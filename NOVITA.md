@@ -36,6 +36,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
   > Spotify, TikTok, Instagram, Discord, 7TV e Telegram in una carta sola, e ognuno lo scolleghi quando vuoi, con qualunque piano.
 - Spotify, TikTok, gli avvisi di Discord, 7TV e l'accesso con Telegram si scollegano con qualunque piano: prima, tornando all'Essenziale, restavano legati.
 - Un sostegno al progetto aperto e mai pagato si cancella dopo una settimana, e quelli pagati dopo dieci anni, come dice l'informativa.
+- L'azione «Timeout in chat» dei moduli mette davvero in pausa chi ha fatto scattare il modulo: prima non faceva niente. Se manca il permesso, o la persona è un moderatore o un VIP, il bot lo dice. [vai: moduli]
 - Col pannello in inglese o in spagnolo la scheda Donazioni si chiama «Donations» e «Donaciones» anche nel menù, e nella pagina link il carattere in spagnolo è «Fuente». [vai: donazioni]
 - Le recensioni della pagina iniziale scorrono sotto le dirette in onda e prima della serata col bot acceso, e la pagina si apre più leggera.
 
@@ -46,6 +47,23 @@ nome resta in casa. Non è una cosa da ricordarsi:
   > Link e descrizioni vengono da quello che hai già: pagina link, social, settimana, Discord, donazioni. Scarichi tutto in un file, pronto da mettere su Twitch.
 - Nel media kit il testo sulla fascia del contatto si legge con qualunque colore della pagina link: con alcuni accenti prima restava troppo tenue.
 - Ogni scheda del pannello ha il suo manuale: Stato, Effetti e Community si aggiungono agli altri, che ora dicono le etichette e i messaggi che vedi davvero.
+- In chat «!bot» e «!ia» rispondono sempre, anche con i comandi base spenti: fra i comandi pronti non si spengono, non si rinominano e non si riservano più. [vai: moduli]
+- Con la gestione dei comandi dalla chat accesa, «!comando lista» lo può scrivere chiunque: aggiungere, cambiare e togliere comandi resta ai moderatori. [vai: moduli]
+- La guida dei contatori e il tasto «Accendi a schermo» non dicono più che il numero riparte da zero: si accende col numero a cui è arrivato. [vai: moduli]
+- Nell'elenco dei moduli il riassunto dell'azione «Contatore» dice se azzera o imposta il numero: prima diceva sempre che lo aumentava. [vai: moduli]
+- «Salva i comandi» salva le righe della sua lista: un gioco rimesso com'era di serie nella scheda Comandi non torna più come lo mostrava ancora la scheda Giochi. [vai: moduli]
+- L'editor dei moduli e la pagina di ascolto vocale mandano nelle schede di oggi: Comandi vocali per il microfono e il permesso di gestione canale, Effetti & suoni, Musica. [vai: moduli]
+- Nel giro guidato di Comandi vocali il passo sul microfono indica il tasto «Apri l'ascolto vocale», non più l'interruttore dei momenti salienti. [vai: ascolto]
+- L'azione «Metti una canzone in coda» e l'importazione da un altro bot non parlano più di un add-on Musica: le richieste musicali sono nel piano Essenziale. [vai: moduli]
+- Una donazione mandata dai Connettori avanzati senza valuta, o con una valuta sconosciuta, entra con quella del canale: prima la richiesta falliva. [vai: moduli]
+- «Salva aspetto» dei contatori non rende più nero pieno lo sfondo: resta semitrasparente come quello di serie, anche quando cambi colore. [vai: moduli]
+- Momenti salienti: la sensibilità salvata mentre il server ti sta già ascoltando vale entro un minuto, senza aspettare la diretta dopo. [vai: ascolto]
+- Un modulo a tempo, su un evento, a voce o da Telegram con «Costa» o «Serve almeno» non toglie più monete a te né a nessuno: paga solo chi lo usa scrivendo in chat. [vai: moduli]
+- Nell'azione «Aspetta» il campo arriva a 30 secondi, quanto il bot aspetta davvero, e il testo sull'overlay resta a schermo al massimo 30 secondi, come dice il suo campo. [vai: moduli]
+- La carta «Comando vocale» dice che l'ascolto funziona anche fuori da Chrome ed Edge, col motore locale che la prima volta scarica un modello. [vai: ascolto]
+- Nell'editor dei moduli inneschi, eventi, azioni e il riassunto di ogni modulo si leggono in inglese e in spagnolo, come il resto del pannello. [vai: moduli]
+- I campi dell'editor dei moduli, i tasti Prova, Modifica ed Elimina e i Connettori avanzati si leggono anche in inglese e in spagnolo. [vai: moduli]
+- La pagina di ascolto vocale si legge in inglese e in spagnolo, nella lingua del pannello, registro compreso. Il riconoscimento resta in italiano. [vai: ascolto]
 - I pannelli per Twitch si scaricano tre volte più definiti: sul telefono bordi e scritte restano netti. Quelli che hai già caricato vanno riscaricati e rimessi. [vai: pannelli]
 - Il cursore disegnato c'è anche sul selettore dei colori, su «scegli file» e nei campi dove si scrive: nel pannello non resta nessun cursore di sistema.
 - La pagina iniziale in inglese e in spagnolo ha nella sua lingua anche il piede, il riquadro per dare una mano e l'avviso dei cookie: prima restavano in italiano.

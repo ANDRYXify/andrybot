@@ -1321,7 +1321,7 @@ const _DEMO_TEMA_BASE = { sfondoTipo: 'tinta', bg: '', bg2: '', angolo: 160, sfo
 function _demoGet(via) {
   if (via === '/api/streamer/overlays' && _demoScritture.overlays) return { overlays: _demoScritture.overlays };
   if (via === '/api/streamer/effetti' && _demoScritture.effetti) return { overlayUrl: 'https://socialbot.live/overlay/andryx_demo', effetti: _demoScritture.effetti };
-  if (via === '/api/contatori' && _demoScritture.contatori) return { contatori: _demoScritture.contatori };
+  if (via === '/api/contatori' && _demoScritture.contatori) return { contatori: _demoScritture.contatori, base: _demoGet('/api/contatori').base };
   const F = {
     '/api/me': statoDemo(),
     '/api/tiktok/stato': { appAttiva: true, collegato: true, username: 'andryxify', redirect: 'https://socialbot.live/tiktok/callback' },
@@ -1440,7 +1440,7 @@ function _demoGet(via) {
       { comando: 'tentativi', etichetta: 'Tentativi', emoji: '', valore: 23, step: 1, auto_parola: '', reward_id: '',
         verbiCfg: { leggi: { parole: [], chi: 'tutti' }, piu: { parole: ['+', 'add'], chi: 'mod' }, meno: { parole: ['-', 'meno'], chi: 'mod' }, azzera: { parole: ['reset', 'azzera'], chi: 'mod' }, imposta: { parole: ['set'], chi: 'mod' }, mostra: { parole: ['on', 'mostra'], chi: 'mod' }, nascondi: { parole: ['off', 'nascondi'], chi: 'mod' } },
         overlayCfg: { mostra: false, x: 50, y: 94, r: 0, colore: '#ffffff', sfondo: 'rgba(0,0,0,0.55)', dim: 40, grassetto: true, font: 'system', formato: '{emoji} {etichetta}: {valore}' } },
-    ] },
+    ], base: { sfondo: 'rgba(0,0,0,0.55)' } },
     '/api/streamer/giochi/regole': {"contesto":{"mancheMinuti":15,"presenzaOraria":120},"giochi":[{"id":"slot","nome":["Slot machine","Slot machine","Tragaperras"],"resa":{"tipo":"puntata","costo":"costo","esiti":[[0.004629629629629629,["jackpot",1]],[0.004629629629629629,["jackpot",0.75]],[0.018518518518518517,["jackpot",0.4]],[0.4166666666666667,["coppia",1]]]},"param":[{"k":"costo","tipo":"monete","def":10,"min":1,"max":100000,"eti":["Costo di una giocata","Cost of a play","Coste de una tirada"]},{"k":"jackpot","tipo":"monete","def":200,"min":0,"max":1000000,"eti":["Tris di 💎 (il 7 paga tre quarti, gli altri due quinti)","Three 💎 (7 pays three quarters, the others two fifths)","Trío de 💎 (el 7 paga tres cuartos, los demás dos quintos)"]},{"k":"coppia","tipo":"monete","def":15,"min":0,"max":100000,"eti":["Una coppia","A pair","Una pareja"]},{"k":"attesaTesta","tipo":"secondi","def":5,"min":0,"max":86400,"attesa":"testa","eti":["Attesa fra due giocate, a testa","Wait between two plays, each","Espera entre dos jugadas, cada uno"]},{"k":"attesaTutti","tipo":"secondi","def":0,"min":0,"max":86400,"attesa":"tutti","eti":["Attesa fra due giocate, per tutti","Wait between two plays, for everyone","Espera entre dos jugadas, para todos"]}],"valori":{"costo":10,"jackpot":200,"coppia":15,"attesaTesta":5,"attesaTutti":0},"resaOra":{"tipo":"puntata","perCento":93.5}},{"id":"roulette","nome":["Roulette","Roulette","Ruleta"],"resa":{"tipo":"puntata","costo":1,"esiti":[[0.4864864864864865,2]]},"param":[{"k":"massimo","tipo":"monete","def":0,"min":0,"max":1000000,"eti":["Puntata massima (0 = nessun limite)","Maximum bet (0 = no limit)","Apuesta máxima (0 = sin límite)"]},{"k":"attesaTesta","tipo":"secondi","def":5,"min":0,"max":86400,"attesa":"testa","eti":["Attesa fra due giocate, a testa","Wait between two plays, each","Espera entre dos jugadas, cada uno"]},{"k":"attesaTutti","tipo":"secondi","def":0,"min":0,"max":86400,"attesa":"tutti","eti":["Attesa fra due giocate, per tutti","Wait between two plays, for everyone","Espera entre dos jugadas, para todos"]}],"valori":{"massimo":0,"attesaTesta":5,"attesaTutti":0},"resaOra":{"tipo":"puntata","perCento":97.3}},{"id":"pesca","nome":["Pesca","Fishing","Pesca"],"resa":{"tipo":"tabella","tabella":"pescato","attesa":["attesaTesta","attesaTutti"]},"param":[{"k":"attesaTesta","tipo":"secondi","def":300,"min":0,"max":86400,"attesa":"testa","eti":["Attesa fra due lanci, a testa","Wait between two casts, each","Espera entre dos lances, cada uno"]},{"k":"attesaTutti","tipo":"secondi","def":0,"min":0,"max":86400,"attesa":"tutti","eti":["Attesa fra due lanci, per tutti","Wait between two casts, for everyone","Espera entre dos lances, para todos"]},{"k":"pescato","tipo":"tabella","def":[["una vecchia ciabatta 🥿",0,16],["una lattina arrugginita 🥫",0,12],["un pesciolino 🐟",3,30],["un granchio 🦀",8,18],["un polpo 🐙",15,10],["un pesce spada 🗡️",30,6],["uno stivale pieno di monete 👢",50,4],["uno scrigno del tesoro 🧰",100,2]],"max":30,"eti":["Cosa si pesca: nome | monete | rarità","What can be caught: name | coins | rarity","Qué se pesca: nombre | monedas | rareza"]}],"valori":{"attesaTesta":300,"attesaTutti":0,"pescato":[["una vecchia ciabatta 🥿",0,16],["una lattina arrugginita 🥫",0,12],["un pesciolino 🐟",3,30],["un granchio 🦀",8,18],["un polpo 🐙",15,10],["un pesce spada 🗡️",30,6],["uno stivale pieno di monete 👢",50,4],["uno scrigno del tesoro 🧰",100,2]]},"resaOra":{"tipo":"tabella","media":9.8,"perOra":118}},{"id":"duello","nome":["Duello","Duel","Duelo"],"resa":{"tipo":"crea","premio":"premio","attesa":["attesaTutti"]},"param":[{"k":"premio","tipo":"monete","def":0,"min":0,"max":100000,"eti":["Premio del duello senza posta","Prize of a duel without stake","Premio del duelo sin apuesta"]},{"k":"attesaTesta","tipo":"secondi","def":0,"min":0,"max":86400,"attesa":"testa","eti":["Attesa fra due duelli, a testa","Wait between two duels, each","Espera entre dos duelos, cada uno"]},{"k":"attesaTutti","tipo":"secondi","def":15,"min":0,"max":86400,"attesa":"tutti","eti":["Attesa fra due duelli, per tutti","Wait between two duels, for everyone","Espera entre dos duelos, para todos"]},{"k":"postaMax","tipo":"monete","def":0,"min":0,"max":1000000,"eti":["Posta massima di un duello (0 = nessun limite)","Maximum duel stake (0 = no limit)","Apuesta máxima de un duelo (0 = sin límite)"]},{"k":"scadenza","tipo":"secondi","def":60,"min":15,"max":600,"eti":["Tempo per accettare una sfida con posta","Time to accept a staked challenge","Tiempo para aceptar un reto con apuesta"]},{"k":"esiti","tipo":"elenco","def":["{a} stende {b} con una mossa leggendaria! 🥊","{b} inciampa e {a} vince senza fatica 😂","{a} e {b} se le danno di santa ragione, e alla fine la spunta {a}! 🔥","{a} sconfigge {b} e ruba pure la scena ✨"],"max":30,"lungo":200,"segnaposto":["a","b"],"eti":["Come va a finire: {a} vince, {b} perde","How it ends: {a} wins, {b} loses","Cómo termina: {a} gana, {b} pierde"]}],"valori":{"premio":0,"attesaTesta":0,"attesaTutti":15,"postaMax":0,"scadenza":60,"esiti":["{a} stende {b} con una mossa leggendaria! 🥊","{b} inciampa e {a} vince senza fatica 😂","{a} e {b} se le danno di santa ragione, e alla fine la spunta {a}! 🔥","{a} sconfigge {b} e ruba pure la scena ✨"]},"resaOra":{"tipo":"crea","perOra":0}},{"id":"furto","nome":["Furto","Heist","Robo"],"resa":{"tipo":"passa"},"param":[{"k":"riuscita","tipo":"percento","def":45,"min":0,"max":100,"eti":["Quante volte su cento riesce","How many times out of a hundred it works","Cuántas veces de cada cien sale bien"]},{"k":"bottino","tipo":"monete","def":150,"min":10,"max":100000,"eti":["Bottino massimo","Maximum loot","Botín máximo"]},{"k":"multa","tipo":"monete","def":60,"min":0,"max":100000,"eti":["Multa massima se ti beccano","Maximum fine if caught","Multa máxima si te pillan"]},{"k":"attesaTesta","tipo":"secondi","def":45,"min":0,"max":86400,"attesa":"testa","eti":["Attesa fra due giocate, a testa","Wait between two plays, each","Espera entre dos jugadas, cada uno"]},{"k":"attesaTutti","tipo":"secondi","def":0,"min":0,"max":86400,"attesa":"tutti","eti":["Attesa fra due giocate, per tutti","Wait between two plays, for everyone","Espera entre dos jugadas, para todos"]}],"valori":{"riuscita":45,"bottino":150,"multa":60,"attesaTesta":45,"attesaTutti":0},"resaOra":{"tipo":"passa"}},{"id":"colpo","nome":["Colpo di gruppo","Group heist","Golpe en grupo"],"resa":{"tipo":"colpo"},"param":[{"k":"posta","tipo":"monete","def":50,"min":1,"max":100000,"eti":["Posta di chi entra senza dire quanto","Stake for whoever joins without saying how much","Apuesta de quien entra sin decir cuánto"]},{"k":"massimo","tipo":"monete","def":0,"min":0,"max":1000000,"eti":["Posta massima (0 = nessun limite)","Maximum stake (0 = no limit)","Apuesta máxima (0 = sin límite)"]},{"k":"raccolta","tipo":"secondi","def":60,"min":15,"max":600,"eti":["Tempo per entrare nella banda","Time to join the crew","Tiempo para entrar en la banda"]},{"k":"minimo","tipo":"numero","def":2,"min":1,"max":50,"eti":["Persone che servono perché parta","People needed for it to start","Personas necesarias para que empiece"]},{"k":"riuscita","tipo":"percento","def":35,"min":0,"max":100,"eti":["Quante volte su cento scappa chi lo fa da solo","How many times out of a hundred a lone robber escapes","Cuántas veces de cada cien escapa quien lo hace solo"]},{"k":"perPersona","tipo":"percento","def":5,"min":0,"max":50,"eti":["Quanto aggiunge ogni persona in più","How much each extra person adds","Cuánto añade cada persona más"]},{"k":"riuscitaMax","tipo":"percento","def":60,"min":0,"max":100,"eti":["Mai più di tante volte su cento","Never more than this many times out of a hundred","Nunca más de tantas veces de cada cien"]},{"k":"vincita","tipo":"numero","def":160,"min":100,"max":1000,"eti":["Chi scappa, ogni 100 di posta ne riprende (160 = +60%)","Whoever escapes gets back, for every 100 staked (160 = +60%)","Quien escapa recupera, por cada 100 apostadas (160 = +60%)"]},{"k":"attesaTesta","tipo":"secondi","def":0,"min":0,"max":86400,"attesa":"testa","eti":["Attesa fra due colpi, per chi era nella banda","Wait between two heists, for the crew","Espera entre dos golpes, para la banda"]},{"k":"attesaTutti","tipo":"secondi","def":300,"min":0,"max":86400,"attesa":"tutti","eti":["Attesa fra due colpi, per tutti","Wait between two heists, for everyone","Espera entre dos golpes, para todos"]},{"k":"riuscito","tipo":"elenco","def":["💰 Colpo riuscito! La banda scappa col bottino.","💰 Il caveau si apre e la banda è già lontana."],"max":20,"lungo":200,"segnaposto":[],"eti":["Se scappano tutti","If everyone escapes","Si escapan todos"]},{"k":"fallito","tipo":"elenco","def":["🚨 Sirene! La banda finisce dentro al completo.","🚨 L'allarme suona subito: presi tutti."],"max":20,"lungo":200,"segnaposto":[],"eti":["Se li prendono tutti","If everyone is caught","Si los pillan a todos"]},{"k":"meta","tipo":"elenco","def":["💰 Colpo a metà: qualcuno scappa, qualcuno no.","🚨 La banda si divide nella fuga: non tutti ce la fanno."],"max":20,"lungo":200,"segnaposto":[],"eti":["Se va a metà","If it goes halfway","Si sale a medias"]}],"valori":{"posta":50,"massimo":0,"raccolta":60,"minimo":2,"riuscita":35,"perPersona":5,"riuscitaMax":60,"vincita":160,"attesaTesta":0,"attesaTutti":300,"riuscito":["💰 Colpo riuscito! La banda scappa col bottino.","💰 Il caveau si apre e la banda è già lontana."],"fallito":["🚨 Sirene! La banda finisce dentro al completo.","🚨 L'allarme suona subito: presi tutti."],"meta":["💰 Colpo a metà: qualcuno scappa, qualcuno no.","🚨 La banda si divide nella fuga: non tutti ce la fanno."]},"resaOra":{"tipo":"colpo","perCento":96}},{"id":"manche","nome":["Manche","Rounds","Rondas"],"resa":{"tipo":"manche","premio":"premio"},"param":[{"k":"premio","tipo":"monete","def":25,"min":0,"max":100000,"eti":["Premio a chi risponde per primo","Prize for the first right answer","Premio para quien responde primero"]},{"k":"tipi","tipo":"scelte","def":["trivia","parola","numero","anagramma","sequenza","domanda","calcolo","rebus","piuomeno","impiccato","wordle"],"scelte":[["trivia",["Quiz","Quiz","Quiz"]],["parola",["Reflex","Reflex","Reflejo"]],["numero",["Numero","Number","Número"]],["anagramma",["Anagramma","Anagram","Anagrama"]],["sequenza",["Sequenza","Sequence","Secuencia"]],["domanda",["Domanda tua","Your question","Tu pregunta"]],["calcolo",["Calcolo veloce","Quick maths","Cálculo rápido"]],["rebus",["Rebus","Emoji rebus","Jeroglífico"]],["piuomeno",["Più o meno","Higher or lower","Más o menos"]],["impiccato",["Impiccato","Hangman","Ahorcado"]],["wordle",["Wordle della chat","Chat Wordle","Wordle del chat"]]],"eti":["Nel giro delle manche automatiche","In the automatic rounds rotation","En la rotación de rondas automáticas"]},{"k":"attesaTesta","tipo":"secondi","def":0,"min":0,"max":86400,"attesa":"testa","eti":["Attesa fra due manche aperte a mano (!manche, !trivia), a testa","Wait between two rounds started by hand (!manche, !trivia), each","Espera entre dos rondas abiertas a mano (!manche, !trivia), cada uno"]},{"k":"attesaTutti","tipo":"secondi","def":10,"min":0,"max":86400,"attesa":"tutti","eti":["Attesa fra due manche aperte a mano (!manche, !trivia), per tutti","Wait between two rounds started by hand (!manche, !trivia), for everyone","Espera entre dos rondas abiertas a mano (!manche, !trivia), para todos"]}],"valori":{"premio":25,"tipi":["trivia","parola","numero","anagramma","sequenza","domanda","calcolo","rebus","piuomeno","impiccato","wordle"],"attesaTesta":0,"attesaTutti":10},"resaOra":{"tipo":"manche","perOra":100}},{"id":"boss","nome":["Boss da battere insieme","Boss to beat together","Jefe para vencer juntos"],"resa":{"tipo":"boss"},"param":[{"k":"vitaPerPersona","tipo":"numero","def":60,"min":10,"max":10000,"eti":["Punti vita per ogni persona che scrive in chat","Health points for each person writing in chat","Puntos de vida por cada persona que escribe en el chat"]},{"k":"minimo","tipo":"numero","def":3,"min":1,"max":100,"eti":["Contando almeno tante persone","Counting at least this many people","Contando al menos tantas personas"]},{"k":"dannoMin","tipo":"numero","def":5,"min":1,"max":10000,"eti":["Danno di un colpo, da","Damage of a hit, from","Daño de un golpe, desde"]},{"k":"dannoMax","tipo":"numero","def":15,"min":1,"max":10000,"eti":["Danno di un colpo, fino a","Damage of a hit, up to","Daño de un golpe, hasta"]},{"k":"attesaTesta","tipo":"secondi","def":5,"min":0,"max":86400,"attesa":"testa","eti":["Attesa fra due colpi al boss, a testa","Wait between two hits on the boss, each","Espera entre dos golpes al jefe, cada uno"]},{"k":"attesaTutti","tipo":"secondi","def":0,"min":0,"max":86400,"attesa":"tutti","eti":["Attesa fra due colpi al boss, per tutti","Wait between two hits on the boss, for everyone","Espera entre dos golpes al jefe, para todos"]},{"k":"durata","tipo":"secondi","def":90,"min":20,"max":600,"eti":["Tempo per batterlo","Time to beat it","Tiempo para vencerlo"]},{"k":"bottino","tipo":"monete","def":20,"min":0,"max":100000,"eti":["Bottino a testa se cade: chi colpisce di più prende di più","Loot per person if it falls: whoever hits more gets more","Botín por cabeza si cae: quien golpea más se lleva más"]},{"k":"ogni","tipo":"numero","def":0,"min":0,"max":360,"eti":["Arriva da solo in diretta ogni tanti minuti (0 = solo con !boss)","Comes on its own while live every this many minutes (0 = only with !boss)","Llega solo en directo cada tantos minutos (0 = solo con !boss)"]},{"k":"dopoRaid","tipo":"numero","def":10,"min":0,"max":100000,"eti":["Arriva con un raid di almeno tante persone (0 = mai)","Comes with a raid of at least this many people (0 = never)","Llega con un raid de al menos tantas personas (0 = nunca)"]},{"k":"festa","tipo":"numero","def":0,"min":0,"max":10,"eti":["Se cade, minuti di festa in solo emote (0 = niente festa)","If it falls, minutes of emote-only party (0 = no party)","Si cae, minutos de fiesta en solo emotes (0 = sin fiesta)"]},{"k":"nomi","tipo":"elenco","def":["il Drago del Lag 🐉","la Piovra dello Spam 🐙","il Golem del Buffering 🗿","lo Scheletro del Ping Alto 💀","il Troll del Ritardo 👹","il Boss Finale 👾"],"max":30,"lungo":80,"segnaposto":[],"eti":["I boss","The bosses","Los jefes"]}],"valori":{"vitaPerPersona":60,"minimo":3,"dannoMin":5,"dannoMax":15,"attesaTesta":5,"attesaTutti":0,"durata":90,"bottino":20,"ogni":0,"dopoRaid":10,"festa":0,"nomi":["il Drago del Lag 🐉","la Piovra dello Spam 🐙","il Golem del Buffering 🗿","lo Scheletro del Ping Alto 💀","il Troll del Ritardo 👹","il Boss Finale 👾"]},"resaOra":{"tipo":"boss","massimo":95,"ogni":0,"perOra":0}},{"id":"blackjack","nome":["Blackjack","Blackjack","Blackjack"],"resa":{"tipo":"blackjack"},"param":[{"k":"vincitaBJ","tipo":"numero","def":250,"min":200,"max":300,"eti":["Il blackjack servito, ogni 100 puntate, ne rende (250 = 3 a 2)","A dealt blackjack returns, for every 100 bet (250 = 3 to 2)","El blackjack servido devuelve, por cada 100 apostadas (250 = 3 a 2)"]},{"k":"massimo","tipo":"monete","def":0,"min":0,"max":1000000,"eti":["Puntata massima (0 = nessun limite)","Maximum bet (0 = no limit)","Apuesta máxima (0 = sin límite)"]},{"k":"tempo","tipo":"secondi","def":60,"min":15,"max":300,"eti":["Tempo per decidere, poi si sta","Time to decide, then you stand","Tiempo para decidir, luego te plantas"]},{"k":"attesaTesta","tipo":"secondi","def":5,"min":0,"max":86400,"attesa":"testa","eti":["Attesa fra due mani, a testa","Wait between two hands, each","Espera entre dos manos, cada uno"]},{"k":"attesaTutti","tipo":"secondi","def":0,"min":0,"max":86400,"attesa":"tutti","eti":["Attesa fra due mani, per tutti","Wait between two hands, for everyone","Espera entre dos manos, para todos"]}],"valori":{"vincitaBJ":250,"massimo":0,"tempo":60,"attesaTesta":5,"attesaTutti":0},"resaOra":{"tipo":"blackjack","perCento":97.6}},{"id":"corsa","nome":["Corsa","Race","Carrera"],"resa":{"tipo":"corsa"},"param":[{"k":"rende","tipo":"percento","def":95,"min":50,"max":100,"eti":["Su 100 puntate ne tornano in media, qualunque corridore si scelga","Out of 100 bet, this many come back on average, whichever runner you pick","Por cada 100 apostadas vuelven de media, se elija el corredor que se elija"]},{"k":"posta","tipo":"monete","def":50,"min":1,"max":100000,"eti":["Puntata di chi non dice quanto","Bet for whoever does not say how much","Apuesta de quien no dice cuánto"]},{"k":"massimo","tipo":"monete","def":0,"min":0,"max":1000000,"eti":["Puntata massima (0 = nessun limite)","Maximum bet (0 = no limit)","Apuesta máxima (0 = sin límite)"]},{"k":"raccolta","tipo":"secondi","def":45,"min":15,"max":300,"eti":["Tempo per puntare","Time to bet","Tiempo para apostar"]},{"k":"corridori","tipo":"elenco","def":["🐎 Cavallo","🐇 Lepre","🐕 Cane","🦆 Papera","🐢 Tartaruga"],"min":2,"max":8,"lungo":40,"segnaposto":[],"eti":["I corridori, dal favorito al più lento","The runners, from favourite to slowest","Los corredores, del favorito al más lento"]},{"k":"attesaTesta","tipo":"secondi","def":0,"min":0,"max":86400,"attesa":"testa","eti":["Attesa fra due puntate, a testa","Wait between two bets, each","Espera entre dos apuestas, cada uno"]},{"k":"attesaTutti","tipo":"secondi","def":300,"min":0,"max":86400,"attesa":"tutti","eti":["Attesa fra due corse, per tutti","Wait between two races, for everyone","Espera entre dos carreras, para todos"]}],"valori":{"rende":95,"posta":50,"massimo":0,"raccolta":45,"corridori":["🐎 Cavallo","🐇 Lepre","🐕 Cane","🦆 Papera","🐢 Tartaruga"],"attesaTesta":0,"attesaTutti":300},"resaOra":{"tipo":"corsa","perCento":95,"favorito":285,"ultimo":1425}},{"id":"patata","nome":["Patata bollente","Hot potato","Patata caliente"],"resa":{"tipo":"passa"},"param":[{"k":"miccia","tipo":"secondi","def":30,"min":10,"max":600,"eti":["Scoppia dopo almeno tanti secondi","It blows after at least this many seconds","Explota tras al menos tantos segundos"]},{"k":"micciaMax","tipo":"secondi","def":90,"min":10,"max":600,"eti":["E al più dopo tanti","And at most after this many","Y como mucho tras tantos"]},{"k":"multa","tipo":"monete","def":0,"min":0,"max":100000,"eti":["Chi resta con la patata ne dà tante a chi gliel'ha passata (0 = niente)","Whoever is left holding it gives this many to whoever passed it (0 = nothing)","Quien se queda con ella da tantas a quien se la pasó (0 = nada)"]},{"k":"attesaTesta","tipo":"secondi","def":0,"min":0,"max":86400,"attesa":"testa","eti":["Attesa fra due patate lanciate, a testa","Wait between two potatoes thrown, each","Espera entre dos patatas lanzadas, cada uno"]},{"k":"attesaTutti","tipo":"secondi","def":120,"min":0,"max":86400,"attesa":"tutti","eti":["Attesa fra due patate, per tutti","Wait between two potatoes, for everyone","Espera entre dos patatas, para todos"]}],"valori":{"miccia":30,"micciaMax":90,"multa":0,"attesaTesta":0,"attesaTutti":120},"resaOra":{"tipo":"passa"}},{"id":"catena","nome":["Catena di parole","Word chain","Cadena de palabras"],"resa":null,"param":[{"k":"pausa","tipo":"secondi","def":60,"min":20,"max":600,"eti":["Si chiude se nessuno trova la parola per tanti secondi","It closes if nobody finds the word for this many seconds","Se cierra si nadie encuentra la palabra durante tantos segundos"]},{"k":"traguardo","tipo":"numero","def":10,"min":0,"max":1000,"eti":["Ogni tante parole il bot applaude (0 = mai)","Every this many words the bot cheers (0 = never)","Cada tantas palabras el bot aplaude (0 = nunca)"]},{"k":"inizio","tipo":"elenco","def":["casa","sole","luna","mare","pane","gatto","fiore","treno","libro","piano","tavolo","strada","notte","amico","verde","porta","carta","sasso","festa","lupo"],"max":100,"lungo":24,"segnaposto":[],"eti":["Le parole da cui si parte","The words to start from","Las palabras desde las que se empieza"]},{"k":"attesaTesta","tipo":"secondi","def":0,"min":0,"max":86400,"attesa":"testa","eti":["Attesa fra due catene aperte, a testa","Wait between two chains opened, each","Espera entre dos cadenas abiertas, cada uno"]},{"k":"attesaTutti","tipo":"secondi","def":30,"min":0,"max":86400,"attesa":"tutti","eti":["Attesa fra due catene aperte, per tutti","Wait between two chains opened, for everyone","Espera entre dos cadenas abiertas, para todos"]}],"valori":{"pausa":60,"traguardo":10,"inizio":["casa","sole","luna","mare","pane","gatto","fiore","treno","libro","piano","tavolo","strada","notte","amico","verde","porta","carta","sasso","festa","lupo"],"attesaTesta":0,"attesaTutti":30},"resaOra":null},{"id":"conta","nome":["Conta insieme","Count together","Contad juntos"],"resa":null,"param":[{"k":"pausa","tipo":"secondi","def":120,"min":30,"max":1800,"eti":["Si chiude se nessuno conta per tanti secondi","It closes if nobody counts for this many seconds","Se cierra si nadie cuenta durante tantos segundos"]},{"k":"traguardo","tipo":"numero","def":50,"min":0,"max":10000,"eti":["Ogni tanti numeri il bot applaude (0 = mai)","Every this many numbers the bot cheers (0 = never)","Cada tantos números el bot aplaude (0 = nunca)"]},{"k":"attesaTesta","tipo":"secondi","def":0,"min":0,"max":86400,"attesa":"testa","eti":["Attesa fra due conte aperte, a testa","Wait between two counts opened, each","Espera entre dos cuentas abiertas, cada uno"]},{"k":"attesaTutti","tipo":"secondi","def":30,"min":0,"max":86400,"attesa":"tutti","eti":["Attesa fra due conte aperte, per tutti","Wait between two counts opened, for everyone","Espera entre dos cuentas abiertas, para todos"]}],"valori":{"pausa":120,"traguardo":50,"attesaTesta":0,"attesaTutti":30},"resaOra":null},{"id":"8ball","nome":["Palla magica","Magic 8-ball","Bola mágica"],"resa":null,"param":[{"k":"attesaTesta","tipo":"secondi","def":3,"min":0,"max":86400,"attesa":"testa","eti":["Attesa fra due giocate, a testa","Wait between two plays, each","Espera entre dos jugadas, cada uno"]},{"k":"attesaTutti","tipo":"secondi","def":0,"min":0,"max":86400,"attesa":"tutti","eti":["Attesa fra due giocate, per tutti","Wait between two plays, for everyone","Espera entre dos jugadas, para todos"]},{"k":"risposte","tipo":"elenco","def":["Sì, senza dubbio.","Direi proprio di sì.","Ci puoi scommettere.","Assolutamente.","Mmm… non ci conterei.","Meglio di no.","Direi di no.","Non è detto.","Chiedimelo di nuovo più tardi.","Il futuro è nebbioso… riprova.","Le probabilità sono buone.","Segui il tuo istinto.","Ho i miei dubbi…","Ovvio che sì!","Nemmeno per sogno 😄"],"max":40,"lungo":120,"segnaposto":[],"eti":["Le risposte","The answers","Las respuestas"]}],"valori":{"attesaTesta":3,"attesaTutti":0,"risposte":["Sì, senza dubbio.","Direi proprio di sì.","Ci puoi scommettere.","Assolutamente.","Mmm… non ci conterei.","Meglio di no.","Direi di no.","Non è detto.","Chiedimelo di nuovo più tardi.","Il futuro è nebbioso… riprova.","Le probabilità sono buone.","Segui il tuo istinto.","Ho i miei dubbi…","Ovvio che sì!","Nemmeno per sogno 😄"]},"resaOra":null},{"id":"sblocca","nome":["Sblocca la chat","Unlock the chat","Desbloquea el chat"],"resa":{"tipo":"spesa"},"param":[{"k":"modo","tipo":"scelta","def":"emote","scelte":[["emote",["solo emote","emote-only","solo emotes"]],["unici",["messaggi unici","unique chat","mensajes únicos"]]],"eti":["Cosa si sblocca","What gets unlocked","Qué se desbloquea"]},{"k":"costoMinuto","tipo":"monete","def":50,"min":1,"max":100000,"eti":["Costo di ogni minuto","Cost of each minute","Coste de cada minuto"]},{"k":"minuti","tipo":"numero","def":2,"min":1,"max":60,"eti":["Minuti se non se ne dicono","Minutes if none are given","Minutos si no se dicen"]},{"k":"massimo","tipo":"numero","def":10,"min":1,"max":60,"eti":["Minuti al massimo","Maximum minutes","Minutos como máximo"]},{"k":"attesaTesta","tipo":"secondi","def":0,"min":0,"max":86400,"attesa":"testa","eti":["Attesa fra due sblocchi, a testa","Wait between two unlocks, each","Espera entre dos desbloqueos, cada uno"]},{"k":"attesaTutti","tipo":"secondi","def":600,"min":0,"max":86400,"attesa":"tutti","eti":["Attesa fra due sblocchi, per tutti","Wait between two unlocks, for everyone","Espera entre dos desbloqueos, para todos"]}],"valori":{"modo":"emote","costoMinuto":50,"minuti":2,"massimo":10,"attesaTesta":0,"attesaTutti":600},"resaOra":{"tipo":"spesa"}},{"id":"morra","nome":["Morra cinese","Rock paper scissors","Piedra, papel o tijera"],"resa":{"tipo":"puntata","costo":100,"esiti":[[0.3333333333333333,["vincita",1]],[0.3333333333333333,100]]},"param":[{"k":"vincita","tipo":"numero","def":200,"min":100,"max":1000,"eti":["Se vinci, ogni 100 puntate ne tornano (200 = il doppio)","If you win, every 100 bet returns (200 = double)","Si ganas, por cada 100 apostadas vuelven (200 = el doble)"]},{"k":"massimo","tipo":"monete","def":0,"min":0,"max":1000000,"eti":["Puntata massima (0 = nessun limite)","Maximum bet (0 = no limit)","Apuesta máxima (0 = sin límite)"]},{"k":"attesaTesta","tipo":"secondi","def":5,"min":0,"max":86400,"attesa":"testa","eti":["Attesa fra due giocate, a testa","Wait between two plays, each","Espera entre dos jugadas, cada uno"]},{"k":"attesaTutti","tipo":"secondi","def":0,"min":0,"max":86400,"attesa":"tutti","eti":["Attesa fra due giocate, per tutti","Wait between two plays, for everyone","Espera entre dos jugadas, para todos"]}],"valori":{"vincita":200,"massimo":0,"attesaTesta":5,"attesaTutti":0},"resaOra":{"tipo":"puntata","perCento":100}},{"id":"abbraccio","nome":["Abbracci","Hugs","Abrazos"],"resa":null,"param":[{"k":"attesaTesta","tipo":"secondi","def":10,"min":0,"max":86400,"attesa":"testa","eti":["Attesa fra due giocate, a testa","Wait between two plays, each","Espera entre dos jugadas, cada uno"]},{"k":"attesaTutti","tipo":"secondi","def":0,"min":0,"max":86400,"attesa":"tutti","eti":["Attesa fra due giocate, per tutti","Wait between two plays, for everyone","Espera entre dos jugadas, para todos"]},{"k":"frasi","tipo":"elenco","def":["🤗 {a} abbraccia forte {b}!","🤗 {a} stritola {b} in un abbraccio da orso!","🤗 {a} corre ad abbracciare {b}!","🤗 {a} e {b}, stretti stretti."],"max":30,"lungo":200,"segnaposto":["a","b"],"eti":["Come si abbraccia: {a} abbraccia {b}","How a hug goes: {a} hugs {b}","Cómo se abraza: {a} abraza a {b}"]},{"k":"tutti","tipo":"elenco","def":["🤗 {a} abbraccia tutta la chat!","🤗 {a} apre le braccia: abbraccio collettivo!"],"max":20,"lungo":200,"segnaposto":["a"],"eti":["Senza nome, a tutta la chat: {a} abbraccia","With no name, the whole chat: {a} hugs","Sin nombre, a todo el chat: {a} abraza"]}],"valori":{"attesaTesta":10,"attesaTutti":0,"frasi":["🤗 {a} abbraccia forte {b}!","🤗 {a} stritola {b} in un abbraccio da orso!","🤗 {a} corre ad abbracciare {b}!","🤗 {a} e {b}, stretti stretti."],"tutti":["🤗 {a} abbraccia tutta la chat!","🤗 {a} apre le braccia: abbraccio collettivo!"]},"resaOra":null},{"id":"bacio","nome":["Bacini","Kisses","Besitos"],"resa":null,"param":[{"k":"attesaTesta","tipo":"secondi","def":10,"min":0,"max":86400,"attesa":"testa","eti":["Attesa fra due giocate, a testa","Wait between two plays, each","Espera entre dos jugadas, cada uno"]},{"k":"attesaTutti","tipo":"secondi","def":0,"min":0,"max":86400,"attesa":"tutti","eti":["Attesa fra due giocate, per tutti","Wait between two plays, for everyone","Espera entre dos jugadas, para todos"]},{"k":"frasi","tipo":"elenco","def":["😘 {a} manda un bacino a {b}!","😘 {a} schiocca un bacio sulla guancia di {b}!","💋 Bacino volante da {a} per {b}!"],"max":30,"lungo":200,"segnaposto":["a","b"],"eti":["Come si bacia: {a} manda un bacio a {b}","How a kiss goes: {a} kisses {b}","Cómo se besa: {a} besa a {b}"]},{"k":"tutti","tipo":"elenco","def":["😘 {a} manda baci a tutta la chat!"],"max":20,"lungo":200,"segnaposto":["a"],"eti":["Senza nome, a tutta la chat: {a} manda baci","With no name, the whole chat: {a} sends kisses","Sin nombre, a todo el chat: {a} manda besos"]}],"valori":{"attesaTesta":10,"attesaTutti":0,"frasi":["😘 {a} manda un bacino a {b}!","😘 {a} schiocca un bacio sulla guancia di {b}!","💋 Bacino volante da {a} per {b}!"],"tutti":["😘 {a} manda baci a tutta la chat!"]},"resaOra":null},{"id":"cinque","nome":["Batti il cinque","High five","Choca esos cinco"],"resa":null,"param":[{"k":"perfetti","tipo":"percento","def":20,"min":0,"max":100,"eti":["Quante volte su cento il cinque viene perfetto","How many times out of a hundred the high five comes out perfect","Cuántas veces de cada cien el cinco sale perfecto"]},{"k":"scadenza","tipo":"secondi","def":30,"min":5,"max":300,"eti":["Dopo questi la mano resta alzata","After these the hand is left hanging","Tras estos la mano se queda en el aire"]},{"k":"attesaTesta","tipo":"secondi","def":5,"min":0,"max":86400,"attesa":"testa","eti":["Attesa fra due mani alzate, a testa","Wait between two raised hands, each","Espera entre dos manos levantadas, cada uno"]},{"k":"attesaTutti","tipo":"secondi","def":0,"min":0,"max":86400,"attesa":"tutti","eti":["Attesa fra due mani alzate, per tutti","Wait between two raised hands, for everyone","Espera entre dos manos levantadas, para todos"]},{"k":"frasiPerfetto","tipo":"elenco","def":["💥 CIAK! {a} e {b}: cinque perfetto, schiocco da manuale!","💥 {a} e {b}... SCHIOCCO PERFETTO!","💥 Il cinque di {a} e {b} si sente fino in fondo alla chat: perfetto!"],"max":20,"lungo":200,"segnaposto":["a","b"],"eti":["Il cinque perfetto: {a} alza, {b} batte","The perfect high five: {a} raises, {b} hits","El cinco perfecto: {a} levanta, {b} choca"]},{"k":"frasiNormale","tipo":"elenco","def":["🙌 {a} e {b} battono il cinque!","🙌 Cinque fra {a} e {b}!"],"max":20,"lungo":200,"segnaposto":["a","b"],"eti":["Il cinque normale","The normal high five","El cinco normal"]},{"k":"frasiSospeso","tipo":"elenco","def":["🙋 {a} resta con la mano alzata... nessuno batte il cinque.","🙋 La mano di {a} resta a mezz'aria. Che freddo."],"max":20,"lungo":200,"segnaposto":["a"],"eti":["La mano rimasta alzata: {a}","The hand left hanging: {a}","La mano en el aire: {a}"]}],"valori":{"perfetti":20,"scadenza":30,"attesaTesta":5,"attesaTutti":0,"frasiPerfetto":["💥 CIAK! {a} e {b}: cinque perfetto, schiocco da manuale!","💥 {a} e {b}... SCHIOCCO PERFETTO!","💥 Il cinque di {a} e {b} si sente fino in fondo alla chat: perfetto!"],"frasiNormale":["🙌 {a} e {b} battono il cinque!","🙌 Cinque fra {a} e {b}!"],"frasiSospeso":["🙋 {a} resta con la mano alzata... nessuno batte il cinque.","🙋 La mano di {a} resta a mezz'aria. Che freddo."]},"resaOra":null},{"id":"dado","nome":["Dado","Dice","Dado"],"resa":null,"param":[{"k":"attesaTesta","tipo":"secondi","def":3,"min":0,"max":86400,"attesa":"testa","eti":["Attesa fra due giocate, a testa","Wait between two plays, each","Espera entre dos jugadas, cada uno"]},{"k":"attesaTutti","tipo":"secondi","def":0,"min":0,"max":86400,"attesa":"tutti","eti":["Attesa fra due giocate, per tutti","Wait between two plays, for everyone","Espera entre dos jugadas, para todos"]}],"valori":{"attesaTesta":3,"attesaTutti":0},"resaOra":null},{"id":"moneta","nome":["Testa o croce","Heads or tails","Cara o cruz"],"resa":null,"param":[{"k":"attesaTesta","tipo":"secondi","def":3,"min":0,"max":86400,"attesa":"testa","eti":["Attesa fra due giocate, a testa","Wait between two plays, each","Espera entre dos jugadas, cada uno"]},{"k":"attesaTutti","tipo":"secondi","def":0,"min":0,"max":86400,"attesa":"tutti","eti":["Attesa fra due giocate, per tutti","Wait between two plays, for everyone","Espera entre dos jugadas, para todos"]}],"valori":{"attesaTesta":3,"attesaTutti":0},"resaOra":null}]},
     '/api/streamer/comandi-pronti': { comandi: [
       { id: "giochi", modulo: "giochi", moduloNome: ["Giochi in chat","Chat games","Juegos en el chat"], moduloAcceso: true, titolo: ["Elenco dei giochi","Games list","Lista de juegos"], cosa: ["Risponde a chi lo chiede con i giochi accesi che può usare, divisi per come si gioca. Con !giochi e un nome spiega quel gioco.","Replies to whoever asks with the games that are on and that they can use, grouped by how they are played. With !giochi and a name it explains that game.","Responde a quien lo pide con los juegos activos que puede usar, agrupados por cómo se juegan. Con !giochi y un nombre explica ese juego."], costa: false, attesa: 0, spegnibile: false, rinominabile: true, acceso: true, vivo: true, nomi: ["giochi"], rinominato: false, chi: "tutti", chiMinimo: "tutti", attesaTutti: 0 },
@@ -1501,8 +1501,8 @@ function _demoGet(via) {
       { id: "followage", modulo: "base", moduloNome: ["Comandi pronti","Built-in commands","Comandos de serie"], moduloAcceso: true, titolo: ["Da quanto segui","How long you've followed","Desde cuándo sigues"], cosa: ["Dice da quanto tempo una persona segue il canale.","Says how long someone has followed the channel.","Dice desde cuándo una persona sigue el canal."], costa: false, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["followage","daquanto"], rinominato: false, chi: "tutti", chiMinimo: "tutti", attesaTutti: 0 },
       { id: "uptime", modulo: "base", moduloNome: ["Comandi pronti","Built-in commands","Comandos de serie"], moduloAcceso: true, titolo: ["Da quanto sei in diretta","How long you've been live","Cuánto llevas en directo"], cosa: ["Dice da quanto è cominciata la diretta.","Says how long ago the stream started.","Dice cuándo empezó el directo."], costa: false, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["uptime"], rinominato: false, chi: "tutti", chiMinimo: "tutti", attesaTutti: 0 },
       { id: "bit", modulo: "base", moduloNome: ["Comandi pronti","Built-in commands","Comandos de serie"], moduloAcceso: true, titolo: ["La classifica dei Bit","The Bits leaderboard","La clasificación de Bits"], cosa: ["Mostra chi ha messo più Bit e a che posto sei tu. Puoi chiedere oggi, settimana, mese, anno o sempre.","Shows who cheered the most Bits and where you stand. You can ask for today, week, month, year or all time.","Muestra quién ha puesto más Bits y en qué puesto estás. Puedes pedir hoy, semana, mes, año o siempre."], costa: false, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["bit","bits","classificabit"], rinominato: false, chi: "tutti", chiMinimo: "tutti", attesaTutti: 0 },
-      { id: "bot", modulo: "base", moduloNome: ["Comandi pronti","Built-in commands","Comandos de serie"], moduloAcceso: true, titolo: ["Parla col bot","Talk to the bot","Habla con el bot"], cosa: ["Chiama il bot e gli fa una domanda.","Calls the bot and asks it a question.","Llama al bot y le hace una pregunta."], costa: false, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["bot","socialbot","ia","ai"], rinominato: false, chi: "tutti", chiMinimo: "tutti", attesaTutti: 0 },
-      { id: "comando", modulo: "chat", moduloNome: ["Gestione dei comandi dalla chat","Managing commands from chat","Gestión de comandos desde el chat"], moduloAcceso: false, titolo: ["Gestisci i comandi","Manage commands","Gestiona los comandos"], cosa: ["Aggiunge, cambia e toglie comandi senza aprire il pannello.","Adds, changes and removes commands without opening the panel.","Añade, cambia y quita comandos sin abrir el panel."], costa: false, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: false, nomi: ["comando","cmd","comandi","command","commands"], rinominato: false, chi: "mod", chiMinimo: "mod", attesaTutti: 0 },
+      { id: "bot", modulo: "trasparenza", moduloNome: ["Trasparenza IA","AI transparency","Transparencia de IA"], moduloAcceso: true, titolo: ["Chi risponde in chat","Who answers in chat","Quién responde en el chat"], cosa: ["Dice a chi lo scrive che qui risponde un assistente automatico, e che alcune risposte in chat sono scritte da un'intelligenza artificiale. Risponde sempre, a chiunque.","Tells whoever writes it that an automated assistant answers here, and that some chat replies are written by an artificial intelligence. It always answers, to anyone.","Dice a quien lo escribe que aquí responde un asistente automático, y que algunas respuestas en el chat las escribe una inteligencia artificial. Responde siempre, a cualquiera."], costa: false, attesa: 0, spegnibile: false, rinominabile: false, riservabile: false, acceso: true, vivo: true, nomi: ["bot","socialbot","ia","ai"], rinominato: false, chi: "tutti", chiMinimo: "tutti", attesaTutti: 0 },
+      { id: "comando", modulo: "chat", moduloNome: ["Gestione dei comandi dalla chat","Managing commands from chat","Gestión de comandos desde el chat"], moduloAcceso: false, titolo: ["Gestisci i comandi","Manage commands","Gestiona los comandos"], cosa: ["Chiunque ne legge l'elenco con !comando lista. Aggiungere, cambiare e togliere comandi senza aprire il pannello resta ai moderatori.","Anyone can read the list with !comando lista. Adding, changing and removing commands without opening the panel stays with the moderators.","Cualquiera lee la lista con !comando lista. Añadir, cambiar y quitar comandos sin abrir el panel sigue siendo cosa de los moderadores."], costa: false, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: false, nomi: ["comando","cmd","comandi","command","commands"], rinominato: false, chi: "tutti", chiMinimo: "tutti", attesaTutti: 0 },
       { id: "addcom", modulo: "chat", moduloNome: ["Gestione dei comandi dalla chat","Managing commands from chat","Gestión de comandos desde el chat"], moduloAcceso: false, titolo: ["Aggiungi un comando","Add a command","Añade un comando"], cosa: ["Scorciatoia per aggiungere un comando.","Shortcut to add a command.","Atajo para añadir un comando."], costa: false, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: false, nomi: ["addcom"], rinominato: false, chi: "mod", chiMinimo: "mod", attesaTutti: 0 },
       { id: "delcom", modulo: "chat", moduloNome: ["Gestione dei comandi dalla chat","Managing commands from chat","Gestión de comandos desde el chat"], moduloAcceso: false, titolo: ["Togli un comando","Remove a command","Quita un comando"], cosa: ["Scorciatoia per togliere un comando.","Shortcut to remove a command.","Atajo para quitar un comando."], costa: false, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: false, nomi: ["delcom"], rinominato: false, chi: "mod", chiMinimo: "mod", attesaTutti: 0 },
       { id: "editcom", modulo: "chat", moduloNome: ["Gestione dei comandi dalla chat","Managing commands from chat","Gestión de comandos desde el chat"], moduloAcceso: false, titolo: ["Cambia un comando","Edit a command","Cambia un comando"], cosa: ["Scorciatoia per cambiare la risposta di un comando.","Shortcut to change a command's reply.","Atajo para cambiar la respuesta de un comando."], costa: false, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: false, nomi: ["editcom"], rinominato: false, chi: "mod", chiMinimo: "mod", attesaTutti: 0 },
@@ -1738,7 +1738,7 @@ function _demoGet(via) {
         { key: 'Città', value: 'Genova' },
       ],
     },
-    '/api/streamer/moduli': [
+    '/api/streamer/moduli': { moduli: [
       { id: 'social', nome: 'Social', attivo: true, tipo: 'comando',
         trigger: { tipo: 'comando', comando: 'social' },
         azioni: [{ tipo: 'messaggio', testo: 'I miei social: andryxify.it/u/$canale' }] },
@@ -1746,12 +1746,12 @@ function _demoGet(via) {
         trigger: { tipo: 'comando', comando: 'pc' },
         azioni: [{ tipo: 'messaggio', testo: 'Ryzen 7 + RTX 4070. Dettagli su andryxify.it' }] },
       { id: 'benvenuto', nome: 'Benvenuto', attivo: true, tipo: 'evento',
-        trigger: { tipo: 'evento', evento: 'primo-messaggio' },
+        trigger: { tipo: 'evento', evento: 'first' },
         azioni: [{ tipo: 'messaggio', testo: 'Benvenuto $user! Mettiti comodo' }] },
       { id: 'dado', nome: 'Tiro di dado', attivo: false, tipo: 'comando',
         trigger: { tipo: 'comando', comando: 'dado' },
         azioni: [{ tipo: 'messaggio', testo: '$user tira il dado e fa... $random(1,6)!' }] },
-    ],
+    ], effettiDisponibili: ['applausi', 'tromba', 'coriandoli', 'festa'], limiti: { attesaS: 30, testoMinMs: 500, testoMaxMs: 30000 } },
     '/api/streamer/telegram/compleanni': {
       attivo: true, messaggio: '',
       chat: { attivo: true, messaggio: '', effetto: 'coriandoli' },
@@ -3664,7 +3664,7 @@ const GUIDE = {
   clip: { serve: ['Creare clip automatiche nei momenti di “hype” della diretta.', 'Create automatic clips in the stream’s “hype” moments.', 'Crear clips automáticos en los momentos de “hype” del directo.'],
     come: [['Attiva le clip automatiche.', 'Enable automatic clips.', 'Activa los clips automáticos.', '#chk-clip'], ['Regola la sensibilità (quanto “hype” serve).', 'Adjust the sensitivity (how much “hype” it takes).', 'Ajusta la sensibilidad (cuánto “hype” hace falta).', '#rng-clip-sens']] },
   ascolto: { serve: ['Comandare il bot con la VOCE mentre streami (l’audio resta sul tuo PC).', 'Control the bot by VOICE while you stream (audio stays on your PC).', 'Controlar el bot por VOZ mientras haces directo (el audio se queda en tu PC).'],
-    come: [['Concedi l’accesso al microfono dal browser.', 'Grant microphone access from the browser.', 'Concede el acceso al micrófono desde el navegador.', '#toggle-ascolto'], ['Di’ le frasi-chiave dei tuoi moduli vocali (es. “clippa”).', 'Say the key phrases of your voice modules (e.g. “clip it”).', 'Di las frases clave de tus módulos de voz (p. ej. “clipea”).', '#inp-cat-trigger']] },
+    come: [['Apri l’ascolto vocale e concedi il microfono al browser.', 'Open voice listening and allow the microphone in the browser.', 'Abre la escucha por voz y concede el micrófono al navegador.', '#btn-apri-voce'], ['Di’ le frasi-chiave dei tuoi moduli vocali (es. “clippa”).', 'Say the key phrases of your voice modules (e.g. “clip it”).', 'Di las frases clave de tus módulos de voz (p. ej. “clipea”).', '#inp-cat-trigger']] },
   musica: { serve: ['Richieste musicali: gli spettatori mettono canzoni in coda su Spotify.', 'Music requests: viewers queue songs on Spotify.', 'Peticiones musicales: los espectadores ponen canciones en cola en Spotify.'],
     come: [['Connetti Spotify (serve Premium + app aperta).', 'Connect Spotify (needs Premium + the app open).', 'Conecta Spotify (necesitas Premium + la app abierta).', '#spotify-box'], ['Scegli come si “paga” la richiesta: libera, sub, monete, bit o punti canale.', 'Choose how a request is “paid”: free, subs, coins, bits or channel points.', 'Elige cómo se “paga” la petición: libre, subs, monedas, bits o puntos de canal.', '#musica-modo'], ['Gli spettatori usano !sr <canzone>; !song mostra cosa suona.', 'Viewers use !sr <song>; !song shows what’s playing.', 'Los espectadores usan !sr <canción>; !song muestra qué suena.', '']] },
   sondaggi: { serve: ['Lanciare sondaggi e predizioni Twitch direttamente da qui.', 'Launch Twitch polls and predictions right from here.', 'Lanzar encuestas y predicciones de Twitch directamente desde aquí.'],
@@ -3889,7 +3889,7 @@ function tFamiglia(id, def) {
 const SOTTO_SCHEDE = {
   moduli: {
     attributo: 'zona',
-    voci: [['comandi', 'Comandi e contatori'], ['morti', 'CONTATORify']],
+    voci: [['comandi', ['Comandi e contatori', 'Commands and counters', 'Comandos y contadores']], ['morti', 'CONTATORify']],
   },
 };
 
@@ -3908,7 +3908,7 @@ function sottoSchedeHtml(scheda) {
   const voci = cfg.voci.map(([id, nome]) => {
     const on = id === ora;
     return `<button type="button" class="fam-scheda${on ? ' on' : ''}" data-sotto="${esc(id)}"`
-      + `${on ? ' aria-current="true"' : ''}>${esc(nome)}</button>`;
+      + `${on ? ' aria-current="true"' : ''}>${esc(Lv(nome))}</button>`;
   }).join('');
   return `<div class="fam-barra" id="sotto-${esc(scheda)}" role="tablist">${voci}</div>`;
 }
@@ -9257,9 +9257,9 @@ function pannelloAscolto() {
       <h2>${_hIco(ICO.voce)}${L('Comando vocale', 'Voice command', 'Comando por voz')}</h2>
       <p>${L('I comandi vocali funzionano', 'Voice commands work', 'Los comandos por voz funcionan')} <strong class="primo-piano">${L('nel browser', 'in the browser', 'en el navegador')}</strong>, ${L('senza installare niente: apri la pagina di ascolto, premi Avvia, e quando dici una parola chiave il bot fa quello che hai impostato nei Moduli.', 'with nothing to install: open the listening page, press Start, and when you say a keyword the bot does what you set in Modules.', 'sin instalar nada: abre la página de escucha, pulsa Iniciar, y cuando dices una palabra clave el bot hace lo que configuraste en los Módulos.')}</p>
       <p class="spazio-sopra">
-        <a class="btn grande" href="/voce.html" target="_blank" rel="noopener">${_bIco(ICO.voce)}${L('Apri l\'ascolto vocale', 'Open voice listening', 'Abre la escucha por voz')}</a>
+        <a class="btn grande" id="btn-apri-voce" href="/voce.html?lang=${L('it', 'en', 'es')}" target="_blank" rel="noopener">${_bIco(ICO.voce)}${L('Apri l\'ascolto vocale', 'Open voice listening', 'Abre la escucha por voz')}</a>
       </p>
-      <p class="suggerimento spazio-sopra">${L('Tienila aperta mentre streammi. Funziona su Chrome o Edge (Mac e Windows).', 'Keep it open while you stream. Works on Chrome or Edge (Mac and Windows).', 'Mantenla abierta mientras haces directo. Funciona en Chrome o Edge (Mac y Windows).')}</p>
+      <p class="suggerimento spazio-sopra">${L('Tienila aperta mentre streammi. Su Chrome ed Edge usa il riconoscimento del browser. Dove il browser non ce l\'ha (per esempio Dia, Arc, Brave) usa un motore locale: la prima volta scarica un modello di qualche decina di MB, poi va anche offline.', 'Keep it open while you stream. On Chrome and Edge it uses the browser\'s recognition. Where the browser has none (for example Dia, Arc, Brave) it uses a local engine: the first time it downloads a model of a few tens of MB, then it works offline too.', 'Mantenla abierta mientras haces directo. En Chrome y Edge usa el reconocimiento del navegador. Donde el navegador no lo tiene (por ejemplo Dia, Arc, Brave) usa un motor local: la primera vez descarga un modelo de unas decenas de MB, luego funciona también sin conexión.')}</p>
       <p class="suggerimento">${L('I comandi vocali si creano e modificano in', 'Voice commands are created and edited in', 'Los comandos por voz se crean y editan en')}
       <strong class="primo-piano">${L('Chat e pubblico → Comandi', 'Chat & audience → Commands', 'Chat y público → Comandos')}</strong> (${L('innesco "Comando vocale"', '"Voice command" trigger', 'disparador "Comando por voz"')}).</p>
     </div>
@@ -9312,7 +9312,7 @@ function pannelloAscolto() {
     ${proprietario ? `
     <div class="carta">
       <h2>${_hIco(ICO.cuffie)}${L('Impara mentre parlo', 'Learns while I talk', 'Aprende mientras hablo')}</h2>
-      <p>${L('Con la pagina di ascolto aperta, il bot', 'With the listening page open, the bot', 'Con la página de escucha abierta, el bot')} <strong class="primo-piano">${L('ti sente parlare in diretta', 'hears you speak live', 'te oye hablar en directo')}</strong> ${L('e cresce: impara i tuoi modi di dire e il tuo tono, così ti somiglia sempre di più.', 'and grows: it learns your sayings and your tone, so it sounds more and more like you.', 'y crece: aprende tus expresiones y tu tono, así se te parece cada vez más.')} <strong>${L('Solo la tua voce', 'Only your voice', 'Solo tu voz')}</strong> — ${L('mai da altri account.', 'never from other accounts.', 'nunca de otras cuentas.')}</p>
+      <p>${L('Con la pagina di ascolto aperta, il bot', 'With the listening page open, the bot', 'Con la página de escucha abierta, el bot')} <strong class="primo-piano">${L('ti sente parlare in diretta', 'hears you speak live', 'te oye hablar en directo')}</strong> ${L('e cresce: impara i tuoi modi di dire e il tuo tono, così ti somiglia sempre di più.', 'and grows: it learns your sayings and your tone, so it sounds more and more like you.', 'y crece: aprende tus expresiones y tu tono, así se te parece cada vez más.')} <strong>${L('Solo la tua voce', 'Only your voice', 'Solo tu voz')}</strong>: ${L('mai da altri account.', 'never from other accounts.', 'nunca de otras cuentas.')}</p>
       <div class="riga-interruttore spazio-sopra">
         <label class="interruttore">
           <input type="checkbox" id="chk-impara" ${iv.attivo ? 'checked' : ''}>
@@ -19054,8 +19054,8 @@ function pannelloModuli() {
     <div data-zona="comandi">
     <div class="carta">
       <h2>${_hIco(ICO.fulmine)}${L('Comando rapido', 'Quick command', 'Comando rápido')}</h2>
-      <p>${L('Il modo più veloce: scrivi il', 'The fastest way: type the', 'La forma más rápida: escribe el')} <strong class="primo-piano">${L('nome', 'name', 'nombre')}</strong> ${L('e', 'and', 'y')} <strong class="primo-piano">${L('cosa deve rispondere', 'what it should reply', 'qué debe responder')}</strong>. ${L('Fatto — niente altro da compilare.', 'Done — nothing else to fill in.', 'Listo — nada más que rellenar.')}</p>
-      <p class="suggerimento"><a href="/manuale/moduli" target="_blank" rel="noopener">${L('Manuale dei moduli', 'Modules manual', 'Manual de módulos')}</a> — ${L('inneschi, condizioni, azioni e variabili, uno per uno.', 'triggers, conditions, actions and variables, one by one.', 'disparadores, condiciones, acciones y variables, uno por uno.')}</p>
+      <p>${L('Il modo più veloce: scrivi il', 'The fastest way: type the', 'La forma más rápida: escribe el')} <strong class="primo-piano">${L('nome', 'name', 'nombre')}</strong> ${L('e', 'and', 'y')} <strong class="primo-piano">${L('cosa deve rispondere', 'what it should reply', 'qué debe responder')}</strong>. ${L('Fatto: niente altro da compilare.', 'Done: nothing else to fill in.', 'Listo: nada más que rellenar.')}</p>
+      <p class="suggerimento"><a href="/manuale/moduli" target="_blank" rel="noopener">${L('Manuale dei moduli', 'Modules manual', 'Manual de módulos')}</a>: ${L('inneschi, condizioni, azioni e variabili, uno per uno.', 'triggers, conditions, actions and variables, one by one.', 'disparadores, condiciones, acciones y variables, uno por uno.')}</p>
       <div class="riga-flessibile">
         <span class="prefisso-cmd">!</span>
         <input aria-label="social" type="text" id="qc-nome" class="campo-largo" placeholder="social" maxlength="24">
@@ -19072,7 +19072,7 @@ function pannelloModuli() {
       <p class="suggerimento">${L('Altre variabili utili:', 'More handy variables:', 'Más variables útiles:')}
       <code>$followage</code> (${L('da quanto ti segue chi scrive, o', 'how long the writer has followed, or', 'cuánto lleva siguiéndote quien escribe, o')} <code>!followage @nome</code>),
       <code>$spettatori</code> (${L('quanti stanno guardando ora', 'how many are watching now', 'cuántos están viendo ahora')}),
-      <code>$chattercaso</code> (${L('un utente a caso tra chi ha scritto — perfetto per i giochi, es.', 'a random recent chatter — great for games, e.g.', 'un usuario al azar entre quienes han escrito — ideal para juegos, p. ej.')} <em>!abbraccia $chattercaso</em>),
+      <code>$chattercaso</code> (${L('un utente a caso tra chi ha scritto, perfetto per i giochi, es.', 'a random recent chatter, great for games, e.g.', 'un usuario al azar entre quienes han escrito, ideal para juegos, p. ej.')} <em>!abbraccia $chattercaso</em>),
       <code>$data</code> · <code>$ora</code> · <code>$giorno</code>. ${L('Nota:', 'Note:', 'Nota:')} <code>$followage</code> ${L('richiede il permesso "lettura follower" (dalla dashboard).', 'needs the "read followers" permission (from the dashboard).', 'necesita el permiso de "lectura de seguidores" (desde el panel).')}</p>
       <p class="spazio-sopra">
         <button class="btn" id="btn-qc">${L('Aggiungi comando', 'Add command', 'Añadir comando')}</button>
@@ -19080,7 +19080,7 @@ function pannelloModuli() {
       </p>
       <div class="riquadro-info spazio-sopra">
         <strong>${L('Comandi pronti (1 clic)', 'Ready-made commands (1 click)', 'Comandos listos (1 clic)')}</strong>
-        <p class="suggerimento">${L('Creo per te il comando già configurato per i mod. Poi in chat basta', 'I create the command already set up for mods. Then in chat just type', 'Creo el comando ya configurado para mods. Luego en el chat basta')} <code>!categoria Fortnite</code> ${L('o', 'or', 'o')} <code>!titolo In diretta!</code> — ${L('e anche da Telegram in privato con', 'and also from Telegram in private with', 'y también desde Telegram en privado con')} <code>/categoria</code> · <code>/titolo</code>.</p>
+        <p class="suggerimento">${L('Creo per te il comando già configurato per i mod. Poi in chat basta', 'I create the command already set up for mods. Then in chat just type', 'Creo el comando ya configurado para mods. Luego en el chat basta')} <code>!categoria Fortnite</code> ${L('o', 'or', 'o')} <code>!titolo In diretta!</code>, ${L('e anche da Telegram in privato con', 'and also from Telegram in private with', 'y también desde Telegram en privado con')} <code>/categoria</code> · <code>/titolo</code>.</p>
         <p>
           <button class="btn secondario" id="btn-preset-categoria">${L('Crea comando !categoria', 'Create !categoria command', 'Crear comando !categoria')}</button>
           <button class="btn secondario" id="btn-preset-titolo">${L('Crea comando !titolo', 'Create !titolo command', 'Crear comando !titolo')}</button>
@@ -19095,7 +19095,7 @@ function pannelloModuli() {
         <input type="checkbox" id="chk-comandi-chat" ${cch.attivo ? 'checked' : ''}>
         <label for="chk-comandi-chat">${L('Gestisci i comandi dalla chat (per i mod):', 'Manage commands from chat (for mods):', 'Gestiona los comandos desde el chat (para mods):')} <code>!comando aggiungi !nome &lt;risposta&gt;</code>, <code>!comando elimina !nome</code>, <code>!comando lista</code> ${L('(anche', '(also', '(también')} <code>!addcom</code>/<code>!delcom</code>)</label>
       </div>
-      <p class="suggerimento">${L('Spenta di default: SocialBot non impone comandi propri. Accendendola, i mod possono creare comandi semplici (testo con <code>{user}</code>) senza aprire la dashboard. Per variabili, effetti e condizioni resta l\'editor Moduli.', 'Off by default: SocialBot imposes no built-in commands. When on, mods can create simple commands (text with <code>{user}</code>) without opening the dashboard. For variables, effects and conditions use the Modules editor.', 'Apagada por defecto: SocialBot no impone comandos propios. Al activarla, los mods pueden crear comandos simples (texto con <code>{user}</code>) sin abrir el panel. Para variables, efectos y condiciones usa el editor de Módulos.')}</p>
+      <p class="suggerimento">${L('Spenta di default: SocialBot non impone comandi propri. Accendendola, i mod possono creare comandi semplici (testo con <code>{user}</code>) senza aprire la dashboard, e chiunque in chat ne legge l\'elenco con <code>!comando lista</code>. Per variabili, effetti e condizioni resta l\'editor Moduli.', 'Off by default: SocialBot imposes no built-in commands. When on, mods can create simple commands (text with <code>{user}</code>) without opening the dashboard, and anyone in chat can read the list with <code>!comando lista</code>. For variables, effects and conditions use the Modules editor.', 'Apagada por defecto: SocialBot no impone comandos propios. Al activarla, los mods pueden crear comandos simples (texto con <code>{user}</code>) sin abrir el panel, y cualquiera en el chat lee la lista con <code>!comando lista</code>. Para variables, efectos y condiciones usa el editor de Módulos.')}</p>
       <div class="riga-check spazio-sopra">
         <input type="checkbox" id="chk-watchtime" ${wt.attivo !== false ? 'checked' : ''}>
         <label for="chk-watchtime">${L('Conta le ore guardate in chat (comandi', 'Count watched hours in chat (commands', 'Cuenta las horas vistas en el chat (comandos')} <code>!ore</code>, <code>!classificaore</code>)</label>
@@ -19104,7 +19104,7 @@ function pannelloModuli() {
         <input type="checkbox" id="chk-comandi-base" ${(imp.comandiBase?.attivo !== false) ? 'checked' : ''}>
         <label for="chk-comandi-base">${L('Comandi base pronti:', 'Ready-made base commands:', 'Comandos base listos:')} <code>!so</code>/<code>!shoutout</code>, <code>!followage</code>, <code>!uptime</code> ${L('(non sostituiscono mai i tuoi comandi con lo stesso nome; lo shoutout è per mod/streamer e serve essere in diretta)', "(never replace your own commands with the same name; shoutout is for mods/streamer and needs you to be live)", '(nunca sustituyen tus comandos con el mismo nombre; el shoutout es para mods/streamer y requiere estar en directo)')}</label>
       </div>
-      <p class="suggerimento spazio-sopra">${_bIco(ICO.scudo)}${L('Trasparenza IA (AI Act): in chat è sempre attivo', 'AI transparency (AI Act): always active in chat', 'Transparencia de IA (AI Act): siempre activo en el chat')} <code>!bot</code>/<code>!ia</code> — ${L('chiunque può sapere che alcune risposte sono generate da un\'intelligenza artificiale. È indipendente dall\'interruttore qui sopra.', "anyone can learn some replies are AI-generated. It's independent from the toggle above.", 'cualquiera puede saber que algunas respuestas son generadas por IA. Es independiente del interruptor de arriba.')}</p>
+      <p class="suggerimento spazio-sopra">${_bIco(ICO.scudo)}${L('Trasparenza IA (AI Act): in chat rispondono sempre', 'AI transparency (AI Act): in chat these always answer:', 'Transparencia de IA (AI Act): en el chat responden siempre')} <code>!bot</code> ${L('e', 'and', 'y')} <code>!ia</code>, ${L('qualunque cosa dicano questi interruttori e i Comandi pronti: chiunque può sapere che alcune risposte sono scritte da un\'intelligenza artificiale.', 'whatever these switches and the Built-in commands say: anyone can learn that some replies are written by an artificial intelligence.', 'digan lo que digan estos interruptores y los Comandos de serie: cualquiera puede saber que algunas respuestas las escribe una inteligencia artificial.')}</p>
       <p class="spazio-sopra"><button class="btn" id="btn-salva-comodita">${L('Salva', 'Save', 'Guardar')}</button></p>
     </div>
 
@@ -19161,7 +19161,7 @@ function pannelloModuli() {
     </div>
     ${carteContatori()}    <div class="carta">
       <h2>${_hIco(ICO.chat)}${L('Comandi pronti', 'Built-in commands', 'Comandos de serie')}</h2>
-      <p>${L('Quelli che il bot porta già con sé. Ognuno si spegne, si rinomina e si può riservare — come i tuoi.', 'The ones the bot already brings with it. Each one can be switched off, renamed and reserved — like yours.', 'Los que el bot ya trae consigo. Cada uno se apaga, se renombra y se puede reservar — como los tuyos.')}</p>
+      <p>${L('Quelli che il bot porta già con sé. Quasi tutti si spengono, si rinominano e si possono riservare, come i tuoi.', 'The ones the bot already brings with it. Almost all of them can be switched off, renamed and reserved, like yours.', 'Los que el bot ya trae consigo. Casi todos se apagan, se renombran y se pueden reservar, como los tuyos.')}</p>
       <p class="suggerimento">${L('Un comando tuo con lo stesso nome vince sempre su quello pronto.', 'A command of yours with the same name always wins over the built-in one.', 'Un comando tuyo con el mismo nombre siempre gana al de serie.')}</p>
       <ul class="gc-lista" id="lista-cmd-pronti">${attesaHtml('li')}</ul>
       <p class="spazio-sopra"><button class="btn" id="btn-salva-gcmd-2">${L('Salva i comandi', 'Save the commands', 'Guardar los comandos')}</button></p>
@@ -21286,10 +21286,10 @@ function carteContatori() {
         serve: L('Un <strong>contatore</strong> è un numero che tu e i moderatori fate salire dalla chat (morti, tentativi, «no» detti…). Puoi anche mostrarlo <strong>a schermo</strong> nell’overlay della diretta.', 'A <strong>counter</strong> is a number you and your mods bump from chat (deaths, attempts, “no”s said…). You can also show it <strong>on screen</strong> in the stream overlay.', 'Un <strong>contador</strong> es un número que tú y tus moderadores subís desde el chat (muertes, intentos, «noes» dichos…). También puedes mostrarlo <strong>en pantalla</strong> en el overlay del directo.'),
         passi: [
           L('<strong>Crealo</strong> qui sotto in «Nuovo contatore»: scegli il comando (es. <code>morti</code>), un’etichetta e, se vuoi, un’emoji.', '<strong>Create it</strong> below in “New counter”: choose the command (e.g. <code>deaths</code>), a label and, if you like, an emoji.', '<strong>Créalo</strong> abajo en «Nuevo contador»: elige el comando (ej. <code>muertes</code>), una etiqueta y, si quieres, un emoji.'),
-          L('<strong>Accendilo a schermo</strong> scrivendo in chat <code>!morti on</code> (parte da 0 e appare nell’overlay). Lo spegni con <code>!morti off</code>.', '<strong>Turn it on screen</strong> by typing <code>!deaths on</code> in chat (starts from 0 and appears in the overlay). Turn it off with <code>!deaths off</code>.', '<strong>Enciéndelo en pantalla</strong> escribiendo <code>!muertes on</code> en el chat (empieza en 0 y aparece en el overlay). Lo apagas con <code>!muertes off</code>.'),
+          L('<strong>Accendilo a schermo</strong> scrivendo in chat <code>!morti on</code>: compare nell’overlay col numero a cui è arrivato. Lo spegni con <code>!morti off</code>.', '<strong>Turn it on screen</strong> by typing <code>!deaths on</code> in chat: it shows up in the overlay with the number it has reached. Turn it off with <code>!deaths off</code>.', '<strong>Enciéndelo en pantalla</strong> escribiendo <code>!muertes on</code> en el chat: aparece en el overlay con el número al que ha llegado. Lo apagas con <code>!muertes off</code>.'),
           L('<strong>Fallo salire</strong> (solo tu e i mod): <code>!morti+</code>, <code>!morti +3</code>, <code>!morti-</code>, <code>!morti reset</code>, <code>!morti set 10</code>. Chiunque può leggerlo con <code>!morti</code>.', '<strong>Make it go up</strong> (you and mods only): <code>!deaths+</code>, <code>!deaths +3</code>, <code>!deaths-</code>, <code>!deaths reset</code>, <code>!deaths set 10</code>. Anyone can read it with <code>!deaths</code>.', '<strong>Súbelo</strong> (solo tú y los mods): <code>!muertes+</code>, <code>!muertes +3</code>, <code>!muertes-</code>, <code>!muertes reset</code>, <code>!muertes set 10</code>. Cualquiera lo lee con <code>!muertes</code>.'),
           L('<strong>In automatico</strong>: metti una «parola automatica» (es. «lol») e il contatore sale da solo ogni volta che appare in chat; oppure premi «Crea premio» per collegarlo a un <strong>punto canale</strong>.', '<strong>Automatically</strong>: set an “auto word” (e.g. “lol”) and the counter rises on its own whenever it shows up in chat; or hit “Create reward” to link it to a <strong>channel point</strong>.', '<strong>En automático</strong>: pon una «palabra automática» (ej. «lol») y el contador sube solo cada vez que aparece en el chat; o pulsa «Crear premio» para vincularlo a un <strong>punto de canal</strong>.'),
-          L('<strong>Scegli dove appare</strong>: attiva «Mostra in overlay» e usa il menù <strong>Posizione a schermo</strong> (in alto a destra, in basso al centro…). Sotto puoi personalizzare colori, dimensione, font, formato del testo.', '<strong>Choose where it shows</strong>: turn on “Show in overlay” and use the <strong>On-screen position</strong> menu (top right, bottom center…). Below you can customize colors, size, font, text format and the <strong>words to turn on/off</strong>.', '<strong>Elige dónde aparece</strong>: activa «Mostrar en overlay» y usa el menú <strong>Posición en pantalla</strong> (arriba a la derecha, abajo en el centro…). Debajo puedes personalizar colores, tamaño, fuente, formato del texto.'),
+          L('<strong>Scegli dove appare</strong>: attiva «Mostra in overlay» e usa il menù <strong>Posizione a schermo</strong> (in alto a destra, in basso al centro…). Sotto puoi personalizzare colori, dimensione, font, formato del testo.', '<strong>Choose where it shows</strong>: turn on “Show in overlay” and use the <strong>On-screen position</strong> menu (top right, bottom center…). Below you can customize colors, size, font, text format.', '<strong>Elige dónde aparece</strong>: activa «Mostrar en overlay» y usa el menú <strong>Posición en pantalla</strong> (arriba a la derecha, abajo en el centro…). Debajo puedes personalizar colores, tamaño, fuente, formato del texto.'),
         ],
         note: [
           L('Il contatore usa lo <strong>stesso overlay della diretta</strong> di alert ed effetti: se ce l’hai già in OBS, non devi aggiungere nulla.', 'The counter uses the <strong>same stream overlay</strong> as alerts and effects: if it’s already in OBS, you don’t need to add anything.', 'El contador usa el <strong>mismo overlay del directo</strong> que las alertas y los efectos: si ya lo tienes en OBS, no hace falta añadir nada.'),
@@ -21352,7 +21352,7 @@ function _verbiContHtml(c) {
     const opt = CHI_CONT.map(([k, n]) => `<option value="${k}"${r.chi === k ? ' selected' : ''}>${esc(L(n[0], n[1], n[2]))}</option>`).join('');
     const eti = esc(L(nome[0], nome[1], nome[2]));
     return `<div class="cont-verbo" data-verbo="${id}">
-      <span class="cv-nome">${eti}<span class="tenue"> \u2014 ${esc(L(che[0], che[1], che[2]))}</span></span>
+      <span class="cv-nome">${eti}<span class="tenue">: ${esc(L(che[0], che[1], che[2]))}</span></span>
       <input type="text" data-vk="parole" maxlength="80" value="${esc(parole)}" aria-label="${eti} \u2014 ${esc(L('parole', 'words', 'palabras'))}"
         placeholder="${id === 'leggi' ? esc(L('il nome da solo', 'the name alone', 'el nombre solo')) : esc(L('una o pi\u00f9 parole', 'one or more words', 'una o m\u00e1s palabras'))}"${id === 'leggi' ? ' disabled' : ''}>
       <select data-vk="chi" aria-label="${eti} \u2014 ${esc(L('chi pu\u00f2', 'who can', 'qui\u00e9n puede'))}">${opt}</select>
@@ -21366,6 +21366,23 @@ function _verbiContHtml(c) {
       <p><button type="button" class="btn secondario mini" data-ca="salva-verbi" data-cmd="${esc(c.comando)}">${L('Salva comandi', 'Save commands', 'Guardar comandos')}</button></p>
     </div>
   </details>`;
+}
+
+function _sfondoParti(v, base) {
+  const t = String(v || '').trim();
+  if (/^#[0-9a-f]{6}$/i.test(t)) return { hex: t, alfa: 1 };
+  const m = /^rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*(?:,\s*([\d.]+)\s*)?\)$/.exec(t);
+  if (m) {
+    const h = (n) => Math.max(0, Math.min(255, Math.round(Number(n)))).toString(16).padStart(2, '0');
+    return { hex: '#' + h(m[1]) + h(m[2]) + h(m[3]), alfa: m[4] === undefined ? 1 : Math.max(0, Math.min(1, Number(m[4]))) };
+  }
+  return base ? _sfondoParti(base) : { hex: '#000000', alfa: 1 };
+}
+
+function _sfondoDa(hex, alfa) {
+  if (!(alfa < 1)) return hex;
+  const n = parseInt(String(hex).slice(1), 16) || 0;
+  return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${alfa})`;
 }
 
 async function caricaContatori() {
@@ -21394,8 +21411,8 @@ async function caricaContatori() {
   };
   box.innerHTML = list.length ? list.map((c) => {
     const o = c.overlayCfg || {};
-    const hexBg = /^#/.test(o.sfondo || '') ? o.sfondo : '#000000';
     const trasp = !o.sfondo || o.sfondo === 'transparent';
+    const sf = _sfondoParti(trasp ? d.base?.sfondo : o.sfondo, d.base?.sfondo);
     return `
     <div class="cont-riga">
       <span class="cont-info">${c.emoji ? esc(c.emoji) + ' ' : ''}<strong>${esc(c.etichetta || c.comando)}</strong> <code>!${esc(c.comando)}</code>${o.mostra ? ` <span class="tenue">· ${L('a schermo', 'on screen', 'en pantalla')}</span>` : ''}${c.auto_parola ? ` <span class="tenue">· ${L('auto', 'auto', 'auto')}: «${esc(c.auto_parola)}»</span>` : ''}${c.reward_id ? ` <span class="tenue">· ${L('premio', 'reward', 'premio')}</span>` : ''}</span>
@@ -21403,7 +21420,7 @@ async function caricaContatori() {
       <span class="cont-azioni">
         ${o.mostra
           ? `<button type="button" class="btn secondario mini" data-ca="off" data-cmd="${esc(c.comando)}" title="${L('Toglilo dallo schermo (come !' + esc(c.comando) + ' off)', 'Hide it from screen (like !' + esc(c.comando) + ' off)', 'Quítalo de la pantalla (como !' + esc(c.comando) + ' off)')}">${L('Spegni a schermo', 'Hide on screen', 'Apagar en pantalla')}</button>`
-          : `<button type="button" class="btn secondario mini acceso" data-ca="on" data-cmd="${esc(c.comando)}" title="${L('Mostralo a schermo da 0 (come !' + esc(c.comando) + ' on)', 'Show it on screen from 0 (like !' + esc(c.comando) + ' on)', 'Muéstralo en pantalla desde 0 (como !' + esc(c.comando) + ' on)')}">${L('Accendi a schermo', 'Show on screen', 'Encender en pantalla')}</button>`}
+          : `<button type="button" class="btn secondario mini acceso" data-ca="on" data-cmd="${esc(c.comando)}" title="${L('Mostralo a schermo col suo numero (come !' + esc(c.comando) + ' on)', 'Show it on screen with its number (like !' + esc(c.comando) + ' on)', 'Muéstralo en pantalla con su número (como !' + esc(c.comando) + ' on)')}">${L('Accendi a schermo', 'Show on screen', 'Encender en pantalla')}</button>`}
         <button type="button" class="btn secondario mini" data-ca="piu" data-cmd="${esc(c.comando)}" data-val="${c.valore}" data-step="${c.step}">+${c.step}</button>
         <button type="button" class="btn secondario mini" data-ca="meno" data-cmd="${esc(c.comando)}" data-val="${c.valore}" data-step="${c.step}">−${c.step}</button>
         <button type="button" class="btn secondario mini" data-ca="reset" data-cmd="${esc(c.comando)}">${L('Reset', 'Reset', 'Reset')}</button>
@@ -21434,7 +21451,7 @@ async function caricaContatori() {
             <div><label class="campo">${L('Dimensione (px)', 'Size (px)', 'Tamaño (px)')}</label><input aria-label="${esc(L('Dimensione (px)', 'Size (px)', 'Tamaño (px)'))}" type="number" data-ovk="dim" min="10" max="200" value="${Number(o.dim) || 40}"></div>
           </div>
           <div class="griglia-campi spazio-sopra">
-            <div><label class="campo">${L('Colore sfondo', 'Background color', 'Color de fondo')}</label><input aria-label="${esc(L('Colore sfondo', 'Background color', 'Color de fondo'))}" type="color" data-ovk="sfondo" value="${esc(hexBg)}"></div>
+            <div><label class="campo">${L('Colore sfondo', 'Background color', 'Color de fondo')}</label><input aria-label="${esc(L('Colore sfondo', 'Background color', 'Color de fondo'))}" type="color" data-ovk="sfondo" data-alfa="${sf.alfa}" value="${esc(sf.hex)}"></div>
             <div><label class="campo">Font</label><select aria-label="Font" data-ovk="font">${fontOpts(o.font || 'system')}</select></div>
           </div>
           <label class="riga-check spazio-sopra"><input type="checkbox" data-ovk="trasp"${trasp ? ' checked' : ''}> ${L('Sfondo trasparente', 'Transparent background', 'Fondo transparente')}</label>
@@ -21481,7 +21498,7 @@ async function caricaContatori() {
         const overlay = {
           mostra: g('mostra').checked,
           x: Number(g('x').value) || 0, y: Number(g('y').value) || 0,
-          colore: g('colore').value, sfondo: g('trasp').checked ? 'transparent' : g('sfondo').value,
+          colore: g('colore').value, sfondo: g('trasp').checked ? 'transparent' : _sfondoDa(g('sfondo').value, Number(g('sfondo').dataset.alfa)),
           dim: Number(g('dim').value) || 40, grassetto: g('grassetto').checked,
           font: g('font').value, formato: g('formato').value,
         };
@@ -21559,6 +21576,9 @@ function _gcRiga(g) {
   const rinomina = g.rinominabile
     ? `<span class="gc-input"><i>!</i><input type="text" data-gc-nome value="${esc(g.rinominato ? g.nomi[0] : '')}" placeholder="${esc(g.id)}" maxlength="20"></span>`
     : `<span class="gc-input gc-fermo">${esc(L('non si rinomina', 'cannot be renamed', 'no se renombra'))}</span>`;
+  const chiPuo = g.riservabile === false
+    ? `<span class="gc-input gc-fermo">${esc(L('non si riserva', 'cannot be reserved', 'no se reserva'))}</span>`
+    : `<select data-gc-chi>${livelli}</select>`;
   return `<li class="gc-riga${g.acceso ? '' : ' gc-off'}${g.moduloAcceso ? '' : ' gc-muto'}" data-gc="${esc(g.id)}">
     ${spegni}
     <div class="gc-corpo">
@@ -21569,7 +21589,7 @@ function _gcRiga(g) {
     <div class="gc-regole">
       <label class="gc-campo"><span>${esc(L('nome tuo', 'your name', 'tu nombre'))}</span>${rinomina}</label>
       <label class="gc-campo"><span>${esc(L('chi può', 'who can', 'quién puede'))}</span>
-        <select data-gc-chi>${livelli}</select></label>
+        ${chiPuo}</label>
     </div>
   </li>`;
 }
@@ -21608,12 +21628,15 @@ function _gcGruppi(righe) {
   }).join('');
 }
 
-async function salvaGiochiComandi() {
-  const righe = [...document.querySelectorAll('.gc-lista .gc-riga')];
+async function salvaGiochiComandi(ev) {
+  const lista = ev?.currentTarget?.closest?.('.carta')?.querySelector('.gc-lista');
+  const righe = lista ? [...lista.querySelectorAll('.gc-riga')] : [];
   if (!righe.length) return;
   const comandi = {};
+  const ids = [];
   righe.forEach((li) => {
     const id = li.dataset.gc;
+    ids.push(id);
     const on = li.querySelector('[data-gc-on]');
     const nome = li.querySelector('[data-gc-nome]')?.value.trim().toLowerCase().replace(/[^a-z0-9]/g, '') || '';
     const chi = li.querySelector('[data-gc-chi]')?.value || 'tutti';
@@ -21624,7 +21647,7 @@ async function salvaGiochiComandi() {
     if (Object.keys(riga).length) comandi[id] = riga;
   });
   try {
-    await api('/api/streamer/comandi-pronti', { method: 'POST', body: { comandi } });
+    await api('/api/streamer/comandi-pronti', { method: 'POST', body: { comandi, ids } });
     caricaGiochiComandi();
     toast(L('Comandi salvati ✓', 'Commands saved ✓', 'Comandos guardados ✓'));
   } catch (e) {
@@ -26553,7 +26576,7 @@ function attivaPiattaforma() {
 
   const impTag = (testo, cls = '') => `<span class="imp-tag${cls ? ' ' + cls : ''}">${esc(testo)}</span>`;
   const impStato = (c) => `${c.sovrascrive ? impTag(L('sostituisce quello che hai', 'replaces what you have', 'sustituye el que tienes'), 'imp-sovra') : ''}${c.uguale ? impTag(L('identico: lo salto', 'identical: skipping', 'idéntico: lo salto')) : ''}`;
-  const impAvvisi = (c) => (c.avvisi || []).map((a) => `<span class="imp-tag imp-nota">${esc(a.cosa)}${a.dove ? ' — ' + L('qui si fa con', 'here you do it with', 'aquí se hace con') + ' ' + esc(a.dove) : ''}</span>`).join('');
+  const impAvvisi = (c) => (c.avvisi || []).map((a) => `<span class="imp-tag imp-nota">${esc(a.cosa)}${a.dove ? ': ' + L('qui si fa con', 'here you do it with', 'aquí se hace con') + ' ' + esc(a.dove) : ''}</span>`).join('');
   const impNum = (n) => Number(n || 0).toLocaleString(localePannello());
   const impN = (n, uno, tanti) => `${impNum(n)} ${Math.abs(n) === 1 ? uno : tanti}`;
 
@@ -27031,8 +27054,8 @@ function gestisciClicEditor(ev) {
     ev.preventDefault();
     document.getElementById('lista-frasi-trigger')?.insertAdjacentHTML('beforeend',
       '<div class="frase-trigger riga-flessibile" style="margin-bottom:.4rem">'
-      + '<input type="text" class="mod-testo-trigger campo-largo" placeholder="es. come stai?">'
-      + '<button type="button" class="btn pericolo mini" data-rimuovi-frase title="Rimuovi">×</button></div>');
+      + `<input type="text" class="mod-testo-trigger campo-largo" placeholder="${esc(L('es. come stai?', 'e.g. how are you?', 'p. ej. ¿cómo estás?'))}">`
+      + `<button type="button" class="btn pericolo mini" data-rimuovi-frase title="${esc(L('Rimuovi', 'Remove', 'Quitar'))}">×</button></div>`);
     aggiornaRiassunto();
     return;
   }
@@ -29011,39 +29034,44 @@ async function caricaMemoria(mostraToast = false) {
 }
 
 const EVENTI = [
-  ['follow', 'Nuovo follow'],
-  ['subscribe', 'Sub / resub'],
-  ['raid', 'Raid'],
-  ['cheer', 'Bits / cheer'],
-  ['redemption', 'Riscatto punti canale'],
-  ['first', 'Primo messaggio di un utente'],
-  ['online', 'Sei andato in live'],
-  ['offline', 'Fine live'],
-  ['gesto', 'Gesto webcam (mani/volto)'],
+  ['follow', 'Nuovo follow', 'New follow', 'Nuevo follow'],
+  ['subscribe', 'Sub / resub', 'Sub / resub', 'Sub / resub'],
+  ['raid', 'Raid', 'Raid', 'Raid'],
+  ['cheer', 'Bits / cheer', 'Bits / cheer', 'Bits / cheer'],
+  ['redemption', 'Riscatto punti canale', 'Channel points redemption', 'Canje de puntos de canal'],
+  ['first', 'Primo messaggio di un utente', 'A user\'s first message', 'Primer mensaje de un usuario'],
+  ['online', 'Sei andato in live', 'You went live', 'Has empezado el directo'],
+  ['offline', 'Fine live', 'Stream ended', 'Fin del directo'],
+  ['gesto', 'Gesto webcam (mani/volto)', 'Webcam gesture (hands/face)', 'Gesto de webcam (manos/cara)'],
 ];
 const EVENTI_TXT = {
-  follow: 'arriva un nuovo follow', subscribe: 'qualcuno si abbona', raid: 'parte un raid',
-  cheer: 'arrivano dei bits', redemption: 'riscattano un premio coi punti',
-  first: 'un utente scrive per la prima volta', online: 'vai in live', offline: 'finisce la live',
-  gesto: 'fai un gesto alla webcam (usa $gesto / $emozione nel testo)',
+  follow: ['arriva un nuovo follow', 'a new follow arrives', 'llega un nuevo follow'],
+  subscribe: ['qualcuno si abbona', 'someone subscribes', 'alguien se suscribe'],
+  raid: ['parte un raid', 'a raid comes in', 'llega un raid'],
+  cheer: ['arrivano dei bits', 'bits come in', 'llegan bits'],
+  redemption: ['riscattano un premio coi punti', 'someone redeems a points reward', 'alguien canjea un premio con puntos'],
+  first: ['un utente scrive per la prima volta', 'a user writes for the first time', 'un usuario escribe por primera vez'],
+  online: ['vai in live', 'you go live', 'empiezas el directo'],
+  offline: ['finisce la live', 'the stream ends', 'termina el directo'],
+  gesto: ['fai un gesto alla webcam (usa $gesto / $emozione nel testo)', 'you make a gesture at the webcam (use $gesto / $emozione in the text)', 'haces un gesto a la webcam (usa $gesto / $emozione en el texto)'],
 };
-const SCALA_EVENTO = { cheer: 'Bit', raid: 'spettatori', subscribe: 'mesi' };
+const SCALA_EVENTO = { cheer: ['Bit', 'Bits', 'Bits'], raid: ['spettatori', 'viewers', 'espectadores'], subscribe: ['mesi', 'months', 'meses'] };
 
 function _quantiModulo(t, c) {
-  const unita = (t && t.tipo === 'evento') ? SCALA_EVENTO[t.evento || ''] : '';
+  const unita = (t && t.tipo === 'evento') ? Lv(SCALA_EVENTO[t.evento || '']) : '';
   if (!unita) return '';
   return `
     <div class="griglia-campi spazio-sopra">
       <div>
-        <label class="campo" for="mod-min-quantita">Da quanti ${esc(unita)} in su</label>
+        <label class="campo" for="mod-min-quantita">${L(`Da quanti ${esc(unita)} in su`, `From how many ${esc(unita)} up`, `Desde cuántos ${esc(unita)}`)}</label>
         <input type="number" id="mod-min-quantita" min="0" max="10000000" value="${Number(c.minQuantita) || 0}">
       </div>
       <div>
-        <label class="campo" for="mod-max-quantita">Fino a quanti ${esc(unita)}</label>
+        <label class="campo" for="mod-max-quantita">${L(`Fino a quanti ${esc(unita)}`, `Up to how many ${esc(unita)}`, `Hasta cuántos ${esc(unita)}`)}</label>
         <input type="number" id="mod-max-quantita" min="0" max="10000000" value="${Number(c.maxQuantita) || 0}">
       </div>
     </div>
-    <p class="suggerimento">Zero vuol dire nessun limite. Servono a fare una <strong>scala</strong>: un modulo per fascia (1-99, 100-999, 1000 in su), così chi alza la posta ottiene qualcosa di diverso invece della solita risposta uguale per tutti. Chi resta fuori dalla fascia non paga costi e non consuma il cooldown.</p>`;
+    <p class="suggerimento">${L('Zero vuol dire nessun limite. Servono a fare una <strong>scala</strong>: un modulo per fascia (1-99, 100-999, 1000 in su), così chi alza la posta ottiene qualcosa di diverso invece della solita risposta uguale per tutti. Chi resta fuori dalla fascia non paga costi e non consuma il cooldown.', 'Zero means no limit. They let you build a <strong>ladder</strong>: one module per band (1-99, 100-999, 1000 and up), so whoever raises the stakes gets something different instead of the same reply for everyone. Whoever falls outside the band pays nothing and uses no cooldown.', 'Cero quiere decir sin límite. Sirven para hacer una <strong>escalera</strong>: un módulo por franja (1-99, 100-999, 1000 en adelante), así quien sube la apuesta obtiene algo distinto en vez de la misma respuesta para todos. Quien queda fuera de la franja no paga costes y no consume el cooldown.')}</p>`;
 }
 
 function _rinfrescaQuanti() {
@@ -29056,12 +29084,12 @@ function _rinfrescaQuanti() {
 }
 
 const TRIGGER = [
-  ['comando', 'Un comando in chat'],
-  ['parola', 'Una parola, frase o domanda in chat'],
-  ['voce', 'Comando vocale (dal tuo PC)'],
-  ['evento', 'Un evento del canale'],
-  ['timer', 'A tempo (timer)'],
-  ['manuale', 'Manuale / da un mio servizio'],
+  ['comando', 'Un comando in chat', 'A chat command', 'Un comando en el chat'],
+  ['parola', 'Una parola, frase o domanda in chat', 'A word, phrase or question in chat', 'Una palabra, frase o pregunta en el chat'],
+  ['voce', 'Comando vocale (dal tuo PC)', 'Voice command (from your PC)', 'Comando por voz (desde tu PC)'],
+  ['evento', 'Un evento del canale', 'A channel event', 'Un evento del canal'],
+  ['timer', 'A tempo (timer)', 'On a timer', 'Con temporizador'],
+  ['manuale', 'Manuale / da un mio servizio', 'Manual / from a service of mine', 'Manual / desde un servicio mío'],
 ];
 const nomeMonetaUI = () => (impostazioni()?.nomeMonete || '').trim() || 'monete';
 
@@ -29077,22 +29105,22 @@ const bottoniRicette = (attributo) => RICETTE_PUNTI
   .map(([id, eti]) => `<button class="modello-pronto" ${attributo}="${id}">${esc(eti())}</button>`).join('');
 
 const AZIONI = [
-  ['messaggio', 'Scrivi in chat'],
-  ['effetto', 'Fai partire un effetto'],
-  ['clip', 'Crea una clip'],
-  ['categoria', 'Cambia categoria Twitch'],
-  ['titolo', 'Cambia titolo stream'],
-  ['contatore', 'Contatore'],
-  ['webhook', 'Chiama un webhook'],
-  ['attendi', 'Aspetta'],
-  ['overlayTesto', 'Mostra testo sull\'overlay'],
-  ['timeout', 'Timeout in chat'],
-  ['musica', 'Metti una canzone in coda'],
-  ['annuncia', 'Annuncio in chat (/announce)'],
-  ['shoutout', 'Shoutout (banner)'],
-  ['punti', 'Dai o togli punti'],
-  ['regia', 'Regia: scena, muto o transizione'],
-  ['modalita', 'Modalità della chat a tempo'],
+  ['messaggio', 'Scrivi in chat', 'Write in chat', 'Escribe en el chat'],
+  ['effetto', 'Fai partire un effetto', 'Play an effect', 'Lanza un efecto'],
+  ['clip', 'Crea una clip', 'Create a clip', 'Crea un clip'],
+  ['categoria', 'Cambia categoria Twitch', 'Change Twitch category', 'Cambia la categoría de Twitch'],
+  ['titolo', 'Cambia titolo stream', 'Change stream title', 'Cambia el título del directo'],
+  ['contatore', 'Contatore', 'Counter', 'Contador'],
+  ['webhook', 'Chiama un webhook', 'Call a webhook', 'Llama a un webhook'],
+  ['attendi', 'Aspetta', 'Wait', 'Espera'],
+  ['overlayTesto', 'Mostra testo sull\'overlay', 'Show text on the overlay', 'Muestra texto en el overlay'],
+  ['timeout', 'Timeout in chat', 'Chat timeout', 'Timeout en el chat'],
+  ['musica', 'Metti una canzone in coda', 'Queue a song', 'Pon una canción en cola'],
+  ['annuncia', 'Annuncio in chat (/announce)', 'Chat announcement (/announce)', 'Anuncio en el chat (/announce)'],
+  ['shoutout', 'Shoutout (banner)', 'Shoutout (banner)', 'Shoutout (banner)'],
+  ['punti', 'Dai o togli punti', 'Give or take points', 'Da o quita puntos'],
+  ['regia', 'Regia: scena, muto o transizione', 'Program: scene, mute or transition', 'Realización: escena, silencio o transición'],
+  ['modalita', 'Modalità della chat a tempo', 'Timed chat mode', 'Modo del chat con tiempo'],
 ];
 
 const VARIABILI = [
@@ -29156,7 +29184,7 @@ const LEGENDA_VAR = [
 
   ['gruppo', 'Le persone', 'People', 'Las personas'],
   ['$followage', 'Da quanto ti segue chi scrive (o !followage @nome)', 'How long the writer has followed (or !followage @name)', 'Cuánto lleva siguiéndote quien escribe (o !followage @nombre)'],
-  ['$ore', 'Ore guardate da chi scrive (o !ore @nome) — serve il conteggio ore acceso', 'Watch time of the writer (or !ore @name) — needs watch-time on', 'Horas vistas de quien escribe (o !ore @nombre) — necesita el conteo activado'],
+  ['$ore', 'Ore guardate da chi scrive (o !ore @nome): serve il conteggio ore acceso', 'Watch time of the writer (or !ore @name): needs watch time on', 'Horas vistas de quien escribe (o !ore @nombre): necesita el conteo activado'],
   ['$chattercaso', 'Un utente a caso tra chi ha scritto di recente', 'A random recent chatter', 'Un usuario al azar entre quienes escribieron'],
   ['$cita', 'Una citazione a caso tra quelle salvate con !cita', 'A random saved quote (from !cita)', 'Una cita al azar de las guardadas con !cita'],
 
@@ -29224,99 +29252,113 @@ function riassuntoModulo(m) {
   const t = riassuntoQuando(m.trigger || {});
   const c = riassuntoSe(m.condizioni || {});
   const az = (m.azioni || []).map(riassuntoAzione).filter(Boolean);
-  const azTxt = az.length ? az.join(', ') : 'non fa ancora niente';
+  const azTxt = az.length ? az.join(', ') : L('non fa ancora niente', 'does nothing yet', 'todavía no hace nada');
   const alt = (m.altrimenti || []).map(riassuntoAzione).filter(Boolean);
-  const altTxt = alt.length ? ` · ALTRIMENTI ${alt.join(', ')}` : '';
-  return `QUANDO ${t}${c ? ' · SE ' + c : ''} → ${azTxt}${altTxt}`;
+  const altTxt = alt.length ? ` · ${L('ALTRIMENTI', 'OTHERWISE', 'SI NO')} ${alt.join(', ')}` : '';
+  return `${L('QUANDO', 'WHEN', 'CUANDO')} ${t}${c ? ` · ${L('SE', 'IF', 'SI')} ${c}` : ''} → ${azTxt}${altTxt}`;
 }
 function riassuntoQuando(t) {
+  const o = L(' o ', ' or ', ' o ');
   switch (t.tipo) {
     case 'comando': {
-      if (!t.comando) return 'scrivono un comando';
+      if (!t.comando) return L('scrivono un comando', 'someone writes a command', 'escriben un comando');
       const a = Array.isArray(t.alias) ? t.alias : (typeof t.alias === 'string' ? t.alias.split(/[\s,]+/) : []);
       const alist = a.map((x) => String(x).trim().replace(/^!/, '')).filter(Boolean);
       const bang = t.senzaBang ? '' : '!';
-      return `scrivono ${bang}${t.comando}` + (alist.length ? ` (o ${alist.map((x) => bang + x).join(', ')})` : '')
-        + (t.senzaBang ? ' (anche senza !)' : '');
+      const nomi = alist.length ? ` (${L('o', 'or', 'o')} ${alist.map((x) => bang + x).join(', ')})` : '';
+      return L(`scrivono ${bang}${t.comando}`, `someone writes ${bang}${t.comando}`, `escriben ${bang}${t.comando}`) + nomi
+        + (t.senzaBang ? L(' (anche senza !)', ' (also without !)', ' (también sin !)') : '');
     }
     case 'parola': {
-      const modo = { contiene: 'compare', esatto: 'è esattamente', inizia: 'inizia con' }[t.modo] || 'compare';
       const frasi = (Array.isArray(t.testi) && t.testi.length) ? t.testi : (t.testo ? [t.testo] : []);
-      if (!frasi.length) return 'compare una parola';
-      const primi = frasi.slice(0, 2).map((x) => `"${x}"`).join(' o ');
+      if (!frasi.length) return L('compare una parola', 'a word shows up', 'aparece una palabra');
+      const primi = frasi.slice(0, 2).map((x) => `"${x}"`).join(o);
       const extra = frasi.length > 2 ? ` (+${frasi.length - 2})` : '';
-      return `in chat ${modo} ${primi}${extra}`;
+      if (t.modo === 'esatto') return L(`in chat è esattamente ${primi}${extra}`, `the chat message is exactly ${primi}${extra}`, `en el chat es exactamente ${primi}${extra}`);
+      if (t.modo === 'inizia') return L(`in chat inizia con ${primi}${extra}`, `a chat message starts with ${primi}${extra}`, `en el chat empieza por ${primi}${extra}`);
+      return L(`in chat compare ${primi}${extra}`, `${primi}${extra} shows up in chat`, `en el chat aparece ${primi}${extra}`);
     }
     case 'voce': {
       const f = (Array.isArray(t.frasi) ? t.frasi : []).filter(Boolean);
-      if (!f.length) return 'dici una frase al microfono';
-      const primi = f.slice(0, 2).map((x) => `"${x}"`).join(' o ');
-      return `dici ${primi}`;
+      if (!f.length) return L('dici una frase al microfono', 'you say a phrase into the mic', 'dices una frase al micrófono');
+      const primi = f.slice(0, 2).map((x) => `"${x}"`).join(o);
+      return L(`dici ${primi}`, `you say ${primi}`, `dices ${primi}`);
     }
-    case 'evento': return EVENTI_TXT[t.evento] || 'succede un evento del canale';
+    case 'evento': return Lv(EVENTI_TXT[t.evento]) || L('succede un evento del canale', 'a channel event happens', 'pasa un evento del canal');
     case 'timer': {
-      let s = `ogni ${t.minuti || 0} min`;
-      if (t.minMessaggi) s += ` e almeno ${t.minMessaggi} messaggi`;
-      s += t.ancheOffline ? ', anche a canale spento' : ', solo in diretta';
+      const min = t.minuti || 0;
+      let s = L(`ogni ${min} min`, `every ${min} min`, `cada ${min} min`);
+      if (t.minMessaggi) s += L(` e almeno ${t.minMessaggi} messaggi`, ` and at least ${t.minMessaggi} messages`, ` y al menos ${t.minMessaggi} mensajes`);
+      s += t.ancheOffline ? L(', anche a canale spento', ', even when offline', ', también con el canal apagado') : L(', solo in diretta', ', only when live', ', solo en directo');
       return s;
     }
-    case 'manuale': return 'lo attivi tu (Prova o servizio esterno)';
-    default: return 'succede qualcosa';
+    case 'manuale': return L('lo attivi tu (Prova o servizio esterno)', 'you trigger it (Test or an outside service)', 'lo activas tú (Prueba o servicio externo)');
+    default: return L('succede qualcosa', 'something happens', 'pasa algo');
   }
 }
 function riassuntoSe(c) {
   const parti = [];
-  const chi = { sub: 'solo i sub', vip: 'solo i VIP', mod: 'solo i mod' }[c.tier];
+  const mon = nomeMonetaUI();
+  const chi = { sub: L('solo i sub', 'subs only', 'solo los subs'), vip: L('solo i VIP', 'VIPs only', 'solo los VIP'), mod: L('solo i mod', 'mods only', 'solo los mods') }[c.tier];
   if (chi) parti.push(chi);
-  if (c.cooldown > 0) parti.push(`max ogni ${c.cooldown}s`);
-  if (c.cooldownUtente > 0) parti.push(`ogni ${c.cooldownUtente}s a testa`);
-  if (c.minPunti > 0) parti.push(`serve almeno ${c.minPunti} ${nomeMonetaUI()}`);
-  if (c.minQuantita > 0 && c.maxQuantita > 0) parti.push(`da ${c.minQuantita} a ${c.maxQuantita}`);
-  else if (c.minQuantita > 0) parti.push(`da ${c.minQuantita} in su`);
-  else if (c.maxQuantita > 0) parti.push(`fino a ${c.maxQuantita}`);
-  if (typeof c.costo === 'string' && c.costo.includes('$')) parti.push(`costa ${c.costo} ${nomeMonetaUI()}`);
-  else if (c.costo > 0) parti.push(`costa ${c.costo} ${nomeMonetaUI()}`);
-  if (typeof c.probabilita === 'number' && c.probabilita >= 0 && c.probabilita < 100) parti.push(`${c.probabilita}% delle volte`);
-  if (c.soloLive) parti.push('solo in live');
-  if (c.soloOffline) parti.push('solo offline');
+  if (c.cooldown > 0) parti.push(L(`max ogni ${c.cooldown}s`, `at most every ${c.cooldown}s`, `como mucho cada ${c.cooldown}s`));
+  if (c.cooldownUtente > 0) parti.push(L(`ogni ${c.cooldownUtente}s a testa`, `every ${c.cooldownUtente}s each`, `cada ${c.cooldownUtente}s por persona`));
+  if (c.minPunti > 0) parti.push(L(`serve almeno ${c.minPunti} ${mon}`, `needs at least ${c.minPunti} ${mon}`, `hacen falta al menos ${c.minPunti} ${mon}`));
+  if (c.minQuantita > 0 && c.maxQuantita > 0) parti.push(L(`da ${c.minQuantita} a ${c.maxQuantita}`, `from ${c.minQuantita} to ${c.maxQuantita}`, `de ${c.minQuantita} a ${c.maxQuantita}`));
+  else if (c.minQuantita > 0) parti.push(L(`da ${c.minQuantita} in su`, `from ${c.minQuantita} up`, `desde ${c.minQuantita}`));
+  else if (c.maxQuantita > 0) parti.push(L(`fino a ${c.maxQuantita}`, `up to ${c.maxQuantita}`, `hasta ${c.maxQuantita}`));
+  if ((typeof c.costo === 'string' && c.costo.includes('$')) || c.costo > 0) parti.push(L(`costa ${c.costo} ${mon}`, `costs ${c.costo} ${mon}`, `cuesta ${c.costo} ${mon}`));
+  if (typeof c.probabilita === 'number' && c.probabilita >= 0 && c.probabilita < 100) parti.push(L(`${c.probabilita}% delle volte`, `${c.probabilita}% of the time`, `el ${c.probabilita}% de las veces`));
+  if (c.soloLive) parti.push(L('solo in live', 'only when live', 'solo en directo'));
+  if (c.soloOffline) parti.push(L('solo offline', 'only offline', 'solo fuera de directo'));
   return parti.join(', ');
 }
 function riassuntoAzione(a) {
+  const mon = nomeMonetaUI();
   switch (a.tipo) {
-    case 'messaggio': return 'invia un messaggio';
-    case 'effetto': return a.comando ? `fai partire l'effetto !${a.comando}` : 'fai partire un effetto';
+    case 'messaggio': return L('invia un messaggio', 'sends a message', 'envía un mensaje');
+    case 'effetto': return a.comando ? L(`fai partire l'effetto !${a.comando}`, `play the effect !${a.comando}`, `lanza el efecto !${a.comando}`) : L('fai partire un effetto', 'play an effect', 'lanza un efecto');
     case 'contatore': {
-      const n = a.nome || 'contatore';
-      if (a.operazione === 'azzera') return `azzera "${n}"`;
-      if (a.operazione === 'imposta') return `imposta "${n}" a ${a.valore ?? 0}`;
-      return `aumenta "${n}"`;
+      const n = a.nome || L('contatore', 'counter', 'contador');
+      if (a.op === 'azzera') return L(`azzera "${n}"`, `reset "${n}"`, `pon a cero "${n}"`);
+      if (a.op === 'imposta') return L(`imposta "${n}" a ${a.valore ?? 0}`, `set "${n}" to ${a.valore ?? 0}`, `pon "${n}" en ${a.valore ?? 0}`);
+      return L(`aumenta "${n}"`, `increase "${n}"`, `aumenta "${n}"`);
     }
-    case 'webhook': return 'chiama un webhook';
-    case 'clip': return 'crea una clip';
-    case 'categoria': return a.gioco ? `cambia categoria in "${a.gioco}"` : 'cambia categoria';
-    case 'titolo': return a.testo ? `cambia titolo in "${a.testo}"` : 'cambia titolo';
-    case 'attendi': return `aspetta ${a.secondi || 0}s`;
-    case 'overlayTesto': return 'mostra un testo sull\'overlay';
+    case 'webhook': return L('chiama un webhook', 'call a webhook', 'llama a un webhook');
+    case 'clip': return L('crea una clip', 'create a clip', 'crea un clip');
+    case 'categoria': return a.gioco ? L(`cambia categoria in "${a.gioco}"`, `change category to "${a.gioco}"`, `cambia la categoría a "${a.gioco}"`) : L('cambia categoria', 'change category', 'cambia la categoría');
+    case 'titolo': return a.testo ? L(`cambia titolo in "${a.testo}"`, `change title to "${a.testo}"`, `cambia el título a "${a.testo}"`) : L('cambia titolo', 'change title', 'cambia el título');
+    case 'attendi': return L(`aspetta ${a.secondi || 0}s`, `wait ${a.secondi || 0}s`, `espera ${a.secondi || 0}s`);
+    case 'overlayTesto': return L('mostra un testo sull\'overlay', 'show a text on the overlay', 'muestra un texto en el overlay');
     case 'regia': {
       if (a.cosa === 'muto') {
-        const come = { muta: 'muta', smuta: 'smuta', inverti: 'muta o smuta' }[a.come] || 'muta o smuta';
-        return a.fonte ? `${come} la fonte "${a.fonte}"` : `${come} una fonte`;
+        const f = a.fonte ? `"${a.fonte}"` : '';
+        if (a.come === 'muta') return f ? L(`muta la fonte ${f}`, `mute the source ${f}`, `silencia la fuente ${f}`) : L('muta una fonte', 'mute a source', 'silencia una fuente');
+        if (a.come === 'smuta') return f ? L(`smuta la fonte ${f}`, `unmute the source ${f}`, `quita el silencio a la fuente ${f}`) : L('smuta una fonte', 'unmute a source', 'quita el silencio a una fuente');
+        return f ? L(`muta o smuta la fonte ${f}`, `mute or unmute the source ${f}`, `silencia o quita el silencio a la fuente ${f}`) : L('muta o smuta una fonte', 'mute or unmute a source', 'silencia o quita el silencio a una fuente');
       }
-      if (a.cosa === 'transizione') return a.transizione ? `passa alla transizione "${a.transizione}"` : 'cambia transizione';
-      return a.scena ? `cambia scena in "${a.scena}"` : 'cambia scena';
+      if (a.cosa === 'transizione') return a.transizione ? L(`passa alla transizione "${a.transizione}"`, `switch to the "${a.transizione}" transition`, `pasa a la transición "${a.transizione}"`) : L('cambia transizione', 'change transition', 'cambia la transición');
+      return a.scena ? L(`cambia scena in "${a.scena}"`, `switch scene to "${a.scena}"`, `cambia la escena a "${a.scena}"`) : L('cambia scena', 'switch scene', 'cambia la escena');
     }
-    case 'timeout': return `timeout di ${a.secondi || 0}s`;
-    case 'musica': return a.brano ? `metti in coda "${a.brano}"` : 'metti una canzone in coda';
+    case 'timeout': return L(`timeout di ${a.secondi || 0}s`, `${a.secondi || 0}s timeout`, `timeout de ${a.secondi || 0}s`);
+    case 'musica': return a.brano ? L(`metti in coda "${a.brano}"`, `queue "${a.brano}"`, `pon en cola "${a.brano}"`) : L('metti una canzone in coda', 'queue a song', 'pon una canción en cola');
     case 'punti': {
-      const chi = { destinatario: 'a chi è taggato', caso: 'a uno a caso', nome: `a @${a.nome || '?'}` }[a.a] || 'a chi scrive';
+      const chi = a.a === 'nome' ? `@${a.nome || '?'}` : ({
+        destinatario: L('chi è taggato', 'whoever is tagged', 'quien está etiquetado'),
+        caso: L('uno a caso', 'someone at random', 'alguien al azar'),
+      })[a.a] || L('chi scrive', 'the writer', 'quien escribe');
       const q = String(a.quanto ?? '').trim() || '?';
-      if (a.op === 'togli') return `togli ${q} ${nomeMonetaUI()} ${chi}`;
-      if (a.op === 'imposta') return `porta ${chi} a ${q} ${nomeMonetaUI()}`;
-      return `dai ${q} ${nomeMonetaUI()} ${chi}`;
+      if (a.op === 'togli') return L(`togli ${q} ${mon} a ${chi}`, `take ${q} ${mon} from ${chi}`, `quita ${q} ${mon} a ${chi}`);
+      if (a.op === 'imposta') return L(`porta ${chi} a ${q} ${mon}`, `set ${chi} to ${q} ${mon}`, `lleva a ${chi} a ${q} ${mon}`);
+      return L(`dai ${q} ${mon} a ${chi}`, `give ${q} ${mon} to ${chi}`, `da ${q} ${mon} a ${chi}`);
     }
-    case 'annuncia': return 'fai un annuncio in chat';
-    case 'modalita': return `chat in ${({ emote: 'solo emote', unici: 'messaggi unici', sub: 'solo abbonati' })[a.modo] || 'solo emote'} per ${String(a.durata || '').trim() || '2 minuti'}`;
-    case 'shoutout': return a.canale ? `shoutout a @${a.canale}` : 'shoutout (al nome dopo il comando o a chi ti raida)';
+    case 'annuncia': return L('fai un annuncio in chat', 'make a chat announcement', 'haz un anuncio en el chat');
+    case 'modalita': {
+      const modo = ({ emote: L('solo emote', 'emote-only', 'solo emotes'), unici: L('messaggi unici', 'unique messages', 'mensajes únicos'), sub: L('solo abbonati', 'subscribers-only', 'solo suscriptores') })[a.modo] || L('solo emote', 'emote-only', 'solo emotes');
+      const per = String(a.durata || '').trim() || L('2 minuti', '2 minutes', '2 minutos');
+      return L(`chat in ${modo} per ${per}`, `chat in ${modo} for ${per}`, `chat en ${modo} durante ${per}`);
+    }
+    case 'shoutout': return a.canale ? L(`shoutout a @${a.canale}`, `shoutout to @${a.canale}`, `shoutout a @${a.canale}`) : L('shoutout (al nome dopo il comando o a chi ti raida)', 'shoutout (to the name after the command or whoever raids you)', 'shoutout (al nombre tras el comando o a quien te hace raid)');
     default: return '';
   }
 }
@@ -29334,7 +29376,7 @@ async function caricaModuli() {
   try {
     datiModuli = await api('/api/streamer/moduli');
   } catch (e) {
-    ul.innerHTML = `<li class="vuoto">Errore: ${esc(e.message)}</li>`;
+    ul.innerHTML = `<li class="vuoto">${L('Errore:', 'Error:', 'Error:')} ${esc(e.message)}</li>`;
     return;
   }
   disegnaListaModuli();
@@ -29355,7 +29397,7 @@ function disegnaListaModuli() {
   if (!ul) return;
   const moduli = datiModuli?.moduli || [];
   if (!moduli.length) {
-    ul.innerHTML = '<li class="vuoto">Nessun modulo ancora: parti da un modello qui sopra</li>';
+    ul.innerHTML = `<li class="vuoto">${L('Nessun modulo ancora: parti da un modello qui sopra', 'No modules yet: start from a template above', 'Todavía no hay módulos: empieza con una plantilla de arriba')}</li>`;
     return;
   }
   ul.innerHTML = moduli.map((m) => `
@@ -29365,13 +29407,13 @@ function disegnaListaModuli() {
         <span class="levetta"></span>
       </label>
       <div class="testo-voce">
-        <div class="nome-modulo">${esc(m.nome || 'Senza nome')}</div>
+        <div class="nome-modulo">${esc(m.nome || L('Senza nome', 'Unnamed', 'Sin nombre'))}</div>
         <div class="riassunto-lista">${esc(riassuntoModulo(m))}</div>
       </div>
       <div class="azioni-voce">
-        <button class="btn secondario mini" data-prova-modulo="${esc(m.id)}">Prova</button>
-        <button class="btn secondario mini" data-modifica-modulo="${esc(m.id)}">Modifica</button>
-        <button class="btn pericolo mini" data-elimina-modulo="${esc(m.id)}">Elimina</button>
+        <button class="btn secondario mini" data-prova-modulo="${esc(m.id)}">${L('Prova', 'Test', 'Prueba')}</button>
+        <button class="btn secondario mini" data-modifica-modulo="${esc(m.id)}">${L('Modifica', 'Edit', 'Editar')}</button>
+        <button class="btn pericolo mini" data-elimina-modulo="${esc(m.id)}">${L('Elimina', 'Delete', 'Eliminar')}</button>
       </div>
     </li>`).join('');
 
@@ -29437,85 +29479,86 @@ function apriEditor(modulo, dove = 'editor-modulo') {
   const seAperto = c.tier && c.tier !== 'tutti' || c.cooldown > 0 ||
     (typeof c.probabilita === 'number' && c.probabilita < 100) || c.soloLive || c.soloOffline;
 
+  const mon = esc(nomeMonetaUI());
   cont.innerHTML = `
     <div class="carta">
-      <h2>${_hIco(ICO.scrivi)}${m.id ? 'Modifica modulo' : 'Nuovo modulo'}</h2>
+      <h2>${_hIco(ICO.scrivi)}${m.id ? L('Modifica modulo', 'Edit module', 'Editar módulo') : L('Nuovo modulo', 'New module', 'Nuevo módulo')}</h2>
       <div class="riassunto-modulo">${esc(riassuntoModulo(m))}</div>
 
-      <label class="campo" for="mod-nome">Nome del modulo</label>
-      <input type="text" id="mod-nome" placeholder="es. Saluto di benvenuto" value="${esc(m.nome || '')}">
+      <label class="campo" for="mod-nome">${L('Nome del modulo', 'Module name', 'Nombre del módulo')}</label>
+      <input type="text" id="mod-nome" placeholder="${esc(L('es. Saluto di benvenuto', 'e.g. Welcome greeting', 'p. ej. Saludo de bienvenida'))}" value="${esc(m.nome || '')}">
 
       <div class="blocco-quando">
-        <div class="etichetta-blocco">Quando</div>
-        <label class="campo" for="mod-trigger-tipo">Cosa fa scattare il modulo</label>
+        <div class="etichetta-blocco">${L('Quando', 'When', 'Cuando')}</div>
+        <label class="campo" for="mod-trigger-tipo">${L('Cosa fa scattare il modulo', 'What triggers the module', 'Qué dispara el módulo')}</label>
         <select id="mod-trigger-tipo" data-trigger-tipo>
-          ${TRIGGER.map(([v, t]) => `<option value="${v}" ${m.trigger?.tipo === v ? 'selected' : ''}>${esc(t)}</option>`).join('')}
+          ${TRIGGER.map(([v, it, en, es]) => `<option value="${v}" ${m.trigger?.tipo === v ? 'selected' : ''}>${esc(L(it, en, es))}</option>`).join('')}
         </select>
         <div id="campi-quando">${disegnaCampiQuando(m.trigger || {})}</div>
       </div>
 
       <details class="blocco-se" ${seAperto ? 'open' : ''}>
-        <summary class="etichetta-blocco">Se (facoltativo) — aggiungi condizioni</summary>
+        <summary class="etichetta-blocco">${L('Se (facoltativo): aggiungi condizioni', 'If (optional): add conditions', 'Si (opcional): añade condiciones')}</summary>
         <div class="griglia-campi spazio-sopra">
           <div>
-            <label class="campo" for="mod-chipuo">Chi può attivarlo</label>
+            <label class="campo" for="mod-chipuo">${L('Chi può attivarlo', 'Who can trigger it', 'Quién puede activarlo')}</label>
             <select id="mod-chipuo">
-              <option value="tutti" ${c.tier === 'tutti' ? 'selected' : ''}>Tutti</option>
-              <option value="sub" ${c.tier === 'sub' ? 'selected' : ''}>Solo sub</option>
-              <option value="vip" ${c.tier === 'vip' ? 'selected' : ''}>Solo VIP</option>
-              <option value="mod" ${c.tier === 'mod' ? 'selected' : ''}>Solo mod</option>
+              <option value="tutti" ${c.tier === 'tutti' ? 'selected' : ''}>${L('Tutti', 'Everyone', 'Todos')}</option>
+              <option value="sub" ${c.tier === 'sub' ? 'selected' : ''}>${L('Solo sub', 'Subs only', 'Solo subs')}</option>
+              <option value="vip" ${c.tier === 'vip' ? 'selected' : ''}>${L('Solo VIP', 'VIPs only', 'Solo VIP')}</option>
+              <option value="mod" ${c.tier === 'mod' ? 'selected' : ''}>${L('Solo mod', 'Mods only', 'Solo mods')}</option>
             </select>
           </div>
           <div>
-            <label class="campo" for="mod-cooldown">Cooldown (s)</label>
+            <label class="campo" for="mod-cooldown">${L('Cooldown (s)', 'Cooldown (s)', 'Cooldown (s)')}</label>
             <input type="number" id="mod-cooldown" min="0" max="86400" value="${Number(c.cooldown) || 0}">
           </div>
           <div>
-            <label class="campo" for="mod-cooldown-utente">Cooldown per persona (s)</label>
+            <label class="campo" for="mod-cooldown-utente">${L('Cooldown per persona (s)', 'Cooldown per person (s)', 'Cooldown por persona (s)')}</label>
             <input type="number" id="mod-cooldown-utente" min="0" max="86400" value="${Number(c.cooldownUtente) || 0}">
           </div>
           <div>
-            <label class="campo" for="mod-probabilita">Probabilità (%)</label>
+            <label class="campo" for="mod-probabilita">${L('Probabilità (%)', 'Chance (%)', 'Probabilidad (%)')}</label>
             <input type="number" id="mod-probabilita" min="0" max="100" value="${typeof c.probabilita === 'number' ? c.probabilita : 100}">
           </div>
         </div>
-        <p class="suggerimento">Il <strong>cooldown</strong> ferma tutti; quello <strong>per persona</strong> ferma solo chi l'ha appena usato — è quello che serve ai giochi.</p>
+        <p class="suggerimento">${L('Il <strong>cooldown</strong> ferma tutti; quello <strong>per persona</strong> ferma solo chi l\'ha appena usato: è quello che serve ai giochi.', 'The <strong>cooldown</strong> stops everyone; the <strong>per person</strong> one stops only whoever just used it: that is the one games need.', 'El <strong>cooldown</strong> para a todos; el de <strong>por persona</strong> para solo a quien acaba de usarlo: es el que necesitan los juegos.')}</p>
         <div id="mod-quanti">${_quantiModulo(m.trigger || {}, c)}</div>
         <div class="griglia-campi spazio-sopra">
           <div>
-            <label class="campo" for="mod-costo">Costa (${esc(nomeMonetaUI())})</label>
-            <input type="text" id="mod-costo" data-var-target placeholder="100 oppure $arg1" value="${esc(c.costo ?? '')}">
+            <label class="campo" for="mod-costo">${L(`Costa (${mon})`, `Costs (${mon})`, `Cuesta (${mon})`)}</label>
+            <input type="text" id="mod-costo" data-var-target placeholder="${esc(L('100 oppure $arg1', '100 or $arg1', '100 o $arg1'))}" value="${esc(c.costo ?? '')}">
           </div>
           <div>
-            <label class="campo" for="mod-min-punti">Serve almeno (senza spenderli)</label>
+            <label class="campo" for="mod-min-punti">${L('Serve almeno (senza spenderli)', 'Needs at least (without spending them)', 'Hace falta al menos (sin gastarlas)')}</label>
             <input type="number" id="mod-min-punti" min="0" max="1000000" value="${Number(c.minPunti) || 0}">
           </div>
         </div>
-        <label class="campo" for="mod-costo-messaggio">Cosa dire a chi non ha abbastanza ${esc(nomeMonetaUI())}</label>
-        <input type="text" id="mod-costo-messaggio" data-var-target placeholder="Ti servono $costo $monete, ne hai $punti." value="${esc(c.costoMessaggio || '')}">
-        <p class="suggerimento">Si paga <strong>per giocare, non per vincere</strong>: il costo viene tolto prima del tiro di dado, quindi vale anche quando la probabilità non passa. Se il comando viene rifiutato per un altro motivo (ruolo, cooldown, live) non si paga niente.</p>
+        <label class="campo" for="mod-costo-messaggio">${L(`Cosa dire a chi non ha abbastanza ${mon}`, `What to say to whoever doesn't have enough ${mon}`, `Qué decir a quien no tiene suficientes ${mon}`)}</label>
+        <input type="text" id="mod-costo-messaggio" data-var-target placeholder="${esc(L('Ti servono $costo $monete, ne hai $punti.', 'You need $costo $monete, you have $punti.', 'Te hacen falta $costo $monete, tienes $punti.'))}" value="${esc(c.costoMessaggio || '')}">
+        <p class="suggerimento">${L('Si paga <strong>per giocare, non per vincere</strong>: il costo viene tolto prima del tiro di dado, quindi vale anche quando la probabilità non passa. Se il comando viene rifiutato per un altro motivo (ruolo, cooldown, live) non si paga niente. Paga solo chi fa scattare il modulo scrivendo in chat un comando o una parola: su eventi, timer, voce, Telegram e moduli manuali costo e saldo minimo non valgono, e non paga nessuno, nemmeno tu.', 'You pay <strong>to play, not to win</strong>: the cost is taken before the dice roll, so it counts even when the chance does not pass. If the command is refused for another reason (role, cooldown, live) nothing is paid. Only whoever triggers the module by writing a command or a word in chat pays: on events, timers, voice, Telegram and manual modules cost and minimum balance do not apply, and nobody pays, not even you.', 'Se paga <strong>por jugar, no por ganar</strong>: el coste se quita antes de tirar el dado, así que vale también cuando la probabilidad no pasa. Si el comando se rechaza por otro motivo (rol, cooldown, directo) no se paga nada. Solo paga quien dispara el módulo escribiendo en el chat un comando o una palabra: en eventos, temporizadores, voz, Telegram y módulos manuales el coste y el saldo mínimo no valen, y no paga nadie, ni siquiera tú.')}</p>
         ${_piattaformeModulo(c)}
-        <div class="riga-check"><input type="checkbox" id="mod-solo-live" ${c.soloLive ? 'checked' : ''}><label for="mod-solo-live">Solo se sono in live</label></div>
-        <div class="riga-check"><input type="checkbox" id="mod-solo-offline" ${c.soloOffline ? 'checked' : ''}><label for="mod-solo-offline">Solo se sono offline</label></div>
+        <div class="riga-check"><input type="checkbox" id="mod-solo-live" ${c.soloLive ? 'checked' : ''}><label for="mod-solo-live">${L('Solo se sono in live', 'Only when I\'m live', 'Solo si estoy en directo')}</label></div>
+        <div class="riga-check"><input type="checkbox" id="mod-solo-offline" ${c.soloOffline ? 'checked' : ''}><label for="mod-solo-offline">${L('Solo se sono offline', 'Only when I\'m offline', 'Solo si estoy fuera de directo')}</label></div>
       </details>
 
       <div class="blocco-allora">
-        <div class="etichetta-blocco">Allora</div>
+        <div class="etichetta-blocco">${L('Allora', 'Then', 'Entonces')}</div>
         <div id="lista-azioni">${(m.azioni || []).map(disegnaAzione).join('')}</div>
-        <p class="spazio-sopra"><button class="btn secondario mini" data-aggiungi-azione>+ Aggiungi azione</button></p>
+        <p class="spazio-sopra"><button class="btn secondario mini" data-aggiungi-azione>${L('+ Aggiungi azione', '+ Add action', '+ Añadir acción')}</button></p>
       </div>
 
       <div class="blocco-allora" id="blocco-altrimenti"${Number(c.probabilita) < 100 ? '' : ' hidden'}>
-        <div class="etichetta-blocco">Altrimenti</div>
-        <p class="suggerimento">Cosa fare quando la <strong>probabilità</strong> non passa: è il ramo del gioco perso. Lascialo vuoto se non serve.</p>
+        <div class="etichetta-blocco">${L('Altrimenti', 'Otherwise', 'Si no')}</div>
+        <p class="suggerimento">${L('Cosa fare quando la <strong>probabilità</strong> non passa: è il ramo del gioco perso. Lascialo vuoto se non serve.', 'What to do when the <strong>chance</strong> does not pass: it is the lost-game branch. Leave it empty if you do not need it.', 'Qué hacer cuando la <strong>probabilidad</strong> no pasa: es la rama del juego perdido. Déjala vacía si no hace falta.')}</p>
         <div id="lista-altrimenti">${(m.altrimenti || []).map(disegnaAzione).join('')}</div>
-        <p class="spazio-sopra"><button class="btn secondario mini" data-aggiungi-altrimenti>+ Aggiungi azione</button></p>
+        <p class="spazio-sopra"><button class="btn secondario mini" data-aggiungi-altrimenti>${L('+ Aggiungi azione', '+ Add action', '+ Añadir acción')}</button></p>
       </div>
 
       <p class="spazio-sopra">
-        <button class="btn" data-salva="modulo">Salva</button>
-        <button class="btn secondario" data-prova-editor>Prova</button>
-        <button class="btn secondario" data-annulla-editor>Annulla</button>
+        <button class="btn" data-salva="modulo">${L('Salva', 'Save', 'Guardar')}</button>
+        <button class="btn secondario" data-prova-editor>${L('Prova', 'Test', 'Prueba')}</button>
+        <button class="btn secondario" data-annulla-editor>${L('Annulla', 'Cancel', 'Cancelar')}</button>
       </p>
     </div>`;
 
@@ -29523,95 +29566,96 @@ function apriEditor(modulo, dove = 'editor-modulo') {
   document.getElementById('mod-nome')?.focus();
 }
 
+const FRASI_VOCE_DI_SERIE = ['clippa', 'salva la clip'];
+
 function disegnaCampiQuando(t) {
+  const telegramScheda = `<a href="#telegram" data-scheda="telegram">${L('nella scheda Telegram', 'in the Telegram tab', 'en la pestaña Telegram')}</a>`;
   switch (t.tipo) {
     case 'comando':
       return `
-        <label class="campo" for="mod-comando">Comando (senza !)</label>
+        <label class="campo" for="mod-comando">${L('Comando (senza !)', 'Command (without !)', 'Comando (sin !)')}</label>
         <div class="riga-flessibile">
           <span class="prefisso-cmd">!</span>
-          <input type="text" id="mod-comando" class="campo-largo" placeholder="ciao" value="${esc(t.comando || '')}">
+          <input type="text" id="mod-comando" class="campo-largo" placeholder="${esc(L('ciao', 'hello', 'hola'))}" value="${esc(t.comando || '')}">
         </div>
-        <label class="campo" for="mod-alias">Alias (facoltativi, separati da spazio)</label>
-        <input type="text" id="mod-alias" placeholder="salve buongiorno" value="${esc(Array.isArray(t.alias) ? t.alias.join(' ') : (t.alias || ''))}">
+        <label class="campo" for="mod-alias">${L('Alias (facoltativi, separati da spazio)', 'Aliases (optional, separated by a space)', 'Alias (opcionales, separados por un espacio)')}</label>
+        <input type="text" id="mod-alias" placeholder="${esc(L('salve buongiorno', 'hi hey', 'buenas saludos'))}" value="${esc(Array.isArray(t.alias) ? t.alias.join(' ') : (t.alias || ''))}">
         <div class="riga-check" style="margin-top:.5rem">
           <input type="checkbox" id="mod-senza-bang" ${t.senzaBang ? 'checked' : ''}>
-          <label for="mod-senza-bang">Attiva anche <b>senza !</b> — basta scrivere la parola esatta (es. <code>disc</code>)</label>
+          <label for="mod-senza-bang">${L('Attiva anche <b>senza !</b>: basta scrivere la parola esatta (es. <code>disc</code>)', 'Also works <b>without !</b>: just write the exact word (e.g. <code>disc</code>)', 'Actívalo también <b>sin !</b>: basta escribir la palabra exacta (p. ej. <code>disc</code>)')}</label>
         </div>
         <div class="riga-check" style="margin-top:.4rem">
           <input type="checkbox" id="mod-telegram" ${moduloInModifica?.telegram ? 'checked' : ''}>
-          <label for="mod-telegram">Abilita anche su <b>Telegram</b> — risponde nel gruppo anche se la parola è <b>dentro una frase</b> (il <code>!</code> non serve). Attiva il <em>bot interattivo</em> <a href="#telegram" data-scheda="telegram">nella scheda Telegram</a>.</label>
+          <label for="mod-telegram">${L('Abilita anche su <b>Telegram</b>: risponde nel gruppo anche se la parola è <b>dentro una frase</b> (il <code>!</code> non serve). Attiva il <em>bot interattivo</em>', 'Also enable on <b>Telegram</b>: it answers in the group even when the word is <b>inside a sentence</b> (no <code>!</code> needed). Turn on the <em>interactive bot</em>', 'Actívalo también en <b>Telegram</b>: responde en el grupo aunque la palabra esté <b>dentro de una frase</b> (el <code>!</code> no hace falta). Activa el <em>bot interactivo</em>')} ${telegramScheda}.</label>
         </div>`;
     case 'parola': {
       const frasi = (Array.isArray(t.testi) && t.testi.length) ? t.testi : (t.testo ? [t.testo] : ['']);
       const caselle = frasi.map((f) => `
         <div class="frase-trigger riga-flessibile" style="margin-bottom:.4rem">
-          <input type="text" class="mod-testo-trigger campo-largo" placeholder="es. come stai? · buonanotte · a che ora inizi?" value="${esc(f)}">
-          <button type="button" class="btn pericolo mini" data-rimuovi-frase title="Rimuovi">×</button>
+          <input type="text" class="mod-testo-trigger campo-largo" placeholder="${esc(L('es. come stai? · buonanotte · a che ora inizi?', 'e.g. how are you? · good night · what time do you start?', 'p. ej. ¿cómo estás? · buenas noches · ¿a qué hora empiezas?'))}" value="${esc(f)}">
+          <button type="button" class="btn pericolo mini" data-rimuovi-frase title="${esc(L('Rimuovi', 'Remove', 'Quitar'))}">×</button>
         </div>`).join('');
       return `
-        <label class="campo">Parole, frasi o domande che fanno scattare il modulo</label>
-        <p class="suggerimento" style="margin-top:0">Una per casella. Possono essere frasi intere (niente più divisione a virgole). Basta che <b>una</b> combaci.</p>
+        <label class="campo">${L('Parole, frasi o domande che fanno scattare il modulo', 'Words, phrases or questions that trigger the module', 'Palabras, frases o preguntas que disparan el módulo')}</label>
+        <p class="suggerimento" style="margin-top:0">${L('Una per casella. Possono essere frasi intere (niente più divisione a virgole). Basta che <b>una</b> combaci.', 'One per box. They can be whole sentences (no more splitting on commas). It is enough for <b>one</b> to match.', 'Una por casilla. Pueden ser frases enteras (ya no se separan con comas). Basta con que <b>una</b> coincida.')}</p>
         <div id="lista-frasi-trigger">${caselle}</div>
-        <p><button type="button" class="btn secondario mini" data-aggiungi-frase>+ Aggiungi frase</button></p>
-        <label class="campo" for="mod-modo">Come confrontarle</label>` + `
+        <p><button type="button" class="btn secondario mini" data-aggiungi-frase>${L('+ Aggiungi frase', '+ Add phrase', '+ Añadir frase')}</button></p>
+        <label class="campo" for="mod-modo">${L('Come confrontarle', 'How to compare them', 'Cómo compararlas')}</label>
         <select id="mod-modo">
-          <option value="contiene" ${t.modo === 'contiene' ? 'selected' : ''}>Compare dentro il messaggio</option>
-          <option value="esatto" ${t.modo === 'esatto' ? 'selected' : ''}>È esattamente il messaggio</option>
-          <option value="inizia" ${t.modo === 'inizia' ? 'selected' : ''}>Il messaggio inizia così</option>
+          <option value="contiene" ${t.modo === 'contiene' ? 'selected' : ''}>${L('Compare dentro il messaggio', 'Shows up inside the message', 'Aparece dentro del mensaje')}</option>
+          <option value="esatto" ${t.modo === 'esatto' ? 'selected' : ''}>${L('È esattamente il messaggio', 'Is exactly the message', 'Es exactamente el mensaje')}</option>
+          <option value="inizia" ${t.modo === 'inizia' ? 'selected' : ''}>${L('Il messaggio inizia così', 'The message starts like this', 'El mensaje empieza así')}</option>
         </select>
         <div class="riga-check" style="margin-top:.5rem">
           <input type="checkbox" id="mod-punt" ${t.ignoraPunt !== false ? 'checked' : ''}>
-          <label for="mod-punt">Ignora la <b>punteggiatura</b> (così “come stai?” combacia con “come stai”)</label>
+          <label for="mod-punt">${L('Ignora la <b>punteggiatura</b> (così “come stai?” combacia con “come stai”)', 'Ignore <b>punctuation</b> (so “how are you?” matches “how are you”)', 'Ignora la <b>puntuación</b> (así “¿cómo estás?” coincide con “cómo estás”)')}</label>
         </div>
         <div class="riga-check">
           <input type="checkbox" id="mod-case" ${t.maiuscole ? 'checked' : ''}>
-          <label for="mod-case">Rispetta <b>maiuscole/minuscole</b> (di solito conviene lasciarlo spento)</label>
+          <label for="mod-case">${L('Rispetta <b>maiuscole/minuscole</b> (di solito conviene lasciarlo spento)', 'Match <b>upper/lower case</b> (usually best left off)', 'Respeta <b>mayúsculas/minúsculas</b> (normalmente conviene dejarlo apagado)')}</label>
         </div>
         <div class="riga-check">
           <input type="checkbox" id="mod-telegram" ${moduloInModifica?.telegram ? 'checked' : ''}>
-          <label for="mod-telegram">Abilita anche su <b>Telegram</b> — reagisce anche nel gruppo. Attiva il <em>bot interattivo</em> <a href="#telegram" data-scheda="telegram">nella scheda Telegram</a>.</label>
+          <label for="mod-telegram">${L('Abilita anche su <b>Telegram</b>: reagisce anche nel gruppo. Attiva il <em>bot interattivo</em>', 'Also enable on <b>Telegram</b>: it reacts in the group too. Turn on the <em>interactive bot</em>', 'Actívalo también en <b>Telegram</b>: reacciona también en el grupo. Activa el <em>bot interactivo</em>')} ${telegramScheda}.</label>
         </div>`;
     }
     case 'voce': {
-      const frasi = (Array.isArray(t.frasi) && t.frasi.length) ? t.frasi : ['clippa', 'salva la clip'];
+      const frasi = (Array.isArray(t.frasi) && t.frasi.length) ? t.frasi : FRASI_VOCE_DI_SERIE;
       return `
-        <label class="campo" for="mod-frasi-voce">Frasi da ascoltare (una per riga)</label>
-        <textarea id="mod-frasi-voce" placeholder="clippa&#10;salva la clip">${esc(frasi.join('\n'))}</textarea>
-        <p class="suggerimento">Quando al microfono dici una di queste frasi, il modulo scatta. Scrivile in minuscolo,
-        una per riga. L'ascolto si avvia dalla pagina "Apri l'ascolto vocale" in <strong>Diretta → Comandi a voce</strong>.</p>
+        <label class="campo" for="mod-frasi-voce">${L('Frasi da ascoltare (una per riga)', 'Phrases to listen for (one per line)', 'Frases que escuchar (una por línea)')}</label>
+        <textarea id="mod-frasi-voce" placeholder="${esc(FRASI_VOCE_DI_SERIE.join('\n'))}">${esc(frasi.join('\n'))}</textarea>
+        <p class="suggerimento">${L('Quando al microfono dici una di queste frasi, il modulo scatta. Scrivile in minuscolo, una per riga. L\'ascolto si avvia con «Apri l\'ascolto vocale», in <strong>Chat e pubblico → Comandi → Comandi vocali</strong>.', 'When you say one of these phrases into the mic, the module fires. Write them in lower case, one per line. The recognition is in Italian. Listening starts with «Open voice listening», in <strong>Chat & audience → Commands → Voice commands</strong>.', 'Cuando dices al micrófono una de estas frases, el módulo se dispara. Escríbelas en minúsculas, una por línea. El reconocimiento es en italiano. La escucha se inicia con «Abre la escucha por voz», en <strong>Chat y público → Comandos → Comandos de voz</strong>.')}</p>
         <div class="riga-check" style="margin-top:.4rem">
           <input type="checkbox" id="mod-telegram" ${moduloInModifica?.telegram ? 'checked' : ''}>
-          <label for="mod-telegram">Manda il messaggio anche su <b>Telegram</b> quando lo dico a voce (serve il bot interattivo).</label>
+          <label for="mod-telegram">${L('Manda il messaggio anche su <b>Telegram</b> quando lo dico a voce (serve il bot interattivo).', 'Also send the message on <b>Telegram</b> when I say it (needs the interactive bot).', 'Manda el mensaje también a <b>Telegram</b> cuando lo digo por voz (hace falta el bot interactivo).')}</label>
         </div>`;
     }
     case 'evento':
       return `
-        <label class="campo" for="mod-evento">Quale evento</label>
+        <label class="campo" for="mod-evento">${L('Quale evento', 'Which event', 'Qué evento')}</label>
         <select id="mod-evento">
-          ${EVENTI.map(([v, t2]) => `<option value="${v}" ${t.evento === v ? 'selected' : ''}>${esc(t2)}</option>`).join('')}
+          ${EVENTI.map(([v, it, en, es]) => `<option value="${v}" ${t.evento === v ? 'selected' : ''}>${esc(L(it, en, es))}</option>`).join('')}
         </select>`;
     case 'timer':
       return `
         <div class="griglia-campi spazio-sopra">
           <div>
-            <label class="campo" for="mod-minuti">Ogni quanti minuti</label>
+            <label class="campo" for="mod-minuti">${L('Ogni quanti minuti', 'Every how many minutes', 'Cada cuántos minutos')}</label>
             <input type="number" id="mod-minuti" min="1" max="1440" value="${Number(t.minuti) || 15}">
           </div>
           <div>
-            <label class="campo" for="mod-min-messaggi">Solo se almeno N messaggi</label>
+            <label class="campo" for="mod-min-messaggi">${L('Solo se almeno N messaggi', 'Only if at least N messages', 'Solo si hay al menos N mensajes')}</label>
             <input type="number" id="mod-min-messaggi" min="0" max="1000" value="${Number(t.minMessaggi) || 0}">
           </div>
         </div>
-        <p class="suggerimento">Metti 0 messaggi per farlo partire comunque a tempo.</p>
+        <p class="suggerimento">${L('Metti 0 messaggi per farlo partire comunque a tempo.', 'Put 0 messages to make it run on time no matter what.', 'Pon 0 mensajes para que salga igualmente a su hora.')}</p>
         <label class="riga-check spazio-sopra">
           <input type="checkbox" id="mod-timer-offline"${t.ancheOffline ? ' checked' : ''}>
-          Falla parlare anche a canale spento
+          ${L('Falla parlare anche a canale spento', 'Let it speak even when the channel is offline', 'Que hable también con el canal apagado')}
         </label>
-        <p class="suggerimento">Di norma un modulo a tempo parla solo mentre sei in diretta: fuori dalla diretta la chat è vuota.</p>`;
+        <p class="suggerimento">${L('Di norma un modulo a tempo parla solo mentre sei in diretta: fuori dalla diretta la chat è vuota.', 'Normally a timed module only speaks while you are live: off air the chat is empty.', 'Normalmente un módulo con temporizador solo habla mientras estás en directo: fuera del directo el chat está vacío.')}</p>`;
     case 'manuale':
-      return `<p class="suggerimento spazio-sopra">Nessun campo: questo modulo si attiva dal bottone "Prova" o dai
-        Connettori avanzati (API in ingresso) qui sotto.</p>`;
+      return `<p class="suggerimento spazio-sopra">${L('Nessun campo: questo modulo si attiva dal bottone «Prova» o dai Connettori avanzati (API in ingresso) qui sotto.', 'No fields: this module runs from the «Test» button or from the Advanced connectors (incoming API) below.', 'Ningún campo: este módulo se activa con el botón «Prueba» o desde los Conectores avanzados (API de entrada) de abajo.')}</p>`;
     default:
       return '';
   }
@@ -29622,16 +29666,16 @@ function disegnaAzione(a) {
   const tipo = a.tipo || 'messaggio';
   const selTipo = `
     <select data-azione-tipo>
-      ${AZIONI.map(([v, t]) => `<option value="${v}" ${tipo === v ? 'selected' : ''}>${esc(t)}</option>`).join('')}
+      ${AZIONI.map(([v, it, en, es]) => `<option value="${v}" ${tipo === v ? 'selected' : ''}>${esc(L(it, en, es))}</option>`).join('')}
     </select>`;
   return `
     <div class="azione-riga" data-tipo="${esc(tipo)}">
       <div class="azione-testata">
         ${selTipo}
         <div class="azione-controlli">
-          <button class="btn secondario mini" data-su title="Sposta su">↑</button>
-          <button class="btn secondario mini" data-giu title="Sposta giù">↓</button>
-          <button class="btn pericolo mini" data-rimuovi-azione title="Rimuovi">×</button>
+          <button class="btn secondario mini" data-su title="${esc(L('Sposta su', 'Move up', 'Subir'))}">↑</button>
+          <button class="btn secondario mini" data-giu title="${esc(L('Sposta giù', 'Move down', 'Bajar'))}">↓</button>
+          <button class="btn pericolo mini" data-rimuovi-azione title="${esc(L('Rimuovi', 'Remove', 'Quitar'))}">×</button>
         </div>
       </div>
       ${disegnaCampiAzione(a)}
@@ -29648,20 +29692,29 @@ function disegnaCampiAzione(a) {
   const pillole = `<div class="chip-vars">${prime.map(chip).join('')}${
     altre.length ? `<button type="button" class="chip-var chip-altre" data-altre-var>${L('+ tutte le altre', '+ all the others', '+ todas las demás')}</button>` : ''}</div>${
     altre.length ? `<div class="chip-vars chip-vars-altre" hidden>${altre.map(chip).join('')}</div>` : ''}${legendaVariabiliHtml()}`;
+  const opzioni = (voci, scelta) => voci.map(([v, t]) => `<option value="${v}" ${scelta === v ? 'selected' : ''}>${esc(t)}</option>`).join('');
+  const etichetta = (t) => `<label class="campo">${esc(t)}</label>`;
+  const aria = (t) => `aria-label="${esc(t)}"`;
+  const gestione = `${L('Serve il permesso', 'It needs the', 'Hace falta el permiso')} <strong class="primo-piano">${L('Gestione canale', 'Manage Channel', 'Gestión del canal')}</strong>${L(': se manca, lo concedi da', ' permission: if it is missing, grant it from', ': si falta, lo concedes desde')} <strong>${L('Chat e pubblico → Comandi → Comandi vocali', 'Chat & audience → Commands → Voice commands', 'Chat y público → Comandos → Comandos de voz')}</strong>.`;
+  const annuncia = (t) => `
+        <div class="riga-check spazio-sopra">
+          <input type="checkbox" data-campo="annuncia" ${a.annuncia !== false ? 'checked' : ''}>
+          <label>${esc(t)}</label>
+        </div>`;
   switch (tipo) {
     case 'messaggio':
       return `
-        <textarea data-campo="testo" data-var-target placeholder="es. Ciao $user!">${esc(a.testo || '')}</textarea>
+        <textarea data-campo="testo" data-var-target placeholder="${esc(L('es. Ciao $user!', 'e.g. Hi $user!', 'p. ej. ¡Hola $user!'))}">${esc(a.testo || '')}</textarea>
         ${pillole}`;
     case 'effetto': {
       const eff = datiModuli?.effettiDisponibili || [];
       if (!eff.length) {
-        return `<p class="suggerimento">Non hai ancora effetti: carica prima un effetto in <strong>Chat &amp; comandi → Effetti &amp; suoni</strong>.</p>
+        return `<p class="suggerimento">${L('Non hai ancora effetti: carica prima un effetto in', 'You have no effects yet: first upload an effect in', 'Todavía no tienes efectos: sube primero un efecto en')} <strong>${L('Scena &amp; overlay → Effetti &amp; suoni', 'Scene &amp; overlay → Effects &amp; sounds', 'Escena y overlay → Efectos y sonidos')}</strong>.</p>
           <input type="hidden" data-campo="comando" value="${esc(a.comando || '')}">`;
       }
       return `
-        <label class="campo">Quale effetto</label>
-        <select aria-label="Quale effetto" data-campo="comando">
+        ${etichetta(L('Quale effetto', 'Which effect', 'Qué efecto'))}
+        <select ${aria(L('Quale effetto', 'Which effect', 'Qué efecto'))} data-campo="comando">
           ${eff.map((e) => {
             const cmd = typeof e === 'string' ? e : (e.comando || '');
             return `<option value="${esc(cmd)}" ${a.comando === cmd ? 'selected' : ''}>!${esc(cmd)}</option>`;
@@ -29674,29 +29727,24 @@ function disegnaCampiAzione(a) {
       return `
         <div class="griglia-campi">
           <div>
-            <label class="campo">Cosa fare</label>
-            <select aria-label="Cosa fare" data-campo="op">
-              <option value="aggiungi" ${op === 'aggiungi' ? 'selected' : ''}>Dai</option>
-              <option value="togli" ${op === 'togli' ? 'selected' : ''}>Togli</option>
-              <option value="imposta" ${op === 'imposta' ? 'selected' : ''}>Porta esattamente a</option>
+            ${etichetta(L('Cosa fare', 'What to do', 'Qué hacer'))}
+            <select ${aria(L('Cosa fare', 'What to do', 'Qué hacer'))} data-campo="op">
+              ${opzioni([['aggiungi', L('Dai', 'Give', 'Da')], ['togli', L('Togli', 'Take', 'Quita')], ['imposta', L('Porta esattamente a', 'Set exactly to', 'Lleva exactamente a')]], op)}
             </select>
           </div>
           <div>
-            <label class="campo">Quanti</label>
-            <input aria-label="Quanti" type="text" data-campo="quanto" data-var-target placeholder="10 oppure $random(1,50)" value="${esc(a.quanto ?? '')}">
+            ${etichetta(L('Quanti', 'How many', 'Cuántos'))}
+            <input ${aria(L('Quanti', 'How many', 'Cuántos'))} type="text" data-campo="quanto" data-var-target placeholder="${esc(L('10 oppure $random(1,50)', '10 or $random(1,50)', '10 o $random(1,50)'))}" value="${esc(a.quanto ?? '')}">
           </div>
           <div>
-            <label class="campo">A chi</label>
-            <select aria-label="A chi" data-campo="a">
-              <option value="autore" ${chi === 'autore' ? 'selected' : ''}>Chi ha scritto</option>
-              <option value="destinatario" ${chi === 'destinatario' ? 'selected' : ''}>Chi è taggato dopo il comando</option>
-              <option value="caso" ${chi === 'caso' ? 'selected' : ''}>Uno a caso fra chi è in chat</option>
-              <option value="nome" ${chi === 'nome' ? 'selected' : ''}>Un nome fisso</option>
+            ${etichetta(L('A chi', 'To whom', 'A quién'))}
+            <select ${aria(L('A chi', 'To whom', 'A quién'))} data-campo="a">
+              ${opzioni([['autore', L('Chi ha scritto', 'Whoever wrote', 'Quien ha escrito')], ['destinatario', L('Chi è taggato dopo il comando', 'Whoever is tagged after the command', 'Quien está etiquetado tras el comando')], ['caso', L('Uno a caso fra chi è in chat', 'Someone at random in chat', 'Alguien al azar del chat')], ['nome', L('Un nome fisso', 'A fixed name', 'Un nombre fijo')]], chi)}
             </select>
           </div>
           <div${chi === 'nome' ? '' : ' hidden'} data-solo-nome>
-            <label class="campo">Nome utente</label>
-            <input aria-label="Nome utente" type="text" data-campo="nome" placeholder="tizio" value="${esc(a.nome || '')}">
+            ${etichetta(L('Nome utente', 'Username', 'Nombre de usuario'))}
+            <input ${aria(L('Nome utente', 'Username', 'Nombre de usuario'))} type="text" data-campo="nome" placeholder="${esc(L('tizio', 'someone', 'fulano'))}" value="${esc(a.nome || '')}">
           </div>
         </div>
         ${pillole}`;
@@ -29705,68 +29753,60 @@ function disegnaCampiAzione(a) {
       return `
         <div class="griglia-campi">
           <div>
-            <label class="campo">Nome contatore</label>
-            <input aria-label="Nome contatore" type="text" data-campo="nome" placeholder="morti" value="${esc(a.nome || '')}">
+            ${etichetta(L('Nome contatore', 'Counter name', 'Nombre del contador'))}
+            <input ${aria(L('Nome contatore', 'Counter name', 'Nombre del contador'))} type="text" data-campo="nome" placeholder="${esc(L('morti', 'deaths', 'muertes'))}" value="${esc(a.nome || '')}">
           </div>
           <div>
-            <label class="campo">Operazione</label>
-            <select aria-label="Operazione" data-campo="op">
-              <option value="incrementa" ${a.op === 'incrementa' ? 'selected' : ''}>Incrementa (+1)</option>
-              <option value="azzera" ${a.op === 'azzera' ? 'selected' : ''}>Azzera</option>
-              <option value="imposta" ${a.op === 'imposta' ? 'selected' : ''}>Imposta a…</option>
+            ${etichetta(L('Operazione', 'Operation', 'Operación'))}
+            <select ${aria(L('Operazione', 'Operation', 'Operación'))} data-campo="op">
+              ${opzioni([['incrementa', L('Incrementa (+1)', 'Increase (+1)', 'Aumenta (+1)')], ['azzera', L('Azzera', 'Reset', 'Pon a cero')], ['imposta', L('Imposta a…', 'Set to…', 'Fija en…')]], a.op)}
             </select>
           </div>
           <div>
-            <label class="campo">Valore (se "imposta")</label>
-            <input type="number" data-campo="valore" value="${Number(a.valore) || 0}">
+            ${etichetta(L('Valore (se "imposta")', 'Value (for "set")', 'Valor (si "fija")'))}
+            <input ${aria(L('Valore (se "imposta")', 'Value (for "set")', 'Valor (si "fija")'))} type="number" data-campo="valore" value="${Number(a.valore) || 0}">
           </div>
         </div>`;
     case 'webhook':
       return `
-        <label class="campo">URL del tuo servizio (https)</label>
-        <input aria-label="URL del tuo servizio (https)" type="text" data-campo="url" placeholder="https://" value="${esc(a.url || '')}">
+        ${etichetta(L('URL del tuo servizio (https)', 'Your service URL (https)', 'URL de tu servicio (https)'))}
+        <input ${aria(L('URL del tuo servizio (https)', 'Your service URL (https)', 'URL de tu servicio (https)'))} type="text" data-campo="url" placeholder="https://" value="${esc(a.url || '')}">
         <div class="riga-check">
           <input type="checkbox" data-campo="usaRisposta" ${a.usaRisposta ? 'checked' : ''}>
-          <label>Usa la risposta come messaggio in chat</label>
+          <label>${L('Usa la risposta come messaggio in chat', 'Use the reply as a chat message', 'Usa la respuesta como mensaje en el chat')}</label>
         </div>
-        <p class="suggerimento">L'URL è il <strong class="primo-piano">tuo</strong> servizio: la tua logica resta sul tuo
-        server e SocialBot ne pubblica la risposta.</p>`;
+        <p class="suggerimento">${L('L\'URL è il <strong class="primo-piano">tuo</strong> servizio: la tua logica resta sul tuo server e SocialBot ne pubblica la risposta.', 'The URL is <strong class="primo-piano">your</strong> service: your logic stays on your server and SocialBot posts its reply.', 'La URL es <strong class="primo-piano">tu</strong> servicio: tu lógica se queda en tu servidor y SocialBot publica su respuesta.')}</p>`;
     case 'clip':
       return `
-        <p class="suggerimento">Crea una clip del momento su Twitch. Utile con l'innesco vocale
-        ("clippa!") o su un evento. Nessun campo da compilare.</p>`;
+        <p class="suggerimento">${L('Crea una clip del momento su Twitch. Utile con l\'innesco vocale («clippa!») o su un evento. Nessun campo da compilare.', 'Creates a clip of the moment on Twitch. Handy with the voice trigger («clippa!») or on an event. Nothing to fill in.', 'Crea un clip del momento en Twitch. Útil con el disparador por voz («clippa!») o con un evento. Nada que rellenar.')}</p>`;
     case 'categoria':
       return `
-        <label class="campo">Categoria / gioco (puoi usare le variabili, es. <code>$args</code>)</label>
-        <input type="text" data-campo="gioco" data-var-target placeholder="es. Fortnite oppure $args" value="${esc(a.gioco || '')}">
+        <label class="campo">${L('Categoria / gioco (puoi usare le variabili, es.', 'Category / game (you can use variables, e.g.', 'Categoría / juego (puedes usar variables, p. ej.')} <code>$args</code>)</label>
+        <input ${aria(L('Categoria / gioco', 'Category / game', 'Categoría / juego'))} type="text" data-campo="gioco" data-var-target placeholder="${esc(L('es. Fortnite oppure $args', 'e.g. Fortnite or $args', 'p. ej. Fortnite o $args'))}" value="${esc(a.gioco || '')}">
         ${pillole}
-        <div class="riga-check spazio-sopra">
-          <input type="checkbox" data-campo="annuncia" ${a.annuncia !== false ? 'checked' : ''}>
-          <label>Annuncia il cambio in chat</label>
-        </div>
-        <p class="suggerimento">Il bot cerca la categoria su Twitch e imposta quella più somigliante a ciò che scrivi/dici.
-        Serve il permesso <strong class="primo-piano">Gestione canale</strong> (lo concedi da <strong>Diretta → Comandi a voce</strong>).</p>`;
+        ${annuncia(L('Annuncia il cambio in chat', 'Announce the change in chat', 'Anuncia el cambio en el chat'))}
+        <p class="suggerimento">${L('Il bot cerca la categoria su Twitch e imposta quella più somigliante a ciò che scrivi o dici.', 'The bot looks the category up on Twitch and sets the closest one to what you write or say.', 'El bot busca la categoría en Twitch y pone la más parecida a lo que escribes o dices.')} ${gestione}</p>`;
     case 'titolo':
       return `
-        <label class="campo">Nuovo titolo (puoi usare le variabili, es. <code>$gioco</code>, <code>$args</code>)</label>
-        <textarea data-campo="testo" data-var-target placeholder="es. In diretta: $gioco con la community!">${esc(a.testo || '')}</textarea>
+        <label class="campo">${L('Nuovo titolo (puoi usare le variabili, es.', 'New title (you can use variables, e.g.', 'Nuevo título (puedes usar variables, p. ej.')} <code>$gioco</code>, <code>$args</code>)</label>
+        <textarea ${aria(L('Nuovo titolo', 'New title', 'Nuevo título'))} data-campo="testo" data-var-target placeholder="${esc(L('es. In diretta: $gioco con la community!', 'e.g. Live: $gioco with the community!', 'p. ej. En directo: ¡$gioco con la comunidad!'))}">${esc(a.testo || '')}</textarea>
         ${pillole}
-        <div class="riga-check spazio-sopra">
-          <input type="checkbox" data-campo="annuncia" ${a.annuncia !== false ? 'checked' : ''}>
-          <label>Annuncia il cambio in chat</label>
-        </div>
-        <p class="suggerimento">Imposta il titolo dello stream su Twitch (max 140 caratteri).
-        Serve il permesso <strong class="primo-piano">Gestione canale</strong> (lo concedi da <strong>Diretta → Comandi a voce</strong>).</p>`;
-    case 'attendi':
+        ${annuncia(L('Annuncia il cambio in chat', 'Announce the change in chat', 'Anuncia el cambio en el chat'))}
+        <p class="suggerimento">${L('Imposta il titolo dello stream su Twitch (max 140 caratteri).', 'Sets the stream title on Twitch (max 140 characters).', 'Pone el título del directo en Twitch (máx. 140 caracteres).')} ${gestione}</p>`;
+    case 'attendi': {
+      const max = datiModuli?.limiti?.attesaS;
       return `
-        <label class="campo">Secondi da aspettare</label>
-        <input aria-label="Secondi da aspettare" type="number" data-campo="secondi" min="0" max="60" value="${Number(a.secondi) || 2}">`;
-    case 'overlayTesto':
+        <label class="campo">${L('Secondi da aspettare', 'Seconds to wait', 'Segundos de espera')}${max ? L(` (fino a ${max})`, ` (up to ${max})`, ` (hasta ${max})`) : ''}</label>
+        <input ${aria(L('Secondi da aspettare', 'Seconds to wait', 'Segundos de espera'))} type="number" data-campo="secondi" min="0"${max ? ` max="${max}"` : ''} value="${Number(a.secondi) || 2}">`;
+    }
+    case 'overlayTesto': {
+      const lim = datiModuli?.limiti || {};
       return `
-        <textarea data-campo="testo" data-var-target placeholder="Testo da mostrare sull'overlay">${esc(a.testo || '')}</textarea>
+        <textarea ${aria(L('Testo da mostrare sull\'overlay', 'Text to show on the overlay', 'Texto que mostrar en el overlay'))} data-campo="testo" data-var-target placeholder="${esc(L('Testo da mostrare sull\'overlay', 'Text to show on the overlay', 'Texto que mostrar en el overlay'))}">${esc(a.testo || '')}</textarea>
         ${pillole}
-        <label class="campo">Durata a schermo (ms)</label>
-        <input aria-label="Durata a schermo (ms)" type="number" data-campo="durata" min="500" max="30000" value="${Number(a.durata) || 5000}">`;
+        ${etichetta(L('Durata a schermo (ms)', 'Time on screen (ms)', 'Tiempo en pantalla (ms)'))}
+        <input ${aria(L('Durata a schermo (ms)', 'Time on screen (ms)', 'Tiempo en pantalla (ms)'))} type="number" data-campo="durata"${lim.testoMinMs ? ` min="${lim.testoMinMs}"` : ''}${lim.testoMaxMs ? ` max="${lim.testoMaxMs}"` : ''} value="${Number(a.durata) || 5000}">`;
+    }
     case 'regia': {
       const cosa = ['scena', 'muto', 'transizione'].includes(a.cosa) ? a.cosa : 'scena';
       const come = a.come || 'inverti';
@@ -29775,86 +29815,78 @@ function disegnaCampiAzione(a) {
       return `
         <div class="griglia-campi">
           <div>
-            <label class="campo">Cosa fare</label>
-            <select aria-label="Cosa fare" data-campo="cosa">
-              <option value="scena" ${cosa === 'scena' ? 'selected' : ''}>Cambia scena</option>
-              <option value="muto" ${cosa === 'muto' ? 'selected' : ''}>Muta o smuta una fonte</option>
-              <option value="transizione" ${cosa === 'transizione' ? 'selected' : ''}>Cambia transizione</option>
+            ${etichetta(L('Cosa fare', 'What to do', 'Qué hacer'))}
+            <select ${aria(L('Cosa fare', 'What to do', 'Qué hacer'))} data-campo="cosa">
+              ${opzioni([['scena', L('Cambia scena', 'Switch scene', 'Cambia la escena')], ['muto', L('Muta o smuta una fonte', 'Mute or unmute a source', 'Silencia o quita el silencio a una fuente')], ['transizione', L('Cambia transizione', 'Change transition', 'Cambia la transición')]], cosa)}
             </select>
           </div>
           <div data-regia-cosa="scena"${cosa === 'scena' ? '' : ' hidden'}>
-            <label class="campo">Scena</label>
-            <input aria-label="Scena" type="text" data-campo="scena" data-var-target list="mod-regia-scene" maxlength="80" placeholder="es. Pausa, oppure $arg1" value="${esc(a.scena || '')}">
+            ${etichetta(L('Scena', 'Scene', 'Escena'))}
+            <input ${aria(L('Scena', 'Scene', 'Escena'))} type="text" data-campo="scena" data-var-target list="mod-regia-scene" maxlength="80" placeholder="${esc(L('es. Pausa, oppure $arg1', 'e.g. Break, or $arg1', 'p. ej. Pausa, o $arg1'))}" value="${esc(a.scena || '')}">
             ${lista('mod-regia-scene', _cons.scene)}
           </div>
           <div data-regia-cosa="muto"${cosa === 'muto' ? '' : ' hidden'}>
-            <label class="campo">Fonte</label>
-            <input aria-label="Fonte" type="text" data-campo="fonte" data-var-target list="mod-regia-fonti" maxlength="80" placeholder="es. Mic/Aux" value="${esc(a.fonte || '')}">
+            ${etichetta(L('Fonte', 'Source', 'Fuente'))}
+            <input ${aria(L('Fonte', 'Source', 'Fuente'))} type="text" data-campo="fonte" data-var-target list="mod-regia-fonti" maxlength="80" placeholder="${esc(L('es. Mic/Aux', 'e.g. Mic/Aux', 'p. ej. Mic/Aux'))}" value="${esc(a.fonte || '')}">
             ${lista('mod-regia-fonti', _cons.fonti)}
           </div>
           <div data-regia-cosa="muto"${cosa === 'muto' ? '' : ' hidden'}>
-            <label class="campo">Come</label>
-            <select aria-label="Come" data-campo="come">
-              <option value="muta" ${come === 'muta' ? 'selected' : ''}>Muta</option>
-              <option value="smuta" ${come === 'smuta' ? 'selected' : ''}>Smuta</option>
-              <option value="inverti" ${come === 'inverti' ? 'selected' : ''}>Inverti</option>
+            ${etichetta(L('Come', 'How', 'Cómo'))}
+            <select ${aria(L('Come', 'How', 'Cómo'))} data-campo="come">
+              ${opzioni([['muta', L('Muta', 'Mute', 'Silencia')], ['smuta', L('Smuta', 'Unmute', 'Quita el silencio')], ['inverti', L('Inverti', 'Toggle', 'Invierte')]], come)}
             </select>
           </div>
           <div data-regia-cosa="transizione"${cosa === 'transizione' ? '' : ' hidden'}>
-            <label class="campo">Transizione</label>
-            <input aria-label="Transizione" type="text" data-campo="transizione" data-var-target list="mod-regia-transizioni" maxlength="80" placeholder="es. Dissolvenza" value="${esc(a.transizione || '')}">
+            ${etichetta(L('Transizione', 'Transition', 'Transición'))}
+            <input ${aria(L('Transizione', 'Transition', 'Transición'))} type="text" data-campo="transizione" data-var-target list="mod-regia-transizioni" maxlength="80" placeholder="${esc(L('es. Dissolvenza', 'e.g. Fade', 'p. ej. Fundido'))}" value="${esc(a.transizione || '')}">
             ${lista('mod-regia-transizioni', _cons.transizioni)}
           </div>
         </div>
         ${pillole}
         <p class="suggerimento">${su
-          ? 'Regia collegata da questa pagina: i nomi te li propongo mentre scrivi.'
-          : 'Regia non collegata: scrivi il nome esatto come nel programma, oppure collegala in <strong>CONSOLify</strong> e te li propongo io.'}
-        Il passo lo esegue il pannello aperto sul computer della regia, non il server: tienilo aperto mentre streami.</p>`;
+          ? L('Regia collegata da questa pagina: i nomi te li propongo mentre scrivi.', 'Program connected from this page: I suggest the names as you type.', 'Realización conectada desde esta página: te propongo los nombres mientras escribes.')
+          : L('Regia non collegata: scrivi il nome esatto come nel programma, oppure collegala in <strong>CONSOLify</strong> e te li propongo io.', 'Program not connected: write the exact name as in the software, or connect it in <strong>CONSOLify</strong> and I will suggest them.', 'Realización no conectada: escribe el nombre exacto como en el programa, o conéctala en <strong>CONSOLify</strong> y te los propongo yo.')}
+        ${L('Il passo lo esegue il pannello aperto sul computer della regia, non il server: tienilo aperto mentre streami.', 'The step is run by the panel open on the streaming computer, not by the server: keep it open while you stream.', 'El paso lo ejecuta el panel abierto en el ordenador de la realización, no el servidor: tenlo abierto mientras haces directo.')}</p>`;
     }
     case 'timeout':
       return `
-        <label class="campo">Timeout (secondi)</label>
-        <input aria-label="Timeout (secondi)" type="number" data-campo="secondi" min="1" max="1209600" value="${Number(a.secondi) || 600}">`;
+        ${etichetta(L('Timeout (secondi)', 'Timeout (seconds)', 'Timeout (segundos)'))}
+        <input ${aria(L('Timeout (secondi)', 'Timeout (seconds)', 'Timeout (segundos)'))} type="number" data-campo="secondi" min="1" max="1209600" value="${Number(a.secondi) || 600}">
+        <p class="suggerimento">${L('Mette in pausa chi ha fatto scattare il modulo, mai te: su timer, voce e «Prova» non ferma nessuno. Serve il permesso di moderazione, e moderatori e VIP non si possono mettere in pausa.', 'It times out whoever triggered the module, never you: on timers, voice and «Test» it stops nobody. It needs the moderation permission, and mods and VIPs cannot be timed out.', 'Pone en pausa a quien disparó el módulo, nunca a ti: en temporizadores, voz y «Prueba» no para a nadie. Hace falta el permiso de moderación, y a los moderadores y VIP no se les puede poner en pausa.')}</p>`;
     case 'musica':
       return `
-        <label class="campo">Brano da mettere in coda (nome, artista o <code>$args</code>)</label>
-        <input type="text" data-campo="brano" data-var-target placeholder="es. Blinding Lights oppure $args" value="${esc(a.brano || '')}">
+        <label class="campo">${L('Brano da mettere in coda (nome, artista o', 'Track to queue (name, artist or', 'Canción que poner en cola (nombre, artista o')} <code>$args</code>)</label>
+        <input ${aria(L('Brano da mettere in coda', 'Track to queue', 'Canción que poner en cola'))} type="text" data-campo="brano" data-var-target placeholder="${esc(L('es. Blinding Lights oppure $args', 'e.g. Blinding Lights or $args', 'p. ej. Blinding Lights o $args'))}" value="${esc(a.brano || '')}">
         ${pillole}
-        <div class="riga-check spazio-sopra">
-          <input type="checkbox" data-campo="annuncia" ${a.annuncia !== false ? 'checked' : ''}>
-          <label>Annuncia in chat il brano aggiunto</label>
-        </div>
-        <p class="suggerimento">Aggiunge il brano alla coda del tuo Spotify. Richiede l'add-on <strong class="primo-piano">Richieste Musicali</strong> e Spotify collegato in <strong>Diretta → Musica</strong>.</p>`;
+        ${annuncia(L('Annuncia in chat il brano aggiunto', 'Announce the added track in chat', 'Anuncia en el chat la canción añadida'))}
+        <p class="suggerimento">${L('Aggiunge il brano alla coda del tuo Spotify. Le richieste musicali sono nel piano Essenziale: serve Spotify collegato (Premium, con l\'app aperta) in', 'Adds the track to your Spotify queue. Music requests are in the Essential plan: it needs Spotify connected (Premium, with the app open) in', 'Añade la canción a la cola de tu Spotify. Las peticiones musicales están en el plan Esencial: hace falta Spotify conectado (Premium, con la app abierta) en')} <strong>${L('Durante la diretta → Regia → Musica', 'During the live → Control room → Music', 'Durante el directo → Realización → Música')}</strong>.</p>`;
     case 'annuncia':
       return `
-        <textarea data-campo="testo" data-var-target placeholder="es. Benvenuti nella live! Oggi si gioca a $gioco">${esc(a.testo || '')}</textarea>
+        <textarea ${aria(L('Testo dell\'annuncio', 'Announcement text', 'Texto del anuncio'))} data-campo="testo" data-var-target placeholder="${esc(L('es. Benvenuti nella live! Oggi si gioca a $gioco', 'e.g. Welcome to the stream! Today we play $gioco', 'p. ej. ¡Bienvenidos al directo! Hoy se juega a $gioco'))}">${esc(a.testo || '')}</textarea>
         ${pillole}
-        <label class="campo">Colore dell'annuncio</label>
-        <select aria-label="Colore dell'annuncio" data-campo="colore">
-          ${[['primary', 'Predefinito (viola)'], ['blue', 'Blu'], ['green', 'Verde'], ['orange', 'Arancione'], ['purple', 'Viola']]
-            .map(([v, t]) => `<option value="${v}" ${(a.colore || 'primary') === v ? 'selected' : ''}>${esc(t)}</option>`).join('')}
+        ${etichetta(L('Colore dell\'annuncio', 'Announcement colour', 'Color del anuncio'))}
+        <select ${aria(L('Colore dell\'annuncio', 'Announcement colour', 'Color del anuncio'))} data-campo="colore">
+          ${opzioni([['primary', L('Predefinito (viola)', 'Default (purple)', 'Predeterminado (morado)')], ['blue', L('Blu', 'Blue', 'Azul')], ['green', L('Verde', 'Green', 'Verde')], ['orange', L('Arancione', 'Orange', 'Naranja')], ['purple', L('Viola', 'Purple', 'Morado')]], a.colore || 'primary')}
         </select>
-        <p class="suggerimento">L'annuncio ufficiale di Twitch (messaggio evidenziato). Serve il permesso <strong class="primo-piano">annunci</strong>: se manca, riautorizza dalla dashboard.</p>`;
+        <p class="suggerimento">${L('L\'annuncio ufficiale di Twitch (messaggio evidenziato). Serve il permesso <strong class="primo-piano">annunci</strong>: se manca, riautorizza dalla dashboard.', 'Twitch\'s official announcement (highlighted message). It needs the <strong class="primo-piano">announcements</strong> permission: if it is missing, authorize again from the dashboard.', 'El anuncio oficial de Twitch (mensaje destacado). Hace falta el permiso de <strong class="primo-piano">anuncios</strong>: si falta, vuelve a autorizar desde el panel.')}</p>`;
     case 'modalita':
       return `
-        <label class="campo">Quale modalità</label>
-        <select aria-label="Quale modalità" data-campo="modo">
-          ${[['emote', 'Solo emote'], ['unici', 'Messaggi unici'], ['sub', 'Solo abbonati']]
-            .map(([v, t]) => `<option value="${v}" ${(a.modo || 'emote') === v ? 'selected' : ''}>${esc(t)}</option>`).join('')}
+        ${etichetta(L('Quale modalità', 'Which mode', 'Qué modo'))}
+        <select ${aria(L('Quale modalità', 'Which mode', 'Qué modo'))} data-campo="modo">
+          ${opzioni([['emote', L('Solo emote', 'Emote-only', 'Solo emotes')], ['unici', L('Messaggi unici', 'Unique messages', 'Mensajes únicos')], ['sub', L('Solo abbonati', 'Subscribers-only', 'Solo suscriptores')]], a.modo || 'emote')}
         </select>
-        <label class="campo spazio-sopra">Per quanto</label>
-        <input aria-label="Per quanto" type="text" data-campo="durata" maxlength="40" placeholder="vuoto = 2 minuti, oppure 5m, 90s, $arg1" value="${esc(a.durata || '')}">
-        <label class="riga-check spazio-sopra"><input type="checkbox" data-campo="annuncia"${a.annuncia !== false ? ' checked' : ''}> Lo dico in chat, quando parte e quando finisce</label>
-        <p class="suggerimento">Alla fine la chat torna com'era da sola, anche se nel frattempo il bot si riavvia. Se la modalità era già accesa da un mod, la lascio stare. Chat lenta e soli follower non ci sono apposta: le usa lo scudo contro gli attacchi. Serve il permesso di gestire le impostazioni della chat.</p>`;
+        <label class="campo spazio-sopra">${L('Per quanto', 'For how long', 'Durante cuánto')}</label>
+        <input ${aria(L('Per quanto', 'For how long', 'Durante cuánto'))} type="text" data-campo="durata" maxlength="40" placeholder="${esc(L('vuoto = 2 minuti, oppure 5m, 90s, $arg1', 'empty = 2 minutes, or 5m, 90s, $arg1', 'vacío = 2 minutos, o 5m, 90s, $arg1'))}" value="${esc(a.durata || '')}">
+        <label class="riga-check spazio-sopra"><input type="checkbox" data-campo="annuncia"${a.annuncia !== false ? ' checked' : ''}> ${L('Lo dico in chat, quando parte e quando finisce', 'I say it in chat, when it starts and when it ends', 'Lo digo en el chat, cuando empieza y cuando termina')}</label>
+        <p class="suggerimento">${L('Alla fine la chat torna com\'era da sola, anche se nel frattempo il bot si riavvia. Se la modalità era già accesa da un mod, la lascio stare. Chat lenta e soli follower non ci sono apposta: le usa lo scudo contro gli attacchi. Serve il permesso di gestire le impostazioni della chat.', 'At the end the chat goes back to how it was on its own, even if the bot restarts in the meantime. If a mod had already turned the mode on, I leave it alone. Slow mode and followers-only are left out on purpose: the shield uses them against attacks. It needs the permission to manage chat settings.', 'Al final el chat vuelve solo a como estaba, aunque el bot se reinicie mientras tanto. Si un mod ya había activado el modo, lo dejo estar. El modo lento y solo seguidores no están a propósito: los usa el escudo contra los ataques. Hace falta el permiso para gestionar los ajustes del chat.')}</p>`;
     case 'shoutout':
       return `
-        <label class="campo">Canale a cui fare shoutout (vuoto = il nome dopo il comando o chi ti raida)</label>
-        <input aria-label="Canale a cui fare shoutout (vuoto = il nome dopo il comando o chi ti raida)" type="text" data-campo="canale" placeholder="es. giorgiottv oppure lascia vuoto per $touser" value="${esc(a.canale || '')}">
-        <label class="campo spazio-sopra">Messaggio extra in chat (facoltativo)</label>
-        <textarea data-campo="testo" data-var-target placeholder="es. Andate a seguire @$touser! Stava streammando $giocotarget">${esc(a.testo || '')}</textarea>
+        ${etichetta(L('Canale a cui fare shoutout (vuoto = il nome dopo il comando o chi ti raida)', 'Channel to shout out (empty = the name after the command or whoever raids you)', 'Canal al que hacer shoutout (vacío = el nombre tras el comando o quien te hace raid)'))}
+        <input ${aria(L('Canale a cui fare shoutout (vuoto = il nome dopo il comando o chi ti raida)', 'Channel to shout out (empty = the name after the command or whoever raids you)', 'Canal al que hacer shoutout (vacío = el nombre tras el comando o quien te hace raid)'))} type="text" data-campo="canale" placeholder="${esc(L('es. giorgiottv oppure lascia vuoto per $touser', 'e.g. giorgiottv or leave empty for $touser', 'p. ej. giorgiottv o déjalo vacío para $touser'))}" value="${esc(a.canale || '')}">
+        <label class="campo spazio-sopra">${L('Messaggio extra in chat (facoltativo)', 'Extra chat message (optional)', 'Mensaje extra en el chat (opcional)')}</label>
+        <textarea ${aria(L('Messaggio extra in chat (facoltativo)', 'Extra chat message (optional)', 'Mensaje extra en el chat (opcional)'))} data-campo="testo" data-var-target placeholder="${esc(L('es. Andate a seguire @$touser! Stava streammando $giocotarget', 'e.g. Go follow @$touser! They were streaming $giocotarget', 'p. ej. ¡Id a seguir a @$touser! Estaba jugando a $giocotarget'))}">${esc(a.testo || '')}</textarea>
         ${pillole}
-        <p class="suggerimento">Lo shoutout ufficiale di Twitch (il banner). Serve essere in diretta e il permesso <strong class="primo-piano">shoutout</strong>. Per l'auto-shoutout ai raid: crea un modulo con innesco <strong>Evento → raid</strong> e questa azione lasciando vuoto il canale.</p>`;
+        <p class="suggerimento">${L('Lo shoutout ufficiale di Twitch (il banner). Serve essere in diretta e il permesso <strong class="primo-piano">shoutout</strong>. Per l\'auto-shoutout ai raid: crea un modulo con innesco «Un evento del canale», evento «Raid», e questa azione col canale vuoto.', 'Twitch\'s official shoutout (the banner). You need to be live and have the <strong class="primo-piano">shoutout</strong> permission. For auto-shoutouts on raids: create a module with the «A channel event» trigger, event «Raid», and this action with the channel empty.', 'El shoutout oficial de Twitch (el banner). Hace falta estar en directo y el permiso de <strong class="primo-piano">shoutout</strong>. Para el auto-shoutout en los raids: crea un módulo con el disparador «Un evento del canal», evento «Raid», y esta acción con el canal vacío.')}</p>`;
     default:
       return '';
   }
@@ -29989,27 +30021,27 @@ function disegnaConnettori() {
     : (ceUna ? L('c\u2019è, ma non si può rivedere', 'set, but cannot be shown again', 'existe, pero no se puede volver a ver') : L('nessuna chiave', 'no key', 'sin clave'));
 
   const esempio = `curl -X POST ${apiUrl || 'https://socialbot.live/api/ext/<login>'} \\
-  -H "Authorization: Bearer LA_TUA_CHIAVE" \\
+  -H "Authorization: Bearer ${L('LA_TUA_CHIAVE', 'YOUR_KEY', 'TU_CLAVE')}" \\
   -H "Content-Type: application/json" \\
-  -d '{"azione":"messaggio","testo":"Ciao dalla mia app!"}'`;
+  -d '{"azione":"messaggio","testo":"${L('Ciao dalla mia app!', 'Hi from my app!', 'Hola desde mi app!')}"}'`;
 
   box.innerHTML = `
-    <label class="campo">Chiave API in ingresso</label>
+    <label class="campo">${L('Chiave API in ingresso', 'Incoming API key', 'Clave API de entrada')}</label>
     <div class="riga-flessibile">
-      <input type="text" class="campo-largo" readonly aria-label="Chiave API in ingresso" value="${esc(chiaveMostrata)}">
+      <input type="text" class="campo-largo" readonly aria-label="${esc(L('Chiave API in ingresso', 'Incoming API key', 'Clave API de entrada'))}" value="${esc(chiaveMostrata)}">
       ${apiKey ? `<button class="btn secondario mini" data-apikey="mostra">${apiKeyVisibile ? L('Nascondi', 'Hide', 'Ocultar') : L('Mostra', 'Show', 'Mostrar')}</button>` : ''}
       ${apiKey ? `<button class="btn secondario mini" data-apikey="copia">${L('Copia', 'Copy', 'Copiar')}</button>` : ''}
       <button class="btn secondario mini" data-apikey="rigenera">${ceUna ? L('Rigenera', 'Regenerate', 'Regenerar') : L('Genera chiave', 'Generate key', 'Generar clave')}</button>
     </div>
     <p class="suggerimento">${L('Tienila segreta: chi ha questa chiave può far parlare o agire il tuo bot. Di lei conserviamo solo un\u2019impronta, quindi', 'Keep it secret: whoever has this key can make your bot speak or act. We only keep a fingerprint of it, so', 'Guárdala en secreto: quien la tenga puede hacer hablar o actuar a tu bot. De ella solo guardamos una huella, así que')} <strong>${L('si vede una volta sola', 'it is shown only once', 'se ve una sola vez')}</strong>${L(': se la perdi ne generi un\u2019altra. Nemmeno noi possiamo rileggerla, e se ci rubassero il database non ci sarebbe niente da rubare.', ': if you lose it you generate another. Not even we can read it back, and a stolen database would hold nothing to steal.', ': si la pierdes, generas otra. Ni nosotros podemos releerla, y una base de datos robada no tendría nada que robar.')}</p>
 
-    <label class="campo">URL a cui inviare le richieste</label>
+    <label class="campo">${L('URL a cui inviare le richieste', 'URL to send requests to', 'URL a la que enviar las peticiones')}</label>
     <div class="riga-flessibile">
-      <input type="text" class="campo-largo" readonly aria-label="URL a cui inviare le richieste" value="${esc(apiUrl)}" placeholder="—">
-      <button class="btn secondario mini" data-apikey="copia-url">Copia</button>
+      <input type="text" class="campo-largo" readonly aria-label="${esc(L('URL a cui inviare le richieste', 'URL to send requests to', 'URL a la que enviar las peticiones'))}" value="${esc(apiUrl)}" placeholder="—">
+      <button class="btn secondario mini" data-apikey="copia-url">${L('Copia', 'Copy', 'Copiar')}</button>
     </div>
 
-    <label class="campo">Esempio d'uso</label>
+    <label class="campo">${L('Esempio d\'uso', 'Example', 'Ejemplo de uso')}</label>
     <pre class="blocco-codice">${esc(esempio)}</pre>`;
 
   box.onclick = (ev) => {
@@ -30020,9 +30052,9 @@ function disegnaConnettori() {
       apiKeyVisibile = !apiKeyVisibile;
       disegnaConnettori();
     } else if (azione === 'copia') {
-      copiaTesto(datiModuli?.apiKey || '', 'Chiave copiata');
+      copiaTesto(datiModuli?.apiKey || '', L('Chiave copiata', 'Key copied', 'Clave copiada'));
     } else if (azione === 'copia-url') {
-      copiaTesto(datiModuli?.apiUrl || '', 'URL copiato');
+      copiaTesto(datiModuli?.apiUrl || '', L('URL copiato', 'URL copied', 'URL copiada'));
     } else if (azione === 'rigenera') {
       conErrore(async () => {
         const nuova = !!(datiModuli?.apiKey || datiModuli?.apiKeySet);
@@ -30231,7 +30263,7 @@ function _piattaformeModulo(c) {
   const scelte = Array.isArray(c?.piattaforme) && c.piattaforme.length ? c.piattaforme : null;
   return `<div class="spazio-sopra">
     <label class="campo">${L('Su quali piattaforme', 'On which platforms', 'En qué plataformas')}
-      <span class="tenue">— ${L('nessuna spuntata = su tutte', 'none ticked = on all of them', 'ninguna marcada = en todas')}</span></label>
+      <span class="tenue">(${L('nessuna spuntata vuol dire su tutte', 'none ticked means all of them', 'ninguna marcada quiere decir todas')})</span></label>
     <div class="mod-piatt">${_piattaformeAttive.map((p) => `
       <label class="riga-check"><input type="checkbox" class="mod-piatt-c" value="${esc(p.id)}"${scelte && scelte.includes(p.id) ? ' checked' : ''}> ${esc(p.nome)}</label>`).join('')}</div>
   </div>`;

@@ -65,6 +65,17 @@ export class LiveListener {
     this._spawn();
   }
 
+  // Cambia la sensibilita' mentre ascolta: la soglia vale dal prossimo valore
+  // letto, e la base che l'ascolto ha gia' imparato resta com'e'.
+  impostaSensibilita(sensibilita) {
+    const soglia = sogliaDaSensibilita(sensibilita);
+    if (soglia === this.soglia) return false;
+    this.sensibilita = sensibilita;
+    this.soglia = soglia;
+    this.log.info(`ascolto #${this.login}: sensibilità ${sensibilita}`);
+    return true;
+  }
+
   // Ferma l'ascolto: uccide i processi e rimuove i listener. Idempotente.
   stop() {
     this._fermato = true;

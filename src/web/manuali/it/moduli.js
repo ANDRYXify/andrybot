@@ -44,7 +44,7 @@ export default {
       ['«Comandi base pronti»', 'acceso', 'Accende <code>!so</code>/<code>!shoutout</code> (solo moderatori e streamer, solo in diretta), <code>!followage</code>, <code>!uptime</code> e <code>!bit</code>.'],
     ] },
     { p: [
-      'I comandi creati dalla chat sono solo testo: accettano solo <code>{user}</code> (il nome di chi scrive), fino a 400 caratteri, con un nome fino a 25 caratteri. Non compaiono in «I tuoi moduli»: li elenchi in chat con <code>!comando lista</code>. Per variabili, condizioni ed effetti serve un modulo.',
+      'I comandi creati dalla chat sono solo testo: accettano solo <code>{user}</code> (il nome di chi scrive), fino a 400 caratteri, con un nome fino a 25 caratteri. Non compaiono in «I tuoi moduli»: li elenchi in chat con <code>!comando lista</code>, che può scrivere chiunque. Crearli, cambiarli e toglierli resta sempre ai moderatori e a te. Per variabili, condizioni ed effetti serve un modulo.',
       '<code>!bot</code> e <code>!ia</code> rispondono sempre, qualunque cosa dicano questi interruttori: chiunque in chat può sapere che alcune risposte sono scritte da un\'intelligenza artificiale. Se ti costruisci un tuo <code>!bot</code>, risponde il tuo.',
     ] },
 
@@ -172,7 +172,7 @@ export default {
     ] },
     { p: [
       'Nelle etichette la moneta ha il nome che le hai dato in <em>Giochi &amp; classifiche</em>. Con le fasce fai una scala: un modulo per 1-99 bit, uno per 100-999, uno da 1.000 in su. Un massimo più basso del minimo viene ignorato. Chi resta fuori dalla fascia non paga e non consuma il cooldown.',
-      'Sugli eventi, sui timer, sulla voce, su Telegram e sui moduli manuali «Chi può attivarlo» non ferma niente.',
+      'Sugli eventi, sui timer, sulla voce, su Telegram e sui moduli manuali «Chi può attivarlo» non ferma niente. Lo stesso vale per «Costa (monete)» e «Serve almeno»: paga solo chi fa scattare il modulo scrivendo in chat un comando o una parola, col suo nome utente. Sugli eventi (anche il primo messaggio), sui timer, sulla voce, su Telegram e sui moduli manuali il modulo parte e non paga nessuno, nemmeno tu.',
     ] },
     { h3: 'In che ordine vengono controllate' },
     { p: ['L\'ordine decide <strong>quando si paga</strong>.'] },
@@ -207,7 +207,7 @@ export default {
       ['Chiama un webhook', 'manda i dati del momento a un indirizzo tuo', '«URL del tuo servizio (https)»; «Usa la risposta come messaggio in chat»', 'un tuo servizio'],
       ['Aspetta', 'una pausa prima dell\'azione dopo', '«Secondi da aspettare», di base 2', 'al massimo 30 secondi'],
       ['Mostra testo sull\'overlay', 'scrive un testo a schermo nella diretta; dove e come si vede lo scegli nell\'Overlay Studio, elemento «Testo a schermo»', 'il testo; «Durata a schermo (ms)» da 500 a 30.000, di base 5.000', 'l\'overlay in scena, con «Testo a schermo» acceso nell\'Overlay Studio (lo è di base)'],
-      ['Timeout in chat', 'mette in pausa chi ha scritto il comando', '«Timeout (secondi)» da 1 a 1.209.600 (14 giorni), di base 600', 'il permesso di moderazione'],
+      ['Timeout in chat', 'mette in pausa chi ha fatto scattare il modulo: chi ha scritto, o la persona dell\'evento. Lo streamer mai, quindi su timer, voce e «Prova» non ferma nessuno', '«Timeout (secondi)» da 1 a 1.209.600 (14 giorni), di base 600', 'il permesso di moderazione'],
       ['Metti una canzone in coda', 'aggiunge un brano alla coda del tuo Spotify', '«Brano da mettere in coda» (nome, artista o <code>$args</code>); «Annuncia in chat il brano aggiunto»', 'Spotify collegato, Premium e l\'app aperta'],
       ['Annuncio in chat (/announce)', 'l\'annuncio evidenziato di Twitch', 'il testo; «Colore dell\'annuncio»: «Predefinito (viola)», «Blu», «Verde», «Arancione», «Viola»', 'il permesso annunci'],
       ['Shoutout (banner)', 'lo shoutout ufficiale di Twitch', '«Canale a cui fare shoutout» (vuoto vuol dire il nome dopo il comando, o chi ti raida); «Messaggio extra in chat (facoltativo)»', 'essere in diretta e il permesso shoutout'],
@@ -216,7 +216,7 @@ export default {
       ['Modalità della chat a tempo', 'mette la chat in una modalità per un tempo, poi la rimette com\'era', '«Quale modalità»: «Solo emote», «Messaggi unici», «Solo abbonati»; «Per quanto»; «Lo dico in chat, quando parte e quando finisce»', 'il permesso di gestire le impostazioni della chat'],
     ] },
     { p: [
-      '<strong>Messaggi del bot.</strong> Con «Annuncia il cambio in chat» acceso, categoria e titolo scrivono «🎮 Categoria aggiornata: …» e «📝 Titolo aggiornato: …», e se la categoria non si trova «🤔 Non ho trovato la categoria "…".». Se manca il permesso per categoria, titolo, annuncio o shoutout, il bot lo dice in chat con un 🔒 e le altre azioni vanno avanti: se il comando l\'ha scritto uno dello staff (tu o un moderatore) gli dice anche di riautorizzare dalla dashboard, agli altri solo che adesso non può. La clip, se non riesce (canale spento o permesso mancante), non scrive niente. Lo shoutout scrive il «Messaggio extra» solo se è riuscito.',
+      '<strong>Messaggi del bot.</strong> Con «Annuncia il cambio in chat» acceso, categoria e titolo scrivono «🎮 Categoria aggiornata: …» e «📝 Titolo aggiornato: …», e se la categoria non si trova «🤔 Non ho trovato la categoria "…".». Se manca il permesso per categoria, titolo, annuncio, shoutout o timeout, il bot lo dice in chat con un 🔒 e le altre azioni vanno avanti: se il comando l\'ha scritto uno dello staff (tu o un moderatore) gli dice anche di riautorizzare dalla dashboard, agli altri solo che adesso non può. Un moderatore o un VIP non si mette in pausa, e il bot lo dice: «🛡️ Non posso mettere in pausa …: moderatori e VIP non si possono.». La clip, se non riesce (canale spento o permesso mancante), non scrive niente. Lo shoutout scrive il «Messaggio extra» solo se è riuscito.',
       '<strong>Cambia categoria.</strong> Fra le categorie di Twitch sceglie quella che contiene le parole che hai scritto: «diablo 4» non diventa «Diablo». Capisce i numeri romani o scritti in lettere e le sigle più usate, come «gta 5» o «cs2». Se nessuna somiglia abbastanza, non cambia niente.',
       '<strong>Contatore.</strong> «Incrementa (+1)» aggiunge uno, qualunque sia il passo del contatore; «Azzera» riporta a zero; «Imposta a…» mette il numero di «Valore (se "imposta")». Il nome è quello del comando del contatore, senza <code>!</code>: <code>morti</code> muove lo stesso numero di <code>!morti</code>, di <code>$count(morti)</code> e di CONTATORify. Se quel contatore non c\'è ancora, nasce nella carta <em>Contatori</em>. L\'azione cambia il numero senza scriverlo in chat: per dirlo aggiungi «Scrivi in chat» con <code>$count(morti)</code>.',
       '<strong>Dai o togli punti.</strong> «A chi» ha quattro scelte: «Chi ha scritto», «Chi è taggato dopo il comando», «Uno a caso fra chi è in chat» (pescato fra chi ha scritto di recente, di preferenza non l\'autore) e «Un nome fisso», che chiede il «Nome utente». «Quanti» accetta un numero o una variabile: <code>$random(10,50)</code>, <code>$arg1</code>. Dopo, <code>$mossa</code> dice quante monete si sono mosse davvero e <code>$bersaglio</code> su chi: a chi ha 5 monete non se ne tolgono 80. Le azioni che seguono vedono la stessa cifra, così un furto dà al ladro esattamente quello che ha tolto.',
@@ -235,7 +235,7 @@ export default {
     { h3: 'Salva, Prova, Annulla' },
     { p: [
       '<strong>«Salva»</strong> salva e chiude l\'editor. <strong>«Prova»</strong> prima salva, poi esegue il modulo saltando le condizioni: «Salvato e provato: guarda chat/overlay». <strong>«Annulla»</strong> chiude senza salvare.',
-      'Se qualcosa non va il pannello dice cosa: un webhook senza <code>http</code> o <code>https</code>, un cambio di categoria o di titolo senza testo, una canzone senza brano, un annuncio vuoto, un\'azione punti senza quantità o con un nome utente non valido, una regia senza scena, fonte o transizione.',
+      'Se qualcosa non va il pannello dice cosa: un webhook senza <code>http</code> o <code>https</code>, un cambio di categoria o di titolo senza testo, una canzone senza brano, un annuncio vuoto, un\'azione punti senza quantità o con un nome utente non valido, una regia senza scena, fonte o transizione, un\'attesa di più di 30 secondi, un testo sull\'overlay che resta a schermo meno di mezzo secondo o più di 30.',
     ] },
 
     { h3: 'Le variabili' },
@@ -346,7 +346,7 @@ export default {
       ['<code>clip</code>', '<code>motivo</code>, facoltativo', 'crea una clip; serve «Comandi Vocali» o «Clip Automatiche»'],
       ['<code>tiktok-live</code>', 'nessuno', 'avvisa che sei in diretta su TikTok; serve il piano Base'],
       ['<code>youtube-post</code>, <code>tiktok-post</code>, <code>instagram-post</code>', '<code>titolo</code>, <code>url</code>', 'avvisa un nuovo post; serve il piano Base'],
-      ['<code>donazione</code>', '<code>importo</code> (obbligatorio), <code>valuta</code>, <code>nome</code>, <code>messaggio</code>, <code>id</code>', 'una donazione arrivata da un altro servizio; con lo stesso <code>id</code> non conta due volte'],
+      ['<code>donazione</code>', '<code>importo</code> (obbligatorio), <code>valuta</code>, <code>nome</code>, <code>messaggio</code>, <code>id</code>', 'una donazione arrivata da un altro servizio; senza <code>valuta</code>, o con una che il bot non conosce, vale quella delle tue donazioni; con lo stesso <code>id</code> non conta due volte'],
     ] },
     { p: [
       'Al massimo 30 richieste al minuto: oltre, la risposta è <code>429</code>. Una chiave sbagliata riceve <code>404</code>, senza spiegazioni. Un\'azione fuori dal tuo piano riceve <code>403</code>, una sconosciuta «azione non riconosciuta».',
@@ -394,7 +394,7 @@ export default {
       ['«Regolazione fine (X/Y manuali)»', 'X 4, Y 94', 'da 0 a 100 %'],
       ['«Colore testo»', 'bianco', ''],
       ['«Dimensione (px)»', '40', 'da 10 a 200'],
-      ['«Colore sfondo»', 'nero semitrasparente', 'con «Sfondo trasparente» non c\'è sfondo'],
+      ['«Colore sfondo»', 'nero semitrasparente', 'il colore che scegli tiene la stessa trasparenza; con «Sfondo trasparente» non c\'è sfondo'],
       ['«Font»', 'Sistema', 'Sistema, Inter, Space Grotesk, JetBrains Mono, Fraunces, Bricolage'],
       ['«Grassetto»', 'acceso', ''],
       ['«Formato del testo»', '<code>{emoji} {etichetta}: {valore}</code>', '80 caratteri'],
@@ -402,20 +402,23 @@ export default {
 
     { h3: 'Comandi pronti' },
     { p: [
-      'Qui ci sono tutti i comandi che il bot porta già con sé, divisi per famiglia: giochi in chat, giochi con la webcam, sorteggi, ore guardate, serie di presenze, compleanni, VIP, sondaggi, richieste musicali, modalità della chat, e gli altri. Ognuno si spegne, si rinomina e si può riservare. Le scelte valgono dopo <strong>«Salva i comandi»</strong>.',
+      'Qui ci sono tutti i comandi che il bot porta già con sé, divisi per famiglia: giochi in chat, giochi con la webcam, sorteggi, ore guardate, serie di presenze, compleanni, VIP, sondaggi, richieste musicali, modalità della chat, e gli altri. Quasi tutti si spengono, si rinominano e si possono riservare: le eccezioni lo dicono sulla loro riga. Le scelte valgono dopo <strong>«Salva i comandi»</strong>.',
     ] },
     { tabella: [
       ['Controllo', 'Cosa fa'],
       ['interruttore', 'accende o spegne il comando. Un pallino al suo posto vuol dire che è sempre acceso.'],
-      ['«nome tuo»', 'il nome nuovo, fino a 20 lettere minuscole e cifre. Rinominare sostituisce: i nomi di serie smettono di rispondere. «non si rinomina» vale per il comando che fa entrare nel sorteggio, perché la parola la scegli quando lo apri.'],
-      ['«chi può»', '«tutti», «abbonati», «VIP», «moderatori». Un comando che di serie è per i moderatori non si apre a tutti: scegliere più in basso lo lascia al suo livello.'],
+      ['«nome tuo»', 'il nome nuovo, fino a 20 lettere minuscole e cifre. Rinominare sostituisce: i nomi di serie smettono di rispondere. «non si rinomina» vale per il comando che fa entrare nel sorteggio, perché la parola la scegli quando lo apri, e per <code>!bot</code>.'],
+      ['«chi può»', '«tutti», «abbonati», «VIP», «moderatori». Un comando che di serie è per i moderatori non si apre a tutti: scegliere più in basso lo lascia al suo livello. «non si riserva» vale per <code>!bot</code>.'],
+    ] },
+    { p: [
+      '<code>!bot</code> (anche <code>!ia</code>, <code>!ai</code> e <code>!socialbot</code>) sta da solo nella famiglia «Trasparenza IA»: non si spegne, non si rinomina e non si riserva, perché chiunque in chat deve poter sapere che alcune risposte sono scritte da un\'intelligenza artificiale. Risponde con una frase fissa, e non fa domande al bot.',
     ] },
     { p: [
       'Accanto al nome vedi «costa monete» se il comando usa le monete, e le attese («30s a testa», «2 min per tutti»). Le attese dei giochi si cambiano nelle regole dei giochi, in <em>Giochi &amp; classifiche</em>.',
       'Se un\'intera famiglia è spenta, sopra leggi «famiglia spenta: questi comandi non rispondono». Si riaccende dal suo interruttore, nella scheda di quella funzione: per esempio i giochi in <em>Giochi &amp; classifiche</em>, le ore guardate, i comandi base e la gestione dei comandi dalla chat in <em>Comodità in chat</em>.',
       'A chi non può il bot risponde dicendo a chi è riservato, per esempio «!slot qui è riservato a chi è abbonato.».',
       'Due comandi non possono chiamarsi allo stesso modo: il pannello non salva e ti dice quale nome è già di un altro comando. Un comando tuo con lo stesso nome vince sempre su quello pronto, alias compresi: non devi spegnere niente. Se il tuo modulo è spento, risponde di nuovo quello pronto.',
-      'I comandi dei giochi compaiono anche nella scheda <em>Giochi &amp; classifiche</em>: è la stessa impostazione, vista da due posti.',
+      'I comandi dei giochi compaiono anche nella scheda <em>Giochi &amp; classifiche</em>: è la stessa impostazione, vista da due posti. Ogni «Salva i comandi» salva le righe della sua lista, e lascia le altre come le avevi salvate.',
     ] },
 
     { h3: 'CONTATORify: le morti contate da sole' },
@@ -481,7 +484,7 @@ export default {
     { tabella: [
       ['Controllo', 'Di base', 'Cosa fa'],
       ['interruttore «Ascolto acceso» / «Ascolto spento»', 'spento', 'si salva subito'],
-      ['«Sensibilità»', '5', 'da 1 a 10, vale dopo «Salva». Più alta prende anche i momenti meno intensi, più bassa solo i picchi veri.'],
+      ['«Sensibilità»', '5', 'da 1 a 10, vale dopo «Salva»: se il server ti sta già ascoltando, entro un minuto. Più alta prende anche i momenti meno intensi, più bassa solo i picchi veri.'],
     ] },
     { p: [
       'Accanto all\'interruttore leggi «in ascolto ora» quando il server ti sta ascoltando, «non in ascolto» quando no. Si aggiorna quando riapri il pannello.',
@@ -529,7 +532,7 @@ export default {
 
     { h3: 'La pagina di ascolto vocale' },
     { p: [
-      'È la pagina che apri con «Apri l\'ascolto vocale». Si usa dal computer da cui streammi, con lo stesso accesso del pannello.',
+      'È la pagina che apri con «Apri l\'ascolto vocale». Si usa dal computer da cui streammi, con lo stesso accesso del pannello, e si legge nella lingua che hai scelto nel pannello.',
     ] },
     { tabella: [
       ['Parte', 'Cosa fa'],
@@ -538,7 +541,7 @@ export default {
       ['«Registro»', 'cosa ha sentito e cosa è successo, con l\'ora. Tiene le ultime 200 righe.'],
     ] },
     { p: [
-      'Il riconoscimento è in <strong>italiano</strong>. Su Chrome ed Edge usa quello del browser, che non scarica niente. Dove il browser non ce l\'ha (Dia, Arc, Brave) usa un motore locale: la prima volta scarica un modello di qualche decina di MB, poi funziona anche offline. Il cambio lo fa da solo e lo scrive nel registro.',
+      'Il riconoscimento è in <strong>italiano</strong>, qualunque sia la lingua della pagina. Su Chrome ed Edge usa quello del browser, che non scarica niente. Dove il browser non ce l\'ha (Dia, Arc, Brave) usa un motore locale: la prima volta scarica un modello di qualche decina di MB, poi funziona anche offline. Il cambio lo fa da solo e lo scrive nel registro.',
       'La stessa frase non scatta due volte in 4 secondi.',
       'Oltre ai tuoi moduli e ai due comandi di categoria e titolo, la pagina capisce il VIP: «<strong>vip a</strong> chiara», «vip a chiara <strong>per un mese</strong>» (anche «per 2 settimane», «per 3 giorni», «per sempre»; senza durata vale una settimana), e «<strong>togli vip a</strong> chiara». Il nome si cerca fra chi ha scritto in chat, e il bot risponde in chat: «👑 VIP a … per una settimana!», oppure «Non trovo nessuno che somigli a "…" in chat 🤔». Basta la parola «vip» seguita da un nome: attento a come la usi mentre parli.',
       'Durante una penitenza a punti canale la pagina manda anche le frasi intere, per contare le parole vietate. Nel registro leggi «Penitenza in corso: conto quello che dici finché non finisce.». Le penitenze le spiega il <a href="/manuale/interazione">manuale di sondaggi, giveaway e penitenze</a>.',

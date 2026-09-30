@@ -218,3 +218,82 @@ test('!giochi e un nome spiega quel gioco, coi nomi e i valori del canale', () =
     assert.doesNotMatch(T.riempiSpiega(CH, r.spiega), /[{}%]|undefined|NaN/, `${id}: la spiegazione esce pulita`);
   }
 });
+
+// LA TRASPARENZA IA NON SI SPEGNE. `!bot` (e `!ia`, `!ai`, `!socialbot`) dice
+// che in chat risponde anche un'intelligenza artificiale: stava nella famiglia
+// dei comandi base, e spegnendo quella, o il comando, o rinominandolo, la
+// dichiarazione spariva o cambiava nome. Adesso nessuna scelta la tocca.
+const comandibase = await import('../../src/features/comandibase.js');
+
+test('!bot risponde sempre, a chiunque, con le parole di sempre', async () => {
+  const bot = T.comandoDi('bot');
+  assert.equal(T.spegnibile(bot), false, 'non si spegne');
+  assert.equal(T.rinominabile(bot), false, 'non si rinomina');
+  assert.equal(T.riservabile(bot), false, 'non si riserva');
+  assert.equal(T.moduloAcceso(bot.modulo, { comandiBase: { attivo: false } }), true, 'la sua famiglia non ha interruttore');
+
+  scegli({ bot: { off: true, nome: 'chiedi', chi: 'mod' } });
+  streamers.setSettings(CH, { ...(streamers.get(CH)?.settings || {}), comandiBase: { attivo: false } });
+  assert.deepEqual(T.normalizza({ bot: { off: true, nome: 'chiedi', chi: 'mod' } }), {}, 'il pannello non puo\' salvare niente su di lui');
+  for (const parola of ['bot', 'ia', 'ai', 'socialbot']) {
+    const v = T.preparaComando(CH, messaggio('!' + parola));
+    assert.equal(v.testo, '!bot', `!${parola} arriva al gestore anche con i comandi base spenti`);
+  }
+  assert.equal(T.preparaComando(CH, messaggio('!chiedi')), null, 'un nome inventato non diventa !bot');
+  const riga = T.elenco(CH).find((c) => c.id === 'bot');
+  assert.equal(riga.vivo, true);
+  assert.equal(riga.chi, 'tutti');
+
+  const dette = [];
+  assert.equal(await comandibase.tryComando(null, messaggio('!ia'), (t) => dette.push(t)), true);
+  assert.match(dette[0], /intelligenza artificiale/, 'e dice quello che il pannello promette');
+  streamers.setSettings(CH, { ...(streamers.get(CH)?.settings || {}), comandiBase: { attivo: true } });
+  scegli({});
+});
+
+// !COMANDO LISTA E' DI TUTTI, LE MODIFICHE NO. Il registro diceva «solo mod»
+// per tutto !comando, e il gestore apriva l'elenco a chiunque: vinceva il
+// registro, e l'elenco era chiuso. Ora l'elenco e' aperto, e le sottoazioni
+// che scrivono le guarda il gestore, qualunque livello dica il registro.
+const comandichat = await import('../../src/features/comandichat.js');
+const { commands } = await import('../../src/db.js');
+
+test('!comando lista e\' aperto a tutti, aggiungere e togliere restano ai mod', () => {
+  scegli({});
+  streamers.setSettings(CH, { ...(streamers.get(CH)?.settings || {}), comandiChat: { attivo: true } });
+  const chiunque = T.preparaComando(CH, messaggio('!comando lista'));
+  assert.equal(chiunque.testo, '!comando lista', 'nessun rifiuto a chi non e\' mod');
+  const dette = [];
+  const dire = (t) => dette.push(String(t));
+  assert.equal(comandichat.tryComando(messaggio('!comando aggiungi !prova ciao'), dire), true);
+  assert.equal(commands.get(CH, 'prova'), null, 'chi non e\' mod non crea niente');
+  assert.equal(comandichat.tryComando(messaggio('!addcom !prova ciao'), dire), true);
+  assert.equal(commands.get(CH, 'prova'), null, 'nemmeno dalla forma corta');
+  comandichat.tryComando(messaggio('!comando aggiungi !prova ciao {user}', { isMod: true }), dire);
+  assert.ok(commands.get(CH, 'prova'), 'un mod si');
+  dette.length = 0;
+  comandichat.tryComando(messaggio('!comando elimina !prova'), dire);
+  assert.ok(commands.get(CH, 'prova'), 'chi non e\' mod non toglie niente');
+  comandichat.tryComando(messaggio('!comando lista'), dire);
+  assert.match(dette.join(' '), /!prova/, 'e l\'elenco lo legge chiunque');
+  for (const id of ['addcom', 'editcom', 'delcom']) {
+    assert.equal(T.preparaComando(CH, messaggio('!' + id + ' !x y')).rifiuta, 'mod', `!${id} resta ai mod`);
+  }
+  commands.remove(CH, 'prova');
+  streamers.setSettings(CH, { ...(streamers.get(CH)?.settings || {}), comandiChat: { attivo: false } });
+});
+
+// UN SALVATAGGIO CAMBIA LE RIGHE CHE SI VEDEVANO. I giochi stanno in due liste
+// del pannello; salvando da una, le scelte lette dall'altra coprivano quelle
+// appena fatte. Ora chi salva dice quali righe aveva davanti.
+test('salvare da una lista cambia solo le sue righe', () => {
+  const prima = { slot: { off: true }, so: { nome: 'grida' } };
+  // dalla lista di Comandi, che le ha tutte: lo slot torna com'era di serie
+  const tutte = T.COMANDI.map((c) => c.id);
+  assert.deepEqual(T.unisci(prima, { so: { nome: 'grida' } }, tutte), { so: { nome: 'grida' } }, 'lo slot riacceso resta acceso');
+  // dalla lista di Giochi, che ha solo i giochi: lo shoutout rinominato non si perde
+  const giochi = T.COMANDI.filter((c) => c.modulo === 'giochi').map((c) => c.id);
+  assert.deepEqual(T.unisci(prima, { dado: { chi: 'sub' } }, giochi), { so: { nome: 'grida' }, dado: { chi: 'sub' } });
+  assert.deepEqual(T.unisci(prima, { so: { off: true } }, ['dado']), prima, 'una riga fuori dalla lista non passa');
+  assert.deepEqual(T.unisci({ bot: { off: true } }, {}, []), {}, 'e quello che non si puo\' salvare non si salva');
+});

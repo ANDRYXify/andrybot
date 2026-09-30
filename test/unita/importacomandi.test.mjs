@@ -69,6 +69,20 @@ test('dove esiste, si dice anche DOVE si fa qui', () => {
   assert.match(r.avvisi[0].dove, /Moduli/);
 });
 
+// Il brano in ascolto qui si chiede con un comando delle richieste musicali,
+// che sono nel piano gratuito: non un «add-on» da comprare.
+test('il brano in ascolto porta al comando vero, senza add-on', async () => {
+  const { COMANDI } = await import('../../src/features/comandi-registro.js');
+  const ab = await import('../../src/features/abbonamenti.js');
+  const r = traduci('Ora suona: $(spotify)');
+  const dove = r.avvisi[0].dove;
+  assert.doesNotMatch(dove, /add-on/i);
+  const nome = /!([a-z]+)/.exec(dove)?.[1];
+  const c = COMANDI.find((x) => x.nomi.includes(nome));
+  assert.ok(c && c.modulo === 'musica', `!${nome} e' un comando delle richieste musicali`);
+  assert.equal(ab.abilitata(ab.funzioniDi({ tier: 'free' }), 'musica'), true, 'e le richieste musicali sono nell\'Essenziale');
+});
+
 test('un testo senza variabili non viene toccato', () => {
   const t = 'Il mio Discord è discord.gg/andryx — costa 5$ al mese';
   assert.equal(solo(t), t);

@@ -47,7 +47,7 @@ import { paginaManuale, paginaIndiceManuali, aiutiPerScheda } from './manuali.js
 import { conOccasione, normOccasioni, accendi as accendiOccasione } from '../features/occasioni.js';
 import * as cancello from '../features/tg-cancello.js';
 import { permessiDi as permessiDiChat, guai as guaiCancello } from '../features/tg-ingresso.js';
-import { elenco as elencoComandi, normalizza as normalizzaComandi, collisioni as collisioniComandi, LIVELLI as LIVELLI_COMANDO, MODULI as MODULI_COMANDO } from '../features/comandi-registro.js';
+import { elenco as elencoComandi, normalizza as normalizzaComandi, unisci as unisciComandi, collisioni as collisioniComandi, LIVELLI as LIVELLI_COMANDO, MODULI as MODULI_COMANDO } from '../features/comandi-registro.js';
 import { AntiBot, erroriScudo, statoEsecutore, azioniFallite, riprovaFallite, bonifica as bonificaIncidente, conNome, ESENTI_MAX, bloccaDaConsole } from '../features/antibot.js';
 import { statoCensimento } from '../features/punteggio.js';
 import { aperto as incidenteAperto, elenco as elencoIncidenti, uno as unIncidente, sintesi as sintesiIncidente } from '../features/incidenti.js';
@@ -103,6 +103,7 @@ import * as pubblicita from '../features/pubblicita.js';
 import * as giochiConf from '../features/giochi-conf.js';
 import { VOCI as VOCI_TWITCH } from '../features/sondaggi.js';
 import * as modalitaChat from '../features/modalita-chat.js';
+import { LIMITI_AZIONI } from '../features/modules.js';
 import { normModalita } from '../features/quando-lavora.js';
 import * as instagram from '../features/instagram.js';
 import * as igAccesso from '../features/instagram-accesso.js';
@@ -4380,7 +4381,9 @@ STREAMER (${su.toUpperCase()}) e non c'entra con l'automazione del marketing.
   app.get('/api/contatori', requireLogin, (req, res) => {
     const list = contatori.list(currentUser(req).login)
       .map((c) => ({ ...c, overlayCfg: contatori.overlayDi(c), verbiCfg: contatori.verbiDi(c) }));
-    res.json({ contatori: list });
+    // `base`: l'aspetto di serie, cosi' il pannello riparte da li' (lo sfondo
+    // nero semitrasparente) invece di inventarsene uno.
+    res.json({ contatori: list, base: contatori.overlayDi(null) });
   });
   // crea/aggiorna un contatore (comando, etichetta, emoji, step, parola auto, valore)
   app.post('/api/contatori', requireLogin, gCont, wrap(async (req, res) => {
@@ -8500,6 +8503,13 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
       if (a.tipo === 'annuncia' && !String(a.testo || '').trim()) {
         return 'l\'azione "annuncio" ha bisogno di un testo (anche con variabili come $gioco)';
       }
+      if (a.tipo === 'attendi' && Number(a.secondi) > LIMITI_AZIONI.attesaS) {
+        return `l'azione "aspetta" arriva al massimo a ${LIMITI_AZIONI.attesaS} secondi`;
+      }
+      if (a.tipo === 'overlayTesto' && a.durata !== undefined
+        && !(Number(a.durata) >= LIMITI_AZIONI.testoMinMs && Number(a.durata) <= LIMITI_AZIONI.testoMaxMs)) {
+        return `l'azione "testo sull'overlay" resta a schermo da ${LIMITI_AZIONI.testoMinMs} a ${LIMITI_AZIONI.testoMaxMs} millisecondi`;
+      }
       if (a.tipo === 'modalita') {
         if (!Object.keys(modalitaChat.MODI).includes(a.modo)) return 'l\'azione "modalità della chat" vuole sapere quale modalità accendere';
         if (String(a.durata ?? '').length > 40) return 'l\'azione "modalità della chat" vuole una durata corta, come 2m, 90s o $arg1';
@@ -8530,6 +8540,8 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
       // c'e', e basta; il valore lo si vede una volta, quando nasce.
       apiKeySet: owner ? haApiKey(login) : undefined,
       apiUrl: owner ? `${config.baseUrl}/api/ext/${login}` : undefined,
+      // i limiti dei campi delle azioni, gli stessi del motore
+      limiti: LIMITI_AZIONI,
     });
   }));
 
@@ -8922,12 +8934,16 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
 
   app.post('/api/streamer/comandi-pronti', requireLogin, wrap(async (req, res) => {
     const login = currentUser(req).login;
-    const scelte = normalizzaComandi(req.body?.comandi);
+    const s = streamers.get(login);
+    // Con `ids` il pannello dice quali righe aveva davanti: cambiano solo
+    // quelle, e le altre restano come erano salvate.
+    const scelte = Array.isArray(req.body?.ids)
+      ? unisciComandi(s?.settings?.comandi, req.body?.comandi, req.body.ids)
+      : normalizzaComandi(req.body?.comandi);
     const scontri = collisioniComandi(scelte);
     if (scontri.length) {
       return res.status(400).json({ errore: `il nome «${scontri[0].nome}» è già di un altro comando` });
     }
-    const s = streamers.get(login);
     streamers.setSettings(login, { ...(s?.settings || {}), comandi: scelte });
     res.json({ ok: true, comandi: elencoComandi(login) });
   }));
@@ -10323,8 +10339,11 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     if (azione === 'donazione') {
       const d = donazioni.leggiEsterna(req.body);
       if (!d) return res.status(400).json({ errore: 'serve un importo' });
+      // `valuta` e' facoltativa: senza, o con una che non conosciamo, vale
+      // quella del canale.
+      const valuta = d.valuta || streamers.get(login)?.settings?.donazioni?.valuta || 'EUR';
       const chiave = 'ext:' + login + ':' + (d.id || crypto.randomUUID());
-      if (!registroDonazioni.segna(chiave, { login, fonte: 'ext', importo: Math.round(d.importo * 100), valuta: d.valuta || s.settings?.donazioni?.valuta || 'EUR', nome: d.user, messaggio: d.messaggio })) return res.json({ ok: true, doppione: true });
+      if (!registroDonazioni.segna(chiave, { login, fonte: 'ext', importo: Math.round(d.importo * 100), valuta, nome: d.user, messaggio: d.messaggio })) return res.json({ ok: true, doppione: true });
       manager.alerts?.donazione(login, d);
       return res.json({ ok: true });
     }

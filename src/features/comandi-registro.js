@@ -52,6 +52,11 @@ export const MODULI = {
   scudo: { nome: ['Scudo', 'Shield', 'Escudo'], file: 'antibot.js', acceso: (s) => !!s.antibot?.attivo },
   modalita: { nome: ['Modalità della chat a tempo', 'Timed chat modes', 'Modos del chat con tiempo'], file: 'modalita-chat.js', acceso: () => true },
   muro: { nome: ['Muro delle emote', 'Emote wall', 'Muro de emotes'], file: 'muro.js', acceso: (s) => s.overlayMuro?.attivo === true },
+  // La dichiarazione che in chat risponde anche un'intelligenza artificiale
+  // (AI Act, art. 50) non dipende da nessun interruttore: la sua famiglia e'
+  // sempre accesa, e il suo comando non si spegne, non si rinomina e non si
+  // riserva. Chiunque in chat deve poterla chiedere con le parole di sempre.
+  trasparenza: { nome: ['Trasparenza IA', 'AI transparency', 'Transparencia de IA'], file: 'comandibase.js', acceso: () => true },
 };
 
 // AGGIUNGERE UN COMANDO E' UNA RIGA. Questa e' la forma completa: quel che non
@@ -70,7 +75,8 @@ export const MODULI = {
 //     gioco: 'slot',            il gioco del catalogo (giochi-conf.js): le sue
 //                               attese, a testa e per tutti, sono quelle vere
 //     spegnibile: false,        non si puo' spegnere (si puo')
-//     rinominabile: false }     non si puo' rinominare (si puo')
+//     rinominabile: false,      non si puo' rinominare (si puo')
+//     riservabile: false }      resta al livello di serie (si puo' alzare)
 //
 // Poi servono due cose sole, e i cancelli te le ricordano:
 //   · un gestore che conosca quell'id nel file della famiglia;
@@ -207,11 +213,16 @@ export const COMANDI = [
     cosa: ['Dice da quanto è cominciata la diretta.', 'Says how long ago the stream started.', 'Dice cuándo empezó el directo.'] },
   { id: 'bit', modulo: 'base', nomi: ['bit', 'bits', 'classificabit'], titolo: ['La classifica dei Bit', 'The Bits leaderboard', 'La clasificación de Bits'],
     cosa: ['Mostra chi ha messo più Bit e a che posto sei tu. Puoi chiedere oggi, settimana, mese, anno o sempre.', 'Shows who cheered the most Bits and where you stand. You can ask for today, week, month, year or all time.', 'Muestra quién ha puesto más Bits y en qué puesto estás. Puedes pedir hoy, semana, mes, año o siempre.'] },
-  { id: 'bot', modulo: 'base', nomi: ['bot', 'socialbot', 'ia', 'ai'], titolo: ['Parla col bot', 'Talk to the bot', 'Habla con el bot'],
-    cosa: ['Chiama il bot e gli fa una domanda.', 'Calls the bot and asks it a question.', 'Llama al bot y le hace una pregunta.'] },
+  { id: 'bot', modulo: 'trasparenza', nomi: ['bot', 'socialbot', 'ia', 'ai'], titolo: ['Chi risponde in chat', 'Who answers in chat', 'Quién responde en el chat'],
+    spegnibile: false, rinominabile: false, riservabile: false,
+    cosa: ['Dice a chi lo scrive che qui risponde un assistente automatico, e che alcune risposte in chat sono scritte da un\'intelligenza artificiale. Risponde sempre, a chiunque.', 'Tells whoever writes it that an automated assistant answers here, and that some chat replies are written by an artificial intelligence. It always answers, to anyone.', 'Dice a quien lo escribe que aquí responde un asistente automático, y que algunas respuestas en el chat las escribe una inteligencia artificial. Responde siempre, a cualquiera.'] },
 
-  { id: 'comando', modulo: 'chat', nomi: ['comando', 'cmd', 'comandi', 'command', 'commands'], titolo: ['Gestisci i comandi', 'Manage commands', 'Gestiona los comandos'], chi: 'mod',
-    cosa: ['Aggiunge, cambia e toglie comandi senza aprire il pannello.', 'Adds, changes and removes commands without opening the panel.', 'Añade, cambia y quita comandos sin abrir el panel.'] },
+  // L'elenco (!comando lista) e' di tutti; aggiungere, cambiare e togliere
+  // restano ai mod, e lo decide il gestore stesso (comandichat.js), non questa
+  // riga: alzare il livello qui chiude anche l'elenco, abbassarlo non apre le
+  // modifiche a nessuno.
+  { id: 'comando', modulo: 'chat', nomi: ['comando', 'cmd', 'comandi', 'command', 'commands'], titolo: ['Gestisci i comandi', 'Manage commands', 'Gestiona los comandos'],
+    cosa: ['Chiunque ne legge l\'elenco con !comando lista. Aggiungere, cambiare e togliere comandi senza aprire il pannello resta ai moderatori.', 'Anyone can read the list with !comando lista. Adding, changing and removing commands without opening the panel stays with the moderators.', 'Cualquiera lee la lista con !comando lista. Añadir, cambiar y quitar comandos sin abrir el panel sigue siendo cosa de los moderadores.'] },
   { id: 'addcom', modulo: 'chat', nomi: ['addcom'], titolo: ['Aggiungi un comando', 'Add a command', 'Añade un comando'], chi: 'mod',
     cosa: ['Scorciatoia per aggiungere un comando.', 'Shortcut to add a command.', 'Atajo para añadir un comando.'] },
   { id: 'delcom', modulo: 'chat', nomi: ['delcom'], titolo: ['Togli un comando', 'Remove a command', 'Quita un comando'], chi: 'mod',
@@ -347,6 +358,7 @@ function scelte(channel) {
 
 export const rinominabile = (c) => c.rinominabile !== false;
 export const spegnibile = (c) => c.spegnibile !== false;
+export const riservabile = (c) => c.riservabile !== false;
 
 export function nomiDi(c, scelta = {}) {
   if (!rinominabile(c)) return c.nomi;
@@ -373,7 +385,7 @@ export function vivo(channel, id) {
 
 export function livelloDi(c, scelta = {}) {
   const base = LIVELLI.includes(c.chi) ? c.chi : 'tutti';
-  const mio = LIVELLI.includes(scelta.chi) ? scelta.chi : base;
+  const mio = riservabile(c) && LIVELLI.includes(scelta.chi) ? scelta.chi : base;
   return LIVELLI.indexOf(mio) > LIVELLI.indexOf(base) ? mio : base;
 }
 
@@ -421,6 +433,7 @@ export function elenco(channel) {
       ...atteseDi(c, cfg),
       spegnibile: spegnibile(c),
       rinominabile: rinominabile(c),
+      riservabile: riservabile(c),
       acceso: suo,
       vivo: suo && modulo,
       nomi,
@@ -588,9 +601,24 @@ export function normalizza(dati) {
       if (nome && nome !== c.nomi[0]) riga.nome = nome;
     }
     const base = LIVELLI.includes(c.chi) ? c.chi : 'tutti';
-    if (LIVELLI.includes(v.chi) && LIVELLI.indexOf(v.chi) > LIVELLI.indexOf(base)) riga.chi = v.chi;
+    if (riservabile(c) && LIVELLI.includes(v.chi) && LIVELLI.indexOf(v.chi) > LIVELLI.indexOf(base)) riga.chi = v.chi;
     if (Object.keys(riga).length) fuori[c.id] = riga;
   }
+  return fuori;
+}
+
+// UN SALVATAGGIO RIGUARDA LE RIGHE CHE SI VEDEVANO. Gli stessi comandi stanno
+// in due liste del pannello (tutti in Comandi, i giochi anche in Giochi): chi
+// salva da una lista manda le sue righe, `ids`, e solo quelle cambiano. Le
+// scelte degli altri comandi restano quelle salvate, invece di essere coperte
+// da una lista che nessuno stava guardando.
+export function unisci(prima, arrivate, ids) {
+  const qui = new Set((Array.isArray(ids) ? ids : []).map(String));
+  const vecchie = normalizza(prima);
+  const nuove = normalizza(arrivate);
+  const fuori = {};
+  for (const [id, v] of Object.entries(vecchie)) if (!qui.has(id)) fuori[id] = v;
+  for (const [id, v] of Object.entries(nuove)) if (qui.has(id)) fuori[id] = v;
   return fuori;
 }
 

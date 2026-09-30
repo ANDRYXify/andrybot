@@ -124,10 +124,10 @@
 </head>
 <body>
   <div class="wrap">
-    <h1>Ascolto vocale</h1>
-    <p class="intro">Tieni questa scheda aperta mentre streammi: quando dici una parola chiave, il bot fa quello che hai impostato nei Moduli.</p>
+    <h1 data-t="titolo">Ascolto vocale</h1>
+    <p class="intro" data-t="intro">Tieni questa scheda aperta mentre streammi: quando dici una parola chiave, il bot fa quello che hai impostato nei Moduli.</p>
 
-    <div id="noApi" class="avviso" hidden>
+    <div id="noApi" class="avviso" data-t="noApi" hidden>
       Questo browser non ha il riconoscimento vocale nativo (come Dia, Arc, Brave).
       Nessun problema: userò il <strong>motore locale</strong>, che gira direttamente
       sul tuo dispositivo. La <strong>prima volta</strong> scarica un modello
@@ -139,16 +139,16 @@
     <div id="stato" class="stato"><span class="pallino"></span><span id="statoTesto">Fermo</span></div>
 
     <div class="sezione">
-      <h2>Frasi che sta ascoltando</h2>
-      <div id="frasi" class="frasi"><span class="vuoto">Avvia l'ascolto per caricarle…</span></div>
+      <h2 data-t="frasi">Frasi che sta ascoltando</h2>
+      <div id="frasi" class="frasi"><span class="vuoto" data-t="frasiVuoto">Avvia l'ascolto per caricarle…</span></div>
     </div>
 
     <div class="sezione">
-      <h2>Registro</h2>
-      <div id="log" class="log"><div class="riga vuoto">Nessuna attività per ora.</div></div>
+      <h2 data-t="registro">Registro</h2>
+      <div id="log" class="log"><div class="riga vuoto" data-t="registroVuoto">Nessuna attività per ora.</div></div>
     </div>
 
-    <p class="privacy"><strong>Privacy:</strong> la trascrizione avviene sul tuo dispositivo (motore locale) oppure tramite il servizio del browser (Chrome/Edge). Al bot arriva solo una piccola chiamata quando scatta una parola chiave.</p>
+    <p class="privacy" data-t="privacy"><strong>Privacy:</strong> la trascrizione avviene sul tuo dispositivo (motore locale) oppure tramite il servizio del browser (Chrome/Edge). Al bot arriva solo una piccola chiamata quando scatta una parola chiave.</p>
   </div>
 
   <script src="/voce.js" defer></script>
