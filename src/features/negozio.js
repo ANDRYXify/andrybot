@@ -481,6 +481,9 @@ export function rimborsaSospesi() {
   return resi;
 }
 
+// Lo storico si tiene un anno: la pulizia la fa girare il bot.
+export const potaStorico = (ora = Date.now()) => negozioDb.pota(ora);
+
 // ------------------------------------------------------------------ in chat
 
 // Gli articoli che si mostrano a tutti, dai piu' comprati. Quelli che si
