@@ -11,6 +11,7 @@ import assert from 'node:assert/strict';
 import { cartellaUsaEGetta } from '../aiuto.mjs';
 
 const usaEGetta = cartellaUsaEGetta('andrybot-dcgiro-');
+const { config } = await import('../../src/config.js');
 const { dcRuoli, dcLink, points, watchtime, presenze } = await import('../../src/db.js');
 const { giro, datiDi, sappiamo, nonParte } = await import('../../src/features/discord-giro.js');
 process.on('exit', () => usaEGetta.pulisci());
@@ -186,9 +187,16 @@ test('senza configurazione, o da spento, il giro non parte', async () => {
 // Le due cause hanno due rimedi, e il pannello deve dire quello giusto: a chi
 // ha il bot nel server e l'interruttore spento, «porta il bot» e' falso.
 test('perche\' non parte: il server che manca e l\'interruttore spento sono due risposte', () => {
-  assert.equal(nonParte(null), 'server');
-  assert.equal(nonParte({ token: 'tok', guild: '', attivo: true }), 'server');
-  assert.equal(nonParte({ token: '', guild: G, attivo: true }), 'server', 'senza un bot che entri nel server');
+  const casa = config.discordApp.botToken;
+  config.discordApp.botToken = '';
+  try {
+    assert.equal(nonParte(null), 'server');
+    assert.equal(nonParte({ token: 'tok', guild: '', attivo: true }), 'server');
+    assert.equal(nonParte({ token: '', guild: G, attivo: true }), 'server', 'senza un bot che entri nel server');
+    config.discordApp.botToken = 'bot-della-casa';
+    assert.equal(nonParte({ token: '', guild: G, attivo: true }), '', 'col bot della casa entra lui, e il giro parte');
+    assert.equal(nonParte({ token: '', guild: '', attivo: true }), 'server', 'ma un server ci vuole lo stesso');
+  } finally { config.discordApp.botToken = casa; }
   assert.equal(nonParte({ token: 'tok', guild: G, attivo: false }), 'spento');
   assert.equal(nonParte({ token: 'tok', guild: G, attivo: false }, { prova: true }), '', 'guardare da spento si puo\'');
   assert.equal(nonParte({ token: 'tok', guild: G, attivo: true }), '');

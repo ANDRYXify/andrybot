@@ -45,6 +45,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Mima, Non ridere, Reaction rush e Battaglia, i minigiochi della webcam, hanno lo stesso nome in tutto il pannello, anche in inglese e in spagnolo. [vai: effetti]
 - «Dai punti» a «Chi ha scritto» in un timer non paga più lo streamer: lì non ha scritto nessuno e il passo salta. E le monete vanno al nome utente, anche a chi si mostra con un nome in un altro alfabeto. [vai: moduli]
 - La moneta di base si chiama «coins» o «monedas» col pannello in inglese o in spagnolo, e l'anteprima dell'importazione dice «Timers» o «Temporizadores». [vai: moduli]
+- Chi toglie tutti i posti degli avvisi su Telegram o su Discord non se ne ritrova uno alla lettura dopo: il gruppo o il canale collegato diventa un posto una volta sola, quando arriva.
 
 ## 2026-09-27
 
