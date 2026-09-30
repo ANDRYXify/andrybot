@@ -130,6 +130,14 @@ comandi diversi da quelli della riga italiana.
   en> Before, no command could answer “when are you live?” with a real time.
   es> El comando !prossima
   es> Antes, ningún comando sabía responder a «¿cuándo estás en directo?» con una hora real.
+- Alla domanda «quando sei in diretta?» il bot risponde con la prossima diretta vera, presa dalla tua settimana o dal Programma di Twitch, e non da un testo scritto a mano.
+- [importante] In Account ci sono le «Preferenze del canale»: la lingua del bot in chat, il fuso, come si scrivono date, ore e durate, e da dove si leggono le prossime dirette. [vai: account]
+  > Le preferenze del canale
+  > Prima il bot scriveva le date all'italiana e con l'ora di Roma per tutti, anche per un canale inglese o spagnolo.
+- [importante] C'è !channelage, da quanto esiste il canale o quello di chi nomini, e !followage dice il tempo vero di calendario. La risposta di tutti e due la puoi riscrivere, nella lista dei comandi. [vai: moduli]
+  > !followage e !channelage a modo tuo
+  > Prima la risposta dei comandi pronti era fissa, e il tempo di !followage contava i mesi da trenta giorni.
+- Nei Moduli $data, $ora e $giorno seguono fuso e formato del canale, e $moneta, $sino, $eta, $colore, $animale, $soldi e $altezza escono nella lingua della chat. [vai: moduli]
 
 ## 2026-09-27
 

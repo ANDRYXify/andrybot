@@ -111,6 +111,8 @@ import { credenzialiInstagram } from '../features/instagram-credenziali.js';
 import * as storiaIg from '../features/storia-ig.js';
 import * as settimana from '../features/settimana.js';
 import * as prossime from '../features/prossime.js';
+import * as preferenze from '../features/preferenze.js';
+import { origineLinguaChat } from '../features/lingua-canale.js';
 import * as automatiche from '../features/automatiche.js';
 import * as campagne from '../features/campagne.js';
 import { paginaCampagna, titoloDi } from './campagna-vista.js';
@@ -4658,6 +4660,31 @@ STREAMER (${su.toUpperCase()}) e non c'entra con l'automazione del marketing.
   // Scollegare e' ritirare un consenso, e l'informativa promette che si puo':
   // un canale tornato all'Essenziale ha ancora quelli di quando pagava, e la
   // scheda in cui stavano e' chiusa. Ogni voce porta la rotta che la toglie.
+  // LE PREFERENZE DEL CANALE (docs/PREFERENZE.md): quello che lo streamer ha
+  // scelto, i valori che valgono adesso, e da dove viene la lingua di base.
+  // Salvare «di base» toglie la chiave: chi non sceglie segue la base.
+  const statoPreferenze = (login) => {
+    const settings = streamers.get(login)?.settings || {};
+    return {
+      scelte: preferenze.scelte(settings.preferenze),
+      valori: preferenze.preferenzeDi(login),
+      origineLingua: origineLinguaChat(login),
+      linguaTwitch: String(settings.linguaTwitch || '').slice(0, 2),
+      fusoSettimana: settimana.settimanaDi(settings).fuso,
+      suTwitch: prossime.suTwitch(login),
+      fonte: prossime.fonteDi(login),
+    };
+  };
+  app.get('/api/streamer/preferenze', requireOwner, (req, res) => {
+    res.json(statoPreferenze(currentUser(req).login));
+  });
+  app.post('/api/streamer/preferenze', requireOwner, (req, res) => {
+    const login = currentUser(req).login;
+    if (!preferenze.salvaPreferenze(login, req.body?.preferenze)) return res.status(404).json({ errore: 'canale sconosciuto' });
+    prossime.dimenticaProgramma(login);
+    res.json({ ok: true, ...statoPreferenze(login) });
+  });
+
   app.get('/api/account/collegamenti', requireOwner, (req, res) => {
     const login = currentUser(req).login;
     const tg = tgConf.get(login);
@@ -5493,7 +5520,9 @@ STREAMER (${su.toUpperCase()}) e non c'entra con l'automazione del marketing.
     }
     posti.ig = await storiaIgPossibile(login);
     // Il Programma e' di Twitch: c'e' per chi e' entrato con Twitch.
-    if (tokens.get('broadcaster', login)) posti.tw = { permesso: programmaOk(login) };
+    // `delloStreamer`: il Programma e' la fonte scelta delle prossime dirette,
+    // e la settimana non ci scrive (prossime.js); il pannello lo dice li' accanto.
+    if (tokens.get('broadcaster', login)) posti.tw = { permesso: programmaOk(login), delloStreamer: prossime.programmaDelloStreamer(login) };
     if (pronto) posti.dcCalendario = { acceso: !!s?.settings?.discordEventi?.acceso };
     return posti;
   };

@@ -26,6 +26,22 @@ import { leggiDurata, DURATA_DI_SERIE } from './modalita-chat.js';
 import { aggiornaSchermo } from './contatori.js';
 import { aChiPuo, eStaff } from './risposte.js';
 import * as prossime from './prossime.js';
+import * as formati from './preferenze.js';
+import { preferenzeDi } from './preferenze.js';
+
+// Le parole che alcune variabili pescano: nella lingua della chat del canale,
+// come tutto quello che il bot scrive (docs/PREFERENZE.md).
+const PAROLE_VARIABILI = {
+  it: { moneta: ['testa', 'croce'], sino: ['sì', 'no'], anni: ' anni',
+    colori: ['rosso', 'blu', 'verde', 'giallo', 'viola', 'arancione', 'rosa', 'nero', 'celeste', 'turchese', 'fucsia', 'oro'],
+    animali: ['gatto', 'cane', 'panda', 'drago', 'lama', 'bradipo', 'procione', 'capibara', 'pinguino', 'koala', 'volpe', 'riccio'] },
+  en: { moneta: ['heads', 'tails'], sino: ['yes', 'no'], anni: ' years old',
+    colori: ['red', 'blue', 'green', 'yellow', 'purple', 'orange', 'pink', 'black', 'sky blue', 'turquoise', 'fuchsia', 'gold'],
+    animali: ['cat', 'dog', 'panda', 'dragon', 'llama', 'sloth', 'raccoon', 'capybara', 'penguin', 'koala', 'fox', 'hedgehog'] },
+  es: { moneta: ['cara', 'cruz'], sino: ['sí', 'no'], anni: ' años',
+    colori: ['rojo', 'azul', 'verde', 'amarillo', 'morado', 'naranja', 'rosa', 'negro', 'celeste', 'turquesa', 'fucsia', 'dorado'],
+    animali: ['gato', 'perro', 'panda', 'dragón', 'llama', 'perezoso', 'mapache', 'capibara', 'pingüino', 'koala', 'zorro', 'erizo'] },
+};
 
 const log = makeLog('moduli');
 
@@ -1184,11 +1200,14 @@ export class ModulesEngine {
       } catch (e) { log.debug('cita:', e?.message || e); }
     }
 
-    // data/ora locali (runtime del server): utili per comandi tipo "!ora" o "!oggi".
-    const adesso = new Date();
-    const dataOggi = adesso.toLocaleDateString('it-IT');
-    const oraOra = adesso.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
-    const giornoOggi = adesso.toLocaleDateString('it-IT', { weekday: 'long' });
+    // data, ora e giorno di adesso, nella lingua, nel fuso e nel formato del
+    // canale (preferenze.js): un canale inglese a New York non legge l'ora di Roma.
+    const pref = preferenzeDi(ctx.channel);
+    const adesso = Date.now();
+    const dataOggi = formati.data(adesso, pref);
+    const oraOra = formati.ora(adesso, pref);
+    const giornoOggi = formati.giorno(adesso, pref);
+    const P = PAROLE_VARIABILI[pref.lingua] || PAROLE_VARIABILI.it;
 
     // SHOUTOUT: l'ultimo gioco/titolo del canale dell'utente citato DOPO il
     // comando ($touser = primo argomento). Es. "!so giorgiottv" →
@@ -1247,22 +1266,22 @@ export class ModulesEngine {
       percentuale: () => ri(0, 100) + '%',
       percento: () => ri(0, 100) + '%',
       dado: () => String(ri(1, 6)),
-      moneta: () => scegli(['testa', 'croce']),
-      sino: () => scegli(['sì', 'no']),
-      altezza: () => (1.40 + Math.random() * 0.70).toFixed(2).replace('.', ',') + ' m',
+      moneta: () => scegli(P.moneta),
+      sino: () => scegli(P.sino),
+      altezza: () => formati.numero(1.40 + Math.random() * 0.70, pref, { decimali: 2 }) + ' m',
       peso: () => ri(40, 130) + ' kg',
       lunghezza: () => ri(1, 30) + ' cm',
       grandezza: () => ri(1, 50) + ' cm',
-      eta: () => ri(1, 99) + ' anni',
+      eta: () => ri(1, 99) + P.anni,
       temperatura: () => ri(-10, 45) + '°C',
       velocita: () => ri(1, 320) + ' km/h',
       distanza: () => ri(1, 1000) + ' km',
-      soldi: () => ri(0, 100000).toLocaleString('it-IT') + ' €',
-      euro: () => ri(0, 100000).toLocaleString('it-IT') + ' €',
+      soldi: () => formati.euro(ri(0, 100000), pref),
+      euro: () => formati.euro(ri(0, 100000), pref),
       livello: () => String(ri(1, 100)),
-      colore: () => scegli(['rosso', 'blu', 'verde', 'giallo', 'viola', 'arancione', 'rosa', 'nero', 'celeste', 'turchese', 'fucsia', 'oro']),
+      colore: () => scegli(P.colori),
       emoji: () => scegli(['😂', '🔥', '💀', '😎', '🤡', '👑', '💜', '🚀', '🎉', '🥶', '🤯', '😳', '🫡', '🧠', '⚡', '🍕', '🐐']),
-      animale: () => scegli(['gatto', 'cane', 'panda', 'drago', 'lama', 'bradipo', 'procione', 'capibara', 'pinguino', 'koala', 'volpe', 'riccio']),
+      animale: () => scegli(P.animali),
     };
 
     // Anche queste si pagano solo se citate: una lettura in piu' per ogni

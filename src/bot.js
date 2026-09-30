@@ -343,8 +343,10 @@ export class BotManager {
     // passato mentre il bot era fermo.
     // Il Programma di Twitch va allo stesso passo e per la stessa ragione: e' la
     // stessa settimana scritta in un altro posto.
-    this._eventiDcTimer = setInterval(() => { this._giroEventiDiscord(); this._giroProgramma(); this._giroInstagram(); }, 6 * 60 * 60_000);
-    setTimeout(() => { this._giroEventiDiscord(); this._giroProgramma(); this._giroInstagram(); }, 150_000);
+    // La lingua del canale su Twitch, per la lingua della chat di base
+    // (lingua-canale.js): cambia di rado, quattro sguardi al giorno avanzano.
+    this._eventiDcTimer = setInterval(() => { this._giroEventiDiscord(); this._giroProgramma(); this._giroInstagram(); this._giroLingue(); }, 6 * 60 * 60_000);
+    setTimeout(() => { this._giroEventiDiscord(); this._giroProgramma(); this._giroInstagram(); this._giroLingue(); }, 150_000);
     // La pubblicità: il giro legge il programma di Twitch, e non a ogni
     // passaggio (vedi `pub.vaGuardato`). Il preavviso e il «sono tornato» non
     // li dice il giro: sono istanti, e li dicono due sveglie puntate lì.
@@ -1963,6 +1965,24 @@ export class BotManager {
   // legale, un segmento tolto a mano che va rimesso). Scrive solo la memoria di
   // cosa e' nostro, e solo se nel frattempo la settimana non e' stata salvata:
   // in quel caso il salvataggio ha gia' fatto il suo giro, e il nostro e' vecchio.
+  // LA LINGUA DEL CANALE SU TWITCH (broadcaster_language), che vale come lingua
+  // della chat quando lo streamer non ne ha scelta una. Si scrive solo se e'
+  // cambiata: un salvataggio delle impostazioni per niente, quattro volte al
+  // giorno per ogni canale, sarebbe un rischio senza motivo.
+  async _giroLingue() {
+    for (const s of streamers.list()) {
+      try {
+        if (!s.user_id || !prossime.suTwitch(s.login)) continue;
+        const ci = await this.helix.getChannelInfo(s.user_id).catch(() => null);
+        const l = String(ci?.broadcaster_language || '').slice(0, 2).toLowerCase();
+        if (!l) continue;
+        const ora = streamers.get(s.login)?.settings || {};
+        if (ora.linguaTwitch === l) continue;
+        streamers.setSettings(s.login, { ...ora, linguaTwitch: l });
+      } catch (err) { log.debug('lingua', s.login, err?.message || err); }
+    }
+  }
+
   async _giroProgramma() {
     for (const s of streamers.list()) {
       try {

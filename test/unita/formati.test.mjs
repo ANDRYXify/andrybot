@@ -113,3 +113,17 @@ test('le preferenze del canale: la base quando non si sceglie, la scelta quando 
   assert.equal(p.lingua, 'es'); assert.equal(p.ora, '24'); assert.equal(p.fuso, 'America/Chicago');
   assert.equal(streamers.get('pref').settings.linguaTwitch, 'en', 'salvare le preferenze non tocca il resto delle impostazioni');
 });
+
+test('da quanto tempo: anni, mesi e giorni di calendario, non divisioni per 365 e 30', () => {
+  const ad = Date.parse('2026-09-30T10:00:00Z');
+  const t = (iso, lingua = 'it') => F.tempoDa(Date.parse(iso), { lingua }, { adesso: ad });
+  assert.equal(t('2021-03-12T18:00:00Z'), '5 anni e 6 mesi');
+  assert.equal(t('2021-03-12T18:00:00Z', 'en'), '5 years and 6 months');
+  assert.equal(t('2026-08-31T10:00:00Z', 'es'), '30 días', 'dal 31 agosto al 30 settembre sono 30 giorni, non «un mese»');
+  assert.equal(t('2024-02-29T12:00:00Z'), '2 anni e 7 mesi');
+  assert.equal(t('2025-09-30T09:00:00Z'), '1 anno');
+  assert.equal(t('2026-09-29T09:00:00Z'), '1 giorno');
+  assert.equal(t('2026-09-30T06:00:00Z', 'en'), '4 hours');
+  assert.equal(t('2026-09-30T09:40:00Z'), 'meno di un\'ora');
+  assert.equal(t('2026-08-15T10:00:00Z'), '1 mese e 15 giorni');
+});

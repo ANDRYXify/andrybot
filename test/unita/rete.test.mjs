@@ -161,7 +161,7 @@ test('un coro finisce nella rete; un messaggio normale no', async () => {
   streamers.setEnabled(ch, true);
   streamers.setSettings(ch, { antibot: { attivo: true, avvisa: false } });
   const scudo = new ab.AntiBot({ helix: {
-    deleteMessage: async () => {}, chatSoloFollower: async () => ({ ok: true }),
+    deleteMessage: async () => ({ ok: true }), chatSoloFollower: async () => ({ ok: true }),
     chatLenta: async () => ({ ok: true }), shieldMode: async () => ({ ok: true }),
   } });
   const testo = 'venite tutti sul canale che vi regalo le monete gratis';

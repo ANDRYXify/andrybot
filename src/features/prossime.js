@@ -105,6 +105,19 @@ async function segmentiDi(helix, login, adesso) {
 // dal pannello: chi lo guarda subito dopo deve vedere quello nuovo.
 export const dimenticaProgramma = (login) => _programmi.delete(String(login || '').toLowerCase());
 
+// Senza chiedere niente a nessuno: la settimana, o il Programma se e' gia'
+// stato letto nell'ultimo quarto d'ora. Serve a chi non puo' aspettare Twitch
+// (il cervello, mentre scrive in chat): se il Programma non e' in memoria non
+// si sa, e non si inventa.
+export function prossimaInMemoria(login, adesso = Date.now()) {
+  const ch = String(login || '').toLowerCase();
+  if (fonteDi(ch) === 'twitch') {
+    const c = _programmi.get(ch);
+    return c && adesso - c.ts < CACHE_MS ? (daProgramma(c.segmenti, 1, adesso)[0] || null) : null;
+  }
+  return daSettimana(settimanaDi(streamers.get(ch)?.settings || {}), 1, adesso)[0] || null;
+}
+
 // { fonte, dirette, errore? }. Un Programma che non si legge non diventa una
 // settimana: lo si dice, invece di rispondere con un'altra fonte.
 export async function prossimeDirette(login, quante = 1, { helix = null, adesso = Date.now() } = {}) {
@@ -133,13 +146,13 @@ const FRASI = {
   en: {
     c: (q, t) => `The next stream is ${q}${t ? `: ${t}` : ''}.`,
     nessuna: 'There\'s no next stream on the schedule yet.',
-    illeggibile: 'I can\'t read the Twitch schedule right now.',
+    illeggibile: 'I can\'t read the Twitch Schedule right now.',
     daDecidere: 'to be decided',
   },
   es: {
     c: (q, t) => `El próximo directo es ${q}${t ? `: ${t}` : ''}.`,
     nessuna: 'Todavía no hay un próximo directo en el horario.',
-    illeggibile: 'Ahora no consigo leer el horario de Twitch.',
+    illeggibile: 'Ahora no consigo leer el Programa de Twitch.',
     daDecidere: 'por decidir',
   },
 };

@@ -241,7 +241,7 @@ export const CATALOGO = [
       { k: 'posta', tipo: 'monete', def: 50, min: 1, max: 100000, eti: T('Puntata di chi non dice quanto', 'Bet for whoever does not say how much', 'Apuesta de quien no dice cuánto') },
       { k: 'massimo', tipo: 'monete', def: 0, min: 0, max: 1000000, eti: T('Puntata massima (0 = nessun limite)', 'Maximum bet (0 = no limit)', 'Apuesta máxima (0 = sin límite)') },
       { k: 'raccolta', tipo: 'secondi', def: 45, min: 15, max: 300, eti: T('Tempo per puntare', 'Time to bet', 'Tiempo para apostar') },
-      { k: 'corridori', tipo: 'elenco', def: CORSA_CORRIDORI, min: 2, max: 8, lungo: 40, segnaposto: [], eti: T('I corridori, dal favorito al più lento', 'The runners, from favourite to slowest', 'Los corredores, del favorito al más lento') },
+      { k: 'corridori', tipo: 'elenco', def: CORSA_CORRIDORI, min: 2, max: 8, lungo: 40, segnaposto: [], eti: T('I corridori, dal favorito al più lento', 'The runners, from favorite to slowest', 'Los corredores, del favorito al más lento') },
       ...ATTESE({ tutti: 300, etiTesta: T('Attesa fra due puntate, a testa', 'Wait between two bets, each', 'Espera entre dos apuestas, cada uno'), etiTutti: T('Attesa fra due corse, per tutti', 'Wait between two races, for everyone', 'Espera entre dos carreras, para todos') }),
     ],
     resa: { tipo: 'corsa' },
