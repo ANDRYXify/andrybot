@@ -96,6 +96,10 @@ const allargati = [];
 for (const admin of [false, true]) {
   for (const lang of ['it', 'en', 'es']) {
     const p = await b.newPage({ viewport: { width: 1366, height: 800 } });
+    // I giri guidati si aprono da soli in ogni scheda nuova, a un tempo loro:
+    // senza questa scelta («non mostrarli piu'») coprirebbero un tasto a caso
+    // quando la pagina arriva in fretta. Qui non si prova il giro.
+    await p.addInitScript(() => { try { localStorage.setItem('sb-giro', JSON.stringify({ viste: {}, mai: true })); } catch {} });
     await p.goto(`http://127.0.0.1:${PORTA}/?demo=1&lang=${lang}`, { waitUntil: 'domcontentloaded' });
     await p.waitForFunction(() => document.querySelector('#nav-drawer .drawer-voce'), null, { timeout: 15000 }).catch(() => {});
     if (admin) await p.evaluate(() => { stato = { ...stato, isAdmin: true }; render(); });
