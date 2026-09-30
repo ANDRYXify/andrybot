@@ -11,7 +11,7 @@ const CAMPI = {
     ['testo', ['Testo', 'Text', 'Texto'], 'frase'],
     ['carattere', ['Carattere', 'Typeface', 'Tipografía'], 'scelta', 'caratteri'],
     ['corpo', ['Corpo', 'Size', 'Tamaño'], 'numero', 8, 240],
-    ['colore', ['Colore', 'Colour', 'Color'], 'colore'],
+    ['colore', ['Colore', 'Color', 'Color'], 'colore'],
     ['max', ['Segni al massimo', 'Max characters', 'Caracteres máximos'], 'numero', 4, 200],
     ['spaziatura', ['Spaziatura', 'Letter spacing', 'Espaciado'], 'numero', -10, 40],
     ['maiuscolo', ['Tutto maiuscolo', 'All caps', 'Todo mayúsculas'], 'sino'],
@@ -19,7 +19,7 @@ const CAMPI = {
   targhetta: [
     ['testo', ['Testo', 'Text', 'Texto'], 'frase'],
     ['sfondo', ['Fondo', 'Background', 'Fondo'], 'colore'],
-    ['colore', ['Colore', 'Colour', 'Color'], 'colore'],
+    ['colore', ['Colore', 'Color', 'Color'], 'colore'],
     ['carattere', ['Carattere', 'Typeface', 'Tipografía'], 'scelta', 'caratteri'],
     ['corpo', ['Corpo', 'Size', 'Tamaño'], 'numero', 10, 200],
     ['punto', ['Pallino davanti', 'Dot in front', 'Punto delante'], 'sino'],
@@ -35,18 +35,18 @@ const CAMPI = {
   riga: [
     ['larghezza', ['Larghezza', 'Width', 'Ancho'], 'numero', 1, 2400],
     ['altezza', ['Altezza', 'Height', 'Alto'], 'numero', 1, 1000],
-    ['colore', ['Colore', 'Colour', 'Color'], 'colore'],
+    ['colore', ['Colore', 'Color', 'Color'], 'colore'],
   ],
   striscia: [
     ['larghezza', ['Larghezza', 'Width', 'Ancho'], 'numero', 2, 1200],
     ['inclinazione', ['Inclinazione', 'Slant', 'Inclinación'], 'numero', -80, 80],
-    ['colore', ['Colore', 'Colour', 'Color'], 'colore'],
+    ['colore', ['Colore', 'Color', 'Color'], 'colore'],
   ],
 };
 
 const CAMPI_FONDO = [
   ['tipo', ['Tipo', 'Kind', 'Tipo'], 'scelta', 'fondi'],
-  ['tinta', ['Tinta', 'Base colour', 'Tinte'], 'colore'],
+  ['tinta', ['Tinta', 'Base color', 'Tinte'], 'colore'],
   ['alone', ['Alone', 'Glow', 'Halo'], 'colore'],
   ['alone2', ['Secondo alone', 'Second glow', 'Segundo halo'], 'colore'],
   ['cx', ['Alone: da sinistra', 'Glow: from left', 'Halo: desde la izquierda'], 'numero', 0, 100],
