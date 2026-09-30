@@ -152,11 +152,6 @@ comandi diversi da quelli della riga italiana.
   es> !followage y !channelage a tu manera
   es> Antes la respuesta de los comandos de serie era fija, y el tiempo de !followage contaba los meses de treinta días.
 - Nei Moduli $data, $ora e $giorno seguono fuso e formato del canale, e $moneta, $sino, $eta, $colore, $animale, $soldi e $altezza escono nella lingua della chat. [vai: moduli]
-- [importante] Nella scheda «Negozio» apri il negozio del canale: chi guarda spende le monete con !compra, per un effetto, il VIP, un ruolo su Discord, una canzone o un oggetto da tenere. [vai: negozio]
-  > Il negozio del canale
-  > Le monete guadagnate stando in chat adesso si spendono: tu decidi cosa c'è, quanto costa e chi lo compra, e se qualcosa non parte le monete tornano.
-- L'informativa sulla privacy dice cosa tiene il negozio: chi ha comprato cosa e quando, per un anno, e gli oggetti nella borsa finché l'articolo resta.
-
   en: In Modules, $data, $ora and $giorno follow your channel’s time zone and format, and $moneta, $sino, $eta, $colore, $animale, $soldi and $altezza come out in the chat’s language.
   es: En los Módulos, $data, $ora y $giorno siguen la zona horaria y el formato del canal, y $moneta, $sino, $eta, $colore, $animale, $soldi y $altezza salen en el idioma del chat.
 - [importante] Nell'Overlay Studio c'è il «Conto alla pubblicità»: quanto manca alla prossima pausa di Twitch e, durante la pausa, quanto manca al tuo ritorno. Scende da solo e segue anche i rinvii. [vai: alert]
@@ -198,6 +193,18 @@ comandi diversi da quelli della riga italiana.
 - Nella catena di parole ogni parola buona ha la sua risposta, con le due lettere da cui si riparte: prima passava in silenzio e sembrava che il gioco non andasse. [vai: giochi]
   en: In the word chain every valid word gets its own reply, with the two letters to continue from: before, it went by in silence and the game looked broken.
   es: En la cadena de palabras cada palabra válida tiene su respuesta, con las dos letras desde las que se sigue: antes pasaba en silencio y parecía que el juego no funcionaba.
+- [importante] Nella scheda «Negozio» apri il negozio del canale: chi guarda spende le monete con !compra, per un effetto, il VIP, un ruolo su Discord, una canzone o un oggetto da tenere. [vai: negozio]
+  en: In the “Shop” tab you open the channel shop: viewers spend their coins with !compra on an effect, VIP, a Discord role, a song or an item to keep.
+  es: En la pestaña «Tienda» abres la tienda del canal: quien mira gasta sus monedas con !compra en un efecto, el VIP, un rol de Discord, una canción o un objeto para guardar.
+  > Il negozio del canale
+  > Le monete guadagnate stando in chat adesso si spendono: tu decidi cosa c'è, quanto costa e chi lo compra, e se qualcosa non parte le monete tornano.
+  en> The channel shop
+  en> The coins earned by being in chat can now be spent: you decide what’s there, what it costs and who can buy it, and if something doesn’t go through the coins come back.
+  es> La tienda del canal
+  es> Las monedas ganadas estando en el chat ahora se gastan: tú decides qué hay, cuánto cuesta y quién lo compra, y si algo no sale las monedas vuelven.
+- L'informativa sulla privacy dice cosa tiene il negozio: chi ha comprato cosa e quando, per un anno, e gli oggetti nella borsa finché l'articolo resta.
+  en: The privacy notice says what the shop keeps: who bought what and when, for a year, and the items in the bag for as long as the item is there.
+  es: La política de privacidad dice qué guarda la tienda: quién compró qué y cuándo, durante un año, y los objetos de la bolsa mientras el artículo siga ahí.
 
 ## 2026-09-27
 
