@@ -150,9 +150,20 @@
     return ore > 0 ? parola(ore, 'h') : W.poco;
   }
 
+  function numero(n, p, opz) {
+    const v = valori(p);
+    const d = opz && Number.isFinite(opz.decimali) ? opz.decimali : 0;
+    return new Intl.NumberFormat(LOCALE[v.lingua], { minimumFractionDigits: d, maximumFractionDigits: d }).format(Number(n) || 0);
+  }
+
+  function euro(n, p) {
+    const v = valori(p);
+    return new Intl.NumberFormat(LOCALE[v.lingua], { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(Number(n) || 0);
+  }
+
   function primoGiorno(p) { return valori(p).settimana === 'dom' ? 0 : 1; }
 
-  const FORMATI = { LINGUE, DATE, ORE, SETTIMANE, DURATE, FUSO_BASE, fusoValido, valori, data, ora, giorno, quando, durata, tempoDa, primoGiorno };
+  const FORMATI = { LINGUE, DATE, ORE, SETTIMANE, DURATE, FUSO_BASE, fusoValido, valori, data, ora, giorno, quando, durata, tempoDa, numero, euro, primoGiorno };
   if (typeof module !== 'undefined' && module.exports) module.exports = FORMATI;
   else radice.SB_FORMATI = FORMATI;
 })(typeof window !== 'undefined' ? window : globalThis);

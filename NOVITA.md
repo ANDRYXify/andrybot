@@ -59,6 +59,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - [importante] C'è !channelage, da quanto esiste il canale o quello di chi nomini, e !followage dice il tempo vero di calendario. La risposta di tutti e due la puoi riscrivere, nella lista dei comandi. [vai: moduli]
   > !followage e !channelage a modo tuo
   > Prima la risposta dei comandi pronti era fissa, e il tempo di !followage contava i mesi da trenta giorni.
+- Nei Moduli $data, $ora e $giorno seguono fuso e formato del canale, e $moneta, $sino, $eta, $colore, $animale, $soldi e $altezza escono nella lingua della chat. [vai: moduli]
 
 ## 2026-09-27
 
