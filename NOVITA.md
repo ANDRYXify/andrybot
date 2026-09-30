@@ -667,7 +667,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
   es: Con el token de Ko-fi cada propina enciende el aviso «Donación» en el overlay y el agradecimiento en el chat, y hace subir el objetivo en euros, que también se puede mostrar bajo el botón «Apóyame».
 - Nel player la disposizione «libera» mette ogni pezzo dove lo trascini sulla tela: copertina, righe, barra, tempi e onde, con righe e barra larghe quanto vuoi. Si parte da dove i pezzi stanno già, e in diretta è uguale. [vai: alert]
   en: In the player, the “free” layout puts each piece where you drag it on the canvas: cover art, lines, bar, times and waves, with lines and bar as wide as you like. It starts from where they are, and live is the same.
-  es: En el reproductor, la disposición «libre» pone cada pieza donde la arrastras en el lienzo: portada, líneas, barra, tiempos y ondas, con líneas y barra del ancho que quieras. Parte de donde ya están, y en directo es igual.
+  es: En el reproductor, la disposición «libre» pone cada pieza donde la arrastras en el lienzo: portada, líneas, barra, tiempos y ondas, con líneas y barra del ancho que quieras. Parte de donde ya están y en directo es igual.
 - Gli extra Clip automatiche e Squadra costano 1,99 € al mese ciascuno, i comandi a voce 0,99 €: il listino dice quello che Stripe addebita, e i tre insieme restano 3,99 € con «Tutto». [vai: sottoscrizione]
   en: The Automatic Clips and Team extras cost €1.99 a month each, and Voice Commands €0.99: the price list says what Stripe charges, and all three together stay at €3.99 with “Everything”.
   es: Los extras Clips Automáticos y Equipo cuestan 1,99 € al mes cada uno, y Comandos por Voz 0,99 €: la lista de precios dice lo que cobra Stripe, y los tres juntos siguen costando 3,99 € con «Todo».
