@@ -298,7 +298,7 @@ test('quando: solo in diretta, o fra due date', async () => {
   articolo(ch, { nome: 'Natale', quando: 'date', dal: ORA + 86400_000, al: ORA + 2 * 86400_000 });
   const presto = await compra(ch, 'zoe', 'natale');
   assert.equal(presto.momento, 'chiuso');
-  assert.match(S.frase(ch, presto.momento, presto.dati), /si compra dal 1 ottobre al 2 ottobre/);
+  assert.match(S.frase(ch, presto.momento, presto.dati), /si compra dal 01\/10\/2026 al 02\/10\/2026/, 'le date nel formato del canale');
   assert.equal((await compra(ch, 'zoe', 'natale', { ora: ORA + 1.5 * 86400_000 })).ok, true);
   assert.equal(S.normArticolo({ nome: 'X', tipo: 'oggetto', quando: 'date', dal: 5, al: 4 }).errore, 'date');
 });

@@ -25,7 +25,7 @@
 // Il negozio di un canale non vede niente degli altri: ogni lettura e ogni
 // scrittura porta il canale, e un articolo si trova solo dentro il suo.
 import { negozio as negozioDb, streamers } from '../db.js';
-import { linguaChat } from './lingua-canale.js';
+import { preferenzeDi, numero, durata, data } from './preferenze.js';
 import { canaleHa } from './accesso.js';
 import { nomeIn } from './comandi-registro.js';
 import { aChi, spazioPer, inMessaggi } from './risposte.js';
@@ -116,35 +116,30 @@ export const scorteDi = (a) => (a.scorta !== null && a.scorta !== undefined ? { 
 // ------------------------------------------------------------------ le frasi
 //
 // Tutto quello che il negozio dice in chat sta qui, in un posto solo, nelle
-// tre lingue della chat (lingua-canale.js). Quando arrivera' la voce del
-// canale (docs/VOCE.md) queste diventano momenti del suo frasario, e il resto
-// del file non se ne accorge: chiama frase() e basta.
-const LOCALE = { it: 'it-IT', en: 'en-US', es: 'es-ES' };
+// tre lingue della chat. La lingua, i numeri, le date e le durate sono quelli
+// delle preferenze del canale (preferenze.js), come nel resto del bot. Quando
+// arrivera' la voce del canale (docs/VOCE.md) queste diventano momenti del suo
+// frasario, e il resto del file non se ne accorge: chiama frase() e basta.
 const MONETA = { it: 'monete', en: 'coins', es: 'monedas' };
-const lin = (l) => (LOCALE[l] ? l : 'it');
-export const cifra = (n, l = 'it') => new Intl.NumberFormat(LOCALE[lin(l)]).format(Math.max(0, Math.trunc(Number(n) || 0)));
+const LINGUE = ['it', 'en', 'es'];
+const lin = (l) => (LINGUE.includes(l) ? l : 'it');
+// Le preferenze da usare: quelle di un canale, oppure solo una lingua (per
+// chi deve dire una cosa in una lingua data).
+const pref = (p) => (p && typeof p === 'object' ? p : { lingua: lin(p) });
+export const cifra = (n, p = 'it') => numero(Math.max(0, Math.trunc(Number(n) || 0)), pref(p));
 export const monetaDi = (canale, l = 'it') => {
   const n = streamers.get(String(canale || '').toLowerCase())?.settings?.nomeMonete;
   return (n && String(n).trim()) || MONETA[lin(l)];
 };
-const giorno = (ms, l) => new Date(Number(ms) || 0).toLocaleDateString(LOCALE[lin(l)], { day: 'numeric', month: 'long', timeZone: 'Europe/Rome' });
-
-export function tempo(ms, l = 'it') {
-  const s = Math.max(1, Math.ceil((Number(ms) || 0) / 1000));
-  const [n, u] = s < 60 ? [s, 0] : s < 3600 ? [Math.ceil(s / 60), 1] : [Math.ceil(s / 3600), 2];
-  const P = {
-    it: [['secondo', 'secondi'], ['minuto', 'minuti'], ['ora', 'ore']],
-    en: [['second', 'seconds'], ['minute', 'minutes'], ['hour', 'hours']],
-    es: [['segundo', 'segundos'], ['minuto', 'minutos'], ['hora', 'horas']],
-  }[lin(l)][u];
-  return `${n} ${n === 1 ? P[0] : P[1]}`;
-}
+// Quanto manca, arrotondato al secondo in su: «0 secondi» non si dice a nessuno.
+export const tempo = (ms, p = 'it') => durata(Math.max(1, Math.ceil((Number(ms) || 0) / 1000)) * 1000, pref(p));
 
 // Un requisito detto a parole, come si finisce una frase che comincia con «è
 // per chi», «it's for anyone who», «es para quien».
-export function requisitoAParole(r, l = 'it') {
+export function requisitoAParole(r, p = 'it') {
+  const l = lin(pref(p).lingua);
   const n = Number(r?.soglia) || 0;
-  const c = cifra(n, l);
+  const c = cifra(n, p);
   const T = {
     it: {
       mesi: n === 1 ? 'è abbonato da almeno un mese' : `è abbonato da almeno ${c} mesi`,
@@ -381,7 +376,7 @@ export const MOMENTI = Object.keys(FRASI.it);
 // Quello che il negozio dice in chat: un momento, i suoi dati, la lingua del
 // canale. Un momento che non c'e' e' un errore di chi chiama, e torna vuoto.
 export function frase(canale, momento, dati = {}) {
-  const l = lin(linguaChat(canale));
+  const l = lin(preferenzeDi(canale).lingua);
   const f = FRASI[l][momento] || FRASI.it[momento];
   return f ? f(dati) : '';
 }
@@ -404,7 +399,8 @@ const comandi = (ch) => ({
 // l'acquisto si prova senza rete e senza Twitch.
 export async function compra({ canale, msg, parola, nota = '', live = false, fonti = {}, esecutori = {}, dire = () => {}, ora = Date.now() } = {}) {
   const ch = String(canale || '').toLowerCase();
-  const l = lin(linguaChat(ch));
+  const pf = preferenzeDi(ch);
+  const l = lin(pf.lingua);
   const c = comandi(ch);
   const moneta = monetaDi(ch, l);
   const base = { nome: nomeDi(msg), moneta, ...c };
@@ -413,16 +409,16 @@ export async function compra({ canale, msg, parola, nota = '', live = false, fon
   if (!p) return no('come');
   const a = negozioDb.perParola(ch, p);
   if (!a || !a.attivo) return no('nonCe', { parola: p });
-  const art = { articolo: a.nome, parola: a.parola, prezzo: cifra(a.prezzo, l), tipo: a.tipo };
+  const art = { articolo: a.nome, parola: a.parola, prezzo: cifra(a.prezzo, pf), tipo: a.tipo };
 
   // 1. Tutto quello che puo' dire di no senza toccare niente.
   if (a.quando === 'diretta' && !live) return no('chiuso', { ...art, quando: 'diretta' });
-  if (a.quando === 'date' && (ora < a.dal || ora > a.al)) return no('chiuso', { ...art, quando: 'date', dal: giorno(a.dal, l), al: giorno(a.al, l) });
+  if (a.quando === 'date' && (ora < a.dal || ora > a.al)) return no('chiuso', { ...art, quando: 'date', dal: data(a.dal, pf), al: data(a.al, pf) });
   const ostacolo = negozioDb.ostacolo(ch, a, msg?.user, ora);
-  if (ostacolo && ostacolo.motivo !== 'monete') return no(ostacolo.motivo, datiOstacolo(ostacolo, a, l));
+  if (ostacolo && ostacolo.motivo !== 'monete') return no(ostacolo.motivo, datiOstacolo(ostacolo, a, pf));
   const r = await requisiti.verifica(a.requisiti, { canale: ch, msg, fonti, ora });
-  if (r) return no(r.esito === 'no' ? 'requisito' : 'nonSo', { ...art, requisito: requisitoAParole(r.req, l) });
-  if (ostacolo) return no('monete', { ...art, saldo: cifra(ostacolo.saldo, l) });
+  if (r) return no(r.esito === 'no' ? 'requisito' : 'nonSo', { ...art, requisito: requisitoAParole(r.req, pf) });
+  if (ostacolo) return no('monete', { ...art, saldo: cifra(ostacolo.saldo, pf) });
   const testo = String(nota || '').replace(/\s+/g, ' ').trim().slice(0, 300);
   if (tipi.serveTesto(a) && !testo) return no('serveTesto', { ...art, domanda: a.dati?.domanda || '' });
   const nasce = tipi.nascita(a.tipo);
@@ -437,11 +433,11 @@ export async function compra({ canale, msg, parola, nota = '', live = false, fon
   const pr = negozioDb.prenota(ch, { articolo: a.id, user: msg?.user, display: nomeDi(msg), nota: testo, ...nasce, ora });
   if (!pr.ok) {
     const quale = pr.articolo || a;
-    if (pr.motivo === 'monete') return no('monete', { ...art, saldo: cifra(pr.saldo ?? 0, l) });
+    if (pr.motivo === 'monete') return no('monete', { ...art, saldo: cifra(pr.saldo ?? 0, pf) });
     if (pr.motivo === 'nonCe') return no('nonCe', { parola: p });
-    return no(pr.motivo, datiOstacolo(pr, quale, l));
+    return no(pr.motivo, datiOstacolo(pr, quale, pf));
   }
-  const pagato = { ...art, prezzo: cifra(pr.articolo.prezzo, l), saldo: cifra(pr.saldo, l), id: pr.id };
+  const pagato = { ...art, prezzo: cifra(pr.articolo.prezzo, pf), saldo: cifra(pr.saldo, pf), id: pr.id };
   const fatto = (momento, dati = {}) => ({ ok: true, momento, dati: { ...base, ...pagato, ...dati } });
   if (nasce.stato === 'fatto') return fatto('fattoBorsa');
   if (nasce.stato === 'da_consegnare') return fatto('fattoCoda', { streamer: streamers.get(ch)?.display || ch });
@@ -462,14 +458,14 @@ export async function compra({ canale, msg, parola, nota = '', live = false, fon
   return {
     ok: false,
     momento: 'rimborso',
-    dati: { ...base, ...art, perche: percheAParole(motivo, l, c), codice: motivo, prezzo: cifra(pr.articolo.prezzo, l), saldo: cifra(reso.saldo ?? 0, l), id: pr.id },
+    dati: { ...base, ...art, perche: percheAParole(motivo, l, c), codice: motivo, prezzo: cifra(pr.articolo.prezzo, pf), saldo: cifra(reso.saldo ?? 0, pf), id: pr.id },
   };
 }
 
-function datiOstacolo(o, a, l) {
-  const art = { articolo: a.nome, parola: a.parola, prezzo: cifra(a.prezzo, l) };
+function datiOstacolo(o, a, pf) {
+  const art = { articolo: a.nome, parola: a.parola, prezzo: cifra(a.prezzo, pf) };
   if (o.motivo === 'persona') return { ...art, quante: a.perPersona };
-  if (o.motivo === 'attesa') return { ...art, tempo: tempo(o.resta, l), perTutti: !!o.perTutti };
+  if (o.motivo === 'attesa') return { ...art, tempo: tempo(o.resta, pf), perTutti: !!o.perTutti };
   return art;
 }
 
@@ -499,7 +495,8 @@ export function inVetrina(canale, ora = Date.now()) {
     .sort((x, y) => y.venduti - x.venduti || x.ordine - y.ordine || x.id - y.id);
 }
 
-function rispostaNegozio(ch, msg, args, l) {
+function rispostaNegozio(ch, msg, args, pf) {
+  const l = lin(pf.lingua);
   const c = comandi(ch);
   const moneta = monetaDi(ch, l);
   const base = { nome: nomeDi(msg), moneta, ...c };
@@ -508,23 +505,23 @@ function rispostaNegozio(ch, msg, args, l) {
     const a = negozioDb.perParola(ch, chiesta);
     if (!a || !a.attivo || a.siVede !== 'sempre') return [frase(ch, 'nonCe', { ...base, parola: chiesta })];
     const s = scorteDi(a);
-    const scorte = s.modo === 'tutto' ? frase(ch, 'restano', { n: s.n, cifra: cifra(s.n, l) })
-      : s.modo === 'persona' ? frase(ch, 'aTesta', { n: s.n, cifra: cifra(s.n, l) }) : '';
-    const requisito = a.requisiti.map((r) => requisitoAParole(r, l)).join(l === 'en' ? ' and ' : l === 'es' ? ' y ' : ' e ');
-    return [frase(ch, 'dettaglio', { ...base, articolo: a.nome, parola: a.parola, prezzo: cifra(a.prezzo, l), descrizione: a.descrizione, requisito, scorte })];
+    const scorte = s.modo === 'tutto' ? frase(ch, 'restano', { n: s.n, cifra: cifra(s.n, pf) })
+      : s.modo === 'persona' ? frase(ch, 'aTesta', { n: s.n, cifra: cifra(s.n, pf) }) : '';
+    const requisito = a.requisiti.map((r) => requisitoAParole(r, pf)).join(l === 'en' ? ' and ' : l === 'es' ? ' y ' : ' e ');
+    return [frase(ch, 'dettaglio', { ...base, articolo: a.nome, parola: a.parola, prezzo: cifra(a.prezzo, pf), descrizione: a.descrizione, requisito, scorte })];
   }
   const primi = inVetrina(ch).slice(0, 3);
   if (!primi.length) return [frase(ch, 'vuoto', base)];
-  const voci = primi.map((a) => frase(ch, 'voce', { articolo: a.nome, parola: a.parola, prezzo: cifra(a.prezzo, l), moneta })).join(' · ');
+  const voci = primi.map((a) => frase(ch, 'voce', { articolo: a.nome, parola: a.parola, prezzo: cifra(a.prezzo, pf), moneta })).join(' · ');
   return [frase(ch, 'elenco', { ...base, voci })];
 }
 
-function rispostaBorsa(ch, msg, l) {
+function rispostaBorsa(ch, msg, pf) {
   const c = comandi(ch);
   const base = { nome: nomeDi(msg), ...c };
   const b = negozioDb.borsa(ch, msg?.user);
   if (!b.length) return [frase(ch, 'borsaVuota', base)];
-  const pezzi = b.map((x) => (x.quanti > 1 ? `${x.nome} (${cifra(x.quanti, l)})` : x.nome));
+  const pezzi = b.map((x) => (x.quanti > 1 ? `${x.nome} (${cifra(x.quanti, pf)})` : x.nome));
   const testa = frase(ch, 'borsa', { ...base, lista: '' }).replace(/\s*\.$/, '');
   return inMessaggi(pezzi, spazioPer(msg), { testa, sep: ', ', coda: '.', primaDellaCoda: '' });
 }
@@ -541,11 +538,11 @@ export async function tryComando(msg, parla, ambiente = {}) {
   if (cmd !== 'negozio' && cmd !== 'compra' && cmd !== 'borsa') return false;
   const ch = String(msg?.channel || '').toLowerCase();
   if (!ch || !aperto(ch)) return false;
-  const l = lin(linguaChat(ch));
+  const pf = preferenzeDi(ch);
   const risposta = aChi(msg, parla);
   try {
-    if (cmd === 'negozio') { rispostaNegozio(ch, msg, parti, l).forEach(risposta); return true; }
-    if (cmd === 'borsa') { rispostaBorsa(ch, msg, l).forEach(risposta); return true; }
+    if (cmd === 'negozio') { rispostaNegozio(ch, msg, parti, pf).forEach(risposta); return true; }
+    if (cmd === 'borsa') { rispostaBorsa(ch, msg, pf).forEach(risposta); return true; }
     const esito = await compra({
       canale: ch, msg, parola: parti[0] || '', nota: parti.slice(1).join(' '),
       live: ambiente.live === true,
