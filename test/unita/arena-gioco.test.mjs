@@ -463,3 +463,20 @@ test('!giochi arena la spiega a tutti, e dice che aprirla e\' dei moderatori', a
   assert.equal(testo, '🏟️ L\'arena delle emote: quando si apre l\'arena hai 45 secondi per entrare: scrivendo in chat, o con !combatti se il canale vuole il comando. Combatti con la tua emote, che scegli con !emote e un\'emote. Vince l\'ultimo in piedi, e con !arena un moderatore la apre. Qui farlo partire è riservato ai moderatori e allo streamer.');
   assert.equal(R.spiegaGioco('ar19', 'emote', {}).split(':')[0], '🏟️ L\'arena delle emote', 'la mossa porta al suo gioco');
 });
+
+// La tabella dell'emote scelta e' del canale: esce con i suoi dati e se ne va
+// con lui. Non c'e' un elenco da aggiornare (le tabelle si ricavano dallo
+// schema), e qui si guarda che valga davvero anche per lei.
+test('l\'emote scelta esce nell\'esportazione del canale e se ne va con lui', async () => {
+  const { esporta } = await import('../../src/features/esporta.js');
+  const { cancella } = await import('../../src/features/cancella.js');
+  canale('arenavia'); canale('arenaresta');
+  arenaEmote.scegli('arenavia', 'anna', { nome: 'Kappa', url: TWITCH('25') });
+  arenaEmote.scegli('arenaresta', 'anna', { nome: 'catJAM', url: SETTE(ID7('c')) });
+  assert.equal(arenaEmote.scegli('arenavia', 'bruno', { nome: 'x', url: 'https://example.com/x.png' }), false, 'un indirizzo che non e\' di Twitch o di 7TV non si tiene');
+  const e = esporta('arenavia');
+  assert.deepEqual(e.dati.arena_emote.map((r) => [r.channel, r.user, r.nome]), [['arenavia', 'anna', 'Kappa']]);
+  cancella('arenavia', { conferma: 'arenavia' });
+  assert.equal(arenaEmote.get('arenavia', 'anna'), null);
+  assert.deepEqual(arenaEmote.get('arenaresta', 'anna'), { nome: 'catJAM', url: SETTE(ID7('c')) }, 'quella di un altro canale resta');
+});
