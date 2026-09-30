@@ -25,6 +25,7 @@ import MODULI from './manuali/it/moduli.js';
 import BOT from './manuali/it/bot.js';
 import MODERAZIONE from './manuali/it/moderazione.js';
 import INTERAZIONE from './manuali/it/interazione.js';
+import NEGOZIO from './manuali/it/negozio.js';
 import CONSOLIFY from './manuali/it/consolify.js';
 import DIRETTA from './manuali/it/diretta.js';
 import VETRINA from './manuali/it/vetrina.js';
@@ -37,7 +38,7 @@ import STRUMENTI from './manuali/it/strumenti.js';
 
 // Nell'ordine del menù del pannello: chi cerca una scheda la trova dove se
 // l'aspetta.
-export const MANUALI = [STATO, BOT, MODULI, MODERAZIONE, GIOCHI, INTERAZIONE, DIRETTA, CONSOLIFY, OVERLAY, EFFETTI, EMOTE, VETRINA, COMMUNITY, STRUMENTI, ACCOUNT];
+export const MANUALI = [STATO, BOT, MODULI, MODERAZIONE, GIOCHI, INTERAZIONE, NEGOZIO, DIRETTA, CONSOLIFY, OVERLAY, EFFETTI, EMOTE, VETRINA, COMMUNITY, STRUMENTI, ACCOUNT];
 
 // A QUALE SCHEDA DEL PANNELLO SERVE OGNI PAGINA.
 //

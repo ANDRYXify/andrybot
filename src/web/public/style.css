@@ -2601,3 +2601,22 @@ body:not(.con-nav) .salta { display: none; }
 
 .eff-prima-scena { display: grid; place-items: center; min-height: 120px; max-height: 360px; border-radius: var(--r-m); overflow: hidden; background-color: #1d1b24; background-image: conic-gradient(#2b2834 25%, #1d1b24 0 50%, #2b2834 0 75%, #1d1b24 0); background-size: 24px 24px; }
 #eff-prima-tela { display: block; max-width: 100%; max-height: 360px; cursor: crosshair; }
+
+.neg-editor { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 17rem); gap: 1.4rem; align-items: start; }
+.neg-anteprima-box { position: sticky; top: calc(var(--top-h) + 16px); }
+.neg-anteprima { border: 1px solid var(--border); border-radius: var(--r-m); background: var(--surface); padding: .9rem; }
+.neg-anteprima p { margin: .35rem 0 0; }
+.neg-immagine { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: var(--r-m); background: var(--surface-2); }
+.neg-immagine.vuota { display: grid; place-items: center; color: var(--testo-3); }
+.neg-nome { font-weight: 700; font-size: 1.05rem; color: var(--testo); }
+.neg-desc { color: var(--testo-2); font-size: .9rem; }
+.neg-prezzo { font-weight: 800; color: var(--acc); }
+.neg-requisiti { display: grid; gap: .45rem; margin-top: .5rem; }
+.neg-req { display: flex; align-items: center; justify-content: space-between; gap: .8rem; flex-wrap: wrap; }
+.neg-req .riga-check { margin: 0; flex: 1 1 14rem; }
+.neg-req input[type="number"], .neg-req select { max-width: 11rem; }
+.neg-mini { width: 3rem; height: 3rem; object-fit: cover; border-radius: var(--r-s); flex: 0 0 auto; }
+@media (max-width: 760px) {
+  .neg-editor { grid-template-columns: minmax(0, 1fr); }
+  .neg-anteprima-box { position: static; }
+}

@@ -1130,6 +1130,7 @@ function apiDemo(percorso, opzioni = {}) {
     if (metodo === 'DELETE') _demoScritture.recensione = null;
     return Promise.resolve({ ok: true, puo: true, perche: '', mia: _demoScritture.recensione || null, invito: false, max: 400 });
   }
+  if (via.startsWith('/api/streamer/negozio')) return Promise.resolve(_demoNegozio(metodo, via, opzioni.body));
   if (metodo === 'GET') return Promise.resolve(_demoGet(via));
 
   if (via === '/api/streamer/impostazioni' && Array.isArray(opzioni.body?.overlays)) {
@@ -1296,6 +1297,68 @@ function apiDemo(percorso, opzioni = {}) {
   if (via.endsWith('/prova')) { toast(L('In demo non invio davvero in chat', 'In demo mode I don\'t really send to chat', 'En demo no envío de verdad al chat')); return Promise.resolve({ ok: true }); }
   if (via === '/api/streamer/effetti/disegno' || /^\/api\/streamer\/effetti\/\d+\/schermo$/.test(via)) return Promise.resolve(_demoEffetti(via, opzioni.body || {}));
   return Promise.resolve({ ok: true, demo: true });
+}
+
+function _demoNegozioBase() {
+  const ora = Date.now();
+  const art = (x) => ({ descrizione: '', dati: {}, scorte: { modo: 'illimitate', n: 0 }, attesaTesta: 0, attesaTutti: 0, requisiti: [], siVede: 'sempre', quando: 'sempre', dal: 0, al: 0, attivo: true, venduti: 0, inBorse: 0, immagine: '', immagineUrl: '', ...x });
+  const riga = (id, user, nome, prezzo, stato, minuti, extra = {}) => ({ id, user: user.toLowerCase(), display: user, nome, prezzo, stato, motivo: '', nota: '', ts: ora - minuti * 60000, ...extra });
+  const gioco = L('Scegli il prossimo gioco', 'Pick the next game', 'Elige el próximo juego');
+  return {
+    attivo: true,
+    comandi: { negozio: 'negozio', compra: 'compra', borsa: 'borsa' },
+    max: 60,
+    articoli: [
+      art({ id: 1, parola: 'tada', nome: L('Ta-daa a schermo', 'Ta-daa on screen', 'Ta-daa en pantalla'), tipo: 'effetto', prezzo: 150, attesaTutti: 30, dati: { preset: 'tada' }, venduti: 21,
+        descrizione: L('Parte sulla diretta appena lo compri.', 'It plays on stream as soon as you buy it.', 'Sale en el directo en cuanto lo compras.') }),
+      art({ id: 2, parola: 'spada', nome: L('Spada di legno', 'Wooden sword', 'Espada de madera'), tipo: 'oggetto', prezzo: 100, venduti: 14, inBorse: 9,
+        descrizione: L('Resta nella tua borsa: la vedi con !borsa.', 'It stays in your bag: see it with !borsa.', 'Se queda en tu bolsa: la ves con !borsa.') }),
+      art({ id: 3, parola: 'vip', nome: L('VIP per una diretta', 'VIP for one stream', 'VIP durante un directo'), tipo: 'vip', prezzo: 5000, dati: { dirette: 1 }, scorte: { modo: 'persona', n: 1 }, requisiti: [{ tipo: 'ore', soglia: 10 }], venduti: 3 }),
+      art({ id: 4, parola: 'gioco', nome: gioco, tipo: 'mano', prezzo: 3000, attesaTutti: 3600, scorte: { modo: 'tutto', n: 4 }, venduti: 2,
+        dati: { domanda: L('Quale gioco vuoi vedere?', 'Which game do you want to see?', '¿Qué juego quieres ver?') } }),
+    ],
+    coda: [
+      riga(31, 'Luna_Gamer', gioco, 3000, 'da_consegnare', 25, { nota: 'Hollow Knight' }),
+      riga(32, 'ZioBarba', gioco, 3000, 'da_consegnare', 9, { nota: 'Celeste' }),
+    ],
+    storico: {
+      righe: [
+        riga(33, 'ZioBarba', L('Ta-daa a schermo', 'Ta-daa on screen', 'Ta-daa en pantalla'), 150, 'fatto', 4),
+        riga(32, 'ZioBarba', gioco, 3000, 'da_consegnare', 9, { nota: 'Celeste' }),
+        riga(31, 'Luna_Gamer', gioco, 3000, 'da_consegnare', 25, { nota: 'Hollow Knight' }),
+        riga(30, 'PixelMatto', L('VIP per una diretta', 'VIP for one stream', 'VIP durante un directo'), 5000, 'rimborsato', 60, { motivo: 'vipPieni' }),
+        riga(29, 'Luna_Gamer', L('Spada di legno', 'Wooden sword', 'Espada de madera'), 100, 'fatto', 180),
+      ],
+      totali: { acquisti: 40, monete: 31250, persone: 22, rimborsati: 2, moneteRese: 5150 },
+    },
+    effetti: [{ comando: 'airhorn', tipo: 'audio' }, { comando: 'coriandoli', tipo: 'immagine' }],
+    moduli: [{ id: 1, nome: L('Saluto a schermo', 'On-screen greeting', 'Saludo en pantalla'), attivo: true }],
+  };
+}
+
+function _demoNegozio(metodo, via, b) {
+  const st = _demoScritture.negozio || (_demoScritture.negozio = _demoNegozioBase());
+  if (via === '/api/streamer/negozio/ruoli') {
+    return { ok: true, server: 'La tana', ruoli: [{ id: '101', nome: L('Collezionista', 'Collector', 'Coleccionista'), colore: 0, regola: false }, { id: '102', nome: L('Abbonati', 'Subscribers', 'Suscriptores'), colore: 0, regola: true }] };
+  }
+  if (metodo === 'POST' && via === '/api/streamer/negozio/attivo') st.attivo = b?.attivo === true;
+  if (metodo === 'POST' && via === '/api/streamer/negozio/articoli') {
+    const a = b?.articolo || {};
+    const id = Number(a.id) || Math.max(0, ...st.articoli.map((x) => x.id)) + 1;
+    const vecchio = st.articoli.find((x) => x.id === id) || { venduti: 0, inBorse: 0, immagineUrl: '' };
+    const nuovo = { ...vecchio, ...a, id, parola: a.parola || normComandoWeb(a.nome).replace(/_/g, '').slice(0, 20), requisiti: a.requisiti || [] };
+    st.articoli = st.articoli.some((x) => x.id === id) ? st.articoli.map((x) => (x.id === id ? nuovo : x)) : st.articoli.concat([nuovo]);
+  }
+  const togli = /^\/api\/streamer\/negozio\/articoli\/(\d+)$/.exec(via);
+  if (metodo === 'DELETE' && togli) st.articoli = st.articoli.filter((x) => x.id !== Number(togli[1]));
+  const decidi = /^\/api\/streamer\/negozio\/coda\/(\d+)$/.exec(via);
+  if (metodo === 'POST' && decidi) {
+    const id = Number(decidi[1]);
+    const rifiuta = b?.azione === 'rifiuta';
+    st.coda = st.coda.filter((x) => x.id !== id);
+    st.storico.righe = st.storico.righe.map((r) => (r.id === id ? { ...r, stato: rifiuta ? 'rimborsato' : 'consegnato', motivo: rifiuta ? 'rifiutato' : '' } : r));
+  }
+  return JSON.parse(JSON.stringify(st));
 }
 
 function _demoEffetti(via, b) {
@@ -1527,6 +1590,9 @@ function _demoGet(via) {
       { id: "messaggiunici", modulo: "modalita", moduloNome: ["Modalità della chat a tempo","Timed chat modes","Modos del chat con tiempo"], moduloAcceso: true, titolo: ["Messaggi unici a tempo","Timed unique chat","Mensajes únicos con tiempo"], cosa: ["Per un tempo nessuno può ripetere un messaggio già scritto. Due minuti se non dici quanto.","For a while nobody can repeat a message already written. Two minutes unless you say how long.","Durante un tiempo nadie puede repetir un mensaje ya escrito. Dos minutos si no dices cuánto."], costa: false, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["messaggiunici"], rinominato: false, chi: "mod", chiMinimo: "mod", attesaTutti: 0 },
       { id: "soloabbonati", modulo: "modalita", moduloNome: ["Modalità della chat a tempo","Timed chat modes","Modos del chat con tiempo"], moduloAcceso: true, titolo: ["Solo abbonati a tempo","Timed subscribers-only","Solo suscriptores con tiempo"], cosa: ["Per un tempo scrivono solo gli abbonati. Due minuti se non dici quanto.","For a while only subscribers can write. Two minutes unless you say how long.","Durante un tiempo solo escriben los suscriptores. Dos minutos si no dices cuánto."], costa: false, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["soloabbonati"], rinominato: false, chi: "mod", chiMinimo: "mod", attesaTutti: 0 },
       { id: "permetti", modulo: "scudo", moduloNome: ["Scudo","Shield","Escudo"], moduloAcceso: false, titolo: ["Fai scrivere un account nuovo","Let a new account chat","Deja escribir a una cuenta nueva"], cosa: ["Lo scudo trattiene i messaggi degli account appena creati. Con !permetti nome un mod lo fa scrivere, da lì in poi: finisce fra gli esenti.","The shield holds messages from brand new accounts. With !permetti name a mod lets them chat from then on: they join the exempt list.","El escudo retiene los mensajes de las cuentas recién creadas. Con !permetti nombre un mod la deja escribir desde ese momento: pasa a la lista de exentos."], costa: false, attesa: 0, spegnibile: false, rinominabile: true, acceso: true, vivo: false, nomi: ["permetti"], rinominato: false, chi: "mod", chiMinimo: "mod", attesaTutti: 0 },
+      { id: "negozio", modulo: "negozio", moduloNome: ["Negozio","Shop","Tienda"], moduloAcceso: true, titolo: ["Il negozio","The shop","La tienda"], cosa: ["Dice i tre articoli più comprati, con la parola per comprarli. Con !negozio e una parola racconta quell'articolo: prezzo, requisiti e scorte.","Lists the three most bought items, with the word to buy them. With !negozio and a word it describes that item: price, requirements and stock.","Dice los tres artículos más comprados, con la palabra para comprarlos. Con !negozio y una palabra describe ese artículo: precio, requisitos y existencias."], costa: false, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["negozio","shop"], rinominato: false, chi: "tutti", chiMinimo: "tutti", attesaTutti: 0 },
+      { id: "compra", modulo: "negozio", moduloNome: ["Negozio","Shop","Tienda"], moduloAcceso: true, titolo: ["Compra","Buy","Compra"], cosa: ["Compra un articolo del negozio con le monete: !compra e la parola dell'articolo, e dopo la canzone o il testo se l'articolo li chiede.","Buys a shop item with coins: !compra and the item word, then the song or the text if the item asks for them.","Compra un artículo de la tienda con las monedas: !compra y la palabra del artículo, y después la canción o el texto si el artículo los pide."], costa: true, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["compra","buy"], rinominato: false, chi: "tutti", chiMinimo: "tutti", attesaTutti: 0 },
+      { id: "borsa", modulo: "negozio", moduloNome: ["Negozio","Shop","Tienda"], moduloAcceso: true, titolo: ["La mia borsa","My bag","Mi bolsa"], cosa: ["Dice a chi lo scrive cosa ha nella borsa: gli oggetti comprati nel negozio.","Tells whoever writes it what is in their bag: the objects bought in the shop.","Dice a quien lo escribe qué tiene en la bolsa: los objetos comprados en la tienda."], costa: false, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["borsa","bag"], rinominato: false, chi: "tutti", chiMinimo: "tutti", attesaTutti: 0 },
       { id: "ag", modulo: "sito", moduloNome: ["Giochi del sito","Site games","Juegos del sitio"], moduloAcceso: false, titolo: ["Giochi del sito","Site games","Juegos del sitio"], cosa: ["Manda il comando ai giochi di andryxify.it.","Sends the command to the andryxify.it games.","Manda el comando a los juegos de andryxify.it."], costa: false, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: false, nomi: ["ag","agentify"], rinominato: false, chi: "tutti", chiMinimo: "tutti", attesaTutti: 0 },
     ], livelli: ['tutti', 'sub', 'vip', 'mod'] },
     '/api/streamer/telegram/carta': {
@@ -2965,7 +3031,7 @@ function _regioneSalva(el) {
 
 function segnaDaSalvare(t) {
   if (!t || !t.closest || !t.closest('.pannello-scheda.visibile')) return;
-  if (t.closest('#tg-destinazioni, #gr-ig, #gr-auto, .ovl-testa-banco, .ovl-barra, .ovl-livelli, .cerca-guscio, .st-uscita')) return;
+  if (t.closest('#tg-destinazioni, #gr-ig, #gr-auto, #chk-negozio, .ovl-testa-banco, .ovl-barra, .ovl-livelli, .cerca-guscio, .st-uscita')) return;
   if (t.closest('.ovl-inspector') && !t.closest(ASP_SALVA_A_MANO)) return;
   const reg = _regioneSalva(t);
   if (!reg) return;
@@ -3318,6 +3384,7 @@ const GRUPPI = [
     ['moduli', 'Comandi'],
     ['regole', 'Moderazione'],
     ['giochi', 'Giochi'],
+    ['negozio', 'Negozio'],
     ['statistiche', 'Statistiche'],
   ] },
   { id: 'diretta', nome: 'Durante la diretta', schede: [
@@ -3403,6 +3470,7 @@ const T_SCHEDA = {
   dcentra: ['Chi entra nel server', 'Who joins the server', 'Quién entra al servidor'],
   dcfiltro: ['Il filtro del server', 'The server filter', 'El filtro del servidor'],
   giochi: ['Giochi & classifiche', 'Games & leaderboards', 'Juegos y clasificaciones'],
+  negozio: ['Negozio', 'Shop', 'Tienda'],
   regia: ['Regia', 'Control room', 'Realización'],
   studio: ['Studio Web', 'Web Studio', 'Estudio Web'],
   clip: ['Clip', 'Clips', 'Clips'],
@@ -3458,6 +3526,7 @@ const ICONA = {
   regole:      _ico('<path d="M12 3.2 19 6v5c0 4.8-3.4 7.8-7 8.8-3.6-1-7-4-7-8.8V6z"/>'),
   scudo:       _ico('<path d="M12 3.2 19 6v5c0 4.8-3.4 7.8-7 8.8-3.6-1-7-4-7-8.8V6z"/><path d="m9 12 2 2 4-4"/>'),
   giochi:      _ico('<rect x="2" y="7.5" width="20" height="9" rx="4.5"/><path d="M7 11v3"/><path d="M5.5 12.5h3"/><circle cx="16" cy="11.5" r=".9" fill="currentColor" stroke="none"/><circle cx="18" cy="13.5" r=".9" fill="currentColor" stroke="none"/>'),
+  negozio:     _ico('<path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/>'),
   effetti:     _ico('<path d="M4 9v6h4l5 4V5L8 9z"/><path d="M17 9.5a4 4 0 0 1 0 5"/>'),
   clip:        _ico('<rect x="3" y="5" width="18" height="14" rx="2.2"/><path d="M8 5v14"/><path d="M16 5v14"/><path d="M3 9.5h5"/><path d="M16 9.5h5"/><path d="M3 14.5h5"/><path d="M16 14.5h5"/>'),
   ascolto:     _ico('<rect x="9" y="3" width="6" height="10.5" rx="3"/><path d="M6 11a6 6 0 0 0 12 0"/><path d="M12 17v4"/>'),
@@ -3497,6 +3566,7 @@ const DESC = {
   scudo: ['La difesa dagli attacchi: ondate di follow-bot e hate-raid.', 'Defense against attacks: follow-bot waves and hate-raids.', 'La defensa contra los ataques: oleadas de follow-bots y hate-raids.'],
   registro: ['Cosa è successo: attacchi, interventi e casi da rivedere.', 'What happened: attacks, actions and cases to review.', 'Qué ha pasado: ataques, acciones y casos por revisar.'],
   giochi: ['Mini-giochi, monete e classifiche per la chat.', 'Minigames, coins and leaderboards for chat.', 'Minijuegos, monedas y clasificaciones para el chat.'],
+  negozio: ['Cosa si compra con le monete del canale, chi lo compra, e cosa c’è da consegnare.', 'What can be bought with channel coins, who buys it, and what there is to deliver.', 'Qué se compra con las monedas del canal, quién lo compra y qué hay que entregar.'],
   effetti: ['Effetti, suoni, GIF e video da lanciare in chat o in overlay — con libreria condivisa.', 'Effects, sounds, GIFs and videos to trigger in chat or overlay — with a shared library.', 'Efectos, sonidos, GIF y vídeos para lanzar en el chat o en el overlay — con biblioteca compartida.'],
   regia: ['Gestisci la diretta dal bot: titolo, categoria, tag, clip, marker, pubblicità e raid.', 'Run your stream from the bot: title, category, tags, clips, markers, ads and raids.', 'Gestiona el directo desde el bot: título, categoría, etiquetas, clips, marcadores, anuncios y raids.'],
   studio: ['Vai live dal browser: webcam, schermo, overlay e audio in un click.', 'Go live from the browser: webcam, screen, overlay and audio in one click.', 'Emite desde el navegador: webcam, pantalla, overlay y audio con un clic.'],
@@ -3530,7 +3600,7 @@ const DESC = {
 };
 const descScheda = (id) => { const d = DESC[id]; return d ? L(d[0], d[1], d[2]) : ''; };
 
-const SCHEDA_FUNZ = { giochi: 'giochi', musica: 'musica', ascolto: 'voce', notifiche: 'notifiche', telegram: 'notifiche', effetti: 'effetti', sondaggi: 'effetti', studio: 'studio' };
+const SCHEDA_FUNZ = { giochi: 'giochi', negozio: 'giochi', musica: 'musica', ascolto: 'voce', notifiche: 'notifiche', telegram: 'notifiche', effetti: 'effetti', sondaggi: 'effetti', studio: 'studio' };
 const FUNZ_ADDON = { giochi: 'giochi', musica: 'musica', voce: 'voce', notifiche: 'base', effetti: 'effetti', clipAuto: 'clip', studio: 'base', moderatori: 'base' };
 
 const NOME_ADDON = {
@@ -3675,6 +3745,8 @@ const GUIDE = {
     come: [['Scrivi le parole vietate, una per riga.', 'Write the banned words, one per line.', 'Escribe las palabras prohibidas, una por línea.', '#txt-vietate'], ['Accendi l\'antispam: da lì in giù decidi cosa filtrare.', 'Turn on anti-spam: from there down you choose what to filter.', 'Enciende el antispam: de ahí para abajo eliges qué filtrar.', '#chk-as-attivo'], ['Scegli chi può postare link e quali domini passano sempre.', 'Choose who can post links and which domains always pass.', 'Elige quién puede publicar enlaces y qué dominios pasan siempre.', '#sel-as-linktier'], ['Salva: il bot modera da solo.', 'Save: the bot moderates on its own.', 'Guarda: el bot modera solo.', '#btn-salva-antispam']] },
   giochi: { serve: ['Minigiochi, monete e classifiche per tenere viva la chat.', 'Minigames, coins and leaderboards to keep chat alive.', 'Minijuegos, monedas y clasificaciones para animar el chat.'],
     come: [['Attiva i giochi.', 'Turn on games.', 'Activa los juegos.', '#chk-giochi'], ['Personalizza il nome della moneta e i premi.', 'Customize the coin name and the prizes.', 'Personaliza el nombre de la moneda y los premios.', '#inp-monete'], ['Gli spettatori giocano con !slot, !roulette, !pesca, !trivia…', 'Viewers play with !slot, !roulette, !fish, !trivia…', 'Los espectadores juegan con !slot, !roulette, !pesca, !trivia…', '#lista-gcmd']] },
+  negozio: { serve: ['Un negozio in cui si paga con le monete del canale: effetti, VIP, ruoli, canzoni, oggetti della borsa, cose da consegnare in diretta.', 'A shop where people pay with channel coins: effects, VIP, roles, songs, bag items, things to deliver on stream.', 'Una tienda en la que se paga con las monedas del canal: efectos, VIP, roles, canciones, objetos de la bolsa, cosas para entregar en directo.'],
+    come: [['Apri il negozio.', 'Open the shop.', 'Abre la tienda.', '#chk-negozio'], ['Crea un articolo, o parti da un modello.', 'Create an item, or start from a template.', 'Crea un artículo, o empieza desde un modelo.', '#neg-nuovo'], ['In chat si compra con !compra e la parola dell’articolo.', 'In chat people buy with !compra and the item word.', 'En el chat se compra con !compra y la palabra del artículo.']] },
   effetti: { serve: ['Suoni ed effetti in overlay della diretta, anche riscattabili con i punti canale.', 'Sounds and effects in the stream overlay, redeemable with channel points too.', 'Sonidos y efectos en el overlay del directo, también canjeables con puntos de canal.'],
     come: [['Carica un effetto (audio/immagine) e dagli un comando.', 'Upload an effect (audio/image) and give it a command.', 'Sube un efecto (audio/imagen) y asígnale un comando.', '#eff-file'], ['Nella libreria ci sono effetti già pronti, tuoi e degli altri: uno clic e diventano un tuo comando.', 'The library has ready-made effects, yours and other people’s: one click and they become a command of yours.', 'En la biblioteca hay efectos ya listos, tuyos y de otros: un clic y se convierten en un comando tuyo.', '#lib-griglia'], ['Se vuoi, un effetto si può riscattare coi punti canale invece che con un comando.', 'If you want, an effect can be redeemed with channel points instead of a command.', 'Si quieres, un efecto se puede canjear con puntos de canal en vez de con un comando.', '#premi-box']] },
   clip: { serve: ['Creare clip automatiche nei momenti di “hype” della diretta.', 'Create automatic clips in the stream’s “hype” moments.', 'Crear clips automáticos en los momentos de “hype” del directo.'],
@@ -3791,6 +3863,7 @@ const ICO = {
   corona: '<path d="M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.734H5.81a1 1 0 0 1-.957-.734L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z"/>',
   cuore: '<path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>',
   pacco: '<path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/>',
+  negozio: '<path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/>',
   avviso: '<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
   penitenza: '<rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
 
@@ -3903,6 +3976,10 @@ function tFamiglia(id, def) {
 }
 
 const SOTTO_SCHEDE = {
+  negozio: {
+    attributo: 'zona',
+    voci: [['articoli', ['Articoli', 'Items', 'Artículos']], ['consegnare', ['Da consegnare', 'To deliver', 'Por entregar']], ['storico', ['Storico', 'History', 'Historial']]],
+  },
   moduli: {
     attributo: 'zona',
     voci: [['comandi', ['Comandi e contatori', 'Commands and counters', 'Comandos y contadores']], ['morti', 'CONTATORify']],
@@ -4718,6 +4795,7 @@ function vistaPiattaforma() {
     ${pannelloScudo()}
     ${pannelloRegistro()}
     ${pannelloGiochi()}
+    ${pannelloNegozio()}
     ${pannelloRegia()}
     ${pannelloDirette()}
     ${pannelloConsolify()}
@@ -9866,6 +9944,648 @@ async function caricaSondaggi() {
       document.getElementById('pred-annulla').addEventListener('click', () => conErrore(async () => { await api('/api/predizioni/annulla', { method: 'POST', body: {} }); toast(L('Predizione annullata.', 'Prediction canceled.', 'Predicción cancelada.')); caricaSondaggi(); }));
     } else wrapR.innerHTML = '';
   }
+}
+
+const NEG_TIPI = [
+  ['oggetto', ['Un oggetto della borsa', 'A bag item', 'Un objeto de la bolsa']],
+  ['effetto', ['Un effetto a schermo', 'An on-screen effect', 'Un efecto en pantalla']],
+  ['modulo', ['Un Modulo', 'A Module', 'Un Módulo']],
+  ['mano', ['Da consegnare a mano', 'Delivered by hand', 'Para entregar a mano']],
+  ['vip', ['Il VIP su Twitch', 'VIP on Twitch', 'El VIP en Twitch']],
+  ['discord', ['Un ruolo su Discord', 'A Discord role', 'Un rol en Discord']],
+  ['musica', ['Una canzone in coda', 'A song in the queue', 'Una canción en la cola']],
+  ['evidenza', ['Un messaggio in evidenza', 'A highlighted message', 'Un mensaje destacado']],
+];
+const NEG_REQ = ['mesi', 'tier', 'bit', 'ore', 'serie', 'follower', 'ruolo'];
+const NEG_REQ_ETI = {
+  mesi: ['Abbonato da almeno (mesi)', 'Subscribed for at least (months)', 'Suscrito desde hace al menos (meses)'],
+  tier: ['Abbonato almeno di tier', 'Subscribed at least at tier', 'Suscrito al menos con tier'],
+  bit: ['Bit messi nel canale, da sempre', 'Bits cheered in the channel, all time', 'Bits puestos en el canal, desde siempre'],
+  ore: ['Ore guardate', 'Hours watched', 'Horas vistas'],
+  serie: ['Dirette di fila', 'Streams in a row', 'Directos seguidos'],
+  follower: ['Follower da almeno (giorni)', 'Follower for at least (days)', 'Seguidor desde hace al menos (días)'],
+  ruolo: ['Ruolo', 'Role', 'Rol'],
+};
+const NEG_REQ_LIMITI = { mesi: [1, 120], tier: [1, 3], bit: [1, 10000000], ore: [1, 100000], serie: [1, 1000], follower: [0, 10000], ruolo: [1, 2] };
+const NEG_COLORI = [['primary', ['Il colore del canale', 'The channel color', 'El color del canal']], ['blue', ['Blu', 'Blue', 'Azul']], ['green', ['Verde', 'Green', 'Verde']], ['orange', ['Arancione', 'Orange', 'Naranja']], ['purple', ['Viola', 'Purple', 'Morado']]];
+const NEG_PERCHE = {
+  overlay: ['l’overlay era spento', 'the overlay was off', 'el overlay estaba apagado'],
+  effetto: ['l’effetto non c’era più', 'the effect was gone', 'el efecto ya no existía'],
+  modulo: ['il modulo non è partito', 'the module did not run', 'el módulo no se ejecutó'],
+  'modulo-tier': ['il modulo non era per il suo ruolo', 'the module was not for their role', 'el módulo no era para su rol'],
+  'modulo-piattaforma': ['il modulo non va su quella piattaforma', 'the module does not run on that platform', 'el módulo no funciona en esa plataforma'],
+  'modulo-live': ['il modulo in quel momento non andava', 'the module was not running at that moment', 'el módulo en ese momento no funcionaba'],
+  'modulo-cooldown': ['il modulo era in pausa', 'the module was on cooldown', 'el módulo estaba en pausa'],
+  'modulo-cooldownUtente': ['il modulo era in pausa per quella persona', 'the module was on cooldown for that person', 'el módulo estaba en pausa para esa persona'],
+  soloTwitch: ['si compra solo dalla chat di Twitch', 'it can only be bought from the Twitch chat', 'solo se compra desde el chat de Twitch'],
+  twitch: ['Twitch non ha risposto', 'Twitch did not answer', 'Twitch no respondió'],
+  vipStaff: ['Twitch non dà il VIP a un moderatore', 'Twitch does not give VIP to a moderator', 'Twitch no da el VIP a un moderador'],
+  vipSempre: ['aveva già il VIP per sempre', 'they already had VIP for good', 'ya tenía el VIP para siempre'],
+  vipATempo: ['aveva già il VIP fino a una data', 'they already had VIP until a set date', 'ya tenía el VIP hasta una fecha'],
+  vipPieni: ['i posti VIP erano pieni', 'the VIP slots were full', 'los puestos VIP estaban llenos'],
+  vipPermesso: ['a Twitch mancava il permesso per il VIP', 'Twitch was missing the VIP permission', 'a Twitch le faltaba el permiso del VIP'],
+  discordSpento: ['i ruoli su Discord non erano attivi', 'Discord roles were not on', 'los roles de Discord no estaban activos'],
+  discordRegola: ['quel ruolo lo danno le regole dei Ruoli', 'that role comes from the role rules', 'ese rol lo dan las reglas de los Roles'],
+  discordTuo: ['non aveva collegato il suo Discord', 'they had not linked their Discord', 'no había vinculado su Discord'],
+  discordFuori: ['non era nel server Discord', 'they were not in the Discord server', 'no estaba en el servidor de Discord'],
+  discordNo: ['Discord non ha dato il ruolo', 'Discord did not give the role', 'Discord no dio el rol'],
+  musicaSpenta: ['le richieste musicali non erano attive', 'music requests were not on', 'las peticiones musicales no estaban activas'],
+  musicaNonTrovata: ['la canzone non si trovava su Spotify', 'the song was not on Spotify', 'la canción no estaba en Spotify'],
+  musicaFerma: ['Spotify era fermo', 'Spotify was stopped', 'Spotify estaba parado'],
+  musicaNo: ['Spotify non ha preso la canzone', 'Spotify did not take the song', 'Spotify no aceptó la canción'],
+  evidenzaNo: ['Twitch non ha pubblicato il messaggio', 'Twitch did not post the message', 'Twitch no publicó el mensaje'],
+  riavvio: ['il bot si è riavviato a metà', 'the bot restarted halfway through', 'el bot se reinició a mitad'],
+  rifiutato: ['l’hai rifiutato tu', 'you refused it', 'la rechazaste tú'],
+  errore: ['qualcosa è andato storto', 'something went wrong', 'algo salió mal'],
+};
+const NEG_ERRORI = {
+  nome: ['Dai un nome all’articolo.', 'Give the item a name.', 'Ponle un nombre al artículo.'],
+  parola: ['La parola per comprarlo va scritta con lettere e numeri, senza spazi.', 'The word to buy it takes letters and numbers, no spaces.', 'La palabra para comprarlo va con letras y números, sin espacios.'],
+  parolaUsata: ['Quella parola la usa già un altro articolo.', 'Another item already uses that word.', 'Esa palabra ya la usa otro artículo.'],
+  tipo: ['Scegli cosa fa l’articolo.', 'Choose what the item does.', 'Elige qué hace el artículo.'],
+  effetto: ['Scegli un effetto.', 'Choose an effect.', 'Elige un efecto.'],
+  modulo: ['Scegli un modulo.', 'Choose a module.', 'Elige un módulo.'],
+  ruolo: ['Scegli un ruolo di Discord.', 'Choose a Discord role.', 'Elige un rol de Discord.'],
+  ruoloRegola: ['Quel ruolo lo danno già le regole dei Ruoli: il giro dei ruoli lo toglierebbe.', 'The role rules already give that role: the role round would take it away.', 'Las reglas de los Roles ya dan ese rol: la ronda de roles lo quitaría.'],
+  scorte: ['Quante a persona: almeno una.', 'How many per person: at least one.', 'Cuántos por persona: al menos uno.'],
+  date: ['La data di fine viene dopo quella di inizio.', 'The end date comes after the start date.', 'La fecha de fin va después de la de inicio.'],
+  troppi: ['Hai già il massimo di articoli.', 'You already have the maximum number of items.', 'Ya tienes el máximo de artículos.'],
+  immagine: ['L’immagine deve essere una delle tue.', 'The image has to be one of yours.', 'La imagen tiene que ser una de las tuyas.'],
+  nonCe: ['Questo articolo non c’è più.', 'This item is gone.', 'Este artículo ya no existe.'],
+  deciso: ['Questo acquisto è già stato deciso.', 'This purchase has already been decided.', 'Esta compra ya está decidida.'],
+};
+const NEG_MODELLI = {
+  effetto: () => ({ nome: L('Un effetto a schermo', 'An on-screen effect', 'Un efecto en pantalla'), parola: 'effetto', tipo: 'effetto', prezzo: 200, attesaTutti: 30,
+    descrizione: L('Parte sulla diretta appena lo compri.', 'It plays on stream as soon as you buy it.', 'Sale en el directo en cuanto lo compras.'), dati: { preset: 'tada' } }),
+  vip: () => ({ nome: L('VIP per una diretta', 'VIP for one stream', 'VIP durante un directo'), parola: 'vip', tipo: 'vip', prezzo: 5000, dati: { dirette: 1 },
+    descrizione: L('Il VIP su Twitch fino alla fine della diretta in corso, o della prossima.', 'VIP on Twitch until the end of the current stream, or of the next one.', 'El VIP en Twitch hasta el final del directo en curso, o del próximo.') }),
+  gioco: () => ({ nome: L('Scegli il prossimo gioco', 'Pick the next game', 'Elige el próximo juego'), parola: 'gioco', tipo: 'mano', prezzo: 3000, attesaTutti: 3600,
+    dati: { domanda: L('Quale gioco vuoi vedere?', 'Which game do you want to see?', '¿Qué juego quieres ver?') },
+    descrizione: L('Scrivi il gioco: lo guardo in diretta, e se non si può fare ti rendo le monete.', 'Write the game: I look at it on stream, and if it can’t be done you get your coins back.', 'Escribe el juego: lo miro en directo, y si no se puede te devuelvo las monedas.') }),
+  oggetto: () => ({ nome: L('Una spada di legno', 'A wooden sword', 'Una espada de madera'), parola: 'spada', tipo: 'oggetto', prezzo: 100,
+    descrizione: L('Resta nella tua borsa: la vedi con !borsa.', 'It stays in your bag: see it with !borsa.', 'Se queda en tu bolsa: la ves con !borsa.') }),
+};
+let _neg = null;
+let _negBozza = null;
+let _negRuoli = null;
+
+const _negTipo = (t) => { const r = NEG_TIPI.find(([k]) => k === t); return r ? Lv(r[1]) : t; };
+const _negNum = (n) => Number(n || 0).toLocaleString(localePannello());
+const _negData = (ms) => new Date(Number(ms) || 0).toLocaleDateString(localePannello());
+function _negReqParole(r) {
+  const n = Number(r.soglia) || 0;
+  const c = _negNum(n);
+  switch (r.tipo) {
+    case 'mesi': return n === 1 ? L('abbonato da almeno un mese', 'subscribed for at least a month', 'suscrito desde hace al menos un mes') : L(`abbonato da almeno ${c} mesi`, `subscribed for at least ${c} months`, `suscrito desde hace al menos ${c} meses`);
+    case 'tier': return n <= 1 ? L('abbonato', 'subscribed', 'suscrito') : L(`abbonato di tier ${n} o più`, `subscribed at tier ${n} or higher`, `suscrito con tier ${n} o superior`);
+    case 'bit': return L(`almeno ${c} Bit nel canale`, `at least ${c} Bits in the channel`, `al menos ${c} Bits en el canal`);
+    case 'ore': return n === 1 ? L('almeno un’ora guardata', 'at least one hour watched', 'al menos una hora vista') : L(`almeno ${c} ore guardate`, `at least ${c} hours watched`, `al menos ${c} horas vistas`);
+    case 'serie': return L(`almeno ${c} dirette di fila`, `at least ${c} streams in a row`, `al menos ${c} directos seguidos`);
+    case 'follower': return n <= 0 ? L('follower', 'follower', 'seguidor') : L(`follower da almeno ${c} giorni`, `follower for at least ${c} days`, `seguidor desde hace al menos ${c} días`);
+    case 'ruolo': return n >= 2 ? L('moderatore', 'moderator', 'moderador') : L('VIP o moderatore', 'VIP or moderator', 'VIP o moderador');
+    default: return '';
+  }
+}
+function _negScorteParole(s, venduti) {
+  if (s.modo === 'tutto') return s.n > 0 ? L(`ne restano ${_negNum(s.n)}`, `${_negNum(s.n)} left`, `quedan ${_negNum(s.n)}`) : L('finito', 'sold out', 'agotado');
+  if (s.modo === 'persona') return s.n === 1 ? L('uno a persona', 'one per person', 'uno por persona') : L(`${_negNum(s.n)} a persona`, `${_negNum(s.n)} per person`, `${_negNum(s.n)} por persona`);
+  return venduti ? L(`comprato ${_negNum(venduti)} volte`, `bought ${_negNum(venduti)} times`, `comprado ${_negNum(venduti)} veces`) : L('senza limiti', 'no limits', 'sin límites');
+}
+
+function pannelloNegozio() {
+  const reqRiga = (t) => {
+    const [lo, hi] = NEG_REQ_LIMITI[t];
+    const campo = t === 'tier'
+      ? `<select id="neg-req-${t}-n" aria-label="${esc(Lv(NEG_REQ_ETI[t]))}"><option value="1">1</option><option value="2">2</option><option value="3">3</option></select>`
+      : t === 'ruolo'
+        ? `<select id="neg-req-${t}-n" aria-label="${esc(Lv(NEG_REQ_ETI[t]))}"><option value="1">${L('VIP o moderatore', 'VIP or moderator', 'VIP o moderador')}</option><option value="2">${L('Moderatore', 'Moderator', 'Moderador')}</option></select>`
+        : `<input type="number" id="neg-req-${t}-n" min="${lo}" max="${hi}" value="${Math.max(lo, 1)}" aria-label="${esc(Lv(NEG_REQ_ETI[t]))}">`;
+    return `<div class="neg-req"><div class="riga-check"><input type="checkbox" id="neg-req-${t}" data-neg-req="${t}"><label for="neg-req-${t}">${esc(Lv(NEG_REQ_ETI[t]))}</label></div>${campo}</div>`;
+  };
+  return pannello('negozio', `
+    <div data-zona="articoli">
+    <div class="carta">
+      <h2>${_hIco(ICO.negozio)}${L('Il negozio del canale', 'The channel shop', 'La tienda del canal')}</h2>
+      <p>${L('Qui si paga solo con le monete del canale, cioè con il tempo passato in chat e in diretta. Tu decidi cosa c’è, quanto costa e chi lo può comprare; chi guarda compra dalla chat.', 'Here people pay only with channel coins, that is with the time spent in chat and on stream. You decide what’s there, what it costs and who can buy it; viewers buy from chat.', 'Aquí solo se paga con las monedas del canal, es decir con el tiempo pasado en el chat y en directo. Tú decides qué hay, cuánto cuesta y quién lo puede comprar; quien mira compra desde el chat.')}</p>
+      <p class="suggerimento"><a href="/manuale/negozio" target="_blank" rel="noopener">${L('Manuale del negozio', 'Shop manual', 'Manual de la tienda')}</a>: ${L('ogni tipo di articolo, i requisiti e cosa succede quando qualcosa non parte.', 'every item type, the requirements and what happens when something doesn’t go through.', 'cada tipo de artículo, los requisitos y qué pasa cuando algo no sale.')}</p>
+      <div class="riga-check">
+        <input type="checkbox" id="chk-negozio">
+        <label for="chk-negozio">${L('Negozio aperto', 'Shop open', 'Tienda abierta')}</label>
+      </div>
+      <p class="suggerimento" id="neg-come">${L('Da chiuso, in chat i comandi del negozio non rispondono. Gli articoli e lo storico restano salvati.', 'When closed, the shop commands don’t answer in chat. Items and history stay saved.', 'Cerrada, los comandos de la tienda no responden en el chat. Los artículos y el historial quedan guardados.')}</p>
+    </div>
+    <div class="carta">
+      <h2>${_hIco(ICO.pacco)}${L('Articoli', 'Items', 'Artículos')}</h2>
+      <p>${L('Ogni articolo ha una parola: chi guarda scrive !compra e quella parola. Se non basta qualcosa (monete, un requisito, le scorte) il bot glielo dice, e le monete restano sue.', 'Every item has a word: viewers type !compra and that word. If something is missing (coins, a requirement, stock) the bot tells them, and their coins stay theirs.', 'Cada artículo tiene una palabra: quien mira escribe !compra y esa palabra. Si falta algo (monedas, un requisito, existencias) el bot se lo dice, y las monedas siguen siendo suyas.')}</p>
+      <div class="riga-flessibile">
+        <button type="button" class="btn" id="neg-nuovo">${_bIco(ICO.piu)}${L('Nuovo articolo', 'New item', 'Nuevo artículo')}</button>
+        <span class="suggerimento">${L('oppure parti da un modello:', 'or start from a template:', 'o empieza desde un modelo:')}</span>
+        <button type="button" class="btn secondario mini" data-neg-modello="effetto">${L('Un effetto', 'An effect', 'Un efecto')}</button>
+        <button type="button" class="btn secondario mini" data-neg-modello="vip">${L('Un VIP per una diretta', 'VIP for one stream', 'Un VIP para un directo')}</button>
+        <button type="button" class="btn secondario mini" data-neg-modello="gioco">${L('Scegli il prossimo gioco', 'Pick the next game', 'Elige el próximo juego')}</button>
+        <button type="button" class="btn secondario mini" data-neg-modello="oggetto">${L('Un oggetto della borsa', 'A bag item', 'Un objeto de la bolsa')}</button>
+      </div>
+      <ul class="lista-voci" id="neg-lista">${attesaHtml('li')}</ul>
+    </div>
+    <div class="carta" id="neg-editor" hidden>
+      <h2 id="neg-editor-titolo">${_hIco(ICO.pacco)}${L('Nuovo articolo', 'New item', 'Nuevo artículo')}</h2>
+      <div class="neg-editor">
+        <div class="neg-campi">
+          <label class="campo" for="neg-nome">${L('Nome', 'Name', 'Nombre')}</label>
+          <input type="text" id="neg-nome" class="campo-largo" maxlength="60" placeholder="${esc(L('es. Scegli il prossimo gioco', 'e.g. Pick the next game', 'p. ej. Elige el próximo juego'))}">
+          <label class="campo spazio-sopra" for="neg-parola">${L('La parola per comprarlo', 'The word to buy it', 'La palabra para comprarlo')}</label>
+          <div class="riga-flessibile"><span class="prefisso-cmd" id="neg-parola-cmd">!compra</span><input type="text" id="neg-parola" class="campo-largo" maxlength="20" placeholder="gioco"></div>
+          <label class="campo spazio-sopra" for="neg-descrizione">${L('Descrizione', 'Description', 'Descripción')}</label>
+          <textarea id="neg-descrizione" maxlength="300" rows="2" placeholder="${esc(L('Cosa riceve chi lo compra.', 'What the buyer gets.', 'Qué recibe quien lo compra.'))}"></textarea>
+          <p class="campo spazio-sopra">${L('Immagine', 'Image', 'Imagen')}</p>
+          <div class="riga-flessibile">
+            <button type="button" class="btn secondario" id="neg-immagine">${_bIco(ICO.immagine)}${L('Scegli un’immagine', 'Choose an image', 'Elige una imagen')}</button>
+            <button type="button" class="btn secondario" id="neg-immagine-via" hidden>${L('Togli l’immagine', 'Remove the image', 'Quita la imagen')}</button>
+          </div>
+          <div class="griglia-campi spazio-sopra">
+            <div>
+              <label class="campo" for="neg-prezzo">${L('Prezzo', 'Price', 'Precio')} <span class="suggerimento" id="neg-moneta"></span></label>
+              <input type="number" id="neg-prezzo" min="0" max="10000000" value="100">
+            </div>
+            <div>
+              <label class="campo" for="neg-tipo">${L('Cosa fa', 'What it does', 'Qué hace')}</label>
+              <select id="neg-tipo">${NEG_TIPI.map(([k, n]) => `<option value="${k}">${esc(Lv(n))}</option>`).join('')}</select>
+            </div>
+          </div>
+          <div class="riquadro-info spazio-sopra" data-neg-tipo="oggetto"><p class="suggerimento">${L('Va nella borsa di chi lo compra e ci resta: lo vede con !borsa. Se togli l’articolo, sparisce anche dalle borse.', 'It goes into the buyer’s bag and stays there: they see it with !borsa. If you remove the item, it disappears from the bags too.', 'Va a la bolsa de quien lo compra y se queda: lo ve con !borsa. Si quitas el artículo, desaparece también de las bolsas.')}</p></div>
+          <div class="riquadro-info spazio-sopra" data-neg-tipo="effetto" hidden>
+            <label class="campo" for="neg-effetto">${L('L’effetto', 'The effect', 'El efecto')}</label>
+            <div class="riga-flessibile"><select id="neg-effetto" class="campo-largo"></select>
+              <button type="button" class="btn secondario" id="neg-effetto-lib">${_bIco(ICO.libro)}${L('Dalla libreria', 'From the library', 'De la biblioteca')}</button></div>
+            <p class="suggerimento">${L('Parte sull’overlay. Se l’overlay è spento non si può comprare, e le monete restano a chi voleva comprarlo.', 'It plays on the overlay. If the overlay is off it can’t be bought, and the coins stay with whoever wanted to buy it.', 'Sale en el overlay. Si el overlay está apagado no se puede comprar, y las monedas se quedan con quien quería comprarlo.')}</p>
+          </div>
+          <div class="riquadro-info spazio-sopra" data-neg-tipo="modulo" hidden>
+            <label class="campo" for="neg-modulo">${L('Il modulo', 'The module', 'El módulo')}</label>
+            <select id="neg-modulo" class="campo-largo"></select>
+            <p class="suggerimento">${L('Parte come se l’avesse fatto partire chi compra, e il suo «Costa» non si paga di nuovo. Se le sue condizioni lo fermano, le monete tornano.', 'It runs as if the buyer had started it, and its «Costs» isn’t paid again. If its conditions stop it, the coins go back.', 'Se ejecuta como si lo hubiera lanzado quien compra, y su «Cuesta» no se paga otra vez. Si sus condiciones lo paran, las monedas vuelven.')}</p>
+          </div>
+          <div class="riquadro-info spazio-sopra" data-neg-tipo="mano" hidden>
+            <label class="campo" for="neg-domanda">${L('Cosa chiedi a chi compra (facoltativo)', 'What you ask the buyer (optional)', 'Qué le preguntas a quien compra (opcional)')}</label>
+            <input type="text" id="neg-domanda" class="campo-largo" maxlength="120" placeholder="${esc(L('es. Quale gioco vuoi vedere?', 'e.g. Which game do you want to see?', 'p. ej. ¿Qué juego quieres ver?'))}">
+            <p class="suggerimento">${L('L’acquisto finisce in «Da consegnare»: lì lo segni fatto, oppure lo rifiuti e le monete tornano.', 'The purchase goes to «To deliver»: there you mark it done, or refuse it and the coins go back.', 'La compra va a «Por entregar»: allí la marcas hecha, o la rechazas y las monedas vuelven.')}</p>
+          </div>
+          <div class="riquadro-info spazio-sopra" data-neg-tipo="vip" hidden>
+            <label class="campo" for="neg-dirette">${L('Per quante dirette', 'For how many streams', 'Durante cuántos directos')}</label>
+            <input type="number" id="neg-dirette" min="1" max="60" value="1">
+            <p class="suggerimento">${L('Come il premio della classifica: il conto scende quando una diretta finisce. Chi ha già un VIP a dirette lo allunga.', 'Like the leaderboard prize: the count goes down when a stream ends. Whoever already has VIP by streams extends it.', 'Como el premio de la clasificación: la cuenta baja cuando termina un directo. Quien ya tiene un VIP por directos lo alarga.')}</p>
+          </div>
+          <div class="riquadro-info spazio-sopra" data-neg-tipo="discord" hidden>
+            <label class="campo" for="neg-ruolo">${L('Il ruolo', 'The role', 'El rol')}</label>
+            <select id="neg-ruolo" class="campo-largo"></select>
+            <p class="suggerimento" id="neg-ruolo-nota">${L('Chi compra deve aver collegato il suo Discord con !discord.', 'The buyer must have linked their Discord with !discord.', 'Quien compra tiene que haber vinculado su Discord con !discord.')}</p>
+          </div>
+          <div class="riquadro-info spazio-sopra" data-neg-tipo="musica" hidden><p class="suggerimento">${L('Chi compra scrive la canzone dopo la parola. Entra nella coda di Spotify, come con !sr ma senza le sue regole: suona dopo il brano di adesso e le richieste già in coda, prima della playlist. Spotify non lascia scegliere un posto più avanti.', 'The buyer writes the song after the word. It goes into the Spotify queue, like !sr but without its rules: it plays after the current track and the requests already queued, before the playlist. Spotify doesn’t let you pick a spot further ahead.', 'Quien compra escribe la canción tras la palabra. Entra en la cola de Spotify, como con !sr pero sin sus reglas: suena después del tema actual y de las peticiones ya en cola, antes de la playlist. Spotify no deja elegir un sitio más adelante.')}</p></div>
+          <div class="riquadro-info spazio-sopra" data-neg-tipo="evidenza" hidden>
+            <label class="campo" for="neg-colore">${L('Il colore dell’annuncio', 'The announcement color', 'El color del anuncio')}</label>
+            <select id="neg-colore">${NEG_COLORI.map(([k, n]) => `<option value="${k}">${esc(Lv(n))}</option>`).join('')}</select>
+            <p class="suggerimento">${L('Chi compra scrive il messaggio dopo la parola: esce in chat come annuncio di Twitch, col suo nome davanti.', 'The buyer writes the message after the word: it shows in chat as a Twitch announcement, with their name in front.', 'Quien compra escribe el mensaje tras la palabra: sale en el chat como anuncio de Twitch, con su nombre delante.')}</p>
+          </div>
+          <div class="griglia-campi spazio-sopra">
+            <div>
+              <label class="campo" for="neg-scorte">${L('Scorte', 'Stock', 'Existencias')}</label>
+              <select id="neg-scorte"><option value="illimitate">${L('Illimitate', 'Unlimited', 'Ilimitadas')}</option><option value="tutto">${L('Tot in tutto', 'A set amount in total', 'Una cantidad en total')}</option><option value="persona">${L('Tot a persona', 'A set amount per person', 'Una cantidad por persona')}</option></select>
+            </div>
+            <div id="neg-scorte-n-box" hidden>
+              <label class="campo" for="neg-scorte-n" id="neg-scorte-n-eti">${L('Quante ne restano', 'How many are left', 'Cuántas quedan')}</label>
+              <input type="number" id="neg-scorte-n" min="0" max="1000000" value="10">
+            </div>
+          </div>
+          <div class="griglia-campi spazio-sopra">
+            <div>
+              <label class="campo" for="neg-attesa-testa">${L('Attesa a persona (secondi)', 'Wait per person (seconds)', 'Espera por persona (segundos)')}</label>
+              <input type="number" id="neg-attesa-testa" min="0" max="604800" value="0">
+            </div>
+            <div>
+              <label class="campo" for="neg-attesa-tutti">${L('Attesa per tutti (secondi)', 'Wait for everyone (seconds)', 'Espera para todos (segundos)')}</label>
+              <input type="number" id="neg-attesa-tutti" min="0" max="604800" value="0">
+            </div>
+          </div>
+          <h3 class="sotto-titolo">${L('Chi lo può comprare', 'Who can buy it', 'Quién lo puede comprar')}</h3>
+          <p class="suggerimento">${L('Tutti i requisiti che accendi devono valere. Si leggono da dove stanno davvero: i mesi dal badge, tier, follow e Bit da Twitch, ore e serie dal bot. Se uno non si può leggere, non si compra e il bot lo dice.', 'Every requirement you turn on must hold. They are read from where they really live: months from the badge, tier, follow and Bits from Twitch, hours and streak from the bot. If one can’t be read, nobody buys and the bot says so.', 'Todos los requisitos que actives deben cumplirse. Se leen de donde están de verdad: los meses del badge, tier, follow y Bits de Twitch, horas y racha del bot. Si uno no se puede leer, no se compra y el bot lo dice.')}</p>
+          <div class="neg-requisiti">${NEG_REQ.map(reqRiga).join('')}</div>
+          <div class="griglia-campi spazio-sopra">
+            <div>
+              <label class="campo" for="neg-si-vede">${L('Si vede', 'Shown', 'Se ve')}</label>
+              <select id="neg-si-vede"><option value="sempre">${L('Sempre', 'Always', 'Siempre')}</option><option value="chi_puo">${L('Solo a chi lo può comprare', 'Only to those who can buy it', 'Solo a quien lo puede comprar')}</option></select>
+            </div>
+            <div>
+              <label class="campo" for="neg-quando">${L('Quando si compra', 'When it can be bought', 'Cuándo se compra')}</label>
+              <select id="neg-quando"><option value="sempre">${L('Sempre', 'Always', 'Siempre')}</option><option value="diretta">${L('Solo in diretta', 'Only while live', 'Solo en directo')}</option><option value="date">${L('Fra due date', 'Between two dates', 'Entre dos fechas')}</option></select>
+            </div>
+          </div>
+          <div class="griglia-campi spazio-sopra" id="neg-date" hidden>
+            <div><label class="campo" for="neg-dal">${L('Dal', 'From', 'Desde')}</label><input type="date" id="neg-dal"></div>
+            <div><label class="campo" for="neg-al">${L('Al', 'To', 'Hasta')}</label><input type="date" id="neg-al"></div>
+          </div>
+          <div class="riga-check spazio-sopra">
+            <input type="checkbox" id="neg-attivo" checked>
+            <label for="neg-attivo">${L('In vendita', 'On sale', 'A la venta')}</label>
+          </div>
+        </div>
+        <aside class="neg-anteprima-box" aria-label="${esc(L('Anteprima', 'Preview', 'Vista previa'))}">
+          <p class="campo">${L('Come si vede nella pagina del negozio', 'How it looks on the shop page', 'Cómo se ve en la página de la tienda')}</p>
+          <div id="neg-anteprima" class="neg-anteprima"></div>
+        </aside>
+      </div>
+      <p class="spazio-sopra">
+        <button type="button" class="btn" id="neg-salva" data-salva>${L('Salva l’articolo', 'Save the item', 'Guardar el artículo')}</button>
+        <button type="button" class="btn secondario" id="neg-annulla">${L('Annulla', 'Cancel', 'Cancelar')}</button>
+      </p>
+    </div>
+    </div>
+    <div data-zona="consegnare">
+    <div class="carta">
+      <h2>${_hIco(ICO.pacco)}${L('Da consegnare', 'To deliver', 'Por entregar')}</h2>
+      <p>${L('Gli acquisti che consegni tu, in diretta: dal più vecchio. «Fatto» li chiude; «Rifiuta e rimborsa» rende le monete e lo dice in chat a chi aveva comprato.', 'The purchases you deliver yourself, on stream: oldest first. «Done» closes them; «Refuse and refund» gives the coins back and tells the buyer in chat.', 'Las compras que entregas tú, en directo: de la más antigua. «Hecho» las cierra; «Rechazar y reembolsar» devuelve las monedas y se lo dice en el chat a quien compró.')}</p>
+      <ul class="lista-voci" id="neg-coda">${attesaHtml('li')}</ul>
+    </div>
+    </div>
+    <div data-zona="storico">
+    <div class="carta">
+      <h2>${_hIco(ICO.grafico)}${L('Storico', 'History', 'Historial')}</h2>
+      <p>${L('Chi ha comprato cosa e quando, e quante monete sono girate. Si tiene un anno; quello da consegnare resta finché non decidi.', 'Who bought what and when, and how many coins changed hands. It’s kept for a year; what’s still to deliver stays until you decide.', 'Quién compró qué y cuándo, y cuántas monedas han circulado. Se guarda un año; lo que falta por entregar se queda hasta que decidas.')}</p>
+      <div class="griglia-stat" id="neg-totali">${attesaHtml('div')}</div>
+      <div class="scorrevole">
+        <table class="tabella">
+          <thead><tr><th>${L('Quando', 'When', 'Cuándo')}</th><th>${L('Chi', 'Who', 'Quién')}</th><th>${L('Cosa', 'What', 'Qué')}</th><th>${L('Prezzo', 'Price', 'Precio')}</th><th>${L('Com’è andata', 'How it went', 'Cómo fue')}</th></tr></thead>
+          <tbody id="neg-storico"><tr><td colspan="5">${attesaHtml('span')}</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+    </div>`);
+}
+
+async function caricaNegozio() {
+  const lista = document.getElementById('neg-lista');
+  if (!lista) return;
+  _negCollega();
+  let d;
+  try { d = await api('/api/streamer/negozio'); }
+  catch (e) {
+    const msg = `<p class="vuoto">${L('Non riesco a leggere il negozio: ', 'I can’t read the shop: ', 'No puedo leer la tienda: ')}${esc(e.message)}</p>`;
+    lista.innerHTML = `<li class="vuoto">${msg}</li>`;
+    for (const id of ['neg-coda']) { const el = document.getElementById(id); if (el) el.innerHTML = `<li class="vuoto">${msg}</li>`; }
+    const tot = document.getElementById('neg-totali'); if (tot) tot.innerHTML = msg;
+    const st = document.getElementById('neg-storico'); if (st) st.innerHTML = `<tr><td colspan="5">${msg}</td></tr>`;
+    return;
+  }
+  _negDisegna(d);
+}
+
+function _negDisegna(d) {
+  _neg = d;
+  const chk = document.getElementById('chk-negozio');
+  if (chk) chk.checked = !!d.attivo;
+  const c = d.comandi || {};
+  const come = document.getElementById('neg-come');
+  if (come) {
+    come.textContent = d.attivo
+      ? L(`In chat: !${c.negozio} dice cosa c’è, !${c.compra} e la parola compra, !${c.borsa} mostra la borsa.`, `In chat: !${c.negozio} says what’s there, !${c.compra} and the word buys, !${c.borsa} shows the bag.`, `En el chat: !${c.negozio} dice lo que hay, !${c.compra} y la palabra compra, !${c.borsa} muestra la bolsa.`)
+      : L('Da chiuso, in chat i comandi del negozio non rispondono. Gli articoli e lo storico restano salvati.', 'When closed, the shop commands don’t answer in chat. Items and history stay saved.', 'Cerrada, los comandos de la tienda no responden en el chat. Los artículos y el historial quedan guardados.');
+  }
+  const cmd = document.getElementById('neg-parola-cmd');
+  if (cmd && c.compra) cmd.textContent = '!' + c.compra;
+  const mon = document.getElementById('neg-moneta');
+  if (mon) mon.textContent = '(' + nomeMonetaUI() + ')';
+  _negLista(d);
+  _negCoda(d);
+  _negStorico(d);
+}
+
+function _negLista(d) {
+  const el = document.getElementById('neg-lista');
+  if (!el) return;
+  const arts = d.articoli || [];
+  if (!arts.length) {
+    el.innerHTML = `<li class="vuoto">${L('Ancora nessun articolo. Parti da «Nuovo articolo» o da un modello qui sopra.', 'No items yet. Start from «New item» or from a template above.', 'Aún no hay artículos. Empieza por «Nuevo artículo» o por un modelo de arriba.')}</li>`;
+    return;
+  }
+  el.innerHTML = arts.map((a) => {
+    const badge = [];
+    if (!a.attivo) badge.push(`<span class="badge">${L('non in vendita', 'not on sale', 'no está a la venta')}</span>`);
+    if (a.siVede === 'chi_puo') badge.push(`<span class="badge">${L('si vede a chi può', 'shown to who can', 'se ve a quien puede')}</span>`);
+    if (a.quando === 'diretta') badge.push(`<span class="badge">${L('solo in diretta', 'live only', 'solo en directo')}</span>`);
+    if (a.quando === 'date') badge.push(`<span class="badge">${esc(_negData(a.dal))} · ${esc(_negData(a.al))}</span>`);
+    if (a.scorte.modo === 'tutto' && a.scorte.n <= 0) badge.push(`<span class="badge rosso">${L('finito', 'sold out', 'agotado')}</span>`);
+    const req = (a.requisiti || []).map(_negReqParole).join(', ');
+    const borse = a.tipo === 'oggetto' && a.inBorse ? ' · ' + L(`in ${_negNum(a.inBorse)} borse`, `in ${_negNum(a.inBorse)} bags`, `en ${_negNum(a.inBorse)} bolsas`) : '';
+    const img = a.immagineUrl ? `<img class="neg-mini" src="${esc(a.immagineUrl)}" alt="" loading="lazy">` : '';
+    return `<li>${img}<div class="testo-voce">
+        <div class="domanda">${esc(a.nome)} ${badge.join(' ')}</div>
+        <div class="risposta"><code>!${esc(d.comandi?.compra || 'compra')} ${esc(a.parola)}</code> · ${_negNum(a.prezzo)} ${esc(nomeMonetaUI())} · ${esc(_negTipo(a.tipo))}</div>
+        <div class="meta">${esc(_negScorteParole(a.scorte, a.venduti))}${a.scorte.modo !== 'illimitate' && a.venduti ? ' · ' + L(`comprato ${_negNum(a.venduti)} volte`, `bought ${_negNum(a.venduti)} times`, `comprado ${_negNum(a.venduti)} veces`) : ''}${borse}${req ? ' · ' + esc(L('per comprarlo: ', 'to buy it: ', 'para comprarlo: ') + req) : ''}</div>
+      </div>
+      <div class="riga-flessibile">
+        <button type="button" class="btn secondario mini" data-neg-modifica="${a.id}">${L('Modifica', 'Edit', 'Editar')}</button>
+        <button type="button" class="btn pericolo mini" data-neg-togli="${a.id}">${L('Togli', 'Remove', 'Quitar')}</button>
+      </div></li>`;
+  }).join('');
+}
+
+function _negCoda(d) {
+  const el = document.getElementById('neg-coda');
+  if (!el) return;
+  const coda = d.coda || [];
+  if (!coda.length) {
+    el.innerHTML = `<li class="vuoto">${L('Niente da consegnare. Gli articoli «Da consegnare a mano» finiscono qui quando qualcuno li compra.', 'Nothing to deliver. «Delivered by hand» items land here when someone buys them.', 'Nada que entregar. Los artículos «Para entregar a mano» llegan aquí cuando alguien los compra.')}</li>`;
+    return;
+  }
+  el.innerHTML = coda.map((x) => `<li><div class="testo-voce">
+      <div class="domanda">${esc(x.display || x.user)} · ${esc(x.nome)}</div>
+      ${x.nota ? `<div class="risposta">${esc(x.nota)}</div>` : ''}
+      <div class="meta">${esc(dataIt(x.ts))} · ${_negNum(x.prezzo)} ${esc(nomeMonetaUI())}</div>
+    </div>
+    <div class="riga-flessibile">
+      <button type="button" class="btn mini" data-neg-fatto="${x.id}">${L('Fatto', 'Done', 'Hecho')}</button>
+      <button type="button" class="btn pericolo mini" data-neg-rifiuta="${x.id}">${L('Rifiuta e rimborsa', 'Refuse and refund', 'Rechazar y reembolsar')}</button>
+    </div></li>`).join('');
+}
+
+function _negStorico(d) {
+  const t = d.storico?.totali || {};
+  const tot = document.getElementById('neg-totali');
+  const stat = (n, eti) => `<div class="stat"><div class="numero">${_negNum(n)}</div><div class="etichetta">${eti}</div></div>`;
+  if (tot) {
+    tot.innerHTML = stat(t.acquisti, L('acquisti', 'purchases', 'compras'))
+      + stat(t.monete, `${esc(nomeMonetaUI())}: ${L('il totale speso', 'total spent', 'total gastado')}`)
+      + stat(t.persone, L('persone', 'people', 'personas'))
+      + stat(t.rimborsati, L('rimborsati', 'refunded', 'reembolsadas'));
+  }
+  const body = document.getElementById('neg-storico');
+  if (!body) return;
+  const righe = d.storico?.righe || [];
+  if (!righe.length) { body.innerHTML = `<tr><td colspan="5" class="vuoto">${L('Ancora nessun acquisto.', 'No purchases yet.', 'Aún no hay compras.')}</td></tr>`; return; }
+  const statoDi = (r) => {
+    if (r.stato === 'rimborsato') return `<span class="badge giallo">${L('rimborsato', 'refunded', 'reembolsado')}</span> ${esc(Lv(NEG_PERCHE[r.motivo] || (String(r.motivo).startsWith('modulo') ? NEG_PERCHE.modulo : NEG_PERCHE.errore)))}`;
+    if (r.stato === 'da_consegnare') return `<span class="badge viola">${L('da consegnare', 'to deliver', 'por entregar')}</span>`;
+    if (r.stato === 'consegnato') return `<span class="badge verde">${L('consegnato', 'delivered', 'entregado')}</span>`;
+    if (r.stato === 'in_corso') return `<span class="badge">${L('in corso', 'in progress', 'en curso')}</span>`;
+    return `<span class="badge verde">${L('fatto', 'done', 'hecho')}</span>`;
+  };
+  body.innerHTML = righe.map((r) => `<tr><td>${esc(dataIt(r.ts))}</td><td>${esc(r.display || r.user)}</td><td>${esc(r.nome)}${r.nota ? ` <span class="suggerimento">${esc(r.nota)}</span>` : ''}</td><td>${_negNum(r.prezzo)}</td><td>${statoDi(r)}</td></tr>`).join('');
+}
+
+function _negCollega() {
+  const pan = document.getElementById('scheda-negozio');
+  if (!pan || pan.dataset.collegato) return;
+  pan.dataset.collegato = '1';
+  document.getElementById('chk-negozio')?.addEventListener('change', (ev) => conErrore(async () => {
+    const d = await api('/api/streamer/negozio/attivo', { method: 'POST', body: { attivo: ev.target.checked } });
+    _negDisegna(d);
+    toast(d.attivo ? L('Negozio aperto.', 'Shop open.', 'Tienda abierta.') : L('Negozio chiuso.', 'Shop closed.', 'Tienda cerrada.'));
+  }));
+  document.getElementById('neg-nuovo')?.addEventListener('click', () => _negApri(null));
+  document.getElementById('neg-annulla')?.addEventListener('click', () => _negChiudi());
+  document.getElementById('neg-salva')?.addEventListener('click', () => conErrore(_negSalva));
+  document.getElementById('neg-immagine')?.addEventListener('click', () => conErrore(async () => {
+    const scelta = await scegliDallaLibreria({ tipi: ['immagine'], titolo: L('Scegli l’immagine dell’articolo', 'Choose the item image', 'Elige la imagen del artículo') });
+    if (!scelta || !scelta.ref) return;
+    _negBozza.immagine = scelta.ref;
+    _negBozza.immagineUrl = scelta.url || '';
+    _negAnteprima();
+  }));
+  document.getElementById('neg-immagine-via')?.addEventListener('click', () => { _negBozza.immagine = ''; _negBozza.immagineUrl = ''; _negAnteprima(); });
+  document.getElementById('neg-effetto-lib')?.addEventListener('click', () => conErrore(async () => {
+    const scelta = await scegliDallaLibreria({ tipi: ['audio', 'immagine', 'video'], titolo: L('Scegli l’effetto', 'Choose the effect', 'Elige el efecto') });
+    if (!scelta || !scelta.comando) return;
+    const sel = document.getElementById('neg-effetto');
+    const v = 'effetto:' + scelta.comando;
+    if (sel && ![...sel.options].some((o) => o.value === v)) sel.insertAdjacentHTML('beforeend', `<option value="${esc(v)}">!${esc(scelta.comando)}</option>`);
+    if (sel) sel.value = v;
+    _negAnteprima();
+  }));
+  document.getElementById('neg-tipo')?.addEventListener('change', () => { _negMostraTipo(); _negAnteprima(); });
+  document.getElementById('neg-scorte')?.addEventListener('change', () => { _negMostraScorte(); _negAnteprima(); });
+  document.getElementById('neg-quando')?.addEventListener('change', () => { _negMostraQuando(); _negAnteprima(); });
+  const ed = document.getElementById('neg-editor');
+  ed?.addEventListener('input', () => _negAnteprima());
+  ed?.addEventListener('change', () => _negAnteprima());
+  pan.addEventListener('click', (ev) => {
+    const mod = ev.target.closest('[data-neg-modello]');
+    if (mod) { _negApri(NEG_MODELLI[mod.dataset.negModello]?.() || null); return; }
+    const m = ev.target.closest('[data-neg-modifica]');
+    if (m) { const a = (_neg?.articoli || []).find((x) => String(x.id) === m.dataset.negModifica); if (a) _negApri(a); return; }
+    const t = ev.target.closest('[data-neg-togli]');
+    if (t) { conErrore(() => _negTogli(t.dataset.negTogli)); return; }
+    const f = ev.target.closest('[data-neg-fatto]');
+    if (f) { conErrore(() => _negDecidi(f.dataset.negFatto, 'fatto')); return; }
+    const r = ev.target.closest('[data-neg-rifiuta]');
+    if (r) conErrore(() => _negDecidi(r.dataset.negRifiuta, 'rifiuta'));
+  });
+}
+
+function _negOpzioni() {
+  const d = _neg || {};
+  const eff = document.getElementById('neg-effetto');
+  if (eff) {
+    const preset = (window.SUONI_PRESET && window.SUONI_PRESET.lista) || [];
+    const miei = d.effetti || [];
+    eff.innerHTML = (miei.length ? `<optgroup label="${esc(L('I tuoi effetti', 'Your effects', 'Tus efectos'))}">${miei.map((e) => `<option value="effetto:${esc(e.comando)}">!${esc(e.comando)}</option>`).join('')}</optgroup>` : '')
+      + `<optgroup label="${esc(L('Suoni pronti', 'Ready-made sounds', 'Sonidos listos'))}">${preset.map((s) => `<option value="preset:${esc(s.id)}">${esc(s.nome)}</option>`).join('')}</optgroup>`;
+  }
+  const mod = document.getElementById('neg-modulo');
+  if (mod) {
+    const moduli = d.moduli || [];
+    mod.innerHTML = moduli.length
+      ? moduli.map((m) => `<option value="${m.id}">${esc(m.nome || ('#' + m.id))}${m.attivo ? '' : ' ' + esc(L('(spento)', '(off)', '(apagado)'))}</option>`).join('')
+      : `<option value="">${esc(L('Nessun modulo: crealo in Comandi', 'No modules: create one in Commands', 'Ningún módulo: créalo en Comandos'))}</option>`;
+  }
+}
+
+async function _negRuoliCarica(scelto) {
+  const sel = document.getElementById('neg-ruolo');
+  const nota = document.getElementById('neg-ruolo-nota');
+  if (!sel) return;
+  if (!_negRuoli) {
+    sel.innerHTML = `<option value="">${esc(L('Leggo i ruoli…', 'Reading the roles…', 'Leyendo los roles…'))}</option>`;
+    try { _negRuoli = await api('/api/streamer/negozio/ruoli'); } catch (e) { _negRuoli = { ok: false, errore: e.message }; }
+  }
+  const r = _negRuoli;
+  if (!r.ok) {
+    sel.innerHTML = `<option value="">${esc(L('Nessun ruolo', 'No roles', 'Ningún rol'))}</option>`;
+    if (nota) nota.textContent = r.motivo === 'discordSpento'
+      ? L('Prima collega il tuo server nella scheda Discord.', 'Connect your server in the Discord tab first.', 'Primero conecta tu servidor en la pestaña Discord.')
+      : L('Discord adesso non risponde: riprova fra poco.', 'Discord isn’t answering right now: try again shortly.', 'Discord no responde ahora: inténtalo en un rato.');
+    return;
+  }
+  sel.innerHTML = r.ruoli.map((x) => `<option value="${esc(x.id)}"${x.regola ? ' disabled' : ''}>${esc(x.nome)}${x.regola ? ' ' + esc(L('(lo danno le regole dei Ruoli)', '(given by the role rules)', '(lo dan las reglas de los Roles)')) : ''}</option>`).join('')
+    || `<option value="">${esc(L('Nessun ruolo che il bot possa dare', 'No role the bot can give', 'Ningún rol que el bot pueda dar'))}</option>`;
+  if (scelto && [...sel.options].some((o) => o.value === scelto)) sel.value = scelto;
+  if (nota) nota.textContent = L('Chi compra deve aver collegato il suo Discord con !discord. Qui ci sono i ruoli che il bot può dare.', 'The buyer must have linked their Discord with !discord. These are the roles the bot can give.', 'Quien compra tiene que haber vinculado su Discord con !discord. Aquí están los roles que el bot puede dar.');
+  _negAnteprima();
+}
+
+function _negMostraTipo() {
+  const t = document.getElementById('neg-tipo')?.value || 'oggetto';
+  document.querySelectorAll('#neg-editor [data-neg-tipo]').forEach((b) => { b.hidden = b.dataset.negTipo !== t; });
+  if (t === 'discord') _negRuoliCarica(_negBozza?.dati?.ruolo || '');
+}
+function _negMostraScorte() {
+  const m = document.getElementById('neg-scorte')?.value || 'illimitate';
+  const box = document.getElementById('neg-scorte-n-box');
+  if (box) box.hidden = m === 'illimitate';
+  const eti = document.getElementById('neg-scorte-n-eti');
+  if (eti) eti.textContent = m === 'persona' ? L('Quante a persona', 'How many per person', 'Cuántas por persona') : L('Quante ne restano', 'How many are left', 'Cuántas quedan');
+}
+function _negMostraQuando() {
+  const box = document.getElementById('neg-date');
+  if (box) box.hidden = document.getElementById('neg-quando')?.value !== 'date';
+}
+
+const _negGiorno = (ms) => { if (!ms) return ''; const d = new Date(ms); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+const _negDaGiorno = (v, fine) => { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(v || ''); if (!m) return 0; return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]), fine ? 23 : 0, fine ? 59 : 0, fine ? 59 : 0, fine ? 999 : 0).getTime(); };
+
+function _negApri(a) {
+  const ed = document.getElementById('neg-editor');
+  if (!ed) return;
+  const x = a || {};
+  _negBozza = { id: x.id || 0, immagine: x.immagine || '', immagineUrl: x.immagineUrl || '', dati: x.dati || {} };
+  const v = (id, val) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (el.tagName !== 'SELECT') { el.value = val; return; }
+    for (const o of el.options) o.defaultSelected = o.value === String(val);
+    el.innerHTML = el.innerHTML;
+    el.value = String(val);
+  };
+  const titolo = document.getElementById('neg-editor-titolo');
+  if (titolo) titolo.innerHTML = `${_hIco(ICO.pacco)}${x.id ? L('Modifica l’articolo', 'Edit the item', 'Editar el artículo') : L('Nuovo articolo', 'New item', 'Nuevo artículo')}`;
+  _negOpzioni();
+  v('neg-nome', x.nome || '');
+  v('neg-parola', x.parola || '');
+  v('neg-descrizione', x.descrizione || '');
+  v('neg-prezzo', x.prezzo ?? 100);
+  v('neg-tipo', x.tipo || 'oggetto');
+  const dati = x.dati || {};
+  if (dati.preset) v('neg-effetto', 'preset:' + dati.preset);
+  else if (dati.effetto) {
+    const sel = document.getElementById('neg-effetto');
+    const val = 'effetto:' + dati.effetto;
+    if (sel && ![...sel.options].some((o) => o.value === val)) sel.insertAdjacentHTML('beforeend', `<option value="${esc(val)}">!${esc(dati.effetto)}</option>`);
+    v('neg-effetto', val);
+  }
+  if (dati.modulo) v('neg-modulo', String(dati.modulo));
+  v('neg-domanda', dati.domanda || '');
+  v('neg-dirette', dati.dirette || 1);
+  v('neg-colore', dati.colore || 'primary');
+  const s = x.scorte || { modo: 'illimitate', n: 0 };
+  v('neg-scorte', s.modo);
+  v('neg-scorte-n', s.modo === 'illimitate' ? 10 : s.n);
+  v('neg-attesa-testa', x.attesaTesta || 0);
+  v('neg-attesa-tutti', x.attesaTutti || 0);
+  for (const t of NEG_REQ) {
+    const r = (x.requisiti || []).find((q) => q.tipo === t);
+    const c = document.getElementById('neg-req-' + t);
+    if (c) c.checked = !!r;
+    if (r) v('neg-req-' + t + '-n', r.soglia);
+  }
+  v('neg-si-vede', x.siVede || 'sempre');
+  v('neg-quando', x.quando || 'sempre');
+  v('neg-dal', _negGiorno(x.dal));
+  v('neg-al', _negGiorno(x.al));
+  const att = document.getElementById('neg-attivo');
+  if (att) att.checked = x.attivo !== false;
+  ed.hidden = false;
+  _negMostraTipo(); _negMostraScorte(); _negMostraQuando();
+  _negAnteprima();
+  ed.scrollIntoView({ block: 'start', behavior: 'smooth' });
+  document.getElementById('neg-nome')?.focus({ preventScroll: true });
+}
+
+function _negChiudi() {
+  const ed = document.getElementById('neg-editor');
+  if (ed) ed.hidden = true;
+  _negBozza = null;
+  azzeraBarraSalva();
+}
+
+function _negLeggi() {
+  const g = (id) => document.getElementById(id)?.value ?? '';
+  const tipo = g('neg-tipo');
+  const dati = {};
+  if (tipo === 'effetto') { const e = g('neg-effetto'); if (e.startsWith('preset:')) dati.preset = e.slice(7); else dati.effetto = e.replace(/^effetto:/, ''); }
+  if (tipo === 'modulo') dati.modulo = Number(g('neg-modulo')) || 0;
+  if (tipo === 'mano') dati.domanda = g('neg-domanda').trim();
+  if (tipo === 'vip') dati.dirette = Number(g('neg-dirette')) || 1;
+  if (tipo === 'discord') { dati.ruolo = g('neg-ruolo'); const o = document.getElementById('neg-ruolo')?.selectedOptions?.[0]; dati.nomeRuolo = o ? o.textContent : ''; }
+  if (tipo === 'evidenza') dati.colore = g('neg-colore');
+  const requisiti = NEG_REQ.filter((t) => document.getElementById('neg-req-' + t)?.checked).map((t) => ({ tipo: t, soglia: Number(g('neg-req-' + t + '-n')) || 0 }));
+  return {
+    id: _negBozza?.id || undefined,
+    nome: g('neg-nome').trim(), parola: g('neg-parola').trim(), descrizione: g('neg-descrizione').trim(),
+    immagine: _negBozza?.immagine || '', prezzo: Number(g('neg-prezzo')) || 0, tipo, dati,
+    scorte: { modo: g('neg-scorte'), n: Number(g('neg-scorte-n')) || 0 },
+    attesaTesta: Number(g('neg-attesa-testa')) || 0, attesaTutti: Number(g('neg-attesa-tutti')) || 0,
+    requisiti, siVede: g('neg-si-vede'), quando: g('neg-quando'),
+    dal: _negDaGiorno(g('neg-dal'), false), al: _negDaGiorno(g('neg-al'), true),
+    attivo: !!document.getElementById('neg-attivo')?.checked,
+  };
+}
+
+function _negAnteprima() {
+  const box = document.getElementById('neg-anteprima');
+  if (!box || !_negBozza) return;
+  const a = _negLeggi();
+  const via = document.getElementById('neg-immagine-via');
+  if (via) via.hidden = !_negBozza.immagine;
+  const parola = a.parola || (a.nome.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').split(/[^a-z0-9]+/).find((p) => p.length >= 3) || '');
+  const req = a.requisiti.map(_negReqParole).join(', ');
+  const scorte = a.scorte.modo === 'illimitate' ? '' : _negScorteParole(a.scorte, 0);
+  const quando = a.quando === 'diretta' ? L('Solo in diretta', 'Live only', 'Solo en directo')
+    : a.quando === 'date' && a.dal && a.al ? `${_negData(a.dal)} · ${_negData(a.al)}` : '';
+  const foto = _negBozza.immagineUrl ? `<img class="neg-immagine" src="${esc(_negBozza.immagineUrl)}" alt="">`
+    : `<div class="neg-immagine vuota">${_hIco(_negBozza.immagine ? ICO.immagine : ICO.pacco)}</div>`;
+  box.innerHTML = `${foto}
+    <p class="neg-nome">${esc(a.nome || L('Senza nome', 'Untitled', 'Sin nombre'))}</p>
+    ${a.descrizione ? `<p class="neg-desc">${esc(a.descrizione)}</p>` : ''}
+    <p class="neg-prezzo">${_negNum(a.prezzo)} ${esc(nomeMonetaUI())}</p>
+    ${req ? `<p class="suggerimento">${esc(L('Per comprarlo: ', 'To buy it: ', 'Para comprarlo: ') + req)}</p>` : ''}
+    ${scorte || quando ? `<p class="suggerimento">${esc([scorte, quando].filter(Boolean).join(' · '))}</p>` : ''}
+    <p class="neg-come"><code>!${esc(_neg?.comandi?.compra || 'compra')} ${esc(parola)}</code></p>`;
+}
+
+async function _negSalva() {
+  if (!_negBozza) return;
+  const articolo = _negLeggi();
+  let d;
+  try { d = await api('/api/streamer/negozio/articoli', { method: 'POST', body: { articolo } }); }
+  catch (e) {
+    const t = NEG_ERRORI[e.dati?.codice];
+    throw new Error(t ? Lv(t) : e.message);
+  }
+  _negChiudi();
+  _negDisegna(d);
+  toast(L('Articolo salvato.', 'Item saved.', 'Artículo guardado.'));
+}
+
+async function _negTogli(id) {
+  const a = (_neg?.articoli || []).find((x) => String(x.id) === String(id));
+  if (!a) return;
+  const borse = a.tipo === 'oggetto' && a.inBorse ? L(` Sparisce anche dalle ${_negNum(a.inBorse)} borse in cui sta.`, ` It also disappears from the ${_negNum(a.inBorse)} bags it’s in.`, ` Desaparece también de las ${_negNum(a.inBorse)} bolsas en las que está.`) : '';
+  if (!(await chiediSe({ titolo: L(`Tolgo «${a.nome}» dal negozio?`, `Remove «${a.nome}» from the shop?`, `¿Quito «${a.nome}» de la tienda?`), pericolo: true,
+    testo: L('Lo storico resta com’è.', 'The history stays as it is.', 'El historial queda como está.') + borse,
+    si: L('Toglilo', 'Remove it', 'Quítalo') }))) return;
+  const d = await api('/api/streamer/negozio/articoli/' + encodeURIComponent(id), { method: 'DELETE' });
+  if (_negBozza && String(_negBozza.id) === String(id)) _negChiudi();
+  _negDisegna(d);
+  toast(L('Articolo tolto.', 'Item removed.', 'Artículo quitado.'));
+}
+
+async function _negDecidi(id, azione) {
+  const x = (_neg?.coda || []).find((c) => String(c.id) === String(id));
+  if (azione === 'rifiuta' && !(await chiediSe({ titolo: L('Rifiuto e rimborso?', 'Refuse and refund?', '¿Rechazo y reembolso?'), pericolo: true,
+    testo: L(`${x ? x.display || x.user : ''} riceve indietro ${x ? _negNum(x.prezzo) : ''} ${nomeMonetaUI()}, e il bot glielo dice in chat.`, `${x ? x.display || x.user : ''} gets ${x ? _negNum(x.prezzo) : ''} ${nomeMonetaUI()} back, and the bot tells them in chat.`, `${x ? x.display || x.user : ''} recibe de vuelta ${x ? _negNum(x.prezzo) : ''} ${nomeMonetaUI()}, y el bot se lo dice en el chat.`),
+    si: L('Rifiuta e rimborsa', 'Refuse and refund', 'Rechazar y reembolsar') }))) return;
+  let d;
+  try { d = await api('/api/streamer/negozio/coda/' + encodeURIComponent(id), { method: 'POST', body: { azione } }); }
+  catch (e) { const t = NEG_ERRORI[e.dati?.codice]; if (t) { caricaNegozio(); throw new Error(Lv(t)); } throw e; }
+  _negDisegna(d);
+  toast(azione === 'rifiuta' ? L('Rimborsato.', 'Refunded.', 'Reembolsado.') : L('Segnato come fatto.', 'Marked as done.', 'Marcado como hecho.'));
 }
 
 function pannelloGiveaway() {
@@ -27585,6 +28305,7 @@ function caricaDatiScheda(id) {
   if (id === 'moduli') { caricaPiattaforme(); caricaModuli(); caricaContatori(); caricaGiochiComandi(); collegaMorti(); requestAnimationFrame(() => applicaSottoSchede('moduli')); }
   if (id === 'statistiche') { caricaStatistiche(); caricaClassifica(); }
   if (id === 'giochi') { caricaClassifica(); caricaCitazioni(); caricaBattute(); caricaGiochi(); caricaGiochiComandi(); caricaRegoleGiochi(); _disegnaFormaMonete(); }
+  if (id === 'negozio') { caricaNegozio(); requestAnimationFrame(() => applicaSottoSchede('negozio')); }
   if (id === 'telegram') { caricaTgLogin(); collegaTgDestinazioni(); caricaTgDestinazioni(); collegaCartaLive(); caricaCartaLive(); caricaCompleanni(); }
   if (id === 'notifiche') { caricaTikTok(); caricaInstagram(); collegaFeed(); caricaFeed(); }
   if (id === 'ruoli') { collegaRuoli(); caricaRuoli(); }

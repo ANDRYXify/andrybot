@@ -101,6 +101,8 @@ import * as dcPreset from '../features/discord-preset.js';
 import * as dcEventi from '../features/discord-eventi.js';
 import * as pubblicita from '../features/pubblicita.js';
 import * as giochiConf from '../features/giochi-conf.js';
+import * as negozio from '../features/negozio.js';
+import { ruoliDaVendere } from '../features/negozio-tipi.js';
 import { stato as statoArena } from '../features/arena.js';
 import { VOCI as VOCI_TWITCH } from '../features/sondaggi.js';
 import * as modalitaChat from '../features/modalita-chat.js';
@@ -9057,6 +9059,53 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     const giochiConfNuovo = giochiConf.normalizzaConf(s?.settings?.giochiConf, req.body?.giochiConf);
     streamers.setSettings(login, { ...(s?.settings || {}), giochiConf: giochiConfNuovo });
     res.json(giochiConf.catalogoPerPannello(streamers.get(login)?.settings || {}));
+  });
+
+  // ------------------------------------------------------------ IL NEGOZIO
+  // La porta e basta: chi e' entrato, e il canale e' il suo. Le decisioni
+  // stanno in features/negozio.js (docs/NEGOZIO.md). Le parole degli errori
+  // le traduce il pannello dal codice; queste restano per chi legge la rete.
+  const ERRORI_NEGOZIO = {
+    nome: 'dai un nome all\'articolo', parola: 'la parola per comprarlo va scritta con lettere e numeri',
+    parolaUsata: 'quella parola la usa già un altro articolo', tipo: 'scegli cosa fa l\'articolo',
+    effetto: 'scegli un effetto della tua libreria', modulo: 'scegli un modulo', ruolo: 'scegli un ruolo di Discord',
+    ruoloRegola: 'quel ruolo lo danno già le regole dei Ruoli', scorte: 'quante a persona: almeno una',
+    date: 'la data di fine viene dopo quella di inizio', troppi: 'hai già il massimo di articoli',
+    immagine: 'l\'immagine deve essere una delle tue', nonCe: 'questo articolo non c\'è più',
+  };
+  app.get('/api/streamer/negozio', requireLogin, (req, res) => {
+    res.json(negozio.vistaPannello(currentUser(req).login));
+  });
+  app.post('/api/streamer/negozio/attivo', requireLogin, (req, res) => {
+    if (!esigiFunzione(req, res, 'giochi', 'Il negozio')) return;
+    const login = currentUser(req).login;
+    negozio.apri(login, req.body?.attivo === true);
+    res.json(negozio.vistaPannello(login));
+  });
+  app.post('/api/streamer/negozio/articoli', requireLogin, (req, res) => {
+    if (!esigiFunzione(req, res, 'giochi', 'Il negozio')) return;
+    const login = currentUser(req).login;
+    const r = negozio.salvaArticolo(login, req.body?.articolo);
+    if (!r.ok) return res.status(400).json({ errore: ERRORI_NEGOZIO[r.errore] || 'articolo non valido', codice: r.errore });
+    res.json({ ...negozio.vistaPannello(login), salvato: r.articolo.id });
+  });
+  app.delete('/api/streamer/negozio/articoli/:id', requireLogin, (req, res) => {
+    const login = currentUser(req).login;
+    if (!negozio.togliArticolo(login, req.params.id).ok) return res.status(404).json({ errore: ERRORI_NEGOZIO.nonCe, codice: 'nonCe' });
+    res.json(negozio.vistaPannello(login));
+  });
+  app.get('/api/streamer/negozio/ruoli', requireLogin, wrap(async (req, res) => {
+    res.json(await ruoliDaVendere(currentUser(req).login));
+  }));
+  // «Fatto» o «rifiuta e rimborsa» su un acquisto da consegnare. Chi e' stato
+  // rimborsato lo sa in chat, con la voce del canale.
+  app.post('/api/streamer/negozio/coda/:id', requireLogin, (req, res) => {
+    const login = currentUser(req).login;
+    const azione = req.body?.azione === 'rifiuta' ? 'rifiuta' : 'fatto';
+    const r = azione === 'rifiuta' ? negozio.rifiuta(login, req.params.id) : negozio.consegna(login, req.params.id);
+    if (!r.ok) return res.status(409).json({ errore: 'questo acquisto è già stato deciso', codice: 'deciso' });
+    if (r.frase) { try { manager.say(login, r.frase); } catch { /* niente */ } }
+    res.json(negozio.vistaPannello(login));
   });
 
   // crea/aggiorna un gioco personalizzato (trivia = domande, parola = elenco parole)

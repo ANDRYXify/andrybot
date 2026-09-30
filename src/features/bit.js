@@ -25,7 +25,7 @@ const TTL_MS = 3 * 60_000;
 // Si chiede il massimo che Twitch dia, non i tre del podio: serve a rispondere
 // «sei al 12° posto» a chi sul podio non c'e'. E' quella riga che fa cheerare,
 // non il podio di qualcun altro.
-const QUANTI = 100;
+export const QUANTI = 100;
 const PODIO = 3;
 
 export const PERIODI = ['day', 'week', 'month', 'year', 'all'];
