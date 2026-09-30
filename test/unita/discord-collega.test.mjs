@@ -61,7 +61,7 @@ test('il codice scritto in chat collega, e vale una volta sola', () => {
 
   detto.length = 0;
   dc.tryComando(msg('due', 'ladro', '!discord ' + a.codice), parla);
-  assert.match(detto[0], /non vale piu/i, 'chi lo ricopia dalla chat trova un codice bruciato');
+  assert.match(detto[0], /non vale più/i, 'chi lo ricopia dalla chat trova un codice bruciato');
   assert.equal(dcLink.prendi('due', 'ladro'), null);
 });
 
@@ -70,7 +70,7 @@ test('un codice di un altro canale non vale qui', () => {
   const a = dc.apri('tre', { dcId: DC });
   detto.length = 0;
   dc.tryComando(msg('quattro', 'ludo', '!discord ' + a.codice), parla);
-  assert.match(detto[0], /non vale piu/i);
+  assert.match(detto[0], /non vale più/i);
   assert.equal(dcLink.prendi('quattro', 'ludo'), null);
   // e muore lo stesso: scritto nella chat sbagliata e' comunque finito in
   // pubblico, quindi non deve valere piu' nemmeno a casa sua.
@@ -82,7 +82,7 @@ test('un codice scaduto non collega', () => {
   const a = dc.apri('cinque', { dcId: DC, ora: 1000 });
   detto.length = 0;
   dc.tryComando(msg('cinque', 'ludo', '!discord ' + a.codice), parla, { ora: 1000 + dc.SCADENZA_MS + 1 });
-  assert.match(detto[0], /non vale piu/i);
+  assert.match(detto[0], /non vale più/i);
   assert.equal(dcLink.prendi('cinque', 'ludo'), null);
 });
 

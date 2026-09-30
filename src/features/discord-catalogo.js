@@ -83,9 +83,9 @@ export function nonPuoDare(permessi, bitsBot) {
 // Quanto puo' chiedere un preset: i limiti sono quelli del motore della
 // differenza, e stanno scritti li'. Averne una seconda copia qui vorrebbe dire
 // due numeri che un giorno non coincidono piu'.
-import { MAX_CATEGORIE, MAX_CANALI, MAX_RUOLI, MAX_DOMANDE, MAX_RISPOSTE, ruoliIntoccabili, TIPI, CON_FILI, CON_TAG, CON_LENTEZZA, LENTEZZE, ARCHIVI, TUTTI, normalizzaIngresso, normalizzaFiltro, TIPI_FILTRO, LISTE_FILTRO, portaAccendibile, normalizzaTinta, normalizzaSegno, SEGNI, CON_SEGNO, CON_TINTE, A_CHI, aChiDi } from './discord-preset.js';
+import { MAX_CATEGORIE, MAX_CANALI, MAX_RUOLI, MAX_RIGHE, MAX_PARTENZA, MAX_RISP_CANALI, MAX_RISP_RUOLI, scarta, MAX_DOMANDE, MAX_RISPOSTE, ruoliIntoccabili, TIPI, CON_FILI, CON_TAG, CON_LENTEZZA, LENTEZZE, ARCHIVI, TUTTI, normalizzaIngresso, normalizzaFiltro, TIPI_FILTRO, LISTE_FILTRO, portaAccendibile, normalizzaTinta, normalizzaSegno, SEGNI, CON_SEGNO, CON_TINTE, A_CHI, aChiDi } from './discord-preset.js';
 import { rigaPer } from './discord-righe.js';
-export { MAX_CATEGORIE, MAX_CANALI, MAX_RUOLI, MAX_DOMANDE, MAX_RISPOSTE, TUTTI, TIPI_FILTRO, LISTE_FILTRO, SEGNI, CON_SEGNO, CON_TINTE, A_CHI };
+export { MAX_CATEGORIE, MAX_CANALI, MAX_RUOLI, MAX_RIGHE, MAX_PARTENZA, MAX_RISP_CANALI, MAX_RISP_RUOLI, MAX_DOMANDE, MAX_RISPOSTE, TUTTI, TIPI_FILTRO, LISTE_FILTRO, SEGNI, CON_SEGNO, CON_TINTE, A_CHI };
 export const TIPI_CANALE = Object.freeze(['testo', 'voce', 'annunci', 'palco', 'forum', 'media']);
 
 const somma = (nomi) => (nomi || []).reduce((t, n) => t | (PERMESSI[n] || 0n), 0n);
@@ -501,7 +501,7 @@ export const daId = (id) => CATALOGO.find((p) => p.id === String(id || '')) || n
 // campi che esistono, coi limiti che esistono, e tutto il resto cade. Non si
 // controlla se e' valido — si COSTRUISCE valido, che e' un'altra cosa: un
 // controllo si puo' dimenticare un caso, una ricostruzione no.
-function righePulite(elenco) {
+function righePulite(elenco, scarti = null) {
   const fuori = [];
   for (const r of (Array.isArray(elenco) ? elenco : [])) {
     const chi = r?.chi === TUTTI ? TUTTI
@@ -511,18 +511,20 @@ function righePulite(elenco) {
     const da = solo(r?.da);
     const nega = solo(r?.nega);
     if (!da.length && !nega.length) continue;
+    if (fuori.length >= MAX_RIGHE) { scarta(scarti, 'righe'); continue; }
     fuori.push({ chi, da, nega });
-    if (fuori.length >= 10) break;
   }
   return fuori.length ? fuori : null;
 }
 
-export function normalizzaPreset(x) {
+// `scarti`, se c'e', raccoglie quello che i tetti lasciano fuori (vedi scarta).
+export function normalizzaPreset(x, scarti = null) {
   const categorie = [];
   let canaliTotali = 0;
   const unCanale = (ch) => {
     const n = String(ch?.nome || '').trim().slice(0, 100);
-    if (!n || canaliTotali >= MAX_CANALI) return null;
+    if (!n) return null;
+    if (canaliTotali >= MAX_CANALI) { scarta(scarti, 'canali'); return null; }
     canaliTotali++;
     const tipo = TIPI_CANALE.includes(ch?.tipo) ? ch.tipo : 'testo';
     const num = TIPI[tipo];
@@ -530,7 +532,7 @@ export function normalizzaPreset(x) {
       nome: n,
       tipo,
       argomento: String(ch?.argomento || '').slice(0, tipo === 'forum' || tipo === 'media' ? 4096 : 1024),
-      permessi: righePulite(ch?.permessi),
+      permessi: righePulite(ch?.permessi, scarti),
       // LE COSE CHE UN CANALE HA DAVVERO, e solo dove hanno senso.
       //
       // Una lentezza su una categoria, un tag su un canale di voce, una durata
@@ -559,7 +561,7 @@ export function normalizzaPreset(x) {
   // I RUOLI del preset. Il nome e' l'unica cosa obbligatoria: un ruolo senza
   // privilegi e senza colore e' legittimo — serve a dire «questo e' uno di noi»
   // e basta, ed e' il mestiere di meta' dei ruoli che esistono.
-  const ruoli = (Array.isArray(x?.ruoli) ? x.ruoli : []).slice(0, MAX_RUOLI).map((r) => {
+  const ruoliTutti = (Array.isArray(x?.ruoli) ? x.ruoli : []).map((r) => {
     const nome = String(r?.nome || '').trim().slice(0, 100);
     if (!nome) return null;
     return {
@@ -581,16 +583,24 @@ export function normalizzaPreset(x) {
       ...(String(r?.da || '').replace(/[^0-9]/g, '') ? { da: String(r.da).replace(/[^0-9]/g, '').slice(0, 24) } : {}),
     };
   }).filter(Boolean);
+  scarta(scarti, 'ruoli', ruoliTutti.length - MAX_RUOLI);
+  const ruoli = ruoliTutti.slice(0, MAX_RUOLI);
   const canali = (Array.isArray(x?.canali) ? x.canali : []).map(unCanale).filter(Boolean);
-  for (const c of (Array.isArray(x?.categorie) ? x.categorie : []).slice(0, MAX_CATEGORIE)) {
+  for (const c of (Array.isArray(x?.categorie) ? x.categorie : [])) {
     const nome = String(c?.nome || '').trim().slice(0, 100);
     if (!nome) continue;
+    // una categoria oltre il tetto resta fuori coi suoi canali, e si contano tutti
+    if (categorie.length >= MAX_CATEGORIE) {
+      scarta(scarti, 'categorie');
+      scarta(scarti, 'canali', (Array.isArray(c?.canali) ? c.canali : []).filter((ch) => String(ch?.nome || '').trim()).length);
+      continue;
+    }
     const dentro = [];
     for (const ch of (Array.isArray(c?.canali) ? c.canali : [])) {
       const y = unCanale(ch);
       if (y) dentro.push(y);
     }
-    categorie.push({ nome, permessi: righePulite(c?.permessi), canali: dentro });
+    categorie.push({ nome, permessi: righePulite(c?.permessi, scarti), canali: dentro });
   }
   // LE IMPOSTAZIONI DEL SERVER dentro la traccia, come i canali e i ruoli.
   //
@@ -632,11 +642,11 @@ export function normalizzaPreset(x) {
   // c'e', e le due cose devono passare per la STESSA normalizzazione. Tenerne
   // una copia qui vorrebbe dire che un giorno il confronto direbbe «diverso»
   // per una maiuscola, e la porta si riscriverebbe tutte le sere.
-  const ingresso = normalizzaIngresso(x?.ingresso);
+  const ingresso = normalizzaIngresso(x?.ingresso, scarti);
 
   // IL FILTRO, per la stessa ragione della porta: la normalizzazione sta con
   // la differenza, perche' e' li' che si confronta quel che vuoi con quel che c'e'.
-  const filtro = normalizzaFiltro(x?.filtro);
+  const filtro = normalizzaFiltro(x?.filtro, scarti);
 
   // I ruoli che lo streamer tiene anche se la traccia non li prevede. In
   // modalita' normale non cambia niente — non si cancella mai; in distruttiva
@@ -657,7 +667,7 @@ export function normalizzaPreset(x) {
 // permessi e' un preset che non li tocca, e quelli che ci sono restano come
 // sono. Rileggerli e riscriverli identici sarebbe lo stesso risultato passando
 // per un giro in cui qualcosa puo' andare storto.
-export function dallaFotografia(foto, { porta = null, regole = null, TIPI_ID = { 0: 'testo', 2: 'voce', 5: 'annunci', 13: 'palco', 15: 'forum', 16: 'media' } } = {}) {
+export function dallaFotografia(foto, { porta = null, regole = null, scarti = null, TIPI_ID = { 0: 'testo', 2: 'voce', 5: 'annunci', 13: 'palco', 15: 'forum', 16: 'media' } } = {}) {
   const canali = (foto?.canali || []).filter((c) => c && c.id != null);
   const categorie = canali.filter((c) => Number(c.tipo) === 4);
   const perId = new Map(categorie.map((c) => [String(c.id), c]));
@@ -744,5 +754,5 @@ export function dallaFotografia(foto, { porta = null, regole = null, TIPI_ID = {
     ...(foto?.impostazioni ? { server: foto.impostazioni } : {}),
     canali: cima,
     categorie: categorie.map((c) => ({ nome: String(c.nome || ''), canali: dentro.get(String(c.id)) || [] })),
-  });
+  }, scarti);
 }

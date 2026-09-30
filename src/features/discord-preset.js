@@ -58,6 +58,21 @@ export const ARCHIVI = Object.freeze([60, 1440, 4320, 10080]);
 export const MAX_CATEGORIE = 20;
 export const MAX_CANALI = 60;
 export const MAX_RUOLI = 15;
+// Le righe di «Chi può fare cosa» di un canale o di una categoria, e i canali
+// di partenza della porta. Come gli altri tetti li leggono la normalizzazione
+// e il pannello, che ferma il tasto qui invece di lasciar tagliare in silenzio.
+export const MAX_RIGHE = 10;
+export const MAX_PARTENZA = 20;
+// E quello che una risposta della porta apre e da'.
+export const MAX_RISP_CANALI = 20;
+export const MAX_RISP_RUOLI = 10;
+
+// CHI TAGLIA LO DICE. Le normalizzazioni tengono i tetti, e quello che cade lo
+// contano qui dentro, per chiave: il server lo rimanda al pannello, che scrive
+// cosa e' rimasto fuori invece di lasciarlo sparire.
+export const scarta = (scarti, chiave, quanti = 1) => {
+  if (scarti && quanti > 0) scarti[chiave] = (scarti[chiave] || 0) + quanti;
+};
 
 // COME SI VEDE UN RUOLO, e perche' sono due cose e non quattro.
 //
@@ -750,7 +765,7 @@ export function differenza(foto, preset, { togliere = false, puoiToccare = null 
   for (const v of lista) {
     const gia = trovati.get(v);
     if (v.avvisi) avvisi = gia ? { id: String(gia.id), nome: gia.nome } : { nome: v.nome, dentro: v.dentro };
-    if (!gia) { crea.push({ ...v, perche: 'non c\'e\'' }); continue; }
+    if (!gia) { crea.push({ ...v, perche: 'non c\'è' }); continue; }
     const cambia = {};
     if (permessiDiversi(v.permessi, gia)) cambia.permessi = fondiPermessi(gia, v.permessi);
     if (v.argomento && String(gia.argomento || '') !== v.argomento) cambia.argomento = v.argomento;
@@ -907,7 +922,7 @@ export const MAX_RISPOSTE = 20;
 // Canali e ruoli si nominano per NOME, non per id: la traccia li sta creando
 // nello stesso giro, e un id scritto qui sarebbe l'id di un canale che non
 // esiste ancora, o di uno cancellato il mese scorso.
-export function normalizzaIngresso(g) {
+export function normalizzaIngresso(g, scarti = null) {
   if (!g || typeof g !== 'object') return null;
   const testo = (v, max) => String(v || '').replace(/\s+/g, ' ').trim().slice(0, max);
   const nomi = (v, max) => [...new Set((Array.isArray(v) ? v : []).map((x) => testo(x, 100)).filter(Boolean))].slice(0, max);
@@ -917,8 +932,12 @@ export function normalizzaIngresso(g) {
     const risposte = (Array.isArray(d.risposte) ? d.risposte : []).slice(0, MAX_RISPOSTE).map((r) => {
       const t = testo(r?.titolo, 50);
       if (!t) return null;
+      const canali = nomi(r?.canali, Infinity);
+      const ruoli = nomi(r?.ruoli, Infinity);
+      scarta(scarti, 'rispCanali', canali.length - MAX_RISP_CANALI);
+      scarta(scarti, 'rispRuoli', ruoli.length - MAX_RISP_RUOLI);
       return { titolo: t, testo: testo(r?.testo, 100), emoji: testo(r?.emoji, 32),
-        canali: nomi(r?.canali, 20), ruoli: nomi(r?.ruoli, 10) };
+        canali: canali.slice(0, MAX_RISP_CANALI), ruoli: ruoli.slice(0, MAX_RISP_RUOLI) };
     }).filter(Boolean);
     // Una domanda senza risposte non e' una domanda: sarebbe un muro con
     // scritto «scegli» e niente da scegliere.
@@ -934,7 +953,9 @@ export function normalizzaIngresso(g) {
     }).filter(Boolean),
   } : null;
   if (!domande.length && !ben && g.acceso === undefined && !Array.isArray(g.canaliDiPartenza)) return null;
-  return { acceso: !!g.acceso, canaliDiPartenza: nomi(g.canaliDiPartenza, 20), domande,
+  const partenza = nomi(g.canaliDiPartenza, Infinity);
+  scarta(scarti, 'partenza', partenza.length - MAX_PARTENZA);
+  return { acceso: !!g.acceso, canaliDiPartenza: partenza.slice(0, MAX_PARTENZA), domande,
     ...(ben ? { benvenuto: ben } : {}) };
 }
 
@@ -1133,7 +1154,7 @@ export function differenzaIngresso(preset, foto, stato = {}) {
 
   let blocco = '';
   if (!(foto?.caratteristiche || []).includes('COMMUNITY')) {
-    blocco = 'questo server non e\' di tipo Community: la schermata di benvenuto e le domande d\'ingresso Discord le accende solo li\', dalle sue impostazioni';
+    blocco = 'questo server non è di tipo Community: la schermata di benvenuto e le domande d\'ingresso Discord le accende solo lì, dalle sue impostazioni';
   } else if (laPorta && vuole.acceso) {
     const c = contaPorta(preset, foto, vuole);
     if (!c.basta) {
@@ -1189,7 +1210,7 @@ const NOME_FILTRO = Object.freeze({
   profilo: 'Nomi e profili',
 });
 
-export function normalizzaFiltro(v) {
+export function normalizzaFiltro(v, scarti = null) {
   if (!Array.isArray(v)) return null;
   const testo = (x, max) => String(x || '').replace(/\s+/g, ' ').trim().slice(0, max);
   const lista = (x, quante, lunghe) => [...new Set((Array.isArray(x) ? x : [])
@@ -1226,12 +1247,12 @@ export function normalizzaFiltro(v) {
       voce.espressioni = lista(r?.espressioni, 10, 260);
       voce.passano = lista(r?.passano, 100, 60);
       // Una regola di parole senza parole non filtra niente: non si manda.
-      if (!voce.parole.length && !voce.espressioni.length) { quanti[tipo]--; continue; }
+      if (!voce.parole.length && !voce.espressioni.length) { quanti[tipo]--; scarta(scarti, 'senzaParole'); continue; }
     }
     if (tipo === 'liste') {
       voce.liste = lista(r?.liste, 3, 20).filter((k) => LISTE_FILTRO.includes(k));
       voce.passano = lista(r?.passano, 1000, 60);
-      if (!voce.liste.length) { quanti[tipo]--; continue; }
+      if (!voce.liste.length) { quanti[tipo]--; scarta(scarti, 'senzaListe'); continue; }
     }
     if (tipo === 'menzioni') {
       voce.tettoMenzioni = Math.max(1, Math.min(50, Math.round(Number(r?.tettoMenzioni)) || 5));

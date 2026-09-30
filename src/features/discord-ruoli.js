@@ -33,17 +33,6 @@ export const TIPI = ['follower', 'sub', 'vip', 'mod', 'monete', 'ore', 'serie', 
 const CON_SOGLIA = new Set(['monete', 'ore', 'serie', 'dirette']);
 export const haSoglia = (tipo) => CON_SOGLIA.has(String(tipo));
 
-export const T_REGOLA = {
-  follower: ['Ti segue', 'Follows you', 'Te sigue'],
-  sub: ['È abbonato', 'Is subscribed', 'Está suscrito'],
-  vip: ['È VIP', 'Is a VIP', 'Es VIP'],
-  mod: ['È moderatore', 'Is a moderator', 'Es moderador'],
-  monete: ['Ha almeno tante monete', 'Has at least this many coins', 'Tiene al menos estas monedas'],
-  ore: ['Ti ha guardato almeno tante ore', 'Has watched you at least this many hours', 'Te ha visto al menos estas horas'],
-  serie: ['È di fila da tante dirette', 'Has a streak of this many streams', 'Lleva una racha de tantos directos'],
-  dirette: ['È stato ad almeno tante dirette', 'Has attended at least this many streams', 'Ha estado en al menos tantos directos'],
-};
-
 // Una regola vale se nomina un ruolo che esiste ancora e una condizione che
 // sappiamo valutare. `ruoliVeri` e' l'elenco degli id che il server ha davvero.
 export function regolaOk(r, ruoliVeri) {
@@ -55,11 +44,18 @@ export function regolaOk(r, ruoliVeri) {
   return true;
 }
 
-export function normRegole(lista, { max = 20 } = {}) {
+// Quante regole tiene la scheda dei Ruoli. Lo leggono il server, che non ne
+// salva di piu', e il pannello, che ferma «Aggiungi una regola» qui.
+export const MAX_REGOLE = 20;
+
+// Il tetto conta le regole VERE: prima si scartano quelle vuote e i doppioni,
+// poi si contano. Tagliare l'elenco grezzo farebbe perdere regole buone dietro
+// a una riga vuota.
+export function normRegole(lista, { max = MAX_REGOLE } = {}) {
   const arr = Array.isArray(lista) ? lista : [];
   const out = [];
   const visti = new Set();
-  for (const r of arr.slice(0, max)) {
+  for (const r of arr) {
     const tipo = String(r?.tipo || '');
     if (!TIPI.includes(tipo)) continue;
     const ruolo = String(r?.ruolo || '').replace(/[^0-9]/g, '').slice(0, 24);
@@ -70,10 +66,14 @@ export function normRegole(lista, { max = 20 } = {}) {
     const k = `${tipo}|${ruolo}|${soglia}`;
     if (visti.has(k)) continue;
     visti.add(k);
+    if (out.length >= max) continue;
     out.push({ tipo, ruolo, soglia });
   }
   return out;
 }
+
+// Quante regole vere restano fuori dal tetto: chi taglia lo deve poter dire.
+export const regoleFuori = (lista) => Math.max(0, normRegole(lista, { max: Infinity }).length - MAX_REGOLE);
 
 // I ruoli che UNA regola qualsiasi nomina: sono gli unici che questo gestore
 // puo' togliere. Tutto il resto del server non lo riguarda.
@@ -121,7 +121,7 @@ const A_PAROLE = {
   monete: (n) => `ha almeno ${n} monete`,
   ore: (n) => `ti ha guardato almeno ${n} ore`,
   serie: (n) => `è di fila da ${n} dirette`,
-  dirette: (n) => `è stato ad almeno ${n} dirette`,
+  dirette: (n) => `c’è stato ad almeno ${n} dirette`,
 };
 
 export function perche(regola) {
@@ -176,7 +176,7 @@ export function differenza({ regole, dati, attuali, fuoriPortata } = {}) {
     dare: dare.sort(), togliere: togliere.sort(), bloccati: [...new Set(bloccati)].sort(),
     perche: Object.fromEntries([
       ...dare.map((id) => [id, (motivi.get(id) || []).join(', ')]),
-      ...togliere.map((id) => [id, 'non rientra piu\' in nessuna condizione']),
+      ...togliere.map((id) => [id, 'non rientra più in nessuna condizione']),
     ]),
   };
 }

@@ -19,6 +19,7 @@ import { dirname, join } from 'node:path';
 import {
   TEMI, NOMI_TEMI, MISURA, SEGNAPOSTO, CARATTERI,
   svgCarta, resaCarta, disegnabile, temaPerPiattaforma, avatarDataUri, normCarta,
+  NOMI_TEMA, improntaCarta,
 } from '../../src/features/cartalive.js';
 
 const RAD = join(dirname(fileURLToPath(import.meta.url)), '../..');
@@ -235,4 +236,24 @@ test('la stessa faccia non si riscarica a ogni disegno', async () => {
   // ma non per sempre: passato il tempo, si torna a chiedere
   await avatarDataUri(u, { fetchImpl, ora: Date.now() + 60 * 60 * 1000 });
   assert.equal(quante, 2, 'il ricordo non scade mai: una faccia cambiata non si vedrebbe più');
+});
+
+// I NOMI DEI TEMI: un'etichetta, nelle tre lingue, senza la lineetta lunga. E un
+// tema si riconosce dal disegno: chi l'aveva scelto quando si chiamava in un
+// altro modo continua a leggere «Stai usando un tema standard».
+test('i temi hanno un nome per lingua, e il nome non decide se un tema e\' quel tema', () => {
+  for (const id of NOMI_TEMI) {
+    assert.equal(NOMI_TEMA[id]?.length, 3, `${id}: tre lingue`);
+    assert.equal(TEMI[id].nome, NOMI_TEMA[id][0], `${id}: il nome della carta e' quello italiano`);
+    for (const n of NOMI_TEMA[id]) assert.ok(!n.includes('—'), `${id}: «${n}» senza lineetta`);
+    const scelta = JSON.parse(JSON.stringify(normCarta({ ...TEMI[id], nome: 'Un nome di prima' })));
+    assert.equal(NOMI_TEMI.find((t) => improntaCarta(TEMI[t]) === improntaCarta(scelta)), id, `${id}: riconosciuto anche col nome vecchio`);
+  }
+  const SRV = readFileSync(join(RAD, 'src/web/server.js'), 'utf8');
+  const i = SRV.indexOf('function temaUguale(carta)');
+  const f = SRV.slice(i, SRV.indexOf('\n  }\n', i));
+  assert.match(f, /cartaLive\.improntaCarta\(carta\)/, 'il server confronta i disegni, non i nomi');
+  assert.match(SRV, /nomi: cartaLive\.NOMI_TEMA\[id\] \|\| null,/, 'e manda al pannello i nomi nelle tre lingue');
+  const APP = readFileSync(join(RAD, 'src/web/public/app.js'), 'utf8');
+  assert.ok(APP.includes('${esc(t.nomi ? L(t.nomi[0], t.nomi[1], t.nomi[2]) : t.nome)}'), 'e il pannello li mostra nella lingua di chi guarda');
 });

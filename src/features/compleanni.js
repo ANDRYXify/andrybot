@@ -126,7 +126,7 @@ export function tryComando(msg, parla) {
   if (cmd.azione === 'mostra') {
     const cur = compleanni.get(ch, chi);
     parla(cur
-      ? `@${nome} il tuo compleanno e' segnato per il ${fmtData(cur.giorno, cur.mese)}. Per cambiarlo: !compleanno GG/MM`
+      ? `@${nome} il tuo compleanno è segnato per il ${fmtData(cur.giorno, cur.mese)}. Per cambiarlo: !compleanno GG/MM`
       : `@${nome} scrivi !compleanno GG/MM (per esempio !compleanno 25/12) e ti faccio gli auguri il giorno giusto.`);
     return true;
   }
@@ -157,8 +157,10 @@ export function auguriInChat(msg, parla, fuoco) {
   const r = compleanni.get(ch, chi);
   if (!r) return false;
   const { giorno, mese, anno } = oggiRoma();
-  if (r.giorno !== giorno || r.mese !== mese || r.last_auguri === anno) return false;
-  compleanni.markAuguri(ch, chi, anno);
+  // il segno e' quello della CHAT: gli auguri del gruppo, partiti a
+  // mezzanotte, non tolgono quelli di chi passa in chat
+  if (r.giorno !== giorno || r.mese !== mese || r.last_auguri_chat === anno) return false;
+  compleanni.markAuguri(ch, chi, anno, 'chat');
   parla(augurioChat(cfg.messaggio, { nome: msg.display || msg.user }));
   if (cfg.effetto) { try { fuoco?.(ch, cfg.effetto); } catch { /* l'effetto e' un di piu' */ } }
   return true;

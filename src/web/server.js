@@ -90,7 +90,7 @@ import * as discord from '../features/discord.js';
 import * as dcApi from '../features/discord-api.js';
 import * as dcCollega from '../features/discord-collega.js';
 import * as dcGiro from '../features/discord-giro.js';
-import { normRegole, postoDeiRuoli, livelloDi, TIPI as TIPI_RUOLO, haSoglia } from '../features/discord-ruoli.js';
+import { normRegole, regoleFuori, MAX_REGOLE, postoDeiRuoli, livelloDi, TIPI as TIPI_RUOLO, haSoglia } from '../features/discord-ruoli.js';
 import * as sostegno from '../features/sostegno.js';
 import { creaChiavi, DURATA_MS as CHIAVE_MS } from './chiave-breve.js';
 import { peso as pesoDanno } from '../features/discord-peso.js';
@@ -1079,6 +1079,12 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     return SCOPES.broadcaster.filter((s) => !t.scopes.includes(s));
   };
 
+  // C'E' UN POSTO DOVE MANDARE L'AVVISO? Il gruppo di «Rileva gruppo» oppure un
+  // posto qualsiasi dell'elenco: e' la condizione con cui «impostazioni»
+  // accetta di accendere l'avviso, e il pannello la legge da qui invece di
+  // rifarsela (se la rifaceva piu' stretta, voleva per forza il gruppo).
+  const tgHaPosto = (login, c = tgConf.get(login)) => !!(c?.chat_id || tgDest.lista(login).length);
+
   // stato Telegram per la dashboard — MAI il token (segreto): solo se è
   // configurato, lo @username del bot, il gruppo collegato e le impostazioni.
   const statoTelegram = (login) => {
@@ -1088,6 +1094,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       botUsername: c?.bot_username || '',
       gruppo: c?.chat_titolo || '',
       gruppoOk: !!(c && c.chat_id),
+      postoOk: tgHaPosto(login, c),
       attivo: !!(c && c.attivo),
       messaggio: c?.messaggio || '',
       pinLive: c ? !!c.pin_live : true,
@@ -4585,12 +4592,13 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
   app.get('/api/tgapp/stato', requireLogin, (req, res) => {
     const u = currentUser(req);
     const s = streamers.get(u.login);
-    const st = manager.status();
     res.json({
       login: u.login, display: u.display || u.login, ruolo: u.role,
       abilitato: s?.status === 'approved',
       botOn: !!s?.botEnabled,
-      inChat: Array.isArray(st?.channels) && st.channels.includes(u.login),
+      // la stessa risposta del pannello: la chat della piattaforma del canale,
+      // non quella di Twitch per tutti (null: il canale una chat non ce l'ha)
+      inChat: manager.inChat ? manager.inChat(u.login) : null,
     });
   });
 
@@ -4692,6 +4700,8 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
     botNome: String(c?.bot_nome || ''),
     attivo: !!c?.attivo,
     regole: c?.regole || [],
+    // il tetto delle regole: il pannello ferma «Aggiungi una regola» qui
+    maxRegole: MAX_REGOLE,
     ultimoGiro: Number(c?.ultimo_giro) || 0,
     ultimoEsito: c?.ultimo_esito || {},
     // Le frasi in chat: le sue, e accanto quelle di casa — cosi' il pannello
@@ -4862,7 +4872,10 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
 
   // La prova va ESATTAMENTE dove finirebbe davvero, col testo e la menzione di
   // quella destinazione: una prova che passa da un'altra strada prova altro.
-  app.post('/api/streamer/discord/avvisi/:id/prova', requireOwner, wrap(async (req, res) => {
+  // E chiede lo stesso piano degli avvisi veri (bot.js, annunciaDiretta): una
+  // prova che parte dove l'avviso vero non partirebbe racconterebbe il falso.
+  // L'etichetta e' la stessa che la scheda mostra sopra i canali.
+  app.post('/api/streamer/discord/avvisi/:id/prova', requireOwner, gateFeature('notifiche', 'Mandare gli avvisi su Discord'), wrap(async (req, res) => {
     const login = currentUser(req).login;
     const d = dcDest.get(login, req.params.id);
     const token = dcApi.tokenDi(dcRuoli.get(login));
@@ -4900,7 +4913,11 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
     // un campo vuoto vuol dire «non l'ho toccato», non «cancellalo»: il token
     // il pannello non ce l'ha, quindi non puo' nemmeno rimandarlo indietro.
     if (typeof b.token === 'string' && b.token.trim()) campi.token = b.token.trim();
-    if (b.regole !== undefined) campi.regole = normRegole(b.regole);
+    if (b.regole !== undefined) {
+      // oltre il tetto non si taglia in silenzio: si dice, e non si salva niente
+      if (regoleFuori(b.regole)) return res.status(400).json({ errore: `Più di ${MAX_REGOLE} regole non si tengono: togline qualcuna.` });
+      campi.regole = normRegole(b.regole);
+    }
     if (b.frasi !== undefined) campi.frasi = dcCollega.normalizzaFrasi(b.frasi);
     if (b.attivo !== undefined) campi.attivo = !!b.attivo;
     const prima = dcRuoli.get(login);
@@ -4923,7 +4940,7 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
     const token = campi.token || dcApi.tokenDi(prima);
     const guild = campi.guild !== undefined ? String(campi.guild).replace(/[^0-9]/g, '') : (prima?.guild || '');
     if (campi.attivo && !(token && guild)) {
-      return res.status(400).json({ errore: 'Prima porta il bot nel tuo server: senza, non c\'e\' niente da accendere.' });
+      return res.status(400).json({ errore: 'Prima porta il bot nel tuo server: senza, non c\'è niente da accendere.' });
     }
     res.json(ruoliVisti(dcRuoli.set(login, campi)));
   }));
@@ -4953,11 +4970,17 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
 
   app.post('/api/streamer/ruoli/giro', requireOwner, wrap(async (req, res) => {
     const login = currentUser(req).login;
+    const prova = !!req.body?.prova;
     const e = await dcGiro.giro(login, {
-      prova: !!req.body?.prova,
+      prova,
       quadro: (gente) => helix.ruoliDi(login, gente),
     });
-    if (!e) return res.status(400).json({ errore: 'Prima porta il bot nel tuo server.' });
+    if (!e) {
+      // il perche' lo dice il giro stesso: sono due cause con due rimedi
+      return res.status(400).json({ errore: dcGiro.nonParte(dcRuoli.get(login), { prova }) === 'spento'
+        ? 'Accendi prima «Tieni i ruoli aggiornati»: da spento il bot i ruoli non li tocca.'
+        : 'Prima porta il bot nel tuo server.' });
+    }
     res.json(e);
   }));
 
@@ -5093,6 +5116,8 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
       // dentro un canale, e non si mescolano mai coi permessi di sopra.
       privilegi: Object.keys(dcCatalogo.PERMESSI_RUOLO),
       max: { categorie: dcCatalogo.MAX_CATEGORIE, canali: dcCatalogo.MAX_CANALI, ruoli: dcCatalogo.MAX_RUOLI,
+        righe: dcCatalogo.MAX_RIGHE, partenza: dcCatalogo.MAX_PARTENZA,
+        rispCanali: dcCatalogo.MAX_RISP_CANALI, rispRuoli: dcCatalogo.MAX_RISP_RUOLI,
         domande: dcCatalogo.MAX_DOMANDE, risposte: dcCatalogo.MAX_RISPOSTE },
       // I tetti del filtro sono di Discord: il pannello li mostra invece di
       // far chiedere una settima regola di parole e farla rifiutare.
@@ -5135,13 +5160,19 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
     // gia' e non se le porta dietro, al primo «rimettilo a posto» se le vede
     // cancellare.
     const rr = await dcApi.regoleAuto(token, guild).catch(() => ({ ok: false }));
-    res.json({ ok: true, preset: dcCatalogo.dallaFotografia(foto, { porta, regole: rr?.ok ? rr.regole : null }) });
+    // Un server piu' grande dei tetti della traccia non ci entra intero: quello
+    // che resta fuori si conta e si dice, non si perde in silenzio.
+    const scarti = {};
+    const preset = dcCatalogo.dallaFotografia(foto, { porta, regole: rr?.ok ? rr.regole : null, scarti });
+    res.json({ ok: true, preset, scarti });
   }));
 
   app.post('/api/streamer/dcserver/anteprima', requireOwner, wrap(async (req, res) => {
     const { token, guild, pronto } = dcTokenE(currentUser(req).login);
     if (!pronto) return res.status(400).json(NON_PRONTO);
-    const preset = dcCatalogo.normalizzaPreset(req.body?.preset);
+    // quello che i tetti lasciano fuori dalla traccia, detto nell'anteprima
+    const scarti = {};
+    const preset = dcCatalogo.normalizzaPreset(req.body?.preset, scarti);
     // L'impronta che torna e' di quello che succedera' DAVVERO, e il pannello
     // la rimanda indietro tale e quale. Percio' l'anteprima dev'essere del
     // modo giusto: in avanti e distruttivo fanno due cose diverse, e due cose
@@ -5159,7 +5190,7 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
     // tocca, perche' non dirlo lascerebbe credere che il server sia gia'
     // uguale al preset quando non lo e'.
     const r = a.differenza.ruoli || { crea: [], sistema: [], togli: [], ambigui: [], fuoriPortata: [] };
-    res.json({ ok: true, impronta: a.impronta, mancanti: a.mancanti, vuota: a.vuota, distruttivo: togliere,
+    res.json({ ok: true, impronta: a.impronta, mancanti: a.mancanti, vuota: a.vuota, distruttivo: togliere, scarti,
       crea: a.differenza.crea, sistema: a.differenza.sistema, fuori: a.fuori,
       togli: togliere ? a.differenza.togli : [],
       peso: togliere ? pesoDanno([...a.differenza.togli, ...r.togli]) : null,
@@ -5253,8 +5284,11 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
     // che ci aveva scritto resta. Dopo si cambiano da li', come tutte le altre.
     if ((e.regoleNuove || []).length) {
       const prima = dcRuoli.get(login)?.regole || [];
-      const tutte = normRegole([...prima, ...e.regoleNuove.map((x) => ({ tipo: x.tipo, ruolo: x.ruolo }))]);
+      const unite = [...prima, ...e.regoleNuove.map((x) => ({ tipo: x.tipo, ruolo: x.ruolo }))];
+      const tutte = normRegole(unite);
       dcRuoli.set(login, { regole: tutte });
+      // oltre il tetto dei Ruoli non entrano: l'esito lo dice
+      e.regoleFuori = regoleFuori(unite);
       // Scritte non vuol dire accese: se l'interruttore dei Ruoli e' spento le
       // regole aspettano, e va detto — se no «ho scritto le regole» si legge
       // come «da adesso i ruoli arrivano», e non e' vero.
@@ -5278,10 +5312,13 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
     // Si scrive SOLO se una destinazione non c'e' ancora: chi aveva gia'
     // scelto un canale, o chi usa il suo webhook, non se lo vede cambiare
     // sotto le mani da un giro del costruttore.
+    //
+    // E nasce ACCESO: la destinazione la ricava dcDest.migra da qui, attivo
+    // compreso, e un posto nato spento sarebbe un avviso che non parte.
     let avvisiVerso = '';
     const cfg = dcConf.get(login);
-    if (e.canaleAvvisi && !cfg?.canale && !cfg?.webhook) {
-      dcConf.set(login, { canale: e.canaleAvvisi });
+    if (e.canaleAvvisi && !cfg?.canale && !cfg?.webhook && !dcDest.lista(login).length) {
+      dcConf.set(login, { canale: e.canaleAvvisi, attivo: true });
       avvisiVerso = String(e.canaleAvvisi);
     }
     res.json({ ...e, avvisiVerso });
@@ -9005,7 +9042,7 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     caratteri: cartaLive.CARATTERI.map(([nome]) => nome),
     misura: cartaLive.MISURA,
     massimo: cartaLive.MAX_ELEMENTI,
-    temi: cartaLive.NOMI_TEMI.map((id) => ({ id, nome: cartaLive.TEMI[id].nome, carta: cartaLive.TEMI[id] })),
+    temi: cartaLive.NOMI_TEMI.map((id) => ({ id, nome: cartaLive.TEMI[id].nome, nomi: cartaLive.NOMI_TEMA[id] || null, carta: cartaLive.TEMI[id] })),
   });
 
   // Cosa scrivere dentro alla carta mentre la si compone. Sono i dati VERI del
@@ -9030,8 +9067,8 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
   // la' — fra la carta ripulita e il tema grezzo — direbbe «e' una tua» un
   // istante dopo che hai scelto un tema. Un tasto che si spegne da solo.
   function temaUguale(carta) {
-    const suo = JSON.stringify(cartaLive.normCarta(carta));
-    return cartaLive.NOMI_TEMI.find((t) => JSON.stringify(cartaLive.normCarta(cartaLive.TEMI[t])) === suo) || null;
+    const suo = cartaLive.improntaCarta(carta);
+    return cartaLive.NOMI_TEMI.find((t) => cartaLive.improntaCarta(cartaLive.TEMI[t]) === suo) || null;
   }
 
   async function rispostaCarta(login) {
@@ -9135,7 +9172,7 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
   // Il webhook c'e ma punta altrove, e non abbiamo mai visto niente: dirlo
   // subito vale piu di mille «/collega» a vuoto.
   const erroreWebhookAltrove = (wh) => ({
-    errore: `il bot ha un webhook attivo verso un altro indirizzo (${String(wh?.url || '').slice(0, 60)}…), quindi i suoi messaggi non arrivano qui. Spegni e riaccendi «il bot risponde nel gruppo», poi riprova.`,
+    errore: `il bot ha un webhook attivo verso un altro indirizzo (${String(wh?.url || '').slice(0, 60)}…), quindi i suoi messaggi non arrivano qui. Spegni e riaccendi «Bot interattivo nel gruppo», poi riprova.`,
   });
 
   // rileva il gruppo da cio che il bot ha visto (dev'essere gia nel gruppo)
@@ -9192,6 +9229,9 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     res.json({
       webhook: wh,
       visti: tgVisti.lista(login).length,
+      // dopo «Aggiungi gruppo, canale o topic» la spunta dell'avviso si accende
+      // senza ricaricare: la risposta e' la stessa di statoTelegram
+      postoOk: tgHaPosto(login, c),
       destinazioni: tgDest.lista(login).map((d) => ({
         id: d.id, chatId: d.chat_id, titolo: d.titolo, tipo: d.tipo,
         threadId: d.thread_id, threadNome: d.thread_nome,
@@ -9244,7 +9284,10 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
       threadId: String(req.body?.threadId || ''),
       threadNome: String(req.body?.threadNome || '').slice(0, 80),
       eventi: req.body?.eventi, streamer: req.body?.streamer,
-      pin: !!req.body?.pin,
+      // «Fissa l'avviso in cima…» della scheda e' il valore di base di ogni
+      // posto nuovo, come lo e' per il primo gruppo (tgDest.migra): se il
+      // pannello lo manda si usa quello, se no quello salvato
+      pin: req.body?.pin !== undefined ? !!req.body.pin : !!c.pin_live,
     });
     telegram.inviaMessaggio(c.token, chatId,
       '✅ Collegato! Da qui in poi vi avviserò in questo posto.',
@@ -9419,7 +9462,7 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
       const guaio = guaiCancello({ ioSonoAdmin: me.admin, possoLimitare: me.possoLimitare, permessi });
       if (guaio === 'permessi') return res.status(400).json({ errore: 'non riesco a leggere i permessi del gruppo: riprova fra poco, o controlla che il bot sia ancora dentro' });
       if (guaio === 'admin') return res.status(400).json({ errore: 'il bot deve essere amministratore del gruppo' });
-      if (guaio === 'limitare') return res.status(400).json({ errore: 'il bot e\' amministratore ma non puo\' limitare i membri: dagli il permesso «Blocca utenti»' });
+      if (guaio === 'limitare') return res.status(400).json({ errore: 'il bot è amministratore ma non può limitare i membri: dagli il permesso «Blocca utenti»' });
     }
     tgConf.setIngresso(login, {
       attivo,
@@ -9438,7 +9481,7 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     const attivo = !!req.body?.attivo;
     const messaggio = String(req.body?.messaggio ?? '').slice(0, 800);
     const pinLive = !!req.body?.pinLive;
-    if (attivo && !c.chat_id && !tgDest.lista(login).length) return res.status(400).json({ errore: 'collega prima un gruppo o un canale' });
+    if (attivo && !tgHaPosto(login, c)) return res.status(400).json({ errore: 'collega prima un gruppo o un canale' });
     tgConf.set(login, { attivo, messaggio, pinLive });
     res.json({ ok: true });
   }));

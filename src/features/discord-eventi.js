@@ -203,7 +203,7 @@ const MOTIVO = 'gli appuntamenti, come dice la programmazione della settimana';
 // la gente davanti a uno schermo spento.
 export async function sincronizza(token, guild, me, conf, giorni, { adesso = new Date(), max = 12 } = {}) {
   const c = normalizzaEventi(conf);
-  if (!c.luogo) return { ok: false, errore: 'senza un link non si puo\' dire dove succede' };
+  if (!c.luogo) return { ok: false, errore: 'senza un link non si può dire dove succede' };
   // IL PERMESSO SI GUARDA PRIMA, e non e' prudenza: chi ha invitato il bot
   // prima che il calendario esistesse non gli ha dato «Creare eventi». Senza
   // questa riga il giro delle sei ore bussa a una porta chiusa per sempre, e
@@ -211,7 +211,7 @@ export async function sincronizza(token, guild, me, conf, giorni, { adesso = new
   const r = await api.ruoli(token, guild);
   if (!r.ok) return r;
   if (!api.puoAppuntamenti(api.permessiBot(r.ruoli, me?.ruoli))) {
-    return { ok: false, reinvito: true, errore: 'al bot manca \u00abCreare eventi\u00bb: ripassa dal tasto che lo porta nel tuo server, cosi\' Discord gli aggiorna i permessi' };
+    return { ok: false, reinvito: true, errore: 'al bot manca \u00abCreare eventi\u00bb: ripassa dal tasto che lo porta nel tuo server, così Discord gli aggiorna i permessi' };
   }
   const letti = await api.eventi(token, guild);
   if (!letti.ok) return letti;

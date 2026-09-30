@@ -91,6 +91,25 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Nel manuale dei giochi la tabella delle regole scrive «1 frase di serie» al singolare, e i premi dei tris della slot vengono dagli stessi numeri del gioco.
 - In «I giochi che hai fatto» il tipo di ogni manche si legge col nome del menù, anche in inglese e spagnolo, e non con la sua sigla. [vai: giochi]
 - Quando a sondaggi, predizioni o penitenze manca un permesso, pannello e chat ti dicono di premere «Aggiorna i permessi» nella scheda «Stato». [vai: stato]
+- Nella Mini App di Telegram il badge «in chat adesso» guarda la chat della piattaforma del tuo canale, non più solo quella di Twitch, e se il canale una chat non ce l'ha non compare.
+- Nella Mini App di Telegram il codice da collegare ti manda nel posto giusto del pannello: «Le tue community», scheda Telegram, carta «Accedi e gestisci da Telegram». [vai: telegram]
+- La scheda Avvisi di Discord dice che gli avvisi partono col piano Base, e «Prova» chiede lo stesso piano degli avvisi veri invece di mandare un avviso che poi non arriverebbe. [vai: dcavvisi]
+- Negli Avvisi di Discord «Togli» chiede conferma prima di togliere un canale, come fa già Telegram coi suoi posti. [vai: dcavvisi]
+- Nelle schede Telegram e Discord le spiegazioni dicono il vero: «Rileva gruppo» va anche col bot interattivo acceso, i comandi stanno in «Chat e pubblico», e nel filtro passano i ruoli che spunti. [vai: telegram]
+- Nella scheda Telegram «Avvisa il gruppo quando vado in diretta» si accende appena c'è un posto dove mandare l'avviso, anche solo un canale, come già accettava il server. [vai: telegram]
+- «Fissa l'avviso in cima durante la live…» vale per ogni posto che aggiungi, e a fine diretta su TikTok l'avviso si toglie solo dove era fissato, seguendo la spunta di quel posto. [vai: telegram]
+- Nei Ruoli di Discord, «Passa adesso» con «Tieni i ruoli aggiornati» spento ti dice di accenderlo, invece di chiederti di portare nel server un bot che c'è già. [vai: ruoli]
+- Le frasi di !discord in chat, i messaggi di Telegram e Discord nel pannello e i motivi scritti nel registro del tuo server hanno gli accenti veri: «così», «più», «è» invece dell'apostrofo. [vai: ruoli]
+- Costruendo «Intorno alle dirette», il canale sono-in-onda entra negli Avvisi di Discord già acceso, e l'avviso della diretta ci arriva senza doverlo riaccendere a mano. [vai: dcavvisi]
+- Su Discord l'avviso di un post nuovo ha parole da post, come «ha caricato un nuovo video su YouTube», e non più il testo della diretta che diceva «è in diretta». [vai: dcavvisi]
+- Con gli auguri accesi sia nel gruppo Telegram sia in chat, chi compie gli anni riceve anche quelli in chat al suo primo messaggio: prima quelli del gruppo li spegnevano. [vai: telegram]
+- La carta degli auguri di compleanno si vede anche senza il bot Telegram, così accendi gli auguri in chat; la parte del gruppo ti dice di collegarlo. [vai: telegram]
+- La carta dei compleanni e il codice per collegare la chat privata di Telegram si leggono anche in inglese e spagnolo. [vai: telegram]
+- Nel registro del tuo server Discord, il motivo della condizione sulle dirette si legge «c’è stato ad almeno N dirette», come la chiama la scheda Ruoli. [vai: ruoli]
+- I temi della locandina di Telegram hanno il nome anche in inglese e spagnolo, e le etichette di Telegram e Discord non usano più la lineetta lunga. [vai: telegram]
+- Un moderatore che apre le schede di Discord legge che le usa solo il proprietario del canale, invece di «Non riesco a leggere la configurazione». [vai: ruoli]
+- Nel server Discord i tasti per aggiungere categorie, canali, ruoli e permessi si fermano al tetto e dicono quanti ne tiene la traccia, e l'anteprima scrive cosa resta fuori. [vai: dcserver]
+- Nei Ruoli di Discord «Aggiungi una regola» si ferma a 20 e lo dice, e nel filtro una regola senza parole o senza liste avvisa che così non si salva. [vai: ruoli]
 - «Aggiungi numero» nella pagina link si ferma a sei, quanti la pagina ne mostra: prima dal settimo in poi i numeri sparivano al salvataggio senza dirlo. [vai: pagina]
 - Movimento, spessore e ombra dei bottoni, nell'aspetto della pagina link, mostrano quelli che la pagina usa davvero, anche dopo un tema pronto: prima il pannello diceva «Fermo», «Leggero» e «Nessuna». [vai: pagina]
 - «Rimborsa», nel registro delle donazioni, su una donazione arrivata con Satispay chiede conferma nominando il tuo negozio Satispay, non più il conto Stripe. [vai: donazioni]
@@ -98,6 +117,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - «Salva la settimana» ricorda i posti che hai spuntato in «Mandala»: prima teneva quelli di prima, e la settimana automatica usciva nei posti vecchi. [vai: settimana]
 - Il primo link già pronto della pagina link porta al tuo canale anche se entri con Kick o YouTube, non più a Twitch; chi ha solo un server Discord parte senza. [vai: pagina]
 - Le Grafiche portano all'indirizzo vero del tuo canale anche se entri con Kick o YouTube, e nella pagina link la foto del profilo si chiama «La tua foto» per tutti. [vai: grafiche]
+- Nelle schede Ruoli, Il server e Il filtro di Discord le spiegazioni non usano più la lineetta lunga come pausa. [vai: dcserver]
 
 ## 2026-09-26
 
