@@ -11,7 +11,7 @@ export default {
   titolo: 'Account e abbonamento: moderatori, dati, piani | SocialBot',
   h1: 'Manuale di account e abbonamento',
   desc: 'Collegare Twitch, Kick e YouTube, entrare con una passkey, far entrare i moderatori, scaricare o cancellare i dati, scegliere piano ed extra.',
-  aggiornata: '2026-09-27',
+  aggiornata: '2026-09-30',
   corpo: [
     { p: [
       'Le due schede stanno nel gruppo «Account» del menù. «Il tuo account» riguarda chi entra e dove lavora il bot. «Abbonamento» riguarda cosa hai acceso e quanto paghi.',
@@ -207,6 +207,13 @@ export default {
       'Il file non contiene le chiavi di accesso ai tuoi account né le passkey. Dei messaggi della chat contiene solo i tuoi, perché quelli degli spettatori sono di chi li ha scritti.',
       'Il file è in formato JSON. Porta fino a 20.000 righe per ogni tipo di dato, e fino a 5.000 dei tuoi messaggi. Le immagini, i video e i suoni che hai caricato non sono dentro al file.',
       'Un moderatore vede la carta, ma il file lo scarica solo il proprietario: i dati sono suoi.',
+    ] },
+
+    { h3: 'I tuoi collegamenti' },
+    { p: [
+      'Qui trovi, tutti insieme, gli account che hai collegato oltre a quello con cui entri: Spotify, TikTok, Instagram, gli avvisi di Discord col webhook, 7TV, l\'accesso con Telegram e l\'account Telegram a cui il bot scrive in privato. Accanto a ognuno c\'è il nome dell\'account, quando lo conosciamo.',
+      '«Scollega» ti chiede conferma e poi toglie il collegamento: il bot smette di usarlo e dimentica le sue chiavi, e lo ricolleghi quando vuoi dalla sua scheda. La carta si apre con <strong>qualunque piano</strong>: se torni all\'Essenziale e una scheda si chiude, quello che ci avevi collegato lo togli comunque da qui.',
+      'Twitch, Kick e YouTube stanno in «Le tue piattaforme»; i conti delle donazioni (Stripe, Satispay, Ko-fi) nella scheda Donazioni. La carta la vede solo il proprietario.',
     ] },
 
     { h3: 'Andarsene' },

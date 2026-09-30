@@ -162,3 +162,29 @@ test('il nome e il messaggio si accorciano prima di partire, non dopo', async ()
     assert.equal(c.corpo['metadata[messaggio]'].length, 300);
   } finally { ripulisci(); }
 });
+
+// Quanto resta, come dice l'informativa: il pagato dieci anni dal pagamento,
+// il mai pagato una settimana. La ronda pota anche a Stripe spento.
+test('i sostegni restano quanto dice l\'informativa, e non di piu\'', async () => {
+  const { db, SOSTEGNO_MAI_PAGATO_MS } = await import('../../src/db.js');
+  const ora = Date.UTC(2036, 5, 15, 12);
+  const anni = (n) => { const d = new Date(ora); d.setUTCFullYear(d.getUTCFullYear() - n); return d.getTime(); };
+  const metti = (id, stato, creato, pagato = 0) => db.prepare('INSERT INTO sostegni (id, stato, importo, valuta, nome, messaggio, created_at, pagato_at) VALUES (?, ?, 500, ?, ?, ?, ?, ?)')
+    .run(id, stato, 'EUR', 'Tizio', 'grazie', creato, pagato);
+  metti('pota-vecchio', 'pagato', anni(10) - 5000, anni(10) - 1000);
+  metti('pota-quasi', 'pagato', anni(10), anni(10) + 1000);
+  metti('pota-mai', 'scaduto', ora - SOSTEGNO_MAI_PAGATO_MS - 1000);
+  metti('pota-mai-fresco', 'scaduto', ora - 1000);
+  metti('pota-attesa', 'attesa', ora - 60_000);
+  const tolti = sostegni.pota(ora);
+  const resta = (id) => !!sostegni.get(id);
+  assert.ok(tolti >= 2, 'torna quante righe ha tolto');
+  assert.ok(!resta('pota-vecchio'), 'pagato da piu\' di dieci anni: si toglie');
+  assert.ok(resta('pota-quasi'), 'pagato da meno di dieci anni: resta');
+  assert.ok(!resta('pota-mai'), 'mai pagato, da piu\' di una settimana: si toglie');
+  assert.ok(resta('pota-mai-fresco') && resta('pota-attesa'), 'quello recente e quello ancora aperto restano');
+  const src = (await import('node:fs')).readFileSync(new URL('../../src/features/sostegno.js', import.meta.url), 'utf8');
+  const ronda = src.slice(src.indexOf('export async function ronda('), src.indexOf('\n}\n', src.indexOf('export async function ronda(')));
+  assert.ok(ronda.indexOf('sostegni.pota(') >= 0 && ronda.indexOf('sostegni.pota(') < ronda.indexOf('if (!attivo()) return 0;'), 'la ronda pota prima di guardare se Stripe e\' acceso');
+  assert.ok(!/export function avviaRonda\(\) \{\s*if \(!attivo\(\)\)/.test(src), 'e la ronda parte comunque');
+});

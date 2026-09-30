@@ -2008,7 +2008,18 @@ export const sostegni = {
     const r = db.prepare("SELECT COUNT(*) n, COALESCE(SUM(importo),0) tot FROM sostegni WHERE stato='pagato'").get();
     return { quanti: Number(r?.n) || 0, totale: Number(r?.tot) || 0 };
   },
+  // Quanto si tiene, come dice l'informativa: un sostegno pagato e' un
+  // movimento di cassa e resta dieci anni dal pagamento; uno mai pagato non lo
+  // e', e il nome e il messaggio di chi non ha concluso non hanno motivo di
+  // restare oltre una settimana. Torna quante righe ha tolto.
+  pota(ora = now()) {
+    const dieci = new Date(msIntero(ora)); dieci.setUTCFullYear(dieci.getUTCFullYear() - 10);
+    const pagati = db.prepare("DELETE FROM sostegni WHERE stato='pagato' AND pagato_at<?").run(dieci.getTime()).changes;
+    const mai = db.prepare("DELETE FROM sostegni WHERE stato='scaduto' AND created_at<?").run(msIntero(ora) - SOSTEGNO_MAI_PAGATO_MS).changes;
+    return pagati + mai;
+  },
 };
+export const SOSTEGNO_MAI_PAGATO_MS = 7 * 24 * 3600 * 1000;
 
 // Il registro delle donazioni. Una riga per pagamento, con l'id che gli da' chi
 // lo porta (la sessione di Stripe, l'avviso di Ko-fi): la stessa donazione

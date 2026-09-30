@@ -4098,7 +4098,7 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
   }));
 
   // scollega Spotify dal canale gestito
-  app.post('/api/spotify/disconnect', requireOwner, gateFeature('musica', 'La musica'), (req, res) => {
+  app.post('/api/spotify/disconnect', requireOwner, (req, res) => {
     spotify.scollega(currentUser(req).login);
     res.json({ ok: true });
   });
@@ -4145,7 +4145,7 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
   }));
 
   // scollega TikTok dal canale gestito
-  app.post('/api/tiktok/disconnect', requireOwner, gateFeature('notifiche', 'Le notifiche'), (req, res) => {
+  app.post('/api/tiktok/disconnect', requireOwner, (req, res) => {
     tiktok.scollega(currentUser(req).login);
     res.json({ ok: true });
   });
@@ -4342,7 +4342,7 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
   }));
 
   // scollega Discord (svuota il webhook e spegne)
-  app.post('/api/discord/disconnect', requireOwner, gateFeature('notifiche', 'Le notifiche'), (req, res) => {
+  app.post('/api/discord/disconnect', requireOwner, (req, res) => {
     dcConf.set(currentUser(req).login, { webhook: '', attivo: false });
     res.json({ ok: true });
   });
@@ -4436,7 +4436,7 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
     res.json({ ok: true, username: r.username });
   }));
 
-  app.post('/api/seventv/disconnect', requireOwner, g7tv, (req, res) => {
+  app.post('/api/seventv/disconnect', requireOwner, (req, res) => {
     seventv.scollega(currentUser(req).login);
     res.json({ ok: true });
   });
@@ -4612,9 +4612,30 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
     res.json({ ok: true, username: dati.username || '' });
   }));
 
-  app.post('/api/tgapp/scollega', requireOwner, gateFeature('notifiche', 'Il bot su Telegram'), (req, res) => {
+  app.post('/api/tgapp/scollega', requireOwner, (req, res) => {
     tgLogin.unlinkByLogin(currentUser(req).login);
     res.json({ ok: true });
+  });
+
+  // I COLLEGAMENTI DEL CANALE, in un posto solo e senza guardare il piano.
+  // Scollegare e' ritirare un consenso, e l'informativa promette che si puo':
+  // un canale tornato all'Essenziale ha ancora quelli di quando pagava, e la
+  // scheda in cui stavano e' chiusa. Ogni voce porta la rotta che la toglie.
+  app.get('/api/account/collegamenti', requireOwner, (req, res) => {
+    const login = currentUser(req).login;
+    const tg = tgConf.get(login);
+    const ig = streamers.get(login)?.settings?.instagram || {};
+    const tga = tgLogin.getByLogin(login);
+    const voci = [
+      ['spotify', spotify.collegato(login), '', '/api/spotify/disconnect'],
+      ['tiktok', tiktok.collegato(login), tiktok.datiCollegamento(login)?.username || '', '/api/tiktok/disconnect'],
+      ['instagram', !!(tokens.get('instagram', login)?.accessToken || ig.userId || ig.token), ig.username || '', '/api/instagram/disconnect'],
+      ['discord', !!(dcConf.get(login) || {}).webhook, '', '/api/discord/disconnect'],
+      ['seventv', seventv.collegato(login), seventv.datiCollegamento(login)?.username || '', '/api/seventv/disconnect'],
+      ['tgapp', !!tga, tga?.username || '', '/api/tgapp/scollega'],
+      ['telegram', !!tg?.owner_tg_id, tg?.owner_tg_nome || '', '/api/streamer/telegram/scollega'],
+    ];
+    res.json({ collegamenti: voci.filter((v) => v[1]).map(([id, , chi, via]) => ({ id, chi, via })) });
   });
 
   // stato del collegamento Telegram per la card in dashboard

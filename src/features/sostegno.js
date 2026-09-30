@@ -127,6 +127,7 @@ export async function conferma(sessione) {
 // in attesa e chiede a Stripe com'e' andata. Passata l'ora piu' la tolleranza,
 // una sessione che Stripe non dice pagata e' persa, e si chiude.
 export async function ronda(ora = Date.now()) {
+  sostegni.pota(ora);
   if (!attivo()) return 0;
   let contate = 0;
   for (const r of sostegni.inAttesa(ora - 60_000)) {
@@ -137,8 +138,9 @@ export async function ronda(ora = Date.now()) {
   return contate;
 }
 
+// Gira anche con Stripe spento: i sostegni di prima vanno tolti quando scade
+// il loro tempo, che il conto sia collegato o no.
 export function avviaRonda() {
-  if (!attivo()) return null;
   const t = setInterval(() => { ronda().catch(() => {}); }, RONDA_MS);
   t.unref?.();
   return t;

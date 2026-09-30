@@ -1323,6 +1323,7 @@ function _demoGet(via) {
   const F = {
     '/api/me': statoDemo(),
     '/api/tiktok/stato': { appAttiva: true, collegato: true, username: 'andryxify', redirect: 'https://socialbot.live/tiktok/callback' },
+    '/api/account/collegamenti': { collegamenti: [{ id: 'spotify', chi: '', via: '/api/spotify/disconnect' }, { id: 'tiktok', chi: 'andryxify', via: '/api/tiktok/disconnect' }, { id: 'tgapp', chi: 'andryx', via: '/api/tgapp/scollega' }] },
     '/api/instagram/stato': { appAttiva: true, collegato: true, scaduto: false, username: 'andryxify', aMano: false },
     '/api/discord/invito': { url: '' },
     '/api/streamer/settimana': { settimana: _DEMO_SETTIMANA, posti: {
@@ -8767,6 +8768,12 @@ function pannelloAccount() {
         ? `<p class="suggerimento spazio-sopra">${L('Il file lo scarica il proprietario del canale: i dati sono suoi.', 'The channel owner downloads the file: the data is theirs.', 'El archivo lo descarga el propietario del canal: los datos son suyos.')}</p>`
         : `<p class="spazio-sopra"><a class="btn secondario" id="btn-esporta" href="/api/streamer/esporta" download title="${esc(L('Un file solo con tutto quello che è tuo: profilo, impostazioni, memoria. Non contiene le chiavi di accesso ai tuoi account', 'A single file with everything that is yours: profile, settings, memory. It does not contain your account keys', 'Un solo archivo con todo lo tuyo: perfil, ajustes, memoria. No contiene las claves de tus cuentas'))}">${_bIco(ICO.scarica)}${L('Scarica i miei dati', 'Download my data', 'Descargar mis datos')}</a></p>`}
     </div>
+    ${stato.ruolo === 'moderatore' ? '' : `<div class="carta">
+      <h2>${_hIco(ICO.chiave)}${L('I tuoi collegamenti', 'Your connections', 'Tus conexiones')}</h2>
+      <p>${L('Gli account che hai collegato, tutti qui: li scolleghi quando vuoi, qualunque sia il tuo piano.', 'The accounts you connected, all in one place: disconnect them whenever you like, whatever your plan.', 'Las cuentas que has conectado, todas aquí: las desconectas cuando quieras, sea cual sea tu plan.')}</p>
+      <div id="acc-collegamenti" class="spazio-sopra" aria-busy="true">${attesaHtml('div')}</div>
+      <p class="suggerimento">${L('Twitch, Kick e YouTube stanno qui sopra, in «Le tue piattaforme»; i conti delle donazioni nella scheda Donazioni.', 'Twitch, Kick and YouTube are above, in «Your platforms»; the donation accounts in the Donations tab.', 'Twitch, Kick y YouTube están arriba, en «Tus plataformas»; las cuentas de donaciones en la pestaña Donaciones.')}</p>
+    </div>`}
     <div class="carta">
       <h2>${_hIco(ICO.cestino)}${L('Andarsene', 'Leaving', 'Marcharse')}</h2>
       <p>${L('Se te ne vai', 'If you leave', 'Si te vas')} <strong class="primo-piano">${L('non resta niente di tuo', 'nothing of yours stays', 'no queda nada tuyo')}</strong>: ${L('comandi, moduli, effetti, punti, ore guardate, memoria della chat, pagina link, file caricati, collegamenti ai tuoi account. Il bot esce dal tuo canale.', 'commands, modules, effects, points, watch time, chat memory, link page, uploaded files, connections to your accounts. The bot leaves your channel.', 'comandos, módulos, efectos, puntos, horas vistas, memoria del chat, página de enlaces, archivos subidos, conexiones con tus cuentas. El bot sale de tu canal.')}</p>
@@ -27006,7 +27013,7 @@ async function conErrore(fn) {
 function caricaDatiScheda(id) {
   if (schedaBloccata(id)) return;
   if (id === 'stato') caricaAdesso();
-  if (id === 'account') { caricaPasskey(); caricaModeratori(); caricaRichiesteMod(); caricaMieRichieste(); caricaPiattaforme(); caricaCodiciPosta(); caricaRecensione(); collegaCancella(); collegaAvvisiManca(); }
+  if (id === 'account') { caricaPasskey(); caricaModeratori(); caricaRichiesteMod(); caricaMieRichieste(); caricaPiattaforme(); caricaCodiciPosta(); caricaRecensione(); collegaCancella(); collegaAvvisiManca(); caricaCollegamenti(); }
   if (id === 'avatar') caricaMente3d();
   if (id === 'promo') { collegaPromo(); caricaPromo(); }
   if (id === 'qr') avviaQr();
@@ -30171,6 +30178,41 @@ function riassuntoResti(r) {
     ? ' ' + L('Più i file che hai caricato.', 'Plus the files you uploaded.', 'Más los archivos que has subido.')
     : '';
   return pezzi.join(', ') + '.' + file;
+}
+
+const NOME_COLLEGAMENTO = {
+  spotify: ['Spotify', 'Spotify', 'Spotify'],
+  tiktok: ['TikTok', 'TikTok', 'TikTok'],
+  instagram: ['Instagram', 'Instagram', 'Instagram'],
+  discord: ['Discord, gli avvisi col webhook', 'Discord, the webhook notices', 'Discord, los avisos con webhook'],
+  seventv: ['7TV', '7TV', '7TV'],
+  tgapp: ['Telegram, per entrare nel pannello', 'Telegram, to sign in to the panel', 'Telegram, para entrar en el panel'],
+  telegram: ['Telegram, i messaggi privati del bot', 'Telegram, the bot\'s private messages', 'Telegram, los mensajes privados del bot'],
+};
+
+async function caricaCollegamenti() {
+  const box = document.getElementById('acc-collegamenti');
+  if (!box) return;
+  const r = await api('/api/account/collegamenti').catch(() => null);
+  box.removeAttribute('aria-busy');
+  if (!r) { box.innerHTML = `<p class="suggerimento">${L('Non riesco a leggere i collegamenti adesso: riprova fra poco.', 'I cannot read the connections right now: try again shortly.', 'Ahora no puedo leer las conexiones: vuelve a intentarlo en un rato.')}</p>`; return; }
+  const voci = (r.collegamenti || []).filter((c) => NOME_COLLEGAMENTO[c.id]);
+  box.innerHTML = voci.length
+    ? `<ul class="pf-lista">${voci.map((c) => `<li class="pf-riga">
+        <span class="pf-nome">${esc(L(...NOME_COLLEGAMENTO[c.id]))}${c.chi ? ` <span class="tenue">${esc(c.chi)}</span>` : ''}</span>
+        <span class="pf-azioni"><button type="button" class="btn secondario mini" data-scollega-conto="${esc(c.id)}">${L('Scollega', 'Disconnect', 'Desconectar')}</button></span></li>`).join('')}</ul>`
+    : `<p class="vuoto">${L('Nessun account collegato, a parte quello con cui entri.', 'No connected accounts, apart from the one you sign in with.', 'Ninguna cuenta conectada, aparte de aquella con la que entras.')}</p>`;
+  for (const b of box.querySelectorAll('[data-scollega-conto]')) {
+    const c = voci.find((x) => x.id === b.dataset.scollegaConto);
+    b.addEventListener('click', () => conErrore(async () => {
+      const nome = L(...NOME_COLLEGAMENTO[c.id]);
+      if (!(await chiediSe({ titolo: L(`Scolleghi ${nome}?`, `Disconnect ${nome}?`, `¿Desconectas ${nome}?`), testo: L('Il bot smette di usarlo e dimentica le sue chiavi. Lo ricolleghi quando vuoi.', 'The bot stops using it and forgets its keys. You can connect it again whenever you like.', 'El bot deja de usarlo y olvida sus claves. Lo vuelves a conectar cuando quieras.'), si: L('Scollega', 'Disconnect', 'Desconectar'), pericolo: true }))) return;
+      b.disabled = true;
+      await api(c.via, { method: 'POST', body: {} });
+      toast(L(`${nome} scollegato.`, `${nome} disconnected.`, `${nome} desconectado.`));
+      await caricaCollegamenti();
+    }));
+  }
 }
 
 function collegaCancella() {

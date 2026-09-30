@@ -29,6 +29,11 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Nella settimana un canale Discord che per un momento non risponde resta fra i posti scelti, col suo perché accanto, e lo togli tu se vuoi. [vai: settimana]
 - Nella pagina link la fascia che chiede il permesso per video e musica di altri siti si legge meglio, e in anteprima le parti da completare dicono cosa manca. [vai: pagina]
 - I termini hanno un punto su piani, abbonamenti, disdetta e recesso in 14 giorni, e privacy e termini dicono con precisione con cosa ci si registra e cosa si scollega da dove.
+- [importante] In Account c'è «I tuoi collegamenti»: tutti gli account che hai collegato, ognuno col suo «Scollega», anche se il piano ha chiuso la scheda dove stavano. [vai: account]
+  > Tutti i tuoi collegamenti, in un posto
+  > Spotify, TikTok, Instagram, Discord, 7TV e Telegram in una carta sola, e ognuno lo scolleghi quando vuoi, con qualunque piano.
+- Spotify, TikTok, gli avvisi di Discord, 7TV e l'accesso con Telegram si scollegano con qualunque piano: prima, tornando all'Essenziale, restavano legati.
+- Un sostegno al progetto aperto e mai pagato si cancella dopo una settimana, e quelli pagati dopo dieci anni, come dice l'informativa.
 
 ## 2026-09-27
 
