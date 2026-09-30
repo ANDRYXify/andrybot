@@ -9,7 +9,7 @@ export default {
   titolo: 'La tua vetrina: pagina link, donazioni e social | SocialBot',
   h1: 'La tua vetrina: pagina link, donazioni, settimana, grafiche e i tuoi social',
   desc: 'La pagina da mettere in bio, le donazioni sul tuo conto, i giorni in cui vai in onda, le grafiche da pubblicare e gli avvisi quando pubblichi sui social.',
-  aggiornata: '2026-09-27',
+  aggiornata: '2026-09-30',
   corpo: [
     { p: [
       'Cinque schede che lavorano anche quando non sei in onda: la pagina da mettere in bio, le donazioni, i giorni in cui vai in diretta, le grafiche da pubblicare e gli avvisi quando esce qualcosa di tuo sulle altre reti.',
@@ -305,7 +305,7 @@ export default {
     ] },
     { p: ['<strong>I calendari.</strong> Questa parte compare solo se ne hai almeno uno.'] },
     { ul: [
-      '«Scrivila nel Programma del mio canale Twitch»: ogni giorno diventa una diretta che si ripete, col gioco trovato su Twitch. Quelle che scrivi a mano sul Programma restano tue. Se lo spegni, tolgo dal Programma quelle che avevo scritto io. Serve un permesso in più: se manca, premi «Concedilo».',
+      '«Scrivila nel Programma del mio canale Twitch»: ogni giorno diventa una diretta che si ripete, col gioco trovato su Twitch. Quelle che scrivi a mano sul Programma restano tue. Se lo spegni, tolgo dal Programma quelle che avevo scritto io. Serve un permesso in più: se manca, premi «Concedilo». Se nelle «Preferenze del canale» hai scelto di leggere le prossime dirette dal Programma di Twitch, al posto di questa scelta la scheda lo dice: il Programma resta tuo, e la settimana non ci scrive e non ci toglie niente.',
       'Il calendario del tuo server Discord: col bot Discord nel tuo server trovi «Accendilo», o «Guardalo» se è già acceso. Ti porta alla parte «Avvisi» della scheda «Discord».',
     ] },
     { p: ['Premi «Salva la settimana». I calendari si aggiornano subito, e poi da soli ogni sei ore, anche al cambio dell\'ora. Leggi «Settimana salvata.» con l\'esito.'] },

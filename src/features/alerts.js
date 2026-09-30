@@ -6,7 +6,12 @@
 // - WIDGET persistenti (ultimo follower, ultimo sub) aggiornati dagli eventi.
 // Riusa il canale SSE degli effetti (EffectsEngine.emit) e i suoni PRESET.
 // Tutta la configurazione (e lo stato dei widget) vive in streamers.settings.
-import { streamers, effects as effectsDb } from '../db.js';
+import { streamers, effects as effectsDb, statoVivo } from '../db.js';
+import { linguaChat } from './lingua-canale.js';
+
+// I titoli di base del conto alla pubblicita', nella lingua della chat: li
+// legge chi guarda la diretta.
+const TITOLI_PUBBLICITA = { it: ['Pubblicità fra', 'Torno fra'], en: ['Ads in', 'Back in'], es: ['Anuncios en', 'Vuelvo en'] };
 import * as subathon from './subathon.js';
 import * as treno from './treno.js';
 import { comeSiChiama, portaCorona } from './bit.js';
@@ -436,6 +441,7 @@ export class AlertsEngine {
       conti: contiGoal(s),
       musica: this._musicaConVideo(channel, s.overlayMusica),
       timer: (s.overlayTimer && typeof s.overlayTimer === 'object') ? s.overlayTimer : null,
+      pubblicita: this._pubblicitaInScena(channel, s),
       treno: (s.overlayTreno && typeof s.overlayTreno === 'object') ? s.overlayTreno : null,
       bit: (s.overlayBit && typeof s.overlayBit === 'object') ? s.overlayBit : null,
       boss: (s.overlayBoss && typeof s.overlayBoss === 'object') ? s.overlayBoss : null,
@@ -452,6 +458,24 @@ export class AlertsEngine {
         return (eff && eff.tipo === 'immagine') ? { ...c, url: eff.url } : c;
       }),
       stato: (s.overlayStato && typeof s.overlayStato === 'object') ? s.overlayStato : {},
+    };
+  }
+
+  // Il conto alla pubblicita' come lo legge l'overlay: la sua configurazione,
+  // coi titoli di base nella lingua della chat se lo streamer non li ha
+  // scritti, e lo stato di adesso (lo scrive il bot, vedi _pubInScena). Uno
+  // stato con i tempi gia' passati vale come niente.
+  _pubblicitaInScena(channel, s) {
+    const c = s.overlayPubblicita;
+    if (!c || typeof c !== 'object') return null;
+    const [t, tp] = TITOLI_PUBBLICITA[linguaChat(channel)] || TITOLI_PUBBLICITA.it;
+    const st = statoVivo.leggi(channel, 'pubblicita') || {};
+    const ora = Date.now();
+    return {
+      ...c,
+      titolo: c.titolo || t,
+      titoloPausa: c.titoloPausa || tp,
+      stato: { prossima: Number(st.prossima) > ora ? Number(st.prossima) : 0, pausaFino: Number(st.pausaFino) > ora ? Number(st.pausaFino) : 0 },
     };
   }
 

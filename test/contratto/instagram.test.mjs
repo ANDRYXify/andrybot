@@ -120,7 +120,10 @@ test('una chiave del .env scritta storta la vede chi amministra, dove guarda', (
 });
 
 test('il token si rinnova da solo, allo stesso passo degli altri giri', () => {
-  assert.match(BOT, /this\._giroProgramma\(\); this\._giroInstagram\(\); \}, 6 \* 60 \* 60_000\);/);
+  const seiOre = /setInterval\(\(\) => \{([^}]*)\}, 6 \* 60 \* 60_000\);/.exec(BOT);
+  assert.ok(seiOre, 'c\'e\' il giro delle sei ore');
+  assert.match(seiOre[1], /this\._giroProgramma\(\);/, 'quello degli altri giri');
+  assert.match(seiOre[1], /this\._giroInstagram\(\);/, 'e il rinnovo ci sta dentro');
   const giro = BOT.slice(BOT.indexOf('async _giroInstagram()'), BOT.indexOf('async _giroInstagram()') + 800);
   assert.match(giro, /igAccesso\.daAllungare\(t\.expiresAt\)/);
   assert.match(giro, /tokens\.save\('instagram', login, \{ \.\.\.t, accessToken: r\.token, expiresAt: r\.scade \}\);/,

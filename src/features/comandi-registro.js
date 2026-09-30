@@ -25,6 +25,8 @@
 import { streamers } from '../db.js';
 import { valoriDi, giocoDi } from './giochi-conf.js';
 import { inMessaggi } from './risposte.js';
+import { linguaChat } from './lingua-canale.js';
+import { monetaDi, accordaMoneta } from './moneta.js';
 
 export const LIVELLI = ['tutti', 'sub', 'vip', 'mod'];
 
@@ -120,7 +122,7 @@ export const COMANDI = [
   { id: 'stai', modulo: 'giochi', nomi: ['stai', 'stand'], titolo: ['Stai', 'Stand', 'Plántate'],
     cosa: ['Ti fermi: gioca il banco, e si vede chi vince.', 'You stop: the dealer plays, and you see who wins.', 'Te plantas: juega la banca, y se ve quién gana.'] },
   { id: 'corsa', modulo: 'giochi', gioco: 'corsa', nomi: ['corsa', 'race'], titolo: ['Corsa', 'Race', 'Carrera'],
-    cosa: ['Apre le puntate su una corsa: !corsa 2 50 punta 50 sul secondo corridore. Il favorito paga poco, l\'ultimo tanto.', 'Opens the bets on a race: !corsa 2 50 bets 50 on the second runner. The favourite pays little, the last one a lot.', 'Abre las apuestas de una carrera: !corsa 2 50 apuesta 50 al segundo corredor. El favorito paga poco, el último mucho.'], costa: true },
+    cosa: ['Apre le puntate su una corsa: !corsa 2 50 punta 50 sul secondo corridore. Il favorito paga poco, l\'ultimo tanto.', 'Opens the bets on a race: !corsa 2 50 bets 50 on the second runner. The favorite pays little, the last one a lot.', 'Abre las apuestas de una carrera: !corsa 2 50 apuesta 50 al segundo corredor. El favorito paga poco, el último mucho.'], costa: true },
   { id: 'patata', modulo: 'giochi', gioco: 'patata', nomi: ['patata', 'potato'], titolo: ['Patata bollente', 'Hot potato', 'Patata caliente'],
     cosa: ['Lancia la patata bollente: chi ce l\'ha la passa con !passa, e scoppia in mano a qualcuno quando nessuno se l\'aspetta.', 'Throws the hot potato: whoever holds it passes it with !passa, and it blows up in someone\'s hands when nobody expects it.', 'Lanza la patata caliente: quien la tiene la pasa con !passa, y explota en las manos de alguien cuando nadie se lo espera.'] },
   { id: 'passa', modulo: 'giochi', nomi: ['passa', 'pass'], titolo: ['Passa', 'Pass', 'Pasa'],
@@ -214,7 +216,18 @@ export const COMANDI = [
   { id: 'so', modulo: 'base', nomi: ['so', 'shoutout'], titolo: ['Shoutout', 'Shoutout', 'Shoutout'], chi: 'mod',
     cosa: ['Fa lo shoutout a un altro canale.', 'Gives a shoutout to another channel.', 'Hace un shoutout a otro canal.'] },
   { id: 'followage', modulo: 'base', nomi: ['followage', 'daquanto'], titolo: ['Da quanto segui', 'How long you\'ve followed', 'Desde cuándo sigues'],
-    cosa: ['Dice da quanto tempo una persona segue il canale.', 'Says how long someone has followed the channel.', 'Dice desde cuándo una persona sigue el canal.'] },
+    cosa: ['Dice da quanto tempo una persona segue il canale. Con un nome dopo il comando, lo dice di quella persona.', 'Says how long someone has followed the channel. With a name after the command, it says it about that person.', 'Dice desde cuándo una persona sigue el canal. Con un nombre después del comando, lo dice de esa persona.'],
+    risposte: {
+      si: { etichetta: ['Quando segue', 'When they follow', 'Cuando sigue'], segnaposti: ['nome', 'durata', 'data'], base: ['💜 @{nome} segue il canale da {durata}.', '💜 @{nome} has been following the channel for {durata}.', '💜 @{nome} sigue el canal desde hace {durata}.'] },
+      no: { etichetta: ['Quando non segue', 'When they don\'t follow', 'Cuando no sigue'], segnaposti: ['nome'], base: ['@{nome} non segue ancora il canale.', '@{nome} isn\'t following the channel yet.', '@{nome} todavía no sigue el canal.'] },
+    } },
+  { id: 'channelage', modulo: 'base', nomi: ['channelage', 'accountage', 'etacanale'], titolo: ['Da quanto esiste il canale', 'How old the channel is', 'Desde cuándo existe el canal'],
+    cosa: ['Dice quando è nato il canale e quanto tempo fa. Con un nome dopo il comando, lo dice del canale di quella persona.', 'Says when the channel was created and how long ago. With a name after the command, it says it about that person\'s channel.', 'Dice cuándo se creó el canal y hace cuánto. Con un nombre después del comando, lo dice del canal de esa persona.'],
+    risposte: {
+      si: { etichetta: ['La risposta', 'The reply', 'La respuesta'], segnaposti: ['nome', 'durata', 'data'], base: ['📅 Il canale di {nome} è nato il {data}, {durata} fa.', '📅 {nome}\'s channel was created on {data}, {durata} ago.', '📅 El canal de {nome} se creó el {data}, hace {durata}.'] },
+    } },
+  { id: 'prossima', modulo: 'base', nomi: ['prossima', 'next', 'schedule', 'proxima'], titolo: ['La prossima diretta', 'The next stream', 'El próximo directo'],
+    cosa: ['Dice quando è la prossima diretta, dalla settimana o dal Programma di Twitch, come hai scelto nelle preferenze.', 'Says when the next stream is, from your week or from the Twitch Schedule, as you chose in your preferences.', 'Dice cuándo es el próximo directo, desde tu semana o desde el Programa de Twitch, como elegiste en tus preferencias.'] },
   { id: 'uptime', modulo: 'base', nomi: ['uptime'], titolo: ['Da quanto sei in diretta', 'How long you\'ve been live', 'Cuánto llevas en directo'],
     cosa: ['Dice da quanto è cominciata la diretta.', 'Says how long ago the stream started.', 'Dice cuándo empezó el directo.'] },
   { id: 'bit', modulo: 'base', nomi: ['bit', 'bits', 'classificabit'], titolo: ['La classifica dei Bit', 'The Bits leaderboard', 'La clasificación de Bits'],
@@ -287,6 +300,7 @@ export const COMANDI = [
 //
 // `spiega` parla a chi legge, in seconda persona. {id} diventa il nome che quel
 // comando ha nel canale (rinominato compreso), %monete% il nome delle monete,
+// %[le tue|i tuoi|la tua|il tuo]% l'accordo con quel nome (vedi moneta.js),
 // %gioco.manopola% il valore scelto nelle regole del gioco: solo manopole che
 // non valgono mai zero, cosi' nessuna frase dice «costa 0».
 //
@@ -299,7 +313,7 @@ export const GRUPPI = [
   { id: 'sfide', emoji: '⚔️', nome: 'Contro qualcuno' },
   { id: 'insieme', emoji: '👥', nome: 'Tutti insieme' },
   { id: 'coccole', emoji: '🤗', nome: 'Coccole' },
-  { id: 'conto', emoji: '💰', nome: 'Le tue %monete%' },
+  { id: 'conto', emoji: '💰', nome: '%[Le tue|I tuoi|La tua|Il tuo]% %monete%' },
   { id: 'webcam', emoji: '🎥', nome: 'Con la webcam' },
 ];
 
@@ -307,7 +321,7 @@ export const IN_CHAT = {
   dado: { gruppo: 'solo', emoji: '🎲', spiega: 'Tiri un dado da sei con {dado}. Ne vuoi di più, o con più facce? {dado} 2d20 ne tira due da venti.' },
   moneta: { gruppo: 'solo', emoji: '🪙', spiega: 'Lanci una moneta con {moneta}, ed esce testa o croce.' },
   '8ball': { gruppo: 'solo', emoji: '🎱', forma: 'domanda', spiega: 'Fai una domanda e la palla magica ti risponde: {8ball} vinco stasera?' },
-  monete: { gruppo: 'conto', emoji: '💰', spiega: 'Ti dice quante %monete% hai. Si guadagnano stando in chat, e giocando.' },
+  monete: { gruppo: 'conto', emoji: '💰', spiega: 'Ti dice %[quante|quanti|quanta|quanto]% %monete% hai. %[Si guadagnano|Si guadagnano|Si guadagna|Si guadagna]% stando in chat, e giocando.' },
   classifica: { gruppo: 'conto', emoji: '🏆', spiega: 'Chi ha più %monete% nel canale, e a che posto sei tu. Con {classifica} mod vedi la gara dello staff, con {classifica} tutti le due insieme.' },
   slot: { gruppo: 'solo', emoji: '🎰', spiega: 'Tiri la leva con {slot}: ogni giocata costa %slot.costo% %monete%, con i simboli uguali si vince e il tris di 💎 è il jackpot.' },
   duello: { gruppo: 'sfide', emoji: '⚔️', forma: '@nome posta', spiega: 'Sfidi qualcuno che è in chat con {duello} @nome, e vince uno dei due. Con una posta ({duello} @nome 50) l\'altro accetta con {accetta} o dice di no con {rifiuta}, e chi vince prende la posta dell\'altro.' },
@@ -315,7 +329,7 @@ export const IN_CHAT = {
   manche: { gruppo: 'insieme', emoji: '🎮', spiega: 'Con {manche} parte subito una manche per tutta la chat, invece di aspettare la prossima. Per sceglierla scrivi anche il nome: {manche} impiccato.' },
   pesca: { gruppo: 'solo', emoji: '🎣', spiega: 'Getti la lenza con {pesca}: può abboccare qualcosa che vale %monete%, o niente.' },
   roulette: { gruppo: 'solo', emoji: '🎡', forma: 'posta colore', spiega: 'Punti su un colore o su un numero: {roulette} 50 rosso. Col colore giusto ti torna il doppio, col verde 14 volte tanto, col numero giusto 36.' },
-  furto: { gruppo: 'sfide', emoji: '🦝', forma: '@nome', spiega: 'Provi a rubare %monete% a qualcuno con {furto} @nome. Se va bene sono tue, se ti beccano paghi tu la multa, a lui.' },
+  furto: { gruppo: 'sfide', emoji: '🦝', forma: '@nome', spiega: 'Provi a rubare %monete% a qualcuno con {furto} @nome. Se va bene %[sono tue|sono tuoi|è tua|è tuo]%, se ti beccano paghi tu la multa, a lui.' },
   blackjack: { gruppo: 'solo', emoji: '🃏', forma: 'posta', spiega: 'Una mano contro il banco: {blackjack} 50 per puntare, poi {carta} per un\'altra carta o {stai} per fermarti. Il banco sta su ogni 17; se non decidi entro %blackjack.tempo% secondi, stai.' },
   carta: { parteDi: 'blackjack' },
   stai: { parteDi: 'blackjack' },
@@ -338,7 +352,7 @@ export const IN_CHAT = {
   rifiuta: { parteDi: 'duello' },
   morra: { gruppo: 'solo', emoji: '✊', forma: 'mossa posta', spiega: 'Sasso, carta o forbice contro il bot: {morra} carta. Con una puntata ti giochi %monete%: {morra} carta 20.' },
   sblocca: { gruppo: 'conto', emoji: '🔓', forma: 'minuti', spiega: 'Spendi %monete% per mettere la chat in %sblocca.modo% per qualche minuto: {sblocca} 5 per cinque minuti, a %sblocca.costoMinuto% %monete% al minuto.' },
-  regala: { gruppo: 'conto', emoji: '💝', forma: '@nome quanto', spiega: 'Regali %monete% tue a qualcuno: {regala} @nome 50.' },
+  regala: { gruppo: 'conto', emoji: '💝', forma: '@nome quanto', spiega: 'Regali %[un po\' delle tue|un po\' dei tuoi|un po\' della tua|un po\' del tuo]% %monete% a qualcuno: {regala} @nome 50.' },
 
   mima: { gruppo: 'webcam', emoji: '🎭', spiega: 'Con {mima} parte il gioco della mimica nell\'overlay della webcam.' },
   nonridere: { gruppo: 'webcam', emoji: '😐', spiega: 'Con {nonridere} parte la sfida «non ridere» nell\'overlay della webcam.' },
@@ -449,6 +463,13 @@ export function elenco(channel) {
       rinominato: nomi[0] !== c.nomi[0],
       chi: livelloDi(c, mia),
       chiMinimo: LIVELLI.includes(c.chi) ? c.chi : 'tutti',
+      // le frasi: la sua (vuota = la nostra), la nostra nella lingua della chat, i segnaposti
+      risposte: c.risposte ? Object.fromEntries(Object.entries(c.risposte).map(([k, d]) => [k, {
+        etichetta: d.etichetta,
+        sua: frasiPulite(c, mia.risposte)?.[k] || '',
+        base: d.base[Math.max(0, ['it', 'en', 'es'].indexOf(linguaChat(channel)))],
+        segnaposti: d.segnaposti,
+      }])) : null,
     };
   });
 }
@@ -523,9 +544,11 @@ const ETICHETTA = {
 const APERTURE = ['Ecco a cosa si gioca qui.', 'Scegli tu.', 'Si gioca a tutto questo.'];
 const aperture = new Map();
 
-const nomeMonete = (channel) => {
-  const n = impostazioni(channel).nomeMonete;
-  return (n && String(n).trim()) || 'monete';
+// Il nome e la forma della moneta vengono da un posto solo (moneta.js): gli
+// accordi si sciolgono prima, poi entra il nome.
+const conMoneta = (channel, testo) => {
+  const m = monetaDi(channel);
+  return accordaMoneta(testo, m.forma).replace(/%monete%/g, m.nome);
 };
 
 // Come si scrive un gioco per giocarlo: il nome del canale e la sua forma.
@@ -534,12 +557,11 @@ const comeSiScrive = (r) => ['!' + r.nomi[0], IN_CHAT[r.id].forma].filter(Boolea
 export function giochiInChat(channel, msg = {}, { limite = 450 } = {}) {
   const righe = elenco(channel).filter((r) => r.vivo && FAMIGLIE_GIOCHI.includes(r.modulo) && r.id !== ELENCO
     && IN_CHAT[r.id]?.gruppo && puoUsare(r.chi, msg));
-  const monete = nomeMonete(channel);
   const pezzi = [];
   for (const g of GRUPPI) {
     const qui = righe.filter((r) => IN_CHAT[r.id].gruppo === g.id);
     if (!qui.length) continue;
-    const testa = `${g.emoji} ${g.nome.replace('%monete%', monete)}:`;
+    const testa = `${g.emoji} ${conMoneta(channel, g.nome)}:`;
     qui.forEach((r, i) => {
       const come = comeSiScrive(r);
       pezzi.push({ testo: i ? come : `${testa} ${come}`, prima: i ? ', ' : ' · ', daCapo: `${testa} ${come}` });
@@ -562,10 +584,8 @@ export function giochiInChat(channel, msg = {}, { limite = 450 } = {}) {
 // Il testo di `spiega`, con i nomi e i valori di QUESTO canale.
 export function riempiSpiega(channel, testo) {
   const settings = impostazioni(channel);
-  const monete = nomeMonete(channel);
-  return String(testo || '')
-    .replace(/\{([a-z0-9]+)\}/g, (_, id) => '!' + nomeIn(channel, id))
-    .replace(/%monete%/g, monete)
+  return conMoneta(channel, String(testo || '')
+    .replace(/\{([a-z0-9]+)\}/g, (_, id) => '!' + nomeIn(channel, id)))
     .replace(/%([a-z0-9]+)\.([a-zA-Z]+)%/g, (_, g, k) => testoManopola(settings, g, k));
 }
 
@@ -596,6 +616,37 @@ export function spiegaGioco(channel, parola, msg = {}) {
   return testo;
 }
 
+// LE FRASI DEI COMANDI PRONTI. Un comando che risponde con un dato (da quanto
+// segui, da quanto esiste il canale) dichiara le sue frasi: i segnaposti che
+// sa riempire e la frase di base nelle tre lingue. Lo streamer ne scrive una
+// sua al posto della nostra; vuota vuol dire la nostra, nella lingua della
+// chat. Si tengono solo le frasi dichiarate, ripulite e non piu' lunghe di un
+// messaggio di chat.
+export const RISPOSTA_MAX = 300;
+function frasiPulite(c, v) {
+  if (!c.risposte || !v || typeof v !== 'object') return null;
+  const out = {};
+  for (const k of Object.keys(c.risposte)) {
+    const t = String(v[k] ?? '').replace(/\s+/g, ' ').trim().slice(0, RISPOSTA_MAX);
+    if (t) out[k] = t;
+  }
+  return Object.keys(out).length ? out : null;
+}
+
+// La frase che esce in chat: quella dello streamer se l'ha scritta, se no la
+// nostra nella lingua della chat; i segnaposti dichiarati riempiti coi dati.
+// Un segnaposto che il comando non conosce resta com'e': lo streamer lo vede
+// nell'anteprima e lo corregge, invece di trovarsi una parola sparita.
+export function rispostaDi(channel, id, chiave, dati = {}) {
+  const c = COMANDI.find((x) => x.id === id);
+  const decl = c?.risposte?.[chiave];
+  if (!decl) return '';
+  const sua = frasiPulite(c, scelte(channel)[id]?.risposte)?.[chiave];
+  const i = ['it', 'en', 'es'].indexOf(linguaChat(channel));
+  const modello = sua || decl.base[i < 0 ? 0 : i];
+  return modello.replace(/\{([a-z]+)\}/g, (tutto, k) => (decl.segnaposti.includes(k) ? String(dati[k] ?? '') : tutto));
+}
+
 // Cosa il pannello puo' scrivere, e come si ripulisce.
 export function normalizza(dati) {
   const fuori = {};
@@ -611,6 +662,8 @@ export function normalizza(dati) {
     }
     const base = LIVELLI.includes(c.chi) ? c.chi : 'tutti';
     if (riservabile(c) && LIVELLI.includes(v.chi) && LIVELLI.indexOf(v.chi) > LIVELLI.indexOf(base)) riga.chi = v.chi;
+    const frasi = frasiPulite(c, v.risposte);
+    if (frasi) riga.risposte = frasi;
     if (Object.keys(riga).length) fuori[c.id] = riga;
   }
   return fuori;

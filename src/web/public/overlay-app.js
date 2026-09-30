@@ -1197,6 +1197,7 @@ function ricevi(m) {
     else if (dati.tipo === 'widget') { if (mostra(dati.id === 'ultimoSub' ? 'ws' : 'wf')) widget(dati.id, (MIO.widget && MIO.widget[dati.id]) || dati.cfg, dati.valore); }
     else if (dati.tipo === 'goal') { MIO.goals = Array.isArray(dati.goals) ? dati.goals : MIO.goals; goal(MIO.goals, dati.conti || {}); }
     else if (dati.tipo === 'timer') { MIO.timerFine = Number(dati.fine) || MIO.timerFine; disegnaTimer(); }
+    else if (dati.tipo === 'pubblicita') { MIO.pubblStato = { prossima: Number(dati.prossima) || 0, pausaFino: Number(dati.pausaFino) || 0 }; disegnaPubblicita(); }
     else if (dati.tipo === 'treno') { MIO.trenoStato = dati.treno || null; disegnaTreno(); }
     else if (dati.tipo === 'bit') { if (Array.isArray(dati.righe)) MIO.bitRighe = dati.righe; disegnaBit(); }
     else if (dati.tipo === 'tema') caricaTema();
@@ -1690,6 +1691,51 @@ function togliTimer() {
   timerEl.uscita = setTimeout(via, 520);
 }
 
+const pubblEl = {};
+
+function disegnaPubblicita() {
+  const cfg = MIO.pubbl;
+  const st = MIO.pubblStato || {};
+  const ora = Date.now();
+  const pausaFino = Number(st.pausaFino) || 0;
+  const prossima = Number(st.prossima) || 0;
+  let titolo = '';
+  let manca = 0;
+  let inPausa = false;
+  if (cfg && pausaFino > ora) {
+    if (cfg.pausa !== false) { titolo = cfg.titoloPausa || ''; manca = pausaFino - ora; inPausa = true; }
+  } else if (cfg && prossima > ora && (!cfg.mostraDa || prossima - ora <= cfg.mostraDa * 60000)) {
+    titolo = cfg.titolo || ''; manca = prossima - ora;
+  }
+  if (!cfg || !cfg.attivo || !mostra('pubblicita') || !manca) return togliPubblicita();
+  let el = pubblEl.n;
+  const nato = !el;
+  if (!el) {
+    el = document.createElement('div');
+    el.innerHTML = '<span class="t-tit"></span><span class="t-num"></span>';
+    pubblEl.n = el;
+  }
+  if (pubblEl.uscita) { clearTimeout(pubblEl.uscita); pubblEl.uscita = 0; el.classList.remove('esce'); }
+  posa(wboxes[cfg.posizione] || wboxes['alto-destra'] || document.body, el);
+  el.className = 'ovl-widget ovl-timer ovl-pubblicita dim-' + ((cfg.stile || {}).dim || 'media') + ' ' + classiIdentita(cfg.stile, 'nessuna')
+    + (inPausa ? ' in-pausa' : '') + (el.classList.contains('dentro') ? ' dentro' : '');
+  el.querySelector('.t-tit').textContent = titolo;
+  el.querySelector('.t-num').textContent = oreMinSec(manca);
+  vestiElemento(el, cfg, 'nessuna', 'pubblicita');
+  if (nato) requestAnimationFrame(() => el.classList.add('dentro'));
+}
+
+function togliPubblicita() {
+  const el = pubblEl.n;
+  if (!el) return;
+  const via = () => { el.remove(); if (pubblEl.n === el) pubblEl.n = null; pubblEl.uscita = 0; };
+  if (fermiIMotori()) return via();
+  if (pubblEl.uscita) return;
+  el.classList.remove('dentro');
+  el.classList.add('esce');
+  pubblEl.uscita = setTimeout(via, 520);
+}
+
 const trenoEl = {};
 const TRENO_ICO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="12" rx="2"/><path d="M4 9h16"/><path d="M8 19l-2 2"/><path d="M16 19l2 2"/><circle cx="8.5" cy="18" r="1.5"/><circle cx="15.5" cy="18" r="1.5"/></svg>';
 
@@ -1824,6 +1870,7 @@ function oreMinSec(ms) {
 
 setInterval(() => {
   if (MIO.timer && MIO.timer.attivo && mostra('timer')) disegnaTimer();
+  if (MIO.pubbl && MIO.pubbl.attivo) disegnaPubblicita();
   if (MIO.treno && MIO.treno.attivo && mostra('treno')) disegnaTreno();
   const vivo = MIO.musica && MIO.musica.attivo && mostra('musica');
   if (!vivo) return;
@@ -1860,6 +1907,9 @@ function applicaTema(t) {
       .catch(function (e) { guaio('timer-da-solo', String(e && e.message || e)); });
   }
   disegnaTimer();
+  MIO.pubbl = t.pubblicita || null;
+  MIO.pubblStato = (MIO.pubbl && MIO.pubbl.stato) || { prossima: 0, pausaFino: 0 };
+  disegnaPubblicita();
   MIO.treno = t.treno || null;
   MIO.trenoStato = (stato.treno && typeof stato.treno === 'object') ? stato.treno : null;
   disegnaTreno();

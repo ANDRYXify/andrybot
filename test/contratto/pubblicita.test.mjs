@@ -61,7 +61,9 @@ test('il programma di Twitch lo legge un posto solo', () => {
 
 test('fuori diretta non si chiede niente a Twitch', () => {
   const f = BOT.slice(BOT.indexOf('async _giroPubblicita()'), BOT.indexOf('async _annuncio('));
-  assert.match(f, /if \(live && pub\.vaGuardato\(/, 'il programma si chiede solo a chi e\' in onda');
+  assert.match(f, /if \(live && \(perChat \|\| perScena\)\) \{\n\s*const p = await this\.helix\?\.getAdSchedule/, 'il programma si chiede solo a chi e\' in onda');
+  assert.match(f, /const perChat = conf\.acceso && pub\.vaGuardato\(/, 'per la chat col passo degli annunci');
+  assert.match(f, /const perScena = inScena && pub\.vaGuardatoPerOverlay\(/, 'per l\'overlay col suo');
   assert.match(f, /for \(const \[ch, live\] of this\._liveState\)/, 'e chi e\' in onda lo dice la fonte unica');
 });
 

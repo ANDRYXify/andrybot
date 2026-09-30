@@ -34,6 +34,7 @@ import { streamers, presenze as store, points, memory, modules as modulesDb } fr
 import { NON_CONTARE } from './watchtime.js';
 import { makeLog } from '../logger.js';
 import { aChi } from './risposte.js';
+import { nomeMoneta } from './moneta.js';
 
 const log = makeLog('presenze');
 const norm = (s) => String(s || '').toLowerCase().trim();
@@ -95,7 +96,7 @@ export function riempi(modello, valori) {
   return t.trim();
 }
 
-const nomeMonete = (ch) => { const n = streamers.get(ch)?.settings?.nomeMonete; return (typeof n === 'string' && n.trim()) || 'monete'; };
+const nomeMonete = (ch) => nomeMoneta(ch);
 const ordinale = (n) => `${n}ª`;
 
 // ---------------------------------------------------------------- il giro
@@ -193,23 +194,39 @@ export function moduloSulPrimoMessaggio(channel) {
   catch { return false; }
 }
 
-// Chiamata per ogni messaggio. Aggiorna «visto» e, se e' il caso, saluta.
-// Ritorna 'prima' | 'ritorno' | null (cosa ha detto).
-export function suMessaggio(msg, say, { ora = Date.now(), live = true } = {}) {
+// «E' ARRIVATO». Si segna per ogni messaggio, PRIMA dei controlli che possono
+// fermarlo: chi l'antispam ferma al primo messaggio e' arrivato lo stesso, e
+// il giorno dopo non e' un nuovo; senza, per il canale non c'era mai stato.
+// Torna la riga com'era prima di questo messaggio e se e' la sua prima volta:
+// il saluto, che viene dopo, deve ragionare su quella, non su quella appena
+// scritta. null per chi non si conta.
+export function segnaArrivo(msg, { ora = Date.now() } = {}) {
   if (!msg || msg.isSelf || msg.from_bot) return null;
   const ch = norm(msg.channel), u = norm(msg.user);
   if (!ch || !u || u === ch || u.startsWith('[') || NON_CONTARE.has(u)) return null;
-  const c = cfg(ch);
   const r = store.get(ch, u);
   const suTwitch = !msg.piattaforma || msg.piattaforma === 'twitch';
   const prima = suTwitch
     ? msg.tags?.['first-msg'] === '1'
     : (!r?.prima_ts && !r?.ultimo_msg && memory.storiaDi(ch, u).quanti <= 1);
+  // «visto adesso»: una scrittura al minuto per persona basta, e la prima volta subito
+  if (!r || prima || ora - (r.ultimo_msg || 0) >= 60_000) store.set(ch, u, { ultimo_msg: ora, prima_ts: r?.prima_ts || ora, salutato: r?.salutato || (prima ? 1 : 0) });
+  return { r, prima };
+}
+
+// Chiamata per ogni messaggio che arriva al flusso normale: se e' il caso,
+// saluta. `arrivo` e' quello che ha tornato segnaArrivo, se il tubo l'ha gia'
+// chiamato; senza, lo chiama lei.
+// Ritorna 'prima' | 'ritorno' | null (cosa ha detto).
+export function suMessaggio(msg, say, { ora = Date.now(), live = true, arrivo } = {}) {
+  const a = arrivo === undefined ? segnaArrivo(msg, { ora }) : arrivo;
+  if (!a) return null;
+  const { r, prima } = a;
+  const ch = norm(msg.channel), u = norm(msg.user);
+  const c = cfg(ch);
   const ultimoSegno = Math.max(r?.ultimo_msg || 0, r?.ultima_ts || 0);
   const giorni = ultimoSegno ? Math.floor((ora - ultimoSegno) / GIORNO) : 0;
   const ritorno = !prima && ultimoSegno > 0 && giorni >= c.saluti.giorniAssenza;
-  // «visto adesso»: una scrittura al minuto per persona basta, e la prima volta subito
-  if (!r || prima || ora - (r.ultimo_msg || 0) >= 60_000) store.set(ch, u, { ultimo_msg: ora, prima_ts: r?.prima_ts || ora, salutato: r?.salutato || (prima ? 1 : 0) });
   if (!c.attivo || !c.saluti.attivo) return null;
   if (String(msg.text || '').trim().startsWith('!')) return null;
   if (c.saluti.soloLive && !live) return null;

@@ -21,7 +21,7 @@ function banco({ blocca, timeout, cancella } = {}) {
   const helix = {
     bloccaUtente: async (c, id) => { f.chiamate.push(['blocca', c, id]); return blocca ? blocca(id) : { ok: true }; },
     timeoutUser: async (c, id, d) => { f.chiamate.push(['timeout', c, id, d]); return timeout ? timeout(id) : { ok: true }; },
-    deleteMessage: async (c, m) => { f.chiamate.push(['cancella', c, m]); if (cancella) return cancella(m); },
+    deleteMessage: async (c, m) => { f.chiamate.push(['cancella', c, m]); return cancella ? cancella(m) : { ok: true }; },
   };
   const e = new E.Esecutore({ helix, annota: (ch, riga) => f.righe.push({ ch, ...riga }) });
   return { f, e };
@@ -201,4 +201,35 @@ test('un errore che scoppia non ferma la coda', async () => {
   assert.match(r.motivo, /rete storta/);
   const dopo = await e.esegui(v({ login: 'altro', userId: 'u2', azione: E.AZIONI.CANCELLA, messaggio: 'm1' }));
   assert.equal(dopo.ok, true, 'la fila va avanti');
+});
+
+// ─────────────────────────────────────────── quello che Twitch ha risposto
+
+test('una cancellazione che Twitch rifiuta non risulta fatta', async () => {
+  const { f, e } = banco({ cancella: () => ({ ok: false, motivo: 'permesso mancante (ri-concedi i permessi)' }) });
+  const r = await e.esegui(v({ azione: E.AZIONI.CANCELLA, messaggio: 'm-rifiutato', login: 'rif', userId: 'urif' }));
+  assert.equal(r.ok, false, 'rifiutata');
+  assert.match(f.righe.at(-1).motivoTwitch || JSON.stringify(f.righe.at(-1)), /permesso mancante/, 'e il perche\' resta scritto');
+  assert.ok(e.stato().falliti >= 1, 'e conta fra quelle da riprendere');
+});
+
+test('Twitch detto bene: 403 e\' un permesso, «gia\' bannato» e\' fatto, 409 si riprova', async () => {
+  const { streamers } = await import('../../src/db.js');
+  streamers.upsertApproved('twcanale', 'TwCanale', '99');
+  const { Helix } = await import('../../src/twitch/helix.js');
+  const risposta = { status: 0, testo: '' };
+  const h = new Helix({ auth: { getToken: async () => 'tok' } });
+  h._request = async () => { const err = new Error(`Helix → ${risposta.status} ${risposta.testo}`); err.status = risposta.status; throw err; };
+  const prova = async (status, testo = '') => { risposta.status = status; risposta.testo = testo; return [await h.deleteMessage('twcanale', 'm1'), await h.timeoutUser('twcanale', 'u1', 0, 'x')]; };
+
+  let [c, b] = await prova(403);
+  assert.match(c.motivo, /permesso/); assert.match(b.motivo, /permesso/);
+  [c, b] = await prova(400, '{"message":"The user specified in the user_id field is already banned."}');
+  assert.equal(b.ok, true, 'gia\' bannato: il risultato c\'e\'');
+  assert.equal(c.ok, false, 'un messaggio che non si puo\' cancellare resta un no');
+  [, b] = await prova(409, '{"message":"You may not update the user\'s ban state while someone else is updating the state."}');
+  assert.equal(b.ok, false, 'qualcuno la sta cambiando adesso: non e\' fatta');
+  assert.equal(b.motivo, 'errore Twitch', 'e l\'esecutore la riprova');
+  [c, b] = await prova(429);
+  assert.equal(c.motivo, 'troppe richieste'); assert.equal(b.motivo, 'troppe richieste');
 });

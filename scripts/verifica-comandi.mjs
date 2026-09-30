@@ -142,7 +142,12 @@ export function guaiInChat(tabella) {
       const k = giocoDi(m[1])?.param?.find((x) => x.k === m[2]);
       if (!k || !(k.tipo === 'scelta' || k.min >= 1)) g.manopole.push(`${id}: %${m[1]}.${m[2]}%`);
     }
-    const resto = r.spiega.replace(/%monete%|%[a-z0-9]+\.[a-zA-Z]+%/g, '');
+    // L'accordo con la moneta (moneta.js) ha sempre quattro modi, in
+    // quest'ordine: fp, mp, fs, ms. Con tre o cinque non si sa quale esce.
+    for (const m of r.spiega.matchAll(/%\[([^\]]*)\]%/g)) {
+      if (m[1].split('|').length !== 4) g.segnaposto.push(`${id}: un accordo senza i suoi quattro modi`);
+    }
+    const resto = r.spiega.replace(/%monete%|%[a-z0-9]+\.[a-zA-Z]+%|%\[[^\]|]*\|[^\]|]*\|[^\]|]*\|[^\]|]*\]%/g, '');
     if (/%/.test(resto)) g.segnaposto.push(`${id}: un % senza manopola`);
   }
   return g;
