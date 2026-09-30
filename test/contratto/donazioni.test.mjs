@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // LE DONAZIONI SONO UN EVENTO COME GLI ALTRI: dal webhook alla pagina, ogni
 // pezzo deve conoscere la stessa parola. Qui si tiene fermo il filo: l'alert
 // `donazione` esiste dove nascono gli alert, dove si vestono e dove si

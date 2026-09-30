@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // LA STORIA DI INSTAGRAM, da un posto solo. La pubblicano «Manda» della
 // Settimana, il tasto «Metti nella storia» delle Grafiche e, se lo streamer
 // l'ha accesa, la diretta quando comincia: tre strade, un modo solo di farlo.

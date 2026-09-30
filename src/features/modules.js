@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // ModulesEngine: il motore dei "Moduli", le automazioni componibili
 // QUANDO → SE → ALLORA che ogni streamer costruisce dalla dashboard.
 //
@@ -29,6 +31,8 @@ const log = makeLog('moduli');
 const MAX_AZIONI = 8;              // azioni eseguite al massimo per modulo
 const MAX_TESTO = 400;             // troncatura dei messaggi
 const MAX_ATTESA_S = 30;           // secondi massimi per l'azione "attendi"
+const TESTO_MIN_MS = 500;          // quanto resta a schermo, al minimo, un "overlayTesto"
+const TESTO_MAX_MS = 30_000;       // e al massimo
 const CACHE_STREAM_MS = 30_000;    // cache dello stato live per canale
 const WEBHOOK_TIMEOUT_MS = 5000;   // timeout della chiamata webhook
 const WEBHOOK_MAX_BYTES = 10 * 1024; // lettura massima della risposta webhook
@@ -36,6 +40,11 @@ const TIMER_TICK_MS = 30_000;      // ogni quanto il timer controlla i moduli
 const PAUSA_FRA_TIMER_MS = 7_000;  // respiro fra due timer scaduti nello stesso giro
 const MAX_CODA_TIMER = 50;         // tetto alla fila d'attesa dei timer
 const MAX_PUNTI_AZIONE = 1_000_000; // tetto su quanto un'azione puo' muovere in una volta
+
+// I LIMITI DELLE AZIONI che si scrivono a mano: il pannello li legge da qui
+// (arrivano con l'elenco dei moduli) e il server rifiuta quello che li supera.
+// Un numero solo, cosi' il campo non promette piu' di quello che il motore fa.
+export const LIMITI_AZIONI = Object.freeze({ attesaS: MAX_ATTESA_S, testoMinMs: TESTO_MIN_MS, testoMaxMs: TESTO_MAX_MS });
 
 // Un login su cui si possono muovere monete. Esclude i segnaposto di sistema
 // (che iniziano con '[') e qualunque cosa non somigli a un nome utente: un
@@ -156,6 +165,8 @@ export class ModulesEngine {
         } else if (tr.tipo === 'evento' && tr.evento === 'first' && primoMessaggio) {
           ctx = this._ctxDaMessaggio(msg, channel, livello, [], '');
           ctx.evento = 'first';
+          // e' un evento: chi scrive per la prima volta non paga niente
+          ctx.pagante = '';
         }
 
         if (ctx) { await this.esegui(modulo, ctx, say); if (tr.tipo === 'comando') comandoScattato = true; }
@@ -372,7 +383,7 @@ export class ModulesEngine {
   // Contesto per un modulo eseguito da Telegram (nessun ruolo → tier passano).
   _ctxTelegram(ch, utente, args, argsRaw) {
     return {
-      channel: ch, user: utente || '', userLogin: '', display: utente || '',
+      channel: ch, user: utente || '', userLogin: '', autore: '', display: utente || '',
       args: args || [], argsRaw: argsRaw || '', evento: null,
       _livello: TIER_SCALA.mod, _vars: {},
     };
@@ -685,14 +696,17 @@ export class ModulesEngine {
 
     // MONETE. Due cose diverse: `minPunti` chiede un patrimonio e non lo tocca
     // (un comando riservato a chi ha gia' accumulato); `costo` si paga.
-    // Senza un autore vero (timer, evento, API) non c'e' nessuno da addebitare:
+    // Paga solo chi ha scritto in chat: il suo contesto e' l'unico che ha un
+    // `pagante` (_ctxDaMessaggio). Timer, eventi, API, voce, Telegram e prova
+    // non hanno uno spettatore davanti, e nemmeno lo streamer paga al suo posto:
     // le due condizioni non si applicano invece di rifiutare a vuoto.
-    const autore = loginBuono(ctx.user);
+    const autore = loginBuono(ctx.autore);
+    const pagante = loginBuono(ctx.pagante);
     const minPunti = Math.max(0, Number(c.minPunti) || 0);
     const costo = await this._quantoCosta(c.costo, ctx);
     let saldo = 0;
-    if (autore && (minPunti > 0 || costo > 0)) {
-      saldo = points.get(ctx.channel, autore);
+    if (pagante && (minPunti > 0 || costo > 0)) {
+      saldo = points.get(ctx.channel, pagante);
       ctx._vars = { ...(ctx._vars || {}), costo: String(costo), saldo: String(saldo) };
       if (minPunti > 0 && saldo < minPunti) return no('minPunti');
       if (costo > 0 && saldo < costo) return no('costo');
@@ -719,8 +733,8 @@ export class ModulesEngine {
     // IL PAGAMENTO. Qui, e non prima: tutto cio' che poteva rifiutare ha gia'
     // rifiutato. E qui, e non dopo il dado: in una macchinetta si paga per
     // giocare, non per vincere — cosi' il ramo "altrimenti" parte gia' pagato.
-    if (autore && costo > 0) {
-      points.add(ctx.channel, autore, -costo);
+    if (pagante && costo > 0) {
+      points.add(ctx.channel, pagante, -costo);
       ctx._vars = { ...(ctx._vars || {}), costo: String(costo), saldo: String(Math.max(0, saldo - costo)) };
     }
 
@@ -770,7 +784,7 @@ export class ModulesEngine {
       const recenti = memory.recent(ctx.channel, 80) || [];
       const io = norm(ctx.display || ctx.user);
       const nomi = [...new Set(recenti.filter((m) => !m.from_bot && m.user).map((m) => m.user))];
-      const altri = escludiAutore ? nomi.filter((n) => norm(n) !== io && norm(n) !== norm(ctx.user)) : nomi;
+      const altri = escludiAutore ? nomi.filter((n) => norm(n) !== io && norm(n) !== norm(ctx.user) && norm(n) !== norm(ctx.autore || '')) : nomi;
       const pool = altri.length ? altri : nomi;
       return pool.length ? pool[Math.floor(Math.random() * pool.length)] : '';
     } catch (e) { log.debug('chatterACaso:', e?.message || e); return ''; }
@@ -779,13 +793,15 @@ export class ModulesEngine {
   // A chi vanno (o da chi si tolgono) le monete di un'azione `punti`.
   // 'autore' e' il default perche' e' il caso normale; gli altri servono per i
   // regali, i furti e le estrazioni. Il nome passa sempre da loginBuono: un
-  // destinatario arriva da quello che uno scrive in chat.
+  // destinatario arriva da quello che uno scrive in chat. L'autore e' quello
+  // del contesto (vedi CONTESTI): un timer non ce l'ha, e le monete non vanno a
+  // nessuno invece che allo streamer.
   _chiPunti(azione, ctx) {
     switch (azione?.a) {
       case 'destinatario': return loginBuono((ctx.args && ctx.args[0]) || '');
       case 'caso': return loginBuono(this._chatterACaso(ctx));
       case 'nome': return loginBuono(azione.nome);
-      default: return loginBuono(ctx.user);
+      default: return loginBuono(ctx.autore);
     }
   }
 
@@ -854,12 +870,12 @@ export class ModulesEngine {
       }
       case 'overlayTesto': {
         const testo = await this.espandi(azione.testo, ctx);
-        const durata = Math.max(500, Math.min(60_000, Number(azione.durata) || 5000));
+        const durata = Math.max(TESTO_MIN_MS, Math.min(TESTO_MAX_MS, Number(azione.durata) || 5000));
         this.effects?.emit(ctx.channel, { tipo: 'testo', testo, durata });
         return;
       }
       case 'timeout': {
-        await this._timeout(ctx, Number(azione.secondi) || 0);
+        await this._timeout(ctx, Number(azione.secondi) || 0, dire);
         return;
       }
       case 'clip': {
@@ -900,7 +916,7 @@ export class ModulesEngine {
       case 'musica': {
         // mette un brano nella coda Spotify del canale. Il "brano" può usare le
         // variabili ($args): comando fisso (es. !sigla → un brano preciso) oppure
-        // libero (es. !metti $args). Richiede l'add-on Musica e Spotify collegato.
+        // libero (es. !metti $args). Serve la funzione Musica del piano (c'e' gia' nell'Essenziale) e Spotify collegato.
         if (!canaleHa(ctx.channel, 'musica')) return;
         if (!spotify.collegato(ctx.channel)) {
           if (azione.annuncia !== false) {
@@ -1018,16 +1034,33 @@ export class ModulesEngine {
 
   // Azione di moderazione "timeout": la proviamo SOLO se Helix espone un metodo
   // dedicato. Non inventiamo endpoint/scope: se manca, si logga e si salta.
-  async _timeout(ctx, secondi) {
-    const bersaglio = ctx.userLogin || ctx.user;
-    if (typeof this.helix?.timeout === 'function') {
-      try {
-        await this.helix.timeout(ctx.channel, bersaglio, Math.max(1, Math.min(1_209_600, secondi || 1)));
-      } catch (e) {
-        log.debug('timeout via helix fallito:', e?.message || e);
-      }
+  // TIMEOUT: mette in pausa chi ha fatto scattare il modulo. Passa da
+  // helix.timeoutUser, la stessa porta della moderazione: vuole l'id, non il
+  // nome, e con 0 secondi farebbe un ban, quindi il minimo qui e' 1. Lo
+  // streamer non si mette in pausa: timer, voce, API e prova hanno lui come
+  // autore, e li' non c'e' nessuno da fermare. L'esito si dice come per le
+  // altre azioni: il permesso che manca (il rimedio solo allo staff), e chi non
+  // si puo' fermare perche' e' moderatore o VIP.
+  async _timeout(ctx, secondi, dire = () => {}) {
+    const login = norm(ctx.userLogin || '');
+    if (!login || login === norm(ctx.channel)) { log.debug(`#${ctx.channel} timeout: nessuno da mettere in pausa`); return; }
+    let id = String(ctx.userId || '');
+    if (!id) id = String((await this.helix?.getUserByLogin?.(login).catch(() => null))?.id || '');
+    if (!id) { log.debug(`#${ctx.channel} timeout: non trovo ${login}`); return; }
+    const durata = Math.max(1, Math.min(1_209_600, Math.round(secondi) || 600));
+    const r = await this.helix?.timeoutUser?.(ctx.channel, id, durata, 'timeout da un comando del canale')
+      .catch((e) => ({ ok: false, motivo: e?.message || 'errore' }));
+    if (r?.ok) return;
+    const motivo = String(r?.motivo || 'non disponibile');
+    if (motivo.includes('permesso')) {
+      dire(aChiPuo(ctx.staff, {
+        staff: '🔒 Mi manca il permesso di moderazione per il timeout: riautorizza dalla dashboard.',
+        pubblico: '🔒 Adesso non posso mettere in pausa nessuno.',
+      }));
+    } else if (motivo.includes('mod/VIP')) {
+      dire(`🛡️ Non posso mettere in pausa ${ctx.display || login}: moderatori e VIP non si possono.`);
     } else {
-      log.debug('azione timeout non supportata (helix.timeout assente): salto');
+      log.debug(`#${ctx.channel} timeout di ${login} non riuscito: ${motivo}`);
     }
   }
 
@@ -1224,7 +1257,7 @@ export class ModulesEngine {
 
     // Anche queste si pagano solo se citate: una lettura in piu' per ogni
     // messaggio di chat non si giustifica per una variabile che quasi nessuno usa.
-    const chiScrive = loginBuono(ctx.user);
+    const chiScrive = loginBuono(ctx.autore);
     const puntiAutore = /\$punti/.test(s) && chiScrive ? String(points.get(ctx.channel, chiScrive)) : '';
     let posizioneAutore = '';
     if (/\$posizione/.test(s) && chiScrive) {
@@ -1345,6 +1378,17 @@ export class ModulesEngine {
   }
 
   // ============================================================ CONTESTI
+  //
+  // `autore` e' chi ha fatto scattare il modulo, per login: e' la persona su cui
+  // si muovono le monete di «Chi ha scritto», che paga il cooldown a testa e di
+  // cui $punti dice il saldo. Chi scrive in chat; la persona dell'evento (chi
+  // segue, si abbona, riscatta, fa raid, dona Bit), nessuno se e' anonima; lo
+  // streamer quando e' lui ad agire (voce, gesto della webcam, API, prova).
+  // Nessuno per il tempo (timer), per l'inizio e la fine della diretta, e per
+  // Telegram, dove un nome non e' un account del canale: li' le azioni su
+  // «Chi ha scritto» saltano, e lo streamer non prende il posto di nessuno.
+  // Il login, non il nome visualizzato: un nome in un altro alfabeto non e' un
+  // login, e le monete finirebbero nel vuoto.
 
   _ctxDaMessaggio(msg, channel, livello, args, argsRaw) {
     const nome = msg.display || msg.user || '';
@@ -1356,6 +1400,10 @@ export class ModulesEngine {
       piattaforma: msg.piattaforma || 'twitch',
       user: nome,                   // nome visualizzato (per $user/$touser)
       userLogin: msg.user || '',    // login (per moderazione/timeout)
+      // Chi paga «Costa» e mostra «Serve almeno»: chi ha scritto, per login.
+      // Solo questo contesto lo ha (vedi _condizioniOk).
+      pagante: msg.user || '',
+      autore: msg.user || '',
       userId: msg.userId || (msg.tags && msg.tags['user-id']) || '', // id numerico (per $followage)
       display: nome,
       args,
@@ -1374,9 +1422,12 @@ export class ModulesEngine {
     const d = ev.data || {};
     const raider = d.from_broadcaster_user_name || '';
     const user = comeSiChiama(d, raider || '');
+    const autore = evento === 'gesto' ? channel
+      : (d.is_anonymous ? '' : norm(d.user_login || d.from_broadcaster_user_login || ''));
     return {
       channel,
       user,
+      autore,
       userLogin: norm(d.user_login || d.user_name || ''),
       display: user,
       args: [],
@@ -1401,7 +1452,7 @@ export class ModulesEngine {
   _ctxTimer(channel) {
     const nome = streamers.get(channel)?.display || channel;
     return {
-      channel, user: nome, userLogin: channel, display: nome,
+      channel, user: nome, userLogin: channel, autore: '', display: nome,
       args: [], argsRaw: '', evento: null,
       _livello: TIER_SCALA.mod, _vars: {},
     };
@@ -1410,7 +1461,7 @@ export class ModulesEngine {
   _ctxApi(channel) {
     const nome = streamers.get(channel)?.display || channel;
     return {
-      channel, user: nome, userLogin: channel, display: nome,
+      channel, user: nome, userLogin: channel, autore: channel, display: nome,
       args: [], argsRaw: '', evento: 'api',
       _livello: TIER_SCALA.mod, staff: true, _vars: {},
     };
@@ -1422,7 +1473,7 @@ export class ModulesEngine {
     const nome = streamers.get(channel)?.display || channel;
     const args = Array.isArray(parole) ? parole : String(frase || '').split(' ').filter(Boolean);
     return {
-      channel, user: nome, userLogin: channel, display: nome,
+      channel, user: nome, userLogin: channel, autore: channel, display: nome,
       args, argsRaw: String(frase || ''), evento: 'voce',
       _livello: TIER_SCALA.mod, staff: true, _vars: {},
     };
@@ -1431,7 +1482,7 @@ export class ModulesEngine {
   _ctxProva(channel) {
     const nome = streamers.get(channel)?.display || channel;
     return {
-      channel, user: nome, userLogin: channel, display: nome,
+      channel, user: nome, userLogin: channel, autore: channel, display: nome,
       args: ['esempio', 'prova'], argsRaw: 'esempio prova', evento: null,
       _livello: TIER_SCALA.mod, staff: true,
       _vars: { raider: 'RaiderDiProva', viewers: 42, mesi: 3, bits: 100, premio: 'Premio di prova', user: nome },

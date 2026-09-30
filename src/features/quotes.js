@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // Citazioni (!cita) e shoutout (!so) — due classici del Mod Panel, ora nativi
 // in SocialBot. Le citazioni sono numerate in modo stabile (!cita 12 punta
 // sempre alla stessa). Lo shoutout invita a seguire un altro canale, con

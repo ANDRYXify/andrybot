@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // Antispam: elimina i messaggi di spam (link di altri canali, copypasta,
 // TUTTO MAIUSCOLO, valanghe di menzioni, flood) e, ai recidivi, dà un timeout
 // crescente. Mod e broadcaster sono SEMPRE esenti; VIP/sub secondo le regole.

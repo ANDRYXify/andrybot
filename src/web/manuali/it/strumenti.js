@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // Manuale: Manuale degli strumenti. La forma dei manuali e il perche' stanno in
 // src/web/manuali.js; le lingue in docs/LINGUE.md. Come e' fatto il QR, e
 // perche' si legge, sta in docs/STRUMENTI.md.
@@ -114,9 +116,9 @@ export default {
     ] },
     { h3: 'Metterli su Twitch' },
     { passi: [
-      { t: 'Scarica tutti', d: ': ti arriva un file con le immagini in ordine e un testo con titolo, link e descrizione di ognuno. Puoi anche scaricare un pannello solo, da sotto la sua immagine.' },
-      { t: 'Apri il tuo canale', d: ' su Twitch, vai in <em>Informazioni</em> e accendi <em>Modifica pannelli</em>.' },
-      { t: 'Per ogni pannello', d: ' carica l\'immagine, incolla il link e la descrizione. Nella scheda, sotto ogni pannello, ci sono <em>Copia il link</em> e <em>Copia la descrizione</em>.' },
+      { t: 'Premi «Scarica tutti».', d: 'Ti arriva un file con le immagini in ordine e un testo con titolo, link e descrizione di ognuno. Puoi anche scaricare un pannello solo, da sotto la sua immagine.' },
+      { t: 'Apri il tuo canale su Twitch.', d: 'Vai in <em>Informazioni</em> e accendi <em>Modifica pannelli</em>.' },
+      { t: 'Aggiungi i pannelli uno alla volta.', d: 'Per ognuno carica l\'immagine, incolla il link e la descrizione. Nella scheda, sotto ogni pannello, ci sono <em>Copia il link</em> e <em>Copia la descrizione</em>.' },
     ] },
     { p: ['Le immagini sono larghe 320 pixel, la misura con cui Twitch le mostra. La descrizione Twitch la legge in Markdown: <code>**grassetto**</code>, <code>[parole](link)</code> per un link, un trattino davanti per un elenco.'] },
 

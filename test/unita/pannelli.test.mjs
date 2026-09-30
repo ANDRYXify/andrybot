@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // I PANNELLI DI TWITCH (src/web/public/pannelli.js e src/features/pannelli.js,
 // docs/STRUMENTI.md): si leggono per costruzione, nascono pieni di quello che
 // il canale sa, e quello che si salva ha forma. Il disegno vero si guarda nel

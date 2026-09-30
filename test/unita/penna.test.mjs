@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // LA PENNA (docs/PENNA.md): i segni fatti a mano, calcolati. Il seme varia i
 // segni; dove partono, dove arrivano e dove sta il contenuto lo dice la
 // geometria, per ogni seme.

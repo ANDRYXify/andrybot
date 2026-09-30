@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // IL NOME DEL COMANDO E' UN ELEMENTO DELLA SCENA (docs/OVERLAY.md, «Gli ultimi
 // pezzi fuori dalla scena»). La pastiglia «!comando» di un effetto stava in
 // basso al centro fissa, del colore del marchio, e la accendevano gli effetti.

@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // L'AREA DEGLI EFFETTI E' UN ELEMENTO DELLA SCENA (docs/OVERLAY.md, «Gli ultimi
 // pezzi fuori dalla scena»). Immagini e video comparivano al centro, grandi al
 // massimo l'80% dello schermo, e lo Studio non li mostrava. Ora la loro area

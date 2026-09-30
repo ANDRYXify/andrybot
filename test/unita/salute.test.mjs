@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // LA SALUTE dell'istanza. Prima /health rispondeva `ok: true` e basta: diceva
 // «il processo risponde», non «il prodotto funziona». Se cadeva la chat di
 // tutti restava verde. Qui si controlla che ora dica la verità — e che non

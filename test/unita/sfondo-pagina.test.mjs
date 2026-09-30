@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // L'IMMAGINE DI SFONDO DELLA PAGINA LINK, spostata e in scala (docs/SFONDO-PAGINA.md).
 // Il punto (X, Y) dell'immagine sta sul punto (X, Y) dello schermo, la
 // grandezza e' rispetto a «copre lo schermo», e dove l'immagine non arriva

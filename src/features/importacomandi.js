@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // IMPORTARE DA UN ALTRO BOT: COMANDI, TIMER E PUNTI.
 //
 // Il freno all'adozione non è il prezzo: è che uno streamer con quattrocento
@@ -46,7 +48,7 @@ const NON_TRADUCIBILI = [
   [/\$\(\s*eval\b[^)]*\)/i, 'del codice JavaScript da eseguire', null],
   [/\$\(\s*twitch\b[^)]*\)/i, 'dati di un altro canale presi al volo', null],
   [/\$\(\s*weather\b[^)]*\)/i, 'il meteo', null],
-  [/\$\(\s*(?:youtube|spotify|song|currentsong)\b[^)]*\)/i, 'il brano in ascolto', 'l’add-on Musica'],
+  [/\$\(\s*(?:youtube|spotify|song|currentsong)\b[^)]*\)/i, 'il brano in ascolto', 'il comando !song delle richieste musicali'],
   [/\$\{\s*[a-z][\w.]*[^}]*\}/i, 'una variabile del bot di prima', null],
   [/\$\(\s*[a-z][\w.]*[^)]*\)/i, 'una variabile del bot di prima', null],
 ];

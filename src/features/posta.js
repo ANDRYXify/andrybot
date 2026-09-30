@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // LA POSTA IN USCITA, DI CASA. Il bot e' il suo server di posta, solo in uscita.
 //
 // Niente servizi esterni e niente demone accanto: quando serve mandare una mail

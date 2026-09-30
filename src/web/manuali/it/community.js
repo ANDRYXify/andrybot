@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // Manuale: Le tue community, Telegram e Discord. La forma dei manuali e il perche' stanno in
 // src/web/manuali.js; le lingue in docs/LINGUE.md.
 
@@ -32,7 +34,7 @@ export default {
     { h2: 'Telegram', scheda: 'telegram', p: [
       'Il tuo bot Telegram dentro i tuoi gruppi e canali: avvisa quando vai in diretta, risponde ai comandi, controlla chi entra, fa gli auguri e ti scrive in privato.',
       'La scheda fa parte del piano Base. Senza, ti mostra cosa fa, il tasto «Guarda la demo» e come sbloccarla.',
-      'Finché non incolli il token del bot vedi solo la carta dell\'avviso, più quella della Mini App se c\'è. Le altre compaiono appena il bot è collegato.',
+      'Finché non incolli il token del bot vedi la carta dell\'avviso, quella degli auguri di compleanno e, se c\'è, quella della Mini App. Le altre compaiono appena il bot è collegato.',
     ] },
 
     { h3: 'Accedi e gestisci da Telegram' },
@@ -74,12 +76,13 @@ export default {
       ['Controllo', 'Cosa fa', 'Di base'],
       ['«Quali avvisi arrivano qui»', 'Sette voci: «Diretta su Twitch», «Diretta su Kick», «Diretta su YouTube», «Diretta su TikTok», «Nuovo video su YouTube», «Nuovo post su Instagram», «Nuovo post su TikTok».', 'Tutte'],
       ['«Di chi»', '«Io» e gli altri streamer che annunci.', 'Tutti'],
-      ['«Fissa l’avviso qui»', 'Fissa in cima l\'avviso della diretta finché sei in onda, e lo toglie quando finisci.', 'Acceso sul primo gruppo, spento sui posti aggiunti dopo'],
+      ['«Fissa l’avviso qui»', 'Fissa in cima l\'avviso della diretta finché sei in onda, e lo toglie quando finisci.', 'Come la spunta «Fissa l\'avviso in cima durante la live e rimuovilo quando stacco» al momento in cui aggiungi il posto'],
       ['«Attiva»', 'Spenta, il posto resta in elenco ma non riceve niente.', 'Accesa'],
       ['«Prova»', 'Manda qui un\'anteprima dell\'avviso, con la locandina se è accesa. Leggi «Anteprima mandata: guarda su Telegram.».', ''],
       ['«Togli»', 'Toglie il posto, dopo la conferma. Lo rimetti quando vuoi.', ''],
     ] },
     { p: [
+      'La spunta «Fissa l\'avviso in cima durante la live e rimuovilo quando stacco», sotto il messaggio, è il valore di base dei posti che aggiungi. Poi decide la «Fissa l’avviso qui» di ogni posto, anche per la diretta su TikTok.',
       'Per fissare l\'avviso il bot dev\'essere amministratore con il permesso di fissare i messaggi. Senza quel permesso l\'avviso non resta in cima, ma a fine diretta viene tolto lo stesso. Telegram lascia cancellare a un bot i suoi messaggi solo entro 48 ore.',
       '<strong>«Quale avviso va dove»</strong> mette tutto in una tabella: ogni riga è un avviso, ogni colonna è un posto. Spunti l\'incrocio e si salva da solo. Se una riga dice «non arriva da nessuna parte», quell\'avviso oggi non va da nessuna parte. Un avviso spuntato su due posti arriva in tutti e due. Le colonne dei posti spenti non si toccano.',
     ] },
@@ -94,7 +97,7 @@ export default {
     ] },
     { esempio: '🔴 {nome} è in diretta!\n\n{titolo}\n🎮 {gioco}\n\n👉 {link}' },
     { p: [
-      '«Salva» registra il messaggio e le spunte. Se accendi l\'avviso senza un posto dove mandarlo leggi «collega prima un gruppo o un canale».',
+      '«Salva» registra il messaggio e le spunte. La spunta «Avvisa il gruppo quando vado in diretta» si accende appena c\'è un posto dove mandare l\'avviso: il gruppo di «Rileva gruppo» oppure un posto qualsiasi dell\'elenco. Senza posti leggi «collega prima un gruppo o un canale».',
       '«Manda una prova» manda nel gruppo collegato lo stesso avviso che partirà davvero, locandina compresa. Si usa quando c\'è un gruppo.',
       '«Scollega», dopo la conferma, stacca il bot: con lui se ne vanno il gruppo collegato, l\'avviso acceso, il bot interattivo e la chat privata. Per riaccenderlo incolli di nuovo il token.',
       'Gli avvisi dei post nuovi si accendono nella scheda «I tuoi social» (<a href="/manuale/vetrina">manuale della vetrina</a>). Qui scegli dove arrivano.',
@@ -162,7 +165,8 @@ export default {
     { h3: 'Auguri di compleanno' },
     { p: [
       'La carta ha due parti separate, perché i posti e i momenti sono diversi: gli auguri nella chat della diretta e quelli nel gruppo Telegram.',
-      'Nel gruppo gli auguri partono nella prima ora del giorno, ora italiana. In chat la mezzanotte non esiste: partono al primo messaggio che il festeggiato scrive quel giorno, una volta l\'anno. Chi quel giorno non passa in chat non riceve auguri in chat.',
+      'Gli auguri in chat non hanno bisogno di Telegram, e la carta c\'è anche senza il bot. Finché il bot non è collegato, al posto della parte del gruppo leggi che per gli auguri nel gruppo va collegato; «Membri del gruppo» e «Aggiungi un compleanno a mano» compaiono col bot, perché servono solo al gruppo.',
+      'Nel gruppo gli auguri partono nella prima ora del giorno, ora italiana. In chat la mezzanotte non esiste: partono al primo messaggio che il festeggiato scrive quel giorno, una volta l\'anno. Chi quel giorno non passa in chat non riceve auguri in chat. Con tutte e due le parti accese, gli auguri del gruppo non tolgono quelli in chat: ogni posto fa i suoi.',
     ] },
     { tabella: [
       ['Controllo', 'Cosa fa', 'Di base e limiti'],
@@ -237,7 +241,7 @@ export default {
     { p: [
       'Nell\'elenco dei ruoli trovi quelli che il bot può dare. Quelli che stanno sopra il suo ruolo più alto compaiono spenti, con «sta sopra il bot». Il ruolo che hanno tutti, quelli del bot e quelli di altri bot non si offrono: se una regola vecchia ne nomina uno, lo vedi spento col motivo («ce l’hanno tutti», «è del bot», «è di un altro bot»). Una regola che nomina un ruolo cancellato mostra «un ruolo che non c’è più», e il giro la scarta.',
       'Il bot tocca solo chi si è collegato, e solo i ruoli che le tue regole nominano: li dà a chi rientra nella condizione e li toglie a chi non ci rientra più. I ruoli dati a mano, o da un altro bot, non li guarda. Se Twitch per un momento non risponde, le condizioni che vengono da Twitch per quel giro non valgono: il ruolo non viene né dato né tolto. Ogni ruolo dato o tolto lascia scritto il perché nel registro del tuo server, su Discord.',
-      'Tieni fino a 20 regole. Due regole identiche diventano una.',
+      'Tieni fino a 20 regole: arrivato lì, «Aggiungi una regola» ti dice di toglierne una. Due regole identiche diventano una. Se «Costruisci» porta regole nuove oltre il tetto, l\'esito dice quante restano fuori.',
     ] },
     { tabella: [
       ['Controllo', 'Cosa fa'],
@@ -295,15 +299,15 @@ export default {
       ['Controllo', 'Cosa fa', 'Di base e limiti'],
       ['«Quali avvisi arrivano qui»', 'Le stesse sette voci di Telegram: le dirette su Twitch, Kick, YouTube e TikTok, e i post nuovi su YouTube, Instagram e TikTok.', 'Tutti'],
       ['«Di chi»', '«Io» e gli altri streamer che annunci. Se sei entrato solo con Discord, «Io» non c\'è: annunci gli altri.', 'Tutti'],
-      ['«Il testo»', 'Le parole sopra il riquadro. Segnaposto <code>{nome}</code>, <code>{titolo}</code>, <code>{gioco}</code>, <code>{spettatori}</code>, <code>{link}</code>, <code>{piattaforma}</code>.', 'Vuoto: «🔴 **{nome}** è in diretta · {link}». Al massimo 1800 caratteri.'],
+      ['«Il testo»', 'Le parole sopra il riquadro, per le dirette. Segnaposto <code>{nome}</code>, <code>{titolo}</code>, <code>{gioco}</code>, <code>{spettatori}</code>, <code>{link}</code>, <code>{piattaforma}</code>.', 'Vuoto: «🔴 **{nome}** è in diretta · {link}». Al massimo 1800 caratteri.'],
       ['«Chiama un ruolo»', 'Menziona quel ruolo, e nessun altro.', '«nessuno»'],
       ['«Chiudi l\'avviso a diretta finita»', 'A diretta finita riscrive l\'avviso in «⚫ … ha finito la diretta».', 'Spento'],
       ['«Acceso»', 'Spento, il canale resta in elenco ma non riceve niente.', 'Acceso'],
-      ['«Prova»', 'Manda l\'avviso esattamente dove finirebbe, col tuo testo e la tua menzione. Leggi «Mandato ✓ guarda nel canale.».', ''],
+      ['«Prova»', 'Manda l\'avviso esattamente dove finirebbe, col tuo testo e la tua menzione. Leggi «Mandato ✓ guarda nel canale.». Come gli avvisi veri chiede il piano Base: senza, leggi «Mandare gli avvisi su Discord non è nel tuo piano…», la stessa frase che la carta ti mostra in cima.', ''],
       ['«Togli»', 'Toglie il canale, dopo la conferma.', ''],
     ] },
     { p: [
-      'Titolo, gioco e spettatori stanno già nel riquadro sotto il messaggio: nel testo di solito bastano nome e link. Un post nuovo non è una diretta, e arriva senza riquadro.',
+      'Titolo, gioco e spettatori stanno già nel riquadro sotto il messaggio: nel testo di solito bastano nome e link. Un post nuovo non è una diretta: arriva senza riquadro e con parole sue, come «📺 {nome} ha caricato un nuovo video su YouTube» col titolo e il link. Il testo del canale non lo usa.',
       'Scrivere <code>@everyone</code> nel testo non serve e non funziona: il bot non lo lascia passare. Per chiamare qualcuno usa «Chiama un ruolo».',
       'L\'avviso chiuso non sparisce, diventa «ha finito la diretta»: il bot riscrive solo i suoi messaggi e non ne cancella nessuno.',
       'Se costruisci la traccia «Intorno alle dirette» in «Il server» e qui non hai ancora nessun canale, il canale <code>sono-in-onda</code> diventa il posto delle tue dirette.',
@@ -370,11 +374,11 @@ export default {
       ['Permessi di un canale'],
       ['«Vedere il canale», «Scrivere», «Leggere i messaggi di prima», «Mettere reazioni», «Allegare file», «Far vedere l’anteprima dei link», «Aprire discussioni», «Entrare nel vocale», «Parlare nel vocale», «Chiamare tutti»'],
     ] },
-    { p: ['La traccia tiene al massimo 20 categorie e 60 canali.'] },
+    { p: ['La traccia tiene al massimo 20 categorie, 60 canali e 10 righe di «Chi può fare cosa» per canale o categoria. Arrivato al tetto, il tasto si ferma e ti dice quanti ne tiene. Se il server che leggi con «Leggi il mio server» è più grande, quello che resta fuori lo leggi subito e poi nell\'anteprima, in «Restano fuori dalla traccia».'] },
 
     { h3: 'Chi è chi' },
     { p: [
-      'I ruoli del server: come si vedono e cosa possono fare. «Aggiungi un ruolo» ne mette uno nuovo, fino a 15. Oltre leggi «Più di così non se ne possono chiedere.». Una traccia letta dal tuo server tiene anche lei 15 ruoli al massimo.',
+      'I ruoli del server: come si vedono e cosa possono fare. «Aggiungi un ruolo» ne mette uno nuovo, fino a 15. Oltre leggi «La traccia ne tiene al massimo 15 ruoli.». Una traccia letta dal tuo server tiene anche lei 15 ruoli al massimo, e gli altri li trovi in «Restano fuori dalla traccia».',
       '«Streamer» è solo un colore e un posto a parte, senza privilegi: su Discord un bot non può creare niente più in alto di sé. «Moderatori» invece ha i poteri veri, come mettere in pausa, cacciare e cancellare i messaggi degli altri.',
     ] },
     { tabella: [
@@ -463,7 +467,7 @@ export default {
     { h3: 'Le domande' },
     { p: [
       'Chi entra risponde, e ogni risposta gli apre i canali che gli interessano e gli dà un ruolo. Trova solo quello che ha chiesto, invece di tutti i canali insieme.',
-      '«Accendi la porta d’ingresso» la accende. In «I canali che vede chi entra, prima di rispondere» spunti i canali di partenza, fino a 20. Discord accende la porta solo con almeno 7 canali fra quelli che chi entra si può aprire, contando anche quelli delle risposte, e con almeno 5 dove tutti possono scrivere: la carta tiene il conto mentre spunti, e se non bastano l\'anteprima lo dice.',
+      '«Accendi la porta d’ingresso» la accende. In «I canali che vede chi entra, prima di rispondere» spunti i canali di partenza, fino a 20: oltre, la spunta non si mette e leggi il tetto. Discord accende la porta solo con almeno 7 canali fra quelli che chi entra si può aprire, contando anche quelli delle risposte, e con almeno 5 dove tutti possono scrivere: la carta tiene il conto mentre spunti, e se non bastano l\'anteprima lo dice.',
     ] },
     { tabella: [
       ['Controllo', 'Cosa fa', 'Limiti'],
@@ -514,11 +518,11 @@ export default {
     { h3: 'Parole da non scrivere' },
     { p: [
       'Le tue liste, una per ogni cosa che vuoi fermare. Fino a 6 regole.',
-      '«Le parole, una per riga»: fino a 1000, di 60 caratteri l\'una. «insult*» prende tutto quello che comincia così; «*truffa*» la prende anche dentro altre parole. «E queste passano lo stesso»: le eccezioni, fino a 100. Una regola di parole senza parole non si costruisce.',
+      '«Le parole, una per riga»: fino a 1000, di 60 caratteri l\'una. «insult*» prende tutto quello che comincia così; «*truffa*» la prende anche dentro altre parole. «E queste passano lo stesso»: le eccezioni, fino a 100. Una regola di parole senza parole non si salva e non si costruisce, e finché è vuota la carta lo dice.',
     ] },
 
     { h3: 'Le liste già pronte di Discord' },
-    { p: ['Una regola sola. Spunti quali accendere: «parolacce», «roba sessuale», «insulti pesanti». Le aggiorna Discord in tutte le lingue. «Queste passano lo stesso» tiene fino a 1000 eccezioni. Una regola di liste senza nessuna lista spuntata non si costruisce.'] },
+    { p: ['Una regola sola. Spunti quali accendere: «parolacce», «roba sessuale», «insulti pesanti». Le aggiorna Discord in tutte le lingue. «Queste passano lo stesso» tiene fino a 1000 eccezioni. Una regola di liste senza nessuna lista spuntata non si salva e non si costruisce, e la carta lo dice.'] },
 
     { h3: 'Spam' },
     { p: ['Una regola sola. Lo riconosce Discord: link ripetuti, messaggi in serie, roba mandata a tutti in privato.'] },
@@ -544,7 +548,7 @@ export default {
     { d: 'Gli avvisi su Discord non partono.', r: 'Servono il piano Base, il bot nel server e un canale «Acceso» con quell\'avviso spuntato. «Prova» ti fa vedere dove finisce.' },
     { d: 'Sul calendario del server non compare niente.', r: 'In «Gli appuntamenti sul calendario» controlla che «Metti la mia settimana sul calendario del server» sia acceso, che «Dove succede» abbia il link del tuo canale e che la tua settimana non sia vuota. Poi premi «Mettili adesso»: se leggi che al bot manca «Creare eventi», riscegli il server da «Cambia server» nei «Ruoli».' },
     { d: 'La porta d\'ingresso non si accende.', r: 'Discord la accende solo sui server di tipo Community, con almeno 7 canali fra quelli che chi entra si può aprire e almeno 5 dove tutti possono scrivere. L\'anteprima dice cosa manca.' },
-    { d: 'Sono moderatore del canale e nelle schede Discord non vedo niente.', r: 'Le schede Discord le usa solo il proprietario del canale.' },
+    { d: 'Sono moderatore del canale e nelle schede Discord non posso fare niente.', r: 'Le schede Discord le usa solo il proprietario del canale. Da moderatore le apri, e ognuna te lo dice al posto dei suoi controlli.' },
     { d: 'Ho cancellato un canale con la piazza pulita. Lo recupero?', r: 'No: su Discord un canale cancellato non torna. In «Cosa è stato fatto» restano i nomi di quello che è stato tolto.' },
   ],
 };

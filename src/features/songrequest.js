@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // Richieste musicali in chat (SongRequest) via Spotify. Gli spettatori mettono
 // un brano nella coda del broadcaster con !sr; !song mostra cosa sta suonando.
 // Fa parte dell'add-on "Richieste Musicali": se il piano non lo include, o se lo

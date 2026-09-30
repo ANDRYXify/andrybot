@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // Database di SocialBot (SQLite): qui vivono token, streamer abilitati,
 // memoria del bot (messaggi, ricordi sugli utenti, lezioni imparate),
 // comandi personalizzati e registro delle clip.
@@ -530,7 +532,8 @@ CREATE TABLE IF NOT EXISTS compleanni (   -- compleanni dei membri del gruppo Te
   nome TEXT NOT NULL DEFAULT '',
   giorno INTEGER NOT NULL,
   mese INTEGER NOT NULL,
-  last_auguri INTEGER NOT NULL DEFAULT 0,  -- anno dell'ultimo augurio inviato (anti-doppioni)
+  last_auguri INTEGER NOT NULL DEFAULT 0,  -- anno dell'ultimo augurio nel gruppo (anti-doppioni)
+  last_auguri_chat INTEGER NOT NULL DEFAULT 0,  -- anno dell'ultimo augurio in chat (anti-doppioni)
   ts INTEGER NOT NULL,
   PRIMARY KEY (channel, tg_user_id)
 );
@@ -894,6 +897,8 @@ aggiungiColonna('telegram', 'ingresso_minuti', 'INTEGER NOT NULL DEFAULT 5');
 aggiungiColonna('telegram', 'ingresso_scaduto', "TEXT NOT NULL DEFAULT 'caccia'");
 aggiungiColonna('telegram', 'ingresso_testo', "TEXT NOT NULL DEFAULT ''");
 aggiungiColonna('telegram', 'ingresso_tasto', "TEXT NOT NULL DEFAULT ''");
+// Il gruppo che e' gia' diventato una destinazione degli avvisi (tgDest.migra).
+aggiungiColonna('telegram', 'migrato_chat', "TEXT NOT NULL DEFAULT ''");
 // Il premio in VIP non scade piu' a calendario ma a DIRETTE: un premio che
 // evapora mentre lo streamer sta fermo non e' un premio. `until` resta per i
 // VIP dati a mano, che sono un'altra cosa.
@@ -959,6 +964,15 @@ aggiungiColonna('telegram', 'owner_tg_nome', "TEXT NOT NULL DEFAULT ''");
 aggiungiColonna('telegram', 'yt_ultimo', "TEXT NOT NULL DEFAULT ''");   // id ultimo video YouTube annunciato (anti-doppioni)
 aggiungiColonna('telegram', 'ig_ultimo', "TEXT NOT NULL DEFAULT ''");   // id ultimo post Instagram annunciato (anti-doppioni)
 aggiungiColonna('telegram', 'tk_ultimo', "TEXT NOT NULL DEFAULT ''");   // id ultimo post TikTok annunciato (anti-doppioni)
+// Gli auguri in chat hanno il loro «gia' fatti quest'anno», separato da quello
+// del gruppo: con un segno solo, gli auguri del gruppo a mezzanotte bruciavano
+// quelli in chat, che arrivano dopo, al primo messaggio. Nasce copiando il segno
+// di prima per chi si era segnato dalla chat: il giorno del passaggio nessuno
+// riceve gli auguri due volte.
+if (!db.prepare('PRAGMA table_info(compleanni)').all().some((c) => c.name === 'last_auguri_chat')) {
+  aggiungiColonna('compleanni', 'last_auguri_chat', 'INTEGER NOT NULL DEFAULT 0');
+  db.exec("UPDATE compleanni SET last_auguri_chat = last_auguri WHERE tg_user_id LIKE 'chat:%'");
+}
 aggiungiColonna('quotes', 'autore', "TEXT NOT NULL DEFAULT ''");   // chi ha DETTO la citazione (import x.la: nome utente)
 aggiungiColonna('quotes', 'data', "TEXT NOT NULL DEFAULT ''");     // data della citazione (ISO YYYY-MM-DD, se nota)
 // linee guida: ambito (dove valgono + con chi) — regole contestuali di "lia"
@@ -2650,6 +2664,7 @@ export const dcConf = {
       avatar: campi.avatar !== undefined ? String(campi.avatar) : cur.avatar,
       attivo: campi.attivo !== undefined ? (campi.attivo ? 1 : 0) : cur.attivo,
       ultima_live: campi.ultimaLive !== undefined ? String(campi.ultimaLive) : (cur.ultima_live || ''),
+      migrato: campi.migrato !== undefined ? String(campi.migrato) : (cur.migrato || ''),
     };
     const settings = (s && s.settings) || {};
     streamers.setSettings(c, { ...settings, discord: v });
@@ -2840,15 +2855,21 @@ export const tgDest = {
   setMsgId(id, msgId) {
     db.prepare('UPDATE telegram_dest SET msg_id=? WHERE id=?').run(String(msgId || ''), Number(id) || 0);
   },
-  // Migrazione dal modello a UNA destinazione: se il canale non ne ha ancora
-  // nessuna ma aveva un gruppo collegato, quello diventa la prima destinazione.
-  // Idempotente: gira a ogni lettura senza duplicare nulla.
+  // Migrazione dal modello a UNA destinazione: il gruppo collegato diventa la
+  // prima destinazione UNA volta, quando arriva, e solo se non c'e' gia' un
+  // altro posto. `migrato_chat` ricorda quale gruppo e' gia' stato guardato:
+  // senza, chi toglie tutte le destinazioni se lo ritroverebbe alla lettura
+  // dopo, perche' «nessuna destinazione» e «mai migrato» sembrerebbero la
+  // stessa cosa. Un gruppo nuovo si guarda di nuovo. Gira a ogni lettura.
   migra(channel, conf) {
     const ch = String(channel).toLowerCase();
-    if (!conf?.chat_id) return;
+    const chat = String(conf?.chat_id || '');
+    if (!chat) return;
+    const gia = db.prepare('SELECT migrato_chat FROM telegram WHERE channel=?').get(ch)?.migrato_chat || '';
+    if (gia === chat) return;
     const n = db.prepare('SELECT COUNT(*) c FROM telegram_dest WHERE channel=?').get(ch)?.c || 0;
-    if (n > 0) return;
-    this.aggiungi({ channel: ch, chatId: conf.chat_id, titolo: conf.chat_titolo || '', tipo: 'group', pin: conf.pin_live ? 1 : 0 });
+    if (n === 0) this.aggiungi({ channel: ch, chatId: chat, titolo: conf.chat_titolo || '', tipo: 'group', pin: conf.pin_live ? 1 : 0 });
+    db.prepare('UPDATE telegram SET migrato_chat=? WHERE channel=?').run(chat, ch);
   },
 };
 
@@ -2916,11 +2937,17 @@ export const dcDest = {
   // senza rifare niente — sia che avesse un canale, sia che avesse un webhook.
   // Il webhook era la strada vecchia e continua a funzionare: toglierlo
   // vorrebbe dire spegnere gli avvisi a qualcuno in cambio di un miglioramento
-  // che non ha chiesto. Idempotente: gira a ogni lettura senza duplicare.
+  // che non ha chiesto. Come per Telegram, una volta per posto: `migrato`
+  // ricorda quale canale o webhook e' gia' stato guardato (del webhook solo
+  // l'impronta, che il segreto resti in un posto solo), cosi' chi toglie
+  // tutte le destinazioni non se le ritrova. Gira a ogni lettura.
   migra(channel, conf) {
     const ch = String(channel).toLowerCase();
     if (!conf?.canale && !conf?.webhook) return;
+    const posto = conf.canale ? 'c:' + conf.canale : 'w:' + _improntaCorta(conf.webhook);
+    if (conf.migrato === posto) return;
     const n = db.prepare('SELECT COUNT(*) c FROM discord_dest WHERE channel=?').get(ch)?.c || 0;
+    dcConf.set(ch, { migrato: posto });
     if (n > 0) return;
     this.aggiungi({
       channel: ch,
@@ -3344,8 +3371,11 @@ export const compleanni = {
     db.prepare('DELETE FROM compleanni WHERE channel=? AND tg_user_id=?')
       .run(String(channel).toLowerCase(), String(tgUserId));
   },
-  markAuguri(channel, tgUserId, anno) {
-    db.prepare('UPDATE compleanni SET last_auguri=? WHERE channel=? AND tg_user_id=?')
+  // Il gruppo e la chat hanno ognuno il suo segno: gli auguri in un posto non
+  // spengono quelli nell'altro.
+  markAuguri(channel, tgUserId, anno, dove = 'gruppo') {
+    const colonna = dove === 'chat' ? 'last_auguri_chat' : 'last_auguri';
+    db.prepare(`UPDATE compleanni SET ${colonna}=? WHERE channel=? AND tg_user_id=?`)
       .run(anno | 0, String(channel).toLowerCase(), String(tgUserId));
   },
 };

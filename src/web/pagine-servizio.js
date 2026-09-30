@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // Le due pagine che si vedono quando qualcosa NON c'e'.
 //
 // Sono parenti ma nascono da due bisogni opposti, e la differenza decide come
@@ -26,6 +28,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { iniettaHtml, COPYRIGHT, FIRMA } from '../watermark.js';
 import { dichiarazioni } from './tavolozza.js';
 import { VIA_LINGUA } from './vetrina-vista.js';
 
@@ -105,7 +108,9 @@ const VESTITO = `
   h1{margin-bottom:clamp(.4rem,2vw,1rem)}
   @media (max-width:30rem){.dida{justify-self:stretch;max-width:none}}`;
 
-const guscio = (lang, titolo, corpo, robots = 'noindex, follow', conIcona = true) => `<!doctype html>
+const guscio = (lang, titolo, corpo, robots = 'noindex, follow', conIcona = true) => iniettaHtml(`<!doctype html>
+<!-- ${COPYRIGHT} -->
+<!-- Proprietà intellettuale · ${FIRMA} -->
 <html lang="${lang}">
 <head>
 <meta charset="utf-8">
@@ -120,7 +125,7 @@ ${conIcona ? '<link rel="icon" href="/icons/icon-192.png?v=9">\n<link rel="style
 ${corpo}
 </main>
 </body>
-</html>`;
+</html>`);
 
 // ── 404 ──────────────────────────────────────────────────────────────────────
 // Una sola frase, uguale in ogni caso. Non dice se quella cosa esiste.

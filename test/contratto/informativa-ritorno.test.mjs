@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // UN'USCITA CHE PORTA DA UN'ALTRA PARTE E' UN VICOLO CIECO TRAVESTITO.
 //
 // Le pagine pubbliche sono due — quella dei link e quella delle donazioni — e

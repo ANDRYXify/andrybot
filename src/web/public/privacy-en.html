@@ -1,4 +1,6 @@
 <!DOCTYPE html>
+<!-- © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live -->
+<!-- Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live -->
 <html lang="en">
 <head>
   <meta charset="utf-8">
@@ -123,6 +125,17 @@
           from the channels the streamer has connected themselves, and they are handled <strong>exactly like those from
           Twitch</strong>: same retention, same automatic deletion after 14 days. A new platform never widens what we
           keep: it only widens <em>where</em> it comes from.</li>
+        <li><strong>Voice and audio</strong>, with the «Comandi Vocali» add-on. <strong>Voice commands</strong> and
+          <strong>forfeits</strong> are heard by the listening page the streamer opens: the streamer's browser turns the
+          voice into text (on Chrome and Edge with the recognition service of the browser's maker, elsewhere with an engine
+          that runs on the streamer's device), and the audio never reaches us. We only get the recognized phrase, to fire
+          the command or count the forfeit, and we don't keep it. For <strong>highlights</strong> the server listens to the
+          public audio of the stream only to measure its loudness and make a clip when it jumps: it doesn't record it and
+          doesn't turn it into text.</li>
+        <li><strong>The streamer's own words</strong>, to learn how they talk: the phrases they say with the listening page
+          open, if they turn on «Learns while I talk», and the messages they write from their linked Telegram account. We
+          keep their last 60 phrases. Only theirs: the bot doesn't learn anyone else's way of talking. From other people's
+          messages in the Telegram group the bot keeps no text: it takes from them what it takes from the chat.</li>
         <li><strong>The streamer's email address</strong>, optional: the streamer enters it in the Streams tab to receive
           the end-of-stream report; it only takes effect after they confirm it from the message we send them, and they can
           remove it from there whenever they want. The emails are sent from our own server, not by an outside service, and
@@ -206,6 +219,8 @@
           with a random name; then it is deleted.</li>
         <li>Support for the project (name, message, amount, time): <strong>ten years</strong> from the payment, because these are cash transactions and the law requires them to be
           kept. A support started and never paid is not a cash transaction: it is deleted after a week.</li>
+        <li>The streamer's phrases used to learn how they talk: the last <strong>60</strong>; when a new one arrives, the
+          oldest is deleted.</li>
         <li>Everything else: as long as the service needs it, or until the streamer deletes it.</li>
       </ul>
     </section>

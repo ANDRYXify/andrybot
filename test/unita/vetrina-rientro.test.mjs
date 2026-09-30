@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // IL RIENTRO DEL SORGENTE NON SI SPEDISCE (senzaRientro in src/web/vetrina-vista.js).
 // Si tolgono solo byte che non disegnano niente: la prova e' che la pagina,
 // letta come la legge il browser, resta la stessa, sia dove lo spazio bianco

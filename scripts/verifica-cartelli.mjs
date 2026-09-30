@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // Cancello dei CARTELLI: una scritta o un'immagine tua, ferma in scena.
 //
 // Sono la stessa cosa e stanno in una lista sola, quindi il difetto che gira

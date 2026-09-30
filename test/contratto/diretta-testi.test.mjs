@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // I TESTI DELLE SCHEDE DELLA DIRETTA (Regia, Clip, Musica) DICONO IL VERO, NELLE
 // TRE LINGUE. Ognuna di queste frasi era sbagliata in un modo che chi legge
 // nota: una lingua rimasta in un'altra, un verbo che non concorda, un percorso

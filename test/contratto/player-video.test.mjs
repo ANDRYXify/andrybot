@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // UN VIDEO NEL PLAYER. Spotify non da' un video del brano: il video e' dello
 // streamer, un effetto caricato. Il dato e' un riferimento come per gli alert,
 // il server lo risolve in indirizzo, e un traduttore solo (letto da tela e

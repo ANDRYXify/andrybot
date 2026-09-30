@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // LA LOCANDINA NASCE ACCESA — e chi la spegne resta spento.
 //
 // «Non ho deciso» e «no» sono due cose diverse. Una riga in `carte_live` nasce

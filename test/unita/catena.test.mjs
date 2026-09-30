@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // LA CATENA DI PAROLE: conta solo la mossa, si rompe con una parola gia'
 // detta o con due di fila della stessa persona, e il record resta. E un gioco
 // che legge la chat alla volta, fra manche, conta e catena.

@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // Manuale: Effetti & suoni. La forma dei manuali e il perche' stanno in
 // src/web/manuali.js; le lingue in docs/LINGUE.md.
 
@@ -32,7 +34,7 @@ export default {
       'I link della webcam usano la chiave dell\'overlay. Tienili per te. Se il proprietario fa un link nuovo nell\'Overlay Studio, cambiano anche questi e vanno ricopiati.',
       'In «Gesto/espressione → effetto e/o scrittura in chat» ci sono nove righe: Vittoria, Pollice su, Mano aperta, Indice, Pugno, Felice, Triste, Arrabbiato, Sorpreso. A sinistra scrivi il comando di un tuo effetto, senza <code>!</code>; il campo ti propone i tuoi. A destra scrivi un testo o un\'emote che il bot scrive in chat, fino a 120 caratteri. Lascia vuoto quello che non ti serve.',
       'Lo stesso gesto ripetuto entro due secondi e mezzo conta una volta sola. L\'effetto di un gesto parte sempre, senza guardare «Chi può usarlo» e il cooldown.',
-      '<strong>«Minigiochi con la webcam (gesti ed espressioni)»</strong>, acceso di serie, fa giocare nello stesso overlay. Per farne partire uno tieni la mano aperta per circa un secondo, poi scegli col gesto: Vittoria per Mima, Pollice su per Non ridere, Indice per Reaction. Dalla chat partono con <code>!mima</code>, <code>!nonridere</code>, <code>!reaction</code> e <code>!battaglia</code>. Nella Battaglia gli spettatori scrivono <code>!sfida vittoria</code>, o un altro gesto. I punteggi finiscono in chat.',
+      '<strong>«Minigiochi con la webcam (gesti ed espressioni)»</strong>, acceso di serie, fa giocare nello stesso overlay. Per farne partire uno tieni la mano aperta per circa un secondo, poi scegli col gesto: Vittoria per Mima, Pollice su per Non ridere, Indice per Reaction rush. Dalla chat partono con <code>!mima</code>, <code>!nonridere</code>, <code>!reaction</code> e <code>!battaglia</code>. Nella Battaglia gli spettatori scrivono <code>!sfida vittoria</code>, o un altro gesto. I punteggi finiscono in chat.',
     ] },
     { p: ['La sezione «Effetti & giochi» accende e regola il resto. Le scelte valgono dopo «Salva impostazioni webcam».'] },
     { tabella: [
@@ -46,7 +48,7 @@ export default {
       ['«Sensibilità»', '5', 'da 1 a 10: più alta, pose più facili da attivare'],
       ['«Specchia (facecam selfie)»', 'acceso', 'per la webcam a specchio'],
       ['«Suoni»', 'acceso', 'i suoni degli effetti'],
-      ['«Minigiochi (quali attivi)»', 'tutti', 'Mima · Non ridere · Reaction · Battaglia'],
+      ['«Minigiochi (quali attivi)»', 'tutti', 'Mima · Non ridere · Reaction rush · Battaglia'],
       ['«Meme dalle espressioni»', 'acceso', 'fai una faccia e compare il suo meme'],
     ] },
     { p: [

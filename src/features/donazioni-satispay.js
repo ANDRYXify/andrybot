@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // IL CONTO SATISPAY BUSINESS DELLO STREAMER, e le donazioni che ci arrivano.
 //
 // Il conto e' SUO. Nel suo pannello Business apre un «negozio online» di tipo

@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // Gli ingressi esterni: chi bussa da fuori deve poter entrare.
 //
 // Kick spinge i suoi eventi sul nostro webhook, e il webhook non ha e non puo'

@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // IL MODO IN CUI IL BOT STA IN CHAT.
 //
 // Tre cose che una persona in chat fa senza pensarci, e che il bot non faceva.

@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // SI DISTRIBUISCONO, NON SI USANO.
 //
 // All'invito il bot chiede anche cacciare, bannare e mettere in pausa. Non gli

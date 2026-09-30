@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // PORTARSI VIA I PROPRI DATI. Due cose devono essere vere insieme: che ci sia
 // tutto il proprio, e che NON ci sia niente che non è proprio o che non deve
 // uscire. Un export che si porta dietro un token è peggio di nessun export.

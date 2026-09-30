@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // IL PUNTEGGIO: quanto un account somiglia a una macchina.
 //
 // La prova che conta e' sempre la stessa, ed e' quella che lo schema ovvio

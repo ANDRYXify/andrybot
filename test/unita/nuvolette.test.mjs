@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // IL MOTORE DEI FUMETTI: corpo e coda in UN tracciato solo.
 //
 // Perché è la cosa che conta. Disegnare la coda come un pezzo attaccato al

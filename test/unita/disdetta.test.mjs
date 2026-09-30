@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // CHI SE NE VA NON PAGA PIU'. Prima di cancellare un account si disdice il suo
 // abbonamento su Stripe; se non si riesce, la cancellazione non parte.
 import test from 'node:test';

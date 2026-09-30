@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // SCOLLEGARE NON DIPENDE DAL PIANO.
 // Collegare un account e' dare un consenso; scollegarlo e' ritirarlo, e l'informativa
 // promette che si puo' fare. Un canale tornato all'Essenziale ha ancora i suoi

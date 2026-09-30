@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // L'ANTISPAM. Due errori possibili, opposti e tutti e due gravi: lasciar
 // passare lo spam, oppure colpire chi non c'entra. Le prove guardano
 // soprattutto il secondo — un falso positivo su uno spettatore vero è il danno

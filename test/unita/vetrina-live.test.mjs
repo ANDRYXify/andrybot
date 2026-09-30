@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // CHI COMPARE SULLA HOME, E CHI NO.
 //
 // La fascia delle dirette mostra canali di altre persone su una pagina nostra.

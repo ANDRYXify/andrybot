@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // Manuale: Manuale del bot: personalità, conoscenza e memoria. La forma dei manuali e il perche' stanno in
 // src/web/manuali.js; le lingue in docs/LINGUE.md.
 
@@ -131,7 +133,7 @@ export default {
       'Una regola è una richiesta: vale se il bot la capisce. Per una parola che non deve uscire mai, usa «Parole da bloccare» nella scheda «Conoscenza».',
     ] },
     { p: [
-      '<strong>Da Telegram.</strong> Puoi dettarle anche nella chat privata col tuo bot su Telegram, che colleghi nella scheda «Telegram» (piano Base, vedi il <a href="/manuale/vetrina">manuale della vetrina</a>). Funziona solo dal tuo account Telegram, non da quello di un moderatore. Scrivi a parole tue, per esempio «d\'ora in poi non essere troppo formale», oppure usa i comandi.',
+      '<strong>Da Telegram.</strong> Puoi dettarle anche nella chat privata col tuo bot su Telegram, che colleghi nella scheda «Telegram» (piano Base, vedi il <a href="/manuale/community">manuale delle community</a>). Funziona solo dal tuo account Telegram, non da quello di un moderatore. Scrivi a parole tue, per esempio «d\'ora in poi non essere troppo formale», oppure usa i comandi.',
     ] },
     { tabella: [
       ['Comando', 'Cosa fa'],

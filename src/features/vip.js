@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // Gestione VIP: assegna/toglie i VIP di Twitch, con predizione del nick (dal
 // parlato: "vip a chiara" → chiara_3008), durata (default 1 settimana, o quella
 // che dici tu) e scadenza automatica. Serve lo scope 'channel:manage:vips'.

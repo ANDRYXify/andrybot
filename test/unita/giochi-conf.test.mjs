@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // LE REGOLE DEI GIOCHI: un catalogo solo, e un'economia che non stampa monete.
 //
 // Misurato prima: la pesca rendeva ventidue volte la presenza e la slot

@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // LA FRASE-CANARINO. Le altre firme stanno nei file e chi ha il sorgente puo'
 // toglierle una per una. Questa sta nel comportamento: il proprietario sceglie
 // una frase, nel codice c'e' solo la sua impronta, e qualunque installazione

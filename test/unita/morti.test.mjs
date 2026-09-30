@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // LE MORTI CONTATE DA SOLE: la regola, provata senza OBS e senza giocare.
 //
 // La schermata di morte di un gioco e' sempre la stessa immagine. Gliela fai

@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // UNA CHIAVE CHE SCADE: il modo di entrare in uno stato pericoloso apposta.
 //
 // Il difetto non e' «premere il tasto sbagliato»: e' che un clic normale, in

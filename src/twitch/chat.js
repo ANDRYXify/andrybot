@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // Client IRC di Twitch su WebSocket nativo (Node >= 22: WebSocket globale,
 // nessuna dipendenza). Gestisce connessione, PING/PONG, RECONNECT,
 // riconnessione con backoff, parsing dei tag IRCv3 e coda di invio

@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // IL CANCELLO, attaccato a Telegram e al database.
 //
 // La REGOLA sta in tg-ingresso.js e si prova senza rete. Qui ci sono i gesti:

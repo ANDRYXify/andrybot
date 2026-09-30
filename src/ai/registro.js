@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // IL REGISTRO DA ASSISTENTE: le frasi che in una chat non dice nessuno.
 //
 // Un modello piccolo, davanti a una riga che non e' una domanda («ti si ama»),

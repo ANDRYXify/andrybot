@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // DUE DIFETTI CHE NON DANNO ERRORE, E CHE ERANO TUTTI E DUE VIVI.
 //
 // 1. `--tratto-mano` vale `2px 2.5px 2.5px 2px` — quattro larghezze, perché il

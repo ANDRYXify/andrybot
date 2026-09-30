@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // I MURI. Una funzione a pagamento e' tale solo se il muro sta DOVE LA FUNZIONE
 // PARTE: il server che riceve la richiesta, il bot che manda l'avviso o fa la
 // clip, la chiave API usata da fuori. Il salvataggio delle impostazioni non

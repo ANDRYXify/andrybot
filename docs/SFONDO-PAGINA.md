@@ -1,3 +1,5 @@
+<!-- © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live -->
+<!-- Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live -->
 # L'immagine di sfondo della pagina link e delle donazioni
 
 Lo sfondo a immagine si sposta e si scala, e dove l'immagine non arriva lo

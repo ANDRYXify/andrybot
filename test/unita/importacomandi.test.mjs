@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // L'IMPORT da un altro bot: comandi, timer e punti (docs/PONTE.md). Il
 // criterio: niente entra in chat a mentire. Un comando che verrebbe fuori
 // sbagliato va DICHIARATO, non importato di nascosto — «sei morto $(count)
@@ -65,6 +67,20 @@ test('quello che non sappiamo fare viene dichiarato, con il perché', () => {
 test('dove esiste, si dice anche DOVE si fa qui', () => {
   const r = traduci('$(urlfetch https://x)');
   assert.match(r.avvisi[0].dove, /Moduli/);
+});
+
+// Il brano in ascolto qui si chiede con un comando delle richieste musicali,
+// che sono nel piano gratuito: non un «add-on» da comprare.
+test('il brano in ascolto porta al comando vero, senza add-on', async () => {
+  const { COMANDI } = await import('../../src/features/comandi-registro.js');
+  const ab = await import('../../src/features/abbonamenti.js');
+  const r = traduci('Ora suona: $(spotify)');
+  const dove = r.avvisi[0].dove;
+  assert.doesNotMatch(dove, /add-on/i);
+  const nome = /!([a-z]+)/.exec(dove)?.[1];
+  const c = COMANDI.find((x) => x.nomi.includes(nome));
+  assert.ok(c && c.modulo === 'musica', `!${nome} e' un comando delle richieste musicali`);
+  assert.equal(ab.abilitata(ab.funzioniDi({ tier: 'free' }), 'musica'), true, 'e le richieste musicali sono nell\'Essenziale');
 });
 
 test('un testo senza variabili non viene toccato', () => {

@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // L'ORDINE DEI LIVELLI, di qua e di la' dal filo (docs/OVERLAY.md).
 // Una funzione sola dice l'ordine; la tela e l'overlay la leggono entrambi; il
 // server lo tiene per overlay e per occasione; la selezione non lo falsa.

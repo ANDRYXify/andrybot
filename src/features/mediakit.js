@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // IL MEDIA KIT (docs/STRUMENTI.md): il foglio che uno streamer manda a un
 // marchio. Qui si decide da dove viene ogni numero e quando un numero puo'
 // uscire; il disegno sta in src/web/public/kit.js.

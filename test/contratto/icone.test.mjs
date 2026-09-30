@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // OGNI ICONA CHE IL PANNELLO USA ESISTE. Un nome che manca in ICO non da'
 // errore: _hIco(undefined) disegna un'icona vuota, e il titolo resta senza (i
 // calendari di Discord, i ruoli, il tasto muto del mixer da silenziato). Per

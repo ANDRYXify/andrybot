@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // Cancello dei BERSAGLI: quello che si tocca si prende col dito.
 //
 // Perche' esiste. Una «×» di 19 per 16 pixel accanto al nome che toglie e' un

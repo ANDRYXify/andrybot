@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // Le recensioni di SocialBot: chi puo' lasciarla, cosa si pubblica e quando,
 // la media, i dati strutturati. Tutto quello che decide sta qui, senza database
 // e senza pagina, cosi' si prova da solo. Il modello e il perche' stanno in

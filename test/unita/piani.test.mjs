@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // I PIANI: chi ha diritto a cosa. Un errore qui non si vede a schermo — si vede
 // sull'estratto conto. Da un lato uno che non paga usa funzioni a pagamento,
 // dall'altro uno che paga si trova la porta chiusa e se ne va.

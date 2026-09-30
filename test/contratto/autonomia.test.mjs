@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // L'AUTONOMIA DEL BOT, letta nel codice: la decisione sta in un posto solo, il
 // pannello e il manuale dicono lo stesso numero, e quello che dice da solo si vede.
 import test from 'node:test';

@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // Collaudo della COMPARSA: nessuna scheda deve restare spenta.
 //
 // Perche' esiste. Le schede entrano scorrendo: partono a `opacity: 0` e si

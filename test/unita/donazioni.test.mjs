@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // LE DONAZIONI, pezzo per pezzo: la configurazione ripulita (del token resta
 // l'impronta; come si dona, gli importi, il minimo), il modulo della pagina
 // letto, il corpo di Ko-fi letto, l'importo scritto come si scrive, i dati

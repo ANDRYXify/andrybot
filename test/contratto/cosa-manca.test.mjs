@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // GLI AVVISI SU COSA MANCA sono del proprietario del canale, e di nessun altro.
 //
 // Il timore, detto per intero: un avviso condiviso fra moderatore e streamer.

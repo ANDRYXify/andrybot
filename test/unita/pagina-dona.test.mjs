@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // LA PAGINA DELLE DONAZIONI HA LA STESSA FORMA DELLA PAGINA LINK: stesso store,
 // costruito su un altro tavolo. Quello che si salva su una non tocca l'altra,
 // la pulizia e' la stessa, e la pagina vuota ha un suo punto di partenza.

@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // Import citazioni da un link (best-effort). Serve per chi tiene le proprie
 // quotes su una pagina esterna. Estrae frasi "citazione-simili" dall'HTML e le
 // propone in anteprima: è lo streamer a curarle prima di salvarle, quindi va

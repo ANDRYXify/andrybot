@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // Manuale: Manuale delle emote 7TV. La forma dei manuali e il perche' stanno in
 // src/web/manuali.js; le lingue in docs/LINGUE.md.
 
@@ -12,7 +14,7 @@ export default {
     { h2: 'Emote (7TV)', scheda: 'emote', p: [
       'Le emote 7TV del tuo canale si gestiscono da qui: le aggiungi, le togli, le rinomini e ne crei di nuove da un\'immagine, una GIF o un video, senza aprire 7tv.app.',
       'Le emote del canale e quelle globali di 7TV compaiono anche nella chat a schermo dell\'overlay, e quelle del canale volano nel muro delle emote (<a href="/manuale/overlay">manuale dell\'Overlay Studio</a>). Dopo ogni modifica fatta da qui l\'overlay le rilegge subito. Se 7TV risponde lento, l\'overlay tiene l\'ultima lista buona e riprova entro un minuto.',
-      'La scheda sta nel gruppo «Scena & overlay» ed è compresa anche nel piano gratuito. È solo per Twitch: con un canale su Kick leggi «Solo su Twitch». Se trasmetti anche su Twitch, collega quell\'account e la scheda si accende.',
+      'La scheda sta nel gruppo «Scena & overlay» ed è compresa anche nel piano gratuito. È solo per Twitch: con un canale su Kick leggi «Solo su Twitch». Se trasmetti anche su Twitch, entra con quell\'account: è un canale a sé, con la sua scheda Emote.',
     ] },
     { tabella: [
       ['Cosa', 'Proprietario del canale', 'Moderatore'],

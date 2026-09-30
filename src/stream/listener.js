@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // Ascolto live LATO SERVER di UN singolo canale — SOLO AUDIO.
 // Tira l'audio della live da Twitch con `streamlink`, lo passa a `ffmpeg`
 // con il filtro `ebur128` per misurare la loudness momentanea (LUFS) e,
@@ -61,6 +63,17 @@ export class LiveListener {
     this.morto = false;
     this._startedAt = Date.now();
     this._spawn();
+  }
+
+  // Cambia la sensibilita' mentre ascolta: la soglia vale dal prossimo valore
+  // letto, e la base che l'ascolto ha gia' imparato resta com'e'.
+  impostaSensibilita(sensibilita) {
+    const soglia = sogliaDaSensibilita(sensibilita);
+    if (soglia === this.soglia) return false;
+    this.sensibilita = sensibilita;
+    this.soglia = soglia;
+    this.log.info(`ascolto #${this.login}: sensibilità ${sensibilita}`);
+    return true;
   }
 
   // Ferma l'ascolto: uccide i processi e rimuove i listener. Idempotente.

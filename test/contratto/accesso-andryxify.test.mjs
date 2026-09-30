@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // CHI APRE E CHIUDE A MANO E' ANDRYXIFY. Le concessioni e i blocchi decisi a
 // mano (Admin → «Accessi») li decide chi gestisce SocialBot, non il
 // proprietario del canale: il pannello diceva «Il proprietario ti ha aperto»

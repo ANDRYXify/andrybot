@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // Un bottone che si preme e non fa niente.
 //
 // E' il difetto che torna piu' spesso: il bottone c'e', il testo promette una

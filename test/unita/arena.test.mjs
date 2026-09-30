@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // L'ARENA DELLE EMOTE (src/web/public/arena.js, docs/ARENA.md): la partita e'
 // una funzione del seme, dei combattenti, delle regole. Il server la fa girare
 // per sapere chi vince, ogni overlay per disegnarla: se due giri dello stesso

@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // «NON LO SO» NON E' «NO», e deve restare vero in tutti e tre gli strati.
 //
 // E' l'invariante che tiene in piedi il gestore dei ruoli. Se si rompe in UNO
@@ -110,4 +112,25 @@ test('il token del bot non torna mai verso il pannello', () => {
   const post = SRV.slice(SRV.indexOf("app.post('/api/streamer/ruoli', requireOwner"));
   assert.match(post.slice(0, 900), /typeof b\.token === 'string' && b\.token\.trim\(\)/,
     'un campo vuoto vuol dire «non l’ho toccato», non «cancellalo»');
+});
+
+test('«Passa adesso» dice perché il giro non parte, con la risposta del giro', () => {
+  const SRV = leggi('src/web/server.js');
+  const i = SRV.indexOf("app.post('/api/streamer/ruoli/giro'");
+  const r = SRV.slice(i, SRV.indexOf('\n  }));', i));
+  assert.match(r, /dcGiro\.nonParte\(dcRuoli\.get\(login\), \{ prova \}\) === 'spento'/);
+  assert.ok(r.includes('Accendi prima «Tieni i ruoli aggiornati»'), 'da spento dice di accenderlo');
+  assert.match(leggi('src/features/discord-giro.js'), /if \(nonParte\(conf, \{ prova \}\)\) return null;/, 'e il giro usa la stessa risposta');
+});
+
+test('la condizione delle dirette si chiama in un modo solo', () => {
+  // Il pannello diceva «C’è stato ad almeno tante dirette», un elenco nel
+  // modulo delle regole «È stato…»: due nomi per una cosa. Il nome lo sa il
+  // pannello, e il motivo scritto nel registro del server dice la stessa cosa.
+  const APP = leggi('src/web/public/app.js');
+  const blocco = APP.slice(APP.indexOf('const T_DCREG = () => ({'));
+  assert.match(blocco.slice(0, blocco.indexOf('});')), /dirette: L\('C’è stato ad almeno tante dirette',/);
+  const REG = leggi('src/features/discord-ruoli.js');
+  assert.ok(!/È stato ad almeno/.test(REG), 'nessun secondo nome');
+  assert.match(REG, /dirette: \(n\) => `c’è stato ad almeno \$\{n\} dirette`,/);
 });

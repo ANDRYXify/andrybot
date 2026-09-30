@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // IL PDF NOSTRO (src/web/public/pdf.js, docs/STRUMENTI.md): una pagina con
 // un'immagine e i link cliccabili. Si controlla la forma del file come la
 // legge un lettore: l'indice punta agli oggetti, l'immagine torna identica, i

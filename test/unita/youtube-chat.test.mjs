@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // LA CHAT DI YOUTUBE.
 //
 // Twitch e Kick arrivano da soli; YouTube si chiede. Chiedere invece di

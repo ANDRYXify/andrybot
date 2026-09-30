@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // IL FILO CON DISCORD, provato senza Discord.
 //
 // Quello che si misura qui non e' «la chiamata funziona» — quello lo dice
@@ -127,7 +129,7 @@ test('gli errori diventano frasi che una persona puo\' leggere', async () => {
   finto(() => ({ stato: 403, corpo: { code: 50013, message: 'Missing Permissions' } }));
   try {
     const b = await dai('t', '123456789', '987654321', '100000000000000010');
-    assert.match(b.errore, /permesso|piu' in alto/, b.errore);
+    assert.match(b.errore, /permesso|più in alto/, b.errore);
   } finally { ripulisci(); }
 
   finto(() => ({ stato: 503, corpo: {} }));
@@ -208,7 +210,7 @@ test('e se il bot non e\' nel server lo dice con parole sue', async () => {
   try {
     const r = await io('t', '123456789');
     assert.equal(r.ok, false);
-    assert.match(r.errore, /non e' dentro quel server/, r.errore);
+    assert.match(r.errore, /non è dentro quel server/, r.errore);
   } finally { ripulisci(); }
 });
 

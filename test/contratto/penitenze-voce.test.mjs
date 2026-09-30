@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // LE PENITENZE CONTANO IL PARLATO. La pagina della voce mandava al server solo
 // le frasi con una parola chiave dei comandi: il resto di quello che si dice
 // non arrivava mai al conteggio, e una penitenza «vietata la parola» finiva

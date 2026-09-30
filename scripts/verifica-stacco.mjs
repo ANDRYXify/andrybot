@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // Cancello dello STACCO fra vignette: il sito si disegna, non si anima.
 //
 // Cambiando scheda la vignetta vecchia si disegna all'indietro, poi la nuova

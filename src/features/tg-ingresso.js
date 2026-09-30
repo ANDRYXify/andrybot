@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // IL CANCELLO DEL GRUPPO: chi entra e' muto finche' non fa vedere che c'e'.
 //
 // Un gruppo aperto si riempie di account che entrano, spammano e spariscono. La

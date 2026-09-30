@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // Quanto spazio occupa un canale sul disco, e quanto puo' occuparne.
 //
 // Ogni caricamento passa per un limite di GRANDEZZA del singolo file, ma nessuno

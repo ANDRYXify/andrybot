@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // LA REGIA DAI MODULI, SUL PONTE CHE C'ERA GIA'.
 //
 // Un raid non aspetta che si apra CONSOLify, e «torno subito» lo si dice in
@@ -134,7 +136,7 @@ test('il pannello e\' di guardia dall\'avvio, e riprova finche\' il collegamento
 
 test('l\'editor offre la regia coi nomi letti in pagina, e i modelli pronti usano quei nomi', () => {
   const app = leggi('src/web/public/app.js');
-  assert.match(app, /\['regia', 'Regia: scena, muto o transizione'\]/);
+  assert.match(app, /\['regia', 'Regia: scena, muto o transizione'[,\]]/);
   const campi = app.slice(app.indexOf('function disegnaCampiAzione('), app.indexOf('function leggiAzioneRiga('));
   for (const l of ['mod-regia-scene', 'mod-regia-fonti', 'mod-regia-transizioni']) assert.match(campi, new RegExp(`list="${l}"`), l);
   assert.match(campi, /_cons\.scene\)/, 'le scene lette dal programma, in pagina');

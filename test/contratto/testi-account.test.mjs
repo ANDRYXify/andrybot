@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // I TESTI DELL'ACCOUNT DICONO IL VERO.
 //  · un moderatore si invita su Twitch, Kick o YouTube, ed entra con il suo
 //    account su quella piattaforma: il pannello diceva «con Twitch» e basta;

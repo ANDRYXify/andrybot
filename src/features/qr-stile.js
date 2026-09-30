@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // LO STILE DEL QR DI UN CANALE (docs/STRUMENTI.md). La scheda «QR su misura»
 // lo salva nelle impostazioni del canale, e le Grafiche social lo riusano per
 // il QR che mettono nelle immagini. Qui si tiene solo la forma: quello che non

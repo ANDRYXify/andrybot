@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // I manuali: pagine vere, indice che punta a qualcosa, marcatura sotto controllo.
 //
 // Il testo dei manuali contiene marcatura voluta (<code>, <strong>, i link fra
@@ -73,4 +75,22 @@ test('le tabelle hanno righe tutte della stessa larghezza', () => {
       }
     }
   }
+});
+
+// Il titolo di un passo esce su una riga sua (b, display:block): la frase sotto
+// deve stare in piedi da sola. Un passo scritto come «Apri il tuo canale» +
+// « su Twitch, …» in pagina si legge spezzato.
+test('ogni passo dei manuali ha un titolo intero e una frase che comincia da sola', async () => {
+  const { MANUALI } = await import('../../src/web/manuali.js');
+  let visti = 0;
+  for (const m of MANUALI) {
+    for (const b of m.corpo || []) {
+      for (const s of b.passi || []) {
+        visti++;
+        const d = String(s.d || '').replace(/^<[^>]+>/, '');
+        assert.ok(!/^[\s:;,.]/.test(d) && !/^[a-zàèéìòù]/.test(d), `${m.slug}: il passo «${s.t}» continua a metà frase: «${String(s.d).slice(0, 40)}»`);
+      }
+    }
+  }
+  assert.ok(visti > 20, `passi visti: ${visti}`);
 });

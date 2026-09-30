@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // Il gancio fra il registro e l'osservatorio. È il punto che rende inutile
 // ricordarsene: se un modulo scrive un errore, quell'errore È già annotato.
 import test from 'node:test';

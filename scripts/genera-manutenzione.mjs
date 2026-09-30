@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // Scrive la pagina che l'edge mostra quando il bot non risponde.
 //
 // Perche' un file generato e non scritto a mano: quella pagina deve avere i

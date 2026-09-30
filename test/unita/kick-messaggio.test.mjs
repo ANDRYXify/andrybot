@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // DA EVENTO KICK A MESSAGGIO DEL BOT. È il pezzo che rende il multipiattaforma
 // possibile senza riscrivere niente: se un messaggio di Kick entra con la
 // STESSA forma di uno di Twitch, comandi, moduli, antispam, punti e memoria

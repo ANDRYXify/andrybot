@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // Anti-bot: protezione dai follow-bot e dai bot raid, sullo stile di Sery_Bot.
 //
 // Tre difese, in ordine di quanto sono "sicure" (cioè quanto poco rischiano di

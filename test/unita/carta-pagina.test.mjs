@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // LA CARTA DELL'ANTEPRIMA DEL LINK: due preset fatti di dati, che tornano
 // identici dal giro della ripulitura e dalla tinta col proprio segnale; la
 // tinta con un altro colore veste il disegno senza toccare il resto; la carta

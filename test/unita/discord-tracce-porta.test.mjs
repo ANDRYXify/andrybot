@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // LE TRACCE SI PORTANO DIETRO UNA PORTA CHE STA IN PIEDI.
 //
 // Una porta gia' scritta e' comoda finche' e' giusta. Le due cose che la

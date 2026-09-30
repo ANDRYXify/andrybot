@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // LE CHIAMATE A YOUTUBE, e il rinnovo dei token.
 //
 // I token stanno nella STESSA tabella di quelli Twitch e Kick, con

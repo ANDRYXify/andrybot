@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // IL RAPPORTO DI FINE DIRETTA, DA FUORI: si salva sempre e poi parte verso i
 // canali scelti; la scheda Dirette lo mostra e regola i canali; l'indirizzo
 // mail vale solo confermato; il manuale, la vetrina e la privacy lo dicono.

@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // Sondaggi (Polls) e Predizioni (Predictions) di Twitch, gestiti dalla chat dai
 // mod/streamer. Usano l'API Helix col token del broadcaster (scope
 // channel:manage:polls / channel:manage:predictions). Fanno parte dell'add-on

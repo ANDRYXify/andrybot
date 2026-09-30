@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // LA PORTA DEI GIOCHI CHE PARLANO DA SOLI.
 //
 // Qui non bussa un browser con la sua sessione: bussa un gioco, con dentro una

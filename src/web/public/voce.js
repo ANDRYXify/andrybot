@@ -4,6 +4,38 @@
 
 'use strict';
 
+const LINGUE = ['it', 'en', 'es'];
+const LINGUA = (() => {
+  try { const q = new URLSearchParams(location.search).get('lang'); if (LINGUE.includes(q)) return q; } catch (e) {  }
+  try { const s = localStorage.getItem('lingua'); if (LINGUE.includes(s)) return s; } catch (e) {  }
+  const n = (navigator.language || 'it').slice(0, 2).toLowerCase();
+  return LINGUE.includes(n) ? n : 'it';
+})();
+const L = (it, en, es) => (LINGUA === 'en' ? en : LINGUA === 'es' ? es : it);
+
+const TESTI = {
+  titolo: ['Ascolto vocale', 'Voice listening', 'Escucha por voz'],
+  intro: ['Tieni questa scheda aperta mentre streammi: quando dici una parola chiave, il bot fa quello che hai impostato nei Moduli.',
+    'Keep this tab open while you stream: when you say a keyword, the bot does what you set up in Modules. Recognition is in Italian.',
+    'Mantén esta pestaña abierta mientras haces directo: cuando dices una palabra clave, el bot hace lo que configuraste en los Módulos. El reconocimiento es en italiano.'],
+  noApi: ['Questo browser non ha il riconoscimento vocale nativo (come Dia, Arc, Brave). Nessun problema: userò il <strong>motore locale</strong>, che gira direttamente sul tuo dispositivo. La <strong>prima volta</strong> scarica un modello (qualche decina di MB), poi funziona anche offline.',
+    'This browser has no built-in speech recognition (like Dia, Arc, Brave). No problem: I will use the <strong>local engine</strong>, which runs right on your device. The <strong>first time</strong> it downloads a model (a few tens of MB), then it works offline too.',
+    'Este navegador no tiene reconocimiento de voz propio (como Dia, Arc, Brave). No pasa nada: usaré el <strong>motor local</strong>, que funciona directamente en tu dispositivo. La <strong>primera vez</strong> descarga un modelo (unas decenas de MB), luego funciona también sin conexión.'],
+  frasi: ['Frasi che sta ascoltando', 'Phrases it is listening for', 'Frases que está escuchando'],
+  frasiVuoto: ['Avvia l\'ascolto per caricarle…', 'Start listening to load them…', 'Inicia la escucha para cargarlas…'],
+  registro: ['Registro', 'Log', 'Registro'],
+  registroVuoto: ['Nessuna attività per ora.', 'No activity yet.', 'Todavía no hay actividad.'],
+  privacy: ['<strong>Privacy:</strong> la trascrizione avviene sul tuo dispositivo (motore locale) oppure tramite il servizio del browser (Chrome/Edge). Al bot arriva solo una piccola chiamata quando scatta una parola chiave.',
+    '<strong>Privacy:</strong> transcription happens on your device (local engine) or through the browser\'s service (Chrome/Edge). The bot only gets a small call when a keyword fires.',
+    '<strong>Privacidad:</strong> la transcripción se hace en tu dispositivo (motor local) o a través del servicio del navegador (Chrome/Edge). Al bot solo le llega una pequeña llamada cuando salta una palabra clave.'],
+};
+try { document.documentElement.lang = LINGUA; } catch (e) {  }
+document.title = L('Ascolto vocale | SocialBot', 'Voice listening | SocialBot', 'Escucha por voz | SocialBot');
+for (const el of document.querySelectorAll('[data-t]')) {
+  const t = TESTI[el.dataset.t];
+  if (t) el.innerHTML = L(t[0], t[1], t[2]);
+}
+
 const btn = document.getElementById('btn');
 const statoBox = document.getElementById('stato');
 const statoTesto = document.getElementById('statoTesto');
@@ -52,7 +84,7 @@ let trascrivendo = false;
 
 function logga(testo) {
   if (logVuoto) { logBox.innerHTML = ''; logVuoto = false; }
-  const ora = new Date().toLocaleTimeString('it-IT');
+  const ora = new Date().toLocaleTimeString(L('it-IT', 'en-GB', 'es-ES'));
   const riga = document.createElement('div');
   riga.className = 'riga';
   const spanOra = document.createElement('span');
@@ -69,13 +101,13 @@ function logga(testo) {
 function aggiornaStato() {
   if (attivo) {
     statoBox.classList.add('on');
-    statoTesto.textContent = 'In ascolto…';
-    btn.textContent = 'Ferma';
+    statoTesto.textContent = L('In ascolto…', 'Listening…', 'Escuchando…');
+    btn.textContent = L('Ferma', 'Stop', 'Detener');
     btn.classList.add('attivo');
   } else {
     statoBox.classList.remove('on');
-    statoTesto.textContent = 'Fermo';
-    btn.textContent = 'Avvia ascolto';
+    statoTesto.textContent = L('Fermo', 'Stopped', 'Parado');
+    btn.textContent = L('Avvia ascolto', 'Start listening', 'Iniciar escucha');
     btn.classList.remove('attivo');
   }
 }
@@ -85,7 +117,7 @@ function mostraFrasi() {
   if (!frasi.length) {
     const v = document.createElement('span');
     v.className = 'vuoto';
-    v.textContent = 'Nessuna frase: crea un Modulo con innesco "voce" nella dashboard.';
+    v.textContent = L('Nessuna frase: crea un Modulo con innesco "voce" nella dashboard.', 'No phrases: create a Module with the "voice" trigger in the dashboard.', 'Ninguna frase: crea un Módulo con el disparador "voz" en el panel.');
     frasiBox.appendChild(v);
     return;
   }
@@ -115,12 +147,12 @@ async function caricaFrasi() {
     }
     mostraFrasi();
   } catch (e) {
-    logga('non riesco a leggere le frasi: ' + (e && e.message ? e.message : e));
+    logga(L('non riesco a leggere le frasi: ', 'I cannot read the phrases: ', 'no consigo leer las frases: ') + (e && e.message ? e.message : e));
   }
 }
 
 async function inviaFrase(frase) {
-  logga('sentito "' + frase + '" → invio…');
+  logga(L('sentito "', 'heard "', 'oído "') + frase + L('" → invio…', '" → sending…', '" → envío…'));
   try {
     const res = await fetch('/api/streamer/voce', {
       method: 'POST',
@@ -132,18 +164,18 @@ async function inviaFrase(frase) {
     const cat = dati && dati.categoria;
     const tit = dati && dati.titolo;
     if (cat) {
-      if (dati.eseguito && cat.nome) logga('categoria cambiata in "' + cat.nome + '"');
-      else if (cat.riautorizza) logga('manca il permesso di gestione canale: riautorizza dalla dashboard (Panoramica → permessi)');
-      else if (cat.trovato === false) logga('categoria non trovata per "' + (cat.query || '') + '"');
-      else logga('non sono riuscito a cambiare categoria');
+      if (dati.eseguito && cat.nome) logga(L('categoria cambiata in "', 'category changed to "', 'categoría cambiada a "') + cat.nome + '"');
+      else if (cat.riautorizza) logga(L('manca il permesso di gestione canale: concedilo nel pannello, da Chat e pubblico → Comandi → Comandi vocali', 'the manage channel permission is missing: grant it in the panel, from Chat & audience → Commands → Voice commands', 'falta el permiso de gestión del canal: concédelo en el panel, desde Chat y público → Comandos → Comandos de voz'));
+      else if (cat.trovato === false) logga(L('categoria non trovata per "', 'no category found for "', 'categoría no encontrada para "') + (cat.query || '') + '"');
+      else logga(L('non sono riuscito a cambiare categoria', 'I could not change the category', 'no he podido cambiar la categoría'));
     } else if (tit) {
-      if (dati.eseguito && tit.testo) logga('titolo cambiato in "' + tit.testo + '"');
-      else if (tit.riautorizza) logga('manca il permesso di gestione canale: riautorizza dalla dashboard (Panoramica → permessi)');
-      else logga('non sono riuscito a cambiare titolo');
-    } else if (dati && dati.eseguito) logga('"' + frase + '" → modulo scattato');
-    else logga('"' + frase + '" inviato (nessun modulo ha reagito)');
+      if (dati.eseguito && tit.testo) logga(L('titolo cambiato in "', 'title changed to "', 'título cambiado a "') + tit.testo + '"');
+      else if (tit.riautorizza) logga(L('manca il permesso di gestione canale: concedilo nel pannello, da Chat e pubblico → Comandi → Comandi vocali', 'the manage channel permission is missing: grant it in the panel, from Chat & audience → Commands → Voice commands', 'falta el permiso de gestión del canal: concédelo en el panel, desde Chat y público → Comandos → Comandos de voz'));
+      else logga(L('non sono riuscito a cambiare titolo', 'I could not change the title', 'no he podido cambiar el título'));
+    } else if (dati && dati.eseguito) logga('"' + frase + L('" → modulo scattato', '" → module fired', '" → módulo disparado'));
+    else logga('"' + frase + L('" inviato (nessun modulo ha reagito)', '" sent (no module reacted)', '" enviado (ningún módulo ha reaccionado)'));
   } catch (e) {
-    logga('invio non riuscito: ' + (e && e.message ? e.message : e));
+    logga(L('invio non riuscito: ', 'sending failed: ', 'envío fallido: ') + (e && e.message ? e.message : e));
   }
 }
 
@@ -155,8 +187,8 @@ async function guardaPenitenza() {
     if (!res.ok) return;
     const dati = await res.json();
     const ora = Number(dati.inCorso) > 0;
-    if (ora && !penitenzaInCorso) logga('Penitenza in corso: conto quello che dici finché non finisce.');
-    if (!ora && penitenzaInCorso) logga('Penitenza finita: torno ad ascoltare solo le frasi dei comandi.');
+    if (ora && !penitenzaInCorso) logga(L('Penitenza in corso: conto quello che dici finché non finisce.', 'Forfeit running: I count what you say until it ends.', 'Penitencia en curso: cuento lo que dices hasta que termine.'));
+    if (!ora && penitenzaInCorso) logga(L('Penitenza finita: torno ad ascoltare solo le frasi dei comandi.', 'Forfeit over: I go back to listening only for the command phrases.', 'Penitencia terminada: vuelvo a escuchar solo las frases de los comandos.'));
     penitenzaInCorso = ora;
   } catch (e) {  }
 }
@@ -180,7 +212,7 @@ async function inviaImpara(frase) {
 }
 
 function sessioneScaduta() {
-  logga('Sessione scaduta: rientra dalla dashboard e riapri questa pagina.');
+  logga(L('Sessione scaduta: rientra dalla dashboard e riapri questa pagina.', 'Session expired: sign in to the dashboard again and reopen this page.', 'Sesión caducada: vuelve a entrar en el panel y abre de nuevo esta página.'));
   ferma();
 }
 
@@ -255,7 +287,7 @@ function creaRiconoscitore() {
   r.onerror = (ev) => {
     const err = ev && ev.error;
     if (err === 'not-allowed' || err === 'service-not-allowed') {
-      logga('Permesso microfono negato. Consenti il microfono per questo sito (icona nella barra) e riprova.');
+      logga(L('Permesso microfono negato. Consenti il microfono per questo sito (icona nella barra) e riprova.', 'Microphone permission denied. Allow the microphone for this site (icon in the address bar) and try again.', 'Permiso de micrófono denegado. Permite el micrófono para este sitio (icono en la barra) y vuelve a intentarlo.'));
       ferma();
     } else if (err === 'no-speech' || err === 'aborted') {
 
@@ -263,13 +295,13 @@ function creaRiconoscitore() {
 
       erroriRete++;
       if (erroriRete === 1) {
-        logga('Il riconoscimento nativo non è disponibile in questo browser. Preparo il motore locale…');
+        logga(L('Il riconoscimento nativo non è disponibile in questo browser. Preparo il motore locale…', 'Built-in recognition is not available in this browser. Getting the local engine ready…', 'El reconocimiento propio no está disponible en este navegador. Preparo el motor local…'));
       }
       if (erroriRete >= MAX_ERRORI_RETE) {
-        passaALocale('(il nativo dà errore di rete)');
+        passaALocale(L('(il nativo dà errore di rete)', '(the built-in one gives a network error)', '(el propio da error de red)'));
       }
     } else {
-      logga('Errore riconoscimento: ' + err);
+      logga(L('Errore riconoscimento: ', 'Recognition error: ', 'Error de reconocimiento: ') + err);
     }
   };
 
@@ -304,26 +336,26 @@ function ferma() {
   if (timerPenitenza) { clearInterval(timerPenitenza); timerPenitenza = null; }
   penitenzaInCorso = false;
   aggiornaStato();
-  if (eraAttivo) logga('Ascolto fermato.');
+  if (eraAttivo) logga(L('Ascolto fermato.', 'Listening stopped.', 'Escucha detenida.'));
 }
 
 function avviaNativo() {
-  if (!SR) { passaALocale('(niente riconoscimento nativo in questo browser)'); return; }
+  if (!SR) { passaALocale(L('(niente riconoscimento nativo in questo browser)', '(no built-in recognition in this browser)', '(no hay reconocimiento propio en este navegador)')); return; }
   erroriRete = 0; backoffMs = 300;
   if (!rec) rec = creaRiconoscitore();
   try { rec.start(); } catch (e) {  }
-  logga('Ascolto avviato (motore del browser).');
+  logga(L('Ascolto avviato (motore del browser).', 'Listening started (browser engine).', 'Escucha iniciada (motor del navegador).'));
 }
 function fermaNativo(silenzioso) {
   if (rec) { try { rec.stop(); } catch (e) {  } }
-  if (!silenzioso) logga('Motore browser fermato.');
+  if (!silenzioso) logga(L('Motore browser fermato.', 'Browser engine stopped.', 'Motor del navegador detenido.'));
 }
 
 function passaALocale(motivo) {
   if (motore !== 'locale') {
     motore = 'locale';
     try { localStorage.setItem('voce_motore', 'locale'); } catch (e) {  }
-    logga('Passo al motore LOCALE (funziona anche su Dia/Arc/Brave). ' + (motivo || ''));
+    logga(L('Passo al motore LOCALE (funziona anche su Dia/Arc/Brave). ', 'Switching to the LOCAL engine (it also works on Dia/Arc/Brave). ', 'Paso al motor LOCAL (funciona también en Dia/Arc/Brave). ') + (motivo || ''));
   }
   fermaNativo(true);
   if (attivo) avviaLocale();
@@ -333,7 +365,7 @@ async function ensureWhisper() {
   if (asr) return asr;
   if (asrInCaricamento) return asrInCaricamento;
   asrInCaricamento = (async () => {
-    logga('Preparo il motore vocale…');
+    logga(L('Preparo il motore vocale…', 'Getting the voice engine ready…', 'Preparo el motor de voz…'));
     const mod = await import(WHISPER_CDN);
     const pipeline = mod.pipeline;
     try { if (mod.env) mod.env.allowLocalModels = false; } catch (e) {  }
@@ -346,7 +378,7 @@ async function ensureWhisper() {
     let ultimoErrore = null;
     for (const cfg of tentativi) {
       try {
-        logga(`Motore vocale su ${cfg.nome} (${cfg.model})…`);
+        logga(L(`Motore vocale su ${cfg.nome} (${cfg.model})…`, `Voice engine on ${cfg.nome} (${cfg.model})…`, `Motor de voz en ${cfg.nome} (${cfg.model})…`));
         let ultima = -1;
         const p = await pipeline('automatic-speech-recognition', cfg.model, {
           device: cfg.device,
@@ -354,18 +386,19 @@ async function ensureWhisper() {
           progress_callback: (info) => {
             if (info && info.status === 'progress' && typeof info.progress === 'number') {
               const perc = Math.floor(info.progress);
-              if (perc >= ultima + 15) { ultima = perc; logga('Scarico il modello: ' + perc + '% (solo la prima volta)'); }
+              if (perc >= ultima + 15) { ultima = perc; logga(L(`Scarico il modello: ${perc}% (solo la prima volta)`, `Downloading the model: ${perc}% (first time only)`, `Descargo el modelo: ${perc}% (solo la primera vez)`)); }
             }
           },
         });
 
         await p(new Float32Array(8000), { language: 'italian', task: 'transcribe' });
         motoreAttivo = cfg.nome;
-        logga(`Motore vocale pronto (${cfg.nome}).`);
+        logga(L(`Motore vocale pronto (${cfg.nome}).`, `Voice engine ready (${cfg.nome}).`, `Motor de voz listo (${cfg.nome}).`));
         return p;
       } catch (e) {
         ultimoErrore = e;
-        logga(`${cfg.nome} non disponibile, provo altro… (${(e && e.message ? e.message : e).toString().slice(0, 70)})`);
+        const perche = (e && e.message ? e.message : e).toString().slice(0, 70);
+        logga(L(`${cfg.nome} non disponibile, provo altro… (${perche})`, `${cfg.nome} not available, trying something else… (${perche})`, `${cfg.nome} no disponible, pruebo otra cosa… (${perche})`));
       }
     }
     throw ultimoErrore || new Error('nessun backend vocale');
@@ -376,7 +409,7 @@ async function ensureWhisper() {
 
 async function avviaLocale() {
   try {
-    logga('Ascolto avviato (motore locale, sul tuo dispositivo).');
+    logga(L('Ascolto avviato (motore locale, sul tuo dispositivo).', 'Listening started (local engine, on your device).', 'Escucha iniciada (motor local, en tu dispositivo).'));
     await ensureWhisper();
     if (!attivo) return;
     micStream = await navigator.mediaDevices.getUserMedia({
@@ -401,24 +434,24 @@ async function avviaLocale() {
     procNode.connect(audioCtx.destination);
     if (loopTimer) clearInterval(loopTimer);
     loopTimer = setInterval(cicloTrascrizione, PASSO_MS);
-    logga('Sto ascoltando (locale). La prima trascrizione può metterci qualche secondo.');
+    logga(L('Sto ascoltando (locale). La prima trascrizione può metterci qualche secondo.', 'Listening (local). The first transcription can take a few seconds.', 'Escuchando (local). La primera transcripción puede tardar unos segundos.'));
   } catch (e) {
     const msg = (e && e.message) ? e.message : String(e);
     if (/Permission|NotAllowed|denied|NotFound|NotReadable/i.test(msg)) {
-      logga('Permesso microfono negato o microfono non disponibile. Consenti il microfono per questo sito e premi Avvia.');
+      logga(L('Permesso microfono negato o microfono non disponibile. Consenti il microfono per questo sito e premi Avvia.', 'Microphone permission denied or microphone not available. Allow the microphone for this site and press Start.', 'Permiso de micrófono denegado o micrófono no disponible. Permite el micrófono para este sitio y pulsa Iniciar.'));
       ferma();
       return;
     }
     fermaLocale(true);
-    logga('Motore locale non disponibile (' + msg.slice(0, 80) + ').');
+    logga(L('Motore locale non disponibile (', 'Local engine not available (', 'Motor local no disponible (') + msg.slice(0, 80) + ').');
     if (SR) {
       motore = 'nativo';
       try { localStorage.setItem('voce_motore', 'nativo'); } catch (er) {  }
-      logga('Passo al motore del browser, che non ha bisogno di scaricare nulla.');
+      logga(L('Passo al motore del browser, che non ha bisogno di scaricare nulla.', 'Switching to the browser engine, which needs no download.', 'Paso al motor del navegador, que no necesita descargar nada.'));
       avviaNativo();
       return;
     }
-    logga('Nessun motore vocale disponibile in questo browser: prova con Chrome.');
+    logga(L('Nessun motore vocale disponibile in questo browser: prova con Chrome.', 'No voice engine available in this browser: try Chrome.', 'Ningún motor de voz disponible en este navegador: prueba con Chrome.'));
     ferma();
   }
 }
@@ -431,7 +464,7 @@ function fermaLocale(silenzioso) {
   try { if (micStream) micStream.getTracks().forEach((t) => t.stop()); } catch (e) {  }
   procNode = srcNode = audioCtx = micStream = null;
   chunkAudio = []; campioniTot = 0;
-  if (!silenzioso) logga('Motore locale fermato.');
+  if (!silenzioso) logga(L('Motore locale fermato.', 'Local engine stopped.', 'Motor local detenido.'));
 }
 
 async function cicloTrascrizione() {
@@ -474,6 +507,7 @@ function resample16k(float32, fromRate) {
 }
 
 btn.addEventListener('click', () => { if (attivo) ferma(); else avvia(); });
+aggiornaStato();
 if (!SR) {
   motore = 'locale';
   noApi.hidden = false;

@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // L'ANTEPRIMA DEL LINK, PEZZO PER PEZZO: la pagina dice l'immagine giusta a
 // Telegram e agli altri (la carta, altrimenti copertina o faccia), le rotte
 // pubbliche e quelle del proprietario esistono coi loro guardiani, e il

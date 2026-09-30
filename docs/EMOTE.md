@@ -1,3 +1,5 @@
+<!-- © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live -->
+<!-- Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live -->
 # Emote 7TV — dove sono le porte, e perché lì
 
 Il bot fa due cose diverse con le emote 7TV, e conviene tenerle separate perché

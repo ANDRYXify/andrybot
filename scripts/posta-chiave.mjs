@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // La chiave DKIM della posta di casa, i record DNS da copiare, e la prova che
 // quello che sta nel DNS e' davvero quello che il server firma.
 //

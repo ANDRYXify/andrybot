@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // GLI EFFETTI A TUTTO SCHERMO, la parte del server (docs/EFFETTI-SCHERMO.md).
 //
 // Un effetto e' un comando del canale; quello che parte e' un media o un

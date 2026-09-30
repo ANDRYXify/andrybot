@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // GLI INCIDENTI: un attacco è una cosa sola, non trecento righe di registro.
 //
 // Il registro c'era già. Dopo un'ondata restavano quattrocento righe in fila e

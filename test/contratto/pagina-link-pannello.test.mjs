@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // IL PANNELLO DELLA PAGINA LINK DICE QUELLO CHE LA PAGINA FA.
 // Un massimo, un valore di base, un'etichetta: se il pannello ne ha uno suo e il
 // server un altro, la differenza non la vede nessuno finche' una riga sparisce

@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // LE LINGUE DELLA PAGINA INIZIALE: un indirizzo per lingua, la testa nella
 // lingua della pagina, e dati strutturati che dicono quello che la pagina
 // mostra. Il modello sta in docs/LINGUE.md.
