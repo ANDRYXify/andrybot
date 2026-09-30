@@ -134,6 +134,9 @@ Quelle sono, oggi:
   giochi, dei plugin, il saluto al re dei Bit, il subathon;
 - in `src/bot.js` l'annuncio di TikTok in chat, il «nuovo contenuto», il boss
   che arriva col raid;
+- le frasi dell'arena delle emote (`src/features/arena.js`, `FRASI`: solo in
+  italiano) e l'apertura dell'elenco dei giochi (`comandi-registro.js`,
+  `APERTURE`);
 - la prova del webhook di Discord e gli avvisi dei post nuovi, che non sono
   dirette;
 - le risposte dei comandi pronti che lo streamer può riscrivere: sono un
