@@ -231,85 +231,245 @@ nome resta in casa. Non è una cosa da ricordarsi:
 ## 2026-09-24
 
 - Il sito si disegna: cambiando sezione la pagina vecchia si disegna all'indietro e la nuova si disegna a matita e china, come una tavola di manga. Lo stesso per avvisi, finestre e carte che arrivano.
+  en: The site draws itself: when you switch sections, the old page un-draws and the new one is sketched in pencil and ink, like a manga page. The same goes for notices, windows and cards as they arrive.
+  es: El sitio se dibuja: al cambiar de sección la página vieja se borra hacia atrás y la nueva se dibuja a lápiz y tinta, como una página de manga. Igual con los avisos, las ventanas y las tarjetas que llegan.
 - Il tasto che premi si ripassa a china per un attimo. Prima di un gesto di cui potresti pentirti, come togliere una regola, la finestra che te lo chiede diventa una nuvoletta rossa a punte.
+  en: The button you press gets inked over for a moment. Before an action you might regret, like removing a rule, the window asking you turns into a spiky red speech bubble.
+  es: El botón que pulsas se repasa con tinta un instante. Antes de un gesto del que podrías arrepentirte, como quitar una regla, la ventana que te lo pregunta se vuelve un globo rojo con picos.
 - Nel pannello, quando si parla di tutto il servizio adesso c'è scritto SocialBot. «Il bot» resta per quello che scrive in chat, su Discord e su Telegram.
+  en: In the panel, when it’s about the whole service, it now says SocialBot. “The bot” is kept for what writes in chat, on Discord and on Telegram.
+  es: En el panel, cuando se habla de todo el servicio, ahora dice SocialBot. «El bot» queda para lo que escribe en el chat, en Discord y en Telegram.
 - Guide e manuali non saltano più mentre si caricano i caratteri, e due guide non portano più a una pagina che non c'era.
+  en: Guides and manuals no longer jump while the fonts load, and two guides no longer link to a page that didn’t exist.
+  es: Guías y manuales ya no saltan mientras cargan las fuentes, y dos guías ya no llevan a una página que no existía.
 - La pagina iniziale pesa quasi un terzo in meno, e sul telefono si vede prima.
+  en: The home page weighs almost a third less, and it shows up sooner on phones.
+  es: La portada pesa casi un tercio menos, y en el teléfono se ve antes.
 - Puoi dare un voto a SocialBot, da Il tuo account o dalla carta che compare dopo un po' che lo usi. Le recensioni scorrono nella pagina iniziale, sotto l'anteprima dell'Overlay Studio. [vai: account]
+  en: You can rate SocialBot, from Your account or from the card that shows up after you’ve used it for a while. Reviews scroll on the home page, under the Overlay Studio preview.
+  es: Puedes darle una puntuación a SocialBot, desde Tu cuenta o desde la tarjeta que aparece después de usarlo un tiempo. Las reseñas pasan en la portada, debajo de la vista previa de Overlay Studio.
 - La pagina iniziale in inglese e in spagnolo ha il suo indirizzo, socialbot.live/en e socialbot.live/es, e la demo aperta da lì parte già nella tua lingua.
+  en: The home page in English and in Spanish has its own address, socialbot.live/en and socialbot.live/es, and the demo opened from there starts in your language.
+  es: La portada en inglés y en español tiene su propia dirección, socialbot.live/en y socialbot.live/es, y la demo abierta desde ahí ya arranca en tu idioma.
 - Nel registro dello scudo le azioni rimaste in sospeso, e i numeri della coda, sono solo quelli del tuo canale. [vai: registro]
+  en: In the shield log, pending actions and the queue numbers are only your channel’s.
+  es: En el registro del escudo, las acciones pendientes y los números de la cola son solo los de tu canal.
 - Cancellare l'account funziona anche per i canali Kick, YouTube e Discord, e disdice prima l'abbonamento: dopo non parte più nessun addebito. [vai: account]
+  en: Deleting your account works for Kick, YouTube and Discord channels too, and it cancels your subscription first: no charges go out afterward.
+  es: Borrar la cuenta funciona también para los canales de Kick, YouTube y Discord, y antes cancela la suscripción: después no sale ningún cobro.
 - «Salva le regole» nei Giochi salva le regole dei giochi, e il salva delle parole vietate non tocca più le regole dei giochi. [vai: giochi]
+  en: “Save the rules” in Games saves the game rules, and saving banned words no longer touches the game rules.
+  es: «Guardar las reglas» en Juegos guarda las reglas de los juegos, y guardar las palabras prohibidas ya no toca las reglas de los juegos.
 - Le penitenze contano davvero quello che dici: finché ce n'è una in corso, la pagina della voce manda al bot tutto il parlato, non solo i comandi. [vai: penitenze]
+  en: Forfeits really count what you say: while one is running, the voice page sends the bot everything you say, not just commands.
+  es: Las penitencias cuentan de verdad lo que dices: mientras hay una en curso, la página de voz le manda al bot todo lo que hablas, no solo los comandos.
 - I contatori sono uno solo: l'azione «Contatore» dei comandi, $count(nome) e il contatore con !morti sono lo stesso numero, e «Incrementa (+1)» aggiunge davvero uno. [vai: moduli]
+  en: There’s just one kind of counter: the commands’ “Counter” action, $count(name) and the counter with !morti are the same number, and “Increase (+1)” really adds one.
+  es: Los contadores son uno solo: la acción «Contador» de los comandos, $count(nombre) y el contador con !morti son el mismo número, y «Aumenta (+1)» suma uno de verdad.
 - «Salva aspetto» dei contatori salva l'aspetto invece di dare un errore. [vai: moduli]
+  en: “Save look” on counters saves the look instead of throwing an error.
+  es: «Guardar aspecto» de los contadores guarda el aspecto en lugar de dar un error.
 - Ko-fi si collega nella carta in alto delle Donazioni, accanto a Stripe e Satispay: con la pagina e il token, chi dona trova il tasto Ko-fi fra i modi per donare. [vai: donazioni]
+  en: Ko-fi connects in the top card of Donations, next to Stripe and Satispay: with the page and the token, donors find the Ko-fi button among the ways to donate.
+  es: Ko-fi se conecta en la tarjeta de arriba de Donaciones, junto a Stripe y Satispay: con la página y el token, quien dona encuentra el botón de Ko-fi entre las formas de donar.
 - La pagina link e la pagina delle donazioni si aprono anche per i canali di Kick, YouTube e Discord, e le donazioni da Ko-fi arrivano anche a loro. [vai: pagina]
+  en: The link page and the donations page open for Kick, YouTube and Discord channels too, and Ko-fi donations reach them as well.
+  es: La página de enlaces y la de donaciones se abren también para los canales de Kick, YouTube y Discord, y las donaciones de Ko-fi les llegan también.
 - «Prova l'avviso» nelle Donazioni fa partire una donazione, non un follow, e l'alert Donazione accetta i tuoi suoni e le tue immagini. [vai: donazioni]
+  en: “Test the alert” in Donations fires a donation, not a follow, and the Donation alert accepts your own sounds and images.
+  es: «Probar el aviso» en Donaciones lanza una donación, no un follow, y la alerta Donación acepta tus sonidos y tus imágenes.
 - Dalla pagina delle donazioni si dona anche quando la pagina link è spenta. [vai: donazioni]
+  en: People can donate from the donations page even when the link page is turned off.
+  es: Desde la página de donaciones se puede donar aunque la página de enlaces esté apagada.
 - Una donazione in un'altra valuta fa partire l'avviso e il grazie, ma non conta per l'obiettivo e per le offerte, che sono nella tua valuta. [vai: donazioni]
+  en: A donation in another currency fires the alert and the thank-you, but doesn’t count toward the goal or the offers, which are in your currency.
+  es: Una donación en otra moneda lanza el aviso y el agradecimiento, pero no cuenta para el objetivo ni para las ofertas, que están en tu moneda.
 - L'informativa della tua pagina nomina i conti che usi davvero, Ko-fi compreso, e la privacy e i termini del sito parlano anche di Ko-fi.
+  en: Your page’s privacy notice names the accounts you actually use, Ko-fi included, and the site’s privacy policy and terms cover Ko-fi too.
+  es: El aviso de privacidad de tu página nombra las cuentas que usas de verdad, Ko-fi incluido, y la privacidad y los términos del sitio hablan también de Ko-fi.
 - Nell'Overlay Studio, nelle Grafiche, nella Pagina link e nelle Donazioni c'è «Tutto schermo»: il menù lascia il lato e la pagina prende tutta la larghezza. [vai: alert]
+  en: Overlay Studio, Graphics, the Link page and Donations have “Full screen”: the menu leaves the side and the page takes the whole width.
+  es: En Overlay Studio, Gráficas, la Página de enlaces y Donaciones está «Pantalla completa»: el menú deja el lateral y la página ocupa todo el ancho.
 - A tutto schermo il menù aspetta sul bordo sinistro: ci arrivi col cursore e si disegna, lo lasci e si disfa. Nello Studio il menù resta di lato finché non scegli tu. [vai: alert]
+  en: In full screen the menu waits at the left edge: move the cursor there and it draws itself, move away and it un-draws. In the Studio the menu stays at the side until you choose otherwise.
+  es: En pantalla completa el menú espera en el borde izquierdo: llegas con el cursor y se dibuja, lo dejas y se deshace. En el Studio el menú se queda al lado hasta que elijas tú.
 - I suggerimenti che compaiono passando sopra ai tasti sono più leggeri e si disegnano a matita, e dopo un clic dicono la cosa giusta.
+  en: The tips that appear when you hover over buttons are lighter and drawn in pencil, and after a click they say the right thing.
+  es: Las ayudas que aparecen al pasar sobre los botones son más ligeras y se dibujan a lápiz, y después de un clic dicen lo correcto.
 - Chi condivide socialbot.live/en o socialbot.live/es vede l'anteprima del link in inglese o in spagnolo, come la pagina.
+  en: People who share socialbot.live/en or socialbot.live/es see the link preview in English or Spanish, like the page.
+  es: Quien comparte socialbot.live/en o socialbot.live/es ve la vista previa del enlace en inglés o en español, como la página.
 - La tua pagina link, e la sua anteprima nelle chat, mostrano la tua foto anche se entri con Kick, YouTube o Discord, dal prossimo accesso. [vai: pagina]
+  en: Your link page, and its preview in chats, show your photo even if you sign in with Kick, YouTube or Discord, starting from your next sign-in.
+  es: Tu página de enlaces, y su vista previa en los chats, muestran tu foto aunque entres con Kick, YouTube o Discord, desde el próximo acceso.
 - In sola osservazione lo scudo non cambia più le modalità della chat: nel registro scrive cosa avrebbe fatto, come per il resto. [vai: scudo]
+  en: In observe-only mode the shield no longer changes chat modes: it writes in the log what it would have done, like for everything else.
+  es: En solo observar el escudo ya no cambia los modos del chat: escribe en el registro lo que habría hecho, como con lo demás.
 - «Blocca sempre» vale sempre con lo scudo acceso, anche con l'elenco dei nomi da bot spento. [vai: scudo]
+  en: “Always block” always applies with the shield on, even with the list of bot names turned off.
+  es: «Bloquear siempre» vale siempre con el escudo encendido, aunque la lista de nombres de bots esté apagada.
 - Tolto l'interruttore «Durante un'ondata, chat ai soli follower», che non faceva niente: ai soli follower la chat ci va quando lo scudo arriva ad «attacco». [vai: scudo]
+  en: The “During a wave, followers-only chat” switch is gone, since it did nothing: chat goes followers-only when the shield reaches “attack”.
+  es: Se quitó el interruptor «Durante una oleada, chat solo para seguidores», que no hacía nada: el chat pasa a solo seguidores cuando el escudo llega a «ataque».
 - La pulizia dopo un attacco dice quanti account toglie davvero e quanti ne lascia stare, e quando non può dice perché. [vai: registro]
+  en: The cleanup after an attack says how many accounts it actually removes and how many it leaves alone, and when it can’t, it says why.
+  es: La limpieza tras un ataque dice cuántas cuentas quita de verdad y cuántas deja en paz, y cuando no puede dice por qué.
 - Nel registro dello scudo ogni riga ha il suo nome nella lingua del pannello, e dopo «Permetti», «Ignora» o «Blocca sempre» si aggiorna il registro. [vai: registro]
+  en: In the shield log every row has its name in the panel’s language, and after “Allow”, “Dismiss” or “Always block” the log updates.
+  es: En el registro del escudo cada fila tiene su nombre en el idioma del panel, y después de «Permitir», «Ignorar» o «Bloquear siempre» el registro se actualiza.
 - La pulizia dei follower blocca invece di bannare, così il follow sparisce e il numero torna pulito. Se il blocco non si può fare banna e lo dice, e se mancano i permessi dice dove riconcederli. [vai: registro]
+  en: The follower cleanup blocks instead of banning, so the follow disappears and the count comes back clean. If blocking isn’t possible it bans and says so, and if permissions are missing it says where to grant them again.
+  es: La limpieza de seguidores bloquea en lugar de banear, así el follow desaparece y el número vuelve a estar limpio. Si no se puede bloquear, banea y lo dice, y si faltan permisos dice dónde volver a darlos.
 - Quando «Blocca sempre» o «Non toccare mai» sono piene il pannello lo dice, invece di perdere il nome al salvataggio, e il caso da rivedere resta lì finché non fai spazio. [vai: scudo]
+  en: When “Always block” or “Never touch” are full, the panel says so instead of losing the name on save, and the case to review stays there until you make room.
+  es: Cuando «Bloquear siempre» o «Nunca tocar» están llenas, el panel lo dice en lugar de perder el nombre al guardar, y el caso por revisar se queda ahí hasta que hagas espacio.
 - Con «solo mod» nei link dell'antispam un VIP non posta più link. Per tutto il resto i VIP restano liberi. [vai: regole]
+  en: With “mods only” set for links in the antispam, a VIP can no longer post links. For everything else, VIPs stay free.
+  es: Con «solo mods» en los enlaces del antispam, un VIP ya no publica enlaces. Para todo lo demás, los VIP siguen libres.
 - Lo scudo dice giusto chi non tocca mai: tu, i mod, i VIP e gli abbonati. Seguire il canale non basta, perché il follow è un clic e i follow-bot lo fanno. [vai: scudo]
+  en: The shield correctly states who it never touches: you, mods, VIPs and subscribers. Following the channel isn’t enough, because a follow is one click and follow-bots do it.
+  es: El escudo dice bien a quién no toca nunca: a ti, a los mods, a los VIP y a los suscriptores. Seguir el canal no basta, porque el follow es un clic y los follow-bots lo hacen.
 - Le conferme del pannello, come «salvato», «acceso» e «spento», escono nella lingua del pannello, e numeri e date si scrivono come si usa in quella lingua.
+  en: Panel confirmations, like “Saved”, “On” and “Off”, come out in the panel’s language, and numbers and dates are written the way that language writes them.
+  es: Las confirmaciones del panel, como «Guardado», «Encendido» y «Apagado», salen en el idioma del panel, y los números y las fechas se escriben como se usa en ese idioma.
 - «Sfoglia i font» tiene la sua icona anche dopo che hai aperto e chiuso l'elenco. [vai: alert]
+  en: “Browse fonts” keeps its icon even after you’ve opened and closed the list.
+  es: «Explorar fuentes» mantiene su icono incluso después de abrir y cerrar la lista.
 - Con il canale su YouTube o su Discord, le schede che parlano solo con Twitch sono spente e spiegate, come già su Kick, invece di mostrare pulsanti che non fanno niente.
+  en: With a YouTube or Discord channel, tabs that only work with Twitch are turned off and explained, as on Kick already, instead of showing buttons that do nothing.
+  es: Con el canal en YouTube o en Discord, las pestañas que solo funcionan con Twitch están apagadas y explicadas, como ya pasaba en Kick, en lugar de mostrar botones que no hacen nada.
 - Aprendo un attacco nel registro dello scudo, i conti dicono certi, sospetti e legittimi nella lingua del pannello, senza un «probabile» che restava sempre a zero. [vai: registro]
+  en: When you open an attack in the shield log, the counts say certain, suspect and legitimate in the panel’s language, without a “probable” that always stayed at zero.
+  es: Al abrir un ataque en el registro del escudo, las cuentas dicen seguros, sospechosos y legítimos en el idioma del panel, sin un «probable» que siempre quedaba en cero.
 - Il manuale della moderazione segue le tre schede, Chat, Scudo e Registro, e spiega ogni voce con il suo valore di base, i suoi limiti e i messaggi che leggi. [vai: regole]
+  en: The moderation manual follows the three tabs, Chat, Shield and Log, and explains each item with its default, its limits and the messages you read.
+  es: El manual de moderación sigue las tres pestañas, Chat, Escudo y Registro, y explica cada opción con su valor de base, sus límites y los mensajes que lees.
 - In guide e manuali l'indice «In questa pagina» mostra anche le parti di ogni sezione, e ognuna si apre col suo collegamento.
+  en: In guides and manuals, the “On this page” index also shows the parts of each section, and each one opens with its own link.
+  es: En guías y manuales, el índice «En esta página» muestra también las partes de cada sección, y cada una se abre con su enlace.
 - «Adatta la personalità al mio canale» fa quello che dice: spento, il bot non impara più lo stile dalla tua voce e dai tuoi messaggi, e usa solo le frasi che hai scritto tu. [vai: personalita]
+  en: “Adapt the personality to my channel” does what it says: when it’s off, the bot no longer learns style from your voice and your messages, and uses only the phrases you wrote.
+  es: «Adapta la personalidad a mi canal» hace lo que dice: apagado, el bot ya no aprende el estilo de tu voz ni de tus mensajes, y usa solo las frases que escribiste tú.
 - Le regole della personalità sono al massimo 12 e arrivano al bot tutte. Prima dalla tredicesima in poi si salvavano, ma il bot non le vedeva. [vai: personalita]
+  en: Personality rules are capped at 12 and all of them reach the bot. Before, from the thirteenth on they were saved, but the bot didn’t see them.
+  es: Las reglas de la personalidad son como máximo 12 y le llegan todas al bot. Antes, de la decimotercera en adelante se guardaban, pero el bot no las veía.
 - Nella Memoria ogni lezione e ogni fatto si toglie da solo con «Togli», e azzerare tutta la memoria lo può fare solo il proprietario del canale. [vai: memoria]
+  en: In Memory, each lesson and each fact can be removed on its own with “Remove”, and only the channel owner can wipe the whole memory.
+  es: En Memoria cada lección y cada dato se quita por separado con «Quitar», y borrar toda la memoria solo lo puede hacer el propietario del canal.
 - Il promemoria dei social parte solo con la pagina link accesa, e il suggerimento sotto la spunta dice quando parte davvero. [vai: personalita]
+  en: The socials reminder only runs with the link page on, and the tip under the checkbox says when it really goes out.
+  es: El recordatorio de las redes sale solo con la página de enlaces encendida, y la ayuda debajo de la casilla dice cuándo sale de verdad.
 - «Ri-leggi il mio profilo» dice quante cose nuove ha trovato, e se non trova niente lo dice invece di scrivere «Fatto». [vai: conoscenza]
+  en: “Re-read my profile” says how many new things it found, and if it finds nothing it says so instead of writing “Done”.
+  es: «Volver a leer mi perfil» dice cuántas cosas nuevas encontró, y si no encuentra nada lo dice en lugar de escribir «Hecho».
 - In «Cosa sa il bot» e nella Memoria ogni voce ha un nome nella lingua del pannello, anche quelle trovate online o ricavate dai tuoi discorsi. [vai: conoscenza]
+  en: In “What the bot knows” and in Memory every entry has a name in the panel’s language, including ones found online or drawn from your conversations.
+  es: En «Lo que sabe el bot» y en Memoria cada entrada tiene un nombre en el idioma del panel, también las encontradas en línea o sacadas de tus conversaciones.
 - Il manuale del bot segue le tre schede, Personalità, Conoscenza e Memoria, con ogni controllo, il suo valore di base e i messaggi che leggi. [vai: personalita]
+  en: The bot manual follows the three tabs, Personality, Knowledge and Memory, with every control, its default and the messages you read.
+  es: El manual del bot sigue las tres pestañas, Personalidad, Conocimiento y Memoria, con cada control, su valor de base y los mensajes que lees.
 - Premendo «Tutto schermo» il menù di lato si disfa a matita prima di lasciare il posto, e tornando indietro si ridisegna. [vai: alert]
+  en: When you press “Full screen” the side menu un-draws in pencil before making room, and when you go back it draws itself again.
+  es: Al pulsar «Pantalla completa» el menú lateral se deshace a lápiz antes de dejar su sitio, y al volver se dibuja de nuevo.
 - Nelle Grafiche l'anteprima resta tutta visibile mentre scorri, sotto la barra in cima. [vai: grafiche]
+  en: In Graphics the preview stays fully visible while you scroll, under the top bar.
+  es: En Gráficas la vista previa se queda entera a la vista mientras te desplazas, debajo de la barra de arriba.
 - Nel giro guidato il riquadro attorno a quello che ti indica si disegna a matita, a ogni passo.
+  en: In the guided tour, the box around what it’s pointing at is drawn in pencil at every step.
+  es: En el recorrido guiado, el recuadro alrededor de lo que te señala se dibuja a lápiz en cada paso.
 - [importante] Nelle Grafiche sposti ogni pezzo trascinandolo sull'anteprima, col mouse, col dito o con le frecce. Le guide mostrano margini, centri e dove Instagram copre la storia, e post e storia si spostano insieme. [vai: grafiche]
+  en: In Graphics you move each piece by dragging it on the preview, with the mouse, your finger or the arrow keys. Guides show margins, centers and where Instagram covers the story, and post and story move together.
+  es: En Gráficas mueves cada pieza arrastrándola sobre la vista previa, con el mouse, el dedo o las flechas. Las guías muestran márgenes, centros y dónde Instagram tapa la historia, y post e historia se mueven juntos.
   > Le Grafiche si impaginano col dito
   > Sposti titolo, orari e immagini direttamente sull'anteprima, e le guide ti dicono dove Instagram coprirebbe la storia prima che succeda.
+  en> Lay out your graphics with your finger
+  en> Move the title, times and images right on the preview, and the guides show where Instagram would cover the story before it happens.
+  es> Las Gráficas se maquetan con el dedo
+  es> Mueves título, horarios e imágenes directamente sobre la vista previa, y las guías te dicen dónde Instagram taparía la historia antes de que pase.
 - [importante] Nelle Grafiche c'è «Stasera alle…»: la storia che annuncia la prossima diretta della tua Settimana, con l'ora, il tuo indirizzo e dietro la copertina del gioco. [vai: grafiche]
+  en: Graphics has “Tonight at…”: the story that announces the next stream from Your week, with the time, your address and the game’s cover art behind it.
+  es: En Gráficas está «Esta noche a las…»: la historia que anuncia el próximo directo de Tu semana, con la hora, tu dirección y detrás la portada del juego.
   > La storia che annuncia la prossima diretta
   > Ogni giorno in onda ha la sua storia già pronta, con l'ora giusta e la copertina del gioco: la pubblichi in un tocco invece di rifarla ogni volta.
+  en> The story that announces your next stream
+  en> Every day on air has its story ready, with the right time and the game’s cover art: you post it with one tap instead of making it again every time.
+  es> La historia que anuncia el próximo directo
+  es> Cada día al aire tiene su historia ya lista, con la hora correcta y la portada del juego: la publicas con un toque en lugar de rehacerla cada vez.
 - [importante] Nella pagina link e in quella delle donazioni l'immagine di sfondo si sposta e si rimpicciolisce trascinandola sull'anteprima. Dove non arriva continuano i colori dei suoi bordi. [vai: pagina]
+  en: On the link page and the donations page, the background image moves and shrinks as you drag it on the preview. Where it doesn’t reach, the colors of its edges carry on.
+  es: En la página de enlaces y en la de donaciones, la imagen de fondo se mueve y se reduce arrastrándola sobre la vista previa. Donde no llega siguen los colores de sus bordes.
   > Lo sfondo della pagina link si sistema trascinando
   > Scegli tu quale parte della foto si vede e quanto è grande, e dove la foto non arriva i colori continuano senza un bordo netto.
+  en> Adjust the link page background by dragging
+  en> You choose which part of the photo shows and how big it is, and where the photo doesn’t reach the colors carry on without a hard edge.
+  es> El fondo de la página de enlaces se ajusta arrastrando
+  es> Eliges qué parte de la foto se ve y qué tan grande es, y donde la foto no llega los colores siguen sin un borde marcado.
 - Il boss risponde a chi lo colpisce: poco dopo il primo colpo, e poi al massimo ogni venti secondi, il bot scrive chi ha colpito e quanto, la vita che resta e i secondi che mancano. [vai: giochi]
+  en: The boss answers whoever hits it: shortly after the first hit, and then at most every twenty seconds, the bot writes who hit it and how hard, the health left and the seconds remaining.
+  es: El jefe responde a quien lo golpea: poco después del primer golpe, y luego como mucho cada veinte segundos, el bot escribe quién golpeó y cuánto, la vida que queda y los segundos que faltan.
 - [importante] Nelle Grafiche c'è «In automatico»: la storia «Stasera alle…» esce da sola prima di ogni diretta, e la settimana esce il giorno che scegli, dopo che l'hai confermata dalla mail o dal pannello. [vai: grafiche]
+  en: Graphics has “Automatic”: the “Tonight at…” story goes out by itself before every stream, and the week goes out on the day you choose, after you’ve confirmed it by email or from the panel.
+  es: En Gráficas está «Automático»: la historia «Esta noche a las…» sale sola antes de cada directo, y la semana sale el día que eliges, después de confirmarla desde el correo o el panel.
   > Le storie escono da sole
   > La storia prima della diretta e la settimana escono all'ora giusta anche se te ne dimentichi, e la settimana solo dopo che l'hai confermata.
+  en> Stories that go out by themselves
+  en> The pre-stream story and the week go out at the right time even if you forget, and the week only after you’ve confirmed it.
+  es> Las historias salen solas
+  es> La historia antes del directo y la semana salen a la hora correcta aunque te olvides, y la semana solo después de que la hayas confirmado.
 - Col tutto schermo acceso, passando a una scheda che non lo usa il menù torna di lato disegnandosi, e tornando si disfa prima di sparire. Anche riaprirlo mentre si sta chiudendo lo ridisegna.
+  en: With full screen on, switching to a tab that doesn’t use it brings the menu back to the side, drawing itself, and switching back un-draws it before it vanishes. Reopening it while it’s closing redraws it too.
+  es: Con la pantalla completa activada, al pasar a una pestaña que no la usa el menú vuelve al lado dibujándose, y al volver se deshace antes de desaparecer. Reabrirlo mientras se cierra también lo redibuja.
 - [importante] La pagina delle donazioni può avere l'aspetto della pagina link e seguirlo quando lo cambi: nell'editor, in «Aspetto», scegli «Uguale alla pagina link». [vai: donazioni]
+  en: The donations page can have the link page’s look and follow it when you change it: in the editor, under “Look”, choose “Same as the link page”.
+  es: La página de donaciones puede tener el aspecto de la página de enlaces y seguirlo cuando lo cambias: en el editor, en «Aspecto», eliges «Igual que la página de enlaces».
   > Donazioni e pagina link con lo stesso aspetto
   > Chi passa dalla tua pagina link a quella delle donazioni trova gli stessi colori e gli stessi caratteri, e se cambi l'una cambia anche l'altra.
+  en> Donations and link page with the same look
+  en> People going from your link page to your donations page find the same colors and fonts, and if you change one the other changes too.
+  es> Donaciones y página de enlaces con el mismo aspecto
+  es> Quien pasa de tu página de enlaces a la de donaciones encuentra los mismos colores y las mismas fuentes, y si cambias una cambia también la otra.
 - Nell'editor della pagina link e di quella delle donazioni, dopo un tema pronto resti nella scheda in cui eri, e i tasti scattano una volta sola anche dopo tanti ritocchi.
+  en: In the link page and donations page editor, after a ready-made theme you stay on the tab you were on, and buttons fire only once even after lots of tweaks.
+  es: En el editor de la página de enlaces y de la de donaciones, después de un tema listo te quedas en la pestaña donde estabas, y los botones saltan una sola vez incluso después de muchos retoques.
 - La classifica dei Bit compare davvero in diretta, e resta dove la metti in ogni overlay. I caratteri che carichi si vedono anche in OBS, non solo nello Studio. [vai: alert]
+  en: The Bits leaderboard really shows up live, and stays where you put it in each overlay. Fonts you upload show in OBS too, not just in the Studio.
+  es: La clasificación de Bits aparece de verdad en directo, y se queda donde la pones en cada overlay. Las fuentes que subes se ven también en OBS, no solo en el Studio.
 - Il tutto schermo si ricorda per ogni scheda: acceso in Donazioni non si accende più anche in Pagina link, che resta col menù di lato finché non lo scegli lì.
+  en: Full screen is remembered per tab: turned on in Donations, it no longer turns on in the Link page too, which keeps its side menu until you choose it there.
+  es: La pantalla completa se recuerda por pestaña: activada en Donaciones ya no se activa también en la Página de enlaces, que mantiene el menú al lado hasta que la elijas ahí.
 - [importante] Il boss è un pezzo dell'Overlay Studio: lo sposti, lo ingrandisci e lo vesti come gli altri, e lo spegni per ogni overlay. Nello Studio lo vedi com'è in onda. [vai: alert]
+  en: The boss is an Overlay Studio piece: you move it, resize it and dress it like the others, and turn it off per overlay. In the Studio you see it as it looks on air.
+  es: El jefe es una pieza de Overlay Studio: lo mueves, lo agrandas y lo vistes como los demás, y lo apagas en cada overlay. En el Studio lo ves como sale al aire.
   > Il boss si sistema nello Studio
   > La barra della vita del boss va dove vuoi tu, grande quanto vuoi e vestita come il resto dell'overlay, invece di stare in un angolo fisso.
+  en> Set up the boss in the Studio
+  en> The boss’s health bar goes where you want, as big as you want and dressed like the rest of the overlay, instead of sitting in a fixed corner.
+  es> El jefe se acomoda en el Studio
+  es> La barra de vida del jefe va donde quieras, del tamaño que quieras y vestida como el resto del overlay, en lugar de quedarse en una esquina fija.
 - Nell'editor della pagina link e di quella delle donazioni l'anteprima resta ferma a metà schermo mentre scorri i campi. Sul telefono resta in cima, con «Salva e pubblica» sempre a portata. [vai: pagina]
+  en: In the link page and donations page editor, the preview stays put in the middle of the screen while you scroll the fields. On phones it stays at the top, with “Save and publish” always within reach.
+  es: En el editor de la página de enlaces y de la de donaciones, la vista previa se queda fija a media pantalla mientras recorres los campos. En el teléfono se queda arriba, con «Guardar y publicar» siempre a mano.
 - Il testo che un comando mostra sull'overlay è un pezzo dello Studio: lo sposti, lo vesti (anche con un fondo) e lo spegni per ogni overlay. [vai: alert]
+  en: The text a command shows on the overlay is a Studio piece: you move it, dress it (with a background too) and turn it off per overlay.
+  es: El texto que un comando muestra en el overlay es una pieza del Studio: lo mueves, lo vistes (también con un fondo) y lo apagas en cada overlay.
 - Anche la pastiglia col nome del comando che compare con un effetto, per esempio «!applausi», è un pezzo dello Studio: la sposti, la vesti e la spegni per ogni overlay. [vai: alert]
+  en: The pill with the command name that appears with an effect, for example “!applausi”, is also a Studio piece: you move it, dress it and turn it off per overlay.
+  es: También la píldora con el nombre del comando que aparece con un efecto, por ejemplo «!applausi», es una pieza del Studio: la mueves, la vistes y la apagas en cada overlay.
 - Le immagini e i video degli effetti compaiono in un'area che sposti e ridimensioni nello Studio, e in un riquadro si adattano senza deformarsi. [vai: alert]
+  en: Effect images and videos appear in an area you move and resize in the Studio, and inside a frame they fit without getting distorted.
+  es: Las imágenes y los videos de los efectos aparecen en un área que mueves y redimensionas en el Studio, y dentro de un recuadro se adaptan sin deformarse.
 - I video col green screen escono con la loro forma, invece che schiacciati a due per uno.
+  en: Green screen videos come out in their own shape, instead of squashed two to one.
+  es: Los videos con pantalla verde salen con su forma, en lugar de aplastados dos a uno.
 - [importante] Il muro delle emote: quelle che la chat scrive volano sulla scena con dieci movimenti, la stessa ripetuta cresce e poi esplode. Eventi, premi e !esplodi fanno esplodere figure intere. [vai: alert]
+  en: The emote wall: emotes that chat types fly across the scene with ten kinds of movement, and the same one repeated grows and then explodes. Events, prizes and !esplodi blow up whole shapes.
+  es: El muro de emotes: los que escribe el chat vuelan por la escena con diez movimientos, y el mismo repetido crece y luego explota. Eventos, premios y !esplodi hacen explotar figuras enteras.
   > Il muro delle emote
   > Le emote che la chat scrive diventano parte della scena: chi guarda vede la sua emote volare, e un raid o un premio fanno esplodere una figura intera.
+  en> The emote wall
+  en> The emotes chat types become part of the scene: viewers see their emote fly, and a raid or a prize blows up a whole shape.
+  es> El muro de emotes
+  es> Los emotes que escribe el chat pasan a formar parte de la escena: quien mira ve volar su emote, y un raid o un premio hacen explotar una figura entera.
 
 ## 2026-09-23
 
