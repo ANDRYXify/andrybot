@@ -110,3 +110,40 @@ test('nel pannello le categorie di Twitch si cercano in un posto solo', () => {
   assert.ok(usi.includes('campo'), 'e i giorni della settimana anche');
   assert.equal([...APP.matchAll(/api\('\/api\/streamer\/regia\/giochi\?q='/g)].length, 1, 'una chiamata sola alla ricerca dei giochi');
 });
+
+test('«Salva la settimana» salva i posti spuntati, e quelli di prima solo se la lista non si e\' caricata', async () => {
+  const fz = (nome) => { const i = APP.indexOf(`function ${nome}(`); assert.ok(i >= 0, `manca ${nome}`); return APP.slice(i, APP.indexOf('\n}\n', i) + 2); };
+  const spunte = [{ dataset: { settDove: 'tg' }, value: '11' }, { dataset: { settDove: 'ig' }, value: 'storia' }];
+  const prova = (posti) => new Function('document', '_settPosti', `
+    const settimanaOra = () => ({ giorni: [], dura: 120, fuso: 'Europe/Rome', dove: { tg: ['99'], dc: ['7'], ig: false }, twitch: { acceso: false } });
+    const _settLeggiGiorni = () => []; const _g = () => null; const _fusoQui = () => 'Europe/Rome';
+    ${fz('_settDoveScelti')} ${fz('_settLeggi')} return _settLeggi();`)(
+    { querySelectorAll: (q) => (q === '#sett-dove input[data-sett-dove]:checked' ? spunte : []) }, posti);
+  assert.deepEqual(prova({ tg: [{ id: 11 }], dc: [{ id: 7 }], ig: { puo: true } }).dove, { tg: ['11'], dc: [], ig: true },
+    'quelli spuntati, e il canale tolto resta tolto');
+  assert.deepEqual(prova(null).dove, { tg: ['99'], dc: ['7'], ig: false }, 'senza la lista, non si cancella niente');
+  assert.match(APP, /_settPosti = d \? \(d\.posti \|\| \{\}\) : null;/, 'una lettura fallita non conta come «nessun posto»');
+  const { normalizzaSettimana } = await import('../../src/features/settimana.js');
+  assert.deepEqual(normalizzaSettimana({ dove: { tg: ['11'], dc: [], ig: true } }).dove, { tg: ['11'], dc: [], ig: true }, 'e il server li tiene come arrivano');
+});
+
+// Un posto rotto per un momento (il bot senza un permesso, un canale che non
+// risponde) resta una scelta dello streamer: si vede spuntato col suo perche',
+// e si toglie solo togliendo la spunta. Prima usciva spento, e il primo
+// salvataggio lo cancellava.
+test('un canale Discord rotto resta fra i posti scelti, e si puo\' togliere a mano', () => {
+  const i = APP.indexOf('function _settDisegnaDove(');
+  const corpo = APP.slice(i, APP.indexOf('\n}\n', i) + 2);
+  const box = { innerHTML: '' };
+  new Function('_g', '_settPosti', 'settimanaOra', 'L', 'esc', '_igStoriaBloccata', `${corpo} _settDisegnaDove();`)(
+    (id) => (id === 'sett-dove' ? box : null),
+    { dc: [{ id: 7, nome: 'annunci', manca: 'scrivere' }, { id: 8, nome: 'altro' }] },
+    () => ({ dove: { tg: [], dc: ['7'], ig: false } }),
+    (it) => it, (s) => String(s), () => '');
+  const spunte = [...box.innerHTML.matchAll(/<input[^>]*data-sett-dove="dc"[^>]*>/g)].map((m) => m[0]);
+  const rotto = spunte.find((x) => x.includes('value="7"'));
+  assert.ok(rotto && / checked/.test(rotto), 'il canale scelto resta spuntato anche se ora non risponde');
+  assert.ok(!/disabled/.test(rotto), 'e la spunta si puo\' togliere');
+  assert.match(box.innerHTML, /Il bot qui non può scrivere\./, 'col suo perche\' accanto');
+  assert.ok(!/ checked/.test(spunte.find((x) => x.includes('value="8"'))), 'quello non scelto resta non scelto');
+});

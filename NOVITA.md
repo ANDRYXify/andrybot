@@ -22,6 +22,19 @@ streamer *usa*, si riscrive senza nominarla: la funzione resta documentata e il
 nome resta in casa. Non è una cosa da ricordarsi:
 `scripts/verifica-novita.mjs` boccia una riga pubblica che la nomina.
 
+## 2026-09-30
+
+- Il QR e il media kit degli Strumenti portano all'indirizzo vero del tuo canale anche su Kick e YouTube: prima su Kick ne scrivevano uno sbagliato. [vai: qr]
+- I temi pronti della pagina link tengono i bottoni velati anche dopo il salvataggio: prima tornavano ai colori della base, e su un tema scuro potevano uscire bianchi. [vai: pagina]
+- Nella settimana un canale Discord che per un momento non risponde resta fra i posti scelti, col suo perché accanto, e lo togli tu se vuoi. [vai: settimana]
+- Nella pagina link la fascia che chiede il permesso per video e musica di altri siti si legge meglio, e in anteprima le parti da completare dicono cosa manca. [vai: pagina]
+- I termini hanno un punto su piani, abbonamenti, disdetta e recesso in 14 giorni, e privacy e termini dicono con precisione con cosa ci si registra e cosa si scollega da dove.
+- [importante] In Account c'è «I tuoi collegamenti»: tutti gli account che hai collegato, ognuno col suo «Scollega», anche se il piano ha chiuso la scheda dove stavano. [vai: account]
+  > Tutti i tuoi collegamenti, in un posto
+  > Spotify, TikTok, Instagram, Discord, 7TV e Telegram in una carta sola, e ognuno lo scolleghi quando vuoi, con qualunque piano.
+- Spotify, TikTok, gli avvisi di Discord, 7TV e l'accesso con Telegram si scollegano con qualunque piano: prima, tornando all'Essenziale, restavano legati.
+- Un sostegno al progetto aperto e mai pagato si cancella dopo una settimana, e quelli pagati dopo dieci anni, come dice l'informativa.
+
 ## 2026-09-27
 
 - [importante] In «Strumenti» ci sono i pannelli per Twitch: tutti nello stesso stile, e già pieni dei link e delle descrizioni che il canale conosce. [vai: pannelli]
@@ -95,6 +108,13 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Un moderatore che apre le schede di Discord legge che le usa solo il proprietario del canale, invece di «Non riesco a leggere la configurazione». [vai: ruoli]
 - Nel server Discord i tasti per aggiungere categorie, canali, ruoli e permessi si fermano al tetto e dicono quanti ne tiene la traccia, e l'anteprima scrive cosa resta fuori. [vai: dcserver]
 - Nei Ruoli di Discord «Aggiungi una regola» si ferma a 20 e lo dice, e nel filtro una regola senza parole o senza liste avvisa che così non si salva. [vai: ruoli]
+- «Aggiungi numero» nella pagina link si ferma a sei, quanti la pagina ne mostra: prima dal settimo in poi i numeri sparivano al salvataggio senza dirlo. [vai: pagina]
+- Movimento, spessore e ombra dei bottoni, nell'aspetto della pagina link, mostrano quelli che la pagina usa davvero, anche dopo un tema pronto: prima il pannello diceva «Fermo», «Leggero» e «Nessuna». [vai: pagina]
+- «Rimborsa», nel registro delle donazioni, su una donazione arrivata con Satispay chiede conferma nominando il tuo negozio Satispay, non più il conto Stripe. [vai: donazioni]
+- «Modi», nell'aspetto della pagina link, dice come va davvero il permesso per video e musica di altri siti: con «Caricali subito» chi apre la pagina trova prima una fascia che glielo chiede. [vai: pagina]
+- «Salva la settimana» ricorda i posti che hai spuntato in «Mandala»: prima teneva quelli di prima, e la settimana automatica usciva nei posti vecchi. [vai: settimana]
+- Il primo link già pronto della pagina link porta al tuo canale anche se entri con Kick o YouTube, non più a Twitch; chi ha solo un server Discord parte senza. [vai: pagina]
+- Le Grafiche portano all'indirizzo vero del tuo canale anche se entri con Kick o YouTube, e nella pagina link la foto del profilo si chiama «La tua foto» per tutti. [vai: grafiche]
 
 ## 2026-09-26
 

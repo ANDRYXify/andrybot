@@ -9,7 +9,8 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { cartellaUsaEGetta } from '../aiuto.mjs';
 
-process.env.DATA_DIR ||= cartellaUsaEGetta('pie-');
+const { pulisci } = cartellaUsaEGetta('pie-');
+test.after(pulisci);
 const RAD = join(dirname(fileURLToPath(import.meta.url)), '../..');
 const GUSCIO = readFileSync(join(RAD, 'src/web/public/index.html'), 'utf8');
 const { guscioVetrina } = await import('../../src/web/vetrina-vista.js');

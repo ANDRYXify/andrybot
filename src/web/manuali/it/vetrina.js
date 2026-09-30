@@ -29,7 +29,7 @@ export default {
       'L\'editor ha tre colonne: i comandi, con le due linguette «Contenuti» e «Aspetto», l\'«Anteprima dal vivo» e il riquadro coi comandi del pezzo che hai scelto. L\'anteprima resta ferma a metà schermo mentre scorri i campi. Sul telefono resta in cima, con «Salva e pubblica» sempre a portata.',
     ] },
     { passi: [
-      { t: 'Riempi «Contenuti»', d: 'L\'intestazione, poi i pezzi della pagina: link, social, video, la tua diretta e gli altri. La prima volta trovi già pronto un link al tuo canale.' },
+      { t: 'Riempi «Contenuti»', d: 'L\'intestazione, poi i pezzi della pagina: link, social, video, la tua diretta e gli altri. La prima volta trovi già pronto un link al tuo canale, su Twitch, Kick o YouTube.' },
       { t: 'Scegli l\'«Aspetto»', d: 'Parti da un tema pronto, che cambia tutto in un colpo, e ritocca quello che vuoi.' },
       { t: 'Guarda l\'anteprima', d: 'Si aggiorna mentre scrivi, senza salvare, ed è la pagina vera. Con «Telefono» e «Schermo» la vedi nelle due misure. Cliccando un pezzo nell\'anteprima apri i suoi comandi.' },
       { t: 'Premi «Salva e pubblica»', d: 'La pagina va online subito. L\'indirizzo non cambia mai: chi ce l\'ha vede sempre la versione aggiornata.' },
@@ -51,7 +51,7 @@ export default {
       ['Comando', 'Cosa fa', 'Limite'],
       ['«Titolo»', 'Il nome grande in cima. Vuoto, va il nome del tuo canale.', '80 caratteri'],
       ['«Sottotitolo»', 'La riga sotto il nome. La leggono anche i motori di ricerca.', '200 caratteri'],
-      ['«Immagine del profilo»', '«Quella di Twitch» usa la foto del profilo con cui entri (anche Kick, YouTube o Discord): la prende da sola e si aggiorna quando la cambi là. «Un\'immagine mia (carica o incolla)» apre «Carica una foto» e un campo per l\'indirizzo. «Nessuna» la toglie.', 'PNG, JPG, WEBP o GIF'],
+      ['«Immagine del profilo»', '«La tua foto» usa la foto del profilo con cui entri, su Twitch, Kick, YouTube o Discord: la prende da sola e si aggiorna quando la cambi là. «Un\'immagine mia (carica o incolla)» apre «Carica una foto» e un campo per l\'indirizzo. «Nessuna» la toglie.', 'PNG, JPG, WEBP o GIF'],
     ] },
     { p: ['Se in quel momento la tua foto non si legge, l\'editor te lo dice e riprova da solo. Intanto puoi scegliere «Un\'immagine mia».'] },
 
@@ -419,7 +419,7 @@ export default {
 
     { h3: 'Link, QR e didascalia' },
     { p: [
-      '«Condivisione & link al canale»: scegli se la grafica porta a <code>socialbot.live/u/…</code>, la tua pagina link, o a <code>twitch.tv/…</code>.',
+      '«Condivisione & link al canale»: scegli se la grafica porta a <code>socialbot.live/u/…</code>, la tua pagina link, o all\'indirizzo del tuo canale, come <code>twitch.tv/…</code>, <code>kick.com/…</code> o <code>youtube.com/@…</code>.',
       '«Stampa un QR + il link del canale sull\'immagine» mette in basso un QR con l\'indirizzo scritto accanto. Su Instagram l\'immagine del feed non è cliccabile: col QR chi la vede arriva lo stesso al canale. Le righe dei giorni gli fanno posto.',
       'Il QR prende lo stile che hai salvato in «QR su misura», nel gruppo «Strumenti»: forme, colori e logo, senza la frase della cornice. Se con quello stile non si rileggerebbe, esce il QR di base. Come si prepara lo stile è nel <a href="/manuale/strumenti">manuale degli strumenti</a>.',
       '«Didascalia pronta (modificabile)» è il testo da mettere sotto il post, già scritto col link e diverso per ogni tipo. Se lo cambi, resta il tuo finché hai la scheda aperta; non si salva. «Copia didascalia» lo copia.',

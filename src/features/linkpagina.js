@@ -85,7 +85,7 @@ const PILE = {
 
 // La sola pila che porta un file. Le pagine link non caricano caratteri dal
 // web: e' una scelta di velocita', e vale ancora per tutte tranne questa.
-import { cssPaginaSicuro } from '../db.js';
+import { cssPaginaSicuro, LIMITI_LINKPAGE } from '../db.js';
 import { formattaImporto } from './donazioni.js';
 
 // I COMMENTI NON ESCONO DA QUI.
@@ -713,7 +713,7 @@ export function renderLinkPage(pagina, { login, display, avatar, baseUrl, antepr
         if (!anteprima) return '';
         return `<div class="voce bozza" ${ritardo}><span class="ico">${_mIco(b.icona)}</span>
           <span class="tx"><span class="et">${esc(b.label || 'Link senza etichetta')}</span>
-          <span class="so">${esc(!b.label ? 'manca l\'etichetta' : 'manca l\'indirizzo')} — da completare</span></span></div>`;
+          <span class="so">da completare: ${esc(!b.label ? 'manca l\'etichetta' : 'manca l\'indirizzo')}</span></span></div>`;
       }
       // Colori solo per QUESTO bottone. Vanno in due variabili, non in uno stile
       // sul colore diretto: così le regole di hover e "in evidenza" continuano a
@@ -730,8 +730,8 @@ export function renderLinkPage(pagina, { login, display, avatar, baseUrl, antepr
         <span class="fre" aria-hidden="true">›</span>
       </a>`;
     }
-    if (b.tipo === 'titolo') return b.testo ? `<h2 class="tit" ${ritardo}>${parole(b.testo)}</h2>` : (anteprima ? `<h2 class="tit bozza" ${ritardo}>titolo vuoto — da completare</h2>` : '');
-    if (b.tipo === 'testo') return b.testo ? `<p class="par" ${ritardo}>${esc(b.testo)}</p>` : (anteprima ? `<p class="par bozza" ${ritardo}>testo vuoto — da completare</p>` : '');
+    if (b.tipo === 'titolo') return b.testo ? `<h2 class="tit" ${ritardo}>${parole(b.testo)}</h2>` : (anteprima ? `<h2 class="tit bozza" ${ritardo}>titolo vuoto, da completare</h2>` : '');
+    if (b.tipo === 'testo') return b.testo ? `<p class="par" ${ritardo}>${esc(b.testo)}</p>` : (anteprima ? `<p class="par bozza" ${ritardo}>testo vuoto, da completare</p>` : '');
     if (b.tipo === 'separatore') return `<hr class="sep" ${ritardo}>`;
     if (b.tipo === 'spazio') return `<div class="spazio" ${ritardo}></div>`;
     if (b.tipo === 'badge') return b.testo ? `<span class="badge2" ${ritardo}>${esc(b.testo)}</span>` : '';
@@ -761,7 +761,7 @@ export function renderLinkPage(pagina, { login, display, avatar, baseUrl, antepr
       const forma = b.formato && b.formato !== 'auto' ? b.formato : e.formato;
       // altezza scelta a mano: vince su tutto, comprese le proporzioni
       const dich = [];
-      if (Number(b.altezza) > 0) dich.push(`height:${Math.min(1200, Math.round(b.altezza))}px`, 'aspect-ratio:auto');
+      if (Number(b.altezza) > 0) dich.push(`height:${Math.min(LIMITI_LINKPAGE.altezzaEmbed, Math.round(b.altezza))}px`, 'aspect-ratio:auto');
       if (b.sfondo) dich.push(`--emb-bg:${b.sfondo}`);
       dich.push(`--d:${Math.min(n - 1, 12) * 45}ms`);
       const alt = `${Number(b.altezza) > 0 ? 'data-fisso="1" ' : ''}style="${dich.join(';')}"`;
@@ -836,7 +836,7 @@ export function renderLinkPage(pagina, { login, display, avatar, baseUrl, antepr
       // il link, la frase e l'obiettivo arrivano dalle impostazioni del canale
       // (`sostieni`): il blocco decide solo come si presenta
       const d = sostieni;
-      if (!d) return anteprima ? `<div class="segna" ${ritardo}>sostieni: ${MANCA_SOSTIENI[manca] || MANCA_SOSTIENI.spente} — da completare</div>` : '';
+      if (!d) return anteprima ? `<div class="segna" ${ritardo}>sostieni, da completare: ${MANCA_SOSTIENI[manca] || MANCA_SOSTIENI.spente}</div>` : '';
       const g = b.obiettivo !== false && d.goal ? d.goal : null;
       const q = g ? Math.min(1, Math.max(0, g.ora / g.meta)) : 0;
       const cifra = (x) => formattaImporto(x, d.valuta);
@@ -1434,7 +1434,7 @@ ${/* l'icona della scheda e della schermata home: la foto che la pagina mostra
 ${banner && corpo.includes('chiedi-b') ? `
   <aside class="fascia" id="fascia" hidden>
     <p><b>Video e musica di altri siti.</b> Questa pagina non usa cookie, ma i riquadri di YouTube, Spotify,
-      Twitch e simili sono pezzi dei loro siti e possono usarne di propri. Li carichiamo solo se dici di sì —
+      Twitch e simili sono pezzi dei loro siti e possono usarne di propri. Li carichiamo solo se dici di sì:
       <a href="${esc(viaPrivacy)}">i dettagli sono qui</a>.</p>
     <div class="fascia-b">
       <button type="button" id="fascia-si">Va bene, carica tutto</button>
