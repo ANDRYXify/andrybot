@@ -27,28 +27,74 @@ nome resta in casa. Non è una cosa da ricordarsi:
 ## 2026-09-30
 
 - Il QR e il media kit degli Strumenti portano all'indirizzo vero del tuo canale anche su Kick e YouTube: prima su Kick ne scrivevano uno sbagliato. [vai: qr]
+  en: The QR code and media kit in Tools lead to your channel’s real address on Kick and YouTube too: before, on Kick they wrote a wrong one.
+  es: El QR y el media kit de Herramientas llevan a la dirección real de tu canal también en Kick y YouTube: antes, en Kick escribían una equivocada.
 - I temi pronti della pagina link tengono i bottoni velati anche dopo il salvataggio: prima tornavano ai colori della base, e su un tema scuro potevano uscire bianchi. [vai: pagina]
+  en: The link page’s ready-made themes keep their tinted buttons even after saving: before, they went back to the base colors, and on a dark theme they could come out white.
+  es: Los temas listos de la página de enlaces mantienen los botones velados incluso después de guardar: antes volvían a los colores de base, y en un tema oscuro podían salir blancos.
 - Nella settimana un canale Discord che per un momento non risponde resta fra i posti scelti, col suo perché accanto, e lo togli tu se vuoi. [vai: settimana]
+  en: In your week, a Discord channel that doesn’t answer for a moment stays among the chosen places, with the reason next to it, and you remove it if you want.
+  es: En la semana, un canal de Discord que por un momento no responde se queda entre los lugares elegidos, con su motivo al lado, y lo quitas tú si quieres.
 - Nella pagina link la fascia che chiede il permesso per video e musica di altri siti si legge meglio, e in anteprima le parti da completare dicono cosa manca. [vai: pagina]
+  en: On the link page, the strip asking permission for video and music from other sites is easier to read, and in the preview the parts still to fill in say what’s missing.
+  es: En la página de enlaces, la franja que pide permiso para video y música de otros sitios se lee mejor, y en la vista previa las partes por completar dicen qué falta.
 - I termini hanno un punto su piani, abbonamenti, disdetta e recesso in 14 giorni, e privacy e termini dicono con precisione con cosa ci si registra e cosa si scollega da dove.
+  en: The terms have a section on plans, subscriptions, cancellation and the 14-day withdrawal right, and privacy and terms say exactly what you sign up with and what gets disconnected from where.
+  es: Los términos tienen un punto sobre planes, suscripciones, cancelación y desistimiento en 14 días, y privacidad y términos dicen con precisión con qué te registras y qué se desconecta y de dónde.
 - [importante] In Account c'è «I tuoi collegamenti»: tutti gli account che hai collegato, ognuno col suo «Scollega», anche se il piano ha chiuso la scheda dove stavano. [vai: account]
+  en: Account has “Your connections”: every account you’ve connected, each with its own “Disconnect”, even if your plan closed the tab where it lived.
+  es: En Cuenta está «Tus conexiones»: todas las cuentas que conectaste, cada una con su «Desconectar», aunque el plan haya cerrado la pestaña donde estaban.
   > Tutti i tuoi collegamenti, in un posto
   > Spotify, TikTok, Instagram, Discord, 7TV e Telegram in una carta sola, e ognuno lo scolleghi quando vuoi, con qualunque piano.
+  en> All your connections in one place
+  en> Spotify, TikTok, Instagram, Discord, 7TV and Telegram on a single card, and you disconnect each one whenever you want, on any plan.
+  es> Todas tus conexiones en un solo lugar
+  es> Spotify, TikTok, Instagram, Discord, 7TV y Telegram en una sola tarjeta, y cada una la desconectas cuando quieras, con cualquier plan.
 - Spotify, TikTok, gli avvisi di Discord, 7TV e l'accesso con Telegram si scollegano con qualunque piano: prima, tornando all'Essenziale, restavano legati.
+  en: Spotify, TikTok, Discord alerts, 7TV and Telegram sign-in can be disconnected on any plan: before, going back to Essenziale left them tied.
+  es: Spotify, TikTok, los avisos de Discord, 7TV y el acceso con Telegram se desconectan con cualquier plan: antes, al volver a Essenziale, se quedaban vinculados.
 - Un sostegno al progetto aperto e mai pagato si cancella dopo una settimana, e quelli pagati dopo dieci anni, come dice l'informativa.
+  en: A support payment for the project that was started and never paid is deleted after a week, and paid ones after ten years, as the privacy notice says.
+  es: Un apoyo al proyecto abierto y nunca pagado se borra al cabo de una semana, y los pagados al cabo de diez años, como dice el aviso de privacidad.
 - L'azione «Timeout in chat» dei moduli mette davvero in pausa chi ha fatto scattare il modulo: prima non faceva niente. Se manca il permesso, o la persona è un moderatore o un VIP, il bot lo dice. [vai: moduli]
+  en: The modules’ “Chat timeout” action really puts whoever triggered the module on pause: before, it did nothing. If the permission is missing, or the person is a mod or a VIP, the bot says so.
+  es: La acción «Timeout en el chat» de los módulos pone de verdad en pausa a quien hizo saltar el módulo: antes no hacía nada. Si falta el permiso, o la persona es moderadora o VIP, el bot lo dice.
 - Col pannello in inglese o in spagnolo la scheda Donazioni si chiama «Donations» e «Donaciones» anche nel menù, e nella pagina link il carattere in spagnolo è «Fuente». [vai: donazioni]
+  en: With the panel in English or Spanish, the Donations tab is called “Donations” and “Donaciones” in the menu too, and on the link page the Spanish word for font is “Fuente”.
+  es: Con el panel en inglés o en español, la pestaña Donaciones se llama «Donations» y «Donaciones» también en el menú, y en la página de enlaces la fuente en español es «Fuente».
 - Le recensioni della pagina iniziale scorrono sotto le dirette in onda e prima della serata col bot acceso, e la pagina si apre più leggera.
+  en: Reviews on the home page scroll under the live streams and before the night with the bot on, and the page opens lighter.
+  es: Las reseñas de la portada pasan debajo de los directos al aire y antes de la noche con el bot encendido, y la página se abre más ligera.
 - I moderatori possono rinominare e togliere le emote 7TV anche dal pannello, come già potevano aggiungerle, dopo che il proprietario ha collegato 7TV. [vai: emote]
+  en: Mods can rename and remove 7TV emotes from the panel too, as they could already add them, once the owner has connected 7TV.
+  es: Los moderadores pueden renombrar y quitar los emotes de 7TV también desde el panel, como ya podían añadirlos, después de que el propietario conectó 7TV.
 - Nel tracciamento della webcam il suggerimento nomina il tasto giusto, «Salva impostazioni webcam». [vai: effetti]
+  en: In webcam tracking, the tip names the right button, “Save webcam settings”.
+  es: En el seguimiento de la webcam, la ayuda nombra el botón correcto, «Guardar ajustes de webcam».
 - L'informativa sulla privacy dice cosa succede alla voce: comandi a voce e penitenze passano dal tuo browser, l'audio della diretta si misura solo per le clip, e il bot impara solo dalle tue parole.
+  en: The privacy notice explains what happens to your voice: voice commands and forfeits go through your browser, stream audio is only measured for clips, and the bot learns only from your words.
+  es: El aviso de privacidad dice qué pasa con la voz: los comandos por voz y las penitencias pasan por tu navegador, el audio del directo solo se mide para los clips, y el bot aprende solo de tus palabras.
 - Mima, Non ridere, Reaction rush e Battaglia, i minigiochi della webcam, hanno lo stesso nome in tutto il pannello, anche in inglese e in spagnolo. [vai: effetti]
+  en: Charades, Don’t laugh, Reaction rush and Battle, the webcam minigames, have the same name across the whole panel, in English and Spanish too.
+  es: Mímica, No te rías, Reaction rush y Batalla, los minijuegos de la webcam, tienen el mismo nombre en todo el panel, también en inglés y en español.
 - «Dai punti» a «Chi ha scritto» in un timer non paga più lo streamer: lì non ha scritto nessuno e il passo salta. E le monete vanno al nome utente, anche a chi si mostra con un nome in un altro alfabeto. [vai: moduli]
+  en: “Give or take points” to “Whoever wrote” in a timer no longer pays the streamer: nobody wrote anything there, so the step is skipped. Coins go to the username, even for people who display a name in another alphabet.
+  es: «Da o quita puntos» a «Quien ha escrito» en un temporizador ya no le paga al streamer: ahí nadie escribió y el paso se salta. Las monedas van al nombre de usuario, también de quien muestra un nombre en otro alfabeto.
 - La moneta di base si chiama «coins» o «monedas» col pannello in inglese o in spagnolo, e l'anteprima dell'importazione dice «Timers» o «Temporizadores». [vai: moduli]
+  en: The base currency is called “coins” or “monedas” with the panel in English or Spanish, and the import preview says “Timers” or “Temporizadores”.
+  es: La moneda de base se llama «coins» o «monedas» con el panel en inglés o en español, y la vista previa de la importación dice «Timers» o «Temporizadores».
 - Chi toglie tutti i posti degli avvisi su Telegram o su Discord non se ne ritrova uno alla lettura dopo: il gruppo o il canale collegato diventa un posto una volta sola, quando arriva.
+  en: If you remove all the alert places on Telegram or Discord, you don’t find one back the next time it loads: the connected group or channel becomes a place only once, when it arrives.
+  es: Quien quita todos los lugares de los avisos en Telegram o en Discord ya no se encuentra uno de nuevo en la siguiente lectura: el grupo o el canal conectado se vuelve un lugar una sola vez, cuando llega.
 - Pannello e sito in inglese parlano americano (color, center, behavior), e i suggerimenti a voce propongono parole italiane, perché il riconoscimento è in italiano.
+  en: The panel and site in English now speak American (color, center, behavior), and voice suggestions offer Italian words, because recognition is in Italian.
+  es: El panel y el sitio en inglés hablan en americano (color, center, behavior), y las sugerencias de voz proponen palabras italianas, porque el reconocimiento está en italiano.
 - Una cancellazione o un ban che Twitch rifiuta non risulta più fatto: resta fra le azioni da riprendere, col perché, e un permesso mancante si dice come tale. [vai: scudo]
+  en: A deletion or ban that Twitch rejects no longer shows as done: it stays among the actions to retry, with the reason, and a missing permission is reported as such.
+  es: Un borrado o un ban que Twitch rechaza ya no figura como hecho: queda entre las acciones por retomar, con el motivo, y un permiso que falta se dice como tal.
 - Chi l'antispam ferma al primo messaggio risulta arrivato lo stesso: conta fra le prime volte del rapporto, e il giorno dopo non è di nuovo alla prima volta. [vai: dirette]
+  en: People stopped by the antispam on their first message still count as arrived: they’re among the first-timers in the report, and the next day they aren’t first-timers again.
+  es: Quien el antispam frena en su primer mensaje figura como llegado igual: cuenta entre las primeras veces del informe, y al día siguiente no vuelve a ser su primera vez.
 
 ## 2026-09-27
 
@@ -326,7 +372,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
   en: “Refund” in the donations log, on a donation that came through Satispay, asks for confirmation naming your Satispay store, no longer your Stripe account.
   es: «Reembolsar», en el registro de donaciones, sobre una donación llegada con Satispay pide confirmación nombrando tu tienda de Satispay, ya no la cuenta de Stripe.
 - «Modi», nell'aspetto della pagina link, dice come va davvero il permesso per video e musica di altri siti: con «Caricali subito» chi apre la pagina trova prima una fascia che glielo chiede. [vai: pagina]
-  en: “Behaviour”, in the link page look, says how permission for video and music from other sites really works: with “Load them right away”, visitors first see a strip asking for it.
+  en: “Behavior”, in the link page look, says how permission for video and music from other sites really works: with “Load them right away”, visitors first see a strip asking for it.
   es: «Modos», en el aspecto de la página de enlaces, dice cómo funciona de verdad el permiso para video y música de otros sitios: con «Cárgalos enseguida», quien abre la página ve antes una franja que se lo pide.
 - «Salva la settimana» ricorda i posti che hai spuntato in «Mandala»: prima teneva quelli di prima, e la settimana automatica usciva nei posti vecchi. [vai: settimana]
   en: “Save the week” remembers the places you checked in “Send it”: before, it kept the old ones, and the automatic week went out to the old places.
@@ -2725,7 +2771,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
   en: There’s a “CSS” tab where you can write your own: it comes last, so it wins over everything else.
   es: Hay una pestaña «CSS» donde escribir el tuyo: llega al final, así que gana sobre todo lo demás.
 - La pagina link: l'aspetto non è più una colonna sola da ventidue voci, ma sei schede (Temi, Impianto, Scrittura, Colori, Bottoni, Modi) con i campi affiancati.
-  en: The link page look is no longer a single column of twenty-two settings, but six tabs (Themes, Layout, Type, Colors, Buttons, Behaviour) with the fields side by side.
+  en: The link page look is no longer a single column of twenty-two settings, but six tabs (Themes, Layout, Type, Colors, Buttons, Behavior) with the fields side by side.
   es: El aspecto de la página de enlaces ya no es una sola columna de veintidós opciones, sino seis pestañas (Temas, Estructura, Tipografía, Colores, Botones, Modos) con los campos lado a lado.
 - L'anteprima della pagina link è passata a sinistra, con i comandi a destra: si legge come il banco dell'overlay.
   en: The link page preview moved to the left, with the controls on the right: it reads like the overlay workbench.
