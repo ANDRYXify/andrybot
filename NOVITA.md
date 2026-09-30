@@ -672,49 +672,137 @@ nome resta in casa. Non è una cosa da ricordarsi:
 ## 2026-09-10
 
 - Con la regia collegata sul computer, i tasti scena funzionano anche premuti dal telefono o da una tastiera fisica: il pannello aperto lì fa da ponte. [vai: consolify]
+  en: With the program connected on your computer, scene keys work even when pressed from your phone or a physical key pad: the panel open there acts as a bridge.
+  es: Con el programa conectado en la computadora, las teclas de escena funcionan también pulsadas desde el teléfono o un teclado físico: el panel abierto allí hace de puente.
 - Se nessun pannello è aperto su quel computer, il tasto te lo dice invece di rispondere «fatto». [vai: consolify]
+  en: If no panel is open on that computer, the key tells you so instead of answering “done”.
+  es: Si no hay ningún panel abierto en esa computadora, la tecla te lo dice en lugar de responder «hecho».
 - I menù con tante voci non si schiacciano più: prima con dieci scene i nomi venivano tagliati a metà, ora la lista scorre. [vai: consolify]
+  en: Menus with lots of items no longer get squashed: before, with ten scenes the names were cut in half, and now the list scrolls.
+  es: Los menús con muchas opciones ya no se aprietan: antes, con diez escenas los nombres se cortaban por la mitad, y ahora la lista se desplaza.
 - I menù a tendina del pannello sono disegnati come il resto del sito, tutti: prima solo uno lo era e gli altri uscivano col grigio del sistema.
+  en: All the panel’s dropdown menus are drawn like the rest of the site: before, only one was, and the others came out in the system’s gray.
+  es: Todos los menús desplegables del panel están dibujados como el resto del sitio: antes solo uno lo estaba y los demás salían con el gris del sistema.
 - Un tasto si crea da un posto libero: nasce vuoto e si apre la sua scheda, dove costruisci quello che vuoi. Non devi più scegliere un'azione da una tendina prima di poter fare niente. [vai: consolify]
+  en: You create a key from an empty slot: it starts blank and its card opens, where you build whatever you want. You no longer have to pick an action from a dropdown before doing anything.
+  es: Una tecla se crea desde un hueco libre: nace vacía y se abre su ficha, donde construyes lo que quieras. Ya no hace falta elegir una acción de un desplegable antes de poder hacer nada.
 - Nella scheda ci sono idee pronte (manda un link, manda un suono, cambia scena, vado in pausa) che sono un punto di partenza: poi cambi tutto. [vai: consolify]
+  en: The card has ready-made ideas (send a link, play a sound, switch scene, going on a break) as a starting point: then you change everything.
+  es: En la ficha hay ideas listas (enviar un enlace, enviar un sonido, cambiar de escena, me voy a pausa) que son un punto de partida: luego lo cambias todo.
 - Collegata la regia, ti do io scene, fonti e transizioni: nei tasti le scegli da un elenco invece di ricopiare i nomi a mano. [vai: consolify]
+  en: Once the program is connected, I give you the scenes, sources and transitions: in keys you pick them from a list instead of copying the names by hand.
+  es: Con el programa conectado, te doy yo escenas, fuentes y transiciones: en las teclas las eliges de una lista en lugar de copiar los nombres a mano.
 - Le schede aperte si aggiornano appena il collegamento va a buon fine, invece di restare come prima. [vai: consolify]
+  en: Open cards update as soon as the connection goes through, instead of staying as they were.
+  es: Las fichas abiertas se actualizan en cuanto la conexión funciona, en lugar de quedarse como antes.
 - Collegare il programma con cui mandi in onda è un clic: indirizzo e porta non te li chiedo, li provo io. Se lì l'autenticazione è spenta, hai finito lì. [vai: consolify]
+  en: Connecting the program you go live with takes one click: I don’t ask for the address and port, I try them myself. If authentication is off there, you’re done.
+  es: Conectar el programa con el que emites es un clic: la dirección y el puerto no te los pido, los pruebo yo. Si ahí la autenticación está apagada, ya terminaste.
 - Se invece chiede una password, te lo dico e compare un campo solo per quella. Dalla volta dopo mi collego da solo quando apri la scheda. [vai: consolify]
+  en: If it asks for a password, I tell you, and a field appears just for that. From then on I connect by myself when you open the tab.
+  es: Si en cambio pide una contraseña, te lo digo y aparece un campo solo para eso. Desde la vez siguiente me conecto solo cuando abres la pestaña.
 - Puoi collegare il programma con cui mandi in onda: compaiono le tue scene, le cambi da qui, e i tasti possono cambiare scena o mutare una fonte dentro una fila di passi. [vai: consolify]
+  en: You can connect the program you go live with: your scenes show up, you switch them from here, and keys can switch scene or mute a source within a series of steps.
+  es: Puedes conectar el programa con el que emites: aparecen tus escenas, las cambias desde aquí, y las teclas pueden cambiar de escena o silenciar una fuente dentro de una serie de pasos.
 - Indirizzo e password di quel collegamento restano nel tuo browser: non arrivano al nostro server e non entrano nel database. Con «Scorda tutto» spariscono anche da lì. [vai: consolify]
+  en: The address and password for that connection stay in your browser: they don’t reach our server and never go into the database. “Forget it all” removes them from there too.
+  es: La dirección y la contraseña de esa conexión se quedan en tu navegador: no llegan a nuestro servidor ni entran en la base de datos. Con «Olvidar todo» desaparecen también de ahí.
 - Funziona sul computer dove gira quel programma. Dal telefono i tasti del bot vanno come sempre, ma le scene no, e la scheda te lo dice prima. [vai: consolify]
+  en: It works on the computer where that program runs. From your phone the bot’s keys work as always, but scenes don’t, and the tab tells you beforehand.
+  es: Funciona en la computadora donde corre ese programa. Desde el teléfono las teclas del bot van como siempre, pero las escenas no, y la pestaña te lo dice antes.
 - Un tasto può mandare in onda un'immagine, un video o un suono caricati lì sul tasto: non devi più farne prima un effetto con un suo comando in un'altra scheda. [vai: consolify]
+  en: A key can put an image, a video or a sound on air, uploaded right there on the key: you no longer have to turn it into an effect with its own command in another tab first.
+  es: Una tecla puede sacar al aire una imagen, un video o un sonido subidos ahí mismo en la tecla: ya no hace falta convertirlos antes en un efecto con su comando en otra pestaña.
 - Durata e volume di quel media si cambiano dal tasto, e quando lo sostituisci il file vecchio se ne va invece di restare sul disco per sempre. [vai: consolify]
+  en: That media’s duration and volume are changed from the key, and when you replace it the old file goes away instead of staying on the disk forever.
+  es: La duración y el volumen de ese medio se cambian desde la tecla, y cuando lo reemplazas el archivo viejo se va en lugar de quedarse en el disco para siempre.
 - Un tasto di CONSOLify può fare più cose di seguito, non una sola: dire una frase, aspettare, lanciare un effetto, mandare il risultato di un comando, nell'ordine che scegli tu. [vai: consolify]
+  en: A CONSOLify key can do several things in a row, not just one: say a line, wait, fire an effect, send a command’s result, in the order you choose.
+  es: Una tecla de CONSOLify puede hacer varias cosas seguidas, no una sola: decir una frase, esperar, lanzar un efecto, enviar el resultado de un comando, en el orden que elijas.
 - I passi si aggiungono, si spostano e si tolgono dalla scheda del tasto, e se uno non riesce gli altri succedono lo stesso. [vai: consolify]
+  en: Steps are added, moved and removed from the key’s card, and if one fails the others still happen.
+  es: Los pasos se añaden, se mueven y se quitan desde la ficha de la tecla, y si uno falla los demás se ejecutan igual.
 - I tasti che avevi già continuano a funzionare: diventano una fila di un passo solo, senza che tu debba rifarli. [vai: consolify]
+  en: The keys you already had keep working: they become a one-step series, without you having to redo them.
+  es: Las teclas que ya tenías siguen funcionando: se vuelven una serie de un solo paso, sin que tengas que rehacerlas.
 - I tasti di CONSOLify creati prima di oggi ripartono: alcuni non avevano un indirizzo valido e premerli non faceva niente, ora si sistemano da soli alla prima apertura. [vai: consolify]
+  en: CONSOLify keys created before today work again: some didn’t have a valid address and pressing them did nothing, and now they fix themselves the first time you open them.
+  es: Las teclas de CONSOLify creadas antes de hoy vuelven a funcionar: algunas no tenían una dirección válida y pulsarlas no hacía nada, y ahora se arreglan solas al abrirlas por primera vez.
 - Il conto alla rovescia può partire da solo quando si apre l'overlay: metti su la scena d'attesa e il conto è già andato, senza premere niente. [vai: alert]
+  en: The countdown can start by itself when the overlay opens: put up the waiting scene and the countdown is already running, without pressing anything.
+  es: La cuenta atrás puede arrancar sola cuando se abre el overlay: pones la escena de espera y la cuenta ya está en marcha, sin pulsar nada.
 - Quello che metti su CONSOLify arriva a tutti i tuoi overlay: premi e parte, senza collegare niente a mano. [vai: consolify]
+  en: Whatever you put on CONSOLify reaches all your overlays: press it and it goes, without connecting anything by hand.
+  es: Lo que pones en CONSOLify llega a todos tus overlays: pulsas y sale, sin conectar nada a mano.
 - Ogni overlay può rifiutare i tasti per conto suo, dall'elenco degli elementi, senza rifiutare anche gli effetti che gli arrivano dalla chat. [vai: effetti]
+  en: Each overlay can refuse keys on its own, from the list of elements, without also refusing the effects that come from chat.
+  es: Cada overlay puede rechazar las teclas por su cuenta, desde la lista de elementos, sin rechazar también los efectos que le llegan desde el chat.
 - Premere un tasto di CONSOLify senza nessun overlay collegato non dice più «fatto»: l'effetto non avrebbe dove andare, e adesso te lo dice invece di farti credere che sia partito. [vai: consolify]
+  en: Pressing a CONSOLify key with no overlay connected no longer says “done”: the effect would have nowhere to go, and now it tells you instead of making you think it went out.
+  es: Pulsar una tecla de CONSOLify sin ningún overlay conectado ya no dice «hecho»: el efecto no tendría adónde ir, y ahora te lo dice en lugar de hacerte creer que salió.
 - In cima alla plancia c'è una spia che dice se un overlay è collegato, così lo sai prima di premere e non dopo. [vai: consolify]
+  en: At the top of the board there’s a light that shows whether an overlay is connected, so you know before pressing, not after.
+  es: Arriba del tablero hay un indicador que dice si hay un overlay conectado, así lo sabes antes de pulsar y no después.
 - I video degli effetti vanno fino in fondo: prima li chiudeva un tempo memorizzato, e se quel tempo era sbagliato il video spariva dopo un fotogramma senza mai partire. [vai: effetti]
+  en: Effect videos play all the way through: before, a stored duration cut them off, and if that duration was wrong the video vanished after one frame without ever starting.
+  es: Los videos de los efectos llegan hasta el final: antes los cerraba un tiempo guardado, y si ese tiempo estaba mal el video desaparecía tras un fotograma sin llegar a arrancar.
 - Se il browser non dà il permesso di partire con l'audio, il video parte muto invece di restare fermo, e negli errori trovi scritto che è successo. [vai: effetti]
+  en: If the browser won’t allow it to start with sound, the video starts muted instead of staying frozen, and the errors tell you it happened.
+  es: Si el navegador no da permiso para arrancar con sonido, el video arranca en silencio en lugar de quedarse quieto, y en los errores queda escrito que pasó.
 - Quando un overlay non riesce a far partire un suono o un video, ora lo dice invece di restare zitto: il motivo lo trovi fra gli errori, con scritto cosa non è andato. [vai: effetti]
+  en: When an overlay can’t play a sound or a video, it now says so instead of staying silent: you’ll find the reason among the errors, with what went wrong.
+  es: Cuando un overlay no logra reproducir un sonido o un video, ahora lo dice en lugar de callarse: el motivo lo encuentras entre los errores, con lo que no funcionó.
 - I tasti di CONSOLify hanno il tratto disegnato del resto del sito, e si distinguono sia col tema chiaro sia con quello scuro; i posti liberi si vedono che sono posti, non tasti spenti. [vai: consolify]
+  en: CONSOLify keys have the same hand-drawn stroke as the rest of the site and stand out in both the light and dark themes; empty slots look like slots, not switched-off keys.
+  es: Las teclas de CONSOLify tienen el trazo dibujado del resto del sitio y se distinguen tanto con el tema claro como con el oscuro; los huecos libres se ven como huecos, no como teclas apagadas.
 - La plancia vuota non è più una frase: i posti liberi si vedono, e sotto c'è scritto come riempirli, con il consiglio giusto a seconda che tu stia sistemando i tasti o usandoli. [vai: consolify]
+  en: An empty board is no longer just a sentence: the empty slots are visible, and below them it says how to fill them, with the right tip depending on whether you’re arranging keys or using them.
+  es: El tablero vacío ya no es una frase: los huecos libres se ven, y debajo dice cómo llenarlos, con el consejo adecuado según estés ordenando las teclas o usándolas.
 - Ogni tasto di CONSOLify ha il suo indirizzo, e punta al tasto invece che all'azione: se domani a quel tasto cambi mestiere, nome o icona, sulla tastiera fisica non rifai niente. [vai: consolify]
+  en: Each CONSOLify key has its own address, pointing at the key rather than the action: if you later change that key’s job, name or icon, you redo nothing on the physical key pad.
+  es: Cada tecla de CONSOLify tiene su dirección, y apunta a la tecla y no a la acción: si mañana a esa tecla le cambias la función, el nombre o el icono, en el teclado físico no rehaces nada.
 - Scegli il formato della plancia (da 3×3 a 5×8) e quanto stanno grandi i tasti: parti da una griglia vera invece che da un foglio bianco, e i posti liberi si vedono. [vai: consolify]
+  en: Choose the board size (from 3×3 to 5×8) and how big the keys are: you start from a real grid instead of a blank sheet, and the empty slots are visible.
+  es: Elige el formato del tablero (de 3×3 a 5×8) y qué tan grandes son las teclas: partes de una cuadrícula real en lugar de una hoja en blanco, y los huecos libres se ven.
 - Sul telefono la plancia si apre di lato: in verticale i tasti sarebbero francobolli, e te lo dice invece di darteli schiacciati. [vai: consolify]
+  en: On phones the board opens sideways: upright, the keys would be postage stamps, and it tells you so instead of handing them to you squashed.
+  es: En el teléfono el tablero se abre de lado: en vertical las teclas serían sellos, y te lo dice en lugar de dártelas aplastadas.
 - Quello che scrivi nella scheda di un tasto si salva da sé quando esci dal campo: non c'è più un «Salva» da ricordarsi, e non si perde niente scegliendo un colore.
+  en: What you type in a key’s card saves itself when you leave the field: there’s no “Save” to remember anymore, and nothing gets lost when you pick a color.
+  es: Lo que escribes en la ficha de una tecla se guarda solo cuando sales del campo: ya no hay un «Guardar» que recordar, y no se pierde nada al elegir un color.
 - Rigenerare la chiave degli indirizzi si fa dal pannello e chiede conferma: i vecchi indirizzi smettono di funzionare subito.
+  en: Regenerating the address key is done from the panel and asks for confirmation: the old addresses stop working right away.
+  es: Regenerar la clave de las direcciones se hace desde el panel y pide confirmación: las direcciones viejas dejan de funcionar al instante.
 - Quando entri dopo un aggiornamento una finestra si apre in mezzo allo schermo e ti dice cosa è cambiato; se ti sei perso qualche giorno, li trovi tutti in elenco.
+  en: When you come in after an update, a window opens in the middle of the screen and tells you what changed; if you missed a few days, you’ll find them all in a list.
+  es: Cuando entras después de una actualización, se abre una ventana en medio de la pantalla que te cuenta qué cambió; si te perdiste algunos días, los encuentras todos en una lista.
 - I tasti di CONSOLify si personalizzano in tutto: nome, colore libero, conferma prima di premere, e l'icona la scegli da un elenco disegnato oppure carichi la tua immagine.
+  en: CONSOLify keys can be customized in every way: name, any color, a confirmation before pressing, and an icon picked from a drawn set or your own uploaded image.
+  es: Las teclas de CONSOLify se personalizan en todo: nombre, color libre, confirmación antes de pulsar, y el icono lo eliges de una lista dibujada o subes tu propia imagen.
 - L'immagine che carichi ha un suo indirizzo, così la stessa faccia la puoi mettere anche sul tasto di una tastiera fisica.
+  en: The image you upload gets its own address, so you can put the same face on a physical key pad’s key too.
+  es: La imagen que subes tiene su propia dirección, así la misma cara la puedes poner también en la tecla de un teclado físico.
 - I tasti si trascinano per ordinarli, si duplicano e si spostano fra le pagine.
+  en: Keys can be dragged to reorder them, duplicated and moved between pages.
+  es: Las teclas se arrastran para ordenarlas, se duplican y se mueven entre páginas.
 - La chiave degli indirizzi ora sta coperta: quella scheda si apre mentre streami, e prima si leggeva a schermo.
+  en: The address key is now hidden: that card is open while you stream, and before, it could be read on screen.
+  es: La clave de las direcciones ahora está tapada: esa ficha se abre mientras emites, y antes se leía en pantalla.
 - Nuova sezione CONSOLify: i tasti del tuo canale sotto le dita mentre streami (contatori, effetti, una battuta, una frase) sul telefono, sul tablet o su un secondo monitor.
+  en: New CONSOLify section: your channel’s keys under your fingers while you stream (counters, effects, a joke, a line) on your phone, tablet or a second monitor.
+  es: Nueva sección CONSOLify: las teclas de tu canal bajo los dedos mientras emites (contadores, efectos, un chiste, una frase) en el teléfono, la tablet o un segundo monitor.
 - I tasti nascono da soli dai tuoi contatori e dai tuoi effetti, e ognuno mostra com'è andata: premi e leggi il numero nuovo.
+  en: Keys are created automatically from your counters and your effects, and each one shows how it went: press it and read the new number.
+  es: Las teclas nacen solas de tus contadores y tus efectos, y cada una muestra cómo fue: pulsas y lees el número nuevo.
 - Gli stessi tasti li puoi mettere su una tastiera fisica: la scheda ti dà l'indirizzo già pronto da incollare, e icona e nome li scegli lì.
+  en: You can put the same keys on a physical key pad: the card gives you the address ready to paste, and you pick the icon and name there.
+  es: Las mismas teclas las puedes poner en un teclado físico: la ficha te da la dirección lista para pegar, y el icono y el nombre los eliges ahí.
 - Quando il serbatoio delle battute è vuoto, il bot ne costruisce una con i numeri del tuo canale (morti, tentativi, quello che conti tu) invece di chiederne una generica.
+  en: When the joke jar is empty, the bot builds one with your channel’s numbers (deaths, attempts, whatever you count) instead of asking for a generic one.
+  es: Cuando el depósito de chistes está vacío, el bot arma uno con los números de tu canal (muertes, intentos, lo que cuentes tú) en lugar de pedir uno genérico.
 - E impara quale modo di costruirle fa ridere lì: dopo averla detta conta chi ride davvero, e la volta dopo usa il modo che ha funzionato.
+  en: It learns which way of building them gets laughs there: after telling one it counts who really laughs, and next time it uses the approach that worked.
+  es: Aprende además qué forma de armarlos hace reír ahí: después de contarlo cuenta quién se ríe de verdad, y la vez siguiente usa la forma que funcionó.
 
 ## 2026-09-08
 
