@@ -274,7 +274,7 @@ function impostazioni() {
       ...(s.penitenze && typeof s.penitenze === 'object' ? s.penitenze : {}) },
     alerts: (() => {
       const a = (s.alerts && typeof s.alerts === 'object') ? s.alerts : {};
-      const ev = (x, d) => ({ attivo: false, testo: '', suono: d.suono, accento: d.colore, volume: 100, minBits: 0, minViewers: 0, ...(x && typeof x === 'object' ? { ...x, accento: x.accento || x.colore || d.colore } : {}) });
+      const ev = (x, d) => ({ attivo: false, chi: 'socialbot', testo: '', suono: d.suono, accento: d.colore, volume: 100, minBits: 0, minViewers: 0, ...(x && typeof x === 'object' ? { ...x, accento: x.accento || x.colore || d.colore } : {}) });
       return {
         attivo: a.attivo !== false,
         posizione: ['alto-centro', 'centro', 'basso-centro'].includes(a.posizione) ? a.posizione : 'alto-centro',
@@ -10264,12 +10264,33 @@ function popolaMediaSuoniAlert(effetti, alertsCfg) {
 }
 
 const ALERT_TIPI = () => [
-  { key: 'follow', nome: L('Nuovo follower', 'New follower', 'Nuevo seguidor'), ph: L('{user} ha seguito il canale!', '{user} followed the channel!', '¡{user} ha seguido el canal!'), vars: '{user}', acc: '#f72fa7' },
-  { key: 'sub', nome: L('Abbonamento', 'Subscription', 'Suscripción'), ph: L('{user} si è abbonato! ({mesi} mesi)', '{user} subscribed! ({mesi} months)', '¡{user} se ha suscrito! ({mesi} meses)'), vars: '{user}, {mesi}', acc: '#ffb020' },
-  { key: 'cheer', nome: L('Bit (cheer)', 'Bits (cheer)', 'Bits (cheer)'), ph: L('{user} ha lanciato {bits} bit!', '{user} sent {bits} bits!', '¡{user} ha enviado {bits} bits!'), vars: '{user}, {bits}', acc: '#38d39f', soglia: { campo: 'minBits', label: L('Bit minimi', 'Minimum bits', 'Bits mínimos') } },
-  { key: 'raid', nome: L('Raid', 'Raid', 'Raid'), ph: L('{user} è arrivato in raid con {viewers} spettatori!', '{user} raided with {viewers} viewers!', '¡{user} ha llegado en raid con {viewers} espectadores!'), vars: '{user}, {viewers}', acc: '#ff4d4d', soglia: { campo: 'minViewers', label: L('Spettatori minimi', 'Minimum viewers', 'Espectadores mínimos') } },
+  { key: 'follow', twitch: true, nome: L('Nuovo follower', 'New follower', 'Nuevo seguidor'), ph: L('{user} ha seguito il canale!', '{user} followed the channel!', '¡{user} ha seguido el canal!'), vars: '{user}', acc: '#f72fa7' },
+  { key: 'sub', twitch: true, nome: L('Abbonamento', 'Subscription', 'Suscripción'), ph: L('{user} si è abbonato! ({mesi} mesi)', '{user} subscribed! ({mesi} months)', '¡{user} se ha suscrito! ({mesi} meses)'), vars: '{user}, {mesi}', acc: '#ffb020' },
+  { key: 'cheer', twitch: true, nome: L('Bit (cheer)', 'Bits (cheer)', 'Bits (cheer)'), ph: L('{user} ha lanciato {bits} bit!', '{user} sent {bits} bits!', '¡{user} ha enviado {bits} bits!'), vars: '{user}, {bits}', acc: '#38d39f', soglia: { campo: 'minBits', label: L('Bit minimi', 'Minimum bits', 'Bits mínimos') } },
+  { key: 'raid', twitch: true, nome: L('Raid', 'Raid', 'Raid'), ph: L('{user} è arrivato in raid con {viewers} spettatori!', '{user} raided with {viewers} viewers!', '¡{user} ha llegado en raid con {viewers} espectadores!'), vars: '{user}, {viewers}', acc: '#ff4d4d', soglia: { campo: 'minViewers', label: L('Spettatori minimi', 'Minimum viewers', 'Espectadores mínimos') } },
   { key: 'donazione', nome: L('Donazione', 'Donation', 'Donación'), ph: L('{user} ha offerto {importo}! {messaggio}', '{user} tipped {importo}! {messaggio}', '¡{user} ha donado {importo}! {messaggio}'), vars: '{user}, {importo}, {messaggio}', acc: '#1d9e5e', soglia: { campo: 'minImporto', label: L('Importo minimo', 'Minimum amount', 'Importe mínimo') } },
 ];
+
+const ALERT_TWITCH_AIUTO = 'https://link.twitch.tv/SettingUpTwitchAlerts';
+const CHI_ALERT_OPTS = () => [['socialbot', 'SocialBot'], ['twitch', 'Twitch'], ['entrambi', L('Tutti e due', 'Both', 'Los dos')]];
+function notaChiAlert(chi) {
+  const link = `<a href="${ALERT_TWITCH_AIUTO}" target="_blank" rel="noopener">${L('Come si impostano su Twitch', 'How to set them up on Twitch', 'Cómo se configuran en Twitch')}</a>`;
+  if (chi === 'twitch') return L('Lo mostra Twitch, con l\'alert che imposti su Twitch: da qui non parte niente. Widget, obiettivi e subathon vanno avanti come prima.', 'Twitch shows it, with the alert you set up on Twitch: nothing plays from here. Widgets, goals and subathon keep working as before.', 'La muestra Twitch, con la alerta que configuras en Twitch: desde aquí no sale nada. Widgets, objetivos y subathon siguen funcionando como antes.') + ' ' + link;
+  if (chi === 'entrambi') return L('Partono tutti e due, il nostro e quello di Twitch. Mettili in due punti diversi dello schermo, così non si coprono.', 'Both play, ours and Twitch\'s. Put them in two different spots on screen so they don\'t cover each other.', 'Salen las dos, la nuestra y la de Twitch. Ponlas en dos sitios distintos de la pantalla para que no se tapen.') + ' ' + link;
+  return L('Lo mostra SocialBot. Se su Twitch hai acceso anche i suoi alert, questo evento compare due volte: lì puoi spegnerli.', 'SocialBot shows it. If Twitch\'s own alerts are on too, this event shows up twice: you can turn them off there.', 'La muestra SocialBot. Si en Twitch tienes activadas también sus alertas, este evento aparece dos veces: allí puedes apagarlas.') + ' ' + link;
+}
+function chiAlertMostra(b) {
+  const sel = b && b.querySelector('.al-chi');
+  if (!sel) return;
+  const nostro = b.querySelector('.al-nostro');
+  if (nostro) nostro.hidden = sel.value === 'twitch';
+  const nota = b.querySelector('.al-chi-nota');
+  if (nota) nota.innerHTML = notaChiAlert(sel.value);
+}
+document.addEventListener('change', (e) => {
+  const sel = e.target.closest && e.target.closest('.al-chi');
+  if (sel) chiAlertMostra(sel.closest('.alert-blocco'));
+});
 
 const FONT_BASE = () => [['sistema', L('Sistema', 'System', 'Sistema')], ['rotondo', L('Arrotondato', 'Rounded', 'Redondeado')], ['condensato', L('Condensato', 'Condensed', 'Condensada')], ['mono', L('Monospazio', 'Monospace', 'Monoespaciada')], ['serif', L('Serif', 'Serif', 'Serif')], ['manga', L('Manga', 'Manga', 'Manga')]];
 const FONT_OPTS = () => FONT_BASE().concat(FONT_MIEI.map((f) => ['mio:' + f.nome, f.nome]));
@@ -10348,6 +10369,8 @@ const TEMPLATE_BUILTIN = [
   { nome: 'Nastro', che: 'Fasce piene e diagonali, senza cornici. Buono per le dirette veloci', dati: { al: { animazione: 'slide', sfondo: '#241206', opacita: 93, testo: '#fff4e6', bordoRaggio: 0, bordoSpessore: 0, glow: false, font: 'sistema', dimTesto: 27, forma: 'nastro', materia: 'sfumata', cornice: 'barra', composizione: 'riga' }, ch: { sfondo: '#241206', opacita: 85, testo: '#fff4e6', bordoRaggio: 0, font: 'sistema', dim: 'media', forma: 'nastro', materia: 'sfumata', cornice: 'barra' }, go: { dim: 'media', font: 'sistema', forma: 'nastro', materia: 'sfumata', cornice: 'barra', sfondo: '#241206', testo: '#fff4e6', accento: '#ff8a2b', bordoRaggio: 0, opacita: 90 }, mu: { tema: 'cassetta', sfondo: 'copertina', corpo: 'cicciotto', entrata: 'scivola' }, acc: '#ff8a2b' } },
 
   { nome: 'Esagoni', che: 'Forme a nido d’ape e taglio tecnico, per i giochi di fantascienza', dati: { al: { animazione: 'zoom', sfondo: '#0d1117', opacita: 92, testo: '#e6edf3', bordoRaggio: 0, bordoSpessore: 2, glow: true, font: 'sistema', dimTesto: 26, forma: 'esagono', materia: 'griglia', cornice: 'linea', composizione: 'colonna' }, ch: { sfondo: '#0d1117', opacita: 84, testo: '#e6edf3', bordoRaggio: 0, font: 'sistema', dim: 'media', forma: 'taglio', materia: 'griglia', cornice: 'linea' }, go: { dim: 'media', font: 'sistema', forma: 'esagono', materia: 'griglia', cornice: 'linea', sfondo: '#0d1117', testo: '#e6edf3', accento: '#58a6ff', bordoRaggio: 0, opacita: 88 }, mu: { tema: 'esagono', sfondo: 'colori', corpo: 'normale', entrata: 'sale' }, acc: '#58a6ff' } },
+
+  { nome: 'Stile Twitch', che: 'Niente riquadro: l’immagine grande sopra e il nome in viola, come gli alert di Twitch', dati: { al: { animazione: 'pop', uscita: 'fade', sfondo: '#0e0e10', opacita: 0, testo: '#ffffff', bordoRaggio: 0, bordoSpessore: 0, glow: false, font: 'sistema', dimTesto: 30, peso: '800', forma: 'carta', materia: 'piatta', cornice: 'nessuna', composizione: 'colonna', dimIcona: 110, ombraTesto: true, evidenziaNome: true }, ch: { sfondo: '#18181b', opacita: 85, testo: '#efeff1', bordoRaggio: 4, font: 'sistema', dim: 'media', forma: 'squadrata', materia: 'piatta', cornice: 'nessuna' }, go: { dim: 'media', font: 'sistema', forma: 'squadrata', materia: 'piatta', cornice: 'nessuna', sfondo: '#18181b', testo: '#efeff1', accento: '#9146ff', bordoRaggio: 4, opacita: 90 }, mu: { tema: 'nessuno', sfondo: 'copertina', corpo: 'normale', entrata: 'dissolve' }, acc: '#9146ff' } },
 ];
 
 function bloccoAlert(t, a) {
@@ -10355,12 +10378,20 @@ function bloccoAlert(t, a) {
   const acc = c.accento || c.colore || t.acc;
   const vol = c.volume != null ? c.volume : 100;
   const soglia = t.soglia ? `<div><label class="campo">${t.soglia.label}</label><input aria-label="${esc(t.soglia.label)}" type="number" class="al-soglia" min="0" value="${Number(c[t.soglia.campo]) || 0}"></div>` : '';
+  const chi = t.twitch && CHI_ALERT_OPTS().some(([v]) => v === c.chi) ? c.chi : 'socialbot';
+  const riga = t.twitch ? `
+      <div class="al-chi-riga spazio-sopra">
+        <label class="campo">${L('Chi lo mostra', 'Shown by', 'Quién la muestra')}</label>
+        <select class="al-chi" aria-label="${esc(L('Chi mostra l\'alert di', 'Who shows the alert for', 'Quién muestra la alerta de') + ' ' + t.nome)}">${CHI_ALERT_OPTS().map(([v, n]) => `<option value="${v}"${v === chi ? ' selected' : ''}>${esc(n)}</option>`).join('')}</select>
+        <p class="suggerimento al-chi-nota">${notaChiAlert(chi)}</p>
+      </div>` : '';
   return `
     <div class="alert-blocco" data-alert="${t.key}">
       <div class="riga-interruttore">
         <label class="interruttore"><input type="checkbox" class="al-attivo" ${c.attivo ? 'checked' : ''}><span class="levetta"></span></label>
         <strong>${t.nome}</strong>
-      </div>
+      </div>${riga}
+      <div class="al-nostro"${chi === 'twitch' ? ' hidden' : ''}>
       <label class="campo spazio-sopra">${L('Testo', 'Text', 'Texto')} <span class="tenue">— ${L('segnaposto', 'placeholders', 'marcadores')}: ${esc(t.vars)}</span></label>
       <input type="text" class="al-testo campo-largo" aria-label="${esc(L('Testo di', 'Text of', 'Texto de') + ' ' + t.nome)}" maxlength="200" placeholder="${esc(t.ph)}" value="${esc(c.testo || '')}">
       <div class="griglia-campi spazio-sopra">
@@ -10401,6 +10432,7 @@ function bloccoAlert(t, a) {
       </div>
       <p class="suggerimento"><strong>${L('Metti quello che vuoi:', 'Put whatever you want:', 'Pon lo que quieras:')}</strong> ${L('scegli dai tuoi effetti', 'choose from your effects', 'elige entre tus efectos')} <em>${L('oppure', 'or', 'o')}</em> ${L('carica un file al volo qui sopra. Suono e immagine/video', 'upload a file on the fly above. Sound and image/video', 'sube un archivo al vuelo arriba. Sonido e imagen/vídeo')} <strong>${L('partono insieme', 'play together', 'se reproducen juntos')}</strong> — ${L('così puoi avere, ad esempio, la tua GIF', 'so you can have, for example, your GIF', 'así puedes tener, por ejemplo, tu GIF')} <em>${L('con', 'with', 'con')}</em> ${L('il tuo suono.', 'your sound.', 'tu sonido.')}</p>
       <p class="spazio-sopra"><button type="button" class="btn secondario mini al-prova" data-kind="${t.key}">${_bIco('<path d="m6 3 14 9-14 9Z"/>')}${L('Prova', 'Test', 'Probar')}</button></p>
+      </div>
     </div>`;
 }
 
@@ -11735,6 +11767,7 @@ function _raccogliAlerts() {
     const soglia = b.querySelector('.al-soglia');
     blocchi[k] = {
       attivo: !!b.querySelector('.al-attivo')?.checked,
+      chi: b.querySelector('.al-chi')?.value || 'socialbot',
       testo: (b.querySelector('.al-testo')?.value || '').trim(),
       suono: b.querySelector('.al-suono')?.value || '',
       media: b.querySelector('.al-media')?.value || '',
@@ -14859,7 +14892,7 @@ function _riempiConfig(d) {
   _imposta('al-st-dimico', ast.dimIcona); _imposta('al-st-uscita', ast.uscita); _imposta('al-st-peso', ast.peso == null ? '700' : String(ast.peso)); _imposta('al-st-spaz', ast.spaziatura); _imposta('al-st-maiusc', ast.maiuscolo); _imposta('al-st-ombratxt', ast.ombraTesto !== false); _imposta('al-st-evid', ast.evidenziaNome !== false);
   document.querySelectorAll('.alert-blocco[data-alert]').forEach((b) => {
     const c = a[b.dataset.alert] || {};
-    _impostaEl(b.querySelector('.al-attivo'), c.attivo); _impostaEl(b.querySelector('.al-testo'), c.testo);
+    _impostaEl(b.querySelector('.al-attivo'), c.attivo); _impostaEl(b.querySelector('.al-chi'), c.chi); chiAlertMostra(b); _impostaEl(b.querySelector('.al-testo'), c.testo);
     _impostaEl(b.querySelector('.al-suono'), c.suono); _impostaEl(b.querySelector('.al-colore'), c.accento || c.colore);
     _impostaEl(b.querySelector('.al-font'), c.font || ''); _impostaEl(b.querySelector('.al-vol'), c.volume != null ? c.volume : 100);
     const sog = b.querySelector('.al-soglia'); if (sog) _impostaEl(sog, c.minBits != null ? c.minBits : c.minImporto != null ? c.minImporto : c.minViewers);

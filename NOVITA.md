@@ -208,6 +208,18 @@ comandi diversi da quelli della riga italiana.
 - Il gioco e la durata della diretta il bot li dice a chi li chiede davvero, non a chi scrive «da quanto tempo non ci vediamo». [vai: personalita]
   en: The bot says what game it is and how long the stream has been going to people who actually ask, not to someone writing “long time no see”.
   es: El juego y la duración del directo el bot los dice a quien los pregunta de verdad, no a quien escribe «cuánto tiempo sin vernos».
+- [importante] Negli alert di follow, sub, bit e raid scegli chi li mostra: SocialBot, Twitch o tutti e due. Con Twitch il nostro non parte, e widget e obiettivi contano lo stesso. [vai: alert]
+  en: In follow, sub, bits and raid alerts you choose who shows them: SocialBot, Twitch or both. With Twitch ours doesn’t play, and widgets and goals still count.
+  es: En las alertas de follow, sub, bits y raid eliges quién las muestra: SocialBot, Twitch o las dos. Con Twitch la nuestra no sale, y los widgets y los objetivos cuentan igual.
+  > Gli alert di Twitch, i nostri o tutti e due
+  > Prima chi usava già gli alert di Twitch doveva spegnere i nostri, o li vedeva due volte. Twitch non lascia cambiarli da fuori: si impostano su Twitch, e qui decidi se parte anche il nostro.
+  en> Twitch’s alerts, ours, or both
+  en> Before, if you already used Twitch’s alerts you had to turn ours off, or you saw them twice. Twitch doesn’t let them be changed from outside: you set them up on Twitch, and here you decide whether ours plays too.
+  es> Las alertas de Twitch, las nuestras o las dos
+  es> Antes, quien ya usaba las alertas de Twitch tenía que apagar las nuestras, o las veía dos veces. Twitch no deja cambiarlas desde fuera: se configuran en Twitch, y aquí decides si sale también la nuestra.
+- Fra le vesti dell'overlay c'è «Stile Twitch»: niente riquadro, l'immagine grande sopra e il nome in viola, come negli alert di Twitch, e poi cambi quello che vuoi. [vai: alert]
+  en: Among the overlay looks there’s “Stile Twitch”: no box, a big image on top and the name in purple, like Twitch’s alerts, and then you change whatever you want.
+  es: Entre los aspectos del overlay está «Stile Twitch»: sin recuadro, la imagen grande arriba y el nombre en morado, como en las alertas de Twitch, y luego cambias lo que quieras.
 
 ## 2026-09-27
 

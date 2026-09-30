@@ -161,7 +161,7 @@ const SETTE_GIORNI_MS = 7 * 24 * 60 * 60 * 1000;
 import {
   SUONI_PRESET, FONT_OVL, MIO_FONT, fontOvlOk, clampInt, hexOk, unoDi, xyOk, puliConta,
   ICONE_OVL_K, icoOk, PESO_OVL, MAIUSC_OVL, USCITA_OVL,
-  FORME_OVL, MATERIE_OVL, CORNICI_OVL, COMP_OVL,
+  FORME_OVL, MATERIE_OVL, CORNICI_OVL, COMP_OVL, chiAlertOk,
   normAlertStile, normChatStile, normWidgetStile, normOverlayWidgetCfg, normOverlayStile, normGoals, MAX_GOAL,
   normMusica, normTimer, normPubblicita, normTreno, normBit, normBoss, normScritta, normEtichetta, normMuro, FIGURE_MURO, normCartelli, normDisegno,
   normArena,
@@ -6276,10 +6276,11 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
       // media: niente OPPURE un'immagine/video caricato ("effetto:<comando>").
       const refEffetto = (x) => /^effetto:[a-z0-9_]{1,30}$/i.test(String(x)) ? String(x).toLowerCase() : '';
       const suonoOk = (x) => (SUONI_PRESET.has(String(x)) ? String(x) : refEffetto(x));
-      const evt = (e) => {
+      const evt = (kind, e) => {
         e = e || {};
         return {
           attivo: !!e.attivo,
+          chi: chiAlertOk(kind, e.chi),
           testo: String(e.testo || '').slice(0, 200),
           suono: suonoOk(e.suono),
           media: refEffetto(e.media),
@@ -6296,11 +6297,11 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
         xy: xyOk(p.xy),
         durata: clampInt(p.durata, 2000, 20000, 6000),
         stile: normAlertStile(st),
-        follow: evt(p.follow),
-        sub: evt(p.sub),
-        cheer: { ...evt(p.cheer), minBits: clampInt(p.cheer?.minBits, 0, 1e9, 0) },
-        raid: { ...evt(p.raid), minViewers: clampInt(p.raid?.minViewers, 0, 1e6, 0) },
-        donazione: { ...evt(p.donazione), minImporto: Math.max(0, Math.min(1e6, Math.round((Number(p.donazione?.minImporto) || 0) * 100) / 100)) },
+        follow: evt('follow', p.follow),
+        sub: evt('sub', p.sub),
+        cheer: { ...evt('cheer', p.cheer), minBits: clampInt(p.cheer?.minBits, 0, 1e9, 0) },
+        raid: { ...evt('raid', p.raid), minViewers: clampInt(p.raid?.minViewers, 0, 1e6, 0) },
+        donazione: { ...evt('donazione', p.donazione), minImporto: Math.max(0, Math.min(1e6, Math.round((Number(p.donazione?.minImporto) || 0) * 100) / 100)) },
       };
     }
     // CHAT a schermo nell'overlay (con stile completo)

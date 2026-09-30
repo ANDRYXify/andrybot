@@ -116,6 +116,16 @@ export const ANIM_CHAT = ['slide', 'fade', 'nessuna'];
 export const DIM_CHAT = ['piccola', 'media', 'grande', 'enorme'];
 export const DIM_WIDGET = ['piccola', 'media', 'grande', 'enorme'];
 
+// CHI MOSTRA UN ALERT. Twitch ha i suoi alert per gli eventi che manda lui
+// (follow, sub, bit, raid): per ognuno lo streamer sceglie se lo mostra
+// SocialBot, Twitch o tutti e due. Gli alert di Twitch si impostano su Twitch,
+// perche' Twitch non da' un modo per cambiarli o farli partire da fuori; qui si
+// decide solo se il nostro parte. La donazione non passa da Twitch: la mostra
+// SocialBot e basta, qualunque cosa ci sia scritto.
+export const CHI_ALERT = ['socialbot', 'twitch', 'entrambi'];
+export const EVENTI_TWITCH = ['follow', 'sub', 'cheer', 'raid'];
+export const chiAlertOk = (kind, v) => (EVENTI_TWITCH.includes(kind) && CHI_ALERT.includes(v) ? v : 'socialbot');
+
 export const normAlertStile = (st) => {
   st = st || {};
   return {

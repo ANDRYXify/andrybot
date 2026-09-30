@@ -24,7 +24,7 @@ export default {
     { tabella: [
       ['Controllo', 'Cosa fa'],
       ['«Overlay»', 'Sceglie l\'overlay che stai modificando. Se hai modifiche non salvate il pannello chiede prima: «Salva ed esci», «Esci senza salvare» o «Resta qui».'],
-      ['«Nuovo…»', 'Crea un overlay. In «Parti da» scegli «Come quello che sto modificando» oppure una delle nove vesti pronte. Il nome di serie è «Overlay» col suo numero. Nasce con dentro tutti gli elementi e con un link suo.'],
+      ['«Nuovo…»', 'Crea un overlay. In «Parti da» scegli «Come quello che sto modificando» oppure una delle dieci vesti pronte. Il nome di serie è «Overlay» col suo numero. Nasce con dentro tutti gli elementi e con un link suo.'],
       ['«Rinomina»', 'Cambia il nome nell\'elenco. Il link resta lo stesso.'],
       ['«Duplica»', 'Copia visibilità, posizioni, aspetto e CSS in un overlay nuovo, con un link suo. Il nome di serie finisce con «(copia)».'],
       ['«Elimina»', 'Toglie l\'overlay dopo una conferma. Il suo link smette di funzionare e in OBS resta una sorgente vuota. L\'ultimo overlay non si toglie: «Deve restare almeno un overlay.»'],
@@ -124,7 +124,7 @@ export default {
       '<strong>Si salvano da soli</strong>, appena molli il mouse o cambi un valore: posizioni, dimensioni, rotazioni, riquadri, blocchi, ordine dei livelli, visibilità, occasioni, «Quali chat in questo overlay», player, conto alla rovescia, conto alla pubblicità, hype train, classifica Bit, boss, arena delle emote, testo a schermo, nome del comando, muro delle emote, obiettivi, cartelli e contatori. I loro pulsanti «Salva» salvano subito, senza aspettare.',
       '<strong>Aspettano un pulsante</strong>: alert eventi («Salva alert»), chat a schermo («Salva chat»), ultimo follower e ultimo sub, CSS («Salva CSS»). «Salva overlay» li salva tutti insieme. Finché non salvi, in basso resta la barra delle modifiche non salvate, con «Annulla» per tornare a com\'era. Se cambi scheda, overlay o pagina il pannello chiede prima.',
       'Se un salvataggio non riesce leggi «Non riesco a salvare: controlla la connessione, riprovo al prossimo cambiamento.»',
-      'In cima a ogni gruppo «Aspetto» c\'è la riga <strong>«Veste»</strong> con nove vesti pronte: Viola classico, Neon, Minimal chiaro, Retro arcade, Manga, Vetro, Terminale, Nastro, Esagoni. Una veste cambia l\'elemento che stai guardando; sul muro delle emote accende o spegne l\'ombra. «a tutto l’overlay» stende la veste scelta su tutti gli elementi. Dopo cambi a mano quello che vuoi. Se premi «a tutto l’overlay» senza aver scelto una veste leggi «Scegli prima una veste qui sopra.»',
+      'In cima a ogni gruppo «Aspetto» c\'è la riga <strong>«Veste»</strong> con dieci vesti pronte: Viola classico, Neon, Minimal chiaro, Retro arcade, Manga, Vetro, Terminale, Nastro, Esagoni, Stile Twitch. Una veste cambia l\'elemento che stai guardando; sul muro delle emote accende o spegne l\'ombra. «a tutto l’overlay» stende la veste scelta su tutti gli elementi. Dopo cambi a mano quello che vuoi. Se premi «a tutto l’overlay» senza aver scelto una veste leggi «Scegli prima una veste qui sopra.»',
     ] },
 
     { h3: 'Metterlo nella diretta' },
@@ -338,6 +338,8 @@ export default {
       ['«Donazione»', '<code>{user} ha offerto {importo}! {messaggio}</code>', 'Moneta', 'verde scuro', '«Importo minimo»'],
     ] },
     { p: [
+      'Follow, sub, bit e raid hanno anche <strong>«Chi lo mostra»</strong>: «SocialBot», di serie, «Twitch» oppure «Tutti e due». Con «Twitch» il nostro alert non parte e il resto del riquadro si chiude: l\'evento lo mostrano gli alert di Twitch, che si impostano su Twitch (<a href="https://link.twitch.tv/SettingUpTwitchAlerts">come si fa</a>). Twitch non dà un modo per cambiarli o farli partire da fuori, per questo qui si sceglie solo chi li mostra. Ultimo follower, ultimo sub, obiettivi e subathon contano l\'evento in ogni caso.',
+      'Con «Tutti e due» partono il nostro e quello di Twitch: mettili in due punti diversi dello schermo, così non si coprono. Con «SocialBot», se su Twitch hai acceso anche i suoi alert, l\'evento compare due volte. La donazione non passa da Twitch e la mostra sempre SocialBot. Se vuoi i nostri alert con l\'aria di quelli di Twitch, c\'è la veste «Stile Twitch»: niente riquadro, l\'immagine grande sopra e il nome in viola, poi cambi quello che vuoi.',
       'Sotto la soglia l\'alert non parte: è il modo di non suonare per un bit solo. Le donazioni arrivano dai servizi collegati nella scheda «Donazioni» (<a href="/manuale/vetrina">manuale della vetrina</a>).',
       'Ogni evento ha «Testo», fino a 200 caratteri; lasciato vuoto vale quello di serie. Ha anche «Colore», «Volume» da 0 a 100 e «Font», che di serie segue lo stile comune e se lo cambi vale per quell\'evento soltanto.',
       '«Icona» sceglie fra venti icone (Stella, Cuore, Fulmine, Megafono, Corona, Fuoco, Diamante, Trofeo, Regalo, Razzo, Scudo, Cuffie, Controller, Nota, Fumetto, Campana, Scintille, Saluto, Occhio, Moneta) e le tue immagini, sotto «Le mie».',
@@ -426,7 +428,7 @@ export default {
     { h3: 'Quando non si vede niente' },
     { ul: [
       '<strong>La pagina è bianca o vuota in OBS.</strong> Controlla il link: senza la sua chiave l\'indirizzo risponde «non trovato». Se hai fatto un link nuovo, quello vecchio non funziona più.',
-      '<strong>Gli alert non partono.</strong> Deve essere acceso l\'interruttore del singolo evento, oltre a «Alert eventi». Per follow, sub, bit e raid servono i permessi di Twitch: si riautorizzano dalla scheda «Stato». Controlla anche la soglia.',
+      '<strong>Gli alert non partono.</strong> Deve essere acceso l\'interruttore del singolo evento, oltre a «Alert eventi». In «Chi lo mostra» non deve esserci «Twitch», che lascia l\'evento agli alert di Twitch. Per follow, sub, bit e raid servono i permessi di Twitch: si riautorizzano dalla scheda «Stato». Controlla anche la soglia.',
       '<strong>Parte l\'alert ma non il suono.</strong> In OBS la sorgente Browser deve avere «Controlla l\'audio via OBS». Controlla anche il volume dell\'evento.',
       '<strong>«Prova» non mostra niente.</strong> L\'overlay deve essere aperto in OBS o in una scheda, e l\'elemento deve essere acceso in quell\'overlay.',
       '<strong>Vedo tutto doppio.</strong> Due sorgenti Browser con lo stesso link nella stessa scena: tienine una.',
