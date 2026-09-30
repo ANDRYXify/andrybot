@@ -555,13 +555,24 @@ function evidenza(voci, aiuti = {}, l = 'it') {
   return `<div class="g-evidenza"><p class="g-evidenza-tit">${T[l].novitaProva}</p>${imp.map((v) => {
     const a = v.vai && aiuti[v.vai];
     return `<article class="g-ev"${inLinguaDi(v, l)}>${v.titolo ? `<h3 class="g-ev-tit">${esc(v.titolo)}</h3>` : ''}${v.perche ? `<p class="g-ev-perche">${testo(v.perche)}</p>` : ''}`
-      + `<p class="g-ev-riga">${testo(v.testo)}</p>${a ? `<p class="g-ev-dove"><a href="${esc(a.via)}">${esc(a.titolo)}</a></p>` : ''}</article>`;
+      + `<p class="g-ev-riga">${testo(v.testo)}</p>${a ? `<p class="g-ev-dove">${versoAiuto(a, l)}</p>` : ''}</article>`;
   }).join('')}</div>`;
 }
 
 // Una voce che non e' nella lingua della pagina lo dice (novita.js, `lingua`):
 // chi legge ad alta voce la pronuncia giusta, e chi la vede capisce perche'.
 const inLinguaDi = (v, l) => (v && typeof v === 'object' && v.lingua && v.lingua !== l ? ` lang="${esc(v.lingua)}"` : '');
+
+// La pagina che spiega una scheda, nella lingua della pagina se c'e'. Dove la
+// traduzione non c'e' ancora, aiutiPerScheda() da' quella italiana (manuali.js):
+// il collegamento lo dice, col titolo marcato italiano e la destinazione pure.
+const linguaDellaVia = (via) => LINGUE_DOC.find((y) => y !== 'it'
+  && [VIE[y].guide, VIE[y].manuali].some((b) => String(via).startsWith(`${b}/`))) || 'it';
+function versoAiuto(a, l) {
+  const sua = linguaDellaVia(a.via);
+  const segno = sua !== l ? ` lang="${sua}" hreflang="${sua}"` : '';
+  return `<a href="${esc(a.via)}"${segno}>${esc(a.titolo)}</a>`;
+}
 
 // Le tre pagine delle novita', una per lingua, ognuna al suo indirizzo (VIE).
 export const alternativeNovita = () => Object.fromEntries(LINGUE_DOC.map((l) => [l, `${SITO}${VIE[l].novita}`]));
@@ -589,7 +600,7 @@ export function paginaNovita(gruppi, aiuti = {}, l = 'it') {
 ${gruppi.map((g) => `<section class="g-novita"><h2>${esc(dataIn(g.data, x))}</h2>${evidenza(g.voci, aiuti, x)}${
     sezioni(g.voci.filter((v) => !(v && v.importante))).map((s) => {
       const a = s.vai && aiuti[s.vai];
-      const tit = a ? `<h3 class="g-dove-tit"><a href="${esc(a.via)}">${esc(a.titolo)}</a></h3>` : '';
+      const tit = a ? `<h3 class="g-dove-tit">${versoAiuto(a, x)}</h3>` : '';
       return `${tit}<ul>${s.voci.map((v) => `<li${inLinguaDi(v, x)}>${testo(typeof v === 'string' ? v : v.testo)}</li>`).join('')}</ul>`;
     }).join('')}</section>`).join('')}
 </main>${piede(x)}`;

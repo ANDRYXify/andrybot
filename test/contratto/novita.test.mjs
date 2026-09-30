@@ -404,8 +404,9 @@ test('la pagina pubblica manda alla pagina che spiega quella sezione', () => {
   assert.ok(f.length > 0 && g.indexOf('function dataIn(') > 0, 'la pagina sta dove la si cerca');
   assert.match(f, /sezioni\(g\.voci\.filter\(\(v\) => !\(v && v\.importante\)\)\)/, 'anche qui a sezioni, le importanti a parte');
   assert.match(f, /\$\{evidenza\(g\.voci, aiuti, x\)\}/, 'e le importanti in cima alla giornata');
-  assert.match(f, /g-dove-tit/, 'col titolo');
-  assert.match(f, /href="\$\{esc\(a\.via\)\}"/, 'che e\' un collegamento vero');
+  assert.match(f, /<h3 class="g-dove-tit">\$\{versoAiuto\(a, x\)\}<\/h3>/, 'col titolo');
+  const verso = g.slice(g.indexOf('function versoAiuto('), g.indexOf('\n}', g.indexOf('function versoAiuto(')));
+  assert.match(verso, /<a href="\$\{esc\(a\.via\)\}"/, 'che e\' un collegamento vero');
   assert.doesNotMatch(f, /data-nov-vai/, 'fuori dal pannello non si apre una scheda: si apre una pagina');
 });
 
@@ -579,6 +580,10 @@ test('una pagina delle novità per lingua: la sua lingua, il suo indirizzo, e le
   assert.match(en, /<li>A fix\.<\/li>/, 'la riga in inglese');
   assert.match(en, /<li lang="it">Una riga ancora da tradurre\.<\/li>/, 'e una riga rimasta in italiano lo dice');
   assert.doesNotMatch(paginaNovita(pubbliche(g, 'it'), aiuti, 'it'), /<(li|article class="g-ev") lang=/, 'in italiano nessuna riga porta il segno');
+  const conAiuti = (l) => paginaNovita(pubbliche(g, l), { alert: { titolo: 'Manuale dell\'overlay', via: '/manuale/overlay' }, stato: { titolo: 'Status manual', via: '/en/manual/status' } }, l);
+  assert.match(conAiuti('en'), /<a href="\/manuale\/overlay" lang="it" hreflang="it">Manuale dell'overlay<\/a>/, 'un collegamento a una pagina ancora solo italiana lo dice');
+  assert.match(conAiuti('en'), /<a href="\/en\/manual\/status">Status manual<\/a>/, 'uno nella lingua della pagina no');
+  assert.match(conAiuti('it'), /<a href="\/manuale\/overlay">Manuale dell'overlay<\/a>/, 'e in italiano niente segno');
   const es = paginaNovita(pubbliche(g, 'es'), aiuti, 'es');
   assert.match(es, /<li>Una corrección\.<\/li>/);
   assert.doesNotMatch(es, /Una correzione\./, 'niente italiano dove c\'e\' la traduzione');
