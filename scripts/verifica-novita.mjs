@@ -315,10 +315,19 @@ const orfane = dove.filter((d) => !SCHEDE[d]);
 dice(orfane.length === 0, `righe che dicono dove andare: ${dove.length}`,
   orfane.length ? `non esistono: ${orfane.join(', ')}` : '');
 
+// Un ramo di lavoro spesso non ha un ramo a monte: prima, li', il controllo non
+// guardava nessun commit e passava a vuoto, e i commit muti si scoprivano solo
+// dopo l'unione, spingendo il ramo principale. Senza ramo a monte si confronta
+// con origin/main, cioe' con quello che e' gia' fuori: sono i commit che un
+// giorno verranno spinti.
+const monteDi = () => {
+  try { return git('rev-parse', '--abbrev-ref', '--symbolic-full-name', '@{u}'); } catch { /* nessun ramo a monte */ }
+  try { git('rev-parse', '--verify', '--quiet', 'origin/main'); return 'origin/main'; } catch { return ''; }
+};
 try {
-  const monte = git('rev-parse', '--abbrev-ref', '--symbolic-full-name', '@{u}');
-  daSpingere = git('rev-list', `${monte}..HEAD`).split('\n').filter(Boolean);
-} catch { /* nessun ramo a monte: si controlla solo il file */ }
+  const monte = monteDi();
+  if (monte) daSpingere = git('rev-list', `${monte}..HEAD`).split('\n').filter(Boolean);
+} catch { /* niente da confrontare: si controlla solo il file */ }
 
 // «Novita': nessuna» vale quanto «Novità: nessuna»: nei messaggi di commit gli
 // accenti si scrivono con l'apostrofo, e una regola che non lo sa boccia chi
