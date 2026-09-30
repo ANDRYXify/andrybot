@@ -6,6 +6,8 @@
 // connessione chat autenticata CON L'ACCOUNT DELLO STREAMER (il bot
 // parla come lui), un gestore messaggi e le sottoscrizioni agli
 // eventi Twitch. Tiene tutto sincronizzato con la dashboard.
+import { writeFileSync, renameSync } from 'node:fs';
+import { join } from 'node:path';
 import { makeLog } from './logger.js';
 import { config } from './config.js';
 import * as filigrana from './watermark.js';
@@ -186,6 +188,7 @@ export class BotManager {
 
   async start() {
     if (this.running) return;
+    this._scriviInOnda();
 
     this.clips = new ClipEngine({ helix: this.helix, say: (ch, t) => this.say(ch, t) });
     // Il muro delle emote: la chat, gli eventi e i premi che fanno volare emote.
@@ -1325,6 +1328,22 @@ export class BotManager {
       .catch(() => { /* alla prossima */ });
   }
 
+  // CHI E' IN ONDA, SCRITTO FUORI DAL PROCESSO (data/.in-onda). Lo legge
+  // server/aggiorna.sh prima di riavviare: un riavvio in piena diretta ferma per
+  // qualche secondo chat, avvisi e overlay a chi sta trasmettendo, e quello che
+  // succede in quei secondi si perde. Si riscrive a ogni cambio e all'avvio, cosi'
+  // il file dice sempre quello che sa il processo che gira, non uno morto prima.
+  // Si scrive accanto e poi si rinomina: chi legge non trova mai meta' file.
+  _scriviInOnda() {
+    try {
+      const canali = new Set([...this._liveState].filter(([, v]) => v === true).map(([c]) => c));
+      for (const p of ['kick']) for (const r of statoVivo.tutti('diretta:' + p)) if (r.dato?.live === true) canali.add(r.channel);
+      const file = join(config.dataDir, '.in-onda');
+      writeFileSync(file + '.tmp', JSON.stringify({ canali: [...canali].sort(), ts: Date.now() }));
+      renameSync(file + '.tmp', file);
+    } catch (e) { log.debug('in onda: ' + (e?.message || e)); }
+  }
+
   // Fonte UNICA di verità per lo stato live/offline (arriva sia da EventSub,
   // istantaneo, sia dal watcher, che copre anche chi non è connesso in chat —
   // es. modalità "quando live" con bot ancora offline). Idempotente: reagisce
@@ -1335,6 +1354,7 @@ export class BotManager {
     const prev = this._liveState.get(ch);
     if (prev === isLive) return;                 // nessun cambiamento: stop
     this._liveState.set(ch, isLive);
+    this._scriviInOnda();
     // riconcilia le unità: la modalità "quando live" entra/esce col live
     this.syncChannels().catch(() => {});
     // LA DIRETTA E' UN FATTO, L'ANNUNCIO E' UNA TRANSIZIONE: due cose diverse, e
@@ -1533,6 +1553,7 @@ export class BotManager {
     try {
       if (ev.tipo === 'live') statoVivo.scrivi(ev.channel, 'diretta:' + ev.piattaforma, { live: true });
       if (ev.tipo === 'fine-live') statoVivo.togli(ev.channel, 'diretta:' + ev.piattaforma);
+      if (ev.tipo === 'live' || ev.tipo === 'fine-live') this._scriviInOnda();
       if (ev.tipo === 'live') {
         const d = avvisi.diretta({ piattaforma: ev.piattaforma, login: ev.channel, titolo: ev.titolo, id: ev.id || ev.titolo || String(Date.now()) });
         if (d) await this.annunciaDiretta(d);
