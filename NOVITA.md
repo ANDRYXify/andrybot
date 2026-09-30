@@ -522,77 +522,215 @@ nome resta in casa. Non è una cosa da ricordarsi:
 ## 2026-09-18
 
 - Un contatore nuovo lo fai dal banco di regia, senza cambiare scheda: premi «Aggiungi», gli dai un comando e compare sulla tela già acceso. [vai: alert]
+  en: You make a new counter right from the studio, without switching tabs: press “Add”, give it a command, and it appears on the canvas already on.
+  es: Un contador nuevo lo creas desde la mesa del Studio, sin cambiar de pestaña: pulsas «Añadir», le das un comando y aparece en el lienzo ya encendido.
 - Vuoi provarlo senza toccare l'overlay che hai già in OBS? Il banco te ne fa una copia, stesso layout e link suo, col contatore acceso solo lì. [vai: alert]
+  en: Want to try it without touching the overlay you already have in OBS? The studio makes you a copy, same layout with its own link, with the counter on only there.
+  es: ¿Quieres probarlo sin tocar el overlay que ya tienes en OBS? La mesa te hace una copia, mismo diseño y enlace propio, con el contador encendido solo ahí.
 - L'annulla dello Studio non riporta più indietro anche l'elemento spostato un attimo prima: ogni cosa ha il suo passo. [vai: alert]
+  en: Undo in the Studio no longer also reverts the element you moved a moment earlier: each thing has its own step.
+  es: Deshacer en el Studio ya no revierte también el elemento que moviste un momento antes: cada cosa tiene su paso.
 - Su un widget piccolo la maniglia per ingrandire finiva sotto quella del perimetro: ci cliccavi e invece di ingrandirlo gli davi una cornice. Adesso lì non c'è, e la dimensione la cambi dal pannello. [vai: alert]
+  en: On a small widget the resize handle ended up under the outline handle: you clicked it and gave it a frame instead of resizing it. Now it’s not there, and you change the size from the panel.
+  es: En un widget pequeño el asa para agrandar quedaba debajo de la del perímetro: hacías clic y en vez de agrandarlo le ponías un marco. Ahora ahí no está, y el tamaño lo cambias desde el panel.
 - Il lucchetto tiene davvero: prima le maniglie restavano lì, e con quelle un elemento bloccato si poteva ancora ingrandire o girare. [vai: alert]
+  en: The lock really holds: before, the handles stayed there, and with them a locked element could still be resized or rotated.
+  es: El candado aguanta de verdad: antes las asas seguían ahí, y con ellas un elemento bloqueado todavía se podía agrandar o girar.
 - Se il bot riparte mentre sei in onda la serata non si perde più: prima i numeri dicevano zero minuti, e quella diretta finiva senza lasciare il suo rapporto. [vai: statistiche]
+  en: If the bot restarts while you’re live, the night is no longer lost: before, the numbers said zero minutes, and that stream ended without leaving its report.
+  es: Si el bot se reinicia mientras estás al aire, la noche ya no se pierde: antes los números decían cero minutos, y ese directo terminaba sin dejar su informe.
 - Quando parla di sua iniziativa non si intromette più fra due che stanno parlando: prende l'ultima cosa detta a tutti, e se non ce n'è una sta zitto. [vai: personalita]
+  en: When it speaks on its own, it no longer butts in between two people talking: it picks up the last thing said to everyone, and if there isn’t one it stays quiet.
+  es: Cuando habla por iniciativa propia ya no se mete entre dos que están hablando: toma lo último que se dijo a todos, y si no hay nada se calla.
 - Nel rapporto di fine diretta le clip hanno il loro titolo vero, con quanto durano: prima c'era scritto solo perché il bot le aveva fatte, tipo «modulo». [vai: dirette]
+  en: In the end-of-stream report, clips have their real title and length: before, it only said why the bot had made them, like “modulo”.
+  es: En el informe de fin de directo los clips tienen su título real y cuánto duran: antes solo decía por qué los había hecho el bot, como «modulo».
 - Parla di meno ma meglio: si aggiunge a un discorso vero fra due persone, non a una riga qualsiasi, e quando parte ha il taglio di uno della chat invece che di chi presenta la serata. [vai: personalita]
+  en: It talks less but better: it joins a real conversation between two people, not just any line, and when it does, it sounds like someone in chat rather than the host of the night.
+  es: Habla menos pero mejor: se suma a una conversación real entre dos personas, no a cualquier línea, y cuando lo hace suena como uno del chat y no como quien presenta la noche.
 - Tutto quello che fa salire un contatore da solo sta in un posto suo: nei Comandi trovi CONTATORify, accanto ai contatori che muove. [vai: moduli]
+  en: Everything that makes a counter go up by itself has its own place: in Commands you’ll find CONTATORify, next to the counters it moves.
+  es: Todo lo que hace subir solo un contador tiene su propio lugar: en Comandos encuentras CONTATORify, junto a los contadores que mueve.
 - Le schermate di morte adesso stanno in comune: cerchi il gioco, la prendi e non insegni niente. Se una non ti prende bene la sistemi, e la sistemi per tutti. [vai: moduli]
+  en: Death screens are now shared: you search for the game, grab its screen and teach nothing. If one doesn’t catch well, you fix it, and you fix it for everyone.
+  es: Las pantallas de muerte ahora son compartidas: buscas el juego, la tomas y no enseñas nada. Si una no te detecta bien la arreglas, y la arreglas para todos.
 - Counter-Strike e Dota dicono loro quante volte sei morto: metti un file nella cartella del gioco e il contatore sale da se', senza riconoscere niente. [vai: moduli]
+  en: Counter-Strike and Dota report themselves how many times you died: put a file in the game folder and the counter goes up on its own, with nothing to recognize.
+  es: Counter-Strike y Dota dicen ellos cuántas veces moriste: pones un archivo en la carpeta del juego y el contador sube solo, sin reconocer nada.
 - Muori e il numero sale da solo: fai vedere al bot la schermata di morte del gioco una volta, e poi ci pensa lui mentre giochi. L'immagine dello schermo non esce dal tuo computer. [vai: moduli]
+  en: Die and the number goes up by itself: show the bot the game’s death screen once, and it takes care of it while you play. Your screen image never leaves your computer.
+  es: Mueres y el número sube solo: le muestras al bot la pantalla de muerte del juego una vez, y luego se encarga él mientras juegas. La imagen de tu pantalla no sale de tu computadora.
 - Mentre sei in onda le Statistiche si aggiornano da sole: la diretta di adesso conta già fra le dirette, coi suoi minuti e il suo picco, invece di comparire solo a fine serata. [vai: statistiche]
+  en: While you’re live, Stats update by themselves: the current stream already counts among your streams, with its minutes and its peak, instead of showing up only at the end of the night.
+  es: Mientras estás al aire, las Estadísticas se actualizan solas: el directo actual ya cuenta entre los directos, con sus minutos y su pico, en lugar de aparecer solo al final de la noche.
 - Chi manda bit non viene più preso per spam: cinque «5 bit» di fila sono cinque messaggi uguali per forza, e adesso il filtro lo sa. [vai: regole]
+  en: People sending bits are no longer taken for spam: five “5 bit” in a row are bound to be five identical messages, and now the filter knows it.
+  es: Quien manda bits ya no se toma por spam: cinco «5 bit» seguidos son por fuerza cinco mensajes iguales, y ahora el filtro lo sabe.
 - Le cose che il bot dice da solo non si accumulano più mentre la chat è ferma o la diretta è spenta: prima tornavano tutte insieme appena si riaccendeva. [vai: personalita]
+  en: Things the bot says on its own no longer pile up while chat is quiet or the stream is off: before, they all came back at once as soon as it came back on.
+  es: Lo que el bot dice por su cuenta ya no se acumula mientras el chat está quieto o el directo apagado: antes volvía todo junto en cuanto se reactivaba.
 - Il bot non spara più una riga appena si riavvia: se non si ricorda quando ha parlato l'ultima volta, conta da adesso. Se il processo ripartiva spesso, sembrava impazzito. [vai: personalita]
+  en: The bot no longer fires off a line as soon as it restarts: if it doesn’t remember when it last spoke, it counts from now. If the process restarted often, it seemed to go crazy.
+  es: El bot ya no suelta una línea en cuanto se reinicia: si no recuerda cuándo habló por última vez, cuenta desde ahora. Si el proceso se reiniciaba a menudo, parecía enloquecido.
 - Il bot fa il portiere del gruppo Telegram: chi entra non può scrivere finché non preme un tasto, e chi non risponde in tempo esce (e può rientrare). Lo accendi tu, ed è spento finché non lo fai. [vai: telegram]
+  en: The bot works as the Telegram group’s doorkeeper: newcomers can’t write until they press a button, and anyone who doesn’t answer in time is removed (and can rejoin). You turn it on; it’s off until you do.
+  es: El bot hace de portero del grupo de Telegram: quien entra no puede escribir hasta que pulsa un botón, y quien no responde a tiempo sale (y puede volver). Lo activas tú, y está apagado hasta que lo hagas.
 - Per le sere diverse dalle altre ci sono le occasioni: un'aggiunta sopra l'overlay che hai già. La accendi e compare, la spegni e torna tutto com'era, e in OBS non tocchi niente. [vai: alert]
+  en: For nights that aren’t like the others there are occasions: an add-on on top of the overlay you already have. Turn it on and it appears, turn it off and everything goes back to how it was, with nothing to touch in OBS.
+  es: Para las noches distintas de las demás están las ocasiones: un añadido encima del overlay que ya tienes. Lo activas y aparece, lo apagas y todo vuelve a como estaba, y en OBS no tocas nada.
 - Le occasioni partono da un modello che guardi prima di sceglierlo: subathon, torno subito, serata speciale, o una vuota da farsi da sé. [vai: alert]
+  en: Occasions start from a template you can look at before choosing it: subathon, be right back, special night, or a blank one to make yourself.
+  es: Las ocasiones parten de una plantilla que miras antes de elegirla: subathon, vuelvo enseguida, noche especial, o una vacía para armarla tú.
 - Nella colonna dei livelli la posizione scritta adesso è quella vera anche appena apri lo Studio. [vai: alert]
+  en: In the layers column, the position shown is now the real one even right after you open the Studio.
+  es: En la columna de capas la posición escrita ahora es la real incluso nada más abrir el Studio.
 - I livelli mostrano quello che c'è in questo overlay, non più la lista intera con dentro anche lo spento. Il resto sta sotto «Aggiungi», dove trovi anche cartelli e immagini. [vai: alert]
+  en: Layers show what’s in this overlay, no longer the whole list including what’s turned off. The rest is under “Add”, where you’ll also find signs and images.
+  es: Las capas muestran lo que hay en este overlay, ya no la lista entera con lo apagado incluido. El resto está en «Añadir», donde también encuentras carteles e imágenes.
 - Lo Studio si muove più svelto: trascinare un elemento costa quasi la metà di prima. [vai: alert]
+  en: The Studio moves faster: dragging an element costs almost half what it did.
+  es: El Studio va más ágil: arrastrar un elemento cuesta casi la mitad que antes.
 
 ## 2026-09-17
 
 - Le presenze si contano diretta dopo diretta: chi resta in chat almeno dieci minuti è presente, e le dirette di fila fanno una serie con un bonus in monete che cresce. Con !serie ognuno vede la sua. [vai: giochi]
+  en: Attendance is counted stream after stream: anyone who stays in chat for at least ten minutes is present, and consecutive streams build a streak with a growing coin bonus. With !serie everyone sees their own.
+  es: Las asistencias se cuentan directo tras directo: quien se queda en el chat al menos diez minutos está presente, y los directos seguidos forman una racha con un bono en monedas que crece. Con !serie cada uno ve la suya.
 - Il bot saluta chi scrive per la prima volta e chi torna dopo settimane, con le parole che scegli tu nella scheda Giochi. Se hai già un Modulo sul primo messaggio, vince il tuo. [vai: giochi]
+  en: The bot greets people writing for the first time and those coming back after weeks, with the words you choose in the Games tab. If you already have a Module on first messages, yours wins.
+  es: El bot saluda a quien escribe por primera vez y a quien vuelve tras semanas, con las palabras que eliges en la pestaña Juegos. Si ya tienes un Módulo para el primer mensaje, gana el tuyo.
 - Nella scheda Memoria trovi chi c'è sempre: le serie di presenze più lunghe del canale. [vai: memoria]
+  en: In the Memory tab you’ll find who’s always there: the channel’s longest attendance streaks.
+  es: En la pestaña Memoria encuentras a quien siempre está: las rachas de asistencia más largas del canal.
 - Ogni diretta finita lascia il suo rapporto nella scheda «Dirette», con durata, picco di spettatori, chat, follower, sub, raid, presenti, clip e donazioni. Un puntino ti dice quando ce n'è uno nuovo. [vai: dirette]
+  en: Every finished stream leaves its report in the “Streams” tab, with length, viewer peak, chat, followers, subs, raids, attendance, clips and donations. A dot tells you when there’s a new one.
+  es: Cada directo terminado deja su informe en la pestaña «Directos», con duración, pico de espectadores, chat, seguidores, subs, raids, presentes, clips y donaciones. Un puntito te avisa cuando hay uno nuevo.
 - Il rapporto può arrivarti appena chiudi, su Telegram in privato o via mail: l'indirizzo lo scrivi tu e vale dopo la conferma. [vai: dirette]
+  en: The report can reach you as soon as you sign off, privately on Telegram or by email: you type the address yourself, and it works after you confirm it.
+  es: El informe te puede llegar en cuanto cierras, por Telegram en privado o por correo: la dirección la escribes tú y vale después de confirmarla.
 - I Moduli comandano la regia: un comando, la voce o un raid cambiano scena, mutano una fonte o la transizione nel programma con cui mandi in onda. Tre modelli pronti: torno subito, sono tornato, raid. [vai: moduli]
+  en: Modules control your streaming program: a command, your voice or a raid can switch scene, mute a source or change the transition. Three ready-made templates: be right back, I’m back, raid.
+  es: Los Módulos manejan el programa de emisión: un comando, la voz o un raid cambian de escena, silencian una fuente o cambian la transición. Tres plantillas listas: vuelvo enseguida, ya volví, raid.
 - Il marchio adesso esiste anche in vettoriale, pronto per il giorno che i programmi di posta mostreranno il nostro logo accanto al mittente. [vai: dirette]
+  en: The brand now exists as a vector file too, ready for the day email programs show our logo next to the sender.
+  es: La marca ahora existe también en vectorial, lista para el día en que los programas de correo muestren nuestro logo junto al remitente.
 - La pagina d’ingresso adesso pesa un settimo: chi arriva per leggere non si scarica più tutto il pannello, e il listino è già lì senza aspettare.
+  en: The landing page now weighs a seventh as much: people who come to read no longer download the whole panel, and the price list is already there without waiting.
+  es: La página de entrada ahora pesa una séptima parte: quien llega a leer ya no se descarga todo el panel, y la lista de precios ya está ahí sin esperar.
 - L’hype train adesso sta nella scena: livello, barra, quanto manca e chi spinge di più. Il bot lo dice in chat quando parte, quando sale e quando finisce. [vai: alert]
+  en: The hype train now lives in the scene: level, bar, how much is left and who’s pushing hardest. The bot announces in chat when it starts, when it levels up and when it ends.
+  es: El hype train ahora está en la escena: nivel, barra, cuánto falta y quién empuja más. El bot lo dice en el chat cuando empieza, cuando sube y cuando termina.
 - Puoi mettere in scena scritte e immagini tue: il titolo della serata, le regole, il logo, un «torno subito». Le trascini dove vuoi, fino a otto. [vai: alert]
+  en: You can put your own text and images in the scene: the night’s title, the rules, your logo, a “be right back”. Drag them wherever you like, up to eight.
+  es: Puedes poner en escena textos e imágenes tuyos: el título de la noche, las reglas, el logo, un «vuelvo enseguida». Los arrastras adonde quieras, hasta ocho.
 - Un elemento con lo sfondo a zero diventava una lastra colorata invece di sparire. Adesso «senza sfondo» vuol dire davvero senza niente dietro. [vai: alert]
+  en: An element with its background at zero turned into a colored slab instead of disappearing. Now “No background” really means nothing behind it.
+  es: Un elemento con el fondo en cero se volvía una placa de color en lugar de desaparecer. Ahora «Sin fondo» quiere decir de verdad nada detrás.
 - Il rapporto di fine diretta dice anche a che livello è arrivato l’hype train e chi l’ha spinto. [vai: dirette]
+  en: The end-of-stream report also says what level the hype train reached and who pushed it.
+  es: El informe de fin de directo dice también a qué nivel llegó el hype train y quién lo empujó.
 - Gli eventi più lunghi venivano registrati a metà e il rapporto non riusciva più a rileggerli. Adesso ci stanno interi. [vai: dirette]
+  en: Longer events were saved only halfway, and the report could no longer read them back. Now they fit whole.
+  es: Los eventos más largos se guardaban a medias y el informe ya no lograba volver a leerlos. Ahora caben enteros.
 - La pagina d’ingresso è scesa ancora: adesso si porta dietro solo le animazioni che usa davvero, non quelle di tutto il pannello.
+  en: The landing page got lighter still: it now only carries the animations it actually uses, not those of the whole panel.
+  es: La página de entrada bajó todavía más: ahora solo lleva las animaciones que usa de verdad, no las de todo el panel.
 - Un’automazione può chiedere quanti Bit sono arrivati: sotto la soglia non parte, e con una fascia per scaglione scrivi una scala. Vale anche per gli spettatori di un raid e i mesi di un sub. [vai: moduli]
+  en: An automation can ask how many Bits came in: below the threshold it doesn’t run, and with one band per tier you write a ladder. The same works for raid viewers and sub months.
+  es: Una automatización puede preguntar cuántos Bits llegaron: por debajo del umbral no arranca, y con una franja por nivel escribes una escala. Vale también para los espectadores de un raid y los meses de un sub.
 - Quando il treno è nell’ultimo quarto della salita il bot dice quanti punti mancano al livello dopo. Una volta per livello, e la frase la scrivi tu. [vai: alert]
+  en: When the train is in the last quarter of its climb, the bot says how many points are left to the next level. Once per level, and you write the line.
+  es: Cuando el tren está en el último cuarto de la subida, el bot dice cuántos puntos faltan para el siguiente nivel. Una vez por nivel, y la frase la escribes tú.
 - «!bit» dice chi ha messo più Bit oggi, questa settimana, questo mese o da sempre. E a chi non è sul podio dice a che posto è. [vai: moduli]
+  en: “!bit” says who gave the most Bits today, this week, this month or all time. To anyone not on the podium it says what place they’re in.
+  es: «!bit» dice quién puso más Bits hoy, esta semana, este mes o desde siempre. A quien no está en el podio le dice en qué puesto está.
 - Telegram adesso ha una scheda sua, nel gruppo nuovo «Le tue community»: era una voce dentro le notifiche, con dentro più roba di tutte le altre messe insieme. [vai: telegram]
+  en: Telegram now has its own tab, in the new “Your communities” group: it was an entry inside notifications, holding more than all the others put together.
+  es: Telegram ahora tiene su propia pestaña, en el grupo nuevo «Tus comunidades»: era una entrada dentro de las notificaciones, con más cosas que todas las demás juntas.
 - Mostrare un contatore a schermo lo azzerava. Adesso no: il numero resta quello, e mostrare e azzerare sono due comandi diversi. [vai: moduli]
+  en: Showing a counter on screen reset it to zero. Not anymore: the number stays put, and showing and resetting are two separate commands.
+  es: Mostrar un contador en pantalla lo ponía a cero. Ya no: el número se queda como está, y mostrar y poner a cero son dos comandos distintos.
 - Dei contatori scegli tu le parole: quale comando aggiunge, quale toglie, quale azzera, e chi può usarlo. Verbo per verbo. [vai: moduli]
+  en: You choose the words for counters: which command adds, which subtracts, which resets, and who can use it. Verb by verb.
+  es: Las palabras de los contadores las eliges tú: qué comando suma, cuál resta, cuál pone a cero y quién puede usarlo. Verbo por verbo.
 - Il numero adesso vale attaccato o staccato: «!morti +3» e «!morti + 3» sono la stessa cosa. Prima il secondo aggiungeva uno. [vai: moduli]
+  en: The number now counts with or without a space: “!morti +3” and “!morti + 3” are the same thing. Before, the second one added one.
+  es: El número ahora vale pegado o separado: «!morti +3» y «!morti + 3» son lo mismo. Antes el segundo sumaba uno.
 - Quando un comando è riservato, il bot lo dice invece di stare zitto. E lo dice bene: «ai moderatori e allo streamer», non «a i VIP». [vai: moduli]
+  en: When a command is restricted, the bot says so instead of staying silent. It says it properly too: “ai moderatori e allo streamer”, not “a i VIP”.
+  es: Cuando un comando está reservado, el bot lo dice en lugar de callarse. Lo dice bien, además: «ai moderatori e allo streamer», no «a i VIP».
 - Nell’overlay c’erano due elenchi dei livelli, uno accanto alla tela e uno molto più in basso. Adesso ce n’è uno solo, quello che vedi. [vai: alert]
+  en: The overlay had two layer lists, one next to the canvas and one much further down. Now there’s just one, the one you see.
+  es: En el overlay había dos listas de capas, una junto al lienzo y otra mucho más abajo. Ahora hay una sola, la que ves.
 - Scegli un livello e a destra compare tutto quello che lo riguarda, con la tela sempre davanti: prima dovevi scorrere via per cambiarlo. [vai: alert]
+  en: Pick a layer and everything about it appears on the right, with the canvas always in front of you: before, you had to scroll away to change it.
+  es: Eliges una capa y a la derecha aparece todo lo que le concierne, con el lienzo siempre delante: antes había que desplazarse para cambiarla.
 - I livelli che si cambiano in un’altra scheda adesso te lo dicono, e ci si va da lì. [vai: alert]
+  en: Layers that are changed in another tab now tell you so, and you can go there from them.
+  es: Las capas que se cambian en otra pestaña ahora te lo dicen, y desde ahí se va.
 - Nascondere un cartello in un overlay non restava nascosto dopo il salvataggio. Adesso sì. [vai: alert]
+  en: Hiding a sign in an overlay didn’t stay hidden after saving. Now it does.
+  es: Ocultar un cartel en un overlay no se mantenía después de guardar. Ahora sí.
 - In fondo a ogni mail che ti mandiamo c'è un codice di verifica. Lo ritrovi solo nella scheda Stato: se non combacia, quella mail non è nostra. [vai: stato]
+  en: At the bottom of every email we send you there’s a verification code. You’ll find it only in the Status tab: if it doesn’t match, that email isn’t from us.
+  es: Al final de cada correo que te enviamos hay un código de verificación. Lo encuentras solo en la pestaña Estado: si no coincide, ese correo no es nuestro.
 - Nell'elenco della posta adesso si legge il nome di chi scrive, non il pezzo prima della chiocciola. [vai: dirette]
+  en: In your inbox you now see the sender’s name, not the part before the @.
+  es: En la bandeja de entrada ahora se lee el nombre de quien escribe, no la parte antes de la arroba.
 - C'è una scheda «Statistiche»: i numeri del canale per sette giorni, trenta o da sempre, e cinque classifiche. Prima erano sparsi fra Memoria, Giochi e Dirette. [vai: statistiche]
+  en: There’s a “Stats” tab: the channel’s numbers for seven days, thirty or all time, and five leaderboards. Before, they were scattered across Memory, Games and Streams.
+  es: Hay una pestaña «Estadísticas»: los números del canal de siete días, treinta o desde siempre, y cinco clasificaciones. Antes estaban repartidos entre Memoria, Juegos y Directos.
 - La mail del rapporto adesso apre dicendo com'è andata, non con una tabella. In fondo trovi le clip della serata, una per una, da riaprire. [vai: dirette]
+  en: The report email now opens by saying how it went, not with a table. At the bottom you’ll find the night’s clips, one by one, ready to reopen.
+  es: El correo del informe ahora empieza diciendo cómo fue, no con una tabla. Al final encuentras los clips de la noche, uno por uno, para volver a abrirlos.
 - Se non hai ancora messo un indirizzo, la prima volta che entri te lo chiedo una volta sola. Dici no e non te lo chiedo più. [vai: dirette]
+  en: If you haven’t added an address yet, I’ll ask you for one the first time you come in, just once. Say no and I won’t ask again.
+  es: Si todavía no pusiste una dirección, te la pido la primera vez que entras, una sola vez. Dices que no y no te la vuelvo a pedir.
 - Basta tenere il pannello aperto sul computer della diretta: si ricollega da solo alla regia appena lo apri, e riprova quando il programma si chiude. [vai: consolify]
+  en: Just keep the panel open on your streaming computer: it reconnects to the program by itself as soon as you open it, and tries again when the program closes.
+  es: Basta con tener el panel abierto en la computadora del directo: se reconecta solo al programa en cuanto lo abres, y vuelve a intentarlo cuando el programa se cierra.
 - Chi trasmette su due piattaforme sceglie quali chat vanno a schermo in ogni overlay. Per tenerle divise ne fai un secondo con l'altra accesa: ha un link suo. [vai: alert]
+  en: If you stream on two platforms, you choose which chats go on screen in each overlay. To keep them apart, make a second one with the other chat on: it has its own link.
+  es: Quien emite en dos plataformas elige qué chats salen en pantalla en cada overlay. Para tenerlos separados, haces un segundo overlay con el otro activado: tiene su propio enlace.
 - Quando due chat stanno nello stesso riquadro, ogni riga può portare un segno che dice da dove arriva. Lo accendi in «Segna da dove arriva». [vai: alert]
+  en: When two chats share the same box, each line can carry a mark saying where it comes from. Turn it on in “Mark where it comes from”.
+  es: Cuando dos chats están en el mismo recuadro, cada línea puede llevar una marca que dice de dónde llega. Se activa en «Marca de dónde llega».
 - Togliere una chat dallo schermo non la spegne: il bot continua a leggerla e a rispondere. [vai: alert]
+  en: Removing a chat from the screen doesn’t turn it off: the bot keeps reading it and replying.
+  es: Quitar un chat de la pantalla no lo apaga: el bot sigue leyéndolo y respondiendo.
 - Sulla pagina iniziale di SocialBot c'è una fascia con chi è in diretta adesso. Ci compari se lo accendi tu, dalla scheda Stato. [vai: stato]
+  en: SocialBot’s home page has a strip showing who’s live right now. You appear there if you turn it on yourself, from the Status tab.
+  es: En la portada de SocialBot hay una franja con quién está en directo ahora. Apareces si lo activas tú, desde la pestaña Estado.
 - Della tua diretta si vedono nome, titolo, categoria e quanta gente ti guarda: niente dei tuoi spettatori. Spegni e sparisci. [vai: stato]
+  en: From your stream, people see your name, title, category and how many are watching: nothing about your viewers. Turn it off and you disappear.
+  es: De tu directo se ven el nombre, el título, la categoría y cuánta gente te mira: nada de tus espectadores. Lo apagas y desapareces.
 - Alla prossima apertura del pannello te lo chiedo io, una volta sola. Rispondi no e non te lo chiedo più. [vai: stato]
+  en: The next time you open the panel I’ll ask you, just once. Answer no and I won’t ask again.
+  es: La próxima vez que abras el panel te lo pregunto yo, una sola vez. Respondes que no y no te lo vuelvo a preguntar.
 - Arriva il subathon: il conto alla rovescia dell'overlay si allunga con sub, bit e donazioni, quanto decidi tu. Si accende dallo Studio, sotto al conto. [vai: alert]
+  en: Here comes the subathon: the overlay countdown gets longer with subs, bits and donations, by as much as you decide. You turn it on from the Studio, under the countdown.
+  es: Llega el subathon: la cuenta atrás del overlay se alarga con subs, bits y donaciones, lo que decidas tú. Se activa desde el Studio, debajo de la cuenta.
 - Metti un tetto in ore e la fine non va mai oltre: una serata fortunata non ti porta a dormire alle sette. Con !subathon la chat sa quanto manca. [vai: alert]
+  en: Set a cap in hours and the end never goes past it: a lucky night won’t keep you up until seven in the morning. With !subathon, chat knows how much is left.
+  es: Pones un tope en horas y el final nunca lo supera: una noche con suerte no te lleva a dormir a las siete. Con !subathon el chat sabe cuánto falta.
 - Chi rinnova l'abbonamento adesso fa scattare l'alert e conta negli obiettivi. Prima il rinnovo al bot non arrivava proprio. [vai: alert]
+  en: Subscription renewals now trigger the alert and count toward goals. Before, renewals never reached the bot at all.
+  es: Quien renueva la suscripción ahora hace saltar la alerta y cuenta en los objetivos. Antes la renovación ni le llegaba al bot.
 - Una raffica di regali conta un sub per ogni sub, non uno in più: l'annuncio della raffica serve all'alert, non al conto. [vai: alert]
+  en: A burst of gifted subs counts one sub for each sub, not one extra: the burst announcement is for the alert, not the count.
+  es: Una ráfaga de regalos cuenta un sub por cada sub, no uno de más: el anuncio de la ráfaga sirve para la alerta, no para la cuenta.
 - Nelle classifiche del canale non ci sei più tu: ore, monete, messaggi e serie contano chi ti guarda. Il totale dei messaggi resta intero. [vai: statistiche]
+  en: You’re no longer in your own channel’s leaderboards: hours, coins, messages and streaks count the people watching you. The total message count stays whole.
+  es: En las clasificaciones del canal ya no estás tú: horas, monedas, mensajes y rachas cuentan a quien te mira. El total de mensajes sigue entero.
 - Gli auguri di compleanno adesso arrivano anche in chat, al primo messaggio di chi li compie. Nel gruppo restano a mezzanotte, come prima. [vai: telegram]
+  en: Birthday wishes now arrive in chat too, on the first message of the person celebrating. In the group they still go out at midnight, as before.
+  es: Las felicitaciones de cumpleaños ahora llegan también al chat, con el primer mensaje de quien los cumple. En el grupo siguen saliendo a medianoche, como antes.
 - Chi ti guarda si segna il compleanno da solo: scrive !compleanno 25/12 e tu non devi toccare niente. Con !compleanno via lo toglie. [vai: telegram]
+  en: Viewers add their own birthday: they type !compleanno 25/12 and you don’t have to touch anything. With !compleanno via they remove it.
+  es: Quien te mira anota su cumpleaños solo: escribe !compleanno 25/12 y tú no tienes que tocar nada. Con !compleanno via lo quita.
 - Insieme agli auguri in chat può partire un effetto della tua libreria. Lo scegli dalla scheda Telegram. [vai: telegram]
+  en: Along with the birthday wishes in chat, an effect from your library can go off. You choose it from the Telegram tab.
+  es: Junto con las felicitaciones en el chat puede salir un efecto de tu biblioteca. Lo eliges desde la pestaña Telegram.
 
 ## 2026-09-16
 
