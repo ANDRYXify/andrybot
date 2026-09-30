@@ -81,6 +81,7 @@ import { avviaBackupAuto, stopBackupAuto } from './backup.js';
 import * as dcGiro from './features/discord-giro.js';
 import * as dcEventi from './features/discord-eventi.js';
 import * as settimanaFeat from './features/settimana.js';
+import * as prossime from './features/prossime.js';
 import * as dcCollega from './features/discord-collega.js';
 import * as pub from './features/pubblicita.js';
 import * as modalitaFeat from './features/modalita-chat.js';
@@ -1967,6 +1968,7 @@ export class BotManager {
       try {
         const sett = settimanaFeat.settimanaDi(s.settings);
         if (!sett.twitch.acceso) continue;
+        if (prossime.programmaDelloStreamer(s.login)) continue;   // il Programma e' la sua fonte: non ci si scrive
         if (!tokens.get('broadcaster', s.login)?.scopes?.includes('channel:manage:schedule')) continue;
         const e = await settimanaFeat.sincronizzaProgramma(this.helix, s.login, sett);
         if (!e.ok) continue;
