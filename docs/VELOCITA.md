@@ -117,6 +117,38 @@ risposte alla stessa domanda, e quale vinca lo decide il parser di turno. La
 regola di Caddy e' stata tolta: la cache la dichiara l'origine, che e' l'unico
 posto che sa cosa sta servendo.
 
+**Gli script non erano mai eterni, e il server si fermava.** Due difetti nel
+minificatore (`src/web/minifica.js`), trovati sul sito vero quando «su molti
+browser» il pannello restava sulla copertina e dopo venticinque secondi diceva
+«ci sta mettendo piu' del solito»:
+
+- il minificatore rispondeva da se' e scriveva `max-age=0` a mano, scavalcando
+  l'impronta: i fogli di stile uscivano `immutable`, nessuno script mai;
+- la sua cache teneva UN file (ogni file nuovo la svuotava). Il pannello chiede
+  venticinque script, quindi `app.js` si rifaceva quasi a ogni apertura. E
+  rifarlo costa circa dieci secondi di terser sul filo principale: in quei
+  secondi il server non fa un giro, misurato (0 giri su 961 attesi). Non si
+  fermava il pannello: si fermava tutto, overlay in onda e bot in chat compresi.
+
+Misura con lo stesso carico di un'apertura (52 script chiesti insieme, tre
+volte): prima 12-15 secondi a ogni apertura e il server fermo fino a 12,9 secondi
+di fila; dopo 0,1-0,4 secondi, e il server fermo al massimo 0,09 secondi.
+
+Le regole adesso, e nessuna dipende da quanto e' veloce la macchina:
+
+- **una richiesta non aspetta mai la minificazione**: se la versione finale di
+  quel contenuto non e' pronta esce il sorgente (che fa la stessa cosa), senza
+  `immutable`, e intanto la minificazione parte, una volta sola;
+- **il lavoro gira in un altro filo** (`minifica-lavoro.js`), e all'avvio si
+  preparano tutti i nostri script;
+- **un posto per file**, che si rifa' solo quando cambia quel file;
+- **`immutable` lo decide l'impronta**, in un posto solo, anche per gli script;
+- `vendor/` esce com'e': sono librerie di altri, gia' minificate, e rifarle
+  costava secondi per niente.
+
+Il collaudo e' `test/contratto/minifica-servire.test.mjs`: fra le altre cose
+misura che mentre si minifica il filo principale continua a girare.
+
 **Il service worker resta com'era, ed e' una scelta.** Con l'impronta, farlo
 rispondere dalla cache sarebbe stato difendibile — quell'indirizzo non puo'
 cambiare contenuto. Ma non pagava il prezzo che chiedeva: la velocita' la danno

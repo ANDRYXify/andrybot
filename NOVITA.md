@@ -63,6 +63,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - [importante] Nell'Overlay Studio c'è il «Conto alla pubblicità»: quanto manca alla prossima pausa di Twitch e, durante la pausa, quanto manca al tuo ritorno. Scende da solo e segue anche i rinvii. [vai: alert]
   > Il conto alla pubblicità, in scena
   > Prima il conto c'era solo nel pannello, per te: chi guardava la diretta non sapeva quando sarebbe arrivata la pausa, né quanto sarebbe durata.
+- Il pannello si apre subito: prima il server si fermava una decina di secondi quasi a ogni apertura, e la copertina finiva su «ci sta mettendo più del solito». Dalla seconda volta il browser tiene i file.
 
 ## 2026-09-27
 
