@@ -12,7 +12,8 @@
 // c'è un secondo elenco da tenere allineato — chi scrive una traccia privata la
 // marca come sempre, e il cancello fa il resto.
 //
-// Uso: node scripts/verifica-riservati.mjs   (esce 1 se qualcosa è tracciato)
+// Uso: node scripts/verifica-riservati.mjs              (esce 1 se qualcosa è tracciato)
+//      node scripts/verifica-riservati.mjs --selftest   (le parole di ogni lingua, provate)
 
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
@@ -48,23 +49,80 @@ for (const f of tracciati) {
 // sitemap. Una riga li' puo' dire cosa il prodotto FA adesso; non deve mai dire
 // quale porta era aperta prima. Chi legge le versioni vecchie di una pagina
 // pubblica non deve trovarci la mappa di dove mancavano i controlli.
-const PORTE_APERTE = [
-  /senza (?:verifiche|controlli|pulizia|validazione|filtri)\b/i,
-  /non (?:era|erano|veniva|venivano) (?:controllat|verificat|validat|puliti|filtrat)/i,
-  /(?:chiunque|bastava|si poteva) (?:poteva |)(?:entrare|accedere|scrivere|leggere|iniettare|aggirare)/i,
-  /\b(?:vulnerabil|falla|exploit|bypass|aggirare (?:il |la |i |le |)(?:controll|verific|blocc))/i,
-  /\b(?:xss|csrf|sql inject|injection|iniezione di)\b/i,
-  /(?:chiave|token|segreto|password)\w* (?:espost|in chiaro|visibil)/i,
-];
+//
+// Quella pagina si legge in tre lingue: sotto ogni riga italiana ci sono la sua
+// traduzione inglese («en:», «en>») e spagnola («es:», «es>»). Ogni riga si
+// legge con le parole della SUA lingua: le stesse lettere non dicono la stessa
+// cosa («falla» in italiano e' una breccia, in spagnolo e' «non funziona»), e una
+// parola italiana applicata allo spagnolo vede buchi dove non ce ne sono e non
+// vede quelli detti con le parole di la'.
+const PORTE_APERTE = {
+  it: [
+    /senza (?:verifiche|controlli|pulizia|validazione|filtri)\b/i,
+    /non (?:era|erano|veniva|venivano) (?:controllat|verificat|validat|puliti|filtrat)/i,
+    /(?:chiunque|bastava|si poteva) (?:poteva |)(?:entrare|accedere|scrivere|leggere|iniettare|aggirare)/i,
+    /\b(?:vulnerabil|falla|exploit|bypass|aggirare (?:il |la |i |le |)(?:controll|verific|blocc))/i,
+    /\b(?:xss|csrf|sql inject|injection|iniezione di)\b/i,
+    /(?:chiave|token|segreto|password)\w* (?:espost|in chiaro|visibil)/i,
+  ],
+  en: [
+    /\bwithout (?:any )?(?:checks|checking|verification|validation|sanitiz|filter)/i,
+    /\b(?:was|were)(?: not|n[’']t) (?:checked|verified|validated|sanitized|filtered)/i,
+    /\b(?:anyone|anybody) could (?:get in|access|read|write|inject|bypass)/i,
+    /\b(?:vulnerab|exploit|bypass|security (?:hole|flaw)|loophole)/i,
+    /\b(?:xss|csrf|sql inject|injection)\b/i,
+    /\b(?:key|token|secret|password)s? (?:were |was )?(?:exposed|in plain text|visible)/i,
+  ],
+  es: [
+    /\bsin (?:ninguna )?(?:verificaci|comprobaci|control|validaci|filtr)/i,
+    /\bno se (?:comprobaba|verificaba|validaba|filtraba|controlaba)/i,
+    /\b(?:cualquiera|bastaba|se pod[ií]a) (?:pod[ií]a )?(?:entrar|acceder|escribir|leer|inyectar|saltarse)/i,
+    /\b(?:vulnerab|exploit|bypass|agujero de seguridad|(?:brecha|fallo|falla) de seguridad)/i,
+    /\b(?:xss|csrf|sql inject|inyecci[oó]n)\b/i,
+    /\b(?:clave|token|secreto|contraseña)s? (?:expuest|en claro|visible)/i,
+  ],
+};
+const LINGUA_DELLA_RIGA = /^\s+(en|es)[:>]/;
+function spifferiDi(righe, file) {
+  const fuori = [];
+  righe.forEach((r, i) => {
+    const l = (r.match(LINGUA_DELLA_RIGA) || [])[1] || 'it';
+    if (PORTE_APERTE[l].some((x) => x.test(r))) fuori.push({ file, n: i + 1, riga: r.trim().slice(0, 100) });
+  });
+  return fuori;
+}
+
 const PUBBLICI = ['NOVITA.md'];
 const spifferi = [];
 for (const f of PUBBLICI) {
   let righe = [];
   try { righe = readFileSync(f, 'utf8').split('\n'); } catch { continue; }
-  righe.forEach((r, i) => {
-    const re = PORTE_APERTE.find((x) => x.test(r));
-    if (re) spifferi.push({ file: f, n: i + 1, riga: r.trim().slice(0, 100) });
-  });
+  spifferi.push(...spifferiDi(righe, f));
+}
+
+// L'autoprova: le parole di ogni lingua prendono quello che devono, e solo
+// quello. Una riga per lingua che racconta un buco, e una che usa la stessa
+// parola per dire un'altra cosa.
+if (process.argv.includes('--selftest')) {
+  const CASI = [
+    ['- Prima chiunque poteva entrare nel pannello.', true],
+    ['- Il salvataggio a volte falla.', true],
+    ['  en: Before, anyone could access the panel.', true],
+    ['  en> There was a security hole in the log.', true],
+    ['  en: A failed action is no longer lost.', false],
+    ['  es: Antes cualquiera podía entrar en el panel.', true],
+    ['  es> Había un fallo de seguridad en el registro.', true],
+    ['  es: Una acción que falla no se pierde.', false],
+  ];
+  let storti = 0;
+  for (const [riga, atteso] of CASI) {
+    const visto = spifferiDi([riga], 'prova').length > 0;
+    const ok = visto === atteso;
+    if (!ok) storti++;
+    console.log(`  ${ok ? '✓' : '✗'}  ${atteso ? 'vede' : 'lascia stare'}: ${riga.trim()}`);
+  }
+  console.log(storti ? `\n${storti} ${storti === 1 ? 'caso sbagliato' : 'casi sbagliati'}.` : "\nOgni lingua si legge con le sue parole. ✓");
+  process.exit(storti ? 1 : 0);
 }
 
 console.log(`riservatezza  ${tracciati.length} documenti tracciati controllati · ${PUBBLICI.length} pagina pubblica letta  ${colpevoli.length || spifferi.length ? '' : '✓'}`);
