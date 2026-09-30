@@ -51,54 +51,152 @@ nome resta in casa. Non è una cosa da ricordarsi:
 ## 2026-09-27
 
 - [importante] In «Strumenti» ci sono i pannelli per Twitch: tutti nello stesso stile, e già pieni dei link e delle descrizioni che il canale conosce. [vai: pannelli]
+  en: “Tools” now has panels for Twitch: all in the same style, and already filled with the links and descriptions your channel knows.
+  es: En «Herramientas» están los paneles para Twitch: todos con el mismo estilo, y ya llenos de los enlaces y las descripciones que el canal conoce.
   > I pannelli del canale senza riscriverli
   > Link e descrizioni vengono da quello che hai già: pagina link, social, settimana, Discord, donazioni. Scarichi tutto in un file, pronto da mettere su Twitch.
+  en> Your channel panels without rewriting them
+  en> Links and descriptions come from what you already have: link page, socials, week, Discord, donations. You download it all in one file, ready to put on Twitch.
+  es> Los paneles del canal sin reescribirlos
+  es> Enlaces y descripciones salen de lo que ya tienes: página de enlaces, redes, semana, Discord, donaciones. Lo descargas todo en un archivo, listo para poner en Twitch.
 - Nel media kit il testo sulla fascia del contatto si legge con qualunque colore della pagina link: con alcuni accenti prima restava troppo tenue.
+  en: In the media kit, the text on the contact band is readable with any link page color: with some accents it used to be too faint.
+  es: En el media kit, el texto de la franja de contacto se lee con cualquier color de la página de enlaces: con algunos acentos antes quedaba demasiado tenue.
 - Ogni scheda del pannello ha il suo manuale: Stato, Effetti e Community si aggiungono agli altri, che ora dicono le etichette e i messaggi che vedi davvero.
+  en: Every tab in the panel has its own manual: Status, Effects and Community join the others, which now use the labels and messages you actually see.
+  es: Cada pestaña del panel tiene su manual: Estado, Efectos y Comunidad se suman a los demás, que ahora dicen las etiquetas y los mensajes que ves de verdad.
 - In chat «!bot» e «!ia» rispondono sempre, anche con i comandi base spenti: fra i comandi pronti non si spengono, non si rinominano e non si riservano più. [vai: moduli]
+  en: In chat, “!bot” and “!ia” always answer, even with the basic commands turned off: among the built-in commands they can no longer be turned off, renamed or restricted.
+  es: En el chat, «!bot» e «!ia» responden siempre, incluso con los comandos básicos apagados: entre los comandos de serie ya no se apagan, no se renombran y no se reservan.
 - Con la gestione dei comandi dalla chat accesa, «!comando lista» lo può scrivere chiunque: aggiungere, cambiare e togliere comandi resta ai moderatori. [vai: moduli]
+  en: With command management from chat turned on, anyone can type “!comando lista”: adding, changing and removing commands stays with the mods.
+  es: Con la gestión de comandos desde el chat activada, «!comando lista» lo puede escribir cualquiera: añadir, cambiar y quitar comandos sigue siendo cosa de los moderadores.
 - La guida dei contatori e il tasto «Accendi a schermo» non dicono più che il numero riparte da zero: si accende col numero a cui è arrivato. [vai: moduli]
+  en: The counters guide and the “Show on screen” button no longer say the number starts again from zero: it turns on at the number it had reached.
+  es: La guía de los contadores y el botón «Encender en pantalla» ya no dicen que el número vuelve a empezar de cero: se enciende con el número al que había llegado.
 - Nell'elenco dei moduli il riassunto dell'azione «Contatore» dice se azzera o imposta il numero: prima diceva sempre che lo aumentava. [vai: moduli]
+  en: In the modules list, the summary of the “Counter” action says whether it resets or sets the number: before, it always said it increased it.
+  es: En la lista de módulos, el resumen de la acción «Contador» dice si pone a cero o fija el número: antes siempre decía que lo aumentaba.
 - «Salva i comandi» salva le righe della sua lista: un gioco rimesso com'era di serie nella scheda Comandi non torna più come lo mostrava ancora la scheda Giochi. [vai: moduli]
+  en: “Save the commands” saves the rows of its own list: a game reset to its default in the Commands tab no longer comes back the way the Games tab was still showing it.
+  es: «Guardar los comandos» guarda las filas de su lista: un juego devuelto a como venía de serie en la pestaña Comandos ya no vuelve como lo seguía mostrando la pestaña Juegos.
 - L'editor dei moduli e la pagina di ascolto vocale mandano nelle schede di oggi: Comandi vocali per il microfono e il permesso di gestione canale, Effetti & suoni, Musica. [vai: moduli]
+  en: The module editor and the voice listening page point to today’s tabs: Voice commands for the microphone and the channel management permission, Effects & sounds, Music.
+  es: El editor de módulos y la página de escucha por voz llevan a las pestañas de hoy: Comandos de voz para el micrófono y el permiso de gestión del canal, Efectos y sonidos, Música.
 - Nel giro guidato di Comandi vocali il passo sul microfono indica il tasto «Apri l'ascolto vocale», non più l'interruttore dei momenti salienti. [vai: ascolto]
+  en: In the Voice commands guided tour, the microphone step points to the “Open voice listening” button, no longer the highlights switch.
+  es: En el recorrido guiado de Comandos de voz, el paso del micrófono señala el botón «Abre la escucha por voz», ya no el interruptor de los momentos destacados.
 - L'azione «Metti una canzone in coda» e l'importazione da un altro bot non parlano più di un add-on Musica: le richieste musicali sono nel piano Essenziale. [vai: moduli]
+  en: The “Queue a song” action and importing from another bot no longer mention a Music add-on: song requests are in the Essenziale plan.
+  es: La acción «Pon una canción en cola» y la importación desde otro bot ya no hablan de un extra de Música: las peticiones musicales están en el plan Essenziale.
 - Una donazione mandata dai Connettori avanzati senza valuta, o con una valuta sconosciuta, entra con quella del canale: prima la richiesta falliva. [vai: moduli]
+  en: A donation sent through the Advanced connectors with no currency, or an unknown one, comes in with the channel’s currency: before, the request failed.
+  es: Una donación enviada por los Conectores avanzados sin moneda, o con una moneda desconocida, entra con la del canal: antes la petición fallaba.
 - «Salva aspetto» dei contatori non rende più nero pieno lo sfondo: resta semitrasparente come quello di serie, anche quando cambi colore. [vai: moduli]
+  en: “Save look” on counters no longer turns the background solid black: it stays semi-transparent like the default one, even when you change the color.
+  es: «Guardar aspecto» de los contadores ya no deja el fondo negro lleno: sigue semitransparente como el de serie, aunque cambies el color.
 - Momenti salienti: la sensibilità salvata mentre il server ti sta già ascoltando vale entro un minuto, senza aspettare la diretta dopo. [vai: ascolto]
+  en: Highlights: a sensitivity saved while the server is already listening to you takes effect within a minute, without waiting for the next stream.
+  es: Momentos destacados: la sensibilidad guardada mientras el servidor ya te está escuchando vale en menos de un minuto, sin esperar al siguiente directo.
 - Un modulo a tempo, su un evento, a voce o da Telegram con «Costa» o «Serve almeno» non toglie più monete a te né a nessuno: paga solo chi lo usa scrivendo in chat. [vai: moduli]
+  en: A module run by a timer, an event, your voice or Telegram with “Cost” or “Needs at least” no longer takes coins from you or anyone: only people using it by typing in chat pay.
+  es: Un módulo con temporizador, por evento, por voz o desde Telegram con «Cuesta» o «Hace falta al menos» ya no te quita monedas ni a ti ni a nadie: solo paga quien lo usa escribiendo en el chat.
 - Nell'azione «Aspetta» il campo arriva a 30 secondi, quanto il bot aspetta davvero, e il testo sull'overlay resta a schermo al massimo 30 secondi, come dice il suo campo. [vai: moduli]
+  en: In the “Wait” action the field goes up to 30 seconds, which is how long the bot really waits, and overlay text stays on screen for at most 30 seconds, as its field says.
+  es: En la acción «Espera» el campo llega a 30 segundos, lo que el bot espera de verdad, y el texto del overlay se queda en pantalla como mucho 30 segundos, como dice su campo.
 - La carta «Comando vocale» dice che l'ascolto funziona anche fuori da Chrome ed Edge, col motore locale che la prima volta scarica un modello. [vai: ascolto]
+  en: The “Voice command” card says listening also works outside Chrome and Edge, with the local engine that downloads a model the first time.
+  es: La tarjeta «Comando por voz» dice que la escucha funciona también fuera de Chrome y Edge, con el motor local que la primera vez descarga un modelo.
 - Nell'editor dei moduli inneschi, eventi, azioni e il riassunto di ogni modulo si leggono in inglese e in spagnolo, come il resto del pannello. [vai: moduli]
+  en: In the module editor, triggers, events, actions and each module’s summary read in English and Spanish, like the rest of the panel.
+  es: En el editor de módulos, los disparadores, los eventos, las acciones y el resumen de cada módulo se leen en inglés y en español, como el resto del panel.
 - I campi dell'editor dei moduli, i tasti Prova, Modifica ed Elimina e i Connettori avanzati si leggono anche in inglese e in spagnolo. [vai: moduli]
+  en: The module editor’s fields, the Test, Edit and Delete buttons and the Advanced connectors read in English and Spanish too.
+  es: Los campos del editor de módulos, los botones Probar, Editar y Eliminar y los Conectores avanzados se leen también en inglés y en español.
 - La pagina di ascolto vocale si legge in inglese e in spagnolo, nella lingua del pannello, registro compreso. Il riconoscimento resta in italiano. [vai: ascolto]
+  en: The voice listening page reads in English and Spanish, in the panel’s language, log included. Recognition stays in Italian.
+  es: La página de escucha por voz se lee en inglés y en español, en el idioma del panel, registro incluido. El reconocimiento sigue en italiano.
 - I pannelli per Twitch si scaricano tre volte più definiti: sul telefono bordi e scritte restano netti. Quelli che hai già caricato vanno riscaricati e rimessi. [vai: pannelli]
+  en: Twitch panels download three times sharper: on phones, edges and text stay crisp. The ones you’ve already uploaded need to be downloaded and put back.
+  es: Los paneles para Twitch se descargan con el triple de definición: en el teléfono bordes y textos quedan nítidos. Los que ya subiste hay que volver a descargarlos y ponerlos.
 - Il cursore disegnato c'è anche sul selettore dei colori, su «scegli file» e nei campi dove si scrive: nel pannello non resta nessun cursore di sistema.
+  en: The hand-drawn cursor now also shows on the color picker, on “choose file” and in text fields: no system cursor is left in the panel.
+  es: El cursor dibujado está también en el selector de colores, en «elegir archivo» y en los campos donde se escribe: en el panel no queda ningún cursor del sistema.
 - La pagina iniziale in inglese e in spagnolo ha nella sua lingua anche il piede, il riquadro per dare una mano e l'avviso dei cookie: prima restavano in italiano.
+  en: The home page in English and Spanish now has its footer, the box for helping out and the cookie notice in its own language too: before, they stayed in Italian.
+  es: La portada en inglés y en español tiene en su idioma también el pie, el recuadro para echar una mano y el aviso de cookies: antes se quedaban en italiano.
 - Anche nel pannello il piede e l'avviso dei cookie seguono la lingua che scegli, e cambiano insieme a lei.
+  en: In the panel too, the footer and the cookie notice follow the language you choose, and change along with it.
+  es: También en el panel el pie y el aviso de cookies siguen el idioma que eliges, y cambian junto con él.
 - Privacy e termini si leggono anche in inglese e in spagnolo, ognuno col suo indirizzo: il testo di riferimento resta quello italiano, e le traduzioni lo dicono in cima.
+  en: Privacy and terms can now be read in English and Spanish too, each at its own address: the Italian text remains the reference, and the translations say so at the top.
+  es: Privacidad y términos se leen también en inglés y en español, cada uno en su dirección: el texto de referencia sigue siendo el italiano, y las traducciones lo dicen arriba.
 - La transizione scelta in un tasto di CONSOLify o in un Modulo resta dov'è e parte davvero: prima spariva appena salvata. [vai: consolify]
+  en: The transition chosen in a CONSOLify key or a Module stays put and really plays: before, it disappeared as soon as it was saved.
+  es: La transición elegida en una tecla de CONSOLify o en un Módulo se queda donde está y arranca de verdad: antes desaparecía nada más guardarla.
 - Un'idea pronta di CONSOLify crea il tasto coi passi da riempire segnati «da completare», e un passo aggiunto si salva subito: prima i passi vuoti sparivano e il tasto restava lì senza fare niente. [vai: consolify]
+  en: A ready-made CONSOLify idea creates the key with the steps to fill in marked “unfinished”, and a step you add is saved right away: before, empty steps vanished and the key sat there doing nothing.
+  es: Una idea lista de CONSOLify crea la tecla con los pasos por llenar marcados «por completar», y un paso añadido se guarda enseguida: antes los pasos vacíos desaparecían y la tecla se quedaba sin hacer nada.
 - Quando una pagina di CONSOLify ha già 48 tasti, anche «Duplica» e «Sposta nella pagina» si fermano e dicono che è piena: prima il tasto in più spariva senza avviso. [vai: consolify]
+  en: When a CONSOLify page already has 48 keys, “Duplicate” and “Move to page” stop too and say it’s full: before, the extra key vanished without warning.
+  es: Cuando una página de CONSOLify ya tiene 48 teclas, también «Duplicar» y «Mover a la página» se detienen y dicen que está llena: antes la tecla de más desaparecía sin avisar.
 - Nel formato «libero» di CONSOLify, in modifica, c'è il «+» in fondo alla pagina: prima lì non c'era modo di creare un tasto nuovo. [vai: consolify]
+  en: In CONSOLify’s “free” layout, while editing, there’s a “+” at the bottom of the page: before, there was no way to create a new key there.
+  es: En el formato «libre» de CONSOLify, al editar, está el «+» al final de la página: antes ahí no había forma de crear una tecla nueva.
 - Le clip fatte con «Crea clip» in Regia finiscono in «Ultime clip», nel rapporto della serata e nelle statistiche, col motivo «dalla Regia». [vai: clip]
+  en: Clips made with “Create clip” in the Control room end up in “Latest clips”, in the night’s report and in the stats, with the reason “from the Control room”.
+  es: Los clips hechos con «Crear clip» en Realización acaban en «Últimos clips», en el informe de la noche y en las estadísticas, con el motivo «desde Realización».
 - Clip e Musica parlano tutte e tre le lingue anche nei pezzi rimasti in italiano o in inglese, e il muro delle clip automatiche dice che «non sono» nel tuo piano. [vai: clip]
+  en: Clips and Music speak all three languages even in the bits that had stayed in Italian or English, and the automatic clips wall says they’re “not” in your plan.
+  es: Clips y Música hablan los tres idiomas también en las partes que se habían quedado en italiano o en inglés, y el muro de los clips automáticos dice que «no están» en tu plan.
 - Se nella Musica manca il permesso dei punti canale, il riquadro porta dritto a concederlo: prima rimandava a una sezione che non c'è più. [vai: musica]
+  en: If Music is missing the channel points permission, the box takes you straight to granting it: before, it pointed to a section that no longer exists.
+  es: Si en Música falta el permiso de los puntos de canal, el recuadro lleva directo a concederlo: antes mandaba a una sección que ya no existe.
 - In inglese la Regia si chiama «Control room» anche nel menù, e la sua guida elenca le azioni rapide che ci sono davvero: clip, marker, pubblicità, raid. [vai: regia]
+  en: In English, Regia is called “Control room” in the menu too, and its guide lists the quick actions that really exist: clips, markers, ads, raids.
+  es: En inglés, Realización se llama «Control room» también en el menú, y su guía enumera las acciones rápidas que existen de verdad: clips, marcadores, publicidad, raids.
 - «Chi guarda di più» vuota non chiede più di accendere un conteggio che è già acceso: dice che nessuna ora è stata ancora contata, e solo se l'hai spento ti dice dove riaccenderlo. [vai: statistiche]
+  en: An empty “Who watches the most” no longer asks you to turn on a count that’s already on: it says no hours have been counted yet, and only if you turned it off does it tell you where to turn it back on.
+  es: «Quién mira más» vacío ya no pide activar un conteo que ya está activo: dice que todavía no se contó ninguna hora, y solo si lo apagaste te dice dónde volver a encenderlo.
 - Collegando la regia da CONSOLify leggi il motivo vero quando non va (password sbagliata, indirizzo di rete, programma spento), e «Oppure a mano» si prova anche senza password. [vai: consolify]
+  en: When you connect the program from CONSOLify, you read the real reason when it fails (wrong password, network address, program off), and “Or by hand” can be tried without a password too.
+  es: Al conectar el programa desde CONSOLify lees el motivo real cuando falla (contraseña equivocada, dirección de red, programa apagado), y «O a mano» se prueba también sin contraseña.
 - Nella scheda Stato, in «Quando dev'essere attivo», restano «Sempre» e «Solo quando sei in diretta»: «Manuale» faceva lo stesso di «Sempre», e chi l'aveva scelto ora legge «Sempre». [vai: stato]
+  en: In the Status tab, under “When it should be active”, “Always” and “Only when you’re live” remain: “Manual” did the same as “Always”, and whoever had picked it now sees “Always”.
+  es: En la pestaña Estado, en «Cuándo debe estar activo», quedan «Siempre» y «Solo cuando estás en directo»: «Manual» hacía lo mismo que «Siempre», y quien lo había elegido ahora lee «Siempre».
 - Su Kick il bot ubbidisce all'interruttore e alla modalità: spento non risponde più, e con «Solo quando sei in diretta» risponde solo mentre Kick dice che sei in onda. [vai: stato]
+  en: On Kick the bot obeys the switch and the mode: when off it no longer answers, and with “Only when you’re live” it answers only while Kick says you’re on air.
+  es: En Kick el bot obedece al interruptor y al modo: apagado ya no responde, y con «Solo cuando estás en directo» responde solo mientras Kick dice que estás al aire.
 - Per i canali nati su YouTube la chat delle dirette parte davvero: prima la levetta restava alzata e il bot non la leggeva mai. [vai: account]
+  en: For channels that started on YouTube, live chat really starts: before, the toggle stayed on and the bot never read it.
+  es: En los canales nacidos en YouTube, el chat de los directos arranca de verdad: antes el interruptor seguía encendido y el bot nunca lo leía.
 - La scheda Stato di un canale Kick, YouTube o Discord non chiede più i permessi di Twitch, e «in chat adesso» guarda la chat della piattaforma del canale. [vai: stato]
+  en: The Status tab of a Kick, YouTube or Discord channel no longer asks for Twitch permissions, and “in chat now” looks at the chat of the channel’s platform.
+  es: La pestaña Estado de un canal de Kick, YouTube o Discord ya no pide los permisos de Twitch, y «en el chat ahora» mira el chat de la plataforma del canal.
 - La carta «Attiva il bot» dice il vero sui permessi: Twitch ne chiede uno per ogni funzione che li usa, e l'elenco intero lo vedi prima di confermare. [vai: stato]
+  en: The “Activate the bot” card tells the truth about permissions: Twitch asks for one for each feature that uses them, and you see the full list before confirming.
+  es: La tarjeta «Activa el bot» dice la verdad sobre los permisos: Twitch pide uno por cada función que los usa, y la lista entera la ves antes de confirmar.
 - In «Le tue piattaforme» un canale Kick, YouTube o Discord non vede più Twitch «da sistemare»: la riga dice che Twitch è un canale a sé, e come entrarci. [vai: account]
+  en: In “Your platforms”, a Kick, YouTube or Discord channel no longer sees Twitch as “needs a fix”: the row says Twitch is a separate channel, and how to get into it.
+  es: En «Tus plataformas», un canal de Kick, YouTube o Discord ya no ve Twitch «hay que arreglarla»: la fila dice que Twitch es un canal aparte, y cómo entrar en él.
 - Se dai i permessi entrando su Twitch con un altro account, il pannello te lo dice al ritorno e ti propone di riprovare, invece di tornare in silenzio. [vai: stato]
+  en: If you grant permissions while signed in to Twitch with another account, the panel tells you when you come back and offers to try again, instead of returning in silence.
+  es: Si das los permisos entrando en Twitch con otra cuenta, el panel te lo dice al volver y te propone reintentar, en lugar de volver en silencio.
 - Un moderatore non vede più i tasti per pagare, aggiungere un extra o aprire il portale dei pagamenti: sono del proprietario, e prima «Attiva» faceva pagare il canale del moderatore. [vai: sottoscrizione]
+  en: A moderator no longer sees the buttons for paying, adding an extra or opening the payment portal: they’re the owner’s, and before, “Activate” charged the moderator’s channel.
+  es: Un moderador ya no ve los botones para pagar, añadir un extra o abrir el portal de pagos: son del propietario, y antes «Activar» le cobraba al canal del moderador.
 - Chi ha già il Base e nessun extra, nella scheda Abbonamento, vede solo quanto costano gli extra che aggiunge: prima il totale contava di nuovo il canone Base. [vai: sottoscrizione]
+  en: Anyone who already has Base and no extras sees, in the Subscription tab, only the cost of the extras they add: before, the total counted the Base fee again.
+  es: Quien ya tiene el Base y ningún extra ve en la pestaña Suscripción solo lo que cuestan los extras que añade: antes el total volvía a contar la cuota del Base.
 - In «Cosa hai acceso» della scheda Abbonamento ci sono anche «Bot su Telegram» e «Studio Web», che il Base comprende e mancavano dall'elenco. [vai: sottoscrizione]
+  en: The Subscription tab’s “What you have on” now also lists “Bot on Telegram” and “Web Studio”, which Base includes and were missing from the list.
+  es: En «Qué tienes activo» de la pestaña Suscripción están también «Bot en Telegram» y «Estudio Web», que el Base incluye y faltaban en la lista.
 - Quando andryxify ti apre o ti chiude una funzione a mano, il pannello lo dice con il suo nome: prima scriveva «il proprietario», che sembrava voler dire te. [vai: sottoscrizione]
+  en: When andryxify opens or closes a feature for you by hand, the panel says so by name: before, it wrote “the owner”, which seemed to mean you.
+  es: Cuando andryxify te abre o te cierra una función a mano, el panel lo dice con su nombre: antes escribía «el propietario», que parecía querer decir tú.
 - Invitando un moderatore, il pannello dice che entrerà con il suo account sulla piattaforma che hai scelto, non più «con Twitch» anche per Kick e YouTube. [vai: account]
+  en: When you invite a moderator, the panel says they’ll sign in with their account on the platform you chose, no longer “with Twitch” for Kick and YouTube too.
+  es: Al invitar a un moderador, el panel dice que entrará con su cuenta en la plataforma que elegiste, ya no «con Twitch» también para Kick y YouTube.
 - Quando il bot perde la chat, il messaggio su Telegram nomina il tasto giusto, «Ricollega i permessi» nella scheda Stato.
 - Su un dispositivo che non gestisce le passkey il pannello dice solo che non si può, senza più aggiungere subito dopo «Passkey creata!». [vai: account]
 - Un invito da moderatore scaduto si vede come «invito scaduto», da rigenerare, invece di un «valido fino al» con una data già passata. [vai: account]
