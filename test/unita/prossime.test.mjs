@@ -87,3 +87,33 @@ test('il Programma e\' dello streamer solo se l\'ha scelto: la settimana allora 
   const salva = SRV.slice(SRV.indexOf("app.post('/api/streamer/settimana'"), SRV.indexOf('settimana.sincronizzaProgramma(helix, login, sett)'));
   assert.ok(salva.includes('if (prossime.programmaDelloStreamer(login))'), 'e nemmeno il salvataggio della settimana');
 });
+
+test('in chat: !prossima e $prossima dicono la stessa diretta, nella lingua e nel formato del canale', async () => {
+  const { ModulesEngine } = await import('../../src/features/modules.js');
+  const base = await import('../../src/features/comandibase.js');
+  streamers.upsertApproved('chat1', 'Chat1', '71');
+  streamers.setSettings('chat1', { settimana: SETT });
+  const adesso = Date.now();
+  const atteso = (lingua) => X.daSettimana(SETT, 1, adesso)[0];
+  const d = atteso();
+  assert.ok(d, 'la settimana di prova ha sempre una prossima sera');
+  assert.match(await X.testoProssima('chat1', { adesso }), /^La prossima diretta è .+ alle 21:00: (Elden Ring|Chiacchiere)\.$/);
+  streamers.setSettings('chat1', { settimana: SETT, preferenze: { lingua: 'en' } });
+  assert.match(await X.testoProssima('chat1', { adesso }), /^The next stream is .+ at 9:00 PM: (Elden Ring|Chiacchiere)\.$/);
+  streamers.setSettings('chat1', { settimana: SETT, preferenze: { lingua: 'es' } });
+  assert.match(await X.testoProssima('chat1', { adesso }), /^El próximo directo es .+ a las 21:00: (Elden Ring|Chiacchiere)\.$/);
+
+  streamers.setSettings('chat1', { settimana: SETT });
+  const dette = [];
+  assert.equal(await base.tryComando({}, { channel: 'chat1', user: 'tizio', text: '!prossima' }, (t) => dette.push(t)), true);
+  assert.match(dette[0], /^La prossima diretta è /);
+
+  const motore = new ModulesEngine({});
+  const t = await motore.espandi('Ci vediamo $prossima!', { channel: 'chat1', user: 'tizio', args: [], argsRaw: '', _vars: {} });
+  assert.match(t, /^Ci vediamo .+ alle 21:00!$/);
+
+  streamers.upsertApproved('chat2', 'Chat2', '72');
+  streamers.setSettings('chat2', { preferenze: { fonteProssime: 'settimana' } });
+  assert.equal(await X.testoProssima('chat2'), 'Non c\'è ancora una prossima diretta in programma.', 'senza sere non inventa niente');
+  assert.equal(await motore.espandi('$prossima', { channel: 'chat2', user: 'x', args: [], argsRaw: '', _vars: {} }), 'da decidere');
+});

@@ -49,6 +49,9 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Pannello e sito in inglese parlano americano (color, center, behavior), e i suggerimenti a voce propongono parole italiane, perché il riconoscimento è in italiano.
 - Una cancellazione o un ban che Twitch rifiuta non risulta più fatto: resta fra le azioni da riprendere, col perché, e un permesso mancante si dice come tale. [vai: scudo]
 - Chi l'antispam ferma al primo messaggio risulta arrivato lo stesso: conta fra le prime volte del rapporto, e il giorno dopo non è di nuovo alla prima volta. [vai: dirette]
+- [importante] In chat c'è !prossima: dice quando è la prossima diretta, con l'ora vera presa dalla tua settimana o dal Programma di Twitch, e nei Moduli c'è $prossima. [vai: moduli]
+  > Il comando !prossima
+  > Prima alla domanda «quando sei in diretta?» nessun comando sapeva rispondere con un'ora vera.
 
 ## 2026-09-27
 

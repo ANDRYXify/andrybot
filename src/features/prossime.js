@@ -20,7 +20,7 @@
 // I segmenti scritti prima restano ricordati come nostri, per il giorno in
 // cui torna alla settimana.
 import { streamers } from '../db.js';
-import { preferenzeDi } from './preferenze.js';
+import { preferenzeDi, quando } from './preferenze.js';
 import { settimanaDi, inOnda, duraOk, chiaveAtt, FUSO_BASE } from './settimana.js';
 import { fusoValido, prossimaVolta } from './discord-eventi.js';
 import { eSu } from '../identita.js';
@@ -117,4 +117,47 @@ export async function prossimeDirette(login, quante = 1, { helix = null, adesso 
     return { fonte, dirette: daProgramma(r.segmenti, n, adesso) };
   }
   return { fonte, dirette: daSettimana(settimanaDi(streamers.get(ch)?.settings || {}), n, adesso) };
+}
+
+// ── IN CHAT ─────────────────────────────────────────────────────────────────
+// La frase di !prossima e il valore di $prossima, nella lingua e nel formato
+// del canale. Una frase per lingua per ora: le varianti arrivano con la voce
+// del canale (docs/VOCE.md), che le prendera' da qui.
+const FRASI = {
+  it: {
+    c: (q, t) => `La prossima diretta è ${q}${t ? `: ${t}` : ''}.`,
+    nessuna: 'Non c\'è ancora una prossima diretta in programma.',
+    illeggibile: 'Adesso non riesco a leggere il Programma di Twitch.',
+    daDecidere: 'da decidere',
+  },
+  en: {
+    c: (q, t) => `The next stream is ${q}${t ? `: ${t}` : ''}.`,
+    nessuna: 'There\'s no next stream on the schedule yet.',
+    illeggibile: 'I can\'t read the Twitch schedule right now.',
+    daDecidere: 'to be decided',
+  },
+  es: {
+    c: (q, t) => `El próximo directo es ${q}${t ? `: ${t}` : ''}.`,
+    nessuna: 'Todavía no hay un próximo directo en el horario.',
+    illeggibile: 'Ahora no consigo leer el horario de Twitch.',
+    daDecidere: 'por decidir',
+  },
+};
+
+// «sabato alle 21:00», nel fuso e nel formato del canale; «da decidere» se
+// non ce n'e' una.
+export async function quandoProssima(canale, { helix = null, adesso = Date.now() } = {}) {
+  const pref = preferenzeDi(canale);
+  const r = await prossimeDirette(canale, 1, { helix, adesso });
+  const d = r.dirette[0];
+  return d ? quando(d.inizio, pref, { adesso }) : FRASI[pref.lingua].daDecidere;
+}
+
+export async function testoProssima(canale, { helix = null, adesso = Date.now() } = {}) {
+  const pref = preferenzeDi(canale);
+  const F = FRASI[pref.lingua];
+  const r = await prossimeDirette(canale, 1, { helix, adesso });
+  const d = r.dirette[0];
+  if (!d) return r.errore ? F.illeggibile : F.nessuna;
+  return F.c(quando(d.inizio, pref, { adesso }), d.titolo || d.categoria);
 }

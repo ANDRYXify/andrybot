@@ -12,6 +12,7 @@ import * as bit from './bit.js';
 import { makeLog } from '../logger.js';
 import { aChi } from './risposte.js';
 import { nomeIn } from './comandi-registro.js';
+import * as prossime from './prossime.js';
 
 const log = makeLog('comandibase');
 
@@ -122,6 +123,14 @@ export async function tryComando(helix, msg, say) {
         periodo: quando[(parti[0] || '').toLowerCase()] || 'month',
       });
       if (riga) say(riga);
+      return true;
+    }
+
+    // ---- PROSSIMA: !prossima — quando e' la prossima diretta, dalla fonte
+    // scelta (la settimana o il Programma di Twitch, vedi prossime.js) ----
+    if (cmd === 'prossima') {
+      if (personalizzato(ch, cmd)) return false;
+      say(await prossime.testoProssima(ch, { helix }));
       return true;
     }
 
