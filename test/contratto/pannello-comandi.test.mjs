@@ -59,16 +59,17 @@ test('il riassunto dell\'azione contatore dice l\'operazione scelta nell\'editor
 // Giochi (i comandi dei giochi). Legge solo la lista della sua carta, e dice al
 // server quali righe aveva davanti: una scelta riportata al valore di base in
 // una lista non viene piu' coperta dalla riga dell'altra.
-function rigaFinta(id, { on = true, nome = '', chi = 'tutti' } = {}) {
+function rigaFinta(id, { on = true, nome = '', chi = 'tutti', frasi = {} } = {}) {
   const campi = { '[data-gc-on]': { checked: on }, '[data-gc-nome]': { value: nome }, '[data-gc-chi]': { value: chi } };
-  return { dataset: { gc: id }, querySelector: (q) => campi[q] || null };
+  const aree = Object.entries(frasi).map(([k, v]) => ({ dataset: { gcRisposta: k }, value: v }));
+  return { dataset: { gc: id }, querySelector: (q) => campi[q] || null, querySelectorAll: (q) => (q === '[data-gc-risposta]' ? aree : []) };
 }
 function listaFinta(righe) {
   return { querySelectorAll: (q) => (q === '.gc-riga' ? righe : []) };
 }
 
 test('«Salva i comandi» manda solo le righe della sua lista, e quali erano', async () => {
-  const comandi = listaFinta([rigaFinta('slot'), rigaFinta('so', { nome: 'grida' })]);
+  const comandi = listaFinta([rigaFinta('slot'), rigaFinta('so', { nome: 'grida' }), rigaFinta('followage', { frasi: { si: '  {nome} ci segue  da {durata} ', no: '   ' } })]);
   const giochi = listaFinta([rigaFinta('slot', { on: false })]);
   const carta = (ul) => ({ querySelector: (q) => (q === '.gc-lista' ? ul : null) });
   const tasto = (ul) => ({ closest: (q) => (q === '.carta' ? carta(ul) : null) });
@@ -79,8 +80,8 @@ test('«Salva i comandi» manda solo le righe della sua lista, e quali erano', a
     documento, async (url, o) => { mandati.push(o.body); return {}; }, () => {}, () => {}, (it) => it);
 
   await salva({ currentTarget: tasto(comandi) });
-  assert.deepEqual(mandati[0].comandi, { so: { nome: 'grida' } }, 'lo slot riacceso non viene coperto dalla lista dei giochi');
-  assert.deepEqual(mandati[0].ids, ['slot', 'so']);
+  assert.deepEqual(mandati[0].comandi, { so: { nome: 'grida' }, followage: { risposte: { si: '{nome} ci segue da {durata}' } } }, 'lo slot riacceso non viene coperto dalla lista dei giochi, e una frase vuota vuol dire la nostra');
+  assert.deepEqual(mandati[0].ids, ['slot', 'so', 'followage']);
   await salva({ currentTarget: tasto(giochi) });
   assert.deepEqual(mandati[1], { comandi: { slot: { off: true } }, ids: ['slot'] });
 

@@ -25,6 +25,7 @@
 import { streamers } from '../db.js';
 import { valoriDi, giocoDi } from './giochi-conf.js';
 import { inMessaggi } from './risposte.js';
+import { linguaChat } from './lingua-canale.js';
 
 export const LIVELLI = ['tutti', 'sub', 'vip', 'mod'];
 
@@ -123,7 +124,7 @@ export const COMANDI = [
   { id: 'stai', modulo: 'giochi', nomi: ['stai', 'stand'], titolo: ['Stai', 'Stand', 'Plántate'],
     cosa: ['Ti fermi: gioca il banco, e si vede chi vince.', 'You stop: the dealer plays, and you see who wins.', 'Te plantas: juega la banca, y se ve quién gana.'] },
   { id: 'corsa', modulo: 'giochi', gioco: 'corsa', nomi: ['corsa', 'race'], titolo: ['Corsa', 'Race', 'Carrera'],
-    cosa: ['Apre le puntate su una corsa: !corsa 2 50 punta 50 sul secondo corridore. Il favorito paga poco, l\'ultimo tanto.', 'Opens the bets on a race: !corsa 2 50 bets 50 on the second runner. The favourite pays little, the last one a lot.', 'Abre las apuestas de una carrera: !corsa 2 50 apuesta 50 al segundo corredor. El favorito paga poco, el último mucho.'], costa: true },
+    cosa: ['Apre le puntate su una corsa: !corsa 2 50 punta 50 sul secondo corridore. Il favorito paga poco, l\'ultimo tanto.', 'Opens the bets on a race: !corsa 2 50 bets 50 on the second runner. The favorite pays little, the last one a lot.', 'Abre las apuestas de una carrera: !corsa 2 50 apuesta 50 al segundo corredor. El favorito paga poco, el último mucho.'], costa: true },
   { id: 'patata', modulo: 'giochi', gioco: 'patata', nomi: ['patata', 'potato'], titolo: ['Patata bollente', 'Hot potato', 'Patata caliente'],
     cosa: ['Lancia la patata bollente: chi ce l\'ha la passa con !passa, e scoppia in mano a qualcuno quando nessuno se l\'aspetta.', 'Throws the hot potato: whoever holds it passes it with !passa, and it blows up in someone\'s hands when nobody expects it.', 'Lanza la patata caliente: quien la tiene la pasa con !passa, y explota en las manos de alguien cuando nadie se lo espera.'] },
   { id: 'passa', modulo: 'giochi', nomi: ['passa', 'pass'], titolo: ['Passa', 'Pass', 'Pasa'],
@@ -211,7 +212,18 @@ export const COMANDI = [
   { id: 'so', modulo: 'base', nomi: ['so', 'shoutout'], titolo: ['Shoutout', 'Shoutout', 'Shoutout'], chi: 'mod',
     cosa: ['Fa lo shoutout a un altro canale.', 'Gives a shoutout to another channel.', 'Hace un shoutout a otro canal.'] },
   { id: 'followage', modulo: 'base', nomi: ['followage', 'daquanto'], titolo: ['Da quanto segui', 'How long you\'ve followed', 'Desde cuándo sigues'],
-    cosa: ['Dice da quanto tempo una persona segue il canale.', 'Says how long someone has followed the channel.', 'Dice desde cuándo una persona sigue el canal.'] },
+    cosa: ['Dice da quanto tempo una persona segue il canale. Con un nome dopo il comando, lo dice di quella persona.', 'Says how long someone has followed the channel. With a name after the command, it says it about that person.', 'Dice desde cuándo una persona sigue el canal. Con un nombre después del comando, lo dice de esa persona.'],
+    risposte: {
+      si: { etichetta: ['Quando segue', 'When they follow', 'Cuando sigue'], segnaposti: ['nome', 'durata', 'data'], base: ['💜 @{nome} segue il canale da {durata}.', '💜 @{nome} has been following the channel for {durata}.', '💜 @{nome} sigue el canal desde hace {durata}.'] },
+      no: { etichetta: ['Quando non segue', 'When they don\'t follow', 'Cuando no sigue'], segnaposti: ['nome'], base: ['@{nome} non segue ancora il canale.', '@{nome} isn\'t following the channel yet.', '@{nome} todavía no sigue el canal.'] },
+    } },
+  { id: 'channelage', modulo: 'base', nomi: ['channelage', 'accountage', 'etacanale'], titolo: ['Da quanto esiste il canale', 'How old the channel is', 'Desde cuándo existe el canal'],
+    cosa: ['Dice quando è nato il canale e quanto tempo fa. Con un nome dopo il comando, lo dice del canale di quella persona.', 'Says when the channel was created and how long ago. With a name after the command, it says it about that person\'s channel.', 'Dice cuándo se creó el canal y hace cuánto. Con un nombre después del comando, lo dice del canal de esa persona.'],
+    risposte: {
+      si: { etichetta: ['La risposta', 'The reply', 'La respuesta'], segnaposti: ['nome', 'durata', 'data'], base: ['📅 Il canale di {nome} è nato il {data}, {durata} fa.', '📅 {nome}\'s channel was created on {data}, {durata} ago.', '📅 El canal de {nome} se creó el {data}, hace {durata}.'] },
+    } },
+  { id: 'prossima', modulo: 'base', nomi: ['prossima', 'next', 'schedule', 'proxima'], titolo: ['La prossima diretta', 'The next stream', 'El próximo directo'],
+    cosa: ['Dice quando è la prossima diretta, dalla settimana o dal Programma di Twitch, come hai scelto nelle preferenze.', 'Says when the next stream is, from your week or from the Twitch Schedule, as you chose in your preferences.', 'Dice cuándo es el próximo directo, desde tu semana o desde el Programa de Twitch, como elegiste en tus preferencias.'] },
   { id: 'uptime', modulo: 'base', nomi: ['uptime'], titolo: ['Da quanto sei in diretta', 'How long you\'ve been live', 'Cuánto llevas en directo'],
     cosa: ['Dice da quanto è cominciata la diretta.', 'Says how long ago the stream started.', 'Dice cuándo empezó el directo.'] },
   { id: 'bit', modulo: 'base', nomi: ['bit', 'bits', 'classificabit'], titolo: ['La classifica dei Bit', 'The Bits leaderboard', 'La clasificación de Bits'],
@@ -450,6 +462,13 @@ export function elenco(channel) {
       rinominato: nomi[0] !== c.nomi[0],
       chi: livelloDi(c, mia),
       chiMinimo: LIVELLI.includes(c.chi) ? c.chi : 'tutti',
+      // le frasi: la sua (vuota = la nostra), la nostra nella lingua della chat, i segnaposti
+      risposte: c.risposte ? Object.fromEntries(Object.entries(c.risposte).map(([k, d]) => [k, {
+        etichetta: d.etichetta,
+        sua: frasiPulite(c, mia.risposte)?.[k] || '',
+        base: d.base[Math.max(0, ['it', 'en', 'es'].indexOf(linguaChat(channel)))],
+        segnaposti: d.segnaposti,
+      }])) : null,
     };
   });
 }
@@ -597,6 +616,37 @@ export function spiegaGioco(channel, parola, msg = {}) {
   return testo;
 }
 
+// LE FRASI DEI COMANDI PRONTI. Un comando che risponde con un dato (da quanto
+// segui, da quanto esiste il canale) dichiara le sue frasi: i segnaposti che
+// sa riempire e la frase di base nelle tre lingue. Lo streamer ne scrive una
+// sua al posto della nostra; vuota vuol dire la nostra, nella lingua della
+// chat. Si tengono solo le frasi dichiarate, ripulite e non piu' lunghe di un
+// messaggio di chat.
+export const RISPOSTA_MAX = 300;
+function frasiPulite(c, v) {
+  if (!c.risposte || !v || typeof v !== 'object') return null;
+  const out = {};
+  for (const k of Object.keys(c.risposte)) {
+    const t = String(v[k] ?? '').replace(/\s+/g, ' ').trim().slice(0, RISPOSTA_MAX);
+    if (t) out[k] = t;
+  }
+  return Object.keys(out).length ? out : null;
+}
+
+// La frase che esce in chat: quella dello streamer se l'ha scritta, se no la
+// nostra nella lingua della chat; i segnaposti dichiarati riempiti coi dati.
+// Un segnaposto che il comando non conosce resta com'e': lo streamer lo vede
+// nell'anteprima e lo corregge, invece di trovarsi una parola sparita.
+export function rispostaDi(channel, id, chiave, dati = {}) {
+  const c = COMANDI.find((x) => x.id === id);
+  const decl = c?.risposte?.[chiave];
+  if (!decl) return '';
+  const sua = frasiPulite(c, scelte(channel)[id]?.risposte)?.[chiave];
+  const i = ['it', 'en', 'es'].indexOf(linguaChat(channel));
+  const modello = sua || decl.base[i < 0 ? 0 : i];
+  return modello.replace(/\{([a-z]+)\}/g, (tutto, k) => (decl.segnaposti.includes(k) ? String(dati[k] ?? '') : tutto));
+}
+
 // Cosa il pannello puo' scrivere, e come si ripulisce.
 export function normalizza(dati) {
   const fuori = {};
@@ -612,6 +662,8 @@ export function normalizza(dati) {
     }
     const base = LIVELLI.includes(c.chi) ? c.chi : 'tutti';
     if (riservabile(c) && LIVELLI.includes(v.chi) && LIVELLI.indexOf(v.chi) > LIVELLI.indexOf(base)) riga.chi = v.chi;
+    const frasi = frasiPulite(c, v.risposte);
+    if (frasi) riga.risposte = frasi;
     if (Object.keys(riga).length) fuori[c.id] = riga;
   }
   return fuori;
