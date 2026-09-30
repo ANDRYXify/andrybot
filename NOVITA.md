@@ -131,13 +131,29 @@ comandi diversi da quelli della riga italiana.
   es> El comando !prossima
   es> Antes, ningún comando sabía responder a «¿cuándo estás en directo?» con una hora real.
 - Alla domanda «quando sei in diretta?» il bot risponde con la prossima diretta vera, presa dalla tua settimana o dal Programma di Twitch, e non da un testo scritto a mano.
+  en: When asked “when are you live?”, the bot answers with your real next stream, taken from your week or from the Twitch Schedule, not from a handwritten text.
+  es: A la pregunta «¿cuándo estás en directo?», el bot responde con el próximo directo real, tomado de tu semana o del Programa de Twitch, y no de un texto escrito a mano.
 - [importante] In Account ci sono le «Preferenze del canale»: la lingua del bot in chat, il fuso, come si scrivono date, ore e durate, e da dove si leggono le prossime dirette. [vai: account]
+  en: Account has “Channel preferences”: the bot’s language in chat, the time zone, how dates, times and durations are written, and where your next streams are read from.
+  es: En Cuenta están las «Preferencias del canal»: el idioma del bot en el chat, la zona horaria, cómo se escriben fechas, horas y duraciones, y de dónde se leen los próximos directos.
   > Le preferenze del canale
   > Prima il bot scriveva le date all'italiana e con l'ora di Roma per tutti, anche per un canale inglese o spagnolo.
+  en> Your channel preferences
+  en> Before, the bot wrote dates the Italian way and in Rome time for everyone, even for an English or Spanish channel.
+  es> Las preferencias del canal
+  es> Antes el bot escribía las fechas a la italiana y con la hora de Roma para todos, incluso para un canal en inglés o en español.
 - [importante] C'è !channelage, da quanto esiste il canale o quello di chi nomini, e !followage dice il tempo vero di calendario. La risposta di tutti e due la puoi riscrivere, nella lista dei comandi. [vai: moduli]
+  en: There’s !channelage, how long your channel or the one you name has existed, and !followage tells the real calendar time. You can rewrite the reply of both, in the list of commands.
+  es: Está !channelage, desde cuándo existe el canal o el de quien nombres, y !followage dice el tiempo real de calendario. La respuesta de los dos la puedes reescribir, en la lista de comandos.
   > !followage e !channelage a modo tuo
   > Prima la risposta dei comandi pronti era fissa, e il tempo di !followage contava i mesi da trenta giorni.
+  en> !followage and !channelage your way
+  en> Before, the built-in commands’ reply was fixed, and !followage’s time counted months as thirty days.
+  es> !followage y !channelage a tu manera
+  es> Antes la respuesta de los comandos de serie era fija, y el tiempo de !followage contaba los meses de treinta días.
 - Nei Moduli $data, $ora e $giorno seguono fuso e formato del canale, e $moneta, $sino, $eta, $colore, $animale, $soldi e $altezza escono nella lingua della chat. [vai: moduli]
+  en: In Modules, $data, $ora and $giorno follow your channel’s time zone and format, and $moneta, $sino, $eta, $colore, $animale, $soldi and $altezza come out in the chat’s language.
+  es: En los Módulos, $data, $ora y $giorno siguen la zona horaria y el formato del canal, y $moneta, $sino, $eta, $colore, $animale, $soldi y $altezza salen en el idioma del chat.
 
 ## 2026-09-27
 
