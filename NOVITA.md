@@ -36,6 +36,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
   > Spotify, TikTok, Instagram, Discord, 7TV e Telegram in una carta sola, e ognuno lo scolleghi quando vuoi, con qualunque piano.
 - Spotify, TikTok, gli avvisi di Discord, 7TV e l'accesso con Telegram si scollegano con qualunque piano: prima, tornando all'Essenziale, restavano legati.
 - Un sostegno al progetto aperto e mai pagato si cancella dopo una settimana, e quelli pagati dopo dieci anni, come dice l'informativa.
+- Col pannello in inglese o in spagnolo la scheda Donazioni si chiama «Donations» e «Donaciones» anche nel menù, e nella pagina link il carattere in spagnolo è «Fuente». [vai: donazioni]
 
 ## 2026-09-27
 

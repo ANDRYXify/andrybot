@@ -3365,6 +3365,8 @@ const T_GRUPPO = {
 };
 const T_SCHEDA = {
   stato: ['Stato', 'Status', 'Estado'],
+  donazioni: ['Donazioni', 'Donations', 'Donaciones'],
+  consolify: ['CONSOLify', 'CONSOLify', 'CONSOLify'],
   account: ['Il tuo account', 'Your account', 'Tu cuenta'],
   personalita: ['Personalità', 'Personality', 'Personalidad'],
   conoscenza: ['Conoscenza', 'Knowledge', 'Conocimiento'],
@@ -20328,7 +20330,7 @@ async function caricaPaginaLink(ridisegna = false, quale = null) {
         <div class="lp-pane" data-gruppo="aspetto" data-pane="asp-scrittura" hidden>
           <div class="carta">
             <div class="griglia-campi">
-              <div><label class="campo" for="lp-font">${L('Carattere', 'Font', 'Tipografía')}</label>
+              <div><label class="campo" for="lp-font">${L('Carattere', 'Font', 'Fuente')}</label>
                 <select id="lp-font" data-lpk="font">${opts(d.fonts || [], LP.tema.font, NOMI_FONT)}</select></div>
               <div><label class="campo" for="lp-peso">${L('Spessore', 'Weight', 'Grosor')}</label>
                 <select id="lp-peso" data-lpk="peso">
