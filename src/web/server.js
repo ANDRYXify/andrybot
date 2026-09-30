@@ -101,6 +101,7 @@ import * as dcPreset from '../features/discord-preset.js';
 import * as dcEventi from '../features/discord-eventi.js';
 import * as pubblicita from '../features/pubblicita.js';
 import * as giochiConf from '../features/giochi-conf.js';
+import { stato as statoArena } from '../features/arena.js';
 import { VOCI as VOCI_TWITCH } from '../features/sondaggi.js';
 import * as modalitaChat from '../features/modalita-chat.js';
 import { normModalita } from '../features/quando-lavora.js';
@@ -1561,6 +1562,13 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     const suo = streamers.get(login);
     if (suo && !suo.settings?.overlayVisto) streamers.setSettings(login, { ...(suo.settings || {}), overlayVisto: Date.now() });
     effects.addClient(login, res);
+    // Un'arena in corso si racconta subito a chi arriva: con seme, combattenti,
+    // regole e istante di partenza l'overlay rifa' la partita fino ad adesso
+    // (docs/ARENA.md). Senza, un overlay riaperto a meta' non saprebbe niente.
+    try {
+      const arena = statoArena(login);
+      if (arena) res.write(`data: ${JSON.stringify({ tipo: 'arena', azione: 'stato', ...arena })}\n\n`);
+    } catch (e) { log.debug(`#${login} arena all'apertura:`, e?.message || e); }
     req.on('close', () => effects.removeClient(login, res));
   });
 
