@@ -10,7 +10,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { analizza, pubbliche, tutte, unisci, inItaliano, ultima, segnalibro, daVedere, segnoValido, taglia, destinazioni, inSezioni, idVoce, EVIDENZA_MAX, SEGNO_MAX } from '../../src/web/novita.js';
+import { analizza, pubbliche, tutte, unisci, inItaliano, ultima, segnalibro, daVedere, segnoValido, taglia, destinazioni, inSezioni, idVoce, righeSperse, EVIDENZA_MAX, SEGNO_MAX } from '../../src/web/novita.js';
 
 const RAD = join(dirname(fileURLToPath(import.meta.url)), '../..');
 const gruppi = analizza(readFileSync(join(RAD, 'NOVITA.md'), 'utf8'));
@@ -41,7 +41,8 @@ test('la prosa attorno non finisce fra le novità', () => {
     '## 2026-01-01',
     '',            // giornata vuota: non deve comparire
   ].join('\n'));
-  assert.deepEqual(pubbliche(uno), [{ data: '2026-01-02', voci: [{ testo: 'prima cosa', vai: null, importante: false }, { testo: 'seconda cosa', vai: null, importante: false }] }]);
+  const id = (t) => idVoce('2026-01-02', t);
+  assert.deepEqual(pubbliche(uno), [{ data: '2026-01-02', voci: [{ id: id('prima cosa'), testo: 'prima cosa', vai: null, importante: false }, { id: id('seconda cosa'), testo: 'seconda cosa', vai: null, importante: false }] }]);
 });
 
 test('le righe scritte prima di qualsiasi giornata si ignorano', () => {
@@ -64,11 +65,12 @@ test('una riga marcata privata non arriva mai alla forma pubblica', () => {
     '- questa la vedono tutti',
     '- [privato] questa è solo mia',
   ].join('\n'));
-  assert.deepEqual(pubbliche(g), [{ data: '2026-01-02', voci: [{ testo: 'questa la vedono tutti', vai: null, importante: false }] }]);
+  const id = (t) => idVoce('2026-01-02', t);
+  assert.deepEqual(pubbliche(g), [{ data: '2026-01-02', voci: [{ id: id('questa la vedono tutti'), testo: 'questa la vedono tutti', vai: null, importante: false }] }]);
   // e a chi ha diritto arriva, marcata per quello che è
   assert.deepEqual(tutte(g), [{ data: '2026-01-02', voci: [
-    { testo: 'questa la vedono tutti', privata: false, importante: false, vai: null },
-    { testo: 'questa è solo mia', privata: true, importante: false, vai: null },
+    { id: id('questa la vedono tutti'), testo: 'questa la vedono tutti', privata: false, importante: false, vai: null },
+    { id: id('questa è solo mia'), testo: 'questa è solo mia', privata: true, importante: false, vai: null },
   ] }]);
 });
 
@@ -442,4 +444,110 @@ test('sulla pagina pubblica un\'importante ha il suo titolo, e dove si prova', a
     { alert: { titolo: 'Manuale dell\'overlay', via: '/manuale/overlay' } });
   assert.match(h, /<article class="g-ev"><h3 class="g-ev-tit">Il muro delle emote<\/h3><p class="g-ev-perche">Le emote volano\.<\/p><p class="g-ev-riga">Il muro\.<\/p><p class="g-ev-dove"><a href="\/manuale\/overlay">/);
   assert.equal((h.match(/<h1[\s>]/g) || []).length, 1, 'e la pagina resta con un h1 solo');
+});
+
+// ── LE TRE LINGUE ──────────────────────────────────────────────────────────
+// Una riga, tre lingue, nello stesso posto: sotto la riga italiana, rientrate,
+// `en:` ed `es:`; per un'importante anche `en>` ed `es>` (titolo, poi perché).
+// Chi legge sceglie la lingua; l'impronta resta quella italiana.
+
+const TRE = [
+  '## 2026-09-30',
+  '',
+  '- [importante] Il muro delle emote. [vai: alert]',
+  '  en: The emote wall.',
+  '  es: El muro de emotes.',
+  '  > Il muro',
+  '  > Le emote volano.',
+  '  en> The wall',
+  '  en> Emotes fly.',
+  '  es> El muro',
+  '  es> Los emotes vuelan.',
+  '- Una correzione. [vai: stato]',
+  '  es: Una corrección.',
+  '  en: A fix.',
+  '- Una riga ancora da tradurre.',
+].join('\n');
+
+test('le traduzioni stanno sotto la riga, e non entrano nel testo né nella destinazione', () => {
+  const [g] = analizza(TRE);
+  assert.equal(g.voci.length, 3, 'le righe rientrate non diventano voci');
+  const [muro, corr, sola] = g.voci;
+  assert.equal(muro.testo, 'Il muro delle emote.');
+  assert.equal(muro.vai, 'alert', 'il [vai:] della riga italiana vale per tutte');
+  assert.deepEqual(muro.lingue, {
+    en: { testo: 'The emote wall.', titolo: 'The wall', perche: 'Emotes fly.' },
+    es: { testo: 'El muro de emotes.', titolo: 'El muro', perche: 'Los emotes vuelan.' },
+  });
+  assert.equal(muro.titolo, 'Il muro', 'il titolo italiano resta il suo');
+  assert.equal(muro.perche, 'Le emote volano.');
+  assert.deepEqual(corr.lingue, { en: { testo: 'A fix.' }, es: { testo: 'Una corrección.' } }, 'in qualunque ordine');
+  assert.equal(sola.lingue, undefined, 'una riga senza traduzioni non ne inventa');
+});
+
+test('chi legge sceglie la lingua: testo, titolo e perché arrivano in quella', () => {
+  const g = analizza(TRE);
+  const [en] = pubbliche(g, 'en');
+  assert.deepEqual(en.voci.slice(0, 2).map((v) => [v.testo, v.titolo, v.perche, v.vai]), [
+    ['The emote wall.', 'The wall', 'Emotes fly.', 'alert'],
+    ['A fix.', undefined, undefined, 'stato'],
+  ]);
+  const [es] = pubbliche(g, 'es');
+  assert.deepEqual(es.voci.slice(0, 2).map((v) => [v.testo, v.titolo, v.perche]), [
+    ['El muro de emotes.', 'El muro', 'Los emotes vuelan.'],
+    ['Una corrección.', undefined, undefined],
+  ]);
+  const [it] = pubbliche(g, 'it');
+  assert.equal(it.voci[0].testo, 'Il muro delle emote.');
+  assert.deepEqual(pubbliche(g), pubbliche(g, 'it'), 'senza lingua, l\'italiano');
+  for (const storta of ['fr', 'EN', '', null, ['en']]) assert.deepEqual(pubbliche(g, storta), pubbliche(g, 'it'), `una lingua che non c'e' (${storta}) vale italiano`);
+  assert.ok(!('lingue' in en.voci[0]), 'fuori di casa esce la lingua scelta, non tutte e tre');
+});
+
+test('l\'impronta resta quella italiana: cambiare lingua non fa rivedere niente', () => {
+  const g = analizza(TRE);
+  const vecchio = segnalibro(pubbliche(analizza(TRE.split('\n').filter((r) => !/^\s+(en|es)[:>]/.test(r)).join('\n'))));
+  for (const l of ['it', 'en', 'es']) {
+    const f = pubbliche(g, l);
+    for (const v of f[0].voci) assert.equal(v.id, idVoce('2026-09-30', analizza(TRE)[0].voci[f[0].voci.indexOf(v)].testo), `${l}: l'impronta e' della riga italiana`);
+    assert.equal(segnalibro(f), vecchio, `${l}: lo stesso segnaposto di chi le leggeva solo in italiano`);
+    for (const altra of ['it', 'en', 'es']) {
+      assert.deepEqual(daVedere(pubbliche(g, altra), segnalibro(f)), [], `lette in ${l}, non tornano in ${altra}`);
+    }
+  }
+  assert.equal(segnalibro(tutte(g, 'es')), segnalibro(tutte(g, 'it')), 'e cosi\' per chi vede anche le sue');
+  // una riga italiana riscritta torna, in qualunque lingua la si legga
+  const riscritta = analizza(TRE.replace('- Una correzione.', '- Una correzione diversa.'));
+  assert.deepEqual(daVedere(pubbliche(riscritta, 'en'), segnalibro(pubbliche(g, 'en'))).flatMap((x) => x.voci.map((v) => v.testo)), ['A fix.']);
+});
+
+test('una traduzione a metà non si mostra: la voce resta intera in italiano, e lo dice', () => {
+  const g = analizza(TRE);
+  const sola = pubbliche(g, 'en')[0].voci[2];
+  assert.equal(sola.testo, 'Una riga ancora da tradurre.');
+  assert.equal(sola.lingua, 'it', 'dice in che lingua e\', cosi\' chi la mostra la marca');
+  assert.equal(pubbliche(g, 'it')[0].voci[2].lingua, undefined, 'in italiano non c\'e\' niente da dire');
+  assert.equal(pubbliche(g, 'en')[0].voci[1].lingua, undefined, 'una voce tradotta non porta il segno');
+  const senzaTitolo = analizza(TRE.replace('  en> The wall\n  en> Emotes fly.\n', ''));
+  const muro = pubbliche(senzaTitolo, 'en')[0].voci[0];
+  assert.deepEqual([muro.testo, muro.titolo, muro.perche, muro.lingua], ['Il muro delle emote.', 'Il muro', 'Le emote volano.', 'it'],
+    'un\'importante senza titolo inglese resta tutta italiana, non meta\' e meta\'');
+});
+
+test('le righe private restano in italiano anche per chi ha il pannello in un\'altra lingua', () => {
+  const g = analizza('## 2026-09-30\n- pubblica\n  en: public\n  es: pública\n- [privato] solo mia\n');
+  assert.deepEqual(tutte(g, 'en')[0].voci.map((v) => [v.testo, v.privata, v.lingua]), [['public', false, undefined], ['solo mia', true, 'it']]);
+  assert.deepEqual(pubbliche(g, 'es')[0].voci.map((v) => v.testo), ['pública'], 'e fuori di casa non escono in nessuna lingua');
+});
+
+test('una traduzione staccata o doppia non si perde in silenzio', () => {
+  assert.deepEqual(righeSperse(TRE), [], 'il file scritto bene non lascia niente');
+  const staccata = TRE.replace('- Una correzione. [vai: stato]\n', '- Una correzione. [vai: stato]\n\n');
+  assert.deepEqual(righeSperse(staccata).map((x) => [x.perche, x.testo.trim()]), [['staccata', 'es: Una corrección.'], ['staccata', 'en: A fix.']]);
+  assert.equal(analizza(staccata)[0].voci[1].lingue, undefined, 'e non si attacca a nessuno');
+  const doppia = TRE.replace('  en: A fix.', '  en: A fix.\n  en: Another fix.');
+  assert.deepEqual(righeSperse(doppia).map((x) => [x.perche, x.riga]), [['doppia', 15]]);
+  assert.equal(analizza(doppia)[0].voci[1].lingue.en.testo, 'A fix.', 'la prima resta, la seconda e\' segnalata');
+  assert.deepEqual(righeSperse(TRE.replace('  en: A fix.', '  en:')).map((x) => x.perche), ['vuota']);
+  assert.deepEqual(righeSperse('# Novità\n\n- esempio\n  en: example\n\n## 2026-09-30\n- vera\n  en: real\n'), [], 'la prosa in testa al file non e\' letta, e quindi non e\' persa');
 });
