@@ -744,7 +744,12 @@ export class Helix {
       return { ok: true };
     } catch (e) {
       if (e.status === 404) return { ok: true, giaVia: true };   // già sparito
-      if (e.status === 401) return { ok: false, motivo: 'permesso mancante (ri-concedi i permessi)' };
+      // 401 e' la chiave senza il permesso, 403 il conto che non modera il
+      // canale: per chi deve rimediare e' la stessa cosa, un permesso da ridare.
+      if (e.status === 401 || e.status === 403) return { ok: false, motivo: 'permesso mancante (ri-concedi i permessi)' };
+      // 400: il messaggio e' dello streamer o di un moderatore, o ha piu' di sei ore.
+      if (e.status === 400) return { ok: false, motivo: 'non si può cancellare (è di un moderatore o dello streamer, o è troppo vecchio)' };
+      if (e.status === 429) return { ok: false, motivo: 'troppe richieste' };
       log.debug('deleteMessage:', e?.message || e);
       return { ok: false, motivo: 'errore Twitch' };
     }
@@ -889,9 +894,14 @@ export class Helix {
       });
       return { ok: true };
     } catch (e) {
+      // «Gia' bannato» Twitch lo dice con un 400 e le sue parole; il 409 e'
+      // un'altra cosa: qualcuno sta cambiando proprio adesso lo stato di quella
+      // persona, e si riprova. Scambiarli voleva dire dare per fatto un ban
+      // mai avvenuto.
+      if (e.status === 400 && /already banned/i.test(e?.message || '')) return { ok: true, gia: true };
       if (e.status === 400) return { ok: false, motivo: 'non posso (forse è mod/VIP o sei tu)' };
-      if (e.status === 401) return { ok: false, motivo: 'permesso mancante' };
-      if (e.status === 409) return { ok: true, gia: true };   // già bannato
+      if (e.status === 401 || e.status === 403) return { ok: false, motivo: 'permesso mancante' };
+      if (e.status === 429) return { ok: false, motivo: 'troppe richieste' };
       log.debug('timeoutUser:', e?.message || e);
       return { ok: false, motivo: 'errore Twitch' };
     }

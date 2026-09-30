@@ -46,9 +46,9 @@ test('nel tubo dei messaggi nessuno si ricava la voce da sé', () => {
 
 test('la voce arriva fino in fondo, non si ferma al primo strato', () => {
   assert.match(gestisci, /const parla = dire \|\| this\.vocePer\(msg\)/);
-  assert.match(bot, /_elaboraMessaggio\(login, msg, onMessage, parla\);/,
+  assert.match(bot, /this\._elaboraMessaggio\(login, msg, onMessage, parla[,)]/,
     'chi elabora deve RICEVERE la voce, non ricavarsela');
-  assert.match(bot, /_elaboraMessaggio\(login, msg, onMessage, parla = this\.vocePer\(msg\)\)/,
+  assert.match(bot, /_elaboraMessaggio\(login, msg, onMessage, parla = this\.vocePer\(msg\)[,)]/,
     'e avere un ripiego sensato se non gliela passano');
 });
 
