@@ -73,6 +73,46 @@ test('l\'arena si stringe fino alla misura minima, e i combattenti restano dentr
   assert.ok(lunga.passo >= 30 * A.PASSO, 'la partita lunga arriva oltre la stretta');
 });
 
+// Due difetti trovati guardando la partita disegnata: un oggetto caduto quando
+// l'arena era larga restava fuori dai muri che si stringevano, e i combattenti
+// lo inseguivano spingendo contro il muro; e con combattenti grandi e misura
+// minima piccola l'arena finiva piu' stretta di un combattente, che usciva dai
+// muri. Qui ogni passo guarda i cerchi interi e gli oggetti interi.
+test('l\'arena che si stringe non lascia oggetti fuori dai muri', () => {
+  const s = A.nuova('oggetti-fuori', gente(6), { ogniOggetto: 1, strettaDopo: 5, strettaDurata: 20, strettaMin: 0.3, vita: 1000, danno: 1 });
+  let persi = 0;
+  while (!s.fine && s.passo < 40 * A.PASSO) {
+    persi += A.passo(s).filter((e) => e.tipo === 'perso').length;
+    const m = A.muri(s);
+    for (const o of s.oggetti) {
+      assert.ok(o.x - A.R_OGGETTO >= m.x0 && o.x + A.R_OGGETTO <= m.x1 && o.y - A.R_OGGETTO >= m.y0 && o.y + A.R_OGGETTO <= m.y1, `passo ${s.passo}: ${o.tipo} fuori dai muri`);
+    }
+  }
+  assert.ok(persi > 0, 'la stretta ha davvero lasciato fuori qualcosa da togliere');
+});
+
+// Un urto spinge i due cerchi l'uno via dall'altro, e prima poteva spingerne
+// uno oltre il muro: i cerchi interi restano dentro dopo ogni passo, urti
+// compresi. E l'arena piu' stretta tiene ancora due combattenti affiancati.
+test('un combattente ci sta sempre tutto, urti compresi, anche grande nell\'arena piu\' stretta', () => {
+  for (const [raggio, strettaMin] of [[30, 0.3], [60, 0.15], [45, 0.15], [14, 0.15]]) {
+    const R = { raggio, strettaMin, strettaDopo: 5, strettaDurata: 5, vita: 1000, danno: 1, durataMax: 60 };
+    const r = A.regole(R);
+    assert.ok(r.strettaMin * A.W >= 4 * raggio && r.strettaMin * A.H >= 2 * raggio, `raggio ${raggio}: nell'arena piu' stretta ci stanno due combattenti affiancati`);
+    for (const n of [3, 12]) {
+      const s = A.nuova(`grandi-${raggio}-${n}`, gente(n), R);
+      while (!s.fine) {
+        A.passo(s);
+        const m = A.muri(s);
+        for (const c of s.corpi.filter((x) => x.vivo)) {
+          assert.ok(c.x - raggio >= m.x0 - 1e-9 && c.x + raggio <= m.x1 + 1e-9 && c.y - raggio >= m.y0 - 1e-9 && c.y + raggio <= m.y1 + 1e-9,
+            `raggio ${raggio}, ${n} combattenti, passo ${s.passo}: ${c.id} esce dai muri`);
+        }
+      }
+    }
+  }
+});
+
 test('gli oggetti fanno quello che dicono', () => {
   const due = (oggA) => {
     const s = A.nuova('duello', gente(2), { ogniOggetto: 60 });
