@@ -155,11 +155,23 @@ comandi diversi da quelli della riga italiana.
   en: In Modules, $data, $ora and $giorno follow your channel’s time zone and format, and $moneta, $sino, $eta, $colore, $animale, $soldi and $altezza come out in the chat’s language.
   es: En los Módulos, $data, $ora y $giorno siguen la zona horaria y el formato del canal, y $moneta, $sino, $eta, $colore, $animale, $soldi y $altezza salen en el idioma del chat.
 - [importante] Nell'Overlay Studio c'è il «Conto alla pubblicità»: quanto manca alla prossima pausa di Twitch e, durante la pausa, quanto manca al tuo ritorno. Scende da solo e segue anche i rinvii. [vai: alert]
+  en: Overlay Studio has the “Ad countdown”: how long until the next Twitch ad break and, during the break, how long until you’re back. It counts down by itself and follows snoozes too.
+  es: En Overlay Studio está la «Cuenta atrás de anuncios»: cuánto falta para la próxima pausa de Twitch y, durante la pausa, cuánto falta para tu regreso. Baja sola y sigue también los aplazamientos.
   > Il conto alla pubblicità, in scena
   > Prima il conto c'era solo nel pannello, per te: chi guardava la diretta non sapeva quando sarebbe arrivata la pausa, né quanto sarebbe durata.
+  en> The ad countdown, on screen
+  en> Before, the countdown was only in the panel, for you: viewers didn’t know when the break would come or how long it would last.
+  es> La cuenta atrás de anuncios, en escena
+  es> Antes la cuenta estaba solo en el panel, para ti: quien miraba el directo no sabía cuándo llegaría la pausa ni cuánto duraría.
 - Il pannello si apre subito: prima il server si fermava una decina di secondi quasi a ogni apertura, e la copertina finiva su «ci sta mettendo più del solito». Dalla seconda volta il browser tiene i file.
+  en: The panel opens right away: before, the server stalled for about ten seconds almost every time, and the cover screen ended up on “this is taking longer than usual”. From the second visit on, the browser keeps the files.
+  es: El panel se abre enseguida: antes el servidor se detenía unos diez segundos casi cada vez, y la portada acababa en «está tardando más de lo normal». Desde la segunda vez el navegador guarda los archivos.
 - Accanto al nome della moneta scegli come se ne parla, «le tue», «i tuoi», «la tua» o «il tuo»: !giochi dice «I tuoi Semi di girasole», non più «Le tue Semi di girasole». [vai: giochi]
+  en: Next to the coin name you choose its gender and number, so it’s spoken of correctly: in Italian, !giochi now says “I tuoi Semi di girasole”, no longer “Le tue Semi di girasole”.
+  es: Junto al nombre de la moneda eliges su género y su número, así se habla bien de ella: en italiano, !giochi dice «I tuoi Semi di girasole» y ya no «Le tue Semi di girasole».
 - Gli aggiornamenti di SocialBot aspettano che nessuno sia in diretta prima di riavviare il bot, e mentre si preparano non gli rubano velocità: niente chat o overlay fermi in piena serata.
+  en: SocialBot updates wait until nobody is live before restarting the bot, and while they get ready they don’t slow it down: no chat or overlay freezing in the middle of a stream.
+  es: Las actualizaciones de SocialBot esperan a que nadie esté en directo antes de reiniciar el bot, y mientras se preparan no le quitan velocidad: nada de chat ni overlay parados en pleno directo.
 
 ## 2026-09-27
 
