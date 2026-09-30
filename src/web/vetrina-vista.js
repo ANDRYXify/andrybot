@@ -19,6 +19,8 @@
 // (che e' uno script classico e non puo' importare): un contratto li confronta
 // uno per uno, perche' due copie non sorvegliate vanno alla deriva in silenzio.
 
+import { guideIn, urlGuida, VIE } from './guide.js';
+import { manualiIn } from './manuali.js';
 const ICO = {
   chat: '<path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/>',
   scudo: '<path d="M12 3.2 19 6v5c0 4.8-3.4 7.8-7 8.8-3.6-1-7-4-7-8.8V6z"/>',
@@ -886,6 +888,49 @@ export function senzaRientro(h) {
     .join('');
 }
 
+// IL PIEDE DELLA HOME, NELLA LINGUA DELLA PAGINA. index.html lo porta in
+// italiano; per /en e /es si riscrive qui, coi collegamenti alle guide e ai
+// manuali che in quella lingua esistono davvero (un collegamento a una
+// traduzione che non c'e' non si scrive). Le etichette corte delle guide sono
+// scelte per il piede: il titolo intero sta nella guida.
+const PIE_GUIDE = [
+  ['come-mettere-un-bot-su-twitch', 'How to add a bot to Twitch', 'Cómo poner un bot en Twitch'],
+  ['follow-bot-e-hate-raid', 'Stopping follow-bots and hate raids', 'Frenar follow-bots y hate raids'],
+  ['comandi-chat-twitch', 'Chat commands', 'Comandos del chat'],
+  ['overlay-obs-per-twitch', 'Stream overlays', 'Overlays para el directo'],
+  ['bot-per-twitch-italiano', 'Choosing a Twitch bot', 'Elegir un bot para Twitch'],
+];
+const PIE_MANUALI = [['giochi', 'Games manual', 'Manual de juegos'], ['moduli', 'Commands manual', 'Manual de comandos']];
+const PIE_TESTI = {
+  en: {
+    mano: '<p><strong>I write SocialBot myself</strong>, and almost everything it does stays free. If it helps you and you feel like giving me a hand, you can: whatever amount you like, just once.</p>\n<a class="btn" href="/sostieni">Give a hand</a>',
+    voce: '<p>SocialBot talks in your chat <strong>with your own account</strong>, and you stay in control.</p>',
+    guide: 'Guides', manuali: 'Manuals', novita: 'What’s new', privacy: 'Privacy &amp; security', termini: 'Terms of service',
+    cookie: 'We only use a <strong>technical cookie</strong> to keep you signed in.\nNo tracking, no ads.', dettagli: 'Details', ok: 'Got it',
+  },
+  es: {
+    mano: '<p><strong>SocialBot lo escribo yo</strong>, y casi todo lo que hace sigue siendo gratis. Si te sirve y te apetece echarme una mano, puedes: lo que quieras, una sola vez.</p>\n<a class="btn" href="/sostieni">Echar una mano</a>',
+    voce: '<p>SocialBot habla en tu chat <strong>con tu propia cuenta</strong>, y el control siempre es tuyo.</p>',
+    guide: 'Guías', manuali: 'Manuales', novita: 'Novedades', privacy: 'Privacidad y seguridad', termini: 'Términos del servicio',
+    cookie: 'Solo usamos una <strong>cookie técnica</strong> para mantener tu sesión abierta.\nNada de rastreo ni publicidad.', dettagli: 'Detalles', ok: 'Entendido',
+  },
+};
+function pieDi(l) {
+  const t = PIE_TESTI[l], v = VIE[l], k = l === 'en' ? 1 : 2;
+  const a = (href, testo) => `<a href="${href}">${testo}</a>`;
+  const guide = guideIn(l), manuali = manualiIn(l);
+  const voci = [a(v.guide, t.guide)];
+  if (manuali.length) voci.push(a(v.manuali, t.manuali));
+  for (const m of PIE_MANUALI) { const x = manuali.find((y) => y.id === m[0]); if (x) voci.push(a(`${v.manuali}/${x.slug}`, m[k])); }
+  voci.push(a(v.novita, t.novita));
+  for (const g of PIE_GUIDE) { const x = guide.find((y) => y.id === g[0]); if (x) voci.push(a(new URL(urlGuida(l, x.slug)).pathname, g[k])); }
+  return {
+    mano: `<aside class="pie-mano">\n${t.mano}\n</aside>`,
+    pie: `<footer class="pie">\n${t.voce}\n<p class="pie-guide">${voci.join(' · ')}</p>\n<p class="pie-legale">${a(v.privacy, t.privacy)} · ${a(v.termini, t.termini)} · <a href="https://andryxify.it" rel="noopener">andryxify.it</a></p>\n</footer>`,
+    cookie: `<p>${t.cookie} <a href="${v.privacy}">${t.dettagli}</a></p>\n<button type="button" id="cookie-ok" class="btn">${t.ok}</button>`,
+  };
+}
+
 // Il guscio di chi non e' entrato: la vetrina gia' disegnata, la larghezza
 // giusta al primo disegno (`body.vetrina`, vedi docs/VELOCITA.md) e solo le sue
 // risorse.
@@ -902,6 +947,13 @@ export function guscioVetrina(guscio, lingua, opzioni = {}) {
     h = h.replace(da, a);
   };
   cambia('<body>', '<body class="vetrina">');
+  if (l !== 'it') {
+    const p = pieDi(l);
+    const blocco = (re, a) => { const m = h.match(re); if (!m) throw new Error(`guscio ${l}: non trovo in index.html → ${re}`); h = h.replace(m[0], () => a(m)); };
+    blocco(/<aside class="pie-mano">[\s\S]*?<\/aside>/, () => p.mano);
+    blocco(/<footer class="pie">[\s\S]*?<\/footer>/, () => p.pie);
+    blocco(/(<div id="cookie-banner"[^>]*>)[\s\S]*?(<\/div>)/, (m) => `${m[1]}\n${p.cookie}\n${m[2]}`);
+  }
   cambia('</head>', `  <script type="application/ld+json">${jsonSicuro(datiStrutturatiVetrina(l, opzioni))}</script>\n</head>`);
   cambia('<html lang="it">', `<html lang="${m.html}">`);
   cambia(`<title>${base.titolo}</title>`, `<title>${m.titolo}</title>`);
@@ -922,11 +974,17 @@ export function guscioVetrina(guscio, lingua, opzioni = {}) {
 
 // Il guscio di chi e' entrato (e della demo): tutto il pannello, senza lo
 // script della vetrina che li' non ha niente da fare.
+//
+// Il pannello sceglie la lingua nel browser, quindi il piede in inglese e in
+// spagnolo viaggia accanto a quello italiano, in un <template> per lingua fatto
+// da pieDi: app.js lo mette al posto dell'italiano quando la lingua cambia.
 export function guscioPannello(guscio) {
   let h = guscio;
   for (const riga of SOLO_VETRINA) {
     if (!h.includes(riga)) throw new Error(`pannello: non trovo ${riga} in index.html`);
     h = h.replace('  ' + riga + '\n', '').replace(riga, '');
   }
-  return h;
+  const piedi = ['en', 'es'].map((l) => { const p = pieDi(l); return `<template id="pie-${l}">${p.mano}${p.pie}<div class="cookie-testo">${p.cookie}</div></template>`; }).join('');
+  if (!h.includes('</body>')) throw new Error('pannello: non trovo </body> in index.html');
+  return h.replace('</body>', `${piedi}\n</body>`);
 }

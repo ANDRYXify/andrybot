@@ -150,8 +150,12 @@ export async function eseguiTasto(channel, idTasto, dip = {}) {
   }
   if (!tasto) return { ok: false, mostra: 'tasto non trovato' };
 
+  // i passi da completare si saltano; se non ne resta nessuno pronto, il tasto
+  // lo dice invece di rispondere «fatto» su niente
+  const pronti = (tasto.passi || []).filter((p) => !p.incompleto);
+  if (!pronti.length) return { ok: false, mostra: DA_COMPLETARE };
   const esiti = [];
-  for (const passo of tasto.passi) {
+  for (const passo of pronti) {
     if (passo.tipo === 'attesa') { await dormi(passo.ms); esiti.push({ ok: true, mostra: '' }); continue; }
     esiti.push(await eseguiPasso(login, passo, dip));
   }
@@ -279,6 +283,7 @@ export async function eseguiPassoDiTasto(channel, idTasto, k, dip = {}) {
       if (t.id !== idTasto) continue;
       const passo = (t.passi || [])[Number(k)];
       if (!passo) return { ok: false, mostra: 'passo non trovato' };
+      if (passo.incompleto) return { ok: false, mostra: DA_COMPLETARE };
       if (passo.tipo === 'attesa') return { ok: true, mostra: '', attesa: passo.ms };
       return Promise.resolve(eseguiPasso(login, passo, dip));
     }
@@ -295,7 +300,7 @@ export const TIPI_REGIA = ['scena', 'muto', 'transizione'];
 
 export function passoDiRegia(channel, passo) {
   const p = passoPulito(passo, new Set());
-  if (!p || !TIPI_REGIA.includes(p.tipo)) return Promise.resolve({ ok: false, mostra: 'passo non valido' });
+  if (!p || p.incompleto || !TIPI_REGIA.includes(p.tipo)) return Promise.resolve({ ok: false, mostra: 'passo non valido' });
   return chiediAlPonte(norm(channel), p);
 }
 
@@ -405,11 +410,36 @@ const nuovoId = () => crypto.randomBytes(5).toString('hex');
 // motivo per cui la plancia stava stretta. Ora porta una fila di passi, e un
 // passo e' uno di pochi verbi.
 //
-// Un passo che non si puo' fare viene tolto, non tenuto li' a fingere; se non ne
-// resta nessuno, il tasto sparisce — come prima faceva un tasto che puntava a
-// un'azione cancellata.
+// Un passo che non si puo' piu' fare (punta a un'azione cancellata, o a un file
+// che non e' un nome di file) viene tolto, non tenuto li' a fingere; se non ne
+// resta nessuno, il tasto sparisce.
+//
+// Un passo DA COMPLETARE e' un'altra cosa: e' un passo appena messo, a cui manca
+// ancora il campo che lo fa agire (la frase, il file, la scena). Esiste: si
+// salva segnato `incompleto`, il pannello lo mostra da riempire, e premendo il
+// tasto si salta. Buttarlo via al salvataggio lasciava a video un tasto che
+// puntava a niente, e alla rilettura il passo spariva.
 const PASSI_MAX = 8;
 const ATTESA_MAX_MS = 30000;
+export const DA_COMPLETARE = 'da completare';
+
+// I TETTI SONO UNO PER COSA, e stanno qui. Il pannello li riceve da qui e li
+// controlla a ogni ingresso (il «+», «Duplica», «Sposta nella pagina»), cosi'
+// chi preme sa perche' non si puo'. Una plancia che arriva oltre il tetto non si
+// salva tagliata in silenzio: si rifiuta, e si dice quale tetto ha passato.
+export const LIMITI = Object.freeze({ pagine: PAGINE_MAX, tasti: TASTI_MAX, passi: PASSI_MAX });
+
+export function fuoriTetto(dati) {
+  const pagine = Array.isArray(dati?.pagine) ? dati.pagine : [];
+  if (pagine.length > PAGINE_MAX) return `al massimo ${PAGINE_MAX} pagine`;
+  for (const pg of pagine) {
+    const tasti = Array.isArray(pg?.tasti) ? pg.tasti : [];
+    if (tasti.length > TASTI_MAX) return `al massimo ${TASTI_MAX} tasti per pagina`;
+    for (const t of tasti) if (Array.isArray(t?.passi) && t.passi.length > PASSI_MAX) return `al massimo ${PASSI_MAX} passi per tasto`;
+  }
+  return '';
+}
+const daCompletare = (passo) => ({ ...passo, incompleto: true });
 
 function passoPulito(p, valide) {
   const tipo = String(p?.tipo || '');
@@ -420,36 +450,43 @@ function passoPulito(p, valide) {
   }
   if (tipo === 'chat') {
     const testo = testoPulito(p?.testo, 400);
-    return testo ? { tipo, testo } : null;
+    return testo ? { tipo, testo } : daCompletare({ tipo, testo });
   }
   if (tipo === 'comando') {
     const comando = testoPulito(p?.comando, 40).replace(/^!/, '').toLowerCase();
-    return /^[a-z0-9_-]{1,40}$/.test(comando) ? { tipo, comando } : null;
+    return /^[a-z0-9_-]{1,40}$/.test(comando) ? { tipo, comando } : daCompletare({ tipo, comando });
   }
   if (tipo === 'media') {
     // Il file e' stato prodotto dalla stessa catena degli effetti (compressione,
     // limiti, cartella del canale): qui si controlla solo che il nome sia un
     // nome di file e non una strada per uscire dalla cartella.
     const file = String(p?.file || '');
-    if (!/^[A-Za-z0-9._-]{1,80}$/.test(file) || file.includes('..')) return null;
     const genere = ['immagine', 'video', 'audio'].includes(String(p?.genere)) ? String(p.genere) : null;
-    if (!genere) return null;
     const durata = Math.round(Number(p?.durata));
     const volume = Math.round(Number(p?.volume));
-    return {
-      tipo, file, genere,
+    const misure = {
       durata: Number.isFinite(durata) ? Math.max(500, Math.min(30000, durata)) : 5000,
       volume: Number.isFinite(volume) ? Math.max(0, Math.min(100, volume)) : 100,
     };
+    // senza file e' un passo ancora da riempire; il genere e' solo quello che
+    // l'idea propone, e il file vero lo decide quando arriva
+    if (!file) return daCompletare({ tipo, file, genere: genere || 'immagine', ...misure });
+    if (!/^[A-Za-z0-9._-]{1,80}$/.test(file) || file.includes('..')) return null;
+    if (!genere) return null;
+    return { tipo, file, genere, ...misure };
   }
   if (tipo === 'scena') {
     const scena = testoPulito(p?.scena, 80);
-    return scena ? { tipo, scena } : null;
+    return scena ? { tipo, scena } : daCompletare({ tipo, scena });
   }
   if (tipo === 'muto') {
     const fonte = testoPulito(p?.fonte, 80);
     const come = ['inverti', 'muta', 'smuta'].includes(String(p?.come)) ? String(p.come) : 'inverti';
-    return fonte ? { tipo, fonte, come } : null;
+    return fonte ? { tipo, fonte, come } : daCompletare({ tipo, fonte, come });
+  }
+  if (tipo === 'transizione') {
+    const transizione = testoPulito(p?.transizione, 80);
+    return transizione ? { tipo, transizione } : daCompletare({ tipo, transizione });
   }
   if (tipo === 'attesa') {
     const ms = Math.round(Number(p?.ms));
@@ -545,7 +582,7 @@ export function fileUsati(channel) {
 export function salvaPlancia(channel, dati) {
   const login = norm(channel);
   const s = streamers.get(login);
-  if (!s) return null;
+  if (!s || fuoriTetto(dati)) return null;
   const pulita = planciaPulita(login, dati);
   streamers.setSettings(login, { ...(s.settings || {}), plancia: pulita });
   return plancia(login);

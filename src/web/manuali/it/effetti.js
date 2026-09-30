@@ -11,7 +11,7 @@ export default {
   corpo: [
     { h2: 'Effetti & suoni', scheda: 'effetti', p: [
       'Qui carichi suoni, immagini, GIF e video e li fai partire nell\'overlay: da un comando in chat, da un gesto davanti alla webcam o da un premio a punti canale. Ci sono anche otto effetti pronti, disegnati da noi. Gli stessi media li ritrovi negli alert, nel player, nei cartelli e in ogni campo che ha il pulsante «Dalla libreria».',
-      'La scheda sta nel gruppo «Scena & overlay» ed è compresa in ogni piano, anche in quello gratuito. Se leggi «Chiusa dal proprietario», per il tuo canale è chiusa, e sotto c\'è il motivo quando c\'è.',
+      'La scheda sta nel gruppo «Scena & overlay» ed è compresa in ogni piano, anche in quello gratuito. Se leggi «Chiusa da andryxify», per il tuo canale è chiusa, e sotto c\'è il motivo quando c\'è.',
       'La usano il proprietario del canale e i moderatori. I premi a punti canale sono di Twitch e chiedono il permesso dei punti canale.',
       'Gli effetti compaiono in ogni overlay dove c\'è l\'elemento «Effetti a schermo». Il suono esce dalla diretta se nella sorgente Browser di OBS hai spuntato «Controlla l\'audio via OBS» (<a href="/manuale/overlay">manuale dell\'Overlay Studio</a>).',
     ] },

@@ -82,7 +82,7 @@
         const scade = setTimeout(() => { finita(no, new Error('non-raggiungibile')); chiudi(); }, ATTESA_MS);
 
         ws.onerror = () => { clearTimeout(scade); finita(no, new Error('non-raggiungibile')); };
-        ws.onclose = () => { clearTimeout(scade); finita(no, new Error('non-raggiungibile')); chiudi(); };
+        ws.onclose = (ev) => { clearTimeout(scade); finita(no, new Error(ev && ev.code === 4009 ? 'password-sbagliata' : 'non-raggiungibile')); chiudi(); };
 
         ws.onmessage = async (m) => {
           let g;

@@ -18,6 +18,7 @@ import { join } from 'node:path';
 import { VIA_LINGUA } from './vetrina-vista.js';
 import { urlGuide } from './guide.js';
 import { urlManuali } from './manuali.js';
+import { LEGALI, legaleIn } from './legali.js';
 
 export function dataDichiarata(publicDir, nome) {
   try { return (readFileSync(join(publicDir, nome), 'utf8').match(/class="aggiornato-il" datetime="(\d{4}-\d{2}-\d{2})"/) || [])[1]; }
@@ -33,8 +34,13 @@ export function vociPubbliche({ base, pubbliche, sostieni, publicDir }) {
   // L'indirizzo che si dichiara e' quello vero: dichiararne uno che rimanda
   // vorrebbe dire far indicizzare un rimbalzo.
   voci.push({ u: sostieni, p: '0.4', f: 'yearly' });
-  voci.push({ u: `${base}/privacy`, p: '0.3', f: 'yearly', m: dataDichiarata(publicDir, 'privacy.html') });
-  voci.push({ u: `${base}/termini`, p: '0.3', f: 'yearly', m: dataDichiarata(publicDir, 'termini.html') });
+  // Privacy e termini: una voce per ogni lingua che ha il suo file, e il
+  // gruppo hreflang fatto delle stesse (src/web/legali.js).
+  for (const pagina of Object.keys(LEGALI)) {
+    const lingue = legaleIn(pagina);
+    const alt = lingue.length > 1 ? Object.fromEntries(lingue.map((x) => [x.l, base + x.via])) : undefined;
+    for (const x of lingue) voci.push({ u: base + x.via, p: '0.3', f: 'yearly', m: dataDichiarata(publicDir, x.file), ...(alt ? { alt } : {}) });
+  }
   return voci;
 }
 

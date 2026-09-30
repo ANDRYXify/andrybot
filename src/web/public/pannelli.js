@@ -5,6 +5,7 @@
   'use strict';
 
   const W = 320;
+  const DENSITA = 3;
   const ALTEZZE = [80, 100, 160];
   const TEMI = ['pagina', 'carta', 'notte'];
   const FORME = ['penna', 'netta', 'piena'];
@@ -67,6 +68,8 @@
     const h = o.h, c = o.colori;
     const font = fontDi(o.carattere || CAR);
     const problemi = [];
+    const d = o.densita || 1;
+    g.setTransform(d, 0, 0, d, 0, 0);
     g.clearRect(0, 0, W, h);
     const sp = spazio(h, o.forma, !!o.icona);
     const box = sp.box;
@@ -154,7 +157,7 @@
     return voci.map((p, i) => [`${i + 1}. ${p.titolo}`, p.link || '', p.testo || ''].filter((x, k) => k === 0 || x).join('\n')).join('\n\n----\n\n') + '\n';
   }
 
-  const PANNELLI = { W, ALTEZZE, TEMI, FORME, TIPI, ICONE, MAX, RETI, MIN_PX, tavolozza, misura, disegna, predefiniti, mdTesto, mdIndirizzo, mdLink, nomeFile, testi };
+  const PANNELLI = { W, DENSITA, ALTEZZE, TEMI, FORME, TIPI, ICONE, MAX, RETI, MIN_PX, tavolozza, misura, disegna, predefiniti, mdTesto, mdIndirizzo, mdLink, nomeFile, testi };
   if (typeof module !== 'undefined' && module.exports) module.exports = PANNELLI;
   else radice.SB_PANNELLI = PANNELLI;
 })(typeof window !== 'undefined' ? window : globalThis);

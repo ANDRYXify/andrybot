@@ -32,6 +32,7 @@ export default {
     { h3: 'Attiva il bot: concedi i permessi' },
     { p: [
       'Solo per il proprietario di un canale Twitch che non ha ancora dato i permessi. Senza, il bot non può scrivere nella tua chat. Il tasto è «Concedi i permessi su Twitch».',
+      'I permessi li dà l\'account Twitch del canale. Se su Twitch sei entrato con un altro account, al ritorno il pannello dice «I permessi non sono passati» e propone «Riprova su Twitch».',
       'Il bot scrive in chat <strong>con il tuo account</strong>, non con un account suo. Per questo chiede a Twitch i permessi del canale, uno per ogni funzione che li usa:',
     ] },
     { tabella: [
@@ -83,13 +84,14 @@ export default {
     { tabella: [
       ['Controllo', 'Cosa fa', 'Di base'],
       ['Interruttore «Bot acceso» / «Bot spento»', 'Accende o spegne il bot sul canale. Il cambio vale subito, e lo conferma «Bot acceso!» o «Bot spento.».', 'Acceso.'],
-      ['«in chat adesso» / «non connesso»', 'Dice se il bot è dentro la tua chat di Twitch. Si legge quando apri il pannello.', 'Solo lettura.'],
+      ['«in chat adesso» / «non connesso»', 'Dice se il bot è nella chat della piattaforma del tuo canale: su Twitch se è entrato nella chat, su Kick se è acceso e Kick è collegato, su YouTube se sta leggendo la chat di una diretta. Si legge quando apri il pannello. Un canale solo su Discord non ce l\'ha.', 'Solo lettura.'],
       ['«Quando dev\'essere attivo»', '«Sempre (24/7)» oppure «Solo quando sei in diretta».', '«Sempre (24/7)».'],
       ['«Salva modalità»', 'Salva la scelta del menù qui sopra. Risponde «Modalità salvata ✓».', ''],
     ] },
     { p: [
       'Con <strong>«Sempre (24/7)»</strong> il bot sta in chat giorno e notte, finché l\'interruttore è acceso.',
       'Con <strong>«Solo quando sei in diretta»</strong> entra nella tua chat di Twitch da solo quando parte la diretta ed esce quando finisce. Di solito se ne accorge subito, al massimo in un paio di minuti. Fuori onda, in questa modalità, il badge dice «non connesso» ed è normale.',
+      'Su Kick vale lo stesso: il bot risponde da quando Kick dice che la diretta è partita a quando dice che è finita. La chat di YouTube il bot la legge solo durante le dirette, con tutte e due le modalità.',
       'L\'interruttore vale sopra la modalità: da spento, il bot non risponde in nessun caso.',
       '<strong>Spegnerlo non cancella nulla.</strong> Comandi, monete, memoria e impostazioni restano, e quando lo riaccendi riparte da dove era rimasto.',
       'L\'interruttore e la modalità li usa anche un moderatore.',
@@ -107,7 +109,7 @@ export default {
     ] },
     { p: [
       'Sotto c\'è «Aggiorna i permessi»: apre Twitch, confermi, e si aggiornano tutti, anche quelli nuovi. Se qualcosa non funziona, è il primo tasto da premere.',
-      'Un moderatore al posto della riga vede «Permessi del bot:» con «chat attiva» o «chat non attiva». I permessi li dà solo il proprietario.',
+      'Su un canale Twitch, un moderatore al posto della riga vede «Permessi del bot:» con «chat attiva» o «chat non attiva». I permessi li dà solo il proprietario.',
     ] },
 
     { h3: 'Stai provando … gratis' },

@@ -1,5 +1,9 @@
 // Manuale: account e abbonamento. La forma dei manuali e il perche' stanno in
 // src/web/manuali.js; le lingue in docs/LINGUE.md.
+// I prezzi vengono dal listino che vende (numeri.js → features/abbonamenti.js).
+import { PREZZO_BASE, PREZZO_ADDON, PREZZO_BUNDLE } from '../numeri.js';
+
+const TUTTO = PREZZO_BUNDLE('tutto');
 
 export default {
   slug: 'account',
@@ -7,7 +11,7 @@ export default {
   titolo: 'Account e abbonamento: moderatori, dati, piani | SocialBot',
   h1: 'Manuale di account e abbonamento',
   desc: 'Collegare Twitch, Kick e YouTube, entrare con una passkey, far entrare i moderatori, scaricare o cancellare i dati, scegliere piano ed extra.',
-  aggiornata: '2026-09-27',
+  aggiornata: '2026-09-30',
   corpo: [
     { p: [
       'Le due schede stanno nel gruppo «Account» del menù. «Il tuo account» riguarda chi entra e dove lavora il bot. «Abbonamento» riguarda cosa hai acceso e quanto paghi.',
@@ -33,7 +37,7 @@ export default {
     { tabella: [
       ['Badge', 'Cosa vuol dire'],
       ['«non disponibile»', 'Questa piattaforma non è ancora aperta su SocialBot. Per YouTube la nota dice «in arrivo».'],
-      ['«non collegata»', 'Non l\'hai collegata. Premi «Collega».'],
+      ['«non collegata»', 'Non l\'hai collegata. Premi «Collega». Su un canale Kick, YouTube o Discord la riga di Twitch resta così, senza tasto: Twitch non si aggiunge a un canale di un\'altra piattaforma. Se trasmetti anche su Twitch, entri con il tuo account Twitch e hai un canale a sé, con il suo pannello.'],
       ['«collegata»', 'Collegata, ma il bot adesso non ci lavora: per esempio su Twitch è spento, o su YouTube non sei in diretta.'],
       ['«attiva»', 'Il bot ci lavora adesso.'],
       ['«da sistemare»', 'Qualcosa non va. La nota accanto dice cosa, e il tasto accanto lo sistema.'],
@@ -84,7 +88,7 @@ export default {
     { p: [
       'L\'invito <strong>vale 72 ore</strong> e si usa una volta. Chi lo apre entra con <strong>il suo account su quella piattaforma</strong>, lo stesso che hai scritto tu. Con un altro account l\'invito non vale, e su Twitch la pagina dell\'invito glielo dice.',
       'Il link non è nemmeno indispensabile: se quella persona entra nel pannello con quell\'account prima della scadenza, l\'invito si abbina da solo.',
-      'Il nome va scritto com\'è sulla piattaforma: da 3 a 25 caratteri, lettere, numeri e trattino basso.',
+      'Scrivi il nome com\'è sulla piattaforma, con o senza la @. Maiuscole, punti, trattini e spazi non contano: il nome si legge come quando quella persona entra, e restano lettere, numeri e trattino basso. Se non resta niente, leggi «nome utente non valido».',
     ] },
     { p: ['In «Chi ha chiesto di aiutarti» ogni richiesta porta un segno:'] },
     { ul: [
@@ -101,6 +105,7 @@ export default {
       ['Stato', 'Cosa vedi', 'Tasti'],
       ['«attivo»', '«ultimo accesso …», oppure «mai entrato».', '«Rimuovi»: chiede «Tolgo questo moderatore?», e da lì non entra più nel pannello.'],
       ['«invito in attesa»', '«invito valido fino al …» con la data di scadenza.', '«Copia link», «Rigenera» per un link nuovo di 72 ore, «Annulla», che chiede conferma come «Rimuovi».'],
+      ['«invito scaduto»', 'Sono passate le 72 ore: «il link non vale più: rigeneralo».', '«Rigenera» e «Annulla». Il vecchio link non si copia più.'],
     ] },
     { p: ['Messaggi che puoi incontrare creando un invito: «Scrivi il nome utente del moderatore.», «nome utente non valido», «sei già il proprietario del canale», «Il tuo piano non include i moderatori.», «hai raggiunto il massimo di moderatori del tuo piano.».'] },
 
@@ -166,9 +171,9 @@ export default {
       ['Avviso', 'Quando compare', 'Dove porta «Fammi vedere»'],
       ['«Mancano dei permessi»', 'Twitch ha permessi nuovi che non hai ancora dato.', '«Stato»'],
       ['«Il bot è spento»', 'L\'interruttore del bot è spento.', '«Stato»'],
-      ['«Spotify non è collegato»', 'Le richieste musicali sono nel tuo piano, ma Spotify non è collegato.', '«Musica»'],
+      ['«Spotify non è collegato»', 'Le richieste musicali sono accese, cioè il comando <code>!sr</code> è acceso, ma Spotify non è collegato. Se non le usi, spegni <code>!sr</code> e l\'avviso sparisce.', '«Musica»'],
       ['«Il tuo overlay non l’hai ancora aperto»', 'Il link del tuo overlay non è mai stato aperto nel programma con cui trasmetti.', '«Overlay Studio»'],
-      ['«Non hai ancora un comando tuo»', 'Nel canale non c\'è nessun comando e nessun modulo.', '«Comandi»'],
+      ['«Non hai ancora un comando tuo»', 'Nel canale non c\'è nessun comando e nessun modulo fatto da te. I due moduli del kit di partenza, «Benvenuto ai nuovi» e «Promemoria follow», finché restano com\'erano non contano.', '«Comandi»'],
       ['«La tua pagina link non è pubblicata»', 'La pagina link non è accesa.', '«Pagina link»'],
       ['«La tua settimana è vuota»', 'In «La tua settimana» non c\'è nessun giorno con un\'ora.', '«La tua settimana»'],
     ] },
@@ -204,6 +209,13 @@ export default {
       'Un moderatore vede la carta, ma il file lo scarica solo il proprietario: i dati sono suoi.',
     ] },
 
+    { h3: 'I tuoi collegamenti' },
+    { p: [
+      'Qui trovi, tutti insieme, gli account che hai collegato oltre a quello con cui entri: Spotify, TikTok, Instagram, gli avvisi di Discord col webhook, 7TV, l\'accesso con Telegram e l\'account Telegram a cui il bot scrive in privato. Accanto a ognuno c\'è il nome dell\'account, quando lo conosciamo.',
+      '«Scollega» ti chiede conferma e poi toglie il collegamento: il bot smette di usarlo e dimentica le sue chiavi, e lo ricolleghi quando vuoi dalla sua scheda. La carta si apre con <strong>qualunque piano</strong>: se torni all\'Essenziale e una scheda si chiude, quello che ci avevi collegato lo togli comunque da qui.',
+      'Twitch, Kick e YouTube stanno in «Le tue piattaforme»; i conti delle donazioni (Stripe, Satispay, Ko-fi) nella scheda Donazioni. La carta la vede solo il proprietario.',
+    ] },
+
     { h3: 'Andarsene' },
     { p: [
       'Solo il proprietario può cancellare. Se te ne vai non resta niente di tuo: comandi, moduli, effetti, punti, ore guardate, memoria della chat, pagina link, file caricati, collegamenti ai tuoi account, recensione. Il bot esce dal tuo canale.',
@@ -223,7 +235,7 @@ export default {
       'Qui vedi cosa hai attivo, cosa comprende, e come cambiarlo o annullarlo. Nessun vincolo: si disdice quando vuoi.',
       'La regola: <strong>l\'Essenziale è gratis e resta gratis</strong>, senza carta. Il resto si aggiunge uno per uno e si toglie quando non serve più.',
       'La scheda è una carta sola, «La tua sottoscrizione», divisa nelle parti qui sotto.',
-      'Un moderatore vede il piano del canale e cosa è acceso. Pagare, aggiungere un extra e disdire sono cose del proprietario.',
+      'Un moderatore vede il piano del canale e cosa è acceso. Pagare, aggiungere un extra e disdire sono cose del proprietario: al moderatore la scheda non mostra i tasti per farlo, e al posto della gestione dice «Pagare, aggiungere un extra e disdire sono cose del proprietario del canale.».',
     ] },
 
     { h3: 'Piano attuale' },
@@ -256,11 +268,11 @@ export default {
     { tabella: [
       ['Piano o extra', 'Prezzo al mese', 'Cosa accende', 'Se lo spegni'],
       ['Essenziale', 'Gratis', 'Il bot in chat col tuo account, comandi e moduli illimitati, moderazione e scudo anti-bot, overlay, alert e contatori, giochi e monete, sondaggi, effetti anche a punti canale, richieste musicali.', 'Non si spegne.'],
-      ['Base', '€2,99', 'Tutto l\'Essenziale, più gli avvisi quando vai in diretta su Telegram e Discord, gli avvisi dei nuovi post su TikTok, YouTube e Instagram, il bot su Telegram, lo Studio Web e un moderatore.', 'Gli avvisi non partono più e non puoi invitare né accettare moderatori. Le impostazioni restano.'],
-      ['Clip Automatiche', '€1,99', 'I momenti migliori clippati e salvati da soli mentre trasmetti su Twitch.', 'Le clip già fatte restano. Non ne nascono di nuove.'],
-      ['Comandi Vocali', '€0,99', 'Guidi il bot con la voce: cambi titolo e categoria e dai VIP mentre trasmetti.', 'L\'ascolto si ferma. I moduli con innesco vocale restano scritti, ma non scattano.'],
-      ['Squadra', '€1,99', 'Fino a 10 moderatori sul pannello.', 'Non puoi invitarne né accettarne oltre il posto del Base.'],
-      ['Tutto', '€3,99 invece di €4,97', 'I tre extra insieme.', 'Come spegnere i tre extra.'],
+      ['Base', PREZZO_BASE(), 'Tutto l\'Essenziale, più gli avvisi quando vai in diretta su Telegram e Discord, gli avvisi dei nuovi post su TikTok, YouTube e Instagram, il bot su Telegram, lo Studio Web e un moderatore.', 'Gli avvisi non partono più e non puoi invitare né accettare moderatori. Le impostazioni restano.'],
+      ['Clip Automatiche', PREZZO_ADDON('clip'), 'I momenti migliori clippati e salvati da soli mentre trasmetti su Twitch.', 'Le clip già fatte restano. Non ne nascono di nuove.'],
+      ['Comandi Vocali', PREZZO_ADDON('voce'), 'Guidi il bot con la voce: cambi titolo e categoria e dai VIP mentre trasmetti.', 'L\'ascolto si ferma. I moduli con innesco vocale restano scritti, ma non scattano.'],
+      ['Squadra', PREZZO_ADDON('squadra'), 'Fino a 10 moderatori sul pannello.', 'Non puoi invitarne né accettarne oltre il posto del Base.'],
+      ['Tutto', `${TUTTO.prezzo} invece di ${TUTTO.pieno}`, 'I tre extra insieme.', 'Come spegnere i tre extra.'],
     ] },
     { p: [
       'Gli extra si aggiungono sopra il Base: dall\'Essenziale, scegliere un extra vuol dire prendere anche il Base.',
@@ -270,7 +282,7 @@ export default {
     { p: ['Quando i pagamenti dal pannello sono aperti, qui c\'è il riquadro per aggiungere. Il suo titolo dice da dove parti: «Il Base, più quello che vuoi» dall\'Essenziale, «Per continuare dopo la prova» durante una prova, «Gli extra che ti mancano» se hai già un abbonamento.'] },
     { passi: [
       { t: 'Spunta cosa ti serve. ', d: 'Accanto a ogni extra c\'è quanto aggiunge al mese. Il totale si aggiorna mentre spunti.' },
-      { t: 'Guarda il totale. ', d: 'Se sei sull\'Essenziale comprende il Base, e con niente spuntato dice «solo il canone Base». Se hai già il Base conta solo gli extra che aggiungi. Se scegli tutti e tre gli extra e non ne hai ancora nessuno, lo sconto di «Tutto» si applica da solo: «Col pacchetto «Tutto» paghi €3,99 invece di €4,97: applicato.».' },
+      { t: 'Guarda il totale. ', d: `Se sei sull'Essenziale comprende il Base, e con niente spuntato dice «solo il canone Base». Se hai già il Base conta solo gli extra che aggiungi. Se scegli tutti e tre gli extra e non ne hai ancora nessuno, lo sconto di «Tutto» si applica da solo: «Col pacchetto «Tutto» paghi ${TUTTO.prezzo} invece di ${TUTTO.pieno}: applicato.».` },
       { t: 'Premi «Attiva». ', d: 'Se non hai un abbonamento, si apre la pagina di pagamento di Stripe. Se ce l\'hai, gli extra entrano in quello e il Base non si ripaga.' },
     ] },
     { p: [
@@ -285,7 +297,7 @@ export default {
       'Un extra compare solo quando il suo prezzo è pronto per la vendita. Se ne manca uno, riprova più tardi.',
       'Se Stripe in quel momento non risponde, leggi «In questo momento non riesco a parlare con Stripe: riprova fra poco.». Se il piano scelto non si può vendere adesso, leggi «Piano non disponibile.».',
     ] },
-    { p: ['Nelle altre schede, una funzione fuori dal tuo piano mostra «Non nel tuo piano», con «Guarda la demo» e il tasto «Sblocca con «…»», che la aggiunge da lì. Sotto c\'è «Vedi tutti i piani e i pacchetti», che porta qui. Se i pagamenti dal pannello non sono aperti, al posto del tasto leggi quale pacchetto la comprende e «Chiedi ad andryxify di abilitarla.».'] },
+    { p: ['Nelle altre schede, una funzione fuori dal tuo piano mostra «Non nel tuo piano», con «Guarda la demo» e il tasto «Sblocca con «…»», che la aggiunge da lì. Sotto c\'è «Vedi tutti i piani e i pacchetti», che porta qui. Se i pagamenti dal pannello non sono aperti, al posto del tasto leggi quale pacchetto la comprende e «Chiedi ad andryxify di abilitarla.». Un moderatore il tasto non lo vede: legge quale pacchetto la comprende e «Può aggiungerla il proprietario del canale.».'] },
 
     { h3: 'Gestione e disdetta' },
     { p: ['Il tasto apre il <strong>portale sicuro dei pagamenti</strong> di Stripe. Il nome del tasto cambia con la situazione:'] },

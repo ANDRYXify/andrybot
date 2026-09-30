@@ -7,7 +7,8 @@
 // scoprirebbe qui e non in pagina.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { MANUALI, paginaManuale, paginaIndiceManuali, urlManuali } from '../../src/web/manuali.js';
+import { MANUALI, paginaManuale, paginaIndiceManuali, urlManuali, manualiIn } from '../../src/web/manuali.js';
+import { VIE, LINGUE_DOC } from '../../src/web/guide.js';
 
 test('ogni manuale si compone senza inciampare nella marcatura', () => {
   assert.ok(MANUALI.length >= 2, `manuali: ${MANUALI.length}`);
@@ -49,11 +50,15 @@ test("l'indice dei manuali li elenca tutti", () => {
   for (const m of MANUALI) assert.ok(h.includes(`/manuale/${m.slug}`), `c'è ${m.slug}`);
 });
 
-test('la sitemap ha una voce per ogni manuale, più l’indice', () => {
+// Una voce per ogni manuale in ogni lingua in cui esiste, più l'indice di
+// quella lingua; e ogni voce sta sotto l'indirizzo dei manuali della sua lingua.
+test('la sitemap ha una voce per ogni manuale in ogni lingua, più l’indice', () => {
   const u = urlManuali();
-  assert.equal(u.length, MANUALI.length + 1);
+  const attese = LINGUE_DOC.reduce((t, l) => t + manualiIn(l).length + (manualiIn(l).length ? 1 : 0), 0);
+  assert.equal(manualiIn('it').length, MANUALI.length);
+  assert.equal(u.length, attese);
   for (const v of u) {
-    assert.match(v.loc, /^https:\/\/socialbot\.live\/manuale/);
+    assert.ok(LINGUE_DOC.some((l) => v.loc.startsWith(`https://socialbot.live${VIE[l].manuali}`)), v.loc);
     assert.match(v.lastmod, /^\d{4}-\d{2}-\d{2}$/);
   }
 });

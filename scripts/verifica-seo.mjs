@@ -48,6 +48,7 @@ const { paginaManuale, paginaIndiceManuali, aiutiPerScheda } = await import('../
 const novita = await import('../src/web/novita.js');
 const { vociPubbliche } = await import('../src/web/sitemap.js');
 const { pianiPubblici } = await import('../src/features/abbonamenti.js');
+const { LEGALI, legaleIn } = await import('../src/web/legali.js');
 
 // L'indirizzo del sostegno in produzione: il sottodominio (SOSTIENI_HOST), che e'
 // anche il canonico che la pagina dichiara.
@@ -86,8 +87,7 @@ export function componiSito() {
       if (p.startsWith(VIE[l].manuali + '/')) return paginaManuale(p.slice(VIE[l].manuali.length + 1), l);
     }
     if (p === '/novita') return paginaNovita(pubbliche, aiutiPerScheda());
-    if (p === '/privacy') return file('privacy.html');
-    if (p === '/termini') return file('termini.html');
+    for (const pagina of Object.keys(LEGALI)) for (const x of legaleIn(pagina)) if (p === x.via) return file(x.file);
     return null;
   };
   const pagine = new Map(voci.map((v) => [v.u, servita(v.u)]));

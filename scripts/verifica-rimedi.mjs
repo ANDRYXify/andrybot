@@ -39,7 +39,7 @@ export const PAROLE = /dashboard|pannell|riautorizz|ricollega|concedi i permessi
 
 // I testi col rimedio che non passano da aChiPuo, ognuno con chi lo legge.
 export const CLASSIFICATI = [
-  ['src/bot.js', 'Entra nella dashboard e premi', 'Telegram, al solo proprietario'],
+  ['src/bot.js', 'Entra nel pannello e premi', 'Telegram, al solo proprietario'],
   ['src/features/antibot.js', 'togline qualcuno dal pannello', '!permetti risponde solo a streamer e mod'],
   ['src/features/comandibase.js', 'riautorizza i permessi dalla dashboard', '!so risponde solo a streamer e mod'],
   ['src/features/modalita-chat.js', 'riautorizza dalla dashboard', 'le modalita\' della chat rispondono solo a streamer e mod'],
@@ -58,6 +58,7 @@ export const CLASSIFICATI = [
   ['src/features/studio.js', 'ri-concedi i permessi', 'errore della diretta dallo Studio, nel pannello del proprietario'],
   ['src/features/seventv.js', 'scollega 7TV e ricollegalo', 'errore di 7TV nel pannello: la rotta lo da\' solo al proprietario (ricollega7tv)'],
   ['src/features/seventv.js', 'chiedi al proprietario di ricollegare 7TV', 'errore di 7TV nel pannello, ai moderatori: il rimedio e\' del proprietario'],
+  ['src/features/sondaggi.js', 'lo streamer lo rimette dal pannello', '!sondaggio e !predizione rispondono solo a streamer e mod, e il rimedio lo nomina per lo streamer'],
 ];
 
 function elencaFile() {

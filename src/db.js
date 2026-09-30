@@ -2008,7 +2008,18 @@ export const sostegni = {
     const r = db.prepare("SELECT COUNT(*) n, COALESCE(SUM(importo),0) tot FROM sostegni WHERE stato='pagato'").get();
     return { quanti: Number(r?.n) || 0, totale: Number(r?.tot) || 0 };
   },
+  // Quanto si tiene, come dice l'informativa: un sostegno pagato e' un
+  // movimento di cassa e resta dieci anni dal pagamento; uno mai pagato non lo
+  // e', e il nome e il messaggio di chi non ha concluso non hanno motivo di
+  // restare oltre una settimana. Torna quante righe ha tolto.
+  pota(ora = now()) {
+    const dieci = new Date(msIntero(ora)); dieci.setUTCFullYear(dieci.getUTCFullYear() - 10);
+    const pagati = db.prepare("DELETE FROM sostegni WHERE stato='pagato' AND pagato_at<?").run(dieci.getTime()).changes;
+    const mai = db.prepare("DELETE FROM sostegni WHERE stato='scaduto' AND created_at<?").run(msIntero(ora) - SOSTEGNO_MAI_PAGATO_MS).changes;
+    return pagati + mai;
+  },
 };
+export const SOSTEGNO_MAI_PAGATO_MS = 7 * 24 * 3600 * 1000;
 
 // Il registro delle donazioni. Una riga per pagamento, con l'id che gli da' chi
 // lo porta (la sessione di Stripe, l'avviso di Ko-fi): la stessa donazione
@@ -3648,9 +3659,16 @@ export const FORMATI_EMBED = ['auto', 'video', 'quadrato', 'verticale', 'alto', 
 // accendere e spegnere un "sono live": quando la diretta parte si vede, quando
 // è finita il player mostra da sé che il canale è offline.
 export const PIATTAFORME_DIRETTA = ['twitch', 'kick', 'youtube'];
+// I limiti arrivano anche al pannello, insieme alla pagina: un massimo scritto
+// solo qui non puo' essere diverso di la', e una riga in piu' non sparisce al
+// salvataggio senza che nessuno l'abbia vista andar via.
+// voci: quante righe tiene un pezzo fatto di righe, per tipo di pezzo.
+// altezzaEmbed: il massimo, in px, dell'altezza scelta a mano per un riquadro.
 export const LIMITI_LINKPAGE = {
   headline: 80, tagline: 200, label: 60, sotto: 90, url: 500,
-  blocchi: 40, social: 12, testo: 500, titolo: 60,
+  blocchi: 40, testo: 500, titolo: 60,
+  voci: { social: 12, griglia: 12, numeri: 6, faq: 12 },
+  altezzaEmbed: 900,
 };
 
 // Riconosce la piattaforma dall'indirizzo: così l'icona giusta arriva da sé e
@@ -3674,26 +3692,6 @@ export function iconaDaUrl(u) {
   } catch { /* url non valido */ }
   return 'link';
 }
-
-const TEMA_DEF = {
-  sfondoTipo: 'tinta',       // tinta | gradiente | immagine
-  bg: '', bg2: '', angolo: 160, sfondoUrl: '',
-  // l'immagine: il suo punto (X, Y) sta sullo stesso punto dello schermo, e
-  // la grandezza e' rispetto a «copre lo schermo» (docs/SFONDO-PAGINA.md)
-  sfondoX: 50, sfondoY: 50, sfondoScala: 100, sfondoRapporto: 0,
-  sfondoRiempi: 'bordi',     // bordi | tema: cosa c'e' dove l'immagine non arriva
-  sfondoBordi: null,         // { su, giu, sx, dx, angoli }: sei colori per lato, e i quattro angoli
-  effetto: 'nessuno',        // nessuno | aurora | maglia | grana | bolle
-  testo: '', accent: '', card: '', bordo: '',
-  font: 'system',
-  raggio: 14,                // spigoli (0) → pillola (999)
-  stileBtn: 'pieno',         // pieno | contorno | vetro
-  ombra: true,
-  anim: 'rise',              // nessuna | fade | rise | pop
-  avatarForma: 'cerchio',    // cerchio | quadrato | nessuno
-  larghezza: 30,             // rem: quanto è larga la colonna
-  allinea: 'centro',         // centro | sinistra
-};
 
 // Visite della pagina link: si contano e si riassumono, nient'altro.
 export const visitePagina = {
@@ -3731,7 +3729,11 @@ const storePagina = (tabella, { conAspetto = false } = {}) => ({
   conAspetto,
   _riga(r) {
     const leggi = (s, def) => { try { const p = JSON.parse(s || 'null'); return p && typeof p === 'object' ? p : def; } catch { return def; } };
-    const tema = { ...TEMA_DEF, ...leggi(r.tema, {}) };
+    // Il tema si legge passando dalla stessa pulizia del salvataggio: quello che
+    // manca (una pagina salvata prima che un comando esistesse) prende il suo
+    // valore di base, scritto una volta sola nella pulizia. Il pannello mostra
+    // questo e la pagina si stampa da questo: non possono dire due cose diverse.
+    const tema = this.pulisci({ tema: leggi(r.tema, {}) }).tema;
     let blocchi = leggi(r.blocchi, null);
     if (!Array.isArray(blocchi)) {
       // pagina salvata prima dei blocchi: i vecchi `links` diventano blocchi link
@@ -3752,7 +3754,7 @@ const storePagina = (tabella, { conAspetto = false } = {}) => ({
     const r = this.get(channel);
     if (r) return r;
     return { channel: String(channel).toLowerCase(), headline: display || channel, tagline: '',
-      template: 'minimal', avatar: '', tema: { ...TEMA_DEF }, blocchi: [], attiva: true, ts: 0, vuota: true,
+      template: 'minimal', avatar: '', tema: this.pulisci({}).tema, blocchi: [], attiva: true, ts: 0, vuota: true,
       ...(this.conAspetto ? { aspetto: 'link' } : {}) };
   },
   esiste(channel) { return !!this.get(channel); },
@@ -3765,6 +3767,14 @@ const storePagina = (tabella, { conAspetto = false } = {}) => ({
   pulisci(d = {}) {
     const L = LIMITI_LINKPAGE;
     const hex = (v) => (/^#[0-9a-f]{3,8}$/i.test(String(v || '')) ? String(v) : '');
+    // Bottoni e bordi dei temi pronti sono velati (rgba): e' il loro aspetto,
+    // non un errore. Si accetta solo la forma coi numeri, che nel CSS della
+    // pagina non puo' diventare altro.
+    const velato = (v) => {
+      const m = /^rgba?\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*(?:,\s*(0|1|0?\.\d{1,3}|1\.0{1,3}))?\s*\)$/i.exec(String(v || '').trim());
+      if (!m || [m[1], m[2], m[3]].some((x) => Number(x) > 255)) return hex(v);
+      return m[4] === undefined ? `rgb(${m[1]},${m[2]},${m[3]})` : `rgba(${m[1]},${m[2]},${m[3]},${m[4]})`;
+    };
     const str = (v, max) => String(v ?? '').trim().slice(0, max);
     // Se manca lo schema lo mettiamo noi: chi incolla "twitch.tv/tizio" intende
     // un indirizzo, non un errore. Scartare la riga era il modo piu rapido di
@@ -3799,6 +3809,8 @@ const storePagina = (tabella, { conAspetto = false } = {}) => ({
     const tema = {
       sfondoTipo: scelta(t.sfondoTipo, ['tinta', 'gradiente', 'immagine'], 'tinta'),
       bg: hex(t.bg), bg2: hex(t.bg2), angolo: num(t.angolo, 0, 360, 160), sfondoUrl: urlOk(t.sfondoUrl),
+      // l'immagine: il suo punto (X, Y) sta sullo stesso punto dello schermo, e
+      // la grandezza e' rispetto a «copre lo schermo» (docs/SFONDO-PAGINA.md)
       sfondoX: num(t.sfondoX, 0, 100, 50), sfondoY: num(t.sfondoY, 0, 100, 50),
       sfondoScala: num(t.sfondoScala, 40, 200, 100),
       sfondoRapporto: rapporto(t.sfondoRapporto),
@@ -3809,7 +3821,7 @@ const storePagina = (tabella, { conAspetto = false } = {}) => ({
         // il retino stampato e le linee di concentrazione: due segni del disegno
         // a china, non due effetti di luce come quelli qui sopra
         'retino', 'concentrazione'], 'nessuno'),
-      testo: hex(t.testo), accent: hex(t.accent), card: hex(t.card), bordo: hex(t.bordo),
+      testo: hex(t.testo), accent: hex(t.accent), card: velato(t.card), bordo: velato(t.bordo),
       font: scelta(t.font, FONT_LINKPAGE, 'system'),
       fontTitoli: scelta(t.fontTitoli, FONT_LINKPAGE, ''),
       corpo: num(t.corpo, 80, 130, 100),
@@ -3868,7 +3880,7 @@ const storePagina = (tabella, { conAspetto = false } = {}) => ({
       } else if (tipo === 'separatore' || tipo === 'spazio') {
         out.push({ tipo });
       } else if (tipo === 'social') {
-        const voci = (Array.isArray(b.voci) ? b.voci : []).slice(0, L.social).map((sv) => {
+        const voci = (Array.isArray(b.voci) ? b.voci : []).slice(0, L.voci.social).map((sv) => {
           const u = urlOk(sv?.url);
           return { url: u, icona: scelta(sv?.icona, ICONE_LINKPAGE, null) || iconaDaUrl(u) };
         });
@@ -3883,7 +3895,7 @@ const storePagina = (tabella, { conAspetto = false } = {}) => ({
         // sito, non li possiamo misurare), quindi la decide chi fa la pagina:
         // e l'unico modo per non lasciare mai spazio vuoto sotto.
         out.push({ tipo, url: urlOk(b.url), risolto: urlOk(b.risolto),
-          formato: scelta(b.formato, FORMATI_EMBED, 'auto'), altezza: num(b.altezza, 0, 1200, 0),
+          formato: scelta(b.formato, FORMATI_EMBED, 'auto'), altezza: num(b.altezza, 0, L.altezzaEmbed, 0),
           sfondo: hex(b.sfondo), titolo: str(b.titolo, L.label) });
       } else if (tipo === 'diretta') {
         // il nome del canale, non un indirizzo: il player lo costruiamo noi.
@@ -3904,11 +3916,11 @@ const storePagina = (tabella, { conAspetto = false } = {}) => ({
       } else if (tipo === 'scritta') {
         out.push({ tipo, testo: str(b.testo, L.titolo), velocita: scelta(b.velocita, ['lenta', 'media', 'veloce'], 'media') });
       } else if (tipo === 'numeri') {
-        const voci = (Array.isArray(b.voci) ? b.voci : []).slice(0, 6)
+        const voci = (Array.isArray(b.voci) ? b.voci : []).slice(0, L.voci.numeri)
           .map((v) => ({ n: str(v?.n, 16), etichetta: str(v?.etichetta, 40) }));
         out.push({ tipo, voci });
       } else if (tipo === 'faq') {
-        const voci = (Array.isArray(b.voci) ? b.voci : []).slice(0, 12)
+        const voci = (Array.isArray(b.voci) ? b.voci : []).slice(0, L.voci.faq)
           .map((v) => ({ d: str(v?.d, L.titolo), r: str(v?.r, L.testo) }));
         out.push({ tipo, voci });
       } else if (tipo === 'conto') {
@@ -3930,7 +3942,7 @@ const storePagina = (tabella, { conAspetto = false } = {}) => ({
         out.push({ tipo, titolo: str(b.titolo, L.label), quanti: quanti >= 3 && quanti <= 20 ? quanti : 5,
           modo: scelta(b.modo, ['ultimi', 'top'], 'ultimi'), periodo: scelta(b.periodo, ['mese', 'sempre'], 'sempre') });
       } else if (tipo === 'griglia') {
-        const voci = (Array.isArray(b.voci) ? b.voci : []).slice(0, 12).map((v) => ({
+        const voci = (Array.isArray(b.voci) ? b.voci : []).slice(0, L.voci.griglia).map((v) => ({
           img: urlOk(v?.img), titolo: str(v?.titolo, L.label), testo: str(v?.testo, L.sotto), url: urlOk(v?.url),
         }));
         out.push({ tipo, voci });

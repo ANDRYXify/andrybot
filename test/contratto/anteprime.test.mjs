@@ -23,33 +23,37 @@ const PUB = join(RAD, 'src/web/public');
 const SRV = readFileSync(join(RAD, 'src/web/server.js'), 'utf8');
 const VET = readFileSync(join(RAD, 'src/web/vetrina.js'), 'utf8');
 
-// le pagine che il server serve senza sessione
-const PAGINE = [...SRV.matchAll(/guscio\.pagina\('([^']+)'\)/g)].map((m) => m[1]);
+// le pagine che il server serve senza sessione: `guscio.pagina('file', ...indirizzi)`,
+// dove una pagina puo' dichiarare anche gli indirizzi a cui risponde
+const DICHIARATE = [...SRV.matchAll(/guscio\.pagina\(('[^)]*)\)/g)].map((m) => [...m[1].matchAll(/'([^']+)'/g)].map((x) => x[1]));
+const PAGINE = DICHIARATE.map((d) => d[0]);
 // le rotte stabili che il cancello lascia passare
 const bloccoRotte = VET.slice(VET.indexOf('const ROTTE = new Set(['), VET.indexOf('// Famiglie di rotte'));
 const ROTTE = new Set([...bloccoRotte.matchAll(/'(\/[^']*)'/g)].map((m) => m[1]));
 
 // Una pagina è condivisibile se esiste una rotta che porta a lei.
 const rottaDi = (nome) => (nome === 'index.html' ? '/' : '/' + nome.replace(/\.html$/, ''));
-const condivisibili = PAGINE.filter((n) => ROTTE.has(rottaDi(n)));
+const condivisibili = DICHIARATE.filter(([n, ...vie]) => ROTTE.has(rottaDi(n)) || vie.some((v) => !v.startsWith('/api/'))).map((d) => d[0]);
 
 test('le pagine condivisibili si riconoscono dalle rotte', () => {
   assert.ok(condivisibili.length >= 5, `condivisibili: ${condivisibili.join(', ')}`);
   assert.ok(condivisibili.includes('index.html'));
-  assert.ok(condivisibili.includes('privacy.html'));
+  for (const n of ['privacy.html', 'privacy-en.html', 'privacy-es.html', 'termini.html', 'termini-en.html', 'termini-es.html', 'sostieni.html']) assert.ok(condivisibili.includes(n), n);
   // le pagine dell'overlay non hanno una rotta stabile: restano fuori da sole
   assert.equal(condivisibili.includes('overlay.html'), false);
   assert.equal(condivisibili.includes('tracking-overlay.html'), false);
 });
 
+// Il canonical sta su socialbot.live o su un suo sottodominio: la pagina del
+// sostegno vive su sostieni.socialbot.live, e dice quello.
 const RICHIESTI = [
   ['<title>', /<title>[^<]{5,}<\/title>/],
   ['description', /<meta name="description" content="[^"]{40,}"/],
-  ['canonical', /<link rel="canonical" href="https:\/\/socialbot\.live[^"]*"/],
+  ['canonical', /<link rel="canonical" href="https:\/\/(?:[a-z]+\.)?socialbot\.live[^"]*"/],
   ['robots', /<meta name="robots" content="[^"]+"/],
   ['og:title', /<meta property="og:title" content="[^"]{10,}"/],
   ['og:description', /<meta property="og:description" content="[^"]{40,}"/],
-  ['og:url', /<meta property="og:url" content="https:\/\/socialbot\.live[^"]*"/],
+  ['og:url', /<meta property="og:url" content="https:\/\/(?:[a-z]+\.)?socialbot\.live[^"]*"/],
   ['og:image', /<meta property="og:image" content="(https:\/\/socialbot\.live\/icons\/[^"]+)"/],
   ['twitter:card', /<meta name="twitter:card" content="summary_large_image"/],
   ['twitter:image', /<meta name="twitter:image" content="https:\/\/socialbot\.live\/icons\/[^"]+"/],

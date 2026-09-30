@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#fdfbf6">
+  <link rel="icon" href="/icons/icon-192.png?v=9">
+  <link rel="apple-touch-icon" href="/icons/icon-192.png?v=9">
+  <title>Privacidad y seguridad en SocialBot</title>
+  <link rel="stylesheet" href="/font.css">
+  <link rel="stylesheet" href="/tema.css">
+  <link rel="stylesheet" href="/pagina.css">
+  <script src="/tema.js"></script>
+  <meta name="description" content="Qué datos recoge SocialBot, por qué, cuánto tiempo los guarda y cómo descargarlos o borrarlos. Los tokens siguen cifrados en el servidor y nunca llegan al navegador.">
+  <meta name="copyright" content="© 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live">
+  <link rel="canonical" href="https://socialbot.live/es/privacidad">
+  <link rel="alternate" hreflang="it" href="https://socialbot.live/privacy">
+  <link rel="alternate" hreflang="en" href="https://socialbot.live/en/privacy">
+  <link rel="alternate" hreflang="es" href="https://socialbot.live/es/privacidad">
+  <link rel="alternate" hreflang="x-default" href="https://socialbot.live/privacy">
+  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="SocialBot">
+  <meta property="og:locale" content="es_ES">
+  <meta property="og:url" content="https://socialbot.live/es/privacidad">
+  <meta property="og:title" content="Privacidad y seguridad en SocialBot">
+  <meta property="og:description" content="Qué datos recoge SocialBot, por qué, cuánto tiempo los guarda y cómo descargarlos o borrarlos. Los tokens siguen cifrados en el servidor y nunca llegan al navegador.">
+  <meta property="og:image" content="https://socialbot.live/icons/og.png?v=9">
+  <meta property="og:image:type" content="image/png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="SocialBot, el bot que en el chat escribe con tu nombre, para Twitch y Kick">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Privacidad y seguridad en SocialBot">
+  <meta name="twitter:description" content="Qué datos recoge SocialBot, por qué, cuánto tiempo los guarda y cómo descargarlos o borrarlos. Los tokens siguen cifrados en el servidor y nunca llegan al navegador.">
+  <meta name="twitter:image" content="https://socialbot.live/icons/og.png?v=9">
+  <meta name="twitter:image:alt" content="SocialBot, el bot que en el chat escribe con tu nombre, para Twitch y Kick">
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebPage","@id":"https://socialbot.live/es/privacidad#webpage","url":"https://socialbot.live/es/privacidad","name":"Privacidad y seguridad en SocialBot","inLanguage":"es-ES","isPartOf":{"@type":"WebSite","@id":"https://socialbot.live/#website","url":"https://socialbot.live/","name":"SocialBot"},"publisher":{"@type":"Organization","@id":"https://socialbot.live/#org","name":"andryxify.it","url":"https://andryxify.it"},"dateModified":"2026-09-30"}</script>
+</head>
+<body>
+  <div class="wrap">
+    <header class="top">
+      <img src="/icons/marchio-barra.png?v=9" alt="SocialBot" width="82" height="52">
+      <div>
+        <h1>Privacidad y seguridad</h1>
+        <div class="sub">SocialBot · socialbot.live</div>
+      </div>
+    </header>
+    <p class="muted">Esta es una traducción. La versión de referencia es el <a href="/privacy" hreflang="it">texto en italiano</a>.</p>
+
+    <section>
+      <p>SocialBot es el bot para Twitch y Kick de <strong>ANDRYXify</strong>, con su panel para el directo y las redes sociales.
+      Está abierto a cualquier streamer que se registre con Twitch, Kick, YouTube o Discord: el plan Essenziale es
+      gratuito, y lo demás se abre con un plan de pago o con la habilitación como miembro de la comunidad de andryxify.it.
+      Habla en el chat <strong>con la cuenta del propio streamer</strong> (ninguna cuenta-bot anónima) y recoge solo
+      lo que necesita para funcionar. <strong>Ninguna IA de pago de terceros</strong>: el "cerebro" es un modelo
+      procedimental/estadístico que funciona íntegramente en nuestro servidor. <strong>Ningún dato vendido a terceros</strong>.</p>
+      <p class="muted">Responsable del tratamiento: ANDRYXify. Para cualquier solicitud puedes escribirnos desde los
+      <a href="https://www.andryxify.it">canales oficiales de andryxify.it</a>.</p>
+    </section>
+
+    <section>
+      <h2>Cookies</h2>
+      <p>Usamos <strong>una sola cookie técnica de sesión</strong> (<code>andrybot</code>), necesaria para que sigas
+      conectado después de iniciar sesión. Está firmada, es <code>httpOnly</code> y <code>SameSite=Lax</code>.</p>
+      <ul>
+        <li><strong>Ninguna</strong> cookie analítica, publicitaria o de elaboración de perfiles.</li>
+        <li><strong>Ningún</strong> rastreador ni servicio de terceros que instale cookies.</li>
+      </ul>
+      <p class="muted">Como es estrictamente necesaria para iniciar sesión, esta cookie no requiere consentimiento: el banner que ves
+      es meramente informativo.</p>
+    </section>
+
+    <section>
+      <h2>Qué datos tratamos</h2>
+      <ul>
+        <li><strong>Cuentas de las plataformas que conecta el streamer</strong>: Twitch y, si las conecta él,
+          también <strong>Kick</strong> y <strong>YouTube</strong> (login, nombre para mostrar, user id) y <strong>tokens de
+          autorización (OAuth)</strong>: sirven para actuar con su cuenta: escribir en el chat, crear clips, gestionar
+          VIP, moderar, recibir los eventos (follow/sub/raid). Se quedan en el servidor y <strong>nunca se exponen al
+          navegador</strong>.</li>
+        <li><strong>Si te registras con Kick</strong>, esa cuenta <em>es</em> tu acceso: guardamos tu nombre y
+          tu user id de Kick para reconocerte cuando vuelves (aunque cambies de nombre), y el canal que creamos se llama
+          <code>kick.&lt;nombre&gt;</code>, un nombre que no puede coincidir con el de un canal de Twitch, así dos
+          personas con el mismo nombre en plataformas distintas nunca acaban en el mismo canal. No se pide ninguna cuenta
+          de Twitch, y no se recoge ningún dato de Twitch.</li>
+        <li><strong>Mensajes del chat público</strong> del canal: se guardan para que el bot aprenda y responda,
+          y <strong>se borran automáticamente a los 14 días</strong>. La IA local solo extrae de ellos estadísticas (las
+          palabras sueltas, con cuántas veces aparecen) y vectores numéricos, y eso es lo que guarda: pasados los 14 días,
+          el texto de los mensajes no lo conserva.</li>
+        <li><strong>Preguntas que el bot no ha sabido responder</strong>: de estas se queda el texto de la pregunta, para
+          aprender a responder la próxima vez. Antes de guardarla se limpia de <strong>menciones, direcciones de
+          correo electrónico y enlaces</strong>, y no se asocia a <strong>quién</strong> la escribió: no es el mensaje de
+          alguien, es algo que el bot no sabía. Se puede pedir que se borre, como todo lo demás.</li>
+        <li><strong>Conocimiento y ajustes</strong> que introduce el streamer; <strong>monedas y VIP</strong> (fidelidad).</li>
+        <li><strong>Quién ha seguido el canal</strong>: el identificador de Twitch (o el nombre en Kick) y cuándo lo vimos
+          seguir, para no tratar como seguidor nuevo a quien deja de seguir y vuelve a seguir. Se elimina con la cuenta.</li>
+        <li><strong>La reseña de SocialBot</strong>, si el streamer deja una: las estrellas, el texto si lo escribe,
+          el idioma y, <strong>solo si lo elige</strong>, el nombre del canal. Es pública en la página de inicio: las estrellas
+          enseguida, el texto después de que lo hayamos leído. La cambia o la quita cuando quiera desde Tu cuenta, y se elimina con
+          la cuenta.</li>
+        <li><strong>Afinidad "amigos"</strong>: una simple puntuación global por usuario, en <strong>compartimentos
+          estancos</strong>: nunca el contenido de los mensajes ni en qué canal.</li>
+        <li><strong>Cumpleaños</strong>, solo si lo escribe la propia persona (en el grupo de Telegram o en el chat con
+          <code>!compleanno</code>) o si el streamer lo añade a mano: <strong>día y mes</strong>; el nombre que se usa
+          en la felicitación, es decir, el que tiene la persona en el grupo de Telegram o en el chat cuando se apunta (o el
+          que escribe el streamer, cuando el cumpleaños lo añade él); para reconocerla, el id de su cuenta de Telegram o el
+          nombre de su cuenta en el chat; y el año de la última felicitación, que sirve para no repetirla. Ninguna fecha de nacimiento completa, así que
+          ninguna edad. Se conserva hasta que se elimina, con <code>!compleanno via</code> o desde el panel del streamer.</li>
+        <li><strong>Integraciones opcionales</strong> que activa el streamer: token de su bot de <strong>Telegram</strong>
+          + id del grupo (que proporciona él), <strong>nombre de usuario de TikTok</strong> público para el aviso de directo, y la
+          clave con permisos limitados de su cuenta de <strong>Stripe</strong> para las donaciones, guardada cifrada; si conecta
+          <strong>Satispay</strong>, la clave que creamos a propósito para su tienda online con el <strong>código de
+          activación</strong> que genera él (el código vale una sola vez y no lo guardamos): con esa clave firmamos los
+          pagos y los posibles reembolsos, y se guarda cifrada; si
+          conecta <strong>Ko-fi</strong>, la dirección de su página de Ko-fi y la huella del token con el que Ko-fi firma
+          sus avisos (el token no: con la huella lo reconocemos, pero a partir de ella no se puede obtener); si
+          conecta <strong>Instagram</strong>, el nombre y el id de su cuenta profesional y el token que nos da Instagram,
+          guardado cifrado, para los avisos de publicaciones nuevas y, cuando él lo pide, para publicar la historia con
+          su semana. Si quita la app de su Instagram, o pide a Instagram que borre los datos, Instagram nos lo
+          comunica y borramos de inmediato el token y el nombre.</li>
+        <li><strong>Mensajes y eventos de las otras plataformas conectadas</strong> (Kick, YouTube): solo llegan de los
+          canales que ha conectado el propio streamer, y se tratan <strong>exactamente igual que los de Twitch</strong>: misma conservación, mismo borrado automático a los 14 días. Ninguna plataforma nueva amplía
+          lo que guardamos: solo amplía <em>de dónde</em> llega.</li>
+        <li><strong>Dirección de correo electrónico del streamer</strong>, opcional: la escribe él en la pestaña Directos para
+          recibir el informe de final de directo, solo es válida después de que la haya confirmado desde el mensaje que le
+          enviamos, y la quita de ahí cuando quiera. Los correos salen de nuestro servidor, no de un servicio externo, y no
+          contienen nada de sus espectadores aparte de las cifras del directo y los nombres de quienes más han escrito.</li>
+        <li><strong>Passkeys</strong>: solo la <strong>clave pública</strong>. Ningún dato biométrico sale nunca de tu
+          dispositivo.</li>
+        <li><strong>Donaciones</strong> a un streamer. Desde su página, el pago lo gestiona <strong>Stripe</strong> o
+          <strong>Satispay</strong>, en la cuenta del streamer, y los datos de la tarjeta solo los ven Stripe y el banco, nunca nosotros.
+          Si el streamer ha conectado <strong>Ko-fi</strong>, quien dona paga en su página de Ko-fi y Ko-fi nos avisa: el nombre,
+          el mensaje (si quien dona no lo mantiene privado), el importe y la moneda. Ko-fi también nos envía la dirección de correo
+          electrónico de quien dona: no la guardamos. Para las propinas que llegan de otro servicio (por ejemplo Streamlabs,
+          StreamElements o PayPal) y que el streamer nos reenvía con una automatización suya y la clave API de su canal,
+          leemos solo el nombre, el mensaje, el importe, la moneda y el identificador que ese servicio da a la propina, para
+          no contarla dos veces: nada más. Nos quedamos con el nombre
+          que elige quien dona (o ninguno), el mensaje, el importe y la hora: sirven para el aviso en directo y para el
+          registro del streamer. El nombre y el mensaje pueden aparecer en directo y, si el streamer pone el bloque
+          «Quién donó» en su página, el nombre también ahí (el formulario lo indica antes de donar). Si el streamer lo permite, quien dona
+          puede adjuntar una imagen: la guardamos, recomprimida, hasta que el streamer decide; si la descarta la borramos
+          enseguida, si la emite se queda con la donación en su registro y puede quitarla él. Si el pago no se
+          completa, la imagen se borra cuando el pago caduca, poco más de una hora después de abrirlo.</li>
+        <li><strong>Apoyos al proyecto</strong> hechos desde <a href="/sostieni">socialbot.live/sostieni</a>: son algo
+          distinto de las donaciones a un streamer, y van a la <strong>cuenta de Stripe de ANDRYXify</strong>, la misma en la que
+          se pagan las suscripciones. También aquí los datos de la tarjeta solo los ven Stripe y tu banco, nunca nosotros. Nos
+          quedamos con el importe, la hora y, si los escribes, el nombre y el mensaje: no aparecen en ningún sitio y no hay
+          ninguna página de quienes apoyan el proyecto, solo los lee el responsable del tratamiento, ANDRYXify.
+          No hace falta una cuenta para apoyar el proyecto.</li>
+        <li><strong>Campañas en ciudades</strong>: si el propietario de un canal consigue el año gratis gracias a un anuncio
+          (socialbot.live/nyc, /milano o /napoli), guardamos qué campaña y cuándo. Sirve para contar las plazas que quedan y
+          para no dar el año gratis dos veces al mismo canal con la misma campaña; se borra con el canal.</li>
+        <li><strong>Registros técnicos mínimos</strong> para el funcionamiento y la seguridad.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Por qué los tratamos (bases jurídicas)</h2>
+      <ul>
+        <li><strong>Ejecución del contrato</strong> (art. 6.1.b del RGPD): el servicio que nos pide el streamer, con las
+          funciones que activa él y la suscripción si tiene una; y, para quien dona o apoya el proyecto, el pago que ha
+          elegido hacer.</li>
+        <li><strong>Interés legítimo</strong> (art. 6.1.f) del canal, y nuestro, en moderar los chats, mantenerlos seguros
+          e interactuar, sobre mensajes <strong>ya hechos públicos</strong> por los usuarios: en los chats de Twitch, Kick y
+          YouTube que conecta el streamer y en su grupo de Telegram, donde, si el streamer lo activa, quien entra no puede
+          escribir hasta que pulsa el botón de bienvenida. En Discord el bot no lee los mensajes: el filtro lo aplica el
+          propio Discord, con las reglas que el streamer nos hace escribir. Aquí entran también los registros técnicos
+          mínimos que sirven para la seguridad del servicio.</li>
+        <li><strong>Consentimiento</strong> (art. 6.1.a) para lo que es opcional y la persona nos da por elección propia:
+          la dirección de correo electrónico del streamer, para el informe de los directos y los correos de confirmación,
+          que solo vale después de que la haya confirmado; el cumpleaños; las integraciones que el streamer decide conectar;
+          la cuenta de Discord que un espectador vincula para recibir los roles. Se retira cuando se quiera, quitando el dato
+          o desconectando.</li>
+        <li><strong>Obligación legal</strong> (art. 6.1.c): los apoyos al proyecto son ingresos, y la ley exige conservar
+          su registro durante diez años.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Con quién y dónde</h2>
+      <p>El bot funciona en <strong>Twitch</strong> y, si el streamer las conecta, en <strong>Kick</strong> y
+        <strong>YouTube</strong>: a cada una solo le llegan los datos necesarios para hacer lo que ha pedido el streamer
+        (leer el chat de su canal, responder, recibir los eventos). Las integraciones con <strong>Telegram</strong>,
+      <strong>TikTok</strong> e <strong>Instagram</strong> solo se producen si el streamer las conecta. Su semana va al
+      Programa de su canal de Twitch, al calendario de su servidor de Discord y a los sitios que elige él, solo si lo pide. Las donaciones pasan por <strong>Stripe</strong>
+      (Stripe Payments Europe, Irlanda) o por <strong>Satispay</strong> (Satispay Europe, Luxemburgo), a la cuenta que el
+      streamer abre allí: a ellos les llegan el importe, el nombre y el mensaje que elige quien dona. Si el streamer conecta
+      <strong>Ko-fi</strong> (Ko-fi Labs, Reino Unido), quien dona lo hace en su página de Ko-fi, y desde Ko-fi nos llegan
+      los avisos de esas donaciones. Los datos se alojan en el <strong>servidor de ANDRYXify
+      (Hetzner, Alemania, en la UE)</strong>, bajo HTTPS.</p>
+      <p class="muted">Sin venta de datos, sin rastreo publicitario, sin IA de pago de terceros.</p>
+    </section>
+
+    <section>
+      <h2>Cuánto tiempo</h2>
+      <ul>
+        <li>Mensajes del chat: <strong>14 días</strong>.</li>
+        <li>Tokens: mientras el streamer siga conectado (se pueden revocar desconectándose).</li>
+        <li>Donaciones (nombre elegido, mensaje, importe, hora): <strong>un año</strong>.</li>
+        <li>Dirección de correo electrónico del streamer e informes de los directos: hasta que el streamer los quite o borre el canal.</li>
+        <li>Imágenes adjuntas a las donaciones: hasta que el streamer decida; después, igual que la donación, o se borran enseguida si las descarta; las de un pago que nunca se completa, en cuanto el pago caduca.</li>
+        <li>La imagen de la semana enviada como historia de Instagram: el tiempo que tarde Instagram en descargarla, en una dirección
+          con un nombre aleatorio; después se borra.</li>
+        <li>Apoyos al proyecto (nombre, mensaje, importe, hora): <strong>diez años</strong> desde el pago, porque son movimientos de caja y la ley exige conservarlos. Un apoyo
+          iniciado y nunca pagado no es un movimiento de caja: se borra al cabo de una semana.</li>
+        <li>Lo demás: mientras lo necesite el servicio, o hasta que el streamer lo borre.</li>
+      </ul>
+    </section>
+
+    <section id="diritti">
+      <h2>Tus derechos</h2>
+      <p>Puedes ejercer los derechos de acceso, rectificación, supresión y oposición. En la práctica, desde el panel el streamer puede:</p>
+      <ul>
+        <li><strong>Descargar todos sus datos</strong> en un solo archivo (Cuenta &rarr; Tu cuenta &rarr; Tus datos son tuyos).</li>
+        <li><strong>Borrar la cuenta y todo lo que contiene</strong> (Cuenta &rarr; Tu cuenta &rarr; Marcharse): comandos, módulos, efectos, puntos, horas vistas, memoria del chat, página de enlaces, archivos subidos y conexiones con las cuentas. No se puede deshacer, y el bot sale del canal.</li>
+        <li><strong>Borrar la memoria</strong> del bot (lecciones, recuerdos, conocimiento aprendido del chat).</li>
+        <li><strong>Desconectar las plataformas y las integraciones</strong>: se borra el token, la clave o el vínculo que
+          nos había dado, y el bot deja de trabajar ahí. Kick y YouTube desde Cuenta &rarr; Tu cuenta (Tus plataformas);
+          Discord desde Tus comunidades &rarr; Discord, con «Desconectar todo», que quita también los vínculos de quienes se
+          habían vinculado para recibir los roles; el bot de Telegram del grupo, la cuenta de Telegram a la que el bot
+          responde en privado y el acceso con Telegram desde Tus comunidades &rarr; Telegram; TikTok e Instagram desde Tu
+          escaparate &rarr; Tus redes; Spotify desde Realización &rarr; Música; 7TV desde Escena y overlay &rarr; Emotes
+          (7TV); Stripe, Satispay y Ko-fi desde Tu escaparate &rarr; Donaciones. Las cuentas conectadas están además todas
+          juntas en Cuenta &rarr; Tu cuenta &rarr; Tus conexiones, que se abre con cualquier plan: desconectar no depende de lo
+          que pagas.</li>
+        <li><strong>Revocar los permisos dados en Twitch</strong>, que no se desconecta desde el panel: se revocan desde
+          los ajustes de su propia cuenta de Twitch, y el token que Twitch ya no acepta el servidor lo borra por sí
+          solo.</li>
+        <li><strong>Eliminar las passkeys</strong> en cualquier momento (Cuenta &rarr; Tu cuenta).</li>
+      </ul>
+      <p class="muted">Para cualquier solicitud, escríbenos desde los <a href="https://www.andryxify.it">canales oficiales de andryxify.it</a>.</p>
+    </section>
+
+    <section>
+      <h2>Seguridad</h2>
+      <div>
+        <span class="pill">Acceso blindado</span>
+        <span class="pill">Passkeys</span>
+        <span class="pill">HTTPS</span>
+        <span class="pill">Tokens en el servidor</span>
+        <span class="pill">IA local</span>
+        <span class="pill">Servidor en la UE</span>
+      </div>
+      <ul>
+        <li><strong>Acceso "en laberinto":</strong> el panel no es accesible desde fuera. Solo se entra con un
+          <strong>pase desechable</strong> generado por el sitio (256 bits, válido 2 minutos, de un solo uso) o con tu
+          <strong>passkey</strong>. Quien no está autorizado solo ve un "Not Found": no se filtra ninguna información.</li>
+        <li><strong>Passkeys (WebAuthn):</strong> vuelves a entrar con la huella, la cara o el PIN del dispositivo; la clave privada
+          nunca sale del dispositivo, nosotros solo guardamos la pública.</li>
+        <li><strong>Tokens nunca en el navegador:</strong> las autorizaciones de Twitch se quedan en el servidor; la sesión usa una
+          cookie firmada y <code>httpOnly</code>.</li>
+        <li><strong>La conexión con el programa con el que emites no pasa por nosotros:</strong> dirección, puerto y
+          contraseña se quedan en <strong>tu navegador, en tu ordenador</strong>. No viajan a nuestro servidor, no
+          acaban en la base de datos y no aparecen en las copias de seguridad: nunca los hemos tenido. La página habla directamente con
+          ese programa, y solo si funciona en la <strong>misma máquina</strong>: hacia otro ordenador, el navegador
+          rechaza la conexión. Con «Olvidar todo» desaparecen también de ahí.</li>
+        <li><strong>Cerebro en local:</strong> ningún contenido se envía a servicios de inteligencia artificial
+          externos o de pago.</li>
+        <li><strong>Moderación:</strong> el antispam integrado elimina el spam y los enlaces no autorizados y aplica un timeout a los
+          reincidentes, para proteger el chat.</li>
+        <li><strong>Todo en la UE, todo en HTTPS</strong>, con registros técnicos mínimos.</li>
+      </ul>
+    </section>
+
+    <footer>
+      <p><a href="/es">← Volver al panel</a> · <a href="https://www.andryxify.it">andryxify.it</a></p>
+      <p class="aggiornato">SocialBot, política de privacidad resumida y transparente. Última actualización: <time class="aggiornato-il" datetime="2026-09-30">30 de septiembre de 2026</time>.</p>
+    </footer>
+  </div>
+
+<!-- Questo software e tutto il suo contenuto (codice, logica, dati, motori di ragionamento e la persona "Lia") sono proprieta intellettuale di Andrea Taliento (ANDRYXify). © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live. ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live -->
+<span style="display:none" aria-hidden="true">​‌​‌​​​‌​‌‌‌​‌​‌​‌‌​​‌​‌​‌‌‌​​‌‌​‌‌‌​‌​​​‌‌​‌‌‌‌​​‌​​​​​​‌‌‌​​‌‌​‌‌​‌‌‌‌​‌‌​​‌‌​​‌‌‌​‌​​​‌‌‌​‌‌‌​‌‌​​​​‌​‌‌‌​​‌​​‌‌​​‌​‌​​‌​​​​​​‌‌​​‌​‌​​‌​​​​​​‌‌‌​‌​​​‌‌‌​‌​‌​‌‌‌​‌​​​‌‌‌​‌​​​‌‌​‌‌‌‌​​‌​​​​​​‌‌​‌​​‌​‌‌​‌‌​​​​‌​​​​​​‌‌‌​​‌‌​‌‌‌​‌​‌​‌‌​‌‌‌‌​​‌​​​​​​‌‌​​​‌‌​‌‌​‌‌‌‌​‌‌​‌‌‌​​‌‌‌​‌​​​‌‌​​‌​‌​‌‌​‌‌‌​​‌‌‌​‌​‌​‌‌‌​‌​​​‌‌​‌‌‌‌​​‌​​​​​​​‌​‌​​​​‌‌​​​‌‌​‌‌​‌‌‌‌​‌‌​​‌​​​‌‌​‌​​‌​‌‌​​​‌‌​‌‌​​‌​‌​​‌​‌‌​​​​‌​​​​​​‌‌​‌‌​​​‌‌​‌‌‌‌​‌‌​​‌‌‌​‌‌​‌​​‌​‌‌​​​‌‌​‌‌​​​​‌​​‌​‌‌​​​​‌​​​​​​‌‌​​‌​​​‌‌​​​​‌​‌‌‌​‌​​​‌‌​‌​​‌​​‌​‌‌​​​​‌​​​​​​‌‌​‌‌​‌​‌‌​‌‌‌‌​‌‌‌​‌​​​‌‌​‌‌‌‌​‌‌‌​​‌​​‌‌​‌​​‌​​‌​​​​​​‌‌​​‌​​​‌‌​‌​​‌​​‌​​​​​​‌‌‌​​‌​​‌‌​​​​‌​‌‌​​‌‌‌​‌‌​‌​​‌​‌‌​‌‌‌‌​‌‌​‌‌‌​​‌‌​​​​‌​‌‌​‌‌​‌​‌‌​​‌​‌​‌‌​‌‌‌​​‌‌‌​‌​​​‌‌​‌‌‌‌​​‌​​​​​​‌‌​​‌​‌​​‌​​​​​​‌‌​‌‌​​​‌‌​​​​‌​​‌​​​​​​‌‌‌​​​​​‌‌​​‌​‌​‌‌‌​​‌​​‌‌‌​​‌‌​‌‌​‌‌‌‌​‌‌​‌‌‌​​‌‌​​​​‌​​‌​​​​​​​‌​​​‌​​‌​​‌‌​​​‌‌​‌​​‌​‌‌​​​​‌​​‌​​​‌​​​‌​‌​​‌​​‌​​​​​​‌‌‌​​‌‌​‌‌​‌‌‌‌​‌‌​‌‌‌​​‌‌​‌‌‌‌​​‌​​​​​​‌‌‌​​​​​‌‌‌​​‌​​‌‌​‌‌‌‌​‌‌‌​​​​​‌‌‌​​‌​​‌‌​‌​​‌​‌‌​​‌​‌​‌‌‌​‌​​​‌‌​​​​‌​​‌​​​​​​‌‌​‌​​‌​‌‌​‌‌‌​​‌‌‌​‌​​​‌‌​​‌​‌​‌‌​‌‌​​​‌‌​‌‌​​​‌‌​​‌​‌​‌‌‌​‌​​​‌‌‌​‌​​​‌‌‌​‌​‌​‌‌​​​​‌​‌‌​‌‌​​​‌‌​​‌​‌​​‌​​​​​​‌‌​​‌​​​‌‌​‌​​‌​​‌​​​​​​‌​​​​​‌​‌‌​‌‌‌​​‌‌​​‌​​​‌‌‌​​‌​​‌‌​​‌​‌​‌‌​​​​‌​​‌​​​​​​‌​‌​‌​​​‌‌​​​​‌​‌‌​‌‌​​​‌‌​‌​​‌​‌‌​​‌​‌​‌‌​‌‌‌​​‌‌‌​‌​​​‌‌​‌‌‌‌​​‌​​​​​​​‌​‌​​​​‌​​​​​‌​‌​​‌‌‌​​‌​​​‌​​​‌​‌​​‌​​‌​‌‌​​‌​‌​‌‌​​​​‌‌​‌​​‌​‌‌​​‌‌​​‌‌‌‌​​‌​​‌​‌​​‌​​‌​‌‌‌​​​‌​​​​​‌‌​​​​‌​‌​‌​‌​​‌​​‌​​​​​​​‌‌​​‌​​​‌‌​​​​​​‌‌​​‌​​​‌‌​‌​​‌‌‌​​​‌​‌​​​​​​​‌​​‌​​‌‌​​‌‌​​‌​​​‌‌​​​​​​‌‌​​‌​​​‌‌​‌‌​​​‌​​​​​​‌​​​​​‌​‌‌​‌‌‌​​‌‌​​‌​​​‌‌‌​​‌​​‌‌​​‌​‌​‌‌​​​​‌​​‌​​​​​​‌​‌​‌​​​‌‌​​​​‌​‌‌​‌‌​​​‌‌​‌​​‌​‌‌​​‌​‌​‌‌​‌‌‌​​‌‌‌​‌​​​‌‌​‌‌‌‌​​‌​​​​​​​‌​‌​​​​‌​​​​​‌​‌​​‌‌‌​​‌​​​‌​​​‌​‌​​‌​​‌​‌‌​​‌​‌​‌‌​​​​‌‌​‌​​‌​‌‌​​‌‌​​‌‌‌‌​​‌​​‌​‌​​‌​​‌​​​​​‌‌‌​​​‌​‌​​​​​​​‌​​‌​‌​​​​‌​​​​​​‌​‌​‌​​​‌‌‌​‌​‌​‌‌‌​‌​​​‌‌‌​‌​​​‌‌​‌​​‌​​‌​​​​​​‌‌​‌​​‌​​‌​​​​​​‌‌​​‌​​​‌‌​‌​​‌​‌‌‌​​‌​​‌‌​‌​​‌​‌‌‌​‌​​​‌‌‌​‌​​​‌‌​‌​​‌​​‌​​​​​​‌‌‌​​‌​​‌‌​‌​​‌​‌‌‌​​‌‌​‌‌​​‌​‌​‌‌‌​​‌​​‌‌‌​‌‌​​‌‌​​​​‌​‌‌‌​‌​​​‌‌​‌​​‌​​‌​​​​​‌‌‌​​​‌​‌​​​​​​​‌​​‌​‌​​​​‌​​​​​​‌‌‌​​‌‌​‌‌​‌‌‌‌​‌‌​​​‌‌​‌‌​‌​​‌​‌‌​​​​‌​‌‌​‌‌​​​‌‌​​​‌​​‌‌​‌‌‌‌​‌‌‌​‌​​​​‌​‌‌‌​​‌‌​‌‌​​​‌‌​‌​​‌​‌‌‌​‌‌​​‌‌​​‌​‌​​‌​‌‌‌​​​‌​​​​​​‌​​​​​‌​‌​​‌‌‌​​‌​​​‌​​​‌​‌​​‌​​‌​‌‌​​‌​‌​‌‌​​​​​‌​‌‌​‌​‌​​‌​​‌​‌​‌​​​​​​‌‌‌​‌​​​‌‌‌​‌​​‌‌​​​​‌​​‌‌​‌‌‌​‌‌​​‌‌​​​‌‌​​‌‌​​‌‌‌​​‌​‌‌​​​‌‌​​‌‌​​​‌​‌‌​​‌​‌​​‌‌‌​​​​‌‌​​​‌​​​‌‌​‌​​​​‌‌​​‌​​​‌‌​‌​​​‌‌​​‌​​​​‌‌‌​​‌​​‌‌​​​​​​‌​‌‌​‌​​‌‌​‌​​​‌‌​​‌‌​​​‌‌​‌‌‌​‌‌​​​‌​​​‌​‌‌​‌​‌‌‌​‌​​​‌‌​​​​‌​‌‌​‌‌​​​‌‌​‌​​‌​‌‌​​‌​‌​‌‌​‌‌‌​​‌‌‌​‌​​​‌‌​‌‌‌‌​​‌‌‌​‌​​​‌‌‌​‌​​‌‌‌​​‌‌​‌‌​‌‌‌‌​‌‌​​​‌‌​‌‌​‌​​‌​‌‌​​​​‌​‌‌​‌‌​​​‌‌​​​‌​​‌‌​‌‌‌‌​‌‌‌​‌​​​​‌​‌‌‌​​‌‌​‌‌​​​‌‌​‌​​‌​‌‌‌​‌‌​​‌‌​​‌​‌⁣</span></body>
+</html>

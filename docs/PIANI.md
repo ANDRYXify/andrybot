@@ -155,8 +155,8 @@ Le porte, tutte dell'amministratore: `GET /api/admin/accessi`,
 `GET/PUT/DELETE /api/admin/accessi/:login`. Nel pannello Admin ogni streamer
 ha il tasto «Accessi»: modo, caselle delle funzioni (moderatori come numero),
 scadenza, nota, storia. Lo streamer legge la riga nella scheda «Il tuo bot»
-(«Il proprietario ti ha aperto…», «Accesso sospeso…»), e i muri delle funzioni
-chiuse dicono «chiuso dal proprietario» invece di proporre un acquisto. Il
+(«andryxify ti ha aperto…», «Accesso sospeso…»), e i muri delle funzioni
+chiuse dicono «chiuso da andryxify» invece di proporre un acquisto. Il
 blocco chiude le funzioni nel pannello e nel bot dove il muro c'è; per far
 uscire il bot dal canale resta «Disabilita».
 

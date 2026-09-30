@@ -22,6 +22,19 @@ streamer *usa*, si riscrive senza nominarla: la funzione resta documentata e il
 nome resta in casa. Non è una cosa da ricordarsi:
 `scripts/verifica-novita.mjs` boccia una riga pubblica che la nomina.
 
+## 2026-09-30
+
+- Il QR e il media kit degli Strumenti portano all'indirizzo vero del tuo canale anche su Kick e YouTube: prima su Kick ne scrivevano uno sbagliato. [vai: qr]
+- I temi pronti della pagina link tengono i bottoni velati anche dopo il salvataggio: prima tornavano ai colori della base, e su un tema scuro potevano uscire bianchi. [vai: pagina]
+- Nella settimana un canale Discord che per un momento non risponde resta fra i posti scelti, col suo perché accanto, e lo togli tu se vuoi. [vai: settimana]
+- Nella pagina link la fascia che chiede il permesso per video e musica di altri siti si legge meglio, e in anteprima le parti da completare dicono cosa manca. [vai: pagina]
+- I termini hanno un punto su piani, abbonamenti, disdetta e recesso in 14 giorni, e privacy e termini dicono con precisione con cosa ci si registra e cosa si scollega da dove.
+- [importante] In Account c'è «I tuoi collegamenti»: tutti gli account che hai collegato, ognuno col suo «Scollega», anche se il piano ha chiuso la scheda dove stavano. [vai: account]
+  > Tutti i tuoi collegamenti, in un posto
+  > Spotify, TikTok, Instagram, Discord, 7TV e Telegram in una carta sola, e ognuno lo scolleghi quando vuoi, con qualunque piano.
+- Spotify, TikTok, gli avvisi di Discord, 7TV e l'accesso con Telegram si scollegano con qualunque piano: prima, tornando all'Essenziale, restavano legati.
+- Un sostegno al progetto aperto e mai pagato si cancella dopo una settimana, e quelli pagati dopo dieci anni, come dice l'informativa.
+
 ## 2026-09-27
 
 - [importante] In «Strumenti» ci sono i pannelli per Twitch: tutti nello stesso stile, e già pieni dei link e delle descrizioni che il canale conosce. [vai: pannelli]
@@ -46,6 +59,60 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Nell'editor dei moduli inneschi, eventi, azioni e il riassunto di ogni modulo si leggono in inglese e in spagnolo, come il resto del pannello. [vai: moduli]
 - I campi dell'editor dei moduli, i tasti Prova, Modifica ed Elimina e i Connettori avanzati si leggono anche in inglese e in spagnolo. [vai: moduli]
 - La pagina di ascolto vocale si legge in inglese e in spagnolo, nella lingua del pannello, registro compreso. Il riconoscimento resta in italiano. [vai: ascolto]
+- I pannelli per Twitch si scaricano tre volte più definiti: sul telefono bordi e scritte restano netti. Quelli che hai già caricato vanno riscaricati e rimessi. [vai: pannelli]
+- Il cursore disegnato c'è anche sul selettore dei colori, su «scegli file» e nei campi dove si scrive: nel pannello non resta nessun cursore di sistema.
+- La pagina iniziale in inglese e in spagnolo ha nella sua lingua anche il piede, il riquadro per dare una mano e l'avviso dei cookie: prima restavano in italiano.
+- Anche nel pannello il piede e l'avviso dei cookie seguono la lingua che scegli, e cambiano insieme a lei.
+- Privacy e termini si leggono anche in inglese e in spagnolo, ognuno col suo indirizzo: il testo di riferimento resta quello italiano, e le traduzioni lo dicono in cima.
+- La transizione scelta in un tasto di CONSOLify o in un Modulo resta dov'è e parte davvero: prima spariva appena salvata. [vai: consolify]
+- Un'idea pronta di CONSOLify crea il tasto coi passi da riempire segnati «da completare», e un passo aggiunto si salva subito: prima i passi vuoti sparivano e il tasto restava lì senza fare niente. [vai: consolify]
+- Quando una pagina di CONSOLify ha già 48 tasti, anche «Duplica» e «Sposta nella pagina» si fermano e dicono che è piena: prima il tasto in più spariva senza avviso. [vai: consolify]
+- Nel formato «libero» di CONSOLify, in modifica, c'è il «+» in fondo alla pagina: prima lì non c'era modo di creare un tasto nuovo. [vai: consolify]
+- Le clip fatte con «Crea clip» in Regia finiscono in «Ultime clip», nel rapporto della serata e nelle statistiche, col motivo «dalla Regia». [vai: clip]
+- Clip e Musica parlano tutte e tre le lingue anche nei pezzi rimasti in italiano o in inglese, e il muro delle clip automatiche dice che «non sono» nel tuo piano. [vai: clip]
+- Se nella Musica manca il permesso dei punti canale, il riquadro porta dritto a concederlo: prima rimandava a una sezione che non c'è più. [vai: musica]
+- In inglese la Regia si chiama «Control room» anche nel menù, e la sua guida elenca le azioni rapide che ci sono davvero: clip, marker, pubblicità, raid. [vai: regia]
+- «Chi guarda di più» vuota non chiede più di accendere un conteggio che è già acceso: dice che nessuna ora è stata ancora contata, e solo se l'hai spento ti dice dove riaccenderlo. [vai: statistiche]
+- Collegando la regia da CONSOLify leggi il motivo vero quando non va (password sbagliata, indirizzo di rete, programma spento), e «Oppure a mano» si prova anche senza password. [vai: consolify]
+- Nella scheda Stato, in «Quando dev'essere attivo», restano «Sempre» e «Solo quando sei in diretta»: «Manuale» faceva lo stesso di «Sempre», e chi l'aveva scelto ora legge «Sempre». [vai: stato]
+- Su Kick il bot ubbidisce all'interruttore e alla modalità: spento non risponde più, e con «Solo quando sei in diretta» risponde solo mentre Kick dice che sei in onda. [vai: stato]
+- Per i canali nati su YouTube la chat delle dirette parte davvero: prima la levetta restava alzata e il bot non la leggeva mai. [vai: account]
+- La scheda Stato di un canale Kick, YouTube o Discord non chiede più i permessi di Twitch, e «in chat adesso» guarda la chat della piattaforma del canale. [vai: stato]
+- La carta «Attiva il bot» dice il vero sui permessi: Twitch ne chiede uno per ogni funzione che li usa, e l'elenco intero lo vedi prima di confermare. [vai: stato]
+- In «Le tue piattaforme» un canale Kick, YouTube o Discord non vede più Twitch «da sistemare»: la riga dice che Twitch è un canale a sé, e come entrarci. [vai: account]
+- Se dai i permessi entrando su Twitch con un altro account, il pannello te lo dice al ritorno e ti propone di riprovare, invece di tornare in silenzio. [vai: stato]
+- Un moderatore non vede più i tasti per pagare, aggiungere un extra o aprire il portale dei pagamenti: sono del proprietario, e prima «Attiva» faceva pagare il canale del moderatore. [vai: sottoscrizione]
+- Chi ha già il Base e nessun extra, nella scheda Abbonamento, vede solo quanto costano gli extra che aggiunge: prima il totale contava di nuovo il canone Base. [vai: sottoscrizione]
+- In «Cosa hai acceso» della scheda Abbonamento ci sono anche «Bot su Telegram» e «Studio Web», che il Base comprende e mancavano dall'elenco. [vai: sottoscrizione]
+- Quando andryxify ti apre o ti chiude una funzione a mano, il pannello lo dice con il suo nome: prima scriveva «il proprietario», che sembrava voler dire te. [vai: sottoscrizione]
+- Invitando un moderatore, il pannello dice che entrerà con il suo account sulla piattaforma che hai scelto, non più «con Twitch» anche per Kick e YouTube. [vai: account]
+- Quando il bot perde la chat, il messaggio su Telegram nomina il tasto giusto, «Ricollega i permessi» nella scheda Stato.
+- Su un dispositivo che non gestisce le passkey il pannello dice solo che non si può, senza più aggiungere subito dopo «Passkey creata!». [vai: account]
+- Un invito da moderatore scaduto si vede come «invito scaduto», da rigenerare, invece di un «valido fino al» con una data già passata. [vai: account]
+- Invitando un moderatore puoi scrivere il nome come lo vedi sulla piattaforma, anche con maiuscole o punti: si legge come quando quella persona entra. [vai: account]
+- L'avviso «Spotify non è collegato» arriva solo a chi ha le richieste musicali accese: chi spegne il comando !sr non lo vede più. [vai: musica]
+- L'avviso «Non hai ancora un comando tuo» non conta più i due moduli del kit di partenza lasciati com'erano: prima non compariva mai. [vai: moduli]
+- Sotto i punti della chat sparisce la casella «Solo mentre sei in diretta», che non cambiava niente: la presenza arriva solo in diretta, le monete per messaggio sempre. [vai: giochi]
+- Nel giveaway «Quanti» parte dal numero scelto in «Vincitori (predefinito)», e dopo «Estrai» la riga con chi ha vinto resta al suo posto. [vai: giveaway]
+- Se apri un giveaway con i minigiochi spenti, il pannello ti dice di accendere «Attiva i minigiochi in chat» invece di parlare del piano. [vai: giveaway]
+- «VIP a tempo attivi» dice quante dirette restano a chi ha vinto il premio, invece di «per sempre», e chi rivince il premio lo rinnova a dirette. [vai: giochi]
+- Le citazioni importate mostrano nell'elenco il loro autore e la data, e i testi dell'elenco si leggono anche in inglese e spagnolo. [vai: giochi]
+- Creare un premio nelle penitenze accende anche l'interruttore nella scheda, così un «Salva» dopo non le rispegne, e «Salva» parte una volta sola. [vai: penitenze]
+- Quando manca il permesso dei punti canale, la scheda Penitenze ti dà il tasto «Aggiorna i permessi» invece di mandarti in un'altra scheda. [vai: penitenze]
+- Sondaggi e predizioni partono con due campi, e il tasto «+» ne aggiunge fino a 5 opzioni o 10 esiti, i limiti di Twitch. [vai: sondaggi]
+- Su un canale che non è su Twitch, Sondaggi e Penitenze dicono che funzionano solo lì, invece di mostrare tasti che non fanno niente.
+- Se le regole dei giochi o l'elenco dei tuoi giochi non arrivano, la carta dice l'errore invece di restare in caricamento o dirti che non ne hai. [vai: giochi]
+- In «Classifica & VIP» i rimandi chiamano le schede col loro nome, «Comandi» e «Comandi vocali», e i campi dei giochi da creare hanno etichette più chiare. [vai: giochi]
+- Nel manuale dei giochi la tabella delle regole scrive «1 frase di serie» al singolare, e i premi dei tris della slot vengono dagli stessi numeri del gioco.
+- In «I giochi che hai fatto» il tipo di ogni manche si legge col nome del menù, anche in inglese e spagnolo, e non con la sua sigla. [vai: giochi]
+- Quando a sondaggi, predizioni o penitenze manca un permesso, pannello e chat ti dicono di premere «Aggiorna i permessi» nella scheda «Stato». [vai: stato]
+- «Aggiungi numero» nella pagina link si ferma a sei, quanti la pagina ne mostra: prima dal settimo in poi i numeri sparivano al salvataggio senza dirlo. [vai: pagina]
+- Movimento, spessore e ombra dei bottoni, nell'aspetto della pagina link, mostrano quelli che la pagina usa davvero, anche dopo un tema pronto: prima il pannello diceva «Fermo», «Leggero» e «Nessuna». [vai: pagina]
+- «Rimborsa», nel registro delle donazioni, su una donazione arrivata con Satispay chiede conferma nominando il tuo negozio Satispay, non più il conto Stripe. [vai: donazioni]
+- «Modi», nell'aspetto della pagina link, dice come va davvero il permesso per video e musica di altri siti: con «Caricali subito» chi apre la pagina trova prima una fascia che glielo chiede. [vai: pagina]
+- «Salva la settimana» ricorda i posti che hai spuntato in «Mandala»: prima teneva quelli di prima, e la settimana automatica usciva nei posti vecchi. [vai: settimana]
+- Il primo link già pronto della pagina link porta al tuo canale anche se entri con Kick o YouTube, non più a Twitch; chi ha solo un server Discord parte senza. [vai: pagina]
+- Le Grafiche portano all'indirizzo vero del tuo canale anche se entri con Kick o YouTube, e nella pagina link la foto del profilo si chiama «La tua foto» per tutti. [vai: grafiche]
 
 ## 2026-09-26
 

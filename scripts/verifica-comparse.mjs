@@ -157,7 +157,7 @@ const SORVEGLIA = () => {
   // il browser, se glielo chiedi, ne calcola le misure.
   const guarda = () => {
     const nuovi = new Map(), incontrati = new Set();
-    (function giu(e, opaco) {
+    (function giu(e, opaco, uscente) {
       for (const c of e.children) {
         if (c.matches(SALTA)) continue;
         if (e.tagName === 'DETAILS' && !e.open && !e.classList.contains('dg-resta') && c.tagName !== 'SUMMARY') continue;
@@ -171,11 +171,14 @@ const SORVEGLIA = () => {
         const vede = op && st.visibility !== 'hidden' && r.width >= 12 && r.height >= 12;
         const coperto = c.classList.contains('dg-in') || c.classList.contains('dg-out');
         const cont = coperto || contorno(st);
-        if (vede && cont) { nuovi.set(c, { r, firma: firma(c, r), eraVisto: prima.get(c) === true }); if (!antenati.has(c)) antenati.set(c, catena(c)); }
+        // chi si sta gia' ricoprendo (lui o un antenato) e poi manca, se n'e'
+        // andato disfacendosi: il nascondere che arriva dopo non si vede
+        const esce = uscente || (c.classList.contains('dg-out') && copre.has(c));
+        if (vede && cont) { nuovi.set(c, { r, firma: firma(c, r), eraVisto: prima.get(c) === true, esce }); if (!antenati.has(c)) antenati.set(c, catena(c)); }
         prima.set(c, vede);
-        giu(c, op);
+        giu(c, op, esce);
       }
-    })(document.body, true);
+    })(document.body, true, false);
     for (const e of vivi.keys()) if (!incontrati.has(e)) prima.set(e, false);
     return nuovi;
   };
@@ -186,7 +189,12 @@ const SORVEGLIA = () => {
   // al primo cambio portato dal gesto, e li' sembrava comparire. Quando la
   // pagina e' pronta si guarda da capo: quello che si vede prima del gesto e'
   // noto per costruzione, non per fortuna.
-  S.base = () => { vivi = guarda(); avviata = true; };
+  // L'ISTANTE DELL'ULTIMA FOTOGRAFIA. Un riquadro che manca al giro di adesso si
+  // vedeva a quello di prima: e' sparito fra i due, non quando il giro se ne
+  // accorge. Sotto carico un giro dello Studio dura piu' della finestra di un
+  // disegno, e contare da adesso buttava fuori un disfarsi che c'era stato.
+  let tVivi = 0;
+  S.base = () => { vivi = guarda(); tVivi = ora(); avviata = true; };
 
   // SI GUARDA QUELLO CHE SI DIPINGE. Un campione preso dentro un
   // requestAnimationFrame vede lo stato di META' fotogramma: se un'altra
@@ -207,13 +215,15 @@ const SORVEGLIA = () => {
     ultimo = t;
     for (let i = inAttesa.length - 1; i >= 0; i--) {
       const x = inAttesa[i];
-      if (segnati(scopre, x.e, x.t - 700, t)) { S.eventi.push({ tipo: 'compare', ok: true, chi: x.chi, azione: x.azione, t: x.t }); inAttesa.splice(i, 1); }
+      if (segnati(scopre, x.e, x.da - 700, t)) { S.eventi.push({ tipo: 'compare', ok: true, chi: x.chi, azione: x.azione, t: x.t }); inAttesa.splice(i, 1); }
       else if (t - x.t > 600) { S.eventi.push({ tipo: 'compare', ok: false, chi: x.chi, azione: x.azione, t: x.t }); inAttesa.splice(i, 1); }
     }
-    if (!sporco) return;
+    // senza cambi nel DOM quello che si vedeva si vede ancora: la fotografia
+    // di prima vale anche adesso
+    if (!sporco) { tVivi = t; return; }
     sporco = false;
     const nuovi = guarda();
-    if (!avviata) { vivi = nuovi; avviata = true; return; }
+    if (!avviata) { vivi = nuovi; tVivi = t; avviata = true; return; }
     const comparsi = [], spariti = [];
     for (const [e, v] of nuovi) if (!vivi.has(e) && !v.eraVisto) comparsi.push([e, v]);
     for (const [e, v] of vivi) {
@@ -225,14 +235,15 @@ const SORVEGLIA = () => {
     for (const [e, v] of comparsi) {
       if (via.has(v.firma)) { via.delete(v.firma); continue; }
       if (!aSchermo(v.r) || !S.pronta) continue;
-      inAttesa.push({ e, t, chi: nome(e), azione: S.azione });
+      inAttesa.push({ e, t, da: tVivi, chi: nome(e), azione: S.azione });
     }
     const rimasti = new Set(via.values());
     for (const [e, v] of spariti) {
       if (!rimasti.has(e) || !aSchermo(v.r) || !S.pronta) continue;
-      S.eventi.push({ tipo: 'sparisce', ok: segnati(copre, e, t - 900, t), chi: nome(e), azione: S.azione, t });
+      S.eventi.push({ tipo: 'sparisce', ok: v.esce || segnati(copre, e, tVivi - 900, t), chi: nome(e), azione: S.azione, t });
     }
     vivi = nuovi;
+    tVivi = t;
   };
   document.addEventListener('DOMContentLoaded', () => {
     new MutationObserver((mosse) => {

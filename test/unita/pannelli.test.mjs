@@ -21,6 +21,7 @@ function tela() {
     measureText(s) { return { width: String(s).length * Number(/(\d+)px/.exec(this.font)[1]) * 0.6 }; },
     fillText(t, x, y) { this.scritte.push({ t, x, y, px: Number(/(\d+)px/.exec(this.font)[1]), colore: this.fillStyle, align: this.textAlign }); },
     drawImage(...a) { this.immagini.push(a); },
+    setTransform(a, b, c, d) { this.scala = [a, d]; },
     clearRect() {}, fillRect() {}, beginPath() {}, moveTo() {}, arcTo() {}, closePath() {}, fill() {}, stroke() {},
   };
 }
@@ -182,4 +183,22 @@ test('quello che si salva ha forma', () => {
   assert.equal(n.voci[1].testo.length, S.MAX.testo);
   assert.equal(new Set(n.voci.map((v) => v.id)).size, n.voci.length);
   assert.equal(S.normPannelli({ stile: { altezza: 99 } }).stile.altezza, 100, 'un\'altezza fuori dalle tre torna media');
+});
+
+// Twitch mostra il pannello largo 320, ma su un telefono quei 320 sono 960 pixel
+// veri: un'immagine da 320 viene allargata e si impasta. Il disegno si pensa a
+// 320 e si stampa a DENSITA volte tanto; Twitch lo rimpicciolisce, e ogni pixel
+// dello schermo ha il suo.
+test('il pannello si stampa alla densita\' dei telefoni, col disegno pensato a 320', () => {
+  assert.ok(P.DENSITA >= 3, 'i telefoni arrivano a 3 pixel per punto');
+  const g = tela();
+  P.disegna(g, { h: 100, densita: P.DENSITA, titolo: 'Discord', icona: ICONA, colori: COL, forma: 'netta', carattere: CAR });
+  assert.deepEqual(g.scala, [P.DENSITA, P.DENSITA], 'si disegna in unita\' da 320, stampate a densita\' piena');
+  const g1 = tela();
+  P.disegna(g1, { h: 100, titolo: 'Discord', icona: ICONA, colori: COL, forma: 'netta', carattere: CAR });
+  assert.deepEqual(g1.scala, [1, 1], 'senza densita\' non si ingrandisce niente');
+  assert.ok(APP.includes('<canvas width="${P.W * P.DENSITA}" height="${h * P.DENSITA}"'), 'la tela del pannello ha i pixel della densita\'');
+  assert.ok(APP.includes('densita: P.DENSITA'), 'e il pannello ci disegna sopra a quella densita\'');
+  const svg = /viewBox="0 0 24 24" width="(\d+)" height="\1" fill="none" stroke="\$\{colore\}"/.exec(APP);
+  assert.ok(svg && Number(svg[1]) >= 56 * P.DENSITA, 'l\'icona nasce grande almeno quanto la sua misura stampata');
 });

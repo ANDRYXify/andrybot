@@ -148,3 +148,26 @@ test('e si vedono anche con la tastiera, cosa che il browser non faceva', () => 
   assert.match(js, /pointerType === 'touch'/,
     'sul telefono no: un suggerimento al passaggio del dito è un suggerimento che non se ne va più');
 });
+
+// IL CURSORE DISEGNATO VALE ANCHE SUI CAMPI CHE SI CLICCANO. I campi dove si
+// scrive hanno la barretta; tutti gli altri input (quelli dello standard HTML che
+// non ricevono testo) sono tasti e hanno la manina. Prima la regola della
+// barretta prendeva ogni input, e sul selettore del colore o su «scegli file»
+// compariva il cursore di sistema al posto del nostro.
+test('ogni input che si clicca ha la manina, non la barretta', () => {
+  const css = leggi('src/web/public/tema.css');
+  const regole = [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map((m) => ({ sel: m[1].replace(/\s+/g, ' ').trim(), corpo: m[2], at: m.index }));
+  // I tre cursori stanno una volta sola, in variabili: la barretta per scrivere,
+  // la manina per cliccare. Si controlla che siano disegnati (un'immagine, con
+  // il cursore di sistema solo come riserva) e chi li usa.
+  const radice = regole.find((r) => r.sel === ':root' && /--cursore-testo:/.test(r.corpo));
+  assert.ok(radice, 'le variabili dei cursori');
+  assert.match(radice.corpo, /--cursore-testo:\s*url\("data:image\/svg\+xml,[^"]+"\)\s*16 16,\s*text;/);
+  assert.match(radice.corpo, /--cursore-mano:\s*url\("data:image\/svg\+xml,[^"]+"\)\s*16 15,\s*pointer;/);
+  const barretta = regole.find((r) => /cursor:\s*var\(--cursore-testo\)\s*!important/.test(r.corpo));
+  const manina = regole.filter((r) => /cursor:\s*var\(--cursore-mano\)\s*!important/.test(r.corpo) && /input\[type=/.test(r.sel));
+  assert.ok(barretta && manina.length === 1, 'una regola per la barretta e una per gli input da cliccare');
+  assert.ok(manina[0].at > barretta.at, 'e quella della manina viene dopo, cosi\' vince');
+  const CLICCABILI = ['button', 'checkbox', 'color', 'file', 'image', 'radio', 'range', 'reset', 'submit'];
+  for (const t of CLICCABILI) assert.ok(manina[0].sel.includes(`input[type="${t}"]`), `input[type="${t}"] senza manina`);
+});
