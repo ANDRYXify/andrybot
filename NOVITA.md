@@ -794,62 +794,176 @@ nome resta in casa. Non è una cosa da ricordarsi:
 ## 2026-09-07
 
 - Il bot risponde agganciando la risposta al messaggio di chi gli ha scritto, come fa una persona col tasto «rispondi». Vale su Twitch e su Kick.
+  en: The bot answers by attaching its reply to the message of whoever wrote to it, the way a person uses the “reply” button. It works on Twitch and on Kick.
+  es: El bot responde enganchando la respuesta al mensaje de quien le escribió, como hace una persona con el botón «responder». Vale en Twitch y en Kick.
 - Prima di rispondere aspetta un momento, come chi legge e scrive. Adesso quel momento segue il ritmo della chat: se vola risponde subito, se è calma si prende il suo tempo.
+  en: Before answering it waits a moment, like someone reading and typing. That moment now follows the pace of the chat: if it’s flying it answers right away, if it’s calm it takes its time.
+  es: Antes de responder espera un momento, como quien lee y escribe. Ahora ese momento sigue el ritmo del chat: si va volando responde enseguida, si está tranquilo se toma su tiempo.
 - Vede se chi gli scrive è moderatore, abbonato o VIP, e se è la prima volta che scrive da te. Non cambia cosa risponde, cambia il modo: a un nuovo arrivato non dà per scontate le cose del canale.
+  en: It sees whether the person writing is a mod, a subscriber or a VIP, and whether it’s their first time in your chat. It changes how it answers, not what: with a newcomer it doesn’t take channel things for granted.
+  es: Ve si quien le escribe es moderador, suscriptor o VIP, y si es la primera vez que escribe en tu canal. No cambia qué responde, cambia el modo: a quien llega nuevo no le da por sabidas las cosas del canal.
 - Quando parla di sua iniziativa si aggancia a quello che vi state dicendo. L'elenco di frasi fatte non c'è più, e cadeva sempre in mezzo a discorsi che non c'entravano.
+  en: When it speaks up on its own, it picks up on what you’re all talking about. The list of stock phrases is gone, and it always landed in the middle of unrelated conversations.
+  es: Cuando habla por iniciativa propia se engancha a lo que están diciendo. La lista de frases hechas ya no existe, y siempre caía en medio de conversaciones que no tenían nada que ver.
 - Se non ha niente di suo da dire, sta zitto.
+  en: If it has nothing of its own to say, it stays quiet.
+  es: Si no tiene nada propio que decir, se calla.
 - Lo scudo anti-bot adesso ha sei livelli e sale un gradino alla volta. Prima guarda, poi avvisa i moderatori, poi rallenta la chat, e solo alla fine la chiude ai soli follower.
+  en: The anti-bot shield now has six levels and goes up one step at a time. First it watches, then it warns the mods, then it slows the chat, and only at the end does it close it to followers only.
+  es: El escudo anti-bot ahora tiene seis niveles y sube un escalón a la vez. Primero observa, luego avisa a los moderadores, luego frena el chat y solo al final lo cierra a solo seguidores.
 - Una clip andata bene non fa più chiudere la chat. Tanti follow di cui non si sa niente alzano l'attenzione, non la serranda.
+  en: A clip that did well no longer gets the chat closed. Lots of follows from unknown accounts raise attention, not the shutters.
+  es: Un clip que funcionó bien ya no hace cerrar el chat. Muchos follows de los que no se sabe nada suben la atención, no la persiana.
 - Quando l'attacco passa si scende un gradino per volta, riaprendo subito quello che non serve più.
+  en: When the attack passes it steps down one level at a time, reopening right away whatever is no longer needed.
+  es: Cuando el ataque pasa se baja un escalón a la vez, reabriendo enseguida lo que ya no hace falta.
 - Puoi scegliere quanto presto reagire: prudente, bilanciata o aggressiva.
+  en: You can choose how early it reacts: cautious, balanced or aggressive.
+  es: Puedes elegir qué tan pronto reacciona: prudente, equilibrada o agresiva.
 - Davanti a un'ondata di follow finti il bot riconosce quali nomi vengono dalla stessa fabbrica e toglie solo quelli. Chi era capitato lì in mezzo resta dov'è.
+  en: Faced with a wave of fake follows, the bot recognizes which names come from the same factory and removes only those. Anyone who happened to be caught in the middle stays put.
+  es: Ante una oleada de follows falsos, el bot reconoce qué nombres vienen de la misma fábrica y quita solo esos. Quien había caído ahí en medio se queda donde está.
 - Se non riconosce nessun gruppo non se lo inventa, e tratta l'ondata come una cosa sola.
+  en: If it doesn’t recognize any group, it doesn’t make one up, and it treats the wave as a single thing.
+  es: Si no reconoce ningún grupo no se lo inventa, y trata la oleada como una sola cosa.
 - Vengono fermati anche i follow finti che arrivano piano piano, uno ogni pochi secondi per dieci minuti. Passavano indisturbati.
+  en: Fake follows that trickle in slowly, one every few seconds for ten minutes, are stopped too. They used to get through untouched.
+  es: También se frenan los follows falsos que llegan despacio, uno cada pocos segundos durante diez minutos. Pasaban sin que nadie los tocara.
 - Un'ondata così veloce da arrivare tutta insieme adesso si vede. Era proprio quella che scappava.
+  en: A wave so fast that it arrives all at once can now be seen. That was exactly the one that slipped through.
+  es: Una oleada tan rápida que llega toda junta ahora se ve. Era justamente la que se escapaba.
 - Per dire che un'ondata è finta il bot aspetta di aver visto quindici follow. Con sei, un picco vero su dodici finiva scambiato per finto.
+  en: To call a wave fake, the bot waits until it has seen fifteen follows. With six, one real spike in twelve was mistaken for fake.
+  es: Para decir que una oleada es falsa, el bot espera a haber visto quince follows. Con seis, un pico real de cada doce se tomaba por falso.
 - Convincendosi a metà ondata riprende anche i follow arrivati prima, invece di partire da quel momento.
+  en: When it makes up its mind halfway through a wave, it also goes back to the follows that came before, instead of starting from that moment.
+  es: Cuando se convence a mitad de la oleada, recupera también los follows llegados antes, en lugar de empezar desde ese momento.
 - Il ritmo del tuo canale non si impara più da due minuti di attacco. Perché conti servono ore.
+  en: Your channel’s rhythm is no longer learned from two minutes of an attack. For it to count, it takes hours.
+  es: El ritmo de tu canal ya no se aprende de dos minutos de ataque. Para que cuente hacen falta horas.
 - Un raid vero in cui trecento persone salutano con la stessa frase non viene più scambiato per un attacco.
+  en: A real raid where three hundred people say hi with the same phrase is no longer mistaken for an attack.
+  es: Un raid de verdad en el que trescientas personas saludan con la misma frase ya no se toma por un ataque.
 - Una chat che ripete una frase corta tutti insieme nemmeno. Servono trenta caratteri e cinque parole, non quattordici caratteri.
+  en: The same goes for a chat all repeating a short phrase together. It takes thirty characters and five words, not fourteen characters.
+  es: Tampoco un chat que repite a coro una frase corta. Hacen falta treinta caracteres y cinco palabras, no catorce caracteres.
 - Il rilevamento dello stesso messaggio da tanti account resta acceso anche spegnendo l'elenco dei nomi da bot.
+  en: Detection of the same message from many accounts stays on even if you turn off the list of bot names.
+  es: La detección del mismo mensaje desde muchas cuentas sigue activa aunque apagues la lista de nombres de bots.
 - Gli attacchi si misurano sull'ora in cui sono successi, non su quella in cui arrivano al bot.
+  en: Attacks are measured by the time they happened, not the time they reach the bot.
+  es: Los ataques se miden por la hora en que ocurrieron, no por la hora en que le llegan al bot.
 - Ogni attacco diventa una scheda sola invece di trecento righe di registro: quando è cominciato, quanto è durato, quanto forte è andato, chi c'era, cosa ha fatto il bot.
+  en: Each attack becomes a single card instead of three hundred log lines: when it started, how long it lasted, how hard it hit, who was there, what the bot did.
+  es: Cada ataque se vuelve una sola ficha en lugar de trescientas líneas de registro: cuándo empezó, cuánto duró, qué tan fuerte fue, quién estaba y qué hizo el bot.
 - Un attacco che riprende dopo pochi minuti resta lo stesso attacco, e il conto dei danni non si spezza in dieci pezzi.
+  en: An attack that resumes after a few minutes is still the same attack, and the damage count doesn’t break into ten pieces.
+  es: Un ataque que se reanuda a los pocos minutos sigue siendo el mismo ataque, y la cuenta de daños no se parte en diez trozos.
 - Nella scheda chi è arrivato durante l'attacco è diviso fra bot certi, sospetti e persone vere.
+  en: On the card, whoever arrived during the attack is split into certain bots, suspects and real people.
+  es: En la ficha, quien llegó durante el ataque está dividido entre bots seguros, sospechosos y personas reales.
 - Finito l'attacco puoi ripulire i follower finti partendo da quella divisione. Le persone vere restano fuori, e per eseguire devi riscrivere quanti account stai per togliere.
+  en: Once the attack is over you can clean out the fake followers starting from that split. Real people are left out, and to go ahead you have to type how many accounts you’re about to remove.
+  es: Terminado el ataque puedes limpiar los seguidores falsos a partir de esa división. Las personas reales quedan fuera, y para ejecutar tienes que volver a escribir cuántas cuentas vas a quitar.
 - Se il bot si riavvia mentre un attacco è in corso, la scheda si chiude e resta.
+  en: If the bot restarts while an attack is under way, the card closes and stays.
+  es: Si el bot se reinicia mientras hay un ataque en curso, la ficha se cierra y se conserva.
 - C'è la sola osservazione: lo scudo lavora e scrive cosa avrebbe fatto, senza bannare, bloccare o cancellare niente. Serve per vedere come si comporta prima di lasciarlo agire.
+  en: There’s an observe-only mode: the shield works and writes down what it would have done, without banning, blocking or deleting anything. Use it to see how it behaves before letting it act.
+  es: Existe el modo solo observar: el escudo trabaja y anota lo que habría hecho, sin banear, bloquear ni borrar nada. Sirve para ver cómo se comporta antes de dejarlo actuar.
 - Un'azione che non riesce non si perde. Resta in sospeso e la fai riprovare dalla console.
+  en: An action that fails isn’t lost. It stays pending and you can retry it from the console.
+  es: Una acción que falla no se pierde. Queda pendiente y la puedes reintentar desde la consola.
 - Nel registro c'è anche cosa ha risposto Twitch, non solo se è andata.
+  en: The log also shows what Twitch answered, not just whether it worked.
+  es: En el registro está también lo que respondió Twitch, no solo si salió bien.
 - Nella console trovi quanto ha sbagliato: chi era stato segnalato e poi ha scritto in chat era una persona.
+  en: In the console you see how often it got it wrong: someone who was flagged and then wrote in chat was a person.
+  es: En la consola ves cuánto se equivocó: quien había sido señalado y luego escribió en el chat era una persona.
 - Lo stesso evento che arriva due volte non fa bannare due volte.
+  en: The same event arriving twice doesn’t cause two bans.
+  es: El mismo evento que llega dos veces no hace banear dos veces.
 - La cancellazione di un messaggio di spam passa avanti alla pulizia dei follower finti, che può aspettare.
+  en: Deleting a spam message now goes ahead of cleaning out fake followers, which can wait.
+  es: Borrar un mensaje de spam ahora pasa por delante de la limpieza de seguidores falsos, que puede esperar.
 - I canali che usano il bot si scambiano quello che scoprono. Un account bloccato durante un'ondata da una parte diventa noto anche agli altri, e la lista cresce da sola.
+  en: Channels using the bot share what they discover. An account blocked during a wave in one place becomes known to the others too, and the list grows by itself.
+  es: Los canales que usan el bot comparten lo que descubren. Una cuenta bloqueada durante una oleada en un lado pasa a ser conocida también por los demás, y la lista crece sola.
 - Perché un nome entri in quella lista servono tre canali che lo riconoscano ciascuno per conto suo, e solo per cose misurate sul momento.
+  en: For a name to get onto that list, three channels have to recognize it independently, and only for things measured at the time.
+  es: Para que un nombre entre en esa lista hacen falta tres canales que lo reconozcan cada uno por su cuenta, y solo por cosas medidas en el momento.
 - Un nome nella lista comune scade dopo tre mesi e si può togliere subito.
+  en: A name on the shared list expires after three months and can be removed right away.
+  es: Un nombre en la lista común caduca a los tres meses y se puede quitar enseguida.
 - Lo scudo riconosce anche i bot che guardano e basta. Un account presente in molti canali nello stesso momento, che non scrive mai, viene segnalato: decidi tu.
+  en: The shield also recognizes bots that only watch. An account present in many channels at the same moment that never writes gets flagged: you decide.
+  es: El escudo reconoce también los bots que solo miran. Una cuenta presente en muchos canales al mismo tiempo, que nunca escribe, queda señalada: decides tú.
 - Il giudizio su un account non somma più tre volte la stessa cosa. Un nuovo spettatore senza foto né bio prendeva lo stesso punteggio di un follow-bot vero.
+  en: The verdict on an account no longer adds up the same thing three times. A new viewer with no photo or bio got the same score as a real follow-bot.
+  es: El juicio sobre una cuenta ya no suma tres veces lo mismo. Un espectador nuevo sin foto ni bio sacaba la misma puntuación que un follow-bot de verdad.
 - Per togliere il follow serve sempre un fatto che una persona non può produrre: il nome riconosciuto, o la presenza in molti canali. Il resto fa solo segnalare.
+  en: Removing a follow always takes a fact a person can’t produce: a recognized name, or presence in many channels. Anything else only raises a flag.
+  es: Para quitar el follow siempre hace falta un hecho que una persona no puede producir: el nombre reconocido o la presencia en muchos canales. Lo demás solo hace señalar.
 - Se Twitch non risponde mentre lo scudo controlla l'età di un account, riprova al messaggio dopo.
+  en: If Twitch doesn’t answer while the shield is checking an account’s age, it tries again on the next message.
+  es: Si Twitch no responde mientras el escudo comprueba la antigüedad de una cuenta, lo reintenta en el mensaje siguiente.
 - Il filtro dei link guarda il dominio del link, non il testo intorno. Bastava nominare da qualche parte un sito permesso e il filtro si spegneva.
+  en: The link filter looks at the link’s domain, not the text around it. Mentioning an allowed site anywhere was enough to switch the filter off.
+  es: El filtro de enlaces mira el dominio del enlace, no el texto de alrededor. Bastaba con nombrar en algún lado un sitio permitido para que el filtro se apagara.
 - I messaggi normali scritti col punto attaccato, tipo «lascia stare.io ci provo», non vengono più cancellati. Su quindici frasi di chat vere ne finivano cancellate dieci.
+  en: Normal messages typed with a period stuck to the next word, like “lascia stare.io ci provo”, are no longer deleted. Out of fifteen real chat lines, ten ended up deleted.
+  es: Los mensajes normales escritos con el punto pegado, como «lascia stare.io ci provo», ya no se borran. De quince frases de chat reales se borraban diez.
 - Una parola vietata resta vietata anche scritta con un accento.
+  en: A banned word stays banned even when written with an accent.
+  es: Una palabra prohibida sigue prohibida aunque se escriba con tilde.
 - Nel pannello sei scritte avevano l'apostrofo al posto dell'accento, e adesso sono scritte come si deve.
+  en: Six Italian labels in the panel had an apostrophe instead of an accent, and now they’re written properly.
+  es: En el panel, seis textos en italiano tenían el apóstrofo en lugar del acento, y ahora están bien escritos.
 - Quando la cancellazione è finita te lo dice una nuvoletta disegnata come il resto del sito, invece della finestrella grigia del browser.
+  en: When the deletion is done, a bubble drawn like the rest of the site tells you, instead of the browser’s little gray window.
+  es: Cuando el borrado termina te lo dice un globo dibujado como el resto del sitio, en lugar de la ventanita gris del navegador.
 - Nella finestra di ricerca il Tab non esce più dietro al velo, Escape chiude da qualunque punto e chiudendo il cursore torna dove eri. Prima girava nella pagina sotto, che non si vede.
+  en: In the search window, Tab no longer escapes behind the overlay, Escape closes it from anywhere, and on closing the cursor goes back where you were. Before, it wandered into the hidden page underneath.
+  es: En la ventana de búsqueda, Tab ya no se escapa detrás del velo, Escape cierra desde cualquier punto y al cerrar el cursor vuelve adonde estabas. Antes daba vueltas por la página de abajo, que no se ve.
 - Il bot legge e risponde nella chat delle tue dirette YouTube, con gli stessi comandi, moduli e monete di Twitch. Si accende da Stato → Le tue piattaforme.
+  en: The bot reads and answers in the chat of your YouTube streams, with the same commands, modules and coins as on Twitch. Turn it on from Status → Your platforms.
+  es: El bot lee y responde en el chat de tus directos de YouTube, con los mismos comandos, módulos y monedas que en Twitch. Se activa desde Estado → Tus plataformas.
 - Nella sezione Andarsene si vede cosa c'è da cancellare scritto a parole (messaggi ricordati, citazioni, comandi) invece dei nomi interni del database.
+  en: In the Leaving section, what there is to delete is spelled out in words (remembered messages, quotes, commands) instead of the database’s internal names.
+  es: En la sección Marcharse se ve lo que hay que borrar escrito con palabras (mensajes recordados, citas, comandos) en lugar de los nombres internos de la base de datos.
 - Da Stato → Andarsene puoi cancellare l'account e tutto quello che contiene, file caricati e collegamenti compresi. Non si annulla: per confermare va scritto il nome del canale.
+  en: From Status → Leaving you can delete your account and everything in it, uploaded files and connections included. It can’t be undone: to confirm, you type the channel name.
+  es: Desde Estado → Marcharse puedes borrar la cuenta y todo lo que contiene, archivos subidos y conexiones incluidos. No se deshace: para confirmar hay que escribir el nombre del canal.
 - Se il bot si riavvia mentre un giveaway è aperto, chi era entrato resta in gara coi suoi biglietti. Prima sparivano tutti, e con loro il giveaway.
+  en: If the bot restarts while a giveaway is open, everyone who entered stays in with their tickets. Before, they all vanished, and the giveaway with them.
+  es: Si el bot se reinicia mientras hay un sorteo abierto, quien había entrado sigue participando con sus boletos. Antes desaparecían todos, y con ellos el sorteo.
 - Anche una penitenza in corso riprende da dov'era, contatore compreso, invece di spegnersi a metà.
+  en: A forfeit in progress also picks up where it left off, counter included, instead of switching off halfway.
+  es: También una penitencia en curso sigue desde donde estaba, contador incluido, en lugar de apagarse a la mitad.
 - Se lo scudo aveva chiuso la chat ai soli follower e il bot si riavviava, la chat restava chiusa e nessuno la riapriva. Adesso si riapre da sola al ritorno.
+  en: If the shield had closed chat to followers only and the bot restarted, chat stayed closed and nobody reopened it. Now it reopens by itself when the bot comes back.
+  es: Si el escudo había cerrado el chat a solo seguidores y el bot se reiniciaba, el chat se quedaba cerrado y nadie lo volvía a abrir. Ahora se reabre solo al volver.
 - La ricerca trova quello che c'è scritto dentro le schede (campi, sezioni, pieghevoli, bottoni) e non solo i nomi delle schede. Cliccando ti porta sulla cosa e te la segna, aprendo da sola quello che la nascondeva.
+  en: Search finds what’s written inside the tabs (fields, sections, collapsibles, buttons), not just the tab names. Clicking takes you to the thing and highlights it, opening whatever was hiding it.
+  es: La búsqueda encuentra lo que está escrito dentro de las pestañas (campos, secciones, plegables, botones) y no solo sus nombres. Al hacer clic te lleva a la cosa y la marca, abriendo lo que la ocultaba.
 - Dalla ricerca si arriva anche a Scudo anti-bot, Comandi vocali, Conoscenza, Penitenze, Musica e Clip: prima quelle sei sezioni non uscivano mai.
+  en: Search now also reaches Anti-bot shield, Voice commands, Knowledge, Forfeits, Music and Clips: before, those six sections never came up.
+  es: Desde la búsqueda se llega también a Escudo anti-bot, Comandos de voz, Conocimiento, Penitencias, Música y Clips: antes esas seis secciones no salían nunca.
 - I moduli a tempo parlano solo mentre sei in diretta: prima riempivano la chat vuota tutta la notte. Dentro al modulo c'è l'interruttore per farli parlare anche a canale spento.
+  en: Timed modules only talk while you’re live: before, they filled the empty chat all night. Inside the module there’s a switch to make them talk while the channel is offline too.
+  es: Los módulos con temporizador solo hablan mientras estás en directo: antes llenaban el chat vacío toda la noche. Dentro del módulo está el interruptor para que hablen también con el canal apagado.
 - Dopo un riavvio del bot i timer non partono più tutti insieme, perché l'ora dell'ultimo giro adesso resta salvata. E quelli che scadono nello stesso minuto escono in fila, non in un colpo.
+  en: After a bot restart, timers no longer all fire at once, because the time of the last round is now saved. Timers due in the same minute go out one after another, not in one burst.
+  es: Tras un reinicio del bot los temporizadores ya no salen todos juntos, porque la hora de la última vuelta ahora queda guardada. Los que vencen en el mismo minuto salen en fila, no de golpe.
 - Un modulo a tempo appena creato aspetta il suo primo giro prima di parlare, invece di partire subito.
+  en: A newly created timed module waits for its first round before talking, instead of starting right away.
+  es: Un módulo con temporizador recién creado espera su primera vuelta antes de hablar, en lugar de arrancar enseguida.
 - Ogni campo del pannello ha un nome che il lettore di schermo legge: prima 395 caselle su 916 restavano mute. Riguarda i cursori del tema, i pannelli dello Studio, gli avvisi, i compleanni e i premi.
+  en: Every field in the panel has a name that screen readers read out: before, 395 fields out of 916 were silent. This covers the theme sliders, Studio panels, alerts, birthdays and prizes.
+  es: Cada campo del panel tiene un nombre que lee el lector de pantalla: antes 395 casillas de 916 estaban mudas. Afecta a los controles del tema, los paneles del Studio, los avisos, los cumpleaños y los premios.
 - Sui temi pronti della pagina link la nuvoletta ripeteva il nome scritto sotto al bottone, e ora non c'è più.
+  en: On the link page’s ready-made themes, the tooltip repeated the name written under the button, and now it’s gone.
+  es: En los temas listos de la página de enlaces, el globo repetía el nombre escrito debajo del botón, y ahora ya no está.
 
 ## 2026-09-06
 
