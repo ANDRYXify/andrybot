@@ -387,6 +387,15 @@ se ogni parola sbagliata rompesse la catena, la chat non potrebbe parlare.
 Rompono la catena la parola già detta (compresa quella da cui si è partiti) e
 due mosse di fila della stessa persona; chi l'ha rotta può aprire la nuova.
 
+**Ogni mossa ha la sua risposta.** All'inizio una mossa buona passava in
+silenzio, e in diretta sembrava il gioco rotto: dopo PIANO qualcuno ha scritto
+«Normale», la catena l'ha presa, e in chat non si è visto niente. Chi scrive
+non sa se è entrata, chi arriva non sa da dove si riparte. Adesso ogni parola
+buona ha una riga del bot con il conto e le due lettere dopo («🔗 SOLE, 2
+parole. Avanti con LE!»). Il record e il traguardo, quando capitano, prendono
+il posto di quella riga: una riga per mossa, mai due. Le chiacchiere restano
+senza risposta.
+
 Non c'è un dizionario: la chat vede ogni parola, e il gioco non ha monete da
 proteggere. Una parola che finisce con due lettere da cui non comincia niente
 («sport») chiude la catena per stanchezza, senza romperla: è una mossa lecita.

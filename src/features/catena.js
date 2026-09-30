@@ -9,6 +9,12 @@
 //  · CONTA SOLO LA MOSSA. Un messaggio e' una mossa se e' una parola sola che
 //    comincia con le due lettere giuste; tutto il resto e' chiacchiera e non
 //    tocca la catena. Cosi' chi saluta non rompe niente.
+//  · OGNI MOSSA HA LA SUA RISPOSTA. Una mossa buona accettata in silenzio, in
+//    una chat che scorre, e' una mossa che sembra persa: chi l'ha scritta non
+//    sa se e' entrata, e chi arriva non sa da dove si riparte. Percio' ogni
+//    parola buona ha una riga del bot con le due lettere dopo; il record e il
+//    traguardo, quando capitano, la prendono al posto suo. Una riga per mossa,
+//    mai due.
 //  · SI ROMPE CON UNA PAROLA GIA' DETTA, O CON DUE DI FILA DELLA STESSA
 //    PERSONA. Allora il bot dice perche' e riparte da una parola nuova.
 //  · IL RECORD RESTA. La catena piu' lunga del canale sta nel database
@@ -103,13 +109,15 @@ export function suMessaggio(channel, msg) {
   c.parola = p;
   c.n++;
   c.ultimo = io;
+  let riga = `🔗 ${p.toUpperCase()}, ${c.n === 1 ? 'una parola' : `${c.n} parole`}. Avanti con ${coda(p)}!`;
   if (c.n > c.record) {
-    if (!c.superato && c.record > 0) c.say(`🏆 Nuovo record del canale: ${c.n} parole! Avanti con ${coda(p)}!`);
+    if (!c.superato && c.record > 0) riga = `🏆 Nuovo record del canale: ${c.n} parole! Avanti con ${coda(p)}!`;
     c.superato = true;
     c.record = c.n;
     statoVivo.scrivi(channel, CHIAVE, { n: c.n });
   }
   const traguardo = conf(channel).traguardo;
-  if (traguardo > 0 && c.n % traguardo === 0) c.say(`🔗 ${c.n} parole! Adesso tocca a ${coda(p)}.`);
+  if (traguardo > 0 && c.n % traguardo === 0 && !riga.startsWith('🏆')) riga = `🔗 ${c.n} parole! Adesso tocca a ${coda(p)}.`;
+  c.say(riga);
   return true;
 }

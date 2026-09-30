@@ -190,6 +190,9 @@ comandi diversi da quelli della riga italiana.
 - La privacy dice cosa arriva al server dal contatore delle morti: dallo schermo solo «+1», dai giochi il numero e la partita, da un file il numero e il nome del file.
   en: The privacy notice says what reaches the server from the death counter: from the screen only “+1”, from games the number and the match, from a file the number and the file name.
   es: La política de privacidad dice qué llega al servidor desde el contador de muertes: desde la pantalla solo «+1», desde los juegos el número y la partida, desde un archivo el número y su nombre.
+- Nella catena di parole ogni parola buona ha la sua risposta, con le due lettere da cui si riparte: prima passava in silenzio e sembrava che il gioco non andasse. [vai: giochi]
+  en: In the word chain every valid word gets its own reply, with the two letters to continue from: before, it went by in silence and the game looked broken.
+  es: En la cadena de palabras cada palabra válida tiene su respuesta, con las dos letras desde las que se sigue: antes pasaba en silencio y parecía que el juego no funcionaba.
 
 ## 2026-09-27
 
