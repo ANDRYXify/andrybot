@@ -597,79 +597,213 @@ nome resta in casa. Non è una cosa da ricordarsi:
 ## 2026-09-16
 
 - Nella scheda «Abbonamento» aggiungi gli extra da lì: spunti quello che ti manca, leggi il totale e attivi. Chi ha già il Base non lo ripaga: l'extra entra nell'abbonamento che c'è. [vai: sottoscrizione]
+  en: In the “Subscription” tab you add extras right there: check what you’re missing, read the total and activate. If you already have Base you don’t pay for it again: the extra joins your current subscription.
+  es: En la pestaña «Suscripción» añades los extras desde ahí: marcas lo que te falta, lees el total y activas. Quien ya tiene el Base no lo vuelve a pagar: el extra entra en la suscripción que ya tiene.
 - Se un rinnovo non va a buon fine, la scheda te lo dice e il tasto porta al portale per cambiare carta: appena il pagamento passa, le funzioni tornano da sole. [vai: sottoscrizione]
+  en: If a renewal doesn’t go through, the tab tells you and the button takes you to the portal to change your card: as soon as the payment clears, the features come back by themselves.
+  es: Si una renovación no sale bien, la pestaña te lo dice y el botón lleva al portal para cambiar de tarjeta: en cuanto el pago pasa, las funciones vuelven solas.
 - Tornando dal pagamento, il piano risulta attivo solo quando Stripe ha confermato davvero. Se l'incasso è ancora in corso lo leggi, e il piano si accende da solo dopo. [vai: sottoscrizione]
+  en: When you come back from payment, the plan shows as active only once Stripe has really confirmed it. If the charge is still going through you’ll see that, and the plan turns on by itself afterward.
+  es: Al volver del pago, el plan figura activo solo cuando Stripe lo ha confirmado de verdad. Si el cobro todavía está en curso lo verás, y el plan se activa solo después.
 - L'Essenziale non scade mai: chi esce dalla community o disdice un abbonamento resta con il bot acceso e perde solo le funzioni in più. [vai: sottoscrizione]
+  en: Essenziale never expires: anyone who leaves the community or cancels a subscription keeps the bot running and only loses the extra features.
+  es: Essenziale no caduca nunca: quien sale de la comunidad o cancela una suscripción se queda con el bot encendido y solo pierde las funciones extra.
 - Le donazioni passano da SocialBot: nella scheda «Donazioni» colleghi il tuo conto Stripe, tuo e gestito da te, e chi ti segue dona dalla tua pagina link. Il pagamento arriva a te. [vai: donazioni]
+  en: Donations go through SocialBot: in the “Donations” tab you connect your Stripe account, yours and managed by you, and your followers donate from your link page. The payment goes to you.
+  es: Las donaciones pasan por SocialBot: en la pestaña «Donaciones» conectas tu cuenta de Stripe, tuya y gestionada por ti, y quien te sigue dona desde tu página de enlaces. El pago te llega a ti.
 - Anche Satispay: colleghi il tuo negozio online con il codice di attivazione, e chi ha l'app paga da lì. Con tutti e due, chi dona sceglie. [vai: donazioni]
+  en: Satispay too: you connect your online store with the activation code, and people with the app pay from there. With both, donors choose.
+  es: También Satispay: conectas tu tienda en línea con el código de activación, y quien tiene la app paga desde ahí. Con los dos, quien dona elige.
 - Una pagina tutta per le donazioni, su dona.socialbot.live/iltuonome (o socialbot.live/dona/iltuonome): stessi strumenti della pagina link, un'altra pagina, e il tasto «Sostieni» della pagina link può portare lì. [vai: donazioni]
+  en: A page just for donations, at dona.socialbot.live/yourname (or socialbot.live/dona/yourname): the same tools as the link page, a separate page, and the link page’s “Support” button can lead there.
+  es: Una página solo para las donaciones, en dona.socialbot.live/tunombre (o socialbot.live/dona/tunombre): las mismas herramientas que la página de enlaces, otra página, y el botón «Apóyame» puede llevar ahí.
 - Le offerte: fino a otto scaglioni con importo, nome ed effetto della tua libreria. Chi dona le vede al posto degli importi, e all'arrivo parte l'effetto dell'offerta raggiunta. [vai: donazioni]
+  en: Offers: up to eight tiers with an amount, a name and an effect from your library. Donors see them instead of the amounts, and when one comes in, the effect for the tier reached plays.
+  es: Las ofertas: hasta ocho niveles con importe, nombre y efecto de tu biblioteca. Quien dona las ve en lugar de los importes, y al llegar sale el efecto de la oferta alcanzada.
 - Chi dona, da un importo che decidi tu in su, può allegare un'immagine o una GIF: va in onda come un effetto, dopo che l'hai vista nel registro e l'hai mandata tu con un tasto. [vai: donazioni]
+  en: Donors giving above an amount you set can attach an image or a GIF: it goes on air as an effect, after you’ve seen it in the log and sent it yourself with a button.
+  es: Quien dona desde un importe que decides tú puede adjuntar una imagen o un GIF: sale al aire como un efecto, después de que lo veas en el registro y lo mandes tú con un botón.
 - Se preferisci, l'immagine di chi dona parte da sola appena il pagamento è confermato: lo scegli nella scheda delle donazioni, e la puoi sempre rimandare, scartare o togliere. [vai: donazioni]
+  en: If you prefer, the donor’s image plays by itself as soon as the payment is confirmed: you choose this in the donations tab, and you can always replay, discard or remove it.
+  es: Si lo prefieres, la imagen de quien dona sale sola en cuanto el pago se confirma: lo eliges en la pestaña de las donaciones, y siempre puedes volver a enviarla, descartarla o quitarla.
 - L'indirizzo corto dona.socialbot.live/iltuonome si accende da solo: quando lo vedi nella scheda «Donazioni» al posto di quello lungo, è pronto da condividere. [vai: donazioni]
+  en: The short address dona.socialbot.live/yourname turns on by itself: when you see it in the “Donations” tab instead of the long one, it’s ready to share.
+  es: La dirección corta dona.socialbot.live/tunombre se activa sola: cuando la ves en la pestaña «Donaciones» en lugar de la larga, está lista para compartir.
 - Il proprietario può aprirti funzioni oltre il tuo piano, o chiuderne, quando serve: lo leggi nella scheda «Il tuo bot», con la scadenza se c'è. [vai: stato]
+  en: The owner can open features beyond your plan for you, or close some, when needed: you’ll read it in the “Your bot” tab, with the expiry date if there is one.
+  es: El propietario puede abrirte funciones más allá de tu plan, o cerrarlas, cuando hace falta: lo lees en la pestaña «Tu bot», con la fecha de vencimiento si la hay.
 - Quando incolli la pagina link o quella delle donazioni su Telegram, WhatsApp o Discord, l'anteprima è una card coi colori della tua pagina, e la rifai come vuoi con l'editor delle locandine. [vai: pagina]
+  en: When you paste your link page or donations page on Telegram, WhatsApp or Discord, the preview is a card in your page’s colors, and you can redo it however you like with the poster editor.
+  es: Cuando pegas la página de enlaces o la de donaciones en Telegram, WhatsApp o Discord, la vista previa es una tarjeta con los colores de tu página, y la rehaces como quieras con el editor de carteles.
 - Un blocco «Chi ha donato» per la pagina link e per la pagina delle donazioni: gli ultimi sostenitori o i primi per somma, del mese o di sempre, quanti nomi vuoi. [vai: pagina]
+  en: A “Who donated” block for the link page and the donations page: the latest supporters or the top ones by total, for the month or all time, as many names as you like.
+  es: Un bloque «Quién donó» para la página de enlaces y la de donaciones: los últimos que apoyaron o los primeros por suma, del mes o de siempre, tantos nombres como quieras.
 - Per il tasto «Sostieni» scegli l'icona fra quelle della pagina, come per ogni link; di serie è un cuore. [vai: pagina]
+  en: For the “Support” button you pick the icon from the page’s set, like for any link; by default it’s a heart.
+  es: Para el botón «Apóyame» eliges el icono entre los de la página, como para cualquier enlace; por defecto es un corazón.
 - Sulla pagina link il puntatore disegnato resta suo anche sul blocco delle donazioni: stella sui tasti e sugli importi, penna intorno, cursore di testo solo dove si scrive. [vai: pagina]
+  en: On the link page the hand-drawn pointer stays its own on the donations block too: a star on buttons and amounts, a pen around them, a text cursor only where you type.
+  es: En la página de enlaces el puntero dibujado sigue siendo el suyo también en el bloque de donaciones: estrella sobre los botones y los importes, pluma alrededor, cursor de texto solo donde se escribe.
 - A ogni donazione ricevuta sul conto partono da soli l'avviso in overlay, il grazie in chat e l'obiettivo in euro. Nella scheda vedi le ultime arrivate, con nome e messaggio. [vai: donazioni]
+  en: For every donation received on your account, the overlay alert, the thank-you in chat and the euro goal all go off by themselves. In the tab you see the latest ones, with name and message.
+  es: Con cada donación recibida en la cuenta salen solos el aviso en el overlay, el agradecimiento en el chat y el objetivo en euros. En la pestaña ves las últimas llegadas, con nombre y mensaje.
 - Il minimo e il massimo per una donazione li decidi tu nella scheda «Donazioni»: il massimo parte da 500 e può arrivare a 5.000. [vai: donazioni]
+  en: You set the minimum and maximum for a donation in the “Donations” tab: the maximum starts at 500 and can go up to 5,000.
+  es: El mínimo y el máximo de una donación los decides tú en la pestaña «Donaciones»: el máximo empieza en 500 y puede llegar a 5.000.
 - Ogni donazione finisce nel registro della scheda «Donazioni»: totali di oggi, del mese e dell'anno, ricerca, scarico in CSV; per ogni riga puoi rimandare l'avviso, rimborsare dal tuo conto o cancellarla. [vai: donazioni]
+  en: Every donation lands in the “Donations” tab log: totals for today, the month and the year, search, CSV export; for each row you can replay the alert, refund from your account or delete it.
+  es: Cada donación queda en el registro de la pestaña «Donaciones»: totales de hoy, del mes y del año, búsqueda, descarga en CSV; en cada fila puedes repetir el aviso, reembolsar desde tu cuenta o borrarla.
 - Le voci «Donazioni» e «CONSOLify» del menù del pannello hanno la loro icona, come tutte le altre. [vai: consolify]
+  en: The “Donations” and “CONSOLify” entries in the panel menu have their own icons, like all the others.
+  es: Las entradas «Donaciones» y «CONSOLify» del menú del panel tienen su icono, como todas las demás.
 - Nel player puoi mettere un tuo video in loop, caricato fra gli Effetti: sfocato sullo sfondo al posto della copertina, o in chiaro sulla copertina stessa. Con i temi vinile e CD la copertina resta quella del disco. [vai: alert]
+  en: In the player you can put your own looping video, uploaded in Effects: blurred in the background instead of the cover art, or sharp on the cover itself. With the vinyl and CD themes the cover stays the record’s.
+  es: En el reproductor puedes poner un video tuyo en bucle, subido en Efectos: desenfocado de fondo en lugar de la portada, o nítido sobre la portada misma. Con los temas vinilo y CD la portada sigue siendo la del disco.
 - Donazioni: nella scheda «Donazioni» dici come si dona (sul tuo conto, oppure Ko-fi, PayPal o altro) e il tasto «Sostieni» compare sulla tua pagina link, col tuo tema. [vai: donazioni]
+  en: Donations: in the “Donations” tab you say how people can donate (to your account, or Ko-fi, PayPal or something else) and the “Support” button appears on your link page, in your theme.
+  es: Donaciones: en la pestaña «Donaciones» dices cómo se dona (en tu cuenta, o Ko-fi, PayPal u otro) y el botón «Apóyame» aparece en tu página de enlaces, con tu tema.
 - Con il token di Ko-fi ogni mancia accende l'avviso «Donazione» in overlay, il grazie in chat e fa salire l'obiettivo in euro, che si può mostrare anche sotto il tasto «Sostieni». [vai: alert]
+  en: With your Ko-fi token, every tip fires the “Donation” alert in the overlay and the thank-you in chat, and moves the euro goal up, which can also show under the “Support” button.
+  es: Con el token de Ko-fi cada propina enciende el aviso «Donación» en el overlay y el agradecimiento en el chat, y hace subir el objetivo en euros, que también se puede mostrar bajo el botón «Apóyame».
 - Nel player la disposizione «libera» mette ogni pezzo dove lo trascini sulla tela: copertina, righe, barra, tempi e onde, con righe e barra larghe quanto vuoi. Si parte da dove i pezzi stanno già, e in diretta è uguale. [vai: alert]
+  en: In the player, the “free” layout puts each piece where you drag it on the canvas: cover art, lines, bar, times and waves, with lines and bar as wide as you like. It starts from where they are, and live is the same.
+  es: En el reproductor, la disposición «libre» pone cada pieza donde la arrastras en el lienzo: portada, líneas, barra, tiempos y ondas, con líneas y barra del ancho que quieras. Parte de donde ya están, y en directo es igual.
 - Gli extra Clip automatiche e Squadra costano 1,99 € al mese ciascuno, i comandi a voce 0,99 €: il listino dice quello che Stripe addebita, e i tre insieme restano 3,99 € con «Tutto». [vai: sottoscrizione]
+  en: The Automatic Clips and Team extras cost €1.99 a month each, and Voice Commands €0.99: the price list says what Stripe charges, and all three together stay at €3.99 with “Everything”.
+  es: Los extras Clips Automáticos y Equipo cuestan 1,99 € al mes cada uno, y Comandos por Voz 0,99 €: la lista de precios dice lo que cobra Stripe, y los tres juntos siguen costando 3,99 € con «Todo».
 - Giochi e monete, alert ed effetti, sondaggi e richieste musicali con il player sono nell'Essenziale, gratis: quello che gli altri bot danno gratis, qui è gratis. [vai: sottoscrizione]
+  en: Games and coins, alerts and effects, polls and song requests with the player are in Essenziale, for free: what other bots give away for free is free here too.
+  es: Juegos y monedas, alertas y efectos, encuestas y peticiones musicales con el reproductor están en Essenziale, gratis: lo que los otros bots dan gratis, aquí es gratis.
 - Il piano vale anche mentre il bot lavora, non solo quando salvi: clip automatiche, avvisi e ascolto a voce seguono il tuo piano, e nel pannello ogni funzione a pagamento ha il suo muro con il pacchetto giusto. [vai: sottoscrizione]
+  en: The plan applies while the bot is working too, not only when you save: automatic clips, alerts and voice listening follow your plan, and in the panel every paid feature has its own wall with the right package.
+  es: El plan vale también mientras el bot trabaja, no solo cuando guardas: clips automáticos, avisos y escucha por voz siguen tu plan, y en el panel cada función de pago tiene su muro con el paquete correcto.
 
 ## 2026-09-12
 
 - Il player ha due temi nuovi, CD ed esagono, e ogni tema porta la sua animazione: il vinile gira, il CD cambia riflesso, l'anello dell'esagono ruota. Scegli il tema e basta. [vai: alert]
+  en: The player has two new themes, CD and hexagon, and each theme brings its own animation: the vinyl spins, the CD shimmers, the hexagon’s ring rotates. Just pick the theme.
+  es: El reproductor tiene dos temas nuevos, CD y hexágono, y cada tema trae su animación: el vinilo gira, el CD cambia de reflejo, el anillo del hexágono rota. Eliges el tema y listo.
 - Ogni tema del player entra ed esce come l'oggetto vero: il vinile prende giri e poi frena e rientra nella custodia, il CD esce e la custodia si chiude, la cassetta viene espulsa. [vai: alert]
+  en: Each player theme comes in and goes out like the real object: the vinyl spins up, then brakes and slides back into its sleeve, the CD pops out and the case closes, the cassette gets ejected.
+  es: Cada tema del reproductor entra y sale como el objeto real: el vinilo toma vueltas, luego frena y vuelve a la funda, el CD sale y la caja se cierra, el casete se expulsa.
 - Nello Studio, «Rivedi l'entrata» fa uscire e rientrare il player sulla tela, per vedere il gesto del tema senza andare in diretta. [vai: alert]
+  en: In the Studio, “Replay the entrance” makes the player leave and come back on the canvas, so you can see the theme’s move without going live.
+  es: En el Studio, «Repetir la entrada» hace salir y volver a entrar el reproductor en el lienzo, para ver el gesto del tema sin salir en directo.
 - L'entrata del player (dissolvenza, scivola, sale) in diretta ora parte davvero: prima il nodo compariva già al suo posto. [vai: alert]
+  en: The player’s entrance (fade, slide, rise) now really plays live: before, it just appeared already in place.
+  es: La entrada del reproductor (fundido, deslizar, subir) ahora sí arranca en directo: antes aparecía ya en su sitio.
 - Nel player messo in colonna il testo sta dentro la carta e la copertina è al centro: i tempi non escono più dal bordo. [vai: alert]
+  en: In the column layout of the player the text stays inside the card and the cover art is centered: the times no longer spill over the edge.
+  es: En el reproductor en columna el texto queda dentro de la tarjeta y la portada está centrada: los tiempos ya no se salen del borde.
 - L'anteprima del link, quando lo incolli su Telegram, WhatsApp o X, dice la stessa cosa della pagina: il bot che in chat scrive con il tuo nome, con l'immagine rifatta.
+  en: The link preview, when you paste it on Telegram, WhatsApp or X, says the same thing as the page: the bot that writes in chat under your name, with a redone image.
+  es: La vista previa del enlace, cuando lo pegas en Telegram, WhatsApp o X, dice lo mismo que la página: el bot que en el chat escribe con tu nombre, con la imagen rehecha.
 - La pagina pubblica racconta una serata di diretta con il bot acceso, momento per momento, al posto delle schede tutte uguali; l'elenco completo delle funzioni resta, con i prezzi accanto.
+  en: The public page tells the story of a stream night with the bot on, moment by moment, instead of cards that all look the same; the full list of features is still there, with prices alongside.
+  es: La página pública cuenta una noche de directo con el bot encendido, momento a momento, en lugar de tarjetas todas iguales; la lista completa de funciones sigue ahí, con los precios al lado.
 - Nell'invito in fondo alla pagina pubblica ci si registra anche con Kick (e con YouTube dove è aperto), come in cima alla pagina: lì era rimasto solo Twitch.
+  en: In the invite at the bottom of the public page you can sign up with Kick too (and with YouTube where it’s open), like at the top of the page: only Twitch had been left there.
+  es: En la invitación al final de la página pública también te puedes registrar con Kick (y con YouTube donde está abierto), como arriba: ahí solo había quedado Twitch.
 - Sotto la tela dello Studio puoi mettere un'immagine di riferimento, uno screenshot della scena o una grafica: resta nel tuo browser, non va in onda, e la regoli in trasparenza. [vai: alert]
+  en: Under the Studio canvas you can place a reference image, a screenshot of the scene or a graphic: it stays in your browser, never goes on air, and you adjust its transparency.
+  es: Debajo del lienzo del Studio puedes poner una imagen de referencia, una captura de la escena o una gráfica: se queda en tu navegador, no sale al aire, y ajustas su transparencia.
 - Nello Studio il riquadro è la scatola dell'elemento: tiri il perimetro del player e lui prende quella forma, largo, stretto o quadrato; l'altezza dà la grandezza, la larghezza lo spazio al testo. [vai: alert]
+  en: In the Studio the frame is the element’s box: drag the player’s outline and it takes that shape, wide, narrow or square; the height sets the size, the width the room for text.
+  es: En el Studio el recuadro es la caja del elemento: estiras el perímetro del reproductor y toma esa forma, ancha, estrecha o cuadrada; la altura da el tamaño y la anchura el espacio para el texto.
 - Mentre tiri i bordi di un riquadro vedi l'elemento cambiare in tempo reale, e la chat in anteprima riempie la sua scatola con quante righe ci stanno. [vai: alert]
+  en: While you drag a frame’s edges you see the element change in real time, and the chat in the preview fills its box with as many lines as fit.
+  es: Mientras estiras los bordes de un recuadro ves el elemento cambiar en tiempo real, y el chat de la vista previa llena su caja con tantas líneas como caben.
 - Il player musica si regola pezzo per pezzo: spazio attorno, copertina, vinile, prima e seconda riga, tempi, barra e onde hanno ognuno la sua misura e, se vuoi, il suo colore. [vai: alert]
+  en: The music player can be tuned piece by piece: padding, cover art, vinyl, first and second line, times, bar and waves each have their own size and, if you like, their own color.
+  es: El reproductor de música se ajusta pieza por pieza: espacio alrededor, portada, vinilo, primera y segunda línea, tiempos, barra y ondas tienen cada uno su medida y, si quieres, su color.
 - Il conto alla rovescia con «parte da solo» parte appena lo accendi, senza premere «Fai partire», e il pannello lo vede contare anche quando l'ha fatto partire una sorgente. [vai: alert]
+  en: The countdown set to “starts by itself” starts as soon as you turn it on, without pressing “Start it”, and the panel sees it counting even when a source started it.
+  es: La cuenta atrás con «arranca sola» arranca en cuanto la activas, sin pulsar «Ponlo en marcha», y el panel la ve contar aunque la haya iniciado una fuente.
 - La sfida a tempo dei punti canale compare davvero sull'overlay (l'avvio si perdeva per strada) ed è un elemento della scena: la sposti, le dai un riquadro, e sulla carta si legge quanto manca. [vai: alert]
+  en: The channel points timed challenge really shows up on the overlay (the start got lost along the way) and it’s a scene element: you move it, give it a frame, and the card shows how long is left.
+  es: El desafío con tiempo de los puntos de canal aparece de verdad en el overlay (el inicio se perdía por el camino) y es un elemento de la escena: lo mueves, le das un recuadro y en la tarjeta se lee cuánto falta.
 - Nell'editor degli overlay ogni elemento può avere un riquadro: tiri i bordi e chat, alert, player, widget, obiettivi e contatori si adattano a quello spazio, uguale sulla tela e in diretta. [vai: alert]
+  en: In the overlay editor every element can have a frame: drag the edges and chat, alerts, player, widgets, goals and counters adapt to that space, the same on the canvas and live.
+  es: En el editor de overlays cada elemento puede tener un recuadro: estiras los bordes y chat, alertas, reproductor, widgets, objetivos y contadores se adaptan a ese espacio, igual en el lienzo que en directo.
 
 ## 2026-09-11
 
 - L'editor degli overlay chiede prima di farti perdere l'aspetto non salvato, se cambi scheda, overlay o pagina; dice quando un salvataggio non riesce; e non manda più salvataggi doppi. [vai: alert]
+  en: The overlay editor asks before letting you lose an unsaved look when you switch tab, overlay or page; it tells you when a save fails; and it no longer sends duplicate saves.
+  es: El editor de overlays pregunta antes de hacerte perder el aspecto sin guardar, si cambias de pestaña, de overlay o de página; avisa cuando un guardado falla; y ya no envía guardados dobles.
 - Nell'editor degli overlay un livello si può bloccare perché non si sposti per sbaglio, l'aggancio alle guide si spegne, con Ctrl e rotella si ingrandisce attorno al puntatore, e la griglia si toglie davvero. [vai: alert]
+  en: In the overlay editor you can lock a layer so it doesn’t move by accident, turn off snapping to guides, zoom around the pointer with Ctrl and the wheel, and really hide the grid.
+  es: En el editor de overlays una capa se puede bloquear para que no se mueva sin querer, el ajuste a las guías se apaga, con Ctrl y la rueda se amplía alrededor del puntero, y la cuadrícula se quita de verdad.
 - In chat il bot non parla più da assistente: niente «implementazione», «non sono in grado», «funzionalità». Se una cosa non è sua lo dice come uno della chat, e una riga di quel tipo non esce e non gli torna in mente. [vai: personalita]
+  en: In chat the bot no longer talks like an assistant: no “implementation”, “I’m not able to”, “functionality”. If something isn’t its thing it says so like anyone in chat, and a line like that never goes out.
+  es: En el chat el bot ya no habla como un asistente: nada de «implementación», «no estoy en condiciones», «funcionalidad». Si algo no es lo suyo lo dice como uno más del chat, y una línea así no sale.
 - L'overlay in OBS si ricollega da solo dopo un riavvio del bot o un salto di rete: chat, effetti e tasti di CONSOLify ripartono senza toccare la sorgente. Quelle aperte da prima di oggi vanno ricaricate una volta. [vai: alert]
+  en: The overlay in OBS reconnects by itself after a bot restart or a network drop: chat, effects and CONSOLify keys come back without touching the source. Sources opened before today need one reload.
+  es: El overlay en OBS se reconecta solo tras un reinicio del bot o un corte de red: chat, efectos y teclas de CONSOLify vuelven sin tocar la fuente. Las abiertas antes de hoy hay que recargarlas una vez.
 - Nell'editor degli overlay la tela ha le misure della diretta: il player tiene la stessa larghezza con ogni brano, la chat si ferma alla larghezza scelta, i contatori hanno la dimensione vera. [vai: alert]
+  en: In the overlay editor the canvas has the stream’s real size: the player keeps the same width with every song, the chat stops at the chosen width, and counters have their true size.
+  es: En el editor de overlays el lienzo tiene las medidas del directo: el reproductor mantiene el mismo ancho con cada canción, el chat se detiene en el ancho elegido y los contadores tienen su tamaño real.
 - Quando parla da solo, il bot lo fa per un motivo e non più a caso: risponde a chi è rimasto senza risposta se sa la cosa, rilancia la chat che si ferma dopo un momento vivo, sale sull'onda quando esplode. [vai: personalita]
+  en: When it speaks on its own, the bot now has a reason: it answers someone left without a reply if it knows the answer, revives a chat that stalls after a lively moment, and rides the wave when it blows up.
+  es: Cuando habla solo, el bot lo hace por un motivo y ya no al azar: responde a quien se quedó sin respuesta si sabe la cosa, reanima el chat que se para tras un momento vivo y se sube a la ola cuando estalla.
 - Risposte e battute di sua iniziativa escono con il tempo di una persona che scrive, mai due di fila dello stesso genere, e se hai appena scritto tu lascia la chat a te. [vai: personalita]
+  en: Replies and jokes on its own initiative come out at the pace of a person typing, never two of the same kind in a row, and if you just wrote something it leaves the chat to you.
+  es: Las respuestas y los chistes por iniciativa propia salen con el ritmo de una persona que escribe, nunca dos seguidos del mismo tipo, y si acabas de escribir tú te deja el chat.
 - Di sua iniziativa il bot non parla più due volte in sei minuti, e il promemoria dei tuoi link esce al più ogni tre quarti d'ora: prima poteva ripeterlo a tre minuti di distanza. [vai: personalita]
+  en: On its own initiative the bot no longer speaks twice in six minutes, and the reminder of your links goes out at most every forty-five minutes: before, it could repeat it three minutes apart.
+  es: Por iniciativa propia el bot ya no habla dos veces en seis minutos, y el recordatorio de tus enlaces sale como mucho cada tres cuartos de hora: antes podía repetirlo a tres minutos de distancia.
 - Nella scheda del bot vedi cosa ha detto da solo, con l'ora e il motivo, e puoi dirgli di farlo solo mentre sei in diretta. [vai: personalita]
+  en: In the bot’s tab you see what it said on its own, with the time and the reason, and you can tell it to do so only while you’re live.
+  es: En la pestaña del bot ves lo que dijo por su cuenta, con la hora y el motivo, y puedes pedirle que lo haga solo mientras estás en directo.
 - La chat autonoma parte a zero, come dice il cursore: prima il cursore mostrava 3%, il manuale 5% e il bot stava a zero. [vai: personalita]
+  en: Autonomous chatting starts at zero, as the slider says: before, the slider showed 3%, the manual 5% and the bot sat at zero.
+  es: El chat autónomo empieza en cero, como dice el control: antes el control mostraba 3%, el manual 5% y el bot estaba en cero.
 - Quando la connessione alla chat muore in silenzio il bot se ne accorge e si ricollega da solo, invece di restare acceso e muto con la spia verde. [vai: stato]
+  en: When the chat connection dies silently, the bot notices and reconnects by itself, instead of staying on and mute with the green light lit.
+  es: Cuando la conexión con el chat muere en silencio, el bot se da cuenta y se reconecta solo, en lugar de quedarse encendido y mudo con la luz verde.
 - Se il permesso di Twitch scade, prova a rinnovarlo da solo prima di chiederti di ricollegare; e una risposta rimasta ferma durante una caduta non esce in ritardo di minuti. [vai: stato]
+  en: If the Twitch permission expires, it tries to renew it by itself before asking you to reconnect; and a reply stuck during an outage doesn’t go out minutes late.
+  es: Si el permiso de Twitch caduca, intenta renovarlo solo antes de pedirte que vuelvas a conectar; y una respuesta que se quedó parada durante una caída no sale con minutos de retraso.
 - Gli avvisi di follow, iscrizione e diretta che Twitch rifiutava per un attimo di troppo traffico ora si riattivano da soli poco dopo. [vai: alert]
+  en: Follow, sub and go-live alerts that Twitch rejected for a moment because of too much traffic now reactivate by themselves shortly after.
+  es: Los avisos de follow, suscripción y directo que Twitch rechazaba por un momento de demasiado tráfico ahora se reactivan solos poco después.
 - Per sicurezza il link dei tuoi overlay è stato rinnovato: copialo di nuovo dal pannello e rimettilo nelle sorgenti del programma con cui mandi in onda. [vai: alert]
+  en: For security, your overlays’ link has been renewed: copy it again from the panel and put it back in the sources of the program you go live with.
+  es: Por seguridad, el enlace de tus overlays se renovó: cópialo de nuevo desde el panel y vuelve a ponerlo en las fuentes del programa con el que emites.
 - Il link dell'overlay ora porta la chiave con sé, e accanto c'è il tasto per farne uno nuovo: se ti scappa in un video o in una chat, lo rinnovi e il vecchio muore subito. [vai: alert]
+  en: The overlay link now carries its key, and next to it there’s a button to make a new one: if it slips out in a video or a chat, you renew it and the old one dies instantly.
+  es: El enlace del overlay ahora lleva la clave consigo, y al lado está el botón para crear uno nuevo: si se te escapa en un video o en un chat, lo renuevas y el viejo muere al instante.
 - Un'icona caricata come disegno vettoriale viene trasformata in immagine: quello che carichi resta un'immagine e basta. [vai: consolify]
+  en: An icon uploaded as a vector drawing is turned into an image: what you upload stays an image and nothing more.
+  es: Un icono subido como dibujo vectorial se convierte en imagen: lo que subes sigue siendo una imagen y nada más.
 - Ogni canale ha un tetto di spazio sul disco per media, effetti, font e icone, e il pannello ti dice quanto ne usi: prima nessuno lo contava. [vai: effetti]
+  en: Each channel has a disk space cap for media, effects, fonts and icons, and the panel tells you how much you’re using: before, nobody was counting.
+  es: Cada canal tiene un tope de espacio en disco para medios, efectos, fuentes e iconos, y el panel te dice cuánto usas: antes nadie lo contaba.
 - Sulla pagina pubblica ora si vede anche CONSOLify, con il collegamento al programma della diretta: prima chi non aveva un account non sapeva che esistesse. [vai: consolify]
+  en: The public page now shows CONSOLify too, with the connection to your streaming program: before, people without an account didn’t know it existed.
+  es: En la página pública ahora se ve también CONSOLify, con la conexión al programa del directo: antes quien no tenía cuenta no sabía que existía.
 - Compaiono in vetrina anche le grafiche pronte da pubblicare, il registro della moderazione e quello che il bot ricorda dei tuoi spettatori. [vai: grafiche]
+  en: The showcase now also features ready-to-post graphics, the moderation log and what the bot remembers about your viewers.
+  es: En el escaparate aparecen también las gráficas listas para publicar, el registro de moderación y lo que el bot recuerda de tus espectadores.
 - Ogni novità dice anche dove è successa: le righe stanno sotto il nome della sezione, e quel nome è un bottone che ti porta lì. [vai: stato]
+  en: Every update also says where it happened: the lines sit under the name of the section, and that name is a button that takes you there.
+  es: Cada novedad dice también dónde pasó: las líneas están bajo el nombre de la sección, y ese nombre es un botón que te lleva ahí.
 - Una carta adesso si stacca dalla pagina più dei bottoni che ci stanno dentro: prima avevano la stessa ombra e sembrava tutto appiccicato sullo stesso piano.
+  en: A card now stands out from the page more than the buttons inside it: before, they had the same shadow and everything looked stuck on the same level.
+  es: Una tarjeta ahora se despega de la página más que los botones que tiene dentro: antes tenían la misma sombra y todo parecía pegado en el mismo plano.
 - Le scritte piccole sopra le schede e nel menù laterale erano troppo chiare per leggerle bene: ora hanno il contrasto che serve, col tema chiaro e con quello scuro.
+  en: The small labels above the tabs and in the side menu were too light to read well: now they have the contrast they need, in both the light and dark themes.
+  es: Los textos pequeños sobre las pestañas y en el menú lateral eran demasiado claros para leerlos bien: ahora tienen el contraste necesario, con el tema claro y con el oscuro.
 - Il bottone che cancella tutto aveva la scritta bianca su rosso chiaro nel tema scuro, poco leggibile proprio dove conta: adesso è scritta in nero. [vai: stato]
+  en: The button that deletes everything had white text on light red in the dark theme, hard to read right where it matters: now the text is black.
+  es: El botón que lo borra todo tenía el texto blanco sobre rojo claro en el tema oscuro, poco legible justo donde importa: ahora el texto es negro.
 
 - La finestra delle novità non perde più quello che arriva a giornata iniziata: se una cosa esce dopo che l'hai vista, te la mostra lo stesso invece di darla per letta.
+  en: The What’s new window no longer misses things that arrive after the day has started: if something comes out after you’ve looked, it shows it anyway instead of marking it as read.
+  es: La ventana de novedades ya no pierde lo que llega con el día empezado: si algo sale después de que la viste, te lo muestra igual en lugar de darlo por leído.
 - Quando le novità sono tante, la finestra ne mostra una manciata e dice quante altre ci sono, invece di rovesciarti addosso un muro di righe.
+  en: When there’s a lot of news, the window shows a handful and says how many more there are, instead of dumping a wall of lines on you.
+  es: Cuando hay muchas novedades, la ventana muestra unas cuantas y dice cuántas más hay, en lugar de echarte encima un muro de líneas.
 
 ## 2026-09-10
 
