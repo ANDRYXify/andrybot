@@ -18365,7 +18365,7 @@ function pannelloEffetti() {
         <select aria-label="${esc(L('Webcam da usare', 'Webcam to use', 'Webcam a usar'))}" id="trk-cam" class="campo-largo"><option value="">${L('Webcam predefinita del sistema', 'System default webcam', 'Webcam predeterminada del sistema')}</option></select>
         <button type="button" class="btn secondario" id="trk-cam-rileva">${L('Rileva webcam', 'Detect webcams', 'Detectar webcams')}</button>
       </div>
-      <p class="suggerimento">${L('Premi «Rileva webcam» e consenti la fotocamera per vedere i nomi, scegli la tua e premi «Salva mappatura». Il nome vale anche nell\'overlay in OBS.', 'Press «Detect webcams» and allow the camera to see the names, pick yours and press «Save mapping». The name works in the stream overlay too.', 'Pulsa «Detectar webcams» y permite la cámara para ver los nombres, elige la tuya y pulsa «Guardar mapeo». El nombre vale también en el overlay del directo.')}</p>
+      <p class="suggerimento">${L('Premi «Rileva webcam» e consenti la fotocamera per vedere i nomi, scegli la tua e premi «Salva impostazioni webcam». Il nome vale anche nell\'overlay in OBS.', 'Press «Detect webcams» and allow the camera to see the names, pick yours and press «Save webcam settings». The name works in the stream overlay too.', 'Pulsa «Detectar webcams» y permite la cámara para ver los nombres, elige la tuya y pulsa «Guardar ajustes de webcam». El nombre vale también en el overlay del directo.')}</p>
       <label class="campo spazio-sopra">${L('Gesto/espressione → effetto e/o scrittura in chat', 'Gesture/expression → effect and/or chat message', 'Gesto/expresión → efecto y/o mensaje en el chat')}</label>
       <p class="suggerimento">${L('Per ogni gesto: a sinistra il comando effetto, a destra un testo/emote che il bot scrive in chat. Lascia vuoto ciò che non ti serve.', 'For each gesture: on the left the effect command, on the right a text/emote the bot writes in chat. Leave blank what you don\'t need.', 'Para cada gesto: a la izquierda el comando de efecto, a la derecha un texto/emote que el bot escribe en el chat. Deja vacío lo que no necesites.')}</p>
       <datalist id="trk-eff-list"></datalist>
@@ -18968,7 +18968,7 @@ async function _svtvCaricaSet() {
   const testa = `<p><strong>${esc(set.nome || L('Set attivo', 'Active set', 'Set activo'))}</strong>${cap}</p>`;
   if (!emotes.length) { box.innerHTML = testa + `<p class="vuoto">${L('Nessuna emote nel set. Aggiungine qui sotto!', 'No emotes in the set. Add some below!', '¡No hay emotes en el set. Añade algunas abajo!')}</p>`; return; }
   const proprietario = stato?.ruolo !== 'moderatore';
-  const puoModificare = proprietario && _svtvCollegato;
+  const puoModificare = _svtvCollegato;
   const avviso = (proprietario && !_svtvCollegato)
     ? `<p class="suggerimento">${L('Queste sono le emote del tuo canale (sola lettura). Collega il tuo account 7TV qui sopra per aggiungerne, toglierne o rinominarle.', 'These are your channel emotes (read-only). Connect your 7TV account above to add, remove or rename them.', 'Estas son las emotes de tu canal (solo lectura). Conecta tu cuenta 7TV arriba para añadir, quitar o renombrar.')}</p>`
     : '';
@@ -27895,7 +27895,7 @@ async function caricaTracking() {
     selCam.innerHTML = `<option value="">${L('Webcam predefinita del sistema', 'System default webcam', 'Webcam predeterminada del sistema')}</option>`
       + cams.map((c, i) => `<option value="${esc(c.label || String(i))}">${esc(c.label || (L('Webcam', 'Webcam', 'Webcam') + ' ' + (i + 1)))}</option>`).join('');
     if (prima && [...selCam.options].some((o) => o.value === prima)) selCam.value = prima;
-    toast(L('Webcam rilevate: scegli la tua e premi «Salva mappatura».', 'Webcams detected: pick yours and press «Save mapping».', 'Webcams detectadas: elige la tuya y pulsa «Guardar mapeo».'));
+    toast(L('Webcam rilevate: scegli la tua e premi «Salva impostazioni webcam».', 'Webcams detected: pick yours and press «Save webcam settings».', 'Webcams detectadas: elige la tuya y pulsa «Guardar ajustes de webcam».'));
   });
 }
 

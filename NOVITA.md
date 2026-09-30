@@ -39,6 +39,8 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - L'azione «Timeout in chat» dei moduli mette davvero in pausa chi ha fatto scattare il modulo: prima non faceva niente. Se manca il permesso, o la persona è un moderatore o un VIP, il bot lo dice. [vai: moduli]
 - Col pannello in inglese o in spagnolo la scheda Donazioni si chiama «Donations» e «Donaciones» anche nel menù, e nella pagina link il carattere in spagnolo è «Fuente». [vai: donazioni]
 - Le recensioni della pagina iniziale scorrono sotto le dirette in onda e prima della serata col bot acceso, e la pagina si apre più leggera.
+- I moderatori possono rinominare e togliere le emote 7TV anche dal pannello, come già potevano aggiungerle, dopo che il proprietario ha collegato 7TV. [vai: emote]
+- Nel tracciamento della webcam il suggerimento nomina il tasto giusto, «Salva impostazioni webcam». [vai: effetti]
 
 ## 2026-09-27
 
