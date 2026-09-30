@@ -968,6 +968,11 @@ export class BotManager {
     try {
       if (suTwitch && await this.antibot?.controllaChat(msg)) return;
     } catch (e) { log.error(`#${login} anti-bot chat:`, e?.message || e); }
+    // Chi scrive e' arrivato, anche se l'antispam qui sotto lo ferma: la prima
+    // presenza si segna prima dei controlli (presenze.segnaArrivo). Dopo
+    // l'anti-bot, perche' un nome da follow-bot noto non e' una persona.
+    let arrivo = null;
+    try { arrivo = presenze.segnaArrivo(msg); } catch (e) { log.debug(`#${login} arrivo:`, e?.message || e); }
     // 1) ANTISPAM: se è spam lo elimina e stop (il bot non "reagisce" allo spam)
     try {
       if (suTwitch && await antispam.tryAntispam(this.helix, msg, parla)) return;
@@ -977,11 +982,11 @@ export class BotManager {
       if (await gamesbridge.tryGamesBridge(msg, parla)) return;
     } catch (e) { log.error(`#${login} giochi:`, e?.message || e); }
     // 3) flusso normale
-    this._elaboraMessaggio(login, msg, onMessage, parla);
+    this._elaboraMessaggio(login, msg, onMessage, parla, arrivo);
   }
 
   // Elaborazione normale di un messaggio (chiamata solo se non gestito prima).
-  _elaboraMessaggio(login, msg, onMessage, parla = this.vocePer(msg)) {
+  _elaboraMessaggio(login, msg, onMessage, parla = this.vocePer(msg), arrivo = undefined) {
     onMessage(msg).catch(e => log.error(`#${login} gestione messaggio:`, e?.message || e));
     if (filigrana.eCanarino(msg.text) && canarinoLibero(login)) { parla(filigrana.rispostaCanarino(licenza.firma())); return; }
     if (!msg.piattaforma || msg.piattaforma === 'twitch') {
@@ -1004,7 +1009,7 @@ export class BotManager {
     // bot, salvo che lo streamer si sia costruito il suo saluto con un Modulo.
     try {
       const live = msg.piattaforma && msg.piattaforma !== 'twitch' ? true : this._liveState.get(login) === true;
-      presenze.suMessaggio(msg, parla, { live });
+      presenze.suMessaggio(msg, parla, { live, arrivo });
     } catch (e) { log.debug(`#${login} saluti:`, e?.message || e); }
     // Auguri a chi compie gli anni oggi, al suo primo messaggio: in chat non
     // esiste la mezzanotte, esiste quando c'e'.

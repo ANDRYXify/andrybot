@@ -47,6 +47,8 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - La moneta di base si chiama «coins» o «monedas» col pannello in inglese o in spagnolo, e l'anteprima dell'importazione dice «Timers» o «Temporizadores». [vai: moduli]
 - Chi toglie tutti i posti degli avvisi su Telegram o su Discord non se ne ritrova uno alla lettura dopo: il gruppo o il canale collegato diventa un posto una volta sola, quando arriva.
 - Pannello e sito in inglese parlano americano (color, center, behavior), e i suggerimenti a voce propongono parole italiane, perché il riconoscimento è in italiano.
+- Una cancellazione o un ban che Twitch rifiuta non risulta più fatto: resta fra le azioni da riprendere, col perché, e un permesso mancante si dice come tale. [vai: scudo]
+- Chi l'antispam ferma al primo messaggio risulta arrivato lo stesso: conta fra le prime volte del rapporto, e il giorno dopo non è di nuovo alla prima volta. [vai: dirette]
 
 ## 2026-09-27
 

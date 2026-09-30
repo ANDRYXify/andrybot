@@ -224,8 +224,10 @@ export class Esecutore {
         case AZIONI.CANCELLA:
         case AZIONI.LIMITA:
           if (!v.messaggio) return { ok: false, motivo: 'manca l\'id del messaggio' };
-          await h?.deleteMessage?.(v.canale, v.messaggio);
-          return { ok: true };
+          // Quello che Twitch ha risposto, non quello che si sperava: una
+          // cancellazione rifiutata scritta come fatta e' un messaggio che
+          // resta in chat mentre il registro dice che non c'e' piu'.
+          return (await h?.deleteMessage?.(v.canale, v.messaggio)) || { ok: false, motivo: 'non disponibile' };
         case AZIONI.TIMEOUT:
           return (await h?.timeoutUser?.(v.canale, v.userId, v.durata || 600, motivoCorto(v))) || { ok: false, motivo: 'non disponibile' };
         case AZIONI.BAN:

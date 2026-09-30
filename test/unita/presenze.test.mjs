@@ -128,3 +128,21 @@ test('le impostazioni si normalizzano pure, anche a meta\', e i comandi rispondo
   assert.equal(p.tryComando({ channel: CH, user: 'x', text: '!serie' }, say), false, 'spento, non risponde');
   assert.deepEqual(p.giroDiretta(CH, { streamId: 'z', chatters: ['a'], ora: T0 + 90 * GIORNO }).presenze, []);
 });
+
+test('chi e\' fermato al primo messaggio e\' arrivato lo stesso, e il saluto guarda la riga di prima', () => {
+  const T = T0 + 200 * GIORNO;
+  const CH = 'canalearrivi';
+  streamers.upsertApproved(CH, 'CanaleArrivi', '4242');
+  const fermato = { channel: CH, user: 'fermato', display: 'Fermato', text: 'guarda qui', tags: { 'first-msg': '1' } };
+  const a = p.segnaArrivo(fermato, { ora: T });
+  assert.equal(a.prima, true);
+  assert.equal(store.get(CH, 'fermato').prima_ts, T, 'segnato anche se il messaggio poi non passa');
+  assert.equal(p.segnaArrivo({ ...fermato, user: 'nightbot' }, { ora: T }), null, 'un bot noto non si conta');
+
+  // Su Kick la prima volta si ricava dalla riga: chi saluta deve guardare quella
+  // di prima del messaggio, non quella appena scritta da segnaArrivo.
+  const k = { channel: CH, user: 'kickiano', display: 'Kickiano', text: 'ciao', piattaforma: 'kick' };
+  const arrivo = p.segnaArrivo(k, { ora: T + 2 * MIN });
+  assert.equal(arrivo.prima, true);
+  assert.equal(p.suMessaggio(k, () => {}, { ora: T + 2 * MIN, live: true, arrivo }), 'prima', 'la prima volta resta la prima volta');
+});
