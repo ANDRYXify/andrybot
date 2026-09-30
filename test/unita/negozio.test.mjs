@@ -191,7 +191,7 @@ test('quello che si sa prima non costa niente: l\'effetto che non puo\' partire 
   const spento = { effetto: { puoPartire: () => 'overlay', esegui: async () => assert.fail('non deve partire') } };
   const e = await compra(ch, 'olga', 'botto', { esecutori: spento });
   assert.equal(e.momento, 'nonParte');
-  assert.match(S.frase(ch, e.momento, e.dati), /overlay in questo momento è spento\. Le monete restano tue/);
+  assert.match(S.frase(ch, e.momento, e.dati), /overlay in questo momento è spento\. Le tue monete restano dove sono\.$/);
   assert.equal(points.get(ch, 'olga'), 300);
   assert.equal(storicoDi(ch).length, 0);
 });
@@ -392,7 +392,7 @@ test('in chat: i tre comandi, rinominabili, e un negozio chiuso tace', async () 
     return S.tryComando({ ...m, text: v?.testo || text }, (t) => detti.push(t), { esecutori: {}, fonti: {} });
   };
   await scrivi('!compra scudo');
-  assert.match(detti.pop(), /Lia, Scudo è nella tua borsa \(!borsa\)\. Ti restano 450 monete/);
+  assert.match(detti.pop(), /Lia, Scudo è nella tua borsa \(!borsa\)\. Le tue monete: 450\.$/);
   await scrivi('!negozio');
   const elenco = detti.pop();
   assert.match(elenco, /^🛒 Nel negozio: Scudo \(scudo\), 50 monete · Spada di legno \(spada\), 100 monete\./);
@@ -401,7 +401,7 @@ test('in chat: i tre comandi, rinominabili, e un negozio chiuso tace', async () 
   assert.equal(detti.pop(), '🎒 Lia, nella tua borsa: Scudo.');
   articolo(ch, { nome: 'Corona', prezzo: 1500, descrizione: 'Brilla.', requisiti: [{ tipo: 'ore', soglia: 5 }], scorte: { modo: 'persona', n: 1 } });
   await scrivi('!negozio corona');
-  assert.equal(detti.pop(), '🛒 Corona (corona): 1500 monete. Brilla. È per chi ha guardato almeno 5 ore. Uno a testa.');
+  assert.equal(detti.pop(), '🛒 Corona (corona): 1500 monete. Brilla. È per chi ha guardato almeno 5 ore. Una volta a testa.');
   streamers.setSettings(ch, { ...streamers.get(ch).settings, comandi: { compra: { nome: 'prendi' } } });
   await scrivi('!prendi spada');
   assert.match(detti.pop(), /Spada di legno è nella tua borsa/);
@@ -425,9 +425,37 @@ test('le frasi parlano la lingua del canale, e ogni momento ce l\'ha in tutte e 
     }
   }
   streamers.setSettings(ch, { preferenze: { lingua: 'es' } });
-  assert.match(S.frase(ch, 'fatto', dati), /^🛒 Ana, hecho: Espada es tuyo/);
-  assert.equal(S.monetaDi(ch, 'es'), 'monedas');
+  assert.equal(S.frase(ch, 'fatto', dati), '🛒 Ana, has comprado Espada. Tus monedas: 5.');
+  assert.deepEqual(S.monetaIn(ch, 'es'), { nome: 'monedas', forma: 'fp' }, 'il nome di serie si dice nella lingua della chat');
   assert.equal(S.requisitoAParole({ tipo: 'follower', soglia: 0 }, 'en'), 'follows the channel');
+});
+
+test('la moneta ha il nome e la forma del canale: «I tuoi Semi di girasole», e il segno d\'accordo non esce mai', () => {
+  const ch = canale();
+  const dati = { nome: 'Ana', articolo: 'Espada', parola: 'espada', prezzo: '100', saldo: '5', cmd: '!compra', cmdNegozio: '!negozio', cmdBorsa: '!borsa', requisito: 'r', perche: 'p', tempo: 't', quante: 2, n: 2, cifra: '2', lista: 'l', voci: 'v', streamer: 's', brano: 'b', direttePer: 'd', dal: 'a', al: 'b', quando: 'date', tipo: 'musica', domanda: 'q' };
+  const imposta = (lingua, nomeMonete, formaMonete) => streamers.setSettings(ch, { preferenze: { lingua }, nomeMonete, formaMonete });
+  imposta('it', 'Semi di girasole');
+  assert.equal(S.frase(ch, 'fattoBorsa', dati), '🎒 Ana, Espada è nella tua borsa (!borsa). I tuoi Semi di girasole: 5.');
+  assert.match(S.frase(ch, 'nonParte', dati), /: p\. I tuoi Semi di girasole restano dove sono\.$/);
+  assert.equal(S.frase(ch, 'voce', dati), 'Espada (espada), 100 Semi di girasole');
+  imposta('it', 'Oro', 'ms');
+  assert.match(S.frase(ch, 'nonSo', dati), /non riesco a verificarlo: il tuo Oro resta dov'è\.$/);
+  assert.match(S.frase(ch, 'fatto', dati), /\. Il tuo Oro: 5\.$/);
+  imposta('it', 'Gemme');
+  assert.match(S.frase(ch, 'fatto', dati), /\. Le tue Gemme: 5\.$/, 'senza una scelta vale la base di moneta.js');
+  imposta('es', 'Oro', 'ms');
+  assert.equal(S.frase(ch, 'fatto', dati), '🛒 Ana, has comprado Espada. Tu Oro: 5.');
+  assert.match(S.frase(ch, 'nonParte', dati), /\. Tu Oro se queda donde está\.$/);
+  imposta('en');
+  assert.equal(S.frase(ch, 'fatto', dati), '🛒 Ana, you bought Espada. Your coins: 5.');
+  for (const lingua of ['it', 'en', 'es']) {
+    for (const forma of ['fp', 'mp', 'fs', 'ms']) {
+      imposta(lingua, 'Gettoni', forma);
+      for (const m of S.MOMENTI) assert.ok(!/%\[|\]%/.test(S.frase(ch, m, dati)), `${lingua}/${forma}/${m}: resta un segno d'accordo`);
+    }
+  }
+  imposta('it', 'Semi di girasole');
+  assert.match(S.frase(ch, 'fattoMusica', { ...dati, brano: 'Canzone %[a|b|c|d]%' }), /Spotify: Canzone %\[a\|b\|c\|d\]%\. I tuoi Semi/, 'l\'accordo si scioglie solo nelle frasi scritte qui, non in quello che arriva da fuori');
 });
 
 test('le tabelle del negozio escono con l\'esportazione e se ne vanno con l\'account', async () => {
@@ -510,7 +538,7 @@ test('dal pannello: si salva solo quello che sta nel canale, e il rimborso a man
   assert.equal(S.vistaPannello(ch).coda[0].nota, 'Hades');
   const r = S.rifiuta(ch, e.dati.id);
   assert.equal(r.ok, true);
-  assert.match(r.frase, /IVO, Scegli il gioco non è stato accettato: ti ho reso 300 monete\./);
+  assert.match(r.frase, /IVO, il tuo acquisto di Scegli il gioco non è stato accettato: ti ho reso 300 monete\./);
   assert.equal(S.rifiuta(ch, e.dati.id).ok, false, 'una volta sola');
   assert.equal(points.get(ch, 'ivo'), 1000);
   const v = S.vistaPannello(ch);

@@ -176,6 +176,14 @@ Stanno in un posto solo, `frase(canale, momento, dati)` in
 preferenze del canale. Quando la voce del canale (docs/VOCE.md) arriva, diventano
 momenti del suo frasario.
 
+La moneta la mette `frase()` stessa: nome e forma da `moneta.js`, e solo il nome
+di serie tradotto nella lingua della chat («coins», «monedas»). Le parole che le
+si accordano si scrivono `%[le tue|i tuoi|la tua|il tuo]%` e si sciolgono solo
+nei pezzi scritti nel file (un titolo di Spotify con dentro un segno resta com'è).
+Il saldo si dice «I tuoi Semi di girasole: 450», che torna con ogni nome e ogni
+numero. Il nome di un articolo invece non ha un genere noto: nessuna parola
+intorno gli si accorda («hai comprato Corona», non «Corona è tuo»).
+
 ### Quanto si tiene
 
 Lo storico un anno, come le donazioni; quello ancora da consegnare finché lo

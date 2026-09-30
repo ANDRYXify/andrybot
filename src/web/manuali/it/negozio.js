@@ -125,6 +125,7 @@ export default {
     { p: [
       'Questi comandi li spegni, li rinomini o li riservi nella scheda «Comandi», come gli altri comandi pronti. Rispondono solo col negozio aperto.',
       'Il bot risponde a chi ha scritto, nella lingua della chat scelta nelle preferenze, con i numeri e le date nel formato del canale.',
+      'Le monete le chiama col nome scritto in «Come si chiamano le monete», nella scheda «Giochi & classifiche», e le parole intorno le accorda come hai scelto in «Come se ne parla in chat». Con dei Semi di girasole, dopo un acquisto il bot scrive «I tuoi Semi di girasole: 450».',
     ] },
     { h3: 'Come va un acquisto' },
     { passi: [
@@ -132,8 +133,8 @@ export default {
       { t: 'Poi si paga, tutto insieme', d: 'Le monete escono, la scorta scende e l\'acquisto entra nello storico in un passo solo. Due persone che comprano l\'ultima scorta nello stesso istante non la prendono tutte e due: la seconda si sente dire che è finita, e non paga.' },
       { t: 'Poi parte', d: 'Se quello che si è comprato non parte, le monete e la scorta tornano, e lo storico scrive il perché. Se il bot si riavvia proprio in quel momento, all\'avvio rende le monete di quell\'acquisto.' },
     ] },
-    { esempio: '🛒 Luna_Gamer, Scegli il prossimo gioco è in coda: te lo consegna andryxify in diretta. Ti restano 1.250 monete.' },
-    { esempio: '🛒 Luna_Gamer, VIP per una diretta non è partito: i posti VIP del canale sono pieni. Ti ho reso 5.000 monete.' },
+    { esempio: '🛒 Luna_Gamer, Scegli il prossimo gioco è in coda: alla consegna ci pensa andryxify in diretta. Le tue monete: 1250.' },
+    { esempio: '🛒 Luna_Gamer, l\'acquisto di VIP per una diretta non è andato a buon fine: i posti VIP del canale sono pieni. Ti ho reso 5000 monete.' },
 
     { h2: 'Quando qualcosa non va' },
     { ul: [

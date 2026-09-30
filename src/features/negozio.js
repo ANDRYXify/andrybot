@@ -27,6 +27,7 @@
 import { negozio as negozioDb, streamers, effects as effectsDb, modules as modulesDb, dcRuoli } from '../db.js';
 import { normRegole, ruoliNostri } from './discord-ruoli.js';
 import { preferenzeDi, numero, durata, data } from './preferenze.js';
+import { monetaDi, accordaMoneta, NOME_BASE } from './moneta.js';
 import { canaleHa } from './accesso.js';
 import { nomeIn } from './comandi-registro.js';
 import { aChi, spazioPer, inMessaggi } from './risposte.js';
@@ -123,17 +124,20 @@ export const scorteDi = (a) => (a.scorta !== null && a.scorta !== undefined ? { 
 // delle preferenze del canale (preferenze.js), come nel resto del bot. Quando
 // arrivera' la voce del canale (docs/VOCE.md) queste diventano momenti del suo
 // frasario, e il resto del file non se ne accorge: chiama frase() e basta.
-const MONETA = { it: 'monete', en: 'coins', es: 'monedas' };
 const LINGUE = ['it', 'en', 'es'];
 const lin = (l) => (LINGUE.includes(l) ? l : 'it');
 // Le preferenze da usare: quelle di un canale, oppure solo una lingua (per
 // chi deve dire una cosa in una lingua data).
 const pref = (p) => (p && typeof p === 'object' ? p : { lingua: lin(p) });
 export const cifra = (n, p = 'it') => numero(Math.max(0, Math.trunc(Number(n) || 0)), pref(p));
-export const monetaDi = (canale, l = 'it') => {
-  const n = streamers.get(String(canale || '').toLowerCase())?.settings?.nomeMonete;
-  return (n && String(n).trim()) || MONETA[lin(l)];
-};
+// Il nome della moneta e come se ne parla li dice moneta.js, per tutto il bot.
+// Qui si aggiunge una cosa sola: il nome di serie si dice nella lingua della
+// chat, perche' il negozio parla anche inglese e spagnolo.
+const MONETA_DI_SERIE = { it: NOME_BASE, en: 'coins', es: 'monedas' };
+export function monetaIn(canale, l = 'it') {
+  const m = monetaDi(canale);
+  return { nome: m.nome === NOME_BASE ? MONETA_DI_SERIE[lin(l)] : m.nome, forma: m.forma };
+}
 // Quanto manca, arrotondato al secondo in su: «0 secondi» non si dice a nessuno.
 export const tempo = (ms, p = 'it') => durata(Math.max(1, Math.ceil((Number(ms) || 0) / 1000)) * 1000, pref(p));
 
@@ -206,7 +210,7 @@ export function percheAParole(codice, l = 'it', { cmdDiscord = '!discord' } = {}
       musicaNo: 'Spotify non ha preso la canzone',
       evidenzaNo: 'Twitch non ha pubblicato il messaggio',
       riavvio: 'il bot si è riavviato a metà',
-      rifiutato: "lo streamer non l'ha accettato",
+      rifiutato: 'lo streamer ha detto di no',
       errore: 'qualcosa è andato storto',
     },
     en: {
@@ -236,7 +240,7 @@ export function percheAParole(codice, l = 'it', { cmdDiscord = '!discord' } = {}
       musicaNo: 'Spotify did not take the song',
       evidenzaNo: 'Twitch did not post the message',
       riavvio: 'the bot restarted halfway through',
-      rifiutato: 'the streamer did not accept it',
+      rifiutato: 'the streamer said no',
       errore: 'something went wrong',
     },
     es: {
@@ -266,7 +270,7 @@ export function percheAParole(codice, l = 'it', { cmdDiscord = '!discord' } = {}
       musicaNo: 'Spotify no ha aceptado la canción',
       evidenzaNo: 'Twitch no ha publicado el mensaje',
       riavvio: 'el bot se reinició a mitad',
-      rifiutato: 'el streamer no lo ha aceptado',
+      rifiutato: 'el streamer ha dicho que no',
       errore: 'algo ha salido mal',
     },
   }[lin(l)];
@@ -275,6 +279,14 @@ export function percheAParole(codice, l = 'it', { cmdDiscord = '!discord' } = {}
   return P.errore;
 }
 
+// Le frasi che parlano delle monete le accordano col nome del canale:
+// %[le tue|i tuoi|la tua|il tuo]% (moneta.js) si scioglie con la forma scelta
+// dallo streamer, e il saldo si dice «I tuoi Semi di girasole: 450», che torna
+// con ogni nome e con ogni numero. Le frasi col segno d'accordo si scrivono
+// col tag `a`, che lo scioglie solo nei pezzi scritti qui: quello che arriva da
+// fuori (il titolo di una canzone, il nome di un articolo) resta com'e'.
+// Il nome dell'articolo non ha un genere che il bot conosca: nessuna parola
+// intorno gli si accorda («hai comprato Corona», non «Corona è tuo»).
 const FRASI = {
   it: {
     come: (d) => `🛒 Si compra così: ${d.cmd} e la parola dell'articolo. Cosa c'è lo vedi con ${d.cmdNegozio}.`,
@@ -283,29 +295,29 @@ const FRASI = {
     elenco: (d) => `🛒 Nel negozio: ${d.voci}. Si compra con ${d.cmd} e la parola fra parentesi.`,
     voce: (d) => `${d.articolo} (${d.parola}), ${d.prezzo} ${d.moneta}`,
     dettaglio: (d) => `🛒 ${d.articolo} (${d.parola}): ${d.prezzo} ${d.moneta}.${d.descrizione ? ' ' + d.descrizione : ''}${d.requisito ? ' È per chi ' + d.requisito + '.' : ''}${d.scorte ? ' ' + d.scorte : ''}`,
-    restano: (d) => (d.n > 0 ? `Ne restano ${d.cifra}.` : 'È finito.'),
-    aTesta: (d) => (d.n === 1 ? 'Uno a testa.' : `${d.cifra} a testa.`),
-    fatto: (d) => `🛒 ${d.nome}, fatto: ${d.articolo} è tuo. Ti restano ${d.saldo} ${d.moneta}.`,
-    fattoBorsa: (d) => `🎒 ${d.nome}, ${d.articolo} è nella tua borsa (${d.cmdBorsa}). Ti restano ${d.saldo} ${d.moneta}.`,
-    fattoCoda: (d) => `🛒 ${d.nome}, ${d.articolo} è in coda: te lo consegna ${d.streamer} in diretta. Ti restano ${d.saldo} ${d.moneta}.`,
-    fattoMusica: (d) => `🎶 ${d.nome}, in coda su Spotify: ${d.brano}. Ti restano ${d.saldo} ${d.moneta}.`,
-    fattoVip: (d) => `👑 ${d.nome}, hai il VIP per ${d.direttePer}. Ti restano ${d.saldo} ${d.moneta}.`,
-    sfortuna: (d) => `🎲 ${d.nome}, ${d.articolo} è partito, ma stavolta il dado ha detto di no.`,
+    restano: (d) => (d.n > 1 ? `Ne restano ${d.cifra}.` : d.n === 1 ? 'Ne resta solo 1.' : 'Le scorte sono finite.'),
+    aTesta: (d) => (d.n === 1 ? 'Una volta a testa.' : `${d.cifra} volte a testa.`),
+    fatto: (d, a) => a`🛒 ${d.nome}, hai comprato ${d.articolo}. %[Le tue|I tuoi|La tua|Il tuo]% ${d.moneta}: ${d.saldo}.`,
+    fattoBorsa: (d, a) => a`🎒 ${d.nome}, ${d.articolo} è nella tua borsa (${d.cmdBorsa}). %[Le tue|I tuoi|La tua|Il tuo]% ${d.moneta}: ${d.saldo}.`,
+    fattoCoda: (d, a) => a`🛒 ${d.nome}, ${d.articolo} è in coda: alla consegna ci pensa ${d.streamer} in diretta. %[Le tue|I tuoi|La tua|Il tuo]% ${d.moneta}: ${d.saldo}.`,
+    fattoMusica: (d, a) => a`🎶 ${d.nome}, in coda su Spotify: ${d.brano}. %[Le tue|I tuoi|La tua|Il tuo]% ${d.moneta}: ${d.saldo}.`,
+    fattoVip: (d, a) => a`👑 ${d.nome}, hai il VIP per ${d.direttePer}. %[Le tue|I tuoi|La tua|Il tuo]% ${d.moneta}: ${d.saldo}.`,
+    sfortuna: (d) => `🎲 ${d.nome}, hai comprato ${d.articolo}, ma stavolta il dado ha detto di no.`,
     monete: (d) => `💰 ${d.nome}, ${d.articolo} costa ${d.prezzo} ${d.moneta} e tu ne hai ${d.saldo}.`,
-    scorte: (d) => `🛒 ${d.articolo} è finito.`,
+    scorte: (d) => `🛒 ${d.articolo}: le scorte sono finite.`,
     persona: (d) => (d.quante === 1
-      ? `🛒 ${d.nome}, ${d.articolo} si prende una volta sola a testa, e tu l'hai già preso.`
-      : `🛒 ${d.nome}, ${d.articolo} si prende ${d.quante} volte a testa, e tu ci sei già arrivato.`),
-    attesa: (d) => (d.perTutti ? `⏳ ${d.articolo} si può ricomprare fra ${d.tempo}.` : `⏳ ${d.nome}, ${d.articolo} lo puoi ricomprare fra ${d.tempo}.`),
+      ? `🛒 ${d.nome}, ${d.articolo} si prende una volta sola a testa, e la tua volta l'hai già usata.`
+      : `🛒 ${d.nome}, ${d.articolo} si prende ${d.quante} volte a testa, e le tue le hai già usate tutte.`),
+    attesa: (d) => (d.perTutti ? `⏳ ${d.articolo} si può ricomprare fra ${d.tempo}.` : `⏳ ${d.nome}, puoi ricomprare ${d.articolo} fra ${d.tempo}.`),
     requisito: (d) => `🔒 ${d.nome}, ${d.articolo} è per chi ${d.requisito}.`,
-    nonSo: (d) => `🔒 ${d.nome}, ${d.articolo} è per chi ${d.requisito}, e adesso non riesco a verificarlo: le monete restano tue.`,
+    nonSo: (d, a) => a`🔒 ${d.nome}, ${d.articolo} è per chi ${d.requisito}, e adesso non riesco a verificarlo: %[le tue|i tuoi|la tua|il tuo]% ${d.moneta} %[restano dove sono|restano dove sono|resta dov'è|resta dov'è]%.`,
     chiuso: (d) => (d.quando === 'diretta' ? `🕒 ${d.articolo} si compra solo durante la diretta.` : `🕒 ${d.articolo} si compra dal ${d.dal} al ${d.al}.`),
     serveTesto: (d) => (d.tipo === 'musica' ? `🎶 ${d.nome}, scrivi anche la canzone: ${d.cmd} ${d.parola} e il titolo o l'artista.`
       : d.tipo === 'evidenza' ? `📣 ${d.nome}, scrivi anche il messaggio: ${d.cmd} ${d.parola} e il testo.`
         : `🛒 ${d.nome}, ${d.domanda} Rispondi così: ${d.cmd} ${d.parola} e la tua risposta.`),
-    nonParte: (d) => `🛒 ${d.nome}, ${d.articolo} adesso non si può comprare: ${d.perche}. Le monete restano tue.`,
-    rimborso: (d) => `🛒 ${d.nome}, ${d.articolo} non è partito: ${d.perche}. Ti ho reso ${d.prezzo} ${d.moneta}.`,
-    rifiutato: (d) => `🛒 ${d.nome}, ${d.articolo} non è stato accettato: ti ho reso ${d.prezzo} ${d.moneta}.`,
+    nonParte: (d, a) => a`🛒 ${d.nome}, ${d.articolo} adesso non si può comprare: ${d.perche}. %[Le tue|I tuoi|La tua|Il tuo]% ${d.moneta} %[restano dove sono|restano dove sono|resta dov'è|resta dov'è]%.`,
+    rimborso: (d) => `🛒 ${d.nome}, l'acquisto di ${d.articolo} non è andato a buon fine: ${d.perche}. Ti ho reso ${d.prezzo} ${d.moneta}.`,
+    rifiutato: (d) => `🛒 ${d.nome}, il tuo acquisto di ${d.articolo} non è stato accettato: ti ho reso ${d.prezzo} ${d.moneta}.`,
     borsa: (d) => `🎒 ${d.nome}, nella tua borsa: ${d.lista}.`,
     borsaVuota: (d) => `🎒 ${d.nome}, la tua borsa è vuota. Cosa c'è da comprare lo vedi con ${d.cmdNegozio}.`,
   },
@@ -317,28 +329,28 @@ const FRASI = {
     voce: (d) => `${d.articolo} (${d.parola}), ${d.prezzo} ${d.moneta}`,
     dettaglio: (d) => `🛒 ${d.articolo} (${d.parola}): ${d.prezzo} ${d.moneta}.${d.descrizione ? ' ' + d.descrizione : ''}${d.requisito ? ' It\'s for anyone who ' + d.requisito + '.' : ''}${d.scorte ? ' ' + d.scorte : ''}`,
     restano: (d) => (d.n > 0 ? `${d.cifra} left.` : 'Sold out.'),
-    aTesta: (d) => (d.n === 1 ? 'One each.' : `${d.cifra} each.`),
-    fatto: (d) => `🛒 ${d.nome}, done: ${d.articolo} is yours. You have ${d.saldo} ${d.moneta} left.`,
-    fattoBorsa: (d) => `🎒 ${d.nome}, ${d.articolo} is in your bag (${d.cmdBorsa}). You have ${d.saldo} ${d.moneta} left.`,
-    fattoCoda: (d) => `🛒 ${d.nome}, ${d.articolo} is in the queue: ${d.streamer} will deliver it on stream. You have ${d.saldo} ${d.moneta} left.`,
-    fattoMusica: (d) => `🎶 ${d.nome}, queued on Spotify: ${d.brano}. You have ${d.saldo} ${d.moneta} left.`,
-    fattoVip: (d) => `👑 ${d.nome}, you have VIP for ${d.direttePer}. You have ${d.saldo} ${d.moneta} left.`,
-    sfortuna: (d) => `🎲 ${d.nome}, ${d.articolo} went off, but this time the dice said no.`,
+    aTesta: (d) => (d.n === 1 ? 'Once per person.' : `${d.cifra} times per person.`),
+    fatto: (d) => `🛒 ${d.nome}, you bought ${d.articolo}. Your ${d.moneta}: ${d.saldo}.`,
+    fattoBorsa: (d) => `🎒 ${d.nome}, ${d.articolo} is in your bag (${d.cmdBorsa}). Your ${d.moneta}: ${d.saldo}.`,
+    fattoCoda: (d) => `🛒 ${d.nome}, ${d.articolo} is in the queue: ${d.streamer} will deliver it on stream. Your ${d.moneta}: ${d.saldo}.`,
+    fattoMusica: (d) => `🎶 ${d.nome}, queued on Spotify: ${d.brano}. Your ${d.moneta}: ${d.saldo}.`,
+    fattoVip: (d) => `👑 ${d.nome}, you have VIP for ${d.direttePer}. Your ${d.moneta}: ${d.saldo}.`,
+    sfortuna: (d) => `🎲 ${d.nome}, you bought ${d.articolo}, but this time the dice said no.`,
     monete: (d) => `💰 ${d.nome}, ${d.articolo} costs ${d.prezzo} ${d.moneta} and you have ${d.saldo}.`,
     scorte: (d) => `🛒 ${d.articolo} is sold out.`,
     persona: (d) => (d.quante === 1
-      ? `🛒 ${d.nome}, ${d.articolo} is one per person, and you already got it.`
-      : `🛒 ${d.nome}, ${d.articolo} is ${d.quante} per person, and you already reached that.`),
+      ? `🛒 ${d.nome}, ${d.articolo} is once per person, and you already had your turn.`
+      : `🛒 ${d.nome}, ${d.articolo} is ${d.quante} times per person, and you already used them all.`),
     attesa: (d) => (d.perTutti ? `⏳ ${d.articolo} can be bought again in ${d.tempo}.` : `⏳ ${d.nome}, you can buy ${d.articolo} again in ${d.tempo}.`),
     requisito: (d) => `🔒 ${d.nome}, ${d.articolo} is for anyone who ${d.requisito}.`,
-    nonSo: (d) => `🔒 ${d.nome}, ${d.articolo} is for anyone who ${d.requisito}, and I can't check that right now: your coins stay yours.`,
+    nonSo: (d) => `🔒 ${d.nome}, ${d.articolo} is for anyone who ${d.requisito}, and I can't check that right now: you keep your ${d.moneta}.`,
     chiuso: (d) => (d.quando === 'diretta' ? `🕒 ${d.articolo} can only be bought during the stream.` : `🕒 ${d.articolo} can be bought from ${d.dal} to ${d.al}.`),
     serveTesto: (d) => (d.tipo === 'musica' ? `🎶 ${d.nome}, add the song too: ${d.cmd} ${d.parola} and the title or the artist.`
       : d.tipo === 'evidenza' ? `📣 ${d.nome}, add the message too: ${d.cmd} ${d.parola} and the text.`
         : `🛒 ${d.nome}, ${d.domanda} Answer like this: ${d.cmd} ${d.parola} and your answer.`),
-    nonParte: (d) => `🛒 ${d.nome}, ${d.articolo} can't be bought right now: ${d.perche}. Your coins stay yours.`,
+    nonParte: (d) => `🛒 ${d.nome}, ${d.articolo} can't be bought right now: ${d.perche}. You keep your ${d.moneta}.`,
     rimborso: (d) => `🛒 ${d.nome}, ${d.articolo} didn't go through: ${d.perche}. I gave you back ${d.prezzo} ${d.moneta}.`,
-    rifiutato: (d) => `🛒 ${d.nome}, ${d.articolo} wasn't accepted: I gave you back ${d.prezzo} ${d.moneta}.`,
+    rifiutato: (d) => `🛒 ${d.nome}, your purchase of ${d.articolo} wasn't accepted: I gave you back ${d.prezzo} ${d.moneta}.`,
     borsa: (d) => `🎒 ${d.nome}, in your bag: ${d.lista}.`,
     borsaVuota: (d) => `🎒 ${d.nome}, your bag is empty. See what you can buy with ${d.cmdNegozio}.`,
   },
@@ -349,29 +361,29 @@ const FRASI = {
     elenco: (d) => `🛒 En la tienda: ${d.voci}. Se compra con ${d.cmd} y la palabra entre paréntesis.`,
     voce: (d) => `${d.articolo} (${d.parola}), ${d.prezzo} ${d.moneta}`,
     dettaglio: (d) => `🛒 ${d.articolo} (${d.parola}): ${d.prezzo} ${d.moneta}.${d.descrizione ? ' ' + d.descrizione : ''}${d.requisito ? ' Es para quien ' + d.requisito + '.' : ''}${d.scorte ? ' ' + d.scorte : ''}`,
-    restano: (d) => (d.n > 0 ? `Quedan ${d.cifra}.` : 'Se ha agotado.'),
-    aTesta: (d) => (d.n === 1 ? 'Uno por persona.' : `${d.cifra} por persona.`),
-    fatto: (d) => `🛒 ${d.nome}, hecho: ${d.articolo} es tuyo. Te quedan ${d.saldo} ${d.moneta}.`,
-    fattoBorsa: (d) => `🎒 ${d.nome}, ${d.articolo} está en tu bolsa (${d.cmdBorsa}). Te quedan ${d.saldo} ${d.moneta}.`,
-    fattoCoda: (d) => `🛒 ${d.nome}, ${d.articolo} está en la cola: te lo entrega ${d.streamer} en directo. Te quedan ${d.saldo} ${d.moneta}.`,
-    fattoMusica: (d) => `🎶 ${d.nome}, en la cola de Spotify: ${d.brano}. Te quedan ${d.saldo} ${d.moneta}.`,
-    fattoVip: (d) => `👑 ${d.nome}, tienes el VIP durante ${d.direttePer}. Te quedan ${d.saldo} ${d.moneta}.`,
-    sfortuna: (d) => `🎲 ${d.nome}, ${d.articolo} ha salido, pero esta vez el dado ha dicho que no.`,
+    restano: (d) => (d.n > 1 ? `Quedan ${d.cifra}.` : d.n === 1 ? 'Queda solo 1.' : 'Se ha agotado.'),
+    aTesta: (d) => (d.n === 1 ? 'Una vez por persona.' : `${d.cifra} veces por persona.`),
+    fatto: (d, a) => a`🛒 ${d.nome}, has comprado ${d.articolo}. %[Tus|Tus|Tu|Tu]% ${d.moneta}: ${d.saldo}.`,
+    fattoBorsa: (d, a) => a`🎒 ${d.nome}, ${d.articolo} está en tu bolsa (${d.cmdBorsa}). %[Tus|Tus|Tu|Tu]% ${d.moneta}: ${d.saldo}.`,
+    fattoCoda: (d, a) => a`🛒 ${d.nome}, ${d.articolo} está en la cola: de la entrega se encarga ${d.streamer} en directo. %[Tus|Tus|Tu|Tu]% ${d.moneta}: ${d.saldo}.`,
+    fattoMusica: (d, a) => a`🎶 ${d.nome}, en la cola de Spotify: ${d.brano}. %[Tus|Tus|Tu|Tu]% ${d.moneta}: ${d.saldo}.`,
+    fattoVip: (d, a) => a`👑 ${d.nome}, tienes el VIP durante ${d.direttePer}. %[Tus|Tus|Tu|Tu]% ${d.moneta}: ${d.saldo}.`,
+    sfortuna: (d) => `🎲 ${d.nome}, has comprado ${d.articolo}, pero esta vez el dado ha dicho que no.`,
     monete: (d) => `💰 ${d.nome}, ${d.articolo} cuesta ${d.prezzo} ${d.moneta} y tú tienes ${d.saldo}.`,
     scorte: (d) => `🛒 ${d.articolo} se ha agotado.`,
     persona: (d) => (d.quante === 1
-      ? `🛒 ${d.nome}, ${d.articolo} es uno por persona, y tú ya lo tienes.`
-      : `🛒 ${d.nome}, ${d.articolo} es de ${d.quante} por persona, y tú ya has llegado.`),
+      ? `🛒 ${d.nome}, ${d.articolo} se compra una vez por persona, y tu vez ya la has usado.`
+      : `🛒 ${d.nome}, ${d.articolo} se compra ${d.quante} veces por persona, y ya las has usado todas.`),
     attesa: (d) => (d.perTutti ? `⏳ ${d.articolo} se puede volver a comprar dentro de ${d.tempo}.` : `⏳ ${d.nome}, puedes volver a comprar ${d.articolo} dentro de ${d.tempo}.`),
     requisito: (d) => `🔒 ${d.nome}, ${d.articolo} es para quien ${d.requisito}.`,
-    nonSo: (d) => `🔒 ${d.nome}, ${d.articolo} es para quien ${d.requisito}, y ahora no puedo comprobarlo: las monedas siguen siendo tuyas.`,
+    nonSo: (d, a) => a`🔒 ${d.nome}, ${d.articolo} es para quien ${d.requisito}, y ahora no puedo comprobarlo: %[tus|tus|tu|tu]% ${d.moneta} %[se quedan donde están|se quedan donde están|se queda donde está|se queda donde está]%.`,
     chiuso: (d) => (d.quando === 'diretta' ? `🕒 ${d.articolo} solo se compra durante el directo.` : `🕒 ${d.articolo} se compra del ${d.dal} al ${d.al}.`),
     serveTesto: (d) => (d.tipo === 'musica' ? `🎶 ${d.nome}, escribe también la canción: ${d.cmd} ${d.parola} y el título o el artista.`
       : d.tipo === 'evidenza' ? `📣 ${d.nome}, escribe también el mensaje: ${d.cmd} ${d.parola} y el texto.`
         : `🛒 ${d.nome}, ${d.domanda} Responde así: ${d.cmd} ${d.parola} y tu respuesta.`),
-    nonParte: (d) => `🛒 ${d.nome}, ${d.articolo} ahora no se puede comprar: ${d.perche}. Las monedas siguen siendo tuyas.`,
-    rimborso: (d) => `🛒 ${d.nome}, ${d.articolo} no ha salido: ${d.perche}. Te he devuelto ${d.prezzo} ${d.moneta}.`,
-    rifiutato: (d) => `🛒 ${d.nome}, ${d.articolo} no ha sido aceptado: te he devuelto ${d.prezzo} ${d.moneta}.`,
+    nonParte: (d, a) => a`🛒 ${d.nome}, ${d.articolo} ahora no se puede comprar: ${d.perche}. %[Tus|Tus|Tu|Tu]% ${d.moneta} %[se quedan donde están|se quedan donde están|se queda donde está|se queda donde está]%.`,
+    rimborso: (d) => `🛒 ${d.nome}, la compra de ${d.articolo} no ha salido bien: ${d.perche}. Te he devuelto ${d.prezzo} ${d.moneta}.`,
+    rifiutato: (d) => `🛒 ${d.nome}, tu compra de ${d.articolo} no ha sido aceptada: te he devuelto ${d.prezzo} ${d.moneta}.`,
     borsa: (d) => `🎒 ${d.nome}, en tu bolsa: ${d.lista}.`,
     borsaVuota: (d) => `🎒 ${d.nome}, tu bolsa está vacía. Lo que puedes comprar lo ves con ${d.cmdNegozio}.`,
   },
@@ -380,11 +392,16 @@ const FRASI = {
 export const MOMENTI = Object.keys(FRASI.it);
 
 // Quello che il negozio dice in chat: un momento, i suoi dati, la lingua del
-// canale. Un momento che non c'e' e' un errore di chi chiama, e torna vuoto.
+// canale. Il nome della moneta lo mette frase() stessa, da moneta.js: chi
+// chiama non lo passa. Un momento che non c'e' e' un errore di chi chiama, e
+// torna vuoto.
 export function frase(canale, momento, dati = {}) {
   const l = lin(preferenzeDi(canale).lingua);
   const f = FRASI[l][momento] || FRASI.it[momento];
-  return f ? f(dati) : '';
+  if (!f) return '';
+  const m = monetaIn(canale, l);
+  const a = (pezzi, ...valori) => pezzi.reduce((t, p, i) => t + accordaMoneta(p, m.forma) + (i < valori.length ? valori[i] : ''), '');
+  return f({ ...dati, moneta: m.nome }, a);
 }
 
 // ------------------------------------------------------------------ l'acquisto
@@ -408,8 +425,7 @@ export async function compra({ canale, msg, parola, nota = '', live = false, fon
   const pf = preferenzeDi(ch);
   const l = lin(pf.lingua);
   const c = comandi(ch);
-  const moneta = monetaDi(ch, l);
-  const base = { nome: nomeDi(msg), moneta, ...c };
+  const base = { nome: nomeDi(msg), ...c };
   const no = (momento, dati = {}) => ({ ok: false, momento, dati: { ...base, ...dati } });
   const p = pulisci(parola).replace(/[^a-z0-9]/g, '').slice(0, 20);
   if (!p) return no('come');
@@ -507,8 +523,7 @@ export function inVetrina(canale, ora = Date.now()) {
 function rispostaNegozio(ch, msg, args, pf) {
   const l = lin(pf.lingua);
   const c = comandi(ch);
-  const moneta = monetaDi(ch, l);
-  const base = { nome: nomeDi(msg), moneta, ...c };
+  const base = { nome: nomeDi(msg), ...c };
   const chiesta = pulisci(args[0] || '').replace(/[^a-z0-9]/g, '');
   if (chiesta) {
     const a = negozioDb.perParola(ch, chiesta);
@@ -521,7 +536,7 @@ function rispostaNegozio(ch, msg, args, pf) {
   }
   const primi = inVetrina(ch).slice(0, 3);
   if (!primi.length) return [frase(ch, 'vuoto', base)];
-  const voci = primi.map((a) => frase(ch, 'voce', { articolo: a.nome, parola: a.parola, prezzo: cifra(a.prezzo, pf), moneta })).join(' · ');
+  const voci = primi.map((a) => frase(ch, 'voce', { articolo: a.nome, parola: a.parola, prezzo: cifra(a.prezzo, pf) })).join(' · ');
   return [frase(ch, 'elenco', { ...base, voci })];
 }
 
@@ -577,7 +592,6 @@ export async function tryComando(msg, parla, ambiente = {}) {
 export function vistaPannello(canale) {
   const ch = String(canale || '').toLowerCase();
   const venduti = negozioDb.venduti(ch);
-  const pf = preferenzeDi(ch);
   const immagineUrl = (ref) => {
     const m = /^effetto:(.+)$/.exec(ref || '');
     const e = m ? effectsDb.get(ch, m[1]) : null;
@@ -585,7 +599,6 @@ export function vistaPannello(canale) {
   };
   return {
     attivo: streamers.get(ch)?.settings?.negozio?.attivo === true,
-    moneta: monetaDi(ch, pf.lingua),
     comandi: { negozio: nomeIn(ch, 'negozio'), compra: nomeIn(ch, 'compra'), borsa: nomeIn(ch, 'borsa') },
     max: MAX_ARTICOLI,
     articoli: negozioDb.articoli(ch).map((a) => ({
@@ -640,5 +653,5 @@ export function rifiuta(canale, id) {
   const r = negozioDb.rimborsa(ch, id, 'rifiutato', { da: ['da_consegnare'] });
   if (!r.ok) return { ok: false };
   const pf = preferenzeDi(ch);
-  return { ok: true, frase: frase(ch, 'rifiutato', { nome: r.display || r.user, articolo: r.nome, prezzo: cifra(r.prezzo, pf), moneta: monetaDi(ch, pf.lingua) }) };
+  return { ok: true, frase: frase(ch, 'rifiutato', { nome: r.display || r.user, articolo: r.nome, prezzo: cifra(r.prezzo, pf) }) };
 }

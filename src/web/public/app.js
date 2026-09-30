@@ -1305,7 +1305,6 @@ function _demoNegozioBase() {
   const gioco = L('Scegli il prossimo gioco', 'Pick the next game', 'Elige el próximo juego');
   return {
     attivo: true,
-    moneta: L('monete', 'coins', 'monedas'),
     comandi: { negozio: 'negozio', compra: 'compra', borsa: 'borsa' },
     max: 60,
     articoli: [
@@ -9986,7 +9985,7 @@ const NEG_PERCHE = {
   musicaNo: ['Spotify non ha preso la canzone', 'Spotify did not take the song', 'Spotify no aceptó la canción'],
   evidenzaNo: ['Twitch non ha pubblicato il messaggio', 'Twitch did not post the message', 'Twitch no publicó el mensaje'],
   riavvio: ['il bot si è riavviato a metà', 'the bot restarted halfway through', 'el bot se reinició a mitad'],
-  rifiutato: ['l’hai rifiutato tu', 'you refused it', 'lo rechazaste tú'],
+  rifiutato: ['l’hai rifiutato tu', 'you refused it', 'la rechazaste tú'],
   errore: ['qualcosa è andato storto', 'something went wrong', 'algo salió mal'],
 };
 const NEG_ERRORI = {
@@ -10242,7 +10241,7 @@ function _negDisegna(d) {
   const cmd = document.getElementById('neg-parola-cmd');
   if (cmd) cmd.textContent = '!' + (c.compra || 'compra');
   const mon = document.getElementById('neg-moneta');
-  if (mon) mon.textContent = '(' + (d.moneta || '') + ')';
+  if (mon) mon.textContent = '(' + nomeMonetaUI() + ')';
   _negLista(d);
   _negCoda(d);
   _negStorico(d);
@@ -10268,7 +10267,7 @@ function _negLista(d) {
     const img = a.immagineUrl ? `<img class="neg-mini" src="${esc(a.immagineUrl)}" alt="" loading="lazy">` : '';
     return `<li>${img}<div class="testo-voce">
         <div class="domanda">${esc(a.nome)} ${badge.join(' ')}</div>
-        <div class="risposta"><code>!${esc(d.comandi?.compra || 'compra')} ${esc(a.parola)}</code> · ${_negNum(a.prezzo)} ${esc(d.moneta || '')} · ${esc(_negTipo(a.tipo))}</div>
+        <div class="risposta"><code>!${esc(d.comandi?.compra || 'compra')} ${esc(a.parola)}</code> · ${_negNum(a.prezzo)} ${esc(nomeMonetaUI())} · ${esc(_negTipo(a.tipo))}</div>
         <div class="meta">${esc(_negScorteParole(a.scorte, a.venduti))}${a.scorte.modo !== 'illimitate' && a.venduti ? ' · ' + L(`comprato ${_negNum(a.venduti)} volte`, `bought ${_negNum(a.venduti)} times`, `comprado ${_negNum(a.venduti)} veces`) : ''}${borse}${req ? ' · ' + esc(L('per comprarlo: ', 'to buy it: ', 'para comprarlo: ') + req) : ''}</div>
       </div>
       <div class="riga-flessibile">
@@ -10289,7 +10288,7 @@ function _negCoda(d) {
   el.innerHTML = coda.map((x) => `<li><div class="testo-voce">
       <div class="domanda">${esc(x.display || x.user)} · ${esc(x.nome)}</div>
       ${x.nota ? `<div class="risposta">${esc(x.nota)}</div>` : ''}
-      <div class="meta">${esc(dataIt(x.ts))} · ${_negNum(x.prezzo)} ${esc(d.moneta || '')}</div>
+      <div class="meta">${esc(dataIt(x.ts))} · ${_negNum(x.prezzo)} ${esc(nomeMonetaUI())}</div>
     </div>
     <div class="riga-flessibile">
       <button type="button" class="btn mini" data-neg-fatto="${x.id}">${L('Fatto', 'Done', 'Hecho')}</button>
@@ -10303,7 +10302,7 @@ function _negStorico(d) {
   const stat = (n, eti) => `<div class="stat"><div class="numero">${_negNum(n)}</div><div class="etichetta">${eti}</div></div>`;
   if (tot) {
     tot.innerHTML = stat(t.acquisti, L('acquisti', 'purchases', 'compras'))
-      + stat(t.monete, L(`${d.moneta || 'monete'}: il totale speso`, `${d.moneta || 'coins'}: total spent`, `${d.moneta || 'monedas'}: total gastado`))
+      + stat(t.monete, `${esc(nomeMonetaUI())}: ${L('il totale speso', 'total spent', 'total gastado')}`)
       + stat(t.persone, L('persone', 'people', 'personas'))
       + stat(t.rimborsati, L('rimborsati', 'refunded', 'reembolsadas'));
   }
@@ -10534,7 +10533,7 @@ function _negAnteprima() {
   box.innerHTML = `${foto}
     <p class="neg-nome">${esc(a.nome || L('Senza nome', 'Untitled', 'Sin nombre'))}</p>
     ${a.descrizione ? `<p class="neg-desc">${esc(a.descrizione)}</p>` : ''}
-    <p class="neg-prezzo">${_negNum(a.prezzo)} ${esc(_neg?.moneta || '')}</p>
+    <p class="neg-prezzo">${_negNum(a.prezzo)} ${esc(nomeMonetaUI())}</p>
     ${req ? `<p class="suggerimento">${esc(L('Per comprarlo: ', 'To buy it: ', 'Para comprarlo: ') + req)}</p>` : ''}
     ${scorte || quando ? `<p class="suggerimento">${esc([scorte, quando].filter(Boolean).join(' · '))}</p>` : ''}
     <p class="neg-come"><code>!${esc(_neg?.comandi?.compra || 'compra')} ${esc(parola)}</code></p>`;
@@ -10570,7 +10569,7 @@ async function _negTogli(id) {
 async function _negDecidi(id, azione) {
   const x = (_neg?.coda || []).find((c) => String(c.id) === String(id));
   if (azione === 'rifiuta' && !(await chiediSe({ titolo: L('Rifiuto e rimborso?', 'Refuse and refund?', '¿Rechazo y reembolso?'), pericolo: true,
-    testo: L(`${x ? x.display || x.user : ''} riceve indietro ${x ? _negNum(x.prezzo) : ''} ${_neg?.moneta || ''}, e il bot glielo dice in chat.`, `${x ? x.display || x.user : ''} gets ${x ? _negNum(x.prezzo) : ''} ${_neg?.moneta || ''} back, and the bot tells them in chat.`, `${x ? x.display || x.user : ''} recibe de vuelta ${x ? _negNum(x.prezzo) : ''} ${_neg?.moneta || ''}, y el bot se lo dice en el chat.`),
+    testo: L(`${x ? x.display || x.user : ''} riceve indietro ${x ? _negNum(x.prezzo) : ''} ${nomeMonetaUI()}, e il bot glielo dice in chat.`, `${x ? x.display || x.user : ''} gets ${x ? _negNum(x.prezzo) : ''} ${nomeMonetaUI()} back, and the bot tells them in chat.`, `${x ? x.display || x.user : ''} recibe de vuelta ${x ? _negNum(x.prezzo) : ''} ${nomeMonetaUI()}, y el bot se lo dice en el chat.`),
     si: L('Rifiuta e rimborsa', 'Refuse and refund', 'Rechazar y reembolsar') }))) return;
   let d;
   try { d = await api('/api/streamer/negozio/coda/' + encodeURIComponent(id), { method: 'POST', body: { azione } }); }
