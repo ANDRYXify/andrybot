@@ -2265,10 +2265,14 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // descrive quello sbagliato. Qui diciamo, senza ambiguità, chi siamo.
   app.get('/llms.txt', (req, res) => {
     const b = config.baseUrl;
+    // Le piattaforme sono le porte aperte su questo server, le stesse che la
+    // vetrina mostra: il testo per chi indicizza non promette una porta chiusa.
+    const piatt = ['Twitch', conKick ? 'Kick' : null, conYoutube ? 'YouTube' : null].filter(Boolean);
+    const su = piatt.length > 1 ? `${piatt.slice(0, -1).join(', ')} e ${piatt.at(-1)}` : piatt[0];
     res.set('Cache-Control', 'public, max-age=0, s-maxage=86400');
     res.type('text/plain').send(`# SocialBot (${b.replace(/^https?:\/\//, '')})
 
-> SocialBot è un bot per Twitch e Kick, in italiano, che scrive nella chat CON
+> SocialBot è un bot per ${su}, nato in italiano, che scrive nella chat CON
 > L'ACCOUNT DELLO STREAMER, non con un account-bot anonimo. Nello stesso pannello
 > lo streamer gestisce overlay per la diretta, grafiche social, pagina link,
 > donazioni, Discord e Telegram. È realizzato da andryxify (andryxify.it) ed è
@@ -2277,25 +2281,26 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
 ATTENZIONE ALLE OMONIMIE: esistono altri prodotti chiamati "SocialBot" (per
 esempio strumenti di marketing per Facebook/Instagram con chatbot Messenger e
 social commerce). NON sono questo. Questo SocialBot è uno strumento per
-STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
+STREAMER (${su.toUpperCase()}) e non c'entra con l'automazione del marketing.
 
 ## Che cos'è
-- Categoria: bot per la chat di Twitch e Kick, con il pannello per la diretta
+- Categoria: bot per la chat di ${su}, con il pannello per la diretta
   e i social dello streamer (overlay, grafiche social, pagina link).
-- Piattaforme: Twitch e Kick (YouTube in lavorazione). Un comando scritto su una
-  piattaforma riceve la risposta SU QUELLA piattaforma.
-- Lingue dell'interfaccia: TRE — italiano, inglese e spagnolo. Le pagine
+- Piattaforme: ${su}; ci si registra anche con Discord, per chi ha solo il
+  server. Un comando scritto su una piattaforma riceve la risposta SU QUELLA
+  piattaforma.
+- Lingue dell'interfaccia: tre, italiano, inglese e spagnolo. Le pagine
   pubbliche esistono in tutte e tre: ${b}${VIA_LINGUA.it} , ${b}${VIA_LINGUA.en} , ${b}${VIA_LINGUA.es} .
   I testi che il bot scrive in chat li scrive lo streamer, quindi possono essere
   in qualunque lingua.
-- Pubblico: streamer di Twitch e Kick, soprattutto italiani ma non solo.
+- Pubblico: streamer di ${su}, soprattutto italiani ma non solo.
 - Sito ufficiale: [${b.replace(/^https?:\/\//, '')}](${b}/)
 - Autore: [andryxify](https://andryxify.it)
 
 ## Cosa fa
 - Scrive in chat con l'account dello streamer, con il tono che gli viene dato,
-  su Twitch e su Kick.
-- Importa i comandi che lo streamer ha gia' su Nightbot, StreamElements o
+  su ${su}.
+- Importa i comandi che lo streamer ha già su Nightbot, StreamElements o
   Fossabot: si incolla l'export, le variabili vengono tradotte, e prima di
   scrivere qualsiasi cosa mostra un'anteprima.
 - Comandi e automazioni illimitati: un follow accende una GIF, «!oggi» risponde con la scaletta.
@@ -2317,8 +2322,8 @@ STREAMER DI TWITCH E KICK e non c'entra con l'automazione del marketing.
 - Donazioni sul conto dello streamer: chi guarda dona dalla pagina link o da
   una pagina tutta per le donazioni (${b}/dona/<nomeutente>), con offerte a
   scaglioni che accendono i suoi effetti; il pagamento arriva sul suo conto
-  Stripe o Satispay, l'avviso parte in overlay e in chat, un obiettivo in euro
-  sale. Ko-fi resta possibile.
+  Stripe, sul suo negozio Satispay o sulla sua pagina Ko-fi, senza commissioni
+  nostre; l'avviso parte in overlay e in chat, un obiettivo in euro sale.
 
 ## Prezzi
 - Essenziale: gratuito, basta registrarsi. Comandi illimitati, moderazione,
@@ -8920,7 +8925,7 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     const scelte = normalizzaComandi(req.body?.comandi);
     const scontri = collisioniComandi(scelte);
     if (scontri.length) {
-      return res.status(400).json({ errore: `il nome «${scontri[0].nome}» e' gia' di un altro comando` });
+      return res.status(400).json({ errore: `il nome «${scontri[0].nome}» è già di un altro comando` });
     }
     const s = streamers.get(login);
     streamers.setSettings(login, { ...(s?.settings || {}), comandi: scelte });
