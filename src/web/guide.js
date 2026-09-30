@@ -178,8 +178,8 @@ article form button{font:inherit;cursor:pointer}
 export const LINGUE_DOC = ['it', 'en', 'es'];
 export const VIE = {
   it: { home: '/', guide: '/guide', manuali: '/manuale', novita: '/novita', privacy: viaLegale('privacy', 'it'), termini: viaLegale('termini', 'it') },
-  en: { home: '/en', guide: '/en/guides', manuali: '/en/manual', novita: '/novita', privacy: viaLegale('privacy', 'en'), termini: viaLegale('termini', 'en') },
-  es: { home: '/es', guide: '/es/guias', manuali: '/es/manual', novita: '/novita', privacy: viaLegale('privacy', 'es'), termini: viaLegale('termini', 'es') },
+  en: { home: '/en', guide: '/en/guides', manuali: '/en/manual', novita: '/en/news', privacy: viaLegale('privacy', 'en'), termini: viaLegale('termini', 'en') },
+  es: { home: '/es', guide: '/es/guias', manuali: '/es/manual', novita: '/es/novedades', privacy: viaLegale('privacy', 'es'), termini: viaLegale('termini', 'es') },
 };
 export const T = {
   it: {
@@ -197,6 +197,10 @@ export const T = {
     manualiDesc: 'I manuali di SocialBot: cosa fa ogni scheda del pannello e come, con i numeri veri del bot.',
     manualiIntro: 'Cosa fa cosa, e come. Non è una presentazione: è il materiale da tenere aperto accanto mentre configuri.',
     manualiRaccolta: 'Manuali di SocialBot',
+    novitaTitolo: 'Novità di SocialBot: cosa è cambiato | SocialBot',
+    novitaDesc: 'Le novità del bot per Twitch e Kick, in ordine di tempo: comandi, giochi a punti, overlay, moderazione e correzioni.',
+    novitaIntro: 'Cosa è cambiato nel bot, in ordine di tempo. Una riga per cosa: se non si vede da fuori, qui non c\'è.',
+    novitaNome: 'Novità di SocialBot', novitaBreve: 'Cosa è cambiato nel bot, in ordine di tempo.', novitaProva: 'Da provare',
   },
   en: {
     locale: 'en-GB', og: 'en_GB', guide: 'Guides', manuali: 'Manuals', novita: 'What’s new', ilBot: 'The bot',
@@ -213,6 +217,10 @@ export const T = {
     manualiDesc: 'The SocialBot manuals: what every tab of the panel does and how, with the real numbers of the bot.',
     manualiIntro: 'What does what, and how. Not a sales pitch: the material to keep open next to you while you set things up.',
     manualiRaccolta: 'SocialBot manuals',
+    novitaTitolo: 'What’s new in SocialBot: what changed | SocialBot',
+    novitaDesc: 'What’s new in the bot for Twitch and Kick, newest first: commands, points games, overlays, moderation and fixes.',
+    novitaIntro: 'What changed in the bot, newest first. One line per change: if you can’t see it from the outside, it isn’t here.',
+    novitaNome: 'What’s new in SocialBot', novitaBreve: 'What changed in the bot, newest first.', novitaProva: 'Try these',
   },
   es: {
     locale: 'es-ES', og: 'es_ES', guide: 'Guías', manuali: 'Manuales', novita: 'Novedades', ilBot: 'El bot',
@@ -229,6 +237,10 @@ export const T = {
     manualiDesc: 'Los manuales de SocialBot: qué hace cada pestaña del panel y cómo, con los números reales del bot.',
     manualiIntro: 'Qué hace qué, y cómo. No es una presentación: es el material para tener abierto al lado mientras configuras.',
     manualiRaccolta: 'Manuales de SocialBot',
+    novitaTitolo: 'Novedades de SocialBot: qué cambió | SocialBot',
+    novitaDesc: 'Las novedades del bot para Twitch y Kick, de la más reciente a la más antigua: comandos, juegos con puntos, overlays, moderación y correcciones.',
+    novitaIntro: 'Lo que cambió en el bot, de lo más reciente a lo más antiguo. Una línea por cambio: si no se ve desde fuera, aquí no está.',
+    novitaNome: 'Novedades de SocialBot', novitaBreve: 'Lo que cambió en el bot, de lo más reciente a lo más antiguo.', novitaProva: 'Para probar',
   },
 };
 const lin = (l) => (LINGUE_DOC.includes(l) ? l : 'it');
@@ -537,51 +549,59 @@ function sezioni(voci) {
 // funzione nuova non deve perdersi fra dieci rifiniture (novita.js, IMPORTANTE).
 // Le importanti si presentano per intero, come nel pannello: il titolo che dice
 // cos'e', il perche' conta, la riga, e dove si prova.
-function evidenza(voci, aiuti = {}) {
+function evidenza(voci, aiuti = {}, l = 'it') {
   const imp = voci.filter((v) => v && typeof v === 'object' && v.importante);
   if (!imp.length) return '';
-  return `<div class="g-evidenza"><p class="g-evidenza-tit">Da provare</p>${imp.map((v) => {
+  return `<div class="g-evidenza"><p class="g-evidenza-tit">${T[l].novitaProva}</p>${imp.map((v) => {
     const a = v.vai && aiuti[v.vai];
-    return `<article class="g-ev">${v.titolo ? `<h3 class="g-ev-tit">${esc(v.titolo)}</h3>` : ''}${v.perche ? `<p class="g-ev-perche">${testo(v.perche)}</p>` : ''}`
+    return `<article class="g-ev"${inLinguaDi(v, l)}>${v.titolo ? `<h3 class="g-ev-tit">${esc(v.titolo)}</h3>` : ''}${v.perche ? `<p class="g-ev-perche">${testo(v.perche)}</p>` : ''}`
       + `<p class="g-ev-riga">${testo(v.testo)}</p>${a ? `<p class="g-ev-dove"><a href="${esc(a.via)}">${esc(a.titolo)}</a></p>` : ''}</article>`;
   }).join('')}</div>`;
 }
 
+// Una voce che non e' nella lingua della pagina lo dice (novita.js, `lingua`):
+// chi legge ad alta voce la pronuncia giusta, e chi la vede capisce perche'.
+const inLinguaDi = (v, l) => (v && typeof v === 'object' && v.lingua && v.lingua !== l ? ` lang="${esc(v.lingua)}"` : '');
+
+// Le tre pagine delle novita', una per lingua, ognuna al suo indirizzo (VIE).
+export const alternativeNovita = () => Object.fromEntries(LINGUE_DOC.map((l) => [l, `${SITO}${VIE[l].novita}`]));
+
 // `aiuti` e' la mappa scheda → pagina che la spiega (da manuali.js, che importa
-// di qui: la passa chi chiama, cosi' non si girano intorno). Serve per dire DOVE
-// e' successa una cosa: la riga porta solo l'identificativo della scheda, il
-// nome e l'indirizzo li mette chi mostra.
-export function paginaNovita(gruppi, aiuti = {}) {
-  const url = `${SITO}/novita`;
+// di qui: la passa chi chiama, cosi' non si girano intorno), nella lingua della
+// pagina. Serve per dire DOVE e' successa una cosa: la riga porta solo
+// l'identificativo della scheda, il nome e l'indirizzo li mette chi mostra.
+// `gruppi` arrivano gia' nella lingua della pagina (novita.pubbliche(…, l)).
+export function paginaNovita(gruppi, aiuti = {}, l = 'it') {
+  const x = lin(l), t = T[x], v = VIE[x];
+  const alt = alternativeNovita();
+  const url = alt[x];
   const ultima = gruppi[0]?.data || new Date().toISOString().slice(0, 10);
   const ld = `<script type="application/ld+json">${JSON.stringify({
     '@context': 'https://schema.org', '@type': 'WebPage',
-    name: 'Novità di SocialBot', url, inLanguage: 'it-IT', dateModified: ultima,
-    description: 'Cosa è cambiato nel bot, in ordine di tempo.',
+    name: t.novitaNome, url, inLanguage: t.locale, dateModified: ultima,
+    description: t.novitaBreve,
     publisher: { '@type': 'Organization', name: 'SocialBot', url: SITO },
   })}</script>`;
-  const corpo = `${testata('novita')}
-<main><p class="g-briciole"><a href="/">SocialBot</a> › Novità</p>
-<h1>Novità</h1>
-<p>Cosa è cambiato nel bot, in ordine di tempo. Una riga per cosa: se non si vede da fuori, qui non c'è.</p>
-${gruppi.map((g) => `<section class="g-novita"><h2>${esc(dataItaliana(g.data))}</h2>${evidenza(g.voci, aiuti)}${
+  const corpo = `${testata('novita', x, alt)}
+<main><p class="g-briciole"><a href="${v.home}">SocialBot</a> › ${t.novita}</p>
+<h1>${t.novita}</h1>
+<p>${t.novitaIntro}</p>
+${gruppi.map((g) => `<section class="g-novita"><h2>${esc(dataIn(g.data, x))}</h2>${evidenza(g.voci, aiuti, x)}${
     sezioni(g.voci.filter((v) => !(v && v.importante))).map((s) => {
       const a = s.vai && aiuti[s.vai];
       const tit = a ? `<h3 class="g-dove-tit"><a href="${esc(a.via)}">${esc(a.titolo)}</a></h3>` : '';
-      return `${tit}<ul>${s.voci.map((v) => `<li>${testo(typeof v === 'string' ? v : v.testo)}</li>`).join('')}</ul>`;
+      return `${tit}<ul>${s.voci.map((v) => `<li${inLinguaDi(v, x)}>${testo(typeof v === 'string' ? v : v.testo)}</li>`).join('')}</ul>`;
     }).join('')}</section>`).join('')}
-</main>${piede()}`;
-  return scheletro({
-    titolo: 'Novità di SocialBot: cosa è cambiato | SocialBot',
-    desc: 'Le novità del bot per Twitch e Kick, in ordine di tempo: comandi, giochi a punti, overlay, moderazione e correzioni.',
-    url, corpo, ld,
-  });
+</main>${piede(x)}`;
+  return scheletro({ titolo: t.novitaTitolo, desc: t.novitaDesc, url, corpo, ld, l: x, alt });
 }
 
-function dataItaliana(iso) {
+// La data come la direbbe chi legge, nella sua lingua: le parole le mette
+// Intl, non una tabella scritta a mano.
+function dataIn(iso, l = 'it') {
   const [a, m, g] = iso.split('-').map(Number);
-  return new Date(Date.UTC(a, m - 1, g)).toLocaleDateString('it-IT',
-    { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+  return new Intl.DateTimeFormat(T[lin(l)].locale, { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })
+    .format(new Date(Date.UTC(a, m - 1, g)));
 }
 
 export function paginaIndice(l = 'it') {
@@ -619,6 +639,11 @@ export function urlGuide(novita = []) {
       voci.push({ loc, lastmod: guideIn(l).find((x) => x.id === g.id).aggiornata, freq: 'monthly', prio: '0.7', alt });
     }
   }
-  if (novita.length) voci.push({ loc: `${SITO}/novita`, lastmod: novita[0].data, freq: 'weekly', prio: '0.6' });
+  // Le novita' in ogni lingua, col loro gruppo: la data e' la stessa, perche'
+  // le giornate sono le stesse in tutte e tre.
+  if (novita.length) {
+    const alt = alternativeNovita();
+    for (const l of LINGUE_DOC) voci.push({ loc: alt[l], lastmod: novita[0].data, freq: 'weekly', prio: '0.6', alt });
+  }
   return voci;
 }

@@ -2084,9 +2084,9 @@ function barraCarteHtml(id) {
 
 function vociAiuto() {
   return [
-    ['/guide', L('Guide', 'Guides', 'Guías')],
-    ['/manuale', L('Manuali', 'Manuals', 'Manuales')],
-    ['/novita', L('Novità', 'What’s new', 'Novedades')],
+    [viaPagina('guide'), L('Guide', 'Guides', 'Guías')],
+    [viaPagina('manuali'), L('Manuali', 'Manuals', 'Manuales')],
+    [viaPagina('novita'), L('Novità', 'What’s new', 'Novedades')],
   ];
 }
 
@@ -2217,6 +2217,12 @@ const testoAttivo = (si) => (si ? L('Attivo', 'On', 'Activo') : L('Spento', 'Off
 const testoClipAuto = (si) => (si ? L('Clip automatiche accese', 'Automatic clips on', 'Clips automáticos activados') : L('Clip automatiche spente', 'Automatic clips off', 'Clips automáticos desactivados'));
 const testoAscolto = (si) => (si ? L('Ascolto acceso', 'Listening on', 'Escucha activada') : L('Ascolto spento', 'Listening off', 'Escucha desactivada'));
 const VIA_LINGUA = { it: '/', en: '/en', es: '/es' };
+const VIE_PAGINE = {
+  it: { guide: '/guide', manuali: '/manuale', novita: '/novita' },
+  en: { guide: '/en/guides', manuali: '/en/manual', novita: '/en/news' },
+  es: { guide: '/es/guias', manuali: '/es/manual', novita: '/es/novedades' },
+};
+const viaPagina = (cosa) => (VIE_PAGINE[LINGUA] || VIE_PAGINE.it)[cosa];
 function indirizzoInLingua(l) {
   try {
     const u = new URL(location.href);
@@ -15269,7 +15275,7 @@ async function mostraNovita() {
   if (_novFatto || !stato?.user) return;
   _novFatto = true;
   let d = null;
-  try { d = await api('/api/novita/da-vedere'); } catch { return; }
+  try { d = await api(`/api/novita/da-vedere?lang=${LINGUA}`); } catch { return; }
   if (!d?.ok) return;
   const segna = (fino) => api('/api/novita/viste', { method: 'POST', body: { fino } }).catch(() => {});
   const fin = d.segnalibro || d.ultima;
@@ -15317,7 +15323,7 @@ async function mostraNovita() {
       ? `<p class="suggerimento nov-altri">${L(`Le altre ${restanti} stanno più indietro: le trovi tutte qui sotto.`, `The other ${restanti} are further back: you find them all below.`, `Las otras ${restanti} están más atrás: las encuentras todas abajo.`)}</p>`
       : ''}</div>
     <div class="nov-piede">
-      <a class="btn secondario mini" href="/novita">${L('Tutte le novità', 'All the news', 'Todas las novedades')}</a>
+      <a class="btn secondario mini" href="${esc(viaPagina('novita'))}">${L('Tutte le novità', 'All updates', 'Todas las novedades')}</a>
       <button class="btn" id="nov-chiudi">${L('Ho capito', 'Got it', 'Entendido')}</button>
     </div>`;
   document.body.appendChild(f);

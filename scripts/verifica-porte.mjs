@@ -91,6 +91,8 @@ const PUBBLICHE = new Map([
   ['GET /en/manual/:slug', 'il manuale e pubblico'],
   ['GET /es/manual/:slug', 'il manuale e pubblico'],
   ['GET /novita', 'le novita sono pubbliche'],
+  ['GET /en/news', 'le novita in inglese: pubbliche come quelle in italiano'],
+  ['GET /es/novedades', 'le novita in spagnolo: pubbliche come quelle in italiano'],
   ['GET /api/novita', 'le novita sono pubbliche'],
   ['GET /api/abbonamento/piani', 'il listino e pubblico'],
   ['GET /posta/conferma', 'il clic sulla mail di conferma: porta un codice monouso che si confronta col suo calco, e scade in un giorno'],

@@ -400,9 +400,10 @@ test('la finestra disegna il titolo della sezione, e quel titolo porta li\'', ()
 
 test('la pagina pubblica manda alla pagina che spiega quella sezione', () => {
   const g = readFileSync(join(RAD, 'src/web/guide.js'), 'utf8');
-  const f = g.slice(g.indexOf('export function paginaNovita('), g.indexOf('function dataItaliana('));
+  const f = g.slice(g.indexOf('export function paginaNovita('), g.indexOf('function dataIn('));
+  assert.ok(f.length > 0 && g.indexOf('function dataIn(') > 0, 'la pagina sta dove la si cerca');
   assert.match(f, /sezioni\(g\.voci\.filter\(\(v\) => !\(v && v\.importante\)\)\)/, 'anche qui a sezioni, le importanti a parte');
-  assert.match(f, /\$\{evidenza\(g\.voci, aiuti\)\}/, 'e le importanti in cima alla giornata');
+  assert.match(f, /\$\{evidenza\(g\.voci, aiuti, x\)\}/, 'e le importanti in cima alla giornata');
   assert.match(f, /g-dove-tit/, 'col titolo');
   assert.match(f, /href="\$\{esc\(a\.via\)\}"/, 'che e\' un collegamento vero');
   assert.doesNotMatch(f, /data-nov-vai/, 'fuori dal pannello non si apre una scheda: si apre una pagina');
@@ -550,4 +551,66 @@ test('una traduzione staccata o doppia non si perde in silenzio', () => {
   assert.equal(analizza(doppia)[0].voci[1].lingue.en.testo, 'A fix.', 'la prima resta, la seconda e\' segnalata');
   assert.deepEqual(righeSperse(TRE.replace('  en: A fix.', '  en:')).map((x) => x.perche), ['vuota']);
   assert.deepEqual(righeSperse('# Novità\n\n- esempio\n  en: example\n\n## 2026-09-30\n- vera\n  en: real\n'), [], 'la prosa in testa al file non e\' letta, e quindi non e\' persa');
+});
+
+// ── LE PAGINE, LE PORTE E IL PANNELLO IN TRE LINGUE ─────────────────────────
+
+test('una pagina delle novità per lingua: la sua lingua, il suo indirizzo, e le altre due accanto', async () => {
+  const { paginaNovita, VIE, T } = await import('../../src/web/guide.js');
+  const g = analizza(TRE);
+  const aiuti = { alert: { titolo: 'Overlay', via: '/x/overlay' }, stato: { titolo: 'Stato', via: '/x/stato' } };
+  const alt = { it: 'https://socialbot.live/novita', en: 'https://socialbot.live/en/news', es: 'https://socialbot.live/es/novedades' };
+  const date = { it: '30 settembre 2026', en: '30 September 2026', es: '30 de septiembre de 2026' };
+  for (const l of ['it', 'en', 'es']) {
+    const h = paginaNovita(pubbliche(g, l), aiuti, l);
+    assert.ok(h.includes(`<html lang="${l}">`), `${l}: la lingua della pagina`);
+    assert.ok(h.includes(`<link rel="canonical" href="${alt[l]}">`), `${l}: canonica a se stessa`);
+    for (const [x, u] of Object.entries(alt)) assert.ok(h.includes(`<link rel="alternate" hreflang="${x}" href="${u}">`), `${l}: accanto ${x}`);
+    assert.ok(h.includes(`<link rel="alternate" hreflang="x-default" href="${alt.it}">`), `${l}: x-default sull'italiano`);
+    assert.ok(h.includes(`<title>${T[l].novitaTitolo.replace(/&/g, '&amp;')}</title>`), `${l}: il titolo nella sua lingua`);
+    assert.ok(h.includes(`<h1>${T[l].novita}</h1>`), `${l}: l'h1`);
+    assert.ok(h.includes(`<h2>${date[l]}</h2>`), `${l}: la data come la dice chi legge (${date[l]})`);
+    assert.ok(h.includes(`<p class="g-evidenza-tit">${T[l].novitaProva}</p>`), `${l}: il riquadro delle importanti`);
+    assert.ok(h.includes(`href="${VIE[l].novita}" aria-current="page"`), `${l}: la testata segna le novità della sua lingua`);
+    assert.equal(VIE[l].novita, new URL(alt[l]).pathname);
+  }
+  const en = paginaNovita(pubbliche(g, 'en'), aiuti, 'en');
+  assert.match(en, /<h3 class="g-ev-tit">The wall<\/h3><p class="g-ev-perche">Emotes fly\.<\/p><p class="g-ev-riga">The emote wall\.<\/p>/, 'l\'importante in inglese');
+  assert.match(en, /<li>A fix\.<\/li>/, 'la riga in inglese');
+  assert.match(en, /<li lang="it">Una riga ancora da tradurre\.<\/li>/, 'e una riga rimasta in italiano lo dice');
+  assert.doesNotMatch(paginaNovita(pubbliche(g, 'it'), aiuti, 'it'), /<(li|article class="g-ev") lang=/, 'in italiano nessuna riga porta il segno');
+  const es = paginaNovita(pubbliche(g, 'es'), aiuti, 'es');
+  assert.match(es, /<li>Una corrección\.<\/li>/);
+  assert.doesNotMatch(es, /Una correzione\./, 'niente italiano dove c\'e\' la traduzione');
+});
+
+test('la sitemap ha le novità in ogni lingua, col loro gruppo', async () => {
+  const { urlGuide } = await import('../../src/web/guide.js');
+  const voci = urlGuide(pubbliche(analizza(TRE))).filter((v) => /\/(novita|news|novedades)$/.test(v.loc));
+  assert.deepEqual(voci.map((v) => v.loc), ['https://socialbot.live/novita', 'https://socialbot.live/en/news', 'https://socialbot.live/es/novedades']);
+  for (const v of voci) {
+    assert.equal(v.lastmod, '2026-09-30');
+    assert.deepEqual(v.alt, { it: voci[0].loc, en: voci[1].loc, es: voci[2].loc }, `${v.loc}: il gruppo intero`);
+  }
+});
+
+test('le porte delle novità danno la lingua chiesta, e il pannello chiede la sua', () => {
+  const srv = readFileSync(join(RAD, 'src/web/server.js'), 'utf8');
+  assert.match(srv, /const linguaNovita = \(req\) => \(novita\.LINGUE\.includes\(req\.query\.lang\) \? req\.query\.lang : 'it'\);/, 'una lingua valida, o l\'italiano');
+  const pezzo = (via) => { const i = srv.indexOf(`app.get('${via}'`); return srv.slice(i, srv.indexOf('\n  });', i)); };
+  assert.match(pezzo('/api/novita'), /novita\.pubbliche\(novita\.leggi\(NOVITA_MD\), l\)/, '/api/novita nella lingua chiesta');
+  assert.match(pezzo('/api/novita'), /res\.json\(\{ lingua: l,/, 'e dice quale');
+  const dv = pezzo('/api/novita/da-vedere');
+  assert.match(dv, /const l = linguaNovita\(req\);/);
+  assert.match(dv, /novita\.tutte\(novita\.unisci\(letti, novita\.leggi\(LIA_NOVITA\)\), l\) : novita\.pubbliche\(letti, l\)/, 'per tutti e per chi vede anche le sue');
+  const i = srv.indexOf("app.get(['/novita', '/en/news', '/es/novedades']");
+  const pag = srv.slice(i, srv.indexOf('\n  });', i));
+  assert.match(pag, /const l = linguaDi\(req\.path, 'novita'\);/, 'la pagina prende la lingua dall\'indirizzo');
+  assert.match(pag, /paginaNovita\(novita\.pubbliche\(letti, l\), AIUTI_LINGUE\[l\], l\)/, 'con le righe e le pagine d\'aiuto di quella lingua');
+  assert.match(pag, /fatta\.letti !== letti/, 'e si rifa\' quando il file e\' stato riletto');
+  const app = readFileSync(join(RAD, 'src/web/public/app.js'), 'utf8');
+  const f = app.slice(app.indexOf('async function mostraNovita('), app.indexOf('function pannelloConsolify('));
+  assert.match(f, /api\(`\/api\/novita\/da-vedere\?lang=\$\{LINGUA\}`\)/, 'il pannello chiede le novità nella sua lingua');
+  assert.match(f, /href="\$\{esc\(viaPagina\('novita'\)\)\}"/, 'e «Tutte le novità» porta alla pagina della sua lingua');
+  assert.doesNotMatch(f, /href="\/novita"/);
 });
