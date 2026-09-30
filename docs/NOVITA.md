@@ -24,10 +24,11 @@ perché.
 
 Tutto il resto legge quel file, e succede da sé:
 
-- **`/novita`** — pagina pubblica, stesso guscio delle guide, indicizzabile. Il
-  suo posto nella sitemap arriva da `urlGuide()`, con la data dell'ultima
-  giornata come `lastmod`: contenuto che si aggiorna, che è quello che i motori
-  guardano.
+- **`/novita`**, **`/en/news`**, **`/es/novedades`**: la pagina pubblica, una
+  per lingua, stesso guscio delle guide, indicizzabile. Il loro posto nella
+  sitemap arriva da `urlGuide()`, col gruppo delle tre lingue e la data
+  dell'ultima giornata come `lastmod`: contenuto che si aggiorna, che è quello
+  che i motori guardano.
 - **La finestra all'ingresso** — chi torna dopo un aggiornamento non deve andare
   a cercare cosa è cambiato: glielo si dice una volta, entrando
   (`/api/novita/da-vedere`). Chi entra per la prima volta non si è perso niente:
@@ -41,6 +42,59 @@ quattro righe dell'ultima giornata, col «visto» tenuto dal solo browser: a ogn
 riga nuova tornava, con le stesse quattro righe. Due posti per la stessa cosa,
 con due memorie diverse, non si possono tenere d'accordo; uno solo sì.
 - **Il piede della vetrina** — un collegamento in più fra le pagine pubbliche.
+
+## Le lingue
+
+La pagina, la finestra del pannello e l'API si leggono in italiano, inglese e
+spagnolo, e la riga arriva a ognuno **nella lingua di chi legge**. La
+traduzione non sta in un altro file: sta sotto la riga, nello stesso commit,
+perché una riga tradotta altrove si scolla dalla sua il giorno che una delle due
+cambia.
+
+```
+- [importante] Il muro delle emote: quelle che la chat scrive volano sulla scena. [vai: alert]
+  en: The emote wall: emotes that chat types fly across the scene.
+  es: El muro de emotes: los que escribe el chat vuelan por la escena.
+  > Il muro delle emote
+  > Le emote che la chat scrive diventano parte della scena.
+  en> The emote wall
+  en> The emotes chat types become part of the scene.
+  es> El muro de emotes
+  es> Los emotes que escribe el chat pasan a formar parte de la escena.
+```
+
+- **Chi legge sceglie la lingua.** `pubbliche(gruppi, lingua)` e
+  `tutte(gruppi, lingua)` danno testo, titolo e perché nella lingua chiesta. La
+  traduzione vale se è intera; se manca un pezzo la voce resta tutta in italiano
+  e lo dice (`lingua: 'it'`), e la pagina la marca `lang="it"`. Nel file pubblico
+  non succede: il cancello vuole ogni traduzione. Le righe `[privato]` non si
+  traducono, e al proprietario arrivano in italiano.
+- **L'impronta resta quella italiana.** Ogni voce porta `id`, calcolato sulla
+  data e sul testo italiano: il segnaposto è lo stesso in tutte e tre le lingue,
+  chi cambia lingua non rivede niente, e i segnaposto salvati prima restano
+  validi.
+- **Le porte.** `/novita`, `/en/news`, `/es/novedades` (indirizzi in `VIE` di
+  `src/web/guide.js`), ognuna canonica a sé, col gruppo hreflang delle tre e la
+  data detta nella lingua della pagina. `/api/novita` e
+  `/api/novita/da-vedere` prendono `?lang=it|en|es`, e qualunque altra cosa vale
+  italiano; il pannello manda la sua lingua, e «Tutte le novità» porta alla
+  pagina della stessa lingua.
+- **Il cancello.** `scripts/verifica-novita.mjs` vuole `en:` ed `es:` su ogni
+  riga pubblica, `en>` ed `es>` su ogni importante e solo lì, e nessuna
+  traduzione staccata o doppia: non rilegge il file a modo suo, chiede al
+  lettore (`righeSperse`) cosa ha lasciato cadere. Numeri e comandi devono essere
+  quelli della riga italiana, che è anche il modo di accorgersi di una traduzione
+  finita sotto la riga sbagliata. E le regole delle righe italiane: 220 caratteri
+  e due frasi, titoli di 60, niente lineette lunghe, niente congiunzione in
+  testa, niente gergo. `--selftest` rompe il file vero in diciannove modi e
+  pretende di vederli tutti.
+
+Un'avvertenza sull'unione. `NOVITA.md` si unisce da solo (`merge=union`), e
+l'unione mette una dopo l'altra le righe aggiunte dalle due parti nello stesso
+punto. Se da una parte si traduce l'ultima riga di una giornata e dall'altra si
+aggiunge una riga nuova in fondo alla stessa giornata, la traduzione può finire
+sotto la riga nuova. Il cancello lo vede (una riga senza traduzione, numeri che
+non tornano): dopo ogni unione, si gira.
 
 ## Il segnaposto: le righe viste, non un punto nella lista
 

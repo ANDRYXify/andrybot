@@ -123,7 +123,7 @@ scrive la memoria non ci sono `fetch`.
 
 Le pagine erano collegate dalla **vetrina** — cioè da fuori. Chi è dentro non le
 vedeva. Ora nella barra in alto (e nel cassetto, sul telefono) c'è un **«?»**:
-apre *Guide*, *Manuali*, *Novità*, e in cima la pagina di **questa** scheda,
+apre *Guide*, *Manuali*, *Novità* (nella lingua del pannello), e in cima la pagina di **questa** scheda,
 quando c'è.
 
 Costa una banda di larghezza: a 1400px la barra ora si ritira sull'hamburger un

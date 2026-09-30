@@ -281,8 +281,9 @@ scelta di posizionamento, non un difetto da correggere.
 
 Oltre alle guide: `/manuale/giochi`, `/manuale/moduli` e il loro indice
 `/manuale` (materiale di consultazione, `TechArticle` nei dati strutturati), e
-`/novita` — contenuto che si aggiorna, con la data dell'ultima giornata come
-`lastmod` nella sitemap. Tutte con la loro voce nella sitemap ricavata dalla
+`/novita` (e `/en/news`, `/es/novedades`, col gruppo hreflang delle tre):
+contenuto che si aggiorna, con la data dell'ultima giornata come `lastmod` nella
+sitemap. Tutte con la loro voce nella sitemap ricavata dalla
 stessa fonte che le compone (`urlGuide`, `urlManuali`): una pagina nuova ci
 finisce da sé, non c'è un secondo elenco da tenere allineato.
 

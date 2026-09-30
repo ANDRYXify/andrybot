@@ -10,7 +10,7 @@ testo passa da `L(it, en, es)`. Il resto no:
 | pagina iniziale | tre lingue, ma allo stesso indirizzo con `?lang=` |
 | guide | solo italiano |
 | manuali | solo italiano |
-| novità (pagina e finestra nel pannello) | solo italiano, anche a chi ha il pannello in inglese |
+| novità (pagina e finestra nel pannello) | tre lingue: una pagina per lingua, la finestra nella lingua del pannello |
 | privacy e termini | solo italiano |
 | pagina 404 | tre lingue |
 
@@ -124,13 +124,19 @@ Ogni riga di `NOVITA.md` si scrive nelle tre lingue, nello stesso commit:
 
 ```md
 - Il testo in italiano. [vai: account]
-  - en: The text in English.
-  - es: El texto en español.
+  en: The text in English.
+  es: El texto en español.
 ```
 
-La finestra delle novità nel pannello mostra la riga nella lingua del
-pannello; la pagina pubblica ha i suoi tre indirizzi. Le righe già scritte si
-traducono una volta, tutte.
+Un'importante porta titolo e perché anche in `en>` ed `es>`, dopo quelli
+italiani (`>`). Il `[vai: x]` resta sulla riga italiana; le righe `[privato]`
+non si traducono.
+
+La finestra delle novità nel pannello chiede le righe nella lingua del pannello
+(`/api/novita/da-vedere?lang=`); la pagina pubblica ha i suoi tre indirizzi,
+ognuno con le righe della sua lingua. L'impronta di «già vista» resta quella
+della riga italiana: cambiare lingua non fa rivedere niente. Il dettaglio sta in
+`docs/NOVITA.md`, «Le lingue».
 
 ## Privacy e termini
 
