@@ -15,7 +15,16 @@ import { fileURLToPath } from 'node:url';
 import { randomBytes } from 'node:crypto';
 
 // mini-parser .env (niente dipendenze): KEY=valore, # commenti
+//
+// Le prove non lo leggono. Sul server il collaudo gira nella cartella dove sta
+// il .env vero, e una prova che vedesse i segreti di produzione misurerebbe il
+// server invece del codice: col bot Discord della casa configurato, «senza un
+// bot suo non parte» diventava falso solo li'. Peggio, una prova potrebbe
+// parlare davvero con Telegram o Discord. Il corridore delle prove marca i suoi
+// processi con NODE_TEST_CONTEXT: li' la configurazione e' solo quella che la
+// prova scrive da se'.
 function loadDotEnv() {
+  if (process.env.NODE_TEST_CONTEXT) return;
   const path = resolve(process.cwd(), '.env');
   if (!existsSync(path)) return;
   for (const line of readFileSync(path, 'utf8').split('\n')) {
