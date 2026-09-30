@@ -5095,7 +5095,7 @@ function _settDisegnaDove() {
   const p = _settPosti || {};
   const w = settimanaOra();
   const tg = new Set(w.dove.tg); const dc = new Set(w.dove.dc);
-  const spunta = (tipo, id, nome, sotto, attiva, nota) => `<label class="tg-spunta"><input type="checkbox" data-sett-dove="${tipo}" value="${esc(String(id))}"${attiva ? ' checked' : ''}${nota ? ' disabled' : ''}><span>${esc(nome)}${sotto ? ` <span class="suggerimento">${esc(sotto)}</span>` : ''}</span></label>${nota ? `<p class="suggerimento sett-nota">${nota}</p>` : ''}`;
+  const spunta = (tipo, id, nome, sotto, attiva, nota) => `<label class="tg-spunta"><input type="checkbox" data-sett-dove="${tipo}" value="${esc(String(id))}"${attiva ? ' checked' : ''}><span>${esc(nome)}${sotto ? ` <span class="suggerimento">${esc(sotto)}</span>` : ''}</span></label>${nota ? `<p class="suggerimento sett-nota">${nota}</p>` : ''}`;
   const blocchi = [];
   if ((p.tg || []).length) {
     blocchi.push(`<p class="campo">Telegram</p>` + p.tg.map((d) => spunta('tg', d.id, d.nome, d.dove ? L('argomento ', 'topic ', 'tema ') + d.dove : '', tg.has(String(d.id)), '')).join(''));
@@ -5107,7 +5107,7 @@ function _settDisegnaDove() {
       scrivere: L('Il bot qui non può scrivere.', 'The bot cannot write here.', 'El bot no puede escribir aquí.'),
       allegare: L('Al bot manca «Allegare file».', 'The bot is missing «Attach Files».', 'Al bot le falta «Adjuntar archivos».') + ` <button type="button" class="btn secondario mini" data-sett-reinvita>${L('Aggiorna i suoi permessi', 'Update its permissions', 'Actualiza sus permisos')}</button>`,
     };
-    blocchi.push(`<p class="campo spazio-sopra">Discord</p>` + p.dc.map((d) => spunta('dc', d.id, d.webhook ? L('canale col webhook', 'webhook channel', 'canal con webhook') : '#' + (d.nome || '?'), '', dc.has(String(d.id)) && !d.manca, d.manca ? perche[d.manca] || '' : '')).join(''));
+    blocchi.push(`<p class="campo spazio-sopra">Discord</p>` + p.dc.map((d) => spunta('dc', d.id, d.webhook ? L('canale col webhook', 'webhook channel', 'canal con webhook') : '#' + (d.nome || '?'), '', dc.has(String(d.id)), d.manca ? perche[d.manca] || '' : '')).join(''));
   }
   if (p.ig) {
     blocchi.push(`<p class="campo spazio-sopra">Instagram</p>` + (p.ig.puo
@@ -7602,8 +7602,8 @@ function _qrVie() {
   const login = String(stato?.user?.login || '').toLowerCase();
   if (!login) return [];
   const vie = [[L('La tua pagina link', 'Your link page', 'Tu página de enlaces'), `https://socialbot.live/u/${login}`]];
-  if (stato?.piattaforma === 'twitch') vie.push(['Twitch', `https://twitch.tv/${login}`]);
-  if (stato?.piattaforma === 'kick') vie.push(['Kick', `https://kick.com/${login}`]);
+  const casa = String(stato?.indirizzo || '');
+  if (casa) vie.push([NOME_PIATTAFORMA[stato?.piattaforma] || L('Il tuo canale', 'Your channel', 'Tu canal'), casa]);
   return vie;
 }
 
@@ -8110,11 +8110,11 @@ function _kitDisegno(d, scelte) {
   const gg = d.settimana?.giorni || [];
   const settimana = m.settimana && gg.some((x) => x && !x.off && x.ora) ? GIORNI.map((nome, i) => ({ giorno: nome, ora: gg[i]?.ora || '', off: !!(gg[i]?.off || !gg[i]?.ora) })) : [];
   const fuso = d.settimana?.fuso || 'Europe/Rome';
-  const canale = d.piattaforma === 'twitch' ? `twitch.tv/${stato?.user?.login}` : d.piattaforma === 'kick' ? `kick.com/${stato?.user?.login}` : '';
+  const canale = String(stato?.indirizzo || '').replace(/^https?:\/\/(www\.)?/, '');
   const colori = scelte.tema === 'pagina' ? d.colori : { ...KIT_TEMI[scelte.tema], acc: d.colori.acc };
   return {
     nome: d.display, avatar: KIT_STATO.avatar, colori, presentazione: String(scelte.presentazione || '').trim(),
-    canale: canale ? { etichetta: canale, url: 'https://' + canale } : null,
+    canale: canale ? { etichetta: canale, url: String(stato.indirizzo) } : null,
     numeri, nota: numeri.length ? nota : '',
     categorie: m.categorie ? n.categorie.map((c) => ({ nome: c.altro ? L('Altro', 'Other', 'Otros') : c.nome, quota: c.quota })) : [],
     settimana, fuso: settimana.length ? (fuso === 'Europe/Rome' ? L('Orari in ora italiana', 'Times in Italian time', 'Horas en hora italiana') : fuso.replace(/_/g, ' ')) : '',
@@ -18698,7 +18698,7 @@ async function caricaPremi() {
       <a class="btn secondario mini" href="/auth/permessi">${L('Concedi il permesso', 'Grant the permission', 'Concede el permiso')}</a></p>`;
     return;
   }
-  const effOpts = [`<option value="">${L('— nessun effetto —', '— no effect —', '— sin efecto —')}</option>`]
+  const effOpts = [`<option value="">${L('Nessun effetto', 'No effect', 'Ningún efecto')}</option>`]
     .concat((d.effetti || []).map((c) => `<option value="${esc(c.comando)}">!${esc(c.comando)} (${esc(etTipoEffetto(c.tipo))})</option>`)).join('');
   const premi = d.premi || [];
   const lista = premi.length
@@ -20011,6 +20011,10 @@ const _tema = (o) => ({ sfondoTipo: 'tinta', bg: '', bg2: '', angolo: 160, sfond
   testo: '', accent: '', card: '', bordo: '', font: 'system', raggio: 14, stileBtn: 'pieno', ombra: true,
   anim: 'rise', avatarForma: 'cerchio', larghezza: 30, allinea: 'centro', disposizione: 'colonna',
   cursore: 'sistema', ...o });
+const _esaColore = (v) => {
+  const m = /^rgba?\((\d+),(\d+),(\d+)/.exec(String(v || '').replace(/\s/g, ''));
+  return m ? '#' + [m[1], m[2], m[3]].map((x) => Math.min(255, Number(x)).toString(16).padStart(2, '0')).join('') : String(v || '');
+};
 const TEMI_PRONTI = [
   { id: 'neon', nome: 'Notte al neon', base: 'neon',
     tema: _tema({ sfondoTipo: 'gradiente', angolo: 165, effetto: 'aurora', stileBtn: 'vetro', raggio: 18 }) },
@@ -20397,8 +20401,8 @@ async function caricaPaginaLink(ridisegna = false, quale = null) {
             <div class="griglia-campi spazio-sopra">
               <div><label class="campo">${L('Colore testo', 'Text colour', 'Color del texto')}</label><input aria-label="${esc(L('Colore testo', 'Text colour', 'Color del texto'))}" type="color" data-lpk="testo" value="${esc(LP.tema.testo || '#f4f2ff')}"></div>
               <div><label class="campo">${L('Colore evidenza', 'Accent colour', 'Color de acento')}</label><input aria-label="${esc(L('Colore evidenza', 'Accent colour', 'Color de acento'))}" type="color" data-lpk="accent" value="${esc(LP.tema.accent || '#a568ff')}"></div>
-              <div><label class="campo">${L('Colore bottoni', 'Button colour', 'Color de botones')}</label><input aria-label="${esc(L('Colore bottoni', 'Button colour', 'Color de botones'))}" type="color" data-lpk="card" value="${esc(LP.tema.card || '#141220')}"></div>
-              <div><label class="campo">${L('Colore bordi', 'Border colour', 'Color de bordes')}</label><input aria-label="${esc(L('Colore bordi', 'Border colour', 'Color de bordes'))}" type="color" data-lpk="bordo" value="${esc(LP.tema.bordo || '#2c2440')}"></div>
+              <div><label class="campo">${L('Colore bottoni', 'Button colour', 'Color de botones')}</label><input aria-label="${esc(L('Colore bottoni', 'Button colour', 'Color de botones'))}" type="color" data-lpk="card" value="${esc(_esaColore(LP.tema.card) || '#141220')}"></div>
+              <div><label class="campo">${L('Colore bordi', 'Border colour', 'Color de bordes')}</label><input aria-label="${esc(L('Colore bordi', 'Border colour', 'Color de bordes'))}" type="color" data-lpk="bordo" value="${esc(_esaColore(LP.tema.bordo) || '#2c2440')}"></div>
               <div><label class="campo">${L('Testo dei bottoni', 'Button text', 'Texto de los botones')}</label><input aria-label="${esc(L('Testo dei bottoni', 'Button text', 'Texto de los botones'))}" type="color" data-lpk="testoBtn" value="${esc(LP.tema.testoBtn || LP.tema.testo || '#f4f2ff')}"></div>
             </div>
           </div>
@@ -27067,7 +27071,7 @@ async function caricaCompleanni() {
       <button class="btn secondario mini" data-membro-add>Aggiungi</button>
     </div>`).join('');
   const ch = d.chat || {};
-  const effetti = ['<option value="">— nessun effetto —</option>']
+  const effetti = [`<option value="">${L('Nessun effetto', 'No effect', 'Ningún efecto')}</option>`]
     .concat((d.effetti || []).map((e) => `<option value="${esc(e)}"${ch.effetto === e ? ' selected' : ''}>!${esc(e)}</option>`)).join('');
   box.innerHTML = `
     <div class="riga-interruttore">

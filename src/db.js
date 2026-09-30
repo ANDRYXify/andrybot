@@ -3756,6 +3756,14 @@ const storePagina = (tabella, { conAspetto = false } = {}) => ({
   pulisci(d = {}) {
     const L = LIMITI_LINKPAGE;
     const hex = (v) => (/^#[0-9a-f]{3,8}$/i.test(String(v || '')) ? String(v) : '');
+    // Bottoni e bordi dei temi pronti sono velati (rgba): e' il loro aspetto,
+    // non un errore. Si accetta solo la forma coi numeri, che nel CSS della
+    // pagina non puo' diventare altro.
+    const velato = (v) => {
+      const m = /^rgba?\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*(?:,\s*(0|1|0?\.\d{1,3}|1\.0{1,3}))?\s*\)$/i.exec(String(v || '').trim());
+      if (!m || [m[1], m[2], m[3]].some((x) => Number(x) > 255)) return hex(v);
+      return m[4] === undefined ? `rgb(${m[1]},${m[2]},${m[3]})` : `rgba(${m[1]},${m[2]},${m[3]},${m[4]})`;
+    };
     const str = (v, max) => String(v ?? '').trim().slice(0, max);
     // Se manca lo schema lo mettiamo noi: chi incolla "twitch.tv/tizio" intende
     // un indirizzo, non un errore. Scartare la riga era il modo piu rapido di
@@ -3802,7 +3810,7 @@ const storePagina = (tabella, { conAspetto = false } = {}) => ({
         // il retino stampato e le linee di concentrazione: due segni del disegno
         // a china, non due effetti di luce come quelli qui sopra
         'retino', 'concentrazione'], 'nessuno'),
-      testo: hex(t.testo), accent: hex(t.accent), card: hex(t.card), bordo: hex(t.bordo),
+      testo: hex(t.testo), accent: hex(t.accent), card: velato(t.card), bordo: velato(t.bordo),
       font: scelta(t.font, FONT_LINKPAGE, 'system'),
       fontTitoli: scelta(t.fontTitoli, FONT_LINKPAGE, ''),
       corpo: num(t.corpo, 80, 130, 100),

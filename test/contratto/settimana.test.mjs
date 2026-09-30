@@ -126,3 +126,24 @@ test('«Salva la settimana» salva i posti spuntati, e quelli di prima solo se l
   const { normalizzaSettimana } = await import('../../src/features/settimana.js');
   assert.deepEqual(normalizzaSettimana({ dove: { tg: ['11'], dc: [], ig: true } }).dove, { tg: ['11'], dc: [], ig: true }, 'e il server li tiene come arrivano');
 });
+
+// Un posto rotto per un momento (il bot senza un permesso, un canale che non
+// risponde) resta una scelta dello streamer: si vede spuntato col suo perche',
+// e si toglie solo togliendo la spunta. Prima usciva spento, e il primo
+// salvataggio lo cancellava.
+test('un canale Discord rotto resta fra i posti scelti, e si puo\' togliere a mano', () => {
+  const i = APP.indexOf('function _settDisegnaDove(');
+  const corpo = APP.slice(i, APP.indexOf('\n}\n', i) + 2);
+  const box = { innerHTML: '' };
+  new Function('_g', '_settPosti', 'settimanaOra', 'L', 'esc', '_igStoriaBloccata', `${corpo} _settDisegnaDove();`)(
+    (id) => (id === 'sett-dove' ? box : null),
+    { dc: [{ id: 7, nome: 'annunci', manca: 'scrivere' }, { id: 8, nome: 'altro' }] },
+    () => ({ dove: { tg: [], dc: ['7'], ig: false } }),
+    (it) => it, (s) => String(s), () => '');
+  const spunte = [...box.innerHTML.matchAll(/<input[^>]*data-sett-dove="dc"[^>]*>/g)].map((m) => m[0]);
+  const rotto = spunte.find((x) => x.includes('value="7"'));
+  assert.ok(rotto && / checked/.test(rotto), 'il canale scelto resta spuntato anche se ora non risponde');
+  assert.ok(!/disabled/.test(rotto), 'e la spunta si puo\' togliere');
+  assert.match(box.innerHTML, /Il bot qui non può scrivere\./, 'col suo perche\' accanto');
+  assert.ok(!/ checked/.test(spunte.find((x) => x.includes('value="8"'))), 'quello non scelto resta non scelto');
+});

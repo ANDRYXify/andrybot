@@ -119,6 +119,21 @@ test('un tema pronto parte dalla base del server, e il pannello mostra quello ch
     const pagina = linkPage.pulisci({ tema: messo }).tema;
     for (const k of menuDelTema()) assert.ok(messo[k] !== undefined, `«${t.nome}»: il menu «${k}» resterebbe sulla prima voce`);
     for (const k of ['movimento', 'peso', 'ombraTipo']) assert.equal(messo[k], pagina[k], `«${t.nome}»: il pannello mostra «${messo[k]}», la pagina usa «${pagina[k]}»`);
+    // i colori del tema pronto sono quelli che la pagina salva: uno scartato
+    // lascia il posto al colore della base, e la pagina esce diversa
+    for (const k of ['bg', 'bg2', 'testo', 'accent', 'card', 'bordo']) {
+      if (t.tema[k]) assert.equal(pagina[k], String(t.tema[k]).replace(/\s/g, ''), `«${t.nome}»: il colore «${k}» si perde al salvataggio`);
+    }
+  }
+});
+
+test('un colore velato si salva solo nella forma coi numeri', () => {
+  const c = (v) => linkPage.pulisci({ tema: { card: v } }).tema.card;
+  assert.equal(c('rgba(255, 255, 255, .07)'), 'rgba(255,255,255,.07)');
+  assert.equal(c('rgb(1,2,3)'), 'rgb(1,2,3)');
+  assert.equal(c('#abcdef'), '#abcdef');
+  for (const male of ['rgba(256,0,0,.5)', 'rgba(1,2,3,2)', 'rgba(1,2,3,.5);background:url(x)', 'red', 'rgba(1,2,3', 'var(--x)']) {
+    assert.equal(c(male), '', `«${male}» passerebbe nel CSS della pagina`);
   }
 });
 
