@@ -94,6 +94,7 @@ const ROTTE = new Set([
   '/api/me',                                  // senza sessione risponde soltanto "nessun utente"
   '/guide', '/manuale', '/novita',            // guide, manuali e novità: contenuto pubblico, indicizzabile
   '/en/guides', '/es/guias', '/en/manual', '/es/manual',   // le stesse guide e gli stessi manuali in inglese e in spagnolo
+  '/en/news', '/es/novedades',                // e le novità in inglese e in spagnolo
   '/api/novita',                              // le stesse novità, in forma di dati, per chi le legge da fuori
   '/api/streamer-verify',                     // API JSON della link-page (proxy verso Vercel)
   '/instagram/cancellazione',                 // dove Meta manda chi ha chiesto la cancellazione: dice com'e' andata

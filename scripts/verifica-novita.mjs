@@ -15,21 +15,26 @@
 // E si guarda che le righe siano scritte per chi trasmette, non per chi
 // programma: niente nomi di file, niente parole da riunione tecnica.
 //
-// Uso: node scripts/verifica-novita.mjs   (esce 1 se qualcosa non torna)
+// E si guarda che ogni riga pubblica si legga nelle tre lingue del sito, con le
+// traduzioni scritte sotto la riga italiana, nello stesso commit.
+//
+// Uso: node scripts/verifica-novita.mjs              (esce 1 se qualcosa non torna)
+//      node scripts/verifica-novita.mjs --selftest   (rompe le traduzioni e pretende di vederlo)
 
 import { execFileSync } from 'node:child_process';
 import { EMOJI } from './_emoji.mjs';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { analizza, pubbliche, destinazioni } from '../src/web/novita.js';
+import { analizza, pubbliche, destinazioni, righeSperse } from '../src/web/novita.js';
 import { aiutiPerScheda } from '../src/web/manuali.js';
 
 const RAD = join(dirname(fileURLToPath(import.meta.url)), '..');
 const esiti = [];
 const dice = (ok, msg, extra = '') => esiti.push({ ok, msg, extra });
 
-const gruppi = analizza(readFileSync(join(RAD, 'NOVITA.md'), 'utf8'));
+const TESTO = readFileSync(join(RAD, 'NOVITA.md'), 'utf8');
+const gruppi = analizza(TESTO);
 // Le voci sono OGGETTI ({testo, privata}), non stringhe: chi controlla la forma
 // deve guardare il testo. Prendendo l'oggetto, ogni misura qui sotto tornerebbe
 // verde su niente — che e' peggio di un cancello rosso.
@@ -157,6 +162,142 @@ dice(!titoliStorti.length, 'titoli corti, fino a 60 caratteri, senza punto in fo
 dice(!percheLunghi.length, 'il perché sta in tre frasi', percheLunghi[0]?.slice(0, 80));
 dice(!conLineette.length, 'titoli e perché senza lineette lunghe', conLineette[0]?.slice(0, 80));
 dice(!percheTecnici.length, 'e scritti per chi trasmette: niente gergo, file o emoji', percheTecnici[0]?.slice(0, 80));
+
+// ---- le tre lingue: ogni riga pubblica si legge anche in inglese e spagnolo --
+// La pagina delle novita', la finestra del pannello e l'API parlano la lingua di
+// chi legge (src/web/novita.js). Chi legge in inglese o in spagnolo non deve
+// trovarsi una riga in italiano in mezzo alle sue: la traduzione si scrive sotto
+// la riga, nello stesso commit, e qui si pretende che ci sia.
+//
+// Non si giudica il gusto di una traduzione: si misura quello che si puo'
+// misurare. Che ci sia, intera; che sia attaccata alla sua riga (una rientrata
+// staccata da una riga vuota, o scritta due volte, il lettore la lascia cadere:
+// qui si chiede a lui cosa ha lasciato); che dica gli stessi numeri e gli stessi
+// comandi della riga italiana, che e' anche il modo di accorgersi di una
+// traduzione finita sotto la riga sbagliata; e che rispetti le regole delle
+// righe italiane: la misura, niente lineette lunghe, niente congiunzione in
+// testa, niente gergo.
+const LINEETTA = /—|(?<!\d)–|–(?!\d)/;
+const ATTACCHI = {
+  en: /^(And|But|So|Or|Nor|Plus|Also|Then|Yet|Moreover)\b/,
+  es: /^(Y|E|Pero|Así|Entonces|Luego|Además|O|Ni|Mas)\b/,
+};
+const SEGNI = /\[(vai:|importante\]|privat[oa]\])/i;
+// «!comando» scritto come parola, non come comando vero: si traduce.
+const GENERICI = new Set(['!comando', '!comandi', '!command', '!commands']);
+const cifre = (t) => (String(t).match(/\d+/g) || []).sort().join(' ');
+const comandi = (t) => (String(t).match(/![a-z0-9_]+/gi) || []).map((c) => c.toLowerCase()).filter((c) => !GENERICI.has(c)).sort().join(' ');
+const frasi = (t) => (String(t).match(/[.!?](\s|$)/g) || []).length;
+const misura = (t) => [...String(t)].length;
+
+function guaiLingue(testo) {
+  const g = {};
+  const segna = (chi, cosa) => { (g[chi] ||= []).push(cosa); };
+  for (const x of righeSperse(testo)) segna('sperse', `riga ${x.riga} (${x.perche}): «${x.testo.trim().slice(0, 60)}»`);
+  for (const giorno of analizza(testo)) {
+    for (const v of giorno.voci) {
+      if (v.privata) continue;              // le private non escono di casa: non si traducono
+      const dove = `${giorno.data} «${v.testo.slice(0, 40)}…»`;
+      for (const l of ['en', 'es']) {
+        const t = v.lingue?.[l] || {};
+        if (!t.testo) { segna('mancano', `${dove}: manca «${l}:»`); continue; }
+        if (v.importante && (!t.titolo || !t.perche)) segna('importanti', `${dove}: manca il titolo o il perché «${l}>»`);
+        if (!v.importante && (t.titolo || t.perche)) segna('importanti', `${dove}: «${l}>» su una riga che non è importante`);
+        for (const x of [t.testo, t.titolo, t.perche].filter(Boolean)) {
+          const q = `${dove} ${l}: «${x.slice(0, 60)}»`;
+          if (LINEETTA.test(x)) segna('lineette', q);
+          if (ATTACCHI[l].test(x)) segna('attacchi', q);
+          if (SEGNI.test(x)) segna('segni', q);
+          if (GERGO.test(x) || CODICE.test(x) || EMOJI.test(x)) segna('gergo', q);
+          if (LEI.test(x)) segna('lei', q);
+        }
+        if (misura(t.testo) > 220 || frasi(t.testo) > 2) segna('misura', `${dove} ${l}: ${misura(t.testo)} caratteri, ${frasi(t.testo)} frasi`);
+        if (t.titolo && (misura(t.titolo) > 60 || /[.!?;:,]$/.test(t.titolo))) segna('misura', `${dove} ${l}> titolo «${t.titolo}»`);
+        if (t.perche && (misura(t.perche) > 300 || frasi(t.perche) > 3)) segna('misura', `${dove} ${l}> perché di ${misura(t.perche)} caratteri, ${frasi(t.perche)} frasi`);
+        if (cifre(t.testo) !== cifre(v.testo) || comandi(t.testo) !== comandi(v.testo)) {
+          segna('numeri', `${dove} ${l}: «${cifre(t.testo)} ${comandi(t.testo)}» invece di «${cifre(v.testo)} ${comandi(v.testo)}»`);
+        }
+        if (v.importante && t.titolo && t.perche && cifre(`${t.titolo} ${t.perche}`) !== cifre(`${v.titolo} ${v.perche}`)) segna('numeri', `${dove} ${l}>: i numeri del titolo e del perché`);
+        if (t.testo === v.testo) segna('copie', `${dove} ${l}:`);
+      }
+    }
+  }
+  return g;
+}
+
+const PROMESSE_LINGUE = [
+  ['mancano', 'ogni riga pubblica si legge anche in inglese e in spagnolo'],
+  ['importanti', 'ogni importante ha titolo e perché nelle tre lingue, e solo le importanti'],
+  ['sperse', 'nessuna traduzione staccata dalla sua riga o scritta due volte'],
+  ['numeri', 'le traduzioni dicono i numeri e i comandi della riga italiana'],
+  ['misura', 'le traduzioni stanno nella misura delle righe: 220 caratteri e due frasi, titoli di 60, perché di tre frasi'],
+  ['lineette', 'nelle traduzioni niente lineette lunghe (la corta solo fra due numeri)'],
+  ['attacchi', 'nessuna traduzione comincia con una congiunzione'],
+  ['segni', '[vai:], [importante] e [privato] stanno solo sulla riga italiana'],
+  ['gergo', 'le traduzioni sono scritte per chi trasmette: niente gergo, file o emoji'],
+  ['copie', 'nessuna traduzione è la riga italiana ricopiata'],
+  ['lei', 'nessuna cosa sua nelle traduzioni'],
+];
+
+// L'AUTOPROVA. Si prende il file vero, gia' verde, e lo si rompe in un punto per
+// volta: ogni rottura deve accendere la sua promessa. Se il file cambia al punto
+// che una rottura non si sa piu' fare, e' rossa anche quella: un'autoprova che
+// non rompe niente non prova niente.
+if (process.argv.includes('--selftest')) {
+  const vero = guaiLingue(TESTO);
+  if (Object.keys(vero).length) {
+    console.log("  ✗ il file di partenza non e' verde: l'autoprova non puo' dire niente");
+    for (const [k, l] of Object.entries(vero)) console.log(`      ${k}: ${l[0]}`);
+    process.exit(1);
+  }
+  const righe = TESTO.split('\n');
+  const cambia = (re, fai) => {
+    const i = righe.findIndex((r) => re.test(r));
+    if (i < 0) return null;
+    const r = [...righe];
+    fai(r, i);
+    return r.join('\n');
+  };
+  const italiano = (r) => r.replace(/^[-*]\s+/, '').replace(/^(\[(importante|privat[oa])\]\s*)+/i, '').replace(/\s*\[vai:[^\]]*\]\s*$/, '');
+  const ROTTURE = [
+    ['una riga senza inglese', 'mancano', cambia(/^  en: /, (r, i) => r.splice(i, 1))],
+    ['una riga senza spagnolo', 'mancano', cambia(/^  es: /, (r, i) => r.splice(i, 1))],
+    ["un'importante senza titolo e perché in spagnolo", 'importanti', cambia(/^  es> /, (r, i) => r.splice(i, 2))],
+    ['un titolo tradotto su una riga normale', 'importanti', cambia(/^- (?!\[importante\])/, (r, i) => r.splice(i + 3, 0, '  en> A title', '  en> A reason.'))],
+    ['una traduzione staccata da una riga vuota', 'sperse', cambia(/^  en: /, (r, i) => r.splice(i, 0, ''))],
+    ['una traduzione scritta due volte', 'sperse', cambia(/^  es: /, (r, i) => r.splice(i, 0, r[i]))],
+    ['un numero cambiato', 'numeri', cambia(/^  en: .*\d/, (r, i) => { r[i] = r[i].replace(/\d+/, (n) => String(Number(n) + 1)); })],
+    ['un comando tradotto', 'numeri', cambia(/^  en: .*!giochi/, (r, i) => { r[i] = r[i].replace('!giochi', '!games'); })],
+    ['una riga troppo lunga', 'misura', cambia(/^  en: /, (r, i) => { r[i] = r[i].replace(/\.$/, '') + ', and on'.repeat(40) + '.'; })],
+    ['una riga di tre frasi', 'misura', cambia(/^  es: .{10,80}$/, (r, i) => { r[i] += ' Una. Dos.'; })],
+    ['un titolo col punto in fondo', 'misura', cambia(/^  en> /, (r, i) => { r[i] += '.'; })],
+    ['una lineetta lunga', 'lineette', cambia(/^  en: /, (r, i) => { r[i] = r[i].replace(/^(  en: \S+) /, '$1 — '); })],
+    ['una lineetta corta come pausa', 'lineette', cambia(/^  es: /, (r, i) => { r[i] = r[i].replace(/^(  es: \S+) /, '$1 – '); })],
+    ['una congiunzione in testa, in inglese', 'attacchi', cambia(/^  en: /, (r, i) => { r[i] = r[i].replace('  en: ', '  en: And '); })],
+    ['una congiunzione in testa, in spagnolo', 'attacchi', cambia(/^  es: /, (r, i) => { r[i] = r[i].replace('  es: ', '  es: Pero '); })],
+    ['una destinazione scritta sulla traduzione', 'segni', cambia(/^  en: /, (r, i) => { r[i] += ' [vai: stato]'; })],
+    ['una parola da riunione tecnica', 'gergo', cambia(/^  es: /, (r, i) => { r[i] = r[i].replace(/\.$/, ', con un endpoint.'); })],
+    ['la riga italiana ricopiata', 'copie', cambia(/^- /, (r, i) => { r[i + 1] = `  en: ${italiano(r[i])}`; })],
+    ['una cosa sua in una traduzione', 'lei', cambia(/^  es: /, (r, i) => { r[i] = r[i].replace(/\.$/, ', como dice Lia.'); })],
+  ];
+  let cieche = 0;
+  for (const [che, dove, testo] of ROTTURE) {
+    if (testo == null) { console.log(`  ?  ${che}  → non so piu' come romperlo: l'autoprova e' scaduta`); cieche++; continue; }
+    const visto = (guaiLingue(testo)[dove] || []).length > 0;
+    console.log((visto ? '  ✓  ' : '  ✗  ') + che + (visto ? '' : '  → PASSA INOSSERVATO'));
+    if (!visto) cieche++;
+  }
+  console.log(cieche ? `\n${cieche} ${cieche === 1 ? 'rottura non vista' : 'rotture non viste'}.` : "\nOgni rottura e' vista. ✓");
+  process.exit(cieche ? 1 : 0);
+}
+
+const lingue = guaiLingue(TESTO);
+const tradotte = pubbliche(gruppi).flatMap((g) => g.voci).length;
+dice(true, `righe pubbliche nelle tre lingue: ${tradotte}`);
+for (const [k, che] of PROMESSE_LINGUE) {
+  const l = lingue[k] || [];
+  dice(!l.length, che, l.length ? `${l.length}: ${l.slice(0, 3).join(' · ')}` : '');
+}
 
 // ---- la regola: chi tocca il prodotto lo racconta -------------------------
 // Si guardano i commit che stanno per essere spinti. Se non ce ne sono (o non

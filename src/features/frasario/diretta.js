@@ -223,7 +223,7 @@ export const MOMENTI = {
 
   'pubblicita-prima': {
     titolo: ['Prima della pubblicità', 'Before an ad break', 'Antes de la publicidad'],
-    quando: ['Poco prima che parta una pausa pubblicitaria, con la pubblicità in chat accesa in Diretta.', 'Shortly before an ad break, with ads in chat switched on under Live.', 'Poco antes de una pausa publicitaria, con la publicidad en el chat activada en Directo.'],
+    quando: ['Poco prima che parta una pausa pubblicitaria, con la pubblicità in chat accesa in Regia.', 'Shortly before an ad break, with ads in chat switched on in Control room.', 'Poco antes de una pausa publicitaria, con la publicidad en el chat activada en Realización.'],
     dati: NUMERI_PUBBLICITA,
     esempio: { secondi: 90, durata: '1:30', canale: 'Luna' },
     spegnibile: true,
@@ -323,7 +323,7 @@ export const MOMENTI = {
 
   'pubblicita-parte': {
     titolo: ['La pubblicità parte', 'The ad break starts', 'Empieza la publicidad'],
-    quando: ['Quando Twitch fa partire una pausa pubblicitaria, con la pubblicità in chat accesa.', 'When Twitch starts an ad break, with ads in chat switched on.', 'Cuando Twitch empieza una pausa publicitaria, con la publicidad en el chat activada.'],
+    quando: ['Quando Twitch fa partire una pausa pubblicitaria, con la pubblicità in chat accesa in Regia.', 'When Twitch starts an ad break, with ads in chat switched on in Control room.', 'Cuando Twitch empieza una pausa publicitaria, con la publicidad en el chat activada en Realización.'],
     dati: NUMERI_PUBBLICITA,
     esempio: { secondi: 90, durata: '1:30', canale: 'Luna' },
     spegnibile: true,
@@ -426,7 +426,7 @@ export const MOMENTI = {
 
   'pubblicita-dopo': {
     titolo: ['Dopo la pubblicità', 'After the ad break', 'Después de la publicidad'],
-    quando: ['Quando la pausa pubblicitaria è finita, con la pubblicità in chat accesa.', 'When the ad break is over, with ads in chat switched on.', 'Cuando termina la pausa publicitaria, con la publicidad en el chat activada.'],
+    quando: ['Quando la pausa pubblicitaria è finita, con la pubblicità in chat accesa in Regia.', 'When the ad break is over, with ads in chat switched on in Control room.', 'Cuando termina la pausa publicitaria, con la publicidad en el chat activada en Realización.'],
     dati: NUMERI_PUBBLICITA,
     esempio: { secondi: 90, durata: '1:30', canale: 'Luna' },
     spegnibile: true,
@@ -1072,7 +1072,7 @@ export const MOMENTI = {
 
   'raid-uscita': {
     titolo: ['Il raid verso un altro canale', 'Raiding another channel', 'El raid a otro canal'],
-    quando: ['Quando fai partire un raid dalla Regia.', 'When you start a raid from the Control room.', 'Cuando inicias un raid desde la Regia.'],
+    quando: ['Quando fai partire un raid dalla Regia.', 'When you start a raid from the Control room.', 'Cuando inicias un raid desde Realización.'],
     dati: { nome: 'sempre' },
     esempio: { nome: 'Kiro' },
     spegnibile: true,

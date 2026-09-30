@@ -71,7 +71,8 @@ export const MISURE = { titolo: 65, descrizione: [70, 165], paroleGuida: 700 };
 // ── Il sito come lo manda il server ──────────────────────────────────────────
 
 export function componiSito() {
-  const pubbliche = novita.pubbliche(novita.leggi(join(RAD, 'NOVITA.md')));
+  const letti = novita.leggi(join(RAD, 'NOVITA.md'));
+  const pubbliche = novita.pubbliche(letti);
   const voci = vociPubbliche({ base: SITO, pubbliche, sostieni: SOSTIENI, publicDir: PUB });
   const guscio = readFileSync(join(PUB, 'index.html'), 'utf8');
   const piani = pianiPubblici();
@@ -88,7 +89,7 @@ export function componiSito() {
       if (p === VIE[l].manuali) return paginaIndiceManuali(l);
       if (p.startsWith(VIE[l].manuali + '/')) return paginaManuale(p.slice(VIE[l].manuali.length + 1), l);
     }
-    if (p === '/novita') return paginaNovita(pubbliche, aiutiPerScheda());
+    for (const l of LINGUE_DOC) if (p === VIE[l].novita) return paginaNovita(novita.pubbliche(letti, l), aiutiPerScheda(l), l);
     for (const pagina of Object.keys(LEGALI)) for (const x of legaleIn(pagina)) if (p === x.via) return file(x.file);
     return null;
   };

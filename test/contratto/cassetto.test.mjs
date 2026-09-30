@@ -49,8 +49,8 @@ test('e l\'aiuto ci sta come elenco, con le sue voci', () => {
 test('le voci dell\'aiuto sono le stesse in barra e nel cassetto', () => {
   const i = APP.indexOf('function vociAiuto()');
   const corpo = APP.slice(i, APP.indexOf('\n}', i));
-  for (const via of ['/guide', '/manuale', '/novita']) {
-    assert.ok(corpo.includes(`'${via}'`), `l'elenco porta a ${via}`);
+  for (const cosa of ['guide', 'manuali', 'novita']) {
+    assert.ok(corpo.includes(`viaPagina('${cosa}')`), `l'elenco porta a ${cosa}, nella lingua del pannello`);
   }
   assert.equal(APP.split('vociAiuto()').length - 1, 3, 'un elenco solo, usato da tutti e due');
 });
