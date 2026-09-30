@@ -97,6 +97,7 @@ import { piattaformaDi } from './identita.js';
 import { tokenDi as tokenKick } from './kick/api.js';
 import * as bjFeat from './features/blackjack.js';
 import * as seguitiFeat from './features/seguiti.js';
+import * as negozio from './features/negozio.js';
 import * as arenaFeat from './features/arena.js';
 import { mappaCanale as emoteDelCanale, soloCanale as emoteSoloDelCanale } from './features/emotes.js';
 
@@ -158,6 +159,7 @@ export class BotManager {
     this._animaTimer = null;
     this._vipTimer = null;
     this._premiTimer = null;
+    this._negozioTimer = null;
     this._annunciTimer = null;       // poll degli annunci "gioco attivo" (regole in chat)
     this._stopReflection = null;
     this._capAvvisoDato = false;     // il tetto ascolti è già stato loggato una volta?
@@ -223,6 +225,12 @@ export class BotManager {
         this._bjRese.get(r.channel).push(r);
       }
     } catch (e) { log.error('blackjack rimborsi:', e?.message || e); }
+    // Gli acquisti del negozio rimasti a meta' da prima di un riavvio: le monete
+    // erano gia' uscite e l'effetto nessuno sa se e' partito. Tornano a chi le
+    // aveva spese, e lo storico dice perche'.
+    try {
+      for (const r of negozio.rimborsaSospesi()) log.info(`#${r.channel} negozio: ${r.prezzo} rese a ${r.user}, l'acquisto di «${r.nome}» era rimasto a metà`);
+    } catch (e) { log.error('negozio rimborsi:', e?.message || e); }
     // Il boss: la barra della vita sull'overlay, e la festa in solo emote.
     bossFeat.impostaSpinta((ch, p) => this.effects?.emit?.(ch, p));
     bossFeat.impostaModalita(this.modalita);
@@ -286,6 +294,12 @@ export class BotManager {
     // VIP: rimozione automatica degli scaduti + premi periodici (settimanale/mensile)
     this._vipTimer = setInterval(() => vip.controllaScadenze(this.helix).catch(() => {}), 5 * 60_000);
     this._premiTimer = setInterval(() => this._controllaPremi(), 60 * 60_000);
+    // Il negozio: lo storico si tiene un anno (privacy.html). Si pulisce
+    // all'avvio e poi ogni sei ore: un processo che si riavvia spesso non deve
+    // saltare la pulizia per sempre.
+    const potaNegozio = () => { try { negozio.potaStorico(); } catch (e) { log.debug('negozio, pulizia dello storico:', e?.message || e); } };
+    potaNegozio();
+    this._negozioTimer = setInterval(potaNegozio, 6 * 60 * 60_000);
     // Anti-bot: lista di bot noti aggiornata da sola. Si riprende la copia su
     // disco subito (istantaneo), poi si scarica la fresca dopo 30s (per non
     // rallentare l'avvio) e la si rinfresca ogni 12 ore.
@@ -383,6 +397,7 @@ export class BotManager {
     clearInterval(this._momentiTimer);
     clearInterval(this._vipTimer);
     clearInterval(this._premiTimer);
+    clearInterval(this._negozioTimer);
     clearInterval(this._listaBotTimer);
     clearInterval(this._watchtimeTimer);
     stopBackupAuto();
@@ -1165,6 +1180,13 @@ export class BotManager {
     sondaggi.trySondaggio(this.helix, cmdMsg, parla).catch((e) => log.error(`#${login} sondaggi:`, e?.message || e));
     // richieste musicali via Spotify (!sr, !song) — add-on Richieste Musicali
     songrequest.trySongRequest(cmdMsg, parla).catch((e) => log.error(`#${login} songrequest:`, e?.message || e));
+    // il negozio del canale (!negozio, !compra, !borsa): si paga con le monete.
+    // Gli servono Twitch, gli overlay e i Moduli per far partire quello che si
+    // compra, e se il canale e' in diretta (fuori da Twitch lo e' per costruzione).
+    negozio.tryComando(cmdMsg, parla, {
+      helix: this.helix, effetti: this.effects, moduli: this.modules,
+      live: msg.piattaforma && msg.piattaforma !== 'twitch' ? true : this._liveState.get(login) === true,
+    }).catch((e) => log.error(`#${login} negozio:`, e?.message || e));
     // citazioni (!cita) — lo shoutout (!so) lo gestisce comandibase qui sopra
     try { quotes.tryQuoteCommand(msg, parla); } catch (e) { log.error(`#${login} citazioni:`, e?.message || e); }
     // Le battute: prima il serbatoio del canale, che e' istantaneo e sicuro. Il

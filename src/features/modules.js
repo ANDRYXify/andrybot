@@ -612,6 +612,29 @@ export class ModulesEngine {
     return false;
   }
 
+  // UN ACQUISTO DEL NEGOZIO fa partire un modulo (features/negozio-tipi.js).
+  // Il contesto e' quello di chi ha comprato: $user e' lui, e le condizioni di
+  // ruolo, di piattaforma, di diretta e le pause valgono per lui. Ma senza
+  // `pagante`: il modulo e' gia' stato pagato nel negozio, e il suo «Costa» non
+  // si paga una seconda volta. Quello che ha scritto dopo il nome arriva come
+  // $args. Torna { ok } oppure { ok:false, motivo } con la condizione che l'ha
+  // fermato, cosi' il negozio rende le monete e sa dire perche'. Il dado perso
+  // non e' un fermo: era parte di quello che si e' comprato, come in una
+  // macchinetta.
+  async eseguiAcquisto(channel, id, msg, say, { nota = '' } = {}) {
+    const ch = norm(channel);
+    const modulo = modulesDb.get(ch, Number(id));
+    if (!modulo || !modulo.attivo) return { ok: false, motivo: 'modulo' };
+    const testo = String(nota || '').trim();
+    const ctx = this._ctxDaMessaggio(msg, ch, livelloUtente(msg), testo ? testo.split(/\s+/) : [], testo);
+    ctx.pagante = '';
+    const esito = {};
+    const partito = await this.esegui(modulo, ctx, say, { esito });
+    if (partito) return { ok: true };
+    if (esito.motivo === 'probabilita') return { ok: true, dati: { sfortuna: true } };
+    return { ok: false, motivo: esito.motivo ? `modulo-${esito.motivo}` : 'modulo' };
+  }
+
   // ============================================================ ESECUZIONE
 
   // Valuta le CONDIZIONI e, se passano, esegue le AZIONI in sequenza. Ritorna
@@ -635,6 +658,7 @@ export class ModulesEngine {
         else {
           const scusa = v.motivo === 'costo' ? modulo.condizioni?.costoMessaggio : '';
           if (scusa) { const t = await this.espandi(scusa, ctx); if (t) dire(t); }
+          if (opts.esito) opts.esito.motivo = v.motivo;
           return false;
         }
       }

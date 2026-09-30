@@ -59,6 +59,9 @@ export const MODULI = {
   // sempre accesa, e il suo comando non si spegne, non si rinomina e non si
   // riserva. Chiunque in chat deve poterla chiedere con le parole di sempre.
   trasparenza: { nome: ['Trasparenza IA', 'AI transparency', 'Transparencia de IA'], file: 'comandibase.js', acceso: () => true },
+  // Il negozio del canale (docs/NEGOZIO.md): chiuso finche' lo streamer non lo
+  // apre, perche' un negozio vuoto che risponde in chat non serve a nessuno.
+  negozio: { nome: ['Negozio', 'Shop', 'Tienda'], file: 'negozio.js', acceso: (s) => s.negozio?.attivo === true },
 };
 
 // AGGIUNGERE UN COMANDO E' UNA RIGA. Questa e' la forma completa: quel che non
@@ -281,6 +284,13 @@ export const COMANDI = [
   // l'avviso dice il nome che ha nel canale.
   { id: 'permetti', modulo: 'scudo', nomi: ['permetti'], titolo: ['Fai scrivere un account nuovo', 'Let a new account chat', 'Deja escribir a una cuenta nueva'], chi: 'mod', spegnibile: false,
     cosa: ['Lo scudo trattiene i messaggi degli account appena creati. Con !permetti nome un mod lo fa scrivere, da lì in poi: finisce fra gli esenti.', 'The shield holds messages from brand new accounts. With !permetti name a mod lets them chat from then on: they join the exempt list.', 'El escudo retiene los mensajes de las cuentas recién creadas. Con !permetti nombre un mod la deja escribir desde ese momento: pasa a la lista de exentos.'] },
+
+  { id: 'negozio', modulo: 'negozio', nomi: ['negozio', 'shop'], titolo: ['Il negozio', 'The shop', 'La tienda'],
+    cosa: ['Dice i tre articoli più comprati, con la parola per comprarli. Con !negozio e una parola racconta quell\'articolo: prezzo, requisiti e scorte.', 'Lists the three most bought items, with the word to buy them. With !negozio and a word it describes that item: price, requirements and stock.', 'Dice los tres artículos más comprados, con la palabra para comprarlos. Con !negozio y una palabra describe ese artículo: precio, requisitos y existencias.'] },
+  { id: 'compra', modulo: 'negozio', nomi: ['compra', 'buy'], titolo: ['Compra', 'Buy', 'Compra'], costa: true,
+    cosa: ['Compra un articolo del negozio con le monete: !compra e la parola dell\'articolo, e dopo la canzone o il testo se l\'articolo li chiede.', 'Buys a shop item with coins: !compra and the item word, then the song or the text if the item asks for them.', 'Compra un artículo de la tienda con las monedas: !compra y la palabra del artículo, y después la canción o el texto si el artículo los pide.'] },
+  { id: 'borsa', modulo: 'negozio', nomi: ['borsa', 'bag'], titolo: ['La mia borsa', 'My bag', 'Mi bolsa'],
+    cosa: ['Dice a chi lo scrive cosa ha nella borsa: gli oggetti comprati nel negozio.', 'Tells whoever writes it what is in their bag: the objects bought in the shop.', 'Dice a quien lo escribe qué tiene en la bolsa: los objetos comprados en la tienda.'] },
 
   { id: 'ag', modulo: 'sito', nomi: ['ag', 'agentify'], titolo: ['Giochi del sito', 'Site games', 'Juegos del sitio'],
     cosa: ['Manda il comando ai giochi di andryxify.it.', 'Sends the command to the andryxify.it games.', 'Manda el comando a los juegos de andryxify.it.'] },

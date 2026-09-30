@@ -29,6 +29,7 @@
     alert: 'overlay alert studio scena widget browser source obs allerte follow sub bit raid chat a schermo emote 7tv avvisi notifica a schermo layout editor livelli sovrimpressione escena capa aviso occasione occasioni subathon torno subito pausa serata speciale compleanno evento modelli aggiunta temporanea ocasion ocasiones occasion contatore contatori counter contador copia dell overlay duplica scena',
     effetti: 'effetti suoni audio sound sfx gif immagini video premi punti canale riscatto riscatti redeem efectos sonidos',
     emote: 'emote 7tv emoji faccine emoticon emotes',
+    negozio: 'negozio shop tienda compra comprare acquisti articoli borsa monete spendere premi vip ruolo richiesta da consegnare storico scorte requisiti buy store items bag tienda comprar',
     statistiche: 'statistiche numeri classifiche ore viste spettatori picco follower grafici estadísticas clasificaciones',
     dirette: 'dirette rapporto fine diretta riassunto serata mail telegram storico directos informe resumen',
     consolify: 'consolify tasti plancia telefono tablet tastiera macro scorciatoie teclas botones atajos',
