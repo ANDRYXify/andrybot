@@ -1074,77 +1074,219 @@ nome resta in casa. Non è una cosa da ricordarsi:
 ## 2026-09-03
 
 - Nell'overlay c'è il player: quello che stai ascoltando su Spotify, a schermo. Compare quando la musica parte e sparisce quando la fermi.
+  en: The overlay has a player: what you’re listening to on Spotify, on screen. It appears when the music starts and disappears when you stop it.
+  es: El overlay tiene un reproductor: lo que estás escuchando en Spotify, en pantalla. Aparece cuando empieza la música y desaparece cuando la paras.
 - Il player è tuo dalla copertina in giù: quadrata, tonda o un vinile che gira, avanzamento come barra o come anello attorno alla copertina, onde che ballano a tempo.
+  en: The player is yours from the cover art down: square, round or a spinning vinyl, progress as a bar or a ring around the cover, and waves that dance in time.
+  es: El reproductor es tuyo de la portada para abajo: cuadrada, redonda o un vinilo que gira, el avance como barra o como anillo alrededor de la portada, y ondas que bailan al ritmo.
 - Ancora: lo sfondo può prendere la copertina sfocata o i colori del disco che scorrono, il titolo lungo scorre e l'entrata in scena la scegli tu.
+  en: The background can use the blurred cover art or the record’s colors flowing by, long titles scroll, and you pick how it enters the scene.
+  es: El fondo puede tomar la portada desenfocada o los colores del disco en movimiento, los títulos largos se desplazan y la entrada en escena la eliges tú.
 - Il player va a tempo con quello che suona: le onde ballano sul battito vero del brano, e volendo pulsa anche la copertina.
+  en: The player keeps time with what’s playing: the waves dance to the song’s real beat, and if you like, the cover art pulses too.
+  es: El reproductor va al ritmo de lo que suena: las ondas bailan con el pulso real de la canción y, si quieres, también late la portada.
 - Il player non sparisce più mentre la canzone va: un intoppo di Spotify o il vuoto fra due tracce lo spegnevano per un attimo, e poi rientrava.
+  en: The player no longer disappears while the song is playing: a Spotify hiccup or the gap between two tracks switched it off for a moment, and then it came back.
+  es: El reproductor ya no desaparece mientras suena la canción: un tropiezo de Spotify o el silencio entre dos pistas lo apagaban un momento, y luego volvía.
 - In pausa invece sparisce davvero, se è quello che hai scelto: prima restava lì.
+  en: When paused, though, it really does disappear, if that’s what you chose: before, it stayed there.
+  es: En pausa, en cambio, desaparece de verdad, si es lo que elegiste: antes se quedaba ahí.
 - Player e conto alla rovescia se ne vanno con una dissolvenza, non di colpo.
+  en: The player and the countdown fade out instead of vanishing all at once.
+  es: El reproductor y la cuenta atrás se van con un fundido, no de golpe.
 - Le forme con gli angoli tagliati non lasciano più uno spigolo chiaro: l'ombra seguiva il rettangolo invece della forma.
+  en: Shapes with cut corners no longer leave a light corner behind: the shadow followed the rectangle instead of the shape.
+  es: Las formas con esquinas cortadas ya no dejan una esquina clara: la sombra seguía el rectángulo en lugar de la forma.
 - La disposizione è tua: copertina a sinistra, a destra, sopra come un poster, o solo la copertina col cerchio che si riempie.
+  en: The layout is up to you: cover art on the left, on the right, on top like a poster, or just the cover with a ring that fills up.
+  es: La disposición la decides tú: portada a la izquierda, a la derecha, arriba como un póster, o solo la portada con el círculo que se llena.
 - Titolo e artista possono stare su due righe, e nei testi si può usare anche il nome dell'album.
+  en: Title and artist can go on two lines, and the album name can be used in the texts too.
+  es: Título y artista pueden ir en dos líneas, y en los textos también se puede usar el nombre del álbum.
 - C'è il conto alla rovescia di inizio diretta: scegli i minuti e parte. Sta nel canale, quindi ricaricare l'overlay o riavviare tutto non lo azzera.
+  en: There’s a countdown to the start of your stream: pick the minutes and it starts. It lives in the channel, so reloading the overlay or restarting everything doesn’t reset it.
+  es: Hay una cuenta atrás para el inicio del directo: eliges los minutos y arranca. Vive en el canal, así que recargar el overlay o reiniciarlo todo no la pone a cero.
 - Un obiettivo può partire da dove sei già: «1000 follower» invece di «altri 1000». Il tasto «Quanti ne ho adesso» va a chiedere il numero vero a Twitch.
+  en: A goal can start from where you already are: “1000 followers” instead of “1000 more”. The “How many I have now” button asks Twitch for the real number.
+  es: Un objetivo puede empezar desde donde ya estás: «1000 seguidores» en lugar de «1000 más». El botón «Cuántos tengo ahora» le pide a Twitch el número real.
 - Spostare le cose nello Studio non le fa più saltare: prendevi un elemento e scattava sotto il cursore, tanto più lontano quanto più era vicino a un bordo.
+  en: Moving things in the Studio no longer makes them jump: you grabbed an element and it snapped under the cursor, farther away the closer it was to an edge.
+  es: Mover cosas en el Studio ya no las hace saltar: agarrabas un elemento y se colocaba de golpe bajo el cursor, más lejos cuanto más cerca estaba de un borde.
 - Un elemento non può più uscire dallo schermo mentre lo trascini.
+  en: An element can no longer leave the screen while you drag it.
+  es: Un elemento ya no puede salirse de la pantalla mientras lo arrastras.
 - «Allinea a sinistra» adesso lo attacca davvero al bordo.
+  en: “Align left” now really snaps it to the edge.
+  es: «Alinear a la izquierda» ahora sí lo pega al borde.
 - L'occhio di un livello si vede quando è chiuso: prima l'elemento spariva ma l'icona restava un occhio aperto.
+  en: A layer’s eye now shows when it’s closed: before, the element disappeared but the icon stayed an open eye.
+  es: El ojo de una capa se ve cuando está cerrado: antes el elemento desaparecía pero el icono seguía siendo un ojo abierto.
 - Il puntino del cursore non sparisce più quando si aggancia a un pulsante: con il cursore nascosto era l'unico modo di sapere dove stavi puntando.
+  en: The cursor dot no longer disappears when it locks onto a button: with the cursor hidden, it was the only way to know where you were pointing.
+  es: El puntito del cursor ya no desaparece cuando se engancha a un botón: con el cursor oculto era la única forma de saber adónde apuntabas.
 
 - Un elemento dell'overlay si modifica in un posto solo, accanto alla tela: scegli e hai davanti tutto quello che lo riguarda, senza scendere sotto e perdere di vista l'anteprima.
+  en: An overlay element is edited in one place, next to the canvas: pick it and everything about it is right there, without scrolling down and losing sight of the preview.
+  es: Un elemento del overlay se edita en un solo lugar, junto al lienzo: lo eliges y tienes delante todo lo que le concierne, sin bajar y perder de vista la vista previa.
 - Anche i contatori hanno i loro comandi lì: cosa scrivono, colori, carattere, con o senza sfondo.
+  en: Counters have their controls there too: what they say, colors, font, with or without a background.
+  es: Los contadores también tienen sus controles ahí: qué escriben, colores, fuente, con o sin fondo.
 - I comandi di un elemento sono raggruppati a fisarmonica: prima si scorreva per dodici schermate solo per l'alert, ora ne basta una.
+  en: An element’s controls are grouped in collapsible sections: before, the alert alone took twelve screens of scrolling, now one is enough.
+  es: Los controles de un elemento se agrupan en acordeón: antes había que desplazarse doce pantallas solo para la alerta, ahora basta con una.
 - Il player ha la stazza di un player: la copertina era grande un francobollo perché seguiva la misura delle pastiglie.
+  en: The player is now player-sized: the cover art was the size of a stamp because it followed the size of the pills.
+  es: El reproductor tiene tamaño de reproductor: la portada era del tamaño de un sello porque seguía la medida de las píldoras.
 - Scegliendo un elemento non compare più l'aspetto di un altro: una regola di stile teneva a schermo un blocco che era stato nascosto.
+  en: Picking an element no longer shows the look settings of another one: a style rule kept a hidden block on screen.
+  es: Al elegir un elemento ya no aparece el aspecto de otro: una regla de estilo mantenía en pantalla un bloque que se había ocultado.
 - Anche gli obiettivi si modificano tutti dal pannello: conta, traguardo, partenza e dove stavano ancora nella carta sotto la tela. Nell'elenco resta il nome, il conteggio e i due tasti.
+  en: Goals are now fully edited from the panel too: what they count, target, start and position were still in the card under the canvas. The list keeps the name, the count and the two buttons.
+  es: Los objetivos también se editan por completo desde el panel: qué cuentan, meta, inicio y posición seguían en la tarjeta bajo el lienzo. En la lista quedan el nombre, la cuenta y los dos botones.
 - Nello Studio la tela ha tutto: obiettivi e contatori si trascinano come gli alert, con maniglie, frecce, aggancio e annulla. Prima si potevano mettere in posizione solo scrivendo numeri in un modulo.
+  en: In the Studio the canvas has everything: goals and counters drag like alerts, with handles, arrow keys, snapping and undo. Before, you could only position them by typing numbers into a form.
+  es: En el Studio el lienzo lo tiene todo: objetivos y contadores se arrastran como las alertas, con asas, flechas, ajuste y deshacer. Antes solo se podían colocar escribiendo números en un formulario.
 - Gli angoli della tela sono quelli veri dell'overlay: un obiettivo «in alto a destra» sta a filo dello schermo, e non usciva più dal riquadro come faceva prima.
+  en: The canvas corners are the overlay’s real corners: a goal set to “top right” sits flush with the edge of the screen instead of spilling out of the frame like before.
+  es: Las esquinas del lienzo son las reales del overlay: un objetivo «arriba derecha» queda al ras de la pantalla, y ya no se sale del recuadro como antes.
 - Livelli e Proprietà non coprono più la tela: sono due sponde ai lati, si arrotolano per far spazio, si staccano trascinandole e si riagganciano con un doppio clic.
+  en: Layers and Properties no longer cover the canvas: they’re two side panels that roll up to make room, detach when you drag them and dock back with a double click.
+  es: Capas y Propiedades ya no tapan el lienzo: son dos paneles a los lados que se enrollan para dejar espacio, se sueltan arrastrándolos y se vuelven a anclar con un doble clic.
 - Dimensione e Rotazione hanno un comando solo, cursore e casella insieme: erano due comandi separati che si contraddicevano, e sullo schermo si leggevano tre numeri diversi per lo stesso valore.
+  en: Size and Rotation have a single control, slider and box together: they were two separate controls that contradicted each other, showing three different numbers for the same value.
+  es: Tamaño y Rotación tienen un solo control, deslizador y casilla juntos: eran dos controles separados que se contradecían, y en pantalla se leían tres números distintos para el mismo valor.
 - Annulla riporta indietro anche il player e il conto alla rovescia: li spostavi e Annulla li lasciava dov'erano.
+  en: Undo now brings back the player and the countdown too: you moved them and Undo left them where they were.
+  es: Deshacer ahora también devuelve el reproductor y la cuenta atrás: los movías y Deshacer los dejaba donde estaban.
 - Nei Livelli ogni elemento dice dov'è in percentuale, come le Proprietà e la barra sotto la tela: prima un elemento appena scelto diceva «in alto a sinistra» mentre le Proprietà dicevano già 2%.
+  en: In Layers every element shows where it is as a percentage, like Properties and the bar under the canvas: before, a freshly picked element said “top left” while Properties already said 2%.
+  es: En Capas cada elemento dice dónde está en porcentaje, como Propiedades y la barra bajo el lienzo: antes un elemento recién elegido decía «arriba izquierda» mientras Propiedades ya decía 2%.
 - La regolazione fine sopravvive al salvataggio: le frecce dello Studio spostano di un pixel, ma il salvataggio arrotondava a percentuali intere e ricaricando l'elemento tornava indietro, fino a dieci pixel.
+  en: Fine adjustments survive saving: the Studio’s arrow keys move by one pixel, but saving rounded to whole percentages, so on reload the element jumped back by up to ten pixels.
+  es: El ajuste fino sobrevive al guardado: las flechas del Studio mueven un píxel, pero al guardar se redondeaba a porcentajes enteros y, al recargar, el elemento retrocedía hasta diez píxeles.
 - I contatori seguono le stesse regole degli altri elementi su misure, colori e caratteri: quello che imposti resta nei limiti previsti.
+  en: Counters follow the same rules as the other elements for sizes, colors and fonts: whatever you set stays within the intended limits.
+  es: Los contadores siguen las mismas reglas que los demás elementos en medidas, colores y fuentes: lo que configuras se mantiene dentro de los límites previstos.
 - La maniglia per ruotare si raggiunge sempre: per un elemento in cima alla tela finiva tagliata fuori dal riquadro, e ora passa sotto.
+  en: The rotate handle is always within reach: for an element at the top of the canvas it got cut off outside the frame, and now it moves underneath.
+  es: El asa para girar siempre se alcanza: en un elemento arriba del lienzo quedaba cortada fuera del recuadro, y ahora pasa por debajo.
 - L'elemento che stai modificando sta davanti agli altri: prima un vicino gli copriva le maniglie e si prendeva il clic.
+  en: The element you’re editing stays in front of the others: before, a neighbor covered its handles and took the click.
+  es: El elemento que estás editando queda delante de los demás: antes uno cercano le tapaba las asas y se llevaba el clic.
 - Ogni overlay è una sessione di lavoro a sé: quello che sposti in uno resta lì. Prima player, conto alla rovescia, obiettivi e contatori avevano una posizione sola per tutto il canale e ti seguivano ovunque.
+  en: Each overlay is its own workspace: what you move in one stays there. Before, the player, countdown, goals and counters had a single position for the whole channel and followed you everywhere.
+  es: Cada overlay es un espacio de trabajo aparte: lo que mueves en uno se queda ahí. Antes reproductor, cuenta atrás, objetivos y contadores tenían una sola posición para todo el canal y te seguían a todas partes.
 - Ogni overlay ha il suo Annulla: annullare in una scena non disfa quello che hai fatto in un'altra.
+  en: Each overlay has its own Undo: undoing in one scene doesn’t undo what you did in another.
+  es: Cada overlay tiene su propio Deshacer: deshacer en una escena no deshace lo que hiciste en otra.
 - Lo Studio ha la marcia fine: tieni Ctrl (o ⌘) mentre trascini e il puntatore va a un quinto, così arrivi sotto il pixel. Prima il movimento più piccolo possibile col mouse era di due pixel e mezzo di overlay.
+  en: The Studio has a fine gear: hold Ctrl (or ⌘) while dragging and the pointer moves at a fifth of the speed, so you get below a pixel. Before, the smallest mouse move was two and a half overlay pixels.
+  es: El Studio tiene marcha fina: con Ctrl (o ⌘) al arrastrar, el puntero va a un quinto de velocidad y llegas por debajo del píxel. Antes el mínimo movimiento con el mouse era de dos píxeles y medio del overlay.
 - Con Maiusc premuto l'elemento resta dritto sull'asse in cui l'hai avviato, senza sbandare.
+  en: With Shift held down, the element stays straight on the axis you started on, without drifting.
+  es: Con Mayús pulsado, el elemento sigue recto en el eje en que empezaste, sin desviarse.
 - La rotellina non ridimensiona più da sola: scorrendo la pagina sopra la tela cambiavi misura all'elemento senza volerlo. Ora serve Alt per la misura e Maiusc per la rotazione.
+  en: The scroll wheel no longer resizes on its own: scrolling the page over the canvas changed the element’s size by accident. Now you need Alt for size and Shift for rotation.
+  es: La rueda del mouse ya no cambia el tamaño sola: al desplazar la página sobre el lienzo cambiabas el tamaño del elemento sin querer. Ahora hace falta Alt para el tamaño y Mayús para la rotación.
 - Lo zoom della tela arriva al 400%, perché sotto il 227% un pixel dell'overlay non si vede nemmeno.
+  en: Canvas zoom goes up to 400%, because below 227% you can’t even see a single overlay pixel.
+  es: El zoom del lienzo llega al 400%, porque por debajo del 227% un píxel del overlay ni se ve.
 - Il sito ha preso il tema dal marchio: la sfumatura dal magenta al vino che c'è nel logo passa ora nei titoli e nei pulsanti, e il contorno scuro che tiene insieme le lettere tiene anche i pulsanti e le pastiglie.
+  en: The site took its theme from the brand: the magenta-to-wine gradient in the logo now runs through titles and buttons, and the dark outline holding the letters together holds buttons and pills too.
+  es: El sitio tomó el tema de la marca: el degradado de magenta a vino del logo pasa ahora a títulos y botones, y el contorno oscuro que une las letras une también botones y píldoras.
 - Vale dentro e fuori, in chiaro e in scuro: sul fondo scuro il contorno ha un filo di luce, così si legge come si legge il marchio.
+  en: It applies inside and out, in light and dark: on a dark background the outline gets a thin line of light, so it reads the way the brand does.
+  es: Vale dentro y fuera, en claro y en oscuro: sobre fondo oscuro el contorno tiene un hilo de luz, así se lee como se lee la marca.
 - L'occhio dei Livelli toglie l'elemento dalla scena in cui stai lavorando, non da tutte: puoi avere una scena con un obiettivo e un'altra con un altro.
+  en: The eye in Layers removes the element from the scene you’re working on, not from all of them: you can have one scene with one goal and another with a different one.
+  es: El ojo de Capas quita el elemento de la escena en la que estás trabajando, no de todas: puedes tener una escena con un objetivo y otra con otro.
 - L'interruttore di un elemento, quello nel suo pannello, resta invece valido ovunque: uno spegne l'elemento, l'altro lo toglie da una scena sola.
+  en: An element’s switch, the one in its panel, still applies everywhere: one turns the element off, the other removes it from a single scene.
+  es: El interruptor de un elemento, el de su panel, en cambio vale en todas partes: uno apaga el elemento, el otro lo quita de una sola escena.
 - Il sito è disegnato a mano come il marchio: i titoli hanno il tratto del logo, i riquadri hanno angoli storti come tirati a penna e i pulsanti portano l'ombra piena dell'inchiostro.
+  en: The site is hand-drawn like the brand: titles have the logo’s stroke, boxes have crooked corners as if drawn in pen, and buttons carry a solid ink shadow.
+  es: El sitio está dibujado a mano como la marca: los títulos tienen el trazo del logo, los recuadros tienen esquinas torcidas como hechas a pluma y los botones llevan la sombra llena de la tinta.
 - I pulsanti si timbrano invece di illuminarsi: premendoli scendono sull'ombra come un timbro sulla carta.
+  en: Buttons stamp instead of lighting up: when you press them they sink onto their shadow like a stamp on paper.
+  es: Los botones se estampan en lugar de iluminarse: al pulsarlos bajan sobre su sombra como un sello sobre el papel.
 - Il carattere disegnato è ospitato sul nostro server come tutti gli altri, quindi la pagina non chiede niente a nessuno per disegnarsi.
+  en: The hand-drawn font is hosted on our server like all the others, so the page doesn’t ask anyone for anything to draw itself.
+  es: La fuente dibujada está alojada en nuestro servidor como todas las demás, así que la página no le pide nada a nadie para dibujarse.
 - Il sito è una tavola di manga: il fondo è carta, dietro al titolo ci sono le linee che convergono e sopra passa il retino a puntini.
+  en: The site is a manga page: the background is paper, speed lines converge behind the title, and a halftone dot screen runs over the top.
+  es: El sitio es una página de manga: el fondo es papel, detrás del título convergen las líneas y por encima pasa la trama de puntos.
 - Dentro e fuori parlano la stessa lingua: pulsanti, menù, pannelli, elenchi e perfino il cursore hanno il contorno d'inchiostro.
+  en: Inside and out speak the same language: buttons, menus, panels, lists and even the cursor have the ink outline.
+  es: Dentro y fuera hablan el mismo idioma: botones, menús, paneles, listas y hasta el cursor tienen el contorno de tinta.
 - Le parole in risalto del titolo si colorano da sinistra a destra quando la pagina arriva, come le colorerebbe un disegnatore.
+  en: The highlighted words in the title fill with color from left to right as the page loads, the way an artist would color them.
+  es: Las palabras destacadas del título se colorean de izquierda a derecha cuando llega la página, como las colorearía un dibujante.
 - I testi piccoli sono più scuri: su carta chiara quelli di prima si leggevano male.
+  en: Small text is darker: on light paper the old one was hard to read.
+  es: Los textos pequeños son más oscuros: sobre papel claro los de antes se leían mal.
 - Il lettering disegnato è dei titoli, dei comandi e del marchio; il testo che si legge ha un carattere pulito, come in una tavola vera.
+  en: The hand-drawn lettering is for titles, controls and the brand; the text you read has a clean font, like on a real comic page.
+  es: El lettering dibujado es para los títulos, los controles y la marca; el texto que se lee tiene una fuente limpia, como en una página de verdad.
 - La schermata di caricamento è una vignetta: linee che convergono sul marchio, retino e il logo che si timbra.
+  en: The loading screen is a comic panel: lines converging on the brand, halftone and the logo stamping in.
+  es: La pantalla de carga es una viñeta: líneas que convergen en la marca, trama y el logo que se estampa.
 - Su telefono le ultime righe in fondo alla pagina non finiscono più sotto la barra dei pulsanti.
+  en: On phones, the last lines at the bottom of the page no longer end up under the button bar.
+  es: En el teléfono, las últimas líneas al final de la página ya no quedan debajo de la barra de botones.
 - Menù, cassetto, campi e interruttori hanno il contorno d'inchiostro come tutto il resto.
+  en: Menus, the drawer, fields and switches have the ink outline like everything else.
+  es: Menús, cajón, campos e interruptores tienen el contorno de tinta como todo lo demás.
 - Il puntatore è disegnato: una freccia con il contorno d'inchiostro, e non insegue più il mouse, quindi non resta mai indietro.
+  en: The pointer is hand-drawn: an arrow with an ink outline, and it no longer chases the mouse, so it never lags behind.
+  es: El puntero está dibujado: una flecha con contorno de tinta, y ya no persigue al mouse, así que nunca se queda atrás.
 - Anche le guide e l'anteprima dei link sono tavole: carta, linee che convergono, retino e lettering disegnato.
+  en: Guides and link previews are comic pages too: paper, converging lines, halftone and hand-drawn lettering.
+  es: Las guías y la vista previa de los enlaces también son páginas de cómic: papel, líneas que convergen, trama y lettering dibujado.
 - Il marchio nella schermata di caricamento è dentro la pagina stessa: non lo si chiede più alla rete, quindi non può mancare.
+  en: The brand on the loading screen is built into the page itself: it’s no longer fetched from the network, so it can’t go missing.
+  es: La marca de la pantalla de carga está dentro de la propia página: ya no se pide a la red, así que no puede faltar.
 - Sopra le cose che si cliccano il puntatore diventa un lampo a quattro punte: cambia forma senza rincorrere il mouse, quindi non resta indietro.
+  en: Over clickable things the pointer turns into a four-pointed spark: it changes shape without chasing the mouse, so it doesn’t lag behind.
+  es: Sobre lo que se puede pulsar, el puntero se vuelve un destello de cuatro puntas: cambia de forma sin perseguir al mouse, así que no se queda atrás.
 - Passando sopra un pulsante, attorno a lui si allarga una sagoma d'inchiostro, e la stella del puntatore ci si muove dentro.
+  en: Hovering over a button spreads an ink shape around it, and the pointer’s star moves around inside it.
+  es: Al pasar sobre un botón, a su alrededor se abre una silueta de tinta, y la estrella del puntero se mueve dentro.
 - Il lettering del sito è il pennarello del marchio, non un carattere tondo da fumetto per bambini.
+  en: The site’s lettering is the brand’s marker, not a rounded kids’ comic font.
+  es: El lettering del sitio es el marcador de la marca, no una fuente redonda de cómic infantil.
 - Se il sito non riesce a caricarsi resta comunque la sua pagina, vestita come tutto il resto, invece di una schermata spoglia.
+  en: If the site can’t load, you still get its own page, dressed like everything else, instead of a bare screen.
+  es: Si el sitio no logra cargar, queda igualmente su página, vestida como todo lo demás, en lugar de una pantalla vacía.
 - Anche il carattere «manga» che puoi scegliere per l'overlay ora è un pennarello vero.
+  en: The “Manga” font you can pick for the overlay is now a real marker too.
+  es: La fuente «Manga» que puedes elegir para el overlay ahora también es un marcador de verdad.
 - Le cose arrivano a scatti invece di scivolare, come i disegni tenuti due fotogrammi nell'animazione giapponese: si sente più veloce.
+  en: Things arrive in snaps instead of sliding, like drawings held for two frames in Japanese animation: it feels faster.
+  es: Las cosas llegan a saltos en lugar de deslizarse, como los dibujos que duran dos fotogramas en la animación japonesa: se siente más rápido.
 - Gli avvisi entrano di slancio e quelli di errore danno una scrollata, così non passano inosservati.
+  en: Notices burst in, and error notices give a shake, so they don’t go unnoticed.
+  es: Los avisos entran con impulso y los de error dan una sacudida, así no pasan desapercibidos.
 - Barre di avanzamento, equalizzatore e misuratore del volume si muovono senza far ricalcolare la pagina: il movimento è più fluido, soprattutto sull'overlay in diretta.
+  en: Progress bars, the equalizer and the volume meter move without making the page recalculate its layout: motion is smoother, especially on the live overlay.
+  es: Las barras de progreso, el ecualizador y el medidor de volumen se mueven sin que la página se recalcule: el movimiento es más fluido, sobre todo en el overlay en directo.
 - Il puntatore disegnato ora vale ovunque: prima su alcune intestazioni e barre di sezione tornava quello di sistema.
+  en: The hand-drawn pointer now works everywhere: before, the system one came back on some headers and section bars.
+  es: El puntero dibujado ahora vale en todas partes: antes, en algunos encabezados y barras de sección, volvía el del sistema.
 - Scegliendo un obiettivo sulla tela le sue proprietà (colori, carattere, forma, cornice, opacità) si aprono lì accanto, come per ogni altro elemento.
+  en: Picking a goal on the canvas opens its properties (colors, font, shape, frame, opacity) right next to it, like any other element.
+  es: Al elegir un objetivo en el lienzo, sus propiedades (colores, fuente, forma, marco, opacidad) se abren al lado, como con cualquier otro elemento.
 - Trascinare un contatore non lo fa più saltare a metà schermo, e ora si può anche ruotare.
+  en: Dragging a counter no longer makes it jump to the middle of the screen, and now it can be rotated too.
+  es: Arrastrar un contador ya no lo hace saltar a media pantalla, y ahora también se puede girar.
 - L'occhio di «Obiettivo» e «Contatori» funziona davvero: prima si spegneva e al ricaricamento tornava acceso, quindi non si potevano togliere da un overlay.
+  en: The eye on “Goal” and “Counters” really works: before, it turned off and came back on after a reload, so you couldn’t remove them from an overlay.
+  es: El ojo de «Objetivo» y «Contadores» funciona de verdad: antes se apagaba y al recargar volvía a encenderse, así que no se podían quitar de un overlay.
 - Il giro guidato insegna invece di raccontare: ogni tappa è un passo da fare, con la luce puntata sul comando che nomina, e se sta dentro una sezione chiusa, la apre.
+  en: The guided tour teaches instead of telling: each stop is a step to take, with the spotlight on the control it names, and if that’s inside a closed section, it opens it.
+  es: El recorrido guiado enseña en lugar de contar: cada parada es un paso que dar, con el foco en el control que nombra, y si está dentro de una sección cerrada, la abre.
 - Tre schede che il giro saltava (Avatar 3D, Grafiche social, Scudo anti-bot) adesso ce l'hanno.
+  en: Three tabs the tour skipped (Avatar 3D, Social graphics, Anti-bot shield) now have one.
+  es: Tres pestañas que el recorrido se saltaba (Avatar 3D, Gráficas sociales, Escudo anti-bot) ahora lo tienen.
 
 ## 2026-09-02
 
