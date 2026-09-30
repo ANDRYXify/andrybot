@@ -9,7 +9,7 @@ export default {
   titolo: 'Le tue community: Telegram e Discord | SocialBot',
   h1: 'Le tue community: il manuale di Telegram e Discord',
   desc: 'Telegram e Discord dal pannello: avvisi in gruppi, canali e topic, cancello, compleanni, chat privata, ruoli, calendario, porta e filtro del server.',
-  aggiornata: '2026-09-27',
+  aggiornata: '2026-09-30',
   corpo: [
     { p: [
       'Nel menù, il gruppo «Le tue community» ha due voci: «Telegram» e «Discord». Telegram è una scheda sola. Discord ne ha cinque, in fila in cima alla pagina: «Ruoli», «Avvisi», «Il server», «Chi entra», «Il filtro».',
@@ -92,10 +92,11 @@ export default {
       'La lista degli streamer è una sola, la stessa della scheda «Avvisi» di Discord: uno aggiunto qui compare anche lì. Cosa annunciare lo decide ogni scheda per conto suo.',
     ] },
     { p: [
-      '<strong>«Messaggio dell\'avviso».</strong> Il testo che parte. Segnaposto: <code>{nome}</code>, <code>{titolo}</code>, <code>{gioco}</code>, <code>{spettatori}</code>, <code>{link}</code>. Al massimo 800 caratteri. Lasciato vuoto, parte il testo di serie. Una riga che resta vuota perché manca il dato sparisce.',
-      'Il tuo testo vale per le dirette su Twitch, tue e degli altri streamer. Le dirette su Kick, YouTube e TikTok partono col testo di serie di quel servizio. Con la locandina accesa il testo di serie si accorcia a nome e link: titolo e gioco sono già disegnati nell\'immagine.',
+      '<strong>«Messaggio dell\'avviso».</strong> Il testo che parte. Segnaposto: <code>{nome}</code>, <code>{titolo}</code>, <code>{gioco}</code>, <code>{spettatori}</code>, <code>{link}</code>. Al massimo 800 caratteri. Una riga che resta vuota perché manca il dato sparisce.',
+      'Lasciato vuoto, la prima riga la sceglie il bot fra le sue frasi, nella lingua della chat del canale: cambia a ogni diretta, e la stessa riga va a Telegram e a Discord. Sotto vengono il titolo, il gioco e il link. Le frasi le trovi nella scheda «Personalità», carta «Le frasi del bot» (vedi il <a href="/manuale/bot">manuale del bot</a>).',
+      'Il tuo testo vale per le dirette su Twitch, tue e degli altri streamer. Le dirette su Kick, YouTube e TikTok partono con la riga del bot e l\'icona di quel servizio. Con la locandina accesa il testo di casa si accorcia alla riga del bot e al link: titolo e gioco sono già disegnati nell\'immagine.',
     ] },
-    { esempio: '🔴 {nome} è in diretta!\n\n{titolo}\n🎮 {gioco}\n\n👉 {link}' },
+    { esempio: '🔴 Andry è in diretta su Twitch, passate a salutare!\n\nUn titolo\n🎮 Un gioco\n\n👉 https://twitch.tv/andry' },
     { p: [
       '«Salva» registra il messaggio e le spunte. La spunta «Avvisa il gruppo quando vado in diretta» si accende appena c\'è un posto dove mandare l\'avviso: il gruppo di «Rileva gruppo» oppure un posto qualsiasi dell\'elenco. Senza posti leggi «collega prima un gruppo o un canale».',
       '«Manda una prova» manda nel gruppo collegato lo stesso avviso che partirà davvero, locandina compresa. Si usa quando c\'è un gruppo.',
@@ -299,9 +300,9 @@ export default {
       ['Controllo', 'Cosa fa', 'Di base e limiti'],
       ['«Quali avvisi arrivano qui»', 'Le stesse sette voci di Telegram: le dirette su Twitch, Kick, YouTube e TikTok, e i post nuovi su YouTube, Instagram e TikTok.', 'Tutti'],
       ['«Di chi»', '«Io» e gli altri streamer che annunci. Se sei entrato solo con Discord, «Io» non c\'è: annunci gli altri.', 'Tutti'],
-      ['«Il testo»', 'Le parole sopra il riquadro, per le dirette. Segnaposto <code>{nome}</code>, <code>{titolo}</code>, <code>{gioco}</code>, <code>{spettatori}</code>, <code>{link}</code>, <code>{piattaforma}</code>.', 'Vuoto: «🔴 **{nome}** è in diretta · {link}». Al massimo 1800 caratteri.'],
+      ['«Il testo»', 'Le parole sopra il riquadro, per le dirette. Segnaposto <code>{nome}</code>, <code>{titolo}</code>, <code>{gioco}</code>, <code>{spettatori}</code>, <code>{link}</code>, <code>{piattaforma}</code>.', 'Vuoto: l\'icona, una riga delle frasi del bot nella lingua del canale e il link. Al massimo 1800 caratteri.'],
       ['«Chiama un ruolo»', 'Menziona quel ruolo, e nessun altro.', '«nessuno»'],
-      ['«Chiudi l\'avviso a diretta finita»', 'A diretta finita riscrive l\'avviso in «⚫ … ha finito la diretta».', 'Spento'],
+      ['«Chiudi l\'avviso a diretta finita»', 'A diretta finita riscrive l\'avviso con «⚫», il nome e una riga delle frasi del bot, nella lingua del canale.', 'Spento'],
       ['«Acceso»', 'Spento, il canale resta in elenco ma non riceve niente.', 'Acceso'],
       ['«Prova»', 'Manda l\'avviso esattamente dove finirebbe, col tuo testo e la tua menzione. Leggi «Mandato ✓ guarda nel canale.». Come gli avvisi veri chiede il piano Base: senza, leggi «Mandare gli avvisi su Discord non è nel tuo piano…», la stessa frase che la carta ti mostra in cima.', ''],
       ['«Togli»', 'Toglie il canale, dopo la conferma.', ''],

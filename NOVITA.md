@@ -72,6 +72,11 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - L'hype train, la pubblicità, il promemoria dei link e !treno parlano nella lingua del tuo canale: le loro frasi stanno in Personalità, e un testo che avevi cambiato resta il tuo. [vai: personalita]
 - Quando fai partire un raid dalla Regia, il bot lo dice in chat col nome del canale dove state andando. [vai: regia]
 - Gli avvisi di diretta su Telegram e su Discord si aprono con una frase che cambia a ogni diretta, nella lingua del canale, e il riquadro di Discord parla quella lingua. Un testo scritto da te per un posto vale ancora.
+- [importante] In Personalità c'è «Le frasi del bot»: i momenti in cui il bot parla da solo, con le frasi che userebbe adesso, e per ognuno tieni le nostre, aggiungi le tue, usi solo le tue o lo spegni. [vai: personalita]
+  > Le frasi del bot, a modo tuo
+  > Prima il bot diceva le stesse frasi in tutti i canali, in italiano anche a una chat inglese. Cambiarle voleva dire cercare caselle sparse, e per la maggior parte non c'erano.
+- Il nome della tua community lo scrivi in «Le frasi del bot», e il bot lo usa nelle frasi che parlano a tutta la chat. «Prova» mostra le prossime frasi con dati di esempio, senza consumarle. [vai: personalita]
+- Dove una frase del bot ha una faccina, esce un'emote allegra che la tua chat usa spesso, se ce n'è una: mai una triste dopo un grazie.
 ## 2026-09-27
 
 - [importante] In «Strumenti» ci sono i pannelli per Twitch: tutti nello stesso stile, e già pieni dei link e delle descrizioni che il canale conosce. [vai: pannelli]

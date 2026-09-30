@@ -9,7 +9,7 @@ export default {
   titolo: 'Manuale della diretta: regia, clip, musica, rapporti | SocialBot',
   h1: 'Manuale della diretta: regia, clip, musica, rapporti e statistiche',
   desc: 'Titolo, categoria, pubblicità e raid dal pannello, le clip che nascono da sole, le richieste su Spotify, il rapporto di ogni diretta e i numeri del canale.',
-  aggiornata: '2026-09-27',
+  aggiornata: '2026-09-30',
   corpo: [
     { p: [
       'Queste schede servono <strong>mentre trasmetti</strong> e subito dopo. Stanno nel gruppo «Durante la diretta» del menù: «Regia» apre una barra con tre voci, «Regia», «Clip» e «Musica». Accanto ci sono «Dirette» e «CONSOLify». «Statistiche» sta nel gruppo «Chat e pubblico».',
@@ -63,17 +63,18 @@ export default {
       ['Impostazione', 'Di base', 'Limiti', 'Cosa fa'],
       ['«Colore dell’annuncio»', 'come sempre', 'come sempre, blu, verde, arancione, viola', 'Il colore della riga evidenziata.'],
       ['«Quanto prima avviso»', '60 secondi', 'da 15 a 300 secondi', 'Quanto prima della pausa esce «Prima che parta».'],
-      ['Testo di ogni momento', 'vedi sotto', '480 caratteri', 'Ogni momento ha la sua levetta. Un testo vuoto vuol dire che quel momento non dice niente.'],
+      ['Levetta di ogni momento', 'accesa', '', 'Spegne quel momento, per esempio per una sera. Per non dirlo mai si spegne nelle frasi del bot.'],
       ['«Quanto ritardo accetto»', '120 secondi', 'da 0 a 600 secondi', 'Se la fine della pausa è passata da più di così, «Quando torni» non esce più.'],
     ] },
     { tabella: [
-      ['Momento', 'Testo di base', 'Quando esce'],
-      ['«Prima che parta»', 'Fra poco parte la pubblicità: restate qui, torno subito.', 'A «Quanto prima avviso» secondi dalla pausa. Il bot lo ricava dalla programmazione di Twitch, che esiste solo mentre sei in onda. Se rimandi la pausa, l\'avviso segue la nuova ora.'],
-      ['«Appena parte»', 'Pubblicità per {secondi} secondi. Non andate via, ci vediamo fra poco.', 'Quando Twitch dice che la pausa è partita, con la sua durata. Vale per quella che mandi tu e per quella automatica di Twitch.'],
-      ['«Quando torni»', 'Eccomi, sono tornato.', 'A fine pausa, se sei ancora in onda. Twitch non avvisa quando finisce: il bot conta i secondi che gli ha detto alla partenza. Se Twitch non ha detto quanto dura, non esce. Se il bot si riavvia nel mezzo, il conto si perde e sta zitto invece di salutare in ritardo.'],
+      ['Momento', 'Nelle frasi del bot', 'Quando esce'],
+      ['«Prima che parta»', '«Prima della pubblicità»', 'A «Quanto prima avviso» secondi dalla pausa. Il bot lo ricava dalla programmazione di Twitch, che esiste solo mentre sei in onda. Se rimandi la pausa, l\'avviso segue la nuova ora.'],
+      ['«Appena parte»', '«La pubblicità parte»', 'Quando Twitch dice che la pausa è partita, con la sua durata. Vale per quella che mandi tu e per quella automatica di Twitch.'],
+      ['«Quando torni»', '«Dopo la pubblicità»', 'A fine pausa, se sei ancora in onda. Twitch non avvisa quando finisce: il bot conta i secondi che gli ha detto alla partenza. Se Twitch non ha detto quanto dura, non esce. Se il bot si riavvia nel mezzo, il conto si perde e sta zitto invece di salutare in ritardo.'],
     ] },
     { p: [
-      'In tutte e tre puoi usare <code>{secondi}</code> (quanto dura la pausa, per esempio 90), <code>{durata}</code> (la stessa cosa in minuti, 1:30) e <code>{canale}</code> (il nome del canale). La durata è sempre quella che dice Twitch: per «Prima che parta» quella in programma, per le altre due quella della pausa partita. Se Twitch non dice quanto dura, una riga che usa <code>{secondi}</code> o <code>{durata}</code> non esce.',
+      'Le parole non si scrivono qui: sono le frasi del bot, nella scheda «Personalità», carta «Le frasi del bot» (vedi il <a href="/manuale/bot">manuale del bot</a>). Cambiano col canale, nella lingua della chat e col tono scelto, e lì puoi aggiungere le tue o usare solo quelle.',
+      'Nelle tue frasi puoi usare <code>{secondi}</code> (quanto dura la pausa, per esempio 90), <code>{durata}</code> (la stessa cosa in minuti, 1:30) e <code>{canale}</code> (il nome del canale). La durata è sempre quella che dice Twitch: per «Prima che parta» quella in programma, per le altre due quella della pausa partita. Se Twitch non dice quanto dura, esce una frase che non la chiede.',
       'Servono due permessi di Twitch: la programmazione pubblicità e gli annunci in chat. Se ne manca uno, in cima alla carta leggi «Senza questi permessi non esce niente» con il collegamento «Concedili e torna qui».',
     ] },
 

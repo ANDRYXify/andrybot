@@ -1129,6 +1129,7 @@ function apiDemo(percorso, opzioni = {}) {
     if (metodo === 'DELETE') _demoScritture.recensione = null;
     return Promise.resolve({ ok: true, puo: true, perche: '', mia: _demoScritture.recensione || null, invito: false, max: 400 });
   }
+  if (via === '/api/streamer/voce/prova') return Promise.resolve({ frasi: _demoProvaFrasi(opzioni.body) });
   if (metodo === 'GET') return Promise.resolve(_demoGet(via));
 
   if (via === '/api/streamer/impostazioni' && Array.isArray(opzioni.body?.overlays)) {
@@ -1321,6 +1322,38 @@ const _DEMO_TEMA_BASE = { sfondoTipo: 'tinta', bg: '', bg2: '', angolo: 160, sfo
   bordoSp: 0, css: '', raggio: 14, stileBtn: 'pieno', ombra: true, ombraTipo: 'morbida', ombraColore: '', consenso: 'sempre',
   anim: 'rise', avatarForma: 'cerchio', larghezza: 30, allinea: 'centro', cursore: 'sistema', disposizione: 'colonna', movimento: 'dolce' };
 
+function _demoFrasi() {
+  const m = (id, titolo, quando, dati, nostre, spegnibile = true, extra = {}) => ({ id, titolo, quando, dati, spegnibile, modo: 'nostre', sue: [], nostre, ...extra });
+  return { lingua: L('it', 'en', 'es'), tono: 'scherzoso', community: L('la ciurma', 'the crew', 'la tripulación'), gruppi: [
+    { id: 'diretta', titolo: ['La diretta', 'The stream', 'El stream'], momenti: [
+      m('inizio-diretta', ['La diretta parte', 'The stream starts', 'Empieza el stream'], ['Quando vai in onda su Twitch.', 'When you go live on Twitch.', 'Cuando sales en vivo en Twitch.'], ['community'], [
+        L('Eccoci in onda. Oggi niente scuse, solo divertimento {:🔥}', 'Showtime! No excuses today, just good times {:🔥}', '¡Empezamos! Hoy nada de excusas, solo diversión {:🔥}'),
+        L('Si parte, {community}! Fatevi sentire in chat {:🔥}', 'Let’s go, {community}! Make some noise in chat {:🔥}', '¡Arrancamos, {community}! Hagan ruido en el chat {:🔥}')]),
+    ] },
+    { id: 'community', titolo: ['La community', 'The community', 'La comunidad'], momenti: [
+      m('follow', ['Un follow', 'A follow', 'Un follow'], ['Quando qualcuno segue il canale per la prima volta.', 'When someone follows the channel for the first time.', 'Cuando alguien sigue el canal por primera vez.'], ['nome', 'community'], [
+        L('Follow di {nome} registrato. Il mio ego ringrazia {:😄}', 'Follow from {nome} received. My ego says thanks {:😄}', 'Follow de {nome} recibido. Mi ego lo agradece {:😄}')],
+      true, { modo: 'miste', sue: [L('Benvenuta ciurma, {nome}!', 'Welcome aboard, {nome}!', '¡Bienvenida a bordo, {nome}!')] }),
+      m('bit', ['I Bit', 'Bits', 'Los Bits'], ['Quando qualcuno manda Bit con un cheer.', 'When someone cheers with Bits.', 'Cuando alguien manda Bits con un cheer.'], ['nome', 'bit', 'community'], [
+        L('{nome} lancia {bit} bit! Il salvadanaio fa le capriole {:💎}', '{nome} throws {bit|# bit|# bits}! The piggy bank is doing backflips {:💎}', '¡{nome} lanza {bit|# bit|# bits}! La alcancía está dando volteretas {:💎}')]),
+    ] },
+    { id: 'avvisi', titolo: ['Gli avvisi fuori dalla chat', 'Alerts outside chat', 'Los avisos fuera del chat'], momenti: [
+      m('avviso-diretta', ['L’avviso di diretta', 'The live alert', 'El aviso de directo'], ['La prima riga dell’avviso su Telegram e su Discord quando vai in diretta.', 'The first line of the Telegram and Discord alert when you go live.', 'La primera línea del aviso en Telegram y Discord cuando sales en directo.'], ['nome', 'piattaforma', 'community'], [
+        L('{nome} è in diretta su {piattaforma}! Correte, che il meglio succede all’inizio', '{nome} is live on {piattaforma}! Hurry, the best stuff happens at the start', '¡{nome} está en vivo en {piattaforma}! Corran, que lo mejor pasa al principio')], false),
+    ] },
+  ] };
+}
+
+function _demoProvaFrasi(b) {
+  const d = _demoFrasi();
+  const m = d.gruppi.flatMap((g) => g.momenti).find((x) => x.id === b?.momento);
+  if (!m || b?.modo === 'spento') return [];
+  const mie = Array.isArray(b?.frasi) ? b.frasi : [];
+  const pool = b?.modo === 'sue' && mie.length ? mie : (b?.modo === 'miste' ? [...m.nostre, ...mie] : m.nostre);
+  const dati = { nome: 'Luna', bit: 500, piattaforma: 'Twitch', community: 'ciurma' };
+  return pool.slice(0, 3).map((f) => _fraseLeggibile(f).replace(/\{([a-z]+)\}/g, (_, k) => String(dati[k] ?? '')));
+}
+
 function _demoGet(via) {
   if (via === '/api/streamer/overlays' && _demoScritture.overlays) return { overlays: _demoScritture.overlays };
   if (via === '/api/streamer/effetti' && _demoScritture.effetti) return { overlayUrl: 'https://socialbot.live/overlay/andryx_demo', effetti: _demoScritture.effetti };
@@ -1345,6 +1378,7 @@ function _demoGet(via) {
       { id: 'cs2', nome: 'Counter-Strike 2', cartella: 'game/csgo/cfg', file: 'gamestate_integration_socialbot_cs2.cfg' },
       { id: 'dota2', nome: 'Dota 2', cartella: 'game/dota/cfg/gamestate_integration', file: 'gamestate_integration_socialbot_dota2.cfg' },
     ] },
+    '/api/streamer/voce': _demoFrasi(),
     '/api/streamer/discord/avvisi': { collegato: true, guildNome: 'Casa di andryx', io: 'andryx_demo', conDiretta: true,
       destinazioni: [
         { id: 1, canale: '200000000000000001', canaleNome: 'annunci', webhook: false, eventi: ['live', 'kick'], streamer: ['andryx_demo'],
@@ -9055,6 +9089,7 @@ function pannelloPersonalita() {
 
       <p class="spazio-sopra"><button class="btn" id="btn-salva-personalita">${L('Salva', 'Save', 'Guardar')}</button></p>
     </div>
+    ${cartaFrasiBot()}
     <div class="carta">
       <h2>${_hIco(ICO.righello)}${L('Linee guida', 'Guidelines', 'Directrices')}</h2>
       <p>${L('I', 'The', 'Los')} <strong class="primo-piano">${L('limiti e le regole', 'limits and rules', 'límites y las reglas')}</strong> ${L('che le dai: lei li', 'you give it: it', 'que le das: las')} <strong>${L('salva', 'saves', 'guarda')}</strong> ${L('e li rispetta', 'and follows them', 'y las respeta')}
@@ -9079,6 +9114,150 @@ function pannelloPersonalita() {
       </div>
       <ul class="lista-voci" id="lista-guide">${attesaHtml('li')}</ul>
     </div>`);
+}
+
+function cartaFrasiBot() {
+  const v = stato?.streamer?.settings?.voce || {};
+  return `<div class="carta" id="carta-frasi">
+      <h2>${_hIco(ICO.chat)}${L('Le frasi del bot', 'The bot’s lines', 'Las frases del bot')}</h2>
+      <p>${L('Quello che il bot dice da solo: quando vai in diretta e quando chiudi, per un follow, un abbonamento, un raid, i Bit, la pubblicità, l’hype train, e la prima riga degli avvisi su Telegram e Discord.', 'What the bot says on its own: when you go live and when you end, for a follow, a sub, a raid, Bits, ads, the hype train, and the first line of the Telegram and Discord alerts.', 'Lo que el bot dice por su cuenta: cuando sales en directo y cuando terminas, por un follow, una suscripción, un raid, los Bits, la publicidad, el hype train, y la primera línea de los avisos en Telegram y Discord.')}</p>
+      <p class="suggerimento">${L('Le frasi girano: il tuo canale parte da una sua e nessuna torna prima che siano uscite tutte. Per ogni momento puoi tenere le nostre, aggiungere le tue, usare solo le tue o spegnerlo.', 'The lines rotate: your channel starts from one of its own and none comes back before all have been said. For each moment you can keep ours, add yours, use only yours or switch it off.', 'Las frases rotan: tu canal empieza por una suya y ninguna vuelve antes de que hayan salido todas. Para cada momento puedes quedarte con las nuestras, añadir las tuyas, usar solo las tuyas o apagarlo.')}</p>
+      <label class="campo" for="inp-community">${L('Nome della community', 'Community name', 'Nombre de la comunidad')}</label>
+      <input type="text" id="inp-community" maxlength="40" value="${esc(v.community || '')}" placeholder="${esc(L('es. la ciurma, i gremlin', 'e.g. the crew, the gremlins', 'p. ej. la tripulación, los gremlins'))}">
+      <p class="suggerimento">${L('Come chiami chi ti segue quando parli a tutti. Il bot lo usa in qualche frase in più, quelle che parlano a tutta la chat.', 'What you call your followers when you talk to everyone. The bot uses it in a few extra lines, the ones that talk to the whole chat.', 'Cómo llamas a quienes te siguen cuando hablas a todos. El bot lo usa en algunas frases más, las que hablan a todo el chat.')}</p>
+      <div id="frasi-bot" class="spazio-sopra">${attesaHtml('div')}</div>
+      <p class="spazio-sopra"><button class="btn" id="btn-salva-frasi">${L('Salva le frasi', 'Save the lines', 'Guardar las frases')}</button></p>
+    </div>`;
+}
+
+let _frasi = null;
+
+const _FRASI_MODI = () => ({
+  nostre: L('Le nostre', 'Ours', 'Las nuestras'),
+  miste: L('Le nostre e le mie', 'Ours and mine', 'Las nuestras y las mías'),
+  sue: L('Solo le mie', 'Only mine', 'Solo las mías'),
+  spento: L('Spento', 'Off', 'Apagado'),
+});
+
+function _fraseLeggibile(t) {
+  return String(t || '')
+    .replace(/\{:([^{}]+)\}/g, '$1')
+    .replace(/\{([a-z][a-z0-9]*)\|[^|{}]*\|([^|{}]*)\}/g, (_, k, tanti) => tanti.split('#').join('{' + k + '}'));
+}
+
+function _segnoIgnoto(t, dati) {
+  for (const m of String(t || '').matchAll(/\{([^{}]*)\}/g)) {
+    const d = m[1];
+    const k = /^[a-z][a-z0-9]*$/.test(d) ? d : (/^([a-z][a-z0-9]*)\|[^|]*\|[^|]*$/.exec(d)?.[1] || '');
+    if (k) { if (!dati.includes(k)) return m[0]; continue; }
+    if (/^:.+$/.test(d) || /^[^{}/]*\/[^{}/]*$/.test(d)) continue;
+    return m[0];
+  }
+  return '';
+}
+
+function _frasiDelMomento(el) {
+  return String(el.querySelector('[data-sue]')?.value || '').split('\n').map((x) => x.trim()).filter(Boolean);
+}
+
+function _frasiAdesso(m, modo, mie) {
+  if (modo === 'spento') return `<li class="vuoto">${L('Spento: qui il bot non dice niente.', 'Off: the bot says nothing here.', 'Apagado: aquí el bot no dice nada.')}</li>`;
+  const nostre = modo === 'sue' && mie.length ? [] : m.nostre.map((f) => ({ t: f, mia: false }));
+  const tue = modo === 'miste' || modo === 'sue' ? mie.map((f) => ({ t: f, mia: true })) : [];
+  const avviso = modo === 'sue' && !mie.length
+    ? `<li class="vuoto">${L('Scrivi almeno una frase tua: finché non ce n’è una, restano le nostre.', 'Write at least one line of yours: until there is one, ours stay.', 'Escribe al menos una frase tuya: mientras no haya una, se quedan las nuestras.')}</li>` : '';
+  return avviso + [...nostre, ...tue].map((f) => `<li><span>${esc(_fraseLeggibile(f.t))}</span>${f.mia ? ` <span class="badge">${L('tua', 'yours', 'tuya')}</span>` : ''}</li>`).join('');
+}
+
+function _frasiMomentoHtml(m) {
+  const modi = _FRASI_MODI();
+  const scelte = Object.keys(modi).filter((k) => k !== 'spento' || m.spegnibile);
+  const id = 'frasi-' + m.id;
+  return `<details class="spazio-sopra" data-momento="${esc(m.id)}">
+      <summary>${esc(Lv(m.titolo))} <span class="badge" data-stato>${esc(modi[m.modo] || modi.nostre)}</span></summary>
+      <p class="suggerimento">${esc(Lv(m.quando))}</p>
+      <label class="campo" for="${esc(id)}-modo">${L('Quali frasi', 'Which lines', 'Qué frases')}</label>
+      <select id="${esc(id)}-modo" data-modo>${scelte.map((k) => `<option value="${k}"${m.modo === k ? ' selected' : ''}>${esc(modi[k])}</option>`).join('')}</select>
+      <label class="campo" for="${esc(id)}-sue">${L('Le mie frasi (una per riga)', 'My lines (one per line)', 'Mis frases (una por línea)')}</label>
+      <textarea id="${esc(id)}-sue" class="campo-largo" rows="3" data-sue>${esc((m.sue || []).join('\n'))}</textarea>
+      <p class="suggerimento">${L('Puoi usare', 'You can use', 'Puedes usar')} ${m.dati.map((x) => `<code>{${esc(x)}}</code>`).join(' ')}. ${L('Una frase che nomina un dato che manca non esce: esce un’altra.', 'A line that names missing data is not sent: another one is.', 'Una frase que nombra un dato que falta no sale: sale otra.')}</p>
+      <p class="campo">${L('Le frasi di adesso', 'The lines right now', 'Las frases de ahora')}</p>
+      <ul class="lista-voci" data-adesso>${_frasiAdesso(m, m.modo, m.sue || [])}</ul>
+      <div class="riga-flessibile spazio-sopra"><button type="button" class="btn secondario mini" data-prova>${L('Prova', 'Try it', 'Probar')}</button></div>
+      <p class="campo" data-provate-titolo hidden>${L('Le prossime che uscirebbero, con dati di esempio', 'The next ones that would come out, with sample data', 'Las próximas que saldrían, con datos de ejemplo')}</p>
+      <ol class="lista-voci" data-provate hidden></ol>
+    </details>`;
+}
+
+async function caricaFrasiBot() {
+  const box = document.getElementById('frasi-bot');
+  if (!box) return;
+  let d;
+  try { d = await api('/api/streamer/voce'); } catch { box.innerHTML = `<p class="vuoto">${L('Non disponibile ora.', 'Not available right now.', 'No disponible ahora.')}</p>`; return; }
+  if (!Array.isArray(d?.gruppi)) { box.innerHTML = ''; return; }
+  _frasi = d;
+  const lingue = { it: L('italiano', 'Italian', 'italiano'), en: L('inglese', 'English', 'inglés'), es: L('spagnolo', 'Spanish', 'español') };
+  const toni = { scherzoso: L('scherzoso', 'playful', 'bromista'), amichevole: L('amichevole', 'friendly', 'amistoso'), serio: L('serio', 'serious', 'serio') };
+  const comm = document.getElementById('inp-community');
+  if (comm && document.activeElement !== comm) comm.value = d.community || '';
+  box.innerHTML = `<p class="suggerimento">${L('Adesso parlano in', 'Right now they speak', 'Ahora hablan en')} <strong>${esc(lingue[d.lingua] || d.lingua)}</strong> ${L('e col tono', 'with the tone', 'y con el tono')} <strong>${esc(toni[d.tono] || d.tono)}</strong>. ${L('Il tono lo scegli qui sopra, la lingua della chat in', 'You pick the tone above, the chat language in', 'El tono lo eliges arriba, el idioma del chat en')} <a href="#account" data-scheda="account">${L('Account, Preferenze del canale', 'Account, Channel preferences', 'Cuenta, Preferencias del canal')}</a>.</p>`
+    + d.gruppi.map((g) => `<h3 class="spazio-sopra">${esc(Lv(g.titolo))}</h3>${g.momenti.map(_frasiMomentoHtml).join('')}`).join('');
+  box.onchange = box.oninput = (ev) => {
+    const el = ev.target.closest('[data-momento]');
+    if (!el) return;
+    const m = _frasiMomento(el.dataset.momento);
+    if (!m) return;
+    const modo = el.querySelector('[data-modo]').value;
+    el.querySelector('[data-stato]').textContent = _FRASI_MODI()[modo];
+    el.querySelector('[data-adesso]').innerHTML = _frasiAdesso(m, modo, _frasiDelMomento(el));
+  };
+  box.onclick = (ev) => {
+    const b = ev.target.closest('[data-prova]');
+    if (!b) return;
+    const el = b.closest('[data-momento]');
+    conErrore(async () => {
+      const r = await api('/api/streamer/voce/prova', { method: 'POST', body: {
+        momento: el.dataset.momento, modo: el.querySelector('[data-modo]').value, frasi: _frasiDelMomento(el),
+        community: document.getElementById('inp-community')?.value || '',
+      } });
+      const ol = el.querySelector('[data-provate]');
+      const frasi = Array.isArray(r?.frasi) ? r.frasi : [];
+      ol.hidden = false;
+      el.querySelector('[data-provate-titolo]').hidden = false;
+      ol.innerHTML = frasi.length
+        ? frasi.map((f) => `<li>${esc(f)}</li>`).join('')
+        : `<li class="vuoto">${L('Adesso qui non uscirebbe niente.', 'Nothing would come out here right now.', 'Ahora aquí no saldría nada.')}</li>`;
+    });
+  };
+}
+
+function _frasiMomento(id) {
+  for (const g of _frasi?.gruppi || []) for (const m of g.momenti) if (m.id === id) return m;
+  return null;
+}
+
+async function salvaFrasiBot() {
+  const box = document.getElementById('frasi-bot');
+  if (!box || !_frasi) return;
+  const momenti = {};
+  for (const el of box.querySelectorAll('[data-momento]')) {
+    const m = _frasiMomento(el.dataset.momento);
+    if (!m) continue;
+    const frasi = _frasiDelMomento(el);
+    for (const f of frasi) {
+      const ignoto = _segnoIgnoto(f, m.dati);
+      if (ignoto) {
+        el.open = true;
+        el.querySelector('[data-sue]')?.focus();
+        toast(L(`«${Lv(m.titolo)}»: ${ignoto} non è un dato di questo momento.`, `“${Lv(m.titolo)}”: ${ignoto} is not data this moment has.`, `«${Lv(m.titolo)}»: ${ignoto} no es un dato de este momento.`), 'errore');
+        return;
+      }
+    }
+    momenti[m.id] = { modo: el.querySelector('[data-modo]').value, frasi };
+  }
+  const community = document.getElementById('inp-community')?.value || '';
+  await salvaImpostazioni({ voce: { community, momenti } }, L('Frasi del bot salvate ✓', 'The bot’s lines saved ✓', 'Frases del bot guardadas ✓'));
+  await caricaFrasiBot();
 }
 
 async function caricaSpontanee() {
@@ -25683,7 +25862,9 @@ function attivaPiattaforma() {
       internet: document.getElementById('chk-internet').checked,
       frasi: righe(document.getElementById('txt-frasi').value),
     }, L('Personalità salvata ✓', 'Personality saved ✓', 'Personalidad guardada ✓'));
+    caricaFrasiBot();
   }));
+  document.getElementById('btn-salva-frasi')?.addEventListener('click', () => conErrore(salvaFrasiBot));
 
   const aggiungiGuida = () => conErrore(async () => {
     const inp = document.getElementById('inp-guida');
@@ -27202,7 +27383,7 @@ function caricaDatiScheda(id) {
   if (id === 'misure') avviaMisure();
   if (id === 'kit') avviaKit();
   if (id === 'pannelli') avviaPannelli();
-  if (id === 'personalita') { caricaGuide(); caricaSpontanee(); }
+  if (id === 'personalita') { caricaGuide(); caricaSpontanee(); caricaFrasiBot(); }
   if (id === 'conoscenza') { caricaConoscenza(); caricaQuaderno(); caricaRetePanoramica(); }
   if (id === 'clip') caricaClip();
   if (id === 'musica') caricaSpotify();
