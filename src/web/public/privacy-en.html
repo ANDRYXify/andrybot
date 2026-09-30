@@ -171,6 +171,17 @@
           (socialbot.live/nyc, /milano or /napoli), we record which campaign and when. This is used to count the spots
           left and to avoid giving the free year twice to the same channel in the same campaign; it is deleted along with
           the channel.</li>
+        <li><strong>The death counter</strong> (CONTATORify), if the streamer turns it on. <strong>From the screen</strong>:
+          the panel open on their computer asks the broadcasting program for a screenshot, turns it there into a
+          16-digit fingerprint the image can't be rebuilt from, and throws the screenshot away. Only «+1» reaches us,
+          plus the fingerprint when they teach a screen; if they share it, the fingerprint goes into the library with the
+          game, the language and their channel name as the author. <strong>From games that report it themselves</strong>
+          (Counter-Strike 2, Dota 2): the game sends its state, which also includes the ID of their game account. We keep
+          the number of deaths and the match (the map and mode, or the match number); we don't save the rest and it
+          doesn't end up in the logs. <strong>From a file</strong> on their computer (for example the one DSDeaths
+          writes): the panel reads it and the file stays there; we receive the number and the file name.
+          <strong>From Minecraft</strong>: the panel reads the game's log and death messages on their computer; we
+          receive the number of deaths and the player name, not the log.</li>
         <li><strong>Minimal technical logs</strong> for operation and security.</li>
       </ul>
     </section>

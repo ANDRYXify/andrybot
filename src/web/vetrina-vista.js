@@ -588,9 +588,9 @@ function corpo(L, l, kick, youtube, dirette, piani, recensioni) {
       <header class="vt-barra">
         <a class="vt-marchio" href="/" aria-label="SocialBot"><img src="/icons/logo-barra.png?v=9" alt="SocialBot" width="80" height="30"></a>
         <nav class="vt-mappa" aria-label="${L('Il sito', 'The site', 'El sitio')}">
-          <a href="/guide">${L('Guide', 'Guides', 'Guías')}</a>
-          <a href="/manuale">${L('Manuali', 'Manuals', 'Manuales')}</a>
-          <a href="/novita">${L('Novità', 'What’s new', 'Novedades')}</a>
+          <a href="${VIE[l].guide}">${L('Guide', 'Guides', 'Guías')}</a>
+          <a href="${VIE[l].manuali}">${L('Manuali', 'Manuals', 'Manuales')}</a>
+          <a href="${VIE[l].novita}">${L('Novità', 'What’s new', 'Novedades')}</a>
           <a href="${demoVia(l)}">${L('Demo', 'Demo', 'Demo')}</a>
         </nav>
         <div class="vt-strumenti">${selettoreLingua(l, L)}</div>

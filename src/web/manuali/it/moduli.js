@@ -427,6 +427,7 @@ export default {
     { p: [
       'Sta nella seconda parte della scheda, <strong>«CONTATORify»</strong>. La schermata di morte di un gioco è sempre la stessa immagine. La mostri una volta al pannello, e da lì il contatore sale da solo mentre giochi. Funziona con qualunque contatore: insegnagli la schermata di vittoria e hai <code>!vittorie</code>.',
       'Serve la regia collegata in CONSOLify e questo pannello aperto sul computer da cui mandi in onda. L\'immagine dello schermo non esce da lì: al server arriva solo «+1».',
+      'Il pannello può stare dietro al gioco: continua a guardare anche quando non lo vedi. Se lo apri in due schede guarda una sola, e se chiudi quella continua l\'altra.',
     ] },
     { tabella: [
       ['Controllo', 'Cosa fa', 'Di base e limiti'],
@@ -440,7 +441,7 @@ export default {
     { p: [
       'Quando premi il tasto, il pannello controlla se la schermata la conosce già. Se l\'ha insegnata qualcun altro ti chiede «La conosco già: è la morte di «…»»: con «Prendi la sua» non devi insegnare niente, con «La insegno io» vai avanti. Poi chiede «Che schermata è?», di base «Morte», e premi «Impara».',
       'Se manca qualcosa il pannello lo dice: «Scegli prima quale fonte devo guardare.», «Serve un contatore da far salire: creane uno nella scheda Comandi.», «Non riesco a guardare quella fonte: la regia è collegata?».',
-      'La riga sotto «Ogni quanto guardo (secondi)» ti dice cosa vede: «Spento.», «La regia non è collegata: senza, non posso guardare niente.», «Guardo…», «Adesso vedo «…» (distanza N).», «Nessuna schermata riconosciuta adesso.», «Contata: …».',
+      'La riga sotto «Ogni quanto guardo (secondi)» ti dice cosa vede: «Spento.», «La regia non è collegata: senza, non posso guardare niente.», «Guardo…», «Sta già guardando un\'altra scheda del pannello: se la chiudi, continuo io.», «Adesso vedo «…» (distanza N).», «Nessuna schermata riconosciuta adesso.», «Contata: …».',
       'Conta quando la schermata <strong>compare</strong>, non finché resta: una morte che dura cinque secondi vale uno. Dopo una morte contata, per 4 secondi non ne conta altre. Conta solo mentre il programma di regia è in onda: le prove fuori diretta non sporcano il numero. Ogni morte fa salire il contatore del suo passo e il bot la dice in chat.',
       'Puoi insegnare fino a 8 schermate, una per gioco: quella che combacia vince, così non devi dire tu a cosa stai giocando. Ogni schermata tiene fino a 12 impronte.',
     ] },
@@ -470,6 +471,23 @@ export default {
     { p: [
       'Contano solo le tue morti: da spettatore o in un replay non sale niente. Fuori diretta il gioco parla ma il contatore non sale. La prima lettura dopo l\'avvio non conta, perché le morti già fatte in quella partita non sono successe adesso. Ogni morte fa salire il contatore del suo passo e il bot la dice in chat.',
       'Il file contiene una chiave che serve solo a far salire i contatori. Se il file è finito in giro, <strong>«Rifai la chiave»</strong> ne fa una nuova: i file che hai già messo smettono di funzionare e vanno riscaricati.',
+    ] },
+
+    { h3: 'Il conto dal tuo computer' },
+    { p: [
+      'Per certi giochi il numero esatto delle morti c\'è già, sul computer dove giochi. Nella carta <strong>«Il conto dal tuo computer»</strong> lo fai leggere al pannello. Serve Chrome o Edge su quel computer, con questo pannello aperto; i file restano lì, e al server arriva solo il numero.',
+      '<strong>I souls.</strong> <strong>DSDeaths</strong> (github.com/Quidrex/DSDeaths) è un programma gratuito che legge il numero dalla memoria del gioco e a ogni morte lo scrive in <code>DSDeaths.txt</code>, un numero e basta. Funziona con Dark Souls: Prepare to Die Edition, Dark Souls Remastered, Dark Souls II e Scholar of the First Sin, Dark Souls III, Sekiro, ed Elden Ring giocato offline con l\'anticheat spento. Va bene anche un altro programma che scrive il conto in un file di testo, purché nel file ci sia un numero solo.',
+      '<strong>Minecraft Java.</strong> Il gioco scrive ogni messaggio della chat nel suo registro, <code>logs/latest.log</code>, e le frasi di morte sono le sue, nella lingua in cui giochi. Il pannello le legge dai file del tuo gioco e conta solo le tue: quando è un altro a morire, quando sei tu a uccidere, o quando qualcuno scrive la frase in chat, non sale niente. Chi sei lo dice il gioco quando parte.',
+    ] },
+    { passi: [
+      { t: 'Scegli il contatore', d: 'In «Quale contatore faccio salire». «non contare» lo spegne.' },
+      { t: 'Per i souls', d: 'Avvia DSDeaths insieme al gioco: crea <code>DSDeaths.txt</code> nella cartella da cui l\'hai avviato. Premi «Scegli il file» e apri quel file.' },
+      { t: 'Per Minecraft', d: 'Premi «Scegli la cartella di Minecraft» e scegli <code>.minecraft</code>, la cartella del gioco. Con un launcher diverso da quello ufficiale scegli la cartella dell\'istanza, quella con <code>logs</code>; se la riga dice che non trova le frasi, premi «Scegli la cartella dei file del gioco» e scegli quella del launcher con <code>assets</code>.' },
+    ] },
+    { p: [
+      'Da lì il pannello guarda ogni 2 secondi, anche da dietro al gioco. La riga sotto i tasti dice cosa legge: «Leggo «DSDeaths.txt»: 37.» oppure «Leggo Minecraft come «…»: N frasi di morte, lingua it_it.», e accanto «Fuori diretta leggo ma non conto.» o quante morti ha contato da quando guarda. Se qualcosa manca lo dice: un file senza un numero solo, una cartella senza <code>logs/latest.log</code>, i file del gioco che non trova, «Non so ancora chi sei: Minecraft lo scrive quando parte.».',
+      'Conta solo in diretta. Per un file conta quando il numero sale: se scende, o sale di più di 5 in un colpo, hai caricato un altro personaggio, e riparte da lì senza contare. Ogni morte fa salire il contatore del suo passo e il bot la dice in chat.',
+      'Quando riapri il pannello la prima lettura non conta, perché le morti fatte a pannello chiuso non sono successe adesso. Il pannello si ricorda la scelta: se il browser chiede di nuovo il permesso la riga lo dice e compare <strong>«Riprendi»</strong>. <strong>«Smetti di leggere»</strong> la dimentica. Come per la schermata, legge una scheda sola.',
     ] },
 
     // ------------------------------------------------------------ COMANDI VOCALI
@@ -569,6 +587,8 @@ export default {
     { d: 'Ho un contatore !morti e anche un modulo !morti: risponde solo il modulo.', r: 'Un tuo modulo acceso con lo stesso nome vince su tutto il resto, contatori e comandi pronti compresi. Cambia nome al modulo, oppure spegnilo.' },
     { d: 'Ho importato i comandi da Nightbot e quelli per mod li usano tutti.', r: 'Dal bot di prima non arrivano il livello utente né le attese. Apri quei moduli con «Modifica» e metti «Solo mod» in «Chi può attivarlo».' },
     { d: 'Ho perso la chiave dei Connettori avanzati.', r: 'Non si può rivedere: il bot ne conserva solo un\'impronta. Premi «Rigenera», copia quella nuova e sostituiscila dove usavi la vecchia, che smette subito di funzionare.' },
+    { d: 'Minecraft non conta le mie morti.', r: 'Guarda la riga sotto i tasti della carta «Il conto dal tuo computer». Se dice il nome di un altro, il gioco è partito con quell\'account. Se non trova le frasi, con un launcher diverso da quello ufficiale premi «Scegli la cartella dei file del gioco». Conta solo in diretta, e solo le frasi di morte del gioco: su un server con messaggi di morte suoi non le riconosce.' },
+    { d: 'Il contatore non segue DSDeaths.', r: 'Guarda la riga sotto i tasti della carta «Il conto dal tuo computer». Se dice «Fuori diretta leggo ma non conto.» il contatore salirà in diretta. Se chiede il permesso premi «Riprendi». Se il numero non cambia mentre muori, DSDeaths non sta leggendo il gioco: tienilo aperto insieme al gioco, e per Elden Ring gioca offline con l\'anticheat spento.' },
     { d: 'CONTATORify non conta le morti.', r: 'Guarda la riga sotto «Ogni quanto guardo (secondi)». «La regia non è collegata» vuol dire che il pannello non vede il programma di regia: collegalo in CONSOLify. Se vede la schermata ma non conta, controlla di essere in onda. Se la schermata è a schermo e non la vede, premi «Non l\'ha presa adesso».' },
     { d: 'Il comando vocale non parte.', r: 'La pagina di ascolto deve essere aperta e in ascolto, col microfono concesso. Serve il pacchetto «Comandi Vocali». Il riconoscimento è in italiano: scrivi le frasi come le dici. Guarda il «Registro» della pagina: dice se la frase è arrivata e se un modulo è partito.' },
     { d: '«Categoria Fortnite» non cambia il gioco.', r: 'La parola chiave va detta prima del nome, e «Cambia categoria a voce» deve essere su «Attivo» e salvato. Se manca il permesso <em>Gestione canale</em>, la scheda mostra l\'avviso con «Concedi il permesso».' },

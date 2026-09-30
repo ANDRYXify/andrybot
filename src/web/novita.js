@@ -74,15 +74,75 @@ const VAI = /\s*\[vai:\s*([a-z0-9-]{2,40})\]\s*$/i;
 // (verifica-novita.mjs).
 const CITA = /^\s+>\s?(.*?)\s*$/;
 
-export function analizza(testo) {
+// UNA RIGA, TRE LINGUE, NELLO STESSO POSTO. La pagina e il pannello si leggono
+// in italiano, inglese e spagnolo, e una riga tradotta altrove (un secondo file,
+// un elenco a parte) si scolla dalla sua il giorno che una delle due cambia.
+// Quindi la traduzione sta sotto la riga, rientrata, e si scrive nello stesso
+// commit:
+//
+//     - I menu' con tante voci non si schiacciano piu'. [vai: consolify]
+//       en: Menus with lots of items no longer get squashed.
+//       es: Los menús con muchas opciones ya no se aprietan.
+//
+// e un'importante porta anche titolo e perche' in ogni lingua, dopo quelli
+// italiani, con lo stesso segno della citazione preceduto dalla lingua:
+//
+//       > Il muro delle emote
+//       > Le emote della chat diventano parte della scena.
+//       en> The emote wall
+//       en> Chat emotes become part of the scene.
+//       es> El muro de emotes
+//       es> Los emotes del chat pasan a formar parte de la escena.
+//
+// Il `[vai: x]` sta solo sulla riga italiana e vale per tutte. Le righe
+// `[privato]` non si traducono: non escono di casa.
+//
+// L'IMPRONTA RESTA QUELLA ITALIANA. «Gia' vista» si decide sull'impronta della
+// riga (idVoce, piu' sotto), e l'impronta si calcola sulla data e sul testo
+// italiano: chi cambia lingua non si rivede davanti le novita' gia' lette, e i
+// segnaposto salvati prima di oggi restano validi.
+export const LINGUE = ['it', 'en', 'es'];
+const TRADOTTA = /^\s+(en|es):\s?(.*?)\s*$/;
+const CITA_TRADOTTA = /^\s+(en|es)>\s?(.*?)\s*$/;
+// Quello che ha l'aria di una riga rientrata attaccata a una voce, anche se non
+// e' attaccata a niente: e' cosi' che il cancello trova una traduzione persa.
+const RIENTRATA = /^\s+(?:>|(?:en|es)[:>])/;
+
+// Una lettura sola, due risposte: le giornate, e le righe rientrate che il
+// lettore non ha preso (staccate da una riga vuota, o doppie). Il cancello non
+// rilegge il file a modo suo: chiede a questo stesso lettore cosa ha lasciato.
+function leggiRighe(testo) {
   const gruppi = [];
+  const sperse = [];
   let ultima = null;
-  for (const riga of String(testo).split('\n')) {
-    const c = ultima && riga.match(CITA);
-    if (c) {
-      if (!c[1]) continue;
-      if (ultima.titolo == null) ultima.titolo = c[1];
-      else ultima.perche = ultima.perche ? `${ultima.perche} ${c[1]}` : c[1];
+  const righe = String(testo).split('\n');
+  for (let n = 0; n < righe.length; n++) {
+    const riga = righe[n];
+    if (ultima) {
+      const c = riga.match(CITA);
+      if (c) {
+        if (!c[1]) continue;
+        if (ultima.titolo == null) ultima.titolo = c[1];
+        else ultima.perche = ultima.perche ? `${ultima.perche} ${c[1]}` : c[1];
+        continue;
+      }
+      const t = riga.match(TRADOTTA);
+      if (t) {
+        const suo = ((ultima.lingue ||= {})[t[1]] ||= {});
+        if (suo.testo != null || !t[2]) sperse.push({ riga: n + 1, testo: riga, perche: suo.testo != null ? 'doppia' : 'vuota' });
+        else suo.testo = t[2];
+        continue;
+      }
+      const ct = riga.match(CITA_TRADOTTA);
+      if (ct) {
+        if (!ct[2]) continue;
+        const suo = ((ultima.lingue ||= {})[ct[1]] ||= {});
+        if (suo.titolo == null) suo.titolo = ct[2];
+        else suo.perche = suo.perche ? `${suo.perche} ${ct[2]}` : ct[2];
+        continue;
+      }
+    } else if (gruppi.length && RIENTRATA.test(riga)) {
+      sperse.push({ riga: n + 1, testo: riga, perche: 'staccata' });
       continue;
     }
     ultima = null;
@@ -104,15 +164,48 @@ export function analizza(testo) {
       gruppi[gruppi.length - 1].voci.push(ultima);
     }
   }
-  return gruppi.filter((g) => g.voci.length);
+  return { gruppi: gruppi.filter((g) => g.voci.length), sperse };
 }
 
-// Quello che può uscire di casa: le voci pubbliche, come stringhe, e senza i
-// giorni che restano vuoti perché parlavano solo di lei.
-export function pubbliche(gruppi) {
+export function analizza(testo) {
+  return leggiRighe(testo).gruppi;
+}
+
+// Le righe scritte come traduzioni (o come titolo e perche') che non sono
+// attaccate a nessuna voce, o che ripetono una lingua gia' data: per chi deve
+// controllare che niente di quello che si e' scritto vada perso.
+export function righeSperse(testo) {
+  return leggiRighe(testo).sperse;
+}
+
+const linguaValida = (l) => (LINGUE.includes(l) ? l : 'it');
+
+// Una voce nella lingua di chi legge. La traduzione vale se e' intera: testo, e
+// per un'importante anche titolo e perche'. Una voce a meta' fra due lingue non
+// si mostra: se manca un pezzo resta tutta in italiano e lo dice (`lingua`), e
+// chi la mostra la marca come tale. Nel file pubblico non succede: il cancello
+// vuole ogni traduzione.
+function inLingua(data, v, l) {
+  const t = l === 'it' ? null : v.lingue?.[l];
+  const intera = !!(t && t.testo && (!v.titolo || t.titolo) && (!v.perche || t.perche));
+  const da = intera ? t : v;
+  return {
+    id: idVoce(data, v.testo),
+    testo: da.testo,
+    vai: v.vai || null,
+    importante: !!v.importante,
+    ...(da.titolo ? { titolo: da.titolo } : {}),
+    ...(da.perche ? { perche: da.perche } : {}),
+    ...(l !== 'it' && !intera ? { lingua: 'it' } : {}),
+  };
+}
+
+// Quello che può uscire di casa: le voci pubbliche, nella lingua chiesta, e
+// senza i giorni che restano vuoti perché parlavano solo di lei.
+export function pubbliche(gruppi, lingua = 'it') {
+  const l = linguaValida(lingua);
   return gruppi
-    .map((g) => ({ data: g.data, voci: g.voci.filter((v) => !v.privata).map((v) => ({ testo: v.testo, vai: v.vai || null, importante: !!v.importante,
-      ...(v.titolo ? { titolo: v.titolo } : {}), ...(v.perche ? { perche: v.perche } : {}) })) }))
+    .map((g) => ({ data: g.data, voci: g.voci.filter((v) => !v.privata).map((v) => inLingua(g.data, v, l)) }))
     .filter((g) => g.voci.length);
 }
 
@@ -142,10 +235,11 @@ export function destinazioni(gruppi) {
   return [...out];
 }
 
-// Tutto, per chi ha il diritto di vederlo. Le voci restano oggetti, così chi le
-// mostra può dire quali sono solo sue.
-export function tutte(gruppi) {
-  return gruppi.map((g) => ({ data: g.data, voci: g.voci.map((v) => ({ ...v })) }));
+// Tutto, per chi ha il diritto di vederlo, nella lingua chiesta. Le voci restano
+// oggetti, così chi le mostra può dire quali sono solo sue.
+export function tutte(gruppi, lingua = 'it') {
+  const l = linguaValida(lingua);
+  return gruppi.map((g) => ({ data: g.data, voci: g.voci.map((v) => ({ ...inLingua(g.data, v, l), privata: !!v.privata })) }));
 }
 
 // La data come la direbbe una persona: «2 settembre 2026».
@@ -232,12 +326,15 @@ export function idVoce(data, testo) {
   return h.toString(36);
 }
 
-const testoDi = (v) => (typeof v === 'string' ? v : v.testo);
+// L'impronta di una voce, in qualunque forma arrivi: la forma per lingua la
+// porta gia' (calcolata sull'italiano), la riga letta dal file e la stringa
+// sono l'italiano stesso.
+const improntaDi = (data, v) => (typeof v === 'string' ? idVoce(data, v) : v.id || idVoce(data, v.testo));
 
 export function segnalibro(gruppi) {
   if (!gruppi.length) return null;
   const dentro = gruppi.slice(0, FINESTRA);
-  const ids = dentro.flatMap((g) => g.voci.map((v) => idVoce(g.data, testoDi(v))));
+  const ids = dentro.flatMap((g) => g.voci.map((v) => improntaDi(g.data, v)));
   return `v2:${dentro[dentro.length - 1].data}:${ids.join('.')}`;
 }
 
@@ -306,7 +403,7 @@ export function daVedere(gruppi, segno) {
     const fuori = [];
     for (const g of gruppi) {
       if (g.data < fino) break;
-      const voci = g.voci.filter((v) => !viste.has(idVoce(g.data, testoDi(v))));
+      const voci = g.voci.filter((v) => !viste.has(improntaDi(g.data, v)));
       if (voci.length) fuori.push({ data: g.data, voci });
     }
     return fuori;
