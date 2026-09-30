@@ -29750,7 +29750,8 @@ function disegnaCampiAzione(a) {
     case 'timeout':
       return `
         ${etichetta(L('Timeout (secondi)', 'Timeout (seconds)', 'Timeout (segundos)'))}
-        <input ${aria(L('Timeout (secondi)', 'Timeout (seconds)', 'Timeout (segundos)'))} type="number" data-campo="secondi" min="1" max="1209600" value="${Number(a.secondi) || 600}">`;
+        <input ${aria(L('Timeout (secondi)', 'Timeout (seconds)', 'Timeout (segundos)'))} type="number" data-campo="secondi" min="1" max="1209600" value="${Number(a.secondi) || 600}">
+        <p class="suggerimento">${L('Mette in pausa chi ha fatto scattare il modulo, mai te: su timer, voce e «Prova» non ferma nessuno. Serve il permesso di moderazione, e moderatori e VIP non si possono mettere in pausa.', 'It times out whoever triggered the module, never you: on timers, voice and «Test» it stops nobody. It needs the moderation permission, and mods and VIPs cannot be timed out.', 'Pone en pausa a quien disparó el módulo, nunca a ti: en temporizadores, voz y «Prueba» no para a nadie. Hace falta el permiso de moderación, y a los moderadores y VIP no se les puede poner en pausa.')}</p>`;
     case 'musica':
       return `
         <label class="campo">${L('Brano da mettere in coda (nome, artista o', 'Track to queue (name, artist or', 'Canción que poner en cola (nombre, artista o')} <code>$args</code>)</label>

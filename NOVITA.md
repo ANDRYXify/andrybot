@@ -34,6 +34,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
   > Spotify, TikTok, Instagram, Discord, 7TV e Telegram in una carta sola, e ognuno lo scolleghi quando vuoi, con qualunque piano.
 - Spotify, TikTok, gli avvisi di Discord, 7TV e l'accesso con Telegram si scollegano con qualunque piano: prima, tornando all'Essenziale, restavano legati.
 - Un sostegno al progetto aperto e mai pagato si cancella dopo una settimana, e quelli pagati dopo dieci anni, come dice l'informativa.
+- L'azione «Timeout in chat» dei moduli mette davvero in pausa chi ha fatto scattare il modulo: prima non faceva niente. Se manca il permesso, o la persona è un moderatore o un VIP, il bot lo dice. [vai: moduli]
 
 ## 2026-09-27
 

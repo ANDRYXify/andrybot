@@ -871,7 +871,7 @@ export class ModulesEngine {
         return;
       }
       case 'timeout': {
-        await this._timeout(ctx, Number(azione.secondi) || 0);
+        await this._timeout(ctx, Number(azione.secondi) || 0, dire);
         return;
       }
       case 'clip': {
@@ -1030,16 +1030,33 @@ export class ModulesEngine {
 
   // Azione di moderazione "timeout": la proviamo SOLO se Helix espone un metodo
   // dedicato. Non inventiamo endpoint/scope: se manca, si logga e si salta.
-  async _timeout(ctx, secondi) {
-    const bersaglio = ctx.userLogin || ctx.user;
-    if (typeof this.helix?.timeout === 'function') {
-      try {
-        await this.helix.timeout(ctx.channel, bersaglio, Math.max(1, Math.min(1_209_600, secondi || 1)));
-      } catch (e) {
-        log.debug('timeout via helix fallito:', e?.message || e);
-      }
+  // TIMEOUT: mette in pausa chi ha fatto scattare il modulo. Passa da
+  // helix.timeoutUser, la stessa porta della moderazione: vuole l'id, non il
+  // nome, e con 0 secondi farebbe un ban, quindi il minimo qui e' 1. Lo
+  // streamer non si mette in pausa: timer, voce, API e prova hanno lui come
+  // autore, e li' non c'e' nessuno da fermare. L'esito si dice come per le
+  // altre azioni: il permesso che manca (il rimedio solo allo staff), e chi non
+  // si puo' fermare perche' e' moderatore o VIP.
+  async _timeout(ctx, secondi, dire = () => {}) {
+    const login = norm(ctx.userLogin || '');
+    if (!login || login === norm(ctx.channel)) { log.debug(`#${ctx.channel} timeout: nessuno da mettere in pausa`); return; }
+    let id = String(ctx.userId || '');
+    if (!id) id = String((await this.helix?.getUserByLogin?.(login).catch(() => null))?.id || '');
+    if (!id) { log.debug(`#${ctx.channel} timeout: non trovo ${login}`); return; }
+    const durata = Math.max(1, Math.min(1_209_600, Math.round(secondi) || 600));
+    const r = await this.helix?.timeoutUser?.(ctx.channel, id, durata, 'timeout da un comando del canale')
+      .catch((e) => ({ ok: false, motivo: e?.message || 'errore' }));
+    if (r?.ok) return;
+    const motivo = String(r?.motivo || 'non disponibile');
+    if (motivo.includes('permesso')) {
+      dire(aChiPuo(ctx.staff, {
+        staff: '🔒 Mi manca il permesso di moderazione per il timeout: riautorizza dalla dashboard.',
+        pubblico: '🔒 Adesso non posso mettere in pausa nessuno.',
+      }));
+    } else if (motivo.includes('mod/VIP')) {
+      dire(`🛡️ Non posso mettere in pausa ${ctx.display || login}: moderatori e VIP non si possono.`);
     } else {
-      log.debug('azione timeout non supportata (helix.timeout assente): salto');
+      log.debug(`#${ctx.channel} timeout di ${login} non riuscito: ${motivo}`);
     }
   }
 
