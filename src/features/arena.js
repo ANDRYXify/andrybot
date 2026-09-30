@@ -41,6 +41,7 @@ import { BOT_NOTI } from './muro.js';
 import { twitchInMessaggio } from './emotes.js';
 import { aspetta, giocato } from './attese-giochi.js';
 import { aChi } from './risposte.js';
+import { nomeMoneta } from './moneta.js';
 
 const A = globalThis.SB_ARENA;
 
@@ -85,7 +86,7 @@ const A_CHI = { sub: 'a chi è abbonato', vip: 'ai VIP', mod: 'ai moderatori' };
 const di = (frase, v = {}) => String(frase).replace(/\{(\w+)\}/g, (_, k) => (v[k] ?? ''));
 const pulito = (s) => String(s || '').replace(/^@/, '').toLowerCase().trim();
 const conf = (channel) => valoriDi(streamers.get(channel)?.settings, 'arena');
-const monete = (channel) => String(streamers.get(channel)?.settings?.nomeMonete || '').trim() || 'monete';
+const monete = (channel) => nomeMoneta(channel);
 const ELENCO_MAX = 10;
 const elenca = (voci) => (voci.length > ELENCO_MAX ? `${voci.slice(0, ELENCO_MAX).join(', ')} e altri ${voci.length - ELENCO_MAX}` : voci.join(', '));
 const SILENZIO_MS = 30_000;

@@ -480,3 +480,14 @@ test('l\'emote scelta esce nell\'esportazione del canale e se ne va con lui', as
   assert.equal(arenaEmote.get('arenavia', 'anna'), null);
   assert.deepEqual(arenaEmote.get('arenaresta', 'anna'), { nome: 'catJAM', url: SETTE(ID7('c')) }, 'quella di un altro canale resta');
 });
+
+test('le monete si chiamano col nome del canale', () => {
+  canale('ar20', { iscrizioni: 30, costo: 7, ingresso: 'comando' });
+  streamers.setSettings('ar20', { ...streamers.get('ar20').settings, nomeMonete: 'Semi di girasole' });
+  const s = scena('ar20');
+  AR.apri('ar20', s.say);
+  assert.match(s.detti[0], /L'ingresso costa 7 Semi di girasole\./);
+  AR.combatti('ar20', { channel: 'ar20', user: 'anna', display: 'anna', text: '!combatti' }, s.say);
+  assert.equal(s.detti.at(-1), '⚔️ anna, per entrare servono 7 Semi di girasole e ne hai 0.');
+  AR.ferma('ar20', s.say);
+});
