@@ -445,6 +445,7 @@ export class AlertsEngine {
       treno: (s.overlayTreno && typeof s.overlayTreno === 'object') ? s.overlayTreno : null,
       bit: (s.overlayBit && typeof s.overlayBit === 'object') ? s.overlayBit : null,
       boss: (s.overlayBoss && typeof s.overlayBoss === 'object') ? s.overlayBoss : null,
+      arena: (s.overlayArena && typeof s.overlayArena === 'object') ? s.overlayArena : null,
       scritta: (s.overlayScritta && typeof s.overlayScritta === 'object') ? s.overlayScritta : null,
       etichetta: (s.overlayEtichetta && typeof s.overlayEtichetta === 'object') ? s.overlayEtichetta : null,
       muro: (s.overlayMuro && typeof s.overlayMuro === 'object') ? s.overlayMuro : null,

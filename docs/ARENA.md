@@ -163,3 +163,47 @@ stesso segnale potrà accendere le occasioni in base alla scena.
    la scelta delle scene.
 5. La scena attiva: dalla sorgente e dal pannello.
 6. Manuale (overlay e giochi), novità, nelle tre lingue.
+
+## Com'è fatta
+
+Fatti i punti 1, 2, 3 e 6 (parte italiana); le scene di OBS e la scena
+attiva (punti 4 e 5, la scelta delle scene) sono il passo dopo. Le decisioni
+prese costruendo, con il loro perché.
+
+- **Il seme nasce alla chiusura delle iscrizioni**, non all'apertura. Prima
+  dell'ultimo ingresso non esiste: nessuno può calcolare l'esito ed entrare
+  solo se vince. L'overlay, durante le iscrizioni, mette i combattenti ai
+  posti di `nuova('anteprima', elenco, regole)` schiacciati sotto le due righe,
+  e alla partenza li porta in 450 ms ai posti veri della battaglia: è solo
+  disegno, la partita non ne sa niente.
+- **Il vincitore si dice quando si vede**: la vittoria scatta a
+  `t0 + ceil(passi × 1000 / PASSO)` ms, mai prima che l'overlay possa esserci
+  arrivato.
+- **Le regole si fermano all'apertura**: il server le legge una volta, le
+  normalizza col motore e le manda negli eventi; cambiarle a partita aperta
+  non cambia la partita.
+- **Gli istanti del server si traducono con lo scarto misurato all'arrivo**
+  (`Date.now() − ora` di ogni evento), non con l'ora del computer della
+  diretta: due orologi che non vanno d'accordo non spostano la partita.
+- **L'ingresso si paga entrando**, una volta, ed è scritto in `stato_vivo`
+  (`arena-quote`): se l'arena si annulla, con `!arena ferma` o perché i
+  combattenti sono meno di due, torna indietro; se il bot si riavvia, torna
+  all'avvio e il bot lo dice quando il canale rientra in chat.
+- **La probabilità delle chat grandi è una estrazione a persona**, al primo
+  messaggio: a messaggio entrerebbe chi scrive di più, e la probabilità non
+  sfoltirebbe niente.
+- **L'emote è una funzione** (`emoteDi`): la scelta con `!emote` (tabella
+  `arena_emote`), poi la prima emote del messaggio per posizione (Twitch dal
+  tag, letto sul testo scritto davvero, poi 7TV), poi una delle emote del
+  canale scelta da un'impronta della persona, sempre la stessa per lei. Non
+  dal seme: il seme durante le iscrizioni non c'è ancora. Le emote 7TV
+  arrivano quando arrivano: chi è già entrato si riveste e il suo `entra`
+  riparte.
+- **Il disegno è uno** (`src/web/public/arena-tela.js`, `SB_ARENA_TELA`), per
+  l'overlay e per lo Studio. La tela ha un margine attorno all'arena del
+  motore, così nomi, corona e bordo a penna non escono mai dal disegno.
+- **Tre difetti del motore**, visti disegnando: un oggetto rimasto fuori dai
+  muri che si stringono ora sparisce (evento `perso`) invece di far spingere i
+  combattenti contro il muro; dopo gli urti ogni cerchio torna dentro i muri;
+  la misura minima dell'arena non scende sotto due combattenti affiancati
+  (`strettaMin ≥ 4 × raggio / W`).

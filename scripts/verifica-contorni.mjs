@@ -54,8 +54,8 @@
 // Uso: node scripts/verifica-contorni.mjs
 //      node scripts/verifica-contorni.mjs --selftest   (deve diventare rosso)
 
-import { apriSito } from './_sito.mjs';
-const CHROMIUM = process.env.CHROMIUM || '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
+import { apriSito, chromiumQui } from './_sito.mjs';
+const CHROMIUM = chromiumQui();
 const PLAYWRIGHT = process.env.PLAYWRIGHT || '/opt/node22/lib/node_modules/playwright/index.mjs';
 const SELFTEST = process.argv.includes('--selftest');
 // Sotto mezzo pixel e' arrotondamento, non inchiostro perso.
@@ -73,6 +73,7 @@ let TETTO = 8;
 const SCHERMI = ['ovl-anteprima', 'ovl-tela', 'lp-telefono', 'ant-tela'];
 
 let chromium;
+if (!CHROMIUM) { console.log('Chromium non c\'e\' su questa macchina: collaudo saltato.'); process.exit(0); }
 try { ({ chromium } = await import(PLAYWRIGHT)); }
 catch { console.log('Playwright non c\'e\' su questa macchina: collaudo saltato.'); process.exit(0); }
 

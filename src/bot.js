@@ -96,6 +96,8 @@ import { tokenDi as tokenKick } from './kick/api.js';
 import * as bjFeat from './features/blackjack.js';
 import * as seguitiFeat from './features/seguiti.js';
 import * as negozio from './features/negozio.js';
+import * as arenaFeat from './features/arena.js';
+import { mappaCanale as emoteDelCanale, soloCanale as emoteSoloDelCanale } from './features/emotes.js';
 
 const log = makeLog('bot');
 const BOSS_DOPO_RAID_MS = 20_000;
@@ -230,6 +232,18 @@ export class BotManager {
     // Il boss: la barra della vita sull'overlay, e la festa in solo emote.
     bossFeat.impostaSpinta((ch, p) => this.effects?.emit?.(ch, p));
     bossFeat.impostaModalita(this.modalita);
+    // L'arena delle emote: gli eventi all'overlay, le emote del canale per
+    // riconoscerle nei messaggi, e gli ingressi pagati di un'arena che il
+    // riavvio ha interrotto, resi e detti quando il canale torna in chat.
+    arenaFeat.impostaSpinta((ch, p) => this.effects?.emit?.(ch, p));
+    arenaFeat.impostaEmote({ tutte: (ch) => emoteDelCanale(this.helix, ch), proprie: (ch) => emoteSoloDelCanale(this.helix, ch) });
+    this._arenaRese = new Map();
+    try {
+      for (const r of arenaFeat.rimborsaDopoRiavvio()) {
+        log.info(`#${r.channel} arena: ingresso reso a ${r.chi.join(', ')}, la partita era rimasta aperta`);
+        this._arenaRese.set(r.channel, r);
+      }
+    } catch (e) { log.error('arena rimborsi:', e?.message || e); }
     this.penitenze = new PenitenzeEngine({
       say: (ch, t) => this.say(ch, t),
       effects: this.effects,
@@ -334,6 +348,9 @@ export class BotManager {
     // Il boss che arriva da solo: stesso giro di un minuto, intervallo fisso.
     this._bossProx = new Map();       // login → ts del prossimo boss
     this._bossTimer = setInterval(() => this._bossDaSolo(), 60_000);
+    // L'arena che si apre da sola: lo stesso giro del boss, con le sue regole.
+    this._arenaProx = new Map();      // login → ts della prossima arena
+    this._arenaTimer = setInterval(() => this._arenaDaSolo(), 60_000);
     // Allenamento continuo: distilla i discorsi dello streamer nel motore veloce
     // (ogni 12 min, solo se attivo e con materiale nuovo).
     this._distillaTimer = setInterval(() => this._distilla(), 12 * 60_000);
@@ -389,6 +406,7 @@ export class BotManager {
     clearInterval(this._distillaTimer);
     clearInterval(this._mancheTimer);
     clearInterval(this._bossTimer);
+    clearInterval(this._arenaTimer);
     clearInterval(this._compleTimer);
     clearInterval(this._dcRuoliTimer);
     clearInterval(this._eventiDcTimer);
@@ -711,6 +729,27 @@ export class BotManager {
     } catch (e) { log.error('boss:', e?.message || e); }
   }
 
+  // L'arena automatica: ogni `ogni` minuti, solo in diretta e a chat viva, e
+  // solo se qualcuno puo' entrarci. Intervallo fisso, come il boss: e' quello
+  // su cui il pannello calcola il massimo all'ora.
+  _arenaDaSolo() {
+    try {
+      for (const login of this.units.keys()) {
+        const s = streamers.get(login);
+        const ogni = arenaFeat.vieneDaSolo(login);
+        if (!ogni || s?.settings?.giochi === false || !arenaFeat.giocabile(login)) { this._arenaProx.delete(login); continue; }
+        if (this._liveState.get(login) !== true) continue;
+        if ((memory.messageRate?.(login) || 0) < 1) continue;
+        const prox = this._arenaProx.get(login);
+        if (prox === undefined) { this._arenaProx.set(login, Date.now() + ogni * 60_000); continue; }
+        if (Date.now() < prox) continue;
+        let prima = true;
+        arenaFeat.apri(login, (t) => { if (prima) { prima = false; this._dettaDaSolo(login, 'arena', t); } else this.say(login, t); });
+        this._arenaProx.set(login, Date.now() + ogni * 60_000);
+      }
+    } catch (e) { log.error('arena:', e?.message || e); }
+  }
+
   // Un raid abbastanza grande porta un boss: chi arriva ha subito qualcosa da
   // fare insieme a chi c'era. Si aspetta un poco, che i raider entrino in chat.
   _bossDelRaid(login, data) {
@@ -725,6 +764,22 @@ export class BotManager {
       }, BOSS_DOPO_RAID_MS);
       t.unref?.();
     } catch (e) { log.debug(`#${login} boss del raid:`, e?.message || e); }
+  }
+
+  // Un raid abbastanza grande apre l'arena: chi arriva entra scrivendo il suo
+  // primo saluto. Si aspetta come per il boss, che i raider arrivino in chat.
+  _arenaDelRaid(login, data) {
+    try {
+      if (streamers.get(login)?.settings?.giochi === false || !arenaFeat.giocabile(login)) return;
+      if (!arenaFeat.vieneColRaid(login, data?.viewers)) return;
+      const chi = data?.from_broadcaster_user_name || data?.from_broadcaster_user_login || '';
+      const t = setTimeout(() => {
+        if (!this.units.has(login)) return;
+        let prima = true;
+        arenaFeat.apri(login, (x) => { if (prima) { prima = false; this._dettaDaSolo(login, 'arena', x); } else this.say(login, x); }, { annuncio: chi ? `Il raid di ${chi} arriva giusto in tempo. ` : '' });
+      }, BOSS_DOPO_RAID_MS);
+      t.unref?.();
+    } catch (e) { log.debug(`#${login} arena del raid:`, e?.message || e); }
   }
 
   // ALLENAMENTO CONTINUO: mentre lo streamer è attivo (in live o con chat viva), il
@@ -879,6 +934,8 @@ export class BotManager {
         const u = this.units.get(login); if (u) u.connesso = true;
         for (const r of this._bjRese.get(login) || []) this.say(login, bjFeat.testoRimborso(r));
         this._bjRese.delete(login);
+        if (this._arenaRese.has(login)) this.say(login, arenaFeat.testoRimborso(this._arenaRese.get(login)));
+        this._arenaRese.delete(login);
         // chi segue gia' il canale, ricordato una volta: il suo prossimo follow
         // non e' nuovo (features/seguiti.js)
         seguitiFeat.semina(this.helix, login).catch((e) => log.debug(`#${login} semina dei follower:`, e?.message || e));
@@ -1052,7 +1109,10 @@ export class BotManager {
     const vaglio = suo ? null : registro.preparaComando(login, msg);
     if (vaglio?.rifiuta) { aChi(msg, parla)(vaglio.messaggio); return; }
     if (!suo && !vaglio?.salta) {
-    const cmdMsg = vaglio?.testo && vaglio.testo !== msg.text ? { ...msg, text: vaglio.testo } : msg;
+    // Il testo scritto davvero resta accanto a quello tradotto: il tag delle
+    // emote di Twitch conta i caratteri su quello, e un comando rinominato ne
+    // sposta tutte le posizioni (l'emote dell'arena, !emote Kappa).
+    const cmdMsg = vaglio?.testo && vaglio.testo !== msg.text ? { ...msg, text: vaglio.testo, testoScritto: msg.text } : msg;
     // lo scudo: !permetti nome, l'uscita dal trattenimento degli account nuovi.
     // Solo su Twitch, dove il trattenimento esiste.
     if (!msg.piattaforma || msg.piattaforma === 'twitch') {
@@ -1320,7 +1380,7 @@ export class BotManager {
       if (type === 'channel.follow') this.antibot?.onFollow(ev);
       else if (type === 'channel.raid') this.antibot?.onRaid(ev);
     } catch (e) { log.error(`#${channel} anti-bot evento:`, e?.message || e); }
-    if (type === 'channel.raid') this._bossDelRaid(channel, data);
+    if (type === 'channel.raid') { this._bossDelRaid(channel, data); this._arenaDelRaid(channel, data); }
     // moduli: automazioni con trigger 'evento' (follow, sub, raid, cheer, ...)
     try { this.modules?.onEvent(ev, (t) => this.say(channel, t)); }
     catch (e) { log.error(`#${channel} moduli evento:`, e?.message || e); }

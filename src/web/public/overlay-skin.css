@@ -1020,6 +1020,14 @@
 .ovl-boss.boss-via { animation: boss-via .6s ease-in forwards; }
 @keyframes boss-via { to { opacity: 0; } }
 
+.ovl-arena { display: block; padding: .3em; opacity: 1; transition: opacity .4s ease; }
+.ovl-arena canvas { display: block; width: 40em; height: 25em; }
+.ovl-arena.dim-piccola { font-size: 1rem; }
+.ovl-arena.dim-media { font-size: 1.35rem; }
+.ovl-arena.dim-grande { font-size: 1.7rem; }
+.ovl-arena.dim-enorme { font-size: 2.1rem; }
+.ovl-arena.arena-via { opacity: 0; }
+
 .ovl-scritta { display: block; white-space: normal; text-align: center; padding: .1em .35em; font-weight: 800; line-height: 1.15; letter-spacing: .01em;
   text-shadow: 0 3px 18px rgba(0, 0, 0, .7), 0 0 2px rgba(0, 0, 0, .9); overflow-wrap: anywhere;
   opacity: 0; translate: 0 .3em; scale: .98; transition: opacity .3s ease, translate .3s ease, scale .3s ease; }
@@ -1076,7 +1084,7 @@
   .ovl-boss.boss-via { animation: boss-via .6s ease-in forwards; }
   .ovl-boss .boss-danno { display: none; }
   .ovl-boss .boss-scia, .ovl-boss .boss-vita { transition: none; }
-  .ovl-scritta, .ovl-etichetta, .effetto { transition: none; }
+  .ovl-scritta, .ovl-etichetta, .effetto, .ovl-arena { transition: none; }
   .muro-combo { transition: none; }
   .muro-combo.batte img, .muro-combo.batte .muro-emoji, .muro-emote.arcobaleno img, .muro-emote.arcobaleno .muro-emoji { animation: none; }
 }

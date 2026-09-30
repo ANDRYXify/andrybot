@@ -411,6 +411,215 @@ function ridisegnaBoss() {
   vestiBoss(carta);
 }
 
+const arenaBox = document.getElementById('arena');
+const ARENA = { d: null, s: null, scarto: 0, carta: null, tela: null, veste: null, giro: 0, info: new Map(), vista: new Map(), bersagli: new Map(), avvio: null, lampi: [] };
+const ARENA_PASSI_FOTOGRAMMA = 90;
+const ARENA_AVVIO_MS = 450;
+
+function arenaAcceso() { return mostra('arena') && !!MIO.arena && MIO.arena.attivo !== false; }
+
+const oraArena = () => Date.now() - ARENA.scarto;
+
+function vestiArena(carta) {
+  const cfg = MIO.arena || {};
+  const st = cfg.stile || {};
+  carta.className = 'ovl-widget ovl-arena dim-' + (st.dim || 'media') + ' ' + classiIdentita(st, 'nessuna') + (carta._via ? ' arena-via' : '');
+  vestiElemento(carta, cfg, 'nessuna', 'arena');
+  const cs = getComputedStyle(carta);
+  ARENA.veste = { font: cs.fontFamily, testo: cs.color, accento: (cs.getPropertyValue('--acc') || '').trim() || '#f72fa7',
+    nomi: cfg.nomi !== false, coloreChat: cfg.coloreChat !== false, bordo: cfg.bordo !== false };
+}
+
+function cartaArena() {
+  if (ARENA.carta && ARENA.carta.isConnected && !ARENA.carta._via) return ARENA.carta;
+  const carta = document.createElement('div');
+  const tela = document.createElement('canvas');
+  carta.appendChild(tela);
+  arenaBox.appendChild(carta);
+  ARENA.carta = carta;
+  ARENA.tela = tela;
+  vestiArena(carta);
+  return carta;
+}
+
+function togliArena() {
+  if (ARENA.carta) ARENA.carta.remove();
+  ARENA.carta = null;
+  ARENA.tela = null;
+}
+
+function arenaVia() {
+  const carta = ARENA.carta;
+  ARENA.carta = null;
+  ARENA.tela = null;
+  if (!carta) return;
+  carta._via = true;
+  carta.classList.add('arena-via');
+  setTimeout(() => carta.remove(), 450);
+}
+
+function passoArena() {
+  const d = ARENA.d;
+  return Math.max(0, Math.floor((oraArena() - d.t0) * window.SB_ARENA.PASSO / 1000));
+}
+
+function arenaAnteprima() {
+  const d = ARENA.d;
+  if (!d || !window.SB_ARENA) return;
+  const s = window.SB_ARENA.nuova('anteprima', d.lista.map((id) => ({ id })), d.regole);
+  const T = window.SB_ARENA_TELA;
+  ARENA.bersagli = new Map(s.corpi.map((c) => [c.id, T ? T.posaIscrizioni(c, s.regole.raggio) : { x: c.x, y: c.y }]));
+  for (const [id, b] of ARENA.bersagli) if (!ARENA.vista.has(id)) ARENA.vista.set(id, { x: b.x, y: b.y });
+}
+
+function arenaBattaglia(ev) {
+  const A = window.SB_ARENA;
+  const lista = (ev.combattenti || []).map((c) => String(c.id));
+  for (const c of ev.combattenti || []) ARENA.info.set(String(c.id), c);
+  ARENA.d = { fase: 'battaglia', seme: String(ev.seme), t0: Number(ev.t0) || 0, regole: A.regole(ev.regole), lista };
+  ARENA.s = A.nuova(ARENA.d.seme, lista.map((id) => ({ id })), ARENA.d.regole);
+  ARENA.avvio = new Map();
+  for (const c of ARENA.s.corpi) {
+    const v = ARENA.vista.get(c.id);
+    if (v) ARENA.avvio.set(c.id, { dx: v.x - c.x, dy: v.y - c.y });
+  }
+  ARENA.lampi.length = 0;
+}
+
+function arenaVittoria(ev) {
+  if (!ARENA.d || !ARENA.s) return;
+  window.SB_ARENA.corri(ARENA.s, Infinity);
+  ARENA.d.fase = 'vittoria';
+  ARENA.d.esito = ev.esito || null;
+}
+
+function arena(ev) {
+  if (!window.SB_ARENA) return;
+  const a = ev.azione;
+  if (a === 'fine' || a === 'annullata') {
+    ARENA.d = null; ARENA.s = null; ARENA.vista.clear(); ARENA.bersagli.clear(); ARENA.info.clear(); ARENA.lampi.length = 0;
+    arenaVia();
+    return;
+  }
+  if (Number.isFinite(Number(ev.ora))) ARENA.scarto = Date.now() - Number(ev.ora);
+  if (a === 'iscrizioni' || (a === 'stato' && ev.fase === 'iscrizioni')) {
+    ARENA.info = new Map();
+    ARENA.vista.clear();
+    ARENA.s = null;
+    const lista = [];
+    for (const c of ev.combattenti || []) { lista.push(String(c.id)); ARENA.info.set(String(c.id), c); }
+    ARENA.d = { fase: 'iscrizioni', righe: Array.isArray(ev.righe) ? ev.righe : [], aperta: Number(ev.aperta) || Number(ev.ora) || 0,
+      fine: Number(ev.fineIscrizioni) || 0, regole: window.SB_ARENA.regole(ev.regole), lista };
+    arenaAnteprima();
+  } else if (a === 'entra') {
+    const c = ev.combattente;
+    if (!ARENA.d || ARENA.d.fase !== 'iscrizioni' || !c) return;
+    const id = String(c.id);
+    if (!ARENA.info.has(id)) ARENA.d.lista.push(id);
+    ARENA.info.set(id, c);
+    arenaAnteprima();
+  } else if (a === 'battaglia') {
+    arenaBattaglia(ev);
+  } else if (a === 'vittoria') {
+    arenaVittoria(ev);
+  } else if (a === 'stato' && (ev.fase === 'battaglia' || ev.fase === 'vittoria')) {
+    ARENA.info = new Map();
+    arenaBattaglia(ev);
+    ARENA.avvio = null;
+    if (ev.fase === 'vittoria') arenaVittoria(ev);
+    else window.SB_ARENA.corri(ARENA.s, passoArena());
+  }
+  arenaGira();
+}
+
+function arenaGira() {
+  if (ARENA.giro || !ARENA.d) return;
+  ARENA.giro = requestAnimationFrame(arenaFotogramma);
+}
+
+function misuraTelaArena(tela) {
+  const w = tela.offsetWidth || 1;
+  const b = tela.getBoundingClientRect();
+  const scala = b.width > 0 ? b.width / w : 1;
+  const W = Math.max(50, Math.min(4000, Math.round(w * scala * (window.devicePixelRatio || 1))));
+  const T = window.SB_ARENA_TELA;
+  const H = Math.round(W * T.TH / T.TW);
+  if (tela.width !== W || tela.height !== H) { tela.width = W; tela.height = H; }
+}
+
+function lampiArena(eventi, ora) {
+  for (const e of eventi) {
+    if (e.tipo === 'colpo') ARENA.lampi.push({ tipo: 'colpo', x: e.x, y: e.y, da: ora, dura: 320 });
+    else if (e.tipo === 'eliminato') {
+      const c = ARENA.s.corpi.find((x) => x.id === e.chi);
+      if (c) ARENA.lampi.push({ tipo: 'eliminato', x: c.x, y: c.y, r: ARENA.s.regole.raggio, colore: (ARENA.info.get(e.chi) || {}).colore || '', da: ora, dura: 650 });
+    }
+  }
+}
+
+function arenaFotogramma() {
+  ARENA.giro = 0;
+  const d = ARENA.d;
+  const A = window.SB_ARENA, T = window.SB_ARENA_TELA;
+  if (!d || !A || !T) return;
+  if (!arenaAcceso()) { togliArena(); return; }
+  cartaArena();
+  const tela = ARENA.tela;
+  misuraTelaArena(tela);
+  const ora = oraArena();
+  let sc = null;
+  let ancora = true;
+  if (d.fase === 'iscrizioni') {
+    const R = d.regole;
+    const corpi = [];
+    for (const id of d.lista) {
+      const b = ARENA.bersagli.get(id);
+      const v = ARENA.vista.get(id);
+      if (!b || !v) continue;
+      v.x += (b.x - v.x) * 0.18;
+      v.y += (b.y - v.y) * 0.18;
+      const c = ARENA.info.get(id) || {};
+      corpi.push({ id, x: v.x, y: v.y, r: R.raggio, vita: 1, max: 1, oggetti: [], uccisioni: 0, corona: false, nome: c.nome || id, colore: c.colore || '', emote: c.emote || null });
+    }
+    const durata = Math.max(1, d.fine - d.aperta);
+    sc = { corpi, righe: d.righe, tempo: (d.fine - ora) / durata };
+  } else if (ARENA.s) {
+    const s = ARENA.s;
+    const obiettivo = passoArena();
+    const vicino = obiettivo - s.passo <= ARENA_PASSI_FOTOGRAMMA;
+    const fino = Math.min(obiettivo, s.passo + ARENA_PASSI_FOTOGRAMMA);
+    while (!s.fine && s.passo < fino) {
+      const eventi = A.passo(s);
+      if (vicino && eventi.length) lampiArena(eventi, ora);
+    }
+    const q = s.fine || s.passo < obiettivo ? 1 : Math.max(0, Math.min(1, (ora - d.t0) * A.PASSO / 1000 - s.passo));
+    sc = T.scenaDi(s, ARENA.info, q);
+    const trascorso = ora - d.t0;
+    if (ARENA.avvio && trascorso < ARENA_AVVIO_MS) {
+      const k = 1 - Math.max(0, trascorso) / ARENA_AVVIO_MS;
+      for (const c of sc.corpi) { const o = ARENA.avvio.get(c.id); if (o) { c.x += o.dx * k; c.y += o.dy * k; } }
+    }
+    ARENA.lampi = ARENA.lampi.filter((l) => ora - l.da < l.dura);
+    sc.lampi = ARENA.lampi.map((l) => ({ ...l, t: (ora - l.da) / l.dura }));
+    if (d.fase === 'vittoria' && d.esito) {
+      const w = ARENA.info.get(String(d.esito.vincitore)) || {};
+      const r = (d.esito.classifica || []).find((x) => x.id === d.esito.vincitore) || {};
+      sc.vincitore = { nome: w.nome || d.esito.vincitore, colore: w.colore || '', emote: w.emote || null, uccisioni: r.uccisioni || 0,
+        corona: d.esito.corona != null && d.esito.corona === d.esito.vincitore, motto: d.esito.motto || '' };
+      ancora = ARENA.lampi.length > 0;
+    }
+  }
+  T.disegna(tela, sc, ARENA.veste, arenaGira);
+  if (ancora) ARENA.giro = requestAnimationFrame(arenaFotogramma);
+}
+
+function ridisegnaArena() {
+  if (!ARENA.d) return;
+  if (!arenaAcceso()) { togliArena(); return; }
+  if (ARENA.carta) vestiArena(ARENA.carta);
+  arenaGira();
+}
+
 const penCard = {};
 
 function penitenza(ev) {
@@ -994,6 +1203,7 @@ function ricevi(m) {
     else if (dati.tipo === 'tema') caricaTema();
     else if (dati.tipo === 'testo') mostraTesto(dati);
     else if (dati.tipo === 'boss') { boss(dati); muroBoss(dati); }
+    else if (dati.tipo === 'arena') arena(dati);
     else if (dati.tipo === 'contatore') contatore(dati);
     else if (dati.tipo === 'immagine' || dati.tipo === 'video' || dati.tipo === 'disegno') { if (mostra('effetti')) { codaVisiva.push(dati); mostraProssimo(); } }
 }
@@ -1705,6 +1915,8 @@ function applicaTema(t) {
   disegnaTreno();
   MIO.boss = t.boss || null;
   ridisegnaBoss();
+  MIO.arena = t.arena || null;
+  ridisegnaArena();
   MIO.scritta = t.scritta || null;
   ridisegnaScritte();
   MIO.etichetta = t.etichetta || null;

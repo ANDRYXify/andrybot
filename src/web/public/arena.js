@@ -37,11 +37,12 @@
     const x = r && typeof r === 'object' ? r : {};
     const o = x.oggetti && typeof x.oggetti === 'object' ? x.oggetti : {};
     const durataMax = numero(x.durataMax, 30, 900, BASE.durataMax);
+    const raggio = numero(x.raggio, 14, 60, BASE.raggio);
     return {
       vita: numero(x.vita, 10, 1000, BASE.vita),
       velocita: numero(x.velocita, 40, 400, BASE.velocita),
       danno: numero(x.danno, 1, 200, BASE.danno),
-      raggio: numero(x.raggio, 14, 60, BASE.raggio),
+      raggio,
       rinculo: numero(x.rinculo, 0, 3, BASE.rinculo),
       attesaColpo: numero(x.attesaColpo, 0.1, 3, BASE.attesaColpo),
       caccia: numero(x.caccia, 0, 0.2, BASE.caccia),
@@ -56,7 +57,7 @@
       corona: x.corona !== false,
       strettaDopo: Math.min(numero(x.strettaDopo, 5, 600, BASE.strettaDopo), durataMax),
       strettaDurata: numero(x.strettaDurata, 5, 300, BASE.strettaDurata),
-      strettaMin: numero(x.strettaMin, 0.15, 1, BASE.strettaMin),
+      strettaMin: Math.max(numero(x.strettaMin, 0.15, 1, BASE.strettaMin), (4 * raggio) / W),
       durataMax,
     };
   }
@@ -163,12 +164,25 @@
     }
   }
 
+  function dentro(c, m, r) {
+    if (c.x < m.x0 + r) { c.x = m.x0 + r; c.vx = Math.abs(c.vx); }
+    if (c.x > m.x1 - r) { c.x = m.x1 - r; c.vx = -Math.abs(c.vx); }
+    if (c.y < m.y0 + r) { c.y = m.y0 + r; c.vy = Math.abs(c.vy); }
+    if (c.y > m.y1 - r) { c.y = m.y1 - r; c.vy = -Math.abs(c.vy); }
+  }
+
   function passo(s) {
     const eventi = [];
     if (s.fine) return eventi;
     const R = s.regole, dt = 1 / PASSO;
     s.passo += 1;
     const m = muri(s);
+    for (let i = s.oggetti.length - 1; i >= 0; i--) {
+      const o = s.oggetti[i];
+      if (o.x - R_OGGETTO >= m.x0 && o.x + R_OGGETTO <= m.x1 && o.y - R_OGGETTO >= m.y0 && o.y + R_OGGETTO <= m.y1) continue;
+      s.oggetti.splice(i, 1);
+      eventi.push({ tipo: 'perso', oggetto: o.id, cosa: o.tipo });
+    }
     if (s.passo >= s.prossimoOggetto) { metti(s, eventi); s.prossimoOggetto = s.passo + Math.round(R.ogniOggetto * PASSO); }
     for (const c of s.corpi) {
       c.px = c.x; c.py = c.y;
@@ -182,10 +196,7 @@
       c.vx = (c.vx / l) * v; c.vy = (c.vy / l) * v;
       c.x += c.vx * dt; c.y += c.vy * dt;
       const r = R.raggio;
-      if (c.x < m.x0 + r) { c.x = m.x0 + r; c.vx = Math.abs(c.vx); }
-      if (c.x > m.x1 - r) { c.x = m.x1 - r; c.vx = -Math.abs(c.vx); }
-      if (c.y < m.y0 + r) { c.y = m.y0 + r; c.vy = Math.abs(c.vy); }
-      if (c.y > m.y1 - r) { c.y = m.y1 - r; c.vy = -Math.abs(c.vy); }
+      dentro(c, m, r);
       for (let i = s.oggetti.length - 1; i >= 0; i--) {
         const o = s.oggetti[i];
         if (q(o.x - c.x) + q(o.y - c.y) > q(r + R_OGGETTO)) continue;
@@ -213,6 +224,7 @@
         colpisci(s, a, b, eventi);
       }
     }
+    for (const c of lista) if (c.vivo) dentro(c, m, R.raggio);
     if (R.corona) {
       const prima = s.corona;
       let re = prima ? s.corpi.find((c) => c.id === prima) : null;

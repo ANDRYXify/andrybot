@@ -526,6 +526,28 @@ export const normBoss = (x) => {
   };
 };
 
+// L'ARENA DELLE EMOTE in scena (docs/ARENA.md). Chi entra, quando si apre e
+// come si combatte lo decide la scheda Giochi; qui se si vede, dove sta, quanto
+// e' grande e com'e' vestita. Accesa di suo come il boss: compare solo quando
+// un'arena e' aperta, e un'arena la apre qualcuno. Il fondo di serie e'
+// trasparente (opacita' 0): l'arena e' il gioco, non una carta sopra il gioco.
+// Le tre scelte sue: i nomi sopra i combattenti, il colore che ognuno ha in
+// chat, il bordo a penna dell'arena.
+export const VESTE_ARENA = { sfondo: '#0f0f14', opacita: 0, testo: '#ffffff', accento: '#f72fa7', bordoRaggio: 12 };
+export const POS_ARENA = ['centro'];
+export const normArena = (x) => {
+  x = x || {};
+  return {
+    attivo: x.attivo !== false,
+    posizione: unoDi(x.posizione, POS_ARENA, 'centro'),
+    xy: xyOk(x.xy),
+    nomi: x.nomi !== false,
+    coloreChat: x.coloreChat !== false,
+    bordo: x.bordo !== false,
+    stile: normWidgetStile({ ...VESTE_ARENA, ...(x.stile || {}) }),
+  };
+};
+
 // LE SCRITTE DEI MODULI in scena («Testo a schermo», docs/OVERLAY.md): cosa
 // dicono e quanto restano lo decide il modulo; qui se si vedono, dove stanno e
 // com'e' la loro veste. Di serie come prima: grandi, bianche, senza fondo, al
