@@ -313,108 +313,314 @@ nome resta in casa. Non è una cosa da ricordarsi:
 ## 2026-09-23
 
 - I ruoli che il costruttore crea adesso vanno a qualcuno: «Streamer» a te che hai il server, gli altri a moderatori, VIP e abbonati. [vai: dcserver]
+  en: The roles the builder creates now go to someone: “Streamer” to you as the server owner, the others to mods, VIPs and subscribers.
+  es: Los roles que crea el constructor ahora van a alguien: «Streamer» a ti, que tienes el servidor, y los demás a moderadores, VIP y suscriptores.
 - Il giro dei ruoli non partiva per chi usa il nostro bot, e i ruoli non arrivavano mai: adesso parte. [vai: ruoli]
+  en: The role round didn’t start for people using our bot, and the roles never arrived: now it starts.
+  es: La ronda de roles no arrancaba para quien usa nuestro bot, y los roles nunca llegaban: ahora arranca.
 - Anche gli appuntamenti sul calendario si allineano col nostro bot, e non si spengono più insieme ai ruoli. [vai: dcavvisi]
+  en: Calendar events line up with our bot too, and no longer switch off together with the roles.
+  es: También las citas del calendario se alinean con nuestro bot, y ya no se apagan junto con los roles.
 - Ogni ruolo della traccia dice a chi va, e lo cambi tu: a te, a chi modera, ai VIP, agli abbonati, o a nessuno. [vai: dcserver]
+  en: Each role in the track says who it goes to, and you can change it: to you, to your mods, to VIPs, to subscribers, or to nobody.
+  es: Cada rol de la plantilla dice a quién va, y lo cambias tú: a ti, a quien modera, a los VIP, a los suscriptores o a nadie.
 - Quando qualcosa non riesce, il costruttore dice su cosa: quale canale, quale regola, quale porta. [vai: dcserver]
+  en: When something fails, the builder says what on: which channel, which rule, which door.
+  es: Cuando algo falla, el constructor dice en qué: qué canal, qué regla, qué puerta.
 - «In diretta» nasce come stanza dove si ascolta: parli tu e chi modera, gli altri ti sentono. [vai: dcserver]
+  en: “Live” starts out as a room for listening: you and your mods speak, everyone else hears you.
+  es: «En directo» nace como sala para escuchar: hablan tú y quien modera, los demás te oyen.
 - Le tracce creano l'angolo AFK e lo impostano, se il tuo server non ne ha già uno. [vai: dcserver]
+  en: Tracks create the AFK corner and set it up, if your server doesn’t already have one.
+  es: Las plantillas crean el rincón AFK y lo configuran, si tu servidor no tiene ya uno.
 - Scegliere un'immagine per un ruolo che c'è già non blocca più la costruzione con un falso «il server è cambiato». [vai: dcserver]
+  en: Picking an image for a role that already exists no longer blocks the build with a false “the server has changed”.
+  es: Elegir una imagen para un rol que ya existe ya no bloquea la construcción con un falso «el servidor ha cambiado».
 - Il cambio di categoria, a voce, in chat o da Telegram, non scambia più «diablo 4» per «Diablo»: conta ogni parola che dici, e capisce numeri romani e sigle come «gta 5» o «cs2». [vai: ascolto]
+  en: Changing category by voice, in chat or from Telegram no longer mistakes “diablo 4” for “Diablo”: it counts every word you say, and understands Roman numerals and abbreviations like “gta 5” or “cs2”.
+  es: El cambio de categoría, por voz, en el chat o desde Telegram, ya no confunde «diablo 4» con «Diablo»: cuenta cada palabra que dices, y entiende números romanos y siglas como «gta 5» o «cs2».
 - Nei Ruoli si sceglie solo un ruolo che il bot può dare davvero. Il pannello dice qual è il suo ruolo più alto e chi gli sta sopra, senza contare i ruoli degli altri bot. [vai: ruoli]
+  en: In Roles you can only pick a role the bot can actually give. The panel says which is its highest role and who’s above it, not counting other bots’ roles.
+  es: En Roles solo se elige un rol que el bot pueda dar de verdad. El panel dice cuál es su rol más alto y quién está por encima, sin contar los roles de otros bots.
 - Il costruttore non crea più un secondo «Moderatori» accanto al tuo «moderatore»: se il ruolo c'è già e il bot non ci arriva, te lo dice. [vai: dcserver]
+  en: The builder no longer creates a second “Moderators” next to your “moderator”: if the role already exists and the bot can’t reach it, it tells you.
+  es: El constructor ya no crea un segundo «Moderadores» junto a tu «moderador»: si el rol ya existe y el bot no llega a él, te lo dice.
 - Facendo piazza pulita, i ruoli vecchi che restano li vedi prima, ognuno col suo perché: stanno sopra il bot, oppure sono di un altro bot. [vai: dcserver]
+  en: When you clear the board, you see beforehand the old roles that will stay, each with its reason: they’re above the bot, or they belong to another bot.
+  es: Al hacer limpieza ves antes los roles viejos que se quedan, cada uno con su motivo: están por encima del bot, o son de otro bot.
 - [importante] La settimana ha una scheda sua: scrivi una volta i giorni, gli orari e cosa fai, e da lì li prendono la grafica e i calendari. [vai: settimana]
+  en: Your week has its own tab: write your days, times and what you do once, and the graphic and calendars take them from there.
+  es: La semana tiene su propia pestaña: escribes una vez los días, los horarios y lo que haces, y de ahí los toman la gráfica y los calendarios.
   > La tua settimana in un posto solo
   > Scrivi una volta quando vai in onda e cosa fai: grafiche, calendari e avvisi prendono tutto da lì.
+  en> Your week in one place
+  en> Write once when you go live and what you do: graphics, calendars and alerts take everything from there.
+  es> Tu semana en un solo lugar
+  es> Escribes una vez cuándo sales al aire y qué haces: gráficas, calendarios y avisos lo toman todo de ahí.
 - Con un tasto la mandi su Telegram, nei canali di Discord e nella storia di Instagram. Compaiono solo i servizi che hai collegato. [vai: settimana]
+  en: With one button you send it to Telegram, to Discord channels and to your Instagram story. Only the services you’ve connected show up.
+  es: Con un botón la envías a Telegram, a los canales de Discord y a la historia de Instagram. Aparecen solo los servicios que conectaste.
 - Anche il Programma del tuo canale Twitch può riceverla, e si rimette in pari da solo quando cambi la settimana. [vai: settimana]
+  en: Your Twitch channel’s Schedule can receive it too, and it catches up by itself when you change your week.
+  es: También el Programa de tu canal de Twitch puede recibirla, y se pone al día solo cuando cambias la semana.
 - Nella grafica della settimana i giorni seguono la lingua del pannello: in inglese non esce più «LUN MAR MER». [vai: grafiche]
+  en: In the weekly graphic the days follow the panel’s language: in English you no longer get “LUN MAR MER”.
+  es: En la gráfica de la semana los días siguen el idioma del panel: en inglés ya no sale «LUN MAR MER».
 - Due tasti «Vai a…», nel calendario di Discord e negli avvisi, non portavano da nessuna parte: adesso ci portano. [vai: dcavvisi]
+  en: Two “Go to…” buttons, in the Discord calendar and in the alerts, led nowhere: now they take you there.
+  es: Dos botones «Ir a…», en el calendario de Discord y en los avisos, no llevaban a ninguna parte: ahora sí llevan.
 - I tasti di CONSOLify funzionano davvero da una tastiera fisica, icone comprese: fino a oggi ogni pressione si perdeva per strada. [vai: consolify]
+  en: CONSOLify keys really work from a physical key pad, icons included: until today every press got lost along the way.
+  es: Las teclas de CONSOLify funcionan de verdad desde un teclado físico, iconos incluidos: hasta hoy cada pulsación se perdía por el camino.
 - Con i giochi che dicono da soli quando muori, il contatore adesso sale davvero: il loro messaggio non arrivava fino a me. [vai: moduli]
+  en: With games that report your deaths themselves, the counter now really goes up: their message wasn’t reaching me.
+  es: Con los juegos que dicen solos cuándo mueres, el contador ahora sube de verdad: su mensaje no me llegaba.
 - [importante] Instagram si collega con un tasto, come TikTok: scegli con che account entrare, e niente più ID e token da copiare dal sito di Meta. Serve un account professionale. [vai: notifiche]
+  en: Instagram connects with one button, like TikTok: choose which account to sign in with, and no more IDs and tokens to copy from Meta’s site. You need a professional account.
+  es: Instagram se conecta con un botón, como TikTok: eliges con qué cuenta entrar, y se acabaron los ID y tokens que copiar del sitio de Meta. Hace falta una cuenta profesional.
   > Instagram si collega con un tasto
   > Prima servivano codici copiati dal sito di Meta. Adesso scegli l'account e sei collegato, pronto a pubblicare storie e post dal pannello.
+  en> Instagram connects with one button
+  en> Before, you needed codes copied from Meta’s site. Now you pick the account and you’re connected, ready to post stories and posts from the panel.
+  es> Instagram se conecta con un botón
+  es> Antes hacían falta códigos copiados del sitio de Meta. Ahora eliges la cuenta y ya estás conectado, listo para publicar historias y posts desde el panel.
 - Il collegamento con Instagram si rinnova da solo prima di scadere, e se togli l'app dal tuo Instagram lo cancello subito. [vai: notifiche]
+  en: The Instagram connection renews itself before it expires, and if you remove the app from your Instagram I delete it right away.
+  es: La conexión con Instagram se renueva sola antes de caducar, y si quitas la app de tu Instagram la borro enseguida.
 - Se a Instagram o al bot di Discord manca un permesso, o un collegamento si è rotto, lo vedi subito nella sua scheda, con il tasto per rimediare. [vai: notifiche]
+  en: If Instagram or the Discord bot is missing a permission, or a connection broke, you see it right away in its tab, with the button to fix it.
+  es: Si a Instagram o al bot de Discord le falta un permiso, o una conexión se rompió, lo ves enseguida en su pestaña, con el botón para arreglarlo.
 - Quando il pannello ti chiede una conferma o un nome, lo fa con la sua finestra e nella tua lingua: niente più finestre grigie del browser, che sul telefono sembravano un avviso di sistema.
+  en: When the panel asks you for a confirmation or a name, it uses its own window, in your language: no more gray browser windows that looked like a system alert on phones.
+  es: Cuando el panel te pide una confirmación o un nombre, lo hace con su propia ventana y en tu idioma: se acabaron las ventanas grises del navegador, que en el teléfono parecían un aviso del sistema.
 - Le scorciatoie si leggono coi tasti del tuo computer, ⌘ sul Mac e Ctrl su Windows, e sul telefono non compaiono. L'editor dell'overlay si usa anche col dito. [vai: alert]
+  en: Shortcuts show your computer’s keys, ⌘ on Mac and Ctrl on Windows, and they don’t appear on phones. The overlay editor works with your finger too.
+  es: Los atajos se leen con las teclas de tu computadora, ⌘ en Mac y Ctrl en Windows, y en el teléfono no aparecen. El editor del overlay se usa también con el dedo.
 - Se il browser non lascia copiare, il testo compare già selezionato, col tasto giusto per il tuo dispositivo, anche nel segnalibro delle citazioni. Prima alcune copie fallivano senza dirlo.
+  en: If the browser won’t allow copying, the text appears already selected, with the right key for your device, in the quotes bookmark too. Before, some copies failed without saying so.
+  es: Si el navegador no deja copiar, el texto aparece ya seleccionado, con la tecla adecuada para tu dispositivo, también en el marcador de las citas. Antes algunas copias fallaban sin decirlo.
 - Il tasto che toglie l'audio a una sorgente non resta più vuoto quando l'audio è spento, e i titoli del calendario e dei ruoli hanno di nuovo la loro icona.
+  en: The button that mutes a source no longer goes blank when the audio is off, and the calendar and roles titles have their icon back.
+  es: El botón que silencia una fuente ya no se queda vacío cuando el audio está apagado, y los títulos del calendario y de los roles vuelven a tener su icono.
 - «Avvisi» diventa «I tuoi social»: in cima i tuoi account, ognuno con il suo stato e il tasto per collegarlo, e sotto cosa annunciare quando pubblichi. Niente più riquadri ripetuti. [vai: notifiche]
+  en: “Alerts” becomes “Your socials”: your accounts at the top, each with its status and a button to connect it, and below that what to announce when you post. No more repeated boxes.
+  es: «Avisos» pasa a ser «Tus redes»: arriba tus cuentas, cada una con su estado y el botón para conectarla, y debajo qué anunciar cuando publicas. Se acabaron los recuadros repetidos.
 - La pagina delle donazioni si modifica dalla scheda Donazioni, e la tua diretta in prima pagina si accende dalla Pagina link. [vai: donazioni]
+  en: The donations page is edited from the Donations tab, and your stream on the front page is turned on from the Link page.
+  es: La página de donaciones se edita desde la pestaña Donaciones, y tu directo en la portada se activa desde la Página de enlaces.
 - La promo dei tuoi social in chat si accende insieme alla personalità del bot, accanto a «si fa vivo da solo». [vai: personalita]
+  en: The promo for your socials in chat turns on together with the bot’s personality, next to “chimes in on its own”.
+  es: La promo de tus redes en el chat se activa junto con la personalidad del bot, al lado de «interviene solo».
 - «Come funziona» si apre da solo la prima volta che entri in una scheda, poi resta chiuso finché non lo apri tu.
+  en: “How it works” opens by itself the first time you enter a tab, then stays closed until you open it.
+  es: «Cómo funciona» se abre solo la primera vez que entras en una pestaña, y luego queda cerrado hasta que lo abras tú.
 - [importante] La prima schermata del tuo server Discord si scrive da sola: ogni canale in mostra ha già la sua faccina e la sua riga, nella lingua del nome. Quelle che scrivi tu restano tue. [vai: dcentra]
+  en: Your Discord server’s welcome screen writes itself: every featured channel already has its emoji and its line, in the language of its name. The ones you write stay yours.
+  es: La pantalla de bienvenida de tu servidor de Discord se escribe sola: cada canal destacado ya tiene su emoji y su línea, en el idioma de su nombre. Las que escribes tú siguen siendo tuyas.
   > La prima schermata del server si scrive da sola
   > Chi entra nel tuo server trova ogni canale già spiegato in una riga, nella lingua giusta, e tu cambi solo quello che vuoi.
+  en> Your server’s welcome screen writes itself
+  en> Newcomers to your server find every channel already explained in one line, in the right language, and you only change what you want.
+  es> La bienvenida del servidor se escribe sola
+  es> Quien entra en tu servidor encuentra cada canal ya explicado en una línea, en el idioma correcto, y tú cambias solo lo que quieras.
 - Nei giorni della settimana scrivi un gioco o un titolo: mentre scrivi compaiono le categorie di Twitch, e sotto ogni giorno leggi quale andrà sul Programma. [vai: settimana]
+  en: In the days of your week you type a game or a title: Twitch categories appear as you type, and under each day you read which one will go on the Schedule.
+  es: En los días de la semana escribes un juego o un título: mientras escribes aparecen las categorías de Twitch, y debajo de cada día lees cuál irá al Programa.
 - Il synthwave delle grafiche è in prospettiva vera: il sole sorge dietro il titolo e le linee del pavimento escono da tutto l'orizzonte. [vai: grafiche]
+  en: The synthwave in graphics has real perspective: the sun rises behind the title and the floor lines come out from the whole horizon.
+  es: El synthwave de las gráficas tiene perspectiva real: el sol sale detrás del título y las líneas del suelo salen de todo el horizonte.
 - Otto temi animati nuovi per le grafiche, fra cui vaporwave, pioggia al neon, notte di stelle, sakura e lo-fi, e tredici stili pronti con l'anteprima fatta coi tuoi testi. [vai: grafiche]
+  en: Eight new animated themes for graphics, including vaporwave, neon rain, starry night, sakura and lo-fi, and thirteen ready-made styles with previews made from your texts.
+  es: Ocho temas animados nuevos para las gráficas, entre ellos vaporwave, lluvia de neón, noche estrellada, sakura y lo-fi, y trece estilos listos con la vista previa hecha con tus textos.
 - Nelle grafiche scegli il carattere e lo stile del titolo, la forma delle righe, e per le scene animate cosa si vede, la velocità e quanto si nota. [vai: grafiche]
+  en: In graphics you choose the title’s font and style, the shape of the rows, and for animated scenes what’s shown, the speed and how noticeable it is.
+  es: En las gráficas eliges la fuente y el estilo del título, la forma de las filas y, en las escenas animadas, qué se ve, la velocidad y cuánto se nota.
 - Le scritte delle grafiche si leggono sempre, anche sopra le scene che si muovono, e GIF e video ricominciano senza scatti. Col QR, niente più righe coperte. [vai: grafiche]
+  en: Text on graphics is always readable, even over moving scenes, and GIFs and videos loop without stutters. With the QR code, no more covered rows.
+  es: Los textos de las gráficas se leen siempre, incluso sobre escenas en movimiento, y los GIF y videos vuelven a empezar sin saltos. Con el QR, se acabaron las filas tapadas.
 - Nella scheda del browser la tua pagina link ha come icona la tua foto, quella che mostra in alto, invece di quella di SocialBot. [vai: pagina]
+  en: In the browser tab, your link page uses your photo as its icon, the one shown at the top, instead of SocialBot’s.
+  es: En la pestaña del navegador tu página de enlaces tiene como icono tu foto, la que muestra arriba, en lugar de la de SocialBot.
 - Il titolo di ogni scheda si vede subito, anche al primo caricamento, e sul telefono il pannello non scivola più di lato.
+  en: Each tab’s title shows right away, even on first load, and on phones the panel no longer slides sideways.
+  es: El título de cada pestaña se ve enseguida, incluso en la primera carga, y en el teléfono el panel ya no se desliza de lado.
 - Stato ti dice come va adesso: in diretta vedi da quanto, chi ti guarda e cosa succede in chat; fuori onda, quando è la prossima e com’è andata l’ultima. [vai: stato]
+  en: Status tells you how things are going now: when live, how long you’ve been on, who’s watching and what’s happening in chat; off air, when the next stream is and how the last one went.
+  es: Estado te dice cómo va ahora: en directo ves desde cuándo, quién te mira y qué pasa en el chat; fuera del aire, cuándo es el próximo y cómo fue el último.
 - Piattaforme, passkey, moderatori, codici delle mail e i tuoi dati hanno una scheda loro, «Il tuo account». Il pre-addestramento sta in Conoscenza. [vai: account]
+  en: Platforms, passkeys, moderators, email codes and your data have their own tab, “Your account”. Pre-training is in Knowledge.
+  es: Plataformas, passkeys, moderadores, códigos de los correos y tus datos tienen su propia pestaña, «Tu cuenta». El preentrenamiento está en Conocimiento.
 - Sul computer il menù sta sempre a sinistra, con tutte le schede: un clic e ci sei, e vedi sempre dove sei.
+  en: On a computer the menu always sits on the left, with every tab: one click and you’re there, and you always see where you are.
+  es: En la computadora el menú está siempre a la izquierda, con todas las pestañas: un clic y llegas, y siempre ves dónde estás.
 - Mentre una scheda carica, al posto di «Caricamento…» vedi la forma di quello che sta arrivando.
+  en: While a tab loads, instead of “Loading…” you see the shape of what’s on its way.
+  es: Mientras una pestaña carga, en lugar de «Cargando…» ves la forma de lo que está llegando.
 - Il pannello si apre e cambia scheda più in fretta, soprattutto sul telefono: prepara solo la scheda che stai guardando.
+  en: The panel opens and switches tabs faster, especially on phones: it only prepares the tab you’re looking at.
+  es: El panel se abre y cambia de pestaña más rápido, sobre todo en el teléfono: prepara solo la pestaña que estás mirando.
 - Le «×» che tolgono un amico o una fonte si prendono col dito anche sul telefono.
+  en: The “×” buttons that remove a friend or a source can be tapped with a finger on phones too.
+  es: Las «×» que quitan a un amigo o una fuente se pulsan con el dedo también en el teléfono.
 - Nello Studio un elemento si sposta di quanto lo trascini anche appena scelto: la tela non cambia più misura sotto il dito. [vai: alert]
+  en: In the Studio an element moves as far as you drag it even right after you pick it: the canvas no longer changes size under your finger.
+  es: En el Studio un elemento se mueve lo que lo arrastras incluso recién elegido: el lienzo ya no cambia de tamaño bajo el dedo.
 - A diretta appena chiusa, Stato non dice più «in diretta»: quando Twitch risponde, vale quello che dice Twitch. [vai: stato]
+  en: Right after a stream ends, Status no longer says “Live”: once Twitch answers, what Twitch says wins.
+  es: Con el directo recién terminado, Estado ya no dice «En directo»: cuando Twitch responde, vale lo que dice Twitch.
 - Scrivere nelle Grafiche è di nuovo fluido, anche dopo esserci entrati più volte, e «Salva» o «Scarica» partono una volta sola. [vai: grafiche]
+  en: Typing in Graphics is smooth again, even after going in several times, and “Save” or “Download” fire only once.
+  es: Escribir en Gráficas vuelve a ser fluido, incluso después de entrar varias veces, y «Guardar» o «Descargar» salen una sola vez.
 - Le grafiche escono anche in verticale per le storie, 1080×1920: lo sfondo copre tutto lo schermo e le scritte stanno lontane dalle barre di Instagram. [vai: grafiche]
+  en: Graphics now also come out vertical for stories, 1080×1920: the background covers the whole screen and the text stays clear of Instagram’s bars.
+  es: Las gráficas salen también en vertical para las historias, 1080×1920: el fondo cubre toda la pantalla y los textos quedan lejos de las barras de Instagram.
 - La settimana mandata nella storia di Instagram non esce più tagliata ai lati: alla storia va la versione verticale, a Telegram e Discord il post. [vai: settimana]
+  en: The week sent to your Instagram story no longer comes out cropped at the sides: the story gets the vertical version, Telegram and Discord the post.
+  es: La semana enviada a la historia de Instagram ya no sale cortada a los lados: a la historia va la versión vertical, y a Telegram y Discord el post.
 - [importante] Nuovo nelle Grafiche: con «Metti nella storia» la grafica che vedi va nella tua storia di Instagram, già in verticale. Se Instagram non è collegato, il tasto per collegarlo è lì. [vai: grafiche]
+  en: New in Graphics: with “Post to your story”, the graphic you see goes to your Instagram story, already vertical. If Instagram isn’t connected, the button to connect it is right there.
+  es: Nuevo en Gráficas: con «Publicar en tu historia», la gráfica que ves va a tu historia de Instagram, ya en vertical. Si Instagram no está conectado, el botón para conectarlo está ahí.
   > Dalle Grafiche alla storia di Instagram
   > La grafica che hai appena fatto finisce nella tua storia già nel formato giusto, senza scaricarla e ricaricarla dal telefono.
+  en> From Graphics to your Instagram story
+  en> The graphic you just made lands in your story already in the right format, without downloading it and uploading it again from your phone.
+  es> De Gráficas a tu historia de Instagram
+  es> La gráfica que acabas de hacer llega a tu historia ya en el formato correcto, sin descargarla y volver a subirla desde el teléfono.
 - [importante] La storia «Live ora» può partire da sola quando vai in diretta su Twitch: accendila nelle Grafiche, nel riquadro della storia, e se non parte te lo dico. [vai: grafiche]
+  en: The “Live now” story can go out by itself when you go live on Twitch: turn it on in Graphics, in the story box, and if it doesn’t go out I’ll tell you.
+  es: La historia «En directo» puede salir sola cuando empiezas un directo en Twitch: la activas en Gráficas, en el recuadro de la historia, y si no sale te lo digo.
   > La storia «Live ora» parte da sola
   > Quando vai in diretta chi ti segue su Instagram lo sa subito, anche se tu stai già pensando a tutt'altro.
+  en> The “Live now” story goes out by itself
+  en> When you go live, your Instagram followers know right away, even if your mind is already on something else.
+  es> La historia «En directo» sale sola
+  es> Cuando empiezas el directo, quien te sigue en Instagram lo sabe enseguida, aunque tú ya estés pensando en otra cosa.
 - Settimana e «Live ora» hanno ognuna il suo titolo: quello della settimana non finisce più sulla grafica della diretta. [vai: grafiche]
+  en: The week and “Live now” each have their own title: the week’s title no longer ends up on the live graphic.
+  es: La semana y «En directo» tienen cada una su título: el de la semana ya no acaba en la gráfica del directo.
 - Nelle Grafiche i tasti hanno di nuovo il contorno, come nel resto del pannello, e in Statistiche il periodo scelto non perde il bordo. [vai: grafiche]
+  en: In Graphics the buttons have their outline back, like in the rest of the panel, and in Stats the chosen period keeps its border.
+  es: En Gráficas los botones vuelven a tener contorno, como en el resto del panel, y en Estadísticas el periodo elegido no pierde el borde.
 - Cambiare scheda è più svelto, soprattutto sul telefono, e nello Studio l'anteprima dal vivo riparte quando ci torni. [vai: alert]
+  en: Switching tabs is quicker, especially on phones, and in the Studio the live preview restarts when you come back to it.
+  es: Cambiar de pestaña es más ágil, sobre todo en el teléfono, y en el Studio la vista previa en vivo se reanuda cuando vuelves.
 - Nello Studio la tela è molto più grande: il menù si apre dal tasto in alto e lascia la larghezza al lavoro, e i nomi dei livelli non si tagliano più. [vai: alert]
+  en: In the Studio the canvas is much bigger: the menu opens from the button at the top and leaves the width for your work, and layer names no longer get cut off.
+  es: En el Studio el lienzo es mucho más grande: el menú se abre desde el botón de arriba y deja el ancho para el trabajo, y los nombres de las capas ya no se cortan.
 - Pubblicità in chat: il preavviso adesso parte davvero, «sono tornato» arriva quando la pausa finisce, e i secondi nei messaggi sono sempre quanto dura la pausa. [vai: regia]
+  en: Ads in chat: the heads-up now really goes out, “I’m back” arrives when the break ends, and the seconds in the messages always match how long the break lasts.
+  es: Publicidad en el chat: el aviso previo ahora sale de verdad, «ya volví» llega cuando termina la pausa, y los segundos de los mensajes son siempre lo que dura la pausa.
 - Chi ha l'account nuovo non viene più cacciato dallo scudo: l'avviso esce una volta sola, e un mod lo fa scrivere con !permetti nome. Un messaggio con i Bit non viene mai trattenuto. [vai: scudo]
+  en: People with new accounts are no longer kicked out by the shield: the notice goes out only once, and a mod lets them write with !permetti name. A message with Bits is never held back.
+  es: Quien tiene la cuenta nueva ya no es expulsado por el escudo: el aviso sale una sola vez, y un mod lo deja escribir con !permetti nombre. Un mensaje con Bits nunca se retiene.
 - [importante] Ogni gioco ha le sue regole da cambiare: costi, premi, attese, probabilità, testi e cosa si pesca, con accanto quanto rende. Di serie il banco vince sempre un po' e la pesca rende quanto la presenza. [vai: giochi]
+  en: Every game has its own rules to change: costs, prizes, waits, odds, texts and what can be caught, with what it pays out alongside. By default the house always wins a little, and fishing pays as much as attendance.
+  es: Cada juego tiene sus reglas para cambiar: costos, premios, esperas, probabilidades, textos y qué se pesca, con lo que rinde al lado. De serie la banca siempre gana un poco y la pesca rinde lo mismo que la asistencia.
   > Le regole di ogni gioco sono tue
   > Decidi quanto costa giocare, quanto si vince e ogni quanto, e vedi subito se il gioco regala punti o li toglie.
+  en> The rules of every game are yours
+  en> Decide how much it costs to play, how much you win and how often, and see right away whether the game gives points away or takes them.
+  es> Las reglas de cada juego son tuyas
+  es> Decides cuánto cuesta jugar, cuánto se gana y cada cuánto, y ves enseguida si el juego regala puntos o los quita.
 - [importante] La chat in solo emote per due minuti, o per il tempo che dici: la accendono i mod con !soloemote 5m, un tuo Modulo o la chat con !sblocca, e poi torna com'era da sola. [vai: moduli]
+  en: Emote-only chat for two minutes, or for as long as you say: mods turn it on with !soloemote 5m, one of your Modules does, or chat does with !sblocca, and then it goes back to normal by itself.
+  es: El chat en solo emotes durante dos minutos, o el tiempo que digas: lo activan los mods con !soloemote 5m, un Módulo tuyo o el chat con !sblocca, y luego vuelve solo a como estaba.
   > La chat in solo emote, a tempo
   > Un momento di festa o di calma in chat dura quanto vuoi e poi finisce da solo.
+  en> Emote-only chat, on a timer
+  en> A moment of celebration or calm in chat lasts as long as you want and then ends on its own.
+  es> El chat en solo emotes, con tiempo
+  es> Un momento de fiesta o de calma en el chat dura lo que quieras y luego termina solo.
 - [importante] Quattro manche nuove: impiccato, più o meno, calcolo veloce e rebus con le emoji. Scegli tu quali girano da sole, e con !manche impiccato ne apri una per nome. [vai: giochi]
+  en: Four new rounds: hangman, higher or lower, quick maths and emoji rebus. You choose which ones run on their own, and with !manche impiccato you open one by name.
+  es: Cuatro rondas nuevas: ahorcado, más o menos, cálculo rápido y jeroglífico con emojis. Eliges cuáles salen solas, y con !manche impiccato abres una por su nombre.
   > Quattro manche nuove in chat
   > Impiccato, più o meno, calcolo e rebus tengono viva la chat nei momenti morti, da soli o quando li chiami tu.
+  en> Four new chat rounds
+  en> Hangman, higher or lower, quick maths and rebus keep chat alive in the slow moments, on their own or when you call them.
+  es> Cuatro rondas nuevas en el chat
+  es> Ahorcado, más o menos, cálculo y jeroglífico mantienen vivo el chat en los momentos muertos, solos o cuando los llamas tú.
 - [importante] Duelli con la posta: !duello @nome 50, l'altro accetta o rifiuta e chi vince prende la posta dell'altro. Arriva anche la morra cinese contro il bot, per ridere o con una puntata. [vai: giochi]
+  en: Duels with stakes: !duello @name 50, the other person accepts or refuses, and the winner takes the other’s stake. Rock paper scissors against the bot arrives too, just for fun or with a bet.
+  es: Duelos con apuesta: !duello @nombre 50, el otro acepta o rechaza y quien gana se lleva la apuesta del otro. Llega también piedra, papel o tijera contra el bot, por diversión o con una apuesta.
   > Duelli con la posta e morra cinese
   > Due spettatori si sfidano mettendo in gioco i propri punti, e tutta la chat sta a guardare chi vince.
+  en> Duels with stakes, and rock paper scissors
+  en> Two viewers challenge each other by putting their own points on the line, and the whole chat watches to see who wins.
+  es> Duelos con apuesta y piedra, papel o tijera
+  es> Dos espectadores se retan poniendo en juego sus propios puntos, y todo el chat mira quién gana.
 - Abbracci, bacini e il batti il cinque in chat: ogni tanto, a sorpresa, viene un cinque perfetto. Chi scrive !nococcole non ne riceve. [vai: giochi]
+  en: Hugs, kisses and high fives in chat: every now and then, out of nowhere, a perfect high five comes along. Anyone who types !nococcole doesn’t get any.
+  es: Abrazos, besitos y choca esos cinco en el chat: de vez en cuando, por sorpresa, sale un choque perfecto. Quien escribe !nococcole no recibe ninguno.
 - [importante] Due giochi da fare insieme: il colpo di gruppo, dove più siete più è facile scappare col bottino, e il boss, che la chat batte a colpi di !colpisci con la barra della vita sull'overlay. [vai: giochi]
+  en: Two games to play together: the group heist, where the more of you there are the easier it is to get away with the loot, and the boss, which chat beats with !colpisci while its health bar shows on the overlay.
+  es: Dos juegos para jugar juntos: el golpe en grupo, donde cuantos más son más fácil es escapar con el botín, y el jefe, que el chat vence a golpes de !colpisci con la barra de vida en el overlay.
   > Giochi da fare tutti insieme
   > Il colpo e il boss premiano la chat quando gioca unita: più gente partecipa, più è facile vincere.
+  en> Games to play all together
+  en> The heist and the boss reward chat for playing as one: the more people join in, the easier it is to win.
+  es> Juegos para jugar todos juntos
+  es> El golpe y el jefe premian al chat cuando juega unido: cuanta más gente participa, más fácil es ganar.
 - La finestra delle novità non ti rimostra più le stesse righe: ognuna esce una volta. Le cose nuove più grosse stanno in cima, «In evidenza», anche nella pagina delle novità.
+  en: The What’s new window no longer shows you the same lines again: each one appears once. The biggest new things sit at the top, “Featured”, on the What’s new page too.
+  es: La ventana de novedades ya no te vuelve a mostrar las mismas líneas: cada una sale una vez. Las cosas nuevas más grandes están arriba, «Destacado», también en la página de novedades.
 - [importante] Ogni gioco ha due attese che scegli tu, a testa e per tutti, e partono solo quando si gioca davvero. Chi le trova se lo sente dire una volta, con quanto manca. [vai: giochi]
+  en: Every game has two cooldowns you choose, per person and for everyone, and they only start when someone actually plays. Whoever hits one is told once, with how long is left.
+  es: Cada juego tiene dos esperas que eliges tú, por persona y para todos, y solo empiezan cuando se juega de verdad. Quien se las encuentra lo oye una vez, con cuánto falta.
   > Attese a testa e per tutti
   > Nessuno riempie la chat con lo stesso gioco, e chi deve aspettare sa quanto manca invece di riprovare a vuoto.
+  en> Cooldowns per person and for everyone
+  en> Nobody floods chat with the same game, and whoever has to wait knows how long is left instead of trying again in vain.
+  es> Esperas por persona y para todos
+  es> Nadie llena el chat con el mismo juego, y quien tiene que esperar sabe cuánto falta en lugar de volver a intentarlo en vano.
 - [importante] Tre giochi nuovi: il wordle della chat coi quadratini colorati, conta insieme per battere il record del canale, e il blackjack contro il banco con !bj 50. [vai: giochi]
+  en: Three new games: the chat Wordle with colored squares, count together to beat the channel record, and blackjack against the house with !bj 50.
+  es: Tres juegos nuevos: el Wordle del chat con cuadraditos de colores, contar juntos para batir el récord del canal, y el blackjack contra la banca con !bj 50.
   > Wordle, conta e blackjack
   > Tre giochi diversi fra loro, uno di parole, uno da fare insieme per il record e uno a carte, così ognuno in chat trova il suo.
+  en> Wordle, count together and blackjack
+  en> Three very different games, one with words, one to play together for the record and one with cards, so everyone in chat finds theirs.
+  es> Wordle, contar juntos y blackjack
+  es> Tres juegos distintos entre sí, uno de palabras, uno para jugar juntos por el récord y uno de cartas, así cada uno en el chat encuentra el suyo.
 - La corsa: !corsa apre le puntate su cinque corridori, il favorito paga poco e l'ultimo tanto, e ogni corridore rende uguale. Nomi e resa li scegli tu. [vai: giochi]
+  en: The race: !corsa opens betting on five runners, the favorite pays little and the last one a lot, and every runner pays out equally over time. You choose names and payouts.
+  es: La carrera: !corsa abre las apuestas sobre cinco corredores, el favorito paga poco y el último mucho, y cada corredor rinde igual. Nombres y pagos los eliges tú.
 - La patata bollente: !patata la lancia, !passa la passa a chi è in chat, e scoppia quando nessuno se l'aspetta. Se vuoi, chi resta con la patata paga una multa. [vai: giochi]
+  en: Hot potato: !patata throws it, !passa passes it to someone in chat, and it blows up when nobody expects it. If you like, whoever is left holding it pays a fine.
+  es: La patata caliente: !patata la lanza, !passa la pasa a alguien del chat, y explota cuando nadie se lo espera. Si quieres, quien se queda con la patata paga una multa.
 - La catena di parole: !catena, e ogni parola comincia con le ultime due lettere della precedente. Si batte il record del canale, e le chiacchiere non la rompono. [vai: giochi]
+  en: Word chain: !catena, and each word starts with the last two letters of the one before. You go for the channel record, and small talk doesn’t break the chain.
+  es: La cadena de palabras: !catena, y cada palabra empieza con las dos últimas letras de la anterior. Se bate el récord del canal, y las charlas no la rompen.
 - !trivia e !manche, mentre si conta insieme, ti dicono cosa c'è in corso invece di tacere o di dire che non ci sono manche. [vai: giochi]
+  en: While a count together is running, !trivia and !manche tell you what’s going on instead of staying silent or saying there are no rounds.
+  es: Mientras se cuenta juntos, !trivia y !manche te dicen qué está en curso en lugar de callarse o decir que no hay rondas.
 - Il menù è fatto a vignette: ogni gruppo si apre e si chiude dalla sua didascalia, e resta aperto quello della scheda in cui sei. Se dentro un gruppo chiuso c'è qualcosa di nuovo, lo vedi dal «!».
+  en: The menu is made of comic panels: each group opens and closes from its caption, and the group for the tab you’re in stays open. If there’s something new inside a closed group, the “!” shows it.
+  es: El menú está hecho de viñetas: cada grupo se abre y se cierra desde su texto de apoyo, y queda abierto el de la pestaña en la que estás. Si dentro de un grupo cerrado hay algo nuevo, lo ves por el «!».
 - Nella Pagina link e nelle Donazioni l'anteprima non si schiaccia più accanto ai comandi: il telefono resta sempre intero, e le colonne si mettono in fila solo se c'è posto. [vai: donazioni]
+  en: In the Link page and in Donations, the preview no longer gets squashed next to the controls: the phone always stays whole, and the columns only line up side by side if there’s room.
+  es: En la Página de enlaces y en Donaciones la vista previa ya no se aplasta junto a los controles: el teléfono siempre queda entero, y las columnas se ponen en fila solo si hay espacio.
 - Nella scheda Telegram «Auguri di compleanno», l'accesso, dove mandare gli avvisi e la carta live compaiono subito: restavano in caricamento finché non passavi da «I tuoi social». [vai: telegram]
+  en: In the Telegram tab, “Birthday wishes”, sign-in, where to send alerts and the live card show up right away: they stayed loading until you went through “Your socials”.
+  es: En la pestaña Telegram, «Felicitaciones de cumpleaños», el acceso, adónde mandar los avisos y la tarjeta en directo aparecen enseguida: se quedaban cargando hasta que pasabas por «Tus redes».
 - Le Donazioni si aprono larghe quanto la Pagina link: l'editor è lo stesso, e adesso ha lo stesso spazio per comandi, anteprima e ispettore. [vai: donazioni]
+  en: Donations opens as wide as the Link page: the editor is the same, and it now has the same room for controls, preview and inspector.
+  es: Donaciones se abre tan ancha como la Página de enlaces: el editor es el mismo, y ahora tiene el mismo espacio para controles, vista previa e inspector.
 - Nel menù, nel gruppo «Canale», il canale che stai guardando ha di nuovo il suo timbro: sul telefono si vedeva solo un'ombra storta.
+  en: In the menu, in the “Channel” group, the channel you’re viewing has its stamp again: on phones you only saw a crooked shadow.
+  es: En el menú, en el grupo «Canal», el canal que estás viendo vuelve a tener su sello: en el teléfono solo se veía una sombra torcida.
 - Nella libreria degli effetti i tasti restano dentro la loro carta anche sugli schermi medi: «Non condividere» usciva dal bordo. [vai: effetti]
+  en: In the effects library the buttons stay inside their card even on medium screens: “Stop sharing” used to spill over the edge.
+  es: En la biblioteca de efectos los botones se quedan dentro de su tarjeta incluso en pantallas medianas: «Dejar de compartir» se salía del borde.
 - Cambiando sezione le carte entrano davvero dal lato verso cui vai: finora, quasi sempre, salivano e basta.
+  en: When you switch sections, cards really come in from the side you’re heading to: until now, they almost always just slid up.
+  es: Al cambiar de sección las tarjetas entran de verdad por el lado hacia el que vas: hasta ahora, casi siempre, solo subían.
 - Sul telefono, cambiando scheda, le carte entrano dal bordo e non più da fuori schermo, e le scritte accanto agli interruttori vanno a capo: la pagina non scivola più di lato.
+  en: On phones, when you switch tabs, cards come in from the edge rather than from off screen, and the labels next to switches wrap: the page no longer slides sideways.
+  es: En el teléfono, al cambiar de pestaña, las tarjetas entran desde el borde y ya no desde fuera de la pantalla, y los textos junto a los interruptores bajan de línea: la página ya no se desliza de lado.
 - Cambiando sezione da una pagina scorsa in giù, la nuova si apre dall'inizio: prima compariva a metà e scivolava su da sola.
+  en: When you switch sections from a page scrolled down, the new one opens at the top: before, it appeared halfway down and slid up by itself.
+  es: Al cambiar de sección desde una página desplazada hacia abajo, la nueva se abre desde el principio: antes aparecía a la mitad y subía sola.
 
 ## 2026-09-19
 
