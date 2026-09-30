@@ -116,9 +116,9 @@ export default {
     ] },
     { h3: 'Metterli su Twitch' },
     { passi: [
-      { t: 'Scarica tutti', d: ': ti arriva un file con le immagini in ordine e un testo con titolo, link e descrizione di ognuno. Puoi anche scaricare un pannello solo, da sotto la sua immagine.' },
-      { t: 'Apri il tuo canale', d: ' su Twitch, vai in <em>Informazioni</em> e accendi <em>Modifica pannelli</em>.' },
-      { t: 'Per ogni pannello', d: ' carica l\'immagine, incolla il link e la descrizione. Nella scheda, sotto ogni pannello, ci sono <em>Copia il link</em> e <em>Copia la descrizione</em>.' },
+      { t: 'Premi «Scarica tutti».', d: 'Ti arriva un file con le immagini in ordine e un testo con titolo, link e descrizione di ognuno. Puoi anche scaricare un pannello solo, da sotto la sua immagine.' },
+      { t: 'Apri il tuo canale su Twitch.', d: 'Vai in <em>Informazioni</em> e accendi <em>Modifica pannelli</em>.' },
+      { t: 'Aggiungi i pannelli uno alla volta.', d: 'Per ognuno carica l\'immagine, incolla il link e la descrizione. Nella scheda, sotto ogni pannello, ci sono <em>Copia il link</em> e <em>Copia la descrizione</em>.' },
     ] },
     { p: ['Le immagini sono larghe 320 pixel, la misura con cui Twitch le mostra. La descrizione Twitch la legge in Markdown: <code>**grassetto**</code>, <code>[parole](link)</code> per un link, un trattino davanti per un elenco.'] },
 
