@@ -21,9 +21,9 @@
 // Uso: node scripts/verifica-comparsa.mjs
 //      node scripts/verifica-comparsa.mjs --selftest   (deve diventare rosso)
 
-import { apriSito } from './_sito.mjs';
+import { apriSito, chromiumQui } from './_sito.mjs';
 
-const CHROMIUM = process.env.CHROMIUM || '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
+const CHROMIUM = chromiumQui();
 const PLAYWRIGHT = process.env.PLAYWRIGHT || '/opt/node22/lib/node_modules/playwright/index.mjs';
 const SELFTEST = process.argv.includes('--selftest');
 // Quanto si aspetta prima di dire che una scheda non si accendera' piu'. La rete
@@ -31,6 +31,7 @@ const SELFTEST = process.argv.includes('--selftest');
 const ATTESA = 3000;
 
 let chromium;
+if (!CHROMIUM) { console.log('Chromium non c\'e\' su questa macchina: collaudo saltato.'); process.exit(0); }
 try { ({ chromium } = await import(PLAYWRIGHT)); }
 catch { console.log('Playwright non c\'e\' su questa macchina: collaudo saltato.'); process.exit(0); }
 

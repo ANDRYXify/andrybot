@@ -23,6 +23,7 @@ import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { guscioVetrina } from '../src/web/vetrina-vista.js';
 
+import { chromiumQui } from './_sito.mjs';
 // I prezzi arrivano dal listino vero, non da una sua imitazione. La cartella
 // usa e getta serve perche' il listino tira dentro la configurazione: il banco
 // non tocca niente di quello che c'e' sul disco.
@@ -32,10 +33,11 @@ const PIANI = pianiPubblici();
 
 const RAD = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PUB = path.join(RAD, 'src/web/public');
-const CHROMIUM = process.env.CHROMIUM || '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
+const CHROMIUM = chromiumQui();
 const PLAYWRIGHT = process.env.PLAYWRIGHT || '/opt/node22/lib/node_modules/playwright/index.mjs';
 
 let chromium;
+if (!CHROMIUM) { console.log('Chromium non c\'e\' su questa macchina: collaudo saltato.'); process.exit(0); }
 try { ({ chromium } = await import(PLAYWRIGHT)); }
 catch { console.log('Playwright non c\'e\' su questa macchina: collaudo saltato.'); process.exit(0); }
 

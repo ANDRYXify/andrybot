@@ -29,14 +29,14 @@
 //      node scripts/verifica-padrone.mjs --selftest  (rimette la transizione
 //                                                     sul transform: rosso)
 
-import { apriSito } from './_sito.mjs';
+import { apriSito, chromiumQui } from './_sito.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const RAD = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const CSS = path.join(RAD, 'src/web/public/anime.css');
-const CHROMIUM = process.env.CHROMIUM || '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
+const CHROMIUM = chromiumQui();
 const PLAYWRIGHT = process.env.PLAYWRIGHT || '/opt/node22/lib/node_modules/playwright/index.mjs';
 const SELFTEST = process.argv.includes('--selftest');
 
@@ -44,6 +44,7 @@ const INVERSIONI_MAX = 8;   // entrata e uscita, e un margine
 const BALLO_MAX = 2;        // quante volte la larghezza puo' cambiare verso
 
 let chromium;
+if (!CHROMIUM) { console.log('Chromium non c\'e\' su questa macchina: collaudo saltato.'); process.exit(0); }
 try { ({ chromium } = await import(PLAYWRIGHT)); }
 catch { console.log('Playwright non c\'e\' su questa macchina: collaudo saltato.'); process.exit(0); }
 

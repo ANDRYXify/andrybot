@@ -130,11 +130,22 @@ export async function apriSito({ api = () => ({}), kick = true, youtube = false,
   return { porta, base: `http://127.0.0.1:${porta}`, chiudi: () => srv.close() };
 }
 
+// Dove sta Chromium, o null se su questa macchina non c'e'. Sul server non
+// c'e': li' i collaudi col browser si saltano, e l'aggiornamento deve passare lo
+// stesso. Un collaudo che lancia Chromium da se' passa di qui, come apriBrowser:
+// verifica-battito lo lanciava senza guardare e, sul server, faceva fallire
+// tutto l'aggiornamento con un ENOENT.
+export function chromiumQui() {
+  const via = process.env.CHROMIUM || '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
+  return fs.existsSync(via) ? via : null;
+}
+
 // Chromium con le opzioni che servono su questa macchina. Restituisce null se
-// Playwright non c'e': il collaudo si salta invece di fallire.
+// Playwright o Chromium non ci sono: il collaudo si salta invece di fallire.
 export async function apriBrowser() {
   const PLAYWRIGHT = process.env.PLAYWRIGHT || '/opt/node22/lib/node_modules/playwright/index.mjs';
-  const CHROMIUM = process.env.CHROMIUM || '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
+  const CHROMIUM = chromiumQui();
+  if (!CHROMIUM) return null;
   let chromium;
   try { ({ chromium } = await import(PLAYWRIGHT)); } catch { return null; }
   return chromium.launch({ executablePath: CHROMIUM,

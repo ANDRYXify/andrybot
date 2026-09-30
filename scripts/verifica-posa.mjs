@@ -30,13 +30,13 @@
 //      node scripts/verifica-posa.mjs --selftest (rimette la formula vecchia:
 //                                                 DEVE diventare rosso)
 
-import { apriSito } from './_sito.mjs';
+import { apriSito, chromiumQui } from './_sito.mjs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const RAD = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PUB = path.join(RAD, 'src/web/public');
-const CHROMIUM = process.env.CHROMIUM || '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
+const CHROMIUM = chromiumQui();
 const PLAYWRIGHT = process.env.PLAYWRIGHT || '/opt/node22/lib/node_modules/playwright/index.mjs';
 const SELFTEST = process.argv.includes('--selftest');
 
@@ -52,6 +52,7 @@ const TIPI = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; cha
   '.webmanifest': 'application/manifest+json', '.json': 'application/json', '.woff2': 'font/woff2' };
 
 let chromium;
+if (!CHROMIUM) { console.log('Chromium non c\'e\' su questa macchina: collaudo saltato.'); process.exit(0); }
 try { ({ chromium } = await import(PLAYWRIGHT)); }
 catch {
   console.log('Playwright non c\'e\' su questa macchina: collaudo saltato.');

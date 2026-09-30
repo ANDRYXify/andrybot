@@ -73,7 +73,7 @@ const BASE = `http://127.0.0.1:${srv.address().port}`;
 const esiti = [];
 const dice = (ok, msg) => esiti.push({ ok, msg });
 const browser = await apriBrowser();
-if (!browser) { console.log('Playwright non c\'e\': collaudo saltato.'); srv.close(); process.exit(0); }
+if (!browser) { console.log('  –  saltato: manca Chromium o Playwright'); srv.close(); process.exit(0); }
 
 try {
   const pagina = await browser.newPage();

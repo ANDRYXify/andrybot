@@ -30,3 +30,10 @@ test('la libreria ha una porta in ogni campo media', async () => {
   const { codice, uscita } = await lanciaScript('scripts/verifica-libreria.mjs');
   assert.equal(codice, 0, uscita);
 });
+
+// Sul server Chromium non c'e': un collaudo col browser che non se ne accorge
+// ferma tutto l'aggiornamento (e' successo con verifica-battito).
+test('sul server, senza browser, i collaudi col browser si saltano da soli', async () => {
+  const { codice, uscita } = await lanciaScript('scripts/verifica-senza-browser.mjs');
+  assert.equal(codice, 0, uscita);
+});

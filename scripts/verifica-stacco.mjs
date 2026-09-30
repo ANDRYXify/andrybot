@@ -52,9 +52,9 @@
 
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { apriSito } from './_sito.mjs';
+import { apriSito, chromiumQui } from './_sito.mjs';
 
-const CHROMIUM = process.env.CHROMIUM || '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
+const CHROMIUM = chromiumQui();
 const PLAYWRIGHT = process.env.PLAYWRIGHT || '/opt/node22/lib/node_modules/playwright/index.mjs';
 const ROMPI = (process.argv.find((a) => a.startsWith('--rompi=')) || '').slice('--rompi='.length);
 
@@ -85,6 +85,7 @@ if (process.argv.includes('--selftest')) {
 }
 
 let chromium;
+if (!CHROMIUM) { console.log('Chromium non c\'e\' su questa macchina: collaudo saltato.'); process.exit(0); }
 try { ({ chromium } = await import(PLAYWRIGHT)); }
 catch { console.log('Playwright non c\'e\' su questa macchina: collaudo saltato.'); process.exit(0); }
 

@@ -23,11 +23,12 @@ import { dirname, join } from 'node:path';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { tinta } from '../src/web/tavolozza.js';
 
+import { chromiumQui } from './_sito.mjs';
 const QUI = dirname(fileURLToPath(import.meta.url));
 const RAD = join(QUI, '..');
 const SORG = join(RAD, 'assets', 'marchio');
 const FUORI = join(RAD, 'src', 'web', 'public', 'icons');
-const CHROMIUM = process.env.CHROMIUM || '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
+const CHROMIUM = chromiumQui();
 const PLAYWRIGHT = process.env.PLAYWRIGHT || '/opt/node22/lib/node_modules/playwright/index.mjs';
 
 const CARTA = tinta('surface');
@@ -58,6 +59,7 @@ const LAVORI = [
 ];
 
 let chromium;
+if (!CHROMIUM) { console.log('Chromium non c\'e\' su questa macchina: collaudo saltato.'); process.exit(0); }
 try { ({ chromium } = await import(PLAYWRIGHT)); }
 catch { console.log('Playwright non c\'e\': impossibile generare il marchio.'); process.exit(1); }
 
