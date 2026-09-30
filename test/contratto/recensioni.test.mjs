@@ -115,11 +115,14 @@ test('nel database si legge solo chi c\'e\' ancora ed e\' approvato', () => {
   assert.equal(recensioni.di('ok_uno'), null);
 });
 
-test('la striscia: sotto l\'anteprima dell\'overlay, uguale nelle tre lingue, nella lingua di ogni recensione', () => {
+test('la striscia: fra l\'anteprima dell\'overlay e la serata, sotto le dirette in onda, uguale nelle tre lingue, nella lingua di ogni recensione', () => {
   const v = R.vetrinaDi([voce('a', 5, 'uno'), voce('b', 4, 'two', { lingua: 'en', conNome: false }), voce('c', 3, 'tres', { lingua: 'es' })]);
-  const pagine = ['it', 'en', 'es'].map((l) => vetrinaHtml(l, { recensioni: v }));
+  const dirette = [{ nome: 'Qualcuno', url: 'https://www.twitch.tv/qualcuno', categoria: 'Just Chatting', titolo: 'ciao', spettatori: 12 }];
+  const pagine = ['it', 'en', 'es'].map((l) => vetrinaHtml(l, { recensioni: v, dirette }));
   for (const h of pagine) {
-    assert.ok(h.indexOf('class="vt-vetro"') < h.indexOf('class="vt-recensioni"'), 'sotto l\'anteprima dell\'overlay');
+    const [vetro, inOnda, striscia, serata] = ['class="vt-vetro"', 'class="vt-dirette"', 'class="vt-recensioni"', 'class="vt-serata"'].map((x) => h.indexOf(x));
+    assert.ok(vetro > 0 && inOnda > 0 && striscia > 0 && serata > 0, 'le quattro parti ci sono');
+    assert.ok(vetro < inOnda && inOnda < striscia && striscia < serata, 'anteprima, dirette in onda, recensioni, serata: in quest\'ordine');
     assert.equal((h.match(/class="vt-rec"/g) || []).length, 6, 'il nastro c\'e\' due volte, per scorrere senza strappi');
     assert.equal((h.match(/class="vt-rec" lang="[a-z]+" aria-hidden="true"/g) || []).length, 3, 'e la seconda volta e\' nascosta ai lettori di schermo');
     assert.match(h, /<li class="vt-rec" lang="en">/, 'ogni recensione col suo lang');

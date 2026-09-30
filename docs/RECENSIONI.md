@@ -4,7 +4,8 @@
 
 Chi usa SocialBot da un po' può dargli un voto da una a cinque stelle e, se
 vuole, due righe. Quelle pubblicate scorrono nella pagina iniziale, sotto
-l'anteprima dell'Overlay Studio, e diventano dati strutturati per i motori di
+l'anteprima dell'Overlay Studio e sotto le dirette in onda (quando ce ne sono),
+prima della serata col bot acceso, e diventano dati strutturati per i motori di
 ricerca.
 
 Per Google le recensioni valgono solo se sono vere, leggibili sulla pagina, non

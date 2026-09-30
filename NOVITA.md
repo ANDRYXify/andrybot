@@ -37,6 +37,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Spotify, TikTok, gli avvisi di Discord, 7TV e l'accesso con Telegram si scollegano con qualunque piano: prima, tornando all'Essenziale, restavano legati.
 - Un sostegno al progetto aperto e mai pagato si cancella dopo una settimana, e quelli pagati dopo dieci anni, come dice l'informativa.
 - Col pannello in inglese o in spagnolo la scheda Donazioni si chiama «Donations» e «Donaciones» anche nel menù, e nella pagina link il carattere in spagnolo è «Fuente». [vai: donazioni]
+- Le recensioni della pagina iniziale scorrono sotto le dirette in onda e prima della serata col bot acceso, e la pagina si apre più leggera.
 
 ## 2026-09-27
 

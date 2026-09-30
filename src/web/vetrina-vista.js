@@ -264,7 +264,8 @@ function heroAnteprima(L) {
 }
 
 
-// LE RECENSIONI, sotto l'anteprima dell'overlay (docs/RECENSIONI.md). Arrivano
+// LE RECENSIONI, sotto l'anteprima dell'overlay e sotto le dirette in onda,
+// prima della serata col bot acceso (docs/RECENSIONI.md). Arrivano
 // gia' pronte da features/recensioni.js: `null` vuol dire che quelle con testo
 // sono meno di tre, e allora non c'e' niente, nemmeno il titolo. Ogni recensione
 // resta nella lingua in cui e' stata scritta, col suo `lang`. Il nastro c'e' due
@@ -607,8 +608,8 @@ function corpo(L, l, kick, youtube, dirette, piani, recensioni) {
       <p class="vt-sotto">${L(`L’<b>Essenziale è gratis per sempre</b> · nessuna carta richiesta · <a href="${demoVia(l)}">guarda la demo</a>`, `The <b>Essenziale plan is free forever</b> · no card needed · <a href="${demoVia(l)}">see the demo</a>`, `El <b>plan Essenziale es gratis para siempre</b> · sin tarjeta · <a href="${demoVia(l)}">mira la demo</a>`)}</p>
       ${soloDiscordHtml(L)}
       ${heroAnteprima(L)}
-      ${recensioniHtml(L, l, recensioni)}
       ${fasciaLive(L, l, dirette)}
+      ${recensioniHtml(L, l, recensioni)}
     </section>
 
     <section class="vt-sez">

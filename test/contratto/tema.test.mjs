@@ -157,19 +157,41 @@ test('e si vedono anche con la tastiera, cosa che il browser non faceva', () => 
 // barretta prendeva ogni input, e sul selettore del colore o su «scegli file»
 // compariva il cursore di sistema al posto del nostro.
 test('ogni input che si clicca ha la manina, non la barretta', () => {
-  const css = leggi('src/web/public/tema.css');
-  const regole = [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map((m) => ({ sel: m[1].replace(/\s+/g, ' ').trim(), corpo: m[2], at: m.index }));
-  // I tre cursori stanno una volta sola, in variabili: la barretta per scrivere,
-  // la manina per cliccare. Si controlla che siano disegnati (un'immagine, con
-  // il cursore di sistema solo come riserva) e chi li usa.
+  const regoleDi = (css) => [...css.replace(/\/\*[\s\S]*?\*\//g, (c) => ' '.repeat(c.length)).matchAll(/([^{}]+)\{([^{}]*)\}/g)].map((m) => ({ sel: m[1].replace(/\s+/g, ' ').trim(), corpo: m[2], at: m.index }));
+  const tema = regoleDi(leggi('src/web/public/tema.css'));
+  const regole = regoleDi(leggi('src/web/public/campi.css'));
+  // I tre cursori stanno una volta sola, in variabili: la freccia e la manina in
+  // tema.css, che ogni pagina carica; la barretta per scrivere in campi.css,
+  // che carica solo chi ha dei campi. Si controlla che siano disegnati
+  // (un'immagine, con il cursore di sistema solo come riserva) e chi li usa.
+  const radiceTema = tema.find((r) => r.sel === ':root' && /--cursore-mano:/.test(r.corpo));
+  assert.ok(radiceTema, 'la freccia e la manina in tema.css');
+  assert.match(radiceTema.corpo, /--cursore-mano:\s*url\("data:image\/svg\+xml,[^"]+"\)\s*16 15,\s*pointer;/);
+  assert.ok(!tema.some((r) => /--cursore-testo/.test(r.corpo)), 'la barretta non pesa sulle pagine senza campi (la home ne ha zero)');
   const radice = regole.find((r) => r.sel === ':root' && /--cursore-testo:/.test(r.corpo));
-  assert.ok(radice, 'le variabili dei cursori');
+  assert.ok(radice, 'la barretta in campi.css');
   assert.match(radice.corpo, /--cursore-testo:\s*url\("data:image\/svg\+xml,[^"]+"\)\s*16 16,\s*text;/);
-  assert.match(radice.corpo, /--cursore-mano:\s*url\("data:image\/svg\+xml,[^"]+"\)\s*16 15,\s*pointer;/);
   const barretta = regole.find((r) => /cursor:\s*var\(--cursore-testo\)\s*!important/.test(r.corpo));
   const manina = regole.filter((r) => /cursor:\s*var\(--cursore-mano\)\s*!important/.test(r.corpo) && /input\[type=/.test(r.sel));
   assert.ok(barretta && manina.length === 1, 'una regola per la barretta e una per gli input da cliccare');
   assert.ok(manina[0].at > barretta.at, 'e quella della manina viene dopo, cosi\' vince');
   const CLICCABILI = ['button', 'checkbox', 'color', 'file', 'image', 'radio', 'range', 'reset', 'submit'];
   for (const t of CLICCABILI) assert.ok(manina[0].sel.includes(`input[type="${t}"]`), `input[type="${t}"] senza manina`);
+});
+
+// Chi ha dei campi carica campi.css, e subito DOPO tema.css: le due regole hanno
+// lo stesso peso, e vince quella che viene dopo. La home non lo carica: le sue
+// risorse sono un elenco chiuso (RISORSE_VETRINA), e lei di campi non ne ha.
+test('ogni pagina con dei campi carica campi.css dopo tema.css, e la home no', async () => {
+  const { RISORSE_VETRINA } = await import('../../src/web/vetrina-vista.js');
+  assert.ok(!RISORSE_VETRINA.includes('campi.css'), 'la home non paga la barretta');
+  const dir = new URL('../../src/web/public/', import.meta.url);
+  const { readdirSync } = await import('node:fs');
+  for (const n of readdirSync(dir).filter((x) => x.endsWith('.html'))) {
+    const h = leggi('src/web/public/' + n);
+    const tema = h.search(/href="\/?tema\.css/), campi = h.search(/href="\/?campi\.css/);
+    const haCampi = n === 'index.html' || /<(input|textarea|select)\b/.test(h);
+    if (!haCampi || tema < 0) continue;
+    assert.ok(campi > tema, `${n}: ha dei campi e deve caricare campi.css dopo tema.css`);
+  }
 });
