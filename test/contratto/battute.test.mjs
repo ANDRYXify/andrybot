@@ -258,7 +258,7 @@ test('quando tace dopo essere stato chiamato, lo scrive nel registro', () => {
   // deve uscire SEMPRE — non solo con DEBUG acceso, perche' serve proprio quando
   // nessuno aveva acceso niente prima.
   const src = readFileSync(join(RAD, 'src/ai/brain.js'), 'utf8');
-  const i = src.indexOf('if (menzionaBot(text, botLogin || channel)) {');
+  const i = src.indexOf('      if (chiamato) {');
   assert.ok(i > 0, 'il ramo della menzione si trova');
   const ramo = src.slice(i, src.indexOf('return true;', i));
   // la riga si scrive in un posto solo, e quel posto usa log.info: con log.debug

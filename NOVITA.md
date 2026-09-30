@@ -202,6 +202,12 @@ comandi diversi da quelli della riga italiana.
 - Nella catena di parole ogni parola buona ha la sua risposta, con le due lettere da cui si riparte: prima passava in silenzio e sembrava che il gioco non andasse. [vai: giochi]
   en: In the word chain every valid word gets its own reply, with the two letters to continue from: before, it went by in silence and the game looked broken.
   es: En la cadena de palabras cada palabra válida tiene su respuesta, con las dos letras desde las que se sigue: antes pasaba en silencio y parecía que el juego no funcionaba.
+- In chat il bot risponde a chi parla a lui: chi parla di bot, risponde a un altro spettatore o scrive il nome dello streamer non riceve più frasi a caso. [vai: personalita]
+  en: In chat the bot answers whoever is talking to it: people talking about bots, replying to another viewer or writing the streamer’s name no longer get random lines.
+  es: En el chat el bot responde a quien le habla a él: quien habla de bots, responde a otro espectador o escribe el nombre del streamer ya no recibe frases al azar.
+- Il gioco e la durata della diretta il bot li dice a chi li chiede davvero, non a chi scrive «da quanto tempo non ci vediamo». [vai: personalita]
+  en: The bot says what game it is and how long the stream has been going to people who actually ask, not to someone writing “long time no see”.
+  es: El juego y la duración del directo el bot los dice a quien los pregunta de verdad, no a quien escribe «cuánto tiempo sin vernos».
 
 ## 2026-09-27
 
