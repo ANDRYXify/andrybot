@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // UN POST NUOVO, SU DISCORD, NON DICE «È IN DIRETTA».
 //
 // Il testo di ogni canale degli Avvisi e' scritto per le dirette, e di serie

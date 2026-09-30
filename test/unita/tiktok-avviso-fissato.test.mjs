@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // L'AVVISO DELLA DIRETTA SU TIKTOK SI TOGLIE DOVE ERA STATO FISSATO.
 //
 // Ogni posto di Telegram ha la sua spunta «Fissa l'avviso qui»; quella della

@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // L'AVVISO DI TELEGRAM E I SUOI POSTI: pannello e server dicono la stessa cosa.
 //
 // Il server accende l'avviso se c'e' un posto dove mandarlo (il gruppo di

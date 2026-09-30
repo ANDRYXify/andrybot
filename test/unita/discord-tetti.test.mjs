@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // I TETTI DI DISCORD NON TAGLIANO IN SILENZIO.
 //
 // La traccia del server tiene 20 categorie, 60 canali, 15 ruoli, 10 righe di

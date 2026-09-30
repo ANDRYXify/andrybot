@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // GLI AVVISI SU DISCORD CHIEDONO IL PIANO BASE, E LO DICONO.
 //
 // Gli avvisi veri partono solo col pacchetto «notifiche» (bot.js). La «Prova»
