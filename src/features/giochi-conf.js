@@ -98,6 +98,14 @@ const CORSA_CORRIDORI = ['🐎 Cavallo', '🐇 Lepre', '🐕 Cane', '🦆 Papera
 const CATENA_INIZIO = ['casa', 'sole', 'luna', 'mare', 'pane', 'gatto', 'fiore', 'treno', 'libro', 'piano', 'tavolo', 'strada', 'notte', 'amico', 'verde', 'porta', 'carta', 'sasso', 'festa', 'lupo'];
 const BOSS = ['il Drago del Lag 🐉', 'la Piovra dello Spam 🐙', 'il Golem del Buffering 🗿', 'lo Scheletro del Ping Alto 💀', 'il Troll del Ritardo 👹', 'il Boss Finale 👾'];
 
+// Gli oggetti dell'arena: gli stessi del motore (SB_ARENA.OGGETTI), e una prova
+// controlla che i due elenchi siano uguali.
+export const OGGETTI_ARENA = ['spada', 'scudo', 'cuore', 'stivali'];
+const NOMI_OGGETTI = {
+  spada: T('spada', 'sword', 'espada'), scudo: T('scudo', 'shield', 'escudo'),
+  cuore: T('cuore', 'heart', 'corazón'), stivali: T('stivali', 'boots', 'botas'),
+};
+
 // LE DUE ATTESE DI OGNI GIOCO. A testa: dopo che una persona ha giocato,
 // aspetta lei. Per tutti: dopo che qualcuno ha giocato, aspetta tutto il
 // canale. Ogni gioco le ha tutte e due, e le fa rispettare lo stesso pezzo di
@@ -223,6 +231,46 @@ export const CATALOGO = [
       { k: 'nomi', tipo: 'elenco', def: BOSS, max: 30, lungo: 80, segnaposto: [], eti: T('I boss', 'The bosses', 'Los jefes') },
     ],
     resa: { tipo: 'boss' },
+  },
+  {
+    // L'arena delle emote (docs/ARENA.md). I numeri del combattimento sono
+    // quelli del motore (src/web/public/arena.js), negli stessi limiti che il
+    // motore si da' da solo: il pannello non offre un valore che poi verrebbe
+    // stretto in silenzio. Percento e decimi perche' le manopole sono intere.
+    id: 'arena', nome: T('Arena delle emote', 'Emote arena', 'Arena de emotes'),
+    param: [
+      { k: 'iscrizioni', tipo: 'secondi', def: 60, min: 15, max: 600, eti: T('Tempo per entrare', 'Time to join', 'Tiempo para entrar') },
+      { k: 'ingresso', tipo: 'scelta', def: 'scrivi', scelte: [['scrivi', T('chi scrive in chat', 'whoever writes in chat', 'quien escribe en el chat')], ['comando', T('solo col comando', 'only with the command', 'solo con el comando')]], eti: T('Chi entra', 'Who joins', 'Quién entra') },
+      { k: 'probabilita', tipo: 'percento', def: 100, min: 1, max: 100, eti: T('Chi scrive entra, su cento persone (per le chat grandi)', 'Whoever writes gets in, out of a hundred people (for big chats)', 'Quien escribe entra, de cada cien personas (para chats grandes)') },
+      { k: 'chi', tipo: 'scelta', def: 'tutti', scelte: [['tutti', T('tutti', 'everyone', 'todos')], ['sub', T('abbonati', 'subscribers', 'suscriptores')], ['vip', T('VIP', 'VIPs', 'VIP')], ['mod', T('moderatori', 'moderators', 'moderadores')]], eti: T('Chi può entrare', 'Who can join', 'Quién puede entrar') },
+      { k: 'costo', tipo: 'monete', def: 0, min: 0, max: 100000, eti: T('Costo per entrare (0 = gratis)', 'Cost to join (0 = free)', 'Coste para entrar (0 = gratis)') },
+      { k: 'massimo', tipo: 'numero', def: 20, min: 2, max: 50, eti: T('Combattenti al massimo', 'Fighters at most', 'Luchadores como máximo') },
+      { k: 'vita', tipo: 'numero', def: 100, min: 10, max: 1000, eti: T('Vita di ogni combattente', 'Health of each fighter', 'Vida de cada luchador') },
+      { k: 'velocita', tipo: 'numero', def: 150, min: 40, max: 400, eti: T('Velocità (punti al secondo, l\'arena è larga 1000)', 'Speed (points per second, the arena is 1000 wide)', 'Velocidad (puntos por segundo, la arena mide 1000 de ancho)') },
+      { k: 'danno', tipo: 'numero', def: 5, min: 1, max: 200, eti: T('Danno di un colpo', 'Damage of a hit', 'Daño de un golpe') },
+      { k: 'raggio', tipo: 'numero', def: 30, min: 14, max: 60, eti: T('Grandezza dei combattenti (raggio)', 'Fighter size (radius)', 'Tamaño de los luchadores (radio)') },
+      { k: 'rinculo', tipo: 'percento', def: 100, min: 0, max: 300, eti: T('Rinculo di un urto (100 = normale)', 'Knockback of a bump (100 = normal)', 'Retroceso de un choque (100 = normal)') },
+      { k: 'attesaColpo', tipo: 'numero', def: 12, min: 1, max: 30, eti: T('Fra due colpi degli stessi due, decimi di secondo', 'Between two hits of the same pair, tenths of a second', 'Entre dos golpes de los mismos dos, décimas de segundo') },
+      { k: 'ogniOggetto', tipo: 'secondi', def: 6, min: 0, max: 60, eti: T('Cade un oggetto ogni tanti secondi (0 = mai)', 'An item drops every this many seconds (0 = never)', 'Cae un objeto cada tantos segundos (0 = nunca)') },
+      { k: 'spada', tipo: 'percento', def: 150, min: 100, max: 500, eti: T('Spada: danno fatto (150 = una volta e mezza)', 'Sword: damage dealt (150 = one and a half times)', 'Espada: daño hecho (150 = una vez y media)') },
+      { k: 'scudo', tipo: 'percento', def: 50, min: 10, max: 100, eti: T('Scudo: danno subito (50 = la metà)', 'Shield: damage taken (50 = half)', 'Escudo: daño recibido (50 = la mitad)') },
+      { k: 'cuore', tipo: 'percento', def: 40, min: 5, max: 100, eti: T('Cuore: vita che ridà, su cento', 'Heart: health it gives back, out of a hundred', 'Corazón: vida que devuelve, de cada cien') },
+      { k: 'stivali', tipo: 'percento', def: 140, min: 100, max: 300, eti: T('Stivali: velocità (140 = +40%)', 'Boots: speed (140 = +40%)', 'Botas: velocidad (140 = +40%)') },
+      { k: 'oggetti', tipo: 'scelte', def: [...OGGETTI_ARENA], scelte: OGGETTI_ARENA.map((k) => [k, NOMI_OGGETTI[k]]), eti: T('Gli oggetti che cadono', 'The items that drop', 'Los objetos que caen') },
+      { k: 'corona', tipo: 'scelta', def: 'si', scelte: [['si', T('sì, a chi ha eliminato di più', 'yes, to whoever eliminated most', 'sí, a quien eliminó más')], ['no', T('no', 'no', 'no')]], eti: T('La corona', 'The crown', 'La corona') },
+      { k: 'strettaDopo', tipo: 'secondi', def: 40, min: 5, max: 600, eti: T('L\'arena comincia a stringersi dopo', 'The arena starts shrinking after', 'La arena empieza a estrecharse tras') },
+      { k: 'strettaDurata', tipo: 'secondi', def: 30, min: 5, max: 300, eti: T('E si stringe in', 'And shrinks over', 'Y se estrecha en') },
+      { k: 'strettaMin', tipo: 'percento', def: 30, min: 15, max: 100, eti: T('Fino a questa misura, su cento', 'Down to this size, out of a hundred', 'Hasta este tamaño, de cada cien') },
+      { k: 'durataMax', tipo: 'secondi', def: 150, min: 30, max: 900, eti: T('Durata massima: poi vince chi ha più vita', 'Maximum length: then whoever has most health wins', 'Duración máxima: luego gana quien tiene más vida') },
+      { k: 'vittoria', tipo: 'secondi', def: 10, min: 3, max: 60, eti: T('Il vincitore resta a schermo per', 'The winner stays on screen for', 'El ganador se queda en pantalla') },
+      { k: 'premioVincitore', tipo: 'monete', def: 50, min: 0, max: 100000, eti: T('Premio al vincitore', 'Prize for the winner', 'Premio para el ganador') },
+      { k: 'premioEliminazione', tipo: 'monete', def: 5, min: 0, max: 100000, eti: T('Premio per ogni eliminazione', 'Prize for each elimination', 'Premio por cada eliminación') },
+      { k: 'premioCorona', tipo: 'monete', def: 10, min: 0, max: 100000, eti: T('Premio a chi porta la corona', 'Prize for whoever wears the crown', 'Premio para quien lleva la corona') },
+      ...ATTESE({ tutti: 300, etiTesta: T('Attesa fra due arene aperte a mano, a testa', 'Wait between two arenas opened by hand, each', 'Espera entre dos arenas abiertas a mano, cada uno'), etiTutti: T('Attesa fra due arene aperte a mano, per tutti', 'Wait between two arenas opened by hand, for everyone', 'Espera entre dos arenas abiertas a mano, para todos') }),
+      { k: 'ogni', tipo: 'numero', def: 0, min: 0, max: 360, eti: T('Si apre da sola in diretta ogni tanti minuti (0 = solo con !arena)', 'Opens on its own while live every this many minutes (0 = only with !arena)', 'Se abre sola en directo cada tantos minutos (0 = solo con !arena)') },
+      { k: 'dopoRaid', tipo: 'numero', def: 0, min: 0, max: 100000, eti: T('Si apre con un raid di almeno tante persone (0 = mai)', 'Opens with a raid of at least this many people (0 = never)', 'Se abre con un raid de al menos tantas personas (0 = nunca)') },
+    ],
+    resa: { tipo: 'arena' },
   },
   {
     id: 'blackjack', nome: T('Blackjack', 'Blackjack', 'Blackjack'),
@@ -554,6 +602,13 @@ function importo(expr, v) {
   return f === 1 ? base : Math.round(base * f);
 }
 
+// Quanto prende al piu' una persona in un'arena: il premio del vincitore,
+// quello della corona se e' accesa, e un'eliminazione per ognuno degli altri.
+export function arenaMassimo(v) {
+  const altri = Math.max(1, (Number(v.massimo) || 2) - 1);
+  return (Number(v.premioVincitore) || 0) + (v.corona === 'no' ? 0 : Number(v.premioCorona) || 0) + (Number(v.premioEliminazione) || 0) * altri;
+}
+
 export function valutaResa(resa, v, contesto = {}) {
   if (!resa) return null;
   if (resa.tipo === 'puntata') {
@@ -599,7 +654,42 @@ export function valutaResa(resa, v, contesto = {}) {
     const ogni = Number(v.ogni) || 0;
     return { tipo: 'boss', massimo, ogni, perOra: ogni ? Math.round(massimo * 60 / ogni) : 0 };
   }
+  if (resa.tipo === 'arena') {
+    // Il massimo di una persona in una partita: vince, porta la corona ed
+    // elimina tutti gli altri. Con l'arena automatica, un massimo all'ora.
+    const massimo = arenaMassimo(v);
+    const ogni = Number(v.ogni) || 0;
+    return { tipo: 'arena', massimo, corona: v.corona !== 'no', ogni, perOra: ogni ? Math.round(massimo * 60 / ogni) : 0 };
+  }
   return { tipo: resa.tipo };
+}
+
+// DAI VALORI DEL PANNELLO ALLE REGOLE DEL MOTORE. Le manopole sono intere
+// (percento, decimi); il motore vuole fattori e secondi. `SB_ARENA.regole` poi
+// le stringe nei suoi limiti, che sono gli stessi del catalogo. Nessun oggetto
+// che cade (ogniOggetto 0) e' lo stesso che averli spenti tutti: la scelta
+// «almeno uno» delle scelte resta vera, e «mai» si dice col tempo, come per le
+// altre cose che si possono non volere.
+export function regoleDa(v = {}) {
+  const n = (k) => Number(v[k]);
+  const ogni = n('ogniOggetto');
+  const accesi = Array.isArray(v.oggetti) ? v.oggetti : OGGETTI_ARENA;
+  return {
+    vita: n('vita'),
+    velocita: n('velocita'),
+    danno: n('danno'),
+    raggio: n('raggio'),
+    rinculo: n('rinculo') / 100,
+    attesaColpo: n('attesaColpo') / 10,
+    ogniOggetto: ogni > 0 ? ogni : undefined,
+    oggetti: { spada: n('spada') / 100, scudo: n('scudo') / 100, cuore: n('cuore') / 100, stivali: n('stivali') / 100 },
+    spenti: ogni > 0 ? OGGETTI_ARENA.filter((k) => !accesi.includes(k)) : [...OGGETTI_ARENA],
+    corona: v.corona !== 'no',
+    strettaDopo: n('strettaDopo'),
+    strettaDurata: n('strettaDurata'),
+    strettaMin: n('strettaMin') / 100,
+    durataMax: n('durataMax'),
+  };
 }
 
 export function presenzaOraria(punti = {}) {

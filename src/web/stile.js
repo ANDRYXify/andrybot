@@ -116,6 +116,16 @@ export const ANIM_CHAT = ['slide', 'fade', 'nessuna'];
 export const DIM_CHAT = ['piccola', 'media', 'grande', 'enorme'];
 export const DIM_WIDGET = ['piccola', 'media', 'grande', 'enorme'];
 
+// CHI MOSTRA UN ALERT. Twitch ha i suoi alert per gli eventi che manda lui
+// (follow, sub, bit, raid): per ognuno lo streamer sceglie se lo mostra
+// SocialBot, Twitch o tutti e due. Gli alert di Twitch si impostano su Twitch,
+// perche' Twitch non da' un modo per cambiarli o farli partire da fuori; qui si
+// decide solo se il nostro parte. La donazione non passa da Twitch: la mostra
+// SocialBot e basta, qualunque cosa ci sia scritto.
+export const CHI_ALERT = ['socialbot', 'twitch', 'entrambi'];
+export const EVENTI_TWITCH = ['follow', 'sub', 'cheer', 'raid'];
+export const chiAlertOk = (kind, v) => (EVENTI_TWITCH.includes(kind) && CHI_ALERT.includes(v) ? v : 'socialbot');
+
 export const normAlertStile = (st) => {
   st = st || {};
   return {
@@ -519,6 +529,28 @@ export const normBoss = (x) => {
     posizione: unoDi(x.posizione, POS_BOSS, 'alto-centro'),
     xy: xyOk(x.xy),
     stile: normWidgetStile({ ...VESTE_BOSS, ...(x.stile || {}) }),
+  };
+};
+
+// L'ARENA DELLE EMOTE in scena (docs/ARENA.md). Chi entra, quando si apre e
+// come si combatte lo decide la scheda Giochi; qui se si vede, dove sta, quanto
+// e' grande e com'e' vestita. Accesa di suo come il boss: compare solo quando
+// un'arena e' aperta, e un'arena la apre qualcuno. Il fondo di serie e'
+// trasparente (opacita' 0): l'arena e' il gioco, non una carta sopra il gioco.
+// Le tre scelte sue: i nomi sopra i combattenti, il colore che ognuno ha in
+// chat, il bordo a penna dell'arena.
+export const VESTE_ARENA = { sfondo: '#0f0f14', opacita: 0, testo: '#ffffff', accento: '#f72fa7', bordoRaggio: 12 };
+export const POS_ARENA = ['centro'];
+export const normArena = (x) => {
+  x = x || {};
+  return {
+    attivo: x.attivo !== false,
+    posizione: unoDi(x.posizione, POS_ARENA, 'centro'),
+    xy: xyOk(x.xy),
+    nomi: x.nomi !== false,
+    coloreChat: x.coloreChat !== false,
+    bordo: x.bordo !== false,
+    stile: normWidgetStile({ ...VESTE_ARENA, ...(x.stile || {}) }),
   };
 };
 

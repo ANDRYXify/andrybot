@@ -13,6 +13,7 @@ import * as model from './model.js';
 import * as persona from './persona.js';
 import * as brainpy from './brainpy.js';
 import { daAssistente } from './registro.js';
+import { aChi, chiedeLaDurata, chiedeIlGioco, soloUnaChiamata } from './destinatario.js';
 import { genereDi, scegliAccordando, istruzioneGenere } from './genere.js';
 import * as conti from '../features/conti.js';
 import { perLaStanza } from '../features/momenti.js';
@@ -323,19 +324,9 @@ function compila(template, variabili) {
   return out;
 }
 
-// il testo chiama il bot per quello che e': «bot»
-function chiamaIlBot(text) {
-  return /(^|[^a-z0-9_])bot([^a-z0-9_]|$)/.test(String(text || '').toLowerCase());
-}
-
-// il testo menziona il canale/streamer (@nome o nome come parola) o "bot"?
-function menzionaBot(text, login) {
-  const t = String(text || '').toLowerCase();
-  if (chiamaIlBot(t)) return true;
-  const l = String(login || '').toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  if (!l) return false;
-  return new RegExp('(^|[^a-z0-9_])@?' + l + '([^a-z0-9_]|$)').test(t);
-}
+// A chi si parla lo decide un posto solo, src/ai/destinatario.js. Prima qui
+// c'erano chiamaIlBot e menzionaBot: «bot» in qualunque punto della frase, o il
+// nome dello streamer, erano una chiamata al bot.
 
 // parole legate a social/link, cercate sia nel messaggio sia nella knowledge
 const PAROLE_SOCIAL = ['instagram', 'youtube', 'tiktok', 'discord', 'telegram', 'twitter',
@@ -344,7 +335,7 @@ const PAROLE_SOCIAL = ['instagram', 'youtube', 'tiktok', 'discord', 'telegram', 
 // Intenti che il bot sa già gestire in chatReply (saluti, "come va", "chi sei",
 // gioco/uptime, ringraziamenti, link). Serve al percorso REATTIVO di shouldReply:
 // riconoscere al volo un messaggio "rispondibile" anche senza menzione.
-const INTENTI_NOTI = /come va\b|come stai|come butta|come procede|come andiamo|chi sei|cosa sei|cosa sai fare|come funzioni|che bot sei|presentati|che gioco|che game|a cosa (stai )?gioc|a che (gioco|game)|cosa stai giocando|che stai giocando|uptime|da quanto|(^|[^a-z])(ciao|ehi|hey|buongiorno|buonasera|buond[iì]|salve|weil[aà]|hola)([^a-z]|$)|grazie|bravo|brava|bravissim|(^|[^a-z])(link|sito|social)([^a-z]|$)/;
+const INTENTI_NOTI = /come va\b|come stai|come butta|come procede|come andiamo|chi sei|cosa sei|cosa sai fare|come funzioni|che bot sei|presentati|(^|[^a-z])(ciao|ehi|hey|buongiorno|buonasera|buond[iì]|salve|weil[aà]|hola)([^a-z]|$)|grazie|bravo|brava|bravissim|(^|[^a-z])(link|sito|social)([^a-z]|$)/;
 
 // Il messaggio "sembra rispondibile"? Cioè assomiglia a qualcosa che il bot sa
 // già gestire: una domanda ('?'), un intento noto o una parola social/link.
@@ -357,6 +348,7 @@ function sembraRispondibile(text) {
   const t = String(text || '').toLowerCase();
   if (!t) return false;
   if (t.includes('?')) return true;
+  if (chiedeLaDurata(t) || chiedeIlGioco(t)) return true;
   if (INTENTI_NOTI.test(t)) return true;
   if (EMOZIONE_CUES.test(t)) return true;
   return PAROLE_SOCIAL.some((p) => t.includes(p));
@@ -911,14 +903,32 @@ export class Brain {
     this._conversazione.set(channel, { user: String(user).toLowerCase(), ts: Date.now() });
   }
 
-  shouldReply({ channel, botLogin, user, text, streamer, isSelf } = {}) {
+  // A chi e' rivolto il messaggio (src/ai/destinatario.js). Le righe scritte dal
+  // bot si leggono dalla memoria della chat, dove chat.say le mette: servono
+  // solo quando qualcuno risponde a una riga dello stesso account, per sapere se
+  // l'aveva scritta il bot o lo streamer.
+  _aChi(channel, text, tags, botLogin) {
+    let detti = [];
+    if (tags?.['reply-parent-msg-id']) {
+      try { detti = memory.recentMessages(channel, 80).filter((m) => m.from_bot).map((m) => m.text); }
+      catch { detti = []; }
+    }
+    return aChi({ testo: text, tags, botLogin, canale: channel, detti });
+  }
+
+  shouldReply({ channel, botLogin, user, text, streamer, isSelf, tags = null } = {}) {
     try {
       if (isSelf || !streamer || !channel || !text) return false;
       const uLow = String(user || '').toLowerCase();
+      const dest = this._aChi(channel, text, tags, botLogin);
+      const chiamato = dest.a === 'bot' || dest.a === 'streamer';
       if (BOT_NOTI.has(uLow)) {
-        if (menzionaBot(text, botLogin || channel)) log.info(`#${channel} menzione di ${uLow}: non rispondo — e' in elenco fra i bot noti`);
+        if (chiamato) log.info(`#${channel} menzione di ${uLow}: non rispondo — e' in elenco fra i bot noti`);
         return false;
       }
+      // Fra due persone il bot non si mette in mezzo: chi risponde a un altro, o
+      // lo chiama con la @, parla a lui.
+      if (dest.a === 'altri') return false;
 
       const settings = streamer.settings || {};
       // FOLLOW-UP: sto continuando un filo con la STESSA persona a cui ho appena
@@ -941,7 +951,7 @@ export class Brain {
       // Il freno resta, ma per la menzione e' un altro freno: corto e per PERSONA.
       // Cosi' una conversazione funziona, e chi ripete il nome del bot dieci volte
       // di fila non fa allagare la chat lo stesso.
-      if (menzionaBot(text, botLogin || channel)) {
+      if (chiamato) {
         // Un bot che ignora qualcuno deve saper dire PERCHE'. Il silenzio dopo
         // che ti hanno chiamato per nome, senza una riga da nessuna parte, e' la
         // cosa piu' difficile da capire da fuori: da dentro sembra tutto a posto,
@@ -1016,9 +1026,16 @@ export class Brain {
   // da qui e passa per forza da _finalizza, che e' il solo punto in cui una
   // risposta diventa una cosa detta. Chi aggiunge un ramo qui dentro non puo'
   // dimenticarsi il controllo: non ha modo di saltarlo.
-  async _rispostaGrezza({ channel, user, display, text, streamer, botLogin, ruolo = null } = {}) {
+  async _rispostaGrezza({ channel, user, display, text: grezzo, streamer, botLogin, ruolo = null, tags = null } = {}) {
     try {
-      if (!channel || !text || !streamer) return null;
+      if (!channel || !grezzo || !streamer) return null;
+      // A CHI SI PARLA, prima di tutto. Fra due persone il bot non entra. E il
+      // testo che si guarda e' quello scritto da chi risponde: il «@nome» che
+      // Twitch mette davanti a una risposta non e' una cosa che ha detto lui.
+      const dest = this._aChi(channel, grezzo, tags, botLogin);
+      if (dest.a === 'altri') return null;
+      const text = dest.testo || grezzo;
+      const allaPersona = dest.a === 'streamer';
       const settings = streamer.settings || {};
       const iaOn = settings.iaLocale !== false;   // IA locale accesa (default sì)
       const tono = TONI.includes(settings.tono) ? settings.tono : 'scherzoso';
@@ -1030,7 +1047,7 @@ export class Brain {
         nome = persona.vezzeggiativo(user, nome);
       }
       const lower = String(text).toLowerCase();
-      const menziona = menzionaBot(text, botLogin || channel);
+      const menziona = dest.a === 'bot' || allaPersona;
       const variabili = { user: nome, canale: streamer.display || channel };
 
       // ---- a. INTENTI FATTUALI (dati reali) ----------------------------
@@ -1039,7 +1056,7 @@ export class Brain {
       // NON sono più template: li gestisce il modello, con parole sue.
 
       // che gioco / a cosa giochi
-      if (/che gioco|che game|a cosa (stai )?gioc|a che (gioco|game)|cosa stai giocando|che stai giocando/.test(lower)) {
+      if (chiedeIlGioco(text)) {
         const ctx = memory.streamContext(channel);
         if (ctx) return compila(scegli(LIVE_CONTESTO), { ...variabili, ctx });
         try {
@@ -1058,7 +1075,7 @@ export class Brain {
       }
 
       // da quanto siamo live / uptime
-      if (/uptime|da quanto/.test(lower)) {
+      if (chiedeLaDurata(text)) {
         try {
           const stream = await this.helix?.getStream?.(channel);
           if (stream?.started_at) {
@@ -1135,6 +1152,20 @@ export class Brain {
         // scritta, con un cenno al nome così almeno non è sempre identica.
         const prefisso = Math.random() < 0.7 ? '' : nome + ' ';
         return prefisso + daConoscenza;
+      }
+
+      // ALLO STREAMER SI RISPONDONO I FATTI, E UN SALUTO. Qui sopra ci sono il
+      // gioco, la durata, i link e quello che il canale ha scritto: quelli li dice
+      // anche il bot. Chiacchierare al posto suo no: chi scrive il suo nome parla
+      // a lui, e il bot scrive con il suo account.
+      // Un saluto e basta si ricambia: col suo account, un «ciao» a chi l'ha
+      // salutato e' un gesto suo. «Eccomi, chi mi ha evocato?» invece no: e' la
+      // frase di un bot chiamato, detta a chi parlava alla persona.
+      if (allaPersona) {
+        const soloSaluto = soloUnaChiamata(text) && /(^|[^a-z])(ciao|ehi|hey|buongiorno|buonasera|buond[iì]|salve|weil[aà]|hola)([^a-z]|$)/.test(lower);
+        if (soloSaluto) return compila(scegli(SALUTI[tono] || SALUTI.scherzoso, genere), variabili);
+        log.info(`#${channel} ${user} parla allo streamer (${dest.perche}): niente chiacchiera al posto suo`);
+        return null;
       }
 
       // ---- c. IL CERVELLO PARLA (contestuale, parole sue) -------------
@@ -1246,20 +1277,19 @@ export class Brain {
               if (r) return r;
             }
           }
-          // A CHI ERA LA DOMANDA. Il bot scrive con l'account dello streamer: chi
-          // scrive @streamer sta chiedendo a LUI, e un «non lo so» uscito da quel
-          // nome e' una cosa falsa detta al posto suo (lui magari lo sa). Si tace e
-          // risponde lui. Chi scrive «bot» chiede al bot, e il bot puo' dire onesto
-          // che non lo sa.
-          const alloStreamer = !chiamaIlBot(text) && (!botLogin || botLogin === channel);
-          if (alloStreamer) {
-            log.info(`#${channel} domanda di ${user} allo streamer, senza una risposta vera: la lascio a lui`);
-            return null;
-          }
+          // Qui ci arriva solo chi ha chiamato il bot: allo streamer si e' gia'
+          // smesso di rispondere sopra. Il bot puo' dire onesto che non lo sa.
           return compila(scegli(NON_LO_SO, genere), variabili);
         }
-        // mi hanno chiamato senza una domanda: rispondo comunque con un cenno
-        // (mai ignorare chi mi nomina), scegliendo tra saluto ed "eccomi".
+        // CHIAMATO SENZA UNA DOMANDA. Un cenno ha senso solo a chi ha chiamato e
+        // basta («bot», «ciao bot»): li' non c'e' niente da capire, e tacere
+        // sembrerebbe essere morto. A una frase vera un cenno pescato a caso non
+        // risponde: «Sì ANDRYXify? Se è per soldi, non ne ho» a «Quanti bot
+        // AHAHAH» era questo. Senza il modello, meglio tacere.
+        if (!soloUnaChiamata(text)) {
+          log.info(`#${channel} ${user} ha chiamato con una frase, e senza il modello non ho una risposta vera: taccio`);
+          return null;
+        }
         const salutato = /(^|[^a-z])(ciao|ehi|hey|buongiorno|buonasera|buond[iì]|salve|weil[aà]|hola)([^a-z]|$)/.test(lower);
         const pool = (salutato ? SALUTI : ECCOMI)[tono] || ECCOMI.scherzoso;
         return compila(scegli(pool, genere), variabili);

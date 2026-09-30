@@ -81,6 +81,10 @@ const ROTTURE = [
     'dove l\'angolo e\' trasparente la casella prende un colore che non si vede'],
   ['src/web/public/overlay-app.js', "  v.n = Math.max(v.n, n);\n", "  v.n = n;\n",
     'con i fotogrammi in ritardo la combo torna indietro'],
+  ['src/web/public/overlay-app.js', "  vestiElemento(carta, cfg, 'nessuna', 'arena');\n", '',
+    'in diretta l\'arena non si posa dove la mette lo Studio'],
+  ['src/web/public/app.js', "  box.className = 'ovl-widget ovl-arena dim-' + (st.dim || 'media') + ' ' + classiIdentita(st, 'nessuna');", "  box.className = 'ovl-widget ovl-arena dim-media ' + classiIdentita(st, 'nessuna');",
+    'sulla tela l\'arena non cambia grandezza con la Dimensione'],
 ];
 
 // --selftest prova tutte le rotture; --selftest=<parola> solo quelle la cui
@@ -126,7 +130,7 @@ if (!browser) { console.log('  –  saltato: manca Chromium o Playwright'); proc
 // il tema e il brano che il finto bot serve alla pagina dell'overlay: li scrive
 // l'editor, caso per caso, cosi' le due pagine vestono la stessa cosa
 let TEMA = null, MUSICA = { stato: 'niente' };
-const MOSTRA = { alert: true, chat: true, wf: true, ws: true, goal: true, cont: true, musica: true, timer: true, treno: true, cart: true, pen: true, boss: true, scritta: true, etichetta: true, muro: true, effetti: true, consolify: true };
+const MOSTRA = { alert: true, chat: true, wf: true, ws: true, goal: true, cont: true, musica: true, timer: true, treno: true, cart: true, pen: true, boss: true, arena: true, scritta: true, etichetta: true, muro: true, effetti: true, consolify: true };
 const ovl = overlayFinto({ tema: () => TEMA, musica: () => MUSICA });
 const { base, chiudi } = await apriSito({ overlay: ovl });
 
@@ -161,8 +165,15 @@ try {
   const live = await browser.newPage({ viewport: { width: 1920, height: 1080 } });
   const erroriLive = [];
   live.on('pageerror', (e) => erroriLive.push(String(e.message || e)));
+  // `MIO` e' una costante in cima a overlay-app.js: sta nello spazio globale
+  // della pagina ma non su `window`. Chiesta come `window.MIO` l'attesa non
+  // arrivava mai, scadeva dopo otto secondi a ogni apertura, e si misurava
+  // comunque: un'attesa che non aspettava niente. Il segno che il tema e'
+  // arrivato e' `MIO.ordine`, che nasce solo quando il tema e' applicato; poi
+  // la condizione di ogni caso.
   const apriLive = async (aspetta) => {
     await live.goto(base + '/overlay/prova?key=x', { waitUntil: 'domcontentloaded' });
+    await live.waitForFunction(() => typeof MIO !== 'undefined' && Array.isArray(MIO.ordine), null, { timeout: 8000 }).catch(() => {});
     await live.waitForFunction(aspetta, null, { timeout: 8000 }).catch(() => {});
     await attesa(250);
   };
@@ -214,7 +225,7 @@ try {
     const box = await misuraEd('#ap-chat');
     const riga = await misuraEd('#ap-chat .chat-riga');
     TEMA = { css: '', widget: {}, goals: [], conti: {}, timer: null, musica: null, stato: {}, mostra: MOSTRA, xy: { chat: { x: 50, y: 50, s: 100, r: 0 } }, alertStile: null, chatStile: st };
-    await apriLive(() => window.MIO && document.getElementById('chatlive'));
+    await apriLive(() => typeof MIO !== 'undefined' && document.getElementById('chatlive'));
     await attesa(300);
     ovl.manda({ tipo: 'chat', user: 'MarioRossi', colore: '#ff4d4d', testo: 'ciao a tutti', max: 8, fadeSec: 0 });
     await live.waitForFunction(() => document.querySelector('#chatlive .chat-riga'), null, { timeout: 5000 }).catch(() => {});
@@ -268,7 +279,7 @@ try {
     if (!c) { dice(false, 'contatori: la demo non ne ha uno da misurare'); break; }
     const e = await misuraEd('#ap-stage .contatore-widget');
     TEMA = { css: '', widget: {}, goals: [], conti: {}, timer: null, musica: null, stato: {}, mostra: MOSTRA, xy: caso.xy ? { [c.k]: caso.xy } : {}, alertStile: null, chatStile: null };
-    await apriLive(() => window.MIO && window.MIO.mostra && window.MIO.mostra.consolify === true);
+    await apriLive(() => typeof MIO !== 'undefined' && MIO.mostra && MIO.mostra.consolify === true);
     await attesa(200);
     ovl.manda({ tipo: 'contatore', comando: c.comando, mostra: true, testo: c.testo, x: 50, y: 50, r: 0, colore: '#ffffff', sfondo: 'rgba(0,0,0,0.55)', dim: caso.dim, grassetto: !!caso.grassetto, font: 'system' });
     await live.waitForFunction(() => document.querySelector('.contatore-widget'), null, { timeout: 5000 }).catch(() => {});
@@ -357,7 +368,7 @@ try {
   });
   const edPen = cfgPen ? await misuraEd('#ap-pen .pen-card') : null;
   TEMA = { css: '', widget: {}, goals: [], conti: {}, timer: null, musica: null, stato: {}, mostra: MOSTRA, xy: { pen: { x: 50, y: 50, s: 100, r: 0 } }, alertStile: null, chatStile: null };
-  await apriLive(() => window.MIO && window.MIO.mostra && window.MIO.mostra.pen === true);
+  await apriLive(() => typeof MIO !== 'undefined' && MIO.mostra && MIO.mostra.pen === true);
   await attesa(200);
   ovl.manda({ azione: 'start', id: 'p1', modo: 'vieta', cosa: 'parola', valore: 'esempio', durata: 2, posizione: 'alto-destra', colore: '#ff2d2d', tipo: 'penitenza' });
   await live.waitForFunction(() => document.querySelector('#penitenze .pen-card.dentro'), null, { timeout: 5000 }).catch(() => {});
@@ -423,7 +434,7 @@ try {
     const stileBoss = { ...(await ed.evaluate(() => _defBoss().stile)), ...(stile || {}) };
     TEMA = { css: '', widget: {}, goals: [], conti: {}, timer: null, musica: null, stato: {}, mostra: MOSTRA, xy: xy ? { boss: xy } : {}, alertStile: null, chatStile: null,
       boss: { attivo: true, posizione: 'alto-centro', xy: null, stile: stileBoss } };
-    await apriLive(() => window.MIO && window.MIO.boss);
+    await apriLive(() => typeof MIO !== 'undefined' && MIO.boss);
     ovl.manda({ tipo: 'boss', azione: 'arriva', nome: 'Troll del Ritardo', vita: 240, vitaMax: 360, durata: 90 });
     await live.waitForFunction(() => document.querySelector('#boss .ovl-boss'), null, { timeout: 5000 }).catch(() => {});
     await attesa(600);
@@ -435,6 +446,41 @@ try {
       `boss ${nome}: editor ${edBoss ? mis(edBoss) : '–'} a ${edDove ? Math.round(edDove.x) + ',' + Math.round(edDove.y) : '–'} = diretta ${lvBoss ? mis(lvBoss) : '–'} a ${lvDove ? Math.round(lvDove.x) + ',' + Math.round(lvDove.y) : '–'}`,
       'editor e diretta non coincidono');
     dice(testi[0] && testi[1] && testi[0].join('|') === testi[1].join('|'), `boss ${nome}: stesso nome, stessa vita, stessa barra — «${(testi[1] || []).slice(0, 2).join(' · ')}»`, JSON.stringify(testi));
+  }
+
+  // --- 6-quater-bis. l'arena delle emote ------------------------------------
+  // docs/ARENA.md. L'arena d'esempio dello Studio e quella che si apre in onda
+  // hanno la stessa scatola, nello stesso posto: in un punto, al suo angolo,
+  // e vestita (grandezza, cornice, fondo). Il contenuto e' la partita, che in
+  // onda nasce dagli eventi del server: qui si misura la carta che la porta.
+  const ARENA_VESTE = { dim: 'grande', sfondo: '#203040', opacita: 60, testo: '#ffffee', accento: '#22aa66', bordoRaggio: 6, font: 'sistema', forma: 'carta', materia: 'piatta', cornice: 'linea' };
+  for (const [nome, xy, stile] of [['in un punto', { x: 40, y: 45, s: 80, r: 0 }, null], ['al suo angolo', null, null], ['vestita', { x: 55, y: 60, s: 60, r: 0 }, ARENA_VESTE]]) {
+    await ed.evaluate(async ({ xy, stile }) => {
+      const c = _cfgEl('arena'); c.attivo = true; c.stile = { ..._defArena().stile, ...(stile || {}) };
+      const q = _ovXY(); for (const k of Object.keys(q)) delete q[k];
+      if (xy) q.arena = { ...xy };
+      aggiornaAnteprima();
+      await new Promise((r) => setTimeout(r, 600));
+    }, { xy, stile });
+    await ed.waitForFunction(() => { const t = document.querySelector('#ap-arena canvas'); return t && t.width > 50; }, null, { timeout: 8000 }).catch(() => {});
+    const edA = await misuraEd('#ap-arena .ovl-arena');
+    const edDove = await ed.evaluate(`(${DOVE})('#ap-arena .ovl-arena')`);
+    const stileA = { ...(await ed.evaluate(() => _defArena().stile)), ...(stile || {}) };
+    TEMA = { css: '', widget: {}, goals: [], conti: {}, timer: null, musica: null, stato: {}, mostra: MOSTRA, xy: xy ? { arena: xy } : {}, alertStile: null, chatStile: null,
+      arena: { attivo: true, posizione: 'centro', xy: null, nomi: true, coloreChat: true, bordo: true, stile: stileA } };
+    await apriLive(() => typeof MIO !== 'undefined' && MIO.arena);
+    const ora = Date.now();
+    ovl.manda({ tipo: 'arena', azione: 'iscrizioni', ora, aperta: ora, fineIscrizioni: ora + 60000, righe: ['Scrivi in chat per entrare!', '!emote nome per scegliere la tua'], regole: {} });
+    for (const id of ['anna', 'bruno', 'carla']) ovl.manda({ tipo: 'arena', azione: 'entra', combattente: { id, nome: id, colore: '', emote: null } });
+    await live.waitForFunction(() => { const t = document.querySelector('#arena .ovl-arena canvas'); return t && t.width > 50; }, null, { timeout: 5000 }).catch(() => {});
+    await attesa(500);
+    const lvA = await misuraLive('#arena .ovl-arena');
+    const lvDove = await live.evaluate(`(${DOVE})('#arena .ovl-arena')`);
+    dice(edA && lvA && vicino(edA.w, lvA.w) && vicino(edA.h, lvA.h) && vicino(edA.font, lvA.font, 0.6)
+      && edDove && lvDove && vicino(edDove.x, lvDove.x, 2) && vicino(edDove.y, lvDove.y, 2),
+      `arena ${nome}: editor ${edA ? mis(edA) : '–'} a ${edDove ? Math.round(edDove.x) + ',' + Math.round(edDove.y) : '–'} = diretta ${lvA ? mis(lvA) : '–'} a ${lvDove ? Math.round(lvDove.x) + ',' + Math.round(lvDove.y) : '–'}`,
+      'editor e diretta non coincidono');
+    ovl.manda({ tipo: 'arena', azione: 'annullata', perche: 'ferma' });
   }
 
   // --- 6-quinquies. il testo a schermo -------------------------------------
@@ -459,7 +505,7 @@ try {
     const stileS = { ...(await ed.evaluate(() => _defScritta().stile)), ...(stile || {}) };
     TEMA = { css: '', widget: {}, goals: [], conti: {}, timer: null, musica: null, stato: {}, mostra: MOSTRA, xy: xy ? { scritta: xy } : {}, alertStile: null, chatStile: null,
       scritta: { attivo: true, posizione: 'centro', xy: null, stile: stileS } };
-    await apriLive(() => window.MIO && window.MIO.scritta);
+    await apriLive(() => typeof MIO !== 'undefined' && MIO.scritta);
     ovl.manda({ tipo: 'testo', testo, durata: 60000 });
     await live.waitForFunction(() => document.querySelector('#testi .ovl-scritta.dentro'), null, { timeout: 5000 }).catch(() => {});
     await attesa(600);
@@ -488,7 +534,7 @@ try {
     const stileE = { ...(await ed.evaluate(() => _defEtichetta().stile)), ...(stile || {}) };
     TEMA = { css: '', widget: {}, goals: [], conti: {}, timer: null, musica: null, stato: {}, mostra: MOSTRA, xy: xy ? { etichetta: xy } : {}, alertStile: null, chatStile: null,
       etichetta: { attivo: true, posizione: 'basso-centro', xy: null, stile: stileE } };
-    await apriLive(() => window.MIO && window.MIO.etichetta);
+    await apriLive(() => typeof MIO !== 'undefined' && MIO.etichetta);
     ovl.manda({ tipo: 'audio', url: '', comando: scritto.slice(1) });
     await live.waitForFunction(() => document.querySelector('#etichette .ovl-etichetta.dentro'), null, { timeout: 3000 }).catch(() => {});
     await attesa(350);
@@ -516,7 +562,7 @@ try {
     const edF = await misuraEd('#ap-effetti .effetto');
     const edDove = await ed.evaluate(`(${DOVE_S})('#ap-effetti .effetto')`);
     TEMA = { css: '', widget: {}, goals: [], conti: {}, timer: null, musica: null, stato: {}, mostra: MOSTRA, xy: xy ? { effetti: xy } : {}, alertStile: null, chatStile: null };
-    await apriLive(() => window.MIO && window.MIO.mostra && window.MIO.mostra.effetti === true);
+    await apriLive(() => typeof MIO !== 'undefined' && MIO.mostra && MIO.mostra.effetti === true);
     ovl.manda({ tipo: 'immagine', url: ESEMPIO, durata: 60000, comando: '' });
     await live.waitForFunction(() => document.querySelector('#palco .effetto.dentro'), null, { timeout: 5000 }).catch(() => {});
     await attesa(600);
@@ -550,7 +596,7 @@ try {
     const edGiro = await ed.evaluate(`(${DENTRO})('#ap-muro')`);
     TEMA = { css: '', widget: {}, goals: [], conti: {}, timer: null, musica: null, stato: {}, mostra: MOSTRA, xy: xy ? { muro: xy } : {}, alertStile: null, chatStile: null,
       muro: { ...cfgMuro, maxSchermo: 6, coda: 0, combo: { ...cfgMuro.combo, soglia: 3, finestra: 2 } } };
-    await apriLive(() => window.MIO && window.MIO.muro && window.MIO.muro.attivo === true);
+    await apriLive(() => typeof MIO !== 'undefined' && MIO.muro && MIO.muro.attivo === true);
     const lvA = await live.evaluate(`(${DOVE_S})('#muro')`);
     const lvM = await live.evaluate(`(${MISURA})('#muro')`);
     dice(edM && lvM && edA && lvA && vicino(edM.w, lvM.w, 2) && vicino(edM.h, lvM.h, 2) && vicino(edA.x, lvA.x, 2) && vicino(edA.y, lvA.y, 2),
@@ -840,7 +886,7 @@ try {
   const AREA_PICCOLA = { effetti: { x: 5, y: 5, w: 20, h: 20, r: 0 } };
   const FUOCHI = { nome: 'fuochi', colori: ['#ff5a5a', '#ffd166'], quanti: 'tanti', durata: 4, suono: '' };
   TEMA = { css: '', widget: {}, goals: [], conti: {}, timer: null, musica: null, stato: {}, mostra: MOSTRA, xy: AREA_PICCOLA, alertStile: null, chatStile: null };
-  await apriLive(() => window.MIO && window.MIO.mostra && window.MIO.mostra.effetti === true);
+  await apriLive(() => typeof MIO !== 'undefined' && MIO.mostra && MIO.mostra.effetti === true);
   const tuttoSchermo = [];
   for (const schermo of ['riempi', 'intero']) {
     ovl.manda({ tipo: 'immagine', url: LARGA, durata: 1500, comando: '', schermo, posizione: null });
@@ -876,7 +922,7 @@ try {
     `un disegno e' una tela grande quanto la finestra, al livello degli effetti, che si disegna (${disegnato ? disegnato.accesi : 0} punti accesi) e se ne va da sola`, JSON.stringify({ disegnato, andato }));
 
   TEMA = { ...TEMA, mostra: { ...MOSTRA, effetti: false } };
-  await apriLive(() => window.MIO && window.MIO.mostra && window.MIO.mostra.effetti === false);
+  await apriLive(() => typeof MIO !== 'undefined' && MIO.mostra && MIO.mostra.effetti === false);
   ovl.manda({ tipo: 'disegno', comando: '', disegno: FUOCHI, durata: 4000, volume: 0 });
   ovl.manda({ tipo: 'immagine', url: LARGA, durata: 1500, comando: '', schermo: 'riempi', posizione: null });
   await attesa(900);

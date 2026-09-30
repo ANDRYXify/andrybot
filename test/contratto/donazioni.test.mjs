@@ -52,7 +52,7 @@ test('l\'alert «donazione» esiste dove nasce, dove si veste e dove si salva', 
   assert.match(BOT, /new AlertsEngine\(\{ effects: this\.effects, say: \(ch, t\) => this\.say\(ch, t\)[, ]/, 'il bot gli presta la chat');
   assert.match(APP, /\{ key: 'donazione', nome: L\('Donazione'/, 'il pannello lo elenca fra gli alert');
   assert.match(APP, /soglia: \{ campo: 'minImporto'/, 'con la soglia dell\'importo minimo');
-  assert.match(SRV, /donazione: \{ \.\.\.evt\(p\.donazione\), minImporto:/, 'il server lo salva');
+  assert.match(SRV, /donazione: \{ \.\.\.evt\('donazione', p\.donazione\), minImporto:/, 'il server lo salva');
   assert.match(OVL, /^  donazione: '<svg/m, 'l\'overlay ha la sua icona');
 });
 

@@ -133,6 +133,12 @@ test('il pannello calcola la resa con la stessa regola del server', () => {
       const v = G.valoriDi({}, g.id);
       for (const p of g.param) {
         if (p.tipo === 'tabella') v[p.k] = v[p.k].map(([n, , w]) => [n, Math.floor(caso() * 500), 1 + Math.floor(caso() * 50)]);
+        // Le scelte si pescano fra quelle vere: un numero al posto di una
+        // scelta non prenderebbe mai il ramo che la scelta accende, e una
+        // resa che dipende da una scelta (la corona dell'arena) passerebbe
+        // senza essere guardata.
+        else if (p.tipo === 'scelta') v[p.k] = p.scelte[Math.floor(caso() * p.scelte.length)][0];
+        else if (p.tipo === 'scelte') v[p.k] = p.scelte.map(([id]) => id).filter(() => caso() < 0.5);
         else if (p.tipo === 'elenco') v[p.k] = Array.from({ length: (p.min || 1) + Math.floor(caso() * (p.max - (p.min || 1) + 1)) }, (_, k) => `riga ${k}`);
         else v[p.k] = p.min + Math.floor(caso() * Math.min(p.max - p.min + 1, 5000));
       }

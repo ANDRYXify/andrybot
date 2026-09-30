@@ -166,13 +166,23 @@ function fineStringa(src, i) {
   return src.length;
 }
 
-// Quello che non e' una frase: gli oggetti di opzioni ({ via: 'bot' }) e il
-// momento chiesto alla voce (voce.di(canale, 'follow', ...)).
+// Quello che non e' una frase: gli oggetti di opzioni ({ via: 'bot' }), il
+// momento chiesto alla voce (voce.di(canale, 'follow', ...)) e una stringa
+// confrontata (perche === 'ferma'): di un confronto in chat esce un si' o un
+// no, mai la stringa.
+const CONFRONTO_PRIMA = /(?:[=!]==?)\s*$/;
+const CONFRONTO_DOPO = /^\s*[=!]==?/;
 function senzaNonFrasi(args) {
   let out = '';
   for (let i = 0; i < args.length; i++) {
     const c = args[i];
-    if (c === "'" || c === '"' || c === '`') { const f = fineStringa(args, i); out += args.slice(i, f + 1); i = f; continue; }
+    if (c === "'" || c === '"' || c === '`') {
+      const f = fineStringa(args, i);
+      const confrontata = CONFRONTO_PRIMA.test(args.slice(Math.max(0, i - 8), i)) || CONFRONTO_DOPO.test(args.slice(f + 1, f + 9));
+      out += confrontata ? '0' : args.slice(i, f + 1);
+      i = f;
+      continue;
+    }
     if (c === '{') { i = finoAllaChiusa(args, i + 1); out += '{}'; continue; }
     const voce = /^voce\s*\.\s*(?:di|anteprima)\s*\(/.exec(args.slice(i));
     if (voce && !/[\w$.]/.test(args[i - 1] || '')) { i = finoAllaChiusa(args, i + voce[0].length); out += 'voce()'; continue; }
@@ -299,6 +309,7 @@ if (process.argv.includes('--selftest')) {
     ['portati', () => tutto(MOMENTI, conFile('src/features/nuovo.js', 'export const x = (ch, t) => this.say(ch, `Grazie ${t}!`, { via: \'bot\' });')), 'un template con parole, accanto alle opzioni'],
     ['portati', () => tutto(MOMENTI, conFile('src/features/nuovo.js', "export const x = (msg, say, y) => aChi(msg, say)('Si fa cosi\\'.');")), 'il rispondi-a-chi con un testo scritto'],
     ['portati', () => tutto(MOMENTI, conFile('src/features/nuovo.js', "export const x = (say, c) => say(riempi(c.testo || 'Grazie {user}!'));")), 'un testo di riserva dentro un\'altra chiamata'],
+    ['portati', () => tutto(MOMENTI, conFile('src/features/nuovo.js', "export const x = (say, p) => say(p === 'ferma' ? 'Fermata!' : p);")), 'una frase fissa accanto a un confronto'],
     ['elenco', () => tutto(MOMENTI, { daPortare: [...DA_PORTARE, 'src/features/voce.js'] }), 'un file senza frasi fisse lasciato nell\'elenco'],
     ['elenco', () => tutto(MOMENTI, { daPortare: [...DA_PORTARE, 'src/features/sparito.js'], massimo: MASSIMO + 1 }), 'un file che non esiste piu\''],
     ['elenco', () => tutto(MOMENTI, { ...conFile('src/features/nuovo.js', "export const x = (say) => say('Ciao!');"), daPortare: [...DA_PORTARE, 'src/features/nuovo.js'] }), 'l\'elenco che si allunga'],
@@ -306,6 +317,7 @@ if (process.argv.includes('--selftest')) {
   const NON_ROTTURE = [
     ['portati', () => tutto(MOMENTI, conFile('src/features/nuovo.js', "export const x = (ch) => this.say(ch, voce.di(ch, 'follow', { nome: 'Luna' }), { via: 'bot' });")), 'il nome del momento e le opzioni non sono frasi'],
     ['portati', () => tutto(MOMENTI, conFile('src/features/nuovo.js', "// say('Ciao a tutti!')\nexport const x = (say, t) => say('👑 ' + t);")), 'un commento e un\'icona non sono frasi'],
+    ['portati', () => tutto(MOMENTI, conFile('src/features/nuovo.js', "export const x = (say, p, a, b) => say(p === 'ferma' ? a : 'fine' !== p ? b : a);")), 'una stringa confrontata non e\' una frase'],
   ];
   let cieche = 0;
   for (const [dove, fa, che] of ROTTURE) {

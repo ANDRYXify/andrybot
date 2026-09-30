@@ -59,7 +59,7 @@
     while ((v = vivi(box)).length > 1 && trabocca(box)) { v[0].remove(); n++; }
     return n;
   }
-  var ORDINE_BASE = ['muro', 'effetti', 'pen', 'etichetta', 'scritta', 'chat', 'wf', 'ws', 'goal', 'cart', 'musica', 'timer', 'treno', 'bit', 'boss', 'alert', 'cont'];
+  var ORDINE_BASE = ['muro', 'arena', 'effetti', 'pen', 'etichetta', 'scritta', 'chat', 'wf', 'ws', 'goal', 'cart', 'musica', 'timer', 'treno', 'bit', 'boss', 'alert', 'cont'];
   function rango(k) { var i = ORDINE_BASE.indexOf(String(k).split(':')[0]); return i < 0 ? ORDINE_BASE.length : i; }
   function ordine(chiavi, salvato) {
     var s = [];

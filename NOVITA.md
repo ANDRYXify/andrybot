@@ -103,6 +103,15 @@ comandi diversi da quelli della riga italiana.
 - Chi toglie tutti i posti degli avvisi su Telegram o su Discord non se ne ritrova uno alla lettura dopo: il gruppo o il canale collegato diventa un posto una volta sola, quando arriva.
   en: If you remove all the alert places on Telegram or Discord, you don’t find one back the next time it loads: the connected group or channel becomes a place only once, when it arrives.
   es: Quien quita todos los lugares de los avisos en Telegram o en Discord ya no se encuentra uno de nuevo en la siguiente lectura: el grupo o el canal conectado se vuelve un lugar una sola vez, cuando llega.
+- [importante] Nei Giochi c'è l'arena delle emote: chi scrive in chat entra con la sua emote, i combattenti si scontrano da soli e vince l'ultimo in piedi, con premi in monete. [vai: giochi]
+  en: Games has the emote arena: whoever writes in chat joins with their emote, the fighters clash on their own and the last one standing wins, with coin prizes.
+  es: En Juegos está la arena de emotes: quien escribe en el chat entra con su emote, los luchadores chocan solos y gana el último en pie, con premios en monedas.
+  > L'arena delle emote
+  > Un gioco per tutta la chat che si guarda in diretta: la apri con !arena, ognuno combatte con la sua emote, e nell'overlay è un elemento dello Studio che sposti e vesti come gli altri.
+  en> The emote arena
+  en> A game for the whole chat that you watch live: you open it with !arena, everyone fights with their emote, and on the overlay it is a Studio element you move and style like the others.
+  es> La arena de emotes
+  es> Un juego para todo el chat que se ve en directo: la abres con !arena, cada uno lucha con su emote, y en el overlay es un elemento del Studio que mueves y vistes como los demás.
 - Pannello e sito in inglese parlano americano (color, center, behavior), e i suggerimenti a voce propongono parole italiane, perché il riconoscimento è in italiano.
   en: The panel and site in English now speak American (color, center, behavior), and voice suggestions offer Italian words, because recognition is in Italian.
   es: El panel y el sitio en inglés hablan en americano (color, center, behavior), y las sugerencias de voz proponen palabras italianas, porque el reconocimiento está en italiano.
@@ -193,6 +202,24 @@ comandi diversi da quelli della riga italiana.
 - Nella catena di parole ogni parola buona ha la sua risposta, con le due lettere da cui si riparte: prima passava in silenzio e sembrava che il gioco non andasse. [vai: giochi]
   en: In the word chain every valid word gets its own reply, with the two letters to continue from: before, it went by in silence and the game looked broken.
   es: En la cadena de palabras cada palabra válida tiene su respuesta, con las dos letras desde las que se sigue: antes pasaba en silencio y parecía que el juego no funcionaba.
+- In chat il bot risponde a chi parla a lui: chi parla di bot, risponde a un altro spettatore o scrive il nome dello streamer non riceve più frasi a caso. [vai: personalita]
+  en: In chat the bot answers whoever is talking to it: people talking about bots, replying to another viewer or writing the streamer’s name no longer get random lines.
+  es: En el chat el bot responde a quien le habla a él: quien habla de bots, responde a otro espectador o escribe el nombre del streamer ya no recibe frases al azar.
+- Il gioco e la durata della diretta il bot li dice a chi li chiede davvero, non a chi scrive «da quanto tempo non ci vediamo». [vai: personalita]
+  en: The bot says what game it is and how long the stream has been going to people who actually ask, not to someone writing “long time no see”.
+  es: El juego y la duración del directo el bot los dice a quien los pregunta de verdad, no a quien escribe «cuánto tiempo sin vernos».
+- [importante] Negli alert di follow, sub, bit e raid scegli chi li mostra: SocialBot, Twitch o tutti e due. Con Twitch il nostro non parte, e widget e obiettivi contano lo stesso. [vai: alert]
+  en: In follow, sub, bits and raid alerts you choose who shows them: SocialBot, Twitch or both. With Twitch ours doesn’t play, and widgets and goals still count.
+  es: En las alertas de follow, sub, bits y raid eliges quién las muestra: SocialBot, Twitch o las dos. Con Twitch la nuestra no sale, y los widgets y los objetivos cuentan igual.
+  > Gli alert di Twitch, i nostri o tutti e due
+  > Prima chi usava già gli alert di Twitch doveva spegnere i nostri, o li vedeva due volte. Twitch non lascia cambiarli da fuori: si impostano su Twitch, e qui decidi se parte anche il nostro.
+  en> Twitch’s alerts, ours, or both
+  en> Before, if you already used Twitch’s alerts you had to turn ours off, or you saw them twice. Twitch doesn’t let them be changed from outside: you set them up on Twitch, and here you decide whether ours plays too.
+  es> Las alertas de Twitch, las nuestras o las dos
+  es> Antes, quien ya usaba las alertas de Twitch tenía que apagar las nuestras, o las veía dos veces. Twitch no deja cambiarlas desde fuera: se configuran en Twitch, y aquí decides si sale también la nuestra.
+- Fra le vesti dell'overlay c'è «Stile Twitch»: niente riquadro, l'immagine grande sopra e il nome in viola, come negli alert di Twitch, e poi cambi quello che vuoi. [vai: alert]
+  en: Among the overlay looks there’s “Stile Twitch”: no box, a big image on top and the name in purple, like Twitch’s alerts, and then you change whatever you want.
+  es: Entre los aspectos del overlay está «Stile Twitch»: sin recuadro, la imagen grande arriba y el nombre en morado, como en las alertas de Twitch, y luego cambias lo que quieras.
 
 - Il bot ringrazia per follow, abbonamenti, raid, Bit, shoutout e premi a punti canale nella lingua della chat e col tono scelto, con frasi che ogni canale gira a modo suo. [vai: personalita]
   en: The bot thanks people for follows, subs, raids, Bits, shoutouts and channel point rewards in the chat’s language and in the tone you picked, with lines each channel rotates its own way.

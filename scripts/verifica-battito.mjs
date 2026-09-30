@@ -34,10 +34,12 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawn } from 'node:child_process';
 import { minificaJs } from '../src/web/minifica.js';
+import { chromiumQui } from './_sito.mjs';
 
 const RAD = join(dirname(fileURLToPath(import.meta.url)), '..');
 const PUB = join(RAD, 'src/web/public');
-const CHROMIUM = process.env.CHROMIUM || '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
+const CHROMIUM = chromiumQui();
+if (!CHROMIUM) { console.log('  –  saltato: manca Chromium o Playwright'); process.exit(0); }
 const GRAZIA_S = 10;
 const MISURA_S = 20;
 
@@ -88,6 +90,7 @@ const chrome = spawn(CHROMIUM, [
   `--enable-features=IntensiveWakeUpThrottling:grace_period_seconds/${GRAZIA_S}`,
   'about:blank',
 ], { stdio: 'ignore', detached: true });
+chrome.on('error', (e) => dice(false, `Chromium non parte: ${e?.message || e}`));
 
 let ws = null;
 const chiuso = new Promise((ok) => chrome.once('exit', ok));

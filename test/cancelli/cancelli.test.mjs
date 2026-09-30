@@ -37,3 +37,10 @@ test('ogni frase del bot ha un posto solo, e il cancello se ne accorge davvero',
   const a = await lanciaScript('scripts/verifica-voce.mjs', ['--selftest']);
   assert.equal(a.codice, 0, a.uscita);
 });
+
+// Sul server Chromium non c'e': un collaudo col browser che non se ne accorge
+// ferma tutto l'aggiornamento (e' successo con verifica-battito).
+test('sul server, senza browser, i collaudi col browser si saltano da soli', async () => {
+  const { codice, uscita } = await lanciaScript('scripts/verifica-senza-browser.mjs');
+  assert.equal(codice, 0, uscita);
+});

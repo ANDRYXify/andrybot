@@ -26,7 +26,7 @@
 //      node scripts/verifica-giro.mjs --selftest --rottura=N
 //        (rimette uno dei difetti della posa: DEVE diventare rosso)
 
-import { apriSito } from './_sito.mjs';
+import { apriSito, chromiumQui } from './_sito.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -75,7 +75,7 @@ if (SELFTEST) {
 const ripristina = () => { if (SELFTEST) for (const [f, t] of originali) fs.writeFileSync(f, t); };
 process.on('exit', ripristina);
 const PUB = path.join(RAD, 'src/web/public');
-const CHROMIUM = process.env.CHROMIUM || '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
+const CHROMIUM = chromiumQui();
 const PLAYWRIGHT = process.env.PLAYWRIGHT || '/opt/node22/lib/node_modules/playwright/index.mjs';
 
 const TIPI = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
@@ -83,6 +83,7 @@ const TIPI = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; cha
   '.webmanifest': 'application/manifest+json', '.json': 'application/json', '.woff2': 'font/woff2' };
 
 let chromium;
+if (!CHROMIUM) { console.log('Chromium non c\'e\' su questa macchina: collaudo saltato.'); process.exit(0); }
 try { ({ chromium } = await import(PLAYWRIGHT)); }
 catch {
   console.log('Playwright non c\'e\' su questa macchina: collaudo saltato.');

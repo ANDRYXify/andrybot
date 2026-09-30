@@ -19,6 +19,7 @@ import * as stemmi from './badges.js';
 import * as emote from './emotes.js';
 import { makeLog } from '../logger.js';
 import { formattaImporto, livelloPer } from './donazioni.js';
+import { chiAlertOk } from '../web/stile.js';
 
 const log = makeLog('alerts');
 
@@ -144,6 +145,9 @@ export class AlertsEngine {
       if (!a || a.attivo === false) return;
       const conf = a[kind];
       if (!conf || conf.attivo === false) return;
+      // lo streamer ha scelto l'alert di Twitch: il nostro non parte, ma i
+      // widget, gli obiettivi e la maratona qui sopra hanno gia' contato
+      if (chiAlertOk(kind, conf.chi) === 'twitch') return;
       if (kind === 'cheer' && Number(vars.bits) < (Number(conf.minBits) || 0)) return;
       if (kind === 'raid' && Number(vars.viewers) < (Number(conf.minViewers) || 0)) return;
       this._spara(channel, a, kind, conf, vars);
@@ -445,6 +449,7 @@ export class AlertsEngine {
       treno: (s.overlayTreno && typeof s.overlayTreno === 'object') ? s.overlayTreno : null,
       bit: (s.overlayBit && typeof s.overlayBit === 'object') ? s.overlayBit : null,
       boss: (s.overlayBoss && typeof s.overlayBoss === 'object') ? s.overlayBoss : null,
+      arena: (s.overlayArena && typeof s.overlayArena === 'object') ? s.overlayArena : null,
       scritta: (s.overlayScritta && typeof s.overlayScritta === 'object') ? s.overlayScritta : null,
       etichetta: (s.overlayEtichetta && typeof s.overlayEtichetta === 'object') ? s.overlayEtichetta : null,
       muro: (s.overlayMuro && typeof s.overlayMuro === 'object') ? s.overlayMuro : null,

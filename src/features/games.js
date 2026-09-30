@@ -12,6 +12,7 @@ import { valoriDi, SLOT_TRIS } from './giochi-conf.js';
 import * as coccole from './coccole.js';
 import * as colpoFeat from './colpo.js';
 import * as bossFeat from './boss.js';
+import * as arenaFeat from './arena.js';
 import * as contaFeat from './conta.js';
 import * as bjFeat from './blackjack.js';
 import * as corsaFeat from './corsa.js';
@@ -873,6 +874,10 @@ export function tryGame(msg, say) {
     const risposta = aChi(msg, say);
     const comando = (id) => '!' + nomeIn(channel, id);
 
+    // l'arena aperta nel modo «chi scrive» fa entrare con qualunque messaggio,
+    // anche un numero della conta: per questo viene prima, e non lo consuma
+    arenaFeat.suMessaggio(channel, msg, say);
+
     // un numero mentre si conta insieme appartiene alla conta, una parola
     // mentre c'e' la catena alla catena
     if (contaFeat.suMessaggio(channel, msg)) return true;
@@ -1148,6 +1153,21 @@ export function tryGame(msg, say) {
 
       case 'colpisci': {
         bossFeat.colpisci(channel, msg, say);
+        return true;
+      }
+
+      case 'arena': {
+        arenaFeat.comandoArena(channel, msg, args, say);
+        return true;
+      }
+
+      case 'combatti': {
+        arenaFeat.combatti(channel, msg, say);
+        return true;
+      }
+
+      case 'emote': {
+        arenaFeat.scegliEmote(channel, msg, say).catch((e) => log.error('emote dell\'arena:', e?.message || e));
         return true;
       }
 

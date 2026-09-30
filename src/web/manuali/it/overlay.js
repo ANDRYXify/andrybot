@@ -13,7 +13,7 @@ export default {
   corpo: [
     { h2: 'Overlay Studio', scheda: 'alert', p: [
       'L\'overlay è <strong>una pagina web</strong>. In OBS si mette come sorgente <em>Browser</em>. Da lì in poi quello che decidi nella scheda «Overlay Studio», nel gruppo «Scena & overlay», compare in diretta senza toccare più niente in OBS.',
-      'La scheda si apre sul <strong>banco</strong>: a sinistra i livelli, al centro la tela 1920×1080, a destra le proprietà. Le impostazioni di alert, chat, ultimo follower e sub, player, conto alla rovescia, conto alla pubblicità, hype train, classifica Bit, boss, testo a schermo, nome del comando e muro delle emote stanno dentro «Proprietà»: selezioni l\'elemento sulla tela e le trovi lì, divise in gruppi che si aprono uno alla volta. Sotto il banco restano le carte «Metterlo nella diretta», «Gli obiettivi», «Cartelli» e «CSS avanzato».',
+      'La scheda si apre sul <strong>banco</strong>: a sinistra i livelli, al centro la tela 1920×1080, a destra le proprietà. Le impostazioni di alert, chat, ultimo follower e sub, player, conto alla rovescia, conto alla pubblicità, hype train, classifica Bit, boss, arena delle emote, testo a schermo, nome del comando e muro delle emote stanno dentro «Proprietà»: selezioni l\'elemento sulla tela e le trovi lì, divise in gruppi che si aprono uno alla volta. Sotto il banco restano le carte «Metterlo nella diretta», «Gli obiettivi», «Cartelli» e «CSS avanzato».',
       'In testa alla scheda <strong>«Tutto schermo»</strong> toglie il menù di lato e lascia tutta la larghezza alla tela. Il menù si disfa a matita e aspetta sul bordo sinistro: ci arrivi col cursore e si ridisegna, lo lasci e si disfa. «Rimetti il menù» lo riporta di lato. Il browser ricorda la scelta per questa scheda.',
       'La scheda c\'è in ogni piano, anche in quello gratuito. La usano il proprietario del canale e i moderatori. Le poche cose riservate al proprietario sono segnate qui sotto.',
       'Su un telefono tenuto in verticale compare la carta «Gira il telefono»: il banco lavora in orizzontale.',
@@ -24,7 +24,7 @@ export default {
     { tabella: [
       ['Controllo', 'Cosa fa'],
       ['«Overlay»', 'Sceglie l\'overlay che stai modificando. Se hai modifiche non salvate il pannello chiede prima: «Salva ed esci», «Esci senza salvare» o «Resta qui».'],
-      ['«Nuovo…»', 'Crea un overlay. In «Parti da» scegli «Come quello che sto modificando» oppure una delle nove vesti pronte. Il nome di serie è «Overlay» col suo numero. Nasce con dentro tutti gli elementi e con un link suo.'],
+      ['«Nuovo…»', 'Crea un overlay. In «Parti da» scegli «Come quello che sto modificando» oppure una delle dieci vesti pronte. Il nome di serie è «Overlay» col suo numero. Nasce con dentro tutti gli elementi e con un link suo.'],
       ['«Rinomina»', 'Cambia il nome nell\'elenco. Il link resta lo stesso.'],
       ['«Duplica»', 'Copia visibilità, posizioni, aspetto e CSS in un overlay nuovo, con un link suo. Il nome di serie finisce con «(copia)».'],
       ['«Elimina»', 'Toglie l\'overlay dopo una conferma. Il suo link smette di funzionare e in OBS resta una sorgente vuota. L\'ultimo overlay non si toglie: «Deve restare almeno un overlay.»'],
@@ -66,7 +66,7 @@ export default {
       ['Dare un perimetro', 'Tira un bordo dell\'elemento scelto, oppure spunta «Riquadro».'],
       ['Allineare', 'I sei pulsanti in alto: sinistra, centro, destra, alto, centro, basso. Senza niente di scelto: «Scegli prima un livello.»'],
       ['Bloccare', 'Il lucchetto nel livello o «Blocca»: un elemento bloccato non si sposta, non si ridimensiona e non si ruota per sbaglio.'],
-      ['Davanti e dietro', 'Nei «Livelli» in cima c\'è quello in primo piano. Trascina una riga dalla presa, i sei puntini a sinistra: più su va davanti, più giù va dietro, e la tela lo segue mentre la muovi. Da tastiera Alt+↑ e Alt+↓ (con Maiusc fino in cima o in fondo), oppure Ctrl+] e Ctrl+[, o «Davanti» e «Dietro» in «Proprietà». Scegliere un elemento non lo porta davanti: le maniglie stanno sopra a tutto. Di serie in fondo stanno il muro delle emote e gli effetti a schermo, in cima l\'alert e i contatori. In diretta l\'ordine è lo stesso della tela, ed è di ogni overlay; un\'occasione può avere il suo. Anche l\'ordine torna indietro con Ctrl+Z.'],
+      ['Davanti e dietro', 'Nei «Livelli» in cima c\'è quello in primo piano. Trascina una riga dalla presa, i sei puntini a sinistra: più su va davanti, più giù va dietro, e la tela lo segue mentre la muovi. Da tastiera Alt+↑ e Alt+↓ (con Maiusc fino in cima o in fondo), oppure Ctrl+] e Ctrl+[, o «Davanti» e «Dietro» in «Proprietà». Scegliere un elemento non lo porta davanti: le maniglie stanno sopra a tutto. Di serie in fondo stanno il muro delle emote, l\'arena delle emote e gli effetti a schermo, in cima l\'alert e i contatori. In diretta l\'ordine è lo stesso della tela, ed è di ogni overlay; un\'occasione può avere il suo. Anche l\'ordine torna indietro con Ctrl+Z.'],
       ['Rimettere a posto', 'Doppio clic sull\'elemento, <strong>Canc</strong>, oppure «Ripristina»: torna nella sua posizione di serie.'],
       ['Tornare indietro', '<strong>Ctrl+Z</strong>. Per rifare: <strong>Ctrl+Y</strong> o Ctrl+Maiusc+Z. Le due frecce in alto a sinistra fanno lo stesso. Tengono 60 passi per overlay, finché la pagina resta aperta.'],
       ['Ingrandire la tela', '<strong>Ctrl+rotellina</strong> attorno al puntatore, oppure «−» e «+» a passi del 25%, da 50% a 400%. «Adatta» rimette tutta la scena nello schermo.'],
@@ -95,6 +95,7 @@ export default {
       ['«Classifica Bit»', 'Chi ha messo più Bit.', 'in alto a sinistra', 'qui, in «Proprietà»'],
       ['«Sfida a tempo»', 'La carta della penitenza riscattata coi punti canale.', 'in alto a destra', 'scheda «Penitenze»'],
       ['«Boss»', 'La carta del boss di turno: nome, vita, tempo che resta, chi lo colpisce e quanto.', 'in alto al centro', 'scheda «Giochi»'],
+      ['«Arena delle emote»', 'L\'arena in cui la chat combatte con le sue emote. Si vede solo mentre un\'arena è aperta.', 'al centro', 'scheda «Giochi»'],
       ['«Testo a schermo»', 'La scritta che un comando manda con «Mostra testo sull\'overlay».', 'al centro', 'scheda «Comandi»'],
       ['«Nome del comando»', 'La pastiglia «!comando» che compare quando parte un effetto.', 'in basso al centro', 'scheda «Effetti & suoni»'],
       ['«Muro delle emote»', 'Le emote che la chat scrive volano sulla scena; la stessa emote ripetuta cresce e poi esplode. Di serie spento.', 'tutto lo schermo', 'qui, in «Proprietà»'],
@@ -115,15 +116,15 @@ export default {
       ['Ultimo follower e ultimo sub', 'interruttore, testo, icona, aspetto', 'il nome mostrato'],
       ['CSS avanzato', 'tutto', ''],
       ['Obiettivi e cartelli', 'se si vedono e dove', 'traguardo e conto, testo o immagine, aspetto'],
-      ['Player, conto alla rovescia, conto alla pubblicità, hype train, classifica Bit, sfida a tempo, boss, testo a schermo, nome del comando, contatori, muro delle emote', 'se si vedono e dove', 'tutte le impostazioni e l\'aspetto'],
+      ['Player, conto alla rovescia, conto alla pubblicità, hype train, classifica Bit, sfida a tempo, boss, arena delle emote, testo a schermo, nome del comando, contatori, muro delle emote', 'se si vedono e dove', 'tutte le impostazioni e l\'aspetto'],
       ['Effetti a schermo', 'se si vedono, dove e quanto grandi', 'cosa fa ogni effetto, nella scheda «Effetti & suoni»'],
     ] },
     { p: [
       'Per avere due obiettivi o due cartelli con un aspetto diverso in due scene ne fai due, e in ogni overlay accendi quello giusto.',
-      '<strong>Si salvano da soli</strong>, appena molli il mouse o cambi un valore: posizioni, dimensioni, rotazioni, riquadri, blocchi, ordine dei livelli, visibilità, occasioni, «Quali chat in questo overlay», player, conto alla rovescia, conto alla pubblicità, hype train, classifica Bit, boss, testo a schermo, nome del comando, muro delle emote, obiettivi, cartelli e contatori. I loro pulsanti «Salva» salvano subito, senza aspettare.',
+      '<strong>Si salvano da soli</strong>, appena molli il mouse o cambi un valore: posizioni, dimensioni, rotazioni, riquadri, blocchi, ordine dei livelli, visibilità, occasioni, «Quali chat in questo overlay», player, conto alla rovescia, conto alla pubblicità, hype train, classifica Bit, boss, arena delle emote, testo a schermo, nome del comando, muro delle emote, obiettivi, cartelli e contatori. I loro pulsanti «Salva» salvano subito, senza aspettare.',
       '<strong>Aspettano un pulsante</strong>: alert eventi («Salva alert»), chat a schermo («Salva chat»), ultimo follower e ultimo sub, CSS («Salva CSS»). «Salva overlay» li salva tutti insieme. Finché non salvi, in basso resta la barra delle modifiche non salvate, con «Annulla» per tornare a com\'era. Se cambi scheda, overlay o pagina il pannello chiede prima.',
       'Se un salvataggio non riesce leggi «Non riesco a salvare: controlla la connessione, riprovo al prossimo cambiamento.»',
-      'In cima a ogni gruppo «Aspetto» c\'è la riga <strong>«Veste»</strong> con nove vesti pronte: Viola classico, Neon, Minimal chiaro, Retro arcade, Manga, Vetro, Terminale, Nastro, Esagoni. Una veste cambia l\'elemento che stai guardando; sul muro delle emote accende o spegne l\'ombra. «a tutto l’overlay» stende la veste scelta su tutti gli elementi. Dopo cambi a mano quello che vuoi. Se premi «a tutto l’overlay» senza aver scelto una veste leggi «Scegli prima una veste qui sopra.»',
+      'In cima a ogni gruppo «Aspetto» c\'è la riga <strong>«Veste»</strong> con dieci vesti pronte: Viola classico, Neon, Minimal chiaro, Retro arcade, Manga, Vetro, Terminale, Nastro, Esagoni, Stile Twitch. Una veste cambia l\'elemento che stai guardando; sul muro delle emote accende o spegne l\'ombra. «a tutto l’overlay» stende la veste scelta su tutti gli elementi. Dopo cambi a mano quello che vuoi. Se premi «a tutto l’overlay» senza aver scelto una veste leggi «Scegli prima una veste qui sopra.»',
     ] },
 
     { h3: 'Metterlo nella diretta' },
@@ -244,6 +245,13 @@ export default {
       'Qui c\'è l\'interruttore «Mostralo nella scena», acceso di serie, e la sua veste: di serie fondo scuro e vita rossa. Di serie sta in alto al centro. Sulla tela lo vedi com\'è in onda: lo sposti, lo ingrandisci, gli dai un riquadro e lo togli da un overlay con l\'occhio, come gli altri elementi.',
     ] },
 
+    { h3: 'Arena delle emote' },
+    { p: [
+      'L\'arena in cui la chat combatte con le sue emote: ogni combattente è un cerchio con la sua emote, il nome sopra e sotto gli oggetti che ha e il teschio con le eliminazioni. L\'anello attorno al cerchio è la vita che gli resta. Durante le iscrizioni in alto ci sono le due righe per entrare, e chi entra compare fermo al suo posto; poi i combattenti si muovono, i muri si stringono e alla fine il vincitore resta grande al centro. Chi entra, quanto dura e quanto paga si decide nella scheda «Giochi», con «Apri i Giochi» (<a href="/manuale/giochi">manuale dei giochi</a>).',
+      'Qui c\'è l\'interruttore «Mostrala nella scena», acceso di serie: l\'arena compare solo mentre è aperta. Le sue scelte: «Il nome sopra ogni combattente», «Col colore che ognuno ha in chat» e «Il bordo dell\'arena, disegnato a penna», tutte accese di serie. La veste è quella di tutti: dimensione, carattere, colori (l\'accento colora il bordo e gli oggetti), opacità e cornice. Di serie il fondo è trasparente e l\'arena sta al centro.',
+      'La partita è la stessa in ogni overlay aperto: ognuno la calcola coi dati che manda il bot, e un overlay aperto a partita in corso riparte dal punto giusto. Sulla tela dello Studio c\'è un\'arena d\'esempio disegnata dallo stesso codice della diretta. Nei livelli di serie sta in fondo, sopra il muro delle emote: è grande, e così non copre gli elementi da prendere.',
+    ] },
+
     { h3: 'Testo a schermo' },
     { p: [
       'Le scritte che un comando mette in scena con «Mostra testo sull\'overlay». Cosa dicono e quanto restano si decide nel comando, con «Apri i Comandi». Qui decidi dove stanno e come sono vestite.',
@@ -327,6 +335,8 @@ export default {
       ['«Donazione»', '<code>{user} ha offerto {importo}! {messaggio}</code>', 'Moneta', 'verde scuro', '«Importo minimo»'],
     ] },
     { p: [
+      'Follow, sub, bit e raid hanno anche <strong>«Chi lo mostra»</strong>: «SocialBot», di serie, «Twitch» oppure «Tutti e due». Con «Twitch» il nostro alert non parte e il resto del riquadro si chiude: l\'evento lo mostrano gli alert di Twitch, che si impostano su Twitch (<a href="https://link.twitch.tv/SettingUpTwitchAlerts">come si fa</a>). Twitch non dà un modo per cambiarli o farli partire da fuori, per questo qui si sceglie solo chi li mostra. Ultimo follower, ultimo sub, obiettivi e subathon contano l\'evento in ogni caso.',
+      'Con «Tutti e due» partono il nostro e quello di Twitch: mettili in due punti diversi dello schermo, così non si coprono. Con «SocialBot», se su Twitch hai acceso anche i suoi alert, l\'evento compare due volte. La donazione non passa da Twitch e la mostra sempre SocialBot. Se vuoi i nostri alert con l\'aria di quelli di Twitch, c\'è la veste «Stile Twitch»: niente riquadro, l\'immagine grande sopra e il nome in viola, poi cambi quello che vuoi.',
       'Sotto la soglia l\'alert non parte: è il modo di non suonare per un bit solo. Le donazioni arrivano dai servizi collegati nella scheda «Donazioni» (<a href="/manuale/vetrina">manuale della vetrina</a>).',
       'Ogni evento ha «Testo», fino a 200 caratteri; lasciato vuoto vale quello di serie. Ha anche «Colore», «Volume» da 0 a 100 e «Font», che di serie segue lo stile comune e se lo cambi vale per quell\'evento soltanto.',
       '«Icona» sceglie fra venti icone (Stella, Cuore, Fulmine, Megafono, Corona, Fuoco, Diamante, Trofeo, Regalo, Razzo, Scudo, Cuffie, Controller, Nota, Fumetto, Campana, Scintille, Saluto, Occhio, Moneta) e le tue immagini, sotto «Le mie».',
@@ -415,7 +425,7 @@ export default {
     { h3: 'Quando non si vede niente' },
     { ul: [
       '<strong>La pagina è bianca o vuota in OBS.</strong> Controlla il link: senza la sua chiave l\'indirizzo risponde «non trovato». Se hai fatto un link nuovo, quello vecchio non funziona più.',
-      '<strong>Gli alert non partono.</strong> Deve essere acceso l\'interruttore del singolo evento, oltre a «Alert eventi». Per follow, sub, bit e raid servono i permessi di Twitch: si riautorizzano dalla scheda «Stato». Controlla anche la soglia.',
+      '<strong>Gli alert non partono.</strong> Deve essere acceso l\'interruttore del singolo evento, oltre a «Alert eventi». In «Chi lo mostra» non deve esserci «Twitch», che lascia l\'evento agli alert di Twitch. Per follow, sub, bit e raid servono i permessi di Twitch: si riautorizzano dalla scheda «Stato». Controlla anche la soglia.',
       '<strong>Parte l\'alert ma non il suono.</strong> In OBS la sorgente Browser deve avere «Controlla l\'audio via OBS». Controlla anche il volume dell\'evento.',
       '<strong>«Prova» non mostra niente.</strong> L\'overlay deve essere aperto in OBS o in una scheda, e l\'elemento deve essere acceso in quell\'overlay.',
       '<strong>Vedo tutto doppio.</strong> Due sorgenti Browser con lo stesso link nella stessa scena: tienine una.',

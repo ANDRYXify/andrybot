@@ -1940,7 +1940,7 @@ quello della base).
 **Di serie è l'ordine che la diretta ha oggi**, letto dai livelli che le
 pagine già avevano, così aprendo lo Studio niente cambia posto:
 
-    muro · effetti · sfida a tempo · nome del comando · testo a schermo · chat ·
+    muro · arena · effetti · sfida a tempo · nome del comando · testo a schermo · chat ·
     ultimo follower · ultimo sub · obiettivi · cartelli · player · conto alla
     rovescia · hype train · classifica Bit · boss · alert · contatori
 

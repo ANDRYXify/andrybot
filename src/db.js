@@ -244,6 +244,15 @@ CREATE TABLE IF NOT EXISTS points (        -- "monete" (punti fedeltà) dei mini
   PRIMARY KEY (channel, user)
 );
 
+CREATE TABLE IF NOT EXISTS arena_emote (    -- l'emote con cui una persona combatte nell'arena (!emote), per canale
+  channel TEXT NOT NULL,
+  user TEXT NOT NULL,
+  nome TEXT NOT NULL,                        -- il nome dell'emote, come si scrive in chat
+  url TEXT NOT NULL,                         -- l'immagine: solo dalle CDN di Twitch o di 7TV
+  ts INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (channel, user)
+);
+
 CREATE TABLE IF NOT EXISTS watchtime (     -- ore guardate (secondi in chat mentre è live), per canale
   channel TEXT NOT NULL,
   user TEXT NOT NULL,                        -- login minuscolo
@@ -719,7 +728,7 @@ CREATE TABLE IF NOT EXISTS seguiti (         -- chi ha gia' seguito il canale: u
 
 CREATE TABLE IF NOT EXISTS stato_vivo (      -- lo stato dei motori che deve sopravvivere a un riavvio
   channel TEXT NOT NULL,
-  chiave TEXT NOT NULL,                      -- 'giveaway' | 'penitenza' | 'assetto' | 'ritmo'
+  chiave TEXT NOT NULL,                      -- 'giveaway' | 'penitenza' | 'assetto' | 'ritmo' | 'arena-quote'
   dato TEXT NOT NULL DEFAULT '{}',           -- JSON dello stato, letto solo dal motore che l'ha scritto
   ts INTEGER NOT NULL DEFAULT 0,
   PRIMARY KEY (channel, chiave)
@@ -2492,6 +2501,29 @@ export const quotes = {
       aggiunte++;
     }
     return { aggiunte, saltate };
+  },
+};
+
+// ---------------------------------------------------------------- l'emote dell'arena
+// La scelta fatta in chat con !emote vale fra una partita e l'altra. L'url si
+// tiene solo se viene da una delle due CDN che il bot sa leggere (Twitch e
+// 7TV): finisce in un <img> dell'overlay, e un indirizzo qualunque sarebbe un
+// modo di far caricare roba altrui in diretta.
+export const EMOTE_URL_OK = /^https:\/\/(?:static-cdn\.jtvnw\.net\/emoticons\/v2\/[A-Za-z0-9_]{1,64}\/default\/dark\/2\.0|cdn\.7tv\.app\/emote\/[A-Za-z0-9]{20,32}\/2x\.webp)$/;
+export const arenaEmote = {
+  get(channel, user) {
+    const r = db.prepare('SELECT nome, url FROM arena_emote WHERE channel=? AND user=?')
+      .get(String(channel || '').toLowerCase(), String(user || '').toLowerCase());
+    return r && EMOTE_URL_OK.test(r.url) ? { nome: r.nome, url: r.url } : null;
+  },
+  scegli(channel, user, emote) {
+    const nome = String(emote?.nome || '').slice(0, 60);
+    const url = String(emote?.url || '');
+    if (!nome || !EMOTE_URL_OK.test(url)) return false;
+    db.prepare(`INSERT INTO arena_emote (channel, user, nome, url, ts) VALUES (?,?,?,?,?)
+      ON CONFLICT(channel, user) DO UPDATE SET nome=excluded.nome, url=excluded.url, ts=excluded.ts`)
+      .run(String(channel || '').toLowerCase(), String(user || '').toLowerCase(), nome, url, now());
+    return true;
   },
 };
 
