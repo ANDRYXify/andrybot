@@ -19,6 +19,7 @@ import * as stemmi from './badges.js';
 import * as emote from './emotes.js';
 import { makeLog } from '../logger.js';
 import { formattaImporto, livelloPer } from './donazioni.js';
+import { chiAlertOk } from '../web/stile.js';
 
 const log = makeLog('alerts');
 
@@ -144,6 +145,9 @@ export class AlertsEngine {
       if (!a || a.attivo === false) return;
       const conf = a[kind];
       if (!conf || conf.attivo === false) return;
+      // lo streamer ha scelto l'alert di Twitch: il nostro non parte, ma i
+      // widget, gli obiettivi e la maratona qui sopra hanno gia' contato
+      if (chiAlertOk(kind, conf.chi) === 'twitch') return;
       if (kind === 'cheer' && Number(vars.bits) < (Number(conf.minBits) || 0)) return;
       if (kind === 'raid' && Number(vars.viewers) < (Number(conf.minViewers) || 0)) return;
       this._spara(channel, a, kind, conf, vars);
