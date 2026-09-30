@@ -12,7 +12,7 @@ export default {
   titolo: 'Manuale di sondaggi, giveaway e penitenze | SocialBot',
   h1: 'Manuale di sondaggi, giveaway e penitenze',
   desc: 'Sondaggi e predizioni di Twitch, il giveaway con le probabilità che scegli tu, le penitenze a punti canale contate a voce: ogni carta e ogni comando.',
-  aggiornata: '2026-09-27',
+  aggiornata: '2026-09-30',
   corpo: [
     { p: [
       'Tre schede che servono <strong>mentre trasmetti</strong>. Stanno in «Chat e pubblico», voce «Giochi», accanto a «Giochi & classifiche».',
@@ -215,7 +215,7 @@ export default {
     { p: [
       'Il riconoscimento vocale sente male, quindi il confronto è <strong>tollerante</strong>: una parola capita a metà ma sostanzialmente giusta conta, una parola diversa che ci somiglia per caso no. Quanto è tollerante lo decide «Tolleranza al riconoscimento vocale:». Le parole di tre lettere o meno devono combaciare esatte.',
       'La stessa frase sentita due volte in tre secondi conta una volta sola.',
-      'L\'audio resta sul tuo computer: la pagina di ascolto trasforma la voce in testo e al bot arriva solo il testo. Tutto quello che dici va al conteggio solo mentre una penitenza è in corso.',
+      'L\'audio non arriva mai al bot: la pagina di ascolto trasforma la voce in testo, su Chrome ed Edge col servizio del browser e altrove con un motore che gira sul tuo computer, e al bot arriva solo il testo. Quello che dici va al conteggio solo mentre una penitenza è in corso.',
     ] },
 
     { h2: 'Quando qualcosa non va' },
@@ -226,7 +226,7 @@ export default {
       '<strong>Nessuno entra nel giveaway.</strong> Controlla la parola d\'ingresso: se l\'hai cambiata, in chat va scritta quella, non <code>!join</code>. Con «Riservato agli abbonati (sub)» acceso, chi non è abbonato non entra.',
       '<strong>Vincono sempre gli stessi.</strong> Guarda le probabilità: con numeri alti un gruppo piccolo di abbonati domina. Metti tutto a 1 e diventa un\'estrazione alla pari.',
       '<strong>Il riscatto non fa partire la penitenza.</strong> Controlla che le penitenze siano accese e salvate, e che nel menù di quel modo ci sia il premio giusto. Se hai rinominato il premio su Twitch, sceglilo di nuovo.',
-      '<strong>La penitenza non conta.</strong> La pagina di ascolto deve essere aperta e avviata con «Avvia ascolto», col microfono concesso, in Chrome o Edge. Serve l\'extra «Comandi Vocali». Dopo il riscatto aspetta qualche secondo: la pagina se ne accorge da sola.',
+      '<strong>La penitenza non conta.</strong> La pagina di ascolto deve essere aperta e avviata con «Avvia ascolto», col microfono concesso. Serve l\'extra «Comandi Vocali». Fuori da Chrome ed Edge, la prima volta la pagina scarica il motore di riconoscimento: aspetta che il registro dica «Ascolto avviato». Dopo il riscatto aspetta qualche secondo: la pagina se ne accorge da sola.',
       '<strong>Conta parole che non ho detto.</strong> Alza «Tolleranza al riconoscimento vocale:». Le lettere sono più fragili delle parole: per le sfide lunghe conviene una parola intera.',
     ] },
   ],

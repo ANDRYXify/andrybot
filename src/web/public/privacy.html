@@ -123,6 +123,17 @@
         <li><strong>Messaggi ed eventi delle altre piattaforme collegate</strong> (Kick, YouTube): arrivano solo dai
           canali che lo streamer ha collegato lui, e vengono trattati <strong>esattamente come quelli di Twitch</strong>: stessa conservazione, stessa cancellazione automatica dopo 14 giorni. Nessuna piattaforma nuova amplia
           quello che conserviamo: amplia soltanto <em>da dove</em> arriva.</li>
+        <li><strong>Voce e audio</strong>, con l'extra «Comandi Vocali». I <strong>comandi a voce</strong> e le
+          <strong>penitenze</strong> li sente la pagina di ascolto aperta dallo streamer: la voce la trasforma in testo il
+          suo browser (su Chrome ed Edge con il servizio di riconoscimento di chi fa il browser, altrove con un motore che
+          gira sul suo dispositivo), e l'audio non arriva mai a noi. A noi arriva solo la frase riconosciuta, per far
+          scattare il comando o contare la penitenza, e non la conserviamo. Per i <strong>momenti salienti</strong> il
+          server ascolta l'audio pubblico della diretta solo per misurarne il volume e fare una clip quando sale di colpo:
+          non lo registra e non lo trasforma in testo.</li>
+        <li><strong>Le parole dello streamer</strong>, per imparare il suo modo di parlare: le frasi che dice con la pagina
+          di ascolto aperta, se accende «Impara mentre parlo», e i messaggi che scrive lui dal suo account Telegram
+          collegato. Teniamo le sue ultime 60 frasi. Solo le sue: dagli altri il bot non impara il modo di parlare. Dei
+          messaggi degli altri nel gruppo Telegram il bot non conserva il testo: ne ricava quello che ricava dalla chat.</li>
         <li><strong>Indirizzo e-mail dello streamer</strong>, facoltativo: lo scrive lui nella scheda Dirette per ricevere il
 rapporto di fine diretta, vale solo dopo che ha confermato dal messaggio che gli mandiamo, e lo toglie da lì quando
 vuole. Le mail partono dal nostro server, non da un servizio esterno, e non contengono niente dei suoi spettatori
@@ -204,6 +215,8 @@ oltre ai numeri della diretta e ai nomi di chi ha scritto di più.</li>
           dal nome casuale; poi si cancella.</li>
         <li>Sostegni al progetto (nome, messaggio, importo, ora): <strong>dieci anni</strong> dal pagamento, perché sono movimenti di cassa e la legge li vuole tenuti. Un sostegno
           aperto e mai pagato non è un movimento di cassa: si cancella dopo una settimana.</li>
+        <li>Le frasi dello streamer per imparare il suo modo di parlare: le ultime <strong>60</strong>; quando ne arriva una
+          nuova, la più vecchia si cancella.</li>
         <li>Il resto: finché serve al servizio, o finché lo streamer non lo cancella.</li>
       </ul>
     </section>
