@@ -10239,7 +10239,7 @@ function _negDisegna(d) {
       : L('Da chiuso, in chat i comandi del negozio non rispondono. Gli articoli e lo storico restano salvati.', 'When closed, the shop commands don’t answer in chat. Items and history stay saved.', 'Cerrada, los comandos de la tienda no responden en el chat. Los artículos y el historial quedan guardados.');
   }
   const cmd = document.getElementById('neg-parola-cmd');
-  if (cmd) cmd.textContent = '!' + (c.compra || 'compra');
+  if (cmd && c.compra) cmd.textContent = '!' + c.compra;
   const mon = document.getElementById('neg-moneta');
   if (mon) mon.textContent = '(' + nomeMonetaUI() + ')';
   _negLista(d);

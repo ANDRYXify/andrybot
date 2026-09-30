@@ -2603,7 +2603,7 @@ body:not(.con-nav) .salta { display: none; }
 #eff-prima-tela { display: block; max-width: 100%; max-height: 360px; cursor: crosshair; }
 
 .neg-editor { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 17rem); gap: 1.4rem; align-items: start; }
-.neg-anteprima-box { position: sticky; top: 1rem; }
+.neg-anteprima-box { position: sticky; top: calc(var(--top-h) + 16px); }
 .neg-anteprima { border: 1px solid var(--border); border-radius: var(--r-m); background: var(--surface); padding: .9rem; }
 .neg-anteprima p { margin: .35rem 0 0; }
 .neg-immagine { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: var(--r-m); background: var(--surface-2); }
