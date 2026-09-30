@@ -16654,7 +16654,7 @@ function collegaMorti() {
     b.disabled = true;
     try {
       const scatto = await _mortiScatta(cfg.fonte);
-      if (!scatto || !scatto.firma) throw new Error(L('Non riesco a guardare quella fonte: la regia è collegata?', 'I can\'t look at that source: is the program connected?', '¿No consigo mirar esa fuente: está conectado el programa?'));
+      if (!scatto || !scatto.firma) throw new Error(L('Non riesco a guardare quella fonte: la regia è collegata?', 'I can\'t look at that source: is the program connected?', 'No consigo mirar esa fuente: ¿está conectado el programa?'));
       const gia = window.SB_MORTI.vicina(cfg.schermate, scatto.firma, cfg.soglia);
       if (gia) { toast(L(`Questa la conosco già: «${gia.quale.nome}».`, `I already know this one: «${gia.quale.nome}».`, `Esta ya la conozco: «${gia.quale.nome}».`)); return; }
 
@@ -18368,7 +18368,7 @@ function pannelloEffetti() {
         <input type="checkbox" id="trk-giochi" ${trk.giochi !== false ? 'checked' : ''}>
         <label for="trk-giochi">${L('Minigiochi con la webcam (gesti ed espressioni)', 'Webcam minigames (gestures and expressions)', 'Minijuegos con la webcam (gestos y expresiones)')}</label>
       </div>
-      <p class="suggerimento">${L('Si giocano NELLO stesso overlay. Avvio a gesto:', 'They play in the SAME overlay. Start by gesture:', 'Se juegan en el MISMO overlay. Inicio por gesto:')} ${L('tieni', 'hold', 'mantén')} <strong>${L('la mano aperta', 'an open palm', 'la mano abierta')}</strong> ${L('~1s, poi scegli col gesto', '~1s, then pick with a gesture', '~1s, luego elige con un gesto')} (${L('Vittoria', 'Victory', 'Victoria')} → ${L('Mima', 'Mimic', 'Imita')} · ${L('Pollice su', 'Thumbs up', 'Pulgar arriba')} → ${L('Non ridere', "Don't laugh", 'No te rías')} · ${L('Indice', 'Index finger', 'Índice')} → Reaction). ${L('Oppure da chat:', 'Or from chat:', 'O desde el chat:')} <code>!mima</code>, <code>!nonridere</code>, <code>!reaction</code>, <code>!battaglia</code> ${L('(nella Battaglia gli spettatori scrivono', '(in Battle viewers type', '(en la Batalla los espectadores escriben')} <code>!sfida vittoria</code>). ${L('I punteggi finiscono in chat.', 'Scores go to chat.', 'Las puntuaciones van al chat.')}</p>
+      <p class="suggerimento">${L('Si giocano NELLO stesso overlay. Avvio a gesto:', 'They play in the SAME overlay. Start by gesture:', 'Se juegan en el MISMO overlay. Inicio por gesto:')} ${L('tieni', 'hold', 'mantén')} <strong>${L('la mano aperta', 'an open palm', 'la mano abierta')}</strong> ${L('~1s, poi scegli col gesto', '~1s, then pick with a gesture', '~1s, luego elige con un gesto')} (${L('Vittoria', 'Victory', 'Victoria')} → ${L('Mima', 'Charades', 'Mímica')} · ${L('Pollice su', 'Thumbs up', 'Pulgar arriba')} → ${L('Non ridere', "Don't laugh", 'No te rías')} · ${L('Indice', 'Index finger', 'Índice')} → Reaction rush). ${L('Oppure da chat:', 'Or from chat:', 'O desde el chat:')} <code>!mima</code>, <code>!nonridere</code>, <code>!reaction</code>, <code>!battaglia</code> ${L('(nella Battaglia gli spettatori scrivono', '(in Battle viewers type', '(en la Batalla los espectadores escriben')} <code>!sfida vittoria</code>). ${L('I punteggi finiscono in chat.', 'Scores go to chat.', 'Las puntuaciones van al chat.')}</p>
       <details class="spazio-sopra" ${trk.effetti ? '' : 'open'}>
         <summary><strong>${L('Effetti & giochi — accendi/spegni e regola', 'Effects & games — toggle and tune', 'Efectos y juegos — activa/desactiva y ajusta')}</strong></summary>
         <div class="riga-check spazio-sopra"><input type="checkbox" id="ef-attivo" ${trk.effetti?.attivo !== false ? 'checked' : ''}><label for="ef-attivo"><strong>${L('Effetti cinematici', 'Cinematic effects', 'Efectos cinematográficos')}</strong> (master)</label></div>
@@ -18400,9 +18400,9 @@ function pannelloEffetti() {
         </div>
         <h4 class="spazio-sopra">${L('Minigiochi (quali attivi)', 'Minigames (which are on)', 'Minijuegos (cuáles activos)')}</h4>
         <div class="riga-flessibile" style="flex-wrap:wrap;gap:.7rem">
-          <label class="riga-check"><input type="checkbox" id="g-mima" ${trk.giochiSel?.mima !== false ? 'checked' : ''}> Mima</label>
-          <label class="riga-check"><input type="checkbox" id="g-nonridere" ${trk.giochiSel?.nonridere !== false ? 'checked' : ''}> ${L('Non ridere', "Don't laugh", 'No reír')}</label>
-          <label class="riga-check"><input type="checkbox" id="g-reaction" ${trk.giochiSel?.reaction !== false ? 'checked' : ''}> Reaction</label>
+          <label class="riga-check"><input type="checkbox" id="g-mima" ${trk.giochiSel?.mima !== false ? 'checked' : ''}> ${L('Mima', 'Charades', 'Mímica')}</label>
+          <label class="riga-check"><input type="checkbox" id="g-nonridere" ${trk.giochiSel?.nonridere !== false ? 'checked' : ''}> ${L('Non ridere', "Don't laugh", 'No te rías')}</label>
+          <label class="riga-check"><input type="checkbox" id="g-reaction" ${trk.giochiSel?.reaction !== false ? 'checked' : ''}> Reaction rush</label>
           <label class="riga-check"><input type="checkbox" id="g-battaglia" ${trk.giochiSel?.battaglia !== false ? 'checked' : ''}> ${L('Battaglia', 'Battle', 'Batalla')}</label>
         </div>
         <h4 class="spazio-sopra"><label class="riga-check" style="margin:0"><input type="checkbox" id="ef-meme" ${trk.effetti?.meme !== false ? 'checked' : ''}> ${L('Meme dalle espressioni', 'Meme from expressions', 'Meme por expresiones')}</label></h4>
@@ -30581,7 +30581,7 @@ const ETICHETTE_FUNZ = () => ({
   giochi: L('Giochi e classifiche', 'Games and leaderboards', 'Juegos y clasificaciones'),
   musica: L('Richieste musicali', 'Music requests', 'Peticiones musicales'),
   clipAuto: L('Clip automatiche', 'Automatic clips', 'Clips automáticos'),
-  voce: L('Comandi a voce', 'Voice commands', 'Comandos por voz'),
+  voce: L('Comandi vocali', 'Voice commands', 'Comandos de voz'),
   notifiche: L('Avvisi live e nuovi post', 'Live and new-post alerts', 'Avisos de directo y nuevos posts'),
   telegram: L('Bot su Telegram', 'Bot on Telegram', 'Bot en Telegram'),
   studio: L('Studio Web', 'Web Studio', 'Studio Web'),

@@ -124,6 +124,18 @@
         <li><strong>Mensajes y eventos de las otras plataformas conectadas</strong> (Kick, YouTube): solo llegan de los
           canales que ha conectado el propio streamer, y se tratan <strong>exactamente igual que los de Twitch</strong>: misma conservación, mismo borrado automático a los 14 días. Ninguna plataforma nueva amplía
           lo que guardamos: solo amplía <em>de dónde</em> llega.</li>
+        <li><strong>Voz y audio</strong>, con el extra «Comandi Vocali». Los <strong>comandos por voz</strong> y las
+          <strong>penitencias</strong> los oye la página de escucha que abre el streamer: su navegador convierte la voz en
+          texto (en Chrome y Edge con el servicio de reconocimiento de quien hace el navegador, en los demás con un motor
+          que funciona en su dispositivo), y el audio nunca nos llega. Solo nos llega la frase reconocida, para lanzar el
+          comando o contar la penitencia, y no la guardamos. Para los <strong>momentos destacados</strong> el servidor
+          escucha el audio público del directo solo para medir su volumen y hacer un clip cuando sube de golpe: no lo graba
+          ni lo convierte en texto.</li>
+        <li><strong>Las palabras del streamer</strong>, para aprender su forma de hablar: las frases que dice con la página
+          de escucha abierta, si enciende «Aprende mientras hablo», y los mensajes que escribe él desde su cuenta de
+          Telegram vinculada. Guardamos sus últimas 60 frases. Solo las suyas: el bot no aprende la forma de hablar de nadie
+          más. De los mensajes de los demás en el grupo de Telegram el bot no guarda el texto: saca de ellos lo que saca del
+          chat.</li>
         <li><strong>Dirección de correo electrónico del streamer</strong>, opcional: la escribe él en la pestaña Directos para
           recibir el informe de final de directo, solo es válida después de que la haya confirmado desde el mensaje que le
           enviamos, y la quita de ahí cuando quiera. Los correos salen de nuestro servidor, no de un servicio externo, y no
@@ -206,6 +218,8 @@
           con un nombre aleatorio; después se borra.</li>
         <li>Apoyos al proyecto (nombre, mensaje, importe, hora): <strong>diez años</strong> desde el pago, porque son movimientos de caja y la ley exige conservarlos. Un apoyo
           iniciado y nunca pagado no es un movimiento de caja: se borra al cabo de una semana.</li>
+        <li>Las frases del streamer para aprender su forma de hablar: las últimas <strong>60</strong>; cuando llega una
+          nueva, la más antigua se borra.</li>
         <li>Lo demás: mientras lo necesite el servicio, o hasta que el streamer lo borre.</li>
       </ul>
     </section>

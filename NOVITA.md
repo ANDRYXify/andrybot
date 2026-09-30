@@ -41,6 +41,8 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - Le recensioni della pagina iniziale scorrono sotto le dirette in onda e prima della serata col bot acceso, e la pagina si apre più leggera.
 - I moderatori possono rinominare e togliere le emote 7TV anche dal pannello, come già potevano aggiungerle, dopo che il proprietario ha collegato 7TV. [vai: emote]
 - Nel tracciamento della webcam il suggerimento nomina il tasto giusto, «Salva impostazioni webcam». [vai: effetti]
+- L'informativa sulla privacy dice cosa succede alla voce: comandi a voce e penitenze passano dal tuo browser, l'audio della diretta si misura solo per le clip, e il bot impara solo dalle tue parole.
+- Mima, Non ridere, Reaction rush e Battaglia, i minigiochi della webcam, hanno lo stesso nome in tutto il pannello, anche in inglese e in spagnolo. [vai: effetti]
 
 ## 2026-09-27
 
