@@ -133,7 +133,7 @@ export default {
       'Una regola è una richiesta: vale se il bot la capisce. Per una parola che non deve uscire mai, usa «Parole da bloccare» nella scheda «Conoscenza».',
     ] },
     { p: [
-      '<strong>Da Telegram.</strong> Puoi dettarle anche nella chat privata col tuo bot su Telegram, che colleghi nella scheda «Telegram» (piano Base, vedi il <a href="/manuale/vetrina">manuale della vetrina</a>). Funziona solo dal tuo account Telegram, non da quello di un moderatore. Scrivi a parole tue, per esempio «d\'ora in poi non essere troppo formale», oppure usa i comandi.',
+      '<strong>Da Telegram.</strong> Puoi dettarle anche nella chat privata col tuo bot su Telegram, che colleghi nella scheda «Telegram» (piano Base, vedi il <a href="/manuale/community">manuale delle community</a>). Funziona solo dal tuo account Telegram, non da quello di un moderatore. Scrivi a parole tue, per esempio «d\'ora in poi non essere troppo formale», oppure usa i comandi.',
     ] },
     { tabella: [
       ['Comando', 'Cosa fa'],
