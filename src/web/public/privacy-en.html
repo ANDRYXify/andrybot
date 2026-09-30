@@ -35,7 +35,7 @@
   <meta name="twitter:description" content="What data SocialBot collects, why, how long it keeps it, and how to download or delete it. Tokens stay encrypted on the server and never reach the browser.">
   <meta name="twitter:image" content="https://socialbot.live/icons/og.png?v=9">
   <meta name="twitter:image:alt" content="SocialBot, the bot that writes in chat under your own name, for Twitch and Kick">
-  <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebPage","@id":"https://socialbot.live/en/privacy#webpage","url":"https://socialbot.live/en/privacy","name":"Privacy and security at SocialBot","inLanguage":"en-US","isPartOf":{"@type":"WebSite","@id":"https://socialbot.live/#website","url":"https://socialbot.live/","name":"SocialBot"},"publisher":{"@type":"Organization","@id":"https://socialbot.live/#org","name":"andryxify.it","url":"https://andryxify.it"},"dateModified":"2026-09-27"}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebPage","@id":"https://socialbot.live/en/privacy#webpage","url":"https://socialbot.live/en/privacy","name":"Privacy and security at SocialBot","inLanguage":"en-US","isPartOf":{"@type":"WebSite","@id":"https://socialbot.live/#website","url":"https://socialbot.live/","name":"SocialBot"},"publisher":{"@type":"Organization","@id":"https://socialbot.live/#org","name":"andryxify.it","url":"https://andryxify.it"},"dateModified":"2026-09-30"}</script>
 </head>
 <body>
   <div class="wrap">
@@ -49,7 +49,9 @@
     <p class="muted">This is a translation. The <a href="/privacy" hreflang="it">Italian text</a> is the reference version.</p>
 
     <section>
-      <p>SocialBot is <strong>ANDRYXify</strong>'s bot for Twitch and Kick, with its own panel for your streams and socials, reserved for verified and approved streamers.
+      <p>SocialBot is <strong>ANDRYXify</strong>'s bot for Twitch and Kick, with its own panel for your streams and socials.
+      It is open to every streamer who signs up with Twitch, Kick, YouTube or Discord: the Essenziale plan is free, and
+      the rest opens up with a paid plan or by being enabled as a member of the andryxify.it community.
       It talks in chat <strong>from the streamer's own account</strong> (no anonymous bot account) and collects only
       what it needs to work. <strong>No paid third-party AI</strong>: the "brain" is a
       procedural/statistical model that runs entirely on our server. <strong>No data sold to third parties</strong>.</p>
@@ -83,8 +85,9 @@
           same name on different platforms never end up on the same channel. No Twitch account is required, and no Twitch
           data is collected.</li>
         <li><strong>Public chat messages</strong> from the channel: stored so the bot can learn and reply, and
-          <strong>automatically deleted after 14 days</strong>. The local AI only derives statistics and numeric vectors
-          from them, and does not keep the text beyond that.</li>
+          <strong>automatically deleted after 14 days</strong>. The local AI only derives statistics from them (single
+          words, with how often they appear) and numeric vectors, and that is what it keeps: once the 14 days are up, it
+          does not keep the text of the messages.</li>
         <li><strong>Questions the bot couldn't answer</strong>: for these, the text of the question is kept, so the bot
           can learn to answer it next time. Before it is stored, it is stripped of <strong>mentions, email addresses and
           links</strong>, and it is not linked to <strong>who</strong> wrote it: it is not someone's message, it is
@@ -99,14 +102,18 @@
         <li><strong>"Friends" affinity</strong>: a simple global score per user, kept <strong>strictly
           compartmentalized</strong>: never the content of the messages, nor which channel they were in.</li>
         <li><strong>Birthday</strong>, only if the person enters it themselves (in the Telegram group or in chat with
-          <code>!compleanno</code>) or if the streamer adds it by hand: <strong>day and month</strong>, the name the
-          person used to enter it, and the year of the last birthday greeting, so it isn't repeated. No full date of birth,
+          <code>!compleanno</code>) or if the streamer adds it by hand: <strong>day and month</strong>; the name to
+          use in the greeting, that is, the one the person shows up with in the Telegram group or in chat when they add
+          their birthday (or the one the streamer writes, when they add the birthday themselves); to recognize the person,
+          the id of their Telegram account or the name of their chat account; and the year of the last birthday greeting,
+          so it isn't repeated. No full date of birth,
           and therefore no age. It stays until it is removed, with <code>!compleanno via</code> or from the streamer's panel.</li>
         <li><strong>Optional integrations</strong> turned on by the streamer: the token of their <strong>Telegram</strong>
           bot + the group id (both provided by the streamer), their public <strong>TikTok username</strong> for the live
           notification, and the restricted key for their <strong>Stripe</strong> account for donations, stored
-          encrypted; if they connect <strong>Satispay</strong>, the key we use to sign payments on their online store,
-          also encrypted; if they connect <strong>Ko-fi</strong>, the address of their Ko-fi page and the fingerprint of
+          encrypted; if they connect <strong>Satispay</strong>, the key we create just for their online store with the
+          <strong>activation code</strong> they generate (the code works only once and we don't keep it): we use that key
+          to sign payments and any refunds, and it is stored encrypted; if they connect <strong>Ko-fi</strong>, the address of their Ko-fi page and the fingerprint of
           the token Ko-fi uses to sign its notifications (not the token itself: the fingerprint lets us recognize it, but
           the token can't be derived from it); if they connect <strong>Instagram</strong>, the name and id of their
           professional account and the token Instagram gives us, stored encrypted, for notifications about new posts and,
@@ -126,23 +133,26 @@
           <strong>Stripe</strong> or <strong>Satispay</strong>, into the streamer's account, and card details are seen
           only by Stripe and the bank, never by us. If the streamer has connected <strong>Ko-fi</strong>, the donor pays
           on the streamer's Ko-fi page and Ko-fi notifies us: the name, the message (unless the donor keeps it private),
-          the amount and the currency. Ko-fi also sends us the donor's email address: we don't save it. The same goes for
-          tips the streamer passes on to us from another service using their channel's API key. What we keep is the name
+          the amount and the currency. Ko-fi also sends us the donor's email address: we don't save it. For tips that
+          come from another service (for example Streamlabs, StreamElements or PayPal) and that the streamer forwards to us
+          through an automation of their own with their channel's API key, we read only the name, the message, the amount,
+          the currency and the id that service gives the tip, so it isn't counted twice: nothing else. What we keep is the name
           chosen by the donor (which can be none), the message, the amount and the time: these are needed for the
           on-stream alert and for the streamer's log. The name and the message may appear on stream and, if the streamer
           adds the «Who donated» block to their page, the name appears there too (the form says so before you donate).
           If the streamer allows it, the donor can attach an image: we keep it, recompressed, until the streamer decides;
           if they discard it, we delete it right away; if they put it on stream, it stays with the donation in their log
-          and they can remove it themselves. Images from payments that were never completed are deleted along with the
-          request.</li>
+          and they can remove it themselves. If the payment is never completed, the image is deleted when the payment
+          expires, a little over an hour after it was opened.</li>
         <li><strong>Support for the project</strong> given through <a href="/sostieni">socialbot.live/sostieni</a>: this
-          is different from donations to a streamer, and it goes into <strong>SocialBot's Stripe</strong> account. Here
-          too, card details are seen only by Stripe and your bank, never by us. What we keep is the amount, the time and,
-          if you write them, the name and the message: they don't appear anywhere, there is no supporters page, and only
-          the data controller reads them. You don't need an account to support the project.</li>
+          is different from donations to a streamer, and it goes into <strong>ANDRYXify's Stripe account</strong>, the
+          same one subscriptions are paid into. Here too, card details are seen only by Stripe and your bank, never by us.
+          What we keep is the amount, the time and, if you write them, the name and the message: they don't appear
+          anywhere, there is no supporters page, and only the data controller, ANDRYXify, reads them. You don't need an account to support the project.</li>
         <li><strong>City campaigns</strong>: if a channel owner claims the free year from an ad
           (socialbot.live/nyc, /milano or /napoli), we record which campaign and when. This is used to count the spots
-          and to avoid giving it twice to the same channel; it is deleted along with the channel.</li>
+          left and to avoid giving the free year twice to the same channel in the same campaign; it is deleted along with
+          the channel.</li>
         <li><strong>Minimal technical logs</strong> for operation and security.</li>
       </ul>
     </section>
@@ -150,9 +160,21 @@
     <section>
       <h2>Why we process it (legal bases)</h2>
       <ul>
-        <li><strong>Performance of the service</strong> requested by the streamer (the bot features they turn on themselves).</li>
-        <li>The channel's <strong>legitimate interest</strong> in moderating and interacting, on messages <strong>already
-          made public</strong> by users in the Twitch chat.</li>
+        <li><strong>Performance of the contract</strong> (Article 6(1)(b) GDPR): the service the streamer asks us for,
+          with the features they turn on and their subscription if they have one; and, for anyone who donates or supports
+          the project, the payment they chose to make.</li>
+        <li><strong>Legitimate interest</strong> (Article 6(1)(f)) of the channel, and ours, in moderating the chats,
+          keeping them safe and interacting, on messages <strong>already made public</strong> by users: in the Twitch, Kick
+          and YouTube chats the streamer connects and in their Telegram group, where, if the streamer turns it on,
+          newcomers can't write until they press the welcome button. On Discord the bot doesn't read messages: the filter
+          is applied by Discord itself, with the rules the streamer has us write. The minimal technical logs needed for the
+          security of the service fall here too.</li>
+        <li><strong>Consent</strong> (Article 6(1)(a)) for what is optional and given by the person by their own choice:
+          the streamer's email address, for the stream report and the confirmation emails, which only takes effect once
+          they have confirmed it; birthdays; the integrations the streamer decides to connect; the Discord account a viewer
+          links to get roles. It can be withdrawn at any time, by removing the data or disconnecting.</li>
+        <li><strong>Legal obligation</strong> (Article 6(1)(c)): support for the project is income, and the law requires
+          its records to be kept for ten years.</li>
       </ul>
     </section>
 
@@ -179,7 +201,7 @@
         <li>Tokens: as long as the streamer stays connected (they can be revoked by disconnecting).</li>
         <li>Donations (chosen name, message, amount, time): <strong>one year</strong>.</li>
         <li>The streamer's email address and stream reports: until the streamer removes them or deletes the channel.</li>
-        <li>Images attached to donations: until the streamer decides; after that, the same as the donation, or deleted right away if discarded.</li>
+        <li>Images attached to donations: until the streamer decides; after that, the same as the donation, or deleted right away if discarded; those from a payment that was never completed, as soon as the payment expires.</li>
         <li>The week image sent as an Instagram Story: only as long as it takes Instagram to download it, from an address
           with a random name; then it is deleted.</li>
         <li>Support for the project (name, message, amount, time): <strong>ten years</strong>, because these are cash transactions and the law requires them to be kept.</li>
@@ -191,11 +213,20 @@
       <h2>Your rights</h2>
       <p>You can exercise your rights of access, rectification, erasure and objection. In practice, from the dashboard the streamer can:</p>
       <ul>
-        <li><strong>Download all of their data</strong> in a single file (Status &rarr; Your data is yours).</li>
-        <li><strong>Delete the account and everything in it</strong> (Status &rarr; Leaving): commands, modules, effects, points, watch time, chat memory, link page, uploaded files and account connections. This cannot be undone, and the bot leaves the channel.</li>
+        <li><strong>Download all of their data</strong> in a single file (Account &rarr; Your account &rarr; Your data is yours).</li>
+        <li><strong>Delete the account and everything in it</strong> (Account &rarr; Your account &rarr; Leaving): commands, modules, effects, points, watch time, chat memory, link page, uploaded files and account connections. This cannot be undone, and the bot leaves the channel.</li>
         <li><strong>Clear the bot's memory</strong> (lessons, memories, knowledge learned from chat).</li>
-        <li><strong>Revoke permissions</strong> by disconnecting the account (the tokens are invalidated).</li>
-        <li><strong>Remove passkeys</strong> and <strong>disconnect</strong> Telegram/TikTok at any time.</li>
+        <li><strong>Disconnect platforms and integrations</strong>: the token, key or link they had given us is deleted,
+          and the bot stops working there. Kick and YouTube from Account &rarr; Your account (Your platforms); Discord from
+          Your communities &rarr; Discord, with «Disconnect everything», which also removes the links of the people who had
+          connected to get roles; the group's Telegram bot, the Telegram account the bot replies to in private and the
+          Telegram login from Your communities &rarr; Telegram; TikTok and Instagram from Your showcase &rarr; Your socials;
+          Spotify from Control room &rarr; Music; 7TV from Scene &amp; overlay &rarr; Emotes (7TV); Stripe, Satispay and
+          Ko-fi from Your showcase &rarr; Donations.</li>
+        <li><strong>Revoke the permissions given on Twitch</strong>, which can't be disconnected from the panel: they are
+          revoked from the settings of their own Twitch account, and the server deletes by itself a token that Twitch no
+          longer accepts.</li>
+        <li><strong>Remove passkeys</strong> at any time (Account &rarr; Your account).</li>
       </ul>
       <p class="muted">For requests, write to us through the <a href="https://www.andryxify.it">official andryxify.it channels</a>.</p>
     </section>
@@ -233,7 +264,7 @@
 
     <footer>
       <p><a href="/en">← Back to the dashboard</a> · <a href="https://www.andryxify.it">andryxify.it</a></p>
-      <p class="aggiornato">SocialBot, a concise and transparent privacy notice. Last updated: <time class="aggiornato-il" datetime="2026-09-27">September 27, 2026</time>.</p>
+      <p class="aggiornato">SocialBot, a concise and transparent privacy notice. Last updated: <time class="aggiornato-il" datetime="2026-09-30">September 30, 2026</time>.</p>
     </footer>
   </div>
 

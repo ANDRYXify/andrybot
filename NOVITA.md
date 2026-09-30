@@ -28,6 +28,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - I temi pronti della pagina link tengono i bottoni velati anche dopo il salvataggio: prima tornavano ai colori della base, e su un tema scuro potevano uscire bianchi. [vai: pagina]
 - Nella settimana un canale Discord che per un momento non risponde resta fra i posti scelti, col suo perché accanto, e lo togli tu se vuoi. [vai: settimana]
 - Nella pagina link la fascia che chiede il permesso per video e musica di altri siti si legge meglio, e in anteprima le parti da completare dicono cosa manca. [vai: pagina]
+- I termini hanno un punto su piani, abbonamenti, disdetta e recesso in 14 giorni, e privacy e termini dicono con precisione con cosa ci si registra e cosa si scollega da dove.
 
 ## 2026-09-27
 

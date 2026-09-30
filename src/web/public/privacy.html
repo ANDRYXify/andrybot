@@ -35,7 +35,7 @@
   <meta name="twitter:description" content="Quali dati SocialBot raccoglie, perché, per quanto li tiene e come scaricarli o cancellarli. I token restano cifrati sul server e non arrivano mai al browser.">
   <meta name="twitter:image" content="https://socialbot.live/icons/og.png?v=9">
   <meta name="twitter:image:alt" content="SocialBot, il bot che in chat scrive con il tuo nome, per Twitch e Kick">
-  <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebPage","@id":"https://socialbot.live/privacy#webpage","url":"https://socialbot.live/privacy","name":"Privacy e sicurezza di SocialBot","inLanguage":"it-IT","isPartOf":{"@type":"WebSite","@id":"https://socialbot.live/#website","url":"https://socialbot.live/","name":"SocialBot"},"publisher":{"@type":"Organization","@id":"https://socialbot.live/#org","name":"andryxify.it","url":"https://andryxify.it"},"dateModified":"2026-09-27"}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebPage","@id":"https://socialbot.live/privacy#webpage","url":"https://socialbot.live/privacy","name":"Privacy e sicurezza di SocialBot","inLanguage":"it-IT","isPartOf":{"@type":"WebSite","@id":"https://socialbot.live/#website","url":"https://socialbot.live/","name":"SocialBot"},"publisher":{"@type":"Organization","@id":"https://socialbot.live/#org","name":"andryxify.it","url":"https://andryxify.it"},"dateModified":"2026-09-30"}</script>
 </head>
 <body>
   <div class="wrap">
@@ -48,7 +48,9 @@
     </header>
 
     <section>
-      <p>SocialBot è il bot per Twitch e Kick di <strong>ANDRYXify</strong>, con il suo pannello per la diretta e i social, riservato agli streamer verificati e abilitati.
+      <p>SocialBot è il bot per Twitch e Kick di <strong>ANDRYXify</strong>, con il suo pannello per la diretta e i social.
+      È aperto a ogni streamer che si registra con Twitch, Kick, YouTube o Discord: l'Essenziale è gratuito, il resto si
+      apre con un piano a pagamento o con l'abilitazione come membro della community di andryxify.it.
       Parla nella chat <strong>con l'account dello streamer stesso</strong> (nessun account-bot anonimo) e raccoglie solo
       ciò che serve a funzionare. <strong>Nessuna IA a pagamento di terzi</strong>: il "cervello" è un modello
       procedurale/statistico che gira interamente sul nostro server. <strong>Nessun dato venduto a terzi</strong>.</p>
@@ -82,8 +84,9 @@
           persone con lo stesso nome su piattaforme diverse non finiscono mai sullo stesso canale. Nessun account
           Twitch è richiesto, e nessun dato Twitch viene raccolto.</li>
         <li><strong>Messaggi della chat pubblica</strong> del canale: memorizzati per far imparare e rispondere il bot,
-          e <strong>cancellati automaticamente dopo 14 giorni</strong>. L'IA locale ne ricava solo statistiche e vettori
-          numerici, non conserva il testo oltre.</li>
+          e <strong>cancellati automaticamente dopo 14 giorni</strong>. L'IA locale ne ricava solo statistiche (le singole
+          parole, con quante volte compaiono) e vettori numerici, ed è questo che tiene: passati i 14 giorni, il testo dei
+          messaggi non lo conserva.</li>
         <li><strong>Domande a cui il bot non ha saputo rispondere</strong>: di queste resta il testo della domanda, per
           imparare a rispondere la volta dopo. Prima di essere conservata viene ripulita di <strong>menzioni, indirizzi
           e-mail e link</strong>, e non le viene associato <strong>chi</strong> l'ha scritta: non è il messaggio di
@@ -98,13 +101,17 @@
         <li><strong>Affinità "amici"</strong>: un semplice punteggio globale per utente, a <strong>compartimenti
           stagni</strong>: mai il contenuto dei messaggi né in quale canale.</li>
         <li><strong>Compleanno</strong>, solo se lo scrive la persona stessa (nel gruppo Telegram o in chat con
-          <code>!compleanno</code>) o se lo streamer lo aggiunge a mano: <strong>giorno e mese</strong>, il nome con cui
-          si è scritta, e l'anno dell'ultimo augurio, che serve a non ripeterlo. Nessuna data di nascita completa, quindi
+          <code>!compleanno</code>) o se lo streamer lo aggiunge a mano: <strong>giorno e mese</strong>; il nome da usare
+          negli auguri, cioè quello con cui la persona compare nel gruppo Telegram o in chat quando si segna (o quello che
+          scrive lo streamer, quando il compleanno lo aggiunge lui); per riconoscerla, l'id del suo account Telegram o il nome del suo account
+          in chat; e l'anno dell'ultimo augurio, che serve a non ripeterlo. Nessuna data di nascita completa, quindi
           nessuna età. Resta finché non lo si toglie, con <code>!compleanno via</code> o dal pannello dello streamer.</li>
         <li><strong>Integrazioni opzionali</strong> attivate dallo streamer: token del suo bot <strong>Telegram</strong>
           + id del gruppo (forniti da lui), <strong>username TikTok</strong> pubblico per la notifica live, e la
           chiave a permessi ridotti del suo conto <strong>Stripe</strong> per le donazioni, conservata cifrata; se collega
-          <strong>Satispay</strong>, la chiave con cui firmiamo i pagamenti sul suo negozio online, anch'essa cifrata; se
+          <strong>Satispay</strong>, la chiave che creiamo apposta per il suo negozio online con il <strong>codice di
+          attivazione</strong> che genera lui (il codice vale una volta sola e non lo teniamo): con quella chiave firmiamo i
+          pagamenti e gli eventuali rimborsi, ed è conservata cifrata; se
           collega <strong>Ko-fi</strong>, l'indirizzo della sua pagina Ko-fi e l'impronta del token con cui Ko-fi firma i
           suoi avvisi (il token no: con l'impronta lo riconosciamo, ma non si ricava); se
           collega <strong>Instagram</strong>, il nome e l'id del suo account professionale e il token che Instagram ci
@@ -124,22 +131,25 @@ oltre ai numeri della diretta e ai nomi di chi ha scritto di più.</li>
           <strong>Satispay</strong>, sul conto dello streamer, e i dati della carta li vedono solo Stripe e la banca, mai noi.
           Se lo streamer ha collegato <strong>Ko-fi</strong>, chi dona paga sulla sua pagina Ko-fi e Ko-fi ci avvisa: il nome,
           il messaggio (se chi dona non lo tiene privato), l'importo e la valuta. Ko-fi ci manda anche l'indirizzo email di
-          chi dona: non lo salviamo. Lo stesso vale per le mance che lo streamer ci passa da un altro servizio con la chiave
-          API del suo canale. A noi resta il nome
+          chi dona: non lo salviamo. Per le mance che arrivano da un altro servizio (per esempio Streamlabs, StreamElements
+          o PayPal) e che lo streamer ci inoltra con una sua automazione e la chiave API del suo canale, leggiamo solo il
+          nome, il messaggio, l'importo, la valuta e l'identificativo che quel servizio dà alla mancia, per non contarla due
+          volte: nient'altro. A noi resta il nome
           scelto da chi dona (anche nessuno), il messaggio, l'importo e l'ora: servono per l'avviso in diretta e per il
           registro dello streamer. Il nome e il messaggio possono comparire in diretta e, se lo streamer mette il blocco
           «Chi ha donato» sulla sua pagina, il nome anche lì (il modulo lo dice prima di donare). Se lo streamer lo permette, chi dona
           può allegare un'immagine: la conserviamo, ricompressa, finché lo streamer non decide; se la scarta la cancelliamo
-          subito, se la manda in onda resta con la donazione nel suo registro e la può togliere lui. Le immagini dei
-          pagamenti mai completati si cancellano con la richiesta.</li>
+          subito, se la manda in onda resta con la donazione nel suo registro e la può togliere lui. Se il pagamento non si
+          completa, l'immagine si cancella quando il pagamento scade, poco più di un'ora dopo averlo aperto.</li>
         <li><strong>Sostegni al progetto</strong> fatti da <a href="/sostieni">socialbot.live/sostieni</a>: sono una cosa
-          diversa dalle donazioni a uno streamer, e vanno sul conto <strong>Stripe di SocialBot</strong>. Anche qui i dati
-          della carta li vedono solo Stripe e la tua banca, mai noi. A noi resta l'importo, l'ora e, se li scrivi, il nome
-          e il messaggio: non compaiono da nessuna parte e non c'è nessuna pagina dei sostenitori, li legge solo il titolare.
+          diversa dalle donazioni a uno streamer, e vanno sul <strong>conto Stripe di ANDRYXify</strong>, lo stesso su cui
+          si pagano gli abbonamenti. Anche qui i dati della carta li vedono solo Stripe e la tua banca, mai noi. A noi resta
+          l'importo, l'ora e, se li scrivi, il nome e il messaggio: non compaiono da nessuna parte e non c'è nessuna pagina
+          dei sostenitori, li legge solo il titolare del trattamento, ANDRYXify.
           Non serve un account per sostenere il progetto.</li>
         <li><strong>Campagne in città</strong>: se il proprietario di un canale prende l'anno gratis da una pubblicità
-          (socialbot.live/nyc, /milano o /napoli), ricordiamo quale campagna e quando. Serve a contare i posti e a non
-          darla due volte allo stesso canale; si cancella con il canale.</li>
+          (socialbot.live/nyc, /milano o /napoli), ricordiamo quale campagna e quando. Serve a contare i posti rimasti e a
+          non dare l'anno gratis due volte allo stesso canale con la stessa campagna; si cancella con il canale.</li>
         <li><strong>Log tecnici minimi</strong> per funzionamento e sicurezza.</li>
       </ul>
     </section>
@@ -147,9 +157,21 @@ oltre ai numeri della diretta e ai nomi di chi ha scritto di più.</li>
     <section>
       <h2>Perché li trattiamo (basi giuridiche)</h2>
       <ul>
-        <li><strong>Esecuzione del servizio</strong> richiesto dallo streamer (le funzioni del bot che attiva lui).</li>
-        <li><strong>Interesse legittimo</strong> del canale a moderare e interagire, su messaggi <strong>già resi
-          pubblici</strong> dagli utenti nella chat Twitch.</li>
+        <li><strong>Esecuzione del contratto</strong> (art. 6.1.b del GDPR): il servizio che lo streamer ci chiede, con le
+          funzioni che accende lui e l'abbonamento se ne ha uno; e, per chi dona o sostiene il progetto, il pagamento che
+          ha scelto di fare.</li>
+        <li><strong>Interesse legittimo</strong> (art. 6.1.f) del canale, e nostro, a moderare le chat, a tenerle sicure e a
+          interagire, su messaggi <strong>già resi pubblici</strong> dagli utenti: nelle chat di Twitch, Kick e YouTube che
+          lo streamer collega e nel suo gruppo Telegram, dove, se lo streamer lo accende, chi entra non può scrivere finché
+          non preme il tasto di benvenuto. Su Discord il bot non legge i messaggi: il filtro lo applica Discord stesso, con
+          le regole che lo streamer ci fa scrivere. Qui rientrano anche i log tecnici minimi che servono alla sicurezza del
+          servizio.</li>
+        <li><strong>Consenso</strong> (art. 6.1.a) per ciò che è facoltativo e che la persona ci dà di sua scelta:
+          l'indirizzo e-mail dello streamer, per il rapporto delle dirette e le mail di conferma, che vale solo dopo che
+          l'ha confermato; il compleanno; le integrazioni che lo streamer decide di collegare; l'account Discord che uno
+          spettatore collega per ricevere i ruoli. Si ritira quando si vuole, togliendo il dato o scollegando.</li>
+        <li><strong>Obbligo di legge</strong> (art. 6.1.c): i sostegni al progetto sono incassi, e la legge chiede di
+          conservarne la registrazione per dieci anni.</li>
       </ul>
     </section>
 
@@ -175,7 +197,7 @@ oltre ai numeri della diretta e ai nomi di chi ha scritto di più.</li>
         <li>Token: finché lo streamer resta collegato (revocabili disconnettendosi).</li>
         <li>Donazioni (nome scelto, messaggio, importo, ora): <strong>un anno</strong>.</li>
       <li>Indirizzo e-mail dello streamer e rapporti delle dirette: finché lo streamer non li toglie o cancella il canale.</li>
-        <li>Immagini allegate alle donazioni: fino alla decisione dello streamer; poi come la donazione, o via subito se scartate.</li>
+        <li>Immagini allegate alle donazioni: fino alla decisione dello streamer; poi come la donazione, o via subito se scartate; quelle di un pagamento mai completato, appena il pagamento scade.</li>
         <li>L'immagine della settimana mandata come storia di Instagram: il tempo che Instagram la scarichi, su un indirizzo
           dal nome casuale; poi si cancella.</li>
         <li>Sostegni al progetto (nome, messaggio, importo, ora): <strong>dieci anni</strong>, perché sono movimenti di cassa e la legge li vuole tenuti.</li>
@@ -187,11 +209,19 @@ oltre ai numeri della diretta e ai nomi di chi ha scritto di più.</li>
       <h2>I tuoi diritti</h2>
       <p>Puoi esercitare accesso, rettifica, cancellazione e opposizione. In pratica, dalla dashboard lo streamer può:</p>
       <ul>
-        <li><strong>Scaricare tutti i suoi dati</strong> in un file solo (Stato &rarr; I tuoi dati sono tuoi).</li>
-        <li><strong>Cancellare l'account e tutto quello che contiene</strong> (Stato &rarr; Andarsene): comandi, moduli, effetti, punti, ore guardate, memoria della chat, pagina link, file caricati e collegamenti agli account. Non si annulla, e il bot esce dal canale.</li>
+        <li><strong>Scaricare tutti i suoi dati</strong> in un file solo (Account &rarr; Il tuo account &rarr; I tuoi dati sono tuoi).</li>
+        <li><strong>Cancellare l'account e tutto quello che contiene</strong> (Account &rarr; Il tuo account &rarr; Andarsene): comandi, moduli, effetti, punti, ore guardate, memoria della chat, pagina link, file caricati e collegamenti agli account. Non si annulla, e il bot esce dal canale.</li>
         <li><strong>Azzerare la memoria</strong> del bot (lezioni, ricordi, conoscenza imparata dalla chat).</li>
-        <li><strong>Revocare i permessi</strong> disconnettendo l'account (i token vengono invalidati).</li>
-        <li><strong>Rimuovere le passkey</strong> e <strong>scollegare</strong> Telegram/TikTok in ogni momento.</li>
+        <li><strong>Scollegare le piattaforme e le integrazioni</strong>: si cancella il token, la chiave o il collegamento
+          che ci aveva dato, e da lì il bot smette di lavorare. Kick e YouTube da Account &rarr; Il tuo account (Le tue
+          piattaforme); Discord da Le tue community &rarr; Discord, con «Scollega tutto», che toglie anche i collegamenti di
+          chi si era collegato per ricevere i ruoli; il bot Telegram del gruppo, l'account Telegram a cui il bot risponde in
+          privato e l'accesso con Telegram da Le tue community &rarr; Telegram; TikTok e Instagram da La tua vetrina &rarr;
+          I tuoi social; Spotify da Regia &rarr; Musica; 7TV da Scena &amp; overlay &rarr; Emote (7TV); Stripe, Satispay e
+          Ko-fi da La tua vetrina &rarr; Donazioni.</li>
+        <li><strong>Revocare i permessi dati su Twitch</strong>, che dal pannello non si scollega: si revocano dalle
+          impostazioni del proprio account Twitch, e il token che Twitch non accetta più il server lo cancella da solo.</li>
+        <li><strong>Rimuovere le passkey</strong> in ogni momento (Account &rarr; Il tuo account).</li>
       </ul>
       <p class="muted">Per richieste, scrivici dai <a href="https://www.andryxify.it">canali ufficiali di andryxify.it</a>.</p>
     </section>
@@ -229,7 +259,7 @@ oltre ai numeri della diretta e ai nomi di chi ha scritto di più.</li>
 
     <footer>
       <p><a href="/">← Torna alla dashboard</a> · <a href="https://www.andryxify.it">andryxify.it</a></p>
-      <p class="aggiornato">SocialBot, informativa sintetica e trasparente. Ultimo aggiornamento: <time class="aggiornato-il" datetime="2026-09-27">27 settembre 2026</time>.</p>
+      <p class="aggiornato">SocialBot, informativa sintetica e trasparente. Ultimo aggiornamento: <time class="aggiornato-il" datetime="2026-09-30">30 settembre 2026</time>.</p>
     </footer>
   </div>
 
