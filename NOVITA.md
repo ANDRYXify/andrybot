@@ -198,52 +198,146 @@ nome resta in casa. Non è una cosa da ricordarsi:
   en: When you invite a moderator, the panel says they’ll sign in with their account on the platform you chose, no longer “with Twitch” for Kick and YouTube too.
   es: Al invitar a un moderador, el panel dice que entrará con su cuenta en la plataforma que elegiste, ya no «con Twitch» también para Kick y YouTube.
 - Quando il bot perde la chat, il messaggio su Telegram nomina il tasto giusto, «Ricollega i permessi» nella scheda Stato.
+  en: When the bot loses the chat, the Telegram message names the right button, “Reconnect permissions” in the Status tab.
+  es: Cuando el bot pierde el chat, el mensaje de Telegram nombra el botón correcto, «Reconecta los permisos» en la pestaña Estado.
 - Su un dispositivo che non gestisce le passkey il pannello dice solo che non si può, senza più aggiungere subito dopo «Passkey creata!». [vai: account]
+  en: On a device that doesn’t support passkeys, the panel just says it can’t be done, without adding “Passkey created!” right after.
+  es: En un dispositivo que no admite passkeys, el panel solo dice que no se puede, sin añadir justo después «¡Passkey creada!».
 - Un invito da moderatore scaduto si vede come «invito scaduto», da rigenerare, invece di un «valido fino al» con una data già passata. [vai: account]
+  en: An expired moderator invite shows as “invite expired”, to be regenerated, instead of “valid until” with a date already gone.
+  es: Una invitación de moderador caducada se ve como «invitación caducada», para regenerar, en lugar de un «válida hasta el» con una fecha ya pasada.
 - Invitando un moderatore puoi scrivere il nome come lo vedi sulla piattaforma, anche con maiuscole o punti: si legge come quando quella persona entra. [vai: account]
+  en: When you invite a moderator you can type the name as you see it on the platform, even with capitals or dots: it’s read the same way as when that person signs in.
+  es: Al invitar a un moderador puedes escribir el nombre como lo ves en la plataforma, incluso con mayúsculas o puntos: se lee igual que cuando esa persona entra.
 - L'avviso «Spotify non è collegato» arriva solo a chi ha le richieste musicali accese: chi spegne il comando !sr non lo vede più. [vai: musica]
+  en: The “Spotify is not connected” notice only goes to people with song requests turned on: if you turn off the !sr command, you no longer see it.
+  es: El aviso «Spotify no está conectado» llega solo a quien tiene las peticiones musicales activadas: quien apaga el comando !sr ya no lo ve.
 - L'avviso «Non hai ancora un comando tuo» non conta più i due moduli del kit di partenza lasciati com'erano: prima non compariva mai. [vai: moduli]
+  en: The “You don’t have a command of your own yet” notice no longer counts the two starter-kit modules left untouched: before, it never appeared.
+  es: El aviso «Todavía no tienes un comando tuyo» ya no cuenta los dos módulos del kit de inicio que quedaron como estaban: antes nunca aparecía.
 - Sotto i punti della chat sparisce la casella «Solo mentre sei in diretta», che non cambiava niente: la presenza arriva solo in diretta, le monete per messaggio sempre. [vai: giochi]
+  en: Under chat points, the “Only while you are live” checkbox is gone, since it changed nothing: attendance only comes while live, coins per message always.
+  es: Debajo de los puntos del chat desaparece la casilla «Solo mientras estás en directo», que no cambiaba nada: la asistencia llega solo en directo, las monedas por mensaje siempre.
 - Nel giveaway «Quanti» parte dal numero scelto in «Vincitori (predefinito)», e dopo «Estrai» la riga con chi ha vinto resta al suo posto. [vai: giveaway]
+  en: In the giveaway, “How many” starts from the number chosen in “Winners (default)”, and after “Draw” the row with the winners stays in place.
+  es: En el sorteo, «Cuántos» parte del número elegido en «Ganadores (por defecto)», y después de «Sacar» la fila con quién ganó se queda en su sitio.
 - Se apri un giveaway con i minigiochi spenti, il pannello ti dice di accendere «Attiva i minigiochi in chat» invece di parlare del piano. [vai: giveaway]
+  en: If you open a giveaway with minigames turned off, the panel tells you to turn on “Enable chat minigames” instead of talking about the plan.
+  es: Si abres un sorteo con los minijuegos apagados, el panel te dice que actives «Activa los minijuegos en el chat» en lugar de hablar del plan.
 - «VIP a tempo attivi» dice quante dirette restano a chi ha vinto il premio, invece di «per sempre», e chi rivince il premio lo rinnova a dirette. [vai: giochi]
+  en: “Active timed VIPs” says how many streams the prize winner has left, instead of “forever”, and winning the prize again renews it in streams.
+  es: «VIP temporales activos» dice cuántos directos le quedan a quien ganó el premio, en lugar de «para siempre», y quien vuelve a ganar el premio lo renueva en directos.
 - Le citazioni importate mostrano nell'elenco il loro autore e la data, e i testi dell'elenco si leggono anche in inglese e spagnolo. [vai: giochi]
+  en: Imported quotes show their author and date in the list, and the list’s texts read in English and Spanish too.
+  es: Las citas importadas muestran en la lista su autor y la fecha, y los textos de la lista se leen también en inglés y en español.
 - Creare un premio nelle penitenze accende anche l'interruttore nella scheda, così un «Salva» dopo non le rispegne, e «Salva» parte una volta sola. [vai: penitenze]
+  en: Creating a reward in forfeits also turns on the switch in the tab, so a later “Save” doesn’t switch them off again, and “Save” fires only once.
+  es: Crear un premio en las penitencias activa también el interruptor de la pestaña, así un «Guardar» después no las vuelve a apagar, y «Guardar» sale una sola vez.
 - Quando manca il permesso dei punti canale, la scheda Penitenze ti dà il tasto «Aggiorna i permessi» invece di mandarti in un'altra scheda. [vai: penitenze]
+  en: When the channel points permission is missing, the Forfeits tab gives you the “Update permissions” button instead of sending you to another tab.
+  es: Cuando falta el permiso de los puntos de canal, la pestaña Penitencias te da el botón «Actualizar permisos» en lugar de mandarte a otra pestaña.
 - Sondaggi e predizioni partono con due campi, e il tasto «+» ne aggiunge fino a 5 opzioni o 10 esiti, i limiti di Twitch. [vai: sondaggi]
+  en: Polls and predictions start with two fields, and the “+” button adds up to 5 options or 10 outcomes, Twitch’s limits.
+  es: Encuestas y predicciones empiezan con dos campos, y el botón «+» añade hasta 5 opciones o 10 resultados, los límites de Twitch.
 - Su un canale che non è su Twitch, Sondaggi e Penitenze dicono che funzionano solo lì, invece di mostrare tasti che non fanno niente.
+  en: On a channel that isn’t on Twitch, Polls and Forfeits say they only work there, instead of showing buttons that do nothing.
+  es: En un canal que no está en Twitch, Encuestas y Penitencias dicen que solo funcionan ahí, en lugar de mostrar botones que no hacen nada.
 - Se le regole dei giochi o l'elenco dei tuoi giochi non arrivano, la carta dice l'errore invece di restare in caricamento o dirti che non ne hai. [vai: giochi]
+  en: If the game rules or the list of your games don’t load, the card shows the error instead of staying stuck loading or telling you that you have none.
+  es: Si las reglas de los juegos o la lista de tus juegos no llegan, la tarjeta dice el error en lugar de quedarse cargando o decirte que no tienes ninguno.
 - In «Classifica & VIP» i rimandi chiamano le schede col loro nome, «Comandi» e «Comandi vocali», e i campi dei giochi da creare hanno etichette più chiare. [vai: giochi]
+  en: In “Leaderboard & VIP”, the cross-references call tabs by their names, “Commands” and “Voice commands”, and the fields for creating games have clearer labels.
+  es: En «Clasificación y VIP» las referencias llaman a las pestañas por su nombre, «Comandos» y «Comandos de voz», y los campos para crear juegos tienen etiquetas más claras.
 - Nel manuale dei giochi la tabella delle regole scrive «1 frase di serie» al singolare, e i premi dei tris della slot vengono dagli stessi numeri del gioco.
+  en: In the games manual, the rules table uses the singular for “1 default phrase”, and the slot machine’s three-of-a-kind prizes come from the game’s own numbers.
+  es: En el manual de juegos, la tabla de reglas escribe «1 frase de serie» en singular, y los premios de los tríos de la tragaperras salen de los mismos números del juego.
 - In «I giochi che hai fatto» il tipo di ogni manche si legge col nome del menù, anche in inglese e spagnolo, e non con la sua sigla. [vai: giochi]
+  en: In “The games you made”, the type of each round shows the name from the menu, in English and Spanish too, instead of its internal code.
+  es: En «Los juegos que has hecho», el tipo de cada ronda se lee con el nombre del menú, también en inglés y en español, y no con su sigla.
 - Quando a sondaggi, predizioni o penitenze manca un permesso, pannello e chat ti dicono di premere «Aggiorna i permessi» nella scheda «Stato». [vai: stato]
+  en: When polls, predictions or forfeits are missing a permission, the panel and chat tell you to press “Update permissions” in the “Status” tab.
+  es: Cuando a encuestas, predicciones o penitencias les falta un permiso, el panel y el chat te dicen que pulses «Actualizar permisos» en la pestaña «Estado».
 - Nella Mini App di Telegram il badge «in chat adesso» guarda la chat della piattaforma del tuo canale, non più solo quella di Twitch, e se il canale una chat non ce l'ha non compare.
+  en: In the Telegram Mini App, the “in chat now” badge looks at the chat of your channel’s platform, not just Twitch’s, and if the channel has no chat it doesn’t appear.
+  es: En la Mini App de Telegram, la insignia «en el chat ahora» mira el chat de la plataforma de tu canal, ya no solo el de Twitch, y si el canal no tiene chat no aparece.
 - Nella Mini App di Telegram il codice da collegare ti manda nel posto giusto del pannello: «Le tue community», scheda Telegram, carta «Accedi e gestisci da Telegram». [vai: telegram]
+  en: In the Telegram Mini App, the linking code sends you to the right spot in the panel: “Your communities”, the Telegram tab, the “Log in & manage from Telegram” card.
+  es: En la Mini App de Telegram, el código para vincular te manda al lugar correcto del panel: «Tus comunidades», pestaña Telegram, tarjeta «Accede y gestiona desde Telegram».
 - La scheda Avvisi di Discord dice che gli avvisi partono col piano Base, e «Prova» chiede lo stesso piano degli avvisi veri invece di mandare un avviso che poi non arriverebbe. [vai: dcavvisi]
+  en: The Discord Alerts tab says alerts come with the Base plan, and “Test” requires the same plan as real alerts instead of sending an alert that then wouldn’t arrive.
+  es: La pestaña de Avisos de Discord dice que los avisos llegan con el plan Base, y «Probar» pide el mismo plan que los avisos reales en lugar de mandar un aviso que luego no llegaría.
 - Negli Avvisi di Discord «Togli» chiede conferma prima di togliere un canale, come fa già Telegram coi suoi posti. [vai: dcavvisi]
+  en: In Discord Alerts, “Remove” asks for confirmation before removing a channel, as Telegram already does with its places.
+  es: En los Avisos de Discord, «Quitar» pide confirmación antes de quitar un canal, como ya hace Telegram con sus lugares.
 - Nelle schede Telegram e Discord le spiegazioni dicono il vero: «Rileva gruppo» va anche col bot interattivo acceso, i comandi stanno in «Chat e pubblico», e nel filtro passano i ruoli che spunti. [vai: telegram]
+  en: In the Telegram and Discord tabs, the explanations tell the truth: “Detect group” works with the interactive bot on too, the commands are in “Chat & audience”, and the roles you check get past the filter.
+  es: En las pestañas Telegram y Discord las explicaciones dicen la verdad: «Detectar grupo» funciona también con el bot interactivo encendido, los comandos están en «Chat y público», y en el filtro pasan los roles que marcas.
 - Nella scheda Telegram «Avvisa il gruppo quando vado in diretta» si accende appena c'è un posto dove mandare l'avviso, anche solo un canale, come già accettava il server. [vai: telegram]
+  en: In the Telegram tab, “Alert the group when I go live” turns on as soon as there’s a place to send the alert, even just a channel, as the server already accepted.
+  es: En la pestaña Telegram, «Avisa al grupo cuando voy en directo» se activa en cuanto hay un lugar adonde mandar el aviso, aunque sea solo un canal, como ya aceptaba el servidor.
 - «Fissa l'avviso in cima durante la live…» vale per ogni posto che aggiungi, e a fine diretta su TikTok l'avviso si toglie solo dove era fissato, seguendo la spunta di quel posto. [vai: telegram]
+  en: “Pin the alert at the top during the live…” applies to every place you add, and when a TikTok live ends the alert is removed only where it was pinned, following that place’s checkbox.
+  es: «Fija el aviso arriba durante el directo…» vale para cada lugar que añades, y al terminar el directo en TikTok el aviso se quita solo donde estaba fijado, según la casilla de ese lugar.
 - Nei Ruoli di Discord, «Passa adesso» con «Tieni i ruoli aggiornati» spento ti dice di accenderlo, invece di chiederti di portare nel server un bot che c'è già. [vai: ruoli]
+  en: In Discord Roles, “Go round now” with “Keep the roles up to date” off tells you to turn it on, instead of asking you to bring into the server a bot that’s already there.
+  es: En los Roles de Discord, «Pasa ahora» con «Mantén los roles al día» apagado te dice que lo actives, en lugar de pedirte que lleves al servidor un bot que ya está.
 - Le frasi di !discord in chat, i messaggi di Telegram e Discord nel pannello e i motivi scritti nel registro del tuo server hanno gli accenti veri: «così», «più», «è» invece dell'apostrofo. [vai: ruoli]
+  en: The !discord lines in chat, the Telegram and Discord messages in the panel and the reasons written in your server’s audit log now have real Italian accents: “così”, “più”, “è” instead of an apostrophe.
+  es: Las frases de !discord en el chat, los mensajes de Telegram y Discord en el panel y los motivos del registro de tu servidor tienen los acentos italianos correctos: «così», «più», «è» en lugar del apóstrofo.
 - Costruendo «Intorno alle dirette», il canale sono-in-onda entra negli Avvisi di Discord già acceso, e l'avviso della diretta ci arriva senza doverlo riaccendere a mano. [vai: dcavvisi]
+  en: When you build “Around your streams”, the sono-in-onda channel joins Discord Alerts already on, and the go-live alert reaches it without turning it back on by hand.
+  es: Al construir «Alrededor de los directos», el canal sono-in-onda entra en los Avisos de Discord ya activado, y el aviso del directo le llega sin tener que reactivarlo a mano.
 - Su Discord l'avviso di un post nuovo ha parole da post, come «ha caricato un nuovo video su YouTube», e non più il testo della diretta che diceva «è in diretta». [vai: dcavvisi]
+  en: On Discord, the alert for a new post uses post wording, like “uploaded a new video on YouTube”, no longer the live text that said “is live”.
+  es: En Discord, el aviso de un post nuevo tiene palabras de post, como «subió un video nuevo a YouTube», y ya no el texto del directo que decía «está en directo».
 - Con gli auguri accesi sia nel gruppo Telegram sia in chat, chi compie gli anni riceve anche quelli in chat al suo primo messaggio: prima quelli del gruppo li spegnevano. [vai: telegram]
+  en: With birthday wishes on both in the Telegram group and in chat, the person celebrating also gets the chat ones on their first message: before, the group ones switched them off.
+  es: Con las felicitaciones activadas tanto en el grupo de Telegram como en el chat, quien cumple años recibe también las del chat en su primer mensaje: antes las del grupo las apagaban.
 - La carta degli auguri di compleanno si vede anche senza il bot Telegram, così accendi gli auguri in chat; la parte del gruppo ti dice di collegarlo. [vai: telegram]
+  en: The birthday wishes card shows even without the Telegram bot, so you can turn on wishes in chat; the group part tells you to connect it.
+  es: La tarjeta de felicitaciones de cumpleaños se ve también sin el bot de Telegram, así activas las felicitaciones en el chat; la parte del grupo te dice que lo conectes.
 - La carta dei compleanni e il codice per collegare la chat privata di Telegram si leggono anche in inglese e spagnolo. [vai: telegram]
+  en: The birthdays card and the code for linking your private Telegram chat read in English and Spanish too.
+  es: La tarjeta de cumpleaños y el código para vincular el chat privado de Telegram se leen también en inglés y en español.
 - Nel registro del tuo server Discord, il motivo della condizione sulle dirette si legge «c’è stato ad almeno N dirette», come la chiama la scheda Ruoli. [vai: ruoli]
+  en: In your Discord server’s audit log, the reason for the streams condition reads “was there for at least N streams”, as the Roles tab calls it.
+  es: En el registro de tu servidor de Discord, el motivo de la condición sobre los directos se lee «estuvo en al menos N directos», como la llama la pestaña Roles.
 - I temi della locandina di Telegram hanno il nome anche in inglese e spagnolo, e le etichette di Telegram e Discord non usano più la lineetta lunga. [vai: telegram]
+  en: The Telegram poster themes have names in English and Spanish too, and the Telegram and Discord labels no longer use the long dash.
+  es: Los temas del cartel de Telegram tienen nombre también en inglés y en español, y las etiquetas de Telegram y Discord ya no usan la raya larga.
 - Un moderatore che apre le schede di Discord legge che le usa solo il proprietario del canale, invece di «Non riesco a leggere la configurazione». [vai: ruoli]
+  en: A moderator opening the Discord tabs reads that only the channel owner uses them, instead of “I can’t read the configuration”.
+  es: Un moderador que abre las pestañas de Discord lee que solo las usa el propietario del canal, en lugar de «No consigo leer la configuración».
 - Nel server Discord i tasti per aggiungere categorie, canali, ruoli e permessi si fermano al tetto e dicono quanti ne tiene la traccia, e l'anteprima scrive cosa resta fuori. [vai: dcserver]
+  en: In the Discord server, the buttons for adding categories, channels, roles and permissions stop at the cap and say how many the track holds, and the preview writes what’s left out.
+  es: En el servidor de Discord, los botones para añadir categorías, canales, roles y permisos se detienen en el tope y dicen cuántos admite la plantilla, y la vista previa escribe lo que queda fuera.
 - Nei Ruoli di Discord «Aggiungi una regola» si ferma a 20 e lo dice, e nel filtro una regola senza parole o senza liste avvisa che così non si salva. [vai: ruoli]
+  en: In Discord Roles, “Add a rule” stops at 20 and says so, and in the filter a rule with no words or lists warns that it won’t save like that.
+  es: En los Roles de Discord, «Añadir una regla» se detiene en 20 y lo dice, y en el filtro una regla sin palabras o sin listas avisa de que así no se guarda.
 - «Aggiungi numero» nella pagina link si ferma a sei, quanti la pagina ne mostra: prima dal settimo in poi i numeri sparivano al salvataggio senza dirlo. [vai: pagina]
+  en: “Add number” on the link page stops at six, as many as the page shows: before, from the seventh on the numbers silently disappeared on save.
+  es: «Añadir número» en la página de enlaces se detiene en seis, los que la página muestra: antes, a partir del séptimo los números desaparecían al guardar sin decirlo.
 - Movimento, spessore e ombra dei bottoni, nell'aspetto della pagina link, mostrano quelli che la pagina usa davvero, anche dopo un tema pronto: prima il pannello diceva «Fermo», «Leggero» e «Nessuna». [vai: pagina]
+  en: Button motion, thickness and shadow in the link page look now show what the page really uses, even after a ready-made theme: before, the panel said “Stopped”, “Light” and “None”.
+  es: Movimiento, grosor y sombra de los botones, en el aspecto de la página de enlaces, muestran lo que la página usa de verdad, incluso después de un tema listo: antes el panel decía «Parado», «Ligero» y «Ninguna».
 - «Rimborsa», nel registro delle donazioni, su una donazione arrivata con Satispay chiede conferma nominando il tuo negozio Satispay, non più il conto Stripe. [vai: donazioni]
+  en: “Refund” in the donations log, on a donation that came through Satispay, asks for confirmation naming your Satispay store, no longer your Stripe account.
+  es: «Reembolsar», en el registro de donaciones, sobre una donación llegada con Satispay pide confirmación nombrando tu tienda de Satispay, ya no la cuenta de Stripe.
 - «Modi», nell'aspetto della pagina link, dice come va davvero il permesso per video e musica di altri siti: con «Caricali subito» chi apre la pagina trova prima una fascia che glielo chiede. [vai: pagina]
+  en: “Behaviour”, in the link page look, says how permission for video and music from other sites really works: with “Load them right away”, visitors first see a strip asking for it.
+  es: «Modos», en el aspecto de la página de enlaces, dice cómo funciona de verdad el permiso para video y música de otros sitios: con «Cárgalos enseguida», quien abre la página ve antes una franja que se lo pide.
 - «Salva la settimana» ricorda i posti che hai spuntato in «Mandala»: prima teneva quelli di prima, e la settimana automatica usciva nei posti vecchi. [vai: settimana]
+  en: “Save the week” remembers the places you checked in “Send it”: before, it kept the old ones, and the automatic week went out to the old places.
+  es: «Guardar la semana» recuerda los lugares que marcaste en «Mándala»: antes se quedaba con los anteriores, y la semana automática salía en los lugares viejos.
 - Il primo link già pronto della pagina link porta al tuo canale anche se entri con Kick o YouTube, non più a Twitch; chi ha solo un server Discord parte senza. [vai: pagina]
+  en: The first ready-made link on the link page leads to your channel even if you sign in with Kick or YouTube, no longer to Twitch; if you only have a Discord server, it starts without one.
+  es: El primer enlace listo de la página de enlaces lleva a tu canal aunque entres con Kick o YouTube, ya no a Twitch; quien solo tiene un servidor de Discord empieza sin él.
 - Le Grafiche portano all'indirizzo vero del tuo canale anche se entri con Kick o YouTube, e nella pagina link la foto del profilo si chiama «La tua foto» per tutti. [vai: grafiche]
+  en: Graphics point to your channel’s real address even if you sign in with Kick or YouTube, and on the link page the profile photo is called “Your picture” for everyone.
+  es: Las Gráficas llevan a la dirección real de tu canal aunque entres con Kick o YouTube, y en la página de enlaces la foto de perfil se llama «Tu foto» para todos.
 - Nelle schede Ruoli, Il server e Il filtro di Discord le spiegazioni non usano più la lineetta lunga come pausa. [vai: dcserver]
+  en: In the Discord Roles, The server and The filter tabs, the explanations no longer use the long dash as a pause.
+  es: En las pestañas Roles, El servidor y El filtro de Discord las explicaciones ya no usan la raya larga como pausa.
 
 ## 2026-09-26
 
