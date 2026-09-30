@@ -1,3 +1,5 @@
+<!-- © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live -->
+<!-- Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live -->
 # I piani: cosa è gratis, cosa si paga, e dove sta il muro
 
 Il catalogo vive in un posto solo, `src/features/abbonamenti.js`: l'Essenziale

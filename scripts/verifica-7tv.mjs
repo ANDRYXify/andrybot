@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // Sonda del CONTRATTO 7TV — parla con 7TV VERO, quindi vive fuori da `npm test`
 // (le prove devono girare offline e uguali a se stesse).
 //

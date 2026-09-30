@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // Il marchio in VETTORIALE, per BIMI: il logo che i programmi di posta possono
 // mostrare accanto al mittente.
 //

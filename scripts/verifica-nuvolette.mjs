@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // Cancello delle NUVOLETTE: chi non ha un nome deve almeno averlo qui.
 //
 // Perche' esiste. Il pannello ha quasi mille controlli, e la tentazione era

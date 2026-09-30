@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // La LIBRERIA dei media a livello di magazzino: chi vede cosa, e cosa resta
 // invisibile. È la parte che regge la condivisione fra streamer, quindi un
 // errore qui non è un difetto grafico: è il media privato di qualcuno che

@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // Backup automatico del database. Tutto (comandi, temi, monete, moderatori,
 // pagine link, token) vive in un solo file SQLite: un incidente e sparisce
 // tutto. Qui ne teniamo copie periodiche, in sicurezza.

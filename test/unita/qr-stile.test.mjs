@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // LO STILE DEL QR SALVATO NEL CANALE (src/features/qr-stile.js): si tiene la
 // forma, e quello che non e' una scelta conosciuta torna quello di serie.
 import test from 'node:test';

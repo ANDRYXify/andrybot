@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // Stemmi (badge) accanto ai nick nella "chat a schermo" dell'overlay:
 //  - Twitch: broadcaster, mod, VIP, sub, prime, bit… (globali + del canale)
 //  - 7TV: il badge cosmetico dell'utente, se ne ha uno.

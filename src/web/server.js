@@ -510,6 +510,8 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     try { res.setHeader('X-Licenza', licenza.firma()); } catch { /* header gia' inviati */ }
     next();
   });
+  // E ogni pagina HTML composta qui esce con la firma dentro (watermark.js).
+  app.use(filigrana.firmaLePagine);
 
   // Le sessioni DEVONO essere firmate con un segreto reale. `config.sessionSecret`
   // è sempre valorizzato (env → file persistito → effimero casuale): se per

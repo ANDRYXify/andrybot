@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // LE ROTTE DI KICK: collegare un account, e ricevere gli eventi.
 //
 // Stanno in un file loro e non dentro server.js per una ragione che abbiamo già

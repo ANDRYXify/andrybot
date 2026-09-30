@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // IL TESTO A SCHERMO E' UN ELEMENTO DELLA SCENA (docs/OVERLAY.md, «Gli ultimi
 // pezzi fuori dalla scena»). La scritta che un comando manda con «Mostra testo
 // sull'overlay» stava al centro fissa, la accendevano gli effetti e lo Studio

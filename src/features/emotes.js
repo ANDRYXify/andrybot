@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // Emote 7TV per l'overlay "chat a schermo". Risolve, per canale, la mappa
 // nome→immagine (emote GLOBALI 7TV + emote del CANALE) così l'overlay può
 // mostrare le emote come nella chat di Twitch, non solo il testo.

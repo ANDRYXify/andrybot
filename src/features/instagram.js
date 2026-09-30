@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // Instagram: avviso quando esce un nuovo post, e la storia della settimana.
 // Instagram NON ha un feed pubblico (lo scraping è bloccato), quindi serve
 // l'account dello streamer: collegato col tasto (accesso aziendale di

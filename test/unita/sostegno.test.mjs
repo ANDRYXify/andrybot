@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // SOSTENERE IL PROGETTO: quello che deve essere vero PRIMA di parlare con Stripe.
 //
 // Qui non si prova che il pagamento funziona — quello lo dice Stripe. Si prova

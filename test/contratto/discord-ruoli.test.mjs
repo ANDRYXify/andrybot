@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // «NON LO SO» NON E' «NO», e deve restare vero in tutti e tre gli strati.
 //
 // E' l'invariante che tiene in piedi il gestore dei ruoli. Se si rompe in UNO

@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // Le pagine che si vedono quando qualcosa non c'è.
 //
 // Il 404 e la manutenzione sembrano parenti, ma hanno due vincoli opposti e
@@ -20,10 +22,15 @@ test('il 404 resta un labirinto: non dice mai se quella cosa esiste', () => {
   // diventerebbe un oracolo, e basterebbe tastare il bordo per mappare il sito.
   const spie = [/accedi/i, /log ?in/i, /entra/i, /privat/i, /riservat/i, /permess/i,
     /sessione/i, /autoriz/i, /session/i, /sign ?in/i];
+  // La firma di proprieta' (meta, commento, firma invisibile) e' la stessa su
+  // ogni pagina del sito: non dice niente dell'indirizzo cercato, e il suo
+  // «diritti riservati» non e' una risorsa riservata. Si guarda il resto.
+  const senzaFirma = (h) => h.replace(/<!--[\s\S]*?-->/g, '').replace(/<meta name="copyright"[^>]*>/g, '').replace(/<span hidden aria-hidden="true">[^<]*<\/span>/g, '');
   for (const l of LINGUE_SERVIZIO) {
     const h = pagina404(l);
+    assert.ok(/name="copyright"/.test(h), `${l}: il 404 porta la firma come ogni pagina`);
     for (const spia of spie) {
-      assert.ok(!spia.test(h), `${l}: il 404 lascia capire qualcosa (${spia})`);
+      assert.ok(!spia.test(senzaFirma(h)), `${l}: il 404 lascia capire qualcosa (${spia})`);
     }
     assert.ok(/noindex/.test(h), `${l}: il 404 non va indicizzato`);
     assert.ok(h.includes('<h1'), `${l}: il 404 è una pagina, non una riga`);

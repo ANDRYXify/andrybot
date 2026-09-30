@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // L'ASPETTO DELLA PAGINA LINK SULLA PAGINA DELLE DONAZIONI (docs/DONAZIONI.md).
 // Una funzione sola decide con che aspetto si mostra la pagina delle
 // donazioni: se una sola delle strade che la mostrano la saltasse, la pagina

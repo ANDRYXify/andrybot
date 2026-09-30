@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // Cancello dei MODULI: il motore e il pannello devono sapere le stesse cose.
 //
 // Un Modulo attraversa quattro posti — il motore che lo esegue, il server che

@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // LA PORTA D'INGRESSO, E LE PAROLE CHE LA ACCOMPAGNANO.
 //
 // Prima si arrivava al Discord di uno streamer per due strade storte: un

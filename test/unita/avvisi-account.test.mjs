@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // DUE AVVISI CHE DICEVANO UNA COSA NON VERA.
 //  · «Non hai ancora un comando tuo» non scattava mai per chi aveva il kit di
 //    partenza: contava i suoi due moduli, che lo streamer non ha fatto;

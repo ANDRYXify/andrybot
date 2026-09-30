@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // Il browser e il server devono essere d'accordo su quali campi ha uno stile.
 //
 // Il server ricostruisce lo stile campo per campo: un campo che non elenca lo

@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // LA FIRMA DEI WEBHOOK DI KICK. L'indirizzo è pubblico per forza — Kick deve
 // poterlo raggiungere — quindi chiunque lo trovi può mandarci finti eventi:
 // un finto messaggio in chat, un finto comando eseguito a nome di uno streamer.

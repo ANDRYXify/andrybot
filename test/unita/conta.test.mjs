@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // CONTA INSIEME: tocca al numero dopo, mai due di fila la stessa persona, e chi
 // sbaglia fa ricominciare. Il record resta.
 //

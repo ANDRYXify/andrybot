@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // QUANDO LAVORA IL BOT, su qualunque chat.
 //
 // Le regole sono due, e valgono uguali per Twitch, Kick e YouTube:

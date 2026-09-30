@@ -1,3 +1,5 @@
+<!-- © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live -->
+<!-- Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live -->
 # Un moto solo, che risponde a una domanda sola
 
 > «Tutte le animazioni del sito ad ora sono incoerenti e troppo lente e

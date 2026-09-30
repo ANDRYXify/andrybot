@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // LE STATISTICHE STANNO IN UN POSTO SOLO, E OGNI NUMERO HA UNA FONTE SOLA.
 //
 // Erano sparse in tre schede: i sette giorni in Memoria, le classifiche delle

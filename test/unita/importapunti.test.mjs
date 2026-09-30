@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // IL REGISTRO DEI PUNTI IMPORTATI (points.importa in src/db.js, docs/PONTE.md).
 // Si sommano alle monete di qui, una volta sola: lo stesso file due volte non
 // cambia niente, un file aggiornato cambia solo la differenza, le monete

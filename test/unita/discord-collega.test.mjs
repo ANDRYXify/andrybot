@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // COLLEGARSI SENZA FARSI RUBARE IL POSTO.
 //
 // Il codice va dal web alla chat, e non viceversa. La prova che conta e' che un

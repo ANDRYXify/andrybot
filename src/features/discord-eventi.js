@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // GLI APPUNTAMENTI SUL CALENDARIO DEL SERVER.
 //
 // «Giovedì alle 21» sul Discord di chi ti guarda. Non e' un avviso — l'avviso

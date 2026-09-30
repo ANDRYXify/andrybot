@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // L'eco del bot su Kick: quello che dice il bot non e' un messaggio della chat.
 //
 // Su Kick non esiste un `isSelf`: il bot scrive con l'account dell'app e

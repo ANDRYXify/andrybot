@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // Gestore dei messaggi in chat: il cuore "reattivo" di SocialBot.
 // Per ogni messaggio, in ordine: memoria → moderazione → comandi (!) → IA.
 // I comandi NON passano dall'IA: risposta immediata e deterministica.

@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // LA SINCRONIA DEI CANALI, letta nel codice: un giro alla volta, e il posto
 // dell'unita' preso PRIMA di aspettare la rete. Due giri insieme avviavano due
 // unita' per lo stesso canale: due connessioni, due risposte a ogni comando.

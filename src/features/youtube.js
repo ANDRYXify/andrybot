@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // YouTube: avviso quando esce un NUOVO video. Usa il feed RSS pubblico di
 // YouTube (nessuna API, nessuna chiave): affidabile e gratis.
 //   https://www.youtube.com/feeds/videos.xml?channel_id=UC...

@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // LE OCCASIONI: un secondo strato sopra l"overlay che c"e" gia".
 //
 // Le prove che contano sono quelle in cui lo strato potrebbe smettere di essere

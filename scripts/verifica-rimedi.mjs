@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // Cancello dei RIMEDI: il rimedio che tocca al canale lo legge solo chi lo puo' fare.
 //
 // La regola (docs/RIMEDI.md): una frase che il bot dice in chat non chiede mai a

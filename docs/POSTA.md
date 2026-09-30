@@ -1,3 +1,5 @@
+<!-- © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live -->
+<!-- Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live -->
 # La posta di casa: il bot è il suo server di posta
 
 Niente servizi esterni. Quando serve una mail (il rapporto di fine diretta,

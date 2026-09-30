@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // IL PIEDE DELLA HOME PARLA LA LINGUA DELLA PAGINA (src/web/vetrina-vista.js,
 // docs/LINGUE.md). index.html porta piede, riquadro del sostegno e banner dei
 // cookie in italiano; /en e /es li riscrivono, e ogni collegamento porta a una

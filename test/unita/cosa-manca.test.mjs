@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // I PICCOLI AVVISI SU COSA MANCA (src/features/cosa-manca.js): esistono finche'
 // la cosa manca, li vede solo il proprietario, e le sue risposte valgono.
 import test from 'node:test';

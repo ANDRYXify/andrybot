@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // IL CONTO SATISPAY DELLO STREAMER, con un Satispay finto: il codice di
 // attivazione registra una chiave pubblica nostra e Satispay risponde con un
 // KeyId; da li' ogni richiesta e' firmata, e la firma si verifica QUI con la

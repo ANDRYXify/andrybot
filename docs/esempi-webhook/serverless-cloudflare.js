@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // ---------------------------------------------------------------------------
 // Modulo esterno per SocialBot — SERVERLESS su Cloudflare Workers.
 // NESSUN server da gestire. Cloudflare ha un piano gratuito generoso.

@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // L'IMMAGINE DI CHI DONA NEL REGISTRO: entra con la riga in attesa, si conta
 // fra quelle che aspettano, dopo il pagamento aspetta l'ok, l'ok e' uno solo,
 // lo scarto lascia la riga e toglie il file, la scadenza e la pulizia dicono

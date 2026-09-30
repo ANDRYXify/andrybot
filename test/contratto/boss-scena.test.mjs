@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // IL BOSS E' UN ELEMENTO DELLA SCENA (docs/OVERLAY.md, «Gli ultimi pezzi fuori
 // dalla scena»). Stava in alto al centro fisso nel CSS dell'overlay, lo
 // accendeva l'interruttore degli effetti e lo Studio non lo mostrava. Ora ha la

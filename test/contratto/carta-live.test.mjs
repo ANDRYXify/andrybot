@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // LA CARTA DELLA DIRETTA: si guarda, non si descrive.
 //
 // Il difetto che questo collaudo esiste per impedire non si vede leggendo il

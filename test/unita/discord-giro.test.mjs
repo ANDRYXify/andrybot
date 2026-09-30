@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // IL GIRO, provato senza Discord e senza Twitch.
 //
 // La prova che conta piu' di tutte e' la terza: se di una persona NON SAPPIAMO

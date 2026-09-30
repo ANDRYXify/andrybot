@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // I TASTI DEL COSTRUTTORE, PREMUTI DAVVERO.
 //
 // `verifica-bottoni.mjs` cerca il nome di ogni tasto nel sorgente e chiede «c'e'

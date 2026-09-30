@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // LE DUE VIE del cervello: chi risponde in chat pubblica, e chi risponde a lui.
 //
 // Non è una differenza di rotta HTTP, è una differenza di persona. `/chat` è

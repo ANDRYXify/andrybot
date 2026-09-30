@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // A CHI VANNO, COSTRUITO: il ruolo tuo finisce addosso a te.
 //
 // Il modello puo' dire giusto e il fare sbagliare. Qui Discord e' finto ma con

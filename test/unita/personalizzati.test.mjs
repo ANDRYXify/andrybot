@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // «Quello che ti sei costruito vince.»
 //
 // Il difetto vero, nato con i giochi nei Moduli: i comandi PRONTI giravano

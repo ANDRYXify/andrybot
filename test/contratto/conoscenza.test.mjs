@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // QUELLO CHE LO STREAMER SCRIVE DEVE ARRIVARE, e deve arrivare la cosa GIUSTA.
 //
 // Il difetto vecchio non aveva sintomi: al cervello andavano le prime sei voci

@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // L'ATTESA HA LA FORMA DI QUELLO CHE ARRIVA.
 //
 // Il ragionamento sta in docs/MOTO.md («L'attesa ha la forma di quello che

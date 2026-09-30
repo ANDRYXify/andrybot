@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // L'ARGINE. Due errori possibili e opposti: lasciar passare l'abuso, oppure
 // fermare l'uso vero. Il secondo è peggio — un limite che scatta addosso a uno
 // streamer che sta lavorando è un difetto, non una difesa.

@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // LE MODIFICHE AL SET 7TV e il collegamento dell'account.
 //
 // Il difetto vero: la GraphQL v3 di 7TV, a una modifica che non puo' fare

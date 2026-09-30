@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // QUELLO CHE SI MUOVE NON PUO' SPARIRE, E NON PUO' ALLARGARE LA PAGINA.
 //
 // Un'animazione e' un di piu': se non parte (una classe che non arriva, un

@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // Comandi chat per i minigiochi webcam (P6). Avviano i giochi NELL'overlay
 // tracking passando dal canale di ritorno degli effetti (effects.emitTrk). La
 // "Battaglia con la chat": gli spettatori scrivono !sfida <gesto> e l'overlay

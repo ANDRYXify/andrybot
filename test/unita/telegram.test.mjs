@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // TELEGRAM: quale chat si collega, e la regola che impedisce il «Conflict».
 //
 // Il difetto vero: con il bot interattivo acceso Telegram VIETA getUpdates, e

@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // Super-compressione degli effetti caricati dallo streamer.
 // Usa il binario di sistema `ffmpeg` (niente dipendenze npm): audio, immagini
 // e video vengono ridotti a file piccolissimi, adatti a un overlay per OBS.

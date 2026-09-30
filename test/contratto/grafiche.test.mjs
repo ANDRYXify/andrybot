@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // LE GRAFICHE SOCIAL: le cose che stanno fra le tabelle del pannello, il
 // motore delle scene e il server, e che nessuno dei tre puo' dire da solo.
 //

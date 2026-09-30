@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // Ore guardate (watchtime) + fedeltà. Ogni tot minuti, mentre il canale è LIVE,
 // crediamo il tempo a chi è in chat (dalla lista "chatters" di Twitch, quindi
 // anche ai lurker). I comandi !ore e !classificaore mostrano i totali. È una

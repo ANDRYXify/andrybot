@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // IL PADRONE NON CORRE NELLA SUA GARA.
 //
 // Lo streamer primo fra «chi guarda di piu'» sul proprio canale e' una riga che

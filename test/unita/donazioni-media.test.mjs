@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // L'IMMAGINE DI CHI DONA: entra solo se e' un'immagine, prende un nome nostro
 // nella cartella degli effetti del canale, si toglie solo se il nome e' nostro,
 // e per l'overlay diventa un effetto con le misure scelte dallo streamer.

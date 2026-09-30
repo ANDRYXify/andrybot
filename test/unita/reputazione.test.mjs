@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // LA FIDUCIA GUADAGNATA: chi è di casa non si giudica con un'euristica.
 //
 // Tutto lo scudo guarda indizi CONTRO — il nome, l'età dell'account, la

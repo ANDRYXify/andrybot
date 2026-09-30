@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // L'IDENTITÀ di un media caricato. L'invariante: un caricamento non ne cancella
 // mai un altro. Prima il comando era fisso per slot, quindi ogni immagine nuova
 // distruggeva la precedente — e un media senza identità non si riusa e non si

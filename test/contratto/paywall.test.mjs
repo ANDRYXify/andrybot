@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // IL PAYWALL DA FUORI: chi paga arriva in fondo (il ritorno dal Checkout si
 // conferma da Stripe, un extra entra nell'abbonamento che c'e'), chi non paga
 // vede dove sta il muro e come lo apre (la scheda Abbonamento vende, i muri

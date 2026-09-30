@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // QUALI CREDENZIALI DI INSTAGRAM, per uno streamer. Una risposta sola per tutti
 // quelli che ne hanno bisogno (gli avvisi dei post nuovi, la storia della
 // settimana, la prova dal pannello): prima ognuno leggeva le impostazioni per

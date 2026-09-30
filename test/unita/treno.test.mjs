@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // L'HYPE TRAIN E' DI TWITCH, NOI LO RISPECCHIAMO.
 //
 // Le prove che contano sono quelle in cui la copia potrebbe scollarsi

@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // IL BLACKJACK CONTRO IL BANCO.
 //
 // `!bj 50` da' due carte a te e due al banco (una coperta). Poi `!carta` o

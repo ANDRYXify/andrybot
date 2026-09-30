@@ -1,3 +1,5 @@
+<!-- © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live -->
+<!-- Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live -->
 # Le preferenze del canale
 
 Oggi il bot scrive le date all'italiana e con l'ora di Roma dappertutto, perché
@@ -77,6 +79,13 @@ Tutto quello che il bot scrive da solo passa dalla voce del canale
 (`docs/VOCE.md`), che sceglie la frase nella lingua delle preferenze. Le
 preferenze sono il posto in cui quella lingua si decide; la voce è il posto in
 cui si usa. Fino a quando un momento non è passato nella voce, resta com'è.
+
+La stessa lingua vale per le pagine pubbliche del canale, che oggi sono solo in
+italiano anche per uno streamer inglese o spagnolo: la pagina link (i testi
+fissi: la fascia del permesso, «Contenuti di altri siti», le bozze), la pagina
+delle donazioni (il titolo, il tasto, «Controlla l'importo», «Oppure con
+Satispay»), la conferma della settimana. Quello che scrive lo streamer resta
+com'è; cambia quello che scriviamo noi.
 
 ## Nel pannello
 

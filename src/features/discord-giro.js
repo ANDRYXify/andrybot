@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // IL GIRO: la regola e il filo si incontrano qui, una persona alla volta.
 //
 // La regola (`discord-ruoli.js`) non sa cosa sia Discord. Il filo

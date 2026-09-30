@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // Notifiche Discord: ogni streamer collega un WEBHOOK di un canale del PROPRIO
 // server Discord (Impostazioni canale → Integrazioni → Webhook → copia URL).
 // Quando va in diretta, il bot posta lì un avviso con un embed ricco (titolo,

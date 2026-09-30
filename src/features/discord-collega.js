@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // «QUESTO ACCOUNT DISCORD SONO IO»: come si dimostra, e perche' cosi'.
 //
 // Servono due meta': chi sei su Discord e chi sei su Twitch. La prima la dice

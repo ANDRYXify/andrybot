@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // I CANCELLI come prove: quello che prima si lanciava a mano (e quindi ogni
 // tanto non si lanciava) qui gira a ogni `npm test`.
 import test from 'node:test';

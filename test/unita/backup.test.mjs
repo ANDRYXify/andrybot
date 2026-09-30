@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // IL BACKUP, e soprattutto il RIPRISTINO. Le copie c'erano già; quello che non
 // c'era è la prova che siano riapribili — e un backup che nessuno ha mai
 // riaperto è una speranza, non un backup. Qui il giro si chiude davvero: si

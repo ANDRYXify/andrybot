@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // I PREZZI DEL MANUALE SONO QUELLI DEL LISTINO. Il manuale dell'account li
 // legge da src/web/manuali/numeri.js, che li prende da features/abbonamenti.js:
 // scritti a mano, al primo ritocco del listino avrebbero detto un prezzo che

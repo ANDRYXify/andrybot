@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // La vetrina, in un posto solo.
 //
 // Prima ce n'erano DUE, e non erano due copie della stessa pagina: erano due

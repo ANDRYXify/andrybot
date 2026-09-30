@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // UN MODO SOLO DI APRIRE UN FLUSSO, e un battito che si vede.
 //
 // Un EventSource nudo muore per sempre al primo 502 di un riavvio dietro il

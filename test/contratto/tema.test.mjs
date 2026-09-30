@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // UNA TAVOLOZZA SOLA per tutto quello che si vede senza login.
 //
 // La pagina pubblica aveva una tavolozza tutta sua, scura fissa, e le guide ne

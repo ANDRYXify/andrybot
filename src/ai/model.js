@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // ======================================================================
 // IA LOCALE di SocialBot — un piccolo "modello" che gira TUTTO in casa,
 // senza API a pagamento, e si ADDESTRA DA SOLO sulla chat del canale e

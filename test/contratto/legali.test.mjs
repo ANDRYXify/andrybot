@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // PRIVACY E TERMINI NELLE TRE LINGUE (src/web/legali.js, docs/LINGUE.md).
 //
 // La tabella di legali.js e' la fonte: indirizzo e file di ogni pagina in ogni

@@ -1,3 +1,5 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // Cancello degli ACCENTI: quello che si legge da fuori è scritto in italiano.
 //
 // Perché esiste. Le righe delle novità e i manuali finiscono su una pagina
