@@ -951,125 +951,365 @@ nome resta in casa. Non è una cosa da ricordarsi:
 ## 2026-09-04
 
 - La chiave API del canale non si conserva più: ne resta solo un'impronta. Si vede una volta sola, quando la generi, e nemmeno noi possiamo rileggerla.
+  en: The channel API key is no longer stored: only a fingerprint of it stays. You see it once, when you generate it, and not even we can read it back.
+  es: La clave API del canal ya no se guarda: solo queda una huella de ella. Se ve una sola vez, cuando la generas, y ni siquiera nosotros podemos volver a leerla.
 - I backup del database sono cifrati: una copia che esce di casa è rumore senza il segreto del server.
+  en: Database backups are encrypted: a copy that leaves the house is just noise without the server’s secret.
+  es: Las copias de seguridad de la base de datos están cifradas: una copia que sale de casa es ruido sin el secreto del servidor.
 - I segreti dei collegamenti (bot Telegram, Spotify, TikTok, 7TV) non stanno più in chiaro nel database: ognuno ha la sua chiave, e quella chiave è a sua volta chiusa a chiave.
+  en: Connection secrets (Telegram bot, Spotify, TikTok, 7TV) are no longer stored in plain text in the database: each one has its own key, and that key is locked away in turn.
+  es: Los secretos de las conexiones (bot de Telegram, Spotify, TikTok, 7TV) ya no están en claro en la base de datos: cada uno tiene su clave, y esa clave está a su vez bajo llave.
 - Ogni segreto è legato al suo posto: preso da un account e messo su un altro non si apre più.
+  en: Every secret is tied to its place: taken from one account and put on another, it no longer opens.
+  es: Cada secreto está atado a su lugar: tomado de una cuenta y puesto en otra, ya no se abre.
 - Nell'Overlay Studio il titolo «Gira il telefono» non copre più l'icona sopra di sé.
+  en: In Overlay Studio, the “Turn your phone” title no longer covers the icon above it.
+  es: En Overlay Studio, el título «Gira el teléfono» ya no tapa el icono de arriba.
 - I tre passi per mettere l'overlay in OBS tornano a leggersi come frasi intere, invece di spezzarsi in due colonne.
+  en: The three steps for adding the overlay to OBS read as full sentences again, instead of splitting into two columns.
+  es: Los tres pasos para poner el overlay en OBS vuelven a leerse como frases enteras, en lugar de partirse en dos columnas.
 - Niente più schermate vuote scorrendo una scheda: alcune carte restavano spente e lasciavano al loro posto un buco alto quanto loro.
+  en: No more empty screens while scrolling a tab: some cards stayed switched off and left a hole as tall as they were.
+  es: Se acabaron las pantallas vacías al desplazarte por una pestaña: algunas tarjetas se quedaban apagadas y dejaban un hueco de su misma altura.
 - Sul telefono il contorno non resta più acceso sull'ultimo tasto premuto: gli effetti del passaggio del mouse ora valgono solo dove un mouse c'è davvero.
+  en: On phones the outline no longer stays lit on the last button you tapped: hover effects now apply only where there really is a mouse.
+  es: En el teléfono el contorno ya no se queda encendido en el último botón pulsado: los efectos al pasar el mouse ahora valen solo donde hay un mouse de verdad.
 - Su telefono le schede Notifiche, Moduli e Avvisi non escono più dallo schermo: il testo si tagliava a metà frase e la pagina scivolava di lato.
+  en: On phones the Notifications, Modules and Alerts tabs no longer run off the screen: text was cut off mid-sentence and the page slid sideways.
+  es: En el teléfono las pestañas Notificaciones, Módulos y Avisos ya no se salen de la pantalla: el texto se cortaba a media frase y la página se deslizaba de lado.
 - La ricerca ha il tema del sito: contorno pieno, filtri a pastiglia e le voci che si sollevano. Prima era rimasta col disegno di prima.
+  en: Search now has the site’s theme: a solid outline, pill-shaped filters and results that lift up. It had kept the old design.
+  es: La búsqueda tiene el tema del sitio: contorno lleno, filtros en píldora y resultados que se elevan. Se había quedado con el diseño anterior.
 - Anche gli elenchi, le schede della libreria, i blocchi della pagina link, i contatori e le spunte hanno il contorno giusto.
+  en: Lists, library cards, link page blocks, counters and checkmarks have the right outline too.
+  es: Las listas, las fichas de la biblioteca, los bloques de la página de enlaces, los contadores y las casillas también tienen el contorno correcto.
 - Il bot legge la tua pagina link mentre risponde: titoli, testi, link, social, conti alla rovescia e soprattutto le FAQ che ci hai scritto tu.
+  en: The bot reads your link page while it answers: titles, texts, links, socials, countdowns and above all the FAQs you wrote there.
+  es: El bot lee tu página de enlaces mientras responde: títulos, textos, enlaces, redes, cuentas atrás y sobre todo las preguntas frecuentes que escribiste ahí.
 - Cambi la pagina e cambia subito quello che sa, senza rifare niente. Se la spegni, smette di usarla.
+  en: Change the page and what the bot knows changes right away, with nothing to redo. If you turn the page off, it stops using it.
+  es: Cambias la página y cambia enseguida lo que sabe, sin rehacer nada. Si la apagas, deja de usarla.
 - Nell'elenco «cosa sa il bot» ora compaiono anche quelle voci, marcate «dalla tua pagina link»: si cambiano sulla pagina, non da lì.
+  en: The “What the bot knows” list now shows those entries too, marked “from your link page”: you change them on the page, not there.
+  es: En la lista «Lo que sabe el bot» ahora aparecen también esas entradas, marcadas «de tu página de enlaces»: se cambian en la página, no ahí.
 - Il manuale del bot e la guida della scheda Conoscenza sono aggiornati: scheda, quando, fissate, quaderno, parole da bloccare e pagina link.
+  en: The bot manual and the guide for the Knowledge tab are up to date: profile card, when, pinned, notebook, words to block and link page.
+  es: El manual del bot y la guía de la pestaña Conocimiento están al día: ficha, cuándo, fijadas, cuaderno, palabras a bloquear y página de enlaces.
 - I contorni non vengono più tagliati: dentro le schede ogni bottone aveva l'ombra rasata sui quattro lati, e nelle colonne che scorrono il bordo spariva di lato.
+  en: Outlines no longer get clipped: inside tabs every button had its shadow shaved off on all four sides, and in scrolling columns the edge vanished at the side.
+  es: Los contornos ya no se recortan: dentro de las pestañas cada botón tenía la sombra rasurada por los cuatro lados, y en las columnas que se desplazan el borde desaparecía de lado.
 - Sul tema chiaro tornano le ombre piene che mancavano: una riga di stile sbagliata le spegneva tutte, mentre sul tema scuro si sono sempre viste.
+  en: The solid shadows that were missing are back in the light theme: one wrong style line turned them all off, while in the dark theme they always showed.
+  es: En el tema claro vuelven las sombras llenas que faltaban: una línea de estilo equivocada las apagaba todas, mientras que en el tema oscuro siempre se vieron.
 - Nella scheda puoi elencare le parole che il bot non deve mai scrivere (il cognome, la via, il nome della scuola): se una finisce in una risposta, il bot non la manda.
+  en: In your profile card you can list words the bot must never write (your last name, your street, your school’s name): if one ends up in a reply, the bot doesn’t send it.
+  es: En la ficha puedes enumerar las palabras que el bot nunca debe escribir (tu apellido, tu calle, el nombre de tu escuela): si una acaba en una respuesta, el bot no la envía.
 - La scheda non parte più vuota: quando il bot rilegge il tuo profilo riempie chi sei, gli orari e dove ti trovano, senza toccare quello che hai scritto tu.
+  en: The profile card no longer starts empty: when the bot rereads your profile it fills in who you are, your schedule and where to find you, without touching what you wrote.
+  es: La ficha ya no empieza vacía: cuando el bot vuelve a leer tu perfil rellena quién eres, los horarios y dónde encontrarte, sin tocar lo que escribiste tú.
 - Nella scheda Conoscenza puoi compilare la tua scheda: chi sei, cosa fai in diretta, gli orari, dove ti trovano, come deve chiamarti e cosa non deve dire di te.
+  en: In the Knowledge tab you can fill in your profile card: who you are, what you do on stream, your schedule, where to find you, what to call you and what not to say about you.
+  es: En la pestaña Conocimiento puedes completar tu ficha: quién eres, qué haces en directo, los horarios, dónde encontrarte, cómo debe llamarte y qué no debe decir de ti.
 - Il bot sceglie le voci di conoscenza più vicine alla domanda, non le ultime che hai scritto. Puoi scriverne quante vuoi.
+  en: The bot picks the knowledge entries closest to the question, not the last ones you wrote. You can write as many as you like.
+  es: El bot elige las entradas de conocimiento más cercanas a la pregunta, no las últimas que escribiste. Puedes escribir tantas como quieras.
 - Ogni voce può valere sempre, solo quando sei in diretta o solo quando sei offline. Puoi anche fissarla, così il bot ce l'ha davanti in ogni caso.
+  en: Each entry can apply always, only when you’re live or only when you’re offline. You can also pin it, so the bot has it in front of it no matter what.
+  es: Cada entrada puede valer siempre, solo cuando estás en directo o solo cuando estás desconectado. También puedes fijarla, así el bot la tiene delante en cualquier caso.
 - Le frasi che scrivi in Personalità ora arrivano al bot come esempio del tuo modo di parlare. Prima restavano lì.
+  en: The phrases you write in Personality now reach the bot as examples of how you talk. Before, they just sat there.
+  es: Las frases que escribes en Personalidad ahora le llegan al bot como ejemplo de tu forma de hablar. Antes se quedaban ahí.
 - Nel quaderno del bot scrivi come deve rispondere, e vedi anche quello che gli è già stato insegnato.
+  en: In the bot’s notebook you write how it should answer, and you also see what it has already been taught.
+  es: En el cuaderno del bot escribes cómo debe responder, y ves también lo que ya le han enseñado.
 - Nella dashboard i menù a tendina restano in riga con i bottoni accanto, invece di andare a capo da soli.
+  en: In the dashboard, dropdown menus stay in line with the buttons next to them instead of wrapping onto a new line by themselves.
+  es: En el panel, los menús desplegables se quedan en línea con los botones de al lado, en lugar de saltar solos a otra línea.
 - In chat pubblica risponde il bot del tuo canale: non si ricorda degli utenti e non parla di sé.
+  en: In public chat, your channel’s bot is the one answering: it doesn’t remember users and doesn’t talk about itself.
+  es: En el chat público responde el bot de tu canal: no recuerda a los usuarios y no habla de sí mismo.
 - Le risposte salvate non escono più sempre uguali: il bot le riformula. Se contengono un link restano identiche.
+  en: Saved answers no longer come out the same every time: the bot rephrases them. If they contain a link, they stay exactly as written.
+  es: Las respuestas guardadas ya no salen siempre iguales: el bot las reformula. Si contienen un enlace, se quedan idénticas.
 - Attorno a un video o a una musica incorporata non si vedono più gli spicchi vuoti negli angoli: li riempie il colore del bordo, così sembrano cornice.
+  en: Around an embedded video or music player, the empty wedges in the corners are gone: the border color fills them, so they look like a frame.
+  es: Alrededor de un video o una música incrustados ya no se ven huecos vacíos en las esquinas: los rellena el color del borde, así parecen un marco.
 - Puoi scegliere il colore dietro al riquadro, per intonarlo a quello che si vede dentro al contenuto.
+  en: You can pick the color behind the box, to match it to what shows inside the content.
+  es: Puedes elegir el color detrás del recuadro, para combinarlo con lo que se ve dentro del contenido.
 - I riquadri di video, musica e pagine incorporate, la copertina e i bottoni dell'informativa hanno lo stesso bordo e la stessa ombra del resto della pagina: prima avevano un filo sottile che non cambiava mai col tema.
+  en: Boxes for embedded video, music and pages, the cover and the notice buttons have the same border and shadow as the rest of the page: before, they had a thin line that never changed with the theme.
+  es: Los recuadros de video, música y páginas incrustadas, la portada y los botones del aviso tienen el mismo borde y la misma sombra que el resto de la página: antes tenían una línea fina que nunca cambiaba con el tema.
 - La scritta che scorre è tornata a scorrere: si era fermata perché due cose diverse avevano lo stesso nome dentro al foglio di stile.
+  en: The scrolling text scrolls again: it had stopped because two different things had the same name inside the style sheet.
+  es: El texto que se desplaza vuelve a desplazarse: se había detenido porque dos cosas distintas tenían el mismo nombre en la hoja de estilo.
 - La sua velocità funziona per la prima volta: «lenta», «media» e «veloce» non arrivavano mai alla pagina, andavano tutte alla stessa andatura.
+  en: Its speed works for the first time: “Slow”, “Medium” and “Fast” never reached the page, and all ran at the same pace.
+  es: Su velocidad funciona por primera vez: «Lenta», «Media» y «Rápida» nunca llegaban a la página, y todas iban al mismo ritmo.
 - L'editor della pagina link è a tre zone come il banco dell'overlay: i pezzi a sinistra, l'anteprima al centro, i comandi del pezzo scelto a destra.
+  en: The link page editor has three areas like the overlay workbench: the blocks on the left, the preview in the middle, the controls for the chosen block on the right.
+  es: El editor de la página de enlaces tiene tres zonas como el banco del overlay: las piezas a la izquierda, la vista previa en el centro y los controles de la pieza elegida a la derecha.
 - Scegli un pezzo (o cliccalo nell'anteprima) e i suoi comandi compaiono a destra, con scritto sopra di quale pezzo sono.
+  en: Pick a block (or click it in the preview) and its controls appear on the right, labeled with which block they belong to.
+  es: Elige una pieza (o haz clic en ella en la vista previa) y sus controles aparecen a la derecha, con el nombre de la pieza arriba.
 - Il tutorial della pagina link parte chiuso e sta in fondo: aperto si mangiava mezza colonna e la lista dei pezzi non si vedeva.
+  en: The link page tutorial starts collapsed and sits at the bottom: open, it ate half a column and you couldn’t see the list of blocks.
+  es: El tutorial de la página de enlaces empieza cerrado y está al final: abierto se comía media columna y no se veía la lista de piezas.
 - I pezzi della pagina link non sono più tutti spalancati insieme: una riga per pezzo, che si apre una alla volta e resta aperta anche se lo sposti o lo duplichi.
+  en: Link page blocks are no longer all wide open at once: one row per block, opening one at a time and staying open even if you move or duplicate it.
+  es: Las piezas de la página de enlaces ya no están todas abiertas a la vez: una fila por pieza, que se abre de una en una y sigue abierta aunque la muevas o la dupliques.
 - Nel tema scuro il contorno disegnato si vede: era nero su nero, quindi non c'era, e restavano solo gli aloni rosa.
+  en: In the dark theme the hand-drawn outline shows: it was black on black, so it wasn’t there, and only the pink glows were left.
+  es: En el tema oscuro se ve el contorno dibujado: era negro sobre negro, así que no estaba, y solo quedaban los halos rosas.
 - La barra in basso, la lente della ricerca e le icone parlano la stessa lingua del resto: contorno disegnato e ombra a timbro.
+  en: The bottom bar, the search magnifier and the icons speak the same language as everything else: hand-drawn outline and stamp shadow.
+  es: La barra de abajo, la lupa de la búsqueda y los iconos hablan el mismo idioma que el resto: contorno dibujado y sombra de sello.
 - La barra in basso è opaca: su alcuni telefoni il testo della pagina si leggeva attraverso.
+  en: The bottom bar is opaque: on some phones you could read the page text through it.
+  es: La barra de abajo es opaca: en algunos teléfonos el texto de la página se leía a través.
 - Le pagine link pubblicate non portano più i commenti del nostro codice: chi apriva gli strumenti del browser su una pagina qualsiasi ne trovava trentasette.
+  en: Published link pages no longer carry the comments from our code: anyone opening the browser tools on any page found thirty-seven of them.
+  es: Las páginas de enlaces publicadas ya no llevan los comentarios de nuestro código: quien abría las herramientas del navegador en cualquier página encontraba treinta y siete.
 - La pagina link ora si allarga su tutto lo schermo come il banco dell'overlay: prima restava dentro una colonna da mille pixel e l'anteprima era piccola.
+  en: The link page now spreads across the whole screen like the overlay workbench: before, it stayed inside a thousand-pixel column and the preview was small.
+  es: La página de enlaces ahora ocupa toda la pantalla como el banco del overlay: antes se quedaba dentro de una columna de mil píxeles y la vista previa era pequeña.
 - I titoli delle sezioni non sporgono più sopra la carta, e la freccetta che le apre è tornata una punta invece di un rombo.
+  en: Section titles no longer stick out above the card, and the little arrow that opens them is a point again instead of a diamond.
+  es: Los títulos de las secciones ya no sobresalen por encima de la tarjeta, y la flechita que las abre vuelve a ser una punta en lugar de un rombo.
 - La pagina link ha molte più cose da cambiare: carattere dei titoli separato, maiuscolo, interlinea, aria fra i pezzi, colore del testo dei bottoni e spessore del bordo.
+  en: The link page has many more things to change: a separate font for titles, uppercase, line spacing, room between blocks, button text color and border thickness.
+  es: La página de enlaces tiene muchas más cosas para cambiar: fuente de títulos aparte, mayúsculas, interlineado, aire entre piezas, color del texto de los botones y grosor del borde.
 - C'è una scheda «CSS» dove scrivere il tuo: arriva per ultimo, quindi vince su tutto il resto.
+  en: There’s a “CSS” tab where you can write your own: it comes last, so it wins over everything else.
+  es: Hay una pestaña «CSS» donde escribir el tuyo: llega al final, así que gana sobre todo lo demás.
 - La pagina link: l'aspetto non è più una colonna sola da ventidue voci, ma sei schede (Temi, Impianto, Scrittura, Colori, Bottoni, Modi) con i campi affiancati.
+  en: The link page look is no longer a single column of twenty-two settings, but six tabs (Themes, Layout, Type, Colors, Buttons, Behaviour) with the fields side by side.
+  es: El aspecto de la página de enlaces ya no es una sola columna de veintidós opciones, sino seis pestañas (Temas, Estructura, Tipografía, Colores, Botones, Modos) con los campos lado a lado.
 - L'anteprima della pagina link è passata a sinistra, con i comandi a destra: si legge come il banco dell'overlay.
+  en: The link page preview moved to the left, with the controls on the right: it reads like the overlay workbench.
+  es: La vista previa de la página de enlaces pasó a la izquierda, con los controles a la derecha: se lee como el banco del overlay.
 - Puoi cambiare la grandezza del testo della pagina link (80–130%) e il suo spessore: leggero, medio o marcato. Prima era grassetto e basta.
+  en: You can change the link page’s text size (80–130%) and weight: light, medium or bold. Before, it was bold and nothing else.
+  es: Puedes cambiar el tamaño del texto de la página de enlaces (80–130%) y su grosor: ligero, medio o marcado. Antes era negrita y punto.
 - Il puntatore disegnato adesso resta scelto: lo salvavi e alla ricarica tornava indietro da solo.
+  en: The hand-drawn pointer now stays selected: you saved it and on reload it switched back by itself.
+  es: El puntero dibujado ahora se queda elegido: lo guardabas y al recargar volvía atrás solo.
 - Il titolo della home usa gli stessi due colori del resto della pagina: le parole nel colore del testo, quelle in risalto nel rosa del marchio. Prima aveva un rosa tutto suo che al buio restava scuro come il fondo.
+  en: The home page title uses the same two colors as the rest of the page: words in the text color, highlighted ones in the brand pink. Before, it had a pink of its own that stayed as dark as the background at night.
+  es: El título de la portada usa los mismos dos colores que el resto de la página: las palabras en el color del texto y las destacadas en el rosa de la marca. Antes tenía un rosa propio que de noche era oscuro como el fondo.
 - I bottoni scelti e quelli rossi hanno di nuovo il loro contorno: il bordo era dello stesso colore del riempimento, quindi spariva dentro, e restava solo l'ombra su due lati: sembravano ritagliati male.
+  en: Selected and red buttons have their outline back: the border was the same color as the fill, so it vanished into it, leaving only a two-sided shadow that looked badly cut out.
+  es: Los botones elegidos y los rojos vuelven a tener su contorno: el borde era del mismo color que el relleno, así que desaparecía dentro, y solo quedaba la sombra en dos lados, como mal recortados.
 - I riquadri «ultimo follower» e «ultimo sub» prendono la veste come tutto il resto: prima quei bottoni non facevano niente e le due etichette restavano com'erano mentre l'overlay cambiava tema.
+  en: The “Latest follower” and “Latest sub” boxes take on the look like everything else: before, those buttons did nothing and the two labels stayed the same while the overlay changed theme.
+  es: Los recuadros «Último seguidor» y «Último sub» toman el aspecto como todo lo demás: antes esos botones no hacían nada y las dos etiquetas seguían igual mientras el overlay cambiaba de tema.
 - «a tutto l'overlay» adesso li prende davvero tutti: prima saltava quei due, il conto alla rovescia e i contatori.
+  en: “To the whole overlay” now really applies to all of them: before, it skipped those two, the countdown and the counters.
+  es: «A todo el overlay» ahora sí los incluye a todos: antes se saltaba esos dos, la cuenta atrás y los contadores.
 - Ai due riquadri puoi scegliere forma, materia e cornice, come agli altri pezzi.
+  en: For the two boxes you can pick shape, material and frame, like the other blocks.
+  es: En los dos recuadros puedes elegir forma, materia y marco, como en las demás piezas.
 - L'anteprima dei due riquadri mostra quello che va davvero in onda: prima ne disegnava uno e in diretta ne arrivava un altro.
+  en: The preview of the two boxes shows what really goes on air: before, it drew one and a different one arrived on stream.
+  es: La vista previa de los dos recuadros muestra lo que sale de verdad al aire: antes dibujaba uno y en directo llegaba otro.
 - L'alone dell'alert e quello della materia neon si accendono: c'erano da sempre e non si erano mai visti.
+  en: The alert’s glow and the neon material’s glow light up: they’d always been there and had never shown.
+  es: El halo de la alerta y el de la materia neón se encienden: estaban desde siempre y nunca se habían visto.
 - Con la veste manga l'ombra è netta invece che sfocata, come un secondo segno d'inchiostro.
+  en: With the manga look the shadow is sharp instead of blurred, like a second ink stroke.
+  es: Con el aspecto manga la sombra es nítida en lugar de difuminada, como un segundo trazo de tinta.
 - Il sito era irraggiungibile: la configurazione del guardiano d'ingresso non era valida e lui, per questo, non si avviava. Rimessa a posto e verificata col programma vero prima di spingerla.
+  en: The site was unreachable: the gatekeeper’s configuration wasn’t valid, so it wouldn’t start. It’s fixed and was checked with the real program before going out.
+  es: El sitio no se podía alcanzar: la configuración del guardián de entrada no era válida y por eso no arrancaba. Quedó arreglada y probada con el programa real antes de publicarla.
 - Un elemento con la Dimensione cambiata arriva davvero al bordo dello schermo: rimpicciolito si piantava prima e sembrava bloccato lì, ingrandito usciva dalla tela.
+  en: An element with a changed Size really reaches the edge of the screen: shrunk, it used to stop short and seem stuck there, and enlarged it went off the canvas.
+  es: Un elemento con el Tamaño cambiado llega de verdad al borde de la pantalla: reducido se frenaba antes y parecía atascado, agrandado se salía del lienzo.
 - Segue il dito com'è giusto mentre lo trascini, a qualunque Dimensione.
+  en: It follows your finger properly while you drag it, at any Size.
+  es: Sigue al dedo como debe mientras lo arrastras, con cualquier Tamaño.
 - Le immagini e i video dei comandi finiscono in diretta dove li hai messi nell'anteprima, anche quando li rimpicciolisci.
+  en: Command images and videos end up on stream where you placed them in the preview, even when you shrink them.
+  es: Las imágenes y los videos de los comandos acaban en directo donde los pusiste en la vista previa, incluso cuando los reduces.
 - Il player non si strizza più a seconda di dove lo metti: posato al centro o a destra si stringeva, e il titolo finiva tagliato. Ora è largo quanto gli serve, ovunque lo porti.
+  en: The player no longer squeezes depending on where you put it: set in the middle or on the right it narrowed, and the title got cut off. Now it’s as wide as it needs to be, wherever you move it.
+  es: El reproductor ya no se encoge según dónde lo pongas: en el centro o a la derecha se estrechaba y el título quedaba cortado. Ahora es tan ancho como necesita, lo pongas donde lo pongas.
 - Il player è cresciuto: le misure partono da dove prima finivano, e c'è la misura «enorme».
+  en: The player got bigger: the sizes start where they used to end, and there’s a “Huge” size.
+  es: El reproductor creció: las medidas empiezan donde antes terminaban, y está la medida «Enorme».
 - «Enorme» c'è per tutti i widget, non solo per la chat: player, obiettivi, ultimo follower, ultimo sub, contatori.
+  en: “Huge” is there for every widget, not just chat: player, goals, latest follower, latest sub, counters.
+  es: «Enorme» está para todos los widgets, no solo para el chat: reproductor, objetivos, último seguidor, último sub, contadores.
 - Il player ha i temi, e un tema prende la forma dell'oggetto vero. Cassetta: titolo e artista sull'etichetta, sotto la finestrella con le due bobine che girano.
+  en: The player has themes, and a theme takes the shape of the real object. Cassette: title and artist on the label, and below it the little window with two spinning reels.
+  es: El reproductor tiene temas, y un tema toma la forma del objeto real. Casete: título y artista en la etiqueta, y debajo la ventanita con los dos carretes que giran.
 - Vinile: il disco esce dalla busta e gira, con i solchi e l'etichetta al centro.
+  en: Vinyl: the record slides out of its sleeve and spins, with grooves and the label in the middle.
+  es: Vinilo: el disco sale de la funda y gira, con los surcos y la etiqueta en el centro.
 - Terminale: mono, prompt e cursore che lampeggia. Manga: retino, contorno d'inchiostro e il titolo in lettering.
+  en: Terminal: monospace, a prompt and a blinking cursor. Manga: halftone, ink outline and the title in lettering.
+  es: Terminal: monoespaciada, prompt y cursor que parpadea. Manga: trama, contorno de tinta y el título en lettering.
 - Ha il corpo: **slim** se lo vuoi sottile, **cicciotto** se lo vuoi generoso. È un asse a parte dalla dimensione: uno cambia le proporzioni, l'altro la scala.
+  en: It has a build: **slim** if you want it thin, **chunky** if you want it generous. It’s a separate axis from size: one changes the proportions, the other the scale.
+  es: Tiene cuerpo: **slim** si lo quieres delgado, **gordito** si lo quieres generoso. Es un eje aparte del tamaño: uno cambia las proporciones y el otro la escala.
 - Le onde ballano quanto è carico il brano: una ballata si muove piano, un pezzo tirato spinge. Lo dice Spotify, non lo inventiamo noi.
+  en: The waves dance as hard as the song does: a ballad moves gently, an upbeat track pushes. Spotify says so, we don’t make it up.
+  es: Las ondas bailan según la energía de la canción: una balada se mueve despacio, un tema intenso empuja. Lo dice Spotify, no lo inventamos nosotros.
 - Un titolo lungo non allarga più il player a mezzo schermo: la colonna del testo ha il suo tetto e il titolo scorre, come deve.
+  en: A long title no longer stretches the player across half the screen: the text column has its own cap and the title scrolls, as it should.
+  es: Un título largo ya no estira el reproductor a media pantalla: la columna del texto tiene su tope y el título se desplaza, como debe.
 - Quel tetto lo scegli tu: «Larghezza del testo» dice quanto può allargarsi prima che il titolo si metta a scorrere. A zero decide il corpo.
+  en: You choose that cap: “Text width” says how far it can grow before the title starts scrolling. At zero, the build decides.
+  es: Ese tope lo eliges tú: «Ancho del texto» dice cuánto puede crecer antes de que el título empiece a desplazarse. En cero decide el cuerpo.
 - «Parti da quanti ne ho adesso» adesso è una spunta che resta, non un tasto da premere ogni volta. Il numero lo tengo allineato io a quello vero di Twitch.
+  en: “Start from how many I have now” is now a checkbox that stays, not a button to press every time. I keep the number in line with Twitch’s real one.
+  es: «Empieza desde cuántos tengo ahora» ahora es una casilla que se queda, no un botón que pulsar cada vez. El número lo mantengo alineado con el real de Twitch.
 - La Plancia è disegnata come il resto del sito: contorno d'inchiostro, angoli tirati a mano, nomi in lettering.
+  en: The Deck is drawn like the rest of the site: ink outline, hand-drawn corners, names in lettering.
+  es: La Consola está dibujada como el resto del sitio: contorno de tinta, esquinas hechas a mano, nombres en lettering.
 - Quando scorri fra le sezioni partono le linee di concentrazione dalla scheda che stai guardando, come in una vignetta.
+  en: When you scroll between sections, focus lines burst from the tab you’re looking at, like in a comic panel.
+  es: Cuando te desplazas entre secciones salen líneas de concentración desde la pestaña que estás mirando, como en una viñeta.
 - Il tratto disegnato adesso arriva ovunque: interruttori, campi, cartellini e tutti i pulsantini hanno il contorno d'inchiostro e gli angoli tirati a mano.
+  en: The hand-drawn stroke now reaches everywhere: switches, fields, tags and all the little buttons have the ink outline and hand-drawn corners.
+  es: El trazo dibujado ahora llega a todas partes: interruptores, campos, etiquetas y todos los botoncitos tienen el contorno de tinta y las esquinas hechas a mano.
 - Gli interruttori sono disegnati anche loro: contorno, pallina con il suo bordo, e lo scatto a scatti invece che scivolato.
+  en: Switches are hand-drawn too: outline, a knob with its own border, and a snappy click instead of a slide.
+  es: Los interruptores también están dibujados: contorno, bolita con su borde, y un salto seco en lugar de deslizarse.
 - Le schede sono vignette: angoli quadri, contorno spesso e il titolo in una fascia d'inchiostro in alto, come la didascalia di una tavola.
+  en: Tabs are comic panels: square corners, a thick outline and the title in an ink band at the top, like a caption on a page.
+  es: Las pestañas son viñetas: esquinas rectas, contorno grueso y el título en una franja de tinta arriba, como el texto de apoyo de una página.
 - Il grigio pieno è sparito: le superfici secondarie sono a retino, come il mezzotono stampato.
+  en: Flat gray is gone: secondary surfaces use halftone, like printed screentone.
+  es: El gris liso desapareció: las superficies secundarias van con trama, como el medio tono impreso.
 - Il tratto ha una gerarchia: la vignetta è più spessa del comando, il comando più del dettaglio. È così che si legge la profondità.
+  en: The stroke has a hierarchy: the panel is thicker than the control, the control thicker than the detail. That’s how depth reads.
+  es: El trazo tiene jerarquía: la viñeta es más gruesa que el control, el control más que el detalle. Así se lee la profundidad.
 - I pulsanti sono a tinta piatta, senza sfumature: in una tavola il colore è pieno o non c'è.
+  en: Buttons are flat color, with no gradients: on a comic page, color is either solid or not there at all.
+  es: Los botones son de color plano, sin degradados: en una página de cómic el color es lleno o no está.
 - Quando arrivi con la tastiera su un comando si vede subito dove sei: cornice d'accento netta, senza niente che copra quello che hai intorno.
+  en: When you reach a control with the keyboard, you see right away where you are: a crisp accent frame, with nothing covering what’s around it.
+  es: Cuando llegas a un control con el teclado se ve enseguida dónde estás: un marco de acento nítido, sin nada que tape lo que hay alrededor.
 - Il tema scuro non è più bianco e nero: il fondo tira al prugna e la carta al rosa, come i colori del logo. Anche di notte è la stessa pagina stampata.
+  en: The dark theme is no longer black and white: the background leans plum and the paper pink, like the logo’s colors. Even at night it’s the same printed page.
+  es: El tema oscuro ya no es blanco y negro: el fondo tira a ciruela y el papel a rosa, como los colores del logo. También de noche es la misma página impresa.
 - Il titolo di una scheda è una targhetta nell'angolo, con la freccetta dentro: si legge come la didascalia di una vignetta.
+  en: A tab’s title is a little plate in the corner, with the arrow inside: it reads like a comic panel caption.
+  es: El título de una pestaña es una plaquita en la esquina, con la flechita dentro: se lee como el texto de una viñeta.
 - Il sito scarica il 16% in meno: quello che arriva al browser è compresso.
+  en: The site downloads 16% less: what reaches the browser is compressed.
+  es: El sitio descarga un 16% menos: lo que llega al navegador va comprimido.
 - L'anteprima che compare quando incolli un link di SocialBot è ridisegnata come il sito: lettering, retino e targhetta d'inchiostro.
+  en: The preview that appears when you paste a SocialBot link is redrawn like the site: lettering, halftone and an ink plate.
+  es: La vista previa que aparece cuando pegas un enlace de SocialBot está redibujada como el sitio: lettering, trama y plaquita de tinta.
 - La pagina delle novità torna a mostrare le novità: era vuota, e con lei l'elenco nel pannello.
+  en: The What’s new page shows the news again: it was empty, and so was the list in the panel.
+  es: La página de novedades vuelve a mostrar las novedades: estaba vacía, y con ella la lista del panel.
 - I titoli grandi sono contornati come le lettere del logo: pieno colorato dentro, tratto nero attorno.
+  en: Big titles are outlined like the logo’s letters: solid color inside, black stroke around.
+  es: Los títulos grandes tienen contorno como las letras del logo: relleno de color dentro y trazo negro alrededor.
 - La vetrina si apre a scaglioni, un pezzo alla volta, con lo scatto dell'animazione giapponese invece della dissolvenza sfocata.
+  en: The showcase opens in stages, one piece at a time, with the snap of Japanese animation instead of a blurry fade.
+  es: El escaparate se abre por partes, una pieza a la vez, con el salto de la animación japonesa en lugar del fundido borroso.
 - Anche il cambio di sezione ha perso la sfocatura: adesso è uno stacco netto, come si passa da una vignetta all'altra.
+  en: Switching sections has lost the blur too: now it’s a clean cut, like going from one comic panel to the next.
+  es: El cambio de sección también perdió el desenfoque: ahora es un corte seco, como pasar de una viñeta a otra.
 - L'avviso di errore arriva con la sua scossa: si capisce che qualcosa è andato storto anche solo da come si muove.
+  en: The error notice arrives with its own jolt: you can tell something went wrong just from the way it moves.
+  es: El aviso de error llega con su sacudida: se entiende que algo salió mal solo por cómo se mueve.
 - Il marchio in alto trema un attimo quando ci passi sopra, come una cosa disegnata a mano.
+  en: The brand at the top wobbles for a moment when you hover over it, like something drawn by hand.
+  es: La marca de arriba tiembla un instante cuando pasas por encima, como algo dibujado a mano.
 - Di notte si legge: il contorno nero spariva nel fondo scuro, ora ha il filo di carta attorno come nelle tavole stampate.
+  en: It’s readable at night: the black outline disappeared into the dark background, and now it has a thin paper edge around it like on printed pages.
+  es: De noche se lee: el contorno negro desaparecía en el fondo oscuro, y ahora tiene un filo de papel alrededor como en las páginas impresas.
 - Le linee di concentrazione dietro il titolo si sono calmate: erano un fondale che copriva tutto, adesso convergono sul titolo e gli lasciano aria attorno.
+  en: The focus lines behind the title have calmed down: they were a backdrop covering everything, and now they converge on the title and leave it room to breathe.
+  es: Las líneas de concentración detrás del título se calmaron: eran un telón que lo tapaba todo, y ahora convergen en el título y le dejan aire alrededor.
 - Il titolo grande ha il pieno del marchio, lo stesso della «b» di bot, dentro il contorno: prima era una parete di colore piatto e su telefono le lettere si gonfiavano fino a chiudersi.
+  en: The big title has the brand’s fill, the same as the “b” in bot, inside the outline: before, it was a wall of flat color, and on phones the letters swelled until they closed up.
+  es: El título grande tiene el relleno de la marca, el mismo de la «b» de bot, dentro del contorno: antes era una pared de color plano, y en el teléfono las letras se hinchaban hasta cerrarse.
 - La home non si ricompone più sotto gli occhi mentre carica: arriva già fatta, e non balla più.
+  en: The home page no longer rearranges itself before your eyes while it loads: it arrives already built, and stops jumping around.
+  es: La portada ya no se recompone ante tus ojos mientras carga: llega ya hecha, y no se mueve más.
 - È la stessa per tutti: prima chi cercava su Google trovava una pagina scritta a parte, solo in italiano, diversa da quella che poi si apriva davvero.
+  en: It’s the same for everyone: before, people searching on Google found a separately written page, only in Italian, different from the one that actually opened.
+  es: Es la misma para todos: antes quien buscaba en Google encontraba una página escrita aparte, solo en italiano, distinta de la que luego se abría de verdad.
 - Le tre lingue sono diventate indirizzi veri: cambiando lingua l'indirizzo cambia con te, e lo puoi salvare o mandare a qualcuno.
+  en: The three languages are now real addresses: when you switch language the address changes with you, and you can save it or send it to someone.
+  es: Los tres idiomas son ahora direcciones reales: al cambiar de idioma la dirección cambia contigo, y puedes guardarla o mandársela a alguien.
 - Nell'Overlay Studio la veste si sceglie sempre, non solo quando crei un overlay: in cima a ogni barra ci sono le nove vesti, e sotto cambi quello che vuoi.
+  en: In Overlay Studio you can always pick the look, not just when you create an overlay: the nine looks sit at the top of every bar, and below you change whatever you like.
+  es: En Overlay Studio el aspecto se elige siempre, no solo cuando creas un overlay: arriba de cada barra están los nueve aspectos, y debajo cambias lo que quieras.
 - «A tutto l'overlay» le applica in un colpo a tutti gli elementi, invece di rifare le stesse undici scelte per alert, chat e ogni widget.
+  en: “To the whole overlay” applies them to every element in one go, instead of redoing the same eleven choices for alerts, chat and each widget.
+  es: «A todo el overlay» los aplica de una vez a todos los elementos, en lugar de repetir las mismas once elecciones para alertas, chat y cada widget.
 - Adesso una veste veste davvero tutto: prima sceglievi Manga e la chat restava a metà, gli obiettivi e il player non se ne accorgevano nemmeno.
+  en: A look now really dresses everything: before, you picked Manga and the chat stayed halfway, while goals and the player didn’t even notice.
+  es: Ahora un aspecto viste de verdad todo: antes elegías Manga y el chat se quedaba a medias, y los objetivos y el reproductor ni se enteraban.
 - Il player segue la veste: «Nastro» lo fa diventare una cassetta, «Terminale» un terminale, «Manga» il manga.
+  en: The player follows the look: “Ribbon” turns it into a cassette, “Terminal” into a terminal, “Manga” into manga.
+  es: El reproductor sigue el aspecto: «Cinta» lo convierte en un casete, «Terminal» en una terminal, «Manga» en manga.
 - Il manga adesso c'è dappertutto: overlay, pagina link (in chiaro e di notte) e grafiche social.
+  en: Manga is now everywhere: the overlay, the link page (light and at night) and social graphics.
+  es: El manga ahora está en todas partes: overlay, página de enlaces (en claro y de noche) y gráficas sociales.
 - La pagina link in manga è carta e inchiostro davvero: contorni neri, ombra piena spostata, titoli a pennarello.
+  en: The manga link page is real paper and ink: black outlines, a solid offset shadow, titles in marker.
+  es: La página de enlaces en manga es papel y tinta de verdad: contornos negros, sombra llena desplazada, títulos a marcador.
 - Il carattere a pennarello lo scarica solo chi sceglie quel tema: le altre pagine link restano leggere come prima.
+  en: The marker font is only downloaded by people who pick that theme: the other link pages stay as light as before.
+  es: La fuente de marcador solo la descarga quien elige ese tema: las demás páginas de enlaces siguen igual de ligeras.
 - L'avatar segue il tema: prima aveva un alone sfumato suo che stonava su una pagina disegnata.
+  en: The avatar follows the theme: before, it had a soft glow of its own that clashed on a hand-drawn page.
+  es: El avatar sigue el tema: antes tenía un halo difuminado propio que desentonaba en una página dibujada.
 - Nel riquadro che chiede il consenso, «Dettagli» finiva da solo schiacciato nell'angolo in basso a destra e sembrava caduto fuori: ora sta dentro la frase che spiega, e i due pulsanti si dividono la riga.
+  en: In the consent box, “Details” ended up alone, squeezed into the bottom right corner, as if it had fallen out: now it sits inside the sentence that explains, and the two buttons share the row.
+  es: En el recuadro que pide el consentimiento, «Detalles» quedaba solo, aplastado en la esquina de abajo a la derecha, como caído: ahora está dentro de la frase que explica, y los dos botones comparten la fila.
 - Il tema Manga adesso è disegnato davvero: retino stampato sulla carta, contorni spessi coi pieni dentro, e di notte le linee di concentrazione che convergono sul tuo nome.
+  en: The Manga theme is now really drawn: halftone printed on the paper, thick outlines with solid fills, and at night focus lines converging on your name.
+  es: El tema Manga ahora está dibujado de verdad: trama impresa sobre el papel, contornos gruesos con rellenos dentro y, de noche, líneas de concentración que convergen en tu nombre.
 - Puoi accendere un puntatore del mouse disegnato coi colori del tuo tema: una penna, e una stella su quello che si può premere. Su telefono non cambia niente.
+  en: You can turn on a hand-drawn mouse pointer in your theme’s colors: a pen, and a star over things you can press. Nothing changes on phones.
+  es: Puedes activar un puntero del mouse dibujado con los colores de tu tema: una pluma, y una estrella sobre lo que se puede pulsar. En el teléfono no cambia nada.
 - Chi visita la tua pagina può cambiare idea sui contenuti di altri siti: prima la scelta era per sempre e il riquadro non tornava più. Ora nel piede c'è «Contenuti di altri siti» che lo riapre.
+  en: Visitors to your page can change their mind about content from other sites: before, the choice was forever and the box never came back. Now “Content from other sites” in the footer opens it again.
+  es: Quien visita tu página puede cambiar de idea sobre el contenido de otros sitios: antes la elección era para siempre. Ahora en el pie está «Contenido de otros sitios», que vuelve a abrir el recuadro.
 - Se dice di no dopo aver detto di sì, il no vale davvero: la pagina si ricarica, così da quei siti non parte più niente.
+  en: If they say no after saying yes, the no really counts: the page reloads, so nothing loads from those sites anymore.
+  es: Si dice que no después de haber dicho que sí, el no vale de verdad: la página se recarga, así que de esos sitios ya no se carga nada.
 - Sulla pagina link online non funzionava niente di quello che si clicca: il riquadro del consenso non compariva, «Carica il contenuto» non rispondeva, il conto alla rovescia stava fermo. Ora funziona.
+  en: Nothing clickable worked on the live link page: the consent box didn’t appear, “Load the content” didn’t respond, the countdown stood still. Now it works.
+  es: En la página de enlaces publicada no funcionaba nada de lo que se pulsa: el recuadro del consentimiento no aparecía, «Cargar el contenido» no respondía y la cuenta atrás estaba parada. Ahora funciona.
 - Nell'interfaccia non ci sono più emoji di sistema: dove dicevano qualcosa («bloccato», «animato», «in attesa») ora c'è il segno disegnato, con lo stesso tratto del resto.
+  en: There are no system emoji in the interface anymore: where they meant something (“blocked”, “animated”, “pending”) there’s now the drawn symbol, with the same stroke as the rest.
+  es: En la interfaz ya no hay emojis del sistema: donde decían algo («bloqueado», «animado», «en espera») ahora está el signo dibujado, con el mismo trazo que el resto.
 - Le emoji che il bot scrive in chat restano dov'erano: quella è la sua voce.
+  en: The emoji the bot writes in chat stay where they were: that’s its voice.
+  es: Los emojis que el bot escribe en el chat siguen donde estaban: esa es su voz.
 - Gli obiettivi si impostano in un posto solo: il traguardo vale per tutti i tuoi overlay, e non lo devi rifare scena per scena. Dove sta e come si vede lo decidi ancora sull'overlay che stai componendo.
+  en: Goals are set up in one place: the target applies to all your overlays, and you don’t have to redo it scene by scene. Where it sits and how it looks you still decide on the overlay you’re building.
+  es: Los objetivos se configuran en un solo lugar: la meta vale para todos tus overlays y no hay que rehacerla escena por escena. Dónde está y cómo se ve lo sigues decidiendo en el overlay que estás armando.
 - La barra di un obiettivo non torna più indietro: se arrivavano follower mentre il numero vero era ancora quello di poco prima, il totale a schermo calava. Ora no.
+  en: A goal’s bar no longer goes backward: if followers arrived while the real number was still the one from a moment earlier, the on-screen total dropped. Not anymore.
+  es: La barra de un objetivo ya no retrocede: si llegaban seguidores mientras el número real todavía era el de un momento antes, el total en pantalla bajaba. Ya no.
 - Nell'anteprima dello Studio la barra di un obiettivo era vuota anche a 662 su 1000: adesso si riempie davvero.
+  en: In the Studio preview, a goal’s bar was empty even at 662 out of 1000: now it really fills up.
+  es: En la vista previa del Studio la barra de un objetivo estaba vacía incluso con 662 de 1000: ahora se llena de verdad.
 - L'anteprima non ti mostra più un overlay diverso da quello che va in onda: la cornice degli elementi era disegnata in un modo qui e in un altro in diretta.
+  en: The preview no longer shows you a different overlay from the one that goes on air: element frames were drawn one way here and another way on stream.
+  es: La vista previa ya no te muestra un overlay distinto del que sale al aire: el marco de los elementos se dibujaba de una forma aquí y de otra en directo.
 - Il titolo lungo del player scorre anche nell'anteprima, invece di restare tagliato.
+  en: The player’s long title scrolls in the preview too, instead of staying cut off.
+  es: El título largo del reproductor también se desplaza en la vista previa, en lugar de quedarse cortado.
 - Spuntare «parti da quanti ne ho adesso» non ti butta più fuori dalla scheda che stavi modificando.
+  en: Checking “Start from how many I have now” no longer kicks you out of the tab you were editing.
+  es: Marcar «Empieza desde cuántos tengo ahora» ya no te saca de la pestaña que estabas editando.
 - I comandi delle onde del player dicono cosa fanno: uno le mostra o le nasconde, l'altro decide cosa balla a tempo.
+  en: The player’s wave controls say what they do: one shows or hides them, the other decides what dances in time.
+  es: Los controles de las ondas del reproductor dicen lo que hacen: uno las muestra u oculta, el otro decide qué baila al ritmo.
 - Google mostrava ancora il logo vecchio: l'indirizzo da cui lo prende non cambiava mai, quindi non aveva motivo di riscaricarlo. Adesso cambia.
+  en: Google was still showing the old logo: the address it gets it from never changed, so it had no reason to download it again. Now it changes.
+  es: Google seguía mostrando el logo viejo: la dirección de donde lo toma nunca cambiaba, así que no tenía motivo para volver a descargarlo. Ahora cambia.
 
 ## 2026-09-03
 
