@@ -117,3 +117,17 @@ test('in chat: !prossima e $prossima dicono la stessa diretta, nella lingua e ne
   assert.equal(await X.testoProssima('chat2'), 'Non c\'è ancora una prossima diretta in programma.', 'senza sere non inventa niente');
   assert.equal(await motore.espandi('$prossima', { channel: 'chat2', user: 'x', args: [], argsRaw: '', _vars: {} }), 'da decidere');
 });
+
+test('il cervello sa la prossima diretta vera, senza chiedere niente a Twitch mentre la chat aspetta', async () => {
+  const { Brain } = await import('../../src/ai/brain.js');
+  streamers.upsertApproved('cerv1', 'Cerv1', '81');
+  streamers.setSettings('cerv1', { settimana: SETT });
+  const b = Object.create(Brain.prototype);
+  const s = b._situazione('cerv1');
+  assert.match(s, /Prossima diretta: .+ alle 21:00 \((Elden Ring|Chiacchiere)\)/, s);
+  streamers.setSettings('cerv1', { settimana: SETT, preferenze: { fonteProssime: 'twitch' } });
+  X.dimenticaProgramma('cerv1');
+  assert.doesNotMatch(b._situazione('cerv1'), /Prossima diretta/, 'Programma non ancora letto: non si sa, e non si inventa');
+  await X.prossimeDirette('cerv1', 1, { helix: { programma: async () => ({ ok: true, segmenti: [{ start_time: new Date(Date.now() + 3600000).toISOString(), end_time: new Date(Date.now() + 7200000).toISOString(), title: 'dal programma', category: null }] }) } });
+  assert.match(b._situazione('cerv1'), /Prossima diretta: .+ \(dal programma\)/, 'letto una volta, lo sa');
+});

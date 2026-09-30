@@ -52,6 +52,7 @@ nome resta in casa. Non è una cosa da ricordarsi:
 - [importante] In chat c'è !prossima: dice quando è la prossima diretta, con l'ora vera presa dalla tua settimana o dal Programma di Twitch, e nei Moduli c'è $prossima. [vai: moduli]
   > Il comando !prossima
   > Prima alla domanda «quando sei in diretta?» nessun comando sapeva rispondere con un'ora vera.
+- Alla domanda «quando sei in diretta?» il bot risponde con la prossima diretta vera, presa dalla tua settimana o dal Programma di Twitch, e non da un testo scritto a mano.
 
 ## 2026-09-27
 

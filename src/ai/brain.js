@@ -16,6 +16,8 @@ import { daAssistente } from './registro.js';
 import { genereDi, scegliAccordando, istruzioneGenere } from './genere.js';
 import * as conti from '../features/conti.js';
 import { perLaStanza } from '../features/momenti.js';
+import * as prossime from '../features/prossime.js';
+import { preferenzeDi, quando as quandoDiretta } from '../features/preferenze.js';
 
 const log = makeLog('brain');
 
@@ -561,10 +563,25 @@ export class Brain {
   _situazione(channel) {
     try {
       const ctx = memory.streamContext(channel);   // "In live su X: ... da Yh Zm" oppure null = offline
-      if (ctx) return String(ctx).slice(0, 200);
+      const dopo = this._prossima(channel);
+      if (ctx) return [String(ctx).slice(0, 200), dopo].filter(Boolean).join(' · ');
       const gioco = memory.facts(channel).find((f) => f.key === 'gioco_recente')?.value;
-      return gioco ? ('Ora offline (ultima diretta su ' + String(gioco).slice(0, 60) + ')') : 'Ora offline';
+      return [gioco ? ('Ora offline (ultima diretta su ' + String(gioco).slice(0, 60) + ')') : 'Ora offline', dopo].filter(Boolean).join(' · ');
     } catch { return null; }
+  }
+
+  // LA PROSSIMA DIRETTA, VERA. Alla domanda «quando sei in diretta?» il cervello
+  // risponde con quello che trova qui, non con un testo scritto a mano mesi fa:
+  // la fonte scelta dallo streamer (la settimana o il Programma di Twitch, vedi
+  // features/prossime.js), nel fuso e nella lingua del canale. Solo quello che
+  // e' gia' in memoria: nessuna chiamata a Twitch mentre la chat aspetta.
+  _prossima(channel) {
+    try {
+      const d = prossime.prossimaInMemoria(channel);
+      if (!d) return '';
+      const q = quandoDiretta(d.inizio, preferenzeDi(channel));
+      return `Prossima diretta: ${q}${d.titolo || d.categoria ? ` (${String(d.titolo || d.categoria).slice(0, 60)})` : ''}`;
+    } catch { return ''; }
   }
 
   // Impara dalla COMMUNITY in uno spazio pubblico (chat di GRUPPO Telegram, come
