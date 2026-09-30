@@ -137,6 +137,9 @@ Quelle sono, oggi:
 - le frasi dell'arena delle emote (`src/features/arena.js`, `FRASI`: solo in
   italiano) e l'apertura dell'elenco dei giochi (`comandi-registro.js`,
   `APERTURE`);
+- le frasi del negozio (`src/features/negozio.js`, `FRASI` e `frase()`): la
+  lingua viene gia' da `linguaChat` e le monete da `moneta.js`, ma una frase
+  sola per momento e nessun tono;
 - la prova del webhook di Discord e gli avvisi dei post nuovi, che non sono
   dirette;
 - le risposte dei comandi pronti che lo streamer può riscrivere: sono un
