@@ -23,6 +23,13 @@
 
 import { guideIn, urlGuida, VIE } from './guide.js';
 import { manualiIn } from './manuali.js';
+// LA SPUNTA A MANO. Una «v» sola per la home, uguale nel configuratore e negli
+// elenchi dei piani, fatta come quelle del pannello (docs/DISEGNO.md, «Le
+// spunte»): scende corta, risale lunga e sborda un poco da tutte e due le parti
+// quando sta in una casella. Il configuratore la traccia a scatti quando la
+// spunti (il tratteggio da 40 in vetrina.css copre tutta la sua lunghezza, 36).
+const V_A_MANO = '<path d="M2 12c1 2 5 5 8 7c3-6 9-14 16-20"/>';
+
 const ICO = {
   chat: '<path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/>',
   scudo: '<path d="M12 3.2 19 6v5c0 4.8-3.4 7.8-7 8.8-3.6-1-7-4-7-8.8V6z"/>',
@@ -386,7 +393,7 @@ function soloDiscordHtml(L) {
 function configuratoreHtml(L, piani) {
   const disponibili = piani.addon || [];
   if (!disponibili.length) return '';
-  const spunta = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>';
+  const spunta = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + V_A_MANO + '</svg>';
   const righe = disponibili.map((a) => `
     <label class="vt-extra">
       <input type="checkbox" value="${esc(a.id)}">
@@ -492,7 +499,7 @@ function carteListino(L, piani) {
 function listinoHtml(L, piani) {
   if (!piani || !piani.base || !piani.free) return '';
   const perMese = L('/mese', '/month', '/mes');
-  const spunta = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>';
+  const spunta = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + V_A_MANO + '</svg>';
   const { free: cartaFree, base: cartaBase } = carteListino(L, piani);
   const piano = ({ nome, prezzo, sotto, testo, voci, punta, azione }) => `
     <article class="vt-piano${punta ? ' punta' : ''}">
