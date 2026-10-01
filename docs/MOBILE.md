@@ -141,7 +141,7 @@ menu di lato mente di 240 px, e l'editor della pagina link e delle donazioni ci
 è larga 946 px, comandi (21rem) e ispettore (26rem) se ne prendevano 752 e
 all'anteprima restavano 159. Il telefono schiacciato, una parola per riga.
 
-Adesso l'editor è un contenitore (`#lp-box`, `#lp-box-dona`, `container: lp`)
+Adesso l'editor è un contenitore (`.lp-casa`, `container: lp`)
 e le colonne le sceglie sulla propria larghezza. Le soglie sono la somma delle
 colonne con l'anteprima al suo minimo, cioè il telefono (24rem) con la sua
 cornice (0,8rem per lato), 26rem:
@@ -157,10 +157,16 @@ rifà i conti: una colonna cambiata senza la sua soglia è rossa.
 
 Lo spazio largo (il contenuto senza il tetto dei 1080 px, col margine stretto)
 lo chiede l'editor, non la scheda: la regola guarda se nella scheda aperta c'è
-`#lp-box` o `#lp-box-dona`. Prima guardava la scheda «pagina» per nome, e le
-Donazioni, che aprono lo stesso editor, restavano in 1080 px: a 1440 px di
-finestra un editor di 946 px contro i 1103 della Pagina link. Adesso sono uguali
-a ogni larghezza.
+una casa dell'editor visibile (`.lp-casa:not([hidden] *)`). Prima guardava la
+scheda «pagina» per nome, e le Donazioni, che aprono lo stesso editor, restavano
+in 1080 px: a 1440 px di finestra un editor di 946 px contro i 1103 della Pagina
+link. Poi è arrivato il Negozio, e le regole scritte con gli id (`#lp-box`,
+`#lp-box-dona`) non lo conoscevano: lo stesso editor in una colonna sola anche
+su uno schermo largo. Adesso ogni casa nasce da `lpCasaHtml(quale)`, che le dà
+l'id di `LP_CASA` e la classe `lp-casa`: una casa nuova è un contenitore e
+chiede lo spazio largo senza che nessuno debba ricordarsene. Nel Negozio la casa
+sta nella sotto-scheda «La pagina del negozio»: quando sei in «Articoli» è
+nascosta, e la scheda resta nei suoi 1080 px.
 
 ### L'anteprima resta a metà dello schermo
 
@@ -191,6 +197,51 @@ calcola, non si aggiusta:
   alta il 45% dello spazio visibile, come l'anteprima delle Grafiche sul
   telefono: i campi scorrono sotto, e «Salva e pubblica», che sta con
   l'anteprima, resta sempre a portata.
+
+### «Telefono» e «Schermo»: il posto e il vetro
+
+Segnalato così: «un po' rotto l'editor se metto schermo». In «Schermo»
+l'anteprima è una pagina larga 1280 punti mostrata rimpicciolita
+(`transform: scale`). Il rimpicciolimento è solo a vista: per l'impaginazione la
+pagina restava larga 1280, la colonna dell'anteprima si allargava fino a lei,
+la cornice usciva dal riquadro e «Salva e pubblica» finiva sopra i tasti dei
+pezzi. E la scala si misurava sulla cornice già gonfiata: 1280 / 1280 = 1, cioè
+la misura confermava lo sbaglio invece di correggerlo.
+
+Adesso le parti sono tre, e ognuna prende la misura da quella che la contiene,
+mai da quella che contiene:
+
+- **il posto** (`#lp-cornice`, `.lp-posto`) è lo spazio che resta nel riquadro
+  fra il titolo e «Salva e pubblica»; è un contenitore di misura
+  (`container-type: size`), quindi niente di quello che ha dentro lo può
+  allargare;
+- **il vetro** (`.lp-telefono`) sta nel posto: in «Telefono» largo al massimo
+  24rem e alto quanto il posto; in «Schermo» un 16:10 grande quanto ci sta,
+  `min(100cqw − bordi, (100cqh − bordi) × 1,6)`, cioè tocca il posto in
+  larghezza o in altezza;
+- **la pagina** sta sopra il vetro (`position: absolute`), larga 1280 e alta
+  800, e non conta nell'impaginazione. La scala è `larghezza del vetro / 1280`,
+  ricalcolata da un `ResizeObserver` sul vetro: il vetro non dipende dalla
+  scala, quindi la misura non può più girare in tondo.
+
+La vista scelta è dell'editor (`LP.vista`), non dei tasti: quando l'editor si
+ridisegna (un tema scelto, per esempio) torna com'era, invece di ripartire da
+«Telefono» con la pagina ancora rimpicciolita.
+
+`node scripts/verifica-anteprima-pagina.mjs` apre i tre editor (pagina link,
+donazioni, negozio) a 390, 1000, 1440 e 1920 px. In «Telefono» e in «Schermo»
+pretende che:
+
+- il riquadro e la casa non cambino larghezza passando a «Schermo»;
+- il vetro stia nel posto, il posto nel riquadro, e lo schermo sia grande quanto
+  ci sta;
+- la pagina rimpicciolita sia esattamente il vetro, in 16:10;
+- «Salva e pubblica» stia nel riquadro e non tocchi comandi e ispettore;
+- alla stessa larghezza i tre editor abbiano le stesse colonne;
+- la vista resti «Schermo» dopo che l'editor si ridisegna.
+
+Con `--selftest` rimette la cornice vecchia e toglie il contenitore al negozio,
+e vuole vedere tutte e due le cose rosse.
 
 ### Il collaudo
 

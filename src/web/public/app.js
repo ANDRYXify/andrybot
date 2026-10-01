@@ -10431,7 +10431,7 @@ function pannelloNegozio() {
     <div class="carta" id="neg-pagina-carta">
       <h2>${_hIco(ICO.condividi)}${L('La pagina del negozio', 'The shop page', 'La página de la tienda')}</h2>
       <p>${L('Una pagina tua per il negozio, come la pagina link: chi la apre vede gli articoli in vendita, i prezzi, i requisiti e come si compra. Ogni pezzo si accende, si sposta e si veste; temi, sfondo, caratteri e colori sono quelli della pagina link.', 'A page of your own for the shop, like the link page: whoever opens it sees the items on sale, the prices, the requirements and how to buy. Every piece can be turned on, moved and styled; themes, background, fonts and colors are the link page ones.', 'Una página tuya para la tienda, como la página de enlaces: quien la abre ve los artículos a la venta, los precios, los requisitos y cómo se compra. Cada pieza se activa, se mueve y se viste; temas, fondo, tipografía y colores son los de la página de enlaces.')}</p>
-      <div id="lp-box-negozio">${attesaHtml()}</div>
+      ${lpCasaHtml('negozio')}
     </div>
     </div>`);
 }
@@ -21042,7 +21042,7 @@ function pannelloPaginaLink() {
   return pannello('pagina', `
     <div class="carta">
       <h2>${_hIco(ICO.condividi)}${L('La tua pagina link', 'Your link page', 'Tu página de enlaces')}</h2>
-      <div id="lp-box">${attesaHtml()}</div>
+      ${lpCasaHtml('link')}
     </div>
     ${proprietario ? `<div class="carta">
       <h2>${_hIco(ICO.globo)}${L('La tua diretta in prima pagina', 'Your stream on the front page', 'Tu directo en portada')}</h2>
@@ -21113,7 +21113,7 @@ function pannelloDonazioni() {
     <div class="carta" id="dona-pagina-carta">
       <h2>${_hIco(ICO.condividi)}${L('La tua pagina delle donazioni', 'Your donations page', 'Tu página de donaciones')}</h2>
       <p>${L('Una pagina tutta per le donazioni, con gli stessi strumenti della pagina link: qui il cuore sono le offerte e il modulo. Sulla pagina link il tasto «Sostieni» porta qui.', 'A page just for donations, with the same tools as the link page: here the heart is the offers and the form. On the link page the «Support» button leads here.', 'Una página solo para las donaciones, con las mismas herramientas que la página de enlaces: aquí lo principal son las ofertas y el formulario. En la página de enlaces el botón «Apóyame» lleva aquí.')}</p>
-      <div id="lp-box-dona">${attesaHtml()}</div>
+      ${lpCasaHtml('dona')}
     </div>
     <div class="carta" id="dona-ultime-carta">
       <h2>${_hIco(ICO.lista)}${L('Il registro delle donazioni', 'The donations register', 'El registro de donaciones')}</h2>
@@ -21365,8 +21365,9 @@ function lpIntroHtml(d) {
   })}`;
 }
 
-const LP = { d: null, blocchi: [], tema: {}, testa: {}, quale: 'link', aspetto: '', schede: { link: {}, dona: {}, negozio: {} } };
+const LP = { d: null, blocchi: [], tema: {}, testa: {}, quale: 'link', aspetto: '', vista: 'telefono', schede: { link: {}, dona: {}, negozio: {} } };
 const LP_CASA = { link: 'lp-box', dona: 'lp-box-dona', negozio: 'lp-box-negozio' };
+const lpCasaHtml = (quale) => `<div id="${LP_CASA[quale]}" class="lp-casa">${attesaHtml()}</div>`;
 const LP_API = { link: '/api/linkpage', dona: '/api/paginadona', negozio: '/api/paginanegozio' };
 const lpConAspetto = () => LP.quale === 'dona' || LP.quale === 'negozio';
 const lpVociMax = (tipo) => Number(LP.d?.limiti?.voci?.[tipo]) || 0;
@@ -21626,11 +21627,11 @@ async function caricaPaginaLink(ridisegna = false, quale = null) {
       <div class="lp-anteprima">
         <div class="lp-ant-tit">${L('Anteprima dal vivo', 'Live preview', 'Vista previa en directo')}
           <span class="lp-vista">
-            <button type="button" class="lp-vista-b sel" data-lpvista="telefono">${L('Telefono', 'Phone', 'Móvil')}</button>
-            <button type="button" class="lp-vista-b" data-lpvista="schermo">${L('Schermo', 'Desktop', 'Pantalla')}</button>
+            <button type="button" class="lp-vista-b${LP.vista === 'schermo' ? '' : ' sel'}" data-lpvista="telefono">${L('Telefono', 'Phone', 'Móvil')}</button>
+            <button type="button" class="lp-vista-b${LP.vista === 'schermo' ? ' sel' : ''}" data-lpvista="schermo">${L('Schermo', 'Desktop', 'Pantalla')}</button>
           </span>
         </div>
-        <div class="lp-telefono" id="lp-cornice"><iframe id="lp-iframe" title="anteprima"></iframe><div class="lp-sf-velo" hidden></div></div>
+        <div class="lp-posto${LP.vista === 'schermo' ? ' schermo' : ''}" id="lp-cornice"><div class="lp-telefono"><iframe id="lp-iframe" title="anteprima"></iframe><div class="lp-sf-velo" hidden></div></div></div>
         <div class="lp-azioni">
           <button class="btn" id="lp-salva" title="${esc(L('Salva le modifiche e le mette subito online: da questo momento chi apre il link vede questa', 'Saves your changes and puts them online right away: from now on this is what visitors see', 'Guarda los cambios y los publica al momento: desde ahora quien abra el enlace ve esto'))}">${L('Salva e pubblica', 'Save and publish', 'Guardar y publicar')}</button>
           <a class="btn secondario" id="lp-apri" href="${esc(d.url || '#')}" target="_blank" rel="noopener">${_bIco(ICO.occhio)}${L('Apri', 'Open', 'Abrir')}</a>
@@ -21934,11 +21935,10 @@ async function caricaPaginaLink(ridisegna = false, quale = null) {
   const suVista = (ev) => {
     const v = ev.target.closest('[data-lpvista]'); if (!v) return;
     const cornice = box.querySelector('#lp-cornice'); if (!cornice) return;
-    const orizz = v.dataset.lpvista === 'schermo';
-    cornice.classList.toggle('schermo', orizz);
-    box.querySelector('.lp-editor')?.classList.toggle('orizz', orizz);
+    LP.vista = v.dataset.lpvista === 'schermo' ? 'schermo' : 'telefono';
+    cornice.classList.toggle('schermo', LP.vista === 'schermo');
     box.querySelectorAll('.lp-vista-b').forEach((b) => b.classList.toggle('sel', b === v));
-    requestAnimationFrame(lpScala);
+    lpScala();
   };
   const suScheda = (ev) => {
     const t = ev.target.closest('[data-lptab]'); if (!t) return;
@@ -22000,6 +22000,7 @@ async function caricaPaginaLink(ridisegna = false, quale = null) {
     if (v) vaiAScheda(v.dataset.lpVai);
   };
   box.onclick = (ev) => { for (const f of [lpClicBlocchi, suVista, suScheda, suTema, suCarica, suAspetto]) f(ev); };
+  lpGuardaVetro(box);
 
   document.getElementById('lp-salva').onclick = () => conErrore(async () => {
     const r = await api(lpApi(), { method: 'POST', body: {
@@ -22672,11 +22673,19 @@ function lpAnteprimaCliccabile(f) {
 
 function lpScala() {
   const c = document.getElementById('lp-cornice');
-  if (!c || !c.classList.contains('schermo')) return;
-  const largo = c.clientWidth || c.getBoundingClientRect().width;
-  if (largo > 0) c.style.setProperty('--z', String(Math.max(0.12, largo / 1280)));
+  const vetro = c?.querySelector('.lp-telefono');
+  if (!vetro || !c.classList.contains('schermo')) return;
+  const largo = vetro.clientWidth;
+  if (largo > 0) c.style.setProperty('--z', String(largo / 1280));
 }
-window.addEventListener('resize', lpScala);
+const _lpOcchio = typeof ResizeObserver === 'function' ? new ResizeObserver(() => lpScala()) : null;
+function lpGuardaVetro(box) {
+  const vetro = box.querySelector('#lp-cornice .lp-telefono');
+  if (!vetro) return;
+  if (_lpOcchio) { _lpOcchio.disconnect(); _lpOcchio.observe(vetro); }
+  else lpScala();
+}
+if (!_lpOcchio) window.addEventListener('resize', lpScala);
 
 let _lpTimer = null;
 function lpAnteprima() {

@@ -31,9 +31,10 @@ Adesso:
   qui c'è una riga che ci porta, non un riquadro.
 - **La promo social in chat** è una cosa che il bot dice da solo in chat, come
   «si fa vivo da solo»: sta nel riquadro Personalità e si salva con lui.
-- **La pagina delle donazioni** si modifica nella scheda Donazioni. L'editor è
-  lo stesso della pagina link, ma ogni pagina ha la sua casa (`lp-box` e
-  `lp-box-dona`): quando si apre in una, l'altra si svuota, così non esistono
+- **La pagina delle donazioni** si modifica nella scheda Donazioni, quella del
+  negozio nel Negozio. L'editor è lo stesso della pagina link, ma ogni pagina ha
+  la sua casa (`lp-box`, `lp-box-dona`, `lp-box-negozio`, tutte fatte da
+  `lpCasaHtml`): quando si apre in una, le altre si svuotano, così non esistono
   mai due editor con gli stessi id.
 - **La diretta in prima pagina** sta accanto alla pagina link, non in Stato.
 

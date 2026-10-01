@@ -89,7 +89,8 @@ test('la pagina ha il suo script, e chi non e\' dentro lo puo\' scaricare', () =
 
 test('il pannello: lo stesso editor delle altre pagine, nella scheda Negozio', () => {
   assert.ok(APP.includes("['pagina', ['La pagina del negozio', 'The shop page', 'La página de la tienda']]"), 'una parte sua nella scheda');
-  assert.ok(APP.includes('<div id="lp-box-negozio">'), 'la casa dell\'editor');
+  const pannelloNeg = APP.slice(APP.indexOf("return pannello('negozio', `"), APP.indexOf('\n}\n', APP.indexOf("return pannello('negozio', `")));
+  assert.ok(pannelloNeg.includes("${lpCasaHtml('negozio')}"), 'la casa dell\'editor, nella scheda Negozio');
   assert.ok(APP.includes("if (id === 'negozio') { caricaNegozio(); caricaPaginaLink(false, 'negozio');"), 'e li\' si apre');
   assert.ok(APP.includes("${LP.quale === 'negozio' ? lpAggiungiNegozioHtml() :"), 'coi pezzi del negozio');
   assert.ok(APP.includes('id="neg-url-copia"') && APP.includes('id="neg-url-apri"'), 'l\'indirizzo con «Copia» e «Apri»');

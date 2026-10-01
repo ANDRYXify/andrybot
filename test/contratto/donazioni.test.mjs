@@ -386,7 +386,8 @@ test('la pagina delle donazioni: stessa forma, altro tavolo, stesso editor; le o
   assert.ok(APP.includes("api(lpApi() + '/anteprima'"), 'anche l\'anteprima');
   assert.ok(APP.includes("const LP_CASA = { link: 'lp-box', dona: 'lp-box-dona', negozio: 'lp-box-negozio' };")
     && APP.includes('const _lpCasa = () => LP_CASA[LP.quale] || LP_CASA.link;'), 'ogni pagina ha la sua casa per l\'editor');
-  assert.match(APP, /<div id="lp-box-dona">/, 'e quella delle donazioni sta nella scheda Donazioni');
+  const pannelloDona = APP.slice(APP.indexOf("return pannello('donazioni', `"), APP.indexOf('\n}\n', APP.indexOf("return pannello('donazioni', `")));
+  assert.ok(pannelloDona.includes("${lpCasaHtml('dona')}"), 'e quella delle donazioni sta nella scheda Donazioni');
   assert.match(APP, /if \(id === 'donazioni'\) \{ riempiDonazioni\(\); caricaStatoDonazioni\(true\); caricaPaginaLink\(false, 'dona'\); \}/, 'e li\' si apre');
   assert.ok(!/data-lpquale/.test(APP), 'niente interruttore fra le due pagine: ognuna si modifica da un posto solo');
   assert.match(APP, /id="dona-livelli"/); assert.match(APP, /class="dl-effetto"/, 'le offerte si compongono nel pannello, con l\'effetto dalla libreria');

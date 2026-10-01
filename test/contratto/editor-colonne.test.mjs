@@ -20,6 +20,7 @@ import { readFileSync } from 'node:fs';
 
 const CSS = readFileSync(new URL('../../src/web/public/style.css', import.meta.url), 'utf8');
 const ANIME = readFileSync(new URL('../../src/web/public/anime.css', import.meta.url), 'utf8');
+const APP = readFileSync(new URL('../../src/web/public/app.js', import.meta.url), 'utf8');
 const rem = (s) => Number(String(s).replace('rem', ''));
 
 function blocco(soglia) {
@@ -32,13 +33,13 @@ function blocco(soglia) {
 }
 
 test('l\'editor misura se stesso: nessuna soglia sulla finestra', () => {
-  assert.match(CSS, /#lp-box, #lp-box-dona \{ container: lp \/ inline-size; \}/);
+  assert.match(CSS, /\.lp-casa \{ container: lp \/ inline-size; \}/);
   assert.doesNotMatch(CSS, /@media \(min-width: 1101px\)|@media \(min-width: 1380px\)|@media \(max-width: 1100px\) \{\s*\.lp-editor/, 'le vecchie soglie sulla finestra non ci sono piu\'');
 });
 
 test('le soglie sono la somma delle colonne, e l\'anteprima tiene il telefono intero', () => {
   const gap = rem(CSS.match(/\.lp-editor \{ display: grid; grid-template-columns: 1fr; gap: ([\d.]+rem)/)[1]);
-  const telefono = rem(CSS.match(/\.lp-telefono:not\(\.schermo\) \{ width: min\(([\d.]+rem), 100%\)/)[1]);
+  const telefono = rem(CSS.match(/\.lp-posto:not\(\.schermo\) > \.lp-telefono \{ width: min\(([\d.]+rem), 100%\)/)[1]);
   const imbottitura = rem(CSS.match(/\.lp-anteprima \{[^}]*padding: ([\d.]+rem)/)[1]);
   const soglie = [...CSS.matchAll(/@container lp \(min-width: ([\d.]+rem)\)/g)].map((m) => m[1]);
   assert.equal(soglie.length, 2, 'due soglie: due colonne e tre colonne');
@@ -55,9 +56,19 @@ test('le soglie sono la somma delle colonne, e l\'anteprima tiene il telefono in
   assert.ok(Math.abs(anteprimaDue - anteprimaTre) < 1e-9, 'e la stessa anteprima minima vale per tutte e due le soglie');
 });
 
-test('l\'editor ha lo stesso spazio nella Pagina link e nelle Donazioni', () => {
+test('l\'editor ha lo stesso spazio nella Pagina link, nelle Donazioni e nel Negozio', () => {
   // Lo spazio largo lo chiede l'editor, non la scheda: prima lo aveva solo la
-  // Pagina link, e le Donazioni aprivano lo stesso editor in 1080 px.
-  assert.match(ANIME, /body:has\(\.pannello-scheda\.visibile :is\(#lp-box, #lp-box-dona\)\) \.contenuto \{\n  max-width: none;/);
+  // Pagina link, e le Donazioni aprivano lo stesso editor in 1080 px. Poi e'
+  // arrivato il Negozio, e le liste di id (#lp-box, #lp-box-dona) non lo
+  // conoscevano: una colonna sola anche su uno schermo largo. Adesso la casa
+  // dell'editor nasce da una funzione sola, con la sua classe: una casa nuova
+  // e' un contenitore e chiede lo spazio largo senza che nessuno se ne ricordi.
+  assert.match(ANIME, /body:has\(\.pannello-scheda\.visibile \.lp-casa:not\(\[hidden\] \*\)\) \.contenuto \{\n  max-width: none;/);
   assert.doesNotMatch(ANIME, /\[data-scheda="pagina"\]\) \.contenuto/, 'nessuna scheda ha lo spazio largo per nome');
+  assert.doesNotMatch(CSS + ANIME, /#lp-box/, 'nessuna regola nomina una casa per id');
+  const case_ = APP.match(/const LP_CASA = \{([^}]*)\};/)[1].match(/\w+(?=:)/g);
+  assert.deepEqual(case_.sort(), ['dona', 'link', 'negozio']);
+  assert.match(APP, /const lpCasaHtml = \(quale\) => `<div id="\$\{LP_CASA\[quale\]\}" class="lp-casa">/);
+  for (const q of case_) assert.ok(APP.includes(`\${lpCasaHtml('${q}')}`), `la casa «${q}» nasce da lpCasaHtml`);
+  assert.doesNotMatch(APP, /<div id="lp-box/, 'nessuna casa scritta a mano');
 });

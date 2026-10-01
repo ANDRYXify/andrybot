@@ -43,6 +43,12 @@ comandi diversi da quelli della riga italiana.
 
 ## 2026-10-01
 
+- Nell'anteprima dal vivo di pagina link, donazioni e negozio, «Schermo» mostra la pagina intera dentro il suo riquadro, e la vista scelta resta anche quando cambi tema. [vai: negozio]
+  en: In the live preview of the link, donations and shop pages, «Desktop» shows the whole page inside its frame, and the chosen view stays when you change theme.
+  es: En la vista previa en directo de las páginas de enlaces, donaciones y tienda, «Pantalla» muestra la página entera dentro de su recuadro, y la vista elegida se queda aunque cambies de tema.
+- L'editor della pagina del negozio si allarga come quello della pagina link: su uno schermo largo pezzi, anteprima e comandi stanno affiancati. [vai: negozio]
+  en: The shop page editor widens like the link page one: on a wide screen, pieces, preview and settings sit side by side.
+  es: El editor de la página de la tienda se ensancha como el de la página de enlaces: en una pantalla ancha, piezas, vista previa y ajustes quedan lado a lado.
 - L'anteprima del link non taglia più i nomi a un numero di lettere: ogni testo si misura e si rimpicciolisce quanto serve per starci intero. [vai: negozio]
   en: The link preview no longer cuts names at a number of letters: every text is measured and shrinks as much as needed to fit whole.
   es: La vista previa del enlace ya no corta los nombres a un número de letras: cada texto se mide y se reduce lo necesario para caber entero.
