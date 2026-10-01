@@ -209,8 +209,8 @@ body.leggero .cerca-voce, body.leggero .cerca-sugg .chip-domanda, body.leggero .
 .mod-sez + .mod-sez { margin-top: 22px; }
 .mod-sez > h3 { font-size: .7rem; text-transform: uppercase; letter-spacing: .13em; color: var(--testo-3); margin: 0 0 12px; font-weight: 600; }
 .mod-griglia { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 11px 26px; align-items: start; }
-.mod-voce { display: flex; align-items: flex-start; gap: 9px; }
-.mod-voce > input[type="checkbox"] { margin-top: .18em; flex: 0 0 auto; }
+.mod-voce { display: flex; align-items: baseline; gap: 9px; }
+.mod-voce > input[type="checkbox"] { flex: 0 0 auto; margin: 0; position: relative; top: .18em; }
 .mod-voce label { display: inline; line-height: 1.5; cursor: pointer; }
 .mod-voce label input[type="number"] { max-width: 4.6rem; margin: 0 2px; }
 .reg-inc + .reg-inc { border-top: 1px solid var(--border); }
@@ -579,8 +579,8 @@ body.pad-vivo #plancia-lancia { bottom: calc(130px + env(safe-area-inset-bottom,
   textarea { min-height: 96px; line-height: 1.55; }
   input[type="file"] { font-size: .92rem; padding: .7rem .8rem; }
 
-  .riga-check { margin: .95rem 0; gap: .7rem; min-height: 40px; align-items: center; }
-  .riga-check label { padding: .3rem 0; line-height: 1.4; }
+  .riga-check { margin: .95rem 0; gap: .7rem; min-height: 40px; }
+  .riga-check > label { padding-block: .3rem; line-height: 1.4; }
   .interruttore { --lev-l: 54px; --lev-a: 32px; }
 
   .menu-voce, .drawer-voce { min-height: 46px; }
@@ -1203,6 +1203,7 @@ body.leggero .vivo::after, body.meno-moto .vivo::after { animation: none; opacit
   font-size: .78rem; color: var(--testo-2); white-space: nowrap;
 }
 .ovl-spunta input { accent-color: var(--acc); margin: 0; }
+.ovl-spunta + .ovl-spunta { margin-left: .7rem; }
 .ovl-zoom-v { font-size: .78rem; font-variant-numeric: tabular-nums; color: var(--testo-2); min-width: 40px; text-align: center; }
 
 .ovl-scena { display: grid; grid-template-columns: minmax(0, 1fr) 210px; gap: 10px; margin-top: 10px; align-items: start; }

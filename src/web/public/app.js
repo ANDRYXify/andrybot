@@ -19787,7 +19787,7 @@ function pannelloEffetti() {
       <select id="eff-schermo">${_opzioniSchermo('')}</select>
       <p class="suggerimento">${_spiegaSchermo()}</p>
 
-      <div class="riga-check spazio-sopra" style="display:block">
+      <div class="spazio-sopra">
         <label class="riga-check"><input type="checkbox" id="eff-pubblico"> ${_bIco(ICO.globo)}<strong>${L('Rendi pubblico', 'Make it public', 'Hazlo público')}</strong> — ${L('condividilo con gli altri streamer nella libreria', 'share it with other streamers in the library', 'compártelo con otros streamers en la biblioteca')}</label>
       </div>
       <div id="eff-nome-box" class="spazio-sopra" hidden>

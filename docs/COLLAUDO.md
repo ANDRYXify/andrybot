@@ -361,8 +361,36 @@ Due cose che prima lo facevano passare a vuoto, o lo rendevano difficile:
   git notes add -m "Novità: nessuna (perché)" <sha>
   ```
 
-  La nota non cambia il commit. Quando si spinge, le note vanno con lui:
-  la cartella da cui si spinge le prende insieme al ramo
-  (`git fetch <repo> main refs/notes/commits:refs/notes/commits`), e il push
-  manda anche `refs/notes/commits`, così la dichiarazione resta accanto al
-  commit anche su GitHub.
+  La nota non cambia il commit. Serve dove il cancello controlla, cioè nella
+  cartella da cui si spinge: quella la prende insieme al ramo
+  (`git fetch <repo> main refs/notes/commits:refs/notes/commits`). Su GitHub
+  le note non vanno: da qui il riferimento `refs/notes/commits` non si può
+  spingere (il primo tentativo è stato rifiutato con un 403), e non serve,
+  perché un commit già su GitHub il cancello non lo guarda più. Si spinge solo
+  il ramo, come sempre.
+
+## Le scelte stanno con le loro parole
+
+`scripts/verifica-scelte.mjs` apre ogni scheda del pannello con tutte le
+sezioni aperte, al telefono (390) e al computer (1280), e misura ogni casella e
+ogni pallino che ha un'etichetta:
+
+- sta sulla stessa riga delle sue parole, a non più di 24 pixel;
+- fra le parole delle scelte su quella riga, le più vicine sono le sue;
+- non sta sopra le sue parole;
+- se la frase va a capo, riparte sotto il suo inizio, non in colonna.
+
+Nasce da uno screenshot: sul telefono le quattro scelte della moneta andavano a
+capo dove capitava. La causa non era quel gruppo. `.riga-check` aveva due
+regole, una che la faceva riga e una dell'Overlay Studio che la faceva pezzo
+in linea, e vinceva la seconda dappertutto. La prima misura ha trovato 27
+scelte fuori posto in 444.
+
+Adesso la regola è una sola: la casella (o il pallino) è appesa a sinistra,
+allineata alla prima riga, e le parole scorrono come un paragrafo con il loro
+rientro. Il rientro si applica solo a una riga che comincia davvero con una
+casella. Un riquadro che ha un suo margine interno dichiara `--rc-lato` e
+`--rc-cima` invece di riscrivere il margine, così la casella resta dentro.
+Una riga che contiene un campo (un numero, un menù) si allinea al centro del
+campo. Più scelte affiancate le mette in fila il contenitore
+(`.riga-flessibile`), non la riga.

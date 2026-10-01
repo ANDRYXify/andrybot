@@ -336,8 +336,8 @@ const SCUSA = /novit[àa]'?\s*:\s*(no|nessuna)\b/i;
 // La dichiarazione puo' stare anche in una NOTA attaccata al commit (git notes,
 // refs/notes/commits). Serve quando un commit gia' fatto se l'e' dimenticata:
 // la nota si aggiunge dopo senza riscrivere il commit, quindi la cronologia
-// resta quella e niente va rifatto. Le note viaggiano col push (vedi
-// docs/COLLAUDO.md), cosi' la dichiarazione resta accanto al commit anche fuori.
+// resta quella e niente va rifatto. La nota serve dove si controlla, cioe' nella
+// cartella da cui si spinge, che la prende insieme al ramo (vedi docs/COLLAUDO.md).
 const notaDi = (sha) => { try { return git('notes', 'show', sha); } catch { return ''; } };
 const muti = [];
 for (const sha of daSpingere) {

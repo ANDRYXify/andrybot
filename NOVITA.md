@@ -41,6 +41,15 @@ questa non è una cosa da ricordarsi: il cancello boccia una riga pubblica senza
 traduzione, una traduzione staccata dalla sua riga, o una che dice numeri e
 comandi diversi da quelli della riga italiana.
 
+## 2026-10-01
+
+- Le scelte con caselle e pallini stanno ognuna sulla sua riga, con la casella accanto alle sue parole: sul telefono quelle del nome della moneta andavano a capo dove capitava. [vai: giochi]
+  en: Checkbox and radio choices each sit on their own line, with the box next to its words: on phones, the coin name choices used to wrap at random.
+  es: Las opciones con casillas y botones van cada una en su línea, con la casilla junto a sus palabras: en el móvil las del nombre de la moneda saltaban de línea donde caía.
+- Una frase lunga accanto a una casella va a capo sotto di sé, e nella barra dell'Overlay Studio ogni spunta sta più vicina alla sua parola che a quella prima. [vai: alert]
+  en: A long sentence next to a checkbox wraps under itself, and in the Overlay Studio toolbar each checkbox sits closer to its own word than to the one before.
+  es: Una frase larga junto a una casilla salta de línea debajo de sí misma, y en la barra de Overlay Studio cada casilla queda más cerca de su palabra que de la anterior.
+
 ## 2026-09-30
 
 - Il QR e il media kit degli Strumenti portano all'indirizzo vero del tuo canale anche su Kick e YouTube: prima su Kick ne scrivevano uno sbagliato. [vai: qr]

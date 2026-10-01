@@ -706,7 +706,7 @@ textarea { min-height: 110px; resize: vertical; }
 input[type="range"] { width: 100%; accent-color: var(--acc); }
 input[type="number"] { width: 92px; background: var(--surface); border: 1px solid var(--border-2); border-radius: var(--r-s); color: var(--testo); padding: .5rem .6rem; font-size: .92rem; transition: border-color var(--molla), box-shadow var(--molla); }
 input[type="number"]:focus { outline: none; border-color: var(--acc); box-shadow: 0 0 0 3px var(--acc-tint); }
-input[type="checkbox"] { accent-color: var(--acc); width: 1.05rem; height: 1.05rem; }
+input[type="checkbox"], input[type="radio"] { accent-color: var(--acc); width: 1.05rem; height: 1.05rem; }
 .fam-barra {
   display: flex; flex-wrap: wrap; gap: 4px;
   margin: 1rem 0 0;
@@ -747,8 +747,13 @@ input[type="checkbox"] { accent-color: var(--acc); width: 1.05rem; height: 1.05r
 }
 .sotto-titolo:first-child { margin-top: 0; padding-top: 0; border-top: 0; }
 
-.riga-check { display: flex; align-items: center; gap: .55rem; margin: .7rem 0; }
-.riga-check label { cursor: pointer; }
+.riga-check { --rc-lato: 0px; --rc-cima: 0px; display: block; position: relative; padding-left: var(--rc-lato); margin: .7rem 0; font-size: .9rem; }
+.riga-check:has(> input:is([type="checkbox"], [type="radio"]):first-child) { padding-left: calc(var(--rc-lato) + 1.05rem + .6rem); }
+label.riga-check, .riga-check label { cursor: pointer; }
+.riga-check > input:is([type="checkbox"], [type="radio"]):first-child { position: absolute; left: var(--rc-lato); top: calc(var(--rc-cima) + .25em); top: calc(var(--rc-cima) + (1lh - 1.05rem) / 2); margin: 0; }
+.riga-check:has(> :is(input:not([type="checkbox"]):not([type="radio"]), select)) { display: flex; align-items: center; gap: .6rem; padding-left: 0; }
+.riga-check:has(> :is(input:not([type="checkbox"]):not([type="radio"]), select)) > input:is([type="checkbox"], [type="radio"]) { position: static; flex: none; }
+.riga-flessibile > .riga-check { margin: 0; }
 
 input[type="file"] { width: 100%; background: var(--surface-2); border: 1px solid var(--border-2); border-radius: var(--r-s); color: var(--testo-2); padding: .5rem .7rem; font-size: .9rem; }
 input[type="file"]::file-selector-button { background: var(--acc); color: var(--su-acc); border: none; border-radius: var(--r-xs); padding: .4rem .9rem; margin-right: .8rem; cursor: pointer; font-weight: 600; font-family: inherit; transition: background var(--molla); }
@@ -1307,7 +1312,7 @@ input[type="file"]::file-selector-button:hover { background: var(--acc-600); }
 .cont-verbo input, .cont-verbo select { min-width: 0; }
 @media (max-width: 620px) { .cont-verbo { grid-template-columns: 1fr; gap: .2rem; } }
 .cont-ov-form { padding: .6rem .2rem .2rem; }
-.cont-ov-form .riga-mostra { padding: .4rem .55rem; border: 1px solid var(--acc-bordo); border-radius: var(--r-s); background: var(--acc-soft); }
+.cont-ov-form .riga-mostra { --rc-lato: .55rem; --rc-cima: .4rem; padding-top: .4rem; padding-bottom: .4rem; padding-right: .55rem; border: 1px solid var(--acc-bordo); border-radius: var(--r-s); background: var(--acc-soft); }
 .cont-fine { margin-top: .55rem; }
 .cont-fine > summary { cursor: pointer; font-size: .8rem; color: var(--testo-3); user-select: none; }
 @media (hover: hover) {
@@ -1366,8 +1371,6 @@ input[type="file"]::file-selector-button:hover { background: var(--acc-600); }
 }
 .ovl-elem .oe-sw { flex: none; }
 
-.riga-check { display: inline-flex; align-items: center; gap: .4rem; font-size: .9rem; margin-right: 1.2rem; cursor: pointer; }
-.riga-check input { width: 16px; height: 16px; }
 
 #ovl-css, .lp-css { min-height: 130px; font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: .85rem; white-space: pre; }
 .lp-css { width: 100%; resize: vertical; }
@@ -1721,8 +1724,7 @@ body.leggero .scheletro::after, body.meno-moto .scheletro::after { animation: no
 .gr-auto h3 { margin: 0 0 .2rem; font-size: 1rem; }
 .gr-auto > .suggerimento { margin: 0 0 .3rem; }
 .gr-auto-riga { padding: .65rem 0 .4rem; border-top: 1px solid var(--border); }
-.gr-auto-riga .riga-check { margin: 0; align-items: flex-start; }
-.gr-auto-riga .riga-check input { margin-top: .2rem; }
+.gr-auto-riga .riga-check { margin: 0; }
 .gr-auto-quanto { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; margin: .4rem 0 .2rem 1.6rem; font-size: .9rem; }
 .gr-auto-tit { margin: 0 0 .35rem; }
 .gr-auto .gr-ig-auto { margin-top: 0; padding-top: 0; border-top: 0; }
