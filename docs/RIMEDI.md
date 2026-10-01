@@ -53,7 +53,9 @@ collegamento da rifare deve stare in uno di due posti:
 - la chiave `staff:` di un `aChiPuo(...)`, mentre la chiave `pubblico:` accanto non li nomina
   mai;
 - l'elenco del cancello, col destinatario e il perché: un comando che risponde solo allo
-  staff, una mail o un messaggio Telegram al proprietario, un errore mostrato nel pannello.
+  staff, una mail o un messaggio Telegram al proprietario, un errore mostrato nel pannello,
+  una pagina pubblica che si rivolge per nome a chi ha il canale («Se il negozio è tuo, lo
+  apri dal pannello», sulla pagina del negozio chiuso).
 
 Un testo nuovo che non sta in nessuno dei due è rosso finché qualcuno non decide a chi
 arriva. Una voce dell'elenco che non trova più il suo testo è rossa anche lei. L'autoprova lo
