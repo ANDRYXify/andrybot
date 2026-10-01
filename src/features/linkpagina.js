@@ -717,10 +717,13 @@ export function renderLinkPage(pagina, { login, display, avatar, baseUrl, antepr
   const imgAvatar = imgCustom || (avatar && login ? `${baseUrl || ''}/u/${encodeURIComponent(login)}/avatar` : '');
   // La testa: foto, titolo, sottotitolo. Di solito sta in cima da sola; nella
   // pagina del negozio e' un pezzo come gli altri, e sta dove la metti.
+  // L'iniziale e' quella del nome: nel negozio il titolo comincia di solito
+  // con «Il negozio di», e una «I» nel cerchio non e' la faccia di nessuno.
+  const lettera = iniziale(negozio ? (display || login) : titolo);
   const testa = () => `${mostraAvatar ? (imgAvatar
     ? `<img class="avatar" src="${esc(imgAvatar)}" alt="" width="88" height="88" loading="eager" data-ripiego>
-         <div class="avatar" aria-hidden="true" style="display:none">${esc(iniziale(titolo))}</div>`
-    : `<div class="avatar" aria-hidden="true">${esc(iniziale(titolo))}</div>`) : ''}
+         <div class="avatar" aria-hidden="true" style="display:none">${esc(lettera)}</div>`
+    : `<div class="avatar" aria-hidden="true">${esc(lettera)}</div>`) : ''}
     <h1>${esc(titolo)}</h1>
     ${pagina.tagline ? `<p class="tag">${esc(pagina.tagline)}</p>` : ''}`;
   const testaInUnPezzo = !!negozio && (pagina.blocchi || []).some((b) => b?.tipo === 'intestazione');

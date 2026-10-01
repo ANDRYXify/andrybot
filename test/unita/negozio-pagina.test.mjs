@@ -157,6 +157,13 @@ test('negozio aperto ma vuoto: la pagina lo dice', () => {
   assert.ok(t.includes('Il negozio per ora è vuoto'), t.slice(0, 300));
 });
 
+test('senza foto, nel cerchio c\'e\' l\'iniziale del canale e non quella del titolo', () => {
+  const ch = canale();
+  const h = P.htmlPaginaNegozio(ch, { baseUrl: BASE, display: 'Zeno' });
+  assert.match(testo(h), /Il negozio di Zeno/, 'il titolo di partenza comincia con «Il»');
+  assert.match(h, /<div class="avatar" aria-hidden="true">Z<\/div>/, 'il cerchio dice di chi e\' il negozio');
+});
+
 test('le parole sono nella lingua del canale, il prezzo regge con ogni numero, la moneta si accorda', () => {
   const ch = canale({ nomeMonete: 'Semi di girasole', preferenze: { lingua: 'it' } });
   articolo(ch, { nome: 'Spilla', prezzo: 1, requisiti: [{ tipo: 'ruolo', soglia: 1 }, { tipo: 'ore', soglia: 5 }], scorte: { modo: 'persona', n: 1 } });

@@ -323,11 +323,11 @@ export function opzioniDaDati(v) {
   .ng-sez-t{font-family:var(--fd);font-weight:var(--pm);font-size:1.15rem;letter-spacing:-.01em;margin:.6rem 0 .5rem}
   .ng-griglia{display:grid;gap:var(--aria);grid-template-columns:repeat(var(--ng-col),minmax(0,1fr))}
   @media (max-width:40rem){.ng-griglia.c3{grid-template-columns:repeat(2,minmax(0,1fr))}}
-  @media (max-width:27rem){.ng-griglia{grid-template-columns:minmax(0,1fr)}}
+  @media (max-width:27rem){.ng-griglia.c2,.ng-griglia.c3{grid-template-columns:minmax(0,1fr)}}
   .ng-art{display:flex;flex-direction:column;min-width:0;border-radius:var(--r);overflow:hidden;${stileBtn};${ombra};color:var(--btxt);text-align:left}
   .ng-img{display:block;width:100%;aspect-ratio:var(--ng-forma);object-fit:cover;background:${c.bg2}}
   .ng-art.f-libero .ng-img{height:auto}
-  .ng-segnaposto{display:grid;place-items:center;width:100%;aspect-ratio:var(--ng-forma);background:${c.bg2};color:var(--acc)}
+  .ng-segnaposto{display:grid;place-items:center;width:100%;aspect-ratio:var(--ng-forma);max-height:7.5rem;background:${c.bg2};color:var(--acc)}
   .ng-art.f-libero .ng-segnaposto{aspect-ratio:16 / 9}
   .ng-corpo{display:flex;flex-direction:column;gap:.45rem;padding:.85rem .95rem .95rem;flex:1}
   .ng-tipo{font-size:.72rem;letter-spacing:.05em;text-transform:uppercase;color:var(--tenue);font-weight:var(--pm)}
@@ -341,8 +341,8 @@ export function opzioniDaDati(v) {
   .ng-prezzo{display:flex;align-items:baseline;flex-wrap:wrap;gap:.45rem;margin-top:auto}
   .ng-prezzo-m{font-size:.74rem;text-transform:uppercase;letter-spacing:.06em;color:var(--tenue);font-weight:var(--pm)}
   .ng-prezzo-n{font-family:var(--fd);font-weight:var(--pf);font-size:1.3rem;color:var(--testo)}
-  .ng-cmd{display:flex;align-items:center;gap:.5rem;border-top:1px solid ${c.bordo};padding-top:.6rem;margin-top:.25rem}
-  .ng-cmd code{flex:1;min-width:0;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.88rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .ng-cmd{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem;border-top:1px solid ${c.bordo};padding-top:.6rem;margin-top:.25rem}
+  .ng-cmd code{flex:1 1 9rem;min-width:0;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.88rem;overflow-wrap:anywhere}
   .ng-es{flex:0 0 auto;font-size:.8rem;color:var(--tenue)}
   .ng-copia{flex:0 0 auto;font:inherit;font-size:.82rem;font-weight:var(--pm);min-height:2.25rem;padding:.35rem .8rem;border-radius:calc(var(--r) * .6);border:1px solid var(--acc);background:transparent;color:var(--testo);cursor:pointer}
   .ng-copia:hover,.ng-copia:focus-visible{background:var(--acc);color:var(--suacc)}
