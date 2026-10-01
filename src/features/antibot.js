@@ -82,12 +82,18 @@ export const ANTIBOT_DEFAULT = {
 };
 
 // Bot NOTORIAMENTE buoni: non si toccano mai. In minuscolo.
+//
+// Sono anche gli unici bot di servizio del prodotto: le ore guardate e il muro
+// delle emote ne avevano due liste loro, scritte a mano e diverse da questa.
+// Adesso le leggono da qui (BOT_DI_SERVIZIO), e «e' un bot?» lo dice solo eBot.
 const BUONI = new Set([
   'nightbot', 'streamelements', 'streamlabs', 'moobot', 'wizebot', 'fossabot',
   'sery_bot', 'soundalerts', 'buttsbot', 'pretzelrocks', 'commanderroot',
   'own3d', 'tangiabot', 'kofistreambot', 'blerp', 'lattemotte', 'streamstickers',
   'creatisbot', 'phantombot', 'deepbot', 'coebot', 'botisimo', 'stay_hydrated_bot',
+  'botrixoficial', 'pokemoncommunitygame', 'frostytoolsdotcom', 'streamcaptainbot',
 ]);
+export const BOT_DI_SERVIZIO = BUONI;
 
 // Pattern dei nomi tipici dei follow-bot promozionali ("comprati follower").
 // Alta precisione di proposito: meglio lasciarne passare qualcuno che bannare
@@ -163,6 +169,22 @@ export function nomeBot(login, cfg = {}) {
   if (cfg.listaAuto !== false && listaEsterna.has(l)) return true;   // lista aggiornata
   return PATTERN_BOT.some((re) => re.test(l));
 }
+
+// E' UN BOT? Per le cose che contano le PERSONE (monete, ore guardate, presenze)
+// la domanda e' un fatto, non una scelta dello scudo: un bot di servizio, un bot
+// della lista aggiornata, un nome da bot o uno della lista «Blocca sempre» non
+// e' pubblico, anche se lo scudo non lo blocca. Lo streamer resta l'ultima
+// parola solo per dire «questo NON e' un bot» (gli esentati).
+export function eBot(login, cfg = {}) {
+  const l = norm(login);
+  if (!l) return false;
+  if (BUONI.has(l)) return true;
+  if ((cfg.esenti || []).map(norm).includes(l)) return false;
+  if ((cfg.extra || []).map(norm).filter(Boolean).includes(l)) return true;
+  return listaEsterna.has(l) || PATTERN_BOT.some((re) => re.test(l));
+}
+export const scudoDi = (channel) => ({ ...ANTIBOT_DEFAULT, ...(streamers.get(norm(channel))?.settings?.antibot || {}) });
+export const ePersona = (channel, login) => !eBot(login, scudoDi(channel));
 
 // La lista «Blocca sempre» e' dello streamer, e dice «sempre»: vale con lo
 // scudo acceso anche quando l'elenco dei nomi da bot e' spento. Prima stava

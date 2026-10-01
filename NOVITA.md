@@ -43,6 +43,15 @@ comandi diversi da quelli della riga italiana.
 
 ## 2026-10-01
 
+- Le monete che arrivano da sole si possono spegnere, fermare dopo un tot di silenzio, mettere sotto un tetto e raddoppiare per un'ora; e i comandi o i messaggi ripetuti possono non contare. [vai: giochi]
+  en: Coins that come by themselves can be switched off, stopped after a while of silence, capped and doubled for an hour; and commands or repeated messages can stop counting.
+  es: Las monedas que llegan solas se pueden apagar, detener tras un rato de silencio, limitar con un tope y duplicar durante una hora; y los comandos o los mensajes repetidos pueden dejar de contar.
+- I bot che stanno in chat a guardare non prendono più monete, ore guardate né serie di presenze, e non salgono in classifica. [vai: giochi]
+  en: Bots sitting in chat to watch no longer get coins, watch time or attendance streaks, and don't climb the leaderboard.
+  es: Los bots que se quedan en el chat mirando ya no reciben monedas, horas vistas ni rachas de presencia, y no suben en la clasificación.
+- Nel pannello vedi quante monete prende in una diretta chi scrive spesso, chi ogni tanto e chi guarda in silenzio, con le regole che stai scegliendo. [vai: giochi]
+  en: The dashboard shows how many coins someone who writes often, now and then or watches in silence gets in a stream, with the rules you are choosing.
+  es: En el panel ves cuántas monedas recibe en un directo quien escribe a menudo, de vez en cuando o mira en silencio, con las reglas que estás eligiendo.
 - La pagina di un negozio chiuso ha il vestito del sito, come le altre, e a chi il negozio ce l'ha dice dove aprirlo nel pannello. [vai: negozio]
   en: The page of a closed shop now wears the site's look like the others, and tells shop owners where to open it in the dashboard.
   es: La página de una tienda cerrada lleva el aspecto del sitio como las demás, y a quien tiene la tienda le dice dónde abrirla en el panel.

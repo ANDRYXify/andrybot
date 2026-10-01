@@ -669,7 +669,7 @@ export class BotManager {
             .catch((e) => log.debug(`#${login} giro presenze:`, e?.message || e));
           // Stesso giro, stessa lista: le monete di presenza non costano
           // nemmeno una chiamata in piu' a Twitch.
-          try { games.giroMonete(login, chatters, { live: true }); }
+          try { games.giroMonete(login, chatters, { live: true, diretta: stream.id }); }
           catch (e) { log.debug(`#${login} monete:`, e?.message || e); }
           // E la presenza, che finora si deduceva dal parlare. Dedurla dal
           // parlare ha un buco che non si chiude con un caso particolare: i

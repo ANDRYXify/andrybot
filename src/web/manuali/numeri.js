@@ -6,6 +6,11 @@
 import { CATALOGO, giocoDi, valoriDi, valutaResa, presenzaOraria, MANCHE_TIPI, SLOT_TRIS, parteDi } from '../../features/giochi-conf.js';
 
 export { presenzaOraria, MANCHE_TIPI };
+// L'economia: le stesse regole che danno le monete (economia-regole.js), cosi'
+// i numeri del manuale non possono restare indietro.
+import { normalizza as regoleEconomia, quotaGiro, contiDiretta } from '../../features/economia-regole.js';
+export const PRESENZA_IN_SILENZIO = (giri, regole = {}) => quotaGiro({ attivo: false, giriFermo: giri }, regoleEconomia(regole));
+export const DIRETTA_DI_SERIE = (regole = {}) => contiDiretta(regole);
 
 // I tris della slot come li paga il motore: la parte del tris di 💎 a parole
 // e quanto fa con i valori di base.

@@ -57,6 +57,7 @@ const SOLO_SESSIONE = new Set(['requireAdmin', 'requireLogin', 'requireMod', 're
 const PUBBLICHE = new Map([
   ['GET /entra', 'la pagina di ingresso'],
   ['GET /js/carta-disegno.js', 'un file statico come gli altri del sito: il disegno della carta, senza commenti e senza dati di nessuno'],
+  ['GET /js/economia-regole.js', 'un file statico come gli altri del sito: i conti dell\'economia delle monete, senza commenti e senza dati di nessuno'],
   ['GET /font/:file', 'i caratteri della carta: solo i tre nomi dell\'elenco, e sono file gia\' pubblici per licenza'],
   ['GET /instagram/cancellazione', 'dove Meta manda chi ha chiesto di cancellare i dati: riconosce solo i codici firmati da noi, e non mostra niente di nessuno'],
   ['GET /pubblici/:nome', 'l\'immagine della settimana mentre Instagram la scarica: nome casuale da 128 bit, cancellata appena pubblicata'],
@@ -143,6 +144,7 @@ const PUBBLICHE = new Map([
 // chi e' gia' dentro, e da fuori il sito resta un labirinto.
 const SOLO_DENTRO = new Map([
   ['GET /js/carta-disegno.js', 'la usa l\'editor della carta, che sta nel pannello'],
+  ['GET /js/economia-regole.js', 'la usa il pannello per i conti di una diretta, nella scheda Giochi'],
   ['GET /font/:file', 'li usa l\'editor della carta, che sta nel pannello'],
   ['GET /auth/logout', 'senza sessione non c\'e\' niente da chiudere'],
 ]);

@@ -26,9 +26,8 @@ const log = makeLog('muro');
 
 // I bot di chat piu' diffusi: scrivono emote nei loro annunci, e un muro che
 // vola a ogni annuncio di un bot non e' la chat che reagisce.
-export const BOT_NOTI = new Set(['nightbot', 'streamelements', 'streamlabs', 'moobot', 'fossabot', 'wizebot',
-  'soundalerts', 'sery_bot', 'botrixoficial', 'kofistreambot', 'pokemoncommunitygame', 'streamstickers', 'blerp',
-  'frostytoolsdotcom', 'own3d', 'tangiabot', 'deepbot', 'coebot', 'phantombot', 'streamcaptainbot']);
+import { BOT_DI_SERVIZIO as BOT_NOTI } from './antibot.js';
+export { BOT_NOTI };
 
 const MAX_PAROLE = 20;
 // Il nome canonico del comando: in chat lo si chiama come lo streamer l'ha

@@ -58,6 +58,8 @@ import { statoBackup, backupOra } from '../backup.js';
 import { risolviCanaleId } from '../features/youtube.js';
 import * as abbonamenti from '../features/abbonamenti.js';
 import * as presenze from '../features/presenze.js';
+import * as economia from '../features/economia.js';
+import { regolePerIlBrowser } from '../features/economia-servita.js';
 import * as statistiche from '../features/statistiche.js';
 import * as rapporto from '../features/rapporto.js';
 import * as bitFeat from '../features/bit.js';
@@ -1005,6 +1007,15 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // arrivare a chi apre F12. Si spoglia una volta all'avvio, non a ogni
   // richiesta.
   const DISEGNO_JS = cartaLive.disegnoPerIlBrowser();
+  // Le regole dell'economia, servite allo stesso modo: il pannello fa i conti di
+  // una diretta con lo stesso file con cui il bot da' le monete
+  // (economia-servita.js). Solo conti, nessun dato di nessuno.
+  const REGOLE_ECONOMIA_JS = regolePerIlBrowser();
+  app.get('/js/economia-regole.js', (req, res) => {
+    if (!REGOLE_ECONOMIA_JS) return notFound(res);
+    res.set('Content-Type', 'application/javascript; charset=utf-8')
+      .set('Cache-Control', 'public, max-age=3600').send(REGOLE_ECONOMIA_JS);
+  });
   app.get('/js/carta-disegno.js', (req, res) => {
     if (!DISEGNO_JS) return notFound(res);
     res.set('Content-Type', 'application/javascript; charset=utf-8')
@@ -6238,6 +6249,16 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     res.json(giveaway.stato(currentUser(req).login));
   });
 
+  // L'ORA DOPPIA dal pannello (docs/ECONOMIA.md): la stessa del comando !doppio.
+  // I conti di una diretta il pannello li fa da se', con /js/economia-regole.js.
+  app.get('/api/monete/doppio', requireOwner, (req, res) => res.json({ doppio: economia.doppio(currentUser(req).login) }));
+  app.post('/api/monete/doppio', requireOwner, (req, res) => {
+    const login = currentUser(req).login;
+    const b = req.body || {};
+    if (b.stop) { economia.spegniDoppio(login); return res.json({ doppio: null }); }
+    res.json({ doppio: economia.accendiDoppio(login, { minuti: b.minuti, x: b.x }) });
+  });
+
   app.post('/api/giveaway/apri', requireOwner, (req, res) => {
     const login = currentUser(req).login;
     const b = req.body || {};
@@ -6639,12 +6660,12 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     if (b.formaMonete !== undefined) out.formaMonete = formaValida(b.formaMonete) ? b.formaMonete : '';
     // Le manopole di ogni gioco: le dichiara e le normalizza il catalogo.
     if (b.giochiConf !== undefined) out.giochiConf = giochiConf.normalizzaConf(s.settings?.giochiConf, b.giochiConf);
-    // personalizzazione punti/classifica: quanti punti per messaggio, premi dei
-    // giochi, quanti in classifica. Valori limitati a range sensati.
+    // L'economia delle monete: le regole le ripulisce la stessa funzione che le
+    // applica (economia.normalizza), cosi' i limiti stanno in un posto solo. Un
+    // campo che il pannello non manda resta com'era, non torna al predefinito.
     if (b.punti !== undefined) {
       const p = b.punti || {};
       const c = (v, def, lo, hi) => { const n = Math.round(Number(v)); return Number.isFinite(n) ? Math.min(hi, Math.max(lo, n)) : def; };
-      const f = (v, def, lo, hi) => { const n = Number(v); return Number.isFinite(n) ? Math.min(hi, Math.max(lo, n)) : def; };
       // I premi e i costi dei giochi stavano qui e adesso stanno in
       // giochiConf (giochi-conf.js). I valori vecchi si portano avanti come
       // sono, senza riscriverli col predefinito: sono la memoria di chi li
@@ -6655,18 +6676,7 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
         if (p[k] !== undefined) vecchi[k] = c(p[k], giaQui[k] ?? 0, lo, hi);
         else if (giaQui[k] !== undefined) vecchi[k] = giaQui[k];
       }
-      out.punti = {
-        ...vecchi,
-        perMessaggio: c(p.perMessaggio, 2, 0, 1000),
-        ogniSecondi:  c(p.ogniSecondi, 60, 5, 3600),
-        topN:         c(p.topN, 5, 3, 10),
-        perPresenza:  c(p.perPresenza, 5, 0, 10000),
-        perAttivita:  c(p.perAttivita, 5, 0, 10000),
-        moltSub:      f(p.moltSub, 1.5, 1, 10),
-        moltVip:      f(p.moltVip, 1.25, 1, 10),
-        lurkPasso:    f(p.lurkPasso, 0.15, 0, 1),
-        lurkMinimo:   f(p.lurkMinimo, 0.35, 0, 1),
-      };
+      out.punti = { ...vecchi, ...economia.normalizza({ ...giaQui, ...p }) };
     }
     // richieste musicali (!sr): modo di pagamento/permesso + costo + premio
     if (b.musica !== undefined) {

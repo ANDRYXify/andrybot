@@ -18,6 +18,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { guscioVetrina, guscioPannello, indirizzoHome } from '../src/web/vetrina-vista.js';
 import { disegnoPerIlBrowser, CARATTERI_AMMESSI, CARTELLA_CARATTERI } from '../src/features/carta-servita.js';
+import { regolePerIlBrowser } from '../src/features/economia-servita.js';
 
 const RAD = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 export const PUB = path.join(RAD, 'src/web/public');
@@ -103,6 +104,10 @@ export async function apriSito({ api = () => ({}), kick = true, youtube = false,
     if (q === '/js/carta-disegno.js') {
       res.writeHead(200, { 'content-type': 'text/javascript; charset=utf-8' });
       return res.end(disegnoPerIlBrowser());
+    }
+    if (q === '/js/economia-regole.js') {
+      res.writeHead(200, { 'content-type': 'text/javascript; charset=utf-8' });
+      return res.end(regolePerIlBrowser());
     }
     if (q.startsWith('/font/')) {
       const nome = q.slice(6);

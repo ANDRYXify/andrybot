@@ -2,7 +2,7 @@
 // Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // Manuale: Manuale dei giochi e delle monete. La forma dei manuali e il perche' stanno in
 // src/web/manuali.js; le lingue in docs/LINGUE.md.
-import { DI_SERIE, RESA, CIFRA, ATTESE, ATTESA, SLOT, righeRegole, righePesca, presenzaOraria, MANCHE_TIPI } from '../numeri.js';
+import { DI_SERIE, RESA, CIFRA, ATTESE, ATTESA, SLOT, righeRegole, righePesca, presenzaOraria, MANCHE_TIPI, PRESENZA_IN_SILENZIO, DIRETTA_DI_SERIE } from '../numeri.js';
 
 // Le attese di un gioco dentro le tabelle: «nessuna» al posto del trattino.
 const ATT = (id) => { const t = ATTESE(id); return t === '\u2014' ? 'nessuna' : t; };
@@ -67,7 +67,7 @@ export default {
     { tabella: righeRegole() },
 
     { h3: 'Punti & classifica' },
-    { p: ['Qui decidi quante monete si guadagnano. Ci sono tre entrate, e si sommano.'] },
+    { p: ['Qui decidi come si guadagnano le monete, a chi non arrivano e quando smettono di arrivare. Ci sono tre entrate che arrivano da sole, e si sommano.'] },
     { tabella: [
       ['Entrata', 'A chi', 'Quando', 'Di base'],
       ['Messaggio', 'a chi scrive', 'al massimo una volta ogni 60 secondi a testa, anche a canale spento', '2 monete'],
@@ -75,31 +75,44 @@ export default {
       ['Partecipazione', 'in più, a chi ha scritto in quel giro', 'ogni giro di cinque minuti, solo in diretta', '5 monete'],
     ] },
     { p: [
-      'Presenza e partecipazione arrivano solo mentre sei in diretta, e non c\'è una scelta per darle a canale spento. Le monete per messaggio arrivano sempre, anche a canale spento se il bot è in chat.',
-      'Presenza, partecipazione, moltiplicatori e le due quote del silenzio stanno sotto «Guadagno mentre guardano».',
+      'Tutto quello che arriva da solo passa da una porta sola, con le regole sempre nello stesso ordine: chi è, se l\'entrata è accesa, se il messaggio conta, il silenzio, i moltiplicatori, i tetti. Anche il bonus delle serie di presenze passa di lì. Giochi, negozio e Moduli invece no: sono scambi che decide qualcuno, e non hanno tetti.',
+      '«Arrivano anche da sole: coi messaggi, con la presenza e con le serie» spegne tutte e tre le entrate insieme: le monete si guadagnano solo giocando, coi Moduli e con quello che dai tu.',
     ] },
     { tabella: [
       ['Controllo', 'Di base', 'Limiti', 'Cosa fa'],
+      ['«Quanti in classifica»', '5', '3–10', 'Quante righe mostra <code>!classifica</code>.'],
+      ['«Arrivano anche da sole: coi messaggi, con la presenza e con le serie»', 'acceso', '', 'Spento, niente cresce da sé.'],
       ['«Punti per messaggio»', '2', '0–1000', 'Monete a chi scrive. A 0 questa entrata si spegne.'],
       ['«…ogni quanti secondi»', '60', '5–3600', 'Ogni quanto una persona può riprendere le monete per messaggio.'],
-      ['«Quanti in classifica»', '5', '3–10', 'Quante righe mostra <code>!classifica</code>.'],
+      ['«Lettere minime perché conti»', '0', '0–100', 'Un messaggio più corto non conta. A 0 conta tutto.'],
+      ['«Anche a canale spento, se il bot è in chat»', 'acceso', '', 'Spento, le monete per messaggio arrivano solo in diretta.'],
+      ['«I comandi (!slot, !monete…) non contano»', 'spento', '', 'Un messaggio che comincia con ! non conta.'],
+      ['«Lo stesso messaggio ripetuto non conta»', 'spento', '', 'Lo stesso testo di prima, spazi e maiuscole a parte, non conta.'],
       ['«Presenza (per giro)»', '5', '0–10.000', 'Monete a ogni giro a chi è in chat.'],
-      ['«Partecipazione (in più)»', '5', '0–10.000', 'In più, a chi ha scritto in quel giro.'],
+      ['«Partecipazione (in più)»', '5', '0–10.000', 'In più, a chi ha scritto in quel giro un messaggio che conta.'],
       ['«Moltiplicatore abbonati»', '1,5', '1–10', 'Moltiplica presenza e partecipazione di un abbonato.'],
       ['«Moltiplicatore VIP»', '1,25', '1–10', 'Moltiplica presenza e partecipazione di un VIP.'],
-      ['«Quanto cala per giro in silenzio»', '0,15', '0–1', 'Quanta presenza perde a ogni giro chi resta zitto.'],
-      ['«Non scende sotto»', '0,35', '0–1', 'La quota minima della presenza di chi resta zitto.'],
+      ['«Presenza piena per (minuti)»', '0', '0–600', 'Per quanti minuti di silenzio la presenza resta piena.'],
+      ['«Poi cala a ogni giro di (%)»', '15%', '0–100%', 'Quanta presenza perde a ogni giro chi resta zitto.'],
+      ['«Fino a (% della presenza)»', '35%', '0–100%', 'La quota minima della presenza di chi resta zitto.'],
+      ['«Si ferma dopo (minuti, 0 = mai)»', '0', '0–1440', 'Dopo tanti minuti di silenzio la presenza non vale più niente, finché non scrive.'],
+      ['«Al massimo a diretta, a testa (0 = senza)»', '0', '', 'Quante monete automatiche può prendere una persona in una diretta. A canale spento, in una giornata.'],
+      ['«Nessuno supera (0 = senza)»', '0', '', 'Oltre questo saldo le monete automatiche non arrivano più. Le vincite sì.'],
+      ['«Escludi anche (nomi separati da spazi o virgole)»', 'nessuno', 'fino a 200 nomi', 'Chi non riceve mai monete automatiche, per esempio un tuo secondo account.'],
     ] },
     { p: [
-      'Premi «Salva punti».',
-      `I moltiplicatori si leggono dai distintivi dei messaggi: chi non ha mai scritto non li ha. Chi è abbonato e VIP prende quello degli abbonati. Con i valori di base, presenza e partecipazione danno 10 monete ogni cinque minuti a chi guarda e scrive (${CIFRA(presenzaOraria({}))} all'ora), 15 a un abbonato, 13 a un VIP.`,
-      'Chi resta in silenzio continua a guadagnare, ma <strong>gradualmente meno</strong>: un gradino a ogni giro senza scrivere, fino alla quota minima. Chi torna a scrivere <strong>risale subito a quota piena</strong>. Con i valori di base:',
+      'Premi «Salva punti». Sotto, «In una diretta di due ore» fa i conti con le regole che vedi, anche prima di salvarle: quanto prende chi scrive spesso, chi ogni tanto e chi guarda in silenzio. Sono i conti del bot, non una stima a parte.',
+      `Un messaggio che <strong>non conta</strong> non porta monete, non vale come partecipazione e non interrompe il silenzio: chi scrive <code>!monete</code> ogni cinque minuti non torna a quota piena. I moltiplicatori si leggono dai distintivi dei messaggi: chi non ha mai scritto non li ha. Chi è abbonato e VIP prende quello degli abbonati. Con i valori di base, presenza e partecipazione danno 10 monete ogni cinque minuti a chi guarda e scrive (${CIFRA(presenzaOraria({}))} all'ora), 15 a un abbonato, 13 a un VIP.`,
+      'Chi resta in silenzio continua a guadagnare, ma <strong>gradualmente meno</strong>: un gradino a ogni giro senza scrivere, fino alla quota minima, e se lo scegli si ferma del tutto dopo tanti minuti. Chi torna a scrivere <strong>risale subito a quota piena</strong>. Chi esce dalla chat e rientra riparte da capo. Il conto sta nel database: un riavvio del bot non lo azzera. Con i valori di base:',
     ] },
     { tabella: [
       ['Giri in silenzio', '0', '1', '2', '3', '4', '5 e oltre'],
-      ['Monete di presenza', '5', '4', '4', '3', '2', '2'],
+      ['Monete di presenza', ...[0, 1, 2, 3, 4, 5].map((g) => String(PRESENZA_IN_SILENZIO(g)))],
     ] },
     { p: [
+      `In una diretta di due ore, con i valori di base, chi scrive spesso prende ${CIFRA(DIRETTA_DI_SERIE().spesso)} monete, chi scrive ogni tanto ${CIFRA(DIRETTA_DI_SERIE().ogniTanto)}, chi guarda in silenzio ${CIFRA(DIRETTA_DI_SERIE().silenzio)}.`,
+      '<strong>I bot non prendono mai monete</strong>, e non è una scelta: quelli di servizio, quelli che lo scudo conosce e quelli della tua lista «Blocca sempre». Non salgono in classifica e non vincono premi. Lo stesso vale per le ore guardate e le serie di presenze. Se lo scudo prende per bot una persona, mettila fra gli esentati dello scudo e torna a ricevere.',
+      '<strong>L\'ora doppia</strong>: per un tempo che scegli, tutto quello che arriva da solo vale due volte (o fino a cinque). La accendi qui con «Accendi l\'ora doppia», o in chat un moderatore scrive <code>!doppio 30</code> per mezz\'ora, <code>!doppio 60 3</code> per un\'ora al triplo, <code>!doppio stop</code> per finire. Salvare le regole non la spegne, e un riavvio non la allunga.',
       'La lista di chi è in chat la dà Twitch a ogni giro: serve il permesso «ore guardate», che vedi nella scheda «Stato».',
     ] },
 
@@ -498,7 +511,7 @@ export default {
 
     { h2: 'Quando qualcosa non va' },
     { ul: [
-      '<strong>Le monete non salgono.</strong> Controlla «Attiva i minigiochi in chat». Presenza e partecipazione arrivano solo in diretta e vogliono il permesso «ore guardate»: se nella scheda «Stato» è rosso, premi «Aggiorna i permessi».',
+      '<strong>Le monete non salgono.</strong> Controlla «Attiva i minigiochi in chat» e, in «Punti & classifica», «Arrivano anche da sole». Presenza e partecipazione arrivano solo in diretta e vogliono il permesso «ore guardate»: se nella scheda «Stato» è rosso, premi «Aggiorna i permessi». Se salgono per qualcuno e non per una persona, guarda i tetti, il silenzio che si ferma, i messaggi che non contano e «Escludi anche»; e se lo scudo la prende per un bot, mettila fra i suoi esentati.',
       '<strong>Un comando non risponde.</strong> Guarda la sua riga in «Comandi dei giochi»: può essere spento o la sua famiglia può essere spenta. Se hai un comando tuo con lo stesso nome nella scheda «Comandi», risponde il tuo.',
       '<strong>Il bot risponde «qui è riservato…».</strong> Quel comando ha un livello in «chi può»: abbassalo a «tutti», se il comando di serie lo permette.',
       '<strong>Il bot risponde «non è in chat».</strong> Duello, patata, abbracci, bacini e cinque valgono solo su chi è in chat adesso: un nome inventato non passa.',

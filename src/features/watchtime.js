@@ -8,17 +8,15 @@
 // NB: il tracker (tick periodico) vive in bot.js, che ha accesso a Helix e alla
 // lista dei canali attivi. Qui stanno la formattazione e i comandi in chat.
 import { watchtime, streamers } from '../db.js';
+import { BOT_DI_SERVIZIO, ePersona } from './antibot.js';
 import { makeLog } from '../logger.js';
 import { aChi, spazioPer, inMessaggi } from './risposte.js';
 
 const log = makeLog('watchtime');
 
-// bot/servizi da NON conteggiare nella classifica delle ore.
-export const NON_CONTARE = new Set([
-  'nightbot', 'streamelements', 'streamlabs', 'moobot', 'wizebot', 'fossabot',
-  'sery_bot', 'commanderroot', 'soundalerts', 'pretzelrocks', 'kofistreambot',
-  'tangiabot', 'creatisbot', 'lattemotte', 'blerp', 'buttsbot', 'own3d',
-]);
+// I bot di servizio, per chi li nomina (la patata non si passa a un bot). Chi
+// conta le ore delle PERSONE usa ePersona, che conosce anche i bot spettatori.
+export const NON_CONTARE = BOT_DI_SERVIZIO;
 
 const attivo = (channel) => streamers.get(channel)?.settings?.watchtime?.attivo !== false;
 
@@ -42,7 +40,7 @@ export function accredita(channel, chatters, deltaSec) {
   if (!attivo(channel)) return 0;
   const utili = (chatters || [])
     .map((u) => String(u || '').toLowerCase())
-    .filter((u) => u && !NON_CONTARE.has(u));
+    .filter((u) => u && ePersona(channel, u));
   if (utili.length) {
     try { watchtime.addMany(channel, utili, Math.max(0, Math.round(deltaSec) || 0)); }
     catch (e) { log.debug('accredita:', e?.message || e); }

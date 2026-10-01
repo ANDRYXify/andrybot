@@ -1039,6 +1039,18 @@ aggiungiColonna('points', 'ruolo', "TEXT NOT NULL DEFAULT ''");  // '' = pubblic
 // Quante monete sono arrivate dall'ultima importazione da un altro bot: una
 // nuova importazione porta solo la differenza (docs/PONTE.md).
 aggiungiColonna('points', 'importate', 'INTEGER NOT NULL DEFAULT 0');
+// L'economia (docs/ECONOMIA.md). `visto`: l'ultima volta che la persona c'era
+// (un messaggio o la lista di chi e' in chat), non l'ultima volta che le sue
+// monete sono cambiate. `zitto_giri` e `zitto_ts`: da quanti giri di
+// presenza sta in silenzio, e quando e' stato contato l'ultimo; stavano in
+// memoria e a ogni riavvio chi era in lurk ripartiva pieno. `diretta` e
+// `guadagno_diretta`: quante monete automatiche ha preso in questa diretta
+// (o in questo giorno, a canale spento), per il tetto.
+aggiungiColonna('points', 'visto', 'INTEGER NOT NULL DEFAULT 0');
+aggiungiColonna('points', 'zitto_giri', 'INTEGER NOT NULL DEFAULT 0');
+aggiungiColonna('points', 'zitto_ts', 'INTEGER NOT NULL DEFAULT 0');
+aggiungiColonna('points', 'diretta', "TEXT NOT NULL DEFAULT ''");
+aggiungiColonna('points', 'guadagno_diretta', 'INTEGER NOT NULL DEFAULT 0');
 aggiungiColonna('telegram', 'pin_live', "INTEGER NOT NULL DEFAULT 1");
 aggiungiColonna('telegram', 'msg_id', "TEXT NOT NULL DEFAULT ''");
 aggiungiColonna('telegram', 'msg_id_tk', "TEXT NOT NULL DEFAULT ''");
@@ -1365,7 +1377,44 @@ export const points = {
   },
   top(channel, n = 5, chi = 'pubblico') {
     const filtro = FILTRO_CLASSIFICA[chi] ?? FILTRO_CLASSIFICA.pubblico;
-    return db.prepare(`SELECT user, monete, ruolo FROM points WHERE channel=? AND user<>? AND user NOT LIKE '[%'${filtro} ORDER BY monete DESC LIMIT ?`).all(channel, padroneDi(channel), n);
+    return db.prepare(`SELECT user, monete, ruolo FROM points WHERE channel=? AND user<>? AND user NOT LIKE '[%' AND monete>0${filtro} ORDER BY monete DESC LIMIT ?`).all(channel, padroneDi(channel), n);
+  },
+  // L'ECONOMIA legge e scrive a blocchi: un giro di presenza tocca tutti quelli
+  // che sono in chat, e una scrittura per persona fuori da una transazione
+  // costerebbe un fsync a testa. Chi non ha una riga non c'e' nella mappa.
+  economiaDi(channel, utenti) {
+    const out = new Map();
+    const tutti = [...new Set((utenti || []).map((u) => String(u).toLowerCase()).filter(Boolean))];
+    for (let i = 0; i < tutti.length; i += 400) {
+      const pezzo = tutti.slice(i, i + 400);
+      const q = db.prepare(`SELECT user, monete, ruolo, visto, zitto_giri, zitto_ts, diretta, guadagno_diretta FROM points WHERE channel=? AND user IN (${pezzo.map(() => '?').join(',')})`);
+      for (const r of q.all(channel, ...pezzo)) out.set(r.user, r);
+    }
+    return out;
+  },
+  // Una riga per persona: `delta` (le monete in piu'), e i campi da scrivere;
+  // un campo `null` resta com'e'. Una persona che non riceve niente (un bot no:
+  // quello non arriva fin qui) ha comunque la riga, perche' il suo silenzio va
+  // contato. `ts` cambia solo se cambiano le monete.
+  economiaScrivi(channel, righe) {
+    const q = db.prepare(`INSERT INTO points (channel, user, monete, ruolo, ts, visto, zitto_giri, zitto_ts, diretta, guadagno_diretta)
+      VALUES (?,?,MAX(0,?),COALESCE(?,''),?,COALESCE(?,0),COALESCE(?,0),COALESCE(?,0),COALESCE(?,''),COALESCE(?,0))
+      ON CONFLICT(channel, user) DO UPDATE SET monete = MAX(0, points.monete + ?), ruolo = COALESCE(?, points.ruolo),
+        ts = CASE WHEN ? <> 0 THEN ? ELSE points.ts END, visto = COALESCE(?, points.visto),
+        zitto_giri = COALESCE(?, points.zitto_giri), zitto_ts = COALESCE(?, points.zitto_ts),
+        diretta = COALESCE(?, points.diretta), guadagno_diretta = COALESCE(?, points.guadagno_diretta)`);
+    const ora = now();
+    db.transaction(() => {
+      for (const r of righe || []) {
+        const u = String(r.user || '').toLowerCase();
+        if (!u) continue;
+        const d = Math.round(Number(r.delta) || 0);
+        const ruolo = r.ruolo === null || r.ruolo === undefined ? null : (r.ruolo === 'staff' ? 'staff' : '');
+        const v = (x) => (x === undefined ? null : x);
+        q.run(channel, u, d, ruolo, ora, v(r.visto), v(r.zittoGiri), v(r.zittoTs), v(r.diretta), v(r.guadagno),
+          d, ruolo, d, ora, v(r.visto), v(r.zittoGiri), v(r.zittoTs), v(r.diretta), v(r.guadagno));
+      }
+    })();
   },
 };
 

@@ -30,8 +30,9 @@
 // messaggio (quello che ti sei costruito vince), e non saluta a raffica: un riposo
 // fra un saluto e l'altro e un tetto ogni dieci minuti, perche' un raid porta
 // cinquanta persone nuove in un colpo e cinquanta saluti sono spam.
-import { streamers, presenze as store, points, memory, modules as modulesDb } from '../db.js';
-import { NON_CONTARE } from './watchtime.js';
+import { streamers, presenze as store, memory, modules as modulesDb } from '../db.js';
+import { ePersona } from './antibot.js';
+import * as economia from './economia.js';
 import { makeLog } from '../logger.js';
 import { aChi } from './risposte.js';
 import { nomeMoneta } from './moneta.js';
@@ -145,7 +146,7 @@ export function giroDiretta(channel, { streamId = '', chatters = [], ora = Date.
   const presenti = new Set();
   for (const grezzo of chatters || []) {
     const u = norm(grezzo);
-    if (!u || u.startsWith('[') || NON_CONTARE.has(u) || u === ch) continue;
+    if (!u || u.startsWith('[') || u === ch || !ePersona(ch, u)) continue;
     presenti.add(u);
     const n = (m.get(u) || 0) + 1;
     m.set(u, n);
@@ -154,7 +155,7 @@ export function giroDiretta(channel, { streamId = '', chatters = [], ora = Date.
     if (!nuovo) continue;
     const { bonus, traguardo, ...campi } = nuovo;
     store.set(ch, u, campi);
-    if (bonus > 0) { try { points.add(ch, u, bonus); } catch (e) { log.debug(`#${ch} bonus a ${u}:`, e?.message || e); } }
+    if (bonus > 0) { try { economia.riceve(ch, u, bonus, { fonte: 'serie' }); } catch (e) { log.debug(`#${ch} bonus a ${u}:`, e?.message || e); } }
     const voce = { user: u, serie: nuovo.serie, dirette: nuovo.dirette, record: nuovo.record, bonus, traguardo };
     esito.presenze.push(voce);
     if (traguardo) esito.traguardi.push(voce);
@@ -203,7 +204,7 @@ export function moduloSulPrimoMessaggio(channel) {
 export function segnaArrivo(msg, { ora = Date.now() } = {}) {
   if (!msg || msg.isSelf || msg.from_bot) return null;
   const ch = norm(msg.channel), u = norm(msg.user);
-  if (!ch || !u || u === ch || u.startsWith('[') || NON_CONTARE.has(u)) return null;
+  if (!ch || !u || u === ch || u.startsWith('[') || !ePersona(ch, u)) return null;
   const r = store.get(ch, u);
   const suTwitch = !msg.piattaforma || msg.piattaforma === 'twitch';
   const prima = suTwitch

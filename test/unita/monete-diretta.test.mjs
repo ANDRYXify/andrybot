@@ -43,7 +43,8 @@ test('il giro parte solo quando Twitch dice che il canale e\' in diretta', () =>
   const bot = leggi('src/bot.js');
   const giro = bot.slice(bot.indexOf('async _tickWatchtime() {'), bot.indexOf('_prossimaManche(m) {'));
   assert.ok(giro.indexOf('if (!stream) continue;') > 0);
-  assert.ok(giro.indexOf('games.giroMonete(login, chatters, { live: true })') > giro.indexOf('if (!stream) continue;'));
+  assert.ok(giro.indexOf('games.giroMonete(login, chatters, { live: true, diretta: stream.id })') > giro.indexOf('if (!stream) continue;'),
+    'e porta l\'id della diretta: e\' la chiave del tetto per diretta (docs/ECONOMIA.md)');
 });
 
 test('la casella non c\'e\' piu\': ne\' nel pannello, ne\' fra i punti che il server salva', () => {

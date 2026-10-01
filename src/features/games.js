@@ -22,6 +22,7 @@ import { aspetta, giocato } from './attese-giochi.js';
 import { points, streamers, giochi } from '../db.js';
 import { makeLog } from '../logger.js';
 import { nomeMoneta } from './moneta.js';
+import * as economia from './economia.js';
 
 const log = makeLog('giochi');
 
@@ -34,82 +35,34 @@ const norm = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-
 // Le manopole di un gioco per questo canale: le dichiara giochi-conf.js.
 const conf = (channel, id) => valoriDi(streamers.get(channel)?.settings, id);
 
-// accredito passivo: throttle per (canale,utente)
-const ultimoAccredito = new Map();
-
 function attivi(channel) {
   const s = streamers.get(channel);
   return s?.settings?.giochi !== false;   // di default i giochi sono accesi
 }
 
-// Configurazione punti/classifica per canale (personalizzabile dalla dashboard).
-// Valori di default = quelli storici, così i canali esistenti non cambiano nulla.
 // L'economia delle monete.
 //
-// Com'era: si guadagnava SOLO scrivendo, due monete al minuto. Chi guardava in
-// silenzio per due ore prendeva zero; chi scriveva «ok» ogni minuto ne prendeva
-// centoventi. Cosi si premia il rumore, non la presenza — ed e' un invito a
-// tenere una macro che scrive in chat.
+// Com'era all'inizio: si guadagnava SOLO scrivendo, due monete al minuto. Chi
+// guardava in silenzio per due ore prendeva zero; chi scriveva «ok» ogni minuto
+// ne prendeva centoventi. Cosi' si premia il rumore, non la presenza.
 //
-// Com'e' ora, sul modello dei sistemi fedelta' collaudati (StreamElements,
-// Streamlabs): due flussi che si SOMMANO.
+// Poi: due flussi che si SOMMANO, la presenza a chi c'e' anche in silenzio e
+// la partecipazione in piu' a chi ha scritto nel giro, coi moltiplicatori per
+// abbonati e VIP e un calo graduale per chi resta in lurk. Solo in diretta: a
+// bocce ferme non c'e' niente da premiare.
 //
-//   presenza   a chi c'e', anche in silenzio, a ogni giro
-//   attivita'  in piu' a chi ha scritto in quel giro
-//
-// piu' i moltiplicatori per abbonati e VIP, e una regola chiesta
-// esplicitamente: chi resta in lurk a lungo continua a guadagnare, ma
-// GRADUALMENTE MENO. Non a zero — la presenza vale sempre qualcosa — ma
-// scendendo di un passo a ogni giro senza partecipare, fino a un minimo. Chi
-// torna a parlare risale subito a quota piena.
-//
-// Presenza e partecipazione solo mentre il canale e' in diretta, senza una
-// scelta che le accenda a canale spento: li' non c'e' niente da premiare, e il
-// flusso continuo a bocce ferme e' proprio cio' che svaluta la moneta. Le
-// monete per messaggio invece arrivano sempre, perche' premiano chi scrive.
-const PUNTI_DEFAULT = {
-  perMessaggio: 2, ogniSecondi: 60,
-  perPresenza: 5, perAttivita: 5,
-  moltSub: 1.5, moltVip: 1.25,
-  lurkPasso: 0.15, lurkMinimo: 0.35,
-  topN: 5,
-};
+// Adesso le regole, le curve e i tetti stanno in economia.js
+// (docs/ECONOMIA.md), che e' l'unica porta di tutto quello che arriva da solo:
+// i bot non ricevono, il silenzio si puo' fermare, i messaggi possono non
+// contare, ci sono i tetti e l'ora doppia. Qui restano i nomi di sempre.
 function numClamp(v, def, lo, hi) { const n = Math.round(Number(v)); return Number.isFinite(n) ? Math.min(hi, Math.max(lo, n)) : def; }
-function cfgPunti(channel) {
-  const p = streamers.get(channel)?.settings?.punti || {};
-  return {
-    perMessaggio: numClamp(p.perMessaggio, PUNTI_DEFAULT.perMessaggio, 0, 1000),
-    ogniSecondi:  numClamp(p.ogniSecondi,  PUNTI_DEFAULT.ogniSecondi, 5, 3600),
-    topN:         numClamp(p.topN,         PUNTI_DEFAULT.topN, 3, 10),
-    perPresenza:  numClamp(p.perPresenza,  PUNTI_DEFAULT.perPresenza, 0, 10000),
-    perAttivita:  numClamp(p.perAttivita,  PUNTI_DEFAULT.perAttivita, 0, 10000),
-    moltSub:      numFra(p.moltSub,        PUNTI_DEFAULT.moltSub, 1, 10),
-    moltVip:      numFra(p.moltVip,        PUNTI_DEFAULT.moltVip, 1, 10),
-    lurkPasso:    numFra(p.lurkPasso,      PUNTI_DEFAULT.lurkPasso, 0, 1),
-    lurkMinimo:   numFra(p.lurkMinimo,     PUNTI_DEFAULT.lurkMinimo, 0, 1),
-  };
-}
-function numFra(v, def, lo, hi) { const n = Number(v); return Number.isFinite(n) ? Math.min(hi, Math.max(lo, n)) : def; }
+const cfgPunti = (channel) => economia.regole(channel);
+export const fattoreLurk = (giri, cfg) => economia.fattoreSilenzio(giri, economia.normalizza(cfg));
+export const quotaGiro = (dati, cfg) => economia.quotaGiro(dati, economia.normalizza(cfg));
 
-// Quanto vale la presenza di chi non partecipa da `giri` giri: piena finche'
-// partecipa, poi scende di un passo per volta e si ferma al minimo.
-export function fattoreLurk(giri, cfg) {
-  const passo = cfg.lurkPasso ?? PUNTI_DEFAULT.lurkPasso;
-  const minimo = cfg.lurkMinimo ?? PUNTI_DEFAULT.lurkMinimo;
-  return Math.max(minimo, 1 - Math.max(0, giri) * passo);
-}
-
-// Quante monete spettano a una persona in questo giro.
-export function quotaGiro({ attivo, giriFermo, sub, vip }, cfg) {
-  const base = (cfg.perPresenza || 0) * fattoreLurk(attivo ? 0 : giriFermo, cfg);
-  const extra = attivo ? (cfg.perAttivita || 0) : 0;
-  const molt = sub ? (cfg.moltSub || 1) : (vip ? (cfg.moltVip || 1) : 1);
-  return Math.round((base + extra) * molt);
-}
-
-// Chi ha scritto dall'ultimo giro, e da quanti giri uno sta zitto.
+// Chi ha scritto un messaggio che conta dall'ultimo giro. Da quanti giri uno
+// sta zitto lo sa la sua riga nel database (economia.js), non la memoria.
 const attiviGiro = new Map();     // canale → Set(utente)
-const fermiDa = new Map();        // canale → Map(utente → giri)
 
 // I ruoli non costano una chiamata: ogni messaggio in chat porta con se' i
 // distintivi di chi scrive, quindi basta ricordarli. Chi non ha mai parlato
@@ -121,12 +74,14 @@ const fermiDa = new Map();        // canale → Map(utente → giri)
 // niente, e in quel caso non tocchiamo il ruolo gia' registrato.
 const ruoliVisti = new Map();     // canale → Map(utente → { sub, vip })
 
-function segnaAttivita(channel, utente, msg) {
+function segnaAttivita(channel, utente, msg, conta = true) {
   const ch = String(channel || '').toLowerCase();
   const u = String(utente || '').toLowerCase();
-  let s2 = attiviGiro.get(ch);
-  if (!s2) { s2 = new Set(); attiviGiro.set(ch, s2); }
-  s2.add(u);
+  if (conta) {
+    let s2 = attiviGiro.get(ch);
+    if (!s2) { s2 = new Set(); attiviGiro.set(ch, s2); }
+    s2.add(u);
+  }
   if (msg) {
     let r = ruoliVisti.get(ch);
     if (!r) { r = new Map(); ruoliVisti.set(ch, r); }
@@ -154,32 +109,11 @@ export function ruoliDi(channel) {
 // silenzio); `ruoli` dice chi e' sub o VIP. Ritorna quanto e' stato dato, per
 // i collaudi e per la console. A canale spento non da' niente, qualunque cosa
 // dica un vecchio `punti.soloLive` salvato: non e' piu' una scelta.
-export function giroMonete(channel, presenti, { ruoli = null, live = true } = {}) {
+export function giroMonete(channel, presenti, { ruoli = null, live = true, diretta = '' } = {}) {
   const ch = String(channel || '').toLowerCase();
   if (!ruoli) ruoli = ruoliDi(ch);
-  const esito = { accreditati: 0, monete: 0, saltati: 0 };
-  if (!attivi(ch)) return esito;
-  if (!live) { attiviGiro.delete(ch); return esito; }
-  const cfg = cfgPunti(ch);
-  if (!(cfg.perPresenza > 0 || cfg.perAttivita > 0)) return esito;
-
-  const parlanti = attiviGiro.get(ch) || new Set();
-  let fermi = fermiDa.get(ch);
-  if (!fermi) { fermi = new Map(); fermiDa.set(ch, fermi); }
-
-  for (const grezzo of presenti || []) {
-    const u = String(grezzo || '').toLowerCase();
-    if (!u || u.startsWith('[')) { esito.saltati++; continue; }
-    const attivo = parlanti.has(u);
-    const giri = attivo ? 0 : (fermi.get(u) || 0) + 1;
-    fermi.set(u, giri);
-    const r = ruoli[u] || {};
-    const q = quotaGiro({ attivo, giriFermo: giri, sub: !!r.sub, vip: !!r.vip }, cfg);
-    if (q > 0) { points.add(ch, u, q, ruoloDa(ruoli[u])); esito.accreditati++; esito.monete += q; }
-  }
-  // chi non c'e' piu' non deve restare in memoria a crescere all'infinito
-  const presenti2 = new Set((presenti || []).map((x) => String(x).toLowerCase()));
-  for (const k of fermi.keys()) if (!presenti2.has(k)) fermi.delete(k);
+  if (!attivi(ch) || !live) { attiviGiro.delete(ch); return { accreditati: 0, monete: 0, saltati: 0, fermi: 0 }; }
+  const esito = economia.giro(ch, presenti, { ruoli, parlanti: attiviGiro.get(ch) || new Set(), live, diretta });
   attiviGiro.delete(ch);
   return esito;
 }
@@ -264,21 +198,18 @@ export function inChat(channel, utente) {
 }
 
 // --------------------------------------------------------- monete: accredito passivo
-// Chi chatta guadagna qualche moneta (throttle 60s per persona).
+// Chi chatta guadagna qualche moneta: quante, quando e se il messaggio conta lo
+// decide la porta dell'economia. Il ruolo si ricorda sempre; la partecipazione
+// al giro solo se il messaggio conta.
 export function accredita(msg) {
   try {
     if (!msg) return;
     const u = String(msg.user || '').toLowerCase();
     if (!u || u.startsWith('[')) return;
     segnaPresenza(msg.channel, u);
-    segnaAttivita(msg.channel, u, msg);
-    if (!attivi(msg.channel)) return;
-    const c = cfgPunti(msg.channel);
-    if (c.perMessaggio <= 0) return;
-    const k = msg.channel + '|' + u;
-    if (Date.now() - (ultimoAccredito.get(k) || 0) < c.ogniSecondi * 1000) return;
-    ultimoAccredito.set(k, Date.now());
-    points.add(msg.channel, u, c.perMessaggio, msg.isMod || msg.isBroadcaster ? 'staff' : '');
+    if (!attivi(msg.channel)) { segnaAttivita(msg.channel, u, msg, false); return; }
+    const { conta } = economia.messaggio(msg);
+    segnaAttivita(msg.channel, u, msg, conta);
   } catch { /* niente */ }
 }
 
@@ -954,6 +885,24 @@ export function tryGame(msg, say) {
 
       case 'monete': {
         risposta(`💰 Hai ${points.get(channel, msg.user)} ${moneta()}.`);
+        return true;
+      }
+
+      // L'ORA DOPPIA, dalla chat: per lo staff (il registro la riserva ai mod).
+      // Senza numeri mezz'ora al doppio; «stop» la chiude prima.
+      case 'doppio': {
+        if (/^(stop|fine|off|basta)$/i.test(args[0] || '')) {
+          const c = economia.doppio(channel);
+          economia.spegniDoppio(channel);
+          say(c ? `⏹️ Ora doppia finita: ${moneta()} di nuovo al loro valore.` : 'Non c\'era un\'ora doppia accesa.');
+          return true;
+        }
+        const minuti = Number.parseInt(args[0], 10) || 30;
+        const x = Number.parseFloat(String(args[1] || '2').replace(',', '.')) || 2;
+        const d = economia.accendiDoppio(channel, { minuti, x });
+        const min = Math.round((d.fino - Date.now()) / 60_000);
+        const per = d.x === 2 ? 'il doppio' : d.x === 3 ? 'il triplo' : `${String(d.x).replace('.', ',')} volte tanto`;
+        say(`⏫ Per ${min} minuti presenza e messaggi danno ${per} di ${moneta()}.`);
         return true;
       }
 

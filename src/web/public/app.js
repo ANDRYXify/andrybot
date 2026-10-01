@@ -223,7 +223,7 @@ function impostazioni() {
     promoSocial: s.promoSocial !== false,
     vetrinaLive: s.vetrinaLive === true,
     nomeMonete: (typeof s.nomeMonete === 'string' && s.nomeMonete.trim()) || 'monete',
-    punti: { perMessaggio: 2, ogniSecondi: 60, trivia: 25, duello: 15, slotCosto: 10, slotVinci: 200, slotCoppia: 20, topN: 5, perPresenza: 5, perAttivita: 5, moltSub: 1.5, moltVip: 1.25, lurkPasso: 0.15, lurkMinimo: 0.35, ...(s.punti && typeof s.punti === 'object' ? s.punti : {}) },
+    punti: { perMessaggio: 2, ogniSecondi: 60, trivia: 25, duello: 15, slotCosto: 10, slotVinci: 200, slotCoppia: 20, topN: 5, perPresenza: 5, perAttivita: 5, moltSub: 1.5, moltVip: 1.25, lurkPasso: 0.15, lurkMinimo: 0.35, auto: true, msgSpento: true, esclusi: [], noComandi: false, noRipetuti: false, minLettere: 0, pienoMin: 0, stopMin: 0, tettoDiretta: 0, saldoMax: 0, ...(s.punti && typeof s.punti === 'object' ? s.punti : {}) },
     manche: { attivo: false, minMin: 15, maxMin: 45, soloLive: false, ...(s.manche && typeof s.manche === 'object' ? s.manche : {}) },
     premioVip: (s.premioVip && typeof s.premioVip === 'object') ? s.premioVip : {},
     antispam: (s.antispam && typeof s.antispam === 'object') ? s.antispam : {},
@@ -1132,6 +1132,12 @@ function apiDemo(percorso, opzioni = {}) {
   }
   if (via === '/api/streamer/voce/prova') return Promise.resolve({ frasi: _demoProvaFrasi(opzioni.body) });
   if (via.startsWith('/api/streamer/negozio')) return Promise.resolve(_demoNegozio(metodo, via, opzioni.body));
+  if (via === '/api/monete/doppio') {
+    const b = opzioni.body || {};
+    if (metodo === 'POST') _demoScritture.doppio = b.stop ? null : { fino: Date.now() + Math.min(240, Math.max(5, Number(b.minuti) || 30)) * 60_000, x: Math.min(5, Math.max(1.5, Number(b.x) || 2)) };
+    const d = _demoScritture.doppio;
+    return Promise.resolve({ doppio: d && d.fino > Date.now() ? d : null });
+  }
   if (metodo === 'GET') return Promise.resolve(_demoGet(via));
 
   if (via === '/api/streamer/impostazioni' && Array.isArray(opzioni.body?.overlays)) {
@@ -23146,23 +23152,69 @@ function pannelloGiochi() {
     </div>
     <div class="carta">
       <h2>${_hIco(ICO.medaglia)}${L('Punti & classifica', 'Points & leaderboard', 'Puntos y clasificación')}</h2>
-      <p>${L('Decidi quanti', 'Decide how many', 'Decide cuántas')} <strong class="primo-piano">${esc(s.nomeMonete)}</strong> ${L('si guadagnano. La classifica', 'are earned. The leaderboard', 'se ganan. La clasificación')} <code>!classifica</code> ${L('mostra i primi in cima. Costi e premi dei giochi stanno nelle regole di ogni gioco, qui sopra.', 'shows the top players. Game costs and prizes are in each game\'s rules, above.', 'muestra a los primeros. Costes y premios de los juegos están en las reglas de cada juego, aquí arriba.')}</p>
+      <p>${L('Decidi come si guadagnano', 'Decide how people earn', 'Decide cómo se ganan')} <strong class="primo-piano">${esc(s.nomeMonete)}</strong>${L(', a chi non arrivano e quando smettono di arrivare. La classifica', ', who never gets them and when they stop. The leaderboard', ', a quién no le llegan y cuándo dejan de llegar. La clasificación')} <code>!classifica</code> ${L('mostra i primi in cima. Costi e premi dei giochi stanno nelle regole di ogni gioco, qui sopra.', 'shows the top players. Game costs and prizes are in each game\'s rules, above.', 'muestra a los primeros. Costes y premios de los juegos están en las reglas de cada juego, aquí arriba.')}</p>
+      <div class="griglia-punti">
+        <label class="campo-num">${L('Quanti in classifica', 'How many on the board', 'Cuántos en la clasificación')}<input type="number" id="pt-topN" min="3" max="10" value="${s.punti.topN}"></label>
+      </div>
+      <div class="riga-check spazio-sopra">
+        <input type="checkbox" id="pt-auto" ${s.punti.auto !== false ? 'checked' : ''}>
+        <label for="pt-auto">${L('Arrivano anche da sole: coi messaggi, con la presenza e con le serie', 'They also come by themselves: with messages, presence and streaks', 'También llegan solas: con los mensajes, la presencia y las rachas')}</label>
+      </div>
+      <p class="suggerimento">${L('Spento, si guadagnano solo giocando, coi Moduli e con quello che dai tu: niente cresce da sé.', 'Off, people only earn by playing, with Modules and with what you give: nothing grows by itself.', 'Apagado, solo se ganan jugando, con los Módulos y con lo que das tú: nada crece por sí solo.')}</p>
+
+      <h3 class="sotto-titolo">${L('Per ogni messaggio', 'For each message', 'Por cada mensaje')}</h3>
       <div class="griglia-punti">
         <label class="campo-num">${L('Punti per messaggio', 'Points per message', 'Puntos por mensaje')}<input type="number" id="pt-perMessaggio" min="0" max="1000" value="${s.punti.perMessaggio}"></label>
         <label class="campo-num">${L('…ogni quanti secondi', '…every how many seconds', '…cada cuántos segundos')}<input type="number" id="pt-ogniSecondi" min="5" max="3600" value="${s.punti.ogniSecondi}"></label>
-        <label class="campo-num">${L('Quanti in classifica', 'How many on the board', 'Cuántos en la clasificación')}<input type="number" id="pt-topN" min="3" max="10" value="${s.punti.topN}"></label>
+        <label class="campo-num">${L('Lettere minime perché conti', 'Minimum letters to count', 'Letras mínimas para contar')}<input type="number" id="pt-minLettere" min="0" max="100" value="${s.punti.minLettere || 0}"></label>
       </div>
-      <h3 class="sotto-titolo">${L('Guadagno mentre guardano', 'Earning while watching', 'Ganancia mientras miran')}</h3>
-      <p>${L('Ogni cinque minuti, mentre sei in diretta, chi è in chat riceve la <strong>presenza</strong>, anche se sta zitto, e chi ha scritto in quel giro riceve in più la <strong>partecipazione</strong>. Chi resta a lungo in silenzio continua a guadagnare, ma scendendo un gradino per volta fino a un minimo: appena riscrive torna a quota piena.', 'Every five minutes, while you are live, whoever is in chat gets <strong>presence</strong>, even in silence, and whoever wrote in that round also gets <strong>participation</strong>. Someone silent for a long time keeps earning, but one step lower each round down to a floor: as soon as they write again they are back to full.', 'Cada cinco minutos, mientras estás en directo, quien está en el chat recibe la <strong>presencia</strong>, aunque calle, y quien escribió en esa ronda recibe además la <strong>participación</strong>. Quien calla mucho sigue ganando, pero bajando un escalón por ronda hasta un mínimo: en cuanto vuelve a escribir recupera la cuota completa.')}</p>
+      <div class="riga-check"><input type="checkbox" id="pt-msgSpento" ${s.punti.msgSpento !== false ? 'checked' : ''}><label for="pt-msgSpento">${L('Anche a canale spento, se il bot è in chat', 'Also with the channel offline, if the bot is in chat', 'También con el canal apagado, si el bot está en el chat')}</label></div>
+      <div class="riga-check"><input type="checkbox" id="pt-noComandi" ${s.punti.noComandi ? 'checked' : ''}><label for="pt-noComandi">${L('I comandi (!slot, !monete…) non contano', 'Commands (!slot, !coins…) don\'t count', 'Los comandos (!slot, !monedas…) no cuentan')}</label></div>
+      <div class="riga-check"><input type="checkbox" id="pt-noRipetuti" ${s.punti.noRipetuti ? 'checked' : ''}><label for="pt-noRipetuti">${L('Lo stesso messaggio ripetuto non conta', 'The same message repeated doesn\'t count', 'El mismo mensaje repetido no cuenta')}</label></div>
+      <p class="suggerimento">${L('Un messaggio che non conta non porta monete, non vale come partecipazione e non interrompe il silenzio. Con «Lettere minime» a 0 conta tutto.', 'A message that doesn\'t count brings no coins, isn\'t participation and doesn\'t break the silence. With «Minimum letters» at 0 everything counts.', 'Un mensaje que no cuenta no da monedas, no vale como participación y no rompe el silencio. Con «Letras mínimas» a 0 cuenta todo.')}</p>
+
+      <h3 class="sotto-titolo">${L('Mentre guardano', 'While they watch', 'Mientras miran')}</h3>
+      <p>${L('Ogni cinque minuti, mentre sei in diretta, chi è in chat riceve la <strong>presenza</strong>, anche se sta zitto, e chi ha scritto in quel giro riceve in più la <strong>partecipazione</strong>.', 'Every five minutes, while you are live, whoever is in chat gets <strong>presence</strong>, even in silence, and whoever wrote in that round also gets <strong>participation</strong>.', 'Cada cinco minutos, mientras estás en directo, quien está en el chat recibe la <strong>presencia</strong>, aunque calle, y quien escribió en esa ronda recibe además la <strong>participación</strong>.')}</p>
       <div class="griglia-punti">
         <label class="campo-num">${L('Presenza (per giro)', 'Presence (per round)', 'Presencia (por ronda)')}<input type="number" id="pt-perPresenza" min="0" max="10000" value="${s.punti.perPresenza}"></label>
         <label class="campo-num">${L('Partecipazione (in più)', 'Participation (extra)', 'Participación (extra)')}<input type="number" id="pt-perAttivita" min="0" max="10000" value="${s.punti.perAttivita}"></label>
         <label class="campo-num">${L('Moltiplicatore abbonati', 'Subscriber multiplier', 'Multiplicador suscriptores')}<input type="number" id="pt-moltSub" min="1" max="10" step="0.05" value="${s.punti.moltSub}"></label>
         <label class="campo-num">${L('Moltiplicatore VIP', 'VIP multiplier', 'Multiplicador VIP')}<input type="number" id="pt-moltVip" min="1" max="10" step="0.05" value="${s.punti.moltVip}"></label>
-        <label class="campo-num">${L('Quanto cala per giro in silenzio', 'Drop per silent round', 'Cuánto baja por ronda en silencio')}<input type="number" id="pt-lurkPasso" min="0" max="1" step="0.05" value="${s.punti.lurkPasso}"></label>
-        <label class="campo-num">${L('Non scende sotto', 'Never below', 'No baja de')}<input type="number" id="pt-lurkMinimo" min="0" max="1" step="0.05" value="${s.punti.lurkMinimo}"></label>
       </div>
-      <p class="suggerimento">${L('Presenza e partecipazione arrivano solo mentre sei in diretta. Le monete per messaggio arrivano sempre, anche a canale spento se il bot è in chat. Con «Punti per messaggio» a 0 non arrivano più.', 'Presence and participation only come while you are live. Coins per message always come, even with the channel offline if the bot is in chat. With «Points per message» at 0 they stop.', 'Presencia y participación solo llegan mientras estás en directo. Las monedas por mensaje llegan siempre, también con el canal apagado si el bot está en el chat. Con «Puntos por mensaje» a 0 dejan de llegar.')}</p>
+
+      <h3 class="sotto-titolo">${L('Chi sta in silenzio', 'Who stays silent', 'Quien se queda en silencio')}</h3>
+      <div class="griglia-punti">
+        <label class="campo-num">${L('Presenza piena per (minuti)', 'Full presence for (minutes)', 'Presencia completa durante (minutos)')}<input type="number" id="pt-pienoMin" min="0" max="600" step="5" value="${s.punti.pienoMin || 0}"></label>
+        <label class="campo-num">${L('Poi cala a ogni giro di (%)', 'Then drops each round by (%)', 'Luego baja en cada ronda (%)')}<input type="number" id="pt-lurkPasso" min="0" max="100" step="5" value="${Math.round((Number(s.punti.lurkPasso) || 0) * 100)}"></label>
+        <label class="campo-num">${L('Fino a (% della presenza)', 'Down to (% of presence)', 'Hasta (% de la presencia)')}<input type="number" id="pt-lurkMinimo" min="0" max="100" step="5" value="${Math.round((Number(s.punti.lurkMinimo) || 0) * 100)}"></label>
+        <label class="campo-num">${L('Si ferma dopo (minuti, 0 = mai)', 'Stops after (minutes, 0 = never)', 'Se detiene tras (minutos, 0 = nunca)')}<input type="number" id="pt-stopMin" min="0" max="1440" step="5" value="${s.punti.stopMin || 0}"></label>
+      </div>
+      <p class="suggerimento">${L('Il silenzio si conta dal primo giro in cui c\'è senza scrivere. Appena scrive un messaggio che conta, torna piena. Se esce dalla chat e rientra, si riparte da capo.', 'Silence is counted from the first round they are there without writing. As soon as they write a message that counts, it\'s full again. If they leave the chat and come back, it starts over.', 'El silencio se cuenta desde la primera ronda en que está sin escribir. En cuanto escribe un mensaje que cuenta, vuelve a ser completa. Si sale del chat y vuelve, empieza de cero.')}</p>
+
+      <h3 class="sotto-titolo">${L('I tetti', 'The caps', 'Los topes')}</h3>
+      <div class="griglia-punti">
+        <label class="campo-num">${L('Al massimo a diretta, a testa (0 = senza)', 'At most per stream, each (0 = none)', 'Como máximo por directo, cada uno (0 = sin)')}<input type="number" id="pt-tettoDiretta" min="0" max="10000000" value="${s.punti.tettoDiretta || 0}"></label>
+        <label class="campo-num">${L('Nessuno supera (0 = senza)', 'Nobody goes over (0 = none)', 'Nadie supera (0 = sin)')}<input type="number" id="pt-saldoMax" min="0" max="1000000000" value="${s.punti.saldoMax || 0}"></label>
+      </div>
+      <p class="suggerimento">${L('I tetti valgono per quello che arriva da solo. Giochi, negozio e Moduli non ne hanno: vincendo si può andare oltre. A canale spento il tetto «a diretta» vale per la giornata.', 'Caps apply to what comes by itself. Games, the shop and Modules have none: winning can take you past them. With the channel offline the «per stream» cap applies to the day.', 'Los topes valen para lo que llega solo. Juegos, tienda y Módulos no tienen: ganando se puede ir más allá. Con el canal apagado el tope «por directo» vale para el día.')}</p>
+
+      <h3 class="sotto-titolo">${L('Chi non le prende mai', 'Who never gets them', 'Quién nunca las recibe')}</h3>
+      <p>${L('I bot non prendono mai monete: quelli di servizio, quelli che lo scudo conosce e quelli della tua lista «Blocca sempre». Non salgono in classifica e non vincono premi.', 'Bots never get coins: service bots, the ones the shield knows and the ones on your «Always block» list. They don\'t climb the leaderboard and don\'t win prizes.', 'Los bots nunca reciben monedas: los de servicio, los que el escudo conoce y los de tu lista «Bloquear siempre». No suben en la clasificación ni ganan premios.')}</p>
+      <label class="campo" for="pt-esclusi">${L('Escludi anche (nomi separati da spazi o virgole)', 'Also exclude (names separated by spaces or commas)', 'Excluye también (nombres separados por espacios o comas)')}</label>
+      <textarea id="pt-esclusi" rows="2" maxlength="5200" placeholder="${esc(L('es. ilmiosecondoaccount, unamica', 'e.g. mysecondaccount, afriend', 'p. ej. micuentasecundaria, unaamiga'))}">${esc((Array.isArray(s.punti.esclusi) ? s.punti.esclusi : []).join(', '))}</textarea>
+
+      <h3 class="sotto-titolo">${L('L\'ora doppia', 'Double time', 'La hora doble')}</h3>
+      <p id="pt-doppio-stato" class="suggerimento">${L('Per un po\' tutto quello che arriva da solo vale di più.', 'For a while everything that comes by itself is worth more.', 'Durante un rato todo lo que llega solo vale más.')}</p>
+      <div class="griglia-punti">
+        <label class="campo-num">${L('Per quanti minuti', 'For how many minutes', 'Durante cuántos minutos')}<input type="number" id="pt-doppio-min" min="5" max="240" step="5" value="30"></label>
+        <label class="campo-num">${L('Quante volte tanto', 'How many times as much', 'Cuántas veces más')}<input type="number" id="pt-doppio-x" min="1.5" max="5" step="0.5" value="2"></label>
+      </div>
+      <p class="spazio-sopra"><button type="button" class="btn secondario" id="btn-doppio">${L('Accendi l\'ora doppia', 'Start double time', 'Enciende la hora doble')}</button> <button type="button" class="btn secondario" id="btn-doppio-stop" hidden>${L('Spegnila', 'Stop it', 'Apágala')}</button></p>
+      <p class="suggerimento">${L('In chat i moderatori la accendono con', 'In chat moderators start it with', 'En el chat los moderadores la encienden con')} <code>!${esc(String(stato?.streamer?.settings?.comandi?.doppio?.nome || '').replace(/[^a-z0-9]/g, '') || 'doppio')} 30</code> ${L('e la spengono con', 'and stop it with', 'y la apagan con')} <code>!${esc(String(stato?.streamer?.settings?.comandi?.doppio?.nome || '').replace(/[^a-z0-9]/g, '') || 'doppio')} stop</code>.</p>
+
+      <h3 class="sotto-titolo">${L('In una diretta di due ore', 'In a two-hour stream', 'En un directo de dos horas')}</h3>
+      <ul class="pt-conti" id="pt-conti" aria-live="polite">${attesaHtml('li')}</ul>
+      <p class="suggerimento">${L('Sono i conti del bot, con le regole che vedi qui, anche prima di salvarle: senza abbonamento, senza giochi e senza la serie.', 'These are the bot\'s own sums, with the rules you see here, even before saving: no subscription, no games and no streak.', 'Son las cuentas del bot, con las reglas que ves aquí, incluso antes de guardarlas: sin suscripción, sin juegos y sin racha.')}</p>
       <p class="spazio-sopra"><button class="btn" id="btn-salva-punti">${L('Salva punti', 'Save points', 'Guardar puntos')}</button></p>
     </div>
     <div class="carta">
@@ -26965,6 +27017,45 @@ function pannelloMemoria() {
     </div>`);
 }
 
+function puntiDalPannello() {
+  const v = (id) => Number(document.getElementById(id)?.value);
+  const on = (id) => !!document.getElementById(id)?.checked;
+  return {
+    auto: on('pt-auto'), msgSpento: on('pt-msgSpento'), noComandi: on('pt-noComandi'), noRipetuti: on('pt-noRipetuti'),
+    perMessaggio: v('pt-perMessaggio'), ogniSecondi: v('pt-ogniSecondi'), minLettere: v('pt-minLettere'),
+    perPresenza: v('pt-perPresenza'), perAttivita: v('pt-perAttivita'),
+    moltSub: v('pt-moltSub'), moltVip: v('pt-moltVip'),
+    pienoMin: v('pt-pienoMin'), stopMin: v('pt-stopMin'),
+    lurkPasso: v('pt-lurkPasso') / 100, lurkMinimo: v('pt-lurkMinimo') / 100,
+    tettoDiretta: v('pt-tettoDiretta'), saldoMax: v('pt-saldoMax'),
+    esclusi: document.getElementById('pt-esclusi')?.value || '',
+    topN: v('pt-topN'),
+  };
+}
+const oraDellaDoppia = (t) => new Date(t).toLocaleTimeString(LINGUA === 'en' ? 'en-US' : LINGUA === 'es' ? 'es-ES' : 'it-IT', { hour: '2-digit', minute: '2-digit' });
+async function contiPunti() {
+  const box = document.getElementById('pt-conti');
+  if (!box) return;
+  let r;
+  try {
+    const regole = await import('/js/economia-regole.js');
+    const { doppio } = await api('/api/monete/doppio');
+    const punti = puntiDalPannello();
+    r = { conti: regole.contiDiretta(punti), conDoppio: doppio ? regole.contiDiretta(punti, { x: doppio.x }) : null, doppio };
+  } catch { return; }
+  const riga = (eti, n, d) => `<li><span>${eti}</span> <strong>${n}</strong>${d !== undefined ? ` <span class="suggerimento">${L('con l\'ora doppia', 'with double time', 'con la hora doble')} ${d}</span>` : ''}</li>`;
+  const c = r.conti || {}, d = r.conDoppio;
+  box.innerHTML = riga(L('Chi scrive spesso', 'Someone who writes often', 'Quien escribe a menudo'), c.spesso, d?.spesso)
+    + riga(L('Chi scrive ogni tanto', 'Someone who writes now and then', 'Quien escribe de vez en cuando'), c.ogniTanto, d?.ogniTanto)
+    + riga(L('Chi guarda in silenzio', 'Someone watching in silence', 'Quien mira en silencio'), c.silenzio, d?.silenzio);
+  const st = document.getElementById('pt-doppio-stato');
+  const stop = document.getElementById('btn-doppio-stop');
+  if (st) st.textContent = r.doppio
+    ? L(`Accesa fino alle ${oraDellaDoppia(r.doppio.fino)}: vale ${String(r.doppio.x).replace('.', ',')} volte tanto.`, `On until ${oraDellaDoppia(r.doppio.fino)}: worth ${r.doppio.x} times as much.`, `Encendida hasta las ${oraDellaDoppia(r.doppio.fino)}: vale ${String(r.doppio.x).replace('.', ',')} veces más.`)
+    : L('Per un po\' tutto quello che arriva da solo vale di più.', 'For a while everything that comes by itself is worth more.', 'Durante un rato todo lo que llega solo vale más.');
+  if (stop) stop.hidden = !r.doppio;
+}
+
 function attivaPiattaforma() {
 
   document.getElementById('toggle-bot')?.addEventListener('change', async (ev) => {
@@ -27553,17 +27644,23 @@ function attivaPiattaforma() {
     toast(L('Regole salvate ✓', 'Rules saved ✓', 'Reglas guardadas ✓'));
   }));
 
+  let _contiTimer = null;
+  const carta = document.getElementById('pt-conti')?.closest('.carta');
+  carta?.addEventListener('input', () => { clearTimeout(_contiTimer); _contiTimer = setTimeout(contiPunti, 250); });
+  carta?.addEventListener('change', () => { clearTimeout(_contiTimer); _contiTimer = setTimeout(contiPunti, 50); });
+  document.getElementById('btn-doppio')?.addEventListener('click', () => conErrore(async () => {
+    await api('/api/monete/doppio', { method: 'POST', body: { minuti: Number(document.getElementById('pt-doppio-min')?.value), x: Number(document.getElementById('pt-doppio-x')?.value) } });
+    await contiPunti();
+    toast(L('Ora doppia accesa', 'Double time on', 'Hora doble encendida'));
+  }));
+  document.getElementById('btn-doppio-stop')?.addEventListener('click', () => conErrore(async () => {
+    await api('/api/monete/doppio', { method: 'POST', body: { stop: true } });
+    await contiPunti();
+    toast(L('Ora doppia spenta', 'Double time off', 'Hora doble apagada'));
+  }));
+
   document.getElementById('btn-salva-punti')?.addEventListener('click', () => conErrore(async () => {
-    const v = (id) => Number(document.getElementById(id).value);
-    await salvaImpostazioni({ punti: {
-      perMessaggio: v('pt-perMessaggio'), ogniSecondi: v('pt-ogniSecondi'),
-      perPresenza: v('pt-perPresenza'), perAttivita: v('pt-perAttivita'),
-      moltSub: parseFloat(document.getElementById('pt-moltSub')?.value) || 1.5,
-      moltVip: parseFloat(document.getElementById('pt-moltVip')?.value) || 1.25,
-      lurkPasso: parseFloat(document.getElementById('pt-lurkPasso')?.value) ?? 0.15,
-      lurkMinimo: parseFloat(document.getElementById('pt-lurkMinimo')?.value) ?? 0.35,
-      topN: v('pt-topN'),
-    } }, L('Punti salvati ✓', 'Points saved ✓', 'Puntos guardados ✓'));
+    await salvaImpostazioni({ punti: puntiDalPannello() }, L('Punti salvati ✓', 'Points saved ✓', 'Puntos guardados ✓'));
   }));
 
   document.getElementById('btn-salva-presenze')?.addEventListener('click', () => conErrore(async () => {
@@ -28612,7 +28709,7 @@ function caricaDatiScheda(id) {
   if (id === 'emote') caricaEmote7TV();
   if (id === 'moduli') { caricaPiattaforme(); caricaModuli(); caricaContatori(); caricaGiochiComandi(); collegaMorti(); requestAnimationFrame(() => applicaSottoSchede('moduli')); }
   if (id === 'statistiche') { caricaStatistiche(); caricaClassifica(); }
-  if (id === 'giochi') { caricaClassifica(); caricaCitazioni(); caricaBattute(); caricaGiochi(); caricaGiochiComandi(); caricaRegoleGiochi(); _disegnaFormaMonete(); }
+  if (id === 'giochi') { caricaClassifica(); caricaCitazioni(); caricaBattute(); caricaGiochi(); caricaGiochiComandi(); caricaRegoleGiochi(); _disegnaFormaMonete(); contiPunti(); }
   if (id === 'negozio') { caricaNegozio(); caricaPaginaLink(false, 'negozio'); requestAnimationFrame(() => applicaSottoSchede('negozio')); }
   if (id === 'telegram') { caricaTgLogin(); collegaTgDestinazioni(); caricaTgDestinazioni(); collegaCartaLive(); caricaCartaLive(); caricaCompleanni(); }
   if (id === 'notifiche') { caricaTikTok(); caricaInstagram(); collegaFeed(); caricaFeed(); }

@@ -625,6 +625,9 @@ details > summary:focus-visible { outline: 2px solid var(--acc); outline-offset:
 .h-ico { color: var(--acc); vertical-align: -.22em; margin-right: .45rem; }
 
 .griglia-punti { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: .8rem; margin-top: .6rem; }
+.pt-conti { list-style: none; margin: .6rem 0 0; padding: 0; display: grid; gap: .35rem; }
+.pt-conti li { display: flex; flex-wrap: wrap; align-items: baseline; gap: .45rem; }
+.pt-conti strong { font-variant-numeric: tabular-nums; }
 .campo-num { display: flex; flex-direction: column; gap: .3rem; font-size: .84rem; font-weight: 600; color: var(--testo-2); }
 .campo-num input { font-family: inherit; font-size: .95rem; padding: .5rem .6rem; border: 1px solid var(--border-2); border-radius: var(--r-s); background: var(--surface); color: var(--testo); }
 .campo-num input:focus { outline: none; border-color: var(--acc); box-shadow: 0 0 0 3px var(--acc-tint); }

@@ -102,6 +102,8 @@ export const COMANDI = [
     cosa: ['Risponde a una domanda. Serve la domanda.', 'Answers a question. The question is required.', 'Responde a una pregunta. Hace falta la pregunta.'] },
   { id: 'monete', modulo: 'giochi', nomi: ['monete', 'punti', 'bilancio'], titolo: ['Il mio saldo', 'My balance', 'Mi saldo'],
     cosa: ['Dice quante monete ha chi lo scrive.', 'Says how many coins the writer has.', 'Dice cuántas monedas tiene quien lo escribe.'] },
+  { id: 'doppio', modulo: 'giochi', nomi: ['doppio', 'doppie'], titolo: ['Ora doppia', 'Double time', 'Hora doble'], chi: 'mod',
+    cosa: ['Per un po\' le monete che arrivano da sole valgono di più: !doppio 30 per mezz\'ora, !doppio 60 3 per un\'ora al triplo, !doppio stop per finire.', 'For a while the coins that come by themselves are worth more: !doppio 30 for half an hour, !doppio 60 3 for an hour at triple, !doppio stop to end it.', 'Durante un rato las monedas que llegan solas valen más: !doppio 30 media hora, !doppio 60 3 una hora al triple, !doppio stop para terminar.'] },
   { id: 'classifica', modulo: 'giochi', nomi: ['classifica', 'top', 'classificamod', 'classificastaff', 'topmod'], titolo: ['Classifica', 'Leaderboard', 'Clasificación'],
     cosa: ['I primi del pubblico. Con «mod» la gara dello staff, con «tutti» le due insieme.', 'The top viewers. With «mod» the staff race, with «tutti» both together.', 'Los primeros del público. Con «mod» la carrera del staff, con «tutti» las dos juntas.'] },
   { id: 'slot', modulo: 'giochi', gioco: 'slot', nomi: ['slot'], titolo: ['Slot machine', 'Slot machine', 'Tragaperras'],
