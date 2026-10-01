@@ -37,7 +37,9 @@
 // centosessanta righe: la regola che la centra usava `1lh`, e sulla casella
 // `lh` vale la riga della casella (15 px), non quella delle parole (23). E il
 // riquadro e' un gesto solo: con quattro righe incrociate agli angoli, a dodici
-// pixel, la casella vuota si leggeva come l'icona «ritaglia».
+// pixel, la casella vuota si leggeva come l'icona «ritaglia». E OGNI CASELLA
+// HA IL SUO DISEGNO: due riquadri uguali nella stessa pagina sono due semi
+// uguali, e si vedono.
 //
 // LA HOME. Le caselle del configuratore hanno il disegno del pannello, scritto
 // dal server con lo stesso file: si misura che arrivi intero (1,65rem, centrato
@@ -115,7 +117,11 @@ const MISURA = `(() => {
     }
     return null;
   };
-  const tratti = (img) => { const m = decodeURIComponent(img).match(/<path d="([^"]*)"/); return m ? (m[1].match(/M/g) || []).length : 0; };
+  const fondo = (img) => { const m = decodeURIComponent(img).match(/<path d="([^"]*)"/); return m ? m[1] : ''; };
+  const tratti = (img) => (fondo(img).match(/M/g) || []).length;
+  // ogni casella ha il suo disegno: lo stesso riquadro su due caselle della
+  // stessa pagina vuol dire due semi uguali
+  const visti = (window.__spVisti = window.__spVisti || new Map());
   const scelte = [...scheda.querySelectorAll('input[type="checkbox"], input[type="radio"]')]
     .filter((i) => vede(i))
     .map((i) => ({ i, lab: etichetta(i) }))
@@ -127,6 +133,9 @@ const MISURA = `(() => {
     const img = x.i.style.borderImageSource || '';
     if (!x.i.classList.contains('sp-disegnata') || !img.includes('data:image/svg')) { rotte.push('non disegnata: «' + nome(x.i, x.lab) + '»'); continue; }
     if (x.i.dataset.sp !== (x.i.checked ? 'si' : 'no') || img.includes('segno') !== x.i.checked) { rotte.push('il disegno non dice il suo stato: «' + nome(x.i, x.lab) + '»'); continue; }
+    const gia = visti.get(fondo(img));
+    if (gia && gia !== x.i && gia.isConnected) { rotte.push('ha lo stesso disegno di un\\'altra casella: «' + nome(x.i, x.lab) + '»'); continue; }
+    visti.set(fondo(img), x.i);
     const suoi = x.testi.filter((q) => stessaRiga(q, x.r));
     const suo = suoi.length ? Math.min(...suoi.map((q) => distanza(q, x.r))) : Infinity;
     if (suo > 24) { rotte.push('staccata dalle sue parole: «' + nome(x.i, x.lab) + '»' + (suo === Infinity ? ' (non sono sulla sua riga)' : ' (' + Math.round(suo) + ' px)')); continue; }
@@ -179,6 +188,9 @@ const MISURA_CASA = `(() => {
   const rem = parseFloat(getComputedStyle(document.documentElement).fontSize);
   const rotte = [];
   const righe = [...document.querySelectorAll('.vt-extra')];
+  const fondi = new Set();
+  const vu = [...document.querySelectorAll('.vt-elenco li svg path')].map((p) => p.getAttribute('d'));
+  if (new Set(vu).size !== vu.length) rotte.push('due voci degli elenchi hanno la stessa «v»');
   const ottico = (el) => {
     const n = document.createTreeWalker(el, NodeFilter.SHOW_TEXT).nextNode();
     if (!n) return null;
@@ -199,6 +211,8 @@ const MISURA_CASA = `(() => {
     if (Math.abs(v.left + v.width / 2 - b.left - b.width / 2) > .5 || Math.abs(v.top + v.height / 2 - b.top - b.height / 2) > .5) { rotte.push('il disegno non sta centrato sulla sua casella: «' + nome + '»'); continue; }
     const fondo = svg.querySelector('.vt-sp-c')?.getAttribute('d') || '';
     if ((fondo.match(/M/g) || []).length !== 1) { rotte.push('il riquadro non e\\' un gesto solo: «' + nome + '»'); continue; }
+    if (fondi.has(fondo)) { rotte.push('ha lo stesso disegno di un\\'altra casella: «' + nome + '»'); continue; }
+    fondi.add(fondo);
     const o = ottico(riga.querySelector('strong'));
     const scarto = o === null ? 0 : b.top + b.height / 2 - o;
     if (Math.abs(scarto) > 2) { rotte.push('la casella non sta in mezzo alla prima riga del nome: «' + nome + '» (' + scarto.toFixed(1) + ' px)'); continue; }
@@ -319,8 +333,16 @@ try {
         el.style.borderImageSource = '';
         return true;
       });
+      const copiata = await p.evaluate(() => {
+        const xs = [...document.querySelectorAll('.pannello-scheda.visibile input.sp-disegnata[type="checkbox"]')].filter((x) => x.getBoundingClientRect().width > 0);
+        const a = xs.find((x) => x.checked), b = xs.find((x) => x.checked && x !== a);
+        if (!a || !b) return false;
+        b.style.borderImageSource = a.style.borderImageSource;
+        return true;
+      });
       const r = await p.evaluate(MISURA);
       if (tolta && r.rotte.some((x) => x.startsWith('non disegnata'))) rotte.push('390px · autoprova: casella nativa vista');
+      if (copiata && r.rotte.some((x) => x.startsWith('ha lo stesso disegno'))) rotte.push('390px · autoprova: disegno doppio visto');
     }
     await ctx.close();
   }
@@ -336,11 +358,13 @@ try {
     const nativa = rotte.some((r) => r.includes('autoprova: casella nativa vista'));
     const storta = rotte.some((r) => r.startsWith('1280px') && r.includes('non sta in mezzo alla sua prima riga'));
     const stretta = rotte.some((r) => r.includes('home: il disegno non ha la sua misura'));
-    const vista = inLinea && nativa && storta && stretta;
+    const doppia = rotte.some((r) => r.includes('autoprova: disegno doppio visto'));
+    const vista = inLinea && nativa && storta && stretta && doppia;
     console.log(inLinea ? 'Autoprova: la scelta attaccata a un\'altra si vede. ✓' : 'Autoprova: la regola in linea NON e\' stata vista. ✗');
     console.log(nativa ? 'Autoprova: la casella non disegnata si vede. ✓' : 'Autoprova: la casella non disegnata NON e\' stata vista. ✗');
     console.log(storta ? 'Autoprova: la casella piu\' alta delle sue parole si vede. ✓' : 'Autoprova: la casella piu\' alta NON e\' stata vista. ✗');
     console.log(stretta ? 'Autoprova: la «v» della home stretta si vede. ✓' : 'Autoprova: la «v» della home stretta NON e\' stata vista. ✗');
+    console.log(doppia ? 'Autoprova: due caselle col disegno uguale si vedono. ✓' : 'Autoprova: due caselle col disegno uguale NON sono state viste. ✗');
     process.exitCode = vista ? 0 : 1;
   } else {
     console.log(ok ? 'Ogni casella e ogni pallino stanno con le loro parole, disegnati come il resto del sito. ✓' : `${rotte.length} scelte fuori posto.`);

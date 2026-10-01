@@ -118,7 +118,19 @@ const SELFTEST = process.argv.includes('--selftest');
 // ripetuta in ogni riga la compressione la scrive quasi gratis), e' arrivata a
 // 61464 byte, 24 sopra il 60. Il tetto va a 61: la misura di oggi con l'aria
 // di prima.
-const TETTO_KB = 61;
+//
+// Lo stesso giorno, guardate da vicino, le spunte avevano difetti veri: la
+// «v» della home stretta a 14 pixel, la casella fatta di quattro righe che
+// sembrava l'icona «ritaglia». Ora la home scrive il disegno del pannello, dallo
+// stesso file (spunta-forma.js). E poi chiesto: ogni spunta unica, che si veda
+// fatta a mano. Le dieci spunte della home (tre caselle e sette voci dei piani)
+// sono dieci disegni diversi, e un disegno diverso la compressione non lo
+// ripete gratis. Limate fin dove la forma regge: i tracciati si scrivono a
+// passi relativi (`compatto`, un terzo in meno), e la «v» non si campiona piu'
+// rada di cosi', perche' sugli schermi fitti i lati diventerebbero scalini. La
+// home e' arrivata a 61,1 kB. Il tetto va a 62: la misura di oggi con l'aria
+// di prima.
+const TETTO_KB = 62;
 
 let chromium;
 if (!CHROMIUM) { console.log('Chromium non c\'e\' su questa macchina: collaudo saltato.'); process.exit(0); }

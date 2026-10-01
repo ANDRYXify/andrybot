@@ -564,16 +564,31 @@ sistema: un quadratino liscio, magenta pieno, uguale a quello di ogni altro
 sito. Chiesto così: una «v» nera, disegnata, centrata, che esce un po' da una
 parte e un po' dall'altra; contrastante con la casella; la casella più piccola
 e disegnata anche lei.
+Poi: ogni spunta diversa dalle altre, unica, e che si riconosca disegnata.
+
+**Ogni spunta è unica.** Non ci sono varianti da cui pescare: ogni casella ha
+un seme suo e la forma si ricava da quello, con misure continue, come una mano
+che rifà la casella ogni volta. Cambiano la posizione e un filo di rotazione
+del riquadro, la misura, gli angoli (uno quasi vivo, uno tondo), quanto si
+piegano i lati, dove la penna entra e quanto ripassa chiudendo, e a volte un
+pezzo di lato ripassato leggero, come fa la matita. Nella «v» cambiano
+l'attacco, il vertice, la punta, quanto si incurva il braccio lungo, il
+tremolio della mano e dove il pennino preme di più. Il pallino cambia raggio,
+giro di chiusura e spire. Il caso fa variare, non decide la correttezza: le
+cose che devono restare vere sono costruite, non sperate.
 
 - **La casella** è un riquadro a matita (`--testo-3`, tratto sottile) fatto
-  come lo fa una mano: **un gesto solo**, in senso orario, che parte poco dopo
-  l'angolo in alto a sinistra, gira gli angoli senza staccare (arrotondati,
-  ognuno un po' diverso), con i lati appena storti, e si chiude ripassando un
-  pezzetto del lato di partenza, poco discosto. Niente code oltre gli angoli. È
-  più piccola della casella vera, che resta della sua misura per il dito.
+  come lo fa una mano: **un gesto solo**, in senso orario. La penna entra poco
+  sopra la riga e scende nel lato in alto, gira gli angoli senza staccare, coi
+  lati storti, e si chiude ripassando un pezzetto del lato di partenza, poco
+  discosto. Niente code oltre gli angoli: tutto sta nel riquadro, al più
+  un'ansa della mano fuori. È più piccola della casella vera, che resta della
+  sua misura per il dito.
 - **La spunta** è una «v» di pennino in china (`--contorno`): una sagoma piena,
-  sottile all'attacco, spessa al vertice e affilata in uscita. È centrata sulla
-  casella ed esce a sinistra, a destra e in alto. Nera e piena su una matita
+  sottile all'attacco, spessa dove il pennino preme (vicino al vertice) e
+  affilata in uscita. Dopo averla disegnata la si sposta in orizzontale finché
+  il suo inchiostro è centrato sul riquadro: centrata per costruzione, qualunque
+  forma abbia. Esce a sinistra, a destra e in alto. Nera e piena su una matita
   grigia e sottile: le due cose non si confondono, nei due temi.
 - **Il pallino** è un cerchio a matita chiuso a mano, poco più di un giro; la
   scelta è un pallino pieno a china, grande la metà del cerchio, con aria
@@ -601,16 +616,19 @@ Com'è fatto, per costruzione:
 - ogni strada che cambia lo stato passa di qui: il clic (`change`), il codice
   che scrive `.checked` (il setter è avvolto), il `reset` dei moduli, e per i
   pallini gli altri del gruppo, che il browser spegne senza dirlo;
-- il seme (id, oppure nome e valore) sceglie una di sei varianti: varia il
-  tratto, non decide dove stanno la casella e la spunta, che stanno dove dice
-  la geometria;
+- il seme è l'id della casella, oppure il tipo, il nome, il valore, le parole
+  dell'etichetta e l'id del primo antenato che ne ha uno; se due caselle
+  attaccate alla pagina hanno lo stesso, la seconda prende il suo numero
+  d'ordine (`#2`). Una casella che se ne va libera il suo posto, quindi una
+  scheda ridisegnata ritrova gli stessi disegni. Il seme fa variare il tratto,
+  non decide dove stanno la casella e la spunta;
 - i colori si leggono dal tema e si rifanno quando il tema cambia;
 - in alto contrasto (`forced-colors`) torna la casella del sistema;
 - l'interruttore (la levetta) ha il suo disegno e resta com'è; un input con
   `data-nativo` resta nativo.
 
 **Un disegno solo, per pannello e home.** La geometria (il riquadro, la «v», il
-cerchio e il pallino, le sei varianti, i pesi del tratto) sta in
+cerchio e il pallino, come variano da un seme all'altro) sta in
 `src/web/public/spunta-forma.js`, un file senza DOM. Il pannello lo carica prima
 di `disegno.js`, e `disegno-pannello.js` lo usa per l'immagine di bordo delle
 caselle vere. La home non lo carica: lo esegue il server
@@ -621,7 +639,7 @@ scatti da sinistra, nell'ordine della penna, col solo CSS. Negli elenchi dei
 piani c'è la sola «v», verde, con la scatola stretta attorno al suo inchiostro.
 Due copie fatte a mano erano andate alla deriva (vedi sotto); una copia sola non
 può. Il motore resta fuori dal nucleo: sulla home non c'è una casella nativa da
-disegnare, e il peso conta (`scripts/verifica-dieta.mjs`, tetto 61 kB).
+disegnare, e il peso conta (`scripts/verifica-dieta.mjs`, tetto 62 kB: dieci disegni unici scritti a passi relativi).
 
 **La casella sta in mezzo alla prima riga delle sue parole.** Nelle righe
 `.riga-check` la casella è appoggiata a sinistra e scende di metà della
@@ -663,7 +681,8 @@ caselle restano col colore del tema.
 
 Collaudo: `scripts/verifica-scelte.mjs` pretende che ogni casella e ogni
 pallino visibile, in ogni scheda, al telefono e al computer, sia disegnato, che
-il disegno dica il suo stato, che il riquadro sia un gesto solo, e che il
+il disegno dica il suo stato, che nessuna abbia il riquadro di un'altra nella
+stessa pagina, che il riquadro sia un gesto solo, e che il
 centro della casella stia sul centro ottico della prima riga delle sue parole
 (a metà fra minuscole e maiuscole, sopra la linea di base), entro 2 pixel. Su un
 campione, toccato, la spunta si traccia in almeno tre disegni e si disfa; nel
@@ -672,11 +691,14 @@ home misura le caselle del configuratore: il disegno grande 1,65rem e centrato
 sulla casella, il riquadro un gesto solo, la casella in mezzo alla prima riga
 del nome, la «v» che c'è solo a casella spuntata. L'autoprova toglie il disegno
 a una casella, rimette la casella col carattere dei controlli (la casella torna
-4 pixel più in alto) e rimette la regola che stringeva la «v» della home, e
-vuole vederle tutte rosse.
+4 pixel più in alto), rimette la regola che stringeva la «v» della home e
+copia il disegno di una casella su un'altra, e vuole vederle tutte rosse.
 
-La geometria ha le sue prove in `test/unita/spunta-forma.test.mjs`: un gesto
-solo e nessuna coda oltre gli angoli, la «v» centrata che esce a sinistra, a
-destra e in alto, il pallino tondo che chiude con un giro alla sua misura e
-lascia aria al cerchio, la home che scrive gli stessi tracciati del pannello.
+La geometria ha le sue prove in `test/unita/spunta-forma.test.mjs`, su
+trecento semi: un gesto solo e nessuna coda oltre gli angoli, la «v» centrata
+che esce a sinistra, a destra e in alto, il pallino tondo che chiude con un
+giro alla sua misura e lascia aria al cerchio, nessun disegno uguale a un altro
+e una gamma di forme che l'occhio vede (gli angoli e la punta della «v» si
+spostano di più di un pixel), la home che scrive gli stessi tracciati del
+pannello e una «v» diversa per ogni voce dei piani.
 Ognuna è stata rotta a mano ed è diventata rossa.

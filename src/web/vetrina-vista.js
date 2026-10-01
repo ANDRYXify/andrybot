@@ -36,23 +36,26 @@ import './public/spunta-forma.js';
 // (1,05rem, con 0,3rem di disegno tutto intorno): il riquadro a matita e la «v»
 // di pennino, che si scopre a scatti da sinistra, nell'ordine della penna. Negli
 // elenchi dei piani c'e' la sola «v», con la scatola stretta attorno al suo
-// inchiostro. La variante viene dal seme, come nel pannello.
+// inchiostro. Ogni spunta ha la sua forma, dal suo seme, come nel pannello:
+// nessuna e' uguale a un'altra. I tracciati si scrivono a passi relativi
+// (`compatto`): dieci disegni unici pesano un terzo in meno.
 const SPF = globalThis.SB_SPUNTA;
 const CASELLA_HOME = (seme) => {
-  const p = SPF.forma('checkbox', SPF.variante(seme));
-  return `<svg viewBox="0 0 20 20" aria-hidden="true"><path class="vt-sp-c" stroke-width="${SPF.MATITA}" d="${p.fondo}"/>` +
-    `<path class="vt-sp-v" stroke-width="${SPF.ORLO}" d="${SPF.inchiostro(p.punti, 1)}"/></svg>`;
+  const p = SPF.forma('checkbox', seme);
+  return `<svg viewBox="0 0 20 20" aria-hidden="true"><path class="vt-sp-c" stroke-width="${p.tratto}" d="${SPF.compatto(p.fondo)}"/>` +
+    (p.ripasso ? `<path class="vt-sp-r" stroke-width="${Math.round(p.tratto * 70) / 100}" d="${SPF.compatto(p.ripasso)}"/>` : '') +
+    `<path class="vt-sp-v" stroke-width="${SPF.ORLO}" d="${SPF.compatto(SPF.inchiostro(p.v, 1))}"/></svg>`;
 };
-const SPUNTA = (() => {
-  const d = SPF.inchiostro(SPF.forma('checkbox', 0).punti, 1);
+const SPUNTA = (seme) => {
+  const d = SPF.inchiostro(SPF.forma('checkbox', seme).v, 1);
   const n = d.match(/-?\d+(?:\.\d+)?/g).map(Number);
   const xs = n.filter((_, i) => i % 2 === 0), ys = n.filter((_, i) => i % 2 === 1);
   const m = SPF.ORLO / 2;
   const x0 = Math.min(...xs) - m, x1 = Math.max(...xs) + m, y0 = Math.min(...ys) - m, y1 = Math.max(...ys) + m;
   const lato = Math.max(x1 - x0, y1 - y0);
-  const vb = [(x0 + x1 - lato) / 2, (y0 + y1 - lato) / 2, lato, lato].map((v) => Math.round(v * 100) / 100).join(' ');
-  return `<svg viewBox="${vb}" fill="currentColor" stroke="currentColor" stroke-width="${SPF.ORLO}" stroke-linejoin="round" aria-hidden="true"><path d="${d}"/></svg>`;
-})();
+  const vb = [(x0 + x1 - lato) / 2, (y0 + y1 - lato) / 2, lato, lato].map((v) => Math.round(v * 10) / 10).join(' ');
+  return `<svg viewBox="${vb}" fill="currentColor" stroke="currentColor" stroke-width="${SPF.ORLO}" stroke-linejoin="round" aria-hidden="true"><path d="${SPF.compatto(d)}"/></svg>`;
+};
 
 const ICO = {
   chat: '<path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/>',
@@ -529,7 +532,7 @@ function listinoHtml(L, piani) {
       <h3>${esc(nome)}</h3>
       <div class="vt-prezzo"><b>${prezzo}</b><span>${sotto}</span></div>
       <p>${esc(testo)}</p>
-      <ul class="vt-elenco">${voci.map((v) => `<li>${SPUNTA}${esc(v)}</li>`).join('')}</ul>
+      <ul class="vt-elenco">${voci.map((v) => `<li>${SPUNTA(`voce:${nome}:${v}`)}${esc(v)}</li>`).join('')}</ul>
       ${azione}
     </article>`;
 

@@ -25,11 +25,24 @@
     return spColore;
   }
 
-  function spImmagine(tipo, v, quanto) {
+  function spImmagine(tipo, seme, quanto) {
     var c = spColori();
-    var k = tipo + v + ':' + quanto + ':' + c.china + c.matita;
-    if (!spMemo[k]) spMemo[k] = 'url("data:image/svg+xml,' + encodeURIComponent(SP.svg(tipo, v, quanto, c)) + '")';
+    var url = function () { return 'url("data:image/svg+xml,' + encodeURIComponent(SP.svg(tipo, seme, quanto, c)) + '")'; };
+    if (quanto > 0 && quanto < 1) return url();
+    var k = tipo + seme + ':' + quanto + ':' + c.china + c.matita;
+    if (!spMemo[k]) spMemo[k] = url();
     return spMemo[k];
+  }
+
+  var spChiavi = {};
+  function spSeme(el) {
+    var lab = el.labels && el.labels[0];
+    var su = el.parentElement && el.parentElement.closest('[id]');
+    var k = el.id || [el.type, el.name, el.value, lab ? lab.textContent.replace(/\s+/g, ' ').trim().slice(0, 48) : '', su ? su.id : ''].join('|');
+    var gia = (spChiavi[k] || []).filter(function (x) { return x.isConnected && x !== el; });
+    gia.push(el);
+    spChiavi[k] = gia;
+    return k + '#' + gia.length;
   }
 
   function spAdatta(el) {
@@ -46,7 +59,7 @@
     if (!spAdatta(el)) return;
     var st = el._sp;
     if (!st) {
-      st = el._sp = { v: SP.variante(el.id || (el.name + ':' + el.value)), q: el.checked ? 1 : 0, t: 0 };
+      st = el._sp = { v: spSeme(el), q: el.checked ? 1 : 0, t: 0 };
       el.style.borderImageSource = spImmagine(el.type, st.v, st.q);
       el.classList.add('sp-disegnata');
       el.dataset.sp = el.checked ? 'si' : 'no';

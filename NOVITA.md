@@ -43,6 +43,9 @@ comandi diversi da quelli della riga italiana.
 
 ## 2026-10-01
 
+- Ogni casella e ogni pallino ha un disegno suo, diverso da tutti gli altri, come fatto a mano uno per uno: il riquadro un po' storto, la «v» con la sua pressione. [vai: giochi]
+  en: Every checkbox and radio button has its own drawing, unlike any other, as if each were drawn by hand: a slightly crooked box, a check with its own pen pressure.
+  es: Cada casilla y cada botón de opción tiene su propio dibujo, distinto de todos los demás, como hecho a mano uno a uno: el cuadro algo torcido, la «v» con su presión.
 - La casella vuota è un riquadro a matita fatto d'un gesto, come lo fa una mano: con le righe incrociate agli angoli sembrava il simbolo del ritaglio. E il pallino scelto è tondo, con aria intorno. [vai: giochi]
   en: The empty checkbox is a pencil square drawn in one stroke, the way a hand does it: with lines crossing at the corners it looked like the crop symbol. And the chosen radio dot is round, with room around it.
   es: La casilla vacía es un cuadrado a lápiz hecho de un trazo, como lo hace una mano: con las líneas cruzadas en las esquinas parecía el símbolo de recortar. Y el punto elegido es redondo, con aire alrededor.
