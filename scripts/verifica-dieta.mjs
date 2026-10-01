@@ -103,6 +103,14 @@ const SELFTEST = process.argv.includes('--selftest');
 // tetto la pagina ha smesso di spedire il rientro dei suoi template (a capo e
 // spazi davanti a ogni riga): 170 byte compressi che non disegnavano niente
 // (senzaRientro, in vetrina-vista.js, con la prova che si legge uguale).
+//
+// Il 1 ottobre sono arrivate le spunte disegnate (docs/DISEGNO.md, «Le
+// spunte»). Il motore che disegna caselle e pallini a china sta in
+// disegno-pannello.js e non nel nucleo: sulla home non c'e' una casella nativa
+// che si veda (quelle del configuratore sono nascoste dietro la loro spunta),
+// quindi portarlo qui sarebbe stato peso senza niente da disegnare. La home ha
+// preso solo la «v» a mano, nel configuratore e nei listini: 65 byte compressi,
+// dopo averla scritta a numeri interi e senza un attributo ripetuto in ogni riga.
 const TETTO_KB = 60;
 
 let chromium;

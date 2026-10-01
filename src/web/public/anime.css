@@ -867,6 +867,10 @@ body.pad-guida, body.pad-guida * { cursor: none !important; }
 .dg-out { animation: dg-copri var(--dg-retino, 170ms) steps(3, jump-end) var(--dg-da-retino, 0ms) both; }
 @keyframes dg-retino { from { --mt-t: 0px; } to { --mt-t: 7px; } }
 @keyframes dg-copri { from { --mt-t: 7px; } to { --mt-t: 0px; } }
+input.sp-disegnata { -webkit-appearance: none; appearance: none; border: 0 solid transparent; border-radius: 0; padding: 0; background: transparent; border-image-slice: 0 fill; border-image-width: 0; border-image-outset: .3rem; border-image-repeat: stretch; cursor: pointer; flex: none; }
+input.sp-disegnata:disabled { opacity: .45; cursor: default; }
+input.sp-disegnata:focus-visible { outline: 2px dashed var(--acc); outline-offset: 2px; }
+@media (forced-colors: active) { input.sp-disegnata { -webkit-appearance: auto; appearance: auto; border-image-source: none !important; } }
 .dg-tela { position: absolute; pointer-events: none; overflow: visible; max-width: none; }
 .dg-tela path { fill: none; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 1; stroke-dashoffset: 1; }
 .dg-matita { stroke: color-mix(in srgb, var(--contorno) 62%, transparent); stroke-width: 1.5; }

@@ -25,6 +25,12 @@
 // nascosta e si vede la levetta) non hanno un riquadro da misurare: si
 // saltano, e il conto dice quante se ne sono misurate davvero.
 //
+// E OGNI SCELTA E' DISEGNATA come il resto del sito (disegno.js, «Le spunte»
+// in docs/DISEGNO.md): la casella a china, la spunta o il pallino a mano, e il
+// disegno dice lo stato vero della casella. Su un campione, toccata, la spunta
+// si traccia a scatti e toccata di nuovo si disfa; nel gruppo dei pallini della
+// moneta, sceglierne uno cancella quello di prima.
+//
 // Uso: node scripts/verifica-scelte.mjs             (esce 1 se una scelta e' staccata o attaccata a un'altra)
 //      node scripts/verifica-scelte.mjs --selftest  (rimette la regola in linea e vuole vederla rossa)
 
@@ -78,6 +84,9 @@ const MISURA = `(() => {
     .filter((x) => x.testi.length);
   const rotte = [];
   for (const x of scelte) {
+    const img = x.i.style.borderImageSource || '';
+    if (!x.i.classList.contains('sp-disegnata') || !img.includes('data:image/svg')) { rotte.push('non disegnata: «' + nome(x.i, x.lab) + '»'); continue; }
+    if (x.i.dataset.sp !== (x.i.checked ? 'si' : 'no') || img.includes('stroke-dashoffset') !== x.i.checked) { rotte.push('il disegno non dice il suo stato: «' + nome(x.i, x.lab) + '»'); continue; }
     const suoi = x.testi.filter((q) => stessaRiga(q, x.r));
     const suo = suoi.length ? Math.min(...suoi.map((q) => distanza(q, x.r))) : Infinity;
     if (suo > 24) { rotte.push('staccata dalle sue parole: «' + nome(x.i, x.lab) + '»' + (suo === Infinity ? ' (non sono sulla sua riga)' : ' (' + Math.round(suo) + ' px)')); continue; }
@@ -141,6 +150,74 @@ try {
       misurate += r.misurate;
       for (const x of r.rotte) rotte.push(`${w}px · ${id}: ${x}`);
     }
+    // Le prove del gesto cambiano un'impostazione, e il pannello non lascia
+    // uscire da una scheda con una modifica non salvata: ognuna parte da una
+    // pagina appena caricata.
+    const fresca = async (scheda) => {
+      const q = await ctx.newPage();
+      q.on('pageerror', (e) => guai.push(e.message));
+      await q.goto(sito.base + '/?demo=1&lang=it', { waitUntil: 'networkidle' });
+      await q.waitForFunction(() => window.SB_APP && document.querySelector('.pannello-scheda.visibile'), null, { timeout: 20000 });
+      await q.addStyleTag({ content: '.giro-velo,.giro-fumetto,.giro-carta,#cookie-banner{display:none!important}' });
+      await q.evaluate((x) => window.SB_APP.vai(x), scheda);
+      await q.waitForFunction((x) => document.querySelector('.pannello-scheda.visibile')?.dataset.scheda === x, scheda, { timeout: 10000 });
+      await q.waitForTimeout(400);
+      return q;
+    };
+    if (telefono && !SELFTEST) {
+      const pg = await fresca('regole');
+      const gesto = await pg.evaluate(async () => {
+        const el = [...document.querySelectorAll('.pannello-scheda.visibile input.sp-disegnata[type="checkbox"]')]
+          .find((x) => !x.checked && x.getBoundingClientRect().width > 0);
+        if (!el) return { trovata: false };
+        el.scrollIntoView({ block: 'center' });
+        await new Promise((ok) => setTimeout(ok, 120));
+        const guarda = async () => { const visti = new Set(); for (let t = 0; t < 14; t++) { visti.add(el.style.borderImageSource); await new Promise((ok) => setTimeout(ok, 40)); } return visti.size; };
+        el.click();
+        const dentro = await guarda();
+        const accesa = el.dataset.sp === 'si' && el.style.borderImageSource.includes('stroke-dashoffset');
+        el.click();
+        const fuori = await guarda();
+        const spenta = el.dataset.sp === 'no' && !el.style.borderImageSource.includes('stroke-dashoffset');
+        return { trovata: true, dentro, fuori, accesa, spenta };
+      });
+      if (!gesto.trovata) rotte.push(`${w}px · regole: nessuna casella da toccare per provare il gesto`);
+      else {
+        if (gesto.dentro < 3 || !gesto.accesa) rotte.push(`${w}px · regole: la spunta non si traccia a scatti quando la metti (${gesto.dentro} disegni)`);
+        if (gesto.fuori < 2 || !gesto.spenta) rotte.push(`${w}px · regole: la spunta non si disfa quando la togli (${gesto.fuori} disegni)`);
+      }
+      await pg.close();
+      const g = await fresca('giochi');
+      const gruppo = await g.evaluate(async () => {
+        document.querySelectorAll('.pannello-scheda.visibile details:not([open])').forEach((d) => { d.open = true; });
+        await new Promise((ok) => setTimeout(ok, 350));
+        const tutti = [...document.querySelectorAll('.pannello-scheda.visibile input.sp-disegnata[type="radio"][name="forma-monete"]')];
+        const altro = tutti.find((x) => !x.checked);
+        if (!altro) return { trovato: false };
+        const prima = tutti.find((x) => x.checked);
+        altro.scrollIntoView({ block: 'center' });
+        altro.click();
+        await new Promise((ok) => setTimeout(ok, 600));
+        return { trovato: true, nuovo: altro.dataset.sp === 'si', vecchio: !prima || prima.dataset.sp === 'no' };
+      });
+      await g.close();
+      if (!gruppo.trovato) rotte.push(`${w}px · giochi: il gruppo dei pallini della moneta non c'e' da provare`);
+      else if (!gruppo.nuovo || !gruppo.vecchio) rotte.push(`${w}px · giochi: scegliendo un pallino, ${gruppo.nuovo ? 'quello di prima resta disegnato' : 'il nuovo non si disegna'}`);
+    }
+    if (SELFTEST && telefono) {
+      await p.evaluate(() => window.SB_APP.vai('regole'));
+      await p.waitForFunction(() => document.querySelector('.pannello-scheda.visibile')?.dataset.scheda === 'regole', null, { timeout: 10000 });
+      await p.waitForTimeout(400);
+      const tolta = await p.evaluate(() => {
+        const el = [...document.querySelectorAll('.pannello-scheda.visibile input.sp-disegnata')].find((x) => x.getBoundingClientRect().width > 0);
+        if (!el) return false;
+        el.classList.remove('sp-disegnata');
+        el.style.borderImageSource = '';
+        return true;
+      });
+      const r = await p.evaluate(MISURA);
+      if (tolta && r.rotte.some((x) => x.startsWith('non disegnata'))) rotte.push('390px · autoprova: casella nativa vista');
+    }
     await ctx.close();
   }
   for (const r of rotte.slice(0, 40)) console.log(`  ✗ ${r}`);
@@ -151,11 +228,14 @@ try {
   if (pochi) console.log('  ✗ troppo poche scelte misurate: il cancello non sta guardando il pannello');
   const ok = !rotte.length && !guai.length && !pochi;
   if (SELFTEST) {
-    const vista = rotte.some((r) => r.startsWith('390px') && r.includes('attaccata alle parole di un\'altra') && r.includes('Play'));
-    console.log(vista ? 'Autoprova: la scelta attaccata a un\'altra si vede. ✓' : 'Autoprova: la regola in linea NON e\' stata vista. ✗');
+    const inLinea = rotte.some((r) => r.startsWith('390px') && r.includes('attaccata alle parole di un\'altra') && r.includes('Play'));
+    const nativa = rotte.some((r) => r.includes('autoprova: casella nativa vista'));
+    const vista = inLinea && nativa;
+    console.log(inLinea ? 'Autoprova: la scelta attaccata a un\'altra si vede. ✓' : 'Autoprova: la regola in linea NON e\' stata vista. ✗');
+    console.log(nativa ? 'Autoprova: la casella non disegnata si vede. ✓' : 'Autoprova: la casella non disegnata NON e\' stata vista. ✗');
     process.exitCode = vista ? 0 : 1;
   } else {
-    console.log(ok ? 'Ogni casella e ogni pallino stanno con le loro parole. ✓' : `${rotte.length} scelte fuori posto.`);
+    console.log(ok ? 'Ogni casella e ogni pallino stanno con le loro parole, disegnati come il resto del sito. ✓' : `${rotte.length} scelte fuori posto.`);
     process.exitCode = ok ? 0 : 1;
   }
 } finally {

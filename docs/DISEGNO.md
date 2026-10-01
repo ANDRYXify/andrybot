@@ -556,3 +556,63 @@ si disegnano più né scivolano: ci sono.
   nessun tratto corre lungo il lato che non c'è.
 - `scripts/verifica-larghezza.mjs` gira a 360 px col disegno acceso: nessuna
   tela allarga la pagina.
+
+## Le spunte
+
+Le caselle e i pallini erano gli ultimi controlli rimasti col disegno del
+sistema: un quadratino liscio, magenta pieno, uguale a quello di ogni altro
+sito. Chiesto così: «proprio la "v" della spunta sia disegnata, una v nera che
+esce un po' da una parte e un po' dall'altra».
+
+- **La casella** è un quadrato a china (`--contorno`): quattro tratti appena
+  storti, fatti con lo stesso `tratto` dei contorni delle carte.
+- **La spunta** è una «v» a china, dello stesso inchiostro: parte un poco
+  fuori dal riquadro a sinistra, scende corta, risale lunga ed esce in alto a
+  destra, come una spunta fatta a penna.
+- **Il pallino** è un cerchio a china chiuso a mano, poco più di un giro; la
+  scelta è un ricciolo pieno che lo riempie.
+- **Si disegna e si disfa.** Mettere la spunta la traccia a scatti, alla
+  cadenza del sito (12 disegni al secondo, 330 ms); toglierla la disfa
+  all'indietro, più svelta (`RITORNO`). Una casella fuori dallo schermo cambia
+  senza animazione.
+
+Com'è fatto, per costruzione:
+
+- la casella resta un `<input>` vero: tastiera, lettori di schermo, clic
+  sull'etichetta, `:checked`, tutto come prima. Il disegno è un SVG calcolato
+  messo come **immagine di bordo** con `border-image-outset`: può uscire di
+  0,3rem tutto intorno senza ingrandire la casella, quindi niente si sposta
+  nel pannello e il clic resta sulla casella. Con uno sfondo la «v» non
+  sarebbe potuta uscire dai bordi;
+- `appearance: none` vale solo per `input.sp-disegnata`, e la classe la mette
+  il disegno insieme alla sua immagine: una casella che il disegno non ha
+  ancora preso resta quella del sistema, mai un quadrato vuoto;
+- ogni strada che cambia lo stato passa di qui: il clic (`change`), il codice
+  che scrive `.checked` (il setter è avvolto), il `reset` dei moduli, e per i
+  pallini gli altri del gruppo, che il browser spegne senza dirlo;
+- il seme (id, oppure nome e valore) sceglie una di sei varianti: varia il
+  tratto, non decide dove stanno la casella e la spunta, che stanno dove dice
+  la geometria;
+- i colori si leggono dal tema e si rifanno quando il tema cambia;
+- in alto contrasto (`forced-colors`) torna la casella del sistema;
+- l'interruttore (la levetta) ha il suo disegno e resta com'è; un input con
+  `data-nativo` resta nativo.
+
+Il motore sta in `disegno-pannello.js`, non nel nucleo: sulla home non c'è una
+casella nativa che si veda, quindi lì sarebbe stato peso senza niente da
+disegnare (`scripts/verifica-dieta.mjs`). La home ha le sue spunte disegnate a
+parte, nel configuratore e nei listini: una sola «v» a mano (`V_A_MANO` in
+`src/web/vetrina-vista.js`), che nel configuratore sborda dal riquadro e si
+traccia a scatti col solo CSS.
+
+Le pagine pubbliche degli streamer (pagina link, donazioni, negozio) hanno il
+tema scelto dallo streamer e non portano il disegno del pannello: lì le
+caselle restano col colore del tema.
+
+Collaudo: `scripts/verifica-scelte.mjs` pretende che ogni casella e ogni
+pallino visibile, in ogni scheda, al telefono e al computer, sia disegnato e
+che il disegno dica il suo stato; su un campione, toccato, la spunta si
+traccia in almeno tre disegni e si disfa; nel gruppo dei pallini della moneta,
+sceglierne uno cancella quello di prima. L'autoprova toglie il disegno a una
+casella e vuole vederla rossa. Rotti a mano: senza animazione e senza
+l'aggiornamento del gruppo, il cancello è rosso.
