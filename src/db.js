@@ -296,6 +296,16 @@ CREATE TABLE IF NOT EXISTS rapporti (      -- il rapporto di ogni diretta finita
 );
 CREATE INDEX IF NOT EXISTS idx_rapporti_channel ON rapporti(channel, fine);
 
+CREATE TABLE IF NOT EXISTS voce_giri (     -- a che punto e' il giro delle frasi di ogni momento (features/voce.js)
+  channel TEXT NOT NULL,
+  momento TEXT NOT NULL,
+  giro INTEGER NOT NULL DEFAULT 0,          -- quante volte le frasi del momento sono uscite tutte
+  usate TEXT NOT NULL DEFAULT '[]',         -- le frasi gia' uscite in questo giro, per impronta
+  ultima TEXT NOT NULL DEFAULT '',          -- l'ultima uscita: il giro dopo non comincia da lei
+  ts INTEGER NOT NULL,
+  PRIMARY KEY (channel, momento)
+);
+
 CREATE TABLE IF NOT EXISTS posta_streamer ( -- l'indirizzo scelto dallo streamer per i rapporti
   channel TEXT PRIMARY KEY,
   email TEXT NOT NULL DEFAULT '',
@@ -1411,6 +1421,27 @@ export const presenze = {
     const ch = String(channel).toLowerCase();
     db.prepare('DELETE FROM presenze WHERE channel=?').run(ch);
     db.prepare('DELETE FROM dirette_viste WHERE channel=?').run(ch);
+  },
+};
+
+// ---------------------------------------------------------------- VOCE: il giro delle frasi
+// Una riga per canale e momento. Si legge e si scrive a ogni frase detta:
+// e' il motivo per cui, dopo un riavvio, il canale riprende dalla frase dopo
+// e non ricomincia da capo (features/voce.js).
+export const voceGiri = {
+  get(channel, momento) {
+    const r = db.prepare('SELECT giro, usate, ultima FROM voce_giri WHERE channel=? AND momento=?')
+      .get(String(channel).toLowerCase(), String(momento));
+    if (!r) return { giro: 0, usate: [], ultima: '' };
+    let usate = [];
+    try { usate = JSON.parse(r.usate); } catch { usate = []; }
+    return { giro: Number(r.giro) || 0, usate: Array.isArray(usate) ? usate.map(String) : [], ultima: String(r.ultima || '') };
+  },
+  salva(channel, momento, { giro = 0, usate = [], ultima = '' } = {}) {
+    db.prepare(`INSERT INTO voce_giri (channel, momento, giro, usate, ultima, ts) VALUES (?,?,?,?,?,?)
+      ON CONFLICT(channel, momento) DO UPDATE SET giro=excluded.giro, usate=excluded.usate, ultima=excluded.ultima, ts=excluded.ts`)
+      .run(String(channel).toLowerCase(), String(momento), Math.max(0, Math.floor(Number(giro) || 0)),
+        JSON.stringify((Array.isArray(usate) ? usate : []).map(String).slice(0, 200)), String(ultima || ''), now());
   },
 };
 

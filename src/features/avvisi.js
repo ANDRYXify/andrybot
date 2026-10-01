@@ -22,33 +22,29 @@ export const PIATTAFORME = {
     etichetta: ['Diretta su Twitch', 'Twitch live', 'Directo en Twitch'],
     nome: 'Twitch',
     evento: 'live',                       // chiave storica: NON si tocca
+    icona: '🔴',
     url: (login) => `https://twitch.tv/${login}`,
-    predefinito: '🔴 <b>{nome}</b> è in diretta!\n\n<b>{titolo}</b>\n🎮 {gioco}\n\n👉 {link}',
-    conLocandina: '🔴 <b>{nome}</b> è in diretta · <a href="{link}">guarda ora</a>',
   },
   kick: {
     etichetta: ['Diretta su Kick', 'Kick live', 'Directo en Kick'],
     nome: 'Kick',
     evento: 'kick',
+    icona: '🟢',
     url: (login) => `https://kick.com/${login}`,
-    predefinito: '🟢 <b>{nome}</b> è in diretta su <b>Kick</b>!\n\n<b>{titolo}</b>\n\n👉 {link}',
-    conLocandina: '🟢 <b>{nome}</b> è in diretta su Kick · <a href="{link}">guarda ora</a>',
   },
   youtube: {
     etichetta: ['Diretta su YouTube', 'YouTube live', 'Directo en YouTube'],
     nome: 'YouTube',
     evento: 'ytlive',
+    icona: '🔴',
     url: (login, d) => d?.url || `https://youtube.com/@${login}/live`,
-    predefinito: '🔴 <b>{nome}</b> è in diretta su <b>YouTube</b>!\n\n<b>{titolo}</b>\n\n👉 {link}',
-    conLocandina: '🔴 <b>{nome}</b> è in diretta su YouTube · <a href="{link}">guarda ora</a>',
   },
   tiktok: {
     etichetta: ['Diretta su TikTok', 'TikTok live', 'Directo en TikTok'],
     nome: 'TikTok',
     evento: 'tiktok',                     // chiave storica: NON si tocca
+    icona: '🎵',
     url: (login, d) => d?.url || `https://www.tiktok.com/@${login}/live`,
-    predefinito: '🎵 <b>{nome}</b> è in diretta su <b>TikTok</b>!\n\n👉 {link}',
-    conLocandina: '🎵 <b>{nome}</b> è in diretta su TikTok · <a href="{link}">guarda ora</a>',
   },
 };
 
@@ -89,11 +85,33 @@ export function diretta({ piattaforma, login, display = '', titolo = '', gioco =
   };
 }
 
-// Il testo. `template` è quello personalizzato dallo streamer (vuoto = quello
-// della piattaforma). Un segnaposto senza dato sparisce insieme alla sua riga:
-// «🎮 » da solo è peggio che niente.
+// LA PRIMA RIGA DELL'AVVISO la sceglie la voce del canale (momento
+// `avviso-diretta` del frasario), una volta per avviso: la stessa riga va a
+// Telegram e a Discord, e il giro delle frasi non avanza due volte per la
+// stessa diretta. Il nome pero' si scrive in grassetto in due modi diversi
+// (HTML di qua, markdown di la'), quindi chi sceglie la riga mette al posto
+// del nome questo segno, e ogni posto lo stende a modo suo con `stendiRiga`,
+// sfuggendo il resto per il suo formato.
+export const SEGNO_NOME = '\u0001';
+
+// La riga stesa per un posto. Senza una riga della voce (un avviso composto da
+// chi non l'ha chiesta) resta il nome e la piattaforma: niente parole, quindi
+// niente lingua sbagliata.
+export function stendiRiga(riga, sfuggi, nomeInForma, piattaforma = '') {
+  const r = String(riga || '');
+  if (!r.includes(SEGNO_NOME)) return r ? sfuggi(r) : [nomeInForma, sfuggi(piattaforma)].filter(Boolean).join(' · ');
+  return r.split(SEGNO_NOME).map(sfuggi).join(nomeInForma);
+}
+
+// Il testo. `template` è quello personalizzato dallo streamer per quel posto:
+// se c'e', vince, ed e' la sua frase, non la nostra. Un segnaposto senza dato
+// sparisce insieme alla sua riga: «🎮 » da solo è peggio che niente.
 //
-// `conLocandina` cambia il testo di casa, non quello scritto dallo streamer.
+// Senza template: l'icona della piattaforma, la riga della voce (`d.voce`),
+// poi titolo, gioco e link, ognuno solo se c'e'. Nessuna parola scritta qui:
+// quelle stanno nel frasario, nella lingua del canale.
+//
+// `conLocandina` accorcia il testo di casa, non quello scritto dallo streamer.
 // Quando parte anche l'immagine, il titolo e il gioco sono GIA' disegnati
 // dentro: ripeterli sotto vuol dire mandare due volte la stessa cosa e un
 // messaggio alto il doppio. Resta quello che l'immagine non può fare — il nome
@@ -102,25 +120,30 @@ export function diretta({ piattaforma, login, display = '', titolo = '', gioco =
 export function messaggio(d, template = '', { conLocandina = false } = {}) {
   if (!d) return '';
   const p = PIATTAFORME[d.piattaforma];
-  const valori = {
-    nome: escHtml(d.display),
-    titolo: escHtml(d.titolo || (p.nome + ' · in diretta')),
-    gioco: escHtml(d.gioco),
-    spettatori: d.spettatori == null ? '' : String(d.spettatori),
-    link: d.url,
-    login: escHtml(d.login),
-    piattaforma: p.nome,
-  };
-  const t = (template && String(template).trim())
-    || (conLocandina && p.conLocandina) || p.predefinito;
-  const steso = t.replace(/\{(nome|titolo|gioco|spettatori|link|login|piattaforma)\}/g, (_, k) => valori[k] ?? '');
-  // via le righe rimaste vuote (o con solo un'emoji e uno spazio)
-  return steso.split('\n')
-    .filter((r, i, tutte) => r.trim() !== '' || (i > 0 && i < tutte.length - 1 && tutte[i - 1].trim() !== ''))
-    .join('\n')
-    .replace(/^[^\p{L}\p{N}<]*$/gmu, '')
-    .replace(/\n{3,}/g, '\n\n')
-    .trim();
+  const suo = template && String(template).trim();
+  if (suo) {
+    const valori = {
+      nome: escHtml(d.display),
+      titolo: escHtml(d.titolo),
+      gioco: escHtml(d.gioco),
+      spettatori: d.spettatori == null ? '' : String(d.spettatori),
+      link: d.url,
+      login: escHtml(d.login),
+      piattaforma: p.nome,
+    };
+    const steso = suo.replace(/\{(nome|titolo|gioco|spettatori|link|login|piattaforma)\}/g, (_, k) => valori[k] ?? '');
+    // via le righe rimaste vuote (o con solo un'emoji e uno spazio)
+    return steso.split('\n')
+      .filter((r, i, tutte) => r.trim() !== '' || (i > 0 && i < tutte.length - 1 && tutte[i - 1].trim() !== ''))
+      .join('\n')
+      .replace(/^[^\p{L}\p{N}<]*$/gmu, '')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
+  }
+  const riga = `${p.icona} ${stendiRiga(d.voce, escHtml, `<b>${escHtml(d.display)}</b>`, p.nome)}`;
+  if (conLocandina) return `${riga} 👉 ${d.url}`;
+  const corpo = [d.titolo ? `<b>${escHtml(d.titolo)}</b>` : '', d.gioco ? `🎮 ${escHtml(d.gioco)}` : ''].filter(Boolean);
+  return [riga, ...(corpo.length ? ['', ...corpo] : []), '', `👉 ${d.url}`].join('\n');
 }
 
 // Le voci per il filtro delle destinazioni (Telegram) e per la dashboard.

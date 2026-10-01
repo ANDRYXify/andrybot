@@ -223,12 +223,9 @@ export default {
       ['«Mostra chi ha spinto di più»', 'acceso', ''],
       ['«Mostra il record del canale, quando Twitch lo manda»', 'spento', ''],
       ['«Dillo in chat»', 'spento', 'le righe in chat, separate dalla scena'],
-      ['«Quando parte»', 'Hype train partito! Spingiamo.', '200 caratteri'],
-      ['«Quando sale di livello»', 'Hype train al livello {livello}!', '<code>{livello}</code>'],
-      ['«Quando manca poco al livello»', 'Manca poco al livello {prossimo}: {manca} punti!', '<code>{prossimo}</code> <code>{manca}</code>; si dice nell\'ultimo quarto della salita'],
-      ['«Quando finisce»', 'Treno finito al livello {livello}. Grazie {chi}!', '<code>{livello}</code> <code>{chi}</code> <code>{punti}</code>'],
     ] },
-    { p: ['Il bot parla una volta per momento, non a ogni sub: i sub li annunciano già gli alert. Svuota una casella e quella frase non si dice più. Chi ha il treno già a schermo da Twitch può tenere solo le righe in chat. I sub e i bit che fanno crescere il treno contano già negli obiettivi e nel subathon, uno per uno. Chi guarda chiede <code>!treno</code>.'] },
+    { p: ['In chat il bot parla quando il treno parte, quando manca poco al livello dopo (nell\'ultimo quarto della salita), quando ci arriva e quando finisce. Le frasi sono quelle del bot, nella scheda «Personalità», carta «Le frasi del bot»: cambiano col canale, nella lingua della chat, e lì ne spegni una o scrivi le tue, con <code>{livello}</code>, <code>{prossimo}</code>, <code>{manca}</code>, <code>{punti}</code> e <code>{chi}</code>.'] },
+    { p: ['Il bot parla una volta per momento, non a ogni sub: i sub li annunciano già gli alert. Chi ha il treno già a schermo da Twitch può tenere solo le righe in chat. I sub e i bit che fanno crescere il treno contano già negli obiettivi e nel subathon, uno per uno. Chi guarda chiede <code>!treno</code>.'] },
 
     { h3: 'Classifica Bit' },
     { tabella: [

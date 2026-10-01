@@ -12,7 +12,8 @@
 // in silenzio. Qui si fissa che non succeda.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { diretta, messaggio, eventoDi, PIATTAFORME, CHIAVI } from '../../src/features/avvisi.js';
+import { diretta, messaggio, eventoDi, PIATTAFORME, CHIAVI, SEGNO_NOME, stendiRiga } from '../../src/features/avvisi.js';
+import { testoDiretta, testoFinita, incornicia } from '../../src/features/discord.js';
 
 test('le chiavi già salvate NON cambiano significato', () => {
   assert.equal(eventoDi('twitch'), 'live', '«live» ha sempre voluto dire Twitch: deve continuare');
@@ -26,14 +27,45 @@ test('le piattaforme nuove portano chiavi nuove, non rubano le vecchie', () => {
   assert.equal(new Set(chiavi).size, chiavi.length, 'due piattaforme non possono condividere una chiave');
 });
 
-test('ogni piattaforma è completa: nome, evento, link e messaggio', () => {
+test('ogni piattaforma è completa: nome, evento, link e icona', () => {
   for (const [k, p] of Object.entries(PIATTAFORME)) {
     assert.ok(p.nome, `${k}: manca il nome`);
     assert.ok(p.evento, `${k}: manca la chiave evento`);
     assert.match(p.url('tizio'), /^https:\/\//, `${k}: il link non è un indirizzo`);
-    assert.match(p.predefinito, /\{link\}/, `${k}: il messaggio non porta il link`);
-    assert.match(p.predefinito, /\{nome\}/, `${k}: il messaggio non dice chi`);
+    assert.ok(p.icona, `${k}: manca l'icona`);
+    const t = messaggio(diretta({ piattaforma: k, login: 'tizio', display: 'Tizio' }));
+    assert.match(t, /Tizio/, `${k}: il messaggio non dice chi`);
+    assert.ok(t.includes(p.url('tizio')), `${k}: il messaggio non porta il link`);
   }
+});
+
+test('la prima riga e\' quella della voce del canale, col nome in grassetto e il resto sfuggito', () => {
+  const d = { ...diretta({ piattaforma: 'twitch', login: 'andry', display: 'Andry', titolo: 'Ciao' }), voce: `${SEGNO_NOME} is live on Twitch & friends` };
+  const t = messaggio(d);
+  assert.equal(t.split('\n')[0], '🔴 <b>Andry</b> is live on Twitch &amp; friends');
+  const dc = testoDiretta(d);
+  assert.equal(dc, '🔴 **Andry** is live on Twitch & friends · https://twitch.tv/andry', 'su Discord la stessa riga, in markdown');
+  assert.equal(stendiRiga('', (x) => x, '**A**', 'Kick'), '**A** · Kick', 'senza riga della voce: il nome e la piattaforma, nessuna parola');
+});
+
+test('senza la riga della voce nessuna parola scritta a mano', () => {
+  const t = messaggio(diretta({ piattaforma: 'kick', login: 'a', display: 'A', titolo: 'T', gioco: 'G' }));
+  assert.doesNotMatch(t, /diretta|live|vivo/i, t);
+  assert.doesNotMatch(testoDiretta(diretta({ piattaforma: 'kick', login: 'a', display: 'A' })), /diretta|live|vivo/i);
+});
+
+test('a diretta finita la riga viene dalla voce, e senza resta il nome', () => {
+  assert.equal(testoFinita({ display: 'Luna' }, null, `${SEGNO_NOME} ended the stream`), '⚫ **Luna** ended the stream');
+  assert.equal(testoFinita({ display: 'Lu_na' }), '⚫ **Lu\\_na**', 'il nome si sfugge per il markdown');
+});
+
+test('il riquadro di Discord parla la lingua del canale', () => {
+  const d = diretta({ piattaforma: 'kick', login: 'a', display: 'A', gioco: 'Chess', spettatori: 3 });
+  const en = incornicia({ ...d, lingua: 'en' });
+  assert.equal(en.title, '🟢 A is live on Kick');
+  assert.deepEqual(en.fields.map((f) => f.name), ['🎮 Game', '👥 Viewers']);
+  assert.equal(incornicia({ ...d, lingua: 'es' }).title, '🟢 A está en vivo en Kick');
+  assert.equal(incornicia(d).fields[0].name, '🎮 Gioco', 'senza lingua, l\'italiano');
 });
 
 test('una diretta senza piattaforma nota non esiste', () => {

@@ -29,6 +29,7 @@
 // riaperto a meta' treno lo ritrova, e il bot riavviato pure.
 import { streamers } from '../db.js';
 import { makeLog } from '../logger.js';
+import * as voce from './voce.js';
 
 const log = makeLog('treno');
 
@@ -106,13 +107,6 @@ export const trenoDi = (settings) => settings?.overlayStato?.treno || null;
 // sempre col confronto sull'istante, mai con un contatore che scorre.
 export const vivo = (t, ora = Date.now()) => !!(t && t.scade > ora);
 
-// Il treno in parole, per la chat e per i test: «livello 3».
-export const inParole = (t) => (t ? `livello ${t.livello}` : '');
-
-const riempi = (tpl, vars) => String(tpl || '')
-  .replace(/\{(\w+)\}/g, (_, k) => (vars[k] != null ? String(vars[k]) : ''))
-  .slice(0, 300);
-
 // Chi ha spinto di piu', in una parola sola per la chat.
 export const primo = (t) => (t && t.chi && t.chi.length ? t.chi[0].nome : '');
 
@@ -164,25 +158,25 @@ export function suEvento(channel, tipo, dati, { say, spingi, ora = Date.now() } 
       try { spingi?.(channel, esito.treno); } catch (e) { log.debug('spinta:', e?.message || e); }
     }
     if (say && annuncia(s?.settings)) {
-      const r = regoleDi(s.settings);
-      const vars = {
+      // `quanto` e `meta` Twitch li manda verso il livello DOPO: il numero che
+      // manca e' per il prossimo, non per quello in cui siamo. Chiamarlo
+      // {livello} avrebbe scritto in chat un traguardo gia' passato.
+      const dati = {
         livello: esito.treno.livello,
-        chi: primo(esito.treno) || 'voi',
+        chi: primo(esito.treno),
         punti: esito.treno.totale,
-        // `quanto` e `meta` Twitch li manda verso il livello DOPO: il numero che
-        // manca e' per il prossimo, non per quello in cui siamo. Chiamarlo
-        // {livello} avrebbe scritto in chat un traguardo gia' passato.
         prossimo: esito.treno.livello + 1,
         manca: Math.max(0, esito.treno.meta - esito.treno.quanto),
       };
       // Il passaggio di livello batte il richiamo: se il treno e' appena salito,
       // «manca poco al livello di prima» sarebbe una notizia vecchia di un
-      // istante. Un evento, una frase.
-      const testo = nuovo.che === 'parte' ? riempi(r.testoParte, vars)
-        : nuovo.che === 'finisce' ? riempi(r.testoFine, vars)
-          : esito.saltato ? riempi(r.testoLivello, vars)
-            : esito.quasi ? riempi(r.testoQuasi, vars) : '';
-      if (testo.trim()) say(channel, testo);
+      // istante. Un evento, una frase. La frase la sceglie la voce del canale.
+      const momento = nuovo.che === 'parte' ? 'treno-parte'
+        : nuovo.che === 'finisce' ? 'treno-fine'
+          : esito.saltato ? 'treno-livello'
+            : esito.quasi ? 'treno-quasi' : '';
+      const testo = momento ? voce.di(channel, momento, dati) : '';
+      if (testo) say(channel, testo);
     }
     return esito;
   } catch (e) { log.debug('suEvento:', e?.message || e); return null; }
@@ -200,7 +194,9 @@ export function tryComando(msg, parla, { ora = Date.now() } = {}) {
   if (!s || !serve(s.settings)) return false;
   const t = trenoDi(s.settings);
   if (!vivo(t, ora) || t.finito) return false;
-  const manca = Math.max(0, Math.round((t.scade - ora) / 1000));
-  parla(`Hype train al ${inParole(t)}: ${t.quanto} punti su ${t.meta} per il prossimo, e restano ${manca} secondi.`);
+  const secondi = Math.max(0, Math.round((t.scade - ora) / 1000));
+  const frase = voce.di(msg.channel, 'treno-stato', { livello: t.livello, quanto: t.quanto, meta: t.meta, secondi });
+  if (!frase) return false;
+  parla(frase);
   return true;
 }

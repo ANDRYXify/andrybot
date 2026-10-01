@@ -13,7 +13,8 @@
 //  · il programma si legge com'e' fatto davvero, non come dicono i documenti;
 //  · {secondi} e {durata} sono sempre quanto dura la pausa;
 //  · il programma non si chiede quando non serve;
-//  · una casella vuota vuol dire «non dire niente», non «usa il testo nostro».
+//  · qui si decide quando parlare e con quali dati: le parole le sceglie la
+//    voce del canale (test/unita/voce-canale.test.mjs).
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as P from '../../src/features/pubblicita.js';
@@ -37,33 +38,33 @@ test('il preavviso non può stare più lontano di uno snooze', () => {
   assert.equal(P.PREAVVISO_MAX, 300);
 });
 
-test('una casella vuota vuol dire «non dire niente»', () => {
-  const c = acceso({ dopo: { testo: '' } });
-  assert.equal(c.dopo.testo, '', 'non le si rimette dentro il testo nostro');
-  assert.equal(P.parla(c, 'dopo'), false);
-  assert.equal(P.parla(c, 'prima'), true, 'e gli altri momenti non c\'entrano');
-  // Anche solo spazi: chi svuota la casella la svuota.
-  assert.equal(P.parla(acceso({ prima: { testo: '   ' } }), 'prima'), false);
+test('le parole non stanno qui: nessun testo nelle impostazioni, e ogni momento ha il suo nel frasario', () => {
+  const c = P.normalizzaPubblicita({ acceso: true, dopo: { acceso: true, testo: 'Eccomi, sono tornato.' } });
+  assert.deepEqual(c.dopo, { acceso: true }, 'un testo vecchio non rientra');
+  assert.deepEqual(Object.keys(P.MOMENTO).sort(), [...P.MOMENTI].sort());
+  assert.deepEqual(Object.values(P.MOMENTO), ['pubblicita-prima', 'pubblicita-parte', 'pubblicita-dopo']);
 });
 
 test('spento tutto, non parla nessuno', () => {
   const c = P.normalizzaPubblicita({ acceso: false, prima: { acceso: true }, durante: { acceso: true } });
-  for (const m of P.MOMENTI) assert.equal(P.parla(c, m), false, m);
+  for (const m of P.MOMENTI) assert.equal(P.siDice(c, m), false, m);
 });
 
 test('ogni momento si spegne per conto suo', () => {
   const c = acceso({ durante: { acceso: false } });
-  assert.equal(P.parla(c, 'durante'), false);
-  assert.equal(P.parla(c, 'prima'), true);
-  assert.equal(P.parla(c, 'dopo'), true);
+  assert.equal(P.siDice(c, 'durante'), false);
+  assert.equal(P.siDice(c, 'prima'), true);
+  assert.equal(P.siDice(c, 'dopo'), true);
 });
 
-test('le parole da sostituire non lasciano buchi nel messaggio', () => {
-  const c = acceso({ durante: { testo: '{secondi}s = {durata} su {canale}' } });
-  assert.equal(P.testoDi(c, 'durante', { secondi: 90, canale: 'andryx' }), '90s = 1:30 su andryx');
-  // I secondi si scrivono a due cifre, e un messaggio non finisce con uno
-  // spazio penzoloni perche' una parola da sostituire era vuota.
-  assert.equal(P.testoDi(c, 'durante', { secondi: 5 }), '5s = 0:05 su');
+test('i dati della frase: quanto dura la pausa, e se non si sa non ci sono', () => {
+  assert.deepEqual(P.datiDi({ secondi: 90, canale: 'andryx' }), { canale: 'andryx', secondi: 90, durata: '1:30' });
+  // I secondi si scrivono a due cifre.
+  assert.deepEqual(P.datiDi({ secondi: 5 }), { canale: '', secondi: 5, durata: '0:05' });
+  // Una durata che non si sa non diventa uno zero: il dato manca, e la voce
+  // sceglie una frase che non lo chiede.
+  assert.deepEqual(P.datiDi({ secondi: 0, canale: 'andryx' }), { canale: 'andryx' });
+  assert.deepEqual(P.datiDi({ secondi: 999999 }), { canale: '' });
 });
 
 test('il programma vero: gli istanti arrivano in secondi Unix, non come dicono i documenti', () => {
@@ -125,7 +126,7 @@ test('il preavviso si dice una volta, e non se uno snooze ha spostato la pausa',
   const fra = (s) => P.programmaDa({ next_ad_at: (ORA + s * 1000) / 1000, duration: 90 });
   assert.equal(P.preavviso(c, {}, fra(600), ORA), null, 'dieci minuti prima e\' troppo presto');
   const p = P.preavviso(c, {}, fra(45), ORA);
-  assert.ok(p && p.testo, 'quarantacinque secondi prima si dice');
+  assert.ok(p && p.quando, 'quarantacinque secondi prima si dice');
   assert.equal(P.preavviso(c, { dettoPer: String(p.quando) }, fra(45), ORA), null, 'detto per quella pausa, non si ridice');
   assert.equal(P.quandoAvvisare(c, { dettoPer: String(p.quando) }, fra(45), ORA), 0, 'e non gli si punta un\'altra sveglia');
   // Alla sveglia il programma si rilegge: uno snooze sposta la pausa cinque
@@ -142,23 +143,19 @@ test('il preavviso si dice una volta, e non se uno snooze ha spostato la pausa',
 });
 
 test('{secondi} e {durata} sono quanto dura la pausa, in tutti e tre i momenti', () => {
-  const c = acceso({ quanto: 60,
-    prima: { testo: 'fra poco {secondi}s ({durata})' },
-    durante: { testo: 'ora {secondi}s ({durata})' },
-    dopo: { testo: 'finiti {secondi}s ({durata})' } });
+  const c = acceso({ quanto: 60 });
   const programma = P.programmaDa({ next_ad_at: (ORA + 60_000) / 1000, duration: 90 });
-  assert.equal(P.preavviso(c, {}, programma, ORA).testo, 'fra poco 90s (1:30)', 'prima: la durata del programma, non i secondi che mancano');
+  assert.equal(P.preavviso(c, {}, programma, ORA).secondi, 90, 'prima: la durata del programma, non i secondi che mancano');
   const a = P.allaPartenza(c, {}, { started_at: new Date(ORA).toISOString(), duration_seconds: 90 }, ORA);
-  assert.equal(a.testo, 'ora 90s (1:30)');
-  assert.equal(P.allaFine(c, { finisceA: a.finisceA, secondi: a.secondi }, a.finisceA).testo, 'finiti 90s (1:30)', 'dopo: non «0:00»');
+  assert.equal(a.secondi, 90);
+  assert.equal(P.allaFine(c, { finisceA: a.finisceA, secondi: a.secondi }, a.finisceA).secondi, 90, 'dopo: non «0:00»');
 });
 
-test('senza la durata, una frase che la chiede non esce; le altre sì', () => {
-  const c = acceso({ quanto: 60, prima: { testo: 'fra poco {durata} di pubblicità' } });
+test('senza la durata il preavviso si dice lo stesso, e senza numero', () => {
   const senza = P.programmaDa({ next_ad_at: (ORA + 60_000) / 1000, duration: 0 });
-  assert.equal(P.preavviso(c, {}, senza, ORA), null, 'un numero inventato in chat e\' peggio del silenzio');
-  assert.ok(P.preavviso(acceso({ quanto: 60 }), {}, senza, ORA), 'il testo di serie non la chiede, e si dice');
-  assert.equal(P.testoDi(c, 'prima', { secondi: 0 }), '');
+  const p = P.preavviso(acceso({ quanto: 60 }), {}, senza, ORA);
+  assert.ok(p, 'la pausa c\'e\': si avvisa');
+  assert.equal(p.secondi, 0, 'e il numero non si inventa');
 });
 
 test('una pausa si annuncia una volta, anche se l’evento arriva due volte', () => {
@@ -180,7 +177,7 @@ test('la pausa finisce a inizio + durata, anche se l’evento arriva tardi', () 
   const tardi = ORA + 20000;
   const a = P.allaPartenza(c, {}, { started_at: new Date(ORA).toISOString(), duration_seconds: 90 }, tardi);
   assert.equal(a.finisceA, ORA + 90000);
-  assert.match(a.testo, /90 secondi/, 'e la durata detta e\' quella della pausa');
+  assert.equal(a.secondi, 90, 'e la durata detta e\' quella della pausa');
   // Un orologio di Twitch avanti rispetto al nostro: la pausa non puo' essere
   // cominciata dopo che ce l'hanno detto.
   const avanti = P.allaPartenza(c, {}, { started_at: new Date(ORA + 5000).toISOString(), duration_seconds: 90 }, ORA);
@@ -190,8 +187,8 @@ test('la pausa finisce a inizio + durata, anche se l’evento arriva tardi', () 
 test('un evento arrivato a pausa finita non dice «pubblicità per 90 secondi»', () => {
   const c = acceso({ tolleranza: 120 });
   const a = P.allaPartenza(c, {}, { started_at: new Date(ORA).toISOString(), duration_seconds: 90 }, ORA + 100_000);
-  assert.equal(a.testo, '', 'sarebbe falso');
-  assert.equal(P.allaFine(c, { finisceA: a.finisceA, secondi: a.secondi }, ORA + 100_000).testo, 'Eccomi, sono tornato.',
+  assert.equal(a.dire, false, 'sarebbe falso');
+  assert.equal(P.allaFine(c, { finisceA: a.finisceA, secondi: a.secondi }, ORA + 100_000).dire, true,
     'il ritorno invece e\' vero, dentro la tolleranza');
 });
 
@@ -200,7 +197,7 @@ test('una durata storta non diventa un numero in chat, né un conto', () => {
   const a = P.allaPartenza(c, {}, { started_at: new Date(ORA).toISOString(), duration_seconds: 999999 }, ORA);
   assert.equal(a.secondi, 0, 'fuori scala non e\' una durata: tagliarla a 300 vorrebbe dire annunciare un numero mai detto');
   assert.equal(a.finisceA, 0, 'e senza durata non c\'e\' una fine da contare');
-  assert.equal(a.testo, '', 'il testo di serie chiede i secondi: non esce');
+  assert.equal(a.dire, true, 'la pausa e\' cominciata: si dice, con una frase che non chiede i secondi');
   assert.equal(P.allaPartenza(c, {}, { started_at: new Date(ORA).toISOString(), duration_seconds: 'novanta' }, ORA).secondi, 0);
   // La durata vera si legge in tutte e due le forme: numero (il payload vero)
   // e stringa (l'esempio dei documenti).
@@ -220,10 +217,10 @@ test('senza un istante d’inizio non si annuncia: non si saprebbe riconoscere i
 test('«sono tornato» in ritardo non si dice: è una bugia detta in diretta', () => {
   const c = acceso({ tolleranza: 120 });
   assert.equal(P.allaFine(c, { finisceA: ORA + 5000 }, ORA), null, 'prima del tempo non si dice');
-  assert.equal(P.allaFine(c, { finisceA: ORA - 1000, secondi: 90 }, ORA).testo, 'Eccomi, sono tornato.');
+  assert.equal(P.allaFine(c, { finisceA: ORA - 1000, secondi: 90 }, ORA).dire, true);
   const tardi = P.allaFine(c, { finisceA: ORA - 300 * 1000 }, ORA);
   assert.equal(tardi.scaduto, true);
-  assert.equal(tardi.testo, '', 'cinque minuti dopo si tace');
+  assert.equal(tardi.dire, false, 'cinque minuti dopo si tace');
   assert.equal(P.allaFine(c, { finisceA: ORA - 1000, dettoDopo: true }, ORA), null, 'e non si ripete');
 });
 

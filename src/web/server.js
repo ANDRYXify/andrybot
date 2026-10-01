@@ -100,6 +100,7 @@ import * as dcCostruisci from '../features/discord-costruisci.js';
 import * as dcPreset from '../features/discord-preset.js';
 import * as dcEventi from '../features/discord-eventi.js';
 import * as pubblicita from '../features/pubblicita.js';
+import * as voce from '../features/voce.js';
 import * as giochiConf from '../features/giochi-conf.js';
 import * as negozio from '../features/negozio.js';
 import { ruoliDaVendere } from '../features/negozio-tipi.js';
@@ -319,6 +320,16 @@ function slugify(s) {
     .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40) || 'overlay';
 }
 const TONI_VALIDI = ['scherzoso', 'amichevole', 'serio'];
+
+// LA PROVA DI UN AVVISO racconta quello che partirebbe davvero: la prossima
+// riga che la voce del canale sceglierebbe, nella sua lingua. La guarda senza
+// consumarla (anteprima): provare tre volte non deve far saltare tre frasi.
+function conVoceDiProva(login, dir) {
+  if (!dir) return dir;
+  const nome = avvisi.PIATTAFORME[dir.piattaforma]?.nome || 'Twitch';
+  const [riga = ''] = voce.anteprima(login, 'avviso-diretta', { nome: avvisi.SEGNO_NOME, piattaforma: nome }, 1);
+  return { ...dir, voce: riga, lingua: linguaChat(login) };
+}
 // Il genere con cui il bot parla di se'. L'elenco lo tiene il modulo che lo usa,
 // cosi' non ci sono due liste da tenere d'accordo.
 const GENERI_VALIDI = GENERI;
@@ -4910,7 +4921,6 @@ STREAMER (${su.toUpperCase()}) e non c'entra con l'automazione del marketing.
       communityQuanti: streamers.membriCommunity(login).length,
       io: login,
       conDiretta: conDiretta(piattaformaDi(login)),
-      testoDiCasa: discord.TESTO_DEFAULT,
     });
   }));
 
@@ -4960,7 +4970,7 @@ STREAMER (${su.toUpperCase()}) e non c'entra con l'automazione del marketing.
       titolo: info?.title || '', gioco: info?.game_name || '',
       spettatori: info?.viewer_count ?? null, id: String(info?.id || 'prova'),
     });
-    const esiti = await discord.diffondi(token, [d], dir);
+    const esiti = await discord.diffondi(token, [d], conVoceDiProva(login, dir));
     const r = esiti[0] || { ok: false, errore: 'nessun canale' };
     if (!r.ok) return res.status(400).json({ errore: r.errore });
     res.json({ ok: true });
@@ -6224,6 +6234,12 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
       }
       out.scheda = schedaPulita(b.scheda);
     }
+    // LE FRASI DEL BOT e il nome della community: ripulite dalla voce, che sa
+    // quali momenti esistono e quali segnaposti ha ognuno.
+    if (b.voce !== undefined) {
+      if (typeof b.voce !== 'object' || b.voce === null || Array.isArray(b.voce)) return res.status(400).json({ errore: 'voce non valida' });
+      out.voce = voce.normVoce(b.voce);
+    }
     if (b.frasi !== undefined) {
       if (!Array.isArray(b.frasi)) return res.status(400).json({ errore: 'frasi deve essere una lista' });
       out.frasi = b.frasi
@@ -7123,6 +7139,49 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     res.send(righe.join('\n') + (righe.length ? '\n' : ''));
   }));
 
+  // LE FRASI DEL BOT (docs/VOCE.md): tutti i momenti, a gruppi, con le frasi
+  // che uscirebbero adesso nel canale (nella sua lingua e nel suo tono) e la
+  // scelta dello streamer. Si salvano con le impostazioni (`voce`).
+  app.get('/api/streamer/voce', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const s = streamers.get(login)?.settings || {};
+    const lingua = linguaChat(login);
+    const tono = voce.tonoDi(s);
+    res.json({
+      lingua, tono,
+      community: voce.pulisciCommunity(s.voce?.community),
+      gruppi: voce.GRUPPI.map((g) => ({
+        id: g.id,
+        titolo: g.titolo,
+        momenti: g.momenti.map((id) => {
+          const m = voce.MOMENTI[id];
+          const { modo, frasi } = voce.sceltaDi(s, id);
+          return {
+            id, titolo: m.titolo, quando: m.quando, dati: voce.datiAmmessi(id), spegnibile: m.spegnibile,
+            modo, sue: frasi, nostre: m.frasi?.[lingua]?.[tono] || [],
+          };
+        }),
+      })),
+    });
+  }));
+
+  // «Prova»: le prossime frasi di un momento, coi dati di esempio, senza
+  // consumarle. Con la scelta che sta sullo schermo, anche se non e' salvata:
+  // si prova quello che si vede.
+  app.post('/api/streamer/voce/prova', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const b = req.body || {};
+    const id = String(b.momento || '');
+    const m = voce.MOMENTI[id];
+    if (!m) return res.status(400).json({ errore: 'momento sconosciuto' });
+    const s = streamers.get(login)?.settings || {};
+    const scelta = voce.normVoce({
+      community: b.community !== undefined ? b.community : s.voce?.community,
+      momenti: { ...(s.voce?.momenti || {}), [id]: { modo: b.modo, frasi: Array.isArray(b.frasi) ? b.frasi : [] } },
+    });
+    res.json({ frasi: voce.anteprima(login, id, m.esempio, 3, { voce: scelta }) });
+  }));
+
   // LINEE GUIDA (le regole che dai a "lia"): le rispetta sempre, in ogni modo
   app.get('/api/streamer/guide', requireLogin, wrap(async (req, res) => {
     res.json({ guide: guide.list(currentUser(req).login) });
@@ -7784,6 +7843,10 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     if (!target) return res.status(400).json({ errore: 'scrivi il canale da raidare' });
     const r = await helix.startRaid(login, target);
     if (!r.ok) return res.status(400).json({ errore: r.motivo || 'non riuscito' });
+    // La chat lo sa prima di trovarsi altrove: il raid di Twitch parte dopo un
+    // conto alla rovescia, ed e' il momento di salutarsi e di dire dove si va.
+    const frase = voce.di(login, 'raid-uscita', { nome: r.target || target });
+    if (frase) manager.say(login, frase);
     res.json({ ok: true, target: r.target });
   }));
 
@@ -9486,7 +9549,7 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     });
     const evento = avvisi.eventoDi(piattaformaDi(login)) || avvisi.eventoDi('twitch');
     const foto = await cartaLive.fotoPerEvento(login, evento, { info: info || {}, helix });
-    const testo = avvisi.messaggio(dir, c.messaggio, { conLocandina: !!foto });
+    const testo = avvisi.messaggio(conVoceDiProva(login, dir), c.messaggio, { conLocandina: !!foto });
     const esiti = await telegram.diffondi(c.token, [{ id: d.id, chat_id: d.chat_id, thread_id: d.thread_id, titolo: d.titolo || '' }],
       '🧪 <i>Anteprima notifica</i>\n\n' + testo, { anteprima: true, foto });
     const r = esiti[0] || { ok: false, errore: 'nessuna destinazione' };
@@ -9668,7 +9731,7 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     // contrario, e nessuno dei due sintomi si vede finche' non e' tardi.
     const evento = avvisi.eventoDi(piattaformaDi(login)) || avvisi.eventoDi('twitch');
     const foto = await cartaLive.fotoPerEvento(login, evento, { info: info || {}, helix });
-    const testo = avvisi.messaggio(dir, c.messaggio, { conLocandina: !!foto });
+    const testo = avvisi.messaggio(conVoceDiProva(login, dir), c.messaggio, { conLocandina: !!foto });
     const esiti = await telegram.diffondi(c.token, [{ id: 0, chat_id: c.chat_id, titolo: 'gruppo' }],
       '🧪 <i>Anteprima notifica</i>\n\n' + testo, { anteprima: true, foto });
     const r = esiti[0] || { ok: false, errore: 'nessuna destinazione' };
@@ -10323,7 +10386,8 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     if (!username) return res.status(400).json({ errore: 'imposta prima il tuo username TikTok' });
     const c = tgConf.get(login);
     if (!c?.token || !c.chat_id) return res.status(400).json({ errore: 'collega prima il bot Telegram e il gruppo' });
-    const r = await telegram.notificaTikTok(c, { login, display: s?.display || login }, username, s?.settings?.tiktok?.messaggio);
+    const [riga = ''] = voce.anteprima(login, 'avviso-diretta', { nome: avvisi.SEGNO_NOME, piattaforma: 'TikTok' }, 1);
+    const r = await telegram.notificaTikTok(c, { login, display: s?.display || login }, username, s?.settings?.tiktok?.messaggio, riga);
     if (!r.ok) return res.status(400).json({ errore: r.errore });
     res.json({ ok: true });
   }));

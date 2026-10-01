@@ -12,6 +12,7 @@
 // venga usato per SSRF verso host arbitrari. Timeout su ogni chiamata.
 import { makeLog } from '../logger.js';
 import * as api from './discord-api.js';
+import { PIATTAFORME, stendiRiga } from './avvisi.js';
 
 const log = makeLog('discord');
 
@@ -21,23 +22,6 @@ const VIOLA = 0x9146ff;   // colore Twitch (barra dell'embed)
 const WEBHOOK_RE = /^https:\/\/(?:(?:canary|ptb)\.)?discord(?:app)?\.com\/api(?:\/v\d+)?\/webhooks\/\d+\/[\w-]+$/;
 
 export function webhookValido(url) { return WEBHOOK_RE.test(String(url || '').trim()); }
-
-// Messaggio di default (modificabile). Segnaposto: {nome} {titolo} {gioco} {spettatori} {link}
-export const MESSAGGIO_DEFAULT = '🔴 **{nome}** è in diretta ora! 👉 {link}';
-
-function risolvi(streamer, info, template) {
-  const login = String(streamer?.login || '').toLowerCase();
-  const valori = {
-    nome: streamer?.display || login,
-    titolo: info?.title || 'In diretta ora!',
-    gioco: info?.game_name || 'Just Chatting',
-    spettatori: String(info?.viewer_count ?? 0),
-    link: `https://twitch.tv/${login}`,
-    login,
-  };
-  const t = (template && String(template).trim()) || MESSAGGIO_DEFAULT;
-  return t.replace(/\{(nome|titolo|gioco|spettatori|link|login)\}/g, (_, k) => valori[k]);
-}
 
 // Miniatura dello stream (helix dà un url con {width}x{height} da riempire).
 function miniatura(info) {
@@ -177,19 +161,6 @@ export async function verifica(webhook) {
   finally { clearTimeout(to); }
 }
 
-// Avviso "è live". `conf` = { webhook, messaggio, nome_bot, avatar }.
-export async function notificaLive(conf, streamer, info) {
-  if (!configurato(conf)) return { ok: false, errore: 'discord non configurato' };
-  const payload = {
-    content: risolvi(streamer, info, conf.messaggio),
-    embeds: [embedLive(streamer, info)],
-    allowed_mentions: { parse: ['roles', 'everyone'] },   // permette @everyone/@role SOLO se scritti dallo streamer nel messaggio
-  };
-  const r = await manda(conf, payload);
-  if (!r.ok) log.warn(`notifica live #${streamer?.login}: ${r.errore}`);
-  return r;
-}
-
 // AVVISO «È LIVE» PER QUALUNQUE PIATTAFORMA.
 // `d` e' la diretta nella forma comune (vedi features/avvisi.js): Discord non
 // deve sapere se dietro c'e' Twitch, Kick o YouTube. I campi che una piattaforma
@@ -198,17 +169,28 @@ export async function notificaLive(conf, streamer, info) {
 const COLORI = { twitch: VIOLA, kick: 0x53fc18, youtube: 0xff0000, tiktok: 0x000000 };
 const NOMI = { twitch: 'Twitch', kick: 'Kick', youtube: 'YouTube', tiktok: 'TikTok' };
 
+// Le etichette del riquadro, nella lingua del canale (`d.lingua`, messa da chi
+// compone l'avviso con linguaChat). Sono etichette, non frasi: una per lingua,
+// sempre la stessa, perche' il riquadro si riconosce anche per questo.
+const RIQUADRO = {
+  it: { live: (n, p) => `${n} è in diretta${p ? ' su ' + p : ''}`, gioco: 'Gioco', spettatori: 'Spettatori' },
+  en: { live: (n, p) => `${n} is live${p ? ' on ' + p : ''}`, gioco: 'Game', spettatori: 'Viewers' },
+  es: { live: (n, p) => `${n} está en vivo${p ? ' en ' + p : ''}`, gioco: 'Juego', spettatori: 'Espectadores' },
+};
+const riquadroDi = (d) => RIQUADRO[d?.lingua] || RIQUADRO.it;
+
 // L'INCORNICIATO della diretta. Sta in una funzione sua perche' lo usano in
 // due: l'avviso che parte da solo e quello che parte verso piu' canali. Due
 // copie vorrebbero dire due incorniciati che col tempo diventano diversi.
 export function incornicia(d) {
   const p = String(d?.piattaforma || 'twitch');
+  const r = riquadroDi(d);
   const campi = [];
-  if (d?.gioco) campi.push({ name: '🎮 Gioco', value: String(d.gioco).slice(0, 100), inline: true });
-  if (d?.spettatori != null) campi.push({ name: '👥 Spettatori', value: String(d.spettatori), inline: true });
+  if (d?.gioco) campi.push({ name: '🎮 ' + r.gioco, value: String(d.gioco).slice(0, 100), inline: true });
+  if (d?.spettatori != null) campi.push({ name: '👥 ' + r.spettatori, value: String(d.spettatori), inline: true });
 
   const emb = {
-    title: `🔴 ${d?.display || d?.login} è in diretta${p === 'twitch' ? '' : ' su ' + (NOMI[p] || p)}!`,
+    title: `${PIATTAFORME[p]?.icona || '🔴'} ${r.live(d?.display || d?.login, p === 'twitch' ? '' : (NOMI[p] || p))}`,
     url: d?.url,
     description: d?.titolo || undefined,
     color: COLORI[p] ?? VIOLA,
@@ -228,10 +210,18 @@ export function incornicia(d) {
 // dentro, su Discord, si porterebbe via meta' messaggio in corsivo.
 const escMd = (s) => String(s ?? '').replace(/([\\`*_~|])/g, '\\$1');
 
-export const TESTO_DEFAULT = '🔴 **{nome}** è in diretta · {link}';
+// Senza un testo del posto: l'icona, la riga della voce del canale (`d.voce`,
+// la stessa che va a Telegram) col nome in grassetto, e il link. Nessuna
+// parola scritta qui: quelle stanno nel frasario, nella lingua del canale.
+export function testoDiCasa(d) {
+  const p = String(d?.piattaforma || 'twitch');
+  const nome = `**${escMd(d?.display || d?.login)}**`;
+  return `${PIATTAFORME[p]?.icona || '🔴'} ${stendiRiga(d?.voce, escMd, nome, NOMI[p] || p)} · ${d?.url || ''}`.trim();
+}
 
 export function testoDiretta(d, template = '') {
   if (!d) return '';
+  if (!(template && String(template).trim())) return testoDiCasa(d).slice(0, 1800);
   const valori = {
     nome: escMd(d.display || d.login),
     titolo: escMd(d.titolo || ''),
@@ -241,7 +231,7 @@ export function testoDiretta(d, template = '') {
     login: escMd(d.login || ''),
     piattaforma: NOMI[String(d.piattaforma || '')] || String(d.piattaforma || ''),
   };
-  const t = (template && String(template).trim()) || TESTO_DEFAULT;
+  const t = String(template).trim();
   return t.replace(/\{(nome|titolo|gioco|spettatori|link|login|piattaforma)\}/g, (_, k) => valori[k] ?? '')
     .split('\n')
     .filter((r, i, tutte) => r.trim() !== '' || (i > 0 && i < tutte.length - 1 && tutte[i - 1].trim() !== ''))
@@ -303,12 +293,16 @@ export async function diffondi(token, dest, d, { post = false } = {}) {
 // rifiuta sempre la modifica di un messaggio di un altro, qualunque permesso si
 // abbia — quindi questa strada, puntata altrove, non fa niente. E' anche piu'
 // onesta verso chi c'era: la riga resta, e dice che la diretta e' finita.
-export const TESTO_FINITA = '⚫ La diretta è finita.';
+// La riga viene dalla voce del canale (momento `avviso-finita`), col segno
+// del nome come quella della diretta. Senza riga resta il cerchio e il nome:
+// nessuna parola scritta qui.
+export const TESTO_FINITA = '⚫';
 
-export function testoFinita(d, quando = null) {
+export function testoFinita(d, quando = null, riga = '') {
   const nome = d?.display || d?.login || '';
   const ora = quando ? ` · ${quando}` : '';
-  return nome ? `⚫ **${nome}** ha finito la diretta${ora}` : TESTO_FINITA + ora;
+  if (!nome) return TESTO_FINITA + ora;
+  return `⚫ ${stendiRiga(riga, escMd, `**${escMd(nome)}**`)}${ora}`;
 }
 
 export async function chiudiMessaggio(token, dove, msgId, testo = TESTO_FINITA) {

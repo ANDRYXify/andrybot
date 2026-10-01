@@ -9,7 +9,7 @@ export default {
   titolo: 'Manuale del bot: personalità, conoscenza e memoria | SocialBot',
   h1: 'Manuale del bot: personalità, conoscenza e memoria',
   desc: 'Come regoli tono, carattere e interventi del bot in chat, cosa gli insegni su di te, cosa si ricorda del canale e come azzeri quello che ha imparato.',
-  aggiornata: '2026-09-24',
+  aggiornata: '2026-09-30',
   corpo: [
     { p: [
       'In chat il bot scrive <strong>a nome tuo</strong>: chi guarda vede il tuo account, non uno estraneo. Qui decidi come parla, cosa sa e cosa si ricorda.',
@@ -20,7 +20,7 @@ export default {
 
     // ------------------------------------------------------------ PERSONALITÀ
     { h2: 'Personalità', scheda: 'personalita', p: [
-      'Decide come parla il bot: il tono, il carattere, quanto interviene da solo e le regole che rispetta sempre. Ci sono due carte: «Personalità» e «Linee guida».',
+      'Decide come parla il bot: il tono, il carattere, quanto interviene da solo, cosa dice da solo e le regole che rispetta sempre. Ci sono tre carte: «Personalità», «Le frasi del bot» e «Linee guida».',
     ] },
 
     { h3: 'Personalità' },
@@ -114,6 +114,31 @@ export default {
       '<strong>Le tue frasi.</strong> Una per riga, fino a 50 frasi da 200 caratteri: le frasi e i caratteri in più non vengono salvati. Non sono frasi da ripetere. Il bot le legge prima di rispondere come esempi di come scrivi, per suonare come te, e per questo servono «Risposte intelligenti» accese.',
       '<strong>Adatta la personalità al mio canale.</strong> Acceso, agli esempi delle tue frasi il bot aggiunge da solo le cose che dici in diretta, se usi l\'ascolto, e i tuoi messaggi in chat: così suona come te anche senza che tu scriva niente. Spento, usa solo le frasi che hai scritto tu. Il cambio vale dalla risposta dopo.',
       'Le battute da dire in chat sono un\'altra cosa e stanno in «Giochi & classifiche».',
+    ] },
+
+    { h3: 'Le frasi del bot' },
+    { p: [
+      'Sono le frasi che il bot dice da solo, senza che nessuno lo chiami: quando vai in diretta e quando chiudi, per un follow o un follow che torna, un abbonamento, un rinnovo, gli abbonamenti regalati, un raid in arrivo o in uscita, i Bit, uno shoutout, un premio a punti canale, l\'hype train, la pubblicità, il promemoria dei link, e la prima riga degli avvisi di diretta su Telegram e Discord. I momenti sono divisi in tre gruppi: «La diretta», «La community» e «Gli avvisi fuori dalla chat».',
+      'Escono nella lingua della chat del canale, quella delle «Preferenze del canale» nella scheda Account, e col «Tono» scelto qui sopra. In cima alla carta leggi quali sono adesso.',
+    ] },
+    { p: [
+      '<strong>Il giro.</strong> Ogni momento ha più frasi, e il tuo canale le gira in un ordine suo: due canali non partono dalla stessa frase, e nessuna torna prima che siano uscite tutte. Il giro dopo non comincia da quella appena detta. A che punto è il giro resta salvato: dopo un riavvio il bot riprende dalla frase dopo.',
+      'Una frase che nomina un dato che manca non esce. Se Twitch non dice quante persone porta un raid, per esempio, esce una frase che non le nomina.',
+    ] },
+    { tabella: [
+      ['Scelta', 'Cosa succede'],
+      ['«Le nostre»', 'Le frasi di serie, nella lingua e nel tono del canale. È la scelta di base.'],
+      ['«Le nostre e le mie»', 'Le tue si mescolano alle nostre, nello stesso giro.'],
+      ['«Solo le mie»', 'Escono solo le tue. Finché non ne scrivi almeno una, restano le nostre.'],
+      ['«Spento»', 'In quel momento il bot non dice niente. Gli avvisi su Telegram e Discord non si spengono da qui: si spengono nelle loro schede.'],
+    ] },
+    { p: [
+      '<strong>Le tue frasi.</strong> Una per riga, fino a 20 per momento, da 200 caratteri. Sotto la casella c\'è l\'elenco dei segnaposto che quel momento conosce, per esempio <code>{nome}</code> e <code>{bit}</code> per i Bit. Una frase con un segnaposto che il momento non ha non si salva: il pannello lo dice, «… non è un dato di questo momento.», e apre il momento giusto.',
+      '<strong>«Le frasi di adesso»</strong> sono quelle fra cui il bot sceglie con la scelta che vedi, anche prima di salvarla. <strong>«Prova»</strong> mostra le prossime tre che uscirebbero, con dati di esempio. Non consuma niente: il giro resta dov\'è.',
+      '<strong>«Nome della community».</strong> Come chiami chi ti segue quando parli a tutti, fino a 40 caratteri: «la ciurma», «i gremlin». Il bot lo usa in qualche frase in più, quelle che parlano a tutta la chat, e senza l\'articolo: «Si parte, ciurma!».',
+      '<strong>Le emote.</strong> Dove una frase ha una faccina, il bot mette un\'emote allegra che la tua chat usa spesso, se ce n\'è una. Un\'emote triste, o di cui non si capisce l\'umore, non la usa. Fuori dalla chat, su Telegram e Discord, resta la faccina.',
+      '«Salva le frasi» salva le scelte e il nome della community, e compare «Frasi del bot salvate ✓».',
+      '<strong>I testi di prima.</strong> I testi che avevi cambiato per l\'hype train e per la pubblicità sono diventati le tue frasi di quel momento, con «Solo le mie»; quelli che avevi svuotato sono diventati «Spento». Il testo dell\'avviso scritto nelle schede di Telegram o di Discord resta lì, e per quel posto vale il tuo.',
     ] },
 
     { h3: 'Linee guida' },
@@ -295,6 +320,7 @@ export default {
     ] },
   ],
   faq: [
+    { d: 'Il bot ringrazia in italiano anche se la mia chat è in inglese.', r: 'Le frasi del bot seguono la lingua della chat del canale: la scegli nella scheda Account, «Preferenze del canale». Se non l\'hai scelta vale quella del canale su Twitch. Il cambio vale dalla frase dopo.' },
     { d: 'Il bot parla troppo in chat. Cosa abbasso?', r: 'Prima di tutto «Chat autonoma», nella scheda «Personalità»: decide sia quanto risponde a chi non lo chiama sia ogni quanto dice una cosa sua. In «Cosa ha detto da solo» vedi cosa ha detto e perché. Se vuoi che di sua iniziativa parli solo mentre sei live, spunta «Solo mentre sono in diretta».' },
     { d: 'Lo nomino e non risponde.', r: 'Controlla che il bot sia acceso nella scheda «Stato» e che «Rispondi quando mi nominano in chat» sia spuntato. Conta come chiamata «bot» detto come si chiama qualcuno, la risposta a una sua riga o il suo account con la @; il nome del canale è una chiamata a te, e lì il bot dice solo i fatti. La stessa persona lo può richiamare dopo 10 secondi. Con «Risposte intelligenti» spento risponde solo se una voce della «Conoscenza» corrisponde alla domanda.' },
     { d: 'Il promemoria dei social non parte mai.', r: 'Parte solo in diretta, quando la chat sta parlando, al più ogni 45 minuti. Servono «Ricorda i tuoi social in chat, nei momenti giusti» spuntato, «Personalità proattiva» accesa, «Chat autonoma» sopra lo 0% e la pagina link accesa.' },

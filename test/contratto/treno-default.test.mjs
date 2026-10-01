@@ -41,15 +41,11 @@ test("il pannello e il server partono dagli stessi valori", () => {
   }
 });
 
-test("le frasi in chat sono le stesse, di numero e di nome", () => {
-  const frasi = (o) => Object.keys(o).filter((k) => k.startsWith('testo')).sort();
-  assert.deepEqual(frasi(pannello), frasi(server),
-    'una frase aggiunta da una parte sola: il pannello ne offrirebbe una che il server butta, o viceversa');
-  assert.ok(frasi(server).length >= 4);
-});
-
-test("e dicono le stesse parole", () => {
-  for (const k of Object.keys(server).filter((x) => x.startsWith('testo'))) {
-    assert.equal(pannello[k], server[k], `la frase di partenza di ${k} e diversa fra pannello e server`);
-  }
+test("le frasi in chat non stanno qui, ne' da una parte ne' dall'altra", () => {
+  // Stavano qui, scritte due volte e in italiano per tutti. Adesso sono le
+  // frasi del bot (features/voce.js), nella lingua e nel tono del canale: una
+  // frase rimasta da una parte sola sarebbe una seconda verita'.
+  const frasi = (o) => Object.keys(o).filter((k) => k.startsWith('testo'));
+  assert.deepEqual(frasi(pannello), [], 'il pannello offrirebbe una frase che nessuno dice');
+  assert.deepEqual(frasi(server), [], 'il server salverebbe una frase che nessuno dice');
 });

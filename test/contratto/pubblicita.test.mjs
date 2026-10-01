@@ -12,6 +12,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import * as P from '../../src/features/pubblicita.js';
+import { MOMENTI } from '../../src/features/frasario/index.js';
 
 const RAD = join(dirname(fileURLToPath(import.meta.url)), '../..');
 const leggi = (f) => readFileSync(join(RAD, f), 'utf8');
@@ -75,7 +76,7 @@ test('il pannello ha i comandi, e stanno dove sta già la pubblicità', () => {
   // li': cercarli scritti a mano vorrebbe dire pretendere che siano copiati
   // tre volte, che e' il contrario di quello che si vuole.
   assert.match(APP, /data-pub="\$\{q\}-acceso"/);
-  assert.match(APP, /data-pub="\$\{q\}-testo"/);
+  assert.ok(!/data-pub="\$\{q\}-testo"/.test(APP), 'le parole non si scrivono qui: sono le frasi del bot');
   for (const m of ['prima', 'durante', 'dopo']) {
     assert.ok(APP.includes(`momento('${m}'`), `il momento «${m}» non e' disegnato`);
   }
@@ -83,6 +84,8 @@ test('il pannello ha i comandi, e stanno dove sta già la pubblicità', () => {
   // sarebbe un menu in piu' da cercare.
   const regia = APP.slice(APP.indexOf("pannello('regia'"), APP.indexOf('let _pub = null;'));
   assert.match(regia, /id="pub-box"/, 'la carta sta nella regia');
+  const disegno = APP.slice(APP.indexOf('function _pubDisegna('), APP.indexOf('function _pubLeggi('));
+  assert.match(disegno, /data-scheda="personalita"/, 'e dice dove si scelgono le frasi');
 });
 
 test('i limiti li decide il modello, non il pannello', () => {
@@ -114,10 +117,12 @@ test('quello che non puo\' funzionare si dice PRIMA, con la cura', () => {
   assert.match(APP, /\/auth\/permessi/, 'e la cura e\' un posto dove andare, non una frase');
 });
 
-test('i testi di serie ci sono, e si possono svuotare', () => {
-  const c = P.normalizzaPubblicita({ acceso: true });
-  for (const m of P.MOMENTI) assert.ok(c[m].testo.length > 10, `«${m}» nasce con qualcosa da dire`);
-  assert.equal(P.normalizzaPubblicita({ acceso: true, dopo: { testo: '' } }).dopo.testo, '');
+test('ogni momento della pausa ha le sue frasi nel frasario, in tre lingue', () => {
+  for (const m of P.MOMENTI) {
+    const f = MOMENTI[P.MOMENTO[m]]?.frasi;
+    assert.ok(f, `«${m}» non ha un momento nel frasario`);
+    for (const l of ['it', 'en', 'es']) assert.ok(f[l]?.scherzoso?.length, `«${m}» senza ${l}`);
+  }
 });
 
 test('e la pagina pubblica lo racconta', () => {

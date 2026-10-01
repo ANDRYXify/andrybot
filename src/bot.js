@@ -66,7 +66,7 @@ import { ChatYoutube } from './youtube/chat.js';
 import { voceYoutube } from './youtube/voce.js';
 import { collegati as youtubeCollegati } from './youtube/api.js';
 import * as avvisi from './features/avvisi.js';
-import { dirette, guide, vips } from './db.js';
+import { dirette, guide, vips, linkPage } from './db.js';
 import * as cancello from './features/tg-cancello.js';
 import { ClipEngine } from './features/clips.js';
 import { PenitenzeEngine } from './features/penitenze.js';
@@ -86,6 +86,8 @@ import * as settimanaFeat from './features/settimana.js';
 import * as prossime from './features/prossime.js';
 import * as dcCollega from './features/discord-collega.js';
 import * as pub from './features/pubblicita.js';
+import * as voce from './features/voce.js';
+import { linguaChat } from './features/lingua-canale.js';
 import * as modalitaFeat from './features/modalita-chat.js';
 import * as bossFeat from './features/boss.js';
 import { aChi } from './features/risposte.js';
@@ -542,6 +544,19 @@ export class BotManager {
     } catch (e) { log.error('momenti:', e?.message || e); }
   }
 
+  // IL PROMEMORIA DEI LINK rimanda alla SUA pagina sul sito (siteUrl/u/<canale>):
+  // una destinazione sempre giusta e sotto il suo controllo, non i link pescati
+  // dalla conoscenza, che potevano essere social mai impostati da lui. Senza
+  // sito configurato non propone niente, e nemmeno se la pagina non c'e' o
+  // l'ha spenta (la stessa regola della pagina, /u/:user): se no manderebbe la
+  // chat su un 404. Le parole le sceglie la voce del canale.
+  _promemoriaLink(login) {
+    const canale = String(login || '').toLowerCase().trim();
+    const base = config.hubUrl || config.siteUrl;
+    if (!canale || !base || !linkPage.get(canale)?.attiva) return '';
+    return voce.di(canale, 'promemoria-link', { link: `${base}/u/${canale}` });
+  }
+
   _eseguiMomento(login, s, { tipo, momento }, ora) {
     const spunto = momento.spunto || '';
     if (tipo === 'domanda') {
@@ -573,7 +588,7 @@ export class BotManager {
       return;
     }
     if (tipo === 'promo') {
-      const promo = games.promoSociale(login);
+      const promo = this._promemoriaLink(login);
       if (!promo) { this._ultimoTipo.set(login, 'iniziativa'); return this._eseguiMomento(login, s, { tipo: 'iniziativa', momento }, ora); }
       this._ultimaPromo.set(login, ora);
       this._dettaDaSoloConCalma(login, 'promo', promo);
@@ -1576,6 +1591,10 @@ export class BotManager {
   // topic e non sapeva arrivare a un canale, senza che nessun errore lo dicesse.
   async _diffondi(login, evento, chi, d, { chiudi = false, messaggioTg = '' } = {}) {
     let inviati = 0;
+    // LA RIGA DELLA VOCE, una per avviso: la stessa a Telegram e a Discord, e
+    // il giro delle frasi del canale avanza una volta sola. Parla il canale che
+    // manda l'avviso, anche quando la diretta e' di un altro.
+    const conVoce = { ...d, lingua: linguaChat(login), voce: this._rigaAvviso(login, 'avviso-diretta', d?.piattaforma) };
     // «chi» sono io o e' un altro? La differenza non e' estetica: l'avviso di un
     // altro va ricordato per STREAMER, se no la sua diretta che finisce chiude
     // anche la mia.
@@ -1589,14 +1608,14 @@ export class BotManager {
     try {
       const conf = tgConf.get(login);
       if (ammesso.telegram && conf?.attivo && conf.token) {
-        const componi = (conLocandina) => avvisi.messaggio(d, messaggioTg, { conLocandina });
-        const r = await this._diffondiTelegram(login, conf, evento, chi, componi, { pin: chiudi, chi: altrui, info: d });
+        const componi = (conLocandina) => avvisi.messaggio(conVoce, messaggioTg, { conLocandina });
+        const r = await this._diffondiTelegram(login, conf, evento, chi, componi, { pin: chiudi, chi: altrui, info: conVoce });
         inviati += r.inviati || 0;
       }
     } catch (e) { log.error(`avviso Telegram ${evento} #${chi}:`, e?.message || e); }
     try {
       if (ammesso.discord) {
-        const r = await this._diffondiDiscord(login, evento, chi, d, { chiudi });
+        const r = await this._diffondiDiscord(login, evento, chi, conVoce, { chiudi });
         inviati += r.inviati || 0;
       }
     } catch (e) { log.error(`avviso Discord ${evento} #${chi}:`, e?.message || e); }
@@ -1627,6 +1646,12 @@ export class BotManager {
     }
     if (inviati) log.info(`Discord: «${evento}» di #${chi} inviato a ${inviati}/${buoni.length} canali di #${login}`);
     return { inviati, totale: buoni.length };
+  }
+
+  // La riga di un avviso, dalla voce del canale, col segno al posto del nome:
+  // ogni posto lo stende nel suo formato (features/avvisi.js).
+  _rigaAvviso(login, momento, piattaforma = 'twitch') {
+    return voce.di(login, momento, { nome: avvisi.SEGNO_NOME, piattaforma: avvisi.PIATTAFORME[piattaforma]?.nome || 'Twitch' });
   }
 
   // Un evento arrivato da un'altra piattaforma (per ora Kick) entra qui.
@@ -1795,10 +1820,12 @@ export class BotManager {
       tgMsg.pulisci(login, chi);
       const token = dcApi.tokenDi(dcRuoli.get(login));
       {
+        let riga = null;
         for (const m of dcMsg.perStreamer(login, chi)) {
           const d = dcDest.get(login, m.dest_id);
           if (d?.chiudi && m.msg_id) {
-            const r = await discord.chiudiMessaggio(token, d, m.msg_id, discord.testoFinita({ display: chi }));
+            if (riga === null) riga = this._rigaAvviso(login, 'avviso-finita');
+            const r = await discord.chiudiMessaggio(token, d, m.msg_id, discord.testoFinita({ display: chi }, null, riga));
             if (!r.ok) log.debug(`chiudi live di ${chi} in ${d.canale_nome || d.canale}: ${r.errore}`);
           }
         }
@@ -1829,13 +1856,15 @@ export class BotManager {
     } catch (e) { log.error(`chiudi Telegram #${login}:`, e?.message || e); }
     try {
       const token = dcApi.tokenDi(dcRuoli.get(login));
+      let riga = null;   // la voce sceglie la riga solo se c'e' davvero un avviso da chiudere
       for (const d of dcDest.lista(login)) {
         if (!token && !d.webhook) continue;
         if (!d.msg_id) continue;
         const msgId = d.msg_id;
         dcDest.setMsgId(d.id, '');    // azzera comunque: un solo tentativo per destinazione
         if (!d.chiudi) continue;      // si toglie solo dove lo streamer l'ha chiesto
-        const r = await discord.chiudiMessaggio(token, d, msgId, discord.testoFinita(streamers.get(login) || { login }));
+        if (riga === null) riga = this._rigaAvviso(login, 'avviso-finita');
+        const r = await discord.chiudiMessaggio(token, d, msgId, discord.testoFinita(streamers.get(login) || { login }, null, riga));
         if (r.ok) log.info(`avviso Discord chiuso in ${d.canale_nome || d.canale} (live di #${login} finita)`);
         else log.warn(`chiudi Discord ${d.canale_nome || d.canale}: ${r.errore}`);
       }
@@ -1926,7 +1955,7 @@ export class BotManager {
     const adesso = Date.now();
     for (const [ch, live] of this._liveState) {
       const s = streamers.get(ch)?.settings || {};
-      const conf = pub.normalizzaPubblicita(s.pubblicita);
+      const conf = this._confPubblicita(ch);
       const inScena = s.overlayPubblicita?.attivo === true;
       if (!conf.acceso) { this._spegniSveglia(ch, 'prima'); this._spegniSveglia(ch, 'dopo'); }
       if (!conf.acceso && !inScena) { this._pub.delete(ch); continue; }
@@ -1982,11 +2011,27 @@ export class BotManager {
     this._pubSveglie.delete(k);
   }
 
+  // LA PUBBLICITA' DI UN CANALE, con le levette di tutti e due i posti: quella
+  // della sua carta (tacere una sera) e quella delle frasi del bot (non dirlo
+  // mai). Un momento spento in uno dei due non si dice, e il suo programma non
+  // si legge per niente.
+  _confPubblicita(ch) {
+    const conf = pub.normalizzaPubblicita(streamers.get(ch)?.settings?.pubblicita);
+    for (const q of pub.MOMENTI) conf[q].acceso = conf[q].acceso && voce.acceso(ch, pub.MOMENTO[q]);
+    return conf;
+  }
+
+  // La frase di un momento della pausa, scelta dalla voce del canale.
+  _frasePubblicita(ch, quale, secondi) {
+    const canale = streamers.get(ch)?.display || ch;
+    return voce.di(ch, pub.MOMENTO[quale], pub.datiDi({ secondi, canale }));
+  }
+
   // IL PREAVVISO, all'istante giusto. Il programma si rilegge adesso: se uno
   // snooze ha spostato la pausa, il preavviso di quella li' non si dice.
   async _preavviso(ch) {
     if (!this._liveState.get(ch)) return;
-    const conf = pub.normalizzaPubblicita(streamers.get(ch)?.settings?.pubblicita);
+    const conf = this._confPubblicita(ch);
     if (!conf.acceso) return;
     const p = await this.helix?.getAdSchedule?.(ch).catch(() => null);
     const adesso = Date.now();
@@ -1995,13 +2040,14 @@ export class BotManager {
     const avviso = p ? pub.preavviso(conf, stato, p, adesso) : null;
     if (avviso) stato.dettoPer = String(avviso.quando);
     this._pub.set(ch, stato);
-    if (avviso) await this._annuncio(ch, conf, avviso.testo);
+    if (avviso) await this._annuncio(ch, conf, this._frasePubblicita(ch, 'prima', avviso.secondi));
   }
 
   // L'annuncio evidenziato in chat. Se Twitch dice di no — permesso tolto,
   // canale offline — non si riprova: un annuncio ritentato arriverebbe fuori
   // tempo, e fuori tempo e' peggio che niente.
   async _annuncio(ch, conf, testo) {
+    if (!testo) return;
     try {
       const r = await this.helix?.announce?.(ch, testo, conf.colore);
       if (!r?.ok) log.debug(`#${ch} annuncio pubblicita' non partito: ${r?.motivo || '?'}`);
@@ -2013,7 +2059,7 @@ export class BotManager {
   // sveglia del «sono tornato», puntata a inizio + durata.
   async _pubblicitaPartita(ch, dati) {
     const s = streamers.get(ch)?.settings || {};
-    const conf = pub.normalizzaPubblicita(s.pubblicita);
+    const conf = this._confPubblicita(ch);
     const inScena = s.overlayPubblicita?.attivo === true;
     if (!conf.acceso && !inScena) return;
     const stato = this._pub.get(ch) || {};
@@ -2033,7 +2079,7 @@ export class BotManager {
     if (!conf.acceso) return;
     if (a.finisceA) this._sveglia(ch, 'dopo', a.finisceA, () => this._sonoTornato(ch));
     else this._spegniSveglia(ch, 'dopo');
-    if (a.testo) await this._annuncio(ch, conf, a.testo);
+    if (a.dire) await this._annuncio(ch, conf, this._frasePubblicita(ch, 'durante', a.secondi));
   }
 
   // LA PAUSA CHE FINISCE. La sveglia e' sempre quella dell'ultima pausa (una
@@ -2042,12 +2088,12 @@ export class BotManager {
   async _sonoTornato(ch) {
     const stato = this._pub.get(ch);
     if (!stato) return;
-    const conf = pub.normalizzaPubblicita(streamers.get(ch)?.settings?.pubblicita);
+    const conf = this._confPubblicita(ch);
     const fine = pub.allaFine(conf, stato, Date.now());
     if (!fine) return;
     stato.dettoDopo = true;
     stato.finisceA = 0;
-    if (fine.testo && this._liveState.get(ch)) await this._annuncio(ch, conf, fine.testo);
+    if (fine.dire && this._liveState.get(ch)) await this._annuncio(ch, conf, this._frasePubblicita(ch, 'dopo', fine.secondi));
   }
 
   // GLI APPUNTAMENTI SI ALLINEANO DA SOLI.
@@ -2166,17 +2212,20 @@ export class BotManager {
       if (!tk?.username) return { ok: false, motivo: 'TikTok non configurato' };
       if (Date.now() - (this._tiktokUltima.get(l) || 0) < 3 * 3600_000) return { ok: false, motivo: 'gia avvisato di recente' };
       this._tiktokUltima.set(l, Date.now());
+      // Una riga della voce per questa diretta, la stessa ai due posti.
+      const riga = this._rigaAvviso(l, 'avviso-diretta', 'tiktok');
       // Su Discord, dove lo streamer ha acceso l'avviso «TikTok».
       await this._diffondiDiscord(l, 'tiktok', l, {
         piattaforma: 'tiktok', login: l, display: s?.display || l,
         titolo: '', gioco: '', spettatori: null, url: tiktok.urlLive(tk.username),
+        voce: riga, lingua: linguaChat(l),
       }).catch(() => {});
       // Telegram (basta che il bot+gruppo siano collegati: indipendente dal
       // toggle "avviso live Twitch"). Cattura il message_id per fissarlo/eliminarlo.
       const conf = tgConf.get(l);
       if (conf?.token) {
         try {
-          const testo = telegram.costruisciMessaggioTikTok({ login: l, display: s?.display || l }, tk.username, tk.messaggio);
+          const testo = telegram.costruisciMessaggioTikTok({ login: l, display: s?.display || l }, tk.username, tk.messaggio, riga);
           tgDest.migra(l, conf);
           const dest = tgDest.perEvento(l, 'tiktok', l);
           const esiti = await telegram.diffondi(conf.token, dest, testo, { anteprima: true });

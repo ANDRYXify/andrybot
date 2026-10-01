@@ -105,7 +105,7 @@ test('cosa ha detto da solo si vede, e solo a chi e\' entrato', () => {
   assert.match(r, /private, no-store/, 'e non finisce in nessuna cache condivisa');
   assert.match(APP, /api\('\/api\/streamer\/autonomia'\)/, 'il pannello la chiede');
   assert.match(APP, /id="lista-spontanee"/, 'e la disegna');
-  assert.match(APP, /if \(id === 'personalita'\) \{ caricaGuide\(\); caricaSpontanee\(\); \}/, 'quando si apre la scheda');
+  assert.match(APP, /if \(id === 'personalita'\) \{ caricaGuide\(\); caricaSpontanee\(\);[^}]*\}/, 'quando si apre la scheda');
 });
 
 test('ogni checkbox della scheda del bot mostra lo stesso default che il codice usa', () => {

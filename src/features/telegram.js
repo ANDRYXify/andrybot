@@ -9,16 +9,12 @@
 // sendMessage). Niente long-poll, niente processi in ascolto perenne → non
 // si può incastrare nulla. Il gruppo si "rileva" leggendo gli ultimi update.
 import { makeLog } from '../logger.js';
+import * as avvisi from './avvisi.js';
 
 const log = makeLog('telegram');
 
 const API = 'https://api.telegram.org';
 const TIMEOUT_MS = 10_000;   // ogni chiamata ha un tetto: mai restare appesi
-
-// Messaggio di default (modificabile dallo streamer). Segnaposto disponibili:
-// {nome} {titolo} {gioco} {spettatori} {link} {login}
-export const MESSAGGIO_DEFAULT =
-  '🔴 <b>{nome}</b> è in diretta!\n\n{titolo}\n🎮 {gioco}\n\n👉 {link}';
 
 // --------------------------------------------------------- chiamata all'API
 async function tgCall(token, metodo, { params = {}, post = false, modulo = null, attesa = 0 } = {}) {
@@ -338,51 +334,27 @@ export async function eliminaMessaggio(token, chatId, messageId) {
 export const escHtml = (s) => String(s ?? '')
   .replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
 
-export function costruisciMessaggioLive(streamer, info, template) {
-  const login = String(streamer?.login || '').toLowerCase();
-  const link = `https://twitch.tv/${login}`;
-  const valori = {
-    nome: escHtml(streamer?.display || login),
-    titolo: escHtml(info?.title || 'In diretta ora!'),
-    gioco: escHtml(info?.game_name || 'Just Chatting'),
-    spettatori: String(info?.viewer_count ?? 0),
-    link,                       // il link resta "grezzo": lo linkifica Telegram
-    login: escHtml(login),
-  };
-  const t = (template && String(template).trim()) || MESSAGGIO_DEFAULT;
-  return t.replace(/\{(nome|titolo|gioco|spettatori|link|login)\}/g, (_, k) => valori[k]);
-}
-
-// Manda la notifica "è live" nel gruppo configurato. `conf` è la riga tgConf.
-export async function notificaLive(conf, streamer, info) {
-  if (!conf?.token || !conf?.chat_id) return { ok: false, errore: 'telegram non configurato' };
-  const testo = costruisciMessaggioLive(streamer, info, conf.messaggio);
-  const r = await inviaMessaggio(conf.token, conf.chat_id, testo, { anteprima: true });
-  if (!r.ok) log.warn(`notifica live #${streamer?.login}: ${r.errore}`);
-  return r;
-}
-
-// Messaggio TikTok di default (modificabile dallo streamer). Segnaposto:
-// {nome} {link} {username}
-export const MESSAGGIO_TIKTOK_DEFAULT =
-  '🎵 <b>{nome}</b> è in diretta su <b>TikTok</b>!\n\n👉 {link}';
-
-export function costruisciMessaggioTikTok(streamer, username, template) {
+// L'avviso «in diretta su TikTok». Il testo scritto dallo streamer vince (i
+// suoi segnaposto: {nome} {link} {username}); senza, e' l'avviso di casa, con
+// la riga che la voce del canale ha scelto per questa diretta (`riga`, col
+// segno del nome: features/avvisi.js).
+export function costruisciMessaggioTikTok(streamer, username, template, riga = '') {
   const u = String(username || '').replace(/^@/, '');
-  const valori = {
-    nome: escHtml(streamer?.display || streamer?.login || u),
-    link: `https://www.tiktok.com/@${u}/live`,   // grezzo: lo linkifica Telegram
-    username: escHtml('@' + u),
-  };
-  const t = (template && String(template).trim()) || MESSAGGIO_TIKTOK_DEFAULT;
-  return t.replace(/\{(nome|link|username)\}/g, (_, k) => valori[k]);
+  const link = `https://www.tiktok.com/@${u}/live`;   // grezzo: lo linkifica Telegram
+  const suo = template && String(template).trim();
+  if (!suo) {
+    const d = avvisi.diretta({ piattaforma: 'tiktok', login: streamer?.login || u, display: streamer?.display || streamer?.login || u, url: link });
+    return avvisi.messaggio(d ? { ...d, voce: riga } : null);
+  }
+  const valori = { nome: escHtml(streamer?.display || streamer?.login || u), link, username: escHtml('@' + u) };
+  return suo.replace(/\{(nome|link|username)\}/g, (_, k) => valori[k]);
 }
 
 // Notifica "in diretta su TikTok" nel gruppo Telegram configurato. `template`
-// è il testo personalizzato (vuoto = quello standard).
-export async function notificaTikTok(conf, streamer, username, template) {
+// è il testo personalizzato (vuoto = quello di casa, con la riga della voce).
+export async function notificaTikTok(conf, streamer, username, template, riga = '') {
   if (!conf?.token || !conf?.chat_id) return { ok: false, errore: 'telegram non configurato' };
-  const testo = costruisciMessaggioTikTok(streamer, username, template);
+  const testo = costruisciMessaggioTikTok(streamer, username, template, riga);
   const r = await inviaMessaggio(conf.token, conf.chat_id, testo, { anteprima: true });
   if (!r.ok) log.warn(`notifica TikTok #${streamer?.login}: ${r.errore}`);
   return r;

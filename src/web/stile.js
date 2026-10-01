@@ -493,9 +493,11 @@ export const normPubblicita = (x) => {
 
 // IL TRENO. E' un elemento della scena come gli altri — stessa veste, stesso
 // angolo, stesso trascinamento — piu' le due scelte che sono solo sue: se
-// mostrare chi ha spinto di piu', e cosa dire in chat. La chat e la scena sono
+// mostrare chi ha spinto di piu', e se dirlo in chat. La chat e la scena sono
 // due interruttori separati di proposito: c'e' chi il treno lo vuole solo a
-// schermo, e chi solo in chat perche' a schermo ce l'ha gia' da Twitch.
+// schermo, e chi solo in chat perche' a schermo ce l'ha gia' da Twitch. COSA
+// dire non sta qui: sono le frasi del bot (features/voce.js), come tutte le
+// altre, nella lingua e nel tono del canale.
 export const normTreno = (x) => {
   x = x || {};
   return {
@@ -507,12 +509,6 @@ export const normTreno = (x) => {
     // non l'ha mai sfiorato e' solo un numero che sta li'.
     mostraRecord: x.mostraRecord === true,
     annuncia: x.annuncia === true,
-    testoParte: String(x.testoParte == null ? 'Hype train partito! Spingiamo.' : x.testoParte).slice(0, 200),
-    testoLivello: String(x.testoLivello == null ? 'Hype train al livello {livello}!' : x.testoLivello).slice(0, 200),
-    testoFine: String(x.testoFine == null ? 'Treno finito al livello {livello}. Grazie {chi}!' : x.testoFine).slice(0, 200),
-    // IL RICHIAMO, nell'ultimo quarto della salita: e' l'unico momento in cui
-    // dire «manca poco» serve a qualcosa. Si spegne svuotando il testo.
-    testoQuasi: String(x.testoQuasi == null ? 'Manca poco al livello {prossimo}: {manca} punti!' : x.testoQuasi).slice(0, 200),
     posizione: unoDi(x.posizione, POS_ANG, 'alto-destra'),
     xy: xyOk(x.xy),
     stile: normWidgetStile(x.stile),

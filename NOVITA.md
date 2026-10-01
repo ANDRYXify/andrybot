@@ -233,6 +233,36 @@ comandi diversi da quelli della riga italiana.
   en: Among the overlay looks there’s “Stile Twitch”: no box, a big image on top and the name in purple, like Twitch’s alerts, and then you change whatever you want.
   es: Entre los aspectos del overlay está «Stile Twitch»: sin recuadro, la imagen grande arriba y el nombre en morado, como en las alertas de Twitch, y luego cambias lo que quieras.
 
+- Il bot ringrazia per follow, abbonamenti, raid, Bit, shoutout e premi a punti canale nella lingua della chat e col tono scelto, con frasi che ogni canale gira a modo suo. [vai: personalita]
+  en: The bot thanks people for follows, subs, raids, Bits, shoutouts and channel point rewards in the chat’s language and in the tone you picked, with lines each channel rotates its own way.
+  es: El bot agradece follows, suscripciones, raids, Bits, shoutouts y premios de puntos del canal en el idioma del chat y con el tono elegido, con frases que cada canal rota a su manera.
+- A diretta finita il bot saluta la chat, e dopo un rinnovo ringrazia per i mesi di abbonamento. Chi regala abbonamenti riceve il grazie una volta sola, e chi li riceve non viene più ringraziato al posto suo.
+  en: When the stream ends the bot says goodbye to chat, and after a resub it thanks people for their months. Whoever gifts subs is thanked once, and those who receive them are no longer thanked in their place.
+  es: Al terminar el directo el bot se despide del chat, y tras una renovación agradece los meses. Quien regala suscripciones recibe las gracias una vez, y a quien las recibe ya no se le agradece en su lugar.
+- L'hype train, la pubblicità, il promemoria dei link e !treno parlano nella lingua del tuo canale: le loro frasi stanno in Personalità, e un testo che avevi cambiato resta il tuo. [vai: personalita]
+  en: The hype train, ads, the links reminder and !treno speak your channel’s language: their lines live in Personality, and a text you had changed stays yours.
+  es: El hype train, la publicidad, el recordatorio de enlaces y !treno hablan el idioma de tu canal: sus frases están en Personalidad, y un texto que habías cambiado sigue siendo tuyo.
+- Quando fai partire un raid dalla Regia, il bot lo dice in chat col nome del canale dove state andando. [vai: regia]
+  en: When you start a raid from Control room, the bot says so in chat with the name of the channel you’re heading to.
+  es: Cuando inicias un raid desde Realización, el bot lo dice en el chat con el nombre del canal al que van.
+- Gli avvisi di diretta su Telegram e su Discord si aprono con una frase che cambia a ogni diretta, nella lingua del canale, e il riquadro di Discord parla quella lingua. Un testo scritto da te per un posto vale ancora.
+  en: Live alerts on Telegram and Discord open with a line that changes every stream, in the channel’s language, and the Discord box speaks that language. A text you wrote for a place still applies.
+  es: Los avisos de directo en Telegram y Discord empiezan con una frase que cambia en cada directo, en el idioma del canal, y el recuadro de Discord habla ese idioma. Un texto que escribiste para un lugar sigue valiendo.
+- [importante] In Personalità c'è «Le frasi del bot»: i momenti in cui il bot parla da solo, con le frasi che userebbe adesso, e per ognuno tieni le nostre, aggiungi le tue, usi solo le tue o lo spegni. [vai: personalita]
+  en: Personality has “The bot’s lines”: the moments when the bot speaks on its own, with the lines it would use now, and for each one you keep ours, add yours, use only yours or switch it off.
+  es: En Personalidad está «Las frases del bot»: los momentos en que el bot habla por su cuenta, con las frases que usaría ahora, y para cada uno te quedas con las nuestras, añades las tuyas, usas solo las tuyas o lo apagas.
+  > Le frasi del bot, a modo tuo
+  > Prima il bot diceva le stesse frasi in tutti i canali, in italiano anche a una chat inglese. Cambiarle voleva dire cercare caselle sparse, e per la maggior parte non c'erano.
+  en> The bot’s lines, your way
+  en> Before, the bot said the same lines on every channel, in Italian even to an English chat. Changing them meant hunting for scattered boxes, and for most of them there were none.
+  es> Las frases del bot, a tu manera
+  es> Antes el bot decía las mismas frases en todos los canales, en italiano incluso a un chat en inglés. Cambiarlas quería decir buscar casillas sueltas, y para la mayoría no había.
+- Il nome della tua community lo scrivi in «Le frasi del bot», e il bot lo usa nelle frasi che parlano a tutta la chat. «Prova» mostra le prossime frasi con dati di esempio, senza consumarle. [vai: personalita]
+  en: You write your community’s name in “The bot’s lines”, and the bot uses it in the lines that talk to the whole chat. “Try it” shows the next lines with sample data, without using them up.
+  es: El nombre de tu comunidad lo escribes en «Las frases del bot», y el bot lo usa en las frases que hablan a todo el chat. «Probar» muestra las próximas frases con datos de ejemplo, sin gastarlas.
+- Dove una frase del bot ha una faccina, esce un'emote allegra che la tua chat usa spesso, se ce n'è una: mai una triste dopo un grazie.
+  en: Where a bot line has a face, a cheerful emote your chat uses often comes out, if there is one: never a sad one after a thank-you.
+  es: Donde una frase del bot tiene una carita, sale un emote alegre que tu chat usa a menudo, si lo hay: nunca uno triste tras un gracias.
 ## 2026-09-27
 
 - [importante] In «Strumenti» ci sono i pannelli per Twitch: tutti nello stesso stile, e già pieni dei link e delle descrizioni che il canale conosce. [vai: pannelli]
