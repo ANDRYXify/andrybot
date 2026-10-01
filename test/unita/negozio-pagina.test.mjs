@@ -17,7 +17,7 @@ import assert from 'node:assert/strict';
 import { cartellaUsaEGetta } from '../aiuto.mjs';
 
 const casa = cartellaUsaEGetta('negozio-pagina-');
-const { streamers, effects, paginaNegozio, linkPage, negozio: N } = await import('../../src/db.js');
+const { streamers, effects, paginaNegozio, linkPage, negozio: N, db } = await import('../../src/db.js');
 const S = await import('../../src/features/negozio.js');
 const P = await import('../../src/features/negozio-pagina.js');
 const { config } = await import('../../src/config.js');
@@ -91,10 +91,12 @@ test('con l\'aspetto «come la pagina link» la pagina prende il tema di quella,
 test('dalla pagina di un canale non si arriva mai ai dati di un altro', () => {
   const a = canale({ nomeMonete: 'Gemme' });
   const b = canale({ nomeMonete: 'Gettoni' });
-  const imgA = immagine(a, 'coronaa');
-  const imgB = immagine(b, 'coronab');
-  articolo(a, { nome: 'Corona di Anna', immagine: 'effetto:coronaa' });
-  articolo(b, { nome: 'Corona di Bruno', immagine: 'effetto:coronab' });
+  // Lo stesso nome di effetto in due canali: e' il caso in cui la porta, se
+  // guardasse solo l'effetto usato in vetrina, darebbe il file dell'altro.
+  const imgA = immagine(a, 'corona');
+  const imgB = immagine(b, 'corona');
+  articolo(a, { nome: 'Corona di Anna', immagine: 'effetto:corona' });
+  articolo(b, { nome: 'Corona di Bruno', immagine: 'effetto:corona' });
   paginaNegozio.salva(b, { headline: 'Il negozio segreto di Bruno', tema: { accent: '#abcdef' }, blocchi: P.PEZZI_DI_SERIE });
   const h = pagina(a);
   assert.ok(h.includes('Corona di Anna') && !h.includes('Corona di Bruno'), 'gli articoli sono solo i suoi');
@@ -123,6 +125,11 @@ test('la porta delle immagini non da\' media fuori dalla vetrina', () => {
   assert.equal(P.mediaPubblico(ch, nascosta.id), null, 'un articolo che si vede solo a chi lo puo\' comprare non sta in vetrina');
   assert.equal(P.mediaPubblico(ch, spenta.id), null, 'un articolo non in vendita non sta in vetrina');
   assert.equal(P.mediaPubblico(ch, suono.id), null, 'solo immagini');
+  const cambiata = immagine(ch, 'cambiata');
+  articolo(ch, { nome: 'Cambiata', immagine: 'effetto:cambiata' });
+  assert.ok(P.mediaPubblico(ch, cambiata.id));
+  db.prepare("UPDATE effects SET tipo='audio', file='cambiata.mp3' WHERE id=?").run(cambiata.id);
+  assert.equal(P.mediaPubblico(ch, cambiata.id), null, 'un effetto che non e\' piu\' un\'immagine non esce, anche se un articolo lo nomina ancora');
   assert.equal(P.mediaPubblico(ch, 'abc'), null);
   assert.equal(P.mediaPubblico(ch, 999999), null);
   streamers.setSettings(ch, { ...streamers.get(ch).settings, negozio: { attivo: false } });

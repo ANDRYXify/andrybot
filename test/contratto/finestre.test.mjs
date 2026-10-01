@@ -199,6 +199,14 @@ test('ogni copia passa da copiaTesto, che non fallisce in silenzio', () => {
   for (const f of readdirSync(dir).filter((x) => x.endsWith('.js'))) {
     let src = readFileSync(join(dir, f), 'utf8');
     if (f === 'app.js') for (const n of ['copiaTesto', '_xlaGrabFn']) { const p = pezzo(n); src = src.replace(p, p.replace(/[^\n]/g, ' ')); }
+    // La pagina pubblica del negozio non ha il pannello, quindi nemmeno
+    // copiaTesto: ha la sua strada con la stessa promessa. Se il browser non
+    // lascia copiare, o non sa farlo, il comando resta selezionato sotto gli occhi.
+    if (f === 'pagina-negozio.js') {
+      assert.match(src, /navigator\.clipboard\.writeText\(testo\)\.then\(function \(\) \{ segna\(b\); \}, function \(\) \{ seleziona\(b\); \}\);\n\s*\} else \{\n\s*seleziona\(b\);/,
+        'la pagina del negozio non fallisce in silenzio: senza appunti, il comando resta selezionato');
+      continue;
+    }
     senzaCommentiJs(src).split('\n').forEach((r, i) => { if (/clipboard\s*\??\.\s*writeText/.test(r)) scrive.push(`${f}:${i + 1}`); });
   }
   assert.deepEqual(scrive, [], 'fuori da copiaTesto (e dal segnalibro, che ha la sua strada) nessuno scrive negli appunti');

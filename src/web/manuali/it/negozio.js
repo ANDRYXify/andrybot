@@ -13,8 +13,8 @@ export default {
   schede: ['negozio'],
   titolo: 'Manuale del negozio | SocialBot',
   h1: 'Manuale del negozio',
-  desc: 'Il negozio del canale: cosa si compra con le monete, i requisiti letti da Twitch, le scorte, la coda da consegnare, lo storico e i comandi in chat.',
-  aggiornata: '2026-09-30',
+  desc: 'Il negozio del canale: cosa si compra con le monete, i requisiti, le scorte, la coda da consegnare, lo storico, la pagina del negozio e i comandi in chat.',
+  aggiornata: '2026-10-01',
   corpo: [
     { p: [
       'Il negozio è un posto in cui si paga solo con le <strong>monete del canale</strong>, cioè con il tempo passato in chat e in diretta. Le monete non si comprano e non diventano soldi. Tu decidi cosa c\'è, quanto costa e chi lo può comprare; chi guarda compra dalla chat.',
@@ -23,7 +23,7 @@ export default {
 
     { h2: 'Negozio', scheda: 'negozio', p: [
       'Il negozio è nel piano Essenziale, quello gratuito. La scheda la usano il proprietario del canale e i moderatori del pannello.',
-      'In alto scegli fra tre parti: «Articoli», «Da consegnare» e «Storico».',
+      'In alto scegli fra quattro parti: «Articoli», «Da consegnare», «Storico» e «La pagina del negozio».',
     ] },
 
     { h3: 'Il negozio del canale' },
@@ -31,6 +31,7 @@ export default {
       '«Negozio aperto» è spento di base. Da spento, in chat i comandi del negozio non rispondono; gli articoli, le borse e lo storico restano salvati.',
       'Da acceso, sotto la spunta il pannello ti ricorda i comandi con i nomi che hanno nel tuo canale: se li rinomini, scrive quelli nuovi.',
       'La spunta si salva da sola quando la tocchi, e il pannello scrive «Negozio aperto.» o «Negozio chiuso.».',
+      'Sotto c\'è l\'indirizzo della pagina del negozio, con «Copia» e «Apri»: è quello da mettere nella bio o nei pannelli di Twitch.',
     ] },
 
     { h3: 'Articoli' },
@@ -114,10 +115,31 @@ export default {
       'Lo storico si tiene un anno, poi si cancella da solo.',
     ] },
 
+    { h3: 'La pagina del negozio' },
+    { p: [
+      'Il negozio ha una pagina sua, come la pagina link: <strong>negozio.socialbot.live/</strong> e il nome del tuo canale. Funziona sempre anche l\'indirizzo lungo, socialbot.live/u/ e il nome del canale seguito da /negozio. È la pagina del tuo negozio e di nessun altro: mostra solo i tuoi articoli, la tua moneta e il tuo aspetto, e da lì non si arriva ai negozi di altri canali.',
+      'Si vede quando il negozio è aperto. Da chiuso, chi apre l\'indirizzo legge che qui non c\'è un negozio, senza altro.',
+      'La costruisci con lo stesso editor della pagina link: in «Contenuti» i pezzi, in «Aspetto» temi, sfondo, caratteri, colori ed effetti. «Uguale alla pagina link» prende lo stile della tua pagina link e lo segue quando la cambi; «Tutto suo» le dà un aspetto proprio. L\'anteprima si guarda come «Telefono» o come «Schermo», e quello che vedi è quello che vede chi la apre. Quando ti piace, premi «Salva e pubblica».',
+    ] },
+    { tabella: [
+      ['Pezzo', 'Cosa mostra'],
+      ['«Intestazione»', 'La foto, il titolo e il sottotitolo che scrivi in alto, in «Intestazione». Qui è un pezzo come gli altri: lo sposti dove vuoi, o lo togli.'],
+      ['«Articolo in vetrina»', 'Un articolo in grande: quello che scegli, oppure «Il più comprato (cambia da solo)».'],
+      ['«Griglia degli articoli»', 'Tutti gli articoli in vendita a tutti, su una, due o tre colonne, con le immagini quadrate, larghe, alte o come sono. Prezzo, scorte e requisiti li mostri o li nascondi.'],
+      ['«Come si compra»', 'Il comando per comprare col nome che ha nel tuo canale, e una frase sulla tua moneta accordata come hai scelto in «Come se ne parla in chat».'],
+      ['«Piede coi link»', 'Il link alla tua pagina link, se è pubblicata, e quello al tuo canale.'],
+    ] },
+    { p: [
+      'Ci puoi mettere anche titoli, testi, immagini, righe divisorie e spazi. Ogni pezzo si allarga, si allinea ed entra come vuoi, dai comandi sotto i suoi campi.',
+      'Ogni articolo ha la sua immagine (quella scelta nell\'editor dell\'articolo), il nome, la descrizione, il prezzo col nome della tua moneta, le scorte, i requisiti scritti in chiaro e un tasto «Copia» che copia il comando per comprarlo. Gli articoli che si vedono solo a chi li può comprare non ci sono.',
+      'Le parole della pagina, quelle che non scrivi tu, sono nella lingua della chat scelta nelle preferenze.',
+      'In «Quando condividi il link» c\'è l\'immagine che Telegram, WhatsApp e Discord mostrano quando qualcuno incolla l\'indirizzo: la puoi rifare come quella della pagina link.',
+    ] },
+
     { h2: 'In chat' },
     { tabella: [
       ['Comando', 'Cosa fa'],
-      ['<code>!negozio</code>', 'Dice i tre articoli più comprati, con la parola per comprarli e il prezzo. Quelli che si vedono solo a chi li può comprare non escono. <code>!shop</code> fa lo stesso.'],
+      ['<code>!negozio</code>', 'Dice i tre articoli più comprati, con la parola per comprarli e il prezzo, e l\'indirizzo della pagina del negozio. Quelli che si vedono solo a chi li può comprare non escono. <code>!shop</code> fa lo stesso.'],
       ['<code>!negozio spada</code>', 'Racconta quell\'articolo: prezzo, descrizione, requisiti e scorte.'],
       ['<code>!compra spada</code>', 'Compra l\'articolo. Per una canzone, un messaggio in evidenza o una domanda si scrive dopo la parola: <code>!compra canzone Bohemian Rhapsody</code>. <code>!buy</code> fa lo stesso.'],
       ['<code>!borsa</code>', 'Dice a chi lo scrive cosa ha nella borsa, con quante volte l\'ha preso. <code>!bag</code> fa lo stesso.'],
@@ -154,5 +176,7 @@ export default {
     { d: 'Cosa succede se il bot si riavvia mentre qualcuno compra?', r: 'Se le monete erano già uscite e non si sa se l\'effetto è partito, all\'avvio tornano a chi le aveva spese, e lo storico scrive «il bot si è riavviato a metà».' },
     { d: 'Chi vede cosa ho comprato?', r: 'Lo streamer e i moderatori del pannello, nello storico. In chat solo la risposta del bot a chi compra.' },
     { d: 'Posso rimettere le scorte?', r: 'Sì: apri l\'articolo con «Modifica» e scrivi in «Quante ne restano» il numero nuovo.' },
+    { d: 'La pagina del negozio mostra anche i negozi di altri streamer?', r: 'No. Ogni indirizzo è il negozio di un canale solo, e la pagina non porta ad altri negozi. Senza il nome di un canale, negozio.socialbot.live porta alla home di SocialBot.' },
+    { d: 'Si può comprare dalla pagina?', r: 'No: la pagina mostra cosa c\'è e come si compra. Si compra in chat, con il comando che la pagina copia per te.' },
   ],
 };

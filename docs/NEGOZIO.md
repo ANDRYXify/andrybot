@@ -192,12 +192,76 @@ cancella il canale. L'informativa lo dice nelle tre lingue.
 
 ### Cosa serve ai punti 5 e 6
 
-- **La pagina pubblica**: gli articoli che si mostrano a tutti sono già quelli
-  di `inVetrina()`. L'immagine di un articolo è un'immagine della libreria del
-  canale (`effetto:<comando>`): il pannello la mostra dietro la sessione, e la
-  pagina pubblica ha bisogno di una porta sua, senza la chiave dell'overlay.
-  Il link della pagina va aggiunto alla risposta di `!negozio`, che oggi dice i
-  tre articoli più comprati.
+- **La pagina pubblica**: fatta, vedi «La pagina» qui sotto.
 - **L'alert sull'overlay**: parte dove l'acquisto diventa «fatto» (o entra in
   coda), in `compra()`.
 - **L'arena**: la borsa si legge con `negozio.borsa(canale, persona)` (db.js).
+
+## La pagina (punto 5)
+
+`negozio.socialbot.live/<canale>`, e sempre anche `/u/<canale>/negozio`. È la
+terza pagina pubblica, dopo quella dei link e quella delle donazioni, e non ha
+niente di suo che le altre due non abbiano già, a parte i pezzi da negozio.
+
+### Una pagina sola, tre tavoli
+
+- **Lo store** è lo stesso (`storePagina` in db.js), con la tabella
+  `pagina_negozio`: testa, tema, pezzi, e `aspetto` («come la pagina link» o
+  «suo», come le donazioni). Ogni pagina dichiara i pezzi che ammette
+  (`TIPI_PAGINA_NEGOZIO`): la pulizia scarta gli altri, in tutti e due i versi.
+- **Il disegno** è `renderLinkPage` con l'opzione `negozio`
+  (features/negozio-pagina.js): i pezzi del negozio, il loro foglio di stile
+  (vestito con le variabili del tema e coi colori dei bottoni), le parole fisse
+  nella lingua del canale, `/pagina-negozio.js` per il tasto «Copia».
+  Senza `negozio` le altre due pagine restano come erano.
+- **L'editor** del pannello è quello della pagina link con `LP.quale =
+  'negozio'`, montato in «La pagina del negozio» della scheda Negozio.
+- **La carta dell'anteprima del link** è la terza di `TEMI_PAGINA`, con la
+  targhetta nella lingua del canale; si rifà con lo stesso editor.
+
+### I pezzi
+
+| Pezzo | Cosa fa |
+| --- | --- |
+| `intestazione` | Foto, titolo, sottotitolo. Nella pagina del negozio la testa è un pezzo: si sposta, o si toglie (resta un titolo solo per i lettori di schermo). |
+| `vetrina` | Un articolo in grande: quello scelto, o il più comprato. Se quello scelto esce di vendita, il più comprato. |
+| `articoli` | La griglia: 1-3 colonne (sul telefono si stringono), formato delle immagini, prezzo, scorte e requisiti sì o no. |
+| `comecompra` | Il comando col nome che ha nel canale, e la frase sulla moneta accordata con la sua forma. |
+| `piede` | I link alla pagina link (se pubblicata) e al canale. |
+
+In più `titolo`, `testo`, `separatore`, `spazio`, `immagine`. Niente riquadri
+di altri siti: una pagina che vende non chiede il permesso per un video.
+
+Ogni articolo: immagine, nome, descrizione, il tipo, il prezzo come etichetta
+col nome della moneta («Semi di girasole 1»: regge con ogni numero, dove «1
+monete» no), le scorte con le frasi del negozio, i requisiti scritti come su un
+cartellino (`requisitoBreve`, tre lingue), il comando e il tasto che lo copia.
+
+### Un canale, e nessun altro
+
+Tutto parte dal canale dell'indirizzo: `inVetrina(canale)`, la sua moneta, il
+suo comando, il suo aspetto. Un canale che non c'è e uno col negozio chiuso
+hanno la stessa pagina «qui non c'è un negozio» (404), nella lingua del
+browser e non in quella del canale, che direbbe se il canale esiste. La radice
+di `negozio.socialbot.live` non elenca i negozi: rimanda al sito.
+
+### La porta delle immagini
+
+`/u/<canale>/negozio/media/<id>`, pubblica: niente sessione, niente chiave
+dell'overlay. Esce solo un media che è di quel canale, è un'immagine, e lo usa
+un articolo che la pagina mostra adesso (in vendita, visibile a tutti, nelle
+sue date, a negozio aperto): `mediaPubblico`. Tutto il resto è 404, anche un
+media vero dello stesso canale che nessun articolo in vetrina usa.
+L'anteprima del pannello prende le immagini dalla libreria, dietro la sessione,
+perché il negozio può essere ancora chiuso.
+
+### L'indirizzo corto
+
+Come `dona`, `sostieni` e `discord`: il nome sta nel Caddyfile (validato con
+Caddy vero e registrato in `Caddyfile.validato`), il server bussa in HTTPS e
+accende `config.negozioHost` quando risponde; `NEGOZIO_HOST` lo sceglie o lo
+spegne. `urlPaginaNegozio` (negozio.js) è l'unico posto che scrive l'indirizzo:
+la chat (`!negozio`), il pannello, il canonico della pagina. Sul server
+`aggiorna.sh` valida e fa rileggere il Caddyfile a ogni aggiornamento, quindi
+dopo il record DNS non serve nient'altro.
+

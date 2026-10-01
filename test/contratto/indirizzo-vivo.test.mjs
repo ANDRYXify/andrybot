@@ -75,7 +75,10 @@ test('i nomi che il sito promette sono nomi che la porta d\'ingresso conosce', (
   const promessi = [...SRV.matchAll(/candidatoHost\(config\.baseUrl, '([a-z]+)'\)/g)].map((m) => `${m[1]}.socialbot.live`);
   assert.deepEqual(promessi, ['dona.socialbot.live', 'sostieni.socialbot.live', 'discord.socialbot.live', 'negozio.socialbot.live'],
     'le sonde si leggono tutte');
-  for (const nome of promessi) assert.ok(CADDY.includes(nome), `${nome} non è fra i nomi serviti`);
+  // Il nome deve stare fra gli indirizzi del sito, non da qualche parte nel
+  // file: un commento che lo nomina non chiede nessun certificato.
+  const indirizzi = (CADDY.match(/^socialbot\.live,[^{\n]*\{/m) || [''])[0];
+  for (const nome of promessi) assert.ok(indirizzi.includes(nome), `${nome} non è fra i nomi serviti`);
 });
 
 test('la pagina del sostegno si apre a chi NON e\' dentro, che e\' chi dona', async () => {

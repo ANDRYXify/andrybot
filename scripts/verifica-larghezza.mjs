@@ -304,6 +304,9 @@ const { pianiPubblici } = await import('../src/features/abbonamenti.js');
 const { paginaIndice, paginaGuida, GUIDE } = await import('../src/web/guide.js');
 const { pagina404 } = await import('../src/web/pagine-servizio.js');
 const { renderLinkPage } = await import('../src/features/linkpagina.js');
+// La pagina del negozio: gli stessi stili, e la griglia piu' larga (tre colonne)
+// che e' quella che su un telefono si deve stringere da sola.
+const { paginaNegozioEsempio } = await import('./_negozio-esempio.mjs');
 
 const INDIRIZZO_LUNGO = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ&list=PLx0sYbCqOb8TBPRdmBHs5Iftvv9TPboYG&index=12';
 const BLOCCHI = [
@@ -327,6 +330,8 @@ const PAGINE = {
   'guida-en': () => paginaGuida(GUIDE[0].id, 'en'),
   'non-trovata': () => pagina404('it'),
   ...Object.fromEntries(STILI.map((s) => [`link-${s}`, () => renderLinkPage({ headline: 'Andry', template: s, blocchi: BLOCCHI, tema: {} }, { login: 'prova', display: 'Andry', baseUrl: 'http://127.0.0.1' })])),
+  ...Object.fromEntries(['minimal', 'neon', 'brutal', 'pastello'].map((s) => [`negozio-${s}`, () => paginaNegozioEsempio({ template: s, colonne: 3 })])),
+  'negozio-es': () => paginaNegozioEsempio({ lingua: 'es', colonne: 2 }),
 };
 const STATICHE = ['privacy.html', 'termini.html', 'sostieni.html', 'collega.html'];
 const TIPI = { '.css': 'text/css', '.js': 'text/javascript', '.png': 'image/png', '.svg': 'image/svg+xml', '.woff2': 'font/woff2', '.ttf': 'font/ttf', '.webp': 'image/webp', '.json': 'application/json', '.html': 'text/html; charset=utf-8' };

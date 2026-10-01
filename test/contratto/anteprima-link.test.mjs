@@ -50,21 +50,24 @@ test('il colore della pagina: quello del tema, sennò quello del preset', () => 
   assert.match(accentoDi({}), /^#[0-9a-fA-F]{3,6}$/);
 });
 
-test('le rotte: due pubbliche per le chat, quattro del proprietario, una cache che si rifa\' quando serve', () => {
-  assert.ok(SRV.includes("app.get('/u/:user/anteprima.png', rottaCartaPagina('link'));") && SRV.includes("app.get('/u/:user/anteprima-dona.png', rottaCartaPagina('dona'));"));
+test('le rotte: tre pubbliche per le chat, quattro del proprietario, una cache che si rifa\' quando serve', () => {
+  assert.ok(SRV.includes("app.get('/u/:user/anteprima.png', rottaCartaPagina('link'));") && SRV.includes("app.get('/u/:user/anteprima-dona.png', rottaCartaPagina('dona'));")
+    && SRV.includes("app.get('/u/:user/anteprima-negozio.png', rottaCartaPagina('negozio'));"));
   assert.match(PORTE, /\['GET \/u\/:user\/anteprima\.png', /); assert.match(PORTE, /\['GET \/u\/:user\/anteprima-dona\.png', /);
+  assert.match(PORTE, /\['GET \/u\/:user\/anteprima-negozio\.png', /);
   for (const v of ['get', 'put', 'delete']) assert.ok(SRV.includes(`app.${v}('/api/paginacarta', requireOwner,`), v);
   assert.ok(SRV.includes("app.get('/api/paginacarta.png', requireOwner,"));
   assert.ok(SRV.includes("if (!p || !p.attiva) return notFound(res);\n    const png = await pngCartaPagina(login, quale);"), 'una pagina spenta non ha anteprima');
   assert.ok(SRV.includes("const chiave = `${dati.ts}|${mia?.ts || 0}|${dati.avatar.length}|${dati.accento}`;"), 'la cache sa quando la carta e\' vecchia');
   assert.ok(SRV.includes("cartePagina.set(login, quale, req.body.carta ? cartaLive.normCarta(req.body.carta) : null);"), 'si salva quello che il server ha ripulito');
   assert.ok(SRV.includes("set('Cache-Control', 'public, max-age=3600')"), 'le chat la tengono un\'ora');
-  assert.equal((SRV.match(/immagineAnteprima: immagineAnteprimaDi\(login, '(link|dona)'\)/g) || []).length, 2, 'tutte e due le pagine la scrivono');
+  assert.equal((SRV.match(/immagineAnteprima: immagineAnteprimaDi\(login, '(link|dona|negozio)'\)/g) || []).length, 3, 'tutte e tre le pagine la scrivono');
   assert.ok(SRV.includes("const immagineAnteprimaDi = (login, quale) => (cartaLive.disegnabile() ?"), 'solo se il server sa disegnarla');
 });
 
 test('il pannello: il riquadro nell\'editor della pagina, lo stesso editor delle locandine col suo titolo', () => {
-  assert.ok(APP.includes('<div id="lp-carta-box">') && APP.includes("await api('/api/paginacarta?quale=' + (LP.quale === 'dona' ? 'dona' : 'link'))"));
+  assert.ok(APP.includes('<div id="lp-carta-box">') && APP.includes("await api('/api/paginacarta?quale=' + LP.quale)"), 'la carta della pagina che si sta modificando');
+  assert.ok(SRV.includes("const qualePagina = (v) => (['dona', 'negozio'].includes(String(v || '')) ? String(v) : 'link');"), 'e il server conosce le tre pagine');
   assert.ok(APP.includes("const mod = await import('/carta-editor.js');\n      mod.apri({ ..._cartaPagina, titolo:"), 'lo stesso editor, col titolo dell\'anteprima');
   assert.ok(APP.includes('id="lp-carta-standard"') && APP.includes("{ method: 'DELETE' }"), 'si torna a quella standard');
   assert.ok(leggi('src/web/public/carta-editor.js').includes("esc(stato.titolo || L('Editor della locandina'"), 'l\'editor prende il titolo da chi lo apre');

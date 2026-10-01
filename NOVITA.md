@@ -49,6 +49,21 @@ comandi diversi da quelli della riga italiana.
 - Una frase lunga accanto a una casella va a capo sotto di sé, e nella barra dell'Overlay Studio ogni spunta sta più vicina alla sua parola che a quella prima. [vai: alert]
   en: A long sentence next to a checkbox wraps under itself, and in the Overlay Studio toolbar each checkbox sits closer to its own word than to the one before.
   es: Una frase larga junto a una casilla salta de línea debajo de sí misma, y en la barra de Overlay Studio cada casilla queda más cerca de su palabra que de la anterior.
+- [importante] Il negozio ha la sua pagina, negozio.socialbot.live e il nome del canale: gli articoli con immagine, prezzo, requisiti e scorte, e come si compra. [vai: negozio]
+  en: Your shop has its own page, negozio.socialbot.live plus your channel name: the items with image, price, requirements and stock, and how to buy.
+  es: La tienda tiene su página, negozio.socialbot.live y el nombre del canal: los artículos con imagen, precio, requisitos y existencias, y cómo se compra.
+  > La vetrina del tuo negozio
+  > La costruisci come la pagina link, con gli stessi temi, e la mandi a chi guarda. Ogni negozio è solo del suo canale, e da lì non si arriva agli altri.
+  en> Your shop window
+  en> You build it like the link page, with the same themes, and send it to your viewers. Every shop belongs to its channel only, and it never leads to the others.
+  es> El escaparate de tu tienda
+  es> La construyes como la página de enlaces, con los mismos temas, y se la mandas a quien te mira. Cada tienda es solo de su canal, y desde ella no se llega a las demás.
+- In chat !negozio, dopo i tre articoli più comprati, scrive l'indirizzo della pagina del negozio. [vai: negozio]
+  en: In chat, !negozio now writes the shop page address after the three most bought items.
+  es: En el chat, !negozio escribe la dirección de la página de la tienda después de los tres artículos más comprados.
+- L'informativa sulla privacy dice cosa mostra la pagina pubblica del negozio: gli articoli in vendita e l'aspetto scelto, mai chi ha comprato.
+  en: The privacy notice says what the public shop page shows: the items on sale and the chosen look, never who bought what.
+  es: La política de privacidad dice qué muestra la página pública de la tienda: los artículos a la venta y el aspecto elegido, nunca quién compró.
 
 ## 2026-09-30
 

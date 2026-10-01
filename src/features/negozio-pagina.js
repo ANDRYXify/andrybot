@@ -222,18 +222,39 @@ const FORME = { quadrato: '1 / 1', largo: '16 / 9', alto: '3 / 4', libero: 'auto
 // che il tema decide per i bottoni: una scheda articolo e' vestita come un
 // bottone della pagina link, con lo stesso bordo e la stessa ombra.
 export function opzioniNegozio(canale, { baseUrl = '', display = '', ora = Date.now(), anteprima = false } = {}) {
+  return opzioniDaDati(datiPagina(canale, { baseUrl, display, ora, anteprima }));
+}
+
+// Tutto quello che la pagina di un canale legge, in un posto: la vetrina, la
+// moneta, il comando, i suoi link. Da qui in giu' (opzioniDaDati) non si legge
+// piu' niente: si scrive solo quello che c'e' qui dentro.
+export function datiPagina(canale, { baseUrl = '', display = '', ora = Date.now(), anteprima = false } = {}) {
   const ch = String(canale || '').toLowerCase();
   const v = vetrinaPagina(ch, { ora, anteprima });
-  const t = T[v.lingua];
-  const nome = display || ch;
+  const link = linkPage.get(ch);
+  return {
+    ...v,
+    nome: display || ch,
+    url: urlPaginaNegozio(ch),
+    privacy: `${baseUrl}${viaLegale('privacy', v.lingua)}#negozio`,
+    urlLink: link?.attiva ? `${baseUrl}/u/${ch}` : '',
+    urlTv: urlCanale(ch) || '',
+    piattaforma: piattaformaDi(ch),
+  };
+}
+
+// I pezzi del negozio e il loro foglio di stile, da dei dati gia' letti. E'
+// una funzione pura: la usa la pagina vera, e i collaudi che misurano la
+// pagina senza un database.
+export function opzioniDaDati(v) {
+  const t = T[lin(v.lingua)];
+  const nome = v.nome;
   const moneta = maiuscola(v.moneta.nome);
   // L'accordo con la moneta (moneta.js) si scioglie solo nei pezzi scritti qui:
   // il nome del comando e quello della moneta restano come li ha scelti lo streamer.
   const accorda = (pezzi, ...valori) => pezzi.reduce((s, p, i) => s + accordaMoneta(p, v.moneta.forma) + (i < valori.length ? valori[i] : ''), '');
-  const link = linkPage.get(ch);
-  const urlLink = link?.attiva ? `${baseUrl}/u/${ch}` : '';
-  const urlTv = urlCanale(ch) || '';
-  const dove = { twitch: 'Twitch', kick: 'Kick', youtube: 'YouTube' }[piattaformaDi(ch)] || '';
+  const { urlLink, urlTv } = v;
+  const dove = { twitch: 'Twitch', kick: 'Kick', youtube: 'YouTube' }[v.piattaforma] || '';
 
   const scheda = (a, { formato = 'quadrato', prezzo = true, scorte = true, requisiti = true } = {}) => {
     const cmd = `${v.cmd} ${a.parola}`;
@@ -289,7 +310,7 @@ export function opzioniNegozio(canale, { baseUrl = '', display = '', ora = Date.
       const voce = (href, ico, testo) => `<a class="voce" href="${esc(href)}" target="_blank" rel="noopener"><span class="ico">${iconaMarchio(ico)}</span><span class="tx"><span class="et">${esc(testo)}</span></span><span class="fre" aria-hidden="true">›</span></a>`;
       const voci = [
         b.link && urlLink ? voce(urlLink, 'link', t.link(nome)) : '',
-        b.canale && urlTv && dove ? voce(urlTv, piattaformaDi(ch), t.canale(nome, dove)) : '',
+        b.canale && urlTv && dove ? voce(urlTv, v.piattaforma, t.canale(nome, dove)) : '',
       ].filter(Boolean).join('');
       return voci ? `<nav class="ng-piede" ${ritardo}>${voci}</nav>` : '';
     }
@@ -334,9 +355,9 @@ export function opzioniNegozio(canale, { baseUrl = '', display = '', ora = Date.
   .ng-piede{display:flex;flex-direction:column;gap:var(--aria);width:100%}`;
 
   return {
-    lingua: v.lingua,
-    url: urlPaginaNegozio(ch),
-    privacy: `${baseUrl}${viaLegale('privacy', v.lingua)}#negozio`,
+    lingua: lin(v.lingua),
+    url: v.url,
+    privacy: v.privacy,
     testi: { titolo: t.titolo, descrizione: t.descrizione(nome), vuota: t.vuota, creata: t.creata, privacy: t.privacy },
     blocco,
     css,

@@ -39,9 +39,9 @@ test('la scheda Negozio sta nel gruppo della chat, registrata per intero', () =>
   assert.match(app, /\n {2}negozio: \s*_ico\(/, 'l\'icona nel menu');
   assert.match(app, /SCHEDA_FUNZ = \{[^}]*negozio: 'giochi'/, 'si apre con il piano che ha le monete');
   assert.match(app, /\$\{pannelloNegozio\(\)\}/);
-  assert.match(app, /if \(id === 'negozio'\) \{ caricaNegozio\(\); requestAnimationFrame\(\(\) => applicaSottoSchede\('negozio'\)\); \}/);
+  assert.match(app, /if \(id === 'negozio'\) \{ caricaNegozio\(\); caricaPaginaLink\(false, 'negozio'\); requestAnimationFrame\(\(\) => applicaSottoSchede\('negozio'\)\); \}/);
   const sotto = app.slice(app.indexOf('const SOTTO_SCHEDE = {'), app.indexOf('function sottoScelta('));
-  for (const z of ['articoli', 'consegnare', 'storico']) {
+  for (const z of ['articoli', 'consegnare', 'storico', 'pagina']) {
     assert.match(sotto, new RegExp(`\\['${z}', \\[`), `la parte «${z}» fra le sotto-schede`);
     assert.ok(app.includes(`<div data-zona="${z}">`), `e la sua zona nella scheda`);
   }
