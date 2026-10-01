@@ -334,6 +334,7 @@ export const IN_CHAT = {
   moneta: { gruppo: 'solo', emoji: '🪙', spiega: 'Lanci una moneta con {moneta}, ed esce testa o croce.' },
   '8ball': { gruppo: 'solo', emoji: '🎱', forma: 'domanda', spiega: 'Fai una domanda e la palla magica ti risponde: {8ball} vinco stasera?' },
   monete: { gruppo: 'conto', emoji: '💰', spiega: 'Ti dice %[quante|quanti|quanta|quanto]% %monete% hai. %[Si guadagnano|Si guadagnano|Si guadagna|Si guadagna]% stando in chat, e giocando.' },
+  doppio: { gruppo: 'conto', emoji: '⏱️', forma: 'minuti', spiega: 'Per un po\' quello che si guadagna stando in chat vale di più: {doppio} 30 per mezz\'ora, {doppio} 60 3 per un\'ora al triplo, {doppio} stop per finire.' },
   classifica: { gruppo: 'conto', emoji: '🏆', spiega: 'Chi ha più %monete% nel canale, e a che posto sei tu. Con {classifica} mod vedi la gara dello staff, con {classifica} tutti le due insieme.' },
   slot: { gruppo: 'solo', emoji: '🎰', spiega: 'Tiri la leva con {slot}: ogni giocata costa %slot.costo% %monete%, con i simboli uguali si vince e il tris di 💎 è il jackpot.' },
   duello: { gruppo: 'sfide', emoji: '⚔️', forma: '@nome posta', spiega: 'Sfidi qualcuno che è in chat con {duello} @nome, e vince uno dei due. Con una posta ({duello} @nome 50) l\'altro accetta con {accetta} o dice di no con {rifiuta}, e chi vince prende la posta dell\'altro.' },

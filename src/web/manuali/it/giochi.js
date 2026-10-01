@@ -275,6 +275,7 @@ export default {
       ['<code>!moneta</code>', '<code>!coin</code>', 'Testa o croce.', ATT('moneta')],
       ['<code>!8ball</code>', '<code>!palla8</code>', 'Risponde a una domanda. Serve la domanda.', ATT('8ball')],
       ['<code>!monete</code>', '<code>!punti</code> <code>!bilancio</code>', 'Quante ne hai.', 'nessuna'],
+      ['<code>!doppio 30</code>', '<code>!doppie</code>', 'L\'ora doppia per mezz\'ora: quello che arriva da solo vale di più. <code>!doppio 60 3</code> per un\'ora al triplo, <code>!doppio stop</code> per finire. Solo mod e streamer.', 'nessuna'],
       ['<code>!classifica</code>', '<code>!top</code>', 'I primi del pubblico, e dove sei tu.', 'nessuna'],
       ['<code>!classifica mod</code>', '<code>!classificamod</code> <code>!classificastaff</code> <code>!topmod</code>', 'I primi dello staff.', 'nessuna'],
       ['<code>!slot</code>', 'nessuno', 'Macchinetta: paghi, giri, forse vinci.', ATT('slot')],

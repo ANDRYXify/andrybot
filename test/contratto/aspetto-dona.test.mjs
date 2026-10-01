@@ -12,14 +12,17 @@ import { readFileSync } from 'node:fs';
 const leggi = (f) => readFileSync(new URL('../../' + f, import.meta.url), 'utf8');
 const SRV = leggi('src/web/server.js');
 const APP = leggi('src/web/public/app.js');
+// l'anteprima del pannello e quella della demo le compone anteprima-pagine.js
+const ANT = leggi('src/web/anteprima-pagine.js');
 const tratto = (testo, da, n) => { const i = testo.indexOf(da); assert.ok(i >= 0, `manca ${da}`); return testo.slice(i, i + n); };
 
 test('ogni strada che mostra la pagina delle donazioni passa da aspettoDi', () => {
   assert.match(tratto(SRV, "app.get('/dona/:login', wrap(", 1400), /renderLinkPage\(aspettoDi\(p, link\),/, 'la pagina');
   assert.match(tratto(SRV, "app.get('/dona/:user/privacy'", 900), /pagina: aspettoDi\(p, linkPage\.get\(login\)\)/, 'la sua informativa');
   assert.match(tratto(SRV, 'async function datiCartaPagina(', 500), /quale === 'dona' \? aspettoDi\(paginaDona\.conDefault\(login, display\), linkPage\.get\(login\)\)/, 'l\'immagine dell\'anteprima del link');
-  assert.match(tratto(SRV, "app.post('/api/paginadona/anteprima'", 700), /const finta = aspettoDi\(paginaDona\.pulisci\(/, 'l\'anteprima del pannello');
-  const viste = [...SRV.matchAll(/renderLinkPage\(([^,]+),/g)].map((m) => m[1]);
+  assert.match(tratto(SRV, "app.post('/api/paginadona/anteprima'", 700), /htmlAnteprima\('dona', [\s\S]*link: linkPage\.get\(login\)/, 'l\'anteprima del pannello');
+  assert.match(tratto(ANT, 'export function htmlAnteprima(', 1200), /aspettoDi\(paginaDona\.pulisci\(\{ \.\.\.testo, aspetto: c\.aspetto \}\), c\.link\)/, 'l\'anteprima, del pannello e della demo');
+  const viste = [...(SRV + ANT).matchAll(/renderLinkPage\(([^,]+),/g)].map((m) => m[1]);
   assert.ok(viste.every((v) => !/paginaDona/.test(v)), 'nessuno stampa la pagina delle donazioni direttamente dallo store');
 });
 

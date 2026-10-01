@@ -145,9 +145,9 @@ export const cifra = (n, p = 'it') => numero(Math.max(0, Math.trunc(Number(n) ||
 // chat, perche' il negozio parla anche inglese e spagnolo.
 const MONETA_DI_SERIE = { it: NOME_BASE, en: 'coins', es: 'monedas' };
 export function monetaIn(canale, l = 'it') {
-  const m = monetaDi(canale);
-  return { nome: m.nome === NOME_BASE ? MONETA_DI_SERIE[lin(l)] : m.nome, forma: m.forma };
+  return monetaPerLingua(monetaDi(canale), l);
 }
+export const monetaPerLingua = (m, l = 'it') => ({ nome: m.nome === NOME_BASE ? MONETA_DI_SERIE[lin(l)] : m.nome, forma: m.forma });
 // Quanto manca, arrotondato al secondo in su: «0 secondi» non si dice a nessuno.
 export const tempo = (ms, p = 'it') => durata(Math.max(1, Math.ceil((Number(ms) || 0) / 1000)) * 1000, pref(p));
 
@@ -406,10 +406,15 @@ export const MOMENTI = Object.keys(FRASI.it);
 // chiama non lo passa. Un momento che non c'e' e' un errore di chi chiama, e
 // torna vuoto.
 export function frase(canale, momento, dati = {}) {
-  const l = lin(preferenzeDi(canale).lingua);
+  const pf = preferenzeDi(canale);
+  return fraseCon(pf, monetaIn(canale, lin(pf.lingua)), momento, dati);
+}
+// La stessa frase da preferenze e moneta gia' lette (monetaIn): la usa anche
+// la demo, che il canale non ce l'ha nel database.
+export function fraseCon(pf, m, momento, dati = {}) {
+  const l = lin(pf?.lingua);
   const f = FRASI[l][momento] || FRASI.it[momento];
   if (!f) return '';
-  const m = monetaIn(canale, l);
   const a = (pezzi, ...valori) => pezzi.reduce((t, p, i) => t + accordaMoneta(p, m.forma) + (i < valori.length ? valori[i] : ''), '');
   return f({ ...dati, moneta: m.nome }, a);
 }
@@ -523,8 +528,12 @@ export const potaStorico = (ora = Date.now()) => negozioDb.pota(ora);
 // tutta la chat.
 export function inVetrina(canale, ora = Date.now()) {
   const ch = String(canale || '').toLowerCase();
-  const venduti = negozioDb.venduti(ch);
-  return negozioDb.articoli(ch)
+  return vetrinaDi(negozioDb.articoli(ch), negozioDb.venduti(ch), ora);
+}
+// La stessa scelta da articoli gia' letti (`venduti`: id -> quanti): la usa
+// anche la demo, che gli articoli li tiene nel browser.
+export function vetrinaDi(articoli, venduti, ora = Date.now()) {
+  return articoli
     .filter((a) => a.attivo && a.siVede === 'sempre' && !(a.quando === 'date' && (ora < a.dal || ora > a.al)))
     .map((a) => ({ ...a, venduti: venduti.get(a.id) || 0 }))
     .sort((x, y) => y.venduti - x.venduti || x.ordine - y.ordine || x.id - y.id);

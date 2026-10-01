@@ -13,8 +13,9 @@
 //     un comando che la chat non conosce);
 //   · nessuna riga rivendica una parola gia' di un'altra (il secondo non
 //     partirebbe mai e nessuno saprebbe perche');
-//   · la copia finta della demo copre esattamente il registro (se no la demo
-//     mostra un prodotto diverso da quello vero).
+//   · la copia finta della demo copre esattamente il registro, e ogni sua riga
+//     dice quello che dice il registro (se no la demo mostra un prodotto
+//     diverso da quello vero).
 //
 // E che la chat ne parli a chi guarda (IN_CHAT, comandi-registro.js):
 //   · ogni comando delle famiglie di giochi ha il suo posto: un gruppo e una
@@ -73,18 +74,42 @@ for (const [k, m] of Object.entries(MODULI)) if (!terna(m.nome)) mute.push(`fami
 dice(mute.length === 0, `ogni riga parla italiano, inglese e spagnolo: ${COMANDI.length} comandi e ${Object.keys(MODULI).length} famiglie`, mute.join(', '));
 
 // ---- la demo mostra lo stesso prodotto ------------------------------------
+// Non basta che ci siano gli stessi comandi: la demo e' rimasta indietro anche
+// con i comandi giusti, con «Chiama il boss» per tutti mentre il registro lo da'
+// ai moderatori, e la descrizione di !negozio di prima del link alla pagina.
+// Quindi di ogni riga si confronta quello che il pannello mostra e che viene
+// dal registro: famiglia, titolo, descrizione, chi lo puo' usare, e i nomi se
+// la demo non lo mostra apposta come rinominato.
 const app = leggi('src/web/public/app.js');
-const i = app.indexOf("'/api/streamer/comandi-pronti': { comandi: [");
-dice(i >= 0, 'la demo ha la sua copia dei comandi');
-if (i >= 0) {
-  const blocco = app.slice(i, app.indexOf('], livelli:', i));
-  const finti = [...blocco.matchAll(/\bid: "([a-z0-9]+)"/g)].map((m) => m[1]);
+const INIZIO_DEMO = "'/api/streamer/comandi-pronti': { comandi: [";
+const DAL_REGISTRO = (c) => ({ modulo: c.modulo, moduloNome: MODULI[c.modulo]?.nome, titolo: c.titolo, cosa: c.cosa,
+  chiMinimo: LIVELLI.includes(c.chi) ? c.chi : 'tutti', nomi: c.nomi });
+export function guaiDemo(testo) {
+  const i = testo.indexOf(INIZIO_DEMO);
+  if (i < 0) return { manca: true, coperti: [], righe: [] };
+  const blocco = testo.slice(i, testo.indexOf('], livelli:', i));
+  const finte = blocco.split('\n').filter((r) => /^\s*\{ id: "/.test(r))
+    .map((r) => new Function(`return (${r.trim().replace(/,\s*$/, '')});`)());
   const veri = COMANDI.map((c) => c.id);
-  const mancanti = veri.filter((x) => !finti.includes(x));
-  const inPiu = finti.filter((x) => !veri.includes(x));
-  dice(mancanti.length === 0 && inPiu.length === 0,
-    `la demo copre il registro: ${finti.length} su ${veri.length}`,
-    [...mancanti.map((x) => '-' + x), ...inPiu.map((x) => '+' + x)].join(', '));
+  const finti = finte.map((d) => d.id);
+  const coperti = [...veri.filter((x) => !finti.includes(x)).map((x) => '-' + x), ...finti.filter((x) => !veri.includes(x)).map((x) => '+' + x)];
+  const righe = [];
+  for (const d of finte) {
+    const c = COMANDI.find((x) => x.id === d.id);
+    if (!c) continue;
+    const atteso = DAL_REGISTRO(c);
+    for (const [k, v] of Object.entries(atteso)) {
+      if (k === 'nomi' && d.rinominato) continue;
+      if (JSON.stringify(d[k]) !== JSON.stringify(v)) righe.push(`${d.id}.${k}`);
+    }
+  }
+  return { manca: false, coperti, righe, n: finti.length, di: veri.length };
+}
+const gd = guaiDemo(app);
+dice(!gd.manca, 'la demo ha la sua copia dei comandi');
+if (!gd.manca) {
+  dice(gd.coperti.length === 0, `la demo copre il registro: ${gd.n} su ${gd.di}`, gd.coperti.join(', '));
+  dice(gd.righe.length === 0, 'ogni comando della demo dice quello che dice il registro', gd.righe.join(', '));
 }
 
 // ---- un solo elenco in chat -----------------------------------------------
@@ -183,6 +208,17 @@ if (process.argv.includes('--selftest')) {
     const t = copia();
     rompi(t);
     const visto = guaiInChat(t)[dove].length > 0;
+    console.log((visto ? '  ✓  ' : '  ✗  ') + che + (visto ? '' : '  → PASSA INOSSERVATO'));
+    if (!visto) cieche++;
+  }
+  const DEMO_ROTTE = [
+    [(t) => t.replace(/(\{ id: "boss",.*?)chi: "mod", chiMinimo: "mod"/, '$1chi: "tutti", chiMinimo: "tutti"'), 'righe', 'un comando dei moderatori che la demo da\' a tutti'],
+    [(t) => t.replace(/(\{ id: "negozio",.*?cosa: \[")/, '$1Vecchia descrizione. '), 'righe', 'una descrizione rimasta indietro'],
+    [(t) => t.replace(/\n\s*\{ id: "doppio",[^\n]*/, ''), 'coperti', 'un comando che la demo non ha'],
+  ];
+  for (const [rompi, dove, che] of DEMO_ROTTE) {
+    const rotto = rompi(app);
+    const visto = rotto !== app && guaiDemo(rotto)[dove].length > 0;
     console.log((visto ? '  ✓  ' : '  ✗  ') + che + (visto ? '' : '  → PASSA INOSSERVATO'));
     if (!visto) cieche++;
   }

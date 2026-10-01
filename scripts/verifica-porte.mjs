@@ -56,9 +56,9 @@ const SOLO_SESSIONE = new Set(['requireAdmin', 'requireLogin', 'requireMod', 're
 // passaggi della passkey (che il segreto se lo verificano da soli).
 const PUBBLICHE = new Map([
   ['GET /entra', 'la pagina di ingresso'],
-  ['GET /js/carta-disegno.js', 'un file statico come gli altri del sito: il disegno della carta, senza commenti e senza dati di nessuno'],
-  ['GET /js/economia-regole.js', 'un file statico come gli altri del sito: i conti dell\'economia delle monete, senza commenti e senza dati di nessuno'],
-  ['GET /font/:file', 'i caratteri della carta: solo i tre nomi dell\'elenco, e sono file gia\' pubblici per licenza'],
+  ['GET /js/carta-disegno.js', 'un file statico come gli altri del sito: il disegno della carta, senza commenti e senza dati di nessuno. Lo importa l\'editor della carta, anche nella demo'],
+  ['GET /js/economia-regole.js', 'un file statico come gli altri del sito: i conti dell\'economia delle monete, senza commenti e senza dati di nessuno. Lo importa il pannello, anche nella demo'],
+  ['GET /font/:file', 'i caratteri della carta: solo i tre nomi dell\'elenco, e sono file gia\' pubblici per licenza. Li carica l\'editor della carta, anche nella demo'],
   ['GET /instagram/cancellazione', 'dove Meta manda chi ha chiesto di cancellare i dati: riconosce solo i codici firmati da noi, e non mostra niente di nessuno'],
   ['GET /pubblici/:nome', 'l\'immagine della settimana mentre Instagram la scarica: nome casuale da 128 bit, cancellata appena pubblicata'],
   ['GET /accedi', 'la pagina di ingresso'],
@@ -117,6 +117,7 @@ const PUBBLICHE = new Map([
   ['GET /sostieni', 'la pagina per sostenere il progetto: pubblica, e non chiede un account a nessuno'],
   ['GET /:campagna', 'la pagina del QR di una campagna (docs/CAMPAGNE.md): la apre chi passa per strada, e chi non ha un account entra da li\'. Se l\'id non e\' una campagna passa oltre, al 404'],
   ['GET /campagne/:file', 'l\'anteprima del link di una campagna: la leggono Telegram, WhatsApp e Discord quando qualcuno incolla il link'],
+  ['POST /api/demo/anteprima', 'l\'anteprima delle pagine nella demo, che e\' il pannello di chi non e\' entrato: rende la pagina da quello che la demo manda, senza leggere ne\' scrivere niente, e la restituisce a chi l\'ha chiesta (tetto al minuto per indirizzo)'],
   ['GET /api/sostieni', 'gli importi che proponiamo: la pagina li deve poter leggere prima di chiedere qualcosa'],
   ['POST /api/sostieni', 'apre il pagamento: chi sostiene non si iscrive a niente, quindi non c\'e\' una sessione da guardare (tetto al minuto per indirizzo)'],
   ['GET /api/sostieni/esito', 'il ritorno dal pagamento: la verita\' la da\' Stripe, l\'indirizzo serve solo a sapere quale sessione rileggere'],
@@ -143,9 +144,6 @@ const PUBBLICHE = new Map([
 // Pubbliche per il guardiano, ma dietro il cancello della sessione: servono a
 // chi e' gia' dentro, e da fuori il sito resta un labirinto.
 const SOLO_DENTRO = new Map([
-  ['GET /js/carta-disegno.js', 'la usa l\'editor della carta, che sta nel pannello'],
-  ['GET /js/economia-regole.js', 'la usa il pannello per i conti di una diretta, nella scheda Giochi'],
-  ['GET /font/:file', 'li usa l\'editor della carta, che sta nel pannello'],
   ['GET /auth/logout', 'senza sessione non c\'e\' niente da chiudere'],
 ]);
 
@@ -159,6 +157,8 @@ if (SELFTEST) {
     + "  app.get(['/api/pubblico', '/api/nascosto'], (req, res) => res.json({ tutto: 1 }));\n"
     + "  app.get(VIA_NASCOSTA, (req, res) => res.json({ tutto: 1 }));\n"
     + "  app.get('/health',");
+  sorgente = sorgente.replace("guscio.pagina('index.html', '/js/economia-regole.js', '/js/carta-disegno.js');", '')
+    .replace(/guscio\.porta\('\/font\/:file'[^\n]*/, '');
 }
 
 // Una rotta si legge dal suo primo argomento: un indirizzo scritto per intero,
@@ -288,6 +288,37 @@ for (const r of daFuori) {
 }
 for (const k of SOLO_DENTRO.keys()) {
   if (!PUBBLICHE.has(k)) guai.push(`«${k}» e' fra le porte chiuse a chi e' senza sessione, ma non e' piu' pubblica: va tolta anche da li'`);
+  const via = k.slice(k.indexOf(' ') + 1);
+  if (guscio.aperto(esempio(via)) || schemiAperti.has(via)) guai.push(`«${k}» e' fra le porte chiuse a chi e' senza sessione, ma il cancello la apre: va tolta da li'`);
+}
+
+// 7. I MODULI CHE LE PAGINE PUBBLICHE IMPORTANO.
+//    Il guscio ricava le risorse delle pagine pubbliche dai file di public/:
+//    un modulo che compone il server (i conti delle monete, il disegno della
+//    carta) non e' un file, e il guscio non lo vede. La demo, che e' il
+//    pannello di chi non e' entrato, li importava e riceveva 404: i conti
+//    delle monete restavano vuoti e l'editor della carta non si apriva.
+//    Qui ogni `import` e ogni `url(` di una pagina pubblica deve passare il
+//    cancello. Un indirizzo che finisce in un pezzo calcolato (`/font/${f}`)
+//    passa se c'e' una porta con uno schema che comincia li'. Resta fuori
+//    solo un modulo la cui rotta pretende la sessione (il pannello privato
+//    dell'amministrazione): quello e' chiuso apposta, e lo dice la sua porta.
+const RE_IMPORT = /(?:\bimport\s*\(\s*|\bfrom\s*|\bimport\s+)(['"])(\/[^'"?#]+)\1/g;
+const RE_URL = /\burl\(\s*(['"]?)(\/[^'"()?#$]*)(\$\{)?/g;
+const passa = (percorso, calcolato) => (calcolato
+  ? [...schemiAperti].some((sc) => sc.startsWith(percorso) && sc.slice(percorso.length).startsWith(':'))
+  : guscio.aperto(percorso));
+const importati = new Set();
+for (const via of guscio.elenco().filter((v) => /\.(m?js|html)$/.test(v))) {
+  let testo;
+  try { testo = readFileSync(join(RAD, 'src/web/public', via), 'utf8'); } catch { continue; }
+  const chiesti = [...[...testo.matchAll(RE_IMPORT)].map((m) => [m[2], false]), ...[...testo.matchAll(RE_URL)].map((m) => [m[2], !!m[3]])];
+  for (const [percorso, calcolato] of chiesti) {
+    const sua = rotte.find((r) => r.chiave === `GET ${percorso}`);
+    if (sua?.guardia && SOLO_SESSIONE.has(sua.guardia)) continue;
+    importati.add(percorso);
+    if (!passa(percorso, calcolato)) guai.push(`${via} importa ${percorso}${calcolato ? '…' : ''}, e il cancello lo chiude a chi non e' entrato`);
+  }
 }
 
 const conta = {};
@@ -303,6 +334,7 @@ verde = dice(!guai.some((g) => /marcire|toglila/.test(g)), `porte dichiarate pub
 verde = dice(!guai.some((g) => /amministrazione/.test(g)), `porte di amministrazione: ${rotte.filter((r) => /^\/api\/admin\b/.test(r.via)).length}`, guai.filter((g) => /amministrazione/.test(g)).slice(0, 5).join(' · ')) && verde;
 verde = dice(!guai.some((g) => /tocca una chiave/.test(g)), `porte pubbliche che toccano una chiave: ${guai.filter((g) => /tocca una chiave/.test(g)).length}`, guai.filter((g) => /tocca una chiave/.test(g)).slice(0, 5).join(' · ')) && verde;
 verde = dice(!guai.some((g) => /senza sessione/.test(g)), `porte per chi e' senza sessione: ${daFuori.length}, tutte aperte nel cancello`, guai.filter((g) => /senza sessione/.test(g)).slice(0, 5).join(' · ')) && verde;
+verde = dice(!guai.some((g) => /importa .*chiude/.test(g)), `moduli e caratteri che le pagine pubbliche importano: ${importati.size}, tutti aperti nel cancello`, guai.filter((g) => /importa .*chiude/.test(g)).slice(0, 5).join(' · ')) && verde;
 
 if (SELFTEST) {
   const regalo = guai.some((g) => /regalo.*tocca una chiave/.test(g));
@@ -311,7 +343,11 @@ if (SELFTEST) {
   const composta = guai.some((g) => /VIA_NASCOSTA.*non legge/.test(g));
   if (!inElenco) { console.log('\nAutoprova FALLITA: la seconda porta di un elenco non e\' stata vista.\n'); process.exit(1); }
   if (!composta) { console.log('\nAutoprova FALLITA: la porta con un indirizzo composto non e\' stata vista.\n'); process.exit(1); }
-  if (!verde && regalo && tastiera) { console.log('\nAutoprova: una porta nuova senza guardiano, una in un elenco, una con un indirizzo composto, una che regala una chiave e una a chiave chiusa dal cancello fanno diventare rosso il cancello. ✓\n'); process.exit(0); }
+  const modulo = guai.some((g) => /importa \/js\/economia-regole\.js, e il cancello/.test(g));
+  const carattere = guai.some((g) => /importa \/font\/…, e il cancello/.test(g));
+  if (!modulo) { console.log('\nAutoprova FALLITA: il modulo che la demo importa, chiuso dal cancello, non e\' stato visto.\n'); process.exit(1); }
+  if (!carattere) { console.log('\nAutoprova FALLITA: il carattere che l\'editor della carta carica, chiuso dal cancello, non e\' stato visto.\n'); process.exit(1); }
+  if (!verde && regalo && tastiera) { console.log('\nAutoprova: una porta nuova senza guardiano, una in un elenco, una con un indirizzo composto, una che regala una chiave, una a chiave chiusa dal cancello, un modulo e un carattere che la demo non riceverebbe fanno diventare rosso il cancello. ✓\n'); process.exit(0); }
   if (!verde && !regalo) { console.log('\nAutoprova FALLITA: la porta che regala la chiave non e\' stata vista.\n'); process.exit(1); }
   if (!verde) { console.log('\nAutoprova FALLITA: la porta a chiave chiusa dal cancello non e\' stata vista.\n'); process.exit(1); }
   console.log('\nAutoprova FALLITA: il cancello non si accorge di una porta aperta.\n');

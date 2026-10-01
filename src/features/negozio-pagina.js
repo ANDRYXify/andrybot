@@ -19,7 +19,7 @@
 // da fuori non si distingue nemmeno quale dei due casi sia.
 import { effects as effectsDb, linkPage, paginaNegozio } from '../db.js';
 import { renderLinkPage, aspettoDi, iconaMarchio } from './linkpagina.js';
-import { inVetrina, aperto, frase, cifra, monetaIn, scorteDi, urlPaginaNegozio } from './negozio.js';
+import { inVetrina, aperto, fraseCon, cifra, monetaIn, scorteDi, urlPaginaNegozio } from './negozio.js';
 import { accordaMoneta } from './moneta.js';
 import { preferenzeDi, data } from './preferenze.js';
 import { nomeIn } from './comandi-registro.js';
@@ -206,23 +206,39 @@ export function vetrinaPagina(canale, { ora = Date.now(), anteprima = false } = 
   const ch = String(canale || '').toLowerCase();
   const pf = preferenzeDi(ch);
   const l = lin(pf.lingua);
+  return vetrinaDa(inVetrina(ch, ora), {
+    pf, moneta: monetaIn(ch, l), cmd: '!' + nomeIn(ch, 'compra'),
+    immagine: (ref) => immagineDi(ch, ref, anteprima),
+  });
+}
+
+// La stessa vetrina da cose gia' lette: gli articoli scelti (vetrinaDi), le
+// preferenze, la moneta nella lingua del canale, il comando per comprare, e
+// da dove prendere le immagini. Da qui in giu' non si legge niente: la usa la
+// pagina vera e la demo, che il canale non ce l'ha nel database.
+export function vetrinaDa(articoli, { pf, moneta, cmd, immagine = () => '' }) {
+  const l = lin(pf.lingua);
   const t = T[l];
   const scorte = (a) => {
     const s = scorteDi(a);
-    if (s.modo === 'tutto') return frase(ch, 'restano', { n: s.n, cifra: cifra(s.n, pf) });
-    if (s.modo === 'persona') return frase(ch, 'aTesta', { n: s.n, cifra: cifra(s.n, pf) });
+    if (s.modo === 'tutto') return fraseCon(pf, moneta, 'restano', { n: s.n, cifra: cifra(s.n, pf) });
+    if (s.modo === 'persona') return fraseCon(pf, moneta, 'aTesta', { n: s.n, cifra: cifra(s.n, pf) });
     return '';
   };
-  const articoli = inVetrina(ch, ora).map((a) => ({
-    id: a.id, nome: a.nome, descrizione: a.descrizione, parola: a.parola, tipo: a.tipo,
-    tipoNome: t.tipi[a.tipo] || '',
-    prezzo: cifra(a.prezzo, pf),
-    immagine: immagineDi(ch, a.immagine, anteprima),
-    scorte: scorte(a),
-    requisiti: (a.requisiti || []).map((r) => requisitoBreve(r, pf)).filter(Boolean),
-    quando: a.quando === 'diretta' ? t.soloDiretta : a.quando === 'date' && a.al ? t.fino(data(a.al, pf)) : '',
-  }));
-  return { lingua: l, articoli, cmd: '!' + nomeIn(ch, 'compra'), moneta: monetaIn(ch, l) };
+  return {
+    lingua: l,
+    articoli: articoli.map((a) => ({
+      id: a.id, nome: a.nome, descrizione: a.descrizione, parola: a.parola, tipo: a.tipo,
+      tipoNome: t.tipi[a.tipo] || '',
+      prezzo: cifra(a.prezzo, pf),
+      immagine: immagine(a.immagine),
+      scorte: scorte(a),
+      requisiti: (a.requisiti || []).map((r) => requisitoBreve(r, pf)).filter(Boolean),
+      quando: a.quando === 'diretta' ? t.soloDiretta : a.quando === 'date' && a.al ? t.fino(data(a.al, pf)) : '',
+    })),
+    cmd,
+    moneta,
+  };
 }
 
 const SEGNAPOSTO = '<svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>';

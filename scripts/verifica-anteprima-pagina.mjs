@@ -23,11 +23,16 @@
 //  · la pagina finta, rimpicciolita, e' esattamente il vetro, in 16:10;
 //  · «Salva e pubblica» sta nel riquadro e non tocca comandi e ispettore;
 //  · alla stessa larghezza i tre editor hanno le stesse colonne;
-//  · la vista scelta resta dopo che l'editor si ridisegna (un tema scelto).
+//  · la vista scelta resta dopo che l'editor si ridisegna (un tema scelto);
+//  · nel vetro c'e' la pagina, coi titoli che l'editor ha scritto. Il sito dei
+//    collaudi e' la demo, e la demo l'anteprima non la sapeva chiedere: il
+//    vetro restava nero, e le misure qui sopra misuravano un vetro vuoto
+//    (docs/DEMO.md).
 //
 // Uso: node scripts/verifica-anteprima-pagina.mjs             (esce 1 se qualcosa esce o non torna)
-//      node scripts/verifica-anteprima-pagina.mjs --selftest  (rimette la cornice vecchia e toglie
-//                                                             il contenitore al negozio, e li vuole rossi)
+//      node scripts/verifica-anteprima-pagina.mjs --selftest  (rimette la cornice vecchia, toglie
+//                                                             il contenitore al negozio e la porta
+//                                                             dell'anteprima della demo, e li vuole rossi)
 
 import { apriSito, apriBrowser } from './_sito.mjs';
 
@@ -39,7 +44,8 @@ const VECCHIO = '#lp-box-negozio{container-type:normal!important}'
   + '.lp-posto.schermo>.lp-telefono{box-sizing:border-box!important;width:auto!important;aspect-ratio:auto!important;height:calc(800px * var(--z,.3))!important}'
   + '.lp-posto.schermo>.lp-telefono iframe{position:static!important}';
 
-const sito = await apriSito({});
+// nell'autoprova la porta dell'anteprima della demo non risponde: il vetro resta nero
+const sito = await apriSito({ rotte: SELFTEST ? (req, res, q) => (q === '/api/demo/anteprima' ? (res.writeHead(404), res.end(), true) : false) : null });
 const br = await apriBrowser();
 if (!br) { console.log('Playwright non c\'e\': salto.'); sito.chiudi(); process.exit(0); }
 const rotte = [], guai = [];
@@ -85,6 +91,13 @@ try {
       await vista('telefono');
       await p.waitForTimeout(250);
       const tel = await p.evaluate(MISURA);
+      const pagina = await p.waitForFunction(() => {
+        const casa = [...document.querySelectorAll('.lp-casa')].find((c) => c.offsetParent && c.querySelector('#lp-iframe'));
+        const titolo = casa?.querySelector('#lp-headline')?.value?.trim();
+        const testo = casa?.querySelector('#lp-iframe')?.contentDocument?.body?.textContent || '';
+        return titolo && testo.includes(titolo) ? titolo : false;
+      }, null, { timeout: 5000 }).then((h) => h.jsonValue()).catch(() => '');
+      dice(!!pagina, `${dove}: nel vetro non c'e' la pagina col titolo dell'editor (resta nero)`);
       await vista('schermo');
       await p.waitForTimeout(400);
       const sch = await p.evaluate(MISURA);
@@ -119,10 +132,12 @@ try {
 if (SELFTEST) {
   const esce = rotte.some((r) => r.includes('riquadro') || r.includes('esce'));
   const colonne = rotte.some((r) => r.includes('stesse colonne'));
+  const nero = rotte.some((r) => r.includes('resta nero'));
   console.log(esce ? 'Autoprova: la cornice vecchia, che esce dal riquadro, si vede. ✓' : 'Autoprova: la cornice vecchia NON e\' stata vista. ✗');
   console.log(colonne ? 'Autoprova: il negozio senza contenitore si vede. ✓' : 'Autoprova: il negozio senza contenitore NON e\' stato visto. ✗');
-  process.exit(esce && colonne ? 0 : 1);
+  console.log(nero ? 'Autoprova: il vetro nero della demo si vede. ✓' : 'Autoprova: il vetro nero della demo NON e\' stato visto. ✗');
+  process.exit(esce && colonne && nero ? 0 : 1);
 }
 console.log(`\n${misure} anteprime misurate (tre editor, ${SCHERMI.length} larghezze, telefono e schermo).`);
-console.log(rotte.length ? `${rotte.length} cose non tornano.` : 'L\'anteprima sta nel suo riquadro in ogni vista, e i tre editor sono lo stesso editor. ✓');
+console.log(rotte.length ? `${rotte.length} cose non tornano.` : 'L\'anteprima sta nel suo riquadro in ogni vista, ha dentro la pagina, e i tre editor sono lo stesso editor. ✓');
 process.exit(rotte.length ? 1 : 0);

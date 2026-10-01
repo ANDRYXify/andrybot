@@ -19,6 +19,7 @@ import { fileURLToPath } from 'node:url';
 import { guscioVetrina, guscioPannello, indirizzoHome } from '../src/web/vetrina-vista.js';
 import { disegnoPerIlBrowser, CARATTERI_AMMESSI, CARTELLA_CARATTERI } from '../src/features/carta-servita.js';
 import { regolePerIlBrowser } from '../src/features/economia-servita.js';
+import { tmpdir } from 'node:os';
 
 const RAD = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 export const PUB = path.join(RAD, 'src/web/public');
@@ -83,6 +84,29 @@ export function overlayFinto({ login = 'prova', tema = () => ({}), musica = () =
   };
 }
 
+// L'anteprima delle pagine nella demo, con la STESSA funzione del server
+// (src/web/anteprima-pagine.js, docs/DEMO.md). Quel modulo porta con se' il
+// database per le sue pulizie: si apre in una cartella usa e getta, e solo la
+// prima volta che una pagina la chiede.
+let _anteprima = null;
+function anteprimaDemo() {
+  if (!_anteprima) {
+    process.env.DATA_DIR = process.env.DATA_DIR || fs.mkdtempSync(path.join(tmpdir(), 'sito-'));
+    _anteprima = import('../src/web/anteprima-pagine.js');
+  }
+  return _anteprima;
+}
+function rispondiAnteprima(req, res) {
+  let corpo = '';
+  req.on('data', (c) => { corpo += c; });
+  req.on('end', async () => {
+    let r;
+    try { r = (await anteprimaDemo()).anteprimaDemo(JSON.parse(corpo || '{}'), { baseUrl: 'http://127.0.0.1' }); } catch (e) { r = { errore: String(e?.message || e) }; }
+    res.writeHead(r.errore ? 400 : 200, { 'content-type': 'application/json' });
+    res.end(JSON.stringify(r.errore ? { errore: r.errore } : { html: r.html }));
+  });
+}
+
 // Apre il sito su una porta libera. `api` risponde a /api/* (per finta, o come
 // gli si dice); `kick` accende la porta di Kick nella vetrina; `overlay` e' un
 // overlayFinto(); `rotte(req, res, q)` serve quel che un collaudo vuole in piu'
@@ -93,6 +117,7 @@ export async function apriSito({ api = () => ({}), kick = true, youtube = false,
     const q = decodeURIComponent(via.pathname);
     if (rotte && rotte(req, res, q)) return;
     if (overlay && overlay.gestisci(req, res, q)) return;
+    if (q === '/api/demo/anteprima' && req.method === 'POST') return rispondiAnteprima(req, res);
     if (q.startsWith('/api/')) {
       res.writeHead(200, { 'content-type': 'application/json' });
       return res.end(JSON.stringify(api(q, via) ?? {}));

@@ -60,6 +60,7 @@ import * as abbonamenti from '../features/abbonamenti.js';
 import * as presenze from '../features/presenze.js';
 import * as economia from '../features/economia.js';
 import { regolePerIlBrowser } from '../features/economia-servita.js';
+import { htmlAnteprima, anteprimaDemo } from './anteprima-pagine.js';
 import * as statistiche from '../features/statistiche.js';
 import * as rapporto from '../features/rapporto.js';
 import * as bitFeat from '../features/bit.js';
@@ -1011,6 +1012,12 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // una diretta con lo stesso file con cui il bot da' le monete
   // (economia-servita.js). Solo conti, nessun dato di nessuno.
   const REGOLE_ECONOMIA_JS = regolePerIlBrowser();
+  // La demo e' il pannello di chi non e' entrato, e questi moduli li importa
+  // anche lei. Il guscio ricava le risorse delle pagine pubbliche dai file di
+  // public/, e questi non sono file: li compone il server. Senza dichiararli,
+  // a chi e' senza sessione il cancello rispondeva 404, e nella demo i conti
+  // delle monete restavano vuoti e l'editor della carta non si apriva.
+  guscio.pagina('index.html', '/js/economia-regole.js', '/js/carta-disegno.js');
   app.get('/js/economia-regole.js', (req, res) => {
     if (!REGOLE_ECONOMIA_JS) return notFound(res);
     res.set('Content-Type', 'application/javascript; charset=utf-8')
@@ -1025,6 +1032,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // E i caratteri, gli STESSI file che carica il rasterizzatore. Un carattere
   // diverso fra anteprima e immagine vera sposterebbe ogni testo di qualche
   // pixel, e nessuno capirebbe perché.
+  guscio.porta('/font/:file', (via) => cartaLive.CARATTERI_AMMESSI.has(via.slice('/font/'.length)));
   app.get('/font/:file', (req, res) => {
     const f = String(req.params.file || '');
     if (!cartaLive.CARATTERI_AMMESSI.has(f)) return notFound(res);
@@ -2188,19 +2196,12 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     const login = currentUser(req).login;
     const s = streamers.get(login);
     const b = req.body || {};
-    // passo dalla stessa sanificazione del salvataggio, senza scrivere
-    const finta = linkPage.pulisci({
-      headline: b.headline, tagline: b.tagline, template: b.template,
-      avatar: b.avatar, tema: b.tema,
-      blocchi: await risolviCanaliYoutube(b.blocchi, login),
-    });
-    const html = renderLinkPage(finta, {
+    // la compone anteprima-pagine.js, la stessa della demo: passa dalla
+    // pulizia del salvataggio, senza scrivere, e mostra anche i pezzi ancora
+    // da completare
+    const html = htmlAnteprima('link', { ...b, blocchi: await risolviCanaliYoutube(b.blocchi, login) }, {
       login, display: s?.display || login, avatar: await avatarDi(login), baseUrl: config.baseUrl,
-      sostieni: donazioni.datiSostieni(s?.settings, contiDi(login)),
-      manca: donazioni.cosaManca(s?.settings, contiDi(login)),
-      anteprima: true,   // mostra anche i blocchi ancora da completare
-      urlDona: donazioni.urlPaginaDona(login),
-      donatori: donatoriPer(login, finta.blocchi),
+      settings: s?.settings, conti: contiDi(login), donatori: (blocchi) => donatoriPer(login, blocchi),
     });
     res.json({ html });
   }));
@@ -2253,14 +2254,10 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     const login = currentUser(req).login;
     const s = streamers.get(login);
     const b = req.body || {};
-    const finta = aspettoDi(paginaDona.pulisci({ headline: b.headline, tagline: b.tagline, template: b.template, avatar: b.avatar, tema: b.tema,
-      blocchi: await risolviCanaliYoutube(b.blocchi, login), aspetto: aspettoInArrivo(login, b.aspetto) }), linkPage.get(login));
-    const html = renderLinkPage(finta, {
+    const html = htmlAnteprima('dona', { ...b, blocchi: await risolviCanaliYoutube(b.blocchi, login) }, {
       login, display: s?.display || login, avatar: await avatarDi(login), baseUrl: config.baseUrl,
-      sostieni: donazioni.datiSostieni(s?.settings, contiDi(login)), manca: donazioni.cosaManca(s?.settings, contiDi(login)),
-      anteprima: true, dona: true,
-      urlDona: donazioni.urlPaginaDona(login),
-      donatori: donatoriPer(login, finta.blocchi),
+      aspetto: aspettoInArrivo(login, b.aspetto), link: linkPage.get(login),
+      settings: s?.settings, conti: contiDi(login), donatori: (blocchi) => donatoriPer(login, blocchi),
     });
     res.json({ html });
   }));
@@ -2314,12 +2311,27 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     const login = currentUser(req).login;
     const s = streamers.get(login);
     const b = req.body || {};
-    const finta = aspettoDi(paginaNegozio.pulisci({ headline: b.headline, tagline: b.tagline, template: b.template, avatar: b.avatar,
-      tema: b.tema, blocchi: b.blocchi, aspetto: aspettoNegozioInArrivo(login, b.aspetto) }), linkPage.get(login));
-    const html = negozioPagina.htmlPaginaNegozio(login, {
-      pagina: finta, anteprima: true, display: s?.display || login, avatar: await avatarDi(login), baseUrl: config.baseUrl,
+    const display = s?.display || login;
+    const html = htmlAnteprima('negozio', b, {
+      login, display, avatar: await avatarDi(login), baseUrl: config.baseUrl,
+      aspetto: aspettoNegozioInArrivo(login, b.aspetto), link: linkPage.get(login),
+      negozio: negozioPagina.opzioniNegozio(login, { baseUrl: config.baseUrl, display, anteprima: true }),
     });
     res.json({ html });
+  }));
+
+  // L'anteprima delle tre pagine nella demo (docs/DEMO.md). La demo e' il
+  // pannello di chi non e' entrato, e il suo canale finto lo tiene il browser:
+  // qui la pagina si rende con lo stesso disegno e le stesse pulizie
+  // dell'anteprima vera, senza database e senza rete. Torna a chi l'ha
+  // chiesta, come JSON, e non si apre a nessun indirizzo. Un tetto al minuto
+  // per indirizzo, come le altre porte pubbliche che costano qualcosa.
+  guscio.pagina('index.html', '/api/demo/anteprima');
+  app.post('/api/demo/anteprima', wrap(async (req, res) => {
+    if (!extRateOk('demo-anteprima:' + String(req.ip || ''))) return res.status(429).json({ errore: 'Troppe richieste: riprova fra poco.' });
+    const r = anteprimaDemo(req.body, { baseUrl: config.baseUrl });
+    if (r.errore) return res.status(400).json({ errore: r.errore });
+    res.json({ html: r.html });
   }));
 
   // ── L'anteprima del link, dal pannello: la carta di ognuna delle due pagine ──

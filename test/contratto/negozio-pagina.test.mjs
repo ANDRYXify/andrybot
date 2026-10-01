@@ -61,8 +61,10 @@ test('chi modifica la pagina e\' il proprietario, e quello che manda e\' quello 
   assert.ok(!/req\.(body|query|params)\??\.(login|channel|canale|user)/.test(blocco), 'il canale non arriva mai dalla richiesta');
   assert.equal((blocco.match(/const login = currentUser\(req\)\.login;/g) || []).length, 3, 'ogni porta lo prende dalla sessione');
   assert.match(blocco, /paginaNegozio\.salva\(login, \{\n\s*headline: b\.headline, tagline: b\.tagline, template: b\.template, avatar: b\.avatar, tema: b\.tema,\n\s*blocchi: b\.blocchi, attiva: true, aspetto: aspettoNegozioInArrivo\(login, b\.aspetto\),/);
-  assert.match(blocco, /aspettoDi\(paginaNegozio\.pulisci\(\{ headline: b\.headline, tagline: b\.tagline, template: b\.template, avatar: b\.avatar,\n\s*tema: b\.tema, blocchi: b\.blocchi, aspetto: aspettoNegozioInArrivo\(login, b\.aspetto\) \}\), linkPage\.get\(login\)\)/,
-    'l\'anteprima passa dalla stessa pulizia del salvataggio');
+  assert.match(blocco, /htmlAnteprima\('negozio', b, \{[^}]*aspetto: aspettoNegozioInArrivo\(login, b\.aspetto\), link: linkPage\.get\(login\),\n\s*negozio: negozioPagina\.opzioniNegozio\(login, /,
+    'l\'anteprima riceve la scelta dell\'aspetto e i pezzi del negozio di quel canale');
+  assert.match(leggi('src/web/anteprima-pagine.js'), /aspettoDi\(paginaNegozio\.pulisci\(\{ \.\.\.testo, aspetto: c\.aspetto \}\), c\.link\)/,
+    'e passa dalla stessa pulizia del salvataggio');
   const salva = tratto(APP, "document.getElementById('lp-salva').onclick", 600);
   assert.match(salva, /headline: LP\.testa\.headline, tagline: LP\.testa\.tagline, template: LP\.testa\.template,/);
   assert.match(salva, /tema: LP\.tema, blocchi: LP\.blocchi/);

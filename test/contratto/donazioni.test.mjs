@@ -25,6 +25,9 @@ const { AlertsEngine } = await import('../../src/features/alerts.js');
 process.on('exit', () => usaEGetta.pulisci());
 const leggi = (f) => readFileSync(join(RAD, f), 'utf8');
 const SRV = leggi('src/web/server.js');
+// le due anteprime del pannello (e quelle della demo) le compone anteprima-pagine.js
+const ANT = leggi('src/web/anteprima-pagine.js');
+const ANTEPRIME = (SRV.match(/htmlAnteprima\('(link|dona)', \{ \.\.\.b, blocchi: await risolviCanaliYoutube\(b\.blocchi, login\) \}, \{[^}]*settings: s\?\.settings, conti: contiDi\(login\), donatori: \(blocchi\) => donatoriPer\(login, blocchi\),/g) || []).length;
 const APP = leggi('src/web/public/app.js');
 const OVL = leggi('src/web/public/overlay-app.js');
 const AL = leggi('src/features/alerts.js');
@@ -118,7 +121,9 @@ test('il webhook e\' un ingresso dichiarato, verificato con l\'impronta, e il to
   assert.match(SRV, /donazioni: \{ \.\.\.dn, kofiImp: '', kofiSet: true \}/, '/api/me maschera l\'impronta');
   assert.match(SRV, /out\.donazioni = donazioni\.normDonazioni\(b\.donazioni, s\.settings\?\.donazioni, user\.login\);/, 'le impostazioni passano dalla pulizia');
   assert.match(SRV, /if \(azione === 'donazione'\) \{/, 'la chiave API del canale accetta una mancia');
-  assert.ok((SRV.match(/sostieni: donazioni\.datiSostieni\(s\?\.settings, (conti|contiDi\(login\))\)/g) || []).length === 6, 'le due pagine pubbliche, le due anteprime e le due informative ricevono gli stessi dati, coi conti');
+  assert.ok((SRV.match(/sostieni: donazioni\.datiSostieni\(s\?\.settings, (conti|contiDi\(login\))\)/g) || []).length === 4, 'le due pagine pubbliche e le due informative ricevono gli stessi dati, coi conti');
+  assert.equal(ANTEPRIME, 2, 'le due anteprime passano impostazioni, conti e chi ha donato alla composizione comune');
+  assert.ok(ANT.includes('sostieni: datiSostieni(c.settings, c.conti), manca: cosaManca(c.settings, c.conti),'), 'che ne fa gli stessi dati');
 });
 
 test('il motore: una donazione fa crescere l\'obiettivo, spara l\'alert sopra la soglia e ringrazia in chat', () => {
@@ -470,7 +475,9 @@ test('il blocco «Chi ha donato»: i nomi dal registro solo se la pagina lo most
   assert.ok(con([{ tipo: 'sostieni', titolo: 'Un caffè' }, { tipo: 'donatori', quanti: 5 }]).includes('Il nome che scrivi può comparire fra chi ha donato, qui in pagina.'), 'il modulo avvisa quando il blocco c\'e\'');
   assert.ok(!con([{ tipo: 'sostieni', titolo: 'Un caffè' }]).includes('può comparire fra chi ha donato'), 'e tace quando non c\'e\'');
   assert.ok(SRV.includes("const donatoriPer = (login, blocchi) => (Array.isArray(blocchi) && blocchi.some((b) => b && b.tipo === 'donatori') ? registroDonazioni.donatori(login) : null);"), 'il registro si legge solo se serve');
-  assert.equal((SRV.match(/donatori: donatoriPer\(login, (p|finta)\.blocchi\)/g) || []).length, 4, 'le due pagine e le due anteprime');
+  assert.equal((SRV.match(/donatori: donatoriPer\(login, p\.blocchi\)/g) || []).length, 2, 'le due pagine');
+  assert.equal(ANTEPRIME, 2, 'e le due anteprime');
+  assert.ok(ANT.includes('donatori: c.donatori ? c.donatori(pagina.blocchi) : null,'), 'sui pezzi gia\' puliti');
   assert.match(APP, /data-lpadd="donatori"/); assert.match(APP, /donatori: \{ tipo: 'donatori', titolo: '', quanti: 5, modo: 'ultimi', periodo: 'sempre' \}/);
   assert.ok(leggi('src/db.js').includes("'sostieni', 'donatori']"), 'e\' un tipo di blocco');
 });
@@ -484,7 +491,8 @@ test('la pagina delle donazioni dice il suo indirizzo vero: canonical e og:url c
   assert.ok(lunga.includes('<link rel="canonical" href="https://s.live/dona/x">'), 'senza nome corto, /dona/<login>');
   const link = renderLinkPage(pag, { ...opz, urlDona: 'https://dona.s.live/x' });
   assert.ok(link.includes('<link rel="canonical" href="https://s.live/u/x">') && link.includes('· i miei link</title>'), 'la pagina link resta la pagina link');
-  assert.equal((SRV.match(/urlDona: donazioni\.urlPaginaDona\(login\)/g) || []).length, 4, 'le due pagine e le due anteprime sanno l\'indirizzo corto');
+  assert.equal((SRV.match(/urlDona: donazioni\.urlPaginaDona\(login\)/g) || []).length, 2, 'le due pagine sanno l\'indirizzo corto');
+  assert.ok(ANTEPRIME === 2 && ANT.includes('urlDona: urlPaginaDona(c.login),'), 'e le due anteprime');
 });
 
 test('«Rimborsa» chiede conferma nominando il servizio da cui tornano i soldi, quello della riga', () => {

@@ -40,9 +40,13 @@ export const accordaMoneta = (testo, forma) => F.accordaMoneta(testo, forma);
 // La moneta di un canale: il nome da scrivere, la forma con cui se ne parla, e
 // se quella forma l'ha scelta lo streamer o e' la base.
 export function monetaDi(canale) {
-  const s = streamers.get(String(canale || '').toLowerCase())?.settings || {};
-  const nome = nomePulito(s.nomeMonete) || NOME_BASE;
-  const scelta = formaValida(s.formaMonete) ? s.formaMonete : '';
+  return monetaDa(streamers.get(String(canale || '').toLowerCase())?.settings || {});
+}
+// La stessa cosa da impostazioni gia' lette: la usa anche la demo, che il
+// canale non ce l'ha nel database.
+export function monetaDa(s = {}) {
+  const nome = nomePulito(s?.nomeMonete) || NOME_BASE;
+  const scelta = formaValida(s?.formaMonete) ? s.formaMonete : '';
   return { nome, forma: scelta || formaBase(nome), scelta: !!scelta };
 }
 
