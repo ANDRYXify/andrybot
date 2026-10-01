@@ -16,6 +16,7 @@ const games = await import('../../src/features/games.js');
 const B = await import('../../src/features/boss.js');
 const G = await import('../../src/features/giochi-conf.js');
 const R = await import('../../src/features/comandi-registro.js');
+const GR = await import('../../src/features/giro-regole.js');
 test.after(() => casa.pulisci());
 
 const T0 = Date.parse('2026-09-23T21:00:00Z');
@@ -230,8 +231,9 @@ test('arriva col raid solo se il raid e\' abbastanza grande; da solo solo se lo 
   canale('b8');
   assert.equal(B.vieneColRaid('b8', 9), false);
   assert.equal(B.vieneColRaid('b8', 10), true);
-  assert.equal(B.vieneDaSolo('b8'), 0, 'di serie il boss automatico e\' spento');
+  const daSolo = (ch) => GR.minuti(GR.giroDi(streamers.get(ch).settings), 'boss');
+  assert.equal(daSolo('b8'), 0, 'di serie il boss automatico e\' spento');
   canale('b9', { dopoRaid: 0, ogni: 45 });
   assert.equal(B.vieneColRaid('b9', 5000), false);
-  assert.equal(B.vieneDaSolo('b9'), 45);
+  assert.equal(daSolo('b9'), 45, 'chi lo aveva ogni 45 minuti lo ritrova nel giro, non piu\' spesso');
 });

@@ -19,7 +19,7 @@ const SRV = leggi('src/web/server.js');
 const MOD = leggi('src/features/modules.js');
 
 test('il bot: stesso giro delle ore, saluto al messaggio, comandi nel vaglio', () => {
-  const tick = BOT.slice(BOT.indexOf('async _tickWatchtime() {'), BOT.indexOf('_prossimaManche(m) {'));
+  const tick = BOT.slice(BOT.indexOf('async _tickWatchtime() {'), BOT.indexOf('  _giro() {'));
   assert.ok(tick.includes('presenze.giroDiretta(login, { streamId: stream.id, chatters })'), 'la lista di chi e\' in chat e\' la stessa, nessuna chiamata in piu\'');
   assert.ok(tick.includes('for (const t of presenze.annunciDi(login, esito)) this.say(login, t);'));
   const msg = BOT.slice(BOT.indexOf('_elaboraMessaggio(login, msg, onMessage, parla'), BOT.indexOf('const suo = personalizzati.suoComando(login, msg.text);'));

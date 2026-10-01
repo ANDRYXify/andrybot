@@ -149,11 +149,27 @@ export function corsa(channel, msg, args, say, { moneta = 'monete' } = {}) {
     }
     return;
   }
-  const nuova = { nomi: [...nomi], quote: quoteCorsa(nomi.length, c.rende), puntate: new Map(), nuovi: [], giro: null, partita: false, say };
+  const nuova = nuovaCorsa(channel, say, c, nomi);
   if (i >= 0) nuova.puntate.set(io, { nome, i, posta });
+  const chi = i >= 0 ? `${nome} punta ${posta} ${moneta} su ${nomi[i]} e apre la corsa` : `${nome} apre la corsa`;
+  say(`🏁 ${chi}: si parte fra ${c.raccolta} secondi! ${tabellone(nuova)}. ${come}`);
+}
+
+function nuovaCorsa(channel, say, c, nomi) {
+  const nuova = { nomi: [...nomi], quote: quoteCorsa(nomi.length, c.rende), puntate: new Map(), nuovi: [], giro: null, partita: false, say };
   nuova.timer = setTimeout(() => parti(channel, nuova), c.raccolta * 1000);
   nuova.timer.unref?.();
   corse.set(channel, nuova);
-  const chi = i >= 0 ? `${nome} punta ${posta} ${moneta} su ${nomi[i]} e apre la corsa` : `${nome} apre la corsa`;
-  say(`🏁 ${chi}: si parte fra ${c.raccolta} secondi! ${tabellone(nuova)}. ${come}`);
+  return nuova;
+}
+
+// La corsa aperta dal giro dei giochi automatici: nessuno punta per primo, e
+// chi vuole entra come sempre. Torna false se ce n'e' gia' una.
+export function apri(channel, say) {
+  if (corse.has(channel)) return false;
+  const c = conf(channel);
+  const cmd = nomeIn(channel, 'corsa');
+  const nuova = nuovaCorsa(channel, say, c, c.corridori);
+  say(`🏁 Si apre la corsa: si parte fra ${c.raccolta} secondi! ${tabellone(nuova)}. Punta con !${cmd} 2 ${c.posta}: il corridore, col numero o col nome, e la puntata.`);
+  return true;
 }

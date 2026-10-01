@@ -19,7 +19,7 @@ test.after(() => casa.pulisci());
 
 const APP = readFileSync(new URL('../../src/web/public/app.js', import.meta.url), 'utf8');
 const di = (id) => G.giocoDi(id);
-const resaDi = (id, settings = {}) => G.valutaResa(di(id).resa, G.valoriDi(settings, id), { mancheMinuti: 15 });
+const resaDi = (id, settings = {}) => G.valutaResa(di(id).resa, G.valoriDi(settings, id), G.contestoDi(settings));
 
 test('di serie il banco vince sempre un po\'', () => {
   for (const g of G.CATALOGO.filter((x) => x.resa?.tipo === 'puntata')) {
@@ -142,7 +142,8 @@ test('il pannello calcola la resa con la stessa regola del server', () => {
         else if (p.tipo === 'elenco') v[p.k] = Array.from({ length: (p.min || 1) + Math.floor(caso() * (p.max - (p.min || 1) + 1)) }, (_, k) => `riga ${k}`);
         else v[p.k] = p.min + Math.floor(caso() * Math.min(p.max - p.min + 1, 5000));
       }
-      const ctx = { mancheMinuti: 1 + Math.floor(caso() * 60) };
+      const quando = () => (caso() < 0.3 ? 0 : 1 + Math.floor(caso() * 120));
+      const ctx = { mancheMinuti: quando(), bossMinuti: quando(), arenaMinuti: quando() };
       assert.deepEqual(pannello(g.resa, v, ctx), G.valutaResa(g.resa, v, ctx), `${g.id} ${JSON.stringify(v)}`);
     }
   }

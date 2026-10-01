@@ -15,6 +15,7 @@ const casa = cartellaUsaEGetta('manche-');
 const { streamers, points } = await import('../../src/db.js');
 const games = await import('../../src/features/games.js');
 const G = await import('../../src/features/giochi-conf.js');
+const GR = await import('../../src/features/giro-regole.js');
 test.after(() => casa.pulisci());
 
 const norm = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9 ]/g, '').trim();
@@ -129,7 +130,7 @@ test('in chat: gli indizi escono al massimo uno ogni quattro secondi, e chi vinc
   assert.ok(!detti.some((x) => /Tempo scaduto/.test(x)), 'una manche vinta non scade');
 });
 
-test('il giro delle manche automatiche e\' quello scelto; col nome parte anche fuori dal giro', () => {
+test('!manche sceglie coi pesi del giro; col nome parte anche fuori dal giro', () => {
   canale('m4', { manche: { tipi: ['calcolo'] } });
   const detti = [];
   for (let i = 0; i < 5; i++) {
@@ -145,8 +146,13 @@ test('il giro delle manche automatiche e\' quello scelto; col nome parte anche f
   assert.match(detti.at(-1), /IMPICCATO/);
   assert.equal(games.tipoMancheDa('più o meno'), 'piuomeno');
   assert.equal(games.tipoMancheDa('boh'), null);
-  assert.deepEqual(G.normalizzaConf({}, { manche: { tipi: [] } }), { manche: {} }, 'un giro vuoto non passa: per spegnere c\'e\' l\'interruttore');
-  assert.deepEqual(G.normalizzaConf({}, { manche: { tipi: ['rebus', 'inventato', 'rebus'] } }).manche.tipi, ['rebus']);
+  // un giro salvato vince sui tipi di prima, e senza pesi si sceglie fra tutti
+  streamers.setSettings('m4', { giro: { voci: Object.fromEntries(GR.TIPI_MANCHE.map((t) => [t, { peso: t === 'rebus' ? 7 : 0 }])) } });
+  games.tryGame({ channel: 'm4', user: 'x', text: games.mancheInCorso('m4').soluzione }, (x) => detti.push(x));
+  assert.equal(games.mancheInCorso('m4'), null, 'l\'impiccato e\' stato indovinato');
+  assert.equal(games.avviaManche('m4', (x) => detti.push(x)), true);
+  assert.match(detti.at(-1), /REBUS/);
+  assert.deepEqual([...games.TIPI_COSTRUTTORI].sort(), [...GR.TIPI_MANCHE].sort(), 'i tipi del giro sono quelli che il bot sa costruire');
 });
 
 test('il wordle colora come il gioco vero, anche con le lettere doppie', () => {

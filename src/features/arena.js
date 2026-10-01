@@ -474,9 +474,6 @@ export async function scegliEmote(channel, msg, say) {
 
 // ── le strade automatiche, decise qui perche' le regole stanno qui ─────
 
-export function vieneDaSolo(channel) {
-  return conf(channel).ogni;
-}
 export function vieneColRaid(channel, persone) {
   const soglia = conf(channel).dopoRaid;
   return soglia > 0 && Number(persone) >= soglia;

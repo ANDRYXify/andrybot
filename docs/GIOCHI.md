@@ -347,6 +347,10 @@ riprova al minuto dopo, senza aspettare un giro intero.
 **Le regole generali del giro**: acceso o spento; ogni da `min` a `max` minuti; solo in diretta o
 anche a canale spento; chat viva, cioè almeno `chatMin` messaggi al minuto (0 = anche a chat ferma,
 per svegliarla).
+Sotto, il pannello dice il ritmo (`ritmo` in giro-regole.js): se il giro scatta almeno una volta
+all'ora, quanti giochi in un'ora, arrotondati sulla media (ogni 7 minuti sono quasi 9, non 8); se
+il massimo passa l'ora, i minuti fra uno e l'altro, perché «da 1 a 1 in un'ora» per un gioco ogni
+novanta minuti sarebbe falso.
 
 **Chi può partire adesso**, per costruzione, in un posto solo:
 
@@ -401,9 +405,11 @@ la stessa cosa) e restano letti solo per ricavare il giro di chi non l'ha ancora
 estrazioni possibili, non a campione); un peso a zero non esce mai; la distanza blocca e poi
 libera; niente parte sopra un gioco in corso; boss e arena non partono a canale spento; il tipo di
 manche senza domande non parte e il giro ne sceglie un altro; le ultime partenze sopravvivono a un
-riavvio; la migrazione dà le stesse frequenze medie; la resa legge la distanza vera. Mutazioni: la
-scelta che ignora i pesi, la distanza ignorata, la sovrapposizione permessa, la migrazione che
-perde il boss.
+riavvio; la migrazione dà le stesse frequenze medie; la resa legge la distanza vera; nel bot, il
+primo scatto si pianifica e non parte, quello dovuto parte e ripianifica, e spento, a canale spento
+o sotto la «chat viva» (contata sull'ultimo minuto, come dice il pannello) non parte niente.
+Mutazioni: la scelta che ignora i pesi, la distanza ignorata, la sovrapposizione permessa, la
+migrazione che perde il boss, la finestra della chat di mezzo minuto.
 
 ## Il colpo di gruppo e il boss
 

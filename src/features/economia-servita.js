@@ -15,10 +15,16 @@ import { spoglia } from '../spoglia.js';
 
 const QUI = dirname(fileURLToPath(import.meta.url));
 
-let _servito = null;
-export function regolePerIlBrowser() {
-  if (_servito === null) {
-    try { _servito = spoglia(readFileSync(join(QUI, 'economia-regole.js'), 'utf8'), 'js'); } catch { _servito = ''; }
+const _serviti = new Map();
+const servito = (file) => {
+  if (!_serviti.has(file)) {
+    let t = '';
+    try { t = spoglia(readFileSync(join(QUI, file), 'utf8'), 'js'); } catch { t = ''; }
+    _serviti.set(file, t);
   }
-  return _servito;
-}
+  return _serviti.get(file);
+};
+export const regolePerIlBrowser = () => servito('economia-regole.js');
+// Lo stesso per le regole del giro dei giochi automatici (giro-regole.js): il
+// pannello mostra le percentuali e i tempi coi conti del bot.
+export const giroPerIlBrowser = () => servito('giro-regole.js');

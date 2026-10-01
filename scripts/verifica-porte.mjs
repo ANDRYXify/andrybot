@@ -58,6 +58,7 @@ const PUBBLICHE = new Map([
   ['GET /entra', 'la pagina di ingresso'],
   ['GET /js/carta-disegno.js', 'un file statico come gli altri del sito: il disegno della carta, senza commenti e senza dati di nessuno. Lo importa l\'editor della carta, anche nella demo'],
   ['GET /js/economia-regole.js', 'un file statico come gli altri del sito: i conti dell\'economia delle monete, senza commenti e senza dati di nessuno. Lo importa il pannello, anche nella demo'],
+  ['GET /js/giro-regole.js', 'un file statico come gli altri del sito: i conti del giro dei giochi automatici, senza commenti e senza dati di nessuno. Lo importa il pannello, anche nella demo'],
   ['GET /font/:file', 'i caratteri della carta: solo i tre nomi dell\'elenco, e sono file gia\' pubblici per licenza. Li carica l\'editor della carta, anche nella demo'],
   ['GET /instagram/cancellazione', 'dove Meta manda chi ha chiesto di cancellare i dati: riconosce solo i codici firmati da noi, e non mostra niente di nessuno'],
   ['GET /pubblici/:nome', 'l\'immagine della settimana mentre Instagram la scarica: nome casuale da 128 bit, cancellata appena pubblicata'],
@@ -157,7 +158,7 @@ if (SELFTEST) {
     + "  app.get(['/api/pubblico', '/api/nascosto'], (req, res) => res.json({ tutto: 1 }));\n"
     + "  app.get(VIA_NASCOSTA, (req, res) => res.json({ tutto: 1 }));\n"
     + "  app.get('/health',");
-  sorgente = sorgente.replace("guscio.pagina('index.html', '/js/economia-regole.js', '/js/carta-disegno.js');", '')
+  sorgente = sorgente.replace("guscio.pagina('index.html', '/js/economia-regole.js', '/js/giro-regole.js', '/js/carta-disegno.js');", '')
     .replace(/guscio\.porta\('\/font\/:file'[^\n]*/, '');
 }
 

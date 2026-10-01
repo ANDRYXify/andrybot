@@ -24,6 +24,7 @@ import { makeLog } from '../logger.js';
 import { nomeMoneta } from './moneta.js';
 import * as economia from './economia.js';
 import { ultimoGiorno } from './economia-regole.js';
+import { giroDi, pesca, TIPI_MANCHE } from './giro-regole.js';
 import { preferenzeDi } from './preferenze.js';
 
 const log = makeLog('giochi');
@@ -628,12 +629,17 @@ export function avviaManche(channel, say, tipo = '') {
     const r = c ? c.fai(channel) : null;
     return r ? avviaRound(channel, r, say) : false;
   }
-  const nelGiro = new Set(conf(channel, 'manche').tipi);
-  const builders = Object.entries(COSTRUTTORI).filter(([id]) => nelGiro.has(id)).map(([, c]) => c.fai);
-  // prova qualche costruttore finché uno produce un round valido
-  for (const b of builders.sort(() => Math.random() - 0.5)) {
-    const r = b(channel);
+  // A mano, un tipo coi pesi del giro dei giochi automatici (giro-regole.js);
+  // se nessun tipo ha un peso, tutti alla pari. Un tipo che non ha niente da
+  // chiedere (la «domanda tua» senza domande) esce dalla fila e si ripesca.
+  const g = giroDi(streamers.get(channel)?.settings);
+  let fila = TIPI_MANCHE.filter((id) => COSTRUTTORI[id]).map((id) => ({ id, peso: g.voci[id].peso }));
+  if (!fila.some((c) => c.peso > 0)) fila = fila.map((c) => ({ ...c, peso: 1 }));
+  while (fila.length) {
+    const id = pesca(fila, Math.random());
+    const r = COSTRUTTORI[id].fai(channel);
     if (r) return avviaRound(channel, r, say);
+    fila = fila.filter((c) => c.id !== id);
   }
   return false;
 }

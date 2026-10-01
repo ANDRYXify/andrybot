@@ -23,6 +23,8 @@
 // non vuol dire «scelto»: un valore uguale al VECCHIO predefinito vale come mai
 // toccato e prende il nuovo; uno diverso e' una scelta, e resta.
 
+import { VOCI, giroDi, minuti, minutiManche } from './giro-regole.js';
+
 const T = (it, en, es) => [it, en, es];
 
 export const PRESENZA_GIRI_ORA = 12;
@@ -56,19 +58,8 @@ const DUELLO = [
 
 // I tipi di manche: gli stessi del motore (games.js, COSTRUTTORI), e una prova
 // controlla che i due elenchi siano uguali.
-export const MANCHE_TIPI = [
-  ['trivia', T('Quiz', 'Quiz', 'Quiz')],
-  ['parola', T('Reflex', 'Reflex', 'Reflejo')],
-  ['numero', T('Numero', 'Number', 'Número')],
-  ['anagramma', T('Anagramma', 'Anagram', 'Anagrama')],
-  ['sequenza', T('Sequenza', 'Sequence', 'Secuencia')],
-  ['domanda', T('Domanda tua', 'Your question', 'Tu pregunta')],
-  ['calcolo', T('Calcolo veloce', 'Quick maths', 'Cálculo rápido')],
-  ['rebus', T('Rebus', 'Emoji rebus', 'Jeroglífico')],
-  ['piuomeno', T('Più o meno', 'Higher or lower', 'Más o menos')],
-  ['impiccato', T('Impiccato', 'Hangman', 'Ahorcado')],
-  ['wordle', T('Wordle della chat', 'Chat Wordle', 'Wordle del chat')],
-];
+// I tipi di manche: quelli del giro dei giochi automatici, un elenco solo.
+export const MANCHE_TIPI = VOCI.filter((v) => v.gioco === 'manche').map((v) => [v.id, v.nome]);
 
 const ABBRACCI = [
   '🤗 {a} abbraccia forte {b}!',
@@ -222,7 +213,6 @@ export const CATALOGO = [
     id: 'manche', nome: T('Manche', 'Rounds', 'Rondas'),
     param: [
       { k: 'premio', tipo: 'monete', def: 25, min: 0, max: 100000, eti: T('Premio a chi risponde per primo', 'Prize for the first right answer', 'Premio para quien responde primero'), vecchio: { punti: 'trivia', era: 25 } },
-      { k: 'tipi', tipo: 'scelte', def: MANCHE_TIPI.map(([id]) => id), scelte: MANCHE_TIPI, eti: T('Nel giro delle manche automatiche', 'In the automatic rounds rotation', 'En la rotación de rondas automáticas') },
       ...ATTESE({ tutti: 10, etiTesta: T('Attesa fra due manche aperte a mano (!manche, !trivia), a testa', 'Wait between two rounds started by hand (!manche, !trivia), each', 'Espera entre dos rondas abiertas a mano (!manche, !trivia), cada uno'), etiTutti: T('Attesa fra due manche aperte a mano (!manche, !trivia), per tutti', 'Wait between two rounds started by hand (!manche, !trivia), for everyone', 'Espera entre dos rondas abiertas a mano (!manche, !trivia), para todos') }),
     ],
     resa: { tipo: 'manche', premio: 'premio' },
@@ -237,7 +227,6 @@ export const CATALOGO = [
       ...ATTESE({ testa: 5, prima: 'testa', insisti: false, etiTesta: T('Attesa fra due colpi al boss, a testa', 'Wait between two hits on the boss, each', 'Espera entre dos golpes al jefe, cada uno'), etiTutti: T('Attesa fra due colpi al boss, per tutti', 'Wait between two hits on the boss, for everyone', 'Espera entre dos golpes al jefe, para todos') }),
       { k: 'durata', tipo: 'secondi', def: 90, min: 20, max: 600, eti: T('Tempo per batterlo', 'Time to beat it', 'Tiempo para vencerlo') },
       { k: 'bottino', tipo: 'monete', def: 20, min: 0, max: 100000, eti: T('Bottino a testa se cade: chi colpisce di più prende di più', 'Loot per person if it falls: whoever hits more gets more', 'Botín por cabeza si cae: quien golpea más se lleva más') },
-      { k: 'ogni', tipo: 'numero', def: 0, min: 0, max: 360, eti: T('Arriva da solo in diretta ogni tanti minuti (0 = solo con !boss)', 'Comes on its own while live every this many minutes (0 = only with !boss)', 'Llega solo en directo cada tantos minutos (0 = solo con !boss)') },
       { k: 'dopoRaid', tipo: 'numero', def: 10, min: 0, max: 100000, eti: T('Arriva con un raid di almeno tante persone (0 = mai)', 'Comes with a raid of at least this many people (0 = never)', 'Llega con un raid de al menos tantas personas (0 = nunca)') },
       { k: 'festa', tipo: 'numero', def: 0, min: 0, max: 10, eti: T('Se cade, minuti di festa in solo emote (0 = niente festa)', 'If it falls, minutes of emote-only party (0 = no party)', 'Si cae, minutos de fiesta en solo emotes (0 = sin fiesta)') },
       { k: 'nomi', tipo: 'elenco', def: BOSS, max: 30, lungo: 80, segnaposto: [], eti: T('I boss', 'The bosses', 'Los jefes') },
@@ -279,7 +268,6 @@ export const CATALOGO = [
       { k: 'premioEliminazione', tipo: 'monete', def: 5, min: 0, max: 100000, eti: T('Premio per ogni eliminazione', 'Prize for each elimination', 'Premio por cada eliminación') },
       { k: 'premioCorona', tipo: 'monete', def: 10, min: 0, max: 100000, eti: T('Premio a chi porta la corona', 'Prize for whoever wears the crown', 'Premio para quien lleva la corona') },
       ...ATTESE({ tutti: 300, etiTesta: T('Attesa fra due arene aperte a mano, a testa', 'Wait between two arenas opened by hand, each', 'Espera entre dos arenas abiertas a mano, cada uno'), etiTutti: T('Attesa fra due arene aperte a mano, per tutti', 'Wait between two arenas opened by hand, for everyone', 'Espera entre dos arenas abiertas a mano, para todos') }),
-      { k: 'ogni', tipo: 'numero', def: 0, min: 0, max: 360, eti: T('Si apre da sola in diretta ogni tanti minuti (0 = solo con !arena)', 'Opens on its own while live every this many minutes (0 = only with !arena)', 'Se abre sola en directo cada tantos minutos (0 = solo con !arena)') },
       { k: 'dopoRaid', tipo: 'numero', def: 0, min: 0, max: 100000, eti: T('Si apre con un raid di almeno tante persone (0 = mai)', 'Opens with a raid of at least this many people (0 = never)', 'Se abre con un raid de al menos tantas personas (0 = nunca)') },
     ],
     resa: { tipo: 'arena' },
@@ -443,8 +431,8 @@ function valore(p, v) {
   if (p.tipo === 'tabella') return tabella(v, p);
   if (p.tipo === 'scelta') return p.scelte.some(([id]) => id === v) ? v : null;
   if (p.tipo === 'scelte') {
-    // Almeno una: un giro senza manche e' un interruttore spento travestito,
-    // e l'interruttore c'e' gia'.
+    // Almeno una: una scelta vuota e' un interruttore spento travestito, e
+    // l'interruttore c'e' gia'.
     const ok = (Array.isArray(v) ? v : []).filter((x) => p.scelte.some(([id]) => id === x));
     return ok.length ? [...new Set(ok)] : null;
   }
@@ -663,14 +651,14 @@ export function valutaResa(resa, v, contesto = {}) {
     const colpi = Math.floor((Number(v.durata) || 0) / ritmo(v, ['attesaTesta', 'attesaTutti'])) + 1;
     const danno = Math.max(Number(v.dannoMin) || 0, Number(v.dannoMax) || 0);
     const massimo = Math.round((Number(v.bottino) || 0) * colpi * danno / Math.max(1, Number(v.vitaPerPersona) || 1));
-    const ogni = Number(v.ogni) || 0;
+    const ogni = Number(contesto.bossMinuti) || 0;
     return { tipo: 'boss', massimo, ogni, perOra: ogni ? Math.round(massimo * 60 / ogni) : 0 };
   }
   if (resa.tipo === 'arena') {
     // Il massimo di una persona in una partita: vince, porta la corona ed
     // elimina tutti gli altri. Con l'arena automatica, un massimo all'ora.
     const massimo = arenaMassimo(v);
-    const ogni = Number(v.ogni) || 0;
+    const ogni = Number(contesto.arenaMinuti) || 0;
     return { tipo: 'arena', massimo, corona: v.corona !== 'no', ogni, perOra: ogni ? Math.round(massimo * 60 / ogni) : 0 };
   }
   return { tipo: resa.tipo };
@@ -711,8 +699,15 @@ export function presenzaOraria(punti = {}) {
 }
 
 // Il catalogo come lo riceve il pannello: niente funzioni, solo dati.
+// Il contesto della resa: ogni quanto, al massimo, partono da sole le manche,
+// il boss e l'arena (la distanza vera nel giro dei giochi automatici, 0 = mai).
+export function contestoDi(settings = {}) {
+  const g = giroDi(settings);
+  return { mancheMinuti: minutiManche(g), bossMinuti: minuti(g, 'boss'), arenaMinuti: minuti(g, 'arena'), presenzaOraria: presenzaOraria(settings?.punti) };
+}
+
 export function catalogoPerPannello(settings = {}) {
-  const contesto = { mancheMinuti: settings?.manche?.minMin || 15, presenzaOraria: presenzaOraria(settings?.punti) };
+  const contesto = contestoDi(settings);
   return {
     contesto,
     giochi: CATALOGO.map((g) => {

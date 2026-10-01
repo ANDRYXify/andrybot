@@ -59,7 +59,8 @@ import { risolviCanaleId } from '../features/youtube.js';
 import * as abbonamenti from '../features/abbonamenti.js';
 import * as presenze from '../features/presenze.js';
 import * as economia from '../features/economia.js';
-import { regolePerIlBrowser } from '../features/economia-servita.js';
+import { regolePerIlBrowser, giroPerIlBrowser } from '../features/economia-servita.js';
+import * as giroRegole from '../features/giro-regole.js';
 import { htmlAnteprima, anteprimaDemo } from './anteprima-pagine.js';
 import * as statistiche from '../features/statistiche.js';
 import * as rapporto from '../features/rapporto.js';
@@ -1018,11 +1019,17 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // public/, e questi non sono file: li compone il server. Senza dichiararli,
   // a chi e' senza sessione il cancello rispondeva 404, e nella demo i conti
   // delle monete restavano vuoti e l'editor della carta non si apriva.
-  guscio.pagina('index.html', '/js/economia-regole.js', '/js/carta-disegno.js');
+  guscio.pagina('index.html', '/js/economia-regole.js', '/js/giro-regole.js', '/js/carta-disegno.js');
   app.get('/js/economia-regole.js', (req, res) => {
     if (!REGOLE_ECONOMIA_JS) return notFound(res);
     res.set('Content-Type', 'application/javascript; charset=utf-8')
       .set('Cache-Control', 'public, max-age=3600').send(REGOLE_ECONOMIA_JS);
+  });
+  const REGOLE_GIRO_JS = giroPerIlBrowser();
+  app.get('/js/giro-regole.js', (req, res) => {
+    if (!REGOLE_GIRO_JS) return notFound(res);
+    res.set('Content-Type', 'application/javascript; charset=utf-8')
+      .set('Cache-Control', 'public, max-age=3600').send(REGOLE_GIRO_JS);
   });
   app.get('/js/carta-disegno.js', (req, res) => {
     if (!DISEGNO_JS) return notFound(res);
@@ -6674,13 +6681,9 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     // giochi + promo social automatica
     if (b.giochi !== undefined) out.giochi = !!b.giochi;
     if (b.promoSocial !== undefined) out.promoSocial = !!b.promoSocial;
-    // manche automatiche: il bot lancia giochi a caso a intervalli casuali
-    if (b.manche !== undefined) {
-      const m = b.manche || {};
-      const cm = (v, def, lo, hi) => { const n = Math.round(Number(v)); return Number.isFinite(n) ? Math.min(hi, Math.max(lo, n)) : def; };
-      const minMin = cm(m.minMin, 15, 1, 360);
-      out.manche = { attivo: !!m.attivo, minMin, maxMin: Math.max(minMin, cm(m.maxMin, 45, 1, 360)), soloLive: !!m.soloLive };
-    }
+    // Le manche automatiche di prima non si scrivono piu' da qui: i giochi
+    // automatici hanno la loro porta (/api/streamer/giro), e quello che c'era
+    // resta solo da leggere, per chi non ha ancora salvato il giro.
     if (b.nomeMonete !== undefined) out.nomeMonete = nomePulito(b.nomeMonete);
     // Come si parla della moneta (moneta.js). Vuoto vuol dire «di base», e la
     // base segue il nome: se lo streamer lo cambia, cambia con lui.
@@ -6905,7 +6908,7 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     // resta spento (i membri community hanno tutto attivo, quindi mai limitati).
     const F = funzioniDi(user.login);
     const A = (k) => abbonamenti.abilitata(F, k);
-    if (!A('giochi')) { out.giochi = false; if (out.manche) out.manche.attivo = false; if (out.premioVip) out.premioVip.attivo = false; }
+    if (!A('giochi')) { out.giochi = false; if (out.premioVip) out.premioVip.attivo = false; }
     if (!A('clipAuto')) out.clipAuto = false;
     if (!A('voce')) { out.ascoltoLive = false; if (out.cambioCategoria) out.cambioCategoria.attivo = false; if (out.cambioTitolo) out.cambioTitolo.attivo = false; if (out.imparaVoce) out.imparaVoce.attivo = false; }
     if (!A('notifiche') && out.tiktok) { out.tiktok.attivo = false; out.tiktok.postAttivo = false; }
@@ -9268,6 +9271,20 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     const gioco = req.body?.gioco ? String(req.body.gioco) : null;
     if (gioco && !giochiConf.giocoDi(gioco)) return res.status(400).json({ errore: 'Questo gioco non c\'è.' });
     res.json({ tolti: attese.perdona(login, chi, gioco), castighi: castighiPerPannello(login) });
+  });
+  // IL GIRO DEI GIOCHI AUTOMATICI (docs/GIOCHI.md): quello del canale (salvato,
+  // o ricavato dai tre orologi di prima), e il salvataggio, ripulito dalle
+  // stesse regole del bot.
+  app.get('/api/streamer/giro', requireLogin, (req, res) => {
+    res.json({ giro: giroRegole.giroDi(streamers.get(currentUser(req).login)?.settings) });
+  });
+  app.post('/api/streamer/giro', requireLogin, (req, res) => {
+    if (!esigiFunzione(req, res, 'giochi', 'Il giro dei giochi automatici')) return;
+    const login = currentUser(req).login;
+    const s = streamers.get(login);
+    const giro = giroRegole.normalizza(req.body?.giro);
+    streamers.setSettings(login, { ...(s?.settings || {}), giro });
+    res.json({ giro });
   });
   app.post('/api/streamer/giochi/regole', requireLogin, (req, res) => {
     if (!esigiFunzione(req, res, 'giochi', 'Le regole dei giochi')) return;

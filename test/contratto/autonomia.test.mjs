@@ -59,10 +59,19 @@ test('il cervello del bot accetta un motivo e sa dire se conosce una risposta', 
   assert.match(BR, /saQualcosa\(channel, testo\) \{\s*try \{ return !!this\._cercaConoscenza\(channel, testo\); \}/, 'stessa soglia della scorciatoia: sa = e\' gia\' la risposta');
 });
 
-test('anche la manche automatica finisce nel registro, ma solo il suo annuncio', () => {
-  const f = BOT.slice(BOT.indexOf('  _manche() {'), BOT.indexOf('  _distilla() {'));
-  assert.match(f, /_dettaDaSolo\(login, 'manche', t\)/);
+test('anche i giochi automatici finiscono nel registro, ma solo il loro annuncio', () => {
+  const i = BOT.indexOf('  _giro() {');
+  assert.ok(i > 0, 'il giro dei giochi automatici c\'e\'');
+  const f = BOT.slice(i, BOT.indexOf('  _bossDelRaid(', i));
+  assert.match(f, /_dettaDaSolo\(login, gioco, t\)/, 'col nome del gioco che parte');
   assert.match(f, /if \(prima\) \{ prima = false;/, 'le righe successive del gioco sono risposte, non iniziative');
+});
+
+test('ogni gioco del giro ha la sua etichetta nel registro del pannello', async () => {
+  const { VOCI } = await import('../../src/features/giro-regole.js');
+  const riga = APP.split('\n').find((r) => r.includes('const TIPO = { promo:'));
+  assert.ok(riga, 'le etichette del registro ci sono');
+  for (const gioco of new Set(VOCI.map((v) => v.gioco))) assert.match(riga, new RegExp(`[{ ]${gioco}: L\\('`), `«${gioco}» partito da solo si legge con le parole del pannello, non col nome interno`);
 });
 
 test('il cursore parte dal kit, e un valore che manca e\' zero dappertutto', async () => {

@@ -57,7 +57,7 @@ parola dalla chat:
 
 - dal pannello, «Lancia adesso»;
 - in chat, un moderatore scrive `!manche prossima`: parte la prima della coda;
-- da sole: se lo streamer lo sceglie, le manche automatiche pescano prima dalla coda.
+- da sole: se lo streamer lo sceglie, quando il giro dei giochi automatici sceglie una manche la pesca prima dalla coda.
 
 Una preparata giocata esce dalla coda e va nello **storico**, con chi ha vinto e cosa: lo stesso
 posto dove lo streamer ritrova le cose da consegnare.

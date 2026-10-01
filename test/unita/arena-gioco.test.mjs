@@ -19,6 +19,7 @@ const casa = cartellaUsaEGetta('arena-gioco-');
 const { streamers, points, statoVivo, arenaEmote } = await import('../../src/db.js');
 const AR = await import('../../src/features/arena.js');
 const G = await import('../../src/features/giochi-conf.js');
+const GR = await import('../../src/features/giro-regole.js');
 const A = globalThis.SB_ARENA;
 test.after(() => casa.pulisci());
 
@@ -395,16 +396,17 @@ test('la resa: il massimo di una persona in una partita, e all\'ora se si apre d
   const r = G.valutaResa(G.giocoDi('arena').resa, v);
   assert.deepEqual(r, { tipo: 'arena', massimo: 50 + 10 + 5 * 19, corona: true, ogni: 0, perOra: 0 });
   assert.deepEqual(G.valutaResa(G.giocoDi('arena').resa, { ...v, corona: 'no' }), { tipo: 'arena', massimo: 50 + 5 * 19, corona: false, ogni: 0, perOra: 0 }, 'senza corona, niente premio della corona');
-  assert.deepEqual(G.valutaResa(G.giocoDi('arena').resa, { ...v, ogni: 30 }), { tipo: 'arena', massimo: 155, corona: true, ogni: 30, perOra: 310 });
+  assert.deepEqual(G.valutaResa(G.giocoDi('arena').resa, v, { arenaMinuti: 30 }), { tipo: 'arena', massimo: 155, corona: true, ogni: 30, perOra: 310 }, 'all\'ora, con la distanza vera del giro');
 });
 
 test('le strade automatiche: ogni tanti minuti, e coi raid abbastanza grandi', () => {
+  const daSola = (ch) => GR.minuti(GR.giroDi(streamers.get(ch).settings), 'arena');
   canale('ar16', { ogni: 45, dopoRaid: 20 });
-  assert.equal(AR.vieneDaSolo('ar16'), 45);
+  assert.equal(daSola('ar16'), 45, 'chi la aveva ogni 45 minuti la ritrova nel giro');
   assert.equal(AR.vieneColRaid('ar16', 19), false);
   assert.equal(AR.vieneColRaid('ar16', 20), true);
   canale('ar17', {});
-  assert.equal(AR.vieneDaSolo('ar17'), 0, 'di serie solo a mano');
+  assert.equal(daSola('ar17'), 0, 'di serie solo a mano');
   assert.equal(AR.vieneColRaid('ar17', 5000), false, 'di serie nessun raid la apre');
   assert.equal(AR.giocabile('ar17'), true);
   streamers.setSettings('ar17', { giochi: false });

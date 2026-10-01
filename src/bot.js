@@ -101,6 +101,8 @@ import * as bjFeat from './features/blackjack.js';
 import * as seguitiFeat from './features/seguiti.js';
 import * as negozio from './features/negozio.js';
 import * as arenaFeat from './features/arena.js';
+import * as giroRegole from './features/giro-regole.js';
+import * as giroGiochi from './features/giro-giochi.js';
 import { mappaCanale as emoteDelCanale, soloCanale as emoteSoloDelCanale } from './features/emotes.js';
 
 const log = makeLog('bot');
@@ -349,16 +351,11 @@ export class BotManager {
     // Ogni mezzo minuto, perche' l'attesa piu' corta che si puo' scegliere e' un
     // minuto e un controllo ogni minuto la farebbe scadere fino al doppio tardi.
     this._cancelloTimer = setInterval(() => cancello.giroScadenze((ch) => tgConf.get(ch)).catch(() => {}), 30_000);
-    // Manche automatiche: il bot lancia un gioco a caso, a intervalli casuali,
-    // sui canali che l'hanno attivato (controllo ogni minuto).
-    this._mancheProx = new Map();     // login → ts della prossima manche
-    this._mancheTimer = setInterval(() => this._manche(), 60_000);
-    // Il boss che arriva da solo: stesso giro di un minuto, intervallo fisso.
-    this._bossProx = new Map();       // login → ts del prossimo boss
-    this._bossTimer = setInterval(() => this._bossDaSolo(), 60_000);
-    // L'arena che si apre da sola: lo stesso giro del boss, con le sue regole.
-    this._arenaProx = new Map();      // login → ts della prossima arena
-    this._arenaTimer = setInterval(() => this._arenaDaSolo(), 60_000);
+    // Il giro dei giochi automatici (giro-giochi.js): un orologio solo per le
+    // manche, il boss, l'arena, la catena, la conta e la corsa che partono da
+    // soli, controllato ogni minuto.
+    this._giroProx = new Map();       // login → ts del prossimo scatto
+    this._giroTimer = setInterval(() => this._giro(), 60_000);
     // Allenamento continuo: distilla i discorsi dello streamer nel motore veloce
     // (ogni 12 min, solo se attivo e con materiale nuovo).
     this._distillaTimer = setInterval(() => this._distilla(), 12 * 60_000);
@@ -413,9 +410,7 @@ export class BotManager {
     clearInterval(this._postTimer);
     clearInterval(this._annunciTimer);
     clearInterval(this._distillaTimer);
-    clearInterval(this._mancheTimer);
-    clearInterval(this._bossTimer);
-    clearInterval(this._arenaTimer);
+    clearInterval(this._giroTimer);
     clearInterval(this._compleTimer);
     clearInterval(this._dcRuoliTimer);
     clearInterval(this._eventiDcTimer);
@@ -702,74 +697,30 @@ export class BotManager {
     }
   }
 
-  // Manche automatiche: per ogni canale che le ha attivate, ogni tanto (intervallo
-  // casuale tra min e max minuti) il bot lancia un gioco a caso. Solo a chat viva
-  // (mai in una chat vuota) e, se richiesto, solo mentre è in diretta.
-  _prossimaManche(m) {
-    const min = Math.min(360, Math.max(1, Number(m.minMin) || 15));
-    const max = Math.max(min, Math.min(360, Number(m.maxMin) || 45));
-    return Date.now() + (min + Math.random() * (max - min)) * 60_000;
-  }
-  _manche() {
+  // IL GIRO DEI GIOCHI AUTOMATICI (docs/GIOCHI.md). Ogni minuto, per ogni
+  // canale col giro acceso: se e' il momento, sceglie un gioco fra quelli che
+  // possono partire e lo fa partire. Solo a chat viva quanto chiede il canale,
+  // e se richiesto solo in diretta. Se non parte niente (c'e' gia' un gioco
+  // aperto, o nessuno puo') riprova al minuto dopo.
+  _giro() {
     try {
       for (const login of this.units.keys()) {
         const s = streamers.get(login);
-        const m = s?.settings?.manche;
-        // manche spente, o giochi spenti (anche per tier) → niente e resetta
-        if (!m?.attivo || s.settings?.giochi === false) { this._mancheProx.delete(login); continue; }
-        if (m.soloLive && this._liveState.get(login) !== true) continue;   // solo live, ma non è live
-        if ((memory.messageRate?.(login) || 0) < 1) continue;              // chat ferma: non disturbare
-        const prox = this._mancheProx.get(login);
-        if (prox === undefined) { this._mancheProx.set(login, this._prossimaManche(m)); continue; }  // pianifica la prima
+        const g = giroRegole.giroDi(s?.settings);
+        if (!g.attivo || s?.settings?.giochi === false) { this._giroProx.delete(login); continue; }
+        const live = this._liveState.get(login) === true;
+        if (g.soloLive && !live) continue;
+        if ((memory.messageRate?.(login, 60_000) || 0) < g.chatMin) continue;   // i messaggi dell'ultimo minuto, come dice il pannello
+        const prox = this._giroProx.get(login);
+        if (prox === undefined) { this._giroProx.set(login, giroRegole.prossimo(g, Date.now(), Math.random())); continue; }
         if (Date.now() < prox) continue;
-        let prima = true;
-        games.avviaManche(login, (t) => { if (prima) { prima = false; this._dettaDaSolo(login, 'manche', t); } else this.say(login, t); });
-        this._mancheProx.set(login, this._prossimaManche(m));
+        const dire = (gioco) => {
+          let prima = true;
+          return (t) => { if (prima) { prima = false; this._dettaDaSolo(login, gioco, t); } else this.say(login, t); };
+        };
+        if (giroGiochi.scatta(login, { live, dire })) this._giroProx.set(login, giroRegole.prossimo(g, Date.now(), Math.random()));
       }
-    } catch (e) { log.error('manche:', e?.message || e); }
-  }
-
-  // Il boss automatico: ogni `ogni` minuti, solo in diretta e a chat viva, e
-  // solo se !colpisci risponde (un boss che nessuno puo' colpire non si
-  // manda). Intervallo fisso e non casuale: e' quello su cui il pannello
-  // calcola il massimo all'ora.
-  _bossDaSolo() {
-    try {
-      for (const login of this.units.keys()) {
-        const s = streamers.get(login);
-        const ogni = bossFeat.vieneDaSolo(login);
-        if (!ogni || s?.settings?.giochi === false || !registro.vivo(login, 'colpisci')) { this._bossProx.delete(login); continue; }
-        if (this._liveState.get(login) !== true) continue;
-        if ((memory.messageRate?.(login) || 0) < 1) continue;
-        const prox = this._bossProx.get(login);
-        if (prox === undefined) { this._bossProx.set(login, Date.now() + ogni * 60_000); continue; }
-        if (Date.now() < prox) continue;
-        let prima = true;
-        bossFeat.arriva(login, (t) => { if (prima) { prima = false; this._dettaDaSolo(login, 'boss', t); } else this.say(login, t); });
-        this._bossProx.set(login, Date.now() + ogni * 60_000);
-      }
-    } catch (e) { log.error('boss:', e?.message || e); }
-  }
-
-  // L'arena automatica: ogni `ogni` minuti, solo in diretta e a chat viva, e
-  // solo se qualcuno puo' entrarci. Intervallo fisso, come il boss: e' quello
-  // su cui il pannello calcola il massimo all'ora.
-  _arenaDaSolo() {
-    try {
-      for (const login of this.units.keys()) {
-        const s = streamers.get(login);
-        const ogni = arenaFeat.vieneDaSolo(login);
-        if (!ogni || s?.settings?.giochi === false || !arenaFeat.giocabile(login)) { this._arenaProx.delete(login); continue; }
-        if (this._liveState.get(login) !== true) continue;
-        if ((memory.messageRate?.(login) || 0) < 1) continue;
-        const prox = this._arenaProx.get(login);
-        if (prox === undefined) { this._arenaProx.set(login, Date.now() + ogni * 60_000); continue; }
-        if (Date.now() < prox) continue;
-        let prima = true;
-        arenaFeat.apri(login, (t) => { if (prima) { prima = false; this._dettaDaSolo(login, 'arena', t); } else this.say(login, t); });
-        this._arenaProx.set(login, Date.now() + ogni * 60_000);
-      }
-    } catch (e) { log.error('arena:', e?.message || e); }
+    } catch (e) { log.error('giro dei giochi:', e?.message || e); }
   }
 
   // Un raid abbastanza grande porta un boss: chi arriva ha subito qualcosa da

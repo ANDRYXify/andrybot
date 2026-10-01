@@ -62,7 +62,7 @@ export default {
       '<strong>Chi insiste aspetta di più.</strong> Se nelle regole di un gioco metti un tempo in «Chi insiste durante l\'attesa», chi riscrive il comando mentre per lui il gioco è in attesa aspetta quel tempo in più. La seconda volta il doppio, la terza il doppio ancora: con 30 secondi sono 30, poi 60, poi 120 in più. Dopo le volte che scegli (di base 5) per lui quel gioco è chiuso fino alla fine della diretta, a canale spento fino a domani. Ogni volta il bot gli dice l\'attesa nuova, e quando il gioco si chiude lo dice una volta sola. Chi poi gioca dopo aver aspettato senza insistere scende di un gradino. Vale per una persona su quel gioco, per quella diretta: la diretta dopo si riparte da zero, e un riavvio del bot non lo azzera. Tu e i moderatori non siete mai castigati. Le frasi le trovi nella Personalità, fra quelle dei giochi.',
       '<strong>Il perdono.</strong> La carta «Chi aspetta di più» elenca chi è castigato in questa diretta, su quale gioco, a che gradino e fino a quando, con «Perdona» accanto a ognuno. In chat lo staff scrive <code>!perdona @nome</code> per tutti i giochi, o <code>!perdona @nome slot</code> per uno solo. Il perdono toglie il castigo intero, non l\'attesa normale del gioco: chi ha appena giocato aspetta comunque la sua. Le risposte del comando le cambi nella carta dei comandi.',
       'Negli elenchi va una frase per riga. Sotto ogni elenco il pannello scrive quali segnaposto puoi usare, per esempio <code>{a}</code> e <code>{b}</code>. Una riga con un segnaposto che quel gioco non conosce non si salva: dopo il salvataggio sparisce. Nella tabella della pesca ogni riga è <code>nome | monete | rarità</code>. La rarità è un peso da 1 a 1000: 30 esce il doppio di 15.',
-      'Un numero fuori dai limiti viene portato al limite più vicino. Un elenco che resterebbe vuoto non si salva: resta quello di prima. Lo stesso per «Nel giro delle manche automatiche»: se togli tutti i tipi, resta la scelta di prima.',
+      'Un numero fuori dai limiti viene portato al limite più vicino. Un elenco che resterebbe vuoto non si salva: resta quello di prima.',
       'Premi «Salva le regole». I valori nuovi valgono dalla giocata successiva, non da quella in corso.',
       'Tutte le impostazioni, con il valore di base e i limiti:',
     ] },
@@ -164,19 +164,23 @@ export default {
       'Premi «Salva presenze e saluti».',
     ] },
 
-    { h3: 'Manche automatiche' },
-    { p: ['Il bot lancia da solo, ogni tanto, una manche: una domanda aperta a tutta la chat, e il primo che risponde giusto vince il premio della manche. I tipi sono spiegati più sotto, in «Le manche».'] },
+    { h3: 'I giochi automatici' },
+    { p: ['Il bot lancia da solo, ogni tanto, un gioco per tutta la chat: una manche di uno dei suoi tipi, il boss, l\'arena, la catena di parole, la conta o la corsa. Un orologio solo li fa partire tutti, così non cadono mai uno sopra l\'altro.'] },
     { tabella: [
       ['Controllo', 'Di base', 'Limiti', 'Cosa fa'],
-      ['«Attiva le manche automatiche»', 'spento', 'acceso o spento', 'Accende le manche a sorpresa.'],
-      ['«Ogni almeno (minuti)»', '15', '1–360', 'Il tempo minimo fra due manche.'],
+      ['«Accendi i giochi automatici»', 'spento', 'acceso o spento', 'Accende i giochi a sorpresa.'],
+      ['«Un gioco ogni almeno (minuti)»', '15', '1–360', 'Il tempo minimo fra due giochi automatici, di qualunque tipo.'],
       ['«…al massimo (minuti)»', '45', '1–360', 'Il tempo massimo. Se lo metti sotto il minimo, vale il minimo.'],
-      ['«Solo mentre sono in diretta»', 'spento', 'acceso o spento', 'Acceso: a canale spento non parte nessuna manche.'],
+      ['«Chat viva: almeno tanti messaggi al minuto»', '1', '0–30', 'Sotto questo ritmo non parte niente. A zero parte anche con la chat ferma, per svegliarla.'],
+      ['«Solo mentre sono in diretta»', 'spento', 'acceso o spento', 'Acceso: a canale spento non parte niente. Il boss e l\'arena partono comunque solo in diretta.'],
+      ['«Peso», per ogni gioco', '10 per le manche, 0 per gli altri', '0–100', 'Quanto esce quel gioco rispetto agli altri: con 30 esce tre volte più di uno con 10. A zero non parte mai da solo. Accanto il pannello scrive quanti su 100.'],
+      ['«Al massimo uno ogni», per ogni gioco', '0', '0–1440 minuti', 'Un limite tutto suo: il boss una volta all\'ora anche se il giro scatta ogni dieci minuti. A zero vale solo il giro.'],
     ] },
     { p: [
-      'Fra una manche e l\'altra il bot sceglie un tempo a caso fra il minimo e il massimo. Non ne lancia mai una con la chat ferma, cioè con meno di un messaggio al minuto.',
-      'Quali tipi girano lo scegli nelle regole della «Manche», alla voce «Nel giro delle manche automatiche». Lì c\'è anche il premio.',
-      'In chat <code>!manche</code> ne lancia una al volo. Premi «Salva manche».',
+      'Fra uno scatto e l\'altro il bot sceglie un tempo a caso fra il minimo e il massimo. Quando scatta, sceglie un gioco fra quelli che possono partire adesso, ognuno col suo peso: niente di aperto in chat, la sua distanza passata, e quello che il gioco chiede (il boss solo se <code>!colpisci</code> risponde, una «domanda tua» solo se hai scritto delle domande). Se nessuno può, riprova al minuto dopo.',
+      'Le ultime partenze di ogni gioco restano salvate: un riavvio del bot non fa arrivare il boss due volte nella stessa ora. Sotto i pesi il pannello dice quanti giochi automatici arrivano in un\'ora (o, se il giro è più lento di un\'ora, ogni quanti minuti), e quanto spesso al massimo il boss.',
+      'Se prima avevi le manche automatiche, il boss o l\'arena «ogni tanti minuti», li ritrovi qui con le stesse frequenze in media, e il boss e l\'arena non più spesso di prima. Il boss e l\'arena che arrivano con un raid restano nelle loro regole.',
+      'In chat <code>!manche</code> ne lancia una al volo, scelta con gli stessi pesi. Premi «Salva i giochi automatici».',
     ] },
 
     { h3: 'I tuoi giochi' },
@@ -197,7 +201,7 @@ export default {
     ] },
     { p: [
       'Premi «Crea gioco»: il pannello scrive «Gioco creato!». Puoi avere fino a 50 giochi così. Se manca il materiale, o per anagramma, impiccato e wordle non c\'è nemmeno una parola della misura giusta, il gioco non si crea e il pannello dice cosa manca.',
-      'Il gioco nuovo entra nelle manche del suo tipo: parte a sorpresa se le manche automatiche sono accese e quel tipo è nel giro, e con <code>!manche</code> seguito dal tipo ne apri una quando vuoi. Come il tuo materiale si mescola con quello di serie è spiegato più sotto, in «Le manche».',
+      'Il gioco nuovo entra nelle manche del suo tipo: parte a sorpresa se i giochi automatici sono accesi e quel tipo ha un peso, e con <code>!manche</code> seguito dal tipo ne apri una quando vuoi. Come il tuo materiale si mescola con quello di serie è spiegato più sotto, in «Le manche».',
       '<strong>«Lo scrive uno spettatore»</strong> fa un comando che costa monete, tira il dado e paga, o no. In «Da cosa parti» scegli una delle sei ricette, o «Parti da zero». Si apre l\'editor dei Moduli dentro questa scheda: inneschi, condizioni e azioni sono quelli del <a href="/manuale/moduli">manuale dei comandi</a>.',
     ] },
     { tabella: [
@@ -419,7 +423,7 @@ export default {
 
     { h3: 'Il boss da battere insieme' },
     { p: [
-      `Un boss arriva quando un mod scrive <code>!boss</code>, con un raid di almeno ${DI_SERIE('boss').dopoRaid} persone, e se vuoi da solo ogni tanto mentre sei in diretta, con la chat viva. Ha ${DI_SERIE('boss').vitaPerPersona} punti vita per ogni persona che ha scritto in chat negli ultimi dieci minuti, contando almeno ${DI_SERIE('boss').minimo} persone: chi guarda in silenzio non conta, così il boss è alla portata di chi c'è davvero.`,
+      `Un boss arriva quando un mod scrive <code>!boss</code>, con un raid di almeno ${DI_SERIE('boss').dopoRaid} persone, e da solo, mentre sei in diretta, se gli dai un peso nei giochi automatici. Ha ${DI_SERIE('boss').vitaPerPersona} punti vita per ogni persona che ha scritto in chat negli ultimi dieci minuti, contando almeno ${DI_SERIE('boss').minimo} persone: chi guarda in silenzio non conta, così il boss è alla portata di chi c'è davvero.`,
       `La chat lo colpisce con <code>!colpisci</code>, un colpo ogni ${ATTESA(DI_SERIE('boss').attesaTesta)} a testa, da ${DI_SERIE('boss').dannoMin} a ${DI_SERIE('boss').dannoMax} di danno. Ha ${ATTESA(DI_SERIE('boss').durata)} prima di scappare. Se cade, il bottino va a chi l'ha colpito in proporzione al danno: se tutti colpiscono uguale ognuno prende ${CIFRA(DI_SERIE('boss').bottino)}, e chi colpisce di più prende di più, fino a ${CIFRA(RESA('boss').massimo)} a testa. Se scappa non prende niente nessuno, e nessuno perde niente.`,
       'Il bot non risponde a ogni colpo: poco dopo il primo, e poi al massimo ogni venti secondi, scrive chi ha colpito e quanto, la vita che resta e i secondi che mancano. Quando il boss arriva a metà vita e a un quarto lo dice subito.',
       'Nell\'overlay, con gli effetti accesi, compare la carta del boss: nome, vita che scende a ogni colpo, tempo che resta, chi colpisce e quanto. È un elemento dello Studio: la sposti, la ingrandisci e la vesti lì, e la spegni per overlay. Nelle regole scegli anche una festa: se il boss cade, la chat va in solo emote per qualche minuto e poi torna com\'era.',
@@ -434,7 +438,7 @@ export default {
       `Alla fine delle iscrizioni si combatte, se i combattenti sono almeno due; se no l'arena si annulla e l'ingresso torna indietro. I combattenti si muovono da soli, prendono gli oggetti che cadono ogni ${ATTESA(DI_SERIE('arena').ogniOggetto)} e si scontrano: a ogni urto perdono vita, e chi la finisce è eliminato. La spada fa più danno, lo scudo ne fa subire meno, il cuore ridà vita, gli stivali fanno correre di più.`,
       `Dopo ${ATTESA(DI_SERIE('arena').strettaDopo)} l'arena comincia a stringersi, e in ${ATTESA(DI_SERIE('arena').strettaDurata)} arriva a ${DI_SERIE('arena').strettaMin} su 100 della misura: la partita finisce sempre. Non scende mai sotto due combattenti affiancati, e gli oggetti rimasti fuori dai muri spariscono. Se dopo ${ATTESA(DI_SERIE('arena').durataMax)} sono ancora in piedi in più di uno, vince chi ha più vita.`,
       `La partita è decisa appena comincia: il bot sa subito chi vince, ma lo dice in chat e paga solo quando l'overlay arriva alla fine. Il vincitore prende ${CIFRA(DI_SERIE('arena').premioVincitore)} monete, ogni eliminazione vale ${CIFRA(DI_SERIE('arena').premioEliminazione)}, e chi porta la corona, cioè ha eliminato di più, prende ${CIFRA(DI_SERIE('arena').premioCorona)}. Chi vince con la corona eliminando tutti arriva a ${CIFRA(RESA('arena').massimo)} monete.`,
-      'L\'arena si apre anche da sola in diretta ogni tanti minuti, o con un raid di almeno tante persone, se lo scegli nelle regole: di serie succede solo con <code>!arena</code>. Nell\'overlay è un elemento dello Studio, «Arena delle emote»: la sposti, la ingrandisci e la vesti lì.',
+      'L\'arena si apre anche da sola in diretta, se le dai un peso nei giochi automatici, o con un raid di almeno tante persone, se lo scegli nelle sue regole: di serie succede solo con <code>!arena</code>. Nell\'overlay è un elemento dello Studio, «Arena delle emote»: la sposti, la ingrandisci e la vesti lì.',
     ] },
 
     { h3: 'Blackjack' },
@@ -480,9 +484,9 @@ export default {
 
     { h2: 'Le manche' },
     { p: [
-      `Una manche è una domanda aperta a tutta la chat: chi risponde giusto per primo prende il premio della manche (${CIFRA(DI_SERIE('manche').premio)} di base). Partono da sole con le manche automatiche, o a mano con <code>!manche</code>, che ne apre una a caso fra quelle del giro.`,
+      `Una manche è una domanda aperta a tutta la chat: chi risponde giusto per primo prende il premio della manche (${CIFRA(DI_SERIE('manche').premio)} di base). Partono da sole coi giochi automatici, o a mano con <code>!manche</code>, che ne sceglie una coi pesi dei giochi automatici (fra tutte, se nessuna ha un peso).`,
       'Per sceglierne una scrivi anche il tipo: <code>!manche impiccato</code>, <code>!manche più o meno</code>, <code>!manche quiz</code>. Spazi e accenti non contano, quindi va bene anche <code>!manche piuomeno</code>. Se il tipo non esiste, il bot li elenca. <code>!trivia</code> apre sempre un Quiz.',
-      `I tipi sono ${MANCHE_TIPI.length}. Nelle regole della «Manche» scegli quali stanno nel giro di quelle automatiche, e il bot pesca un tipo che riesca a costruire:`,
+      `I tipi sono ${MANCHE_TIPI.length}. Nei giochi automatici dai a ognuno il suo peso, e il bot pesca un tipo che riesca a costruire:`,
     ] },
     { tabella: [
       ['Tipo', 'Come funziona', 'Tempo', 'Materiale tuo'],
@@ -539,7 +543,7 @@ export default {
       '<strong>Ho cambiato un premio e non cambia niente.</strong> Controlla di aver premuto «Salva le regole». I valori nuovi valgono dalla giocata successiva, non da quella in corso.',
       '<strong>Una frase delle regole è sparita dopo il salvataggio.</strong> Aveva un segnaposto che quel gioco non conosce. Usa quelli scritti sotto l\'elenco.',
       '<strong>Il premio in VIP non arriva.</strong> Serve il permesso VIP: se la carta «Classifica & VIP» lo chiede, premi «Concedi i permessi». Staff, proprietario e chi ha già il VIP per sempre vengono saltati.',
-      '<strong>Una manche non parte mai.</strong> Controlla che le manche automatiche siano accese, che il tipo sia nel giro e che la chat scriva almeno un messaggio al minuto. Con «Solo mentre sono in diretta» acceso, a canale spento non ne parte nessuna.',
+      '<strong>Una manche non parte mai.</strong> Controlla che i giochi automatici siano accesi, che quel tipo abbia un peso più di zero e che la chat scriva quanto chiede «Chat viva». Con «Solo mentre sono in diretta» acceso, a canale spento non ne parte nessuna. Se c\'è un altro gioco aperto, si aspetta che finisca.',
     ] },
   ],
   faq: [

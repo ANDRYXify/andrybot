@@ -82,11 +82,13 @@ function arma(channel, c) {
 
 // Chi chiama controlla prima che la chat sia libera (games.js, chiLeggeLaChat).
 export function apri(channel, say) {
+  if (catene.has(channel)) return false;
   const c = { record: recordCatena(channel), say, timer: null };
   riparti(c, prima(channel));
   catene.set(channel, c);
   arma(channel, c);
   say(`🔗 Catena di parole! Si parte da ${c.parola.toUpperCase()}: la prossima comincia con ${coda(c.parola)}. Una parola a messaggio, mai due di fila la stessa persona, mai una già detta. Record del canale: ${c.record}.`);
+  return true;
 }
 
 // Un messaggio di chat mentre c'e' la catena. Torna true se era una mossa.

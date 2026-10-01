@@ -154,6 +154,18 @@ comandi diversi da quelli della riga italiana.
 - Lo staff può togliere il castigo a chi ha insistito: in chat con !perdona @nome, o con «Perdona» nella carta «Chi aspetta di più». L'attesa normale del gioco resta. [vai: giochi]
   en: Your team can lift the penalty from someone who kept insisting: in chat with !perdona @nome, or with «Forgive» in the «Who is waiting longer» card. The game's normal wait stays.
   es: Tu equipo puede quitar el castigo a quien insistió: en el chat con !perdona @nome, o con «Perdonar» en la tarjeta «Quién espera más». La espera normal del juego se queda.
+- [importante] I giochi automatici hanno un orologio solo: manche, boss, arena, catena, conta e corsa, ognuno col suo peso e il suo «al massimo uno ogni». [vai: giochi]
+  en: Automatic games share a single clock: rounds, boss, arena, word chain, count and race, each with its own weight and its own «at most one every».
+  es: Los juegos automáticos tienen un solo reloj: rondas, jefe, arena, cadena, cuenta y carrera, cada uno con su peso y su «como máximo uno cada».
+  > Decidi tu quale gioco e quanto spesso
+  > Prima erano tre orologi che non si parlavano e potevano cadere uno sull'altro. Ora scegli quanto spesso in generale e, per ogni gioco, quanto esce rispetto agli altri: il pannello dice quanti su 100.
+  en> You decide which game and how often
+  en> Before, there were three clocks that ignored each other and could land on top of one another. Now you choose how often in general and, for each game, how often it comes up: the panel says how many in 100.
+  es> Tú decides qué juego y cada cuánto
+  es> Antes eran tres relojes que no se hablaban y podían caer uno encima del otro. Ahora eliges cada cuánto en general y, para cada juego, cuánto sale respecto a los demás: el panel dice cuántos de cada 100.
+- !manche sceglie il tipo con gli stessi pesi dei giochi automatici, e ogni tipo esce davvero con la sua probabilità. [vai: giochi]
+  en: !manche picks the type with the same weights as automatic games, and every type really comes up with its own probability.
+  es: !manche elige el tipo con los mismos pesos que los juegos automáticos, y cada tipo sale de verdad con su probabilidad.
 
 ## 2026-09-30
 
