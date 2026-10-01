@@ -118,7 +118,7 @@ export default {
 
     { h3: 'Le frasi del bot' },
     { p: [
-      'Sono le frasi che il bot dice da solo, senza che nessuno lo chiami: quando vai in diretta e quando chiudi, per un follow o un follow che torna, un abbonamento, un rinnovo, gli abbonamenti regalati, un raid in arrivo o in uscita, i Bit, uno shoutout, un premio a punti canale, l\'hype train, la pubblicità, il promemoria dei link, e la prima riga degli avvisi di diretta su Telegram e Discord. I momenti sono divisi in tre gruppi: «La diretta», «La community» e «Gli avvisi fuori dalla chat».',
+      'Sono le frasi che il bot dice da solo, senza che nessuno lo chiami: quando vai in diretta e quando chiudi, per un follow o un follow che torna, un abbonamento, un rinnovo, gli abbonamenti regalati, un raid in arrivo o in uscita, i Bit, uno shoutout, un premio a punti canale, l\'hype train, la pubblicità, il promemoria dei link, la prima riga degli avvisi di diretta su Telegram e Discord, e nei giochi chi prova a giocare senza aver scritto abbastanza o insiste durante l\'attesa. I momenti sono divisi in quattro gruppi: «La diretta», «La community», «Gli avvisi fuori dalla chat» e «I giochi in chat».',
       'Escono nella lingua della chat del canale, quella delle «Preferenze del canale» nella scheda Account, e col «Tono» scelto qui sopra. In cima alla carta leggi quali sono adesso.',
     ] },
     { p: [

@@ -24,6 +24,7 @@
 //
 // Il ragionamento sta in docs/GIOCHI.md.
 import { points, streamers, statoVivo } from '../db.js';
+import * as economia from './economia.js';
 import { valoriDi } from './giochi-conf.js';
 import { nomeIn } from './comandi-registro.js';
 import { aChi } from './risposte.js';
@@ -98,9 +99,11 @@ const contaCarte = (carte) => {
   return p.soft ? `${p.duro}/${p.tot}` : String(p.tot);
 };
 
-function ricorda(channel, chi, posta) {
+// La posta di una mano aperta si ricorda con la sua ricevuta: dopo un riavvio
+// torna coi lotti che erano stati puntati (docs/ECONOMIA.md).
+function ricorda(channel, chi, posta, ricevuta = null) {
   const d = statoVivo.leggi(channel, CHIAVE) || {};
-  if (posta) d[chi] = posta; else delete d[chi];
+  if (posta) d[chi] = { posta, ricevuta }; else delete d[chi];
   if (Object.keys(d).length) statoVivo.scrivi(channel, CHIAVE, d);
   else statoVivo.togli(channel, CHIAVE);
 }
@@ -115,9 +118,12 @@ export const testoRimborso = ({ channel, chi, posta }) =>
 export function rimborsaDopoRiavvio() {
   const rese = [];
   for (const { channel, dato } of statoVivo.tutti(CHIAVE)) {
-    for (const [chi, posta] of Object.entries(dato || {})) {
-      points.add(channel, chi, Number(posta));
-      rese.push({ channel, chi, posta: Number(posta) });
+    for (const [chi, v] of Object.entries(dato || {})) {
+      // una mano aperta prima dei lotti e' stata puntata con monete che non scadevano
+      const posta = Number(typeof v === 'object' ? v?.posta : v) || 0;
+      const ricevuta = Array.isArray(v?.ricevuta) ? v.ricevuta : [{ scade: 0, quanti: posta }];
+      economia.rendi(channel, chi, ricevuta);
+      rese.push({ channel, chi, posta });
     }
     statoVivo.togli(channel, CHIAVE);
   }
@@ -133,7 +139,7 @@ function chiudi(channel, chi, m, esito) {
   mani.delete(`${channel}|${chi}`);
   clearTimeout(m.timer);
   const torna = rende(esito, m.posta, conf(channel).vincitaBJ);
-  const saldo = points.add(channel, chi, torna);
+  const saldo = economia.chiudiPuntata(channel, chi, m.ricevuta, torna);
   ricorda(channel, chi, 0);
   return { torna, netto: torna - m.posta, saldo };
 }
@@ -186,10 +192,11 @@ export function apri(channel, msg, args, say, { moneta = 'monete' } = {}) {
   if (c.massimo > 0 && posta > c.massimo) { risposta(`🃏 Qui si punta al massimo ${c.massimo} ${moneta}.`); return false; }
   const saldo = points.get(channel, chi);
   if (saldo < posta) { risposta(`🃏 Per puntarne ${posta} non bastano: di ${moneta} ne hai ${saldo}.`); return false; }
-  points.add(channel, chi, -posta);
-  const m = { nome, posta, io: [pesca(), pesca()], banco: [pesca(), pesca()], timer: null, say: risposta };
+  const presa = economia.punta(channel, chi, posta);
+  if (!presa) { risposta(`🃏 Per puntarne ${posta} non bastano: di ${moneta} ne hai ${points.get(channel, chi)}.`); return false; }
+  const m = { nome, posta, ricevuta: presa.ricevuta, io: [pesca(), pesca()], banco: [pesca(), pesca()], timer: null, say: risposta };
   mani.set(`${channel}|${chi}`, m);
-  ricorda(channel, chi, posta);
+  ricorda(channel, chi, posta, presa.ricevuta);
   const esito = esitoNaturale(m.io, m.banco);
   if (esito) {
     const r = chiudi(channel, chi, m, esito);

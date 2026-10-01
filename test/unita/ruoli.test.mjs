@@ -24,7 +24,7 @@ test.beforeEach(() => ruoli.scorda());
 
 test('un moderatore che non ha mai scritto finisce nella gara giusta', async () => {
   for (const [u, q] of [['seb__98', 1442], ['chiara_3008', 1318], ['skeller92', 308], ['mizu__gamer', 693]]) {
-    points.add(CH, u, q);                     // nessuno ha mai portato il suo ruolo
+    points.dai(CH, u, q);                     // nessuno ha mai portato il suo ruolo
   }
   assert.equal(points.top(CH, 9, 'staff').length, 0, 'partenza: la gara staff e\' vuota');
 
@@ -39,7 +39,7 @@ test('un moderatore che non ha mai scritto finisce nella gara giusta', async () 
 });
 
 test('lo streamer e\' staff del suo canale anche se Twitch non lo elenca', async () => {
-  points.add(CH, CH, 379);
+  points.dai(CH, CH, 379);
   await ruoli.riallinea(finto([]), CH, { forza: true });
   assert.equal(points.ruoloDi(CH, CH), 'staff');
 });

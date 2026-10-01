@@ -20,7 +20,7 @@ test.after(() => casa.pulisci());
 function canale(ch, giochiConf = {}, soldi = {}) {
   streamers.upsertApproved(ch, ch);
   streamers.setSettings(ch, { giochiConf });
-  for (const [u, n] of Object.entries(soldi)) { points.add(ch, u, n); games.segnaPresenza(ch, u); }
+  for (const [u, n] of Object.entries(soldi)) { points.dai(ch, u, n); games.segnaPresenza(ch, u); }
 }
 const scrivi = (ch, user, text, detti) => games.tryGame({ channel: ch, user, text }, (t) => detti.push(t));
 const totale = (ch, chi) => chi.reduce((s, u) => s + points.get(ch, u), 0);
@@ -59,7 +59,7 @@ test('le monete si ricontrollano quando l\'altro accetta', () => {
   canale('s3', {}, { elena: 60, franco: 100 });
   const detti = [];
   scrivi('s3', 'elena', '!duello @franco 50', detti);
-  points.add('s3', 'elena', -30);
+  points.togli('s3', 'elena', 30);
   scrivi('s3', 'franco', '!accetta', detti);
   assert.match(detti.at(-1), /elena non ha più 50/);
   assert.deepEqual([points.get('s3', 'elena'), points.get('s3', 'franco')], [30, 100]);
@@ -112,7 +112,7 @@ test('la morra in chat: senza puntata non muove monete, con la puntata si', () =
   assert.match(detti.at(-1), /Si gioca così: !morra sasso, carta o forbice/);
   games.tryGame({ channel: 's6', user: 'pia', text: '!morra carta 20' }, (t) => detti.push(t));
   assert.match(detti.at(-1), /non hai 20/);
-  points.add('s6', 'quinto', 100);
+  points.dai('s6', 'quinto', 100);
   scrivi('s6', 'quinto', '!morra forbice 20', detti);
   const esito = detti.at(-1);
   assert.match(esito, /quinto: forbice/);

@@ -111,11 +111,23 @@ const NOMI_OGGETTI = {
 // canale. Ogni gioco le ha tutte e due, e le fa rispettare lo stesso pezzo di
 // codice (attese-giochi.js). `prima` dice dove stava il valore quando l'attesa
 // era una sola, cosi' chi l'aveva scelta la ritrova al posto giusto.
-const ATTESE = ({ testa = 0, tutti = 0, prima = null, etiTesta, etiTutti } = {}) => [
+//
+// CHI INSISTE ASPETTA DI PIU' (docs/GIOCHI.md). Chi riscrive il comando mentre
+// per lui il gioco e' in attesa aspetta `insisti` secondi in piu', poi il
+// doppio, poi il doppio ancora; dopo `insistiMax` volte il gioco per lui e'
+// chiuso fino a fine diretta. Di partenza niente. Il boss non le ha: il suo
+// comando, !colpisci, si scrive a raffica per costruzione.
+const ATTESE = ({ testa = 0, tutti = 0, prima = null, etiTesta, etiTutti, insisti = true } = {}) => [
   { k: 'attesaTesta', tipo: 'secondi', def: testa, min: 0, max: 86400, attesa: 'testa', ...(prima === 'testa' ? { prima: 'attesa' } : {}),
     eti: etiTesta || T('Attesa fra due giocate, a testa', 'Wait between two plays, each', 'Espera entre dos jugadas, cada uno') },
   { k: 'attesaTutti', tipo: 'secondi', def: tutti, min: 0, max: 86400, attesa: 'tutti', ...(prima === 'tutti' ? { prima: 'attesa' } : {}),
     eti: etiTutti || T('Attesa fra due giocate, per tutti', 'Wait between two plays, for everyone', 'Espera entre dos jugadas, para todos') },
+  ...(insisti ? [
+    { k: 'insisti', tipo: 'secondi', def: 0, min: 0, max: 3600, insistere: 'tot',
+      eti: T('Chi insiste durante l\'attesa aspetta in più: la prima volta (poi il doppio, 0 = niente)', 'Whoever insists during the wait waits longer: the first time (then double, 0 = none)', 'Quien insiste durante la espera espera más: la primera vez (luego el doble, 0 = nada)') },
+    { k: 'insistiMax', tipo: 'numero', def: 5, min: 0, max: 20, insistere: 'max',
+      eti: T('Dopo quante volte basta fino a fine diretta (0 = mai)', 'After how many times it stops until the end of the stream (0 = never)', 'Tras cuántas veces se acaba hasta el final del directo (0 = nunca)') },
+  ] : []),
 ];
 
 // Quanto paga un tris della slot, in parti del tris di 💎. Li leggono il
@@ -222,7 +234,7 @@ export const CATALOGO = [
       { k: 'minimo', tipo: 'numero', def: 3, min: 1, max: 100, eti: T('Contando almeno tante persone', 'Counting at least this many people', 'Contando al menos tantas personas') },
       { k: 'dannoMin', tipo: 'numero', def: 5, min: 1, max: 10000, eti: T('Danno di un colpo, da', 'Damage of a hit, from', 'Daño de un golpe, desde') },
       { k: 'dannoMax', tipo: 'numero', def: 15, min: 1, max: 10000, eti: T('Danno di un colpo, fino a', 'Damage of a hit, up to', 'Daño de un golpe, hasta') },
-      ...ATTESE({ testa: 5, prima: 'testa', etiTesta: T('Attesa fra due colpi al boss, a testa', 'Wait between two hits on the boss, each', 'Espera entre dos golpes al jefe, cada uno'), etiTutti: T('Attesa fra due colpi al boss, per tutti', 'Wait between two hits on the boss, for everyone', 'Espera entre dos golpes al jefe, para todos') }),
+      ...ATTESE({ testa: 5, prima: 'testa', insisti: false, etiTesta: T('Attesa fra due colpi al boss, a testa', 'Wait between two hits on the boss, each', 'Espera entre dos golpes al jefe, cada uno'), etiTutti: T('Attesa fra due colpi al boss, per tutti', 'Wait between two hits on the boss, for everyone', 'Espera entre dos golpes al jefe, para todos') }),
       { k: 'durata', tipo: 'secondi', def: 90, min: 20, max: 600, eti: T('Tempo per batterlo', 'Time to beat it', 'Tiempo para vencerlo') },
       { k: 'bottino', tipo: 'monete', def: 20, min: 0, max: 100000, eti: T('Bottino a testa se cade: chi colpisce di più prende di più', 'Loot per person if it falls: whoever hits more gets more', 'Botín por cabeza si cae: quien golpea más se lleva más') },
       { k: 'ogni', tipo: 'numero', def: 0, min: 0, max: 360, eti: T('Arriva da solo in diretta ogni tanti minuti (0 = solo con !boss)', 'Comes on its own while live every this many minutes (0 = only with !boss)', 'Llega solo en directo cada tantos minutos (0 = solo con !boss)') },

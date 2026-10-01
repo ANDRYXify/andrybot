@@ -121,6 +121,36 @@ comandi diversi da quelli della riga italiana.
 - Gli avvisi dei post nuovi, su Discord e su Telegram, parlano la lingua e il tono del canale, e su Discord usano anche il messaggio che hai scritto per i post. [vai: dcavvisi]
   en: New post alerts, on Discord and Telegram, speak your channel's language and tone, and on Discord they also use the message you wrote for posts.
   es: Los avisos de posts nuevos, en Discord y en Telegram, hablan el idioma y el tono del canal, y en Discord también usan el mensaje que escribiste para los posts.
+- [importante] Le monete possono scadere: per ogni modo di guadagnarle (in chat, giocando, premi, dallo staff) scegli quanto durano, da una settimana a un anno o a fine stagione. [vai: giochi]
+  en: Coins can expire: for each way of earning them (chat, games, rewards, your team) you choose how long they last, from a week to a year or the end of the season.
+  es: Las monedas pueden caducar: para cada forma de ganarlas (chat, juegos, premios, tu equipo) eliges cuánto duran, de una semana a un año o hasta el final de la temporada.
+  > Monete che durano quanto vuoi tu
+  > Col negozio, chi accumula per mesi può svuotarlo in una sera. Così decidi quanto vale ogni modo di guadagnare, e una moneta tiene la sua data anche quando passa di mano.
+  en> Coins that last as long as you want
+  en> With the shop, someone who saves up for months can empty it in one evening. This way you decide how long each way of earning is worth, and a coin keeps its date when it changes hands.
+  es> Monedas que duran lo que tú quieras
+  es> Con la tienda, quien acumula durante meses puede vaciarla en una noche. Así decides cuánto vale cada forma de ganar, y una moneda mantiene su fecha aunque cambie de manos.
+- Si spendono prima le monete che scadono prima, e !monete dice quante ne scadono e quando. Quelle che ci sono già non scadono, a meno che tu non dia loro una data. [vai: giochi]
+  en: The coins that expire first are spent first, and !monete says how many expire and when. The ones people already have never expire, unless you give them a date.
+  es: Se gastan primero las monedas que caducan antes, y !monete dice cuántas caducan y cuándo. Las que ya existen no caducan, salvo que les pongas una fecha.
+- [importante] Per giocare bisogna esserci: se lo scegli, un gioco costa qualche messaggio scritto in chat, così chi viene solo per i giochi prima parla con te. [vai: giochi]
+  en: To play, you have to be here: if you want, a game costs a few chat messages, so whoever comes just for the games talks with you first.
+  es: Para jugar hay que estar: si quieres, un juego cuesta algunos mensajes en el chat, así quien viene solo por los juegos primero habla contigo.
+  > Prima si parla, poi si gioca
+  > Le attese dicono quanto spesso si gioca, non chi gioca. Scegli ogni quanti messaggi si apre una partita: i comandi non contano, e tu e i moderatori giocate sempre.
+  en> Chat first, then play
+  en> Cooldowns say how often people play, not who plays. You choose how many messages open a game: commands don't count, and you and your moderators can always play.
+  es> Primero se habla, luego se juega
+  es> Las esperas dicen cada cuánto se juega, no quién juega. Eliges cada cuántos mensajes se abre una partida: los comandos no cuentan, y tú y los moderadores jugáis siempre.
+- [importante] Chi insiste su un gioco in attesa aspetta di più, ogni volta il doppio, fino a fine diretta: lo scegli gioco per gioco nelle regole. [vai: giochi]
+  en: Whoever keeps trying a game during its wait waits longer, double each time, up to the end of the stream: you choose it game by game in the rules.
+  es: Quien insiste en un juego en espera espera más, el doble cada vez, hasta el final del directo: lo eliges juego por juego en las reglas.
+  > Chi insiste aspetta di più
+  > Come un telefono bloccato dopo troppi tentativi: la prima volta l'attesa cresce di quanto scegli, poi del doppio. Chi si calma torna indietro, e la diretta dopo si riparte da zero.
+  en> Insisting means waiting longer
+  en> Like a phone locked after too many tries: the first time the wait grows by the amount you choose, then by double. Whoever calms down steps back, and the next stream starts from zero.
+  es> Quien insiste espera más
+  es> Como un teléfono bloqueado tras demasiados intentos: la primera vez la espera crece lo que elijas, luego el doble. Quien se calma retrocede, y el siguiente directo empieza de cero.
 
 ## 2026-09-30
 

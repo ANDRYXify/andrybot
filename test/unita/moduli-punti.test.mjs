@@ -30,7 +30,7 @@ function raccogli() {
   return { dette, dire: (t) => dette.push(t) };
 }
 
-test.beforeEach(() => { points.add(CH, 'tizio', -1_000_000); points.add(CH, 'tizio', 500); });
+test.beforeEach(() => { points.togli(CH, 'tizio', 1_000_000); points.dai(CH, 'tizio', 500); });
 
 test('un comando puo\' costare, e chi non ha le monete non lo usa', async () => {
   const m = { id: 1, azioni: [{ tipo: 'messaggio', testo: 'fatto' }],
@@ -71,7 +71,7 @@ test('nessuno paga per un comando che sarebbe stato rifiutato comunque', async (
 test('e nessuno brucia il cooldown per un comando che non puo\' permettersi', async () => {
   const m = { id: 6, condizioni: { costo: 10_000, cooldown: 3600 }, azioni: [{ tipo: 'messaggio', testo: 'x' }] };
   await motore.esegui(m, ctx(), () => {});
-  points.add(CH, 'tizio', 20_000);
+  points.dai(CH, 'tizio', 20_000);
   const a = raccogli();
   assert.equal(await motore.esegui(m, ctx(), a.dire), true, 'il cooldown non era stato consumato dal tentativo fallito');
 });
@@ -105,7 +105,7 @@ test('la quantita\' puo\' essere una variabile, e resta dentro i limiti', async 
 });
 
 test('togli non porta mai sotto zero', async () => {
-  points.add(CH, 'poverissimo', 5);
+  points.dai(CH, 'poverissimo', 5);
   await motore.esegui({ id: 12, azioni: [{ tipo: 'punti', op: 'togli', quanto: '9999' }] }, ctx({ user: 'poverissimo' }), () => {});
   assert.equal(points.get(CH, 'poverissimo'), 0);
 });
@@ -119,7 +119,7 @@ test('un destinatario che non e\' un nome utente non riceve niente', async () =>
 });
 
 test('le variabili raccontano l\'economia: saldo, moneta, posizione, classifica', async () => {
-  points.add(CH, 'primo', 9000);
+  points.dai(CH, 'primo', 9000);
   const m = { id: 14, azioni: [{ tipo: 'messaggio', testo: 'hai $punti $monete, sei $posizione°. Top: $top(2)' }] };
   const a = raccogli();
   await motore.esegui(m, ctx(), a.dire);
@@ -129,7 +129,7 @@ test('le variabili raccontano l\'economia: saldo, moneta, posizione, classifica'
 });
 
 test('$punti(nome) legge il saldo di un altro', async () => {
-  points.add(CH, 'altro', 77);
+  points.dai(CH, 'altro', 77);
   const a = raccogli();
   await motore.esegui({ id: 15, azioni: [{ tipo: 'messaggio', testo: 'altro ha $punti(altro)' }] }, ctx(), a.dire);
   assert.equal(a.dette[0], 'altro ha 77');
@@ -173,7 +173,7 @@ test('un modulo senza altrimenti resta esattamente com\'era', () => {
 // Il costo puo' essere un'espressione: senza, "!scommetti 100" non si scrive,
 // ed e' meta' dei giochi a punti.
 test('il costo puo\' venire da quello che uno scrive', async () => {
-  points.add(CH, 'tizio', -1_000_000); points.add(CH, 'tizio', 500);
+  points.togli(CH, 'tizio', 1_000_000); points.dai(CH, 'tizio', 500);
   const m = { id: 20, condizioni: { costo: '$arg1' },
     azioni: [{ tipo: 'punti', op: 'aggiungi', quanto: '$arg1' }, { tipo: 'messaggio', testo: 'ok' }] };
   assert.equal(await motore.esegui(m, ctx({ args: ['200'] }), () => {}), true);
@@ -184,7 +184,7 @@ test('il costo puo\' venire da quello che uno scrive', async () => {
 });
 
 test('un costo scritto male non e\' un costo', async () => {
-  points.add(CH, 'tizio', -1_000_000); points.add(CH, 'tizio', 500);
+  points.togli(CH, 'tizio', 1_000_000); points.dai(CH, 'tizio', 500);
   const m = { id: 22, condizioni: { costo: '$arg1' }, azioni: [{ tipo: 'messaggio', testo: 'ok' }] };
   assert.equal(await motore.esegui(m, ctx({ args: ['pippo'] }), () => {}), true, 'passa, ma senza addebito');
   assert.equal(points.get(CH, 'tizio'), 500);
@@ -204,8 +204,8 @@ test('un costo con variabile si salva com\'e\', un numero resta numero', () => {
 // Senza questo, un furto toglierebbe una cifra alla vittima e ne darebbe
 // un'altra al ladro: due $random sono due numeri diversi.
 test('la cifra appena mossa si puo\' riusare, e non e\' quella chiesta ma quella riuscita', async () => {
-  points.add(CH, 'vittima', -1_000_000); points.add(CH, 'vittima', 30);
-  points.add(CH, 'ladro', -1_000_000);
+  points.togli(CH, 'vittima', 1_000_000); points.dai(CH, 'vittima', 30);
+  points.togli(CH, 'ladro', 1_000_000);
   const m = { id: 30, azioni: [
     { tipo: 'punti', op: 'togli', quanto: '80', a: 'nome', nome: 'vittima' },
     { tipo: 'punti', op: 'aggiungi', quanto: '$mossa', a: 'nome', nome: 'ladro' },
@@ -227,7 +227,7 @@ test.after(() => usaEGetta.pulisci());
 test('«Costa» e «Serve almeno» non addebitano a nessuno fuori dalla chat', async () => {
   const { streamers } = await import('../../src/db.js');
   streamers.request(CH, 'Canale', '1');
-  points.add(CH, 'canale', 500);
+  points.dai(CH, 'canale', 500);
   const prima = { canale: points.get(CH, 'canale'), tizio: points.get(CH, 'tizio') };
   const m = { id: 40, condizioni: { costo: 100, minPunti: 50 }, azioni: [{ tipo: 'messaggio', testo: 'ok $costo' }] };
   const contesti = {
@@ -246,7 +246,7 @@ test('«Costa» e «Serve almeno» non addebitano a nessuno fuori dalla chat', a
 });
 
 test('in chat paga chi ha scritto, per il suo nome utente e non per quello mostrato', async () => {
-  points.add(CH, 'yuki_88', -1_000_000); points.add(CH, 'yuki_88', 300);
+  points.togli(CH, 'yuki_88', 1_000_000); points.dai(CH, 'yuki_88', 300);
   const c = motore._ctxDaMessaggio({ user: 'yuki_88', display: 'ゆき', text: '!gioca' }, CH, 0, [], '');
   const m = { id: 50, condizioni: { costo: 100 }, azioni: [{ tipo: 'messaggio', testo: 'ok' }] };
   assert.equal(await motore.esegui(m, c, () => {}), true);
@@ -256,7 +256,7 @@ test('in chat paga chi ha scritto, per il suo nome utente e non per quello mostr
 test('«Chi ha scritto» e\' chi ha fatto scattare il modulo: un timer non ha nessuno, e lo streamer non prende il suo posto', async () => {
   const { streamers } = await import('../../src/db.js');
   streamers.request(CH, 'Canale', '1');
-  const azzera = (u) => { points.add(CH, u, -1_000_000); };
+  const azzera = (u) => { points.togli(CH, u, 1_000_000); };
   for (const u of ['canale', 'tizio', 'yuki_88', 'fan_1', 'raider_2']) azzera(u);
   const m = (id) => ({ id, azioni: [{ tipo: 'punti', op: 'aggiungi', quanto: '50' }] });
   const saldi = () => Object.fromEntries(['canale', 'tizio', 'yuki_88', 'fan_1', 'raider_2'].map((u) => [u, points.get(CH, u)]));

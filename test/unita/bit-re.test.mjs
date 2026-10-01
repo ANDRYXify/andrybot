@@ -57,7 +57,7 @@ test('il premio dei Bit va a chi ne ha messi di piu\', e lo dice con il suo nume
 
 test('e nemmeno qui si prova a dare il VIP a chi Twitch lo rifiuterebbe', async () => {
   const ch = 'b2';
-  points.add(ch, 'capo', 1, 'staff');
+  points.dai(ch, 'capo', 1, { ruolo: 'staff' });
   const h = finto({ rifiuta: new Set(['capo']) });
   // la classifica dei Bit e' di Twitch: dentro ci sono tutti, staff compreso
   const v = await vip.premiaTopBit(h, ch, righe(['capo', 9000], ['ludo', 100]), unPosto, null);
@@ -76,8 +76,8 @@ test('una classifica vuota non premia nessuno e non dice niente', async () => {
 
 test('chi puo\' vincere: non il padrone di casa, non lo staff', () => {
   const ch = 'b4';
-  points.add(ch, 'capo', 1, 'staff');
-  points.add(ch, 'anna', 1);
+  points.dai(ch, 'capo', 1, { ruolo: 'staff' });
+  points.dai(ch, 'anna', 1);
   assert.equal(vip.puoVincere(ch, 'anna'), true);
   assert.equal(vip.puoVincere(ch, 'capo'), false);
   assert.equal(vip.puoVincere(ch, ch), false, 'il padrone di casa non corre nella sua gara');

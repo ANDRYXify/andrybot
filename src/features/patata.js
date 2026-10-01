@@ -20,9 +20,10 @@
 //
 // Il ragionamento sta in docs/GIOCHI.md.
 import { points, streamers } from '../db.js';
+import * as economia from './economia.js';
 import { valoriDi } from './giochi-conf.js';
 import { nomeIn } from './comandi-registro.js';
-import { aspetta, giocato } from './attese-giochi.js';
+import { aspetta, giocato, entra } from './attese-giochi.js';
 import { NON_CONTARE } from './watchtime.js';
 
 const pulito = (s) => String(s || '').replace(/^@/, '').toLowerCase().trim();
@@ -45,7 +46,7 @@ function scoppia(channel, p) {
   let dato = 0;
   if (multa > 0 && p.da && p.giocatori.has(p.chi)) {
     dato = Math.min(multa, points.get(channel, p.chi));
-    if (dato > 0) { points.add(channel, p.chi, -dato); points.add(channel, p.da, dato); }
+    if (dato > 0) economia.passa(channel, p.chi, p.da, dato);
   }
   const giri = p.passaggi === 0 ? 'senza che nessuno la passasse' : p.passaggi === 1 ? 'dopo un passaggio' : `dopo ${p.passaggi} passaggi`;
   const paga = dato > 0 ? ` ${p.daNome} incassa ${dato} ${p.moneta} da ${p.nome}.` : '';
@@ -60,6 +61,7 @@ export function lancia(channel, msg, say, { moneta = 'monete' } = {}) {
   const q = patate.get(channel);
   if (q) { say(`🥔 La patata ce l'ha già ${q.nome}: !${passa} @nome, e in fretta.`); return; }
   if (aspetta(channel, 'patata', msg, say, { dire: ({ nome: chi, tempo, perTutti }) => (perTutti ? `🥔 La prossima patata fra ${tempo}.` : `🥔 ${chi}, puoi lanciarne un'altra fra ${tempo}.`) })) return;
+  entra(channel, 'patata', msg);
   const corta = Math.min(c.miccia, c.micciaMax);
   const lunga = Math.max(c.miccia, c.micciaMax);
   const p = { chi: io, nome, da: '', daNome: '', lanciata: io, giocatori: new Set([io]), passaggi: 0, moneta, say };

@@ -28,6 +28,7 @@
 //
 // Il ragionamento sta in docs/GIOCHI.md.
 import { points, streamers, memory } from '../db.js';
+import * as economia from './economia.js';
 import { valoriDi } from './giochi-conf.js';
 import { nomeIn } from './comandi-registro.js';
 import { aspetta, giocato } from './attese-giochi.js';
@@ -121,7 +122,7 @@ function cade(channel) {
   const b = via(channel);
   const c = conf(channel);
   const quote = spartisci(b.danni, c);
-  for (const q of quote) if (q.monete > 0) points.add(channel, q.chi, q.monete);
+  for (const q of quote) if (q.monete > 0) economia.dai(channel, q.chi, q.monete, 'giochi');
   const coda = c.bottino > 0
     ? `Bottino: ${elenca(quote.map((q) => `${q.nome} +${q.monete}`))}.`
     : `Colpi andati a segno: ${elenca(quote.map((q) => `${q.nome} ${q.danno}`))}.`;

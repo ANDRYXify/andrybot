@@ -16,6 +16,7 @@ import net from 'node:net';
 import http from 'node:http';
 import https from 'node:https';
 import { modules as modulesDb, counters, memory, streamers, clips, quotes, watchtime, points } from '../db.js';
+import * as economia from './economia.js';
 import { risolviCategoria } from './categoria.js';
 import * as presenze from './presenze.js';
 import { canaleHa } from './accesso.js';
@@ -772,7 +773,7 @@ export class ModulesEngine {
     // rifiutato. E qui, e non dopo il dado: in una macchinetta si paga per
     // giocare, non per vincere — cosi' il ramo "altrimenti" parte gia' pagato.
     if (pagante && costo > 0) {
-      points.add(ctx.channel, pagante, -costo);
+      economia.togli(ctx.channel, pagante, costo);
       ctx._vars = { ...(ctx._vars || {}), costo: String(costo), saldo: String(Math.max(0, saldo - costo)) };
     }
 
@@ -866,8 +867,10 @@ export class ModulesEngine {
         if (!Number.isFinite(n)) return;
         const q = Math.max(-MAX_PUNTI_AZIONE, Math.min(MAX_PUNTI_AZIONE, n));
         const prima = points.get(ctx.channel, chi);
-        if (azione.op === 'imposta') points.add(ctx.channel, chi, Math.max(0, q) - prima);
-        else points.add(ctx.channel, chi, azione.op === 'togli' ? -Math.abs(q) : q);
+        // quello che un Modulo da' nasce da «premi e Moduli», con la sua durata
+        const muovi = (d) => { if (d > 0) economia.dai(ctx.channel, chi, d, 'premi'); else if (d < 0) economia.togli(ctx.channel, chi, -d); };
+        if (azione.op === 'imposta') muovi(Math.max(0, q) - prima);
+        else muovi(azione.op === 'togli' ? -Math.abs(q) : q);
         // Quanto e' stato mosso DAVVERO (e a chi): senza, un'azione che pesca a
         // caso non potrebbe raccontarlo, ne' un'altra azione potrebbe usare la
         // stessa cifra — un furto toglierebbe una somma alla vittima e ne darebbe

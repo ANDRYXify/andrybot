@@ -35,7 +35,7 @@ const carte = (...gradi) => {
 function canale(ch, blackjack = {}, monete = {}) {
   streamers.upsertApproved(ch, ch);
   streamers.setSettings(ch, { giochiConf: { blackjack } });
-  for (const [u, n] of Object.entries(monete)) points.add(ch, u, n);
+  for (const [u, n] of Object.entries(monete)) points.dai(ch, u, n);
 }
 function scena(ch) {
   const detti = [];
@@ -86,7 +86,7 @@ test('la puntata esce subito, sta nel database, e torna dopo un riavvio', (t) =>
   s.scrivi('anna', '!bj 100');
   assert.match(s.detti.at(-1), /anna punta 100: hai 10. 7. \(17\), il banco mostra 9. e una coperta/);
   assert.equal(points.get('j1', 'anna'), 400, 'la puntata esce subito');
-  assert.deepEqual(statoVivo.leggi('j1', 'bj-mani'), { anna: 100 });
+  assert.deepEqual(statoVivo.leggi('j1', 'bj-mani'), { anna: { posta: 100, ricevuta: [{ scade: 0, quanti: 100 }] } }, 'coi lotti che sono stati puntati');
   assert.deepEqual(B.rimborsaDopoRiavvio(), [{ channel: 'j1', chi: 'anna', posta: 100 }]);
   assert.equal(points.get('j1', 'anna'), 500, 'dopo un riavvio torna');
   assert.equal(statoVivo.leggi('j1', 'bj-mani'), null);

@@ -29,6 +29,8 @@ export const DEFAULT = Object.freeze({
   noComandi: false, noRipetuti: false, minLettere: 0,
   pienoMin: 0, stopMin: 0,
   tettoDiretta: 0, saldoMax: 0,
+  durate: Object.freeze({ chat: 'mai', giochi: 'mai', premi: 'mai', staff: 'mai' }),
+  giocoOgni: 0, giochiScorta: 3,
 });
 export const ESCLUSI_MAX = 200;
 export const DOPPIO = Object.freeze({ min: 5, max: 240, xMin: 1.5, xMax: 5 });
@@ -63,6 +65,78 @@ export function normalizza(p = {}) {
     stopMin: intero(q.stopMin, DEFAULT.stopMin, 0, 1440),
     tettoDiretta: intero(q.tettoDiretta, DEFAULT.tettoDiretta, 0, 10_000_000),
     saldoMax: intero(q.saldoMax, DEFAULT.saldoMax, 0, 1_000_000_000),
+    durate: Object.fromEntries(DA_DOVE.map((k) => [k, DURATE.includes(q.durate?.[k]) ? q.durate[k] : DEFAULT.durate[k]])),
+    giocoOgni: intero(q.giocoOgni, DEFAULT.giocoOgni, 0, 50),
+    giochiScorta: intero(q.giochiScorta, DEFAULT.giochiScorta, 1, 20),
+  };
+}
+
+// QUANTO DURANO LE MONETE (docs/ECONOMIA.md, «Quanto durano le monete»).
+//
+// Una moneta prende la scadenza quando nasce, dal modo in cui nasce: stando in
+// chat, giocando (la parte in piu' oltre la posta, e i premi dei giochi), da un
+// premio o da un Modulo, dallo staff. Poi si muove con la sua data.
+export const DA_DOVE = Object.freeze(['chat', 'giochi', 'premi', 'staff']);
+// «dopo»: a fine giornata, N giorni dopo quello in cui si guadagna. «fine»:
+// all'inizio della settimana (lunedi'), del mese, della stagione (aprile,
+// luglio, ottobre, gennaio) o dell'anno dopo. Sempre nel fuso del canale, e
+// sempre a mezzanotte: due monete che scadono lo stesso giorno sono lo stesso
+// lotto.
+export const DURATE = Object.freeze(['mai', 'sett', 'mese', 'tre', 'anno', 'fine-sett', 'fine-mese', 'fine-stagione', 'fine-anno']);
+const GIORNI = { sett: 7, mese: 30, tre: 91, anno: 365 };
+
+const fusoOk = (fuso) => { try { new Intl.DateTimeFormat('en-US', { timeZone: fuso }); return fuso; } catch { return 'UTC'; } };
+function partiIn(ora, fuso) {
+  const f = new Intl.DateTimeFormat('en-US', { timeZone: fuso, year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric', hourCycle: 'h23' });
+  const p = {};
+  for (const x of f.formatToParts(new Date(ora))) if (x.type !== 'literal') p[x.type] = Number(x.value);
+  return p;
+}
+// L'istante in cui, nel fuso, scocca la mezzanotte del giorno a-m-g (anche un
+// mese 13 o un giorno 32: si normalizzano da soli). Due passi bastano anche
+// nelle notti in cui cambia l'ora.
+function mezzanotte(a, m, g, fuso) {
+  const voluto = Date.UTC(a, m - 1, g);
+  let t = voluto;
+  for (let i = 0; i < 2; i++) {
+    const p = partiIn(t, fuso);
+    t -= Date.UTC(p.year, p.month - 1, p.day, p.hour, p.minute, p.second) - voluto;
+  }
+  return t;
+}
+
+// Quando scade una moneta che nasce adesso con questa durata: un istante, o 0
+// se non scade.
+export function scadenza(durata, ora = Date.now(), fuso = 'Europe/Rome') {
+  if (!DURATE.includes(durata) || durata === 'mai') return 0;
+  const z = fusoOk(fuso);
+  const p = partiIn(ora, z);
+  if (GIORNI[durata]) return mezzanotte(p.year, p.month, p.day + GIORNI[durata] + 1, z);
+  if (durata === 'fine-sett') {
+    const dow = new Date(Date.UTC(p.year, p.month - 1, p.day)).getUTCDay();
+    return mezzanotte(p.year, p.month, p.day + (((8 - dow) % 7) || 7), z);
+  }
+  if (durata === 'fine-mese') return mezzanotte(p.year, p.month + 1, 1, z);
+  if (durata === 'fine-stagione') return mezzanotte(p.year, (Math.floor((p.month - 1) / 3) + 1) * 3 + 1, 1, z);
+  return mezzanotte(p.year + 1, 1, 1, z);
+}
+
+// Il giorno di adesso nel fuso del canale, «AAAA-MM-GG».
+export function giornoIn(ora = Date.now(), fuso = 'Europe/Rome') {
+  const p = partiIn(ora, fusoOk(fuso));
+  return `${p.year}-${String(p.month).padStart(2, '0')}-${String(p.day).padStart(2, '0')}`;
+}
+
+// L'ultimo giorno in cui vale una moneta che scade all'istante `scade` (una
+// mezzanotte nel fuso): fra quanti giorni da oggi, e che giorno e'.
+export function ultimoGiorno(scade, ora = Date.now(), fuso = 'Europe/Rome') {
+  const z = fusoOk(fuso);
+  const u = partiIn(scade - 1, z);
+  const o = partiIn(ora, z);
+  const giorno = Date.UTC(u.year, u.month - 1, u.day);
+  return {
+    fra: Math.round((giorno - Date.UTC(o.year, o.month - 1, o.day)) / 86_400_000),
+    anno: u.year, mese: u.month, giorno: u.day, settimana: new Date(giorno).getUTCDay(), annoOggi: o.year,
   };
 }
 

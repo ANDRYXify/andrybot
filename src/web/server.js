@@ -6264,6 +6264,20 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
   // L'ORA DOPPIA dal pannello (docs/ECONOMIA.md): la stessa del comando !doppio.
   // I conti di una diretta il pannello li fa da se', con /js/economia-regole.js.
   app.get('/api/monete/doppio', requireOwner, (req, res) => res.json({ doppio: economia.doppio(currentUser(req).login) }));
+  // QUANTO DURANO (docs/ECONOMIA.md): le monete del canale che non scadono, e
+  // il fuso in cui il pannello mostra quando scadrebbe una moneta di adesso.
+  app.get('/api/monete/durata', requireOwner, (req, res) => {
+    const login = currentUser(req).login;
+    res.json({ senzaScadenza: economia.senzaScadenza(login), fuso: preferenze.preferenzeDi(login).fuso });
+  });
+  // Una scadenza anche alle monete che non ne hanno: lo decide lo streamer, e
+  // non si torna indietro. La data la calcola il server, nel fuso del canale.
+  app.post('/api/monete/scadenza-vecchie', requireOwner, (req, res) => {
+    const login = currentUser(req).login;
+    const r = economia.scadenzaAlleVecchie(login, req.body?.durata);
+    if (!r) return res.status(400).json({ errore: 'Scegli quando devono scadere.' });
+    res.json(r);
+  });
   app.post('/api/monete/doppio', requireOwner, (req, res) => {
     const login = currentUser(req).login;
     const b = req.body || {};
@@ -8905,7 +8919,7 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     if (vista.punti?.voci?.length) {
       if (!proprietario) punti = { negati: true };
       else {
-        punti = points.importa(login, vista.punti.voci.map((v) => ({ utente: v.utente, monete: v.monete })));
+        punti = economia.importa(login, vista.punti.voci.map((v) => ({ utente: v.utente, monete: v.monete })));
         log.info(`#${login}: punti importati — ${punti.nuovi} nuovi, ${punti.aggiornati} aggiornati, cambio ${vista.punti.tasso}`);
       }
     }
@@ -9197,7 +9211,8 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     const delta = Math.round(Number(req.body?.delta));
     if (!Number.isFinite(delta) || delta === 0) return res.status(400).json({ errore: 'Scrivi quante monete dare (o togliere, con il meno).' });
     const q = Math.max(-1_000_000, Math.min(1_000_000, delta));
-    const saldo = points.add(login, utente, q);
+    // quello che lo staff da' a mano nasce «dallo staff», con la sua durata
+    const saldo = q > 0 ? economia.dai(login, utente, q, 'staff') : (economia.togli(login, utente, -q), points.get(login, utente));
     log.info(`#${login}: monete aggiustate a mano — ${utente} ${q > 0 ? '+' : ''}${q} → ${saldo}`);
     res.json({ ok: true, utente, saldo });
   }));

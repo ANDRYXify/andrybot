@@ -59,13 +59,13 @@ export function gesto(tipo, channel, msg, args, say, { inChat }) {
   const nome = msg.display || msg.user;
   const chi = pulito(args[0]);
   if (aspetta(channel, tipo, msg, say)) return;
-  if (!chi) { say(riempi(scegli(c.tutti), { a: nome })); giocato(channel, tipo, io); return; }
+  if (!chi) { say(riempi(scegli(c.tutti), { a: nome })); giocato(channel, tipo, msg); return; }
   if (!/^[a-z0-9_]{2,25}$/.test(chi)) { say(`«${chi}» non è un nome valido.`); return; }
   if (chi === io) { say(riempi(DA_SOLI[tipo], { a: nome })); return; }
   if (!inChat(channel, chi)) { say(`@${chi} non è in chat adesso.`); return; }
   if (nonNeVuole(channel, chi)) { say(`@${chi} preferisce niente coccole, ma apprezza il pensiero.`); return; }
   say(riempi(scegli(c.frasi), { a: nome, b: chi }));
-  giocato(channel, tipo, io);
+  giocato(channel, tipo, msg);
 }
 
 // ── il batti il cinque ────────────────────────────────────────────────────
@@ -119,7 +119,7 @@ export function cinque(channel, msg, args, say, { inChat, caso = Math.random }) 
   if (bersaglio && nonNeVuole(channel, bersaglio)) { say(`@${bersaglio} preferisce niente coccole, ma apprezza il pensiero.`); return; }
   if (aperte.has(io)) { say(`✋ ${nome}, hai già la mano alzata.`); return; }
   if (aspetta(channel, 'cinque', msg, say)) return;
-  giocato(channel, 'cinque', io);
+  giocato(channel, 'cinque', msg);
   const timer = setTimeout(() => {
     const m = abbassa(channel, io);
     if (m) { try { say(riempi(scegli(c.frasiSospeso), { a: m.nome })); } catch { /* niente */ } }

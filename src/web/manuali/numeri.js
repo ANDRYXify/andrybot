@@ -35,8 +35,11 @@ export const ATTESA = (s) => (s >= 60 && s % 60 === 0 ? `${s / 60} min` : `${s}s
 const TIPO_PARAM = { monete: 'monete', secondi: 'secondi', percento: 'su 100' };
 export function righeRegole() {
   const righe = [['Gioco', 'Impostazione', 'Di base', 'Limiti']];
+  // chi insiste: le stesse due regole in ogni gioco che le ha, dette una volta
+  const insistere = new Map();
   for (const g of CATALOGO) {
     for (const p of g.param) {
+      if (p.insistere) { insistere.set(p.k, p); continue; }
       const base = p.tipo === 'elenco' ? `${quante(p.def.length, 'frase', 'frasi')} di serie`
         : p.tipo === 'tabella' ? `${quante(p.def.length, 'riga', 'righe')} di serie`
           : p.tipo === 'scelta' ? p.scelte.find(([k]) => k === p.def)[1][0]
@@ -47,6 +50,10 @@ export function righeRegole() {
           : `${CIFRA(p.min)}–${CIFRA(p.max)}`;
       righe.push([g.nome[0], p.eti[0], base, limiti]);
     }
+  }
+  const senza = CATALOGO.filter((g) => !g.param.some((p) => p.insistere)).map((g) => `«${g.nome[0]}»`);
+  for (const p of insistere.values()) {
+    righe.push([`Ogni gioco${senza.length ? `, tranne ${senza.join(', ')}` : ''}`, p.eti[0], `${CIFRA(p.def)} ${TIPO_PARAM[p.tipo] || ''}`.trim(), `${CIFRA(p.min)}–${CIFRA(p.max)}`]);
   }
   return righe;
 }

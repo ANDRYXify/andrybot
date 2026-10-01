@@ -140,14 +140,14 @@ test('le regole si fermano all\'apertura: cambiarle a partita aperta non cambia 
 
 test('annullata con meno di due: l\'ingresso torna indietro, niente premi', () => {
   canale('ar4', { iscrizioni: 15, costo: 30 });
-  points.add('ar4', 'anna', 100);
+  points.dai('ar4', 'anna', 100);
   const s = scena('ar4');
   AR.apri('ar4', s.say);
   assert.match(s.detti[0], /L'ingresso costa 30 monete\./);
   s.scrivi('anna', 'eccomi');
   s.scrivi('anna', 'di nuovo');
   assert.equal(points.get('ar4', 'anna'), 70, 'pagato una volta, anche scrivendo due volte');
-  assert.deepEqual(statoVivo.leggi('ar4', 'arena-quote'), { anna: 30 }, 'la quota e\' scritta dove sopravvive a un riavvio');
+  assert.deepEqual(statoVivo.leggi('ar4', 'arena-quote'), { anna: { q: 30, ricevuta: [{ scade: 0, quanti: 30 }] } }, 'la quota e\' scritta dove sopravvive a un riavvio, coi suoi lotti');
   s.orologio.avanza(15_000);
   assert.equal(points.get('ar4', 'anna'), 100, 'tornato tutto');
   assert.equal(statoVivo.leggi('ar4', 'arena-quote'), null);
@@ -163,7 +163,7 @@ test('annullata con meno di due: l\'ingresso torna indietro, niente premi', () =
 
 test('«!arena ferma» annulla anche a battaglia in corso, e rende l\'ingresso', () => {
   canale('ar5', { iscrizioni: 15, costo: 10, premioVincitore: 500 });
-  for (const u of ['anna', 'bruno']) points.add('ar5', u, 50);
+  for (const u of ['anna', 'bruno']) points.dai('ar5', u, 50);
   const s = scena('ar5');
   AR.apri('ar5', s.say);
   s.scrivi('anna'); s.scrivi('bruno');
@@ -181,7 +181,7 @@ test('«!arena ferma» annulla anche a battaglia in corso, e rende l\'ingresso',
 
 test('un riavvio a iscrizioni aperte non si porta via l\'ingresso', () => {
   statoVivo.scrivi('ar6', 'arena-quote', { anna: 25, bruno: 25 });
-  points.add('ar6', 'anna', 5);
+  points.dai('ar6', 'anna', 5);
   const rese = AR.rimborsaDopoRiavvio().filter((r) => r.channel === 'ar6');
   assert.deepEqual(rese, [{ channel: 'ar6', chi: ['anna', 'bruno'] }]);
   assert.equal(points.get('ar6', 'anna'), 30);
@@ -247,8 +247,8 @@ test('la probabilita\': una estrazione a persona, non a messaggio', () => {
 
 test('l\'ingresso a pagamento: chi non ha le monete resta fuori, chi le ha paga una volta', () => {
   canale('ar11', { iscrizioni: 30, costo: 20, ingresso: 'comando' });
-  points.add('ar11', 'anna', 20);
-  points.add('ar11', 'bruno', 19);
+  points.dai('ar11', 'anna', 20);
+  points.dai('ar11', 'bruno', 19);
   const s = scena('ar11');
   AR.apri('ar11', s.say);
   const cmd = (user) => AR.combatti('ar11', { channel: 'ar11', user, display: user, text: '!combatti' }, s.say);

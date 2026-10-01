@@ -241,6 +241,56 @@ stesso ritmo. Chi aveva scelto l'attesa unica la ritrova al posto giusto
 La carta dei comandi mostra le attese scelte nelle regole (il registro dice di
 quale gioco è ogni comando, `gioco`), non più un numero suo.
 
+## Chi insiste aspetta di più
+
+Chiesto così: «penalità se si spammano certi giochi, con un avviso progressivo come quello
+di un telefono bloccato per troppi tentativi: la prima volta l'attesa cresce di tot (per quella
+persona, per quella diretta), poi del doppio, poi ancora del doppio, fino a fine diretta se non
+si regola».
+
+**Cos'è insistere.** Scrivere il comando di un gioco mentre per te quel gioco è in attesa (la tua,
+quella di tutti, o quella che ti sei guadagnato insistendo). È l'unico momento in cui il bot lo
+sa con certezza: chi aspetta e poi gioca non ha insistito, qualunque sia il suo ritmo.
+
+**Quanto cresce.** Lo streamer sceglie, gioco per gioco, il `tot` (in secondi; 0 = niente, ed è
+così di partenza: un canale che non tocca niente non cambia). La prima volta che insisti la tua
+attesa cresce di `tot`, la seconda di `2·tot`, la terza di `4·tot`: dopo `n` volte hai aspettato
+`tot·(2ⁿ−1)` in più, cioè tot, poi tot più il doppio, poi tot più il doppio più il doppio
+ancora. Dopo `insistiMax` volte (di partenza 5; 0 = mai) il gioco per te è chiuso fino alla fine
+della diretta. È la regola del telefono bloccato: ogni tentativo a vuoto costa più del precedente.
+
+**Per quella persona, per quella diretta.** Il castigo è di una persona su un gioco, e vale per
+la diretta (a canale spento, per la giornata del canale, nel suo fuso). La diretta dopo si riparte
+da zero. La chiave della diretta è una sola, quella dell'economia (`economia.momento`): la stessa
+che usa il tetto «a diretta».
+
+**Chi si regola torna indietro.** Ogni partita giocata dopo aver aspettato senza insistere
+abbassa il castigo di un gradino. Chi insiste una volta e poi gioca tranquillo per il resto della
+serata non si porta dietro il conto fino alla fine.
+
+**Chi guarda lo sa.** Ogni volta che il castigo cresce il bot lo dice, con l'attesa nuova e con
+l'avviso che insistendo cresce ancora; quando il gioco si chiude fino a fine diretta lo dice una
+volta, e poi tace. Le frasi sono nella voce del canale (`gioco-insisti`, `gioco-basta`), in tre
+lingue e tre toni, e lo streamer le può cambiare. Le righe del bot sono al massimo una per gradino:
+il castigo non diventa uno spam del bot.
+
+**Chi non c'entra.** Lo staff (apre le partite per tutti), i comandi a raffica (`!colpisci`, che
+per costruzione non è insistere), e chi non ha ancora scritto i messaggi per giocare (quello è
+«per giocare bisogna esserci», docs/ECONOMIA.md, e lì il bot già tace dopo averlo detto).
+
+**Un riavvio non lo azzera e non lo regala.** Il castigo sta nel database (`statoVivo`, una voce
+per canale), con la diretta a cui appartiene: un castigo di una diretta passata non vale.
+
+Le regole stanno nel catalogo, accanto alle due attese di ogni gioco (`insisti`, `insistiMax`), e
+quindi nella carta delle regole di ogni gioco nel pannello. Il boss no: il suo comando è
+`!colpisci`, che si scrive a raffica per costruzione.
+
+Le prove (`test/unita/insistere.test.mjs`): la sequenza tot, 3·tot, 7·tot; la chiusura dopo
+`insistiMax` e la riapertura alla diretta dopo; chi aspetta e gioca non paga; una partita
+tranquilla abbassa di un gradino; lo staff e `!colpisci` mai; il castigo sopravvive a un
+riavvio; un gioco con `tot` a zero non castiga. Mutazioni: raddoppio tolto, castigo che non si
+azzera alla diretta dopo, gradino che non scende.
+
 ## Il colpo di gruppo e il boss
 
 Due giochi collettivi, uno a pagamento e uno gratis, costruiti sulle stesse due

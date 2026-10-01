@@ -24,7 +24,7 @@ const T0 = Date.parse('2026-09-23T21:00:00Z');
 function canale(ch, settings = {}, monete = {}) {
   streamers.upsertApproved(ch, ch);
   streamers.setSettings(ch, settings);
-  for (const [u, n] of Object.entries(monete)) points.add(ch, u, n);
+  for (const [u, n] of Object.entries(monete)) points.dai(ch, u, n);
   for (const u of ['anna', 'bruno', 'carla', 'dario']) games.segnaPresenza(ch, u);
 }
 function scena(ch) {

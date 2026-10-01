@@ -23,13 +23,13 @@ const nomi = (v) => v.map((x) => x.display);
 const CH = 'canale';
 
 test('il ruolo non si perde fra un accredito e l\'altro', () => {
-  points.add(CH, 'tizio', 10);
-  points.add(CH, 'capo', 10, 'staff');
-  points.add(CH, 'capo', 5);                       // accredito che non sa nulla del ruolo
+  points.dai(CH, 'tizio', 10);
+  points.dai(CH, 'capo', 10, { ruolo: 'staff' });
+  points.dai(CH, 'capo', 5);                       // accredito che non sa nulla del ruolo
   assert.equal(points.ruoloDi(CH, 'capo'), 'staff');
-  points.add(CH, 'capo', 1, '');                   // qui invece lo sappiamo: e' tornato pubblico
+  points.dai(CH, 'capo', 1, { ruolo: '' });                   // qui invece lo sappiamo: e' tornato pubblico
   assert.equal(points.ruoloDi(CH, 'capo'), '');
-  points.add(CH, 'capo', 1, 'staff');
+  points.dai(CH, 'capo', 1, { ruolo: 'staff' });
 });
 
 test('due gare separate, e una vista che le unisce', () => {
@@ -40,7 +40,7 @@ test('due gare separate, e una vista che le unisce', () => {
 
 test('i canali di prima restano nella classifica del pubblico', () => {
   // righe scritte quando la colonna non esisteva: ruolo vuoto = pubblico
-  points.add(CH, 'vecchioutente', 999);
+  points.dai(CH, 'vecchioutente', 999);
   assert.ok(points.top(CH, 10).some((r) => r.user === 'vecchioutente'));
 });
 
@@ -62,9 +62,9 @@ function finto({ vipDelCanale = [], rifiuta = new Set() } = {}) {
 
 test('il premio non pesca dallo staff: Twitch lo rifiuterebbe', async () => {
   const ch = 'c2';
-  points.add(ch, 'capo', 10000, 'staff');
-  points.add(ch, 'anna', 500);
-  points.add(ch, 'bruno', 400);
+  points.dai(ch, 'capo', 10000, { ruolo: 'staff' });
+  points.dai(ch, 'anna', 500);
+  points.dai(ch, 'bruno', 400);
   const h = finto({ rifiuta: new Set(['capo']) });
   const v = await vip.premiaTopMonete(h, ch, gara(2), null);
   assert.deepEqual(nomi(v), ['anna', 'bruno']);
@@ -73,10 +73,10 @@ test('il premio non pesca dallo staff: Twitch lo rifiuterebbe', async () => {
 
 test('chi ha gia\' il VIP per sempre viene saltato, e il premio SCORRE', async () => {
   const ch = 'c3';
-  points.add(ch, 'anna', 900);      // ce l'ha per sempre, dato da noi
-  points.add(ch, 'bruno', 800);     // ce l'ha per sempre, dato dallo streamer su Twitch
-  points.add(ch, 'carla', 700);
-  points.add(ch, 'dario', 600);
+  points.dai(ch, 'anna', 900);      // ce l'ha per sempre, dato da noi
+  points.dai(ch, 'bruno', 800);     // ce l'ha per sempre, dato dallo streamer su Twitch
+  points.dai(ch, 'carla', 700);
+  points.dai(ch, 'dario', 600);
   vips.set(ch, { user: 'anna', userId: 'id_anna', display: 'anna', until: 0, motivo: 'sempre' });
   const h = finto({ vipDelCanale: ['bruno'] });
   const v = await vip.premiaTopMonete(h, ch, gara(2), null);
@@ -85,7 +85,7 @@ test('chi ha gia\' il VIP per sempre viene saltato, e il premio SCORRE', async (
 
 test('un VIP perenne non viene mai accorciato (il premio lo revocherebbe)', async () => {
   const ch = 'c4';
-  points.add(ch, 'anna', 900);
+  points.dai(ch, 'anna', 900);
   vips.set(ch, { user: 'anna', userId: 'id_anna', display: 'anna', until: 0, motivo: 'sempre' });
   const h = finto();
   await vip.premiaTopMonete(h, ch, gara(1), null);
@@ -95,7 +95,7 @@ test('un VIP perenne non viene mai accorciato (il premio lo revocherebbe)', asyn
 
 test('un VIP A TEMPO ancora in corso non si salta: il premio lo rifa\' a dirette', async () => {
   const ch = 'c5';
-  points.add(ch, 'anna', 900);
+  points.dai(ch, 'anna', 900);
   const scadenzaVecchia = Date.now() + 3600_000;
   vips.set(ch, { user: 'anna', userId: 'id_anna', display: 'anna', until: scadenzaVecchia, motivo: 'quiz' });
   const h = finto();
@@ -107,8 +107,8 @@ test('un VIP A TEMPO ancora in corso non si salta: il premio lo rifa\' a dirette
 
 test('chi vuole premiare comunque puo\' spegnere il salto', async () => {
   const ch = 'c6';
-  points.add(ch, 'anna', 900);
-  points.add(ch, 'bruno', 800);
+  points.dai(ch, 'anna', 900);
+  points.dai(ch, 'bruno', 800);
   const h = finto({ vipDelCanale: ['anna'] });
   const v = await vip.premiaTopMonete(h, ch, gara(1, 3, { saltaPerenni: false }), null);
   assert.deepEqual(nomi(v), ['anna']);
@@ -119,7 +119,7 @@ test('chi vuole premiare comunque puo\' spegnere il salto', async () => {
 // sempre non deve uscirne con una scadenza addosso.
 test('premiando comunque, il VIP del CANALE non si trasforma in uno a tempo', async () => {
   const ch = 'c8';
-  points.add(ch, 'anna', 900);
+  points.dai(ch, 'anna', 900);
   const h = finto({ vipDelCanale: ['anna'] });   // VIP dato dallo streamer, non da noi
   await vip.premiaTopMonete(h, ch, gara(1, 3, { saltaPerenni: false }), null);
   assert.equal(vips.get(ch, 'anna')?.until ?? 0, 0, 'nessuna scadenza su un VIP che non ne aveva');
@@ -127,7 +127,7 @@ test('premiando comunque, il VIP del CANALE non si trasforma in uno a tempo', as
 
 test('premiando comunque, il VIP perenne NOSTRO resta perenne', async () => {
   const ch = 'c9';
-  points.add(ch, 'anna', 900);
+  points.dai(ch, 'anna', 900);
   vips.set(ch, { user: 'anna', userId: 'id_anna', display: 'anna', until: 0, motivo: 'sempre' });
   const h = finto();
   await vip.premiaTopMonete(h, ch, gara(1, 3, { saltaPerenni: false }), null);
@@ -136,7 +136,7 @@ test('premiando comunque, il VIP perenne NOSTRO resta perenne', async () => {
 
 test('se non c\'e\' abbastanza gente si danno i premi che si possono', async () => {
   const ch = 'c7';
-  points.add(ch, 'anna', 900);
+  points.dai(ch, 'anna', 900);
   const h = finto();
   const v = await vip.premiaTopMonete(h, ch, gara(5), null);
   assert.deepEqual(nomi(v), ['anna']);

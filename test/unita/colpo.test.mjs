@@ -23,7 +23,7 @@ const T0 = Date.parse('2026-09-23T21:00:00Z');
 function canale(ch, colpo = {}, monete = {}) {
   streamers.upsertApproved(ch, ch);
   streamers.setSettings(ch, { giochiConf: { colpo } });
-  for (const [u, n] of Object.entries(monete)) points.add(ch, u, n);
+  for (const [u, n] of Object.entries(monete)) points.dai(ch, u, n);
 }
 function scena(ch) {
   const detti = [];
@@ -103,7 +103,7 @@ test('chi non ha piu\' la posta quando si parte resta fuori; troppo pochi e il c
   s.scrivi('anna', '!colpo 100');
   s.scrivi('bruno', '!colpo 100');
   s.scrivi('carla', '!colpo 100');
-  points.add('k2', 'carla', -50);
+  points.togli('k2', 'carla', 50);
   t.mock.timers.tick(60_000);
   assert.match(s.detti.at(-1), /anna −100, bruno −100\. Una persona resta fuori: non ha più la sua posta\.$/);
   assert.deepEqual(['anna', 'bruno', 'carla'].map((u) => points.get('k2', u)), [0, 0, 50]);

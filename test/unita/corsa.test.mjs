@@ -32,7 +32,7 @@ const vince = (i) => () => [0, 5, 9, 12, 14][i] / 15;
 function canale(ch, corsa = {}, monete = {}) {
   streamers.upsertApproved(ch, ch);
   streamers.setSettings(ch, { giochiConf: { corsa } });
-  for (const [u, n] of Object.entries(monete)) points.add(ch, u, n);
+  for (const [u, n] of Object.entries(monete)) points.dai(ch, u, n);
 }
 function scena(ch) {
   const detti = [];

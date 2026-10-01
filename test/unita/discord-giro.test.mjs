@@ -163,7 +163,7 @@ test('se Discord chiede una lunga attesa, il giro si ferma invece di insistere',
 });
 
 test('quello che sappiamo di una persona viene da casa nostra, e lo zero e\' un numero vero', () => {
-  points.add('dati', 'ludo', 250);
+  points.dai('dati', 'ludo', 250);
   watchtime.add('dati', 'ludo', 3 * 3600 + 1800, '');
   presenze.set('dati', 'ludo', { serie: 4, dirette: 11 });
   const d = datiDi('dati', 'LUDO', { mod: new Set(['ludo']) });

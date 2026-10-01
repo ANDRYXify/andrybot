@@ -118,7 +118,8 @@ test('la multa la paga solo chi ha giocato, fino a quanto ha, a chi gliel\'ha pa
   t.mock.timers.tick(10_000);
   assert.equal(s.detti.at(-1), '💥 BOOM! La patata scoppia fra le mani di bruno, dopo un passaggio.', 'bruno non l\'aveva mai toccata: si brucia e basta');
   assert.deepEqual(saldo(), prima);
-  points.add('p6', 'bruno', 30 - points.get('p6', 'bruno'));
+  points.togli('p6', 'bruno', 1_000_000);
+  points.dai('p6', 'bruno', 30);
   s.scrivi('anna', '!patata');
   s.scrivi('anna', '!passa @bruno');
   s.scrivi('bruno', '!passa @carla');

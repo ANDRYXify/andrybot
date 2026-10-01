@@ -1,0 +1,165 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
+// CHI INSISTE ASPETTA DI PIU' (src/features/attese-giochi.js, docs/GIOCHI.md).
+//
+// Le promesse:
+//  · chi riscrive il comando durante la sua attesa aspetta tot in piu', poi il
+//    doppio, poi il doppio ancora: dopo n volte tot·(2ⁿ−1);
+//  · dopo `insistiMax` volte il gioco per lui e' chiuso fino a fine diretta, lo
+//    si dice una volta, e alla diretta dopo si riparte da zero;
+//  · chi aspetta e gioca non paga niente; una partita tranquilla abbassa il
+//    castigo di un gradino;
+//  · lo staff mai; un gioco con tot a zero non castiga;
+//  · il castigo sopravvive a un riavvio, e una partita annullata lo rimette
+//    com'era;
+//  · il tempo si dice nella lingua della chat; a canale spento la giornata e'
+//    quella del canale.
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { cartellaUsaEGetta } from '../aiuto.mjs';
+
+const casa = cartellaUsaEGetta('insistere-');
+const { streamers, points, statoVivo } = await import('../../src/db.js');
+const games = await import('../../src/features/games.js');
+const A = await import('../../src/features/attese-giochi.js');
+const E = await import('../../src/features/economia.js');
+test.after(() => casa.pulisci());
+
+const T0 = Date.parse('2026-10-01T18:00:00Z');
+let n = 0;
+function tavolo(slot = { insisti: 30, insistiMax: 4 }, altro = {}) {
+  const ch = `insisti${++n}`;
+  streamers.upsertApproved(ch, ch, String(7000 + n));
+  streamers.setEnabled(ch, true);
+  streamers.setSettings(ch, { giochiConf: { slot }, ...altro });
+  points.dai(ch, 'anna', 100000);
+  points.dai(ch, 'bruno', 100000);
+  for (const u of ['anna', 'bruno']) games.segnaPresenza(ch, u);
+  statoVivo.scrivi(ch, 'economia', { diretta: 'prima', ts: Date.now() });
+  const detti = [];
+  const scrivi = (user, text = '!slot', extra = {}) => games.tryGame({ channel: ch, user, text, ...extra }, (x) => detti.push(x));
+  return { ch, detti, scrivi };
+}
+const restaS = (ch, chi = 'anna') => Math.round((A.resta(ch, 'slot', chi)?.ms ?? 0) / 1000);
+
+test('chi insiste aspetta tot, poi tot più il doppio, poi più il doppio ancora', (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout', 'Date'], now: T0 });
+  const s = tavolo();
+  s.scrivi('anna');
+  assert.match(s.detti.at(-1), /🎰/);
+  assert.equal(restaS(s.ch), 5, 'l\'attesa della slot');
+  s.scrivi('anna');
+  assert.equal(restaS(s.ch), 5 + 30);
+  assert.match(s.detti.at(-1), /anna/);
+  assert.match(s.detti.at(-1), /35 secondi/, 'dice l\'attesa nuova');
+  s.scrivi('anna');
+  assert.equal(restaS(s.ch), 5 + 30 + 60);
+  s.scrivi('anna');
+  assert.equal(restaS(s.ch), 5 + 30 + 60 + 120, 'dopo tre volte, 7 volte tot');
+  assert.match(s.detti.at(-1), /4 minuti/);
+  assert.equal(s.detti.length, 4, 'una riga per gradino');
+});
+
+test('dopo insistiMax volte basta fino a fine diretta, lo si dice una volta, e la diretta dopo si riparte', (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout', 'Date'], now: T0 });
+  const s = tavolo();
+  s.scrivi('anna');
+  for (let i = 0; i < 4; i++) s.scrivi('anna');
+  assert.match(s.detti.at(-1), /!slot/);
+  assert.match(s.detti.at(-1), /fino alla fine della diretta/);
+  assert.equal(A.resta(s.ch, 'slot', 'anna').basta, true);
+  const k = s.detti.length;
+  t.mock.timers.tick(6 * 3600_000);
+  statoVivo.scrivi(s.ch, 'economia', { diretta: 'prima', ts: Date.now() });
+  s.scrivi('anna');
+  s.scrivi('anna');
+  assert.equal(s.detti.length, k, 'chiuso, e il bot tace');
+  statoVivo.scrivi(s.ch, 'economia', { diretta: 'dopo', ts: Date.now() });
+  s.scrivi('anna');
+  assert.match(s.detti.at(-1), /🎰/, 'la diretta dopo si gioca');
+  s.scrivi('anna');
+  assert.equal(restaS(s.ch), 5 + 30, 'e il castigo riparte da tot');
+});
+
+test('a canale spento basta fino a domani, e domani si riparte', (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout', 'Date'], now: Date.parse('2026-10-01T20:00:00Z') });
+  const s = tavolo({ insisti: 30, insistiMax: 1 });
+  statoVivo.togli(s.ch, 'economia');
+  s.scrivi('anna');
+  s.scrivi('anna');
+  assert.match(s.detti.at(-1), /fino a domani/);
+  t.mock.timers.tick(3 * 3600_000 + 60_000);   // le 23:01 UTC: a Roma e' gia' domani
+  assert.equal(E.momento(s.ch).chiave, 'f:2026-10-02');
+  s.scrivi('anna');
+  assert.match(s.detti.at(-1), /🎰/);
+});
+
+test('chi aspetta e gioca non paga niente; una partita tranquilla abbassa di un gradino', (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout', 'Date'], now: T0 });
+  const s = tavolo();
+  s.scrivi('anna');
+  t.mock.timers.tick(5000);
+  s.scrivi('anna');
+  assert.equal(restaS(s.ch), 5, 'nessun castigo per chi ha aspettato');
+  s.scrivi('anna');
+  s.scrivi('anna');
+  assert.equal(restaS(s.ch), 5 + 30 + 60, 'gradino 2');
+  t.mock.timers.tick(95_000);
+  s.scrivi('anna');                       // aspettato, ma aveva insistito in questa attesa: resta al 2
+  t.mock.timers.tick(5000);
+  s.scrivi('anna');                       // tranquilla: scende al gradino 1
+  s.scrivi('anna');
+  assert.equal(restaS(s.ch), 5 + 60, 'dal gradino 1 il passo dopo e\' il doppio di tot');
+});
+
+test('lo staff non e\' mai castigato, e un gioco con tot a zero non castiga', (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout', 'Date'], now: T0 });
+  const s = tavolo();
+  s.scrivi('bruno', '!slot', { isMod: true });
+  s.scrivi('bruno', '!slot', { isMod: true });
+  s.scrivi('bruno', '!slot', { isMod: true });
+  assert.equal(restaS(s.ch, 'bruno'), 5);
+  const z = tavolo({ insisti: 0 });
+  z.scrivi('anna');
+  z.scrivi('anna');
+  z.scrivi('anna');
+  assert.equal(restaS(z.ch), 5);
+  assert.equal(z.detti.at(-1), '⏳ anna, !slot di nuovo fra 5 secondi.', 'la solita attesa, detta una volta');
+  assert.equal(z.detti.length, 2);
+});
+
+test('il castigo sopravvive a un riavvio', async (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout', 'Date'], now: T0 });
+  const s = tavolo();
+  s.scrivi('anna');
+  s.scrivi('anna');
+  s.scrivi('anna');
+  const dopo = await import('../../src/features/attese-giochi.js?riavvio=1');
+  assert.equal(Math.round(dopo.resta(s.ch, 'slot', 'anna').ms / 1000), 5 + 30 + 60, 'il bot riacceso lo ritrova');
+});
+
+test('una partita annullata rimette il castigo com\'era', (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout', 'Date'], now: T0 });
+  const s = tavolo();
+  s.scrivi('anna');
+  s.scrivi('anna');
+  t.mock.timers.tick(35_000);
+  const prima = statoVivo.leggi(s.ch, 'giochi-insistenze');
+  A.giocato(s.ch, 'slot', { channel: s.ch, user: 'anna' }).annulla();
+  assert.deepEqual(statoVivo.leggi(s.ch, 'giochi-insistenze'), prima);
+});
+
+test('il tempo si dice nella lingua della chat', (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout', 'Date'], now: T0 });
+  const s = tavolo({ insisti: 30, insistiMax: 4 }, { preferenze: { lingua: 'en' } });
+  s.scrivi('anna');
+  s.scrivi('anna');
+  assert.match(s.detti.at(-1), /35 seconds/);
+  assert.deepEqual(['it', 'en', 'es'].map((l) => A.tempoIn(l, 1000)), ['1 secondo', '1 second', '1 segundo']);
+  assert.equal(A.tempoIn('it', 59_000), '59 secondi');
+  assert.equal(A.tempoIn('it', 60_000), '1 minuto');
+  assert.equal(A.tempoIn('en', 119 * 60_000), '119 minutes');
+  assert.equal(A.tempoIn('es', 120 * 60_000), '2 horas');
+  assert.equal(A.tempoIn('it', 125 * 60_000), '2 ore e 5 minuti');
+  assert.equal(A.tempoIn('en', 61 * 60_000 * 2), '2 hours and 2 minutes');
+});

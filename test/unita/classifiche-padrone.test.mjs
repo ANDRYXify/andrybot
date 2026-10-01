@@ -27,9 +27,9 @@ test('il nome da lasciar fuori e\' quello con cui scrive in chat', () => {
 });
 
 test('le monete: in classifica ci va il pubblico', () => {
-  points.add(CH, 'andryxify', 5000);
-  points.add(CH, 'terry9221', 1355);
-  points.add(CH, 'chiara_3008', 1278);
+  points.dai(CH, 'andryxify', 5000);
+  points.dai(CH, 'terry9221', 1355);
+  points.dai(CH, 'chiara_3008', 1278);
   const top = points.top(CH, 5).map((r) => r.user);
   assert.ok(!top.includes('andryxify'), 'il padrone non compare');
   assert.deepEqual(top.slice(0, 2), ['terry9221', 'chiara_3008']);

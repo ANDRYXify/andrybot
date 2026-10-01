@@ -91,7 +91,7 @@ test('la crescita automatica si spegne tutta insieme, e i giochi restano', () =>
   assert.equal(E.messaggio({ channel: c, user: 'lucia', text: 'eccomi qui' }).dato, 0);
   assert.equal(E.riceve(c, 'lucia', 30, { fonte: 'serie' }), 0);
   assert.equal(points.get(c, 'lucia'), 0);
-  points.add(c, 'lucia', 100);
+  points.dai(c, 'lucia', 100);
   assert.equal(points.get(c, 'lucia'), 100, 'un gioco o un Modulo danno lo stesso');
 });
 
@@ -141,7 +141,7 @@ test('il tetto per diretta taglia a quello che manca, e una diretta nuova ripart
 test('il saldo massimo ferma le monete automatiche, non le vincite', () => {
   const c = canale({ perPresenza: 30, perAttivita: 0, lurkPasso: 0, saldoMax: 50 });
   assert.deepEqual(giri(c, ['lucia'], 3).map((x) => x.monete), [30, 20, 0]);
-  points.add(c, 'lucia', 500);
+  points.dai(c, 'lucia', 500);
   assert.equal(points.get(c, 'lucia'), 550, 'una vincita va oltre');
   assert.equal(E.giro(c, ['lucia'], { diretta: 'd1', ora: T0 + 3 * GIRO }).monete, 0);
 });
@@ -184,8 +184,8 @@ test('nessuna fonte automatica scrive sul saldo senza passare dalla porta', () =
   for (const f of ['export function accredita(', 'export function giroMonete(']) {
     const i = g.indexOf(f);
     const corpo = g.slice(i, g.indexOf('\n}\n', i));
-    assert.ok(i > 0 && !/points\.add/.test(corpo), `${f} non tocca il saldo`);
+    assert.ok(i > 0 && !/points\.(dai|togli|punta|chiudiPuntata|passa|rendi|economiaScrivi)\(/.test(corpo), `${f} non tocca il saldo`);
   }
-  assert.ok(!/points\.add/.test(leggi('src/features/presenze.js')), 'la serie passa dalla porta');
+  assert.ok(!/points\.(dai|togli|punta|chiudiPuntata|passa|rendi|economiaScrivi)\(/.test(leggi('src/features/presenze.js')), 'la serie passa dalla porta');
   assert.match(leggi('src/web/server.js'), /out\.punti = \{ \.\.\.vecchi, \.\.\.economia\.normalizza\(\{ \.\.\.giaQui, \.\.\.p \}\) \};/, 'il server salva con le regole della porta');
 });

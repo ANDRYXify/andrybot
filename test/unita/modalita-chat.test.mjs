@@ -188,7 +188,7 @@ test('!sblocca: si paga solo se la chat cambia davvero', async () => {
   games.impostaModalita(m);
   const ch = 'mizu9';
   streamers.upsertApproved(ch, ch);
-  points.add(ch, 'ricco', 1000);
+  points.dai(ch, 'ricco', 1000);
   const r = [];
   const scrivi = async (testo, user = 'ricco') => { games.tryGame({ channel: ch, user, text: testo }, (t) => r.push(t)); await new Promise((x) => setImmediate(x)); await new Promise((x) => setImmediate(x)); };
   await scrivi('!sblocca 3');
@@ -203,7 +203,7 @@ test('!sblocca: si paga solo se la chat cambia davvero', async () => {
   games.impostaModalita(w2.nuovo());
   const ch2 = 'mizu10';
   streamers.upsertApproved(ch2, ch2);
-  points.add(ch2, 'ricco', 1000);
+  points.dai(ch2, 'ricco', 1000);
   games.tryGame({ channel: ch2, user: 'ricco', text: '!sblocca 99' }, (t) => r.push(t));
   await new Promise((x) => setImmediate(x)); await new Promise((x) => setImmediate(x));
   assert.equal(points.get(ch2, 'ricco'), 1000, 'gia\' accesa da un mod: non costa niente');

@@ -9,6 +9,7 @@
 //   !sr <canzone o artista>   aggiunge un brano alla coda
 //   !song / !brano            mostra il brano in riproduzione
 import { streamers, points } from '../db.js';
+import * as economia from './economia.js';
 import { canaleHa } from './accesso.js';
 import * as spotify from './spotify.js';
 import { makeLog } from '../logger.js';
@@ -137,7 +138,7 @@ export async function trySongRequest(msg, say) {
           if (saldo < pend.costo) { say(`🎵 ${nome}, ti servono ${pend.costo} monete (ne hai ${saldo}).`); return true; }
         }
         const esito = await accodaUri(channel, scelto, '🎵 In coda: ', eStaff(msg));
-        if (esito.ok && pend.modo === 'monete') points.add(channel, msg.user, -pend.costo);
+        if (esito.ok && pend.modo === 'monete') economia.togli(channel, msg.user, pend.costo);
         say(esito.msg);
         return true;
       }
@@ -176,14 +177,14 @@ export async function trySongRequest(msg, say) {
           return true;
         }
         const esito = await accodaUri(channel, cands[0], '🎵 In coda: ', eStaff(msg));
-        if (esito.ok && cfg.modo === 'monete') points.add(channel, msg.user, -cfg.costo);
+        if (esito.ok && cfg.modo === 'monete') economia.togli(channel, msg.user, cfg.costo);
         say(esito.msg);
         return true;
       }
 
       // disambiguazione spenta: comportamento classico (primo risultato Spotify)
       const esito = await accoda(channel, q, '🎵 In coda: ', eStaff(msg));
-      if (esito.ok && cfg.modo === 'monete') points.add(channel, msg.user, -cfg.costo);
+      if (esito.ok && cfg.modo === 'monete') economia.togli(channel, msg.user, cfg.costo);
       say(esito.msg);
       return true;
     }

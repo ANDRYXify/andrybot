@@ -59,6 +59,7 @@ export default {
       'Accanto al nome vedi quanto rende il gioco con i valori che hai scelto, e cambia mentre li muovi. La scritta diventa rossa quando un gioco a puntata comincia a creare monete, cioè ne restituisce più di 100 ogni 100 giocate, o quando la pesca, il boss o l\'arena automatici rendono più della presenza.',
       `Di serie nessun gioco a puntata crea monete: contro il banco il banco vince un po', la morra è alla pari. Un gioco gratis non rende più della presenza: in un'ora di presenza e partecipazione si prendono ${CIFRA(presenzaOraria({}))} monete, e la pesca al ritmo massimo ne dà ${CIFRA(RESA('pesca').perOra)}.`,
       'Ogni gioco ha due attese. <strong>A testa</strong>: dopo che una persona ha giocato, aspetta lei. <strong>Per tutti</strong>: dopo che qualcuno ha giocato, aspetta tutto il canale. Zero vuol dire nessuna attesa. L\'attesa parte quando si gioca davvero: un comando scritto male non la consuma. Chi la trova se lo sente dire una volta, con quanto manca, poi il bot tace fino alla fine. Per <code>!colpisci</code> tace sempre, perché si scrive a raffica.',
+      '<strong>Chi insiste aspetta di più.</strong> Se nelle regole di un gioco metti un tempo in «Chi insiste durante l\'attesa», chi riscrive il comando mentre per lui il gioco è in attesa aspetta quel tempo in più. La seconda volta il doppio, la terza il doppio ancora: con 30 secondi sono 30, poi 60, poi 120 in più. Dopo le volte che scegli (di base 5) per lui quel gioco è chiuso fino alla fine della diretta, a canale spento fino a domani. Ogni volta il bot gli dice l\'attesa nuova, e quando il gioco si chiude lo dice una volta sola. Chi poi gioca dopo aver aspettato senza insistere scende di un gradino. Vale per una persona su quel gioco, per quella diretta: la diretta dopo si riparte da zero, e un riavvio del bot non lo azzera. Tu e i moderatori non siete mai castigati. Le frasi le trovi nella Personalità, fra quelle dei giochi.',
       'Negli elenchi va una frase per riga. Sotto ogni elenco il pannello scrive quali segnaposto puoi usare, per esempio <code>{a}</code> e <code>{b}</code>. Una riga con un segnaposto che quel gioco non conosce non si salva: dopo il salvataggio sparisce. Nella tabella della pesca ogni riga è <code>nome | monete | rarità</code>. La rarità è un peso da 1 a 1000: 30 esce il doppio di 15.',
       'Un numero fuori dai limiti viene portato al limite più vicino. Un elenco che resterebbe vuoto non si salva: resta quello di prima. Lo stesso per «Nel giro delle manche automatiche»: se togli tutti i tipi, resta la scelta di prima.',
       'Premi «Salva le regole». I valori nuovi valgono dalla giocata successiva, non da quella in corso.',
@@ -114,6 +115,23 @@ export default {
       '<strong>I bot non prendono mai monete</strong>, e non è una scelta: quelli di servizio, quelli che lo scudo conosce e quelli della tua lista «Blocca sempre». Non salgono in classifica e non vincono premi. Lo stesso vale per le ore guardate e le serie di presenze. Se lo scudo prende per bot una persona, mettila fra gli esentati dello scudo e torna a ricevere.',
       '<strong>L\'ora doppia</strong>: per un tempo che scegli, tutto quello che arriva da solo vale due volte (o fino a cinque). La accendi qui con «Accendi l\'ora doppia», o in chat un moderatore scrive <code>!doppio 30</code> per mezz\'ora, <code>!doppio 60 3</code> per un\'ora al triplo, <code>!doppio stop</code> per finire. Salvare le regole non la spegne, e un riavvio non la allunga.',
       'La lista di chi è in chat la dà Twitch a ogni giro: serve il permesso «ore guardate», che vedi nella scheda «Stato».',
+    ] },
+
+    { h3: 'Quanto durano le monete' },
+    { p: [
+      'Nella carta «Punti & classifica», sotto «Quanto durano», scegli per ogni modo di guadagnare quanto valgono le monete: stando in chat, giocando (quello che un gioco dà in più della posta, e i premi), da premi e Moduli, date da te o dallo staff (anche quelle importate da un altro bot). Di base non scadono: se non tocchi niente, non cambia niente.',
+      'Le scelte: non scadono, dopo una settimana, un mese, tre mesi, un anno, oppure a fine settimana, mese, stagione (marzo, giugno, settembre, dicembre) o anno. «Dopo» conta i giorni da quando si guadagnano, «a fine» è la stessa data per tutti. Si scade a mezzanotte, nel fuso del canale. Accanto a ogni scelta il pannello dice fino a quando varrebbe una moneta guadagnata adesso.',
+      'Una moneta prende la sua scadenza quando nasce, e la tiene anche quando passa di mano: puntarla, regalarla o farsela rubare non la allunga. <strong>Si spendono prima quelle che scadono prima</strong>, nel negozio come nei giochi, e una vincita restituisce la posta con le sue date: solo la parte in più nasce «giocando». Un rimborso del negozio rimette proprio le monete che erano state spese.',
+      'Le monete che c\'erano prima non scadono, perché sono state guadagnate con regole che dicevano così. Se vuoi una data anche per quelle, il pannello ti dice quante sono e di quante persone, e con «Fai scadere anche queste» dai a tutte la stessa scadenza. Non si torna indietro.',
+      'In chat <code>!monete</code> dice anche quante ne scadono per prime e quando: «20 scadono domenica». Una moneta scaduta non si spende e non conta in classifica, dallo scoccare della mezzanotte.',
+    ] },
+
+    { h3: 'Per giocare bisogna esserci' },
+    { p: [
+      'Le attese dicono quanto spesso si gioca, non chi gioca. Con «Un gioco ogni quanti messaggi» una partita costa qualche messaggio scritto in chat: chi viene solo per i giochi prima deve parlare con te. A zero la regola è spenta, ed è così di base.',
+      'Valgono i messaggi che contano per le monete (le lettere minime e i messaggi ripetuti li decidi sopra), ma mai i comandi: scrivere <code>!slot</code> non è parlare. Se ne mettono da parte al massimo per i giochi che scegli in «Giochi messi da parte»: chi chiacchiera per un\'ora non si ritrova cento partite pronte.',
+      'Paga chi apre una partita o ci entra: i giochi da solo, le sfide, quelli di tutti insieme e quelli con la webcam. Non costano niente le mosse di una partita già aperta (<code>!accetta</code>, <code>!carta</code>, <code>!passa</code>), il saldo, la classifica, abbracci e cinque. Tu e i moderatori giocate sempre. Si paga quando si gioca davvero: un comando scritto male, o un gioco in attesa, non costano niente.',
+      'Chi non ha abbastanza messaggi se lo sente dire una volta, con quanti ne mancano, e di nuovo solo dopo che ha scritto ancora. La frase la trovi nella Personalità, fra quelle dei giochi. Il conto sta nel database: un riavvio del bot non lo azzera.',
     ] },
 
     { h3: 'Presenze e saluti' },
@@ -274,7 +292,7 @@ export default {
       ['<code>!dado</code>', '<code>!roll</code>', 'Tira un dado. <code>!dado 2d20</code> per tirarne altri.', ATT('dado')],
       ['<code>!moneta</code>', '<code>!coin</code>', 'Testa o croce.', ATT('moneta')],
       ['<code>!8ball</code>', '<code>!palla8</code>', 'Risponde a una domanda. Serve la domanda.', ATT('8ball')],
-      ['<code>!monete</code>', '<code>!punti</code> <code>!bilancio</code>', 'Quante ne hai.', 'nessuna'],
+      ['<code>!monete</code>', '<code>!punti</code> <code>!bilancio</code>', 'Quante ne hai, e se alcune scadono quante e quando.', 'nessuna'],
       ['<code>!doppio 30</code>', '<code>!doppie</code>', 'L\'ora doppia per mezz\'ora: quello che arriva da solo vale di più. <code>!doppio 60 3</code> per un\'ora al triplo, <code>!doppio stop</code> per finire. Solo mod e streamer.', 'nessuna'],
       ['<code>!classifica</code>', '<code>!top</code>', 'I primi del pubblico, e dove sei tu.', 'nessuna'],
       ['<code>!classifica mod</code>', '<code>!classificamod</code> <code>!classificastaff</code> <code>!topmod</code>', 'I primi dello staff.', 'nessuna'],

@@ -22,11 +22,24 @@
 //  · I COMANDI A RAFFICA TACCIONO SEMPRE (`muta`): chi picchia il boss scrive
 //    !colpisci di continuo, e una riga per ogni colpo in attesa sarebbe spam.
 //
+// PER GIOCARE BISOGNA ESSERCI (docs/ECONOMIA.md). Se il canale lo chiede, una
+// partita costa dei messaggi scritti in chat, e vale la stessa regola: `aspetta`
+// guarda se ci sono, e chi non li ha non gioca; si pagano quando si gioca
+// davvero. Paga chi apre o entra in una partita con un comando dei giochi (un
+// gruppo dell'elenco: da solo, contro qualcuno, tutti insieme, con la webcam);
+// le mosse, il saldo e le coccole no, e lo staff mai. Il gioco che parte subito
+// da' a `giocato` il messaggio con cui si e' giocato, e la partita si paga li';
+// quello che si chiude dopo (il colpo, la corsa, la patata) chiama `entra`
+// quando la persona entra, e a fine partita `giocato` col nome, per le attese.
+//
 // Il ragionamento sta in docs/GIOCHI.md.
-import { streamers } from '../db.js';
+import { streamers, statoVivo } from '../db.js';
 import { valoriDi } from './giochi-conf.js';
-import { nomeIn } from './comandi-registro.js';
+import { nomeIn, IN_CHAT, puoUsare } from './comandi-registro.js';
 import { aChi } from './risposte.js';
+import * as economia from './economia.js';
+import * as voce from './voce.js';
+import { linguaChat } from './lingua-canale.js';
 
 const pulito = (s) => String(s || '').replace(/^@/, '').toLowerCase().trim();
 const chiave = (channel, gioco, chi) => `${channel}|${gioco}|${chi}`;
@@ -42,21 +55,120 @@ export function aParole(ms) {
   return `${m} minut${m === 1 ? 'o' : 'i'}`;
 }
 
-// Quanto manca, e di quale attesa: se ci sono tutte e due vale la piu' lunga.
+// ── chi insiste aspetta di piu' ─────────────────────────────────────────────
+//
+// Il castigo di una persona su un gioco (docs/GIOCHI.md): a quale diretta
+// appartiene (`d`, la chiave di economia.momento), a che gradino e' (`l`), se
+// ha insistito dall'ultima partita (`i`) e fin quando aspetta (`f`, -1 = fino a
+// fine diretta). Sta nel database, una voce per canale: un riavvio non lo
+// azzera e non lo regala. In memoria c'e' la copia, letta una volta.
+const CASTIGHI = 'giochi-insistenze';
+const castighi = new Map();   // canale → Map(gioco|persona → { d, l, i, f })
+const MAX_AGGIUNTA_S = 86400;
+
+function castighiDi(channel) {
+  let m = castighi.get(channel);
+  if (!m) {
+    const salvati = statoVivo.leggi(channel, CASTIGHI);
+    m = new Map(Object.entries(salvati && typeof salvati === 'object' ? salvati : {}));
+    castighi.set(channel, m);
+  }
+  return m;
+}
+// Si salva quello che vale in questa diretta; il resto si dimentica.
+function salvaCastighi(channel, m, d) {
+  for (const [k, c] of m) if (c.d !== d) m.delete(k);
+  if (m.size) statoVivo.scrivi(channel, CASTIGHI, Object.fromEntries(m));
+  else statoVivo.togli(channel, CASTIGHI);
+}
+function castigoDi(channel, gioco, chi) {
+  const m = castighiDi(channel);
+  if (!m.size) return null;
+  const c = m.get(`${gioco}|${pulito(chi)}`);
+  return c && c.d === economia.momento(channel).chiave ? c : null;
+}
+
+// Il tempo detto nella lingua della chat: le frasi della voce sono in tre lingue.
+const UNITA = {
+  it: { s: ['secondo', 'secondi'], m: ['minuto', 'minuti'], h: ['ora', 'ore'], e: 'e' },
+  en: { s: ['second', 'seconds'], m: ['minute', 'minutes'], h: ['hour', 'hours'], e: 'and' },
+  es: { s: ['segundo', 'segundos'], m: ['minuto', 'minutos'], h: ['hora', 'horas'], e: 'y' },
+};
+export function tempoIn(lingua, ms) {
+  const u = UNITA[lingua] || UNITA.it;
+  const n = (q, [uno, tanti]) => `${q} ${q === 1 ? uno : tanti}`;
+  const s = Math.max(1, Math.ceil(ms / 1000));
+  if (s < 60) return n(s, u.s);
+  const m = Math.ceil(s / 60);
+  if (m < 120) return n(m, u.m);
+  const h = Math.floor(m / 60);
+  return m % 60 ? `${n(h, u.h)} ${u.e} ${n(m % 60, u.m)}` : n(h, u.h);
+}
+const FINO = {
+  it: ['fino alla fine della diretta', 'fino a domani'],
+  en: ['until the end of the stream', 'until tomorrow'],
+  es: ['hasta el final del directo', 'hasta mañana'],
+};
+
+// Ha insistito: il castigo sale di un gradino, e lo si dice. true se ha
+// castigato (e quindi ha gia' parlato lui), false se il gioco non castiga.
+function insiste(channel, gioco, comando, msg, say, r) {
+  if (puoUsare('mod', msg)) return false;
+  const c = valoriDi(streamers.get(channel)?.settings, gioco);
+  if (!(c.insisti > 0)) return false;
+  if (r.basta) return true;
+  const ora = Date.now();
+  const mo = economia.momento(channel, ora);
+  const m = castighiDi(channel);
+  const k = `${gioco}|${pulito(msg.user)}`;
+  const prima = m.get(k);
+  const l = (prima && prima.d === mo.chiave ? prima.l : 0) + 1;
+  const basta = c.insistiMax > 0 && l >= c.insistiMax;
+  const f = basta ? -1 : ora + r.ms + Math.min(c.insisti * 2 ** (l - 1), MAX_AGGIUNTA_S) * 1000;
+  m.set(k, { d: mo.chiave, l, i: 1, f });
+  salvaCastighi(channel, m, mo.chiave);
+  const lingua = linguaChat(channel);
+  const dati = { nome: msg.display || msg.user, comando: '!' + nomeIn(channel, comando) };
+  const frase = basta
+    ? voce.di(channel, 'gioco-basta', { ...dati, quando: (FINO[lingua] || FINO.it)[mo.live ? 0 : 1] })
+    : voce.di(channel, 'gioco-insisti', { ...dati, tempo: tempoIn(lingua, f - ora) });
+  if (frase) aChi(msg, say)(frase);
+  return true;
+}
+
+// Ha giocato: chi aveva aspettato senza insistere scende di un gradino.
+function calma(channel, gioco, msg) {
+  const m = castighiDi(channel);
+  const k = `${gioco}|${pulito(msg.user)}`;
+  const c = m.get(k);
+  if (!c) return;
+  const d = economia.momento(channel).chiave;
+  if (c.d !== d) m.delete(k);
+  else if (c.i) c.i = 0;
+  else if (--c.l <= 0) m.delete(k);
+  salvaCastighi(channel, m, d);
+}
+
+// Quanto manca, e di quale attesa: se ci sono tutte e due vale la piu' lunga,
+// e il castigo di chi ha insistito conta come la sua attesa.
 export function resta(channel, gioco, chi) {
   const ora = Date.now();
-  const testa = (fine.get(chiave(channel, gioco, pulito(chi))) || 0) - ora;
+  const c = castigoDi(channel, gioco, chi);
+  const castigo = !c ? 0 : c.f < 0 ? Infinity : c.f - ora;
+  const testa = Math.max((fine.get(chiave(channel, gioco, pulito(chi))) || 0) - ora, castigo);
   const tutti = (fine.get(chiave(channel, gioco, '')) || 0) - ora;
   if (testa <= 0 && tutti <= 0) return null;
-  return tutti >= testa ? { perTutti: true, ms: tutti } : { perTutti: false, ms: testa };
+  if (tutti >= testa) return { perTutti: true, ms: tutti };
+  return { perTutti: false, ms: testa, basta: castigo === Infinity };
 }
 
 // true se bisogna aspettare (e il gioco si ferma li'). `dire` riceve
 // { nome, tempo, perTutti, cmd } per chi vuole dirlo con parole sue.
 export function aspetta(channel, gioco, msg, say, { comando = gioco, muta = false, dire = null } = {}) {
   const r = resta(channel, gioco, msg.user);
-  if (!r) return false;
+  if (!r) return senzaMessaggi(channel, comando, msg, say, muta);
   if (muta) return true;
+  if (insiste(channel, gioco, comando, msg, say, r)) return true;
   const k = chiave(channel, gioco, r.perTutti ? '' : pulito(msg.user));
   const quando = fine.get(k);
   if (detta.get(k) === quando) return true;
@@ -69,10 +181,53 @@ export function aspetta(channel, gioco, msg, say, { comando = gioco, muta = fals
   return true;
 }
 
-// Si e' giocato: partono le due attese. Torna un `annulla` per chi segna prima
-// di sapere com'e' andata (lo sblocco della chat aspetta Twitch, e due sblocchi
-// insieme non devono passare tutti e due mentre si aspetta).
-export function giocato(channel, gioco, chi) {
+// ── per giocare bisogna esserci ─────────────────────────────────────────────
+
+const GRUPPI_GIOCO = new Set(['solo', 'sfide', 'insieme', 'webcam']);
+export const eUnGioco = (id) => GRUPPI_GIOCO.has(IN_CHAT[id]?.gruppo);
+const paga = (id, msg) => eUnGioco(id) && !puoUsare('mod', msg);
+
+// canale|persona → quanti messaggi mancavano quando gliel'abbiamo detto: lo si
+// ridice solo quando il numero cambia, cioe' dopo un messaggio che conta.
+const dettoMancano = new Map();
+
+function senzaMessaggi(channel, comando, msg, say, muta) {
+  if (!paga(comando, msg)) return false;
+  const quanti = economia.mancano(channel, msg.user);
+  if (!quanti) return false;
+  if (muta) return true;
+  const k = `${channel}|${pulito(msg.user)}`;
+  if (dettoMancano.get(k) === quanti) return true;
+  if (dettoMancano.size > TROPPE) dettoMancano.clear();
+  dettoMancano.set(k, quanti);
+  const frase = voce.di(channel, 'gioco-parla-prima', { nome: msg.display || msg.user, quanti });
+  if (frase) aChi(msg, say)(frase);
+  return true;
+}
+
+// Chi entra in una partita (anche una che si chiude dopo): la paga adesso, e
+// se aveva aspettato senza insistere il suo castigo scende.
+export function entra(channel, gioco, msg) {
+  calma(channel, gioco, msg);
+  if (!paga(gioco, msg)) return;
+  economia.giocata(channel, msg.user);
+  dettoMancano.delete(`${channel}|${pulito(msg.user)}`);
+}
+
+// Si e' giocato: partono le due attese. `chi` e' il messaggio con cui si e'
+// giocato (e la partita si paga), oppure il nome di chi era in una partita
+// che si chiude adesso. Torna un `annulla` per chi segna prima di sapere
+// com'e' andata (lo sblocco della chat aspetta Twitch, e due sblocchi insieme
+// non devono passare tutti e due mentre si aspetta).
+export function giocato(channel, gioco, persona) {
+  let chi = persona;
+  let castigoPrima;
+  if (persona && typeof persona === 'object') {
+    chi = persona.user;
+    castigoPrima = castighiDi(channel).get(`${gioco}|${pulito(chi)}`);
+    if (castigoPrima) castigoPrima = { ...castigoPrima };
+    entra(channel, gioco, persona);
+  }
   const c = valoriDi(streamers.get(channel)?.settings, gioco);
   const ora = Date.now();
   const toccate = [];
@@ -91,6 +246,12 @@ export function giocato(channel, gioco, chi) {
       for (const [k, prima] of toccate) {
         if (prima === undefined) fine.delete(k);
         else fine.set(k, prima);
+      }
+      // il castigo torna com'era: quella partita non c'e' stata
+      if (castigoPrima) {
+        const m = castighiDi(channel);
+        m.set(`${gioco}|${pulito(chi)}`, castigoPrima);
+        salvaCastighi(channel, m, economia.momento(channel).chiave);
       }
     },
   };

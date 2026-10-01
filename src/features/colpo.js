@@ -17,9 +17,10 @@
 //
 // Il ragionamento sta in docs/GIOCHI.md.
 import { points, streamers } from '../db.js';
+import * as economia from './economia.js';
 import { valoriDi } from './giochi-conf.js';
 import { nomeIn } from './comandi-registro.js';
-import { aspetta, giocato } from './attese-giochi.js';
+import { aspetta, giocato, entra } from './attese-giochi.js';
 
 const scegli = (a) => a[Math.floor(Math.random() * a.length)];
 const pulito = (s) => String(s || '').replace(/^@/, '').toLowerCase().trim();
@@ -88,7 +89,8 @@ function chiudi(channel) {
       return;
     }
     const esiti = esitoColpo(banda, c);
-    for (const e of esiti) if (e.netto) points.add(channel, e.chi, e.netto);
+    // la posta resta dov'e' fino all'arrivo: il guadagno nasce «giocando», la perdita si spende
+    for (const e of esiti) if (e.netto > 0) economia.dai(channel, e.chi, e.netto, 'giochi'); else if (e.netto < 0) economia.togli(channel, e.chi, -e.netto);
     k.say(testoColpo(esiti, c) + nota);
   } catch { /* la chat e' andata via: le monete sono gia' al loro posto */ }
 }
@@ -109,6 +111,7 @@ export function colpo(channel, msg, args, say, { moneta = 'monete' } = {}) {
   if (aspetta(channel, 'colpo', msg, say, { dire: ({ nome: chi, tempo, perTutti }) => (perTutti ? `🚓 La polizia gira ancora: il prossimo colpo fra ${tempo}.` : `🚓 ${chi}, ti cercano ancora: il prossimo colpo per te fra ${tempo}.`) })) return;
   const saldo = points.get(channel, io);
   if (saldo < posta) { say(`🦹 ${nome}, per entrare con ${posta} ${moneta} non basta quello che hai (${saldo}).`); return; }
+  entra(channel, 'colpo', msg);
 
   if (k) {
     k.banda.set(io, { nome, posta });

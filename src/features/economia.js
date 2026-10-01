@@ -23,7 +23,8 @@
 // non possono dire due cose diverse.
 import { points, streamers, statoVivo } from '../db.js';
 import { ePersona } from './antibot.js';
-import { GIRO_MS, VIVO_MS, STESSO_FILO_MS, DOPPIO, normalizza, quotaGiro, contaMessaggio, taglia } from './economia-regole.js';
+import { GIRO_MS, VIVO_MS, STESSO_FILO_MS, DOPPIO, normalizza, quotaGiro, contaMessaggio, taglia, scadenza, giornoIn } from './economia-regole.js';
+import { preferenzeDi } from './preferenze.js';
 
 const norm = (s) => String(s || '').toLowerCase().trim().replace(/^@/, '');
 
@@ -38,13 +39,14 @@ const frazione = (v, def, lo, hi) => { const n = Number(v); return Number.isFini
 
 // ── lo stato ─────────────────────────────────────────────────────────────────
 
-// La diretta di adesso, o il giorno a canale spento: e' la chiave del tetto.
-// Lo dice l'ultimo giro di presenza, che sta nel database: un riavvio a meta'
-// diretta non apre una diretta nuova e non azzera il tetto.
+// La diretta di adesso, o il giorno a canale spento (nel fuso del canale): e'
+// la chiave del tetto, e del castigo di chi insiste nei giochi. Lo dice
+// l'ultimo giro di presenza, che sta nel database: un riavvio a meta' diretta
+// non apre una diretta nuova e non azzera il tetto.
 export function momento(channel, ora = Date.now()) {
   const v = statoVivo.leggi(norm(channel), 'economia');
   if (v && v.diretta && ora - Number(v.ts) < VIVO_MS) return { live: true, chiave: 'd:' + v.diretta };
-  return { live: false, chiave: 'f:' + new Date(ora).toISOString().slice(0, 10) };
+  return { live: false, chiave: 'f:' + giornoIn(ora, preferenzeDi(norm(channel)).fuso) };
 }
 
 // L'ORA DOPPIA: per un tempo scelto, tutto quello che arriva da solo vale x
@@ -69,6 +71,64 @@ function puoRicevere(channel, u, cfg, s) {
   return ePersona(channel, u);
 }
 
+// ── quanto durano ───────────────────────────────────────────────────────────
+//
+// Una moneta prende la scadenza quando nasce, dal modo in cui nasce
+// (docs/ECONOMIA.md, «Quanto durano le monete»). Le monete si muovono solo da
+// qui: nessun altro file chiama le funzioni dei lotti di db.js.
+export const scadePer = (channel, daDove, ora = Date.now()) =>
+  scadenza(regole(channel).durate?.[daDove], ora, preferenzeDi(norm(channel)).fuso);
+// Nascono: da un gioco (giochi), da un Modulo o da un premio (premi), dallo staff (staff).
+export const dai = (channel, user, n, daDove, { ruolo = null, ora = Date.now() } = {}) =>
+  points.dai(norm(channel), user, Math.max(0, Math.round(Number(n) || 0)), { scade: scadePer(channel, daDove, ora), ruolo, ora });
+// Escono: quante ce ne sono fino a n ({ tolte, ricevuta }), o una posta tutta o niente.
+export const togli = (channel, user, n) => points.togli(norm(channel), user, n);
+export const punta = (channel, user, n) => points.punta(norm(channel), user, n);
+// Una posta finita: torna coi suoi lotti, e solo il guadagno nasce «giocando».
+export const chiudiPuntata = (channel, user, ricevuta, ritorno, { ora = Date.now() } = {}) =>
+  points.chiudiPuntata(norm(channel), user, ricevuta, ritorno, { scade: scadePer(channel, 'giochi', ora), ora });
+// Una posta presa e tolta in un colpo solo (la slot, la roulette): quanto torna.
+export function gioca(channel, user, posta, ritorno) {
+  const r = punta(channel, user, posta);
+  if (!r) return null;
+  return chiudiPuntata(channel, user, r.ricevuta, ritorno);
+}
+export const passa = (channel, da, a, n) => points.passa(norm(channel), da, a, n);
+// Le monete importate da un altro bot nascono «dallo staff», con la sua durata.
+export const importa = (channel, voci, { ora = Date.now() } = {}) =>
+  points.importa(norm(channel), voci, { scade: scadePer(channel, 'staff', ora), ora });
+// Le monete del canale che non scadono: { persone, monete }.
+export const senzaScadenza = (channel) => points.senzaScadenza(norm(channel));
+// Una scadenza anche a quelle: { persone, monete, scade }, o null se la durata
+// non e' una data (non scadono, o una durata che non c'e').
+export function scadenzaAlleVecchie(channel, durata, ora = Date.now()) {
+  const scade = scadenza(durata, ora, preferenzeDi(norm(channel)).fuso);
+  if (!scade) return null;
+  return { ...points.scadenzaAlleVecchie(norm(channel), scade), scade };
+}
+// Le prime che scadono: { scade, quanti }, o null se nessuna scade.
+export const primaScadenza = (channel, user) => points.prossimaScadenza(norm(channel), user);
+export const rendi = (channel, user, ricevuta) => points.rendi(norm(channel), user, ricevuta);
+
+// ── per giocare bisogna esserci ─────────────────────────────────────────────
+//
+// Una partita costa `giocoOgni` passi, e un passo lo mette da parte ogni
+// messaggio che conta per le monete e non e' un comando: un comando non e'
+// parlare in chat, e `!slot` si pagherebbe da solo. Chi paga e quando lo
+// decide chi conosce il messaggio e il gioco (attese-giochi.js).
+// Quanti messaggi mancano per giocare: 0 se si gioca.
+export function mancano(channel, user) {
+  const ch = norm(channel);
+  const n = regole(ch).giocoOgni;
+  return n > 0 ? Math.max(0, n - points.passi(ch, user)) : 0;
+}
+// La partita e' cominciata: si paga.
+export function giocata(channel, user) {
+  const ch = norm(channel);
+  const n = regole(ch).giocoOgni;
+  if (n > 0) points.spendiPassi(ch, user, n);
+}
+
 // ── la porta ─────────────────────────────────────────────────────────────────
 
 // Una quota che arriva da sola a una persona (il messaggio, la serie di
@@ -85,7 +145,8 @@ export function riceve(channel, user, quota, { fonte = 'messaggio', ruolo = null
   const gia = r && r.diretta === m.chiave ? r.guadagno_diretta : 0;
   const q = taglia(Math.round((Number(quota) || 0) * (d ? d.x : 1)), { monete: r?.monete || 0, gia }, cfg);
   if (q <= 0 && !r) return 0;
-  points.economiaScrivi(ch, [{ user: u, delta: q, ruolo, visto: fonte === 'messaggio' ? ora : null, diretta: m.chiave, guadagno: gia + q }]);
+  points.economiaScrivi(ch, [{ user: u, delta: q, ruolo, visto: fonte === 'messaggio' ? ora : null, diretta: m.chiave, guadagno: gia + q }],
+    { scade: scadePer(ch, 'chat', ora) });
   return q;
 }
 
@@ -105,6 +166,7 @@ export function messaggio(msg, ora = Date.now()) {
   if (ultimoTesto.size > TESTI_MAX) ultimoTesto.delete(ultimoTesto.keys().next().value);
   const cfg = regole(ch);
   const conta = contaMessaggio(msg.text, prec, cfg);
+  if (conta && cfg.giocoOgni > 0 && !/^[!/]/.test(String(msg.text || '').trim())) points.passo(ch, u, cfg.giocoOgni * cfg.giochiScorta);
   if (!conta || cfg.perMessaggio <= 0) return { conta, dato: 0 };
   if (!cfg.msgSpento && !momento(ch, ora).live) return { conta, dato: 0 };
   if (ora - (ultimoAccredito.get(k) || 0) < cfg.ogniSecondi * 1000) return { conta, dato: 0 };
@@ -152,6 +214,6 @@ export function giro(channel, presenti, { ruoli = {}, parlanti = new Set(), live
     if (!r && q <= 0) continue;
     scrivi.push({ user: u, delta: q, ruolo, visto: ora, zittoGiri: giri, zittoTs: ora, diretta: chiave, guadagno: gia + q });
   }
-  points.economiaScrivi(ch, scrivi);
+  points.economiaScrivi(ch, scrivi, { scade: scadePer(ch, 'chat', ora) });
   return esito;
 }

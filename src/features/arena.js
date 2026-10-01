@@ -35,6 +35,7 @@
 import crypto from 'node:crypto';
 import '../web/public/arena.js';
 import { points, streamers, statoVivo, arenaEmote, EMOTE_URL_OK } from '../db.js';
+import * as economia from './economia.js';
 import { valoriDi, regoleDa } from './giochi-conf.js';
 import { nomeIn, puoUsare, vivo, moduloAcceso } from './comandi-registro.js';
 import { BOT_NOTI } from './muro.js';
@@ -249,10 +250,15 @@ function ricordaQuote(channel, p) {
   } catch { /* il database e' giu': la quota e' comunque in memoria */ }
 }
 
+// Una quota e' { q, ricevuta }: torna coi lotti che erano stati spesi
+// (docs/ECONOMIA.md). Una quota di prima dei lotti e' un numero, pagato con
+// monete che non scadevano.
+const ricevutaDi = (v) => (Array.isArray(v?.ricevuta) ? v.ricevuta : [{ scade: 0, quanti: Math.max(0, Math.round(Number(v?.q ?? v) || 0)) }]);
+
 // Rende le quote d'ingresso di una partita che non si gioca fino in fondo.
 function rendiQuote(channel, p) {
   const resi = [...p.quote];
-  for (const [chi, q] of resi) points.add(channel, chi, q);
+  for (const [chi, v] of resi) economia.rendi(channel, chi, ricevutaDi(v));
   p.quote.clear();
   ricordaQuote(channel, p);
   return resi.length > 0;
@@ -266,10 +272,10 @@ export function rimborsaDopoRiavvio() {
   for (const { channel, dato } of statoVivo.tutti(CHIAVE_QUOTE)) {
     if (partite.has(channel)) continue;
     const chi = [];
-    for (const [u, q] of Object.entries(dato || {})) {
-      const n = Math.max(0, Math.round(Number(q) || 0));
-      if (!n) continue;
-      points.add(channel, u, n);
+    for (const [u, v] of Object.entries(dato || {})) {
+      const ricevuta = ricevutaDi(v);
+      if (!ricevuta.some((l) => l.quanti > 0)) continue;
+      economia.rendi(channel, u, ricevuta);
       chi.push(u);
     }
     statoVivo.togli(channel, CHIAVE_QUOTE);
@@ -298,10 +304,9 @@ function entra(channel, p, msg, say, { comando = false } = {}) {
   // scrive di piu', e la probabilita' non sfoltirebbe niente.
   if (!comando && c.probabilita < 100 && !(caso() < c.probabilita / 100)) { p.visti.add(id); return false; }
   if (c.costo > 0) {
-    const saldo = points.get(channel, id);
-    if (saldo < c.costo) { p.visti.add(id); dire(di(FRASI.senzaMonete, { nome, costo: c.costo, saldo, monete: monete(channel) })); return false; }
-    points.add(channel, id, -c.costo);
-    p.quote.set(id, c.costo);
+    const presa = economia.punta(channel, id, c.costo);
+    if (!presa) { p.visti.add(id); dire(di(FRASI.senzaMonete, { nome, costo: c.costo, saldo: points.get(channel, id), monete: monete(channel) })); return false; }
+    p.quote.set(id, { q: c.costo, ricevuta: presa.ricevuta });
     ricordaQuote(channel, p);
   }
   const testo = msg.testoScritto ?? msg.text;
@@ -375,7 +380,7 @@ function vittoria(channel, p) {
   const e = p.esito;
   const nomeDi = (id) => p.dentro.get(id)?.nome || id;
   const premi = premiDi(e, p.c);
-  for (const q of premi) points.add(channel, q.id, q.monete);
+  for (const q of premi) economia.dai(channel, q.id, q.monete, 'giochi');
   // La quota era il prezzo della partita, giocata: non si rende piu'.
   p.quote.clear();
   ricordaQuote(channel, p);
@@ -431,7 +436,7 @@ export function comandoArena(channel, msg, args, say) {
   if (['ferma', 'stop', 'annulla'].includes(sotto)) { ferma(channel, say); return; }
   if (partite.has(channel)) { aChi(msg, say)(FRASI.gia); return; }
   if (aspetta(channel, 'arena', msg, say)) return;
-  if (apri(channel, say)) giocato(channel, 'arena', msg.user);
+  if (apri(channel, say)) giocato(channel, 'arena', msg);
 }
 
 // «!emote Kappa»: la prima emote del messaggio diventa quella di chi scrive,

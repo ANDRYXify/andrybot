@@ -30,7 +30,7 @@ function canale(monete = {}, settings = {}) {
   const ch = `negozio${++giro}`;
   streamers.upsertApproved(ch, ch);
   streamers.setSettings(ch, { negozio: { attivo: true }, ...settings });
-  for (const [u, n] of Object.entries(monete)) points.add(ch, u, n);
+  for (const [u, n] of Object.entries(monete)) points.dai(ch, u, n);
   return ch;
 }
 function articolo(ch, grezzo) {

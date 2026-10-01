@@ -90,6 +90,98 @@ che rimette esattamente quello che è stato tolto.
 - **Le stagioni.** Ogni mese o ogni tre mesi le monete ripartono da zero, o da una parte di quelle
   che si avevano. La classifica finale resta nell'archivio, e il bot può annunciare i primi.
 
+### Quanto durano le monete
+
+Chiesto così: «monete che, guadagnate in un dato modo, rimangono per una settimana, altre un
+mese, altre un anno: col negozio è meglio evitare che ne abusino».
+
+**Una moneta ha una data di scadenza, e la prende quando nasce.** Nasce in un posto solo (il
+modo in cui si guadagna) e da lì prende la sua durata. Poi si muove (si punta, si ruba, si
+regala, si spende, torna con un rimborso) e la data resta la sua. Così la scadenza non si può
+allungare spostando le monete: chi ne ha di quelle che durano una settimana non le trasforma
+in monete che durano un anno.
+
+I modi in cui una moneta nasce, e la durata la sceglie lo streamer per ognuno:
+
+| da dove | cosa c'è dentro |
+|---|---|
+| stando in chat | messaggi, presenza, partecipazione, serie di presenze (la porta, `economia.riceve`) |
+| giocando | quello che un gioco dà in più: la vincita oltre la posta, i premi delle manche, del boss, dell'arena, la pesca |
+| premi e Moduli | quello che dà un Modulo (e poi gli eventi: follow, abbonamenti, bit, raid) |
+| dallo staff | quello che lo staff dà a mano, e le monete importate da un altro bot |
+
+Le durate: **non scadono** (di partenza, per tutte: un canale che non tocca niente non cambia),
+**dopo** una settimana, un mese, tre mesi, un anno (a fine giornata, nel fuso del canale), oppure
+**a fine** settimana, mese, stagione (marzo, giugno, settembre, dicembre) o anno. «Dopo» è più
+giusto (ognuno ha lo stesso tempo), «a fine» è un appuntamento per tutti (la stagione che chiude).
+
+**Le monete si tengono a lotti**: (canale, persona, scadenza, quante). Due lotti con la stessa
+scadenza sono lo stesso lotto, e la scadenza è sempre un confine di giornata: una persona che
+guadagna ogni giorno per un anno ha al massimo un lotto al giorno. Il saldo di sempre
+(`points.monete`) resta, ed è per costruzione la somma dei lotti che valgono: lo scrivono solo le
+funzioni dei lotti, nella stessa transazione.
+
+Le regole che stanno nella forma, non nella buona volontà di chi chiama:
+
+- **si spende prima quello che scade prima.** Nessuno perde monete che avrebbe potuto spendere;
+- **spendere dà una ricevuta**: quali lotti e quante. Un rimborso (il negozio, la mano di
+  blackjack interrotta da un riavvio) rimette esattamente quei lotti, con le loro date;
+- **una puntata torna con la sua data**: la posta vinta torna coi lotti che erano stati puntati,
+  e solo la parte in più nasce «giocando». Un duello, un furto, una patata passano i lotti da una
+  persona all'altra così come sono;
+- **le monete di prima non scadono**: entrano come un lotto senza scadenza, perché sono state
+  guadagnate con regole che dicevano così. Se lo streamer vuole dare una data anche a quelle, lo
+  fa con un tasto, sapendo cosa fa: tutte le monete senza scadenza del canale prendono quella data;
+- **una moneta scaduta non c'è**: non si spende, non conta in classifica, da mezzanotte in punto.
+  Non c'è un giro a tempo che arriva dopo: ogni lettura del saldo (il gioco, la classifica, il
+  negozio, il pannello) passa prima dalle scadenze e toglie dal saldo i lotti scaduti. Con niente
+  di scaduto è una lettura sola sull'indice delle scadenze.
+
+**Chi guarda lo sa.** `!monete` dice anche quante ne scadono per prime e quando («120 scadono
+domenica», «l'8 ottobre»: valgono fino alla fine di quel giorno, nel fuso del canale). Per ora in
+italiano, come il resto delle risposte dei giochi. Il pannello mostra, accanto alle durate, fino a
+quando varrebbe una moneta guadagnata adesso, e quante monete del canale non scadono, con il tasto
+per dar loro una data.
+
+Con la durata il negozio non si svuota in un giorno da chi ha accumulato per mesi: lo streamer
+decide quanto può durare un accumulo, per ogni modo di guadagnare.
+
+### Per giocare bisogna esserci
+
+Chiesto così: «un modo per evitare che vengano spammati giochi e basta, senza interazioni vere
+con la streamer, oltre ai cooldown».
+
+Un'attesa (cooldown) dice *quanto spesso* si gioca, non *chi* gioca: chi sta in chat solo per
+`!slot` ogni minuto la rispetta e non ha mai detto una parola. La regola giusta lega il gioco
+alla partecipazione: **per giocare bisogna aver parlato**.
+
+**L'interazione vera ha già una definizione, e resta una**: il messaggio che conta per le monete
+(`contaMessaggio`: non lo stesso messaggio ripetuto, con le lettere minime scelte), e in più mai un
+comando, qualunque cosa dica la regola delle monete: un comando non è parlare con la streamer, e
+`!slot` si pagherebbe da solo. Un secondo criterio vorrebbe dire due risposte diverse alla stessa
+domanda.
+
+**La regola**: ogni messaggio che conta mette da parte un passo; un gioco costa N passi («un
+gioco ogni N messaggi»); se ne tengono al massimo N × M (si accumulano M giochi, non di più).
+Con N = 0 la regola è spenta, ed è così di partenza: un canale che non tocca niente non cambia.
+
+- **Cosa è un gioco**: un comando delle famiglie dei giochi che apre una partita (un gruppo
+  dell'elenco in chat: da solo, contro qualcuno, tutti insieme, con la webcam). Non lo sono le
+  mosse di una partita già aperta (`!accetta`, `!carta`, `!stai`), il saldo, la classifica,
+  le coccole.
+- **Chi non c'entra**: lo streamer e lo staff (aprono le partite per tutti), e i comandi che
+  solo lo staff può usare.
+- **Chi non ha passi** non gioca, e il bot glielo dice una volta ogni tanto (non a ogni
+  tentativo, sennò lo spam lo fa il bot), con una riga della voce del canale che dice quanti
+  messaggi mancano.
+- I passi stanno nel database (`points.parlato`): un riavvio non li azzera e non li regala.
+- **Si controlla prima, si paga dopo**, come le attese (docs/GIOCHI.md): `aspetta` guarda se i
+  passi ci sono, e la partita si paga quando si gioca davvero (`giocato` col messaggio, o `entra`
+  per il colpo, la corsa e la patata, che si chiudono dopo). Un comando scritto male, o un gioco in
+  attesa, non costano niente.
+- Chi non ha passi se lo sente dire una volta, e di nuovo solo quando il numero cambia (dopo un
+  messaggio che conta): chi riprova e basta non fa parlare il bot.
+
 ### Il registro
 
 Una tabella sola (`points_mov`): canale, persona, quanto, motivo, chi l'ha deciso, quando. Ci
@@ -124,10 +216,16 @@ servono a rispondere a «perché ho perso monete». Si tiene novanta giorni.
 
 ### Fase 2: come si perdono
 
+- La durata delle monete (sopra, «Quanto durano le monete»): i lotti, la ricevuta, la puntata
+  che torna con la sua data, il giro delle scadenze, `!monete` che le dice, e nel pannello la
+  parte «Quanto durano».
 - `CLEARCHAT` e `CLEARMSG` nella chat IRC, `economia.punisci`.
 - Il giro dell'assenza, una volta al giorno.
 - Le stagioni con l'archivio.
 - Il registro, con «Annulla», e la sezione «Come si perdono» nel pannello.
+
+- «Per giocare bisogna esserci»: i passi messi da parte dai messaggi che contano, spesi dai
+  giochi; la riga della voce per chi non ne ha; nel pannello «Un gioco ogni N messaggi».
 
 ### Fase 3: eventi e strumenti
 
@@ -138,6 +236,12 @@ servono a rispondere a «perché ho perso monete». Si tiene novanta giorni.
 - Le monete in circolazione: quante ce ne sono, quante ne sono entrate e uscite questa settimana.
 
 ## Le prove
+
+- La durata: si spende prima quello che scade prima; un rimborso rimette i lotti della ricevuta;
+  una puntata vinta torna coi suoi lotti e solo il guadagno nasce «giocando»; un furto passa i
+  lotti; una moneta scaduta non si spende e non conta; le monete di prima non scadono; il saldo è
+  sempre la somma dei lotti che valgono; nessuno scrive `points.monete` fuori dalle funzioni dei
+  lotti (contratto sul codice). Mutazione: spendere dall'ultima che scade deve far tornare rosso.
 
 - Unità: la porta in ogni ordine di regole, i bot che non ricevono, il silenzio che si ferma e
   riparte, i tetti che tagliano senza superare, il riavvio che non azzera il silenzio.

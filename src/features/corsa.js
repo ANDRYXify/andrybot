@@ -20,9 +20,10 @@
 //
 // Il ragionamento sta in docs/GIOCHI.md.
 import { points, streamers } from '../db.js';
+import * as economia from './economia.js';
 import { valoriDi, quoteCorsa } from './giochi-conf.js';
 import { nomeIn } from './comandi-registro.js';
-import { aspetta, giocato } from './attese-giochi.js';
+import { aspetta, giocato, entra } from './attese-giochi.js';
 
 const pulito = (s) => String(s || '').replace(/^@/, '').toLowerCase().trim();
 const conf = (channel) => valoriDi(streamers.get(channel)?.settings, 'corsa');
@@ -92,7 +93,8 @@ function arrivo(channel, k) {
   const dentro = [...k.puntate].filter(([chi, p]) => points.get(channel, chi) >= p.posta);
   const fuori = k.puntate.size - dentro.length;
   const esiti = dentro.map(([chi, p]) => ({ chi, nome: p.nome, netto: p.i === primo ? Math.floor(p.posta * k.quote[primo].ritorno / 100) - p.posta : -p.posta }));
-  for (const e of esiti) if (e.netto) points.add(channel, e.chi, e.netto);
+  // la posta resta dov'e' fino all'arrivo: il guadagno nasce «giocando», la perdita si spende
+  for (const e of esiti) if (e.netto > 0) economia.dai(channel, e.chi, e.netto, 'giochi'); else if (e.netto < 0) economia.togli(channel, e.chi, -e.netto);
   const podio = ordine.slice(0, 3).map((i, n) => `${['Primo', 'secondo', 'terzo'][n]} ${k.nomi[i]}`).join(', ');
   const voci = esiti.sort((a, b) => b.netto - a.netto).map((e) => `${e.nome} ${e.netto < 0 ? '−' : '+'}${Math.abs(e.netto)}`);
   const nota = fuori === 0 ? '' : fuori === 1 ? ' Una persona resta fuori: non ha più la sua puntata.' : ` ${fuori} persone restano fuori: non hanno più la loro puntata.`;
@@ -137,6 +139,7 @@ export function corsa(channel, msg, args, say, { moneta = 'monete' } = {}) {
     const saldo = points.get(channel, io);
     if (saldo < posta) { say(`🏁 ${nome}, per puntare ${posta} ${moneta} non basta quello che hai (${saldo}).`); return; }
   }
+  entra(channel, 'corsa', msg);
   if (k) {
     k.puntate.set(io, { nome, i, posta });
     k.nuovi.push(`${nome} su ${k.nomi[i]}`);

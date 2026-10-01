@@ -244,6 +244,15 @@ CREATE TABLE IF NOT EXISTS points (        -- "monete" (punti fedeltà) dei mini
   PRIMARY KEY (channel, user)
 );
 
+CREATE TABLE IF NOT EXISTS monete_lotti (  -- le monete a lotti: quante, e quando scadono (0 = mai). docs/ECONOMIA.md
+  channel TEXT NOT NULL,
+  user TEXT NOT NULL,
+  scade INTEGER NOT NULL DEFAULT 0,
+  quanti INTEGER NOT NULL,
+  PRIMARY KEY (channel, user, scade)
+);
+CREATE INDEX IF NOT EXISTS idx_lotti_scade ON monete_lotti(scade);
+
 CREATE TABLE IF NOT EXISTS arena_emote (    -- l'emote con cui una persona combatte nell'arena (!emote), per canale
   channel TEXT NOT NULL,
   user TEXT NOT NULL,
@@ -1073,6 +1082,17 @@ aggiungiColonna('points', 'zitto_giri', 'INTEGER NOT NULL DEFAULT 0');
 aggiungiColonna('points', 'zitto_ts', 'INTEGER NOT NULL DEFAULT 0');
 aggiungiColonna('points', 'diretta', "TEXT NOT NULL DEFAULT ''");
 aggiungiColonna('points', 'guadagno_diretta', 'INTEGER NOT NULL DEFAULT 0');
+aggiungiColonna('points', 'parlato', 'INTEGER NOT NULL DEFAULT 0');  // i passi per giocare (docs/ECONOMIA.md, «Per giocare bisogna esserci»)
+aggiungiColonna('negozio_acquisti', 'ricevuta', "TEXT NOT NULL DEFAULT ''");  // i lotti spesi, per rimborsarli uguali
+// LE MONETE DI PRIMA entrano come un lotto senza scadenza: sono state guadagnate
+// con regole che dicevano cosi'. Solo per chi non ha ancora lotti: la seconda
+// volta non fa niente. Torna quante persone sono entrate.
+export function lottiDiPrima() {
+  return db.prepare(`INSERT INTO monete_lotti (channel, user, scade, quanti)
+    SELECT channel, user, 0, monete FROM points p WHERE monete > 0
+      AND NOT EXISTS (SELECT 1 FROM monete_lotti l WHERE l.channel = p.channel AND l.user = p.user)`).run().changes;
+}
+lottiDiPrima();
 aggiungiColonna('telegram', 'pin_live', "INTEGER NOT NULL DEFAULT 1");
 aggiungiColonna('telegram', 'msg_id', "TEXT NOT NULL DEFAULT ''");
 aggiungiColonna('telegram', 'msg_id_tk', "TEXT NOT NULL DEFAULT ''");
@@ -1313,22 +1333,189 @@ const FILTRO_CLASSIFICA = { pubblico: " AND ruolo=''", staff: " AND ruolo='staff
 // in chat lei e' `giada`.
 export const padroneDi = (channel) => nomeSu(String(channel || '').toLowerCase());
 
+// ---------------------------------------------------------------- i lotti
+// QUANTO DURANO LE MONETE (docs/ECONOMIA.md). Il saldo (points.monete) e' la
+// somma dei lotti che valgono, PER COSTRUZIONE: lo scrivono solo queste
+// funzioni, e sempre insieme ai lotti, dentro la stessa transazione.
+// Si spende prima quello che scade prima (i lotti senza scadenza per ultimi);
+// spendere da' una ricevuta, e un rimborso rimette proprio quei lotti.
+const _lotti = {
+  valgono: db.prepare(`SELECT scade, quanti FROM monete_lotti WHERE channel=? AND user=? AND quanti>0 AND (scade=0 OR scade>?)
+    ORDER BY CASE WHEN scade=0 THEN 1 ELSE 0 END, scade`),
+  metti: db.prepare(`INSERT INTO monete_lotti (channel, user, scade, quanti) VALUES (?,?,?,?)
+    ON CONFLICT(channel, user, scade) DO UPDATE SET quanti = monete_lotti.quanti + excluded.quanti`),
+  scala: db.prepare('UPDATE monete_lotti SET quanti = quanti - ? WHERE channel=? AND user=? AND scade=?'),
+  vuoti: db.prepare('DELETE FROM monete_lotti WHERE channel=? AND user=? AND quanti<=0'),
+  saldo: db.prepare(`INSERT INTO points (channel, user, monete, ruolo, ts) VALUES (?,?,MAX(0,?),COALESCE(?,''),?)
+    ON CONFLICT(channel, user) DO UPDATE SET monete = MAX(0, points.monete + ?), ruolo = COALESCE(?, points.ruolo), ts=?`),
+};
+const _ruolo = (r) => (r === null || r === undefined ? null : (r === 'staff' ? 'staff' : ''));
+// Una moneta nasce in un lotto. Una gia' scaduta non nasce: non ci sarebbe.
+function _crea(ch, u, n, scade, ruolo = null, ora = now()) {
+  const q = Math.trunc(Number(n) || 0);
+  const s = msIntero(scade);
+  const d = q > 0 && !(s > 0 && s <= ora) ? q : 0;
+  if (d) _lotti.metti.run(ch, u, s, d);
+  const r = _ruolo(ruolo);
+  if (d || r !== null) _lotti.saldo.run(ch, u, d, r, ora, d, r, ora);
+  return d;
+}
+// Si spende prima quello che scade prima. Con `tutto` o tutte o niente (null);
+// senza, quante ce ne sono. Torna { tolte, ricevuta: [{ scade, quanti }] }.
+function _spendi(ch, u, n, { tutto = true, ora = now() } = {}) {
+  const voluto = Math.max(0, Math.trunc(Number(n) || 0));
+  const lotti = _lotti.valgono.all(ch, u, ora);
+  const ha = lotti.reduce((t, l) => t + l.quanti, 0);
+  if (tutto && ha < voluto) return null;
+  let resta = Math.min(voluto, ha);
+  const ricevuta = [];
+  for (const l of lotti) {
+    if (resta <= 0) break;
+    const q = Math.min(l.quanti, resta);
+    _lotti.scala.run(q, ch, u, l.scade);
+    ricevuta.push({ scade: l.scade, quanti: q });
+    resta -= q;
+  }
+  const tolte = ricevuta.reduce((t, x) => t + x.quanti, 0);
+  if (tolte) {
+    _lotti.vuoti.run(ch, u);
+    _lotti.saldo.run(ch, u, -tolte, null, ora, -tolte, null, ora);
+  }
+  return { tolte, ricevuta };
+}
+// Rimette i lotti di una ricevuta: tutti, o `quante` cominciando da quelli
+// che scadono dopo. Chi riceve meno di quanto ha dato ha perso quelle che
+// scadevano prima: e' come averle spese, e si spende prima quello che scade
+// prima. Un lotto scaduto nel frattempo non torna: non c'e' piu'.
+function _rendi(ch, u, ricevuta, quante = Infinity, ora = now()) {
+  let resta = quante;
+  let rese = 0;
+  for (const l of [...(Array.isArray(ricevuta) ? ricevuta : [])].reverse()) {
+    if (resta <= 0) break;
+    const q = Math.min(Math.trunc(Number(l?.quanti) || 0), resta);
+    if (q <= 0) continue;
+    rese += _crea(ch, u, q, l.scade, null, ora);
+    resta -= q;
+  }
+  return rese;
+}
+// LE SCADUTE ESCONO PRIMA DI OGNI LETTURA. Un lotto scade a mezzanotte, e da
+// quell'istante non c'e': chi legge un saldo (il gioco, la classifica, il
+// negozio, il pannello) passa prima da qui, che toglie dal saldo i lotti
+// scaduti di tutti. Con niente di scaduto e' una sola lettura sull'indice
+// delle scadenze. Torna quante monete sono scadute.
+const _scaduti = {
+  quali: db.prepare('SELECT channel, user, SUM(quanti) q FROM monete_lotti WHERE scade>0 AND scade<=? GROUP BY channel, user'),
+  via: db.prepare('DELETE FROM monete_lotti WHERE scade>0 AND scade<=?'),
+};
+const _scadute = db.transaction((ora = now()) => {
+  const righe = _scaduti.quali.all(ora);
+  if (!righe.length) return 0;
+  for (const r of righe) _lotti.saldo.run(r.channel, r.user, -r.q, null, ora, -r.q, null, ora);
+  _scaduti.via.run(ora);
+  return righe.reduce((t, r) => t + r.q, 0);
+});
+const _somma = (ricevuta) => (Array.isArray(ricevuta) ? ricevuta : []).reduce((t, l) => t + (Math.trunc(Number(l?.quanti) || 0)), 0);
+
 export const points = {
   get(channel, user) {
+    _scadute();
     const r = db.prepare('SELECT monete FROM points WHERE channel=? AND user=?').get(channel, String(user).toLowerCase());
     return r ? r.monete : 0;
   },
-  // aggiunge (o toglie, con delta negativo) monete; non scende sotto 0. Ritorna il nuovo saldo.
-  // `ruolo` va passato SOLO quando lo si conosce davvero ('' o 'staff'): null
-  // lascia intatto quello gia' registrato, cosi' un accredito che non sa nulla
-  // del ruolo non declassa nessuno.
-  add(channel, user, delta, ruolo = null) {
+  // LE MONETE SI MUOVONO SOLO DA QUI (docs/ECONOMIA.md, «Quanto durano le
+  // monete»), e nessuno le chiama direttamente: passano da features/economia.js,
+  // che sa la durata di ogni modo di guadagnare. `ruolo` va passato SOLO quando
+  // lo si conosce davvero ('' o 'staff'): null lascia quello registrato.
+  //
+  // Nascono: `scade` e' l'istante in cui scadono (0 = mai). Torna il saldo.
+  dai(channel, user, n, { scade = 0, ruolo = null, ora = now() } = {}) {
     const u = String(user).toLowerCase();
-    const r = ruolo === null || ruolo === undefined ? null : (ruolo === 'staff' ? 'staff' : '');
-    db.prepare(`INSERT INTO points (channel, user, monete, ruolo, ts) VALUES (?,?,MAX(0,?),COALESCE(?,''),?)
-      ON CONFLICT(channel, user) DO UPDATE SET monete = MAX(0, points.monete + ?), ruolo = COALESCE(?, points.ruolo), ts=?`)
-      .run(channel, u, delta, r, now(), delta, r, now());
+    db.transaction(() => _crea(channel, u, n, scade, ruolo, ora))();
     return this.get(channel, u);
+  },
+  // Si tolgono, quante ce ne sono fino a `n`: { tolte, ricevuta }.
+  togli(channel, user, n, { ora = now() } = {}) {
+    const u = String(user).toLowerCase();
+    return db.transaction(() => _spendi(channel, u, n, { tutto: false, ora }))();
+  },
+  // Una posta: tutte o niente. La ricevuta, o null se non bastano.
+  punta(channel, user, n, { ora = now() } = {}) {
+    const u = String(user).toLowerCase();
+    return db.transaction(() => _spendi(channel, u, n, { tutto: true, ora }))();
+  },
+  // Com'e' finita una posta: `ritorno` e' quanto torna in tutto. La posta
+  // torna coi suoi lotti; solo la parte in piu' nasce, con `scade` (la durata
+  // di «giocando»). Torna il saldo.
+  chiudiPuntata(channel, user, ricevuta, ritorno, { scade = 0, ora = now() } = {}) {
+    const u = String(user).toLowerCase();
+    const posta = _somma(ricevuta);
+    const r = Math.max(0, Math.trunc(Number(ritorno) || 0));
+    db.transaction(() => {
+      if (r >= posta) { _rendi(channel, u, ricevuta, Infinity, ora); _crea(channel, u, r - posta, scade, null, ora); }
+      else _rendi(channel, u, ricevuta, r, ora);
+    })();
+    return this.get(channel, u);
+  },
+  // Da una persona a un'altra, coi loro lotti: un duello, un furto, un regalo.
+  // Passano quante ce ne sono fino a `n`; torna quante sono passate.
+  passa(channel, da, a, n, { ora = now() } = {}) {
+    const x = String(da).toLowerCase();
+    const y = String(a).toLowerCase();
+    return db.transaction(() => {
+      const s = _spendi(channel, x, n, { tutto: false, ora });
+      _rendi(channel, y, s.ricevuta, Infinity, ora);
+      return s.tolte;
+    })();
+  },
+  // Un rimborso: i lotti della ricevuta tornano com'erano. Torna il saldo.
+  rendi(channel, user, ricevuta, { ora = now() } = {}) {
+    const u = String(user).toLowerCase();
+    db.transaction(() => _rendi(channel, u, ricevuta, Infinity, ora))();
+    return this.get(channel, u);
+  },
+  // I lotti scaduti escono dal saldo (lo fa gia' ogni lettura). Torna quante
+  // monete sono scadute in tutto.
+  scadi(ora = now()) {
+    return _scadute(ora);
+  },
+  // PER GIOCARE BISOGNA ESSERCI (docs/ECONOMIA.md): ogni messaggio che conta
+  // mette da parte un passo, fino a `tetto`; un gioco ne spende `n`, tutti o
+  // niente. Stanno nella riga: un riavvio non li azzera e non li regala.
+  passo(channel, user, tetto) {
+    const t = Math.max(0, Math.trunc(Number(tetto) || 0));
+    db.prepare(`INSERT INTO points (channel, user, monete, ruolo, ts, parlato) VALUES (?,?,0,'',?,MIN(1,?))
+      ON CONFLICT(channel, user) DO UPDATE SET parlato = MIN(?, points.parlato + 1)`).run(channel, String(user).toLowerCase(), now(), t, t);
+  },
+  passi(channel, user) {
+    return db.prepare('SELECT parlato FROM points WHERE channel=? AND user=?').get(channel, String(user).toLowerCase())?.parlato || 0;
+  },
+  spendiPassi(channel, user, n) {
+    const q = Math.max(0, Math.trunc(Number(n) || 0));
+    return db.prepare('UPDATE points SET parlato = parlato - ? WHERE channel=? AND user=? AND parlato >= ?')
+      .run(q, channel, String(user).toLowerCase(), q).changes === 1;
+  },
+  // Le prime che scadono: { scade, quanti }, o null se nessuna scade.
+  prossimaScadenza(channel, user, ora = now()) {
+    return db.prepare('SELECT scade, quanti FROM monete_lotti WHERE channel=? AND user=? AND quanti>0 AND scade>? ORDER BY scade LIMIT 1')
+      .get(channel, String(user).toLowerCase(), ora) || null;
+  },
+  // Le monete del canale che non scadono: { persone, monete }.
+  senzaScadenza(channel) {
+    const r = db.prepare('SELECT COUNT(*) persone, COALESCE(SUM(quanti),0) monete FROM monete_lotti WHERE channel=? AND scade=0 AND quanti>0').get(channel);
+    return { persone: r.persone, monete: r.monete };
+  },
+  // Una data anche alle monete che non scadevano: lo decide lo streamer, con
+  // un tasto. Il saldo non cambia: cambia solo quando scadono.
+  scadenzaAlleVecchie(channel, scade) {
+    const s = msIntero(scade);
+    if (!(s > now())) return { persone: 0, monete: 0 };
+    return db.transaction(() => {
+      const righe = db.prepare('SELECT user, quanti FROM monete_lotti WHERE channel=? AND scade=0 AND quanti>0').all(channel);
+      db.prepare('DELETE FROM monete_lotti WHERE channel=? AND scade=0').run(channel);
+      for (const r of righe) _lotti.metti.run(channel, r.user, s, r.quanti);
+      return { persone: righe.length, monete: righe.reduce((t, r) => t + r.quanti, 0) };
+    })();
   },
   ruoloDi(channel, user) {
     const r = db.prepare('SELECT ruolo FROM points WHERE channel=? AND user=?').get(channel, String(user).toLowerCase());
@@ -1352,6 +1539,7 @@ export const points = {
   // A che posto sta uno NELLA SUA gara. 0 = non e' in classifica (nessuna
   // moneta). Confrontarlo con chi corre in un'altra gara non direbbe niente.
   posizione(channel, user) {
+    _scadute();
     const u = String(user).toLowerCase();
     const r = db.prepare('SELECT monete, ruolo FROM points WHERE channel=? AND user=?').get(channel, u);
     if (!r) return 0;
@@ -1362,6 +1550,7 @@ export const points = {
   // Utente → { monete, importate } di tutto il canale: l'anteprima di
   // un'importazione dice a ognuno quante ne ha e quante ne avra'.
   saldi(channel) {
+    _scadute();
     const m = new Map();
     for (const r of db.prepare('SELECT user, monete, importate FROM points WHERE channel=?').iterate(channel)) {
       m.set(r.user, { monete: r.monete, importate: r.importate });
@@ -1375,10 +1564,10 @@ export const points = {
   // aggiornato cambia solo quello che e' cambiato. Chi non e' nel file non si
   // tocca. Il conto si fa qui dentro, sulla riga di adesso, non su quella vista
   // nell'anteprima.
-  importa(channel, voci) {
+  // Le monete importate nascono dallo staff: `scade` e' la loro durata.
+  importa(channel, voci, { scade = 0, ora = now() } = {}) {
     const leggi = db.prepare('SELECT importate FROM points WHERE channel=? AND user=?');
-    const nuovo = db.prepare("INSERT INTO points (channel, user, monete, ruolo, ts, importate) VALUES (?,?,?,'',?,?)");
-    const cambia = db.prepare('UPDATE points SET monete = MAX(0, monete + ? - importate), importate = ?, ts = ? WHERE channel=? AND user=?');
+    const segna = db.prepare('UPDATE points SET importate = ? WHERE channel=? AND user=?');
     const esito = { nuovi: 0, aggiornati: 0, invariati: 0 };
     db.transaction(() => {
       for (const v of voci || []) {
@@ -1387,17 +1576,20 @@ export const points = {
         if (!u) continue;
         const r = leggi.get(channel, u);
         if (!r) {
-          if (n > 0) { nuovo.run(channel, u, n, now(), n); esito.nuovi++; } else esito.invariati++;
+          if (n > 0) { _crea(channel, u, n, scade, '', ora); segna.run(n, channel, u); esito.nuovi++; } else esito.invariati++;
           continue;
         }
         if (r.importate === n) { esito.invariati++; continue; }
-        cambia.run(n, n, now(), channel, u);
+        const d = n - r.importate;
+        if (d > 0) _crea(channel, u, d, scade, null, ora); else _spendi(channel, u, -d, { tutto: false, ora });
+        segna.run(n, channel, u);
         esito.aggiornati++;
       }
     })();
     return esito;
   },
   top(channel, n = 5, chi = 'pubblico') {
+    _scadute();
     const filtro = FILTRO_CLASSIFICA[chi] ?? FILTRO_CLASSIFICA.pubblico;
     return db.prepare(`SELECT user, monete, ruolo FROM points WHERE channel=? AND user<>? AND user NOT LIKE '[%' AND monete>0${filtro} ORDER BY monete DESC LIMIT ?`).all(channel, padroneDi(channel), n);
   },
@@ -1405,6 +1597,7 @@ export const points = {
   // che sono in chat, e una scrittura per persona fuori da una transazione
   // costerebbe un fsync a testa. Chi non ha una riga non c'e' nella mappa.
   economiaDi(channel, utenti) {
+    _scadute();
     const out = new Map();
     const tutti = [...new Set((utenti || []).map((u) => String(u).toLowerCase()).filter(Boolean))];
     for (let i = 0; i < tutti.length; i += 400) {
@@ -1418,7 +1611,8 @@ export const points = {
   // un campo `null` resta com'e'. Una persona che non riceve niente (un bot no:
   // quello non arriva fin qui) ha comunque la riga, perche' il suo silenzio va
   // contato. `ts` cambia solo se cambiano le monete.
-  economiaScrivi(channel, righe) {
+  // Le monete del giro nascono «stando in chat»: `scade` e' la loro durata.
+  economiaScrivi(channel, righe, { scade = 0 } = {}) {
     const q = db.prepare(`INSERT INTO points (channel, user, monete, ruolo, ts, visto, zitto_giri, zitto_ts, diretta, guadagno_diretta)
       VALUES (?,?,MAX(0,?),COALESCE(?,''),?,COALESCE(?,0),COALESCE(?,0),COALESCE(?,0),COALESCE(?,''),COALESCE(?,0))
       ON CONFLICT(channel, user) DO UPDATE SET monete = MAX(0, points.monete + ?), ruolo = COALESCE(?, points.ruolo),
@@ -1430,11 +1624,12 @@ export const points = {
       for (const r of righe || []) {
         const u = String(r.user || '').toLowerCase();
         if (!u) continue;
-        const d = Math.round(Number(r.delta) || 0);
+        const d = Math.max(0, Math.round(Number(r.delta) || 0));
         const ruolo = r.ruolo === null || r.ruolo === undefined ? null : (r.ruolo === 'staff' ? 'staff' : '');
         const v = (x) => (x === undefined ? null : x);
         q.run(channel, u, d, ruolo, ora, v(r.visto), v(r.zittoGiri), v(r.zittoTs), v(r.diretta), v(r.guadagno),
           d, ruolo, d, ora, v(r.visto), v(r.zittoGiri), v(r.zittoTs), v(r.diretta), v(r.guadagno));
+        if (d > 0) _lotti.metti.run(channel, u, msIntero(scade), d);
       }
     })();
   },
@@ -5303,6 +5498,7 @@ export const negozio = {
       if (r > resta) { resta = r; perTutti = true; }
     }
     if (resta > 0) return { motivo: 'attesa', resta, perTutti };
+    _scadute();
     const saldo = db.prepare('SELECT monete FROM points WHERE channel=? AND user=?').get(ch, u)?.monete || 0;
     if (saldo < a.prezzo) return { motivo: 'monete', saldo };
     return null;
@@ -5321,24 +5517,25 @@ export const negozio = {
       if (!a || !a.attivo) return { ok: false, motivo: 'nonCe' };
       const o = this.ostacolo(ch, a, u, ora);
       if (o) return { ok: false, ...o, articolo: a };
+      let ricevuta = [];
       if (a.prezzo > 0) {
-        const tolte = db.prepare('UPDATE points SET monete = monete - ?, ts = ? WHERE channel=? AND user=? AND monete >= ?')
-          .run(a.prezzo, ora, ch, u, a.prezzo).changes;
-        if (!tolte) throw new NegozioFermo('monete');
+        const s = _spendi(ch, u, a.prezzo, { tutto: true, ora });
+        if (!s) throw new NegozioFermo('monete');
+        ricevuta = s.ricevuta;
       }
       if (a.scorta !== null) {
         const scalata = db.prepare('UPDATE negozio_articoli SET scorta = scorta - 1 WHERE channel=? AND id=? AND scorta > 0').run(ch, a.id).changes;
         if (!scalata) throw new NegozioFermo('scorte');
       }
-      const id = Number(db.prepare(`INSERT INTO negozio_acquisti (channel, articolo, nome, tipo, user, display, prezzo, nota, stato, ts, chiuso)
-        VALUES (?,?,?,?,?,?,?,?,?,?,?)`).run(ch, a.id, a.nome, a.tipo, u, String(display || u).slice(0, 60), a.prezzo,
-        String(nota || '').slice(0, 300), stato, ora, stato === 'fatto' ? ora : 0).lastInsertRowid);
+      const id = Number(db.prepare(`INSERT INTO negozio_acquisti (channel, articolo, nome, tipo, user, display, prezzo, nota, stato, ts, chiuso, ricevuta)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`).run(ch, a.id, a.nome, a.tipo, u, String(display || u).slice(0, 60), a.prezzo,
+        String(nota || '').slice(0, 300), stato, ora, stato === 'fatto' ? ora : 0, JSON.stringify(ricevuta)).lastInsertRowid);
       if (inBorsa) {
         db.prepare(`INSERT INTO negozio_borsa (channel, user, articolo, nome, quanti, ts) VALUES (?,?,?,?,1,?)
           ON CONFLICT(channel, user, articolo) DO UPDATE SET quanti = negozio_borsa.quanti + 1, nome = excluded.nome, ts = excluded.ts`)
           .run(ch, u, a.id, a.nome, ora);
       }
-      const saldo = db.prepare('SELECT monete FROM points WHERE channel=? AND user=?').get(ch, u)?.monete || 0;
+      const saldo = points.get(ch, u);
       return { ok: true, id, saldo, articolo: { ...a, scorta: a.scorta === null ? null : a.scorta - 1 } };
     });
     try {
@@ -5372,12 +5569,15 @@ export const negozio = {
       if (!r || !stati.includes(r.stato)) return { ok: false };
       db.prepare("UPDATE negozio_acquisti SET stato='rimborsato', motivo=?, chiuso=? WHERE id=?").run(String(motivo || '').slice(0, 60), ora, n);
       if (r.prezzo > 0) {
-        db.prepare(`INSERT INTO points (channel, user, monete, ruolo, ts) VALUES (?,?,?,'',?)
-          ON CONFLICT(channel, user) DO UPDATE SET monete = points.monete + excluded.monete, ts = excluded.ts`)
-          .run(ch, r.user, r.prezzo, ora);
+        // i lotti spesi tornano com'erano; un acquisto di prima dei lotti e'
+        // stato pagato con monete che non scadevano
+        let ricevuta = null;
+        try { ricevuta = JSON.parse(r.ricevuta || 'null'); } catch { ricevuta = null; }
+        if (!Array.isArray(ricevuta) || _somma(ricevuta) !== r.prezzo) ricevuta = [{ scade: 0, quanti: r.prezzo }];
+        _rendi(ch, r.user, ricevuta, Infinity, ora);
       }
       db.prepare('UPDATE negozio_articoli SET scorta = scorta + 1 WHERE channel=? AND id=? AND scorta IS NOT NULL').run(ch, r.articolo);
-      const saldo = db.prepare('SELECT monete FROM points WHERE channel=? AND user=?').get(ch, r.user)?.monete || 0;
+      const saldo = points.get(ch, r.user);
       return { ok: true, user: r.user, display: r.display, prezzo: r.prezzo, nome: r.nome, saldo };
     }).immediate();
   },

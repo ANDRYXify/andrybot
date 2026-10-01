@@ -30,7 +30,7 @@ function riempi(login) {
   streamers.upsertApproved(login, login, '1');
   streamers.setEnabled(login, true);
   commands.set(login, 'ciao', 'ciao a tutti');
-  points.add(login, 'lucia', 50);
+  points.dai(login, 'lucia', 50);
   modules.save(login, { nome: 'x', trigger: { tipo: 'comando', comando: 'x' }, condizioni: {}, azioni: [] });
   const dir = path.join(process.env.DATA_DIR, 'effects', login);
   fs.mkdirSync(dir, { recursive: true });
