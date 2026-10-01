@@ -43,6 +43,15 @@ comandi diversi da quelli della riga italiana.
 
 ## 2026-10-01
 
+- L'anteprima del link non taglia più i nomi a un numero di lettere: ogni testo si misura e si rimpicciolisce quanto serve per starci intero. [vai: negozio]
+  en: The link preview no longer cuts names at a number of letters: every text is measured and shrinks as much as needed to fit whole.
+  es: La vista previa del enlace ya no corta los nombres a un número de letras: cada texto se mide y se reduce lo necesario para caber entero.
+- Nell'editor dell'anteprima i pezzi si ridimensionano con le maniglie, il doppio clic porta a scrivere un testo e i segnaposto dicono cosa diventano. [vai: negozio]
+  en: In the preview editor, pieces resize with handles, a double click takes you to write a text, and placeholders show what they turn into.
+  es: En el editor de la vista previa las piezas cambian de tamaño con las asas, el doble clic lleva a escribir un texto y los marcadores dicen en qué se convierten.
+- La carta del negozio mostra il nome del canale e una riga che dice cosa ci si trova, senza ripetere «il negozio» e senza buchi; e si riparte da tre vesti. [vai: negozio]
+  en: The shop card shows the channel name and a line saying what you find there, without repeating «shop» or leaving gaps; and you can start over from three looks.
+  es: La tarjeta de la tienda muestra el nombre del canal y una línea que dice qué se encuentra, sin repetir «la tienda» ni dejar huecos; y se puede volver a empezar desde tres estilos.
 - Sulla pagina delle donazioni l'importo scelto si segna con la «v» disegnata a mano, una diversa per ogni importo, nel colore del tuo tema. [vai: donazioni]
   en: On the donations page, the chosen amount is marked with a hand-drawn check, a different one for each amount, in your theme's color.
   es: En la página de donaciones, el importe elegido se marca con una «v» dibujada a mano, distinta para cada importe, en el color de tu tema.

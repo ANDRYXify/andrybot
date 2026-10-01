@@ -234,3 +234,16 @@ test('la carta dell\'anteprima del link del negozio parla la lingua del canale',
   const targa = (l) => cartaPaginaDi({ quale: 'negozio', lingua: l }).elementi.find((e) => e.id === 'targhetta').testo;
   assert.deepEqual(['it', 'en', 'es'].map(targa), ['IL NEGOZIO', 'SHOP', 'LA TIENDA']);
 });
+
+test('la carta dell\'anteprima del link: il nome del canale, e una riga mai vuota', () => {
+  // La targhetta dice gia' «il negozio»: il nome grande e' quello del canale.
+  // La riga sotto non resta mai vuota, sennò lascia un buco nella carta.
+  const ch = canale();
+  const di = P.righeCarta(ch, 'Bottega');
+  assert.equal(di.nome, 'Bottega', 'il nome del canale, non «Il negozio di …»');
+  assert.equal(di.titolo, 'Cosa si compra in chat, e quanto costa', 'senza parole sue, la riga dice cosa ci si trova');
+  paginaNegozio.salva(ch, { headline: 'Il bazar del lunedì', tagline: '', attiva: true });
+  assert.equal(P.righeCarta(ch, 'Bottega').titolo, 'Il bazar del lunedì', 'un titolo cambiato dallo streamer va sotto al nome');
+  paginaNegozio.salva(ch, { headline: 'Il bazar del lunedì', tagline: 'Premi veri, monete finte', attiva: true });
+  assert.equal(P.righeCarta(ch, 'Bottega').titolo, 'Premi veri, monete finte', 'e la sua riga vince su tutto');
+});

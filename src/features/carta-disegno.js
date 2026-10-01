@@ -44,6 +44,38 @@ export const CARATTERI = [
   ['Archivo', 'Archivo-Variable.ttf'],
 ];
 
+// Quanto e' larga ogni lettera di questi caratteri, in millesimi di corpo, letta
+// dai loro file (scripts/misura-caratteri.mjs): per blocchi di lettere, dalla
+// prima del blocco in avanti. Uno zero e' una lettera che il carattere non ha.
+// ── le lettere (scritto da scripts/misura-caratteri.mjs, non a mano) ──
+export const LETTERE = {
+  'Anton': {
+    peso: 400,
+    32: [234,229,429,546,462,1057,520,214,291,291,452,355,236,311,229,405,494,331,494,494,494,494,494,494,494,494,242,245,321,311,321,492,864,485,479,474,493,412,399,485,499,227,466,472,397,746,498,486,472,494,477,461,396,474,469,712,484,446,410,318,405,318,474,365,317,483,501,491,498,488,280,504,505,243,263,491,248,758,499,497,501,498,347,475,305,499,461,696,459,461,386,340,216,340,493],
+    160: [234,227,481,474,488,463,222,449,477,675,392,578,404,293,675,356,389,358,307,309,317,490,498,234,281,212,397,578,814,726,854,493,485,485,485,485,485,485,640,474,412,412,412,412,227,227,227,227,493,498,486,486,486,486,486,347,486,474,474,474,474,446,462,492,483,483,483,483,483,483,731,491,488,488,488,488,235,235,235,235,503,499,497,497,497,497,497,334,497,499,499,499,499,461,492,461,485,483,485,483,485,483,474,491,474,491,474,491,474,491,493,656,493,498,412,488,412,488,412,488,412,488,412,488,485,504,485,504,485,504,485,504,499,505,508,505,227,235,227,235,227,235,227,243,227,235,693,506,466,263,472,491,493,397,248,397,248,397,403,451,408,417,288,498,499,498,499,498,499,499,491,499,486,497,486,497,486,497,649,739,477,347,477,347,477,347,461,475,461,475,461,475,461,475,396,305,396,383,396,305,474,499,474,499,474,499,474,499,474,499,474,499,712,696,446,461,446,410,386,410,386,410,386,280],
+    8208: [311,0,494,311,563,563,0,0,235,232,236,0,464,463,467,0,385,394,352,0,0,0,708,0],
+    8364: [525],
+    8482: [925],
+  },
+  'Archivo Black': {
+    peso: 400,
+    32: [333,333,500,660,667,1000,889,278,389,389,556,660,333,333,333,278,667,667,667,667,667,667,667,667,667,667,333,333,660,660,660,611,740,778,778,778,778,722,667,833,833,389,667,833,667,944,833,833,722,833,778,722,722,833,778,1000,778,778,722,389,278,389,660,500,333,667,667,667,667,667,389,667,667,333,333,667,333,1000,667,667,667,667,444,611,444,667,611,944,667,611,556,389,278,389,660],
+    160: [333,333,667,667,660,667,278,667,333,800,400,667,660,333,800,333,400,660,400,400,333,667,850,333,333,400,400,667,1000,1000,1000,611,778,778,778,778,778,778,1000,778,722,722,722,722,389,389,389,389,778,833,833,833,833,833,833,660,833,833,833,833,833,778,722,667,667,667,667,667,667,667,1000,667,667,667,667,667,333,333,333,333,667,667,667,667,667,667,667,660,667,667,667,667,667,611,667,611,778,667,778,667,778,667,778,667,778,667,778,667,778,667,778,844,778,667,722,667,722,667,722,667,722,667,722,667,833,667,833,667,833,667,833,667,833,667,833,667,389,333,389,333,389,333,389,333,389,333,1028,668,667,333,833,667,667,667,333,667,333,667,500,667,534,667,333,833,667,833,667,833,667,858,814,681,833,667,833,667,833,667,1000,1000,778,444,778,444,778,444,722,611,722,611,722,611,722,611,722,444,722,625,722,444,833,667,833,667,833,667,833,667,833,667,833,667,1000,944,778,611,778,722,556,722,556,722,556,390],
+    8208: [0,0,0,500,1000,750,0,500,278,278,278,278,500,500,500,0,667,667,500,0,0,0,1000,0],
+    8364: [667],
+    8482: [950],
+  },
+  'Archivo': {
+    peso: 600,
+    32: [200,292,444,583,541,966,729,246,357,357,407,636,300,333,300,298,575,576,576,576,577,575,576,576,576,575,336,336,636,636,636,613,998,709,706,721,728,672,609,794,732,282,585,695,570,844,732,782,670,782,717,667,619,724,671,954,686,677,634,339,298,339,636,507,209,556,592,547,592,561,307,591,584,252,250,543,252,861,584,598,592,592,362,541,314,583,529,758,546,529,509,394,245,394,636],
+    160: [200,292,577,580,580,572,245,579,313,764,397,571,636,333,764,305,400,636,357,357,209,587,590,333,232,357,391,571,855,855,855,613,709,709,709,709,709,709,999,721,672,672,672,672,282,282,282,282,728,732,782,782,782,782,782,636,782,724,724,724,724,677,690,625,556,556,556,556,556,556,895,547,561,561,561,561,252,252,252,252,614,584,598,598,598,598,598,636,598,583,583,583,583,529,592,529,709,556,709,556,709,556,721,547,721,547,721,547,721,547,728,592,728,592,672,561,672,561,672,561,672,561,672,561,794,591,794,591,794,591,794,591,732,584,732,584,282,252,282,252,282,252,282,252,282,252,867,502,585,250,695,543,543,570,252,570,252,570,252,570,252,570,252,732,584,732,584,732,584,584,732,583,782,598,782,598,782,598,1200,950,717,362,717,362,717,362,667,541,667,541,667,541,667,541,619,314,619,314,619,314,724,583,724,583,724,583,724,583,724,583,724,583,954,758,677,529,677,634,509,634,509,634,509,306],
+    8208: [600,333,0,500,1000,875,0,507,280,280,280,0,482,482,482,0,580,580,425,0,0,0,965,0],
+    8364: [580],
+    8482: [1015],
+  },
+};
+// ── fine delle lettere ──
+
 export const MISURA = { larghezza: 1200, altezza: 500 };
 // L'anteprima del link (Telegram, WhatsApp, Discord) ha un'altra forma: 1200×630.
 export const MISURA_PAGINA = { larghezza: 1200, altezza: 630 };
@@ -85,12 +117,70 @@ const senzaEmoji = (s) => String(s ?? '').replace(EMOJI_G, '')
 const esc = (s) => senzaEmoji(s).replace(/[<>&"']/g, (c) => (
   { '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&apos;' }[c]));
 
-// Il testo non si può misurare senza un motore di caratteri, quindi si taglia a
-// un numero di segni. Meglio un titolo con i puntini che un titolo che esce dal
-// bordo — e uscire dal bordo è quello che succede a non fare niente.
-const taglia = (s, n) => {
-  const t = String(s ?? '');
-  return t.length > n ? t.slice(0, Math.max(1, n - 1)).trimEnd() + '…' : t;
+// ── i testi si misurano (docs/CARTA-LIVE.md, «I testi si misurano») ──
+//
+// Quanto e' largo un testo e' la somma delle larghezze delle sue lettere, che
+// stanno nei file dei caratteri (LETTERE, sopra). Il crenamento non si conta:
+// misurato contro il browser e il disegnatore del server, sposta al piu' lo
+// 0,8% in piu', quindi la misura si prende col 2% d'aria (ARIA). Una lettera che
+// i nostri caratteri non hanno la disegna un carattere di riserva, e la si
+// conta larga un corpo intero.
+const ARIA = 1.02;
+const MARGINE = 48;
+// Quanto un testo puo' rimpicciolirsi per starci: fino al 55% del corpo
+// scelto (oltre, il nome diventa piccolo come la riga sotto e la carta perde il
+// suo ordine), e mai sotto i 22 punti, che nell'anteprima di una chat, larga un
+// terzo, sono gia' il testo piu' piccolo che si legge.
+const PIU_PICCOLO = 0.55;
+const LEGGIBILE = 22;
+
+function avanzo(tab, c) {
+  for (const da in tab) {
+    if (da === 'peso') continue;
+    const i = c - Number(da);
+    if (i >= 0 && i < tab[da].length) return tab[da][i] || 1000;
+  }
+  return 1000;
+}
+
+export function larghezzaTesto(testo, carattere, corpo, spaziatura = 0) {
+  const tab = LETTERE[carattere] || LETTERE.Archivo;
+  let somma = 0, n = 0;
+  for (const ch of String(testo ?? '')) { somma += avanzo(tab, ch.codePointAt(0)); n += 1; }
+  return (somma * corpo / 1000) * ARIA + Math.max(0, spaziatura) * n;
+}
+
+// Un testo dentro la sua larghezza. Il corpo scende quanto serve perche' ci
+// stia, fino al suo minimo (sotto); se nemmeno li' ci sta, a quel corpo si
+// taglia e i puntini dicono che continua, misurati anche loro. Il testo non esce
+// mai dalla sua larghezza.
+export function adatta(testo, carattere, corpo, spaziatura, largo, fisso = 0) {
+  const sp = Math.max(0, spaziatura);
+  const misura = (t, c) => larghezzaTesto(t, carattere, c, spaziatura) + fisso * c;
+  // il corpo piu' grande a cui `t` ci sta (la misura cresce dritta col corpo)
+  const sta = (t) => { const u = larghezzaTesto(t, carattere, 1, 0) + fisso; return u > 0 ? Math.floor((largo - sp * [...t].length) / u) : corpo; };
+  const t = String(testo ?? '');
+  if (misura(t, corpo) <= largo) return { corpo, testo: t };
+  const minimo = Math.min(corpo, Math.max(8, Math.round(corpo * PIU_PICCOLO), Math.min(corpo, LEGGIBILE)));
+  const c = sta(t);
+  if (c >= minimo) return { corpo: Math.min(corpo, c), testo: t };
+  const lettere = [...t];
+  while (lettere.length > 1 && misura(lettere.join('').trimEnd() + '…', minimo) > largo) lettere.pop();
+  const corto = lettere.join('').trimEnd() + '…';
+  if (misura(corto, minimo) <= largo) return { corpo: minimo, testo: corto };
+  // Una larghezza minuscola o una spaziatura enorme: nemmeno una lettera coi
+  // puntini ci sta al minimo. Il testo non esce lo stesso: scende ancora, e se
+  // nemmeno a un punto ci sta, non si disegna.
+  const c2 = sta(corto);
+  return c2 >= 1 ? { corpo: Math.min(minimo, c2), testo: corto } : { corpo: minimo, testo: '' };
+}
+
+// La larghezza in cui un testo sta: quella scelta, ma mai oltre il bordo della
+// carta (meno un margine piccolo). Una sola funzione per il disegno e per il
+// campo a puntini dell'editor: quello che si vede e' quello che si disegna.
+export const larghezzaUtile = (e, W) => {
+  const fino = Math.max(40, W - (Number(e.x) || 0) - MARGINE / 2);
+  return Number(e.larghezza) > 0 ? Math.min(Number(e.larghezza), fino) : Math.max(40, W - (Number(e.x) || 0) - MARGINE);
 };
 
 function riempi(modello, dati) {
@@ -129,14 +219,14 @@ export const TEMI = {
       { id: 'targhetta', tipo: 'targhetta', x: 470, y: 116, testo: 'LIVE',
         sfondo: '#9146FF', colore: '#FFFFFF', carattere: 'Archivo Black', corpo: 26, punto: true },
       { id: 'nome', tipo: 'testo', x: 470, y: 256, testo: '{nome}',
-        carattere: 'Archivo Black', corpo: 72, colore: '#FFFFFF', max: 15 },
+        carattere: 'Archivo Black', corpo: 72, colore: '#FFFFFF', larghezza: 680 },
       { id: 'titolo', tipo: 'testo', x: 470, y: 312, testo: '{titolo}',
-        carattere: 'Archivo', corpo: 32, colore: '#C4BBD6', max: 42 },
+        carattere: 'Archivo', corpo: 32, colore: '#C4BBD6', larghezza: 680 },
       { id: 'gioco', tipo: 'testo', x: 490, y: 380, testo: '{gioco}',
-        carattere: 'Archivo', corpo: 26, colore: '#9F8FC0', max: 34, spaziatura: 1 },
+        carattere: 'Archivo', corpo: 26, colore: '#9F8FC0', larghezza: 660, spaziatura: 1 },
       { id: 'trattino', tipo: 'riga', x: 470, y: 356, larghezza: 5, altezza: 30, colore: '#9146FF' },
       { id: 'indirizzo', tipo: 'testo', x: 470, y: 436, testo: 'twitch.tv/{login}',
-        carattere: 'Archivo', corpo: 25, colore: '#7E72A0', max: 40 },
+        carattere: 'Archivo', corpo: 25, colore: '#7E72A0', larghezza: 680 },
     ],
   },
   kick: {
@@ -150,14 +240,14 @@ export const TEMI = {
       { id: 'targhetta', tipo: 'targhetta', x: 150, y: 382, testo: 'LIVE',
         sfondo: '#53FC18', colore: '#000000', carattere: 'Anton', corpo: 32, punto: false, tagliata: true },
       { id: 'nome', tipo: 'testo', x: 456, y: 204, testo: '{nome}',
-        carattere: 'Anton', corpo: 86, colore: '#FFFFFF', max: 16, maiuscolo: true, spaziatura: 1 },
+        carattere: 'Anton', corpo: 86, colore: '#FFFFFF', larghezza: 690, maiuscolo: true, spaziatura: 1 },
       { id: 'titolo', tipo: 'testo', x: 456, y: 268, testo: '{titolo}',
-        carattere: 'Archivo', corpo: 31, colore: '#9A9A9A', max: 40 },
+        carattere: 'Archivo', corpo: 31, colore: '#9A9A9A', larghezza: 690 },
       { id: 'gioco', tipo: 'testo', x: 456, y: 332, testo: '{gioco}',
-        carattere: 'Archivo Black', corpo: 23, colore: '#53FC18', max: 30, maiuscolo: true, spaziatura: 3 },
+        carattere: 'Archivo Black', corpo: 23, colore: '#53FC18', larghezza: 690, maiuscolo: true, spaziatura: 3 },
       { id: 'filo', tipo: 'riga', x: 456, y: 366, larghezza: 600, altezza: 2, colore: '#1E2A1A' },
       { id: 'indirizzo', tipo: 'testo', x: 456, y: 410, testo: 'kick.com/{login}',
-        carattere: 'Archivo', corpo: 26, colore: '#6B6B6B', max: 40 },
+        carattere: 'Archivo', corpo: 26, colore: '#6B6B6B', larghezza: 690 },
     ],
   },
 };
@@ -202,12 +292,12 @@ export const TEMI_PAGINA = {
       { id: 'targhetta', tipo: 'targhetta', x: 520, y: 176, testo: 'I MIEI LINK',
         sfondo: '#7C5CFF', colore: '#FFFFFF', carattere: 'Archivo Black', corpo: 24, punto: false },
       { id: 'nome', tipo: 'testo', x: 520, y: 318, testo: '{nome}',
-        carattere: 'Archivo Black', corpo: 78, colore: '#FFFFFF', max: 15 },
+        carattere: 'Archivo Black', corpo: 78, colore: '#FFFFFF', larghezza: 630 },
       { id: 'titolo', tipo: 'testo', x: 520, y: 376, testo: '{titolo}',
-        carattere: 'Archivo', corpo: 32, colore: '#C9C4D6', max: 42 },
+        carattere: 'Archivo', corpo: 32, colore: '#C9C4D6', larghezza: 630 },
       { id: 'trattino', tipo: 'riga', x: 520, y: 416, larghezza: 56, altezza: 5, colore: '#7C5CFF' },
       { id: 'indirizzo', tipo: 'testo', x: 520, y: 472, testo: '{link}',
-        carattere: 'Archivo', corpo: 27, colore: '#8E88A3', max: 44 },
+        carattere: 'Archivo', corpo: 27, colore: '#8E88A3', larghezza: 630 },
     ],
   },
   dona: {
@@ -221,12 +311,12 @@ export const TEMI_PAGINA = {
       { id: 'targhetta', tipo: 'targhetta', x: 520, y: 170, testo: 'SOSTIENIMI',
         sfondo: '#FF4FA3', colore: '#FFFFFF', carattere: 'Anton', corpo: 28, punto: false, tagliata: true },
       { id: 'nome', tipo: 'testo', x: 520, y: 322, testo: '{nome}',
-        carattere: 'Anton', corpo: 88, colore: '#FFFFFF', max: 14, maiuscolo: true, spaziatura: 1 },
+        carattere: 'Anton', corpo: 88, colore: '#FFFFFF', larghezza: 520, maiuscolo: true, spaziatura: 1 },
       { id: 'titolo', tipo: 'testo', x: 520, y: 380, testo: '{titolo}',
-        carattere: 'Archivo', corpo: 31, colore: '#D6C9D2', max: 34 },
+        carattere: 'Archivo', corpo: 31, colore: '#D6C9D2', larghezza: 520 },
       { id: 'filo', tipo: 'riga', x: 520, y: 418, larghezza: 500, altezza: 2, colore: '#2E1F2A' },
       { id: 'indirizzo', tipo: 'testo', x: 520, y: 470, testo: '{link}',
-        carattere: 'Archivo', corpo: 27, colore: '#9B8E98', max: 38 },
+        carattere: 'Archivo', corpo: 27, colore: '#9B8E98', larghezza: 520 },
     ],
   },
   negozio: {
@@ -239,12 +329,12 @@ export const TEMI_PAGINA = {
       { id: 'targhetta', tipo: 'targhetta', x: 520, y: 172, testo: 'IL NEGOZIO',
         sfondo: '#2BB673', colore: '#FFFFFF', carattere: 'Archivo Black', corpo: 26, punto: false },
       { id: 'nome', tipo: 'testo', x: 520, y: 318, testo: '{nome}',
-        carattere: 'Archivo Black', corpo: 74, colore: '#FFFFFF', max: 16 },
+        carattere: 'Archivo Black', corpo: 74, colore: '#FFFFFF', larghezza: 630 },
       { id: 'titolo', tipo: 'testo', x: 520, y: 376, testo: '{titolo}',
-        carattere: 'Archivo', corpo: 31, colore: '#C4D6CC', max: 40 },
+        carattere: 'Archivo', corpo: 31, colore: '#C4D6CC', larghezza: 630 },
       { id: 'trattino', tipo: 'riga', x: 520, y: 416, larghezza: 56, altezza: 5, colore: '#2BB673' },
       { id: 'indirizzo', tipo: 'testo', x: 520, y: 472, testo: '{link}',
-        carattere: 'Archivo', corpo: 27, colore: '#8FA399', max: 44 },
+        carattere: 'Archivo', corpo: 27, colore: '#8FA399', larghezza: 630 },
     ],
   },
 };
@@ -310,6 +400,22 @@ export function cartaPaginaDi({ dati, quale, accento, lingua = 'it' } = {}) {
     tema = { ...tema, elementi: tema.elementi.map((e) => (e.id === 'targhetta' ? { ...e, testo: scritta } : e)) };
   }
   return normCarta(tintaCarta(tema, SEGNALE_PAGINA[q], accento || SEGNALE_PAGINA[q]));
+}
+
+// Le vesti da cui ripartire nell'editor dell'anteprima: i tre disegni delle
+// pagine, ognuno col colore della pagina e con la targhetta della pagina che si
+// sta vestendo (la carta del negozio vestita «Striscia» dice ancora «il
+// negozio», non «sostienimi»). Lo stesso aspetto dei temi della locandina:
+// id, nome, nomi nelle tre lingue, carta.
+const VESTI_PAGINA = { link: ['Alone', 'Glow', 'Halo'], dona: ['Striscia', 'Stripe', 'Franja'], negozio: ['Cornice', 'Frame', 'Marco'] };
+export function vestiPagina({ quale, accento, lingua = 'it' } = {}) {
+  const q = TEMI_PAGINA[quale] ? quale : 'link';
+  const targa = (cartaPaginaDi({ quale: q, accento, lingua }).elementi.find((e) => e.tipo === 'targhetta') || {}).testo;
+  return Object.keys(TEMI_PAGINA).map((k) => {
+    const c = cartaPaginaDi({ quale: k, accento, lingua });
+    return { id: k, nome: VESTI_PAGINA[k][0], nomi: VESTI_PAGINA[k],
+      carta: { ...c, elementi: c.elementi.map((e) => (e.tipo === 'targhetta' && targa ? { ...e, testo: targa } : e)) } };
+  });
 }
 
 // ── la validazione ─────────────────────────────────────────────────────────
@@ -378,7 +484,7 @@ export function normElemento(e, W, H) {
     carattere: unoDi(e?.carattere, NOMI_CARATTERI, 'Archivo'),
     corpo: numero(e?.corpo, 8, 240, 28),
     colore: colore(e?.colore, '#FFFFFF'),
-    max: numero(e?.max, 4, 200, 40),
+    larghezza: numero(e?.larghezza, 40, W * 2, Math.max(40, W - base.x - MARGINE)),
     spaziatura: numero(e?.spaziatura, -10, 40, 0),
     maiuscolo: e?.maiuscolo === true };
 }
@@ -466,33 +572,44 @@ function avatarSvg(e, dati, n) {
     + (sp ? `<path d="${p}" fill="none" stroke="${bordo}" stroke-width="${sp}"/>` : '');
 }
 
-function testoSvg(e, dati) {
-  let t = riempi(e.testo, dati);
+function testoSvg(e, dati, W, fantasmi) {
+  let t = senzaEmoji(riempi(e.testo, dati));
   if (e.maiuscolo) t = t.toUpperCase();
-  t = taglia(t, Math.max(4, Number(e.max) || 40));
-  if (!t) return '';
+  const x = Number(e.x) || 0, y = Number(e.y) || 0;
   const sp = Number(e.spaziatura) || 0;
-  return `<text x="${Number(e.x) || 0}" y="${Number(e.y) || 0}" font-family="${esc(e.carattere || 'Archivo')}"`
-    + ` font-size="${Math.max(8, Number(e.corpo) || 28)}" fill="${esc(e.colore || '#FFFFFF')}"`
-    + (sp ? ` letter-spacing="${sp}"` : '') + `>${esc(t)}</text>`;
+  const carattere = e.carattere || 'Archivo';
+  const pieno = Math.max(8, Number(e.corpo) || 28);
+  // Nell'editor un testo che i dati lasciano vuoto si vede in trasparenza, col
+  // suo segnaposto: cosi' lo si trova e lo si prende. Nell'immagine non c'e'.
+  if (!t) {
+    if (!fantasmi) return '';
+    return `<text x="${x}" y="${y}" font-family="${esc(carattere)}" font-size="${pieno}" fill="${esc(e.colore || '#FFFFFF')}" fill-opacity=".3">${esc(e.testo || '…')}</text>`;
+  }
+  const { corpo, testo } = adatta(t, carattere, pieno, sp, larghezzaUtile(e, W));
+  return `<text x="${x}" y="${y}" font-family="${esc(carattere)}"`
+    + ` font-size="${corpo}" fill="${esc(e.colore || '#FFFFFF')}"`
+    + (sp ? ` letter-spacing="${sp}"` : '') + `>${esc(testo)}</text>`;
 }
 
-function targhettaSvg(e, dati) {
-  const t = taglia(riempi(e.testo, dati) || 'LIVE', 18).toUpperCase();
-  const corpo = Math.max(10, Number(e.corpo) || 26);
+function targhettaSvg(e, dati, W) {
   const x = Number(e.x) || 0, y = Number(e.y) || 0;
+  const carattere = e.carattere || 'Archivo Black';
+  // Il margine prima della parola (col pallino, piu' largo), quello dopo e lo
+  // spigolo tagliato crescono col corpo: entrano nella misura come una parte
+  // fissa per ogni punto di corpo, cosi' anche la targhetta sta nella carta.
+  const prima = e.punto ? 1.55 : 0.7, dopo = 0.7 + (e.tagliata ? 1.75 * 0.45 : 0);
+  const { corpo, testo: t } = adatta(senzaEmoji(riempi(e.testo, dati) || 'LIVE').toUpperCase(), carattere,
+    Math.max(10, Number(e.corpo) || 26), 2, Math.max(60, W - x - MARGINE / 2), prima + dopo);
   const alt = Math.round(corpo * 1.75);
-  // La larghezza si stima dal corpo: senza motore di caratteri non si misura, e
-  // una stima larga è meglio di una targhetta che taglia la sua stessa parola.
-  const largo = Math.round(corpo * 0.72 * t.length) + (e.punto ? Math.round(corpo * 1.5) : 0) + Math.round(corpo * 1.5);
+  const largo = Math.round(corpo * (prima + dopo) + larghezzaTesto(t, carattere, corpo, 2));
   const sfondo = esc(e.sfondo || '#9146FF'), colore = esc(e.colore || '#FFFFFF');
   const forma = e.tagliata
     ? `<path d="M${x} ${y} H${x + largo} L${x + largo - Math.round(alt * 0.45)} ${y + alt} H${x} Z" fill="${sfondo}"/>`
     : `<rect x="${x}" y="${y}" width="${largo}" height="${alt}" fill="${sfondo}"/>`;
-  const dx = e.punto ? Math.round(corpo * 1.55) : Math.round(corpo * 0.7);
+  const dx = Math.round(corpo * prima);
   return forma
     + (e.punto ? `<circle cx="${x + Math.round(corpo * 0.78)}" cy="${y + alt / 2}" r="${Math.round(corpo * 0.3)}" fill="${colore}"/>` : '')
-    + `<text x="${x + dx}" y="${y + Math.round(alt * 0.72)}" font-family="${esc(e.carattere || 'Archivo Black')}"`
+    + `<text x="${x + dx}" y="${y + Math.round(alt * 0.72)}" font-family="${esc(carattere)}"`
     + ` font-size="${corpo}" fill="${colore}" letter-spacing="2">${esc(t)}</text>`;
 }
 
@@ -510,7 +627,7 @@ function strisciaSvg(e, W, H) {
 
 // La carta come SVG. Funzione PURA: stessi dati, stessa immagine — così il
 // collaudo può confrontarla senza sorprese.
-export function svgCarta(carta, dati = {}) {
+export function svgCarta(carta, dati = {}, { fantasmi = false } = {}) {
   const W = Math.max(200, Number(carta?.larghezza) || MISURA.larghezza);
   const H = Math.max(120, Number(carta?.altezza) || MISURA.altezza);
   const pezzi = [];
@@ -520,8 +637,8 @@ export function svgCarta(carta, dati = {}) {
     n += 1;
     let dentro = '';
     if (e.tipo === 'avatar') dentro = avatarSvg(e, dati, n);
-    else if (e.tipo === 'testo') dentro = testoSvg(e, dati);
-    else if (e.tipo === 'targhetta') dentro = targhettaSvg(e, dati);
+    else if (e.tipo === 'testo') dentro = testoSvg(e, dati, W, fantasmi);
+    else if (e.tipo === 'targhetta') dentro = targhettaSvg(e, dati, W);
     else if (e.tipo === 'riga') dentro = rigaSvg(e);
     else if (e.tipo === 'striscia') dentro = strisciaSvg(e, W, H);
     if (!dentro) continue;

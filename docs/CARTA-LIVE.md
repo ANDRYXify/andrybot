@@ -82,13 +82,79 @@ I segnaposto che si possono scrivere in un testo: `{nome}`, `{titolo}`,
 categoria arrivano dalla piattaforma — gli stessi dati che il messaggio Telegram
 usa già.
 
-Un titolo lunghissimo viene **tagliato coi puntini**, non lasciato uscire dal
-bordo: senza un motore di caratteri il testo non si può misurare, e non fare
-niente vuol dire farlo uscire dalla carta.
+## I testi si misurano
+
+Prima un testo si tagliava a un numero di segni («Segni al massimo»), perché
+«senza un motore di caratteri il testo non si può misurare». Era una stima, e
+sbagliava nei due versi: «Il negozio di andryxify» usciva «Il negozio di a…»
+con mezzo spazio libero, e un nome di tutte M usciva dal bordo.
+
+Ma i caratteri sono file nostri, e quanto è larga ogni lettera è scritto dentro
+il file: la tabella `hmtx` dà l'avanzamento di ogni glifo, `cmap` dice quale
+glifo fa quale lettera, `head` in che unità. `scripts/misura-caratteri.mjs` le
+legge e scrive `LETTERE` in `carta-disegno.js` (fra due segni, mai a mano): per
+ogni carattere, l'avanzamento delle lettere latine, del Latin Extended-A e della
+punteggiatura tipografica, in millesimi di corpo, e il **peso** con cui il
+carattere si disegna da solo. Una lettera che non c'è (cirillico, ideogrammi) la
+disegna un carattere di riserva e si conta larga un corpo intero.
+
+Misurato contro il browser e contro resvg, su frasi vere: Anton e Archivo Black
+coincidono entro l'1%. Il crenamento sposta al più lo 0,8% *in più*, quindi la
+misura si prende col 2% d'aria (`ARIA`).
+
+**Il peso.** Archivo è un carattere variabile, e il suo peso di partenza è 600:
+resvg disegna quello. Il browser invece, con l'`@font-face` dichiarato a 400,
+lo stringeva al peso 400, e l'anteprima dell'editor era più sottile e più
+stretta dell'immagine vera, fino al 10%. Ora l'editor dichiara ogni carattere
+col peso che sta nella tabella (`LETTERE[nome].peso`, letto da `fvar` o da
+`OS/2`): browser, server e tabella danno la stessa larghezza.
+
+**Ogni testo ha la sua larghezza** (`larghezza`, nell'editor «Larghezza
+massima», o la maniglia di destra), e ci sta sempre (`adatta`):
+
+1. se ci sta al suo corpo, resta com'è;
+2. sennò il corpo scende quanto serve, fino al suo minimo: il 55% del corpo
+   scelto (oltre, il nome diventa piccolo come la riga sotto) e mai sotto i 22
+   punti, che in un'anteprima di chat larga un terzo sono il testo più piccolo
+   che si legge;
+3. se nemmeno al minimo ci sta, a quel corpo si taglia coi puntini, misurati
+   anche loro;
+4. in un caso estremo (una larghezza minuscola, una spaziatura enorme) scende
+   ancora: il testo non esce mai.
+
+La larghezza non va mai oltre il bordo della carta (`larghezzaUtile`, la stessa
+per il disegno e per il campo a puntini dell'editor). La targhetta prende la
+larghezza esatta della sua parola, coi margini e lo spigolo tagliato contati
+come una parte per ogni punto di corpo.
 
 E ciò che scrive lo streamer non può rompere il disegno: nome e titolo vengono da
 fuori, e un `"` o un `<` senza fuga chiuderebbero un attributo — da lì in poi la
 carta non sarebbe più la nostra.
+
+## L'editor, i gesti
+
+Chiesto così: «sembra che non funzioni e non mi fa personalizzare niente in modo
+comodo». Ogni pezzo funzionava, l'insieme no: il nome tagliato, un buco dove la
+riga era vuota, si spostava solo coi cursori. Ora:
+
+- **si trascina** un pezzo per spostarlo; quando si aggancia al centro o a un
+  altro pezzo, la riga a cui si è agganciato si vede (Alt per non agganciare,
+  Maiusc per restare in riga, Ctrl/Cmd per andare piano);
+- **le maniglie** del pezzo scelto: a destra la larghezza (testo, riga,
+  striscia), in basso lo spessore (riga), nell'angolo la grandezza. Un testo
+  cresce tutto: corpo e larghezza insieme. La faccia cresce dal centro;
+- **doppio clic** su un testo o una targhetta porta a scriverlo;
+- sotto al testo, **«Si legge: …»** dice cosa diventa coi dati veri, e ogni
+  segnaposto mostra il suo valore;
+- un testo che i dati lasciano **vuoto** si vede in trasparenza, col suo
+  segnaposto, e si prende come gli altri (nell'immagine non c'è);
+- **al centro** in orizzontale e in verticale, misurando il pezzo com'è;
+- **le vesti**: si riparte da un disegno di serie, e Annulla torna indietro.
+
+Il collaudo è `scripts/verifica-editor-carta.mjs`: apre l'editor vero con la
+carta vera del negozio e fa ogni gesto guardando il risultato, e pretende che
+il browser disegni le lettere larghe come la tabella (cioè come il server).
+L'autoprova rimette Archivo al peso 400 e blocca le maniglie, e li vuole rossi.
 
 ## L'editor, e le tre cose che lo tengono onesto
 
@@ -221,8 +287,17 @@ sceglie: la carta rifatta dallo streamer (`carte_pagina`, una per pagina),
 altrimenti il preset tinto.
 
 Il pannello la mostra nel riquadro «Quando condividi il link» dell'editor della
-pagina e apre lo stesso `carta-editor.js` (titolo suo, misura sua, nessun tema
-di partenza da scegliere: lo standard è già la carta che si vede). Le rotte:
+pagina e apre lo stesso `carta-editor.js` (titolo suo, misura sua). Le **vesti**
+sono i tre disegni delle pagine (`vestiPagina`: «Alone», «Striscia», «Cornice»),
+ognuno col colore della pagina e con la targhetta della pagina che si sta
+vestendo.
+
+**La carta del negozio.** La targhetta dice già «il negozio»: il nome grande è
+quello del canale, non «Il negozio di …», che la ripeteva. Sotto va la riga
+dello streamer, se l'ha scritta; poi il titolo della pagina, se l'ha cambiato;
+sennò una riga che dice cosa ci si trova («Cosa si compra in chat, e quanto
+costa»). Mai vuota: una riga vuota lasciava un buco nella carta
+(`righeCarta`, in `src/features/negozio-pagina.js`). Le rotte:
 `GET/PUT/DELETE /api/paginacarta?quale=link|dona`, `GET /api/paginacarta.png`
 per il proprietario; `GET /u/<login>/anteprima.png` e `anteprima-dona.png`
 pubbliche, con cache di un'ora rifatta quando cambiano pagina, carta o faccia.

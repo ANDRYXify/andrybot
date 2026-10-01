@@ -1,7 +1,7 @@
 // © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
 // Proprieta intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 
-import { svgCarta, normCarta, normElemento, CARATTERI } from '/js/carta-disegno.js';
+import { svgCarta, normCarta, normElemento, larghezzaUtile, CARATTERI, LETTERE } from '/js/carta-disegno.js';
 
 const L = (it, en, es) => (document.documentElement.lang === 'en' ? en : document.documentElement.lang === 'es' ? es : it);
 const esc = (s) => String(s ?? '').replace(/[<>&"']/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&apos;' }[c]));
@@ -12,7 +12,7 @@ const CAMPI = {
     ['carattere', ['Carattere', 'Typeface', 'Tipografía'], 'scelta', 'caratteri'],
     ['corpo', ['Corpo', 'Size', 'Tamaño'], 'numero', 8, 240],
     ['colore', ['Colore', 'Color', 'Color'], 'colore'],
-    ['max', ['Segni al massimo', 'Max characters', 'Caracteres máximos'], 'numero', 4, 200],
+    ['larghezza', ['Larghezza massima', 'Max width', 'Ancho máximo'], 'numero', 40, 2400],
     ['spaziatura', ['Spaziatura', 'Letter spacing', 'Espaciado'], 'numero', -10, 40],
     ['maiuscolo', ['Tutto maiuscolo', 'All caps', 'Todo mayúsculas'], 'sino'],
   ],
@@ -70,7 +70,7 @@ function caratteri() {
   if (_fontChiesti) return _fontChiesti;
   const stile = document.createElement('style');
   stile.textContent = CARATTERI.map(([nome, file]) =>
-    `@font-face{font-family:"${ALIAS.get(nome)}";src:url("/font/${file}") format("truetype");font-weight:400;font-style:normal;font-display:block}`).join('');
+    `@font-face{font-family:"${ALIAS.get(nome)}";src:url("/font/${file}") format("truetype");font-weight:${(LETTERE[nome] || {}).peso || 400};font-style:normal;font-display:block}`).join('');
   document.head.appendChild(stile);
   _fontChiesti = Promise.all(CARATTERI.map(([nome]) => document.fonts.load(`32px "${ALIAS.get(nome)}"`))).catch(() => null);
   return _fontChiesti;
@@ -106,11 +106,18 @@ export function apri(stato, { salva, aggiorna } = {}) {
         <h3>${L('Pezzi', 'Pieces', 'Piezas')}</h3>
         <div class="ce-elenco" data-elenco></div>
         <div class="ce-aggiungi" data-aggiungi></div>
+        <div class="ce-vesti" data-vesti></div>
       </aside>
       <div class="ce-tela" data-tela>
         <div class="ce-foglio" data-foglio>
           <div class="ce-disegno" data-disegno></div>
+          <div class="ce-campo" data-campo hidden></div>
           <div class="ce-cornice" data-cornice hidden></div>
+          <div class="ce-guida ce-guida-v" data-guida-v hidden></div>
+          <div class="ce-guida ce-guida-h" data-guida-h hidden></div>
+          <button type="button" class="ce-maniglia" data-m="larga" data-dg-no hidden aria-label="${L('Larghezza', 'Width', 'Ancho')}"></button>
+          <button type="button" class="ce-maniglia" data-m="alta" data-dg-no hidden aria-label="${L('Altezza', 'Height', 'Alto')}"></button>
+          <button type="button" class="ce-maniglia ce-angolo" data-m="angolo" data-dg-no hidden aria-label="${L('Grandezza', 'Size', 'Tamaño')}"></button>
         </div>
       </div>
       <aside class="ce-lato ce-ispettore" data-ispettore></aside>
@@ -123,6 +130,10 @@ export function apri(stato, { salva, aggiorna } = {}) {
   const foglio = q('[data-foglio]');
   const disegno = q('[data-disegno]');
   const cornice = q('[data-cornice]');
+  const campoTesto = q('[data-campo]');
+  const guidaV = q('[data-guida-v]'), guidaH = q('[data-guida-h]');
+  const maniglie = Object.fromEntries([...velo.querySelectorAll('[data-m]')].map((m) => [m.dataset.m, m]));
+  let maniglia = null;
 
   const elSel = () => carta.elementi.find((x) => x.id === sel) || null;
 
@@ -158,24 +169,41 @@ export function apri(stato, { salva, aggiorna } = {}) {
     if (svg) { svg.setAttribute('width', Math.round(carta.larghezza * scala)); svg.setAttribute('height', Math.round(carta.altezza * scala)); }
   }
 
+  const MANIGLIE = { testo: ['larga', 'angolo'], targhetta: ['angolo'], avatar: ['angolo'], riga: ['larga', 'alta'], striscia: ['larga'] };
+
   function riquadro() {
     const e = elSel();
     const svg = disegno.querySelector('svg');
-    if (!e || e.spento || !svg) { cornice.hidden = true; return; }
+    const via = () => { cornice.hidden = true; campoTesto.hidden = true; for (const m of Object.values(maniglie)) m.hidden = true; };
+    if (!e || e.spento || !svg) { via(); return; }
     const g = svg.querySelector(`g[data-el="${CSS.escape(e.id)}"]`);
-    if (!g) { cornice.hidden = true; return; }
+    if (!g) { via(); return; }
     let b;
-    try { b = g.getBBox(); } catch { cornice.hidden = true; return; }
-    if (!b || (!b.width && !b.height)) { cornice.hidden = true; return; }
+    try { b = g.getBBox(); } catch { via(); return; }
+    if (!b || (!b.width && !b.height)) { via(); return; }
     cornice.hidden = false;
     cornice.style.left = (b.x * scala) + 'px';
     cornice.style.top = (b.y * scala) + 'px';
     cornice.style.width = (b.width * scala) + 'px';
     cornice.style.height = (b.height * scala) + 'px';
+    const largo = e.tipo === 'testo' ? larghezzaUtile(e, carta.larghezza) : 0;
+    campoTesto.hidden = !largo;
+    if (largo) {
+      campoTesto.style.left = (e.x * scala) + 'px';
+      campoTesto.style.top = (b.y * scala) + 'px';
+      campoTesto.style.width = (largo * scala) + 'px';
+      campoTesto.style.height = (b.height * scala) + 'px';
+    }
+    const ci = MANIGLIE[e.tipo] || [];
+    const metti = (m, x, y) => { const el = maniglie[m]; el.hidden = !ci.includes(m); el.style.left = (x * scala) + 'px'; el.style.top = (y * scala) + 'px'; };
+    const destra = e.tipo === 'testo' ? e.x + largo : b.x + b.width;
+    metti('larga', destra, b.y + b.height / 2);
+    metti('alta', b.x + b.width / 2, b.y + b.height);
+    metti('angolo', b.x + b.width, b.y + b.height);
   }
 
   function disegnaTela() {
-    disegno.innerHTML = conAlias(svgCarta(carta, dati));
+    disegno.innerHTML = conAlias(svgCarta(carta, dati, { fantasmi: true }));
     misura();
     riquadro();
   }
@@ -192,6 +220,11 @@ export function apri(stato, { salva, aggiorna } = {}) {
       </div>`).join('');
     const agg = q('[data-aggiungi]');
     const pieno = carta.elementi.length >= (vocab.massimo || 24);
+    const vesti = q('[data-vesti]');
+    vesti.innerHTML = (vocab.temi || []).length
+      ? `<h3>${L('Vesti', 'Looks', 'Estilos')}</h3><p class="suggerimento">${L('Ripartire da una di queste cambia tutta la carta: si torna indietro con Annulla.', 'Starting from one of these changes the whole card: Undo brings it back.', 'Empezar desde uno de estos cambia toda la tarjeta: Deshacer la recupera.')}</p>`
+        + `<div class="ce-aggiungi">${vocab.temi.map((t, i) => `<button type="button" class="btn secondario mini" data-ce-veste="${i}">${esc(t.nomi ? L(...t.nomi) : t.nome)}</button>`).join('')}</div>`
+      : '';
     agg.innerHTML = (vocab.tipi || []).map((t) => `<button type="button" class="btn secondario mini" data-nuovo="${esc(t)}" ${pieno ? 'disabled' : ''}>+ ${esc(L(...NOME_TIPO[t] || [t, t, t]))}</button>`).join('')
       + (pieno ? `<p class="suggerimento">${L('Hai raggiunto il massimo di pezzi.', 'You reached the maximum number of pieces.', 'Has alcanzado el máximo de piezas.')}</p>` : '');
   }
@@ -221,13 +254,20 @@ export function apri(stato, { salva, aggiorna } = {}) {
     return `<label class="campo" for="${id}">${nome}</label><input type="text" id="${id}" data-k="${k}" value="${esc(v || '')}">`;
   }
 
+  const corto = (v) => { const t = String(v ?? '').trim(); return t ? (t.length > 22 ? t.slice(0, 21) + '…' : t) : L('vuoto', 'empty', 'vacío'); };
+  function siLegge(e) {
+    const t = String(e.testo || '').replace(/\{(\w+)\}/g, (tutto, k) => ((vocab.segnaposto || []).includes(k) ? String(dati[k] ?? '') : tutto)).trim();
+    return t ? L('Si legge: ', 'It reads: ', 'Se lee: ') + '«' + (e.maiuscolo ? t.toUpperCase() : t) + '»'
+      : L('Adesso è vuoto: nell’immagine non c’è, qui lo vedi in trasparenza.', 'It is empty now: it is not in the image, here you see it faded.', 'Ahora está vacío: no está en la imagen, aquí lo ves en transparencia.');
+  }
+
   function ispettore() {
     const box = q('[data-ispettore]');
     const e = elSel();
     if (!e) {
       box.innerHTML = `<h3>${L('Fondo', 'Background', 'Fondo')}</h3><div data-dove="fondo">`
         + CAMPI_FONDO.map((c) => campo(carta.fondo, c)).join('')
-        + `</div><p class="suggerimento">${L('Scegli un pezzo per cambiarlo. Trascinalo sulla tela per spostarlo.', 'Pick a piece to change it. Drag it on the canvas to move it.', 'Elige una pieza para cambiarla. Arrástrala en el lienzo para moverla.')}</p>`;
+        + `</div><p class="suggerimento">${L('Scegli un pezzo, sulla tela o nell’elenco. Trascinalo per spostarlo, tira le maniglie per cambiarne la misura, doppio clic su un testo per scriverlo.', 'Pick a piece, on the canvas or in the list. Drag it to move it, pull the handles to resize it, double-click a text to write it.', 'Elige una pieza, en el lienzo o en la lista. Arrástrala para moverla, tira de las asas para cambiar su tamaño, doble clic en un texto para escribirlo.')}</p>`;
       return;
     }
     const segna = (vocab.segnaposto || []);
@@ -242,8 +282,14 @@ export function apri(stato, { salva, aggiorna } = {}) {
         ${(CAMPI[e.tipo] || []).map((c) => campo(e, c)).join('')}
         ${campo(e, ['spento', ['Nascosto', 'Hidden', 'Oculto'], 'sino'])}
       </div>
-      ${haTesto ? `<p class="suggerimento">${L('Segnaposto:', 'Placeholders:', 'Marcadores:')} ${segna.map((k) => `<button type="button" class="ce-segna" data-segna="${esc(k)}">{${esc(k)}}</button>`).join(' ')}</p>` : ''}
+      ${haTesto ? `<p class="suggerimento" data-legge>${esc(siLegge(e))}</p>
+      <p class="suggerimento">${L('Segnaposto: si riempiono da soli, coi dati veri.', 'Placeholders: they fill in by themselves, with the real data.', 'Marcadores: se rellenan solos, con los datos reales.')}</p>
+      <p class="ce-segnaposto">${segna.map((k) => `<button type="button" class="ce-segna" data-segna="${esc(k)}" title="${esc(String(dati[k] ?? ''))}">{${esc(k)}}<span>${esc(corto(dati[k]))}</span></button>`).join('')}</p>` : ''}
       <p class="riga-flessibile spazio-sopra">
+        <button type="button" class="btn secondario mini" data-fa="centra-o">${L('Al centro in orizzontale', 'Center horizontally', 'Centrar en horizontal')}</button>
+        <button type="button" class="btn secondario mini" data-fa="centra-v">${L('Al centro in verticale', 'Center vertically', 'Centrar en vertical')}</button>
+      </p>
+      <p class="riga-flessibile">
         <button type="button" class="btn secondario mini" data-fa="duplica">${L('Duplica', 'Duplicate', 'Duplicar')}</button>
         <button type="button" class="btn pericolo mini" data-fa="elimina">${L('Elimina', 'Delete', 'Eliminar')}</button>
       </p>`;
@@ -267,6 +313,8 @@ export function apri(stato, { salva, aggiorna } = {}) {
       sel = dove.id;
     }
     disegnaTela();
+    const legge = q('[data-legge]');
+    if (legge && elSel()) legge.textContent = siLegge(elSel());
   }
 
   function aggiungi(tipo) {
@@ -291,15 +339,23 @@ export function apri(stato, { salva, aggiorna } = {}) {
   }
 
   function aggancia(e, x, y, libero) {
-    if (libero) return [x, y];
+    if (libero) return [x, y, null, null];
     const rette = { x: [carta.larghezza / 2], y: [carta.altezza / 2] };
     for (const a of carta.elementi) if (a !== e && !a.spento) { rette.x.push(a.x); rette.y.push(a.y); }
     const vicino = (v, elenco) => {
-      let m = v, d = AGGANCIO;
-      for (const r of elenco) if (Math.abs(r - v) < d) { d = Math.abs(r - v); m = r; }
-      return m;
+      let m = v, d = AGGANCIO, preso = null;
+      for (const r of elenco) if (Math.abs(r - v) < d) { d = Math.abs(r - v); m = r; preso = r; }
+      return [m, preso];
     };
-    return [vicino(x, rette.x), vicino(y, rette.y)];
+    const [ax, gx] = vicino(x, rette.x), [ay, gy] = vicino(y, rette.y);
+    return [ax, ay, gx, gy];
+  }
+
+  function guide(gx, gy) {
+    guidaV.hidden = gx === null || gx === undefined;
+    guidaH.hidden = gy === null || gy === undefined;
+    if (!guidaV.hidden) guidaV.style.left = (gx * scala) + 'px';
+    if (!guidaH.hidden) guidaH.style.top = (gy * scala) + 'px';
   }
 
   disegno.addEventListener('pointerdown', (ev) => {
@@ -324,7 +380,9 @@ export function apri(stato, { salva, aggiorna } = {}) {
     let x = trascino.x0 + ((ev.clientX - r.left) / scala - trascino.dx - trascino.x0) * fine;
     let y = trascino.y0 + ((ev.clientY - r.top) / scala - trascino.dy - trascino.y0) * fine;
     if (ev.shiftKey) { if (Math.abs(x - trascino.x0) > Math.abs(y - trascino.y0)) y = trascino.y0; else x = trascino.x0; }
-    [x, y] = aggancia(e, Math.round(x), Math.round(y), ev.altKey);
+    let gx, gy;
+    [x, y, gx, gy] = aggancia(e, Math.round(x), Math.round(y), ev.altKey);
+    guide(gx, gy);
     if (x !== e.x || y !== e.y) { e.x = x; e.y = y; trascino.mosso = true; disegnaTela(); }
   });
 
@@ -332,11 +390,57 @@ export function apri(stato, { salva, aggiorna } = {}) {
     if (!trascino) return;
     if (!trascino.mosso) passato.pop();
     trascino = null;
+    guide(null, null);
     ispettore();
   };
+
+  const punto = (ev) => { const r = foglio.getBoundingClientRect(); return [(ev.clientX - r.left) / scala, (ev.clientY - r.top) / scala]; };
+  for (const [m, el] of Object.entries(maniglie)) {
+    el.addEventListener('pointerdown', (ev) => {
+      const e = elSel();
+      if (!e) return;
+      ev.preventDefault(); ev.stopPropagation();
+      passo();
+      const g = disegno.querySelector(`g[data-el="${CSS.escape(e.id)}"]`);
+      const b = g ? g.getBBox() : { y: e.y, height: 1 };
+      maniglia = { m, id: e.id, partenza: punto(ev), e0: { ...e }, alto: Math.max(1, b.height), mosso: false };
+      el.setPointerCapture(ev.pointerId);
+    });
+    el.addEventListener('pointermove', (ev) => {
+      if (!maniglia || maniglia.m !== m) return;
+      const e = carta.elementi.find((x) => x.id === maniglia.id);
+      if (!e) return;
+      const [px, py] = punto(ev), e0 = maniglia.e0;
+      const nuovo = { ...e };
+      if (m === 'larga') nuovo.larghezza = Math.round(px - e0.x);
+      else if (m === 'alta') nuovo.altezza = Math.round(py - e0.y);
+      else if (e.tipo === 'avatar') nuovo.d = Math.round(2 * Math.max(Math.abs(px - e0.x), Math.abs(py - e0.y)));
+      else {
+        const f = Math.max(0.1, 1 + (py - maniglia.partenza[1]) / maniglia.alto);
+        nuovo.corpo = Math.round(e0.corpo * f);
+        if (e.tipo === 'testo') nuovo.larghezza = Math.round(e0.larghezza * f);
+      }
+      Object.assign(e, normElemento(nuovo, carta.larghezza, carta.altezza));
+      maniglia.mosso = true;
+      disegnaTela();
+    });
+    const lascia = () => {
+      if (!maniglia || maniglia.m !== m) return;
+      if (!maniglia.mosso) passato.pop();
+      maniglia = null;
+      ispettore();
+    };
+    el.addEventListener('pointerup', lascia);
+    el.addEventListener('pointercancel', lascia);
+  }
   disegno.addEventListener('pointerup', finisci);
   disegno.addEventListener('pointercancel', finisci);
-  disegno.addEventListener('dblclick', () => { const e = elSel(); if (!e) return; passo(); e.x = Math.round(carta.larghezza / 2); e.y = Math.round(carta.altezza / 2); tutto(); });
+  disegno.addEventListener('dblclick', () => {
+    const e = elSel();
+    if (!e || (e.tipo !== 'testo' && e.tipo !== 'targhetta')) return;
+    const campo = q('#ce-c-testo');
+    if (campo) { campo.focus(); campo.select(); }
+  });
 
   velo.addEventListener('input', (ev) => {
     const t = ev.target;
@@ -372,9 +476,31 @@ export function apri(stato, { salva, aggiorna } = {}) {
       tutto();
       return;
     }
+    const veste = t.closest('[data-ce-veste]');
+    if (veste) {
+      const tema = (vocab.temi || [])[Number(veste.dataset.ceVeste)];
+      if (!tema) return;
+      passo();
+      carta = normCarta(JSON.parse(JSON.stringify(tema.carta)));
+      sel = null;
+      tutto();
+      return;
+    }
     const fa = t.closest('[data-fa]');
     if (!fa) return;
     const che = fa.dataset.fa;
+    if (che === 'centra-o' || che === 'centra-v') {
+      const e = elSel(); if (!e) return;
+      const g = disegno.querySelector(`g[data-el="${CSS.escape(e.id)}"]`);
+      if (!g) return;
+      const b = g.getBBox();
+      passo();
+      if (che === 'centra-o') e.x = Math.round(e.x + (carta.larghezza / 2 - (b.x + b.width / 2)));
+      else e.y = Math.round(e.y + (carta.altezza / 2 - (b.y + b.height / 2)));
+      Object.assign(e, normElemento(e, carta.larghezza, carta.altezza));
+      tutto();
+      return;
+    }
     if (che === 'annulla') annulla();
     else if (che === 'rifai') rifai();
     else if (che === 'duplica') {

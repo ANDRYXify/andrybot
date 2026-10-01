@@ -50,6 +50,7 @@ const T = {
   it: {
     titolo: 'il negozio',
     partenza: (nome) => `Il negozio di ${nome}`,
+    riga: 'Cosa si compra in chat, e quanto costa',
     descrizione: (nome) => `Il negozio di ${nome}: cosa si compra in chat, e quanto costa.`,
     vuota: 'Il negozio per ora è vuoto: torna a trovarlo presto.',
     creata: 'Pagina creata con',
@@ -75,6 +76,7 @@ const T = {
   en: {
     titolo: 'shop',
     partenza: (nome) => `${nome}'s shop`,
+    riga: 'What you can buy in chat, and what it costs',
     descrizione: (nome) => `${nome}'s shop: what you can buy in chat, and what it costs.`,
     vuota: 'The shop is empty for now: come back soon.',
     creata: 'Page made with',
@@ -100,6 +102,7 @@ const T = {
   es: {
     titolo: 'la tienda',
     partenza: (nome) => `La tienda de ${nome}`,
+    riga: 'Qué se compra en el chat, y cuánto cuesta',
     descrizione: (nome) => `La tienda de ${nome}: qué se compra en el chat, y cuánto cuesta.`,
     vuota: 'La tienda por ahora está vacía: vuelve pronto.',
     creata: 'Página creada con',
@@ -380,6 +383,21 @@ export function paginaDiPartenza(canale, display) {
   const t = T[lin(preferenzeDi(ch).lingua)];
   return { ...base, headline: t.partenza(display || ch), aspetto: 'suo',
     tema: { ...base.tema, larghezza: LARGHEZZA_DI_SERIE }, blocchi: PEZZI_DI_SERIE.map((b) => ({ ...b })) };
+}
+
+// Le righe della carta dell'anteprima del link (docs/CARTA-LIVE.md). La targhetta
+// dice gia' «il negozio»: il nome grande e' quello del canale, non «Il negozio
+// di …», che ripeterebbe la targhetta. Sotto va la riga dello streamer, se
+// l'ha scritta; poi il titolo della pagina, se l'ha cambiato; sennò una riga
+// che dice cosa ci si trova. Mai vuota: una riga vuota lascia un buco nella
+// carta.
+export function righeCarta(canale, display) {
+  const ch = String(canale || '').toLowerCase();
+  const p = paginaDi(ch, display);
+  const t = T[lin(preferenzeDi(ch).lingua)];
+  const nome = display || ch;
+  const suo = p.headline && p.headline !== t.partenza(nome) ? p.headline : '';
+  return { nome, titolo: p.tagline || suo || t.riga };
 }
 
 // La pagina intera. `pagina` serve all'anteprima del pannello (quella che si

@@ -1885,9 +1885,10 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       : quale === 'dona' ? aspettoDi(paginaDona.conDefault(login, display), linkPage.get(login)) : linkPage.conDefault(login, display);
     const url = quale === 'negozio' ? negozio.urlPaginaNegozio(login) : quale === 'dona' ? donazioni.urlPaginaDona(login) : `${config.baseUrl}/u/${login}`;
     const foto = p.avatar === 'no' ? '' : (p.avatar || await avatarDi(login) || '');
+    const righe = quale === 'negozio' ? negozioPagina.righeCarta(login, display)
+      : { nome: quale === 'dona' ? display : (p.headline || display), titolo: p.tagline || '' };
     return {
-      nome: quale === 'dona' ? display : (p.headline || display),
-      titolo: p.tagline || '', gioco: '', spettatori: '',
+      ...righe, gioco: '', spettatori: '',
       login, link: url.replace(/^https?:\/\//, ''), piattaforma: piattaformaDi(login),
       avatar: await cartaLive.avatarDataUri(foto),
       accento: accentoDi(p), ts: p.ts || 0,
@@ -2321,7 +2322,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       quale, mia: !!mia,
       carta: cartaLive.cartaPaginaDi({ dati: mia?.dati, quale, accento: dati.accento, lingua: linguaChat(login) }),
       dati, disegnabile: cartaLive.disegnabile(),
-      vocabolario: { ...vocabolarioCarta(), misura: cartaLive.MISURA_PAGINA, temi: [] },
+      vocabolario: { ...vocabolarioCarta(), misura: cartaLive.MISURA_PAGINA, temi: cartaLive.vestiPagina({ quale, accento: dati.accento, lingua: linguaChat(login) }) },
       immagine: `/api/paginacarta.png?quale=${quale}`,
     };
   }
