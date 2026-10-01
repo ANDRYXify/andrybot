@@ -109,9 +109,16 @@ const SELFTEST = process.argv.includes('--selftest');
 // disegno-pannello.js e non nel nucleo: sulla home non c'e' una casella nativa
 // che si veda (quelle del configuratore sono nascoste dietro la loro spunta),
 // quindi portarlo qui sarebbe stato peso senza niente da disegnare. La home ha
-// preso solo la «v» a mano, nel configuratore e nei listini: 65 byte compressi,
-// dopo averla scritta a numeri interi e senza un attributo ripetuto in ogni riga.
-const TETTO_KB = 60;
+// preso solo le sue spunte disegnate, chieste apposta come il disegno del 24
+// settembre: la «v» piena a pennino, centrata e che esce dalla casella (una
+// sagoma sola, a numeri interi, per configuratore e listini), e la casella a
+// matita fatta coi bordi e un solo elemento in piu'. Limata fin dove la forma
+// reggeva (una «v» piu' corta veniva sottile come un segno di testo; la stessa
+// sagoma come maschera nel foglio di stile costava 180 byte in piu', perche'
+// ripetuta in ogni riga la compressione la scrive quasi gratis), e' arrivata a
+// 61464 byte, 24 sopra il 60. Il tetto va a 61: la misura di oggi con l'aria
+// di prima.
+const TETTO_KB = 61;
 
 let chromium;
 if (!CHROMIUM) { console.log('Chromium non c\'e\' su questa macchina: collaudo saltato.'); process.exit(0); }

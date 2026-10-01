@@ -43,9 +43,9 @@ comandi diversi da quelli della riga italiana.
 
 ## 2026-10-01
 
-- Caselle e pallini sono disegnati a china come il resto del sito: la «v» nera esce un po' dal riquadro, si traccia a mano quando la metti e si disfa quando la togli. [vai: giochi]
-  en: Checkboxes and radio buttons are drawn in ink like the rest of the site: the black check pokes out of the box, is drawn by hand when you tick it and undrawn when you clear it.
-  es: Las casillas y los botones de opción están dibujados a tinta como el resto del sitio: la «v» negra sale un poco del recuadro, se traza a mano cuando la marcas y se deshace cuando la quitas.
+- Caselle e pallini sono disegnati come il resto del sito: la casella a matita, la «v» a pennino nera e centrata che ne esce un po', tracciata quando spunti e disfatta quando togli. [vai: giochi]
+  en: Checkboxes and radio buttons are drawn like the rest of the site: a pencil box and a black, centered pen check that pokes out of it, drawn when you tick it and undrawn when you clear it.
+  es: Las casillas y los botones de opción están dibujados como el resto del sitio: la casilla a lápiz y una «v» negra a plumilla, centrada, que sale un poco, trazada al marcar y deshecha al quitar.
 - Le scelte con caselle e pallini stanno ognuna sulla sua riga, con la casella accanto alle sue parole: sul telefono quelle del nome della moneta andavano a capo dove capitava. [vai: giochi]
   en: Checkbox and radio choices each sit on their own line, with the box next to its words: on phones, the coin name choices used to wrap at random.
   es: Las opciones con casillas y botones van cada una en su línea, con la casilla junto a sus palabras: en el móvil las del nombre de la moneda saltaban de línea donde caía.

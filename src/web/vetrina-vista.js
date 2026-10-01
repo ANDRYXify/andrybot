@@ -25,10 +25,12 @@ import { guideIn, urlGuida, VIE } from './guide.js';
 import { manualiIn } from './manuali.js';
 // LA SPUNTA A MANO. Una «v» sola per la home, uguale nel configuratore e negli
 // elenchi dei piani, fatta come quelle del pannello (docs/DISEGNO.md, «Le
-// spunte»): scende corta, risale lunga e sborda un poco da tutte e due le parti
-// quando sta in una casella. Il configuratore la traccia a scatti quando la
-// spunti (il tratteggio da 40 in vetrina.css copre tutta la sua lunghezza, 36).
-const V_A_MANO = '<path d="M2 12c1 2 5 5 8 7c3-6 9-14 16-20"/>';
+// spunte»): una sagoma piena di pennino, sottile all'attacco, spessa al vertice
+// e affilata in uscita. Nel configuratore sta centrata sulla casella a matita,
+// ne esce da tutte e due le parti e si scopre a scatti quando la spunti. Ripetuta
+// in ogni riga dei listini costa quasi niente: la compressione la scrive una
+// volta (provata come maschera in vetrina.css costava 180 byte in piu').
+const SPUNTA = '<svg viewBox="0 0 48 48" fill="currentColor" aria-hidden="true"><path d="M3 14c5 10 10 19 15 28c2 2 5 2 6-1c7-12 14-24 21-37c0 0 0-1-1 0c-8 10-15 19-23 29c-6-6-11-13-16-20z"/></svg>';
 
 const ICO = {
   chat: '<path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/>',
@@ -393,7 +395,7 @@ function soloDiscordHtml(L) {
 function configuratoreHtml(L, piani) {
   const disponibili = piani.addon || [];
   if (!disponibili.length) return '';
-  const spunta = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + V_A_MANO + '</svg>';
+  const spunta = SPUNTA;
   const righe = disponibili.map((a) => `
     <label class="vt-extra">
       <input type="checkbox" value="${esc(a.id)}">
@@ -499,7 +501,6 @@ function carteListino(L, piani) {
 function listinoHtml(L, piani) {
   if (!piani || !piani.base || !piani.free) return '';
   const perMese = L('/mese', '/month', '/mes');
-  const spunta = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + V_A_MANO + '</svg>';
   const { free: cartaFree, base: cartaBase } = carteListino(L, piani);
   const piano = ({ nome, prezzo, sotto, testo, voci, punta, azione }) => `
     <article class="vt-piano${punta ? ' punta' : ''}">
@@ -507,7 +508,7 @@ function listinoHtml(L, piani) {
       <h3>${esc(nome)}</h3>
       <div class="vt-prezzo"><b>${prezzo}</b><span>${sotto}</span></div>
       <p>${esc(testo)}</p>
-      <ul class="vt-elenco">${voci.map((v) => `<li>${spunta}${esc(v)}</li>`).join('')}</ul>
+      <ul class="vt-elenco">${voci.map((v) => `<li>${SPUNTA}${esc(v)}</li>`).join('')}</ul>
       ${azione}
     </article>`;
 

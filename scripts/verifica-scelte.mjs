@@ -86,7 +86,7 @@ const MISURA = `(() => {
   for (const x of scelte) {
     const img = x.i.style.borderImageSource || '';
     if (!x.i.classList.contains('sp-disegnata') || !img.includes('data:image/svg')) { rotte.push('non disegnata: «' + nome(x.i, x.lab) + '»'); continue; }
-    if (x.i.dataset.sp !== (x.i.checked ? 'si' : 'no') || img.includes('stroke-dashoffset') !== x.i.checked) { rotte.push('il disegno non dice il suo stato: «' + nome(x.i, x.lab) + '»'); continue; }
+    if (x.i.dataset.sp !== (x.i.checked ? 'si' : 'no') || img.includes('segno') !== x.i.checked) { rotte.push('il disegno non dice il suo stato: «' + nome(x.i, x.lab) + '»'); continue; }
     const suoi = x.testi.filter((q) => stessaRiga(q, x.r));
     const suo = suoi.length ? Math.min(...suoi.map((q) => distanza(q, x.r))) : Infinity;
     if (suo > 24) { rotte.push('staccata dalle sue parole: «' + nome(x.i, x.lab) + '»' + (suo === Infinity ? ' (non sono sulla sua riga)' : ' (' + Math.round(suo) + ' px)')); continue; }
@@ -175,10 +175,10 @@ try {
         const guarda = async () => { const visti = new Set(); for (let t = 0; t < 14; t++) { visti.add(el.style.borderImageSource); await new Promise((ok) => setTimeout(ok, 40)); } return visti.size; };
         el.click();
         const dentro = await guarda();
-        const accesa = el.dataset.sp === 'si' && el.style.borderImageSource.includes('stroke-dashoffset');
+        const accesa = el.dataset.sp === 'si' && el.style.borderImageSource.includes('segno');
         el.click();
         const fuori = await guarda();
-        const spenta = el.dataset.sp === 'no' && !el.style.borderImageSource.includes('stroke-dashoffset');
+        const spenta = el.dataset.sp === 'no' && !el.style.borderImageSource.includes('segno');
         return { trovata: true, dentro, fuori, accesa, spenta };
       });
       if (!gesto.trovata) rotte.push(`${w}px · regole: nessuna casella da toccare per provare il gesto`);

@@ -561,20 +561,24 @@ si disegnano più né scivolano: ci sono.
 
 Le caselle e i pallini erano gli ultimi controlli rimasti col disegno del
 sistema: un quadratino liscio, magenta pieno, uguale a quello di ogni altro
-sito. Chiesto così: «proprio la "v" della spunta sia disegnata, una v nera che
-esce un po' da una parte e un po' dall'altra».
+sito. Chiesto così: una «v» nera, disegnata, centrata, che esce un po' da una
+parte e un po' dall'altra; contrastante con la casella; la casella più piccola
+e disegnata anche lei.
 
-- **La casella** è un quadrato a china (`--contorno`): quattro tratti appena
-  storti, fatti con lo stesso `tratto` dei contorni delle carte.
-- **La spunta** è una «v» a china, dello stesso inchiostro: parte un poco
-  fuori dal riquadro a sinistra, scende corta, risale lunga ed esce in alto a
-  destra, come una spunta fatta a penna.
-- **Il pallino** è un cerchio a china chiuso a mano, poco più di un giro; la
-  scelta è un ricciolo pieno che lo riempie.
+- **La casella** è uno schizzo a matita (`--testo-3`, tratto sottile): quattro
+  righe appena storte che si incrociano agli angoli, come le righe di
+  costruzione prima della china. È più piccola della casella vera, che resta
+  della sua misura per il dito.
+- **La spunta** è una «v» di pennino in china (`--contorno`): una sagoma piena,
+  sottile all'attacco, spessa al vertice e affilata in uscita. È centrata sulla
+  casella ed esce a sinistra, a destra e in alto. Nera e piena su una matita
+  grigia e sottile: le due cose non si confondono, nei due temi.
+- **Il pallino** è un cerchio a matita chiuso a mano, poco più di un giro; la
+  scelta è un pallino pieno a china.
 - **Si disegna e si disfa.** Mettere la spunta la traccia a scatti, alla
-  cadenza del sito (12 disegni al secondo, 330 ms); toglierla la disfa
-  all'indietro, più svelta (`RITORNO`). Una casella fuori dallo schermo cambia
-  senza animazione.
+  cadenza del sito (12 disegni al secondo, 330 ms): la sagoma cresce lungo il
+  gesto della penna. Toglierla la disfa all'indietro, più svelta (`RITORNO`).
+  Una casella fuori dallo schermo cambia senza animazione.
 
 Com'è fatto, per costruzione:
 
@@ -582,8 +586,11 @@ Com'è fatto, per costruzione:
   sull'etichetta, `:checked`, tutto come prima. Il disegno è un SVG calcolato
   messo come **immagine di bordo** con `border-image-outset`: può uscire di
   0,3rem tutto intorno senza ingrandire la casella, quindi niente si sposta
-  nel pannello e il clic resta sulla casella. Con uno sfondo la «v» non
-  sarebbe potuta uscire dai bordi;
+  nel pannello e il clic resta sulla casella;
+- la «v» è la sagoma che lascia una punta che preme: lungo la linea guida si
+  prende la normale e si allarga di più al centro del gesto e meno ai capi.
+  Disegnarla nel tempo è la stessa sagoma calcolata fino a una frazione del
+  gesto (come `fino` della penna, vedi docs/PENNA.md);
 - `appearance: none` vale solo per `input.sp-disegnata`, e la classe la mette
   il disegno insieme alla sua immagine: una casella che il disegno non ha
   ancora preso resta quella del sistema, mai un quadrato vuoto;
@@ -601,9 +608,12 @@ Com'è fatto, per costruzione:
 Il motore sta in `disegno-pannello.js`, non nel nucleo: sulla home non c'è una
 casella nativa che si veda, quindi lì sarebbe stato peso senza niente da
 disegnare (`scripts/verifica-dieta.mjs`). La home ha le sue spunte disegnate a
-parte, nel configuratore e nei listini: una sola «v» a mano (`V_A_MANO` in
-`src/web/vetrina-vista.js`), che nel configuratore sborda dal riquadro e si
-traccia a scatti col solo CSS.
+parte, nel configuratore e negli elenchi dei piani, con le stesse regole: una
+sola «v» piena a pennino (`SPUNTA` in `src/web/vetrina-vista.js`), la casella a
+matita fatta coi bordi e un solo elemento in più, e la «v» che si scopre a
+scatti da sinistra, nell'ordine della penna, col solo CSS. È entrata apposta
+e il tetto della home è andato da 60 a 61 kB, con la storia scritta nel
+cancello.
 
 Le pagine pubbliche degli streamer (pagina link, donazioni, negozio) hanno il
 tema scelto dallo streamer e non portano il disegno del pannello: lì le
