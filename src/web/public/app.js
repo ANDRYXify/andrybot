@@ -1111,6 +1111,14 @@ function _demoRegole() {
   return base;
 }
 
+function _demoCastighi() {
+  const via = new Set(_demoScritture.perdonati || []);
+  return [
+    { chi: 'spammone_88', gioco: 'slot', nome: ['Slot machine', 'Slot machine', 'Tragaperras'], gradino: 5, fino: null, aspetta: true },
+    { chi: 'luna_gioca', gioco: 'pesca', nome: ['Pesca', 'Fishing', 'Pesca'], gradino: 2, fino: Date.now() + 7 * 60_000, aspetta: true },
+  ].filter((c) => !via.has(`${c.chi}|${c.gioco}`));
+}
+
 function apiDemo(percorso, opzioni = {}) {
   const metodo = (opzioni.method || 'GET').toUpperCase();
   const via = percorso.split('?')[0];
@@ -1136,6 +1144,12 @@ function apiDemo(percorso, opzioni = {}) {
   if (via === '/api/streamer/voce/prova') return Promise.resolve({ frasi: _demoProvaFrasi(opzioni.body) });
   if (via.startsWith('/api/streamer/negozio')) return Promise.resolve(_demoNegozio(metodo, via, opzioni.body));
   if (_DEMO_ANTEPRIMA[via]) return _demoAnteprima(_DEMO_ANTEPRIMA[via], opzioni.body);
+  if (via === '/api/streamer/giochi/castighi') return Promise.resolve({ castighi: _demoCastighi() });
+  if (via === '/api/streamer/giochi/perdona') {
+    const b = opzioni.body || {};
+    _demoScritture.perdonati = [...(_demoScritture.perdonati || []), `${b.chi}|${b.gioco}`];
+    return Promise.resolve({ tolti: 1, castighi: _demoCastighi() });
+  }
   if (via === '/api/monete/durata') return Promise.resolve({ senzaScadenza: { persone: 0, monete: 0 }, fuso: 'Europe/Rome' });
   if (via === '/api/monete/scadenza-vecchie') return Promise.resolve({ persone: 0, monete: 0, scade: 0 });
   if (via === '/api/monete/doppio') {
@@ -1574,6 +1588,7 @@ function _demoGet(via) {
       { id: "8ball", modulo: "giochi", moduloNome: ["Giochi in chat","Chat games","Juegos en el chat"], moduloAcceso: true, titolo: ["Palla magica","Magic 8-ball","Bola mágica"], cosa: ["Risponde a una domanda. Serve la domanda.","Answers a question. The question is required.","Responde a una pregunta. Hace falta la pregunta."], costa: false, attesa: 3, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["8ball","palla8"], rinominato: false, chi: "tutti", chiMinimo: "tutti", attesaTutti: 0 },
       { id: "monete", modulo: "giochi", moduloNome: ["Giochi in chat","Chat games","Juegos en el chat"], moduloAcceso: true, titolo: ["Il mio saldo","My balance","Mi saldo"], cosa: ["Dice quante monete ha chi lo scrive.","Says how many coins the writer has.","Dice cuántas monedas tiene quien lo escribe."], costa: false, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["monete","punti","bilancio"], rinominato: false, chi: "tutti", chiMinimo: "tutti", attesaTutti: 0 },
       { id: "doppio", modulo: "giochi", moduloNome: ["Giochi in chat","Chat games","Juegos en el chat"], moduloAcceso: true, titolo: ["Ora doppia","Double time","Hora doble"], cosa: ["Per un po' le monete che arrivano da sole valgono di più: !doppio 30 per mezz'ora, !doppio 60 3 per un'ora al triplo, !doppio stop per finire.","For a while the coins that come by themselves are worth more: !doppio 30 for half an hour, !doppio 60 3 for an hour at triple, !doppio stop to end it.","Durante un rato las monedas que llegan solas valen más: !doppio 30 media hora, !doppio 60 3 una hora al triple, !doppio stop para terminar."], costa: false, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["doppio","doppie"], rinominato: false, chi: "mod", chiMinimo: "mod", attesaTutti: 0 },
+      { id: "perdona", modulo: "giochi", moduloNome: ["Giochi in chat","Chat games","Juegos en el chat"], moduloAcceso: true, titolo: ["Togli un castigo","Lift a penalty","Quita un castigo"], cosa: ["Toglie il castigo a chi ha insistito troppo in un gioco: !perdona @nome per tutti i giochi, !perdona @nome slot per uno solo. L'attesa normale del gioco resta.","Lifts the penalty from someone who insisted too much on a game: !perdona @nome for every game, !perdona @nome slot for just one. The game's normal wait stays.","Quita el castigo a quien insistió demasiado en un juego: !perdona @nombre para todos los juegos, !perdona @nombre slot para uno solo. La espera normal del juego se queda."], costa: false, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["perdona","perdono","pardon"], rinominato: false, chi: "mod", chiMinimo: "mod", attesaTutti: 0, risposte: {"fatto":{"etichetta":["Quando toglie il castigo","When it lifts the penalty","Cuando quita el castigo"],"sua":"","base":"✅ Castigo tolto a {nome}: si torna a giocare come prima.","segnaposti":["nome"]},"niente":{"etichetta":["Quando non c'è niente da togliere","When there is nothing to lift","Cuando no hay nada que quitar"],"sua":"","base":"{nome} non ha castighi da togliere.","segnaposti":["nome"]},"gioco":{"etichetta":["Quando il gioco non c'è","When the game doesn't exist","Cuando el juego no existe"],"sua":"","base":"«{gioco}» non è un gioco di questo canale.","segnaposti":["gioco"]},"come":{"etichetta":["Quando manca il nome","When the name is missing","Cuando falta el nombre"],"sua":"","base":"Si scrive così: {comando} @nome, o {comando} @nome e il gioco.","segnaposti":["comando"]}} },
       { id: "classifica", modulo: "giochi", moduloNome: ["Giochi in chat","Chat games","Juegos en el chat"], moduloAcceso: true, titolo: ["Classifica","Leaderboard","Clasificación"], cosa: ["I primi del pubblico. Con «mod» la gara dello staff, con «tutti» le due insieme.","The top viewers. With «mod» the staff race, with «tutti» both together.","Los primeros del público. Con «mod» la carrera del staff, con «tutti» las dos juntas."], costa: false, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["classifica","top","classificamod","classificastaff","topmod"], rinominato: false, chi: "tutti", chiMinimo: "tutti", attesaTutti: 0 },
       { id: "slot", modulo: "giochi", moduloNome: ["Giochi in chat","Chat games","Juegos en el chat"], moduloAcceso: true, titolo: ["Slot machine","Slot machine","Tragaperras"], cosa: ["Gioca alla slot: costa monete, il tris paga.","Play the slot: it costs coins, three of a kind pays.","Juega a la tragaperras: cuesta monedas, el trío paga."], costa: true, attesa: 5, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["macchinetta"], rinominato: true, chi: "tutti", chiMinimo: "tutti", attesaTutti: 0 },
       { id: "duello", modulo: "giochi", moduloNome: ["Giochi in chat","Chat games","Juegos en el chat"], moduloAcceso: true, titolo: ["Duello","Duel","Duelo"], cosa: ["Sfida un'altra persona in chat. Con una posta (!duello @nome 50) l'altro accetta o rifiuta, e chi vince prende la posta dell'altro.","Challenge someone else in chat. With a stake (!duello @nome 50) the other accepts or refuses, and the winner takes the other's stake.","Reta a otra persona en el chat. Con apuesta (!duello @nome 50) el otro acepta o rechaza, y quien gana se lleva la apuesta del otro."], costa: true, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["duello","duel"], rinominato: false, chi: "tutti", chiMinimo: "tutti", attesaTutti: 15 },
@@ -23169,6 +23184,12 @@ function pannelloGiochi() {
       <p class="spazio-sopra"><button class="btn" id="btn-salva-regole-giochi">${L('Salva le regole', 'Save the rules', 'Guardar las reglas')}</button></p>
     </div>
     <div class="carta">
+      <h2>${_hIco(ICO.orologio)}${L('Chi aspetta di più', 'Who is waiting longer', 'Quién espera más')}</h2>
+      <p>${L('Chi in questa diretta ha insistito in un gioco durante la sua attesa, se nelle regole di quel gioco hai scelto «Chi insiste durante l\'attesa». «Perdona» toglie il castigo; l\'attesa normale del gioco resta. In chat lo staff fa lo stesso con', 'Who, in this stream, kept trying a game during their wait, if you set «Whoever insists during the wait» in that game\'s rules. «Forgive» lifts the penalty; the game\'s normal wait stays. In chat your team does the same with', 'Quién, en este directo, insistió en un juego durante su espera, si en las reglas de ese juego elegiste «Quien insiste durante la espera». «Perdonar» quita el castigo; la espera normal del juego se queda. En el chat tu equipo hace lo mismo con')} <code>!perdona @nome</code>.</p>
+      <div id="castighi-giochi" class="spazio-sopra" aria-live="polite">${attesaHtml('div')}</div>
+      <p class="spazio-sopra"><button type="button" class="btn secondario" id="btn-castighi-aggiorna">${L('Aggiorna', 'Refresh', 'Actualizar')}</button></p>
+    </div>
+    <div class="carta">
       <h2>${_hIco(ICO.medaglia)}${L('Punti & classifica', 'Points & leaderboard', 'Puntos y clasificación')}</h2>
       <p>${L('Decidi come si guadagnano', 'Decide how people earn', 'Decide cómo se ganan')} <strong class="primo-piano">${esc(s.nomeMonete)}</strong>${L(', a chi non arrivano e quando smettono di arrivare. La classifica', ', who never gets them and when they stop. The leaderboard', ', a quién no le llegan y cuándo dejan de llegar. La clasificación')} <code>!classifica</code> ${L('mostra i primi in cima. Costi e premi dei giochi stanno nelle regole di ogni gioco, qui sopra.', 'shows the top players. Game costs and prizes are in each game\'s rules, above.', 'muestra a los primeros. Costes y premios de los juegos están en las reglas de cada juego, aquí arriba.')}</p>
       <div class="griglia-punti">
@@ -27093,6 +27114,39 @@ async function durataPunti(regole) {
   if (st && sz?.monete > 0) st.textContent = L(`Adesso ${sz.monete} ${stato?.streamer?.settings?.nomeMonete || 'monete'} di ${sz.persone} ${sz.persone === 1 ? 'persona' : 'persone'} non scadono: sono quelle di prima, o di un modo di guadagnare che non scade.`, `Right now ${sz.monete} ${stato?.streamer?.settings?.nomeMonete || 'coins'} held by ${sz.persone} ${sz.persone === 1 ? 'person' : 'people'} never expire: they are the old ones, or from a way of earning that doesn't expire.`, `Ahora ${sz.monete} ${stato?.streamer?.settings?.nomeMonete || 'monedas'} de ${sz.persone} ${sz.persone === 1 ? 'persona' : 'personas'} no caducan: son las de antes, o de una forma de ganar que no caduca.`);
 }
 
+const _quantoManca = (ms) => {
+  const s = Math.max(1, Math.ceil(ms / 1000));
+  if (s < 60) return `${s} s`;
+  const m = Math.ceil(s / 60);
+  return m < 120 ? `${m} min` : `${Math.floor(m / 60)} h ${m % 60} min`;
+};
+function _disegnaCastighi(castighi) {
+  const box = document.getElementById('castighi-giochi');
+  if (!box) return;
+  box.innerHTML = castighi.length
+    ? `<ul class="pf-lista">${castighi.map((c) => `<li class="pf-riga">
+        <span class="pf-nome"><strong>${esc(c.chi)}</strong> <span class="tenue">${esc(L(...c.nome))} · ${L('gradino', 'step', 'nivel')} ${c.gradino} · ${c.fino === null ? L('fino a fine diretta', 'until the end of the stream', 'hasta el final del directo') : c.aspetta ? L('ancora ', 'still ', 'todavía ') + _quantoManca(c.fino - Date.now()) : L('ha finito di aspettare', 'done waiting', 'ya no espera')}</span></span>
+        <span class="pf-azioni"><button type="button" class="btn secondario mini" data-perdona="${esc(c.chi)}" data-gioco="${esc(c.gioco)}">${L('Perdona', 'Forgive', 'Perdonar')}</button></span></li>`).join('')}</ul>`
+    : `<p class="vuoto">${L('Nessuno sta aspettando di più, in questa diretta.', 'Nobody is waiting longer in this stream.', 'Nadie espera más en este directo.')}</p>`;
+  for (const b of box.querySelectorAll('[data-perdona]')) {
+    b.addEventListener('click', () => conErrore(async () => {
+      b.disabled = true;
+      const r = await api('/api/streamer/giochi/perdona', { method: 'POST', body: { chi: b.dataset.perdona, gioco: b.dataset.gioco } });
+      _disegnaCastighi(r.castighi || []);
+      toast(L(`Castigo tolto a ${b.dataset.perdona}`, `Penalty lifted for ${b.dataset.perdona}`, `Castigo quitado a ${b.dataset.perdona}`));
+    }));
+  }
+}
+async function caricaCastighi() {
+  const r = await api('/api/streamer/giochi/castighi').catch(() => null);
+  if (!r) {
+    const box = document.getElementById('castighi-giochi');
+    if (box) box.innerHTML = `<p class="suggerimento">${L('Non riesco a leggere chi sta aspettando: riprova fra poco.', 'I cannot read who is waiting right now: try again shortly.', 'Ahora no puedo leer quién está esperando: vuelve a intentarlo en un rato.')}</p>`;
+    return;
+  }
+  _disegnaCastighi(r.castighi || []);
+}
+
 function puntiDalPannello() {
   const v = (id) => Number(document.getElementById(id)?.value);
   const on = (id) => !!document.getElementById(id)?.checked;
@@ -27727,6 +27781,7 @@ function attivaPiattaforma() {
   const carta = document.getElementById('pt-conti')?.closest('.carta');
   carta?.addEventListener('input', () => { clearTimeout(_contiTimer); _contiTimer = setTimeout(contiPunti, 250); });
   carta?.addEventListener('change', () => { clearTimeout(_contiTimer); _contiTimer = setTimeout(contiPunti, 50); });
+  document.getElementById('btn-castighi-aggiorna')?.addEventListener('click', () => conErrore(caricaCastighi));
   document.getElementById('btn-vecchie')?.addEventListener('click', () => conErrore(async () => {
     const regole = await import('/js/economia-regole.js');
     const durata = document.getElementById('pt-vecchie-durata')?.value;
@@ -28804,7 +28859,7 @@ function caricaDatiScheda(id) {
   if (id === 'emote') caricaEmote7TV();
   if (id === 'moduli') { caricaPiattaforme(); caricaModuli(); caricaContatori(); caricaGiochiComandi(); collegaMorti(); requestAnimationFrame(() => applicaSottoSchede('moduli')); }
   if (id === 'statistiche') { caricaStatistiche(); caricaClassifica(); }
-  if (id === 'giochi') { caricaClassifica(); caricaCitazioni(); caricaBattute(); caricaGiochi(); caricaGiochiComandi(); caricaRegoleGiochi(); _disegnaFormaMonete(); contiPunti(); }
+  if (id === 'giochi') { caricaClassifica(); caricaCitazioni(); caricaBattute(); caricaGiochi(); caricaGiochiComandi(); caricaRegoleGiochi(); caricaCastighi(); _disegnaFormaMonete(); contiPunti(); }
   if (id === 'negozio') { caricaNegozio(); caricaPaginaLink(false, 'negozio'); requestAnimationFrame(() => applicaSottoSchede('negozio')); }
   if (id === 'telegram') { caricaTgLogin(); collegaTgDestinazioni(); caricaTgDestinazioni(); collegaCartaLive(); caricaCartaLive(); caricaCompleanni(); }
   if (id === 'notifiche') { caricaTikTok(); caricaInstagram(); collegaFeed(); caricaFeed(); }

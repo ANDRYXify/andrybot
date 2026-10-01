@@ -149,6 +149,39 @@ function calma(channel, gioco, msg) {
   salvaCastighi(channel, m, d);
 }
 
+// IL PERDONO (docs/GIOCHI.md): lo staff toglie i castighi di una persona, su un
+// gioco o su tutti. Toglie il castigo intero, non l'attesa del gioco. Torna
+// quanti ne ha tolti in questa diretta.
+export function perdona(channel, chi, gioco = null) {
+  const m = castighiDi(channel);
+  const d = economia.momento(channel).chiave;
+  const p = pulito(chi);
+  let tolti = 0;
+  for (const [k, c] of m) {
+    const i = k.lastIndexOf('|');
+    if (k.slice(i + 1) !== p || (gioco && k.slice(0, i) !== gioco)) continue;
+    if (c.d === d) tolti++;
+    m.delete(k);
+  }
+  salvaCastighi(channel, m, d);
+  return tolti;
+}
+
+// I castighi di questa diretta, per il pannello: chi, quale gioco, a che
+// gradino, fin quando (null = fino a fine diretta), e da quanto non insiste piu'.
+export function castighiInCorso(channel, ora = Date.now()) {
+  const m = castighiDi(channel);
+  if (!m.size) return [];
+  const d = economia.momento(channel, ora).chiave;
+  const out = [];
+  for (const [k, c] of m) {
+    if (c.d !== d) continue;
+    const i = k.lastIndexOf('|');
+    out.push({ chi: k.slice(i + 1), gioco: k.slice(0, i), gradino: c.l, fino: c.f < 0 ? null : c.f, aspetta: c.f < 0 || c.f > ora });
+  }
+  return out.sort((a, b) => b.gradino - a.gradino || a.chi.localeCompare(b.chi));
+}
+
 // Quanto manca, e di quale attesa: se ci sono tutte e due vale la piu' lunga,
 // e il castigo di chi ha insistito conta come la sua attesa.
 export function resta(channel, gioco, chi) {

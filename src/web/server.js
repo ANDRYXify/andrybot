@@ -105,6 +105,7 @@ import * as dcEventi from '../features/discord-eventi.js';
 import * as pubblicita from '../features/pubblicita.js';
 import * as voce from '../features/voce.js';
 import * as giochiConf from '../features/giochi-conf.js';
+import * as attese from '../features/attese-giochi.js';
 import * as negozio from '../features/negozio.js';
 import { ruoliDaVendere } from '../features/negozio-tipi.js';
 import * as negozioPagina from '../features/negozio-pagina.js';
@@ -9252,6 +9253,21 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
   // arriva al pannello come dati, cosi' il pannello non ne tiene una copia.
   app.get('/api/streamer/giochi/regole', requireLogin, (req, res) => {
     res.json(giochiConf.catalogoPerPannello(streamers.get(currentUser(req).login)?.settings || {}));
+  });
+  // CHI ASPETTA DI PIU' (docs/GIOCHI.md): i castighi di questa diretta, e il
+  // perdono, lo stesso di !perdona in chat. Toglie il castigo, non l'attesa.
+  const castighiPerPannello = (login) => attese.castighiInCorso(login).map((c) => ({ ...c, nome: giochiConf.giocoDi(c.gioco)?.nome || [c.gioco, c.gioco, c.gioco] }));
+  app.get('/api/streamer/giochi/castighi', requireLogin, (req, res) => {
+    res.json({ castighi: castighiPerPannello(currentUser(req).login) });
+  });
+  app.post('/api/streamer/giochi/perdona', requireLogin, (req, res) => {
+    if (!esigiFunzione(req, res, 'giochi', 'Il perdono')) return;
+    const login = currentUser(req).login;
+    const chi = String(req.body?.chi || '').replace(/^@/, '').toLowerCase();
+    if (!/^[a-z0-9_.]{2,40}$/.test(chi)) return res.status(400).json({ errore: 'Manca il nome di chi perdonare.' });
+    const gioco = req.body?.gioco ? String(req.body.gioco) : null;
+    if (gioco && !giochiConf.giocoDi(gioco)) return res.status(400).json({ errore: 'Questo gioco non c\'è.' });
+    res.json({ tolti: attese.perdona(login, chi, gioco), castighi: castighiPerPannello(login) });
   });
   app.post('/api/streamer/giochi/regole', requireLogin, (req, res) => {
     if (!esigiFunzione(req, res, 'giochi', 'Le regole dei giochi')) return;

@@ -13,7 +13,10 @@
 //  · il castigo sopravvive a un riavvio, e una partita annullata lo rimette
 //    com'era;
 //  · il tempo si dice nella lingua della chat; a canale spento la giornata e'
-//    quella del canale.
+//    quella del canale;
+//  · il perdono dello staff toglie il castigo intero (su un gioco o su tutti),
+//    non l'attesa normale; !perdona e' solo dello staff, risponde con le sue
+//    frasi, e la carta del pannello elenca solo la diretta di adesso.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { cartellaUsaEGetta } from '../aiuto.mjs';
@@ -162,4 +165,86 @@ test('il tempo si dice nella lingua della chat', (t) => {
   assert.equal(A.tempoIn('es', 120 * 60_000), '2 horas');
   assert.equal(A.tempoIn('it', 125 * 60_000), '2 ore e 5 minuti');
   assert.equal(A.tempoIn('en', 61 * 60_000 * 2), '2 hours and 2 minutes');
+});
+
+// ---------------------------------------------------------------- il perdono
+
+const Reg = await import('../../src/features/comandi-registro.js');
+
+test('il perdono riapre il gioco chiuso, riparte dal primo gradino, e lascia l\'attesa normale', (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout', 'Date'], now: T0 });
+  const s = tavolo();
+  s.scrivi('anna');
+  for (let i = 0; i < 4; i++) s.scrivi('anna');
+  assert.equal(A.resta(s.ch, 'slot', 'anna').basta, true);
+  assert.equal(A.perdona(s.ch, 'anna'), 1);
+  const r = A.resta(s.ch, 'slot', 'anna');
+  assert.ok(r && !r.basta && r.ms > 0 && r.ms <= 5000, 'resta l\'attesa della slot, non il castigo');
+  s.scrivi('anna');
+  assert.equal(restaS(s.ch), 5 + 30, 'si riparte dal primo gradino');
+  assert.equal(A.perdona(s.ch, 'bruno'), 0, 'chi non ha castighi');
+});
+
+test('il perdono su un gioco lascia gli altri', (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout', 'Date'], now: T0 });
+  const s = tavolo();
+  streamers.setSettings(s.ch, { giochiConf: { slot: { insisti: 30, insistiMax: 4 }, moneta: { insisti: 30, insistiMax: 4 } } });
+  s.scrivi('anna'); s.scrivi('anna');
+  s.scrivi('anna', '!moneta'); s.scrivi('anna', '!moneta');
+  assert.deepEqual(A.castighiInCorso(s.ch).map((c) => c.gioco).sort(), ['moneta', 'slot']);
+  assert.equal(A.perdona(s.ch, 'anna', 'slot'), 1);
+  assert.deepEqual(A.castighiInCorso(s.ch).map((c) => c.gioco), ['moneta']);
+});
+
+test('!perdona in chat: le sue risposte, il gioco col nome del canale, e solo per lo staff', (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout', 'Date'], now: T0 });
+  const s = tavolo();
+  s.scrivi('anna'); s.scrivi('anna');
+  const mod = { isMod: true };
+  s.scrivi('bruno', '!perdona @anna slot', mod);
+  assert.equal(s.detti.at(-1), '✅ Castigo tolto a anna: si torna a giocare come prima.');
+  s.scrivi('bruno', '!perdona @anna', mod);
+  assert.equal(s.detti.at(-1), 'anna non ha castighi da togliere.');
+  s.scrivi('bruno', '!perdona @anna boh', mod);
+  assert.equal(s.detti.at(-1), '«boh» non è un gioco di questo canale.');
+  s.scrivi('bruno', '!perdona', mod);
+  assert.equal(s.detti.at(-1), 'Si scrive così: !perdona @nome, o !perdona @nome e il gioco.');
+  const v = Reg.preparaComando(s.ch, { text: '!perdona @anna', user: 'carla' });
+  assert.equal(v.rifiuta, 'mod', 'chi non e\' staff non ci arriva');
+  assert.ok(Reg.giochiInChat(s.ch, { isMod: true }).join(' ').includes('!perdona @nome'), 'lo staff lo vede in !giochi');
+  assert.ok(!Reg.giochiInChat(s.ch, {}).join(' ').includes('!perdona'), 'chi guarda no');
+});
+
+test('la carta elenca solo i castighi di questa diretta', (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout', 'Date'], now: T0 });
+  const s = tavolo();
+  s.scrivi('anna'); s.scrivi('anna'); s.scrivi('anna');
+  const [c] = A.castighiInCorso(s.ch);
+  assert.deepEqual({ chi: c.chi, gioco: c.gioco, gradino: c.gradino, aspetta: c.aspetta }, { chi: 'anna', gioco: 'slot', gradino: 2, aspetta: true });
+  assert.equal(c.fino, T0 + 95_000);
+  statoVivo.scrivi(s.ch, 'economia', { diretta: 'dopo', ts: Date.now() });
+  assert.deepEqual(A.castighiInCorso(s.ch), []);
+  assert.equal(A.perdona(s.ch, 'anna'), 0, 'un castigo di una diretta passata non si perdona: non c\'e\' gia\' piu\'');
+});
+
+test('!perdona riconosce il gioco dal comando, anche rinominato, e anche quando il comando non si chiama come il gioco', (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout', 'Date'], now: T0 });
+  const s = tavolo();
+  streamers.setSettings(s.ch, { giochiConf: { manche: { insisti: 30, insistiMax: 4, attesaTutti: 600 }, slot: { insisti: 30, insistiMax: 4 } }, comandi: { slot: { nome: 'macchinetta' } } });
+  // come fa il bot: il vaglio del registro traduce il nome del canale in quello di serie
+  const scrivi = (user, text, extra = {}) => {
+    const v = Reg.preparaComando(s.ch, { channel: s.ch, user, text, ...extra });
+    s.scrivi(user, v?.testo || text, extra);
+  };
+  scrivi('anna', '!trivia');
+  t.mock.timers.tick(120_000);              // la domanda e' finita, l'attesa di tutti no
+  scrivi('anna', '!trivia');
+  scrivi('anna', '!macchinetta');
+  scrivi('anna', '!macchinetta');
+  assert.deepEqual(A.castighiInCorso(s.ch).map((c) => c.gioco).sort(), ['manche', 'slot']);
+  scrivi('bruno', '!perdona @anna trivia', { isMod: true });
+  assert.equal(s.detti.at(-1), '✅ Castigo tolto a anna: si torna a giocare come prima.', '!trivia e\' una manche');
+  scrivi('bruno', '!perdona @anna macchinetta', { isMod: true });
+  assert.equal(s.detti.at(-1), '✅ Castigo tolto a anna: si torna a giocare come prima.', 'il nome che il comando ha nel canale');
+  assert.deepEqual(A.castighiInCorso(s.ch), []);
 });

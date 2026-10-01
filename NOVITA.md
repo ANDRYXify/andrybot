@@ -151,6 +151,9 @@ comandi diversi da quelli della riga italiana.
   en> Like a phone locked after too many tries: the first time the wait grows by the amount you choose, then by double. Whoever calms down steps back, and the next stream starts from zero.
   es> Quien insiste espera más
   es> Como un teléfono bloqueado tras demasiados intentos: la primera vez la espera crece lo que elijas, luego el doble. Quien se calma retrocede, y el siguiente directo empieza de cero.
+- Lo staff può togliere il castigo a chi ha insistito: in chat con !perdona @nome, o con «Perdona» nella carta «Chi aspetta di più». L'attesa normale del gioco resta. [vai: giochi]
+  en: Your team can lift the penalty from someone who kept insisting: in chat with !perdona @nome, or with «Forgive» in the «Who is waiting longer» card. The game's normal wait stays.
+  es: Tu equipo puede quitar el castigo a quien insistió: en el chat con !perdona @nome, o con «Perdonar» en la tarjeta «Quién espera más». La espera normal del juego se queda.
 
 ## 2026-09-30
 

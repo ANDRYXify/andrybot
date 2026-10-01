@@ -104,6 +104,14 @@ export const COMANDI = [
     cosa: ['Dice quante monete ha chi lo scrive.', 'Says how many coins the writer has.', 'Dice cuántas monedas tiene quien lo escribe.'] },
   { id: 'doppio', modulo: 'giochi', nomi: ['doppio', 'doppie'], titolo: ['Ora doppia', 'Double time', 'Hora doble'], chi: 'mod',
     cosa: ['Per un po\' le monete che arrivano da sole valgono di più: !doppio 30 per mezz\'ora, !doppio 60 3 per un\'ora al triplo, !doppio stop per finire.', 'For a while the coins that come by themselves are worth more: !doppio 30 for half an hour, !doppio 60 3 for an hour at triple, !doppio stop to end it.', 'Durante un rato las monedas que llegan solas valen más: !doppio 30 media hora, !doppio 60 3 una hora al triple, !doppio stop para terminar.'] },
+  { id: 'perdona', modulo: 'giochi', nomi: ['perdona', 'perdono', 'pardon'], titolo: ['Togli un castigo', 'Lift a penalty', 'Quita un castigo'], chi: 'mod',
+    cosa: ['Toglie il castigo a chi ha insistito troppo in un gioco: !perdona @nome per tutti i giochi, !perdona @nome slot per uno solo. L\'attesa normale del gioco resta.', 'Lifts the penalty from someone who insisted too much on a game: !perdona @nome for every game, !perdona @nome slot for just one. The game\'s normal wait stays.', 'Quita el castigo a quien insistió demasiado en un juego: !perdona @nombre para todos los juegos, !perdona @nombre slot para uno solo. La espera normal del juego se queda.'],
+    risposte: {
+      fatto: { etichetta: ['Quando toglie il castigo', 'When it lifts the penalty', 'Cuando quita el castigo'], segnaposti: ['nome'], base: ['✅ Castigo tolto a {nome}: si torna a giocare come prima.', '✅ Penalty lifted for {nome}: back to playing as before.', '✅ Castigo quitado a {nome}: se vuelve a jugar como antes.'] },
+      niente: { etichetta: ['Quando non c\'è niente da togliere', 'When there is nothing to lift', 'Cuando no hay nada que quitar'], segnaposti: ['nome'], base: ['{nome} non ha castighi da togliere.', '{nome} has no penalties to lift.', '{nome} no tiene castigos que quitar.'] },
+      gioco: { etichetta: ['Quando il gioco non c\'è', 'When the game doesn\'t exist', 'Cuando el juego no existe'], segnaposti: ['gioco'], base: ['«{gioco}» non è un gioco di questo canale.', '“{gioco}” isn\'t a game on this channel.', '«{gioco}» no es un juego de este canal.'] },
+      come: { etichetta: ['Quando manca il nome', 'When the name is missing', 'Cuando falta el nombre'], segnaposti: ['comando'], base: ['Si scrive così: {comando} @nome, o {comando} @nome e il gioco.', 'Type it like this: {comando} @name, or {comando} @name and the game.', 'Se escribe así: {comando} @nombre, o {comando} @nombre y el juego.'] },
+    } },
   { id: 'classifica', modulo: 'giochi', nomi: ['classifica', 'top', 'classificamod', 'classificastaff', 'topmod'], titolo: ['Classifica', 'Leaderboard', 'Clasificación'],
     cosa: ['I primi del pubblico. Con «mod» la gara dello staff, con «tutti» le due insieme.', 'The top viewers. With «mod» the staff race, with «tutti» both together.', 'Los primeros del público. Con «mod» la carrera del staff, con «tutti» las dos juntas.'] },
   { id: 'slot', modulo: 'giochi', gioco: 'slot', nomi: ['slot'], titolo: ['Slot machine', 'Slot machine', 'Tragaperras'],
@@ -327,6 +335,7 @@ export const GRUPPI = [
   { id: 'coccole', emoji: '🤗', nome: 'Coccole' },
   { id: 'conto', emoji: '💰', nome: '%[Le tue|I tuoi|La tua|Il tuo]% %monete%' },
   { id: 'webcam', emoji: '🎥', nome: 'Con la webcam' },
+  { id: 'staff', emoji: '🛡️', nome: 'Per lo staff' },
 ];
 
 export const IN_CHAT = {
@@ -334,6 +343,7 @@ export const IN_CHAT = {
   moneta: { gruppo: 'solo', emoji: '🪙', spiega: 'Lanci una moneta con {moneta}, ed esce testa o croce.' },
   '8ball': { gruppo: 'solo', emoji: '🎱', forma: 'domanda', spiega: 'Fai una domanda e la palla magica ti risponde: {8ball} vinco stasera?' },
   monete: { gruppo: 'conto', emoji: '💰', spiega: 'Ti dice %[quante|quanti|quanta|quanto]% %monete% hai. %[Si guadagnano|Si guadagnano|Si guadagna|Si guadagna]% stando in chat, e giocando.' },
+  perdona: { gruppo: 'staff', emoji: '🙏', forma: '@nome', spiega: 'Togli il castigo a chi ha insistito troppo in un gioco: {perdona} @nome per tutti i giochi, o col nome del gioco dopo per uno solo. L\'attesa normale del gioco resta.' },
   doppio: { gruppo: 'conto', emoji: '⏱️', forma: 'minuti', spiega: 'Per un po\' quello che si guadagna stando in chat vale di più: {doppio} 30 per mezz\'ora, {doppio} 60 3 per un\'ora al triplo, {doppio} stop per finire.' },
   classifica: { gruppo: 'conto', emoji: '🏆', spiega: 'Chi ha più %monete% nel canale, e a che posto sei tu. Con {classifica} mod vedi la gara dello staff, con {classifica} tutti le due insieme.' },
   slot: { gruppo: 'solo', emoji: '🎰', spiega: 'Tiri la leva con {slot}: ogni giocata costa %slot.costo% %monete%, con i simboli uguali si vince e il tris di 💎 è il jackpot.' },

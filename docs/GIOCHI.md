@@ -281,6 +281,26 @@ per costruzione non è insistere), e chi non ha ancora scritto i messaggi per gi
 **Un riavvio non lo azzera e non lo regala.** Il castigo sta nel database (`statoVivo`, una voce
 per canale), con la diretta a cui appartiene: un castigo di una diretta passata non vale.
 
+**Il perdono.** Lo staff può togliere un castigo prima della fine della diretta: chi ha insistito
+per errore, o ha capito, non deve aspettare la diretta dopo.
+
+- In chat: `!perdona @nome` toglie i castighi di quella persona su tutti i giochi; `!perdona @nome
+  slot` solo su quel gioco (col nome che il comando ha nel canale, rinominato compreso). Il
+  comando è dello staff (livello minimo «mod», come `!doppio`), e in `!giochi` lo vede solo chi lo
+  può usare, nel gruppo «Per lo staff». Le due risposte («fatto», «niente da togliere») sono di
+  serie in tre lingue e lo streamer le cambia nella carta dei comandi.
+- Nel pannello, scheda Giochi: la carta «Chi aspetta di più» elenca i castighi della diretta (chi,
+  quale gioco, a che gradino, fino a quando), con «Perdona» accanto a ognuno. Si legge quando si
+  apre la scheda e dopo ogni perdono, con «Aggiorna» per rileggerla.
+- **Toglie il castigo, non l'attesa del gioco**: chi ha appena giocato aspetta comunque la sua
+  attesa normale, quella che vale per tutti. E lo toglie tutto: si riparte dal primo gradino. Il
+  perdono è una decisione dello staff, non un conto.
+- Il castigo di una diretta passata non c'è già più: non si perdona e non si elenca.
+
+Le prove (`test/unita/insistere.test.mjs`): il perdono riapre il gioco chiuso e riparte dal primo
+gradino; su un gioco solo lascia gli altri; non tocca l'attesa normale; chi non ha castighi riceve
+«niente da togliere»; il comando è riservato allo staff; la carta elenca solo la diretta di adesso.
+
 Le regole stanno nel catalogo, accanto alle due attese di ogni gioco (`insisti`, `insistiMax`), e
 quindi nella carta delle regole di ogni gioco nel pannello. Il boss no: il suo comando è
 `!colpisci`, che si scrive a raffica per costruzione.
@@ -290,6 +310,100 @@ Le prove (`test/unita/insistere.test.mjs`): la sequenza tot, 3·tot, 7·tot; la 
 tranquilla abbassa di un gradino; lo staff e `!colpisci` mai; il castigo sopravvive a un
 riavvio; un gioco con `tot` a zero non castiga. Mutazioni: raddoppio tolto, castigo che non si
 azzera alla diretta dopo, gradino che non scende.
+
+## Il giro dei giochi automatici
+
+Chiesto così: «gestire la frequenza dei minigiochi automatici, singolarmente: la percentuale di
+scelta, le tempistiche in generale e nello specifico».
+
+### Com'era
+
+Tre orologi che non si parlavano: le manche automatiche (ogni da `minMin` a `maxMin` minuti, un
+tipo a caso fra quelli «nel giro»), il boss (`boss.ogni`, fisso) e l'arena (`arena.ogni`, fisso).
+I difetti:
+
+- **potevano cadere uno sull'altro**: un boss a metà di una manche, un'arena sopra un boss;
+- **il tipo di manche non era scelto alla pari**: si mescolava con `sort(() => Math.random() - 0.5)`,
+  che non dà a tutti gli ordini la stessa probabilità (dipende da come l'ordinamento confronta);
+- **niente pesi**: un tipo o c'era o non c'era, e il quiz usciva quanto l'impiccato;
+- **la chat viva era fissa** (un messaggio al minuto), e boss e arena non sapevano delle manche.
+
+### Il modello
+
+**Un orologio solo, il giro.** Quando scatta (ogni da `min` a `max` minuti, a caso nel mezzo)
+sceglie **un** gioco fra quelli che possono partire adesso, ognuno col suo peso. Se nessuno può,
+riprova al minuto dopo, senza aspettare un giro intero.
+
+**Le voci del giro**, ognuna con le sue due manopole:
+
+- ogni tipo di manche (quiz, reflex, numero, anagramma, sequenza, domanda tua, calcolo, rebus, più o
+  meno, impiccato, wordle), il boss, l'arena, la catena di parole, la conta, la corsa;
+- **peso** (0–100, 0 = mai da solo): la probabilità di essere scelto è il peso diviso la somma dei
+  pesi delle voci che possono partire. Il pannello mostra accanto a ogni peso «su 100 giochi
+  automatici, circa N»;
+- **distanza** (minuti, 0 = nessuna): al massimo una volta ogni tanti minuti. È il tempo «nello
+  specifico»: il boss al massimo una volta all'ora, anche se il giro scatta ogni dieci minuti.
+
+**Le regole generali del giro**: acceso o spento; ogni da `min` a `max` minuti; solo in diretta o
+anche a canale spento; chat viva, cioè almeno `chatMin` messaggi al minuto (0 = anche a chat ferma,
+per svegliarla).
+
+**Chi può partire adesso**, per costruzione, in un posto solo:
+
+- peso più di zero, e la sua distanza passata;
+- **niente in corso**: nessuna manche, catena, conta, boss, arena o corsa aperti. Due giochi
+  automatici non si sovrappongono mai, e uno automatico non cade sopra uno aperto a mano;
+- quello che il gioco chiede: il boss solo se `!colpisci` risponde, l'arena solo se si può entrare,
+  boss e arena solo in diretta (vivono nell'overlay), un tipo di manche solo se ha una domanda da
+  fare (la «domanda tua» senza domande non parte), catena, conta e corsa solo se il loro comando
+  risponde.
+
+**La scelta pesata è una sola estrazione**: si mettono in fila le voci che possono partire, coi
+loro pesi, e un numero a caso fra 0 e la somma dice dove si cade. Ogni voce esce esattamente con
+la sua probabilità. La stessa funzione sceglie il tipo di `!manche` scritto a mano (fra i tipi col
+peso, o fra tutti se nessuno ne ha).
+
+**Le ultime partenze stanno nel database** (`statoVivo`, «giro-ultimi»): un riavvio non fa
+arrivare il boss due volte nella stessa ora. Il prossimo scatto no: si ripianifica, e al peggio
+arriva un giro dopo.
+
+**Restano fuori dal giro i raid**: il boss e l'arena che arrivano con un raid grande sono un evento,
+non un orario, e hanno le loro soglie nelle regole del gioco.
+
+### La resa si legge dal giro
+
+Il pannello calcola il massimo di monete all'ora del boss, dell'arena e delle manche
+automatiche. Prima leggeva `boss.ogni`, `arena.ogni` e `manche.minMin`; ora legge la distanza
+minima vera fra due partenze della stessa voce: `max(min del giro, distanza della voce)`, e zero
+se la voce non ha peso o il giro è spento. Per le manche vale la più corta fra i tipi che hanno un
+peso: una manche qualunque può arrivare a ogni scatto.
+
+### Chi aveva scelto qualcosa lo ritrova
+
+Un canale senza `giro` salvato ha il giro ricavato da quello che aveva, con le stesse frequenze in
+media:
+
+- niente acceso: giro spento, ogni tipo di manche col suo peso di partenza (10), boss, arena,
+  catena, conta e corsa a zero. Accendere il giro è accendere le vecchie manche automatiche;
+- solo le manche: lo stesso `min`, `max` e «solo in diretta», peso 10 ai tipi che erano nel giro;
+- solo il boss (o l'arena) ogni N minuti: giro da N a N minuti, solo quella voce, distanza N;
+- più cose insieme: le frequenze si sommano (le manche una ogni `(min+max)/2` minuti, il boss una
+  ogni `boss.ogni`), il giro scatta in media con la somma, e ogni voce ha il peso della sua parte.
+  La distanza del boss e dell'arena è il loro vecchio `ogni`: non arrivano più spesso di prima, e
+  la resa massima all'ora non sale.
+
+`boss.ogni`, `arena.ogni` e `manche.tipi` escono dalle regole dei giochi (sarebbero due posti per
+la stessa cosa) e restano letti solo per ricavare il giro di chi non l'ha ancora salvato.
+
+### Le prove
+
+`test/unita/giro-giochi.test.mjs`: la scelta pesata esce con le sue probabilità (su tutte le
+estrazioni possibili, non a campione); un peso a zero non esce mai; la distanza blocca e poi
+libera; niente parte sopra un gioco in corso; boss e arena non partono a canale spento; il tipo di
+manche senza domande non parte e il giro ne sceglie un altro; le ultime partenze sopravvivono a un
+riavvio; la migrazione dà le stesse frequenze medie; la resa legge la distanza vera. Mutazioni: la
+scelta che ignora i pesi, la distanza ignorata, la sovrapposizione permessa, la migrazione che
+perde il boss.
 
 ## Il colpo di gruppo e il boss
 

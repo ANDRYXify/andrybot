@@ -6,7 +6,7 @@
 // Comandi: !dado [NdM] · !moneta · !8ball <domanda> · !slot · !roulette <p> <scelta>
 //          · !pesca · !duello @tizio · !furto @tizio · !regala @tizio N
 //          · !trivia · !classifica [mod|tutti] · !monete · !giochi
-import { giochiInChat, spiegaGioco, nomeIn } from './comandi-registro.js';
+import { giochiInChat, spiegaGioco, nomeIn, risolvi, rispostaDi } from './comandi-registro.js';
 import { aChi, spazioPer, inMessaggi } from './risposte.js';
 import { valoriDi, SLOT_TRIS } from './giochi-conf.js';
 import * as coccole from './coccole.js';
@@ -18,7 +18,7 @@ import * as bjFeat from './blackjack.js';
 import * as corsaFeat from './corsa.js';
 import * as patataFeat from './patata.js';
 import * as catenaFeat from './catena.js';
-import { aspetta, giocato } from './attese-giochi.js';
+import { aspetta, giocato, perdona } from './attese-giochi.js';
 import { points, streamers, giochi } from '../db.js';
 import { makeLog } from '../logger.js';
 import { nomeMoneta } from './moneta.js';
@@ -901,6 +901,21 @@ export function tryGame(msg, say) {
         const prime = economia.primaScadenza(channel, msg.user);
         const scadono = prime ? ` ${prime.quanti} ${prime.quanti === 1 ? 'scade' : 'scadono'} ${quandoScade(channel, prime.scade)}.` : '';
         risposta(`💰 Hai ${points.get(channel, msg.user)} ${moneta()}.${scadono}`);
+        return true;
+      }
+
+      // IL PERDONO, dalla chat: per lo staff (il registro lo riserva ai mod).
+      // «!perdona @nome» su tutti i giochi, «!perdona @nome slot» su uno solo,
+      // col nome che quel comando ha nel canale (docs/GIOCHI.md).
+      case 'perdona': {
+        const chi = String(args[0] || '').replace(/^@/, '').toLowerCase();
+        if (!/^[a-z0-9_.]{2,40}$/.test(chi)) { risposta(rispostaDi(channel, 'perdona', 'come', { comando: comando('perdona') })); return true; }
+        let gioco = null;
+        if (args[1] !== undefined) {
+          gioco = risolvi(channel, String(args[1]).replace(/^!/, ''))?.comando.gioco || null;
+          if (!gioco) { risposta(rispostaDi(channel, 'perdona', 'gioco', { gioco: String(args[1]).slice(0, 30) })); return true; }
+        }
+        risposta(rispostaDi(channel, 'perdona', perdona(channel, chi, gioco) ? 'fatto' : 'niente', { nome: chi }));
         return true;
       }
 
