@@ -565,16 +565,20 @@ sito. Chiesto così: una «v» nera, disegnata, centrata, che esce un po' da una
 parte e un po' dall'altra; contrastante con la casella; la casella più piccola
 e disegnata anche lei.
 
-- **La casella** è uno schizzo a matita (`--testo-3`, tratto sottile): quattro
-  righe appena storte che si incrociano agli angoli, come le righe di
-  costruzione prima della china. È più piccola della casella vera, che resta
-  della sua misura per il dito.
+- **La casella** è un riquadro a matita (`--testo-3`, tratto sottile) fatto
+  come lo fa una mano: **un gesto solo**, in senso orario, che parte poco dopo
+  l'angolo in alto a sinistra, gira gli angoli senza staccare (arrotondati,
+  ognuno un po' diverso), con i lati appena storti, e si chiude ripassando un
+  pezzetto del lato di partenza, poco discosto. Niente code oltre gli angoli. È
+  più piccola della casella vera, che resta della sua misura per il dito.
 - **La spunta** è una «v» di pennino in china (`--contorno`): una sagoma piena,
   sottile all'attacco, spessa al vertice e affilata in uscita. È centrata sulla
   casella ed esce a sinistra, a destra e in alto. Nera e piena su una matita
   grigia e sottile: le due cose non si confondono, nei due temi.
 - **Il pallino** è un cerchio a matita chiuso a mano, poco più di un giro; la
-  scelta è un pallino pieno a china.
+  scelta è un pallino pieno a china, grande la metà del cerchio, con aria
+  intorno. La punta parte dal centro, gira allargandosi e chiude con un giro
+  intero alla sua misura: il bordo è un cerchio.
 - **Si disegna e si disfa.** Mettere la spunta la traccia a scatti, alla
   cadenza del sito (12 disegni al secondo, 330 ms): la sagoma cresce lungo il
   gesto della penna. Toglierla la disfa all'indietro, più svelta (`RITORNO`).
@@ -605,24 +609,74 @@ Com'è fatto, per costruzione:
 - l'interruttore (la levetta) ha il suo disegno e resta com'è; un input con
   `data-nativo` resta nativo.
 
-Il motore sta in `disegno-pannello.js`, non nel nucleo: sulla home non c'è una
-casella nativa che si veda, quindi lì sarebbe stato peso senza niente da
-disegnare (`scripts/verifica-dieta.mjs`). La home ha le sue spunte disegnate a
-parte, nel configuratore e negli elenchi dei piani, con le stesse regole: una
-sola «v» piena a pennino (`SPUNTA` in `src/web/vetrina-vista.js`), la casella a
-matita fatta coi bordi e un solo elemento in più, e la «v» che si scopre a
-scatti da sinistra, nell'ordine della penna, col solo CSS. È entrata apposta
-e il tetto della home è andato da 60 a 61 kB, con la storia scritta nel
-cancello.
+**Un disegno solo, per pannello e home.** La geometria (il riquadro, la «v», il
+cerchio e il pallino, le sei varianti, i pesi del tratto) sta in
+`src/web/public/spunta-forma.js`, un file senza DOM. Il pannello lo carica prima
+di `disegno.js`, e `disegno-pannello.js` lo usa per l'immagine di bordo delle
+caselle vere. La home non lo carica: lo esegue il server
+(`src/web/vetrina-vista.js`) e scrive nella pagina il disegno che ne esce. La
+casella del configuratore è la casella del pannello alla stessa misura (1,05rem,
+col disegno che esce di 0,3rem tutto intorno), con la «v» che si scopre a
+scatti da sinistra, nell'ordine della penna, col solo CSS. Negli elenchi dei
+piani c'è la sola «v», verde, con la scatola stretta attorno al suo inchiostro.
+Due copie fatte a mano erano andate alla deriva (vedi sotto); una copia sola non
+può. Il motore resta fuori dal nucleo: sulla home non c'è una casella nativa da
+disegnare, e il peso conta (`scripts/verifica-dieta.mjs`, tetto 61 kB).
+
+**La casella sta in mezzo alla prima riga delle sue parole.** Nelle righe
+`.riga-check` la casella è appoggiata a sinistra e scende di metà della
+differenza fra la riga e la casella, `(1lh - 1.05rem) / 2`. Ma l'unità `lh` di
+una proprietà della casella vale la riga *della casella*, che ha il carattere
+dei controlli del sistema (15 px), non quella delle parole (23 px). Per questo
+la casella eredita il carattere della riga (`font: inherit`): `1lh` diventa la
+riga delle parole e la casella scende dove deve. Dove la casella sta nel testo
+come una parola, si allinea a metà delle minuscole (`vertical-align: middle`).
+Dove sta in una fila flessibile con parole che possono andare a capo, si
+appoggia in cima e scende con la stessa formula, così resta sulla prima riga e
+non a metà del paragrafo.
+
+### Cosa non andava, e perché
+
+Guardate da vicino, le prime spunte avevano quattro difetti veri, tutti misurati:
+
+1. **La casella vuota si leggeva come l'icona «ritaglia».** Era fatta di quattro
+   righe che si incrociano e sbordano agli angoli: è il modo di tirare righe
+   lunghe di costruzione, e a dodici pixel le code agli angoli fanno il simbolo
+   del ritaglio. Nella grammatica del sito la matita di costruzione si cancella;
+   un riquadro piccolo una mano lo fa d'un gesto. Adesso è così.
+2. **La punta della «v» si aggrovigliava nell'angolo** in alto a destra, dove
+   passavano due code. Senza code il groviglio non c'è più.
+3. **Il pallino pieno aveva un bozzo:** era una chiocciola che partiva da fuori
+   e si stringeva, e il bordo era l'inizio della chiocciola, più largo del
+   resto. Ed era quasi grande quanto il cerchio.
+4. **Sulla home la «v» era schiacciata a 14 pixel**, piccola e spostata a
+   sinistra: la regola generale `svg { max-width: 100% }` la stringeva alla
+   larghezza della casella. Il disegno della home ora ha `max-width: none` e
+   viene dallo stesso file del pannello.
+
+E uno dell'allineamento: in circa 160 righe del pannello la casella stava 3-5
+pixel più in alto delle parole, per l'unità `lh` letta sulla casella.
 
 Le pagine pubbliche degli streamer (pagina link, donazioni, negozio) hanno il
 tema scelto dallo streamer e non portano il disegno del pannello: lì le
 caselle restano col colore del tema.
 
 Collaudo: `scripts/verifica-scelte.mjs` pretende che ogni casella e ogni
-pallino visibile, in ogni scheda, al telefono e al computer, sia disegnato e
-che il disegno dica il suo stato; su un campione, toccato, la spunta si
-traccia in almeno tre disegni e si disfa; nel gruppo dei pallini della moneta,
-sceglierne uno cancella quello di prima. L'autoprova toglie il disegno a una
-casella e vuole vederla rossa. Rotti a mano: senza animazione e senza
-l'aggiornamento del gruppo, il cancello è rosso.
+pallino visibile, in ogni scheda, al telefono e al computer, sia disegnato, che
+il disegno dica il suo stato, che il riquadro sia un gesto solo, e che il
+centro della casella stia sul centro ottico della prima riga delle sue parole
+(a metà fra minuscole e maiuscole, sopra la linea di base), entro 2 pixel. Su un
+campione, toccato, la spunta si traccia in almeno tre disegni e si disfa; nel
+gruppo dei pallini della moneta, sceglierne uno cancella quello di prima. Sulla
+home misura le caselle del configuratore: il disegno grande 1,65rem e centrato
+sulla casella, il riquadro un gesto solo, la casella in mezzo alla prima riga
+del nome, la «v» che c'è solo a casella spuntata. L'autoprova toglie il disegno
+a una casella, rimette la casella col carattere dei controlli (la casella torna
+4 pixel più in alto) e rimette la regola che stringeva la «v» della home, e
+vuole vederle tutte rosse.
+
+La geometria ha le sue prove in `test/unita/spunta-forma.test.mjs`: un gesto
+solo e nessuna coda oltre gli angoli, la «v» centrata che esce a sinistra, a
+destra e in alto, il pallino tondo che chiude con un giro alla sua misura e
+lascia aria al cerchio, la home che scrive gli stessi tracciati del pannello.
+Ognuna è stata rotta a mano ed è diventata rossa.

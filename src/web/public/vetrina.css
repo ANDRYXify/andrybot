@@ -525,11 +525,12 @@ body.leggero .vt-rec[aria-hidden], body.meno-moto .vt-rec[aria-hidden] { display
 .vt-extra:hover { border-color: var(--border-2); }
 }
 .vt-extra input { position: absolute; opacity: 0; width: 0; height: 0; }
-.vt-spunta { flex: 0 0 auto; position: relative; width: 16px; height: 22px; margin: 1px 3px 0; border: 0 solid var(--testo-3); border-width: 0 1.5px; }
-.vt-spunta:before { content: ""; position: absolute; inset: 3px -4.5px; border: inherit; border-width: 1.5px 0; }
-.vt-spunta svg { position: absolute; left: -5.5px; top: -3px; width: 24px; height: 24px; clip-path: inset(0 100% 0 0); transition: clip-path .15s steps(2); }
+.vt-spunta { flex: 0 0 auto; position: relative; width: 1.05rem; height: 1.05rem; margin-top: calc((.92rem * 1.3 - 1.05rem) / 2); }
+.vt-spunta svg { position: absolute; inset: -.3rem; width: 1.65rem; height: 1.65rem; max-width: none; }
+.vt-sp-c { fill: none; stroke: var(--testo-3); stroke-linecap: round; stroke-linejoin: round; }
+.vt-sp-v { fill: var(--contorno); stroke: var(--contorno); stroke-linejoin: round; clip-path: inset(0 100% 0 0); transition: clip-path .15s steps(2); }
 .vt-extra:has(input:checked) { border-color: var(--acc-bordo); background: var(--acc-soft); }
-.vt-extra:has(input:checked) .vt-spunta svg { clip-path: inset(0); transition: clip-path .33s steps(4); }
+.vt-extra:has(input:checked) .vt-sp-v { clip-path: inset(0); transition: clip-path .33s steps(4); }
 .vt-extra:has(input:focus-visible) { outline: 2px solid var(--acc); outline-offset: 2px; }
 .vt-extra-corpo { min-width: 0; }
 .vt-extra-corpo strong { display: block; font-size: .92rem; font-weight: 600; line-height: 1.3; }

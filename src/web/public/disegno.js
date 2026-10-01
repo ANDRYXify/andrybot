@@ -786,7 +786,7 @@
       misura: misura, disegnabile: disegnabile, traccia: traccia, sfila: sfila, chiedi: chiedi, esegui: esegui,
       compare: compare, via: via, lascia: lascia, siVede: siVede, contornato: contornato, copertina: copertina,
       semeDi: semeDi, caso: caso, f: f, NS: NS, PASSO_FILA: PASSO_FILA, sagome: sagome,
-      tratto: tratto, disegni: disegni, DUE: DUE, RITORNO: RITORNO,
+      disegni: disegni, DUE: DUE, RITORNO: RITORNO,
       fila: function (n) { fila = n; filaT = performance.now(); }
     }
   };

@@ -174,7 +174,7 @@ details[open] > summary::before { transform: rotate(-135deg); }
 @media (hover: hover) {
   .btn.secondario:hover { background: var(--surface-2); color: var(--testo); border-color: var(--contorno); box-shadow: var(--ombra-ink-salto); }
 }
-input[type="checkbox"], input[type="radio"] { accent-color: var(--acc); width: 1.05rem; height: 1.05rem; }
+input[type="checkbox"], input[type="radio"] { accent-color: var(--acc); width: 1.05rem; height: 1.05rem; vertical-align: middle; }
 #toast-box { position: fixed; bottom: 1.2rem; right: 1.2rem; z-index: 200; display: flex; flex-direction: column; gap: .5rem; }
 .toast {
   position: relative; overflow: hidden;

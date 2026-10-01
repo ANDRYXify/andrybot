@@ -23,14 +23,36 @@
 
 import { guideIn, urlGuida, VIE } from './guide.js';
 import { manualiIn } from './manuali.js';
-// LA SPUNTA A MANO. Una «v» sola per la home, uguale nel configuratore e negli
-// elenchi dei piani, fatta come quelle del pannello (docs/DISEGNO.md, «Le
-// spunte»): una sagoma piena di pennino, sottile all'attacco, spessa al vertice
-// e affilata in uscita. Nel configuratore sta centrata sulla casella a matita,
-// ne esce da tutte e due le parti e si scopre a scatti quando la spunti. Ripetuta
-// in ogni riga dei listini costa quasi niente: la compressione la scrive una
-// volta (provata come maschera in vetrina.css costava 180 byte in piu').
-const SPUNTA = '<svg viewBox="0 0 48 48" fill="currentColor" aria-hidden="true"><path d="M3 14c5 10 10 19 15 28c2 2 5 2 6-1c7-12 14-24 21-37c0 0 0-1-1 0c-8 10-15 19-23 29c-6-6-11-13-16-20z"/></svg>';
+import './public/spunta-forma.js';
+// LA SPUNTA A MANO, la stessa del pannello (docs/DISEGNO.md, «Le spunte»). La
+// geometria sta in un file solo, `public/spunta-forma.js`: il pannello lo
+// carica nel browser e la home lo esegue qui, sul server, e ne scrive il
+// risultato nella pagina. Due copie a mano erano andate alla deriva: la casella
+// della home era fatta di bordi CSS e la «v» un disegno a parte, che per giunta
+// la regola generale `svg { max-width: 100% }` stringeva a 14 pixel, piccola e
+// spostata a sinistra della casella.
+//
+// La casella del configuratore e' la casella del pannello alla stessa misura
+// (1,05rem, con 0,3rem di disegno tutto intorno): il riquadro a matita e la «v»
+// di pennino, che si scopre a scatti da sinistra, nell'ordine della penna. Negli
+// elenchi dei piani c'e' la sola «v», con la scatola stretta attorno al suo
+// inchiostro. La variante viene dal seme, come nel pannello.
+const SPF = globalThis.SB_SPUNTA;
+const CASELLA_HOME = (seme) => {
+  const p = SPF.forma('checkbox', SPF.variante(seme));
+  return `<svg viewBox="0 0 20 20" aria-hidden="true"><path class="vt-sp-c" stroke-width="${SPF.MATITA}" d="${p.fondo}"/>` +
+    `<path class="vt-sp-v" stroke-width="${SPF.ORLO}" d="${SPF.inchiostro(p.punti, 1)}"/></svg>`;
+};
+const SPUNTA = (() => {
+  const d = SPF.inchiostro(SPF.forma('checkbox', 0).punti, 1);
+  const n = d.match(/-?\d+(?:\.\d+)?/g).map(Number);
+  const xs = n.filter((_, i) => i % 2 === 0), ys = n.filter((_, i) => i % 2 === 1);
+  const m = SPF.ORLO / 2;
+  const x0 = Math.min(...xs) - m, x1 = Math.max(...xs) + m, y0 = Math.min(...ys) - m, y1 = Math.max(...ys) + m;
+  const lato = Math.max(x1 - x0, y1 - y0);
+  const vb = [(x0 + x1 - lato) / 2, (y0 + y1 - lato) / 2, lato, lato].map((v) => Math.round(v * 100) / 100).join(' ');
+  return `<svg viewBox="${vb}" fill="currentColor" stroke="currentColor" stroke-width="${SPF.ORLO}" stroke-linejoin="round" aria-hidden="true"><path d="${d}"/></svg>`;
+})();
 
 const ICO = {
   chat: '<path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/>',
@@ -395,11 +417,10 @@ function soloDiscordHtml(L) {
 function configuratoreHtml(L, piani) {
   const disponibili = piani.addon || [];
   if (!disponibili.length) return '';
-  const spunta = SPUNTA;
   const righe = disponibili.map((a) => `
     <label class="vt-extra">
       <input type="checkbox" value="${esc(a.id)}">
-      <span class="vt-spunta">${spunta}</span>
+      <span class="vt-spunta">${CASELLA_HOME(`extra:${a.id}`)}</span>
       <span class="vt-extra-corpo">
         <strong>${esc(tre(a, 'nome', L))}</strong>
         <span>${esc(tre(a, 'sommario', L))}</span>

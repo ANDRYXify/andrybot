@@ -43,6 +43,15 @@ comandi diversi da quelli della riga italiana.
 
 ## 2026-10-01
 
+- La casella vuota è un riquadro a matita fatto d'un gesto, come lo fa una mano: con le righe incrociate agli angoli sembrava il simbolo del ritaglio. E il pallino scelto è tondo, con aria intorno. [vai: giochi]
+  en: The empty checkbox is a pencil square drawn in one stroke, the way a hand does it: with lines crossing at the corners it looked like the crop symbol. And the chosen radio dot is round, with room around it.
+  es: La casilla vacía es un cuadrado a lápiz hecho de un trazo, como lo hace una mano: con las líneas cruzadas en las esquinas parecía el símbolo de recortar. Y el punto elegido es redondo, con aire alrededor.
+- Ogni casella sta in mezzo alla prima riga delle sue parole, anche quando la frase va a capo: in molte schede stava un po' più in alto. [vai: regole]
+  en: Every checkbox sits in the middle of the first line of its words, even when the sentence wraps: in many tabs it sat a little too high.
+  es: Cada casilla queda en medio de la primera línea de sus palabras, también cuando la frase salta de línea: en muchas pestañas quedaba un poco más arriba.
+- Sulla home le caselle dei super-poteri hanno lo stesso disegno del pannello, e la «v» non è più piccola e spostata di lato.
+  en: On the home page, the super-power checkboxes have the same drawing as the dashboard, and the check is no longer small and off to the side.
+  es: En la página de inicio, las casillas de los súper-poderes tienen el mismo dibujo que el panel, y la «v» ya no es pequeña ni está desplazada.
 - Caselle e pallini sono disegnati come il resto del sito: la casella a matita, la «v» a pennino nera e centrata che ne esce un po', tracciata quando spunti e disfatta quando togli. [vai: giochi]
   en: Checkboxes and radio buttons are drawn like the rest of the site: a pencil box and a black, centered pen check that pokes out of it, drawn when you tick it and undrawn when you clear it.
   es: Las casillas y los botones de opción están dibujados como el resto del sitio: la casilla a lápiz y una «v» negra a plumilla, centrada, que sale un poco, trazada al marcar y deshecha al quitar.
