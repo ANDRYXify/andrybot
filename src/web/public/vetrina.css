@@ -525,14 +525,11 @@ body.leggero .vt-rec[aria-hidden], body.meno-moto .vt-rec[aria-hidden] { display
 .vt-extra:hover { border-color: var(--border-2); }
 }
 .vt-extra input { position: absolute; opacity: 0; width: 0; height: 0; }
-.vt-spunta {
-  flex: 0 0 auto; position: relative; width: 20px; height: 20px; margin-top: .1rem;
-  border: 2px solid var(--contorno); border-radius: 3px 2px;
-}
-.vt-spunta svg { position: absolute; left: -5px; top: -5px; width: 26px; height: 26px; overflow: visible; color: var(--contorno); }
-.vt-spunta svg path { stroke-dasharray: 40; stroke-dashoffset: 40; transition: stroke-dashoffset .15s steps(2, jump-end); }
+.vt-spunta { flex: 0 0 auto; position: relative; width: 16px; height: 22px; margin: 1px 3px 0; border: 0 solid var(--testo-3); border-width: 0 1.5px; }
+.vt-spunta:before { content: ""; position: absolute; inset: 3px -4.5px; border: inherit; border-width: 1.5px 0; }
+.vt-spunta svg { position: absolute; left: -5.5px; top: -3px; width: 24px; height: 24px; clip-path: inset(0 100% 0 0); transition: clip-path .15s steps(2); }
 .vt-extra:has(input:checked) { border-color: var(--acc-bordo); background: var(--acc-soft); }
-.vt-extra:has(input:checked) .vt-spunta svg path { stroke-dashoffset: 0; transition: stroke-dashoffset .33s steps(4, jump-end); }
+.vt-extra:has(input:checked) .vt-spunta svg { clip-path: inset(0); transition: clip-path .33s steps(4); }
 .vt-extra:has(input:focus-visible) { outline: 2px solid var(--acc); outline-offset: 2px; }
 .vt-extra-corpo { min-width: 0; }
 .vt-extra-corpo strong { display: block; font-size: .92rem; font-weight: 600; line-height: 1.3; }

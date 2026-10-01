@@ -12,7 +12,7 @@
   var tratto = I.tratto, disegni = I.disegni, DUE = I.DUE, RITORNO = I.RITORNO;
 
   var SP_VARIANTI = 6;
-  var SP_BORDO = 20 * 0.3 / (1.05 + 0.6);
+  var SP_LATO = [5.4, 14.6];
   var spColore = null;
   var spMemo = {};
   var spPezzi = {};
@@ -22,7 +22,7 @@
     var r = getComputedStyle(document.documentElement);
     spColore = {
       china: (r.getPropertyValue('--contorno') || '').trim() || '#150910',
-      acc: (r.getPropertyValue('--acc') || '').trim() || '#ba007a'
+      matita: (r.getPropertyValue('--testo-3') || '').trim() || '#5f5a54'
     };
     return spColore;
   }
@@ -45,40 +45,82 @@
     return out;
   }
 
+  function spBez(s, t) {
+    var u = 1 - t;
+    return [u * u * u * s[0][0] + 3 * u * u * t * s[1][0] + 3 * u * t * t * s[2][0] + t * t * t * s[3][0],
+      u * u * u * s[0][1] + 3 * u * u * t * s[1][1] + 3 * u * t * t * s[2][1] + t * t * t * s[3][1]];
+  }
+
+  function spPunti(segmenti, n) {
+    var pts = [];
+    segmenti.forEach(function (s, i) { for (var j = i ? 1 : 0; j <= n; j++) pts.push(spBez(s, j / n)); });
+    var L = [0];
+    for (var i = 1; i < pts.length; i++) L.push(L[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
+    var tot = L[L.length - 1] || 1;
+    return pts.map(function (p, i) { return { x: p[0], y: p[1], u: L[i] / tot }; });
+  }
+
+  function spInchiostro(punti, quanto, largo) {
+    var vis = [];
+    for (var i = 0; i < punti.length; i++) {
+      var p = punti[i];
+      if (p.u <= quanto) { vis.push(p); continue; }
+      var a = punti[i - 1], k = (quanto - a.u) / ((p.u - a.u) || 1);
+      vis.push({ x: a.x + (p.x - a.x) * k, y: a.y + (p.y - a.y) * k, u: quanto });
+      break;
+    }
+    if (vis.length < 2) return '';
+    var sx = [], dx = [];
+    vis.forEach(function (p, i) {
+      var a = vis[Math.max(0, i - 1)], b = vis[Math.min(vis.length - 1, i + 1)];
+      var tx = b.x - a.x, ty = b.y - a.y, l = Math.hypot(tx, ty) || 1;
+      var w = largo * (0.25 + 0.75 * Math.max(0, Math.sin(Math.PI * Math.min(0.97, p.u)))) / 2;
+      sx.push([p.x - ty / l * w, p.y + tx / l * w]);
+      dx.push([p.x + ty / l * w, p.y - tx / l * w]);
+    });
+    return 'M' + sx.concat(dx.reverse()).map(function (q) { return f(q[0]) + ',' + f(q[1]); }).join(' L') + ' Z';
+  }
+
   function spForme(tipo, v) {
     var k = tipo + v;
     if (spPezzi[k]) return spPezzi[k];
     var r = caso('spunta:' + k);
-    var fondo, segno;
-    var a0 = SP_BORDO, a1 = 20 - SP_BORDO;
+    function j(m) { return (r() - 0.5) * 2 * m; }
+    var a0 = SP_LATO[0], a1 = SP_LATO[1];
     if (tipo === 'radio') {
       var a = r() * Math.PI * 2;
-      fondo = spArco(10, 10, 6.3, 6.3, a, a + Math.PI * 2.18, r);
-      segno = spArco(10, 10, 3.3, 0.15, a + 1, a + 1 + Math.PI * 4.6, r);
-    } else {
-      fondo = [[a0, a0, a1, a0], [a1, a0, a1, a1], [a1, a1, a0, a1], [a0, a1, a0, a0]].map(function (l, i) {
-        return tratto(l[0] + (r() - 0.5) * 0.45, l[1] + (r() - 0.5) * 0.45, l[2] + (r() - 0.5) * 0.45, l[3] + (r() - 0.5) * 0.45, caso('spunta:' + k + ':' + i), 0.6, 0.45);
-      }).join(' ');
-      var x0 = 1.3 + r() * 0.6, y0 = 8.9 + (r() - 0.5) * 0.8;
-      var x1 = 7.3 + (r() - 0.5) * 0.6, y1 = 15.2 + (r() - 0.5) * 0.4;
-      var x2 = 18.6 + r() * 0.5, y2 = 1.4 - r() * 0.5;
-      segno = 'M' + f(x0) + ',' + f(y0) + ' C' + f(x0 + 1.1) + ',' + f(y0 + 1.6) + ' ' + f(x1 - 0.9) + ',' + f(y1 - 0.6) + ' ' + f(x1) + ',' + f(y1) +
-        ' C' + f(x1 + 2.4) + ',' + f(y1 - 4.4) + ' ' + f(x2 - 3.4) + ',' + f(y2 + 3.9) + ' ' + f(x2) + ',' + f(y2);
+      spPezzi[k] = {
+        fondo: spArco(10, 10, 4.8, 4.8, a, a + Math.PI * 2.25, r),
+        segno: spArco(10, 10, 2.6, 0.1, a + 1, a + 1 + Math.PI * 4.4, r)
+      };
+      return spPezzi[k];
     }
-    spPezzi[k] = { fondo: fondo, segno: segno };
+    var A = [a0 + j(0.35), a0 + j(0.35)], B = [a1 + j(0.35), a0 + j(0.35)], C = [a1 + j(0.35), a1 + j(0.35)], D = [a0 + j(0.35), a1 + j(0.35)];
+    var fondo = [[A, B], [B, C], [C, D], [D, A]].map(function (l, i) {
+      return tratto(l[0][0], l[0][1], l[1][0], l[1][1], caso('spunta:' + k + ':' + i), 1.6, 0.5);
+    }).join(' ');
+    var p0 = [3.6 + j(0.3), 9.3 + j(0.3)], vt = [8.7 + j(0.3), 14.7 + j(0.25)], e = [16.7 + j(0.3), 3.4 + j(0.3)];
+    var punti = spPunti([
+      [p0, [p0[0] + 1.3, p0[1] + 1.9], [vt[0] - 1.0, vt[1] - 1.2], vt],
+      [vt, [vt[0] + 1.6, vt[1] - 3.1], [e[0] - 3.0, e[1] + 3.9], e]
+    ], 12);
+    spPezzi[k] = { fondo: fondo, punti: punti };
     return spPezzi[k];
   }
 
   function spImmagine(tipo, v, quanto) {
     var c = spColori();
-    var k = tipo + v + ':' + quanto + ':' + c.china + c.acc;
+    var k = tipo + v + ':' + quanto + ':' + c.china + c.matita;
     if (spMemo[k]) return spMemo[k];
     var p = spForme(tipo, v);
-    var svg = '<svg xmlns="' + NS + '" viewBox="0 0 20 20"><path d="' + p.fondo + '" fill="none" stroke="' + c.china +
-      '" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>';
-    if (quanto > 0) {
-      svg += '<path d="' + p.segno + '" fill="none" stroke="' + c.china + '" stroke-width="' + (tipo === 'radio' ? 2.3 : 2.4) +
-        '" stroke-linecap="round" stroke-linejoin="round" pathLength="1" stroke-dasharray="1 1" stroke-dashoffset="' + f(1 - quanto) + '"/>';
+    var svg = '<svg xmlns="' + NS + '" viewBox="0 0 20 20"><path d="' + p.fondo + '" fill="none" stroke="' + c.matita +
+      '" stroke-width="1.05" stroke-linecap="round" stroke-linejoin="round"/>';
+    if (quanto > 0 && tipo === 'radio') {
+      svg += '<path id="segno" d="' + p.segno + '" fill="none" stroke="' + c.china + '" stroke-width="1.9" stroke-linecap="round"' +
+        ' pathLength="1" stroke-dasharray="1 1" stroke-dashoffset="' + f(1 - quanto) + '"/>';
+    } else if (quanto > 0) {
+      svg += '<path id="segno" d="' + spInchiostro(p.punti, quanto, 2.9) + '" fill="' + c.china + '" stroke="' + c.china +
+        '" stroke-width=".35" stroke-linejoin="round"/>';
     }
     svg += '</svg>';
     spMemo[k] = 'url("data:image/svg+xml,' + encodeURIComponent(svg) + '")';
