@@ -1,6 +1,6 @@
 // © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
 // Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
-// LA CARTA DELL'ANTEPRIMA DEL LINK: due preset fatti di dati, che tornano
+// LA CARTA DELL'ANTEPRIMA DEL LINK: tre preset fatti di dati, che tornano
 // identici dal giro della ripulitura e dalla tinta col proprio segnale; la
 // tinta con un altro colore veste il disegno senza toccare il resto; la carta
 // rifatta vince sullo standard; l'immagine si rende e il testo disegna davvero;
@@ -19,8 +19,8 @@ process.on('exit', () => usaEGetta.pulisci());
 
 const DATI = { nome: 'ANDRYXify', titolo: 'Dirette, giochi e chiacchiere', login: 'andryxify', link: 'socialbot.live/u/andryxify', avatar: '' };
 
-test('due preset, fatti di dati, nella misura dell\'anteprima', () => {
-  assert.deepEqual(NOMI_TEMI_PAGINA, ['link', 'dona']);
+test('i preset delle tre pagine, fatti di dati, nella misura dell\'anteprima', () => {
+  assert.deepEqual(NOMI_TEMI_PAGINA, ['link', 'dona', 'negozio']);
   for (const q of NOMI_TEMI_PAGINA) {
     const t = TEMI_PAGINA[q];
     assert.equal(t.larghezza, MISURA_PAGINA.larghezza); assert.equal(t.altezza, 630);

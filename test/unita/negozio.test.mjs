@@ -415,7 +415,7 @@ test('in chat: i tre comandi, rinominabili, e un negozio chiuso tace', async () 
 
 test('le frasi parlano la lingua del canale, e ogni momento ce l\'ha in tutte e tre', () => {
   const ch = canale();
-  const dati = { nome: 'Ana', articolo: 'Espada', parola: 'espada', prezzo: '100', saldo: '5', moneta: 'x', cmd: '!compra', cmdNegozio: '!negozio', cmdBorsa: '!borsa', requisito: 'r', perche: 'p', tempo: 't', quante: 1, n: 1, cifra: '1', lista: 'l', voci: 'v', streamer: 's', brano: 'b', direttePer: 'd', dal: 'a', al: 'b', quando: 'date', tipo: 'musica', domanda: 'q' };
+  const dati = { nome: 'Ana', articolo: 'Espada', parola: 'espada', prezzo: '100', saldo: '5', moneta: 'x', cmd: '!compra', cmdNegozio: '!negozio', cmdBorsa: '!borsa', requisito: 'r', perche: 'p', tempo: 't', quante: 1, n: 1, cifra: '1', lista: 'l', voci: 'v', streamer: 's', brano: 'b', direttePer: 'd', dal: 'a', al: 'b', quando: 'date', tipo: 'musica', domanda: 'q', url: 'u' };
   for (const l of ['it', 'en', 'es']) {
     streamers.setSettings(ch, { preferenze: { lingua: l } });
     for (const m of S.MOMENTI) {

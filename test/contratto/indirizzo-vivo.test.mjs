@@ -70,9 +70,15 @@ test('e se non risponde resta spento, che è il modo giusto di sbagliare', () =>
 test('i nomi che il sito promette sono nomi che la porta d\'ingresso conosce', () => {
   // Un indirizzo corto acceso nel codice e assente dal Caddyfile e' lo stesso
   // difetto visto dall'altra parte: il sito lo offre, e fuori non esiste.
-  for (const nome of ['dona.socialbot.live', 'sostieni.socialbot.live', 'discord.socialbot.live']) {
-    assert.ok(CADDY.includes(nome), `${nome} non è fra i nomi serviti`);
-  }
+  // I nomi si leggono dalle sonde stesse, non da un elenco a mano: un nome nuovo
+  // che il server prova ad accendere entra qui da solo.
+  const promessi = [...SRV.matchAll(/candidatoHost\(config\.baseUrl, '([a-z]+)'\)/g)].map((m) => `${m[1]}.socialbot.live`);
+  assert.deepEqual(promessi, ['dona.socialbot.live', 'sostieni.socialbot.live', 'discord.socialbot.live', 'negozio.socialbot.live'],
+    'le sonde si leggono tutte');
+  // Il nome deve stare fra gli indirizzi del sito, non da qualche parte nel
+  // file: un commento che lo nomina non chiede nessun certificato.
+  const indirizzi = (CADDY.match(/^socialbot\.live,[^{\n]*\{/m) || [''])[0];
+  for (const nome of promessi) assert.ok(indirizzi.includes(nome), `${nome} non è fra i nomi serviti`);
 });
 
 test('la pagina del sostegno si apre a chi NON e\' dentro, che e\' chi dona', async () => {

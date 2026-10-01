@@ -136,6 +136,12 @@ export const config = {
   // rompe niente, l'indirizzo lungo funziona sempre.
   discordHost: /^(no|off)$/i.test(env('DISCORD_HOST', '')) ? '' : env('DISCORD_HOST', '').toLowerCase().replace(/^https?:\/\//, '').replace(/\/.*$/, ''),
   discordHostSpento: /^(no|off)$/i.test(env('DISCORD_HOST', '')),
+  // La pagina del negozio di un canale (negozio.<dominio>/<canale>), come le
+  // altre tre: senza nome il server bussa al DNS e la accende quando risponde
+  // in HTTPS; «no» la tiene spenta. L'indirizzo lungo /u/<canale>/negozio c'e'
+  // sempre.
+  negozioHost: /^(no|off)$/i.test(env('NEGOZIO_HOST', '')) ? '' : env('NEGOZIO_HOST', '').toLowerCase().replace(/^https?:\/\//, '').replace(/\/.*$/, ''),
+  negozioHostSpento: /^(no|off)$/i.test(env('NEGOZIO_HOST', '')),
   sessionSecret: sessionSecret(),
 
   // kick — app registrata su kick.com/settings/developer.

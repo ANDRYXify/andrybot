@@ -184,7 +184,12 @@ export function temaPerPiattaforma(p) {
 // LINK — notte con l'alone: la faccia con l'aureola, il nome grande, il
 // sottotitolo, un trattino, l'indirizzo. DONA — taglio: un fondo sfumato, una
 // striscia di colore a destra, la targhetta tagliata, il nome condensato.
-export const SEGNALE_PAGINA = { link: '#7C5CFF', dona: '#FF4FA3' };
+// NEGOZIO — vetrina: un fondo con l'alone in basso, la faccia quadrata come
+// un'etichetta, la targhetta del negozio nella lingua del canale, il nome.
+export const SEGNALE_PAGINA = { link: '#7C5CFF', dona: '#FF4FA3', negozio: '#2BB673' };
+// La targhetta del negozio parla la lingua del canale: e' la sola parola della
+// carta che non scrive lo streamer.
+const TARGHETTA_NEGOZIO = { it: 'IL NEGOZIO', en: 'SHOP', es: 'LA TIENDA' };
 
 export const TEMI_PAGINA = {
   link: {
@@ -222,6 +227,24 @@ export const TEMI_PAGINA = {
       { id: 'filo', tipo: 'riga', x: 520, y: 418, larghezza: 500, altezza: 2, colore: '#2E1F2A' },
       { id: 'indirizzo', tipo: 'testo', x: 520, y: 470, testo: '{link}',
         carattere: 'Archivo', corpo: 27, colore: '#9B8E98', max: 38 },
+    ],
+  },
+  negozio: {
+    nome: 'Il negozio',
+    ...MISURA_PAGINA,
+    fondo: { tipo: 'alone', tinta: '#0C1310', alone: '#2BB673', alone2: '#135234', cx: 78, cy: 92, r: 70 },
+    elementi: [
+      { id: 'avatar', tipo: 'avatar', x: 290, y: 315, d: 280, forma: 'quadro',
+        bordo: '#2BB673', spessore: 6, aureola: false },
+      { id: 'targhetta', tipo: 'targhetta', x: 520, y: 172, testo: 'IL NEGOZIO',
+        sfondo: '#2BB673', colore: '#FFFFFF', carattere: 'Archivo Black', corpo: 26, punto: false },
+      { id: 'nome', tipo: 'testo', x: 520, y: 318, testo: '{nome}',
+        carattere: 'Archivo Black', corpo: 74, colore: '#FFFFFF', max: 16 },
+      { id: 'titolo', tipo: 'testo', x: 520, y: 376, testo: '{titolo}',
+        carattere: 'Archivo', corpo: 31, colore: '#C4D6CC', max: 40 },
+      { id: 'trattino', tipo: 'riga', x: 520, y: 416, larghezza: 56, altezza: 5, colore: '#2BB673' },
+      { id: 'indirizzo', tipo: 'testo', x: 520, y: 472, testo: '{link}',
+        carattere: 'Archivo', corpo: 27, colore: '#8FA399', max: 44 },
     ],
   },
 };
@@ -278,10 +301,15 @@ export function tintaCarta(carta, segnale, accento) {
 // La carta dell'anteprima di una pagina: quella sua se l'ha rifatta, sennò lo
 // standard vestito col colore della pagina. Una funzione sola per chi disegna
 // l'immagine e per chi apre l'editor.
-export function cartaPaginaDi({ dati, quale, accento } = {}) {
+export function cartaPaginaDi({ dati, quale, accento, lingua = 'it' } = {}) {
   if (dati && Array.isArray(dati.elementi) && dati.elementi.length) return normCarta(dati);
   const q = TEMI_PAGINA[quale] ? quale : 'link';
-  return normCarta(tintaCarta(TEMI_PAGINA[q], SEGNALE_PAGINA[q], accento || SEGNALE_PAGINA[q]));
+  let tema = TEMI_PAGINA[q];
+  if (q === 'negozio') {
+    const scritta = TARGHETTA_NEGOZIO[lingua] || TARGHETTA_NEGOZIO.it;
+    tema = { ...tema, elementi: tema.elementi.map((e) => (e.id === 'targhetta' ? { ...e, testo: scritta } : e)) };
+  }
+  return normCarta(tintaCarta(tema, SEGNALE_PAGINA[q], accento || SEGNALE_PAGINA[q]));
 }
 
 // ── la validazione ─────────────────────────────────────────────────────────

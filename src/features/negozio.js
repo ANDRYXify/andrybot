@@ -34,8 +34,18 @@ import { aChi, spazioPer, inMessaggi } from './risposte.js';
 import * as requisiti from './negozio-requisiti.js';
 import * as tipi from './negozio-tipi.js';
 import { makeLog } from '../logger.js';
+import { config } from '../config.js';
 
 const log = makeLog('negozio');
+
+// L'INDIRIZZO DELLA PAGINA DEL NEGOZIO (docs/NEGOZIO.md, «La pagina»): quello
+// corto, negozio.<dominio>/<canale>, quando il server l'ha acceso (dal .env o
+// dalla sonda, come le donazioni); se no quello lungo, che vale sempre. Chi lo
+// scrive da qualche parte lo chiede qui: la chat, il pannello, la pagina.
+export function urlPaginaNegozio(canale) {
+  const ch = String(canale || '').toLowerCase();
+  return config.negozioHost ? `https://${config.negozioHost}/${ch}` : `${config.baseUrl}/u/${ch}/negozio`;
+}
 
 export const MAX_ARTICOLI = 60;
 export const SI_VEDE = ['sempre', 'chi_puo'];
@@ -292,7 +302,7 @@ const FRASI = {
     come: (d) => `🛒 Si compra così: ${d.cmd} e la parola dell'articolo. Cosa c'è lo vedi con ${d.cmdNegozio}.`,
     nonCe: (d) => `🛒 Nel negozio non c'è «${d.parola}». Cosa c'è lo vedi con ${d.cmdNegozio}.`,
     vuoto: () => '🛒 Il negozio per ora è vuoto.',
-    elenco: (d) => `🛒 Nel negozio: ${d.voci}. Si compra con ${d.cmd} e la parola fra parentesi.`,
+    elenco: (d) => `🛒 Nel negozio: ${d.voci}. Si compra con ${d.cmd} e la parola fra parentesi. Tutto il negozio: ${d.url}`,
     voce: (d) => `${d.articolo} (${d.parola}), ${d.prezzo} ${d.moneta}`,
     dettaglio: (d) => `🛒 ${d.articolo} (${d.parola}): ${d.prezzo} ${d.moneta}.${d.descrizione ? ' ' + d.descrizione : ''}${d.requisito ? ' È per chi ' + d.requisito + '.' : ''}${d.scorte ? ' ' + d.scorte : ''}`,
     restano: (d) => (d.n > 1 ? `Ne restano ${d.cifra}.` : d.n === 1 ? 'Ne resta solo 1.' : 'Le scorte sono finite.'),
@@ -325,7 +335,7 @@ const FRASI = {
     come: (d) => `🛒 This is how you buy: ${d.cmd} and the item word. See what's there with ${d.cmdNegozio}.`,
     nonCe: (d) => `🛒 There's no «${d.parola}» in the shop. See what's there with ${d.cmdNegozio}.`,
     vuoto: () => '🛒 The shop is empty for now.',
-    elenco: (d) => `🛒 In the shop: ${d.voci}. Buy with ${d.cmd} and the word in brackets.`,
+    elenco: (d) => `🛒 In the shop: ${d.voci}. Buy with ${d.cmd} and the word in brackets. The whole shop: ${d.url}`,
     voce: (d) => `${d.articolo} (${d.parola}), ${d.prezzo} ${d.moneta}`,
     dettaglio: (d) => `🛒 ${d.articolo} (${d.parola}): ${d.prezzo} ${d.moneta}.${d.descrizione ? ' ' + d.descrizione : ''}${d.requisito ? ' It\'s for anyone who ' + d.requisito + '.' : ''}${d.scorte ? ' ' + d.scorte : ''}`,
     restano: (d) => (d.n > 0 ? `${d.cifra} left.` : 'Sold out.'),
@@ -358,7 +368,7 @@ const FRASI = {
     come: (d) => `🛒 Se compra así: ${d.cmd} y la palabra del artículo. Lo que hay lo ves con ${d.cmdNegozio}.`,
     nonCe: (d) => `🛒 En la tienda no hay «${d.parola}». Lo que hay lo ves con ${d.cmdNegozio}.`,
     vuoto: () => '🛒 La tienda por ahora está vacía.',
-    elenco: (d) => `🛒 En la tienda: ${d.voci}. Se compra con ${d.cmd} y la palabra entre paréntesis.`,
+    elenco: (d) => `🛒 En la tienda: ${d.voci}. Se compra con ${d.cmd} y la palabra entre paréntesis. Toda la tienda: ${d.url}`,
     voce: (d) => `${d.articolo} (${d.parola}), ${d.prezzo} ${d.moneta}`,
     dettaglio: (d) => `🛒 ${d.articolo} (${d.parola}): ${d.prezzo} ${d.moneta}.${d.descrizione ? ' ' + d.descrizione : ''}${d.requisito ? ' Es para quien ' + d.requisito + '.' : ''}${d.scorte ? ' ' + d.scorte : ''}`,
     restano: (d) => (d.n > 1 ? `Quedan ${d.cifra}.` : d.n === 1 ? 'Queda solo 1.' : 'Se ha agotado.'),
@@ -537,7 +547,7 @@ function rispostaNegozio(ch, msg, args, pf) {
   const primi = inVetrina(ch).slice(0, 3);
   if (!primi.length) return [frase(ch, 'vuoto', base)];
   const voci = primi.map((a) => frase(ch, 'voce', { articolo: a.nome, parola: a.parola, prezzo: cifra(a.prezzo, pf) })).join(' · ');
-  return [frase(ch, 'elenco', { ...base, voci })];
+  return [frase(ch, 'elenco', { ...base, voci, url: urlPaginaNegozio(ch) })];
 }
 
 function rispostaBorsa(ch, msg, pf) {
@@ -599,6 +609,7 @@ export function vistaPannello(canale) {
   };
   return {
     attivo: streamers.get(ch)?.settings?.negozio?.attivo === true,
+    url: urlPaginaNegozio(ch),
     comandi: { negozio: nomeIn(ch, 'negozio'), compra: nomeIn(ch, 'compra'), borsa: nomeIn(ch, 'borsa') },
     max: MAX_ARTICOLI,
     articoli: negozioDb.articoli(ch).map((a) => ({

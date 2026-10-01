@@ -380,10 +380,12 @@ test('la pagina delle donazioni: stessa forma, altro tavolo, stesso editor; le o
   assert.match(SRV, /sondaHost\(candidatoDona, \(h\) => \{ config\.donaHost = h; \}/, 'e quando risponde, da quel momento si usa');
   assert.ok(leggi('src/config.js').includes("donaHostSpento: /^(no|off)$/i.test(env('DONA_HOST', ''))"), 'e si puo\' spegnere con DONA_HOST=no');
   assert.match(leggi('Caddyfile'), /^socialbot\.live,[^{]*\bdona\.socialbot\.live\b[^{]*\{/m, 'e Caddy conosce il nome');
-  assert.match(APP, /const lpApi = \(\) => \(LP\.quale === 'dona' \? '\/api\/paginadona' : '\/api\/linkpage'\);/, 'un editor, due porte');
+  assert.ok(APP.includes("const LP_API = { link: '/api/linkpage', dona: '/api/paginadona', negozio: '/api/paginanegozio' };")
+    && APP.includes('const lpApi = () => LP_API[LP.quale] || LP_API.link;'), 'un editor, una porta per pagina');
   assert.equal((APP.match(/api\(lpApi\(\)/g) || []).length, 4, 'carica, salva, spegni e anteprima passano dalla porta giusta');
   assert.ok(APP.includes("api(lpApi() + '/anteprima'"), 'anche l\'anteprima');
-  assert.match(APP, /const _lpCasa = \(\) => \(LP\.quale === 'dona' \? 'lp-box-dona' : 'lp-box'\);/, 'ogni pagina ha la sua casa per l\'editor');
+  assert.ok(APP.includes("const LP_CASA = { link: 'lp-box', dona: 'lp-box-dona', negozio: 'lp-box-negozio' };")
+    && APP.includes('const _lpCasa = () => LP_CASA[LP.quale] || LP_CASA.link;'), 'ogni pagina ha la sua casa per l\'editor');
   assert.match(APP, /<div id="lp-box-dona">/, 'e quella delle donazioni sta nella scheda Donazioni');
   assert.match(APP, /if \(id === 'donazioni'\) \{ riempiDonazioni\(\); caricaStatoDonazioni\(true\); caricaPaginaLink\(false, 'dona'\); \}/, 'e li\' si apre');
   assert.ok(!/data-lpquale/.test(APP), 'niente interruttore fra le due pagine: ognuna si modifica da un posto solo');

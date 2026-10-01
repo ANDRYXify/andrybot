@@ -1307,6 +1307,7 @@ function _demoNegozioBase() {
   const gioco = L('Scegli il prossimo gioco', 'Pick the next game', 'Elige el próximo juego');
   return {
     attivo: true,
+    url: 'https://negozio.socialbot.live/andryxify',
     comandi: { negozio: 'negozio', compra: 'compra', borsa: 'borsa' },
     max: 60,
     articoli: [
@@ -1900,6 +1901,13 @@ function _demoGet(via) {
   F['/api/paginadona'] = { ...F['/api/linkpage'], url: 'https://dona.socialbot.live/andryxify',
     aspettoLink: { template: F['/api/linkpage'].pagina.template, tema: F['/api/linkpage'].pagina.tema },
     pagina: { ...F['/api/linkpage'].pagina, aspetto: 'link', headline: 'Sostieni ANDRYXify', tagline: 'Se ti piace quello che faccio, un caffè aiuta a farne di più.', blocchi: [{ tipo: 'sostieni', titolo: 'Offrimi un caffè', testo: '', etichetta: '', obiettivo: true, icona: 'cuore' }] } };
+  F['/api/paginanegozio'] = { ...F['/api/linkpage'], url: 'https://negozio.socialbot.live/andryxify', pubblicata: true, visite: null, suggeriti: [],
+    tipi: ['intestazione', 'vetrina', 'articoli', 'comecompra', 'piede', 'titolo', 'testo', 'separatore', 'spazio', 'immagine'],
+    aspettoLink: { template: F['/api/linkpage'].pagina.template, tema: F['/api/linkpage'].pagina.tema },
+    articoli: [{ id: 1, nome: L('Ta-daa a schermo', 'Ta-daa on screen', 'Ta-daa en pantalla') }, { id: 2, nome: L('Spada di legno', 'Wooden sword', 'Espada de madera') }],
+    pagina: { ...F['/api/linkpage'].pagina, aspetto: 'link', headline: L('Il negozio di ANDRYXify', 'ANDRYXify’s shop', 'La tienda de ANDRYXify'), tagline: '',
+      blocchi: [{ tipo: 'intestazione' }, { tipo: 'vetrina', titolo: '', articolo: 0 }, { tipo: 'articoli', titolo: '', colonne: 2, formato: 'quadrato', prezzo: true, scorte: true, requisiti: true },
+        { tipo: 'comecompra', titolo: '', testo: '' }, { tipo: 'piede', link: true, canale: true }] } };
   const statoDona = { paginaUrl: 'https://dona.socialbot.live/andryxify', conto: { stato: 'nessuno', coda: '', nota: '' }, satispay: { stato: 'nessuno', coda: '', nota: '' }, kofi: { stato: 'nessuno', pagina: '', token: false, valuta: 'EUR', webhook: 'https://socialbot.live/dona/kofi/andryxify' }, riepilogo: { oggi: [], mese: [], anno: [], sempre: [] }, ultime: [], daApprovare: [] };
   F['/api/donazioni/stato'] = statoDona; F['/api/donazioni/stato?rileggi=1'] = statoDona;
   const cartaPag = (quale) => ({ quale, mia: false, disegnabile: true, immagine: '',
@@ -3599,7 +3607,7 @@ const DESC = {
   scudo: ['La difesa dagli attacchi: ondate di follow-bot e hate-raid.', 'Defense against attacks: follow-bot waves and hate-raids.', 'La defensa contra los ataques: oleadas de follow-bots y hate-raids.'],
   registro: ['Cosa è successo: attacchi, interventi e casi da rivedere.', 'What happened: attacks, actions and cases to review.', 'Qué ha pasado: ataques, acciones y casos por revisar.'],
   giochi: ['Mini-giochi, monete e classifiche per la chat.', 'Minigames, coins and leaderboards for chat.', 'Minijuegos, monedas y clasificaciones para el chat.'],
-  negozio: ['Cosa si compra con le monete del canale, chi lo compra, e cosa c’è da consegnare.', 'What can be bought with channel coins, who buys it, and what there is to deliver.', 'Qué se compra con las monedas del canal, quién lo compra y qué hay que entregar.'],
+  negozio: ['Cosa si compra con le monete del canale, chi lo compra, cosa c’è da consegnare, e la pagina del negozio.', 'What can be bought with channel coins, who buys it, what there is to deliver, and the shop page.', 'Qué se compra con las monedas del canal, quién lo compra, qué hay que entregar, y la página de la tienda.'],
   effetti: ['Effetti, suoni, GIF e video da lanciare in chat o in overlay — con libreria condivisa.', 'Effects, sounds, GIFs and videos to trigger in chat or overlay — with a shared library.', 'Efectos, sonidos, GIF y vídeos para lanzar en el chat o en el overlay — con biblioteca compartida.'],
   regia: ['Gestisci la diretta dal bot: titolo, categoria, tag, clip, marker, pubblicità e raid.', 'Run your stream from the bot: title, category, tags, clips, markers, ads and raids.', 'Gestiona el directo desde el bot: título, categoría, etiquetas, clips, marcadores, anuncios y raids.'],
   studio: ['Vai live dal browser: webcam, schermo, overlay e audio in un click.', 'Go live from the browser: webcam, screen, overlay and audio in one click.', 'Emite desde el navegador: webcam, pantalla, overlay y audio con un clic.'],
@@ -4011,7 +4019,7 @@ function tFamiglia(id, def) {
 const SOTTO_SCHEDE = {
   negozio: {
     attributo: 'zona',
-    voci: [['articoli', ['Articoli', 'Items', 'Artículos']], ['consegnare', ['Da consegnare', 'To deliver', 'Por entregar']], ['storico', ['Storico', 'History', 'Historial']]],
+    voci: [['articoli', ['Articoli', 'Items', 'Artículos']], ['consegnare', ['Da consegnare', 'To deliver', 'Por entregar']], ['storico', ['Storico', 'History', 'Historial']], ['pagina', ['La pagina del negozio', 'The shop page', 'La página de la tienda']]],
   },
   moduli: {
     attributo: 'zona',
@@ -10267,6 +10275,13 @@ function pannelloNegozio() {
         <label for="chk-negozio">${L('Negozio aperto', 'Shop open', 'Tienda abierta')}</label>
       </div>
       <p class="suggerimento" id="neg-come">${L('Da chiuso, in chat i comandi del negozio non rispondono. Gli articoli e lo storico restano salvati.', 'When closed, the shop commands don’t answer in chat. Items and history stay saved.', 'Cerrada, los comandos de la tienda no responden en el chat. Los artículos y el historial quedan guardados.')}</p>
+      <p class="campo spazio-sopra">${L('L’indirizzo della pagina del negozio', 'The shop page address', 'La dirección de la página de la tienda')}</p>
+      <div class="riga-flessibile">
+        <code id="neg-url">${attesaHtml('span')}</code>
+        <button type="button" class="btn secondario mini" id="neg-url-copia">${L('Copia', 'Copy', 'Copiar')}</button>
+        <a class="btn secondario mini" id="neg-url-apri" href="#" target="_blank" rel="noopener">${_bIco(ICO.occhio)}${L('Apri', 'Open', 'Abrir')}</a>
+      </div>
+      <p class="suggerimento" id="neg-url-nota"></p>
     </div>
     <div class="carta">
       <h2>${_hIco(ICO.pacco)}${L('Articoli', 'Items', 'Artículos')}</h2>
@@ -10411,6 +10426,13 @@ function pannelloNegozio() {
         </table>
       </div>
     </div>
+    </div>
+    <div data-zona="pagina">
+    <div class="carta" id="neg-pagina-carta">
+      <h2>${_hIco(ICO.condividi)}${L('La pagina del negozio', 'The shop page', 'La página de la tienda')}</h2>
+      <p>${L('Una pagina tua per il negozio, come la pagina link: chi la apre vede gli articoli in vendita, i prezzi, i requisiti e come si compra. Ogni pezzo si accende, si sposta e si veste; temi, sfondo, caratteri e colori sono quelli della pagina link.', 'A page of your own for the shop, like the link page: whoever opens it sees the items on sale, the prices, the requirements and how to buy. Every piece can be turned on, moved and styled; themes, background, fonts and colors are the link page ones.', 'Una página tuya para la tienda, como la página de enlaces: quien la abre ve los artículos a la venta, los precios, los requisitos y cómo se compra. Cada pieza se activa, se mueve y se viste; temas, fondo, tipografía y colores son los de la página de enlaces.')}</p>
+      <div id="lp-box-negozio">${attesaHtml()}</div>
+    </div>
     </div>`);
 }
 
@@ -10446,6 +10468,16 @@ function _negDisegna(d) {
   if (cmd && c.compra) cmd.textContent = '!' + c.compra;
   const mon = document.getElementById('neg-moneta');
   if (mon) mon.textContent = '(' + nomeMonetaUI() + ')';
+  const url = document.getElementById('neg-url');
+  if (url && d.url) url.textContent = d.url.replace(/^https?:\/\//, '');
+  const apri = document.getElementById('neg-url-apri');
+  if (apri && d.url) apri.href = d.url;
+  const nota = document.getElementById('neg-url-nota');
+  if (nota) {
+    nota.textContent = d.attivo
+      ? L('Chi apre l’indirizzo vede il negozio, e !negozio in chat lo scrive. L’aspetto lo scegli in «La pagina del negozio».', 'Whoever opens the address sees the shop, and !negozio in chat writes it. You choose the look in «The shop page».', 'Quien abre la dirección ve la tienda, y !negozio en el chat la escribe. El aspecto lo eliges en «La página de la tienda».')
+      : L('Con il negozio chiuso, chi apre l’indirizzo legge che qui non c’è un negozio.', 'With the shop closed, whoever opens the address reads that there is no shop here.', 'Con la tienda cerrada, quien abre la dirección lee que aquí no hay ninguna tienda.');
+  }
   _negLista(d);
   _negCoda(d);
   _negStorico(d);
@@ -10528,6 +10560,7 @@ function _negCollega() {
   const pan = document.getElementById('scheda-negozio');
   if (!pan || pan.dataset.collegato) return;
   pan.dataset.collegato = '1';
+  document.getElementById('neg-url-copia')?.addEventListener('click', () => copiaTesto(_neg?.url || '', L('Indirizzo copiato', 'Address copied', 'Dirección copiada')));
   document.getElementById('chk-negozio')?.addEventListener('change', (ev) => conErrore(async () => {
     const d = await api('/api/streamer/negozio/attivo', { method: 'POST', body: { attivo: ev.target.checked } });
     _negDisegna(d);
@@ -21282,14 +21315,14 @@ function lpVisiteHtml(v) {
 
 async function caricaCartaPagina() {
   if (!document.getElementById('lp-carta-box')) return;
-  try { _cartaPagina = await api('/api/paginacarta?quale=' + (LP.quale === 'dona' ? 'dona' : 'link')); } catch (e) { _cartaPagina = null; }
+  try { _cartaPagina = await api('/api/paginacarta?quale=' + LP.quale); } catch (e) { _cartaPagina = null; }
   disegnaCartaPagina();
 }
 function disegnaCartaPagina() {
   const box = document.getElementById('lp-carta-box'); if (!box) return;
   const d = _cartaPagina;
   if (!d) { box.innerHTML = `<p class="suggerimento">${L('Non riesco a leggerla in questo momento.', 'I cannot read it right now.', 'No puedo leerla en este momento.')}</p>`; return; }
-  const quale = LP.quale === 'dona' ? 'dona' : 'link';
+  const quale = LP.quale;
   box.innerHTML = `${d.disegnabile && d.immagine ? `<img class="lp-carta-img" src="${esc(d.immagine)}&v=${Date.now()}" alt="">` : ''}
     ${d.disegnabile ? '' : `<p class="suggerimento">${L('Sul server mancano i caratteri per disegnarla: nell\'anteprima va la copertina, o la foto profilo.', 'The server is missing the fonts to draw it: the preview falls back to the cover, or the profile photo.', 'Al servidor le faltan las fuentes para dibujarla: la vista previa usa la portada, o la foto de perfil.')}</p>`}
     <p class="lp-riga2 spazio-sopra"><button type="button" class="btn secondario mini" id="lp-carta-editor" ${d.disegnabile ? '' : 'disabled'}>${L('Apri l\'editor', 'Open the editor', 'Abrir el editor')}</button>${d.mia ? `<button type="button" class="btn secondario mini" id="lp-carta-standard">${L('Torna a quella standard', 'Back to the standard one', 'Volver a la estándar')}</button>` : ''}</p>
@@ -21313,7 +21346,9 @@ function disegnaCartaPagina() {
   });
 }
 function lpIntroHtml(d) {
-  const intro = LP.quale === 'dona'
+  const intro = LP.quale === 'negozio'
+    ? L('La pagina del negozio: chi la apre vede gli articoli in vendita, i prezzi e come si compra, con l\'aspetto della tua pagina link o con uno suo. Si vede quando il negozio è aperto. Il suo indirizzo è', 'The shop page: whoever opens it sees the items on sale, the prices and how to buy, with your link page look or one of its own. It shows while the shop is open. Its address is', 'La página de la tienda: quien la abre ve los artículos a la venta, los precios y cómo se compra, con el aspecto de tu página de enlaces o con uno propio. Se ve cuando la tienda está abierta. Su dirección es')
+    : LP.quale === 'dona'
     ? L('La pagina delle donazioni: chi la apre trova le offerte e il modulo, con l\'aspetto della tua pagina link o con uno suo. Il suo indirizzo è', 'The donations page: whoever opens it finds the offers and the form, with your link page look or one of its own. Its address is', 'La página de donaciones: quien la abre encuentra las ofertas y el formulario, con el aspecto de tu página de enlaces o con uno propio. Su dirección es')
     : L('Una pagina pubblica con tutti i tuoi link, da mettere nella bio di Instagram o TikTok. Il suo indirizzo è', 'A public page with all your links, to put in your Instagram or TikTok bio. Its address is', 'Una página pública con todos tus enlaces, para poner en la bio de Instagram o TikTok. Su dirección es');
   return `<p class="suggerimento">${intro}
@@ -21330,11 +21365,14 @@ function lpIntroHtml(d) {
   })}`;
 }
 
-const LP = { d: null, blocchi: [], tema: {}, testa: {}, quale: 'link', aspetto: '', schede: { link: {}, dona: {} } };
+const LP = { d: null, blocchi: [], tema: {}, testa: {}, quale: 'link', aspetto: '', schede: { link: {}, dona: {}, negozio: {} } };
+const LP_CASA = { link: 'lp-box', dona: 'lp-box-dona', negozio: 'lp-box-negozio' };
+const LP_API = { link: '/api/linkpage', dona: '/api/paginadona', negozio: '/api/paginanegozio' };
+const lpConAspetto = () => LP.quale === 'dona' || LP.quale === 'negozio';
 const lpVociMax = (tipo) => Number(LP.d?.limiti?.voci?.[tipo]) || 0;
 const lpVociPiene = (b) => (b.voci || []).length >= lpVociMax(b.tipo);
-const lpSchede = () => LP.schede[LP.quale === 'dona' ? 'dona' : 'link'];
-const lpApi = () => (LP.quale === 'dona' ? '/api/paginadona' : '/api/linkpage');
+const lpSchede = () => LP.schede[LP.quale] || LP.schede.link;
+const lpApi = () => LP_API[LP.quale] || LP_API.link;
 
 const _tema = (o) => ({ sfondoTipo: 'tinta', bg: '', bg2: '', angolo: 160, sfondoUrl: '', effetto: 'nessuno',
   testo: '', accent: '', card: '', bordo: '', font: 'system', raggio: 14, stileBtn: 'pieno', ombra: true,
@@ -21435,7 +21473,7 @@ const lpRng = (k, eti, min, max, val, suf = '') => `
             <label class="campo spazio-sopra">${eti} <span class="tenue" data-lpv="${k}" data-suf="${suf}">${val}${suf}</span></label>
             <input type="range" data-lpk="${k}" aria-label="${esc(eti)}" min="${min}" max="${max}" value="${val}">`;
 
-const _lpCasa = () => (LP.quale === 'dona' ? 'lp-box-dona' : 'lp-box');
+const _lpCasa = () => LP_CASA[LP.quale] || LP_CASA.link;
 
 function lpApriSchede(box) {
   for (const fila of box.querySelectorAll('.lp-tabs[data-gruppo]')) {
@@ -21447,7 +21485,7 @@ function lpApriSchede(box) {
   }
 }
 
-const lpSegueLink = () => LP.quale === 'dona' && LP.aspetto === 'link' && !!LP.d?.aspettoLink;
+const lpSegueLink = () => lpConAspetto() && LP.aspetto === 'link' && !!LP.d?.aspettoLink;
 function lpSegue(box) {
   box.querySelector('.lp-editor')?.classList.toggle('lp-segue-link', lpSegueLink());
   const copia = box.querySelector('.lp-segue-copia');
@@ -21475,8 +21513,10 @@ function lpSegueNotaHtml(d) {
 async function caricaPaginaLink(ridisegna = false, quale = null) {
   if (quale && quale !== LP.quale) { LP.quale = quale; LP.d = null; ridisegna = false; }
   const box = document.getElementById(_lpCasa()); if (!box) return;
-  const altra = document.getElementById(LP.quale === 'dona' ? 'lp-box' : 'lp-box-dona');
-  if (altra?.querySelector('.lp-editor')) altra.innerHTML = `${attesaHtml()}`;
+  for (const [quale, casa] of Object.entries(LP_CASA)) {
+    const altra = quale === LP.quale ? null : document.getElementById(casa);
+    if (altra?.querySelector('.lp-editor')) altra.innerHTML = `${attesaHtml()}`;
+  }
   if (!ridisegna || !LP.d) {
     let dati;
     try { dati = await api(lpApi()); }
@@ -21489,7 +21529,7 @@ async function caricaPaginaLink(ridisegna = false, quale = null) {
     LP.tema = { ...(pag.tema || {}) };
     LP.blocchi = (pag.blocchi || []).length ? pag.blocchi.map((b) => ({ ...b })) : (dati.suggeriti || []).map((b) => ({ ...b }));
     LP.testa = { headline: pag.headline || '', tagline: pag.tagline || '', template: pag.template || 'minimal', avatar: pag.avatar || '' };
-    LP.aspetto = LP.quale === 'dona' ? (pag.aspetto === 'link' ? 'link' : 'suo') : '';
+    LP.aspetto = lpConAspetto() ? (pag.aspetto === 'link' ? 'link' : 'suo') : '';
   }
   const d = LP.d;
 
@@ -21501,7 +21541,9 @@ async function caricaPaginaLink(ridisegna = false, quale = null) {
   box.innerHTML = `
     <div class="lp-editor">
       <div class="lp-comandi">
-        ${d.pubblicata
+        ${LP.quale === 'negozio' && !d.pubblicata
+      ? `<p class="lp-stato off">${_bIco(ICO.avviso)}${L('Il negozio è chiuso: chi apre l\'indirizzo legge che qui non c\'è un negozio. Lo apri in «Articoli».', 'The shop is closed: whoever opens the address reads that there is no shop here. You open it in «Items».', 'La tienda está cerrada: quien abre la dirección lee que aquí no hay ninguna tienda. La abres en «Artículos».')}</p>`
+      : d.pubblicata
       ? `<p class="lp-stato on">${_bIco(ICO.globo)}${L('Online:', 'Live:', 'Online:')}
           <a href="${esc(d.url)}" target="_blank" rel="noopener"><strong>${esc((d.url || '').replace(/^https?:\/\//, ''))}</strong></a></p>`
       : `<p class="lp-stato off">${_bIco(ICO.avviso)}${L('Non ancora pubblicata: compila e salva.', 'Not published yet: fill it in and save.', 'Aún no publicada: rellénala y guarda.')}</p>`}
@@ -21545,7 +21587,7 @@ async function caricaPaginaLink(ridisegna = false, quale = null) {
           <summary><h3>${L('Contenuti', 'Content', 'Contenido')}</h3></summary>
           <div id="lp-blocchi"></div>
           <div class="lp-aggiungi spazio-sopra">
-            <button type="button" class="btn secondario mini" data-lpadd="link">${_bIco(ICO.piu)}${L('Link', 'Link', 'Enlace')}</button>
+            ${LP.quale === 'negozio' ? lpAggiungiNegozioHtml() : `<button type="button" class="btn secondario mini" data-lpadd="link">${_bIco(ICO.piu)}${L('Link', 'Link', 'Enlace')}</button>
             <button type="button" class="btn secondario mini" data-lpadd="social">${L('Riga di social', 'Social row', 'Fila de redes')}</button>
             <button type="button" class="btn secondario mini" data-lpadd="titolo">${L('Titolo di sezione', 'Section heading', 'Título de sección')}</button>
             <button type="button" class="btn secondario mini" data-lpadd="testo">${L('Testo', 'Text', 'Texto')}</button>
@@ -21560,13 +21602,13 @@ async function caricaPaginaLink(ridisegna = false, quale = null) {
             <button type="button" class="btn secondario mini" data-lpadd="conto">${L('Conto alla rovescia', 'Countdown', 'Cuenta atrás')}</button>
             <button type="button" class="btn secondario mini" data-lpadd="sostieni">${L('Sostieni (donazioni)', 'Support me (donations)', 'Apóyame (donaciones)')}</button>
             <button type="button" class="btn secondario mini" data-lpadd="donatori">${L('Chi ha donato', 'Who donated', 'Quién donó')}</button>
-            <button type="button" class="btn secondario mini" data-lpadd="separatore">${L('Riga divisoria', 'Divider', 'Separador')}</button>
+            <button type="button" class="btn secondario mini" data-lpadd="separatore">${L('Riga divisoria', 'Divider', 'Separador')}</button>`}
           </div>
         </details>
         </div>
 
         <div class="lp-pane" data-gruppo="testa" data-pane="aspetto" hidden>
-        ${LP.quale === 'dona' ? lpSegueHtml(d) : ''}
+        ${lpConAspetto() ? lpSegueHtml(d) : ''}
         <div class="lp-tabs lp-tabs-min" data-gruppo="aspetto" role="tablist">
           <button type="button" class="lp-tab sel" data-lptab="asp-temi">${L('Temi', 'Themes', 'Temas')}</button>
           <button type="button" class="lp-tab" data-lptab="asp-impianto">${L('Impianto', 'Layout', 'Estructura')}</button>
@@ -21592,7 +21634,7 @@ async function caricaPaginaLink(ridisegna = false, quale = null) {
         <div class="lp-azioni">
           <button class="btn" id="lp-salva" title="${esc(L('Salva le modifiche e le mette subito online: da questo momento chi apre il link vede questa', 'Saves your changes and puts them online right away: from now on this is what visitors see', 'Guarda los cambios y los publica al momento: desde ahora quien abra el enlace ve esto'))}">${L('Salva e pubblica', 'Save and publish', 'Guardar y publicar')}</button>
           <a class="btn secondario" id="lp-apri" href="${esc(d.url || '#')}" target="_blank" rel="noopener">${_bIco(ICO.occhio)}${L('Apri', 'Open', 'Abrir')}</a>
-          ${d.pubblicata ? `<button type="button" class="btn secondario" id="lp-spegni" title="${esc(L('La pagina resta salvata ma nessuno la può più aprire. Puoi rimetterla quando vuoi', 'The page stays saved but nobody can open it any more. You can put it back whenever you want', 'La página se guarda pero ya nadie puede abrirla. Puedes reactivarla cuando quieras'))}">${L('Togli dal web', 'Take offline', 'Quitar de la web')}</button>` : ''}
+          ${d.pubblicata && LP.quale !== 'negozio' ? `<button type="button" class="btn secondario" id="lp-spegni" title="${esc(L('La pagina resta salvata ma nessuno la può più aprire. Puoi rimetterla quando vuoi', 'The page stays saved but nobody can open it any more. You can put it back whenever you want', 'La página se guarda pero ya nadie puede abrirla. Puedes reactivarla cuando quieras'))}">${L('Togli dal web', 'Take offline', 'Quitar de la web')}</button>` : ''}
           <span id="lp-esito" class="suggerimento"></span>
         </div>
       </div>
@@ -21602,7 +21644,7 @@ async function caricaPaginaLink(ridisegna = false, quale = null) {
           <div id="lp-campi"></div>
         </div>
         <div class="lp-pane" data-gruppo="testa" data-pane="aspetto" hidden>
-        ${LP.quale === 'dona' ? lpSegueNotaHtml(d) : ''}
+        ${lpConAspetto() ? lpSegueNotaHtml(d) : ''}
         <div class="lp-pane" data-gruppo="aspetto" data-pane="asp-temi">
           <div class="carta">
             ${temiProntiHtml(LP.tema._pronto)}
@@ -21859,6 +21901,10 @@ async function caricaPaginaLink(ridisegna = false, quale = null) {
     const b = ev.target.closest('[data-lpadd]'); if (!b) return;
     if (LP.blocchi.length >= d.limiti.blocchi) { toast(L('Hai raggiunto il massimo di blocchi.', 'You’ve reached the block limit.', 'Has alcanzado el máximo de bloques.'), 'errore'); return; }
     const tipo = b.dataset.lpadd;
+    if ((tipo === 'intestazione' || tipo === 'piede') && LP.blocchi.some((x) => x.tipo === tipo)) {
+      toast(L('C\'è già: spostalo dove vuoi.', 'It\'s already there: move it where you like.', 'Ya está: muévelo donde quieras.'));
+      return;
+    }
     const nuovo = { link: { tipo: 'link', icona: 'link', label: '', url: '', sotto: '', evidenzia: false },
       social: { tipo: 'social', voci: [{ icona: 'link', url: '' }] },
       titolo: { tipo: 'titolo', testo: '' }, testo: { tipo: 'testo', testo: '' },
@@ -21873,7 +21919,13 @@ async function caricaPaginaLink(ridisegna = false, quale = null) {
       sostieni: { tipo: 'sostieni', titolo: '', testo: '', etichetta: '', obiettivo: true, icona: 'cuore' },
       donatori: { tipo: 'donatori', titolo: '', quanti: 5, modo: 'ultimi', periodo: 'sempre' },
       griglia: { tipo: 'griglia', voci: [{ img: '', titolo: '', testo: '', url: '' }, { img: '', titolo: '', testo: '', url: '' }] },
-      separatore: { tipo: 'separatore' } }[tipo];
+      separatore: { tipo: 'separatore' },
+      spazio: { tipo: 'spazio' },
+      intestazione: { tipo: 'intestazione' },
+      vetrina: { tipo: 'vetrina', titolo: '', articolo: 0 },
+      articoli: { tipo: 'articoli', titolo: '', colonne: 2, formato: 'quadrato', prezzo: true, scorte: true, requisiti: true },
+      comecompra: { tipo: 'comecompra', titolo: '', testo: '' },
+      piede: { tipo: 'piede', link: true, canale: true } }[tipo];
     if (!nuovo) return;
     LP.blocchi.push(nuovo);
     lpRenderBlocchi(); lpAnteprima();
@@ -22199,11 +22251,71 @@ const NOMI_BLOCCO = () => ({ link: L('Link', 'Link', 'Enlace'), social: L('Riga 
     conto: L('Conto alla rovescia', 'Countdown', 'Cuenta atrás'),
     sostieni: L('Sostieni (donazioni)', 'Support me (donations)', 'Apóyame (donaciones)'),
     donatori: L('Chi ha donato', 'Who donated', 'Quién donó'),
-    separatore: L('Riga divisoria', 'Divider', 'Separador') });
+    separatore: L('Riga divisoria', 'Divider', 'Separador'),
+    spazio: L('Spazio vuoto', 'Empty space', 'Espacio vacío'),
+    intestazione: L('Intestazione', 'Header', 'Encabezado'),
+    vetrina: L('Articolo in vetrina', 'Featured item', 'Artículo destacado'),
+    articoli: L('Griglia degli articoli', 'Item grid', 'Rejilla de artículos'),
+    comecompra: L('Come si compra', 'How to buy', 'Cómo se compra'),
+    piede: L('Piede coi link', 'Footer with links', 'Pie con enlaces') });
 
 const ICO_BLOCCO = { link: 'link', social: 'cuore', titolo: 'stella', testo: 'mail', immagine: 'video',
   embed: 'video', diretta: 'twitch', eroe: 'stella', griglia: 'gioco', scritta: 'musica',
-  numeri: 'soldi', faq: 'mail', conto: 'calendario', sostieni: 'cuore', donatori: 'stella', separatore: 'link' };
+  numeri: 'soldi', faq: 'mail', conto: 'calendario', sostieni: 'cuore', donatori: 'stella', separatore: 'link',
+  spazio: 'link', intestazione: 'stella', vetrina: 'stella', articoli: 'carrello', comecompra: 'carrello', piede: 'link' };
+
+function lpAggiungiNegozioHtml() {
+  const t = (tipo, testo, primo = false) => `<button type="button" class="btn secondario mini" data-lpadd="${tipo}">${primo ? _bIco(ICO.piu) : ''}${testo}</button>`;
+  return [
+    t('articoli', L('Griglia degli articoli', 'Item grid', 'Rejilla de artículos'), true),
+    t('vetrina', L('Articolo in vetrina', 'Featured item', 'Artículo destacado')),
+    t('comecompra', L('Come si compra', 'How to buy', 'Cómo se compra')),
+    t('intestazione', L('Intestazione', 'Header', 'Encabezado')),
+    t('piede', L('Piede coi link', 'Footer with links', 'Pie con enlaces')),
+    t('titolo', L('Titolo di sezione', 'Section heading', 'Título de sección')),
+    t('testo', L('Testo', 'Text', 'Texto')),
+    t('immagine', L('Immagine', 'Image', 'Imagen')),
+    t('separatore', L('Riga divisoria', 'Divider', 'Separador')),
+    t('spazio', L('Spazio vuoto', 'Empty space', 'Espacio vacío')),
+  ].join('\n            ');
+}
+
+function lpCampiNegozio(b, i, d) {
+  const sel = (campo, voci, val) => `<select data-lpb="${i}" data-lpf="${campo}">${voci.map(([k, n]) => `<option value="${esc(String(k))}"${String(val) === String(k) ? ' selected' : ''}>${esc(n)}</option>`).join('')}</select>`;
+  const casella = (campo, testo) => `<label class="riga-check"><input type="checkbox" data-lpb="${i}" data-lpf="${campo}"${b[campo] !== false ? ' checked' : ''}> ${testo}</label>`;
+  const titolo = (ph) => `<input type="text" data-lpb="${i}" data-lpf="titolo" maxlength="${d.limiti.label}" value="${esc(b.titolo || '')}" placeholder="${esc(ph)}">`;
+  if (b.tipo === 'intestazione') {
+    return `<p class="suggerimento">${L('Foto, titolo e sottotitolo si scrivono in «Intestazione» qui sopra. Qui decidi dove stanno: spostala con le frecce o trascinandola. Se la togli, la pagina comincia dal pezzo dopo.', 'Photo, headline and tagline are written in «Header» above. Here you decide where they go: move it with the arrows or by dragging. If you remove it, the page starts from the next piece.', 'La foto, el título y el subtítulo se escriben en «Encabezado» arriba. Aquí decides dónde van: muévelo con las flechas o arrastrándolo. Si lo quitas, la página empieza por la pieza siguiente.')}</p>`;
+  }
+  if (b.tipo === 'vetrina') {
+    const arts = d.articoli || [];
+    return `${titolo(L('Titolo (vuoto: «In vetrina»)', 'Heading (empty: «Featured»)', 'Título (vacío: «Destacado»)'))}
+      <label class="campo spazio-sopra">${L('Quale articolo', 'Which item', 'Qué artículo')}</label>
+      ${sel('articolo', [[0, L('Il più comprato (cambia da solo)', 'The most bought (changes by itself)', 'El más comprado (cambia solo)')], ...arts.map((a) => [a.id, a.nome])], b.articolo || 0)}
+      <p class="suggerimento">${arts.length ? L('Si vedono solo gli articoli in vendita a tutti. Se quello scelto esce di vendita, al suo posto va il più comprato.', 'Only items on sale to everyone show up. If the chosen one stops being on sale, the most bought takes its place.', 'Solo se ven los artículos a la venta para todos. Si el elegido deja de estar a la venta, ocupa su lugar el más comprado.') : L('Il negozio non ha ancora articoli in vendita a tutti: li crei in «Articoli».', 'The shop has no items on sale to everyone yet: create them in «Items».', 'La tienda aún no tiene artículos a la venta para todos: los creas en «Artículos».')}</p>`;
+  }
+  if (b.tipo === 'articoli') {
+    return `${titolo(L('Titolo (facoltativo)', 'Heading (optional)', 'Título (opcional)'))}
+      <div class="griglia-campi spazio-sopra">
+        <div><label class="campo">${L('Colonne', 'Columns', 'Columnas')}</label>${sel('colonne', [[1, '1'], [2, '2'], [3, '3']], b.colonne || 2)}</div>
+        <div><label class="campo">${L('Immagini', 'Images', 'Imágenes')}</label>${sel('formato', [['quadrato', L('Quadrate', 'Square', 'Cuadradas')], ['largo', L('Larghe (16:9)', 'Wide (16:9)', 'Anchas (16:9)')], ['alto', L('Alte (3:4)', 'Tall (3:4)', 'Altas (3:4)')], ['libero', L('Come sono', 'As they are', 'Como son')]], b.formato || 'quadrato')}</div>
+      </div>
+      <div class="spazio-sopra">
+        ${casella('prezzo', L('Mostra il prezzo', 'Show the price', 'Mostrar el precio'))}
+        ${casella('scorte', L('Mostra le scorte', 'Show the stock', 'Mostrar las existencias'))}
+        ${casella('requisiti', L('Mostra i requisiti', 'Show the requirements', 'Mostrar los requisitos'))}
+      </div>
+      <p class="suggerimento">${L('Sul telefono le colonne si stringono da sole: tre diventano due, e su uno schermo stretto una.', 'On a phone the columns narrow by themselves: three become two, and on a narrow screen one.', 'En el móvil las columnas se estrechan solas: tres pasan a dos, y en una pantalla estrecha a una.')}</p>`;
+  }
+  if (b.tipo === 'comecompra') {
+    return `${titolo(L('Titolo (vuoto: «Come si compra»)', 'Heading (empty: «How to buy»)', 'Título (vacío: «Cómo se compra»)'))}
+      <input type="text" class="spazio-sopra" data-lpb="${i}" data-lpf="testo" maxlength="${d.limiti.sotto}" value="${esc(b.testo || '')}" placeholder="${esc(L('Una riga in più (facoltativa)', 'One more line (optional)', 'Una línea más (opcional)'))}">
+      <p class="suggerimento">${L('Il comando scritto in pagina è quello vero: se rinomini !compra nella scheda «Comandi», qui cambia da solo. La frase sulla moneta usa il suo nome e come se ne parla, dalla scheda «Giochi & classifiche».', 'The command written on the page is the real one: if you rename !compra in the «Commands» tab, it changes here by itself. The line about the coins uses their name and how chat talks about them, from the «Games & leaderboards» tab.', 'El comando escrito en la página es el de verdad: si renombras !compra en la pestaña «Comandos», aquí cambia solo. La frase sobre la moneda usa su nombre y cómo se habla de ella, desde la pestaña «Juegos y clasificaciones».')}</p>`;
+  }
+  return `${casella('link', L('Il link alla mia pagina link', 'The link to my link page', 'El enlace a mi página de enlaces'))}
+      ${casella('canale', L('Il link al mio canale', 'The link to my channel', 'El enlace a mi canal'))}
+      <p class="suggerimento">${L('La pagina link compare solo se è pubblicata.', 'The link page shows only if it is published.', 'La página de enlaces solo aparece si está publicada.')}</p>`;
+}
 
 function nomeBlocco(b, NOMI) {
   const suo = (b.tipo === 'sostieni' || b.tipo === 'donatori' ? (b.titolo || b.testo) : (b.label || b.testo || b.titolo || b.d || '')).toString().trim().replace(/\s+/g, ' ');
@@ -22389,6 +22501,8 @@ function lpRenderBlocchi() {
         </div>`).join('')
         + `<p class="spazio-sopra"><button type="button" class="btn secondario mini" data-lpsoc="piu" data-lpb="${i}"${lpVociPiene(b) ? ' disabled' : ''}>${_bIco(ICO.piu)}${L('Aggiungi tessera', 'Add card', 'Añadir ficha')}</button></p>
            <p class="suggerimento">${L('Tessere con immagine affiancate: le tue clip, i tuoi video, i tuoi progetti. Contenuti da guardare, non righe da leggere.', 'Cards with images side by side: your clips, videos, projects. Things to look at, not lines to read.', 'Fichas con imagen en paralelo: tus clips, vídeos, proyectos. Cosas para mirar, no líneas para leer.')}</p>`;
+    } else if (['intestazione', 'vetrina', 'articoli', 'comecompra', 'piede'].includes(b.tipo)) {
+      campi = lpCampiNegozio(b, i, d);
     } else if (b.tipo === 'diretta') {
       const PIA = { twitch: 'Twitch', kick: 'Kick', youtube: 'YouTube' };
       const mio = (d.url || '').split('/u/')[1] || '';
@@ -22400,6 +22514,8 @@ function lpRenderBlocchi() {
         <label class="riga-check"><input type="checkbox" data-lpb="${i}" data-lpf="muto"${b.muto !== false ? ' checked' : ''}> ${L('Parte senza audio', 'Starts muted', 'Empieza sin audio')}</label>
         <label class="riga-check"><input type="checkbox" data-lpb="${i}" data-lpf="autoplay"${b.autoplay ? ' checked' : ''}> ${L('Parte da sola', 'Starts on its own', 'Empieza sola')}</label>
         <p class="suggerimento">${L('Il player resta sempre sulla pagina: quando sei in diretta si vede la diretta, quando non lo sei lo dice da sé. Niente da accendere o spegnere. Se lasci il campo vuoto uso il tuo canale.', 'The player always stays on the page: when you are live it shows the stream, when you are not it says so by itself. Nothing to switch on or off. Leave the field empty to use your own channel.', 'El reproductor se queda siempre en la página: cuando estás en directo se ve el directo, cuando no lo dice él mismo. Nada que encender o apagar. Si dejas el campo vacío uso tu canal.')}</p>`;
+    } else if (b.tipo === 'spazio') {
+      campi = `<p class="suggerimento">${L('Un po\' d\'aria fra due pezzi.', 'Some room between two pieces.', 'Un poco de aire entre dos piezas.')}</p>`;
     } else {
       campi = `<p class="suggerimento">${L('Una linea che separa le sezioni.', 'A line that separates sections.', 'Una línea que separa las secciones.')}</p>`;
     }
@@ -22427,7 +22543,7 @@ function lpRenderBlocchi() {
     .map(([k, n]) => `<option value="${k}"${(b.entrata || 'auto') === k ? ' selected' : ''}>${esc(n)}</option>`).join('')}
           </select></label>
         <span class="lp-bfine">
-          <button type="button" class="btn secondario mini" data-lpb="${i}" data-lpop="dup">${_lpDup}${L('Duplica', 'Duplicate', 'Duplicar')}</button>
+          ${b.tipo === 'intestazione' || b.tipo === 'piede' ? '' : `<button type="button" class="btn secondario mini" data-lpb="${i}" data-lpop="dup">${_lpDup}${L('Duplica', 'Duplicate', 'Duplicar')}</button>`}
           <button type="button" class="btn secondario mini" data-lpb="${i}" data-lpop="via">${_lpVia}${L('Togli', 'Remove', 'Quitar')}</button>
         </span>
       </div>`;
@@ -28488,7 +28604,7 @@ function caricaDatiScheda(id) {
   if (id === 'moduli') { caricaPiattaforme(); caricaModuli(); caricaContatori(); caricaGiochiComandi(); collegaMorti(); requestAnimationFrame(() => applicaSottoSchede('moduli')); }
   if (id === 'statistiche') { caricaStatistiche(); caricaClassifica(); }
   if (id === 'giochi') { caricaClassifica(); caricaCitazioni(); caricaBattute(); caricaGiochi(); caricaGiochiComandi(); caricaRegoleGiochi(); _disegnaFormaMonete(); }
-  if (id === 'negozio') { caricaNegozio(); requestAnimationFrame(() => applicaSottoSchede('negozio')); }
+  if (id === 'negozio') { caricaNegozio(); caricaPaginaLink(false, 'negozio'); requestAnimationFrame(() => applicaSottoSchede('negozio')); }
   if (id === 'telegram') { caricaTgLogin(); collegaTgDestinazioni(); caricaTgDestinazioni(); collegaCartaLive(); caricaCartaLive(); caricaCompleanni(); }
   if (id === 'notifiche') { caricaTikTok(); caricaInstagram(); collegaFeed(); caricaFeed(); }
   if (id === 'ruoli') { collegaRuoli(); caricaRuoli(); }

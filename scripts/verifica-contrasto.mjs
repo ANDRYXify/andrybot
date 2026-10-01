@@ -33,7 +33,19 @@ const TIPI = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; cha
   '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png',
   '.webmanifest': 'application/manifest+json', '.json': 'application/json', '.woff2': 'font/woff2' };
 
-const { porta: PORTA, chiudi: chiudiSito } = await apriSito();
+// La pagina del negozio (docs/NEGOZIO.md, «La pagina»): la stessa che compone
+// il server, dagli stessi pezzi, in alcuni temi chiari e scuri. Le scritte sono
+// quelle che chi compra deve leggere: il nome, il prezzo, i requisiti, il tasto.
+const { paginaNegozioEsempio } = await import('./_negozio-esempio.mjs');
+const { porta: PORTA, chiudi: chiudiSito } = await apriSito({
+  rotte: (req, res, q) => {
+    if (q !== '/negozio-prova') return false;
+    const stile = new URL(req.url, 'http://x').searchParams.get('stile') || 'minimal';
+    res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
+    res.end(paginaNegozioEsempio({ template: stile, colonne: 2 }));
+    return true;
+  },
+});
 
 // WCAG: luminanza relativa e rapporto di contrasto.
 const lum = ([r, g, b]) => {
@@ -68,14 +80,10 @@ const b = await chromium.launch({ executablePath: CHROMIUM,
 
 const guai = [];
 let misurati = 0;
-for (const tema of ['light', 'dark']) {
-  const p = await b.newPage({ viewport: { width: 1440, height: 940 }, colorScheme: tema });
-  await p.goto(`http://127.0.0.1:${PORTA}/?lang=it`, { waitUntil: 'domcontentloaded' });
-  await p.waitForTimeout(2600);
-  await p.evaluate(() => { document.getElementById('cookie-banner')?.remove(); document.getElementById('splash')?.remove(); });
-  await p.waitForTimeout(400);
-
-  for (const [sel, soglia] of PROVE) {
+// Il giro delle misure su una pagina gia' aperta: ogni scritta, ferma e col
+// mouse sopra, contro i pixel che le stanno dietro.
+async function misura(p, tema, prove) {
+  for (const [sel, soglia] of prove) {
     // Il primo VISIBILE: lo stesso bottone puo' stare anche in una finestra
     // chiusa (la scelta fra Twitch e Kick), e quello non lo guarda nessuno.
     const el = await p.$(`${sel}:visible`);
@@ -178,6 +186,27 @@ for (const tema of ['light', 'dark']) {
       if (peggio.r < soglia) guai.push(`${tema} ${sel}${sopra ? ' (col mouse sopra)' : ''}: ${peggio.r}, serve ${soglia}`);
     }
   }
+}
+
+for (const tema of ['light', 'dark']) {
+  const p = await b.newPage({ viewport: { width: 1440, height: 940 }, colorScheme: tema });
+  await p.goto(`http://127.0.0.1:${PORTA}/?lang=it`, { waitUntil: 'domcontentloaded' });
+  await p.waitForTimeout(2600);
+  await p.evaluate(() => { document.getElementById('cookie-banner')?.remove(); document.getElementById('splash')?.remove(); });
+  await p.waitForTimeout(400);
+
+  await misura(p, tema, PROVE);
+  await p.close();
+}
+const PROVE_NEGOZIO = [
+  ['.ng-nome', 4.5], ['.ng-desc', 4.5], ['.ng-tipo', 4.5], ['.ng-chip', 4.5], ['.ng-scorte', 4.5],
+  ['.ng-prezzo-m', 4.5], ['.ng-prezzo-n', 3], ['.ng-copia', 4.5], ['.ng-sez-t', 4.5],
+];
+for (const stile of ['minimal', 'neon', 'retro', 'glass', 'pastello']) {
+  const p = await b.newPage({ viewport: { width: 1280, height: 1600 } });
+  await p.goto(`http://127.0.0.1:${PORTA}/negozio-prova?stile=${stile}`, { waitUntil: 'domcontentloaded' });
+  await p.waitForTimeout(1200);
+  await misura(p, `negozio ${stile}`, PROVE_NEGOZIO);
   await p.close();
 }
 await b.close();
@@ -185,6 +214,6 @@ chiudiSito();
 
 const dice = (ok, testo, extra = '') => { console.log(`  ${ok ? '✓' : '✗'} ${testo}${!ok && extra ? ` — ${extra}` : ''}`); return ok; };
 console.log('\nQuel che c\'e\' scritto si legge davvero.\n');
-const verde = dice(guai.length === 0, `contrasti misurati sui pixel: ${misurati} (chiaro e scuro, fermo e col mouse sopra)`, guai.join(' · '));
+const verde = dice(guai.length === 0, `contrasti misurati sui pixel: ${misurati} (la home chiara e scura, la pagina del negozio in cinque temi, fermo e col mouse sopra)`, guai.join(' · '));
 console.log(verde ? '\ncollaudo verde ✓\n' : '\ncollaudo ROSSO ✗\n');
 process.exit(verde ? 0 : 1);
