@@ -25,7 +25,7 @@ import * as consolle from '../features/console.js';   // CONSOLify + tastiera fi
 import { makeLog } from '../logger.js';
 import { db, tokens, streamers, memory, clips, knowledge, QUANDO_CONOSCENZA, schedaPulita, effects as effectsDb, SCHERMI, normComando, baseDaFile, modules as modulesDb, MAX_MODULI, friends, sfondi as sfondiDb, carteLive, tgAttesa, gsiStato, mortiSchede } from '../db.js';
 import { points, vips, tgConf, tgDest, amici, tgVisti, feedFonti, dcConf, passkeys, managers, quotes, battute, compleanni, membri, subscriptions, giochi as giochiDb, guide, GUIDE_MAX, pointAlerts, tgLogin, contatori, rapporti, postaStreamer, dcRuoli, dcLink, dcGiri, dcAccesso, dcDest, avvisiConf } from '../db.js';
-import { linkPage, visitePagina, TEMPLATE_LINKPAGE, LIMITI_LINKPAGE, FONT_LINKPAGE, ICONE_LINKPAGE, TIPI_BLOCCO, contiDonazioni, contiSatispay, registroDonazioni, paginaDona, cartePagina, accessi, recensioni as recensioniDb, campagneDb, sito } from '../db.js';
+import { linkPage, visitePagina, TEMPLATE_LINKPAGE, LIMITI_LINKPAGE, FONT_LINKPAGE, ICONE_LINKPAGE, TIPI_BLOCCO, TIPI_PAGINA_NEGOZIO, contiDonazioni, contiSatispay, registroDonazioni, paginaDona, paginaNegozio, cartePagina, accessi, recensioni as recensioniDb, campagneDb, sito } from '../db.js';
 import { puoRecensire, validaRecensione, statoDopo, invitoAperto, rimandaFino, vetrinaDi, TESTO_MAX } from '../features/recensioni.js';
 import { funzioniCanale, concessioneDi } from '../features/accesso.js';
 import { canaleHa } from '../features/accesso.js';
@@ -104,6 +104,7 @@ import * as voce from '../features/voce.js';
 import * as giochiConf from '../features/giochi-conf.js';
 import * as negozio from '../features/negozio.js';
 import { ruoliDaVendere } from '../features/negozio-tipi.js';
+import * as negozioPagina from '../features/negozio-pagina.js';
 import { stato as statoArena } from '../features/arena.js';
 import { VOCI as VOCI_TWITCH } from '../features/sondaggi.js';
 import * as modalitaChat from '../features/modalita-chat.js';
@@ -479,6 +480,8 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     (h) => { config.sostieniHost = h; }, 'indirizzo corto del sostegno acceso');
   sondaHost(!config.discordHost && !config.discordHostSpento ? donazioni.candidatoHost(config.baseUrl, 'discord') : '',
     (h) => { config.discordHost = h; }, 'porta d\'ingresso di Discord accesa');
+  sondaHost(!config.negozioHost && !config.negozioHostSpento ? donazioni.candidatoHost(config.baseUrl, 'negozio') : '',
+    (h) => { config.negozioHost = h; }, 'indirizzo corto del negozio acceso');
 
   app.use((req, res, next) => {
     // Sull'indirizzo corto del sostegno la radice E' la pagina. Tutto il resto
@@ -499,6 +502,21 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       if (d) {
         const q = req.url.indexOf('?');
         req.url = '/collega/' + d[1].toLowerCase() + (q >= 0 ? req.url.slice(q) : '');
+        return next();
+      }
+      if (req.path === '/') return res.redirect(302, config.baseUrl + '/');
+      return next();
+    }
+    // La pagina del negozio: negozio.<dominio>/<canale> E' il negozio di quel
+    // canale, e di nessun altro. La radice non elenca i negozi: rimanda al sito.
+    // Le immagini e gli script della pagina hanno indirizzi che non sono un
+    // canale, e passano.
+    if (config.negozioHost && String(req.hostname || '').toLowerCase() === config.negozioHost) {
+      if (legaleIn('privacy').some((x) => x.via === req.path)) return next();
+      const d = RE_CANALE_IN_VIA.exec(req.path);
+      if (d) {
+        const q = req.url.indexOf('?');
+        req.url = '/u/' + d[1].toLowerCase() + '/negozio' + (q >= 0 ? req.url.slice(q) : '');
         return next();
       }
       if (req.path === '/') return res.redirect(302, config.baseUrl + '/');
@@ -838,6 +856,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // velo di caricamento non si toglie — la home restava bianca a chi non è loggato.
   const guscio = creaGuscio(publicDir);
   guscio.risorsa('pagina-link.js');
+  guscio.risorsa('pagina-negozio.js');
   guscio.pagina('index.html');           // la vetrina, servita anche su '/'
   // Le pagine delle campagne e il loro tasto: aperte solo se l'id e' una
   // campagna che c'e' (le rotte stanno in fondo, dopo tutte le altre).
@@ -1858,12 +1877,13 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // della pagina, oppure e' quella che lo streamer ha rifatto. Si tiene in
   // memoria un'ora, e si rifa' quando cambia la pagina, la carta o la faccia.
   const _cartePagina = new Map();          // login|quale → { buf, chiave, ts }
-  const qualePagina = (v) => (String(v || '') === 'dona' ? 'dona' : 'link');
+  const qualePagina = (v) => (['dona', 'negozio'].includes(String(v || '')) ? String(v) : 'link');
   async function datiCartaPagina(login, quale) {
     const s = streamers.get(login);
     const display = s?.display || login;
-    const p = quale === 'dona' ? aspettoDi(paginaDona.conDefault(login, display), linkPage.get(login)) : linkPage.conDefault(login, display);
-    const url = quale === 'dona' ? donazioni.urlPaginaDona(login) : `${config.baseUrl}/u/${login}`;
+    const p = quale === 'negozio' ? negozioPagina.paginaDi(login, display)
+      : quale === 'dona' ? aspettoDi(paginaDona.conDefault(login, display), linkPage.get(login)) : linkPage.conDefault(login, display);
+    const url = quale === 'negozio' ? negozio.urlPaginaNegozio(login) : quale === 'dona' ? donazioni.urlPaginaDona(login) : `${config.baseUrl}/u/${login}`;
     const foto = p.avatar === 'no' ? '' : (p.avatar || await avatarDi(login) || '');
     return {
       nome: quale === 'dona' ? display : (p.headline || display),
@@ -1882,7 +1902,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     const c = _cartePagina.get(k);
     if (!forza && c && c.chiave === chiave && Date.now() - c.ts < 3600_000) return c.buf;
     let buf = null;
-    try { buf = await cartaLive.pngCarta(cartaLive.cartaPaginaDi({ dati: mia?.dati, quale, accento: dati.accento }), dati); }
+    try { buf = await cartaLive.pngCarta(cartaLive.cartaPaginaDi({ dati: mia?.dati, quale, accento: dati.accento, lingua: linguaChat(login) }), dati); }
     catch (e) { log.warn(`anteprima della pagina di #${login}: ${e?.message || e}`); return null; }
     if (buf) {
       if (_cartePagina.size > 300) _cartePagina.delete(_cartePagina.keys().next().value);
@@ -1893,7 +1913,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   const rottaCartaPagina = (quale) => wrap(async (req, res) => {
     const login = String(req.params.user || '').toLowerCase();
     if (!eLoginNostro(login)) return notFound(res);
-    const p = (quale === 'dona' ? paginaDona : linkPage).get(login);
+    const p = quale === 'negozio' ? (negozio.aperto(login) ? { attiva: true } : null) : (quale === 'dona' ? paginaDona : linkPage).get(login);
     if (!p || !p.attiva) return notFound(res);
     const png = await pngCartaPagina(login, quale);
     if (!png) return notFound(res);
@@ -1901,8 +1921,9 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   });
   app.get('/u/:user/anteprima.png', rottaCartaPagina('link'));
   app.get('/u/:user/anteprima-dona.png', rottaCartaPagina('dona'));
+  app.get('/u/:user/anteprima-negozio.png', rottaCartaPagina('negozio'));
   // l'indirizzo dell'immagine da scrivere nella pagina: solo se il server sa disegnarla
-  const immagineAnteprimaDi = (login, quale) => (cartaLive.disegnabile() ? `${config.baseUrl}/u/${login}/anteprima${quale === 'dona' ? '-dona' : ''}.png` : '');
+  const immagineAnteprimaDi = (login, quale) => (cartaLive.disegnabile() ? `${config.baseUrl}/u/${login}/anteprima${quale === 'link' ? '' : '-' + quale}.png` : '');
 
   // Informativa privacy della pagina pubblica. Va messa sempre, anche senza
   // cookie: il banner serve solo per i cookie non essenziali, ma dire chi tratta
@@ -2023,6 +2044,34 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     else res.set('Cache-Control', 'public, max-age=0, s-maxage=60, stale-while-revalidate=300');
     res.type('html').send(html);
   }));
+  // LA PAGINA DEL NEGOZIO (docs/NEGOZIO.md, «La pagina»). Sta su
+  // negozio.<dominio>/<login> quando il nome corto c'e', e su /u/<login>/negozio
+  // sempre. Un canale che non c'e' e uno col negozio chiuso hanno la stessa
+  // pagina «qui non c'e' un negozio», nella lingua del browser di chi la apre:
+  // da fuori i due casi non si distinguono.
+  app.get('/u/:user/negozio', wrap(async (req, res) => {
+    const login = String(req.params.user || '').toLowerCase();
+    const s = eLoginNostro(login) ? streamers.get(login) : null;
+    const html = s ? negozioPagina.htmlPaginaNegozio(login, {
+      display: s.display || login, avatar: await avatarDi(login), baseUrl: config.baseUrl,
+      immagineAnteprima: immagineAnteprimaDi(login, 'negozio'),
+    }) : null;
+    if (!html) {
+      res.status(404).set('Vary', 'Accept-Language').set('Cache-Control', 'public, max-age=0, s-maxage=60');
+      return res.type('html').send(negozioPagina.paginaNonCe(negozioPagina.linguaDiChiApre(req.get('accept-language')), config.baseUrl));
+    }
+    res.set('Cache-Control', 'public, max-age=0, s-maxage=60, stale-while-revalidate=300');
+    res.type('html').send(html);
+  }));
+  // La porta PUBBLICA delle immagini degli articoli: senza sessione e senza la
+  // chiave dell'overlay, ma solo per un'immagine di QUEL canale che un articolo
+  // della sua vetrina usa adesso (mediaPubblico). Tutto il resto e' 404.
+  app.get('/u/:user/negozio/media/:id', (req, res) => {
+    const m = negozioPagina.mediaPubblico(req.params.user, req.params.id);
+    if (!m) return notFound(res);
+    res.sendFile(join(effectsRoot, m.channel, m.file), { maxAge: '300s' }, (err) => { if (err && !res.headersSent) notFound(res); });
+  });
+
   // Il vecchio proxy resta solo per l'API del sito che il pre-addestramento
   // consulta (bio/social della vetrina): non serve più per /u.
   app.get('/api/streamer-verify', proxyLinkPage);
@@ -2210,6 +2259,57 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     res.json({ ok: true, pubblicata: false });
   }));
 
+  // ── La pagina del negozio: lo stesso editor, il terzo tavolo ──
+  // Si vede quando il negozio e' aperto: aprirlo e chiuderlo sta nella scheda
+  // Negozio, qui c'e' solo come si presenta. I pezzi ammessi sono quelli del
+  // negozio (TIPI_PAGINA_NEGOZIO), e la pulizia di db.js scarta gli altri.
+  // come per le donazioni: un salvataggio che non dice l'aspetto tiene quello che c'era
+  const aspettoNegozioInArrivo = (login, v) => (v === 'link' || v === 'suo' ? v : paginaNegozio.get(login)?.aspetto || 'suo');
+  const pubblicaNegozio = (p) => ({ headline: p.headline || '', tagline: p.tagline || '', template: p.template || 'minimal',
+    avatar: p.avatar || '', tema: p.tema, blocchi: p.blocchi || [], attiva: true, aggiornata: p.ts || null, aspetto: p.aspetto });
+  app.get('/api/paginanegozio', requireOwner, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const s = streamers.get(login);
+    const display = s?.display || login;
+    const p = paginaNegozio.get(login) || negozioPagina.paginaDiPartenza(login, display);
+    const link = linkPage.get(login);
+    res.json({
+      url: negozio.urlPaginaNegozio(login),
+      pubblicata: negozio.aperto(login),
+      aspettoLink: link ? { template: link.template, tema: link.tema } : null,
+      templates: TEMPLATE_LINKPAGE, fonts: FONT_LINKPAGE, icone: ICONE_LINKPAGE, tipi: TIPI_PAGINA_NEGOZIO, limiti: LIMITI_LINKPAGE,
+      temaBase: paginaNegozio.pulisci({}).tema,
+      avatarTwitch: await avatarDi(login, { aggiorna: true }),
+      visite: null,
+      suggeriti: [],
+      // gli articoli che la pagina mostra adesso, per scegliere quello in vetrina
+      articoli: negozio.inVetrina(login).map((a) => ({ id: a.id, nome: a.nome })),
+      pagina: pubblicaNegozio(p),
+    });
+  }));
+  app.post('/api/paginanegozio', requireOwner, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const b = req.body || {};
+    const inviati = Array.isArray(b.blocchi) ? b.blocchi.length : 0;
+    const p = paginaNegozio.salva(login, {
+      headline: b.headline, tagline: b.tagline, template: b.template, avatar: b.avatar, tema: b.tema,
+      blocchi: b.blocchi, attiva: true, aspetto: aspettoNegozioInArrivo(login, b.aspetto),
+    });
+    _cartePagina.delete(login + '|negozio');
+    res.json({ ok: true, url: negozio.urlPaginaNegozio(login), pubblicata: negozio.aperto(login), salvati: p?.blocchi?.length || 0, inviati, pagina: pubblicaNegozio(p) });
+  }));
+  app.post('/api/paginanegozio/anteprima', requireOwner, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const s = streamers.get(login);
+    const b = req.body || {};
+    const finta = aspettoDi(paginaNegozio.pulisci({ headline: b.headline, tagline: b.tagline, template: b.template, avatar: b.avatar,
+      tema: b.tema, blocchi: b.blocchi, aspetto: aspettoNegozioInArrivo(login, b.aspetto) }), linkPage.get(login));
+    const html = negozioPagina.htmlPaginaNegozio(login, {
+      pagina: finta, anteprima: true, display: s?.display || login, avatar: await avatarDi(login), baseUrl: config.baseUrl,
+    });
+    res.json({ html });
+  }));
+
   // ── L'anteprima del link, dal pannello: la carta di ognuna delle due pagine ──
   // Stesso vocabolario e stesso editor della locandina; qui la misura e' quella
   // dell'anteprima e i temi di partenza sono le due carte standard. Si salva
@@ -2219,7 +2319,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     const dati = await datiCartaPagina(login, quale);
     return {
       quale, mia: !!mia,
-      carta: cartaLive.cartaPaginaDi({ dati: mia?.dati, quale, accento: dati.accento }),
+      carta: cartaLive.cartaPaginaDi({ dati: mia?.dati, quale, accento: dati.accento, lingua: linguaChat(login) }),
       dati, disegnabile: cartaLive.disegnabile(),
       vocabolario: { ...vocabolarioCarta(), misura: cartaLive.MISURA_PAGINA, temi: [] },
       immagine: `/api/paginacarta.png?quale=${quale}`,

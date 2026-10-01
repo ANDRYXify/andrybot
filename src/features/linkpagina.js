@@ -205,6 +205,8 @@ const _mIco = (n, dim = 20) => {
   const m = MARCHI[n] || MARCHI.link;
   return `<svg viewBox="0 0 24 24" width="${dim}" height="${dim}" fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" aria-hidden="true"${m.c ? ` style="--bc:${m.c}"` : ''}><path d="${m.d}"/></svg>`;
 };
+// Le stesse icone per i pezzi che una pagina disegna da fuori (il negozio).
+export const iconaMarchio = (nome, dim = 20) => _mIco(nome, dim);
 
 function esc(s) {
   return String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -533,9 +535,15 @@ export function coloriDi(pagina) {
   };
 }
 
-export function renderLinkPage(pagina, { login, display, avatar, baseUrl, anteprima, sostieni, grazie, manca, dona, urlDona, urlLink, donatori, immagineAnteprima } = {}) {
+// LA PAGINA DEL NEGOZIO passa da qui come le altre due (docs/NEGOZIO.md, «La
+// pagina»), con `negozio`: i suoi pezzi li disegna features/negozio-pagina.js
+// (`blocco`, `css`), e le poche parole fisse di questa pagina (il titolo nella
+// scheda, il piede, la pagina vuota) arrivano gia' nella lingua del canale
+// (`testi`, `lingua`). Senza `negozio` non cambia niente: la pagina link e
+// quella delle donazioni restano quelle di prima, in italiano.
+export function renderLinkPage(pagina, { login, display, avatar, baseUrl, anteprima, sostieni, grazie, manca, dona, urlDona, urlLink, donatori, immagineAnteprima, negozio } = {}) {
   // l'indirizzo vero della pagina: quello corto delle donazioni, se c'e'
-  const urlCanonico = dona ? (urlDona || `${baseUrl}/dona/${login}`) : `${baseUrl}/u/${login}`;
+  const urlCanonico = negozio ? negozio.url : dona ? (urlDona || `${baseUrl}/dona/${login}`) : `${baseUrl}/u/${login}`;
   const t = pagina.tema || {};
   const c = coloriDi(pagina);
   const font = PILE[t.font] || PILE.system;
@@ -548,7 +556,7 @@ export function renderLinkPage(pagina, { login, display, avatar, baseUrl, antepr
   const larghezza = Number(t.larghezza) || 30;
   const aSinistra = t.allinea === 'sinistra';
   const titolo = pagina.headline || display || login;
-  const descr = pagina.tagline || `Tutti i link di ${display || login}`;
+  const descr = pagina.tagline || (negozio ? negozio.testi.descrizione : `Tutti i link di ${display || login}`);
   const dom = domini(baseUrl);          // parent= dei player Twitch/Kick
   const scuro = eScuro(c.bg);           // decide il tema della chat incorporata
   // Colore del testo SOPRA l'accento (bottoni "in evidenza", copertina, badge…):
@@ -570,7 +578,7 @@ export function renderLinkPage(pagina, { login, display, avatar, baseUrl, antepr
   // ognuna ha la sua. Calcolata qui una volta, cosi' i due posti che la
   // nominano (il piede e la fascia dei contenuti altrui) non possono finire a
   // puntare in due direzioni.
-  const viaPrivacy = dona ? `${urlDona || ''}/privacy` : `/u/${login}/privacy`;
+  const viaPrivacy = negozio ? negozio.privacy : dona ? `${urlDona || ''}/privacy` : `/u/${login}/privacy`;
   // Titoli "parola per parola": ogni parola è un pezzo a sé, così può entrare
   // con un attimo di ritardo sulla precedente. Si fa qui, a mano, perché farlo
   // in pagina vorrebbe dire JavaScript su una pagina che deve aprirsi subito.
@@ -702,10 +710,30 @@ export function renderLinkPage(pagina, { login, display, avatar, baseUrl, antepr
   };
   const anim = ANIM[t.anim] || '';
 
+  // "Nessuna" vuol dire NESSUNA: prima cadeva sull'iniziale del nome, cioè
+  // esattamente il cerchio con la lettera che si voleva togliere.
+  const mostraAvatar = t.avatarForma !== 'nessuno' && pagina.avatar !== 'no';
+  const imgCustom = pagina.avatar === 'no' ? '' : urlSicuro(pagina.avatar);
+  const imgAvatar = imgCustom || (avatar && login ? `${baseUrl || ''}/u/${encodeURIComponent(login)}/avatar` : '');
+  // La testa: foto, titolo, sottotitolo. Di solito sta in cima da sola; nella
+  // pagina del negozio e' un pezzo come gli altri, e sta dove la metti.
+  const testa = () => `${mostraAvatar ? (imgAvatar
+    ? `<img class="avatar" src="${esc(imgAvatar)}" alt="" width="88" height="88" loading="eager" data-ripiego>
+         <div class="avatar" aria-hidden="true" style="display:none">${esc(iniziale(titolo))}</div>`
+    : `<div class="avatar" aria-hidden="true">${esc(iniziale(titolo))}</div>`) : ''}
+    <h1>${esc(titolo)}</h1>
+    ${pagina.tagline ? `<p class="tag">${esc(pagina.tagline)}</p>` : ''}`;
+  const testaInUnPezzo = !!negozio && (pagina.blocchi || []).some((b) => b?.tipo === 'intestazione');
+
   // ── contenuti: i blocchi in ordine ──
   let n = 0;
   const pezzi = (pagina.blocchi || []).map((b) => {
     const ritardo = `style="--d:${Math.min(n++, 12) * 45}ms"`;
+    if (negozio && b.tipo === 'intestazione') return `<header class="testa-b" ${ritardo}>${testa()}</header>`;
+    if (negozio) {
+      const suo = negozio.blocco(b, { anteprima, ritardo });
+      if (suo !== null) return suo;
+    }
     if (b.tipo === 'link') {
       const href = urlSicuro(b.url);
       // In ANTEPRIMA i blocchi incompleti si vedono, segnati come bozza: cosi
@@ -969,9 +997,6 @@ export function renderLinkPage(pagina, { login, display, avatar, baseUrl, antepr
     ? inFile(0, iFissa + 1) + `\n<div class="dopo">${strato ? `<div class="dopo-sf" aria-hidden="true">${strato.html}</div>` : ''}${inFile(iFissa + 1, pezzi.length)}</div>`
     : inFile(0, pezzi.length);
 
-  // "Nessuna" vuol dire NESSUNA: prima cadeva sull'iniziale del nome, cioè
-  // esattamente il cerchio con la lettera che si voleva togliere.
-  const mostraAvatar = t.avatarForma !== 'nessuno' && pagina.avatar !== 'no';
   const pesi = PESI[t.peso] || PESI.marcato;
   const scalaCorpo = Number(t.corpo) || 100;
   const fontTit = PILE[t.fontTitoli] || font;
@@ -983,20 +1008,18 @@ export function renderLinkPage(pagina, { login, display, avatar, baseUrl, antepr
     tutto: 'body{text-transform:uppercase}',
   };
   const maiusc = MAIUSC[t.maiuscolo] || '';
-  const imgCustom = pagina.avatar === 'no' ? '' : urlSicuro(pagina.avatar);
-  const imgAvatar = imgCustom || (avatar && login ? `${baseUrl || ''}/u/${encodeURIComponent(login)}/avatar` : '');
 
   return senzaCommentiCss(`<!DOCTYPE html>
-<html lang="it">
+<html lang="${negozio ? esc(negozio.lingua) : 'it'}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>${esc(titolo)} · ${dona ? 'sostienimi' : 'i miei link'}</title>
+<title>${esc(titolo)} · ${negozio ? esc(negozio.testi.titolo) : dona ? 'sostienimi' : 'i miei link'}</title>
 <meta name="description" content="${esc(descr).slice(0, 160)}">
 <meta name="robots" content="index, follow">
 <link rel="canonical" href="${esc(urlCanonico)}">
 <meta name="theme-color" content="${esc(c.bg)}">
-<meta property="og:type" content="profile">
+<meta property="og:type" content="${negozio ? 'website' : 'profile'}">
 <meta property="og:title" content="${esc(titolo)}">
 <meta property="og:description" content="${esc(descr).slice(0, 200)}">
 <meta property="og:url" content="${esc(urlCanonico)}">
@@ -1412,6 +1435,7 @@ ${/* l'icona della scheda e della schermata home: la foto che la pagina mostra
   .sel-b.tocca > *{outline:2px solid var(--acc);outline-offset:4px}` : ''}
   ${maiusc}
   ${strato ? strato.css : ''}
+  ${negozio ? negozio.css({ c, stileBtn, ombra, aSinistra }) : ''}
   ${cssPaginaSicuro(t.css)}
 </style>
 
@@ -1420,19 +1444,14 @@ ${/* l'icona della scheda e della schermata home: la foto che la pagina mostra
   ${strato ? strato.html : ''}
   ${fxCanvas}
   <main class="telo">
-    ${mostraAvatar ? (imgAvatar
-      ? `<img class="avatar" src="${esc(imgAvatar)}" alt="" width="88" height="88" loading="eager" data-ripiego>
-         <div class="avatar" aria-hidden="true" style="display:none">${esc(iniziale(titolo))}</div>`
-      : `<div class="avatar" aria-hidden="true">${esc(iniziale(titolo))}</div>`) : ''}
-    <h1>${esc(titolo)}</h1>
-    ${pagina.tagline ? `<p class="tag">${esc(pagina.tagline)}</p>` : ''}
-    ${corpo ? `<nav class="lista">${corpo}</nav>` : `<p class="vuoto">Questa pagina non ha ancora contenuti.</p>`}
-    <p class="piede">Pagina creata con <a href="${esc(baseUrl)}/" target="_blank" rel="noopener">SocialBot</a>${
+    ${!negozio ? testa() : testaInUnPezzo ? '' : `<h1 class="solo-lettori">${esc(titolo)}</h1>`}
+    ${corpo ? `<${negozio ? 'div' : 'nav'} class="lista">${corpo}</${negozio ? 'div' : 'nav'}>` : `<p class="vuoto">${negozio ? esc(negozio.testi.vuota) : 'Questa pagina non ha ancora contenuti.'}</p>`}
+    <p class="piede">${negozio ? esc(negozio.testi.creata) : 'Pagina creata con'} <a href="${esc(baseUrl)}/" target="_blank" rel="noopener">SocialBot</a>${
       dona && urlLink ? ` · <a href="${esc(urlLink)}">I link di ${esc(display || login)}</a>` : ''}
-      · <a href="${esc(viaPrivacy)}">Privacy</a>${banner && corpo.includes('chiedi-b')
+      · <a href="${esc(viaPrivacy)}">${negozio ? esc(negozio.testi.privacy) : 'Privacy'}</a>${banner && corpo.includes('chiedi-b')
         ? ` · <button type="button" id="ri-consenso" class="come-link">Contenuti di altri siti</button>` : ''}</p>
   </main>
-<script src="/pagina-link.js?v=11" defer></script>
+<script src="/pagina-link.js?v=11" defer></script>${negozio ? '\n<script src="/pagina-negozio.js?v=1" defer></script>' : ''}
 ${banner && corpo.includes('chiedi-b') ? `
   <aside class="fascia" id="fascia" hidden>
     <p><b>Video e musica di altri siti.</b> Questa pagina non usa cookie, ma i riquadri di YouTube, Spotify,

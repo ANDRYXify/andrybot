@@ -924,6 +924,21 @@ CREATE TABLE IF NOT EXISTS negozio_acquisti (  -- lo storico, e la coda di quell
 );
 CREATE INDEX IF NOT EXISTS idx_negozio_acquisti ON negozio_acquisti(channel, articolo, user, ts);
 CREATE INDEX IF NOT EXISTS idx_negozio_acquisti_stato ON negozio_acquisti(channel, stato, ts);
+CREATE TABLE IF NOT EXISTS pagina_negozio (   -- la pagina pubblica del negozio: stessa forma della pagina link
+  channel TEXT PRIMARY KEY,
+  headline TEXT NOT NULL DEFAULT '',
+  tagline TEXT NOT NULL DEFAULT '',
+  template TEXT NOT NULL DEFAULT 'minimal',
+  accent TEXT NOT NULL DEFAULT '',
+  bg TEXT NOT NULL DEFAULT '',
+  links TEXT NOT NULL DEFAULT '',
+  avatar TEXT NOT NULL DEFAULT '',
+  tema TEXT NOT NULL DEFAULT '',
+  blocchi TEXT NOT NULL DEFAULT '',
+  attiva INTEGER NOT NULL DEFAULT 1,
+  aspetto TEXT NOT NULL DEFAULT '',
+  ts INTEGER NOT NULL
+);
 `);
 
 // --- migrazioni leggere: aggiunge colonne nuove a DB già esistenti ------------
@@ -3318,10 +3333,10 @@ export const carteLive = {
   cancella(channel) { db.prepare('DELETE FROM carte_live WHERE channel=?').run(String(channel).toLowerCase()); },
 };
 
-// L'anteprima del link, rifatta dallo streamer: una per pagina (link, dona).
-// Niente riga = standard (la carta vestita col colore della pagina).
+// L'anteprima del link, rifatta dallo streamer: una per pagina (link, dona,
+// negozio). Niente riga = standard (la carta vestita col colore della pagina).
 export const cartePagina = {
-  _quale: (q) => (q === 'dona' ? 'dona' : 'link'),
+  _quale: (q) => (q === 'dona' || q === 'negozio' ? q : 'link'),
   get(channel, quale) {
     const r = db.prepare('SELECT * FROM carte_pagina WHERE channel=? AND quale=?').get(String(channel).toLowerCase(), this._quale(quale));
     if (!r) return null;
@@ -3783,6 +3798,12 @@ export const ICONE_LINKPAGE = ['link', 'twitch', 'youtube', 'instagram', 'tiktok
   'x', 'telegram', 'kick', 'github', 'reddit', 'threads', 'facebook', 'whatsapp', 'twitter',
   'cuore', 'stella', 'regalo', 'carrello', 'calendario', 'mail', 'musica', 'video', 'scarica', 'gioco', 'caffe', 'soldi'];
 export const TIPI_BLOCCO = ['link', 'titolo', 'testo', 'badge', 'separatore', 'spazio', 'social', 'embed', 'immagine', 'diretta', 'eroe', 'griglia', 'scritta', 'numeri', 'faq', 'conto', 'sostieni', 'donatori'];
+// I pezzi della pagina del negozio (docs/NEGOZIO.md, «La pagina»): i cinque suoi
+// (l'intestazione, l'articolo in vetrina, la griglia, come si compra, il piede)
+// e i pochi della pagina link che stanno bene in un negozio. Niente riquadri di
+// altri siti: una pagina che vende non chiede il permesso per un video.
+export const TIPI_PAGINA_NEGOZIO = ['intestazione', 'vetrina', 'articoli', 'comecompra', 'piede', 'titolo', 'testo', 'separatore', 'spazio', 'immagine'];
+export const FORMATI_ARTICOLO = ['quadrato', 'largo', 'alto', 'libero'];
 // Quanto si MUOVE la pagina mentre la si scorre. "dolce" = i contenuti
 // compaiono entrando. "cinema" = in più: la foto della copertina va in
 // parallasse, i titoli si rivelano parola per parola, le immagini si
@@ -3873,15 +3894,17 @@ export const visitePagina = {
   },
 };
 
-// Le pagine pubbliche hanno una forma sola (testa, tema, blocchi) e due
-// tavoli: la pagina link e la pagina delle donazioni. Lo store e' uno,
-// costruito sul nome della tabella: stessa pulizia, stesso salvataggio.
-// La pagina delle donazioni ha una scelta in piu', `aspetto`: 'link' segue lo
-// stile e il tema della pagina link, 'suo' tiene i suoi. Chi la mostra passa da
-// aspettoDi (features/linkpagina.js).
-const storePagina = (tabella, { conAspetto = false } = {}) => ({
+// Le pagine pubbliche hanno una forma sola (testa, tema, blocchi) e tre
+// tavoli: la pagina link, la pagina delle donazioni e quella del negozio. Lo
+// store e' uno, costruito sul nome della tabella: stessa pulizia, stesso
+// salvataggio. Le donazioni e il negozio hanno una scelta in piu', `aspetto`:
+// 'link' segue lo stile e il tema della pagina link, 'suo' tiene i suoi. Chi la
+// mostra passa da aspettoDi (features/linkpagina.js). `tipi` sono i pezzi che
+// quella pagina ammette: un pezzo che non e' suo non passa la pulizia.
+const storePagina = (tabella, { conAspetto = false, tipi = TIPI_BLOCCO } = {}) => ({
   tabella,
   conAspetto,
+  tipi,
   _riga(r) {
     const leggi = (s, def) => { try { const p = JSON.parse(s || 'null'); return p && typeof p === 'object' ? p : def; } catch { return def; } };
     // Il tema si legge passando dalla stessa pulizia del salvataggio: quello che
@@ -4017,7 +4040,7 @@ const storePagina = (tabella, { conAspetto = false } = {}) => ({
     // che te li segnala come "da completare".
     const blocchi = (Array.isArray(d.blocchi) ? d.blocchi : []).reduce((out, b) => {
       if (out.length >= L.blocchi || !b || typeof b !== 'object') return out;
-      const tipo = scelta(b.tipo, TIPI_BLOCCO, null);
+      const tipo = scelta(b.tipo, this.tipi, null);
       if (!tipo) return out;
       const quanti = out.length;
       if (tipo === 'link') {
@@ -4101,6 +4124,21 @@ const storePagina = (tabella, { conAspetto = false } = {}) => ({
           img: urlOk(v?.img), titolo: str(v?.titolo, L.label), testo: str(v?.testo, L.sotto), url: urlOk(v?.url),
         }));
         out.push({ tipo, voci });
+      } else if (tipo === 'intestazione') {
+        // la testa della pagina (foto, titolo, sottotitolo) dove la metti tu;
+        // quello che dice sta nei campi della testa, qui solo dove sta
+        out.push({ tipo });
+      } else if (tipo === 'vetrina') {
+        // 0 = l'articolo piu' comprato, che cambia da solo; un numero = quello
+        out.push({ tipo, titolo: str(b.titolo, L.label), articolo: num(b.articolo, 0, 2_000_000_000, 0) });
+      } else if (tipo === 'articoli') {
+        out.push({ tipo, titolo: str(b.titolo, L.label), colonne: num(b.colonne, 1, 3, 2),
+          formato: scelta(b.formato, FORMATI_ARTICOLO, 'quadrato'),
+          prezzo: b.prezzo !== false, scorte: b.scorte !== false, requisiti: b.requisiti !== false });
+      } else if (tipo === 'comecompra') {
+        out.push({ tipo, titolo: str(b.titolo, L.label), testo: str(b.testo, L.sotto) });
+      } else if (tipo === 'piede') {
+        out.push({ tipo, link: b.link !== false, canale: b.canale !== false });
       }
       // valgono per QUALSIASI blocco: quanto è largo e come entra
       if (out.length > quanti) {
@@ -4151,6 +4189,7 @@ const storePagina = (tabella, { conAspetto = false } = {}) => ({
 });
 export const linkPage = storePagina('link_page');
 export const paginaDona = storePagina('pagina_dona', { conAspetto: true });
+export const paginaNegozio = storePagina('pagina_negozio', { conAspetto: true, tipi: TIPI_PAGINA_NEGOZIO });
 
 // NB: distinto dai `counters` di sotto (store low-level usato dalle azioni dei moduli).
 // I VERBI DI UN CONTATORE: quali parole fanno cosa, e chi puo'.
