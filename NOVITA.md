@@ -109,6 +109,18 @@ comandi diversi da quelli della riga italiana.
 - L'informativa sulla privacy dice cosa mostra la pagina pubblica del negozio: gli articoli in vendita e l'aspetto scelto, mai chi ha comprato.
   en: The privacy notice says what the public shop page shows: the items on sale and the chosen look, never who bought what.
   es: La política de privacidad dice qué muestra la página pública de la tienda: los artículos a la venta y el aspecto elegido, nunca quién compró.
+- Su Discord l'avviso della diretta si chiude anche se non hai Telegram, e anche per Kick, YouTube e TikTok; la fine di una diretta chiude solo i suoi avvisi. [vai: dcavvisi]
+  en: On Discord the live alert now closes even if you don't use Telegram, and for Kick, YouTube and TikTok too; the end of a stream closes only its own alerts.
+  es: En Discord el aviso del directo se cierra aunque no tengas Telegram, y también para Kick, YouTube y TikTok; el final de un directo cierra solo sus avisos.
+- Una diretta appena iniziata non risulta più finita dopo un minuto: niente avviso «ha finito» seguito da un secondo «è in diretta», né rapporti vuoti. [vai: dcavvisi]
+  en: A stream that has just started no longer counts as ended a minute later: no “has ended” alert followed by a second “is live”, and no empty reports.
+  es: Un directo recién empezado ya no cuenta como terminado al minuto: nada de aviso «ha terminado» seguido de un segundo «está en directo», ni informes vacíos.
+- L'avviso di diretta su Discord ha sempre titolo e gioco, si aggiorna con spettatori e anteprima mentre sei in onda, e se Discord non risponde si ritenta. [vai: dcavvisi]
+  en: The Discord live alert always has the title and game, updates with viewers and the preview while you're on air, and is retried if Discord doesn't answer.
+  es: El aviso de directo en Discord siempre tiene título y juego, se actualiza con espectadores y la vista previa mientras estás en directo, y se reintenta si Discord no responde.
+- Gli avvisi dei post nuovi, su Discord e su Telegram, parlano la lingua e il tono del canale, e su Discord usano anche il messaggio che hai scritto per i post. [vai: dcavvisi]
+  en: New post alerts, on Discord and Telegram, speak your channel's language and tone, and on Discord they also use the message you wrote for posts.
+  es: Los avisos de posts nuevos, en Discord y en Telegram, hablan el idioma y el tono del canal, y en Discord también usan el mensaje que escribiste para los posts.
 
 ## 2026-09-30
 

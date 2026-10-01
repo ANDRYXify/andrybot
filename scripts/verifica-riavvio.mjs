@@ -124,6 +124,7 @@ const DECISO = [
   ['features/studio.js', 'sessioni', 'volatile', 'sessioni di trasmissione: sono connessioni, muoiono col processo'],
   ['features/trackinggiochi.js', '_ultimoSfida', 'volatile', 'anti-spam di !sfida, finestra corta'],
   ['bot.js', 'units', 'volatile', 'connessioni chat: si riaprono all\'avvio'],
+  ['bot.js', '_statoDiretta', 'volatile', 'i segnali delle due fonti sulla diretta (stato-diretta.js): dopo un riavvio il primo segnale li riparte, e il primo rilevamento non annuncia niente; gli avvisi gia\' mandati stanno nei recapiti, nel database'],
   ['bot.js', '_chatKO', 'volatile', 'chi ha la chat scollegata: si riscopre al primo tentativo'],
   ['bot.js', 'listeners', 'volatile', 'ascolto audio: e\' una connessione'],
   ['bot.js', '_liveState', 'volatile', 'chi e\' in diretta adesso: si richiede a Twitch'],

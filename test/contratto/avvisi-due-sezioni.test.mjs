@@ -99,10 +99,13 @@ test('chi aveva gia\' un canale acceso non deve rifare niente', () => {
 
 test('la menzione non sveglia mai piu\' gente di quella scelta', () => {
   const dc = leggi('src/features/discord.js');
-  const f = dc.slice(dc.indexOf('export async function diffondi('));
+  // il messaggio di ogni posto lo compone avvisoPer, e diffondi passa da li'
+  const f = dc.slice(dc.indexOf('export function avvisoPer('));
   const corpo = f.slice(0, f.indexOf('\n}'));
   assert.match(corpo, /allowed_mentions: ruolo \? \{ roles: \[ruolo\] \} : \{ parse: \[\] \}/,
     'un @everyone scritto per sbaglio nel testo sveglierebbe tutto il server');
+  const d = dc.slice(dc.indexOf('export async function diffondi('));
+  assert.match(d.slice(0, d.indexOf('\n}')), /consegna\(token, t, avvisoPer\(t, d, \{ post \}\)\)/, 'diffondi compone il messaggio a modo suo');
 });
 
 test('un avviso si chiude riscrivendolo, mai cancellandolo', () => {
@@ -124,10 +127,14 @@ test('un avviso si chiude riscrivendolo, mai cancellandolo', () => {
 
   const dc = leggi('src/features/discord.js');
   assert.match(dc, /export async function chiudiMessaggio\(/, 'manca la chiusura dell\'avviso');
+  // chiudere e aggiornare un avviso passano dalla stessa riscrittura
   const f = dc.slice(dc.indexOf('export async function chiudiMessaggio('));
-  const corpo = f.slice(0, f.indexOf('\n}'));
+  assert.match(f.slice(0, f.indexOf('\n}')), /return riscrivi\(token, dove, msgId, corpo\);/, 'la chiusura non passa dalla riscrittura');
+  const r = dc.slice(dc.indexOf('async function riscrivi('));
+  const corpo = r.slice(0, r.indexOf('\n}'));
   assert.ok(!/method: 'DELETE'/.test(corpo), 'il webhook torna a cancellare invece di riscrivere');
   assert.match(corpo, /method: 'PATCH'/, 'il webhook deve riscrivere il suo messaggio');
+  assert.match(corpo, /api\.modificaMessaggio\(/, 'il bot deve riscrivere il suo messaggio');
 });
 
 test('l\'avviso si toglie dove era stato messo, e solo quello dello streamer giusto', () => {
@@ -135,7 +142,8 @@ test('l\'avviso si toglie dove era stato messo, e solo quello dello streamer giu
   const f = bot.slice(bot.indexOf('async _chiudiLiveEsterna(login, chi) {'));
   const corpo = f.slice(0, f.indexOf('\n  }'));
   assert.match(corpo, /tgMsg\.perStreamer\(login, chi\)/, 'non chiude l\'avviso su Telegram');
-  assert.match(corpo, /dcMsg\.perStreamer\(login, chi\)/, 'non chiude l\'avviso su Discord');
+  assert.match(corpo, /this\._chiudiDiscord\(login, chi, 'twitch'\)/, 'non chiude l\'avviso su Discord');
+  assert.match(corpo, /dcMsg\.perStreamer\(login, chi\)/, 'non chiude gli avvisi mandati prima dei recapiti');
 });
 
 // Togliere un posto spegne i suoi avvisi: le due sezioni lo chiedono prima

@@ -66,7 +66,8 @@ import { ChatYoutube } from './youtube/chat.js';
 import { voceYoutube } from './youtube/voce.js';
 import { collegati as youtubeCollegati } from './youtube/api.js';
 import * as avvisi from './features/avvisi.js';
-import { dirette, guide, vips, linkPage } from './db.js';
+import { dirette, guide, vips, linkPage, recapiti } from './db.js';
+import { dopoErrore, chiaveDiretta, AGGIORNA_OGNI_MS, TIENI_MS } from './features/recapiti.js';
 import * as cancello from './features/tg-cancello.js';
 import { ClipEngine } from './features/clips.js';
 import { PenitenzeEngine } from './features/penitenze.js';
@@ -78,6 +79,7 @@ import { carica as caricaRete } from './features/rete.js';
 import { carica as caricaIncidenti } from './features/incidenti.js';
 import { scheduleReflection } from './ai/reflection.js';
 import { StreamWatcher } from './stream/watcher.js';
+import { dopoSegnale } from './stream/stato-diretta.js';
 import { LiveListener } from './stream/listener.js';
 import { avviaBackupAuto, stopBackupAuto } from './backup.js';
 import * as dcGiro from './features/discord-giro.js';
@@ -164,6 +166,7 @@ export class BotManager {
     this._stopReflection = null;
     this._capAvvisoDato = false;     // il tetto ascolti è già stato loggato una volta?
     this._liveState = new Map();     // login → bool: se lo streamer è in live adesso
+    this._statoDiretta = new Map();  // login → { live, visto, assenze }: i segnali delle due fonti (stato-diretta.js)
     // La pubblicità, per canale: {prossima, letto, dettoPer, ultimaPausa,
     // secondi, finisceA, dettoDopo}. Sta in memoria e non su disco apposta: è
     // lo stato di una pausa che dura minuti, e un riavvio nel mezzo la fa
@@ -274,7 +277,7 @@ export class BotManager {
     // notifiche Telegram e la modalità "quando live".
     this.watcher = new StreamWatcher({
       helix: this.helix, brain: this.brain,
-      onLive: (login, isLive, data) => this._setLive(login, isLive, data),
+      onLive: (login, isLive, data) => this._setLive(login, isLive, data, 'giro'),
     });
     this.watcher.start();
     this._stopReflection = scheduleReflection({ brain: this.brain });
@@ -324,6 +327,9 @@ export class BotManager {
     // Dirette degli amici da annunciare su Telegram: non sono canali gestiti dal
     // bot, quindi nessun evento arriva da solo — vanno guardati.
     this._amiciTimer = setInterval(() => this._giroAmici().catch(() => {}), 2 * 60_000);
+    // Gli avvisi su Discord che aspettano un altro tentativo, e quelli di una
+    // diretta in corso da riscrivere coi dati di adesso (docs/DISCORD-AVVISI.md).
+    this._recapitiTimer = setInterval(() => this._giroRecapiti().catch(() => {}), 30_000);
     // Nuovi post: avvisa quando esce un nuovo video su YouTube (via RSS, ogni 10 min).
     this._ytId = new Map();
     // La chat di YouTube si legge chiedendola: il motore che la chiede sa anche
@@ -403,6 +409,7 @@ export class BotManager {
     stopBackupAuto();
     clearInterval(this._tiktokTimer);
     clearInterval(this._amiciTimer);
+    clearInterval(this._recapitiTimer);
     clearInterval(this._postTimer);
     clearInterval(this._annunciTimer);
     clearInterval(this._distillaTimer);
@@ -1445,9 +1452,18 @@ export class BotManager {
   // istantaneo, sia dal watcher, che copre anche chi non è connesso in chat —
   // es. modalità "quando live" con bot ancora offline). Idempotente: reagisce
   // solo ai VERI cambi di stato, così non si notifica due volte.
-  _setLive(login, isLive, data) {
+  //
+  // Le due fonti non valgono uguale (stream/stato-diretta.js): il giro chiede a
+  // /streams, che una diretta nuova la vede in ritardo, quindi un suo «non
+  // c'e'» chiude solo se ripetuto e lontano dall'ultimo «c'e'». Prima chiudeva
+  // subito: la diretta appena cominciata «finiva» al primo giro e ripartiva al
+  // secondo, con due avvisi e un rapporto vuoto in mezzo.
+  _setLive(login, isLive, data, fonte = 'evento') {
     const ch = String(login || '').toLowerCase();
     if (!ch) return;
+    const stato = dopoSegnale(this._statoDiretta.get(ch), { live: !!isLive, fonte, ora: Date.now() });
+    this._statoDiretta.set(ch, stato);
+    isLive = stato.live;
     const prev = this._liveState.get(ch);
     if (prev === isLive) return;                 // nessun cambiamento: stop
     this._liveState.set(ch, isLive);
@@ -1471,7 +1487,7 @@ export class BotManager {
     const ev = { channel: ch, type: isLive ? 'stream.online' : 'stream.offline', data: data || {} };
     this._dispatchEvent(ev);
     if (isLive) {
-      this._annunciaTwitch(ch).catch((e) => log.error(`avviso live #${ch}:`, e?.message || e));
+      this._annunciaTwitch(ch, data).catch((e) => log.error(`avviso live #${ch}:`, e?.message || e));
       this._storiaDellaDiretta(ch).catch((e) => log.error(`storia della diretta #${ch}:`, e?.message || e));
     } else {
       this._chiudiAvvisi(ch);
@@ -1635,23 +1651,107 @@ export class BotManager {
     const token = dcApi.tokenDi(dcRuoli.get(login));
     const buoni = token ? dest : dest.filter((x) => x.webhook);
     if (!buoni.length) return { inviati: 0 };
-    const esiti = await discord.diffondi(token, buoni, d, { post });
+    // UN RECAPITO PER POSTO: lo stesso avviso nello stesso posto parte una
+    // volta sola, anche dopo un riavvio, e un posto che rifiuta per un errore
+    // che passa riceve al giro dei recapiti, senza ripetere gli altri. Un post
+    // non si chiude mai, e la sua chiave e' il suo indirizzo.
+    const ora = Date.now();
+    const piattaforma = post ? `post-${d.piattaforma}` : String(d.piattaforma || 'twitch');
+    const diretta = post ? (String(d.url || '') || `al:${ora}`) : chiaveDiretta(d, ora);
     let inviati = 0;
-    for (const e of esiti) {
-      if (!e.ok) continue;
-      inviati++;
-      if (!chiudi || !e.dest.chiudi || !e.id) continue;
-      if (chi && chi !== login) dcMsg.segna(login, e.dest.id, chi, e.id);
-      else dcDest.setMsgId(e.dest.id, e.id);
+    for (const t of buoni) {
+      const rec = recapiti.nuovo({ channel: login, trasporto: 'discord', destId: t.id, streamer: chi || login, piattaforma, diretta, dati: { d, post, chiudi }, ora });
+      if (!rec) continue;
+      if (await this._consegnaDiscord(rec, t, token)) inviati++;
     }
     if (inviati) log.info(`Discord: «${evento}» di #${chi} inviato a ${inviati}/${buoni.length} canali di #${login}`);
     return { inviati, totale: buoni.length };
   }
 
+  // Un tentativo di un recapito: arrivato, da ritentare, o perso
+  // (features/recapiti.js decide quale).
+  async _consegnaDiscord(rec, t, token) {
+    const { d, post } = rec.dati || {};
+    const payload = discord.avvisoPer(t, d, { post });
+    const r = await discord.consegna(token, t, payload);
+    const ora = Date.now();
+    if (r.ok) { recapiti.mandato(rec.id, { msgId: r.id, corpo: payload.content, ora }); return true; }
+    const dopo = dopoErrore(rec, r, ora);
+    if (dopo.perso) {
+      recapiti.perso(rec.id, r.errore);
+      log.warn(`Discord: avviso di #${rec.streamer} perso in ${t.canale_nome || t.canale} (#${rec.channel}): ${r.errore}`);
+    } else recapiti.riprova(rec.id, { prossimo: dopo.prossimo, errore: r.errore });
+    return false;
+  }
+
+  // IL GIRO DEI RECAPITI, ogni 30 secondi: ritenta quelli in attesa, riscrive
+  // gli avvisi delle dirette in corso coi dati di adesso, e una volta all'ora
+  // toglie le righe vecchie.
+  async _giroRecapiti() {
+    if (this._recapitiInCorso) return;
+    this._recapitiInCorso = true;
+    try {
+      const ora = Date.now();
+      for (const rec of recapiti.dovuti('discord', ora)) {
+        const t = dcDest.get(rec.channel, rec.dest_id);
+        if (!t || !t.attivo) { recapiti.perso(rec.id, 'il posto è stato spento o tolto'); continue; }
+        const token = dcApi.tokenDi(dcRuoli.get(rec.channel));
+        if (!token && !t.webhook) { recapiti.perso(rec.id, 'manca il token del bot'); continue; }
+        await this._consegnaDiscord(rec, t, token);
+      }
+      await this._aggiornaAvvisiDiscord(ora);
+      if (ora - (this._recapitiPuliti || 0) > 3600_000) { this._recapitiPuliti = ora; recapiti.pulisci(ora - TIENI_MS); }
+    } catch (e) { log.debug('giro dei recapiti:', e?.message || e); }
+    finally { this._recapitiInCorso = false; }
+  }
+
+  // L'AVVISO DI UNA DIRETTA SU TWITCH SI TIENE AGGIORNATO: titolo, gioco,
+  // spettatori, e l'immagine appena Twitch l'ha fatta (avvisi.dalloStream).
+  // Una chiamata a Twitch per streamer, non per posto; se la diretta non e'
+  // piu' quella dell'avviso non si tocca niente: la chiude chi la vede finire.
+  async _aggiornaAvvisiDiscord(ora) {
+    const righe = recapiti.daAggiornare('discord', ora - AGGIORNA_OGNI_MS).filter((r) => r.piattaforma === 'twitch' && !r.dati?.post);
+    const adesso = new Map();
+    for (const rec of righe) {
+      if (!adesso.has(rec.streamer)) adesso.set(rec.streamer, await this.helix.getStream(rec.streamer).catch(() => null));
+      const info = adesso.get(rec.streamer);
+      const prima = rec.dati?.d || {};
+      if (!info || String(info.id || '') !== rec.diretta) { recapiti.aggiornato(rec.id, { dati: rec.dati, ora }); continue; }
+      const d = { ...prima, titolo: info.title || prima.titolo || '', gioco: info.game_name || prima.gioco || '', ...avvisi.dalloStream(info, ora) };
+      const t = dcDest.get(rec.channel, rec.dest_id);
+      const token = dcApi.tokenDi(dcRuoli.get(rec.channel));
+      if (t && (token || t.webhook)) {
+        const r = await discord.aggiornaAvviso(token, t, rec.msg_id, rec.corpo, d);
+        if (!r.ok) log.debug(`aggiorna avviso di #${rec.streamer} in ${t.canale_nome || t.canale}: ${r.errore}`);
+      }
+      recapiti.aggiornato(rec.id, { dati: { ...rec.dati, d }, ora });
+    }
+  }
+
+  // FINE DI UNA DIRETTA, su Discord: si chiudono gli avvisi di QUELLO
+  // streamer su QUELLA piattaforma, e nessun altro. Dove lo streamer non ha
+  // chiesto di chiuderli restano come sono, ma non si aggiornano piu'. Uno
+  // ancora in attesa e' perso: un «e' in diretta» dopo la fine sarebbe falso.
+  async _chiudiDiscord(login, chi, piattaforma) {
+    const token = dcApi.tokenDi(dcRuoli.get(login));
+    let riga = null;
+    for (const rec of recapiti.aperti(login, 'discord', chi, piattaforma)) {
+      if (rec.stato === 'attesa') { recapiti.perso(rec.id, 'la diretta è finita prima'); continue; }
+      const t = dcDest.get(login, rec.dest_id);
+      recapiti.chiuso(rec.id);
+      if (!t?.chiudi || !rec.msg_id || (!token && !t.webhook)) continue;
+      if (riga === null) riga = this._rigaAvviso(login, 'avviso-finita');
+      const nome = chi === login ? (streamers.get(login) || { login }) : { display: rec.dati?.d?.display || chi };
+      const r = await discord.chiudiMessaggio(token, t, rec.msg_id, discord.testoFinita(nome, null, riga));
+      if (r.ok) log.info(`avviso Discord chiuso in ${t.canale_nome || t.canale} (diretta di #${chi} su ${piattaforma} finita)`);
+      else log.warn(`chiudi Discord ${t.canale_nome || t.canale}: ${r.errore}`);
+    }
+  }
+
   // La riga di un avviso, dalla voce del canale, col segno al posto del nome:
   // ogni posto lo stende nel suo formato (features/avvisi.js).
   _rigaAvviso(login, momento, piattaforma = 'twitch') {
-    return voce.di(login, momento, { nome: avvisi.SEGNO_NOME, piattaforma: avvisi.PIATTAFORME[piattaforma]?.nome || 'Twitch' });
+    return voce.di(login, momento, { nome: avvisi.SEGNO_NOME, piattaforma: avvisi.NOME_POSTO[piattaforma] || 'Twitch' });
   }
 
   // Un evento arrivato da un'altra piattaforma (per ora Kick) entra qui.
@@ -1666,7 +1766,11 @@ export class BotManager {
         if (d) await this.annunciaDiretta(d);
         return;
       }
-      if (ev.tipo === 'fine-live') { dirette.dimentica(ev.channel, ev.piattaforma); return; }
+      if (ev.tipo === 'fine-live') {
+        dirette.dimentica(ev.channel, ev.piattaforma);
+        await this._chiudiDiscord(ev.channel, ev.channel, ev.piattaforma);
+        return;
+      }
       // Seguiti e abbonamenti alimentano gli alert a schermo GIA' esistenti:
       // entrano dalla stessa porta degli eventi Twitch (onEvent), tradotti nel
       // loro vocabolario. Cosi' un alert configurato una volta vale per tutte
@@ -1693,15 +1797,24 @@ export class BotManager {
   // Twitch: si prende quello che sa Helix e si passa dalla STESSA strada di
   // tutte le altre piattaforme. Prima aveva un giro suo, e infatti aggiungerne
   // una seconda voleva dire riscriverlo.
-  async _annunciaTwitch(login) {
-    const info = await this.helix.getStream(login).catch(() => null);
+  //
+  // `ev` e' quello che ha visto la diretta per primo: la diretta di /streams se
+  // e' stato il giro, l'evento di Twitch se e' stato lui. L'evento ha sempre
+  // l'id della diretta e del canale, ma non titolo e gioco; /streams nel primo
+  // minuto non sa ancora niente. Titolo e gioco li sa /channels, subito, perche'
+  // li scrive lo streamer prima di partire. Spettatori e immagine solo quando
+  // sono veri (avvisi.dalloStream): poi l'avviso si aggiorna da se'.
+  async _annunciaTwitch(login, ev = null) {
+    const daStreams = ev && ev.title !== undefined ? ev : await this.helix.getStream(login).catch(() => null);
+    const bid = ev?.broadcaster_user_id || daStreams?.user_id || '';
+    const canale = daStreams || !bid ? null : await this.helix.getChannelInfo(bid).catch(() => null);
     const s = streamers.get(login);
     const d = avvisi.diretta({
       piattaforma: 'twitch', login, display: s?.display || login,
-      titolo: info?.title || '', gioco: info?.game_name || '',
-      spettatori: info?.viewer_count ?? null, id: String(info?.id || ''),
+      titolo: daStreams?.title || canale?.title || '', gioco: daStreams?.game_name || canale?.game_name || '',
+      id: String(ev?.id || daStreams?.id || ''),
     });
-    if (d) d.miniatura = (info?.thumbnail_url || '').replace('{width}', '1280').replace('{height}', '720');
+    if (d) Object.assign(d, avvisi.dalloStream(daStreams));
     return this.annunciaDiretta(d);
   }
 
@@ -1776,10 +1889,9 @@ export class BotManager {
           // arrivato solo da una parte.
           const sua = avvisi.diretta({
             piattaforma: 'twitch', login: a.login, display: a.display || a.login,
-            titolo: info?.title || '', gioco: info?.game_name || '',
-            spettatori: info?.viewer_count ?? null, id: streamId,
+            titolo: info?.title || '', gioco: info?.game_name || '', id: streamId,
           });
-          if (info?.thumbnail_url) sua.miniatura = info.thumbnail_url.replace('{width}', '1280').replace('{height}', '720');
+          Object.assign(sua, avvisi.dalloStream(info));
           const r = await this._diffondi(ch, avvisi.eventoDi('twitch'), a.login, sua, {
             chiudi: true,
             messaggioTg: a.messaggio || tgConf.get(ch)?.messaggio || '',
@@ -1818,6 +1930,10 @@ export class BotManager {
         }
       }
       tgMsg.pulisci(login, chi);
+    } catch (e) { log.debug(`chiudi live esterna ${chi} su Telegram:`, e?.message || e); }
+    try {
+      await this._chiudiDiscord(login, chi, 'twitch');
+      // gli avvisi mandati prima dei recapiti: ricordati in discord_msg
       const token = dcApi.tokenDi(dcRuoli.get(login));
       {
         let riga = null;
@@ -1831,7 +1947,7 @@ export class BotManager {
         }
       }
       dcMsg.pulisci(login, chi);
-    } catch (e) { log.debug(`chiudi live esterna ${chi}:`, e?.message || e); }
+    } catch (e) { log.debug(`chiudi live esterna ${chi} su Discord:`, e?.message || e); }
   }
 
 
@@ -1839,11 +1955,14 @@ export class BotManager {
   // ogni canale che l'aveva chiesto. Best-effort e idempotente: se non c'e'
   // niente da togliere, non fa niente. Il bot puo' cancellare i propri messaggi
   // entro 48 ore su Telegram, e i propri sempre su Discord.
+  //
+  // Telegram e Discord si chiudono ognuno per conto suo: prima la parte di
+  // Telegram usciva dalla funzione quando Telegram non c'era, e chi aveva solo
+  // Discord non vedeva mai chiudere l'avviso.
   async _chiudiAvvisi(login) {
     try {
       const conf = tgConf.get(login);
-      if (!conf?.token) return;
-      for (const d of tgDest.lista(login)) {
+      if (conf?.token) for (const d of tgDest.lista(login)) {
         if (!d.msg_id) continue;
         const msgId = d.msg_id;
         tgDest.setMsgId(d.id, '');    // azzera comunque: un solo tentativo per destinazione
@@ -1852,9 +1971,11 @@ export class BotManager {
         if (r.ok) log.info(`avviso Telegram eliminato in ${d.titolo || d.chat_id} (live di #${login} finita)`);
         else log.warn(`elimina Telegram ${d.titolo || d.chat_id}: ${r.errore}`);
       }
-      if (conf.msg_id) tgConf.setMsgId(login, '');
+      if (conf?.msg_id) tgConf.setMsgId(login, '');
     } catch (e) { log.error(`chiudi Telegram #${login}:`, e?.message || e); }
     try {
+      await this._chiudiDiscord(login, login, 'twitch');
+      // gli avvisi mandati prima dei recapiti: ricordati nel posto (msg_id)
       const token = dcApi.tokenDi(dcRuoli.get(login));
       let riga = null;   // la voce sceglie la riga solo se c'e' davvero un avviso da chiudere
       for (const d of dcDest.lista(login)) {
@@ -1898,7 +2019,10 @@ export class BotManager {
         this._tiktokLive.set(s.login, r.live);
         if (prev === undefined) continue;                  // primo giro: solo seed, niente avviso
         if (r.live) this.notificaTikTok(s.login).catch(() => {});
-        else this._chiudiTelegramTikTok(s.login).catch(() => {});   // live TikTok finita: elimina l'avviso
+        else {                                             // live TikTok finita: l'avviso si toglie o si chiude
+          this._chiudiTelegramTikTok(s.login).catch(() => {});
+          this._chiudiDiscord(s.login, s.login, 'tiktok').catch(() => {});
+        }
       }
     } catch (e) { log.error('controllaTikTok:', e?.message || e); }
   }
@@ -2219,7 +2343,7 @@ export class BotManager {
         piattaforma: 'tiktok', login: l, display: s?.display || l,
         titolo: '', gioco: '', spettatori: null, url: tiktok.urlLive(tk.username),
         voce: riga, lingua: linguaChat(l),
-      }).catch(() => {});
+      }, { chiudi: true }).catch(() => {});
       // Telegram (basta che il bot+gruppo siano collegati: indipendente dal
       // toggle "avviso live Twitch"). Cattura il message_id per fissarlo/eliminarlo.
       const conf = tgConf.get(l);
@@ -2347,10 +2471,14 @@ export class BotManager {
       // ogni piattaforma ha il suo evento: cosi «instagram» puo finire in un
       // topic e «youtube» in un altro, come lo streamer ha deciso.
       const ev = ({ instagram: 'ig', tiktok: 'tt', youtube: 'yt' })[piattaforma] || 'yt';
+      // La prima riga dalla voce del canale, nella sua lingua: una per post, la
+      // stessa ai due posti. Se lo streamer ha scritto il suo messaggio, vale
+      // il suo, di qua e di la'.
+      const riga = this._rigaAvviso(l, 'avviso-post', piattaforma);
       const conf = tgConf.get(l);
       if (conf?.token) {
         tgDest.migra(l, conf);
-        const testo = telegram.costruisciMessaggioPost({ login: l, display: s?.display || l }, { piattaforma, titolo, url, messaggio });
+        const testo = telegram.costruisciMessaggioPost({ login: l, display: s?.display || l }, { piattaforma, titolo, url, messaggio, riga });
         const dest = tgDest.perEvento(l, ev, l);
         await telegram.diffondi(conf.token, dest, testo, { anteprima: true }).catch(() => {});
       }
@@ -2359,6 +2487,7 @@ export class BotManager {
       // non quelle che il canale ha per le dirette.
       await this._diffondiDiscord(l, ev, l, {
         piattaforma, login: l, display: s?.display || l, titolo, url, gioco: '', spettatori: null,
+        voce: riga, lingua: linguaChat(l), messaggio,
       }, { post: true }).catch(() => {});
       if (annunciaChat && this.units.has(l) && url) {
         const info = { tiktok: ['🎵', 'TikTok'], instagram: ['📸', 'Instagram'], youtube: ['📺', 'YouTube'] }[piattaforma] || ['📺', 'YouTube'];

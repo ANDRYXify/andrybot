@@ -53,7 +53,9 @@ test('il bot scrive chi e\' in onda, su Twitch e su Kick, e nessun altro', () =>
 });
 
 test('e lo riscrive a ogni cambio, all\'avvio e agli eventi di Kick', () => {
-  const setLive = BOT.slice(BOT.indexOf('  _setLive(login, isLive, data) {'), BOT.indexOf('  _setLive(login, isLive, data) {') + 600);
+  const FIRMA = "  _setLive(login, isLive, data, fonte = 'evento') {";
+  assert.ok(BOT.includes(FIRMA), 'non trovo _setLive');
+  const setLive = BOT.slice(BOT.indexOf(FIRMA), BOT.indexOf(FIRMA) + 900);
   assert.match(setLive, /this\._liveState\.set\(ch, isLive\);\n\s*this\._scriviInOnda\(\);/, 'a ogni cambio vero di stato');
   assert.match(BOT, /async start\(\) \{\n\s*if \(this\.running\) return;\n\s*this\._scriviInOnda\(\);/, 'all\'avvio: un file di un processo morto non deve parlare per quello vivo');
   assert.match(BOT, /if \(ev\.tipo === 'live' \|\| ev\.tipo === 'fine-live'\) this\._scriviInOnda\(\);/);

@@ -366,12 +366,23 @@ export const MESSAGGIO_POST_YT_DEFAULT = '📺 <b>{nome}</b> ha caricato un nuov
 export const MESSAGGIO_POST_TT_DEFAULT = '🎵 <b>{nome}</b> ha un nuovo post su <b>TikTok</b>!\n\n👉 {link}';
 export const MESSAGGIO_POST_IG_DEFAULT = '📸 <b>{nome}</b> ha un nuovo post su <b>Instagram</b>!\n\n{titolo}\n👉 {link}';
 
-export function costruisciMessaggioPost(streamer, { piattaforma, titolo, url, messaggio } = {}) {
+// Il testo di un post nuovo. Il messaggio dello streamer vince; senza, la
+// riga della voce del canale (momento `avviso-post`, nella sua lingua) col nome
+// in grassetto, poi il titolo e il link. I testi di serie qui sopra restano
+// solo per chi chiama senza una riga della voce.
+export function costruisciMessaggioPost(streamer, { piattaforma, titolo, url, messaggio, riga = '' } = {}) {
   const nome = escHtml(streamer?.display || streamer?.login || '');
+  const suo = messaggio && String(messaggio).trim();
+  if (!suo && riga) {
+    const icona = { tiktok: '🎵', instagram: '📸' }[piattaforma] || '📺';
+    const posto = { tiktok: 'TikTok', instagram: 'Instagram' }[piattaforma] || 'YouTube';
+    return [`${icona} ${avvisi.stendiRiga(riga, escHtml, `<b>${nome}</b>`, posto)}`, titolo ? escHtml(titolo) : '', url ? `👉 ${url}` : '']
+      .filter(Boolean).join('\n');
+  }
   const def = piattaforma === 'tiktok' ? MESSAGGIO_POST_TT_DEFAULT
     : piattaforma === 'instagram' ? MESSAGGIO_POST_IG_DEFAULT
     : MESSAGGIO_POST_YT_DEFAULT;
-  const t = (messaggio && String(messaggio).trim()) || def;
+  const t = suo || def;
   return t.replace(/\{(nome|titolo|link)\}/g, (_, k) => (k === 'nome' ? nome : k === 'titolo' ? escHtml(titolo || '') : (url || '')));
 }
 

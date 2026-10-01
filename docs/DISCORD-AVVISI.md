@@ -164,3 +164,111 @@ arriverà mai. Gli eventi diretta restano, perché i suoi amici streammano.
 La carta «Discord — avviso sei in diretta» con il tutorial del webhook è sparita
 dalla scheda Avvisi: non serve più da quando il bot sta dentro il server, e al
 suo posto c'è una riga che porta alla sezione giusta.
+
+## Ottobre 2026: «alcuni avvisi non funzionano benissimo»
+
+Letti dal codice, non indovinati. Sette difetti, e ognuno spiega un «a volte»:
+
+1. **A fine diretta l'avviso non si chiudeva per chi non ha Telegram.** `_chiudiAvvisi`
+   cominciava da Telegram con `if (!conf?.token) return;` dentro la funzione: senza Telegram si
+   usciva prima di arrivare a Discord. L'avviso restava «è in diretta» per sempre.
+2. **Si chiudevano solo le dirette di Twitch, e un avviso solo per posto.** Kick e YouTube
+   finivano senza chiudere niente (`fine-live` dimenticava la diretta e basta), TikTok non
+   ricordava nemmeno il messaggio. E il ricordo era uno per posto (`discord_dest.msg_id`): in
+   diretta su Twitch e su Kick insieme, il secondo avviso cancellava il ricordo del primo.
+3. **La diretta finiva da sola appena cominciata.** Lo stato ha due fonti: l'evento di Twitch,
+   istantaneo, e il giro ogni due minuti, che chiede a `/streams` di Helix. Quel servizio vede
+   una diretta nuova con un minuto e più di ritardo. Se il giro passava in quel minuto, diceva
+   «non c'è», ed era una transizione vera per `_setLive`: avviso chiuso con «ha finito la
+   diretta», rapporto di una serata vuota, un turno tolto ai premi VIP. Al giro dopo la diretta
+   ricompariva e partiva un secondo avviso.
+4. **L'avviso usciva vuoto quando la diretta la vedeva prima l'evento.** `_annunciaTwitch`
+   chiedeva titolo e gioco a `/streams` nello stesso istante, cioè nel minuto in cui non li
+   sa. Senza titolo, senza gioco, e senza l'id della diretta: l'anti-doppione saltava. Se la
+   vedeva prima il giro, l'avviso era completo. Da qui il «alcuni sì, alcuni no».
+5. **L'immagine all'inizio non c'è ancora.** Twitch fa l'anteprima di una diretta dopo
+   qualche minuto: prima, l'indirizzo dà l'immagine grigia di ripiego, e Discord la tiene. E
+   «Spettatori 0» non dice niente a nessuno.
+6. **Un errore di Discord perdeva l'avviso.** Un «troppe richieste» o un Discord che non
+   risponde non si ritentava: se intanto Telegram era andato, la diretta risultava annunciata e
+   Discord restava senza. La strada del webhook non aspettava nemmeno il tempo che Discord chiede.
+7. **I post nuovi su Discord erano sempre in italiano**, con un testo fisso, e ignoravano il
+   messaggio che lo streamer aveva scritto per i post (Telegram lo usava).
+
+### Quando una diretta comincia e quando finisce
+
+Le due fonti non sono uguali, e la regola lo dice:
+
+- **comincia** al primo segnale «c'è», da qualunque fonte;
+- **finisce** con l'evento di fine di Twitch, subito; oppure col giro, solo se il giro non la
+  vede **due volte di fila** e l'ultimo segnale «c'è» ha più di **cinque minuti**.
+
+Così il ritardo dell'inizio e un giro andato a vuoto a metà serata non chiudono niente, e se
+l'evento di fine non arriva (una sottoscrizione caduta) la diretta si chiude lo stesso, qualche
+minuto dopo. La decisione è una funzione pura (`src/stream/stato-diretta.js`): la usa
+`_setLive`, e le prove la provano da sola.
+
+### Cosa dice l'avviso all'inizio
+
+Solo quello che è vero in quel momento:
+
+- l'id della diretta viene dall'evento (`data.id`), che ce l'ha sempre;
+- titolo e gioco vengono da `/channels` di Helix, che li sa subito perché li scrive lo
+  streamer prima di partire; `/streams` serve solo se ha già la diretta;
+- gli spettatori compaiono solo se sono più di zero;
+- l'immagine compare solo se la diretta è partita da almeno cinque minuti (`miniaturaPronta`).
+
+Poi **l'avviso si aggiorna**: ogni dieci minuti, finché la diretta c'è, si riscrive con titolo,
+gioco, spettatori e l'immagine appena c'è. Riscrivere un messaggio non chiama di nuovo nessuno.
+
+### Il recapito
+
+Un avviso è un fatto (chi, su quale piattaforma, quale diretta o quale post). Un **recapito** è
+quel fatto in **un** posto. La tabella `avvisi_recapiti` ne tiene uno per riga, con lo stato:
+
+| stato | vuol dire |
+|---|---|
+| `attesa` | da mandare: al primo tentativo o dopo un errore che passa |
+| `mandato` | arrivato, con l'id del messaggio |
+| `chiuso` | riscritto a diretta finita |
+| `perso` | non arriverà: un errore che non passa (il bot non può scrivere lì, il canale non c'è più, il webhook è stato tolto), o troppo tardi |
+
+Le regole, che stanno nella forma della tabella e non nella buona volontà di chi la usa:
+
+- **uno per posto e per fatto**: la chiave è (canale, trasporto, posto, streamer, piattaforma,
+  diretta), quindi lo stesso avviso non arriva due volte nello stesso posto, nemmeno dopo un
+  riavvio. Senza un id della diretta (TikTok) la chiave è l'istante dell'avviso: meglio
+  avvisare che tacere, come prima;
+- **un errore che passa si ritenta**: dopo 30 secondi, poi il doppio, fino a cinque minuti fra
+  un tentativo e l'altro, per un quarto d'ora. Un posto che ha già ricevuto non riceve di nuovo;
+- **chiudere è per streamer e per piattaforma**: la fine della diretta di Kick chiude gli
+  avvisi di Kick, non quelli di Twitch, e la fine della diretta di un amico chiude i suoi;
+- un recapito ancora in `attesa` quando la diretta finisce diventa `perso`: un «è in diretta»
+  dopo la fine sarebbe falso.
+
+Il giro dei recapiti passa ogni 30 secondi: ritenta quelli in attesa, aggiorna quelli mandati,
+e una volta all'ora toglie quelli più vecchi di una settimana.
+
+Telegram non cambia, salvo una cosa: la sua chiusura e quella di Discord sono indipendenti, e
+nessuna delle due può più impedire l'altra. Il recapito vale anche per lui, ed è il passo
+dopo: ha le stesse due mancanze (un avviso perso a un errore, un ricordo per posto).
+
+### I post nuovi nella lingua del canale
+
+La riga di un post nuovo viene dal frasario (momento `avviso-post`, con `{nome}` e
+`{piattaforma}`), nella lingua e nel tono del canale, a Telegram e a Discord. Sotto, il titolo e
+il link. Se lo streamer ha scritto il suo messaggio per i post, vale il suo, in tutti e due i
+posti.
+
+### Le prove
+
+- `stato-diretta`: l'inizio da qualunque fonte; il giro che non vede la diretta nei primi
+  cinque minuti non la chiude; un giro a vuoto a metà serata non la chiude; due giri a vuoto
+  dopo cinque minuti la chiudono; l'evento di fine la chiude subito.
+- Il recapito: un posto che rifiuta per un errore che passa riceve al tentativo dopo, gli altri
+  una volta sola; un errore che non passa non si ritenta; la fine di Kick chiude Kick e non
+  Twitch; la fine dell'amico chiude solo i suoi; senza Telegram la chiusura arriva lo stesso.
+- L'avviso all'inizio: niente «Spettatori 0», niente immagine prima dei cinque minuti, titolo e
+  gioco anche quando `/streams` non sa ancora niente.
+- Il post: inglese e spagnolo per un canale inglese e spagnolo, il messaggio dello streamer
+  quando c'è.

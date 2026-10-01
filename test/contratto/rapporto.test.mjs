@@ -18,7 +18,7 @@ const APP = leggi('src/web/public/app.js');
 const SRV = leggi('src/web/server.js');
 
 test('il bot: apre all\'online, misura a ogni giro, chiude, salva sempre e poi manda dove serve', () => {
-  const live = BOT.slice(BOT.indexOf('_setLive(login, isLive, data) {'), BOT.indexOf('_rapportoDiretta(login) {'));
+  const live = BOT.slice(BOT.indexOf("_setLive(login, isLive, data, fonte = 'evento') {"), BOT.indexOf('_rapportoDiretta(login) {'));
   assert.ok(live.includes("rapporto.apri(ch, { inizio: Date.parse(data?.started_at) || 0 });"));
   // Chiedere i titoli delle clip a Twitch ha reso il rapporto una cosa che
   // aspetta: percio' parte e si lascia andare, e un errore suo non puo' fermare
@@ -163,13 +163,13 @@ test('il nome del mittente si vede nell\'elenco della posta', () => {
 // e quando quella diretta finiva non c'era niente da chiudere — nessun rapporto,
 // e la serata spariva anche dal conto delle dirette.
 test('un riavvio a diretta accesa non fa sparire la serata', () => {
-  const live = BOT.slice(BOT.indexOf('_setLive(login, isLive, data) {'), BOT.indexOf('_rapportoDiretta(login) {'));
+  const live = BOT.slice(BOT.indexOf("_setLive(login, isLive, data, fonte = 'evento') {"), BOT.indexOf('_rapportoDiretta(login) {'));
   const apre = live.indexOf('rapporto.apri(ch,');
   const esce = live.indexOf('if (prev === undefined) return;');
   assert.ok(apre > 0 && esce > 0, 'le due righe devono esserci tutte e due');
   assert.ok(apre < esce,
     'la contabilita\' della diretta va fatta PRIMA dell\'uscita al primo rilevamento: dopo, un riavvio a diretta accesa la perde');
-  const annuncia = live.indexOf('this._annunciaTwitch(ch)');
+  const annuncia = live.indexOf('this._annunciaTwitch(ch, data)');
   assert.ok(annuncia > esce, 'l\'annuncio invece resta dopo: un riavvio non e\' una transizione, e non si grida due volte');
 });
 

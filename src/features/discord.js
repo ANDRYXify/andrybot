@@ -71,9 +71,10 @@ async function invia(webhook, payload, { voglioIndietro = true } = {}) {
     }
     if (r.status === 204) return { ok: true, id: '' };
     if (r.status === 404 || r.status === 401) return { ok: false, errore: 'webhook inesistente o revocato', morto: true };
-    if (r.status === 429) return { ok: false, errore: 'troppe richieste, riprova tra poco' };
     let d = null; try { d = await r.json(); } catch { /* niente */ }
-    return { ok: false, errore: d?.message || ('HTTP ' + r.status) };
+    // quanto aspettare lo dice Discord: chi ritenta (features/recapiti.js) non aspetta di meno
+    if (r.status === 429) return { ok: false, errore: 'troppe richieste, riprova tra poco', stato: 429, attesa: Math.round((Number(d?.retry_after) || 1) * 1000) };
+    return { ok: false, errore: d?.message || ('HTTP ' + r.status), stato: r.status };
   } catch (e) { log.warn('invia:', e?.message || e); return { ok: false, errore: 'Discord irraggiungibile' }; }
   finally { clearTimeout(to); }
 }
@@ -167,7 +168,7 @@ export async function verifica(webhook) {
 // non fornisce (il gioco, gli spettatori) non diventano uno zero finto: la loro
 // riga semplicemente non compare.
 const COLORI = { twitch: VIOLA, kick: 0x53fc18, youtube: 0xff0000, tiktok: 0x000000 };
-const NOMI = { twitch: 'Twitch', kick: 'Kick', youtube: 'YouTube', tiktok: 'TikTok' };
+const NOMI = { twitch: 'Twitch', kick: 'Kick', youtube: 'YouTube', tiktok: 'TikTok', instagram: 'Instagram' };
 
 // Le etichette del riquadro, nella lingua del canale (`d.lingua`, messa da chi
 // compone l'avviso con linguaChat). Sono etichette, non frasi: una per lingua,
@@ -187,7 +188,7 @@ export function incornicia(d) {
   const r = riquadroDi(d);
   const campi = [];
   if (d?.gioco) campi.push({ name: '🎮 ' + r.gioco, value: String(d.gioco).slice(0, 100), inline: true });
-  if (d?.spettatori != null) campi.push({ name: '👥 ' + r.spettatori, value: String(d.spettatori), inline: true });
+  if (d?.spettatori > 0) campi.push({ name: '👥 ' + r.spettatori, value: String(d.spettatori), inline: true });
 
   const emb = {
     title: `${PIATTAFORME[p]?.icona || '🔴'} ${r.live(d?.display || d?.login, p === 'twitch' ? '' : (NOMI[p] || p))}`,
@@ -244,15 +245,19 @@ export function testoDiretta(d, template = '') {
 
 // UN POST NUOVO NON E' UNA DIRETTA. Niente riquadro, e parole sue: il testo
 // di ogni canale e' scritto per le dirette (di serie dice «è in diretta»), e
-// sopra un video nuovo direbbe una cosa falsa. Stessi segnaposto e stesse
-// regole di composizione della diretta: una riga senza dato sparisce.
-export const TESTO_POST = Object.freeze({
-  youtube: '📺 **{nome}** ha caricato un nuovo video su YouTube\n{titolo}\n{link}',
-  instagram: '📸 **{nome}** ha un nuovo post su Instagram\n{titolo}\n{link}',
-  tiktok: '🎵 **{nome}** ha un nuovo post su TikTok\n{link}',
-});
-export const testoPost = (d) => testoDiretta(d, TESTO_POST[String(d?.piattaforma || '')] || TESTO_POST.youtube)
-  .split('\n').filter((r) => r.trim()).join('\n');
+// sopra un video nuovo direbbe una cosa falsa. La prima riga viene dalla voce
+// del canale (momento `avviso-post`, `d.voce`), nella sua lingua, col nome in
+// grassetto; sotto il titolo e il link, ognuno solo se c'e'. Se lo streamer
+// ha scritto il suo messaggio per i post (`d.messaggio`), vale il suo, con gli
+// stessi segnaposto della diretta.
+const ICONA_POST = { youtube: '📺', instagram: '📸', tiktok: '🎵' };
+export function testoPost(d) {
+  if (d?.messaggio && String(d.messaggio).trim()) return testoDiretta(d, d.messaggio).split('\n').filter((r) => r.trim()).join('\n');
+  const p = String(d?.piattaforma || 'youtube');
+  const nome = `**${escMd(d?.display || d?.login)}**`;
+  const riga = `${ICONA_POST[p] || '📺'} ${stendiRiga(d?.voce, escMd, nome, NOMI[p] || p)}`;
+  return [riga, d?.titolo ? escMd(d.titolo) : '', d?.url || ''].filter(Boolean).join('\n').slice(0, 1800);
+}
 
 // LO STESSO AVVISO A PIU' CANALI, ognuno col suo testo e il suo ruolo da
 // chiamare. Sequenziale di proposito, come di la': Discord limita la frequenza,
@@ -264,26 +269,39 @@ export const testoPost = (d) => testoDiretta(d, TESTO_POST[String(d?.piattaforma
 // Con `post` e' un post nuovo: niente riquadro e il testo del post, non quello
 // che il canale ha per le dirette.
 export async function diffondi(token, dest, d, { post = false } = {}) {
-  const emb = post ? null : incornicia(d);
   const out = [];
-  for (const t of (dest || [])) {
-    const testo = post ? testoPost(d) : testoDiretta(d, t.messaggio);
-    const ruolo = String(t.ruolo || '').replace(/[^0-9]/g, '');
-    const payload = {
-      content: ((ruolo ? `<@&${ruolo}> ` : '') + testo).slice(0, 1990),
-      allowed_mentions: ruolo ? { roles: [ruolo] } : { parse: [] },
-    };
-    if (emb) payload.embeds = [emb];
-    // Il posto e' un canale del server o un webhook: chi aveva la strada vecchia
-    // continua a ricevere senza aver fatto niente. Cambia solo chi bussa.
-    const r = await (t.webhook
-      ? invia(t.webhook, payload)
-      : api.mandaMessaggio(token, t.canale, payload))
-      .catch((e) => ({ ok: false, errore: e?.message || String(e) }));
-    if (!r.ok) log.warn(`discord → ${t.canale_nome || t.canale}: ${r.errore}`);
-    out.push({ dest: t, ...r });
-  }
+  for (const t of (dest || [])) out.push({ dest: t, ...(await consegna(token, t, avvisoPer(t, d, { post }))) });
   return out;
+}
+
+// Il messaggio di un avviso per UN posto: il suo testo e il suo ruolo.
+export function avvisoPer(t, d, { post = false } = {}) {
+  const testo = post ? testoPost(d) : testoDiretta(d, t?.messaggio);
+  const ruolo = String(t?.ruolo || '').replace(/[^0-9]/g, '');
+  const payload = {
+    content: ((ruolo ? `<@&${ruolo}> ` : '') + testo).slice(0, 1990),
+    allowed_mentions: ruolo ? { roles: [ruolo] } : { parse: [] },
+  };
+  if (!post) payload.embeds = [incornicia(d)];
+  return payload;
+}
+
+// Il posto e' un canale del server o un webhook: chi aveva la strada vecchia
+// continua a ricevere senza aver fatto niente. Cambia solo chi bussa.
+export async function consegna(token, t, payload) {
+  const r = await (t?.webhook
+    ? invia(t.webhook, payload)
+    : api.mandaMessaggio(token, t?.canale, payload))
+    .catch((e) => ({ ok: false, errore: e?.message || String(e) }));
+  if (!r.ok) log.warn(`discord → ${t?.canale_nome || t?.canale}: ${r.errore}`);
+  return r;
+}
+
+// L'AVVISO DI DIRETTA AGGIORNATO: lo stesso testo (la chiamata al ruolo non
+// risuona, riscrivere non chiama nessuno) e il riquadro con i dati di adesso.
+export async function aggiornaAvviso(token, t, msgId, contenuto, d) {
+  const corpo = { content: String(contenuto || '').slice(0, 1990), embeds: [incornicia(d)], allowed_mentions: { parse: [] } };
+  return riscrivi(token, t, msgId, corpo);
 }
 
 // CHIUDERE UN AVVISO: l'avviso non si cancella, si RISCRIVE.
@@ -306,8 +324,13 @@ export function testoFinita(d, quando = null, riga = '') {
 }
 
 export async function chiudiMessaggio(token, dove, msgId, testo = TESTO_FINITA) {
-  if (!msgId) return { ok: false, errore: 'nessun avviso da chiudere' };
   const corpo = { content: String(testo || TESTO_FINITA).slice(0, 1990), embeds: [], allowed_mentions: { parse: [] } };
+  return riscrivi(token, dove, msgId, corpo);
+}
+
+// Riscrivere un messaggio nostro, dal webhook che l'ha scritto o dal bot.
+async function riscrivi(token, dove, msgId, corpo) {
+  if (!msgId) return { ok: false, errore: 'nessun avviso da riscrivere' };
   const wh = String(dove?.webhook || '').trim();
   if (wh) {
     if (!webhookValido(wh)) return { ok: false, errore: 'webhook non valido' };

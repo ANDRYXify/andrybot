@@ -49,6 +49,9 @@ export const PIATTAFORME = {
 };
 
 export const CHIAVI = Object.keys(PIATTAFORME);
+// I nomi di tutti i posti da cui arriva un avviso: le dirette, e i post nuovi
+// (Instagram una diretta non ce l'ha, ma i post si').
+export const NOME_POSTO = Object.freeze({ ...Object.fromEntries(CHIAVI.map((k) => [k, PIATTAFORME[k].nome])), instagram: 'Instagram' });
 export const eventoDi = (piattaforma) => PIATTAFORME[piattaforma]?.evento || '';
 
 // E il contrario. Serve perché la piattaforma di una diretta NON si può ricavare
@@ -79,10 +82,28 @@ export function diretta({ piattaforma, login, display = '', titolo = '', gioco =
     display: display || login,
     titolo: String(titolo || ''),
     gioco: String(gioco || ''),
-    spettatori: Number.isFinite(Number(spettatori)) ? Number(spettatori) : null,
+    // zero spettatori non e' un dato: e Number(null) e' zero, quindi si guarda prima che ci sia
+    spettatori: spettatori != null && Number(spettatori) > 0 ? Number(spettatori) : null,
     url: url || PIATTAFORME[p].url(String(login).toLowerCase()),
     id: String(id || ''),
   };
+}
+
+// SPETTATORI E IMMAGINE, solo quando sono veri. Una diretta appena partita
+// ha zero spettatori, e «Spettatori 0» non dice niente a nessuno. E Twitch fa
+// l'anteprima di una diretta dopo qualche minuto: prima, l'indirizzo da'
+// l'immagine grigia di ripiego, e Discord la tiene per sempre. Quindi
+// l'immagine entra solo dopo MINIATURA_DOPO_MS dall'inizio; l'avviso si
+// riscrive piu' tardi e la prende allora.
+export const MINIATURA_DOPO_MS = 5 * 60_000;
+export function dalloStream(s, ora = Date.now()) {
+  const out = {};
+  const n = Number(s?.viewer_count);
+  if (Number.isFinite(n) && n > 0) out.spettatori = n;
+  const inizio = Date.parse(s?.started_at || '');
+  const u = typeof s?.thumbnail_url === 'string' ? s.thumbnail_url : '';
+  if (u && Number.isFinite(inizio) && ora - inizio >= MINIATURA_DOPO_MS) out.miniatura = u.replace('{width}', '1280').replace('{height}', '720');
+  return out;
 }
 
 // LA PRIMA RIGA DELL'AVVISO la sceglie la voce del canale (momento

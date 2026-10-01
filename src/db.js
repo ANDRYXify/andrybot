@@ -407,6 +407,28 @@ CREATE TABLE IF NOT EXISTS discord_dest (   -- DOVE notificare su Discord: piu c
 );
 CREATE INDEX IF NOT EXISTS idx_dcdest_ch ON discord_dest(channel);
 
+CREATE TABLE IF NOT EXISTS avvisi_recapiti (   -- un avviso in un posto (docs/DISCORD-AVVISI.md, «Il recapito»)
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  channel TEXT NOT NULL,
+  trasporto TEXT NOT NULL,
+  dest_id INTEGER NOT NULL,
+  streamer TEXT NOT NULL,
+  piattaforma TEXT NOT NULL,
+  diretta TEXT NOT NULL,
+  stato TEXT NOT NULL DEFAULT 'attesa',
+  msg_id TEXT NOT NULL DEFAULT '',
+  tentativi INTEGER NOT NULL DEFAULT 0,
+  prossimo INTEGER NOT NULL DEFAULT 0,
+  errore TEXT NOT NULL DEFAULT '',
+  dati TEXT NOT NULL DEFAULT '{}',
+  corpo TEXT NOT NULL DEFAULT '',
+  aggiornato INTEGER NOT NULL DEFAULT 0,
+  ts INTEGER NOT NULL DEFAULT 0,
+  UNIQUE(channel, trasporto, dest_id, streamer, piattaforma, diretta)
+);
+CREATE INDEX IF NOT EXISTS idx_recapiti_stato ON avvisi_recapiti(trasporto, stato, prossimo);
+CREATE INDEX IF NOT EXISTS idx_recapiti_chi ON avvisi_recapiti(channel, trasporto, streamer, piattaforma);
+
 CREATE TABLE IF NOT EXISTS discord_msg (   -- avvisi mandati su Discord: uno per destinazione E per streamer
   channel TEXT NOT NULL,
   dest_id INTEGER NOT NULL,
@@ -3133,6 +3155,52 @@ export const dcMsg = {
     db.prepare('DELETE FROM discord_msg WHERE channel=? AND streamer=?')
       .run(String(channel).toLowerCase(), String(streamer).toLowerCase());
   },
+};
+
+// I RECAPITI: un avviso in un posto, con lo stato (docs/DISCORD-AVVISI.md).
+// La chiave e' la regola: lo stesso avviso, nello stesso posto, una volta sola,
+// anche dopo un riavvio. Chi decide quando ritentare e cosa e' un errore che
+// non passa e' features/recapiti.js; qui si scrive e si legge e basta.
+const _rec = (r) => (r ? { ...r, dati: (() => { try { return JSON.parse(r.dati || '{}'); } catch { return {}; } })() } : null);
+export const recapiti = {
+  // Torna il recapito nuovo, oppure null se c'era gia' (e allora non si manda).
+  nuovo({ channel, trasporto, destId, streamer, piattaforma, diretta, dati = {}, ora = now() }) {
+    const info = db.prepare(`INSERT OR IGNORE INTO avvisi_recapiti (channel, trasporto, dest_id, streamer, piattaforma, diretta, dati, prossimo, ts)
+      VALUES (?,?,?,?,?,?,?,?,?)`)
+      .run(String(channel).toLowerCase(), String(trasporto), Number(destId) || 0, String(streamer).toLowerCase(),
+        String(piattaforma), String(diretta), JSON.stringify(dati || {}), msIntero(ora), msIntero(ora));
+    return info.changes ? _rec(db.prepare('SELECT * FROM avvisi_recapiti WHERE id=?').get(info.lastInsertRowid)) : null;
+  },
+  get(id) { return _rec(db.prepare('SELECT * FROM avvisi_recapiti WHERE id=?').get(Number(id) || 0)); },
+  mandato(id, { msgId = '', corpo = '', ora = now() } = {}) {
+    db.prepare("UPDATE avvisi_recapiti SET stato='mandato', msg_id=?, corpo=?, errore='', aggiornato=? WHERE id=?")
+      .run(String(msgId || ''), String(corpo || ''), msIntero(ora), Number(id) || 0);
+  },
+  riprova(id, { prossimo, errore = '' }) {
+    db.prepare("UPDATE avvisi_recapiti SET stato='attesa', tentativi=tentativi+1, prossimo=?, errore=? WHERE id=?")
+      .run(msIntero(prossimo), String(errore).slice(0, 200), Number(id) || 0);
+  },
+  perso(id, errore = '') {
+    db.prepare("UPDATE avvisi_recapiti SET stato='perso', errore=? WHERE id=?").run(String(errore).slice(0, 200), Number(id) || 0);
+  },
+  chiuso(id) { db.prepare("UPDATE avvisi_recapiti SET stato='chiuso' WHERE id=?").run(Number(id) || 0); },
+  aggiornato(id, { dati, ora = now() }) {
+    db.prepare('UPDATE avvisi_recapiti SET dati=?, aggiornato=? WHERE id=?').run(JSON.stringify(dati || {}), msIntero(ora), Number(id) || 0);
+  },
+  dovuti(trasporto, ora = now()) {
+    return db.prepare("SELECT * FROM avvisi_recapiti WHERE trasporto=? AND stato='attesa' AND prossimo<=? ORDER BY id LIMIT 200")
+      .all(String(trasporto), msIntero(ora)).map(_rec);
+  },
+  daAggiornare(trasporto, primaDi) {
+    return db.prepare("SELECT * FROM avvisi_recapiti WHERE trasporto=? AND stato='mandato' AND msg_id<>'' AND aggiornato<? ORDER BY id LIMIT 200")
+      .all(String(trasporto), msIntero(primaDi)).map(_rec);
+  },
+  // Gli avvisi ancora aperti di una diretta: mandati o in attesa.
+  aperti(channel, trasporto, streamer, piattaforma) {
+    return db.prepare("SELECT * FROM avvisi_recapiti WHERE channel=? AND trasporto=? AND streamer=? AND piattaforma=? AND stato IN ('attesa','mandato')")
+      .all(String(channel).toLowerCase(), String(trasporto), String(streamer).toLowerCase(), String(piattaforma)).map(_rec);
+  },
+  pulisci(primaDi) { return db.prepare('DELETE FROM avvisi_recapiti WHERE ts<?').run(msIntero(primaDi)).changes; },
 };
 
 // Chat e topic che il bot ha visto passare. Serve quando il webhook e acceso:
