@@ -143,20 +143,31 @@ const T404 = {
 
 export const LINGUE_SERVIZIO = ['it', 'en', 'es'];
 
+// LA PAGINA DI QUELLO CHE NON C'E', una sola forma per tutte: la didascalia
+// che spiega, il titolo a pennarello, la nota in coda, le strade in fondo (la
+// prima e' quella accesa). Il 404 del sito e' una di queste; lo e' anche
+// «Qui non c'e' un negozio» (src/features/negozio-pagina.js). Chi ha bisogno di
+// una pagina cosi' la chiede qui, e il vestito non si puo' sbagliare: prima il
+// negozio se n'era fatta una sua, scura e col tasto viola, che sembrava un altro
+// prodotto.
+export function paginaMancante(lingua, { titolo, dida, h1, coda = '', numero = '', vie = [] }) {
+  const l = LINGUE_SERVIZIO.includes(lingua) ? lingua : 'it';
+  return guscio(l, titolo, `  <div class="vignetta">
+    <p class="dida">${esc(dida)}</p>
+    <h1>${esc(h1)}</h1>${coda ? `
+    <p class="dida coda">${esc(coda)}</p>` : ''}${numero ? `
+    <span class="numero">${esc(numero)}</span>` : ''}
+  </div>
+  <div class="vie">${vie.map((v, i) => `
+    <a${i === 0 ? ' class="primo"' : ''} href="${esc(v.href)}">${esc(v.testo)}</a>`).join('')}
+  </div>`);
+}
+
 export function pagina404(lingua = 'it') {
   const l = LINGUE_SERVIZIO.includes(lingua) ? lingua : 'it';
   const t = T404[l];
-  const via = VIA_LINGUA[l];
-  return guscio(l, t.tit, `  <div class="vignetta">
-    <p class="dida">${esc(t.p1)}</p>
-    <h1>${esc(t.h1)}</h1>
-    <p class="dida coda">${esc(t.nota)}</p>
-    <span class="numero">404</span>
-  </div>
-  <div class="vie">
-    <a class="primo" href="${via}">${esc(t.casa)}</a>
-    <a href="/guide">${esc(t.guide)}</a>
-  </div>`);
+  return paginaMancante(l, { titolo: t.tit, dida: t.p1, h1: t.h1, coda: t.nota, numero: '404',
+    vie: [{ href: VIA_LINGUA[l], testo: t.casa }, { href: '/guide', testo: t.guide }] });
 }
 
 // ── MANUTENZIONE ─────────────────────────────────────────────────────────────

@@ -245,6 +245,16 @@ hanno la stessa pagina «qui non c'è un negozio» (404), nella lingua del
 browser e non in quella del canale, che direbbe se il canale esiste. La radice
 di `negozio.socialbot.live` non elenca i negozi: rimanda al sito.
 
+Quella pagina ha la forma e il vestito del 404 del sito: nasce da
+`paginaMancante` in `src/web/pagine-servizio.js` (carta col retino, titolo a
+pennarello, didascalie, tasti a timbro, chiaro e scuro), non da uno stile suo.
+Prima se n'era fatto uno, scuro e col tasto viola, e sembrava un altro prodotto.
+In coda dice «Se il negozio è tuo, lo apri dal pannello: Negozio, poi Articoli»,
+con un tasto per il pannello: è la stessa frase per tutti, quindi non rivela
+niente, e chi apre il proprio negozio chiuso sa subito dove andare.
+`test/unita/negozio-pagina.test.mjs` pretende lo stesso foglio di stile del 404;
+`scripts/verifica-larghezza.mjs` la apre a quattro larghezze di telefono.
+
 ### La porta delle immagini
 
 `/u/<canale>/negozio/media/<id>`, pubblica: niente sessione, niente chiave

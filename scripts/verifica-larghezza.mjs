@@ -303,6 +303,7 @@ const { guscioVetrina } = await import('../src/web/vetrina-vista.js');
 const { pianiPubblici } = await import('../src/features/abbonamenti.js');
 const { paginaIndice, paginaGuida, GUIDE } = await import('../src/web/guide.js');
 const { pagina404 } = await import('../src/web/pagine-servizio.js');
+const { paginaNonCe } = await import('../src/features/negozio-pagina.js');
 const { renderLinkPage } = await import('../src/features/linkpagina.js');
 // La pagina del negozio: gli stessi stili, e la griglia piu' larga (tre colonne)
 // che e' quella che su un telefono si deve stringere da sola.
@@ -332,6 +333,7 @@ const PAGINE = {
   'guida': () => paginaGuida(GUIDE[0].id, 'it'),
   'guida-en': () => paginaGuida(GUIDE[0].id, 'en'),
   'non-trovata': () => pagina404('it'),
+  ...Object.fromEntries(['it', 'es'].map((l) => [`negozio-chiuso-${l}`, () => paginaNonCe(l, '')])),
   ...Object.fromEntries(STILI.map((s) => [`link-${s}`, () => renderLinkPage({ headline: 'Andry', template: s, blocchi: BLOCCHI, tema: {} }, { login: 'prova', display: 'Andry', baseUrl: 'http://127.0.0.1' })])),
   ...Object.fromEntries(['minimal', 'neon', 'brutal', 'pastello'].map((s) => [`negozio-${s}`, () => paginaNegozioEsempio({ template: s, colonne: 3 })])),
   'negozio-es': () => paginaNegozioEsempio({ lingua: 'es', colonne: 2 }),

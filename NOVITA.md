@@ -43,6 +43,9 @@ comandi diversi da quelli della riga italiana.
 
 ## 2026-10-01
 
+- La pagina di un negozio chiuso ha il vestito del sito, come le altre, e a chi il negozio ce l'ha dice dove aprirlo nel pannello. [vai: negozio]
+  en: The page of a closed shop now wears the site's look like the others, and tells shop owners where to open it in the dashboard.
+  es: La página de una tienda cerrada lleva el aspecto del sitio como las demás, y a quien tiene la tienda le dice dónde abrirla en el panel.
 - Nell'anteprima dal vivo di pagina link, donazioni e negozio, «Schermo» mostra la pagina intera dentro il suo riquadro, e la vista scelta resta anche quando cambi tema. [vai: negozio]
   en: In the live preview of the link, donations and shop pages, «Desktop» shows the whole page inside its frame, and the chosen view stays when you change theme.
   es: En la vista previa en directo de las páginas de enlaces, donaciones y tienda, «Pantalla» muestra la página entera dentro de su recuadro, y la vista elegida se queda aunque cambies de tema.

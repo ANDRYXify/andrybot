@@ -25,6 +25,8 @@ import { preferenzeDi, data } from './preferenze.js';
 import { nomeIn } from './comandi-registro.js';
 import { urlCanale, piattaformaDi } from '../identita.js';
 import { viaLegale } from '../web/legali.js';
+import { paginaMancante } from '../web/pagine-servizio.js';
+import { VIA_LINGUA } from '../web/vetrina-vista.js';
 
 const LINGUE = ['it', 'en', 'es'];
 const lin = (l) => (LINGUE.includes(l) ? l : 'it');
@@ -67,9 +69,11 @@ const T = {
     link: (nome) => `I link di ${nome}`,
     canale: (nome, dove) => `${nome} su ${dove}`,
     segnaVuota: 'Qui compaiono gli articoli in vendita: il negozio adesso non ne ha.',
-    nonCe: 'Qui non c\'è un negozio',
-    nonCeTesto: 'L\'indirizzo è sbagliato, oppure questo negozio è chiuso.',
+    nonCe: 'Qui non c’è un negozio',
+    nonCeTesto: 'L’indirizzo è sbagliato, oppure questo negozio è chiuso.',
     nonCeVai: 'Vai a SocialBot',
+    nonCeNota: 'Se il negozio è tuo, lo apri dal pannello: Negozio, poi Articoli.',
+    nonCePannello: 'Apri il pannello',
     tipi: { oggetto: 'Da collezione', effetto: 'Effetto in diretta', modulo: 'Azione in diretta', mano: 'Consegnato in diretta',
       vip: 'VIP su Twitch', discord: 'Ruolo su Discord', musica: 'Canzone in coda', evidenza: 'Messaggio in evidenza' },
   },
@@ -93,9 +97,11 @@ const T = {
     link: (nome) => `${nome}'s links`,
     canale: (nome, dove) => `${nome} on ${dove}`,
     segnaVuota: 'The items on sale show up here: the shop has none right now.',
-    nonCe: 'There\'s no shop here',
+    nonCe: 'There’s no shop here',
     nonCeTesto: 'The address is wrong, or this shop is closed.',
     nonCeVai: 'Go to SocialBot',
+    nonCeNota: 'If the shop is yours, you open it from the dashboard: Shop, then Items.',
+    nonCePannello: 'Open the dashboard',
     tipi: { oggetto: 'Collectible', effetto: 'On-stream effect', modulo: 'On-stream action', mano: 'Delivered on stream',
       vip: 'VIP on Twitch', discord: 'Discord role', musica: 'Song in the queue', evidenza: 'Highlighted message' },
   },
@@ -122,6 +128,8 @@ const T = {
     nonCe: 'Aquí no hay ninguna tienda',
     nonCeTesto: 'La dirección está mal, o esta tienda está cerrada.',
     nonCeVai: 'Ir a SocialBot',
+    nonCeNota: 'Si la tienda es tuya, la abres desde el panel: Tienda, luego Artículos.',
+    nonCePannello: 'Abrir el panel',
     tipi: { oggetto: 'De colección', effetto: 'Efecto en directo', modulo: 'Acción en directo', mano: 'Entregado en directo',
       vip: 'VIP en Twitch', discord: 'Rol en Discord', musica: 'Canción en la cola', evidenza: 'Mensaje destacado' },
   },
@@ -424,38 +432,12 @@ export function linguaDiChiApre(acceptLanguage) {
 
 // «Qui non c'e' un negozio»: la stessa per un canale che non esiste e per uno
 // col negozio chiuso. Non nomina nessun canale e non porta a nessun altro
-// negozio: solo al sito.
+// negozio: solo al sito, e al pannello per chi il negozio ce l'ha (la nota lo
+// dice a tutti allo stesso modo, quindi non rivela niente). Ha la forma e il
+// vestito del 404 del sito (paginaMancante): carta, pennarello, inchiostro.
 export function paginaNonCe(lingua, baseUrl = '') {
   const l = lin(lingua);
   const t = T[l];
-  return `<!DOCTYPE html>
-<html lang="${l}">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>${esc(t.nonCe)} · SocialBot</title>
-<meta name="robots" content="noindex">
-<meta name="theme-color" content="#0f0d16">
-<link rel="icon" href="/icons/icon-192.png?v=9">
-<style>
-  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-  body{min-height:100dvh;display:grid;place-items:center;padding:1.5rem;background:#0f0d16;color:#f4f2fa;
-    font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;line-height:1.5;text-align:center}
-  main{max-width:26rem;display:flex;flex-direction:column;align-items:center;gap:.8rem}
-  svg{color:#a99ed0}
-  h1{font-size:1.6rem;line-height:1.2;letter-spacing:-.02em}
-  p{color:#c9c4d6}
-  a{margin-top:.6rem;display:inline-block;padding:.7rem 1.2rem;border-radius:.8rem;background:#7c5cff;color:#ffffff;text-decoration:none;font-weight:600}
-  a:focus-visible{outline:2px solid #ffffff;outline-offset:3px}
-</style>
-</head>
-<body>
-  <main>
-    ${SEGNAPOSTO.replace('width="40" height="40"', 'width="56" height="56"')}
-    <h1>${esc(t.nonCe)}</h1>
-    <p>${esc(t.nonCeTesto)}</p>
-    <a href="${esc(baseUrl)}/">${esc(t.nonCeVai)}</a>
-  </main>
-</body>
-</html>`;
+  return paginaMancante(l, { titolo: `${t.nonCe} · SocialBot`, dida: t.nonCeTesto, h1: t.nonCe, coda: t.nonCeNota,
+    vie: [{ href: baseUrl + VIA_LINGUA[l], testo: t.nonCeVai }, { href: `${baseUrl}/#negozio`, testo: t.nonCePannello }] });
 }
