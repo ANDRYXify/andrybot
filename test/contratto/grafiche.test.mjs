@@ -185,11 +185,11 @@ test('«Metti nella storia»: tre stati che si vedono, e parte sempre la storia'
 // accendi e a ogni salvataggio. Il modulo si prova in test/unita/storia-ig.
 test('la storia della diretta: la prepara il pannello, la pubblica la diretta, e se non parte si dice', () => {
   const BOT = leggi('src/bot.js');
-  const sl = BOT.slice(BOT.indexOf('  _setLive(login, isLive, data) {'), BOT.indexOf('  async _storiaDellaDiretta(login) {'));
+  const sl = BOT.slice(BOT.indexOf("  _setLive(login, isLive, data, fonte = 'evento') {"), BOT.indexOf('  async _storiaDellaDiretta(login) {'));
   const primo = sl.indexOf('if (prev === undefined) return;');
   const storia = sl.indexOf('this._storiaDellaDiretta(ch)');
   assert.ok(primo > 0 && storia > primo, 'non al primo sguardo dopo un riavvio: solo quando la diretta comincia davvero');
-  const accesa = sl.indexOf('    if (isLive) {\n      this._annunciaTwitch(ch)');
+  const accesa = sl.indexOf('    if (isLive) {\n      this._annunciaTwitch(ch, data)');
   const quando = sl.slice(accesa, sl.indexOf('    } else {', accesa));
   assert.ok(accesa > 0 && quando.includes('this._storiaDellaDiretta(ch)'), 'e solo quando comincia, non quando finisce');
   const sd = BOT.slice(BOT.indexOf('  async _storiaDellaDiretta(login) {'), BOT.indexOf('  // A diretta finita, il rapporto in privato'));
