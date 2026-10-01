@@ -398,7 +398,9 @@ test('la pagina delle donazioni: stessa forma, altro tavolo, stesso editor; le o
   const dati = { modo: 'conto', mezzi: ['stripe'], link: '', importi: [2, 5], minimo: 1, massimo: 500, livelli: [{ da: 5, nome: 'Applauso', effetto: 'effetto:clap' }, { da: 20, nome: '', effetto: '' }], conMessaggio: true, etichetta: 'Dona', messaggio: '', valuta: 'EUR', goal: null };
   const sulla = renderLinkPage(base, { ...opz, sostieni: dati, dona: true });
   assert.ok(sulla.includes('<input type="hidden" name="pagina" value="dona">'), 'sulla pagina delle donazioni il modulo dice da dove torna');
-  assert.ok(sulla.includes('<span>5 € · Applauso</span>') && sulla.includes('<span>20 €</span>') && !sulla.includes('<span>2 €</span>'), 'le offerte al posto degli importi suggeriti');
+  // ogni pillola porta la sua «v» disegnata, che si vede quando e' scelta
+  const pillola = (t) => new RegExp('<span><svg class="sost-v"[^>]*><path d="[^"]+"/></svg>' + t + '</span>');
+  assert.ok(pillola('5 € · Applauso').test(sulla) && pillola('20 €').test(sulla) && !pillola('2 €').test(sulla), 'le offerte al posto degli importi suggeriti');
   const link = renderLinkPage({ ...base, blocchi: [{ tipo: 'sostieni', pagina: true }] }, { ...opz, sostieni: dati });
   assert.ok(link.includes('<a class="voce spicca sost-b" href="/dona/x">') && !link.includes('<form class="sost-f"'), 'sulla pagina link, se lo streamer vuole, il tasto porta alla pagina delle donazioni');
   assert.ok(!renderLinkPage({ ...base, blocchi: [{ tipo: 'sostieni', pagina: true }] }, { ...opz, sostieni: dati, dona: true }).includes('href="/dona/x"'), 'ma sulla pagina delle donazioni il rimando non ha senso: resta il modulo');

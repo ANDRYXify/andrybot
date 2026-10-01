@@ -41,6 +41,9 @@
 // HA IL SUO DISEGNO: due riquadri uguali nella stessa pagina sono due semi
 // uguali, e si vedono.
 //
+// LE PAGINE PUBBLICHE: nessuna casella del sistema in vista, e sulla pagina
+// delle donazioni la pillola scelta porta la sua «v» disegnata (sotto).
+//
 // LA HOME. Le caselle del configuratore hanno il disegno del pannello, scritto
 // dal server con lo stesso file: si misura che arrivi intero (1,65rem, centrato
 // sulla casella, mai stretto dalla regola generale delle immagini), che il
@@ -222,13 +225,51 @@ const MISURA_CASA = `(() => {
   return { misurate: righe.length, rotte };
 })()`;
 
-const sito = await apriSito({ piani: pianiPubblici() });
+// LE PAGINE PUBBLICHE. Sulla pagina delle donazioni l'importo si sceglie con
+// le pillole: il pallino vero e' nascosto, e la pillola scelta porta la sua «v»
+// disegnata (docs/DISEGNO.md, «Le spunte»). Si misura che nessuna casella del
+// sistema resti in vista, che ogni pillola abbia la sua «v», diversa dalle
+// altre, che la «v» ci sia solo sulla scelta, che stia dentro la pillola e non
+// copra l'importo. Poi si sceglie un'altra pillola e la «v» deve seguirla.
+const { paginaDonaEsempio } = await import('./_dona-esempio.mjs');
+const { paginaNegozioEsempio } = await import('./_negozio-esempio.mjs');
+const PUBBLICHE = {
+  '/prova-dona-minimal': () => paginaDonaEsempio({ template: 'minimal' }),
+  '/prova-dona-neon': () => paginaDonaEsempio({ template: 'neon' }),
+  '/prova-negozio': () => paginaNegozioEsempio({ colonne: 3 }),
+};
+const MISURA_PUBBLICA = `(() => {
+  const rotte = [];
+  const vede = (el) => { const s = getComputedStyle(el), r = el.getBoundingClientRect(); return s.display !== 'none' && s.visibility !== 'hidden' && Number(s.opacity) > 0.05 && r.width >= 6 && r.height >= 6 && !el.closest('[hidden]'); };
+  for (const i of document.querySelectorAll('input[type="checkbox"], input[type="radio"]')) {
+    if (vede(i) && !i.classList.contains('sp-disegnata')) rotte.push('una casella del sistema in vista: «' + (i.name || i.id || i.type) + '»');
+  }
+  const pillole = [...document.querySelectorAll('.sost-c')];
+  const vu = new Set();
+  for (const l of pillole) {
+    const i = l.querySelector('input'), sp = l.querySelector('span'), v = l.querySelector('.sost-v');
+    const testo = sp.textContent.trim();
+    if (!v) { rotte.push('pillola senza la sua «v»: «' + testo + '»'); continue; }
+    const d = v.querySelector('path').getAttribute('d');
+    if (vu.has(d)) rotte.push('due pillole con la stessa «v»: «' + testo + '»');
+    vu.add(d);
+    if ((getComputedStyle(v).clipPath === 'inset(0px)') !== i.checked) rotte.push('la «v» non dice la scelta: «' + testo + '»');
+    const a = sp.getBoundingClientRect(), q = v.getBoundingClientRect();
+    if (q.left < a.left - 0.5 || q.right > a.right + 0.5 || q.top < a.top - 0.5 || q.bottom > a.bottom + 0.5) rotte.push('la «v» esce dalla pillola: «' + testo + '»');
+    const t = [...sp.childNodes].find((n) => n.nodeType === 3 && n.textContent.trim());
+    if (t) { const r = document.createRange(); r.selectNodeContents(t); if (q.right > r.getBoundingClientRect().left + 0.5) rotte.push('la «v» copre l\\'importo: «' + testo + '»'); }
+  }
+  return { pillole: pillole.length, rotte };
+})()`;
+
+const sito = await apriSito({ piani: pianiPubblici(), rotte: (req, res, q) => { const f = PUBBLICHE[q]; if (!f) return false; res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' }); res.end(f()); return true; } });
 const br = await apriBrowser();
 if (!br) { console.log('Playwright non c\'e\': salto.'); sito.chiudi(); process.exit(0); }
 const rotte = [];
 const guai = [];
 let misurate = 0;
 let caselleCasa = 0;
+let pillole = 0;
 let schedeViste = 0;
 try {
   for (const [w, h, telefono] of LARGHEZZE) {
@@ -253,6 +294,26 @@ try {
       schedeViste++;
       misurate += r.misurate;
       for (const x of r.rotte) rotte.push(`${w}px · ${id}: ${x}`);
+    }
+    for (const via of Object.keys(PUBBLICHE)) {
+      const pg = await ctx.newPage();
+      pg.on('pageerror', (e) => guai.push(e.message));
+      await pg.goto(sito.base + via, { waitUntil: 'load' });
+      if (SELFTEST) {
+        await pg.addStyleTag({ content: '.sost-c .sost-v{clip-path:none!important}' });
+        await pg.evaluate(() => document.body.insertAdjacentHTML('afterbegin', '<label><input type="checkbox" name="prova-nativa"> nativa</label>'));
+      }
+      await pg.waitForTimeout(300);
+      const r1 = await pg.evaluate(MISURA_PUBBLICA);
+      pillole += r1.pillole;
+      for (const x of r1.rotte) rotte.push(`${w}px · ${via}: ${x}`);
+      if (r1.pillole > 1) {
+        await pg.locator('.sost-c').first().click();
+        await pg.waitForTimeout(400);
+        const r2 = await pg.evaluate(MISURA_PUBBLICA);
+        for (const x of r2.rotte) rotte.push(`${w}px · ${via}, scelta un'altra: ${x}`);
+      }
+      await pg.close();
     }
     const casa = await ctx.newPage();
     casa.on('pageerror', (e) => guai.push(e.message));
@@ -348,7 +409,8 @@ try {
   }
   for (const r of rotte.slice(0, 40)) console.log(`  ✗ ${r}`);
   if (rotte.length > 40) console.log(`  … e altre ${rotte.length - 40}`);
-  console.log(`\n${schedeViste} schede aperte (telefono e computer), ${misurate} scelte misurate, e ${caselleCasa} caselle della home.`);
+  console.log(`\n${schedeViste} schede aperte (telefono e computer), ${misurate} scelte misurate, ${caselleCasa} caselle della home e ${pillole} pillole delle pagine pubbliche.`);
+  if (!SELFTEST && !pillole) { rotte.push('nessuna pillola misurata: il cancello non sta guardando le pagine pubbliche'); console.log('  ✗ nessuna pillola misurata'); }
   if (guai.length) console.log('  ✗ la pagina ha errori: ' + [...new Set(guai)].slice(0, 2).join(' · '));
   const pochi = misurate < 100;
   if (pochi) console.log('  ✗ troppo poche scelte misurate: il cancello non sta guardando il pannello');
@@ -359,12 +421,14 @@ try {
     const storta = rotte.some((r) => r.startsWith('1280px') && r.includes('non sta in mezzo alla sua prima riga'));
     const stretta = rotte.some((r) => r.includes('home: il disegno non ha la sua misura'));
     const doppia = rotte.some((r) => r.includes('autoprova: disegno doppio visto'));
-    const vista = inLinea && nativa && storta && stretta && doppia;
+    const pubblica = rotte.some((r) => r.includes('una casella del sistema in vista')) && rotte.some((r) => r.includes('la «v» non dice la scelta'));
+    const vista = inLinea && nativa && storta && stretta && doppia && pubblica;
     console.log(inLinea ? 'Autoprova: la scelta attaccata a un\'altra si vede. ✓' : 'Autoprova: la regola in linea NON e\' stata vista. ✗');
     console.log(nativa ? 'Autoprova: la casella non disegnata si vede. ✓' : 'Autoprova: la casella non disegnata NON e\' stata vista. ✗');
     console.log(storta ? 'Autoprova: la casella piu\' alta delle sue parole si vede. ✓' : 'Autoprova: la casella piu\' alta NON e\' stata vista. ✗');
     console.log(stretta ? 'Autoprova: la «v» della home stretta si vede. ✓' : 'Autoprova: la «v» della home stretta NON e\' stata vista. ✗');
     console.log(doppia ? 'Autoprova: due caselle col disegno uguale si vedono. ✓' : 'Autoprova: due caselle col disegno uguale NON sono state viste. ✗');
+    console.log(pubblica ? 'Autoprova: sulle pagine pubbliche la casella del sistema e la «v» fuori posto si vedono. ✓' : 'Autoprova: sulle pagine pubbliche i difetti NON sono stati visti. ✗');
     process.exitCode = vista ? 0 : 1;
   } else {
     console.log(ok ? 'Ogni casella e ogni pallino stanno con le loro parole, disegnati come il resto del sito. ✓' : `${rotte.length} scelte fuori posto.`);

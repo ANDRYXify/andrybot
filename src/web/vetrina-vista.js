@@ -47,14 +47,8 @@ const CASELLA_HOME = (seme) => {
     `<path class="vt-sp-v" stroke-width="${SPF.ORLO}" d="${SPF.compatto(SPF.inchiostro(p.v, 1))}"/></svg>`;
 };
 const SPUNTA = (seme) => {
-  const d = SPF.inchiostro(SPF.forma('checkbox', seme).v, 1);
-  const n = d.match(/-?\d+(?:\.\d+)?/g).map(Number);
-  const xs = n.filter((_, i) => i % 2 === 0), ys = n.filter((_, i) => i % 2 === 1);
-  const m = SPF.ORLO / 2;
-  const x0 = Math.min(...xs) - m, x1 = Math.max(...xs) + m, y0 = Math.min(...ys) - m, y1 = Math.max(...ys) + m;
-  const lato = Math.max(x1 - x0, y1 - y0);
-  const vb = [(x0 + x1 - lato) / 2, (y0 + y1 - lato) / 2, lato, lato].map((v) => Math.round(v * 10) / 10).join(' ');
-  return `<svg viewBox="${vb}" fill="currentColor" stroke="currentColor" stroke-width="${SPF.ORLO}" stroke-linejoin="round" aria-hidden="true"><path d="${SPF.compatto(d)}"/></svg>`;
+  const v = SPF.sola(seme);
+  return `<svg viewBox="${v.scatola}" fill="currentColor" stroke="currentColor" stroke-width="${SPF.ORLO}" stroke-linejoin="round" aria-hidden="true"><path d="${v.d}"/></svg>`;
 };
 
 const ICO = {

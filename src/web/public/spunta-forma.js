@@ -240,5 +240,14 @@
     return s + '</svg>';
   }
 
-  radice.SB_SPUNTA = { LATO: LATO, ORLO: ORLO, PALLINO: PALLINO, CERCHIO: CERCHIO, forma: forma, inchiostro: inchiostro, compatto: compatto, svg: svg };
+  function sola(seme) {
+    var d = inchiostro(forma('checkbox', seme).v, 1);
+    var n = d.match(/-?\d+(?:\.\d+)?/g).map(Number), m = ORLO / 2;
+    var xs = n.filter(function (_, i) { return i % 2 === 0; }), ys = n.filter(function (_, i) { return i % 2 === 1; });
+    var x0 = Math.min.apply(null, xs) - m, x1 = Math.max.apply(null, xs) + m, y0 = Math.min.apply(null, ys) - m, y1 = Math.max.apply(null, ys) + m;
+    var lato = Math.max(x1 - x0, y1 - y0);
+    return { d: compatto(d), scatola: [(x0 + x1 - lato) / 2, (y0 + y1 - lato) / 2, lato, lato].map(cifra).join(' ') };
+  }
+
+  radice.SB_SPUNTA = { LATO: LATO, ORLO: ORLO, PALLINO: PALLINO, CERCHIO: CERCHIO, forma: forma, inchiostro: inchiostro, compatto: compatto, sola: sola, svg: svg };
 })(typeof window !== 'undefined' ? window : globalThis);

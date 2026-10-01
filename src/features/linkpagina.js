@@ -89,6 +89,17 @@ const PILE = {
 // web: e' una scelta di velocita', e vale ancora per tutte tranne questa.
 import { cssPaginaSicuro, LIMITI_LINKPAGE } from '../db.js';
 import { formattaImporto } from './donazioni.js';
+import '../web/public/spunta-forma.js';
+
+// La «v» disegnata a mano, la stessa delle caselle del pannello e della home
+// (docs/DISEGNO.md, «Le spunte»): sulla pagina delle donazioni segna l'importo
+// scelto. Ogni pillola ha la sua, dal suo seme, e prende il colore del testo
+// della pillola, quindi contrasta con qualunque tema.
+const SPF = globalThis.SB_SPUNTA;
+const spuntaPillola = (seme) => {
+  const v = SPF.sola(seme);
+  return `<svg class="sost-v" viewBox="${v.scatola}" stroke-width="${SPF.ORLO}" aria-hidden="true"><path d="${v.d}"/></svg>`;
+};
 
 // I COMMENTI NON ESCONO DA QUI.
 //
@@ -898,7 +909,7 @@ export function renderLinkPage(pagina, { login, display, avatar, baseUrl, antepr
             ? `<a class="voce spicca sost-b" href="${esc(kofi)}" target="_blank" rel="noopener nofollow">${dentro}</a>`
             : `<form class="sost-f"${anteprima ? ' data-anteprima="1"' : ` method="post" action="/dona/${esc(login)}"`}${d.proprio ? ' enctype="multipart/form-data"' : ''}>
           ${dona ? '<input type="hidden" name="pagina" value="dona">' : ''}
-          <div class="sost-chips" role="radiogroup" aria-label="Importo">${scelte.map((s, i) => `<label class="sost-c"><input type="radio" name="importo" value="${s.v}"${i === Math.min(1, scelte.length - 1) ? ' checked' : ''}><span>${esc(s.t)}</span></label>`).join('')}</div>
+          <div class="sost-chips" role="radiogroup" aria-label="Importo">${scelte.map((s, i) => `<label class="sost-c"><input type="radio" name="importo" value="${s.v}"${i === Math.min(1, scelte.length - 1) ? ' checked' : ''}><span>${spuntaPillola(`importo:${login}:${s.v}`)}${esc(s.t)}</span></label>`).join('')}</div>
           <label class="sost-altro"><span class="sost-l">Oppure</span><input type="number" name="altro" min="${d.minimo}" max="${d.massimo}" step="0.5" inputmode="decimal" placeholder="${esc('un altro importo, da ' + cifra(d.minimo))}"></label>
           <input class="sost-i" type="text" name="nome" maxlength="40" placeholder="Il tuo nome (se vuoi)" autocomplete="nickname">
           ${d.conMessaggio ? `<input class="sost-i" type="text" name="messaggio" maxlength="200" placeholder="Un messaggio per la diretta (se vuoi)">` : ''}
@@ -1318,8 +1329,10 @@ ${/* l'icona della scheda e della schermata home: la foto che la pagina mostra
   .sost-chips{display:flex;flex-wrap:wrap;gap:.45rem;justify-content:center}
   .sost-c{position:relative}
   .sost-c input{position:absolute;inset:0;opacity:0;margin:0;cursor:pointer}
-  .sost-c span{display:inline-block;padding:.5rem .95rem;border-radius:999px;border:var(--bw) solid ${c.bordo};background:${c.card};font-weight:var(--pf);font-size:.95rem;font-variant-numeric:tabular-nums}
+  .sost-c span{display:inline-block;position:relative;padding:.5rem 1.3rem;border-radius:999px;border:var(--bw) solid ${c.bordo};background:${c.card};font-weight:var(--pf);font-size:.95rem;font-variant-numeric:tabular-nums}
   .sost-c input:checked+span{background:var(--acc);border-color:var(--acc);color:var(--suacc)}
+  .sost-c .sost-v{position:absolute;left:.3rem;top:50%;width:.85rem;height:.85rem;max-width:none;margin-top:-.425rem;fill:currentColor;stroke:currentColor;stroke-linejoin:round;clip-path:inset(0 100% 0 0);transition:clip-path .15s steps(2)}
+  .sost-c input:checked+span .sost-v{clip-path:inset(0);transition:clip-path .33s steps(4)}
   .sost-c input:focus-visible+span{outline:2px solid var(--acc);outline-offset:2px}
   .sost-i,.sost-altro input{width:100%;padding:.7rem .9rem;border-radius:calc(var(--r) * .7);border:var(--bw) solid ${c.bordo};background:${c.card};color:var(--testo);font:inherit;min-width:0}
   .sost-i::placeholder,.sost-altro input::placeholder{color:var(--tenue)}

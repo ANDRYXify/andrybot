@@ -43,6 +43,9 @@ comandi diversi da quelli della riga italiana.
 
 ## 2026-10-01
 
+- Sulla pagina delle donazioni l'importo scelto si segna con la «v» disegnata a mano, una diversa per ogni importo, nel colore del tuo tema. [vai: donazioni]
+  en: On the donations page, the chosen amount is marked with a hand-drawn check, a different one for each amount, in your theme's color.
+  es: En la página de donaciones, el importe elegido se marca con una «v» dibujada a mano, distinta para cada importe, en el color de tu tema.
 - Ogni casella e ogni pallino ha un disegno suo, diverso da tutti gli altri, come fatto a mano uno per uno: il riquadro un po' storto, la «v» con la sua pressione. [vai: giochi]
   en: Every checkbox and radio button has its own drawing, unlike any other, as if each were drawn by hand: a slightly crooked box, a check with its own pen pressure.
   es: Cada casilla y cada botón de opción tiene su propio dibujo, distinto de todos los demás, como hecho a mano uno a uno: el cuadro algo torcido, la «v» con su presión.

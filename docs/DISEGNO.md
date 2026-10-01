@@ -675,9 +675,18 @@ Guardate da vicino, le prime spunte avevano quattro difetti veri, tutti misurati
 E uno dell'allineamento: in circa 160 righe del pannello la casella stava 3-5
 pixel più in alto delle parole, per l'unità `lh` letta sulla casella.
 
-Le pagine pubbliche degli streamer (pagina link, donazioni, negozio) hanno il
-tema scelto dallo streamer e non portano il disegno del pannello: lì le
-caselle restano col colore del tema.
+**Anche sulle pagine degli streamer.** Grafica coerente vuol dire che tutto
+segue lo stile, anche dove il tema lo sceglie lo streamer. Sulle pagine
+pubbliche (pagina link, donazioni, negozio) l'unica scelta è l'importo delle
+donazioni: pillole col pallino vero nascosto. La pillola scelta porta la sua
+«v» disegnata, dallo stesso file, scritta dal server
+(`spuntaPillola` in `src/features/linkpagina.js`): unica per ogni pillola
+(seme: canale e importo), del colore del testo della pillola, quindi
+contrastata con qualunque tema, nel margine sinistro della pillola. Tutte le
+pillole hanno quel margine, così la «v» entra senza spostare niente e le
+altre restano simmetriche. Si scopre a scatti da sinistra come sulla home. Il
+motore delle caselle non si carica: lì non c'è una casella vera da disegnare,
+e se un giorno ce ne fosse una il cancello delle scelte la vede.
 
 Collaudo: `scripts/verifica-scelte.mjs` pretende che ogni casella e ogni
 pallino visibile, in ogni scheda, al telefono e al computer, sia disegnato, che
@@ -692,7 +701,12 @@ sulla casella, il riquadro un gesto solo, la casella in mezzo alla prima riga
 del nome, la «v» che c'è solo a casella spuntata. L'autoprova toglie il disegno
 a una casella, rimette la casella col carattere dei controlli (la casella torna
 4 pixel più in alto), rimette la regola che stringeva la «v» della home e
-copia il disegno di una casella su un'altra, e vuole vederle tutte rosse.
+copia il disegno di una casella su un'altra, e vuole vederle tutte rosse. Sulle
+pagine pubbliche (donazioni in due temi, negozio) pretende che nessuna casella
+del sistema resti in vista e che ogni pillola abbia la sua «v», diversa dalle
+altre, visibile solo sulla scelta, dentro la pillola e mai sopra l'importo;
+poi sceglie un'altra pillola e la «v» deve seguirla. L'autoprova mette una
+casella del sistema e toglie il ritaglio alla «v», e le vuole rosse.
 
 La geometria ha le sue prove in `test/unita/spunta-forma.test.mjs`, su
 trecento semi: un gesto solo e nessuna coda oltre gli angoli, la «v» centrata
