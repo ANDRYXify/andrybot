@@ -341,3 +341,28 @@ Per rifare il caso del server prima di spingere: si mette un `.env` di prova
 nella radice con dentro le variabili che ha lui, si gira `npm test`, e lo si
 toglie. È l'unico modo di vedere il difetto, perché in sviluppo quel file non
 c'è.
+
+## Le novità di ogni commit, anche dopo
+
+`scripts/verifica-novita.mjs` vuole che ogni commit che tocca `src/` dica cosa
+cambia per chi usa il bot: una riga in `NOVITA.md` nello stesso commit, oppure
+«Novità: nessuna (perché)» nel messaggio.
+
+Due cose che prima lo facevano passare a vuoto, o lo rendevano difficile:
+
+- **Un ramo senza ramo a monte** non confrontava niente. È il caso dei rami di
+  lavoro: i commit muti si scoprivano solo dopo l'unione nel ramo principale.
+  Adesso, senza ramo a monte, il confronto è con `origin/main`.
+- **Un commit già fatto** che si è dimenticato la dichiarazione si poteva
+  sistemare solo riscrivendone il messaggio, cioè riscrivendo la cronologia.
+  Adesso la dichiarazione può stare in una nota attaccata al commit:
+
+  ```
+  git notes add -m "Novità: nessuna (perché)" <sha>
+  ```
+
+  La nota non cambia il commit. Quando si spinge, le note vanno con lui:
+  la cartella da cui si spinge le prende insieme al ramo
+  (`git fetch <repo> main refs/notes/commits:refs/notes/commits`), e il push
+  manda anche `refs/notes/commits`, così la dichiarazione resta accanto al
+  commit anche su GitHub.

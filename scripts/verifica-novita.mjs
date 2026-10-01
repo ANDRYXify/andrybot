@@ -333,17 +333,24 @@ try {
 // accenti si scrivono con l'apostrofo, e una regola che non lo sa boccia chi
 // scrive come si e' sempre scritto qui.
 const SCUSA = /novit[àa]'?\s*:\s*(no|nessuna)\b/i;
+// La dichiarazione puo' stare anche in una NOTA attaccata al commit (git notes,
+// refs/notes/commits). Serve quando un commit gia' fatto se l'e' dimenticata:
+// la nota si aggiunge dopo senza riscrivere il commit, quindi la cronologia
+// resta quella e niente va rifatto. Le note viaggiano col push (vedi
+// docs/COLLAUDO.md), cosi' la dichiarazione resta accanto al commit anche fuori.
+const notaDi = (sha) => { try { return git('notes', 'show', sha); } catch { return ''; } };
 const muti = [];
 for (const sha of daSpingere) {
   const toccati = git('show', '--name-only', '--format=', sha).split('\n').filter(Boolean);
   if (!toccati.some((f) => f.startsWith('src/'))) continue;         // non tocca il prodotto
   if (toccati.includes('NOVITA.md')) continue;                       // lo racconta
   if (SCUSA.test(git('log', '-1', '--format=%B', sha))) continue;    // dichiara che non c'è niente da dire
+  if (SCUSA.test(notaDi(sha))) continue;                             // lo dichiara in una nota, aggiunta dopo
   muti.push(`${sha.slice(0, 8)} ${git('log', '-1', '--format=%s', sha).slice(0, 60)}`);
 }
 dice(muti.length === 0, `commit da spingere che toccano il prodotto: ${daSpingere.length ? daSpingere.length : 'nessuno'}`);
 for (const m of muti) dice(false, `  non dice cosa cambia per chi lo usa: ${m}`);
-if (muti.length) dice(false, '  → aggiungi la riga in NOVITA.md, oppure scrivi «Novità: nessuna (perché)» nel messaggio');
+if (muti.length) dice(false, '  → aggiungi la riga in NOVITA.md, oppure scrivi «Novità: nessuna (perché)» nel messaggio; per un commit gia\' fatto, in una nota: git notes add -m "Novità: nessuna (perché)" <sha>');
 
 const rossi = esiti.filter((e) => !e.ok);
 for (const e of esiti) console.log((e.ok ? '  ✓ ' : '  ✗ ') + e.msg + (e.extra && !e.ok ? `  → ${e.extra}` : ''));
