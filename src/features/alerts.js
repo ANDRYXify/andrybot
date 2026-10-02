@@ -19,7 +19,7 @@ import * as stemmi from './badges.js';
 import * as emote from './emotes.js';
 import { makeLog } from '../logger.js';
 import { formattaImporto, livelloPer } from './donazioni.js';
-import { chiAlertOk } from '../web/stile.js';
+import { chiAlertOk, SUONI_PRESET } from '../web/stile.js';
 import * as effettiEventi from './effetti-eventi.js';
 import { canaleHa } from './accesso.js';
 
@@ -41,7 +41,14 @@ const DEFAULT_TESTO = {
   raid: '{user} è arrivato in raid con {viewers} spettatori!',
   donazione: '{user} ha offerto {importo}! {messaggio}',
 };
-const DEFAULT_SUONO = { follow: 'campanello', sub: 'tada', cheer: 'moneta', raid: 'trombetta', donazione: 'moneta' };
+// Il suono di un alert che non ne ha scelto uno. «nessuno» e' il silenzio,
+// scelto: il vuoto vuol dire «di serie», com'e' sempre stato, e nessuno si
+// ritrova un alert muto. Lo Studio mostra questo stesso suono (un test li tiene
+// uguali).
+export const DEFAULT_SUONO = { follow: 'campanello', sub: 'tada', cheer: 'moneta', raid: 'trombetta', donazione: 'moneta' };
+export const SUONO_MUTO = 'nessuno';
+// L'avviso suona davvero? Un suono vero (caricato o pronto) e il volume sopra zero.
+const suonaAvviso = (p) => !!p && Number(p.volume) > 0 && (!!p.suonoUrl || SUONI_PRESET.has(p.suono));
 // Quando l'avviso parte anche lui, l'effetto dell'evento arriva un attimo dopo:
 // prima si legge chi e' stato, poi si festeggia (come l'effetto di un'offerta).
 const DOPO_AVVISO_MS = 1200;
@@ -126,20 +133,15 @@ export class AlertsEngine {
         this._effettoTreno(channel, type, data);
         return;
       }
-      const kind = MAPPA[type];
-      if (!kind) return;
-      const s = this.cfg(channel);
-      const vars = this._vars(data);
+      const sc = this._scenaEvento(this.cfg(channel), type, data);
+      if (!sc) return;
+      const { kind, vars, regalo } = sc;
       // widget persistenti: si aggiornano a prescindere dall'alert
       if (kind === 'follow') this._aggiornaWidget(channel, 'ultimoFollower', vars.user);
       if (kind === 'sub') this._aggiornaWidget(channel, 'ultimoSub', vars.user);
-      // I SUB REGALATI ARRIVANO DUE VOLTE. Twitch manda un `channel.subscribe`
-      // per OGNI abbonamento regalato, piu' un `channel.subscription.gift` per
-      // la raffica: contarli tutti e due vuol dire contare venti regali
-      // ventuno volte. L'annuncio della raffica serve all'alert, non al conto.
-      const regalo = type === 'channel.subscription.gift';
-      // l'obiettivo conta gli eventi veri, non una stima: passano tutti di qui
-      if (!regalo) this._contaGoal(channel, kind, kind === 'cheer' ? Number(vars.bits) || 0 : 1);
+      // l'obiettivo conta gli eventi veri, non una stima: passano tutti di qui.
+      // La raffica dei regali no (vedi _scenaEvento): ogni regalo e' gia' un sub.
+      if (!regalo) sc.obiettivo = this._contaGoal(channel, kind, kind === 'cheer' ? Number(vars.bits) || 0 : 1);
       // il subathon allunga il conto alla rovescia, se lo streamer lo ha acceso
       if (!regalo && (kind === 'sub' || kind === 'cheer')) {
         subathon.suEvento(channel, {
@@ -148,24 +150,71 @@ export class AlertsEngine {
           chi: vars.user,
         }, { say: this.say, spingi: (ch, fine) => this.effects?.emit?.(ch, { tipo: 'timer', fine }) });
       }
-      // alert
-      const a = s?.alerts;
-      const conf = a && a.attivo !== false ? a[kind] : null;
-      // lo streamer ha scelto l'alert di Twitch: il nostro non parte, ma i
-      // widget, gli obiettivi e la maratona qui sopra hanno gia' contato
-      const avviso = !!conf && conf.attivo !== false && chiAlertOk(kind, conf.chi) !== 'twitch'
-        && !(kind === 'cheer' && Number(vars.bits) < (Number(conf.minBits) || 0))
-        && !(kind === 'raid' && Number(vars.viewers) < (Number(conf.minViewers) || 0));
-      // L'EFFETTO DELL'EVENTO non dipende dall'alert: parte anche quando
-      // l'alert lo mostra Twitch, o e' spento. Un sub regalato arriva anche da
-      // solo (`is_gift`), ma il regalo si festeggia una volta, con la raffica.
-      if (!(type === 'channel.subscribe' && data?.is_gift === true)) {
-        const evento = regalo ? 'regalo' : kind;
-        const quanto = { follow: null, sub: Number(vars.mesi) || 1, regalo: Number(data?.total) || 1, cheer: Number(vars.bits) || 0, raid: Number(vars.viewers) || 0 }[evento];
-        this._effettoEvento(channel, evento, quanto, avviso ? DOPO_AVVISO_MS : 0);
-      }
-      if (avviso) this._spara(channel, a, kind, conf, vars);
+      this._vaInOnda(channel, sc);
     } catch (e) { log.debug('onEvent:', e?.message || e); }
+  }
+
+  // LA SCENA DI UN EVENTO: chi e', quale effetto lo festeggia e se parte il
+  // nostro avviso. Non tocca niente: la usano l'evento vero e la prova, che
+  // cosi' e' l'evento vero meno i conti.
+  _scenaEvento(s, type, data) {
+    const kind = MAPPA[type];
+    if (!kind) return null;
+    const vars = this._vars(data);
+    // I SUB REGALATI ARRIVANO DUE VOLTE. Twitch manda un `channel.subscribe`
+    // per OGNI abbonamento regalato, piu' un `channel.subscription.gift` per
+    // la raffica: contarli tutti e due vuol dire contare venti regali
+    // ventuno volte. L'annuncio della raffica serve all'alert, non al conto;
+    // e il regalo si festeggia una volta, con la raffica.
+    const regalo = type === 'channel.subscription.gift';
+    const a = s?.alerts;
+    const conf = a && a.attivo !== false ? a[kind] : null;
+    // lo streamer ha scelto l'alert di Twitch: il nostro non parte, ma i
+    // widget, gli obiettivi e la maratona hanno contato lo stesso
+    const avviso = !!conf && conf.attivo !== false && chiAlertOk(kind, conf.chi) !== 'twitch'
+      && !(kind === 'cheer' && Number(vars.bits) < (Number(conf.minBits) || 0))
+      && !(kind === 'raid' && Number(vars.viewers) < (Number(conf.minViewers) || 0));
+    const evento = type === 'channel.subscribe' && data?.is_gift === true ? null : (regalo ? 'regalo' : kind);
+    const quanto = evento ? { follow: null, sub: Number(vars.mesi) || 1, regalo: Number(data?.total) || 1, cheer: Number(vars.bits) || 0, raid: Number(vars.viewers) || 0 }[evento] : null;
+    return { kind, vars, regalo, evento, quanto, avviso: avviso ? { a, conf } : null };
+  }
+
+  // LA MESSA IN ONDA: prima l'avviso, poi l'effetto dell'offerta o quello
+  // dell'evento, poi quello dell'obiettivo raggiunto. L'EFFETTO DELL'EVENTO non
+  // dipende dall'alert: parte anche quando l'alert lo mostra Twitch, o e'
+  // spento. Se l'avviso parte, l'effetto arriva un attimo dopo; se l'avviso
+  // suona e lo streamer l'ha chiesto, l'effetto parte senza suono.
+  // `voce` e `prova` li passa solo la prova (le scelte non salvate, senza pausa).
+  _vaInOnda(channel, sc, { voce = null, prova = false } = {}) {
+    const pa = sc.avviso ? this._spara(channel, sc.avviso.a, sc.kind, sc.avviso.conf, sc.vars) : null;
+    const dopo = pa ? DOPO_AVVISO_MS : 0;
+    const offerta = sc.offerta ? this._sparaEffetto(channel, sc.offerta, DOPO_AVVISO_MS) : false;
+    const effetto = sc.evento && !offerta ? this._effettoEvento(channel, sc.evento, sc.quanto, dopo, { voce, prova, alertSuona: suonaAvviso(pa) }) : null;
+    const obiettivo = sc.obiettivo ? this._effettoEvento(channel, 'obiettivo', null, dopo) : null;
+    return { avviso: !!pa, offerta, effetto, obiettivo };
+  }
+
+  // LA PROVA DI UN EVENTO: una scena finta, messa in onda come quella vera, con
+  // le scelte che lo streamer ha davanti, anche non salvate. Niente conti e
+  // niente pausa. Ritorna quello che e' partito, per dirlo nel pannello.
+  provaEvento(channel, evento, quanto, voce = null) {
+    const s = this.cfg(channel) || {};
+    const n = Number(quanto) || 0;
+    const chi = 'MarioRossi';
+    const finto = {
+      follow: ['channel.follow', { user_name: chi }],
+      sub: ['channel.subscription.message', { user_name: chi, cumulative_months: n || 1 }],
+      regalo: ['channel.subscription.gift', { user_name: chi, total: n || 1 }],
+      cheer: ['channel.cheer', { user_name: chi, bits: n }],
+      raid: ['channel.raid', { from_broadcaster_user_name: chi, viewers: n }],
+    }[evento];
+    let sc = null;
+    if (finto) sc = this._scenaEvento(s, finto[0], finto[1]);
+    else if (evento === 'donazione') sc = this._scenaDonazione(s, { importo: n || 1, user: chi, messaggio: 'grande live!' });
+    else if (evento === 'treno') sc = { evento, quanto: n || 1, avviso: null };
+    else if (evento === 'obiettivo') sc = { evento, quanto: null, avviso: null };
+    if (!sc) return null;
+    return this._vaInOnda(channel, sc, { voce, prova: true });
   }
 
   // L'EFFETTO DI UN EVENTO (docs/EFFETTI-SCHERMO.md, «Effetti per gli eventi»):
@@ -174,28 +223,36 @@ export class AlertsEngine {
   // follow, «!coriandoli» non vuol dire niente a chi guarda. E' una funzione
   // degli Effetti: un canale che non li ha piu' nel piano non la usa, anche se
   // le scelte salvate sono rimaste.
-  _effettoEvento(channel, evento, quanto, ritardoMs = 0) {
+  // Ritorna cosa e' successo: { parte, da } o { parte: false, perche }, con
+  // perche' fra piano, spento, vuoto, sotto, pausa, manca e muto.
+  _effettoEvento(channel, evento, quanto, ritardoMs = 0, { voce = null, prova = false, alertSuona = false } = {}) {
     try {
-      if (!this.effects?.emit || !canaleHa(channel, 'effetti')) return false;
-      const voce = effettiEventi.voceDi(this.cfg(channel), evento);
-      const livello = effettiEventi.livelloPer(voce, quanto);
-      if (!livello) return false;
+      if (!this.effects?.emit) return { parte: false, perche: 'manca' };
+      if (!canaleHa(channel, 'effetti')) return { parte: false, perche: 'piano' };
+      const v = voce || effettiEventi.voceDi(this.cfg(channel), evento);
+      if (!v || v.attivo !== true) return { parte: false, perche: 'spento' };
+      const livello = effettiEventi.livelloPer(v, quanto);
+      if (!livello) return { parte: false, perche: v.livelli?.length ? 'sotto' : 'vuoto' };
       const chiave = channel + '|' + evento;
       const ora = Date.now();
-      if (ora < (this._pausaEventi.get(chiave) || 0)) return false;
+      if (!prova && ora < (this._pausaEventi.get(chiave) || 0)) return { parte: false, perche: 'pausa', da: livello.da };
       const e = livello.effetto;
-      let p = null;
+      let p = null, soloSuono = false;
       if (e?.tipo === 'pronto') p = this.effects.payloadDisegno?.(channel, e.disegno, e.volume);
       else if (e?.tipo === 'mio') {
         const eff = effectsDb.get(channel, e.comando);
-        if (eff) p = this.effects.payload(channel, eff);
+        if (eff) { p = this.effects.payload(channel, eff); soloSuono = eff.tipo === 'audio'; }
       }
-      if (!p) return false;
-      this._pausaEventi.set(chiave, ora + (Number(voce.pausa) || 0) * 1000);
-      const manda = () => { try { this.effects.emit(channel, { ...p, comando: '', da: 'evento', evento }); } catch (x) { log.debug('effetto evento:', x?.message || x); } };
+      if (!p) return { parte: false, perche: 'manca', da: livello.da };
+      // senza suono, se l'avviso suona gia': un effetto che e' solo un suono, allora, non parte
+      const muto = alertSuona && v.muto === true;
+      if (muto && soloSuono) return { parte: false, perche: 'muto', da: livello.da };
+      if (!prova) this._pausaEventi.set(chiave, ora + (Number(v.pausa) || 0) * 1000);
+      const q = { ...p, comando: '', da: 'evento', evento, ...(muto ? { volume: 0 } : {}) };
+      const manda = () => { try { this.effects.emit(channel, q); } catch (x) { log.debug('effetto evento:', x?.message || x); } };
       if (ritardoMs > 0) setTimeout(manda, ritardoMs).unref?.(); else manda();
-      return true;
-    } catch (x) { log.debug('effetto evento:', x?.message || x); return false; }
+      return { parte: true, da: livello.da, muto };
+    } catch (x) { log.debug('effetto evento:', x?.message || x); return { parte: false, perche: 'manca' }; }
   }
 
   // Il treno festeggia quando parte e ogni volta che sale di livello. Il
@@ -226,29 +283,17 @@ export class AlertsEngine {
     try {
       const s = this.cfg(channel);
       if (!s || !d) return false;
-      const importo = Math.round((Number(d.importo) || 0) * 100) / 100;
-      if (importo <= 0) return false;
-      const cfgD = s.donazioni || {};
-      const valutaCanale = cfgD.valuta || 'EUR';
-      const valuta = d.valuta || valutaCanale;
-      const stessa = valuta === valutaCanale;
-      const vars = { user: d.user || 'qualcuno', importo: formattaImporto(importo, valuta), messaggio: d.messaggio || '' };
+      const sc = this._scenaDonazione(s, d, { soloAvviso });
+      if (!sc) return false;
+      const { importo, stessa, vars } = sc;
       if (!soloAvviso && stessa) {
-        this._contaGoal(channel, 'donazione', importo);
+        sc.obiettivo = this._contaGoal(channel, 'donazione', importo);
         subathon.suEvento(channel, { tipo: 'euro', quanti: importo, chi: vars.user },
           { say: this.say, spingi: (ch, fine) => this.effects?.emit?.(ch, { tipo: 'timer', fine }) });
       }
-      const a = s.alerts;
-      const conf = a && a.attivo !== false ? a.donazione : null;
-      const avviso = !!conf && conf.attivo !== false && (soloAvviso || !stessa || importo >= (Number(conf.minImporto) || 0));
-      if (avviso) this._spara(channel, a, 'donazione', conf, vars);
+      this._vaInOnda(channel, sc);
+      const cfgD = s.donazioni || {};
       if (!soloAvviso && cfgD.annunciaChat && this.say) this.say(channel, riempi(cfgD.testoChat || 'Grazie {user} per {importo}!', vars));
-      // l'offerta raggiunta accende il suo effetto, un attimo dopo l'avviso
-      let offerta = false;
-      if (!soloAvviso && stessa) { const liv = livelloPer(cfgD.livelli, importo); if (liv?.effetto) offerta = this._sparaEffetto(channel, liv.effetto, DOPO_AVVISO_MS); }
-      // Senza l'effetto di un'offerta, quello dell'evento. In un'altra valuta
-      // l'importo non si confronta coi livelli: parte il primo.
-      if (!soloAvviso && !offerta) this._effettoEvento(channel, 'donazione', stessa ? importo : null, avviso ? DOPO_AVVISO_MS : 0);
       // il muro delle emote, dalla soglia in su: nella valuta del canale, come l'obiettivo
       if (!soloAvviso && stessa) { try { this.muro?.suDono(channel, importo); } catch { /* il muro e' un di piu' */ } }
       log.info(`donazione su #${channel}: ${vars.importo} da ${vars.user}`);
@@ -256,24 +301,55 @@ export class AlertsEngine {
     } catch (e) { log.debug('donazione:', e?.message || e); return false; }
   }
 
+  // La scena di una donazione, come _scenaEvento. L'offerta raggiunta accende
+  // il suo effetto, un attimo dopo l'avviso, e allora quello dell'evento no.
+  // In un'altra valuta l'importo non si confronta coi livelli: parte il primo.
+  // `soloAvviso`: si rimanda solo l'avviso, niente effetti.
+  _scenaDonazione(s, d, { soloAvviso = false } = {}) {
+    const importo = Math.round((Number(d.importo) || 0) * 100) / 100;
+    if (importo <= 0) return null;
+    const cfgD = s.donazioni || {};
+    const valutaCanale = cfgD.valuta || 'EUR';
+    const valuta = d.valuta || valutaCanale;
+    const stessa = valuta === valutaCanale;
+    const vars = { user: d.user || 'qualcuno', importo: formattaImporto(importo, valuta), messaggio: d.messaggio || '' };
+    const a = s.alerts;
+    const conf = a && a.attivo !== false ? a.donazione : null;
+    const avviso = !!conf && conf.attivo !== false && (soloAvviso || !stessa || importo >= (Number(conf.minImporto) || 0));
+    const liv = !soloAvviso && stessa ? livelloPer(cfgD.livelli, importo) : null;
+    return { kind: 'donazione', vars, importo, stessa,
+      evento: soloAvviso ? null : 'donazione', quanto: stessa ? importo : null,
+      offerta: liv?.effetto || null, avviso: avviso ? { a, conf } : null };
+  }
+
   // L'OBIETTIVO. Conta gli eventi che lo riguardano e li rende disponibili
   // all'overlay. Il conto sta nelle impostazioni del canale, quindi sopravvive a
   // un riavvio: un obiettivo che si azzera da solo la notte non e' un obiettivo.
+  // Ritorna quanti obiettivi questo evento ha portato al traguardo: il
+  // totale che si vede (partenza + eventi contati) passa l'obiettivo adesso.
+  // Uno raggiunto e poi azzerato, raggiunto di nuovo, conta di nuovo.
   _contaGoal(channel, kind, quanti = 1) {
     try {
       const g = GOAL_DI[kind];
-      if (!g || quanti <= 0) return;
+      if (!g || quanti <= 0) return 0;
       const s = streamers.get(channel);
       const lista = goalDi(s?.settings);
       const tocca = lista.filter((x) => x.attivo !== false && x.tipo === g);
-      if (!tocca.length) return;
+      if (!tocca.length) return 0;
       const stato = { ...(s.settings?.overlayStato || {}) };
       const conti = { ...(stato.goals || {}) };
-      for (const x of tocca) conti[x.id] = Math.round(((Number(conti[x.id]) || 0) + quanti) * 100) / 100;
+      let raggiunti = 0;
+      for (const x of tocca) {
+        const prima = Number(conti[x.id]) || 0;
+        conti[x.id] = Math.round((prima + quanti) * 100) / 100;
+        const base = Number(x.partenza) || 0, meta = Number(x.obiettivo) || 0;
+        if (meta > 0 && base + prima < meta && base + conti[x.id] >= meta) raggiunti++;
+      }
       stato.goals = conti;
       streamers.setSettings(channel, { ...s.settings, overlayStato: stato });
       this.effects?.emit?.(channel, { tipo: 'goal', goals: lista, conti });
-    } catch (e) { log.debug('goal:', e?.message || e); }
+      return raggiunti;
+    } catch (e) { log.debug('goal:', e?.message || e); return 0; }
   }
 
   // IL CONTO ALLA ROVESCIA. Non si tiene un contatore che scorre: si scrive
@@ -390,7 +466,7 @@ export class AlertsEngine {
       const sfx = this._risolviEffetto(channel, conf.suono);
       if (sfx && sfx.tipo === 'audio') payload.suonoUrl = sfx.url;    // altrimenti: niente suono
     } else {
-      payload.suono = conf.suono || DEFAULT_SUONO[kind] || '';
+      payload.suono = conf.suono === SUONO_MUTO ? '' : (conf.suono || DEFAULT_SUONO[kind] || '');
     }
     // ICONA: la chiave di una icona della libreria, oppure un'immagine caricata.
     payload.icona = conf.icona != null ? String(conf.icona) : undefined;
@@ -405,6 +481,7 @@ export class AlertsEngine {
     }
     this.effects?.emit?.(channel, payload);
     log.debug(`alert ${kind} su #${channel}`);
+    return payload;
   }
 
   // Registra lo stato del widget e lo spinge subito nell'overlay.

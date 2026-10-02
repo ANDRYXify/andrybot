@@ -943,19 +943,30 @@ const _demoScritture = {};
 const _DEMO_EVENTI = [
   { id: 'follow', quanto: null, pausa: 10 }, { id: 'sub', quanto: 'mesi', pausa: 0 }, { id: 'regalo', quanto: 'quanti', pausa: 0 },
   { id: 'cheer', quanto: 'bit', pausa: 0 }, { id: 'raid', quanto: 'spettatori', pausa: 0 }, { id: 'donazione', quanto: 'importo', pausa: 0 },
-  { id: 'treno', quanto: 'livello', pausa: 0 },
+  { id: 'treno', quanto: 'livello', pausa: 0 }, { id: 'obiettivo', quanto: null, pausa: 0 },
 ];
 const _DEMO_LIMITI_EVENTI = { livelli: 5, da: 1000000, pausa: 600 };
 
 function _demoEventiBase() {
   const pronto = (nome, suono = '') => ({ tipo: 'pronto', disegno: { ...(window.SB_DISEGNATI ? window.SB_DISEGNATI.parametri({ nome }) : { nome, colori: ['#ffffff'], quanti: 'normale', durata: 6 }), suono }, volume: 80 });
-  const voci = Object.fromEntries(_DEMO_EVENTI.map((e) => [e.id, { attivo: false, pausa: e.pausa, livelli: [] }]));
+  const voci = Object.fromEntries(_DEMO_EVENTI.map((e) => [e.id, { attivo: false, pausa: e.pausa, muto: false, livelli: [] }]));
   voci.follow = { attivo: true, pausa: 10, livelli: [{ da: 0, effetto: pronto('cuori', 'campanello') }] };
   voci.cheer = { attivo: true, pausa: 0, livelli: [{ da: 100, effetto: pronto('coriandoli') }, { da: 1000, effetto: pronto('fuochi', 'tada') }] };
   return { voci };
 }
 
 function _demoEventi(via, metodo, b) {
+  if (via.endsWith('/prova-evento')) {
+    const v = b?.voce || {}, evento = String(b?.evento || ''), n = Number(b?.quanto) || 0;
+    const al = EE_ALERT[evento];
+    const conf = al ? (stato?.streamer?.settings?.alerts || {})[al] : null;
+    const conta = _DEMO_EVENTI.find((e) => e.id === evento)?.quanto;
+    const livelli = Array.isArray(v.livelli) ? v.livelli : [];
+    let l = conta ? null : livelli[0];
+    if (conta) for (const x of livelli) if (n >= x.da) l = x;
+    const effetto = v.attivo !== true ? { parte: false, perche: 'spento' } : !livelli.length ? { parte: false, perche: 'vuoto' } : l ? { parte: true, da: l.da, muto: false } : { parte: false, perche: 'sotto' };
+    return { ok: true, esito: { avviso: !!conf && conf.attivo !== false, offerta: false, effetto, obiettivo: null } };
+  }
   if (via.endsWith('/prova')) { toast(L('In demo l\'overlay non c\'è: dal vivo l\'effetto parte lì.', 'There is no overlay in the demo: live, the effect plays there.', 'En la demo no hay overlay: en directo el efecto sale allí.')); return { ok: true }; }
   if (metodo === 'POST') {
     const x = b?.effettiEventi?.voci || {};
@@ -964,12 +975,14 @@ function _demoEventi(via, metodo, b) {
       const per = new Map();
       for (const l of Array.isArray(v.livelli) ? v.livelli : []) if (l?.effetto && (l.effetto.tipo === 'pronto' || l.effetto.comando)) per.set(e.quanto ? Math.max(0, Math.round(Number(l.da) || 0)) : 0, l.effetto);
       const livelli = [...per.entries()].sort((p, q) => p[0] - q[0]).slice(0, e.quanto ? 5 : 1).map(([da, effetto]) => ({ da, effetto: JSON.parse(JSON.stringify(effetto)) }));
-      return [e.id, { attivo: v.attivo === true, pausa: Math.max(0, Math.min(600, Math.round(Number(v.pausa) || 0))), livelli }];
+      return [e.id, { attivo: v.attivo === true, pausa: Math.max(0, Math.min(600, Math.round(Number(v.pausa) || 0))), muto: v.muto === true, livelli }];
     })) };
     return { ok: true, effettiEventi: _demoScritture.effettiEventi };
   }
   const effetti = (_demoScritture.effetti || _demoGet('/api/streamer/effetti').effetti || []).map((e) => ({ comando: e.comando, tipo: e.tipo }));
-  return { eventi: _DEMO_EVENTI, limiti: _DEMO_LIMITI_EVENTI, effettiEventi: _demoScritture.effettiEventi || _demoEventiBase(), effetti };
+  const ov = _demoScritture.overlays || _demoGet('/api/streamer/overlays').overlays || [];
+  const inVista = !ov.length || ov.some((o) => o?.mostra?.effetti !== false || (Array.isArray(o?.occasioni) && o.occasioni.some((c) => c?.mostra?.effetti === true)));
+  return { eventi: _DEMO_EVENTI, limiti: _DEMO_LIMITI_EVENTI, effettiEventi: _demoScritture.effettiEventi || _demoEventiBase(), effetti, inVista };
 }
 
 const LIB_DEMO = [
@@ -11287,9 +11300,11 @@ async function _penPremi() {
   montaPicker(boxS, { campo: 'premioSolo', hiddenId: 'pen-premio-solo', attuale: d.premioSolo, titolo: L('Usa solo la parola', 'Use only the word', 'Usa solo la palabra'), nomeDefault: L('Dì solo questa parola', 'Say only this word', 'Di solo esta palabra') });
 }
 
+const SUONO_ALERT_SERIE = { follow: 'campanello', sub: 'tada', cheer: 'moneta', raid: 'trombetta', donazione: 'moneta' };
+const _suonoAlertMostrato = (kind, suono) => suono || SUONO_ALERT_SERIE[kind] || 'nessuno';
 function opzioniSuono(sel) {
   const lista = (window.SUONI_PRESET && window.SUONI_PRESET.lista) || [];
-  return ['<option value="">— nessun suono —</option>']
+  return [`<option value="nessuno"${sel === 'nessuno' ? ' selected' : ''}>${L('Nessun suono', 'No sound', 'Sin sonido')}</option>`]
     .concat(lista.map((s) => `<option value="${esc(s.id)}"${s.id === sel ? ' selected' : ''}>${esc(s.nome)}</option>`)).join('');
 }
 
@@ -11336,7 +11351,7 @@ function popolaMediaSuoniAlert(effetti, alertsCfg) {
   document.querySelectorAll('.alert-blocco[data-alert]').forEach((b) => {
     const c = a[b.dataset.alert] || {};
     const selS = b.querySelector('.al-suono');
-    if (selS) { selS.innerHTML = opzioniSuono('') + gruppoAudio; selS.value = c.suono || ''; }
+    if (selS) { selS.innerHTML = opzioniSuono('') + gruppoAudio; selS.value = _suonoAlertMostrato(b.dataset.alert, c.suono); }
     const selM = b.querySelector('.al-media');
     if (selM) { selM.innerHTML = optMedia; selM.value = c.media || ''; }
     const selI = b.querySelector('.al-icona');
@@ -11502,7 +11517,7 @@ function bloccoAlert(t, a) {
       <div class="al-media-wrap spazio-sopra">
         <div class="al-slot">
           <label class="campo">${_bIco(ICO.altoparlante)}${L('Suono', 'Sound', 'Sonido')}</label>
-          <select class="al-suono" aria-label="${esc(L('Suono di', 'Sound of', 'Sonido de') + ' ' + t.nome)}">${opzioniSuono(c.suono || '')}</select>
+          <select class="al-suono" aria-label="${esc(L('Suono di', 'Sound of', 'Sonido de') + ' ' + t.nome)}">${opzioniSuono(_suonoAlertMostrato(t.key, c.suono))}</select>
           <div class="al-carica">
             <input type="file" class="al-up al-up-suono" accept="audio/*" data-slot="suono" hidden>
             <button type="button" class="btn secondario mini al-btn-up" data-slot="suono">${_bIco(ICO.carica)}${L('Carica un suono tuo', 'Upload your own sound', 'Sube un sonido tuyo')}</button>
@@ -14136,7 +14151,27 @@ function _bancoScegliSeServe() {
   const grp = gruppi.find((d) => d.dataset.grp === nome);
   if (!grp) return;
   for (const d of gruppi) d.open = d === grp;
-  requestAnimationFrame(() => grp.scrollIntoView({ behavior: _menoMoto ? 'auto' : 'smooth', block: 'nearest' }));
+  _quandoFermo(_g('ovl-inspector'), () => _mostraGruppo(grp));
+}
+
+function _quandoFermo(casa, fn, entro = performance.now() + 5000) {
+  const resta = (casa?._finoA || 0) - performance.now();
+  const muove = casa && (casa._cambio || resta > 0 || casa.querySelector('.dg-resta'));
+  if (muove && performance.now() < entro) { setTimeout(() => _quandoFermo(casa, fn, entro), Math.max(16, resta)); return; }
+  requestAnimationFrame(fn);
+}
+
+function _mostraGruppo(grp) {
+  if (!grp.isConnected) return;
+  const moto = _menoMoto ? 'auto' : 'smooth';
+  let sc = grp.parentElement;
+  while (sc && sc !== document.body && !(/(auto|scroll)/.test(getComputedStyle(sc).overflowY) && sc.scrollHeight > sc.clientHeight)) sc = sc.parentElement;
+  if (sc && sc !== document.body) {
+    const cima = sc.getBoundingClientRect().top;
+    const tappo = [...sc.children].filter((c) => getComputedStyle(c).position === 'sticky').reduce((h, c) => Math.max(h, c.getBoundingClientRect().bottom - cima), 0);
+    sc.scrollTo({ top: sc.scrollTop + grp.getBoundingClientRect().top - cima - tappo, behavior: moto });
+  }
+  else grp.querySelector('summary')?.scrollIntoView({ behavior: moto, block: 'start' });
 }
 
 function aFisarmonica(blocco) {
@@ -15995,7 +16030,7 @@ function _riempiConfig(d) {
   document.querySelectorAll('.alert-blocco[data-alert]').forEach((b) => {
     const c = a[b.dataset.alert] || {};
     _impostaEl(b.querySelector('.al-attivo'), c.attivo); _impostaEl(b.querySelector('.al-chi'), c.chi); chiAlertMostra(b); _impostaEl(b.querySelector('.al-testo'), c.testo);
-    _impostaEl(b.querySelector('.al-suono'), c.suono); _impostaEl(b.querySelector('.al-colore'), c.accento || c.colore);
+    _impostaEl(b.querySelector('.al-suono'), _suonoAlertMostrato(b.dataset.alert, c.suono)); _impostaEl(b.querySelector('.al-colore'), c.accento || c.colore);
     _impostaEl(b.querySelector('.al-font'), c.font || ''); _impostaEl(b.querySelector('.al-vol'), c.volume != null ? c.volume : 100);
     const sog = b.querySelector('.al-soglia'); if (sog) _impostaEl(sog, c.minBits != null ? c.minBits : c.minImporto != null ? c.minImporto : c.minViewers);
   });
@@ -20008,7 +20043,8 @@ function pannelloEffetti() {
 
     <div class="carta" id="eventi-effetti-carta" data-zona="eventi">
       <h2>${_hIco(ICO.fulmine)}${L('Effetti per gli eventi', 'Effects for events', 'Efectos para los eventos')}</h2>
-      <p>${L('Un follow, un abbonamento, dei bit, un raid, una donazione, il treno dell\'hype: ognuno può far partire un', 'A follow, a sub, some bits, a raid, a donation, the hype train: each one can play a', 'Un follow, una suscripción, unos bits, un raid, una donación, el tren del hype: cada uno puede lanzar un')} <strong class="primo-piano">${L('effetto a tutto schermo', 'full-screen effect', 'efecto a pantalla completa')}</strong>, ${L('coi suoi colori e il suo suono. Dove c\'è un numero vanno a livelli: più bit, più festa. Parte anche quando l\'alert lo mostra Twitch.', 'with its own colors and sound. Where there is a number they go by levels: more bits, bigger party. It plays even when Twitch shows the alert.', 'con sus colores y su sonido. Donde hay un número van por niveles: más bits, más fiesta. Sale también cuando la alerta la muestra Twitch.')}</p>
+      <p>${L('Un follow, un abbonamento, dei bit, un raid, una donazione, il treno dell\'hype, un obiettivo raggiunto: ognuno può far partire un', 'A follow, a sub, some bits, a raid, a donation, the hype train, a goal reached: each one can play a', 'Un follow, una suscripción, unos bits, un raid, una donación, el tren del hype, un objetivo alcanzado: cada uno puede lanzar un')} <strong class="primo-piano">${L('effetto a tutto schermo', 'full-screen effect', 'efecto a pantalla completa')}</strong>, ${L('coi suoi colori e il suo suono. Dove c\'è un numero vanno a livelli: più bit, più festa. Parte anche quando l\'alert lo mostra Twitch.', 'with its own colors and sound. Where there is a number they go by levels: more bits, bigger party. It plays even when Twitch shows the alert.', 'con sus colores y su sonido. Donde hay un número van por niveles: más bits, más fiesta. Sale también cuando la alerta la muestra Twitch.')}</p>
+      <div id="ee-testa"></div>
       <div id="ee-fogli">${attesaHtml()}</div>
       <p class="spazio-sopra riga-flessibile"><button type="button" class="btn" id="ee-salva">${L('Salva gli effetti degli eventi', 'Save the event effects', 'Guardar los efectos de los eventos')}</button></p>
     </div>
@@ -30356,7 +30392,7 @@ function _prontiModifica(e) {
   document.getElementById('pronti-carta')?.scrollIntoView({ behavior: _menoMoto ? 'auto' : 'smooth', block: 'start' });
 }
 
-const EE_ORDINE = ['follow', 'sub', 'regalo', 'cheer', 'raid', 'donazione', 'treno'];
+const EE_ORDINE = ['follow', 'sub', 'regalo', 'cheer', 'raid', 'donazione', 'treno', 'obiettivo'];
 const EE_NOMI = () => ({
   follow: L('Follow', 'Follows', 'Follows'),
   sub: L('Abbonamenti', 'Subscriptions', 'Suscripciones'),
@@ -30365,17 +30401,21 @@ const EE_NOMI = () => ({
   raid: L('Raid', 'Raids', 'Raids'),
   donazione: L('Donazioni', 'Donations', 'Donaciones'),
   treno: L('Treno dell\'hype', 'Hype train', 'Tren del hype'),
+  obiettivo: L('Obiettivo raggiunto', 'Goal reached', 'Objetivo alcanzado'),
 });
-const EE_PRIMO = { follow: 'cuori', sub: 'stelle', regalo: 'palloncini', cheer: 'coriandoli', raid: 'fuochi', donazione: 'coriandoli', treno: 'fuochi' };
+const EE_PRIMO = { follow: 'cuori', sub: 'stelle', regalo: 'palloncini', cheer: 'coriandoli', raid: 'fuochi', donazione: 'coriandoli', treno: 'fuochi', obiettivo: 'fuochi' };
+const EE_PARTENZA = { follow: [[0, 'cuori']], sub: [[1, 'stelle']], regalo: [[1, 'palloncini']], cheer: [[100, 'coriandoli'], [1000, 'fuochi']],
+  raid: [[1, 'fuochi']], donazione: [[1, 'coriandoli'], [20, 'fuochi']], treno: [[1, 'fuochi']], obiettivo: [[0, 'fuochi']] };
 const EE_SCALA = { sub: [1, 3, 6, 12, 24, 36, 48, 60], regalo: [1, 5, 10, 20, 50, 100], cheer: [100, 500, 1000, 5000, 10000], raid: [1, 10, 50, 100, 500], donazione: [1, 5, 10, 20, 50, 100], treno: [1, 2, 3, 4, 5] };
 const EE_ALERT = { follow: 'follow', sub: 'sub', regalo: 'sub', cheer: 'cheer', raid: 'raid', donazione: 'donazione' };
 
 let _ee = null;
+let _mieiEffetti = [];
 const _eeFermi = {};
 let _eeDaAprire = '';
 
 const _eeN = (n) => Number(n).toLocaleString(L('it-IT', 'en-US', 'es-ES'));
-const _eeConta = (ev) => (_ee?.eventi || []).find((e) => e.id === ev)?.quanto ?? (ev === 'follow' ? null : ev);
+const _eeConta = (ev) => ((_ee?.eventi || _DEMO_EVENTI).find((e) => e.id === ev) || { quanto: null }).quanto;
 
 function _eeValuta() {
   const v = String(stato?.streamer?.settings?.donazioni?.valuta || 'EUR');
@@ -30430,18 +30470,22 @@ function _eeCosi(ev) {
   if (!v.attivo) return esc(L(`Così: spento, per «${nome}» non parte niente.`, `So: off, nothing plays for «${nome}».`, `Así: apagado, para «${nome}» no sale nada.`));
   if (!v.livelli.length) return esc(L('Così: acceso, ma senza un effetto non parte niente.', 'So: on, but without an effect nothing plays.', 'Así: activo, pero sin efecto no sale nada.'));
   const pausa = v.pausa > 0 ? ' ' + L(`Al massimo un effetto ogni ${_eeN(v.pausa)} secondi.`, `At most one effect every ${_eeN(v.pausa)} seconds.`, `Como mucho un efecto cada ${_eeN(v.pausa)} segundos.`) : '';
-  if (ev === 'follow') return esc(L(`Così: a ogni follow parte «${_eeNomeEffetto(v.livelli[0].effetto)}».`, `So: every follow plays «${_eeNomeEffetto(v.livelli[0].effetto)}».`, `Así: con cada follow sale «${_eeNomeEffetto(v.livelli[0].effetto)}».`) + pausa);
+  const zitto = v.muto && EE_ALERT[ev] ? ' ' + L('Se suona già l\'alert, senza suono.', 'If the alert already plays a sound, without sound.', 'Si la alerta ya suena, sin sonido.') : '';
+  if (ev === 'follow') return esc(L(`Così: a ogni follow parte «${_eeNomeEffetto(v.livelli[0].effetto)}».`, `So: every follow plays «${_eeNomeEffetto(v.livelli[0].effetto)}».`, `Así: con cada follow sale «${_eeNomeEffetto(v.livelli[0].effetto)}».`) + pausa + zitto);
+  if (ev === 'obiettivo') return esc(L(`Così: quando un obiettivo arriva al traguardo parte «${_eeNomeEffetto(v.livelli[0].effetto)}».`, `So: when a goal is reached it plays «${_eeNomeEffetto(v.livelli[0].effetto)}».`, `Así: cuando un objetivo llega a la meta sale «${_eeNomeEffetto(v.livelli[0].effetto)}».`) + pausa);
   const pezzi = v.livelli.map((l, i) => (i ? L(`da ${_eeSoglia(ev, l.da)} «${_eeNomeEffetto(l.effetto)}»`, `from ${_eeSoglia(ev, l.da)} «${_eeNomeEffetto(l.effetto)}»`, `desde ${_eeSoglia(ev, l.da)} «${_eeNomeEffetto(l.effetto)}»`)
     : L(`da ${_eeSoglia(ev, l.da)} parte «${_eeNomeEffetto(l.effetto)}»`, `from ${_eeSoglia(ev, l.da)} it plays «${_eeNomeEffetto(l.effetto)}»`, `desde ${_eeSoglia(ev, l.da)} sale «${_eeNomeEffetto(l.effetto)}»`)));
   const minimo = ev === 'donazione' ? 0 : 1;
   const sotto = v.livelli[0].da > minimo ? ' ' + L(`Sotto ${_eeSoglia(ev, v.livelli[0].da)}, niente.`, `Below ${_eeSoglia(ev, v.livelli[0].da)}, nothing.`, `Por debajo de ${_eeSoglia(ev, v.livelli[0].da)}, nada.`) : '';
-  return esc(L('Così: ', 'So: ', 'Así: ') + pezzi.join(', ') + '.' + sotto + pausa);
+  return esc(L('Così: ', 'So: ', 'Así: ') + pezzi.join(', ') + '.' + sotto + pausa + zitto);
 }
 
 function _eeContesto(ev) {
   const s = stato?.streamer?.settings || {};
   const vai = (k) => ` <button type="button" class="rg-vai" data-ee-studio="${k}">${L('Apri l\'alert nello Studio', 'Open the alert in the Studio', 'Abrir la alerta en el Studio')}</button>`;
   if (ev === 'treno') return L('L\'effetto parte quando il treno parte e quando sale di livello, non a ogni contributo.', 'The effect plays when the train starts and when it levels up, not on every contribution.', 'El efecto sale cuando el tren arranca y cuando sube de nivel, no con cada contribución.');
+  if (ev === 'obiettivo') return L('Parte quando un obiettivo dello Studio arriva al traguardo (follower, abbonamenti, bit o donazioni), col numero che vede chi guarda. Una volta per obiettivo: se lo azzeri e lo raggiungi di nuovo, riparte. Arriva dopo l\'alert e l\'effetto dell\'evento che l\'ha fatto arrivare.', 'It plays when a Studio goal is reached (followers, subs, bits or donations), with the number viewers see. Once per goal: if you reset it and reach it again, it plays again. It comes after the alert and the effect of the event that got it there.', 'Sale cuando un objetivo del Studio llega a la meta (seguidores, suscripciones, bits o donaciones), con el número que ve el público. Una vez por objetivo: si lo reinicias y lo alcanzas de nuevo, vuelve a salir. Llega después de la alerta y del efecto del evento que lo llevó allí.')
+    + ` <button type="button" class="rg-vai" data-vai="alert">${L('Apri gli obiettivi nello Studio', 'Open the goals in the Studio', 'Abrir los objetivos en el Studio')}</button>`;
   const k = EE_ALERT[ev], a = s.alerts || {}, c = a.attivo !== false ? a[k] : null;
   let t;
   if (!c || c.attivo === false) t = L('L\'alert è spento: parte solo l\'effetto.', 'The alert is off: only the effect plays.', 'La alerta está apagada: solo sale el efecto.');
@@ -30485,6 +30529,7 @@ function _eeLivello(ev, l, i, aperto) {
       <span class="ee-effetto" data-ee-nome="${i}">${esc(_eeNomeEffetto(l.effetto))}</span>
       <span class="ee-tasti">
         <button type="button" class="btn secondario mini" data-ee-apri="${ev}" data-i="${i}" aria-expanded="${aperto}">${aperto ? L('Chiudi', 'Close', 'Cerrar') : L('Modifica', 'Edit', 'Editar')}</button>
+        <button type="button" class="btn secondario mini" data-ee-anteprima="${ev}" data-i="${i}">${L('Anteprima', 'Preview', 'Vista previa')}</button>
         <button type="button" class="btn secondario mini" data-ee-prova="${ev}" data-i="${i}">${L('Prova sull\'overlay', 'Test on the overlay', 'Probar en el overlay')}</button>
         <button type="button" class="btn secondario mini" data-ee-togli="${ev}" data-i="${i}">${conta ? L('Togli il livello', 'Remove the level', 'Quitar el nivel') : L('Togli l\'effetto', 'Remove the effect', 'Quitar el efecto')}</button>
       </span>
@@ -30515,16 +30560,85 @@ function _eeCorpo(ev) {
   const max = conta ? _ee.limiti.livelli : 1;
   const aggiungi = v.livelli.length < max
     ? `<p class="ee-aggiungi"><button type="button" class="btn secondario mini" data-ee-aggiungi="${ev}">${_bIco(ICO.piu)}${v.livelli.length ? L('Aggiungi un livello', 'Add a level', 'Añadir un nivel') : L('Scegli l\'effetto', 'Choose the effect', 'Elige el efecto')}</button>${conta && v.livelli.length ? ` <span class="tenue">${L(`fino a ${max}`, `up to ${max}`, `hasta ${max}`)}</span>` : ''}</p>` : '';
+  const n = _eeProvaN(ev);
+  const prova = `<div class="ee-prova-evento">
+      <div class="ee-prova-riga">
+        ${conta ? `<label for="ee-prova-${ev}">${ev === 'treno' ? L('Prova col livello', 'Test with level', 'Probar con el nivel') : L('Prova con', 'Test with', 'Probar con')}</label>
+        <input type="number" id="ee-prova-${ev}" data-ee-prova-n="${ev}" min="0" max="${_ee.limiti.da}" step="1" inputmode="numeric" value="${n}">${_eeUnita(ev, n).dopo ? `<span data-ee-unita>${esc(_eeUnita(ev, n).dopo)}</span>` : ''}` : ''}
+        <button type="button" class="btn secondario mini" data-ee-prova-evento="${ev}">${L('Prova l\'evento', 'Test the event', 'Probar el evento')}</button>
+      </div>
+      <p class="suggerimento">${L('Parte come in diretta: l\'alert, se c\'è, e un attimo dopo l\'effetto del livello giusto. Con le scelte che vedi qui, anche se non le hai salvate.', 'It plays as it would live: the alert, if there is one, and a moment later the effect of the right level. With the choices you see here, even unsaved.', 'Sale como en directo: la alerta, si la hay, y un momento después el efecto del nivel justo. Con lo que ves aquí, aunque no lo hayas guardado.')}</p>
+    </div>`;
+  const muto = EE_ALERT[ev] ? `<div class="ee-muto">
+      <label class="riga-check"><input type="checkbox" data-ee-muto="${ev}"${v.muto ? ' checked' : ''}> ${L('Se suona già l\'alert, l\'effetto parte senza suono', 'If the alert already plays a sound, the effect plays without sound', 'Si la alerta ya suena, el efecto sale sin sonido')}</label>
+      <p class="suggerimento">${L('Così non suonano due cose a un secondo di distanza. Un tuo effetto che è solo un suono, allora, non parte.', 'So two sounds do not play a second apart. One of your effects that is only a sound then does not play.', 'Así no suenan dos cosas con un segundo de diferencia. Un efecto tuyo que es solo un sonido, entonces, no sale.')}</p>
+    </div>` : '';
   return `
     <p class="ee-contesto">${_eeContesto(ev)}</p>
     ${v.livelli.length ? `<ol class="ee-livelli">${v.livelli.map((l, i) => _eeLivello(ev, l, i, i === aperto)).join('')}</ol>` : ''}
     ${aggiungi}
+    ${v.livelli.length ? prova : ''}
+    ${muto}
     <div class="ee-pausa">
       <label class="campo" for="ee-pausa-${ev}">${L('Pausa fra due effetti (secondi)', 'Pause between two effects (seconds)', 'Pausa entre dos efectos (segundos)')}</label>
       <input type="number" id="ee-pausa-${ev}" data-ee-pausa="${ev}" min="0" max="${_ee.limiti.pausa}" step="1" inputmode="numeric" value="${v.pausa}">
       <p class="suggerimento">${L('Un\'ondata di eventi in pochi secondi fa partire un effetto solo. 0 vuol dire nessuna pausa.', 'A wave of events within a few seconds plays a single effect. 0 means no pause.', 'Una ola de eventos en pocos segundos lanza un solo efecto. 0 significa sin pausa.')}</p>
     </div>
     <p class="ee-cosi" data-ee-cosi="${ev}">${_eeCosi(ev)}</p>`;
+}
+
+function _eeProvaN(ev) {
+  if (_ee.provaN?.[ev] != null) return _ee.provaN[ev];
+  const v = _ee.voci[ev];
+  return v.livelli.length ? v.livelli[v.livelli.length - 1].da : (EE_SCALA[ev] || [1])[0];
+}
+
+const _eeVoceDaMandare = (v) => ({ attivo: v.attivo, pausa: v.pausa, muto: v.muto === true, livelli: v.livelli.map((l) => ({ da: l.da, effetto: l.effetto })) });
+
+function _eeEsitoProva(ev, r, n) {
+  if (!r) return L('Non è partito niente.', 'Nothing played.', 'No salió nada.');
+  const v = _ee.voci[ev], parti = [];
+  if (r.avviso) parti.push(L('l\'alert', 'the alert', 'la alerta'));
+  if (r.offerta) parti.push(L('l\'effetto della sua offerta', 'its offer\'s effect', 'el efecto de su oferta'));
+  const e = r.effetto;
+  if (e?.parte) parti.push(`«${_eeNomeEffetto(v.livelli.find((x) => x.da === e.da)?.effetto)}»${e.muto ? L(' senza suono', ' without sound', ' sin sonido') : ''}`);
+  const perche = e && !e.parte ? ({
+    spento: L('l\'evento è spento', 'the event is off', 'el evento está apagado'),
+    vuoto: L('l\'evento non ha un effetto', 'the event has no effect', 'el evento no tiene efecto'),
+    sotto: L(`con ${_eeSoglia(ev, n)} non si arriva al primo livello, da ${_eeSoglia(ev, v.livelli[0]?.da)}`, `with ${_eeSoglia(ev, n)} it does not reach the first level, from ${_eeSoglia(ev, v.livelli[0]?.da)}`, `con ${_eeSoglia(ev, n)} no se llega al primer nivel, desde ${_eeSoglia(ev, v.livelli[0]?.da)}`),
+    manca: L('il tuo effetto non c\'è più', 'your effect no longer exists', 'tu efecto ya no existe'),
+    muto: L('il tuo effetto è solo un suono, e suona già l\'alert', 'your effect is only a sound, and the alert already plays one', 'tu efecto es solo un sonido, y la alerta ya suena'),
+    piano: L('gli Effetti non sono nel tuo piano', 'Effects are not in your plan', 'los Efectos no están en tu plan'),
+  }[e.perche] || '') : '';
+  const e_ = L(' e ', ' and ', ' y ');
+  const elenco = parti.length > 1 ? parti.slice(0, -1).join(', ') + e_ + parti[parti.length - 1] : (parti[0] || '');
+  if (!parti.length) return L('Non è partito niente', 'Nothing played', 'No salió nada') + (perche ? ': ' + perche : '') + '.';
+  return L('Partiti nell\'overlay: ', 'Played in the overlay: ', 'Salieron en el overlay: ') + elenco + (perche ? L('; l\'effetto no: ', '; the effect did not: ', '; el efecto no: ') + perche : '') + '.';
+}
+
+function _eeTesta() {
+  const box = document.getElementById('ee-testa');
+  if (!box || !_ee) return;
+  const vuoti = _ee.eventi.filter((e) => !_ee.voci[e.id].livelli.length).length;
+  box.innerHTML = `${_ee.inVista === false ? `<p class="warn-riga ee-invisibili">${L('In nessun overlay è acceso «Effetti a schermo»: gli effetti degli eventi partono, ma non si vedono.', 'No overlay has «On-screen effects» turned on: event effects play, but nobody sees them.', 'Ningún overlay tiene activado «Efectos en pantalla»: los efectos de los eventos salen, pero no se ven.')} <button type="button" class="rg-vai" data-vai="alert">${L('Accendilo nello Studio', 'Turn it on in the Studio', 'Actívalo en el Studio')}</button></p>` : ''}
+    ${vuoti ? `<div class="ee-partenza"><button type="button" class="btn secondario mini" data-ee-partenza>${L('Accendi una scelta pronta', 'Turn on a ready-made set', 'Activa una selección lista')}</button>
+      <p class="suggerimento">${L('Cuori ai follow, stelle agli abbonamenti, palloncini ai regali, coriandoli e fuochi ai bit e alle donazioni, fuochi a raid, treno e obiettivi. Riempie solo gli eventi senza un effetto, senza suoni (gli alert hanno già i loro), e non salva da sola.', 'Hearts for follows, stars for subs, balloons for gifts, confetti and fireworks for bits and donations, fireworks for raids, train and goals. It only fills events without an effect, without sounds (alerts have their own), and does not save by itself.', 'Corazones para los follows, estrellas para las suscripciones, globos para los regalos, confeti y fuegos para los bits y las donaciones, fuegos para raids, tren y objetivos. Solo rellena los eventos sin efecto, sin sonidos (las alertas ya tienen los suyos), y no guarda sola.')}</p></div>` : ''}`;
+}
+
+function _eePartenza() {
+  if (!_ee) return;
+  let n = 0;
+  for (const e of _ee.eventi) {
+    const v = _ee.voci[e.id], scelta = EE_PARTENZA[e.id];
+    if (!v || v.livelli.length || !scelta) continue;
+    v.livelli = scelta.map(([da, nome]) => ({ da: e.quanto ? da : 0, effetto: { tipo: 'pronto', disegno: _prontiDisegno(nome), volume: 80 } }));
+    v.attivo = true;
+    n++;
+  }
+  _eeDisegna();
+  segnaDaSalvare(document.getElementById('ee-salva'));
+  toast(n === 1 ? L('Acceso un evento con una scelta pronta: guardalo, provalo e salva.', 'One event turned on with a ready-made set: look, test and save.', 'Un evento activado con una selección lista: míralo, pruébalo y guarda.')
+    : L(`Accesi ${n} eventi con una scelta pronta: guardali, provali e salva.`, `${n} events turned on with a ready-made set: look, test and save.`, `${n} eventos activados con una selección lista: míralos, pruébalos y guarda.`));
 }
 
 function _eeLivelloSt(l) {
@@ -30557,6 +30671,7 @@ function _eeCambiato(ev, rifai = false) {
   const cosi = det.querySelector('[data-ee-cosi]');
   if (cosi) cosi.innerHTML = _eeCosi(ev);
   det.querySelectorAll('[data-ee-nome]').forEach((n) => { n.textContent = _eeNomeEffetto(v.livelli[Number(n.dataset.eeNome)]?.effetto); });
+  _eeTesta();
   segnaDaSalvare(document.getElementById('ee-salva'));
 }
 
@@ -30565,6 +30680,7 @@ function _eeDisegna() {
   if (!box || !_ee) return;
   for (const ev of Object.keys(_eeFermi)) _fermaTutti(_eeFermi[ev]);
   const aperto = box.querySelector('details[data-ee][open]')?.dataset.ee || '';
+  _eeTesta();
   box.innerHTML = _ee.eventi.map((e) => _eeFoglio(e.id)).join('');
   box.querySelectorAll('details[data-ee]').forEach((det) => det.addEventListener('toggle', () => {
     if (det.open && det.dataset.pieno === '1') return;
@@ -30592,7 +30708,7 @@ async function caricaEventiEffetti() {
   if (!box) return;
   try {
     const d = await api('/api/streamer/effetti-eventi');
-    _ee = { eventi: d.eventi, limiti: d.limiti, voci: d.effettiEventi.voci, effetti: d.effetti || [], aperto: {} };
+    _ee = { eventi: d.eventi, limiti: d.limiti, voci: d.effettiEventi.voci, effetti: d.effetti || [], inVista: d.inVista !== false, aperto: {}, provaN: {} };
   } catch (e) {
     box.innerHTML = `<p class="warn-riga">${L('Non riesco a leggere gli effetti degli eventi: ', 'I can’t read the event effects: ', 'No puedo leer los efectos de los eventos: ')}${esc(e.message)}</p>`;
     return;
@@ -30631,12 +30747,15 @@ function usaPerEvento(ev, effetto) {
   toast(L(`Ora è un effetto di «${nome}»: controlla e salva.`, `It is now an effect of «${nome}»: check it and save.`, `Ahora es un efecto de «${nome}»: revísalo y guarda.`));
 }
 
-function _eeLivelloDi(b) { const ev = b.dataset.eeApri || b.dataset.eeProva || b.dataset.eeTogli || b.dataset.eeDa || b.dataset.eeTipo || b.dataset.eeMio; return { ev, i: Number(b.dataset.i), l: _ee?.voci[ev]?.livelli[Number(b.dataset.i)] }; }
+function _eeLivelloDi(b) { const ev = b.dataset.eeApri || b.dataset.eeAnteprima || b.dataset.eeProva || b.dataset.eeTogli || b.dataset.eeDa || b.dataset.eeTipo || b.dataset.eeMio; return { ev, i: Number(b.dataset.i), l: _ee?.voci[ev]?.livelli[Number(b.dataset.i)] }; }
 
 function montaEventiEffetti() {
   const box = document.getElementById('ee-fogli');
   if (!box || box.dataset.montato) return;
   box.dataset.montato = '1';
+  document.getElementById('ee-testa')?.addEventListener('click', (ev) => {
+    if (ev.target.closest?.('[data-ee-partenza]')) _eePartenza();
+  });
   box.addEventListener('click', (ev) => {
     if (!_ee) return;
     const somma = ev.target.closest?.('details[data-ee] > summary');
@@ -30651,6 +30770,18 @@ function montaEventiEffetti() {
     const b = ev.target.closest?.('button');
     if (!b || !box.contains(b)) return;
     if (b.dataset.eeStudio) { apriAlertNelloStudio(b.dataset.eeStudio); return; }
+    if (b.dataset.eeProvaEvento) {
+      const e = b.dataset.eeProvaEvento;
+      const n = Math.max(0, Math.round(Number(box.querySelector(`[data-ee-prova-n="${e}"]`)?.value) || 0));
+      conErrore(async () => {
+        b.disabled = true;
+        try {
+          const r = await api('/api/streamer/effetti-eventi/prova-evento', { method: 'POST', body: { evento: e, quanto: n, voce: _eeVoceDaMandare(_ee.voci[e]) } });
+          toast(_eeEsitoProva(e, r.esito, n));
+        } finally { b.disabled = false; }
+      });
+      return;
+    }
     if (b.dataset.eeAggiungi) {
       const e = b.dataset.eeAggiungi, v = _ee.voci[e];
       v.livelli.push({ da: _eeConta(e) ? _eeProssimo(e) : 0, effetto: _eeNuovoEffetto(e) });
@@ -30663,6 +30794,13 @@ function montaEventiEffetti() {
     const { ev: e, i, l } = _eeLivelloDi(b);
     if (!l) return;
     if (b.dataset.eeApri) { _ee.aperto[e] = _ee.aperto[e] === i ? null : i; _eeRendiCorpo(e); box.querySelector(`[data-ee-apri="${e}"][data-i="${i}"]`)?.focus(); return; }
+    if (b.dataset.eeAnteprima) {
+      const x = l.effetto;
+      if (x.tipo === 'pronto') { anteprimaEffetto({ tipo: 'disegno', disegno: x.disegno, volume: x.volume, nome: _eeNomeEffetto(x) }, { comando: '' }); return; }
+      const m = _mieiEffetti.find((y) => y.comando === x.comando);
+      if (m) anteprimaEffetto(m); else toast(L('Scegli prima uno dei tuoi effetti.', 'Pick one of your effects first.', 'Elige antes uno de tus efectos.'));
+      return;
+    }
     if (b.dataset.eeTogli) {
       _ee.voci[e].livelli.splice(i, 1);
       const a = _ee.aperto[e];
@@ -30678,14 +30816,18 @@ function montaEventiEffetti() {
   });
   box.addEventListener('input', (ev) => {
     const t = ev.target;
-    if (!_ee || !t.dataset.eeDa) return;
+    const e = t.dataset.eeDa || t.dataset.eeProvaN;
+    if (!_ee || !e) return;
     const u = t.parentElement.querySelector('[data-ee-unita]');
-    if (u) u.textContent = _eeUnita(t.dataset.eeDa, Math.round(Number(t.value) || 0)).dopo;
+    if (u) u.textContent = _eeUnita(e, Math.round(Number(t.value) || 0)).dopo;
+    if (t.dataset.eeProvaN) _ee.provaN[e] = Math.max(0, Math.round(Number(t.value) || 0));
   });
   box.addEventListener('change', (ev) => {
     if (!_ee) return;
     const t = ev.target;
     if (t.dataset.eeOn) { _ee.voci[t.dataset.eeOn].attivo = t.checked; _eeCambiato(t.dataset.eeOn); return; }
+    if (t.dataset.eeMuto) { _ee.voci[t.dataset.eeMuto].muto = t.checked; _eeCambiato(t.dataset.eeMuto); return; }
+    if (t.dataset.eeProvaN) return;
     if (t.dataset.eePausa) { const v = _ee.voci[t.dataset.eePausa]; v.pausa = Math.max(0, Math.min(_ee.limiti.pausa, Math.round(Number(t.value) || 0))); t.value = v.pausa; _eeCambiato(t.dataset.eePausa); return; }
     const { ev: e, i, l } = _eeLivelloDi(t);
     if (!l) return;
@@ -30715,7 +30857,7 @@ function montaEventiEffetti() {
     if (doppio) { _eeApri(doppio); throw new Error(L(`in «${EE_NOMI()[doppio]}» due livelli partono dallo stesso numero`, `in «${EE_NOMI()[doppio]}» two levels start at the same number`, `en «${EE_NOMI()[doppio]}» dos niveles empiezan en el mismo número`)); }
     const vuoto = EE_ORDINE.find((e) => _ee.voci[e]?.livelli.some((l) => l.effetto.tipo === 'mio' && !l.effetto.comando));
     if (vuoto) { _eeApri(vuoto); throw new Error(L(`in «${EE_NOMI()[vuoto]}» un livello aspetta che tu scelga uno dei tuoi effetti`, `in «${EE_NOMI()[vuoto]}» a level is waiting for you to pick one of your effects`, `en «${EE_NOMI()[vuoto]}» un nivel espera que elijas uno de tus efectos`)); }
-    const voci = Object.fromEntries(Object.entries(_ee.voci).map(([k, v]) => [k, { attivo: v.attivo, pausa: v.pausa, livelli: v.livelli.map((l) => ({ da: l.da, effetto: l.effetto })) }]));
+    const voci = Object.fromEntries(Object.entries(_ee.voci).map(([k, v]) => [k, _eeVoceDaMandare(v)]));
     const b = ev.currentTarget || document.getElementById('ee-salva');
     if (b) b.disabled = true;
     try {
@@ -30898,6 +31040,8 @@ async function caricaEffetti() {
 
     const etTipo = { audio: _bIco(ICO.altoparlante) + etTipoEffetto('audio'), immagine: _bIco(ICO.immagine) + etTipoEffetto('immagine'), video: _bIco(ICO.video) + etTipoEffetto('video'), disegno: _bIco(ICO.effetti) + etTipoEffetto('disegno') };
     _prontiSuoni = dati.effetti.filter((e) => e.tipo === 'audio').map((e) => e.comando);
+    _mieiEffetti = dati.effetti;
+    if (_ee) _ee.effetti = dati.effetti.map((e) => ({ comando: e.comando, tipo: e.tipo }));
     const nomiPronti = PRONTI_NOMI();
     const etTier = { tutti: L('tutti', 'everyone', 'todos'), sub: 'sub', vip: 'VIP', mod: 'mod' };
 
@@ -30922,6 +31066,7 @@ async function caricaEffetti() {
     ? `<button class="btn secondario mini" data-modifica-pronto="${e.id}">${L('Modifica', 'Edit', 'Editar')}</button>`
     : `<button class="btn secondario mini" data-pubblica="${e.id}" data-stato="${e.pubblico ? 1 : 0}" data-nome="${esc(e.nome || e.comando)}">${e.pubblico ? _bIco(ICO.lucchetto) + L('Rendi privato', 'Make private', 'Hacer privado') : _bIco(ICO.condividi) + L('Condividi', 'Share', 'Compartir')}</button>`}
           <button class="btn secondario mini" data-prova="${esc(e.comando)}">${L('Prova', 'Test', 'Probar')}</button>
+          <select class="eff-evento" data-usa-evento="${esc(e.comando)}" aria-label="${esc(L('Usalo per un evento', 'Use it for an event', 'Úsalo para un evento') + ': !' + e.comando)}"><option value="">${L('Usalo per un evento…', 'Use it for an event…', 'Úsalo para un evento…')}</option>${EE_ORDINE.map((id) => `<option value="${id}">${esc(EE_NOMI()[id])}</option>`).join('')}</select>
           <button class="btn pericolo mini" data-elimina-eff="${e.id}">${L('Elimina', 'Delete', 'Eliminar')}</button>
         </div>
       </li>`;
@@ -30929,6 +31074,8 @@ async function caricaEffetti() {
     dati.effetti.forEach((e) => _controllaSgranata(ul.querySelector(`[data-sgranata="${e.id}"]`), e));
 
     ul.onchange = (ev) => {
+      const usa = ev.target.closest('[data-usa-evento]');
+      if (usa) { const id = usa.value; usa.value = ''; if (id) usaPerEvento(id, { tipo: 'mio', comando: usa.dataset.usaEvento }); return; }
       const sel = ev.target.closest('[data-schermo]');
       if (!sel) return;
       conErrore(async () => {

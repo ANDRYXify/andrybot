@@ -6463,7 +6463,8 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
       // suono: un preset OPPURE un effetto audio caricato ("effetto:<comando>").
       // media: niente OPPURE un'immagine/video caricato ("effetto:<comando>").
       const refEffetto = (x) => /^effetto:[a-z0-9_]{1,30}$/i.test(String(x)) ? String(x).toLowerCase() : '';
-      const suonoOk = (x) => (SUONI_PRESET.has(String(x)) ? String(x) : refEffetto(x));
+      // «nessuno» e' il silenzio scelto; il vuoto resta «il suono di serie»
+      const suonoOk = (x) => (String(x) === 'nessuno' || SUONI_PRESET.has(String(x)) ? String(x) : refEffetto(x));
       const evt = (kind, e) => {
         e = e || {};
         return {
@@ -8487,6 +8488,10 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
       limiti: { livelli: MAX_LIVELLI_EFFETTI, da: MAX_DA_EFFETTI, pausa: MAX_PAUSA_EFFETTI },
       effettiEventi: effettiEventiDi(login, streamers.get(login)?.settings?.effettiEventi),
       effetti: effectsDb.list(login).map((e) => ({ comando: e.comando, tipo: e.tipo })),
+      // c'e' almeno un overlay (o un'occasione) che mostra gli effetti? Se no,
+      // gli effetti degli eventi partono e nessuno li vede: il pannello lo dice
+      inVista: overlaysDi(streamers.get(login)?.settings).some((o) => o?.mostra?.effetti !== false
+        || (Array.isArray(o?.occasioni) && o.occasioni.some((c) => c?.mostra?.effetti === true))),
     });
   }));
   app.post('/api/streamer/effetti-eventi', requireLogin, wrap(async (req, res) => {
@@ -8497,6 +8502,20 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     const effettiEventi = effettiEventiDi(login, req.body?.effettiEventi);
     streamers.setSettings(login, { ...(s.settings || {}), effettiEventi });
     res.json({ ok: true, effettiEventi });
+  }));
+  // La prova di un EVENTO intero, col numero scelto: l'alert, poi l'effetto
+  // del livello giusto (o quello di un'offerta), come in diretta. Con le scelte
+  // che lo streamer ha davanti, anche non salvate; niente conti, niente pausa.
+  app.post('/api/streamer/effetti-eventi/prova-evento', requireLogin, wrap(async (req, res) => {
+    if (!esigiFunzione(req, res, 'effetti', 'Gli effetti per gli eventi')) return;
+    const login = currentUser(req).login;
+    const evento = String(req.body?.evento || '');
+    if (!EVENTI_EFFETTI.some((e) => e.id === evento)) return res.status(400).json({ errore: 'evento non valido' });
+    const voce = effettiEventiDi(login, { voci: { [evento]: req.body?.voce } }).voci[evento];
+    const quanto = Math.max(0, Math.min(MAX_DA_EFFETTI, Number(req.body?.quanto) || 0));
+    const esito = manager.alerts?.provaEvento(login, evento, quanto, voce);
+    if (!esito) return res.status(503).json({ errore: 'il motore degli alert non è pronto' });
+    res.json({ ok: true, esito });
   }));
   // La prova di un livello, prima di salvarlo: lo stesso effetto che partirebbe.
   app.post('/api/streamer/effetti-eventi/prova', requireLogin, wrap(async (req, res) => {

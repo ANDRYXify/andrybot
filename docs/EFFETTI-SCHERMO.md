@@ -317,7 +317,7 @@ o da un'offerta delle donazioni, mai da un evento. I moduli sapevano fare
 ### Il modello
 
 ```
-settings.effettiEventi = { voci: { <evento>: { attivo, pausa, livelli: [{ da, effetto }] } } }
+settings.effettiEventi = { voci: { <evento>: { attivo, pausa, muto, livelli: [{ da, effetto }] } } }
 effetto = { tipo: 'pronto', disegno, volume } | { tipo: 'mio', comando }
 ```
 
@@ -333,6 +333,7 @@ che porta:
 | `raid` | spettatori | 0 |
 | `donazione` | importo, nella valuta delle donazioni | 0 |
 | `treno` | livello del treno | 0 |
+| `obiettivo` | nessuno: un livello solo, `da` 0 | 0 |
 
 Parte il livello col `da` più alto che il numero raggiunge; sotto il primo,
 niente. Un numero che non si sa (una donazione in un'altra valuta) fa partire
@@ -373,6 +374,34 @@ un conto).
 7. **È una funzione degli Effetti.** Salvare e provare chiedono gli Effetti
    nel piano (`esigiFunzione`); e un canale che non li ha più non fa partire
    niente anche con le scelte salvate (`canaleHa`).
+8. **La scena e la messa in onda sono due cose.** `_scenaEvento` e
+   `_scenaDonazione` dicono cosa va in onda (l'alert con la sua veste, il
+   numero, l'offerta, gli obiettivi raggiunti) senza toccare niente;
+   `_vaInOnda` lo manda all'overlay, sempre nello stesso ordine: l'alert,
+   l'effetto dell'offerta o quello dell'evento, poi quello dell'obiettivo.
+   `onEvent` e `donazione` fanno prima le loro cose (widget, obiettivi,
+   subathon, chat, muro) e poi chiamano `_vaInOnda`; `provaEvento` costruisce
+   una scena finta e chiama la stessa `_vaInOnda` con `prova`. La prova è
+   quindi la diretta per costruzione, non una sua imitazione: non conta, non
+   scrive in chat, non guarda e non fa partire la pausa, e usa la voce che le
+   passa il pannello, salvata o no, ripulita da `effettiEventiDi` come le
+   altre.
+9. **L'obiettivo raggiunto si conta, non si ricorda.** `_contaGoal` dice
+   quanti obiettivi l'evento ha fatto passare, cioè quelli con
+   `partenza + prima < obiettivo <= partenza + dopo`: una volta per
+   obiettivo, e di nuovo solo se lo si azzera. Non c'è uno stato in più da
+   perdere a un riavvio.
+10. **Due suoni non si pestano, se lo chiedi.** Con `muto`, se è partito il
+    nostro alert e suona (`suonaAvviso`: volume sopra 0 e un suono pronto o
+    tuo), l'effetto parte a volume 0; uno dei tuoi effetti che è solo audio
+    non parte (`perche: 'muto'`). L'obiettivo non ha un alert e non ha `muto`.
+11. **«Nessun suono» è un silenzio.** Il suono di un alert vuoto (`''`) vuol
+    dire quello di serie, come è sempre stato, perché nessun alert già salvato
+    diventi muto; `'nessuno'` (`SUONO_MUTO`) vuol dire niente. Prima lo Studio
+    mostrava «nessun suono» per `''` e il motore suonava quello di serie: ora
+    il menù mostra il suono che parte davvero (`_suonoAlertMostrato`, con
+    `SUONO_ALERT_SERIE` uguale a `DEFAULT_SUONO`, e un test li tiene uguali) e
+    «Nessun suono» salva `'nessuno'`.
 
 ### Il pannello
 
@@ -390,7 +419,27 @@ un conto).
   guardando in un livello dell'evento (il primo, o uno nuovo sopra gli altri;
   il follow lo sostituisce), passa alla parte e apre il foglio. Non salva.
 - **Nello Studio** ogni alert dice cosa parte e porta al foglio; il foglio
-  porta all'alert, scelto e aperto da solo.
+  porta all'alert, scelto, aperto da solo e in vista. Le proprietà, cambiando
+  elemento, tengono a schermo quello che se ne va finché non si è disfatto
+  (`_cambiaDiMano`, poi `dg-resta` del disegno): il pannello ha la sua altezza
+  vera solo dopo. Per questo lo scorrimento aspetta che sia fermo
+  (`_quandoFermo`) e mette il titolo del gruppo sotto la testata appiccicata
+  (`_mostraGruppo`); scorrendo prima, il pannello si accorciava sopra il
+  gruppo e lo lasciava fuori vista.
+- **«Prova l'evento»**, con «Prova con» dove c'è un numero, chiama
+  `POST /api/streamer/effetti-eventi/prova-evento` con la voce che si vede nel
+  foglio; l'esito (`{avviso, offerta, effetto, obiettivo}`, e per l'effetto
+  `{parte, da, muto}` o `{parte: false, perche}`) diventa una frase: cosa è
+  partito, o perché l'effetto no.
+- **«Anteprima»** su ogni livello apre nel pannello l'anteprima com'è in onda,
+  la stessa della lista dei tuoi effetti.
+- **«Usalo per un evento…»** in ogni riga dei tuoi effetti fa quello che fa il
+  tasto della carta dei pronti, con `{tipo: 'mio', comando}`.
+- **In cima a «Per gli eventi»**: se nessun overlay mostra gli effetti
+  (`inVista` nella risposta di GET, calcolato su overlay e occasioni) una riga
+  lo dice e porta allo Studio; se qualche evento è vuoto, «Accendi una scelta
+  pronta» riempie e accende solo quelli (`EE_PARTENZA`), senza suoni e senza
+  salvare.
 
 Prove: `test/unita/effetti-eventi.test.mjs` (il motore, con gli eventi come
 arrivano), `test/contratto/effetti-eventi-pannello.test.mjs` (pannello, demo e
@@ -408,9 +457,10 @@ motore d'accordo) e il collaudo nel browser `scripts/verifica-effetti-eventi.mjs
   disegno i suoi parametri e il suo suono (`payloadDisegno`, lo stesso per un
   comando e per un evento).
 - `effetti-eventi.js`: gli eventi, la pulizia delle scelte e il livello che
-  parte; `alerts.js` lo fa partire, con la pausa e il treno in memoria.
+  parte; `alerts.js` lo fa partire (scena, messa in onda e prova), con la
+  pausa e il treno in memoria.
 - `server.js`: crea e modifica un disegno, cambia dove appare un media;
-  legge, salva e prova gli effetti per gli eventi.
+  legge, salva e prova gli effetti per gli eventi, e prova un evento intero.
 - `overlay-app.js` e `overlay.html`: `#palco-schermo`, i media a tutto
   schermo, i disegni in coda con gli altri.
 - `app.js`: «Dove appare» al caricamento e nella lista, l'editor degli effetti

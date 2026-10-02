@@ -568,6 +568,7 @@ body.pad-vivo #plancia-lancia { bottom: calc(130px + env(safe-area-inset-bottom,
 @media (pointer: coarse) {
   .btn, button.btn, a.btn { min-height: 44px; padding: .6rem 1.1rem; }
   .btn.mini, button.btn.mini, a.btn.mini { min-height: 38px; padding: .5rem .9rem; font-size: .85rem; border-radius: var(--r-s); }
+  select.eff-evento { min-height: 38px; font-size: .85rem; }
   .btn.grande { min-height: 50px; }
 
   input[type="text"], input[type="password"], input[type="email"], input[type="url"],

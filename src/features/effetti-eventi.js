@@ -5,7 +5,8 @@
 // eventi»). Qui solo conti: niente database, niente overlay. Li usano il motore
 // degli alert, che fa partire l'effetto, e il server, che salva le scelte.
 //
-// Un evento (un follow, un abbonamento, dei bit, un raid...) puo' far partire
+// Un evento (un follow, un abbonamento, dei bit, un raid, un obiettivo
+// raggiunto...) puo' far partire
 // un effetto a tutto schermo: uno pronto, coi suoi colori e il suo suono, o uno
 // degli effetti del canale. Gli eventi che portano un numero (i bit, gli
 // spettatori di un raid, l'importo di una donazione) hanno dei LIVELLI: parte
@@ -23,6 +24,8 @@ export const EVENTI = Object.freeze([
   { id: 'raid', quanto: 'spettatori', pausa: 0 },
   { id: 'donazione', quanto: 'importo', pausa: 0 },
   { id: 'treno', quanto: 'livello', pausa: 0 },
+  // un obiettivo dello Studio che arriva al traguardo
+  { id: 'obiettivo', quanto: null, pausa: 0 },
 ]);
 const PER_ID = new Map(EVENTI.map((e) => [e.id, e]));
 export const eventoDi = (id) => PER_ID.get(id) || null;
@@ -60,7 +63,8 @@ export function vocePulita(ev, x, opz) {
     livelli.set(da, { da, effetto });
   }
   const ordinati = [...livelli.values()].sort((a, b) => a.da - b.da).slice(0, ev.quanto ? MAX_LIVELLI : 1);
-  return { attivo: q.attivo === true, pausa: intero(q.pausa, 0, MAX_PAUSA, ev.pausa), livelli: ordinati };
+  // muto: se l'avviso suona gia', l'effetto parte senza suono
+  return { attivo: q.attivo === true, pausa: intero(q.pausa, 0, MAX_PAUSA, ev.pausa), muto: q.muto === true, livelli: ordinati };
 }
 
 // Le scelte del canale, ripulite: ogni evento c'e', spento finche' non lo si
@@ -77,7 +81,7 @@ export function voceDi(settings, id) {
   const ev = eventoDi(id);
   if (!ev) return null;
   const v = settings?.effettiEventi?.voci?.[id];
-  return v && typeof v === 'object' ? v : { attivo: false, pausa: ev.pausa, livelli: [] };
+  return v && typeof v === 'object' ? v : { attivo: false, pausa: ev.pausa, muto: false, livelli: [] };
 }
 
 // Il livello che parte per questo numero: quello col «da» piu' alto che il

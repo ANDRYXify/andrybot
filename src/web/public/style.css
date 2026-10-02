@@ -2653,6 +2653,13 @@ body:not(.con-nav) .salta { display: none; }
 .ee-editor .pronti-galleria { margin: 0; }
 .ee-tipo { display: flex; flex-wrap: wrap; gap: .3rem 1.2rem; }
 .ee-aggiungi { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem .8rem; margin: 0 0 .9rem; }
+.ee-prova-evento, .ee-muto { display: grid; gap: .3rem; margin: 0 0 .9rem; }
+.ee-prova-riga { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem .6rem; color: var(--testo-2); }
+.ee-prova-riga input { width: 6.5rem; }
+.ee-prova-evento .suggerimento, .ee-muto .suggerimento, .ee-partenza .suggerimento { margin: 0; }
+.ee-partenza { display: grid; gap: .3rem; justify-items: start; margin: 0 0 1rem; }
+.ee-invisibili { margin: 0 0 1rem; }
+select.eff-evento { width: auto; max-width: 100%; min-height: 0; padding: .3rem 1.9rem .3rem .65rem; font-size: .8rem; font-weight: 600; }
 .ee-pausa { display: grid; gap: .3rem; justify-items: start; }
 .ee-pausa input { width: 6.5rem; }
 .ee-pausa .suggerimento { margin: 0; }

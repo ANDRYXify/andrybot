@@ -68,7 +68,7 @@ test('l\'obiettivo «euro» esiste dove si conta, dove si pulisce e dove si dise
   assert.match(OVL, /numGoal\(cfg\.tipo, ora\) \+ ' \/ ' \+ numGoal\(cfg\.tipo, meta\)/, 'in diretta la cifra si scrive in euro');
   assert.match(APP, /_numGoal\(g\.tipo, ora\) \+ ' \/ ' \+ _numGoal\(g\.tipo, meta\)/, 'e sulla tela uguale');
   assert.match(SRV, /g\.tipo === 'bit' \|\| g\.tipo === 'euro'\) \{ fuori\.push\(g\); continue; \}/, '«quanti ne ho adesso» non tocca gli euro: non c\'e\' nessuno a cui chiederli');
-  assert.match(AL, /conti\[x\.id\] = Math\.round\(\(\(Number\(conti\[x\.id\]\) \|\| 0\) \+ quanti\) \* 100\) \/ 100;/, 'il conto tiene i centesimi senza sporcarsi');
+  assert.match(AL, /const prima = Number\(conti\[x\.id\]\) \|\| 0;\s+conti\[x\.id\] = Math\.round\(\(prima \+ quanti\) \* 100\) \/ 100;/, 'il conto tiene i centesimi senza sporcarsi');
 });
 
 test('il blocco «Sostieni» esiste dove si pulisce, dove si rende e dove si aggiunge, e legge una configurazione sola', () => {
@@ -396,7 +396,8 @@ test('la pagina delle donazioni: stessa forma, altro tavolo, stesso editor; le o
   assert.match(APP, /if \(id === 'donazioni'\) \{ riempiDonazioni\(\); caricaStatoDonazioni\(true\); caricaPaginaLink\(false, 'dona'\); \}/, 'e li\' si apre');
   assert.ok(!/data-lpquale/.test(APP), 'niente interruttore fra le due pagine: ognuna si modifica da un posto solo');
   assert.match(APP, /id="dona-livelli"/); assert.match(APP, /class="dl-effetto"/, 'le offerte si compongono nel pannello, con l\'effetto dalla libreria');
-  assert.match(AL, /const liv = livelloPer\(cfgD\.livelli, importo\); if \(liv\?\.effetto\) offerta = this\._sparaEffetto\(channel, liv\.effetto, DOPO_AVVISO_MS\);/, 'l\'offerta raggiunta accende il suo effetto, dall\'importo pagato');
+  assert.match(AL, /const liv = !soloAvviso && stessa \? livelloPer\(cfgD\.livelli, importo\) : null;[\s\S]{0,200}offerta: liv\?\.effetto \|\| null/, 'l\'offerta raggiunta accende il suo effetto, dall\'importo pagato');
+  assert.match(AL, /const offerta = sc\.offerta \? this\._sparaEffetto\(channel, sc\.offerta, DOPO_AVVISO_MS\) : false;/, 'e va in onda un attimo dopo l\'avviso');
   assert.match(AL, /const DOPO_AVVISO_MS = 1200;/, 'un attimo dopo l\'avviso');
   assert.ok(AL.includes("this.effects.emit(channel, this.effects.payload(channel, eff))"), 'con lo stesso payload del tasto Prova');
   // il blocco: le offerte al posto degli importi, il campo nascosto sulla pagina delle donazioni, il rimando dalla pagina link

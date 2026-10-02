@@ -64,8 +64,8 @@ streamers.setStatus?.(CH, 'approved');
 class Spia extends EffectsEngine { constructor() { super(); this.mandati = []; } emit(ch, p) { this.mandati.push(p); } }
 const fx = new Spia();
 const motore = new AlertsEngine({ effects: fx });
-function imposta(voci, { alerts = { attivo: false }, donazioni = {} } = {}) {
-  streamers.setSettings(CH, { ...(streamers.get(CH)?.settings || {}), alerts, donazioni, effettiEventi: pulisci({ voci }) });
+function imposta(voci, { alerts = { attivo: false }, donazioni = {}, altro = {} } = {}) {
+  streamers.setSettings(CH, { ...(streamers.get(CH)?.settings || {}), overlayGoals: [], overlayStato: {}, alerts, donazioni, ...altro, effettiEventi: pulisci({ voci }) });
   fx.mandati.length = 0;
   motore._pausaEventi.clear();
 }
@@ -191,4 +191,88 @@ test('gli eventi di Kick: stessi effetti, stessi numeri', () => {
   ev('channel.subscribe', { user_name: 'kicker', cumulative_months: 7, total: undefined });
   ev('channel.subscription.gift', { user_name: 'kicker', cumulative_months: undefined, total: 3 });
   assert.deepEqual(nomi(), ['stelle', 'palloncini']);
+});
+
+// Un obiettivo dello Studio che arriva al traguardo: il totale che si vede e'
+// la partenza piu' gli eventi contati.
+test('un obiettivo al traguardo fa partire il suo effetto, una volta per passaggio, dopo quello dell\'evento', () => {
+  const goal = { id: 'g1', attivo: true, tipo: 'follower', obiettivo: 10, partenza: 8 };
+  imposta({ follow: { attivo: true, pausa: 0, livelli: [{ effetto: pronto('cuori') }] }, obiettivo: { attivo: true, livelli: [{ effetto: pronto('fuochi') }] } },
+    { altro: { overlayGoals: [goal] } });
+  ev('channel.follow', { user_name: 'a' });
+  assert.deepEqual(nomi(), ['cuori'], '9 su 10: non ancora');
+  ev('channel.follow', { user_name: 'b' });
+  assert.deepEqual(nomi(), ['cuori', 'cuori', 'fuochi'], '10 su 10: prima il follow, poi l\'obiettivo');
+  ev('channel.follow', { user_name: 'c' });
+  assert.deepEqual(nomi(), ['cuori', 'cuori', 'fuochi', 'cuori'], 'oltre il traguardo non riparte');
+  motore.azzeraGoal(CH, 'g1');
+  fx.mandati.length = 0;
+  ev('channel.follow', { user_name: 'd' });
+  ev('channel.follow', { user_name: 'e' });
+  assert.deepEqual(nomi(), ['cuori', 'cuori', 'fuochi'], 'azzerato e raggiunto di nuovo, riparte');
+  imposta({ obiettivo: { attivo: true, livelli: [{ effetto: pronto('fuochi') }] } },
+    { altro: { overlayGoals: [{ ...goal, tipo: 'bit', obiettivo: 500, partenza: 0 }] } });
+  ev('channel.cheer', { bits: 499 });
+  ev('channel.cheer', { bits: 1 });
+  assert.deepEqual(nomi(), ['fuochi'], 'i bit contano coi loro numeri');
+});
+
+test('senza suono se suona gia\' l\'alert; e «nessun suono» nell\'alert e\' davvero il silenzio', (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout', 'Date'] });
+  const voci = { follow: { attivo: true, pausa: 0, muto: true, livelli: [{ effetto: pronto('cuori', { suono: 'tada' }) }] } };
+  imposta(voci, { alerts: { attivo: true, follow: { attivo: true, chi: 'socialbot' } } });
+  ev('channel.follow');
+  t.mock.timers.tick(1200);
+  const [alert, effetto] = visti();
+  assert.equal(alert.tipo, 'alert');
+  assert.equal(alert.suono, 'campanello', 'un alert che non ha scelto suona col suono di serie, come sempre');
+  assert.equal(effetto.volume, 0, 'l\'alert suona: l\'effetto parte muto');
+  imposta(voci, { alerts: { attivo: true, follow: { attivo: true, chi: 'socialbot', suono: 'nessuno' } } });
+  ev('channel.follow');
+  t.mock.timers.tick(1200);
+  assert.equal(visti()[0].suono, '', '«nessun suono» e\' il silenzio');
+  assert.equal(visti()[1].volume, 70, 'l\'alert non suona: l\'effetto tiene il suo suono');
+  imposta(voci, { alerts: { attivo: true, follow: { attivo: true, chi: 'socialbot', volume: 0 } } });
+  ev('channel.follow');
+  t.mock.timers.tick(1200);
+  assert.equal(visti()[1].volume, 70, 'un alert a volume zero non suona');
+  imposta({ follow: { ...voci.follow, muto: false } }, { alerts: { attivo: true, follow: { attivo: true, chi: 'socialbot' } } });
+  ev('channel.follow');
+  t.mock.timers.tick(1200);
+  assert.equal(visti()[1].volume, 70, 'senza la scelta, suonano tutti e due');
+  effectsDb.add(CH, { comando: 'trombone', tipo: 'audio', file: 'trombone.mp3', tier: 'tutti', cooldown: 0, volume: 60, durata: 0 });
+  imposta({ follow: { attivo: true, pausa: 0, muto: true, livelli: [{ effetto: { tipo: 'mio', comando: 'trombone' } }] } }, { alerts: { attivo: true, follow: { attivo: true, chi: 'socialbot' } } });
+  ev('channel.follow');
+  t.mock.timers.tick(1200);
+  assert.deepEqual(nomi(), ['alert'], 'un tuo effetto che e\' solo un suono, muto, non parte');
+});
+
+test('la prova di un evento e\' l\'evento vero, con le scelte non salvate, senza conti e senza pausa', (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout', 'Date'] });
+  const goal = { id: 'g1', attivo: true, tipo: 'bit', obiettivo: 100, partenza: 0 };
+  imposta({ cheer: { attivo: true, pausa: 600, livelli: [{ da: 100, effetto: pronto('coriandoli') }] } },
+    { alerts: { attivo: true, cheer: { attivo: true, chi: 'socialbot', minBits: 0 } }, altro: { overlayGoals: [goal] } });
+  const nonSalvata = pulisci({ voci: { cheer: { attivo: true, pausa: 600, livelli: [{ da: 100, effetto: pronto('coriandoli') }, { da: 1000, effetto: pronto('fuochi') }] } } }).voci.cheer;
+  let r = motore.provaEvento(CH, 'cheer', 1500, nonSalvata);
+  t.mock.timers.tick(1200);
+  assert.equal(r.avviso, true);
+  assert.deepEqual(r.effetto, { parte: true, da: 1000, muto: false });
+  assert.deepEqual(nomi(), ['alert', 'fuochi'], 'il livello delle scelte non salvate, dopo l\'alert');
+  assert.deepEqual(streamers.get(CH).settings.overlayStato?.goals || {}, {}, 'la prova non conta per l\'obiettivo');
+  fx.mandati.length = 0;
+  ev('channel.cheer', { bits: 150 });
+  t.mock.timers.tick(1200);
+  assert.deepEqual(nomi(), ['alert', 'coriandoli'], 'la prova non lascia una pausa all\'evento vero');
+  r = motore.provaEvento(CH, 'cheer', 1500, nonSalvata);
+  assert.equal(r.effetto.parte, true, 'e non la rispetta: l\'evento vero ha appena acceso la sua, la prova parte lo stesso');
+  assert.deepEqual(motore.provaEvento(CH, 'cheer', 50, nonSalvata).effetto, { parte: false, perche: 'sotto' });
+  assert.deepEqual(motore.provaEvento(CH, 'cheer', 500, { ...nonSalvata, attivo: false }).effetto, { parte: false, perche: 'spento' });
+  effectsDb.addDisegno(CH, { comando: 'caffe', disegno: JSON.stringify(normDisegno({ nome: 'stelle' })), tier: 'tutti', cooldown: 0, volume: 50, durata: 5000 });
+  imposta({}, { donazioni: { valuta: 'EUR', livelli: [{ da: 5, nome: 'Caffè', effetto: 'effetto:caffe' }] } });
+  r = motore.provaEvento(CH, 'donazione', 7, pulisci({ voci: { donazione: { attivo: true, livelli: [{ da: 1, effetto: pronto('cuori') }] } } }).voci.donazione);
+  assert.equal(r.offerta, true, 'la donazione che raggiunge un\'offerta col suo effetto: parte quello');
+  assert.equal(r.effetto, null);
+  r = motore.provaEvento(CH, 'obiettivo', 0, pulisci({ voci: { obiettivo: { attivo: true, livelli: [{ effetto: pronto('fuochi') }] } } }).voci.obiettivo);
+  assert.deepEqual(r.effetto, { parte: true, da: 0, muto: false });
+  assert.equal(motore.provaEvento(CH, 'inventato', 1), null);
 });

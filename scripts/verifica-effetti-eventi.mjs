@@ -13,8 +13,16 @@
 //    tornano uguali a una nuova lettura, in ordine;
 //  · uno dei tuoi effetti al posto di uno pronto; la pausa resta nei suoi limiti;
 //  · l'interruttore nel titolo accende senza aprire;
+//  · «Prova l'evento» dice cosa e' partito (l'alert e il livello giusto) o
+//    perche' l'effetto no; ogni livello ha l'anteprima;
+//  · la scelta pronta riempie solo gli eventi vuoti e lascia la pagina da salvare;
+//  · «Usalo per un evento» anche da una riga dei tuoi effetti;
+//  · se nessun overlay mostra gli effetti, la carta lo dice e porta allo Studio;
+//  · nello Studio la tendina del suono di un alert mostra quello che suona
+//    davvero, e «Nessun suono» si salva come silenzio;
 //  · al computer lo Studio dice quale effetto parte, il suo link apre il foglio,
-//    e dal foglio si torna all'alert giusto, aperto da solo; la ricerca porta
+//    e dal foglio si torna all'alert giusto, aperto da solo e in vista nelle
+//    proprietà, quando il pannello ha finito di cambiare; la ricerca porta
 //    alla parte degli eventi;
 //  · niente scorre di lato e la pagina non ha errori, al telefono e al computer.
 //
@@ -67,7 +75,7 @@ async function apri(larg, alt, nome) {
   await p.goto(`http://127.0.0.1:${PORTA}/?demo=1&lang=it`, { waitUntil: 'domcontentloaded' });
   await p.waitForFunction(() => window.SB_APP, null, { timeout: 20000 });
   await p.evaluate(() => window.SB_APP.vai('effetti'));
-  await p.waitForFunction(() => document.querySelectorAll('#ee-fogli details[data-ee]').length === 7 && document.querySelectorAll('#pronti-galleria .pronti-voce').length === 8, null, { timeout: 20000 });
+  await p.waitForFunction(() => document.querySelectorAll('#ee-fogli details[data-ee]').length === EE_ORDINE.length && document.querySelectorAll('#pronti-galleria .pronti-voce').length === 8, null, { timeout: 20000 });
   await p.waitForTimeout(300);
   return p;
 }
@@ -79,6 +87,26 @@ const foglio = (p, ev) => p.evaluate((e) => {
     acceso: !!d?.querySelector('[data-ee-on]')?.checked };
 }, ev);
 const salvato = (p) => p.evaluate(() => JSON.parse(JSON.stringify(_demoScritture.effettiEventi || null)));
+
+// Il gruppo aperto delle proprieta' si misura a pannello FERMO: il cambio di
+// mano finito, niente che si sta disfacendo, e lo scorrimento immobile per
+// dieci fotogrammi. Prima la misura dipenderebbe dal tempo, non dal disegno.
+async function gruppoInVista(p) {
+  await p.waitForFunction(() => { const i = document.getElementById('ovl-inspector'); return !!i && !i._cambio && !i.querySelector('.dg-resta') && (i._finoA || 0) <= performance.now(); }, null, { timeout: 10000 });
+  await p.evaluate(() => new Promise((ok) => {
+    const i = document.getElementById('ovl-inspector');
+    let prima = i.scrollTop, fermi = 0;
+    const giro = () => { const ora = i.scrollTop; fermi = ora === prima ? fermi + 1 : 0; prima = ora; if (fermi >= 10) ok(); else requestAnimationFrame(giro); };
+    requestAnimationFrame(giro);
+  }));
+  return p.evaluate(() => {
+    const aperti = [...document.querySelectorAll('.asp-blocco[data-asp="alert"] > details.insp-grp[open]')];
+    const ins = document.getElementById('ovl-inspector'), su = aperti[0]?.querySelector('summary')?.getBoundingClientRect();
+    const testa = ins?.querySelector(':scope > .pan-testa')?.getBoundingClientRect(), ri = ins?.getBoundingClientRect();
+    const visto = !!(su && ri && su.top >= (testa ? testa.bottom : ri.top) - 1 && su.bottom <= ri.bottom + 1 && su.top >= 0 && su.bottom <= innerHeight);
+    return { scheda: schedaAttiva, sel: selezione, aperti: aperti.map((d) => d.dataset.grp), visto, su: su && Math.round(su.top), testa: testa && Math.round(testa.bottom), st: ins?.scrollTop };
+  });
+}
 
 for (const [larg, alt, nome] of [[390, 844, 'telefono'], [1280, 900, 'computer']]) {
   const p = await apri(larg, alt, nome);
@@ -163,6 +191,63 @@ for (const [larg, alt, nome] of [[390, 844, 'telefono'], [1280, 900, 'computer']
   const sub = await foglio(p, 'sub');
   dice(sub.acceso && !sub.aperto && /senza un effetto/.test(sub.resa), `${nome}: l'interruttore nel titolo accende senza aprire, e il titolo lo dice`, JSON.stringify(sub));
 
+  // «Prova l'evento»: col numero sotto il primo livello, poi sopra l'ultimo
+  const provaCon = (n) => p.evaluate(async (k) => {
+    _eeApri('cheer', false);
+    document.getElementById('toast-box').innerHTML = '';
+    const i = document.querySelector('[data-ee-prova-n="cheer"]');
+    i.value = String(k); i.dispatchEvent(new Event('input', { bubbles: true }));
+    document.querySelector('[data-ee-prova-evento="cheer"]').click();
+    await new Promise((r) => setTimeout(r, 600));
+    return document.querySelector('#toast-box .toast:last-child')?.textContent || '';
+  }, n);
+  const sotto = await provaCon(50), sopra = await provaCon(3000);
+  dice(/l'alert/.test(sotto) && /con 50 bit non si arriva al primo livello, da 100 bit/.test(sotto) && /l'alert e «Fuochi d'artificio»/.test(sopra),
+    `${nome}: «Prova l'evento» dice cosa è partito, o perché l'effetto no`, `${sotto} | ${sopra}`);
+  const anteprima = await p.evaluate(async () => {
+    document.querySelector('[data-ee-anteprima="cheer"][data-i="0"]').click();
+    await new Promise((r) => setTimeout(r, 500));
+    const t = document.querySelector('.ant-velo #ant-titolo')?.textContent || '';
+    document.querySelector('.ant-velo [data-ant="chiudi"]')?.click();
+    return t;
+  });
+  dice(/Coriandoli/.test(anteprima), `${nome}: ogni livello ha l'anteprima, nel pannello`, anteprima);
+
+  // la scelta pronta: solo gli eventi vuoti
+  const primaPronta = await p.evaluate(() => ({ cheer: _ee.voci.cheer.livelli.map((l) => l.da).join(), vuoti: _ee.eventi.filter((e) => !_ee.voci[e.id].livelli.length).map((e) => e.id) }));
+  await p.evaluate(() => { _salvaSporco = false; document.querySelector('[data-ee-partenza]').click(); });
+  await p.waitForTimeout(300);
+  const dopoPronta = await p.evaluate(() => ({ cheer: _ee.voci.cheer.livelli.map((l) => l.da).join(), pieni: _ee.eventi.every((e) => _ee.voci[e.id].livelli.length && _ee.voci[e.id].attivo), suoni: _ee.eventi.some((e) => _ee.voci[e.id].livelli.some((l) => l.effetto.disegno?.suono)), sporco: _salvaSporco, tasto: !!document.querySelector('[data-ee-partenza]') }));
+  dice(primaPronta.vuoti.length > 0 && dopoPronta.pieni && dopoPronta.cheer === primaPronta.cheer && !dopoPronta.tasto && dopoPronta.sporco,
+    `${nome}: la scelta pronta riempie solo gli eventi vuoti, li accende, non tocca gli altri e lascia la pagina da salvare`, JSON.stringify({ primaPronta, dopoPronta }));
+  dice(!(await p.evaluate((ids) => ids.some((id) => _ee.voci[id].livelli.some((l) => l.effetto.disegno?.suono)), primaPronta.vuoti)), `${nome}: la scelta pronta non aggiunge suoni`);
+
+  // «Usalo per un evento» da una riga dei tuoi effetti
+  await p.click('[data-sotto="tuoi"]');
+  await p.waitForTimeout(300);
+  const tuo = await p.evaluate(async () => {
+    const s = document.querySelector('[data-usa-evento]');
+    const c = s.dataset.usaEvento;
+    s.value = 'obiettivo'; s.dispatchEvent(new Event('change', { bubbles: true }));
+    await new Promise((r) => setTimeout(r, 600));
+    return { c, parte: document.querySelector('.sotto-barra .on')?.dataset.sotto, livello: _ee.voci.obiettivo.livelli[0]?.effetto, aperto: !!document.querySelector('#ee-fogli details[data-ee="obiettivo"]')?.open, tendina: s.value };
+  });
+  dice(tuo.parte === 'eventi' && tuo.aperto && tuo.livello?.tipo === 'mio' && tuo.livello.comando === tuo.c && tuo.tendina === '',
+    `${nome}: «Usalo per un evento» da una riga dei tuoi effetti lo mette nel foglio dell'evento`, JSON.stringify(tuo));
+  await p.click('#ee-salva');
+  await p.waitForTimeout(400);
+
+  // nessun overlay che mostra gli effetti
+  const invisibili = await p.evaluate(async () => {
+    const prima = !!document.querySelector('.ee-invisibili');
+    const ov = (_demoScritture.overlays || _demoGet('/api/streamer/overlays').overlays).map((o) => ({ ...o, mostra: { ...(o.mostra || {}), effetti: false }, occasioni: [] }));
+    _demoScritture.overlays = ov;
+    await caricaEventiEffetti();
+    const riga = document.querySelector('.ee-invisibili');
+    return { prima, dopo: !!riga, link: riga?.querySelector('[data-vai="alert"]') ? true : false };
+  });
+  dice(!invisibili.prima && invisibili.dopo && invisibili.link, `${nome}: se nessun overlay mostra gli effetti, la carta lo dice e porta allo Studio`, JSON.stringify(invisibili));
+
   const largo = await p.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   dice(largo <= 0, `${nome}: niente scorre di lato`, `${largo}px`);
 
@@ -175,7 +260,7 @@ for (const [larg, alt, nome] of [[390, 844, 'telefono'], [1280, 900, 'computer']
     await p.waitForFunction(() => document.querySelector('[data-al-effetto="cheer"]'), null, { timeout: 20000 });
     await p.waitForTimeout(800);
     const righe = await p.evaluate(() => Object.fromEntries([...document.querySelectorAll('[data-al-effetto]')].map((x) => [x.dataset.alEffetto, x.textContent.replace(/\s+/g, ' ').trim()])));
-    dice(/Neve da 250 bit/.test(righe.cheer || '') && /Abbonamenti regalati: Palloncini da 1 regalato/.test(righe.sub || '') && !/Abbonamenti:/.test(righe.sub || '') && /!/.test(righe.raid || '') && /Nessun effetto/.test(righe.donazione || ''),
+    dice(/Neve da 250 bit/.test(righe.cheer || '') && /Abbonamenti: Stelle da 1 mese; Abbonamenti regalati: Palloncini da 1 regalato/.test(righe.sub || '') && /!/.test(righe.raid || '') && /Coriandoli da 1 €/.test(righe.donazione || ''),
       'computer: nello Studio ogni alert dice quale effetto parte (gli abbonamenti anche dei regali)', JSON.stringify(righe));
     await p.evaluate(() => document.querySelector('[data-ee-vai="cheer"]').click());
     await p.waitForTimeout(1500);
@@ -183,8 +268,20 @@ for (const [larg, alt, nome] of [[390, 844, 'telefono'], [1280, 900, 'computer']
     dice(torna.scheda === 'effetti' && torna.parte === 'eventi' && torna.aperto, 'computer: il link dello Studio apre la parte e il foglio dei bit', JSON.stringify(torna));
     await p.evaluate(() => document.querySelector('[data-ee-studio="cheer"]').click());
     await p.waitForTimeout(2000);
-    const st = await p.evaluate(() => ({ scheda: schedaAttiva, sel: selezione, aperti: [...document.querySelectorAll('.asp-blocco[data-asp="alert"] > details.insp-grp[open]')].map((d) => d.dataset.grp) }));
+    const st = await gruppoInVista(p);
     dice(st.scheda === 'alert' && st.sel === 'alert' && st.aperti.length === 1 && /^Bit/.test(st.aperti[0]), 'computer: dal foglio si torna allo Studio con l\'alert dei bit scelto e aperto, da solo', JSON.stringify(st));
+    dice(st.visto, 'computer: e il gruppo dei bit si vede nelle proprietà, col titolo sotto la testata', JSON.stringify(st));
+    // il suono di un alert: quello vero, e «Nessun suono» e' silenzio
+    const suono = await p.evaluate(async () => {
+      const sel = document.querySelector('.alert-blocco[data-alert="raid"] .al-suono');
+      const mostrato = sel.value, primo = sel.options[0].value;
+      sel.value = 'nessuno'; sel.dispatchEvent(new Event('change', { bubbles: true }));
+      document.getElementById('al-salva').click();
+      await new Promise((r) => setTimeout(r, 600));
+      return { mostrato, primo, salvato: stato.streamer.settings.alerts?.raid?.suono };
+    });
+    dice(suono.mostrato === 'trombetta' && suono.primo === 'nessuno' && suono.salvato === 'nessuno',
+      'computer: nello Studio il suono di un alert e\' quello che suona davvero, e «Nessun suono» si salva come silenzio', JSON.stringify(suono));
     const cercato = await p.evaluate(async () => {
       window.SB_CERCA.apri();
       const inp = document.getElementById('cerca-input');
@@ -198,6 +295,21 @@ for (const [larg, alt, nome] of [[390, 844, 'telefono'], [1280, 900, 'computer']
     });
     dice(cercato.scheda === 'effetti' && await parte(p) === 'eventi' && cercato.visto, 'computer: la ricerca porta alla parte «Per gli eventi», con la carta davanti', JSON.stringify(cercato));
   }
+  await p.close();
+}
+
+// Il primo ingresso nello Studio, arrivando dal foglio: le proprieta' cambiano
+// di mano e si disfano mentre si arriva, ed e' li' che il gruppo puo' finire
+// fuori vista.
+{
+  const p = await apri(1280, 900, 'computer, primo ingresso');
+  await p.click('[data-sotto="eventi"]');
+  await p.evaluate(() => _eeApri('raid', false));
+  await p.waitForTimeout(400);
+  await p.evaluate(() => document.querySelector('[data-ee-studio="raid"]').click());
+  await p.waitForFunction(() => schedaAttiva === 'alert' && selezione === 'alert', null, { timeout: 20000 });
+  const st = await gruppoInVista(p);
+  dice(st.aperti.length === 1 && /^Raid/.test(st.aperti[0]) && st.visto, 'computer, primo ingresso nello Studio dal foglio: il gruppo del raid è aperto e si vede, col titolo sotto la testata', JSON.stringify(st));
   await p.close();
 }
 

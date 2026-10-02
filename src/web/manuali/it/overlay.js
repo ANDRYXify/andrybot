@@ -9,7 +9,7 @@ export default {
   titolo: 'Manuale dell\'Overlay Studio: alert, chat, obiettivi | SocialBot',
   h1: 'Manuale dell\'Overlay Studio',
   desc: 'Comporre l\'overlay per OBS: overlay e occasioni, la tela, alert, chat, player, conto alla rovescia, obiettivi e cartelli, con i valori di base e i limiti.',
-  aggiornata: '2026-09-30',
+  aggiornata: '2026-10-02',
   corpo: [
     { h2: 'Overlay Studio', scheda: 'alert', p: [
       'L\'overlay è <strong>una pagina web</strong>. In OBS si mette come sorgente <em>Browser</em>. Da lì in poi quello che decidi nella scheda «Overlay Studio», nel gruppo «Scena & overlay», compare in diretta senza toccare più niente in OBS.',
@@ -340,7 +340,7 @@ export default {
       'Sotto la soglia l\'alert non parte: è il modo di non suonare per un bit solo. Le donazioni arrivano dai servizi collegati nella scheda «Donazioni» (<a href="/manuale/vetrina">manuale della vetrina</a>).',
       'Ogni evento ha «Testo», fino a 200 caratteri; lasciato vuoto vale quello di serie. Ha anche «Colore», «Volume» da 0 a 100 e «Font», che di serie segue lo stile comune e se lo cambi vale per quell\'evento soltanto.',
       '«Icona» sceglie fra venti icone (Stella, Cuore, Fulmine, Megafono, Corona, Fuoco, Diamante, Trofeo, Regalo, Razzo, Scudo, Cuffie, Controller, Nota, Fumetto, Campana, Scintille, Saluto, Occhio, Moneta) e le tue immagini, sotto «Le mie».',
-      '«Suono» sceglie fra tredici suoni pronti (Campanello, Campana, Goccia d\'acqua, Moneta, Tamburo, Trombetta, Errore / buzzer, Ta-daa!, Pop, Whoosh, Applausi, Laser, Power-up) e i tuoi, sotto «I miei suoni caricati». Di serie ogni evento ha il suono della tabella.',
+      '«Suono» sceglie fra tredici suoni pronti (Campanello, Campana, Goccia d\'acqua, Moneta, Tamburo, Trombetta, Errore / buzzer, Ta-daa!, Pop, Whoosh, Applausi, Laser, Power-up) e i tuoi, sotto «I miei suoni caricati». Di serie ogni evento ha il suono della tabella, e il menù lo mostra scelto; «Nessun suono» lascia l\'alert in silenzio.',
       '«Immagine o video» mette una tua immagine o un tuo video accanto al testo. Suono e immagine partono insieme: una tua GIF col tuo suono.',
       'Accanto a icona, suono e immagine ci sono «La mia icona…», «Carica un suono tuo», «Carica immagine/video tuo» e «Dalla libreria». Il file caricato si comprime, finisce nella tua libreria di «Effetti & suoni» e si assegna subito. Vale per tutti e cinque gli eventi, donazione compresa. Il file arriva a 60 MB. Il suono vuole un file audio, l\'immagine o video un\'immagine o un video, l\'icona un\'immagine; se sbagli tipo il pannello te lo dice. Un file caricato così diventa anche un comando in chat col nome del file, che solo i moderatori possono lanciare.',
       '«Prova» salva e manda all\'overlay l\'alert di quell\'evento con valori finti: MarioRossi, 3 mesi, 500 bit, 42 spettatori, 5 nella valuta delle tue donazioni col messaggio «grande live!». Le prove sono del proprietario del canale. L\'overlay deve essere aperto, in OBS o in una scheda.',

@@ -124,6 +124,39 @@ comandi diversi da quelli della riga italiana.
 - Gli effetti degli eventi partono anche per follow, abbonamenti e regali su Kick. [vai: effetti]
   en: Event effects also play for follows, subs and gifts on Kick.
   es: Los efectos de los eventos también salen con follows, suscripciones y regalos en Kick.
+- [importante] «Prova l'evento» fa partire un evento come in diretta, col numero che scrivi: l'alert e poi l'effetto del livello giusto. Poi ti dice cosa è partito, o perché no. [vai: effetti]
+  en: “Test the event” plays an event as it would live, with the number you type: the alert and then the effect of the right level. Then it tells you what played, or why not.
+  es: «Probar el evento» lanza un evento como en directo, con el número que escribes: la alerta y después el efecto del nivel justo. Luego te dice qué salió, o por qué no.
+  > Prova un evento senza aspettarlo
+  > Per vedere cosa succede a 500 bit bisognava aspettare 500 bit. Ora il numero lo scrivi tu e parte tutto come in diretta, ma non conta negli obiettivi e non scrive in chat.
+  en> Test an event without waiting for it
+  en> To see what happens at 500 bits you had to wait for 500 bits. Now you type the number and everything plays as it would live, but it doesn't count toward goals or write in chat.
+  es> Prueba un evento sin esperarlo
+  es> Para ver qué pasa con 500 bits había que esperar 500 bits. Ahora el número lo escribes tú y todo sale como en directo, pero no cuenta en los objetivos ni escribe en el chat.
+- Quando un obiettivo arriva al traguardo può partire un effetto a tutto schermo: c'è il foglio «Obiettivo raggiunto», una volta per obiettivo. [vai: effetti]
+  en: When a goal is reached a full-screen effect can play: there's the “Goal reached” sheet, once per goal.
+  es: Cuando un objetivo llega a la meta puede salir un efecto a pantalla completa: está la hoja «Objetivo alcanzado», una vez por objetivo.
+- Ogni livello degli eventi ha «Anteprima»: lo vedi nel pannello com'è in onda, anche quando è uno dei tuoi effetti. [vai: effetti]
+  en: Every event level has “Preview”: you see it in the panel as it goes on air, even when it's one of your own effects.
+  es: Cada nivel de los eventos tiene «Vista previa»: lo ves en el panel como sale en directo, también cuando es uno de tus efectos.
+- Dall'elenco dei tuoi effetti, «Usalo per un evento…» mette un tuo suono, immagine o video nel foglio dell'evento che scegli. [vai: effetti]
+  en: From your effects list, “Use it for an event…” puts one of your sounds, images or videos into the sheet of the event you pick.
+  es: Desde la lista de tus efectos, «Úsalo para un evento…» pone uno de tus sonidos, imágenes o vídeos en la hoja del evento que eliges.
+- Se nessun overlay mostra «Effetti a schermo», la parte degli eventi lo dice e ti porta ad accenderlo nello Studio. [vai: effetti]
+  en: If no overlay shows “On-screen effects”, the events part says so and takes you to turn it on in the Studio.
+  es: Si ningún overlay muestra «Efectos en pantalla», la parte de los eventos lo dice y te lleva a activarlo en el Estudio.
+- «Accendi una scelta pronta» dà un effetto agli eventi che non ne hanno: cuori ai follow, coriandoli ai bit, fuochi ai raid e agli obiettivi. Non salva da sola. [vai: effetti]
+  en: “Turn on a ready-made set” gives an effect to the events that have none: hearts for follows, confetti for bits, fireworks for raids and goals. It doesn't save by itself.
+  es: «Activa una selección lista» da un efecto a los eventos que no tienen: corazones a los follows, confeti a los bits, fuegos a los raids y a los objetivos. No guarda sola.
+- Con «Se suona già l'alert, l'effetto parte senza suono» non suonano più due cose a un secondo di distanza. [vai: effetti]
+  en: With “If the alert already plays a sound, the effect plays without sound” two sounds no longer play a second apart.
+  es: Con «Si la alerta ya suena, el efecto sale sin sonido» ya no suenan dos cosas con un segundo de diferencia.
+- Su un alert dello Studio, «Nessun suono» ora lo lascia davvero in silenzio: prima suonava quello di serie. Il menù mostra il suono che parte. [vai: alert]
+  en: On a Studio alert, “No sound” now really keeps it silent: before, the default sound played. The menu shows the sound that plays.
+  es: En una alerta del Estudio, «Sin sonido» ahora la deja de verdad en silencio: antes sonaba el que viene por defecto. El menú muestra el sonido que sale.
+- Da «Apri l'alert nello Studio» il gruppo dell'alert arriva in vista nelle proprietà, col suo titolo, invece di restare più giù. [vai: alert]
+  en: From “Open the alert in the Studio” the alert's group comes into view in the properties, with its title, instead of staying further down.
+  es: Desde «Abrir la alerta en el Studio» el grupo de la alerta aparece a la vista en las propiedades, con su título, en vez de quedarse más abajo.
 
 ## 2026-10-01
 
