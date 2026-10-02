@@ -28,8 +28,10 @@ test('se le regole non arrivano, la carta dice l\'errore invece di restare in ca
   const box = { innerHTML: 'in caricamento' };
   let disegnate = false;
   // eslint-disable-next-line no-new-func
-  const f = new Function('_g', 'api', 'L', 'esc', '_rgDisegna', '_regole', `${funzione('caricaRegoleGiochi')}\nreturn caricaRegoleGiochi;`);
-  const carica = f(() => box, async () => { throw new Error('server giù'); }, (it) => it, (x) => x, () => { disegnate = true; }, null);
+  // il modulo delle attese uguali per tutti c'e' gia' (lo si carica una volta):
+  // qui si prova la chiamata al server che non risponde
+  const f = new Function('_g', 'api', 'L', 'esc', '_rgDisegna', '_regole', '_rgComuni', `${funzione('caricaRegoleGiochi')}\nreturn caricaRegoleGiochi;`);
+  const carica = f(() => box, async () => { throw new Error('server giù'); }, (it) => it, (x) => x, () => { disegnate = true; }, null, { COMUNI: [] });
   await carica();
   assert.match(box.innerHTML, /Non riesco a leggere le regole dei giochi: server giù/);
   assert.equal(disegnate, false);

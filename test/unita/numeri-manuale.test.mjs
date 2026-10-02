@@ -5,7 +5,7 @@
 // I tris della slot pagano una parte del tris di 💎: tre quarti il 7, due
 // quinti gli altri. Il manuale li scriveva a mano (0,75 e 0,4, e le parole),
 // quindi un ribilancio lo avrebbe lasciato a mentire. Adesso il fattore sta
-// nel catalogo, e lo leggono il motore, la resa, l'etichetta e il manuale. E la
+// nel catalogo, e lo leggono il motore, la resa, il pannello e il manuale. E la
 // tabella delle regole diceva «1 frasi di serie».
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -26,8 +26,14 @@ test('i fattori dei tris sono quelli del catalogo, per il motore e per il manual
   assert.deepEqual(esiti.filter((e) => e[0] === 'jackpot').map((e) => e[1]), [1, G.SLOT_TRIS.sette, G.SLOT_TRIS.altri]);
   assert.deepEqual(N.SLOT.sette, { parte: 'tre quarti', fattore: G.SLOT_TRIS.sette });
   assert.deepEqual(N.SLOT.altri, { parte: 'due quinti', fattore: G.SLOT_TRIS.altri });
-  const eti = G.giocoDi('slot').param.find((p) => p.k === 'jackpot').eti[0];
-  assert.equal(eti, 'Tris di 💎 (il 7 paga tre quarti, gli altri due quinti)');
+  // L'etichetta dice solo «Tris di 💎»: quanto pagano il 7 e gli altri lo
+  // dice la riga sotto, coi numeri, e la fa coi fattori che il catalogo manda
+  // al pannello insieme alla casella. Gli stessi del motore.
+  const jackpot = G.giocoDi('slot').param.find((p) => p.k === 'jackpot');
+  assert.equal(jackpot.eti[0], 'Tris di 💎');
+  assert.deepEqual(jackpot.tris, G.SLOT_TRIS);
+  const nelPannello = G.catalogoPerPannello({}).giochi.find((g) => g.id === 'slot').param.find((p) => p.k === 'jackpot');
+  assert.deepEqual(nelPannello.tris, G.SLOT_TRIS, 'il pannello riceve i fattori veri');
 });
 
 test('una parte senza un nome suo si dice in centesimi', () => {

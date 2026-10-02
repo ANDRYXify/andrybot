@@ -590,6 +590,10 @@ details > summary:focus-visible { outline: 2px solid var(--acc); outline-offset:
 .regola-resa { flex: 1 1 16rem; min-width: 0; font-family: system-ui, sans-serif; font-size: .82rem; color: var(--testo-2); }
 .regola-resa.sopra { color: var(--rosso); font-weight: 600; }
 .regola-corpo { margin-top: .6rem; }
+.rg-sotto { margin: .9rem 0 .1rem; font-size: .84rem; font-weight: 700; color: var(--testo-2); letter-spacing: .01em; }
+.regola-corpo > .rg-sotto:first-child { margin-top: .2rem; }
+.rg-segue { display: grid; gap: .2rem; margin-top: .35rem; }
+.rg-tutti { padding-bottom: 1rem; margin-bottom: 1rem; border-bottom: 1px dashed var(--contorno); }
 .regola-scelte { border: 0; padding: 0; margin: .7rem 0 0; display: flex; flex-wrap: wrap; gap: .3rem 1rem; }
 .regola-scelte > legend { padding: 0; margin-bottom: .3rem; font-size: .88rem; color: var(--testo-2); }
 

@@ -103,9 +103,9 @@ export const MOMENTI = {
   'gioco-insisti': {
     titolo: ['Chi insiste aspetta di più', 'Insisting means waiting longer', 'Quien insiste espera más'],
     quando: [
-      'Quando qualcuno riscrive il comando di un gioco mentre per lui è in attesa, e il gioco castiga chi insiste (regole del gioco, «Chi insiste durante l’attesa»). Dice l’attesa nuova.',
-      'When someone types a game command again while that game is still in their wait, and the game punishes insisting (game rules, “Whoever insists during the wait”). It says the new wait.',
-      'Cuando alguien vuelve a escribir el comando de un juego mientras para él sigue en espera, y el juego castiga a quien insiste (reglas del juego, «Quien insiste durante la espera»). Dice la nueva espera.',
+      'Quando qualcuno riscrive il comando di un gioco mentre per lui è in attesa, e il gioco castiga chi insiste (regole del gioco o quelle uguali per tutti, «Chi insiste prima del tempo aspetta in più»). Dice l’attesa nuova.',
+      'When someone types a game command again while that game is still in their wait, and the game punishes insisting (the game’s rules or the ones for every game, “Whoever insists too early waits longer”). It says the new wait.',
+      'Cuando alguien vuelve a escribir el comando de un juego mientras para él sigue en espera, y el juego castiga a quien insiste (reglas del juego o las de todos, «Quien insiste antes de tiempo espera más»). Dice la nueva espera.',
     ],
     dati: { nome: 'sempre', comando: 'sempre', tempo: 'sempre' },
     esempio: { nome: 'Luna', comando: '!slot', tempo: '45 secondi' },

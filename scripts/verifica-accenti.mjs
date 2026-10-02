@@ -50,7 +50,7 @@ const GIUSTA = { 'non e': 'non è', "c'e": "c'è", 'a meta': 'a metà' };
 //
 // Le eccezioni sono coppie che esistono davvero tutte e due in italiano, e
 // stanno scritte qui perché siano una scelta e non una dimenticanza.
-const COPPIE_VERE = new Set(['meta', 'cambio', 'blocco', 'arrivo', 'provo', 'papa', 'pero', 'sara', 'ancora', 'porto', 'legge', 'tempo', 'leggera', 'capito', 'parlo', 'segnalo', 'mostro']);
+const COPPIE_VERE = new Set(['meta', 'cambio', 'blocco', 'arrivo', 'provo', 'papa', 'pero', 'sara', 'ancora', 'porto', 'legge', 'tempo', 'leggera', 'capito', 'parlo', 'segnalo', 'mostro', 'unita']);
 const ACCENTATE = { 'à': 'a', 'è': 'e', 'é': 'e', 'ì': 'i', 'ò': 'o', 'ù': 'u' };
 
 function incoerenti(testo) {

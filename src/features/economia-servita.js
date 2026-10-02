@@ -28,3 +28,6 @@ export const regolePerIlBrowser = () => servito('economia-regole.js');
 // Lo stesso per le regole del giro dei giochi automatici (giro-regole.js): il
 // pannello mostra le percentuali e i tempi coi conti del bot.
 export const giroPerIlBrowser = () => servito('giro-regole.js');
+// E le attese uguali per tutti i giochi (regole-comuni.js): il pannello dice
+// quali attese valgono davvero in ogni gioco con la funzione del bot.
+export const comuniPerIlBrowser = () => servito('regole-comuni.js');

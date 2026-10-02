@@ -52,6 +52,18 @@ comandi diversi da quelli della riga italiana.
 - Le regole delle monete nella scheda Giochi si leggono meglio: nomi che dicono a chi e ogni quanto, e sotto ogni gruppo una riga che le rilegge coi numeri. [vai: giochi]
   en: Coin rules in the Games tab read better: names that say who and how often, and under each group a line that reads them back with the numbers.
   es: Las reglas de las monedas en la pestaña Juegos se leen mejor: nombres que dicen a quién y cada cuánto, y bajo cada grupo una línea que las relee con los números.
+- [importante] Le stesse attese in tutti i giochi: le scrivi una volta, accese o spente, e ogni gioco può fare a modo suo. [vai: giochi]
+  en: The same waits in every game: you set them once, on or off, and each game can still do its own thing.
+  es: Las mismas esperas en todos los juegos: las escribes una vez, activadas o no, y cada juego puede ir a su aire.
+  > Una regola sola per tutti i giochi
+  > Prima le stesse quattro caselle si ripetevano in ogni gioco. Ora decidi in un posto solo attese e insistenze, lasci vuoto quello che vuoi gioco per gioco, e la pesca, se vuoi, resta lenta.
+  en> One rule for every game
+  en> Before, the same four boxes repeated in every game. Now you set waits and insisting in one place, leave empty what you want per game, and fishing can stay slow if you like.
+  es> Una sola regla para todos los juegos
+  es> Antes las mismas cuatro casillas se repetían en cada juego. Ahora decides en un solo sitio esperas e insistencias, dejas vacío lo que quieres juego por juego, y la pesca, si quieres, sigue lenta.
+- Dentro ogni gioco le regole sono divise fra il gioco e le attese, con le unità, e una riga dice coi numeri cosa succede davvero. [vai: giochi]
+  en: Inside each game the rules are split between the game and the waits, with units, and a line says in numbers what really happens.
+  es: Dentro de cada juego las reglas están separadas entre el juego y las esperas, con unidades, y una línea dice con números lo que pasa de verdad.
 
 ## 2026-10-01
 

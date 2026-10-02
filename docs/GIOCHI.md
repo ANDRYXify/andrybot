@@ -241,6 +241,54 @@ stesso ritmo. Chi aveva scelto l'attesa unica la ritrova al posto giusto
 La carta dei comandi mostra le attese scelte nelle regole (il registro dice di
 quale gioco è ogni comando, `gioco`), non più un numero suo.
 
+## Le attese uguali per tutti i giochi
+
+Chiesto così: «una parte in cui posso decidere globalmente queste cose, attivare o disattivare la
+regola globale e, se è attiva, gestire i giochi in modo da sovrascriverla singolarmente». E la carta
+«Le regole di ogni gioco» era confusionaria: in ogni gioco le stesse quattro caselle in fila con
+costi e premi, senza unità, i tris della slot in frazioni, una riga rossa che non diceva perché.
+
+**Cosa copre.** Solo quello che tutti i giochi hanno: l'attesa per chi ha giocato, quella per
+tutto il canale, quanto aspetta in più chi insiste, dopo quante insistenze è fuori. Costi e premi
+no: la slot e la pesca non si confrontano.
+
+**Il modello**, in un posto solo (`src/features/regole-comuni.js`, puro, servito al pannello come
+`/js/regole-comuni.js`):
+
+- la regola per tutti sta in `giochiConf._tutti`: accesa o spenta, e ognuna delle quattro un numero
+  nei suoi limiti oppure `null`, cioè «resta gioco per gioco». Si può far valere per tutti solo
+  l'insistenza e lasciare a ogni gioco le sue attese;
+- un gioco fa a modo suo con `giochiConf[id].suo`: allora valgono le sue, tutte e quattro;
+- `comuni: false` nel catalogo: i colpi al boss (a raffica per natura) e quello che non è un gioco
+  (abbracci, bacini, cinque, lo sblocco della chat) non la seguono mai, e non possono dire `suo`;
+- `effettivi(propri, tutti, { segue, suo })` dà i valori veri. `valoriDi` la chiama, quindi la
+  usano per costruzione il bot che fa aspettare, i castighi, la resa, le attese scritte nei comandi
+  e in `!giochi`. Con `valoriDi(…, { propri: true })` si hanno quelli del gioco e basta.
+
+**Il pannello.** In cima alla carta, «Le stesse attese in tutti i giochi»: l'interruttore, le quattro
+caselle (vuota = ogni gioco la sua) e una riga che dice la regola coi numeri e chi fa a modo suo.
+Dentro ogni gioco i campi sono divisi fra «Il gioco» e «Le attese»; se il gioco segue la regola, le
+sue caselle delle attese spariscono e al loro posto c'è «Segue le stesse attese di tutti i giochi» con
+«Attese sue per questo gioco». Sotto, la riga che dice cosa succede davvero: i tris della slot in
+monete (coi fattori del catalogo, `tris` sul parametro), le attese in parole, chi insiste volta per
+volta. Le etichette delle attese portano l'unità, e dicono «per chi ha giocato» e «per tutto il
+canale» invece di «a testa» e «per tutti». La riga rossa della resa dice perché è rossa.
+
+**Le caselle hanno i valori del gioco, mai quelli per tutti** (`propri` nel catalogo per il
+pannello): salvare scrive nel gioco solo quello che è suo. Spegnendo la regola per tutti, ogni gioco
+ritrova le sue.
+
+Le prove: `test/unita/regole-comuni.test.mjs` (limiti, vuoto, acceso/spento, a modo suo, chi non la
+segue, il salvataggio che non tocca gli altri giochi, e il bot vero che fa aspettare un minuto con la
+regola per tutti e 5 secondi quando la slot fa a modo suo, e l'insistenza che la segue);
+`test/contratto/regole-giochi-pannello.test.mjs` (le frasi esatte, le caselle coi valori del gioco,
+la funzione del bot e non una copia, il salvataggio); `scripts/verifica-regole-giochi.mjs` nel
+browser (caselle che spariscono e ricompaiono, il boss che lo dice, quello che resta dopo aver
+salvato, telefono e computer, con autoprova). Mutazioni: spenta che vale lo stesso, il boss che la
+segue, «a modo suo» che non conta, cose aggiunte a chi non le ha, il vuoto che diventa zero, il bot
+che non la vede, «suo» per chi non segue, le caselle coi valori veri, il raddoppio detto sbagliato,
+il salvataggio che perde chi fa a modo suo, le caselle che non si nascondono.
+
 ## Chi insiste aspetta di più
 
 Chiesto così: «penalità se si spammano certi giochi, con un avviso progressivo come quello

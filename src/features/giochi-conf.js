@@ -24,6 +24,7 @@
 // toccato e prende il nuovo; uno diverso e' una scelta, e resta.
 
 import { VOCI, giroDi, minuti, minutiManche } from './giro-regole.js';
+import { LIMITI as LIMITI_COMUNI, normalizzaTutti, effettivi } from './regole-comuni.js';
 
 const T = (it, en, es) => [it, en, es];
 
@@ -108,16 +109,22 @@ const NOMI_OGGETTI = {
 // doppio, poi il doppio ancora; dopo `insistiMax` volte il gioco per lui e'
 // chiuso fino a fine diretta. Di partenza niente. Il boss non le ha: il suo
 // comando, !colpisci, si scrive a raffica per costruzione.
+//
+// I limiti stanno in regole-comuni.js, perche' sono gli stessi della regola
+// uguale per tutti i giochi: un posto solo. L'unita' si scrive qui, una volta,
+// per tutte le etichette delle attese.
+const SECONDI = T(' (secondi)', ' (seconds)', ' (segundos)');
+const conUnita = (eti) => eti.map((x, i) => x + SECONDI[i]);
 const ATTESE = ({ testa = 0, tutti = 0, prima = null, etiTesta, etiTutti, insisti = true } = {}) => [
-  { k: 'attesaTesta', tipo: 'secondi', def: testa, min: 0, max: 86400, attesa: 'testa', ...(prima === 'testa' ? { prima: 'attesa' } : {}),
-    eti: etiTesta || T('Attesa fra due giocate, a testa', 'Wait between two plays, each', 'Espera entre dos jugadas, cada uno') },
-  { k: 'attesaTutti', tipo: 'secondi', def: tutti, min: 0, max: 86400, attesa: 'tutti', ...(prima === 'tutti' ? { prima: 'attesa' } : {}),
-    eti: etiTutti || T('Attesa fra due giocate, per tutti', 'Wait between two plays, for everyone', 'Espera entre dos jugadas, para todos') },
+  { k: 'attesaTesta', tipo: 'secondi', def: testa, min: LIMITI_COMUNI.attesaTesta[0], max: LIMITI_COMUNI.attesaTesta[1], attesa: 'testa', ...(prima === 'testa' ? { prima: 'attesa' } : {}),
+    eti: conUnita(etiTesta || T('Attesa per chi ha giocato', 'Wait for whoever played', 'Espera para quien jugó')) },
+  { k: 'attesaTutti', tipo: 'secondi', def: tutti, min: LIMITI_COMUNI.attesaTutti[0], max: LIMITI_COMUNI.attesaTutti[1], attesa: 'tutti', ...(prima === 'tutti' ? { prima: 'attesa' } : {}),
+    eti: conUnita(etiTutti || T('Attesa per tutto il canale', 'Wait for the whole channel', 'Espera para todo el canal')) },
   ...(insisti ? [
-    { k: 'insisti', tipo: 'secondi', def: 0, min: 0, max: 3600, insistere: 'tot',
-      eti: T('Chi insiste durante l\'attesa aspetta in più: la prima volta (poi il doppio, 0 = niente)', 'Whoever insists during the wait waits longer: the first time (then double, 0 = none)', 'Quien insiste durante la espera espera más: la primera vez (luego el doble, 0 = nada)') },
-    { k: 'insistiMax', tipo: 'numero', def: 5, min: 0, max: 20, insistere: 'max',
-      eti: T('Dopo quante volte basta fino a fine diretta (0 = mai)', 'After how many times it stops until the end of the stream (0 = never)', 'Tras cuántas veces se acaba hasta el final del directo (0 = nunca)') },
+    { k: 'insisti', tipo: 'secondi', def: 0, min: LIMITI_COMUNI.insisti[0], max: LIMITI_COMUNI.insisti[1], insistere: 'tot',
+      eti: T('Chi insiste prima del tempo aspetta in più (secondi, 0 = niente)', 'Whoever insists too early waits longer (seconds, 0 = none)', 'Quien insiste antes de tiempo espera más (segundos, 0 = nada)') },
+    { k: 'insistiMax', tipo: 'numero', def: 5, min: LIMITI_COMUNI.insistiMax[0], max: LIMITI_COMUNI.insistiMax[1], insistere: 'max',
+      eti: T('Dopo quante insistenze è fuori fino a fine diretta (0 = mai)', 'After how many tries they are out until the stream ends (0 = never)', 'Tras cuántas insistencias queda fuera hasta el final del directo (0 = nunca)') },
   ] : []),
 ];
 
@@ -138,17 +145,18 @@ export const parteDi = (f) => {
   const c = Math.round(f * 100);
   return PARTI[f] || T(`${c} su 100`, `${c} in 100`, `${c} de cada 100`);
 };
-const _7 = parteDi(SLOT_TRIS.sette);
-const _altri = parteDi(SLOT_TRIS.altri);
 
 // Il catalogo. `param` in ordine di pannello. `resa` e' la descrizione
-// dell'esito medio: vedi `valutaResa`.
+// dell'esito medio: vedi `valutaResa`. `comuni: false` vuol dire che le attese
+// uguali per tutti i giochi qui non valgono mai (regole-comuni.js): i colpi al
+// boss sono a raffica, e abbracci, bacini, cinque e lo sblocco della chat non
+// sono giochi.
 export const CATALOGO = [
   {
     id: 'slot', nome: T('Slot machine', 'Slot machine', 'Tragaperras'),
     param: [
-      { k: 'costo', tipo: 'monete', def: 10, min: 1, max: 100000, eti: T('Costo di una giocata', 'Cost of a play', 'Coste de una tirada'), vecchio: { punti: 'slotCosto', era: 10 } },
-      { k: 'jackpot', tipo: 'monete', def: 200, min: 0, max: 1000000, eti: T(`Tris di 💎 (il 7 paga ${_7[0]}, gli altri ${_altri[0]})`, `Three 💎 (7 pays ${_7[1]}, the others ${_altri[1]})`, `Trío de 💎 (el 7 paga ${_7[2]}, los demás ${_altri[2]})`), vecchio: { punti: 'slotVinci', era: 200 } },
+      { k: 'costo', tipo: 'monete', def: 10, min: 1, max: 100000, eti: T('Costo di una partita', 'Cost of a play', 'Coste de una tirada'), vecchio: { punti: 'slotCosto', era: 10 } },
+      { k: 'jackpot', tipo: 'monete', def: 200, min: 0, max: 1000000, eti: T('Tris di 💎', 'Three 💎', 'Trío de 💎'), tris: SLOT_TRIS, vecchio: { punti: 'slotVinci', era: 200 } },
       { k: 'coppia', tipo: 'monete', def: 15, min: 0, max: 100000, eti: T('Una coppia', 'A pair', 'Una pareja'), vecchio: { punti: 'slotCoppia', era: 20 } },
       ...ATTESE({ testa: 5, prima: 'testa' }),
     ],
@@ -165,7 +173,7 @@ export const CATALOGO = [
   {
     id: 'pesca', nome: T('Pesca', 'Fishing', 'Pesca'),
     param: [
-      ...ATTESE({ testa: 300, prima: 'testa', etiTesta: T('Attesa fra due lanci, a testa', 'Wait between two casts, each', 'Espera entre dos lances, cada uno'), etiTutti: T('Attesa fra due lanci, per tutti', 'Wait between two casts, for everyone', 'Espera entre dos lances, para todos') }),
+      ...ATTESE({ testa: 300, prima: 'testa', etiTesta: T('Attesa fra due lanci, per chi ha giocato', 'Wait between two casts, for whoever played', 'Espera entre dos lances, para quien jugó'), etiTutti: T('Attesa fra due lanci, per tutto il canale', 'Wait between two casts, for the whole channel', 'Espera entre dos lances, para todo el canal') }),
       { k: 'pescato', tipo: 'tabella', def: PESCATO, max: 30, eti: T('Cosa si pesca: nome | monete | rarità', 'What can be caught: name | coins | rarity', 'Qué se pesca: nombre | monedas | rareza') },
     ],
     resa: { tipo: 'tabella', tabella: 'pescato', attesa: ['attesaTesta', 'attesaTutti'] },
@@ -174,7 +182,7 @@ export const CATALOGO = [
     id: 'duello', nome: T('Duello', 'Duel', 'Duelo'),
     param: [
       { k: 'premio', tipo: 'monete', def: 0, min: 0, max: 100000, eti: T('Premio del duello senza posta', 'Prize of a duel without stake', 'Premio del duelo sin apuesta'), vecchio: { punti: 'duello', era: 15 } },
-      ...ATTESE({ tutti: 15, prima: 'tutti', etiTesta: T('Attesa fra due duelli, a testa', 'Wait between two duels, each', 'Espera entre dos duelos, cada uno'), etiTutti: T('Attesa fra due duelli, per tutti', 'Wait between two duels, for everyone', 'Espera entre dos duelos, para todos') }),
+      ...ATTESE({ tutti: 15, prima: 'tutti', etiTesta: T('Attesa fra due duelli, per chi ha giocato', 'Wait between two duels, for whoever played', 'Espera entre dos duelos, para quien jugó'), etiTutti: T('Attesa fra due duelli, per tutto il canale', 'Wait between two duels, for the whole channel', 'Espera entre dos duelos, para todo el canal') }),
       { k: 'postaMax', tipo: 'monete', def: 0, min: 0, max: 1000000, eti: T('Posta massima di un duello (0 = nessun limite)', 'Maximum duel stake (0 = no limit)', 'Apuesta máxima de un duelo (0 = sin límite)') },
       { k: 'scadenza', tipo: 'secondi', def: 60, min: 15, max: 600, eti: T('Tempo per accettare una sfida con posta', 'Time to accept a staked challenge', 'Tiempo para aceptar un reto con apuesta') },
       { k: 'esiti', tipo: 'elenco', def: DUELLO, max: 30, lungo: 200, segnaposto: ['a', 'b'], eti: T('Come va a finire: {a} vince, {b} perde', 'How it ends: {a} wins, {b} loses', 'Cómo termina: {a} gana, {b} pierde') },
@@ -202,7 +210,7 @@ export const CATALOGO = [
       { k: 'perPersona', tipo: 'percento', def: 5, min: 0, max: 50, eti: T('Quanto aggiunge ogni persona in più', 'How much each extra person adds', 'Cuánto añade cada persona más') },
       { k: 'riuscitaMax', tipo: 'percento', def: 60, min: 0, max: 100, eti: T('Mai più di tante volte su cento', 'Never more than this many times out of a hundred', 'Nunca más de tantas veces de cada cien') },
       { k: 'vincita', tipo: 'numero', def: 160, min: 100, max: 1000, eti: T('Chi scappa, ogni 100 di posta ne riprende (160 = +60%)', 'Whoever escapes gets back, for every 100 staked (160 = +60%)', 'Quien escapa recupera, por cada 100 apostadas (160 = +60%)') },
-      ...ATTESE({ tutti: 300, prima: 'tutti', etiTesta: T('Attesa fra due colpi, per chi era nella banda', 'Wait between two heists, for the crew', 'Espera entre dos golpes, para la banda'), etiTutti: T('Attesa fra due colpi, per tutti', 'Wait between two heists, for everyone', 'Espera entre dos golpes, para todos') }),
+      ...ATTESE({ tutti: 300, prima: 'tutti', etiTesta: T('Attesa fra due colpi, per chi era nella banda', 'Wait between two heists, for the crew', 'Espera entre dos golpes, para la banda'), etiTutti: T('Attesa fra due colpi, per tutto il canale', 'Wait between two heists, for the whole channel', 'Espera entre dos golpes, para todo el canal') }),
       { k: 'riuscito', tipo: 'elenco', def: COLPO_RIUSCITO, max: 20, lungo: 200, segnaposto: [], eti: T('Se scappano tutti', 'If everyone escapes', 'Si escapan todos') },
       { k: 'fallito', tipo: 'elenco', def: COLPO_FALLITO, max: 20, lungo: 200, segnaposto: [], eti: T('Se li prendono tutti', 'If everyone is caught', 'Si los pillan a todos') },
       { k: 'meta', tipo: 'elenco', def: COLPO_META, max: 20, lungo: 200, segnaposto: [], eti: T('Se va a metà', 'If it goes halfway', 'Si sale a medias') },
@@ -213,18 +221,18 @@ export const CATALOGO = [
     id: 'manche', nome: T('Manche', 'Rounds', 'Rondas'),
     param: [
       { k: 'premio', tipo: 'monete', def: 25, min: 0, max: 100000, eti: T('Premio a chi risponde per primo', 'Prize for the first right answer', 'Premio para quien responde primero'), vecchio: { punti: 'trivia', era: 25 } },
-      ...ATTESE({ tutti: 10, etiTesta: T('Attesa fra due manche aperte a mano (!manche, !trivia), a testa', 'Wait between two rounds started by hand (!manche, !trivia), each', 'Espera entre dos rondas abiertas a mano (!manche, !trivia), cada uno'), etiTutti: T('Attesa fra due manche aperte a mano (!manche, !trivia), per tutti', 'Wait between two rounds started by hand (!manche, !trivia), for everyone', 'Espera entre dos rondas abiertas a mano (!manche, !trivia), para todos') }),
+      ...ATTESE({ tutti: 10, etiTesta: T('Attesa fra due manche aperte a mano (!manche, !trivia), per chi ha giocato', 'Wait between two rounds started by hand (!manche, !trivia), for whoever played', 'Espera entre dos rondas abiertas a mano (!manche, !trivia), para quien jugó'), etiTutti: T('Attesa fra due manche aperte a mano (!manche, !trivia), per tutto il canale', 'Wait between two rounds started by hand (!manche, !trivia), for the whole channel', 'Espera entre dos rondas abiertas a mano (!manche, !trivia), para todo el canal') }),
     ],
     resa: { tipo: 'manche', premio: 'premio' },
   },
   {
-    id: 'boss', nome: T('Boss da battere insieme', 'Boss to beat together', 'Jefe para vencer juntos'),
+    id: 'boss', nome: T('Boss da battere insieme', 'Boss to beat together', 'Jefe para vencer juntos'), comuni: false,
     param: [
       { k: 'vitaPerPersona', tipo: 'numero', def: 60, min: 10, max: 10000, eti: T('Punti vita per ogni persona che scrive in chat', 'Health points for each person writing in chat', 'Puntos de vida por cada persona que escribe en el chat') },
       { k: 'minimo', tipo: 'numero', def: 3, min: 1, max: 100, eti: T('Contando almeno tante persone', 'Counting at least this many people', 'Contando al menos tantas personas') },
       { k: 'dannoMin', tipo: 'numero', def: 5, min: 1, max: 10000, eti: T('Danno di un colpo, da', 'Damage of a hit, from', 'Daño de un golpe, desde') },
       { k: 'dannoMax', tipo: 'numero', def: 15, min: 1, max: 10000, eti: T('Danno di un colpo, fino a', 'Damage of a hit, up to', 'Daño de un golpe, hasta') },
-      ...ATTESE({ testa: 5, prima: 'testa', insisti: false, etiTesta: T('Attesa fra due colpi al boss, a testa', 'Wait between two hits on the boss, each', 'Espera entre dos golpes al jefe, cada uno'), etiTutti: T('Attesa fra due colpi al boss, per tutti', 'Wait between two hits on the boss, for everyone', 'Espera entre dos golpes al jefe, para todos') }),
+      ...ATTESE({ testa: 5, prima: 'testa', insisti: false, etiTesta: T('Attesa fra due colpi al boss, per chi ha giocato', 'Wait between two hits on the boss, for whoever played', 'Espera entre dos golpes al jefe, para quien jugó'), etiTutti: T('Attesa fra due colpi al boss, per tutto il canale', 'Wait between two hits on the boss, for the whole channel', 'Espera entre dos golpes al jefe, para todo el canal') }),
       { k: 'durata', tipo: 'secondi', def: 90, min: 20, max: 600, eti: T('Tempo per batterlo', 'Time to beat it', 'Tiempo para vencerlo') },
       { k: 'bottino', tipo: 'monete', def: 20, min: 0, max: 100000, eti: T('Bottino a testa se cade: chi colpisce di più prende di più', 'Loot per person if it falls: whoever hits more gets more', 'Botín por cabeza si cae: quien golpea más se lleva más') },
       { k: 'dopoRaid', tipo: 'numero', def: 10, min: 0, max: 100000, eti: T('Arriva con un raid di almeno tante persone (0 = mai)', 'Comes with a raid of at least this many people (0 = never)', 'Llega con un raid de al menos tantas personas (0 = nunca)') },
@@ -267,7 +275,7 @@ export const CATALOGO = [
       { k: 'premioVincitore', tipo: 'monete', def: 50, min: 0, max: 100000, eti: T('Premio al vincitore', 'Prize for the winner', 'Premio para el ganador') },
       { k: 'premioEliminazione', tipo: 'monete', def: 5, min: 0, max: 100000, eti: T('Premio per ogni eliminazione', 'Prize for each elimination', 'Premio por cada eliminación') },
       { k: 'premioCorona', tipo: 'monete', def: 10, min: 0, max: 100000, eti: T('Premio a chi porta la corona', 'Prize for whoever wears the crown', 'Premio para quien lleva la corona') },
-      ...ATTESE({ tutti: 300, etiTesta: T('Attesa fra due arene aperte a mano, a testa', 'Wait between two arenas opened by hand, each', 'Espera entre dos arenas abiertas a mano, cada uno'), etiTutti: T('Attesa fra due arene aperte a mano, per tutti', 'Wait between two arenas opened by hand, for everyone', 'Espera entre dos arenas abiertas a mano, para todos') }),
+      ...ATTESE({ tutti: 300, etiTesta: T('Attesa fra due arene aperte a mano, per chi ha giocato', 'Wait between two arenas opened by hand, for whoever played', 'Espera entre dos arenas abiertas a mano, para quien jugó'), etiTutti: T('Attesa fra due arene aperte a mano, per tutto il canale', 'Wait between two arenas opened by hand, for the whole channel', 'Espera entre dos arenas abiertas a mano, para todo el canal') }),
       { k: 'dopoRaid', tipo: 'numero', def: 0, min: 0, max: 100000, eti: T('Si apre con un raid di almeno tante persone (0 = mai)', 'Opens with a raid of at least this many people (0 = never)', 'Se abre con un raid de al menos tantas personas (0 = nunca)') },
     ],
     resa: { tipo: 'arena' },
@@ -278,7 +286,7 @@ export const CATALOGO = [
       { k: 'vincitaBJ', tipo: 'numero', def: 250, min: 200, max: 300, eti: T('Il blackjack servito, ogni 100 puntate, ne rende (250 = 3 a 2)', 'A dealt blackjack returns, for every 100 bet (250 = 3 to 2)', 'El blackjack servido devuelve, por cada 100 apostadas (250 = 3 a 2)') },
       { k: 'massimo', tipo: 'monete', def: 0, min: 0, max: 1000000, eti: T('Puntata massima (0 = nessun limite)', 'Maximum bet (0 = no limit)', 'Apuesta máxima (0 = sin límite)') },
       { k: 'tempo', tipo: 'secondi', def: 60, min: 15, max: 300, eti: T('Tempo per decidere, poi si sta', 'Time to decide, then you stand', 'Tiempo para decidir, luego te plantas') },
-      ...ATTESE({ testa: 5, etiTesta: T('Attesa fra due mani, a testa', 'Wait between two hands, each', 'Espera entre dos manos, cada uno'), etiTutti: T('Attesa fra due mani, per tutti', 'Wait between two hands, for everyone', 'Espera entre dos manos, para todos') }),
+      ...ATTESE({ testa: 5, etiTesta: T('Attesa fra due mani, per chi ha giocato', 'Wait between two hands, for whoever played', 'Espera entre dos manos, para quien jugó'), etiTutti: T('Attesa fra due mani, per tutto il canale', 'Wait between two hands, for the whole channel', 'Espera entre dos manos, para todo el canal') }),
     ],
     resa: { tipo: 'blackjack' },
   },
@@ -290,7 +298,7 @@ export const CATALOGO = [
       { k: 'massimo', tipo: 'monete', def: 0, min: 0, max: 1000000, eti: T('Puntata massima (0 = nessun limite)', 'Maximum bet (0 = no limit)', 'Apuesta máxima (0 = sin límite)') },
       { k: 'raccolta', tipo: 'secondi', def: 45, min: 15, max: 300, eti: T('Tempo per puntare', 'Time to bet', 'Tiempo para apostar') },
       { k: 'corridori', tipo: 'elenco', def: CORSA_CORRIDORI, min: 2, max: 8, lungo: 40, segnaposto: [], eti: T('I corridori, dal favorito al più lento', 'The runners, from favorite to slowest', 'Los corredores, del favorito al más lento') },
-      ...ATTESE({ tutti: 300, etiTesta: T('Attesa fra due puntate, a testa', 'Wait between two bets, each', 'Espera entre dos apuestas, cada uno'), etiTutti: T('Attesa fra due corse, per tutti', 'Wait between two races, for everyone', 'Espera entre dos carreras, para todos') }),
+      ...ATTESE({ tutti: 300, etiTesta: T('Attesa fra due puntate, per chi ha giocato', 'Wait between two bets, for whoever played', 'Espera entre dos apuestas, para quien jugó'), etiTutti: T('Attesa fra due corse, per tutto il canale', 'Wait between two races, for the whole channel', 'Espera entre dos carreras, para todo el canal') }),
     ],
     resa: { tipo: 'corsa' },
   },
@@ -300,7 +308,7 @@ export const CATALOGO = [
       { k: 'miccia', tipo: 'secondi', def: 30, min: 10, max: 600, eti: T('Scoppia dopo almeno tanti secondi', 'It blows after at least this many seconds', 'Explota tras al menos tantos segundos') },
       { k: 'micciaMax', tipo: 'secondi', def: 90, min: 10, max: 600, eti: T('E al più dopo tanti', 'And at most after this many', 'Y como mucho tras tantos') },
       { k: 'multa', tipo: 'monete', def: 0, min: 0, max: 100000, eti: T('Chi resta con la patata ne dà tante a chi gliel\'ha passata (0 = niente)', 'Whoever is left holding it gives this many to whoever passed it (0 = nothing)', 'Quien se queda con ella da tantas a quien se la pasó (0 = nada)') },
-      ...ATTESE({ tutti: 120, etiTesta: T('Attesa fra due patate lanciate, a testa', 'Wait between two potatoes thrown, each', 'Espera entre dos patatas lanzadas, cada uno'), etiTutti: T('Attesa fra due patate, per tutti', 'Wait between two potatoes, for everyone', 'Espera entre dos patatas, para todos') }),
+      ...ATTESE({ tutti: 120, etiTesta: T('Attesa fra due patate lanciate, per chi ha giocato', 'Wait between two potatoes thrown, for whoever played', 'Espera entre dos patatas lanzadas, para quien jugó'), etiTutti: T('Attesa fra due patate, per tutto il canale', 'Wait between two potatoes, for the whole channel', 'Espera entre dos patatas, para todo el canal') }),
     ],
     resa: { tipo: 'passa' },
   },
@@ -310,7 +318,7 @@ export const CATALOGO = [
       { k: 'pausa', tipo: 'secondi', def: 60, min: 20, max: 600, eti: T('Si chiude se nessuno trova la parola per tanti secondi', 'It closes if nobody finds the word for this many seconds', 'Se cierra si nadie encuentra la palabra durante tantos segundos') },
       { k: 'traguardo', tipo: 'numero', def: 10, min: 0, max: 1000, eti: T('Ogni tante parole il bot applaude (0 = mai)', 'Every this many words the bot cheers (0 = never)', 'Cada tantas palabras el bot aplaude (0 = nunca)') },
       { k: 'inizio', tipo: 'elenco', def: CATENA_INIZIO, max: 100, lungo: 24, segnaposto: [], eti: T('Le parole da cui si parte', 'The words to start from', 'Las palabras desde las que se empieza') },
-      ...ATTESE({ tutti: 30, etiTesta: T('Attesa fra due catene aperte, a testa', 'Wait between two chains opened, each', 'Espera entre dos cadenas abiertas, cada uno'), etiTutti: T('Attesa fra due catene aperte, per tutti', 'Wait between two chains opened, for everyone', 'Espera entre dos cadenas abiertas, para todos') }),
+      ...ATTESE({ tutti: 30, etiTesta: T('Attesa fra due catene aperte, per chi ha giocato', 'Wait between two chains opened, for whoever played', 'Espera entre dos cadenas abiertas, para quien jugó'), etiTutti: T('Attesa fra due catene aperte, per tutto il canale', 'Wait between two chains opened, for the whole channel', 'Espera entre dos cadenas abiertas, para todo el canal') }),
     ],
     resa: null,
   },
@@ -319,7 +327,7 @@ export const CATALOGO = [
     param: [
       { k: 'pausa', tipo: 'secondi', def: 120, min: 30, max: 1800, eti: T('Si chiude se nessuno conta per tanti secondi', 'It closes if nobody counts for this many seconds', 'Se cierra si nadie cuenta durante tantos segundos') },
       { k: 'traguardo', tipo: 'numero', def: 50, min: 0, max: 10000, eti: T('Ogni tanti numeri il bot applaude (0 = mai)', 'Every this many numbers the bot cheers (0 = never)', 'Cada tantos números el bot aplaude (0 = nunca)') },
-      ...ATTESE({ tutti: 30, etiTesta: T('Attesa fra due conte aperte, a testa', 'Wait between two counts opened, each', 'Espera entre dos cuentas abiertas, cada uno'), etiTutti: T('Attesa fra due conte aperte, per tutti', 'Wait between two counts opened, for everyone', 'Espera entre dos cuentas abiertas, para todos') }),
+      ...ATTESE({ tutti: 30, etiTesta: T('Attesa fra due conte aperte, per chi ha giocato', 'Wait between two counts opened, for whoever played', 'Espera entre dos cuentas abiertas, para quien jugó'), etiTutti: T('Attesa fra due conte aperte, per tutto il canale', 'Wait between two counts opened, for the whole channel', 'Espera entre dos cuentas abiertas, para todo el canal') }),
     ],
     resa: null,
   },
@@ -332,13 +340,13 @@ export const CATALOGO = [
     resa: null,
   },
   {
-    id: 'sblocca', nome: T('Sblocca la chat', 'Unlock the chat', 'Desbloquea el chat'),
+    id: 'sblocca', nome: T('Sblocca la chat', 'Unlock the chat', 'Desbloquea el chat'), comuni: false,
     param: [
       { k: 'modo', tipo: 'scelta', def: 'emote', scelte: [['emote', T('solo emote', 'emote-only', 'solo emotes')], ['unici', T('messaggi unici', 'unique chat', 'mensajes únicos')]], eti: T('Cosa si sblocca', 'What gets unlocked', 'Qué se desbloquea') },
       { k: 'costoMinuto', tipo: 'monete', def: 50, min: 1, max: 100000, eti: T('Costo di ogni minuto', 'Cost of each minute', 'Coste de cada minuto') },
       { k: 'minuti', tipo: 'numero', def: 2, min: 1, max: 60, eti: T('Minuti se non se ne dicono', 'Minutes if none are given', 'Minutos si no se dicen') },
       { k: 'massimo', tipo: 'numero', def: 10, min: 1, max: 60, eti: T('Minuti al massimo', 'Maximum minutes', 'Minutos como máximo') },
-      ...ATTESE({ tutti: 600, prima: 'tutti', etiTesta: T('Attesa fra due sblocchi, a testa', 'Wait between two unlocks, each', 'Espera entre dos desbloqueos, cada uno'), etiTutti: T('Attesa fra due sblocchi, per tutti', 'Wait between two unlocks, for everyone', 'Espera entre dos desbloqueos, para todos') }),
+      ...ATTESE({ tutti: 600, prima: 'tutti', etiTesta: T('Attesa fra due sblocchi, per chi ha giocato', 'Wait between two unlocks, for whoever played', 'Espera entre dos desbloqueos, para quien jugó'), etiTutti: T('Attesa fra due sblocchi, per tutto il canale', 'Wait between two unlocks, for the whole channel', 'Espera entre dos desbloqueos, para todo el canal') }),
     ],
     resa: { tipo: 'spesa' },
   },
@@ -352,7 +360,7 @@ export const CATALOGO = [
     resa: { tipo: 'puntata', costo: 100, esiti: [[1 / 3, ['vincita', 1]], [1 / 3, 100]] },
   },
   {
-    id: 'abbraccio', nome: T('Abbracci', 'Hugs', 'Abrazos'),
+    id: 'abbraccio', nome: T('Abbracci', 'Hugs', 'Abrazos'), comuni: false,
     param: [
       ...ATTESE({ testa: 10, prima: 'testa' }),
       { k: 'frasi', tipo: 'elenco', def: ABBRACCI, max: 30, lungo: 200, segnaposto: ['a', 'b'], eti: T('Come si abbraccia: {a} abbraccia {b}', 'How a hug goes: {a} hugs {b}', 'Cómo se abraza: {a} abraza a {b}') },
@@ -361,7 +369,7 @@ export const CATALOGO = [
     resa: null,
   },
   {
-    id: 'bacio', nome: T('Bacini', 'Kisses', 'Besitos'),
+    id: 'bacio', nome: T('Bacini', 'Kisses', 'Besitos'), comuni: false,
     param: [
       ...ATTESE({ testa: 10, prima: 'testa' }),
       { k: 'frasi', tipo: 'elenco', def: BACI, max: 30, lungo: 200, segnaposto: ['a', 'b'], eti: T('Come si bacia: {a} manda un bacio a {b}', 'How a kiss goes: {a} kisses {b}', 'Cómo se besa: {a} besa a {b}') },
@@ -370,11 +378,11 @@ export const CATALOGO = [
     resa: null,
   },
   {
-    id: 'cinque', nome: T('Batti il cinque', 'High five', 'Choca esos cinco'),
+    id: 'cinque', nome: T('Batti il cinque', 'High five', 'Choca esos cinco'), comuni: false,
     param: [
       { k: 'perfetti', tipo: 'percento', def: 20, min: 0, max: 100, eti: T('Quante volte su cento il cinque viene perfetto', 'How many times out of a hundred the high five comes out perfect', 'Cuántas veces de cada cien el cinco sale perfecto') },
       { k: 'scadenza', tipo: 'secondi', def: 30, min: 5, max: 300, eti: T('Dopo questi la mano resta alzata', 'After these the hand is left hanging', 'Tras estos la mano se queda en el aire') },
-      ...ATTESE({ testa: 5, prima: 'testa', etiTesta: T('Attesa fra due mani alzate, a testa', 'Wait between two raised hands, each', 'Espera entre dos manos levantadas, cada uno'), etiTutti: T('Attesa fra due mani alzate, per tutti', 'Wait between two raised hands, for everyone', 'Espera entre dos manos levantadas, para todos') }),
+      ...ATTESE({ testa: 5, prima: 'testa', etiTesta: T('Attesa fra due mani alzate, per chi ha giocato', 'Wait between two raised hands, for whoever played', 'Espera entre dos manos levantadas, para quien jugó'), etiTutti: T('Attesa fra due mani alzate, per tutto il canale', 'Wait between two raised hands, for the whole channel', 'Espera entre dos manos levantadas, para todo el canal') }),
       { k: 'frasiPerfetto', tipo: 'elenco', def: CINQUE_PERFETTO, max: 20, lungo: 200, segnaposto: ['a', 'b'], eti: T('Il cinque perfetto: {a} alza, {b} batte', 'The perfect high five: {a} raises, {b} hits', 'El cinco perfecto: {a} levanta, {b} choca') },
       { k: 'frasiNormale', tipo: 'elenco', def: CINQUE_NORMALE, max: 20, lungo: 200, segnaposto: ['a', 'b'], eti: T('Il cinque normale', 'The normal high five', 'El cinco normal') },
       { k: 'frasiSospeso', tipo: 'elenco', def: CINQUE_SOSPESO, max: 20, lungo: 200, segnaposto: ['a'], eti: T('La mano rimasta alzata: {a}', 'The hand left hanging: {a}', 'La mano en el aire: {a}') },
@@ -442,8 +450,13 @@ function valore(p, v) {
 // Quello che arriva dal pannello, gioco per gioco. Un valore storto non
 // azzera il gioco: si tiene quello di prima. Un gioco che non arriva non si
 // tocca.
+//
+// Le attese uguali per tutti i giochi stanno in `_tutti`, ripulite dalla
+// stessa funzione che le applica; `suo` dice che un gioco fa a modo suo, e lo
+// puo' dire solo un gioco che la regola per tutti la segue.
 export function normalizzaConf(prima = {}, arrivato = {}) {
   const out = { ...(prima && typeof prima === 'object' ? prima : {}) };
+  if (arrivato?._tutti && typeof arrivato._tutti === 'object') out._tutti = normalizzaTutti(arrivato._tutti);
   for (const g of CATALOGO) {
     const a = arrivato?.[g.id];
     if (!a || typeof a !== 'object') continue;
@@ -453,6 +466,7 @@ export function normalizzaConf(prima = {}, arrivato = {}) {
       const v = valore(p, a[p.k]);
       if (v !== null) cur[p.k] = v;
     }
+    if ('suo' in a && g.comuni !== false) cur.suo = a.suo === true;
     out[g.id] = cur;
   }
   return out;
@@ -469,7 +483,12 @@ function vecchioDi(p, settings) {
 
 // I valori di un gioco per un canale: quello scelto nel pannello, poi quello
 // scelto nel vecchio pannello dei punti, poi il predefinito.
-export function valoriDi(settings, id) {
+//
+// Sono i valori VERI, quelli che usano il bot, la resa e i castighi: se le
+// attese uguali per tutti i giochi sono accese e il gioco le segue, valgono
+// quelle (regole-comuni.js, effettivi). Con `propri` si hanno quelli del gioco
+// e basta: sono quelli che il pannello mostra nelle sue caselle, e che salva.
+export function valoriDi(settings, id, { propri = false } = {}) {
   const g = giocoDi(id);
   if (!g) return {};
   const scelto = settings?.giochiConf?.[id] || {};
@@ -478,7 +497,8 @@ export function valoriDi(settings, id) {
     const v = valore(p, scelto[p.k]) ?? (p.prima ? valore(p, scelto[p.prima]) : null) ?? valore(p, vecchioDi(p, settings));
     out[p.k] = v ?? (Array.isArray(p.def) ? p.def.map((x) => (Array.isArray(x) ? [...x] : x)) : p.def);
   }
-  return out;
+  if (propri) return out;
+  return effettivi(out, settings?.giochiConf?._tutti, { segue: g.comuni !== false, suo: scelto.suo === true });
 }
 
 // ── la resa ──────────────────────────────────────────────────────────────
@@ -706,15 +726,25 @@ export function contestoDi(settings = {}) {
   return { mancheMinuti: minutiManche(g), bossMinuti: minuti(g, 'boss'), arenaMinuti: minuti(g, 'arena'), presenzaOraria: presenzaOraria(settings?.punti) };
 }
 
+//
+// Per ogni gioco: `propri` sono i suoi valori (quelli delle caselle), `valori`
+// quelli veri, con le attese uguali per tutti se le segue; `segue` dice se la
+// regola per tutti qui puo' valere, `suo` se il gioco ha scelto di fare a modo
+// suo. `tutti` e' la regola per tutti, ripulita.
 export function catalogoPerPannello(settings = {}) {
   const contesto = contestoDi(settings);
+  const gc = settings?.giochiConf || {};
   return {
     contesto,
+    tutti: normalizzaTutti(gc._tutti),
     giochi: CATALOGO.map((g) => {
       const valori = valoriDi(settings, g.id);
       return {
         id: g.id, nome: g.nome, resa: g.resa,
         param: g.param.map(({ vecchio, prima, ...p }) => p),
+        segue: g.comuni !== false,
+        suo: gc[g.id]?.suo === true,
+        propri: valoriDi(settings, g.id, { propri: true }),
         valori,
         resaOra: valutaResa(g.resa, valori, contesto),
       };

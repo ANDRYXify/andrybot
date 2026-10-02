@@ -59,7 +59,7 @@ import { risolviCanaleId } from '../features/youtube.js';
 import * as abbonamenti from '../features/abbonamenti.js';
 import * as presenze from '../features/presenze.js';
 import * as economia from '../features/economia.js';
-import { regolePerIlBrowser, giroPerIlBrowser } from '../features/economia-servita.js';
+import { regolePerIlBrowser, giroPerIlBrowser, comuniPerIlBrowser } from '../features/economia-servita.js';
 import * as giroRegole from '../features/giro-regole.js';
 import { htmlAnteprima, anteprimaDemo } from './anteprima-pagine.js';
 import * as statistiche from '../features/statistiche.js';
@@ -1019,7 +1019,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // public/, e questi non sono file: li compone il server. Senza dichiararli,
   // a chi e' senza sessione il cancello rispondeva 404, e nella demo i conti
   // delle monete restavano vuoti e l'editor della carta non si apriva.
-  guscio.pagina('index.html', '/js/economia-regole.js', '/js/giro-regole.js', '/js/carta-disegno.js');
+  guscio.pagina('index.html', '/js/economia-regole.js', '/js/giro-regole.js', '/js/regole-comuni.js', '/js/carta-disegno.js');
   app.get('/js/economia-regole.js', (req, res) => {
     if (!REGOLE_ECONOMIA_JS) return notFound(res);
     res.set('Content-Type', 'application/javascript; charset=utf-8')
@@ -1030,6 +1030,12 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     if (!REGOLE_GIRO_JS) return notFound(res);
     res.set('Content-Type', 'application/javascript; charset=utf-8')
       .set('Cache-Control', 'public, max-age=3600').send(REGOLE_GIRO_JS);
+  });
+  const REGOLE_COMUNI_JS = comuniPerIlBrowser();
+  app.get('/js/regole-comuni.js', (req, res) => {
+    if (!REGOLE_COMUNI_JS) return notFound(res);
+    res.set('Content-Type', 'application/javascript; charset=utf-8')
+      .set('Cache-Control', 'public, max-age=3600').send(REGOLE_COMUNI_JS);
   });
   app.get('/js/carta-disegno.js', (req, res) => {
     if (!DISEGNO_JS) return notFound(res);
