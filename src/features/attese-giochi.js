@@ -183,25 +183,36 @@ export function castighiInCorso(channel, ora = Date.now()) {
 }
 
 // Quanto manca, e di quale attesa: se ci sono tutte e due vale la piu' lunga,
-// e il castigo di chi ha insistito conta come la sua attesa.
-export function resta(channel, gioco, chi) {
+// e il castigo di chi ha insistito conta come la sua attesa. Chi entra in una
+// partita gia' aperta non guarda l'attesa per tutti (`tutti: false`), e in un
+// invito nemmeno il castigo (`castigo: false`).
+export function resta(channel, gioco, chi, { tutti: perTutti = true, castigo: colCastigo = true } = {}) {
   const ora = Date.now();
-  const c = castigoDi(channel, gioco, chi);
+  const c = colCastigo ? castigoDi(channel, gioco, chi) : null;
   const castigo = !c ? 0 : c.f < 0 ? Infinity : c.f - ora;
   const testa = Math.max((fine.get(chiave(channel, gioco, pulito(chi))) || 0) - ora, castigo);
-  const tutti = (fine.get(chiave(channel, gioco, '')) || 0) - ora;
+  const tutti = perTutti ? (fine.get(chiave(channel, gioco, '')) || 0) - ora : 0;
   if (testa <= 0 && tutti <= 0) return null;
   if (tutti >= testa) return { perTutti: true, ms: tutti };
   return { perTutti: false, ms: testa, basta: castigo === Infinity };
 }
 
+// CHI APRE DECIDE COS'E' LA PARTITA (docs/GIOCHI.md, «Gli inviti»). Una
+// partita aperta dallo staff o dal giro dei giochi automatici e' un invito del
+// canale: entrarci non e' insistere, e un castigo non tiene fuori e non scende,
+// perche' non conta. Resta l'attesa a testa del gioco, che e' una sua regola e
+// non un castigo. Entrare in una partita gia' aperta, chiunque l'abbia aperta,
+// non guarda l'attesa per tutti: quella separa una partita dalla prossima.
+export const invita = (msg) => puoUsare('mod', msg);
+
 // true se bisogna aspettare (e il gioco si ferma li'). `dire` riceve
 // { nome, tempo, perTutti, cmd } per chi vuole dirlo con parole sue.
-export function aspetta(channel, gioco, msg, say, { comando = gioco, muta = false, dire = null } = {}) {
-  const r = resta(channel, gioco, msg.user);
+// `aperta`: null per chi apre, { invito } per chi entra in una partita aperta.
+export function aspetta(channel, gioco, msg, say, { comando = gioco, muta = false, dire = null, aperta = null } = {}) {
+  const r = resta(channel, gioco, msg.user, aperta ? { tutti: false, castigo: !aperta.invito } : undefined);
   if (!r) return senzaMessaggi(channel, comando, msg, say, muta);
   if (muta) return true;
-  if (insiste(channel, gioco, comando, msg, say, r)) return true;
+  if (!aperta?.invito && insiste(channel, gioco, comando, msg, say, r)) return true;
   const k = chiave(channel, gioco, r.perTutti ? '' : pulito(msg.user));
   const quando = fine.get(k);
   if (detta.get(k) === quando) return true;
@@ -239,9 +250,10 @@ function senzaMessaggi(channel, comando, msg, say, muta) {
 }
 
 // Chi entra in una partita (anche una che si chiude dopo): la paga adesso, e
-// se aveva aspettato senza insistere il suo castigo scende.
-export function entra(channel, gioco, msg) {
-  calma(channel, gioco, msg);
+// se aveva aspettato senza insistere il suo castigo scende. In un invito no:
+// non conta, ne' in su ne' in giu'.
+export function entra(channel, gioco, msg, { invito = false } = {}) {
+  if (!invito) calma(channel, gioco, msg);
   if (!paga(gioco, msg)) return;
   economia.giocata(channel, msg.user);
   dettoMancano.delete(`${channel}|${pulito(msg.user)}`);

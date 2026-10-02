@@ -17,6 +17,10 @@
 //  · il perdono dello staff toglie il castigo intero (su un gioco o su tutti),
 //    non l'attesa normale; !perdona e' solo dello staff, risponde con le sue
 //    frasi, e la carta del pannello elenca solo la diretta di adesso.
+//  · una corsa o un colpo aperti dallo staff o dal giro sono un invito: chi ci
+//    entra non insiste, il castigo non lo tiene fuori e non cambia, l'attesa a
+//    testa resta; aperti da uno spettatore, la regola di prima; e chi entra in
+//    una partita aperta non guarda l'attesa per tutti.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { cartellaUsaEGetta } from '../aiuto.mjs';
@@ -247,4 +251,88 @@ test('!perdona riconosce il gioco dal comando, anche rinominato, e anche quando 
   scrivi('bruno', '!perdona @anna macchinetta', { isMod: true });
   assert.equal(s.detti.at(-1), '✅ Castigo tolto a anna: si torna a giocare come prima.', 'il nome che il comando ha nel canale');
   assert.deepEqual(A.castighiInCorso(s.ch), []);
+});
+
+// CHI APRE DECIDE COS'E' LA PARTITA. Una corsa o un colpo aperti dallo staff o
+// dal giro dei giochi automatici sono un invito: entrarci non e' insistere, il
+// castigo non tiene fuori e non scende. Aperti da uno spettatore, la regola di
+// prima. E chi entra in una partita aperta non guarda l'attesa per tutti.
+const Corsa = await import('../../src/features/corsa.js');
+const MOD = { isMod: true };
+const castigo = (ch, gioco, chi = 'anna') => statoVivo.leggi(ch, 'giochi-insistenze')?.[`${gioco}|${chi}`] || null;
+function corsaFinita(t, conf = {}) {
+  const s = tavolo();
+  streamers.setSettings(s.ch, { giochiConf: { corsa: { insisti: 30, insistiMax: 3, attesaTutti: 300, ...conf } } });
+  points.dai(s.ch, 'carla', 100000);
+  games.segnaPresenza(s.ch, 'carla');
+  s.scrivi('anna', '!corsa 1 10');
+  t.mock.timers.tick(45_000);               // si punta...
+  t.mock.timers.tick(6_000);                // ...si corre, si arriva: l'attesa di tutti parte
+  return s;
+}
+const puntano = (ch) => (Corsa.corsaInCorso(ch)?.puntate || []).map((p) => p.chi).sort();
+
+test('la corsa aperta dallo staff e\' un invito: chi ha un castigo entra, e il castigo non sale e non scende', (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout', 'Date'], now: T0 });
+  const s = corsaFinita(t, { insistiMax: 2 });
+  s.scrivi('anna', '!corsa 1 10');
+  s.scrivi('anna', '!corsa 1 10');
+  assert.equal(castigo(s.ch, 'corsa').l, 2, 'ha insistito due volte');
+  t.mock.timers.tick(400_000);              // l'attesa di tutti e' finita, il castigo di anna no
+  assert.equal(A.resta(s.ch, 'corsa', 'anna')?.basta, true, 'per aprirne una sua, anna e\' chiusa fino a fine diretta');
+  s.scrivi('bruno', '!corsa 2 10', MOD);
+  s.scrivi('anna', '!corsa 1 10');
+  assert.deepEqual(puntano(s.ch), ['anna', 'bruno'], 'nella corsa dello staff anna entra');
+  assert.deepEqual({ l: castigo(s.ch, 'corsa').l, i: castigo(s.ch, 'corsa').i }, { l: 2, i: 1 }, 'e non conta: ne\' in su ne\' in giu\'');
+});
+
+test('la corsa aperta da uno spettatore resta come prima: chi ha un castigo resta fuori, e se insiste sale', (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout', 'Date'], now: T0 });
+  const s = corsaFinita(t);
+  s.scrivi('anna', '!corsa 1 10');
+  t.mock.timers.tick(305_000);              // l'attesa di tutti e' finita, i 30 secondi di castigo no
+  s.scrivi('carla', '!corsa 2 10');
+  s.scrivi('anna', '!corsa 1 10');
+  assert.deepEqual(puntano(s.ch), ['carla']);
+  assert.equal(castigo(s.ch, 'corsa').l, 2, 'entrare durante il proprio castigo e\' insistere');
+});
+
+test('anche nell\'invito l\'attesa a testa del gioco resta: si dice, ma non e\' un castigo', (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout', 'Date'], now: T0 });
+  const s = corsaFinita(t, { attesaTesta: 900 });
+  t.mock.timers.tick(400_000);
+  s.scrivi('bruno', '!corsa 2 10', MOD);
+  s.scrivi('anna', '!corsa 1 10');
+  s.scrivi('anna', '!corsa 1 10');
+  assert.deepEqual(puntano(s.ch), ['bruno']);
+  assert.match(s.detti.at(-1), /^🏁 anna, puoi puntare di nuovo fra/);
+  assert.equal(castigo(s.ch, 'corsa'), null, 'nessun castigo');
+});
+
+test('la corsa aperta dal giro durante l\'attesa di tutti accoglie chi entra', (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout', 'Date'], now: T0 });
+  const s = corsaFinita(t);
+  assert.ok(A.resta(s.ch, 'corsa', 'carla')?.perTutti, 'l\'attesa di tutti corre');
+  assert.equal(Corsa.apri(s.ch, (x) => s.detti.push(x)), true);
+  s.scrivi('carla', '!corsa 2 10');
+  s.scrivi('anna', '!corsa 1 10');
+  assert.deepEqual(puntano(s.ch), ['anna', 'carla'], 'l\'attesa di tutti separa una corsa dalla prossima, non tiene fuori da quella aperta');
+  assert.equal(castigo(s.ch, 'corsa'), null);
+});
+
+test('il colpo organizzato dallo staff e\' un invito come la corsa', async (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout', 'setInterval', 'Date'], now: T0 });
+  const Colpo = await import('../../src/features/colpo.js');
+  const s = tavolo();
+  streamers.setSettings(s.ch, { giochiConf: { colpo: { insisti: 30, insistiMax: 2, attesaTutti: 300 } } });
+  s.scrivi('anna', '!colpo');
+  t.mock.timers.tick(60_000);               // il colpo si chiude: l'attesa di tutti parte
+  s.scrivi('anna', '!colpo');
+  s.scrivi('anna', '!colpo');
+  assert.equal(A.resta(s.ch, 'colpo', 'anna').basta, true, 'per anna il colpo e\' chiuso fino a fine diretta');
+  t.mock.timers.tick(400_000);
+  s.scrivi('bruno', '!colpo', MOD);
+  s.scrivi('anna', '!colpo');
+  assert.deepEqual(Colpo.colpoInCorso(s.ch).map((m) => m.chi).sort(), ['anna', 'bruno'], 'nel colpo dello staff entra');
+  assert.equal(castigo(s.ch, 'colpo').l, 2);
 });

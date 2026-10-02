@@ -20,7 +20,7 @@ import { points, streamers } from '../db.js';
 import * as economia from './economia.js';
 import { valoriDi } from './giochi-conf.js';
 import { nomeIn } from './comandi-registro.js';
-import { aspetta, giocato, entra } from './attese-giochi.js';
+import { aspetta, giocato, entra, invita } from './attese-giochi.js';
 
 const scegli = (a) => a[Math.floor(Math.random() * a.length)];
 const pulito = (s) => String(s || '').replace(/^@/, '').toLowerCase().trim();
@@ -108,17 +108,17 @@ export function colpo(channel, msg, args, say, { moneta = 'monete' } = {}) {
   if (c.massimo > 0 && posta > c.massimo) { say(`🦹 Qui la posta massima è ${c.massimo} ${moneta}.`); return; }
   const k = colpi.get(channel);
   if (k?.banda.has(io)) { say(`🦹 ${nome}, sei già nella banda.`); return; }
-  if (aspetta(channel, 'colpo', msg, say, { dire: ({ nome: chi, tempo, perTutti }) => (perTutti ? `🚓 La polizia gira ancora: il prossimo colpo fra ${tempo}.` : `🚓 ${chi}, ti cercano ancora: il prossimo colpo per te fra ${tempo}.`) })) return;
+  if (aspetta(channel, 'colpo', msg, say, { aperta: k ? { invito: k.invito } : null, dire: ({ nome: chi, tempo, perTutti }) => (perTutti ? `🚓 La polizia gira ancora: il prossimo colpo fra ${tempo}.` : `🚓 ${chi}, ti cercano ancora: il prossimo colpo per te fra ${tempo}.`) })) return;
   const saldo = points.get(channel, io);
   if (saldo < posta) { say(`🦹 ${nome}, per entrare con ${posta} ${moneta} non basta quello che hai (${saldo}).`); return; }
-  entra(channel, 'colpo', msg);
+  entra(channel, 'colpo', msg, { invito: !!k?.invito });
 
   if (k) {
     k.banda.set(io, { nome, posta });
     k.nuovi.push(nome);
     return;
   }
-  const nuovo = { banda: new Map([[io, { nome, posta }]]), nuovi: [], say };
+  const nuovo = { banda: new Map([[io, { nome, posta }]]), nuovi: [], invito: invita(msg), say };
   nuovo.timer = setTimeout(() => chiudi(channel), c.raccolta * 1000);
   nuovo.timer.unref?.();
   nuovo.giro = setInterval(() => diIngressi(nuovo), GIRO_MS);

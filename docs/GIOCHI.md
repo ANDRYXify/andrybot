@@ -278,6 +278,35 @@ il castigo non diventa uno spam del bot.
 per costruzione non è insistere), e chi non ha ancora scritto i messaggi per giocare (quello è
 «per giocare bisogna esserci», docs/ECONOMIA.md, e lì il bot già tace dopo averlo detto).
 
+**Gli inviti: chi apre decide cos'è la partita.** Una partita di gruppo aperta dallo staff o dal
+giro dei giochi automatici è un invito del canale, e chi ci entra risponde all'invito, non insiste.
+Per costruzione, in un posto solo (`aspetta(…, { aperta: { invito } })` e `entra(…, { invito })` in
+attese-giochi.js; chi apre lo segna sulla partita con `invita(msg)`):
+
+- entrarci non fa mai salire un castigo;
+- un castigo, anche quello che chiude il gioco fino a fine diretta, non tiene fuori;
+- e non scende: quella partita non conta, né in su né in giù;
+- resta l'attesa a testa del gioco, che è una sua regola e non un castigo: si dice una volta,
+  senza castigo.
+
+Chi entra in una partita **già aperta**, chiunque l'abbia aperta, non guarda l'attesa per tutti:
+quella separa una partita dalla prossima, non tiene fuori da quella che c'è. Prima la corsa aperta
+dal giro mentre correva ancora l'attesa per tutti non accettava nessuno.
+
+Le partite aperte da uno spettatore restano come prima: entrare durante la propria attesa (o il
+proprio castigo) è insistere. Solo la corsa e il colpo si raggiungono con lo stesso comando che li
+apre, ed è lì che conta chi ha aperto; nelle manche, nella catena e nella conta si risponde, col
+boss si colpisce (a raffica, mai insistere), nell'arena si entra con `!combatti` o scrivendo, e la
+patata si passa: lì il castigo non c'entra mai.
+
+Le prove (`test/unita/insistere.test.mjs`): nella corsa dello staff entra chi ha il gioco chiuso,
+e il castigo resta com'era (gradino e «ha insistito»); nella corsa di uno spettatore chi ha un
+castigo resta fuori e, se insiste, sale; nell'invito l'attesa a testa resta e non diventa castigo;
+la corsa aperta dal giro durante l'attesa per tutti accoglie chi entra; il colpo dello staff è un
+invito come la corsa. Mutazioni: l'invito che castiga, il castigo che tiene fuori, l'attesa di
+tutti che tiene fuori, l'invito che fa scendere il castigo, ogni corsa un invito, la corsa o il
+colpo dello staff che non lo sono.
+
 **Un riavvio non lo azzera e non lo regala.** Il castigo sta nel database (`statoVivo`, una voce
 per canale), con la diretta a cui appartiene: un castigo di una diretta passata non vale.
 

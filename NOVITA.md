@@ -41,6 +41,15 @@ questa non è una cosa da ricordarsi: il cancello boccia una riga pubblica senza
 traduzione, una traduzione staccata dalla sua riga, o una che dice numeri e
 comandi diversi da quelli della riga italiana.
 
+## 2026-10-02
+
+- Chi entra in una corsa o in un colpo aperti dallo staff o dai giochi automatici non insiste: un castigo non lo tiene fuori e non cambia. [vai: giochi]
+  en: Whoever joins a race or a heist opened by the staff or by automatic games isn't insisting: a penalty doesn't keep them out and doesn't change.
+  es: Quien entra en una carrera o en un golpe abiertos por el staff o por los juegos automáticos no insiste: un castigo no lo deja fuera y no cambia.
+- La corsa aperta dai giochi automatici accoglie chi punta anche quando l'attesa per tutti della corsa precedente non è finita. [vai: giochi]
+  en: The race opened by automatic games takes bets even when the previous race's wait for everyone isn't over yet.
+  es: La carrera abierta por los juegos automáticos acepta apuestas aunque la espera para todos de la carrera anterior no haya terminado.
+
 ## 2026-10-01
 
 - Le monete che arrivano da sole si possono spegnere, fermare dopo un tot di silenzio, mettere sotto un tetto e raddoppiare per un'ora; e i comandi o i messaggi ripetuti possono non contare. [vai: giochi]

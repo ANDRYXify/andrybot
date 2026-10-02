@@ -23,7 +23,7 @@ import { points, streamers } from '../db.js';
 import * as economia from './economia.js';
 import { valoriDi, quoteCorsa } from './giochi-conf.js';
 import { nomeIn } from './comandi-registro.js';
-import { aspetta, giocato, entra } from './attese-giochi.js';
+import { aspetta, giocato, entra, invita } from './attese-giochi.js';
 
 const pulito = (s) => String(s || '').replace(/^@/, '').toLowerCase().trim();
 const conf = (channel) => valoriDi(streamers.get(channel)?.settings, 'corsa');
@@ -134,12 +134,12 @@ export function corsa(channel, msg, args, say, { moneta = 'monete' } = {}) {
     if (k?.puntate.has(io)) { say(`🏁 ${nome}, hai già puntato su ${k.nomi[k.puntate.get(io).i]}.`); return; }
     if (c.massimo > 0 && posta > c.massimo) { say(`🏁 Qui si punta al massimo ${c.massimo} ${moneta}.`); return; }
   }
-  if (aspetta(channel, 'corsa', msg, say, { dire: ({ nome: chi, tempo, perTutti }) => (perTutti ? `🏁 La prossima corsa fra ${tempo}.` : `🏁 ${chi}, puoi puntare di nuovo fra ${tempo}.`) })) return;
+  if (aspetta(channel, 'corsa', msg, say, { aperta: k ? { invito: k.invito } : null, dire: ({ nome: chi, tempo, perTutti }) => (perTutti ? `🏁 La prossima corsa fra ${tempo}.` : `🏁 ${chi}, puoi puntare di nuovo fra ${tempo}.`) })) return;
   if (i >= 0) {
     const saldo = points.get(channel, io);
     if (saldo < posta) { say(`🏁 ${nome}, per puntare ${posta} ${moneta} non basta quello che hai (${saldo}).`); return; }
   }
-  entra(channel, 'corsa', msg);
+  entra(channel, 'corsa', msg, { invito: !!k?.invito });
   if (k) {
     k.puntate.set(io, { nome, i, posta });
     k.nuovi.push(`${nome} su ${k.nomi[i]}`);
@@ -149,14 +149,16 @@ export function corsa(channel, msg, args, say, { moneta = 'monete' } = {}) {
     }
     return;
   }
-  const nuova = nuovaCorsa(channel, say, c, nomi);
+  const nuova = nuovaCorsa(channel, say, c, nomi, invita(msg));
   if (i >= 0) nuova.puntate.set(io, { nome, i, posta });
   const chi = i >= 0 ? `${nome} punta ${posta} ${moneta} su ${nomi[i]} e apre la corsa` : `${nome} apre la corsa`;
   say(`🏁 ${chi}: si parte fra ${c.raccolta} secondi! ${tabellone(nuova)}. ${come}`);
 }
 
-function nuovaCorsa(channel, say, c, nomi) {
-  const nuova = { nomi: [...nomi], quote: quoteCorsa(nomi.length, c.rende), puntate: new Map(), nuovi: [], giro: null, partita: false, say };
+// `invito`: l'ha aperta lo staff o il giro dei giochi automatici, e chi entra
+// non insiste (attese-giochi.js, «chi apre decide cos'e' la partita»).
+function nuovaCorsa(channel, say, c, nomi, invito) {
+  const nuova = { nomi: [...nomi], quote: quoteCorsa(nomi.length, c.rende), puntate: new Map(), nuovi: [], giro: null, partita: false, invito, say };
   nuova.timer = setTimeout(() => parti(channel, nuova), c.raccolta * 1000);
   nuova.timer.unref?.();
   corse.set(channel, nuova);
@@ -169,7 +171,7 @@ export function apri(channel, say) {
   if (corse.has(channel)) return false;
   const c = conf(channel);
   const cmd = nomeIn(channel, 'corsa');
-  const nuova = nuovaCorsa(channel, say, c, c.corridori);
+  const nuova = nuovaCorsa(channel, say, c, c.corridori, true);
   say(`🏁 Si apre la corsa: si parte fra ${c.raccolta} secondi! ${tabellone(nuova)}. Punta con !${cmd} 2 ${c.posta}: il corridore, col numero o col nome, e la puntata.`);
   return true;
 }
