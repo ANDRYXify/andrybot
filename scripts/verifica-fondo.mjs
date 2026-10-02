@@ -27,6 +27,20 @@ import { apriSito, chromiumQui } from './_sito.mjs';
 const RAD = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const CSS = path.join(RAD, 'src/web/public/anime.css');
 const SELFTEST = process.argv.includes('--selftest');
+
+// Prima si guarda se il browser c'e', e solo dopo si rompe qualcosa: sul
+// server non c'e', e li' il collaudo (anche l'autoprova) si salta con 0, come
+// tutti gli altri (verifica-senza-browser lo rifa').
+const CHROMIUM = chromiumQui();
+const PLAYWRIGHT = process.env.PLAYWRIGHT || '/opt/node22/lib/node_modules/playwright/index.mjs';
+let chromium;
+if (!CHROMIUM) { console.log('Chromium non c\'e\' su questa macchina: collaudo saltato.'); process.exit(0); }
+try { ({ chromium } = await import(PLAYWRIGHT)); }
+catch {
+  console.log('Playwright non c\'e\' su questa macchina: collaudo saltato.');
+  process.exit(0);
+}
+
 const originale = fs.readFileSync(CSS, 'utf8');
 if (SELFTEST) {
   const senza = originale.split('\n').filter((r) => !r.includes('con-salva .cookie-banner')).join('\n');
@@ -36,16 +50,6 @@ if (SELFTEST) {
 }
 const ripristina = () => { if (SELFTEST) fs.writeFileSync(CSS, originale); };
 process.on('exit', ripristina);
-
-const CHROMIUM = chromiumQui();
-const PLAYWRIGHT = process.env.PLAYWRIGHT || '/opt/node22/lib/node_modules/playwright/index.mjs';
-let chromium;
-if (!CHROMIUM) { console.log('Chromium non c\'e\' su questa macchina: collaudo saltato.'); process.exit(SELFTEST ? 1 : 0); }
-try { ({ chromium } = await import(PLAYWRIGHT)); }
-catch {
-  console.log('Playwright non c\'e\' su questa macchina: collaudo saltato.');
-  process.exit(SELFTEST ? 1 : 0);
-}
 
 const { porta: PORTA, chiudi: chiudiSito } = await apriSito();
 const b = await chromium.launch({ executablePath: CHROMIUM,
