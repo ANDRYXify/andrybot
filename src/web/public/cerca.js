@@ -52,9 +52,9 @@
   };
 
   var FERMA = {};
-  ('il lo la i gli le un uno una di a da in con su per tra fra del della dei delle al alla ai alle dal dalla nel nella sul sulla e ed o oppure ma se come cosa dove quando quale quali chi che cui non piu meno molto poco tutto tutti voglio vorrei posso puoi devo fare faccio fai metti metto mettere aggiungere aggiungo togliere tolgo tolto dove sta si puo serve mi ti ci vi ne c e ho hai ha abbiamo avete hanno sono sei siamo siete essere avere qui qua li la questo questa quello quella cambio cambiare cambiarlo apro apri aprire cerco cercare trovo trovare uso usare usarlo dimmi mostrami portami vado andare andiamo qualcuno qualcosa '
-   + 'the a an of to in on for with by from at as is are be am was were do does did how what where when which who that this these those i you he she it we they my your want need can could should would will just please help me my '
-   + 'el la los las un una de a en con por para del al y o pero si como que donde cuando cual quien esto esta eso esa quiero puedo hacer poner anadir quitar necesito me te se nos os es son ser estar aqui alli este esa').split(/\s+/).forEach(function (w) { if (w) FERMA[w] = 1; });
+  ('il lo la i gli le un uno una di a da in con su per tra fra del della dei delle al alla ai alle dal dalla nel nella sul sulla e ed o oppure ma se come cosa dove quando quale quali quanto quanta quanti quante chi che cui non piu meno molto poco tutto tutti voglio vorrei posso puoi devo fare faccio fai metti metto mettere aggiungere aggiungo togliere tolgo tolto dove sta si puo serve mi ti ci vi ne c e ho hai ha abbiamo avete hanno sono sei siamo siete essere avere qui qua li la questo questa quello quella cambio cambiare cambiarlo apro apri aprire cerco cercare trovo trovare uso usare usarlo dimmi mostrami portami vado andare andiamo qualcuno qualcosa '
+   + 'the a an of to in on for with by from at as is are be am was were do does did how much many what where when which who that this these those i you he she it we they my your want need can could should would will just please help me my '
+   + 'el la los las un una de a en con por para del al y o pero si como que donde cuando cuanto cuanta cuantos cuantas cual quien esto esta eso esa quiero puedo hacer poner anadir quitar necesito me te se nos os es son ser estar aqui alli este esa').split(/\s+/).forEach(function (w) { if (w) FERMA[w] = 1; });
 
   var SIN = [
     ['bot', 'robot', 'bots'],

@@ -52,6 +52,8 @@ const A_PAROLE = [
   // delle due esca dipende da quante parole ci sono attorno, non da un difetto.
   { q: 'chiave api', scheda: ['moduli', 'notifiche'] },
   { q: 'comandi a voce', scheda: ['ascolto'] },
+  // «quanto» e' il modo di chiedere, non la cosa chiesta: un'etichetta che
+  // dice «Abbonati: quante volte tanto» rispondeva a questa domanda.
   { q: 'quanto costa', scheda: ['sottoscrizione', 'stato'] },
 ];
 
