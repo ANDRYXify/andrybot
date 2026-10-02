@@ -6,13 +6,14 @@
 export default {
   slug: 'effetti',
   schede: ['effetti'],
-  titolo: 'Manuale degli effetti: media, gesti e punti canale | SocialBot',
-  h1: 'Manuale degli effetti: media, gesti e punti canale',
-  desc: 'Caricare suoni, immagini e video da lanciare in chat, usare la libreria condivisa, i gesti della webcam e gli effetti sui premi a punti canale di Twitch.',
-  aggiornata: '2026-09-27',
+  titolo: 'Manuale degli effetti: media, eventi e punti canale | SocialBot',
+  h1: 'Manuale degli effetti: media, eventi, gesti e punti canale',
+  desc: 'Suoni, immagini e video da lanciare in chat, la libreria condivisa, effetti a un follow, ai bit o a un raid, i gesti della webcam e i premi a punti canale.',
+  aggiornata: '2026-10-02',
   corpo: [
     { h2: 'Effetti & suoni', scheda: 'effetti', p: [
-      'Qui carichi suoni, immagini, GIF e video e li fai partire nell\'overlay: da un comando in chat, da un gesto davanti alla webcam o da un premio a punti canale. Ci sono anche otto effetti pronti, disegnati da noi. Gli stessi media li ritrovi negli alert, nel player, nei cartelli e in ogni campo che ha il pulsante «Dalla libreria».',
+      'Qui carichi suoni, immagini, GIF e video e li fai partire nell\'overlay: da un comando in chat, da un follow, dai bit o da un raid, da un gesto davanti alla webcam o da un premio a punti canale. Ci sono anche otto effetti pronti, disegnati da noi. Gli stessi media li ritrovi negli alert, nel player, nei cartelli e in ogni campo che ha il pulsante «Dalla libreria».',
+      'La scheda ha quattro parti, con le linguette sotto il titolo. <strong>«I tuoi effetti»</strong>: la libreria dei media, «Carica un effetto», gli effetti pronti e l\'elenco dei tuoi. <strong>«Per gli eventi»</strong>: cosa parte a un follow, a un abbonamento, ai bit, a un raid, a una donazione, al treno dell\'hype. <strong>«Punti canale»</strong>: gli effetti sui premi di Twitch. <strong>«Webcam»</strong>: i gesti e le espressioni. Una modifica lasciata in una parte resta da salvare anche se passi a un\'altra.',
       'La scheda sta nel gruppo «Scena & overlay» ed è compresa in ogni piano, anche in quello gratuito. Se leggi «Chiusa da andryxify», per il tuo canale è chiusa, e sotto c\'è il motivo quando c\'è.',
       'La usano il proprietario del canale e i moderatori. I premi a punti canale sono di Twitch e chiedono il permesso dei punti canale.',
       'Gli effetti compaiono in ogni overlay dove c\'è l\'elemento «Effetti a schermo». Il suono esce dalla diretta se nella sorgente Browser di OBS hai spuntato «Controlla l\'audio via OBS» (<a href="/manuale/overlay">manuale dell\'Overlay Studio</a>).',
@@ -114,6 +115,8 @@ export default {
       'Otto effetti disegnati da noi, che coprono <strong>tutto lo schermo</strong> dell\'overlay dove gli effetti sono accesi. Ogni riquadro mostra l\'effetto, e passandoci sopra si muove; quello scelto si vede grande accanto ai suoi campi, ed è l\'effetto vero, lo stesso che va in onda. Si scelgono anche con le frecce della tastiera.',
       '«Aggiungi l\'effetto» lo mette fra i tuoi effetti col comando che scrivi, o col suo nome se lo lasci vuoto: «Aggiunto come !coriandoli: lo trovi nei tuoi effetti ✓». Se il comando è già di un altro effetto leggi «il comando !nome è già di un altro effetto», e quello non si tocca. Da lì parte come gli altri: dalla chat, da un premio a punti canale, da un comando della scheda «Comandi», da un gesto della webcam o da un livello delle donazioni.',
       'Per cambiarlo dopo, «Modifica» nella sua riga lo riapre qui, con «Modifichi» e il suo comando. Il comando resta quello; «Salva le modifiche» cambia il resto, e puoi anche passare a un altro disegno. «Prova sull\'overlay» lo manda in diretta, «Chiudi la modifica» torna a un effetto nuovo.',
+      'Passando a un altro disegno, suono e volume restano quelli che hai scelto; colori, quanti e durata tornano quelli del disegno nuovo.',
+      '<strong>«Usalo per un evento».</strong> Sotto i tasti c\'è un tasto per ogni evento: Follow, Abbonamenti, Abbonamenti regalati, Bit, Raid, Donazioni, Treno dell\'hype. Ne premi uno e l\'effetto che stai guardando, coi suoi colori e il suo suono, diventa un livello di quell\'evento: il primo se l\'evento non ne ha, altrimenti uno nuovo sopra gli altri. Il pannello passa a «Per gli eventi» e apre il foglio. Il follow ha un effetto solo, e viene sostituito; con cinque livelli già pieni non si aggiunge niente e il pannello te lo dice. Non si salva da solo: controlla e premi «Salva gli effetti degli eventi».',
     ] },
     { tabella: [
       ['Effetto', 'Com\'è', 'Durata di serie (limiti)'],
@@ -138,6 +141,33 @@ export default {
       ['«Cooldown (s)»', '10', 'da 0 a 3600 secondi'],
     ] },
     { p: ['Un effetto pronto non è un media: non entra nella libreria e non si condivide.'] },
+
+    { h3: 'Effetti per gli eventi' },
+    { p: [
+      'Un follow, un abbonamento, dei bit, un raid, una donazione, il treno dell\'hype: ognuno può far partire un effetto a tutto schermo, coi suoi colori e il suo suono. Sta nella parte «Per gli eventi».',
+      'C\'è un foglio per ogni evento, e se ne apre uno alla volta. Nel titolo ci sono l\'interruttore, che accende o spegne l\'evento senza aprire il foglio, e cosa parte: «Cuori», o «Coriandoli da 100 bit, Fuochi d\'artificio da 1.000 bit», o «Spento».',
+      'L\'effetto parte da SocialBot anche quando l\'alert di quell\'evento lo mostra Twitch, o è spento. Se parte anche il nostro alert, l\'effetto arriva un attimo dopo, per non coprirlo. In cima al foglio una riga dice com\'è l\'alert, con «Apri l\'alert nello Studio». Vale per Twitch, Kick e le altre piattaforme collegate: gli eventi arrivano tutti dalla stessa porta.',
+    ] },
+    { tabella: [
+      ['Evento', 'Il numero dei livelli', 'Cosa conta'],
+      ['Follow', 'nessuno: un effetto solo', 'chi segue per la prima volta; chi toglie e rimette il follow non conta'],
+      ['Abbonamenti', 'i mesi di abbonamento', 'gli abbonamenti nuovi e i rinnovi annunciati in chat; quelli regalati no'],
+      ['Abbonamenti regalati', 'quanti ne regala insieme', 'una raffica di regali è un evento solo: venti abbonamenti regalati in un colpo fanno partire un effetto, non venti'],
+      ['Bit', 'i bit', 'ogni cheer'],
+      ['Raid', 'gli spettatori del raid', 'ogni raid in arrivo'],
+      ['Donazioni', 'l\'importo, nella valuta delle tue donazioni', 'ogni donazione; in un\'altra valuta parte il primo livello, perché un cambio non lo inventiamo'],
+      ['Treno dell\'hype', 'il livello del treno', 'quando il treno parte e ogni volta che sale di livello, non a ogni contributo'],
+    ] },
+    { p: [
+      '<strong>I livelli.</strong> Dove c\'è un numero, ogni livello dice da quanto parte: «Da 100 bit», «Da 12 mesi di abbonamento», «Dal livello 3». Parte il livello col numero più alto che l\'evento raggiunge; sotto il primo, niente. Fino a cinque livelli per evento. «Aggiungi un livello» ne propone uno sopra l\'ultimo, con un effetto che l\'evento non usa ancora. Due livelli che partono dallo stesso numero non si salvano: il foglio te lo dice e ti apre quello da sistemare.',
+      'Ogni livello ha «Modifica», «Prova sull\'overlay» e «Togli il livello». «Modifica» apre lo stesso editor degli effetti pronti, galleria compresa: colori, quanti, durata, suono e volume. Oppure scegli «Uno dei tuoi effetti» e prendi un tuo suono, immagine, video o effetto pronto col suo comando. Se poi quell\'effetto lo cancelli, il livello sparisce: non resta un livello che non fa niente.',
+      '<strong>La pausa.</strong> «Pausa fra due effetti (secondi)», da 0 a 600, è il tempo minimo fra due effetti dello stesso evento. Il follow parte con 10 secondi: un\'ondata di follow in pochi secondi fa partire un effetto solo, non cento coriandoli. Gli altri partono con 0.',
+      'In fondo al foglio la riga <strong>«Così»</strong> lo dice in parole: «Così: da 100 bit parte «Coriandoli», da 1.000 bit «Fuochi d\'artificio». Sotto 100 bit, niente.»',
+      'Premi «Salva gli effetti degli eventi». Un tasto solo salva tutti i fogli.',
+      '<strong>Le donazioni.</strong> Se una donazione raggiunge un\'offerta della pagina delle donazioni che ha già il suo effetto, parte quello dell\'offerta e non questo: un effetto per donazione.',
+      '<strong>Nello Studio.</strong> Nell\'Overlay Studio ogni alert ha la riga «Effetto a tutto schermo: …», o «Nessun effetto a tutto schermo per questo evento.», con il link che riporta qui al foglio giusto. L\'alert degli abbonamenti dice anche cosa parte coi regali.',
+      'Gli effetti per gli eventi fanno parte degli Effetti: se il tuo piano non li comprende più, le scelte restano salvate ma non parte niente.',
+    ] },
 
     { h3: 'I tuoi effetti' },
     { p: [
@@ -201,9 +231,11 @@ export default {
       '<strong>Il rilevatore non vede i gesti.</strong> La scheda del rilevatore deve restare aperta in Chrome, con la fotocamera consentita. Prova ad alzare la «Sensibilità».',
       '<strong>L\'overlay dei gesti è nero in OBS.</strong> Stai usando il modo tutto-in-uno: usa i due link del setup consigliato.',
       '<strong>Un premio non fa partire l\'effetto.</strong> Controlla il permesso dei punti canale e che il premio abbia un effetto scelto nella carta «Effetti sui tuoi punti canale».',
+      '<strong>Un evento non fa partire il suo effetto.</strong> Guarda il titolo del foglio: deve essere acceso e dire un effetto. Con i livelli, il numero deve arrivare al primo. Se è appena partito un effetto dello stesso evento, la pausa non è finita. Una donazione che raggiunge un\'offerta col suo effetto fa partire quello dell\'offerta.',
     ] },
   ],
   faq: [
+    { d: 'Posso far partire un effetto quando qualcuno mi segue o manda dei bit?', r: 'Sì, in «Per gli eventi»: un effetto per il follow, e per i bit, i raid, gli abbonamenti e le donazioni anche a livelli, più alto il numero, più grande la festa. Parte anche se l\'alert lo mostra Twitch.' },
     { d: 'Posso lanciare lo stesso media dalla chat e da un premio?', r: 'Sì. Il comando parte dalla chat con le sue regole, il premio lo lancia senza guardare ruolo e cooldown.' },
     { d: 'Come cambio il cooldown di un effetto che ho già?', r: 'Ricarica il file in «Carica un effetto» con lo stesso comando e i valori nuovi: sostituisce quello di prima. Un effetto pronto lo cambi con «Modifica».' },
     { d: 'Quello che prendo dalla libreria resta legato all\'autore?', r: 'È una copia tua, privata, che tiene il nome dell\'autore. Se lui lo cancella, la tua copia resta.' },

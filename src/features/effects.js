@@ -201,14 +201,7 @@ export class EffectsEngine {
     if (eff.tipo === 'disegno') {
       let grezzo = {};
       try { grezzo = JSON.parse(eff.disegno || '{}'); } catch { grezzo = {}; }
-      const disegno = normDisegno(grezzo);
-      const p = { comando: eff.comando, tipo: 'disegno', disegno, volume: eff.volume, durata: disegno.durata * 1000 };
-      const audio = /^effetto:(.+)$/.exec(disegno.suono);
-      if (audio) {
-        const a = effectsDb.get(channel, audio[1]);
-        if (a && a.tipo === 'audio' && a.file) p.suonoUrl = this.mediaUrl(channel, a.file);
-      } else if (disegno.suono) p.suonoPreset = disegno.suono;
-      return p;
+      return this.payloadDisegno(channel, grezzo, eff.volume, eff.comando);
     }
     const visivo = eff.tipo === 'immagine' || eff.tipo === 'video';
     const schermo = visivo && (eff.schermo === 'riempi' || eff.schermo === 'intero') ? eff.schermo : '';
@@ -228,6 +221,20 @@ export class EffectsEngine {
     if (eff.suono_file && (eff.tipo === 'immagine' || eff.tipo === 'video')) {
       p.suonoUrl = this.mediaUrl(channel, eff.suono_file);
     }
+    return p;
+  }
+
+  // Un effetto disegnato, coi suoi parametri: quello salvato con un comando e
+  // quello scelto per un evento passano tutti e due da qui, quindi suonano e
+  // durano allo stesso modo. Il suono e' uno pronto o un audio del canale.
+  payloadDisegno(channel, grezzo, volume, comando = '') {
+    const disegno = normDisegno(grezzo);
+    const p = { comando, tipo: 'disegno', disegno, volume, durata: disegno.durata * 1000 };
+    const audio = /^effetto:(.+)$/.exec(disegno.suono);
+    if (audio) {
+      const a = effectsDb.get(channel, audio[1]);
+      if (a && a.tipo === 'audio' && a.file) p.suonoUrl = this.mediaUrl(channel, a.file);
+    } else if (disegno.suono) p.suonoPreset = disegno.suono;
     return p;
   }
 

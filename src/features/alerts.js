@@ -20,6 +20,8 @@ import * as emote from './emotes.js';
 import { makeLog } from '../logger.js';
 import { formattaImporto, livelloPer } from './donazioni.js';
 import { chiAlertOk } from '../web/stile.js';
+import * as effettiEventi from './effetti-eventi.js';
+import { canaleHa } from './accesso.js';
 
 const log = makeLog('alerts');
 
@@ -40,6 +42,9 @@ const DEFAULT_TESTO = {
   donazione: '{user} ha offerto {importo}! {messaggio}',
 };
 const DEFAULT_SUONO = { follow: 'campanello', sub: 'tada', cheer: 'moneta', raid: 'trombetta', donazione: 'moneta' };
+// Quando l'avviso parte anche lui, l'effetto dell'evento arriva un attimo dopo:
+// prima si legge chi e' stato, poi si festeggia (come l'effetto di un'offerta).
+const DOPO_AVVISO_MS = 1200;
 const DEFAULT_ACC = { follow: '#f72fa7', sub: '#ffb020', cheer: '#38d39f', raid: '#ff4d4d', donazione: '#1d9e5e' };
 
 // stile alert di default (usato se lo streamer non lo tocca)
@@ -86,6 +91,8 @@ export class AlertsEngine {
     this.effects = effects || null;
     this.say = say || null;
     this.muro = muro || null;
+    this._pausaEventi = new Map(); // 'canale|evento' → epoch ms prima del quale quell'effetto tace
+    this._treni = new Map();       // canale → { id, livello } dell'ultimo treno visto
   }
 
   cfg(channel) { return streamers.get(channel)?.settings || null; }
@@ -116,6 +123,7 @@ export class AlertsEngine {
           say: this.say,
           spingi: (ch, t) => this.effects?.emit?.(ch, { tipo: 'treno', treno: t }),
         });
+        this._effettoTreno(channel, type, data);
         return;
       }
       const kind = MAPPA[type];
@@ -142,16 +150,67 @@ export class AlertsEngine {
       }
       // alert
       const a = s?.alerts;
-      if (!a || a.attivo === false) return;
-      const conf = a[kind];
-      if (!conf || conf.attivo === false) return;
+      const conf = a && a.attivo !== false ? a[kind] : null;
       // lo streamer ha scelto l'alert di Twitch: il nostro non parte, ma i
       // widget, gli obiettivi e la maratona qui sopra hanno gia' contato
-      if (chiAlertOk(kind, conf.chi) === 'twitch') return;
-      if (kind === 'cheer' && Number(vars.bits) < (Number(conf.minBits) || 0)) return;
-      if (kind === 'raid' && Number(vars.viewers) < (Number(conf.minViewers) || 0)) return;
-      this._spara(channel, a, kind, conf, vars);
+      const avviso = !!conf && conf.attivo !== false && chiAlertOk(kind, conf.chi) !== 'twitch'
+        && !(kind === 'cheer' && Number(vars.bits) < (Number(conf.minBits) || 0))
+        && !(kind === 'raid' && Number(vars.viewers) < (Number(conf.minViewers) || 0));
+      // L'EFFETTO DELL'EVENTO non dipende dall'alert: parte anche quando
+      // l'alert lo mostra Twitch, o e' spento. Un sub regalato arriva anche da
+      // solo (`is_gift`), ma il regalo si festeggia una volta, con la raffica.
+      if (!(type === 'channel.subscribe' && data?.is_gift === true)) {
+        const evento = regalo ? 'regalo' : kind;
+        const quanto = { follow: null, sub: Number(vars.mesi) || 1, regalo: Number(data?.total) || 1, cheer: Number(vars.bits) || 0, raid: Number(vars.viewers) || 0 }[evento];
+        this._effettoEvento(channel, evento, quanto, avviso ? DOPO_AVVISO_MS : 0);
+      }
+      if (avviso) this._spara(channel, a, kind, conf, vars);
     } catch (e) { log.debug('onEvent:', e?.message || e); }
+  }
+
+  // L'EFFETTO DI UN EVENTO (docs/EFFETTI-SCHERMO.md, «Effetti per gli eventi»):
+  // il livello che il numero raggiunge, se l'evento e' acceso e la sua pausa e'
+  // passata. Il nome del comando non viaggia: sopra un effetto partito da un
+  // follow, «!coriandoli» non vuol dire niente a chi guarda. E' una funzione
+  // degli Effetti: un canale che non li ha piu' nel piano non la usa, anche se
+  // le scelte salvate sono rimaste.
+  _effettoEvento(channel, evento, quanto, ritardoMs = 0) {
+    try {
+      if (!this.effects?.emit || !canaleHa(channel, 'effetti')) return false;
+      const voce = effettiEventi.voceDi(this.cfg(channel), evento);
+      const livello = effettiEventi.livelloPer(voce, quanto);
+      if (!livello) return false;
+      const chiave = channel + '|' + evento;
+      const ora = Date.now();
+      if (ora < (this._pausaEventi.get(chiave) || 0)) return false;
+      const e = livello.effetto;
+      let p = null;
+      if (e?.tipo === 'pronto') p = this.effects.payloadDisegno?.(channel, e.disegno, e.volume);
+      else if (e?.tipo === 'mio') {
+        const eff = effectsDb.get(channel, e.comando);
+        if (eff) p = this.effects.payload(channel, eff);
+      }
+      if (!p) return false;
+      this._pausaEventi.set(chiave, ora + (Number(voce.pausa) || 0) * 1000);
+      const manda = () => { try { this.effects.emit(channel, { ...p, comando: '', da: 'evento', evento }); } catch (x) { log.debug('effetto evento:', x?.message || x); } };
+      if (ritardoMs > 0) setTimeout(manda, ritardoMs).unref?.(); else manda();
+      return true;
+    } catch (x) { log.debug('effetto evento:', x?.message || x); return false; }
+  }
+
+  // Il treno festeggia quando parte e ogni volta che sale di livello. Il
+  // livello di prima lo tiene il motore: il treno nelle impostazioni c'e' solo
+  // se lo streamer lo mostra o lo annuncia, e l'effetto non deve dipendere da
+  // quello. Un treno visto per la prima volta a meta' (il bot e' ripartito)
+  // si ricorda senza festeggiare: il livello in cui e' non e' una salita.
+  _effettoTreno(channel, type, data) {
+    const t = treno.daEvento(type, data);
+    if (!t) return;
+    const prima = this._treni.get(channel);
+    if (t.che === 'finisce') { this._treni.delete(channel); return; }
+    const sale = t.che === 'parte' || (prima && prima.id === t.id && t.livello > prima.livello);
+    if (t.che === 'parte' || !prima || prima.id !== t.id || t.livello > prima.livello) this._treni.set(channel, { id: t.id, livello: t.livello });
+    if (sale) this._effettoEvento(channel, 'treno', t.livello);
   }
 
   // UNA DONAZIONE. Non viene da Twitch: la porta un pagamento sul conto dello
@@ -181,10 +240,15 @@ export class AlertsEngine {
       }
       const a = s.alerts;
       const conf = a && a.attivo !== false ? a.donazione : null;
-      if (conf && conf.attivo !== false && (soloAvviso || !stessa || importo >= (Number(conf.minImporto) || 0))) this._spara(channel, a, 'donazione', conf, vars);
+      const avviso = !!conf && conf.attivo !== false && (soloAvviso || !stessa || importo >= (Number(conf.minImporto) || 0));
+      if (avviso) this._spara(channel, a, 'donazione', conf, vars);
       if (!soloAvviso && cfgD.annunciaChat && this.say) this.say(channel, riempi(cfgD.testoChat || 'Grazie {user} per {importo}!', vars));
       // l'offerta raggiunta accende il suo effetto, un attimo dopo l'avviso
-      if (!soloAvviso && stessa) { const liv = livelloPer(cfgD.livelli, importo); if (liv?.effetto) this._sparaEffetto(channel, liv.effetto, 1200); }
+      let offerta = false;
+      if (!soloAvviso && stessa) { const liv = livelloPer(cfgD.livelli, importo); if (liv?.effetto) offerta = this._sparaEffetto(channel, liv.effetto, DOPO_AVVISO_MS); }
+      // Senza l'effetto di un'offerta, quello dell'evento. In un'altra valuta
+      // l'importo non si confronta coi livelli: parte il primo.
+      if (!soloAvviso && !offerta) this._effettoEvento(channel, 'donazione', stessa ? importo : null, avviso ? DOPO_AVVISO_MS : 0);
       // il muro delle emote, dalla soglia in su: nella valuta del canale, come l'obiettivo
       if (!soloAvviso && stessa) { try { this.muro?.suDono(channel, importo); } catch { /* il muro e' un di piu' */ } }
       log.info(`donazione su #${channel}: ${vars.importo} da ${vars.user}`);

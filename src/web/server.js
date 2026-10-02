@@ -47,6 +47,7 @@ import { paginaManuale, paginaIndiceManuali, aiutiPerScheda } from './manuali.js
 import { conOccasione, normOccasioni, accendi as accendiOccasione } from '../features/occasioni.js';
 import * as cancello from '../features/tg-cancello.js';
 import { permessiDi as permessiDiChat, guai as guaiCancello } from '../features/tg-ingresso.js';
+import { EVENTI as EVENTI_EFFETTI, MAX_LIVELLI as MAX_LIVELLI_EFFETTI, MAX_DA as MAX_DA_EFFETTI, MAX_PAUSA as MAX_PAUSA_EFFETTI, normalizza as normalizzaEffettiEventi } from '../features/effetti-eventi.js';
 import { elenco as elencoComandi, normalizza as normalizzaComandi, unisci as unisciComandi, collisioni as collisioniComandi, LIVELLI as LIVELLI_COMANDO, MODULI as MODULI_COMANDO, GRUPPI as GRUPPI_COMANDO } from '../features/comandi-registro.js';
 import { AntiBot, erroriScudo, statoEsecutore, azioniFallite, riprovaFallite, bonifica as bonificaIncidente, conNome, ESENTI_MAX, bloccaDaConsole } from '../features/antibot.js';
 import { statoCensimento } from '../features/punteggio.js';
@@ -1188,6 +1189,11 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     };
   };
 
+  // Gli effetti per gli eventi si ripuliscono con le stesse funzioni degli
+  // effetti a comando: il disegno con normDisegno, e un effetto del canale solo
+  // se esiste ancora (docs/EFFETTI-SCHERMO.md, «Effetti per gli eventi»).
+  const effettiEventiDi = (login, x) => normalizzaEffettiEventi(x, { disegno: normDisegno, comandoOk: (c) => !!effectsDb.get(login, c) });
+
   // streamer "sicuro" per il browser: nasconde il segreto del ponte giochi
   // (resta solo nel DB del bot). Espone se è collegato e se è acceso.
   const streamerSicuro = (login) => {
@@ -1212,6 +1218,8 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     // La settimana arriva gia' letta: la regola dei posti vecchi sta nel server,
     // e il pannello non ne tiene una copia sua.
     s.settings = { ...(s.settings || {}), settimana: settimana.vistaSettimana(settimana.settimanaDi(s.settings)) };
+    // gli effetti degli eventi come partirebbero: un tuo effetto cancellato non resta scritto
+    if (s.settings.effettiEventi) s.settings = { ...s.settings, effettiEventi: effettiEventiDi(login, s.settings.effettiEventi) };
     return s;
   };
 
@@ -8469,6 +8477,38 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     if (eff) effectsDb.setPubblico(login, eff.id, { pubblico: false, nome: src.nome || comando, autore: src.autore || src.channel });
     effectsDb.incUsi(src.id);
     res.json({ ok: true, comando });
+  }));
+
+  // ---- EFFETTI PER GLI EVENTI (docs/EFFETTI-SCHERMO.md) ----
+  app.get('/api/streamer/effetti-eventi', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    res.json({
+      eventi: EVENTI_EFFETTI.map((e) => ({ id: e.id, quanto: e.quanto, pausa: e.pausa })),
+      limiti: { livelli: MAX_LIVELLI_EFFETTI, da: MAX_DA_EFFETTI, pausa: MAX_PAUSA_EFFETTI },
+      effettiEventi: effettiEventiDi(login, streamers.get(login)?.settings?.effettiEventi),
+      effetti: effectsDb.list(login).map((e) => ({ comando: e.comando, tipo: e.tipo })),
+    });
+  }));
+  app.post('/api/streamer/effetti-eventi', requireLogin, wrap(async (req, res) => {
+    if (!esigiFunzione(req, res, 'effetti', 'Gli effetti per gli eventi')) return;
+    const login = currentUser(req).login;
+    const s = streamers.get(login);
+    if (s?.status !== 'approved') return res.status(403).json({ errore: 'non sei ancora abilitato' });
+    const effettiEventi = effettiEventiDi(login, req.body?.effettiEventi);
+    streamers.setSettings(login, { ...(s.settings || {}), effettiEventi });
+    res.json({ ok: true, effettiEventi });
+  }));
+  // La prova di un livello, prima di salvarlo: lo stesso effetto che partirebbe.
+  app.post('/api/streamer/effetti-eventi/prova', requireLogin, wrap(async (req, res) => {
+    if (!esigiFunzione(req, res, 'effetti', 'Gli effetti per gli eventi')) return;
+    const login = currentUser(req).login;
+    const voce = effettiEventiDi(login, { voci: { follow: { attivo: true, livelli: [{ effetto: req.body?.effetto }] } } }).voci.follow;
+    const e = voce.livelli[0]?.effetto;
+    const p = e?.tipo === 'pronto' ? effects.payloadDisegno(login, e.disegno, e.volume)
+      : e?.tipo === 'mio' ? effects.payload(login, effectsDb.get(login, e.comando)) : null;
+    if (!p) return res.status(400).json({ errore: 'effetto non valido' });
+    effects.emit(login, { ...p, comando: '', da: 'evento' });
+    res.json({ ok: true });
   }));
 
   // "prova": manda l'effetto all'overlay come farebbe il trigger in chat

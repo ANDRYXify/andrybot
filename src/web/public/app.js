@@ -912,6 +912,7 @@ function statoDemo() {
           sub: { attivo: true, testo: '{user} si è abbonato! ({mesi} mesi)', suono: 'tada', colore: '#ffb020' },
           cheer: { attivo: true, testo: '{user} ha lanciato {bits} bit!', suono: 'moneta', colore: '#38d39f', minBits: 100 },
           raid: { attivo: true, testo: '{user} è arrivato in raid con {viewers}!', suono: 'trombetta', colore: '#ff4d4d', minViewers: 2 } },
+        effettiEventi: _demoEventiBase(),
         chatOverlay: { attivo: false, posizione: 'basso-sinistra', max: 8, fadeSec: 0, dim: 'media' },
         overlayGoals: [
           { id: 'g1', attivo: true, tipo: 'follower', obiettivo: 500, titolo: 'Obiettivo follower', posizione: 'alto-sinistra', xy: null,
@@ -938,6 +939,38 @@ function statoDemo() {
 }
 
 const _demoScritture = {};
+
+const _DEMO_EVENTI = [
+  { id: 'follow', quanto: null, pausa: 10 }, { id: 'sub', quanto: 'mesi', pausa: 0 }, { id: 'regalo', quanto: 'quanti', pausa: 0 },
+  { id: 'cheer', quanto: 'bit', pausa: 0 }, { id: 'raid', quanto: 'spettatori', pausa: 0 }, { id: 'donazione', quanto: 'importo', pausa: 0 },
+  { id: 'treno', quanto: 'livello', pausa: 0 },
+];
+const _DEMO_LIMITI_EVENTI = { livelli: 5, da: 1000000, pausa: 600 };
+
+function _demoEventiBase() {
+  const pronto = (nome, suono = '') => ({ tipo: 'pronto', disegno: { ...(window.SB_DISEGNATI ? window.SB_DISEGNATI.parametri({ nome }) : { nome, colori: ['#ffffff'], quanti: 'normale', durata: 6 }), suono }, volume: 80 });
+  const voci = Object.fromEntries(_DEMO_EVENTI.map((e) => [e.id, { attivo: false, pausa: e.pausa, livelli: [] }]));
+  voci.follow = { attivo: true, pausa: 10, livelli: [{ da: 0, effetto: pronto('cuori', 'campanello') }] };
+  voci.cheer = { attivo: true, pausa: 0, livelli: [{ da: 100, effetto: pronto('coriandoli') }, { da: 1000, effetto: pronto('fuochi', 'tada') }] };
+  return { voci };
+}
+
+function _demoEventi(via, metodo, b) {
+  if (via.endsWith('/prova')) { toast(L('In demo l\'overlay non c\'è: dal vivo l\'effetto parte lì.', 'There is no overlay in the demo: live, the effect plays there.', 'En la demo no hay overlay: en directo el efecto sale allí.')); return { ok: true }; }
+  if (metodo === 'POST') {
+    const x = b?.effettiEventi?.voci || {};
+    _demoScritture.effettiEventi = { voci: Object.fromEntries(_DEMO_EVENTI.map((e) => {
+      const v = x[e.id] || {};
+      const per = new Map();
+      for (const l of Array.isArray(v.livelli) ? v.livelli : []) if (l?.effetto && (l.effetto.tipo === 'pronto' || l.effetto.comando)) per.set(e.quanto ? Math.max(0, Math.round(Number(l.da) || 0)) : 0, l.effetto);
+      const livelli = [...per.entries()].sort((p, q) => p[0] - q[0]).slice(0, e.quanto ? 5 : 1).map(([da, effetto]) => ({ da, effetto: JSON.parse(JSON.stringify(effetto)) }));
+      return [e.id, { attivo: v.attivo === true, pausa: Math.max(0, Math.min(600, Math.round(Number(v.pausa) || 0))), livelli }];
+    })) };
+    return { ok: true, effettiEventi: _demoScritture.effettiEventi };
+  }
+  const effetti = (_demoScritture.effetti || _demoGet('/api/streamer/effetti').effetti || []).map((e) => ({ comando: e.comando, tipo: e.tipo }));
+  return { eventi: _DEMO_EVENTI, limiti: _DEMO_LIMITI_EVENTI, effettiEventi: _demoScritture.effettiEventi || _demoEventiBase(), effetti };
+}
 
 const LIB_DEMO = [
   { id: 101, nome: 'Applausi', tipo: 'audio', autore: 'andryx_demo', combo: false, usi: 42, mio: true, pubblico: true, comando: 'applausi', url: '', suonoUrl: '' },
@@ -1151,6 +1184,7 @@ function apiDemo(percorso, opzioni = {}) {
   }
   if (metodo === 'GET' && via === '/api/streamer/settimana/categoria') return Promise.resolve({ categoria: _demoCategoria(domanda) });
   if (metodo === 'GET' && via === '/api/streamer/libreria') return Promise.resolve(_demoLibreria(percorso));
+  if (via.startsWith('/api/streamer/effetti-eventi')) return Promise.resolve(_demoEventi(via, metodo, opzioni.body || {}));
   if (via === '/api/recensione') {
     if (metodo === 'POST') _demoScritture.recensione = { ...opzioni.body, stato: opzioni.body?.testo ? 'attesa' : 'pubblicata' };
     if (metodo === 'DELETE') _demoScritture.recensione = null;
@@ -3860,8 +3894,8 @@ const GUIDE = {
     come: [['Attiva i giochi.', 'Turn on games.', 'Activa los juegos.', '#chk-giochi'], ['Dai un nome alla moneta.', 'Give your coin a name.', 'Ponle nombre a tu moneda.', '#inp-monete'], ['In «Gioco per gioco» apri un gioco e lo sistemi tutto lì: acceso o spento, il nome, quanto costa, quanto paga e quanto si aspetta. Gli spettatori giocano con !slot, !roulette, !pesca, !trivia…', 'In “Game by game” open a game and set it all up right there: on or off, its name, what it costs, what it pays and how long people wait. Viewers play with !slot, !roulette, !fish, !trivia…', 'En «Juego por juego» abre un juego y lo ajustas todo ahí: activo o apagado, el nombre, cuánto cuesta, cuánto paga y cuánto se espera. Los espectadores juegan con !slot, !roulette, !pesca, !trivia…', '#regole-giochi'], ['Quante monete arrivano stando in chat lo decidi in «Monete e classifica».', 'How many coins people get just by being in chat is up to you in “Coins and leaderboard”.', 'Cuántas monedas llegan solo por estar en el chat lo decides en «Monedas y clasificación».', '#pt-perPresenza'], ['Se vuoi, i giochi li lancia il bot da solo: scegli quanto spesso e, gioco per gioco, quanto esce rispetto agli altri.', 'If you like, the bot launches games on its own: choose how often and, game by game, how often each comes up compared to the others.', 'Si quieres, los juegos los lanza el bot solo: elige cada cuánto y, juego por juego, cuánto sale cada uno respecto a los demás.', '#giro-attivo']] },
   negozio: { serve: ['Un negozio in cui si paga con le monete del canale: effetti, VIP, ruoli, canzoni, oggetti della borsa, cose da consegnare in diretta.', 'A shop where people pay with channel coins: effects, VIP, roles, songs, bag items, things to deliver on stream.', 'Una tienda en la que se paga con las monedas del canal: efectos, VIP, roles, canciones, objetos de la bolsa, cosas para entregar en directo.'],
     come: [['Apri il negozio.', 'Open the shop.', 'Abre la tienda.', '#chk-negozio'], ['Crea un articolo, o parti da un modello.', 'Create an item, or start from a template.', 'Crea un artículo, o empieza desde un modelo.', '#neg-nuovo'], ['In chat si compra con !compra e la parola dell’articolo.', 'In chat people buy with !compra and the item word.', 'En el chat se compra con !compra y la palabra del artículo.']] },
-  effetti: { serve: ['Suoni ed effetti in overlay della diretta, anche riscattabili con i punti canale.', 'Sounds and effects in the stream overlay, redeemable with channel points too.', 'Sonidos y efectos en el overlay del directo, también canjeables con puntos de canal.'],
-    come: [['Carica un effetto (audio/immagine) e dagli un comando.', 'Upload an effect (audio/image) and give it a command.', 'Sube un efecto (audio/imagen) y asígnale un comando.', '#eff-file'], ['Nella libreria ci sono effetti già pronti, tuoi e degli altri: uno clic e diventano un tuo comando.', 'The library has ready-made effects, yours and other people’s: one click and they become a command of yours.', 'En la biblioteca hay efectos ya listos, tuyos y de otros: un clic y se convierten en un comando tuyo.', '#lib-griglia'], ['Se vuoi, un effetto si può riscattare coi punti canale invece che con un comando.', 'If you want, an effect can be redeemed with channel points instead of a command.', 'Si quieres, un efecto se puede canjear con puntos de canal en vez de con un comando.', '#premi-box']] },
+  effetti: { serve: ['Suoni ed effetti in overlay della diretta: da un comando, dai punti canale, o da un follow, dei bit, un raid.', 'Sounds and effects in the stream overlay: from a command, from channel points, or from a follow, bits, a raid.', 'Sonidos y efectos en el overlay del directo: desde un comando, desde los puntos de canal, o desde un follow, unos bits, un raid.'],
+    come: [['Carica un effetto (audio/immagine) e dagli un comando.', 'Upload an effect (audio/image) and give it a command.', 'Sube un efecto (audio/imagen) y asígnale un comando.', '#eff-file'], ['Nella libreria ci sono effetti già pronti, tuoi e degli altri: uno clic e diventano un tuo comando.', 'The library has ready-made effects, yours and other people’s: one click and they become a command of yours.', 'En la biblioteca hay efectos ya listos, tuyos y de otros: un clic y se convierten en un comando tuyo.', '#lib-griglia'], ['Se vuoi, un effetto si può riscattare coi punti canale invece che con un comando.', 'If you want, an effect can be redeemed with channel points instead of a command.', 'Si quieres, un efecto se puede canjear con puntos de canal en vez de con un comando.', '#premi-box'], ['In «Per gli eventi» decidi cosa parte a un follow, ai bit, a un raid: a livelli, coi suoi suoni.', 'In «For events» you decide what plays on a follow, on bits, on a raid: by levels, with its own sounds.', 'En «Para los eventos» decides qué sale con un follow, con bits, con un raid: por niveles, con sus sonidos.', '#ee-fogli']] },
   clip: { serve: ['Creare clip automatiche nei momenti di “hype” della diretta.', 'Create automatic clips in the stream’s “hype” moments.', 'Crear clips automáticos en los momentos de “hype” del directo.'],
     come: [['Attiva le clip automatiche.', 'Enable automatic clips.', 'Activa los clips automáticos.', '#chk-clip'], ['Regola la sensibilità (quanto “hype” serve).', 'Adjust the sensitivity (how much “hype” it takes).', 'Ajusta la sensibilidad (cuánto “hype” hace falta).', '#rng-clip-sens']] },
   ascolto: { serve: ['Comandare il bot con la VOCE mentre streami (l’audio resta sul tuo PC).', 'Control the bot by VOICE while you stream (audio stays on your PC).', 'Controlar el bot por VOZ mientras haces directo (el audio se queda en tu PC).'],
@@ -4096,6 +4130,10 @@ const SOTTO_SCHEDE = {
   moduli: {
     attributo: 'zona',
     voci: [['comandi', ['Comandi e contatori', 'Commands and counters', 'Comandos y contadores']], ['morti', 'CONTATORify']],
+  },
+  effetti: {
+    attributo: 'zona',
+    voci: [['tuoi', ['I tuoi effetti', 'Your effects', 'Tus efectos']], ['eventi', ['Per gli eventi', 'For events', 'Para los eventos']], ['punti', ['Punti canale', 'Channel points', 'Puntos de canal']], ['webcam', ['Webcam', 'Webcam', 'Webcam']]],
   },
   giochi: {
     attributo: 'zona',
@@ -11443,6 +11481,7 @@ function bloccoAlert(t, a) {
         <label class="interruttore"><input type="checkbox" class="al-attivo" ${c.attivo ? 'checked' : ''}><span class="levetta"></span></label>
         <strong>${t.nome}</strong>
       </div>${riga}
+      <p class="suggerimento al-effetto" data-al-effetto="${t.key}">${_alEffettoRiga(t.key)}</p>
       <div class="al-nostro"${chi === 'twitch' ? ' hidden' : ''}>
       <label class="campo spazio-sopra">${L('Testo', 'Text', 'Texto')} <span class="tenue">— ${L('segnaposto', 'placeholders', 'marcadores')}: ${esc(t.vars)}</span></label>
       <input type="text" class="al-testo campo-largo" aria-label="${esc(L('Testo di', 'Text of', 'Texto de') + ' ' + t.nome)}" maxlength="200" placeholder="${esc(t.ph)}" value="${esc(c.testo || '')}">
@@ -14078,6 +14117,27 @@ const PEZZI_EL = () => [
 ];
 
 const _apertoGrp = {};
+
+let _bancoDaScegliere = '';
+function apriAlertNelloStudio(kind) {
+  const t = ALERT_TIPI().find((x) => x.key === kind);
+  _bancoDaScegliere = t ? t.nome : ALERT_TIPI()[0].nome;
+  if (schedaAttiva !== 'alert') vaiAScheda('alert');
+  else _bancoScegliSeServe();
+}
+
+function _bancoScegliSeServe() {
+  const nome = _bancoDaScegliere;
+  if (!nome) return;
+  _bancoDaScegliere = '';
+  _apertoGrp.alert = nome;
+  seleziona('alert');
+  const gruppi = [...document.querySelectorAll('.asp-blocco[data-asp="alert"] > details.insp-grp')];
+  const grp = gruppi.find((d) => d.dataset.grp === nome);
+  if (!grp) return;
+  for (const d of gruppi) d.open = d === grp;
+  requestAnimationFrame(() => grp.scrollIntoView({ behavior: _menoMoto ? 'auto' : 'smooth', block: 'nearest' }));
+}
 
 function aFisarmonica(blocco) {
   if (!blocco || blocco.dataset.grp) return;
@@ -19751,12 +19811,12 @@ function pannelloEffetti() {
   const MEME_EMO = [['happy', '😂'], ['surprise', '😱'], ['angry', '🤬'], ['sad', '😭'], ['fear', '😨'], ['disgust', '🤢']];
   const memeLbl = { happy: L('Risata', 'Laugh', 'Risa'), surprise: L('Sorpresa', 'Surprise', 'Sorpresa'), angry: L('Rabbia', 'Anger', 'Enfado'), sad: L('Tristezza', 'Sadness', 'Tristeza'), fear: L('Paura', 'Fear', 'Miedo'), disgust: L('Disgusto', 'Disgust', 'Asco') };
   const righeMeme = MEME_EMO.map(([e, def]) => `
-    <div class="trk-riga"><span class="trk-et">${def} ${memeLbl[e]}</span>
+    <div class="trk-riga"><span class="trk-et">${memeLbl[e]}</span>
       <input type="text" class="mm-in" data-e="${e}" maxlength="300" aria-label="${esc(L('Immagine o emoji per', 'Image or emoji for', 'Imagen o emoji para'))} ${esc(memeLbl[e])}" placeholder="${L('emoji o URL immagine/GIF', 'emoji or image/GIF URL', 'emoji o URL imagen/GIF')}" value="${esc(mm[e] || def)}">
       <button type="button" class="btn secondario mini mm-lib ico-sola" title="${L('Dalla libreria', 'From the library', 'De la biblioteca')}" aria-label="${L('Dalla libreria', 'From the library', 'De la biblioteca')}">${_bIco(ICO.libro)}</button>
     </div>`).join('');
   return pannello('effetti', `
-    <div class="carta">
+    <div class="carta" data-zona="webcam">
       <h2>${_hIco(ICO.effetti)}${L('Effetti dai gesti (webcam)', 'Effects from gestures (webcam)', 'Efectos por gestos (webcam)')}</h2>
       <p>${L('Un overlay per la diretta che', 'An stream overlay that', 'Un overlay para el directo que')} <strong class="primo-piano">${L('legge i gesti delle mani e le espressioni del volto', 'reads hand gestures and face expressions', 'lee los gestos de las manos y las expresiones de la cara')}</strong> ${L('dalla webcam e fa partire effetti a schermo. Gira tutto nel Browser Source: la webcam', 'from the webcam and fires on-screen effects. It all runs in the Browser Source: the webcam', 'de la webcam y lanza efectos en pantalla. Todo corre en el Browser Source: la webcam')} <strong>${L('non esce mai dal tuo PC', 'never leaves your PC', 'nunca sale de tu PC')}</strong> — ${L('al bot arriva solo il nome del gesto.', 'the bot only receives the gesture name.', 'al bot solo llega el nombre del gesto.')}</p>
       <div class="riga-check">
@@ -19843,7 +19903,7 @@ function pannelloEffetti() {
       <p class="suggerimento">${L('Per reazioni più ricche (messaggi in chat, contatori, cooldown per ruolo) usa i', 'For richer reactions (chat messages, counters, per-role cooldown) use', 'Para reacciones más ricas (mensajes en el chat, contadores, cooldown por rol) usa los')} <strong>${L('Moduli', 'Modules', 'Módulos')}</strong>: ${L('QUANDO «Gesto webcam» → ALLORA…', 'WHEN «Webcam gesture» → THEN…', 'CUANDO «Gesto webcam» → ENTONCES…')}</p>
     </div>
 
-    <div class="carta">
+    <div class="carta" data-zona="tuoi">
       <h2>${_hIco(ICO.libro)}${L('La libreria dei media', 'The media library', 'La biblioteca de medios')}</h2>
       <p>${L('Un posto solo per', 'One single place for', 'Un solo sitio para')} <strong class="primo-piano">${L('foto, gif, video e suoni', 'photos, gifs, videos and sounds', 'fotos, gifs, vídeos y sonidos')}</strong>: ${L('i', 'your', 'los')} <strong>${L('tuoi', 'own', 'tuyos')}</strong> ${L('e quelli condivisi dagli altri streamer.', 'and those shared by other streamers.', 'y los compartidos por otros streamers.')}
       ${L('Quello che c\'è qui lo ritrovi', "What's here you find", 'Lo que hay aquí lo encuentras')} <strong>${L('ovunque', 'everywhere', 'en todas partes')}</strong> — ${L('alert, overlay, premi a punti canale, penitenze, meme e grafiche: ogni campo che chiede un media ha il pulsante', 'alerts, overlay, channel-point rewards, forfeits, memes and graphics: every field that asks for a medium has the button', 'alertas, overlay, recompensas de puntos de canal, penitencias, memes y gráficas: cada campo que pide un medio tiene el botón')}
@@ -19861,7 +19921,7 @@ function pannelloEffetti() {
       <div id="lib-griglia" class="lib-griglia"><p class="vuoto">${L('Carico la libreria…', 'Loading the library…', 'Cargando la biblioteca…')}</p></div>
     </div>
 
-    <div class="carta">
+    <div class="carta" data-zona="tuoi">
       <h2>${_hIco(ICO.effetti)}${L('Carica un effetto', 'Upload an effect', 'Sube un efecto')}</h2>
       <p>${L('Audio, immagini o brevi video. Ogni file viene', 'Audio, images or short videos. Each file is', 'Audio, imágenes o vídeos cortos. Cada archivo se')} <strong class="primo-piano">${L('super-compresso', 'super-compressed', 'súper-comprimido')}</strong>
       ${L('in automatico, così l\'overlay resta leggero.', 'automatically, so the overlay stays lightweight.', 'automáticamente, así el overlay se mantiene ligero.')}</p>
@@ -19939,20 +19999,27 @@ function pannelloEffetti() {
       </p>
     </div>
 
-    <div class="carta" id="pronti-carta">
+    <div class="carta" id="pronti-carta" data-zona="tuoi">
       <h2>${_hIco(ICO.effetti)}${L('Effetti pronti a tutto schermo', 'Ready-made full-screen effects', 'Efectos listos a pantalla completa')}</h2>
       <p>${L('Disegnati da noi, coprono', 'Drawn by us, they cover', 'Dibujados por nosotros, cubren')} <strong class="primo-piano">${L('tutto lo schermo', 'the whole screen', 'toda la pantalla')}</strong> ${L('dell\'overlay, dove gli effetti sono accesi. Scegline uno, cambia colori e durata, dagli un comando: parte anche da un premio a punti canale, da un modulo o da un gesto della webcam.', 'of the overlay, wherever effects are on. Pick one, change colors and duration, give it a command: it also plays from a channel-point reward, a module or a webcam gesture.', 'del overlay, donde los efectos están activos. Elige uno, cambia colores y duración, dale un comando: también se lanza desde una recompensa de puntos de canal, un módulo o un gesto de la webcam.')}</p>
       <div class="pronti-galleria" id="pronti-galleria" role="radiogroup" aria-label="${esc(L('Effetti pronti', 'Ready-made effects', 'Efectos listos'))}"></div>
       <div class="pronti-editor" id="pronti-editor"></div>
     </div>
 
-    <div class="carta">
+    <div class="carta" id="eventi-effetti-carta" data-zona="eventi">
+      <h2>${_hIco(ICO.fulmine)}${L('Effetti per gli eventi', 'Effects for events', 'Efectos para los eventos')}</h2>
+      <p>${L('Un follow, un abbonamento, dei bit, un raid, una donazione, il treno dell\'hype: ognuno può far partire un', 'A follow, a sub, some bits, a raid, a donation, the hype train: each one can play a', 'Un follow, una suscripción, unos bits, un raid, una donación, el tren del hype: cada uno puede lanzar un')} <strong class="primo-piano">${L('effetto a tutto schermo', 'full-screen effect', 'efecto a pantalla completa')}</strong>, ${L('coi suoi colori e il suo suono. Dove c\'è un numero vanno a livelli: più bit, più festa. Parte anche quando l\'alert lo mostra Twitch.', 'with its own colors and sound. Where there is a number they go by levels: more bits, bigger party. It plays even when Twitch shows the alert.', 'con sus colores y su sonido. Donde hay un número van por niveles: más bits, más fiesta. Sale también cuando la alerta la muestra Twitch.')}</p>
+      <div id="ee-fogli">${attesaHtml()}</div>
+      <p class="spazio-sopra riga-flessibile"><button type="button" class="btn" id="ee-salva">${L('Salva gli effetti degli eventi', 'Save the event effects', 'Guardar los efectos de los eventos')}</button></p>
+    </div>
+
+    <div class="carta" data-zona="tuoi">
       <h2>${_hIco(ICO.sliders)}${L('I tuoi effetti', 'Your effects', 'Tus efectos')}</h2>
       <ul class="lista-voci" id="lista-effetti">${attesaHtml('li')}</ul>
       <p class="suggerimento" id="eff-spazio" hidden></p>
     </div>
 
-    <div class="carta">
+    <div class="carta" data-zona="punti">
       <h2>${_hIco(ICO.cuffie)}${L('Effetti sui tuoi punti canale', 'Effects on your channel points', 'Efectos en tus puntos de canal')}</h2>
       <p>${L('Attacca un', 'Attach an', 'Añade un')} <strong class="primo-piano">${L('effetto', 'effect', 'efecto')}</strong> ${L('a un', 'to a', 'a una')} <strong>${L('premio a punti canale che hai già', 'channel-point reward you already have', 'recompensa de puntos de canal que ya tienes')}</strong>:
       ${L('quando qualcuno lo riscatta (es. «Bevi l\'acqua»), nell\'overlay parte quello che scegli — un', 'when someone redeems it (e.g. «Drink water»), the overlay plays what you choose — a', 'cuando alguien la canjea (ej. «Bebe agua»), en el overlay se reproduce lo que elijas — un')} <strong>${L('suono pronto', 'ready-made sound', 'sonido listo')}</strong>,
@@ -19962,7 +20029,7 @@ function pannelloEffetti() {
       <div id="suoni-premi-box">${attesaHtml()}</div>
     </div>
 
-    <div class="carta">
+    <div class="carta" data-zona="punti">
       <h2>${_hIco(ICO.giveaway)}${L('Alert a punti canale', 'Channel-point alerts', 'Alertas de puntos de canal')}</h2>
       <p>${L('Crea un', 'Create a', 'Crea una')} <strong class="primo-piano">${L('premio a punti canale', 'channel-point reward', 'recompensa de puntos de canal')}</strong> ${L('di Twitch: quando uno spettatore lo riscatta', 'on Twitch: when a viewer redeems it', 'de Twitch: cuando un espectador la canjea')}
       (${L('spendendo i suoi punti', 'spending their points', 'gastando sus puntos')}), ${L('parte un', 'an', 'se lanza un')} <strong>${L('effetto', 'effect', 'efecto')}</strong> ${L('nell\'overlay e/o un', 'plays in the overlay and/or a', 'en el overlay y/o un')} <strong>${L('messaggio', 'message', 'mensaje')}</strong> ${L('in chat.', 'in chat.', 'en el chat.')}
@@ -29035,12 +29102,12 @@ function caricaDatiScheda(id) {
   if (id === 'giveaway') caricaGiveaway();
   if (id === 'penitenze') caricaPenitenze();
   if (id === 'alert') { caricaAlert(); caricaPiattaforme().then(_rendiQualiChat); _goalBozza = null; _cartBozza = null; _bozzaEl = {}; disegnaGoal(); disegnaCartelli(); caricaContaStudio();
-    riempiCfgForm('musica'); riempiCfgForm('timer'); riempiCfgForm('pubblicita'); riempiCfgForm('treno'); riempiCfgForm('bit'); riempiCfgForm('boss'); riempiCfgForm('arena'); riempiCfgForm('scritta'); riempiCfgForm('etichetta'); _segnaTimer(Number(impostazioni().overlayStato?.timer?.fine) || 0); requestAnimationFrame(() => { applicaSottoSchede('alert'); montaBanco(); }); }
+    riempiCfgForm('musica'); riempiCfgForm('timer'); riempiCfgForm('pubblicita'); riempiCfgForm('treno'); riempiCfgForm('bit'); riempiCfgForm('boss'); riempiCfgForm('arena'); riempiCfgForm('scritta'); riempiCfgForm('etichetta'); _segnaTimer(Number(impostazioni().overlayStato?.timer?.fine) || 0); requestAnimationFrame(() => { applicaSottoSchede('alert'); montaBanco(); _bancoScegliSeServe(); }); }
   else smontaBanco();
   if (id === 'regia') caricaRegia();
   if (id === 'consolify') caricaConsolify();
   if (id === 'studio') caricaStudio();
-  if (id === 'effetti') { caricaEffetti(); caricaPremi(); caricaSuoniPremi(); caricaLibreria(); caricaTracking(); requestAnimationFrame(disegnaPronti); }
+  if (id === 'effetti') { caricaEffetti(); caricaPremi(); caricaSuoniPremi(); caricaLibreria(); caricaTracking(); requestAnimationFrame(() => { applicaSottoSchede('effetti'); disegnaPronti(); }); montaEventiEffetti(); caricaEventiEffetti(); }
   else _prontiFerma();
   if (id === 'emote') caricaEmote7TV();
   if (id === 'moduli') { caricaPiattaforme(); caricaModuli(); caricaContatori(); caricaGiochiComandi(); collegaMorti(); requestAnimationFrame(() => applicaSottoSchede('moduli')); }
@@ -30100,34 +30167,54 @@ const PRONTI_NOMI = () => ({
 const QUANTI_NOMI = () => ({ pochi: L('Pochi', 'Few', 'Pocos'), normale: L('Normale', 'Normal', 'Normal'), tanti: L('Tanti', 'Lots', 'Muchos') });
 
 let _pronti = null;
-let _prontiFermi = [];
+const _prontiFermi = [];
 let _prontiSuoni = [];
 
 function _prontiNuovo(nome) {
-  const C = window.SB_DISEGNATI.CATALOGO[nome];
-  return { id: null, comando: '', p: { nome, colori: C.colori.slice(), quanti: C.quanti, durata: C.durata, suono: '' }, tier: 'tutti', cooldown: 10, volume: 80 };
+  return { id: null, comando: '', p: _prontiDisegno(nome), tier: 'tutti', cooldown: 10, volume: 80 };
 }
 
-function _prontiFerma() { _prontiFermi.forEach((f) => { try { f(); } catch (e) {  } }); _prontiFermi = []; }
+function _prontiDisegno(nome, prima = null) {
+  const C = window.SB_DISEGNATI.CATALOGO[nome];
+  return { nome, colori: C.colori.slice(), quanti: C.quanti, durata: C.durata, suono: prima ? prima.suono : '' };
+}
+
+function _fermaTutti(lista) { lista.forEach((f) => { try { f(); } catch (e) {  } }); lista.length = 0; }
+function _prontiFerma() { _fermaTutti(_prontiFermi); }
 
 function _prontiGiro(tela, dammi, seme) {
   let ferma = null, via = false, n = 0;
   const vai = () => {
-    if (via || !tela.isConnected || !tela.offsetWidth) return;
+    if (via || !tela.isConnected) return;
+    if (!tela.offsetWidth) { if (tela.closest('.pannello-scheda.visibile')) setTimeout(vai, 700); return; }
     ferma = window.SB_DISEGNATI.anima(tela, dammi(), (seme || 1) + n++ * 7919, () => { if (!via) setTimeout(vai, 400); });
   };
   if (_menoMoto) window.SB_DISEGNATI.fermo(tela, dammi(), seme || 1, 0.45); else vai();
   return () => { via = true; if (ferma) ferma(); };
 }
 
-function disegnaPronti() {
-  const gal = document.getElementById('pronti-galleria');
-  const ed = document.getElementById('pronti-editor');
-  if (!gal || !ed || !window.SB_DISEGNATI) return;
-  _prontiFerma();
-  const S = window.SB_DISEGNATI, nomi = PRONTI_NOMI();
-  if (!_pronti) _pronti = _prontiNuovo('coriandoli');
-  gal.innerHTML = S.NOMI.map((n) => `<button type="button" class="pronti-voce" role="radio" aria-checked="${n === _pronti.p.nome}" tabindex="${n === _pronti.p.nome ? 0 : -1}" data-pronto="${n}">
+function _prontiSuoniHtml(scelto) {
+  const presets = (window.SUONI_PRESET && window.SUONI_PRESET.lista) || [];
+  return `<option value="">${L('Nessuno', 'None', 'Ninguno')}</option>
+    <optgroup label="${esc(L('Suoni pronti', 'Ready-made sounds', 'Sonidos listos'))}">${presets.map((x) => `<option value="${esc(x.id)}"${x.id === scelto ? ' selected' : ''}>${esc(x.nome)}</option>`).join('')}</optgroup>
+    ${_prontiSuoni.length ? `<optgroup label="${esc(L('I tuoi suoni', 'Your sounds', 'Tus sonidos'))}">${_prontiSuoni.map((c) => `<option value="effetto:${esc(c)}"${'effetto:' + c === scelto ? ' selected' : ''}>!${esc(c)}</option>`).join('')}</optgroup>` : ''}`;
+}
+
+function editorPronto(gal, ed, st, opz) {
+  const S = window.SB_DISEGNATI;
+  if (!S || !gal || !ed) return;
+  const fermi = opz.fermi, pre = opz.pre;
+  _fermaTutti(fermi);
+  const nomi = PRONTI_NOMI(), qn = QUANTI_NOMI(), C = S.CATALOGO[st.p.nome];
+  const rifai = () => editorPronto(gal, ed, st, opz);
+  const cambiato = (b) => { if (opz.dopo) opz.dopo(b); };
+  const scegli = (nome) => {
+    if (st.p.nome === nome) return;
+    st.p = _prontiDisegno(nome, st.p);
+    rifai();
+    cambiato();
+  };
+  gal.innerHTML = S.NOMI.map((n) => `<button type="button" class="pronti-voce" role="radio" aria-checked="${n === st.p.nome}" tabindex="${n === st.p.nome ? 0 : -1}" data-pronto="${n}">
       <canvas class="pronti-mini" aria-hidden="true"></canvas><span>${esc(nomi[n])}</span></button>`).join('');
   gal.querySelectorAll('.pronti-voce').forEach((b) => {
     const tela = b.querySelector('canvas');
@@ -30138,31 +30225,22 @@ function disegnaPronti() {
     const giu = () => { if (ferma) { ferma(); ferma = null; S.fermo(tela, p(), 3, 0.45); } };
     b.addEventListener('pointerenter', su); b.addEventListener('focus', su);
     b.addEventListener('pointerleave', giu); b.addEventListener('blur', giu);
-    b.addEventListener('click', () => _prontiScegli(b.dataset.pronto));
-    _prontiFermi.push(() => { if (ferma) ferma(); });
+    b.addEventListener('click', () => scegli(b.dataset.pronto));
+    fermi.push(() => { if (ferma) ferma(); });
   });
   gal.onkeydown = (ev) => {
     const passo = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[ev.key];
     if (!passo) return;
     ev.preventDefault();
-    const i = (S.NOMI.indexOf(_pronti.p.nome) + passo + S.NOMI.length) % S.NOMI.length;
-    _prontiScegli(S.NOMI[i]);
+    const i = (S.NOMI.indexOf(st.p.nome) + passo + S.NOMI.length) % S.NOMI.length;
+    scegli(S.NOMI[i]);
     gal.querySelector(`[data-pronto="${S.NOMI[i]}"]`)?.focus();
   };
-  _prontiEditor(ed);
-}
-
-function _prontiEditor(ed) {
-  const S = window.SB_DISEGNATI, st = _pronti, C = S.CATALOGO[st.p.nome], nomi = PRONTI_NOMI(), qn = QUANTI_NOMI();
-  const modifica = st.id != null;
-  const presets = (window.SUONI_PRESET && window.SUONI_PRESET.lista) || [];
-  const suoni = `<option value="">${L('Nessuno', 'None', 'Ninguno')}</option>
-    <optgroup label="${esc(L('Suoni pronti', 'Ready-made sounds', 'Sonidos listos'))}">${presets.map((x) => `<option value="${esc(x.id)}"${x.id === st.p.suono ? ' selected' : ''}>${esc(x.nome)}</option>`).join('')}</optgroup>
-    ${_prontiSuoni.length ? `<optgroup label="${esc(L('I tuoi suoni', 'Your sounds', 'Tus sonidos'))}">${_prontiSuoni.map((c) => `<option value="effetto:${esc(c)}"${'effetto:' + c === st.p.suono ? ' selected' : ''}>!${esc(c)}</option>`).join('')}</optgroup>` : ''}`;
+  const titolo = opz.titolo ? opz.titolo() : '';
   ed.innerHTML = `
     <div class="pronti-scena"><canvas class="pronti-tela" aria-hidden="true"></canvas></div>
     <div class="pronti-campi">
-      <h3>${modifica ? L('Modifichi', 'Editing', 'Editas') + ` <code>!${esc(st.comando)}</code>` : esc(nomi[st.p.nome])}</h3>
+      ${titolo ? `<h3>${titolo}</h3>` : ''}
       <div>
         <span class="campo">${L('Colori', 'Colors', 'Colores')} <span class="tenue">${L('(fino a 5)', '(up to 5)', '(hasta 5)')}</span></span>
         <div class="pronti-colori">
@@ -30172,85 +30250,103 @@ function _prontiEditor(ed) {
         </div>
       </div>
       ${st.p.nome === 'lampo' ? '' : `<div>
-        <span class="campo" id="pronti-quanti-et">${L('Quanti', 'How many', 'Cuántos')}</span>
-        <div class="pronti-quanti" role="radiogroup" aria-labelledby="pronti-quanti-et">${S.QUANTI.map((q) => `<button type="button" role="radio" aria-checked="${q === st.p.quanti}" data-quanti="${q}">${esc(qn[q])}</button>`).join('')}</div>
+        <span class="campo" id="${pre}-quanti-et">${L('Quanti', 'How many', 'Cuántos')}</span>
+        <div class="pronti-quanti" role="radiogroup" aria-labelledby="${pre}-quanti-et">${S.QUANTI.map((q) => `<button type="button" role="radio" aria-checked="${q === st.p.quanti}" data-quanti="${q}">${esc(qn[q])}</button>`).join('')}</div>
       </div>`}
       <div>
-        <label class="campo" for="pronti-durata">${L('Durata', 'Duration', 'Duración')}: <strong id="pronti-durata-v">${st.p.durata}</strong> s</label>
-        <input type="range" id="pronti-durata" min="${C.min}" max="${C.max}" step="1" value="${st.p.durata}">
+        <label class="campo" for="${pre}-durata">${L('Durata', 'Duration', 'Duración')}: <strong id="${pre}-durata-v">${st.p.durata}</strong> s</label>
+        <input type="range" id="${pre}-durata" min="${C.min}" max="${C.max}" step="1" value="${st.p.durata}">
       </div>
       <div class="griglia-campi">
-        <div><label class="campo" for="pronti-suono">${L('Suono', 'Sound', 'Sonido')}</label><select id="pronti-suono">${suoni}</select></div>
-        <div><label class="campo" for="pronti-volume">${L('Volume (%)', 'Volume (%)', 'Volumen (%)')}</label><input type="number" id="pronti-volume" min="0" max="100" value="${st.volume}"></div>
+        <div><label class="campo" for="${pre}-suono">${L('Suono', 'Sound', 'Sonido')}</label><select id="${pre}-suono">${_prontiSuoniHtml(st.p.suono)}</select></div>
+        <div><label class="campo" for="${pre}-volume">${L('Volume (%)', 'Volume (%)', 'Volumen (%)')}</label><input type="number" id="${pre}-volume" min="0" max="100" value="${st.volume}"></div>
       </div>
-      ${modifica ? '' : `<label class="campo" for="pronti-comando">${L('Comando in chat', 'Chat command', 'Comando en el chat')} <span class="tenue">${L('(facoltativo)', '(optional)', '(opcional)')}</span></label>
+      ${opz.coda ? opz.coda() : ''}
+      ${st.p.nome === 'lampo' ? `<p class="suggerimento">${L('Un lampo per volta: più lampi di fila possono far male a chi soffre di epilessia fotosensibile, e l\'overlay non li fa.', 'One flash at a time: several flashes in a row can hurt people with photosensitive epilepsy, and the overlay does not do them.', 'Un destello a la vez: varios destellos seguidos pueden hacer daño a quien sufre epilepsia fotosensible, y el overlay no los hace.')}</p>` : ''}
+      ${opz.azioni ? `<div class="pronti-azioni">${opz.azioni()}</div>` : ''}
+    </div>`;
+  const tela = ed.querySelector('.pronti-tela');
+  let ferma = _prontiGiro(tela, () => st.p, 11);
+  const riparti = () => { ferma(); ferma = _prontiGiro(tela, () => st.p, 11); };
+  fermi.push(() => ferma());
+  ed.oninput = (ev) => {
+    const t = ev.target;
+    if (t.dataset.colore != null) st.p.colori[Number(t.dataset.colore)] = t.value;
+    else if (t.id === pre + '-durata') { st.p.durata = Number(t.value); ed.querySelector('#' + pre + '-durata-v').textContent = t.value; }
+  };
+  ed.onchange = (ev) => {
+    const t = ev.target;
+    if (t.dataset.colore != null || t.id === pre + '-durata') riparti();
+    else if (t.id === pre + '-suono') { st.p.suono = t.value; if (t.value && !t.value.startsWith('effetto:') && window.SUONI_PRESET) window.SUONI_PRESET.suona(t.value, st.volume); }
+    else if (t.id === pre + '-volume') st.volume = Math.max(0, Math.min(100, Math.round(Number(t.value) || 0)));
+    else { if (opz.suCambio) opz.suCambio(t); return; }
+    cambiato();
+  };
+  ed.onclick = (ev) => {
+    const b = ev.target.closest('button');
+    if (!b || !ed.contains(b)) return;
+    if (b.dataset.togli != null) st.p.colori.splice(Number(b.dataset.togli), 1);
+    else if (b.dataset.quanti) st.p.quanti = b.dataset.quanti;
+    else if (b.dataset.pronti === 'colore-piu') st.p.colori.push(st.p.colori[st.p.colori.length - 1] || '#ffffff');
+    else if (b.dataset.pronti === 'colori-serie') st.p.colori = C.colori.slice();
+    else { if (opz.suClick) opz.suClick(b); return; }
+    rifai();
+    cambiato();
+  };
+}
+
+function disegnaPronti() {
+  const gal = document.getElementById('pronti-galleria');
+  const ed = document.getElementById('pronti-editor');
+  if (!gal || !ed || !window.SB_DISEGNATI) return;
+  if (!_pronti) _pronti = _prontiNuovo('coriandoli');
+  const st = _pronti, modifica = st.id != null;
+  editorPronto(gal, ed, st, {
+    pre: 'pronti', fermi: _prontiFermi,
+    titolo: () => (modifica ? L('Modifichi', 'Editing', 'Editas') + ` <code>!${esc(st.comando)}</code>` : esc(PRONTI_NOMI()[st.p.nome])),
+    coda: () => `${modifica ? '' : `<label class="campo" for="pronti-comando">${L('Comando in chat', 'Chat command', 'Comando en el chat')} <span class="tenue">${L('(facoltativo)', '(optional)', '(opcional)')}</span></label>
       <div class="riga-flessibile"><span class="prefisso-cmd">!</span><input type="text" id="pronti-comando" class="campo-largo" maxlength="24" placeholder="${esc(st.p.nome)}" value="${esc(st.comando)}"></div>`}
       <div class="griglia-campi">
         <div><label class="campo" for="pronti-tier">${L('Chi può usarlo', 'Who can use it', 'Quién puede usarlo')}</label>
           <select id="pronti-tier">${[['tutti', L('Tutti', 'Everyone', 'Todos')], ['sub', L('Solo sub', 'Subs only', 'Solo subs')], ['vip', L('Solo VIP', 'VIPs only', 'Solo VIP')], ['mod', L('Solo mod', 'Mods only', 'Solo mods')]].map(([v, t]) => `<option value="${v}"${v === st.tier ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></div>
         <div><label class="campo" for="pronti-cooldown">${L('Cooldown (s)', 'Cooldown (s)', 'Enfriamiento (s)')}</label><input type="number" id="pronti-cooldown" min="0" max="3600" value="${st.cooldown}"></div>
-      </div>
-      ${st.p.nome === 'lampo' ? `<p class="suggerimento">${L('Un lampo per volta: più lampi di fila possono far male a chi soffre di epilessia fotosensibile, e l\'overlay non li fa.', 'One flash at a time: several flashes in a row can hurt people with photosensitive epilepsy, and the overlay does not do them.', 'Un destello a la vez: varios destellos seguidos pueden hacer daño a quien sufre epilepsia fotosensible, y el overlay no los hace.')}</p>` : ''}
-      <p class="pronti-azioni">
+      </div>`,
+    azioni: () => `<p class="pronti-tasti">
         <button type="button" class="btn" data-pronti="salva">${modifica ? L('Salva le modifiche', 'Save changes', 'Guardar los cambios') : L('Aggiungi l\'effetto', 'Add the effect', 'Añadir el efecto')}</button>
         ${modifica ? `<button type="button" class="btn secondario" data-pronti="prova">${L('Prova sull\'overlay', 'Test on the overlay', 'Probar en el overlay')}</button>
         <button type="button" class="btn secondario" data-pronti="annulla">${L('Chiudi la modifica', 'Close editing', 'Cerrar la edición')}</button>` : ''}
       </p>
-    </div>`;
-  const tela = ed.querySelector('.pronti-tela');
-  let ferma = _prontiGiro(tela, () => st.p, 11);
-  const riparti = () => { ferma(); ferma = _prontiGiro(tela, () => st.p, 11); };
-  _prontiFermi.push(() => ferma());
-  ed.oninput = (ev) => {
-    const t = ev.target;
-    if (t.dataset.colore != null) st.p.colori[Number(t.dataset.colore)] = t.value;
-    else if (t.id === 'pronti-durata') { st.p.durata = Number(t.value); ed.querySelector('#pronti-durata-v').textContent = t.value; }
-  };
-  ed.onchange = (ev) => {
-    const t = ev.target;
-    if (t.dataset.colore != null || t.id === 'pronti-durata') riparti();
-    else if (t.id === 'pronti-suono') { st.p.suono = t.value; if (t.value && !t.value.startsWith('effetto:') && window.SUONI_PRESET) window.SUONI_PRESET.suona(t.value, st.volume); }
-    else if (t.id === 'pronti-volume') st.volume = Math.max(0, Math.min(100, Math.round(Number(t.value) || 0)));
-    else if (t.id === 'pronti-tier') st.tier = t.value;
-    else if (t.id === 'pronti-cooldown') st.cooldown = Math.max(0, Math.min(3600, Math.round(Number(t.value) || 0)));
-    else if (t.id === 'pronti-comando') st.comando = t.value.trim() ? normComandoWeb(t.value) : '';
-  };
-  ed.onclick = (ev) => {
-    const b = ev.target.closest('button');
-    if (!b) return;
-    if (b.dataset.togli != null) { st.p.colori.splice(Number(b.dataset.togli), 1); _prontiRifai(); return; }
-    if (b.dataset.quanti) { st.p.quanti = b.dataset.quanti; _prontiRifai(); return; }
-    const a = b.dataset.pronti;
-    if (a === 'colore-piu') { st.p.colori.push(st.p.colori[st.p.colori.length - 1] || '#ffffff'); _prontiRifai(); }
-    else if (a === 'colori-serie') { st.p.colori = C.colori.slice(); _prontiRifai(); }
-    else if (a === 'annulla') { _pronti = _prontiNuovo(st.p.nome); disegnaPronti(); }
-    else if (a === 'prova') conErrore(async () => {
-      await api('/api/streamer/effetti/test', { method: 'POST', body: { comando: st.comando } });
-      toast(L('Effetto inviato all\'overlay (aprilo per vederlo)', 'Effect sent to the overlay (open it to see it)', 'Efecto enviado al overlay (ábrelo para verlo)'));
-    });
-    else if (a === 'salva') conErrore(async () => {
-      const c = ed.querySelector('#pronti-comando');
-      if (c) st.comando = c.value.trim() ? normComandoWeb(c.value) : '';
-      b.disabled = true;
-      try {
-        const r = await api('/api/streamer/effetti/disegno', { method: 'POST', body: { id: st.id, comando: st.comando, disegno: st.p, tier: st.tier, cooldown: st.cooldown, volume: st.volume } });
-        toast(modifica ? L('Modifiche salvate ✓', 'Changes saved ✓', 'Cambios guardados ✓') : L(`Aggiunto come !${r.comando}: lo trovi nei tuoi effetti ✓`, `Added as !${r.comando}: you find it in your effects ✓`, `Añadido como !${r.comando}: lo encuentras en tus efectos ✓`));
-        if (!modifica) { st.comando = ''; }
-        caricaEffetti();
-        _prontiRifai();
-      } finally { b.disabled = false; }
-    });
-  };
-}
-
-function _prontiRifai() { const ed = document.getElementById('pronti-editor'); if (!ed) return; _prontiFerma(); disegnaPronti(); }
-
-function _prontiScegli(nome) {
-  if (_pronti && _pronti.p.nome === nome) return;
-  const nuovo = _prontiNuovo(nome);
-  if (_pronti && _pronti.id != null) _pronti = { ..._pronti, p: { ...nuovo.p, suono: _pronti.p.suono } };
-  else _pronti = { ...nuovo, comando: _pronti ? _pronti.comando : '', tier: _pronti ? _pronti.tier : nuovo.tier, cooldown: _pronti ? _pronti.cooldown : nuovo.cooldown, volume: _pronti ? _pronti.volume : nuovo.volume };
-  disegnaPronti();
+      <div class="pronti-eventi" role="group" aria-labelledby="pronti-eventi-et">
+        <span class="campo" id="pronti-eventi-et">${L('Usalo per un evento', 'Use it for an event', 'Úsalo para un evento')}</span>
+        <span class="pronti-eventi-voci">${EE_ORDINE.map((id) => `<button type="button" class="btn secondario mini" data-pronti-evento="${id}">${esc(EE_NOMI()[id])}</button>`).join('')}</span>
+      </div>`,
+    suCambio: (t) => {
+      if (t.id === 'pronti-tier') st.tier = t.value;
+      else if (t.id === 'pronti-cooldown') st.cooldown = Math.max(0, Math.min(3600, Math.round(Number(t.value) || 0)));
+      else if (t.id === 'pronti-comando') st.comando = t.value.trim() ? normComandoWeb(t.value) : '';
+    },
+    suClick: (b) => {
+      if (b.dataset.prontiEvento) { usaPerEvento(b.dataset.prontiEvento, { tipo: 'pronto', disegno: JSON.parse(JSON.stringify(st.p)), volume: st.volume }); return; }
+      const a = b.dataset.pronti;
+      if (a === 'annulla') { _pronti = _prontiNuovo(st.p.nome); disegnaPronti(); }
+      else if (a === 'prova') conErrore(async () => {
+        await api('/api/streamer/effetti/test', { method: 'POST', body: { comando: st.comando } });
+        toast(L('Effetto inviato all\'overlay (aprilo per vederlo)', 'Effect sent to the overlay (open it to see it)', 'Efecto enviado al overlay (ábrelo para verlo)'));
+      });
+      else if (a === 'salva') conErrore(async () => {
+        const c = ed.querySelector('#pronti-comando');
+        if (c) st.comando = c.value.trim() ? normComandoWeb(c.value) : '';
+        b.disabled = true;
+        try {
+          const r = await api('/api/streamer/effetti/disegno', { method: 'POST', body: { id: st.id, comando: st.comando, disegno: st.p, tier: st.tier, cooldown: st.cooldown, volume: st.volume } });
+          toast(modifica ? L('Modifiche salvate ✓', 'Changes saved ✓', 'Cambios guardados ✓') : L(`Aggiunto come !${r.comando}: lo trovi nei tuoi effetti ✓`, `Added as !${r.comando}: you find it in your effects ✓`, `Añadido como !${r.comando}: lo encuentras en tus efectos ✓`));
+          if (!modifica) st.comando = '';
+          caricaEffetti();
+          disegnaPronti();
+        } finally { b.disabled = false; }
+      });
+    },
+  });
 }
 
 function _prontiModifica(e) {
@@ -30259,6 +30355,401 @@ function _prontiModifica(e) {
   disegnaPronti();
   document.getElementById('pronti-carta')?.scrollIntoView({ behavior: _menoMoto ? 'auto' : 'smooth', block: 'start' });
 }
+
+const EE_ORDINE = ['follow', 'sub', 'regalo', 'cheer', 'raid', 'donazione', 'treno'];
+const EE_NOMI = () => ({
+  follow: L('Follow', 'Follows', 'Follows'),
+  sub: L('Abbonamenti', 'Subscriptions', 'Suscripciones'),
+  regalo: L('Abbonamenti regalati', 'Gifted subs', 'Suscripciones regaladas'),
+  cheer: L('Bit', 'Bits', 'Bits'),
+  raid: L('Raid', 'Raids', 'Raids'),
+  donazione: L('Donazioni', 'Donations', 'Donaciones'),
+  treno: L('Treno dell\'hype', 'Hype train', 'Tren del hype'),
+});
+const EE_PRIMO = { follow: 'cuori', sub: 'stelle', regalo: 'palloncini', cheer: 'coriandoli', raid: 'fuochi', donazione: 'coriandoli', treno: 'fuochi' };
+const EE_SCALA = { sub: [1, 3, 6, 12, 24, 36, 48, 60], regalo: [1, 5, 10, 20, 50, 100], cheer: [100, 500, 1000, 5000, 10000], raid: [1, 10, 50, 100, 500], donazione: [1, 5, 10, 20, 50, 100], treno: [1, 2, 3, 4, 5] };
+const EE_ALERT = { follow: 'follow', sub: 'sub', regalo: 'sub', cheer: 'cheer', raid: 'raid', donazione: 'donazione' };
+
+let _ee = null;
+const _eeFermi = {};
+let _eeDaAprire = '';
+
+const _eeN = (n) => Number(n).toLocaleString(L('it-IT', 'en-US', 'es-ES'));
+const _eeConta = (ev) => (_ee?.eventi || []).find((e) => e.id === ev)?.quanto ?? (ev === 'follow' ? null : ev);
+
+function _eeValuta() {
+  const v = String(stato?.streamer?.settings?.donazioni?.valuta || 'EUR');
+  try { return new Intl.NumberFormat(L('it-IT', 'en-US', 'es-ES'), { style: 'currency', currency: v }).formatToParts(0).find((p) => p.type === 'currency')?.value || v; } catch { return v; }
+}
+
+function _eeSoglia(ev, n) {
+  const N = _eeN(n), uno = Number(n) === 1;
+  if (ev === 'sub') return uno ? L('1 mese', '1 month', '1 mes') : L(`${N} mesi`, `${N} months`, `${N} meses`);
+  if (ev === 'regalo') return uno ? L('1 regalato', '1 gifted', '1 regalada') : L(`${N} regalati`, `${N} gifted`, `${N} regaladas`);
+  if (ev === 'cheer') return uno ? '1 bit' : L(`${N} bit`, `${N} bits`, `${N} bits`);
+  if (ev === 'raid') return uno ? L('1 spettatore', '1 viewer', '1 espectador') : L(`${N} spettatori`, `${N} viewers`, `${N} espectadores`);
+  if (ev === 'donazione') return `${N} ${_eeValuta()}`;
+  if (ev === 'treno') return L(`livello ${N}`, `level ${N}`, `nivel ${N}`);
+  return N;
+}
+
+function _eeUnita(ev, n) {
+  if (ev === 'treno') return { prima: L('Dal livello', 'From level', 'Desde el nivel'), dopo: '' };
+  const uno = Number(n) === 1;
+  const dopo = {
+    sub: uno ? L('mese di abbonamento', 'month subscribed', 'mes de suscripción') : L('mesi di abbonamento', 'months subscribed', 'meses de suscripción'),
+    regalo: uno ? L('abbonamento regalato', 'gifted sub', 'suscripción regalada') : L('abbonamenti regalati insieme', 'subs gifted at once', 'suscripciones regaladas a la vez'),
+    cheer: uno ? 'bit' : L('bit', 'bits', 'bits'),
+    raid: uno ? L('spettatore', 'viewer', 'espectador') : L('spettatori', 'viewers', 'espectadores'),
+    donazione: _eeValuta(),
+  }[ev] || '';
+  return { prima: L('Da', 'From', 'Desde'), dopo };
+}
+
+function _eeNomeEffetto(e) {
+  if (!e) return '';
+  if (e.tipo === 'mio') return '!' + e.comando;
+  return PRONTI_NOMI()[e.disegno?.nome] || e.disegno?.nome || '';
+}
+
+function _eeResa(ev, v) {
+  if (!v || !v.attivo) return L('Spento', 'Off', 'Apagado');
+  if (!v.livelli?.length) return L('Acceso, ma senza un effetto', 'On, but with no effect', 'Activo, pero sin efecto');
+  if (ev === 'follow') return _eeNomeEffetto(v.livelli[0].effetto);
+  return v.livelli.map((l) => `${_eeNomeEffetto(l.effetto)} ${L('da', 'from', 'desde')} ${_eeSoglia(ev, l.da)}`).join(', ');
+}
+
+function _eeDoppi(v) {
+  const visti = new Set();
+  return (v.livelli || []).some((l) => { if (visti.has(l.da)) return true; visti.add(l.da); return false; });
+}
+
+function _eeCosi(ev) {
+  const v = _ee.voci[ev], nome = EE_NOMI()[ev];
+  if (_eeDoppi(v)) return `<span class="warn-riga">${L('Due livelli partono dallo stesso numero: cambiane uno, o al salvataggio resta solo l\'ultimo.', 'Two levels start at the same number: change one, or only the last is kept when you save.', 'Dos niveles empiezan en el mismo número: cambia uno, o al guardar solo queda el último.')}</span>`;
+  if (!v.attivo) return esc(L(`Così: spento, per «${nome}» non parte niente.`, `So: off, nothing plays for «${nome}».`, `Así: apagado, para «${nome}» no sale nada.`));
+  if (!v.livelli.length) return esc(L('Così: acceso, ma senza un effetto non parte niente.', 'So: on, but without an effect nothing plays.', 'Así: activo, pero sin efecto no sale nada.'));
+  const pausa = v.pausa > 0 ? ' ' + L(`Al massimo un effetto ogni ${_eeN(v.pausa)} secondi.`, `At most one effect every ${_eeN(v.pausa)} seconds.`, `Como mucho un efecto cada ${_eeN(v.pausa)} segundos.`) : '';
+  if (ev === 'follow') return esc(L(`Così: a ogni follow parte «${_eeNomeEffetto(v.livelli[0].effetto)}».`, `So: every follow plays «${_eeNomeEffetto(v.livelli[0].effetto)}».`, `Así: con cada follow sale «${_eeNomeEffetto(v.livelli[0].effetto)}».`) + pausa);
+  const pezzi = v.livelli.map((l, i) => (i ? L(`da ${_eeSoglia(ev, l.da)} «${_eeNomeEffetto(l.effetto)}»`, `from ${_eeSoglia(ev, l.da)} «${_eeNomeEffetto(l.effetto)}»`, `desde ${_eeSoglia(ev, l.da)} «${_eeNomeEffetto(l.effetto)}»`)
+    : L(`da ${_eeSoglia(ev, l.da)} parte «${_eeNomeEffetto(l.effetto)}»`, `from ${_eeSoglia(ev, l.da)} it plays «${_eeNomeEffetto(l.effetto)}»`, `desde ${_eeSoglia(ev, l.da)} sale «${_eeNomeEffetto(l.effetto)}»`)));
+  const minimo = ev === 'donazione' ? 0 : 1;
+  const sotto = v.livelli[0].da > minimo ? ' ' + L(`Sotto ${_eeSoglia(ev, v.livelli[0].da)}, niente.`, `Below ${_eeSoglia(ev, v.livelli[0].da)}, nothing.`, `Por debajo de ${_eeSoglia(ev, v.livelli[0].da)}, nada.`) : '';
+  return esc(L('Così: ', 'So: ', 'Así: ') + pezzi.join(', ') + '.' + sotto + pausa);
+}
+
+function _eeContesto(ev) {
+  const s = stato?.streamer?.settings || {};
+  const vai = (k) => ` <button type="button" class="rg-vai" data-ee-studio="${k}">${L('Apri l\'alert nello Studio', 'Open the alert in the Studio', 'Abrir la alerta en el Studio')}</button>`;
+  if (ev === 'treno') return L('L\'effetto parte quando il treno parte e quando sale di livello, non a ogni contributo.', 'The effect plays when the train starts and when it levels up, not on every contribution.', 'El efecto sale cuando el tren arranca y cuando sube de nivel, no con cada contribución.');
+  const k = EE_ALERT[ev], a = s.alerts || {}, c = a.attivo !== false ? a[k] : null;
+  let t;
+  if (!c || c.attivo === false) t = L('L\'alert è spento: parte solo l\'effetto.', 'The alert is off: only the effect plays.', 'La alerta está apagada: solo sale el efecto.');
+  else if (k !== 'donazione' && c.chi === 'twitch') t = L('L\'alert lo mostra Twitch: l\'effetto parte lo stesso, da SocialBot.', 'Twitch shows the alert: the effect still plays, from SocialBot.', 'La alerta la muestra Twitch: el efecto sale igual, desde SocialBot.');
+  else t = L('Parte anche l\'alert: l\'effetto arriva un attimo dopo, per non coprirlo.', 'The alert plays too: the effect comes a moment later, so it does not cover it.', 'También sale la alerta: el efecto llega un momento después, para no taparla.');
+  const piu = {
+    sub: L('Contano gli abbonamenti nuovi e i rinnovi; quelli regalati hanno il loro foglio.', 'New subs and renewals count; gifted ones have their own sheet.', 'Cuentan las suscripciones nuevas y las renovaciones; las regaladas tienen su propia hoja.'),
+    regalo: L('Venti abbonamenti regalati in un colpo fanno partire un effetto solo, scelto col numero dei regali.', 'Twenty subs gifted at once play a single effect, picked by the number of gifts.', 'Veinte suscripciones regaladas de golpe lanzan un solo efecto, elegido por el número de regalos.'),
+    donazione: L('Se la donazione raggiunge un\'offerta che ha già il suo effetto, parte quello dell\'offerta. In un\'altra valuta parte il primo livello.', 'If the donation reaches an offer that already has its own effect, that one plays. In another currency the first level plays.', 'Si la donación llega a una oferta que ya tiene su efecto, sale el de la oferta. En otra moneda sale el primer nivel.'),
+  }[ev];
+  return t + vai(k) + (piu ? `<br>${piu}` : '');
+}
+
+function _eeProssimo(ev) {
+  const v = _ee.voci[ev], ultimo = v.livelli.length ? Math.max(...v.livelli.map((l) => l.da)) : 0;
+  const scala = EE_SCALA[ev] || [1];
+  const n = v.livelli.length ? scala.find((x) => x > ultimo) ?? ultimo * 2 : scala[0];
+  return Math.min(_ee.limiti.da, Math.max(0, n));
+}
+
+function _eeNuovoEffetto(ev) {
+  const S = window.SB_DISEGNATI;
+  const usati = new Set(_ee.voci[ev].livelli.map((l) => l.effetto?.disegno?.nome).filter(Boolean));
+  const giro = [EE_PRIMO[ev], ...S.NOMI.filter((n) => n !== EE_PRIMO[ev] && n !== 'lampo')];
+  return { tipo: 'pronto', disegno: _prontiDisegno(giro.find((n) => !usati.has(n)) || EE_PRIMO[ev]), volume: 80 };
+}
+
+function _eeFoglio(ev) {
+  const v = _ee.voci[ev];
+  return `<details class="regola-gioco ee-foglio${v.attivo ? '' : ' rg-off'}" data-ee="${ev}" name="ee-evento">
+    <summary data-rg-testa><label class="interruttore mini rg-on" title="${esc(L('Acceso o spento', 'On or off', 'Activo o apagado'))}"><input type="checkbox" data-ee-on="${ev}"${v.attivo ? ' checked' : ''} aria-labelledby="ee-nome-${ev}"><span class="levetta"></span></label><span class="rg-nome"><strong id="ee-nome-${ev}">${esc(EE_NOMI()[ev])}</strong></span><span class="regola-resa" data-ee-resa="${ev}">${esc(_eeResa(ev, v))}</span></summary>
+    <div class="regola-corpo" data-ee-corpo="${ev}"></div>
+  </details>`;
+}
+
+function _eeLivello(ev, l, i, aperto) {
+  const id = `ee-${ev}-${i}`, u = _eeUnita(ev, l.da), conta = _eeConta(ev);
+  return `<li class="ee-livello${aperto ? ' aperto' : ''}" data-ee-i="${i}">
+    <div class="ee-testa">
+      ${conta ? `<span class="ee-da"><label for="${id}-da">${esc(u.prima)}</label><input type="number" id="${id}-da" data-ee-da="${ev}" data-i="${i}" min="0" max="${_ee.limiti.da}" step="1" inputmode="numeric" value="${l.da}">${u.dopo ? `<span data-ee-unita>${esc(u.dopo)}</span>` : ''}</span>` : ''}
+      <span class="ee-effetto" data-ee-nome="${i}">${esc(_eeNomeEffetto(l.effetto))}</span>
+      <span class="ee-tasti">
+        <button type="button" class="btn secondario mini" data-ee-apri="${ev}" data-i="${i}" aria-expanded="${aperto}">${aperto ? L('Chiudi', 'Close', 'Cerrar') : L('Modifica', 'Edit', 'Editar')}</button>
+        <button type="button" class="btn secondario mini" data-ee-prova="${ev}" data-i="${i}">${L('Prova sull\'overlay', 'Test on the overlay', 'Probar en el overlay')}</button>
+        <button type="button" class="btn secondario mini" data-ee-togli="${ev}" data-i="${i}">${conta ? L('Togli il livello', 'Remove the level', 'Quitar el nivel') : L('Togli l\'effetto', 'Remove the effect', 'Quitar el efecto')}</button>
+      </span>
+    </div>
+    ${aperto ? _eeEditorHtml(ev, l, i) : ''}
+  </li>`;
+}
+
+function _eeEditorHtml(ev, l, i) {
+  const id = `ee-${ev}-${i}`, mio = l.effetto.tipo === 'mio';
+  const miei = _ee.effetti || [];
+  const scelta = mio ? `<div>
+      <label class="campo" for="${id}-mio">${L('Il tuo effetto', 'Your effect', 'Tu efecto')}</label>
+      ${miei.length ? `<select id="${id}-mio" data-ee-mio="${ev}" data-i="${i}"><option value="">${L('Scegli…', 'Choose…', 'Elige…')}</option>${miei.map((e) => `<option value="${esc(e.comando)}"${e.comando === l.effetto.comando ? ' selected' : ''}>!${esc(e.comando)} (${esc(etTipoEffetto(e.tipo))})</option>`).join('')}</select>`
+        : `<p class="suggerimento">${L('Non hai ancora effetti tuoi: caricane uno in «Carica un effetto», o aggiungi un effetto pronto con un comando.', 'You have no effects of your own yet: upload one in «Upload an effect», or add a ready-made effect with a command.', 'Aún no tienes efectos propios: sube uno en «Sube un efecto», o añade un efecto listo con un comando.')}</p>`}
+    </div>` : `<div class="pronti-galleria" data-ee-gal role="radiogroup" aria-label="${esc(L('Effetti pronti', 'Ready-made effects', 'Efectos listos'))}"></div><div class="pronti-editor" data-ee-ed></div>`;
+  return `<div class="ee-editor">
+    <div class="ee-tipo" role="radiogroup" aria-label="${esc(L('Che effetto', 'Which effect', 'Qué efecto'))}">
+      <label class="riga-check"><input type="radio" name="${id}-tipo" value="pronto" data-ee-tipo="${ev}" data-i="${i}"${mio ? '' : ' checked'}> ${L('Un effetto pronto', 'A ready-made effect', 'Un efecto listo')}</label>
+      <label class="riga-check"><input type="radio" name="${id}-tipo" value="mio" data-ee-tipo="${ev}" data-i="${i}"${mio ? ' checked' : ''}> ${L('Uno dei tuoi effetti', 'One of your effects', 'Uno de tus efectos')}</label>
+    </div>
+    ${scelta}
+  </div>`;
+}
+
+function _eeCorpo(ev) {
+  const v = _ee.voci[ev], conta = _eeConta(ev), aperto = _ee.aperto[ev];
+  const max = conta ? _ee.limiti.livelli : 1;
+  const aggiungi = v.livelli.length < max
+    ? `<p class="ee-aggiungi"><button type="button" class="btn secondario mini" data-ee-aggiungi="${ev}">${_bIco(ICO.piu)}${v.livelli.length ? L('Aggiungi un livello', 'Add a level', 'Añadir un nivel') : L('Scegli l\'effetto', 'Choose the effect', 'Elige el efecto')}</button>${conta && v.livelli.length ? ` <span class="tenue">${L(`fino a ${max}`, `up to ${max}`, `hasta ${max}`)}</span>` : ''}</p>` : '';
+  return `
+    <p class="ee-contesto">${_eeContesto(ev)}</p>
+    ${v.livelli.length ? `<ol class="ee-livelli">${v.livelli.map((l, i) => _eeLivello(ev, l, i, i === aperto)).join('')}</ol>` : ''}
+    ${aggiungi}
+    <div class="ee-pausa">
+      <label class="campo" for="ee-pausa-${ev}">${L('Pausa fra due effetti (secondi)', 'Pause between two effects (seconds)', 'Pausa entre dos efectos (segundos)')}</label>
+      <input type="number" id="ee-pausa-${ev}" data-ee-pausa="${ev}" min="0" max="${_ee.limiti.pausa}" step="1" inputmode="numeric" value="${v.pausa}">
+      <p class="suggerimento">${L('Un\'ondata di eventi in pochi secondi fa partire un effetto solo. 0 vuol dire nessuna pausa.', 'A wave of events within a few seconds plays a single effect. 0 means no pause.', 'Una ola de eventos en pocos segundos lanza un solo efecto. 0 significa sin pausa.')}</p>
+    </div>
+    <p class="ee-cosi" data-ee-cosi="${ev}">${_eeCosi(ev)}</p>`;
+}
+
+function _eeLivelloSt(l) {
+  return { get p() { return l.effetto.disegno; }, set p(x) { l.effetto.disegno = x; }, get volume() { return l.effetto.volume; }, set volume(x) { l.effetto.volume = x; } };
+}
+
+function _eeRendiCorpo(ev) {
+  const det = document.querySelector(`#ee-fogli details[data-ee="${ev}"]`);
+  const corpo = det?.querySelector('[data-ee-corpo]');
+  if (!corpo) return;
+  _fermaTutti(_eeFermi[ev] ||= []);
+  det.dataset.pieno = det.open ? '1' : '';
+  if (!det.open) { corpo.innerHTML = ''; return; }
+  corpo.innerHTML = _eeCorpo(ev);
+  const i = _ee.aperto[ev], l = _ee.voci[ev].livelli[i];
+  const gal = corpo.querySelector('[data-ee-gal]'), ed = corpo.querySelector('[data-ee-ed]');
+  if (l && l.effetto.tipo === 'pronto' && gal && ed) {
+    editorPronto(gal, ed, _eeLivelloSt(l), { pre: `ee-${ev}-${i}`, fermi: _eeFermi[ev], dopo: () => _eeCambiato(ev) });
+  }
+}
+
+function _eeCambiato(ev, rifai = false) {
+  const v = _ee.voci[ev];
+  const det = document.querySelector(`#ee-fogli details[data-ee="${ev}"]`);
+  if (!det) return;
+  if (rifai) _eeRendiCorpo(ev);
+  det.classList.toggle('rg-off', !v.attivo);
+  const resa = det.querySelector('[data-ee-resa]');
+  if (resa) resa.textContent = _eeResa(ev, v);
+  const cosi = det.querySelector('[data-ee-cosi]');
+  if (cosi) cosi.innerHTML = _eeCosi(ev);
+  det.querySelectorAll('[data-ee-nome]').forEach((n) => { n.textContent = _eeNomeEffetto(v.livelli[Number(n.dataset.eeNome)]?.effetto); });
+  segnaDaSalvare(document.getElementById('ee-salva'));
+}
+
+function _eeDisegna() {
+  const box = document.getElementById('ee-fogli');
+  if (!box || !_ee) return;
+  for (const ev of Object.keys(_eeFermi)) _fermaTutti(_eeFermi[ev]);
+  const aperto = box.querySelector('details[data-ee][open]')?.dataset.ee || '';
+  box.innerHTML = _ee.eventi.map((e) => _eeFoglio(e.id)).join('');
+  box.querySelectorAll('details[data-ee]').forEach((det) => det.addEventListener('toggle', () => {
+    if (det.open && det.dataset.pieno === '1') return;
+    _eeRendiCorpo(det.dataset.ee);
+  }));
+  if (aperto) _eeApri(aperto, false);
+}
+
+function _eeApri(ev, scorri = true) {
+  const det = document.querySelector(`#ee-fogli details[data-ee="${ev}"]`);
+  if (!det) return false;
+  det.open = true;
+  _eeRendiCorpo(ev);
+  if (scorri) requestAnimationFrame(() => det.querySelector('summary').scrollIntoView({ behavior: _menoMoto ? 'auto' : 'smooth', block: 'start' }));
+  return true;
+}
+
+function _eeApriSeServe() {
+  if (!_eeDaAprire || !_ee || !document.querySelector('#ee-fogli')?.closest('.pannello-scheda.visibile')) return;
+  if (_eeApri(_eeDaAprire)) _eeDaAprire = '';
+}
+
+async function caricaEventiEffetti() {
+  const box = document.getElementById('ee-fogli');
+  if (!box) return;
+  try {
+    const d = await api('/api/streamer/effetti-eventi');
+    _ee = { eventi: d.eventi, limiti: d.limiti, voci: d.effettiEventi.voci, effetti: d.effetti || [], aperto: {} };
+  } catch (e) {
+    box.innerHTML = `<p class="warn-riga">${L('Non riesco a leggere gli effetti degli eventi: ', 'I can’t read the event effects: ', 'No puedo leer los efectos de los eventos: ')}${esc(e.message)}</p>`;
+    return;
+  }
+  _eeDisegna();
+  _eeApriSeServe();
+}
+
+function apriEffettoEvento(ev) {
+  _eeDaAprire = ev;
+  try { localStorage.setItem('sotto:effetti', 'eventi'); } catch {  }
+  if (schedaAttiva !== 'effetti') vaiAScheda('effetti');
+  else { scegliSotto('effetti', 'eventi'); _eeApriSeServe(); }
+}
+
+function usaPerEvento(ev, effetto) {
+  if (!_ee) { toast(L('Un attimo: sto ancora leggendo gli eventi.', 'One moment: still reading the events.', 'Un momento: todavía estoy leyendo los eventos.')); return; }
+  const v = _ee.voci[ev], conta = _eeConta(ev), nome = EE_NOMI()[ev];
+  let i;
+  if (!v.livelli.length) { v.livelli.push({ da: conta ? _eeProssimo(ev) : 0, effetto }); i = 0; }
+  else if (!conta) { v.livelli[0].effetto = effetto; i = 0; }
+  else if (v.livelli.length < _ee.limiti.livelli) { v.livelli.push({ da: _eeProssimo(ev), effetto }); i = v.livelli.length - 1; }
+  else {
+    scegliSotto('effetti', 'eventi');
+    _eeApri(ev);
+    toast(L(`«${nome}» ha già ${v.livelli.length} livelli: togline uno, poi riprova.`, `«${nome}» already has ${v.livelli.length} levels: remove one, then try again.`, `«${nome}» ya tiene ${v.livelli.length} niveles: quita uno y vuelve a intentarlo.`));
+    return;
+  }
+  v.attivo = true;
+  _ee.aperto[ev] = i;
+  scegliSotto('effetti', 'eventi');
+  const det = document.querySelector(`#ee-fogli details[data-ee="${ev}"]`);
+  if (det) { det.classList.remove('rg-off'); const on = det.querySelector('[data-ee-on]'); if (on) on.checked = true; }
+  _eeApri(ev);
+  _eeCambiato(ev);
+  toast(L(`Ora è un effetto di «${nome}»: controlla e salva.`, `It is now an effect of «${nome}»: check it and save.`, `Ahora es un efecto de «${nome}»: revísalo y guarda.`));
+}
+
+function _eeLivelloDi(b) { const ev = b.dataset.eeApri || b.dataset.eeProva || b.dataset.eeTogli || b.dataset.eeDa || b.dataset.eeTipo || b.dataset.eeMio; return { ev, i: Number(b.dataset.i), l: _ee?.voci[ev]?.livelli[Number(b.dataset.i)] }; }
+
+function montaEventiEffetti() {
+  const box = document.getElementById('ee-fogli');
+  if (!box || box.dataset.montato) return;
+  box.dataset.montato = '1';
+  box.addEventListener('click', (ev) => {
+    if (!_ee) return;
+    const somma = ev.target.closest?.('details[data-ee] > summary');
+    if (somma && !ev.target.closest('.rg-on')) {
+      ev.preventDefault();
+      const prima = somma.getBoundingClientRect().top;
+      somma.parentElement.open = !somma.parentElement.open;
+      const scarto = somma.getBoundingClientRect().top - prima;
+      if (Math.abs(scarto) > 1) window.scrollBy({ top: scarto, behavior: 'instant' });
+      return;
+    }
+    const b = ev.target.closest?.('button');
+    if (!b || !box.contains(b)) return;
+    if (b.dataset.eeStudio) { apriAlertNelloStudio(b.dataset.eeStudio); return; }
+    if (b.dataset.eeAggiungi) {
+      const e = b.dataset.eeAggiungi, v = _ee.voci[e];
+      v.livelli.push({ da: _eeConta(e) ? _eeProssimo(e) : 0, effetto: _eeNuovoEffetto(e) });
+      if (!v.attivo) { v.attivo = true; const on = box.querySelector(`[data-ee-on="${e}"]`); if (on) on.checked = true; }
+      _ee.aperto[e] = v.livelli.length - 1;
+      _eeCambiato(e, true);
+      box.querySelector(`details[data-ee="${e}"] .ee-livello[data-ee-i="${v.livelli.length - 1}"]`)?.scrollIntoView({ behavior: _menoMoto ? 'auto' : 'smooth', block: 'nearest' });
+      return;
+    }
+    const { ev: e, i, l } = _eeLivelloDi(b);
+    if (!l) return;
+    if (b.dataset.eeApri) { _ee.aperto[e] = _ee.aperto[e] === i ? null : i; _eeRendiCorpo(e); box.querySelector(`[data-ee-apri="${e}"][data-i="${i}"]`)?.focus(); return; }
+    if (b.dataset.eeTogli) {
+      _ee.voci[e].livelli.splice(i, 1);
+      const a = _ee.aperto[e];
+      _ee.aperto[e] = a === i ? null : a > i ? a - 1 : a;
+      _eeCambiato(e, true);
+      return;
+    }
+    if (b.dataset.eeProva) conErrore(async () => {
+      if (l.effetto.tipo === 'mio' && !l.effetto.comando) throw new Error(L('scegli prima uno dei tuoi effetti', 'pick one of your effects first', 'elige antes uno de tus efectos'));
+      await api('/api/streamer/effetti-eventi/prova', { method: 'POST', body: { effetto: l.effetto } });
+      toast(L('Effetto inviato all\'overlay (aprilo per vederlo)', 'Effect sent to the overlay (open it to see it)', 'Efecto enviado al overlay (ábrelo para verlo)'));
+    });
+  });
+  box.addEventListener('input', (ev) => {
+    const t = ev.target;
+    if (!_ee || !t.dataset.eeDa) return;
+    const u = t.parentElement.querySelector('[data-ee-unita]');
+    if (u) u.textContent = _eeUnita(t.dataset.eeDa, Math.round(Number(t.value) || 0)).dopo;
+  });
+  box.addEventListener('change', (ev) => {
+    if (!_ee) return;
+    const t = ev.target;
+    if (t.dataset.eeOn) { _ee.voci[t.dataset.eeOn].attivo = t.checked; _eeCambiato(t.dataset.eeOn); return; }
+    if (t.dataset.eePausa) { const v = _ee.voci[t.dataset.eePausa]; v.pausa = Math.max(0, Math.min(_ee.limiti.pausa, Math.round(Number(t.value) || 0))); t.value = v.pausa; _eeCambiato(t.dataset.eePausa); return; }
+    const { ev: e, i, l } = _eeLivelloDi(t);
+    if (!l) return;
+    if (t.dataset.eeDa) {
+      l.da = Math.max(0, Math.min(_ee.limiti.da, Math.round(Number(t.value) || 0)));
+      const v = _ee.voci[e], prima = v.livelli.map((x) => x);
+      v.livelli.sort((a, b) => a.da - b.da);
+      const spostato = v.livelli.some((x, k) => x !== prima[k]);
+      if (_ee.aperto[e] != null) _ee.aperto[e] = v.livelli.indexOf(prima[_ee.aperto[e]]);
+      _eeCambiato(e, spostato);
+      if (spostato) box.querySelector(`[data-ee-da="${e}"][data-i="${v.livelli.indexOf(l)}"]`)?.focus();
+      else t.value = l.da;
+      return;
+    }
+    if (t.dataset.eeTipo) {
+      if (t.value === 'mio' && l.effetto.tipo !== 'mio') { l._pronto = l.effetto; l.effetto = { tipo: 'mio', comando: l._mio || '' }; }
+      else if (t.value === 'pronto' && l.effetto.tipo !== 'pronto') { l._mio = l.effetto.comando; l.effetto = l._pronto || _eeNuovoEffetto(e); }
+      _eeCambiato(e, true);
+      box.querySelector(`[data-ee-tipo="${e}"][data-i="${i}"][value="${t.value}"]`)?.focus();
+      return;
+    }
+    if (t.dataset.eeMio) { l.effetto = { tipo: 'mio', comando: t.value }; _eeCambiato(e); }
+  });
+  document.getElementById('ee-salva')?.addEventListener('click', (ev) => conErrore(async () => {
+    if (!_ee) return;
+    const doppio = EE_ORDINE.find((e) => _ee.voci[e] && _eeDoppi(_ee.voci[e]));
+    if (doppio) { _eeApri(doppio); throw new Error(L(`in «${EE_NOMI()[doppio]}» due livelli partono dallo stesso numero`, `in «${EE_NOMI()[doppio]}» two levels start at the same number`, `en «${EE_NOMI()[doppio]}» dos niveles empiezan en el mismo número`)); }
+    const vuoto = EE_ORDINE.find((e) => _ee.voci[e]?.livelli.some((l) => l.effetto.tipo === 'mio' && !l.effetto.comando));
+    if (vuoto) { _eeApri(vuoto); throw new Error(L(`in «${EE_NOMI()[vuoto]}» un livello aspetta che tu scelga uno dei tuoi effetti`, `in «${EE_NOMI()[vuoto]}» a level is waiting for you to pick one of your effects`, `en «${EE_NOMI()[vuoto]}» un nivel espera que elijas uno de tus efectos`)); }
+    const voci = Object.fromEntries(Object.entries(_ee.voci).map(([k, v]) => [k, { attivo: v.attivo, pausa: v.pausa, livelli: v.livelli.map((l) => ({ da: l.da, effetto: l.effetto })) }]));
+    const b = ev.currentTarget || document.getElementById('ee-salva');
+    if (b) b.disabled = true;
+    try {
+      const r = await api('/api/streamer/effetti-eventi', { method: 'POST', body: { effettiEventi: { voci } } });
+      const prima = Object.values(voci).reduce((n, v) => n + v.livelli.length, 0);
+      _ee.voci = r.effettiEventi.voci;
+      for (const e of Object.keys(_ee.aperto)) if (!(_ee.aperto[e] < _ee.voci[e].livelli.length)) _ee.aperto[e] = null;
+      if (stato?.streamer) stato.streamer.settings = { ...(stato.streamer.settings || {}), effettiEventi: r.effettiEventi };
+      _eeDisegna();
+      _alEffettoAggiorna();
+      const dopo = Object.values(_ee.voci).reduce((n, v) => n + v.livelli.length, 0);
+      toast(dopo < prima ? L('Salvati. Un livello con un effetto che non c\'è più è stato tolto.', 'Saved. A level with an effect that no longer exists was removed.', 'Guardados. Se quitó un nivel con un efecto que ya no existe.') : L('Effetti degli eventi salvati ✓', 'Event effects saved ✓', 'Efectos de los eventos guardados ✓'));
+    } finally { if (b) b.disabled = false; }
+  }));
+}
+
+function _alEffettoRiga(kind) {
+  const voci = stato?.streamer?.settings?.effettiEventi?.voci || {};
+  const quali = kind === 'sub' ? ['sub', 'regalo'] : [kind];
+  const parti = quali.map((e) => { const v = voci[e]; return v?.attivo && v.livelli?.length ? (quali.length > 1 ? EE_NOMI()[e] + ': ' : '') + _eeResa(e, v) : ''; }).filter(Boolean);
+  const testo = parti.length ? L('Effetto a tutto schermo: ', 'Full-screen effect: ', 'Efecto a pantalla completa: ') + parti.join('; ') + '.' : L('Nessun effetto a tutto schermo per questo evento.', 'No full-screen effect for this event.', 'Ningún efecto a pantalla completa para este evento.');
+  return `${_bIco(ICO.fulmine)}${esc(testo)} <button type="button" class="rg-vai" data-ee-vai="${kind}">${parti.length ? L('Cambialo in Effetti & suoni', 'Change it in Effects & sounds', 'Cámbialo en Efectos y sonidos') : L('Sceglilo in Effetti & suoni', 'Choose it in Effects & sounds', 'Elígelo en Efectos y sonidos')}</button>`;
+}
+
+function _alEffettoAggiorna() {
+  document.querySelectorAll('[data-al-effetto]').forEach((p) => { p.innerHTML = _alEffettoRiga(p.dataset.alEffetto); });
+}
+
+document.addEventListener('click', (ev) => {
+  const b = ev.target.closest?.('[data-ee-vai]');
+  if (!b || !schedaValida('effetti')) return;
+  ev.preventDefault();
+  apriEffettoEvento(b.dataset.eeVai);
+});
 
 function _ingrandimento(w, h, schermo) {
   if (!(w > 0 && h > 0)) return 1;

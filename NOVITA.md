@@ -94,6 +94,36 @@ comandi diversi da quelli della riga italiana.
 - Anche quando un'etichetta va a capo, le caselle di una stessa riga stanno alla stessa altezza; e al telefono peso e distanza dei giochi automatici stanno affiancati. [vai: giochi]
   en: Even when a label wraps, boxes in the same row sit at the same height; and on phones the weight and spacing of automatic games sit side by side.
   es: Aunque una etiqueta pase a otra línea, las casillas de una misma fila quedan a la misma altura; y en el móvil el peso y la distancia de los juegos automáticos van uno al lado del otro.
+- [importante] Un effetto a tutto schermo per ogni evento: follow, abbonamenti, regali, bit, raid, donazioni e treno dell'hype, coi suoi colori e il suo suono, anche a livelli. [vai: effetti]
+  en: A full-screen effect for every event: follows, subs, gifts, bits, raids, donations and the hype train, with its own colors and sound, by levels too.
+  es: Un efecto a pantalla completa para cada evento: follows, suscripciones, regalos, bits, raids, donaciones y el tren del hype, con sus colores y su sonido, también por niveles.
+  > I tuoi effetti pronti, anche per gli eventi
+  > Prima coriandoli e fuochi partivano solo da un comando. Ora un follow fa partire i cuori, i bit i coriandoli e da mille in su i fuochi, anche quando l'alert lo mostra Twitch.
+  en> Your ready-made effects, for events too
+  en> Before, confetti and fireworks only played from a command. Now a follow plays hearts, bits play confetti and from a thousand up the fireworks, even when Twitch shows the alert.
+  es> Tus efectos listos, también para los eventos
+  es> Antes el confeti y los fuegos solo salían con un comando. Ahora un follow lanza corazones, los bits el confeti y desde mil los fuegos, también cuando la alerta la muestra Twitch.
+- Negli effetti pronti, «Usalo per un evento» porta l'effetto che stai guardando, col suo suono, nel foglio dell'evento che scegli. [vai: effetti]
+  en: In ready-made effects, “Use it for an event” takes the effect you're looking at, with its sound, into the sheet of the event you pick.
+  es: En los efectos listos, «Úsalo para un evento» lleva el efecto que estás mirando, con su sonido, a la hoja del evento que eliges.
+- Un'ondata di follow non riempie lo schermo: ogni evento ha una pausa fra due effetti, e per il follow sono 10 secondi di serie. [vai: effetti]
+  en: A wave of follows doesn't flood the screen: every event has a pause between two effects, and for follows it's 10 seconds by default.
+  es: Una ola de follows no llena la pantalla: cada evento tiene una pausa entre dos efectos, y para el follow son 10 segundos por defecto.
+- Venti abbonamenti regalati in un colpo fanno partire un effetto solo; una donazione che ha già l'effetto della sua offerta non ne fa partire un secondo. [vai: effetti]
+  en: Twenty subs gifted at once play a single effect; a donation that already has its offer's effect doesn't play a second one.
+  es: Veinte suscripciones regaladas de golpe lanzan un solo efecto; una donación que ya tiene el efecto de su oferta no lanza un segundo.
+- Nello Studio ogni alert dice quale effetto a tutto schermo parte con lui, e ti porta dove lo cambi. [vai: alert]
+  en: In the Studio every alert says which full-screen effect plays with it, and takes you where you change it.
+  es: En el Estudio cada alerta dice qué efecto a pantalla completa sale con ella, y te lleva a donde lo cambias.
+- Effetti & suoni ora è in quattro parti: i tuoi effetti, gli eventi, i punti canale e la webcam. [vai: effetti]
+  en: Effects & sounds now comes in four parts: your effects, events, channel points and the webcam.
+  es: Efectos y sonidos ahora va en cuatro partes: tus efectos, los eventos, los puntos de canal y la webcam.
+- Cambiando disegno fra gli effetti pronti, il suono e il volume che hai scelto restano. [vai: effetti]
+  en: When you switch drawings among ready-made effects, the sound and volume you picked stay.
+  es: Al cambiar de dibujo entre los efectos listos, el sonido y el volumen que elegiste se quedan.
+- Gli effetti degli eventi partono anche per follow, abbonamenti e regali su Kick. [vai: effetti]
+  en: Event effects also play for follows, subs and gifts on Kick.
+  es: Los efectos de los eventos también salen con follows, suscripciones y regalos en Kick.
 
 ## 2026-10-01
 

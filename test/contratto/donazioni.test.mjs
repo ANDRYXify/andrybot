@@ -396,7 +396,8 @@ test('la pagina delle donazioni: stessa forma, altro tavolo, stesso editor; le o
   assert.match(APP, /if \(id === 'donazioni'\) \{ riempiDonazioni\(\); caricaStatoDonazioni\(true\); caricaPaginaLink\(false, 'dona'\); \}/, 'e li\' si apre');
   assert.ok(!/data-lpquale/.test(APP), 'niente interruttore fra le due pagine: ognuna si modifica da un posto solo');
   assert.match(APP, /id="dona-livelli"/); assert.match(APP, /class="dl-effetto"/, 'le offerte si compongono nel pannello, con l\'effetto dalla libreria');
-  assert.match(AL, /const liv = livelloPer\(cfgD\.livelli, importo\); if \(liv\?\.effetto\) this\._sparaEffetto\(channel, liv\.effetto, 1200\);/, 'l\'offerta raggiunta accende il suo effetto, dall\'importo pagato');
+  assert.match(AL, /const liv = livelloPer\(cfgD\.livelli, importo\); if \(liv\?\.effetto\) offerta = this\._sparaEffetto\(channel, liv\.effetto, DOPO_AVVISO_MS\);/, 'l\'offerta raggiunta accende il suo effetto, dall\'importo pagato');
+  assert.match(AL, /const DOPO_AVVISO_MS = 1200;/, 'un attimo dopo l\'avviso');
   assert.ok(AL.includes("this.effects.emit(channel, this.effects.payload(channel, eff))"), 'con lo stesso payload del tasto Prova');
   // il blocco: le offerte al posto degli importi, il campo nascosto sulla pagina delle donazioni, il rimando dalla pagina link
   const base = { attiva: true, blocchi: [{ tipo: 'sostieni', titolo: 'Un caffè' }], tema: {} };

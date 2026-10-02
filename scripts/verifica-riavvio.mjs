@@ -104,6 +104,8 @@ const DECISO = [
   ['features/effects.js', '_clients', 'volatile', 'connessioni SSE aperte: muoiono col processo per forza'],
   ['features/effects.js', '_trkClients', 'volatile', 'idem, overlay del tracking'],
   ['features/effects.js', '_cooldown', 'volatile', 'perderlo vale un effetto in piu\' subito dopo un deploy; scriverlo costa a ogni comando'],
+  ['features/alerts.js', '_pausaEventi', 'volatile', 'la pausa fra due effetti dello stesso evento e\' una cortesia per gli occhi, non un conto: perderla vale al massimo un effetto in piu\' subito dopo un deploy'],
+  ['features/alerts.js', '_treni', 'volatile', 'il livello dell\'ultimo treno visto: dopo un riavvio si reimpara dal primo evento del treno, senza festeggiare, e al peggio si perde la festa di una salita'],
   ['features/emotes.js', 'cacheCanale', 'volatile', 'cache delle emote'],
   ['features/emotes.js', 'cacheSolo', 'volatile', 'cache delle emote 7TV del canale che arriva con un raid: al riavvio si richiedono al raid dopo'],
   ['features/muro.js', 'ultimoComando', 'volatile', 'l\'attesa fra due !esplodi: un riavvio la azzera, e al peggio si esplode un po\' prima. Non tiene niente di nessuno'],

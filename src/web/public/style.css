@@ -2635,7 +2635,35 @@ body:not(.con-nav) .salta { display: none; }
 .pronti-quanti { display: inline-flex; flex-wrap: wrap; gap: .35rem; }
 .pronti-quanti button { padding: .4rem .9rem; background: var(--surface); color: var(--testo); font: inherit; cursor: pointer; }
 .pronti-quanti button[aria-checked="true"] { background: var(--acc); color: var(--su-acc); }
-.pronti-azioni { display: flex; flex-wrap: wrap; gap: .5rem; margin: 0; }
+.pronti-azioni { display: grid; gap: .8rem; }
+.pronti-tasti { display: flex; flex-wrap: wrap; gap: .5rem; margin: 0; }
+.pronti-eventi { display: grid; gap: .35rem; padding-top: .7rem; border-top: 1px dashed var(--contorno); }
+.pronti-eventi-voci { display: flex; flex-wrap: wrap; gap: .35rem; }
+#ee-fogli { overflow-anchor: none; }
+.ee-contesto { margin: 0 0 .7rem; color: var(--testo-2); }
+.ee-livelli { list-style: none; margin: 0 0 .6rem; padding: 0; display: grid; gap: .6rem; }
+.ee-livello { padding: .55rem .65rem; background: var(--surface); border: 1px dashed var(--contorno); border-radius: 3px 5px 4px 6px / 5px 3px 6px 4px; }
+.ee-livello.aperto { border-style: solid; }
+.ee-testa { display: flex; flex-wrap: wrap; align-items: center; gap: .45rem .8rem; }
+.ee-da { display: inline-flex; flex-wrap: wrap; align-items: center; gap: .35rem; color: var(--testo-2); }
+.ee-da input { width: 6.5rem; }
+.ee-effetto { flex: 1 1 7rem; min-width: 0; font-weight: 600; color: var(--testo); overflow-wrap: anywhere; }
+.ee-tasti { display: flex; flex-wrap: wrap; gap: .35rem; }
+.ee-editor { container-type: inline-size; display: grid; gap: .7rem; margin-top: .75rem; padding-top: .75rem; border-top: 1px dashed var(--contorno); }
+.ee-editor .pronti-galleria { margin: 0; }
+.ee-tipo { display: flex; flex-wrap: wrap; gap: .3rem 1.2rem; }
+.ee-aggiungi { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem .8rem; margin: 0 0 .9rem; }
+.ee-pausa { display: grid; gap: .3rem; justify-items: start; }
+.ee-pausa input { width: 6.5rem; }
+.ee-pausa .suggerimento { margin: 0; }
+.ee-cosi { margin: .7rem 0 0; color: var(--testo); font-weight: 600; }
+.al-effetto { margin: .55rem 0 0; }
+.al-effetto svg { vertical-align: -.15em; margin-right: .3rem; }
+@container (max-width: 560px) {
+  .ee-editor .pronti-editor { grid-template-columns: 1fr; }
+  .ee-editor .pronti-galleria { grid-template-columns: repeat(auto-fill, minmax(6.5rem, 1fr)); gap: .4rem; }
+  .ee-editor .pronti-voce { font-size: .78rem; padding: .3rem; }
+}
 .eff-dove { display: flex; flex-wrap: wrap; align-items: center; gap: .45rem; margin-top: .45rem; font-size: .85rem; color: var(--testo-3); }
 .eff-dove select { width: auto; max-width: 100%; }
 .eff-sgranata { margin: .35rem 0 0; color: var(--ambra); }

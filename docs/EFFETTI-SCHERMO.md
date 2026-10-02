@@ -304,6 +304,98 @@ coriandoli smettono di arrivare, e quelli ancora in aria si sciolgono alla fine
   qualche stella cadente.
 - **Lampo**: uno, che sale in sessanta millesimi e si spegne entro la durata.
 
+## Effetti per gli eventi
+
+Chiesto così, guardando la carta degli effetti pronti: «sarebbe figo se si
+potesse usare questi effetti per vari eventi, dando possibilità di modificare
+suoni etc etc».
+
+Prima un effetto partiva da un comando, da un premio, da un modulo, da un gesto
+o da un'offerta delle donazioni, mai da un evento. I moduli sapevano fare
+«evento → effetto», ma scomodo, e gli eventi di Kick ai moduli non arrivano.
+
+### Il modello
+
+```
+settings.effettiEventi = { voci: { <evento>: { attivo, pausa, livelli: [{ da, effetto }] } } }
+effetto = { tipo: 'pronto', disegno, volume } | { tipo: 'mio', comando }
+```
+
+Gli eventi (`EVENTI` in `src/features/effetti-eventi.js`), ognuno col numero
+che porta:
+
+| Evento | Numero | Pausa di serie |
+|---|---|---|
+| `follow` | nessuno: un livello solo, `da` 0 | 10 s |
+| `sub` | mesi (nuovi e rinnovi) | 0 |
+| `regalo` | quanti abbonamenti nella raffica | 0 |
+| `cheer` | bit | 0 |
+| `raid` | spettatori | 0 |
+| `donazione` | importo, nella valuta delle donazioni | 0 |
+| `treno` | livello del treno | 0 |
+
+Parte il livello col `da` più alto che il numero raggiunge; sotto il primo,
+niente. Un numero che non si sa (una donazione in un'altra valuta) fa partire
+il primo livello: l'evento c'è stato, e il suo valore non lo inventiamo. Fino a
+cinque livelli; ripulendo, due livelli con lo stesso `da` diventano uno
+(l'ultimo), ma il pannello non li manda: li segnala e non salva. La pausa è il
+tempo minimo fra due effetti dello stesso evento nello stesso canale, in
+memoria (un riavvio la azzera, ed è giusto: è una cortesia per gli occhi, non
+un conto).
+
+### Le invarianti
+
+1. **Un evento, una strada.** L'effetto parte da `AlertsEngine` (`onEvent` e
+   `donazione`), dove passano gli eventi di tutte le piattaforme: Kick e le
+   altre entrano coi nomi di Twitch (`bot.js`). Non dipende dall'alert: parte
+   anche se l'alert lo mostra Twitch o è spento. Se parte anche il nostro alert,
+   l'effetto arriva 1,2 s dopo (`DOPO_AVVISO_MS`, lo stesso ritardo delle
+   offerte), per non coprirlo.
+2. **I regali non contano due volte.** Twitch manda un `channel.subscribe` con
+   `is_gift` per ogni abbonamento regalato, più un `channel.subscription.gift`
+   per la raffica: il primo non è un `sub`, la raffica è un `regalo` col suo
+   numero.
+3. **Un effetto per donazione.** Se la donazione raggiunge un'offerta che ha
+   già il suo effetto, parte quello dell'offerta e non questo.
+4. **Un effetto pronto è lo stesso effetto del comando.** Stesso messaggio
+   all'overlay (`EffectsEngine.payloadDisegno`), stesso suono, pronto o tuo,
+   stesso volume. Il nome del comando non viaggia (`comando: ''`): sopra un
+   effetto partito da un follow «!coriandoli» non vuol dire niente.
+5. **Uno dei tuoi effetti che non c'è più non resta appeso.** Le scelte si
+   ripuliscono con una funzione sola (`effettiEventiDi` in `server.js`, con
+   `normDisegno` e «il comando esiste?») in lettura, al salvataggio, nella
+   prova e in `/api/me`; e se sparisce fra un salvataggio e l'evento, al
+   momento non parte niente.
+6. **Il treno festeggia quando sale.** Il livello di prima lo tiene il motore,
+   in memoria: il treno nelle impostazioni c'è solo se lo streamer lo mostra o
+   lo annuncia, e l'effetto non deve dipendere da quello. Un treno visto per la
+   prima volta a metà (il bot è ripartito) si ricorda senza festeggiare.
+7. **È una funzione degli Effetti.** Salvare e provare chiedono gli Effetti
+   nel piano (`esigiFunzione`); e un canale che non li ha più non fa partire
+   niente anche con le scelte salvate (`canaleHa`).
+
+### Il pannello
+
+- **Un solo editor degli effetti pronti** (`editorPronto` in `app.js`):
+  galleria, anteprima, colori, quanti, durata, suono e volume. Lo usano la
+  carta dei pronti (prefisso degli id `pronti`, con in coda comando, chi può
+  usarlo e cooldown) e ogni livello aperto di un evento (prefisso
+  `ee-<evento>-<livello>`), sul livello stesso: lo stato è suo, non una copia.
+- **«Per gli eventi»**, una delle quattro parti della scheda Effetti: un foglio
+  per evento, uno aperto alla volta, con l'interruttore e cosa parte nel
+  titolo. Il corpo si disegna quando il foglio si apre, così le anteprime
+  animate sono solo lì. I cambi fatti coi tasti (galleria, quanti, livelli,
+  interruttori) segnano la pagina da salvare come quelli scritti.
+- **«Usalo per un evento»** nella carta dei pronti copia l'effetto che stai
+  guardando in un livello dell'evento (il primo, o uno nuovo sopra gli altri;
+  il follow lo sostituisce), passa alla parte e apre il foglio. Non salva.
+- **Nello Studio** ogni alert dice cosa parte e porta al foglio; il foglio
+  porta all'alert, scelto e aperto da solo.
+
+Prove: `test/unita/effetti-eventi.test.mjs` (il motore, con gli eventi come
+arrivano), `test/contratto/effetti-eventi-pannello.test.mjs` (pannello, demo e
+motore d'accordo) e il collaudo nel browser `scripts/verifica-effetti-eventi.mjs`.
+
 ## Chi fa cosa
 
 - `compress.js`: la sonda, l'alfa di VP8/VP9, APNG, WebP animato, il lato
@@ -313,9 +405,14 @@ coriandoli smettono di arrivare, e quelli ancora in aria si sciolgono alla fine
 - `stile.js`: `DISEGNI` (nomi e valori di serie) e `normDisegno`, lo stesso
   catalogo di `disegnati.js` (un test li tiene uguali).
 - `effects.js`: nel messaggio all'overlay `schermo` per i media, e per un
-  disegno i suoi parametri e il suo suono.
-- `server.js`: crea e modifica un disegno, cambia dove appare un media.
+  disegno i suoi parametri e il suo suono (`payloadDisegno`, lo stesso per un
+  comando e per un evento).
+- `effetti-eventi.js`: gli eventi, la pulizia delle scelte e il livello che
+  parte; `alerts.js` lo fa partire, con la pausa e il treno in memoria.
+- `server.js`: crea e modifica un disegno, cambia dove appare un media;
+  legge, salva e prova gli effetti per gli eventi.
 - `overlay-app.js` e `overlay.html`: `#palco-schermo`, i media a tutto
   schermo, i disegni in coda con gli altri.
-- `app.js`: «Dove appare» al caricamento e nella lista, gli effetti pronti con
-  l'anteprima, i premi a punti canale che sanno cosa è a tutto schermo.
+- `app.js`: «Dove appare» al caricamento e nella lista, l'editor degli effetti
+  pronti con l'anteprima, i fogli degli eventi, la riga di ogni alert nello
+  Studio, i premi a punti canale che sanno cosa è a tutto schermo.
