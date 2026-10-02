@@ -160,6 +160,40 @@ export function quotaGiro({ attivo, giriFermo, sub, vip }, cfg, x = 1) {
   return Math.round((base + extra) * molt * x);
 }
 
+// LE REGOLE DETTE COI NUMERI, per il pannello (docs/ECONOMIA.md, «Il pannello
+// le rilegge»): quanto prende in cinque minuti chi scrive, un abbonato e un VIP
+// che scrivono, e la storia di chi resta in chat senza scrivere. Non sono una
+// spiegazione scritta a parte: sono quotaGiro e fattoreSilenzio del bot, con i
+// loro arrotondamenti (con 1 di presenza, il 40% fa zero e non 0,4).
+//
+// La storia del silenzio e' a pezzi: dal `minuto` (di silenzio) in poi, ogni
+// cinque minuti arrivano `monete`, fino al pezzo dopo. Il primo giro senza
+// scrivere e' il giro 1, come nel bot (economia.giro). Il fattore non cresce
+// mai, quindi i pezzi scendono soltanto; dopo l'ultimo giro in cui puo' ancora
+// cambiare (la fine della presenza intera, i passi fino al minimo, il fermo)
+// resta uguale per sempre.
+export function storiaSilenzio(cfgGrezza) {
+  const cfg = normalizza(cfgGrezza);
+  const pieni = Math.floor(cfg.pienoMin / GIRO_MIN);
+  const passi = cfg.lurkPasso > 0 ? Math.ceil((1 - cfg.lurkMinimo) / cfg.lurkPasso) : 0;
+  const fermo = cfg.stopMin > 0 ? Math.ceil(cfg.stopMin / GIRO_MIN) : 0;
+  const ultimo = Math.max(pieni + passi, fermo) + 1;
+  const pezzi = [];
+  for (let g = 1; g <= ultimo; g++) {
+    const monete = cfg.auto ? quotaGiro({ attivo: false, giriFermo: g }, cfg) : 0;
+    if (!pezzi.length || pezzi.at(-1).monete !== monete) pezzi.push({ minuto: g * GIRO_MIN, monete });
+  }
+  return pezzi;
+}
+export function quoteDette(cfgGrezza) {
+  const cfg = normalizza(cfgGrezza);
+  const q = (p) => (cfg.auto ? quotaGiro(p, cfg) : 0);
+  return {
+    scrive: q({ attivo: true }), abbonato: q({ attivo: true, sub: true }), vip: q({ attivo: true, vip: true }),
+    silenzio: storiaSilenzio(cfg),
+  };
+}
+
 // Un messaggio CONTA (per le monete per messaggio, per la partecipazione e per
 // rompere il silenzio) se non e' un comando, non e' lo stesso di prima e non e'
 // troppo corto, quando lo streamer ha scelto di guardarlo. Una definizione sola:

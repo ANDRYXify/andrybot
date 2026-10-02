@@ -179,6 +179,38 @@ test('i conti del pannello sono quelli del bot', () => {
   assert.deepEqual(E.contiDiretta({ auto: false }), { spesso: 0, ogniTanto: 0, silenzio: 0 });
 });
 
+test('il pannello rilegge le regole coi conti del bot: chi scrive, abbonato, VIP e la storia del silenzio giro per giro', async () => {
+  const R = await import('../../src/features/economia-regole.js');
+  const quanti = 60;
+  // i pezzi della storia, riaperti giro per giro: dal minuto del pezzo in poi
+  const espandi = (pz) => Array.from({ length: quanti }, (_, i) => [...pz].reverse().find((p) => p.minuto <= (i + 1) * R.GIRO_MIN).monete);
+  for (const regole of [
+    {},
+    { perPresenza: 1, perAttivita: 5, lurkPasso: 0.05, lurkMinimo: 0.15 },
+    { perPresenza: 5, pienoMin: 30, lurkPasso: 0.15, lurkMinimo: 0.35, stopMin: 120 },
+    { perPresenza: 10, lurkPasso: 0 },
+    { perPresenza: 7, lurkPasso: 0.3, lurkMinimo: 0, stopMin: 20 },
+    { perPresenza: 40, pienoMin: 150, lurkPasso: 0.1, lurkMinimo: 0.2 },
+    { perPresenza: 9, moltSub: 2, moltVip: 1.5, stopMin: 7 },
+  ]) {
+    const c = canale(regole);
+    const caso = JSON.stringify(regole);
+    const bot = giri(c, ['zitta'], quanti).map((e) => e.monete);
+    const pz = R.storiaSilenzio(regole);
+    assert.deepEqual(espandi(pz), bot, `chi sta zitto, ${caso}`);
+    for (let i = 1; i < pz.length; i++) assert.ok(pz[i].monete < pz[i - 1].monete, `i pezzi scendono soltanto, ${caso}`);
+    const d = R.quoteDette(regole);
+    const uno = (chi, ruoli = {}) => E.giro(c, [chi], { parlanti: new Set([chi]), ruoli, diretta: 'd2', ora: T0 + quanti * GIRO }).monete;
+    assert.equal(d.scrive, uno('parla'), `chi scrive, ${caso}`);
+    assert.equal(d.abbonato, uno('abbonata', { abbonata: { sub: true } }), `un abbonato, ${caso}`);
+    assert.equal(d.vip, uno('vippa', { vippa: { vip: true } }), `un VIP, ${caso}`);
+    assert.deepEqual(d.silenzio, pz);
+  }
+  assert.deepEqual(R.storiaSilenzio({ perPresenza: 1, perAttivita: 5, lurkPasso: 0.05, lurkMinimo: 0.15 }), [{ minuto: 5, monete: 1 }, { minuto: 55, monete: 0 }],
+    'con 1 di presenza il «minimo 15%» fa zero: dal minuto 55 chi sta zitto non prende piu\' niente, e il pannello lo dice');
+  assert.deepEqual(R.quoteDette({ auto: false }), { scrive: 0, abbonato: 0, vip: 0, silenzio: [{ minuto: 5, monete: 0 }] });
+});
+
 test('nessuna fonte automatica scrive sul saldo senza passare dalla porta', () => {
   const g = leggi('src/features/games.js');
   for (const f of ['export function accredita(', 'export function giroMonete(']) {

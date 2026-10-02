@@ -49,6 +49,9 @@ comandi diversi da quelli della riga italiana.
 - La corsa aperta dai giochi automatici accoglie chi punta anche quando l'attesa per tutti della corsa precedente non è finita. [vai: giochi]
   en: The race opened by automatic games takes bets even when the previous race's wait for everyone isn't over yet.
   es: La carrera abierta por los juegos automáticos acepta apuestas aunque la espera para todos de la carrera anterior no haya terminado.
+- Le regole delle monete nella scheda Giochi si leggono meglio: nomi che dicono a chi e ogni quanto, e sotto ogni gruppo una riga che le rilegge coi numeri. [vai: giochi]
+  en: Coin rules in the Games tab read better: names that say who and how often, and under each group a line that reads them back with the numbers.
+  es: Las reglas de las monedas en la pestaña Juegos se leen mejor: nombres que dicen a quién y cada cuánto, y bajo cada grupo una línea que las relee con los números.
 
 ## 2026-10-01
 

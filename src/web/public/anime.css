@@ -1718,12 +1718,14 @@ body.banco-on .pagina-testata > .guida-scheda .guida-corpo { max-height: 30vh; o
 }
 
 body.con-salva { padding-bottom: 92px; }
+body.con-salva .cookie-banner { bottom: calc(18px + env(safe-area-inset-bottom, 0px) + var(--alto-salva, 64px) + 10px); }
 @media (max-width: 720px) {
   body.con-salva { padding-bottom: 116px; }
   body.con-nav.con-salva { padding-bottom: 168px; }
 }
 @media (max-width: 720px) {
   body.con-nav .sv-barra { bottom: calc(70px + env(safe-area-inset-bottom, 0px)); }
+  body.con-nav.con-salva .cookie-banner { bottom: calc(70px + env(safe-area-inset-bottom, 0px) + var(--alto-salva, 104px) + 10px); }
   .sv-barra { padding: .6rem .7rem; gap: 8px; border-radius: 18px; width: calc(100vw - 24px); }
   .sv-testo { font-size: .8rem; order: 1; white-space: normal; }
   .sv-chiudi { order: 2; margin-left: auto; }

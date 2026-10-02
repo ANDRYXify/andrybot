@@ -74,6 +74,41 @@ Giochi, negozio e Moduli **non** passano dalla porta: sono scambi decisi da qual
 compro, il Modulo dà 50 monete), non crescita. Se lo streamer scrive un Modulo che dà monete, le
 dà.
 
+### Il pannello le rilegge
+
+Chi usava la carta «Punti & classifica» la trovava complicata e macchinosa, e aveva ragione per
+quattro motivi precisi: i nomi erano quelli di dentro («Presenza (per giro)», «Partecipazione»,
+«Nessuno supera»), che non dicono né a chi né ogni quanto; la curva del silenzio erano quattro
+caselle slegate, che nessuno riesce a figurarsi; i tetti non dicevano cosa non si supera; il conto
+della diretta stava in fondo, lontano dalle caselle che lo decidono.
+
+Le caselle sono le stesse, il modello anche. Cambia come si leggono:
+
+- **Le etichette dicono a chi e ogni quanto**: «Presenza, a tutti quelli in chat», «In più, a chi
+  ha scritto», «Abbonati: quante volte tanto», «Presenza intera per i primi (minuti)», «Non
+  arrivano più da sole a chi ne ha». La parola «giro» non c'è più: sono 5 minuti.
+- **Sotto ogni gruppo di caselle una riga rilegge le regole coi numeri**, mentre si cambiano:
+  quanto prende ogni 5 minuti chi scrive (e un abbonato, un VIP), la storia di chi guarda senza
+  scrivere, fin dove arrivano i tetti.
+- **Le righe sono giuste per costruzione**: non sono un testo scritto a parte, sono `quoteDette` e
+  `storiaSilenzio` in economia-regole.js, cioè `quotaGiro` e `fattoreSilenzio` del bot, con i loro
+  arrotondamenti. La storia del silenzio è a pezzi `{ minuto, monete }`: dal minuto di silenzio del
+  pezzo in poi, ogni 5 minuti arrivano quelle monete (il primo giro senza scrivere è il giro 1,
+  come in `economia.giro`). Il fattore non cresce mai, quindi i pezzi scendono soltanto; dopo
+  l'ultimo giro in cui può ancora cambiare (fine della presenza intera, passi fino al minimo,
+  fermo) resta uguale. È così che la riga dice la cosa che prima non si vedeva: con 1 di presenza
+  il «minimo 15%» fa zero, e chi sta zitto non prende più niente dal minuto 55.
+- **Il conto della diretta di due ore sta subito sotto i tetti**, accanto alle caselle che lo
+  decidono, non dopo le durate e l'ora doppia.
+
+Le prove: `test/unita/economia.test.mjs` fa girare il bot vero giro per giro per sette regole
+diverse e confronta ogni giro con la storia del pannello (e chi scrive, l'abbonato e il VIP con
+un giro del bot); `test/contratto/punti-detti.test.mjs` controlla le frasi esatte, che si rifanno
+a ogni tasto prima della chiamata al server, che i nomi di dentro non ci sono più e l'ordine delle
+sezioni. Mutazioni: la storia che si ferma prima del fermo, i minuti sfasati di un giro, il primo
+giro zitto contato come zero, abbonato e VIP scambiati, i primi minuti detti uno di troppo, lo
+zero finale non detto, le righe che non si rifanno.
+
 ### Le monete che si perdono
 
 Le perdite sono regole, e ogni perdita finisce nel **registro**, col motivo e un tasto «Annulla»
