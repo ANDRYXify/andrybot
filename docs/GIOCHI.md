@@ -805,3 +805,80 @@ servono — monete, caso, numeri, chi scrive — invece di tutte e quaranta. Non
 un secondo elenco: si ricavano dai **gruppi della legenda** (`GRUPPI_GIOCO`)
 filtrando quelle che esistono davvero, quindi non possono sfasarsi. Le altre
 restano a un clic.
+
+## La scheda in quattro parti, e un gioco in un posto solo
+
+### Com'era
+
+Al telefono la scheda era lunga più di 30.000 pixel: dodici carte in fila, e
+quella dei comandi da sola ne faceva quasi 12.000. Un gioco stava in tre posti:
+la sua riga in «Comandi dei giochi» (acceso, nome, chi può, frase), la sua voce
+in «Le regole di ogni gioco» (costi, premi, attese) e il suo peso nel giro.
+Per sistemare la slot si scorreva su e giù fra due carte, salvando due volte.
+
+### Il modello
+
+- **Un gioco si sistema in un posto solo.** «Gioco per gioco» ha un foglio per
+  ogni voce dell'elenco `!giochi`: dentro ci sono i suoi comandi, le sue regole,
+  le attese, la riga «Così» e le frasi. Chi sta in quale foglio non lo scrive il
+  pannello: lo dice il registro dei comandi. `voceDi(id)` dà la voce (`!carta` e
+  `!stai` sono del blackjack, `!colpisci` del boss, da `IN_CHAT.parteDi`) e la
+  famiglia; `regole` è il gioco del catalogo di cui il comando segue
+  costi e attese (`!trivia` segue la manche, e il suo foglio lo dice con un
+  link). Le famiglie sono quelle di `!giochi`, nello stesso ordine (`gruppi`
+  nella risposta di `/api/streamer/comandi-pronti`); il pannello ha solo le loro
+  etichette tradotte. Un comando senza voce (l'elenco, il giveaway, i giochi del
+  sito) finisce in «Gli altri comandi»; un gioco del catalogo senza voce avrebbe
+  comunque il suo foglio, così nessuna regola sparisce.
+- **Un gioco alla volta.** I fogli sono `details` con lo stesso `name`: aprirne
+  uno chiude l'altro. Il titolo che tocchi resta fermo sotto il dito: il
+  pannello misura dove stava prima del clic e, se quello chiuso sopra lo ha
+  spostato, scorre della stessa misura (l'ancoraggio automatico del browser è
+  spento su quella carta, per non correggere due volte).
+- **L'interruttore sta nel titolo**, e si usa anche a foglio chiuso. Non apre il
+  foglio, e prende il nome dal titolo per chi usa un lettore di schermo.
+- **Un tasto solo:** «Salva i giochi» manda prima i comandi (solo le righe che ha
+  davanti, come «Salva i comandi» nella scheda Comandi), poi le regole. Se un
+  nome è già preso non salva niente e dice quale; se le regole non passano dopo
+  i comandi, dice che i comandi sono salvati e le regole no.
+- **Quattro parti:** «I giochi», «Monete e classifica», «Giochi automatici»,
+  «Citazioni e battute». Ogni carta ne ha una (`data-zona`), e un contratto
+  pretende che nessuna resti fuori. La barra delle parti è fatta di linguette
+  sottolineate, per non confonderla con le pillole delle schede sorelle (vale
+  anche per Comandi e Negozio, che avevano lo stesso difetto).
+- **Cambiare parte non perde niente.** La barra «Hai modifiche non salvate»
+  conta anche i tasti che stanno in una parte nascosta o in una carta chiusa.
+  Ricerca, giro guidato e link dalle altre schede passano da `mostraZonaDi`, che
+  apre la parte dove sta la cosa; i link del boss e dell'arena nello Studio, e
+  quelli del giro, aprono direttamente il foglio del gioco (`data-vai-gioco`).
+- **Il filtro** («Cerca un gioco o un comando») cerca nel nome e nei comandi,
+  anche rinominati, e non segna la pagina come modificata.
+
+### Difetti vecchi, trovati per strada
+
+- `cerca.js` aveva due funzioni `scopri`: la seconda, che anima l'elenco dei
+  risultati, copriva la prima, che apre la sottoscheda o il livello dove sta la
+  cosa cercata. La ricerca non aveva mai aperto una sottoscheda. Ora la seconda
+  si chiama `disegnaLista`.
+- In una finestra stretta la tendina «chi può» usciva dalla riga del comando:
+  la casella era una griglia senza colonne dichiarate, e il pulsante disegnato
+  della tendina aveva una larghezza minima di 10rem. Ora la colonna è larga
+  quanto la casella, e il pulsante la riempie (sul computer resta largo 9rem).
+- Nelle griglie di caselle, un'etichetta che andava a capo spingeva la sua
+  casella più in basso delle vicine. Ora le caselle stanno in fondo alla loro
+  riga, tutte alla stessa altezza: vale per tutto il pannello.
+- Nei giochi automatici al telefono peso e distanza di ogni gioco stavano uno
+  sotto l'altro; ora stanno affiancati, e la parte è più corta di 600 pixel.
+- Il titolo di un gioco non entrava mai nella ricerca: con la resa accanto
+  superava i 64 caratteri che la ricerca accetta. La resa ora non conta nel
+  nome.
+
+### Le prove
+
+`test/contratto/giochi-sezioni.test.mjs` (ogni carta ha la sua parte, ogni
+famiglia la sua etichetta, i fogli nascono dal registro, un salvataggio solo),
+`verifica-comandi` (la demo mette ogni comando nel suo gioco) e il collaudo nel
+browser `verifica-sezioni-giochi` (parti, ricerca in una parte chiusa, giro,
+barra che resta, filtro, un gioco alla volta, interruttore nel titolo, link del
+boss, la tendina dentro la sua riga e le caselle allineate), con la sua
+autoprova.

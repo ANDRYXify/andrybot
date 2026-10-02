@@ -64,6 +64,36 @@ comandi diversi da quelli della riga italiana.
 - Dentro ogni gioco le regole sono divise fra il gioco e le attese, con le unità, e una riga dice coi numeri cosa succede davvero. [vai: giochi]
   en: Inside each game the rules are split between the game and the waits, with units, and a line says in numbers what really happens.
   es: Dentro de cada juego las reglas están separadas entre el juego y las esperas, con unidades, y una línea dice con números lo que pasa de verdad.
+- [importante] La scheda Giochi in quattro parti, e ogni gioco in un posto solo: acceso o spento, nome, chi può, costi, premi e attese insieme. [vai: giochi]
+  en: The Games tab in four parts, and each game in one place: on or off, name, who can use it, costs, prizes and waits together.
+  es: La pestaña Juegos en cuatro partes, y cada juego en un solo sitio: activo o no, nombre, quién puede usarlo, costes, premios y esperas juntos.
+  > Meno da scorrere, tutto a portata
+  > Prima la scheda era lunga trenta schermate e un gioco stava in due carte. Ora scegli la parte che ti serve, apri un gioco alla volta e lo sistemi tutto lì, salvando una volta sola.
+  en> Less scrolling, everything at hand
+  en> Before, the tab was thirty screens long and a game lived in two cards. Now you pick the part you need, open one game at a time and set it all up right there, saving once.
+  es> Menos que desplazar, todo a mano
+  es> Antes la pestaña medía treinta pantallas y un juego estaba en dos tarjetas. Ahora eliges la parte que necesitas, abres un juego a la vez y lo ajustas todo ahí, guardando una sola vez.
+- Un gioco si trova anche dal nome di un comando: «!carta» trova il blackjack. Cercare non conta come una modifica da salvare. [vai: giochi]
+  en: You can find a game by the name of a command too: “!carta” finds blackjack. Searching doesn't count as a change to save.
+  es: Un juego se encuentra también por el nombre de un comando: «!carta» encuentra el blackjack. Buscar no cuenta como un cambio que guardar.
+- Linguette sottolineate invece di pillole: in Giochi, Comandi e Negozio le parti di una scheda non si confondono più con le schede vicine. [vai: giochi]
+  en: Underlined tabs instead of pills: in Games, Commands and Shop the parts of a tab no longer get mixed up with the neighboring tabs.
+  es: Lengüetas subrayadas en vez de píldoras: en Juegos, Comandos y Tienda las partes de una pestaña ya no se confunden con las pestañas vecinas.
+- Se passi a un'altra parte della scheda o chiudi una carta senza salvare, la barra «Hai modifiche non salvate» resta e salva anche quello che hai lasciato indietro. [vai: giochi]
+  en: If you switch to another part of the tab or close a card without saving, the “You have unsaved changes” bar stays and saves what you left behind too.
+  es: Si pasas a otra parte de la pestaña o cierras una tarjeta sin guardar, la barra «Tienes cambios sin guardar» se queda y guarda también lo que dejaste atrás.
+- La ricerca del pannello apre la parte della scheda dove sta quello che cerchi, e te lo mette davanti: prima si fermava alla scheda. [vai: giochi]
+  en: The panel search opens the part of the tab where what you're looking for is, and puts it in front of you: before, it stopped at the tab.
+  es: La búsqueda del panel abre la parte de la pestaña donde está lo que buscas, y te lo pone delante: antes se quedaba en la pestaña.
+- Dallo Studio, «Apri il boss nei Giochi» e «Apri l'arena nei Giochi» portano dritti al gioco, già aperto. Dai giochi automatici si arriva a premi e attese di ognuno. [vai: giochi]
+  en: From the Studio, “Open the boss in Games” and “Open the arena in Games” take you straight to the game, already open. From automatic games you reach each one's prizes and waits.
+  es: Desde el Estudio, «Abre el jefe en Juegos» y «Abre la arena en Juegos» llevan directo al juego, ya abierto. Desde los juegos automáticos llegas a los premios y esperas de cada uno.
+- In una finestra stretta la tendina «chi può» dei comandi non esce più dalla sua riga. [vai: moduli]
+  en: In a narrow window the “who can” menu of commands no longer sticks out of its row.
+  es: En una ventana estrecha el desplegable «quién puede» de los comandos ya no se sale de su fila.
+- Anche quando un'etichetta va a capo, le caselle di una stessa riga stanno alla stessa altezza; e al telefono peso e distanza dei giochi automatici stanno affiancati. [vai: giochi]
+  en: Even when a label wraps, boxes in the same row sit at the same height; and on phones the weight and spacing of automatic games sit side by side.
+  es: Aunque una etiqueta pase a otra línea, las casillas de una misma fila quedan a la misma altura; y en el móvil el peso y la distancia de los juegos automáticos van uno al lado del otro.
 
 ## 2026-10-01
 

@@ -459,7 +459,19 @@ function atteseDi(c, settings) {
   return { attesa: v.attesaTesta || 0, attesaTutti: v.attesaTutti || 0 };
 }
 
+// Dove sta un comando nell'elenco !giochi: la voce (il gioco di cui fa parte:
+// !carta e !stai sono del blackjack, !colpisci del boss) e la sua famiglia. Un
+// comando fuori dall'elenco (un sorteggio, !giochi stesso) non ha voce. Il
+// pannello mette insieme un gioco con questa, non con un elenco suo.
+export function voceDi(id) {
+  const qui = IN_CHAT[id];
+  const voce = qui?.parteDi || (qui?.gruppo ? id : null);
+  return { voce, gruppo: voce ? IN_CHAT[voce]?.gruppo || null : null };
+}
+
 // La riga come la vede il pannello: com'e' configurato QUESTO canale.
+// `regole` e' il gioco del catalogo di cui il comando segue costi e attese
+// (!trivia segue la manche), `voce` quello dell'elenco !giochi.
 export function elenco(channel) {
   const s = scelte(channel);
   const cfg = impostazioni(channel);
@@ -473,6 +485,8 @@ export function elenco(channel) {
       modulo: c.modulo,
       moduloNome: MODULI[c.modulo]?.nome || c.modulo,
       moduloAcceso: modulo,
+      ...voceDi(c.id),
+      regole: c.gioco || null,
       titolo: c.titolo,
       cosa: c.cosa,
       costa: !!c.costa,

@@ -1815,7 +1815,7 @@ body.con-salva .cookie-banner { bottom: calc(18px + env(safe-area-inset-bottom, 
 .gc-nomi code { font-size: .76rem; }
 .gc-attesa { font-size: .7rem; color: var(--testo-3); }
 .gc-regole { display: flex; gap: 10px; align-items: flex-end; flex: none; }
-.gc-campo { display: grid; gap: 3px; font-size: .68rem; color: var(--testo-3); text-transform: uppercase; letter-spacing: .06em; }
+.gc-campo { display: grid; grid-template-columns: minmax(0, 1fr); gap: 3px; font-size: .68rem; color: var(--testo-3); text-transform: uppercase; letter-spacing: .06em; }
 .gc-input { display: flex; align-items: center; gap: 4px; }
 .gc-input i { font-style: normal; color: var(--testo-3); font-weight: 700; }
 .gc-regole input[type="text"] { width: 9rem; }
@@ -1827,6 +1827,13 @@ body.con-salva .cookie-banner { bottom: calc(18px + env(safe-area-inset-bottom, 
   .gc-regole { grid-column: 1 / -1; }
   .gc-regole input[type="text"], .gc-regole select { width: 100%; }
   .gc-campo { flex: 1 1 0; min-width: 0; }
+}
+.gc-riga.gc-capo { grid-template-columns: 1fr auto; }
+.gc-campo > .tendina { display: flex; min-width: 0; }
+.gc-campo > .tendina > .tendina-btn { flex: 1 1 auto; min-width: 9rem; max-width: none; }
+@media (max-width: 720px) {
+  .gc-riga.gc-capo { grid-template-columns: 1fr; }
+  .gc-campo > .tendina > .tendina-btn { min-width: 0; }
 }
 
 .gc-famiglia {

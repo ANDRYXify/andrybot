@@ -66,7 +66,8 @@ for (const [larg, alt, nome] of [[390, 844, 'telefono, barra in basso'], [800, 9
   await p.waitForFunction(() => window.SB_APP, null, { timeout: 20000 });
   await p.evaluate(() => window.SB_APP.vai('giochi'));
   await p.waitForFunction(() => document.querySelector('.pannello-scheda.visibile')?.id === 'scheda-giochi', null, { timeout: 20000 });
-  await p.waitForSelector('#pt-perPresenza', { timeout: 20000 });
+  await p.click('[data-sotto="monete"]');
+  await p.waitForSelector('#pt-perPresenza', { state: 'visible', timeout: 20000 });
   await p.fill('#pt-perPresenza', '3');
   await p.dispatchEvent('#pt-perPresenza', 'input');
   await p.waitForFunction(() => document.getElementById('barra-salva')?.classList.contains('dentro'), null, { timeout: 10000 });

@@ -299,7 +299,7 @@
     ['button.btn', 'azione']
   ];
   var SOLO_NOME = /^(input|select|textarea)$/;
-  var SALTA_CL = /tenue|suggerimento|badge|levetta|pip|cerca-|ovl-liv-|mix-vu|al-up-esito/;
+  var SALTA_CL = /tenue|suggerimento|badge|levetta|pip|cerca-|ovl-liv-|mix-vu|al-up-esito|regola-resa/;
   var MAX_UGUALI = 3;
 
   function classeDi(n) {
@@ -394,6 +394,7 @@
 
   function scopri(el) {
     if (!el.closest) return;
+    if (window.SB_APP && window.SB_APP.mostraZonaDi && window.SB_APP.mostraZonaDi(el)) return;
     var carta = el.closest('.carta[hidden]');
     if (carta && carta.dataset) {
       for (var k in carta.dataset) {
@@ -699,7 +700,7 @@
       hs += righe(resto, [], L('Tutte le sezioni', 'All sections', 'Todas las secciones'), usate.length);
       lista.innerHTML = hs;
       aggancia();
-      scopri();
+      disegnaLista();
       return;
     }
 
@@ -724,10 +725,10 @@
     }
     lista.innerHTML = h;
     aggancia();
-    scopri();
+    disegnaLista();
   }
 
-  function scopri() {
+  function disegnaLista() {
     if (ov && ov.classList.contains('aperto') && window.SB_DISEGNO && window.SB_DISEGNO.compare) window.SB_DISEGNO.compare(lista, { veloce: true });
   }
 

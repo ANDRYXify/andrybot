@@ -76,7 +76,7 @@ test('«Salva i comandi» manda solo le righe della sua lista, e quali erano', a
   const mandati = [];
   const documento = { querySelectorAll: () => [...comandi.querySelectorAll('.gc-riga'), ...giochi.querySelectorAll('.gc-riga')] };
   const salva = new Function('document', 'api', 'toast', 'caricaGiochiComandi', 'L',
-    `${corpo('async function salvaGiochiComandi(')}; return salvaGiochiComandi;`)(
+    `${corpo('function _gcScelte(')}\n${corpo('async function salvaGiochiComandi(')}; return salvaGiochiComandi;`)(
     documento, async (url, o) => { mandati.push(o.body); return {}; }, () => {}, () => {}, (it) => it);
 
   await salva({ currentTarget: tasto(comandi) });

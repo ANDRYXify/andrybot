@@ -35,8 +35,12 @@ const corpoDi = (nome) => {
 test('l\'aspetto cambiato nell\'ispettore sporca la pagina; posizioni e configurazioni no, perche\' si salvano da sole', () => {
   assert.ok(/const ASP_SALVA_A_MANO = '\.asp-blocco\[data-asp="alert"\], \.asp-blocco\[data-asp="chat"\], \.asp-blocco\[data-asp="wf"\], \.asp-blocco\[data-asp="ws"\]';/.test(APP),
     'i quattro blocchi che escono solo con «Salva overlay» hanno un nome');
-  assert.ok(/if \(t\.closest\('#tg-destinazioni, #gr-ig, #gr-auto, #chk-negozio, \.ovl-testa-banco, \.ovl-barra, \.ovl-livelli, \.cerca-guscio, \.st-uscita'\)\) return;\n\s*if \(t\.closest\('\.ovl-inspector'\) && !t\.closest\(ASP_SALVA_A_MANO\)\) return;/.test(APP),
+  // La lista di quello che non sporca la pagina puo' crescere (il filtro dei
+  // giochi, per esempio): quello che conta e' che l'ispettore non ci sia.
+  const esclusi = APP.match(/if \(t\.closest\('(#tg-destinazioni, [^']*)'\)\) return;\n\s*if \(t\.closest\('\.ovl-inspector'\) && !t\.closest\(ASP_SALVA_A_MANO\)\) return;/);
+  assert.ok(esclusi && !esclusi[1].includes('ovl-inspector'),
     'l\'ispettore non e\' piu\' escluso in blocco: lo sono solo le sue parti che si salvano da sole');
+  for (const x of ['.ovl-testa-banco', '.ovl-barra', '.ovl-livelli']) assert.ok(esclusi[1].split(', ').includes(x), `${x} si salva da solo, quindi non sporca`);
   const sc = corpoDi('scegliOverlay');
   assert.ok(/_salvaSporco/.test(sc) && /_chiediPrimaDiUscire\(\)/.test(sc), 'cambiare overlay con l\'aspetto non salvato chiede prima');
 });

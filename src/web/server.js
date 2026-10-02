@@ -47,7 +47,7 @@ import { paginaManuale, paginaIndiceManuali, aiutiPerScheda } from './manuali.js
 import { conOccasione, normOccasioni, accendi as accendiOccasione } from '../features/occasioni.js';
 import * as cancello from '../features/tg-cancello.js';
 import { permessiDi as permessiDiChat, guai as guaiCancello } from '../features/tg-ingresso.js';
-import { elenco as elencoComandi, normalizza as normalizzaComandi, unisci as unisciComandi, collisioni as collisioniComandi, LIVELLI as LIVELLI_COMANDO, MODULI as MODULI_COMANDO } from '../features/comandi-registro.js';
+import { elenco as elencoComandi, normalizza as normalizzaComandi, unisci as unisciComandi, collisioni as collisioniComandi, LIVELLI as LIVELLI_COMANDO, MODULI as MODULI_COMANDO, GRUPPI as GRUPPI_COMANDO } from '../features/comandi-registro.js';
 import { AntiBot, erroriScudo, statoEsecutore, azioniFallite, riprovaFallite, bonifica as bonificaIncidente, conNome, ESENTI_MAX, bloccaDaConsole } from '../features/antibot.js';
 import { statoCensimento } from '../features/punteggio.js';
 import { aperto as incidenteAperto, elenco as elencoIncidenti, uno as unIncidente, sintesi as sintesiIncidente } from '../features/incidenti.js';
@@ -9235,6 +9235,8 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
       comandi: elencoComandi(currentUser(req).login),
       livelli: LIVELLI_COMANDO,
       moduli: Object.fromEntries(Object.entries(MODULI_COMANDO).map(([k, v]) => [k, v.nome])),
+      // l'ordine delle famiglie dell'elenco !giochi: il pannello le mette in fila cosi'
+      gruppi: GRUPPI_COMANDO.map((g) => g.id),
     });
   }));
 

@@ -128,7 +128,7 @@ export default {
       'Con il giveaway riservato, chi non è abbonato scrive la parola e non succede niente.',
       'Un giveaway alla volta per canale. Se ce n\'è uno aperto senza nessuno dentro, aprirne un altro lo sostituisce. Se qualcuno è già entrato, il pannello dice «C\'è già un giveaway aperto.».',
       'Il giveaway resta aperto anche se il bot si riavvia, con i partecipanti e i loro biglietti. Uno dimenticato aperto per più di sette giorni non viene più ripreso.',
-      'I comandi del giveaway stanno nella famiglia «Sorteggi» della carta «Comandi dei giochi», dove li spegni, li rinomini o li riservi: vedi il <a href="/manuale/giochi">manuale dei giochi</a>.',
+      'I comandi del giveaway li spegni, li rinomini o li riservi nella scheda «Giochi & classifiche», in «Gioco per gioco» fra «Gli altri comandi», oppure nella scheda «Comandi»: vedi il <a href="/manuale/giochi">manuale dei giochi</a>.',
     ] },
 
     { h2: 'Penitenze', scheda: 'penitenze', p: [

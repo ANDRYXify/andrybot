@@ -28,7 +28,7 @@
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { COMANDI, MODULI, collisioni, LIVELLI, IN_CHAT, GRUPPI, FAMIGLIE_GIOCHI, ELENCO, FORME } from '../src/features/comandi-registro.js';
+import { COMANDI, MODULI, collisioni, LIVELLI, IN_CHAT, GRUPPI, FAMIGLIE_GIOCHI, ELENCO, FORME, voceDi } from '../src/features/comandi-registro.js';
 import { giocoDi } from '../src/features/giochi-conf.js';
 
 const RAD = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -79,11 +79,13 @@ dice(mute.length === 0, `ogni riga parla italiano, inglese e spagnolo: ${COMANDI
 // ai moderatori, e la descrizione di !negozio di prima del link alla pagina.
 // Quindi di ogni riga si confronta quello che il pannello mostra e che viene
 // dal registro: famiglia, titolo, descrizione, chi lo puo' usare, e i nomi se
-// la demo non lo mostra apposta come rinominato.
+// la demo non lo mostra apposta come rinominato. E a quale gioco appartiene:
+// la scheda Giochi mette insieme un gioco con quello, e una demo che mette
+// !carta nella slot mostra un pannello che non esiste.
 const app = leggi('src/web/public/app.js');
 const INIZIO_DEMO = "'/api/streamer/comandi-pronti': { comandi: [";
-const DAL_REGISTRO = (c) => ({ modulo: c.modulo, moduloNome: MODULI[c.modulo]?.nome, titolo: c.titolo, cosa: c.cosa,
-  chiMinimo: LIVELLI.includes(c.chi) ? c.chi : 'tutti', nomi: c.nomi });
+const DAL_REGISTRO = (c) => ({ modulo: c.modulo, moduloNome: MODULI[c.modulo]?.nome, ...voceDi(c.id), regole: c.gioco || null,
+  titolo: c.titolo, cosa: c.cosa, chiMinimo: LIVELLI.includes(c.chi) ? c.chi : 'tutti', nomi: c.nomi });
 export function guaiDemo(testo) {
   const i = testo.indexOf(INIZIO_DEMO);
   if (i < 0) return { manca: true, coperti: [], righe: [] };
@@ -215,6 +217,7 @@ if (process.argv.includes('--selftest')) {
     [(t) => t.replace(/(\{ id: "boss",.*?)chi: "mod", chiMinimo: "mod"/, '$1chi: "tutti", chiMinimo: "tutti"'), 'righe', 'un comando dei moderatori che la demo da\' a tutti'],
     [(t) => t.replace(/(\{ id: "negozio",.*?cosa: \[")/, '$1Vecchia descrizione. '), 'righe', 'una descrizione rimasta indietro'],
     [(t) => t.replace(/\n\s*\{ id: "doppio",[^\n]*/, ''), 'coperti', 'un comando che la demo non ha'],
+    [(t) => t.replace(/(\{ id: "carta",.*?)voce: "blackjack"/, '$1voce: "slot"'), 'righe', 'una mossa che la demo mette nel gioco sbagliato'],
   ];
   for (const [rompi, dove, che] of DEMO_ROTTE) {
     const rotto = rompi(app);

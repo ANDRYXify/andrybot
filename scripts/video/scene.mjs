@@ -20,8 +20,9 @@ export const SCENE = [
     titolo: 'Le monete del tuo canale',
     sotto: 'come arrivano, a chi no, e quando smettono',
     passi: [
-      { didascalia: 'Nel pannello: Giochi & classifiche.' },
+      { didascalia: 'Nel pannello: Giochi & classifiche, parte «Monete e classifica».' },
       { vai: 'giochi' },
+      { clic: '[data-sotto="monete"]' },
       { scorri: '#pt-auto' },
       { didascalia: 'Arrivano anche da sole: coi messaggi, con la presenza, con le serie. Un clic e le spegni tutte.' },
       { guarda: 1200 },
