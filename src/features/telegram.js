@@ -329,8 +329,14 @@ export async function mostraVerifica(token, queryId, url) {
 // Il link d'invito del bot: uno per gruppo, e la richiesta di approvazione la
 // decide lo scudo. Si cambia lo stesso link invece di farne uno nuovo: chi
 // l'ha gia' trovato sulla porta non si ritrova in mano un link morto.
-export async function creaInvito(token, chatId, { richiesta = false, nome = 'SocialBot' } = {}) {
-  const r = await tgCall(token, 'createChatInviteLink', { post: true, params: { chat_id: chatId, name: String(nome).slice(0, 32), creates_join_request: !!richiesta } });
+// `persone` e `scade` fanno un link PERSONALE (la prova superata sulla porta):
+// vale per quante persone si dice, fino a quando si dice (secondi). Telegram
+// non accetta un tetto di persone su un link che chiede l'approvazione.
+export async function creaInvito(token, chatId, { richiesta = false, nome = 'SocialBot', persone = 0, scade = 0 } = {}) {
+  const params = { chat_id: chatId, name: String(nome).slice(0, 32), creates_join_request: !!richiesta };
+  if (persone > 0 && !richiesta) params.member_limit = Math.min(99999, Math.floor(persone));
+  if (scade > 0) params.expire_date = Math.floor(scade);
+  const r = await tgCall(token, 'createChatInviteLink', { post: true, params });
   return r.ok ? { ok: true, url: String(r.result?.invite_link || ''), richiesta: !!r.result?.creates_join_request } : r;
 }
 export async function cambiaInvito(token, chatId, url, { richiesta = false, nome = 'SocialBot' } = {}) {

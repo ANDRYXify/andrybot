@@ -56,8 +56,10 @@ test('l\'impronta cambia con le domande e le risposte giuste, non coi colori', (
 test('chi chiede: dalla richiesta, senza la bio', () => {
   const u = { chat_join_request: { chat: { id: -100123, type: 'supergroup', title: 'Il gruppo' }, from: { id: 42, first_name: 'Ada', language_code: 'en-US' }, user_chat_id: 42, bio: 'segreto', query_id: 'q1' } };
   const c = S.chiChiede(u);
-  assert.deepEqual(c, { chatId: '-100123', gruppo: true, titolo: 'Il gruppo', userId: '42', nome: 'Ada', lingua: 'en', userChatId: '42', queryId: 'q1' });
+  assert.deepEqual(c, { chatId: '-100123', gruppo: true, titolo: 'Il gruppo', userId: '42', nome: 'Ada', lingua: 'en', userChatId: '42', queryId: 'q1', link: '' });
   assert.ok(!JSON.stringify(c).includes('segreto'));
+  // il link da cui ha chiesto: uno della porta dice com'e' gia' andata
+  assert.equal(S.chiChiede({ chat_join_request: { ...u.chat_join_request, invite_link: { invite_link: 'https://t.me/+abc', name: 'x' } } }).link, 'https://t.me/+abc');
   assert.equal(S.chiChiede({ chat_join_request: { chat: { id: 1, type: 'channel' }, from: { id: 2 } } }).gruppo, false);
   assert.equal(S.chiChiede({}), null);
 });

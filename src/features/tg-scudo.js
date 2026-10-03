@@ -58,6 +58,10 @@ export const LIMITI = { regole: 1500, domande: 3, opzioni: 4, domanda: 160, opzi
 // sbagliare perche' non ha letto, non perche' il disegno era ambiguo.
 export const ALFABETO = 'ACEFHJKMNPRTUVWXY3469';
 export const ATTESA_DOPO_NO = 30 * 60_000;
+// La prova sulla porta: il link personale di chi la supera vale mezz'ora, per
+// una persona; da uno stesso indirizzo si aprono al massimo tante prove l'ora.
+export const VITA_LINK_PORTA = 30 * 60_000;
+export const PROVE_PORTA_ORA = 12;
 export const LUNGHEZZA = 5;
 export const TENTATIVI = 3;
 export const IMMAGINI = 3;
@@ -181,6 +185,8 @@ export function chiChiede(update) {
     lingua: String(u.language_code || '').slice(0, 2).toLowerCase(),
     userChatId: q.user_chat_id ? String(q.user_chat_id) : '',
     queryId: q.query_id ? String(q.query_id) : '',
+    // il link da cui ha chiesto: uno della porta dice com'e' gia' andata
+    link: q.invite_link?.invite_link ? String(q.invite_link.invite_link) : '',
   };
 }
 

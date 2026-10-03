@@ -17,6 +17,15 @@
 //  · chi supera la prova entra solo con approve; ogni guasto lungo la strada
 //    finisce in un rifiuto o in mano agli amministratori. Non c'e' un ramo che
 //    apra la porta per errore.
+//
+// LA PROVA SULLA PORTA (docs/TELEGRAM.md, «Una porta sola») passa dagli stessi
+// gesti: la pagina pubblica del gruppo apre una prova (una riga con via 'web',
+// di chi ha in mano il codice della pagina) e la giudica come quella dentro
+// Telegram. Cambia solo come si dice l'esito: chi la supera riceve un link
+// PERSONALE (una persona, mezz'ora), chi va dagli amministratori un link che
+// chiede l'approvazione e che il bot riconosce. Un link personale si fa una
+// volta sola per prova: una prova superata fa entrare al massimo una persona.
+import { createHash, randomBytes } from 'node:crypto';
 import * as telegramVero from './telegram.js';
 import { tgScudo as scudoDbVero } from '../db.js';
 import { config } from '../config.js';
@@ -24,7 +33,7 @@ import { makeLog } from '../logger.js';
 import { validaInitDataCon } from './tgapp.js';
 import {
   normScudo, chiChiede, azioneRichiesta, codiceNuovo, esitoInvio, decisioneNo, domandePubbliche,
-  firmaDomande, linguaDi, altraImmagine, IMMAGINI, TENTATIVI,
+  firmaDomande, linguaDi, altraImmagine, IMMAGINI, TENTATIVI, VITA_LINK_PORTA,
 } from './tg-scudo.js';
 import { testiScudo, testiPagina } from './tg-scudo-testi.js';
 import * as provaVera from './tg-scudo-prova.js';
@@ -40,6 +49,7 @@ const _con = (d = {}) => ({
   prova: d.prova || provaVera,
   ora: d.ora || Date.now,
   url: d.url || urlVerifica,
+  segreto: d.segreto || (() => randomBytes(18).toString('base64url')),
 });
 
 const leggi = (s) => { try { const p = JSON.parse(s || 'null'); return p && typeof p === 'object' ? p : null; } catch { return null; } };
@@ -66,7 +76,11 @@ const escHtml = (s) => String(s ?? '').replaceAll('&', '&amp;').replaceAll('<', 
 // rifiutare c'e' la strada di sempre col gruppo e la persona. «Agli
 // amministratori» senza guardiano vuol dire non fare niente: la richiesta resta
 // nella loro lista, che e' esattamente il posto giusto.
-async function risolvi(conf, riga, decisione, telegram) {
+// Una prova della porta non ha una richiesta da risolvere: il suo esito e' un
+// link (linkPorta), e un no non dice niente a nessuno.
+async function risolvi(conf, riga, decisione, d) {
+  if (riga.via === 'web') return decisione === 'rifiuta' ? { ok: true } : linkPorta(conf, riga, decisione, d);
+  const telegram = d.telegram;
   const tok = conf.token;
   const q = riga.query_id;
   if (decisione === 'approva') {
@@ -84,9 +98,13 @@ async function risolvi(conf, riga, decisione, telegram) {
 // Chiude una richiesta in attesa con un esito, e lo dice a Telegram. Torna
 // false se la riga era gia' chiusa (qualcun altro e' arrivato prima).
 async function chiudiE(conf, riga, decisione, motivo, { telegram, db, ora }) {
+  if (riga.via === 'web' && motivo === 'scaduta') decisione = 'rifiuta';
   const stato = decisione === 'approva' ? 'passata' : decisione === 'rifiuta' ? 'bocciata' : 'admin';
   if (!db.chiudi(riga.channel, riga.chat_id, riga.tg_user_id, stato, motivo, ora())) return { chiusa: false };
-  const r = await risolvi(conf, riga, decisione, telegram);
+  const r = await risolvi(conf, riga, decisione, { telegram, db, ora });
+  // la prova della porta resta chiusa com'e' anche senza link: la pagina lo
+  // richiede (azione «link»), e il link si fa comunque una volta sola
+  if (riga.via === 'web') return { chiusa: true, stato, url: r?.url || '' };
   if (!r?.ok && decisione === 'approva') {
     db.esito(riga.channel, riga.chat_id, riga.tg_user_id, 'errore', 'telegram');
     log.debug(`#${conf.channel}: approvazione rifiutata da Telegram (${r?.errore || ''})`);
@@ -101,6 +119,8 @@ export async function richiesta(conf, update, deps) {
   const chi = chiChiede(update);
   if (!chi || !conf?.token) return { che: 'nessuno' };
   const s = scudoDi(conf);
+  const daPorta = await richiestaDallaPorta(conf, chi, d);
+  if (daPorta) return daPorta;
   const prima = d.db.prendi(conf.channel, chi.chatId, chi.userId);
   const azione = azioneRichiesta({ acceso: acceso(conf), chi, prima, ora: d.ora() });
   if (azione === 'niente') return { che: 'niente' };
@@ -110,7 +130,7 @@ export async function richiesta(conf, update, deps) {
   }
   if (azione === 'rifiuta') {
     const finta = { channel: conf.channel, chat_id: chi.chatId, tg_user_id: chi.userId, query_id: chi.queryId };
-    await risolvi(conf, finta, 'rifiuta', d.telegram);
+    await risolvi(conf, finta, 'rifiuta', d);
     return { che: 'rifiutato' };
   }
   const lingua = chi.lingua;
@@ -139,15 +159,52 @@ export async function richiesta(conf, update, deps) {
   return { che: 'admin' };
 }
 
-// Qualcuno e' entrato nel gruppo mentre la sua richiesta era in attesa: lo ha
-// fatto entrare un amministratore a mano. La richiesta e' finita, e la pagina,
-// se si apre, lo dice.
+// Una richiesta arrivata da un link della porta dice gia' com'e' andata:
+//  · dal link «agli amministratori»: decidono loro (al guardiano si risponde
+//    «in coda»; senza, la richiesta resta nella loro lista). Niente pagina.
+//  · dal link personale di una prova superata (succede se il gruppo chiede
+//    l'approvazione a tutti): si approva, una volta sola.
+// Un link della porta gia' usato, o di un altro gruppo, non dice niente: la
+// richiesta fa la strada di tutte.
+async function richiestaDallaPorta(conf, chi, d) {
+  const p = chi.link ? d.db.conInvito(conf.channel, chi.link) : null;
+  if (!p || p.chat_id !== chi.chatId || !chi.gruppo) return null;
+  const persona = { channel: conf.channel, chatId: chi.chatId, userId: chi.userId, nome: chi.nome, titolo: chi.titolo, ora: d.ora() };
+  if (p.stato === 'admin') {
+    d.db.finita({ ...persona, stato: 'admin', motivo: 'porta' });
+    if (chi.queryId) await d.telegram.rispondiRichiesta(conf.token, chi.queryId, 'queue').catch(() => {});
+    return { che: 'admin' };
+  }
+  if (p.stato === 'passata' && d.db.passa(p.channel, p.chat_id, p.tg_user_id, 'passata', 'dentro', 'porta')) {
+    d.db.finita({ ...persona, stato: 'passata', motivo: 'porta' });
+    const r = await risolvi(conf, { channel: conf.channel, chat_id: chi.chatId, tg_user_id: chi.userId, query_id: chi.queryId }, 'approva', d);
+    if (!r?.ok) d.db.esito(conf.channel, chi.chatId, chi.userId, 'errore', 'telegram');
+    return { che: 'porta' };
+  }
+  return null;
+}
+
+// Qualcuno e' entrato nel gruppo.
+//  · Dal link personale di una prova della porta: la prova e' usata (non da' un
+//    altro link), e la persona e' segnata come passata da una porta, cosi' il
+//    cancello non la ferma una seconda volta.
+//  · Mentre la sua richiesta era in attesa: lo ha fatto entrare un
+//    amministratore a mano. La richiesta e' finita, e la pagina, se si apre,
+//    lo dice.
 export function entrato(conf, update, deps) {
   const d = _con(deps);
   const cm = update?.chat_member;
   const u = cm?.new_chat_member?.user;
   if (!cm?.chat?.id || !u?.id || cm.new_chat_member?.status !== 'member') return false;
-  return d.db.chiudi(conf.channel, String(cm.chat.id), String(u.id), 'dentro', 'admin', d.ora());
+  const chatId = String(cm.chat.id);
+  const link = cm.invite_link?.invite_link ? String(cm.invite_link.invite_link) : '';
+  const p = link ? d.db.conInvito(conf.channel, link) : null;
+  if (p && p.chat_id === chatId && p.stato === 'passata' && d.db.passa(p.channel, p.chat_id, p.tg_user_id, 'passata', 'dentro', 'porta')) {
+    d.db.finita({ channel: conf.channel, chatId, userId: String(u.id), nome: String(u.first_name || u.username || '').slice(0, 64),
+      titolo: String(cm.chat.title || '').slice(0, 128), stato: 'dentro', motivo: 'porta', ora: d.ora() });
+    return true;
+  }
+  return d.db.chiudi(conf.channel, chatId, String(u.id), 'dentro', 'admin', d.ora());
 }
 
 // ── la pagina ───────────────────────────────────────────────────────────────
@@ -167,10 +224,13 @@ export function identifica(conf, initData, c, deps) {
   return { ok: true, userId: v.user.id, chatId, queryId: v.queryRichiesta || '', lingua: v.user.language_code || '' };
 }
 
-// La riga di chi ha aperto la pagina, se e' davvero la sua.
+// La riga di chi ha aperto la pagina, se e' davvero la sua. Una prova della
+// porta si apre solo col codice della porta, una richiesta di Telegram solo
+// con la firma di Telegram: le due strade non si scambiano le righe.
 function rigaDi(conf, id, d) {
   const r = d.db.prendi(conf.channel, id.chatId, id.userId);
   if (!r) return null;
+  if (!!id.porta !== (r.via === 'web')) return null;
   // col guardiano, la domanda deve essere la stessa che Telegram ha firmato
   if (r.query_id && id.queryId && r.query_id !== id.queryId) return null;
   return r;
@@ -180,14 +240,21 @@ function rigaDi(conf, id, d) {
 // pagina un attimo dopo la scadenza deve leggere com'e' finita.
 async function seScaduta(conf, r, d) {
   if (r.stato !== 'attesa' || !(Number(r.scad) > 0) || d.ora() <= Number(r.scad)) return r;
-  const dec = decisioneNo(scudoDi(conf), 'scaduta');
+  // una pagina lasciata li' non manda nessuno dagli amministratori
+  const dec = r.via === 'web' ? 'rifiuta' : decisioneNo(scudoDi(conf), 'scaduta');
   await chiudiE(conf, r, dec, 'scaduta', d);
   return d.db.prendi(r.channel, r.chat_id, r.tg_user_id) || r;
 }
 
-// Come la pagina chiama l'esito di una riga chiusa.
+// Come la pagina chiama l'esito di una riga chiusa. Una prova della porta
+// porta con se' il suo link; una gia' usata e' «usata» (il link non c'e' piu').
 const ESITO_DI = { passata: 'dentro', dentro: 'dentro', bocciata: 'no', admin: 'admin', errore: 'errore' };
-const esitoRiga = (r) => (r.motivo === 'scaduta' && r.stato !== 'passata' ? 'scaduta' : ESITO_DI[r.stato] || 'chiusa');
+const esitoRiga = (r) => {
+  if (r.motivo === 'scaduta' && r.stato !== 'passata') return 'scaduta';
+  if (r.via === 'web' && r.stato === 'dentro') return 'usata';
+  return ESITO_DI[r.stato] || 'chiusa';
+};
+const esitoCon = (r) => (r.via === 'web' && (r.stato === 'passata' || r.stato === 'admin') ? { esito: esitoRiga(r), url: r.invito || '' } : { esito: esitoRiga(r) });
 
 export async function apri(conf, id, { colori = null } = {}, deps) {
   const d = _con(deps);
@@ -197,7 +264,7 @@ export async function apri(conf, id, { colori = null } = {}, deps) {
   r = await seScaduta(conf, r, d);
   const l = linguaDi(id.lingua || r.lingua);
   const t = testiPagina(l, { gruppo: r.titolo });
-  if (r.stato !== 'attesa') return { esito: esitoRiga(r), lingua: l, t };
+  if (r.stato !== 'attesa') return { ...esitoCon(r), lingua: l, t };
   const s = scudoDi(conf);
   const ts = testiScudo(l);
   const prove = Math.max(0, IMMAGINI - (Number(r.immagini) || 0));
@@ -267,18 +334,18 @@ export async function invia(conf, id, corpo = {}, deps) {
     case 'regole': return { esito: 'regole', msg: t.errori.regole };
     case 'immagine': return { esito: 'nuova', msg: t.errori.nuova };
     case 'cambiato': return { esito: 'cambiato', msg: t.errori.cambiato };
-    case 'chiusa': return { esito: esitoRiga(r) };
+    case 'chiusa': return esitoCon(r);
     case 'scaduta': return { esito: 'scaduta' };
     case 'no': {
       const dec = decisioneNo(s, e.motivo);
       const fatto = await chiudiE(conf, r, dec, e.motivo, d);
-      if (!fatto.chiusa) return { esito: esitoRiga(d.db.prendi(r.channel, r.chat_id, r.tg_user_id) || r) };
-      return { esito: dec === 'admin' ? 'admin' : 'no' };
+      if (!fatto.chiusa) return esitoCon(d.db.prendi(r.channel, r.chat_id, r.tg_user_id) || r);
+      return dec === 'admin' ? conLink({ esito: 'admin' }, r, fatto) : { esito: 'no' };
     }
     case 'passa': {
       const fatto = await chiudiE(conf, r, 'approva', 'prova', d);
-      if (!fatto.chiusa) return { esito: esitoRiga(d.db.prendi(r.channel, r.chat_id, r.tg_user_id) || r) };
-      return { esito: fatto.stato === 'errore' ? 'errore' : 'dentro' };
+      if (!fatto.chiusa) return esitoCon(d.db.prendi(r.channel, r.chat_id, r.tg_user_id) || r);
+      return conLink({ esito: fatto.stato === 'errore' ? 'errore' : 'dentro' }, r, fatto);
     }
     default: return { esito: 'chiusa' };
   }
@@ -292,9 +359,81 @@ export async function aiuto(conf, id, deps) {
   await seScaduta(conf, r, d);
   r = rigaDi(conf, id, d);
   if (!r) return { esito: 'chiusa' };
-  if (r.stato !== 'attesa') return { esito: esitoRiga(r) };
+  if (r.stato !== 'attesa') return esitoCon(r);
   const fatto = await chiudiE(conf, r, 'admin', 'aiuto', d);
-  return { esito: fatto.chiusa ? 'admin' : esitoRiga(d.db.prendi(r.channel, r.chat_id, r.tg_user_id) || r) };
+  return fatto.chiusa ? conLink({ esito: 'admin' }, r, fatto) : esitoCon(d.db.prendi(r.channel, r.chat_id, r.tg_user_id) || r);
+}
+
+// Alla pagina della porta l'esito arriva col suo link (vuoto se Telegram non
+// l'ha dato: la pagina lo richiede con «link»).
+const conLink = (x, r, fatto) => (r.via === 'web' ? { ...x, url: fatto.url || '' } : x);
+
+// ── la prova sulla porta ────────────────────────────────────────────────────
+//
+// Chi preme «Entra» sulla porta apre una prova: il server gli da' un codice a
+// caso, la pagina lo tiene in memoria (niente cookie) e lo rimanda a ogni
+// passo. Nel database c'e' solo la sua impronta: chi leggesse le righe non
+// potrebbe continuare la prova di nessuno.
+export const chiDellaPorta = (segreto) => 'w:' + createHash('sha256').update(String(segreto)).digest('hex').slice(0, 32);
+const SEGRETO = /^[A-Za-z0-9_-]{20,64}$/;
+
+// Una prova nuova, se lo scudo e' acceso. Spento, la porta fa entrare
+// direttamente: qui non c'e' niente da aprire.
+export function nuovaPorta(conf, { lingua = '' } = {}, deps) {
+  const d = _con(deps);
+  if (!acceso(conf) || !conf.chat_id) return { esito: 'spento' };
+  const segreto = d.segreto();
+  d.db.apri({ channel: conf.channel, chatId: String(conf.chat_id), userId: chiDellaPorta(segreto), titolo: conf.chat_titolo || '',
+    lingua: linguaDi(lingua), scad: d.ora() + scudoDi(conf).minuti * 60_000, ora: d.ora(), via: 'web' });
+  return { esito: 'ok', s: segreto };
+}
+
+// Chi sei, per la porta: chi ha il codice della prova. Il gruppo e' quello
+// collegato adesso: se lo streamer lo cambia, la prova di prima non c'e' piu'.
+export function identificaPorta(conf, segreto, lingua) {
+  if (!conf?.token || !conf.chat_id) return { ok: false, motivo: 'canale' };
+  if (!SEGRETO.test(String(segreto || ''))) return { ok: false, motivo: 'firma' };
+  return { ok: true, porta: true, userId: chiDellaPorta(segreto), chatId: String(conf.chat_id), queryId: '', lingua: linguaDi(lingua) };
+}
+
+// Il link di una prova chiusa: personale per chi l'ha superata (una persona,
+// mezz'ora, si entra senza chiedere), con l'approvazione per chi va dagli
+// amministratori. Si fa UNA volta: due «link» insieme aspettano lo stesso, e
+// quello fatto resta quello. Un link scaduto non si rifa': si rifa' la prova.
+const _linkInCorso = new Map();
+function linkPorta(conf, riga, decisione, d) {
+  const k = `${riga.channel}|${riga.chat_id}|${riga.tg_user_id}`;
+  if (_linkInCorso.has(k)) return _linkInCorso.get(k);
+  const p = (async () => {
+    const r = d.db.prendi(riga.channel, riga.chat_id, riga.tg_user_id) || riga;
+    if (r.invito) return { ok: true, url: r.invito };
+    const scad = d.ora() + VITA_LINK_PORTA;
+    const opz = decisione === 'admin'
+      ? { richiesta: true, nome: 'SocialBot · agli admin', scade: scad / 1000 }
+      : { nome: 'SocialBot · porta', persone: 1, scade: scad / 1000 };
+    const t = await d.telegram.creaInvito(conf.token, r.chat_id, opz).catch((e) => ({ ok: false, errore: e?.message || '' }));
+    if (!t?.ok || !t.url) {
+      log.debug(`#${conf.channel}: il link della porta non si fa (${t?.errore || ''})`);
+      return { ok: false };
+    }
+    d.db.segnaInvito(r.channel, r.chat_id, r.tg_user_id, t.url, scad);
+    const dopo = d.db.prendi(r.channel, r.chat_id, r.tg_user_id);
+    return { ok: !!dopo?.invito, url: dopo?.invito || '' };
+  })().finally(() => _linkInCorso.delete(k));
+  _linkInCorso.set(k, p);
+  return p;
+}
+
+// «link»: la pagina chiede il link di una prova chiusa (la prima volta non
+// c'era, o la pagina lo vuole rileggere).
+export async function link(conf, id, deps) {
+  const d = _con(deps);
+  const r = rigaDi(conf, id, d);
+  if (!r || r.via !== 'web') return { esito: 'chiusa' };
+  if (r.stato !== 'passata' && r.stato !== 'admin') return esitoCon(r);
+  if (r.invito && Number(r.scad) > 0 && d.ora() > Number(r.scad)) return { esito: 'scaduta' };
+  const x = await linkPorta(conf, r, r.stato === 'admin' ? 'admin' : 'approva', d);
+  return { esito: r.stato === 'admin' ? 'admin' : 'dentro', url: x.url || '' };
 }
 
 // ── il giro delle scadenze ──────────────────────────────────────────────────
@@ -308,7 +447,7 @@ export async function giroScadenze(confDi, deps) {
   for (const r of righe) {
     const conf = confDi(r.channel);
     if (!conf?.token) {
-      d.db.chiudi(r.channel, r.chat_id, r.tg_user_id, 'admin', 'scaduta', d.ora());
+      d.db.chiudi(r.channel, r.chat_id, r.tg_user_id, r.via === 'web' ? 'bocciata' : 'admin', 'scaduta', d.ora());
       continue;
     }
     try {
@@ -356,12 +495,24 @@ export async function invito(conf, { salva } = {}, deps) {
 export function memoria() {
   let r = null;
   return {
-    apri({ channel, chatId, userId, titolo = '', lingua = '', scad = 0, ora = Date.now() }) {
+    apri({ channel, chatId, userId, titolo = '', lingua = '', scad = 0, ora = Date.now(), via = '' }) {
       r = { channel, chat_id: String(chatId), tg_user_id: String(userId), nome: '', titolo, lingua, query_id: '',
-        stato: 'attesa', motivo: '', codice: '', tentativi: 0, immagini: 0, scad, ts: ora, fine: 0 };
+        stato: 'attesa', motivo: '', codice: '', tentativi: 0, immagini: 0, scad, ts: ora, fine: 0, via: via === 'web' ? 'web' : '', invito: '' };
       return { ...r };
     },
-    prendi() { return r ? { ...r } : null; },
+    prendi(_c, _g, u) { return r && (u === undefined || r.tg_user_id === String(u)) ? { ...r } : null; },
+    segnaInvito(_c, _g, _u, url, scad) {
+      if (!r || r.via !== 'web' || r.invito) return false;
+      r.invito = String(url); r.scad = Number(scad) || 0;
+      return true;
+    },
+    conInvito(_c, url) { return r && url && r.invito === url ? { ...r } : null; },
+    passa(_c, _g, _u, da, a, motivo = '') {
+      if (!r || r.stato !== da) return false;
+      Object.assign(r, { stato: a, motivo });
+      return true;
+    },
+    finita() { return null; },
     nuovaProva(_c, _g, _u, codice) {
       if (!r || r.stato !== 'attesa' || r.immagini >= IMMAGINI) return false;
       r.codice = codice; r.tentativi = 0; r.immagini++;
@@ -384,6 +535,8 @@ export function memoria() {
 const fatto = async () => ({ ok: true });
 export const telegramMuto = {
   rispondiRichiesta: fatto, approvaRichiesta: fatto, rifiutaRichiesta: fatto, mostraVerifica: fatto, inviaMessaggio: fatto,
+  // l'anteprima della porta mostra un link che non porta da nessuna parte
+  creaInvito: async () => ({ ok: true, url: 'https://t.me/+anteprima' }),
 };
 
 export { TENTATIVI, IMMAGINI };

@@ -1109,6 +1109,14 @@ aggiungiColonna('telegram', 'scudo', "TEXT NOT NULL DEFAULT ''");
 aggiungiColonna('telegram', 'scudo_invito', "TEXT NOT NULL DEFAULT ''");
 // Il gruppo che e' gia' diventato una destinazione degli avvisi (tgDest.migra).
 aggiungiColonna('telegram', 'migrato_chat', "TEXT NOT NULL DEFAULT ''");
+// LA PROVA DALLA PORTA (docs/TELEGRAM.md, «Una porta sola»): una riga dello
+// scudo puo' essere una persona che chiede da Telegram (via '') o una prova
+// fatta sulla porta, nel browser (via 'web', tg_user_id 'w:' + l'impronta del
+// codice della pagina). `invito` e' il link personale che la prova da' a chi
+// la supera (una persona, una volta) o a chi va dagli amministratori.
+aggiungiColonna('tg_scudo', 'via', "TEXT NOT NULL DEFAULT ''");
+aggiungiColonna('tg_scudo', 'invito', "TEXT NOT NULL DEFAULT ''");
+db.exec("CREATE INDEX IF NOT EXISTS idx_tgscudo_invito ON tg_scudo(channel, invito) WHERE invito<>''");
 // Il premio in VIP non scade piu' a calendario ma a DIRETTE: un premio che
 // evapora mentre lo streamer sta fermo non e' un premio. `until` resta per i
 // VIP dati a mano, che sono un'altra cosa.
@@ -3965,14 +3973,41 @@ const _tgs = (r) => (r ? { ...r } : null);
 // regole; una prova lo tiene allineato.
 export const PROVE_SCUDO = 3;
 export const tgScudo = {
-  apri({ channel, chatId, userId, nome = '', titolo = '', lingua = '', queryId = '', scad = 0, ora = now() }) {
-    db.prepare(`INSERT INTO tg_scudo (channel, chat_id, tg_user_id, nome, titolo, lingua, query_id, stato, motivo, codice, tentativi, immagini, scad, ts, fine)
-      VALUES (?,?,?,?,?,?,?,'attesa','','',0,0,?,?,0)
+  apri({ channel, chatId, userId, nome = '', titolo = '', lingua = '', queryId = '', scad = 0, ora = now(), via = '' }) {
+    db.prepare(`INSERT INTO tg_scudo (channel, chat_id, tg_user_id, nome, titolo, lingua, query_id, stato, motivo, codice, tentativi, immagini, scad, ts, fine, via, invito)
+      VALUES (?,?,?,?,?,?,?,'attesa','','',0,0,?,?,0,?,'')
       ON CONFLICT(channel, chat_id, tg_user_id) DO UPDATE SET nome=excluded.nome, titolo=excluded.titolo, lingua=excluded.lingua, query_id=excluded.query_id,
-        stato='attesa', motivo='', codice='', tentativi=0, immagini=0, scad=excluded.scad, ts=excluded.ts, fine=0`)
+        stato='attesa', motivo='', codice='', tentativi=0, immagini=0, scad=excluded.scad, ts=excluded.ts, fine=0, via=excluded.via, invito=''`)
       .run(String(channel).toLowerCase(), String(chatId), String(userId), String(nome || '').slice(0, 64), String(titolo || '').slice(0, 128),
-        String(lingua || '').slice(0, 2), String(queryId || ''), Number(scad) || 0, Number(ora) || now());
+        String(lingua || '').slice(0, 2), String(queryId || ''), Number(scad) || 0, Number(ora) || now(), via === 'web' ? 'web' : '');
     return this.prendi(channel, chatId, userId);
+  },
+  // Una persona che e' gia' passata da una porta (la prova sulla porta, o il
+  // link degli amministratori): la sua riga nasce chiusa, con com'e' andata.
+  // Il cancello la legge per non farla passare due volte.
+  finita({ channel, chatId, userId, nome = '', titolo = '', stato, motivo = '', ora = now() }) {
+    db.prepare(`INSERT INTO tg_scudo (channel, chat_id, tg_user_id, nome, titolo, lingua, query_id, stato, motivo, codice, tentativi, immagini, scad, ts, fine, via, invito)
+      VALUES (?,?,?,?,?,'','',?,?,'',0,0,0,?,?,'','')
+      ON CONFLICT(channel, chat_id, tg_user_id) DO UPDATE SET nome=excluded.nome, titolo=excluded.titolo, query_id='',
+        stato=excluded.stato, motivo=excluded.motivo, codice='', scad=0, ts=excluded.ts, fine=excluded.fine, via='', invito=''`)
+      .run(String(channel).toLowerCase(), String(chatId), String(userId), String(nome || '').slice(0, 64), String(titolo || '').slice(0, 128),
+        String(stato), String(motivo || '').slice(0, 40), Number(ora) || now(), Number(ora) || now());
+    return this.prendi(channel, chatId, userId);
+  },
+  // La prova della porta che ha dato questo link, se c'e'.
+  conInvito(channel, url) {
+    if (!url) return null;
+    return _tgs(db.prepare("SELECT * FROM tg_scudo WHERE channel=? AND invito=? AND via='web'").get(String(channel).toLowerCase(), String(url)));
+  },
+  // Il link personale di una prova della porta, e fino a quando vale.
+  segnaInvito(channel, chatId, userId, url, scad) {
+    return db.prepare("UPDATE tg_scudo SET invito=?, scad=? WHERE channel=? AND chat_id=? AND tg_user_id=? AND via='web' AND invito=''")
+      .run(String(url), Number(scad) || 0, String(channel).toLowerCase(), String(chatId), String(userId)).changes === 1;
+  },
+  // Da uno stato chiuso a un altro, una volta sola (il link personale usato).
+  passa(channel, chatId, userId, da, a, motivo = '') {
+    return db.prepare('UPDATE tg_scudo SET stato=?, motivo=? WHERE channel=? AND chat_id=? AND tg_user_id=? AND stato=?')
+      .run(String(a), String(motivo || '').slice(0, 40), String(channel).toLowerCase(), String(chatId), String(userId), String(da)).changes === 1;
   },
   prendi(channel, chatId, userId) {
     return _tgs(db.prepare('SELECT * FROM tg_scudo WHERE channel=? AND chat_id=? AND tg_user_id=?')
@@ -4004,12 +4039,16 @@ export const tgScudo = {
     return db.prepare("SELECT * FROM tg_scudo WHERE stato='attesa' AND scad>0 AND scad<=? ORDER BY scad LIMIT ?")
       .all(Number(ora) || now(), limite | 0).map(_tgs);
   },
+  // Le richieste da mostrare nel pannello. Una prova della porta lasciata a
+  // meta' (aperta e mai finita, o scaduta) non e' una richiesta: nessuno ha
+  // chiesto di entrare. Si vedono quelle che hanno detto qualcosa.
   recenti(channel, limite = 20) {
-    return db.prepare('SELECT channel, chat_id, tg_user_id, nome, stato, motivo, ts, fine FROM tg_scudo WHERE channel=? ORDER BY ts DESC LIMIT ?')
+    return db.prepare(`SELECT channel, chat_id, tg_user_id, nome, stato, motivo, ts, fine, via FROM tg_scudo
+      WHERE channel=? AND NOT (via='web' AND (stato='attesa' OR motivo='scaduta')) ORDER BY ts DESC LIMIT ?`)
       .all(String(channel).toLowerCase(), limite | 0);
   },
   inAttesa(channel) {
-    return db.prepare("SELECT COUNT(*) n FROM tg_scudo WHERE channel=? AND stato='attesa'").get(String(channel).toLowerCase())?.n || 0;
+    return db.prepare("SELECT COUNT(*) n FROM tg_scudo WHERE channel=? AND stato='attesa' AND via=''").get(String(channel).toLowerCase())?.n || 0;
   },
   // le richieste finite si tengono una settimana: abbastanza per vederle nel
   // pannello, non di piu'
