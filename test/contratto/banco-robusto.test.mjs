@@ -37,12 +37,13 @@ test('l\'aspetto cambiato nell\'ispettore sporca la pagina; posizioni e configur
     'i quattro blocchi che escono solo con «Salva overlay» hanno un nome');
   // La lista di quello che non sporca la pagina puo' crescere (il filtro dei
   // giochi, per esempio): quello che conta e' che l'ispettore non ci sia.
-  const esclusi = APP.match(/if \(t\.closest\('(#tg-destinazioni, [^']*)'\)\) return;\n\s*if \(t\.closest\('\.ovl-inspector'\) && !t\.closest\(ASP_SALVA_A_MANO\)\) return;/);
+  const esclusi = APP.match(/const NON_SALVA = '(#tg-destinazioni, [^']*)';/);
+  assert.ok(/return !!el\.closest\(NON_SALVA\) \|\| \(!!el\.closest\('\.ovl-inspector'\) && !el\.closest\(ASP_SALVA_A_MANO\)\);/.test(APP), 'dell\'ispettore restano fuori solo le parti che si salvano da sole');
   assert.ok(esclusi && !esclusi[1].includes('ovl-inspector'),
     'l\'ispettore non e\' piu\' escluso in blocco: lo sono solo le sue parti che si salvano da sole');
   for (const x of ['.ovl-testa-banco', '.ovl-barra', '.ovl-livelli']) assert.ok(esclusi[1].split(', ').includes(x), `${x} si salva da solo, quindi non sporca`);
   const sc = corpoDi('scegliOverlay');
-  assert.ok(/_salvaSporco/.test(sc) && /_chiediPrimaDiUscire\(\)/.test(sc), 'cambiare overlay con l\'aspetto non salvato chiede prima');
+  assert.ok(/_ciSonoModifiche\(\)/.test(sc) && /_chiediPrimaDiUscire\(\)/.test(sc), 'cambiare overlay con l\'aspetto non salvato chiede prima');
 });
 
 test('gli ascoltatori dell\'editor si legano una volta sola, e un elemento si rende trascinabile una volta sola', () => {
@@ -61,7 +62,7 @@ test('i salvataggi dell\'overlay passano da una coda sola, e la rete che cade si
   assert.ok(/if \(_codaOverlay\) \{ _codaAncora = true; return _codaOverlay; \}/.test(APP), 'una richiesta in volo per volta: le altre si accodano e si fondono');
   assert.ok(!/salvaImpostazioni\(\{ overlays: _overlaysPayload\(\) \}/.test(APP), 'nessuno spedisce gli overlay saltando la coda');
   assert.ok(/const ok = await _spingiOverlays\(\{ alerts: alertsCanale, chatOverlay: chatCanale \}\);/.test(APP), 'anche «Salva overlay» passa dalla coda');
-  assert.ok(/if \(!ok\) \{ _salvaSporco = true; _salvaChiusa = false; aggiornaBarraSalva\(\); return; \}/.test(APP), 'se non riesce, la pagina resta sporca');
+  assert.ok(/if \(!ok\) \{ _nonSalvato\(_g\('ovl-salva-tutto'\)\); return; \}/.test(APP), 'se non riesce, la pagina resta da salvare');
   const aTempo = ['salvaCfgElemento', 'salvaGoalDaScena', 'salvaContoDaScena', 'salvaCartDaScena'];
   assert.ok(!/\.catch\(\(\) => \{\s*\}\)/.test(aTempo.map(corpoDi).join('')), 'nessun errore di rete ingoiato in silenzio');
   for (const nome of aTempo) assert.match(corpoDi(nome), /_avvisaSalvataggio\(\)/, `${nome} non dice niente quando la rete cade`);

@@ -9,7 +9,7 @@ export default {
   titolo: 'Manuale dell\'Overlay Studio: alert, chat, obiettivi | SocialBot',
   h1: 'Manuale dell\'Overlay Studio',
   desc: 'Comporre l\'overlay per OBS: overlay e occasioni, la tela, alert, chat, player, conto alla rovescia, obiettivi e cartelli, con i valori di base e i limiti.',
-  aggiornata: '2026-10-02',
+  aggiornata: '2026-10-03',
   corpo: [
     { h2: 'Overlay Studio', scheda: 'alert', p: [
       'L\'overlay è <strong>una pagina web</strong>. In OBS si mette come sorgente <em>Browser</em>. Da lì in poi quello che decidi nella scheda «Overlay Studio», nel gruppo «Scena & overlay», compare in diretta senza toccare più niente in OBS.',
@@ -122,7 +122,7 @@ export default {
     { p: [
       'Per avere due obiettivi o due cartelli con un aspetto diverso in due scene ne fai due, e in ogni overlay accendi quello giusto.',
       '<strong>Si salvano da soli</strong>, appena molli il mouse o cambi un valore: posizioni, dimensioni, rotazioni, riquadri, blocchi, ordine dei livelli, visibilità, occasioni, «Quali chat in questo overlay», player, conto alla rovescia, conto alla pubblicità, hype train, classifica Bit, boss, arena delle emote, testo a schermo, nome del comando, muro delle emote, obiettivi, cartelli e contatori. I loro pulsanti «Salva» salvano subito, senza aspettare.',
-      '<strong>Aspettano un pulsante</strong>: alert eventi («Salva alert»), chat a schermo («Salva chat»), ultimo follower e ultimo sub, CSS («Salva CSS»). «Salva overlay» li salva tutti insieme. Finché non salvi, in basso resta la barra delle modifiche non salvate, con «Annulla» per tornare a com\'era. Se cambi scheda, overlay o pagina il pannello chiede prima.',
+      '<strong>Aspettano un pulsante</strong>: alert eventi («Salva alert»), chat a schermo («Salva chat»), ultimo follower e ultimo sub, CSS («Salva CSS»). «Salva overlay» li salva tutti insieme. Finché non salvi, in basso resta il riquadro delle modifiche non salvate, con «Mostra» per tornarci e «Annulla» per tornare a com\'era; se rimetti a mano com\'era, sparisce da solo. Se cambi scheda, overlay o pagina il pannello chiede prima e ti dice cosa hai cambiato.',
       'Se un salvataggio non riesce leggi «Non riesco a salvare: controlla la connessione, riprovo al prossimo cambiamento.»',
       'In cima a ogni gruppo «Aspetto» c\'è la riga <strong>«Veste»</strong> con dieci vesti pronte: Viola classico, Neon, Minimal chiaro, Retro arcade, Manga, Vetro, Terminale, Nastro, Esagoni, Stile Twitch. Una veste cambia l\'elemento che stai guardando; sul muro delle emote accende o spegne l\'ombra. «a tutto l’overlay» stende la veste scelta su tutti gli elementi. Dopo cambi a mano quello che vuoi. Se premi «a tutto l’overlay» senza aver scelto una veste leggi «Scegli prima una veste qui sopra.»',
     ] },

@@ -125,19 +125,20 @@ for (const [larg, alt, nome] of [[390, 844, 'telefono'], [1280, 900, 'computer']
   const dopo = await foglio(p, 'cheer');
   const cima = await p.evaluate(() => document.querySelector('#ee-fogli details[data-ee="cheer"] > summary').getBoundingClientRect().top);
   const terzo = await p.evaluate(() => { const l = _ee.voci.cheer.livelli[2]; return l && { nome: l.effetto.disegno?.nome, suono: l.effetto.disegno?.suono, da: l.da }; });
-  const sporco = await p.evaluate(() => _salvaSporco);
+  const sporco = await p.evaluate(() => _ciSonoModifiche());
   dice(await parte(p) === 'eventi' && dopo.aperto && terzo?.nome === 'stelle' && terzo.suono === 'tada' && terzo.da === 5000,
     `${nome}: «Usalo per un evento» mette le stelle col loro suono in un livello nuovo dei bit (da 5.000), e apre parte e foglio`, JSON.stringify({ parte: await parte(p), dopo, terzo }));
   dice(cima >= 0 && cima < alt * 0.5, `${nome}: il titolo del foglio arriva in alto, non sotto la piega`, `top=${Math.round(cima)}`);
-  dice(sporco === true, `${nome}: la pagina resta da salvare`, `_salvaSporco=${sporco}`);
+  dice(sporco === true, `${nome}: la pagina resta da salvare`, `da salvare=${sporco}`);
   dice(/Stelle da 5\.000 bit/.test(dopo.resa) && /da 5\.000 bit «Stelle»/.test(dopo.cosi), `${nome}: il titolo e la riga «Così» dicono il livello nuovo`, `${dopo.resa} | ${dopo.cosi}`);
 
   // l'editor del livello è quello dei pronti: la neve al posto delle stelle
-  await p.evaluate(() => { _salvaSporco = false; document.querySelector('#ee-fogli details[data-ee="cheer"] [data-ee-gal] [data-pronto="neve"]').click(); });
+  await p.evaluate(() => { azzeraBarraSalva(); document.querySelector('#ee-fogli details[data-ee="cheer"] [data-ee-gal] [data-pronto="neve"]').scrollIntoView({ behavior: 'instant', block: 'center' }); });
+  await p.click('#ee-fogli details[data-ee="cheer"] [data-ee-gal] [data-pronto="neve"]');
   await p.waitForTimeout(200);
   const neve = await foglio(p, 'cheer');
   const doppi = await p.evaluate(() => ({ id: document.querySelectorAll('[id="pronti-durata"]').length, ee: document.querySelectorAll('[id="ee-cheer-2-durata"]').length }));
-  dice(/Neve da 5\.000 bit/.test(neve.resa) && neve.livelli[2] === 'Neve' && await p.evaluate(() => _salvaSporco) === true,
+  dice(/Neve da 5\.000 bit/.test(neve.resa) && neve.livelli[2] === 'Neve' && await p.evaluate(() => _ciSonoModifiche()) === true,
     `${nome}: nel livello si cambia effetto con la stessa galleria, e il foglio lo dice subito`, JSON.stringify(neve));
   dice(doppi.id === 1 && doppi.ee === 1, `${nome}: due editor nella pagina, ognuno coi suoi id`, JSON.stringify(doppi));
 
@@ -158,7 +159,7 @@ for (const [larg, alt, nome] of [[390, 844, 'telefono'], [1280, 900, 'computer']
   await p.waitForTimeout(500);
   const s1 = await salvato(p);
   const ordine = s1?.voci?.cheer?.livelli?.map((l) => `${l.da}:${l.effetto.disegno?.nome}`);
-  dice(ordine?.join() === '100:coriandoli,250:neve,1000:fuochi' && s1.voci.cheer.pausa === 600 && await p.evaluate(() => _salvaSporco) === false,
+  dice(ordine?.join() === '100:coriandoli,250:neve,1000:fuochi' && s1.voci.cheer.pausa === 600 && await p.evaluate(() => _ciSonoModifiche()) === false,
     `${nome}: corretti, i livelli si salvano in ordine, la pausa resta nei limiti e la pagina non è più da salvare`, JSON.stringify({ ordine, pausa: s1?.voci?.cheer?.pausa }));
   await p.evaluate(() => caricaEventiEffetti());
   await p.waitForTimeout(400);
@@ -215,9 +216,10 @@ for (const [larg, alt, nome] of [[390, 844, 'telefono'], [1280, 900, 'computer']
 
   // la scelta pronta: solo gli eventi vuoti
   const primaPronta = await p.evaluate(() => ({ cheer: _ee.voci.cheer.livelli.map((l) => l.da).join(), vuoti: _ee.eventi.filter((e) => !_ee.voci[e.id].livelli.length).map((e) => e.id) }));
-  await p.evaluate(() => { _salvaSporco = false; document.querySelector('[data-ee-partenza]').click(); });
+  await p.evaluate(() => { azzeraBarraSalva(); document.querySelector('[data-ee-partenza]').scrollIntoView({ behavior: 'instant', block: 'center' }); });
+  await p.click('[data-ee-partenza]');
   await p.waitForTimeout(300);
-  const dopoPronta = await p.evaluate(() => ({ cheer: _ee.voci.cheer.livelli.map((l) => l.da).join(), pieni: _ee.eventi.every((e) => _ee.voci[e.id].livelli.length && _ee.voci[e.id].attivo), suoni: _ee.eventi.some((e) => _ee.voci[e.id].livelli.some((l) => l.effetto.disegno?.suono)), sporco: _salvaSporco, tasto: !!document.querySelector('[data-ee-partenza]') }));
+  const dopoPronta = await p.evaluate(() => ({ cheer: _ee.voci.cheer.livelli.map((l) => l.da).join(), pieni: _ee.eventi.every((e) => _ee.voci[e.id].livelli.length && _ee.voci[e.id].attivo), suoni: _ee.eventi.some((e) => _ee.voci[e.id].livelli.some((l) => l.effetto.disegno?.suono)), sporco: _ciSonoModifiche(), tasto: !!document.querySelector('[data-ee-partenza]') }));
   dice(primaPronta.vuoti.length > 0 && dopoPronta.pieni && dopoPronta.cheer === primaPronta.cheer && !dopoPronta.tasto && dopoPronta.sporco,
     `${nome}: la scelta pronta riempie solo gli eventi vuoti, li accende, non tocca gli altri e lascia la pagina da salvare`, JSON.stringify({ primaPronta, dopoPronta }));
   dice(!(await p.evaluate((ids) => ids.some((id) => _ee.voci[id].livelli.some((l) => l.effetto.disegno?.suono)), primaPronta.vuoti)), `${nome}: la scelta pronta non aggiunge suoni`);

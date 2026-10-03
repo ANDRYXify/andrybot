@@ -1699,6 +1699,20 @@ body.banco-on .pagina-testata > .guida-scheda .guida-corpo { max-height: 30vh; o
   display: inline-flex; align-items: center; gap: .45rem;
   font-size: .86rem; font-weight: 600; color: var(--ambra); white-space: nowrap;
 }
+.sv-testo > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.sv-dove { font-weight: 500; color: var(--testo-2); }
+@media (min-width: 721px) {
+  .sv-barra { flex-wrap: nowrap; max-width: min(760px, calc(100vw - 24px)); }
+  .sv-testo { flex: 1 1 auto; min-width: 0; }
+  .sv-tasti { flex: none; }
+}
+.da-salvare { outline: 2px solid var(--ambra); outline-offset: 2px; }
+.carta.da-salvare-carta { border-color: var(--ambra); }
+.da-salvare-lampo { animation: da-salvare-lampo .7s ease 2; }
+@keyframes da-salvare-lampo { 50% { box-shadow: 0 0 0 6px color-mix(in srgb, var(--ambra) 30%, transparent); } }
+@media (prefers-reduced-motion: reduce) { .da-salvare-lampo { animation: none; } }
+.mdl-elenco { margin: -.6rem 0 1.2rem; padding-left: 1.1rem; display: grid; gap: .3rem; font-size: .9rem; line-height: 1.45; color: var(--testo-2); }
+.mdl-elenco strong { color: var(--testo); font-weight: 600; }
 .sv-tasti { display: flex; gap: 6px; margin-left: auto; }
 .sv-tasti .btn { min-height: 38px; padding: 0 1rem; font-size: .86rem; }
 .sv-tasti .sv-annulla { padding: 0 .7rem; color: var(--testo-2); }

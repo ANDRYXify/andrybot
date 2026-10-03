@@ -53,8 +53,9 @@ function toast(msg, tipo = 'ok') {
 }
 
 async function api(percorso, opzioni = {}) {
-  if (DEMO) return apiDemo(percorso, opzioni);
-  return apiServer(percorso, opzioni);
+  const p = Promise.resolve(DEMO ? apiDemo(percorso, opzioni) : apiServer(percorso, opzioni));
+  _legaScrittura(p, opzioni);
+  return p;
 }
 async function apiServer(percorso, opzioni = {}) {
   const opts = { headers: {}, ...opzioni };
@@ -196,6 +197,7 @@ function _premioTasti(gara) {
     _premio[gara] = { ..._premio[gara], ..._premioLeggi(gara) };
     _premio[gara].posti.splice(i, 1);
     _premioRighe(gara);
+    segnaDaSalvare(_g('pr-' + gara + '-posti'));
   });
 }
 
@@ -205,6 +207,7 @@ function _premioAggiungi(gara) {
   const ultimo = _premio[gara].posti[_premio[gara].posti.length - 1];
   _premio[gara].posti.push({ dirette: Math.max(1, (Number(ultimo?.dirette) || 2) - 1), titolo: '' });
   _premioRighe(gara);
+  segnaDaSalvare(_g('pr-' + gara + '-posti'));
 }
 function impostazioni() {
   const s = stato?.streamer?.settings || {};
@@ -2766,13 +2769,14 @@ function chiediCopia({ testo = '', msgOk = '', titolo = L('Copialo da qui', 'Cop
   });
 }
 
-function chiediScelta({ titolo = '', testo = '', azioni = [], fuoco = '' } = {}) {
+function chiediScelta({ titolo = '', testo = '', elenco = [], azioni = [], fuoco = '' } = {}) {
   return new Promise((risolvi) => {
     const el = document.createElement('div');
     el.className = 'bv-velo mdl-chiedi';
     el.innerHTML = `<div class="bv-carta mdl-carta" role="dialog" aria-modal="true">
       <h2>${esc(titolo)}</h2>
       ${testo ? `<p class="bv-intro">${esc(testo)}</p>` : ''}
+      ${elenco.length ? `<ul class="mdl-elenco">${elenco.map((x) => `<li><strong>${esc(x.titolo)}</strong>${x.cosa ? ': ' + esc(x.cosa) : ''}</li>`).join('')}</ul>` : ''}
       <div class="bv-azioni">${azioni.map((a) => `<button type="button" class="btn grande${a.tono ? ' ' + a.tono : ''}" data-mdl="${esc(a.id)}">${esc(a.testo)}</button>`).join('')}</div>
     </div>`;
     document.body.appendChild(el);
@@ -3169,42 +3173,43 @@ function collegaTgDestinazioni() {
 
 const SEL_SALVA = 'button[id*="salva"], button[id*="save"], [data-salva]';
 const ASP_SALVA_A_MANO = '.asp-blocco[data-asp="alert"], .asp-blocco[data-asp="chat"], .asp-blocco[data-asp="wf"], .asp-blocco[data-asp="ws"]';
+const NON_SALVA = '#tg-destinazioni, #gr-ig, #gr-auto, #chk-negozio, .ovl-testa-banco, .ovl-barra, .ovl-livelli, .cerca-guscio, .st-uscita, [data-rg-filtro], [data-non-salva]';
+const STATI_SALVA = {};
 
-let _salvaBarra = null, _salvaSporco = false, _salvaOsservatore = null;
-let _salvaRegione = null, _salvaChiusa = false, _uscitaInCorso = false;
+let _salvaBarra = null, _uscitaInCorso = false;
+const _daSalvare = new Map();
+const _messeDaParte = new Set();
+const _filiAperti = [], _filiInCorso = new Set();
 
 function _salvaBuono(b) {
   return !b.disabled && b.offsetParent !== null && !/modello|template|cred/i.test(b.id);
 }
-
-function _regioneSalva(el) {
-  for (let c = el.closest('.carta'); c; c = c.parentElement?.closest('.carta')) {
-    if ([...c.querySelectorAll(SEL_SALVA)].some(_salvaBuono)) return c;
+const _salvaVero = (b) => !/modello|template|cred/i.test(b.id || '');
+function _contaSalva(pan) {
+  const conta = new Map();
+  for (const b of pan.querySelectorAll(SEL_SALVA)) {
+    if (!_salvaVero(b)) continue;
+    for (let x = b; x && x !== pan.parentElement; x = x.parentElement) conta.set(x, (conta.get(x) || 0) + 1);
   }
-  const pan = el.closest('.pannello-scheda.visibile');
+  return conta;
+}
+
+function _regioneSalva(el, conta) {
+  const pan = el.closest('.pannello-scheda');
   if (!pan) return null;
-  return [...pan.querySelectorAll(SEL_SALVA)].filter(_salvaBuono).length === 1 ? pan : null;
-}
-
-function segnaDaSalvare(t) {
-  if (!t || !t.closest || !t.closest('.pannello-scheda.visibile')) return;
-  if (t.closest('#tg-destinazioni, #gr-ig, #gr-auto, #chk-negozio, .ovl-testa-banco, .ovl-barra, .ovl-livelli, .cerca-guscio, .st-uscita, [data-rg-filtro]')) return;
-  if (t.closest('.ovl-inspector') && !t.closest(ASP_SALVA_A_MANO)) return;
-  const reg = _regioneSalva(t);
-  if (!reg) return;
-  _salvaRegione = reg;
-  if (_salvaSporco) return;
-  _salvaSporco = true;
-  _salvaChiusa = false;
-  aggiornaBarraSalva();
-}
-
-const _salvaRiposto = (b) => !b.disabled && !/modello|template|cred/i.test(b.id) && !!b.closest('[data-zona][hidden], .carta.chiusa');
-
-function _bottoniSalva() {
-  const r = _salvaRegione;
-  if (!r || !r.isConnected || !r.closest('.pannello-scheda.visibile')) return [];
-  return [...r.querySelectorAll(SEL_SALVA)].filter((b) => _salvaBuono(b) || _salvaRiposto(b)).slice(0, 2);
+  const legata = el.closest('[data-salva-con]');
+  const suo = legata && document.getElementById(legata.dataset.salvaCon);
+  if (suo && suo !== el && !legata.contains(suo)) return _regioneSalva(suo, conta);
+  conta = conta || _contaSalva(pan);
+  let a = el;
+  while (!conta.get(a)) {
+    if (a === pan || a.matches('.carta')) return null;
+    a = a.parentElement;
+  }
+  const n = conta.get(a);
+  if (n > 1 && !a.closest('.carta')) return null;
+  while (a !== pan && !a.matches('.carta') && conta.get(a.parentElement) === n) a = a.parentElement;
+  return a;
 }
 
 let _viaBarra = 0;
@@ -3236,37 +3241,277 @@ function _ripensaBarraSalva() {
   _rilettura = requestAnimationFrame(() => { _rilettura = 0; aggiornaBarraSalva(); });
 }
 
+function _fuoriDaSalvare(el) {
+  return !!el.closest(NON_SALVA) || (!!el.closest('.ovl-inspector') && !el.closest(ASP_SALVA_A_MANO));
+}
+
+const _siSalvano = new WeakSet();
+function _campoDaSalvare(el) {
+  if (_fuoriDaSalvare(el) || el.readOnly || _siSalvano.has(el) || el.closest('[data-si-salva], .esce')) return false;
+  return !(el.tagName === 'INPUT' && /^(button|submit|reset|file|image|search)$/i.test(el.type));
+}
+
+function _valoreCampo(el) {
+  if (el.type === 'checkbox' || el.type === 'radio') return el.checked ? '1' : '0';
+  if (el.tagName === 'SELECT' && el.multiple) return [...el.selectedOptions].map((o) => o.value).join('\u0001');
+  return String(el.value);
+}
+
+function _campiDi(R) {
+  if (_completa(R)) return [];
+  const conta = _contaSalva(R.closest('.pannello-scheda') || R);
+  const fuori = [...document.querySelectorAll('[data-salva-con]')].filter((z) => R.contains(document.getElementById(z.dataset.salvaCon)) && !R.contains(z));
+  return [...R.querySelectorAll('input, select, textarea'), ...fuori.flatMap((z) => [...z.querySelectorAll('input, select, textarea')])]
+    .filter((el) => _campoDaSalvare(el) && _regioneSalva(el, conta) === R);
+}
+
+const _fornitoriDi = (R) => [...R.querySelectorAll(SEL_SALVA)].map((b) => [b.id, STATI_SALVA[b.id]]).filter(([, f]) => f);
+const _completa = (R) => _fornitoriDi(R).some(([, f]) => f.completo);
+
+function _statiDi(R) {
+  return _fornitoriDi(R).map(([id, f]) => {
+    let json;
+    try { json = JSON.stringify(f.stato() ?? null); } catch { json = '?'; }
+    return { id, json };
+  });
+}
+
+function _leggiRegione(R) {
+  const elementi = _campiDi(R);
+  return { elementi, valori: elementi.map(_valoreCampo), stati: _statiDi(R) };
+}
+
+function _firmaRegione(l) {
+  const valori = l.valori.filter((v, i) => !_siSalvano.has(l.elementi[i]));
+  return valori.join('\u0000') + '\u0002' + l.stati.map((x) => x.json).join('\u0001');
+}
+
+function _prendiBase(R) {
+  const r = _daSalvare.get(R);
+  if (r && (r.sporca || r.inViaggio || r.dalUtente)) return;
+  _daSalvare.set(R, { base: _leggiRegione(R), ora: null, sporca: false, ignota: false, inViaggio: null });
+}
+
+function _ripensaRegione(R, r) {
+  r.dalUtente = false;
+  if (r.ignota) { r.sporca = true; return; }
+  r.ora = _leggiRegione(R);
+  r.sporca = _firmaRegione(r.ora) !== _firmaRegione(r.base);
+}
+
+function _cambiati(r) {
+  if (!r.sporca || r.ignota || !r.ora) return [];
+  const { base, ora } = r;
+  if (base.elementi.length === ora.elementi.length) return ora.elementi.filter((el, i) => ora.valori[i] !== base.valori[i] && !_siSalvano.has(el));
+  const prima = new Map(base.elementi.map((el, i) => [el, base.valori[i]]));
+  return ora.elementi.filter((el, i) => !prima.has(el) || prima.get(el) !== ora.valori[i]);
+}
+
+let _ripensa = 0, _ripensaTutte = false;
+const _ripensaSole = new Set();
+function _ripensaPresto(sola) {
+  if (sola instanceof Element) _ripensaSole.add(sola); else _ripensaTutte = true;
+  if (_ripensa) return;
+  _ripensa = requestAnimationFrame(() => {
+    const tutte = _ripensaTutte, sole = new Set(_ripensaSole);
+    _ripensa = 0; _ripensaTutte = false; _ripensaSole.clear();
+    for (const [R, r] of _daSalvare) {
+      if (!R.isConnected) { _daSalvare.delete(R); continue; }
+      if (!r.inViaggio && (tutte || sole.has(R))) _ripensaRegione(R, r);
+    }
+    aggiornaBarraSalva();
+  });
+}
+
+let _gestoVero = false;
+function segnaDaSalvare(t) {
+  if (!t || !t.closest || !t.closest('.pannello-scheda.visibile')) return;
+  const reg = _regioneSalva(t);
+  if (!reg) return;
+  if (!_daSalvare.has(reg)) {
+    if (!_gestoVero) return;
+    _segnaIgnota(reg);
+  }
+  _daSalvare.get(reg).dalUtente = true;
+  _ripensaPresto(reg);
+}
+
+function _segnaIgnota(R) {
+  const r = _daSalvare.get(R);
+  if (r) { r.ignota = true; r.sporca = true; return; }
+  _daSalvare.set(R, { base: null, ora: null, sporca: true, ignota: true, inViaggio: null });
+}
+
+const _primaInPagina = (a, b) => (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1);
+
+function _regioniSporche({ ancheInViaggio = false } = {}) {
+  return [..._daSalvare].filter(([R, r]) => r.sporca && (ancheInViaggio || !r.inViaggio)
+    && R.isConnected && R.closest('.pannello-scheda.visibile')).map(([R]) => R).sort(_primaInPagina);
+}
+const _ciSonoModifiche = () => _regioniSporche({ ancheInViaggio: true }).length > 0;
+
+function _bottoniSalva(R) {
+  if (!R || !R.isConnected || !R.closest('.pannello-scheda.visibile')) return [];
+  return [...R.querySelectorAll(SEL_SALVA)].filter((b) => _salvaVero(b) && !b.disabled).slice(0, 2);
+}
+
+function _titoloRegione(R) {
+  const el = R.dataset.asp && ELEM(R.dataset.asp);
+  if (el) return el.n;
+  const h = R.closest('.carta')?.querySelector(':scope > h2, :scope > summary, :scope > h3');
+  const t = (h?.textContent || '').replace(/\s+/g, ' ').trim();
+  return t || L('questa pagina', 'this page', 'esta página');
+}
+
+function _nomeCampo(el) {
+  const pulisci = (s) => String(s || '').replace(/\s+/g, ' ').trim().slice(0, 60);
+  const lab = el.labels?.[0];
+  if (lab) { const c = lab.cloneNode(true); c.querySelectorAll('input, select, textarea, .tendina').forEach((x) => x.remove()); const t = pulisci(c.textContent); if (t) return t; }
+  const aria = el.getAttribute('aria-label');
+  if (aria) return pulisci(aria);
+  const prima = el.closest('div, p, li, td')?.querySelector('label.campo, .campo-tit, h4');
+  if (prima && pulisci(prima.textContent)) return pulisci(prima.textContent);
+  return pulisci(el.placeholder) || L('un campo', 'a field', 'un campo');
+}
+
+function _bersaglioSegno(el) {
+  if (el.type === 'hidden') return el.closest('.lib-scelta') || el.parentElement;
+  const t = el.tagName === 'SELECT' ? el.closest('.tendina')?.querySelector('.tendina-btn') : null;
+  if (t) return t;
+  if (el.type === 'checkbox' || el.type === 'radio') return el.closest('label.interruttore, label.riga-check, label') || el;
+  return el;
+}
+
+let _segnati = new Set();
+function _segnaCambiati(sporche) {
+  const ora = new Set();
+  for (const R of sporche) {
+    const r = _daSalvare.get(R);
+    for (const el of _cambiati(r)) ora.add(_bersaglioSegno(el));
+    const carta = R.closest('.carta');
+    if (carta) ora.add(carta);
+  }
+  for (const el of _segnati) if (!ora.has(el)) el.classList.remove('da-salvare', 'da-salvare-carta');
+  for (const el of ora) el.classList.add(el.matches('.carta') ? 'da-salvare-carta' : 'da-salvare');
+  _segnati = ora;
+}
+
 function aggiornaBarraSalva() {
-  if (!_salvaBarra || _salvaChiusa) return;
-  const bottoni = _salvaSporco ? _bottoniSalva() : [];
-  if (!bottoni.length) { _mostraBarraSalva(false); return; }
-  if (bottoni.some(_inVista)) { _mostraBarraSalva(false); return; }
+  if (!_salvaBarra) return;
+  const sporche = _regioniSporche();
+  _segnaCambiati(sporche);
+  for (const R of _messeDaParte) if (!sporche.includes(R)) _messeDaParte.delete(R);
+  const davanti = sporche.filter((R) => !_messeDaParte.has(R));
+  if (!davanti.length || sporche.every((R) => _bottoniSalva(R).some(_inVista))) { _mostraBarraSalva(false); return; }
+  const R = sporche.find((x) => !_bottoniSalva(x).some(_inVista)) || sporche[0];
+  _salvaBarra.querySelector('.sv-dove').textContent = sporche.length === 1
+    ? L(`in «${_titoloRegione(R)}»`, `in «${_titoloRegione(R)}»`, `en «${_titoloRegione(R)}»`)
+    : L(`in ${sporche.length} carte`, `in ${sporche.length} cards`, `en ${sporche.length} tarjetas`);
   const zona = _salvaBarra.querySelector('.sv-tasti');
   zona.innerHTML = '';
-
-  const annulla = document.createElement('button');
-  annulla.type = 'button';
-  annulla.className = 'btn testo sv-annulla';
-  annulla.textContent = L('Annulla', 'Discard', 'Descartar');
-  annulla.addEventListener('click', () => {
-    azzeraBarraSalva();
-    try { caricaDatiScheda(schedaAttiva); } catch (e) {  }
-    toast(L('Modifiche annullate', 'Changes discarded', 'Cambios descartados'));
-  });
-  zona.appendChild(annulla);
-
-  for (const b of bottoni) {
-    const proxy = document.createElement('button');
-    proxy.type = 'button';
-    proxy.className = 'btn' + (bottoni.length > 1 && b !== bottoni[0] ? ' secondario' : '');
-    proxy.textContent = (b.textContent || L('Salva', 'Save', 'Guardar')).trim().slice(0, 34);
-    proxy.addEventListener('click', () => {
-      b.click();
-      azzeraBarraSalva();
-    });
-    zona.appendChild(proxy);
-  }
+  const tasto = (classe, testo, fa) => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = classe; b.textContent = testo;
+    b.addEventListener('click', fa);
+    zona.appendChild(b);
+  };
+  tasto('btn testo sv-mostra', L('Mostra', 'Show', 'Mostrar'), () => _mostraModifiche(R));
+  tasto('btn testo sv-annulla', L('Annulla', 'Discard', 'Descartar'), () => _annullaModifiche());
+  const bottoni = _bottoniSalva(R);
+  bottoni.forEach((b, i) => tasto('btn sv-salva' + (i ? ' secondario' : ''), (b.textContent || L('Salva', 'Save', 'Guardar')).trim().slice(0, 34), () => b.click()));
   _mostraBarraSalva(true);
+}
+
+function _mostraModifiche(R) {
+  R = R && R.isConnected ? R : _regioniSporche({ ancheInViaggio: true })[0];
+  if (!R) return;
+  mostraZonaDi(R);
+  for (let d = R.closest('details:not([open])'); d; d = d.parentElement?.closest('details:not([open])')) d.open = true;
+  for (let c = R.closest('.carta'); c; c = c.parentElement?.closest('.carta')) if (_cartaPiegata(c)) _piegaCarta(c, true);
+  const r = _daSalvare.get(R);
+  const campi = r ? _cambiati(r) : [];
+  requestAnimationFrame(() => {
+    const visibili = campi.map(_bersaglioSegno).filter((el) => el.getClientRects().length);
+    const dove = visibili[0] || R.closest('.carta')?.querySelector(':scope > h2') || R;
+    dove.scrollIntoView({ block: 'center', behavior: _menoMoto ? 'auto' : 'smooth' });
+    for (const el of [...visibili, R.closest('.carta') || R]) {
+      el.classList.remove('da-salvare-lampo');
+      void el.offsetWidth;
+      el.classList.add('da-salvare-lampo');
+    }
+    const fuoco = campi.find((el) => el.type !== 'hidden' && el.getClientRects().length);
+    if (fuoco) fuoco.focus({ preventScroll: true });
+  });
+}
+
+function _rimettiRegione(R, r) {
+  if (r.ignota) return false;
+  const base = new Map(r.base.stati.map((x) => [x.id, x.json]));
+  for (const x of _statiDi(R)) {
+    if (x.json === base.get(x.id)) continue;
+    const f = STATI_SALVA[x.id];
+    if (!f.rimetti) return false;
+    f.rimetti(JSON.parse(base.get(x.id)));
+  }
+  const ora = _leggiRegione(R);
+  if (ora.elementi.length !== r.base.valori.length) return _firmaRegione(ora) === _firmaRegione(r.base);
+  ora.elementi.forEach((el, i) => {
+    const v = r.base.valori[i];
+    if (_valoreCampo(el) === v) return;
+    if (el.type === 'checkbox' || el.type === 'radio') el.checked = v === '1';
+    else el.value = v;
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+    el.dispatchEvent(new Event('change', { bubbles: true }));
+  });
+  return _firmaRegione(_leggiRegione(R)) === _firmaRegione(r.base);
+}
+
+function _annullaModifiche() {
+  let tutte = true;
+  for (const R of _regioniSporche({ ancheInViaggio: true })) if (!_rimettiRegione(R, _daSalvare.get(R))) tutte = false;
+  azzeraBarraSalva();
+  if (!tutte) { location.reload(); return; }
+  toast(L('Modifiche annullate', 'Changes discarded', 'Cambios descartados'));
+}
+
+function _apriFilo(R) {
+  const r = _daSalvare.get(R);
+  if (!r || r.inViaggio) return;
+  const ora = r.ignota ? null : _leggiRegione(R);
+  const f = { R, r, ora, scritte: [], legato: false, chiuso: false };
+  f.esito = new Promise((k) => { f.risolvi = k; });
+  r.inViaggio = f;
+  _filiAperti.push(f);
+  setTimeout(() => {
+    _filiAperti.splice(_filiAperti.indexOf(f), 1);
+    if (!f.legato) _chiudiFilo(f, true);
+  }, 0);
+}
+
+let _campoToccato = null;
+function _legaScrittura(p, opzioni) {
+  if (!/^(POST|PUT|PATCH|DELETE)$/i.test(opzioni?.method || '')) return;
+  if (_campoToccato && !_filiAperti.length) _siSalvano.add(_campoToccato);
+  const esito = p.then(() => true, () => false);
+  for (const f of new Set([..._filiAperti, ..._filiInCorso])) if (!f.chiuso) f.scritte.push(esito);
+}
+
+async function _chiudiFilo(f, ok) {
+  if (f.chiuso) return;
+  f.chiuso = true;
+  const esiti = await Promise.all(f.scritte);
+  const salvato = ok && esiti.length > 0 && esiti.every(Boolean);
+  const r = f.r;
+  if (r.inViaggio === f) r.inViaggio = null;
+  if (_daSalvare.get(f.R) === r) {
+    if (salvato) {
+      if (f.ora) { r.base = f.toccata ? f.ora : _leggiRegione(f.R); r.ignota = false; }
+      else _daSalvare.delete(f.R);
+    }
+    if (_daSalvare.get(f.R) === r) _ripensaRegione(f.R, r);
+  }
+  aggiornaBarraSalva();
+  f.risolvi(salvato);
 }
 
 function avviaBarraSalva() {
@@ -3275,54 +3520,96 @@ function avviaBarraSalva() {
   _salvaBarra.id = 'barra-salva';
   _salvaBarra.className = 'sv-barra';
   _salvaBarra.setAttribute('role', 'status');
-  _salvaBarra.innerHTML = `<span class="sv-testo">${_bIco(ICO.avviso)}${L('Hai modifiche non salvate', 'You have unsaved changes', 'Tienes cambios sin guardar')}</span><span class="sv-tasti"></span>`
+  _salvaBarra.innerHTML = `<span class="sv-testo">${_bIco(ICO.avviso)}<span>${L('Modifiche non salvate', 'Unsaved changes', 'Cambios sin guardar')} <span class="sv-dove"></span></span></span><span class="sv-tasti"></span>`
     + `<button type="button" class="sv-chiudi" data-sv-chiudi aria-label="${esc(L('Chiudi l\'avviso', 'Dismiss', 'Cerrar el aviso'))}" title="${esc(L('Chiudi l\'avviso', 'Dismiss', 'Cerrar el aviso'))}">`
     + '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>';
   document.body.appendChild(_salvaBarra);
   if (typeof ResizeObserver === 'function') new ResizeObserver(() => document.body.style.setProperty('--alto-salva', `${_salvaBarra.offsetHeight}px`)).observe(_salvaBarra);
 
-  _salvaBarra.addEventListener('click', (ev) => {
-    if (!ev.target.closest('[data-sv-chiudi]')) return;
-    _salvaChiusa = true;
+  const mettiDaParte = () => {
+    for (const R of _regioniSporche()) _messeDaParte.add(R);
     _mostraBarraSalva(false);
-  });
-
-  document.addEventListener('keydown', (ev) => {
-    if (ev.key !== 'Escape' || !_salvaSporco || _salvaChiusa) return;
-    if (!_salvaBarra.classList.contains('dentro')) return;
-    _salvaChiusa = true;
-    _mostraBarraSalva(false);
-  });
-
-  const sporca = (ev) => {
-    const t = ev.target;
-    if (!t || !/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)) return;
-    segnaDaSalvare(t);
   };
-  document.addEventListener('input', sporca, true);
-  document.addEventListener('change', sporca, true);
+  _salvaBarra.addEventListener('click', (ev) => { if (ev.target.closest('[data-sv-chiudi]')) mettiDaParte(); });
+  document.addEventListener('keydown', (ev) => {
+    if (ev.key === 'Escape' && _salvaBarra.classList.contains('dentro') && !document.querySelector('.bv-velo')) mettiDaParte();
+  });
+
+  const inizio = (ev) => {
+    const t = ev.target;
+    if (!ev.isTrusted || !(t instanceof Element) || t.closest('.sv-barra')) return;
+    if (!t.closest('.pannello-scheda.visibile') || _fuoriDaSalvare(t)) return;
+    const reg = _regioneSalva(t);
+    if (reg) _prendiBase(reg);
+  };
+  for (const tipo of ['pointerdown', 'keydown', 'focusin', 'dragenter']) document.addEventListener(tipo, inizio, true);
+  for (const tipo of ['pointerdown', 'pointerup', 'click', 'keydown', 'input', 'change', 'drop']) {
+    document.addEventListener(tipo, (ev) => {
+      if (!ev.isTrusted || _gestoVero) return;
+      _gestoVero = true;
+      setTimeout(() => { _gestoVero = false; }, 0);
+    }, true);
+  }
+  const cambiato = (ev) => {
+    const t = ev.target;
+    if (t instanceof Element && /^(INPUT|SELECT|TEXTAREA)$/.test(t.tagName)) {
+      _campoToccato = t;
+      setTimeout(() => { if (_campoToccato === t) _campoToccato = null; }, 0);
+      const reg = t.closest('.pannello-scheda') ? _regioneSalva(t) : null;
+      const r = reg && _daSalvare.get(reg);
+      if (r) {
+        r.dalUtente = true;
+        if (r.inViaggio && ev.isTrusted) r.inViaggio.toccata = true;
+      }
+    }
+    _ripensaPresto();
+  };
+  document.addEventListener('input', cambiato, true);
+  document.addEventListener('change', cambiato, true);
+
+  document.addEventListener('click', (ev) => {
+    const b = ev.target.closest?.(SEL_SALVA + ', [data-salva-anche]');
+    if (!b || b.closest('.sv-barra') || !_salvaVero(b)) return;
+    for (const reg of [..._daSalvare.keys()]) if (reg.contains(b)) _apriFilo(reg);
+  }, true);
+  document.addEventListener('click', (ev) => {
+    if (!ev.isTrusted || !(ev.target instanceof Element)) return;
+    for (const reg of _daSalvare.keys()) if (reg.contains(ev.target) && _completa(reg)) _ripensaPresto(reg);
+  }, true);
+
   window.addEventListener('scroll', _ripensaBarraSalva, { passive: true });
   window.addEventListener('resize', _ripensaBarraSalva, { passive: true });
-
   window.addEventListener('beforeunload', (ev) => {
-    if (!_salvaSporco) return;
+    if (!_ciSonoModifiche()) return;
     ev.preventDefault();
     ev.returnValue = '';
   });
-
-  document.addEventListener('click', (ev) => {
-    const b = ev.target.closest?.(SEL_SALVA);
-    if (!b || b.closest('.sv-barra')) return;
-    if (_salvaRegione && _salvaRegione.isConnected && !_salvaRegione.contains(b)) return;
-    azzeraBarraSalva();
-  }, true);
 }
 
 function azzeraBarraSalva() {
-  _salvaSporco = false;
-  _salvaChiusa = false;
-  _salvaRegione = null;
+  _daSalvare.clear();
+  _messeDaParte.clear();
+  _segnaCambiati([]);
   _mostraBarraSalva(false);
+}
+
+function _regionePulita(el) {
+  const reg = el && _regioneSalva(el);
+  return !reg || !_daSalvare.get(reg)?.sporca;
+}
+
+function _scordaRegione(el) {
+  const reg = el && _regioneSalva(el);
+  if (reg) _daSalvare.delete(reg);
+  aggiornaBarraSalva();
+}
+
+function _nonSalvato(el) {
+  const reg = el && el.closest('.pannello-scheda.visibile') ? _regioneSalva(el) : null;
+  if (!reg) return;
+  _segnaIgnota(reg);
+  _messeDaParte.delete(reg);
+  aggiornaBarraSalva();
 }
 
 const FEED_ETI = { ig: ['Instagram', '#e1306c'], yt: ['YouTube', '#ff0033'], tt: ['TikTok', '#25f4ee'] };
@@ -5257,7 +5544,7 @@ function pannelloSettimana() {
       <div class="sett-manda spazio-sopra">
         <canvas id="sett-anteprima" class="sett-anteprima" width="1080" height="1350" aria-label="${esc(L('La grafica della settimana', 'The weekly graphic', 'La gráfica de la semana'))}"></canvas>
         <div>
-          <div id="sett-dove">${attesaHtml()}</div>
+          <div id="sett-dove" data-salva-con="sett-salva">${attesaHtml()}</div>
           <label class="campo spazio-sopra" for="sett-testo">${L('Le parole che la accompagnano', 'The words that go with it', 'Las palabras que la acompañan')}</label>
           <textarea id="sett-testo" rows="3" class="campo-largo" style="resize:vertical"></textarea>
           <p class="spazio-sopra"><button class="btn" id="sett-manda">${_bIco(ICO.condividi)}${L('Manda', 'Send', 'Manda')}</button></p>
@@ -6680,6 +6967,7 @@ function initGrafiche() {
   if (canvas.dataset.collegato) { _grafRiprendi?.(); return; }
   canvas.dataset.collegato = '1';
   let c = grafConfig();
+  STATI_SALVA['gr-salva'] = { completo: true, stato: () => ({ ...c, giorni: undefined }) };
 
   const frame = () => {
     grafRAF = null;
@@ -7600,7 +7888,7 @@ async function montaEditorPromo() {
   const P = window.SB_PROMO;
   box.innerHTML = `
     <div class="promo-campi">
-      <label class="campo campo-su">${L('Campagna', 'Campaign', 'Campaña')}<select id="pe-campagna"></select></label>
+      <label class="campo campo-su">${L('Campagna', 'Campaign', 'Campaña')}<select id="pe-campagna" data-non-salva></select></label>
       <label class="campo campo-su">${L('Indirizzo mostrato e nel QR', 'Address shown and in the QR', 'Dirección mostrada y en el QR')}<input type="text" id="pe-indirizzo" maxlength="60"></label>
       <label class="campo campo-su">${L('Versione', 'Version', 'Versión')}<select id="pe-versione">
         <option value="piena">${L('Con chat e QR', 'With chat and QR', 'Con chat y QR')}</option>
@@ -7997,6 +8285,8 @@ function qrStileDalModulo() {
   };
 }
 
+STATI_SALVA['qr-salva'] = { completo: true, stato: () => qrStileDalModulo() };
+
 function caricaMotoreQr() {
   if (window.SB_PENNA) return Promise.resolve();
   return new Promise((ok, ko) => { const s = document.createElement('script'); s.src = '/penna.js'; s.onload = ok; s.onerror = () => ko(new Error('/penna.js')); document.head.appendChild(s); });
@@ -8371,6 +8661,8 @@ function kitDalModulo() {
   };
 }
 
+STATI_SALVA['kit-salva'] = { completo: true, stato: () => kitDalModulo(), rimetti: (v) => { _kitRiempi({ kit: v }); kitRifaiPresto(); } };
+
 function _kitRiempi(d) {
   const $ = (x) => document.getElementById(x);
   const k = d.kit || {};
@@ -8523,6 +8815,11 @@ async function avviaKit() {
 }
 
 const PAN_STATO = { dati: null, serie: null, motore: null, icone: new Map(), timer: 0, giro: 0, errore: '', aperta: 0 };
+STATI_SALVA['pan-salva'] = {
+  completo: true,
+  stato: () => PAN_STATO.serie,
+  rimetti: (v) => { PAN_STATO.serie = v; _panScelte(); _panElenco(); panRifaiPresto(); },
+};
 const PAN_TEMI = () => [['pagina', L('Come la pagina link', 'Like your link page', 'Como tu página de enlaces')], ['carta', L('Carta', 'Paper', 'Papel')], ['notte', L('Notte', 'Night', 'Noche')]];
 const PAN_FORME = () => [['penna', L('A penna', 'Hand-drawn', 'A mano')], ['netta', L('Netta', 'Clean', 'Nítida')], ['piena', L('Piena', 'Full', 'Llena')]];
 const PAN_ALTEZZE = () => [[80, L('Bassi', 'Short', 'Bajos')], [100, L('Medi', 'Medium', 'Medios')], [160, L('Alti', 'Tall', 'Altos')]];
@@ -10385,6 +10682,7 @@ const NEG_MODELLI = {
 };
 let _neg = null;
 let _negBozza = null;
+STATI_SALVA['neg-salva'] = { stato: () => (_negBozza ? [_negBozza.immagine || '', _negBozza.immagineUrl || ''] : null) };
 let _negRuoli = null;
 
 const _negTipo = (t) => { const r = NEG_TIPI.find(([k]) => k === t); return r ? Lv(r[1]) : t; };
@@ -10731,8 +11029,9 @@ function _negCollega() {
     _negBozza.immagine = scelta.ref;
     _negBozza.immagineUrl = scelta.url || '';
     _negAnteprima();
+    segnaDaSalvare(_g('neg-salva'));
   }));
-  document.getElementById('neg-immagine-via')?.addEventListener('click', () => { _negBozza.immagine = ''; _negBozza.immagineUrl = ''; _negAnteprima(); });
+  document.getElementById('neg-immagine-via')?.addEventListener('click', () => { _negBozza.immagine = ''; _negBozza.immagineUrl = ''; _negAnteprima(); segnaDaSalvare(_g('neg-salva')); });
   document.getElementById('neg-effetto-lib')?.addEventListener('click', () => conErrore(async () => {
     const scelta = await scegliDallaLibreria({ tipi: ['audio', 'immagine', 'video'], titolo: L('Scegli l’effetto', 'Choose the effect', 'Elige el efecto') });
     if (!scelta || !scelta.comando) return;
@@ -10823,7 +11122,8 @@ function _negMostraQuando() {
 const _negGiorno = (ms) => { if (!ms) return ''; const d = new Date(ms); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
 const _negDaGiorno = (v, fine) => { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(v || ''); if (!m) return 0; return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]), fine ? 23 : 0, fine ? 59 : 0, fine ? 59 : 0, fine ? 999 : 0).getTime(); };
 
-function _negApri(a) {
+async function _negApri(a) {
+  if (!(await _primaDiCambiare(_g('neg-salva')))) return;
   const ed = document.getElementById('neg-editor');
   if (!ed) return;
   const x = a || {};
@@ -10878,13 +11178,14 @@ function _negApri(a) {
   _negAnteprima();
   ed.scrollIntoView({ block: 'start', behavior: 'smooth' });
   document.getElementById('neg-nome')?.focus({ preventScroll: true });
+  _scordaRegione(_g('neg-salva'));
 }
 
 function _negChiudi() {
   const ed = document.getElementById('neg-editor');
   if (ed) ed.hidden = true;
   _negBozza = null;
-  azzeraBarraSalva();
+  _scordaRegione(document.getElementById('neg-salva'));
 }
 
 function _negLeggi() {
@@ -11537,7 +11838,7 @@ function bloccoAlert(t, a) {
         </div>
       </div>
       <p class="suggerimento"><strong>${L('Metti quello che vuoi:', 'Put whatever you want:', 'Pon lo que quieras:')}</strong> ${L('scegli dai tuoi effetti', 'choose from your effects', 'elige entre tus efectos')} <em>${L('oppure', 'or', 'o')}</em> ${L('carica un file al volo qui sopra. Suono e immagine/video', 'upload a file on the fly above. Sound and image/video', 'sube un archivo al vuelo arriba. Sonido e imagen/vídeo')} <strong>${L('partono insieme', 'play together', 'se reproducen juntos')}</strong> — ${L('così puoi avere, ad esempio, la tua GIF', 'so you can have, for example, your GIF', 'así puedes tener, por ejemplo, tu GIF')} <em>${L('con', 'with', 'con')}</em> ${L('il tuo suono.', 'your sound.', 'tu sonido.')}</p>
-      <p class="spazio-sopra"><button type="button" class="btn secondario mini al-prova" data-kind="${t.key}">${_bIco('<path d="m6 3 14 9-14 9Z"/>')}${L('Prova', 'Test', 'Probar')}</button></p>
+      <p class="spazio-sopra"><button type="button" class="btn secondario mini al-prova" data-kind="${t.key}" data-salva-anche>${_bIco('<path d="m6 3 14 9-14 9Z"/>')}${L('Prova', 'Test', 'Probar')}</button></p>
       </div>
     </div>`;
 }
@@ -12511,7 +12812,7 @@ function pannelloAlert() {
       <p class="spazio-sopra"><button class="btn" data-salva-cfg="muro">${L('Salva', 'Save', 'Guardar')}</button></p>
     </details>
 
-    <details class="carta sez" data-parte="aspetto" id="sez-goal">
+    <details class="carta sez" data-parte="aspetto" id="sez-goal" data-si-salva>
       <summary><h3>${_hIco(ICO.trofeo)}${L('Gli obiettivi', 'Your goals', 'Tus objetivos')}</h3></summary>
       <p>${L('Barre che si riempiono da sole mentre arrivano follower, sub o bit. Un obiettivo può essere «altri 100» oppure «1000 in tutto»: con «Quanti ne ho adesso» parte dal numero che hai già.', 'Bars that fill by themselves as followers, subs or bits come in. A goal can be «100 more» or «1000 in total»: with «How many I have now» it starts from the number you already have.', 'Barras que se llenan solas mientras llegan followers, subs o bits. Un objetivo puede ser «100 más» o «1000 en total»: con «Cuántos tengo ahora» empieza desde el número que ya tienes.')}</p>
       <p class="suggerimento">${L('Il traguardo è <strong>uno solo e vale per tutti i tuoi overlay</strong>: un obiettivo non cambia da una scena all\u2019altra. Quello che cambia da scena a scena è <strong>dove sta e come si vede</strong>, e lo scegli nello Studio, sull\u2019overlay che stai componendo.', 'The target is <strong>one and applies to all your overlays</strong>: a goal does not change from one scene to another. What does change per scene is <strong>where it sits and how it looks</strong>, and you pick that in the Studio, on the overlay you are composing.', 'La meta es <strong>una sola y vale para todos tus overlays</strong>: un objetivo no cambia de una escena a otra. Lo que cambia por escena es <strong>dónde está y cómo se ve</strong>, y eso lo eliges en el Studio, en el overlay que estás componiendo.')}</p>
@@ -12522,7 +12823,7 @@ function pannelloAlert() {
         <button class="btn" id="btn-salva-goal">${L('Salva', 'Save', 'Guardar')}</button>
       </p>
     </details>
-    <details class="carta sez" data-parte="aspetto" id="sez-cart">
+    <details class="carta sez" data-parte="aspetto" id="sez-cart" data-si-salva>
       <summary><h3>${_hIco(ICO.cartello)}${L('Cartelli', 'Signs', 'Carteles')}</h3></summary>
       <p>${L('Una scritta o un’immagine tua, ferma in scena. Non la muove nessun evento: la scrivi, la metti dove vuoi e resta lì — il titolo della serata, le regole, il tuo logo, un «torno subito».', 'Some words or an image of yours, sitting on the scene. No event moves it: you write it, put it where you want and it stays — tonight’s title, the rules, your logo, a «be right back».', 'Un texto o una imagen tuya, quieta en la escena. No la mueve ningún evento: la escribes, la pones donde quieras y se queda — el título de la noche, las reglas, tu logo, un «vuelvo enseguida».')}</p>
       <p class="suggerimento">${L('Il contenuto è <strong>uno solo e vale per tutti i tuoi overlay</strong>. Quello che cambia da scena a scena è <strong>se si vede, dove sta e come appare</strong>, e lo scegli nello Studio.', 'The content is <strong>one and applies to all your overlays</strong>. What changes per scene is <strong>whether it shows, where it sits and how it looks</strong>, and you pick that in the Studio.', 'El contenido es <strong>uno solo y vale para todos tus overlays</strong>. Lo que cambia por escena es <strong>si se ve, dónde está y cómo aparece</strong>, y eso lo eliges en el Studio.')}</p>
@@ -12651,7 +12952,7 @@ function pannelloAlert() {
       <p class="suggerimento solo-giu">${L('Colori, forma, materia e cornice si cambiano', 'Colors, shape, surface and frame are changed', 'Colores, forma, materia y marco se cambian')} <strong>${L('sulla tela qui sopra', 'on the canvas above', 'en el lienzo de arriba')}</strong>: ${L('scegli l\'elemento e li trovi nel pannello «Proprietà», mentre lo guardi.', 'pick the element and you find them in the «Properties» panel, while looking at it.', 'elige el elemento y los encuentras en el panel «Propiedades», mientras lo miras.')}</p>
       <p class="spazio-sopra">
         <button class="btn" id="co-salva">${L('Salva chat', 'Save chat', 'Guardar chat')}</button>
-        <button class="btn secondario" id="co-prova">${_bIco('<path d="m6 3 14 9-14 9Z"/>')}${L('Prova', 'Test', 'Probar')}</button>
+        <button class="btn secondario" id="co-prova" data-salva-anche>${_bIco('<path d="m6 3 14 9-14 9Z"/>')}${L('Prova', 'Test', 'Probar')}</button>
       </p>
     </details>
 
@@ -12927,7 +13228,7 @@ async function _salvaOverlayCorrente(msg, ancheLayout) {
     if (ancheLayout) ov.mostra = _mostraOra();
   }
   const ok = await _spingiOverlays({ alerts: alertsCanale, chatOverlay: chatCanale });
-  if (!ok) { _salvaSporco = true; _salvaChiusa = false; aggiornaBarraSalva(); return; }
+  if (!ok) { _nonSalvato(_g('ovl-salva-tutto')); return; }
   if (msg) toast(msg);
 }
 async function salvaAlert(silenzioso) { await _salvaOverlayCorrente(silenzioso ? null : L('Alert salvati ✓', 'Alerts saved ✓', 'Alertas guardadas ✓'), false); }
@@ -15104,7 +15405,7 @@ async function _contaInCopia(k, comeSiChiama) {
 async function nuovoContatoreQui() {
   const r = await chiediContatore({ copie: overlays.length < MAX_OVERLAY });
   if (!r) return;
-  if (r.dove === 'copia' && _salvaSporco && !(await _chiediPrimaDiUscire())) return;
+  if (r.dove === 'copia' && _ciSonoModifiche() && !(await _chiediPrimaDiUscire())) return;
   const k = 'cont:' + r.comando;
   try {
     await api('/api/contatori', { method: 'POST', body: {
@@ -16228,7 +16529,7 @@ function _rigeneraQuale() {
 
 function scegliOverlay(id) {
   if (!id || id === overlaySel || !overlays.find((o) => o.id === id)) return;
-  if (_salvaSporco && !_uscitaInCorso) {
+  if (_ciSonoModifiche() && !_uscitaInCorso) {
     _uscitaInCorso = true;
     _chiediPrimaDiUscire().then((si) => { _uscitaInCorso = false; if (si) { azzeraBarraSalva(); _cambiaOverlay(id); } else _rigeneraSelOverlay(); },
       () => { _uscitaInCorso = false; _rigeneraSelOverlay(); });
@@ -18332,7 +18633,7 @@ function pannelloRegia() {
       <label class="campo spazio-sopra">${L('Categoria / gioco', 'Category / game', 'Categoría / juego')}</label>
       <div class="regia-gioco-cur">${L('Ora:', 'Now:', 'Ahora:')} <strong id="regia-gioco-sel">—</strong></div>
       <div class="cat-cerca">
-        <input aria-label="${esc(L('Cerca un gioco/categoria…', 'Search a game/category…', 'Busca un juego/categoría…'))}" type="text" id="regia-gioco-cerca" placeholder="${L('Cerca un gioco/categoria…', 'Search a game/category…', 'Busca un juego/categoría…')}" autocomplete="off">
+        <input aria-label="${esc(L('Cerca un gioco/categoria…', 'Search a game/category…', 'Busca un juego/categoría…'))}" type="text" id="regia-gioco-cerca" data-non-salva placeholder="${L('Cerca un gioco/categoria…', 'Search a game/category…', 'Busca un juego/categoría…')}" autocomplete="off">
         <div id="regia-gioco-lista" class="cat-lista" hidden></div>
       </div>
 
@@ -18436,6 +18737,7 @@ function _pubLeggi() {
 }
 
 let _regiaGameId = '';
+STATI_SALVA['regia-salva-canale'] = { stato: () => _regiaGameId };
 let _regiaUptimeTimer = null;
 let _catListe = 0;
 
@@ -21574,6 +21876,10 @@ function lpIntroHtml(d) {
 }
 
 const LP = { d: null, blocchi: [], tema: {}, testa: {}, quale: 'link', aspetto: '', vista: 'telefono', schede: { link: {}, dona: {}, negozio: {} } };
+STATI_SALVA['lp-salva'] = {
+  completo: true,
+  stato: () => ({ headline: LP.testa.headline, tagline: LP.testa.tagline, template: LP.testa.template, avatar: LP.testa.avatar, tema: LP.tema, blocchi: LP.blocchi, aspetto: LP.aspetto || '' }),
+};
 const LP_CASA = { link: 'lp-box', dona: 'lp-box-dona', negozio: 'lp-box-negozio' };
 const lpCasaHtml = (quale) => `<div id="${LP_CASA[quale]}" class="lp-casa">${attesaHtml()}</div>`;
 const LP_API = { link: '/api/linkpage', dona: '/api/paginadona', negozio: '/api/paginanegozio' };
@@ -23009,7 +23315,7 @@ function _verbiContHtml(c) {
     <div class="cont-verbi-form" data-vbform="${esc(c.comando)}">
       <p class="suggerimento">${L('Le parole le scegli tu, separate da uno spazio. Il numero vale attaccato o staccato: <code>+3</code> e <code>+ 3</code> sono la stessa cosa. Lascia vuoto per togliere quel comando.', 'You pick the words, separated by a space. The number works attached or apart: <code>+3</code> and <code>+ 3</code> are the same. Leave empty to remove that command.', 'T\u00fa eliges las palabras, separadas por un espacio. El n\u00famero vale junto o separado: <code>+3</code> y <code>+ 3</code> son lo mismo. D\u00e9jalo vac\u00edo para quitar ese comando.')}</p>
       ${righe}
-      <p><button type="button" class="btn secondario mini" data-ca="salva-verbi" data-cmd="${esc(c.comando)}">${L('Salva comandi', 'Save commands', 'Guardar comandos')}</button></p>
+      <p><button type="button" class="btn secondario mini" data-salva data-ca="salva-verbi" data-cmd="${esc(c.comando)}">${L('Salva comandi', 'Save commands', 'Guardar comandos')}</button></p>
     </div>
   </details>`;
 }
@@ -23105,7 +23411,7 @@ async function caricaContatori() {
           <label class="campo spazio-sopra">${L('Formato del testo', 'Text format', 'Formato del texto')}</label>
           <input type="text" data-ovk="formato" maxlength="80" aria-label="${esc(L('Formato del testo', 'Text format', 'Formato del texto') + ' — ' + (c.etichetta || c.comando))}" value="${esc(o.formato || '{emoji} {etichetta}: {valore}')}" placeholder="{emoji} {etichetta}: {valore}">
           <p class="suggerimento">${L('Segnaposto:', 'Placeholders:', 'Marcadores:')} <code>{emoji}</code> <code>{etichetta}</code> <code>{valore}</code></p>
-          <p><button type="button" class="btn secondario mini" data-ca="salva-ov" data-cmd="${esc(c.comando)}">${L('Salva aspetto', 'Save look', 'Guardar aspecto')}</button></p>
+          <p><button type="button" class="btn secondario mini" data-salva data-ca="salva-ov" data-cmd="${esc(c.comando)}">${L('Salva aspetto', 'Save look', 'Guardar aspecto')}</button></p>
         </div>
       </details>
     </div>`; }).join('')
@@ -23710,7 +24016,7 @@ function pannelloRuoli() {
           <div><label class="campo" for="dc-guild">${L('Id del server', 'Server id', 'Id del servidor')}</label>
             <input type="text" id="dc-guild" inputmode="numeric" maxlength="24" placeholder="123456789012345678"></div>
         </div>
-        <p class="spazio-sopra"><button class="btn secondario" id="dc-prova">${L('Prova e salva', 'Test and save', 'Probar y guardar')}</button></p>
+        <p class="spazio-sopra"><button class="btn secondario" id="dc-prova" data-salva-anche>${L('Prova e salva', 'Test and save', 'Probar y guardar')}</button></p>
       </details>
     </div>
 
@@ -23725,8 +24031,8 @@ function pannelloRuoli() {
       </div>
       <p class="spazio-sopra riga-flessibile">
         <button class="btn" id="dc-salva">${L('Salva', 'Save', 'Guardar')}</button>
-        <button class="btn secondario mini" id="dc-vedi">${L('Fammi vedere cosa faresti', 'Show me what you would do', 'Enséñame qué harías')}</button>
-        <button class="btn secondario mini" id="dc-adesso">${L('Passa adesso', 'Go round now', 'Pasa ahora')}</button>
+        <button class="btn secondario mini" id="dc-vedi" data-salva-anche>${L('Fammi vedere cosa faresti', 'Show me what you would do', 'Enséñame qué harías')}</button>
+        <button class="btn secondario mini" id="dc-adesso" data-salva-anche>${L('Passa adesso', 'Go round now', 'Pasa ahora')}</button>
       </p>
       <p class="tg-stato" id="dc-esito" hidden></p>
       <p class="suggerimento" id="dc-ultimo"></p>
@@ -24104,6 +24410,7 @@ const T_DCTIPO = () => ({
 });
 
 let _dcs = null;
+for (const id of ['dcs-salva', 'dce-salva', 'dcf-salva']) STATI_SALVA[id] = { completo: true, stato: () => _dcs && _dcsPulito() };
 let _dcsChiave = 0;
 let _dcsIcone = {};
 const _dcsChiaveRuolo = (n) => String(n || '').trim().replace(/\s+/g, ' ').slice(0, 100).toLowerCase();
@@ -24178,7 +24485,7 @@ async function caricaDcAvvisi() {
     const chiTxt = t.streamer.length
       ? t.streamer.map((l) => (persone.find((p) => p.login === l)?.display || l)).join(', ')
       : L('tutti', 'everyone', 'todos');
-    return `<details class="tg-dest${t.attivo ? '' : ' spenta'}" data-dca="${t.id}">
+    return `<details class="tg-dest${t.attivo ? '' : ' spenta'}" data-dca="${t.id}" data-si-salva>
       <summary>
         <span class="tg-dest-ico">${_bIco(ICO.chat)}</span>
         <span class="tg-dest-corpo"><strong>${t.webhook ? '' : '#'}${esc(nome)}</strong><span>${esc(evTxt)} · ${esc(chiTxt)}</span></span>
@@ -24423,7 +24730,7 @@ function _dcevDisegna() {
     ${(_dcev.nostri || []).length ? `<p class="suggerimento spazio-sopra">${L('Adesso sul server ce ne sono ', 'Right now the server has ', 'Ahora en el servidor hay ')}<b>${_dcev.nostri.length}</b>${L(' messi da me. Quelli che hai scritto a mano non li tocco: Discord non me lo lascia fare.', ' put there by me. The ones you wrote by hand I do not touch: Discord will not let me.', ' puestos por m\u00ed. Los que has escrito a mano no los toco: Discord no me deja.')}</p>` : ''}
     <p class="spazio-sopra riga-flessibile">
       <button class="btn secondario" id="dcev-salva">${L('Salva', 'Save', 'Guardar')}</button>
-      <button class="btn secondario" id="dcev-ora">${L('Mettili adesso', 'Put them now', 'Ponlos ahora')}</button>
+      <button class="btn secondario" id="dcev-ora" data-salva-anche>${L('Mettili adesso', 'Put them now', 'Ponlos ahora')}</button>
     </p>
     <p class="suggerimento">${L('Poi ci penso io: se cambi la programmazione, o arriva l\u2019ora legale, li rimetto a posto da sola.', 'Then I take care of it: if you change the schedule, or the clocks change, I put them back myself.', 'Luego me encargo yo: si cambias la programaci\u00f3n, o llega el cambio de hora, los arreglo sola.')}</p>
     <p class="tg-stato" id="dcev-stato" hidden></p>`;
@@ -24491,7 +24798,7 @@ function pannelloDcServer() {
       <h2>${_hIco(ICO.medaglia)}${L('Cosa succede', 'What happens', 'Qué pasa')}</h2>
       <p>${L('Prima si guarda, poi si fa. Quello che vedi qui sotto è esattamente quello che verrà fatto: non un riassunto.', 'First you look, then it happens. What you see below is exactly what will be done: not a summary.', 'Primero se mira, luego se hace. Lo que ves aquí abajo es exactamente lo que se hará: no un resumen.')}</p>
       <p class="spazio-sopra riga-flessibile" id="dcs-azioni" data-salva-qui>
-        <button class="btn secondario" id="dcs-vedi">${L('Fammi vedere cosa faresti', 'Show me what you would do', 'Enséñame qué harías')}</button>
+        <button class="btn secondario" id="dcs-vedi" data-salva-anche>${L('Fammi vedere cosa faresti', 'Show me what you would do', 'Enséñame qué harías')}</button>
         <button class="btn" id="dcs-costruisci" hidden>${L('Costruisci', 'Build it', 'Constrúyelo')}</button>
         <button class="btn secondario" id="dcs-salva">${L('Salva e basta', 'Just save', 'Solo guardar')}</button>
       </p>
@@ -25360,7 +25667,7 @@ function pannelloChiEntra() {
       <h2>${_hIco(ICO.medaglia)}${L('Cosa succede', 'What happens', 'Qué pasa')}</h2>
       <p>${L('La porta fa parte della traccia come i canali: si guarda e si costruisce insieme al resto, in un giro solo.', 'The door is part of the track like the channels: you look at it and build it together with the rest, in one go.', 'La puerta forma parte de la plantilla como los canales: se mira y se construye junto con lo demás, de una sola vez.')}</p>
       <p class="spazio-sopra riga-flessibile" id="dce-azioni" data-salva-qui>
-        <button class="btn secondario" id="dce-vedi">${L('Fammi vedere cosa faresti', 'Show me what you would do', 'Enséñame qué harías')}</button>
+        <button class="btn secondario" id="dce-vedi" data-salva-anche>${L('Fammi vedere cosa faresti', 'Show me what you would do', 'Enséñame qué harías')}</button>
         <button class="btn" id="dce-costruisci" hidden>${L('Costruisci', 'Build it', 'Constrúyelo')}</button>
         <button class="btn secondario" id="dce-salva">${L('Salva e basta', 'Just save', 'Solo guardar')}</button>
       </p>
@@ -25770,7 +26077,7 @@ function pannelloFiltro() {
       <h2>${_hIco(ICO.medaglia)}${L('Cosa succede', 'What happens', 'Qué pasa')}</h2>
       <p>${L('Il filtro fa parte della traccia come i canali: si guarda e si costruisce insieme al resto, in un giro solo.', 'The filter is part of the track like the channels: you look at it and build it together with the rest, in one go.', 'El filtro forma parte de la plantilla como los canales: se mira y se construye junto con lo demás, de una sola vez.')}</p>
       <p class="spazio-sopra riga-flessibile" id="dcf-azioni" data-salva-qui>
-        <button class="btn secondario" id="dcf-vedi">${L('Fammi vedere cosa faresti', 'Show me what you would do', 'Enséñame qué harías')}</button>
+        <button class="btn secondario" id="dcf-vedi" data-salva-anche>${L('Fammi vedere cosa faresti', 'Show me what you would do', 'Enséñame qué harías')}</button>
         <button class="btn" id="dcf-costruisci" hidden>${L('Costruisci', 'Build it', 'Constrúyelo')}</button>
         <button class="btn secondario" id="dcf-salva">${L('Salva e basta', 'Just save', 'Solo guardar')}</button>
       </p>
@@ -26400,7 +26707,7 @@ function pannelloTelegram() {
       <label class="campo" for="tg-ing-tasto">${L('Cosa c\'è scritto sul tasto', 'What the button says', 'Qué pone en el botón')}</label>
       <input type="text" id="tg-ing-tasto" class="campo-largo" maxlength="64" placeholder="${esc(L('Non sono un bot', 'I am not a bot', 'No soy un bot'))}" value="${esc(ing.tasto || '')}">
       <div class="riga-flessibile spazio-sopra">
-        <button class="btn" id="btn-tg-ingresso">${L('Salva il cancello', 'Save the gate', 'Guardar el portero')}</button>
+        <button class="btn" id="btn-tg-ingresso" data-salva>${L('Salva il cancello', 'Save the gate', 'Guardar el portero')}</button>
       </div>
     </div>
     ` : ''}
@@ -26590,7 +26897,7 @@ function pannelloScudo() {
   const ab = s.antibot || {};
   const sel = (v, def) => v === undefined ? def : v;
   return pannello('scudo', `
-    <div class="carta">
+    <div class="carta" data-salva-con="btn-salva-antibot">
       <h2>${_hIco(ICO.scudo)}${L('Lo scudo', 'The shield', 'El escudo')}</h2>
       <p>${L('Difesa dagli attacchi: le ondate di finti follower e gli account-bot che spammano in chat.', 'Defense against attacks: waves of fake followers and bot accounts spamming chat.', 'Defensa contra los ataques: oleadas de seguidores falsos y cuentas-bot que spamean el chat.')}
       <strong class="primo-piano">${L('In dubbio avvisa, non caccia i fan veri.', 'When unsure it warns, it doesn’t kick real fans.', 'En duda avisa, no echa a los fans de verdad.')}</strong></p>
@@ -27574,7 +27881,7 @@ function attivaPiattaforma() {
       internet: document.getElementById('chk-internet').checked,
       frasi: righe(document.getElementById('txt-frasi').value),
     }, L('Personalità salvata ✓', 'Personality saved ✓', 'Personalidad guardada ✓'));
-    caricaFrasiBot();
+    if (_regionePulita(_g('btn-salva-frasi'))) caricaFrasiBot();
   }));
   document.getElementById('btn-salva-frasi')?.addEventListener('click', () => conErrore(salvaFrasiBot));
 
@@ -27691,6 +27998,7 @@ function attivaPiattaforma() {
     _goalBozza.push(goalNuovo());
     disegnaGoal();
     aggiornaAnteprima();
+    salvaGoalDaScena();
     seleziona('goal:' + _goalBozza[_goalBozza.length - 1].id);
   });
 
@@ -27760,10 +28068,12 @@ function attivaPiattaforma() {
     if (box.querySelector('.dona-livello') == null) box.innerHTML = '';
     if (box.querySelectorAll('.dona-livello').length >= 8) { toast(L('Al massimo otto offerte.', 'Eight offers at most.', 'Ocho ofertas como máximo.'), 'errore'); return; }
     box.insertAdjacentHTML('beforeend', _rigaLivello({ da: '', nome: '', effetto: '' }));
+    segnaDaSalvare(box);
   });
   _g('dona-livelli')?.addEventListener('click', (e) => {
     const b = e.target.closest('.dl-via'); if (!b) return;
     togli(b.closest('.dona-livello'), () => { if (!_g('dona-livelli')?.querySelector('.dona-livello')) _disegnaLivelli([]); });
+    segnaDaSalvare(_g('dona-livelli'));
   });
   _g('dona-conto-box')?.addEventListener('click', (e) => {
     const b = e.target.closest('[data-dona]'); if (!b) return;
@@ -27969,6 +28279,7 @@ function attivaPiattaforma() {
       disegnaGoal();
       deseleziona();
       aggiornaAnteprima();
+      salvaGoalDaScena();
       return;
     }
     if (ev.target.closest('[data-g-azzera]')) conErrore(async () => {
@@ -27995,6 +28306,7 @@ function attivaPiattaforma() {
     _cartBozza.push(cartNuovo());
     disegnaCartelli();
     aggiornaAnteprima();
+    salvaCartDaScena();
     seleziona('cart:' + _cartBozza[_cartBozza.length - 1].id);
   });
 
@@ -28919,6 +29231,7 @@ function attivaPiattaforma() {
     _regiaGameId = g.id;
     const sel = document.getElementById('regia-gioco-sel'); if (sel) sel.textContent = g.name;
     gCerca.value = '';
+    segnaDaSalvare(sel || gCerca);
   } });
 
   initStudio();
@@ -29117,7 +29430,11 @@ function righe(testo) {
 }
 
 async function conErrore(fn) {
-  try { await fn(); } catch (e) { toast(L('Errore: ', 'Error: ', 'Error: ') + e.message, 'errore'); }
+  const fili = _filiAperti.filter((f) => !f.legato);
+  for (const f of fili) { f.legato = true; _filiInCorso.add(f); }
+  let ok = true;
+  try { await fn(); } catch (e) { ok = false; toast(L('Errore: ', 'Error: ', 'Error: ') + e.message, 'errore'); }
+  for (const f of fili) { _filiInCorso.delete(f); _chiudiFilo(f, ok); }
 }
 
 function caricaDatiScheda(id) {
@@ -30561,7 +30878,7 @@ function disegnaPronti() {
         <div><label class="campo" for="pronti-cooldown">${L('Cooldown (s)', 'Cooldown (s)', 'Enfriamiento (s)')}</label><input type="number" id="pronti-cooldown" min="0" max="3600" value="${st.cooldown}"></div>
       </div>`,
     azioni: () => `<p class="pronti-tasti">
-        <button type="button" class="btn" data-pronti="salva">${modifica ? L('Salva le modifiche', 'Save changes', 'Guardar los cambios') : L('Aggiungi l\'effetto', 'Add the effect', 'Añadir el efecto')}</button>
+        <button type="button" class="btn"${modifica ? ' id="pronti-salva" data-salva' : ''} data-pronti="salva">${modifica ? L('Salva le modifiche', 'Save changes', 'Guardar los cambios') : L('Aggiungi l\'effetto', 'Add the effect', 'Añadir el efecto')}</button>
         ${modifica ? `<button type="button" class="btn secondario" data-pronti="prova">${L('Prova sull\'overlay', 'Test on the overlay', 'Probar en el overlay')}</button>
         <button type="button" class="btn secondario" data-pronti="annulla">${L('Chiudi la modifica', 'Close editing', 'Cerrar la edición')}</button>` : ''}
       </p>
@@ -30577,7 +30894,7 @@ function disegnaPronti() {
     suClick: (b) => {
       if (b.dataset.prontiEvento) { usaPerEvento(b.dataset.prontiEvento, { tipo: 'pronto', disegno: JSON.parse(JSON.stringify(st.p)), volume: st.volume }); return; }
       const a = b.dataset.pronti;
-      if (a === 'annulla') { _pronti = _prontiNuovo(st.p.nome); disegnaPronti(); }
+      if (a === 'annulla') { _scordaRegione(b); _pronti = _prontiNuovo(st.p.nome); disegnaPronti(); }
       else if (a === 'prova') conErrore(async () => {
         await api('/api/streamer/effetti/test', { method: 'POST', body: { comando: st.comando } });
         toast(L('Effetto inviato all\'overlay (aprilo per vederlo)', 'Effect sent to the overlay (open it to see it)', 'Efecto enviado al overlay (ábrelo para verlo)'));
@@ -30598,10 +30915,18 @@ function disegnaPronti() {
   });
 }
 
-function _prontiModifica(e) {
+STATI_SALVA['pronti-salva'] = {
+  completo: true,
+  stato: () => (_pronti && _pronti.id != null ? { p: _pronti.p, tier: _pronti.tier, cooldown: _pronti.cooldown, volume: _pronti.volume } : null),
+  rimetti: (v) => { if (!_pronti || !v) return; Object.assign(_pronti, v); disegnaPronti(); },
+};
+
+async function _prontiModifica(e) {
+  if (!(await _primaDiCambiare(_g('pronti-salva')))) return;
   const d = e.disegno || {};
   _pronti = { id: e.id, comando: e.comando, p: { ...window.SB_DISEGNATI.parametri(d), suono: d.suono || '' }, tier: e.tier, cooldown: e.cooldown, volume: e.volume };
   disegnaPronti();
+  _scordaRegione(_g('pronti-salva'));
   document.getElementById('pronti-carta')?.scrollIntoView({ behavior: _menoMoto ? 'auto' : 'smooth', block: 'start' });
 }
 
@@ -30623,6 +30948,11 @@ const EE_SCALA = { sub: [1, 3, 6, 12, 24, 36, 48, 60], regalo: [1, 5, 10, 20, 50
 const EE_ALERT = { follow: 'follow', sub: 'sub', regalo: 'sub', cheer: 'cheer', raid: 'raid', donazione: 'donazione' };
 
 let _ee = null;
+STATI_SALVA['ee-salva'] = {
+  completo: true,
+  stato: () => _ee && Object.fromEntries(Object.entries(_ee.voci).map(([k, v]) => [k, _eeVoceDaMandare(v)])),
+  rimetti: (v) => { if (!_ee || !v) return; for (const [k, x] of Object.entries(v)) _ee.voci[k] = { ..._ee.voci[k], ...x }; _eeDisegna(); },
+};
 let _mieiEffetti = [];
 const _eeFermi = {};
 let _eeDaAprire = '';
@@ -32514,7 +32844,8 @@ function disegnaListaModuli() {
 let _slotEditor = 'editor-modulo';
 const slotEditor = () => document.getElementById(_slotEditor) || document.getElementById('editor-modulo');
 
-function apriEditor(modulo, dove = 'editor-modulo') {
+async function apriEditor(modulo, dove = 'editor-modulo') {
+  if (!(await _primaDiCambiare(document.querySelector('[data-salva="modulo"]')))) return;
   _slotEditor = dove;
   const cont = slotEditor();
   if (!cont) return;
@@ -32608,13 +32939,14 @@ function apriEditor(modulo, dove = 'editor-modulo') {
 
       <p class="spazio-sopra">
         <button class="btn" data-salva="modulo">${L('Salva', 'Save', 'Guardar')}</button>
-        <button class="btn secondario" data-prova-editor>${L('Prova', 'Test', 'Prueba')}</button>
+        <button class="btn secondario" data-prova-editor data-salva-anche>${L('Prova', 'Test', 'Prueba')}</button>
         <button class="btn secondario" data-annulla-editor>${L('Annulla', 'Cancel', 'Cancelar')}</button>
       </p>
     </div>`;
 
   cont.scrollIntoView({ behavior: 'smooth', block: 'start' });
   document.getElementById('mod-nome')?.focus();
+  _scordaRegione(cont.querySelector('[data-salva="modulo"]'));
 }
 
 const FRASI_VOCE_DI_SERIE = ['clippa', 'salva la clip'];
@@ -33030,6 +33362,7 @@ function leggiAzioneRiga(riga) {
 }
 
 function aggiornaRiassunto() {
+  segnaDaSalvare(slotEditor()?.querySelector('[data-salva="modulo"]'));
   const el = slotEditor()?.querySelector('.riassunto-modulo');
   if (!el) return;
   const m = leggiForm();
@@ -33048,6 +33381,7 @@ function inserisciNelCampo(campo, testo) {
     campo.value += testo;
     campo.focus();
   }
+  campo.dispatchEvent(new Event('input', { bubbles: true }));
 }
 
 async function salvaModuloCorrente() {
@@ -33803,7 +34137,7 @@ function _accessiHtml(d) {
       <div><label class="campo">${L('Scade il (vuoto: mai)', 'Expires on (empty: never)', 'Caduca el (vacío: nunca)')}</label><input type="datetime-local" class="acc-scade" value="${esc(scadeVal)}"></div>
       <div><label class="campo">${L('Nota (la legge anche lo streamer)', 'Note (the streamer reads it too)', 'Nota (el streamer también la lee)')}</label><input type="text" class="acc-nota" maxlength="300" value="${esc(r?.nota || '')}"></div>
     </div>
-    <p class="spazio-sopra"><button type="button" class="btn mini" data-acc="salva">${L('Salva', 'Save', 'Guardar')}</button> <button type="button" class="btn secondario mini" data-acc="chiudi">${L('Chiudi', 'Close', 'Cerrar')}</button></p>
+    <p class="spazio-sopra"><button type="button" class="btn mini" data-salva data-acc="salva">${L('Salva', 'Save', 'Guardar')}</button> <button type="button" class="btn secondario mini" data-acc="chiudi">${L('Chiudi', 'Close', 'Cerrar')}</button></p>
     ${storia ? `<p class="campo spazio-sopra">${L('Storia', 'History', 'Historial')}</p><ul class="acc-storia suggerimento">${storia}</ul>` : ''}
   </div>`;
 }
@@ -34214,23 +34548,50 @@ function aggiornaStatoNav(id) {
   apriGruppiDi(id);
 }
 
-async function _chiediPrimaDiUscire() {
-  const bottoni = _bottoniSalva();
+async function _primaDiCambiare(el) {
+  const reg = el && el.isConnected ? _regioneSalva(el) : null;
+  if (!reg || !_daSalvare.get(reg)?.sporca) return true;
+  return _chiediPrimaDiUscire({ solo: [reg] });
+}
+
+async function _chiediPrimaDiUscire({ solo = null } = {}) {
+  const sporche = _regioniSporche({ ancheInViaggio: true }).filter((R) => !solo || solo.includes(R));
+  if (!sporche.length) return true;
+  const elenco = sporche.map((R) => {
+    const nomi = [...new Set(_cambiati(_daSalvare.get(R)).map(_nomeCampo))];
+    const altri = nomi.length - 4;
+    return { titolo: _titoloRegione(R), cosa: nomi.slice(0, 4).join(', ') + (altri > 0 ? L(` e altri ${altri}`, ` and ${altri} more`, ` y ${altri} más`) : '') };
+  });
   const r = await chiediScelta({
     titolo: L('Hai modifiche non salvate', 'You have unsaved changes', 'Tienes cambios sin guardar'),
-    testo: L('Se esci adesso le perdi.', 'If you leave now you lose them.', 'Si sales ahora las pierdes.'),
+    testo: solo
+      ? L('Se passi a un altro le perdi. Se resti, ti porto alla prima.', 'If you switch to another one you lose them. If you stay, I take you to the first one.', 'Si pasas a otro las pierdes. Si te quedas, te llevo a la primera.')
+      : L('Se esci adesso le perdi. Se resti, ti porto alla prima.', 'If you leave now you lose them. If you stay, I take you to the first one.', 'Si sales ahora las pierdes. Si te quedas, te llevo a la primera.'),
+    elenco,
     azioni: [
-      { id: 'salva', testo: L('Salva ed esci', 'Save and leave', 'Guardar y salir') },
-      { id: 'ignora', testo: L('Esci senza salvare', 'Leave without saving', 'Salir sin guardar'), tono: 'secondario' },
+      { id: 'salva', testo: solo ? L('Salva e continua', 'Save and continue', 'Guardar y seguir') : L('Salva ed esci', 'Save and leave', 'Guardar y salir') },
+      { id: 'ignora', testo: solo ? L('Continua senza salvare', 'Continue without saving', 'Seguir sin guardar') : L('Esci senza salvare', 'Leave without saving', 'Salir sin guardar'), tono: 'secondario' },
       { id: 'resta', testo: L('Resta qui', 'Stay here', 'Quedarme aquí'), tono: 'testo' },
     ],
   });
-  if (r === null || r === 'resta') return false;
-  if (r === 'salva' && bottoni[0]) {
-    bottoni[0].click();
-    await new Promise((k) => setTimeout(k, 260));
+  if (r !== 'salva' && r !== 'ignora') { _mostraModifiche(sporche[0]); return false; }
+  if (r === 'salva') {
+    for (const R of sporche) {
+      let f = _daSalvare.get(R)?.inViaggio;
+      if (!f) {
+        const b = _bottoniSalva(R)[0];
+        if (b) { b.click(); f = _daSalvare.get(R)?.inViaggio; }
+      }
+      if (!f || !(await f.esito)) {
+        if (!f) toast(L('Questa carta non si salva da qui: te la mostro.', 'This card cannot be saved from here: here it is.', 'Esta tarjeta no se guarda desde aquí: te la muestro.'), 'errore');
+        _mostraModifiche(R);
+        return false;
+      }
+    }
   }
-  azzeraBarraSalva();
+  if (!solo) { azzeraBarraSalva(); return true; }
+  for (const R of sporche) _daSalvare.delete(R);
+  aggiornaBarraSalva();
   return true;
 }
 
@@ -34258,17 +34619,15 @@ const scriveLaStessaCosa = (a, b) => !!a && !!b && a !== b && STESSA_ROBA.some((
 function _riarmaBarraSalva(id) {
   const reg = document.querySelector(`.pannello-scheda[data-scheda="${id}"] [data-salva-qui]`);
   if (!reg) return;
-  _salvaRegione = reg;
-  _salvaSporco = true;
-  _salvaChiusa = false;
+  _segnaIgnota(reg);
   aggiornaBarraSalva();
 }
 
 function vaiAScheda(id) {
   if (senzaDiretta() && id && !SOLO_DISCORD.has(id) && !SOLO_ADMIN.has(id)) id = 'ruoli';
   const insieme = scriveLaStessaCosa(schedaAttiva, id);
-  const sporcoPrima = _salvaSporco;
-  if (id !== schedaAttiva && _salvaSporco && !_uscitaInCorso && !insieme) {
+  const sporcoPrima = _ciSonoModifiche();
+  if (id !== schedaAttiva && sporcoPrima && !_uscitaInCorso && !insieme) {
     _uscitaInCorso = true;
     _chiediPrimaDiUscire().then((si) => { _uscitaInCorso = false; if (si) vaiAScheda(id); },
       () => { _uscitaInCorso = false; });

@@ -563,7 +563,7 @@ test('e prima di cambiare overlay chiede, come chiede sempre', () => {
   // gia' ed e' una sola, quindi la usa anche questa strada invece di rifarne
   // una sua (o di saltarla).
   const f = APP.slice(APP.indexOf('async function nuovoContatoreQui('));
-  assert.match(f.slice(0, 400), /_salvaSporco && !\(await _chiediPrimaDiUscire\(\)\)/,
+  assert.match(f.slice(0, 400), /_ciSonoModifiche\(\) && !\(await _chiediPrimaDiUscire\(\)\)/,
     'la copia passa dalla stessa domanda di scegliOverlay');
 });
 

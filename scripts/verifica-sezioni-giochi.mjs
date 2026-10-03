@@ -43,7 +43,7 @@ catch {
 }
 
 const originale = fs.readFileSync(APP, 'utf8');
-const DIFESA = '.filter((b) => _salvaBuono(b) || _salvaRiposto(b))';
+const DIFESA = '.filter((b) => _salvaVero(b) && !b.disabled)';
 if (SELFTEST) {
   if (!originale.includes(DIFESA)) { console.log('  ✗ non trovo la difesa da togliere'); process.exit(1); }
   console.log('  tolgo: la barra che conta anche i tasti delle parti chiuse\n');
@@ -147,8 +147,8 @@ for (const [larg, alt, nome] of [[390, 844, 'telefono'], [1280, 900, 'computer']
   await p.waitForTimeout(400);
   const lasciata = await barra(p);
   dice(lasciata.dentro && lasciata.tasti.includes('Salva i giochi'), `${nome}: passando a «Monete e classifica» la modifica resta da salvare`, JSON.stringify(lasciata));
-  if (lasciata.dentro) {
-    await p.click('#barra-salva .sv-tasti button:not(.sv-annulla)');
+  if (lasciata.dentro && lasciata.tasti.includes('Salva i giochi')) {
+    await p.click('#barra-salva .sv-tasti button.sv-salva');
     await p.waitForTimeout(700);
   }
   await p.click('[data-sotto="giochi"]');

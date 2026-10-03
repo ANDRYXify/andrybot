@@ -13,7 +13,7 @@ export default {
   titolo: 'Manuale dei giochi e delle monete | SocialBot',
   h1: 'Manuale dei giochi e delle monete',
   desc: 'Le monete della chat, ogni carta della scheda Giochi & classifiche, i comandi di gioco con costi e premi veri, le manche e i giochi da creare.',
-  aggiornata: '2026-09-30',
+  aggiornata: '2026-10-03',
   corpo: [
     { p: [
       'La chat ha una <strong>moneta</strong>: si guadagna guardando e scrivendo, si spende nei giochi. Il nome lo scegli tu, di base sono «monete».',
@@ -24,7 +24,7 @@ export default {
       'Minigiochi, monete e classifiche per la chat. Giochi, monete, classifiche e premio in VIP sono nel piano Essenziale, quello gratuito.',
       'La scheda la usano il proprietario del canale e i moderatori del pannello. Solo il proprietario vede la riga per aggiustare le monete a mano e il rimando per portare qui i punti da un altro bot.',
       'La scheda ha quattro parti, che scegli con le linguette sotto il titolo: «I giochi» (ogni gioco, chi aspetta di più, i giochi tuoi e quelli del sito), «Monete e classifica» (come si guadagnano, presenze e saluti, classifica e VIP), «Giochi automatici» e «Citazioni e battute». Il pannello si ricorda l\'ultima che hai aperto. La ricerca, il giro guidato e i link dalle altre schede aprono da soli la parte giusta.',
-      'Ogni carta ha il suo tasto per salvare. Se cambi qualcosa e il tasto non è in vista, in basso compare la barra «Hai modifiche non salvate»: da lì salvi o annulli. La barra resta anche se passi a un\'altra parte della scheda senza salvare, così non perdi quello che hai lasciato indietro.',
+      'Ogni carta ha il suo tasto per salvare. Se cambi qualcosa e il tasto non è in vista, in basso compare il riquadro «Modifiche non salvate» con il nome della carta: da lì la mostri, salvi o annulli. Se rimetti a mano com\'era, il riquadro sparisce. Resta anche se passi a un\'altra parte della scheda senza salvare, così non perdi quello che hai lasciato indietro.',
     ] },
 
     { h3: 'Minigiochi' },

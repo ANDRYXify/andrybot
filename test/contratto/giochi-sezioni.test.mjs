@@ -124,7 +124,7 @@ test('un tasto solo salva i comandi e poi le regole', () => {
 
 test('cercare un gioco non sporca la pagina', () => {
   assert.match(funzione('_rgDisegna'), /<input type="search" data-rg-filtro/);
-  assert.match(funzione('segnaDaSalvare'), /\[data-rg-filtro\]/);
+  assert.match(APP, /const NON_SALVA = '[^']*\[data-rg-filtro\]/, 'la ricerca non e\' un\'impostazione: resta fuori dalla firma');
 });
 
 test('la ricerca ha una funzione sola per scoprire dove sta una cosa, e apre la parte giusta', () => {

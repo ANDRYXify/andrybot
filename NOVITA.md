@@ -64,6 +64,27 @@ comandi diversi da quelli della riga italiana.
 - Nello Studio, in inglese e in spagnolo, il gruppo dei suoni che hai caricato ha il suo nome tradotto. [vai: alert]
   en: In the Studio, in English and Spanish, the group of sounds you uploaded now has its translated name.
   es: En el Estudio, en inglés y español, el grupo de sonidos que subiste ya tiene su nombre traducido.
+- Il riquadro «Modifiche non salvate» dice in quale carta hai cambiato qualcosa e sparisce se rimetti a mano com'era; carta e campi cambiati hanno il bordo ambra. [vai: stato]
+  en: The “Unsaved changes” box tells you which card you changed and goes away if you put things back by hand; the changed card and fields get an amber border.
+  es: El recuadro «Cambios sin guardar» dice en qué tarjeta cambiaste algo y desaparece si lo dejas como estaba; la tarjeta y los campos cambiados tienen borde ámbar.
+- Uscendo con qualcosa da salvare, la finestra elenca carte e campi cambiati: «Resta qui» ti porta al primo, «Salva ed esci» esce solo se il salvataggio è andato. [vai: stato]
+  en: Leaving with something unsaved, the dialog lists the changed cards and fields: “Stay here” takes you to the first one, “Save and leave” only leaves if saving worked.
+  es: Al salir con algo sin guardar, la ventana enumera tarjetas y campos cambiados: «Quedarme aquí» te lleva al primero, «Guardar y salir» solo sale si se guardó.
+- Salvando una carta, le altre restano segnalate; e un salvataggio che non va lascia la carta da salvare, invece di farla sembrare salvata. [vai: stato]
+  en: Saving one card keeps the others flagged, and a save that fails leaves the card unsaved instead of making it look saved.
+  es: Al guardar una tarjeta, las demás siguen marcadas, y un guardado que falla deja la tarjeta pendiente en vez de hacerla parecer guardada.
+- Le spunte che si salvano da sole, come l'interruttore del bot, non risultano più da salvare, e salvare «Personalità» non cancella le frasi del bot ancora da salvare. [vai: personalita]
+  en: Switches that save on their own, like the bot switch, no longer show as unsaved, and saving “Personality” no longer wipes unsaved bot phrases.
+  es: Los interruptores que se guardan solos, como el del bot, ya no salen como pendientes, y guardar «Personalidad» ya no borra las frases del bot sin guardar.
+- «Annulla» nel riquadro rimette com'era anche Grafiche, Pannelli e Kit; cambiare articolo del negozio, modulo o effetto da modificare chiede prima, se resta qualcosa da salvare. [vai: stato]
+  en: “Discard” in the box now also restores Graphics, Panels and Media kit; switching to another shop item, module or effect to edit asks first if something is unsaved.
+  es: «Descartar» en el recuadro también devuelve Gráficas, Paneles y Media kit a como estaban; cambiar de artículo, módulo o efecto a editar pregunta antes si queda algo sin guardar.
+- Nei Pannelli di Twitch aggiungere, spostare o togliere un pannello, e nel QR su misura i tasti di forma e i colori pronti, ora accendono il riquadro: prima si usciva senza avviso. [vai: pannelli]
+  en: In Twitch Panels adding, moving or removing a panel, and in the custom QR the shape buttons and ready-made colors, now show the box: before, you left without a warning.
+  es: En los Paneles de Twitch añadir, mover o quitar un panel, y en el QR a medida los botones de forma y los colores listos, ahora muestran el recuadro: antes salías sin aviso.
+- Obiettivi e cartelli dello Studio si salvano da soli anche quando ne aggiungi o ne togli uno, come per ogni altro cambiamento. [vai: alert]
+  en: Studio goals and signs now also save on their own when you add or remove one, like every other change.
+  es: Los objetivos y carteles del Estudio también se guardan solos cuando añades o quitas uno, como cualquier otro cambio.
 
 ## 2026-10-02
 

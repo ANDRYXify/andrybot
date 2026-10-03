@@ -9,12 +9,13 @@ export default {
   titolo: 'Manuale della scheda Stato: diretta, bot e permessi | SocialBot',
   h1: 'Manuale della scheda Stato',
   desc: 'Cosa dice la scheda Stato: la diretta in corso o la prossima, l\'interruttore del bot, quando entra in chat, i permessi Twitch e cosa fare se si scollega.',
-  aggiornata: '2026-09-27',
+  aggiornata: '2026-10-03',
   corpo: [
     { h2: 'Stato', scheda: 'stato', p: [
       'È la scheda che si apre quando entri nel pannello, la prima del menù. Risponde a una domanda: <strong>come va adesso?</strong> Sei in onda, il bot è in chat, c\'è qualcosa da sistemare.',
       'Le carte compaiono in quest\'ordine. Quelle che segnalano un problema ci sono solo quando il problema c\'è: se è tutto a posto, la scheda comincia da «La tua diretta».',
       'Quando mancano dei permessi o il bot è spento, al proprietario può comparire anche un avviso in basso a destra, «Mancano dei permessi» o «Il bot è spento», con «Fammi vedere» che porta qui. Come funzionano gli avvisi sta nel <a href="/manuale/account">manuale di account e abbonamento</a>.',
+      'In tutto il pannello, quando cambi qualcosa in una carta e il suo tasto per salvare non è in vista, in basso compare il riquadro <strong>«Modifiche non salvate»</strong> col nome della carta, e la carta e i campi cambiati hanno il bordo color ambra. Se rimetti a mano com\'era, il riquadro e i segni spariscono. «Mostra» ti porta alla modifica, «Annulla» rimette tutto com\'era. Se cambi scheda con qualcosa da salvare, il pannello ti dice quali carte e quali campi: «Salva ed esci» esce solo se il salvataggio è andato, «Resta qui» ti porta al primo campo cambiato.',
     ] },
 
     { h3: 'Stai gestendo il canale di @…' },
