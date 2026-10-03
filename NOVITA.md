@@ -184,6 +184,9 @@ comandi diversi da quelli della riga italiana.
 - Nei comandi importati $(count) torna a contare: il numero sale a ogni uso, come nel bot di prima, e riparte da dove eri arrivato. [vai: moduli]
   en: In imported commands $(count) counts again: the number goes up with every use, as in your old bot, and picks up where you left off.
   es: En los comandos importados $(count) vuelve a contar: el número sube con cada uso, como en tu bot anterior, y sigue desde donde te quedaste.
+- Dalla porta del gruppo Telegram, «Vedi la pagina della prova» apre la prova come la vede chi chiede di entrare: tu, che sei già nel gruppo, entrando non la vedi. [vai: telegram]
+  en: From the Telegram group door, «See the check page» opens the check as people asking to join see it: you are already in the group, so you won't see it when you join.
+  es: Desde la puerta del grupo de Telegram, «Ver la página de la prueba» abre la prueba como la ve quien pide entrar: tú ya estás en el grupo, así que al entrar no la ves.
 
 ## 2026-10-02
 

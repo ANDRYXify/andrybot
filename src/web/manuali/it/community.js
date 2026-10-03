@@ -202,6 +202,7 @@ export default {
       'La porta è una pagina pubblica del tuo gruppo, a un indirizzo come <code>telegram.socialbot.live/il-tuo-canale</code>. La fai nella carta «La porta del gruppo», con lo stesso editor e gli stessi stili della pagina link. La modifica solo il proprietario.',
       'I pezzi suoi sono «Il gruppo e il tasto per entrare», «Come si entra (lo scudo)», che si vede solo con lo scudo acceso, e «Le regole del gruppo», con il testo scritto nello scudo. Poi ci sono quelli di sempre: titoli, testi, link, immagini, separatori.',
       'Il link del tasto lo fa il bot da solo, uno per gruppo. Con lo scudo acceso quel link chiede di entrare, quindi chi passa dalla porta fa la prova. La pagina della prova prende i colori e i caratteri della porta.',
+      'Tu sei già nel gruppo: se premi «Entra nel gruppo» Telegram ti porta dentro e la prova non la vedi. Per guardarla premi <strong>«Vedi la pagina della prova»</strong> nella carta della porta, oppure «Prova la pagina» in fondo alla carta dello scudo: si apre la pagina vera, con quello che hai scritto. Regole, domande e colori della prova si cambiano lì, nella carta «Scudo all\'ingresso»; caratteri e fondo vengono da questa porta.',
       'Nella carta dello scudo trovi l\'indirizzo della porta con «Copia»: mettilo nella bio, nei pannelli di Twitch, in chat.',
     ] },
 

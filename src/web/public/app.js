@@ -27823,6 +27823,8 @@ function pannelloTelegram() {
     <div class="carta" id="tg-porta-carta">
       <h2>${_hIco(ICO.condividi)}${L('La porta del gruppo', 'The group door', 'La puerta del grupo')}</h2>
       <p>${L('Una pagina tua per il gruppo, da mettere ovunque: chi la apre vede il gruppo, come si entra e le regole, e chiede di entrare con un tasto. Si personalizza come la pagina link: temi, sfondo, caratteri, colori e pezzi. La prova prende i suoi colori.', 'A page of your own for the group, to put anywhere: whoever opens it sees the group, how to join and the rules, and asks to join with one button. It is customized like the link page: themes, background, fonts, colors and pieces. The check takes its colors.', 'Una página tuya para el grupo, para ponerla donde quieras: quien la abre ve el grupo, cómo se entra y las normas, y pide entrar con un botón. Se personaliza como la página de enlaces: temas, fondo, fuentes, colores y piezas. La prueba toma sus colores.')}</p>
+      <p class="suggerimento">${L('La pagina della prova, quella che vede chi chiede di entrare, si cambia in «Scudo all’ingresso», qui sopra: regole, domande e colori, con la veste di questa porta. Tu sei già nel gruppo, quindi entrando non la vedi: guardala da qui.', 'The check page, the one people see when they ask to join, is changed in «Entry shield», above: rules, questions and colors, with this door’s look. You are already in the group, so you won’t see it when you join: look at it from here.', 'La página de la prueba, la que ve quien pide entrar, se cambia en «Escudo de entrada», aquí arriba: normas, preguntas y colores, con el aspecto de esta puerta. Ya estás en el grupo, así que al entrar no la ves: mírala desde aquí.')}</p>
+      <p><button type="button" class="btn secondario mini" id="tg-porta-vai-prova">${_bIco(ICO.occhio)}${L('Vedi la pagina della prova', 'See the check page', 'Ver la página de la prueba')}</button></p>
       ${lpCasaHtml('telegram')}
     </div>
     ` : ''}
@@ -27875,6 +27877,20 @@ const _tgsLin = (v) => { const x = v / 255; return x <= 0.03928 ? x / 12.92 : ((
 const _tgsLum = (hex) => { const h = String(hex || '').replace('#', ''); if (!/^[0-9a-f]{6}$/i.test(h)) return 0; const [r, g, b] = [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16)); return 0.2126 * _tgsLin(r) + 0.7152 * _tgsLin(g) + 0.0722 * _tgsLin(b); };
 const tgsContrasto = (a, b) => { const [x, y] = [_tgsLum(a), _tgsLum(b)].sort((p, q) => q - p); return (x + 0.05) / (y + 0.05); };
 const TGS_CONTRASTO = 3;
+
+function collegaPortaProva() {
+  const b = document.getElementById('tg-porta-vai-prova');
+  if (!b || b.dataset.collegato) return;
+  b.dataset.collegato = '1';
+  b.addEventListener('click', () => conErrore(async () => {
+    const carta = document.getElementById('tg-scudo-carta');
+    if (!carta) return;
+    if (_cartaPiegata(carta)) _piegaCarta(carta, true);
+    const prova = document.getElementById('sc-prova');
+    if (prova) prova.click();
+    else carta.scrollIntoView({ block: 'start', behavior: _menoMoto ? 'auto' : 'smooth' });
+  }));
+}
 
 async function caricaScudoTg() {
   const box = document.getElementById('box-tg-scudo');
@@ -30969,7 +30985,7 @@ function caricaDatiScheda(id) {
   if (id === 'statistiche') { caricaStatistiche(); caricaClassifica(); }
   if (id === 'giochi') { caricaClassifica(); caricaCitazioni(); caricaBattute(); caricaGiochi(); caricaRegoleGiochi(); caricaCastighi(); caricaGiro(); _disegnaFormaMonete(); contiPunti(); requestAnimationFrame(() => applicaSottoSchede('giochi')); }
   if (id === 'negozio') { caricaNegozio(); caricaPaginaLink(false, 'negozio'); requestAnimationFrame(() => applicaSottoSchede('negozio')); }
-  if (id === 'telegram') { caricaTgLogin(); collegaTgDestinazioni(); caricaTgDestinazioni(); collegaCartaLive(); caricaCartaLive(); caricaCompleanni(); caricaScudoTg(); caricaPaginaLink(false, 'telegram'); }
+  if (id === 'telegram') { caricaTgLogin(); collegaTgDestinazioni(); caricaTgDestinazioni(); collegaCartaLive(); caricaCartaLive(); caricaCompleanni(); caricaScudoTg(); collegaPortaProva(); caricaPaginaLink(false, 'telegram'); }
   if (id === 'notifiche') { caricaTikTok(); caricaInstagram(); collegaFeed(); caricaFeed(); }
   if (id === 'ruoli') { collegaRuoli(); caricaRuoli(); }
   if (id === 'dcavvisi') { _dcaCollega(); caricaDcAvvisi(); caricaDcEventi(); }
