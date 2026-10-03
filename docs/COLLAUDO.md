@@ -268,14 +268,21 @@ del clic sull'elemento invece che su `document`.
 
 ## I collaudi che hanno bisogno del mondo vero
 
-Due non stanno in `npm run cancelli`, e non per dimenticanza: i cancelli devono
-essere statici e istantanei, mentre questi hanno bisogno di qualcosa che non
-controlliamo.
+I collaudi che aprono un **browser** stanno nella catena di `npm run cancelli`:
+dove Chromium non c'è, come sul server, si saltano da soli, e
+`scripts/verifica-senza-browser.mjs` controlla che lo facciano. Fra questi
+`scripts/verifica-barra.mjs` (le sovrapposizioni si vedono solo dopo un vero
+calcolo di layout) e, entrato per ultimo col suo `--selftest`,
+`scripts/verifica-studio.mjs`, il banco di regia. Fuori dalla catena era rosso
+da giorni senza che nessuno lo vedesse: nella demo i contatori sparivano al
+primo salvataggio (docs/DEMO.md).
+
+Due restano fuori dalla catena. Il primo, e non per dimenticanza, ha bisogno di
+qualcosa che non controlliamo:
 
 | | cosa chiede | perché |
 |---|---|---|
 | `scripts/verifica-7tv.mjs` | la rete | 7TV può spostare le sue porte senza dirlo, ed è successo |
-| `scripts/verifica-barra.mjs` | un browser | le sovrapposizioni si vedono solo dopo un vero calcolo di layout |
 
 `node scripts/verifica-sw.mjs` — il **service worker** in un browser vero: alza
 un server con i file veri, aspetta che il worker sia attivo, cambia un'icona sul

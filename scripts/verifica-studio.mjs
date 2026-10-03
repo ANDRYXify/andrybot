@@ -1,7 +1,8 @@
 // © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
 // Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
-// Collaudo del BANCO DI REGIA — gira in un browser vero, quindi vive fuori da
-// `npm run cancelli` (i cancelli devono restare statici e istantanei).
+// Collaudo del BANCO DI REGIA, in un browser vero, sulla demo. Sta nella catena
+// di `npm run cancelli`, col suo --selftest: dove Chromium non c'e' (il server)
+// si salta da solo, come gli altri collaudi col browser.
 //
 // Il difetto che questo collaudo chiude: la x che si salva NON e' il centro
 // dell'elemento, e' la sua posizione lungo la corsa disponibile (0 = a filo a
@@ -16,20 +17,24 @@
 // entrerebbe in gioco per davvero — e si controlla che si sia spostato di
 // quella quantita'. Con Alt premuto, cosi' l'aggancio non falsa la misura.
 //
-// Uso: node scripts/verifica-studio.mjs   (esce 1 se qualcosa si sposta storto)
+// Da li' e' cresciuto con le altre promesse del banco: i comandi di ogni
+// elemento, il tutto schermo, i livelli, l'annulla, ogni overlay per conto suo,
+// il contatore nuovo che nasce dal banco. Ognuna ha qui sotto il suo perche'.
+//
+// Uso: node scripts/verifica-studio.mjs             (esce 1 se una promessa del banco non tiene)
+//      node scripts/verifica-studio.mjs --selftest  (rimette due difetti: il contatore delle
+//                                                    morti senza «Cosa scrive», e il contatore
+//                                                    creato che il banco non rilegge; li vuole
+//                                                    rossi tutti e due)
+//      SB_MINI=1 node scripts/verifica-studio.mjs   (lo stesso, sul banco minificato come lo
+//                                                    serve il server; si lancia a mano)
 
-import { apriSito, chromiumQui } from './_sito.mjs';
+import { apriSito, chromiumQui, PUB } from './_sito.mjs';
+import fs from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 
-const RAD = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
-const PUB = path.join(RAD, 'src/web/public');
 const CHROMIUM = chromiumQui();
 const PLAYWRIGHT = process.env.PLAYWRIGHT || '/opt/node22/lib/node_modules/playwright/index.mjs';
-
-const TIPI = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
-  '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png',
-  '.webmanifest': 'application/manifest+json', '.json': 'application/json', '.woff2': 'font/woff2' };
 
 let chromium;
 if (!CHROMIUM) { console.log('Chromium non c\'e\' su questa macchina: collaudo saltato.'); process.exit(0); }
@@ -42,16 +47,64 @@ catch {
 // Con SB_MINI=1 il banco viene servito MINIFICATO, come lo scarica davvero un
 // browser. E' la prova che accorciare i nomi interni non rompe l'applicazione:
 // senza, si collauderebbe un codice che nessuno riceve.
+//
+// Dal passaggio al sito comune (scripts/_sito.mjs, e7a84bda) SB_MINI non
+// faceva piu' niente: il sito comune serve i sorgenti, e il collaudo diceva
+// verde su un codice che nessuno riceve. Ora la minificazione la fa la pagina,
+// sulla sua strada (page.route), con la stessa funzione del server e sugli
+// stessi file (`eNostro`: gli script in cima alla cartella pubblica). Si fa
+// tutta prima di aprire la pagina: app.js chiede una decina di secondi, e
+// dentro il caricamento diventerebbe una gara con le attese del collaudo.
 const MINI = process.env.SB_MINI === '1';
-let minificaJs = null;
-if (MINI) ({ minificaJs } = await import('../src/web/minifica.js'));
+let minificaJs = null, eNostro = null;
+if (MINI) ({ minificaJs, eNostro } = await import('../src/web/minifica.js'));
 
 const { porta: PORTA, chiudi: chiudiSito } = await apriSito();
 
 const b = await chromium.launch({ executablePath: CHROMIUM,
   args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader', '--no-sandbox', '--disable-dev-shm-usage'] });
-const p = await b.newPage({ viewport: { width: 1440, height: 950 } });
+// Il service worker si tiene fuori: gli script li servirebbe lui, e ne' l'autoprova
+// ne' SB_MINI potrebbero cambiare quelli che la pagina carica.
+const p = await b.newPage({ viewport: { width: 1440, height: 950 }, serviceWorkers: 'block' });
 const rotture = [];
+
+// L'AUTOPROVA. Il difetto vero che ha tenuto rosso questo collaudo (la risposta
+// della demo ai contatori che richiamava se stessa, 0f108c4c) faceva sparire
+// l'elenco intero: tutti e due i controlli qui sotto diventavano rossi per la
+// stessa ragione, e uno copriva l'altro. Qui si rimettono due difetti che
+// toccano UN controllo ciascuno, cosi' ognuno deve vedere il suo:
+//  · al contatore delle morti manca «Cosa scrive», il resto del blocco c'e';
+//  · il contatore nuovo si crea, ma il banco non rilegge l'elenco (e arriva
+//    dopo i comandi, quindi non puo' coprire il primo).
+const SELFTEST = process.argv.includes('--selftest');
+const DIFETTI = [
+  [/^ *<input type="text" data-k="formato"[^\n]*\n/m, ''],
+  ['  await caricaContaStudio();\n  _mettiDentro(k);', '  _mettiDentro(k);'],
+];
+const difettiMessi = new Set();
+const conDifetti = (t) => {
+  DIFETTI.forEach(([da, a], i) => {
+    const c = typeof da === 'string' ? t.split(da).length - 1 : (t.match(new RegExp(da.source, da.flags + 'g')) || []).length;
+    if (c === 1) { t = t.replace(da, a); difettiMessi.add(i); }
+  });
+  return t;
+};
+const serviti = new Map();
+if (SELFTEST) serviti.set('/app.js', conDifetti(fs.readFileSync(path.join(PUB, 'app.js'), 'utf8')));
+if (MINI) {
+  let ridotti = 0;
+  for (const f of fs.readdirSync(PUB).filter((x) => eNostro('/' + x))) {
+    const via = '/' + f, sorgente = serviti.get(via) ?? fs.readFileSync(path.join(PUB, f), 'utf8');
+    try { serviti.set(via, await minificaJs(sorgente)); ridotti++; } catch { serviti.set(via, sorgente); }
+  }
+  console.log(`Banco minificato: ${ridotti} script su ${serviti.size}.`);
+}
+if (serviti.size) {
+  await p.route((u) => u.host === `127.0.0.1:${PORTA}` && serviti.has(u.pathname), async (route) => {
+    const r = await route.fetch();
+    await route.fulfill({ response: r, body: serviti.get(new URL(route.request().url()).pathname) });
+  });
+}
 p.on('pageerror', (e) => rotture.push('errore di pagina: ' + e.message));
 // Il giro guidato parte da solo alla prima visita di una scheda, dopo un
 // attimo di quiete, e qui la tela si muove da programma: il giro si
@@ -65,6 +118,9 @@ await p.evaluate(() => { document.getElementById('cookie-banner')?.remove(); win
 await p.waitForFunction(() => (document.querySelector('.pannello-scheda.visibile') || {}).id === 'scheda-alert', null, { timeout: 20000 });
 await p.waitForFunction(() => document.querySelectorAll('#ap-stage .ap-el').length > 4, null, { timeout: 20000 });
 await p.waitForTimeout(700);
+// SB_MINI deve collaudare il banco minificato davvero: e' gia' successo che
+// smettesse senza dirlo. Una funzione del banco minificata sta su una riga.
+const minificato = !MINI || await p.evaluate(() => !String(caricaContaStudio).includes('\n'));
 if (!await p.evaluate(() => typeof giroVisto === 'function' && giroVisto(schedaAttiva))) {
   rotture.push('il giro guidato non si spegne piu\' con sb-giro, e puo\' coprire la tela');
 }
@@ -805,6 +861,17 @@ verde = dice(marce.length === 0, 'le marce del trascinamento: fine, dritto, nien
 verde = dice(occhiTrapelati.length === 0, 'l’occhio toglie l’elemento da questo overlay, non da tutti', occhiTrapelati.join(' · ')) && verde;
 verde = dice(contaNuovo.length === 0, 'un contatore nuovo si fa dal banco, e la copia dell’overlay non tocca l’originale', contaNuovo.join(' · ')) && verde;
 verde = dice(rotture.length === 0, 'nessun errore di pagina', rotture.join(' · ')) && verde;
+if (MINI) verde = dice(minificato, 'il banco che ha girato è quello minificato', 'la pagina ha ricevuto i sorgenti') && verde;
 
+if (SELFTEST) {
+  const entrati = difettiMessi.size === DIFETTI.length;
+  const visti = [
+    ['il contatore delle morti senza «Cosa scrive»', morti.some((m) => m.startsWith('cont:morti ') && m.endsWith(': campo assente'))],
+    ['il contatore creato che il banco non rilegge', contaNuovo.includes('il contatore non nasce')],
+  ];
+  console.log(entrati ? '\nAutoprova: i due difetti sono entrati. ✓' : `\nAutoprova: entrati ${difettiMessi.size} difetti su ${DIFETTI.length}: il codice e' cambiato, aggiorna DIFETTI. ✗`);
+  for (const [n, v] of visti) console.log(v ? `Autoprova: ${n} si vede. ✓` : `Autoprova: ${n} NON e' stato visto. ✗`);
+  process.exit(entrati && visti.every(([, v]) => v) ? 0 : 1);
+}
 console.log(verde ? '\ncollaudo verde ✓\n' : '\ncollaudo ROSSO ✗\n');
 process.exit(verde ? 0 : 1);

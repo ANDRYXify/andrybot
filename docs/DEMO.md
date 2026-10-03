@@ -52,6 +52,24 @@ come `@nome` restano come sono, invece di chiederli a YouTube). Rende una pagina
 a chi l'ha chiesta, come JSON: non c'è un indirizzo dove quella pagina si apre. Ha un tetto al
 minuto per indirizzo, come le altre porte pubbliche che costano qualcosa.
 
+## Quello che la demo scrive, lo rilegge
+
+Una richiesta che scrive (un contatore, un overlay, gli effetti) lascia il suo
+risultato in `_demoScritture`, e la lettura dopo deve restituirlo. La risposta
+letta è **la risposta fissa della demo, con sopra quello che si è scritto**:
+`_demoGet` compone la tabella fissa e solo alla fine ci posa la parte scritta.
+Così i campi che la risposta porta oltre all'elenco (per i contatori `base`,
+l'aspetto di serie) vengono da un posto solo, anche quelli che si aggiungeranno.
+
+Non si chiede a `_demoGet` di rispondere a se stessa. È successo (0f108c4c):
+per prendere `base`, la risposta scritta dei contatori richiamava `_demoGet`
+sullo stesso indirizzo, che trovava di nuovo la parte scritta e richiamava se
+stessa, fino a esaurire la pila. Dopo il primo salvataggio di un contatore il
+pannello riceveva un errore al posto dell'elenco: lo Studio restava senza
+contatori, quello appena creato non nasceva, e in «Contatori» si leggeva
+«Impossibile caricare i contatori». Lo misura `scripts/verifica-studio.mjs`,
+che nella demo crea un contatore dal banco e lo cerca sulla tela.
+
 ## Le prove
 
 - Unità: l'anteprima della demo è quella che rende la pagina vera con gli stessi dati; un articolo

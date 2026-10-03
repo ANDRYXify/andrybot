@@ -256,6 +256,11 @@ Due contrappesi:
 - `SB_MINI=1 node scripts/verifica-studio.mjs` serve il banco di regia
   **minificato** e lo collauda: è la prova che accorciare i nomi non rompe
   l'applicazione. Senza, si collauderebbe un codice che nessuno riceve.
+  Per un mese non l'ha fatto, senza dirlo: da quando i collaudi hanno un sito
+  comune (`scripts/_sito.mjs`) la pagina riceveva i sorgenti, e il collaudo era
+  verde lo stesso. Ora la minificazione la fa il collaudo sulla strada della
+  pagina, con la stessa funzione del server, e controlla che il banco che ha
+  girato sia davvero quello minificato.
 
 ---
 
