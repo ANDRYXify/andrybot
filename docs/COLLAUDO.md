@@ -276,6 +276,11 @@ calcolo di layout) e, entrato per ultimo col suo `--selftest`,
 `scripts/verifica-studio.mjs`, il banco di regia. Fuori dalla catena era rosso
 da giorni senza che nessuno lo vedesse: nella demo i contatori sparivano al
 primo salvataggio (docs/DEMO.md).
+Subito dopo, `scripts/verifica-scudo-tg.mjs`: la pagina della prova dello
+scudo Telegram, con dietro gli stessi gesti del server su una richiesta in
+memoria (docs/TELEGRAM.md). La sua autoprova rimette quattro difetti (la prova
+ferma, i colori ignorati, la prova nuova che non arriva, il codice in una
+risposta) e li vuole vedere tutti.
 
 Due restano fuori dalla catena. Il primo, e non per dimenticanza, ha bisogno di
 qualcosa che non controlliamo:

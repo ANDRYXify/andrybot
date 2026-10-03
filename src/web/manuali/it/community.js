@@ -8,8 +8,8 @@ export default {
   schede: ['telegram', 'ruoli', 'dcavvisi', 'dcserver', 'dcentra', 'dcfiltro'],
   titolo: 'Le tue community: Telegram e Discord | SocialBot',
   h1: 'Le tue community: il manuale di Telegram e Discord',
-  desc: 'Telegram e Discord dal pannello: avvisi in gruppi, canali e topic, cancello, compleanni, chat privata, ruoli, calendario, porta e filtro del server.',
-  aggiornata: '2026-09-30',
+  desc: 'Telegram e Discord dal pannello: avvisi in gruppi e topic, cancello e scudo all\'ingresso, porta del gruppo, compleanni, chat privata, ruoli, calendario e filtro.',
+  aggiornata: '2026-10-03',
   corpo: [
     { p: [
       'Nel menù, il gruppo «Le tue community» ha due voci: «Telegram» e «Discord». Telegram è una scheda sola. Discord ne ha cinque, in fila in cima alla pagina: «Ruoli», «Avvisi», «Il server», «Chi entra», «Il filtro».',
@@ -17,7 +17,7 @@ export default {
     ] },
     { tabella: [
       ['Scheda', 'A cosa serve', 'Chi la usa', 'Cosa serve'],
-      ['Telegram', 'Avvisi nei tuoi gruppi, canali e topic, comandi nel gruppo, cancello per chi entra, compleanni, chat privata col bot.', 'Proprietario e moderatori. La chat privata e la Mini App le collega solo il proprietario.', 'Il piano Base.'],
+      ['Telegram', 'Avvisi nei tuoi gruppi, canali e topic, comandi nel gruppo, cancello per chi entra, scudo con una prova per chi chiede di entrare, la porta del gruppo, compleanni, chat privata col bot.', 'Proprietario e moderatori. La chat privata e la Mini App le collega solo il proprietario.', 'Il piano Base.'],
       ['Ruoli', 'Il collegamento col server e i ruoli dati in base a Twitch e ai dati del tuo canale.', 'Solo il proprietario.', 'Niente: c\'è in tutti i piani.'],
       ['Avvisi', 'In quali canali del server arrivano gli avvisi, di chi e con che testo. Il calendario del server.', 'Solo il proprietario.', 'Il bot nel server. Gli avvisi partono col piano Base.'],
       ['Il server', 'Categorie, canali, ruoli e impostazioni del server, costruiti da qui.', 'Solo il proprietario.', 'Il bot nel server.'],
@@ -161,6 +161,48 @@ export default {
       ['«…dagli il permesso «Blocca utenti»»', 'Il bot è amministratore ma non può limitare i membri: dagli quel permesso.'],
       ['«non riesco a leggere i permessi del gruppo…»', 'Riprova fra poco, e controlla che il bot sia ancora nel gruppo.'],
       ['«non riesco a chiedere a Telegram cosa posso fare in quel gruppo…»', 'Controlla che il bot sia ancora nel gruppo.'],
+    ] },
+
+    { h3: 'Lo scudo all\'ingresso' },
+    { p: [
+      'Il cancello lavora su chi è già entrato. Lo scudo lavora un passo prima: chi <strong>chiede</strong> di entrare nel gruppo fa una prova su una pagina, e Telegram lo fa entrare solo se la prova va bene. Lo trovi nella carta «Scudo all\'ingresso».',
+      'La prova è un codice di cinque caratteri che si vede <strong>solo mentre i puntini si muovono</strong>: le lettere scorrono da una parte, il fondo dall\'altra. Una persona lo legge in un paio di secondi. Uno screenshot, una foto o un programma che legge le immagini vedono solo puntini a caso, perché in ogni singolo fotogramma le lettere non ci sono.',
+      'In cima alla carta c\'è l\'elenco di cosa serve, letto dal vivo da Telegram. Quando è tutto a posto si raccoglie in «Tutto pronto: ogni controllo è a posto». Lo scudo non si accende finché manca una cosa segnata in rosso.',
+    ] },
+    { tabella: [
+      ['Cosa serve', 'Come si sistema'],
+      ['«Il sito risponde in HTTPS»', 'Telegram apre solo pagine sicure. Sul nostro sito c\'è già.'],
+      ['«Il bot interattivo è acceso»', 'Accendi «Bot interattivo su Telegram»: le richieste di ingresso arrivano da lì.'],
+      ['«Il gruppo è collegato»', 'Usa «Rileva gruppo».'],
+      ['«Il bot è amministratore del gruppo»', 'In Telegram: impostazioni del gruppo, Amministratori, aggiungi il tuo bot.'],
+      ['«Il bot può invitare utenti»', 'Fra i permessi del bot amministratore accendi «Invita utenti tramite link». Serve ad approvare e rifiutare le richieste, e a fare il link della porta.'],
+      ['«Il bot è il guardiano del gruppo»', 'Facoltativo. Con il guardiano la prova si apre subito, dentro Telegram. Senza, arriva in privato con un messaggio del bot. Per averlo, nelle impostazioni del gruppo scegli il tuo bot come guardiano delle richieste di ingresso; se Telegram non te lo propone, accendi le richieste di ingresso per il bot da @BotFather.'],
+      ['«Per entrare bisogna chiedere»', 'Avviso, non blocco. Se il gruppo è pubblico e si entra senza chiedere, chi lo trova per nome salta lo scudo: in Telegram accendi «Approva nuovi membri», oppure tieni acceso anche il cancello.'],
+    ] },
+    { tabella: [
+      ['Controllo', 'Cosa fa', 'Di base e limiti'],
+      ['«Chiedi la prova a chi chiede di entrare»', 'Accende lo scudo. Accanto leggi «attivo» e quante richieste sono «in attesa».', 'Spento'],
+      ['«Quanto tempo ha per farla»', 'I minuti per finire la prova. Allo scadere la richiesta si chiude da sola, come se non l\'avesse superata.', '10, da 2 a 60'],
+      ['«Chi non la supera»', '«La rifiuto» oppure «La lascio agli amministratori». Chi è rifiutato può chiedere di nuovo fra mezz\'ora.', 'La rifiuto'],
+      ['«Le regole»', 'Con «Chiedi di accettarle prima di entrare» la pagina mostra le regole e una spunta da mettere. Le stesse regole compaiono sulla porta del gruppo.', 'Spento, al massimo 1500 caratteri'],
+      ['«Qualche domanda»', 'Fino a tre domande, ognuna con una risposta giusta: una cosa che sa chi ti segue davvero. Una risposta sbagliata vale come una prova non superata.', 'Nessuna, fino a quattro risposte per domanda'],
+      ['«I colori della prova»', '«Come la porta del gruppo» oppure «Li scelgo io», con il colore dei puntini e del fondo. Serve un contrasto di almeno 3 a 1: se i due colori si distinguono meno, il pannello lo dice e la prova usa i colori della porta, così non esce mai illeggibile.', 'Come la porta'],
+      ['«Salva lo scudo»', 'Salva, e se l\'hai acceso controlla subito con Telegram che il bot possa farlo.', ''],
+      ['«Prova la pagina»', 'Apre qui la pagina vera, con quello che hai scritto anche se non l\'hai salvato. Da lì non parte niente verso Telegram.', ''],
+    ] },
+    { p: [
+      'Per ogni prova ci sono tre tentativi; dopo il terzo sbagliato arriva da sola una prova nuova, e le prove sono tre in tutto. «Un\'altra prova» ne chiede una nuova prima.',
+      'Chi non riesce a vedere la prova (per la vista, o perché ha chiesto al telefono meno movimento) preme «Non riesco a vederla»: la richiesta passa sempre agli amministratori, mai rifiutata. Gli amministratori la trovano nelle richieste di ingresso del gruppo su Telegram.',
+      'Chi supera lo scudo non passa anche dal cancello: una prova sola per persona.',
+      'In «Le ultime richieste» vedi chi ha chiesto di entrare, com\'è andata e perché. Si tengono una settimana.',
+    ] },
+
+    { h3: 'La porta del gruppo' },
+    { p: [
+      'La porta è una pagina pubblica del tuo gruppo, a un indirizzo come <code>telegram.socialbot.live/il-tuo-canale</code>. La fai nella carta «La porta del gruppo», con lo stesso editor e gli stessi stili della pagina link. La modifica solo il proprietario.',
+      'I pezzi suoi sono «Il gruppo e il tasto per entrare», «Come si entra (lo scudo)», che si vede solo con lo scudo acceso, e «Le regole del gruppo», con il testo scritto nello scudo. Poi ci sono quelli di sempre: titoli, testi, link, immagini, separatori.',
+      'Il link del tasto lo fa il bot da solo, uno per gruppo. Con lo scudo acceso quel link chiede di entrare, quindi chi passa dalla porta fa la prova. La pagina della prova prende i colori e i caratteri della porta.',
+      'Nella carta dello scudo trovi l\'indirizzo della porta con «Copia»: mettilo nella bio, nei pannelli di Twitch, in chat.',
     ] },
 
     { h3: 'Auguri di compleanno' },
@@ -541,6 +583,9 @@ export default {
     { d: 'Ho collegato il bot Telegram ma quando vado in diretta non arriva niente.', r: 'Controlla in ordine. Serve il piano Base. «Avvisa il gruppo quando vado in diretta» dev\'essere spuntato e salvato. Il posto dev\'essere «Attiva». In «Quale avviso va dove» la riga della tua diretta non deve dire «non arriva da nessuna parte».' },
     { d: '«Rileva gruppo» dice che non trova nessun gruppo.', r: 'Scrivi <code>/collega</code> dentro il gruppo, poi riprova. Un comando arriva sempre al bot. Un messaggio normale no, se la privacy del bot è accesa.' },
     { d: 'L\'avviso arriva nel «Generale» e non nel topic che voglio.', r: 'Scrivi <code>/collega</code> dentro quel topic e premi «Aggiungi gruppo, canale o topic»: il topic diventa un posto suo. Poi togli la spunta dal gruppo generale in «Quale avviso va dove».' },
+    { d: 'Lo scudo non si accende.', r: 'Guarda l\'elenco in cima alla carta «Scudo all\'ingresso»: la riga rossa dice cosa manca e come sistemarlo. Di solito è il permesso «Invita utenti tramite link» del bot amministratore.' },
+    { d: 'Chi chiede di entrare non riceve la prova.', r: 'Senza guardiano la prova arriva in privato, e il bot può scrivere solo nei primi cinque minuti dopo la richiesta. Se il messaggio non parte la richiesta passa agli amministratori, e in «Le ultime richieste» leggi «il messaggio in privato non è partito». Con il bot come guardiano la prova si apre subito, dentro Telegram.' },
+    { d: 'Qualcuno è entrato senza fare la prova.', r: 'Lo scudo vede solo chi chiede di entrare. Se il gruppo è pubblico e si entra senza chiedere, nell\'elenco in cima alla carta leggi «Per entrare bisogna chiedere»: in Telegram accendi «Approva nuovi membri», oppure tieni acceso anche il cancello. Chi lo fai entrare tu a mano non fa la prova.' },
     { d: 'Il cancello non si accende.', r: 'Servono «Bot interattivo nel gruppo» acceso e il bot amministratore del gruppo con il permesso «Blocca utenti». Il pannello ti dice quale delle due manca.' },
     { d: 'Ho confermato la settimana ma ho visto un errore. Posso fermarla?', r: 'Sì, fino al momento dell\'uscita. Nel messaggio che il bot ti ha mandato in privato su Telegram premi «Non pubblicare», e nella pagina che si apre premi il tasto. Lo stesso si fa dalla mail e dal pannello.' },
     { d: 'Il bot non dà un ruolo su Discord.', r: 'Quasi sempre il ruolo sta sopra quello del bot. Su Discord, in Impostazioni server → Ruoli, trascina il ruolo del bot sopra. La carta «Il collegamento» elenca i ruoli che stanno sopra.' },

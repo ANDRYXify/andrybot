@@ -385,11 +385,11 @@ test('la pagina delle donazioni: stessa forma, altro tavolo, stesso editor; le o
   assert.match(SRV, /sondaHost\(candidatoDona, \(h\) => \{ config\.donaHost = h; \}/, 'e quando risponde, da quel momento si usa');
   assert.ok(leggi('src/config.js').includes("donaHostSpento: /^(no|off)$/i.test(env('DONA_HOST', ''))"), 'e si puo\' spegnere con DONA_HOST=no');
   assert.match(leggi('Caddyfile'), /^socialbot\.live,[^{]*\bdona\.socialbot\.live\b[^{]*\{/m, 'e Caddy conosce il nome');
-  assert.ok(APP.includes("const LP_API = { link: '/api/linkpage', dona: '/api/paginadona', negozio: '/api/paginanegozio' };")
+  assert.ok(APP.includes("const LP_API = { link: '/api/linkpage', dona: '/api/paginadona', negozio: '/api/paginanegozio', telegram: '/api/paginatelegram' };")
     && APP.includes("const lpApi = () => (LP.quale === 'pannello' ? '/api/paginapannello/' + encodeURIComponent(LP.pannello) : LP_API[LP.quale] || LP_API.link);"), 'un editor, una porta per pagina (e una per ogni pannello)');
   assert.equal((APP.match(/api\(lpApi\(\)/g) || []).length, 4, 'carica, salva, spegni e anteprima passano dalla porta giusta');
   assert.ok(APP.includes("api(lpApi() + '/anteprima'"), 'anche l\'anteprima');
-  assert.ok(APP.includes("const LP_CASA = { link: 'lp-box', dona: 'lp-box-dona', negozio: 'lp-box-negozio', pannello: 'lp-box-pannello' };")
+  assert.ok(APP.includes("const LP_CASA = { link: 'lp-box', dona: 'lp-box-dona', negozio: 'lp-box-negozio', pannello: 'lp-box-pannello', telegram: 'lp-box-telegram' };")
     && APP.includes('const _lpCasa = () => LP_CASA[LP.quale] || LP_CASA.link;'), 'ogni pagina ha la sua casa per l\'editor');
   const pannelloDona = APP.slice(APP.indexOf("return pannello('donazioni', `"), APP.indexOf('\n}\n', APP.indexOf("return pannello('donazioni', `")));
   assert.ok(pannelloDona.includes("${lpCasaHtml('dona')}"), 'e quella delle donazioni sta nella scheda Donazioni');

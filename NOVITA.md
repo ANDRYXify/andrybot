@@ -145,6 +145,15 @@ comandi diversi da quelli della riga italiana.
 - Nella demo i contatori non spariscono più dopo che ne modifichi o ne crei uno, e quello nuovo nasce sulla tela dello Studio con lo sfondo e i comandi in chat di serie. [vai: alert]
   en: In the demo, counters no longer disappear after you edit or create one, and a new one appears on the Studio canvas with the default background and chat commands.
   es: En la demo los contadores ya no desaparecen después de editar o crear uno, y el nuevo aparece en el lienzo del Estudio con el fondo y los comandos de chat predeterminados.
+- [importante] Lo scudo del gruppo Telegram: chi chiede di entrare fa prima una prova, un codice che si legge solo mentre i puntini si muovono. E il gruppo ha una sua porta pubblica da personalizzare. [vai: telegram]
+  en: The Telegram group shield: whoever asks to join first takes a check, a code you can only read while the dots move. And the group gets its own public door page to customize.
+  es: El escudo del grupo de Telegram: quien pide entrar hace antes una prueba, un código que solo se lee mientras los puntos se mueven. Y el grupo tiene su propia puerta pública para personalizar.
+  > Lo scudo all'ingresso del gruppo Telegram
+  > Gli account che entrano per fare spam non superano una prova che si legge solo nel movimento: uno screenshot o un programma che legge le immagini non ci vedono niente. Chi non riesce a vederla passa agli amministratori con un tasto, e la porta del gruppo la vesti come la tua pagina link.
+  en> The entry shield for your Telegram group
+  en> Accounts that join to spam can't pass a check you can only read in motion: a screenshot or a program that reads images sees nothing. Anyone who can't see it goes to the admins with one tap, and you style the group door like your link page.
+  es> El escudo de entrada de tu grupo de Telegram
+  es> Las cuentas que entran para hacer spam no superan una prueba que solo se lee en movimiento: una captura o un programa que lee imágenes no ven nada. Quien no puede verla pasa a los administradores con un toque, y la puerta del grupo la vistes como tu página de enlaces.
 
 ## 2026-10-02
 

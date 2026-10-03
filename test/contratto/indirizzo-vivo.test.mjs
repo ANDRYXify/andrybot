@@ -73,7 +73,7 @@ test('i nomi che il sito promette sono nomi che la porta d\'ingresso conosce', (
   // I nomi si leggono dalle sonde stesse, non da un elenco a mano: un nome nuovo
   // che il server prova ad accendere entra qui da solo.
   const promessi = [...SRV.matchAll(/candidatoHost\(config\.baseUrl, '([a-z]+)'\)/g)].map((m) => `${m[1]}.socialbot.live`);
-  assert.deepEqual(promessi, ['dona.socialbot.live', 'sostieni.socialbot.live', 'discord.socialbot.live', 'negozio.socialbot.live'],
+  assert.deepEqual(promessi, ['dona.socialbot.live', 'sostieni.socialbot.live', 'discord.socialbot.live', 'negozio.socialbot.live', 'telegram.socialbot.live'],
     'le sonde si leggono tutte');
   // Il nome deve stare fra gli indirizzi del sito, non da qualche parte nel
   // file: un commento che lo nomina non chiede nessun certificato.

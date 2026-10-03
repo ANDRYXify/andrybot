@@ -56,7 +56,7 @@ test('le soglie sono la somma delle colonne, e l\'anteprima tiene il telefono in
   assert.ok(Math.abs(anteprimaDue - anteprimaTre) < 1e-9, 'e la stessa anteprima minima vale per tutte e due le soglie');
 });
 
-test('l\'editor ha lo stesso spazio nella Pagina link, nelle Donazioni, nel Negozio e dietro i Pannelli', () => {
+test('l\'editor ha lo stesso spazio nella Pagina link, nelle Donazioni, nel Negozio, dietro i Pannelli e nella porta del gruppo Telegram', () => {
   // Lo spazio largo lo chiede l'editor, non la scheda: prima lo aveva solo la
   // Pagina link, e le Donazioni aprivano lo stesso editor in 1080 px. Poi e'
   // arrivato il Negozio, e le liste di id (#lp-box, #lp-box-dona) non lo
@@ -67,7 +67,7 @@ test('l\'editor ha lo stesso spazio nella Pagina link, nelle Donazioni, nel Nego
   assert.doesNotMatch(ANIME, /\[data-scheda="pagina"\]\) \.contenuto/, 'nessuna scheda ha lo spazio largo per nome');
   assert.doesNotMatch(CSS + ANIME, /#lp-box/, 'nessuna regola nomina una casa per id');
   const case_ = APP.match(/const LP_CASA = \{([^}]*)\};/)[1].match(/\w+(?=:)/g);
-  assert.deepEqual(case_.sort(), ['dona', 'link', 'negozio', 'pannello']);
+  assert.deepEqual(case_.sort(), ['dona', 'link', 'negozio', 'pannello', 'telegram']);
   assert.match(APP, /const lpCasaHtml = \(quale\) => `<div id="\$\{LP_CASA\[quale\]\}" class="lp-casa">/);
   for (const q of case_) assert.ok(APP.includes(`\${lpCasaHtml('${q}')}`), `la casa «${q}» nasce da lpCasaHtml`);
   assert.doesNotMatch(APP, /<div id="lp-box/, 'nessuna casa scritta a mano');

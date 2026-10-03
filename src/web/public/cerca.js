@@ -44,7 +44,7 @@
     notifiche: 'avvisi notifiche social tiktok instagram youtube discord nuovi post live notificaciones avisos',
     dcavvisi: 'discord avvisi avviso canale live diretta annuncio menzione ruolo everyone amici community testo messaggio alerts announcement channel mention avisos anuncio canal mencion',
     ruoli: 'discord ruoli ruolo server gilda membri privilegi sub abbonati follower vip moderatori ore monete serie soglia bot token collega !discord roles server members perks rol rango servidor miembros',
-    telegram: 'telegram bot gruppo canale topic membri amici community compleanni rapporto privato verifica token destinazioni miembros cumpleaños cancello ingresso verifica captcha benvenuto antispam bot chi entra muto portiere guardia entrada bienvenida',
+    telegram: 'telegram bot gruppo canale topic membri amici community compleanni rapporto privato verifica token destinazioni miembros cumpleaños cancello ingresso verifica captcha benvenuto antispam bot chi entra muto portiere guardia entrada bienvenida scudo shield escudo richiesta richieste join request solicitud prova check prueba guardiano guardian porta door puerta invito invite enlace regole rules normas',
     stato: 'stato home diretta live in onda adesso prossima ultima spettatori bot acceso spento permessi status estado directo',
     account: 'account piattaforme passkey moderatori mod installa app mail codici dati esporta scarica cancella andarsene kick youtube cuenta plataformas moderadores datos',
     sottoscrizione: 'abbonamento subscription pagamento fattura rinnovo piano prezzo pacchetti costo carta suscripción pago precio',

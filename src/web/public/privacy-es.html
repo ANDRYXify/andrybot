@@ -126,6 +126,11 @@
           que escribe el streamer, cuando el cumpleaños lo añade él); para reconocerla, el id de su cuenta de Telegram o el
           nombre de su cuenta en el chat; y el año de la última felicitación, que sirve para no repetirla. Ninguna fecha de nacimiento completa, así que
           ninguna edad. Se conserva hasta que se elimina, con <code>!compleanno via</code> o desde el panel del streamer.</li>
+        <li><strong>Solicitudes para entrar en el grupo de Telegram</strong>, solo si el streamer activa el escudo: quien
+          pide entrar hace antes una prueba en una página. Guardamos el id de su cuenta de Telegram, el nombre con el que
+          aparece, el grupo, el resultado de la prueba y la hora; la bio de la cuenta no la leemos. La prueba se dibuja en
+          nuestro servidor y el código que hay que leer nunca sale del servidor. Las solicitudes se borran a los
+          <strong>siete días</strong> y no forman parte de la exportación de los datos del canal.</li>
         <li><strong>Integraciones opcionales</strong> que activa el streamer: token de su bot de <strong>Telegram</strong>
           + id del grupo (que proporciona él), <strong>nombre de usuario de TikTok</strong> público para el aviso de directo, y la
           clave con permisos limitados de su cuenta de <strong>Stripe</strong> para las donaciones, guardada cifrada; si conecta
@@ -206,7 +211,7 @@
         <li><strong>Interés legítimo</strong> (art. 6.1.f) del canal, y nuestro, en moderar los chats, mantenerlos seguros
           e interactuar, sobre mensajes <strong>ya hechos públicos</strong> por los usuarios: en los chats de Twitch, Kick y
           YouTube que conecta el streamer y en su grupo de Telegram, donde, si el streamer lo activa, quien entra no puede
-          escribir hasta que pulsa el botón de bienvenida. En Discord el bot no lee los mensajes: el filtro lo aplica el
+          escribir hasta que pulsa el botón de bienvenida, o quien pide entrar hace antes una prueba. En Discord el bot no lee los mensajes: el filtro lo aplica el
           propio Discord, con las reglas que el streamer nos hace escribir. Aquí entran también los registros técnicos
           mínimos que sirven para la seguridad del servicio.</li>
         <li><strong>Consentimiento</strong> (art. 6.1.a) para lo que es opcional y la persona nos da por elección propia:
@@ -238,6 +243,7 @@
       <h2>Cuánto tiempo</h2>
       <ul>
         <li>Mensajes del chat: <strong>14 días</strong>.</li>
+        <li>Solicitudes para entrar en el grupo de Telegram (id, nombre, grupo, resultado, hora): <strong>siete días</strong>.</li>
         <li>Tokens: mientras el streamer siga conectado (se pueden revocar desconectándose).</li>
         <li>Donaciones (nombre elegido, mensaje, importe, hora): <strong>un año</strong>.</li>
         <li>Compras en la tienda del canal (nombre en el chat, artículo, precio, lo que escribió quien compra, las respuestas

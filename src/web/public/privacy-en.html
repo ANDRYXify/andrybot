@@ -127,6 +127,11 @@
           the id of their Telegram account or the name of their chat account; and the year of the last birthday greeting,
           so it isn't repeated. No full date of birth,
           and therefore no age. It stays until it is removed, with <code>!compleanno via</code> or from the streamer's panel.</li>
+        <li><strong>Requests to join the Telegram group</strong>, only if the streamer turns on the shield: whoever asks to
+          join first takes a check on a page. We keep the id of their Telegram account, the name they show up with, the
+          group, the outcome of the check and the time; we don't read the account bio. The check is drawn on our server
+          and the code to read never leaves the server. Requests are deleted after <strong>seven days</strong> and are
+          not part of the channel's data export.</li>
         <li><strong>Optional integrations</strong> turned on by the streamer: the token of their <strong>Telegram</strong>
           bot + the group id (both provided by the streamer), their public <strong>TikTok username</strong> for the live
           notification, and the restricted key for their <strong>Stripe</strong> account for donations, stored
@@ -207,7 +212,7 @@
         <li><strong>Legitimate interest</strong> (Article 6(1)(f)) of the channel, and ours, in moderating the chats,
           keeping them safe and interacting, on messages <strong>already made public</strong> by users: in the Twitch, Kick
           and YouTube chats the streamer connects and in their Telegram group, where, if the streamer turns it on,
-          newcomers can't write until they press the welcome button. On Discord the bot doesn't read messages: the filter
+          newcomers can't write until they press the welcome button, or whoever asks to join first takes a check. On Discord the bot doesn't read messages: the filter
           is applied by Discord itself, with the rules the streamer has us write. The minimal technical logs needed for the
           security of the service fall here too.</li>
         <li><strong>Consent</strong> (Article 6(1)(a)) for what is optional and given by the person by their own choice:
@@ -239,6 +244,7 @@
       <h2>How long we keep it</h2>
       <ul>
         <li>Chat messages: <strong>14 days</strong>.</li>
+        <li>Requests to join the Telegram group (id, name, group, outcome, time): <strong>seven days</strong>.</li>
         <li>Tokens: as long as the streamer stays connected (they can be revoked by disconnecting).</li>
         <li>Donations (chosen name, message, amount, time): <strong>one year</strong>.</li>
         <li>Purchases in the channel shop (chat name, item, price, what the buyer wrote, the form answers, time): <strong>one year</strong>;

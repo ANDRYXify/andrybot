@@ -2213,6 +2213,59 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     res.set('Cache-Control', 'public, max-age=0, s-maxage=60, stale-while-revalidate=300');
     res.type('html').send(html);
   }));
+  // LA PAGINA DIETRO UN PANNELLO (docs/STRUMENTI.md). Si apre solo se e'
+  // accesa E il pannello salvato ci porta: un pannello tolto, o che porta a
+  // un indirizzo, si porta via la sua pagina senza cancellarla (se torna,
+  // torna com'era). Nessuna pagina pubblica senza il pannello che ci porta.
+  // Ha l'aspetto della pagina link (o il suo), i pezzi vivi letti adesso, e
+  // non conta visite: e' una porta da Twitch, non una pagina da misurare.
+  const portaAllaPagina = (s, id) => pannelliTw.portaAllaPagina(s?.settings?.pannelli, id);
+  app.get('/u/:user/p/:id', wrap(async (req, res) => {
+    const login = String(req.params.user || '').toLowerCase();
+    const id = String(req.params.id || '').toLowerCase();
+    if (!eLoginNostro(login) || !paginaPannello.idOk(id)) return notFound(res);
+    const p = paginaPannello.get(login, id);
+    const s = streamers.get(login);
+    if (!p || !p.attiva || !portaAllaPagina(s, id)) return notFound(res);
+    const link = linkPage.get(login);
+    const html = renderLinkPage(aspettoDi(p, link), {
+      login, display: s?.display || login, avatar: await avatarDi(login), baseUrl: config.baseUrl,
+      sostieni: donazioni.datiSostieni(s?.settings, contiDi(login)), urlDona: donazioni.urlPaginaDona(login),
+      urlLink: link?.attiva ? `${config.baseUrl}/u/${login}` : '',
+      donatori: donatoriPer(login, p.blocchi),
+      immagineAnteprima: link?.attiva ? immagineAnteprimaDi(login, 'link') : '',
+      dietro: { url: urlPaginaPannello(login, id) },
+      vivi: viviDi(login)(p.blocchi),
+    });
+    res.set('Cache-Control', 'public, max-age=0, s-maxage=60, stale-while-revalidate=300');
+    res.type('html').send(html);
+  }));
+  // La sua informativa, alla stessa condizione della pagina: il piede di una
+  // pagina dietro un pannello porta qui, non a quella della pagina link (che
+  // puo' essere spenta, e parla dei pezzi di un'altra pagina).
+  app.get('/u/:user/p/:id/privacy', wrap(async (req, res) => {
+    const login = String(req.params.user || '').toLowerCase();
+    const id = String(req.params.id || '').toLowerCase();
+    if (!eLoginNostro(login) || !paginaPannello.idOk(id)) return notFound(res);
+    const p = paginaPannello.get(login, id);
+    const s = streamers.get(login);
+    if (!p || !p.attiva || !portaAllaPagina(s, id)) return notFound(res);
+    res.set('Cache-Control', 'public, max-age=0, s-maxage=300');
+    res.type('html').send(renderInformativa({
+      login, display: s?.display || login, baseUrl: config.baseUrl, pagina: aspettoDi(p, linkPage.get(login)),
+      contatto: config.contattoPrivacy || '', quale: 'dietro', urlTorna: urlPaginaPannello(login, id),
+      sostieni: donazioni.datiSostieni(s?.settings, contiDi(login)),
+    }));
+  }));
+  // La porta PUBBLICA delle immagini degli articoli: senza sessione e senza la
+  // chiave dell'overlay, ma solo per un'immagine di QUEL canale che un articolo
+  // della sua vetrina usa adesso (mediaPubblico). Tutto il resto e' 404.
+  app.get('/u/:user/negozio/media/:id', (req, res) => {
+    const m = negozioPagina.mediaPubblico(req.params.user, req.params.id);
+    if (!m) return notFound(res);
+    res.sendFile(join(effectsRoot, m.channel, m.file), { maxAge: '300s' }, (err) => { if (err && !res.headersSent) notFound(res); });
+  });
+
   // ── LA PORTA DEL GRUPPO TELEGRAM e LA PROVA DELLO SCUDO (docs/TELEGRAM.md) ──
   //
   // La porta (telegram.<dominio>/<canale>, e sempre /telegram/<canale>) si
@@ -2286,59 +2339,6 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     }
     return rispostaScudo(res, azione, conf, id, corpoScudo(req.body));
   }));
-
-  // LA PAGINA DIETRO UN PANNELLO (docs/STRUMENTI.md). Si apre solo se e'
-  // accesa E il pannello salvato ci porta: un pannello tolto, o che porta a
-  // un indirizzo, si porta via la sua pagina senza cancellarla (se torna,
-  // torna com'era). Nessuna pagina pubblica senza il pannello che ci porta.
-  // Ha l'aspetto della pagina link (o il suo), i pezzi vivi letti adesso, e
-  // non conta visite: e' una porta da Twitch, non una pagina da misurare.
-  const portaAllaPagina = (s, id) => pannelliTw.portaAllaPagina(s?.settings?.pannelli, id);
-  app.get('/u/:user/p/:id', wrap(async (req, res) => {
-    const login = String(req.params.user || '').toLowerCase();
-    const id = String(req.params.id || '').toLowerCase();
-    if (!eLoginNostro(login) || !paginaPannello.idOk(id)) return notFound(res);
-    const p = paginaPannello.get(login, id);
-    const s = streamers.get(login);
-    if (!p || !p.attiva || !portaAllaPagina(s, id)) return notFound(res);
-    const link = linkPage.get(login);
-    const html = renderLinkPage(aspettoDi(p, link), {
-      login, display: s?.display || login, avatar: await avatarDi(login), baseUrl: config.baseUrl,
-      sostieni: donazioni.datiSostieni(s?.settings, contiDi(login)), urlDona: donazioni.urlPaginaDona(login),
-      urlLink: link?.attiva ? `${config.baseUrl}/u/${login}` : '',
-      donatori: donatoriPer(login, p.blocchi),
-      immagineAnteprima: link?.attiva ? immagineAnteprimaDi(login, 'link') : '',
-      dietro: { url: urlPaginaPannello(login, id) },
-      vivi: viviDi(login)(p.blocchi),
-    });
-    res.set('Cache-Control', 'public, max-age=0, s-maxage=60, stale-while-revalidate=300');
-    res.type('html').send(html);
-  }));
-  // La sua informativa, alla stessa condizione della pagina: il piede di una
-  // pagina dietro un pannello porta qui, non a quella della pagina link (che
-  // puo' essere spenta, e parla dei pezzi di un'altra pagina).
-  app.get('/u/:user/p/:id/privacy', wrap(async (req, res) => {
-    const login = String(req.params.user || '').toLowerCase();
-    const id = String(req.params.id || '').toLowerCase();
-    if (!eLoginNostro(login) || !paginaPannello.idOk(id)) return notFound(res);
-    const p = paginaPannello.get(login, id);
-    const s = streamers.get(login);
-    if (!p || !p.attiva || !portaAllaPagina(s, id)) return notFound(res);
-    res.set('Cache-Control', 'public, max-age=0, s-maxage=300');
-    res.type('html').send(renderInformativa({
-      login, display: s?.display || login, baseUrl: config.baseUrl, pagina: aspettoDi(p, linkPage.get(login)),
-      contatto: config.contattoPrivacy || '', quale: 'dietro', urlTorna: urlPaginaPannello(login, id),
-      sostieni: donazioni.datiSostieni(s?.settings, contiDi(login)),
-    }));
-  }));
-  // La porta PUBBLICA delle immagini degli articoli: senza sessione e senza la
-  // chiave dell'overlay, ma solo per un'immagine di QUEL canale che un articolo
-  // della sua vetrina usa adesso (mediaPubblico). Tutto il resto e' 404.
-  app.get('/u/:user/negozio/media/:id', (req, res) => {
-    const m = negozioPagina.mediaPubblico(req.params.user, req.params.id);
-    if (!m) return notFound(res);
-    res.sendFile(join(effectsRoot, m.channel, m.file), { maxAge: '300s' }, (err) => { if (err && !res.headersSent) notFound(res); });
-  });
 
   // IL MODULO DI UN ACQUISTO (features/negozio-moduli.js): l'indirizzo che la
   // chat da' a chi scrive !compra per un articolo col modulo. Senza sessione
@@ -2663,64 +2663,6 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     res.json({ html });
   }));
 
-  // ── La porta del gruppo Telegram: lo stesso editor, un altro tavolo ──
-  // Si vede quando lo streamer la pubblica («Salva e pubblica») e il bot ha un
-  // link per far entrare; «Spegni» la toglie senza cancellarla. I pezzi ammessi
-  // sono quelli della porta (TIPI_PAGINA_TELEGRAM).
-  const aspettoPortaInArrivo = (login, v) => (v === 'link' || v === 'suo' ? v : paginaTelegram.get(login)?.aspetto || 'suo');
-  const pubblicaPorta = (p) => ({ headline: p.headline || '', tagline: p.tagline || '', template: p.template || 'minimal',
-    avatar: p.avatar || '', tema: p.tema, blocchi: p.blocchi || [], attiva: !!p.attiva, aggiornata: p.ts || null, aspetto: p.aspetto });
-  app.get('/api/paginatelegram', requireOwner, wrap(async (req, res) => {
-    const login = currentUser(req).login;
-    const s = streamers.get(login);
-    const display = s?.display || login;
-    const p = paginaTelegram.get(login) || tgPorta.paginaDiPartenza(login, display);
-    const link = linkPage.get(login);
-    res.json({
-      url: scudoTg.urlPorta(login),
-      pubblicata: tgPorta.aperta(login),
-      aspettoLink: link ? { template: link.template, tema: link.tema } : null,
-      templates: TEMPLATE_LINKPAGE, fonts: FONT_LINKPAGE, icone: ICONE_LINKPAGE, tipi: TIPI_PAGINA_TELEGRAM, limiti: LIMITI_LINKPAGE,
-      temaBase: paginaTelegram.pulisci({}).tema,
-      avatarTwitch: await avatarDi(login, { aggiorna: true }),
-      visite: null,
-      suggeriti: [],
-      pagina: pubblicaPorta(p),
-    });
-  }));
-  app.post('/api/paginatelegram', requireOwner, wrap(async (req, res) => {
-    const login = currentUser(req).login;
-    const b = req.body || {};
-    const inviati = Array.isArray(b.blocchi) ? b.blocchi.length : 0;
-    const p = paginaTelegram.salva(login, {
-      headline: b.headline, tagline: b.tagline, template: b.template, avatar: b.avatar, tema: b.tema,
-      blocchi: b.blocchi, attiva: true, aspetto: aspettoPortaInArrivo(login, b.aspetto),
-    });
-    // la porta appena pubblicata deve avere il suo link: si fa adesso, non al
-    // primo che bussa
-    const c = tgConf.get(login);
-    if (c?.token && c.chat_id) await scudoTg.invito(c, { salva: salvaInvito(login) }).catch(() => null);
-    res.json({ ok: true, url: scudoTg.urlPorta(login), pubblicata: tgPorta.aperta(login), salvati: p?.blocchi?.length || 0, inviati, pagina: pubblicaPorta(p) });
-  }));
-  app.post('/api/paginatelegram/anteprima', requireOwner, wrap(async (req, res) => {
-    const login = currentUser(req).login;
-    const s = streamers.get(login);
-    const b = req.body || {};
-    const display = s?.display || login;
-    const html = htmlAnteprima('telegram', b, {
-      login, display, avatar: await avatarDi(login), baseUrl: config.baseUrl,
-      aspetto: aspettoPortaInArrivo(login, b.aspetto), link: linkPage.get(login),
-      fuori: tgPorta.opzioniPorta(login, { baseUrl: config.baseUrl, display }),
-    });
-    res.json({ html });
-  }));
-  app.delete('/api/paginatelegram', requireOwner, wrap(async (req, res) => {
-    const login = currentUser(req).login;
-    const p = paginaTelegram.get(login);
-    if (p) paginaTelegram.salva(login, { ...p, attiva: false });
-    res.json({ ok: true, pubblicata: false });
-  }));
-
   // L'anteprima delle tre pagine nella demo (docs/DEMO.md). La demo e' il
   // pannello di chi non e' entrato, e il suo canale finto lo tiene il browser:
   // qui la pagina si rende con lo stesso disegno e le stesse pulizie
@@ -2779,6 +2721,64 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     const login = currentUser(req).login;
     const p = linkPage.get(login);
     if (p) linkPage.salva(login, { ...p, attiva: false });
+    res.json({ ok: true, pubblicata: false });
+  }));
+
+  // ── La porta del gruppo Telegram: lo stesso editor, un altro tavolo ──
+  // Si vede quando lo streamer la pubblica («Salva e pubblica») e il bot ha un
+  // link per far entrare; «Spegni» la toglie senza cancellarla. I pezzi ammessi
+  // sono quelli della porta (TIPI_PAGINA_TELEGRAM).
+  const aspettoPortaInArrivo = (login, v) => (v === 'link' || v === 'suo' ? v : paginaTelegram.get(login)?.aspetto || 'suo');
+  const pubblicaPorta = (p) => ({ headline: p.headline || '', tagline: p.tagline || '', template: p.template || 'minimal',
+    avatar: p.avatar || '', tema: p.tema, blocchi: p.blocchi || [], attiva: !!p.attiva, aggiornata: p.ts || null, aspetto: p.aspetto });
+  app.get('/api/paginatelegram', requireOwner, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const s = streamers.get(login);
+    const display = s?.display || login;
+    const p = paginaTelegram.get(login) || tgPorta.paginaDiPartenza(login, display);
+    const link = linkPage.get(login);
+    res.json({
+      url: scudoTg.urlPorta(login),
+      pubblicata: tgPorta.aperta(login),
+      aspettoLink: link ? { template: link.template, tema: link.tema } : null,
+      templates: TEMPLATE_LINKPAGE, fonts: FONT_LINKPAGE, icone: ICONE_LINKPAGE, tipi: TIPI_PAGINA_TELEGRAM, limiti: LIMITI_LINKPAGE,
+      temaBase: paginaTelegram.pulisci({}).tema,
+      avatarTwitch: await avatarDi(login, { aggiorna: true }),
+      visite: null,
+      suggeriti: [],
+      pagina: pubblicaPorta(p),
+    });
+  }));
+  app.post('/api/paginatelegram', requireOwner, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const b = req.body || {};
+    const inviati = Array.isArray(b.blocchi) ? b.blocchi.length : 0;
+    const p = paginaTelegram.salva(login, {
+      headline: b.headline, tagline: b.tagline, template: b.template, avatar: b.avatar, tema: b.tema,
+      blocchi: b.blocchi, attiva: true, aspetto: aspettoPortaInArrivo(login, b.aspetto),
+    });
+    // la porta appena pubblicata deve avere il suo link: si fa adesso, non al
+    // primo che bussa
+    const c = tgConf.get(login);
+    if (c?.token && c.chat_id) await scudoTg.invito(c, { salva: salvaInvito(login) }).catch(() => null);
+    res.json({ ok: true, url: scudoTg.urlPorta(login), pubblicata: tgPorta.aperta(login), salvati: p?.blocchi?.length || 0, inviati, pagina: pubblicaPorta(p) });
+  }));
+  app.post('/api/paginatelegram/anteprima', requireOwner, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const s = streamers.get(login);
+    const b = req.body || {};
+    const display = s?.display || login;
+    const html = htmlAnteprima('telegram', b, {
+      login, display, avatar: await avatarDi(login), baseUrl: config.baseUrl,
+      aspetto: aspettoPortaInArrivo(login, b.aspetto), link: linkPage.get(login),
+      fuori: tgPorta.opzioniPorta(login, { baseUrl: config.baseUrl, display }),
+    });
+    res.json({ html });
+  }));
+  app.delete('/api/paginatelegram', requireOwner, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const p = paginaTelegram.get(login);
+    if (p) paginaTelegram.salva(login, { ...p, attiva: false });
     res.json({ ok: true, pubblicata: false });
   }));
 

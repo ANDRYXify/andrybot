@@ -239,3 +239,100 @@ Prove: `test/unita/tg-ingresso.test.mjs` (la regola) e
 `test/contratto/tg-cancello.test.mjs` (l'ordine dei gesti, con un Telegram
 finto: il passo indietro dopo un messaggio che non parte e' una prova che gira,
 non una buona intenzione in un commento).
+
+## Lo scudo all'ingresso: una prova prima di entrare
+
+Il cancello qui sopra lavora su chi e' GIA' entrato. Lo scudo lavora un passo
+prima, sulla **richiesta di ingresso**: chi chiede di entrare fa una prova su
+una pagina, e Telegram lo fa entrare solo se la pagina dice «passato».
+
+### Tre strade, una porta ciascuna
+
+1. **Richiesta con il guardiano.** Se nelle impostazioni del gruppo il nostro
+   bot e' il guardiano delle richieste, Telegram ci da' dieci secondi per
+   aprire la pagina dentro Telegram (`sendChatJoinRequestWebApp`). E' la prima
+   cosa che fa il webhook, prima del database e di ogni altra chiamata.
+2. **Richiesta senza guardiano** (gruppo con «Approva nuovi membri», o il link
+   della nostra porta): il bot scrive in privato a chi ha chiesto
+   (`user_chat_id`, cinque minuti per farlo) un messaggio con un tasto che apre
+   la stessa pagina.
+3. **Ingresso diretto** (gruppo pubblico senza approvazione): non c'e' una
+   richiesta, quindi niente scudo. C'e' il cancello, e il pannello lo dice.
+
+Chi entra da una richiesta (`via_join_request`, o un link con
+`creates_join_request`) o e' gia' passato dallo scudo **non** passa dal
+cancello: una porta sola per persona (`tg-ingresso.daRichiesta`,
+`tg-cancello`).
+
+### Invarianti
+
+- **Nessuno entra senza «passa».** L'unica approvazione sta dopo
+  `esitoInvio(...) === 'passa'` (`src/features/tg-scudo.js`). Ogni errore porta
+  a un rifiuto o agli amministratori, mai a un'approvazione.
+- **Un esito per richiesta.** Il passaggio da `attesa` e' un compare-and-set nel
+  database (`tgScudo.chiudi`, `WHERE stato='attesa'`), e la riga si segna PRIMA
+  di dirlo a Telegram: due invii, la scadenza e un amministratore non danno due
+  esiti. Dopo ogni attesa la riga si rilegge.
+- **Nessuna richiesta resta appesa.** Il giro ogni 30 secondi chiude le
+  scadute con l'esito scelto nel pannello. A un guardiano con lo scudo spento si
+  risponde subito `queue`: decidono gli amministratori, come senza bot.
+- **Chi sei lo dice solo la firma.** Persona, gruppo e richiesta vengono
+  dall'`initData` di Telegram, validato con l'HMAC del token del bot di quel
+  canale e vecchio al massimo un'ora (`tgapp.validaInitDataCon`). Dal corpo
+  delle chiamate arrivano ai gesti solo i quattro campi della pagina.
+- **Chi non riesce a vedere la prova non viene rifiutato.** «Non riesco a
+  vederla» manda sempre la richiesta agli amministratori.
+- **Chi e' rifiutato aspetta mezz'ora** prima di poter riprovare.
+- **Dati minimi.** Id Telegram, nome, esito e ora; la bio non si legge. Le righe
+  si potano dopo sette giorni, e lo scarico dei dati non le porta
+  (`esporta.NEGATE`).
+
+### La prova: il codice sta solo nel movimento
+
+Un'immagine con delle lettere storte la legge qualunque programma che legge
+le immagini. Qui non c'e' un'immagine con le lettere: c'e' un campo di
+puntini (160 × 56) che cambia trenta volte al secondo per tre secondi. In
+ogni fotogramma i puntini dentro e fuori dalle lettere sono accesi a caso,
+con la stessa densita': un fotogramma solo, uno screenshot o una foto non
+mostrano niente. Le lettere esistono solo nel **moto**: i puntini delle
+lettere scorrono tutti insieme in una direzione, quelli del fondo in quella
+opposta, e la direzione cambia ogni dieci fotogrammi. L'occhio lo vede subito;
+la media dei fotogrammi (una posa lunga, una foto mossa) no, e le prove lo
+misurano (`test/unita/tg-scudo-prova.test.mjs`).
+
+- Alla pagina arriva un pacchetto di bit (`SBM1`: larghezza, altezza,
+  fotogrammi, fotogrammi al secondo, poi un bit per puntino), mai il codice. I
+  colori li mette la pagina (quelli della porta, o quelli scelti, con un
+  contrasto di almeno 3:1).
+- Tre tentativi per prova, tre prove: poi «non passa».
+- Il confronto e' a tempo costante; maiuscole e spazi non contano.
+
+Onestamente: impossibile in assoluto no. Chi scrive un programma apposta per
+questa prova, confrontando i fotogrammi fra loro, la puo' leggere. Nessuno
+strumento comune lo fa, e ogni tentativo costa: un account Telegram, tre
+prove da tre tentativi, mezz'ora di attesa dopo un no.
+
+### La porta del gruppo
+
+`telegram.<dominio>/<canale>` (sempre anche `/telegram/<canale>`) e' la porta
+pubblica del gruppo: una pagina come la pagina link, con lo stesso editor e
+la stessa veste (`src/features/tg-porta.js`, store `pagina_telegram`). Il link
+per entrare lo fa il bot, uno per gruppo (`scudoTg.invito`): con lo scudo
+acceso chiede l'approvazione, quindi chi entra da li' passa per forza dalla
+prova. La pagina della prova (`/<canale>/verifica`) prende la veste della
+porta; non resta in cache, non si indicizza, non manda referrer.
+
+### Cosa serve
+
+HTTPS, il bot interattivo acceso, il gruppo collegato, il bot amministratore
+con «Invita utenti tramite link», i caratteri della prova sul server. Il
+guardiano e' facoltativo: senza, la prova arriva in privato. Il pannello legge
+tutto dal vivo da Telegram e non accende lo scudo finche' manca una cosa
+grave.
+
+Prove: `test/unita/tg-scudo.test.mjs` (la regola),
+`test/unita/tg-scudo-prova.test.mjs` (la prova in movimento),
+`test/unita/tg-scudo-gesti.test.mjs` (i gesti, con un Telegram finto, gare
+comprese), `test/contratto/tg-scudo-cablaggio.test.mjs` (i fili col server) e
+`scripts/verifica-scudo-tg.mjs` (la pagina vera in un browser, al computer e
+al telefono, con `--selftest`).

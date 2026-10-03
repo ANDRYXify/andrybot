@@ -25,7 +25,7 @@ Ora le rotte li dichiarano al guscio nel punto in cui li servono, e il cancello 
 (`scripts/verifica-porte.mjs`) controlla ogni `import` e ogni `url(` delle pagine pubbliche: un
 modulo nuovo che la demo non riceverebbe nasce rosso.
 
-**L'anteprima delle pagine.** L'editor della pagina link, delle donazioni e del negozio mostra la
+**L'anteprima delle pagine.** L'editor della pagina link, delle donazioni, del negozio e della porta del gruppo Telegram mostra la
 pagina vera: il server la rende con `renderLinkPage` da quello che c'è nell'editor, senza
 salvarla. La rotta vuole la sessione del proprietario, e `apiDemo` non la fingeva: nella demo
 l'anteprima era nera.
@@ -34,7 +34,7 @@ Fingerla nel browser vorrebbe dire una seconda copia del disegno delle pagine, c
 combacia. Quindi la demo chiede la stessa cosa allo stesso disegno, con una porta sua:
 
 ```
-POST /api/demo/anteprima  { quale: link | dona | negozio, pagina, canale }
+POST /api/demo/anteprima  { quale: link | dona | negozio | pannello | telegram, pagina, canale }
 ```
 
 - `pagina` è quello che c'è nell'editor, e passa dalla stessa pulizia del salvataggio
