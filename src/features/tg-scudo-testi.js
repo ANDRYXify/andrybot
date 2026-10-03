@@ -1,0 +1,153 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
+// LE PAROLE DELLO SCUDO, nelle tre lingue: il messaggio in privato, la pagina
+// di verifica, gli esiti.
+//
+// Le dice lo scudo a chi chiede di entrare, non lo streamer: per questo stanno
+// qui. La lingua e' quella di Telegram di chi chiede (language_code), e se non
+// e' una delle tre quella del canale. Nessuna frase presume chi legge: niente
+// «benvenuto» o «sei passato», che dicono di qualcuno se e' maschio o femmina.
+import { LINGUE } from './tg-scudo.js';
+
+const T = {
+  it: {
+    privato: ({ nome, gruppo, minuti }) => `Ciao ${nome}, hai chiesto di entrare in «${gruppo}». Prima una prova veloce: premi qui sotto. Hai ${minuti} minuti.`,
+    tasto: 'Fai la prova',
+    titolo: 'Prima di entrare',
+    sotto: (g) => (g ? `Una prova veloce per entrare in «${g}».` : 'Una prova veloce per entrare nel gruppo.'),
+    tempo: (m) => (m === 1 ? 'Hai ancora un minuto.' : `Hai ancora ${m} minuti.`),
+    prova: 'Leggi il codice che si muove',
+    provaAiuto: 'Le lettere si vedono solo mentre i puntini si muovono: guarda il riquadro un paio di secondi, poi scrivi quello che leggi.',
+    provaVoce: 'Una prova in movimento: le lettere si vedono solo mentre i puntini si muovono.',
+    movimento: 'Hai chiesto di vedere meno movimento: questa prova però si vede solo in movimento. Se ti dà fastidio, premi «Non riesco a vederla».',
+    codice: 'Il codice',
+    altra: (n) => (n === 1 ? 'Un’altra prova (ne resta una)' : `Un’altra prova (ne restano ${n})`),
+    nonRiesco: 'Non riesco a vederla',
+    nonRiescoAiuto: 'La tua richiesta passa agli amministratori del gruppo, e decidono loro.',
+    regole: 'Le regole del gruppo',
+    accetto: 'Ho letto le regole e le rispetto',
+    domande: 'Qualche domanda',
+    entra: 'Entra nel gruppo',
+    attendi: 'Un momento…',
+    carico: 'Preparo la prova…',
+    errori: {
+      vuoto: 'Scrivi il codice che leggi.',
+      regole: 'Per entrare devi accettare le regole.',
+      risposte: 'Rispondi a tutte le domande.',
+      riprova: (n) => `Non è il codice giusto. ${n === 1 ? 'Ti resta un tentativo' : `Ti restano ${n} tentativi`} su questa prova.`,
+      nuova: 'Tentativi finiti su questa prova: eccone un’altra.',
+      cambiato: 'Le domande sono appena cambiate: eccole aggiornate.',
+      rete: 'Non riesco a parlare con il server: riprova fra poco.',
+      disegno: 'La prova non si può mostrare adesso. Premi «Non riesco a vederla»: decidono gli amministratori.',
+    },
+    esiti: {
+      dentro: ['Ci sei', 'Fatto: adesso puoi tornare a Telegram e scrivere nel gruppo.'],
+      no: ['Richiesta rifiutata', 'La prova non è andata. Puoi chiedere di nuovo di entrare fra mezz’ora.'],
+      admin: ['Decidono gli amministratori', 'La tua richiesta è nelle mani degli amministratori del gruppo: ti arriverà la loro risposta.'],
+      scaduta: ['Tempo scaduto', 'La prova è scaduta. Puoi chiedere di nuovo di entrare.'],
+      chiusa: ['Niente da fare qui', 'Non c’è una richiesta di ingresso aperta per te. Per entrare, chiedi di nuovo dal link del gruppo.'],
+      errore: ['Non è andata', 'Hai superato la prova, ma Telegram non mi ha lasciato farti entrare. Chiedi di nuovo l’ingresso: questa volta dovrebbe andare.'],
+      fuori: ['Si apre dentro Telegram', 'È la prova per entrare in un gruppo Telegram: si apre da sola quando chiedi di entrare.'],
+    },
+    chiudi: 'Torna a Telegram',
+  },
+  en: {
+    privato: ({ nome, gruppo, minuti }) => `Hi ${nome}, you asked to join «${gruppo}». First a quick check: tap below. You have ${minuti} minutes.`,
+    tasto: 'Take the check',
+    titolo: 'Before you join',
+    sotto: (g) => (g ? `A quick check to join «${g}».` : 'A quick check to join the group.'),
+    tempo: (m) => (m === 1 ? 'You have one minute left.' : `You have ${m} minutes left.`),
+    prova: 'Read the moving code',
+    provaAiuto: 'The letters only show while the dots move: watch the box for a couple of seconds, then type what you read.',
+    provaVoce: 'A moving check: the letters only show while the dots move.',
+    movimento: 'You asked to see less motion, but this check only shows in motion. If it bothers you, tap «I can’t see it».',
+    codice: 'The code',
+    altra: (n) => (n === 1 ? 'Another check (one left)' : `Another check (${n} left)`),
+    nonRiesco: 'I can’t see it',
+    nonRiescoAiuto: 'Your request goes to the group admins, and they decide.',
+    regole: 'The group rules',
+    accetto: 'I have read the rules and I follow them',
+    domande: 'A few questions',
+    entra: 'Join the group',
+    attendi: 'One moment…',
+    carico: 'Getting the check ready…',
+    errori: {
+      vuoto: 'Type the code you read.',
+      regole: 'To join, you need to accept the rules.',
+      risposte: 'Answer all the questions.',
+      riprova: (n) => `That is not the right code. ${n === 1 ? 'You have one try left' : `You have ${n} tries left`} on this check.`,
+      nuova: 'No tries left on this check: here is another one.',
+      cambiato: 'The questions just changed: here they are, updated.',
+      rete: 'I can’t reach the server: try again shortly.',
+      disegno: 'The check can’t be shown right now. Tap «I can’t see it»: the admins decide.',
+    },
+    esiti: {
+      dentro: ['You are in', 'Done: you can go back to Telegram and write in the group.'],
+      no: ['Request declined', 'The check did not work out. You can ask to join again in half an hour.'],
+      admin: ['The admins decide', 'Your request is in the hands of the group admins: you will get their answer.'],
+      scaduta: ['Time is up', 'The check expired. You can ask to join again.'],
+      chiusa: ['Nothing to do here', 'There is no open join request for you. To join, ask again from the group link.'],
+      errore: ['It did not work', 'You passed the check, but Telegram did not let me add you. Ask to join again: this time it should work.'],
+      fuori: ['It opens inside Telegram', 'This is the check to join a Telegram group: it opens by itself when you ask to join.'],
+    },
+    chiudi: 'Back to Telegram',
+  },
+  es: {
+    privato: ({ nome, gruppo, minuti }) => `Hola, ${nome}: has pedido entrar en «${gruppo}». Antes, una prueba rápida: pulsa abajo. Tienes ${minuti} minutos.`,
+    tasto: 'Hacer la prueba',
+    titolo: 'Antes de entrar',
+    sotto: (g) => (g ? `Una prueba rápida para entrar en «${g}».` : 'Una prueba rápida para entrar en el grupo.'),
+    tempo: (m) => (m === 1 ? 'Te queda un minuto.' : `Te quedan ${m} minutos.`),
+    prova: 'Lee el código que se mueve',
+    provaAiuto: 'Las letras solo se ven mientras los puntos se mueven: mira el recuadro un par de segundos y escribe lo que lees.',
+    provaVoce: 'Una prueba en movimiento: las letras solo se ven mientras los puntos se mueven.',
+    movimento: 'Has pedido ver menos movimiento, pero esta prueba solo se ve en movimiento. Si te molesta, pulsa «No consigo verla».',
+    codice: 'El código',
+    altra: (n) => (n === 1 ? 'Otra prueba (queda una)' : `Otra prueba (quedan ${n})`),
+    nonRiesco: 'No consigo verla',
+    nonRiescoAiuto: 'Tu solicitud pasa a los administradores del grupo, y deciden ellos.',
+    regole: 'Las normas del grupo',
+    accetto: 'He leído las normas y las respeto',
+    domande: 'Unas preguntas',
+    entra: 'Entrar en el grupo',
+    attendi: 'Un momento…',
+    carico: 'Preparando la prueba…',
+    errori: {
+      vuoto: 'Escribe el código que lees.',
+      regole: 'Para entrar tienes que aceptar las normas.',
+      risposte: 'Responde a todas las preguntas.',
+      riprova: (n) => `No es el código correcto. ${n === 1 ? 'Te queda un intento' : `Te quedan ${n} intentos`} en esta prueba.`,
+      nuova: 'Se acabaron los intentos en esta prueba: aquí tienes otra.',
+      cambiato: 'Las preguntas acaban de cambiar: aquí las tienes, actualizadas.',
+      rete: 'No consigo hablar con el servidor: inténtalo de nuevo en un momento.',
+      disegno: 'La prueba no se puede mostrar ahora. Pulsa «No consigo verla»: deciden los administradores.',
+    },
+    esiti: {
+      dentro: ['Ya estás dentro', 'Hecho: puedes volver a Telegram y escribir en el grupo.'],
+      no: ['Solicitud rechazada', 'La prueba no ha salido bien. Puedes volver a pedir entrar dentro de media hora.'],
+      admin: ['Deciden los administradores', 'Tu solicitud está en manos de los administradores del grupo: te llegará su respuesta.'],
+      scaduta: ['Se acabó el tiempo', 'La prueba ha caducado. Puedes volver a pedir entrar.'],
+      chiusa: ['Nada que hacer aquí', 'No hay ninguna solicitud de entrada abierta para ti. Para entrar, pídelo de nuevo desde el enlace del grupo.'],
+      errore: ['No ha salido bien', 'Has superado la prueba, pero Telegram no me ha dejado meterte. Pide entrar de nuevo: esta vez debería funcionar.'],
+      fuori: ['Se abre dentro de Telegram', 'Es la prueba para entrar en un grupo de Telegram: se abre sola cuando pides entrar.'],
+    },
+    chiudi: 'Volver a Telegram',
+  },
+};
+
+export const testiScudo = (l) => T[LINGUE.includes(l) ? l : 'it'];
+
+// Le parole fisse della pagina, gia' fatte: le funzioni non viaggiano in JSON.
+// Quelle che dipendono da un numero (i tentativi che restano, le prove che
+// restano) le scrive il server nella risposta a cui servono.
+export function testiPagina(l, { gruppo = '' } = {}) {
+  const t = testiScudo(l);
+  const { riprova, ...errori } = t.errori;
+  return {
+    titolo: t.titolo, sotto: t.sotto(gruppo),
+    prova: t.prova, provaAiuto: t.provaAiuto, provaVoce: t.provaVoce, movimento: t.movimento,
+    codice: t.codice, nonRiesco: t.nonRiesco, nonRiescoAiuto: t.nonRiescoAiuto,
+    regole: t.regole, accetto: t.accetto, domande: t.domande, entra: t.entra, attendi: t.attendi, carico: t.carico,
+    errori, esiti: t.esiti, chiudi: t.chiudi,
+  };
+}

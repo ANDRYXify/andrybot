@@ -41,6 +41,16 @@ export function redirectUri() { return config.telegramApp?.redirectUri || ''; }
 export function validaInitData(initData, maxAgeSec = 86400) {
   const token = config.telegramApp?.botToken;
   if (!token) return { ok: false, motivo: 'mini app non configurata' };
+  return validaInitDataCon(token, initData, maxAgeSec);
+}
+
+// La stessa validazione con la chiave di un bot qualsiasi. Lo scudo all'ingresso
+// apre la pagina dal bot dello STREAMER, non da quello della piattaforma: la
+// firma va controllata con il token di quel bot, e solo con quello. Oltre a chi
+// sei, initData porta (firmati anche loro) il gruppo e il query_id della
+// richiesta di ingresso, quando la pagina l'ha aperta un guardiano.
+export function validaInitDataCon(token, initData, maxAgeSec = 86400, ora = Date.now()) {
+  if (!token) return { ok: false, motivo: 'bot non collegato' };
   if (!initData || typeof initData !== 'string') return { ok: false, motivo: 'initData mancante' };
 
   let params;
@@ -63,13 +73,16 @@ export function validaInitData(initData, maxAgeSec = 86400) {
   if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return { ok: false, motivo: 'firma non valida' };
 
   const authDate = Number(params.get('auth_date')) || 0;
-  if (maxAgeSec > 0 && authDate > 0 && (Date.now() / 1000 - authDate) > maxAgeSec) {
+  if (maxAgeSec > 0 && authDate > 0 && (ora / 1000 - authDate) > maxAgeSec) {
     return { ok: false, motivo: 'sessione Telegram scaduta' };
   }
 
   let user = null;
   try { user = JSON.parse(params.get('user') || 'null'); } catch { /* niente */ }
   if (!user?.id) return { ok: false, motivo: 'utente assente' };
+
+  let chat = null;
+  try { chat = JSON.parse(params.get('chat') || 'null'); } catch { /* niente */ }
 
   return { ok: true, authDate, user: {
     id: String(user.id),
@@ -78,7 +91,9 @@ export function validaInitData(initData, maxAgeSec = 86400) {
     username: user.username || '',
     language_code: user.language_code || '',
     photo_url: user.photo_url || '',
-  } };
+  },
+  chat: chat?.id ? { id: String(chat.id), type: String(chat.type || ''), title: String(chat.title || '') } : null,
+  queryRichiesta: String(params.get('chat_join_request_query_id') || '') };
 }
 
 // ─────────────────────────────────────────────────────────────── OIDC (browser)

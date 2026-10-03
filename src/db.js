@@ -602,6 +602,25 @@ CREATE TABLE IF NOT EXISTS tg_attesa (    -- chi e' entrato nel gruppo e deve an
   PRIMARY KEY (channel, chat_id, tg_user_id)
 );
 CREATE INDEX IF NOT EXISTS idx_tgattesa_scad ON tg_attesa(scad);
+CREATE TABLE IF NOT EXISTS tg_scudo (     -- chi ha CHIESTO di entrare nel gruppo e passa dalla pagina dello scudo
+  channel TEXT NOT NULL,                   -- login twitch (proprietario del bot)
+  chat_id TEXT NOT NULL,                   -- il gruppo
+  tg_user_id TEXT NOT NULL,                -- chi chiede
+  nome TEXT NOT NULL DEFAULT '',           -- il nome Telegram, per riconoscerlo nel pannello
+  titolo TEXT NOT NULL DEFAULT '',         -- il nome del gruppo, per dirlo nella pagina
+  lingua TEXT NOT NULL DEFAULT '',         -- la lingua della pagina
+  query_id TEXT NOT NULL DEFAULT '',       -- la richiesta data al guardiano ('' se la pagina e' arrivata in privato)
+  stato TEXT NOT NULL DEFAULT 'attesa',    -- attesa | passata | bocciata | admin | dentro | errore
+  motivo TEXT NOT NULL DEFAULT '',         -- perche' e' finita cosi' (prova, domande, scaduta, aiuto…)
+  codice TEXT NOT NULL DEFAULT '',         -- la prova dell'immagine di adesso ('' = da chiedere)
+  tentativi INTEGER NOT NULL DEFAULT 0,    -- sull'immagine di adesso
+  immagini INTEGER NOT NULL DEFAULT 0,
+  scad INTEGER NOT NULL DEFAULT 0,         -- quando scade l'attesa
+  ts INTEGER NOT NULL DEFAULT 0,           -- quando ha chiesto
+  fine INTEGER NOT NULL DEFAULT 0,         -- quando e' finita
+  PRIMARY KEY (channel, chat_id, tg_user_id)
+);
+CREATE INDEX IF NOT EXISTS idx_tgscudo_scad ON tg_scudo(stato, scad);
 CREATE TABLE IF NOT EXISTS morti_schede (   -- la libreria delle schermate, di tutti
   id TEXT PRIMARY KEY,
   radice TEXT NOT NULL DEFAULT '',         -- la prima versione di questa cosa: e' lei che si segue
@@ -1058,6 +1077,10 @@ aggiungiColonna('telegram', 'ingresso_minuti', 'INTEGER NOT NULL DEFAULT 5');
 aggiungiColonna('telegram', 'ingresso_scaduto', "TEXT NOT NULL DEFAULT 'caccia'");
 aggiungiColonna('telegram', 'ingresso_testo', "TEXT NOT NULL DEFAULT ''");
 aggiungiColonna('telegram', 'ingresso_tasto', "TEXT NOT NULL DEFAULT ''");
+// Lo scudo all'ingresso: le impostazioni (JSON, normalizzate da tg-scudo.js) e
+// il link d'invito del bot per la porta pubblica ({chat, url, richiesta}).
+aggiungiColonna('telegram', 'scudo', "TEXT NOT NULL DEFAULT ''");
+aggiungiColonna('telegram', 'scudo_invito', "TEXT NOT NULL DEFAULT ''");
 // Il gruppo che e' gia' diventato una destinazione degli avvisi (tgDest.migra).
 aggiungiColonna('telegram', 'migrato_chat', "TEXT NOT NULL DEFAULT ''");
 // Il premio in VIP non scade piu' a calendario ma a DIRETTE: un premio che
@@ -3775,6 +3798,14 @@ export const tgConf = {
       .run(v.ingresso, v.minuti, v.scaduto, v.testo, v.tasto, c);
     return this.get(c);
   },
+  // Lo scudo all'ingresso: le impostazioni arrivano gia' normalizzate.
+  setScudo(channel, scudo) {
+    db.prepare('UPDATE telegram SET scudo=? WHERE channel=?').run(JSON.stringify(scudo || {}), String(channel).toLowerCase());
+  },
+  setInvito(channel, invito) {
+    db.prepare('UPDATE telegram SET scudo_invito=? WHERE channel=?')
+      .run(invito ? JSON.stringify({ chat: String(invito.chat || ''), url: String(invito.url || ''), richiesta: !!invito.richiesta }) : '', String(channel).toLowerCase());
+  },
   setInterattivo(channel, attivo, secret) {
     db.prepare('UPDATE telegram SET interattivo=?, webhook_secret=? WHERE channel=?')
       .run(attivo ? 1 : 0, String(secret || ''), String(channel).toLowerCase());
@@ -3890,6 +3921,74 @@ export const tgAttesa = {
   },
   quanti(channel) {
     return db.prepare('SELECT COUNT(*) n FROM tg_attesa WHERE channel=?').get(String(channel).toLowerCase())?.n || 0;
+  },
+};
+
+// CHI HA CHIESTO DI ENTRARE e passa dalla pagina dello scudo (tg-scudo.js).
+//
+// Nel database e non in memoria: una richiesta va chiusa anche se il processo
+// si riavvia nel mezzo, e nessuna deve restare appesa.
+//
+// Il cambio di stato e' UNO: `chiudi` passa da 'attesa' a un esito solo se la
+// riga e' ancora in attesa (confronto e scrittura nella stessa istruzione).
+// Due invii insieme, o un invio e la scadenza, non danno due esiti: il secondo
+// trova la riga gia' chiusa e non fa niente.
+const _tgs = (r) => (r ? { ...r } : null);
+// Quante prove (immagini) al massimo per richiesta: lo stesso numero di
+// tg-scudo.js (IMMAGINI), ripetuto qui perche' il database non importa le
+// regole; una prova lo tiene allineato.
+export const PROVE_SCUDO = 3;
+export const tgScudo = {
+  apri({ channel, chatId, userId, nome = '', titolo = '', lingua = '', queryId = '', scad = 0, ora = now() }) {
+    db.prepare(`INSERT INTO tg_scudo (channel, chat_id, tg_user_id, nome, titolo, lingua, query_id, stato, motivo, codice, tentativi, immagini, scad, ts, fine)
+      VALUES (?,?,?,?,?,?,?,'attesa','','',0,0,?,?,0)
+      ON CONFLICT(channel, chat_id, tg_user_id) DO UPDATE SET nome=excluded.nome, titolo=excluded.titolo, lingua=excluded.lingua, query_id=excluded.query_id,
+        stato='attesa', motivo='', codice='', tentativi=0, immagini=0, scad=excluded.scad, ts=excluded.ts, fine=0`)
+      .run(String(channel).toLowerCase(), String(chatId), String(userId), String(nome || '').slice(0, 64), String(titolo || '').slice(0, 128),
+        String(lingua || '').slice(0, 2), String(queryId || ''), Number(scad) || 0, Number(ora) || now());
+    return this.prendi(channel, chatId, userId);
+  },
+  prendi(channel, chatId, userId) {
+    return _tgs(db.prepare('SELECT * FROM tg_scudo WHERE channel=? AND chat_id=? AND tg_user_id=?')
+      .get(String(channel).toLowerCase(), String(chatId), String(userId)));
+  },
+  // una prova nuova: codice nuovo, tentativi da capo, un'immagine in piu'
+  nuovaProva(channel, chatId, userId, codice) {
+    return db.prepare(`UPDATE tg_scudo SET codice=?, tentativi=0, immagini=immagini+1
+      WHERE channel=? AND chat_id=? AND tg_user_id=? AND stato='attesa' AND immagini<?`)
+      .run(String(codice), String(channel).toLowerCase(), String(chatId), String(userId), PROVE_SCUDO).changes === 1;
+  },
+  // un tentativo sbagliato; `spento` toglie il codice (tentativi finiti su quell'immagine)
+  sbagliato(channel, chatId, userId, tentativi, spento) {
+    db.prepare(`UPDATE tg_scudo SET tentativi=?${spento ? ", codice=''" : ''}
+      WHERE channel=? AND chat_id=? AND tg_user_id=? AND stato='attesa'`)
+      .run(Number(tentativi) || 0, String(channel).toLowerCase(), String(chatId), String(userId));
+  },
+  chiudi(channel, chatId, userId, stato, motivo = '', ora = now()) {
+    return db.prepare(`UPDATE tg_scudo SET stato=?, motivo=?, codice='', fine=?
+      WHERE channel=? AND chat_id=? AND tg_user_id=? AND stato='attesa'`)
+      .run(String(stato), String(motivo || '').slice(0, 40), Number(ora) || now(), String(channel).toLowerCase(), String(chatId), String(userId)).changes === 1;
+  },
+  // dopo la chiusura: com'e' andata davvero con Telegram (errore se non ha voluto)
+  esito(channel, chatId, userId, stato, motivo = '') {
+    db.prepare('UPDATE tg_scudo SET stato=?, motivo=? WHERE channel=? AND chat_id=? AND tg_user_id=?')
+      .run(String(stato), String(motivo || '').slice(0, 40), String(channel).toLowerCase(), String(chatId), String(userId));
+  },
+  scaduti(ora = now(), limite = 50) {
+    return db.prepare("SELECT * FROM tg_scudo WHERE stato='attesa' AND scad>0 AND scad<=? ORDER BY scad LIMIT ?")
+      .all(Number(ora) || now(), limite | 0).map(_tgs);
+  },
+  recenti(channel, limite = 20) {
+    return db.prepare('SELECT channel, chat_id, tg_user_id, nome, stato, motivo, ts, fine FROM tg_scudo WHERE channel=? ORDER BY ts DESC LIMIT ?')
+      .all(String(channel).toLowerCase(), limite | 0);
+  },
+  inAttesa(channel) {
+    return db.prepare("SELECT COUNT(*) n FROM tg_scudo WHERE channel=? AND stato='attesa'").get(String(channel).toLowerCase())?.n || 0;
+  },
+  // le richieste finite si tengono una settimana: abbastanza per vederle nel
+  // pannello, non di piu'
+  pota(prima) {
+    return db.prepare("DELETE FROM tg_scudo WHERE stato<>'attesa' AND ts<?").run(Number(prima) || 0).changes;
   },
 };
 

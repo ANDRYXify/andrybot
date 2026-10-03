@@ -16,7 +16,7 @@
 //      non e' uno stato in cui questo codice puo' lasciare qualcuno.
 //   4. solo adesso si segna l'attesa.
 import * as telegramVero from './telegram.js';
-import { tgAttesa as attesaVera } from '../db.js';
+import { tgAttesa as attesaVera, tgScudo as scudoVero } from '../db.js';
 import { makeLog } from '../logger.js';
 import {
   chiEntra, tastiera, testoBenvenuto, permessiDi, MUTO, inMinuti,
@@ -29,17 +29,23 @@ const ora = () => Date.now();
 // Telegram e il database arrivano da fuori, con dentro i veri. Non e' un vezzo:
 // e' l'unico modo per mettere alla prova l'ORDINE dei gesti — che e' la cosa che
 // qui conta piu' di ogni altra — senza un gruppo vero e senza rete.
-const _con = (d = {}) => ({ telegram: d.telegram || telegramVero, attesa: d.attesa || attesaVera });
+const _con = (d = {}) => ({ telegram: d.telegram || telegramVero, attesa: d.attesa || attesaVera, scudo: d.scudo || scudoVero });
 
 export const acceso = (conf) => !!(conf && conf.ingresso && conf.token && conf.interattivo);
 
 // Qualcuno e' entrato. Torna cosa e' successo, cosi' chi chiama puo' dirlo (e il
 // collaudo puo' guardarlo) invece di doverlo indovinare dagli effetti.
 export async function entrato(conf, update, deps) {
-  const { telegram, attesa } = _con(deps);
+  const { telegram, attesa, scudo } = _con(deps);
   if (!acceso(conf)) return { che: 'spento' };
   const e = chiEntra(update);
   if (!e) return { che: 'nessuno' };
+  // Passato dallo scudo, o fatto entrare da un amministratore mentre lo scudo
+  // lo aspettava: e' gia' passato da una porta. Lo dice il nostro database, non
+  // solo i campi di Telegram: una porta sola per persona non deve dipendere da
+  // come Telegram racconta un'approvazione.
+  const s = scudo.prendi(conf.channel, e.chatId, e.userId);
+  if (s && (s.stato === 'passata' || s.stato === 'dentro')) return { che: 'scudo' };
 
   const info = await telegram.infoChat(conf.token, e.chatId);
   const permessi = permessiDi(info.chat);

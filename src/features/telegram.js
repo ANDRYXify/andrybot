@@ -61,7 +61,10 @@ export async function validaToken(token) {
   if (!r.ok) return { ok: false, errore: r.errore };
   // l'id serve a chiedere a Telegram cosa puo' fare il bot DENTRO un gruppo:
   // getChatMember vuole un id, non uno username
-  return { ok: true, id: String(r.result?.id || ''), username: r.result?.username || '', nome: r.result?.first_name || '' };
+  // `richieste`: il bot puo' fare da guardiano delle richieste di ingresso
+  // (Bot API 10.1), cioe' aprire la pagina dello scudo appena uno chiede
+  return { ok: true, id: String(r.result?.id || ''), username: r.result?.username || '', nome: r.result?.first_name || '',
+    richieste: !!r.result?.supports_join_request_queries };
 }
 
 // --------------------------------------------------------- scelta del gruppo
@@ -230,8 +233,11 @@ export async function rilevaDestinazioni(token) {
 // precedente: un tipo di update non elencato qui non arriva mai, e chi lo
 // aspetta resta ad aspettare senza un errore da nessuna parte. `chat_member`
 // serve a sapere chi entra nel gruppo, `callback_query` a sapere chi preme un
-// tasto, `my_chat_member` a sapere quando il bot stesso entra o viene promosso.
-export const UPDATE_VOLUTI = ['message', 'callback_query', 'chat_member', 'my_chat_member'];
+// tasto, `my_chat_member` a sapere quando il bot stesso entra o viene promosso,
+// `chat_join_request` a sapere chi CHIEDE di entrare (lo scudo, tg-scudo.js).
+// All'avvio i webhook si registrano di nuovo (server.js), quindi un tipo
+// aggiunto qui arriva a tutti col primo riavvio.
+export const UPDATE_VOLUTI = ['message', 'callback_query', 'chat_member', 'my_chat_member', 'chat_join_request'];
 export async function impostaWebhook(token, url, secret) {
   return tgCall(token, 'setWebhook', {
     post: true,
@@ -276,6 +282,8 @@ export async function ioNelGruppo(token, chatId, botId) {
     admin: m.status === 'administrator' || m.status === 'creator',
     possoLimitare: !!m.can_restrict_members || m.status === 'creator',
     possoCancellare: !!m.can_delete_messages || m.status === 'creator',
+    // approvare e rifiutare le richieste, e fare i link d'invito
+    possoInvitare: !!m.can_invite_users || m.status === 'creator',
   };
 }
 
@@ -296,6 +304,38 @@ export async function cacciaMembro(token, chatId, userId) {
   if (!r.ok) return r;
   await tgCall(token, 'unbanChatMember', { post: true, params: { chat_id: chatId, user_id: userId, only_if_banned: true } });
   return { ok: true };
+}
+
+// --------------------------------------------------------- lo scudo all'ingresso
+// Chi CHIEDE di entrare (tg-scudo.js). Senza guardiano si risponde col
+// gruppo e la persona; col guardiano, col query_id che Telegram ha dato al bot.
+export async function approvaRichiesta(token, chatId, userId) {
+  return tgCall(token, 'approveChatJoinRequest', { post: true, params: { chat_id: chatId, user_id: userId } });
+}
+export async function rifiutaRichiesta(token, chatId, userId) {
+  return tgCall(token, 'declineChatJoinRequest', { post: true, params: { chat_id: chatId, user_id: userId } });
+}
+// esito: 'approve' | 'decline' | 'queue' (decidono gli amministratori)
+const RISPOSTE_RICHIESTA = new Set(['approve', 'decline', 'queue']);
+export async function rispondiRichiesta(token, queryId, esito) {
+  if (!RISPOSTE_RICHIESTA.has(esito)) return { ok: false, errore: 'esito sconosciuto' };
+  return tgCall(token, 'answerChatJoinRequestQuery', { post: true, params: { chat_join_request_query_id: queryId, result: esito } });
+}
+// Il guardiano ha dieci secondi: questa e' la chiamata che li usa, e ha un
+// tetto suo piu' corto di quello di tutte le altre.
+export async function mostraVerifica(token, queryId, url) {
+  return tgCall(token, 'sendChatJoinRequestWebApp', { post: true, attesa: 8000, params: { chat_join_request_query_id: queryId, web_app_url: url } });
+}
+// Il link d'invito del bot: uno per gruppo, e la richiesta di approvazione la
+// decide lo scudo. Si cambia lo stesso link invece di farne uno nuovo: chi
+// l'ha gia' trovato sulla porta non si ritrova in mano un link morto.
+export async function creaInvito(token, chatId, { richiesta = false, nome = 'SocialBot' } = {}) {
+  const r = await tgCall(token, 'createChatInviteLink', { post: true, params: { chat_id: chatId, name: String(nome).slice(0, 32), creates_join_request: !!richiesta } });
+  return r.ok ? { ok: true, url: String(r.result?.invite_link || ''), richiesta: !!r.result?.creates_join_request } : r;
+}
+export async function cambiaInvito(token, chatId, url, { richiesta = false, nome = 'SocialBot' } = {}) {
+  const r = await tgCall(token, 'editChatInviteLink', { post: true, params: { chat_id: chatId, invite_link: url, name: String(nome).slice(0, 32), creates_join_request: !!richiesta } });
+  return r.ok ? { ok: true, url: String(r.result?.invite_link || url), richiesta: !!r.result?.creates_join_request, revocato: !!r.result?.is_revoked } : r;
 }
 
 // La risposta alla pressione di un tasto. Telegram tiene la rotellina addosso al

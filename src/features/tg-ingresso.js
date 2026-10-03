@@ -61,13 +61,19 @@ const GRUPPI = new Set(['group', 'supergroup']);
 
 // Chi e' ENTRATO adesso, o null. Un amministratore aggiunto direttamente come
 // amministratore non passa dal cancello: non e' uno che entra, e' uno che gia'
-// comanda.
+// comanda. E nemmeno chi entra da una RICHIESTA: e' gia' passato da una porta
+// (lo scudo, tg-scudo.js, o un amministratore che l'ha approvato), e una
+// persona passa da una porta sola. Telegram lo dice in due modi: approvato
+// senza link (via_join_request) o entrato da un link che chiede
+// l'approvazione (invite_link.creates_join_request).
+export const daRichiesta = (cm) => !!(cm?.via_join_request || cm?.invite_link?.creates_join_request);
 export function chiEntra(update) {
   const cm = update?.chat_member;
   const chat = cm?.chat;
   if (!chat || !GRUPPI.has(String(chat.type || ''))) return null;
   if (!FUORI.has(String(cm.old_chat_member?.status || ''))) return null;
   if (!DENTRO.has(String(cm.new_chat_member?.status || ''))) return null;
+  if (daRichiesta(cm)) return null;
   const u = cm.new_chat_member?.user;
   if (!u || !u.id || u.is_bot) return null;
   return {
