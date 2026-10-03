@@ -112,9 +112,15 @@ export function canaleDemo(grezzo) {
 
 // I dati della porta del canale finto: gli stessi che datiPorta (tg-porta.js)
 // legge dal database per un canale vero. Il link d'invito e' un esempio: la
-// demo non ha un bot che lo possa fare.
+// demo non ha un bot che lo possa fare, quindi nemmeno la prova si apre
+// (`demo`: la pagina lo dice); gli esiti si guardano lo stesso.
 export function datiPortaDemo(ch, { baseUrl = '' } = {}) {
   return {
+    canale: ch.login,
+    modo: 'web',
+    demo: true,
+    prova: ch.telegram.scudo,
+    coloriScudo: { modo: 'pagina' },
     lingua: ch.lingua,
     nome: ch.display,
     url: `${baseUrl}/telegram/${ch.login}`,

@@ -1268,7 +1268,6 @@ function apiDemo(percorso, opzioni = {}) {
   if (via.startsWith('/api/streamer/moduli') && metodo !== 'GET' && !via.endsWith('/prova')) return Promise.resolve(_demoModuli(metodo, via, opzioni.body || {}));
   if (via.startsWith('/api/streamer/negozio')) return Promise.resolve(_demoNegozio(metodo, via, opzioni.body));
   if (via === '/api/streamer/telegram/scudo') return Promise.resolve(_demoScudoTg(metodo, opzioni.body));
-  if (via === '/api/streamer/telegram/scudo/anteprima') return Promise.resolve({ html: `<!DOCTYPE html><html lang="${LINGUA || 'it'}"><head><meta charset="utf-8"><style>body{font:16px/1.5 system-ui,sans-serif;margin:0;padding:1.5rem;background:#0f0d14;color:#f4f2f8}</style></head><body><p>${esc(L('Nella demo la prova non si apre: serve un bot Telegram collegato. Col tuo canale, qui vedi la pagina vera, con quello che hai scritto.', 'In the demo the check does not open: it needs a connected Telegram bot. With your channel, here you see the real page, with what you wrote.', 'En la demo la prueba no se abre: hace falta un bot de Telegram conectado. Con tu canal, aquí ves la página real, con lo que has escrito.'))}</p></body></html>` });
   if (_DEMO_ANTEPRIMA[via]) return _demoAnteprima(_DEMO_ANTEPRIMA[via], opzioni.body);
   const pan = /^\/api\/paginapannello\/([a-z0-9-]{1,24})(\/anteprima)?$/.exec(via);
   if (pan) return pan[2] ? _demoAnteprima('pannello', opzioni.body) : Promise.resolve(_demoPaginaPannello(metodo, pan[1], opzioni.body || {}));
@@ -23786,6 +23785,23 @@ function lpLeggiBlocco(t) {
   const i = Number(t.dataset.lpb); const b = LP.blocchi[i]; if (!b) return;
   const campo = t.dataset.lpf;
 
+  if (campo && campo.startsWith('prova.')) {
+    const via = campo.split('.').slice(1);
+    b.prova = b.prova && typeof b.prova === 'object' ? b.prova : {};
+    let o = b.prova;
+    for (const k of via.slice(0, -1)) { o[k] = o[k] && typeof o[k] === 'object' ? o[k] : {}; o = o[k]; }
+    o[via[via.length - 1]] = t.value;
+    if (campo === 'prova.colori.modo') {
+      b.prova.colori.punti ||= '#1d1a26';
+      b.prova.colori.fondo ||= '#f6f3ee';
+      const miei = t.closest('[data-lp-prova-dett]')?.querySelector('[data-lp-prova-miei]');
+      if (miei) miei.hidden = t.value !== 'miei';
+    }
+    const nota = t.closest('[data-lp-prova-dett]')?.querySelector('[data-lp-prova-nota]');
+    if (nota) nota.textContent = lpProvaColoriNota(b.prova);
+    return;
+  }
+
   if (campo && campo.startsWith('voce')) {
     const j = Number(t.dataset.lpv); const v = b.voci?.[j]; if (!v) return;
     const sotto = campo.slice(4).toLowerCase();
@@ -23876,7 +23892,8 @@ function lpCampiTelegram(b, i, d) {
     return `${riga('titolo', d.limiti.label, L('Titolo (vuoto: il nome del gruppo)', 'Heading (empty: the group name)', 'Título (vacío: el nombre del grupo)'))}
       ${riga('testo', d.limiti.sotto, L('Una riga sul gruppo (vuota: una di serie)', 'A line about the group (empty: a standard one)', 'Una línea sobre el grupo (vacía: una estándar)'))}
       ${riga('tasto', d.limiti.label, L('Cosa c\'è scritto sul tasto (vuoto: «Entra nel gruppo»)', 'What the button says (empty: «Join the group»)', 'Qué pone en el botón (vacío: «Entrar en el grupo»)'))}
-      <p class="suggerimento">${L('Il tasto porta al link del tuo bot: con lo scudo acceso quel link chiede di entrare, quindi chi passa da qui fa la prova. Il link lo fa il bot da solo.', 'The button leads to your bot\'s link: with the shield on that link asks to join, so whoever comes through here takes the check. The bot makes the link by itself.', 'El botón lleva al enlace de tu bot: con el escudo encendido ese enlace pide entrar, así que quien pasa por aquí hace la prueba. El enlace lo crea el bot solo.')}</p>`;
+      <p class="suggerimento">${L('Con lo scudo spento il tasto porta dritto nel gruppo. Con lo scudo acceso apre la prova qui, sulla porta: chi la supera riceve un link tutto suo, per una persona, ed entra senza chiedere. I link li fa il bot da solo.', 'With the shield off the button leads straight into the group. With the shield on it opens the check right here, on the door: whoever passes it gets a link of their own, for one person, and joins without asking. The bot makes the links by itself.', 'Con el escudo apagado el botón lleva directo al grupo. Con el escudo encendido abre la prueba aquí, en la puerta: quien la supera recibe un enlace propio, para una persona, y entra sin pedirlo. Los enlaces los crea el bot solo.')}</p>
+      ${lpProvaHtml(b, i)}`;
   }
   if (b.tipo === 'scudo') {
     return `${riga('titolo', d.limiti.label, L('Titolo (vuoto: «Come si entra»)', 'Heading (empty: «How to join»)', 'Título (vacío: «Cómo se entra»)'))}
@@ -23885,6 +23902,89 @@ function lpCampiTelegram(b, i, d) {
   }
   return `${riga('titolo', d.limiti.label, L('Titolo (vuoto: «Le regole del gruppo»)', 'Heading (empty: «The group rules»)', 'Título (vacío: «Las normas del grupo»)'))}
       <p class="suggerimento">${L('Il testo è quello delle regole dello scudo: lo scrivi una volta sola, in «Scudo all\'ingresso», e vale qui e nella prova.', 'The text is the shield rules: you write it once, in «Entry shield», and it counts here and in the check.', 'El texto es el de las normas del escudo: lo escribes una sola vez, en «Escudo de entrada», y vale aquí y en la prueba.')}</p>`;
+}
+
+const PROVA_PAROLE = () => [
+  ['titolo', 60, L('Il titolo della prova', 'The check heading', 'El título de la prueba'), L('Leggi il codice che si muove', 'Read the moving code', 'Lee el código que se mueve')],
+  ['aiuto', 200, L('La spiegazione', 'The explanation', 'La explicación'), L('Le lettere si vedono solo mentre i puntini si muovono…', 'The letters only show while the dots move…', 'Las letras solo se ven mientras los puntos se mueven…')],
+  ['tasto', 60, L('Il tasto per entrare', 'The join button', 'El botón para entrar'), L('Entra nel gruppo', 'Join the group', 'Entrar en el grupo')],
+  ['fattoTitolo', 60, L('Superata: il titolo', 'Passed: the heading', 'Superada: el título'), L('Prova superata', 'Check passed', 'Prueba superada')],
+  ['fattoTesto', 240, L('Superata: il testo', 'Passed: the text', 'Superada: el texto'), L('Apri Telegram ed entra nel gruppo: il link è tuo…', 'Open Telegram and join the group: the link is yours…', 'Abre Telegram y entra en el grupo: el enlace es tuyo…')],
+  ['apri', 40, L('Il tasto per aprire Telegram', 'The button that opens Telegram', 'El botón que abre Telegram'), L('Apri Telegram', 'Open Telegram', 'Abrir Telegram')],
+  ['noTesto', 240, L('Non superata: il testo', 'Not passed: the text', 'No superada: el texto'), L('La prova non è andata. Puoi rifarla da capo.', 'The check did not work out. You can take it again from the start.', 'La prueba no ha salido bien. Puedes repetirla desde el principio.')],
+  ['adminTesto', 240, L('Agli amministratori: il testo', 'To the admins: the text', 'A los administradores: el texto'), L('Apri Telegram e chiedi di entrare da qui: decidono gli amministratori.', 'Open Telegram and ask to join from here: the admins decide.', 'Abre Telegram y pide entrar desde aquí: deciden los administradores.')],
+];
+let _lpProvaAperta = false;
+let _lpProvaVista = '';
+function lpProvaHtml(b, i) {
+  const pr = b.prova && typeof b.prova === 'object' ? b.prova : {};
+  const col = pr.colori || {};
+  const miei = col.modo === 'miei';
+  const vedi = (cosa, testo, ico = '') => `<button type="button" class="btn secondario mini" data-lp-prova="${cosa}">${ico}${testo}</button>`;
+  return `<details class="lp-prova" data-lp-prova-dett${_lpProvaAperta ? ' open' : ''}>
+    <summary>${L('La prova, con lo scudo acceso', 'The check, with the shield on', 'La prueba, con el escudo encendido')}</summary>
+    <p class="suggerimento">${L('È un pezzo di questa pagina: prende i suoi caratteri, i colori dei tasti e lo sfondo. Le regole, le domande e i minuti stanno nello scudo.', 'It is a piece of this page: it takes its fonts, button colors and background. The rules, questions and minutes live in the shield.', 'Es una pieza de esta página: toma sus fuentes, los colores de los botones y el fondo. Las normas, las preguntas y los minutos están en el escudo.')}</p>
+    <div class="riga-flessibile">
+      ${vedi('apri', L('Fai la prova', 'Take the check', 'Hacer la prueba'), _bIco(ICO.occhio))}
+      ${vedi('dentro', L('Superata', 'Passed', 'Superada'))}
+      ${vedi('no', L('Non superata', 'Not passed', 'No superada'))}
+      ${vedi('admin', L('Agli amministratori', 'To the admins', 'A los administradores'))}
+      ${vedi('chiudi', L('Torna alla pagina', 'Back to the page', 'Volver a la página'))}
+    </div>
+    <h4 class="spazio-sopra">${L('Le parole', 'The words', 'Las palabras')}</h4>
+    <p class="suggerimento">${L('Vuote: quelle di serie, nella lingua della porta.', 'Empty: the standard ones, in the door’s language.', 'Vacías: las estándar, en el idioma de la puerta.')}</p>
+    ${PROVA_PAROLE().map(([k, max, et, ph]) => `<label class="campo" for="lp-prova-${i}-${k}">${et}</label>
+      <input type="text" id="lp-prova-${i}-${k}" data-lpb="${i}" data-lpf="prova.${k}" maxlength="${max}" value="${esc(pr[k] || '')}" placeholder="${esc(ph)}">`).join('')}
+    <h4 class="spazio-sopra">${L('Come appare', 'How it looks', 'Cómo se ve')}</h4>
+    <div class="griglia-campi">
+      <div><label class="campo" for="lp-prova-${i}-grandezza">${L('Grandezza del riquadro', 'Box size', 'Tamaño del recuadro')}</label>
+        <select id="lp-prova-${i}-grandezza" data-lpb="${i}" data-lpf="prova.grandezza">
+          ${[['normale', L('Normale', 'Normal', 'Normal')], ['grande', L('Grande', 'Large', 'Grande')], ['piena', L('Tutta la larghezza', 'Full width', 'Todo el ancho')]]
+            .map(([v, n]) => `<option value="${v}"${(pr.grandezza || 'normale') === v ? ' selected' : ''}>${n}</option>`).join('')}
+        </select></div>
+      <div><label class="campo" for="lp-prova-${i}-colori">${L('Colori dei puntini', 'Dot colors', 'Colores de los puntos')}</label>
+        <select id="lp-prova-${i}-colori" data-lpb="${i}" data-lpf="prova.colori.modo">
+          <option value="pagina"${miei ? '' : ' selected'}>${L('Quelli della pagina', 'The page’s ones', 'Los de la página')}</option>
+          <option value="miei"${miei ? ' selected' : ''}>${L('Li scelgo io', 'I pick them', 'Los elijo yo')}</option>
+        </select></div>
+    </div>
+    <div class="griglia-campi" data-lp-prova-miei${miei ? '' : ' hidden'}>
+      <div><label class="campo" for="lp-prova-${i}-punti">${L('I puntini', 'The dots', 'Los puntos')}</label><input type="color" id="lp-prova-${i}-punti" data-lpb="${i}" data-lpf="prova.colori.punti" value="${esc(col.punti || '#1d1a26')}"></div>
+      <div><label class="campo" for="lp-prova-${i}-fondo">${L('Il fondo', 'The background', 'El fondo')}</label><input type="color" id="lp-prova-${i}-fondo" data-lpb="${i}" data-lpf="prova.colori.fondo" value="${esc(col.fondo || '#f6f3ee')}"></div>
+    </div>
+    <p class="suggerimento" data-lp-prova-nota aria-live="polite">${esc(lpProvaColoriNota(pr))}</p>
+  </details>`;
+}
+function lpProvaColoriNota(pr) {
+  const col = pr?.colori || {};
+  if (col.modo !== 'miei') return L('I puntini prendono il colore del testo della pagina, il fondo quello dello sfondo. Se non si leggono, la prova usa inchiostro su carta.', 'The dots take the page’s text color, the background its background color. If they are not readable, the check uses ink on paper.', 'Los puntos toman el color del texto de la página, el fondo el de su fondo. Si no se leen, la prueba usa tinta sobre papel.');
+  const c = tgsContrasto(col.punti || '#1d1a26', col.fondo || '#f6f3ee');
+  const n = c.toLocaleString(localePannello(), { maximumFractionDigits: 1 });
+  return c >= TGS_CONTRASTO
+    ? L(`Contrasto ${n}: si legge.`, `Contrast ${n}: readable.`, `Contraste ${n}: se lee.`)
+    : L(`Contrasto ${n}: troppo poco perché la prova si veda. Finché non arriva a 3, la prova usa i colori della pagina.`, `Contrast ${n}: too little for the check to show. Until it reaches 3, the check uses the page colors.`, `Contraste ${n}: demasiado poco para que la prueba se vea. Hasta que llegue a 3, la prueba usa los colores de la página.`);
+}
+function lpProvaVedi(cosa) {
+  _lpProvaVista = cosa === 'chiudi' ? '' : cosa;
+  const f = document.getElementById('lp-iframe');
+  if (!f) return;
+  if (!lpProvaApplica(f)) f.addEventListener('load', () => lpProvaApplica(f), { once: true });
+  f.closest('.lp-anteprima')?.scrollIntoView({ block: 'nearest', behavior: _menoMoto ? 'auto' : 'smooth' });
+}
+document.addEventListener('click', (ev) => {
+  const b = ev.target.closest?.('[data-lp-prova]');
+  if (b) lpProvaVedi(b.dataset.lpProva);
+});
+document.addEventListener('toggle', (ev) => { if (ev.target?.matches?.('[data-lp-prova-dett]')) _lpProvaAperta = ev.target.open; }, true);
+function lpProvaApplica(f) {
+  try {
+    const t = f.contentWindow?.__tgProva;
+    if (!t) return false;
+    if (!_lpProvaVista) t.chiudi();
+    else if (_lpProvaVista === 'apri') t.apri();
+    else t.mostra(_lpProvaVista);
+    return true;
+  } catch { return false; }
 }
 
 function lpCampiNegozio(b, i, d) {
@@ -24320,6 +24420,7 @@ function lpAnteprima() {
       f.addEventListener('load', () => {
         try { if (y) f.contentWindow.scrollTo(0, y); } catch {  }
         lpAnteprimaCliccabile(f);
+        if (LP.quale === 'telegram' && _lpProvaVista) lpProvaApplica(f);
       }, { once: true });
       f.srcdoc = r.html;
     } catch {  }
@@ -27815,16 +27916,16 @@ function pannelloTelegram() {
 
     <div class="carta" id="tg-scudo-carta">
       <h2>${_hIco(ICO.scudo)}${L('Scudo all’ingresso', 'Entry shield', 'Escudo de entrada')}</h2>
-      <p>${L('Chi chiede di entrare nel gruppo passa prima da una prova, dentro Telegram: un codice che si legge solo mentre si muove, le tue regole e, se vuoi, qualche domanda. Finché non la supera non è nel gruppo.', 'Whoever asks to join the group first takes a check, inside Telegram: a code you can only read while it moves, your rules and, if you want, a few questions. Until they pass it they are not in the group.', 'Quien pide entrar en el grupo pasa antes por una prueba, dentro de Telegram: un código que solo se lee mientras se mueve, tus normas y, si quieres, unas preguntas. Hasta que no la supera no está en el grupo.')}</p>
+      <p>${L('Chi vuole entrare nel gruppo passa prima da una prova: un codice che si legge solo mentre si muove, le tue regole e, se vuoi, qualche domanda. Dalla porta del gruppo la fa lì, appena preme «Entra»; chi chiede da un altro link la fa dentro Telegram, sulla stessa pagina. Finché non la supera non è nel gruppo.', 'Whoever wants to join the group first takes a check: a code you can only read while it moves, your rules and, if you want, a few questions. From the group door they take it right there, as soon as they tap «Join»; whoever asks from another link takes it inside Telegram, on the same page. Until they pass it they are not in the group.', 'Quien quiere entrar en el grupo pasa antes por una prueba: un código que solo se lee mientras se mueve, tus normas y, si quieres, unas preguntas. Desde la puerta del grupo la hace allí, en cuanto pulsa «Entrar»; quien lo pide desde otro enlace la hace dentro de Telegram, en la misma página. Hasta que no la supera no está en el grupo.')}</p>
       <p class="suggerimento">${L('Il codice esiste solo nel movimento: ogni fotogramma da solo è rumore, quindi screenshot, foto dal telefono, Lens e i programmi che leggono le immagini non trovano niente. Chi non riesce a vederlo non viene rifiutato: la sua richiesta passa agli amministratori.', 'The code only exists in motion: each frame on its own is noise, so screenshots, phone photos, Lens and programs that read images find nothing. Whoever cannot see it is not turned away: their request goes to the admins.', 'El código solo existe en movimiento: cada fotograma por sí solo es ruido, así que las capturas, las fotos con el móvil, Lens y los programas que leen imágenes no encuentran nada. Quien no consigue verlo no es rechazado: su solicitud pasa a los administradores.')}</p>
       <div id="box-tg-scudo">${attesaHtml()}</div>
     </div>
 
     <div class="carta" id="tg-porta-carta">
       <h2>${_hIco(ICO.condividi)}${L('La porta del gruppo', 'The group door', 'La puerta del grupo')}</h2>
-      <p>${L('Una pagina tua per il gruppo, da mettere ovunque: chi la apre vede il gruppo, come si entra e le regole, e chiede di entrare con un tasto. Si personalizza come la pagina link: temi, sfondo, caratteri, colori e pezzi. La prova prende i suoi colori.', 'A page of your own for the group, to put anywhere: whoever opens it sees the group, how to join and the rules, and asks to join with one button. It is customized like the link page: themes, background, fonts, colors and pieces. The check takes its colors.', 'Una página tuya para el grupo, para ponerla donde quieras: quien la abre ve el grupo, cómo se entra y las normas, y pide entrar con un botón. Se personaliza como la página de enlaces: temas, fondo, fuentes, colores y piezas. La prueba toma sus colores.')}</p>
-      <p class="suggerimento">${L('La pagina della prova, quella che vede chi chiede di entrare, si cambia in «Scudo all’ingresso», qui sopra: regole, domande e colori, con la veste di questa porta. Tu sei già nel gruppo, quindi entrando non la vedi: guardala da qui.', 'The check page, the one people see when they ask to join, is changed in «Entry shield», above: rules, questions and colors, with this door’s look. You are already in the group, so you won’t see it when you join: look at it from here.', 'La página de la prueba, la que ve quien pide entrar, se cambia en «Escudo de entrada», aquí arriba: normas, preguntas y colores, con el aspecto de esta puerta. Ya estás en el grupo, así que al entrar no la ves: mírala desde aquí.')}</p>
-      <p><button type="button" class="btn secondario mini" id="tg-porta-vai-prova">${_bIco(ICO.occhio)}${L('Vedi la pagina della prova', 'See the check page', 'Ver la página de la prueba')}</button></p>
+      <p>${L('L’unica pagina del tuo gruppo, da mettere ovunque: chi la apre vede il gruppo, come si entra e le regole, e preme «Entra». Con lo scudo spento entra subito; con lo scudo acceso fa la prova qui, sulla stessa pagina, ed entra con un link tutto suo. Si personalizza come la pagina link: temi, sfondo, caratteri, colori e pezzi, prova compresa.', 'Your group’s only page, to put anywhere: whoever opens it sees the group, how to join and the rules, and taps «Join». With the shield off they join right away; with the shield on they take the check here, on the same page, and join with a link of their own. It is customized like the link page: themes, background, fonts, colors and pieces, the check included.', 'La única página de tu grupo, para ponerla donde quieras: quien la abre ve el grupo, cómo se entra y las normas, y pulsa «Entrar». Con el escudo apagado entra enseguida; con el escudo encendido hace la prueba aquí, en la misma página, y entra con un enlace propio. Se personaliza como la página de enlaces: temas, fondo, fuentes, colores y piezas, prueba incluida.')}</p>
+      <p class="suggerimento">${L('La prova è un pezzo di questa porta: parole, colori e grandezza nel pezzo «Il gruppo e il tasto per entrare». Tu sei già nel gruppo, quindi dal vero non la vedi: falla nell’anteprima.', 'The check is a piece of this door: words, colors and size in the «The group and the join button» piece. You are already in the group, so you won’t see it for real: take it in the preview.', 'La prueba es una pieza de esta puerta: palabras, colores y tamaño en la pieza «El grupo y el botón para entrar». Ya estás en el grupo, así que de verdad no la ves: hazla en la vista previa.')}</p>
+      <p><button type="button" class="btn secondario mini" id="tg-porta-vai-prova">${_bIco(ICO.occhio)}${L('Fai la prova nell’anteprima', 'Take the check in the preview', 'Hacer la prueba en la vista previa')}</button></p>
       ${lpCasaHtml('telegram')}
     </div>
     ` : ''}
@@ -27878,18 +27979,26 @@ const _tgsLum = (hex) => { const h = String(hex || '').replace('#', ''); if (!/^
 const tgsContrasto = (a, b) => { const [x, y] = [_tgsLum(a), _tgsLum(b)].sort((p, q) => q - p); return (x + 0.05) / (y + 0.05); };
 const TGS_CONTRASTO = 3;
 
+async function vaiAllaProva() {
+  const carta = document.getElementById('tg-porta-carta');
+  if (!carta) return;
+  if (_cartaPiegata(carta)) _piegaCarta(carta, true);
+  const gruppo = LP.quale === 'telegram' ? (LP.blocchi || []).find((x) => x?.tipo === 'gruppo') : null;
+  if (!gruppo) {
+    carta.scrollIntoView({ block: 'start', behavior: _menoMoto ? 'auto' : 'smooth' });
+    toast(L('Nella porta manca il pezzo «Il gruppo e il tasto per entrare»: aggiungilo, e la prova sta lì dentro.', 'The door is missing the «The group and the join button» piece: add it, and the check lives inside it.', 'A la puerta le falta la pieza «El grupo y el botón para entrar»: añádela, y la prueba está dentro.'));
+    return;
+  }
+  _lpProvaAperta = true;
+  lpRenderBlocchi();
+  lpScegliBlocco(gruppo);
+  lpProvaVedi('apri');
+}
 function collegaPortaProva() {
   const b = document.getElementById('tg-porta-vai-prova');
   if (!b || b.dataset.collegato) return;
   b.dataset.collegato = '1';
-  b.addEventListener('click', () => conErrore(async () => {
-    const carta = document.getElementById('tg-scudo-carta');
-    if (!carta) return;
-    if (_cartaPiegata(carta)) _piegaCarta(carta, true);
-    const prova = document.getElementById('sc-prova');
-    if (prova) prova.click();
-    else carta.scrollIntoView({ block: 'start', behavior: _menoMoto ? 'auto' : 'smooth' });
-  }));
+  b.addEventListener('click', () => conErrore(vaiAllaProva));
 }
 
 async function caricaScudoTg() {
@@ -27920,16 +28029,6 @@ function _tgsDomandaHtml(q, i) {
   </fieldset>`;
 }
 
-function _tgsColoriNota() {
-  const s = SCUDO_TG.bozza;
-  if (s.colori.modo !== 'miei') return L('La prova usa il colore del testo e quello dello sfondo della porta.', 'The check uses the text and background colors of the door.', 'La prueba usa el color del texto y el del fondo de la puerta.');
-  const c = tgsContrasto(s.colori.punti, s.colori.fondo);
-  const n = c.toLocaleString(localePannello(), { maximumFractionDigits: 1 });
-  return c >= TGS_CONTRASTO
-    ? L(`Contrasto ${n}: si legge.`, `Contrast ${n}: readable.`, `Contraste ${n}: se lee.`)
-    : L(`Contrasto ${n}: troppo poco perché la prova si veda. Finché non arriva a 3, la prova usa i colori della porta.`, `Contrast ${n}: too little for the check to show. Until it reaches 3, the check uses the door colors.`, `Contraste ${n}: demasiado poco para que la prueba se vea. Hasta que llegue a 3, la prueba usa los colores de la puerta.`);
-}
-
 function disegnaScudoTg() {
   const box = document.getElementById('box-tg-scudo');
   if (!box || !SCUDO_TG.d) return;
@@ -27939,7 +28038,8 @@ function disegnaScudoTg() {
   const bene = d.controlli.lista.filter((x) => x.ok);
   const recenti = (d.recenti || []).map((r) => {
     const perche = r.stato !== 'passata' && r.motivo && M[r.motivo] ? ` (${esc(M[r.motivo])})` : '';
-    return `<li><div class="testo-voce"><span class="domanda">${esc(r.nome || '?')}</span> <span class="meta">${esc(new Date(r.ts).toLocaleString(localePannello(), { dateStyle: 'short', timeStyle: 'short' }))}</span><br><span class="risposta">${esc(E[r.stato] || r.stato)}${perche}</span></div></li>`;
+    const chi = r.nome || (r.porta ? L('Dalla porta', 'From the door', 'Desde la puerta') : '?');
+    return `<li><div class="testo-voce"><span class="domanda">${esc(chi)}</span> <span class="meta">${esc(new Date(r.ts).toLocaleString(localePannello(), { dateStyle: 'short', timeStyle: 'short' }))}</span><br><span class="risposta">${esc(E[r.stato] || r.stato)}${perche}</span></div></li>`;
   }).join('');
   box.innerHTML = `
     ${male.length ? `<ul class="sc-controlli">${male.map(voce).join('')}</ul>` : ''}
@@ -27983,30 +28083,16 @@ function disegnaScudoTg() {
     <div id="sc-domande">${s.domande.map(_tgsDomandaHtml).join('')}</div>
     <p><button type="button" class="btn secondario mini" id="sc-domanda-piu"${s.domande.length >= TGS_LIMITI.domande ? ' disabled' : ''}>${_bIco(ICO.piu)}${L('Aggiungi una domanda', 'Add a question', 'Añadir una pregunta')}</button></p>
 
-    <h3 class="spazio-sopra">${L('I colori della prova', 'The check colors', 'Los colores de la prueba')}</h3>
-    <div class="riga-flessibile">
-      <label class="riga-check"><input type="radio" name="sc-colori" value="pagina"${s.colori.modo !== 'miei' ? ' checked' : ''}> ${L('Come la porta del gruppo', 'Like the group door', 'Como la puerta del grupo')}</label>
-      <label class="riga-check"><input type="radio" name="sc-colori" value="miei"${s.colori.modo === 'miei' ? ' checked' : ''}> ${L('Li scelgo io', 'I pick them', 'Los elijo yo')}</label>
-    </div>
-    <div class="griglia-campi" id="sc-colori-miei"${s.colori.modo === 'miei' ? '' : ' hidden'}>
-      <div><label class="campo" for="sc-punti">${L('I puntini', 'The dots', 'Los puntos')}</label><input type="color" id="sc-punti" value="${esc(s.colori.punti)}"></div>
-      <div><label class="campo" for="sc-fondo">${L('Il fondo', 'The background', 'El fondo')}</label><input type="color" id="sc-fondo" value="${esc(s.colori.fondo)}"></div>
-    </div>
-    <p class="suggerimento" id="sc-colori-nota" aria-live="polite">${esc(_tgsColoriNota())}</p>
-
     <div class="riga-flessibile spazio-sopra">
       <button class="btn" id="sc-salva" data-salva>${L('Salva lo scudo', 'Save the shield', 'Guardar el escudo')}</button>
-      <button type="button" class="btn secondario" id="sc-prova">${_bIco(ICO.occhio)}${L('Prova la pagina', 'Try the page', 'Probar la página')}</button>
+      <button type="button" class="btn secondario" id="sc-vai-porta">${_bIco(ICO.occhio)}${L('Guarda e vesti la prova nella porta', 'See and dress the check on the door', 'Ver y vestir la prueba en la puerta')}</button>
     </div>
-    <div id="sc-anteprima" class="sc-anteprima" hidden>
-      <p class="suggerimento">${L('È la pagina vera, con quello che hai scritto qui sopra anche se non l’hai ancora salvato. Da qui non parte niente verso Telegram.', 'It is the real page, with what you wrote above even if you have not saved it yet. Nothing goes to Telegram from here.', 'Es la página real, con lo que has escrito arriba aunque aún no lo hayas guardado. Desde aquí no sale nada hacia Telegram.')}</p>
-      <iframe id="sc-anteprima-iframe" title="${esc(L('Anteprima della prova', 'Check preview', 'Vista previa de la prueba'))}"></iframe>
-    </div>
+    <p class="suggerimento">${L('La prova è un pezzo della porta del gruppo, qui sotto: le sue parole, i colori e la grandezza si cambiano lì, nel pezzo «Il gruppo e il tasto per entrare», e nell’anteprima la fai davvero. Le regole e le domande che scrivi qui le legge salvate.', 'The check is a piece of the group door, below: its words, colors and size are changed there, in the «The group and the join button» piece, and in the preview you take it for real. It reads the rules and questions you write here once saved.', 'La prueba es una pieza de la puerta del grupo, aquí abajo: sus palabras, colores y tamaño se cambian allí, en la pieza «El grupo y el botón para entrar», y en la vista previa la haces de verdad. Las normas y preguntas que escribes aquí las lee una vez guardadas.')}</p>
 
     <h3 class="spazio-sopra">${L('La porta', 'The door', 'La puerta')}</h3>
     ${d.porta.pubblicata
       ? `<p class="lp-riga2"><a href="${esc(d.porta.url)}" target="_blank" rel="noopener"><strong>${esc(d.porta.url.replace(/^https?:\/\//, ''))}</strong></a> <button type="button" class="btn secondario mini" id="sc-copia">${L('Copia', 'Copy', 'Copiar')}</button></p>
-         <p class="suggerimento">${L('Mettila dove vuoi: nella bio, nei pannelli, in chat. Chi la apre chiede di entrare e, con lo scudo acceso, passa dalla prova.', 'Put it wherever you like: in your bio, in panels, in chat. Whoever opens it asks to join and, with the shield on, takes the check.', 'Ponla donde quieras: en la bio, en los paneles, en el chat. Quien la abre pide entrar y, con el escudo encendido, pasa la prueba.')}</p>`
+         <p class="suggerimento">${L('Mettila dove vuoi: nella bio, nei pannelli, in chat. Chi la apre preme «Entra» e, con lo scudo acceso, fa la prova lì; superata, entra con un link tutto suo.', 'Put it wherever you like: in your bio, in panels, in chat. Whoever opens it taps «Join» and, with the shield on, takes the check right there; once passed, they join with a link of their own.', 'Ponla donde quieras: en la bio, en los paneles, en el chat. Quien la abre pulsa «Entrar» y, con el escudo encendido, hace la prueba allí; superada, entra con un enlace propio.')}</p>`
       : `<p class="suggerimento">${L('La porta non è ancora pubblicata: la trovi qui sotto, in «La porta del gruppo».', 'The door is not published yet: you will find it below, in «The group door».', 'La puerta aún no está publicada: la encuentras abajo, en «La puerta del grupo».')}</p>`}
 
     <h3 class="spazio-sopra">${L('Le ultime richieste', 'The latest requests', 'Las últimas solicitudes')}</h3>
@@ -28026,8 +28112,6 @@ function leggiScudoTg() {
     opzioni: [...f.querySelectorAll('[data-scdf="opzione"]')].map((x) => x.value),
     giusta: Number(f.querySelector('[data-scdf="giusta"]:checked')?.value ?? -1),
   }));
-  const modo = document.querySelector('input[name="sc-colori"]:checked')?.value === 'miei' ? 'miei' : 'pagina';
-  s.colori = { modo, punti: g('sc-punti')?.value || s.colori.punti, fondo: g('sc-fondo')?.value || s.colori.fondo };
   return s;
 }
 
@@ -28048,15 +28132,6 @@ function collegaScudoTg() {
     const y = window.scrollY; disegnaScudoTg(); window.scrollTo(0, y);
   }));
   document.querySelectorAll('#sc-domande [data-scdf]').forEach((x) => x.addEventListener('change', ridisegna));
-  document.querySelectorAll('input[name="sc-colori"]').forEach((r) => r.addEventListener('change', () => {
-    leggiScudoTg();
-    const box = g('sc-colori-miei'); if (box) box.hidden = SCUDO_TG.bozza.colori.modo !== 'miei';
-    const n = g('sc-colori-nota'); if (n) n.textContent = _tgsColoriNota();
-  }));
-  ['sc-punti', 'sc-fondo'].forEach((id) => g(id)?.addEventListener('input', () => {
-    leggiScudoTg();
-    const n = g('sc-colori-nota'); if (n) n.textContent = _tgsColoriNota();
-  }));
   g('sc-copia')?.addEventListener('click', () => copiaTesto(SCUDO_TG.d.porta.url, L('Indirizzo copiato', 'Address copied', 'Dirección copiada')));
   g('sc-salva')?.addEventListener('click', (ev) => conErrore(async () => {
     const b = ev.currentTarget; b.disabled = true;
@@ -28071,14 +28146,7 @@ function collegaScudoTg() {
       throw e;
     } finally { const x = g('sc-salva'); if (x) x.disabled = false; }
   }));
-  g('sc-prova')?.addEventListener('click', () => conErrore(async () => {
-    const r = await api('/api/streamer/telegram/scudo/anteprima', { method: 'POST', body: { scudo: leggiScudoTg() } });
-    const box = g('sc-anteprima'), fr = g('sc-anteprima-iframe');
-    if (!box || !fr) return;
-    box.hidden = false;
-    fr.srcdoc = r.html;
-    box.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-  }));
+  g('sc-vai-porta')?.addEventListener('click', () => conErrore(vaiAllaProva));
 }
 
 function pannelloNotifiche() {

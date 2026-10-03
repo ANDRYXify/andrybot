@@ -26,6 +26,7 @@ const T = {
     nonRiescoAiuto: 'La tua richiesta passa agli amministratori del gruppo, e decidono loro.',
     regole: 'Le regole del gruppo',
     accetto: 'Ho letto le regole e le rispetto',
+    accettoParti: ['Ho letto ', 'le regole del gruppo', ' e le rispetto'],
     domande: 'Qualche domanda',
     entra: 'Entra nel gruppo',
     attendi: 'Un momento…',
@@ -51,6 +52,26 @@ const T = {
     },
     chiudi: 'Torna a Telegram',
     anteprima: 'Anteprima: è la pagina che vede chi chiede di entrare. Da qui non arriva niente a Telegram.',
+    // la prova sulla porta, nel browser: l'esito e' un link da aprire
+    porta: {
+      apri: 'Apri Telegram',
+      chiedi: 'Chiedi di entrare',
+      rifai: 'Rifai la prova',
+      riprova: 'Riprova',
+      chiudiProva: 'Chiudi la prova',
+      pronto: ['Prova superata', 'Apri Telegram ed entra nel gruppo: il link è tuo, vale per una persona e per mezz’ora.'],
+      senzaLink: ['Prova superata', 'Telegram non mi ha ancora dato il link per farti entrare: riprova fra un momento.'],
+      no: ['Non è andata', 'La prova non è andata. Puoi rifarla da capo.'],
+      admin: ['Decidono gli amministratori', 'Apri Telegram e chiedi di entrare da qui: la richiesta arriva agli amministratori del gruppo, e decidono loro.'],
+      scaduta: ['Tempo scaduto', 'La prova è scaduta. Puoi rifarla da capo.'],
+      usata: ['Link già usato', 'Il link di questa prova è già stato usato. Se non sei nel gruppo, rifai la prova.'],
+      chiusa: ['Questa prova non c’è più', 'Puoi rifarla da capo.'],
+      troppe: ['Troppe prove da qui', 'Da questa connessione sono partite troppe prove in poco tempo: riprova fra un po’.'],
+      anteprimaSpento: 'Lo scudo è spento: «Entra» porta dritto nel gruppo. La prova compare quando lo accendi.',
+      vediLoStesso: 'Mostra la prova lo stesso',
+      anteprimaLink: 'Anteprima: il link vero lo dà Telegram a chi supera la prova.',
+      demo: 'Nella demo la prova non si apre: serve un bot Telegram collegato. Col tuo canale, qui la fai davvero. Gli esiti li guardi coi tasti del pezzo.',
+    },
   },
   en: {
     privato: ({ nome, gruppo, minuti }) => `Hi ${nome}, you asked to join «${gruppo}». First a quick check: tap below. You have ${minuti} minutes.`,
@@ -68,6 +89,7 @@ const T = {
     nonRiescoAiuto: 'Your request goes to the group admins, and they decide.',
     regole: 'The group rules',
     accetto: 'I have read the rules and I follow them',
+    accettoParti: ['I have read ', 'the group rules', ' and I follow them'],
     domande: 'A few questions',
     entra: 'Join the group',
     attendi: 'One moment…',
@@ -93,6 +115,25 @@ const T = {
     },
     chiudi: 'Back to Telegram',
     anteprima: 'Preview: this is the page people see when they ask to join. Nothing reaches Telegram from here.',
+    porta: {
+      apri: 'Open Telegram',
+      chiedi: 'Ask to join',
+      rifai: 'Take the check again',
+      riprova: 'Try again',
+      chiudiProva: 'Close the check',
+      pronto: ['Check passed', 'Open Telegram and join the group: the link is yours, it works for one person for half an hour.'],
+      senzaLink: ['Check passed', 'Telegram has not given me the link to add you yet: try again in a moment.'],
+      no: ['It did not work out', 'The check did not work out. You can take it again from the start.'],
+      admin: ['The admins decide', 'Open Telegram and ask to join from here: the request goes to the group admins, and they decide.'],
+      scaduta: ['Time is up', 'The check expired. You can take it again from the start.'],
+      usata: ['Link already used', 'The link from this check has already been used. If you are not in the group, take the check again.'],
+      chiusa: ['This check is gone', 'You can take it again from the start.'],
+      troppe: ['Too many checks from here', 'Too many checks started from this connection in a short time: try again in a while.'],
+      anteprimaSpento: 'The shield is off: «Join» leads straight into the group. The check shows up when you turn it on.',
+      vediLoStesso: 'Show the check anyway',
+      anteprimaLink: 'Preview: Telegram gives the real link to whoever passes the check.',
+      demo: 'In the demo the check does not open: it needs a connected Telegram bot. With your channel, you take it here for real. You can look at the outcomes with the piece’s buttons.',
+    },
   },
   es: {
     privato: ({ nome, gruppo, minuti }) => `Hola, ${nome}: has pedido entrar en «${gruppo}». Antes, una prueba rápida: pulsa abajo. Tienes ${minuti} minutos.`,
@@ -110,6 +151,7 @@ const T = {
     nonRiescoAiuto: 'Tu solicitud pasa a los administradores del grupo, y deciden ellos.',
     regole: 'Las normas del grupo',
     accetto: 'He leído las normas y las respeto',
+    accettoParti: ['He leído ', 'las normas del grupo', ' y las respeto'],
     domande: 'Unas preguntas',
     entra: 'Entrar en el grupo',
     attendi: 'Un momento…',
@@ -135,6 +177,25 @@ const T = {
     },
     chiudi: 'Volver a Telegram',
     anteprima: 'Vista previa: es la página que ve quien pide entrar. Desde aquí no llega nada a Telegram.',
+    porta: {
+      apri: 'Abrir Telegram',
+      chiedi: 'Pedir entrar',
+      rifai: 'Repetir la prueba',
+      riprova: 'Reintentar',
+      chiudiProva: 'Cerrar la prueba',
+      pronto: ['Prueba superada', 'Abre Telegram y entra en el grupo: el enlace es tuyo, vale para una persona y durante media hora.'],
+      senzaLink: ['Prueba superada', 'Telegram todavía no me ha dado el enlace para meterte: inténtalo de nuevo en un momento.'],
+      no: ['No ha salido bien', 'La prueba no ha salido bien. Puedes repetirla desde el principio.'],
+      admin: ['Deciden los administradores', 'Abre Telegram y pide entrar desde aquí: la solicitud llega a los administradores del grupo, y deciden ellos.'],
+      scaduta: ['Se acabó el tiempo', 'La prueba ha caducado. Puedes repetirla desde el principio.'],
+      usata: ['Enlace ya usado', 'El enlace de esta prueba ya se ha usado. Si no estás en el grupo, repite la prueba.'],
+      chiusa: ['Esta prueba ya no está', 'Puedes repetirla desde el principio.'],
+      troppe: ['Demasiadas pruebas desde aquí', 'Desde esta conexión han salido demasiadas pruebas en poco tiempo: inténtalo de nuevo dentro de un rato.'],
+      anteprimaSpento: 'El escudo está apagado: «Entrar» lleva directo al grupo. La prueba aparece cuando lo enciendes.',
+      vediLoStesso: 'Mostrar la prueba igualmente',
+      anteprimaLink: 'Vista previa: el enlace de verdad lo da Telegram a quien supera la prueba.',
+      demo: 'En la demo la prueba no se abre: hace falta un bot de Telegram conectado. Con tu canal, aquí la haces de verdad. Los resultados los ves con los botones de la pieza.',
+    },
   },
 };
 
@@ -143,6 +204,29 @@ export const testiScudo = (l) => T[LINGUE.includes(l) ? l : 'it'];
 // Le parole fisse della pagina, gia' fatte: le funzioni non viaggiano in JSON.
 // Quelle che dipendono da un numero (i tentativi che restano, le prove che
 // restano) le scrive il server nella risposta a cui servono.
+// Le parole della prova sulla porta: quelle fisse nella lingua della pagina,
+// piu' quelle che lo streamer ha scritto nel pezzo del gruppo (`su`, gia'
+// pulite da paginaTelegram). Una parola sua vale in tutte le lingue: e' sua.
+export const CHIAVI_PROVA = ['titolo', 'aiuto', 'tasto', 'fattoTitolo', 'fattoTesto', 'apri', 'noTesto', 'adminTesto'];
+export function testiPorta(l, { gruppo = '', su = {} } = {}) {
+  const t = testiScudo(l);
+  const base = testiPagina(l, { gruppo });
+  const p = { ...t.porta };
+  const s = su && typeof su === 'object' ? su : {};
+  const tieni = (k) => (typeof s[k] === 'string' && s[k].trim() ? s[k].trim() : '');
+  if (tieni('fattoTitolo') || tieni('fattoTesto')) p.pronto = [tieni('fattoTitolo') || p.pronto[0], tieni('fattoTesto') || p.pronto[1]];
+  if (tieni('noTesto')) p.no = [p.no[0], tieni('noTesto')];
+  if (tieni('adminTesto')) p.admin = [p.admin[0], tieni('adminTesto')];
+  if (tieni('apri')) p.apri = tieni('apri');
+  return {
+    ...base,
+    prova: tieni('titolo') || base.prova,
+    provaAiuto: tieni('aiuto') || base.provaAiuto,
+    entra: tieni('tasto') || base.entra,
+    porta: p,
+  };
+}
+
 export function testiPagina(l, { gruppo = '' } = {}) {
   const t = testiScudo(l);
   const { riprova, ...errori } = t.errori;
@@ -150,7 +234,7 @@ export function testiPagina(l, { gruppo = '' } = {}) {
     titolo: t.titolo, sotto: t.sotto(gruppo),
     prova: t.prova, provaAiuto: t.provaAiuto, provaVoce: t.provaVoce, movimento: t.movimento,
     codice: t.codice, nonRiesco: t.nonRiesco, nonRiescoAiuto: t.nonRiescoAiuto,
-    regole: t.regole, accetto: t.accetto, domande: t.domande, entra: t.entra, attendi: t.attendi, carico: t.carico,
+    regole: t.regole, accetto: t.accetto, accettoParti: t.accettoParti, domande: t.domande, entra: t.entra, attendi: t.attendi, carico: t.carico,
     errori, esiti: t.esiti, chiudi: t.chiudi,
   };
 }

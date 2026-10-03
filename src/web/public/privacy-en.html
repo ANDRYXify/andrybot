@@ -135,7 +135,12 @@
           join first takes a check on a page. We keep the id of their Telegram account, the name they show up with, the
           group, the outcome of the check and the time; we don't read the account bio. The check is drawn on our server
           and the code to read never leaves the server. Requests are deleted after <strong>seven days</strong> and are
-          not part of the channel's data export.</li>
+          not part of the channel's data export. If the check is taken on the <strong>group door</strong>, in the
+          browser, we use no cookies: the page gets a random code that it keeps only in memory, and we keep only its
+          fingerprint, which is not enough to resume the check. The IP address is used only to limit how many checks
+          start from the same connection: it stays in memory for an hour, then it is deleted. Whoever passes the check gets a
+          personal invite link that works for one person for half an hour; when they join, we keep their account as
+          for requests.</li>
         <li><strong>Optional integrations</strong> turned on by the streamer: the token of their <strong>Telegram</strong>
           bot + the group id (both provided by the streamer), their public <strong>TikTok username</strong> for the live
           notification, and the restricted key for their <strong>Stripe</strong> account for donations, stored

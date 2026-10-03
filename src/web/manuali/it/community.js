@@ -165,7 +165,7 @@ export default {
 
     { h3: 'Lo scudo all\'ingresso' },
     { p: [
-      'Il cancello lavora su chi è già entrato. Lo scudo lavora un passo prima: chi <strong>chiede</strong> di entrare nel gruppo fa una prova su una pagina, e Telegram lo fa entrare solo se la prova va bene. Lo trovi nella carta «Scudo all\'ingresso».',
+      'Il cancello lavora su chi è già entrato. Lo scudo lavora un passo prima: chi vuole entrare nel gruppo fa una prova, ed entra solo se la prova va bene. Dalla porta del gruppo la fa lì, appena preme «Entra»; chi chiede di entrare da un altro link la fa dentro Telegram, sulla stessa pagina. Lo trovi nella carta «Scudo all\'ingresso».',
       'La prova è un codice di cinque caratteri che si vede <strong>solo mentre i puntini si muovono</strong>: le lettere scorrono da una parte, il fondo dall\'altra. Una persona lo legge in un paio di secondi. Uno screenshot, una foto o un programma che legge le immagini vedono solo puntini a caso, perché in ogni singolo fotogramma le lettere non ci sono.',
       'In cima alla carta c\'è l\'elenco di cosa serve, letto dal vivo da Telegram. Quando è tutto a posto si raccoglie in «Tutto pronto: ogni controllo è a posto». Lo scudo non si accende finché manca una cosa segnata in rosso.',
     ] },
@@ -186,23 +186,23 @@ export default {
       ['«Chi non la supera»', '«La rifiuto» oppure «La lascio agli amministratori». Chi è rifiutato può chiedere di nuovo fra mezz\'ora.', 'La rifiuto'],
       ['«Le regole»', 'Con «Chiedi di accettarle prima di entrare» la pagina mostra le regole e una spunta da mettere. Le stesse regole compaiono sulla porta del gruppo.', 'Spento, al massimo 1500 caratteri'],
       ['«Qualche domanda»', 'Fino a tre domande, ognuna con una risposta giusta: una cosa che sa chi ti segue davvero. Una risposta sbagliata vale come una prova non superata.', 'Nessuna, fino a quattro risposte per domanda'],
-      ['«I colori della prova»', '«Come la porta del gruppo» oppure «Li scelgo io», con il colore dei puntini e del fondo. Serve un contrasto di almeno 3 a 1: se i due colori si distinguono meno, il pannello lo dice e la prova usa i colori della porta, così non esce mai illeggibile.', 'Come la porta'],
       ['«Salva lo scudo»', 'Salva, e se l\'hai acceso controlla subito con Telegram che il bot possa farlo.', ''],
-      ['«Prova la pagina»', 'Apre qui la pagina vera, con quello che hai scritto anche se non l\'hai salvato. Da lì non parte niente verso Telegram.', ''],
+      ['«Guarda e vesti la prova nella porta»', 'Porta all\'editor della porta, apre il pezzo «Il gruppo e il tasto per entrare» e fa partire la prova nell\'anteprima. Le regole e le domande la prova le legge salvate.', ''],
     ] },
     { p: [
       'Per ogni prova ci sono tre tentativi; dopo il terzo sbagliato arriva da sola una prova nuova, e le prove sono tre in tutto. «Un\'altra prova» ne chiede una nuova prima.',
       'Chi non riesce a vedere la prova (per la vista, o perché ha chiesto al telefono meno movimento) preme «Non riesco a vederla»: la richiesta passa sempre agli amministratori, mai rifiutata. Gli amministratori la trovano nelle richieste di ingresso del gruppo su Telegram.',
       'Chi supera lo scudo non passa anche dal cancello: una prova sola per persona.',
-      'In «Le ultime richieste» vedi chi ha chiesto di entrare, com\'è andata e perché. Si tengono una settimana.',
+      'In «Le ultime richieste» vedi chi ha chiesto di entrare, com\'è andata e perché. Le prove fatte sulla porta si leggono «Dalla porta»: chi le fa non ha ancora un nome Telegram. Quelle lasciate a metà non ci sono, perché nessuno ha chiesto niente. Si tengono una settimana.',
     ] },
 
     { h3: 'La porta del gruppo' },
     { p: [
-      'La porta è una pagina pubblica del tuo gruppo, a un indirizzo come <code>telegram.socialbot.live/il-tuo-canale</code>. La fai nella carta «La porta del gruppo», con lo stesso editor e gli stessi stili della pagina link. La modifica solo il proprietario.',
+      'La porta è l\'unica pagina del tuo gruppo, a un indirizzo come <code>telegram.socialbot.live/il-tuo-canale</code>. La fai nella carta «La porta del gruppo», con lo stesso editor e gli stessi stili della pagina link. La modifica solo il proprietario.',
       'I pezzi suoi sono «Il gruppo e il tasto per entrare», «Come si entra (lo scudo)», che si vede solo con lo scudo acceso, e «Le regole del gruppo», con il testo scritto nello scudo. Poi ci sono quelli di sempre: titoli, testi, link, immagini, separatori.',
-      'Il link del tasto lo fa il bot da solo, uno per gruppo. Con lo scudo acceso quel link chiede di entrare, quindi chi passa dalla porta fa la prova. La pagina della prova prende i colori e i caratteri della porta.',
-      'Tu sei già nel gruppo: se premi «Entra nel gruppo» Telegram ti porta dentro e la prova non la vedi. Per guardarla premi <strong>«Vedi la pagina della prova»</strong> nella carta della porta, oppure «Prova la pagina» in fondo alla carta dello scudo: si apre la pagina vera, con quello che hai scritto. Regole, domande e colori della prova si cambiano lì, nella carta «Scudo all\'ingresso»; caratteri e fondo vengono da questa porta.',
+      'Dove porta «Entra» lo decide lo scudo. <strong>Scudo spento</strong> (niente, o solo il cancello): il tasto è il link del gruppo, e si entra subito. <strong>Scudo acceso</strong>: il tasto apre la prova lì, nella carta del gruppo, con i caratteri, i colori e lo sfondo della porta. Chi la supera riceve un link tutto suo, che vale per una persona e per mezz\'ora, ed entra senza chiedere. Chi chiede di entrare da un altro link vede, dentro Telegram, questa stessa pagina con la prova già aperta.',
+      'La prova si veste nel pezzo «Il gruppo e il tasto per entrare», in «La prova, con lo scudo acceso»: il titolo, la spiegazione, il tasto per entrare, cosa si legge quando la si supera, quando non va e quando decidono gli amministratori, il tasto che apre Telegram, la grandezza del riquadro e i colori dei puntini. Una parola lasciata vuota è quella di serie, nella lingua della porta. Per i colori serve un contrasto di almeno 3 a 1: sotto, il pannello lo dice e la prova usa i colori della pagina, così non esce mai illeggibile.',
+      'Tu sei già nel gruppo, quindi dal vero la prova non la vedi. Falla nell\'anteprima: <strong>«Fai la prova nell\'anteprima»</strong> nella carta della porta, oppure «Fai la prova» nel pezzo del gruppo. È la prova vera, da lì non parte niente verso Telegram. «Superata», «Non superata» e «Agli amministratori» mostrano gli esiti; «Torna alla pagina» la richiude.',
       'Nella carta dello scudo trovi l\'indirizzo della porta con «Copia»: mettilo nella bio, nei pannelli di Twitch, in chat.',
     ] },
 
@@ -586,6 +586,7 @@ export default {
     { d: 'L\'avviso arriva nel «Generale» e non nel topic che voglio.', r: 'Scrivi <code>/collega</code> dentro quel topic e premi «Aggiungi gruppo, canale o topic»: il topic diventa un posto suo. Poi togli la spunta dal gruppo generale in «Quale avviso va dove».' },
     { d: 'Lo scudo non si accende.', r: 'Guarda l\'elenco in cima alla carta «Scudo all\'ingresso»: la riga rossa dice cosa manca e come sistemarlo. Di solito è il permesso «Invita utenti tramite link» del bot amministratore.' },
     { d: 'Chi chiede di entrare non riceve la prova.', r: 'Senza guardiano la prova arriva in privato, e il bot può scrivere solo nei primi cinque minuti dopo la richiesta. Se il messaggio non parte la richiesta passa agli amministratori, e in «Le ultime richieste» leggi «il messaggio in privato non è partito». Con il bot come guardiano la prova si apre subito, dentro Telegram.' },
+    { d: 'Premo «Entra» sulla porta ed entro senza prova.', r: 'Succede con lo scudo spento: allora il tasto porta dritto nel gruppo. Con lo scudo acceso apre la prova lì. Se sei già nel gruppo Telegram ti porta dentro e basta: la prova la vedi nell\'anteprima della porta, con «Fai la prova nell\'anteprima».' },
     { d: 'Qualcuno è entrato senza fare la prova.', r: 'Lo scudo vede solo chi chiede di entrare. Se il gruppo è pubblico e si entra senza chiedere, nell\'elenco in cima alla carta leggi «Per entrare bisogna chiedere»: in Telegram accendi «Approva nuovi membri», oppure tieni acceso anche il cancello. Chi lo fai entrare tu a mano non fa la prova.' },
     { d: 'Il cancello non si accende.', r: 'Servono «Bot interattivo nel gruppo» acceso e il bot amministratore del gruppo con il permesso «Blocca utenti». Il pannello ti dice quale delle due manca.' },
     { d: 'Ho confermato la settimana ma ho visto un errore. Posso fermarla?', r: 'Sì, fino al momento dell\'uscita. Nel messaggio che il bot ti ha mandato in privato su Telegram premi «Non pubblicare», e nella pagina che si apre premi il tasto. Lo stesso si fa dalla mail e dal pannello.' },

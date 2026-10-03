@@ -115,7 +115,7 @@ import * as negozioPagina from '../features/negozio-pagina.js';
 import * as scudoTg from '../features/tg-scudo-gesti.js';
 import * as tgPorta from '../features/tg-porta.js';
 import * as regolaScudo from '../features/tg-scudo.js';
-import { testiPagina as testiScudoPagina, testiScudo } from '../features/tg-scudo-testi.js';
+import { testiPagina as testiScudoPagina } from '../features/tg-scudo-testi.js';
 import * as provaScudo from '../features/tg-scudo-prova.js';
 import { stato as statoArena } from '../features/arena.js';
 import { VOCI as VOCI_TWITCH } from '../features/sondaggi.js';
@@ -539,8 +539,8 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       return next();
     }
     // La porta del gruppo Telegram: telegram.<dominio>/<canale> E' la porta di
-    // quel canale, e /<canale>/verifica la sua pagina della prova (la Mini App
-    // che lo scudo apre dentro Telegram). La radice rimanda al sito.
+    // quel canale, e /<canale>/verifica la stessa porta con la prova aperta (la
+    // Mini App che lo scudo apre dentro Telegram). La radice rimanda al sito.
     if (config.telegramHost && String(req.hostname || '').toLowerCase() === config.telegramHost) {
       if (legaleIn('privacy').some((x) => x.via === req.path)) return next();
       const d = RE_TELEGRAM_IN_VIA.exec(req.path);
@@ -887,7 +887,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   const guscio = creaGuscio(publicDir);
   guscio.risorsa('pagina-link.js');
   guscio.risorsa('pagina-negozio.js');
-  guscio.risorsa('telegram-verifica.js');
+  guscio.risorsa('telegram-porta.js');
   guscio.pagina('index.html');           // la vetrina, servita anche su '/'
   // Le pagine delle campagne e il loro tasto: aperte solo se l'id e' una
   // campagna che c'e' (le rotte stanno in fondo, dopo tutte le altre).
@@ -2293,19 +2293,22 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     res.type('html').send(html);
   }));
 
-  // La pagina della prova: la apre Telegram (il guardiano, o il tasto del
-  // messaggio in privato). Non resta da nessuna parte: niente cache, niente
-  // indice, niente referrer. Il guscio e' lo stesso per ogni canale con un nome
-  // valido, anche uno che non c'e': chi sei e se hai una richiesta lo dice solo
-  // la firma di Telegram, nelle chiamate qui sotto.
+  // La pagina della prova dentro Telegram (il guardiano, o il tasto del
+  // messaggio in privato) e' LA PORTA, con la prova gia' aperta: una pagina
+  // sola, due strade (docs/TELEGRAM.md, «Una porta sola»). Non resta da nessuna
+  // parte: niente cache, niente indice, niente referrer. Chi sei e se hai una
+  // richiesta lo dice solo la firma di Telegram, nelle chiamate qui sotto.
+  // La foto si chiede solo per un canale nostro: un nome qualunque non fa
+  // partire niente verso fuori.
   const scudoSenzaTracce = (res) => res.set({ 'Cache-Control': 'private, no-store', 'Referrer-Policy': 'no-referrer', 'X-Robots-Tag': 'noindex, nofollow' });
-  app.get('/telegram/:canale/verifica', (req, res) => {
+  app.get('/telegram/:canale/verifica', wrap(async (req, res) => {
     const login = String(req.params.canale || '').toLowerCase();
     if (!LOGIN_RE.test(login)) return notFound(res);
     scudoSenzaTracce(res);
-    const display = streamers.get(login)?.display || login;
-    res.type('html').send(tgPorta.htmlVerifica(login, { display }));
-  });
+    const s = eLoginNostro(login) ? streamers.get(login) : null;
+    const avatar = s ? await avatarDi(login).catch(() => '') : '';
+    res.type('html').send(tgPorta.htmlPorta(login, { modo: 'telegram', display: s?.display || login, avatar, baseUrl: config.baseUrl }));
+  }));
 
   // Le quattro chiamate della pagina. Il canale viene SOLO dall'indirizzo, la
   // persona e la richiesta SOLO dalla firma di Telegram (scudoTg.identifica,
@@ -2334,11 +2337,61 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     const nome = String(req.params.canale || '').toLowerCase();
     const login = eLoginNostro(nome) ? nome : '';
     const conf = login ? tgConf.get(login) : null;
-    const id = conf ? scudoTg.identifica(conf, req.body?.initData, req.body?.c) : { ok: false };
-    if (!id.ok) {
+    const firmato = conf ? scudoTg.identifica(conf, req.body?.initData, req.body?.c) : { ok: false };
+    if (!firmato.ok) {
       const l = regolaScudo.linguaDi('', login ? linguaChat(login) : 'it');
       return res.status(azione === 'apri' ? 200 : 403).json({ esito: 'fuori', lingua: l, t: testiScudoPagina(l) });
     }
+    // le parole sono quelle della pagina (la porta, nella lingua del canale):
+    // la lingua di chi chiede resta il ripiego
+    const id = { ...firmato, lingua: regolaScudo.linguaDi(req.body?.lingua, firmato.lingua) };
+    return rispostaScudo(res, azione, conf, id, corpoScudo(req.body));
+  }));
+
+  // LA PROVA SULLA PORTA, nel browser (docs/TELEGRAM.md, «Una porta sola»). Il
+  // canale viene dall'indirizzo e deve avere la porta pubblicata; chi sei lo
+  // dice il codice che il server ha dato alla pagina con «nuova» (nel database
+  // c'e' solo la sua impronta, scudoTg.identificaPorta). Lo stesso tetto al
+  // minuto per indirizzo delle chiamate dentro Telegram, prima di tutto; poi un
+  // tetto all'ora sulle prove nuove: una prova costa un disegno e, superata, un
+  // link. Con lo scudo spento non si apre niente: la porta fa entrare dritti.
+  // Gli indirizzi restano in memoria un'ora e poi si cancellano (la privacy lo
+  // dice): si pota a ogni prova nuova e ogni minuto, anche se nessuno bussa.
+  const AZIONI_PORTA = ['nuova', 'apri', 'immagine', 'invia', 'aiuto', 'link'];
+  const ORA_MS = 3_600_000;
+  const proveNuove = new Map();
+  const potaProveNuove = (ora = Date.now()) => {
+    for (const [k, v] of proveNuove) {
+      const l = v.filter((t) => t > ora - ORA_MS);
+      if (l.length) proveNuove.set(k, l); else proveNuove.delete(k);
+    }
+  };
+  setInterval(potaProveNuove, 60_000).unref?.();
+  const provaNuovaOk = (ip, ora = Date.now()) => {
+    potaProveNuove(ora);
+    const l = proveNuove.get(ip) || [];
+    if (l.length >= regolaScudo.PROVE_PORTA_ORA) return false;
+    proveNuove.set(ip, [...l, ora]);
+    return true;
+  };
+  app.post('/api/tg-porta/:canale/:azione', wrap(async (req, res) => {
+    scudoSenzaTracce(res);
+    const azione = String(req.params.azione || '');
+    if (!AZIONI_PORTA.includes(azione)) return notFound(res);
+    if (!extRateOk('tg-scudo:' + String(req.ip || ''))) return res.status(429).json({ esito: 'rete' });
+    const nome = String(req.params.canale || '').toLowerCase();
+    const login = eLoginNostro(nome) && tgPorta.aperta(nome) ? nome : '';
+    const conf = login ? tgConf.get(login) : null;
+    const lingua = regolaScudo.linguaDi(req.body?.lingua, login ? linguaChat(login) : 'it');
+    if (azione === 'nuova') {
+      if (!conf) return res.json({ esito: 'chiusa' });
+      if (!scudoTg.acceso(conf)) return res.json({ esito: 'spento' });
+      if (!provaNuovaOk(String(req.ip || ''))) return res.status(429).json({ esito: 'troppe' });
+      return res.json(scudoTg.nuovaPorta(conf, { lingua }));
+    }
+    const id = conf ? scudoTg.identificaPorta(conf, req.body?.s, lingua) : { ok: false };
+    if (!id.ok) return res.status(azione === 'apri' ? 200 : 403).json({ esito: 'chiusa' });
+    if (azione === 'link') return res.json(await scudoTg.link(conf, id));
     return rispostaScudo(res, azione, conf, id, corpoScudo(req.body));
   }));
 
@@ -10441,7 +10494,7 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     }
     const chat = info?.chat || {};
     const display = streamers.get(login)?.display || login;
-    const { colori } = tgPorta.vestePorta(login, display);
+    const colori = tgPorta.coloriPorta(login, display);
     return {
       scudo: scudoTg.scudoDi(c),
       controlli: regolaScudo.controlli({
@@ -10451,7 +10504,7 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
         pubblico: !!chat.username, approvazione: !!chat.join_by_request,
       }),
       inAttesa: tgScudo.inAttesa(login),
-      recenti: tgScudo.recenti(login, 20).map((r) => ({ nome: r.nome, stato: r.stato, motivo: r.motivo, ts: r.ts, fine: r.fine })),
+      recenti: tgScudo.recenti(login, 20).map((r) => ({ nome: r.nome, stato: r.stato, motivo: r.motivo, ts: r.ts, fine: r.fine, porta: r.via === 'web' })),
       porta: { url: scudoTg.urlPorta(login), pubblicata: tgPorta.aperta(login) },
       bot: c?.bot_username || '', gruppo: c?.chat_titolo || '',
       // i colori della pagina, per dire nel pannello come esce la prova «come la pagina»
@@ -10476,38 +10529,36 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     res.json({ ok: true, ...(await statoScudo(login)) });
   }));
 
-  // L'ANTEPRIMA della prova, nel pannello: la stessa pagina e gli stessi gesti
-  // (scudoTg.memoria, scudoTg.telegramMuto), con le impostazioni che il
-  // pannello sta scrivendo, anche non ancora salvate. Una per canale, in
-  // memoria, per dieci minuti.
-  const anteprimeScudo = new Map();
-  const ANTEPRIMA_SCUDO_MS = 10 * 60_000;
-  const confAnteprima = (login, scudo) => ({ channel: login, token: 'anteprima', interattivo: 1, scudo: JSON.stringify(scudo) });
-  const idAnteprima = (login) => ({ ok: true, userId: '0', chatId: '0', queryId: '', lingua: linguaChat(login) });
-  app.post('/api/streamer/telegram/scudo/anteprima', requireLogin, wrap(async (req, res) => {
-    const login = currentUser(req).login;
-    const scudo = regolaScudo.normScudo(req.body?.scudo || scudoTg.scudoDi(tgConf.get(login)));
-    const db = scudoTg.memoria();
-    const ora = Date.now();
-    db.apri({ channel: login, chatId: '0', userId: '0', titolo: tgConf.get(login)?.chat_titolo || '', lingua: linguaChat(login), scad: ora + scudo.minuti * 60_000, ora });
-    anteprimeScudo.set(login, { db, scudo, fino: ora + ANTEPRIMA_SCUDO_MS });
-    for (const [k, v] of anteprimeScudo) if (v.fino < ora) anteprimeScudo.delete(k);
-    const display = streamers.get(login)?.display || login;
-    res.json({ html: tgPorta.htmlVerifica(login, { display, anteprima: true, telegram: false, scudo }) });
-  }));
-  app.post('/api/streamer/telegram/scudo/anteprima/:azione', requireLogin, wrap(async (req, res) => {
+  // L'ANTEPRIMA DELLA PORTA nel pannello: «Entra» fa la prova vera, con una
+  // prova tenuta in memoria e un Telegram che non chiama nessuno. Sono gli
+  // stessi gesti della porta, quindi l'anteprima non puo' comportarsi in un
+  // altro modo. Lo scudo e' quello salvato, acceso anche se e' spento: qui si
+  // guarda la prova.
+  const anteprimePorta = new Map();
+  const ANTEPRIMA_PORTA_MS = 10 * 60_000;
+  const confAnteprima = (login) => ({ channel: login, token: 'anteprima', interattivo: 1, chat_id: '0', chat_titolo: tgConf.get(login)?.chat_titolo || '',
+    scudo: JSON.stringify({ ...scudoTg.scudoDi(tgConf.get(login)), attivo: true }) });
+  app.post('/api/streamer/telegram/porta/anteprima/:azione', requireLogin, wrap(async (req, res) => {
     const login = currentUser(req).login;
     const azione = String(req.params.azione || '');
-    if (!AZIONI_SCUDO.includes(azione)) return notFound(res);
-    const a = anteprimeScudo.get(login);
-    const l = linguaChat(login);
-    if (!a || a.fino < Date.now()) return res.json({ esito: 'scaduta', lingua: l, t: testiScudoPagina(l) });
-    const deps = { db: a.db, telegram: scudoTg.telegramMuto };
-    if (azione === 'apri') {
-      const r = await scudoTg.apri(confAnteprima(login, a.scudo), idAnteprima(login), {}, deps);
-      return res.json({ ...r, avviso: testiScudo(regolaScudo.linguaDi(l)).anteprima });
+    if (!AZIONI_PORTA.includes(azione)) return notFound(res);
+    const lingua = regolaScudo.linguaDi(req.body?.lingua, linguaChat(login));
+    const ora = Date.now();
+    for (const [k, v] of anteprimePorta) if (v.fino < ora) anteprimePorta.delete(k);
+    if (azione === 'nuova') {
+      const db = scudoTg.memoria();
+      const conf = confAnteprima(login);
+      const r = scudoTg.nuovaPorta(conf, { lingua }, { db, telegram: scudoTg.telegramMuto });
+      anteprimePorta.set(login, { db, conf, fino: ora + ANTEPRIMA_PORTA_MS });
+      return res.json(r);
     }
-    return rispostaScudo(res, azione, confAnteprima(login, a.scudo), idAnteprima(login), corpoScudo(req.body), deps);
+    const a = anteprimePorta.get(login);
+    if (!a) return res.json({ esito: 'scaduta' });
+    const deps = { db: a.db, telegram: scudoTg.telegramMuto };
+    const id = scudoTg.identificaPorta(a.conf, req.body?.s, lingua);
+    if (!id.ok) return res.json({ esito: 'chiusa' });
+    if (azione === 'link') return res.json(await scudoTg.link(a.conf, id, deps));
+    return rispostaScudo(res, azione, a.conf, id, corpoScudo(req.body), deps);
   }));
 
   app.post('/api/streamer/telegram/impostazioni', requireLogin, wrap(async (req, res) => {

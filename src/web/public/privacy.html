@@ -133,7 +133,11 @@
           entrare fa prima una prova su una pagina. Teniamo l'id del suo account Telegram, il nome con cui compare, il
           gruppo, l'esito della prova e l'ora; la bio dell'account non la leggiamo. La prova si disegna sul nostro server
           e il codice da leggere non lascia mai il server. Le richieste si cancellano dopo <strong>sette giorni</strong>
-          e non fanno parte dell'esportazione dei dati del canale.</li>
+          e non fanno parte dell'esportazione dei dati del canale. Se la prova si fa sulla <strong>porta del gruppo</strong>,
+          nel browser, non usiamo cookie: la pagina riceve un codice a caso che tiene solo in memoria, e noi ne teniamo
+          solo l'impronta, che non basta a riprendere la prova. L'indirizzo IP serve solo a limitare quante prove partono
+          da una stessa connessione: resta in memoria per un'ora, poi si cancella. Chi supera la prova riceve un link d'invito
+          personale, che vale per una persona e per mezz'ora; quando entra teniamo il suo account come per le richieste.</li>
         <li><strong>Integrazioni opzionali</strong> attivate dallo streamer: token del suo bot <strong>Telegram</strong>
           + id del gruppo (forniti da lui), <strong>username TikTok</strong> pubblico per la notifica live, e la
           chiave a permessi ridotti del suo conto <strong>Stripe</strong> per le donazioni, conservata cifrata; se collega

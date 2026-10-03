@@ -184,9 +184,15 @@ comandi diversi da quelli della riga italiana.
 - Nei comandi importati $(count) torna a contare: il numero sale a ogni uso, come nel bot di prima, e riparte da dove eri arrivato. [vai: moduli]
   en: In imported commands $(count) counts again: the number goes up with every use, as in your old bot, and picks up where you left off.
   es: En los comandos importados $(count) vuelve a contar: el número sube con cada uso, como en tu bot anterior, y sigue desde donde te quedaste.
-- Dalla porta del gruppo Telegram, «Vedi la pagina della prova» apre la prova come la vede chi chiede di entrare: tu, che sei già nel gruppo, entrando non la vedi. [vai: telegram]
-  en: From the Telegram group door, «See the check page» opens the check as people asking to join see it: you are already in the group, so you won't see it when you join.
-  es: Desde la puerta del grupo de Telegram, «Ver la página de la prueba» abre la prueba como la ve quien pide entrar: tú ya estás en el grupo, así que al entrar no la ves.
+- [importante] Il gruppo Telegram ha una pagina sola, la porta: «Entra» porta dritto nel gruppo con lo scudo spento, e con lo scudo acceso apre la prova lì, vestita come la porta. Chi la supera entra con un link tutto suo. [vai: telegram]
+  en: Your Telegram group has one page, the door: «Join» goes straight in with the shield off, and with it on opens the check right there, dressed like the door. Passing it gives a link of your own.
+  es: Tu grupo de Telegram tiene una sola página, la puerta: «Entrar» lleva directo al grupo con el escudo apagado, y encendido abre la prueba allí, con su aspecto. Quien la supera entra con un enlace propio.
+  > Una porta sola per il tuo gruppo
+  > Prima la prova stava su un'altra pagina e arrivava dopo aver chiesto di entrare. Ora è un pezzo della porta: parole, colori e grandezza li scegli nel pezzo del gruppo, e nell'anteprima la fai davvero. Chi chiede da un altro link vede la stessa pagina dentro Telegram.
+  en> A single door for your group
+  en> The check used to live on another page and came after asking to join. Now it is a piece of the door: you choose its words, colors and size in the group piece, and take it for real in the preview. Whoever asks from another link sees the same page inside Telegram.
+  es> Una sola puerta para tu grupo
+  es> Antes la prueba estaba en otra página y llegaba después de pedir entrar. Ahora es una pieza de la puerta: palabras, colores y tamaño los eliges en la pieza del grupo, y en la vista previa la haces de verdad. Quien lo pide desde otro enlace ve la misma página dentro de Telegram.
 
 ## 2026-10-02
 

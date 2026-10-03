@@ -4363,6 +4363,24 @@ export const PIATTAFORME_DIRETTA = ['twitch', 'kick', 'youtube'];
 // salvataggio senza che nessuno l'abbia vista andar via.
 // voci: quante righe tiene un pezzo fatto di righe, per tipo di pezzo.
 // altezzaEmbed: il massimo, in px, dell'altezza scelta a mano per un riquadro.
+// LA PROVA DELLA PORTA DEL GRUPPO, come la veste lo streamer: le parole (ogni
+// chiave col suo tetto), i colori dei puntini (quelli della pagina, o due
+// scelti: se non si leggono, la pagina li rifiuta in coloriProva) e quanto e'
+// grande il riquadro. Solo quello che c'e': una porta mai toccata resta
+// {} e prende tutto di serie.
+export const GRANDEZZE_PROVA = ['normale', 'grande', 'piena'];
+export const PAROLE_PROVA = { titolo: 60, aiuto: 200, tasto: 60, fattoTitolo: 60, fattoTesto: 240, apri: 40, noTesto: 240, adminTesto: 240 };
+function provaPorta(x, str) {
+  const p = x && typeof x === 'object' && !Array.isArray(x) ? x : {};
+  const out = {};
+  for (const [k, max] of Object.entries(PAROLE_PROVA)) { const v = str(p[k], max); if (v) out[k] = v; }
+  const c = p.colori && typeof p.colori === 'object' ? p.colori : null;
+  const h6 = (v) => (/^#[0-9a-f]{6}$/i.test(String(v || '')) ? String(v).toLowerCase() : '');
+  if (c && (c.modo === 'miei' || c.modo === 'pagina')) out.colori = { modo: c.modo, punti: h6(c.punti) || '#1d1a26', fondo: h6(c.fondo) || '#f6f3ee' };
+  if (GRANDEZZE_PROVA.includes(p.grandezza) && p.grandezza !== 'normale') out.grandezza = p.grandezza;
+  return out;
+}
+
 export const LIMITI_LINKPAGE = {
   headline: 80, tagline: 200, label: 60, sotto: 90, url: 500,
   blocchi: 40, testo: 500, titolo: 60,
@@ -4670,8 +4688,11 @@ const storePagina = (tabella, { conAspetto = false, tipi = TIPI_BLOCCO } = {}) =
       } else if (tipo === 'piede') {
         out.push({ tipo, link: b.link !== false, canale: b.canale !== false });
       } else if (tipo === 'gruppo') {
-        // il gruppo e il tasto per entrare: il link lo fa il bot, qui le parole
-        out.push({ tipo, titolo: str(b.titolo, L.label), testo: str(b.testo, L.sotto), tasto: str(b.tasto, L.label) });
+        // il gruppo e il tasto per entrare: il link lo fa il bot, qui le parole.
+        // `prova` e' la prova che il tasto apre quando lo scudo e' acceso
+        // (docs/TELEGRAM.md, «Una porta sola»): le sue parole, i colori e la
+        // grandezza. Una parola vuota e' quella di serie, nella lingua della pagina.
+        out.push({ tipo, titolo: str(b.titolo, L.label), testo: str(b.testo, L.sotto), tasto: str(b.tasto, L.label), prova: provaPorta(b.prova, str) });
       } else if (tipo === 'scudo') {
         out.push({ tipo, titolo: str(b.titolo, L.label), testo: str(b.testo, L.sotto) });
       } else if (tipo === 'regole') {

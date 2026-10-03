@@ -1514,7 +1514,7 @@ ${/* l'icona della scheda e della schermata home: la foto che la pagina mostra
   .sel-b.tocca > *{outline:2px solid var(--acc);outline-offset:4px}` : ''}
   ${maiusc}
   ${strato ? strato.css : ''}
-  ${est ? est.css({ c, stileBtn, ombra, aSinistra }) : ''}
+  ${est ? est.css({ c, stileBtn, ombra, aSinistra, blocchi: pagina.blocchi }) : ''}
   ${cssPaginaSicuro(t.css)}
 </style>
 
@@ -1530,7 +1530,7 @@ ${/* l'icona della scheda e della schermata home: la foto che la pagina mostra
       · <a href="${esc(viaPrivacy)}">${est ? esc(est.testi.privacy) : 'Privacy'}</a>${banner && corpo.includes('chiedi-b')
         ? ` · <button type="button" id="ri-consenso" class="come-link">Contenuti di altri siti</button>` : ''}</p>
   </main>
-<script src="/pagina-link.js?v=11" defer></script>${negozio ? '\n<script src="/pagina-negozio.js?v=1" defer></script>' : ''}
+<script src="/pagina-link.js?v=11" defer></script>${negozio ? '\n<script src="/pagina-negozio.js?v=1" defer></script>' : ''}${fuori?.script ? `\n${fuori.script(anteprima)}` : ''}
 ${banner && corpo.includes('chiedi-b') ? `
   <aside class="fascia" id="fascia" hidden>
     <p><b>Video e musica di altri siti.</b> Questa pagina non usa cookie, ma i riquadri di YouTube, Spotify,

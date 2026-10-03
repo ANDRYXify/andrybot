@@ -246,14 +246,17 @@ Il cancello qui sopra lavora su chi e' GIA' entrato. Lo scudo lavora un passo
 prima, sulla **richiesta di ingresso**: chi chiede di entrare fa una prova su
 una pagina, e Telegram lo fa entrare solo se la pagina dice «passato».
 
-### Tre strade, una porta ciascuna
+### Quattro strade, una porta ciascuna
 
+0. **Dalla porta del gruppo** (la strada di casa, vedi «Una porta sola» qui
+   sotto): chi preme «Entra» fa la prova sulla pagina stessa, e chi la supera
+   riceve un link personale. Nessuna richiesta, nessuna attesa.
 1. **Richiesta con il guardiano.** Se nelle impostazioni del gruppo il nostro
    bot e' il guardiano delle richieste, Telegram ci da' dieci secondi per
    aprire la pagina dentro Telegram (`sendChatJoinRequestWebApp`). E' la prima
    cosa che fa il webhook, prima del database e di ogni altra chiamata.
 2. **Richiesta senza guardiano** (gruppo con «Approva nuovi membri», o il link
-   della nostra porta): il bot scrive in privato a chi ha chiesto
+   fisso del bot): il bot scrive in privato a chi ha chiesto
    (`user_chat_id`, cinque minuti per farlo) un messaggio con un tasto che apre
    la stessa pagina.
 3. **Ingresso diretto** (gruppo pubblico senza approvazione): non c'e' una
@@ -312,15 +315,74 @@ questa prova, confrontando i fotogrammi fra loro, la puo' leggere. Nessuno
 strumento comune lo fa, e ogni tentativo costa: un account Telegram, tre
 prove da tre tentativi, mezz'ora di attesa dopo un no.
 
-### La porta del gruppo
+### Una porta sola
 
 `telegram.<dominio>/<canale>` (sempre anche `/telegram/<canale>`) e' la porta
-pubblica del gruppo: una pagina come la pagina link, con lo stesso editor e
-la stessa veste (`src/features/tg-porta.js`, store `pagina_telegram`). Il link
-per entrare lo fa il bot, uno per gruppo (`scudoTg.invito`): con lo scudo
-acceso chiede l'approvazione, quindi chi entra da li' passa per forza dalla
-prova. La pagina della prova (`/<canale>/verifica`) prende la veste della
-porta; non resta in cache, non si indicizza, non manda referrer.
+pubblica del gruppo, ed e' **l'unica pagina** del gruppo: una pagina come la
+pagina link, con lo stesso editor e la stessa veste
+(`src/features/tg-porta.js`, store `pagina_telegram`). Prima c'erano due
+pagine, la porta e quella della prova, con due vesti e due posti dove
+cambiarle; chi premeva «Entra» finiva in Telegram e la prova arrivava dopo,
+altrove. Adesso dove porta «Entra» **lo decide lo scudo**, non
+un'impostazione:
+
+- **scudo spento** (niente, o solo il cancello): il tasto e' il link fisso del
+  bot (`scudoTg.invito`), e si entra subito. Il cancello lavora dopo, se
+  acceso;
+- **scudo acceso**: il tasto apre la prova **li'**, nella carta del gruppo
+  (`/telegram-porta.js`). La prova e' un pezzo della porta: prende i suoi
+  caratteri, i colori dei tasti, lo sfondo; le sue parole (titolo,
+  spiegazione, tasto, gli esiti), i colori dei puntini e la grandezza si
+  scelgono nel pezzo «Il gruppo e il tasto per entrare» (`prova`, pulito da
+  `paginaTelegram`). Le regole e le domande restano nello scudo. Senza
+  JavaScript il tasto resta il link fisso, che con lo scudo acceso chiede
+  l'approvazione: si passa dalla prova dentro Telegram.
+
+Chi chiede di entrare da un altro link vede, dentro Telegram
+(`/<canale>/verifica`), **la stessa porta** con la prova gia' aperta: una
+pagina, due strade. Parla la lingua del canale, come la porta. Non resta in
+cache, non si indicizza, non manda referrer.
+
+#### La prova sulla porta, per costruzione
+
+- **Chi sei e' il codice della pagina.** «Entra» chiede una prova nuova
+  (`POST /api/tg-porta/<canale>/nuova`); il server da' alla pagina un codice a
+  caso e tiene solo la sua **impronta** (`w:` + sha256, riga dello scudo con
+  `via='web'`). La pagina lo tiene in memoria (niente cookie, niente
+  indirizzo) e lo rimanda a ogni passo. Le due strade non si scambiano le
+  righe: una prova della porta si apre solo col codice della porta, una
+  richiesta di Telegram solo con la firma di Telegram.
+- **Gli stessi gesti.** La prova si giudica con `apri`, `immagine`, `invia`,
+  `aiuto` di sempre (tre tentativi, tre prove, il codice che non esce, le
+  domande con la loro impronta). Cambia solo come si dice l'esito:
+  - **superata**: un link personale (`creaInvito`, `member_limit` 1,
+    mezz'ora). Si entra senza chiedere. Il link si fa **una volta sola** per
+    prova, anche se la pagina lo chiede dieci volte insieme (`linkPorta`, una
+    fila per prova): una prova superata fa entrare al massimo una persona. Se
+    Telegram non lo da', la prova resta superata e la pagina lo richiede
+    («link»); un link scaduto non si rifa', si rifa' la prova;
+  - **agli amministratori** (la scelta «la lascio agli amministratori», o «Non
+    riesco a vederla»): un link che chiede l'approvazione. La richiesta che ne
+    arriva va in coda, senza pagina: decidono loro;
+  - **no**, o **pagina lasciata scadere**: nessuna chiamata a Telegram. Una
+    pagina dimenticata aperta non manda nessuno dagli amministratori.
+- **Il bot riconosce i suoi link.** Chi entra dal link personale lo consuma
+  (`entrato`): la prova diventa «usata», la persona e' segnata come passata
+  da una porta e il cancello non la ferma una seconda volta. Se il gruppo
+  chiede l'approvazione a tutti, la richiesta da quel link si approva una
+  volta sola; una seconda dallo stesso link fa la strada di tutte.
+- **Tetti.** Lo stesso tetto al minuto per indirizzo delle chiamate dentro
+  Telegram, prima di tutto; con lo scudo spento non si apre niente (e non
+  conta); poi al massimo dodici prove nuove l'ora da uno stesso indirizzo. La
+  porta dev'essere pubblicata.
+- **Nel pannello** si vedono le prove che hanno detto qualcosa (superate, no,
+  agli amministratori), con «Dalla porta» al posto del nome; quelle lasciate a
+  meta' non sono richieste e non si contano.
+- **L'anteprima** dell'editor della porta fa la prova vera, con una prova in
+  memoria e un Telegram che non chiama nessuno: gli stessi gesti, quindi lo
+  stesso comportamento. I tasti del pezzo mostrano anche ogni esito. Nella
+  demo la prova non si apre (non c'e' un bot): lo dice, e gli esiti si
+  guardano lo stesso.
 
 ### Cosa serve
 
@@ -333,6 +395,11 @@ grave.
 Prove: `test/unita/tg-scudo.test.mjs` (la regola),
 `test/unita/tg-scudo-prova.test.mjs` (la prova in movimento),
 `test/unita/tg-scudo-gesti.test.mjs` (i gesti, con un Telegram finto, gare
-comprese), `test/contratto/tg-scudo-cablaggio.test.mjs` (i fili col server) e
-`scripts/verifica-scudo-tg.mjs` (la pagina vera in un browser, al computer e
-al telefono, con `--selftest`).
+comprese), `test/unita/tg-porta-prova.test.mjs` (la prova sulla porta: un link
+per prova anche chiesto dieci volte insieme, le due strade separate, gli
+amministratori, la scadenza, il link consumato e il cancello),
+`test/contratto/tg-scudo-cablaggio.test.mjs` (i fili col server) e
+`scripts/verifica-scudo-tg.mjs` (la porta vera in un browser, al computer e
+al telefono: «Entra» che apre la prova li', i colori e le parole scelte, il
+link personale, il no, gli amministratori, la stessa pagina dentro Telegram;
+con `--selftest`, un difetto alla volta).

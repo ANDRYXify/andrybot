@@ -119,8 +119,9 @@ const PREFISSI = [
   '/api/console/',       // la tastiera fisica di CONSOLify: un cookie non ce l'ha, e la guarda la chiave del canale
   '/icona/',             // le icone dei tasti, che la stessa tastiera va a prendere: nomi casuali a schema fisso
   '/api/gsi/',           // il gioco che manda il suo stato: lo guarda la chiave dei giochi
-  '/telegram/',          // la porta del gruppo Telegram e la pagina della prova dello scudo: ci arriva chi NON e' di casa
+  '/telegram/',          // la porta del gruppo Telegram, anche con la prova aperta dentro Telegram: ci arriva chi NON e' di casa
   '/api/tg-scudo/',      // le chiamate della prova: chi sei lo dice solo la firma di Telegram
+  '/api/tg-porta/',      // la prova sulla porta, nel browser: chi sei lo dice solo il codice che il server ha dato alla pagina
 ];
 
 const RIF_HTML = /(?:src|href)\s*=\s*["']([^"']+)["']/g;
