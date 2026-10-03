@@ -73,7 +73,7 @@ import { ClipEngine } from './features/clips.js';
 import { PenitenzeEngine } from './features/penitenze.js';
 import { AlertsEngine } from './features/alerts.js';
 import { MuroEmote } from './features/muro.js';
-import { AntiBot, caricaListaBotDaDisco, aggiornaListaBot, caricaRegistroDaDisco, salvaRegistro } from './features/antibot.js';
+import { AntiBot, caricaListaBotDaDisco, aggiornaListaBot, caricaRegistroDaDisco, spegniScudo } from './features/antibot.js';
 import { censisci } from './features/punteggio.js';
 import { carica as caricaRete } from './features/rete.js';
 import { carica as caricaIncidenti } from './features/incidenti.js';
@@ -435,10 +435,13 @@ export class BotManager {
     await this.events?.stop?.();
     // salva i modelli IA locali (semantica auto-addestrata) prima di chiudere
     try { model.salvaTutto(); } catch { /* niente */ }
-    // svuota su disco il registro anti-bot in sospeso (il salvataggio è
-    // debounced 4s: senza questo, ban/segnalazioni degli ultimi secondi si
-    // perderebbero a ogni riavvio/deploy).
-    try { await salvaRegistro(); } catch { /* niente */ }
+    // lo scudo si spegne senza perdere niente (antibot.js, spegniScudo): la
+    // fila si ferma e quello che non era ancora arrivato a Twitch diventa
+    // un'azione in sospeso, da riprendere dal pannello; poi registro, incidenti
+    // e rete vanno su disco (i salvataggi aspettano qualche secondo per
+    // raccogliere le righe: senza questo, gli ultimi si perderebbero a ogni
+    // riavvio o aggiornamento).
+    try { await spegniScudo(); } catch { /* niente */ }
     for (const [, u] of this.units) u.chat.disconnect();
     this.units.clear();
   }

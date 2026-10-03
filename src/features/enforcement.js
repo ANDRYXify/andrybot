@@ -91,6 +91,8 @@ export class Esecutore {
     // Gli stessi conti, canale per canale: quello che vede uno streamer e' il
     // suo, e il totale di tutti resta a chi guarda la macchina.
     this._contiPer = new Map();
+    this._fermo = null;
+    this._sveglia = null;
   }
 
   _conta(canale, chiave) {
@@ -158,9 +160,9 @@ export class Esecutore {
     if (this._gira) return;
     this._gira = true;
     try {
-      while (this._coda.length) {
+      while (this._coda.length && !this._fermo) {
         const attesa = this._pausaFino - Date.now();
-        if (attesa > 0) { await dormi(attesa); continue; }
+        if (attesa > 0) { await this._dormi(attesa); continue; }
         const voce = this._coda.shift();
         const esito = await this._fai(voce);
         // «Rimandato» vuol dire che la voce è tornata in fila per un rientro:
@@ -169,9 +171,55 @@ export class Esecutore {
         // restava tutta la coda — cioè il rientro sul rate limit spegneva
         // l'esecutore invece di rallentarlo.
         if (!esito?.rimandato) voce.risolvi(esito);
-        await dormi(Math.round(1000 / AL_SEC));
+        if (!this._fermo) await this._dormi(Math.round(1000 / AL_SEC));
       }
-    } finally { this._gira = false; }
+    } finally {
+      this._gira = false;
+      if (this._fermo) this._congedaTutti(this._coda.splice(0));
+    }
+  }
+
+  // Il ritmo dorme su un orologio che si puo' svegliare: chi ferma l'esecutore
+  // non deve aspettare la fine di un rientro di minuti, e nessun orologio resta
+  // acceso a tenere vivo un processo che ha finito.
+  _dormi(ms) {
+    return new Promise((r) => {
+      const t = setTimeout(() => { this._sveglia = null; r(); }, Math.max(0, ms));
+      this._sveglia = () => { clearTimeout(t); this._sveglia = null; r(); };
+    });
+  }
+
+  // FERMARSI SENZA LASCIARE NIENTE A META'. Chi si spegne (un riavvio, la fine
+  // di una prova) non abbandona la fila: chi aspettava un esito lo riceve
+  // («fermato prima di farla») invece di restare appeso; il ritmo che dormiva
+  // si sveglia; e quello che era in fila diventa un'azione in sospeso, scritta
+  // su disco come le fallite, che al ritorno si riprende dal pannello. Un
+  // riavvio durante un attacco non si porta via i ban ancora da fare.
+  // Un verdetto che arriva dopo entra in fila e ne esce allo stesso modo: la
+  // fila ha una sola uscita, la fine di _svuota, e da fermi passa da li'.
+  // Il simulatore ferma con `conserva: false`: i suoi verdetti sono un gioco,
+  // non un debito con Twitch.
+  async ferma({ conserva = true } = {}) {
+    if (!this._fermo) this._fermo = { conserva };
+    this._sveglia?.();
+    this._congedaTutti(this._coda.splice(0));
+    await this._lettura;
+    if (this._fermo.conserva) await this._scrittura;
+  }
+
+  _congedaTutti(voci) {
+    const esito = { ok: false, motivo: FERMATA };
+    if (!voci.length) return esito;
+    if (this._fermo.conserva) {
+      for (const { v, tentativi } of voci) {
+        this._falliti.push({ ...v, motivo: FERMATA, tentativi, quando: Date.now() });
+        this.annota(v.canale, rigaDi(v, esito, 'in-attesa'));
+      }
+      if (this._falliti.length > FALLITI_MAX) this._falliti.splice(0, this._falliti.length - FALLITI_MAX);
+      this.salvaFalliti().catch(() => {});
+    }
+    for (const voce of voci) voce.risolvi(esito);
+    return esito;
   }
 
   async _fai(voce) {
@@ -270,26 +318,35 @@ export class Esecutore {
   // I salvataggi si mettono in fila. Due scritture ravvicinate sullo stesso file
   // finiscono in ordine di completamento, non di partenza: l'ultima a partire
   // può essere sovrascritta da una più vecchia, e allora un debito già scritto
-  // sparisce.
+  // sparisce. E la fila parte dopo la lettura dell'avvio: una scrittura che la
+  // precedesse riscriverebbe il file senza le righe di prima.
   salvaFalliti() {
-    this._scrittura = (this._scrittura || Promise.resolve()).then(
+    this._scrittura = (this._scrittura || Promise.resolve()).then(() => this._lettura).then(
       () => writeFile(FILE(), JSON.stringify({ v: 1, righe: this._falliti }))
         .catch((e) => log.warn('coda dei falliti non salvata:', e?.message || e)),
     );
     return this._scrittura;
   }
 
-  async caricaFalliti() {
-    try {
-      const j = JSON.parse(await readFile(FILE(), 'utf8'));
-      this._falliti = (j?.righe || []).filter((f) => f && f.canale && f.azione).slice(-FALLITI_MAX);
-      if (this._falliti.length) log.info(`coda dei falliti: ${this._falliti.length} azioni ancora in sospeso`);
-    } catch (e) { /* prima volta: nessun file */ }
+  // Quello che si legge si AGGIUNGE a quello che c'e': un'azione caduta nei
+  // primi istanti, prima che il file sia letto, non sparisce sotto la lista
+  // vecchia. E chi ferma l'esecutore aspetta la lettura, cosi' quello che
+  // scrive contiene tutte e due.
+  caricaFalliti() {
+    this._lettura = (async () => {
+      try {
+        const j = JSON.parse(await readFile(FILE(), 'utf8'));
+        const letti = (j?.righe || []).filter((f) => f && f.canale && f.azione);
+        this._falliti = [...letti, ...this._falliti].slice(-FALLITI_MAX);
+        if (letti.length) log.info(`coda dei falliti: ${letti.length} azioni ancora in sospeso`);
+      } catch (e) { /* prima volta: nessun file */ }
+    })();
+    return this._lettura;
   }
 }
 
 const FILE = () => join(config.dataDir, 'azioni-fallite.json');
-const dormi = (ms) => new Promise((r) => setTimeout(r, Math.max(0, ms)));
+const FERMATA = 'il bot si è fermato prima di farla';
 const motivoCorto = (v) => (v.motivi.join(', ') || v.origine || 'scudo').slice(0, 200);
 
 // La riga del registro. Ci sta quello che si è CHIESTO e quello che è tornato,

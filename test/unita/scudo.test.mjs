@@ -20,7 +20,7 @@ const { streamers } = await import('../../src/db.js');
 const ab = await import('../../src/features/antibot.js');
 const as = await import('../../src/features/antispam.js');
 const { checkMessage, checkRisposta } = await import('../../src/features/moderation.js');
-test.after(() => casa.pulisci());
+test.after(async () => { await ab.spegniScudo(); casa.pulisci(); });
 
 // Caso deterministico: le prove non devono dipendere dal dado. Generatore
 // lineare con seme fisso, e da li' gli intervalli esponenziali.

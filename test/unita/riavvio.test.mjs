@@ -25,7 +25,11 @@ import { cartellaUsaEGetta } from '../aiuto.mjs';
 const casa = cartellaUsaEGetta('riavvio-');
 const { streamers, statoVivo } = await import('../../src/db.js');
 const giveaway = await import('../../src/features/giveaway.js');
-test.after(() => casa.pulisci());
+test.after(async () => {
+  const { spegniScudo } = await import('../../src/features/antibot.js');
+  await spegniScudo();
+  casa.pulisci();
+});
 
 const CANALE = 'alfa';
 streamers.upsertApproved(CANALE, 'Alfa', '1');

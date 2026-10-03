@@ -16,7 +16,7 @@ const casa = cartellaUsaEGetta('livelli-');
 const { streamers } = await import('../../src/db.js');
 const L = await import('../../src/features/livelli.js');
 const ab = await import('../../src/features/antibot.js');
-test.after(() => casa.pulisci());
+test.after(async () => { await ab.spegniScudo(); casa.pulisci(); });
 
 // ─────────────────────────────────────────── ogni livello fa una cosa sua
 

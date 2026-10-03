@@ -36,6 +36,15 @@ colpa del tetto di Twitch.
 Il simulatore misura i **decisi**, e riporta a parte quanti ne sono stati
 eseguiti.
 
+Finito lo scenario, la fila si **ferma** (`esecutore.ferma({ conserva: false })`).
+Prima restava accesa: i blocchi di un'ondata, sei al secondo, continuavano a
+uscire per più di un minuto dopo la prova, scrivendo nel registro di una
+cartella che la prova aveva già tolto. Erano le centinaia di
+`registro non salvato su disco: ENOENT` nella console dell'aggiornamento, e il
+file delle prove durava 84 secondi invece di 7. `conserva: false` perché i
+verdetti di un gioco non sono un debito con Twitch: non diventano azioni in
+sospeso.
+
 ## Gli scenari
 
 Sono deterministici: nessun dado vero, solo una sequenza che si ripete identica.

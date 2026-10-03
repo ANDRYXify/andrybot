@@ -6,10 +6,21 @@ import { mkdtempSync, rmSync, readFileSync, readdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
+// Togliere la cartella lo dice anche al registro del bot (src/logger.js): una
+// riga scritta dopo e' lavoro rimasto acceso oltre la prova, e fa rosso il file.
+// Una cartella nuova riapre i lavori.
+const CASA = Symbol.for('socialbot.casa-della-prova');
 export function cartellaUsaEGetta(nome = 'andrybot-test-') {
   const dir = mkdtempSync(join(tmpdir(), nome));
   process.env.DATA_DIR = dir;
-  return { dir, pulisci: () => { try { rmSync(dir, { recursive: true, force: true }); } catch { /* */ } } };
+  globalThis[CASA] = { dir, tolta: false };
+  return {
+    dir,
+    pulisci: () => {
+      if (globalThis[CASA]?.dir === dir) globalThis[CASA].tolta = true;
+      try { rmSync(dir, { recursive: true, force: true }); } catch { /* */ }
+    },
+  };
 }
 
 // Esegue uno script di scripts/ e ritorna { codice, uscita }.

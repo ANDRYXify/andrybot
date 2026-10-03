@@ -49,7 +49,7 @@ import * as cancello from '../features/tg-cancello.js';
 import { permessiDi as permessiDiChat, guai as guaiCancello } from '../features/tg-ingresso.js';
 import { EVENTI as EVENTI_EFFETTI, MAX_LIVELLI as MAX_LIVELLI_EFFETTI, MAX_DA as MAX_DA_EFFETTI, MAX_PAUSA as MAX_PAUSA_EFFETTI, normalizza as normalizzaEffettiEventi } from '../features/effetti-eventi.js';
 import { elenco as elencoComandi, normalizza as normalizzaComandi, unisci as unisciComandi, collisioni as collisioniComandi, LIVELLI as LIVELLI_COMANDO, MODULI as MODULI_COMANDO, GRUPPI as GRUPPI_COMANDO } from '../features/comandi-registro.js';
-import { AntiBot, erroriScudo, statoEsecutore, azioniFallite, riprovaFallite, bonifica as bonificaIncidente, conNome, ESENTI_MAX, bloccaDaConsole } from '../features/antibot.js';
+import { erroriScudo, statoEsecutore, azioniFallite, riprovaFallite, bonifica as bonificaIncidente, conNome, ESENTI_MAX, bloccaDaConsole } from '../features/antibot.js';
 import { statoCensimento } from '../features/punteggio.js';
 import { aperto as incidenteAperto, elenco as elencoIncidenti, uno as unIncidente, sintesi as sintesiIncidente } from '../features/incidenti.js';
 import { rapporto as rapportoBonifica, anteprima as anteprimaBonifica } from '../features/bonifica.js';
@@ -3744,9 +3744,14 @@ STREAMER (${su.toUpperCase()}) e non c'entra con l'automazione del marketing.
   // esito reale), le segnalazioni da rivedere, e le liste dello streamer.
   const _abCfg = (login) => ({ ...(streamers.get(login)?.settings?.antibot || {}) });
   const _pulizie = new Map();
-  // La pulizia della lista follower ha bisogno solo di Helix e della lista dei
-  // bot noti (che è del modulo, condivisa): non serve l'istanza del bot vivo.
-  const _scudo = new AntiBot({ helix });
+  // La pulizia della lista follower passa dallo scudo VIVO, quello del bot: la
+  // sua fila e' la stessa di un attacco in corso, cosi' la pulizia ci va
+  // dietro invece di gareggiare per il rate limit, e quello che non riesce
+  // finisce fra le «Rimaste in sospeso» del pannello. Prima qui c'era un
+  // secondo scudo, con una seconda fila, i suoi falliti scritti sopra quelli
+  // del primo nello stesso file e una seconda riapertura delle serrande a ogni
+  // avvio. Lo scudo e' uno per processo (test/contratto/scudo-uno.test.mjs).
+  const scudoVivo = () => manager?.antibot || null;
   // La lista che i canali hanno costruito insieme. Solo i confermati, e mai i
   // canali che li hanno segnalati: quelli non escono dal modulo.
   app.get('/api/antibot/rete', requireOwner, (req, res) => {
@@ -3916,14 +3921,16 @@ STREAMER (${su.toUpperCase()}) e non c'entra con l'automazione del marketing.
     const prova = req.body?.prova !== false;
     const inCorso = _pulizie.get(login);
     if (inCorso && inCorso.attiva) return res.json({ ...inCorso, giaInCorso: true });
+    const scudo = scudoVivo();
+    if (!scudo) return res.status(503).json({ errore: 'scudo non attivo: il bot non è partito' });
     if (prova) {
-      const e = await _scudo.pulisciFollower(login, { max: 3000, prova: true });
+      const e = await scudo.pulisciFollower(login, { max: 3000, prova: true });
       return res.json({ prova: true, guardati: e.guardati, totale: e.totale, trovati: e.trovati.slice(0, 200), quanti: e.trovati.length });
     }
     const stato = { attiva: true, guardati: 0, trovati: 0, bloccati: 0, falliti: 0, avvio: Date.now() };
     _pulizie.set(login, stato);
     res.json({ avviata: true });
-    _scudo.pulisciFollower(login, { max: 3000, alPasso: (p) => Object.assign(stato, p) })
+    scudo.pulisciFollower(login, { max: 3000, alPasso: (p) => Object.assign(stato, p) })
       .then((e) => Object.assign(stato, e, { trovati: e.trovati.length, attiva: false, fine: Date.now() }))
       .catch(() => Object.assign(stato, { attiva: false, errore: true }));
   }));

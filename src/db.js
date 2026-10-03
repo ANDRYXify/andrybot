@@ -11,6 +11,9 @@ import { config } from './config.js';
 import { cifra, decifra, eCifrato, anello, anelloCorrente } from './segreti.js';
 import { istruzioneGenere } from './ai/genere.js';
 import { nomeSu } from './identita.js';
+import { makeLog } from './logger.js';
+
+const log = makeLog('db');
 
 mkdirSync(config.dataDir, { recursive: true });
 export const db = new Database(join(config.dataDir, 'andrybot.db'));
@@ -1222,8 +1225,7 @@ aggiungiColonna('donazioni', 'media_at', 'INTEGER NOT NULL DEFAULT 0');
     const a = db.prepare("UPDATE modules SET config = REPLACE(config, 'andryxify.it/u/', 'socialbot.live/u/') WHERE config LIKE '%andryxify.it/u/%'").run();
     const b = db.prepare("UPDATE knowledge SET risposta = REPLACE(risposta, 'andryxify.it/u/', 'socialbot.live/u/') WHERE risposta LIKE '%andryxify.it/u/%'").run();
     if ((a.changes || 0) + (b.changes || 0) > 0) {
-      // eslint-disable-next-line no-console
-      console.log(`[db] link profilo migrati: ${a.changes} moduli, ${b.changes} risposte → socialbot.live/u/`);
+      log.info(`link profilo migrati: ${a.changes} moduli, ${b.changes} risposte → socialbot.live/u/`);
     }
   } catch { /* best-effort: non blocca l'avvio */ }
 })();
@@ -1243,8 +1245,7 @@ aggiungiColonna('donazioni', 'media_at', 'INTEGER NOT NULL DEFAULT 0');
       tot += (a.changes || 0) + (b.changes || 0);
     }
     if (tot > 0) {
-      // eslint-disable-next-line no-console
-      console.log(`[db] vecchio link del bot migrato → socialbot.live (${tot} testi)`);
+      log.info(`vecchio link del bot migrato → socialbot.live (${tot} testi)`);
     }
   } catch { /* best-effort */ }
 })();
@@ -1268,8 +1269,7 @@ aggiungiColonna('donazioni', 'media_at', 'INTEGER NOT NULL DEFAULT 0');
       ON CONFLICT(channel, key) DO UPDATE SET value=excluded.value, ts=excluded.ts`)
       .run(FLAG, String(r.changes || 0), Date.now());
     if ((r.changes || 0) > 0) {
-      // eslint-disable-next-line no-console
-      console.log(`[db] conoscenza 'auto' inquinata rimossa: ${r.changes} voci (verranno riseminate corrette per-streamer)`);
+      log.info(`conoscenza 'auto' inquinata rimossa: ${r.changes} voci (verranno riseminate corrette per-streamer)`);
     }
   } catch { /* best-effort: non blocca l'avvio */ }
 })();
@@ -1302,8 +1302,7 @@ export function rinnovaChiaviOverlayUnaTantum() {
     });
     giro();
     if (n > 0) {
-      // eslint-disable-next-line no-console
-      console.log(`[db] chiavi degli overlay rinnovate una tantum: ${n} canali (il link va rimesso nelle sorgenti di regia)`);
+      log.info(`chiavi degli overlay rinnovate una tantum: ${n} canali (il link va rimesso nelle sorgenti di regia)`);
     }
     return n;
   } catch { return 0; /* best-effort: non blocca l'avvio */ }

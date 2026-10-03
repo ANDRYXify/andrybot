@@ -16,7 +16,7 @@ const casa = cartellaUsaEGetta('gruppi-');
 const { streamers } = await import('../../src/db.js');
 const G = await import('../../src/features/gruppi.js');
 const ab = await import('../../src/features/antibot.js');
-test.after(() => casa.pulisci());
+test.after(async () => { await ab.spegniScudo(); casa.pulisci(); });
 
 const voci = (nomi) => nomi.map((login) => ({ login, userId: 'u' + login, ts: 0 }));
 const FABBRICA = Array.from({ length: 40 }, (_, i) => `zzq${i}x${(i * 7919) % 97}`);

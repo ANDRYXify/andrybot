@@ -127,6 +127,9 @@ comandi diversi da quelli della riga italiana.
 - In «Da consegnare» e nello storico del negozio le risposte stanno accanto alla loro domanda, ognuna col suo «Copia»; la pagina del negozio dice sotto ogni articolo cosa chiede. [vai: negozio]
   en: In «To deliver» and in the shop history the answers sit next to their question, each with its own «Copy»; the shop page says under each item what it asks for.
   es: En «Por entregar» y en el historial de la tienda las respuestas están junto a su pregunta, cada una con su «Copiar»; la página de la tienda dice bajo cada artículo lo que pide.
+- Se il bot si aggiorna mentre lo scudo sta ancora bloccando un'ondata, i blocchi rimasti in fila non si perdono: li trovi in «Rimaste in sospeso», da riprovare. [vai: scudo]
+  en: If the bot updates while the shield is still blocking a wave, the blocks left in line are not lost: you find them in «Left pending», ready to retry.
+  es: Si el bot se actualiza mientras el escudo todavía bloquea una oleada, los bloqueos que quedaban en fila no se pierden: los encuentras en «Quedaron pendientes», listos para reintentar.
 
 ## 2026-10-02
 

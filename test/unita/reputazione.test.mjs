@@ -18,7 +18,7 @@ const R = await import('../../src/features/reputazione.js');
 const inc = await import('../../src/features/incidenti.js');
 const P = await import('../../src/features/punteggio.js');
 const ab = await import('../../src/features/antibot.js');
-test.after(() => casa.pulisci());
+test.after(async () => { await ab.spegniScudo(); casa.pulisci(); });
 
 const giorniFa = (n) => Date.now() - n * 86400000;
 

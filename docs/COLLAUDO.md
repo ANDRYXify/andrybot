@@ -342,6 +342,53 @@ nella radice con dentro le variabili che ha lui, si gira `npm test`, e lo si
 toglie. È l'unico modo di vedere il difetto, perché in sviluppo quel file non
 c'è.
 
+## La console del collaudo dice gli esiti
+
+Le prove provocano apposta rifiuti, errori e avvisi: è il loro mestiere. Finché
+il registro del bot si stampava, `npm test` riempiva la console
+dell'aggiornamento di centinaia di righe `WARN` e `ERROR` (735 e 14 in un giro
+contato), e in mezzo c'era nascosta quella che contava davvero: lavoro rimasto
+acceso dopo la fine di una prova.
+
+Per costruzione, adesso:
+
+- **Sotto il corridore delle prove il registro non si stampa** (`src/logger.js`,
+  riconosce `NODE_TEST_CONTEXT` come `config.js`). Le ultime righe restano in
+  memoria (`righeDelCollaudo()`) per la prova che vuole leggerle, e
+  l'osservatorio riceve comunque ogni errore. Da verde si tace; **un file rosso
+  stampa le sue ultime trenta righe**, che sono il contesto per capire perché.
+  `LOG_COLLAUDO=1 npm test` le fa vedere sempre.
+- **Una riga scritta dopo che la prova ha tolto la sua cartella fa rosso il
+  file.** `cartellaUsaEGetta().pulisci()` lo dice al registro; una cartella
+  nuova riapre i lavori. Una riga dopo la pulizia è un orologio, una coda o un
+  salvataggio che sopravvive alla prova e scrive dove non c'è più niente: il
+  difetto che la console nascondeva, ora non può tornare in silenzio.
+- **Tutto il prodotto scrive dal registro.** `db.js` stampava i suoi messaggi
+  di migrazione con `console.log`, fuori dal registro: ora passano da
+  `makeLog('db')`, con ora e livello come gli altri, e sotto il collaudo
+  tacciono come gli altri.
+- **Gli avvisi sperimentali di Node non si ripetono.** Le prove usano
+  `mock.timers`, che in Node 22 è sperimentale, e ogni file lo ricordava con due
+  righe: `npm test` gira con `--disable-warning=ExperimentalWarning`, che vale
+  anche per i processi delle prove. Il prodotto non lo ha: se un modulo usasse
+  qualcosa di sperimentale, sul server si vedrebbe.
+- **Chi accende lo scudo lo spegne, come il bot.** Le prove che creano un
+  `AntiBot` chiudono con `await spegniScudo()` prima di `pulisci()`: ferma le
+  file e scrive registro, incidenti e rete. È lo stesso spegnimento di
+  `bot.stop()`, quindi ogni collaudo lo prova. Chi se ne dimentica lo scopre
+  dalla guardia.
+
+Il caso che l'ha fatto nascere: la fila dell'esecutore del simulatore restava
+accesa più di un minuto dopo la prova (`docs/SIMULATORE.md`). Accesa la
+guardia, ha trovato da sola altri tre file con lo stesso difetto (gruppi,
+reputazione, scudo), e, guardando chi accende scudi, un secondo scudo nel
+server (`docs/PIATTAFORMA.md`). Rimettendo il difetto apposta la guardia lo dice
+così, e il file è rosso:
+
+```
+Riga scritta dopo che la prova ha tolto la sua cartella (/tmp/simulatore-…): c'e' lavoro rimasto acceso.
+```
+
 ## Le novità di ogni commit, anche dopo
 
 `scripts/verifica-novita.mjs` vuole che ogni commit che tocca `src/` dica cosa

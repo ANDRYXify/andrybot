@@ -19,12 +19,49 @@ function testoDi(args) {
   }).join(' ');
 }
 
+// SOTTO IL COLLAUDO il registro non si stampa. Le prove provocano apposta
+// rifiuti, errori e avvisi (e' il loro mestiere), e centinaia di righe WARN in
+// mezzo agli esiti nascondono proprio quella che conta. Le righe restano in
+// memoria (le ultime RIGHE_TENUTE) per la prova che vuole leggerle, e
+// l'osservatorio riceve comunque ogni errore. Se un file di prove finisce rosso,
+// le sue ultime righe si stampano: da verde si tace, da rosso si racconta.
+// LOG_COLLAUDO=1 le fa vedere sempre.
+//
+// E c'e' una guardia: una riga scritta dopo che la prova ha tolto la sua
+// cartella (test/aiuto.mjs, cartellaUsaEGetta) e' lavoro rimasto acceso oltre
+// la prova, che scrive dove non c'e' piu' niente. Quella fa rosso il file.
+const ZITTO = !!process.env.NODE_TEST_CONTEXT && process.env.LOG_COLLAUDO !== '1';
+const RIGHE_TENUTE = 400;
+const CASA = Symbol.for('socialbot.casa-della-prova');
+const righe = [];
+let tardive = 0;
+
+export const righeDelCollaudo = () => righe.slice();
+
+if (ZITTO) {
+  process.on('exit', (codice) => {
+    if (!codice || !righe.length) return;
+    process.stderr.write(`\nUltime righe del registro di questa prova:\n${righe.slice(-30).join('\n')}\n`);
+  });
+}
+
+function trattieni(riga) {
+  righe.push(riga);
+  if (righe.length > RIGHE_TENUTE) righe.splice(0, righe.length - RIGHE_TENUTE);
+  const casa = globalThis[CASA];
+  if (!casa?.tolta) return;
+  process.exitCode = 1;
+  if (++tardive <= 5) process.stderr.write(`Riga scritta dopo che la prova ha tolto la sua cartella (${casa.dir}): c'e' lavoro rimasto acceso.\n  ${riga}\n`);
+}
+
 function line(level, tag, args) {
   const head = `[${ts()}] ${level.padEnd(5)} ${tag ? '[' + tag + '] ' : ''}`;
   if (level === 'ERROR') {
     try { osservatorio.annota(tag || 'generale', testoDi(args)); } catch { /* mai per colpa del registro */ }
-    console.error(head, ...args);
-  } else console.log(head, ...args);
+  }
+  if (ZITTO) return trattieni(head + testoDi(args));
+  if (level === 'ERROR') console.error(head, ...args);
+  else console.log(head, ...args);
 }
 
 export function makeLog(tag = '') {

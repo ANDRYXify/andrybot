@@ -17,7 +17,7 @@ const { streamers, memory } = await import('../../src/db.js');
 const rete = await import('../../src/features/rete.js');
 const P = await import('../../src/features/punteggio.js');
 const ab = await import('../../src/features/antibot.js');
-test.after(() => casa.pulisci());
+test.after(async () => { await ab.spegniScudo(); casa.pulisci(); });
 
 const giorniFa = (n) => new Date(Date.now() - n * 86400000).toISOString();
 const SPOGLIO = { profile_image_url: 'https://x/user-default-pictures/y.png', description: '' };

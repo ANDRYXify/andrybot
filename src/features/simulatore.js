@@ -246,11 +246,17 @@ export async function gioca(sc, { canale = 'prova' } = {}) {
   // Un attimo per far scorrere un pezzo di coda: serve a vedere che l'esecutore
   // gira davvero, non ad aspettare che finisca (mille blocchi sono minuti).
   for (let i = 0; i < 40 && scudo.esecutore.stato().inCoda; i++) await new Promise((r) => setTimeout(r, 20));
+  const inCoda = scudo.esecutore.stato().inCoda;
+  // Poi lo scudo si ferma: lo scenario e' finito, e il resto della coda non
+  // deve continuare a girare (minuti, sei al secondo) dopo la prova, scrivendo
+  // in un registro che non e' piu' di nessuno. Senza conservare: i verdetti di
+  // un gioco non sono un debito con Twitch.
+  await scudo.ferma({ conserva: false });
 
   const incidente = inc.aperto(canale) || inc.ultimoDi(canale);
   return {
     colpiti: decisi, allarme, inizio,
-    eseguiti: eseguiti.size, inCoda: scudo.esecutore.stato().inCoda,
+    eseguiti: eseguiti.size, inCoda,
     incidente: incidente ? inc.sintesi(incidente) : null,
   };
 }

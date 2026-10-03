@@ -78,6 +78,7 @@ const DECISO = [
   ['features/antibot.js', 'cori', 'volatile', 'messaggi uguali in pochi secondi'],
   ['features/antibot.js', 'raidRecenti', 'volatile', 'da quanto e\' arrivato un raid: dieci minuti, e dopo un riavvio il raid e\' passato comunque'],
   ['features/antibot.js', 'ondate', 'volatile', 'ondata in corso, misurata su una finestra corta'],
+  ['features/antibot.js', 'accesi', 'volatile', 'gli scudi accesi in questo processo, per spegnerli tutti insieme (spegniScudo): dopo un riavvio se ne accende uno nuovo, e la fila rimasta e\' gia\' su disco come azioni in sospeso'],
   ['features/enforcement.js', '_contiPer', 'volatile', 'quante azioni ha deciso, chiesto e fatto lo scudo di ogni canale da quando il processo e\' acceso: e\' il conto di questa accensione, e dopo un riavvio riparte da zero come quello di tutti'],
   ['features/enforcement.js', '_inCoda', 'volatile', 'quali azioni sono gia\' in fila adesso: serve a non farne due, e dopo un riavvio la fila non c\'e\' piu\''],
   ['features/incidenti.js', 'tutti', 'volatile', 'gli attacchi gia\' successi: stanno su disco a parte e si riprendono all\'avvio'],

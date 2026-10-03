@@ -18,7 +18,10 @@ import { cartellaUsaEGetta } from '../aiuto.mjs';
 const casa = cartellaUsaEGetta('simulatore-');
 const { streamers } = await import('../../src/db.js');
 const S = await import('../../src/features/simulatore.js');
-test.after(() => casa.pulisci());
+const { spegniScudo } = await import('../../src/features/antibot.js');
+// Prima si spegne lo scudo e si finisce di scrivere, poi si toglie la
+// cartella: e' lo stesso spegnimento del bot vero.
+test.after(async () => { await spegniScudo(); casa.pulisci(); });
 
 const CANALE = 'prova';
 streamers.upsertApproved(CANALE, 'Prova', '1');

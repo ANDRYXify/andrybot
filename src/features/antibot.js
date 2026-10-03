@@ -802,6 +802,21 @@ export function erroriScudo(channel) {
   return erroriDi(elenco, (login, da) => !!memory.haScrittoDopo?.(ch, login, da));
 }
 
+// ── Spegnersi ───────────────────────────────────────────────────────────────
+// Lo scudo e' uno per processo (test/contratto/scudo-uno.test.mjs lo tiene), ma
+// le prove ne accendono quanti ne servono: spegnere vuol dire spegnerli tutti.
+// Si ferma ogni fila (quello che non era ancora arrivato a Twitch diventa in
+// sospeso), si fermano gli orologi dello scudo, e si scrive su disco quello che
+// aspettava di esserlo: registro, incidenti, rete. Il bot che si spegne passa
+// da qui, e cosi' ogni prova alla fine: lo stesso percorso, provato ogni volta.
+const accesi = new Set();
+export async function spegniScudo(opzioni) {
+  const tutti = [...accesi];
+  await Promise.all(tutti.map((s) => s.ferma(opzioni)));
+  for (const a of assetti.values()) { clearTimeout(a.timer); a.timer = null; }
+  await Promise.all([salvaRegistro(), inc.salva(), rete.salva()].map((p) => Promise.resolve(p).catch(() => {})));
+}
+
 export class AntiBot {
   constructor({ helix, alert, say, chatSettings } = {}) {
     this.helix = helix;
@@ -813,7 +828,18 @@ export class AntiBot {
     this.esecutore = new Esecutore({ helix, annota: (ch, riga) => registra(ch, riga) });
     esecutore = this.esecutore;
     this.esecutore.caricaFalliti().catch(() => {});
-    setTimeout(() => { this._riapriSerrande().catch(() => {}); }, 4000).unref?.();
+    this._riapri = setTimeout(() => { this._riapriSerrande().catch(() => {}); }, 4000);
+    this._riapri.unref?.();
+    accesi.add(this);
+  }
+
+  // Fermare questo scudo: niente piu' riaperture in programma, e la fila si
+  // ferma come dice enforcement.js (ferma). Chi spegne il processo usa
+  // spegniScudo, qui sotto la classe.
+  ferma(opzioni) {
+    accesi.delete(this);
+    clearTimeout(this._riapri);
+    return this.esecutore.ferma(opzioni);
   }
 
   // Il canale sta girando a vuoto? Allora i verdetti si scrivono e non si

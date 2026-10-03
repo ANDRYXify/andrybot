@@ -16,7 +16,7 @@ const casa = cartellaUsaEGetta('incidenti-');
 const { streamers } = await import('../../src/db.js');
 const I = await import('../../src/features/incidenti.js');
 const ab = await import('../../src/features/antibot.js');
-test.after(() => casa.pulisci());
+test.after(async () => { await ab.spegniScudo(); casa.pulisci(); });
 
 // ─────────────────────────────────────────── aprire, chiudere, riaprire
 

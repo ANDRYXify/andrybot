@@ -15,7 +15,7 @@ const casa = cartellaUsaEGetta('scudo-trattenuti-');
 const { streamers } = await import('../../src/db.js');
 const ab = await import('../../src/features/antibot.js');
 const registro = await import('../../src/features/comandi-registro.js');
-test.after(() => casa.pulisci());
+test.after(async () => { await ab.spegniScudo(); casa.pulisci(); });
 
 const ORA_FA = () => new Date(Date.now() - 3600_000).toISOString();
 

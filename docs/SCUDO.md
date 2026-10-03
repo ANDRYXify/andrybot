@@ -231,7 +231,9 @@ prudenze:
 
 L'endpoint `/api/antibot/pulizia` funziona in due tempi: **in prova** dice chi
 verrebbe tolto senza toccare niente; confermata, parte in sottofondo e
-l'avanzamento si legge dalla console. Prima si guarda, poi si agisce.
+l'avanzamento si legge dalla console. Prima si guarda, poi si agisce. Passa
+dallo scudo vivo del bot, quindi dalla sua fila: senza bot avviato risponde
+«scudo non attivo» invece di accenderne un secondo.
 
 ## Permessi
 

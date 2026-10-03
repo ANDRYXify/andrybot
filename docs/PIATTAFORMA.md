@@ -100,6 +100,21 @@ Cosa ha portato, oltre alla pulizia:
 - **Niente si perde.** Un'azione fallita finisce in una coda che sopravvive al
   riavvio e si può riprendere: è durante un attacco che una chiamata cade, ed è
   durante un attacco che serve.
+- **Fermarsi senza lasciare niente a metà.** Allo spegnimento `bot.stop()`
+  chiama `spegniScudo()` (antibot.js): ogni fila si ferma, il ritmo che dormiva
+  si sveglia, chi aspettava un esito lo riceve, e quello che era ancora in fila
+  diventa un'azione in sospeso, su disco, «il bot si è fermato prima di farla».
+  Poi registro, incidenti e rete vanno su disco senza aspettare i loro orologi.
+  Un aggiornamento durante un'ondata non si porta via i blocchi che restavano
+  da fare. La fila ha una sola uscita, la fine di `_svuota`: anche un verdetto
+  arrivato dopo lo stop esce da lì, nello stesso modo. Le prove si chiudono con
+  lo stesso `spegniScudo()`, quindi questo percorso gira a ogni collaudo.
+- **Uno scudo per processo, davvero.** Il server ne accendeva un secondo per la
+  pulizia dei follower: una seconda fila che gareggiava con la difesa per il
+  rate limit, falliti scritti sopra quelli dell'altra nello stesso file, una
+  seconda riapertura delle serrande a ogni avvio. Ora la pulizia passa dallo
+  scudo del bot, e `test/contratto/scudo-uno.test.mjs` tiene un solo
+  `new AntiBot(` nel prodotto.
 - **Il registro risponde.** Non più «bannato», ma cosa si è chiesto e cosa ha
   risposto Twitch, con l'id del verdetto per risalire alla decisione.
 - **L'ordine giusto.** Una cancellazione di spam passa davanti a mille blocchi

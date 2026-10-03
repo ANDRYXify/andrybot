@@ -233,3 +233,69 @@ test('Twitch detto bene: 403 e\' un permesso, «gia\' bannato» e\' fatto, 409 s
   [c, b] = await prova(429);
   assert.equal(c.motivo, 'troppe richieste'); assert.equal(b.motivo, 'troppe richieste');
 });
+
+// ─────────────────────────────────────────── fermarsi
+
+const orologiAccesi = () => process.getActiveResourcesInfo().filter((t) => t === 'Timeout').length;
+
+test('fermarsi durante un rientro: chi aspettava ha subito un esito, e niente si perde', async () => {
+  // Il caso peggiore: Twitch ha detto «piu' piano» e la fila dorme cinque
+  // secondi. Un riavvio adesso non aspetta il rientro, non lascia un orologio
+  // acceso e non perde le azioni in fila: diventano in sospeso, su disco.
+  const { f, e } = banco({ timeout: () => ({ ok: false, motivo: 'troppe richieste' }) });
+  const prima = orologiAccesi();
+  const uno = e.esegui(v({ login: 'fermo1', userId: 'f1' }));
+  const due = e.esegui(v({ login: 'fermo2', userId: 'f2' }));
+  while (f.chiamate.length < 1) await new Promise((r) => setImmediate(r));
+  await new Promise((r) => setImmediate(r));
+  assert.ok(orologiAccesi() > prima, 'la fila sta dormendo il suo rientro');
+  const t0 = Date.now();
+  await e.ferma();
+  const esiti = await Promise.all([uno, due]);
+  assert.ok(Date.now() - t0 < 1000, 'non si aspetta la fine del rientro');
+  assert.equal(orologiAccesi(), prima, 'e nessun orologio resta acceso a tenere vivo il processo');
+  assert.deepEqual(esiti.map((x) => [x.ok, x.motivo]), [[false, 'il bot si è fermato prima di farla'], [false, 'il bot si è fermato prima di farla']]);
+  assert.equal(f.chiamate.length, 1, 'dopo lo stop Twitch non si chiama piu\'');
+  const sospese = e.fallitiInSospeso({ canale: 'tizio' }).filter((x) => /^fermo/.test(x.login));
+  assert.deepEqual(sospese.map((x) => x.login).sort(), ['fermo1', 'fermo2'], 'le azioni in fila restano da riprendere');
+  assert.ok(f.righe.some((r) => r.login === 'fermo2' && r.esito === 'in-attesa'), 'e il registro lo dice');
+  const tardi = await e.esegui(v({ login: 'fermo3', userId: 'f3' }));
+  assert.equal(tardi.ok, false, 'un verdetto arrivato dopo lo stop non parte');
+  assert.equal(f.chiamate.length, 1);
+  assert.ok(e.fallitiInSospeso({ canale: 'tizio' }).some((x) => x.login === 'fermo3'), 'ma non si perde');
+  await e.salvaFalliti();
+  const dopo = new E.Esecutore({ helix: {}, annota: () => {} });
+  await dopo.caricaFalliti();
+  assert.ok(['fermo1', 'fermo2', 'fermo3'].every((l) => dopo.fallitiInSospeso({ canale: 'tizio' }).some((x) => x.login === l)), 'e al riavvio sono ancora li\'');
+});
+
+test('fermarsi senza conservare: la fila di una prova finisce con la prova', async () => {
+  // E' il simulatore: i suoi verdetti sono un gioco, non un debito con Twitch.
+  const { f, e } = banco();
+  const fila = Array.from({ length: 30 }, (_, i) => e.esegui(v({ login: 'gioco' + i, userId: 'g' + i, azione: E.AZIONI.BLOCCA })));
+  await e.ferma({ conserva: false });
+  const esiti = await Promise.all(fila);
+  assert.ok(esiti.filter((x) => !x.ok).length >= 28, 'quasi tutta la fila era ancora da fare');
+  assert.equal(e.stato().inCoda, 0);
+  assert.equal(e.fallitiInSospeso({ canale: 'tizio' }).filter((x) => /^gioco/.test(x.login)).length, 0, 'e niente diventa un debito');
+  assert.ok(!f.righe.some((r) => r.esito === 'in-attesa'), 'ne\' una riga del registro');
+  assert.ok(f.chiamate.length <= 2);
+});
+
+test('un\'azione caduta mentre si legge la lista di prima non sparisce sotto di lei', async () => {
+  // All'avvio la lista dei falliti si legge dal disco, e intanto lo scudo
+  // lavora gia'. Prima la lettura sostituiva la lista: una caduta nei primi
+  // istanti spariva, in memoria e poi sul disco.
+  const vecchio = new E.Esecutore({ helix: {}, annota: () => {} });
+  vecchio._falliti = [{ ...v({ login: 'vecchio', userId: 'v0' }), motivo: 'permesso mancante', tentativi: 1, quando: Date.now() }];
+  await vecchio.salvaFalliti();
+  const { e } = banco({ timeout: () => ({ ok: false, motivo: 'permesso mancante' }) });
+  const lettura = e.caricaFalliti();
+  await e.esegui(v({ login: 'nuovo', userId: 'n0' }));
+  await lettura;
+  await e.ferma();
+  assert.deepEqual(e.fallitiInSospeso({ canale: 'tizio' }).map((x) => x.login).sort(), ['nuovo', 'vecchio'], 'in memoria ci sono tutti e due');
+  const dopo = new E.Esecutore({ helix: {}, annota: () => {} });
+  await dopo.caricaFalliti();
+  assert.deepEqual(dopo.fallitiInSospeso({ canale: 'tizio' }).map((x) => x.login).sort(), ['nuovo', 'vecchio'], 'e anche sul disco');
+});
