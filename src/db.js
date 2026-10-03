@@ -12,6 +12,7 @@ import { cifra, decifra, eCifrato, anello, anelloCorrente } from './segreti.js';
 import { istruzioneGenere } from './ai/genere.js';
 import { nomeSu } from './identita.js';
 import { makeLog } from './logger.js';
+import { normChi, normTriggerArrivo, normPersona } from './features/arrivi-regola.js';
 
 const log = makeLog('db');
 
@@ -215,6 +216,16 @@ CREATE TABLE IF NOT EXISTS modules (       -- "Moduli": automazioni QUANDO→SE�
   ts INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_modules_channel ON modules(channel);
+
+CREATE TABLE IF NOT EXISTS arrivi (        -- le accoglienze gia' fatte: chi, per quale modulo, in quale occasione
+  channel TEXT NOT NULL,
+  modulo INTEGER NOT NULL,                  -- il Modulo con l'innesco «arriva in chat»
+  chi TEXT NOT NULL,                        -- piattaforma:id (o piattaforma:login se l'id non c'e')
+  occasione TEXT NOT NULL,                  -- d:tw:<inizio> | d:kick:<inizio> | g:<giorno>
+  volte INTEGER NOT NULL DEFAULT 0,         -- quante accoglienze ha avuto da questo modulo
+  ts INTEGER NOT NULL,
+  PRIMARY KEY (channel, modulo, chi)
+);
 
 CREATE TABLE IF NOT EXISTS counters (      -- contatori dei moduli (es. "morti"), per canale
   channel TEXT NOT NULL,
@@ -5409,6 +5420,12 @@ function normCondizioni(c) {
     const t = String(out.costoMessaggio).slice(0, 300).trim();
     if (t) out.costoMessaggio = t; else delete out.costoMessaggio;
   }
+  // «Per chi»: persone e gruppi, ripuliti in un posto solo (arrivi-regola.js).
+  // Assente = per tutti, come i moduli fatti prima che esistesse.
+  if (out.chi !== undefined) {
+    const chi = normChi(out.chi);
+    if (chi) out.chi = chi; else delete out.chi;
+  }
   if (out.piattaforme !== undefined) {
     const scelte = (Array.isArray(out.piattaforme) ? out.piattaforme : [])
       .map((x) => String(x).toLowerCase())
@@ -5433,7 +5450,7 @@ export const modules = {
     const nome = String(m?.nome || '').slice(0, 80);
     const altrimenti = Array.isArray(m?.altrimenti) ? m.altrimenti : [];
     const config = JSON.stringify({
-      trigger: m?.trigger || {},
+      trigger: m?.trigger?.tipo === 'arrivo' ? normTriggerArrivo(m.trigger) : (m?.trigger || {}),
       condizioni: normCondizioni(m?.condizioni),
       azioni: Array.isArray(m?.azioni) ? m.azioni : [],
       // il ramo del "no": assente quando e' vuoto, cosi' i moduli che non lo
@@ -5457,7 +5474,31 @@ export const modules = {
     _cambiati(channel);
     return Number(info.lastInsertRowid);
   },
-  remove(channel, id) { db.prepare('DELETE FROM modules WHERE channel=? AND id=?').run(channel, id); _cambiati(channel); },
+  // Con il modulo se ne vanno i segni delle sue accoglienze: un modulo nuovo
+  // con lo stesso numero non deve trovarli.
+  remove(channel, id) {
+    db.prepare('DELETE FROM modules WHERE channel=? AND id=?').run(channel, id);
+    db.prepare('DELETE FROM arrivi WHERE channel=? AND modulo=?').run(channel, Number(id));
+    _cambiati(channel);
+  },
+  // L'ID DI UNA PERSONA SCELTA PER NOME, appuntato la prima volta che scrive
+  // (e il nome aggiornato se l'ha cambiato): da li' la si riconosce per id.
+  // Tocca solo quella voce di «Per chi», e solo se c'e' ancora.
+  appuntaPersona(channel, id, vecchia, nuova) {
+    const r = db.prepare('SELECT config FROM modules WHERE channel=? AND id=?').get(channel, Number(id));
+    if (!r) return false;
+    const cfg = safeJson(r.config);
+    const persone = cfg?.condizioni?.chi?.persone;
+    if (!Array.isArray(persone)) return false;
+    const v = normPersona(vecchia), n = normPersona(nuova);
+    if (!v || !n) return false;
+    const i = persone.findIndex((q) => q.p === v.p && (q.id || '') === v.id && (q.login || '') === v.login);
+    if (i < 0) return false;
+    persone[i] = { ...persone[i], id: n.id || persone[i].id, login: n.login || persone[i].login, ...(n.nome ? { nome: n.nome } : {}) };
+    db.prepare('UPDATE modules SET config=? WHERE channel=? AND id=?').run(JSON.stringify(cfg), channel, Number(id));
+    _cambiati(channel);
+    return true;
+  },
   // L'ora dell'ultimo giro di un modulo a tempo. Non tocca la revisione dei
   // comandi: qui non cambia niente di cio' che il bot risponde, e si scrive
   // ogni volta che un timer parte.
@@ -5474,6 +5515,30 @@ export const modules = {
   all() {
     return db.prepare('SELECT * FROM modules WHERE attivo=1').all()
       .map(r => ({ channel: r.channel, ...rowToModule(r) }));
+  },
+};
+
+// ------------------------------------------------------------- accoglienze
+// Il segno di un'accoglienza: UNA per occasione. Il passaggio a un'occasione
+// nuova e' un'unica istruzione (vale solo se l'occasione e' diversa): due
+// messaggi di fila, o due motori, non danno due accoglienze. Torna quante ne ha
+// avute con questa (1 la prima volta), o 0 se in questa occasione c'era gia'.
+export const arrivi = {
+  segna(channel, modulo, chi, occasione, ora = now()) {
+    const info = db.prepare(`INSERT INTO arrivi (channel, modulo, chi, occasione, volte, ts) VALUES (?,?,?,?,1,?)
+      ON CONFLICT(channel, modulo, chi) DO UPDATE SET occasione=excluded.occasione, volte=arrivi.volte+1, ts=excluded.ts
+      WHERE arrivi.occasione != excluded.occasione`)
+      .run(String(channel), Number(modulo), String(chi), String(occasione), Math.floor(ora));
+    if (info.changes !== 1) return 0;
+    return Number(db.prepare('SELECT volte FROM arrivi WHERE channel=? AND modulo=? AND chi=?')
+      .get(String(channel), Number(modulo), String(chi))?.volte) || 1;
+  },
+  quante(channel, modulo) {
+    return Number(db.prepare('SELECT COALESCE(SUM(volte),0) n FROM arrivi WHERE channel=? AND modulo=?').get(String(channel), Number(modulo))?.n) || 0;
+  },
+  // Dopo 90 giorni un segno non serve piu' a niente: si toglie.
+  pota(prima) {
+    return db.prepare('DELETE FROM arrivi WHERE ts < ?').run(Math.floor(Number(prima) || 0)).changes;
   },
 };
 

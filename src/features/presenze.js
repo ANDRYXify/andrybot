@@ -216,12 +216,15 @@ export function segnaArrivo(msg, { ora = Date.now() } = {}) {
 }
 
 // Chiamata per ogni messaggio che arriva al flusso normale: se e' il caso,
-// saluta. `arrivo` e' quello che ha tornato segnaArrivo, se il tubo l'ha gia'
+// saluta. `tace`: questa persona ha un'accoglienza scelta dallo streamer (un
+// Modulo «arriva in chat» che la riguarda), e due benvenuti sono uno di troppo. `arrivo` e' quello che ha tornato segnaArrivo, se il tubo l'ha gia'
 // chiamato; senza, lo chiama lei.
 // Ritorna 'prima' | 'ritorno' | null (cosa ha detto).
-export function suMessaggio(msg, say, { ora = Date.now(), live = true, arrivo } = {}) {
+export function suMessaggio(msg, say, { ora = Date.now(), live = true, arrivo, tace = false } = {}) {
   const a = arrivo === undefined ? segnaArrivo(msg, { ora }) : arrivo;
   if (!a) return null;
+  // ha un'accoglienza sua (features/arrivi.js): il benvenuto e' quello
+  if (tace) return null;
   const { r, prima } = a;
   const ch = norm(msg.channel), u = norm(msg.user);
   const c = cfg(ch);

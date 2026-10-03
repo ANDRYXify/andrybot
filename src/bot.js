@@ -13,7 +13,7 @@ import { config } from './config.js';
 import * as filigrana from './watermark.js';
 import * as licenza from './licenza.js';
 import { canaleHa } from './features/accesso.js';
-import { tokens, streamers, memory, tgConf, tgScudo, tgDest, amici, tgMsg, feedFonti, dcConf, dcDest, dcMsg, dcRuoli, avvisiConf, compleanni, pointAlerts, rapporti, postaStreamer } from './db.js';
+import { tokens, streamers, memory, tgConf, tgScudo, arrivi as arriviDb, tgDest, amici, tgMsg, feedFonti, dcConf, dcDest, dcMsg, dcRuoli, avvisiConf, compleanni, pointAlerts, rapporti, postaStreamer } from './db.js';
 import { ChatBot } from './twitch/chat.js';
 import { EventHub } from './twitch/events.js';
 import { Brain } from './ai/brain.js';
@@ -26,6 +26,7 @@ import * as giveaway from './features/giveaway.js';
 import * as watchtime from './features/watchtime.js';
 import * as comandibase from './features/comandibase.js';
 import * as presenze from './features/presenze.js';
+import * as arrivi from './features/arrivi.js';
 import * as rapporto from './features/rapporto.js';
 import * as posta from './features/posta.js';
 import * as trackinggiochi from './features/trackinggiochi.js';
@@ -361,7 +362,12 @@ export class BotManager {
       cancello.giroScadenze((ch) => tgConf.get(ch)).catch(() => {});
       scudoTg.giroScadenze((ch) => tgConf.get(ch)).catch(() => {});
     }, 30_000);
-    this._scudoPota = setInterval(() => { try { tgScudo.pota(Date.now() - 7 * 86_400_000); } catch { /* il prossimo giro */ } }, 60 * 60_000);
+    this._scudoPota = setInterval(() => {
+      try { tgScudo.pota(Date.now() - 7 * 86_400_000); } catch { /* il prossimo giro */ }
+      // i segni delle accoglienze (chi arriva in chat): dopo 90 giorni non
+      // servono piu' a niente
+      try { arriviDb.pota(Date.now() - 90 * 86_400_000); } catch { /* il prossimo giro */ }
+    }, 60 * 60_000);
     // Il giro dei giochi automatici (giro-giochi.js): un orologio solo per le
     // manche, il boss, l'arena, la catena, la conta e la corsa che partono da
     // soli, controllato ogni minuto.
@@ -708,6 +714,10 @@ export class BotManager {
           // e gli spettatori di questo giro, per il rapporto di fine diretta
           try { rapporto.osservaGiro(login, { spettatori: stream.viewer_count, categoria: stream.game_name }); }
           catch (e) { log.debug(`#${login} rapporto:`, e?.message || e); }
+          // Chi e' entrato senza scrivere, fra le persone scelte per nome con
+          // «anche se non scrive» (features/arrivi.js). Stessa lista.
+          arrivi.suGiro(login, chatters, { engine: this.modules, say: (t) => this.say(login, t), twitchInizio: Date.parse(stream.started_at) || this._inizioTwitch(login) }, { helix: this.helix })
+            .catch((e) => log.debug(`#${login} arrivi in silenzio:`, e?.message || e));
         }
       } catch (e) { log.debug(`#${login} ore:`, e?.message || e); }
     }
@@ -995,6 +1005,14 @@ export class BotManager {
     await this._gestisciMessaggio(login, msg, onMessage, parla);
   }
 
+  // L'inizio della diretta su Twitch in corso (lo dice Twitch, e un riavvio non
+  // lo cambia), o 0 se non e' in diretta. Riconosce la diretta per le
+  // accoglienze di chi arriva in chat.
+  _inizioTwitch(login) {
+    if (this._liveState.get(login) !== true) return 0;
+    return Number(rapporto.inCorso(login)?.inizio) || 0;
+  }
+
   // IN ONDA SU UNA PIATTAFORMA DIVERSA DA TWITCH. La chat di YouTube si legge
   // solo durante una diretta: un messaggio che arriva da li' e' in diretta per
   // costruzione. Kick lo dice con i suoi eventi di inizio e fine diretta, che si
@@ -1072,11 +1090,18 @@ export class BotManager {
     if (!msg.isSelf) { try { persona.interagisci(msg.user); } catch { /* niente */ } }
     // L'economia gira sempre: le monete della presenza non sono un comando.
     try { games.accredita(msg); } catch (e) { log.error(`#${login} monete:`, e?.message || e); }
+    // CHI ARRIVA IN CHAT (features/arrivi.js): le accoglienze che lo streamer
+    // ha scelto per questa persona, o per un suo gruppo. Qui, dopo l'antispam
+    // (chi e' stato appena fermato non si accoglie) e prima del saluto generico,
+    // che tace per chi ha la sua accoglienza: una persona, un benvenuto.
+    let accolto = { riguarda: false };
+    try { accolto = arrivi.suMessaggio(msg, { engine: this.modules, say: parla, arrivo, twitchInizio: this._inizioTwitch(login) }); }
+    catch (e) { log.debug(`#${login} arrivi:`, e?.message || e); }
     // Chi scrive per la prima volta, e chi torna dopo un'assenza: una parola dal
     // bot, salvo che lo streamer si sia costruito il suo saluto con un Modulo.
     try {
       const live = msg.piattaforma && msg.piattaforma !== 'twitch' ? true : this._liveState.get(login) === true;
-      presenze.suMessaggio(msg, parla, { live, arrivo });
+      presenze.suMessaggio(msg, parla, { live, arrivo, tace: accolto.riguarda });
     } catch (e) { log.debug(`#${login} saluti:`, e?.message || e); }
     // Auguri a chi compie gli anni oggi, al suo primo messaggio: in chat non
     // esiste la mezzanotte, esiste quando c'e'.
@@ -1725,7 +1750,10 @@ export class BotManager {
   async eventoEsterno(ev) {
     if (!ev?.channel || !streamers.get(ev.channel)) return;
     try {
-      if (ev.tipo === 'live') statoVivo.scrivi(ev.channel, 'diretta:' + ev.piattaforma, { live: true });
+      // `da`: quando e' cominciata, per riconoscere la diretta (le accoglienze
+      // di chi arriva in chat ne fanno una per diretta). Nel database: un
+      // riavvio a diretta in corso non la ricomincia.
+      if (ev.tipo === 'live') statoVivo.scrivi(ev.channel, 'diretta:' + ev.piattaforma, { live: true, da: Date.now() });
       if (ev.tipo === 'fine-live') statoVivo.togli(ev.channel, 'diretta:' + ev.piattaforma);
       if (ev.tipo === 'live' || ev.tipo === 'fine-live') this._scriviInOnda();
       if (ev.tipo === 'live') {

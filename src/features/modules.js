@@ -15,7 +15,9 @@ import dns from 'node:dns';
 import net from 'node:net';
 import http from 'node:http';
 import https from 'node:https';
-import { modules as modulesDb, counters, memory, streamers, clips, quotes, watchtime, points } from '../db.js';
+import { modules as modulesDb, counters, memory, streamers, clips, quotes, watchtime, points, commands as comandiDb } from '../db.js';
+import * as arriviRegola from './arrivi-regola.js';
+import { avviaVoce } from './giro-giochi.js';
 import * as economia from './economia.js';
 import { risolviCategoria } from './categoria.js';
 import * as presenze from './presenze.js';
@@ -48,6 +50,7 @@ const PAROLE_VARIABILI = {
 const log = makeLog('moduli');
 
 const MAX_AZIONI = 8;              // azioni eseguite al massimo per modulo
+const MAX_CATENA = 3;              // moduli in fila con «Esegui un comando», compreso il primo
 const MAX_TESTO = 400;             // troncatura dei messaggi
 const MAX_ATTESA_S = 30;           // secondi massimi per l'azione "attendi"
 const TESTO_MIN_MS = 500;          // quanto resta a schermo, al minimo, un "overlayTesto"
@@ -572,11 +575,14 @@ export class ModulesEngine {
   // Esegue un modulo una volta col contesto "di prova" (autore = streamer),
   // BYPASSANDO le condizioni (cooldown/probabilità/live): la "Prova" deve
   // sempre mostrare un risultato. Ritorna false se il modulo non esiste.
-  async provaModulo(channel, id, say) {
+  // `persona`: «Prova come se arrivasse…» (chi arriva in chat). Prende il
+  // posto di chi scrive solo per la prova: niente si segna.
+  async provaModulo(channel, id, say, { persona = null } = {}) {
     const ch = norm(channel);
     const modulo = modulesDb.get(ch, Number(id));
     if (!modulo) return false;
-    await this.esegui(modulo, this._ctxProva(ch), say, { saltaCondizioni: true });
+    const ctx = persona ? this.ctxPersona(ch, persona, { assenza: '', volte: '1' }) : this._ctxProva(ch);
+    await this.esegui(modulo, ctx, say, { saltaCondizioni: true });
     return true;
   }
 
@@ -665,6 +671,9 @@ export class ModulesEngine {
       }
     }
 
+    // La catena di chi ha eseguito chi (l'azione «Esegui un comando»): serve a
+    // non far rientrare mai un modulo in se stesso.
+    ctx._catena = [...(Array.isArray(ctx._catena) ? ctx._catena : []), modulo.id];
     let eseguite = 0;
     for (const azione of daFare) {
       if (eseguite >= MAX_AZIONI) break;
@@ -702,6 +711,17 @@ export class ModulesEngine {
       const richiesto = TIER_SCALA[c.tier] ?? 0;
       const livello = ctx._livello ?? TIER_SCALA.mod;
       if (livello < richiesto) return no('tier');
+    }
+
+    // PER CHI: persone per nome e gruppi, «solo» o «tranne» (arrivi-regola.js).
+    // Non consuma niente, quindi sta fra le prime. Un contesto senza nessuno
+    // davanti (un timer, l'inizio della diretta) non e' nessuna delle persone
+    // scelte: con «solo» si ferma, con «tranne» passa. Gli eventi portano chi
+    // li ha fatti, per login; i loro gruppi non si sanno, e vale «tutti».
+    if (c.chi) {
+      const chi = { p: ctx.piattaforma || 'twitch', id: String(ctx.userId || ''), login: norm(ctx.userLogin || ctx.autore || '') };
+      const gruppi = new Set(Array.isArray(ctx._gruppi) ? ctx._gruppi : ['tutti']);
+      if (arriviRegola.livello(c.chi, chi, gruppi) < 0) return no('chi');
     }
 
     // SU QUALI PIATTAFORME. Assente o vuoto = TUTTE: e' cosi' che si comportano
@@ -848,8 +868,41 @@ export class ModulesEngine {
   async _eseguiAzione(azione, ctx, dire) {
     switch (azione?.tipo) {
       case 'messaggio': {
-        const t = await this.espandi(azione.testo, ctx);
+        // «Una frase a caso»: una riga per frase, ne esce una. Senza la spunta
+        // il testo resta quello scritto, a capo compresi.
+        let modello = azione.testo;
+        if (azione.aCaso) {
+          const righe = String(modello || '').split('\n').map((x) => x.trim()).filter(Boolean);
+          modello = righe.length ? righe[Math.floor(Math.random() * righe.length)] : '';
+        }
+        const t = await this.espandi(modello, ctx);
         if (t) dire(t);
+        return;
+      }
+      case 'gioco': {
+        // AVVIA UN GIOCO (giro-giochi.avviaVoce): le stesse regole del giro.
+        // Uno gia' aperto non si interrompe; il motivo resta nel registro.
+        const live = !!(await this._stream(ctx.channel));
+        const esito = avviaVoce(ctx.channel, String(azione.gioco || 'caso'), { live, dire });
+        if (!esito.ok) log.info(`#${ctx.channel}: il gioco «${azione.gioco}» non parte (${esito.motivo})`);
+        return;
+      }
+      case 'modulo': {
+        // ESEGUI UN COMANDO: un altro modulo (anche un comando fatto nel
+        // pannello) come se l'avesse scritto la stessa persona, con le sue
+        // condizioni; oppure un comando semplice creato in chat. Mai se stesso
+        // ne' chi l'ha chiamato, e al massimo tre moduli in fila: niente giri.
+        if (azione.comando) {
+          const r = comandiDb.get(ctx.channel, String(azione.comando).replace(/^!/, ''));
+          if (r) dire(String(r).replaceAll('{user}', ctx.display || ctx.user || ''));
+          return;
+        }
+        const id = Number(azione.modulo);
+        const catena = Array.isArray(ctx._catena) ? ctx._catena : [];
+        if (!Number.isFinite(id) || catena.includes(id) || catena.length >= MAX_CATENA) return;
+        const altro = modulesDb.get(ctx.channel, id);
+        if (!altro || !altro.attivo) return;
+        await this.esegui(altro, { ...ctx, pagante: '', _vars: { ...(ctx._vars || {}) } }, dire);
         return;
       }
       case 'effetto': {
@@ -1380,6 +1433,9 @@ export class ModulesEngine {
       // l'ultima azione "punti": quante monete ha mosso e su chi
       mossa: ev.mossa || '',
       bersaglio: ev.bersaglio || '',
+      // chi arriva in chat: da quanti giorni mancava, e quante accoglienze ha avuto
+      assenza: ev.assenza || '',
+      volte: ev.volte || '',
     };
 
     // variabili semplici $nome: prima le dinamiche (valore fresco), poi quelle di
@@ -1468,7 +1524,33 @@ export class ModulesEngine {
       // al canale (src/features/risposte.js, «il rimedio a chi lo puo' fare»).
       // Eventi, timer e Telegram non hanno uno staff davanti: restano senza.
       staff: eStaff(msg),
+      // i gruppi di chi ha scritto (per «Per chi»): mod, VIP e abbonati possono
+      // valere insieme, il livello del ruolo no
+      _gruppi: [...arriviRegola.gruppiDi(msg)],
       _vars: {},
+    };
+  }
+
+  // CHI ARRIVA IN CHAT (arrivi.js): il contesto di chi ha scritto, con
+  // l'evento «arrivo» e da quanto mancava. Non paga niente: non ha chiesto niente.
+  ctxArrivo(msg, vars = {}) {
+    const ctx = this._ctxDaMessaggio(msg, norm(msg.channel), livelloUtente(msg), [], '');
+    ctx.evento = 'arrivo';
+    ctx.pagante = '';
+    ctx._vars = { ...ctx._vars, ...vars };
+    return ctx;
+  }
+
+  // Una persona scelta per nome, entrata senza scrivere (solo Twitch): non c'e'
+  // un messaggio, c'e' lei. Nessun ruolo noto: vale come chiunque.
+  ctxPersona(channel, persona, vars = {}) {
+    const ch = norm(channel);
+    const nome = persona?.nome || persona?.login || '';
+    return {
+      channel: ch, piattaforma: persona?.p || 'twitch',
+      user: nome, userLogin: persona?.login || '', pagante: '', autore: persona?.login || '',
+      userId: persona?.id || '', display: nome, args: [], argsRaw: '', evento: 'arrivo',
+      _livello: TIER_SCALA.tutti, staff: false, _gruppi: ['tutti'], _vars: { ...vars },
     };
   }
 

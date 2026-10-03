@@ -281,6 +281,11 @@ scudo Telegram, con dietro gli stessi gesti del server su una richiesta in
 memoria (docs/TELEGRAM.md). La sua autoprova rimette quattro difetti (la prova
 ferma, i colori ignorati, la prova nuova che non arriva, il codice in una
 risposta) e li vuole vedere tutti.
+Poi `scripts/verifica-arrivi.mjs`: la sotto-scheda «Chi arriva in chat» dei
+Comandi, sulla demo (docs/moduli.md). La sua autoprova rimette tre difetti
+uno alla volta, ognuno nel suo giro, perché messi insieme il primo (l'editor
+che non reagisce) coprirebbe gli altri due: ogni difetto deve far scattare il
+suo controllo.
 
 Due restano fuori dalla catena. Il primo, e non per dimenticanza, ha bisogno di
 qualcosa che non controlliamo:

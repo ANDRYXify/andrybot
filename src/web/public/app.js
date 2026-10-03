@@ -1,7 +1,6 @@
 // © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
 // Proprieta intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 
-
 'use strict';
 
 let stato = null;
@@ -1190,6 +1189,26 @@ function _demoCastighi() {
   ].filter((c) => !via.has(`${c.chi}|${c.gioco}`));
 }
 
+function _demoModuli(metodo, via, b) {
+  const lista = _demoScritture.moduli || _demoGet('/api/streamer/moduli').moduli.map((m) => JSON.parse(JSON.stringify(m)));
+  const m = /^\/api\/streamer\/moduli\/([^/]+)(\/toggle)?$/.exec(via);
+  let id = null;
+  if (metodo === 'POST' && via === '/api/streamer/moduli') {
+    const esiste = lista.find((x) => b.id != null && String(x.id) === String(b.id));
+    id = esiste ? esiste.id : 'demo-' + (lista.length + 1) + '-' + Math.round(performance.now());
+    const nuovo = { ...b, id, attivo: b.attivo !== false };
+    if (esiste) Object.assign(esiste, nuovo); else lista.push(nuovo);
+  } else if (m && m[2] && metodo === 'POST') {
+    const x = lista.find((y) => String(y.id) === decodeURIComponent(m[1]));
+    if (x) x.attivo = b.attivo !== false;
+  } else if (m && metodo === 'DELETE') {
+    const i = lista.findIndex((y) => String(y.id) === decodeURIComponent(m[1]));
+    if (i >= 0) lista.splice(i, 1);
+  }
+  _demoScritture.moduli = lista;
+  return { ok: true, ...(id != null ? { id } : {}) };
+}
+
 function apiDemo(percorso, opzioni = {}) {
   const metodo = (opzioni.method || 'GET').toUpperCase();
   const via = percorso.split('?')[0];
@@ -1214,6 +1233,7 @@ function apiDemo(percorso, opzioni = {}) {
     return Promise.resolve({ ok: true, puo: true, perche: '', mia: _demoScritture.recensione || null, invito: false, max: 400 });
   }
   if (via === '/api/streamer/voce/prova') return Promise.resolve({ frasi: _demoProvaFrasi(opzioni.body) });
+  if (via.startsWith('/api/streamer/moduli') && metodo !== 'GET' && !via.endsWith('/prova')) return Promise.resolve(_demoModuli(metodo, via, opzioni.body || {}));
   if (via.startsWith('/api/streamer/negozio')) return Promise.resolve(_demoNegozio(metodo, via, opzioni.body));
   if (via === '/api/streamer/telegram/scudo') return Promise.resolve(_demoScudoTg(metodo, opzioni.body));
   if (via === '/api/streamer/telegram/scudo/anteprima') return Promise.resolve({ html: `<!DOCTYPE html><html lang="${LINGUA || 'it'}"><head><meta charset="utf-8"><style>body{font:16px/1.5 system-ui,sans-serif;margin:0;padding:1.5rem;background:#0f0d14;color:#f4f2f8}</style></head><body><p>${esc(L('Nella demo la prova non si apre: serve un bot Telegram collegato. Col tuo canale, qui vedi la pagina vera, con quello che hai scritto.', 'In the demo the check does not open: it needs a connected Telegram bot. With your channel, here you see the real page, with what you wrote.', 'En la demo la prueba no se abre: hace falta un bot de Telegram conectado. Con tu canal, aquí ves la página real, con lo que has escrito.'))}</p></body></html>` });
@@ -2070,7 +2090,26 @@ function _demoGet(via) {
       { id: 'dado', nome: 'Tiro di dado', attivo: false, tipo: 'comando',
         trigger: { tipo: 'comando', comando: 'dado' },
         azioni: [{ tipo: 'messaggio', testo: '$user tira il dado e fa... $random(1,6)!' }] },
-    ], effettiDisponibili: ['applausi', 'tromba', 'coriandoli', 'festa'], limiti: { attesaS: 30, testoMinMs: 500, testoMaxMs: 30000 } },
+      { id: 'arrivo-luca', nome: L('Per Luca', 'For Luca', 'Para Luca'), attivo: true,
+        trigger: { tipo: 'arrivo', quando: 'diretta' },
+        condizioni: { chi: { modo: 'solo', persone: [{ p: 'twitch', id: '81234567', login: 'lucaplays', nome: 'LucaPlays' }], gruppi: [] } },
+        azioni: [{ tipo: 'effetto', comando: 'coriandoli' }, { tipo: 'messaggio', aCaso: true, testo: L('Guardate chi c’è: $user! Che bello vederti.\nCiao $user, ti aspettavamo!', 'Look who’s here: $user! So good to see you.\nHi $user, we were waiting for you!', 'Mirad quién está aquí: ¡$user! Qué alegría verte.\n¡Hola $user, te estábamos esperando!') }] },
+      { id: 'arrivo-vip', nome: L('I miei VIP', 'My VIPs', 'Mis VIP'), attivo: true,
+        trigger: { tipo: 'arrivo', quando: 'diretta' },
+        condizioni: { chi: { modo: 'solo', persone: [], gruppi: ['vip'] } },
+        azioni: [{ tipo: 'messaggio', testo: L('Un saluto speciale per $user, VIP del canale!', 'A special hello to $user, VIP of the channel!', '¡Un saludo especial para $user, VIP del canal!') }, { tipo: 'gioco', gioco: 'caso' }] },
+    ], effettiDisponibili: ['applausi', 'tromba', 'coriandoli', 'festa'], limiti: { attesaS: 30, testoMinMs: 500, testoMaxMs: 30000 },
+    giochi: [
+      { id: 'trivia', nome: ['Quiz', 'Quiz', 'Quiz'] }, { id: 'calcolo', nome: ['Calcolo veloce', 'Quick maths', 'Cálculo rápido'] },
+      { id: 'impiccato', nome: ['Impiccato', 'Hangman', 'Ahorcado'] }, { id: 'boss', nome: ['Il boss', 'The boss', 'El jefe'], soloLive: true },
+      { id: 'arena', nome: ['L’arena delle emote', 'The emote arena', 'La arena de emotes'], soloLive: true }, { id: 'corsa', nome: ['Corsa', 'Race', 'Carrera'] },
+    ],
+    comandiSemplici: ['discord', 'orari'],
+    arrivi: { pausa: 5, volte: { 'arrivo-luca': 12, 'arrivo-vip': 31 } } },
+    '/api/streamer/persone/recenti': { persone: [
+      { login: 'lucaplays', nome: 'LucaPlays' }, { login: 'giada_ttv', nome: 'Giada_TTV' }, { login: 'unicornofacinoroso', nome: 'UnicornoFacinoroso' },
+      { login: 'pixelmarta', nome: 'PixelMarta' }, { login: 'sam_respawn', nome: 'Sam_Respawn' },
+    ] },
     '/api/streamer/telegram/compleanni': {
       attivo: true, messaggio: '',
       chat: { attivo: true, messaggio: '', effetto: 'coriandoli' },
@@ -2130,9 +2169,9 @@ function _demoGet(via) {
     pagina: { ...F['/api/linkpage'].pagina, aspetto: 'link', headline: L('Il gruppo Telegram di ANDRYXify', 'ANDRYXify’s Telegram group', 'El grupo de Telegram de ANDRYXify'), tagline: L('Si chiacchiera anche quando la diretta è spenta', 'The chat goes on when the stream is off', 'Se charla también cuando el directo está apagado'),
       blocchi: [{ tipo: 'intestazione' }, { tipo: 'gruppo', titolo: '', testo: '', tasto: '' }, { tipo: 'scudo', titolo: '', testo: '' }, { tipo: 'regole', titolo: '' }, { tipo: 'piede', link: true, canale: true }] } };
   if (via === '/api/contatori' && _demoScritture.contatori) return { ...F[via], contatori: _demoScritture.contatori };
+  if (via === '/api/streamer/moduli' && _demoScritture.moduli) return { ...F[via], moduli: _demoScritture.moduli };
   return F[via] !== undefined ? F[via] : {};
 }
-
 
 function montaDemo() {
   const cont = document.querySelector('.contenuto');
@@ -2250,7 +2289,6 @@ try {
 } catch {  }
 
 const _menoMoto = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
-
 
 let _rivObs = null;
 function _osservatore() {
@@ -4525,7 +4563,7 @@ const SOTTO_SCHEDE = {
   },
   moduli: {
     attributo: 'zona',
-    voci: [['comandi', ['Comandi e contatori', 'Commands and counters', 'Comandos y contadores']], ['morti', 'CONTATORify']],
+    voci: [['comandi', ['Comandi e contatori', 'Commands and counters', 'Comandos y contadores']], ['arrivi', ['Chi arriva in chat', 'Who arrives in chat', 'Quién llega al chat']], ['morti', 'CONTATORify']],
   },
   effetti: {
     attributo: 'zona',
@@ -4650,7 +4688,6 @@ const NOMI_SCHEDA = {
   ruoli: 'Discord', dcavvisi: 'Avvisi su Discord', dcserver: 'Il server Discord', dcentra: 'Chi entra nel server', dcfiltro: 'Il filtro del server',
 };
 const _nomeSchedaGrezzo = (id) => NOMI_SCHEDA[id] || id;
-
 
 function gruppoDiScheda(id) {
   const diretto = elencoGruppi().find((x) => x.schede.some(([sid]) => sid === id));
@@ -7640,7 +7677,6 @@ function initGrafiche() {
     grafCaricaLogo('', ridisegna);
   });
 
-
   document.getElementById('gr-scarica')?.addEventListener('click', async () => {
     await grafFontPronti();
     const full = grafTelaNuova();
@@ -10183,7 +10219,6 @@ function pannelloAccount() {
           </details>`}
     </div>`);
 }
-
 
 function cartaAdessoHtml() {
   if (senzaDiretta()) return '';
@@ -21907,6 +21942,35 @@ function pannelloModuli() {
     </div>
     </div>
 
+    <div data-zona="arrivi">
+    <div class="carta">
+      <h2>${_hIco(ICO.utenti)}${L('Chi arriva in chat', 'Who arrives in chat', 'Quién llega al chat')}</h2>
+      <p>${L('Quando arriva in chat una persona che scegli, il bot fa quello che vuoi tu: un saluto tutto suo, un effetto sull’overlay, un gioco, uno dei tuoi comandi. Una volta per diretta, oppure una volta al giorno, oppure solo se mancava da un po’.', 'When someone you choose arrives in chat, the bot does what you want: a greeting just for them, an effect on the overlay, a game, one of your commands. Once per stream, or once a day, or only if they had been away for a while.', 'Cuando llega al chat una persona que eliges, el bot hace lo que quieras: un saludo solo para ella, un efecto en el overlay, un juego, uno de tus comandos. Una vez por directo, o una vez al día, o solo si llevaba un tiempo sin venir.')}</p>
+      <p class="suggerimento">${L('Ogni accoglienza è un modulo: fa tutto quello che sa fare un modulo, anche più cose in fila. Vale per una persona, per un gruppo (VIP, moderatori, abbonati) o per tutti, e quella della persona prende il posto di quella del gruppo.', 'Each welcome is a module: it does everything a module can do, several things in a row too. It is for one person, a group (VIPs, moderators, subscribers) or everyone, and the one for the person replaces the group one.', 'Cada bienvenida es un módulo: hace todo lo que sabe hacer un módulo, también varias cosas seguidas. Vale para una persona, un grupo (VIP, moderadores, suscriptores) o para todos, y la de la persona sustituye a la del grupo.')}</p>
+      <p class="campo">${L('Parti da un modello', 'Start from a template', 'Empieza con una plantilla')}</p>
+      <div class="modelli-pronti">
+        <button class="modello-pronto" data-modello-arrivo="caloroso">${L('Saluto caloroso', 'Warm greeting', 'Saludo caluroso')}</button>
+        <button class="modello-pronto" data-modello-arrivo="effetto">${L('Effetto e saluto', 'Effect and greeting', 'Efecto y saludo')}</button>
+        <button class="modello-pronto" data-modello-arrivo="gioco">${L('Un gioco per chi arriva', 'A game for whoever arrives', 'Un juego para quien llega')}</button>
+        <button class="modello-pronto" data-modello-arrivo="comando">${L('Uno dei miei comandi', 'One of my commands', 'Uno de mis comandos')}</button>
+        <button class="modello-pronto" data-modello-arrivo="bentornato">${L('Chi torna dopo un’assenza', 'Whoever comes back after a while', 'Quien vuelve tras una ausencia')}</button>
+        <button class="modello-pronto" data-modello-arrivo="vip">${L('I miei VIP', 'My VIPs', 'Mis VIP')}</button>
+        <button class="modello-pronto" data-modello-arrivo="">${L('Parti da zero', 'Start from scratch', 'Empieza de cero')}</button>
+      </div>
+      <h3>${L('Le tue accoglienze', 'Your welcomes', 'Tus bienvenidas')}</h3>
+      <ul id="lista-arrivi" class="lista-moduli">${attesaHtml('li')}</ul>
+      <div id="editor-arrivo"></div>
+    </div>
+    <div class="carta">
+      <h2>${_hIco(ICO.orologio)}${L('Quando arrivano in tanti', 'When many arrive at once', 'Cuando llegan muchos a la vez')}</h2>
+      <p>${L('Con un raid, o a inizio diretta, possono arrivare tante persone insieme: le accoglienze si mettono in fila e partono una alla volta, con una pausa fra l’una e l’altra. Chi aspetta più di tre minuti si salta: il momento è passato.', 'With a raid, or at the start of a stream, many people can arrive together: welcomes line up and go one at a time, with a pause between them. Anyone waiting more than three minutes is skipped: the moment has passed.', 'Con un raid, o al empezar el directo, pueden llegar muchas personas a la vez: las bienvenidas se ponen en fila y salen una a una, con una pausa entre ellas. Quien espera más de tres minutos se salta: el momento ya pasó.')}</p>
+      <label class="campo" for="arrivi-pausa">${L('Pausa fra due accoglienze (secondi)', 'Pause between two welcomes (seconds)', 'Pausa entre dos bienvenidas (segundos)')}</label>
+      <input type="number" id="arrivi-pausa" min="0" max="60" value="${Number(imp.arrivi?.pausa ?? 5)}">
+      <p class="suggerimento">${L('Il saluto generico per chi scrive la prima volta o torna dopo tanto sta in Giochi, «Presenze e saluti»: per chi ha un’accoglienza sua, tace.', 'The generic greeting for first-time writers or people coming back after a long time is in Games, «Attendance and greetings»: for anyone with their own welcome, it stays quiet.', 'El saludo genérico para quien escribe por primera vez o vuelve tras mucho tiempo está en Juegos, «Presencias y saludos»: para quien tiene su propia bienvenida, se calla.')}</p>
+      <p class="spazio-sopra"><button class="btn" id="btn-salva-arrivi">${L('Salva', 'Save', 'Guardar')}</button></p>
+    </div>
+    </div>
+
     <div data-zona="morti">
     ${_mortiCarte()}
     </div>
@@ -21919,6 +21983,38 @@ function nomiRegia() {
   const scena = (n) => scene.find((s) => s.toLowerCase().includes(n.toLowerCase())) || n;
   const fonte = fonti.find((f) => /mic|aux|voce|voice/i.test(f)) || 'Mic/Aux';
   return { scena, fonte };
+}
+
+function modelloArrivo(nome) {
+  const cond = (chi) => ({ tier: 'tutti', cooldown: 0, probabilita: 100, soloLive: false, soloOffline: false, ...(chi ? { chi } : {}) });
+  const base = (n, azioni, trigger = { tipo: 'arrivo', quando: 'diretta' }, chi = null) => ({ id: null, nome: n, attivo: true, trigger, condizioni: cond(chi), azioni });
+  const frasi = (...righe) => ({ tipo: 'messaggio', aCaso: true, testo: righe.join('\n') });
+  switch (nome) {
+    case 'caloroso': return base(L('Saluto caloroso', 'Warm greeting', 'Saludo caluroso'), [frasi(
+      L('Guardate chi c’è: $user! Che bello vederti.', 'Look who’s here: $user! So good to see you.', 'Mirad quién está aquí: ¡$user! Qué alegría verte.'),
+      L('$user è in chat: adesso la diretta può cominciare davvero.', '$user just arrived: now the stream can really start.', '$user ha llegado al chat: ahora sí empieza el directo.'),
+      L('Ciao $user, ti aspettavamo!', 'Hi $user, we were waiting for you!', '¡Hola $user, te estábamos esperando!'))]);
+    case 'effetto': {
+      const eff = datiModuli?.effettiDisponibili?.[0];
+      const effC = typeof eff === 'string' ? eff : (eff?.comando || '');
+      return base(L('Effetto e saluto', 'Effect and greeting', 'Efecto y saludo'), [
+        ...(effC ? [{ tipo: 'effetto', comando: effC }] : []),
+        frasi(L('Fate largo: arriva $user!', 'Make way: here comes $user!', '¡Abrid paso: llega $user!'), L('$user è qui, festa!', '$user is here, party time!', '¡$user está aquí, fiesta!'))]);
+    }
+    case 'gioco': return base(L('Un gioco per chi arriva', 'A game for whoever arrives', 'Un juego para quien llega'), [
+      { tipo: 'messaggio', testo: L('$user è qui: per festeggiare, si gioca!', '$user is here: to celebrate, let’s play!', '$user está aquí: para celebrarlo, ¡a jugar!') },
+      { tipo: 'gioco', gioco: 'caso' }]);
+    case 'comando': return base(L('Uno dei miei comandi', 'One of my commands', 'Uno de mis comandos'), [
+      { tipo: 'modulo', modulo: (datiModuli?.moduli || []).find((x) => x.trigger?.tipo === 'comando')?.id || 0 }]);
+    case 'bentornato': return base(L('Chi torna dopo un’assenza', 'Whoever comes back after a while', 'Quien vuelve tras una ausencia'), [frasi(
+      L('Che bello rivederti, $user: mancavi da $assenza giorni!', 'So good to see you again, $user: it’s been $assenza days!', '¡Qué alegría volver a verte, $user: hacía $assenza días!'),
+      L('Ma guarda chi si rivede: $user! Mancavi tantissimo a tutti.', 'Well look who’s back: $user! We missed you so much.', '¡Mira quién vuelve: $user! Te hemos echado mucho de menos.'))],
+      { tipo: 'arrivo', quando: 'assenza', giorni: 21 });
+    case 'vip': return base(L('I miei VIP', 'My VIPs', 'Mis VIP'), [
+      { tipo: 'messaggio', testo: L('Un saluto speciale per $user, VIP del canale!', 'A special hello to $user, VIP of the channel!', '¡Un saludo especial para $user, VIP del canal!') }],
+      { tipo: 'arrivo', quando: 'diretta' }, { modo: 'solo', persone: [], gruppi: ['vip'] });
+    default: return base('', [{ tipo: 'messaggio', testo: '' }]);
+  }
 }
 
 function modelloPronto(nome) {
@@ -24721,7 +24817,7 @@ function pannelloGiochi() {
       <p class="suggerimento">${L('Alla terza diretta di fila il bonus vale tre volte quello base, alla decima dieci volte: poi resta lì. Chi salta una diretta riparte da uno, il record resta.', 'At the third stream in a row the bonus is three times the base one, at the tenth ten times: then it stays there. Whoever skips a stream starts again from one, the record stays.', 'En el tercer directo seguido el bono vale tres veces el base, en el décimo diez veces: luego se queda ahí. Quien se salta un directo vuelve a empezar de uno, el récord se queda.')}</p>
       <p><label class="riga-check"><input type="checkbox" id="pr-annuncia"${pr.annuncia !== false ? ' checked' : ''}> ${L('Ai traguardi il bot lo dice in chat', 'At the milestones the bot says it in chat', 'En las metas el bot lo dice en el chat')}</label></p>
       <h3 class="sotto-titolo">${L('Il bot che ti riconosce', 'The bot that knows you', 'El bot que te reconoce')}</h3>
-      <p>${L('Al primo messaggio di una persona nuova, e a chi torna dopo un po\', il bot dice una parola. Se ti sei costruito un Modulo sul primo messaggio, vince il tuo e il bot tace.', 'At the first message of a new person, and to whoever comes back after a while, the bot says a word. If you built a Module on the first message, yours wins and the bot stays quiet.', 'Al primer mensaje de una persona nueva, y a quien vuelve tras un tiempo, el bot dice una palabra. Si te has construido un Módulo sobre el primer mensaje, gana el tuyo y el bot calla.')}</p>
+      <p>${L('Al primo messaggio di una persona nuova, e a chi torna dopo un po\', il bot dice una parola. Se ti sei costruito un Modulo sul primo messaggio, vince il tuo e il bot tace. Tace anche per chi ha un’accoglienza sua, in Comandi, «Chi arriva in chat».', 'At the first message of a new person, and to whoever comes back after a while, the bot says a word. If you built a Module on the first message, yours wins and the bot stays quiet. It also stays quiet for anyone with their own welcome, in Commands, «Who arrives in chat».', 'Al primer mensaje de una persona nueva, y a quien vuelve tras un tiempo, el bot dice una palabra. Si te has construido un Módulo sobre el primer mensaje, gana el tuyo y el bot calla. También calla para quien tiene su propia bienvenida, en Comandos, «Quién llega al chat».')}</p>
       <div class="riga-check">
         <input type="checkbox" id="pr-saluti" ${pr.saluti.attivo !== false ? 'checked' : ''}>
         <label for="pr-saluti">${L('Saluta chi arriva e chi torna', 'Greet newcomers and returners', 'Saluda a quien llega y a quien vuelve')}</label>
@@ -29541,7 +29637,6 @@ function attivaPiattaforma() {
 
   document.getElementById('btn-salva-gcmd-2')?.addEventListener('click', salvaGiochiComandi);
 
-
   document.getElementById('btn-salva-regole-giochi')?.addEventListener('click', () => conErrore(async () => {
     const box = _g('regole-giochi');
     if (!box || !_regole) return;
@@ -30249,6 +30344,11 @@ function attivaPiattaforma() {
     }, L('Salvato', 'Saved', 'Guardado'));
   }));
 
+  document.getElementById('btn-salva-arrivi')?.addEventListener('click', () => conErrore(async () => {
+    const pausa = Math.max(0, Math.min(60, Math.round(Number(document.getElementById('arrivi-pausa')?.value) || 0)));
+    await salvaImpostazioni({ arrivi: { pausa } }, L('Salvato', 'Saved', 'Guardado'));
+  }));
+
   document.getElementById('rng-spontaneita')?.addEventListener('input', (ev) => {
     document.getElementById('val-spontaneita').textContent = ev.target.value + '%';
   });
@@ -30478,50 +30578,69 @@ function attivaPiattaforma() {
 
   document.getElementById('scheda-moduli')?.addEventListener('click', (ev) => {
     if (ev.target.closest('[data-nuovo-modulo]')) { apriEditor(null); return; }
+    const arr = ev.target.closest('[data-modello-arrivo]');
+    if (arr) { apriEditor(modelloArrivo(arr.dataset.modelloArrivo), 'editor-arrivo'); return; }
     const mod = ev.target.closest('[data-modello]');
     if (mod) apriEditor(modelloPronto(mod.dataset.modello));
   });
 
-  const ed = slotEditor();
-  if (ed) {
-
-    ed.addEventListener('mousedown', (ev) => {
-      if (ev.target.closest('[data-inserisci]')) ev.preventDefault();
-    });
-
-    ed.addEventListener('focusin', (ev) => {
-      if (ev.target.matches('[data-var-target]')) campoAttivoModulo = ev.target;
-    });
-
-    ed.addEventListener('input', aggiornaRiassunto);
-
-    ed.addEventListener('change', (ev) => {
-      if (ev.target.matches('[data-trigger-tipo]')) {
-        const box = document.getElementById('campi-quando');
-        if (box) box.innerHTML = disegnaCampiQuando({ tipo: ev.target.value });
-        _rinfrescaQuanti();
-      } else if (ev.target.id === 'mod-evento') {
-        _rinfrescaQuanti();
-      } else if (ev.target.matches('[data-azione-tipo]')) {
-        const riga = ev.target.closest('.azione-riga');
-        if (riga) riga.outerHTML = disegnaAzione({ tipo: ev.target.value });
-      } else if (ev.target.id === 'mod-probabilita') {
-        const blocco = document.getElementById('blocco-altrimenti');
-        if (blocco) blocco.hidden = !(Number(ev.target.value) < 100);
-      } else if (ev.target.matches('[data-campo="a"]')) {
-        const box = ev.target.closest('.azione-riga')?.querySelector('[data-solo-nome]');
-        if (box) box.hidden = ev.target.value !== 'nome';
-      } else if (ev.target.matches('[data-campo="cosa"]')) {
-        const cosa = ev.target.value;
-        ev.target.closest('.azione-riga')?.querySelectorAll('[data-regia-cosa]').forEach((b) => { b.hidden = b.dataset.regiaCosa !== cosa; });
-      }
-      aggiornaRiassunto();
-    });
-
-    ed.addEventListener('click', gestisciClicEditor);
-  }
+  for (const id of ['editor-modulo', 'editor-gioco', 'editor-arrivo']) collegaEditor(document.getElementById(id));
 
   caricaDatiScheda(schedaAttiva);
+}
+
+function collegaEditor(ed) {
+  if (!ed || ed.dataset.collegato) return;
+  ed.dataset.collegato = '1';
+
+  ed.addEventListener('mousedown', (ev) => {
+    if (ev.target.closest('[data-inserisci]')) ev.preventDefault();
+  });
+
+  ed.addEventListener('focusin', (ev) => {
+    if (ev.target.matches('[data-var-target]')) campoAttivoModulo = ev.target;
+    if (ev.target.id === 'mod-chi-nome') {
+      _caricaPersoneRecenti().then((lista) => {
+        const dl = document.getElementById('mod-chi-suggerimenti');
+        if (dl && !dl.options.length) dl.innerHTML = lista.map((q) => `<option value="${esc(q.login)}">${esc(q.nome || q.login)}</option>`).join('');
+      });
+    }
+  });
+
+  ed.addEventListener('keydown', (ev) => {
+    if (ev.target.id === 'mod-chi-nome' && ev.key === 'Enter') { ev.preventDefault(); _aggiungiPersona(); }
+  });
+
+  ed.addEventListener('input', aggiornaRiassunto);
+
+  ed.addEventListener('change', (ev) => {
+    if (ev.target.matches('[data-trigger-tipo]')) {
+      const box = document.getElementById('campi-quando');
+      if (box) box.innerHTML = disegnaCampiQuando({ tipo: ev.target.value });
+      _rinfrescaQuanti();
+      if (ev.target.value === 'arrivo') { const chi = ed.querySelector('.blocco-chi'); if (chi) chi.open = true; }
+    } else if (ev.target.id === 'mod-arrivo-quando') {
+      const g = document.getElementById('mod-arrivo-giorni-box');
+      if (g) g.hidden = ev.target.value !== 'assenza';
+    } else if (ev.target.id === 'mod-evento') {
+      _rinfrescaQuanti();
+    } else if (ev.target.matches('[data-azione-tipo]')) {
+      const riga = ev.target.closest('.azione-riga');
+      if (riga) riga.outerHTML = disegnaAzione({ tipo: ev.target.value });
+    } else if (ev.target.id === 'mod-probabilita') {
+      const blocco = document.getElementById('blocco-altrimenti');
+      if (blocco) blocco.hidden = !(Number(ev.target.value) < 100);
+    } else if (ev.target.matches('[data-campo="a"]')) {
+      const box = ev.target.closest('.azione-riga')?.querySelector('[data-solo-nome]');
+      if (box) box.hidden = ev.target.value !== 'nome';
+    } else if (ev.target.matches('[data-campo="cosa"]')) {
+      const cosa = ev.target.value;
+      ev.target.closest('.azione-riga')?.querySelectorAll('[data-regia-cosa]').forEach((b) => { b.hidden = b.dataset.regiaCosa !== cosa; });
+    }
+    aggiornaRiassunto();
+  });
+
+  ed.addEventListener('click', gestisciClicEditor);
 }
 
 function gestisciClicEditor(ev) {
@@ -30567,6 +30686,9 @@ function gestisciClicEditor(ev) {
     if (box?.classList.contains('chip-vars-altre')) box.hidden = !box.hidden;
     return;
   }
+  if (ev.target.closest('[data-aggiungi-persona]')) { ev.preventDefault(); _aggiungiPersona(); return; }
+  const togliP = ev.target.closest('[data-togli-persona]');
+  if (togliP) { ev.preventDefault(); const c = togliP.closest('.chip-persona'); c?.classList.add('esce'); aggiornaRiassunto(); togli(c); return; }
   const rimF = ev.target.closest('[data-rimuovi-frase]');
   if (rimF) { ev.preventDefault(); const r = rimF.closest('.frase-trigger'); r?.classList.add('esce'); aggiornaRiassunto(); togli(r); return; }
   const su = ev.target.closest('[data-su]');
@@ -33665,6 +33787,7 @@ const TRIGGER = [
   ['evento', 'Un evento del canale', 'A channel event', 'Un evento del canal'],
   ['timer', 'A tempo (timer)', 'On a timer', 'Con temporizador'],
   ['manuale', 'Manuale / da un mio servizio', 'Manual / from a service of mine', 'Manual / desde un servicio mío'],
+  ['arrivo', 'Quando arriva in chat una persona', 'When someone arrives in chat', 'Cuando alguien llega al chat'],
 ];
 const nomeMonetaUI = () => (impostazioni()?.nomeMonete || '').trim() || L('monete', 'coins', 'monedas');
 
@@ -33696,6 +33819,8 @@ const AZIONI = [
   ['punti', 'Dai o togli punti', 'Give or take points', 'Da o quita puntos'],
   ['regia', 'Regia: scena, muto o transizione', 'Program: scene, mute or transition', 'Realización: escena, silencio o transición'],
   ['modalita', 'Modalità della chat a tempo', 'Timed chat mode', 'Modo del chat con tiempo'],
+  ['gioco', 'Avvia un gioco', 'Start a game', 'Inicia un juego'],
+  ['modulo', 'Esegui un comando', 'Run a command', 'Ejecuta un comando'],
 ];
 
 const VARIABILI = [
@@ -33717,6 +33842,8 @@ const VARIABILI = [
   '$altezza', '$peso', '$lunghezza', '$grandezza', '$eta', '$temperatura', '$velocita', '$distanza', '$soldi',
 
   '$colore', '$emoji', '$animale',
+
+  '$assenza', '$volte',
 ];
 
 const GRUPPI_GIOCO = ['Le monete del canale', 'Caso, numeri e contatori', 'Chi scrive e cosa dice'];
@@ -33756,6 +33883,10 @@ const LEGENDA_VAR = [
   ['$gioco', 'La categoria/gioco attuale', 'Current category/game', 'La categoría/juego actual'],
   ['$titolo', 'Il titolo attuale della diretta', 'Current stream title', 'El título actual del directo'],
   ['$spettatori', 'Quanti stanno guardando ora', 'How many are watching now', 'Cuántos están viendo ahora'],
+
+  ['gruppo', 'Chi arriva in chat', 'Who arrives in chat', 'Quién llega al chat'],
+  ['$assenza', 'Da quanti giorni non scriveva (vuoto se non si sa)', 'How many days since they last wrote (empty if unknown)', 'Cuántos días llevaba sin escribir (vacío si no se sabe)'],
+  ['$volte', 'Quante accoglienze ha avuto da questo modulo, questa compresa', 'How many welcomes they have had from this module, this one included', 'Cuántas bienvenidas ha tenido de este módulo, contando esta'],
 
   ['gruppo', 'Le persone', 'People', 'Las personas'],
   ['$followage', 'Da quanto ti segue chi scrive (o !followage @nome)', 'How long the writer has followed (or !followage @name)', 'Cuánto lleva siguiéndote quien escribe (o !followage @nombre)'],
@@ -33822,6 +33953,96 @@ function legendaVariabiliHtml() {
   </details>`;
 }
 
+const GRUPPI_CHI = () => [['mod', L('Moderatori', 'Moderators', 'Moderadores')], ['vip', 'VIP'], ['sub', L('Abbonati', 'Subscribers', 'Suscriptores')]];
+const QUANDO_ARRIVO = () => [
+  ['diretta', L('La prima volta in ogni diretta', 'The first time in each stream', 'La primera vez en cada directo')],
+  ['giorno', L('La prima volta ogni giorno', 'The first time each day', 'La primera vez cada día')],
+  ['assenza', L('Solo se mancava da un po’', 'Only if they have been away for a while', 'Solo si llevaba un tiempo sin venir')],
+];
+const NOMI_PIATTAFORMA = { twitch: 'Twitch', kick: 'Kick', youtube: 'YouTube' };
+const RE_NOME_CHAT = /^[a-z0-9_][a-z0-9_.-]{0,39}$/;
+let _personeRecenti = null;
+async function _caricaPersoneRecenti() {
+  if (_personeRecenti) return _personeRecenti;
+  try { _personeRecenti = (await api('/api/streamer/persone/recenti'))?.persone || []; } catch { _personeRecenti = []; }
+  return _personeRecenti;
+}
+
+function _chipPersona(q) {
+  const nome = q.nome || q.login || q.id;
+  const dove = _piattaformeAttive.length > 1 ? `<span class="tenue">${esc(NOMI_PIATTAFORMA[q.p] || q.p)}</span>` : '';
+  return `<span class="chip-persona" data-p="${esc(q.p || 'twitch')}" data-id="${esc(q.id || '')}" data-login="${esc(q.login || '')}" data-nome="${esc(q.nome || '')}">`
+    + `<span>${esc(nome)}</span>${dove}`
+    + `<button type="button" class="chip-togli" data-togli-persona aria-label="${esc(L(`Togli ${nome}`, `Remove ${nome}`, `Quitar a ${nome}`))}">×</button></span>`;
+}
+
+function _perChiHtml(c, t) {
+  const chi = c?.chi || null;
+  const persone = Array.isArray(chi?.persone) ? chi.persone : [];
+  const gruppi = Array.isArray(chi?.gruppi) ? chi.gruppi : [];
+  const dove = _piattaformeAttive.length > 1
+    ? `<select id="mod-chi-piatt" aria-label="${esc(L('Su quale piattaforma', 'On which platform', 'En qué plataforma'))}">${_piattaformeAttive.map((p) => `<option value="${esc(p.id)}">${esc(p.nome)}</option>`).join('')}</select>`
+    : '';
+  return `<details class="blocco-se blocco-chi"${chi || t?.tipo === 'arrivo' ? ' open' : ''}>
+    <summary class="etichetta-blocco">${L('Per chi (facoltativo): solo alcune persone, o tutti tranne alcune', 'For whom (optional): only some people, or everyone except some', 'Para quién (opcional): solo algunas personas, o todos menos algunas')}</summary>
+    <label class="campo" for="mod-chi-modo">${L('Vale', 'It applies', 'Vale')}</label>
+    <select id="mod-chi-modo">
+      <option value="solo"${chi?.modo !== 'tranne' ? ' selected' : ''}>${L('Solo per queste persone e questi gruppi', 'Only for these people and groups', 'Solo para estas personas y grupos')}</option>
+      <option value="tranne"${chi?.modo === 'tranne' ? ' selected' : ''}>${L('Per tutti tranne queste persone e questi gruppi', 'For everyone except these people and groups', 'Para todos menos estas personas y grupos')}</option>
+    </select>
+    <label class="campo" for="mod-chi-nome">${L('Persone', 'People', 'Personas')}</label>
+    <div class="chi-persone" id="mod-chi-persone">${persone.map(_chipPersona).join('')}</div>
+    <div class="riga-flessibile">
+      <input type="text" id="mod-chi-nome" class="campo-largo" list="mod-chi-suggerimenti" autocomplete="off" spellcheck="false" placeholder="${esc(L('il nome in chat, es. tizio', 'their chat name, e.g. jane', 'su nombre en el chat, p. ej. ana'))}">
+      ${dove}
+      <button type="button" class="btn secondario mini" data-aggiungi-persona>${L('Aggiungi', 'Add', 'Añadir')}</button>
+    </div>
+    <datalist id="mod-chi-suggerimenti"></datalist>
+    <p class="kit-errore" id="mod-chi-errore" role="alert"></p>
+    <p class="suggerimento">${L('Scrivi il nome come appare in chat: i suggerimenti sono le persone che hanno scritto di recente. La prima volta che scrive la riconosco per il suo account, così se cambia nome la riconosco lo stesso.', 'Type the name as it shows in chat: the suggestions are people who wrote recently. The first time they write I recognize their account, so if they change their name I still recognize them.', 'Escribe el nombre tal como aparece en el chat: las sugerencias son las personas que han escrito hace poco. La primera vez que escribe reconozco su cuenta, así que si cambia de nombre la sigo reconociendo.')}</p>
+    <label class="campo">${L('Gruppi', 'Groups', 'Grupos')}</label>
+    <div class="mod-piatt">${GRUPPI_CHI().map(([g, n]) => `<label class="riga-check"><input type="checkbox" class="mod-chi-gruppo" value="${g}"${gruppi.includes(g) ? ' checked' : ''}> ${esc(n)}</label>`).join('')}</div>
+    <p class="suggerimento">${L('Una regola per nome batte quella del suo gruppo, e quella del gruppo batte quella per tutti.', 'A rule for someone by name beats the one for their group, and the group one beats the one for everyone.', 'Una regla por nombre gana a la de su grupo, y la del grupo gana a la de todos.')}</p>
+  </details>`;
+}
+
+function _leggiChi() {
+  const box = document.getElementById('mod-chi-persone');
+  if (!box) return null;
+  const persone = [...box.querySelectorAll('.chip-persona:not(.esce)')]
+    .map((x) => ({ p: x.dataset.p || 'twitch', id: x.dataset.id || '', login: x.dataset.login || '', nome: x.dataset.nome || '' }));
+  const gruppi = [...document.querySelectorAll('.mod-chi-gruppo')].filter((x) => x.checked).map((x) => x.value);
+  if (!persone.length && !gruppi.length) return null;
+  return { modo: document.getElementById('mod-chi-modo')?.value === 'tranne' ? 'tranne' : 'solo', persone, gruppi };
+}
+
+function _aggiungiPersona() {
+  const campo = document.getElementById('mod-chi-nome');
+  const box = document.getElementById('mod-chi-persone');
+  const err = document.getElementById('mod-chi-errore');
+  if (!campo || !box) return;
+  const scritto = campo.value.trim().replace(/^@/, '');
+  if (!scritto) return;
+  const login = scritto.toLowerCase();
+  if (!RE_NOME_CHAT.test(login)) {
+    if (err) err.textContent = L('Questo non è un nome della chat: usa lettere, numeri e trattino basso, senza spazi.', 'This is not a chat name: use letters, numbers and underscores, no spaces.', 'Esto no es un nombre del chat: usa letras, números y guion bajo, sin espacios.');
+    campo.setAttribute('aria-invalid', 'true');
+    return;
+  }
+  const p = document.getElementById('mod-chi-piatt')?.value || 'twitch';
+  if ([...box.querySelectorAll('.chip-persona:not(.esce)')].some((x) => x.dataset.p === p && x.dataset.login === login)) {
+    if (err) err.textContent = L('C’è già.', 'Already there.', 'Ya está.');
+    return;
+  }
+  const visto = (_personeRecenti || []).find((x) => x.login === login);
+  box.insertAdjacentHTML('beforeend', _chipPersona({ p, id: '', login, nome: visto?.nome || scritto }));
+  if (err) err.textContent = '';
+  campo.removeAttribute('aria-invalid');
+  campo.value = '';
+  campo.focus();
+  aggiornaRiassunto();
+}
+
 function riassuntoModulo(m) {
   if (!m) return '';
   const t = riassuntoQuando(m.trigger || {});
@@ -33868,12 +34089,28 @@ function riassuntoQuando(t) {
       return s;
     }
     case 'manuale': return L('lo attivi tu (Prova o servizio esterno)', 'you trigger it (Test or an outside service)', 'lo activas tú (Prueba o servicio externo)');
+    case 'arrivo': {
+      if (t.quando === 'giorno') return L('arriva in chat, la prima volta ogni giorno', 'someone arrives in chat, the first time each day', 'alguien llega al chat, la primera vez cada día');
+      if (t.quando === 'assenza') return L(`torna in chat dopo almeno ${t.giorni || 21} giorni`, `someone comes back to chat after at least ${t.giorni || 21} days`, `alguien vuelve al chat tras al menos ${t.giorni || 21} días`);
+      return L('arriva in chat, la prima volta in ogni diretta', 'someone arrives in chat, the first time in each stream', 'alguien llega al chat, la primera vez en cada directo');
+    }
     default: return L('succede qualcosa', 'something happens', 'pasa algo');
   }
+}
+function riassuntoChi(chi) {
+  if (!chi) return '';
+  const nomi = (chi.persone || []).map((q) => q.nome || q.login || q.id);
+  const gr = (chi.gruppi || []).map((g) => (GRUPPI_CHI().find(([id]) => id === g) || [g, g])[1]);
+  const tutti = [...nomi, ...gr];
+  if (!tutti.length) return '';
+  const elenco = tutti.length > 3 ? tutti.slice(0, 3).join(', ') + L(` e altri ${tutti.length - 3}`, ` and ${tutti.length - 3} more`, ` y ${tutti.length - 3} más`) : tutti.join(', ');
+  return chi.modo === 'tranne' ? L(`tutti tranne ${elenco}`, `everyone except ${elenco}`, `todos menos ${elenco}`) : L(`solo per ${elenco}`, `only for ${elenco}`, `solo para ${elenco}`);
 }
 function riassuntoSe(c) {
   const parti = [];
   const mon = nomeMonetaUI();
+  const perChi = riassuntoChi(c.chi);
+  if (perChi) parti.push(perChi);
   const chi = { sub: L('solo i sub', 'subs only', 'solo los subs'), vip: L('solo i VIP', 'VIPs only', 'solo los VIP'), mod: L('solo i mod', 'mods only', 'solo los mods') }[c.tier];
   if (chi) parti.push(chi);
   if (c.cooldown > 0) parti.push(L(`max ogni ${c.cooldown}s`, `at most every ${c.cooldown}s`, `como mucho cada ${c.cooldown}s`));
@@ -33891,7 +34128,17 @@ function riassuntoSe(c) {
 function riassuntoAzione(a) {
   const mon = nomeMonetaUI();
   switch (a.tipo) {
-    case 'messaggio': return L('invia un messaggio', 'sends a message', 'envía un mensaje');
+    case 'messaggio': return a.aCaso ? L('scrive una frase a caso', 'writes a random line', 'escribe una frase al azar') : L('invia un messaggio', 'sends a message', 'envía un mensaje');
+    case 'gioco': {
+      if (!a.gioco || a.gioco === 'caso') return L('avvia un gioco a caso', 'starts a random game', 'inicia un juego al azar');
+      const g = (datiModuli?.giochi || []).find((x) => x.id === a.gioco);
+      return L(`avvia «${g ? Lv(g.nome) : a.gioco}»`, `starts «${g ? Lv(g.nome) : a.gioco}»`, `inicia «${g ? Lv(g.nome) : a.gioco}»`);
+    }
+    case 'modulo': {
+      if (a.comando) return L(`esegue !${a.comando}`, `runs !${a.comando}`, `ejecuta !${a.comando}`);
+      const m = (datiModuli?.moduli || []).find((x) => String(x.id) === String(a.modulo));
+      return m ? L(`esegue «${m.nome}»`, `runs «${m.nome}»`, `ejecuta «${m.nome}»`) : L('esegue un comando', 'runs a command', 'ejecuta un comando');
+    }
     case 'effetto': return a.comando ? L(`fai partire l'effetto !${a.comando}`, `play the effect !${a.comando}`, `lanza el efecto !${a.comando}`) : L('fai partire un effetto', 'play an effect', 'lanza un efecto');
     case 'contatore': {
       const n = a.nome || L('contatore', 'counter', 'contador');
@@ -33955,6 +34202,7 @@ async function caricaModuli() {
     return;
   }
   disegnaListaModuli();
+  disegnaListaArrivi();
   disegnaConnettori();
   try {
     if (window.SB_CERCA) {
@@ -33992,6 +34240,10 @@ function disegnaListaModuli() {
       </div>
     </li>`).join('');
 
+  _gestisciListaModuli(ul);
+}
+
+function _gestisciListaModuli(ul) {
   ul.onchange = (ev) => {
     const tog = ev.target.closest('[data-toggle-modulo]');
     if (!tog) return;
@@ -34016,12 +34268,14 @@ function disegnaListaModuli() {
     const elimina = ev.target.closest('[data-elimina-modulo]');
     if (prova) {
       conErrore(async () => {
-        await api('/api/streamer/moduli/' + encodeURIComponent(prova.dataset.provaModulo) + '/prova', { method: 'POST', body: {} });
+        let persona = null;
+        try { persona = prova.dataset.provaPersona ? JSON.parse(prova.dataset.provaPersona) : null; } catch { persona = null; }
+        await api('/api/streamer/moduli/' + encodeURIComponent(prova.dataset.provaModulo) + '/prova', { method: 'POST', body: persona ? { persona } : {} });
         toast(L('Modulo provato: guarda chat/overlay', 'Module tested: check chat/overlay', 'Módulo probado: mira chat/overlay'));
       });
     } else if (modifica) {
       const m = (datiModuli.moduli || []).find((x) => String(x.id) === String(modifica.dataset.modificaModulo));
-      if (m) apriEditor(m);
+      if (m) apriEditor(m, modifica.dataset.dove || 'editor-modulo');
     } else if (elimina) {
       conErrore(async () => {
         if (!(await chiediSe({ titolo: L('Elimino questo modulo?', 'Delete this module?', '¿Elimino este módulo?'), pericolo: true,
@@ -34033,6 +34287,42 @@ function disegnaListaModuli() {
       });
     }
   };
+}
+
+function disegnaListaArrivi() {
+  const ul = document.getElementById('lista-arrivi');
+  if (!ul) return;
+  const moduli = (datiModuli?.moduli || []).filter((m) => m.trigger?.tipo === 'arrivo');
+  const volte = datiModuli?.arrivi?.volte || {};
+  if (!moduli.length) {
+    ul.innerHTML = `<li class="vuoto">${L('Nessuna accoglienza ancora: parti da un modello qui sopra.', 'No welcomes yet: start from a template above.', 'Todavía no hay bienvenidas: empieza con una plantilla de arriba.')}</li>`;
+  } else {
+    ul.innerHTML = moduli.map((m) => {
+      const chi = m.condizioni?.chi;
+      const per = riassuntoChi(chi) || L('per tutti', 'for everyone', 'para todos');
+      const n = Number(volte[m.id]) || 0;
+      const prima = chi?.modo !== 'tranne' ? chi?.persone?.[0] : null;
+      return `
+    <li class="modulo">
+      <label class="interruttore">
+        <input type="checkbox" data-toggle-modulo="${esc(m.id)}" ${m.attivo ? 'checked' : ''} aria-label="${esc(L(`Accendi «${m.nome || ''}»`, `Turn on «${m.nome || ''}»`, `Enciende «${m.nome || ''}»`))}">
+        <span class="levetta"></span>
+      </label>
+      <div class="testo-voce">
+        <div class="nome-modulo">${esc(m.nome || L('Senza nome', 'Unnamed', 'Sin nombre'))}</div>
+        <div class="riassunto-lista"><strong>${esc(per)}</strong> · ${esc(riassuntoQuando(m.trigger))}</div>
+        <div class="riassunto-lista">${esc((m.azioni || []).map(riassuntoAzione).filter(Boolean).join(', '))}</div>
+        <div class="riassunto-lista tenue">${n ? esc(L(`${n} accoglienze fatte`, `${n} welcomes so far`, `${n} bienvenidas hechas`)) : esc(L('Non è ancora scattata', 'It has not fired yet', 'Todavía no ha saltado'))}</div>
+      </div>
+      <div class="azioni-voce">
+        <button class="btn secondario mini" data-prova-modulo="${esc(m.id)}"${prima ? ` data-prova-persona="${esc(JSON.stringify(prima))}"` : ''}>${prima ? esc(L(`Prova come se arrivasse ${prima.nome || prima.login}`, `Test as if ${prima.nome || prima.login} arrived`, `Prueba como si llegara ${prima.nome || prima.login}`)) : L('Prova', 'Test', 'Prueba')}</button>
+        <button class="btn secondario mini" data-modifica-modulo="${esc(m.id)}" data-dove="editor-arrivo">${L('Modifica', 'Edit', 'Editar')}</button>
+        <button class="btn pericolo mini" data-elimina-modulo="${esc(m.id)}">${L('Elimina', 'Delete', 'Eliminar')}</button>
+      </div>
+    </li>`;
+    }).join('');
+  }
+  _gestisciListaModuli(ul);
 }
 
 let _slotEditor = 'editor-modulo';
@@ -34058,7 +34348,9 @@ async function apriEditor(modulo, dove = 'editor-modulo') {
   const mon = esc(nomeMonetaUI());
   cont.innerHTML = `
     <div class="carta">
-      <h2>${_hIco(ICO.scrivi)}${m.id ? L('Modifica modulo', 'Edit module', 'Editar módulo') : L('Nuovo modulo', 'New module', 'Nuevo módulo')}</h2>
+      <h2>${_hIco(ICO.scrivi)}${m.trigger?.tipo === 'arrivo'
+        ? (m.id ? L('Modifica accoglienza', 'Edit welcome', 'Editar bienvenida') : L('Nuova accoglienza', 'New welcome', 'Nueva bienvenida'))
+        : (m.id ? L('Modifica modulo', 'Edit module', 'Editar módulo') : L('Nuovo modulo', 'New module', 'Nuevo módulo'))}</h2>
       <div class="riassunto-modulo">${esc(riassuntoModulo(m))}</div>
 
       <label class="campo" for="mod-nome">${L('Nome del modulo', 'Module name', 'Nombre del módulo')}</label>
@@ -34072,6 +34364,8 @@ async function apriEditor(modulo, dove = 'editor-modulo') {
         </select>
         <div id="campi-quando">${disegnaCampiQuando(m.trigger || {})}</div>
       </div>
+
+      ${_perChiHtml(c, m.trigger)}
 
       <details class="blocco-se" ${seAperto ? 'open' : ''}>
         <summary class="etichetta-blocco">${L('Se (facoltativo): aggiungi condizioni', 'If (optional): add conditions', 'Si (opcional): añade condiciones')}</summary>
@@ -34231,6 +34525,18 @@ function disegnaCampiQuando(t) {
           ${L('Falla parlare anche a canale spento', 'Let it speak even when the channel is offline', 'Que hable también con el canal apagado')}
         </label>
         <p class="suggerimento">${L('Di norma un modulo a tempo parla solo mentre sei in diretta: fuori dalla diretta la chat è vuota.', 'Normally a timed module only speaks while you are live: off air the chat is empty.', 'Normalmente un módulo con temporizador solo habla mientras estás en directo: fuera del directo el chat está vacío.')}</p>`;
+    case 'arrivo': {
+      const q = t.quando || 'diretta';
+      return `
+        <label class="campo" for="mod-arrivo-quando">${L('Quando scatta', 'When it fires', 'Cuándo salta')}</label>
+        <select id="mod-arrivo-quando">${QUANDO_ARRIVO().map(([v, n]) => `<option value="${v}"${q === v ? ' selected' : ''}>${esc(n)}</option>`).join('')}</select>
+        <div id="mod-arrivo-giorni-box"${q === 'assenza' ? '' : ' hidden'}>
+          <label class="campo" for="mod-arrivo-giorni">${L('Da quanti giorni almeno', 'For at least how many days', 'Desde cuántos días al menos')}</label>
+          <input type="number" id="mod-arrivo-giorni" min="1" max="365" value="${Number(t.giorni) || 21}">
+        </div>
+        <label class="riga-check spazio-sopra"><input type="checkbox" id="mod-arrivo-zitti"${t.zitti ? ' checked' : ''}> ${L('Anche se entra senza scrivere: solo su Twitch e solo per le persone scritte per nome, me ne accorgo entro 5 minuti', 'Even if they join without writing: only on Twitch and only for people added by name, I notice within 5 minutes', 'Aunque entre sin escribir: solo en Twitch y solo para las personas añadidas por nombre, me doy cuenta en 5 minutos')}</label>
+        <p class="suggerimento">${L('Scatta al primo messaggio di chi arriva, una volta sola: due messaggi di fila non sono due arrivi, e nemmeno un riavvio del bot. Per chi vale lo scegli qui sotto, in «Per chi»: senza nessuno, vale per tutti. Chi ha la sua accoglienza non riceve anche quella del gruppo, né il saluto generico.', 'It fires on the first message of whoever arrives, only once: two messages in a row are not two arrivals, and neither is a bot restart. You choose who it is for below, in «For whom»: with nobody there, it is for everyone. Whoever has their own welcome does not also get the group one, nor the generic greeting.', 'Salta con el primer mensaje de quien llega, una sola vez: dos mensajes seguidos no son dos llegadas, ni tampoco un reinicio del bot. Para quién vale lo eliges abajo, en «Para quién»: sin nadie, vale para todos. Quien tiene su bienvenida no recibe también la del grupo, ni el saludo genérico.')}</p>`;
+    }
     case 'manuale':
       return `<p class="suggerimento spazio-sopra">${L('Nessun campo: questo modulo si attiva dal bottone «Prova» o dai Connettori avanzati (API in ingresso) qui sotto.', 'No fields: this module runs from the «Test» button or from the Advanced connectors (incoming API) below.', 'Ningún campo: este módulo se activa con el botón «Prueba» o desde los Conectores avanzados (API de entrada) de abajo.')}</p>`;
     default:
@@ -34282,7 +34588,35 @@ function disegnaCampiAzione(a) {
     case 'messaggio':
       return `
         <textarea data-campo="testo" data-var-target placeholder="${esc(L('es. Ciao $user!', 'e.g. Hi $user!', 'p. ej. ¡Hola $user!'))}">${esc(a.testo || '')}</textarea>
+        <label class="riga-check"><input type="checkbox" data-campo="aCaso"${a.aCaso ? ' checked' : ''}> ${L('Una frase a caso: scrivine una per riga, ogni volta ne esce una', 'A random line: write one per line, each time one comes out', 'Una frase al azar: escribe una por línea, cada vez sale una')}</label>
         ${pillole}`;
+    case 'gioco': {
+      const giochi = datiModuli?.giochi || [];
+      const scelta = a.gioco || 'caso';
+      return `
+        ${etichetta(L('Quale gioco', 'Which game', 'Qué juego'))}
+        <select ${aria(L('Quale gioco', 'Which game', 'Qué juego'))} data-campo="gioco">
+          <option value="caso"${scelta === 'caso' ? ' selected' : ''}>${L('Uno a caso fra quelli che possono partire', 'A random one among those that can start', 'Uno al azar entre los que pueden empezar')}</option>
+          ${giochi.map((g) => `<option value="${esc(g.id)}"${scelta === g.id ? ' selected' : ''}>${esc(Lv(g.nome))}${g.soloLive ? esc(L(' (in diretta)', ' (when live)', ' (en directo)')) : ''}</option>`).join('')}
+        </select>
+        <p class="suggerimento">${L('Le stesse regole dei giochi automatici: se ce n’è già uno aperto non parte, e con i giochi spenti nel canale nemmeno.', 'The same rules as automatic games: if one is already open it does not start, and neither does it with games turned off in the channel.', 'Las mismas reglas que los juegos automáticos: si ya hay uno abierto no empieza, y tampoco con los juegos apagados en el canal.')}</p>`;
+    }
+    case 'modulo': {
+      const altri = (datiModuli?.moduli || []).filter((x) => String(x.id) !== String(moduloInModifica?.id ?? ''));
+      const semplici = datiModuli?.comandiSemplici || [];
+      const scelta = a.comando ? 'cmd:' + a.comando : String(a.modulo ?? '');
+      if (!altri.length && !semplici.length) {
+        return `<p class="suggerimento">${L('Non hai ancora altri comandi: creane uno, poi torna qui a sceglierlo.', 'You have no other commands yet: create one, then come back here to pick it.', 'Todavía no tienes otros comandos: crea uno y vuelve aquí a elegirlo.')}</p>`;
+      }
+      const nomeM = (x) => (x.trigger?.tipo === 'comando' && x.trigger.comando ? `!${x.trigger.comando} · ` : '') + (x.nome || L('Senza nome', 'Unnamed', 'Sin nombre'));
+      return `
+        ${etichetta(L('Quale comando', 'Which command', 'Qué comando'))}
+        <select ${aria(L('Quale comando', 'Which command', 'Qué comando'))} data-campo="modulo">
+          ${altri.length ? `<optgroup label="${esc(L('I tuoi comandi e moduli', 'Your commands and modules', 'Tus comandos y módulos'))}">${altri.map((x) => `<option value="${esc(x.id)}"${scelta === String(x.id) ? ' selected' : ''}>${esc(nomeM(x))}</option>`).join('')}</optgroup>` : ''}
+          ${semplici.length ? `<optgroup label="${esc(L('Comandi creati in chat', 'Commands created in chat', 'Comandos creados en el chat'))}">${semplici.map((n) => `<option value="${esc('cmd:' + n)}"${scelta === 'cmd:' + n ? ' selected' : ''}>!${esc(n)}</option>`).join('')}</optgroup>` : ''}
+        </select>
+        <p class="suggerimento">${L('Fa quello che fa quel comando, come se l’avesse scritto la stessa persona: con le sue condizioni, ma senza farle pagare niente. Un comando non esegue mai se stesso, e al massimo tre si chiamano in fila.', 'It does what that command does, as if the same person had typed it: with its conditions, but without charging them anything. A command never runs itself, and at most three call each other in a row.', 'Hace lo que hace ese comando, como si lo hubiera escrito la misma persona: con sus condiciones, pero sin cobrarle nada. Un comando nunca se ejecuta a sí mismo, y como mucho tres se llaman seguidos.')}</p>`;
+    }
     case 'effetto': {
       const eff = datiModuli?.effettiDisponibili || [];
       if (!eff.length) {
@@ -34489,6 +34823,10 @@ function leggiForm() {
     trigger.frasi = righe((g('mod-frasi-voce')?.value || '').toLowerCase());
   } else if (tipoT === 'evento') {
     trigger.evento = g('mod-evento')?.value || 'follow';
+  } else if (tipoT === 'arrivo') {
+    trigger.quando = g('mod-arrivo-quando')?.value || 'diretta';
+    if (trigger.quando === 'assenza') trigger.giorni = Number(g('mod-arrivo-giorni')?.value) || 21;
+    if (g('mod-arrivo-zitti')?.checked) trigger.zitti = true;
   } else if (tipoT === 'timer') {
     trigger.minuti = Number(g('mod-minuti')?.value) || 0;
     trigger.minMessaggi = Number(g('mod-min-messaggi')?.value) || 0;
@@ -34509,6 +34847,8 @@ function leggiForm() {
   };
   const scelte = [...document.querySelectorAll('.mod-piatt-c')].filter((x) => x.checked).map((x) => x.value);
   if (scelte.length && scelte.length < _piattaformeAttive.length) condizioni.piattaforme = scelte;
+  const chi = _leggiChi();
+  if (chi) condizioni.chi = chi;
   const azioni = [...document.querySelectorAll('#lista-azioni .azione-riga:not(.esce)')].map(leggiAzioneRiga);
   const altrimenti = [...document.querySelectorAll('#lista-altrimenti .azione-riga:not(.esce)')].map(leggiAzioneRiga);
   return {
@@ -34524,7 +34864,12 @@ function leggiAzioneRiga(riga) {
   const tipo = riga.querySelector('[data-azione-tipo]').value;
   const v = (campo) => riga.querySelector(`[data-campo="${campo}"]`);
   switch (tipo) {
-    case 'messaggio': return { tipo, testo: v('testo')?.value || '' };
+    case 'messaggio': return { tipo, testo: v('testo')?.value || '', ...(v('aCaso')?.checked ? { aCaso: true } : {}) };
+    case 'gioco': return { tipo, gioco: v('gioco')?.value || 'caso' };
+    case 'modulo': {
+      const x = v('modulo')?.value || '';
+      return x.startsWith('cmd:') ? { tipo, comando: x.slice(4) } : { tipo, modulo: Number(x) || 0 };
+    }
     case 'effetto': return { tipo, comando: v('comando')?.value || '' };
     case 'contatore': return {
       tipo, nome: (v('nome')?.value || '').trim(),
@@ -34583,6 +34928,11 @@ async function salvaModuloCorrente() {
   if (!m) return null;
   if (!m.nome) { toast(L('Dai un nome al modulo.', 'Give the module a name.', 'Dale un nombre al módulo.'), 'errore'); return null; }
   if (!m.azioni.length) { toast(L('Aggiungi almeno un\'azione.', 'Add at least one action.', 'Añade al menos una acción.'), 'errore'); return null; }
+  if (m.trigger?.tipo === 'arrivo' && !m.condizioni?.chi && !(await chiediSe({
+    titolo: L('Vale per tutti quelli che arrivano?', 'Is it for everyone who arrives?', '¿Vale para todos los que llegan?'),
+    testo: L('In «Per chi» non c’è nessuno: così il bot accoglie chiunque scriva per la prima volta in diretta. Se la volevi per qualcuno, aggiungilo lì.', 'There is nobody in «For whom»: this way the bot welcomes anyone who writes for the first time in the stream. If you wanted it for someone, add them there.', 'En «Para quién» no hay nadie: así el bot da la bienvenida a cualquiera que escriba por primera vez en el directo. Si la querías para alguien, añádelo ahí.'),
+    si: L('Sì, per tutti', 'Yes, for everyone', 'Sí, para todos'),
+  }))) return null;
   const res = await api('/api/streamer/moduli', { method: 'POST', body: m });
   const id = res?.id ?? m.id;
   if (moduloInModifica) moduloInModifica.id = id;
@@ -35545,7 +35895,6 @@ function mostraInvito(invito) {
     </div>`;
   document.getElementById('btn-copia-invito')?.addEventListener('click', () => copiaTesto(invito.url, L('Link d’invito copiato', 'Invite link copied', 'Enlace de invitación copiado')));
 }
-
 
 async function caricaRichiesteMod() {
   const ul = document.getElementById('lista-richieste-mod');

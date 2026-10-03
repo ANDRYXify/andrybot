@@ -1597,6 +1597,14 @@ details.carta.sez[open] > summary { margin-bottom: .5rem; border-bottom: 1px sol
 .modello-pronto:active { transform: scale(.97); }
 
 .lista-moduli { list-style: none; margin-top: .6rem; }
+.chi-persone { display: flex; flex-wrap: wrap; gap: .4rem; margin: .2rem 0 .5rem; }
+.chi-persone:empty { display: none; }
+.chip-persona { display: inline-flex; align-items: center; gap: .35rem; max-width: 100%; background: var(--acc-soft); border: 1px solid var(--acc-bordo); color: var(--testo); border-radius: 999px; padding: .16rem .2rem .16rem .7rem; font-size: .86rem; }
+.chip-persona > span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chip-persona .tenue { font-size: .74rem; }
+.chip-togli { display: inline-grid; place-items: center; min-width: 1.75rem; min-height: 1.75rem; border: 0; border-radius: 999px; background: transparent; color: var(--testo-2); font-size: 1rem; line-height: 1; cursor: pointer; }
+@media (hover: hover) { .chip-togli:hover { background: var(--surface-2); color: var(--testo); } }
+.chip-togli:focus-visible { outline: 2px solid var(--acc); outline-offset: 1px; }
 .modulo { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-m); padding: .72rem .9rem; margin-bottom: .6rem; display: flex; align-items: center; gap: .9rem; flex-wrap: wrap; transition: border-color var(--molla), background var(--molla); }
 @media (hover: hover) {
 .modulo:hover { border-color: var(--border-2); background: var(--surface-2); }

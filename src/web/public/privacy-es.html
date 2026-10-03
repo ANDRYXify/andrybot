@@ -126,6 +126,10 @@
           que escribe el streamer, cuando el cumpleaños lo añade él); para reconocerla, el id de su cuenta de Telegram o el
           nombre de su cuenta en el chat; y el año de la última felicitación, que sirve para no repetirla. Ninguna fecha de nacimiento completa, así que
           ninguna edad. Se conserva hasta que se elimina, con <code>!compleanno via</code> o desde el panel del streamer.</li>
+        <li><strong>Bienvenidas en el chat</strong>, solo si el streamer las crea: las personas que elige por nombre (el
+          nombre en el chat y, desde su primer mensaje, el id de la cuenta en la plataforma, que sirve para reconocerlas si
+          cambian de nombre) y, para cada bienvenida, cuándo la recibió una persona por última vez y cuántas veces. Estas
+          marcas se borran a los <strong>90 días</strong>, o enseguida si el streamer quita la bienvenida.</li>
         <li><strong>Solicitudes para entrar en el grupo de Telegram</strong>, solo si el streamer activa el escudo: quien
           pide entrar hace antes una prueba en una página. Guardamos el id de su cuenta de Telegram, el nombre con el que
           aparece, el grupo, el resultado de la prueba y la hora; la bio de la cuenta no la leemos. La prueba se dibuja en
@@ -244,6 +248,7 @@
       <ul>
         <li>Mensajes del chat: <strong>14 días</strong>.</li>
         <li>Solicitudes para entrar en el grupo de Telegram (id, nombre, grupo, resultado, hora): <strong>siete días</strong>.</li>
+        <li>Cuándo una persona recibió una bienvenida en el chat: <strong>90 días</strong>; las personas elegidas se quedan hasta que el streamer las quita.</li>
         <li>Tokens: mientras el streamer siga conectado (se pueden revocar desconectándose).</li>
         <li>Donaciones (nombre elegido, mensaje, importe, hora): <strong>un año</strong>.</li>
         <li>Compras en la tienda del canal (nombre en el chat, artículo, precio, lo que escribió quien compra, las respuestas

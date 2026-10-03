@@ -74,8 +74,11 @@ test('i comandi pubblici: chiunque li puo\' usare, e si dice cosa fanno solo se 
     { attivo: true, trigger: { tipo: 'evento', comando: 'follow' } },
     m('discord'),
     m('alias', { trigger: { alias: ['a1', '!a2', 'alias'] } }),
+    m('pertizio', { condizioni: { chi: { modo: 'solo', persone: [{ p: 'twitch', login: 'tizio' }], gruppi: [] } } }),
+    m('pervip', { condizioni: { chi: { modo: 'solo', persone: [], gruppi: ['vip'] } } }),
+    m('tranne', { condizioni: { chi: { modo: 'tranne', persone: [{ p: 'twitch', login: 'tizio' }], gruppi: [] } } }),
   ]);
-  assert.deepEqual(lista.map((x) => x.comando), ['alias', 'discord', 'saluta', 'tutti'], 'solo chi non chiede un ruolo, accesi, una volta sola, in ordine');
+  assert.deepEqual(lista.map((x) => x.comando), ['alias', 'discord', 'saluta', 'tranne', 'tutti'], 'solo chi non chiede un ruolo ne\' una persona, accesi, una volta sola, in ordine');
   const d = lista.find((x) => x.comando === 'discord');
   assert.deepEqual(d.alias, ['dc', 'disc'], 'gli alias senza «!» e senza ripetizioni');
   assert.equal(d.cosa, 'Il server: discord.gg/x', 'la frase fissa, pulita');

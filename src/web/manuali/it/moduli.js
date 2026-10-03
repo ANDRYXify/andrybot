@@ -19,7 +19,7 @@ export default {
     // ------------------------------------------------------------ COMANDI
     { h2: 'Comandi', scheda: 'moduli', p: [
       'Qui crei i comandi della chat, le automazioni, i contatori, e scegli come si comportano i comandi che il bot porta già con sé.',
-      'La scheda ha due parti, che scegli dalla barra in alto: <strong>«Comandi e contatori»</strong> e <strong>«CONTATORify»</strong>. Il pannello si ricorda l\'ultima che hai aperto.',
+      'La scheda ha tre parti, che scegli dalla barra in alto: <strong>«Comandi e contatori»</strong>, <strong>«Chi arriva in chat»</strong> e <strong>«CONTATORify»</strong>. Il pannello si ricorda l\'ultima che hai aperto.',
       'È nel piano <strong>Essenziale</strong>, gratis: le poche cose che chiedono un altro piano lo dicono al loro posto. Il tetto è di <strong>100 moduli per canale</strong>: oltre, il pannello risponde «hai raggiunto il massimo di 100 moduli». Proprietario e moderatori del pannello la usano allo stesso modo, con tre eccezioni che restano al proprietario: la chiave dei <em>Connettori avanzati</em>, i premi a punti canale dei contatori e i punti importati da un altro bot.',
     ] },
 
@@ -119,7 +119,7 @@ export default {
     { h3: 'L\'editor: nome e QUANDO' },
     { p: [
       'Si apre sotto l\'elenco. In cima c\'è il riassunto del modulo, che cambia mentre scrivi. Il <strong>«Nome del modulo»</strong> è obbligatorio: senza, il pannello dice «Dai un nome al modulo.». Ne restano i primi 80 caratteri.',
-      'In <strong>«Cosa fa scattare il modulo»</strong> scegli uno dei sei inneschi.',
+      'In <strong>«Cosa fa scattare il modulo»</strong> scegli uno dei sette inneschi.',
     ] },
     { tabella: [
       ['Innesco', 'Parte quando', 'Campi'],
@@ -129,12 +129,14 @@ export default {
       ['«Un evento del canale»', 'succede qualcosa sul canale', '«Quale evento»'],
       ['«A tempo (timer)»', 'ogni tot minuti', '«Ogni quanti minuti», «Solo se almeno N messaggi», «Falla parlare anche a canale spento»'],
       ['«Manuale / da un mio servizio»', 'solo quando lo lanci tu', 'nessuno: parte da «Prova» o dai <em>Connettori avanzati</em>'],
+      ['«Quando arriva in chat una persona»', 'scrive la prima volta in una diretta, in un giorno, o dopo un\'assenza', '«Quando scatta», «Da quanti giorni almeno», «Anche se entra senza scrivere»; per chi lo scegli in «Per chi»'],
     ] },
     { p: [
       '<strong>Comando.</strong> «Attiva anche senza !» fa scattare il comando anche quando qualcuno scrive solo la parola, da sola nel messaggio (<code>disc</code> e non <code>!disc</code>). Dentro una frase non scatta.',
       '<strong>Parola.</strong> «Come confrontarle» ha tre scelte: «Compare dentro il messaggio», «È esattamente il messaggio», «Il messaggio inizia così». Basta che una frase combaci. «Ignora la punteggiatura» è acceso di base, così «come stai?» combacia con «come stai». «Rispetta maiuscole/minuscole» è spento di base.',
       '<strong>Telegram.</strong> Con «Abilita anche su Telegram» il modulo risponde anche nel gruppo, dove il comando scatta pure dentro una frase e senza <code>!</code>. Nel gruppo il bot esegue solo le azioni «Scrivi in chat», e risponde il primo modulo che combacia. Un modulo vocale con Telegram acceso manda i suoi messaggi anche nel gruppo. Serve il «Bot interattivo nel gruppo», che accendi nella scheda <em>Telegram</em> del gruppo <em>Le tue community</em>, nel piano Base.',
       '<strong>Voce.</strong> Scrivi le frasi come le dici, una per riga: il pannello le salva in minuscolo. Basta che la frase compaia dentro quello che dici: «ok clippa adesso» fa scattare «clippa». Scattano solo col pacchetto «Comandi Vocali» e con la pagina di ascolto aperta: tutto nella sezione <em>Comandi vocali</em> più sotto.',
+      '<strong>Arriva in chat.</strong> «Quando scatta» ha tre scelte: «La prima volta in ogni diretta» (di base), «La prima volta ogni giorno», «Solo se mancava da un po\'», con «Da quanti giorni almeno» da 1 a 365 (di base 21). Scatta al primo messaggio, una volta sola: due messaggi di fila non sono due arrivi, e nemmeno un riavvio del bot. «Anche se entra senza scrivere» vale solo su Twitch e solo per le persone scritte per nome: il bot se ne accorge entro 5 minuti. Tutto il resto sta in «Chi arriva in chat», più sotto.',
       '<strong>Timer.</strong> Minuti da 1 a 1.440 (di base 15), messaggi da 0 a 1.000 (0 vuol dire a tempo e basta). Di norma un timer parla solo mentre sei in diretta: per farlo parlare a canale spento spunta «Falla parlare anche a canale spento» oppure la condizione «Solo se sono offline». I messaggi contati sono quelli delle persone, non del bot. Un timer appena creato parla la prima volta dopo un intervallo intero. Se più timer scadono insieme, parlano uno alla volta a 7 secondi di distanza.',
     ] },
     { h3: 'Gli eventi' },
@@ -152,6 +154,13 @@ export default {
     ] },
     { p: ['Se costruisci un modulo sul primo messaggio, il saluto automatico del bot alle facce nuove tace e resta il tuo. Il gesto richiede il tracking della webcam, che si accende in <em>Scena &amp; overlay</em>, <em>Effetti &amp; suoni</em>: lo spiega il <a href="/manuale/effetti">manuale degli effetti</a>.'] },
 
+    { h3: 'Per chi: solo alcune persone, o tutte tranne alcune' },
+    { p: [
+      'Sta fra QUANDO e SE, e vale per ogni innesco: un comando può rispondere in un modo a una persona e in un altro a tutti gli altri. Si apre da solo se il modulo ha già qualcuno, o se l\'innesco è «Quando arriva in chat».',
+      'In <strong>«Vale»</strong> scegli «Solo per queste persone e questi gruppi» oppure «Per tutti tranne queste persone e questi gruppi». In <strong>«Persone»</strong> scrivi il nome come appare in chat e premi Invio o «Aggiungi»: i suggerimenti sono chi ha scritto nel tuo canale negli ultimi 14 giorni. Con più piattaforme collegate, accanto scegli quale. Un nome con spazi o simboli non entra e il pannello lo dice; la × lo toglie. In <strong>«Gruppi»</strong> spunti «Moderatori», «VIP», «Abbonati».',
+      'La prima volta che una persona scelta scrive, il bot la riconosce per il suo account e se lo segna: se poi cambia nome, resta lei. Fino a 50 persone per modulo.',
+      'Una regola per nome batte quella del suo gruppo, e quella del gruppo batte quella per tutti. Su un timer o all\'inizio della diretta non c\'è nessuno davanti: con «Solo per…» il modulo tace, con «Per tutti tranne…» parte.',
+    ] },
     { h3: 'SE: le condizioni' },
     { p: [
       'Stanno in <strong>«Se (facoltativo)»</strong>, che si apre con un clic. È già aperto se il modulo ha un livello diverso da «Tutti», un «Cooldown (s)», una probabilità sotto 100 o una delle due condizioni sulla diretta. Sono tutte facoltative e si sommano: devono passare <strong>tutte</strong>, o il modulo non parte.',
@@ -179,26 +188,27 @@ export default {
     { tabella: [
       ['Passo', 'Controllo'],
       ['1', '«Chi può attivarlo»'],
-      ['2', '«Su quali piattaforme»'],
-      ['3', 'la fascia di bit, spettatori o mesi'],
-      ['4', 'in live o offline'],
-      ['5', 'il saldo richiesto e il costo: qui si <em>controlla</em> e basta'],
-      ['6', '«Cooldown (s)»'],
-      ['7', '«Cooldown per persona (s)»'],
-      ['8', 'il pagamento: qui le monete escono davvero'],
-      ['9', '«Probabilità (%)»'],
+      ['2', '«Per chi»'],
+      ['3', '«Su quali piattaforme»'],
+      ['4', 'la fascia di bit, spettatori o mesi'],
+      ['5', 'in live o offline'],
+      ['6', 'il saldo richiesto e il costo: qui si <em>controlla</em> e basta'],
+      ['7', '«Cooldown (s)»'],
+      ['8', '«Cooldown per persona (s)»'],
+      ['9', 'il pagamento: qui le monete escono davvero'],
+      ['10', '«Probabilità (%)»'],
     ] },
     { p: [
       'Si paga dopo le attese e prima del dado. Chi gioca paga anche quando perde, e non paga se il comando era in attesa o se non poteva usarlo. Chi non ha abbastanza monete non consuma il cooldown. Dopo il pagamento hai <code>$costo</code> (quanto è uscito) e <code>$saldo</code> (quanto è rimasto) da usare nei testi.',
     ] },
 
-    { h3: 'ALLORA: le sedici azioni' },
+    { h3: 'ALLORA: le diciotto azioni' },
     { p: [
       'Si eseguono in fila, dall\'alto, e il bot ne fa al massimo <strong>otto per modulo</strong>: quelle dopo l\'ottava non partono. Con ↑ e ↓ cambi l\'ordine, con × ne togli una, con «+ Aggiungi azione» ne aggiungi. Se un\'azione fallisce, le altre vanno avanti lo stesso. Senza nemmeno un\'azione il pannello dice «Aggiungi almeno un\'azione.».',
     ] },
     { tabella: [
       ['Azione', 'Cosa fa', 'Campi', 'Serve'],
-      ['Scrivi in chat', 'manda un messaggio', 'il testo, fino a 400 caratteri', ''],
+      ['Scrivi in chat', 'manda un messaggio', 'il testo, fino a 400 caratteri; «Una frase a caso»: scrivine una per riga, ogni volta ne esce una', ''],
       ['Fai partire un effetto', 'lancia un tuo effetto o suono, senza guardare chi può usarlo e le sue attese', '«Quale effetto», fra i tuoi effetti accesi; il tasto accanto lo prende dalla libreria o lo carica dal computer, anche se non hai ancora effetti', 'un effetto creato in <em>Scena &amp; overlay</em>, <em>Effetti &amp; suoni</em>, e l\'overlay in scena'],
       ['Crea una clip', 'salva una clip del momento e scrive in chat «Clip salvata!» col link', 'nessuno', 'diretta su Twitch e il permesso clip'],
       ['Cambia categoria Twitch', 'cerca su Twitch la categoria più somigliante e la imposta', '«Categoria / gioco», anche con variabili come <code>$args</code>; «Annuncia il cambio in chat»', 'il permesso <em>Gestione canale</em>'],
@@ -214,6 +224,8 @@ export default {
       ['Dai o togli punti', 'muove le monete del canale', '«Cosa fare»: «Dai», «Togli», «Porta esattamente a»; «Quanti»; «A chi»', 'fino a 1.000.000 di monete per volta'],
       ['Regia: scena, muto o transizione', 'comanda il programma con cui mandi in onda', '«Cosa fare»: «Cambia scena», «Muta o smuta una fonte», «Cambia transizione»; il nome della scena, della fonte o della transizione, fino a 80 caratteri; per la fonte «Come»: «Muta», «Smuta», «Inverti»', 'il pannello aperto sul computer della regia, collegata in CONSOLify'],
       ['Modalità della chat a tempo', 'mette la chat in una modalità per un tempo, poi la rimette com\'era', '«Quale modalità»: «Solo emote», «Messaggi unici», «Solo abbonati»; «Per quanto»; «Lo dico in chat, quando parte e quando finisce»', 'il permesso di gestire le impostazioni della chat'],
+      ['Avvia un gioco', 'fa partire un gioco della chat: uno preciso o «uno a caso fra quelli che possono partire»', '«Quale gioco»', 'le regole dei giochi automatici: se ce n\'è già uno aperto non parte, con i giochi spenti nemmeno, il boss e l\'arena vogliono la diretta'],
+      ['Esegui un comando', 'fa quello che fa un altro tuo comando o modulo, come se l\'avesse scritto la stessa persona: con le sue condizioni, ma senza farle pagare', '«Quale comando», fra i tuoi moduli e i comandi creati in chat', 'un comando non esegue mai se stesso, e al massimo tre si chiamano in fila'],
     ] },
     { p: [
       '<strong>Messaggi del bot.</strong> Con «Annuncia il cambio in chat» acceso, categoria e titolo scrivono «🎮 Categoria aggiornata: …» e «📝 Titolo aggiornato: …», e se la categoria non si trova «🤔 Non ho trovato la categoria "…".». Se manca il permesso per categoria, titolo, annuncio, shoutout o timeout, il bot lo dice in chat con un 🔒 e le altre azioni vanno avanti: se il comando l\'ha scritto uno dello staff (tu o un moderatore) gli dice anche di riautorizzare dalla dashboard, agli altri solo che adesso non può. Un moderatore o un VIP non si mette in pausa, e il bot lo dice: «🛡️ Non posso mettere in pausa …: moderatori e VIP non si possono.». La clip, se non riesce (canale spento o permesso mancante), non scrive niente. Lo shoutout scrive il «Messaggio extra» solo se è riuscito.',
@@ -229,7 +241,7 @@ export default {
     { h3: 'Il ramo Altrimenti' },
     { p: [
       'È quello che succede quando la <strong>probabilità</strong> non passa: il ramo del gioco perso. Compare solo con «Probabilità (%)» sotto 100. Se provi a salvare azioni in «Altrimenti» con la probabilità a 100, il pannello risponde che il blocco scatta solo quando la probabilità non passa.',
-      'Le azioni sono le stesse sedici. Il costo è già stato pagato, così la giocata persa può raccontarlo con <code>$costo</code> e <code>$saldo</code>. Lascialo vuoto se non serve: in quel caso chi perde non legge niente.',
+      'Le azioni sono le stesse diciotto. Il costo è già stato pagato, così la giocata persa può raccontarlo con <code>$costo</code> e <code>$saldo</code>. Lascialo vuoto se non serve: in quel caso chi perde non legge niente.',
     ] },
 
     { h3: 'Salva, Prova, Annulla' },
@@ -260,6 +272,12 @@ export default {
       ['<code>$gioco</code>', 'la categoria attuale'],
       ['<code>$titolo</code>', 'il titolo attuale'],
       ['<code>$spettatori</code>', 'quanti stanno guardando ora'],
+    ] },
+    { p: ['<strong>Chi arriva in chat</strong>'] },
+    { tabella: [
+      ['Variabile', 'Diventa'],
+      ['<code>$assenza</code>', 'da quanti giorni non scriveva chi arriva (vuota se non si sa)'],
+      ['<code>$volte</code>', 'quante accoglienze ha avuto da questo modulo, questa compresa'],
     ] },
     { p: ['<strong>Le persone</strong>'] },
     { tabella: [
@@ -351,6 +369,25 @@ export default {
     ] },
     { p: [
       'Al massimo 30 richieste al minuto: oltre, la risposta è <code>429</code>. Una chiave sbagliata riceve <code>404</code>, senza spiegazioni. Un\'azione fuori dal tuo piano riceve <code>403</code>, una sconosciuta «azione non riconosciuta».',
+    ] },
+
+    { h3: 'Chi arriva in chat' },
+    { p: [
+      'È la seconda parte della scheda. Quando arriva in chat una persona che scegli, il bot fa quello che vuoi: un saluto tutto suo, un effetto sull\'overlay, un gioco, uno dei tuoi comandi. Ogni accoglienza è un modulo con l\'innesco «Quando arriva in chat una persona»: sa fare tutto quello che sa fare un modulo, anche più cose in fila, con le stesse condizioni.',
+      'Sotto <strong>«Parti da un modello»</strong> ci sono «Saluto caloroso», «Effetto e saluto», «Un gioco per chi arriva», «Uno dei miei comandi», «Chi torna dopo un\'assenza», «I miei VIP» e «Parti da zero». Si aprono nell\'editor qui sotto: in «Per chi» aggiungi la persona, poi Salva. Se salvi senza nessuno in «Per chi», il pannello ti chiede se vale per tutti quelli che arrivano.',
+      'In <strong>«Le tue accoglienze»</strong> ognuna dice per chi vale, quando scatta, cosa fa e quante accoglienze ha fatto. «Prova come se arrivasse…» la fa partire come se fosse arrivata la prima persona scelta: manda davvero in chat e sull\'overlay, ma non conta come arrivo.',
+    ] },
+    { tabella: [
+      ['Regola', 'Come funziona'],
+      ['Una volta per occasione', 'una per diretta (o per giorno, o dopo l\'assenza): due messaggi di fila, o un riavvio del bot, non la ripetono'],
+      ['La persona batte il gruppo', 'chi ha la sua accoglienza non riceve anche quella del suo gruppo o quella per tutti'],
+      ['Il saluto generico tace', 'il saluto di <em>Presenze e saluti</em> (Giochi) non parte per chi ha un\'accoglienza'],
+      ['Prima risponde, poi accoglie', 'l\'accoglienza parte poco dopo il messaggio, così la risposta a quello che ha scritto viene prima'],
+      ['In fila', 'se ne arrivano tante insieme, partono una alla volta con la pausa scelta; chi aspetterebbe più di tre minuti si salta'],
+      ['Mai a', 'il bot stesso, il tuo account, chi l\'antispam ha appena fermato, i bot noti (salvo che li scrivi per nome)'],
+    ] },
+    { p: [
+      'Nella carta <strong>«Quando arrivano in tanti»</strong> scegli la <strong>«Pausa fra due accoglienze (secondi)»</strong>: da 0 a 60, di base 5. Poi «Salva».',
     ] },
 
     { h3: 'Contatori' },
@@ -581,6 +618,9 @@ export default {
     ] },
   ],
   faq: [
+    { d: 'Ho fatto un\'accoglienza per una persona, ma quando è arrivata il bot non ha detto niente.', r: 'Guarda in «Le tue accoglienze» che sia accesa e che il nome in «Per chi» sia quello che usa in chat. Scatta una volta per diretta (o per giorno): se aveva già scritto prima, in questa diretta è già stata accolta. Con «Solo se mancava da un po\'» serve che non scrivesse da almeno quei giorni. Se l\'antispam ha fermato il suo primo messaggio, l\'accoglienza aspetta il messaggio dopo. Le condizioni in «Se» valgono anche qui, «Solo se sono in live» compreso.' },
+    { d: 'Una persona riceve sia la sua accoglienza sia quella dei VIP?', r: 'No: la regola per nome prende il posto di quella del gruppo, e quella del gruppo di quella per tutti. Se vuoi che a un VIP arrivino tutte e due le cose, mettile nella sua accoglienza, anche con «Esegui un comando».' },
+    { d: 'Se una persona cambia nome devo riscriverla?', r: 'No. La prima volta che scrive il bot si segna il suo account, e da lì la riconosce anche col nome nuovo; nel pannello compare il nome aggiornato.' },
     { d: 'Ho creato un comando e non risponde. Perché?', r: 'Guarda che il suo interruttore in «I tuoi moduli» sia acceso. Poi le condizioni: un cooldown in corso, «Solo se sono in live» a canale spento, una probabilità sotto 100 senza ramo «Altrimenti». Premi «Prova»: salta le condizioni, e se lì funziona il problema è in una condizione, non in un\'azione.' },
     { d: 'Che differenza c\'è fra un comando e un modulo?', r: 'Nessuna nel motore: un comando è un modulo con l\'innesco «Un comando in chat». Il «Comando rapido» è la scorciatoia per un comando che risponde e basta. I comandi creati dalla chat con <code>!comando aggiungi</code> invece sono solo testo con <code>{user}</code>, e non compaiono fra i moduli.' },
     { d: 'Il mio timer non parla mai.', r: 'Di base un timer parla solo mentre sei in diretta: per farlo parlare a canale spento spunta «Falla parlare anche a canale spento». Se hai chiesto un minimo di messaggi, a chat ferma tace. Un timer nuovo parla la prima volta dopo un intervallo intero.' },

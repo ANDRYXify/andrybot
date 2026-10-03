@@ -30,7 +30,7 @@ import { puoRecensire, validaRecensione, statoDopo, invitoAperto, rimandaFino, v
 import { funzioniCanale, concessioneDi } from '../features/accesso.js';
 import { canaleHa } from '../features/accesso.js';
 import * as cosaManca from '../features/cosa-manca.js';
-import { commands as comandiDb } from '../db.js';
+import { commands as comandiDb, arrivi as arriviDb } from '../db.js';
 import { renderLinkPage, renderInformativa, accentoDi, aspettoDi, coloriDi } from '../features/linkpagina.js';
 import { montaEsche, riepilogoEsche } from './esche.js';
 import { creaMinifica } from './minifica.js';
@@ -62,6 +62,7 @@ import * as presenze from '../features/presenze.js';
 import * as economia from '../features/economia.js';
 import { regolePerIlBrowser, giroPerIlBrowser, comuniPerIlBrowser } from '../features/economia-servita.js';
 import * as giroRegole from '../features/giro-regole.js';
+import * as arriviRegola from '../features/arrivi-regola.js';
 import { htmlAnteprima, anteprimaDemo } from './anteprima-pagine.js';
 import * as statistiche from '../features/statistiche.js';
 import * as rapporto from '../features/rapporto.js';
@@ -351,8 +352,8 @@ const TIER_VALIDI = ['tutti', 'sub', 'vip', 'mod'];
 const UPLOAD_MAX = 60 * 1024 * 1024;   // 60 MB in ingresso (per clip fino a ~30s; l'output sarà molto più piccolo)
 
 // Moduli: tipi di innesco e di azione ammessi (validazione lato API)
-const MOD_TRIGGER = ['comando', 'parola', 'evento', 'timer', 'manuale', 'voce'];
-const MOD_AZIONI = ['messaggio', 'effetto', 'contatore', 'webhook', 'attendi', 'overlayTesto', 'timeout', 'clip', 'categoria', 'titolo', 'musica', 'annuncia', 'shoutout', 'punti', 'regia', 'modalita'];
+const MOD_TRIGGER = ['comando', 'parola', 'evento', 'timer', 'manuale', 'voce', 'arrivo'];
+const MOD_AZIONI = ['messaggio', 'effetto', 'contatore', 'webhook', 'attendi', 'overlayTesto', 'timeout', 'clip', 'categoria', 'titolo', 'musica', 'annuncia', 'shoutout', 'punti', 'regia', 'modalita', 'gioco', 'modulo'];
 const MOD_PUNTI_OP = ['aggiungi', 'togli', 'imposta'];
 const MOD_PUNTI_A = ['autore', 'destinatario', 'caso', 'nome'];
 // L'azione «regia» e' un passo di regia di CONSOLify dentro un Modulo: stesse
@@ -7127,6 +7128,8 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     if (b.antibot !== undefined) out.antibot = normalizzaAntibot(s.settings?.antibot, b.antibot);
     // serie di presenze e saluti: la regola pura sta nel modulo
     if (b.presenze !== undefined) out.presenze = presenze.normalizza(b.presenze, s.settings?.presenze);
+    // chi arriva in chat: la pausa fra due accoglienze, in secondi
+    if (b.arrivi !== undefined) out.arrivi = { pausa: arriviRegola.pausaDi(b.arrivi?.pausa) };
     // il rapporto di fine diretta: su Telegram di serie, via mail se acceso
     if (b.rapporto !== undefined) out.rapporto = rapporto.normalizza(b.rapporto);
     if (b.morti !== undefined) out.morti = morti.normalizza(b.morti);
@@ -9223,6 +9226,17 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     const tipo = m.trigger?.tipo;
     if (!MOD_TRIGGER.includes(tipo)) return 'tipo di innesco non valido';
     if (!Array.isArray(m.azioni) || !m.azioni.length) return "serve almeno un'azione";
+    // «Per chi»: ogni persona scritta deve essere un nome (o un id) vero. Una
+    // persona scartata in silenzio lascerebbe la regola a TUTTI: un saluto
+    // scritto per Tizio arriverebbe a chiunque.
+    const chi = m.condizioni?.chi;
+    if (chi !== undefined && chi !== null) {
+      const persone = Array.isArray(chi.persone) ? chi.persone : [];
+      if (persone.length > arriviRegola.LIMITI.persone) return `«Per chi» tiene al massimo ${arriviRegola.LIMITI.persone} persone`;
+      const storta = persone.find((q) => !arriviRegola.normPersona(q));
+      if (storta) return `«${String(storta?.login || storta?.nome || '').slice(0, 40)}» non è un nome utente valido`;
+    }
+    if (tipo === 'arrivo' && m.trigger?.quando !== undefined && !arriviRegola.QUANDO.includes(m.trigger.quando)) return '«Quando arriva in chat» vuole sapere quando: in ogni diretta, ogni giorno o dopo un\'assenza';
     // Il ramo "altrimenti" e' quello del gioco perso: ha senso solo se c'e' un
     // dado da perdere. Dirlo qui evita un modulo che sembra fare due cose e ne
     // fa una sola.
@@ -9241,6 +9255,15 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
           return 'l\'azione "punti" su un nome fisso vuole un nome utente valido';
         }
         if (!String(a.quanto ?? '').trim()) return 'l\'azione "punti" ha bisogno di una quantità (anche una variabile come $random(1,10))';
+      }
+      if (a.tipo === 'gioco' && a.gioco !== 'caso' && !giroRegole.voceDi(String(a.gioco || ''))) {
+        return 'l\'azione "avvia un gioco" vuole sapere quale gioco, o «uno a caso»';
+      }
+      if (a.tipo === 'modulo') {
+        const id = Number(a.modulo);
+        const cmd = String(a.comando || '').replace(/^!/, '');
+        if (!(Number.isInteger(id) && id > 0) && !/^[a-z0-9_]{1,30}$/i.test(cmd)) return 'l\'azione "esegui un comando" vuole sapere quale comando';
+        if (Number.isInteger(id) && id > 0 && Number(m.id) === id) return 'un comando non può eseguire se stesso';
       }
       if (a.tipo === 'webhook' && !/^https?:\/\//i.test(String(a.url || ''))) {
         return 'il webhook accetta solo URL http/https';
@@ -9296,7 +9319,26 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
       apiUrl: owner ? `${config.baseUrl}/api/ext/${login}` : undefined,
       // i limiti dei campi delle azioni, gli stessi del motore
       limiti: LIMITI_AZIONI,
+      // per «Avvia un gioco» ed «Esegui un comando»: i giochi del giro e i
+      // comandi semplici creati in chat
+      giochi: giroRegole.VOCI.map((v) => ({ id: v.id, nome: v.nome, soloLive: !!v.soloLive })),
+      comandiSemplici: comandiDb.list(login).map((c) => c.name),
+      // chi arriva in chat: la pausa fra due accoglienze, e quante ne ha fatte ogni modulo
+      arrivi: {
+        pausa: arriviRegola.pausaDi(streamers.get(login)?.settings?.arrivi?.pausa),
+        volte: Object.fromEntries(modulesDb.list(login).filter((m) => m.trigger?.tipo === 'arrivo').map((m) => [m.id, arriviDb.quante(login, m.id)])),
+      },
     });
+  }));
+
+  // CHI HA SCRITTO DI RECENTE nel canale della sessione: i suggerimenti del
+  // campo «Per chi». Nomi che lo streamer vede gia' in chat, niente di piu'.
+  app.get('/api/streamer/persone/recenti', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const persone = memory.recentChatters(login, 14 * 86_400_000, 200)
+      .filter((r) => r.user && r.user !== login)
+      .map((r) => ({ login: r.user, nome: r.display || r.user }));
+    res.json({ persone });
   }));
 
   // crea/aggiorna un modulo (id? nel body per la modifica)
@@ -9437,7 +9479,10 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     const login = currentUser(req).login;
     const id = parseInt(req.params.id, 10);
     if (!Number.isFinite(id)) return res.status(400).json({ errore: 'id non valido' });
-    const ok = await modules.provaModulo(login, id, (t) => manager.say(login, t));
+    // «Prova come se arrivasse…»: la persona scelta nel pannello prende il
+    // posto di chi scrive (solo per la prova; niente si segna)
+    const persona = req.body?.persona ? arriviRegola.normPersona(req.body.persona) : null;
+    const ok = await modules.provaModulo(login, id, (t) => manager.say(login, t), { persona });
     if (!ok) return res.status(404).json({ errore: 'modulo non trovato' });
     res.json({ ok: true });
   }));

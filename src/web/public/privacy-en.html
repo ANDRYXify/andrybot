@@ -127,6 +127,10 @@
           the id of their Telegram account or the name of their chat account; and the year of the last birthday greeting,
           so it isn't repeated. No full date of birth,
           and therefore no age. It stays until it is removed, with <code>!compleanno via</code> or from the streamer's panel.</li>
+        <li><strong>Chat welcomes</strong>, only if the streamer creates them: the people they pick by name (the chat name
+          and, from their first message, the account id on the platform, which lets us recognize them if they change their
+          name) and, for each welcome, when a person last got it and how many times. These marks are deleted after
+          <strong>90 days</strong>, or right away if the streamer removes the welcome.</li>
         <li><strong>Requests to join the Telegram group</strong>, only if the streamer turns on the shield: whoever asks to
           join first takes a check on a page. We keep the id of their Telegram account, the name they show up with, the
           group, the outcome of the check and the time; we don't read the account bio. The check is drawn on our server
@@ -245,6 +249,7 @@
       <ul>
         <li>Chat messages: <strong>14 days</strong>.</li>
         <li>Requests to join the Telegram group (id, name, group, outcome, time): <strong>seven days</strong>.</li>
+        <li>When a person got a chat welcome: <strong>90 days</strong>; the people picked stay until the streamer removes them.</li>
         <li>Tokens: as long as the streamer stays connected (they can be revoked by disconnecting).</li>
         <li>Donations (chosen name, message, amount, time): <strong>one year</strong>.</li>
         <li>Purchases in the channel shop (chat name, item, price, what the buyer wrote, the form answers, time): <strong>one year</strong>;

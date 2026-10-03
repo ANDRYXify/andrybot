@@ -74,7 +74,9 @@ export function normPannelli(v) {
 
 // I COMANDI CHE CHIUNQUE PUO' USARE, per il pezzo «comandi» delle pagine
 // (src/features/linkpagina.js): dai moduli accesi del canale, quelli con un
-// comando e senza un ruolo minimo (quelli dei moderatori non si pubblicano).
+// comando e senza un ruolo minimo (quelli dei moderatori non si pubblicano),
+// ne' un «Per chi: solo…» (quello di Tizio non e' di chiunque; «tutti tranne
+// Tizio» invece si').
 // Cosa fanno: la risposta in chat, ma solo se e' una frase fissa. Con una
 // variabile dentro, in pagina si leggerebbe il segnaposto ($user) e non quello
 // che il bot dira' davvero: meglio niente.
@@ -86,6 +88,7 @@ export function comandiPubblici(moduli, max = MAX_COMANDI_PAGINA) {
     if (!m || !m.attivo || m.trigger?.tipo !== 'comando') continue;
     const tier = m.condizioni?.tier;
     if (tier && tier !== 'tutti') continue;
+    if (m.condizioni?.chi && m.condizioni.chi.modo !== 'tranne') continue;
     const comando = pulito(m.trigger.comando);
     if (!comando || visti.has(comando)) continue;
     visti.add(comando);

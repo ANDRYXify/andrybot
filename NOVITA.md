@@ -154,6 +154,21 @@ comandi diversi da quelli della riga italiana.
   en> Accounts that join to spam can't pass a check you can only read in motion: a screenshot or a program that reads images sees nothing. Anyone who can't see it goes to the admins with one tap, and you style the group door like your link page.
   es> El escudo de entrada de tu grupo de Telegram
   es> Las cuentas que entran para hacer spam no superan una prueba que solo se lee en movimiento: una captura o un programa que lee imágenes no ven nada. Quien no puede verla pasa a los administradores con un toque, y la puerta del grupo la vistes como tu página de enlaces.
+- [importante] Chi arriva in chat: quando entra una persona che scegli, il bot fa quello che vuoi, un saluto suo, un effetto, un gioco, un tuo comando. Una volta per diretta, al giorno o dopo un'assenza. [vai: moduli]
+  en: Who arrives in chat: when someone you choose comes in, the bot does what you want, their own greeting, an effect, a game, one of your commands. Once per stream, per day or after a while away.
+  es: Quién llega al chat: cuando entra una persona que eliges, el bot hace lo que quieras, su propio saludo, un efecto, un juego, uno de tus comandos. Una vez por directo, al día o tras una ausencia.
+  > Un benvenuto per ogni persona
+  > Arriva Tizio e c'è il suo saluto, arriva Caio e parte un gioco, i tuoi VIP hanno il loro effetto. La regola della persona batte quella del gruppo, una volta per diretta, anche se cambia nome.
+  en> A welcome for every person
+  en> One viewer arrives and the bot greets them their way, another arrives and a game starts, your VIPs get their own effect. The person's rule beats the group's, once per stream, even if they change their name.
+  es> Una bienvenida para cada persona
+  es> Llega alguien y el bot le saluda a su manera, llega otra persona y empieza un juego, tus VIP tienen su efecto. La regla de la persona gana a la del grupo, una vez por directo, aunque cambie de nombre.
+- Nei moduli c'è «Per chi», per far rispondere un comando solo ad alcune persone o a tutti tranne alcune, e due azioni nuove: «Avvia un gioco» ed «Esegui un comando». [vai: moduli]
+  en: Modules now have «For whom», to make a command answer only some people or everyone except some, and two new actions: «Start a game» and «Run a command».
+  es: Los módulos tienen «Para quién», para que un comando responda solo a algunas personas o a todos menos algunas, y dos acciones nuevas: «Inicia un juego» y «Ejecuta un comando».
+- L'editor dei giochi fatti da te, nella scheda Giochi, torna a funzionare: aggiungere un'azione, cambiare innesco e salvare si fanno anche da lì. [vai: giochi]
+  en: The editor for your own games, in the Games tab, works again: adding an action, changing the trigger and saving all work from there too.
+  es: El editor de tus propios juegos, en la pestaña Juegos, vuelve a funcionar: añadir una acción, cambiar el disparador y guardar también se hacen desde ahí.
 
 ## 2026-10-02
 

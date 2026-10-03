@@ -53,6 +53,10 @@ saluto a chi non ha detto niente sarebbe un modo di dirgli che lo osservano.
 - **Quello che ti sei costruito vince.** I Moduli hanno già l'innesco «primo
   messaggio»: se il canale ha un Modulo attivo su quell'innesco, il saluto di
   serie tace.
+  Tace anche per chi ha un'**accoglienza** sua (un Modulo «Quando arriva in
+  chat» che la riguarda, per nome, per gruppo o per tutti: docs/moduli.md):
+  `arrivi.suMessaggio` lo dice prima (`riguarda`), e `suMessaggio` riceve
+  `tace`. Una persona, un benvenuto.
 - **Niente raffiche.** Un raid porta cinquanta persone nuove in un colpo: un
   riposo di quarantacinque secondi fra un saluto e l'altro, e al più sei ogni
   dieci minuti. I comandi (`!…`) non fanno partire un saluto, e di base si

@@ -21,7 +21,7 @@ il bot esegue una o più azioni.
 }
 ```
 
-- **trigger.tipo**: `comando` · `parola` · `evento` · `timer` · `manuale`
+- **trigger.tipo**: `comando` · `parola` · `evento` · `timer` · `manuale` · `arrivo`
   - `comando`: `comando` (senza `!`) + `alias[]`. Match sulla prima parola dopo `!`.
   - `parola`: `testo` + `modo` (`contiene` · `esatto` · `inizia`).
   - `evento`: `evento` ∈ `follow · subscribe · raid · cheer · redemption · first · online · offline`.
@@ -70,6 +70,83 @@ Eventi: `$raider $viewers` (raid) · `$mesi` (sub) · `$bits` (cheer) · `$premi
 Le variabili che richiedono I/O (`$uptime/$gioco/$titolo`) sono risolte con un `await` prima
 di comporre il messaggio (stato live in cache 30s). Sostituzione con semplice `replace`:
 **niente `eval`**, nessun template engine. Le variabili sconosciute diventano stringa vuota.
+
+## Quando arriva in chat (le accoglienze)
+
+Un'**accoglienza** è un Modulo con l'innesco `arrivo`: quando una persona scelta
+arriva in chat, il bot fa quello che il modulo dice. Non c'è un secondo motore:
+la sotto-scheda «Chi arriva in chat» è una vista dei Moduli con quell'innesco,
+stesso archivio e stesso editor. La regola sta in `src/features/arrivi-regola.js`
+(pura, senza import: la legge anche `db.js` per ripulire), i gesti in
+`src/features/arrivi.js`.
+
+```jsonc
+{
+  "trigger":    { "tipo": "arrivo", "quando": "diretta", "zitti": true },   // diretta | giorno | assenza (+ giorni)
+  "condizioni": { "chi": { "modo": "solo", "persone": [{ "p": "twitch", "id": "123", "login": "tizio", "nome": "Tizio" }], "gruppi": ["vip"] } },
+  "azioni":     [ { "tipo": "effetto", "comando": "coriandoli" }, { "tipo": "messaggio", "aCaso": true, "testo": "Ciao $user!\nEccoti, $user!" }, { "tipo": "gioco", "gioco": "caso" } ]
+}
+```
+
+**Per chi** (`condizioni.chi`) vale per **ogni** innesco, non solo per gli
+arrivi: un comando può rispondere in un modo a Tizio e in un altro a tutti gli
+altri. `modo: solo | tranne`; `persone` per nome; `gruppi` fra `mod`, `vip`,
+`sub`. Assente = per tutti (i moduli fatti prima). Un contesto senza nessuno
+davanti (timer, inizio diretta) con «solo» si ferma, con «tranne» passa.
+
+Gli invarianti, per costruzione:
+
+- **Una persona si riconosce per id.** Si confronta l'id della piattaforma
+  quando c'è (Twitch `user-id`, Kick `user_id`, YouTube `UC…`), il login
+  altrimenti; un id diverso vince su un login uguale (il nome è passato a un
+  altro). Scelta per nome, al primo messaggio l'id si appunta nel modulo
+  (`modules.appuntaPersona`) e il nome si aggiorna se cambia.
+- **La persona batte il gruppo, il gruppo batte tutti** (`chiVince`): fra le
+  accoglienze che riguardano qualcuno scattano solo quelle del livello più
+  alto (2 per nome, 1 per gruppo, 0 per tutti). «Tranne» non nomina nessuno.
+- **Un'occasione, un'accoglienza.** L'occasione è la diretta in corso
+  (Twitch: il suo `started_at`, che un riavvio non cambia; Kick: `da`, scritto
+  all'inizio in `stato_vivo`), fuori diretta il giorno nel fuso del canale;
+  «ogni giorno» è sempre il giorno. Il segno sta in `arrivi(channel, modulo,
+  chi, occasione, volte, ts)` e si mette con un'unica istruzione che vale solo
+  se l'occasione è diversa: due messaggi di fila, o un riavvio, non danno due
+  accoglienze. «Dopo un'assenza» vuole un messaggio di prima, lontano almeno N
+  giorni (dalla riga di `presenze` letta prima di questo messaggio).
+- **Nel tubo**: dopo l'antispam (chi è appena stato fermato non si accoglie),
+  prima del saluto generico di `presenze`, che tace per chi è riguardato.
+  Un bot noto si accoglie solo se scritto per nome; il canale, il bot e chi
+  scrive dal bot mai.
+- **La fila**: una accoglienza alla volta per canale, 1,2 s dopo il messaggio
+  (prima si risponde a quello che ha scritto), con la pausa del canale
+  (`settings.arrivi.pausa`, 0-60 s, 5 di base); al più 25 in fila; se sarebbe
+  partita più di tre minuti dopo l'arrivo, si salta.
+- **Chi entra senza scrivere** (`zitti`): solo Twitch, solo le persone per
+  nome, nel giro da cinque minuti della lista di chi c'è; la chiave è sempre
+  l'id (chiesto a Twitch se manca), così chi entra in silenzio e poi scrive
+  non è accolto due volte.
+
+Le azioni nuove, utili anche fuori dagli arrivi:
+
+- `gioco` (`gioco`: una voce del giro o `caso`): `giro-giochi.avviaVoce`, con
+  le regole del giro (giochi spenti, uno già aperto non si interrompe, quelli
+  dell'overlay vogliono la diretta) e conta per la distanza del giro.
+- `modulo` (`modulo`: id, oppure `comando`: un comando semplice creato in chat):
+  esegue un altro modulo come se l'avesse scritto la stessa persona, con le sue
+  condizioni ma senza costo; mai se stesso né chi l'ha chiamato
+  (`ctx._catena`), al più tre in fila.
+- `messaggio` con `aCaso: true`: una riga per frase, ne esce una.
+- Variabili: `$assenza` (giorni senza scrivere), `$volte` (accoglienze avute
+  da questo modulo, questa compresa).
+
+La prova «come se arrivasse…» (`POST /api/streamer/moduli/:id/prova` con
+`persona`) mette la persona al posto di chi scrive, senza segnare niente.
+I suggerimenti di «Per chi» (`GET /api/streamer/persone/recenti`) sono chi ha
+scritto nel canale della sessione negli ultimi 14 giorni.
+
+Prove: `test/unita/arrivi.test.mjs` (regola e gesti), `test/unita/moduli-arrivi.test.mjs`
+(Per chi, Esegui un comando, frase a caso, Avvia un gioco, prova),
+`test/contratto/arrivi-cablaggio.test.mjs` (i fili), `scripts/verifica-arrivi.mjs`
+(il pannello in un browser, con `--selftest`).
 
 ## Aggancio nel bot
 

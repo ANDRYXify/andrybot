@@ -23,7 +23,7 @@ test('il bot: stesso giro delle ore, saluto al messaggio, comandi nel vaglio', (
   assert.ok(tick.includes('presenze.giroDiretta(login, { streamId: stream.id, chatters })'), 'la lista di chi e\' in chat e\' la stessa, nessuna chiamata in piu\'');
   assert.ok(tick.includes('for (const t of presenze.annunciDi(login, esito)) this.say(login, t);'));
   const msg = BOT.slice(BOT.indexOf('_elaboraMessaggio(login, msg, onMessage, parla'), BOT.indexOf('const suo = personalizzati.suoComando(login, msg.text);'));
-  assert.ok(msg.includes('presenze.suMessaggio(msg, parla, { live, arrivo });'), 'il saluto sta sul messaggio, prima dei comandi');
+  assert.ok(msg.includes('presenze.suMessaggio(msg, parla, { live, arrivo, tace: accolto.riguarda });'), 'il saluto sta sul messaggio, prima dei comandi (e tace per chi ha la sua accoglienza)');
   const tubo = BOT.slice(BOT.indexOf('async _gestisciMessaggio('), BOT.indexOf('  _elaboraMessaggio(login'));
   const [bot, arrivo, spam] = ['antibot?.controllaChat(msg)', 'presenze.segnaArrivo(msg)', 'antispam.tryAntispam('].map((x) => tubo.indexOf(x));
   assert.ok(bot > 0 && arrivo > bot && spam > arrivo, 'chi scrive e\' arrivato prima dell\'antispam, e dopo l\'anti-bot: un follow-bot noto non e\' una persona');

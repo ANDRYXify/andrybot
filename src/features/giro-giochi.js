@@ -64,6 +64,36 @@ export function candidati(channel, g, { live, ora = Date.now() } = {}) {
   }).map((v) => ({ id: v.id, peso: g.voci[v.id].peso }));
 }
 
+// UN GIOCO SCELTO, fatto partire da un Modulo (l'azione «Avvia un gioco»): una
+// voce del giro (un tipo di manche, il boss, l'arena...) o «caso», uno a caso
+// fra quelli che possono partire adesso. Le stesse regole del giro: i giochi
+// spenti nel canale non partono, uno gia' aperto non si interrompe, quello che
+// vive nell'overlay vuole la diretta. Torna { ok, id } o { ok:false, motivo }.
+export function avviaVoce(channel, voce, { live = false, dire, ora = Date.now(), caso = Math.random } = {}) {
+  const ch = String(channel || '').toLowerCase();
+  if (streamers.get(ch)?.settings?.giochi === false) return { ok: false, motivo: 'spenti' };
+  if (inCorso(ch)) return { ok: false, motivo: 'inCorso' };
+  const puo = (v) => v && (!v.soloLive || live) && RICHIESTE[v.gioco](ch);
+  let fila;
+  if (voce === 'caso') fila = VOCI.filter(puo);
+  else {
+    const v = voceDi(voce);
+    if (!v) return { ok: false, motivo: 'sconosciuto' };
+    if (!puo(v)) return { ok: false, motivo: v.soloLive && !live ? 'live' : 'nonPuo' };
+    fila = [v];
+  }
+  while (fila.length) {
+    const v = fila[Math.min(fila.length - 1, Math.floor(caso() * fila.length))];
+    if (AVVIA[v.gioco](ch, dire, v.id)) {
+      const tutte = Object.fromEntries(Object.entries(ultimi(ch)).filter(([k]) => voceDi(k)));
+      statoVivo.scrivi(ch, ULTIMI, { ...tutte, [v.id]: ora });
+      return { ok: true, id: v.id };
+    }
+    fila = fila.filter((x) => x.id !== v.id);
+  }
+  return { ok: false, motivo: 'nonPuo' };
+}
+
 // Il giro scatta: sceglie e fa partire un gioco. `dire(gioco)` da' la funzione
 // che parla per quel gioco. Torna l'id partito, o null se non e' partito niente.
 export function scatta(channel, { live = false, dire, ora = Date.now(), caso = Math.random } = {}) {
