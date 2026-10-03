@@ -57,6 +57,26 @@ cd "$(dirname "$0")/.."
 RADICE="$(pwd)"
 [ -d .git ] || muori "qui non c'è un repository git ($RADICE)"
 
+# LE ISTRUZIONI CHE GIRANO SONO QUELLE DEL CODICE CHE ARRIVA (vedi 4b).
+# Bash legge lo script mentre lo esegue, e `git merge` non lo riscrive: lo
+# sostituisce con un file nuovo. Chi ha lanciato lo script continua quindi con
+# le istruzioni VECCHIE fino alla fine. E' successo davvero: il giro che ha
+# portato la correzione per la porta d'ingresso l'ha saltata, perche' girava
+# con le istruzioni di prima. Si prende l'impronta di quelle che girano adesso;
+# se dopo il merge sono cambiate, si riparte con le nuove.
+# Chi riparte porta con se' il punto da cui si era partiti: e' li' che si
+# torna se qualcosa va storto, non al codice appena arrivato.
+QUESTE_ISTRUZIONI="$(sha256sum server/aggiorna.sh | cut -d' ' -f1)"
+RIPRESO="${AGGIORNA_RIPRESO_DA:-}"
+unset AGGIORNA_RIPRESO_DA
+
+# LA PORTA D'INGRESSO E' PARTE DI QUELLO CHE GIRA. Il Caddyfile e' montato come
+# FILE nel container di Caddy (vedi 6b): conta quello che Caddy vede, non quello
+# che c'e' nel repository. Se Caddy non gira non c'e' niente da mettere in pari.
+caddy_gira() { docker compose ps --status running 2>/dev/null | grep -q caddy; }
+impronta_caddy() { docker compose exec -T caddy sha256sum /etc/caddy/Caddyfile 2>/dev/null | cut -d' ' -f1; }
+porta_in_pari() { ! caddy_gira || [ "$(impronta_caddy)" = "$(sha256sum Caddyfile | cut -d' ' -f1)" ]; }
+
 # ---- 1. la copia di lavoro dev'essere pulita ---------------
 passo "Controllo la copia di lavoro"
 if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
@@ -64,6 +84,10 @@ if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
   muori "ci sono modifiche non salvate. Committale o annullale prima di aggiornare."
 fi
 PRIMA="$(git rev-parse HEAD)"
+if [ -n "$RIPRESO" ]; then
+  git merge-base --is-ancestor "$RIPRESO" HEAD 2>/dev/null || muori "il punto di partenza passato a questo giro ($RIPRESO) non e' un commit che sta prima di questo."
+  PRIMA="$RIPRESO"
+fi
 echo "adesso siamo su $(git rev-parse --short HEAD) — $(git log -1 --format=%s)"
 # i segreti li legge solo root, sempre: costa niente ripeterlo a ogni giro
 [ -f .env ] && chmod 600 .env
@@ -89,15 +113,26 @@ PERSI="$(git rev-list --count origin/"$RAMO"..HEAD 2>/dev/null || echo 0)"
 SEGNO="$RADICE/data/.deployato"
 GIRA="$(cat "$SEGNO" 2>/dev/null || echo '')"
 ATTESO="$(git rev-parse HEAD)"
-if [ "$NUOVI" = "0" ] && [ "$PERSI" = "0" ]; then
-  if [ "$GIRA" = "$ATTESO" ]; then
+#
+# E «quello che gira» comprende la porta d'ingresso: un giro di prima puo'
+# averla lasciata con un Caddyfile vecchio (e' successo, vedi in cima), e senza
+# questo controllo ogni giro dopo direbbe «già aggiornato» per sempre.
+if [ -n "$RIPRESO" ]; then
+  echo "ripreso con le istruzioni nuove: da $(git rev-parse --short "$PRIMA") a $(git rev-parse --short HEAD)."
+elif [ "$NUOVI" = "0" ] && [ "$PERSI" = "0" ]; then
+  if [ "$GIRA" != "$ATTESO" ]; then
+    echo "niente di nuovo da prendere, MA quello che gira non è questo codice:"
+    echo "  in esecuzione: ${GIRA:-(mai segnato)}"
+    echo "  qui:           $ATTESO"
+    echo "ricostruisco."
+  elif ! porta_in_pari; then
+    echo "niente di nuovo da prendere, e il bot gira proprio questo codice, MA la porta"
+    echo "d'ingresso (Caddy) legge ancora un Caddyfile diverso da quello qui."
+    echo "la rimetto in pari (al momento giusto, come un aggiornamento)."
+  else
     echo "già aggiornato: non c'è niente di nuovo, e gira proprio questo."
     [ "$PROVA" = "1" ] || exit 0
   fi
-  echo "niente di nuovo da prendere, MA quello che gira non è questo codice:"
-  echo "  in esecuzione: ${GIRA:-(mai segnato)}"
-  echo "  qui:           $ATTESO"
-  echo "ricostruisco."
 fi
 
 if [ "$PERSI" != "0" ]; then
@@ -132,7 +167,7 @@ if [ "$SERVE_LIA" = "1" ]; then
     git -C "$LIA_DIR" status --short | head -10
     muori "il cervello privato ha modifiche non salvate: committale o annullale prima."
   fi
-  LIA_PRIMA="$(git -C "$LIA_DIR" rev-parse HEAD)"
+  LIA_PRIMA="${AGGIORNA_LIA_RIPRESO_DA:-$(git -C "$LIA_DIR" rev-parse HEAD)}"
   echo "cervello adesso su $(git -C "$LIA_DIR" rev-parse --short HEAD) — $(git -C "$LIA_DIR" log -1 --format=%s)"
   git -C "$LIA_DIR" fetch --quiet origin
   LIA_RAMO="$(git -C "$LIA_DIR" rev-parse --abbrev-ref HEAD)"
@@ -145,7 +180,9 @@ fi
 
 # ---- 3. copia di sicurezza del database --------------------
 passo "Copia di sicurezza del database"
-if docker compose ps --status running 2>/dev/null | grep -q bot; then
+if [ -n "$RIPRESO" ]; then
+  echo "fatta prima di ripartire con le istruzioni nuove."
+elif docker compose ps --status running 2>/dev/null | grep -q bot; then
   if docker compose exec -T bot node -e "import('./src/backup.js').then(m=>m.backupOra()).then(r=>{console.log(r.ok?'copia fatta e riaperta ok':'copia FALLITA: '+r.errore);process.exit(r.ok?0:1)})"; then
     echo "database al sicuro."
   else
@@ -163,6 +200,17 @@ if [ "$SERVE_LIA" = "1" ]; then
   git -C "$LIA_DIR" merge --ff-only "origin/$LIA_RAMO"
   echo "cervello ora su $(git -C "$LIA_DIR" rev-parse --short HEAD) — $(git -C "$LIA_DIR" log -1 --format=%s)"
 fi
+
+# ---- 4b. le istruzioni sono quelle del codice arrivato -----
+# (perché, in cima). Si riparte solo se lo script e' cambiato davvero: al giro
+# ripreso l'impronta combacia, e si va avanti.
+if [ "$(sha256sum server/aggiorna.sh | cut -d' ' -f1)" != "$QUESTE_ISTRUZIONI" ]; then
+  passo "Anche queste istruzioni sono cambiate: riparto con quelle nuove"
+  export AGGIORNA_RIPRESO_DA="$PRIMA"
+  if [ "$SERVE_LIA" = "1" ]; then export AGGIORNA_LIA_RIPRESO_DA="$LIA_PRIMA"; fi
+  exec bash "$RADICE/server/aggiorna.sh" "$@"
+fi
+unset AGGIORNA_LIA_RIPRESO_DA
 
 # ---- 5. il collaudo, PRIMA di toccare quello che gira ------
 # La priorita' piu' bassa che c'e': il bot che gira passa sempre avanti.
@@ -288,8 +336,8 @@ passo "La porta d'ingresso rilegge la configurazione"
 # solo se e' valido si riavvia quello vero: un riavvio rilegge il montaggio.
 # Un paio di secondi di porta chiusa, solo quando il Caddyfile e' cambiato; i
 # certificati stanno nel volume e restano.
-impronta_caddy() { docker compose exec -T caddy sha256sum /etc/caddy/Caddyfile 2>/dev/null | cut -d' ' -f1; }
-if docker compose ps --status running 2>/dev/null | grep -q caddy; then
+# (impronta_caddy e caddy_gira stanno in cima: le usa anche il «già aggiornato»)
+if caddy_gira; then
   QUI_CADDY="$(sha256sum Caddyfile | cut -d' ' -f1)"
   if [ "$(impronta_caddy)" != "$QUI_CADDY" ]; then
     if docker compose run --rm --no-deps -T caddy caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile >/dev/null 2>&1; then

@@ -227,6 +227,35 @@ Le prove sono in `test/contratto/aggiorna-senza-fermare.test.mjs`. Lì la
 funzione che legge il file si fa girare così com'è scritta nello script, non
 una sua copia.
 
+### Le istruzioni nuove e la porta d'ingresso
+
+Due difetti visti sul server vero, nello stesso giro.
+
+- **Lo script girava con le istruzioni vecchie.** Bash legge lo script mentre
+  lo esegue, e `git merge` non lo riscrive: lo sostituisce con un file nuovo.
+  Chi lo ha lanciato continua quindi con la versione di prima fino alla fine, e
+  il giro che portava una correzione di `aggiorna.sh` la saltava. Adesso lo
+  script prende l'impronta di sé all'avvio; se dopo il merge è cambiato,
+  riparte con quello nuovo (`exec`), portandosi il punto di partenza
+  (`AGGIORNA_RIPRESO_DA`): se il collaudo è rosso si torna lì, non al codice
+  appena arrivato. La copia del database non si rifà. Uno script che non
+  cambia non riparte, quindi non c'è un giro infinito.
+- **«Già aggiornato» guardava solo il bot.** Il Caddyfile è montato come FILE
+  nel container di Caddy, e un montaggio di file segue l'inode: dopo il merge
+  Caddy vede ancora il vecchio, `caddy reload` rilegge quello e dice pure
+  «ok», `docker compose up -d` non ricrea niente. Lo legge solo un riavvio del
+  container (provato con Docker e Caddy veri). Un giro che lasciava la porta
+  indietro restava così, perché quello dopo trovava il bot in pari ed usciva.
+  Adesso la porta fa parte di «quello che gira»: se Caddy vede un Caddyfile
+  diverso da quello del repository, il giro non esce. Fa il percorso di un
+  aggiornamento (aspetta la fine delle dirette, valida il file nuovo in un
+  Caddy usa e getta, riavvia la porta e rimisura).
+
+Le prove sono in `test/contratto/aggiorna-istruzioni-nuove.test.mjs`. Lì lo
+script vero gira davvero, su un repository e un'origine usa e getta, con un
+`docker` e un `npm` finti che fanno come quelli veri e registrano cosa gli si
+chiede. Ogni difetto, iniettato da solo, le fa rosse.
+
 ### Cosa ha trovato alla prima esecuzione
 
 Un difetto vero: `package-lock.json` non era in pari con `package.json`.
