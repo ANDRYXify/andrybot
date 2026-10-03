@@ -9,7 +9,7 @@ export default {
   titolo: 'Manuale dei comandi: moduli, contatori e voce | SocialBot',
   h1: 'Manuale dei comandi: moduli, contatori e comandi vocali',
   desc: 'Comandi rapidi, moduli QUANDO, SE, ALLORA, contatori, CONTATORify e comandi vocali di SocialBot: ogni carta, ogni campo, i valori di base e i limiti.',
-  aggiornata: '2026-09-30',
+  aggiornata: '2026-10-03',
   corpo: [
     { p: [
       'Questo manuale copre le due schede della famiglia <em>Comandi</em>, nel gruppo <em>Chat e pubblico</em>: <em>Comandi</em>, dove costruisci quello che il bot fa in chat, e <em>Comandi vocali</em>, dove lo comandi a voce mentre streammi.',
@@ -199,7 +199,7 @@ export default {
     { tabella: [
       ['Azione', 'Cosa fa', 'Campi', 'Serve'],
       ['Scrivi in chat', 'manda un messaggio', 'il testo, fino a 400 caratteri', ''],
-      ['Fai partire un effetto', 'lancia un tuo effetto o suono, senza guardare chi può usarlo e le sue attese', '«Quale effetto», fra i tuoi effetti accesi', 'un effetto creato in <em>Scena &amp; overlay</em>, <em>Effetti &amp; suoni</em>, e l\'overlay in scena'],
+      ['Fai partire un effetto', 'lancia un tuo effetto o suono, senza guardare chi può usarlo e le sue attese', '«Quale effetto», fra i tuoi effetti accesi; il tasto accanto lo prende dalla libreria o lo carica dal computer, anche se non hai ancora effetti', 'un effetto creato in <em>Scena &amp; overlay</em>, <em>Effetti &amp; suoni</em>, e l\'overlay in scena'],
       ['Crea una clip', 'salva una clip del momento e scrive in chat «Clip salvata!» col link', 'nessuno', 'diretta su Twitch e il permesso clip'],
       ['Cambia categoria Twitch', 'cerca su Twitch la categoria più somigliante e la imposta', '«Categoria / gioco», anche con variabili come <code>$args</code>; «Annuncia il cambio in chat»', 'il permesso <em>Gestione canale</em>'],
       ['Cambia titolo stream', 'cambia il titolo della diretta', '«Nuovo titolo», fino a 140 caratteri, con variabili; «Annuncia il cambio in chat»', 'il permesso <em>Gestione canale</em>'],

@@ -127,6 +127,15 @@ export async function soloCanale(helix, login) {
   return ricorda(cacheSolo, key, await delCanale(helix, key)).mappa;
 }
 
+// Le emote 7TV da SCEGLIERE nel pannello (al posto dei pezzi di un effetto):
+// quelle del canale e le globali, separate, con l'id che serve al server per
+// ripassarle. L'id sta gia' dentro l'indirizzo che 7TV ci ha dato.
+const ID_DA_URL = /\/emote\/([A-Za-z0-9]{20,32})\//;
+const inElenco = (mappa) => Object.entries(mappa || {}).map(([nome, url]) => ({ id: (ID_DA_URL.exec(url) || [])[1], nome })).filter((e) => e.id);
+export async function perScelta(helix, login) {
+  return { canale: inElenco(await soloCanale(helix, login)), globali: inElenco(await globali()) };
+}
+
 // Svuota la cache di un canale (o tutta): utile se un domani vogliamo forzare
 // un refresh dopo che lo streamer cambia le sue emote su 7TV.
 export function invalida(login) {

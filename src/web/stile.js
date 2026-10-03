@@ -726,6 +726,32 @@ export const DISEGNI = {
 export const QUANTI_DISEGNO = ['pochi', 'normale', 'tanti'];
 export const MAX_COLORI_DISEGNO = 5;
 const SUONO_EFFETTO = /^effetto:[a-z0-9_]{1,24}$/;
+// AL POSTO DEI PEZZI (docs/EFFETTI-SCHERMO.md, «Al posto dei pezzi»): un media
+// della libreria per comando, o un'emote per id. Mai un indirizzo: quello lo
+// compone il server, verso la libreria del canale o verso le emote che passano
+// da noi. Le stesse regole stanno in public/disegnati.js (un test le tiene uguali).
+export const ORIGINI_DISEGNO = ['angoli', 'alto', 'centro'];
+export const MAX_PEZZI_DISEGNO = 8;
+export const GRANDEZZA_DISEGNO = { min: 25, max: 300, serie: 100 };
+const nomeEmote = (n) => String(n == null ? '' : n).replace(/[^\p{L}\p{N}_:.-]/gu, '').slice(0, 40);
+const FONTI_PEZZO = {
+  mio: (x) => (/^[a-z0-9_]{1,24}$/.test(String(x.comando)) ? { fonte: 'mio', comando: String(x.comando) } : null),
+  '7tv': (x) => (/^[A-Za-z0-9]{20,32}$/.test(String(x.id)) ? { fonte: '7tv', id: String(x.id), nome: nomeEmote(x.nome) } : null),
+  twitch: (x) => (/^[A-Za-z0-9_]{1,64}$/.test(String(x.id)) ? { fonte: 'twitch', id: String(x.id), nome: nomeEmote(x.nome) } : null),
+};
+export const normPezzi = (v) => {
+  const out = [], visti = new Set();
+  for (const x of Array.isArray(v) ? v : []) {
+    const f = x && typeof x === 'object' && Object.prototype.hasOwnProperty.call(FONTI_PEZZO, x.fonte) ? FONTI_PEZZO[x.fonte](x) : null;
+    if (!f) continue;
+    const chiave = f.fonte + ':' + (f.comando || f.id);
+    if (visti.has(chiave)) continue;
+    visti.add(chiave);
+    out.push(f);
+    if (out.length >= MAX_PEZZI_DISEGNO) break;
+  }
+  return out;
+};
 
 export const normDisegno = (x) => {
   x = (x && typeof x === 'object') ? x : {};
@@ -738,6 +764,11 @@ export const normDisegno = (x) => {
     colori: colori.length ? colori : [...d.colori],
     quanti: unoDi(x.quanti, QUANTI_DISEGNO, d.quanti),
     durata: clampInt(x.durata, d.min, d.max, d.durata),
+    pezzi: normPezzi(x.pezzi),
+    grandezza: clampInt(x.grandezza, GRANDEZZA_DISEGNO.min, GRANDEZZA_DISEGNO.max, GRANDEZZA_DISEGNO.serie),
+    gira: x.gira !== false,
+    misto: x.misto === true,
+    origine: unoDi(x.origine, ORIGINI_DISEGNO, ORIGINI_DISEGNO[0]),
     suono: SUONI_PRESET.has(suono) || SUONO_EFFETTO.test(suono) ? suono : '',
   };
 };

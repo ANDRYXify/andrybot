@@ -41,6 +41,30 @@ questa non è una cosa da ricordarsi: il cancello boccia una riga pubblica senza
 traduzione, una traduzione staccata dalla sua riga, o una che dice numeri e
 comandi diversi da quelli della riga italiana.
 
+## 2026-10-03
+
+- [importante] Negli effetti pronti, al posto dei coriandoli, delle stelle o delle scintille puoi mettere immagini, GIF ed emote di Twitch o 7TV. Il moto resta quello dell'effetto. [vai: effetti]
+  en: In ready-made effects, instead of the confetti, stars or sparks you can use images, GIFs and Twitch or 7TV emotes. The motion stays the effect's own.
+  es: En los efectos listos, en lugar del confeti, las estrellas o las chispas puedes poner imágenes, GIF y emotes de Twitch o 7TV. El movimiento sigue siendo el del efecto.
+  > I tuoi pezzi negli effetti pronti
+  > Le stelle possono diventare le tue emote, i coriandoli il tuo logo, le scintille dei fuochi una GIF. Le animate si muovono anche dentro l'effetto, ognuna col suo ritmo, e vale anche per gli effetti degli eventi.
+  en> Your own pieces in ready-made effects
+  en> Stars can become your emotes, confetti your logo, firework sparks a GIF. Animated ones keep moving inside the effect, each at its own pace, and it works for event effects too.
+  es> Tus piezas en los efectos listos
+  es> Las estrellas pueden ser tus emotes, el confeti tu logo, las chispas de los fuegos un GIF. Los animados también se mueven dentro del efecto, cada uno a su ritmo, y vale también para los efectos de los eventos.
+- Ogni effetto pronto ha la sua «Grandezza», da 25% a 300%, e i coriandoli possono partire dall'alto, a pioggia, o dal centro, in un colpo. [vai: effetti]
+  en: Every ready-made effect has its own “Size”, from 25% to 300%, and confetti can start from the top, like rain, or from the center, in one burst.
+  es: Cada efecto listo tiene su «Tamaño», de 25% a 300%, y el confeti puede salir desde arriba, como lluvia, o desde el centro, de golpe.
+- Il suono di un effetto pronto, anche in un livello degli eventi, si carica lì con «Carica un suono tuo» o si prende dalla libreria. [vai: effetti]
+  en: The sound of a ready-made effect, also in an event level, is uploaded right there with “Upload your own sound” or taken from the library.
+  es: El sonido de un efecto listo, también en un nivel de los eventos, se sube ahí con «Sube un sonido tuyo» o se toma de la biblioteca.
+- Dovunque scegli un effetto, nei premi a punti canale, nelle offerte delle donazioni, nei comandi e nei gesti della webcam, c'è il tasto della libreria per caricarlo lì. [vai: effetti]
+  en: Wherever you choose an effect, in channel-point rewards, donation offers, commands and webcam gestures, there is the library button to upload it right there.
+  es: Dondequiera que eliges un efecto, en las recompensas de puntos de canal, las ofertas de donaciones, los comandos y los gestos de la webcam, está el botón de la biblioteca para subirlo ahí.
+- Nello Studio, in inglese e in spagnolo, il gruppo dei suoni che hai caricato ha il suo nome tradotto. [vai: alert]
+  en: In the Studio, in English and Spanish, the group of sounds you uploaded now has its translated name.
+  es: En el Estudio, en inglés y español, el grupo de sonidos que subiste ya tiene su nombre traducido.
+
 ## 2026-10-02
 
 - Chi entra in una corsa o in un colpo aperti dallo staff o dai giochi automatici non insiste: un castigo non lo tiene fuori e non cambia. [vai: giochi]

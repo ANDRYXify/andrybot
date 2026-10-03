@@ -9,7 +9,7 @@ export default {
   titolo: 'Manuale degli effetti: media, eventi e punti canale | SocialBot',
   h1: 'Manuale degli effetti: media, eventi, gesti e punti canale',
   desc: 'Suoni, immagini e video da lanciare in chat, la libreria condivisa, effetti a un follow, ai bit o a un raid, i gesti della webcam e i premi a punti canale.',
-  aggiornata: '2026-10-02',
+  aggiornata: '2026-10-03',
   corpo: [
     { h2: 'Effetti & suoni', scheda: 'effetti', p: [
       'Qui carichi suoni, immagini, GIF e video e li fai partire nell\'overlay: da un comando in chat, da un follow, dai bit o da un raid, da un gesto davanti alla webcam o da un premio a punti canale. Ci sono anche otto effetti pronti, disegnati da noi. Gli stessi media li ritrovi negli alert, nel player, nei cartelli e in ogni campo che ha il pulsante «Dalla libreria».',
@@ -33,7 +33,7 @@ export default {
     { p: [
       'Il «Modo tutto-in-uno» dà un link solo, con webcam ed effetti insieme. Funziona solo se la sorgente Browser di OBS può usare la fotocamera, e spesso non può: se resta nera, torna ai due link.',
       'I link della webcam usano la chiave dell\'overlay. Tienili per te. Se il proprietario fa un link nuovo nell\'Overlay Studio, cambiano anche questi e vanno ricopiati.',
-      'In «Gesto/espressione → effetto e/o scrittura in chat» ci sono nove righe: Vittoria, Pollice su, Mano aperta, Indice, Pugno, Felice, Triste, Arrabbiato, Sorpreso. A sinistra scrivi il comando di un tuo effetto, senza <code>!</code>; il campo ti propone i tuoi. A destra scrivi un testo o un\'emote che il bot scrive in chat, fino a 120 caratteri. Lascia vuoto quello che non ti serve.',
+      'In «Gesto/espressione → effetto e/o scrittura in chat» ci sono nove righe: Vittoria, Pollice su, Mano aperta, Indice, Pugno, Felice, Triste, Arrabbiato, Sorpreso. A sinistra scrivi il comando di un tuo effetto, senza <code>!</code>; il campo ti propone i tuoi, e il tasto accanto lo prende dalla libreria o lo carica dal computer. A destra scrivi un testo o un\'emote che il bot scrive in chat, fino a 120 caratteri. Lascia vuoto quello che non ti serve.',
       'Lo stesso gesto ripetuto entro due secondi e mezzo conta una volta sola. L\'effetto di un gesto parte sempre, senza guardare «Chi può usarlo» e il cooldown.',
       '<strong>«Minigiochi con la webcam (gesti ed espressioni)»</strong>, acceso di serie, fa giocare nello stesso overlay. Per farne partire uno tieni la mano aperta per circa un secondo, poi scegli col gesto: Vittoria per Mima, Pollice su per Non ridere, Indice per Reaction rush. Dalla chat partono con <code>!mima</code>, <code>!nonridere</code>, <code>!reaction</code> e <code>!battaglia</code>. Nella Battaglia gli spettatori scrivono <code>!sfida vittoria</code>, o un altro gesto. I punteggi finiscono in chat.',
     ] },
@@ -115,7 +115,10 @@ export default {
       'Otto effetti disegnati da noi, che coprono <strong>tutto lo schermo</strong> dell\'overlay dove gli effetti sono accesi. Ogni riquadro mostra l\'effetto, e passandoci sopra si muove; quello scelto si vede grande accanto ai suoi campi, ed è l\'effetto vero, lo stesso che va in onda. Si scelgono anche con le frecce della tastiera.',
       '«Aggiungi l\'effetto» lo mette fra i tuoi effetti col comando che scrivi, o col suo nome se lo lasci vuoto: «Aggiunto come !coriandoli: lo trovi nei tuoi effetti ✓». Se il comando è già di un altro effetto leggi «il comando !nome è già di un altro effetto», e quello non si tocca. Da lì parte come gli altri: dalla chat, da un premio a punti canale, da un comando della scheda «Comandi», da un gesto della webcam o da un livello delle donazioni.',
       'Per cambiarlo dopo, «Modifica» nella sua riga lo riapre qui, con «Modifichi» e il suo comando. Il comando resta quello; «Salva le modifiche» cambia il resto, e puoi anche passare a un altro disegno. «Prova sull\'overlay» lo manda in diretta, «Chiudi la modifica» torna a un effetto nuovo.',
-      'Passando a un altro disegno, suono e volume restano quelli che hai scelto; colori, quanti e durata tornano quelli del disegno nuovo.',
+      'Passando a un altro disegno, suono e volume restano quelli che hai scelto, e anche le immagini al posto dei pezzi, la grandezza e le altre scelte qui sotto; colori, quanti e durata tornano quelli del disegno nuovo.',
+      '<strong>Al posto dei pezzi.</strong> Ogni effetto pronto può muovere qualcosa di tuo al posto dei suoi pezzi: «Al posto dei coriandoli», «Al posto delle scintille» nei fuochi, «Al posto dei cuori», «dei fiocchi», «dei palloncini», «delle bolle», «delle stelle». Il moto resta quello dell\'effetto: cambia solo cosa si muove. «Immagine o GIF tua» apre la libreria, dove carichi anche dal computer un\'immagine, una GIF o un video; «Emote di Twitch o 7TV» apre le emote del canale e quelle globali, con la ricerca, e ne prendi più d\'una alla volta. Fino a 8 in tutto; se ne scegli più d\'una, ogni pezzo ne prende una. Le GIF e le emote animate si muovono anche dentro l\'effetto, ognuna col suo ritmo.',
+      'Con le immagini scelte compaiono «Mescola con quelli di serie», per avere metà pezzi tuoi e metà disegnati (nei fuochi, ogni scoppio è tutto immagini o tutto scintille), e «Le immagini girano come i pezzi», acceso di serie: spento, le immagini si muovono uguali ma restano dritte. Uno scoppio di immagini ha meno pezzi di uno di scintille, perché un\'emote è molto più grande di una scintilla. Le scie dei razzi e delle stelle cadenti, il filo dei palloncini e le gocce delle bolle restano disegnati, coi colori scelti. Nel lampo è un\'immagine sola al centro, che si accende e si spegne col lampo.',
+      'Se un\'immagine non arriva all\'overlay, l\'effetto parte lo stesso con le altre, o col disegno di serie se non ne arriva nessuna. Un tuo effetto che hai cancellato resta nella lista con «non c\'è più» finché non lo togli, e in diretta non parte.',
       '<strong>«Usalo per un evento».</strong> Sotto i tasti c\'è un tasto per ogni evento: Follow, Abbonamenti, Abbonamenti regalati, Bit, Raid, Donazioni, Treno dell\'hype, Obiettivo raggiunto. Ne premi uno e l\'effetto che stai guardando, coi suoi colori e il suo suono, diventa un livello di quell\'evento: il primo se l\'evento non ne ha, altrimenti uno nuovo sopra gli altri. Il pannello passa a «Per gli eventi» e apre il foglio. Il follow ha un effetto solo, e viene sostituito; con cinque livelli già pieni non si aggiunge niente e il pannello te lo dice. Non si salva da solo: controlla e premi «Salva gli effetti degli eventi».',
     ] },
     { tabella: [
@@ -132,9 +135,12 @@ export default {
     { tabella: [
       ['Campo', 'Di base', 'Limiti'],
       ['«Colori»', 'quelli dell\'effetto', 'fino a 5; «Colore» ne aggiunge uno, la × lo toglie, «Colori di serie» li rimette'],
+      ['«Al posto dei …»', 'niente: i pezzi disegnati', 'fino a 8, fra immagini, GIF e video tuoi ed emote di Twitch o 7TV; la × toglie'],
+      ['«Grandezza»', '100%', 'da 25% a 300%, per i pezzi disegnati e per le immagini; nel lampo, quella dell\'immagine'],
+      ['«Da dove partono»', 'Dai due angoli in basso', 'solo i coriandoli: Dai due angoli in basso · Dall\'alto, a pioggia · Dal centro, in un colpo'],
       ['«Quanti»', 'Normale', 'Pochi · Normale · Tanti; il lampo non ce l\'ha'],
       ['«Durata»', 'quella dell\'effetto', 'i limiti della tabella qui sopra'],
-      ['«Suono»', 'Nessuno', 'uno dei «Suoni pronti» o dei «I tuoi suoni»'],
+      ['«Suono»', 'Nessuno', 'uno dei «Suoni pronti» o dei «I tuoi suoni»; «Carica un suono tuo» lo carica e lo sceglie, «Dalla libreria» lo prende da lì'],
       ['«Volume (%)»', '80', 'da 0 a 100'],
       ['«Comando in chat»', 'il nome dell\'effetto', 'facoltativo; solo lettere minuscole, numeri e _, fino a 24 caratteri'],
       ['«Chi può usarlo»', 'Tutti', 'Tutti · Solo sub · Solo VIP · Solo mod'],
@@ -163,7 +169,7 @@ export default {
     ] },
     { p: [
       '<strong>I livelli.</strong> Dove c\'è un numero, ogni livello dice da quanto parte: «Da 100 bit», «Da 12 mesi di abbonamento», «Dal livello 3». Parte il livello col numero più alto che l\'evento raggiunge; sotto il primo, niente. Fino a cinque livelli per evento. «Aggiungi un livello» ne propone uno sopra l\'ultimo, con un effetto che l\'evento non usa ancora. Due livelli che partono dallo stesso numero non si salvano: il foglio te lo dice e ti apre quello da sistemare.',
-      'Ogni livello ha «Modifica», «Anteprima», «Prova sull\'overlay» e «Togli il livello». «Anteprima» lo fa vedere qui nel pannello, com\'è in onda, anche se è uno dei tuoi effetti. «Modifica» apre lo stesso editor degli effetti pronti, galleria compresa: colori, quanti, durata, suono e volume. Oppure scegli «Uno dei tuoi effetti» e prendi un tuo suono, immagine, video o effetto pronto col suo comando. Se poi quell\'effetto lo cancelli, il livello sparisce: non resta un livello che non fa niente. Puoi anche partire dall\'elenco dei tuoi effetti: ogni riga ha «Usalo per un evento…», e l\'evento che scegli lo riceve come i tasti degli effetti pronti.',
+      'Ogni livello ha «Modifica», «Anteprima», «Prova sull\'overlay» e «Togli il livello». «Anteprima» lo fa vedere qui nel pannello, com\'è in onda, anche se è uno dei tuoi effetti. «Modifica» apre lo stesso editor degli effetti pronti, galleria compresa: colori, immagini al posto dei pezzi, grandezza, quanti, durata, suono e volume. Oppure scegli «Uno dei tuoi effetti» e prendi un tuo suono, immagine, video o effetto pronto col suo comando. Se poi quell\'effetto lo cancelli, il livello sparisce: non resta un livello che non fa niente. Puoi anche partire dall\'elenco dei tuoi effetti: ogni riga ha «Usalo per un evento…», e l\'evento che scegli lo riceve come i tasti degli effetti pronti.',
       '<strong>La pausa.</strong> «Pausa fra due effetti (secondi)», da 0 a 600, è il tempo minimo fra due effetti dello stesso evento. Il follow parte con 10 secondi: un\'ondata di follow in pochi secondi fa partire un effetto solo, non cento coriandoli. Gli altri partono con 0.',
       'In fondo al foglio la riga <strong>«Così»</strong> lo dice in parole: «Così: da 100 bit parte «Coriandoli», da 1.000 bit «Fuochi d\'artificio». Sotto 100 bit, niente.»',
       '<strong>«Prova l\'evento».</strong> Fa partire l\'evento come in diretta: l\'alert, se è acceso, e un attimo dopo l\'effetto del livello giusto. Dove c\'è un numero, «Prova con» dice quanto: 500 bit, 12 mesi, 30 spettatori, e parte il livello che quel numero raggiunge. Usa le scelte che vedi nel foglio, anche se non le hai salvate; non conta negli obiettivi, non scrive in chat e non fa partire la pausa. Poi un avviso dice cosa è partito, o perché l\'effetto no: «Partiti nell\'overlay: l\'alert e «Coriandoli».», o «con 50 bit non si arriva al primo livello, da 100 bit».',
@@ -212,7 +218,7 @@ export default {
       ['Campo', 'Di base', 'Limiti'],
       ['«Nome del premio»', 'vuoto', 'da 2 a 45 caratteri'],
       ['«Costo (punti canale)»', '500', 'da 1 a 1.000.000'],
-      ['«Effetto da lanciare»', 'nessun effetto', 'uno dei tuoi effetti'],
+      ['«Effetto da lanciare»', 'nessun effetto', 'uno dei tuoi effetti; il tasto accanto lo prende dalla libreria, o lo carica dal computer'],
       ['«Messaggio in chat»', 'vuoto', 'facoltativo, 300 caratteri, <code>{user}</code> è chi riscatta'],
     ] },
     { p: [

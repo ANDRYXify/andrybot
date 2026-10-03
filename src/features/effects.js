@@ -192,6 +192,22 @@ export class EffectsEngine {
     return `${config.baseUrl}/overlay/${login}/media/${file}?key=${this.overlayKey(login)}`;
   }
 
+  // L'indirizzo di un pezzo scelto al posto dei coriandoli, delle stelle...: un
+  // media della libreria (immagine, GIF o video) o un'emote, che passa dal
+  // nostro server. Relativo: l'overlay lo chiede alla sua stessa origine, la
+  // sola da cui la CSP gli lascia leggere i byte (servono per animare una GIF).
+  // Un comando che non c'e' piu', o che non e' un'immagine, non diventa niente.
+  urlPezzo(channel, x) {
+    const login = norm(channel);
+    const chiave = encodeURIComponent(this.overlayKey(login));
+    if (x?.fonte === 'mio') {
+      const e = effectsDb.get(login, x.comando);
+      return e && e.file && (e.tipo === 'immagine' || e.tipo === 'video') ? `/overlay/${login}/media/${encodeURIComponent(e.file)}?key=${chiave}` : '';
+    }
+    if (x?.fonte === '7tv' || x?.fonte === 'twitch') return `/overlay/${login}/emote/${x.fonte}/${encodeURIComponent(x.id)}?key=${chiave}`;
+    return '';
+  }
+
   // Costruisce il payload standard di un effetto (riusato da trigger e "prova").
   // Un effetto DISEGNATO non ha file: viaggiano i suoi parametri, gia'
   // normalizzati, e il suo suono (uno pronto, o un audio del canale).
@@ -230,6 +246,8 @@ export class EffectsEngine {
   payloadDisegno(channel, grezzo, volume, comando = '') {
     const disegno = normDisegno(grezzo);
     const p = { comando, tipo: 'disegno', disegno, volume, durata: disegno.durata * 1000 };
+    const immagini = disegno.pezzi.map((x) => this.urlPezzo(channel, x)).filter(Boolean);
+    if (immagini.length) p.immagini = immagini;
     const audio = /^effetto:(.+)$/.exec(disegno.suono);
     if (audio) {
       const a = effectsDb.get(channel, audio[1]);

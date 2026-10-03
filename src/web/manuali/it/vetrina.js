@@ -9,7 +9,7 @@ export default {
   titolo: 'La tua vetrina: pagina link, donazioni e social | SocialBot',
   h1: 'La tua vetrina: pagina link, donazioni, settimana, grafiche e i tuoi social',
   desc: 'La pagina da mettere in bio, le donazioni sul tuo conto, i giorni in cui vai in onda, le grafiche da pubblicare e gli avvisi quando pubblichi sui social.',
-  aggiornata: '2026-09-30',
+  aggiornata: '2026-10-03',
   corpo: [
     { p: [
       'Cinque schede che lavorano anche quando non sei in onda: la pagina da mettere in bio, le donazioni, i giorni in cui vai in diretta, le grafiche da pubblicare e gli avvisi quando esce qualcosa di tuo sulle altre reti.',
@@ -227,7 +227,7 @@ export default {
       'L\'avviso si veste nella scheda «Overlay Studio» come gli altri, voce «Donazione», con il suo «Importo minimo». L\'obiettivo lo aggiungi fra gli obiettivi, con «Conta» su «euro donati». Tutto è nel <a href="/manuale/overlay">manuale dell\'overlay</a>.',
     ] },
     { p: [
-      '<strong>Le offerte.</strong> Ogni offerta ha un importo «Da», un «Nome» e un «Effetto» della tua libreria di effetti. Chi dona vede le offerte al posto degli importi suggeriti, per esempio «5 € · Applauso». Quando la donazione arriva, dopo l\'avviso parte l\'effetto dell\'offerta più alta raggiunta. Conta l\'importo pagato, non il tasto premuto.',
+      '<strong>Le offerte.</strong> Ogni offerta ha un importo «Da», un «Nome» e un «Effetto» della tua libreria di effetti, che prendi anche col tasto accanto, dove lo carichi dal computer. Chi dona vede le offerte al posto degli importi suggeriti, per esempio «5 € · Applauso». Quando la donazione arriva, dopo l\'avviso parte l\'effetto dell\'offerta più alta raggiunta. Conta l\'importo pagato, non il tasto premuto.',
       '«Aggiungi un\'offerta» ne mette una nuova, fino a otto: oltre leggi «Al massimo otto offerte.». L\'importo va da 1 a 5.000, con una sola offerta per importo, e il nome arriva a 30 caratteri. Un\'offerta fuori dal minimo e dal massimo non compare nel modulo. Senza offerte leggi «Nessuna offerta: chi dona vede gli importi suggeriti.». Le offerte valgono nel modulo, non col link esterno.',
     ] },
     { p: ['<strong>L\'immagine di chi dona.</strong> Con «Chi dona può allegare un\'immagine» acceso, chi dona abbastanza può allegare un\'immagine o una GIF, che va in onda in overlay come un effetto. Vale solo per i pagamenti con Stripe o Satispay dal modulo, non col link esterno e non su Ko-fi.'] },

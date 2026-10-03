@@ -1691,6 +1691,74 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     });
   });
 
+  // LE EMOTE AL POSTO DEI PEZZI di un effetto pronto passano da qui: per
+  // animare una GIF o una WebP animata servono i byte, e la CSP lascia leggere
+  // i byte solo dalla nostra origine. Host fissi, id con la sua forma, e solo
+  // con la chiave dell'overlay o con la sessione del pannello: non e' un
+  // proxy aperto. Una copia in memoria, con un tetto, per non chiedere la
+  // stessa emote a ogni coriandolo.
+  const EMOTE_FONTI = {
+    '7tv': { id: /^[A-Za-z0-9]{20,32}$/, url: (id) => `https://cdn.7tv.app/emote/${id}/4x.webp`, host: 'cdn.7tv.app' },
+    twitch: { id: /^[A-Za-z0-9_]{1,64}$/, url: (id) => `https://static-cdn.jtvnw.net/emoticons/v2/${id}/default/dark/3.0`, host: 'static-cdn.jtvnw.net' },
+  };
+  const EMOTE_TIPI = /^image\/(png|gif|webp|avif)$/;
+  const EMOTE_MAX_BYTE = 4 * 1024 * 1024;
+  const EMOTE_TETTO = 96 * 1024 * 1024;
+  const _emoteCopie = new Map();          // fonte:id -> { buf, tipo }
+  let _emoteByte = 0;
+  const _emoteInViaggio = new Map();
+  async function prendiEmote(fonte, id) {
+    const f = EMOTE_FONTI[fonte];
+    if (!f || !f.id.test(id)) return null;
+    const k = fonte + ':' + id;
+    const c = _emoteCopie.get(k);
+    if (c) { _emoteCopie.delete(k); _emoteCopie.set(k, c); return c; }
+    if (_emoteInViaggio.has(k)) return _emoteInViaggio.get(k);
+    const viaggio = (async () => {
+      try {
+        const r = await fetch(f.url(id), { signal: AbortSignal.timeout(8000) });
+        if (!r.ok || new URL(r.url).host !== f.host) return null;
+        const tipo = String(r.headers.get('content-type') || '').split(';')[0].trim().toLowerCase();
+        if (!EMOTE_TIPI.test(tipo)) return null;
+        const buf = Buffer.from(await r.arrayBuffer());
+        if (!buf.length || buf.length > EMOTE_MAX_BYTE) return null;
+        const v = { buf, tipo };
+        _emoteCopie.set(k, v);
+        _emoteByte += buf.length;
+        while (_emoteByte > EMOTE_TETTO && _emoteCopie.size) {
+          const [vk, vv] = _emoteCopie.entries().next().value;
+          _emoteCopie.delete(vk); _emoteByte -= vv.buf.length;
+        }
+        return v;
+      } catch { return null; } finally { _emoteInViaggio.delete(k); }
+    })();
+    _emoteInViaggio.set(k, viaggio);
+    return viaggio;
+  }
+  async function servieEmote(req, res) {
+    const e = await prendiEmote(String(req.params.fonte || ''), String(req.params.id || ''));
+    if (!e) return notFound(res);
+    res.set({ 'Content-Type': e.tipo, 'Cache-Control': 'private, max-age=86400', 'X-Content-Type-Options': 'nosniff' });
+    res.end(e.buf);
+  }
+  app.get('/overlay/:login/emote/:fonte/:id', wrap(async (req, res) => {
+    if (!chiaveOk(req) || !eLoginNostro(String(req.params.login).toLowerCase())) return notFound(res);
+    return servieEmote(req, res);
+  }));
+  app.get('/api/streamer/emote/:fonte/:id', requireLogin, wrap(servieEmote));
+  // Le emote da scegliere: 7TV e Twitch, del canale e globali. Una fonte che
+  // non risponde e' una lista vuota, non un errore: le altre restano.
+  app.get('/api/streamer/emote-pezzi', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const twitch = piattaformaDi(login) === 'twitch';
+    const [sette, tw] = await Promise.all([
+      twitch ? emotes.perScelta(helix, login).catch(() => ({ canale: [], globali: [] })) : { canale: [], globali: [] },
+      twitch ? (async () => { const u = await helix?.getUserByLogin?.(login); return helix.getEmote(u?.id); })().catch(() => ({ canale: [], globali: [] })) : { canale: [], globali: [] },
+    ]);
+    res.set('Cache-Control', 'no-store');
+    res.json({ sette, twitch: tw });
+  }));
+
   // ------------------------------------------------------------ INGRESSO (pass del sito)
 
   // Ingresso pubblico. Due modi, stesso URL:

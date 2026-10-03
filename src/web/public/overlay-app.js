@@ -209,24 +209,28 @@ let giroDisegno = 0;
 
 function mostraDisegno(ev) {
   if (!window.SB_DISEGNATI || !ev.disegno) { finito(); return; }
-  const tela = document.createElement('canvas');
-  tela.className = 'disegnato';
-  palcoSchermo.appendChild(tela);
-  suonaAbbinato(ev);
-  if (ev.suonoPreset && window.SUONI_PRESET) { try { window.SUONI_PRESET.suona(ev.suonoPreset, ev.volume); } catch (e) {  } }
-  const ms = durataMs(ev, 5000);
-  etichettaVolatile(ev.comando, Math.min(ms, 5000));
-  let chiuso = false, ferma = null;
-  const chiudi = () => {
-    if (chiuso) return;
-    chiuso = true;
-    clearTimeout(scadenza);
-    if (ferma) ferma();
-    tela.remove();
-    finito();
-  };
-  const scadenza = setTimeout(chiudi, ms + 2000);
-  ferma = window.SB_DISEGNATI.anima(tela, ev.disegno, (Date.now() ^ Math.imul(++giroDisegno, 2654435761)) >>> 0, chiudi);
+  const immagini = Array.isArray(ev.immagini) ? ev.immagini : [];
+  (immagini.length ? window.SB_DISEGNATI.risorse(immagini) : Promise.resolve([])).catch(() => []).then((sp) => {
+    if (immagini.length && sp.length < immagini.length) guaio('disegno', (immagini.length - sp.length) + ' immagini non arrivate: il disegno usa quelle arrivate, o quello di serie se non ne e\' arrivata nessuna');
+    const tela = document.createElement('canvas');
+    tela.className = 'disegnato';
+    palcoSchermo.appendChild(tela);
+    suonaAbbinato(ev);
+    if (ev.suonoPreset && window.SUONI_PRESET) { try { window.SUONI_PRESET.suona(ev.suonoPreset, ev.volume); } catch (e) {  } }
+    const ms = durataMs(ev, 5000);
+    etichettaVolatile(ev.comando, Math.min(ms, 5000));
+    let chiuso = false, ferma = null;
+    const chiudi = () => {
+      if (chiuso) return;
+      chiuso = true;
+      clearTimeout(scadenza);
+      if (ferma) ferma();
+      tela.remove();
+      finito();
+    };
+    const scadenza = setTimeout(chiudi, ms + 2000);
+    ferma = window.SB_DISEGNATI.anima(tela, ev.disegno, (Date.now() ^ Math.imul(++giroDisegno, 2654435761)) >>> 0, chiudi, sp);
+  });
 }
 
 function hexToRgb(h) {

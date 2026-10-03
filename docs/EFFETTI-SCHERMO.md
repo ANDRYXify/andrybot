@@ -304,6 +304,85 @@ coriandoli smettono di arrivare, e quelli ancora in aria si sciolgono alla fine
   qualche stella cadente.
 - **Lampo**: uno, che sale in sessanta millesimi e si spegne entro la durata.
 
+### Al posto dei pezzi
+
+Chiesto così: «stelle? diamo la possibilità di cambiare le stelline con png,
+gif, emote, emote 7tv o quello che vuole l'utente lasciando l'effetto
+invariato».
+
+**Il modello.** Nel disegno, accanto a colori, quanti e durata:
+
+```
+pezzi: [{fonte:'mio', comando} | {fonte:'7tv', id, nome} | {fonte:'twitch', id, nome}]  fino a 8, senza doppi
+grandezza: 25..300 (%)   gira: true   misto: false   origine: 'angoli' | 'alto' | 'centro' (coriandoli)
+```
+
+Le regole stanno due volte, uguali e tenute uguali da un test: `parametri` in
+`disegnati.js` e `normDisegno` in `stile.js`. Un pezzo è un media della
+libreria (immagine, GIF o video) per comando, o un'emote per id: **mai un
+indirizzo**. L'indirizzo lo compone il server (`EffectsEngine.urlPezzo`), verso
+la libreria del canale o verso le emote che passano da noi; un comando sparito
+o che non è un'immagine non diventa niente.
+
+**Le invarianti.**
+
+1. **Il moto non cambia.** L'immagine cambia solo il disegno del pezzo
+   principale (`CON_IMMAGINE` al posto di `DISEGNA`), non il suo stato nel
+   tempo (`STATI`): coriandoli, scintille, cuori, fiocchi, il corpo dei
+   palloncini (il filo resta, appeso sotto l'immagine), le bolle (lo scoppio
+   resta), le stelle e la testa delle cadenti (la scia resta). Nel lampo è
+   un'immagine al centro che segue la curva del lampo, e ce n'è sempre una sola.
+2. **L'ingombro è quello disegnato.** Dove il piano usa la grandezza del pezzo
+   (da dove parte un coriandolo, quando esce dal fondo, da dove salgono cuori e
+   bolle) usa la grandezza di quello che si disegna davvero: un'immagine più
+   grande nasce e finisce fuori dallo schermo intera, mai tagliata, anche alla
+   grandezza massima.
+3. **Un'immagine non si somma alla luce.** Fuochi e stelle si disegnano in
+   modo additivo (`lighter`); un'immagine si posa normale, pezzo per pezzo.
+4. **Uno scoppio di immagini ha meno pezzi** (16-26 invece di 70-110): un'emote
+   è dieci volte una scintilla, e lo stesso numero coprirebbe il cielo. Col
+   «mescola», ogni fuoco è tutto immagini o tutto scintille.
+5. **Deterministico**: quale immagine e la fase della sua animazione vengono
+   dal seme.
+6. **Un'immagine che non arriva non rompe niente.** Le immagini si caricano
+   prima del piano (`risorse`), e il piano conosce solo quelle arrivate: se non
+   ne arriva nessuna parte il disegno di serie, e l'overlay lo racconta
+   (`guaio`).
+7. **Le animate si muovono davvero.** Per una GIF, una WebP o una PNG animata
+   servono i byte: `ImageDecoder` li scompone in fotogrammi col loro tempo (al
+   massimo 60, a 128 px; ferme a 320 px), e ogni pezzo ha la sua fase. Un video
+   si disegna col suo fotogramma, muto e in loop. Senza `ImageDecoder`,
+   l'immagine ferma.
+8. **Le emote passano dal nostro server, ma non è un proxy aperto.** La CSP
+   lascia leggere i byte solo dalla nostra origine (`connect-src 'self'`).
+   `/overlay/<login>/emote/<fonte>/<id>?key=` per l'overlay e
+   `/api/streamer/emote/<fonte>/<id>` per il pannello: host fissi (7TV 4x,
+   Twitch 3.0), id con la sua forma, un rimando verso un altro host non si
+   segue, solo immagini e fino a 4 MB, una copia in memoria con un tetto di
+   96 MB. Le miniature nella scelta arrivano invece direttamente dalle CDN: sono
+   solo immagini, e `img-src https:` le lascia passare.
+
+**Il pannello.** Nell'editor degli effetti pronti, e quindi anche in ogni
+livello di un evento, «Al posto dei coriandoli/delle scintille/…»: «Immagine o
+GIF tua» (la libreria, dove si carica anche dal computer) ed «Emote di Twitch o
+7TV» (7TV e Twitch, del canale e globali, con la ricerca, più d'una alla
+volta); poi «Mescola con quelli di serie», «Le immagini girano come i pezzi»,
+«Grandezza» e, per i coriandoli, «Da dove partono». L'anteprima è l'effetto
+vero, con le immagini. «Modifica» riapre il disegno intero, normalizzato dalla
+stessa funzione: un campo aggiunto domani non resta indietro.
+
+**I suoni tuoi.** Il suono di un effetto pronto si carica lì («Carica un suono
+tuo») o si prende dalla libreria. In ogni posto dove si sceglie un effetto (il
+premio a punti canale, l'offerta delle donazioni, l'azione di un comando, un
+gesto della webcam) c'è lo stesso tasto «Dalla libreria» (`tastoLibreriaHtml`),
+che mette la scelta nella forma che quel posto usa e la cambia come se l'avessi
+fatta a mano.
+
+Prove: `test/unita/disegnati-pezzi.test.mjs`, `test/unita/effetti-schermo.test.mjs`,
+`test/contratto/pezzi-emote.test.mjs`, `test/contratto/scelte-libreria.test.mjs`
+e il collaudo nel browser `scripts/verifica-pezzi.mjs` (una GIF rossa e verde
+fatta lì, al telefono e al computer, con autoprova).
+
 ## Effetti per gli eventi
 
 Chiesto così, guardando la carta degli effetti pronti: «sarebbe figo se si
@@ -454,8 +533,8 @@ motore d'accordo) e il collaudo nel browser `scripts/verifica-effetti-eventi.mjs
 - `stile.js`: `DISEGNI` (nomi e valori di serie) e `normDisegno`, lo stesso
   catalogo di `disegnati.js` (un test li tiene uguali).
 - `effects.js`: nel messaggio all'overlay `schermo` per i media, e per un
-  disegno i suoi parametri e il suo suono (`payloadDisegno`, lo stesso per un
-  comando e per un evento).
+  disegno i suoi parametri, il suo suono e gli indirizzi dei suoi pezzi
+  (`payloadDisegno` e `urlPezzo`, gli stessi per un comando e per un evento).
 - `effetti-eventi.js`: gli eventi, la pulizia delle scelte e il livello che
   parte; `alerts.js` lo fa partire (scena, messa in onda e prova), con la
   pausa e il treno in memoria.

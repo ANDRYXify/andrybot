@@ -60,6 +60,19 @@ export class Helix {
     return j?.data?.[0] || null;
   }
 
+  // LE EMOTE DI TWITCH: quelle del canale (abbonamento, bit, follower) e le
+  // globali. Bastano il token dell'app e l'id del canale. Ogni emote: id, nome,
+  // e se e' animata.
+  async getEmote(broadcasterId) {
+    const via = (j) => (Array.isArray(j?.data) ? j.data : []).filter((e) => e && e.id && e.name)
+      .map((e) => ({ id: String(e.id), nome: String(e.name), animata: Array.isArray(e.format) && e.format.includes('animated') }));
+    const [canale, globali] = await Promise.all([
+      /^\d+$/.test(String(broadcasterId || '')) ? this._request('GET', '/chat/emotes', { query: { broadcaster_id: String(broadcasterId) } }).then(via) : Promise.resolve([]),
+      this._request('GET', '/chat/emotes/global').then(via),
+    ]);
+    return { canale, globali };
+  }
+
   // Stream in corso per login → oggetto stream (title, game_name, viewer_count, ...) o null se offline.
   async getStream(login) {
     const j = await this._request('GET', '/streams', { query: { user_login: String(login).toLowerCase() } });

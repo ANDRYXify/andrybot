@@ -63,7 +63,8 @@ test('un disegno viaggia coi suoi parametri normalizzati e col suo suono', () =>
   const { e, mandati } = motore();
   const p = e.payload(ch, effectsDb.get(ch, 'festa'));
   assert.equal(p.tipo, 'disegno');
-  assert.deepEqual(p.disegno, { nome: 'fuochi', colori: ['#ff0000'], quanti: 'normale', durata: DISEGNI.fuochi.max, suono: 'effetto:trombe' });
+  assert.deepEqual(p.disegno, { nome: 'fuochi', colori: ['#ff0000'], quanti: 'normale', durata: DISEGNI.fuochi.max,
+    pezzi: [], grandezza: 100, gira: true, misto: false, origine: 'angoli', suono: 'effetto:trombe' });
   assert.equal(p.durata, DISEGNI.fuochi.max * 1000);
   assert.match(p.suonoUrl, /\/media\/trombe\.ogg\?key=/);
   assert.equal(p.url, undefined, 'un disegno non ha file');
@@ -109,4 +110,28 @@ test('la libreria e\' fatta solo di media: un disegno non si condivide e non si 
   assert.ok(effectsDb.sharedList({}).every((e) => e.tipo !== 'disegno'));
   assert.equal(effectsDb.pubblicoById(idDisegno), null);
   assert.equal(effectsDb.list(ch).length, 2, 'fra i comandi del canale ci sono tutti e due');
+});
+
+test('al posto dei pezzi: il server compone gli indirizzi, solo verso la libreria del canale o le emote che passano da noi', () => {
+  const ch = canale('fx_pezzi');
+  media(ch, 'logo', 'immagine');
+  media(ch, 'clip', 'video');
+  media(ch, 'trombe', 'audio');
+  const { e } = motore();
+  const chiave = encodeURIComponent(e.overlayKey(ch));
+  const p = e.payloadDisegno(ch, { nome: 'stelle', pezzi: [
+    { fonte: 'mio', comando: 'logo' }, { fonte: 'mio', comando: 'clip' }, { fonte: 'mio', comando: 'trombe' }, { fonte: 'mio', comando: 'sparito' },
+    { fonte: '7tv', id: '01F6MZGCNG000255K4X1K0Q0B1', nome: 'pepe' }, { fonte: 'twitch', id: 'emotesv2_abc', nome: 'Kappa' },
+    { fonte: 'http', url: 'https://altrove.example/x.png' },
+  ] }, 80);
+  assert.deepEqual(p.immagini, [
+    `/overlay/fx_pezzi/media/logo.webp?key=${chiave}`,
+    `/overlay/fx_pezzi/media/clip.webp?key=${chiave}`,
+    `/overlay/fx_pezzi/emote/7tv/01F6MZGCNG000255K4X1K0Q0B1?key=${chiave}`,
+    `/overlay/fx_pezzi/emote/twitch/emotesv2_abc?key=${chiave}`,
+  ], 'un suono, un comando sparito e un indirizzo qualsiasi non diventano niente; l\'ordine resta quello scelto');
+  assert.equal(p.disegno.pezzi.length, 6, 'nel disegno restano le scelte, con la loro forma');
+  assert.ok(!('immagini' in e.payloadDisegno(ch, { nome: 'stelle' }, 80)), 'senza pezzi niente immagini: il disegno di serie');
+  assert.ok(p.immagini.every((u) => u.startsWith('/')), 'relativi: l\'overlay li chiede alla sua origine, la sola da cui la CSP gli lascia leggere i byte');
+  for (const x of [{ fonte: 'http', id: 'x' }, { fonte: 'mio' }, null, {}]) assert.equal(e.urlPezzo(ch, x), '', `anche da sola, la risoluzione non compone niente per ${JSON.stringify(x)}`);
 });
