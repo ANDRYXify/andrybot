@@ -1574,7 +1574,6 @@ function _demoProvaFrasi(b) {
 function _demoGet(via) {
   if (via === '/api/streamer/overlays' && _demoScritture.overlays) return { overlays: _demoScritture.overlays };
   if (via === '/api/streamer/effetti' && _demoScritture.effetti) return { overlayUrl: 'https://socialbot.live/overlay/andryx_demo', effetti: _demoScritture.effetti };
-  if (via === '/api/contatori' && _demoScritture.contatori) return { contatori: _demoScritture.contatori, base: _demoGet('/api/contatori').base };
   const F = {
     '/api/me': statoDemo(),
     '/api/tiktok/stato': { appAttiva: true, collegato: true, username: 'andryxify', redirect: 'https://socialbot.live/tiktok/callback' },
@@ -2092,6 +2091,7 @@ function _demoGet(via) {
     dati: { nome: 'ANDRYXify', titolo: quale === 'dona' ? 'Se ti piace quello che faccio, un caffè aiuta.' : 'Dirette, giochi e chiacchiere', gioco: '', login: 'andryxify', link: quale === 'dona' ? 'dona.socialbot.live/andryxify' : 'socialbot.live/u/andryxify', avatar: '' },
     vocabolario: { ...F['/api/streamer/telegram/carta'].vocabolario, misura: { larghezza: 1200, altezza: 630 }, temi: [] } });
   F['/api/paginacarta'] = cartaPag('link');
+  if (via === '/api/contatori' && _demoScritture.contatori) return { ...F[via], contatori: _demoScritture.contatori };
   return F[via] !== undefined ? F[via] : {};
 }
 
