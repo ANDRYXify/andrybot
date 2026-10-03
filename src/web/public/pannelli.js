@@ -7,16 +7,23 @@
   const W = 320;
   const DENSITA = 3;
   const ALTEZZE = [80, 100, 160];
-  const TEMI = ['pagina', 'carta', 'notte'];
+  const TEMI = ['pagina', 'carta', 'notte', 'miei'];
   const FORME = ['penna', 'netta', 'piena'];
   const TIPI = ['chi', 'programma', 'social', 'discord', 'dona', 'comandi', 'regole', 'libero'];
   const ICONE = { chi: 'utente', programma: 'calendario', social: 'globo', discord: 'chat', dona: 'cuore', comandi: 'lista', regole: 'scudo', libero: 'stella' };
   const MIN_PX = 14;
-  const MAX = { voci: 12, titolo: 40, link: 300, testo: 1000, comandi: 12 };
+  const MIN_SOTTO = 11;
+  const MAX = { voci: 12, titolo: 40, sottotitolo: 50, link: 300, testo: 1000, comandi: 12 };
+  const MIEI_BASE = { fondo: '#151216', testo: '#f4eef2', accento: '#b8237f' };
   const RETI = { twitch: 'Twitch', kick: 'Kick', youtube: 'YouTube', instagram: 'Instagram', tiktok: 'TikTok', x: 'X', twitter: 'X', threads: 'Threads', facebook: 'Facebook', discord: 'Discord', telegram: 'Telegram', spotify: 'Spotify', reddit: 'Reddit' };
   const FONDI = { carta: { fondo: '#f6f1e7', testo: '#1a1919' }, notte: { fondo: '#151216', testo: '#f4eef2' } };
 
-  function tavolozza(tema, pag, K) {
+  function tavolozza(tema, pag, K, miei) {
+    if (tema === 'miei') {
+      const m = miei || MIEI_BASE;
+      const testo = K.contrasto(m.testo, m.fondo) >= 4.5 ? m.testo : K.inchiostro(m.fondo);
+      return { fondo: m.fondo, testo, accento: K.contrasto(m.accento, m.fondo) >= 3 ? m.accento : testo };
+    }
     const acc = (pag && pag.acc) || '#b8237f';
     if (tema === 'pagina') {
       const testo = K.inchiostro(acc);
@@ -37,10 +44,10 @@
     g.closePath();
   }
 
-  function adatta(g, testo, largo, da, font) {
-    let px = Math.max(MIN_PX, Math.round(da));
+  function adatta(g, testo, largo, da, font, min = MIN_PX) {
+    let px = Math.max(min, Math.round(da));
     g.font = font(px);
-    while (px > MIN_PX && g.measureText(testo).width > largo) { px--; g.font = font(px); }
+    while (px > min && g.measureText(testo).width > largo) { px--; g.font = font(px); }
     if (g.measureText(testo).width <= largo) return { testo, px, tagliato: false };
     let s = testo;
     while (s && g.measureText(s + '…').width > largo) s = s.slice(0, -1);
@@ -48,20 +55,31 @@
   }
 
   const fontDi = (car) => (px) => `${car.stile || ''}${car.peso} ${px}px ${car.famiglia}`;
+  const fontSotto = (car) => (px) => `${car.stile || ''}600 ${px}px ${car.famiglia}`;
   const CAR = { famiglia: 'sans-serif', peso: 800, stile: '' };
+  const conSotto = (o) => !!String(o.sottotitolo || '').trim();
+  const daTitolo = (h, sotto) => Math.min(40, h * (sotto ? 0.32 : 0.4));
+  const daSotto = (pxTitolo) => Math.max(MIN_SOTTO, Math.round(pxTitolo * 0.5));
 
-  function spazio(h, forma, conIcona) {
+  function spazio(h, forma, conIcona, freccia) {
     const m = forma === 'piena' ? 0 : 6;
     const box = { x: m, y: m, w: W - 2 * m, h: h - 2 * m };
     const pad = Math.max(14, Math.round(h * 0.16));
     const s = Math.max(20, Math.min(56, Math.round(h * 0.46)));
+    const fr = freccia ? Math.round(Math.min(16, h * 0.16)) : 0;
     const x0 = box.x + pad + (conIcona ? s + 12 : 0);
-    return { box, pad, s, x0, largo: box.x + box.w - pad - x0 };
+    return { box, pad, s, fr, x0, largo: box.x + box.w - pad - x0 - (fr ? Math.round(fr * 0.6) + 10 : 0) };
   }
 
   function misura(g, o) {
-    const sp = spazio(o.h, o.forma, !!o.icona);
-    return adatta(g, String(o.titolo || '').trim(), sp.largo, Math.min(40, o.h * 0.4), fontDi(o.carattere || CAR)).px;
+    const sp = spazio(o.h, o.forma, !!o.icona, !!o.freccia);
+    return adatta(g, String(o.titolo || '').trim(), sp.largo, daTitolo(o.h, conSotto(o)), fontDi(o.carattere || CAR)).px;
+  }
+
+  function misuraSotto(g, o, pxTitolo) {
+    if (!conSotto(o)) return Infinity;
+    const sp = spazio(o.h, o.forma, !!o.icona, !!o.freccia);
+    return adatta(g, String(o.sottotitolo).trim(), sp.largo, daSotto(pxTitolo), fontSotto(o.carattere || CAR), MIN_SOTTO).px;
   }
 
   function disegna(g, o) {
@@ -71,7 +89,7 @@
     const d = o.densita || 1;
     g.setTransform(d, 0, 0, d, 0, 0);
     g.clearRect(0, 0, W, h);
-    const sp = spazio(h, o.forma, !!o.icona);
+    const sp = spazio(h, o.forma, !!o.icona, !!o.freccia);
     const box = sp.box;
 
     if (o.forma === 'penna' && o.penna && typeof Path2D !== 'undefined') {
@@ -95,15 +113,42 @@
 
     if (o.icona) g.drawImage(o.icona, box.x + sp.pad, Math.round(box.y + (box.h - sp.s) / 2), sp.s, sp.s);
     const x0 = sp.x0;
-    const t = adatta(g, String(o.titolo || '').trim(), sp.largo, Math.min(40, h * 0.4, o.px || Infinity), font);
+    const cy = box.y + box.h / 2 + 1;
+    const t = adatta(g, String(o.titolo || '').trim(), sp.largo, Math.min(daTitolo(h, conSotto(o)), o.px || Infinity), font);
     if (t.tagliato) problemi.push({ tipo: 'titolo', titolo: o.titolo });
+    let st = null;
+    if (conSotto(o)) {
+      st = adatta(g, String(o.sottotitolo).trim(), sp.largo, Math.min(daSotto(t.px), o.pxSotto || Infinity), fontSotto(o.carattere || CAR), MIN_SOTTO);
+      if (st.tagliato) problemi.push({ tipo: 'sottotitolo', titolo: o.titolo });
+    }
+    const gap = st ? Math.round(t.px * 0.18) : 0;
+    const alto = st ? t.px + gap + st.px : t.px;
+    const yT = cy - alto / 2 + t.px / 2;
+    const xT = o.icona ? x0 : x0 + sp.largo / 2;
     g.fillStyle = c.testo;
     g.textBaseline = 'middle';
     g.textAlign = o.icona ? 'left' : 'center';
-    g.fillText(t.testo, o.icona ? x0 : box.x + box.w / 2, box.y + box.h / 2 + 1);
+    g.font = font(t.px);
+    g.fillText(t.testo, xT, yT);
+    if (st) {
+      g.font = fontSotto(o.carattere || CAR)(st.px);
+      g.fillText(st.testo, xT, yT + t.px / 2 + gap + st.px / 2);
+    }
     g.textAlign = 'left';
     g.textBaseline = 'alphabetic';
-    return { problemi, px: t.px, testo: t.testo };
+    if (sp.fr) {
+      const xR = box.x + box.w - Math.round(sp.pad * 0.7), w = Math.round(sp.fr * 0.55);
+      g.beginPath();
+      g.moveTo(xR - w, cy - sp.fr / 2);
+      g.lineTo(xR, cy);
+      g.lineTo(xR - w, cy + sp.fr / 2);
+      g.lineWidth = 2.5;
+      g.lineCap = 'round';
+      g.lineJoin = 'round';
+      g.strokeStyle = c.accento;
+      g.stroke();
+    }
+    return { problemi, px: t.px, pxSotto: st ? st.px : 0, testo: t.testo, sottotitolo: st ? st.testo : '' };
   }
 
   function mdTesto(s) {
@@ -157,7 +202,7 @@
     return voci.map((p, i) => [`${i + 1}. ${p.titolo}`, p.link || '', p.testo || ''].filter((x, k) => k === 0 || x).join('\n')).join('\n\n----\n\n') + '\n';
   }
 
-  const PANNELLI = { W, DENSITA, ALTEZZE, TEMI, FORME, TIPI, ICONE, MAX, RETI, MIN_PX, tavolozza, misura, disegna, predefiniti, mdTesto, mdIndirizzo, mdLink, nomeFile, testi };
+  const PANNELLI = { W, DENSITA, ALTEZZE, TEMI, FORME, TIPI, ICONE, MAX, RETI, MIN_PX, MIN_SOTTO, MIEI_BASE, tavolozza, misura, misuraSotto, disegna, predefiniti, mdTesto, mdIndirizzo, mdLink, nomeFile, testi };
   if (typeof module !== 'undefined' && module.exports) module.exports = PANNELLI;
   else radice.SB_PANNELLI = PANNELLI;
 })(typeof window !== 'undefined' ? window : globalThis);

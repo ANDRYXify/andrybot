@@ -113,6 +113,8 @@ const PUBBLICHE = new Map([
   ['GET /u/:user/anteprima-dona.png', 'l\'anteprima del link della pagina delle donazioni: come sopra'],
   ['GET /u/:user/negozio', 'la pagina del negozio di uno streamer: pubblica come la pagina link, e chiusa (404) se il negozio e\' chiuso'],
   ['GET /u/:user/negozio/media/:id', 'le immagini degli articoli in vetrina: solo un media di QUEL canale che un articolo visibile usa (mediaPubblico), il resto e\' 404'],
+  ['GET /u/:user/p/:id', 'la pagina dietro un pannello di Twitch: pubblica come la pagina link, e 404 se e\' spenta o se nessun pannello salvato ci porta (portaAllaPagina)'],
+  ['GET /u/:user/p/:id/privacy', 'l\'informativa della pagina dietro un pannello: alla stessa condizione della pagina'],
   ['GET /u/:user/anteprima-negozio.png', 'l\'anteprima del link della pagina del negozio: come sopra'],
   ['GET /u/:user/img/:file', 'immagini della pagina link'],
   ['GET /u/:user/privacy', 'informativa della pagina link'],

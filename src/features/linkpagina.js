@@ -219,6 +219,17 @@ const _mIco = (n, dim = 20) => {
 // Le stesse icone per i pezzi che una pagina disegna da fuori (il negozio).
 export const iconaMarchio = (nome, dim = 20) => _mIco(nome, dim);
 
+// I pezzi vivi: il programma e i comandi si scrivono quando la pagina si apre.
+// La pagina e' in italiano come il resto delle sue parole fisse; i giorni
+// partono dal lunedi', come la settimana (features/settimana.js).
+const GIORNI_PAGINA = ['Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato', 'Domenica'];
+function nomeFuso(fuso) {
+  try {
+    const p = new Intl.DateTimeFormat('it', { timeZone: fuso, timeZoneName: 'longGeneric' }).formatToParts(new Date());
+    return p.find((x) => x.type === 'timeZoneName')?.value || fuso;
+  } catch { return String(fuso || ''); }
+}
+
 function esc(s) {
   return String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
@@ -552,9 +563,13 @@ export function coloriDi(pagina) {
 // scheda, il piede, la pagina vuota) arrivano gia' nella lingua del canale
 // (`testi`, `lingua`). Senza `negozio` non cambia niente: la pagina link e
 // quella delle donazioni restano quelle di prima, in italiano.
-export function renderLinkPage(pagina, { login, display, avatar, baseUrl, anteprima, sostieni, grazie, manca, dona, urlDona, urlLink, donatori, immagineAnteprima, negozio } = {}) {
+// LA PAGINA DIETRO UN PANNELLO passa da qui con `dietro` ({ url }): stessa
+// forma, il suo indirizzo, e non si offre ai motori di ricerca (e' una porta
+// da Twitch, non una pagina da trovare). `vivi` porta i dati dei pezzi vivi
+// (programma, comandi) per tutte le pagine che li usano.
+export function renderLinkPage(pagina, { login, display, avatar, baseUrl, anteprima, sostieni, grazie, manca, dona, urlDona, urlLink, donatori, immagineAnteprima, negozio, dietro, vivi } = {}) {
   // l'indirizzo vero della pagina: quello corto delle donazioni, se c'e'
-  const urlCanonico = negozio ? negozio.url : dona ? (urlDona || `${baseUrl}/dona/${login}`) : `${baseUrl}/u/${login}`;
+  const urlCanonico = negozio ? negozio.url : dietro ? dietro.url : dona ? (urlDona || `${baseUrl}/dona/${login}`) : `${baseUrl}/u/${login}`;
   const t = pagina.tema || {};
   const c = coloriDi(pagina);
   const font = PILE[t.font] || PILE.system;
@@ -567,7 +582,7 @@ export function renderLinkPage(pagina, { login, display, avatar, baseUrl, antepr
   const larghezza = Number(t.larghezza) || 30;
   const aSinistra = t.allinea === 'sinistra';
   const titolo = pagina.headline || display || login;
-  const descr = pagina.tagline || (negozio ? negozio.testi.descrizione : `Tutti i link di ${display || login}`);
+  const descr = pagina.tagline || (negozio ? negozio.testi.descrizione : dietro ? `${titolo} · ${display || login}` : `Tutti i link di ${display || login}`);
   const dom = domini(baseUrl);          // parent= dei player Twitch/Kick
   const scuro = eScuro(c.bg);           // decide il tema della chat incorporata
   // Colore del testo SOPRA l'accento (bottoni "in evidenza", copertina, badge…):
@@ -589,7 +604,7 @@ export function renderLinkPage(pagina, { login, display, avatar, baseUrl, antepr
   // ognuna ha la sua. Calcolata qui una volta, cosi' i due posti che la
   // nominano (il piede e la fascia dei contenuti altrui) non possono finire a
   // puntare in due direzioni.
-  const viaPrivacy = negozio ? negozio.privacy : dona ? `${urlDona || ''}/privacy` : `/u/${login}/privacy`;
+  const viaPrivacy = negozio ? negozio.privacy : dona ? `${urlDona || ''}/privacy` : dietro ? `${dietro.url || ''}/privacy` : `/u/${login}/privacy`;
   // Titoli "parola per parola": ogni parola è un pezzo a sé, così può entrare
   // con un attimo di ritardo sulla precedente. Si fa qui, a mano, perché farlo
   // in pagina vorrebbe dire JavaScript su una pagina che deve aprirsi subito.
@@ -865,6 +880,23 @@ export function renderLinkPage(pagina, { login, display, avatar, baseUrl, antepr
       if (!tessere) return anteprima ? `<div class="segna" ${ritardo}>griglia: aggiungi almeno una tessera</div>` : '';
       return `<div class="griglia" ${ritardo}>${tessere}</div>`;
     }
+    if (b.tipo === 'programma') {
+      // i giorni in onda della settimana del canale, letti adesso
+      const p = vivi?.programma;
+      const giorni = (p?.giorni || []).map((g, i) => ({ ...(g || {}), i })).filter((g) => !g.off && g.ora);
+      if (!giorni.length) return anteprima ? `<div class="segna" ${ritardo}>programma: nella scheda «La tua settimana» non c'è ancora un giorno in onda</div>` : '';
+      const pross = b.prossima !== false && p.prossima ? p.prossima.giorno : -1;
+      return `${b.titolo ? `<h2 class="tit" ${ritardo}>${esc(b.titolo)}</h2>` : ''}
+        <div class="prog" ${ritardo}><ul class="prog-l">${giorni.map((g) => `<li class="prog-r${g.i === pross ? ' pross' : ''}"><span class="prog-g">${GIORNI_PAGINA[g.i]}</span><span class="prog-o">${esc(g.ora)}</span>${g.att ? `<span class="prog-a">${esc(g.att)}</span>` : ''}${g.i === pross ? '<span class="prog-p">la prossima</span>' : ''}</li>`).join('')}</ul>
+        <p class="prog-f">Orari: ${esc(nomeFuso(p.fuso))}</p></div>`;
+    }
+    if (b.tipo === 'comandi') {
+      // i comandi che chiunque puo' usare in chat, letti adesso
+      const lista = vivi?.comandi || [];
+      if (!lista.length) return anteprima ? `<div class="segna" ${ritardo}>comandi: non c'è ancora un comando che chiunque può usare</div>` : '';
+      return `${b.titolo ? `<h2 class="tit" ${ritardo}>${esc(b.titolo)}</h2>` : ''}
+        <dl class="cmd" ${ritardo}>${lista.map((c) => `<div class="cmd-r"><dt><code>!${esc(c.comando)}</code>${(c.alias || []).length ? `<span class="cmd-al">anche ${c.alias.map((a) => '!' + esc(a)).join(', ')}</span>` : ''}</dt>${b.risposte !== false && c.cosa ? `<dd>${esc(c.cosa)}</dd>` : ''}</div>`).join('')}</dl>`;
+    }
     if (b.tipo === 'donatori') {
       // chi ha donato: i nomi li porta il server dal registro; qui la forma
       const top = b.modo === 'top';
@@ -1028,12 +1060,12 @@ export function renderLinkPage(pagina, { login, display, avatar, baseUrl, antepr
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>${esc(titolo)} · ${negozio ? esc(negozio.testi.titolo) : dona ? 'sostienimi' : 'i miei link'}</title>
+<title>${esc(titolo)} · ${negozio ? esc(negozio.testi.titolo) : dietro ? esc(display || login) : dona ? 'sostienimi' : 'i miei link'}</title>
 <meta name="description" content="${esc(descr).slice(0, 160)}">
-<meta name="robots" content="index, follow">
+<meta name="robots" content="${dietro ? 'noindex, follow' : 'index, follow'}">
 <link rel="canonical" href="${esc(urlCanonico)}">
 <meta name="theme-color" content="${esc(c.bg)}">
-<meta property="og:type" content="${negozio ? 'website' : 'profile'}">
+<meta property="og:type" content="${negozio || dietro ? 'website' : 'profile'}">
 <meta property="og:title" content="${esc(titolo)}">
 <meta property="og:description" content="${esc(descr).slice(0, 200)}">
 <meta property="og:url" content="${esc(urlCanonico)}">
@@ -1295,6 +1327,21 @@ ${/* l'icona della scheda e della schermata home: la foto che la pagina mostra
   .dnt-i{color:var(--acc);font-weight:var(--pf);font-variant-numeric:tabular-nums}
   .dnt-vuoto{margin:0;color:var(--tenue);font-size:.9rem;text-align:center}
   /* domande frequenti: si aprono da sole, nessuno script */
+  .prog{width:100%;margin-top:1rem}
+  .prog-l{list-style:none;display:grid;gap:.4rem}
+  .prog-r{display:flex;align-items:baseline;flex-wrap:wrap;gap:.35rem .8rem;padding:.75rem 1rem;border-radius:var(--r);${stileBtn};text-align:left}
+  .prog-r.pross{box-shadow:inset 0 0 0 2px var(--acc)}
+  .prog-g{font-weight:var(--pm);min-width:6.5em}
+  .prog-o{font-variant-numeric:tabular-nums;font-weight:var(--pf);color:var(--acc)}
+  .prog-a{flex:1 1 8rem;min-width:0;color:var(--tenue);font-size:.9rem}
+  .prog-p{margin-left:auto;padding:.12rem .55rem;border-radius:999px;background:var(--acc);color:var(--suacc);font-size:.7rem;font-weight:var(--pm);letter-spacing:.06em;text-transform:uppercase}
+  .prog-f{margin-top:.55rem;font-size:.78rem;color:var(--tenue);text-align:${aSinistra ? 'left' : 'center'}}
+  .cmd{width:100%;margin-top:1rem;display:grid;gap:.4rem}
+  .cmd-r{padding:.75rem 1rem;border-radius:var(--r);${stileBtn};text-align:left}
+  .cmd-r dt{display:flex;flex-wrap:wrap;align-items:baseline;gap:.25rem .6rem}
+  .cmd-r code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-weight:var(--pf);color:var(--acc)}
+  .cmd-al{font-size:.8rem;color:var(--tenue)}
+  .cmd-r dd{margin-top:.3rem;color:var(--tenue);font-size:.92rem;text-wrap:pretty}
   .faq{width:100%;margin-top:1rem;display:flex;flex-direction:column;gap:.45rem}
   .faq-v{border-radius:var(--r);${stileBtn};overflow:hidden}
   .faq-v summary{cursor:pointer;padding:.85rem 1rem;font-weight:var(--pn);list-style:none;display:flex;align-items:center;gap:.5rem}
@@ -1463,7 +1510,7 @@ ${/* l'icona della scheda e della schermata home: la foto che la pagina mostra
     ${!negozio ? testa() : testaInUnPezzo ? '' : `<h1 class="solo-lettori">${esc(titolo)}</h1>`}
     ${corpo ? `<${negozio ? 'div' : 'nav'} class="lista">${corpo}</${negozio ? 'div' : 'nav'}>` : `<p class="vuoto">${negozio ? esc(negozio.testi.vuota) : 'Questa pagina non ha ancora contenuti.'}</p>`}
     <p class="piede">${negozio ? esc(negozio.testi.creata) : 'Pagina creata con'} <a href="${esc(baseUrl)}/" target="_blank" rel="noopener">SocialBot</a>${
-      dona && urlLink ? ` · <a href="${esc(urlLink)}">I link di ${esc(display || login)}</a>` : ''}
+      (dona || dietro) && urlLink ? ` · <a href="${esc(urlLink)}">I link di ${esc(display || login)}</a>` : ''}
       · <a href="${esc(viaPrivacy)}">${negozio ? esc(negozio.testi.privacy) : 'Privacy'}</a>${banner && corpo.includes('chiedi-b')
         ? ` · <button type="button" id="ri-consenso" class="come-link">Contenuti di altri siti</button>` : ''}</p>
   </main>
@@ -1491,8 +1538,9 @@ ${fxScript}
 // usano cookie non essenziali, ma dire chi tratta i dati, quali e perché è un
 // obbligo che non dipende dai cookie. Sta su una pagina sua, con lo stesso tema
 // della pagina link, così non sembra un pezzo di un altro sito.
-// `quale` dice di CHI e' questa informativa: della pagina link o di quella
-// delle donazioni. Non e' un dettaglio estetico — il tasto in fondo riporta
+// `quale` dice di CHI e' questa informativa: della pagina link, di quella
+// delle donazioni o di una pagina dietro un pannello ('dietro', che non
+// conta visite e lo dice). Non e' un dettaglio estetico — il tasto in fondo riporta
 // indietro, e riportare alla pagina sbagliata e' un vicolo cieco travestito da
 // uscita. E il verso non lo indovina la pagina: glielo dice la rotta da cui
 // arriva, che e' l'unica cosa che lo sa per certo.
@@ -1532,12 +1580,14 @@ export function renderInformativa({ login, display, baseUrl, pagina, contatto, q
   const chiede = t.consenso === 'chiedi';
   const nome = display || login;
   const p = (s) => `<p>${s}</p>`;
+  const dietro = quale === 'dietro';
+  const di = quale === 'dona' ? ' · donazioni' : dietro && pagina?.headline ? ` · ${pagina.headline}` : '';
   return senzaCommentiCss(`<!DOCTYPE html>
 <html lang="it">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Privacy · ${esc(nome)}${quale === 'dona' ? ' · donazioni' : ''}</title>
+<title>Privacy · ${esc(nome)}${esc(di)}</title>
 <meta name="robots" content="noindex, follow">
 <style>${facciaFont(t.font)}
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -1560,20 +1610,21 @@ export function renderInformativa({ login, display, baseUrl, pagina, contatto, q
 <body>
   <main>
     <h1>Privacy di questa pagina</h1>
-    ${p(`Questa è la pagina ${quale === 'dona' ? 'delle donazioni' : 'pubblica'} di <strong>${esc(nome)}</strong>, ospitata da SocialBot. Qui c'è scritto, in italiano e senza giri di parole, cosa succede ai dati quando la apri.`)}
+    ${p(`${dietro ? `Questa è una pagina di <strong>${esc(nome)}</strong>, quella che si apre da un suo pannello su Twitch,` : `Questa è la pagina ${quale === 'dona' ? 'delle donazioni' : 'pubblica'} di <strong>${esc(nome)}</strong>,`} ospitata da SocialBot. Qui c'è scritto, in italiano e senza giri di parole, cosa succede ai dati quando la apri.`)}
 
     <h2>Cookie: non ce ne sono</h2>
     ${p('Questa pagina <strong>non usa cookie</strong> e non salva niente sul tuo dispositivo. Non c\'è nessun banner da accettare perché non c\'è niente da accettare.')}
 
-    <h2>Cosa contiamo</h2>
-    ${p('Ogni volta che la pagina viene aperta aumentiamo di uno un contatore <strong>giornaliero</strong>, così chi l\'ha creata sa se qualcuno la guarda. È tutto qui.')}
+    <h2>${dietro ? 'Cosa contiamo: niente' : 'Cosa contiamo'}</h2>
+    ${dietro ? p('Questa pagina <strong>non conta le visite</strong>: quando la apri non teniamo nessun numero e nessuna traccia.')
+    : p('Ogni volta che la pagina viene aperta aumentiamo di uno un contatore <strong>giornaliero</strong>, così chi l\'ha creata sa se qualcuno la guarda. È tutto qui.')}
     <ul>
       <li><strong>Non</strong> salviamo il tuo indirizzo IP.</li>
       <li><strong>Non</strong> sappiamo chi sei, da dove arrivi o che dispositivo usi.</li>
       <li><strong>Non</strong> possiamo collegare due visite alla stessa persona.</li>
       <li>Non c'è nessuno strumento di analisi o pubblicità di terzi.</li>
     </ul>
-    ${p('Il numero è aggregato: non è un dato personale e non permette di risalire a nessuno.')}
+    ${dietro ? '' : p('Il numero è aggregato: non è un dato personale e non permette di risalire a nessuno.')}
 
     <h2>Contenuti di altri siti</h2>
     ${chiede
@@ -1583,7 +1634,7 @@ export function renderInformativa({ login, display, baseUrl, pagina, contatto, q
     ${informativaDonazioni(sostieni, nome, (pagina?.blocchi || []).some((x) => x && x.tipo === 'donatori'), p)}
     <h2>Chi decide, e a chi scrivere</h2>
     ${p(`I contenuti di questa pagina li sceglie <strong>${esc(nome)}</strong>. SocialBot la ospita e la mostra per suo conto.`)}
-    ${p(`Per chiedere di vedere, correggere o cancellare qualcosa${contatto ? `, scrivi a <a href="mailto:${esc(contatto)}">${esc(contatto)}</a>` : ', usa i contatti che trovi sulla pagina'}. La pagina si può togliere dal web in qualsiasi momento, e con lei il contatore.`)}
+    ${p(`Per chiedere di vedere, correggere o cancellare qualcosa${contatto ? `, scrivi a <a href="mailto:${esc(contatto)}">${esc(contatto)}</a>` : ', usa i contatti che trovi sulla pagina'}. La pagina si può togliere dal web in qualsiasi momento${dietro ? '' : ', e con lei il contatore'}.`)}
 
     <a class="torna" href="${esc(urlTorna || `/u/${login}`)}">← Torna alla pagina${quale === 'dona' ? ' delle donazioni' : ''}</a>
     <p class="data">SocialBot · ${esc(baseUrl || '')}</p>

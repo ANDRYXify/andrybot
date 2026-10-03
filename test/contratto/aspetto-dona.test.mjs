@@ -21,7 +21,9 @@ test('ogni strada che mostra la pagina delle donazioni passa da aspettoDi', () =
   assert.match(tratto(SRV, "app.get('/dona/:user/privacy'", 900), /pagina: aspettoDi\(p, linkPage\.get\(login\)\)/, 'la sua informativa');
   assert.match(tratto(SRV, 'async function datiCartaPagina(', 500), /quale === 'dona' \? aspettoDi\(paginaDona\.conDefault\(login, display\), linkPage\.get\(login\)\)/, 'l\'immagine dell\'anteprima del link');
   assert.match(tratto(SRV, "app.post('/api/paginadona/anteprima'", 700), /htmlAnteprima\('dona', [\s\S]*link: linkPage\.get\(login\)/, 'l\'anteprima del pannello');
-  assert.match(tratto(ANT, 'export function htmlAnteprima(', 1200), /aspettoDi\(paginaDona\.pulisci\(\{ \.\.\.testo, aspetto: c\.aspetto \}\), c\.link\)/, 'l\'anteprima, del pannello e della demo');
+  const ant = tratto(ANT, 'export function htmlAnteprima(', 1200);
+  assert.match(ant, /const archivio = dona \? paginaDona : dietro \? paginaPannello : null;/, 'l\'anteprima delle donazioni pulisce con l\'archivio delle donazioni');
+  assert.match(ant, /archivio \? aspettoDi\(archivio\.pulisci\(\{ \.\.\.testo, aspetto: c\.aspetto \}\), c\.link\)/, 'l\'anteprima, del pannello e della demo');
   const viste = [...(SRV + ANT).matchAll(/renderLinkPage\(([^,]+),/g)].map((m) => m[1]);
   assert.ok(viste.every((v) => !/paginaDona/.test(v)), 'nessuno stampa la pagina delle donazioni direttamente dallo store');
 });

@@ -9,7 +9,7 @@ export default {
   schede: ['qr', 'misure', 'kit', 'pannelli'],
   titolo: 'Manuale degli strumenti: QR, emote, kit e pannelli | SocialBot',
   h1: 'Manuale degli strumenti',
-  desc: 'Un QR col tuo logo che si legge davvero, emote e badge per Twitch, 7TV e Discord anche animate, il media kit coi numeri veri e i pannelli del canale già pieni.',
+  desc: 'QR col tuo logo che si legge davvero, emote e badge anche animate per Twitch, 7TV e Discord, media kit coi numeri veri, pannelli già pieni con una pagina dentro.',
   aggiornata: '2026-10-03',
   corpo: [
     { p: [
@@ -121,8 +121,20 @@ export default {
     ] },
     { h3: 'Uno stile per tutti' },
     { p: [
-      'Colori, forma, carattere, altezza e icona valgono per tutti i pannelli: stanno in fila sulla stessa pagina, e uno diverso dagli altri si nota subito. I colori possono essere quelli della tua pagina link, Carta o Notte; la forma a penna, netta o piena. Anche il titolo ha una misura sola per tutti: quella che fa stare il più lungo.',
-      'Il testo sul pannello si legge sempre: se il colore non contrasta abbastanza, diventa bianco o nero. Con <em>Twitch scuro</em> e <em>Twitch chiaro</em> vedi come stanno sulle due pagine di Twitch.',
+      'Colori, forma, carattere, altezza e icona valgono per tutti i pannelli: stanno in fila sulla stessa pagina, e uno diverso dagli altri si nota subito. I colori possono essere quelli della tua pagina link, Carta, Notte o <em>I miei colori</em>, dove scegli tu sfondo, testo e accento; la forma a penna, netta o piena. Anche il titolo ha una misura sola per tutti: quella che fa stare il più lungo.',
+      'Ogni pannello può avere un <strong>sottotitolo</strong>, una riga piccola sotto il titolo («ogni sera dalle 21», «entra nel server»): anche quello ha una misura sola per tutta la serie. Con <em>Una freccina sui pannelli che portano da qualche parte</em> chi guarda capisce al volo quali si cliccano: la freccina compare solo su quelli che hanno davvero un link.',
+      'Il testo sul pannello si legge sempre: se il colore non contrasta abbastanza, diventa bianco o nero, anche coi tuoi colori. Con <em>Twitch scuro</em> e <em>Twitch chiaro</em> vedi come stanno sulle due pagine di Twitch.',
+    ] },
+    { h3: 'Un pannello con una pagina dentro' },
+    { p: [
+      'Su Twitch un pannello è un\'immagine con un link e poche righe. Quando hai più cose da dire (tutti i comandi, le regole spiegate, il programma con i giochi, le foto della postazione) scegli <em>Quando lo clicchi: Apre la sua pagina</em>. Chi clicca il pannello arriva a una pagina tua, <code>socialbot.live/u/tuonome/p/…</code>, e il link del pannello si scrive da solo.',
+      'La pagina si fa con lo stesso editor della pagina link, e di serie ne ha l\'aspetto: un canale, un vestito. Nasce già piena di quello che il pannello promette: il <em>Programma</em> con la tua settimana, i <em>Comandi</em> coi tuoi comandi, <em>Chi sono</em> con la tua frase e i social, <em>Discord</em> col tasto per entrare, e gli altri con la descrizione del pannello riga per riga.',
+    ] },
+    { ul: [
+      '<strong>Il programma e i comandi si aggiornano da soli</strong>: sono letti quando la pagina si apre. Cambi la settimana o aggiungi un comando, e la pagina è già giusta, senza ricaricare niente su Twitch. Gli stessi due pezzi li puoi mettere anche nella pagina link.',
+      '<strong>Si vedono solo i comandi che può usare chiunque</strong>: quelli per i moderatori no. Accanto a ognuno c\'è cosa risponde il bot, quando è una frase fissa.',
+      '<strong>La pagina si apre quando è pubblicata e il pannello salvato ci porta.</strong> Se togli il pannello, o lo fai portare a un indirizzo, la pagina non si apre più ma resta salvata: se torni indietro, torna com\'era.',
+      '<strong>Non finisce sui motori di ricerca</strong>: è una porta da Twitch, non una pagina da trovare. La tua pagina link resta quella che si trova.',
     ] },
     { h3: 'Metterli su Twitch' },
     { passi: [
@@ -156,7 +168,8 @@ export default {
     { d: 'Perché la mia emote animata è a scatti?', r: 'Twitch tiene 60 fotogrammi: un\'animazione di 4 secondi ne mostra 15 al secondo, una di 2 secondi 30. Accorciala e torna fluida.' },
     { d: 'I numeri del media kit si possono modificare?', r: 'No: vengono dalle tue dirette, e puoi solo scegliere quali mostrare. È quello che li rende credibili per chi li legge.' },
     { d: 'Il media kit è una pagina pubblica?', r: 'No: esiste quando lo scarichi, e lo mandi tu a chi vuoi.' },
-    { d: 'I pannelli si aggiornano da soli su Twitch?', r: 'No: Twitch non lascia cambiare i pannelli da fuori. Quando cambi qualcosa, riscarichi e ricarichi il pannello che è cambiato.' },
+    { d: 'I pannelli si aggiornano da soli su Twitch?', r: 'No: Twitch non lascia cambiare i pannelli da fuori. Quando cambi qualcosa, riscarichi e ricarichi il pannello che è cambiato. Quello che sta nella pagina dietro un pannello, invece, si cambia qui e su Twitch è già giusto.' },
+    { d: 'Perché il mio pannello non porta da nessuna parte?', r: 'Se apre la sua pagina e la pagina non è ancora pubblicata, il link resta vuoto: sotto l\'anteprima c\'è scritto. Preparala e premi «Salva e pubblica», poi salva i pannelli.' },
     { d: 'Posso usare i pannelli su Kick o YouTube?', r: 'Le immagini sì, sono normali PNG. Le misure però sono quelle di Twitch.' },
   ],
 };

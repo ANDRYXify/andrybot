@@ -100,6 +100,21 @@ comandi diversi da quelli della riga italiana.
 - La pagina «Qui non c'è un negozio» si legge in ordine: prima cosa succede, poi cosa fare (chiedere in chat); chi il negozio ce l'ha trova un riquadro suo col tasto per aprirlo. [vai: negozio]
   en: The “There’s no shop here” page reads in order: first what happened, then what to do (ask in chat); whoever owns the shop gets a box of their own with the button to open it.
   es: La página «Aquí no hay ninguna tienda» se lee en orden: primero qué pasa, luego qué hacer (preguntar en el chat); quien tiene la tienda encuentra un recuadro propio con el botón para abrirla.
+- [importante] Ogni pannello di Twitch può aprire una pagina sua, che prepari con lo stesso editor della pagina link: il link del pannello lo scriviamo noi, e porta lì. [vai: pannelli]
+  en: Every Twitch panel can open a page of its own, which you prepare with the same editor as the link page: we write the panel's link for you, and it leads there.
+  es: Cada panel de Twitch puede abrir una página propia, que preparas con el mismo editor de la página de enlaces: el enlace del panel lo escribimos nosotros, y lleva ahí.
+  > Un pannello con una pagina dentro
+  > Nel pannello stanno un titolo e poche righe; dietro il clic ci sta il resto. La pagina nasce piena di quello che il pannello promette, e programma e comandi si leggono quando la apri: cambi la settimana e la pagina è già giusta.
+  en> A panel with a page inside
+  en> A panel holds a title and a few lines; the rest fits behind the click. The page starts filled with what the panel promises, and schedule and commands are read when it opens: change your week and the page is already right.
+  es> Un panel con una página dentro
+  es> En el panel caben un título y pocas líneas; detrás del clic cabe el resto. La página nace llena de lo que el panel promete, y el horario y los comandos se leen al abrirla: cambias la semana y la página ya está bien.
+- Nei Pannelli di Twitch c'è il tema «I miei colori», sempre leggibile; ogni pannello può avere un sottotitolo, e una freccina segna quelli che portano da qualche parte. [vai: pannelli]
+  en: Twitch Panels now have the “My colors” theme, always readable; each panel can have a subtitle, and a small arrow marks the ones that lead somewhere.
+  es: Los Paneles de Twitch tienen el tema «Mis colores», siempre legible; cada panel puede tener un subtítulo, y una flechita marca los que llevan a algún sitio.
+- Nella pagina link, nelle donazioni e nelle pagine dei pannelli ci sono «Il mio programma» e «I comandi della chat»: si scrivono da soli dalla tua settimana e dai comandi aperti a tutti. [vai: pagina]
+  en: The link page, the donations page and panel pages now have “My schedule” and “Chat commands”: they fill in by themselves from your week and from the commands open to everyone.
+  es: La página de enlaces, la de donaciones y las páginas de los paneles tienen «Mi horario» y «Los comandos del chat»: se escriben solos con tu semana y los comandos abiertos a todos.
 
 ## 2026-10-02
 

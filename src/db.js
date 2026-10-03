@@ -970,6 +970,23 @@ CREATE TABLE IF NOT EXISTS pagina_negozio (   -- la pagina pubblica del negozio:
   aspetto TEXT NOT NULL DEFAULT '',
   ts INTEGER NOT NULL
 );
+CREATE TABLE IF NOT EXISTS pagina_pannello (  -- la pagina dietro un pannello di Twitch, /u/<login>/p/<id>: stessa forma della pagina link
+  channel TEXT NOT NULL,
+  pannello TEXT NOT NULL,                     -- l'id del pannello (settings.pannelli.voci[].id)
+  headline TEXT NOT NULL DEFAULT '',
+  tagline TEXT NOT NULL DEFAULT '',
+  template TEXT NOT NULL DEFAULT 'minimal',
+  accent TEXT NOT NULL DEFAULT '',
+  bg TEXT NOT NULL DEFAULT '',
+  links TEXT NOT NULL DEFAULT '',
+  avatar TEXT NOT NULL DEFAULT '',
+  tema TEXT NOT NULL DEFAULT '',
+  blocchi TEXT NOT NULL DEFAULT '',
+  attiva INTEGER NOT NULL DEFAULT 1,
+  aspetto TEXT NOT NULL DEFAULT '',
+  ts INTEGER NOT NULL,
+  PRIMARY KEY (channel, pannello)
+);
 `);
 
 // --- migrazioni leggere: aggiunge colonne nuove a DB già esistenti ------------
@@ -4109,7 +4126,9 @@ export const FONT_LINKPAGE = ['system', 'inter', 'mono', 'serif', 'condensato', 
 export const ICONE_LINKPAGE = ['link', 'twitch', 'youtube', 'instagram', 'tiktok', 'discord', 'spotify',
   'x', 'telegram', 'kick', 'github', 'reddit', 'threads', 'facebook', 'whatsapp', 'twitter',
   'cuore', 'stella', 'regalo', 'carrello', 'calendario', 'mail', 'musica', 'video', 'scarica', 'gioco', 'caffe', 'soldi'];
-export const TIPI_BLOCCO = ['link', 'titolo', 'testo', 'badge', 'separatore', 'spazio', 'social', 'embed', 'immagine', 'diretta', 'eroe', 'griglia', 'scritta', 'numeri', 'faq', 'conto', 'sostieni', 'donatori'];
+// `programma` e `comandi` sono VIVI: in pagina si scrivono quando la pagina si
+// apre, dalla settimana e dai comandi del canale, non da una copia salvata.
+export const TIPI_BLOCCO = ['link', 'titolo', 'testo', 'badge', 'separatore', 'spazio', 'social', 'embed', 'immagine', 'diretta', 'eroe', 'griglia', 'scritta', 'numeri', 'faq', 'conto', 'sostieni', 'donatori', 'programma', 'comandi'];
 // I pezzi della pagina del negozio (docs/NEGOZIO.md, «La pagina»): i cinque suoi
 // (l'intestazione, l'articolo in vetrina, la griglia, come si compra, il piede)
 // e i pochi della pagina link che stanno bene in un negozio. Niente riquadri di
@@ -4431,6 +4450,12 @@ const storePagina = (tabella, { conAspetto = false, tipi = TIPI_BLOCCO } = {}) =
         const quanti = Math.round(Number(b.quanti));
         out.push({ tipo, titolo: str(b.titolo, L.label), quanti: quanti >= 3 && quanti <= 20 ? quanti : 5,
           modo: scelta(b.modo, ['ultimi', 'top'], 'ultimi'), periodo: scelta(b.periodo, ['mese', 'sempre'], 'sempre') });
+      } else if (tipo === 'programma') {
+        // i giorni e le ore vengono dalla settimana del canale: qui solo il titolo
+        out.push({ tipo, titolo: str(b.titolo, L.label), prossima: b.prossima !== false });
+      } else if (tipo === 'comandi') {
+        // i comandi che chiunque puo' usare, letti quando la pagina si apre
+        out.push({ tipo, titolo: str(b.titolo, L.label), risposte: b.risposte !== false });
       } else if (tipo === 'griglia') {
         const voci = (Array.isArray(b.voci) ? b.voci : []).slice(0, L.voci.griglia).map((v) => ({
           img: urlOk(v?.img), titolo: str(v?.titolo, L.label), testo: str(v?.testo, L.sotto), url: urlOk(v?.url),
@@ -4502,6 +4527,48 @@ const storePagina = (tabella, { conAspetto = false, tipi = TIPI_BLOCCO } = {}) =
 export const linkPage = storePagina('link_page');
 export const paginaDona = storePagina('pagina_dona', { conAspetto: true });
 export const paginaNegozio = storePagina('pagina_negozio', { conAspetto: true, tipi: TIPI_PAGINA_NEGOZIO });
+
+// LE PAGINE DIETRO I PANNELLI (docs/STRUMENTI.md, «La pagina dietro il
+// pannello»): una per pannello, con la pulizia e la lettura delle altre. La
+// chiave e' il canale col pannello; `channel` resta una colonna sua, cosi'
+// esportazione e cancellazione dell'account (features/esporta.js) le trovano
+// come trovano tutto il resto.
+const ID_PANNELLO = /^[a-z0-9-]{1,24}$/;
+export const paginaPannello = Object.assign(storePagina('pagina_pannello', { conAspetto: true }), {
+  idOk: (id) => ID_PANNELLO.test(String(id || '')),
+  get(channel, id) {
+    if (!this.idOk(id)) return null;
+    const r = db.prepare('SELECT * FROM pagina_pannello WHERE channel=? AND pannello=?').get(String(channel).toLowerCase(), String(id));
+    return r ? this._riga(r) : null;
+  },
+  conDefault(channel, id, display) {
+    const r = this.get(channel, id);
+    if (r) return r;
+    return { channel: String(channel).toLowerCase(), pannello: String(id), headline: display || channel, tagline: '',
+      template: 'minimal', avatar: '', tema: this.pulisci({}).tema, blocchi: [], attiva: true, ts: 0, vuota: true, aspetto: 'link' };
+  },
+  esiste(channel, id) { return !!this.get(channel, id); },
+  salva(channel, id, d = {}) {
+    if (!this.idOk(id)) return null;
+    const c = String(channel).toLowerCase();
+    const p = this.pulisci(d);
+    db.prepare(`INSERT INTO pagina_pannello (channel, pannello, headline, tagline, template, accent, bg, links, avatar, tema, blocchi, attiva, aspetto, ts)
+      VALUES (@channel, @pannello, @headline, @tagline, @template, @accent, @bg, '', @avatar, @tema, @blocchi, @attiva, @aspetto, @ts)
+      ON CONFLICT(channel, pannello) DO UPDATE SET headline=excluded.headline, tagline=excluded.tagline, template=excluded.template,
+        accent=excluded.accent, bg=excluded.bg, avatar=excluded.avatar, tema=excluded.tema, blocchi=excluded.blocchi,
+        attiva=excluded.attiva, aspetto=excluded.aspetto, ts=excluded.ts`).run({
+      channel: c, pannello: String(id), headline: p.headline, tagline: p.tagline, template: p.template,
+      accent: p.tema.accent, bg: p.tema.bg, avatar: p.avatar, tema: JSON.stringify(p.tema), blocchi: JSON.stringify(p.blocchi),
+      attiva: p.attiva === false ? 0 : 1, aspetto: p.aspetto, ts: now(),
+    });
+    return this.get(c, id);
+  },
+  // le pagine accese del canale, per sapere dove porta ogni pannello
+  accese(channel) {
+    return db.prepare('SELECT pannello, ts FROM pagina_pannello WHERE channel=? AND attiva=1').all(String(channel).toLowerCase());
+  },
+  rimuovi(channel, id) { db.prepare('DELETE FROM pagina_pannello WHERE channel=? AND pannello=?').run(String(channel).toLowerCase(), String(id)); },
+});
 
 // NB: distinto dai `counters` di sotto (store low-level usato dalle azioni dei moduli).
 // I VERBI DI UN CONTATORE: quali parole fanno cosa, e chi puo'.

@@ -869,6 +869,12 @@ input[type="file"]::file-selector-button:hover { background: var(--acc-600); }
 .pan-nome { min-width: 0; overflow-wrap: anywhere; }
 .pan-campi { display: grid; gap: .5rem; padding: 0 .75rem .75rem; }
 .pan-azioni { display: flex; flex-wrap: wrap; gap: .4rem; }
+.pan-miei { margin-top: .6rem; gap: .8rem; }
+.pan-miei input[type="color"] { width: 3.2rem; min-height: 44px; padding: .2rem; }
+.pan-pagina-stato { display: grid; gap: .45rem; justify-items: start; margin-top: .4rem; }
+.pan-pagina-stato a { overflow-wrap: anywhere; }
+.pan-pagina > .riga-flessibile { margin-bottom: .8rem; }
+.pan-pagina-tit { margin: 0; }
 .pan-vista { display: grid; justify-items: center; gap: 14px; padding: 18px 12px; border-radius: var(--r-s); background: #0e0e10; width: 100%; box-sizing: border-box; max-height: max(240px, calc(100vh - var(--top-h) - 15rem)); overflow: auto; overscroll-behavior: contain; }
 .pan-vista[data-fondo="chiaro"] { background: #f7f7f8; }
 .pan-fig { margin: 0; display: grid; justify-items: center; gap: 6px; max-width: 100%; }

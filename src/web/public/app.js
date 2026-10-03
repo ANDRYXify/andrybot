@@ -1209,6 +1209,8 @@ function apiDemo(percorso, opzioni = {}) {
   if (via === '/api/streamer/voce/prova') return Promise.resolve({ frasi: _demoProvaFrasi(opzioni.body) });
   if (via.startsWith('/api/streamer/negozio')) return Promise.resolve(_demoNegozio(metodo, via, opzioni.body));
   if (_DEMO_ANTEPRIMA[via]) return _demoAnteprima(_DEMO_ANTEPRIMA[via], opzioni.body);
+  const pan = /^\/api\/paginapannello\/([a-z0-9-]{1,24})(\/anteprima)?$/.exec(via);
+  if (pan) return pan[2] ? _demoAnteprima('pannello', opzioni.body) : Promise.resolve(_demoPaginaPannello(metodo, pan[1], opzioni.body || {}));
   if (via === '/api/streamer/giro') {
     if (metodo === 'POST') _demoScritture.giro = opzioni.body?.giro || null;
     return import('/js/giro-regole.js').then((R) => ({ giro: _demoScritture.giro ? R.normalizza(_demoScritture.giro) : R.normalizza({ attivo: true, voci: { boss: { peso: 20, distanza: 60 } } }) }));
@@ -1410,11 +1412,35 @@ const _DEMO_ANTEPRIMA = { '/api/linkpage/anteprima': 'link', '/api/paginadona/an
 function _demoAnteprima(quale, pagina) {
   const s = stato?.settings || {};
   const neg = _demoScritture.negozio || _demoNegozioBase();
+  const pan = _demoGet('/api/streamer/pannelli');
   return apiServer('/api/demo/anteprima', { method: 'POST', body: { quale, pagina,
     canale: { login: stato?.user?.login, display: stato?.user?.display, lingua: stato?.linguaChat,
       aspettoLink: LP.d?.aspettoLink || null, donazioni: s.donazioni || null,
       moneta: { nomeMonete: s.nomeMonete, formaMonete: s.formaMonete },
-      compra: neg.comandi?.compra, articoli: neg.articoli } } });
+      compra: neg.comandi?.compra, articoli: neg.articoli,
+      settimana: pan.settimana || null, comandi: _DEMO_COMANDI_PUBBLICI } } });
+}
+
+const _DEMO_COMANDI_PUBBLICI = [
+  { comando: 'discord', alias: ['dc'], cosa: 'Il server della community: discord.socialbot.live/andryxify' },
+  { comando: 'lurk', alias: [], cosa: 'Buon lurk! Torna quando vuoi.' },
+  { comando: 'morti', alias: [], cosa: '' },
+  { comando: 'setup', alias: ['pc'], cosa: 'Il PC, il microfono e la webcam che uso sono nella pagina link.' },
+  { comando: 'social', alias: [], cosa: 'Instagram, TikTok e YouTube: tutti nella pagina link.' },
+];
+
+function _demoPaginaPannello(metodo, id, b) {
+  const pagine = (_demoScritture.paginePannelli ||= {});
+  const url = `https://socialbot.live/u/${stato?.user?.login || 'andryxify'}/p/${id}`;
+  if (metodo === 'POST') pagine[id] = { ...b, attiva: b.attiva !== false };
+  if (metodo === 'DELETE' && pagine[id]) pagine[id].attiva = false;
+  const base = _demoGet('/api/linkpage');
+  const p = pagine[id];
+  const pagina = p ? { headline: p.headline || '', tagline: p.tagline || '', template: p.template || 'minimal', avatar: p.avatar || '', tema: p.tema || base.pagina.tema, blocchi: p.blocchi || [], attiva: p.attiva !== false, aspetto: p.aspetto || 'link' }
+    : { ...base.pagina, headline: '', tagline: '', blocchi: [], aspetto: 'link' };
+  return { ...base, url, esiste: !!p, pubblicata: !!p?.attiva, aspettaPannello: false, visite: null, suggeriti: [],
+    aspettoLink: { template: base.pagina.template, tema: base.pagina.tema },
+    ok: true, salvati: (pagina.blocchi || []).length, inviati: (pagina.blocchi || []).length, pagina };
 }
 
 function _demoNegozioBase() {
@@ -1912,6 +1938,8 @@ function _demoGet(via) {
       settimana: _DEMO_SETTIMANA,
       comandi: ['discord', 'social', 'lurk', 'morti', 'setup'],
       pannelli: null,
+      pagine: Object.fromEntries(Object.entries(_demoScritture.paginePannelli || {}).filter(([, p]) => p.attiva).map(([id]) => [id, `https://socialbot.live/u/andryxify/p/${id}`])),
+      basePagine: 'https://socialbot.live/u/andryxify/p/',
     },
     '/api/streamer/kit': {
       display: 'Andryx', piattaforma: 'twitch', follower: 12840,
@@ -4237,7 +4265,7 @@ const GUIDE = {
   misure: { serve: ['Preparare emote e badge alle misure che chiedono Twitch, 7TV e Discord, ferme o animate, partendo da un’immagine sola o da un video corto.', 'Get emotes and badges ready at the sizes Twitch, 7TV and Discord ask for, still or animated, starting from a single image or a short video.', 'Preparar emotes y badges a los tamaños que piden Twitch, 7TV y Discord, fijos o animados, partiendo de una sola imagen o de un vídeo corto.'],
     come: [['Scegli un’immagine, anche animata, o un video, meglio se grande e quadrato.', 'Choose an image, animated too, or a video, better if big and square.', 'Elige una imagen, también animada, o un vídeo, mejor si es grande y cuadrado.', '#mis-scegli'], ['Scegli per cosa: emote o badge di Twitch, emote di 7TV, emoji di Discord.', 'Choose what it is for: Twitch emote or badge, 7TV emote, Discord emoji.', 'Elige para qué: emote o badge de Twitch, emote de 7TV, emoji de Discord.', '#mis-carta .gr-sfondo-scelte'], ['Se si muove, scegli il fotogramma fermo: l’animazione parte da lì.', 'If it moves, choose the still frame: the animation starts there.', 'Si se mueve, elige el fotograma fijo: la animación empieza ahí.'], ['Guarda come viene alle misure vere, sulla chat scura e su quella chiara.', 'See how it looks at real size, on the dark chat and the light one.', 'Mira cómo queda a tamaño real, en el chat oscuro y en el claro.', '#mis-anteprime'], ['Scaricale una per una o tutte in un file zip.', 'Download them one by one or all in a zip file.', 'Descárgalas una a una o todas en un archivo zip.', '#mis-zip']] },
   pannelli: { serve: ['Fare i pannelli sotto il tuo canale Twitch, tutti nello stesso stile, con link e descrizioni già scritti.', 'Make the panels under your Twitch channel, all in one style, with links and descriptions already written.', 'Hacer los paneles bajo tu canal de Twitch, todos con el mismo estilo, con enlaces y descripciones ya escritos.'],
-    come: [['Scegli colori, forma, carattere e altezza: valgono per tutti i pannelli.', 'Pick colors, shape, font and height: they apply to all panels.', 'Elige colores, forma, letra y altura: valen para todos los paneles.', '#pan-carta .gr-sfondo-scelte'], ['Guarda i pannelli: ognuno ha già il suo link e la sua descrizione, e li cambi come vuoi.', 'Look at the panels: each one already has its link and description, and you change them as you like.', 'Mira los paneles: cada uno ya tiene su enlace y su descripción, y los cambias como quieras.', '#pan-voci'], ['Scarica tutti: immagini e testi in un file solo, da mettere su Twitch.', 'Download all: images and texts in one file, to put on Twitch.', 'Descarga todos: imágenes y textos en un solo archivo, para poner en Twitch.', '#pan-zip']] },
+    come: [['Scegli colori, forma, carattere e altezza: valgono per tutti i pannelli.', 'Pick colors, shape, font and height: they apply to all panels.', 'Elige colores, forma, letra y altura: valen para todos los paneles.', '#pan-carta .gr-sfondo-scelte'], ['Guarda i pannelli: ognuno ha già il suo link e la sua descrizione, e li cambi come vuoi.', 'Look at the panels: each one already has its link and description, and you change them as you like.', 'Mira los paneles: cada uno ya tiene su enlace y su descripción, y los cambias como quieras.', '#pan-voci'], ['Se un pannello ha più cose da dire, fallo aprire la sua pagina: la prepari con lo stesso editor della pagina link, e il programma e i comandi si aggiornano da soli.', 'If a panel has more to say, make it open its own page: you prepare it with the same editor as the link page, and the schedule and commands update by themselves.', 'Si un panel tiene más que decir, haz que abra su propia página: la preparas con el mismo editor de la página de enlaces, y el horario y los comandos se actualizan solos.'], ['Scarica tutti: immagini e testi in un file solo, da mettere su Twitch.', 'Download all: images and texts in one file, to put on Twitch.', 'Descarga todos: imágenes y textos en un solo archivo, para poner en Twitch.', '#pan-zip']] },
   kit: { serve: ['Preparare il foglio da mandare a un marchio: chi sei, cosa trasmetti, i tuoi numeri e come contattarti.', 'Prepare the sheet to send to a brand: who you are, what you stream, your numbers and how to reach you.', 'Preparar la hoja para mandar a una marca: quién eres, qué transmites, tus números y cómo contactarte.'],
     come: [['Scrivi due righe su di te e l’email per le collaborazioni.', 'Write a couple of lines about you and the email for collaborations.', 'Escribe dos líneas sobre ti y el email para colaboraciones.', '#kit-presentazione'], ['Scegli cosa mostrare: i numeri vengono dalle tue dirette degli ultimi 30 giorni.', 'Choose what to show: the numbers come from your streams of the last 30 days.', 'Elige qué mostrar: los números vienen de tus directos de los últimos 30 días.', '#kit-tela'], ['Scarica il PDF, coi link che si aprono con un clic, o il PNG.', 'Download the PDF, with links that open with a click, or the PNG.', 'Descarga el PDF, con enlaces que se abren con un clic, o el PNG.', '#kit-pdf']] },
   grafiche: { serve: ['Fare la locandina della diretta da postare sui social, con i tuoi colori e il tuo handle.', 'Make the stream poster to post on socials, with your colors and your handle.', 'Hacer el cartel del directo para publicar en redes, con tus colores y tu handle.'],
@@ -9121,7 +9149,7 @@ STATI_SALVA['pan-salva'] = {
   stato: () => PAN_STATO.serie,
   rimetti: (v) => { PAN_STATO.serie = v; _panScelte(); _panElenco(); panRifaiPresto(); },
 };
-const PAN_TEMI = () => [['pagina', L('Come la pagina link', 'Like your link page', 'Como tu página de enlaces')], ['carta', L('Carta', 'Paper', 'Papel')], ['notte', L('Notte', 'Night', 'Noche')]];
+const PAN_TEMI = () => [['pagina', L('Come la pagina link', 'Like your link page', 'Como tu página de enlaces')], ['carta', L('Carta', 'Paper', 'Papel')], ['notte', L('Notte', 'Night', 'Noche')], ['miei', L('I miei colori', 'My colors', 'Mis colores')]];
 const PAN_FORME = () => [['penna', L('A penna', 'Hand-drawn', 'A mano')], ['netta', L('Netta', 'Clean', 'Nítida')], ['piena', L('Piena', 'Full', 'Llena')]];
 const PAN_ALTEZZE = () => [[80, L('Bassi', 'Short', 'Bajos')], [100, L('Medi', 'Medium', 'Medios')], [160, L('Alti', 'Tall', 'Altos')]];
 const PAN_TIPI = () => ({ chi: L('Chi sono', 'About me', 'Sobre mí'), programma: L('Programma', 'Schedule', 'Horario'), social: L('Social', 'Socials', 'Redes'), discord: 'Discord', dona: L('Sostienimi', 'Support me', 'Apóyame'), comandi: L('Comandi', 'Commands', 'Comandos'), regole: L('Regole', 'Rules', 'Normas'), libero: L('Pannello', 'Panel', 'Panel') });
@@ -9153,10 +9181,16 @@ function pannelloPannelli() {
       <div class="st-lavoro spazio-sopra">
         <div class="st-comandi">
           <div class="campo campo-su"><span>${L('I colori', 'The colors', 'Los colores')}</span><div class="gr-sfondo-scelte" role="group">${bottoni(PAN_TEMI(), 'pan-tema')}</div></div>
+          <div class="riga-flessibile pan-miei" id="pan-miei" hidden>
+            <label class="campo-num">${L('Sfondo', 'Background', 'Fondo')}<input type="color" data-pan-colore="fondo" value="#151216"></label>
+            <label class="campo-num">${L('Testo', 'Text', 'Texto')}<input type="color" data-pan-colore="testo" value="#f4eef2"></label>
+            <label class="campo-num">${L('Accento', 'Accent', 'Acento')}<input type="color" data-pan-colore="accento" value="#b8237f"></label>
+          </div>
           <div class="campo campo-su"><span>${L('La forma', 'The shape', 'La forma')}</span><div class="gr-sfondo-scelte" role="group">${bottoni(PAN_FORME(), 'pan-forma')}</div></div>
           <div class="campo campo-su"><span>${L('Il carattere', 'The font', 'La letra')}</span><div class="gr-sfondo-scelte" role="group">${caratteri}</div></div>
           <div class="campo campo-su"><span>${L('L’altezza', 'The height', 'La altura')}</span><div class="gr-sfondo-scelte" role="group">${bottoni(PAN_ALTEZZE(), 'pan-alto')}</div></div>
           <label class="riga-check spazio-sopra"><input type="checkbox" id="pan-icone" checked> ${L('Un’icona accanto al titolo', 'An icon next to the title', 'Un icono junto al título')}</label>
+          <label class="riga-check"><input type="checkbox" id="pan-freccia"> ${L('Una freccina sui pannelli che portano da qualche parte', 'A small arrow on the panels that lead somewhere', 'Una flechita en los paneles que llevan a algún sitio')}</label>
           <h3 class="spazio-sopra">${L('I pannelli, in ordine', 'The panels, in order', 'Los paneles, en orden')}</h3>
           <div id="pan-voci" class="pan-voci"></div>
           <div class="riga-flessibile spazio-sopra">
@@ -9183,6 +9217,13 @@ function pannelloPannelli() {
           </div>
         </div>
       </div>
+    </div>
+    <div class="carta pan-pagina" id="pan-pagina" hidden>
+      <div class="riga-flessibile">
+        <button type="button" class="btn secondario" id="pan-pagina-torna">${_bIco(ICO.indietro)}${L('Torna ai pannelli', 'Back to the panels', 'Volver a los paneles')}</button>
+        <h2 class="pan-pagina-tit" id="pan-pagina-tit"></h2>
+      </div>
+      ${lpCasaHtml('pannello')}
     </div>`);
 }
 
@@ -9195,7 +9236,7 @@ function caricaMotorePannelli() {
   return PAN_STATO.motore;
 }
 
-const _panStile = () => ({ tema: 'pagina', forma: 'penna', carattere: 'archivo', altezza: 100, icone: true });
+const _panStile = () => ({ tema: 'pagina', forma: 'penna', carattere: 'archivo', altezza: 100, icone: true, freccia: false, colori: { fondo: '#151216', testo: '#f4eef2', accento: '#b8237f' } });
 const _panPredefiniti = () => window.SB_PANNELLI.predefiniti(PAN_STATO.dati || {}, panTesti());
 
 function _panIcona(nome, colore) {
@@ -9218,6 +9259,61 @@ function _panScelte() {
   segna('pan-tema', st.tema); segna('pan-forma', st.forma); segna('pan-font', st.carattere); segna('pan-alto', st.altezza);
   const ic = document.getElementById('pan-icone');
   if (ic) ic.checked = st.icone !== false;
+  const fr = document.getElementById('pan-freccia');
+  if (fr) fr.checked = st.freccia === true;
+  const miei = document.getElementById('pan-miei');
+  if (miei) {
+    miei.hidden = st.tema !== 'miei';
+    st.colori = { ..._panStile().colori, ...(st.colori || {}) };
+    miei.querySelectorAll('[data-pan-colore]').forEach((x) => { x.value = st.colori[x.dataset.panColore]; });
+  }
+}
+
+const _panLink = (v) => (v.pagina ? (PAN_STATO.dati?.pagine?.[v.id] || '') : (v.link || ''));
+
+function _panPaginaDiPartenza(v) {
+  const d = PAN_STATO.dati || {};
+  const piano = (r) => String(r || '').replace(/\[([^\]]*)\]\([^)]*\)/g, '$1').replace(/\\([\\`*_[\]])/g, '$1').replace(/\*\*|__/g, '').trim();
+  const righe = (t) => String(t || '').split('\n').map((r) => piano(r.replace(/^\s*[-*]\s+/, ''))).filter(Boolean).slice(0, 12).map((testo) => ({ tipo: 'testo', testo }));
+  const social = (d.social || []).length ? [{ tipo: 'social', voci: d.social.map((x) => ({ icona: x.icona, url: x.url })) }] : [];
+  const b = v.tipo === 'programma' ? [{ tipo: 'programma', titolo: '', prossima: true }]
+    : v.tipo === 'comandi' ? [{ tipo: 'comandi', titolo: '', risposte: true }]
+      : v.tipo === 'social' ? (social.length ? social : righe(v.testo))
+        : v.tipo === 'discord' ? [...righe(v.testo), ...(d.linkDiscord ? [{ tipo: 'link', icona: 'discord', label: L('Entra nel server', 'Join the server', 'Entra en el servidor'), url: d.linkDiscord, sotto: '', evidenzia: true }] : [])]
+          : v.tipo === 'chi' ? [...(d.bio ? [{ tipo: 'testo', testo: d.bio }] : righe(v.testo)), ...social]
+            : righe(v.testo);
+  return b.length ? b : [{ tipo: 'testo', testo: '' }];
+}
+
+async function _panApriPagina(i) {
+  const v = PAN_STATO.serie?.voci[i];
+  const carta = document.getElementById('pan-carta'), box = document.getElementById('pan-pagina');
+  if (!v || !carta || !box) return;
+  if (!(await _primaDiCambiare(document.getElementById('lp-salva')))) return;
+  if (LP.quale !== 'pannello' || LP.pannello !== v.id) LP.d = null;
+  LP.pannello = v.id;
+  LP.partenza = { headline: v.titolo || PAN_TIPI()[v.tipo], blocchi: _panPaginaDiPartenza(v) };
+  document.getElementById('pan-pagina-tit').textContent = L(`La pagina di «${v.titolo || PAN_TIPI()[v.tipo]}»`, `The page of «${v.titolo || PAN_TIPI()[v.tipo]}»`, `La página de «${v.titolo || PAN_TIPI()[v.tipo]}»`);
+  box.hidden = false;
+  box.scrollIntoView({ block: 'start', behavior: 'instant' });
+  await caricaPaginaLink(false, 'pannello');
+}
+
+async function _panChiudiPagina() {
+  const carta = document.getElementById('pan-carta'), box = document.getElementById('pan-pagina');
+  if (!carta || !box || box.hidden) return;
+  const salva = document.getElementById('lp-salva');
+  if (!(await _primaDiCambiare(salva))) return;
+  if (salva) _scordaRegione(salva);
+  const casa = document.getElementById(LP_CASA.pannello);
+  if (casa) casa.innerHTML = attesaHtml();
+  LP.d = null;
+  box.hidden = true;
+  try { const d = await api('/api/streamer/pannelli'); if (PAN_STATO.dati) PAN_STATO.dati.pagine = d.pagine || {}; } catch { /* resta quel che si sapeva */ }
+  _panElenco();
+  await panRifai().catch(() => null);
+  const voce = document.querySelector(`#pan-voci [data-pan-i="${PAN_STATO.aperta}"]`);
+  (voce || carta).scrollIntoView({ block: 'center', behavior: 'instant' });
 }
 
 function _panVoceHtml(v, i, n) {
@@ -9226,11 +9322,12 @@ function _panVoceHtml(v, i, n) {
     <summary><span class="pan-num">${i + 1}</span><span class="pan-nome">${esc(v.titolo || T[v.tipo])}</span></summary>
     <div class="pan-campi">
       <label class="campo campo-su">${L('Titolo', 'Title', 'Título')}<input type="text" data-pan-campo="titolo" maxlength="40" value="${esc(v.titolo)}"></label>
+      <label class="campo campo-su">${L('Sottotitolo (facoltativo)', 'Subtitle (optional)', 'Subtítulo (opcional)')}<input type="text" data-pan-campo="sottotitolo" maxlength="50" value="${esc(v.sottotitolo || '')}" placeholder="${esc(L('una riga piccola sotto il titolo', 'a small line under the title', 'una línea pequeña bajo el título'))}"></label>
       <label class="campo campo-su">${L('Icona', 'Icon', 'Icono')}<select data-pan-campo="icona">${Object.entries(I).map(([k, nome]) => `<option value="${k}"${k === v.icona ? ' selected' : ''}>${esc(nome)}</option>`).join('')}</select></label>
-      <label class="campo campo-su">${L('Dove porta l’immagine', 'Where the image leads', 'A dónde lleva la imagen')}<input type="url" data-pan-campo="link" maxlength="300" value="${esc(v.link)}" placeholder="https://"></label>
+      ${_panDoveHtml(v)}
       <label class="campo campo-su">${L('Descrizione', 'Description', 'Descripción')}<textarea data-pan-campo="testo" rows="4" maxlength="1000">${esc(v.testo)}</textarea></label>
       <div class="pan-azioni">
-        <button type="button" class="btn secondario mini" data-pan-azione="copia-link">${L('Copia il link', 'Copy the link', 'Copiar el enlace')}</button>
+        <button type="button" class="btn secondario mini" data-pan-azione="copia-link"${_panLink(v) ? '' : ' disabled'}>${L('Copia il link', 'Copy the link', 'Copiar el enlace')}</button>
         <button type="button" class="btn secondario mini" data-pan-azione="copia-testo">${L('Copia la descrizione', 'Copy the description', 'Copiar la descripción')}</button>
         ${v.tipo !== 'libero' ? `<button type="button" class="btn secondario mini" data-pan-azione="riprendi">${L('Riprendi dal canale', 'Refill from the channel', 'Recuperar del canal')}</button>` : ''}
         <button type="button" class="btn secondario mini" data-pan-azione="su"${i === 0 ? ' disabled' : ''}>${L('Su', 'Up', 'Arriba')}</button>
@@ -9239,6 +9336,20 @@ function _panVoceHtml(v, i, n) {
       </div>
     </div>
   </details>`;
+}
+
+function _panDoveHtml(v) {
+  const indirizzo = `<label class="campo campo-su">${L('Dove porta l’immagine', 'Where the image leads', 'A dónde lleva la imagen')}<input type="url" data-pan-campo="link" maxlength="300" value="${esc(v.link)}" placeholder="https://"></label>`;
+  if (v.tipo === 'dona') return indirizzo;
+  const url = PAN_STATO.dati?.pagine?.[v.id] || '';
+  const scelta = (val, testo) => `<button type="button" class="gr-tema${!!v.pagina === val ? ' on' : ''}" data-pan-azione="${val ? 'dove-pagina' : 'dove-link'}" aria-pressed="${!!v.pagina === val}">${esc(testo)}</button>`;
+  return `<div class="campo campo-su"><span>${L('Quando lo clicchi', 'When it is clicked', 'Cuando lo pulsan')}</span>
+      <div class="gr-sfondo-scelte" role="group">${scelta(false, L('Porta a un indirizzo', 'Leads to an address', 'Lleva a una dirección'))}${scelta(true, L('Apre la sua pagina', 'Opens its own page', 'Abre su propia página'))}</div></div>
+    ${v.pagina ? `<div class="pan-pagina-stato">
+        ${url ? `<p class="suggerimento">${L('Si apre', 'It opens', 'Se abre')} <a href="${esc(url)}" target="_blank" rel="noopener">${esc(url.replace(/^https?:\/\//, ''))}</a>. ${L('Ci metti tutto quello che nel pannello non ci sta: programma, comandi, regole, foto, link.', 'Put in it everything that does not fit in the panel: schedule, commands, rules, photos, links.', 'Pon en ella todo lo que no cabe en el panel: horario, comandos, normas, fotos, enlaces.')}</p>`
+    : `<p class="suggerimento">${L('La pagina non è ancora pubblicata: finché non la pubblichi, il pannello non porta da nessuna parte.', 'The page is not published yet: until you publish it, the panel leads nowhere.', 'La página aún no está publicada: hasta que la publiques, el panel no lleva a ninguna parte.')}</p>`}
+        <button type="button" class="btn secondario mini" data-pan-azione="pagina">${_bIco(ICO.scrivi)}${url ? L('Modifica la pagina', 'Edit the page', 'Editar la página') : L('Prepara la pagina', 'Prepare the page', 'Preparar la página')}</button>
+      </div>` : indirizzo}`;
 }
 
 function _panElenco() {
@@ -9263,7 +9374,7 @@ async function panRifai() {
   const giro = ++PAN_STATO.giro;
   const P = window.SB_PANNELLI, S = PAN_STATO.serie, st = S.stile;
   const h = P.ALTEZZE.includes(Number(st.altezza)) ? Number(st.altezza) : 100;
-  const pal = P.tavolozza(st.tema, PAN_STATO.dati?.colori, window.SB_KIT);
+  const pal = P.tavolozza(st.tema, PAN_STATO.dati?.colori, window.SB_KIT, st.colori);
   const car = GR_CARATTERI[st.carattere] || GR_CARATTERI.archivo;
   const T = PAN_TIPI();
   if (vista.children.length !== S.voci.length || vista.dataset.alto !== String(h)) {
@@ -9272,15 +9383,19 @@ async function panRifai() {
   }
   const problemi = [];
   const tele = [...vista.querySelectorAll('canvas')];
-  const px = tele.length ? Math.min(...S.voci.map((v, i) => P.misura(tele[i].getContext('2d'), { h, titolo: v.titolo || T[v.tipo], icona: st.icone !== false, carattere: car }))) : 0;
+  const misure = S.voci.map((v) => ({ h, forma: st.forma, titolo: v.titolo || T[v.tipo], sottotitolo: v.sottotitolo || '', icona: st.icone !== false, carattere: car, freccia: st.freccia === true && !!_panLink(v) }));
+  const px = tele.length ? Math.min(...misure.map((o, i) => P.misura(tele[i].getContext('2d'), o))) : 0;
+  const pxSotto = tele.length ? Math.min(...misure.map((o, i) => P.misuraSotto(tele[i].getContext('2d'), o, px))) : 0;
   for (let i = 0; i < S.voci.length; i++) {
     const v = S.voci[i];
     const icona = st.icone !== false ? await _panIcona(v.icona, pal.accento) : null;
     if (giro !== PAN_STATO.giro) return;
     const titolo = v.titolo || T[v.tipo];
-    tele[i].setAttribute('aria-label', titolo);
-    const r = P.disegna(tele[i].getContext('2d'), { h, densita: P.DENSITA, px, titolo, icona, colori: pal, forma: st.forma, carattere: car, seme: `pan:${String(stato?.user?.login || '')}:${v.id}`, penna: window.SB_PENNA });
-    if (r.problemi.length) problemi.push(L(`«${titolo}» non ci sta intero: accorcialo o scegli un carattere più stretto.`, `«${titolo}» does not fit: shorten it or pick a narrower font.`, `«${titolo}» no cabe entero: acórtalo o elige una letra más estrecha.`));
+    tele[i].setAttribute('aria-label', v.sottotitolo ? `${titolo}, ${v.sottotitolo}` : titolo);
+    const r = P.disegna(tele[i].getContext('2d'), { ...misure[i], densita: P.DENSITA, px, pxSotto, icona, colori: pal, seme: `pan:${String(stato?.user?.login || '')}:${v.id}`, penna: window.SB_PENNA });
+    if (r.problemi.some((x) => x.tipo === 'titolo')) problemi.push(L(`«${titolo}» non ci sta intero: accorcialo o scegli un carattere più stretto.`, `«${titolo}» does not fit: shorten it or pick a narrower font.`, `«${titolo}» no cabe entero: acórtalo o elige una letra más estrecha.`));
+    if (r.problemi.some((x) => x.tipo === 'sottotitolo')) problemi.push(L(`Il sottotitolo di «${titolo}» non ci sta intero: accorcialo.`, `The subtitle of «${titolo}» does not fit: shorten it.`, `El subtítulo de «${titolo}» no cabe entero: acórtalo.`));
+    if (v.pagina && !_panLink(v)) problemi.push(L(`«${titolo}» apre la sua pagina, che non è ancora pubblicata: preparala, o fallo portare a un indirizzo.`, `«${titolo}» opens its own page, which is not published yet: prepare it, or make it lead to an address.`, `«${titolo}» abre su propia página, que aún no está publicada: prepárala, o haz que lleve a una dirección.`));
   }
   lista.innerHTML = problemi.map((x) => `<li class="problema">${esc(x)}</li>`).join('');
   if (zip) zip.disabled = !S.voci.length;
@@ -9321,7 +9436,7 @@ async function panScaricaTutti(btn) {
   try {
     await panRifai();
     const P = window.SB_PANNELLI, T = PAN_TIPI();
-    const voci = PAN_STATO.serie.voci.map((v) => ({ ...v, titolo: v.titolo || T[v.tipo] }));
+    const voci = PAN_STATO.serie.voci.map((v) => ({ ...v, titolo: v.titolo || T[v.tipo], link: _panLink(v) }));
     const file = [];
     for (let i = 0; i < voci.length; i++) {
       const b = await _panPng(i);
@@ -9337,7 +9452,9 @@ function _panAzione(b, i) {
   const S = PAN_STATO.serie, v = S.voci[i];
   if (!v) return;
   const az = b.dataset.panAzione;
-  if (az === 'copia-link') { copiaTesto(v.link, L('Link copiato', 'Link copied', 'Enlace copiado')); return; }
+  if (az === 'copia-link') { if (_panLink(v)) copiaTesto(_panLink(v), L('Link copiato', 'Link copied', 'Enlace copiado')); return; }
+  if (az === 'pagina') { _panApriPagina(i).catch((e) => toast(e.message, 'errore')); return; }
+  if (az === 'dove-pagina' || az === 'dove-link') { v.pagina = az === 'dove-pagina'; PAN_STATO.aperta = i; }
   if (az === 'copia-testo') { copiaTesto(v.testo, L('Descrizione copiata', 'Description copied', 'Descripción copiada')); return; }
   if (az === 'riprendi') {
     const p = _panPredefiniti().find((x) => x.tipo === v.tipo);
@@ -9372,6 +9489,8 @@ function _panAggiungi() {
 async function avviaPannelli() {
   const scheda = document.getElementById('scheda-pannelli');
   if (!scheda) return;
+  const pagina = document.getElementById('pan-pagina');
+  if (pagina && !pagina.hidden && LP.quale !== 'pannello') pagina.hidden = true;
   if (!scheda.dataset.collegata) {
     scheda.dataset.collegata = '1';
     scheda.addEventListener('input', (ev) => {
@@ -9390,6 +9509,11 @@ async function avviaPannelli() {
         return;
       }
       if (ev.target.id === 'pan-icone' && S) { S.stile.icone = ev.target.checked; panRifaiPresto(); }
+      if (ev.target.id === 'pan-freccia' && S) { S.stile.freccia = ev.target.checked; panRifaiPresto(); }
+      if (ev.target.dataset?.panColore && S) {
+        S.stile.colori = { ..._panStile().colori, ...(S.stile.colori || {}), [ev.target.dataset.panColore]: ev.target.value };
+        panRifaiPresto();
+      }
     });
     scheda.addEventListener('toggle', (ev) => {
       const d = ev.target.closest?.('.pan-voce');
@@ -9420,6 +9544,7 @@ async function avviaPannelli() {
       if (b.dataset.panAzione) { _panAzione(b, Number(b.closest('[data-pan-i]')?.dataset.panI)); return; }
       if (b.dataset.panPng !== undefined) { panScarica(Number(b.dataset.panPng), b).catch((e) => toast(e.message, 'errore')); return; }
       if (b.id === 'pan-aggiungi') { _panAggiungi(); return; }
+      if (b.id === 'pan-pagina-torna') { _panChiudiPagina().catch((e) => toast(e.message, 'errore')); return; }
       if (b.id === 'pan-zip') { panScaricaTutti(b).catch((e) => toast(e.message, 'errore')); return; }
       if (b.id === 'pan-salva' && S) conErrore(() => salvaImpostazioni({ pannelli: S }, L('Pannelli salvati', 'Panels saved', 'Paneles guardados')));
     });
@@ -22157,7 +22282,9 @@ function disegnaCartaPagina() {
   });
 }
 function lpIntroHtml(d) {
-  const intro = LP.quale === 'negozio'
+  const intro = LP.quale === 'pannello'
+    ? L('La pagina che si apre quando clicchi questo pannello su Twitch: tutto quello che nel pannello non ci sta. Ha l\'aspetto della tua pagina link, o uno suo. Il suo indirizzo è', 'The page that opens when you click this panel on Twitch: everything that does not fit in the panel. It has your link page look, or one of its own. Its address is', 'La página que se abre cuando haces clic en este panel en Twitch: todo lo que no cabe en el panel. Tiene el aspecto de tu página de enlaces, o uno propio. Su dirección es')
+    : LP.quale === 'negozio'
     ? L('La pagina del negozio: chi la apre vede gli articoli in vendita, i prezzi e come si compra, con l\'aspetto della tua pagina link o con uno suo. Si vede quando il negozio è aperto. Il suo indirizzo è', 'The shop page: whoever opens it sees the items on sale, the prices and how to buy, with your link page look or one of its own. It shows while the shop is open. Its address is', 'La página de la tienda: quien la abre ve los artículos a la venta, los precios y cómo se compra, con el aspecto de tu página de enlaces o con uno propio. Se ve cuando la tienda está abierta. Su dirección es')
     : LP.quale === 'dona'
     ? L('La pagina delle donazioni: chi la apre trova le offerte e il modulo, con l\'aspetto della tua pagina link o con uno suo. Il suo indirizzo è', 'The donations page: whoever opens it finds the offers and the form, with your link page look or one of its own. Its address is', 'La página de donaciones: quien la abre encuentra las ofertas y el formulario, con el aspecto de tu página de enlaces o con uno propio. Su dirección es')
@@ -22176,19 +22303,19 @@ function lpIntroHtml(d) {
   })}`;
 }
 
-const LP = { d: null, blocchi: [], tema: {}, testa: {}, quale: 'link', aspetto: '', vista: 'telefono', schede: { link: {}, dona: {}, negozio: {} } };
+const LP = { d: null, blocchi: [], tema: {}, testa: {}, quale: 'link', aspetto: '', vista: 'telefono', pannello: '', partenza: null, schede: { link: {}, dona: {}, negozio: {}, pannello: {} } };
 STATI_SALVA['lp-salva'] = {
   completo: true,
   stato: () => ({ headline: LP.testa.headline, tagline: LP.testa.tagline, template: LP.testa.template, avatar: LP.testa.avatar, tema: LP.tema, blocchi: LP.blocchi, aspetto: LP.aspetto || '' }),
 };
-const LP_CASA = { link: 'lp-box', dona: 'lp-box-dona', negozio: 'lp-box-negozio' };
+const LP_CASA = { link: 'lp-box', dona: 'lp-box-dona', negozio: 'lp-box-negozio', pannello: 'lp-box-pannello' };
 const lpCasaHtml = (quale) => `<div id="${LP_CASA[quale]}" class="lp-casa">${attesaHtml()}</div>`;
 const LP_API = { link: '/api/linkpage', dona: '/api/paginadona', negozio: '/api/paginanegozio' };
-const lpConAspetto = () => LP.quale === 'dona' || LP.quale === 'negozio';
+const lpConAspetto = () => LP.quale === 'dona' || LP.quale === 'negozio' || LP.quale === 'pannello';
 const lpVociMax = (tipo) => Number(LP.d?.limiti?.voci?.[tipo]) || 0;
 const lpVociPiene = (b) => (b.voci || []).length >= lpVociMax(b.tipo);
 const lpSchede = () => LP.schede[LP.quale] || LP.schede.link;
-const lpApi = () => LP_API[LP.quale] || LP_API.link;
+const lpApi = () => (LP.quale === 'pannello' ? '/api/paginapannello/' + encodeURIComponent(LP.pannello) : LP_API[LP.quale] || LP_API.link);
 
 const _tema = (o) => ({ sfondoTipo: 'tinta', bg: '', bg2: '', angolo: 160, sfondoUrl: '', effetto: 'nessuno',
   testo: '', accent: '', card: '', bordo: '', font: 'system', raggio: 14, stileBtn: 'pieno', ombra: true,
@@ -22346,6 +22473,11 @@ async function caricaPaginaLink(ridisegna = false, quale = null) {
     LP.blocchi = (pag.blocchi || []).length ? pag.blocchi.map((b) => ({ ...b })) : (dati.suggeriti || []).map((b) => ({ ...b }));
     LP.testa = { headline: pag.headline || '', tagline: pag.tagline || '', template: pag.template || 'minimal', avatar: pag.avatar || '' };
     LP.aspetto = lpConAspetto() ? (pag.aspetto === 'link' ? 'link' : 'suo') : '';
+    if (LP.quale === 'pannello' && !dati.esiste && LP.partenza) {
+      LP.testa.headline = LP.partenza.headline || '';
+      LP.blocchi = LP.partenza.blocchi.map((b) => ({ ...b }));
+      LP.aspetto = 'link';
+    }
   }
   const d = LP.d;
 
@@ -22359,6 +22491,8 @@ async function caricaPaginaLink(ridisegna = false, quale = null) {
       <div class="lp-comandi">
         ${LP.quale === 'negozio' && !d.pubblicata
       ? `<p class="lp-stato off">${_bIco(ICO.avviso)}${L('Il negozio è chiuso: chi apre l\'indirizzo legge che qui non c\'è un negozio. Lo apri in «Articoli».', 'The shop is closed: whoever opens the address reads that there is no shop here. You open it in «Items».', 'La tienda está cerrada: quien abre la dirección lee que aquí no hay ninguna tienda. La abres en «Artículos».')}</p>`
+      : d.aspettaPannello
+      ? `<p class="lp-stato off">${_bIco(ICO.avviso)}${L('Salvata. Si apre quando salvi i pannelli con questo pannello che porta alla sua pagina.', 'Saved. It opens once you save the panels with this panel leading to its page.', 'Guardada. Se abre cuando guardas los paneles con este panel llevando a su página.')}</p>`
       : d.pubblicata
       ? `<p class="lp-stato on">${_bIco(ICO.globo)}${L('Online:', 'Live:', 'Online:')}
           <a href="${esc(d.url)}" target="_blank" rel="noopener"><strong>${esc((d.url || '').replace(/^https?:\/\//, ''))}</strong></a></p>`
@@ -22393,11 +22527,11 @@ async function caricaPaginaLink(ridisegna = false, quale = null) {
           </div>
         </details>
 
-        <details class="carta sez">
+        ${LP.quale === 'pannello' ? '' : `<details class="carta sez">
           <summary><h3>${L('Quando condividi il link', 'When you share the link', 'Cuando compartes el enlace')}</h3></summary>
           <p class="suggerimento">${L('Su Telegram, WhatsApp e Discord il link mostra questa immagine, disegnata coi colori della tua pagina. La puoi rifare come vuoi con lo stesso editor delle locandine.', 'On Telegram, WhatsApp and Discord the link shows this image, drawn in your page\'s colors. You can redo it as you like with the same editor as the posters.', 'En Telegram, WhatsApp y Discord el enlace muestra esta imagen, dibujada con los colores de tu página. Puedes rehacerla como quieras con el mismo editor de los carteles.')}</p>
           <div id="lp-carta-box">${attesaHtml()}</div>
-        </details>
+        </details>`}
 
         <details class="carta sez" open>
           <summary><h3>${L('Contenuti', 'Content', 'Contenido')}</h3></summary>
@@ -22416,6 +22550,8 @@ async function caricaPaginaLink(ridisegna = false, quale = null) {
             <button type="button" class="btn secondario mini" data-lpadd="numeri">${L('Numeri', 'Numbers', 'Números')}</button>
             <button type="button" class="btn secondario mini" data-lpadd="faq">${L('Domande frequenti', 'FAQ', 'Preguntas frecuentes')}</button>
             <button type="button" class="btn secondario mini" data-lpadd="conto">${L('Conto alla rovescia', 'Countdown', 'Cuenta atrás')}</button>
+            <button type="button" class="btn secondario mini" data-lpadd="programma">${L('Il mio programma', 'My schedule', 'Mi horario')}</button>
+            <button type="button" class="btn secondario mini" data-lpadd="comandi">${L('I comandi della chat', 'Chat commands', 'Los comandos del chat')}</button>
             <button type="button" class="btn secondario mini" data-lpadd="sostieni">${L('Sostieni (donazioni)', 'Support me (donations)', 'Apóyame (donaciones)')}</button>
             <button type="button" class="btn secondario mini" data-lpadd="donatori">${L('Chi ha donato', 'Who donated', 'Quién donó')}</button>
             <button type="button" class="btn secondario mini" data-lpadd="separatore">${L('Riga divisoria', 'Divider', 'Separador')}</button>`}
@@ -22732,6 +22868,8 @@ async function caricaPaginaLink(ridisegna = false, quale = null) {
       numeri: { tipo: 'numeri', voci: [{ n: '', etichetta: '' }, { n: '', etichetta: '' }, { n: '', etichetta: '' }] },
       faq: { tipo: 'faq', voci: [{ d: '', r: '' }] },
       conto: { tipo: 'conto', titolo: '', quando: '', finito: '' },
+      programma: { tipo: 'programma', titolo: '', prossima: true },
+      comandi: { tipo: 'comandi', titolo: '', risposte: true },
       sostieni: { tipo: 'sostieni', titolo: '', testo: '', etichetta: '', obiettivo: true, icona: 'cuore' },
       donatori: { tipo: 'donatori', titolo: '', quanti: 5, modo: 'ultimi', periodo: 'sempre' },
       griglia: { tipo: 'griglia', voci: [{ img: '', titolo: '', testo: '', url: '' }, { img: '', titolo: '', testo: '', url: '' }] },
@@ -23065,6 +23203,8 @@ const NOMI_BLOCCO = () => ({ link: L('Link', 'Link', 'Enlace'), social: L('Riga 
     scritta: L('Scritta che scorre', 'Scrolling text', 'Texto que se desplaza'),
     numeri: L('Numeri', 'Numbers', 'Números'), faq: L('Domande frequenti', 'FAQ', 'Preguntas frecuentes'),
     conto: L('Conto alla rovescia', 'Countdown', 'Cuenta atrás'),
+    programma: L('Il mio programma', 'My schedule', 'Mi horario'),
+    comandi: L('I comandi della chat', 'Chat commands', 'Los comandos del chat'),
     sostieni: L('Sostieni (donazioni)', 'Support me (donations)', 'Apóyame (donaciones)'),
     donatori: L('Chi ha donato', 'Who donated', 'Quién donó'),
     separatore: L('Riga divisoria', 'Divider', 'Separador'),
@@ -23077,7 +23217,7 @@ const NOMI_BLOCCO = () => ({ link: L('Link', 'Link', 'Enlace'), social: L('Riga 
 
 const ICO_BLOCCO = { link: 'link', social: 'cuore', titolo: 'stella', testo: 'mail', immagine: 'video',
   embed: 'video', diretta: 'twitch', eroe: 'stella', griglia: 'gioco', scritta: 'musica',
-  numeri: 'soldi', faq: 'mail', conto: 'calendario', sostieni: 'cuore', donatori: 'stella', separatore: 'link',
+  numeri: 'soldi', faq: 'mail', conto: 'calendario', programma: 'calendario', comandi: 'gioco', sostieni: 'cuore', donatori: 'stella', separatore: 'link',
   spazio: 'link', intestazione: 'stella', vetrina: 'stella', articoli: 'carrello', comecompra: 'carrello', piede: 'link' };
 
 function lpAggiungiNegozioHtml() {
@@ -23297,6 +23437,14 @@ function lpRenderBlocchi() {
         <input type="datetime-local" data-lpb="${i}" data-lpf="quando" value="${esc(b.quando || '')}">
         <input type="text" class="spazio-sopra" data-lpb="${i}" data-lpf="finito" maxlength="${d.limiti.label}" value="${esc(b.finito || '')}" placeholder="${esc(L('Cosa scrivere quando è ora (es. SONO LIVE!)', 'What to show when the time comes (e.g. I\'M LIVE!)', 'Qué poner cuando llega la hora (p. ej. ¡ESTOY EN DIRECTO!)'))}">
         <p class="suggerimento">${L('Scala di secondo in secondo. L\'ora la scrivi nel TUO fuso: chi guarda la vede nel suo, ci pensa il suo telefono.', 'It ticks down every second. You write the time in YOUR timezone: whoever looks sees it in theirs, their phone handles it.', 'Baja segundo a segundo. La hora la escribes en TU huso: quien la mira la ve en el suyo, se encarga su móvil.')}</p>`;
+    } else if (b.tipo === 'programma') {
+      campi = `<input type="text" data-lpb="${i}" data-lpf="titolo" maxlength="${d.limiti.label}" value="${esc(b.titolo || '')}" placeholder="${esc(L('Titolo (es. QUANDO SONO IN DIRETTA)', 'Heading (e.g. WHEN I AM LIVE)', 'Título (p. ej. CUÁNDO ESTOY EN DIRECTO)'))}">
+        <label class="riga-check spazio-sopra"><input type="checkbox" data-lpb="${i}" data-lpf="prossima"${b.prossima !== false ? ' checked' : ''}> ${L('Segna la prossima diretta', 'Mark the next stream', 'Marca el próximo directo')}</label>
+        <p class="suggerimento">${L('I giorni e le ore vengono dalla scheda «La tua settimana» e si aggiornano da soli: la cambi là e cambia anche qui.', 'The days and times come from the «Your week» tab and update by themselves: change it there and it changes here too.', 'Los días y las horas vienen de la pestaña «Tu semana» y se actualizan solos: la cambias allí y cambia también aquí.')}</p>`;
+    } else if (b.tipo === 'comandi') {
+      campi = `<input type="text" data-lpb="${i}" data-lpf="titolo" maxlength="${d.limiti.label}" value="${esc(b.titolo || '')}" placeholder="${esc(L('Titolo (es. I COMANDI DELLA CHAT)', 'Heading (e.g. CHAT COMMANDS)', 'Título (p. ej. LOS COMANDOS DEL CHAT)'))}">
+        <label class="riga-check spazio-sopra"><input type="checkbox" data-lpb="${i}" data-lpf="risposte"${b.risposte !== false ? ' checked' : ''}> ${L('Scrivi anche cosa risponde il bot', 'Also show what the bot answers', 'Escribe también qué responde el bot')}</label>
+        <p class="suggerimento">${L('Ci sono i comandi della scheda «Comandi» che può usare chiunque, sempre aggiornati: quelli solo per i moderatori non compaiono. La risposta si vede quando è una frase fissa.', 'It lists the commands from the «Commands» tab that anyone can use, always up to date: the ones for moderators only do not show. The answer shows when it is a fixed sentence.', 'Aparecen los comandos de la pestaña «Comandos» que puede usar cualquiera, siempre al día: los que son solo para moderadores no salen. La respuesta se ve cuando es una frase fija.')}</p>`;
     } else if (b.tipo === 'scritta') {
       const VEL = { lenta: L('Lenta', 'Slow', 'Lenta'), media: L('Media', 'Medium', 'Media'), veloce: L('Veloce', 'Fast', 'Rápida') };
       campi = `<input type="text" data-lpb="${i}" data-lpf="testo" maxlength="${d.limiti.titolo}" value="${esc(b.testo || '')}" placeholder="${esc(L('es. OGNI SERA DALLE 21 ·', 'e.g. EVERY NIGHT FROM 9PM ·', 'p. ej. CADA NOCHE DESDE LAS 21 ·'))}">

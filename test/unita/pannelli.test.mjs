@@ -24,7 +24,8 @@ function tela() {
     fillText(t, x, y) { this.scritte.push({ t, x, y, px: Number(/(\d+)px/.exec(this.font)[1]), colore: this.fillStyle, align: this.textAlign }); },
     drawImage(...a) { this.immagini.push(a); },
     setTransform(a, b, c, d) { this.scala = [a, d]; },
-    clearRect() {}, fillRect() {}, beginPath() {}, moveTo() {}, arcTo() {}, closePath() {}, fill() {}, stroke() {},
+    clearRect() {}, fillRect() {}, beginPath() { this.tratto = []; }, moveTo(x, y) { this.tratto.push([x, y]); }, lineTo(x, y) { this.tratto.push([x, y]); },
+    arcTo() {}, closePath() {}, fill() {}, stroke() { (this.tratti ||= []).push({ punti: this.tratto, colore: this.strokeStyle }); },
   };
 }
 const CAR = { famiglia: 'Archivo', peso: 800, stile: '' };
@@ -63,8 +64,28 @@ test('il testo contrasta sempre almeno 4,5 col suo sfondo, qualunque accento', (
       colori++;
     }
   }
-  assert.equal(colori, 216 * 3);
+  assert.equal(colori, 216 * P.TEMI.length);
   assert.equal(P.tavolozza('carta', { acc: '#b8237f' }, K).accento, '#b8237f', 'un accento che contrasta resta suo');
+});
+
+// «I miei colori»: sfondo, testo e accento li sceglie lo streamer, qualunque
+// essi siano. La regola resta la stessa: il testo si legge (4,5), l'accento
+// si vede (3) o prende il colore del testo.
+test('i miei colori: qualunque scelta, il testo si legge e l\'accento si vede', () => {
+  const passi = [0, 85, 170, 255];
+  const hex = (r, g, b) => '#' + [r, g, b].map((x) => x.toString(16).padStart(2, '0')).join('');
+  const tutti = [];
+  for (const r of passi) for (const g of passi) for (const b of passi) tutti.push(hex(r, g, b));
+  let prove = 0;
+  for (const fondo of tutti) for (const testo of ['#000000', '#ffffff', '#808080', fondo]) for (const accento of ['#ff0000', '#00ff00', '#0000ff', fondo]) {
+    const c = P.tavolozza('miei', null, K, { fondo, testo, accento });
+    assert.equal(c.fondo, fondo, 'lo sfondo e\' quello scelto');
+    assert.ok(K.contrasto(c.testo, c.fondo) >= 4.5, `testo ${testo} su ${fondo}: diventa ${c.testo}`);
+    assert.ok(c.accento === c.testo || K.contrasto(c.accento, c.fondo) >= 3, `accento ${accento} su ${fondo}`);
+    if (K.contrasto(testo, fondo) >= 4.5) assert.equal(c.testo, testo, 'un testo che si legge resta suo');
+    prove++;
+  }
+  assert.equal(prove, 64 * 16);
 });
 
 test('il titolo parte grande e si rimpicciolisce finche\' ci sta', () => {
@@ -164,19 +185,27 @@ test('i file si chiamano in ordine, senza accenti ne\' spazi', () => {
 });
 
 test('quello che si salva ha forma', () => {
-  assert.deepEqual(S.normPannelli(null), { stile: { tema: 'pagina', forma: 'penna', carattere: 'archivo', altezza: 100, icone: true }, voci: [] });
+  const COLORI_BASE = { fondo: '#151216', testo: '#f4eef2', accento: '#b8237f' };
+  assert.deepEqual(S.normPannelli(null), { stile: { tema: 'pagina', forma: 'penna', carattere: 'archivo', altezza: 100, icone: true, freccia: false, colori: COLORI_BASE }, voci: [] });
+  assert.deepEqual(S.MIEI_BASE, P.MIEI_BASE, 'i colori di serie sono gli stessi nel motore e nel server');
   const n = S.normPannelli({
     stile: { tema: 'rosa', forma: 'netta', carattere: 'serif', altezza: '160', icone: false },
     voci: [
-      { id: 'chi', tipo: 'chi', titolo: '  Chi\n   sono  ', icona: 'utente', link: 'javascript:alert(1)', testo: 'riga uno\r\nriga due\n\n\n\nfine' },
+      { id: 'chi', tipo: 'chi', titolo: '  Chi\n   sono  ', icona: 'utente', link: 'javascript:alert(1)', testo: 'riga uno\r\nriga due\n\n\n\nfine', pagina: true, sottotitolo: '  tutto\n su di me ' },
       { id: 'chi', tipo: 'boh', titolo: 'x'.repeat(80), icona: 'non-esiste', link: 'https://socialbot.live/u/a', testo: 'y'.repeat(2000) },
       null, 7,
       ...Array.from({ length: 20 }, (_, i) => ({ tipo: 'libero', titolo: `L${i}` })),
     ],
   });
-  assert.deepEqual(n.stile, { tema: 'pagina', forma: 'netta', carattere: 'serif', altezza: 160, icone: false });
+  assert.deepEqual(n.stile, { tema: 'pagina', forma: 'netta', carattere: 'serif', altezza: 160, icone: false, freccia: false, colori: COLORI_BASE });
   assert.equal(n.voci.length, S.MAX.voci);
-  assert.deepEqual(n.voci[0], { id: 'chi', tipo: 'chi', titolo: 'Chi sono', icona: 'utente', link: '', testo: 'riga uno\nriga due\n\nfine' });
+  assert.deepEqual(n.voci[0], { id: 'chi', tipo: 'chi', titolo: 'Chi sono', sottotitolo: 'tutto su di me', icona: 'utente', link: '', pagina: true, testo: 'riga uno\nriga due\n\nfine' });
+  assert.equal(n.voci[1].pagina, false, 'la pagina sua solo se chiesta');
+  const miei = S.normPannelli({ stile: { tema: 'miei', freccia: true, colori: { fondo: '#ABCDEF', testo: 'rosso', accento: '#123' } } }).stile;
+  assert.equal(miei.tema, 'miei');
+  assert.equal(miei.freccia, true);
+  assert.deepEqual(miei.colori, { fondo: '#abcdef', testo: COLORI_BASE.testo, accento: COLORI_BASE.accento }, 'un colore che non e\' #rrggbb torna quello di serie');
+  assert.equal(S.normPannelli({ voci: [{ tipo: 'dona', pagina: true }] }).voci[0].pagina, false, '«Sostienimi» porta alla pagina delle donazioni, non a una sua');
   assert.equal(n.voci[1].id, 'chi-2', 'lo stesso id due volte: il secondo cambia, e il bordo a penna resta suo');
   assert.equal(n.voci[1].tipo, 'libero');
   assert.equal(n.voci[1].titolo.length, S.MAX.titolo);
@@ -203,4 +232,52 @@ test('il pannello si stampa alla densita\' dei telefoni, col disegno pensato a 3
   assert.ok(APP.includes('densita: P.DENSITA'), 'e il pannello ci disegna sopra a quella densita\'');
   const svg = /viewBox="0 0 24 24" width="(\d+)" height="\1" fill="none" stroke="\$\{colore\}"/.exec(APP);
   assert.ok(svg && Number(svg[1]) >= 56 * P.DENSITA, 'l\'icona nasce grande almeno quanto la sua misura stampata');
+});
+
+// Il sottotitolo: una riga piccola sotto il titolo, che sta nell'altezza piu'
+// bassa. Le due righe stanno dentro il pannello, il titolo sopra, il
+// sottotitolo sotto e piu' piccolo.
+test('il sottotitolo sta sotto il titolo, piu\' piccolo, e dentro il pannello a ogni altezza', () => {
+  for (const h of P.ALTEZZE) {
+    const g = tela();
+    const r = P.disegna(g, { h, titolo: 'Chi sono', sottotitolo: 'tutto su di me', icona: ICONA, colori: COL, forma: 'netta', carattere: CAR });
+    assert.equal(g.scritte.length, 2, `${h}: due righe`);
+    const [t, st] = g.scritte;
+    assert.equal(t.t, 'Chi sono'); assert.equal(st.t, 'tutto su di me');
+    assert.ok(st.px < t.px && st.px >= P.MIN_SOTTO, `${h}: il sottotitolo e\' piu\' piccolo (${st.px} < ${t.px})`);
+    assert.ok(t.y < st.y, `${h}: il titolo sta sopra`);
+    assert.ok(t.y - t.px / 2 >= 6 && st.y + st.px / 2 <= h - 6, `${h}: le due righe stanno dentro il pannello`);
+    assert.equal(r.pxSotto, st.px);
+  }
+  const g = tela();
+  P.disegna(g, { h: 100, titolo: 'Chi sono', sottotitolo: '   ', icona: ICONA, colori: COL, forma: 'netta', carattere: CAR });
+  assert.equal(g.scritte.length, 1, 'un sottotitolo vuoto non c\'e\'');
+});
+
+test('anche il sottotitolo ha una misura sola per la serie', () => {
+  const o = (sottotitolo) => ({ h: 100, forma: 'netta', titolo: 'Programma', sottotitolo, icona: ICONA, carattere: CAR });
+  const voci = [o('lun mer ven'), o('ogni sera dalle nove fino a tardi, quasi sempre')];
+  const px = Math.min(...voci.map((x) => P.misura(tela(), x)));
+  const ps = Math.min(...voci.map((x) => P.misuraSotto(tela(), x, px)));
+  const misure = voci.map((x) => { const g = tela(); P.disegna(g, { ...x, colori: COL, px, pxSotto: ps }); return g.scritte[1].px; });
+  assert.equal(new Set(misure).size, 1, `la stessa misura per tutti: ${misure}`);
+  assert.equal(P.misuraSotto(tela(), o(''), px), Infinity, 'chi non ha sottotitolo non conta');
+});
+
+// La freccina: solo sui pannelli che portano da qualche parte (lo decide chi
+// disegna, col link vero), col colore dell'accento, e il titolo le lascia posto.
+test('la freccina c\'e\' solo se chiesta, e il titolo le lascia posto', () => {
+  const senza = tela(), con = tela();
+  P.disegna(senza, { h: 100, titolo: 'Discord', colori: COL, forma: 'netta', carattere: CAR });
+  P.disegna(con, { h: 100, titolo: 'Discord', colori: COL, forma: 'netta', carattere: CAR, freccia: true });
+  const freccine = (g) => (g.tratti || []).filter((x) => x.punti.length === 3);
+  assert.equal(freccine(senza).length, 0, 'senza, niente freccina');
+  assert.equal(freccine(con).length, 1, 'con, una');
+  assert.equal(freccine(con)[0].colore, COL.accento);
+  const [a, b, c] = freccine(con)[0].punti;
+  assert.ok(b[0] > a[0] && b[0] > c[0] && a[1] < b[1] && c[1] > b[1], 'punta a destra');
+  assert.ok(b[0] <= P.W - 6, 'e sta dentro il pannello');
+  assert.ok(con.scritte[0].x < senza.scritte[0].x, 'il titolo centrato si sposta a sinistra per farle posto');
+  const largo = 'Quando sono in diretta';
+  assert.ok(P.misura(tela(), { h: 100, titolo: largo, icona: ICONA, carattere: CAR, freccia: true }) <= P.misura(tela(), { h: 100, titolo: largo, icona: ICONA, carattere: CAR }), 'e se serve si rimpicciolisce per non toccarla');
 });

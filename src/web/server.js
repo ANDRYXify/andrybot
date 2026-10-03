@@ -25,7 +25,7 @@ import * as consolle from '../features/console.js';   // CONSOLify + tastiera fi
 import { makeLog } from '../logger.js';
 import { db, tokens, streamers, memory, clips, knowledge, QUANDO_CONOSCENZA, schedaPulita, effects as effectsDb, SCHERMI, normComando, baseDaFile, modules as modulesDb, MAX_MODULI, friends, sfondi as sfondiDb, carteLive, tgAttesa, gsiStato, mortiSchede } from '../db.js';
 import { points, vips, tgConf, tgDest, amici, tgVisti, feedFonti, dcConf, passkeys, managers, quotes, battute, compleanni, membri, subscriptions, giochi as giochiDb, guide, GUIDE_MAX, pointAlerts, tgLogin, contatori, rapporti, postaStreamer, dcRuoli, dcLink, dcGiri, dcAccesso, dcDest, avvisiConf } from '../db.js';
-import { linkPage, visitePagina, TEMPLATE_LINKPAGE, LIMITI_LINKPAGE, FONT_LINKPAGE, ICONE_LINKPAGE, TIPI_BLOCCO, TIPI_PAGINA_NEGOZIO, contiDonazioni, contiSatispay, registroDonazioni, paginaDona, paginaNegozio, cartePagina, accessi, recensioni as recensioniDb, campagneDb, sito } from '../db.js';
+import { linkPage, visitePagina, TEMPLATE_LINKPAGE, LIMITI_LINKPAGE, FONT_LINKPAGE, ICONE_LINKPAGE, TIPI_BLOCCO, TIPI_PAGINA_NEGOZIO, contiDonazioni, contiSatispay, registroDonazioni, paginaDona, paginaNegozio, paginaPannello, cartePagina, accessi, recensioni as recensioniDb, campagneDb, sito } from '../db.js';
 import { puoRecensire, validaRecensione, statoDopo, invitoAperto, rimandaFino, vetrinaDi, TESTO_MAX } from '../features/recensioni.js';
 import { funzioniCanale, concessioneDi } from '../features/accesso.js';
 import { canaleHa } from '../features/accesso.js';
@@ -2035,6 +2035,21 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // l'indirizzo dell'immagine da scrivere nella pagina: solo se il server sa disegnarla
   const immagineAnteprimaDi = (login, quale) => (cartaLive.disegnabile() ? `${config.baseUrl}/u/${login}/anteprima${quale === 'link' ? '' : '-' + quale}.png` : '');
 
+  // LE PAGINE DIETRO I PANNELLI (docs/STRUMENTI.md): l'indirizzo, e i pezzi
+  // vivi di ogni pagina (programma, comandi), letti quando la pagina si apre e
+  // solo se la pagina li mostra.
+  const urlPaginaPannello = (login, id) => `${config.baseUrl}/u/${login}/p/${id}`;
+  const viviDi = (login) => (blocchi) => {
+    const usa = (t) => (blocchi || []).some((b) => b?.tipo === t);
+    const out = {};
+    if (usa('programma')) {
+      const sett = settimana.settimanaDi(streamers.get(login)?.settings);
+      out.programma = { giorni: sett.giorni, fuso: sett.fuso, prossima: settimana.prossimaDiretta(sett) };
+    }
+    if (usa('comandi')) out.comandi = pannelliTw.comandiPubblici(modulesDb.list(login));
+    return out;
+  };
+
   // Informativa privacy della pagina pubblica. Va messa sempre, anche senza
   // cookie: il banner serve solo per i cookie non essenziali, ma dire chi tratta
   // i dati e quali è un obbligo che dai cookie non dipende.
@@ -2098,6 +2113,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       urlDona: donazioni.urlPaginaDona(login),
       donatori: donatoriPer(login, p.blocchi),
       immagineAnteprima: immagineAnteprimaDi(login, 'link'),
+      vivi: viviDi(login)(p.blocchi),
     });
     // Una visita in più. Contiamo SOLO quante volte la pagina è stata aperta:
     // niente indirizzi IP, niente cookie, niente su chi c'era. I robot li
@@ -2149,6 +2165,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       urlLink: link?.attiva ? `${config.baseUrl}/u/${login}` : '',
       donatori: donatoriPer(login, p.blocchi),
       immagineAnteprima: immagineAnteprimaDi(login, 'dona'),
+      vivi: viviDi(login)(p.blocchi),
     });
     if (dona) res.set('Cache-Control', 'private, no-store');
     else res.set('Cache-Control', 'public, max-age=0, s-maxage=60, stale-while-revalidate=300');
@@ -2172,6 +2189,50 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     }
     res.set('Cache-Control', 'public, max-age=0, s-maxage=60, stale-while-revalidate=300');
     res.type('html').send(html);
+  }));
+  // LA PAGINA DIETRO UN PANNELLO (docs/STRUMENTI.md). Si apre solo se e'
+  // accesa E il pannello salvato ci porta: un pannello tolto, o che porta a
+  // un indirizzo, si porta via la sua pagina senza cancellarla (se torna,
+  // torna com'era). Nessuna pagina pubblica senza il pannello che ci porta.
+  // Ha l'aspetto della pagina link (o il suo), i pezzi vivi letti adesso, e
+  // non conta visite: e' una porta da Twitch, non una pagina da misurare.
+  const portaAllaPagina = (s, id) => pannelliTw.portaAllaPagina(s?.settings?.pannelli, id);
+  app.get('/u/:user/p/:id', wrap(async (req, res) => {
+    const login = String(req.params.user || '').toLowerCase();
+    const id = String(req.params.id || '').toLowerCase();
+    if (!eLoginNostro(login) || !paginaPannello.idOk(id)) return notFound(res);
+    const p = paginaPannello.get(login, id);
+    const s = streamers.get(login);
+    if (!p || !p.attiva || !portaAllaPagina(s, id)) return notFound(res);
+    const link = linkPage.get(login);
+    const html = renderLinkPage(aspettoDi(p, link), {
+      login, display: s?.display || login, avatar: await avatarDi(login), baseUrl: config.baseUrl,
+      sostieni: donazioni.datiSostieni(s?.settings, contiDi(login)), urlDona: donazioni.urlPaginaDona(login),
+      urlLink: link?.attiva ? `${config.baseUrl}/u/${login}` : '',
+      donatori: donatoriPer(login, p.blocchi),
+      immagineAnteprima: link?.attiva ? immagineAnteprimaDi(login, 'link') : '',
+      dietro: { url: urlPaginaPannello(login, id) },
+      vivi: viviDi(login)(p.blocchi),
+    });
+    res.set('Cache-Control', 'public, max-age=0, s-maxage=60, stale-while-revalidate=300');
+    res.type('html').send(html);
+  }));
+  // La sua informativa, alla stessa condizione della pagina: il piede di una
+  // pagina dietro un pannello porta qui, non a quella della pagina link (che
+  // puo' essere spenta, e parla dei pezzi di un'altra pagina).
+  app.get('/u/:user/p/:id/privacy', wrap(async (req, res) => {
+    const login = String(req.params.user || '').toLowerCase();
+    const id = String(req.params.id || '').toLowerCase();
+    if (!eLoginNostro(login) || !paginaPannello.idOk(id)) return notFound(res);
+    const p = paginaPannello.get(login, id);
+    const s = streamers.get(login);
+    if (!p || !p.attiva || !portaAllaPagina(s, id)) return notFound(res);
+    res.set('Cache-Control', 'public, max-age=0, s-maxage=300');
+    res.type('html').send(renderInformativa({
+      login, display: s?.display || login, baseUrl: config.baseUrl, pagina: aspettoDi(p, linkPage.get(login)),
+      contatto: config.contattoPrivacy || '', quale: 'dietro', urlTorna: urlPaginaPannello(login, id),
+      sostieni: donazioni.datiSostieni(s?.settings, contiDi(login)),
+    }));
   }));
   // La porta PUBBLICA delle immagini degli articoli: senza sessione e senza la
   // chiave dell'overlay, ma solo per un'immagine di QUEL canale che un articolo
@@ -2292,6 +2353,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     const html = htmlAnteprima('link', { ...b, blocchi: await risolviCanaliYoutube(b.blocchi, login) }, {
       login, display: s?.display || login, avatar: await avatarDi(login), baseUrl: config.baseUrl,
       settings: s?.settings, conti: contiDi(login), donatori: (blocchi) => donatoriPer(login, blocchi),
+      vivi: viviDi(login),
     });
     res.json({ html });
   }));
@@ -2348,6 +2410,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       login, display: s?.display || login, avatar: await avatarDi(login), baseUrl: config.baseUrl,
       aspetto: aspettoInArrivo(login, b.aspetto), link: linkPage.get(login),
       settings: s?.settings, conti: contiDi(login), donatori: (blocchi) => donatoriPer(login, blocchi),
+      vivi: viviDi(login),
     });
     res.json({ html });
   }));
@@ -2355,6 +2418,76 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     const login = currentUser(req).login;
     const p = paginaDona.get(login);
     if (p) paginaDona.salva(login, { ...p, attiva: false });
+    res.json({ ok: true, pubblicata: false });
+  }));
+
+  // ── Le pagine dietro i pannelli: lo stesso editor, un tavolo per pannello ──
+  // L'id e' quello del pannello (settings.pannelli.voci[].id). La pagina si
+  // salva anche prima che la serie dei pannelli sia salvata, ma si apre solo
+  // quando il pannello salvato ci porta (portaAllaPagina): «pubblicata» lo dice.
+  const idPannello = (req) => String(req.params.id || '').toLowerCase();
+  const pubblicaPannello = (p) => ({ headline: p.headline || '', tagline: p.tagline || '', template: p.template || 'minimal',
+    avatar: p.avatar || '', tema: p.tema, blocchi: p.blocchi || [], attiva: p.attiva !== false, aggiornata: p.ts || null, aspetto: p.aspetto });
+  app.get('/api/paginapannello/:id', requireOwner, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const id = idPannello(req);
+    if (!paginaPannello.idOk(id)) return res.status(400).json({ errore: 'pannello non valido' });
+    const s = streamers.get(login);
+    const esiste = paginaPannello.esiste(login, id);
+    const p = paginaPannello.conDefault(login, id, s?.display || login);
+    const link = linkPage.get(login);
+    res.json({
+      url: urlPaginaPannello(login, id), esiste,
+      pubblicata: esiste && p.attiva && portaAllaPagina(s, id),
+      // salvata e accesa, ma il pannello salvato non ci porta ancora
+      aspettaPannello: esiste && p.attiva && !portaAllaPagina(s, id),
+      aspettoLink: link ? { template: link.template, tema: link.tema } : null,
+      templates: TEMPLATE_LINKPAGE, fonts: FONT_LINKPAGE, icone: ICONE_LINKPAGE, tipi: TIPI_BLOCCO, limiti: LIMITI_LINKPAGE,
+      temaBase: paginaPannello.pulisci({}).tema,
+      avatarTwitch: await avatarDi(login, { aggiorna: true }),
+      visite: null, suggeriti: [],
+      pagina: { ...pubblicaPannello(p), headline: esiste ? p.headline : '' },
+    });
+  }));
+  app.post('/api/paginapannello/:id', requireOwner, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const id = idPannello(req);
+    if (!paginaPannello.idOk(id)) return res.status(400).json({ errore: 'pannello non valido' });
+    const b = req.body || {};
+    const inviati = Array.isArray(b.blocchi) ? b.blocchi.length : 0;
+    const prima = paginaPannello.get(login, id);
+    const p = paginaPannello.salva(login, id, {
+      headline: b.headline, tagline: b.tagline, template: b.template, avatar: b.avatar, tema: b.tema,
+      blocchi: await risolviCanaliYoutube(b.blocchi, login), attiva: b.attiva !== false,
+      aspetto: b.aspetto === 'link' || b.aspetto === 'suo' ? b.aspetto : (prima?.aspetto || 'link'),
+    });
+    res.json({
+      ok: true, url: urlPaginaPannello(login, id), pubblicata: !!p?.attiva && portaAllaPagina(streamers.get(login), id),
+      aspettaPannello: !!p?.attiva && !portaAllaPagina(streamers.get(login), id),
+      salvati: p?.blocchi?.length || 0, inviati, pagina: pubblicaPannello(p),
+    });
+  }));
+  app.post('/api/paginapannello/:id/anteprima', requireOwner, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const id = idPannello(req);
+    if (!paginaPannello.idOk(id)) return res.status(400).json({ errore: 'pannello non valido' });
+    const s = streamers.get(login);
+    const b = req.body || {};
+    const html = htmlAnteprima('pannello', { ...b, blocchi: await risolviCanaliYoutube(b.blocchi, login) }, {
+      login, display: s?.display || login, avatar: await avatarDi(login), baseUrl: config.baseUrl,
+      aspetto: b.aspetto === 'link' || b.aspetto === 'suo' ? b.aspetto : (paginaPannello.get(login, id)?.aspetto || 'link'),
+      link: linkPage.get(login), urlPannello: urlPaginaPannello(login, id),
+      settings: s?.settings, conti: contiDi(login), donatori: (blocchi) => donatoriPer(login, blocchi),
+      vivi: viviDi(login),
+    });
+    res.json({ html });
+  }));
+  app.delete('/api/paginapannello/:id', requireOwner, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const id = idPannello(req);
+    if (!paginaPannello.idOk(id)) return res.status(400).json({ errore: 'pannello non valido' });
+    const p = paginaPannello.get(login, id);
+    if (p) paginaPannello.salva(login, id, { ...p, attiva: false });
     res.json({ ok: true, pubblicata: false });
   }));
 
@@ -7291,6 +7424,10 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
       settimana: settimana.vistaSettimana(settimana.settimanaDi(s?.settings)),
       comandi,
       pannelli: s?.settings?.pannelli ? pannelliTw.normPannelli(s.settings.pannelli) : null,
+      // le pagine dietro i pannelli accese: un pannello porta alla sua solo se
+      // c'e' ed e' accesa, se no il suo link resta vuoto
+      pagine: Object.fromEntries(paginaPannello.accese(login).map((r) => [r.pannello, urlPaginaPannello(login, r.pannello)])),
+      basePagine: `${config.baseUrl}/u/${login}/p/`,
     });
   }));
 

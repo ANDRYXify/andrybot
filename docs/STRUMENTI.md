@@ -13,7 +13,8 @@ diretta e che non sono il bot:
 - **Media kit** (`kit`): il foglio A4 da mandare ai marchi, coi numeri delle
   dirette misurati da noi, in PDF coi link cliccabili o in PNG;
 - **Pannelli** (`pannelli`): i pannelli sotto il canale Twitch, tutti nello
-  stesso stile, con link e descrizioni già scritti da quello che il canale ha.
+  stesso stile, con link e descrizioni già scritti da quello che il canale ha;
+  ognuno può aprire una pagina sua, con quello che nel pannello non ci sta.
 
 Un gruppo con una scheda sola il cancello delle sorelle non lo accetta: per
 questo si è partiti con due strumenti veri, non con uno e un segnaposto.
@@ -381,10 +382,15 @@ campo si riscrive a mano; un pannello libero ha solo quello che ci si scrive.
 
 I pannelli stanno in fila sulla stessa pagina: uno diverso dagli altri si nota
 subito. Per questo lo stile è della serie, non del pannello: tema, forma,
-carattere, icone sì o no, altezza. Il pannello sceglie solo titolo e icona.
+carattere, icone sì o no, altezza, freccina sì o no. Il pannello sceglie titolo,
+sottotitolo, icona e dove porta.
 
 - **Tema.** «Pagina»: lo sfondo è l'accento della pagina link. «Carta» e
-  «Notte»: chiaro e scuro, con l'accento sulle icone e sul bordo.
+  «Notte»: chiaro e scuro, con l'accento sulle icone e sul bordo. «I miei
+  colori»: sfondo, testo e accento scelti dallo streamer, con la stessa regola
+  di contrasto qui sotto (il testo che non si legge diventa bianco o nero,
+  l'accento che non si vede prende il colore del testo). La prova li prova
+  tutti su una griglia di colori, testo uguale allo sfondo compreso.
 - **Forma.** «A penna»: il bordo disegnato dalla penna di casa (quella del QR
   e delle carte del pannello), con un seme per pannello, così ogni bordo è un
   po' diverso come quelli fatti a mano, ma sempre lo stesso a ogni disegno.
@@ -392,8 +398,20 @@ carattere, icone sì o no, altezza. Il pannello sceglie solo titolo e icona.
 - **Carattere.** Gli stessi delle Grafiche social.
 - **Altezza.** 80, 100 o 160 pixel.
 
+- **Freccina.** Una punta a destra, del colore dell'accento, sui pannelli che
+  portano da qualche parte. La decide chi disegna, col link VERO del pannello
+  (`_panLink`): un pannello senza link, o con la sua pagina non pubblicata, non
+  la ha. Il titolo le lascia posto e, se serve, si rimpicciolisce.
+
 Fuori dalla forma lo sfondo è trasparente: sulla pagina di Twitch, chiara o
 scura, si vede solo il pannello.
+
+Il **sottotitolo** è una riga piccola sotto il titolo. Con il sottotitolo il
+titolo parte da 0,32 dell'altezza invece di 0,4, e il sottotitolo da metà del
+titolo (mai sotto 11 pixel): così le due righe stanno anche nei pannelli bassi
+(80), con aria sopra e sotto. Anche il sottotitolo ha una misura sola per la
+serie (`misuraSotto`), quella che fa stare il più lungo; solo sotto gli 11 pixel
+si accorcia, e la scheda lo dice.
 
 ### Si legge per costruzione
 
@@ -417,6 +435,65 @@ proprio quel nero sulla fascia del contatto; il collaudo dei pannelli, che
 prova tutti i colori di una griglia 6×6×6, l'ha trovato, e adesso la regola
 sta in un posto solo.
 
+### La pagina dietro il pannello
+
+Su Twitch un pannello è un'immagine, un link e una descrizione in Markdown:
+quello che non ci sta non può stare nel pannello, sta dietro il clic. Ogni
+pannello (tranne «Sostienimi», che ha già la pagina delle donazioni) può
+aprire **la sua pagina**, `/u/<login>/p/<id>`, con l'id del pannello.
+
+- È fatta con lo **stesso editor a blocchi** della pagina link, delle donazioni
+  e del negozio: il quarto tavolo (`LP.quale = 'pannello'`, `LP.pannello` =
+  id), con l'aspetto della pagina link di serie (come le donazioni).
+- **Il link del pannello non si scrive**: con «Apre la sua pagina» è
+  l'indirizzo della pagina, calcolato, e resta vuoto finché la pagina non è
+  pubblicata (la scheda lo dice). Non può puntare altrove per sbaglio.
+- **Nasce piena di quello che il pannello promette** (`_panPaginaDiPartenza`):
+  Programma il pezzo `programma`, Comandi il pezzo `comandi`, Chi sono la frase
+  e i social, Social i social, Discord il tasto per entrare, gli altri la
+  descrizione del pannello riga per riga.
+- **Due pezzi vivi**, nuovi e validi su tutte le pagine (anche la pagina link e
+  quella delle donazioni): `programma` (i giorni in onda della settimana, con
+  la prossima segnata e il fuso detto per nome) e `comandi` (i comandi che può
+  usare chiunque, `comandiPubblici` in `src/features/pannelli.js`: moduli
+  accesi, col comando, senza ruolo minimo; la risposta si mostra solo se è una
+  frase fissa, perché con una variabile dentro si leggerebbe il segnaposto). Si
+  leggono quando la pagina si apre (`viviDi` in `server.js`), mai da una copia
+  salvata: cambi la settimana e la pagina è già giusta, senza ricaricare
+  niente su Twitch.
+- **Si apre solo se un pannello salvato ci porta** (`portaAllaPagina`): esiste
+  ed è su «Apre la sua pagina». Un pannello tolto, o che porta a un indirizzo,
+  si porta via la sua pagina senza cancellarla: se torna, torna com'era.
+  Nessuna pagina pubblica senza il pannello che ci porta, per costruzione e
+  non per una pulizia che qualcuno deve ricordarsi di fare.
+- **Non si offre ai motori di ricerca** (`noindex, follow`): è una porta da
+  Twitch, non una pagina da trovare. Non conta visite. Il piede porta alla
+  pagina link, se è pubblicata, e alla **sua informativa**
+  (`/u/<login>/p/<id>/privacy`, `quale: 'dietro'` in `renderInformativa`),
+  aperta alla stessa condizione della pagina e che dice il vero: niente
+  contatore. Quella della pagina link non andava: può essere spenta, e parla
+  di un'altra pagina e di un contatore che qui non c'è. L'anteprima nelle chat
+  è quella della pagina link.
+- **Dove sta**: la tabella `pagina_pannello` ha la colonna `channel` sua
+  (chiave: canale e pannello), così esportazione e cancellazione dell'account
+  (`src/features/esporta.js`) la trovano come trovano tutto il resto.
+  `GET/POST/DELETE /api/paginapannello/:id` e `/anteprima` per l'editor, `GET
+  /u/:user/p/:id` e `/privacy` per chi la apre. La demo la tiene in memoria.
+
+Le prove: `test/unita/pagine-pannelli.test.mjs` (una pagina per pannello, id
+ammessi, esportazione e cancellazione, comandi pubblici, i due pezzi vivi,
+indirizzo e noindex, quando si apre, l'informativa sua),
+`test/contratto/pagine-pannelli.test.mjs` (le porte del server: il canale
+dall'indirizzo o dalla sessione, la stessa regola per pagina, informativa e
+«pubblicata», i pezzi vivi letti adesso), `test/unita/pannelli.test.mjs`
+(sottotitolo, misura unica, freccina, miei colori) e il cancello da browser
+`scripts/verifica-pannelli-pagina.mjs`, al telefono e al computer: il link
+calcolato (niente da copiare finché la pagina non c'è, poi il suo indirizzo),
+la freccina solo dove il pannello porta, la pagina che nasce piena, «Sostienimi»
+senza la scelta, niente che scorre di lato. Con `--selftest` rimette tre
+difetti (freccina su ogni pannello, pagina che nasce vuota, link scritto a mano
+anche con la pagina) e li vuole rossi.
+
 ### Il Markdown
 
 Le descrizioni si scrivono in Markdown perché Twitch le legge così. Quello che
@@ -437,6 +514,7 @@ loro CRC-32. `test/unita/zip.test.mjs` lo fa leggere anche a un lettore che non
 
 `src/web/public/pannelli.js` disegna e prepara i testi (`SB_PANNELLI`),
 `src/web/public/zip.js` scrive lo ZIP, `src/features/pannelli.js` ripulisce
-quello che si salva (`settings.pannelli`), `GET /api/streamer/pannelli` dà i
-dati del canale. Si caricano solo quando si apre la scheda.
+quello che si salva (`settings.pannelli`), sceglie i comandi pubblici e dice
+quando una pagina si apre, `GET /api/streamer/pannelli` dà i dati del canale e
+le pagine accese. Si caricano solo quando si apre la scheda.
 
