@@ -30249,7 +30249,7 @@ const _DEMO_EMOTE = {
   sette: { canale: [{ id: '01DEMO7TVPEPEGAAAAAAAAAAAA', nome: 'demoPepe' }, { id: '01DEMO7TVCATJAMAAAAAAAAAAA', nome: 'demoJam' }], globali: [{ id: '01DEMO7TVEZAAAAAAAAAAAAAAA', nome: 'demoEZ' }] },
   twitch: { canale: [{ id: 'emotesv2_demo1', nome: 'andryxCuore', animata: false }], globali: [{ id: 'emotesv2_demo2', nome: 'demoKappa', animata: false }] },
 };
-const _DEMO_EMOTE_FILE = { '01DEMO7TVPEPEGAAAAAAAAAAAA': '/icons/icon-192.png', '01DEMO7TVCATJAMAAAAAAAAAAA': '/icons/marchio.png', '01DEMO7TVEZAAAAAAAAAAAAAAA': '/icons/marchio-barra.png', emotesv2_demo1: '/icons/icon-192.png', emotesv2_demo2: '/icons/marchio.png' };
+const _DEMO_EMOTE_FILE = { '01DEMO7TVPEPEGAAAAAAAAAAAA': '/icons/icon-192.png?v=9', '01DEMO7TVCATJAMAAAAAAAAAAA': '/icons/marchio.png?v=9', '01DEMO7TVEZAAAAAAAAAAAAAAA': '/icons/marchio-barra.png?v=9', emotesv2_demo1: '/icons/icon-192.png?v=9', emotesv2_demo2: '/icons/marchio.png?v=9' };
 
 const _demoPezzi = {};
 function _urlPezzo(x) {
