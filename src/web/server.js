@@ -2243,6 +2243,29 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     res.sendFile(join(effectsRoot, m.channel, m.file), { maxAge: '300s' }, (err) => { if (err && !res.headersSent) notFound(res); });
   });
 
+  // IL MODULO DI UN ACQUISTO (features/negozio-moduli.js): l'indirizzo che la
+  // chat da' a chi scrive !compra per un articolo col modulo. Senza sessione
+  // per costruzione (chi compra e' uno spettatore): l'indirizzo apre la bozza,
+  // le risposte danno un codice, e a comprare e' il codice scritto in chat dal
+  // suo account. Canale e bozza vengono solo dall'indirizzo; niente si conserva
+  // nel browser, niente si indicizza, niente si porta dietro il referrer.
+  const moduloSenzaTracce = (res) => res.set({ 'Cache-Control': 'private, no-store', 'Referrer-Policy': 'no-referrer', 'X-Robots-Tag': 'noindex, nofollow' });
+  const tokenModulo = (req) => (/^[\w-]{22}$/.test(String(req.params.token || '')) ? String(req.params.token) : '');
+  app.get('/u/:user/m/:token', wrap(async (req, res) => {
+    const login = String(req.params.user || '').toLowerCase();
+    moduloSenzaTracce(res);
+    const p = negozioPagina.paginaModulo(eLoginNostro(login) ? login : '', tokenModulo(req), { codice: /^\d{4}$/.test(String(req.query.c || '')) ? String(req.query.c) : '' });
+    res.status(p.stato === 'fine' ? 404 : 200).type('html').send(p.html);
+  }));
+  app.post('/u/:user/m/:token', express.urlencoded({ extended: false, limit: '16kb', parameterLimit: 20 }), wrap(async (req, res) => {
+    const login = String(req.params.user || '').toLowerCase();
+    const token = tokenModulo(req);
+    moduloSenzaTracce(res);
+    const p = negozioPagina.paginaModulo(eLoginNostro(login) ? login : '', token, { invio: req.body && typeof req.body === 'object' ? req.body : {} });
+    if (p.stato === 'codice') return res.redirect(303, `/u/${login}/m/${token}?c=${p.codice}`);
+    res.status(p.stato === 'fine' ? 404 : 422).type('html').send(p.html);
+  }));
+
   // Il vecchio proxy resta solo per l'API del sito che il pre-addestramento
   // consulta (bio/social della vetrina): non serve più per /u.
   app.get('/api/streamer-verify', proxyLinkPage);

@@ -115,6 +115,8 @@ const PUBBLICHE = new Map([
   ['GET /u/:user/negozio/media/:id', 'le immagini degli articoli in vetrina: solo un media di QUEL canale che un articolo visibile usa (mediaPubblico), il resto e\' 404'],
   ['GET /u/:user/p/:id', 'la pagina dietro un pannello di Twitch: pubblica come la pagina link, e 404 se e\' spenta o se nessun pannello salvato ci porta (portaAllaPagina)'],
   ['GET /u/:user/p/:id/privacy', 'l\'informativa della pagina dietro un pannello: alla stessa condizione della pagina'],
+  ['GET /u/:user/m/:token', 'il modulo di un acquisto: lo apre il link che la chat da\' a chi compra, e vale solo la bozza di 128 bit di quel canale, viva; a comprare e\' il codice scritto in chat dal suo account'],
+  ['POST /u/:user/m/:token', 'le risposte di quel modulo: danno solo un codice, che compra soltanto se lo scrive in chat chi ha la bozza (tetto agli invii per bozza)'],
   ['GET /u/:user/anteprima-negozio.png', 'l\'anteprima del link della pagina del negozio: come sopra'],
   ['GET /u/:user/img/:file', 'immagini della pagina link'],
   ['GET /u/:user/privacy', 'informativa della pagina link'],

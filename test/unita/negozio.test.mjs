@@ -258,13 +258,15 @@ test('da consegnare a mano: in coda, poi fatto oppure rifiutato e rimborsato', a
   const ch = canale({ teo: 300, ada: 300 });
   const a = articolo(ch, { nome: 'Scegli il prossimo gioco', parola: 'gioco', tipo: 'mano', prezzo: 120, dati: { domanda: 'Quale gioco?' }, scorte: { modo: 'tutto', n: 5 } });
   const senza = await compra(ch, 'teo', 'gioco');
-  assert.equal(senza.momento, 'serveTesto');
-  assert.match(S.frase(ch, senza.momento, senza.dati), /Quale gioco\? Rispondi così: !compra gioco/);
+  assert.equal(senza.momento, 'modulo', 'la domanda di prima e\' un modulo di un campo');
+  assert.match(S.frase(ch, senza.momento, senza.dati), new RegExp(`Quale gioco\\? Rispondi così: !compra gioco e la tua risposta, oppure dal modulo: \\S+/u/${ch}/m/[\\w-]{22}$`));
+  assert.equal(points.get(ch, 'teo'), 300, 'senza risposta non si spende niente');
   const e = await compra(ch, 'teo', 'gioco', { nota: 'Elden Ring' });
   assert.equal(e.momento, 'fattoCoda');
   const f = await compra(ch, 'ada', 'gioco', { nota: 'Hades' });
   const coda = N.coda(ch);
-  assert.deepEqual(coda.map((x) => [x.user, x.nota]), [['teo', 'Elden Ring'], ['ada', 'Hades']]);
+  assert.deepEqual(coda.map((x) => [x.user, JSON.parse(x.risposte)]), [['teo', [{ etichetta: 'Quale gioco?', valore: 'Elden Ring' }]], ['ada', [{ etichetta: 'Quale gioco?', valore: 'Hades' }]]],
+    'la riga risponde al campo, e la risposta si salva con la sua domanda');
   assert.equal(N.consegna(ch, e.dati.id), true);
   assert.equal(N.consegna(ch, e.dati.id), false, 'una volta sola');
   const r = N.rimborsa(ch, f.dati.id, 'rifiutato', { da: ['da_consegnare'] });
@@ -415,7 +417,7 @@ test('in chat: i tre comandi, rinominabili, e un negozio chiuso tace', async () 
 
 test('le frasi parlano la lingua del canale, e ogni momento ce l\'ha in tutte e tre', () => {
   const ch = canale();
-  const dati = { nome: 'Ana', articolo: 'Espada', parola: 'espada', prezzo: '100', saldo: '5', moneta: 'x', cmd: '!compra', cmdNegozio: '!negozio', cmdBorsa: '!borsa', requisito: 'r', perche: 'p', tempo: 't', quante: 1, n: 1, cifra: '1', lista: 'l', voci: 'v', streamer: 's', brano: 'b', direttePer: 'd', dal: 'a', al: 'b', quando: 'date', tipo: 'musica', domanda: 'q', url: 'u' };
+  const dati = { nome: 'Ana', articolo: 'Espada', parola: 'espada', prezzo: '100', saldo: '5', moneta: 'x', cmd: '!compra', cmdNegozio: '!negozio', cmdBorsa: '!borsa', requisito: 'r', perche: 'p', tempo: 't', quante: 1, n: 1, cifra: '1', lista: 'l', voci: 'v', streamer: 's', brano: 'b', direttePer: 'd', dal: 'a', al: 'b', quando: 'date', tipo: 'musica', domanda: 'q', url: 'u', minuti: 15, chiede: 'c' };
   for (const l of ['it', 'en', 'es']) {
     streamers.setSettings(ch, { preferenze: { lingua: l } });
     for (const m of S.MOMENTI) {

@@ -1446,8 +1446,11 @@ function _demoPaginaPannello(metodo, id, b) {
 function _demoNegozioBase() {
   const ora = Date.now();
   const art = (x) => ({ descrizione: '', dati: {}, scorte: { modo: 'illimitate', n: 0 }, attesaTesta: 0, attesaTutti: 0, requisiti: [], siVede: 'sempre', quando: 'sempre', dal: 0, al: 0, attivo: true, venduti: 0, inBorse: 0, immagine: '', immagineUrl: '', ...x });
-  const riga = (id, user, nome, prezzo, stato, minuti, extra = {}) => ({ id, user: user.toLowerCase(), display: user, nome, prezzo, stato, motivo: '', nota: '', ts: ora - minuti * 60000, ...extra });
+  const riga = (id, user, nome, prezzo, stato, minuti, extra = {}) => ({ id, user: user.toLowerCase(), display: user, nome, prezzo, stato, motivo: '', nota: '', risposte: [], ts: ora - minuti * 60000, ...extra });
   const gioco = L('Scegli il prossimo gioco', 'Pick the next game', 'Elige el próximo juego');
+  const domanda = L('Quale gioco vuoi vedere?', 'Which game do you want to see?', '¿Qué juego quieres ver?');
+  const partita = L('Una partita con me', 'A match with me', 'Una partida conmigo');
+  const nomeDiscord = L('Il tuo nome Discord', 'Your Discord username', 'Tu nombre de Discord');
   return {
     attivo: true,
     url: 'https://negozio.socialbot.live/andryxify',
@@ -1460,17 +1463,23 @@ function _demoNegozioBase() {
         descrizione: L('Resta nella tua borsa: la vedi con !borsa.', 'It stays in your bag: see it with !borsa.', 'Se queda en tu bolsa: la ves con !borsa.') }),
       art({ id: 3, parola: 'vip', nome: L('VIP per una diretta', 'VIP for one stream', 'VIP durante un directo'), tipo: 'vip', prezzo: 5000, dati: { dirette: 1 }, scorte: { modo: 'persona', n: 1 }, requisiti: [{ tipo: 'ore', soglia: 10 }], venduti: 3 }),
       art({ id: 4, parola: 'gioco', nome: gioco, tipo: 'mano', prezzo: 3000, attesaTutti: 3600, scorte: { modo: 'tutto', n: 4 }, venduti: 2,
-        dati: { domanda: L('Quale gioco vuoi vedere?', 'Which game do you want to see?', '¿Qué juego quieres ver?') } }),
+        campi: [{ id: 'c1', etichetta: domanda, tipo: 'testo', obbligatorio: true, opzioni: [], aiuto: '' }] }),
+      art({ id: 5, parola: 'partita', nome: partita, tipo: 'mano', prezzo: 2000, attesaTutti: 600, venduti: 1,
+        descrizione: L('Giochiamo insieme su Discord dopo la diretta.', 'We play together on Discord after the stream.', 'Jugamos juntos en Discord después del directo.'),
+        campi: [{ id: 'c1', etichetta: nomeDiscord, tipo: 'testo', obbligatorio: true, opzioni: [], aiuto: L('come lo vedi nel server', 'as you see it in the server', 'como lo ves en el servidor') },
+          { id: 'c2', etichetta: 'Rank', tipo: 'scelta', obbligatorio: false, opzioni: ['Oro', 'Platino', 'Diamante'], aiuto: '' }] }),
     ],
     coda: [
-      riga(31, 'Luna_Gamer', gioco, 3000, 'da_consegnare', 25, { nota: 'Hollow Knight' }),
-      riga(32, 'ZioBarba', gioco, 3000, 'da_consegnare', 9, { nota: 'Celeste' }),
+      riga(31, 'Luna_Gamer', gioco, 3000, 'da_consegnare', 25, { risposte: [{ etichetta: domanda, valore: 'Hollow Knight' }] }),
+      riga(34, 'PixelMatto', partita, 2000, 'da_consegnare', 12, { risposte: [{ etichetta: nomeDiscord, valore: 'pixelmatto_88' }, { etichetta: 'Rank', valore: 'Platino' }] }),
+      riga(32, 'ZioBarba', gioco, 3000, 'da_consegnare', 9, { risposte: [{ etichetta: domanda, valore: 'Celeste' }] }),
     ],
     storico: {
       righe: [
         riga(33, 'ZioBarba', L('Ta-daa a schermo', 'Ta-daa on screen', 'Ta-daa en pantalla'), 150, 'fatto', 4),
-        riga(32, 'ZioBarba', gioco, 3000, 'da_consegnare', 9, { nota: 'Celeste' }),
-        riga(31, 'Luna_Gamer', gioco, 3000, 'da_consegnare', 25, { nota: 'Hollow Knight' }),
+        riga(34, 'PixelMatto', partita, 2000, 'da_consegnare', 12, { risposte: [{ etichetta: nomeDiscord, valore: 'pixelmatto_88' }, { etichetta: 'Rank', valore: 'Platino' }] }),
+        riga(32, 'ZioBarba', gioco, 3000, 'da_consegnare', 9, { risposte: [{ etichetta: domanda, valore: 'Celeste' }] }),
+        riga(31, 'Luna_Gamer', gioco, 3000, 'da_consegnare', 25, { risposte: [{ etichetta: domanda, valore: 'Hollow Knight' }] }),
         riga(30, 'PixelMatto', L('VIP per una diretta', 'VIP for one stream', 'VIP durante un directo'), 5000, 'rimborsato', 60, { motivo: 'vipPieni' }),
         riga(29, 'Luna_Gamer', L('Spada di legno', 'Wooden sword', 'Espada de madera'), 100, 'fatto', 180),
       ],
@@ -1770,7 +1779,7 @@ function _demoGet(via) {
       { id: "soloabbonati", modulo: "modalita", moduloNome: ["Modalità della chat a tempo","Timed chat modes","Modos del chat con tiempo"], moduloAcceso: true, voce: null, gruppo: null, regole: null, titolo: ["Solo abbonati a tempo","Timed subscribers-only","Solo suscriptores con tiempo"], cosa: ["Per un tempo scrivono solo gli abbonati. Due minuti se non dici quanto.","For a while only subscribers can write. Two minutes unless you say how long.","Durante un tiempo solo escriben los suscriptores. Dos minutos si no dices cuánto."], costa: false, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["soloabbonati"], rinominato: false, chi: "mod", chiMinimo: "mod", attesaTutti: 0 },
       { id: "permetti", modulo: "scudo", moduloNome: ["Scudo","Shield","Escudo"], moduloAcceso: false, voce: null, gruppo: null, regole: null, titolo: ["Fai scrivere un account nuovo","Let a new account chat","Deja escribir a una cuenta nueva"], cosa: ["Lo scudo trattiene i messaggi degli account appena creati. Con !permetti nome un mod lo fa scrivere, da lì in poi: finisce fra gli esenti.","The shield holds messages from brand new accounts. With !permetti name a mod lets them chat from then on: they join the exempt list.","El escudo retiene los mensajes de las cuentas recién creadas. Con !permetti nombre un mod la deja escribir desde ese momento: pasa a la lista de exentos."], costa: false, attesa: 0, spegnibile: false, rinominabile: true, acceso: true, vivo: false, nomi: ["permetti"], rinominato: false, chi: "mod", chiMinimo: "mod", attesaTutti: 0 },
       { id: "negozio", modulo: "negozio", moduloNome: ["Negozio","Shop","Tienda"], moduloAcceso: true, voce: null, gruppo: null, regole: null, titolo: ["Il negozio","The shop","La tienda"], cosa: ["Dice i tre articoli più comprati, con la parola per comprarli, e il link alla pagina del negozio. Con !negozio e una parola racconta quell'articolo: prezzo, requisiti e scorte.","Lists the three most bought items, with the word to buy them, and the link to the shop page. With !negozio and a word it describes that item: price, requirements and stock.","Dice los tres artículos más comprados, con la palabra para comprarlos, y el enlace a la página de la tienda. Con !negozio y una palabra describe ese artículo: precio, requisitos y existencias."], costa: false, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["negozio","shop"], rinominato: false, chi: "tutti", chiMinimo: "tutti", attesaTutti: 0 },
-      { id: "compra", modulo: "negozio", moduloNome: ["Negozio","Shop","Tienda"], moduloAcceso: true, voce: null, gruppo: null, regole: null, titolo: ["Compra","Buy","Compra"], cosa: ["Compra un articolo del negozio con le monete: !compra e la parola dell'articolo, e dopo la canzone o il testo se l'articolo li chiede.","Buys a shop item with coins: !compra and the item word, then the song or the text if the item asks for them.","Compra un artículo de la tienda con las monedas: !compra y la palabra del artículo, y después la canción o el texto si el artículo los pide."], costa: true, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["compra","buy"], rinominato: false, chi: "tutti", chiMinimo: "tutti", attesaTutti: 0 },
+      { id: "compra", modulo: "negozio", moduloNome: ["Negozio","Shop","Tienda"], moduloAcceso: true, voce: null, gruppo: null, regole: null, titolo: ["Compra","Buy","Compra"], cosa: ["Compra un articolo del negozio con le monete: !compra e la parola dell'articolo, e dopo la canzone o il testo se l'articolo li chiede. Se l'articolo fa domande, dà il link del modulo, e !compra col codice del modulo conferma.","Buys a shop item with coins: !compra and the item word, then the song or the text if the item asks for them. If the item asks questions, it gives the form link, and !compra with the form code confirms.","Compra un artículo de la tienda con las monedas: !compra y la palabra del artículo, y después la canción o el texto si el artículo los pide. Si el artículo hace preguntas, da el enlace del formulario, y !compra con el código del formulario confirma."], costa: true, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["compra","buy"], rinominato: false, chi: "tutti", chiMinimo: "tutti", attesaTutti: 0 },
       { id: "borsa", modulo: "negozio", moduloNome: ["Negozio","Shop","Tienda"], moduloAcceso: true, voce: null, gruppo: null, regole: null, titolo: ["La mia borsa","My bag","Mi bolsa"], cosa: ["Dice a chi lo scrive cosa ha nella borsa: gli oggetti comprati nel negozio.","Tells whoever writes it what is in their bag: the objects bought in the shop.","Dice a quien lo escribe qué tiene en la bolsa: los objetos comprados en la tienda."], costa: false, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["borsa","bag"], rinominato: false, chi: "tutti", chiMinimo: "tutti", attesaTutti: 0 },
       { id: "ag", modulo: "sito", moduloNome: ["Giochi del sito","Site games","Juegos del sitio"], moduloAcceso: false, voce: null, gruppo: null, regole: null, titolo: ["Giochi del sito","Site games","Juegos del sitio"], cosa: ["Manda il comando ai giochi di andryxify.it.","Sends the command to the andryxify.it games.","Manda el comando a los juegos de andryxify.it."], costa: false, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: false, nomi: ["ag","agentify"], rinominato: false, chi: "tutti", chiMinimo: "tutti", attesaTutti: 0 },
     ], livelli: ['tutti', 'sub', 'vip', 'mod'], gruppi: ['solo', 'sfide', 'insieme', 'coccole', 'conto', 'webcam', 'staff'] },
@@ -11094,6 +11103,9 @@ const NEG_ERRORI = {
   immagine: ['L’immagine deve essere una delle tue.', 'The image has to be one of yours.', 'La imagen tiene que ser una de las tuyas.'],
   nonCe: ['Questo articolo non c’è più.', 'This item is gone.', 'Este artículo ya no existe.'],
   deciso: ['Questo acquisto è già stato deciso.', 'This purchase has already been decided.', 'Esta compra ya está decidida.'],
+  campiTroppi: ['Al massimo cinque domande.', 'Five questions at most.', 'Cinco preguntas como máximo.'],
+  campoDoppio: ['Due domande hanno lo stesso testo: le risposte non si distinguerebbero.', 'Two questions have the same text: the answers could not be told apart.', 'Dos preguntas tienen el mismo texto: las respuestas no se distinguirían.'],
+  sceltaCorta: ['Una domanda a scelta vuole almeno due scelte diverse.', 'A multiple choice question needs at least two different options.', 'Una pregunta de opciones necesita al menos dos opciones distintas.'],
 };
 const NEG_MODELLI = {
   effetto: () => ({ nome: L('Un effetto a schermo', 'An on-screen effect', 'Un efecto en pantalla'), parola: 'effetto', tipo: 'effetto', prezzo: 200, attesaTutti: 30,
@@ -11101,14 +11113,21 @@ const NEG_MODELLI = {
   vip: () => ({ nome: L('VIP per una diretta', 'VIP for one stream', 'VIP durante un directo'), parola: 'vip', tipo: 'vip', prezzo: 5000, dati: { dirette: 1 },
     descrizione: L('Il VIP su Twitch fino alla fine della diretta in corso, o della prossima.', 'VIP on Twitch until the end of the current stream, or of the next one.', 'El VIP en Twitch hasta el final del directo en curso, o del próximo.') }),
   gioco: () => ({ nome: L('Scegli il prossimo gioco', 'Pick the next game', 'Elige el próximo juego'), parola: 'gioco', tipo: 'mano', prezzo: 3000, attesaTutti: 3600,
-    dati: { domanda: L('Quale gioco vuoi vedere?', 'Which game do you want to see?', '¿Qué juego quieres ver?') },
+    campi: [{ etichetta: L('Quale gioco vuoi vedere?', 'Which game do you want to see?', '¿Qué juego quieres ver?'), tipo: 'testo', obbligatorio: true, opzioni: [], aiuto: '' }],
     descrizione: L('Scrivi il gioco: lo guardo in diretta, e se non si può fare ti rendo le monete.', 'Write the game: I look at it on stream, and if it can’t be done you get your coins back.', 'Escribe el juego: lo miro en directo, y si no se puede te devuelvo las monedas.') }),
   oggetto: () => ({ nome: L('Una spada di legno', 'A wooden sword', 'Una espada de madera'), parola: 'spada', tipo: 'oggetto', prezzo: 100,
     descrizione: L('Resta nella tua borsa: la vedi con !borsa.', 'It stays in your bag: see it with !borsa.', 'Se queda en tu bolsa: la ves con !borsa.') }),
 };
 let _neg = null;
 let _negBozza = null;
-STATI_SALVA['neg-salva'] = { stato: () => (_negBozza ? [_negBozza.immagine || '', _negBozza.immagineUrl || ''] : null) };
+STATI_SALVA['neg-salva'] = { stato: () => (_negBozza ? [_negBozza.immagine || '', _negBozza.immagineUrl || '', JSON.stringify(_negBozza.campi || [])] : null) };
+const NEG_TIPI_CAMPO = [['testo', ['Testo breve', 'Short text', 'Texto corto']], ['lungo', ['Testo lungo', 'Long text', 'Texto largo']], ['numero', ['Numero', 'Number', 'Número']], ['scelta', ['Una scelta fra…', 'One of…', 'Una opción entre…']]];
+const NEG_CAMPI_PRONTI = {
+  discord: () => ({ etichetta: L('Il tuo nome Discord', 'Your Discord username', 'Tu nombre de Discord'), tipo: 'testo', obbligatorio: true, opzioni: [], aiuto: L('come lo vedi nel server, per esempio andry_42', 'as you see it in the server, e.g. andry_42', 'como lo ves en el servidor, por ejemplo andry_42') }),
+  gioco: () => ({ etichetta: L('Il tuo nome nel gioco', 'Your in-game name', 'Tu nombre en el juego'), tipo: 'testo', obbligatorio: true, opzioni: [], aiuto: '' }),
+  vuoto: () => ({ etichetta: '', tipo: 'testo', obbligatorio: true, opzioni: [], aiuto: '' }),
+};
+const NEG_MAX_CAMPI = 5;
 let _negRuoli = null;
 
 const _negTipo = (t) => { const r = NEG_TIPI.find(([k]) => k === t); return r ? Lv(r[1]) : t; };
@@ -11214,8 +11233,6 @@ function pannelloNegozio() {
             <p class="suggerimento">${L('Parte come se l’avesse fatto partire chi compra, e il suo «Costa» non si paga di nuovo. Se le sue condizioni lo fermano, le monete tornano.', 'It runs as if the buyer had started it, and its «Costs» isn’t paid again. If its conditions stop it, the coins go back.', 'Se ejecuta como si lo hubiera lanzado quien compra, y su «Cuesta» no se paga otra vez. Si sus condiciones lo paran, las monedas vuelven.')}</p>
           </div>
           <div class="riquadro-info spazio-sopra" data-neg-tipo="mano" hidden>
-            <label class="campo" for="neg-domanda">${L('Cosa chiedi a chi compra (facoltativo)', 'What you ask the buyer (optional)', 'Qué le preguntas a quien compra (opcional)')}</label>
-            <input type="text" id="neg-domanda" class="campo-largo" maxlength="120" placeholder="${esc(L('es. Quale gioco vuoi vedere?', 'e.g. Which game do you want to see?', 'p. ej. ¿Qué juego quieres ver?'))}">
             <p class="suggerimento">${L('L’acquisto finisce in «Da consegnare»: lì lo segni fatto, oppure lo rifiuti e le monete tornano.', 'The purchase goes to «To deliver»: there you mark it done, or refuse it and the coins go back.', 'La compra va a «Por entregar»: allí la marcas hecha, o la rechazas y las monedas vuelven.')}</p>
           </div>
           <div class="riquadro-info spazio-sopra" data-neg-tipo="vip" hidden>
@@ -11233,6 +11250,14 @@ function pannelloNegozio() {
             <label class="campo" for="neg-colore">${L('Il colore dell’annuncio', 'The announcement color', 'El color del anuncio')}</label>
             <select id="neg-colore">${NEG_COLORI.map(([k, n]) => `<option value="${k}">${esc(Lv(n))}</option>`).join('')}</select>
             <p class="suggerimento">${L('Chi compra scrive il messaggio dopo la parola: esce in chat come annuncio di Twitch, col suo nome davanti.', 'The buyer writes the message after the word: it shows in chat as a Twitch announcement, with their name in front.', 'Quien compra escribe el mensaje tras la palabra: sale en el chat como anuncio de Twitch, con su nombre delante.')}</p>
+          </div>
+          <h3 class="sotto-titolo">${L('Cosa chiedi a chi compra', 'What you ask the buyer', 'Qué le preguntas a quien compra')}</h3>
+          <p class="suggerimento">${L('Facoltativo. Chi compra riceve in chat il link di un modulo con queste domande, lo compila e conferma con un codice: le risposte le trovi in «Da consegnare» e nello storico. Con una domanda sola può rispondere anche in chat, dopo la parola. Chiedi solo quello che ti serve.', 'Optional. The buyer gets a link in chat to a form with these questions, fills it in and confirms with a code: you find the answers in «To deliver» and in the history. With a single question they can also answer in chat, after the word. Ask only what you need.', 'Opcional. Quien compra recibe en el chat el enlace de un formulario con estas preguntas, lo rellena y confirma con un código: las respuestas las encuentras en «Por entregar» y en el historial. Con una sola pregunta también puede responder en el chat, después de la palabra. Pregunta solo lo que necesitas.')}</p>
+          <div id="neg-campi" class="neg-campi"></div>
+          <div class="riga-flessibile spazio-sopra" id="neg-campi-aggiungi">
+            <button type="button" class="btn secondario mini" data-neg-campo-nuovo="vuoto">${_bIco(ICO.piu)}${L('Una domanda', 'A question', 'Una pregunta')}</button>
+            <button type="button" class="btn secondario mini" data-neg-campo-nuovo="discord">${L('Nome Discord', 'Discord username', 'Nombre de Discord')}</button>
+            <button type="button" class="btn secondario mini" data-neg-campo-nuovo="gioco">${L('Nome nel gioco', 'In-game name', 'Nombre en el juego')}</button>
           </div>
           <div class="griglia-campi spazio-sopra">
             <div>
@@ -11404,12 +11429,19 @@ function _negCoda(d) {
   el.innerHTML = coda.map((x) => `<li><div class="testo-voce">
       <div class="domanda">${esc(x.display || x.user)} · ${esc(x.nome)}</div>
       ${x.nota ? `<div class="risposta">${esc(x.nota)}</div>` : ''}
+      ${_negRisposteHtml(x.risposte, true)}
       <div class="meta">${esc(dataIt(x.ts))} · ${_negNum(x.prezzo)} ${esc(nomeMonetaUI())}</div>
     </div>
     <div class="riga-flessibile">
       <button type="button" class="btn mini" data-neg-fatto="${x.id}">${L('Fatto', 'Done', 'Hecho')}</button>
       <button type="button" class="btn pericolo mini" data-neg-rifiuta="${x.id}">${L('Rifiuta e rimborsa', 'Refuse and refund', 'Rechazar y reembolsar')}</button>
     </div></li>`).join('');
+}
+
+function _negRisposteHtml(risposte, conCopia) {
+  const r = Array.isArray(risposte) ? risposte : [];
+  if (!r.length) return '';
+  return `<dl class="neg-risposte">${r.map((x) => `<div class="neg-risposta"><dt>${esc(x.etichetta)}</dt><dd><span>${esc(x.valore)}</span>${conCopia ? `<button type="button" class="btn secondario mini" data-neg-copia="${esc(x.valore)}" aria-label="${esc(L(`Copia: ${x.etichetta}`, `Copy: ${x.etichetta}`, `Copiar: ${x.etichetta}`))}">${L('Copia', 'Copy', 'Copiar')}</button>` : ''}</dd></div>`).join('')}</dl>`;
 }
 
 function _negStorico(d) {
@@ -11433,7 +11465,7 @@ function _negStorico(d) {
     if (r.stato === 'in_corso') return `<span class="badge">${L('in corso', 'in progress', 'en curso')}</span>`;
     return `<span class="badge verde">${L('fatto', 'done', 'hecho')}</span>`;
   };
-  body.innerHTML = righe.map((r) => `<tr><td>${esc(dataIt(r.ts))}</td><td>${esc(r.display || r.user)}</td><td>${esc(r.nome)}${r.nota ? ` <span class="suggerimento">${esc(r.nota)}</span>` : ''}</td><td>${_negNum(r.prezzo)}</td><td>${statoDi(r)}</td></tr>`).join('');
+  body.innerHTML = righe.map((r) => `<tr><td>${esc(dataIt(r.ts))}</td><td>${esc(r.display || r.user)}</td><td>${esc(r.nome)}${r.nota ? ` <span class="suggerimento">${esc(r.nota)}</span>` : ''}${_negRisposteHtml(r.risposte, false)}</td><td>${_negNum(r.prezzo)}</td><td>${statoDi(r)}</td></tr>`).join('');
 }
 
 function _negCollega() {
@@ -11483,9 +11515,81 @@ function _negCollega() {
     const f = ev.target.closest('[data-neg-fatto]');
     if (f) { conErrore(() => _negDecidi(f.dataset.negFatto, 'fatto')); return; }
     const r = ev.target.closest('[data-neg-rifiuta]');
-    if (r) conErrore(() => _negDecidi(r.dataset.negRifiuta, 'rifiuta'));
+    if (r) { conErrore(() => _negDecidi(r.dataset.negRifiuta, 'rifiuta')); return; }
+    const cp = ev.target.closest('[data-neg-copia]');
+    if (cp) { copiaTesto(cp.dataset.negCopia, L('Copiato', 'Copied', 'Copiado')); return; }
+    const nuovo = ev.target.closest('[data-neg-campo-nuovo]');
+    if (nuovo && _negBozza) {
+      if ((_negBozza.campi || []).length >= NEG_MAX_CAMPI) return;
+      _negBozza.campi = [...(_negBozza.campi || []), (NEG_CAMPI_PRONTI[nuovo.dataset.negCampoNuovo] || NEG_CAMPI_PRONTI.vuoto)()];
+      _negCampiDisegna(_negBozza.campi.length - 1);
+      _negAnteprima();
+      segnaDaSalvare(_g('neg-salva'));
+      return;
+    }
+    const az = ev.target.closest('[data-nc-azione]');
+    if (az && _negBozza) {
+      const i = Number(az.closest('[data-neg-campo]')?.dataset.negCampo);
+      const c = _negBozza.campi || [];
+      if (!c[i]) return;
+      const dove = az.dataset.ncAzione;
+      if (dove === 'togli') c.splice(i, 1);
+      if (dove === 'su' && i > 0) [c[i - 1], c[i]] = [c[i], c[i - 1]];
+      if (dove === 'giu' && i < c.length - 1) [c[i + 1], c[i]] = [c[i], c[i + 1]];
+      _negCampiDisegna(dove === 'togli' ? -1 : dove === 'su' ? Math.max(0, i - 1) : dove === 'giu' ? Math.min(c.length - 1, i + 1) : i);
+      _negAnteprima();
+      segnaDaSalvare(_g('neg-salva'));
+    }
   });
+  const campi = document.getElementById('neg-campi');
+  const leggiCampo = (ev) => {
+    const el = ev.target.closest('[data-nc]');
+    const i = Number(ev.target.closest('[data-neg-campo]')?.dataset.negCampo);
+    const c = _negBozza?.campi?.[i];
+    if (!el || !c) return;
+    const k = el.dataset.nc;
+    c[k] = k === 'obbligatorio' ? el.checked : k === 'opzioni' ? el.value.split('\n') : el.value;
+    if (k === 'tipo') { const box = ev.target.closest('[data-neg-campo]')?.querySelector('[data-nc-opzioni]'); if (box) box.hidden = el.value !== 'scelta'; }
+  };
+  campi?.addEventListener('input', leggiCampo);
+  campi?.addEventListener('change', leggiCampo);
 }
+
+function _negCampiDisegna(fuoco = null) {
+  const box = document.getElementById('neg-campi');
+  if (!box || !_negBozza) return;
+  const c = _negBozza.campi || [];
+  box.innerHTML = c.map((x, i) => `<fieldset class="neg-campo" data-neg-campo="${i}">
+      <legend>${L(`Domanda ${i + 1}`, `Question ${i + 1}`, `Pregunta ${i + 1}`)}</legend>
+      <div class="griglia-campi">
+        <div><label class="campo" for="neg-c${i}-eti">${L('La domanda', 'The question', 'La pregunta')}</label>
+          <input type="text" id="neg-c${i}-eti" data-nc="etichetta" maxlength="60" value="${esc(x.etichetta || '')}" placeholder="${esc(L('es. Il tuo nome Discord', 'e.g. Your Discord username', 'p. ej. Tu nombre de Discord'))}"></div>
+        <div><label class="campo" for="neg-c${i}-tipo">${L('La risposta', 'The answer', 'La respuesta')}</label>
+          <select id="neg-c${i}-tipo" data-nc="tipo">${NEG_TIPI_CAMPO.map(([k, n]) => `<option value="${k}"${k === (x.tipo || 'testo') ? ' selected' : ''}>${esc(Lv(n))}</option>`).join('')}</select></div>
+      </div>
+      <div data-nc-opzioni${x.tipo === 'scelta' ? '' : ' hidden'}>
+        <label class="campo spazio-sopra" for="neg-c${i}-opz">${L('Le scelte, una per riga', 'The options, one per line', 'Las opciones, una por línea')}</label>
+        <textarea id="neg-c${i}-opz" data-nc="opzioni" rows="3" maxlength="500">${esc((x.opzioni || []).join('\n'))}</textarea>
+      </div>
+      <label class="campo spazio-sopra" for="neg-c${i}-aiuto">${L('Un aiuto sotto la domanda (facoltativo)', 'A hint under the question (optional)', 'Una ayuda bajo la pregunta (opcional)')}</label>
+      <input type="text" id="neg-c${i}-aiuto" data-nc="aiuto" maxlength="80" value="${esc(x.aiuto || '')}">
+      <div class="riga-check spazio-sopra"><input type="checkbox" id="neg-c${i}-obb" data-nc="obbligatorio"${x.obbligatorio !== false ? ' checked' : ''}><label for="neg-c${i}-obb">${L('Va risposta per forza', 'An answer is required', 'Hay que responder')}</label></div>
+      <div class="riga-flessibile spazio-sopra">
+        <button type="button" class="btn secondario mini" data-nc-azione="su"${i === 0 ? ' disabled' : ''}>${L('Su', 'Up', 'Arriba')}</button>
+        <button type="button" class="btn secondario mini" data-nc-azione="giu"${i === c.length - 1 ? ' disabled' : ''}>${L('Giù', 'Down', 'Abajo')}</button>
+        <button type="button" class="btn secondario mini" data-nc-azione="togli">${L('Togli', 'Remove', 'Quitar')}</button>
+      </div>
+    </fieldset>`).join('');
+  const piu = document.getElementById('neg-campi-aggiungi');
+  if (piu) piu.querySelectorAll('button').forEach((b) => { b.disabled = c.length >= NEG_MAX_CAMPI; });
+  if (fuoco !== null && fuoco >= 0) box.querySelector(`[data-neg-campo="${fuoco}"] input`)?.focus({ preventScroll: false });
+}
+
+const _negCampiDa = (x) => {
+  const c = Array.isArray(x?.campi) && x.campi.length ? x.campi
+    : x?.tipo === 'mano' && x?.dati?.domanda ? [{ etichetta: x.dati.domanda, tipo: 'testo', obbligatorio: true, opzioni: [], aiuto: '' }] : [];
+  return c.map((k) => ({ etichetta: k.etichetta || '', tipo: k.tipo || 'testo', obbligatorio: k.obbligatorio !== false, opzioni: [...(k.opzioni || [])], aiuto: k.aiuto || '' }));
+};
 
 function _negOpzioni() {
   const d = _neg || {};
@@ -11553,7 +11657,7 @@ async function _negApri(a) {
   const ed = document.getElementById('neg-editor');
   if (!ed) return;
   const x = a || {};
-  _negBozza = { id: x.id || 0, immagine: x.immagine || '', immagineUrl: x.immagineUrl || '', dati: x.dati || {} };
+  _negBozza = { id: x.id || 0, immagine: x.immagine || '', immagineUrl: x.immagineUrl || '', dati: x.dati || {}, campi: _negCampiDa(x) };
   const v = (id, val) => {
     const el = document.getElementById(id);
     if (!el) return;
@@ -11579,7 +11683,6 @@ async function _negApri(a) {
     v('neg-effetto', val);
   }
   if (dati.modulo) v('neg-modulo', String(dati.modulo));
-  v('neg-domanda', dati.domanda || '');
   v('neg-dirette', dati.dirette || 1);
   v('neg-colore', dati.colore || 'primary');
   const s = x.scorte || { modo: 'illimitate', n: 0 };
@@ -11601,6 +11704,7 @@ async function _negApri(a) {
   if (att) att.checked = x.attivo !== false;
   ed.hidden = false;
   _negMostraTipo(); _negMostraScorte(); _negMostraQuando();
+  _negCampiDisegna();
   _negAnteprima();
   ed.scrollIntoView({ block: 'start', behavior: 'smooth' });
   document.getElementById('neg-nome')?.focus({ preventScroll: true });
@@ -11620,7 +11724,6 @@ function _negLeggi() {
   const dati = {};
   if (tipo === 'effetto') { const e = g('neg-effetto'); if (e.startsWith('preset:')) dati.preset = e.slice(7); else dati.effetto = e.replace(/^effetto:/, ''); }
   if (tipo === 'modulo') dati.modulo = Number(g('neg-modulo')) || 0;
-  if (tipo === 'mano') dati.domanda = g('neg-domanda').trim();
   if (tipo === 'vip') dati.dirette = Number(g('neg-dirette')) || 1;
   if (tipo === 'discord') { dati.ruolo = g('neg-ruolo'); const o = document.getElementById('neg-ruolo')?.selectedOptions?.[0]; dati.nomeRuolo = o ? o.textContent : ''; }
   if (tipo === 'evidenza') dati.colore = g('neg-colore');
@@ -11634,6 +11737,7 @@ function _negLeggi() {
     requisiti, siVede: g('neg-si-vede'), quando: g('neg-quando'),
     dal: _negDaGiorno(g('neg-dal'), false), al: _negDaGiorno(g('neg-al'), true),
     attivo: !!document.getElementById('neg-attivo')?.checked,
+    campi: (_negBozza?.campi || []).map((k) => ({ ...k, opzioni: (k.opzioni || []).map((o) => String(o).trim()).filter(Boolean) })),
   };
 }
 
@@ -11656,6 +11760,7 @@ function _negAnteprima() {
     <p class="neg-prezzo">${_negNum(a.prezzo)} ${esc(nomeMonetaUI())}</p>
     ${req ? `<p class="suggerimento">${esc(L('Per comprarlo: ', 'To buy it: ', 'Para comprarlo: ') + req)}</p>` : ''}
     ${scorte || quando ? `<p class="suggerimento">${esc([scorte, quando].filter(Boolean).join(' · '))}</p>` : ''}
+    ${a.campi.some((k) => k.etichetta.trim()) ? `<p class="suggerimento">${esc(L('Ti chiede: ', 'It asks for: ', 'Te pide: ') + a.campi.map((k) => k.etichetta.trim()).filter(Boolean).join(', '))}</p>` : ''}
     <p class="neg-come"><code>!${esc(_neg?.comandi?.compra || 'compra')} ${esc(parola)}</code></p>`;
 }
 

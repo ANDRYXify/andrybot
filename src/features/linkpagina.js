@@ -557,6 +557,16 @@ export function coloriDi(pagina) {
   };
 }
 
+// La veste di una pagina per chi ne disegna un'altra accanto, fuori da questo
+// file (il modulo del negozio, features/negozio-moduli.js): i colori, i
+// caratteri, il testo sopra l'accento e se il fondo e' scuro. Le stesse regole
+// della pagina, cosi' le due non possono vestirsi in due modi.
+export function vesteDi(pagina) {
+  const c = coloriDi(pagina);
+  const t = pagina?.tema || {};
+  return { c, font: PILE[t.font] || PILE.system, faccia: facciaFont(t.font), suAcc: eScuro(c.acc) ? '#ffffff' : '#0d0d12', scuro: eScuro(c.bg) };
+}
+
 // LA PAGINA DEL NEGOZIO passa da qui come le altre due (docs/NEGOZIO.md, «La
 // pagina»), con `negozio`: i suoi pezzi li disegna features/negozio-pagina.js
 // (`blocco`, `css`), e le poche parole fisse di questa pagina (il titolo nella

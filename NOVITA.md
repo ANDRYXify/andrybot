@@ -115,6 +115,18 @@ comandi diversi da quelli della riga italiana.
 - Nella pagina link, nelle donazioni e nelle pagine dei pannelli ci sono «Il mio programma» e «I comandi della chat»: si scrivono da soli dalla tua settimana e dai comandi aperti a tutti. [vai: pagina]
   en: The link page, the donations page and panel pages now have “My schedule” and “Chat commands”: they fill in by themselves from your week and from the commands open to everyone.
   es: La página de enlaces, la de donaciones y las páginas de los paneles tienen «Mi horario» y «Los comandos del chat»: se escriben solos con tu semana y los comandos abiertos a todos.
+- [importante] Nel negozio un articolo può chiedere qualcosa a chi compra, per esempio il nome Discord: il bot gli dà il link di un modulo, e l'acquisto si conferma in chat con un codice. [vai: negozio]
+  en: In the shop an item can ask the buyer something, for example their Discord username: the bot gives them a form link, and the purchase is confirmed in chat with a code.
+  es: En la tienda un artículo puede pedirle algo a quien compra, por ejemplo su nombre de Discord: el bot le da el enlace de un formulario, y la compra se confirma en el chat con un código.
+  > Un modulo da compilare quando si compra
+  > Fino a cinque domande per articolo, a risposta libera, con un numero o a scelta. Il codice lo può scrivere solo chi ha chiesto il modulo: se un altro apre il link, non può comprare al suo posto. Con una domanda sola si risponde anche in chat.
+  en> A form to fill in when buying
+  en> Up to five questions per item, with a free answer, a number or a choice. Only the person who asked for the form can type the code: if someone else opens the link, they cannot buy in their place. With a single question you can also answer in chat.
+  es> Un formulario que rellenar al comprar
+  es> Hasta cinco preguntas por artículo, de respuesta libre, con un número o de opciones. El código solo lo puede escribir quien pidió el formulario: si otro abre el enlace, no puede comprar en su lugar. Con una sola pregunta también se responde en el chat.
+- In «Da consegnare» e nello storico del negozio le risposte stanno accanto alla loro domanda, ognuna col suo «Copia»; la pagina del negozio dice sotto ogni articolo cosa chiede. [vai: negozio]
+  en: In «To deliver» and in the shop history the answers sit next to their question, each with its own «Copy»; the shop page says under each item what it asks for.
+  es: En «Por entregar» y en el historial de la tienda las respuestas están junto a su pregunta, cada una con su «Copiar»; la página de la tienda dice bajo cada artículo lo que pide.
 
 ## 2026-10-02
 

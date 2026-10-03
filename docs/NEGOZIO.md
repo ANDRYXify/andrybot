@@ -73,6 +73,70 @@ un acquisto dato a chi non doveva.
 - Sul sito, la pagina del negozio del canale (accanto alla pagina link): gli
   articoli con prezzo, requisiti e scorte, e come si compra. In sola lettura:
   per comprare si usa la chat, che sa già chi sei.
+- Un articolo può chiedere qualcosa a chi compra (un nome Discord, un rank,
+  il gioco da vedere): il **modulo**, qui sotto.
+
+### Il modulo
+
+Fino a cinque domande per articolo, di ogni tipo: testo breve, testo lungo,
+numero, una scelta fra due o più voci; ognuna obbligatoria o no, con un aiuto
+sotto. Le risposte si salvano con l'acquisto come **istantanea**
+(`[{ etichetta, valore }]`): cambiare l'articolo dopo non cambia quello che ha
+scritto chi ha comprato.
+
+Chi compra si riconosce dalla chat: lo dice la piattaforma, su Twitch, Kick e
+YouTube allo stesso modo. Un modulo invece è una pagina, e un link detto in
+chat lo apre chiunque la stia guardando: se bastasse compilarlo, un altro
+potrebbe metterci il **suo** nome Discord e prendersi quello che ha pagato un
+altro. Per questo, per costruzione, **la pagina raccoglie e la chat conferma**:
+
+1. `!compra torneo` fa tutti i controlli che dicono di no senza toccare niente
+   (il momento, scorte, attese, requisiti, monete). Se passano e l'articolo ha
+   un modulo, nasce una **bozza** (`negozio_bozze`: canale, chi, piattaforma,
+   articolo, scade fra 15 minuti) con il suo indirizzo,
+   `/u/<canale>/m/<chiave>` (128 bit). Nel database c'è solo l'**impronta**
+   della chiave (sha256): chi lo legge non trova un link che funzioni. Il bot
+   lo dice in chat. Una bozza per persona e articolo: chi riscrive `!compra`
+   riceve un modulo nuovo.
+2. La pagina del modulo (`paginaModulo` in `negozio-pagina.js`, disegnata da
+   `htmlModulo` in `negozio-moduli.js`): l'articolo, il prezzo, «compri come
+   …», le domande. È un `<form>` vero, senza JavaScript: il server controlla e,
+   se manca qualcosa, la riscrive coi campi segnati (422). Nessun cookie,
+   `noindex`, `no-store`, nessun referrer; la lingua, la moneta e i colori sono
+   quelli del negozio del canale. Le risposte giuste danno un **codice**,
+   `#1234`, legato a **quelle** risposte (`negozio_risposte`): ogni invio ha il
+   suo, unico fra le bozze vive di chi compra.
+3. `!compra #1234`, dallo **stesso account**, nello stesso canale e sulla
+   stessa piattaforma, entro la scadenza: `compra()` di sempre, con quelle
+   risposte e gli stessi controlli. La bozza si prende in un colpo solo
+   (`usata`): due codici scritti insieme comprano una volta. Comprato, la bozza
+   se ne va con tutte le sue risposte; non comprato (le monete, l'overlay
+   spento), torna libera e il codice vale fino alla scadenza.
+
+Perché regge:
+
+- chi apre il link di un altro ottiene un codice che non può usare: lo scrive
+  solo chi ha l'account;
+- `#` non può stare nella parola di un articolo (`[a-z0-9]`): un codice non si
+  confonde mai con un articolo;
+- le monete si spendono solo alla conferma, dentro `prenota`: niente
+  prenotazioni appese;
+- se il modulo dell'articolo cambia fra la bozza e il codice (`firma`), le
+  risposte non sono più di quel modulo: si ricomincia con un modulo nuovo. Un
+  articolo tolto si porta via i suoi moduli aperti.
+
+**La riga basta** quando il modulo ha una domanda sola e il tipo non usa già la
+riga come contenuto (la canzone, il messaggio in evidenza, gli argomenti del
+Modulo): `!compra gioco Hades` risponde alla domanda, e una scelta deve
+combaciare con una voce. È la vecchia «domanda» del «da consegnare a mano»,
+generalizzata: `campiDi` legge `dati.domanda` come un campo obbligatorio, così
+gli articoli di prima non cambiano e non c'è niente da migrare. Senza la riga,
+o con più domande, arriva il link.
+
+Nel pannello le risposte stanno in «Da consegnare» (ognuna col suo «Copia»: un
+nome Discord si copia, non si ricopia a mano) e nello storico. La pagina del
+negozio dice sotto ogni articolo cosa chiede, e «Come si compra» spiega il
+modulo quando almeno un articolo ne ha uno; `!negozio parola` lo dice in chat.
 - Sull'overlay, se lo si vuole: l'acquisto annunciato come un alert.
 
 ### Il pannello
@@ -111,7 +175,7 @@ Classifica & VIP): il negozio le spende soltanto.
 
 ### I dati
 
-Quattro tabelle, tutte con la colonna del canale: l'esportazione e la
+Sei tabelle, tutte con la colonna del canale: l'esportazione e la
 cancellazione dell'account le prendono da sole.
 
 - `negozio_articoli`: l'articolo. Le scorte sono **una scelta sola**, come nel
@@ -122,7 +186,9 @@ cancellazione dell'account le prendono da sole.
 - `negozio_acquisti`: lo storico e la coda da consegnare. Quante volte una
   persona ha preso un articolo, e quando, **non si scrive due volte**: si legge
   da qui. Un acquisto rimborsato non conta né per le scorte a persona né per le
-  attese.
+  attese. Le risposte al modulo stanno nella colonna `risposte`.
+- `negozio_bozze` e `negozio_risposte`: i moduli aperti e i loro invii, in
+  attesa del codice in chat (vedi «Il modulo»).
 
 ### L'acquisto
 
@@ -186,8 +252,10 @@ intorno gli si accorda («hai comprato Corona», non «Corona è tuo»).
 
 ### Quanto si tiene
 
-Lo storico un anno, come le donazioni; quello ancora da consegnare finché lo
-streamer non decide. La borsa finché lo streamer non toglie l'articolo o
+Lo storico un anno, come le donazioni, con le risposte al modulo; quello ancora
+da consegnare finché lo streamer non decide. Un modulo non confermato sparisce
+dopo il suo quarto d'ora, con le risposte: le toglie la stessa pulizia
+(`negozio.pota`), e comunque dopo la scadenza non vale più. La borsa finché lo streamer non toglie l'articolo o
 cancella il canale. L'informativa lo dice nelle tre lingue.
 
 ### Cosa serve ai punti 5 e 6

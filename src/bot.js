@@ -164,6 +164,7 @@ export class BotManager {
     this._vipTimer = null;
     this._premiTimer = null;
     this._negozioTimer = null;
+    this._moduliTimer = null;
     this._annunciTimer = null;       // poll degli annunci "gioco attivo" (regole in chat)
     this._stopReflection = null;
     this._capAvvisoDato = false;     // il tetto ascolti è già stato loggato una volta?
@@ -305,6 +306,8 @@ export class BotManager {
     const potaNegozio = () => { try { negozio.potaStorico(); } catch (e) { log.debug('negozio, pulizia dello storico:', e?.message || e); } };
     potaNegozio();
     this._negozioTimer = setInterval(potaNegozio, 6 * 60 * 60_000);
+    // I moduli degli acquisti non confermati si tolgono appena scadono.
+    this._moduliTimer = setInterval(() => { try { negozio.potaModuli(); } catch (e) { log.debug('negozio, pulizia dei moduli:', e?.message || e); } }, 60_000);
     // Anti-bot: lista di bot noti aggiornata da sola. Si riprende la copia su
     // disco subito (istantaneo), poi si scarica la fresca dopo 30s (per non
     // rallentare l'avvio) e la si rinfresca ogni 12 ore.
@@ -401,6 +404,7 @@ export class BotManager {
     clearInterval(this._vipTimer);
     clearInterval(this._premiTimer);
     clearInterval(this._negozioTimer);
+    clearInterval(this._moduliTimer);
     clearInterval(this._listaBotTimer);
     clearInterval(this._watchtimeTimer);
     stopBackupAuto();

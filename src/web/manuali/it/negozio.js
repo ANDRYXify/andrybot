@@ -70,7 +70,7 @@ export default {
       ['«Un oggetto della borsa»', 'Va nella borsa di chi lo compra e ci resta. Lo vede con <code>!borsa</code>.', 'niente', 'mai: l\'acquisto è tutto qui'],
       ['«Un effetto a schermo»', 'Parte sull\'overlay l\'effetto scelto in «L’effetto»: un tuo effetto (suono, immagine, video, disegnato) o un suono pronto. «Dalla libreria» prende un media dalla libreria.', 'l\'overlay aperto in OBS', 'se l\'overlay si chiude proprio mentre compra; con l\'overlay spento, o l\'effetto tolto, non si compra proprio'],
       ['«Un Modulo»', 'Parte il modulo scelto in «Il modulo», come se l\'avesse fatto partire chi compra. Quello che scrive dopo la parola arriva al modulo come <code>$args</code>.', 'un modulo acceso', 'se le condizioni del modulo lo fermano (ruolo, piattaforma, diretta, pausa)'],
-      ['«Da consegnare a mano»', 'Finisce in «Da consegnare». Con «Cosa chiedi a chi compra (facoltativo)» chi compra deve scrivere la risposta dopo la parola.', 'niente', 'quando premi «Rifiuta e rimborsa»'],
+      ['«Da consegnare a mano»', 'Finisce in «Da consegnare». Se ti serve sapere qualcosa da chi compra, il gioco da vedere o il suo nome Discord, lo chiedi in «Cosa chiedi a chi compra».', 'niente', 'quando premi «Rifiuta e rimborsa»'],
       ['«Il VIP su Twitch»', `Il VIP per le dirette di «Per quante dirette», da 1 a ${MAX_DIRETTE_VIP}.`, 'Twitch', 'se Twitch non lo dà: posti VIP pieni, permesso mancante'],
       ['«Un ruolo su Discord»', 'Il bot dà il ruolo scelto in «Il ruolo» sul tuo server.', 'il server collegato nella scheda Discord, e chi compra collegato con <code>!discord</code>', 'se chi compra non è nel server, o Discord non dà il ruolo'],
       ['«Una canzone in coda»', 'La canzone scritta dopo la parola entra nella coda di Spotify.', 'Spotify collegato nella scheda Musica', 'se la canzone non si trova o Spotify è fermo'],
@@ -81,6 +81,24 @@ export default {
       '<strong>Il ruolo su Discord.</strong> L\'elenco mostra i ruoli che il bot può dare, cioè quelli sotto di lui. Quelli che una regola della scheda Discord nomina ci sono ma non si scelgono, con scritto «(lo danno le regole dei Ruoli)»: il giro dei ruoli li toglierebbe a chi non soddisfa la regola, e l\'acquisto sparirebbe da solo. Il ruolo comprato resta finché non lo togli tu.',
       '<strong>La canzone.</strong> Entra nella coda di Spotify come con <code>!sr</code>, ma senza le regole di <code>!sr</code> (solo abbonati, costo, punti canale): è già pagata qui. Spotify lascia solo aggiungere in fondo alla coda: la canzone suona dopo quella di adesso e dopo le richieste già in coda, prima della playlist.',
       '<strong>Il Modulo.</strong> Il suo «Costa» non si paga una seconda volta, e il suo «Serve almeno» non si guarda: si è già pagato nel negozio. Se il modulo ha una probabilità e il dado dice di no, l\'acquisto vale lo stesso, come in una macchinetta.',
+    ] },
+
+    { h3: 'Cosa chiedi a chi compra' },
+    { p: [
+      'Ogni articolo, di qualunque tipo, può fare fino a cinque domande a chi lo compra: un nome Discord, il nome nel gioco, un rank, il gioco da vedere. «Una domanda» ne aggiunge una vuota; «Nome Discord» e «Nome nel gioco» ne aggiungono una già scritta.',
+    ] },
+    { tabella: [
+      ['Campo', 'Cosa fa'],
+      ['«La domanda»', 'quello che legge chi compra, fino a 60 caratteri. Due domande non possono avere lo stesso testo: le risposte non si distinguerebbero.'],
+      ['«La risposta»', '«Testo breve» (una riga), «Testo lungo» (qualche riga), «Numero», oppure «Una scelta fra…»: allora in «Le scelte, una per riga» scrivi almeno due voci, e chi compra sceglie solo fra quelle.'],
+      ['«Un aiuto sotto la domanda (facoltativo)»', 'una riga piccola sotto la domanda, per esempio «come lo vedi nel server».'],
+      ['«Va risposta per forza»', 'acceso, senza risposta non si compra; spento, chi compra la può lasciare vuota.'],
+    ] },
+    { p: [
+      '<strong>Come risponde chi compra.</strong> Scrive <code>!compra</code> e la parola, come sempre. Se l\'articolo fa domande, il bot gli dà in chat il link di un modulo: lo compila sul telefono o sul computer, e il modulo gli dà un codice, per esempio <code>#4821</code>. Lo scrive in chat, <code>!compra #4821</code>, e solo allora compra: le monete si spendono in quel momento, con gli stessi controlli di sempre.',
+      '<strong>Perché il codice.</strong> Il link lo vede tutta la chat. Il codice lo può scrivere solo l\'account di chi ha chiesto il modulo: così nessuno può mettere il suo nome Discord nell\'acquisto di un altro. Il modulo vale un quarto d\'ora; chi lo lascia scadere riscrive <code>!compra</code> e ne riceve uno nuovo.',
+      '<strong>Con una domanda sola</strong> si può anche rispondere in chat, dopo la parola: <code>!compra gioco Hades</code>. Non vale per la canzone, il messaggio in evidenza e il Modulo, dove quello che si scrive dopo la parola è già la canzone, il messaggio o gli argomenti: lì le domande passano sempre dal modulo.',
+      'Se cambi le domande mentre qualcuno sta compilando, il suo codice non compra: il bot gli dà il modulo nuovo. Le risposte le trovi in «Da consegnare» e nello storico, ognuna con la sua domanda. Chiedi solo quello che ti serve: le risposte si tengono come gli acquisti, un anno.',
     ] },
 
     { h3: 'Chi lo può comprare' },
@@ -102,7 +120,7 @@ export default {
 
     { h3: 'Da consegnare' },
     { p: [
-      'Gli acquisti «Da consegnare a mano», dal più vecchio, con chi li ha comprati, cosa ha scritto, quando e quanto ha pagato.',
+      'Gli acquisti «Da consegnare a mano», dal più vecchio, con chi li ha comprati, cosa ha scritto, le risposte alle tue domande, quando e quanto ha pagato. Ogni risposta ha il suo «Copia»: un nome Discord si copia, non si ricopia a mano.',
       '«Fatto» li chiude. «Rifiuta e rimborsa» chiede conferma, rende le monete e la scorta, e il bot scrive in chat a chi aveva comprato che non è stato accettato e quanto gli è tornato.',
       'Un acquisto deciso non si decide due volte: se due persone del pannello premono insieme, la seconda legge «Questo acquisto è già stato deciso.».',
       'Quello che c\'è da consegnare resta qui finché non decidi, anche dopo un anno.',
@@ -141,7 +159,8 @@ export default {
       ['Comando', 'Cosa fa'],
       ['<code>!negozio</code>', 'Dice i tre articoli più comprati, con la parola per comprarli e il prezzo, e l\'indirizzo della pagina del negozio. Quelli che si vedono solo a chi li può comprare non escono. <code>!shop</code> fa lo stesso.'],
       ['<code>!negozio spada</code>', 'Racconta quell\'articolo: prezzo, descrizione, requisiti e scorte.'],
-      ['<code>!compra spada</code>', 'Compra l\'articolo. Per una canzone, un messaggio in evidenza o una domanda si scrive dopo la parola: <code>!compra canzone Bohemian Rhapsody</code>. <code>!buy</code> fa lo stesso.'],
+      ['<code>!compra spada</code>', 'Compra l\'articolo. Per una canzone, un messaggio in evidenza o una domanda sola si scrive dopo la parola: <code>!compra canzone Bohemian Rhapsody</code>. Se l\'articolo fa domande, il bot dà il link del modulo. <code>!buy</code> fa lo stesso.'],
+      ['<code>!compra #4821</code>', 'Conferma il modulo compilato, col codice che ha dato. Funziona solo dall\'account che ha chiesto il modulo, entro un quarto d\'ora.'],
       ['<code>!borsa</code>', 'Dice a chi lo scrive cosa ha nella borsa, con quante volte l\'ha preso. <code>!bag</code> fa lo stesso.'],
     ] },
     { p: [
@@ -168,6 +187,9 @@ export default {
       '<strong>Il ruolo di Discord non si può scegliere.</strong> Lo nomina una regola nella scheda Discord. Toglilo dalle regole, oppure vendi un altro ruolo. Se l\'elenco è vuoto, il ruolo sta sopra al bot: su Discord trascina il ruolo del bot più in alto.',
       '<strong>Chi compra un ruolo si sente dire di collegare il suo Discord.</strong> Deve scrivere <code>!discord</code> in chat e seguire i passi. Solo dopo il ruolo si può comprare.',
       '<strong>«Quella parola la usa già un altro articolo».</strong> Ogni articolo ha la sua parola: cambiane una.',
+      '<strong>«Due domande hanno lo stesso testo».</strong> Le risposte non si distinguerebbero: cambia il testo di una delle due.',
+      '<strong>«Una domanda a scelta vuole almeno due scelte diverse».</strong> In «Le scelte, una per riga» scrivi almeno due voci diverse, oppure cambia «La risposta» in «Testo breve».',
+      '<strong>Chi compra dice che il codice non vale.</strong> Il modulo vale un quarto d\'ora, e il codice solo dall\'account che ha chiesto il modulo. Basta riscrivere <code>!compra</code> e la parola per un modulo nuovo. Se intanto hai cambiato le domande, il bot gli dà direttamente quello nuovo.',
     ] },
   ],
   faq: [
@@ -177,6 +199,7 @@ export default {
     { d: 'Chi vede cosa ho comprato?', r: 'Lo streamer e i moderatori del pannello, nello storico. In chat solo la risposta del bot a chi compra.' },
     { d: 'Posso rimettere le scorte?', r: 'Sì: apri l\'articolo con «Modifica» e scrivi in «Quante ne restano» il numero nuovo.' },
     { d: 'La pagina del negozio mostra anche i negozi di altri streamer?', r: 'No. Ogni indirizzo è il negozio di un canale solo, e la pagina non porta ad altri negozi. Senza il nome di un canale, negozio.socialbot.live porta alla home di SocialBot.' },
-    { d: 'Si può comprare dalla pagina?', r: 'No: la pagina mostra cosa c\'è e come si compra. Si compra in chat, con il comando che la pagina copia per te.' },
+    { d: 'Si può comprare dalla pagina?', r: 'No: la pagina mostra cosa c\'è e come si compra. Si compra in chat, con il comando che la pagina copia per te. Il modulo di un articolo che fa domande si compila sul sito, ma si conferma in chat: è la chat che sa chi sei.' },
+    { d: 'Perché il modulo chiede di scrivere un codice in chat?', r: 'Perché il link del modulo lo vede tutta la chat. Il codice lo può scrivere solo l\'account di chi ha chiesto il modulo: se un altro lo apre e lo compila, ottiene un codice che non può usare, e l\'acquisto resta di chi l\'ha voluto.' },
   ],
 };

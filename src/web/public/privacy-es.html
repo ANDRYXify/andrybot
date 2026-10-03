@@ -97,7 +97,8 @@
         <li><strong>Conocimiento y ajustes</strong> que introduce el streamer; <strong>monedas y VIP</strong> (fidelidad).</li>
         <li><strong>La tienda del canal</strong>, si el streamer la abre: quién compró qué y cuándo (el nombre en el chat, el
           artículo, el precio en monedas y lo que escribió después de la palabra del artículo, por ejemplo una canción o un
-          mensaje), y los objetos que cada uno guarda en su bolsa. Sirve para entregar lo que se compró, para devolver las
+          mensaje), las respuestas al formulario del artículo, si el streamer puso uno (por ejemplo el nombre de Discord), y
+          los objetos que cada uno guarda en su bolsa. Sirve para entregar lo que se compró, para devolver las
           monedas y para contar existencias y esperas. Lo ven el streamer y sus moderadores en el panel. En la tienda solo se
           paga con las monedas del canal, nunca con dinero.</li>
         <li id="negozio"><strong>La página de la tienda</strong> (negozio.socialbot.live/ y el nombre del canal), mientras la
@@ -105,6 +106,12 @@
           requisitos, y el nombre, la foto y los textos que el streamer elige para la página. No muestra quién compró ni qué
           guarda alguien en su bolsa, y no lleva a las tiendas de otros canales. Quien la abre no deja nada: ninguna cookie,
           ningún recuento de visitas, ningún formulario; el botón «Copiar» copia el comando en su propio dispositivo y nada más.</li>
+        <li id="negozio-modulo"><strong>El formulario de una compra</strong>, cuando un artículo le pide algo a quien compra:
+          el bot da en el chat el enlace de una página con las preguntas del streamer. Las respuestas sirven solo para esa
+          compra: la página da un código, y la compra solo se hace cuando quien escribió el comando lo escribe en el chat
+          desde su cuenta, así nadie más puede comprar en su lugar. Las ven el streamer y sus moderadores, junto a la compra.
+          Un formulario no confirmado desaparece después de un cuarto de hora, con sus respuestas. La página no usa cookies y
+          no se indexa.</li>
         <li><strong>Quién ha seguido el canal</strong>: el identificador de Twitch (o el nombre en Kick) y cuándo lo vimos
           seguir, para no tratar como seguidor nuevo a quien deja de seguir y vuelve a seguir. Se elimina con la cuenta.</li>
         <li><strong>La reseña de SocialBot</strong>, si el streamer deja una: las estrellas, el texto si lo escribe,
@@ -233,9 +240,11 @@
         <li>Mensajes del chat: <strong>14 días</strong>.</li>
         <li>Tokens: mientras el streamer siga conectado (se pueden revocar desconectándose).</li>
         <li>Donaciones (nombre elegido, mensaje, importe, hora): <strong>un año</strong>.</li>
-        <li>Compras en la tienda del canal (nombre en el chat, artículo, precio, lo que escribió quien compra, hora):
+        <li>Compras en la tienda del canal (nombre en el chat, artículo, precio, lo que escribió quien compra, las respuestas
+          al formulario, hora):
           <strong>un año</strong>; las que faltan por entregar se quedan hasta que el streamer decida. Los objetos de la
-          bolsa: hasta que el streamer quite el artículo o borre el canal.</li>
+          bolsa: hasta que el streamer quite el artículo o borre el canal. Un formulario no confirmado: <strong>un cuarto de
+          hora</strong>.</li>
         <li>Dirección de correo electrónico del streamer e informes de los directos: hasta que el streamer los quite o borre el canal.</li>
         <li>Imágenes adjuntas a las donaciones: hasta que el streamer decida; después, igual que la donación, o se borran enseguida si las descarta; las de un pago que nunca se completa, en cuanto el pago caduca.</li>
         <li>La imagen de la semana enviada como historia de Instagram: el tiempo que tarde Instagram en descargarla, en una dirección

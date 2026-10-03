@@ -33,6 +33,8 @@ import { nomeIn } from './comandi-registro.js';
 import { aChi, spazioPer, inMessaggi } from './risposte.js';
 import * as requisiti from './negozio-requisiti.js';
 import * as tipi from './negozio-tipi.js';
+import * as moduli from './negozio-moduli.js';
+import { randomBytes, randomInt } from 'node:crypto';
 import { makeLog } from '../logger.js';
 import { config } from '../config.js';
 
@@ -103,11 +105,13 @@ export function normArticolo(g) {
   const al = quando === 'date' ? intero(x.al, 0, 8.64e15, 0) : 0;
   if (quando === 'date' && !(dal > 0 && al > dal)) return { ok: false, errore: 'date' };
   const immagine = IMMAGINE_OK.test(String(x.immagine || '')) ? String(x.immagine) : '';
+  const modulo = moduli.normCampi(x.campi);
+  if (!modulo.ok) return { ok: false, errore: modulo.errore };
   return {
     ok: true,
     articolo: {
       id: intero(x.id, 0, 1e12, 0) || undefined,
-      parola, nome, tipo, dati, immagine,
+      parola, nome, tipo, dati, immagine, campi: modulo.campi,
       descrizione: riga(x.descrizione, 300),
       prezzo: intero(x.prezzo, 0, MAX_PREZZO, 0),
       scorta: modo === 'tutto' ? quante : null,
@@ -304,7 +308,7 @@ const FRASI = {
     vuoto: () => '🛒 Il negozio per ora è vuoto.',
     elenco: (d) => `🛒 Nel negozio: ${d.voci}. Si compra con ${d.cmd} e la parola fra parentesi. Tutto il negozio: ${d.url}`,
     voce: (d) => `${d.articolo} (${d.parola}), ${d.prezzo} ${d.moneta}`,
-    dettaglio: (d) => `🛒 ${d.articolo} (${d.parola}): ${d.prezzo} ${d.moneta}.${d.descrizione ? ' ' + d.descrizione : ''}${d.requisito ? ' È per chi ' + d.requisito + '.' : ''}${d.scorte ? ' ' + d.scorte : ''}`,
+    dettaglio: (d) => `🛒 ${d.articolo} (${d.parola}): ${d.prezzo} ${d.moneta}.${d.descrizione ? ' ' + d.descrizione : ''}${d.requisito ? ' È per chi ' + d.requisito + '.' : ''}${d.scorte ? ' ' + d.scorte : ''}${d.chiede ? ' Ti chiede: ' + d.chiede + '.' : ''}`,
     restano: (d) => (d.n > 1 ? `Ne restano ${d.cifra}.` : d.n === 1 ? 'Ne resta solo 1.' : 'Le scorte sono finite.'),
     aTesta: (d) => (d.n === 1 ? 'Una volta a testa.' : `${d.cifra} volte a testa.`),
     fatto: (d, a) => a`🛒 ${d.nome}, hai comprato ${d.articolo}. %[Le tue|I tuoi|La tua|Il tuo]% ${d.moneta}: ${d.saldo}.`,
@@ -325,6 +329,10 @@ const FRASI = {
     serveTesto: (d) => (d.tipo === 'musica' ? `🎶 ${d.nome}, scrivi anche la canzone: ${d.cmd} ${d.parola} e il titolo o l'artista.`
       : d.tipo === 'evidenza' ? `📣 ${d.nome}, scrivi anche il messaggio: ${d.cmd} ${d.parola} e il testo.`
         : `🛒 ${d.nome}, ${d.domanda} Rispondi così: ${d.cmd} ${d.parola} e la tua risposta.`),
+    modulo: (d) => (d.inRiga
+      ? `📝 ${d.nome}, ${d.domanda} Rispondi così: ${d.cmd} ${d.parola} e la tua risposta, oppure dal modulo: ${d.url}`
+      : `📝 ${d.nome}, per ${d.articolo} c'è un modulo da compilare: ${d.url} Poi scrivi qui il codice che ti dà. Vale ${d.minuti} minuti.`),
+    moduloCodice: (d) => `📝 ${d.nome}, quel codice non vale: il modulo è scaduto, o il codice non è tuo. Riscrivi ${d.cmd} e la parola dell'articolo per un modulo nuovo.`,
     nonParte: (d, a) => a`🛒 ${d.nome}, ${d.articolo} adesso non si può comprare: ${d.perche}. %[Le tue|I tuoi|La tua|Il tuo]% ${d.moneta} %[restano dove sono|restano dove sono|resta dov'è|resta dov'è]%.`,
     rimborso: (d) => `🛒 ${d.nome}, l'acquisto di ${d.articolo} non è andato a buon fine: ${d.perche}. Ti ho reso ${d.prezzo} ${d.moneta}.`,
     rifiutato: (d) => `🛒 ${d.nome}, il tuo acquisto di ${d.articolo} non è stato accettato: ti ho reso ${d.prezzo} ${d.moneta}.`,
@@ -337,7 +345,7 @@ const FRASI = {
     vuoto: () => '🛒 The shop is empty for now.',
     elenco: (d) => `🛒 In the shop: ${d.voci}. Buy with ${d.cmd} and the word in brackets. The whole shop: ${d.url}`,
     voce: (d) => `${d.articolo} (${d.parola}), ${d.prezzo} ${d.moneta}`,
-    dettaglio: (d) => `🛒 ${d.articolo} (${d.parola}): ${d.prezzo} ${d.moneta}.${d.descrizione ? ' ' + d.descrizione : ''}${d.requisito ? ' It\'s for anyone who ' + d.requisito + '.' : ''}${d.scorte ? ' ' + d.scorte : ''}`,
+    dettaglio: (d) => `🛒 ${d.articolo} (${d.parola}): ${d.prezzo} ${d.moneta}.${d.descrizione ? ' ' + d.descrizione : ''}${d.requisito ? ' It\'s for anyone who ' + d.requisito + '.' : ''}${d.scorte ? ' ' + d.scorte : ''}${d.chiede ? ' It asks for: ' + d.chiede + '.' : ''}`,
     restano: (d) => (d.n > 0 ? `${d.cifra} left.` : 'Sold out.'),
     aTesta: (d) => (d.n === 1 ? 'Once per person.' : `${d.cifra} times per person.`),
     fatto: (d) => `🛒 ${d.nome}, you bought ${d.articolo}. Your ${d.moneta}: ${d.saldo}.`,
@@ -358,6 +366,10 @@ const FRASI = {
     serveTesto: (d) => (d.tipo === 'musica' ? `🎶 ${d.nome}, add the song too: ${d.cmd} ${d.parola} and the title or the artist.`
       : d.tipo === 'evidenza' ? `📣 ${d.nome}, add the message too: ${d.cmd} ${d.parola} and the text.`
         : `🛒 ${d.nome}, ${d.domanda} Answer like this: ${d.cmd} ${d.parola} and your answer.`),
+    modulo: (d) => (d.inRiga
+      ? `📝 ${d.nome}, ${d.domanda} Answer like this: ${d.cmd} ${d.parola} and your answer, or use the form: ${d.url}`
+      : `📝 ${d.nome}, ${d.articolo} has a form to fill in: ${d.url} Then type the code it gives you here. It lasts ${d.minuti} minutes.`),
+    moduloCodice: (d) => `📝 ${d.nome}, that code doesn't work: the form has expired, or the code isn't yours. Type ${d.cmd} and the item word again for a new form.`,
     nonParte: (d) => `🛒 ${d.nome}, ${d.articolo} can't be bought right now: ${d.perche}. You keep your ${d.moneta}.`,
     rimborso: (d) => `🛒 ${d.nome}, ${d.articolo} didn't go through: ${d.perche}. I gave you back ${d.prezzo} ${d.moneta}.`,
     rifiutato: (d) => `🛒 ${d.nome}, your purchase of ${d.articolo} wasn't accepted: I gave you back ${d.prezzo} ${d.moneta}.`,
@@ -370,7 +382,7 @@ const FRASI = {
     vuoto: () => '🛒 La tienda por ahora está vacía.',
     elenco: (d) => `🛒 En la tienda: ${d.voci}. Se compra con ${d.cmd} y la palabra entre paréntesis. Toda la tienda: ${d.url}`,
     voce: (d) => `${d.articolo} (${d.parola}), ${d.prezzo} ${d.moneta}`,
-    dettaglio: (d) => `🛒 ${d.articolo} (${d.parola}): ${d.prezzo} ${d.moneta}.${d.descrizione ? ' ' + d.descrizione : ''}${d.requisito ? ' Es para quien ' + d.requisito + '.' : ''}${d.scorte ? ' ' + d.scorte : ''}`,
+    dettaglio: (d) => `🛒 ${d.articolo} (${d.parola}): ${d.prezzo} ${d.moneta}.${d.descrizione ? ' ' + d.descrizione : ''}${d.requisito ? ' Es para quien ' + d.requisito + '.' : ''}${d.scorte ? ' ' + d.scorte : ''}${d.chiede ? ' Te pide: ' + d.chiede + '.' : ''}`,
     restano: (d) => (d.n > 1 ? `Quedan ${d.cifra}.` : d.n === 1 ? 'Queda solo 1.' : 'Se ha agotado.'),
     aTesta: (d) => (d.n === 1 ? 'Una vez por persona.' : `${d.cifra} veces por persona.`),
     fatto: (d, a) => a`🛒 ${d.nome}, has comprado ${d.articolo}. %[Tus|Tus|Tu|Tu]% ${d.moneta}: ${d.saldo}.`,
@@ -391,6 +403,10 @@ const FRASI = {
     serveTesto: (d) => (d.tipo === 'musica' ? `🎶 ${d.nome}, escribe también la canción: ${d.cmd} ${d.parola} y el título o el artista.`
       : d.tipo === 'evidenza' ? `📣 ${d.nome}, escribe también el mensaje: ${d.cmd} ${d.parola} y el texto.`
         : `🛒 ${d.nome}, ${d.domanda} Responde así: ${d.cmd} ${d.parola} y tu respuesta.`),
+    modulo: (d) => (d.inRiga
+      ? `📝 ${d.nome}, ${d.domanda} Responde así: ${d.cmd} ${d.parola} y tu respuesta, o desde el formulario: ${d.url}`
+      : `📝 ${d.nome}, para ${d.articolo} hay un formulario que rellenar: ${d.url} Luego escribe aquí el código que te da. Vale ${d.minuti} minutos.`),
+    moduloCodice: (d) => `📝 ${d.nome}, ese código no vale: el formulario ha caducado, o el código no es tuyo. Vuelve a escribir ${d.cmd} y la palabra del artículo para un formulario nuevo.`,
     nonParte: (d, a) => a`🛒 ${d.nome}, ${d.articolo} ahora no se puede comprar: ${d.perche}. %[Tus|Tus|Tu|Tu]% ${d.moneta} %[se quedan donde están|se quedan donde están|se queda donde está|se queda donde está]%.`,
     rimborso: (d) => `🛒 ${d.nome}, la compra de ${d.articolo} no ha salido bien: ${d.perche}. Te he devuelto ${d.prezzo} ${d.moneta}.`,
     rifiutato: (d) => `🛒 ${d.nome}, tu compra de ${d.articolo} no ha sido aceptada: te he devuelto ${d.prezzo} ${d.moneta}.`,
@@ -435,7 +451,7 @@ const comandi = (ch) => ({
 // `fonti` legge i requisiti che stanno su Twitch (negozio-requisiti.js),
 // `esecutori` fa partire gli effetti (negozio-tipi.js): arrivano da fuori, cosi'
 // l'acquisto si prova senza rete e senza Twitch.
-export async function compra({ canale, msg, parola, nota = '', live = false, fonti = {}, esecutori = {}, dire = () => {}, ora = Date.now() } = {}) {
+export async function compra({ canale, msg, parola, nota = '', risposte = null, live = false, fonti = {}, esecutori = {}, dire = () => {}, ora = Date.now() } = {}) {
   const ch = String(canale || '').toLowerCase();
   const pf = preferenzeDi(ch);
   const l = lin(pf.lingua);
@@ -456,8 +472,28 @@ export async function compra({ canale, msg, parola, nota = '', live = false, fon
   const r = await requisiti.verifica(a.requisiti, { canale: ch, msg, fonti, ora });
   if (r) return no(r.esito === 'no' ? 'requisito' : 'nonSo', { ...art, requisito: requisitoAParole(r.req, pf) });
   if (ostacolo) return no('monete', { ...art, saldo: cifra(ostacolo.saldo, pf) });
-  const testo = String(nota || '').replace(/\s+/g, ' ').trim().slice(0, 300);
-  if (tipi.serveTesto(a) && !testo) return no('serveTesto', { ...art, domanda: a.dati?.domanda || '' });
+  let testo = String(nota || '').replace(/\s+/g, ' ').trim().slice(0, 300);
+  if (tipi.serveTesto(a) && a.tipo !== 'mano' && !testo) return no('serveTesto', { ...art, domanda: '' });
+
+  // Il modulo (negozio-moduli.js): le risposte arrivano dalla bozza
+  // confermata col codice, o dalla riga quando basta; se no nasce la bozza, e
+  // la chat riceve il link. Niente monete si muovono prima della conferma.
+  const campi = moduli.campiDi(a);
+  let date = [];
+  if (campi.length) {
+    if (Array.isArray(risposte)) date = risposte;
+    else {
+      const inRiga = moduli.rigaBasta(a);
+      const r = inRiga && testo ? moduli.valoreDi(campi[0], testo) : null;
+      if (r?.ok && r.valore) { date = [{ etichetta: campi[0].etichetta, valore: r.valore }]; testo = ''; }
+      else {
+        const token = randomBytes(16).toString('base64url');
+        negozioDb.nuovaBozza(ch, { token, user: msg?.user, piattaforma: msg?.piattaforma || 'twitch', display: nomeDi(msg),
+          articolo: a.id, nota: moduli.usaNota(a.tipo) ? testo : '', firma: JSON.stringify(campi), scade: ora + moduli.VITA_BOZZA_MS, ora });
+        return no('modulo', { ...art, url: urlModulo(ch, token), inRiga, domanda: inRiga ? domandaDi(campi[0]) : '', minuti: Math.round(moduli.VITA_BOZZA_MS / 60000) });
+      }
+    }
+  }
   const nasce = tipi.nascita(a.tipo);
   const es = esecutori[a.tipo];
   if (nasce.stato === 'in_corso') {
@@ -467,7 +503,7 @@ export async function compra({ canale, msg, parola, nota = '', live = false, fon
   }
 
   // 2. La parte nel database, tutta insieme.
-  const pr = negozioDb.prenota(ch, { articolo: a.id, user: msg?.user, display: nomeDi(msg), nota: testo, ...nasce, ora });
+  const pr = negozioDb.prenota(ch, { articolo: a.id, user: msg?.user, display: nomeDi(msg), nota: testo, risposte: date, ...nasce, ora });
   if (!pr.ok) {
     const quale = pr.articolo || a;
     if (pr.motivo === 'monete') return no('monete', { ...art, saldo: cifra(pr.saldo ?? 0, pf) });
@@ -499,6 +535,34 @@ export async function compra({ canale, msg, parola, nota = '', live = false, fon
   };
 }
 
+// L'indirizzo del modulo: sotto la pagina del canale, cosi' si legge di chi e'.
+export const urlModulo = (canale, token) => `${config.baseUrl}/u/${String(canale || '').toLowerCase()}/m/${token}`;
+// La domanda di un campo come si dice in chat: con il punto di domanda o i due
+// punti in fondo, se l'etichetta non li ha gia'.
+const domandaDi = (c) => (/[?:.!]$/.test(c.etichetta) ? c.etichetta : `${c.etichetta}:`);
+
+// IL CODICE SCRITTO IN CHAT (`!compra #1234`): prende la bozza di chi scrive,
+// compra con le sue risposte e con gli stessi controlli di sempre. Se il
+// modulo dell'articolo e' cambiato nel frattempo, le risposte non sono piu' di
+// quel modulo: si ricomincia con un modulo nuovo (compra senza risposte).
+export async function confermaModulo({ canale, msg, codice, live = false, fonti = {}, esecutori = {}, dire = () => {}, ora = Date.now() } = {}) {
+  const ch = String(canale || '').toLowerCase();
+  const b = negozioDb.prendiCodice(ch, { user: msg?.user, piattaforma: msg?.piattaforma || 'twitch', codice, ora });
+  if (!b) return { ok: false, momento: 'moduloCodice', dati: { nome: nomeDi(msg), ...comandi(ch) } };
+  let esito;
+  try {
+    const a = negozioDb.articolo(ch, b.articolo);
+    if (!a) esito = { ok: false, momento: 'moduloCodice', dati: { nome: nomeDi(msg), ...comandi(ch) } };
+    else {
+      const uguale = JSON.stringify(moduli.campiDi(a)) === b.firma;
+      esito = await compra({ canale: ch, msg, parola: a.parola, nota: b.nota, risposte: uguale ? moduli.risposteDa(b.risposte) : null, live, fonti, esecutori, dire, ora });
+    }
+  } finally {
+    negozioDb.chiudiBozza(b.impronta, !!esito?.ok);
+  }
+  return esito;
+}
+
 function datiOstacolo(o, a, pf) {
   const art = { articolo: a.nome, parola: a.parola, prezzo: cifra(a.prezzo, pf) };
   if (o.motivo === 'persona') return { ...art, quante: a.perPersona };
@@ -520,6 +584,9 @@ export function rimborsaSospesi() {
 
 // Lo storico si tiene un anno: la pulizia la fa girare il bot.
 export const potaStorico = (ora = Date.now()) => negozioDb.pota(ora);
+// I moduli scaduti si tolgono subito, non col giro dello storico: lo dice
+// l'informativa, un modulo non confermato sparisce dopo il suo quarto d'ora.
+export const potaModuli = (ora = Date.now()) => negozioDb.potaBozze(ora);
 
 // ------------------------------------------------------------------ in chat
 
@@ -551,7 +618,8 @@ function rispostaNegozio(ch, msg, args, pf) {
     const scorte = s.modo === 'tutto' ? frase(ch, 'restano', { n: s.n, cifra: cifra(s.n, pf) })
       : s.modo === 'persona' ? frase(ch, 'aTesta', { n: s.n, cifra: cifra(s.n, pf) }) : '';
     const requisito = a.requisiti.map((r) => requisitoAParole(r, pf)).join(l === 'en' ? ' and ' : l === 'es' ? ' y ' : ' e ');
-    return [frase(ch, 'dettaglio', { ...base, articolo: a.nome, parola: a.parola, prezzo: cifra(a.prezzo, pf), descrizione: a.descrizione, requisito, scorte })];
+    const chiede = moduli.cosaChiede(a).join(', ');
+    return [frase(ch, 'dettaglio', { ...base, articolo: a.nome, parola: a.parola, prezzo: cifra(a.prezzo, pf), descrizione: a.descrizione, requisito, scorte, chiede })];
   }
   const primi = inVetrina(ch).slice(0, 3);
   if (!primi.length) return [frase(ch, 'vuoto', base)];
@@ -586,13 +654,17 @@ export async function tryComando(msg, parla, ambiente = {}) {
   try {
     if (cmd === 'negozio') { rispostaNegozio(ch, msg, parti, pf).forEach(risposta); return true; }
     if (cmd === 'borsa') { rispostaBorsa(ch, msg, pf).forEach(risposta); return true; }
-    const esito = await compra({
-      canale: ch, msg, parola: parti[0] || '', nota: parti.slice(1).join(' '),
+    const giro = {
+      canale: ch, msg,
       live: ambiente.live === true,
       fonti: ambiente.fonti || requisiti.fontiTwitch(ambiente.helix),
       esecutori: ambiente.esecutori || tipi.esecutori(ambiente),
       dire: parla,
-    });
+    };
+    const codice = moduli.CODICE.exec(parti[0] || '');
+    const esito = codice
+      ? await confermaModulo({ ...giro, codice: codice[1] })
+      : await compra({ ...giro, parola: parti[0] || '', nota: parti.slice(1).join(' ') });
     if (esito.ok) log.info(`#${ch} ${msg?.user} ha comprato ${esito.dati.articolo} (${esito.momento})`);
     risposta(frase(ch, esito.momento, esito.dati));
   } catch (e) {
@@ -626,13 +698,17 @@ export function vistaPannello(canale) {
       inBorse: a.tipo === 'oggetto' ? negozioDb.inQuanteBorse(ch, a.id) : 0,
       immagineUrl: immagineUrl(a.immagine),
     })),
-    coda: negozioDb.coda(ch),
-    storico: negozioDb.storico(ch),
+    coda: negozioDb.coda(ch).map(acquistoPerPannello),
+    storico: (({ righe, totali }) => ({ righe: righe.map(acquistoPerPannello), totali }))(negozioDb.storico(ch)),
     // quello che l'editor offre: gli effetti della libreria del canale e i suoi Moduli
     effetti: effectsDb.list(ch).map((e) => ({ comando: e.comando, tipo: e.tipo })),
     moduli: modulesDb.list(ch).map((m) => ({ id: m.id, nome: m.nome, attivo: !!m.attivo })),
   };
 }
+
+// Un acquisto come lo legge la scheda: le risposte al modulo rilette, e niente
+// di quello che serve solo al database (i lotti spesi, il canale).
+const acquistoPerPannello = ({ ricevuta, channel, risposte, ...r }) => ({ ...r, risposte: moduli.risposteDa(risposte) });
 
 export function apri(canale, attivo) {
   const ch = String(canale || '').toLowerCase();

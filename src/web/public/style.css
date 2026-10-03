@@ -2749,6 +2749,16 @@ select.eff-evento { width: auto; max-width: 100%; min-height: 0; padding: .3rem 
 .neg-req .riga-check { margin: 0; flex: 1 1 14rem; }
 .neg-req input[type="number"], .neg-req select { max-width: 11rem; }
 .neg-mini { width: 3rem; height: 3rem; object-fit: cover; border-radius: var(--r-s); flex: 0 0 auto; }
+.neg-campi { display: grid; gap: .7rem; margin-top: .6rem; }
+.neg-campi:empty { display: none; }
+.neg-campo { border: 1px solid var(--border); border-radius: var(--r-m); background: var(--surface); padding: .7rem .9rem .9rem; min-width: 0; }
+.neg-campo legend { padding: 0 .35rem; font-size: .8rem; font-weight: 700; color: var(--testo-2); letter-spacing: .02em; }
+.neg-campo .riga-check { margin: .7rem 0 0; }
+.neg-risposte { display: grid; gap: .3rem; margin: .35rem 0 0; }
+.neg-risposta { display: grid; grid-template-columns: minmax(0, max-content) minmax(0, 1fr); gap: .15rem .6rem; align-items: baseline; }
+.neg-risposta dt { color: var(--testo-2); font-size: .85rem; }
+.neg-risposta dd { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; font-weight: 600; overflow-wrap: anywhere; white-space: pre-line; }
+@media (max-width: 520px) { .neg-risposta { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 760px) {
   .neg-editor { grid-template-columns: minmax(0, 1fr); }
   .neg-anteprima-box { position: static; }

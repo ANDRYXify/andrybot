@@ -955,6 +955,29 @@ CREATE TABLE IF NOT EXISTS negozio_acquisti (  -- lo storico, e la coda di quell
 );
 CREATE INDEX IF NOT EXISTS idx_negozio_acquisti ON negozio_acquisti(channel, articolo, user, ts);
 CREATE INDEX IF NOT EXISTS idx_negozio_acquisti_stato ON negozio_acquisti(channel, stato, ts);
+CREATE TABLE IF NOT EXISTS negozio_bozze (     -- i moduli aperti da chi compra, in attesa del codice in chat (features/negozio-moduli.js)
+  impronta TEXT PRIMARY KEY,                   -- lo sha256 della chiave dell'indirizzo (128 bit casuali): la chiave vera sta solo nel link
+  channel TEXT NOT NULL,
+  user TEXT NOT NULL,
+  piattaforma TEXT NOT NULL DEFAULT '',
+  display TEXT NOT NULL DEFAULT '',
+  articolo INTEGER NOT NULL,
+  nota TEXT NOT NULL DEFAULT '',               -- la riga scritta in chat, per i tipi che la usano (la canzone, il messaggio)
+  firma TEXT NOT NULL DEFAULT '',              -- i campi del modulo quando e' nata: se cambiano, si ricompila
+  invii INTEGER NOT NULL DEFAULT 0,
+  usata INTEGER NOT NULL DEFAULT 0,            -- 1 mentre un codice la sta comprando
+  scade INTEGER NOT NULL,
+  ts INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS idx_negozio_bozze ON negozio_bozze(channel, user);
+CREATE TABLE IF NOT EXISTS negozio_risposte (  -- ogni invio di un modulo, col suo codice: vale quello che si scrive in chat
+  impronta TEXT NOT NULL,                      -- quella della sua bozza
+  channel TEXT NOT NULL,
+  codice TEXT NOT NULL,                        -- 4 cifre, uniche fra le bozze vive di chi compra
+  risposte TEXT NOT NULL DEFAULT '[]',         -- [{ etichetta, valore }]
+  ts INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (impronta, codice)
+);
 CREATE TABLE IF NOT EXISTS pagina_negozio (   -- la pagina pubblica del negozio: stessa forma della pagina link
   channel TEXT PRIMARY KEY,
   headline TEXT NOT NULL DEFAULT '',
@@ -1101,6 +1124,8 @@ aggiungiColonna('points', 'diretta', "TEXT NOT NULL DEFAULT ''");
 aggiungiColonna('points', 'guadagno_diretta', 'INTEGER NOT NULL DEFAULT 0');
 aggiungiColonna('points', 'parlato', 'INTEGER NOT NULL DEFAULT 0');  // i passi per giocare (docs/ECONOMIA.md, «Per giocare bisogna esserci»)
 aggiungiColonna('negozio_acquisti', 'ricevuta', "TEXT NOT NULL DEFAULT ''");  // i lotti spesi, per rimborsarli uguali
+aggiungiColonna('negozio_articoli', 'campi', "TEXT NOT NULL DEFAULT '[]'");     // il modulo per chi compra (features/negozio-moduli.js)
+aggiungiColonna('negozio_acquisti', 'risposte', "TEXT NOT NULL DEFAULT ''");   // le risposte al modulo, come le ha date: [{ etichetta, valore }]
 // LE MONETE DI PRIMA entrano come un lotto senza scadenza: sono state guadagnate
 // con regole che dicevano cosi'. Solo per chi non ha ancora lotti: la seconda
 // volta non fa niente. Torna quante persone sono entrate.
@@ -5456,6 +5481,7 @@ const negRiga = (r) => (r ? {
   scorta: r.scorta === null || r.scorta === undefined ? null : r.scorta,
   perPersona: r.per_persona, attesaTesta: r.attesa_testa, attesaTutti: r.attesa_tutti,
   siVede: r.si_vede, quando: r.quando, dal: r.dal, al: r.al, attivo: !!r.attivo, ordine: r.ordine, ts: r.ts,
+  campi: (() => { try { const x = JSON.parse(r.campi || '[]'); return Array.isArray(x) ? x : []; } catch { return []; } })(),
 } : null);
 
 export const negozio = {
@@ -5494,7 +5520,7 @@ export const negozio = {
       scorta: a.scorta === null || a.scorta === undefined ? null : a.scorta,
       per_persona: a.perPersona || 0, attesa_testa: a.attesaTesta || 0, attesa_tutti: a.attesaTutti || 0,
       si_vede: a.siVede, quando: a.quando, dal: a.dal || 0, al: a.al || 0, attivo: a.attivo ? 1 : 0,
-      ordine: a.ordine || 0, ts: now(),
+      ordine: a.ordine || 0, campi: JSON.stringify(Array.isArray(a.campi) ? a.campi : []), ts: now(),
     };
     try {
       const fatto = db.transaction(() => {
@@ -5502,14 +5528,14 @@ export const negozio = {
         if (quale) {
           const c = db.prepare(`UPDATE negozio_articoli SET parola=@parola, nome=@nome, descrizione=@descrizione, immagine=@immagine,
             prezzo=@prezzo, tipo=@tipo, dati=@dati, scorta=@scorta, per_persona=@per_persona, attesa_testa=@attesa_testa,
-            attesa_tutti=@attesa_tutti, si_vede=@si_vede, quando=@quando, dal=@dal, al=@al, attivo=@attivo, ordine=@ordine, ts=@ts
+            attesa_tutti=@attesa_tutti, si_vede=@si_vede, quando=@quando, dal=@dal, al=@al, attivo=@attivo, ordine=@ordine, campi=@campi, ts=@ts
             WHERE channel=@channel AND id=@id`).run({ ...valori, id: quale });
           if (!c.changes) return 0;
         } else {
           quale = Number(db.prepare(`INSERT INTO negozio_articoli (channel, parola, nome, descrizione, immagine, prezzo, tipo, dati,
-            scorta, per_persona, attesa_testa, attesa_tutti, si_vede, quando, dal, al, attivo, ordine, ts)
+            scorta, per_persona, attesa_testa, attesa_tutti, si_vede, quando, dal, al, attivo, ordine, campi, ts)
             VALUES (@channel, @parola, @nome, @descrizione, @immagine, @prezzo, @tipo, @dati, @scorta, @per_persona,
-            @attesa_testa, @attesa_tutti, @si_vede, @quando, @dal, @al, @attivo, @ordine, @ts)`).run(valori).lastInsertRowid);
+            @attesa_testa, @attesa_tutti, @si_vede, @quando, @dal, @al, @attivo, @ordine, @campi, @ts)`).run(valori).lastInsertRowid);
         }
         db.prepare('DELETE FROM negozio_requisiti WHERE channel=? AND articolo=?').run(ch, quale);
         const metti = db.prepare('INSERT INTO negozio_requisiti (channel, articolo, tipo, soglia) VALUES (?,?,?,?)');
@@ -5523,8 +5549,8 @@ export const negozio = {
       throw e;
     }
   },
-  // Toglie un articolo, i suoi requisiti e il suo posto nelle borse. Lo storico
-  // resta: e' successo, e ha il nome di allora.
+  // Toglie un articolo, i suoi requisiti, i moduli aperti e il suo posto nelle
+  // borse. Lo storico resta: e' successo, e ha il nome di allora.
   togli(channel, id) {
     const ch = String(channel || '').toLowerCase();
     const n = Math.trunc(Number(id)) || 0;
@@ -5532,6 +5558,8 @@ export const negozio = {
       const via = db.prepare('DELETE FROM negozio_articoli WHERE channel=? AND id=?').run(ch, n).changes;
       if (!via) return { ok: false };
       db.prepare('DELETE FROM negozio_requisiti WHERE channel=? AND articolo=?').run(ch, n);
+      db.prepare('DELETE FROM negozio_risposte WHERE impronta IN (SELECT impronta FROM negozio_bozze WHERE channel=? AND articolo=?)').run(ch, n);
+      db.prepare('DELETE FROM negozio_bozze WHERE channel=? AND articolo=?').run(ch, n);
       const borse = db.prepare('DELETE FROM negozio_borsa WHERE channel=? AND articolo=?').run(ch, n).changes;
       return { ok: true, borse };
     })();
@@ -5575,7 +5603,7 @@ export const negozio = {
   // `stato`: 'in_corso' se dopo c'e' un effetto da far partire, 'fatto' se
   // l'acquisto e' tutto qui (l'oggetto, che va nella borsa nella stessa
   // transazione), 'da_consegnare' se lo consegna lo streamer.
-  prenota(channel, { articolo, user, display = '', nota = '', stato = 'in_corso', inBorsa = false, ora = now() } = {}) {
+  prenota(channel, { articolo, user, display = '', nota = '', risposte = [], stato = 'in_corso', inBorsa = false, ora = now() } = {}) {
     const ch = String(channel || '').toLowerCase();
     const u = String(user || '').toLowerCase();
     if (!u) return { ok: false, motivo: 'nonCe' };
@@ -5594,9 +5622,10 @@ export const negozio = {
         const scalata = db.prepare('UPDATE negozio_articoli SET scorta = scorta - 1 WHERE channel=? AND id=? AND scorta > 0').run(ch, a.id).changes;
         if (!scalata) throw new NegozioFermo('scorte');
       }
-      const id = Number(db.prepare(`INSERT INTO negozio_acquisti (channel, articolo, nome, tipo, user, display, prezzo, nota, stato, ts, chiuso, ricevuta)
-        VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`).run(ch, a.id, a.nome, a.tipo, u, String(display || u).slice(0, 60), a.prezzo,
-        String(nota || '').slice(0, 300), stato, ora, stato === 'fatto' ? ora : 0, JSON.stringify(ricevuta)).lastInsertRowid);
+      const id = Number(db.prepare(`INSERT INTO negozio_acquisti (channel, articolo, nome, tipo, user, display, prezzo, nota, stato, ts, chiuso, ricevuta, risposte)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`).run(ch, a.id, a.nome, a.tipo, u, String(display || u).slice(0, 60), a.prezzo,
+        String(nota || '').slice(0, 300), stato, ora, stato === 'fatto' ? ora : 0, JSON.stringify(ricevuta),
+        Array.isArray(risposte) && risposte.length ? JSON.stringify(risposte) : '').lastInsertRowid);
       if (inBorsa) {
         db.prepare(`INSERT INTO negozio_borsa (channel, user, articolo, nome, quanti, ts) VALUES (?,?,?,?,1,?)
           ON CONFLICT(channel, user, articolo) DO UPDATE SET quanti = negozio_borsa.quanti + 1, nome = excluded.nome, ts = excluded.ts`)
@@ -5684,10 +5713,96 @@ export const negozio = {
   // Lo storico si tiene un anno, come le donazioni (privacy.html). Quello che
   // lo streamer deve ancora consegnare non si tocca: non e' storia, e' da fare.
   pota(ora = now()) {
+    this.potaBozze(ora);
     return db.prepare("DELETE FROM negozio_acquisti WHERE stato IN ('fatto','consegnato','rimborsato') AND ts < ?")
       .run(ora - NEG_ANNO_MS).changes;
   },
+
+  // I moduli scaduti, con le loro risposte: non valgono piu' e non si tengono
+  // (privacy.html, «Il modulo di un acquisto»). Gira ogni minuto, dal bot.
+  potaBozze(ora = now()) {
+    db.prepare('DELETE FROM negozio_risposte WHERE impronta IN (SELECT impronta FROM negozio_bozze WHERE scade < ?)').run(ora);
+    return db.prepare('DELETE FROM negozio_bozze WHERE scade < ?').run(ora).changes;
+  },
+
+  // ---- i moduli (features/negozio-moduli.js): la pagina raccoglie, la chat conferma
+  // La chiave dell'indirizzo non si conserva: si conserva la sua impronta, e
+  // ogni funzione qui prende la chiave e la ricalca. Chi legge il database non
+  // trova un link che funzioni.
+  // Una bozza per persona e articolo: chi riscrive !compra riceve un modulo
+  // nuovo, e quello di prima non vale piu'.
+  nuovaBozza(channel, { token, user, piattaforma = '', display = '', articolo, nota = '', firma = '', scade, ora = now() } = {}) {
+    const ch = String(channel || '').toLowerCase();
+    const u = String(user || '').toLowerCase();
+    const n = Math.trunc(Number(articolo)) || 0;
+    db.transaction(() => {
+      const vecchie = db.prepare('SELECT impronta FROM negozio_bozze WHERE channel=? AND user=? AND piattaforma=? AND articolo=?').all(ch, u, piattaforma, n);
+      for (const v of vecchie) this.chiudiBozza(v.impronta, true);
+      db.prepare(`INSERT INTO negozio_bozze (impronta, channel, user, piattaforma, display, articolo, nota, firma, scade, ts)
+        VALUES (?,?,?,?,?,?,?,?,?,?)`).run(improntaModulo(token), ch, u, String(piattaforma || ''), String(display || u).slice(0, 60), n,
+        String(nota || '').slice(0, 300), String(firma || ''), Math.trunc(scade), ora);
+    })();
+    return String(token);
+  },
+  // La bozza di quell'indirizzo, se e' di quel canale ed e' ancora viva.
+  bozza(channel, token, ora = now()) {
+    return db.prepare('SELECT * FROM negozio_bozze WHERE impronta=? AND channel=? AND scade>=?')
+      .get(improntaModulo(token), String(channel || '').toLowerCase(), ora) || null;
+  },
+  // Un invio del modulo: le risposte col loro codice. Il codice e' unico fra
+  // le bozze vive di chi compra nel canale, cosi' quando lo scrive in chat
+  // indica un invio solo. Torna il codice, o null se il modulo e' stato
+  // mandato troppe volte o non c'e' piu'.
+  invia(channel, token, risposte, { maxInvii, codice: dammi, ora = now() } = {}) {
+    const ch = String(channel || '').toLowerCase();
+    return db.transaction(() => {
+      const b = db.prepare('SELECT * FROM negozio_bozze WHERE impronta=? AND channel=? AND scade>=?').get(improntaModulo(token), ch, ora);
+      if (!b || b.invii >= maxInvii) return null;
+      const usati = new Set(db.prepare(`SELECT r.codice FROM negozio_risposte r JOIN negozio_bozze b ON b.impronta=r.impronta
+        WHERE b.channel=? AND b.user=? AND b.piattaforma=? AND b.scade>=?`).all(ch, b.user, b.piattaforma, ora).map((r) => r.codice));
+      let codice = '';
+      for (let i = 0; i < 50 && (!codice || usati.has(codice)); i++) codice = dammi();
+      if (usati.has(codice)) return null;
+      db.prepare('INSERT INTO negozio_risposte (impronta, channel, codice, risposte, ts) VALUES (?,?,?,?,?)').run(b.impronta, ch, codice, JSON.stringify(risposte || []), ora);
+      db.prepare('UPDATE negozio_bozze SET invii = invii + 1 WHERE impronta=?').run(b.impronta);
+      return codice;
+    })();
+  },
+  // L'invio che ha quel codice, se e' di quella bozza (per mostrare di nuovo il
+  // codice dopo il ritorno alla pagina).
+  invio(channel, token, codice, ora = now()) {
+    return db.prepare(`SELECT r.* FROM negozio_risposte r JOIN negozio_bozze b ON b.impronta=r.impronta
+      WHERE r.impronta=? AND r.codice=? AND b.channel=? AND b.scade>=?`).get(improntaModulo(token), String(codice || ''), String(channel || '').toLowerCase(), ora) || null;
+  },
+  // IL CODICE SCRITTO IN CHAT: lo stesso account, nello stesso canale e sulla
+  // stessa piattaforma, entro la scadenza. La bozza si prende in un colpo
+  // solo (usata=1): due «!compra #1234» di fila non comprano due volte.
+  prendiCodice(channel, { user, piattaforma = '', codice, ora = now() } = {}) {
+    const ch = String(channel || '').toLowerCase();
+    const u = String(user || '').toLowerCase();
+    return db.transaction(() => {
+      const r = db.prepare(`SELECT b.*, r.risposte AS risposte FROM negozio_risposte r JOIN negozio_bozze b ON b.impronta=r.impronta
+        WHERE b.channel=? AND b.user=? AND b.piattaforma=? AND r.codice=? AND b.scade>=?`).get(ch, u, String(piattaforma || ''), String(codice || ''), ora);
+      if (!r || r.usata) return null;
+      db.prepare('UPDATE negozio_bozze SET usata=1 WHERE impronta=? AND usata=0').run(r.impronta);
+      return r;
+    }).immediate();
+  },
+  // Com'e' finita, per l'impronta che prendiCodice ha dato: comprato, la bozza
+  // se ne va con le sue risposte; non comprato (le monete, un requisito,
+  // l'overlay spento), torna libera e il codice vale ancora fino alla scadenza.
+  chiudiBozza(impronta, comprato) {
+    if (comprato) {
+      db.prepare('DELETE FROM negozio_risposte WHERE impronta=?').run(String(impronta || ''));
+      db.prepare('DELETE FROM negozio_bozze WHERE impronta=?').run(String(impronta || ''));
+    } else {
+      db.prepare('UPDATE negozio_bozze SET usata=0 WHERE impronta=?').run(String(impronta || ''));
+    }
+  },
 };
+
+// L'impronta della chiave di un modulo: quella che sta nel database.
+const improntaModulo = (token) => crypto.createHash('sha256').update(String(token || '')).digest('hex');
 
 class NegozioFermo extends Error {
   constructor(motivo) { super(motivo); this.motivo = motivo; }

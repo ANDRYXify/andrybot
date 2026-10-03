@@ -17,9 +17,11 @@
 // senza il canale accanto. Un canale che non c'e', o col negozio chiuso, ha la
 // stessa pagina «qui non c'e' un negozio», nella lingua di chi la apre: cosi'
 // da fuori non si distingue nemmeno quale dei due casi sia.
-import { effects as effectsDb, linkPage, paginaNegozio } from '../db.js';
-import { renderLinkPage, aspettoDi, iconaMarchio } from './linkpagina.js';
+import { randomInt } from 'node:crypto';
+import { effects as effectsDb, linkPage, paginaNegozio, negozio as negozioDb, streamers } from '../db.js';
+import { renderLinkPage, aspettoDi, iconaMarchio, vesteDi } from './linkpagina.js';
 import { inVetrina, aperto, fraseCon, cifra, monetaIn, scorteDi, urlPaginaNegozio } from './negozio.js';
+import { campiDi, cosaChiede, vaglia, htmlModulo, MAX_INVII, VITA_BOZZA_MS } from './negozio-moduli.js';
 import { accordaMoneta } from './moneta.js';
 import { preferenzeDi, data } from './preferenze.js';
 import { nomeIn } from './comandi-registro.js';
@@ -75,6 +77,8 @@ const T = {
     nonCeTuo: 'È il tuo negozio?',
     nonCeNota: 'Lo apri dal pannello: Negozio, poi Articoli.',
     nonCePannello: 'Apri il pannello',
+    chiede: (x) => `Ti chiede: ${x}`,
+    comeModulo: 'Se l’articolo ti chiede qualcosa, il bot ti dà il link di un modulo: lo compili, e scrivi in chat il codice che ti dà.',
     tipi: { oggetto: 'Da collezione', effetto: 'Effetto in diretta', modulo: 'Azione in diretta', mano: 'Consegnato in diretta',
       vip: 'VIP su Twitch', discord: 'Ruolo su Discord', musica: 'Canzone in coda', evidenza: 'Messaggio in evidenza' },
   },
@@ -104,6 +108,8 @@ const T = {
     nonCeTuo: 'Is this your shop?',
     nonCeNota: 'You open it from the dashboard: Shop, then Items.',
     nonCePannello: 'Open the dashboard',
+    chiede: (x) => `It asks for: ${x}`,
+    comeModulo: 'If the item asks you something, the bot gives you a form link: fill it in, then type the code it gives you in chat.',
     tipi: { oggetto: 'Collectible', effetto: 'On-stream effect', modulo: 'On-stream action', mano: 'Delivered on stream',
       vip: 'VIP on Twitch', discord: 'Discord role', musica: 'Song in the queue', evidenza: 'Highlighted message' },
   },
@@ -133,6 +139,8 @@ const T = {
     nonCeTuo: '¿Es tu tienda?',
     nonCeNota: 'La abres desde el panel: Tienda, luego Artículos.',
     nonCePannello: 'Abrir el panel',
+    chiede: (x) => `Te pide: ${x}`,
+    comeModulo: 'Si el artículo te pide algo, el bot te da el enlace de un formulario: lo rellenas, y escribes en el chat el código que te da.',
     tipi: { oggetto: 'De colección', effetto: 'Efecto en directo', modulo: 'Acción en directo', mano: 'Entregado en directo',
       vip: 'VIP en Twitch', discord: 'Rol en Discord', musica: 'Canción en la cola', evidenza: 'Mensaje destacado' },
   },
@@ -238,6 +246,7 @@ export function vetrinaDa(articoli, { pf, moneta, cmd, immagine = () => '' }) {
       scorte: scorte(a),
       requisiti: (a.requisiti || []).map((r) => requisitoBreve(r, pf)).filter(Boolean),
       quando: a.quando === 'diretta' ? t.soloDiretta : a.quando === 'date' && a.al ? t.fino(data(a.al, pf)) : '',
+      chiede: cosaChiede(a),
     })),
     cmd,
     moneta,
@@ -303,6 +312,7 @@ export function opzioniDaDati(v) {
         <h3 class="ng-nome">${esc(a.nome)}</h3>
         ${a.descrizione ? `<p class="ng-desc">${esc(a.descrizione)}</p>` : ''}
         ${chip ? `<div class="ng-righe">${chip}</div>` : ''}
+        ${a.chiede?.length ? `<p class="ng-chiede">${esc(t.chiede(a.chiede.join(', ')))}</p>` : ''}
         ${scorte && a.scorte ? `<p class="ng-scorte">${esc(a.scorte)}</p>` : ''}
         ${prezzo ? `<p class="ng-prezzo"><span class="ng-prezzo-m">${esc(moneta)}</span> <span class="ng-prezzo-n">${esc(a.prezzo)}</span></p>` : ''}
         <div class="ng-cmd"><code>${esc(cmd)}</code><button type="button" class="ng-copia" data-copia="${esc(cmd)}" data-fatto="${esc(t.copiato)}" aria-label="${esc(t.copiaCome(cmd))}">${esc(t.copia)}</button></div>
@@ -332,6 +342,7 @@ export function opzioniDaDati(v) {
       return `<section class="ng-come" ${ritardo}>
         <h2 class="ng-sez-t">${esc(b.titolo || t.come)}</h2>
         <p>${esc(t.comeTesto({ cmd: v.cmd, moneta: v.moneta.nome }, accorda))}</p>
+        ${v.articoli.some((a) => a.chiede?.length) ? `<p>${esc(t.comeModulo)}</p>` : ''}
         ${b.testo ? `<p>${esc(b.testo)}</p>` : ''}
         ${es ? `<div class="ng-cmd"><span class="ng-es">${esc(t.esempio)}</span><code>${esc(es)}</code><button type="button" class="ng-copia" data-copia="${esc(es)}" data-fatto="${esc(t.copiato)}" aria-label="${esc(t.copiaCome(es))}">${esc(t.copia)}</button></div>` : ''}
       </section>`;
@@ -367,7 +378,7 @@ export function opzioniDaDati(v) {
   .ng-righe{display:flex;flex-wrap:wrap;gap:.35rem}
   .ng-chip{font-size:.76rem;line-height:1.3;padding:.2rem .6rem;border-radius:999px;border:1px solid ${c.bordo};color:var(--testo)}
   .ng-chip.req{border-color:var(--acc)}
-  .ng-scorte{font-size:.84rem;color:var(--tenue)}
+  .ng-scorte,.ng-chiede{font-size:.84rem;color:var(--tenue)}
   .ng-prezzo{display:flex;align-items:baseline;flex-wrap:wrap;gap:.45rem;margin-top:auto}
   .ng-prezzo-m{font-size:.74rem;text-transform:uppercase;letter-spacing:.06em;color:var(--tenue);font-weight:var(--pm)}
   .ng-prezzo-n{font-family:var(--fd);font-weight:var(--pf);font-size:1.3rem;color:var(--testo)}
@@ -440,6 +451,40 @@ export function htmlPaginaNegozio(canale, { pagina = null, anteprima = false, di
     login: ch, display: display || ch, avatar, baseUrl, anteprima,
     immagineAnteprima: og, negozio,
   });
+}
+
+// IL MODULO DI UN ACQUISTO (negozio-moduli.js): la pagina dietro il link che
+// la chat da' a chi compra. Tutto parte dalla bozza dell'indirizzo, e solo se e'
+// di questo canale, viva, e il suo articolo e il suo modulo sono ancora quelli:
+// se no la pagina dice che il modulo non c'e' piu' e come ricominciare. Con
+// `invio` (il modulo mandato) controlla le risposte: sbagliate, la pagina torna
+// coi campi segnati; giuste, nasce il codice e chi chiama porta all'ultimo
+// passo. Lingua, moneta e veste sono quelle del negozio del canale.
+export function paginaModulo(canale, token, { invio = null, codice = '', ora = Date.now() } = {}) {
+  const ch = String(canale || '').toLowerCase();
+  const pf = preferenzeDi(ch);
+  const l = lin(pf.lingua);
+  const display = streamers.get(ch)?.display || ch;
+  const comune = { lingua: l, veste: vesteDi(paginaDi(ch, display)), cmd: '!' + nomeIn(ch, 'compra'), azione: `/u/${ch}/m/${token}`,
+    minuti: Math.round(VITA_BOZZA_MS / 60000), script: '/pagina-negozio.js?v=1' };
+  const fine = (perche = 'scaduto') => ({ stato: 'fine', html: htmlModulo({ ...comune, stato: 'fine', fine: perche }) });
+  const b = aperto(ch) ? negozioDb.bozza(ch, token, ora) : null;
+  const a = b ? negozioDb.articolo(ch, b.articolo) : null;
+  const campi = a ? campiDi(a) : [];
+  if (!b || !a || !a.attivo || !campi.length || JSON.stringify(campi) !== b.firma) return fine();
+  const moneta = monetaIn(ch, l);
+  const pagina = { ...comune, articolo: { nome: a.nome, descrizione: a.descrizione, prezzo: cifra(a.prezzo, pf), moneta: moneta.nome },
+    chi: b.display || b.user, dove: { twitch: 'Twitch', kick: 'Kick', youtube: 'YouTube' }[b.piattaforma] || '', campi };
+  if (invio) {
+    if (b.invii >= MAX_INVII) return fine('troppi');
+    const v = vaglia(campi, invio);
+    if (!v.ok) return { stato: 'modulo', errori: v.errori, html: htmlModulo({ ...pagina, valori: v.valori, errori: v.errori }) };
+    const c = negozioDb.invia(ch, token, v.risposte, { maxInvii: MAX_INVII, codice: () => String(randomInt(0, 10000)).padStart(4, '0'), ora });
+    if (!c) return fine('troppi');
+    return { stato: 'codice', codice: c };
+  }
+  if (codice && negozioDb.invio(ch, token, codice, ora)) return { stato: 'codice', codice, html: htmlModulo({ ...pagina, stato: 'codice', codice }) };
+  return { stato: 'modulo', html: htmlModulo(pagina) };
 }
 
 // La lingua di chi apre una pagina che non c'e': quella del suo browser, fra
