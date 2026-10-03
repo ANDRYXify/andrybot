@@ -37,6 +37,17 @@ test('il 404 resta un labirinto: non dice mai se quella cosa esiste', () => {
   }
 });
 
+// Si legge dall'alto in basso: prima cosa e' successo (il titolo), poi perche'
+// e cosa fare (la didascalia). Al contrario confondeva: si leggeva il perche'
+// prima di sapere cosa.
+test('prima il titolo, poi la didascalia: in ogni pagina di servizio', () => {
+  for (const [nome, h] of [...LINGUE_SERVIZIO.map((l) => [`404 ${l}`, pagina404(l)]), ['manutenzione', paginaManutenzione()]]) {
+    const i = h.indexOf('<h1'), j = h.indexOf('class="dida"');
+    assert.ok(i > 0 && j > 0 && i < j, `${nome}: il titolo viene prima della didascalia`);
+    assert.ok(/\.vie a:focus-visible[^{]*\{outline:3px solid var\(--acc\)/.test(h), `${nome}: il fuoco ha il segno del sito, non quello del browser`);
+  }
+});
+
 test('la manutenzione non chiede NIENTE a nessuno', () => {
   // La serve l'edge perché il bot è proprio ciò che è giù: se la pagina
   // chiedesse un foglio di stile, un carattere o anche solo l'icona, quelle

@@ -147,11 +147,22 @@ test('negozio chiuso o canale che non c\'e\': nessuna pagina, e «non c\'e\'» n
   assert.ok(!nc.includes(ch) && !nc.includes('Spilla') && /noindex/.test(nc), 'non nomina canali ne\' articoli, e non si indicizza');
   assert.match(nc, new RegExp(`href="${BASE}/"`), 'porta solo al sito');
   assert.match(nc, new RegExp(`href="${BASE}/#negozio"`), 'e al pannello, per chi il negozio ce l\'ha');
+  // Due persone, tenute separate: la didascalia e' per chi arriva da un link
+  // (cosa fare: chiedere in chat), il riquadro «E' il tuo negozio?» per chi il
+  // negozio ce l'ha, col tasto del pannello DENTRO, accanto alla sua frase.
+  // Nessun tasto acceso: non c'e' un'azione giusta per tutti.
+  const tuo = nc.match(/<div class="tuo">[\s\S]*?<\/div>/)?.[0] || '';
+  assert.ok(tuo.includes('È il tuo negozio?') && tuo.includes('Lo apri dal pannello') && new RegExp(`href="${BASE}/#negozio"`).test(tuo),
+    'la nota e il tasto del pannello stanno insieme, nel riquadro di chi il negozio ce l\'ha');
+  assert.ok(!(nc.match(/<div class="vie">[\s\S]*?<\/div>/)?.[0] || '').includes('#negozio'), 'e non in fondo fra le strade di tutti');
+  assert.ok(/chiedi in chat/.test(nc.match(/<p class="dida">[^<]*<\/p>/)?.[0] || ''), 'chi arriva da un link sa cosa fare');
+  assert.ok(!/class="primo"/.test(nc), 'nessun tasto acceso');
+  assert.ok(nc.indexOf('<h1') < nc.indexOf('class="dida"') && nc.indexOf('class="dida"') < nc.indexOf('class="tuo"'), 'si legge in ordine: cosa, perche\', e poi chi e\' il proprietario');
   // Il vestito e' quello del 404 del sito, non uno suo: lo stesso foglio di
-  // stile, la stessa forma (didascalia, titolo a pennarello, nota, strade).
+  // stile, la stessa forma (titolo a pennarello, didascalia, strade).
   const stile = (h) => h.match(/<style>[\s\S]*?<\/style>/)?.[0];
   assert.equal(stile(nc), stile(pagina404('it')), 'il vestito e\' quello del 404 del sito');
-  for (const pezzo of ['class="vignetta"', 'class="dida"', 'class="dida coda"', 'class="vie"', 'href="/font.css"']) assert.ok(nc.includes(pezzo), pezzo);
+  for (const pezzo of ['class="vignetta"', 'class="dida"', 'class="tuo"', 'class="vie"', 'href="/font.css"']) assert.ok(nc.includes(pezzo), pezzo);
   assert.equal(P.linguaDiChiApre('es-ES,es;q=0.9,en;q=0.8'), 'es');
   assert.equal(P.linguaDiChiApre('de-DE,fr;q=0.8'), 'it');
   assert.match(P.paginaNonCe('en', BASE), /There’s no shop here/);

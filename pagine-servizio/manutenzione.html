@@ -27,7 +27,7 @@
     border-radius:7px 4px 6px 5px / 5px 7px 4px 6px;
     box-shadow:var(--alone-contorno),var(--ombra-ink-alta);
     text-align:center}
-  .dida{justify-self:start;max-width:26rem;
+  .dida{justify-self:center;max-width:26rem;
     padding:.5rem .85rem .55rem 1rem;text-align:left;position:relative;
     background:var(--surface-2-tinta);color:var(--testo-2);
     border:1px solid var(--contorno);border-left-width:5px;
@@ -49,8 +49,17 @@
     border:2px solid var(--contorno);border-width:var(--tratto-mano);
     border-radius:var(--ang-mano);box-shadow:var(--ombra-ink)}
   .vie a.primo{background:var(--acc);color:var(--su-acc)}
-  .vie a:active{transform:translate(2px,3px);box-shadow:none}
-  .dida.coda{justify-self:start;font-size:.8rem;padding:.42rem .8rem .46rem .95rem;max-width:30rem}
+  .vie a:active,.tuo a:active{transform:translate(2px,3px);box-shadow:none}
+  .vie a:focus-visible,.tuo a:focus-visible{outline:3px solid var(--acc);outline-offset:3px}
+  .dida.coda{justify-self:center;font-size:.8rem;padding:.42rem .8rem .46rem .95rem;max-width:30rem}
+  .tuo{justify-self:stretch;display:grid;gap:.55rem;justify-items:center;
+    padding-top:clamp(1rem,3vw,1.4rem);border-top:2px dashed var(--contorno)}
+  .tuo-t{font-weight:700;color:var(--testo)}
+  .tuo p{font-size:.9rem;color:var(--testo-2);max-width:26rem}
+  .tuo a{display:inline-block;margin-top:.2rem;padding:.5rem 1rem;text-decoration:none;font-weight:600;font-size:.92rem;
+    color:var(--testo);background:var(--surface-2-tinta);
+    border:2px solid var(--contorno);border-width:var(--tratto-mano);
+    border-radius:var(--ang-mano);box-shadow:var(--ombra-ink)}
   .dida.coda span+span{display:inline-block;margin-top:.3rem}
   .nota{margin-top:1.1rem;font-size:.84rem;color:var(--testo-2);text-align:center}
   .nota+.nota{margin-top:.3rem}
@@ -61,8 +70,8 @@
 <body>
 <main class="tavola">
   <div class="vignetta">
-    <p class="dida">Sto facendo un aggiornamento. Ci vuole qualche minuto: la pagina non è rotta, è solo un momento di pausa.</p>
     <h1>Torniamo subito</h1>
+    <p class="dida">Sto facendo un aggiornamento. Ci vuole qualche minuto: la pagina non è rotta, è solo un momento di pausa.</p>
     <p class="dida coda"><span lang="en">An update is going out. It takes a few minutes: the page is not broken, it is just a short pause.</span><br><span lang="es">Estoy haciendo una actualización. Tarda unos minutos: la página no está rota, es solo una pausa.</span></p>
   </div>
   <div class="vie"><a class="primo" href="/">Riprova</a></div>

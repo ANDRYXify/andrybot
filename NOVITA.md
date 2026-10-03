@@ -97,6 +97,9 @@ comandi diversi da quelli della riga italiana.
 - In «Emote e badge» ci sono anche l'emote di 7TV e l'emoji di Discord, a 128 pixel, provate in chat sui loro colori. [vai: misure]
   en: “Emotes and badges” also has the 7TV emote and the Discord emoji, at 128 pixels, tried out in chat on their own colors.
   es: En «Emotes y badges» también están el emote de 7TV y el emoji de Discord, a 128 píxeles, probados en el chat con sus colores.
+- La pagina «Qui non c'è un negozio» si legge in ordine: prima cosa succede, poi cosa fare (chiedere in chat); chi il negozio ce l'ha trova un riquadro suo col tasto per aprirlo. [vai: negozio]
+  en: The “There’s no shop here” page reads in order: first what happened, then what to do (ask in chat); whoever owns the shop gets a box of their own with the button to open it.
+  es: La página «Aquí no hay ninguna tienda» se lee en orden: primero qué pasa, luego qué hacer (preguntar en el chat); quien tiene la tienda encuentra un recuadro propio con el botón para abrirla.
 
 ## 2026-10-02
 

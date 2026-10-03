@@ -249,11 +249,25 @@ Quella pagina ha la forma e il vestito del 404 del sito: nasce da
 `paginaMancante` in `src/web/pagine-servizio.js` (carta col retino, titolo a
 pennarello, didascalie, tasti a timbro, chiaro e scuro), non da uno stile suo.
 Prima se n'era fatto uno, scuro e col tasto viola, e sembrava un altro prodotto.
-In coda dice «Se il negozio è tuo, lo apri dal pannello: Negozio, poi Articoli»,
-con un tasto per il pannello: è la stessa frase per tutti, quindi non rivela
-niente, e chi apre il proprio negozio chiuso sa subito dove andare.
-`test/unita/negozio-pagina.test.mjs` pretende lo stesso foglio di stile del 404;
-`scripts/verifica-larghezza.mjs` la apre a quattro larghezze di telefono.
+
+Si legge dall'alto in basso e parla a due persone, separate:
+
+- il titolo dice cosa è successo; la didascalia, sotto, perché e cosa fare a
+  chi ci arriva da un link (quasi sempre uno spettatore): «Se il link ti è
+  arrivato da una diretta, chiedi in chat: forse riapre più tardi»;
+- un riquadro «È il tuo negozio?» parla a chi il negozio ce l'ha: «Lo apri
+  dal pannello: Negozio, poi Articoli», col tasto del pannello lì dentro,
+  accanto alla sua frase. È la stessa per tutti, quindi non rivela niente;
+- in fondo, «Cos'è SocialBot». Nessun tasto acceso: qui non c'è un'azione
+  giusta per tutti.
+
+La prima versione metteva la didascalia sopra il titolo e i due tasti insieme
+in fondo, il pannello acceso accanto alla home: si leggeva il perché prima di
+sapere cosa, e il tasto del proprietario sembrava per tutti. Il 404 e la
+manutenzione seguono lo stesso ordine (titolo, poi didascalia).
+`test/unita/negozio-pagina.test.mjs` pretende lo stesso foglio di stile del 404,
+l'ordine, e il tasto del pannello dentro il riquadro e non fra le strade di
+tutti; `scripts/verifica-larghezza.mjs` la apre a quattro larghezze di telefono.
 
 ### La porta delle immagini
 

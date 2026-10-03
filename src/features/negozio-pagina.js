@@ -70,9 +70,10 @@ const T = {
     canale: (nome, dove) => `${nome} su ${dove}`,
     segnaVuota: 'Qui compaiono gli articoli in vendita: il negozio adesso non ne ha.',
     nonCe: 'Qui non c’è un negozio',
-    nonCeTesto: 'L’indirizzo è sbagliato, oppure questo negozio è chiuso.',
-    nonCeVai: 'Vai a SocialBot',
-    nonCeNota: 'Se il negozio è tuo, lo apri dal pannello: Negozio, poi Articoli.',
+    nonCeTesto: 'Questo negozio è chiuso, oppure l’indirizzo è sbagliato. Se il link ti è arrivato da una diretta, chiedi in chat: forse riapre più tardi.',
+    nonCeVai: 'Cos’è SocialBot',
+    nonCeTuo: 'È il tuo negozio?',
+    nonCeNota: 'Lo apri dal pannello: Negozio, poi Articoli.',
     nonCePannello: 'Apri il pannello',
     tipi: { oggetto: 'Da collezione', effetto: 'Effetto in diretta', modulo: 'Azione in diretta', mano: 'Consegnato in diretta',
       vip: 'VIP su Twitch', discord: 'Ruolo su Discord', musica: 'Canzone in coda', evidenza: 'Messaggio in evidenza' },
@@ -98,9 +99,10 @@ const T = {
     canale: (nome, dove) => `${nome} on ${dove}`,
     segnaVuota: 'The items on sale show up here: the shop has none right now.',
     nonCe: 'There’s no shop here',
-    nonCeTesto: 'The address is wrong, or this shop is closed.',
-    nonCeVai: 'Go to SocialBot',
-    nonCeNota: 'If the shop is yours, you open it from the dashboard: Shop, then Items.',
+    nonCeTesto: 'This shop is closed, or the address is wrong. If the link came from a stream, ask in chat: it may open again later.',
+    nonCeVai: 'What SocialBot is',
+    nonCeTuo: 'Is this your shop?',
+    nonCeNota: 'You open it from the dashboard: Shop, then Items.',
     nonCePannello: 'Open the dashboard',
     tipi: { oggetto: 'Collectible', effetto: 'On-stream effect', modulo: 'On-stream action', mano: 'Delivered on stream',
       vip: 'VIP on Twitch', discord: 'Discord role', musica: 'Song in the queue', evidenza: 'Highlighted message' },
@@ -126,9 +128,10 @@ const T = {
     canale: (nome, dove) => `${nome} en ${dove}`,
     segnaVuota: 'Aquí salen los artículos a la venta: ahora la tienda no tiene ninguno.',
     nonCe: 'Aquí no hay ninguna tienda',
-    nonCeTesto: 'La dirección está mal, o esta tienda está cerrada.',
-    nonCeVai: 'Ir a SocialBot',
-    nonCeNota: 'Si la tienda es tuya, la abres desde el panel: Tienda, luego Artículos.',
+    nonCeTesto: 'Esta tienda está cerrada, o la dirección está mal. Si el enlace te llegó desde un directo, pregunta en el chat: quizá vuelva a abrir más tarde.',
+    nonCeVai: 'Qué es SocialBot',
+    nonCeTuo: '¿Es tu tienda?',
+    nonCeNota: 'La abres desde el panel: Tienda, luego Artículos.',
     nonCePannello: 'Abrir el panel',
     tipi: { oggetto: 'De colección', effetto: 'Efecto en directo', modulo: 'Acción en directo', mano: 'Entregado en directo',
       vip: 'VIP en Twitch', discord: 'Rol en Discord', musica: 'Canción en la cola', evidenza: 'Mensaje destacado' },
@@ -448,12 +451,16 @@ export function linguaDiChiApre(acceptLanguage) {
 
 // «Qui non c'e' un negozio»: la stessa per un canale che non esiste e per uno
 // col negozio chiuso. Non nomina nessun canale e non porta a nessun altro
-// negozio: solo al sito, e al pannello per chi il negozio ce l'ha (la nota lo
-// dice a tutti allo stesso modo, quindi non rivela niente). Ha la forma e il
-// vestito del 404 del sito (paginaMancante): carta, pennarello, inchiostro.
+// negozio. Parla a due persone, e le tiene separate: a chi e' arrivato da un
+// link (quasi sempre uno spettatore) dice cosa fare, chiedere in chat; a chi il
+// negozio ce l'ha, in un riquadro col suo titolo, dice dove si apre, col tasto
+// del pannello accanto. Lo dice a tutti allo stesso modo, quindi non rivela
+// niente. Nessun tasto acceso: qui non c'e' un'azione giusta per tutti. Ha la
+// forma e il vestito del 404 del sito (paginaMancante).
 export function paginaNonCe(lingua, baseUrl = '') {
   const l = lin(lingua);
   const t = T[l];
-  return paginaMancante(l, { titolo: `${t.nonCe} · SocialBot`, dida: t.nonCeTesto, h1: t.nonCe, coda: t.nonCeNota,
-    vie: [{ href: baseUrl + VIA_LINGUA[l], testo: t.nonCeVai }, { href: `${baseUrl}/#negozio`, testo: t.nonCePannello }] });
+  return paginaMancante(l, { titolo: `${t.nonCe} · SocialBot`, dida: t.nonCeTesto, h1: t.nonCe,
+    tuo: { titolo: t.nonCeTuo, testo: t.nonCeNota, via: { href: `${baseUrl}/#negozio`, testo: t.nonCePannello } },
+    vie: [{ href: baseUrl + VIA_LINGUA[l], testo: t.nonCeVai, spento: true }] });
 }

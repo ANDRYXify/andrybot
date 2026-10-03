@@ -62,12 +62,13 @@ export const CLASSIFICATI = [
   ['src/features/seventv.js', 'chiedi al proprietario di ricollegare 7TV', 'errore di 7TV nel pannello, ai moderatori: il rimedio e\' del proprietario'],
   ['src/features/sondaggi.js', 'lo streamer lo rimette dal pannello', '!sondaggio e !predizione rispondono solo a streamer e mod, e il rimedio lo nomina per lo streamer'],
   // La pagina «Qui non c'e' un negozio» (pagina web, non chat): la nota e il
-  // tasto si rivolgono per nome a chi il negozio ce l'ha («Se il negozio e'
-  // tuo»), a chiunque allo stesso modo, quindi non dicono di chi e' il negozio.
-  ['src/features/negozio-pagina.js', 'lo apri dal pannello', 'pagina del negozio chiuso: la nota parla solo a chi il negozio ce l\'ha'],
-  ['src/features/negozio-pagina.js', 'Apri il pannello', 'pagina del negozio chiuso: il tasto accanto a quella nota'],
-  ['src/features/negozio-pagina.js', 'you open it from the dashboard', 'pagina del negozio chiuso, in inglese: la nota parla solo a chi il negozio ce l\'ha'],
-  ['src/features/negozio-pagina.js', 'Open the dashboard', 'pagina del negozio chiuso, in inglese: il tasto accanto a quella nota'],
+  // tasto stanno nel riquadro «E' il tuo negozio?», che si rivolge per nome a
+  // chi il negozio ce l'ha, a chiunque allo stesso modo, quindi non dicono di
+  // chi e' il negozio.
+  ['src/features/negozio-pagina.js', 'Lo apri dal pannello', 'pagina del negozio chiuso: la nota del riquadro «È il tuo negozio?»'],
+  ['src/features/negozio-pagina.js', 'Apri il pannello', 'pagina del negozio chiuso: il tasto dentro quel riquadro'],
+  ['src/features/negozio-pagina.js', 'You open it from the dashboard', 'pagina del negozio chiuso, in inglese: la nota del riquadro «Is this your shop?»'],
+  ['src/features/negozio-pagina.js', 'Open the dashboard', 'pagina del negozio chiuso, in inglese: il tasto dentro quel riquadro'],
 ];
 
 function elencaFile() {

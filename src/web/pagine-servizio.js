@@ -78,7 +78,7 @@ const VESTITO = `
     border-radius:7px 4px 6px 5px / 5px 7px 4px 6px;
     box-shadow:var(--alone-contorno),var(--ombra-ink-alta);
     text-align:center}
-  .dida{justify-self:start;max-width:26rem;
+  .dida{justify-self:center;max-width:26rem;
     padding:.5rem .85rem .55rem 1rem;text-align:left;position:relative;
     background:var(--surface-2-tinta);color:var(--testo-2);
     border:1px solid var(--contorno);border-left-width:5px;
@@ -100,8 +100,17 @@ const VESTITO = `
     border:2px solid var(--contorno);border-width:var(--tratto-mano);
     border-radius:var(--ang-mano);box-shadow:var(--ombra-ink)}
   .vie a.primo{background:var(--acc);color:var(--su-acc)}
-  .vie a:active{transform:translate(2px,3px);box-shadow:none}
-  .dida.coda{justify-self:start;font-size:.8rem;padding:.42rem .8rem .46rem .95rem;max-width:30rem}
+  .vie a:active,.tuo a:active{transform:translate(2px,3px);box-shadow:none}
+  .vie a:focus-visible,.tuo a:focus-visible{outline:3px solid var(--acc);outline-offset:3px}
+  .dida.coda{justify-self:center;font-size:.8rem;padding:.42rem .8rem .46rem .95rem;max-width:30rem}
+  .tuo{justify-self:stretch;display:grid;gap:.55rem;justify-items:center;
+    padding-top:clamp(1rem,3vw,1.4rem);border-top:2px dashed var(--contorno)}
+  .tuo-t{font-weight:700;color:var(--testo)}
+  .tuo p{font-size:.9rem;color:var(--testo-2);max-width:26rem}
+  .tuo a{display:inline-block;margin-top:.2rem;padding:.5rem 1rem;text-decoration:none;font-weight:600;font-size:.92rem;
+    color:var(--testo);background:var(--surface-2-tinta);
+    border:2px solid var(--contorno);border-width:var(--tratto-mano);
+    border-radius:var(--ang-mano);box-shadow:var(--ombra-ink)}
   .dida.coda span+span{display:inline-block;margin-top:.3rem}
   .nota{margin-top:1.1rem;font-size:.84rem;color:var(--testo-2);text-align:center}
   .nota+.nota{margin-top:.3rem}
@@ -143,23 +152,31 @@ const T404 = {
 
 export const LINGUE_SERVIZIO = ['it', 'en', 'es'];
 
-// LA PAGINA DI QUELLO CHE NON C'E', una sola forma per tutte: la didascalia
-// che spiega, il titolo a pennarello, la nota in coda, le strade in fondo (la
-// prima e' quella accesa). Il 404 del sito e' una di queste; lo e' anche
-// «Qui non c'e' un negozio» (src/features/negozio-pagina.js). Chi ha bisogno di
-// una pagina cosi' la chiede qui, e il vestito non si puo' sbagliare: prima il
-// negozio se n'era fatta una sua, scura e col tasto viola, che sembrava un altro
-// prodotto.
-export function paginaMancante(lingua, { titolo, dida, h1, coda = '', numero = '', vie = [] }) {
+// LA PAGINA DI QUELLO CHE NON C'E', una sola forma per tutte, che si legge
+// dall'alto in basso: il titolo a pennarello (cosa e' successo), la didascalia
+// (perche', e cosa fare), la nota in coda, le strade in fondo (la prima e'
+// quella accesa). Prima la didascalia stava sopra il titolo, e si leggeva il
+// perche' prima di sapere cosa: confondeva. Se una parte parla solo a qualcuno
+// (`tuo`: chi il negozio ce l'ha), sta in un riquadro suo, col titolo che dice
+// a chi parla e il suo tasto accanto alla sua frase, non in fondo fra quelli
+// di tutti. Il 404 del sito e' una di queste; lo e' anche «Qui non c'e' un
+// negozio» (src/features/negozio-pagina.js). Chi ha bisogno di una pagina
+// cosi' la chiede qui, e il vestito non si puo' sbagliare.
+export function paginaMancante(lingua, { titolo, dida, h1, coda = '', numero = '', tuo = null, vie = [] }) {
   const l = LINGUE_SERVIZIO.includes(lingua) ? lingua : 'it';
   return guscio(l, titolo, `  <div class="vignetta">
-    <p class="dida">${esc(dida)}</p>
-    <h1>${esc(h1)}</h1>${coda ? `
-    <p class="dida coda">${esc(coda)}</p>` : ''}${numero ? `
+    <h1>${esc(h1)}</h1>
+    <p class="dida">${esc(dida)}</p>${coda ? `
+    <p class="dida coda">${esc(coda)}</p>` : ''}${tuo ? `
+    <div class="tuo">
+      <p class="tuo-t">${esc(tuo.titolo)}</p>
+      <p>${esc(tuo.testo)}</p>
+      <a href="${esc(tuo.via.href)}">${esc(tuo.via.testo)}</a>
+    </div>` : ''}${numero ? `
     <span class="numero">${esc(numero)}</span>` : ''}
   </div>
   <div class="vie">${vie.map((v, i) => `
-    <a${i === 0 ? ' class="primo"' : ''} href="${esc(v.href)}">${esc(v.testo)}</a>`).join('')}
+    <a${i === 0 && !v.spento ? ' class="primo"' : ''} href="${esc(v.href)}">${esc(v.testo)}</a>`).join('')}
   </div>`);
 }
 
@@ -184,8 +201,8 @@ const TM = [
 export function paginaManutenzione() {
   const [it, en, es] = TM;
   return guscio('it', it[1], `  <div class="vignetta">
-    <p class="dida">${esc(it[2])}</p>
     <h1>${esc(it[1])}</h1>
+    <p class="dida">${esc(it[2])}</p>
     <p class="dida coda"><span lang="en">${esc(en[2])}</span><br><span lang="es">${esc(es[2])}</span></p>
   </div>
   <div class="vie"><a class="primo" href="/">${esc(it[3])}</a></div>`, 'noindex, nofollow', false);
