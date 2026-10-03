@@ -1,7 +1,8 @@
 // © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
 // Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
-// L'anteprima delle pagine dell'editor: link, donazioni, negozio e quelle
-// dietro i pannelli di Twitch (docs/DEMO.md, docs/STRUMENTI.md).
+// L'anteprima delle pagine dell'editor: link, donazioni, negozio, la porta del
+// gruppo Telegram e quelle dietro i pannelli di Twitch (docs/DEMO.md,
+// docs/STRUMENTI.md, docs/TELEGRAM.md).
 //
 // L'editor mostra la pagina vera, resa dal server da quello che c'e'
 // nell'editor, senza salvarla. Qui sta come si compone, una volta sola:
@@ -11,18 +12,19 @@
 // anteprimaDemo lo pulisce con le stesse funzioni del salvataggio. Il disegno
 // e' uno: la demo non puo' mostrare una pagina diversa da quella vera.
 
-import { linkPage, paginaDona, paginaNegozio, paginaPannello } from '../db.js';
+import { linkPage, paginaDona, paginaNegozio, paginaPannello, paginaTelegram } from '../db.js';
 import { renderLinkPage, aspettoDi } from '../features/linkpagina.js';
 import { normDonazioni, cosaManca, datiSostieni, urlPaginaDona } from '../features/donazioni.js';
 import { normArticolo, vetrinaDi, monetaPerLingua, urlPaginaNegozio } from '../features/negozio.js';
 import { vetrinaDa, opzioniDaDati } from '../features/negozio-pagina.js';
+import { opzioniDaDati as opzioniPortaDa } from '../features/tg-porta.js';
 import { monetaDa } from '../features/moneta.js';
 import { normalizzaSettimana, prossimaDiretta } from '../features/settimana.js';
 import { F } from '../features/preferenze.js';
 import { urlCanale, piattaformaDi } from '../identita.js';
 import { viaLegale } from './legali.js';
 
-export const QUALI = ['link', 'dona', 'negozio', 'pannello'];
+export const QUALI = ['link', 'dona', 'negozio', 'pannello', 'telegram'];
 
 // La pagina dell'anteprima. `editor` e' quello che l'editor manda, e passa
 // dalla stessa pulizia del salvataggio. `c` e' il canale gia' letto: login,
@@ -38,6 +40,10 @@ export function htmlAnteprima(quale, editor, c) {
   if (quale === 'negozio') {
     const pagina = aspettoDi(paginaNegozio.pulisci({ ...testo, aspetto: c.aspetto }), c.link);
     return renderLinkPage(pagina, { ...comune, negozio: c.negozio });
+  }
+  if (quale === 'telegram') {
+    const pagina = aspettoDi(paginaTelegram.pulisci({ ...testo, aspetto: c.aspetto }), c.link);
+    return renderLinkPage(pagina, { ...comune, fuori: c.fuori });
   }
   const dona = quale === 'dona', dietro = quale === 'pannello';
   const archivio = dona ? paginaDona : dietro ? paginaPannello : null;
@@ -94,6 +100,32 @@ export function canaleDemo(grezzo) {
       alias: (Array.isArray(x?.alias) ? x.alias : []).slice(0, 5).map((a) => riga(a, 30).toLowerCase().replace(/[^a-z0-9_]/g, '')).filter(Boolean),
       cosa: riga(x?.cosa, 200),
     })).filter((x) => x.comando),
+    // la porta del gruppo Telegram: il nome del gruppo, se lo scudo e' acceso e
+    // le sue regole, come le salverebbe il pannello
+    telegram: {
+      gruppo: riga(oggetto(c.telegram).gruppo, 128),
+      scudo: oggetto(c.telegram).scudo === true,
+      regole: String(oggetto(c.telegram).regole ?? '').replace(/\r\n?/g, '\n').trim().slice(0, 1500),
+    },
+  };
+}
+
+// I dati della porta del canale finto: gli stessi che datiPorta (tg-porta.js)
+// legge dal database per un canale vero. Il link d'invito e' un esempio: la
+// demo non ha un bot che lo possa fare.
+export function datiPortaDemo(ch, { baseUrl = '' } = {}) {
+  return {
+    lingua: ch.lingua,
+    nome: ch.display,
+    url: `${baseUrl}/telegram/${ch.login}`,
+    privacy: `${baseUrl}${viaLegale('privacy', ch.lingua)}#telegram`,
+    gruppo: ch.telegram.gruppo,
+    invito: 'https://t.me/+esempio',
+    scudo: ch.telegram.scudo,
+    regole: ch.telegram.regole,
+    urlLink: ch.link ? `${baseUrl}/u/${ch.login}` : '',
+    urlTv: urlCanale(ch.login) || '',
+    piattaforma: piattaformaDi(ch.login),
   };
 }
 
@@ -114,7 +146,7 @@ export function datiNegozioDemo(ch, { baseUrl = '', ora = Date.now() } = {}) {
 }
 
 // L'anteprima della demo: { html }, oppure { errore } se `quale` non e' una
-// delle tre. Niente database e niente rete: i canali YouTube scritti come
+// delle pagine. Niente database e niente rete: i canali YouTube scritti come
 // @nome restano come sono, invece di chiederli a YouTube.
 export function anteprimaDemo(corpo, { baseUrl = '', ora = Date.now() } = {}) {
   const b = oggetto(corpo);
@@ -127,6 +159,7 @@ export function anteprimaDemo(corpo, { baseUrl = '', ora = Date.now() } = {}) {
       aspetto: p.aspetto, link: ch.link,
       settings: { donazioni: ch.donazioni, overlayGoals: [] }, conti: {},
       negozio: b.quale === 'negozio' ? opzioniDaDati(datiNegozioDemo(ch, { baseUrl, ora })) : null,
+      fuori: b.quale === 'telegram' ? opzioniPortaDa(datiPortaDemo(ch, { baseUrl })) : null,
       urlPannello: '',
       vivi: () => ({
         programma: ch.settimana ? { giorni: ch.settimana.giorni, fuso: ch.settimana.fuso, prossima: prossimaDiretta(ch.settimana, new Date(ora)) } : null,

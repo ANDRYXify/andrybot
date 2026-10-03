@@ -104,7 +104,12 @@
 # (negozio.socialbot.live/<canale>): la pagina di quel canale e di nessun
 # altro, la radice rimanda al sito. Stessa regola di discord: il nome va qui,
 # o il certificato non arriva.
-socialbot.live, dona.socialbot.live, sostieni.socialbot.live, discord.socialbot.live, negozio.socialbot.live {
+#
+# telegram.socialbot.live e' la porta del gruppo Telegram di uno streamer
+# (telegram.socialbot.live/<canale>) e la pagina della prova dello scudo
+# (telegram.socialbot.live/<canale>/verifica), che Telegram apre come Mini App.
+# Stessa regola: il nome va qui.
+socialbot.live, dona.socialbot.live, sostieni.socialbot.live, discord.socialbot.live, negozio.socialbot.live, telegram.socialbot.live {
 	# zstd prima di gzip: Chrome lo prende e comprime meglio, gli altri
 	# ricadono su gzip. app.js e un file grosso, qui si vede.
 	encode zstd gzip
@@ -114,10 +119,14 @@ socialbot.live, dona.socialbot.live, sostieni.socialbot.live, discord.socialbot.
 	# Una regola in piu' qui aggiungeva un SECONDO Cache-Control accanto al
 	# nostro, e due risposte alla stessa domanda non le sa sciogliere nessuno.
 
-	@tgapp path /tgapp /tgapp.html
+	# La Mini App e la pagina della prova dello scudo: tutte e due si aprono
+	# dentro Telegram (e in Telegram Web, dentro una cornice), e usano lo
+	# script di Telegram. La prova ha due indirizzi: /telegram/<canale>/verifica
+	# sul sito, e /<canale>/verifica sull'indirizzo corto.
+	@tgapp expression `path('/tgapp', '/tgapp.html', '/telegram/*/verifica') || (host('telegram.socialbot.live') && path('/*/verifica'))`
 	@ml path /voce.html /tracking/*
 
-	# --- Mini App Telegram: script SDK + framing di Telegram Web -----------
+	# --- Mini App Telegram e prova dello scudo: script SDK + framing di Telegram Web
 	handle @tgapp {
 		header {
 			import sicurezza_comune

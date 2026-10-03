@@ -1208,6 +1208,8 @@ function apiDemo(percorso, opzioni = {}) {
   }
   if (via === '/api/streamer/voce/prova') return Promise.resolve({ frasi: _demoProvaFrasi(opzioni.body) });
   if (via.startsWith('/api/streamer/negozio')) return Promise.resolve(_demoNegozio(metodo, via, opzioni.body));
+  if (via === '/api/streamer/telegram/scudo') return Promise.resolve(_demoScudoTg(metodo, opzioni.body));
+  if (via === '/api/streamer/telegram/scudo/anteprima') return Promise.resolve({ html: `<!DOCTYPE html><html lang="${LINGUA || 'it'}"><head><meta charset="utf-8"><style>body{font:16px/1.5 system-ui,sans-serif;margin:0;padding:1.5rem;background:#0f0d14;color:#f4f2f8}</style></head><body><p>${esc(L('Nella demo la prova non si apre: serve un bot Telegram collegato. Col tuo canale, qui vedi la pagina vera, con quello che hai scritto.', 'In the demo the check does not open: it needs a connected Telegram bot. With your channel, here you see the real page, with what you wrote.', 'En la demo la prueba no se abre: hace falta un bot de Telegram conectado. Con tu canal, aquí ves la página real, con lo que has escrito.'))}</p></body></html>` });
   if (_DEMO_ANTEPRIMA[via]) return _demoAnteprima(_DEMO_ANTEPRIMA[via], opzioni.body);
   const pan = /^\/api\/paginapannello\/([a-z0-9-]{1,24})(\/anteprima)?$/.exec(via);
   if (pan) return pan[2] ? _demoAnteprima('pannello', opzioni.body) : Promise.resolve(_demoPaginaPannello(metodo, pan[1], opzioni.body || {}));
@@ -1408,7 +1410,7 @@ function apiDemo(percorso, opzioni = {}) {
   return Promise.resolve({ ok: true, demo: true });
 }
 
-const _DEMO_ANTEPRIMA = { '/api/linkpage/anteprima': 'link', '/api/paginadona/anteprima': 'dona', '/api/paginanegozio/anteprima': 'negozio' };
+const _DEMO_ANTEPRIMA = { '/api/linkpage/anteprima': 'link', '/api/paginadona/anteprima': 'dona', '/api/paginanegozio/anteprima': 'negozio', '/api/paginatelegram/anteprima': 'telegram' };
 function _demoAnteprima(quale, pagina) {
   const s = stato?.settings || {};
   const neg = _demoScritture.negozio || _demoNegozioBase();
@@ -1418,7 +1420,33 @@ function _demoAnteprima(quale, pagina) {
       aspettoLink: LP.d?.aspettoLink || null, donazioni: s.donazioni || null,
       moneta: { nomeMonete: s.nomeMonete, formaMonete: s.formaMonete },
       compra: neg.comandi?.compra, articoli: neg.articoli,
-      settimana: pan.settimana || null, comandi: _DEMO_COMANDI_PUBBLICI } } });
+      settimana: pan.settimana || null, comandi: _DEMO_COMANDI_PUBBLICI,
+      telegram: { gruppo: 'Community di Andryx', scudo: _demoScudoTg().scudo.attivo, regole: _demoScudoTg().scudo.regole.testo } } } });
+}
+
+function _demoScudoTg(metodo, corpo) {
+  const base = { attivo: true, minuti: 10, no: 'rifiuta',
+    regole: { attivo: true, testo: L('Niente spam e niente insulti. Gli spoiler solo nel topic apposta. Si parla di giochi, di dirette e di quello che vi va, con rispetto.', 'No spam and no insults. Spoilers only in their own topic. We talk about games, streams and whatever you like, with respect.', 'Nada de spam ni de insultos. Los spoilers solo en su tema. Se habla de juegos, de directos y de lo que os apetezca, con respeto.') },
+    domande: [{ testo: L('Come si chiama il gatto di Andryx?', 'What is Andryx’s cat called?', '¿Cómo se llama el gato de Andryx?'), opzioni: ['Biscotto', 'Pixel', 'Nebbia'], giusta: 1 }],
+    colori: { modo: 'pagina', punti: '#1d1a26', fondo: '#f6f3ee' } };
+  if (metodo === 'POST' && corpo) _demoScritture.scudoTg = { ...base, ...corpo };
+  const ora = Date.now();
+  return {
+    scudo: _demoScritture.scudoTg || base,
+    controlli: { blocco: '', modo: 'guardiano', lista: [
+      { k: 'https', ok: true, grave: true }, { k: 'interattivo', ok: true, grave: true }, { k: 'gruppo', ok: true, grave: true },
+      { k: 'admin', ok: true, grave: true }, { k: 'invitare', ok: true, grave: true }, { k: 'prova', ok: true, grave: true },
+      { k: 'guardiano', ok: true, grave: false }, { k: 'porta', ok: true, grave: false }] },
+    inAttesa: 1,
+    recenti: [
+      { nome: 'Giulia', stato: 'attesa', motivo: '', ts: ora - 60_000, fine: 0 },
+      { nome: 'Marco', stato: 'passata', motivo: 'prova', ts: ora - 3_600_000, fine: ora - 3_500_000 },
+      { nome: 'nuovo_account_88', stato: 'bocciata', motivo: 'scaduta', ts: ora - 7_200_000, fine: ora - 6_600_000 },
+      { nome: 'Sara', stato: 'admin', motivo: 'aiuto', ts: ora - 86_400_000, fine: ora - 86_300_000 },
+    ],
+    porta: { url: 'https://telegram.socialbot.live/' + (stato?.user?.login || 'andryxify'), pubblicata: true },
+    bot: 'andryx_live_bot', gruppo: 'Community di Andryx', pagina: { testo: '#f4f2f8', bg: '#0f0d14' },
+  };
 }
 
 const _DEMO_COMANDI_PUBBLICI = [
@@ -2092,6 +2120,11 @@ function _demoGet(via) {
     dati: { nome: 'ANDRYXify', titolo: quale === 'dona' ? 'Se ti piace quello che faccio, un caffè aiuta.' : 'Dirette, giochi e chiacchiere', gioco: '', login: 'andryxify', link: quale === 'dona' ? 'dona.socialbot.live/andryxify' : 'socialbot.live/u/andryxify', avatar: '' },
     vocabolario: { ...F['/api/streamer/telegram/carta'].vocabolario, misura: { larghezza: 1200, altezza: 630 }, temi: [] } });
   F['/api/paginacarta'] = cartaPag('link');
+  F['/api/paginatelegram'] = { ...F['/api/linkpage'], url: 'https://telegram.socialbot.live/andryxify', pubblicata: true, visite: null, suggeriti: [],
+    tipi: ['intestazione', 'gruppo', 'scudo', 'regole', 'piede', 'titolo', 'testo', 'link', 'separatore', 'spazio', 'immagine'],
+    aspettoLink: { template: F['/api/linkpage'].pagina.template, tema: F['/api/linkpage'].pagina.tema },
+    pagina: { ...F['/api/linkpage'].pagina, aspetto: 'link', headline: L('Il gruppo Telegram di ANDRYXify', 'ANDRYXify’s Telegram group', 'El grupo de Telegram de ANDRYXify'), tagline: L('Si chiacchiera anche quando la diretta è spenta', 'The chat goes on when the stream is off', 'Se charla también cuando el directo está apagado'),
+      blocchi: [{ tipo: 'intestazione' }, { tipo: 'gruppo', titolo: '', testo: '', tasto: '' }, { tipo: 'scudo', titolo: '', testo: '' }, { tipo: 'regole', titolo: '' }, { tipo: 'piede', link: true, canale: true }] } };
   return F[via] !== undefined ? F[via] : {};
 }
 
@@ -22703,6 +22736,8 @@ function disegnaCartaPagina() {
 function lpIntroHtml(d) {
   const intro = LP.quale === 'pannello'
     ? L('La pagina che si apre quando clicchi questo pannello su Twitch: tutto quello che nel pannello non ci sta. Ha l\'aspetto della tua pagina link, o uno suo. Il suo indirizzo è', 'The page that opens when you click this panel on Twitch: everything that does not fit in the panel. It has your link page look, or one of its own. Its address is', 'La página que se abre cuando haces clic en este panel en Twitch: todo lo que no cabe en el panel. Tiene el aspecto de tu página de enlaces, o uno propio. Su dirección es')
+    : LP.quale === 'telegram'
+    ? L('La porta del tuo gruppo Telegram: chi la apre vede il gruppo, come si entra e le regole, e il tasto per chiedere di entrare. Con lo scudo acceso chi entra da qui passa dalla prova. Ha l\'aspetto della tua pagina link o uno suo. Il suo indirizzo è', 'The door to your Telegram group: whoever opens it sees the group, how to join and the rules, and the button to ask to join. With the shield on, whoever joins from here takes the check. It has your link page look or its own. Its address is', 'La puerta de tu grupo de Telegram: quien la abre ve el grupo, cómo se entra y las normas, y el botón para pedir entrar. Con el escudo encendido, quien entra desde aquí pasa la prueba. Tiene el aspecto de tu página de enlaces o uno propio. Su dirección es')
     : LP.quale === 'negozio'
     ? L('La pagina del negozio: chi la apre vede gli articoli in vendita, i prezzi e come si compra, con l\'aspetto della tua pagina link o con uno suo. Si vede quando il negozio è aperto. Il suo indirizzo è', 'The shop page: whoever opens it sees the items on sale, the prices and how to buy, with your link page look or one of its own. It shows while the shop is open. Its address is', 'La página de la tienda: quien la abre ve los artículos a la venta, los precios y cómo se compra, con el aspecto de tu página de enlaces o con uno propio. Se ve cuando la tienda está abierta. Su dirección es')
     : LP.quale === 'dona'
@@ -22722,15 +22757,15 @@ function lpIntroHtml(d) {
   })}`;
 }
 
-const LP = { d: null, blocchi: [], tema: {}, testa: {}, quale: 'link', aspetto: '', vista: 'telefono', pannello: '', partenza: null, schede: { link: {}, dona: {}, negozio: {}, pannello: {} } };
+const LP = { d: null, blocchi: [], tema: {}, testa: {}, quale: 'link', aspetto: '', vista: 'telefono', pannello: '', partenza: null, schede: { link: {}, dona: {}, negozio: {}, pannello: {}, telegram: {} } };
 STATI_SALVA['lp-salva'] = {
   completo: true,
   stato: () => ({ headline: LP.testa.headline, tagline: LP.testa.tagline, template: LP.testa.template, avatar: LP.testa.avatar, tema: LP.tema, blocchi: LP.blocchi, aspetto: LP.aspetto || '' }),
 };
-const LP_CASA = { link: 'lp-box', dona: 'lp-box-dona', negozio: 'lp-box-negozio', pannello: 'lp-box-pannello' };
+const LP_CASA = { link: 'lp-box', dona: 'lp-box-dona', negozio: 'lp-box-negozio', pannello: 'lp-box-pannello', telegram: 'lp-box-telegram' };
 const lpCasaHtml = (quale) => `<div id="${LP_CASA[quale]}" class="lp-casa">${attesaHtml()}</div>`;
-const LP_API = { link: '/api/linkpage', dona: '/api/paginadona', negozio: '/api/paginanegozio' };
-const lpConAspetto = () => LP.quale === 'dona' || LP.quale === 'negozio' || LP.quale === 'pannello';
+const LP_API = { link: '/api/linkpage', dona: '/api/paginadona', negozio: '/api/paginanegozio', telegram: '/api/paginatelegram' };
+const lpConAspetto = () => LP.quale === 'dona' || LP.quale === 'negozio' || LP.quale === 'pannello' || LP.quale === 'telegram';
 const lpVociMax = (tipo) => Number(LP.d?.limiti?.voci?.[tipo]) || 0;
 const lpVociPiene = (b) => (b.voci || []).length >= lpVociMax(b.tipo);
 const lpSchede = () => LP.schede[LP.quale] || LP.schede.link;
@@ -22946,7 +22981,7 @@ async function caricaPaginaLink(ridisegna = false, quale = null) {
           </div>
         </details>
 
-        ${LP.quale === 'pannello' ? '' : `<details class="carta sez">
+        ${LP.quale === 'pannello' || LP.quale === 'telegram' ? '' : `<details class="carta sez">
           <summary><h3>${L('Quando condividi il link', 'When you share the link', 'Cuando compartes el enlace')}</h3></summary>
           <p class="suggerimento">${L('Su Telegram, WhatsApp e Discord il link mostra questa immagine, disegnata coi colori della tua pagina. La puoi rifare come vuoi con lo stesso editor delle locandine.', 'On Telegram, WhatsApp and Discord the link shows this image, drawn in your page\'s colors. You can redo it as you like with the same editor as the posters.', 'En Telegram, WhatsApp y Discord el enlace muestra esta imagen, dibujada con los colores de tu página. Puedes rehacerla como quieras con el mismo editor de los carteles.')}</p>
           <div id="lp-carta-box">${attesaHtml()}</div>
@@ -22956,7 +22991,7 @@ async function caricaPaginaLink(ridisegna = false, quale = null) {
           <summary><h3>${L('Contenuti', 'Content', 'Contenido')}</h3></summary>
           <div id="lp-blocchi"></div>
           <div class="lp-aggiungi spazio-sopra">
-            ${LP.quale === 'negozio' ? lpAggiungiNegozioHtml() : `<button type="button" class="btn secondario mini" data-lpadd="link">${_bIco(ICO.piu)}${L('Link', 'Link', 'Enlace')}</button>
+            ${LP.quale === 'negozio' ? lpAggiungiNegozioHtml() : LP.quale === 'telegram' ? lpAggiungiTelegramHtml() : `<button type="button" class="btn secondario mini" data-lpadd="link">${_bIco(ICO.piu)}${L('Link', 'Link', 'Enlace')}</button>
             <button type="button" class="btn secondario mini" data-lpadd="social">${L('Riga di social', 'Social row', 'Fila de redes')}</button>
             <button type="button" class="btn secondario mini" data-lpadd="titolo">${L('Titolo di sezione', 'Section heading', 'Título de sección')}</button>
             <button type="button" class="btn secondario mini" data-lpadd="testo">${L('Testo', 'Text', 'Texto')}</button>
@@ -23298,7 +23333,10 @@ async function caricaPaginaLink(ridisegna = false, quale = null) {
       vetrina: { tipo: 'vetrina', titolo: '', articolo: 0 },
       articoli: { tipo: 'articoli', titolo: '', colonne: 2, formato: 'quadrato', prezzo: true, scorte: true, requisiti: true },
       comecompra: { tipo: 'comecompra', titolo: '', testo: '' },
-      piede: { tipo: 'piede', link: true, canale: true } }[tipo];
+      piede: { tipo: 'piede', link: true, canale: true },
+      gruppo: { tipo: 'gruppo', titolo: '', testo: '', tasto: '' },
+      scudo: { tipo: 'scudo', titolo: '', testo: '' },
+      regole: { tipo: 'regole', titolo: '' } }[tipo];
     if (!nuovo) return;
     LP.blocchi.push(nuovo);
     lpRenderBlocchi(); lpAnteprima();
@@ -23632,12 +23670,16 @@ const NOMI_BLOCCO = () => ({ link: L('Link', 'Link', 'Enlace'), social: L('Riga 
     vetrina: L('Articolo in vetrina', 'Featured item', 'Artículo destacado'),
     articoli: L('Griglia degli articoli', 'Item grid', 'Rejilla de artículos'),
     comecompra: L('Come si compra', 'How to buy', 'Cómo se compra'),
-    piede: L('Piede coi link', 'Footer with links', 'Pie con enlaces') });
+    piede: L('Piede coi link', 'Footer with links', 'Pie con enlaces'),
+    gruppo: L('Il gruppo e il tasto per entrare', 'The group and the join button', 'El grupo y el botón para entrar'),
+    scudo: L('Come si entra (lo scudo)', 'How to join (the shield)', 'Cómo se entra (el escudo)'),
+    regole: L('Le regole del gruppo', 'The group rules', 'Las normas del grupo') });
 
 const ICO_BLOCCO = { link: 'link', social: 'cuore', titolo: 'stella', testo: 'mail', immagine: 'video',
   embed: 'video', diretta: 'twitch', eroe: 'stella', griglia: 'gioco', scritta: 'musica',
   numeri: 'soldi', faq: 'mail', conto: 'calendario', programma: 'calendario', comandi: 'gioco', sostieni: 'cuore', donatori: 'stella', separatore: 'link',
-  spazio: 'link', intestazione: 'stella', vetrina: 'stella', articoli: 'carrello', comecompra: 'carrello', piede: 'link' };
+  spazio: 'link', intestazione: 'stella', vetrina: 'stella', articoli: 'carrello', comecompra: 'carrello', piede: 'link',
+  gruppo: 'telegram', scudo: 'stella', regole: 'mail' };
 
 function lpAggiungiNegozioHtml() {
   const t = (tipo, testo, primo = false) => `<button type="button" class="btn secondario mini" data-lpadd="${tipo}">${primo ? _bIco(ICO.piu) : ''}${testo}</button>`;
@@ -23653,6 +23695,40 @@ function lpAggiungiNegozioHtml() {
     t('separatore', L('Riga divisoria', 'Divider', 'Separador')),
     t('spazio', L('Spazio vuoto', 'Empty space', 'Espacio vacío')),
   ].join('\n            ');
+}
+
+function lpAggiungiTelegramHtml() {
+  const t = (tipo, testo, primo = false) => `<button type="button" class="btn secondario mini" data-lpadd="${tipo}">${primo ? _bIco(ICO.piu) : ''}${testo}</button>`;
+  return [
+    t('gruppo', L('Il gruppo e il tasto per entrare', 'The group and the join button', 'El grupo y el botón para entrar'), true),
+    t('scudo', L('Come si entra (lo scudo)', 'How to join (the shield)', 'Cómo se entra (el escudo)')),
+    t('regole', L('Le regole del gruppo', 'The group rules', 'Las normas del grupo')),
+    t('intestazione', L('Intestazione', 'Header', 'Encabezado')),
+    t('piede', L('Piede coi link', 'Footer with links', 'Pie con enlaces')),
+    t('titolo', L('Titolo di sezione', 'Section heading', 'Título de sección')),
+    t('testo', L('Testo', 'Text', 'Texto')),
+    t('link', L('Link', 'Link', 'Enlace')),
+    t('immagine', L('Immagine', 'Image', 'Imagen')),
+    t('separatore', L('Riga divisoria', 'Divider', 'Separador')),
+    t('spazio', L('Spazio vuoto', 'Empty space', 'Espacio vacío')),
+  ].join('\n            ');
+}
+
+function lpCampiTelegram(b, i, d) {
+  const riga = (campo, max, ph) => `<input type="text" class="spazio-sopra" data-lpb="${i}" data-lpf="${campo}" maxlength="${max}" value="${esc(b[campo] || '')}" placeholder="${esc(ph)}">`;
+  if (b.tipo === 'gruppo') {
+    return `${riga('titolo', d.limiti.label, L('Titolo (vuoto: il nome del gruppo)', 'Heading (empty: the group name)', 'Título (vacío: el nombre del grupo)'))}
+      ${riga('testo', d.limiti.sotto, L('Una riga sul gruppo (vuota: una di serie)', 'A line about the group (empty: a standard one)', 'Una línea sobre el grupo (vacía: una estándar)'))}
+      ${riga('tasto', d.limiti.label, L('Cosa c\'è scritto sul tasto (vuoto: «Entra nel gruppo»)', 'What the button says (empty: «Join the group»)', 'Qué pone en el botón (vacío: «Entrar en el grupo»)'))}
+      <p class="suggerimento">${L('Il tasto porta al link del tuo bot: con lo scudo acceso quel link chiede di entrare, quindi chi passa da qui fa la prova. Il link lo fa il bot da solo.', 'The button leads to your bot\'s link: with the shield on that link asks to join, so whoever comes through here takes the check. The bot makes the link by itself.', 'El botón lleva al enlace de tu bot: con el escudo encendido ese enlace pide entrar, así que quien pasa por aquí hace la prueba. El enlace lo crea el bot solo.')}</p>`;
+  }
+  if (b.tipo === 'scudo') {
+    return `${riga('titolo', d.limiti.label, L('Titolo (vuoto: «Come si entra»)', 'Heading (empty: «How to join»)', 'Título (vacío: «Cómo se entra»)'))}
+      ${riga('testo', d.limiti.sotto, L('Come lo racconti tu (vuoto: la spiegazione di serie)', 'In your own words (empty: the standard explanation)', 'Con tus palabras (vacío: la explicación estándar)'))}
+      <p class="suggerimento">${L('Si vede solo con lo scudo acceso, qui sopra in «Scudo all\'ingresso».', 'It shows only with the shield on, above in «Entry shield».', 'Solo se ve con el escudo encendido, arriba en «Escudo de entrada».')}</p>`;
+  }
+  return `${riga('titolo', d.limiti.label, L('Titolo (vuoto: «Le regole del gruppo»)', 'Heading (empty: «The group rules»)', 'Título (vacío: «Las normas del grupo»)'))}
+      <p class="suggerimento">${L('Il testo è quello delle regole dello scudo: lo scrivi una volta sola, in «Scudo all\'ingresso», e vale qui e nella prova.', 'The text is the shield rules: you write it once, in «Entry shield», and it counts here and in the check.', 'El texto es el de las normas del escudo: lo escribes una sola vez, en «Escudo de entrada», y vale aquí y en la prueba.')}</p>`;
 }
 
 function lpCampiNegozio(b, i, d) {
@@ -23886,6 +23962,8 @@ function lpRenderBlocchi() {
            <p class="suggerimento">${L('Tessere con immagine affiancate: le tue clip, i tuoi video, i tuoi progetti. Contenuti da guardare, non righe da leggere.', 'Cards with images side by side: your clips, videos, projects. Things to look at, not lines to read.', 'Fichas con imagen en paralelo: tus clips, vídeos, proyectos. Cosas para mirar, no líneas para leer.')}</p>`;
     } else if (['intestazione', 'vetrina', 'articoli', 'comecompra', 'piede'].includes(b.tipo)) {
       campi = lpCampiNegozio(b, i, d);
+    } else if (['gruppo', 'scudo', 'regole'].includes(b.tipo)) {
+      campi = lpCampiTelegram(b, i, d);
     } else if (b.tipo === 'diretta') {
       const PIA = { twitch: 'Twitch', kick: 'Kick', youtube: 'YouTube' };
       const mio = (d.url || '').split('/u/')[1] || '';
@@ -27578,6 +27656,19 @@ function pannelloTelegram() {
         <button class="btn" id="btn-tg-ingresso" data-salva>${L('Salva il cancello', 'Save the gate', 'Guardar el portero')}</button>
       </div>
     </div>
+
+    <div class="carta" id="tg-scudo-carta">
+      <h2>${_hIco(ICO.scudo)}${L('Scudo all’ingresso', 'Entry shield', 'Escudo de entrada')}</h2>
+      <p>${L('Chi chiede di entrare nel gruppo passa prima da una prova, dentro Telegram: un codice che si legge solo mentre si muove, le tue regole e, se vuoi, qualche domanda. Finché non la supera non è nel gruppo.', 'Whoever asks to join the group first takes a check, inside Telegram: a code you can only read while it moves, your rules and, if you want, a few questions. Until they pass it they are not in the group.', 'Quien pide entrar en el grupo pasa antes por una prueba, dentro de Telegram: un código que solo se lee mientras se mueve, tus normas y, si quieres, unas preguntas. Hasta que no la supera no está en el grupo.')}</p>
+      <p class="suggerimento">${L('Il codice esiste solo nel movimento: ogni fotogramma da solo è rumore, quindi screenshot, foto dal telefono, Lens e i programmi che leggono le immagini non trovano niente. Chi non riesce a vederlo non viene rifiutato: la sua richiesta passa agli amministratori.', 'The code only exists in motion: each frame on its own is noise, so screenshots, phone photos, Lens and programs that read images find nothing. Whoever cannot see it is not turned away: their request goes to the admins.', 'El código solo existe en movimiento: cada fotograma por sí solo es ruido, así que las capturas, las fotos con el móvil, Lens y los programas que leen imágenes no encuentran nada. Quien no consigue verlo no es rechazado: su solicitud pasa a los administradores.')}</p>
+      <div id="box-tg-scudo">${attesaHtml()}</div>
+    </div>
+
+    <div class="carta" id="tg-porta-carta">
+      <h2>${_hIco(ICO.condividi)}${L('La porta del gruppo', 'The group door', 'La puerta del grupo')}</h2>
+      <p>${L('Una pagina tua per il gruppo, da mettere ovunque: chi la apre vede il gruppo, come si entra e le regole, e chiede di entrare con un tasto. Si personalizza come la pagina link: temi, sfondo, caratteri, colori e pezzi. La prova prende i suoi colori.', 'A page of your own for the group, to put anywhere: whoever opens it sees the group, how to join and the rules, and asks to join with one button. It is customized like the link page: themes, background, fonts, colors and pieces. The check takes its colors.', 'Una página tuya para el grupo, para ponerla donde quieras: quien la abre ve el grupo, cómo se entra y las normas, y pide entrar con un botón. Se personaliza como la página de enlaces: temas, fondo, fuentes, colores y piezas. La prueba toma sus colores.')}</p>
+      ${lpCasaHtml('telegram')}
+    </div>
     ` : ''}
 
     <div class="carta">
@@ -27586,6 +27677,236 @@ function pannelloTelegram() {
       <div id="box-compleanni">${attesaHtml()}</div>
     </div>
 `);
+}
+
+const SCUDO_TG = { d: null, bozza: null };
+const TGS_LIMITI = { regole: 1500, domande: 3, opzioni: 4, domanda: 160, opzione: 80 };
+const TGS_CONTROLLI = () => ({
+  https: [L('Il sito risponde in HTTPS', 'The site answers over HTTPS', 'El sitio responde en HTTPS'),
+    L('Telegram apre solo pagine sicure: su un server senza HTTPS lo scudo non si accende.', 'Telegram only opens secure pages: on a server without HTTPS the shield does not turn on.', 'Telegram solo abre páginas seguras: en un servidor sin HTTPS el escudo no se enciende.')],
+  interattivo: [L('Il bot interattivo è acceso', 'The interactive bot is on', 'El bot interactivo está encendido'),
+    L('Si accende qui sopra, in «Bot interattivo su Telegram»: è da lì che arrivano le richieste di ingresso.', 'Turn it on above, in «Interactive bot on Telegram»: that is where join requests come in.', 'Se enciende arriba, en «Bot interactivo en Telegram»: por ahí llegan las solicitudes de entrada.')],
+  gruppo: [L('Il gruppo è collegato', 'The group is connected', 'El grupo está conectado'),
+    L('Collegalo in alto con «Rileva gruppo».', 'Connect it at the top with «Detect group».', 'Conéctalo arriba con «Detectar grupo».')],
+  admin: [L('Il bot è amministratore del gruppo', 'The bot is a group admin', 'El bot es administrador del grupo'),
+    L('In Telegram: impostazioni del gruppo, Amministratori, aggiungi il tuo bot.', 'In Telegram: group settings, Administrators, add your bot.', 'En Telegram: ajustes del grupo, Administradores, añade tu bot.')],
+  invitare: [L('Il bot può invitare utenti', 'The bot can invite users', 'El bot puede invitar usuarios'),
+    L('Fra i permessi del bot amministratore accendi «Invita utenti tramite link»: serve ad approvare e rifiutare le richieste, e a fare il link della porta.', 'Among the admin bot permissions turn on «Invite users via link»: it is needed to approve and decline requests, and to make the door link.', 'Entre los permisos del bot administrador activa «Invitar usuarios mediante enlace»: sirve para aprobar y rechazar solicitudes, y para crear el enlace de la puerta.')],
+  prova: [L('La prova si può disegnare', 'The check can be drawn', 'La prueba se puede dibujar'),
+    L('Su questo server mancano i caratteri della prova: senza, lo scudo non si accende.', 'This server is missing the fonts for the check: without them the shield does not turn on.', 'A este servidor le faltan las fuentes de la prueba: sin ellas el escudo no se enciende.')],
+  guardiano: [L('Il bot è il guardiano del gruppo: la prova si apre subito, dentro Telegram', 'The bot is the group guardian: the check opens right away, inside Telegram', 'El bot es el guardián del grupo: la prueba se abre enseguida, dentro de Telegram'),
+    L('Senza guardiano la prova arriva in privato, con un messaggio del bot appena qualcuno chiede di entrare: funziona lo stesso. Per farla aprire subito, nelle impostazioni del gruppo scegli il tuo bot come guardiano delle richieste di ingresso; se Telegram non te lo propone, accendi le richieste di ingresso per il bot da @BotFather.', 'Without a guardian the check arrives privately, in a message from the bot as soon as someone asks to join: it works anyway. To make it open right away, in the group settings pick your bot as the guardian of join requests; if Telegram does not offer it, turn on join requests for the bot in @BotFather.', 'Sin guardián la prueba llega en privado, con un mensaje del bot en cuanto alguien pide entrar: funciona igual. Para que se abra enseguida, en los ajustes del grupo elige tu bot como guardián de las solicitudes de entrada; si Telegram no te lo ofrece, activa las solicitudes de entrada para el bot en @BotFather.')],
+  porta: [L('Per entrare bisogna chiedere', 'To join you have to ask', 'Para entrar hay que pedirlo'),
+    L('Il gruppo è pubblico e si entra senza chiedere: chi lo trova per nome salta lo scudo. In Telegram accendi «Approva nuovi membri», oppure tieni acceso anche il cancello qui sopra. Chi entra dalla tua porta passa comunque dalla prova.', 'The group is public and people join without asking: whoever finds it by name skips the shield. In Telegram turn on «Approve new members», or keep the gate above on too. Whoever joins from your door takes the check anyway.', 'El grupo es público y se entra sin pedirlo: quien lo encuentra por su nombre se salta el escudo. En Telegram activa «Aprobar nuevos miembros», o mantén encendido también el portero de arriba. Quien entra por tu puerta pasa la prueba igualmente.')],
+});
+const TGS_ESITI = () => ({
+  attesa: L('In attesa della prova', 'Waiting for the check', 'Esperando la prueba'),
+  passata: L('Ha superato la prova: è nel gruppo', 'Passed the check: in the group', 'Superó la prueba: está en el grupo'),
+  bocciata: L('Rifiutata', 'Declined', 'Rechazada'),
+  admin: L('Passata agli amministratori', 'Left to the admins', 'Pasada a los administradores'),
+  dentro: L('Fatta entrare a mano da un amministratore', 'Let in by hand by an admin', 'Dejada entrar a mano por un administrador'),
+  errore: L('Ha superato la prova, ma Telegram non l’ha fatta entrare', 'Passed the check, but Telegram did not let them in', 'Superó la prueba, pero Telegram no la dejó entrar'),
+});
+const TGS_MOTIVI = () => ({
+  prova: L('codice sbagliato', 'wrong code', 'código incorrecto'),
+  domande: L('risposte sbagliate', 'wrong answers', 'respuestas incorrectas'),
+  scaduta: L('tempo scaduto', 'time ran out', 'se acabó el tiempo'),
+  aiuto: L('non riusciva a vedere la prova', 'could not see the check', 'no conseguía ver la prueba'),
+  pagina: L('la prova non si è aperta', 'the check did not open', 'la prueba no se abrió'),
+  privato: L('il messaggio in privato non è partito', 'the private message did not go out', 'el mensaje privado no salió'),
+});
+const _tgsLin = (v) => { const x = v / 255; return x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4; };
+const _tgsLum = (hex) => { const h = String(hex || '').replace('#', ''); if (!/^[0-9a-f]{6}$/i.test(h)) return 0; const [r, g, b] = [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16)); return 0.2126 * _tgsLin(r) + 0.7152 * _tgsLin(g) + 0.0722 * _tgsLin(b); };
+const tgsContrasto = (a, b) => { const [x, y] = [_tgsLum(a), _tgsLum(b)].sort((p, q) => q - p); return (x + 0.05) / (y + 0.05); };
+const TGS_CONTRASTO = 3;
+
+async function caricaScudoTg() {
+  const box = document.getElementById('box-tg-scudo');
+  if (!box) return;
+  try { SCUDO_TG.d = await api('/api/streamer/telegram/scudo'); }
+  catch (e) { box.innerHTML = `<p class="suggerimento">${esc(e?.message || L('Non riesco a leggere lo scudo adesso.', 'I cannot read the shield right now.', 'No puedo leer el escudo ahora.'))}</p>`; return; }
+  SCUDO_TG.bozza = JSON.parse(JSON.stringify(SCUDO_TG.d.scudo));
+  disegnaScudoTg();
+}
+
+function _tgsDomandaHtml(q, i) {
+  const voci = Array.from({ length: TGS_LIMITI.opzioni }, (_, k) => q.opzioni?.[k] || '');
+  const piene = voci.filter((v) => v.trim()).length;
+  const regge = !q.testo?.trim() || (piene >= 2 && (voci[q.giusta] || '').trim());
+  return `<fieldset class="sc-domanda" data-scd="${i}">
+    <legend>${L('Domanda', 'Question', 'Pregunta')} ${i + 1}</legend>
+    <input type="text" data-scdf="testo" maxlength="${TGS_LIMITI.domanda}" value="${esc(q.testo || '')}" aria-label="${esc(L('Il testo della domanda', 'The question text', 'El texto de la pregunta'))}" placeholder="${esc(L('es. Come si chiama il canale?', 'e.g. What is the channel called?', 'p. ej. ¿Cómo se llama el canal?'))}">
+    <div class="sc-voci">
+      ${voci.map((v, k) => `<label class="sc-voce">
+        <input type="radio" name="sc-giusta-${i}" data-scdf="giusta" value="${k}"${Number(q.giusta) === k ? ' checked' : ''} aria-label="${esc(L(`La risposta ${k + 1} è quella giusta`, `Answer ${k + 1} is the right one`, `La respuesta ${k + 1} es la correcta`))}">
+        <input type="text" data-scdf="opzione" data-k="${k}" maxlength="${TGS_LIMITI.opzione}" value="${esc(v)}" aria-label="${esc(L(`Risposta ${k + 1}`, `Answer ${k + 1}`, `Respuesta ${k + 1}`))}" placeholder="${esc(L(`Risposta ${k + 1}`, `Answer ${k + 1}`, `Respuesta ${k + 1}`))}">
+      </label>`).join('')}
+    </div>
+    <p class="suggerimento">${L('Il pallino segna la risposta giusta. Le risposte vuote non si mostrano.', 'The dot marks the right answer. Empty answers are not shown.', 'El punto marca la respuesta correcta. Las respuestas vacías no se muestran.')}</p>
+    ${regge ? '' : `<p class="tg-stato guaio">${_bIco(ICO.avviso)}${L('Questa domanda ancora non vale: servono almeno due risposte, e il pallino su una risposta scritta.', 'This question does not count yet: it needs at least two answers, and the dot on a written answer.', 'Esta pregunta aún no vale: hacen falta al menos dos respuestas, y el punto en una respuesta escrita.')}</p>`}
+    <button type="button" class="btn secondario mini" data-scd-togli="${i}">${_bIco(ICO.cestino)}${L('Togli la domanda', 'Remove the question', 'Quitar la pregunta')}</button>
+  </fieldset>`;
+}
+
+function _tgsColoriNota() {
+  const s = SCUDO_TG.bozza;
+  if (s.colori.modo !== 'miei') return L('La prova usa il colore del testo e quello dello sfondo della porta.', 'The check uses the text and background colors of the door.', 'La prueba usa el color del texto y el del fondo de la puerta.');
+  const c = tgsContrasto(s.colori.punti, s.colori.fondo);
+  const n = c.toLocaleString(localePannello(), { maximumFractionDigits: 1 });
+  return c >= TGS_CONTRASTO
+    ? L(`Contrasto ${n}: si legge.`, `Contrast ${n}: readable.`, `Contraste ${n}: se lee.`)
+    : L(`Contrasto ${n}: troppo poco perché la prova si veda. Finché non arriva a 3, la prova usa i colori della porta.`, `Contrast ${n}: too little for the check to show. Until it reaches 3, the check uses the door colors.`, `Contraste ${n}: demasiado poco para que la prueba se vea. Hasta que llegue a 3, la prueba usa los colores de la puerta.`);
+}
+
+function disegnaScudoTg() {
+  const box = document.getElementById('box-tg-scudo');
+  if (!box || !SCUDO_TG.d) return;
+  const d = SCUDO_TG.d, s = SCUDO_TG.bozza, C = TGS_CONTROLLI(), E = TGS_ESITI(), M = TGS_MOTIVI();
+  const voce = (x) => `<li class="tg-stato ${x.ok ? 'ok' : x.grave ? 'guaio' : ''}">${_bIco(x.ok ? ICO.spunta : ICO.avviso)}<span><strong>${esc(C[x.k][0])}</strong>${x.ok ? '' : `<br>${esc(C[x.k][1])}`}</span></li>`;
+  const male = d.controlli.lista.filter((x) => !x.ok);
+  const bene = d.controlli.lista.filter((x) => x.ok);
+  const recenti = (d.recenti || []).map((r) => {
+    const perche = r.stato !== 'passata' && r.motivo && M[r.motivo] ? ` (${esc(M[r.motivo])})` : '';
+    return `<li><div class="testo-voce"><span class="domanda">${esc(r.nome || '?')}</span> <span class="meta">${esc(new Date(r.ts).toLocaleString(localePannello(), { dateStyle: 'short', timeStyle: 'short' }))}</span><br><span class="risposta">${esc(E[r.stato] || r.stato)}${perche}</span></div></li>`;
+  }).join('');
+  box.innerHTML = `
+    ${male.length ? `<ul class="sc-controlli">${male.map(voce).join('')}</ul>` : ''}
+    ${bene.length ? `<details class="sc-bene"><summary>${_bIco(ICO.spunta)}${bene.length === d.controlli.lista.length
+      ? L('Tutto pronto: ogni controllo è a posto', 'All set: every check is fine', 'Todo listo: cada comprobación está en orden')
+      : L(`${bene.length} controlli a posto`, `${bene.length} checks fine`, `${bene.length} comprobaciones en orden`)}</summary>
+      <ul class="sc-controlli">${bene.map(voce).join('')}</ul></details>` : ''}
+    <div class="riga-interruttore spazio-sopra">
+      <label class="interruttore"><input type="checkbox" id="sc-attivo"${s.attivo ? ' checked' : ''}${d.controlli.blocco && !s.attivo ? ' disabled' : ''}><span class="levetta"></span></label>
+      <span class="etichetta-stato">${L('Chiedi la prova a chi chiede di entrare', 'Ask for the check when someone asks to join', 'Pide la prueba a quien pide entrar')}</span>
+      ${d.scudo.attivo ? `<span class="badge verde">${L('attivo', 'active', 'activo')}</span>` : ''}
+      ${d.inAttesa ? `<span class="badge">${d.inAttesa} ${L('in attesa', 'waiting', 'esperando')}</span>` : ''}
+    </div>
+    ${d.controlli.blocco && !s.attivo ? `<p class="suggerimento">${L('Si accende quando tutte le spunte rosse qui sopra sono a posto.', 'It turns on once all the red ticks above are sorted.', 'Se enciende cuando todas las marcas rojas de arriba están en orden.')}</p>` : ''}
+    <p class="suggerimento">${d.controlli.modo === 'guardiano'
+      ? L('La prova si apre da sola, dentro Telegram, appena qualcuno chiede di entrare.', 'The check opens by itself, inside Telegram, as soon as someone asks to join.', 'La prueba se abre sola, dentro de Telegram, en cuanto alguien pide entrar.')
+      : L('La prova arriva in privato: il bot scrive a chi chiede di entrare, con un tasto che la apre.', 'The check arrives privately: the bot writes to whoever asks to join, with a button that opens it.', 'La prueba llega en privado: el bot escribe a quien pide entrar, con un botón que la abre.')}</p>
+
+    <div class="griglia-campi spazio-sopra">
+      <div>
+        <label class="campo" for="sc-minuti">${L('Quanto tempo ha per farla', 'How long they have to take it', 'Cuánto tiempo tiene para hacerla')}</label>
+        <input type="number" id="sc-minuti" class="campo-largo" min="2" max="60" step="1" value="${Number(s.minuti) || 10}">
+      </div>
+      <div>
+        <label class="campo" for="sc-no">${L('Chi non la supera', 'Whoever does not pass it', 'Quien no la supera')}</label>
+        <select id="sc-no" class="campo-largo">
+          <option value="rifiuta"${s.no !== 'admin' ? ' selected' : ''}>${L('La rifiuto', 'I decline it', 'La rechazo')}</option>
+          <option value="admin"${s.no === 'admin' ? ' selected' : ''}>${L('La lascio agli amministratori', 'I leave it to the admins', 'La dejo a los administradores')}</option>
+        </select>
+      </div>
+    </div>
+    <p class="suggerimento">${L('Chi è rifiutato può chiedere di nuovo fra mezz’ora. Chi preme «Non riesco a vederla» va sempre agli amministratori, mai rifiutato.', 'Whoever is declined can ask again in half an hour. Whoever taps «I can’t see it» always goes to the admins, never declined.', 'Quien es rechazado puede pedirlo de nuevo dentro de media hora. Quien pulsa «No consigo verla» siempre va a los administradores, nunca se rechaza.')}</p>
+
+    <h3 class="spazio-sopra">${L('Le regole', 'The rules', 'Las normas')}</h3>
+    <label class="riga-check"><input type="checkbox" id="sc-regole-attivo"${s.regole.attivo ? ' checked' : ''}> ${L('Chiedi di accettarle prima di entrare', 'Ask them to accept them before joining', 'Pide que las acepten antes de entrar')}</label>
+    <textarea id="sc-regole" rows="5" maxlength="${TGS_LIMITI.regole}" aria-label="${esc(L('Le regole del gruppo', 'The group rules', 'Las normas del grupo'))}" placeholder="${esc(L('es. Niente spam, niente insulti, niente spoiler fuori dal canale apposta.', 'e.g. No spam, no insults, no spoilers outside the right channel.', 'p. ej. Nada de spam, nada de insultos, nada de spoilers fuera del canal adecuado.'))}">${esc(s.regole.testo || '')}</textarea>
+    <p class="suggerimento">${L('Le stesse regole compaiono anche sulla porta del gruppo, nel pezzo «Le regole del gruppo».', 'The same rules also show on the group door, in the «The group rules» piece.', 'Las mismas normas aparecen también en la puerta del grupo, en la pieza «Las normas del grupo».')}</p>
+
+    <h3 class="spazio-sopra">${L('Qualche domanda', 'A few questions', 'Unas preguntas')}</h3>
+    <p class="suggerimento">${L('Facoltative, fino a tre, ognuna con una risposta giusta: una cosa che sa chi ti segue davvero. Una risposta sbagliata vale come una prova non superata.', 'Optional, up to three, each with one right answer: something your real followers know. A wrong answer counts as a failed check.', 'Opcionales, hasta tres, cada una con una respuesta correcta: algo que sabe quien te sigue de verdad. Una respuesta incorrecta cuenta como una prueba no superada.')}</p>
+    <div id="sc-domande">${s.domande.map(_tgsDomandaHtml).join('')}</div>
+    <p><button type="button" class="btn secondario mini" id="sc-domanda-piu"${s.domande.length >= TGS_LIMITI.domande ? ' disabled' : ''}>${_bIco(ICO.piu)}${L('Aggiungi una domanda', 'Add a question', 'Añadir una pregunta')}</button></p>
+
+    <h3 class="spazio-sopra">${L('I colori della prova', 'The check colors', 'Los colores de la prueba')}</h3>
+    <div class="riga-flessibile">
+      <label class="riga-check"><input type="radio" name="sc-colori" value="pagina"${s.colori.modo !== 'miei' ? ' checked' : ''}> ${L('Come la porta del gruppo', 'Like the group door', 'Como la puerta del grupo')}</label>
+      <label class="riga-check"><input type="radio" name="sc-colori" value="miei"${s.colori.modo === 'miei' ? ' checked' : ''}> ${L('Li scelgo io', 'I pick them', 'Los elijo yo')}</label>
+    </div>
+    <div class="griglia-campi" id="sc-colori-miei"${s.colori.modo === 'miei' ? '' : ' hidden'}>
+      <div><label class="campo" for="sc-punti">${L('I puntini', 'The dots', 'Los puntos')}</label><input type="color" id="sc-punti" value="${esc(s.colori.punti)}"></div>
+      <div><label class="campo" for="sc-fondo">${L('Il fondo', 'The background', 'El fondo')}</label><input type="color" id="sc-fondo" value="${esc(s.colori.fondo)}"></div>
+    </div>
+    <p class="suggerimento" id="sc-colori-nota" aria-live="polite">${esc(_tgsColoriNota())}</p>
+
+    <div class="riga-flessibile spazio-sopra">
+      <button class="btn" id="sc-salva" data-salva>${L('Salva lo scudo', 'Save the shield', 'Guardar el escudo')}</button>
+      <button type="button" class="btn secondario" id="sc-prova">${_bIco(ICO.occhio)}${L('Prova la pagina', 'Try the page', 'Probar la página')}</button>
+    </div>
+    <div id="sc-anteprima" class="sc-anteprima" hidden>
+      <p class="suggerimento">${L('È la pagina vera, con quello che hai scritto qui sopra anche se non l’hai ancora salvato. Da qui non parte niente verso Telegram.', 'It is the real page, with what you wrote above even if you have not saved it yet. Nothing goes to Telegram from here.', 'Es la página real, con lo que has escrito arriba aunque aún no lo hayas guardado. Desde aquí no sale nada hacia Telegram.')}</p>
+      <iframe id="sc-anteprima-iframe" title="${esc(L('Anteprima della prova', 'Check preview', 'Vista previa de la prueba'))}"></iframe>
+    </div>
+
+    <h3 class="spazio-sopra">${L('La porta', 'The door', 'La puerta')}</h3>
+    ${d.porta.pubblicata
+      ? `<p class="lp-riga2"><a href="${esc(d.porta.url)}" target="_blank" rel="noopener"><strong>${esc(d.porta.url.replace(/^https?:\/\//, ''))}</strong></a> <button type="button" class="btn secondario mini" id="sc-copia">${L('Copia', 'Copy', 'Copiar')}</button></p>
+         <p class="suggerimento">${L('Mettila dove vuoi: nella bio, nei pannelli, in chat. Chi la apre chiede di entrare e, con lo scudo acceso, passa dalla prova.', 'Put it wherever you like: in your bio, in panels, in chat. Whoever opens it asks to join and, with the shield on, takes the check.', 'Ponla donde quieras: en la bio, en los paneles, en el chat. Quien la abre pide entrar y, con el escudo encendido, pasa la prueba.')}</p>`
+      : `<p class="suggerimento">${L('La porta non è ancora pubblicata: la trovi qui sotto, in «La porta del gruppo».', 'The door is not published yet: you will find it below, in «The group door».', 'La puerta aún no está publicada: la encuentras abajo, en «La puerta del grupo».')}</p>`}
+
+    <h3 class="spazio-sopra">${L('Le ultime richieste', 'The latest requests', 'Las últimas solicitudes')}</h3>
+    ${recenti ? `<ul class="lista-voci">${recenti}</ul>` : `<p class="suggerimento">${L('Ancora nessuna. Si tengono una settimana.', 'None yet. They are kept for a week.', 'Todavía ninguna. Se guardan una semana.')}</p>`}`;
+  collegaScudoTg();
+}
+
+function leggiScudoTg() {
+  const g = (id) => document.getElementById(id);
+  const s = SCUDO_TG.bozza;
+  s.attivo = !!g('sc-attivo')?.checked;
+  s.minuti = Math.max(2, Math.min(60, Math.round(Number(g('sc-minuti')?.value) || 10)));
+  s.no = g('sc-no')?.value === 'admin' ? 'admin' : 'rifiuta';
+  s.regole = { attivo: !!g('sc-regole-attivo')?.checked, testo: String(g('sc-regole')?.value || '').slice(0, TGS_LIMITI.regole) };
+  s.domande = [...document.querySelectorAll('#sc-domande .sc-domanda')].map((f) => ({
+    testo: f.querySelector('[data-scdf="testo"]')?.value || '',
+    opzioni: [...f.querySelectorAll('[data-scdf="opzione"]')].map((x) => x.value),
+    giusta: Number(f.querySelector('[data-scdf="giusta"]:checked')?.value ?? -1),
+  }));
+  const modo = document.querySelector('input[name="sc-colori"]:checked')?.value === 'miei' ? 'miei' : 'pagina';
+  s.colori = { modo, punti: g('sc-punti')?.value || s.colori.punti, fondo: g('sc-fondo')?.value || s.colori.fondo };
+  return s;
+}
+
+function collegaScudoTg() {
+  const g = (id) => document.getElementById(id);
+  const ridisegna = () => { const y = window.scrollY; leggiScudoTg(); disegnaScudoTg(); window.scrollTo(0, y); };
+  g('sc-domanda-piu')?.addEventListener('click', () => {
+    leggiScudoTg();
+    if (SCUDO_TG.bozza.domande.length >= TGS_LIMITI.domande) return;
+    SCUDO_TG.bozza.domande.push({ testo: '', opzioni: ['', '', '', ''], giusta: 0 });
+    const y = window.scrollY; disegnaScudoTg(); window.scrollTo(0, y);
+    const ultima = document.querySelectorAll('#sc-domande .sc-domanda');
+    ultima[ultima.length - 1]?.querySelector('[data-scdf="testo"]')?.focus();
+  });
+  document.querySelectorAll('[data-scd-togli]').forEach((b) => b.addEventListener('click', () => {
+    leggiScudoTg();
+    SCUDO_TG.bozza.domande.splice(Number(b.dataset.scdTogli), 1);
+    const y = window.scrollY; disegnaScudoTg(); window.scrollTo(0, y);
+  }));
+  document.querySelectorAll('#sc-domande [data-scdf]').forEach((x) => x.addEventListener('change', ridisegna));
+  document.querySelectorAll('input[name="sc-colori"]').forEach((r) => r.addEventListener('change', () => {
+    leggiScudoTg();
+    const box = g('sc-colori-miei'); if (box) box.hidden = SCUDO_TG.bozza.colori.modo !== 'miei';
+    const n = g('sc-colori-nota'); if (n) n.textContent = _tgsColoriNota();
+  }));
+  ['sc-punti', 'sc-fondo'].forEach((id) => g(id)?.addEventListener('input', () => {
+    leggiScudoTg();
+    const n = g('sc-colori-nota'); if (n) n.textContent = _tgsColoriNota();
+  }));
+  g('sc-copia')?.addEventListener('click', () => copiaTesto(SCUDO_TG.d.porta.url, L('Indirizzo copiato', 'Address copied', 'Dirección copiada')));
+  g('sc-salva')?.addEventListener('click', (ev) => conErrore(async () => {
+    const b = ev.currentTarget; b.disabled = true;
+    try {
+      const d = await api('/api/streamer/telegram/scudo', { method: 'POST', body: leggiScudoTg() });
+      SCUDO_TG.d = d;
+      SCUDO_TG.bozza = JSON.parse(JSON.stringify(d.scudo));
+      toast(d.scudo.attivo ? L('Scudo acceso e salvato', 'Shield on and saved', 'Escudo encendido y guardado') : L('Scudo salvato', 'Shield saved', 'Escudo guardado'));
+      const y = window.scrollY; disegnaScudoTg(); window.scrollTo(0, y);
+    } catch (e) {
+      if (e?.dati?.controlli) { SCUDO_TG.d = { ...SCUDO_TG.d, ...e.dati }; const y = window.scrollY; disegnaScudoTg(); window.scrollTo(0, y); }
+      throw e;
+    } finally { const x = g('sc-salva'); if (x) x.disabled = false; }
+  }));
+  g('sc-prova')?.addEventListener('click', () => conErrore(async () => {
+    const r = await api('/api/streamer/telegram/scudo/anteprima', { method: 'POST', body: { scudo: leggiScudoTg() } });
+    const box = g('sc-anteprima'), fr = g('sc-anteprima-iframe');
+    if (!box || !fr) return;
+    box.hidden = false;
+    fr.srcdoc = r.html;
+    box.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }));
 }
 
 function pannelloNotifiche() {
@@ -30335,7 +30656,7 @@ function caricaDatiScheda(id) {
   if (id === 'statistiche') { caricaStatistiche(); caricaClassifica(); }
   if (id === 'giochi') { caricaClassifica(); caricaCitazioni(); caricaBattute(); caricaGiochi(); caricaRegoleGiochi(); caricaCastighi(); caricaGiro(); _disegnaFormaMonete(); contiPunti(); requestAnimationFrame(() => applicaSottoSchede('giochi')); }
   if (id === 'negozio') { caricaNegozio(); caricaPaginaLink(false, 'negozio'); requestAnimationFrame(() => applicaSottoSchede('negozio')); }
-  if (id === 'telegram') { caricaTgLogin(); collegaTgDestinazioni(); caricaTgDestinazioni(); collegaCartaLive(); caricaCartaLive(); caricaCompleanni(); }
+  if (id === 'telegram') { caricaTgLogin(); collegaTgDestinazioni(); caricaTgDestinazioni(); collegaCartaLive(); caricaCartaLive(); caricaCompleanni(); caricaScudoTg(); caricaPaginaLink(false, 'telegram'); }
   if (id === 'notifiche') { caricaTikTok(); caricaInstagram(); collegaFeed(); caricaFeed(); }
   if (id === 'ruoli') { collegaRuoli(); caricaRuoli(); }
   if (id === 'dcavvisi') { _dcaCollega(); caricaDcAvvisi(); caricaDcEventi(); }

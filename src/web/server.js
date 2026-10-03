@@ -23,7 +23,7 @@ import * as filigrana from '../watermark.js';   // filigrana di proprietà (Andr
 import * as licenza from '../licenza.js';      // il nome con cui questo software si presenta
 import * as consolle from '../features/console.js';   // CONSOLify + tastiera fisica
 import { makeLog } from '../logger.js';
-import { db, tokens, streamers, memory, clips, knowledge, QUANDO_CONOSCENZA, schedaPulita, effects as effectsDb, SCHERMI, normComando, baseDaFile, modules as modulesDb, MAX_MODULI, friends, sfondi as sfondiDb, carteLive, tgAttesa, gsiStato, mortiSchede } from '../db.js';
+import { db, tokens, streamers, memory, clips, knowledge, QUANDO_CONOSCENZA, schedaPulita, effects as effectsDb, SCHERMI, normComando, baseDaFile, modules as modulesDb, MAX_MODULI, friends, sfondi as sfondiDb, carteLive, tgAttesa, tgScudo, paginaTelegram, TIPI_PAGINA_TELEGRAM, gsiStato, mortiSchede } from '../db.js';
 import { points, vips, tgConf, tgDest, amici, tgVisti, feedFonti, dcConf, passkeys, managers, quotes, battute, compleanni, membri, subscriptions, giochi as giochiDb, guide, GUIDE_MAX, pointAlerts, tgLogin, contatori, rapporti, postaStreamer, dcRuoli, dcLink, dcGiri, dcAccesso, dcDest, avvisiConf } from '../db.js';
 import { linkPage, visitePagina, TEMPLATE_LINKPAGE, LIMITI_LINKPAGE, FONT_LINKPAGE, ICONE_LINKPAGE, TIPI_BLOCCO, TIPI_PAGINA_NEGOZIO, contiDonazioni, contiSatispay, registroDonazioni, paginaDona, paginaNegozio, paginaPannello, cartePagina, accessi, recensioni as recensioniDb, campagneDb, sito } from '../db.js';
 import { puoRecensire, validaRecensione, statoDopo, invitoAperto, rimandaFino, vetrinaDi, TESTO_MAX } from '../features/recensioni.js';
@@ -111,6 +111,11 @@ import * as attese from '../features/attese-giochi.js';
 import * as negozio from '../features/negozio.js';
 import { ruoliDaVendere } from '../features/negozio-tipi.js';
 import * as negozioPagina from '../features/negozio-pagina.js';
+import * as scudoTg from '../features/tg-scudo-gesti.js';
+import * as tgPorta from '../features/tg-porta.js';
+import * as regolaScudo from '../features/tg-scudo.js';
+import { testiPagina as testiScudoPagina, testiScudo } from '../features/tg-scudo-testi.js';
+import * as provaScudo from '../features/tg-scudo-prova.js';
 import { stato as statoArena } from '../features/arena.js';
 import { VOCI as VOCI_TWITCH } from '../features/sondaggi.js';
 import * as modalitaChat from '../features/modalita-chat.js';
@@ -227,6 +232,7 @@ const PEZZI_GRAFICHE = {
 const CANALE_IN_VIA = LOGIN_RE.source.replace(/^\^|\$$/g, '');
 const RE_CANALE_IN_VIA = new RegExp(`^/(${CANALE_IN_VIA})/?$`, 'i');
 const RE_DONA_IN_VIA = new RegExp(`^/(${CANALE_IN_VIA})(/privacy)?/?$`, 'i');
+const RE_TELEGRAM_IN_VIA = new RegExp(`^/(${CANALE_IN_VIA})(/verifica)?/?$`, 'i');
 // LE CHAT CHE UN OVERLAY MOSTRA. Una chat non e' un elemento a se': e' una
 // SORGENTE del riquadro della chat, quindi si accende e si spegne come ogni
 // altra cosa dell'overlay ma non ha una posizione propria. Tenerle divise
@@ -488,6 +494,8 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     (h) => { config.discordHost = h; }, 'porta d\'ingresso di Discord accesa');
   sondaHost(!config.negozioHost && !config.negozioHostSpento ? donazioni.candidatoHost(config.baseUrl, 'negozio') : '',
     (h) => { config.negozioHost = h; }, 'indirizzo corto del negozio acceso');
+  sondaHost(!config.telegramHost && !config.telegramHostSpento ? donazioni.candidatoHost(config.baseUrl, 'telegram') : '',
+    (h) => { config.telegramHost = h; }, 'porta del gruppo Telegram accesa');
 
   app.use((req, res, next) => {
     // Sull'indirizzo corto del sostegno la radice E' la pagina. Tutto il resto
@@ -523,6 +531,20 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       if (d) {
         const q = req.url.indexOf('?');
         req.url = '/u/' + d[1].toLowerCase() + '/negozio' + (q >= 0 ? req.url.slice(q) : '');
+        return next();
+      }
+      if (req.path === '/') return res.redirect(302, config.baseUrl + '/');
+      return next();
+    }
+    // La porta del gruppo Telegram: telegram.<dominio>/<canale> E' la porta di
+    // quel canale, e /<canale>/verifica la sua pagina della prova (la Mini App
+    // che lo scudo apre dentro Telegram). La radice rimanda al sito.
+    if (config.telegramHost && String(req.hostname || '').toLowerCase() === config.telegramHost) {
+      if (legaleIn('privacy').some((x) => x.via === req.path)) return next();
+      const d = RE_TELEGRAM_IN_VIA.exec(req.path);
+      if (d) {
+        const q = req.url.indexOf('?');
+        req.url = '/telegram/' + d[1].toLowerCase() + (d[2] ? '/verifica' : '') + (q >= 0 ? req.url.slice(q) : '');
         return next();
       }
       if (req.path === '/') return res.redirect(302, config.baseUrl + '/');
@@ -863,6 +885,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   const guscio = creaGuscio(publicDir);
   guscio.risorsa('pagina-link.js');
   guscio.risorsa('pagina-negozio.js');
+  guscio.risorsa('telegram-verifica.js');
   guscio.pagina('index.html');           // la vetrina, servita anche su '/'
   // Le pagine delle campagne e il loro tasto: aperte solo se l'id e' una
   // campagna che c'e' (le rotte stanno in fondo, dopo tutte le altre).
@@ -2190,6 +2213,80 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     res.set('Cache-Control', 'public, max-age=0, s-maxage=60, stale-while-revalidate=300');
     res.type('html').send(html);
   }));
+  // ── LA PORTA DEL GRUPPO TELEGRAM e LA PROVA DELLO SCUDO (docs/TELEGRAM.md) ──
+  //
+  // La porta (telegram.<dominio>/<canale>, e sempre /telegram/<canale>) si
+  // apre solo se lo streamer l'ha pubblicata e il bot ha un link per far
+  // entrare; se no, «qui non c'e' un gruppo», uguale per tutti i casi. Il link
+  // lo fa il bot (scudoTg.invito): con lo scudo acceso chiede l'approvazione.
+  const salvaInvito = (login) => (v) => tgConf.setInvito(login, v);
+  app.get('/telegram/:canale', wrap(async (req, res) => {
+    const login = String(req.params.canale || '').toLowerCase();
+    const s = eLoginNostro(login) ? streamers.get(login) : null;
+    let html = null;
+    if (s && tgPorta.aperta(login)) {
+      const inv = await scudoTg.invito(tgConf.get(login), { salva: salvaInvito(login) }).catch(() => null);
+      if (inv?.ok) {
+        html = tgPorta.htmlPorta(login, { display: s.display || login, avatar: await avatarDi(login), baseUrl: config.baseUrl, invito: inv.url });
+      }
+    }
+    if (!html) {
+      res.status(404).set('Vary', 'Accept-Language').set('Cache-Control', 'public, max-age=0, s-maxage=60');
+      return res.type('html').send(tgPorta.paginaNonCe(tgPorta.linguaDiChiApre(req.get('accept-language')), config.baseUrl));
+    }
+    res.set('Cache-Control', 'public, max-age=0, s-maxage=60, stale-while-revalidate=300');
+    res.type('html').send(html);
+  }));
+
+  // La pagina della prova: la apre Telegram (il guardiano, o il tasto del
+  // messaggio in privato). Non resta da nessuna parte: niente cache, niente
+  // indice, niente referrer. Il guscio e' lo stesso per ogni canale con un nome
+  // valido, anche uno che non c'e': chi sei e se hai una richiesta lo dice solo
+  // la firma di Telegram, nelle chiamate qui sotto.
+  const scudoSenzaTracce = (res) => res.set({ 'Cache-Control': 'private, no-store', 'Referrer-Policy': 'no-referrer', 'X-Robots-Tag': 'noindex, nofollow' });
+  app.get('/telegram/:canale/verifica', (req, res) => {
+    const login = String(req.params.canale || '').toLowerCase();
+    if (!LOGIN_RE.test(login)) return notFound(res);
+    scudoSenzaTracce(res);
+    const display = streamers.get(login)?.display || login;
+    res.type('html').send(tgPorta.htmlVerifica(login, { display }));
+  });
+
+  // Le quattro chiamate della pagina. Il canale viene SOLO dall'indirizzo, la
+  // persona e la richiesta SOLO dalla firma di Telegram (scudoTg.identifica,
+  // col token del bot di quel canale): niente dal corpo decide chi sei. Un
+  // tetto al minuto per indirizzo, come le altre porte pubbliche che costano
+  // qualcosa (la prova si disegna sul server).
+  const AZIONI_SCUDO = ['apri', 'immagine', 'invia', 'aiuto'];
+  const rispostaScudo = async (res, azione, conf, id, corpo, deps) => {
+    if (azione === 'apri') return res.json(await scudoTg.apri(conf, id, {}, deps));
+    if (azione === 'immagine') {
+      const r = await scudoTg.immagine(conf, id, deps);
+      if (r.esito !== 'ok') return res.status(409).json(r);
+      res.set({ 'Content-Type': 'application/octet-stream', 'X-Prove': String(r.prove), 'X-Altra': encodeURIComponent(scudoTg.altraIn(id.lingua, r.prove)) });
+      return res.send(r.bin);
+    }
+    if (azione === 'invia') return res.json(await scudoTg.invia(conf, id, corpo, deps));
+    return res.json(await scudoTg.aiuto(conf, id, deps));
+  };
+  // solo i quattro campi che la pagina manda: il resto del corpo non arriva a nessuno
+  const corpoScudo = (b) => ({ codice: b?.codice, regole: b?.regole, risposte: b?.risposte, firma: b?.firma });
+  app.post('/api/tg-scudo/:canale/:azione', wrap(async (req, res) => {
+    scudoSenzaTracce(res);
+    const azione = String(req.params.azione || '');
+    if (!AZIONI_SCUDO.includes(azione)) return notFound(res);
+    if (!extRateOk('tg-scudo:' + String(req.ip || ''))) return res.status(429).json({ esito: 'rete' });
+    const nome = String(req.params.canale || '').toLowerCase();
+    const login = eLoginNostro(nome) ? nome : '';
+    const conf = login ? tgConf.get(login) : null;
+    const id = conf ? scudoTg.identifica(conf, req.body?.initData, req.body?.c) : { ok: false };
+    if (!id.ok) {
+      const l = regolaScudo.linguaDi('', login ? linguaChat(login) : 'it');
+      return res.status(azione === 'apri' ? 200 : 403).json({ esito: 'fuori', lingua: l, t: testiScudoPagina(l) });
+    }
+    return rispostaScudo(res, azione, conf, id, corpoScudo(req.body));
+  }));
+
   // LA PAGINA DIETRO UN PANNELLO (docs/STRUMENTI.md). Si apre solo se e'
   // accesa E il pannello salvato ci porta: un pannello tolto, o che porta a
   // un indirizzo, si porta via la sua pagina senza cancellarla (se torna,
@@ -2564,6 +2661,64 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       negozio: negozioPagina.opzioniNegozio(login, { baseUrl: config.baseUrl, display, anteprima: true }),
     });
     res.json({ html });
+  }));
+
+  // ── La porta del gruppo Telegram: lo stesso editor, un altro tavolo ──
+  // Si vede quando lo streamer la pubblica («Salva e pubblica») e il bot ha un
+  // link per far entrare; «Spegni» la toglie senza cancellarla. I pezzi ammessi
+  // sono quelli della porta (TIPI_PAGINA_TELEGRAM).
+  const aspettoPortaInArrivo = (login, v) => (v === 'link' || v === 'suo' ? v : paginaTelegram.get(login)?.aspetto || 'suo');
+  const pubblicaPorta = (p) => ({ headline: p.headline || '', tagline: p.tagline || '', template: p.template || 'minimal',
+    avatar: p.avatar || '', tema: p.tema, blocchi: p.blocchi || [], attiva: !!p.attiva, aggiornata: p.ts || null, aspetto: p.aspetto });
+  app.get('/api/paginatelegram', requireOwner, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const s = streamers.get(login);
+    const display = s?.display || login;
+    const p = paginaTelegram.get(login) || tgPorta.paginaDiPartenza(login, display);
+    const link = linkPage.get(login);
+    res.json({
+      url: scudoTg.urlPorta(login),
+      pubblicata: tgPorta.aperta(login),
+      aspettoLink: link ? { template: link.template, tema: link.tema } : null,
+      templates: TEMPLATE_LINKPAGE, fonts: FONT_LINKPAGE, icone: ICONE_LINKPAGE, tipi: TIPI_PAGINA_TELEGRAM, limiti: LIMITI_LINKPAGE,
+      temaBase: paginaTelegram.pulisci({}).tema,
+      avatarTwitch: await avatarDi(login, { aggiorna: true }),
+      visite: null,
+      suggeriti: [],
+      pagina: pubblicaPorta(p),
+    });
+  }));
+  app.post('/api/paginatelegram', requireOwner, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const b = req.body || {};
+    const inviati = Array.isArray(b.blocchi) ? b.blocchi.length : 0;
+    const p = paginaTelegram.salva(login, {
+      headline: b.headline, tagline: b.tagline, template: b.template, avatar: b.avatar, tema: b.tema,
+      blocchi: b.blocchi, attiva: true, aspetto: aspettoPortaInArrivo(login, b.aspetto),
+    });
+    // la porta appena pubblicata deve avere il suo link: si fa adesso, non al
+    // primo che bussa
+    const c = tgConf.get(login);
+    if (c?.token && c.chat_id) await scudoTg.invito(c, { salva: salvaInvito(login) }).catch(() => null);
+    res.json({ ok: true, url: scudoTg.urlPorta(login), pubblicata: tgPorta.aperta(login), salvati: p?.blocchi?.length || 0, inviati, pagina: pubblicaPorta(p) });
+  }));
+  app.post('/api/paginatelegram/anteprima', requireOwner, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const s = streamers.get(login);
+    const b = req.body || {};
+    const display = s?.display || login;
+    const html = htmlAnteprima('telegram', b, {
+      login, display, avatar: await avatarDi(login), baseUrl: config.baseUrl,
+      aspetto: aspettoPortaInArrivo(login, b.aspetto), link: linkPage.get(login),
+      fuori: tgPorta.opzioniPorta(login, { baseUrl: config.baseUrl, display }),
+    });
+    res.json({ html });
+  }));
+  app.delete('/api/paginatelegram', requireOwner, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const p = paginaTelegram.get(login);
+    if (p) paginaTelegram.salva(login, { ...p, attiva: false });
+    res.json({ ok: true, pubblicata: false });
   }));
 
   // L'anteprima delle tre pagine nella demo (docs/DEMO.md). La demo e' il
@@ -10173,6 +10328,92 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     res.json({ ok: true, ingresso: statoTelegram(login).ingresso });
   }));
 
+  // LO SCUDO ALL'INGRESSO (docs/TELEGRAM.md). Lo stato si chiede ADESSO a
+  // Telegram: il bot e' amministratore e puo' invitare? e' il guardiano del
+  // gruppo? il gruppo chiede l'approvazione? Lo scudo non si accende se gli manca
+  // una cosa grave, e il pannello dice quale (regolaScudo.controlli): un
+  // interruttore acceso che poi non fa niente e' peggio di uno che rifiuta.
+  async function statoScudo(login) {
+    const c = tgConf.get(login);
+    let io = null, info = null, me = null;
+    if (c?.token) {
+      io = await telegram.validaToken(c.token).catch(() => null);
+      if (c.chat_id) {
+        info = await telegram.infoChat(c.token, c.chat_id).catch(() => null);
+        me = io?.id ? await telegram.ioNelGruppo(c.token, c.chat_id, io.id).catch(() => null) : null;
+      }
+    }
+    const chat = info?.chat || {};
+    const display = streamers.get(login)?.display || login;
+    const { colori } = tgPorta.vestePorta(login, display);
+    return {
+      scudo: scudoTg.scudoDi(c),
+      controlli: regolaScudo.controlli({
+        https: /^https:\/\//.test(String(config.baseUrl || '')), interattivo: !!c?.interattivo, gruppo: !!c?.chat_id,
+        admin: !!me?.admin, invitare: !!me?.possoInvitare, disegnabile: provaScudo.disegnabile(),
+        richieste: !!io?.richieste, guardiano: !!(chat.guard_bot?.id && io?.id && String(chat.guard_bot.id) === String(io.id)),
+        pubblico: !!chat.username, approvazione: !!chat.join_by_request,
+      }),
+      inAttesa: tgScudo.inAttesa(login),
+      recenti: tgScudo.recenti(login, 20).map((r) => ({ nome: r.nome, stato: r.stato, motivo: r.motivo, ts: r.ts, fine: r.fine })),
+      porta: { url: scudoTg.urlPorta(login), pubblicata: tgPorta.aperta(login) },
+      bot: c?.bot_username || '', gruppo: c?.chat_titolo || '',
+      // i colori della pagina, per dire nel pannello come esce la prova «come la pagina»
+      pagina: { testo: colori.testo, bg: colori.bg },
+    };
+  }
+  app.get('/api/streamer/telegram/scudo', requireLogin, wrap(async (req, res) => {
+    res.json(await statoScudo(currentUser(req).login));
+  }));
+  app.post('/api/streamer/telegram/scudo', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const c = tgConf.get(login);
+    if (!c?.token) return res.status(400).json({ errore: 'prima collega il bot con il token', blocco: 'token' });
+    const nuovo = regolaScudo.normScudo(req.body || {});
+    if (nuovo.attivo) {
+      const st = await statoScudo(login);
+      if (st.controlli.blocco) return res.status(400).json({ errore: 'lo scudo non si può accendere: manca qualcosa', blocco: st.controlli.blocco, ...st });
+    }
+    tgConf.setScudo(login, nuovo);
+    // il link della porta segue lo scudo: acceso, chiede l'approvazione
+    if (c.chat_id) await scudoTg.invito(tgConf.get(login), { salva: salvaInvito(login) }).catch(() => null);
+    res.json({ ok: true, ...(await statoScudo(login)) });
+  }));
+
+  // L'ANTEPRIMA della prova, nel pannello: la stessa pagina e gli stessi gesti
+  // (scudoTg.memoria, scudoTg.telegramMuto), con le impostazioni che il
+  // pannello sta scrivendo, anche non ancora salvate. Una per canale, in
+  // memoria, per dieci minuti.
+  const anteprimeScudo = new Map();
+  const ANTEPRIMA_SCUDO_MS = 10 * 60_000;
+  const confAnteprima = (login, scudo) => ({ channel: login, token: 'anteprima', interattivo: 1, scudo: JSON.stringify(scudo) });
+  const idAnteprima = (login) => ({ ok: true, userId: '0', chatId: '0', queryId: '', lingua: linguaChat(login) });
+  app.post('/api/streamer/telegram/scudo/anteprima', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const scudo = regolaScudo.normScudo(req.body?.scudo || scudoTg.scudoDi(tgConf.get(login)));
+    const db = scudoTg.memoria();
+    const ora = Date.now();
+    db.apri({ channel: login, chatId: '0', userId: '0', titolo: tgConf.get(login)?.chat_titolo || '', lingua: linguaChat(login), scad: ora + scudo.minuti * 60_000, ora });
+    anteprimeScudo.set(login, { db, scudo, fino: ora + ANTEPRIMA_SCUDO_MS });
+    for (const [k, v] of anteprimeScudo) if (v.fino < ora) anteprimeScudo.delete(k);
+    const display = streamers.get(login)?.display || login;
+    res.json({ html: tgPorta.htmlVerifica(login, { display, anteprima: true, telegram: false, scudo }) });
+  }));
+  app.post('/api/streamer/telegram/scudo/anteprima/:azione', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const azione = String(req.params.azione || '');
+    if (!AZIONI_SCUDO.includes(azione)) return notFound(res);
+    const a = anteprimeScudo.get(login);
+    const l = linguaChat(login);
+    if (!a || a.fino < Date.now()) return res.json({ esito: 'scaduta', lingua: l, t: testiScudoPagina(l) });
+    const deps = { db: a.db, telegram: scudoTg.telegramMuto };
+    if (azione === 'apri') {
+      const r = await scudoTg.apri(confAnteprima(login, a.scudo), idAnteprima(login), {}, deps);
+      return res.json({ ...r, avviso: testiScudo(regolaScudo.linguaDi(l)).anteprima });
+    }
+    return rispostaScudo(res, azione, confAnteprima(login, a.scudo), idAnteprima(login), corpoScudo(req.body), deps);
+  }));
+
   app.post('/api/streamer/telegram/impostazioni', requireLogin, wrap(async (req, res) => {
     const login = currentUser(req).login;
     const c = tgConf.get(login);
@@ -10358,10 +10599,19 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     }
     res.json({ ok: true });   // conferma subito a Telegram, poi elabora
     try {
-      // IL CANCELLO prima di tutto: chi entra e chi preme il tasto non hanno
-      // niente a che vedere con i messaggi, e farli passare per la strada dei
-      // messaggi vorrebbe dire attraversare venti controlli che non li riguardano.
+      // LO SCUDO prima di ogni altra cosa: una richiesta portata al guardiano ha
+      // dieci secondi per avere la sua pagina, e qui non deve aspettare nessuno.
+      if (req.body?.chat_join_request) {
+        scudoTg.richiesta(conf, req.body).catch((e) => log.debug('scudo:', e?.message || e));
+        return;
+      }
+      // IL CANCELLO: chi entra e chi preme il tasto non hanno niente a che
+      // vedere con i messaggi, e farli passare per la strada dei messaggi
+      // vorrebbe dire attraversare venti controlli che non li riguardano. Chi
+      // entra chiude anche la sua richiesta allo scudo, se ne aveva una aperta
+      // (l'ha fatto entrare un amministratore a mano).
       if (req.body?.chat_member) {
+        try { scudoTg.entrato(conf, req.body); } catch (e) { log.debug('scudo:', e?.message || e); }
         cancello.entrato(conf, req.body).catch((e) => log.debug('cancello:', e?.message || e));
         return;
       }

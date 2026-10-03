@@ -572,14 +572,20 @@ export function vesteDi(pagina) {
 // (`blocco`, `css`), e le poche parole fisse di questa pagina (il titolo nella
 // scheda, il piede, la pagina vuota) arrivano gia' nella lingua del canale
 // (`testi`, `lingua`). Senza `negozio` non cambia niente: la pagina link e
-// quella delle donazioni restano quelle di prima, in italiano.
+// quella delle donazioni restano quelle di prima, in italiano. LA PORTA DEL
+// GRUPPO TELEGRAM passa nello stesso modo con `fuori` (stessa forma: `url`,
+// `privacy`, `lingua`, `testi`, `blocco`, `css`); lo script del negozio resta
+// solo del negozio.
 // LA PAGINA DIETRO UN PANNELLO passa da qui con `dietro` ({ url }): stessa
 // forma, il suo indirizzo, e non si offre ai motori di ricerca (e' una porta
 // da Twitch, non una pagina da trovare). `vivi` porta i dati dei pezzi vivi
 // (programma, comandi) per tutte le pagine che li usano.
-export function renderLinkPage(pagina, { login, display, avatar, baseUrl, anteprima, sostieni, grazie, manca, dona, urlDona, urlLink, donatori, immagineAnteprima, negozio, dietro, vivi } = {}) {
+export function renderLinkPage(pagina, { login, display, avatar, baseUrl, anteprima, sostieni, grazie, manca, dona, urlDona, urlLink, donatori, immagineAnteprima, negozio, fuori, dietro, vivi } = {}) {
+  // una pagina coi pezzi disegnati fuori da qui: il negozio, o `fuori` (la
+  // porta del gruppo Telegram, features/tg-porta.js). Stessa forma per tutte.
+  const est = negozio || fuori;
   // l'indirizzo vero della pagina: quello corto delle donazioni, se c'e'
-  const urlCanonico = negozio ? negozio.url : dietro ? dietro.url : dona ? (urlDona || `${baseUrl}/dona/${login}`) : `${baseUrl}/u/${login}`;
+  const urlCanonico = est ? est.url : dietro ? dietro.url : dona ? (urlDona || `${baseUrl}/dona/${login}`) : `${baseUrl}/u/${login}`;
   const t = pagina.tema || {};
   const c = coloriDi(pagina);
   const font = PILE[t.font] || PILE.system;
@@ -592,7 +598,7 @@ export function renderLinkPage(pagina, { login, display, avatar, baseUrl, antepr
   const larghezza = Number(t.larghezza) || 30;
   const aSinistra = t.allinea === 'sinistra';
   const titolo = pagina.headline || display || login;
-  const descr = pagina.tagline || (negozio ? negozio.testi.descrizione : dietro ? `${titolo} · ${display || login}` : `Tutti i link di ${display || login}`);
+  const descr = pagina.tagline || (est ? est.testi.descrizione : dietro ? `${titolo} · ${display || login}` : `Tutti i link di ${display || login}`);
   const dom = domini(baseUrl);          // parent= dei player Twitch/Kick
   const scuro = eScuro(c.bg);           // decide il tema della chat incorporata
   // Colore del testo SOPRA l'accento (bottoni "in evidenza", copertina, badge…):
@@ -614,7 +620,7 @@ export function renderLinkPage(pagina, { login, display, avatar, baseUrl, antepr
   // ognuna ha la sua. Calcolata qui una volta, cosi' i due posti che la
   // nominano (il piede e la fascia dei contenuti altrui) non possono finire a
   // puntare in due direzioni.
-  const viaPrivacy = negozio ? negozio.privacy : dona ? `${urlDona || ''}/privacy` : dietro ? `${dietro.url || ''}/privacy` : `/u/${login}/privacy`;
+  const viaPrivacy = est ? est.privacy : dona ? `${urlDona || ''}/privacy` : dietro ? `${dietro.url || ''}/privacy` : `/u/${login}/privacy`;
   // Titoli "parola per parola": ogni parola è un pezzo a sé, così può entrare
   // con un attimo di ritardo sulla precedente. Si fa qui, a mano, perché farlo
   // in pagina vorrebbe dire JavaScript su una pagina che deve aprirsi subito.
@@ -755,22 +761,22 @@ export function renderLinkPage(pagina, { login, display, avatar, baseUrl, antepr
   // pagina del negozio e' un pezzo come gli altri, e sta dove la metti.
   // L'iniziale e' quella del nome: nel negozio il titolo comincia di solito
   // con «Il negozio di», e una «I» nel cerchio non e' la faccia di nessuno.
-  const lettera = iniziale(negozio ? (display || login) : titolo);
+  const lettera = iniziale(est ? (display || login) : titolo);
   const testa = () => `${mostraAvatar ? (imgAvatar
     ? `<img class="avatar" src="${esc(imgAvatar)}" alt="" width="88" height="88" loading="eager" data-ripiego>
          <div class="avatar" aria-hidden="true" style="display:none">${esc(lettera)}</div>`
     : `<div class="avatar" aria-hidden="true">${esc(lettera)}</div>`) : ''}
     <h1>${esc(titolo)}</h1>
     ${pagina.tagline ? `<p class="tag">${esc(pagina.tagline)}</p>` : ''}`;
-  const testaInUnPezzo = !!negozio && (pagina.blocchi || []).some((b) => b?.tipo === 'intestazione');
+  const testaInUnPezzo = !!est && (pagina.blocchi || []).some((b) => b?.tipo === 'intestazione');
 
   // ── contenuti: i blocchi in ordine ──
   let n = 0;
   const pezzi = (pagina.blocchi || []).map((b) => {
     const ritardo = `style="--d:${Math.min(n++, 12) * 45}ms"`;
-    if (negozio && b.tipo === 'intestazione') return `<header class="testa-b" ${ritardo}>${testa()}</header>`;
-    if (negozio) {
-      const suo = negozio.blocco(b, { anteprima, ritardo });
+    if (est && b.tipo === 'intestazione') return `<header class="testa-b" ${ritardo}>${testa()}</header>`;
+    if (est) {
+      const suo = est.blocco(b, { anteprima, ritardo });
       if (suo !== null) return suo;
     }
     if (b.tipo === 'link') {
@@ -1066,16 +1072,16 @@ export function renderLinkPage(pagina, { login, display, avatar, baseUrl, antepr
   const maiusc = MAIUSC[t.maiuscolo] || '';
 
   return senzaCommentiCss(`<!DOCTYPE html>
-<html lang="${negozio ? esc(negozio.lingua) : 'it'}">
+<html lang="${est ? esc(est.lingua) : 'it'}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>${esc(titolo)} · ${negozio ? esc(negozio.testi.titolo) : dietro ? esc(display || login) : dona ? 'sostienimi' : 'i miei link'}</title>
+<title>${esc(titolo)} · ${est ? esc(est.testi.titolo) : dietro ? esc(display || login) : dona ? 'sostienimi' : 'i miei link'}</title>
 <meta name="description" content="${esc(descr).slice(0, 160)}">
 <meta name="robots" content="${dietro ? 'noindex, follow' : 'index, follow'}">
 <link rel="canonical" href="${esc(urlCanonico)}">
 <meta name="theme-color" content="${esc(c.bg)}">
-<meta property="og:type" content="${negozio || dietro ? 'website' : 'profile'}">
+<meta property="og:type" content="${est || dietro ? 'website' : 'profile'}">
 <meta property="og:title" content="${esc(titolo)}">
 <meta property="og:description" content="${esc(descr).slice(0, 200)}">
 <meta property="og:url" content="${esc(urlCanonico)}">
@@ -1508,7 +1514,7 @@ ${/* l'icona della scheda e della schermata home: la foto che la pagina mostra
   .sel-b.tocca > *{outline:2px solid var(--acc);outline-offset:4px}` : ''}
   ${maiusc}
   ${strato ? strato.css : ''}
-  ${negozio ? negozio.css({ c, stileBtn, ombra, aSinistra }) : ''}
+  ${est ? est.css({ c, stileBtn, ombra, aSinistra }) : ''}
   ${cssPaginaSicuro(t.css)}
 </style>
 
@@ -1517,11 +1523,11 @@ ${/* l'icona della scheda e della schermata home: la foto che la pagina mostra
   ${strato ? strato.html : ''}
   ${fxCanvas}
   <main class="telo">
-    ${!negozio ? testa() : testaInUnPezzo ? '' : `<h1 class="solo-lettori">${esc(titolo)}</h1>`}
-    ${corpo ? `<${negozio ? 'div' : 'nav'} class="lista">${corpo}</${negozio ? 'div' : 'nav'}>` : `<p class="vuoto">${negozio ? esc(negozio.testi.vuota) : 'Questa pagina non ha ancora contenuti.'}</p>`}
-    <p class="piede">${negozio ? esc(negozio.testi.creata) : 'Pagina creata con'} <a href="${esc(baseUrl)}/" target="_blank" rel="noopener">SocialBot</a>${
+    ${!est ? testa() : testaInUnPezzo ? '' : `<h1 class="solo-lettori">${esc(titolo)}</h1>`}
+    ${corpo ? `<${est ? 'div' : 'nav'} class="lista">${corpo}</${est ? 'div' : 'nav'}>` : `<p class="vuoto">${est ? esc(est.testi.vuota) : 'Questa pagina non ha ancora contenuti.'}</p>`}
+    <p class="piede">${est ? esc(est.testi.creata) : 'Pagina creata con'} <a href="${esc(baseUrl)}/" target="_blank" rel="noopener">SocialBot</a>${
       (dona || dietro) && urlLink ? ` · <a href="${esc(urlLink)}">I link di ${esc(display || login)}</a>` : ''}
-      · <a href="${esc(viaPrivacy)}">${negozio ? esc(negozio.testi.privacy) : 'Privacy'}</a>${banner && corpo.includes('chiedi-b')
+      · <a href="${esc(viaPrivacy)}">${est ? esc(est.testi.privacy) : 'Privacy'}</a>${banner && corpo.includes('chiedi-b')
         ? ` · <button type="button" id="ri-consenso" class="come-link">Contenuti di altri siti</button>` : ''}</p>
   </main>
 <script src="/pagina-link.js?v=11" defer></script>${negozio ? '\n<script src="/pagina-negozio.js?v=1" defer></script>' : ''}

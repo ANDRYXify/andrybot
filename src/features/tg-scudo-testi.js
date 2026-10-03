@@ -50,6 +50,7 @@ const T = {
       fuori: ['Si apre dentro Telegram', 'È la prova per entrare in un gruppo Telegram: si apre da sola quando chiedi di entrare.'],
     },
     chiudi: 'Torna a Telegram',
+    anteprima: 'Anteprima: è la pagina che vede chi chiede di entrare. Da qui non arriva niente a Telegram.',
   },
   en: {
     privato: ({ nome, gruppo, minuti }) => `Hi ${nome}, you asked to join «${gruppo}». First a quick check: tap below. You have ${minuti} minutes.`,
@@ -91,6 +92,7 @@ const T = {
       fuori: ['It opens inside Telegram', 'This is the check to join a Telegram group: it opens by itself when you ask to join.'],
     },
     chiudi: 'Back to Telegram',
+    anteprima: 'Preview: this is the page people see when they ask to join. Nothing reaches Telegram from here.',
   },
   es: {
     privato: ({ nome, gruppo, minuti }) => `Hola, ${nome}: has pedido entrar en «${gruppo}». Antes, una prueba rápida: pulsa abajo. Tienes ${minuti} minutos.`,
@@ -132,6 +134,7 @@ const T = {
       fuori: ['Se abre dentro de Telegram', 'Es la prueba para entrar en un grupo de Telegram: se abre sola cuando pides entrar.'],
     },
     chiudi: 'Volver a Telegram',
+    anteprima: 'Vista previa: es la página que ve quien pide entrar. Desde aquí no llega nada a Telegram.',
   },
 };
 

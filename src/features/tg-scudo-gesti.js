@@ -199,16 +199,23 @@ export async function apri(conf, id, { colori = null } = {}, deps) {
   const t = testiPagina(l, { gruppo: r.titolo });
   if (r.stato !== 'attesa') return { esito: esitoRiga(r), lingua: l, t };
   const s = scudoDi(conf);
+  const ts = testiScudo(l);
+  const prove = Math.max(0, IMMAGINI - (Number(r.immagini) || 0));
+  const minuti = Math.max(1, Math.ceil(((Number(r.scad) || 0) - d.ora()) / 60_000));
   return {
     esito: 'attesa', lingua: l, t,
     regole: s.regole.attivo ? s.regole.testo : '',
     domande: domandePubbliche(s), firma: firmaDomande(s),
     scade: Number(r.scad) || 0, ora: d.ora(),
-    prove: Math.max(0, IMMAGINI - (Number(r.immagini) || 0)),
+    // la prima prova la chiede la pagina appena aperta: le «altre» sono quelle dopo
+    prove, altra: ts.altra(Math.max(0, prove - 1)), tempo: ts.tempo(minuti),
     disegnabile: d.prova.disegnabile(),
     colori,
   };
 }
+
+// Le parole di una prova nuova, per la risposta che porta i fotogrammi.
+export const altraIn = (lingua, prove) => testiScudo(linguaDi(lingua)).altra(Math.max(0, prove));
 
 // Una prova nuova. Torna i byte dei fotogrammi, o perche' non si puo'.
 export async function immagine(conf, id, deps) {
@@ -337,5 +344,46 @@ export async function invito(conf, { salva } = {}, deps) {
   salva?.({ chat, url: r.url, richiesta: r.richiesta });
   return { ok: true, url: r.url, richiesta: r.richiesta };
 }
+
+// ── l'anteprima del pannello ────────────────────────────────────────────────
+//
+// Lo streamer prova la sua pagina dal pannello. Passa dagli STESSI gesti
+// (apri, immagine, invia, aiuto) di chi chiede davvero, con una richiesta finta
+// tenuta in memoria e un Telegram che non chiama nessuno: l'anteprima non puo'
+// comportarsi in un modo diverso dalla pagina vera, perche' e' la stessa strada.
+// La memoria ha le stesse regole del database: la chiusura riesce una volta
+// sola, le prove sono contate.
+export function memoria() {
+  let r = null;
+  return {
+    apri({ channel, chatId, userId, titolo = '', lingua = '', scad = 0, ora = Date.now() }) {
+      r = { channel, chat_id: String(chatId), tg_user_id: String(userId), nome: '', titolo, lingua, query_id: '',
+        stato: 'attesa', motivo: '', codice: '', tentativi: 0, immagini: 0, scad, ts: ora, fine: 0 };
+      return { ...r };
+    },
+    prendi() { return r ? { ...r } : null; },
+    nuovaProva(_c, _g, _u, codice) {
+      if (!r || r.stato !== 'attesa' || r.immagini >= IMMAGINI) return false;
+      r.codice = codice; r.tentativi = 0; r.immagini++;
+      return true;
+    },
+    sbagliato(_c, _g, _u, tentativi, spento) {
+      if (r?.stato !== 'attesa') return;
+      r.tentativi = tentativi;
+      if (spento) r.codice = '';
+    },
+    chiudi(_c, _g, _u, stato, motivo = '', ora = Date.now()) {
+      if (!r || r.stato !== 'attesa') return false;
+      Object.assign(r, { stato, motivo, codice: '', fine: ora });
+      return true;
+    },
+    esito(_c, _g, _u, stato, motivo = '') { if (r) Object.assign(r, { stato, motivo }); },
+    scaduti() { return []; },
+  };
+}
+const fatto = async () => ({ ok: true });
+export const telegramMuto = {
+  rispondiRichiesta: fatto, approvaRichiesta: fatto, rifiutaRichiesta: fatto, mostraVerifica: fatto, inviaMessaggio: fatto,
+};
 
 export { TENTATIVI, IMMAGINI };

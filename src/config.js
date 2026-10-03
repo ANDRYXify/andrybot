@@ -142,6 +142,12 @@ export const config = {
   // sempre.
   negozioHost: /^(no|off)$/i.test(env('NEGOZIO_HOST', '')) ? '' : env('NEGOZIO_HOST', '').toLowerCase().replace(/^https?:\/\//, '').replace(/\/.*$/, ''),
   negozioHostSpento: /^(no|off)$/i.test(env('NEGOZIO_HOST', '')),
+  // La porta del gruppo Telegram di un canale (telegram.<dominio>/<canale>) e
+  // la sua pagina di verifica (telegram.<dominio>/<canale>/verifica), come le
+  // altre: senza nome il server bussa al DNS e la accende quando risponde in
+  // HTTPS; «no» la tiene spenta. L'indirizzo lungo /telegram/<canale> vale sempre.
+  telegramHost: /^(no|off)$/i.test(env('TELEGRAM_HOST', '')) ? '' : env('TELEGRAM_HOST', '').toLowerCase().replace(/^https?:\/\//, '').replace(/\/.*$/, ''),
+  telegramHostSpento: /^(no|off)$/i.test(env('TELEGRAM_HOST', '')),
   sessionSecret: sessionSecret(),
 
   // kick — app registrata su kick.com/settings/developer.

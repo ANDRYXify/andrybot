@@ -1015,6 +1015,21 @@ CREATE TABLE IF NOT EXISTS pagina_negozio (   -- la pagina pubblica del negozio:
   aspetto TEXT NOT NULL DEFAULT '',
   ts INTEGER NOT NULL
 );
+CREATE TABLE IF NOT EXISTS pagina_telegram (  -- la porta del gruppo Telegram, telegram.<dominio>/<canale>: stessa forma della pagina link
+  channel TEXT PRIMARY KEY,
+  headline TEXT NOT NULL DEFAULT '',
+  tagline TEXT NOT NULL DEFAULT '',
+  template TEXT NOT NULL DEFAULT 'minimal',
+  accent TEXT NOT NULL DEFAULT '',
+  bg TEXT NOT NULL DEFAULT '',
+  links TEXT NOT NULL DEFAULT '',
+  avatar TEXT NOT NULL DEFAULT '',
+  tema TEXT NOT NULL DEFAULT '',
+  blocchi TEXT NOT NULL DEFAULT '',
+  attiva INTEGER NOT NULL DEFAULT 1,
+  aspetto TEXT NOT NULL DEFAULT '',
+  ts INTEGER NOT NULL
+);
 CREATE TABLE IF NOT EXISTS pagina_pannello (  -- la pagina dietro un pannello di Twitch, /u/<login>/p/<id>: stessa forma della pagina link
   channel TEXT NOT NULL,
   pannello TEXT NOT NULL,                     -- l'id del pannello (settings.pannelli.voci[].id)
@@ -4257,6 +4272,10 @@ export const TIPI_BLOCCO = ['link', 'titolo', 'testo', 'badge', 'separatore', 's
 // e i pochi della pagina link che stanno bene in un negozio. Niente riquadri di
 // altri siti: una pagina che vende non chiede il permesso per un video.
 export const TIPI_PAGINA_NEGOZIO = ['intestazione', 'vetrina', 'articoli', 'comecompra', 'piede', 'titolo', 'testo', 'separatore', 'spazio', 'immagine'];
+// I pezzi della porta del gruppo Telegram (docs/TELEGRAM.md, «La porta»): il
+// gruppo col tasto per entrare, come funziona lo scudo, le regole del gruppo,
+// il piede, e i pochi della pagina link che stanno bene su una porta.
+export const TIPI_PAGINA_TELEGRAM = ['intestazione', 'gruppo', 'scudo', 'regole', 'piede', 'titolo', 'testo', 'link', 'separatore', 'spazio', 'immagine'];
 export const FORMATI_ARTICOLO = ['quadrato', 'largo', 'alto', 'libero'];
 // Quanto si MUOVE la pagina mentre la si scorre. "dolce" = i contenuti
 // compaiono entrando. "cinema" = in più: la foto della copertina va in
@@ -4348,8 +4367,9 @@ export const visitePagina = {
   },
 };
 
-// Le pagine pubbliche hanno una forma sola (testa, tema, blocchi) e tre
-// tavoli: la pagina link, la pagina delle donazioni e quella del negozio. Lo
+// Le pagine pubbliche hanno una forma sola (testa, tema, blocchi) e piu'
+// tavoli: la pagina link, la pagina delle donazioni, quella del negozio, la
+// porta del gruppo Telegram e le pagine dietro i pannelli. Lo
 // store e' uno, costruito sul nome della tabella: stessa pulizia, stesso
 // salvataggio. Le donazioni e il negozio hanno una scelta in piu', `aspetto`:
 // 'link' segue lo stile e il tema della pagina link, 'suo' tiene i suoi. Chi la
@@ -4599,6 +4619,14 @@ const storePagina = (tabella, { conAspetto = false, tipi = TIPI_BLOCCO } = {}) =
         out.push({ tipo, titolo: str(b.titolo, L.label), testo: str(b.testo, L.sotto) });
       } else if (tipo === 'piede') {
         out.push({ tipo, link: b.link !== false, canale: b.canale !== false });
+      } else if (tipo === 'gruppo') {
+        // il gruppo e il tasto per entrare: il link lo fa il bot, qui le parole
+        out.push({ tipo, titolo: str(b.titolo, L.label), testo: str(b.testo, L.sotto), tasto: str(b.tasto, L.label) });
+      } else if (tipo === 'scudo') {
+        out.push({ tipo, titolo: str(b.titolo, L.label), testo: str(b.testo, L.sotto) });
+      } else if (tipo === 'regole') {
+        // il testo e' quello delle regole dello scudo: una cosa sola, in un posto
+        out.push({ tipo, titolo: str(b.titolo, L.label) });
       }
       // valgono per QUALSIASI blocco: quanto è largo e come entra
       if (out.length > quanti) {
@@ -4650,6 +4678,7 @@ const storePagina = (tabella, { conAspetto = false, tipi = TIPI_BLOCCO } = {}) =
 export const linkPage = storePagina('link_page');
 export const paginaDona = storePagina('pagina_dona', { conAspetto: true });
 export const paginaNegozio = storePagina('pagina_negozio', { conAspetto: true, tipi: TIPI_PAGINA_NEGOZIO });
+export const paginaTelegram = storePagina('pagina_telegram', { conAspetto: true, tipi: TIPI_PAGINA_TELEGRAM });
 
 // LE PAGINE DIETRO I PANNELLI (docs/STRUMENTI.md, «La pagina dietro il
 // pannello»): una per pannello, con la pulizia e la lettura delle altre. La

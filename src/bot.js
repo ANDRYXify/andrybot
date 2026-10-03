@@ -13,7 +13,7 @@ import { config } from './config.js';
 import * as filigrana from './watermark.js';
 import * as licenza from './licenza.js';
 import { canaleHa } from './features/accesso.js';
-import { tokens, streamers, memory, tgConf, tgDest, amici, tgMsg, feedFonti, dcConf, dcDest, dcMsg, dcRuoli, avvisiConf, compleanni, pointAlerts, rapporti, postaStreamer } from './db.js';
+import { tokens, streamers, memory, tgConf, tgScudo, tgDest, amici, tgMsg, feedFonti, dcConf, dcDest, dcMsg, dcRuoli, avvisiConf, compleanni, pointAlerts, rapporti, postaStreamer } from './db.js';
 import { ChatBot } from './twitch/chat.js';
 import { EventHub } from './twitch/events.js';
 import { Brain } from './ai/brain.js';
@@ -69,6 +69,7 @@ import * as avvisi from './features/avvisi.js';
 import { dirette, guide, vips, linkPage, recapiti } from './db.js';
 import { dopoErrore, chiaveDiretta, AGGIORNA_OGNI_MS, TIENI_MS } from './features/recapiti.js';
 import * as cancello from './features/tg-cancello.js';
+import * as scudoTg from './features/tg-scudo-gesti.js';
 import { ClipEngine } from './features/clips.js';
 import { PenitenzeEngine } from './features/penitenze.js';
 import { AlertsEngine } from './features/alerts.js';
@@ -353,7 +354,14 @@ export class BotManager {
     // Il cancello del gruppo Telegram: chi e' entrato e non ha premuto il tasto.
     // Ogni mezzo minuto, perche' l'attesa piu' corta che si puo' scegliere e' un
     // minuto e un controllo ogni minuto la farebbe scadere fino al doppio tardi.
-    this._cancelloTimer = setInterval(() => cancello.giroScadenze((ch) => tgConf.get(ch)).catch(() => {}), 30_000);
+    // Con lui lo scudo all'ingresso: le richieste rimaste senza esito si
+    // chiudono col loro esito (tg-scudo-gesti.js), e quelle finite da piu' di
+    // una settimana si tolgono.
+    this._cancelloTimer = setInterval(() => {
+      cancello.giroScadenze((ch) => tgConf.get(ch)).catch(() => {});
+      scudoTg.giroScadenze((ch) => tgConf.get(ch)).catch(() => {});
+    }, 30_000);
+    this._scudoPota = setInterval(() => { try { tgScudo.pota(Date.now() - 7 * 86_400_000); } catch { /* il prossimo giro */ } }, 60 * 60_000);
     // Il giro dei giochi automatici (giro-giochi.js): un orologio solo per le
     // manche, il boss, l'arena, la catena, la conta e la corsa che partono da
     // soli, controllato ogni minuto.
@@ -423,6 +431,7 @@ export class BotManager {
     for (const t of this._pubSveglie.values()) clearTimeout(t);
     this._pubSveglie.clear();
     clearInterval(this._cancelloTimer);
+    clearInterval(this._scudoPota);
     clearInterval(this._tgProattivoTimer);
     clearInterval(this._percorsoTimer);
     clearTimeout(this._risveglioTO);
