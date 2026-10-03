@@ -1713,6 +1713,23 @@ prodotto.
   cerchi si toccano (`SCALA_SPAZIO`) la maniglia propria non si disegna — la
   dimensione resta nel pannello, con Alt+rotella e col perimetro.
 
+### Poi e' rimasto rosso fuori dalla catena
+
+Il collaudo stava fuori da `npm run cancelli`, e li' e' rimasto rosso per giorni
+su due punti: «il contatore non nasce» e «cont:morti formato: campo assente».
+Sembrava che il contatore delle morti avesse perso «Cosa scrive»; il campo
+invece c'era, ed era sparito il blocco intero. La demo rispondeva ai contatori
+richiamando se stessa per prendere l'aspetto di serie (0f108c4c): dopo il primo
+salvataggio girava in tondo, e il pannello riceveva un errore al posto
+dell'elenco. Era un difetto del prodotto, e si e' corretto il prodotto
+(docs/DEMO.md).
+
+Il collaudo ora sta nella catena, con un'autoprova (`--selftest`) che rimette
+due difetti, uno per controllo: al contatore delle morti manca «Cosa scrive», e
+il contatore creato non viene riletto dal banco. Non il difetto vero, perche'
+quello li faceva rossi tutti e due insieme e uno copriva l'altro: un controllo
+diventato cieco sarebbe passato inosservato.
+
 ## La classifica dei Bit in scena
 
 E' un elemento come gli altri — stessa veste, stesso angolo, stesso

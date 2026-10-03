@@ -1,7 +1,8 @@
 // © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
 // Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
-// Collaudo del BANCO DI REGIA — gira in un browser vero, quindi vive fuori da
-// `npm run cancelli` (i cancelli devono restare statici e istantanei).
+// Collaudo del BANCO DI REGIA, in un browser vero, sulla demo. Sta nella catena
+// di `npm run cancelli`, col suo --selftest: dove Chromium non c'e' (il server)
+// si salta da solo, come gli altri collaudi col browser.
 //
 // Il difetto che questo collaudo chiude: la x che si salva NON e' il centro
 // dell'elemento, e' la sua posizione lungo la corsa disponibile (0 = a filo a
@@ -16,7 +17,15 @@
 // entrerebbe in gioco per davvero — e si controlla che si sia spostato di
 // quella quantita'. Con Alt premuto, cosi' l'aggancio non falsa la misura.
 //
-// Uso: node scripts/verifica-studio.mjs   (esce 1 se qualcosa si sposta storto)
+// Da li' e' cresciuto con le altre promesse del banco: i comandi di ogni
+// elemento, il tutto schermo, i livelli, l'annulla, ogni overlay per conto suo,
+// il contatore nuovo che nasce dal banco. Ognuna ha qui sotto il suo perche'.
+//
+// Uso: node scripts/verifica-studio.mjs             (esce 1 se una promessa del banco non tiene)
+//      node scripts/verifica-studio.mjs --selftest  (rimette due difetti: il contatore delle
+//                                                    morti senza «Cosa scrive», e il contatore
+//                                                    creato che il banco non rilegge; li vuole
+//                                                    rossi tutti e due)
 
 import { apriSito, chromiumQui } from './_sito.mjs';
 import path from 'node:path';
@@ -50,8 +59,36 @@ const { porta: PORTA, chiudi: chiudiSito } = await apriSito();
 
 const b = await chromium.launch({ executablePath: CHROMIUM,
   args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader', '--no-sandbox', '--disable-dev-shm-usage'] });
-const p = await b.newPage({ viewport: { width: 1440, height: 950 } });
+// Il service worker si tiene fuori: gli script li servirebbe lui, e l'autoprova
+// non potrebbe rimettere i suoi difetti negli script che la pagina carica.
+const p = await b.newPage({ viewport: { width: 1440, height: 950 }, serviceWorkers: 'block' });
 const rotture = [];
+
+// L'AUTOPROVA. Il difetto vero che ha tenuto rosso questo collaudo (la risposta
+// della demo ai contatori che richiamava se stessa, 0f108c4c) faceva sparire
+// l'elenco intero: tutti e due i controlli qui sotto diventavano rossi per la
+// stessa ragione, e uno copriva l'altro. Qui si rimettono due difetti che
+// toccano UN controllo ciascuno, cosi' ognuno deve vedere il suo:
+//  · al contatore delle morti manca «Cosa scrive», il resto del blocco c'e';
+//  · il contatore nuovo si crea, ma il banco non rilegge l'elenco (e arriva
+//    dopo i comandi, quindi non puo' coprire il primo).
+const SELFTEST = process.argv.includes('--selftest');
+const DIFETTI = [
+  [/^ *<input type="text" data-k="formato"[^\n]*\n/m, ''],
+  ['  await caricaContaStudio();\n  _mettiDentro(k);', '  _mettiDentro(k);'],
+];
+const difettiMessi = new Set();
+if (SELFTEST) {
+  await p.route(/\/app\.js(\?|$)/, async (route) => {
+    const r = await route.fetch();
+    let t = await r.text();
+    DIFETTI.forEach(([da, a], i) => {
+      const c = typeof da === 'string' ? t.split(da).length - 1 : (t.match(new RegExp(da.source, da.flags + 'g')) || []).length;
+      if (c === 1) { t = t.replace(da, a); difettiMessi.add(i); }
+    });
+    await route.fulfill({ response: r, body: t });
+  });
+}
 p.on('pageerror', (e) => rotture.push('errore di pagina: ' + e.message));
 // Il giro guidato parte da solo alla prima visita di una scheda, dopo un
 // attimo di quiete, e qui la tela si muove da programma: il giro si
@@ -806,5 +843,15 @@ verde = dice(occhiTrapelati.length === 0, 'l’occhio toglie l’elemento da que
 verde = dice(contaNuovo.length === 0, 'un contatore nuovo si fa dal banco, e la copia dell’overlay non tocca l’originale', contaNuovo.join(' · ')) && verde;
 verde = dice(rotture.length === 0, 'nessun errore di pagina', rotture.join(' · ')) && verde;
 
+if (SELFTEST) {
+  const entrati = difettiMessi.size === DIFETTI.length;
+  const visti = [
+    ['il contatore delle morti senza «Cosa scrive»', morti.some((m) => m.startsWith('cont:morti ') && m.endsWith(': campo assente'))],
+    ['il contatore creato che il banco non rilegge', contaNuovo.includes('il contatore non nasce')],
+  ];
+  console.log(entrati ? '\nAutoprova: i due difetti sono entrati. ✓' : `\nAutoprova: entrati ${difettiMessi.size} difetti su ${DIFETTI.length}: il codice e' cambiato, aggiorna DIFETTI. ✗`);
+  for (const [n, v] of visti) console.log(v ? `Autoprova: ${n} si vede. ✓` : `Autoprova: ${n} NON e' stato visto. ✗`);
+  process.exit(entrati && visti.every(([, v]) => v) ? 0 : 1);
+}
 console.log(verde ? '\ncollaudo verde ✓\n' : '\ncollaudo ROSSO ✗\n');
 process.exit(verde ? 0 : 1);
