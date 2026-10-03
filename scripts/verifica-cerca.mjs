@@ -207,16 +207,32 @@ for (const d of provate.filter((_, i) => i % 7 === 0).slice(0, 6)) {
     const id = prima.dataset.id || '';
     const eUnaScheda = !!id && pulito(prima.querySelector('b')?.textContent) === pulito(window.SB_APP.nomeScheda(id));
     prima.click();
-    await new Promise((x) => setTimeout(x, 3200));
-    const m = document.querySelector('.cerca-mira');
-    const b = m && m.getBoundingClientRect();
-    const scheda = document.querySelector('.pannello-scheda.visibile')?.dataset.scheda || '';
-    return {
-      scheda,
-      laScheda: eUnaScheda && scheda === id,
-      segnato: !!m,
-      inVista: !!(b && b.top > -20 && b.bottom < window.innerHeight + 20),
+    // Si aspetta l'ARRIVO, non un tempo fisso: la scheda si apre, la cosa si
+    // segna e lo scorrimento finisce quando la macchina ce la fa. Con un tempo
+    // fisso, a macchina carica la cosa arrivava dopo il controllo e il
+    // cancello diceva «fuori vista» di una ricerca che funzionava. Il tetto
+    // (dieci secondi) resta: una cosa che non arriva mai non arriva.
+    const misura = () => {
+      const m = document.querySelector('.cerca-mira');
+      const b = m && m.getBoundingClientRect();
+      const scheda = document.querySelector('.pannello-scheda.visibile')?.dataset.scheda || '';
+      return {
+        scheda,
+        laScheda: eUnaScheda && scheda === id,
+        segnato: !!m,
+        inVista: !!(b && b.top > -20 && b.bottom < window.innerHeight + 20),
+      };
     };
+    // Il segno si spegne da solo dopo qualche secondo: si ricorda se c'e' stato,
+    // perche' «segnata ma fuori vista» e «mai segnata» sono difetti diversi.
+    const fine = Date.now() + 10000;
+    let r = misura(), segnata = r.segnato;
+    while (Date.now() < fine && !(r.laScheda || (r.segnato && r.inVista))) {
+      await new Promise((x) => setTimeout(x, 150));
+      r = misura();
+      segnata = segnata || r.segnato;
+    }
+    return { ...r, segnato: segnata };
   }, d.testo);
   if (!r.laScheda && (!r.segnato || !r.inVista)) nonArrivate.push({ q: d.testo, dove: r.scheda, segnato: r.segnato, inVista: r.inVista });
 }
