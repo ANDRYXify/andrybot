@@ -234,7 +234,11 @@ test('la pagina del modulo: solo la bozza viva di quel canale, gli errori accant
   assert.match(bene.codice, /^\d{4}$/);
   const dopo = P.paginaModulo(ch, token, { codice: bene.codice, ora });
   assert.match(dopo.html, new RegExp(`!compra #${bene.codice}`));
-  assert.equal(P.paginaModulo(ch, token, { codice: '0000', ora }).stato, 'modulo', 'un codice inventato non mostra niente');
+  // Il codice vero e' a caso fra 0000 e 9999: quello inventato si ricava da
+  // lui, cosi' e' diverso per costruzione (un «0000» fisso coincideva una
+  // volta su diecimila, ed e' successo).
+  const inventato = String((Number(bene.codice) + 1) % 10000).padStart(4, '0');
+  assert.equal(P.paginaModulo(ch, token, { codice: inventato, ora }).stato, 'modulo', 'un codice inventato non mostra niente');
   N.salva(ch, S.normArticolo({ ...a, campi: [{ etichetta: 'Altro' }] }).articolo);
   assert.equal(P.paginaModulo(ch, token, { ora }).stato, 'fine', 'cambiate le domande, quel modulo non c\'e\' piu\'');
 });
