@@ -32,7 +32,7 @@ export const NEGATE = {
   link_page_visite: 'contatore di visite grezzo, con dati di chi ha visitato',
   messages: 'i messaggi della chat sono di CHI LI HA SCRITTI, non del canale: escono solo i propri',
   stream_context: 'stato momentaneo della diretta, non dati',
-  tg_scudo: 'chi ha chiesto di entrare nel gruppo Telegram: sono dati di quelle persone, tenuti una settimana per il pannello, con dentro le prove momentanee della pagina',
+  tg_scudo: 'chi ha chiesto di entrare nel gruppo Telegram: sono dati di quelle persone, tenuti una settimana per mostrare allo streamer com'e' andata, con dentro le prove momentanee della pagina',
 };
 
 // Le tabelle che appartengono a un canale, ricavate dallo schema.

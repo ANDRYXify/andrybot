@@ -69,6 +69,12 @@ export const CLASSIFICATI = [
   ['src/features/negozio-pagina.js', 'Apri il pannello', 'pagina del negozio chiuso: il tasto dentro quel riquadro'],
   ['src/features/negozio-pagina.js', 'You open it from the dashboard', 'pagina del negozio chiuso, in inglese: la nota del riquadro «Is this your shop?»'],
   ['src/features/negozio-pagina.js', 'Open the dashboard', 'pagina del negozio chiuso, in inglese: il tasto dentro quel riquadro'],
+  // La porta del gruppo Telegram che non c'e' (pagina web, non chat): stessa
+  // forma, il riquadro «E' il tuo gruppo?».
+  ['src/features/tg-porta.js', 'La porta si apre dal pannello', 'porta del gruppo chiusa: la nota del riquadro «È il tuo gruppo?»'],
+  ['src/features/tg-porta.js', 'Apri il pannello', 'porta del gruppo chiusa: il tasto dentro quel riquadro'],
+  ['src/features/tg-porta.js', 'You open the door from the dashboard', 'porta del gruppo chiusa, in inglese: la nota del riquadro «Is this your group?»'],
+  ['src/features/tg-porta.js', 'Open the dashboard', 'porta del gruppo chiusa, in inglese: il tasto dentro quel riquadro'],
 ];
 
 function elencaFile() {
