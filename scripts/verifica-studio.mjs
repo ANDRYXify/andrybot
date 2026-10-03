@@ -26,19 +26,15 @@
 //                                                    morti senza «Cosa scrive», e il contatore
 //                                                    creato che il banco non rilegge; li vuole
 //                                                    rossi tutti e due)
+//      SB_MINI=1 node scripts/verifica-studio.mjs   (lo stesso, sul banco minificato come lo
+//                                                    serve il server; si lancia a mano)
 
-import { apriSito, chromiumQui } from './_sito.mjs';
+import { apriSito, chromiumQui, PUB } from './_sito.mjs';
+import fs from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 
-const RAD = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
-const PUB = path.join(RAD, 'src/web/public');
 const CHROMIUM = chromiumQui();
 const PLAYWRIGHT = process.env.PLAYWRIGHT || '/opt/node22/lib/node_modules/playwright/index.mjs';
-
-const TIPI = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
-  '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png',
-  '.webmanifest': 'application/manifest+json', '.json': 'application/json', '.woff2': 'font/woff2' };
 
 let chromium;
 if (!CHROMIUM) { console.log('Chromium non c\'e\' su questa macchina: collaudo saltato.'); process.exit(0); }
@@ -51,16 +47,24 @@ catch {
 // Con SB_MINI=1 il banco viene servito MINIFICATO, come lo scarica davvero un
 // browser. E' la prova che accorciare i nomi interni non rompe l'applicazione:
 // senza, si collauderebbe un codice che nessuno riceve.
+//
+// Dal passaggio al sito comune (scripts/_sito.mjs, e7a84bda) SB_MINI non
+// faceva piu' niente: il sito comune serve i sorgenti, e il collaudo diceva
+// verde su un codice che nessuno riceve. Ora la minificazione la fa la pagina,
+// sulla sua strada (page.route), con la stessa funzione del server e sugli
+// stessi file (`eNostro`: gli script in cima alla cartella pubblica). Si fa
+// tutta prima di aprire la pagina: app.js chiede una decina di secondi, e
+// dentro il caricamento diventerebbe una gara con le attese del collaudo.
 const MINI = process.env.SB_MINI === '1';
-let minificaJs = null;
-if (MINI) ({ minificaJs } = await import('../src/web/minifica.js'));
+let minificaJs = null, eNostro = null;
+if (MINI) ({ minificaJs, eNostro } = await import('../src/web/minifica.js'));
 
 const { porta: PORTA, chiudi: chiudiSito } = await apriSito();
 
 const b = await chromium.launch({ executablePath: CHROMIUM,
   args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader', '--no-sandbox', '--disable-dev-shm-usage'] });
-// Il service worker si tiene fuori: gli script li servirebbe lui, e l'autoprova
-// non potrebbe rimettere i suoi difetti negli script che la pagina carica.
+// Il service worker si tiene fuori: gli script li servirebbe lui, e ne' l'autoprova
+// ne' SB_MINI potrebbero cambiare quelli che la pagina carica.
 const p = await b.newPage({ viewport: { width: 1440, height: 950 }, serviceWorkers: 'block' });
 const rotture = [];
 
@@ -78,15 +82,27 @@ const DIFETTI = [
   ['  await caricaContaStudio();\n  _mettiDentro(k);', '  _mettiDentro(k);'],
 ];
 const difettiMessi = new Set();
-if (SELFTEST) {
-  await p.route(/\/app\.js(\?|$)/, async (route) => {
+const conDifetti = (t) => {
+  DIFETTI.forEach(([da, a], i) => {
+    const c = typeof da === 'string' ? t.split(da).length - 1 : (t.match(new RegExp(da.source, da.flags + 'g')) || []).length;
+    if (c === 1) { t = t.replace(da, a); difettiMessi.add(i); }
+  });
+  return t;
+};
+const serviti = new Map();
+if (SELFTEST) serviti.set('/app.js', conDifetti(fs.readFileSync(path.join(PUB, 'app.js'), 'utf8')));
+if (MINI) {
+  let ridotti = 0;
+  for (const f of fs.readdirSync(PUB).filter((x) => eNostro('/' + x))) {
+    const via = '/' + f, sorgente = serviti.get(via) ?? fs.readFileSync(path.join(PUB, f), 'utf8');
+    try { serviti.set(via, await minificaJs(sorgente)); ridotti++; } catch { serviti.set(via, sorgente); }
+  }
+  console.log(`Banco minificato: ${ridotti} script su ${serviti.size}.`);
+}
+if (serviti.size) {
+  await p.route((u) => u.host === `127.0.0.1:${PORTA}` && serviti.has(u.pathname), async (route) => {
     const r = await route.fetch();
-    let t = await r.text();
-    DIFETTI.forEach(([da, a], i) => {
-      const c = typeof da === 'string' ? t.split(da).length - 1 : (t.match(new RegExp(da.source, da.flags + 'g')) || []).length;
-      if (c === 1) { t = t.replace(da, a); difettiMessi.add(i); }
-    });
-    await route.fulfill({ response: r, body: t });
+    await route.fulfill({ response: r, body: serviti.get(new URL(route.request().url()).pathname) });
   });
 }
 p.on('pageerror', (e) => rotture.push('errore di pagina: ' + e.message));
@@ -102,6 +118,9 @@ await p.evaluate(() => { document.getElementById('cookie-banner')?.remove(); win
 await p.waitForFunction(() => (document.querySelector('.pannello-scheda.visibile') || {}).id === 'scheda-alert', null, { timeout: 20000 });
 await p.waitForFunction(() => document.querySelectorAll('#ap-stage .ap-el').length > 4, null, { timeout: 20000 });
 await p.waitForTimeout(700);
+// SB_MINI deve collaudare il banco minificato davvero: e' gia' successo che
+// smettesse senza dirlo. Una funzione del banco minificata sta su una riga.
+const minificato = !MINI || await p.evaluate(() => !String(caricaContaStudio).includes('\n'));
 if (!await p.evaluate(() => typeof giroVisto === 'function' && giroVisto(schedaAttiva))) {
   rotture.push('il giro guidato non si spegne piu\' con sb-giro, e puo\' coprire la tela');
 }
@@ -842,6 +861,7 @@ verde = dice(marce.length === 0, 'le marce del trascinamento: fine, dritto, nien
 verde = dice(occhiTrapelati.length === 0, 'l’occhio toglie l’elemento da questo overlay, non da tutti', occhiTrapelati.join(' · ')) && verde;
 verde = dice(contaNuovo.length === 0, 'un contatore nuovo si fa dal banco, e la copia dell’overlay non tocca l’originale', contaNuovo.join(' · ')) && verde;
 verde = dice(rotture.length === 0, 'nessun errore di pagina', rotture.join(' · ')) && verde;
+if (MINI) verde = dice(minificato, 'il banco che ha girato è quello minificato', 'la pagina ha ricevuto i sorgenti') && verde;
 
 if (SELFTEST) {
   const entrati = difettiMessi.size === DIFETTI.length;
