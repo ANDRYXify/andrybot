@@ -143,6 +143,22 @@ async function chiedi(testo) {
   }, testo);
 }
 
+// Le domande a parole misurano la risposta DI PARTENZA, quella di chi cerca la
+// prima volta: si fanno prima di ogni clic. La ricerca impara da quello che si
+// sceglie (docs/CERCA.md), e le prove qui sotto cliccano davvero: fatte dopo,
+// le domande misuravano i clic del cancello. Con le destinazioni del media kit
+// il campione da cliccare si e' spostato su «Costo (monete)», e «quanto costa»
+// finiva li' per due punti e mezzo di memoria, non per un difetto.
+const memoriaVuota = await p.evaluate(() => !localStorage.getItem('sb-cerca-memoria'));
+const aParole = [];
+for (const c of A_PAROLE) {
+  const r = await chiedi(c.q);
+  const primo = r[0];
+  if (!primo || !c.scheda.includes(primo.id)) {
+    aParole.push({ q: c.q, atteso: c.scheda.join('/'), uscito: primo ? `${primo.testo} (${primo.id})` : '—' });
+  }
+}
+
 if (SELFTEST) {
   // La ricerca com'era: conosceva solo i nomi delle schede, e dentro le schede
   // non guardava. Si toglie ai pannelli il segno che li lega alla loro scheda,
@@ -248,14 +264,6 @@ await p.waitForTimeout(180);
 const fuocoTornato = await p.evaluate(() => document.activeElement?.getAttribute('data-partenza') === '1');
 const fuoco = { avanti: dentroDopoTab, indietro: dentroDopoIndietro, nome: nomeFinestra, tornato: fuocoTornato, partenza };
 
-const aParole = [];
-for (const c of A_PAROLE) {
-  const r = await chiedi(c.q);
-  const primo = r[0];
-  if (!primo || !c.scheda.includes(primo.id)) {
-    aParole.push({ q: c.q, atteso: c.scheda.join('/'), uscito: primo ? `${primo.testo} (${primo.id})` : '—' });
-  }
-}
 
 await b.close();
 await chiudiSito();
@@ -273,6 +281,7 @@ dice(fuoco.avanti && fuoco.indietro, 'col Tab non si esce dalla finestra di rice
   `avanti: ${fuoco.avanti ? 'dentro' : 'FUORI'} · indietro: ${fuoco.indietro ? 'dentro' : 'FUORI'} — si finisce a navigare la pagina dietro al velo, senza vederla`);
 dice(!!fuoco.nome, 'e la finestra ha un nome, non e\' solo «dialogo»', '');
 dice(fuoco.tornato, 'chiudendola il fuoco torna da dove era partito', 'si riparte da capo dalla cima della pagina');
+dice(memoriaVuota, 'le domande a parole si fanno a memoria vuota, prima di ogni clic', 'la ricerca aveva gia\' imparato qualcosa');
 dice(!aParole.length, 'e una domanda detta a parole arriva nella scheda giusta',
   aParole.slice(0, 4).map((x) => `«${x.q}» voleva ${x.atteso}, ha dato ${x.uscito}`).join(' · '));
 for (const x of sbagliate) console.log(`  · non prima: «${x.cercato}» (${x.dove}) → ${x.uscito}`);

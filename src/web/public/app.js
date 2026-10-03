@@ -1959,7 +1959,28 @@ function _demoGet(via) {
       bio: 'Gioco a tutto quello che ha una storia, e la chat decide il finale.',
       colori: { bg: '#05040a', bg2: '#1b0b3d', testo: '#f6f3ff', tenue: '#a99ed0', card: 'rgba(255,255,255,.07)', bordo: 'rgba(170,110,255,.42)', acc: '#b072ff' },
       settimana: _DEMO_SETTIMANA,
-      kit: { presentazione: '', email: 'collab@andryx.it', collaborazioni: ['Nebbia Audio', 'Pixelforno', 'Ghiro Gear'], mostra: {}, tema: 'pagina' },
+      salvato: true,
+      kit: {
+        tema: 'pagina', colori: { fondo: '#15121a', testo: '#f4f1f8', accento: '#b8237f' }, carattere: 'archivo', titoli: 'maiuscolo',
+        sezioni: [
+          { tipo: 'testa', titolo: '', visibile: true, larghezza: 'piena', riga: 'Storie, horror e giochi indie, con la chat che decide', presentazione: 'Gioco a tutto quello che ha una storia, e la chat decide il finale. Quattro sere a settimana, una community che torna e che parla: le dirette sono una serata fra amici, non un rumore di fondo.' },
+          { tipo: 'numeri', titolo: '', visibile: true, larghezza: 'piena', mostra: { follower: true, media: true, picco: true, ore: true, dirette: false, persone: true, follow: false } },
+          { tipo: 'lavori', titolo: '', visibile: true, larghezza: 'piena', voci: [
+            { titolo: 'Diretta di lancio con Nebbia Audio', testo: 'Tre ore di prova delle cuffie in partita, con un codice sconto per la chat: 212 codici usati nella prima settimana.', url: 'https://nebbiaaudio.example/andryx' },
+            { titolo: 'Serie «Una notte nella nebbia»', testo: 'Cinque episodi su YouTube, montati da me.', url: 'https://youtube.com/@andryxify' },
+          ] },
+          { tipo: 'categorie', titolo: '', visibile: true, larghezza: 'meta' },
+          { tipo: 'social', titolo: '', visibile: true, larghezza: 'meta' },
+          { tipo: 'settimana', titolo: '', visibile: true, larghezza: 'meta' },
+          { tipo: 'collaborazioni', titolo: '', visibile: true, larghezza: 'meta', voci: [{ nome: 'Nebbia Audio', url: 'https://nebbiaaudio.example' }, { nome: 'Pixelforno', url: '' }, { nome: 'Ghiro Gear', url: 'https://ghirogear.example' }] },
+          { tipo: 'offerte', titolo: '', visibile: true, larghezza: 'piena', voci: [
+            { nome: 'Una diretta dedicata', testo: 'Due ore col prodotto in partita, menzioni e un comando in chat per tutta la settimana.', prezzo: 'da 300 €' },
+            { nome: 'Un video sul canale YouTube', testo: 'Da 8 a 12 minuti, montato da me, col link in descrizione.', prezzo: 'da 450 €' },
+          ] },
+          { tipo: 'link', titolo: '', visibile: true, larghezza: 'piena', voci: [{ etichetta: 'La mia pagina link', url: 'https://socialbot.live/u/andryxify' }] },
+          { tipo: 'contatti', titolo: '', visibile: true, larghezza: 'piena', email: 'collab@andryx.it', altro: { etichetta: 'Prenota una call', url: 'https://cal.example/andryx' } },
+        ],
+      },
     },
     '/api/streamer/codici-posta': {
       codici: [
@@ -4072,7 +4093,7 @@ const DESC = {
   qr: ['Un QR con le tue forme, i tuoi colori e il tuo logo, che si scarica solo se si legge.', 'A QR with your shapes, colors and logo, downloadable only if it scans.', 'Un QR con tus formas, tus colores y tu logo, que se descarga solo si se lee.'],
   misure: ['Emote e badge per Twitch, 7TV e Discord, ferme o animate, da un’immagine sola o da un video corto.', 'Emotes and badges for Twitch, 7TV and Discord, still or animated, from a single image or a short video.', 'Emotes y badges para Twitch, 7TV y Discord, fijos o animados, desde una sola imagen o un vídeo corto.'],
   pannelli: ['I pannelli sotto il tuo canale Twitch, nello stesso stile e già pieni.', 'The panels under your Twitch channel, in one style and already filled in.', 'Los paneles bajo tu canal de Twitch, con un mismo estilo y ya rellenos.'],
-  kit: ['Il foglio da mandare ai marchi, coi numeri veri delle tue dirette.', 'The sheet to send to brands, with the real numbers of your streams.', 'La hoja para mandar a las marcas, con los números reales de tus directos.'],
+  kit: ['Il tuo media kit per i marchi: chi sei, i lavori fatti e i numeri veri delle tue dirette.', 'Your media kit for brands: who you are, your past work and the real numbers of your streams.', 'Tu media kit para las marcas: quién eres, tus trabajos y los números reales de tus directos.'],
   settimana: ['I giorni in cui vai in onda, scritti una volta: da qui vanno sui calendari e dove li mandi.', 'The days you go live, written once: from here they go onto the calendars and wherever you send them.', 'Los días en que sales en directo, escritos una vez: de aquí van a los calendarios y adonde los mandes.'],
   consolify: ['I tasti del tuo canale sotto le dita: sul telefono, sul tablet o su una tastiera vera.', 'Your channel’s keys under your fingers: on your phone, tablet or a real key pad.', 'Las teclas de tu canal bajo los dedos: en el móvil, la tablet o un teclado de verdad.'],
   telegram: ['Il tuo bot nel tuo gruppo: avvisi, comandi, compleanni, membri e il rapporto della serata in privato.', 'Your bot in your group: alerts, commands, birthdays, members and the night report in private.', 'Tu bot en tu grupo: avisos, comandos, cumpleaños, miembros y el informe de la noche en privado.'],
@@ -4275,8 +4296,8 @@ const GUIDE = {
     come: [['Scegli un’immagine, anche animata, o un video, meglio se grande e quadrato.', 'Choose an image, animated too, or a video, better if big and square.', 'Elige una imagen, también animada, o un vídeo, mejor si es grande y cuadrado.', '#mis-scegli'], ['Scegli per cosa: emote o badge di Twitch, emote di 7TV, emoji di Discord.', 'Choose what it is for: Twitch emote or badge, 7TV emote, Discord emoji.', 'Elige para qué: emote o badge de Twitch, emote de 7TV, emoji de Discord.', '#mis-carta .gr-sfondo-scelte'], ['Se si muove, scegli il fotogramma fermo: l’animazione parte da lì.', 'If it moves, choose the still frame: the animation starts there.', 'Si se mueve, elige el fotograma fijo: la animación empieza ahí.'], ['Guarda come viene alle misure vere, sulla chat scura e su quella chiara.', 'See how it looks at real size, on the dark chat and the light one.', 'Mira cómo queda a tamaño real, en el chat oscuro y en el claro.', '#mis-anteprime'], ['Scaricale una per una o tutte in un file zip.', 'Download them one by one or all in a zip file.', 'Descárgalas una a una o todas en un archivo zip.', '#mis-zip']] },
   pannelli: { serve: ['Fare i pannelli sotto il tuo canale Twitch, tutti nello stesso stile, con link e descrizioni già scritti.', 'Make the panels under your Twitch channel, all in one style, with links and descriptions already written.', 'Hacer los paneles bajo tu canal de Twitch, todos con el mismo estilo, con enlaces y descripciones ya escritos.'],
     come: [['Scegli colori, forma, carattere e altezza: valgono per tutti i pannelli.', 'Pick colors, shape, font and height: they apply to all panels.', 'Elige colores, forma, letra y altura: valen para todos los paneles.', '#pan-carta .gr-sfondo-scelte'], ['Guarda i pannelli: ognuno ha già il suo link e la sua descrizione, e li cambi come vuoi.', 'Look at the panels: each one already has its link and description, and you change them as you like.', 'Mira los paneles: cada uno ya tiene su enlace y su descripción, y los cambias como quieras.', '#pan-voci'], ['Se un pannello ha più cose da dire, fallo aprire la sua pagina: la prepari con lo stesso editor della pagina link, e il programma e i comandi si aggiornano da soli.', 'If a panel has more to say, make it open its own page: you prepare it with the same editor as the link page, and the schedule and commands update by themselves.', 'Si un panel tiene más que decir, haz que abra su propia página: la preparas con el mismo editor de la página de enlaces, y el horario y los comandos se actualizan solos.'], ['Scarica tutti: immagini e testi in un file solo, da mettere su Twitch.', 'Download all: images and texts in one file, to put on Twitch.', 'Descarga todos: imágenes y textos en un solo archivo, para poner en Twitch.', '#pan-zip']] },
-  kit: { serve: ['Preparare il foglio da mandare a un marchio: chi sei, cosa trasmetti, i tuoi numeri e come contattarti.', 'Prepare the sheet to send to a brand: who you are, what you stream, your numbers and how to reach you.', 'Preparar la hoja para mandar a una marca: quién eres, qué transmites, tus números y cómo contactarte.'],
-    come: [['Scrivi due righe su di te e l’email per le collaborazioni.', 'Write a couple of lines about you and the email for collaborations.', 'Escribe dos líneas sobre ti y el email para colaboraciones.', '#kit-presentazione'], ['Scegli cosa mostrare: i numeri vengono dalle tue dirette degli ultimi 30 giorni.', 'Choose what to show: the numbers come from your streams of the last 30 days.', 'Elige qué mostrar: los números vienen de tus directos de los últimos 30 días.', '#kit-tela'], ['Scarica il PDF, coi link che si aprono con un clic, o il PNG.', 'Download the PDF, with links that open with a click, or the PNG.', 'Descarga el PDF, con enlaces que se abren con un clic, o el PNG.', '#kit-pdf']] },
+  kit: { serve: ['Preparare il media kit da mandare a un marchio, come un curriculum: chi sei, i tuoi numeri, i lavori fatti, cosa offri e come contattarti.', 'Prepare the media kit to send to a brand, like a résumé: who you are, your numbers, past work, what you offer and how to reach you.', 'Preparar el media kit para mandar a una marca, como un currículum: quién eres, tus números, tus trabajos, qué ofreces y cómo contactarte.'],
+    come: [['Scegli i colori, il carattere e come si scrivono i titoli.', 'Pick the colors, the typeface and how titles are written.', 'Elige los colores, la tipografía y cómo se escriben los títulos.', '#kit-carta .gr-sfondo-scelte'], ['Apri le sezioni e riempile: due righe su di te, i lavori, i marchi, cosa offri, l’email. Mettile in ordine, a tutta riga o a metà, e nascondi quelle che non vuoi.', 'Open the sections and fill them in: a couple of lines about you, your work, brands, what you offer, your email. Put them in order, full width or half, and hide the ones you do not want.', 'Abre las secciones y rellénalas: dos líneas sobre ti, tus trabajos, las marcas, qué ofreces, el email. Ordénalas, a todo el ancho o a la mitad, y oculta las que no quieras.', '#kit-sezioni'], ['Scarica il PDF: ogni link si apre con un clic e il testo si cerca. Oppure le immagini PNG.', 'Download the PDF: every link opens with a click and the text can be searched. Or the PNG images.', 'Descarga el PDF: cada enlace se abre con un clic y el texto se puede buscar. O las imágenes PNG.', '#kit-pdf']] },
   grafiche: { serve: ['Fare la locandina della diretta da postare sui social, con i tuoi colori e il tuo handle.', 'Make the stream poster to post on socials, with your colors and your handle.', 'Hacer el cartel del directo para publicar en redes, con tus colores y tu handle.'],
     come: [['Scrivi il titolo: è la riga grande della locandina.', 'Write the title: it is the big line of the poster.', 'Escribe el título: es la línea grande del cartel.', '#gr-titolo'], ['Scegli il colore d\'accento; il testo si adatta da solo perché resti leggibile.', 'Pick the accent color; the text adapts by itself so it stays readable.', 'Elige el color de acento; el texto se adapta solo para que siga legible.', '#gr-accento'], ['Scarica il PNG (o la versione animata) e pubblicalo: la didascalia è già pronta da copiare.', 'Download the PNG (or the animated one) and post it: the caption is ready to copy.', 'Descarga el PNG (o la versión animada) y publícalo: el pie de foto ya está listo para copiar.', '#gr-scarica'], ['In cima, «Metti nella storia» manda la grafica nella tua storia di Instagram, già in verticale; se Instagram non è collegato, lì trovi il tasto per collegarlo.', 'At the top, «Post to your story» sends the graphic to your Instagram story, already vertical; if Instagram is not connected, you find the button to connect it there.', 'Arriba, «Publicar en tu historia» manda la gráfica a tu historia de Instagram, ya en vertical; si Instagram no está conectado, ahí tienes el botón para conectarlo.', '#gr-ig']] },
   settimana: { serve: ['Scrivere una volta sola quando vai in onda e cosa fai, e mandarlo dove ti seguono.', 'Write once when you go live and what you do, and send it where people follow you.', 'Escribir una sola vez cuándo sales en directo y qué haces, y mandarlo donde te siguen.'],
@@ -8928,37 +8949,70 @@ function avviaMisure() {
   });
 }
 
-const KIT_STATO = { dati: null, avatar: undefined, motore: null, timer: 0, link: [], errore: '' };
+const KIT_STATO = { dati: null, avatar: undefined, motore: null, timer: 0, fogli: [], errore: '', bozza: null, aperte: new Set() };
 const KIT_TEMI = {
   carta: { bg: '#fbfaf7', bg2: '#f1eee8', testo: '#16141a', tenue: '#5b5663', card: '#ffffff', bordo: '#e2ddd5' },
   notte: { bg: '#121117', bg2: '#1c1a24', testo: '#f3f0f7', tenue: '#aaa3b8', card: '#1d1b25', bordo: '#302d3b' },
 };
-const KIT_MOSTRA = () => [
+const KIT_MAX = { lavori: 6, collaborazioni: 12, offerte: 6, link: 8, testi: 2 };
+const KIT_NUMERI = () => [
   ['follower', L('Follower totali', 'Total followers', 'Seguidores totales')], ['media', L('Spettatori in media', 'Average viewers', 'Espectadores de media')],
   ['picco', L('Spettatori al picco', 'Peak viewers', 'Pico de espectadores')], ['ore', L('Ore in onda', 'Hours live', 'Horas en directo')],
   ['dirette', L('Dirette', 'Streams', 'Directos')], ['persone', L('Persone in chat', 'People in chat', 'Personas en el chat')],
-  ['follow', L('Follower nuovi', 'New followers', 'Seguidores nuevos')], ['categorie', L('Cosa trasmetti', 'What you stream', 'Qué transmites')],
-  ['settimana', L('Quando sei in onda', 'When you are live', 'Cuándo estás en directo')], ['social', L('Dove trovarti', 'Where to find you', 'Dónde encontrarte')],
+  ['follow', L('Follower nuovi', 'New followers', 'Seguidores nuevos')],
 ];
-const KIT_TEMI_NOMI = () => [['pagina', L('Come la pagina link', 'Like your link page', 'Como tu página de enlaces')], ['carta', L('Carta', 'Paper', 'Papel')], ['notte', L('Notte', 'Night', 'Noche')]];
+const KIT_TEMI_NOMI = () => [['pagina', L('Come la pagina link', 'Like your link page', 'Como tu página de enlaces')], ['carta', L('Carta', 'Paper', 'Papel')], ['notte', L('Notte', 'Night', 'Noche')], ['miei', L('I miei colori', 'My colors', 'Mis colores')]];
+const KIT_CARATTERI = () => [['archivo', 'Archivo'], ['grazie', L('Con grazie', 'Serif', 'Con serifa')], ['mono', L('Monospaziato', 'Monospaced', 'Monoespaciada')]];
+const KIT_TITOLI = () => [['maiuscolo', L('Maiuscoli spaziati', 'Spaced capitals', 'Mayúsculas espaciadas')], ['normale', L('Normali', 'Regular', 'Normales')]];
+const KIT_SEZ = () => ({
+  testa: { nome: L('Chi sei', 'Who you are', 'Quién eres'), dice: L('Foto, nome e canale vengono dal tuo account: qui scrivi il resto.', 'Photo, name and channel come from your account: write the rest here.', 'Foto, nombre y canal vienen de tu cuenta: aquí escribes el resto.') },
+  numeri: { nome: L('I numeri', 'The numbers', 'Los números'), dice: L('Li misuriamo dalle tue dirette: scegli quali mostrare, non cosa dicono.', 'We measure them from your streams: you choose which to show, not what they say.', 'Los medimos de tus directos: eliges cuáles mostrar, no lo que dicen.') },
+  categorie: { nome: L('Cosa trasmetto', 'What I stream', 'Qué transmito'), dice: L('Dalle categorie delle tue dirette.', 'From the categories of your streams.', 'De las categorías de tus directos.') },
+  settimana: { nome: L('Quando sono in onda', 'When I am live', 'Cuándo estoy en directo'), dice: L('Dalla tua settimana.', 'From your week.', 'De tu semana.') },
+  social: { nome: L('Dove trovarmi', 'Where to find me', 'Dónde encontrarme'), dice: L('Dai social della tua pagina link.', 'From the socials on your link page.', 'De las redes de tu página de enlaces.') },
+  lavori: { nome: L('I miei lavori', 'My work', 'Mis trabajos'), dice: L('Una diretta sponsorizzata, un video, una clip: con un link, il titolo si apre dal PDF.', 'A sponsored stream, a video, a clip: with a link, the title opens from the PDF.', 'Un directo patrocinado, un vídeo, un clip: con un enlace, el título se abre desde el PDF.') },
+  collaborazioni: { nome: L('Hanno lavorato con me', 'Brands I have worked with', 'Han trabajado conmigo'), dice: L('I marchi con un link si aprono dal PDF.', 'Brands with a link open from the PDF.', 'Las marcas con enlace se abren desde el PDF.') },
+  offerte: { nome: L('Cosa offro', 'What I offer', 'Qué ofrezco'), dice: L('Quello che proponi a un marchio, col prezzo se vuoi dirlo.', 'What you offer a brand, with a price if you want to say it.', 'Lo que propones a una marca, con el precio si quieres decirlo.') },
+  testo: { nome: L('Un testo tuo', 'Your own text', 'Un texto tuyo'), dice: L('Un titolo e un testo liberi.', 'A free title and text.', 'Un título y un texto libres.') },
+  link: { nome: L('Link utili', 'Useful links', 'Enlaces útiles'), dice: L('Un portfolio, un press kit, un video: si aprono dal PDF.', 'A portfolio, a press kit, a video: they open from the PDF.', 'Un portfolio, un press kit, un vídeo: se abren desde el PDF.') },
+  contatti: { nome: L('Per lavorare insieme', 'To work together', 'Para trabajar juntos'), dice: L('Sempre in fondo all’ultima pagina, e tutto si apre dal PDF.', 'Always at the bottom of the last page, and everything opens from the PDF.', 'Siempre al final de la última página, y todo se abre desde el PDF.') },
+});
+const KIT_VOCE_NUOVA = {
+  lavori: () => ({ titolo: '', testo: '', url: '' }), collaborazioni: () => ({ nome: '', url: '' }),
+  offerte: () => ({ nome: '', testo: '', prezzo: '' }), link: () => ({ etichetta: '', url: '' }),
+};
+
+function _kitScelte(nome, voci, attuale) {
+  return voci.map(([id, n]) => `<button type="button" class="gr-tema${id === attuale ? ' on' : ''}" data-kit-${nome}="${id}" aria-pressed="${id === attuale}">${esc(n)}</button>`).join('');
+}
 
 function pannelloKit() {
   return pannello('kit', `
     <div class="carta" id="kit-carta">
       <h2>${_hIco(ICO.kit)}${L('Media kit', 'Media kit', 'Media kit')}</h2>
-      <p>${L('Il foglio da mandare a un marchio: chi sei, cosa trasmetti, quanta gente ti guarda e come contattarti. I numeri li misuriamo dalle tue dirette: puoi scegliere quali mostrare, non cambiarli.', 'The sheet to send to a brand: who you are, what you stream, how many people watch you and how to reach you. We measure the numbers from your streams: you can choose which ones to show, not change them.', 'La hoja para mandar a una marca: quién eres, qué transmites, cuánta gente te ve y cómo contactarte. Los números los medimos de tus directos: puedes elegir cuáles mostrar, no cambiarlos.')}</p>
+      <p>${L('Il tuo biglietto da visita per i marchi, come un curriculum: chi sei, i tuoi numeri, i lavori fatti, cosa offri e come contattarti. I numeri li misuriamo dalle tue dirette: puoi scegliere quali mostrare, non cambiarli.', 'Your calling card for brands, like a résumé: who you are, your numbers, past work, what you offer and how to reach you. We measure the numbers from your streams: you can choose which to show, not change them.', 'Tu carta de presentación para las marcas, como un currículum: quién eres, tus números, los trabajos hechos, qué ofreces y cómo contactarte. Los números los medimos de tus directos: puedes elegir cuáles mostrar, no cambiarlos.')}</p>
       <div class="st-lavoro spazio-sopra">
         <div class="st-comandi">
-          <label class="campo campo-su">${L('Due righe su di te', 'A couple of lines about you', 'Dos líneas sobre ti')}<textarea id="kit-presentazione" maxlength="280" rows="4"></textarea></label>
-          <label class="campo campo-su">${L('Email per le collaborazioni', 'Email for collaborations', 'Email para colaboraciones')}<input type="email" id="kit-email" maxlength="120" autocomplete="email"></label>
-          <label class="campo campo-su">${L('Marchi con cui hai lavorato', 'Brands you have worked with', 'Marcas con las que has trabajado')}<input type="text" id="kit-collab" maxlength="360" placeholder="${esc(L('Separati da una virgola', 'Separated by a comma', 'Separadas por una coma'))}"></label>
-          <div class="campo campo-su"><span>${L('I colori', 'The colors', 'Los colores')}</span><div class="gr-sfondo-scelte" role="group">${KIT_TEMI_NOMI().map(([id, n]) => `<button type="button" class="gr-tema" data-kit-tema="${id}" aria-pressed="false">${esc(n)}</button>`).join('')}</div></div>
-          <fieldset class="kit-mostra spazio-sopra"><legend>${L('Cosa mostrare', 'What to show', 'Qué mostrar')}</legend>${KIT_MOSTRA().map(([id, n]) => `<label class="riga-check"><input type="checkbox" data-kit-mostra="${id}" checked> ${esc(n)}</label>`).join('')}</fieldset>
+          <h3 class="sotto-titolo">${L('La veste', 'The look', 'El aspecto')}</h3>
+          <div class="campo campo-su"><span id="kit-tema-eti">${L('I colori', 'The colors', 'Los colores')}</span><div class="gr-sfondo-scelte" role="group" aria-labelledby="kit-tema-eti">${_kitScelte('tema', KIT_TEMI_NOMI(), 'pagina')}</div></div>
+          <div id="kit-miei" class="kit-miei" hidden>
+            <label class="campo" for="kit-c-fondo">${L('Fondo', 'Background', 'Fondo')}<input type="color" id="kit-c-fondo" data-kit-colore="fondo"></label>
+            <label class="campo" for="kit-c-testo">${L('Testo', 'Text', 'Texto')}<input type="color" id="kit-c-testo" data-kit-colore="testo"></label>
+            <label class="campo" for="kit-c-accento">${L('Accento', 'Accent', 'Acento')}<input type="color" id="kit-c-accento" data-kit-colore="accento"></label>
+            <p class="suggerimento kit-miei-nota" id="kit-c-nota" aria-live="polite"></p>
+          </div>
+          <div class="campo campo-su"><span id="kit-car-eti">${L('Il carattere', 'The typeface', 'La tipografía')}</span><div class="gr-sfondo-scelte" role="group" aria-labelledby="kit-car-eti">${_kitScelte('carattere', KIT_CARATTERI(), 'archivo')}</div></div>
+          <div class="campo campo-su"><span id="kit-tit-eti">${L('I titoli delle sezioni', 'Section titles', 'Los títulos de las secciones')}</span><div class="gr-sfondo-scelte" role="group" aria-labelledby="kit-tit-eti">${_kitScelte('titoli', KIT_TITOLI(), 'maiuscolo')}</div></div>
+          <h3 class="sotto-titolo spazio-sopra">${L('Le sezioni', 'The sections', 'Las secciones')}</h3>
+          <p class="suggerimento">${L('Nell’ordine in cui si leggono. Due sezioni «a metà» una dopo l’altra stanno affiancate; una sezione che non ci sta passa alla pagina dopo, fino a tre pagine.', 'In reading order. Two «half» sections in a row sit side by side; a section that does not fit moves to the next page, up to three pages.', 'En el orden en que se leen. Dos secciones «a la mitad» seguidas van una al lado de la otra; una sección que no cabe pasa a la página siguiente, hasta tres páginas.')}</p>
+          <div id="kit-sezioni" class="kit-sezioni"></div>
+          <p class="spazio-sopra"><button type="button" class="btn secondario mini" id="kit-testo-nuovo">${_bIco(ICO.piu)}${L('Un testo tuo', 'Your own text', 'Un texto tuyo')}</button></p>
           <ul id="kit-mancano" class="kit-mancano"></ul>
         </div>
         <div class="st-destra">
-          <div class="st-vista">
-            <canvas id="kit-tela" width="1240" height="1754" role="img" aria-label="${esc(L('Anteprima del media kit', 'Media kit preview', 'Vista previa del media kit'))}"></canvas>
+          <div class="st-vista kit-vista">
+            <p class="kit-pagine-conto" id="kit-pagine-conto" aria-live="polite"></p>
+            <div id="kit-fogli" class="kit-fogli" role="group" aria-label="${esc(L('Anteprima del media kit', 'Media kit preview', 'Vista previa del media kit'))}"></div>
             <ul id="kit-problemi" class="promo-problemi"></ul>
           </div>
           <div class="st-uscita">
@@ -8967,7 +9021,7 @@ function pannelloKit() {
               <button type="button" class="btn secondario" id="kit-png" disabled>${L('Scarica PNG', 'Download PNG', 'Descargar PNG')}</button>
               <button type="button" class="btn secondario" id="kit-salva">${L('Salva', 'Save', 'Guardar')}</button>
             </div>
-            <p class="suggerimento">${L('Nel PDF la tua email, i social e il canale si aprono con un clic.', 'In the PDF your email, socials and channel open with a click.', 'En el PDF tu email, tus redes y el canal se abren con un clic.')}</p>
+            <p class="suggerimento">${L('Nel PDF l’email, il canale, i social e ogni link si aprono con un clic, e il testo si seleziona e si cerca.', 'In the PDF your email, channel, socials and every link open with a click, and the text can be selected and searched.', 'En el PDF el email, el canal, las redes y cada enlace se abren con un clic, y el texto se puede seleccionar y buscar.')}</p>
           </div>
         </div>
       </div>
@@ -8988,28 +9042,142 @@ function _kitAvatar(login) {
   return _qrImmagine(`/u/${encodeURIComponent(login)}/avatar`).then((i) => (KIT_STATO.avatar = i), () => (KIT_STATO.avatar = null));
 }
 
-function kitDalModulo() {
-  const $ = (x) => document.getElementById(x);
-  const mostra = {};
-  document.querySelectorAll('#scheda-kit [data-kit-mostra]').forEach((c) => { mostra[c.dataset.kitMostra] = c.checked; });
-  return {
-    presentazione: $('kit-presentazione').value, email: $('kit-email').value.trim(),
-    collaborazioni: $('kit-collab').value.split(',').map((x) => x.trim()).filter(Boolean),
-    mostra, tema: document.querySelector('#scheda-kit [data-kit-tema][aria-pressed="true"]')?.dataset.kitTema || 'pagina',
-  };
+const _kitCopia = (x) => JSON.parse(JSON.stringify(x));
+function kitDalModulo() { return KIT_STATO.bozza ? _kitCopia(KIT_STATO.bozza) : null; }
+
+STATI_SALVA['kit-salva'] = { completo: true, stato: () => kitDalModulo(), rimetti: (v) => { KIT_STATO.bozza = _kitCopia(v); KIT_STATO.aperte.clear(); _kitRiempi(); kitRifaiPresto(); } };
+
+function _kitPrimaVolta(k, d) {
+  const testa = k.sezioni.find((s) => s.tipo === 'testa');
+  if (!d.salvato && testa && !testa.presentazione && d.bio) testa.presentazione = String(d.bio).slice(0, 600);
+  return k;
 }
 
-STATI_SALVA['kit-salva'] = { completo: true, stato: () => kitDalModulo(), rimetti: (v) => { _kitRiempi({ kit: v }); kitRifaiPresto(); } };
+function _kitRiempi() {
+  const k = KIT_STATO.bozza;
+  if (!k) return;
+  const scheda = document.getElementById('scheda-kit');
+  for (const [nome, val] of [['tema', k.tema], ['carattere', k.carattere], ['titoli', k.titoli]]) {
+    scheda.querySelectorAll(`[data-kit-${nome}]`).forEach((b) => { const su = b.getAttribute(`data-kit-${nome}`) === val; b.classList.toggle('on', su); b.setAttribute('aria-pressed', String(su)); });
+  }
+  for (const c of ['fondo', 'testo', 'accento']) document.getElementById(`kit-c-${c}`).value = k.colori[c];
+  document.getElementById('kit-miei').hidden = k.tema !== 'miei';
+  _kitSezioni();
+}
 
-function _kitRiempi(d) {
-  const $ = (x) => document.getElementById(x);
-  const k = d.kit || {};
-  $('kit-presentazione').value = k.presentazione || d.bio || '';
-  $('kit-email').value = k.email || '';
-  $('kit-collab').value = (k.collaborazioni || []).join(', ');
-  document.querySelectorAll('#scheda-kit [data-kit-mostra]').forEach((c) => { c.checked = k.mostra?.[c.dataset.kitMostra] !== false; });
-  const tema = k.tema || 'pagina';
-  document.querySelectorAll('#scheda-kit [data-kit-tema]').forEach((b) => { b.classList.toggle('on', b.dataset.kitTema === tema); b.setAttribute('aria-pressed', String(b.dataset.kitTema === tema)); });
+const _kitVuota = (s) => (Array.isArray(s.voci) ? !s.voci.some((v) => (v.titolo || v.nome || v.url || '').trim()) : s.tipo === 'testo' ? !String(s.testo || '').trim() : false);
+
+function _kitStatoSezione(s) {
+  if (s.visibile === false) return L('nascosta', 'hidden', 'oculta');
+  if (_kitVuota(s)) return L('vuota: non compare', 'empty: not shown', 'vacía: no aparece');
+  return s.larghezza === 'meta' ? L('a metà', 'half width', 'a la mitad') : '';
+}
+
+function _kitAvvisoCampo(el) {
+  const tipo = el.dataset.kitVerifica;
+  if (!tipo || !window.SB_KIT) return;
+  const v = el.value.trim();
+  const ok = !v || (tipo === 'email' ? window.SB_KIT.emailKit(v) : window.SB_KIT.urlKit(v));
+  el.setAttribute('aria-invalid', String(!ok));
+  const msg = document.getElementById(el.id + '-e');
+  if (msg) {
+    msg.hidden = !!ok;
+    msg.textContent = ok ? '' : tipo === 'email'
+      ? L('Questa email non sembra giusta: così non compare e non si salva.', 'This email does not look right: as it is, it is not shown or saved.', 'Este email no parece correcto: así no aparece ni se guarda.')
+      : L('Questo indirizzo non si apre: scrivilo intero, per esempio miosito.it o https://…', 'This address does not open: write it in full, for example mysite.com or https://…', 'Esta dirección no se abre: escríbela entera, por ejemplo misitio.es o https://…');
+  }
+}
+
+function _kitCampo(id, etichetta, campo, valore, o = {}) {
+  const attr = `id="${id}" ${o.voce ? 'data-kvv' : 'data-kv'}="${campo}" maxlength="${o.max || 80}"${o.segnaposto ? ` placeholder="${esc(o.segnaposto)}"` : ''}${o.verifica ? ` data-kit-verifica="${o.verifica}" aria-describedby="${id}-e"` : ''}`;
+  const dentro = o.righe
+    ? `<textarea ${attr} rows="${o.righe}">${esc(valore || '')}</textarea>`
+    : `<input type="${o.verifica === 'email' ? 'email' : o.verifica === 'url' ? 'url' : 'text'}" ${attr} value="${esc(valore || '')}"${o.verifica === 'email' ? ' autocomplete="email"' : ''}>`;
+  return `<label class="campo campo-su" for="${id}">${esc(etichetta)}${dentro}</label>${o.verifica ? `<p class="kit-errore" id="${id}-e" hidden></p>` : ''}`;
+}
+
+function _kitVoci(s, i) {
+  const pre = `kit-s${i}`;
+  const voce = (v, j, campi) => `<fieldset class="kit-voce" data-kit-voce="${j}">
+      <legend>${L(`Voce ${j + 1}`, `Item ${j + 1}`, `Elemento ${j + 1}`)}</legend>${campi}
+      <div class="riga-flessibile spazio-sopra">
+        <button type="button" class="btn secondario mini" data-kit-az="voce-su"${j === 0 ? ' disabled' : ''}>${L('Su', 'Up', 'Arriba')}</button>
+        <button type="button" class="btn secondario mini" data-kit-az="voce-giu"${j === s.voci.length - 1 ? ' disabled' : ''}>${L('Giù', 'Down', 'Abajo')}</button>
+        <button type="button" class="btn secondario mini" data-kit-az="voce-togli">${L('Togli', 'Remove', 'Quitar')}</button>
+      </div></fieldset>`;
+  const url = (v, j, eti) => _kitCampo(`${pre}-v${j}-url`, eti, 'url', v.url, { voce: true, max: 300, verifica: 'url', segnaposto: 'https://…' });
+  const campi = {
+    lavori: (v, j) => _kitCampo(`${pre}-v${j}-titolo`, L('Titolo', 'Title', 'Título'), 'titolo', v.titolo, { voce: true, max: 60, segnaposto: L('es. Diretta con un marchio di cuffie', 'e.g. Stream with a headphone brand', 'p. ej. Directo con una marca de auriculares') })
+      + _kitCampo(`${pre}-v${j}-testo`, L('Due righe (facoltative)', 'A couple of lines (optional)', 'Dos líneas (opcional)'), 'testo', v.testo, { voce: true, max: 200, righe: 2 })
+      + url(v, j, L('Link (facoltativo)', 'Link (optional)', 'Enlace (opcional)')),
+    collaborazioni: (v, j) => _kitCampo(`${pre}-v${j}-nome`, L('Marchio', 'Brand', 'Marca'), 'nome', v.nome, { voce: true, max: 40 })
+      + url(v, j, L('Link (facoltativo)', 'Link (optional)', 'Enlace (opcional)')),
+    offerte: (v, j) => _kitCampo(`${pre}-v${j}-nome`, L('Cosa proponi', 'What you offer', 'Qué propones'), 'nome', v.nome, { voce: true, max: 50, segnaposto: L('es. Una diretta dedicata', 'e.g. A dedicated stream', 'p. ej. Un directo dedicado') })
+      + _kitCampo(`${pre}-v${j}-testo`, L('Due righe (facoltative)', 'A couple of lines (optional)', 'Dos líneas (opcional)'), 'testo', v.testo, { voce: true, max: 160, righe: 2 })
+      + _kitCampo(`${pre}-v${j}-prezzo`, L('Prezzo (facoltativo)', 'Price (optional)', 'Precio (opcional)'), 'prezzo', v.prezzo, { voce: true, max: 30, segnaposto: L('es. da 300 €', 'e.g. from $300', 'p. ej. desde 300 €') }),
+    link: (v, j) => _kitCampo(`${pre}-v${j}-etichetta`, L('Cosa scrivere', 'What to show', 'Qué mostrar'), 'etichetta', v.etichetta, { voce: true, max: 40, segnaposto: L('es. Il mio portfolio', 'e.g. My portfolio', 'p. ej. Mi portfolio') })
+      + url(v, j, L('Link', 'Link', 'Enlace')),
+  }[s.tipo];
+  const max = KIT_MAX[s.tipo];
+  return `<div class="kit-voci">${s.voci.map((v, j) => voce(v, j, campi(v, j))).join('')}</div>
+    <p><button type="button" class="btn secondario mini" data-kit-az="voce-piu"${s.voci.length >= max ? ' disabled' : ''}>${_bIco(ICO.piu)}${L('Aggiungi', 'Add', 'Añadir')}</button> <span class="suggerimento">${s.voci.length}/${max}</span></p>`;
+}
+
+function _kitCorpo(s, i) {
+  const pre = `kit-s${i}`;
+  switch (s.tipo) {
+    case 'testa': return _kitCampo(`${pre}-riga`, L('Una riga sotto il nome (facoltativa)', 'A line under your name (optional)', 'Una línea bajo tu nombre (opcional)'), 'riga', s.riga, { max: 80, segnaposto: L('es. Streamer di giochi horror e indie', 'e.g. Horror and indie games streamer', 'p. ej. Streamer de juegos de terror e indie') })
+      + _kitCampo(`${pre}-presentazione`, L('Due righe su di te', 'A couple of lines about you', 'Dos líneas sobre ti'), 'presentazione', s.presentazione, { max: 600, righe: 5 });
+    case 'numeri': return `<fieldset class="kit-mostra"><legend>${L('Quali numeri', 'Which numbers', 'Qué números')}</legend>${KIT_NUMERI().map(([id, n]) => `<label class="riga-check"><input type="checkbox" data-kv-mostra="${id}"${s.mostra?.[id] !== false ? ' checked' : ''}> ${esc(n)}</label>`).join('')}</fieldset>`;
+    case 'testo': return _kitCampo(`${pre}-testo`, L('Il testo', 'The text', 'El texto'), 'testo', s.testo, { max: 800, righe: 6 });
+    case 'contatti': return _kitCampo(`${pre}-email`, L('Email per le collaborazioni', 'Email for collaborations', 'Email para colaboraciones'), 'email', s.email, { max: 120, verifica: 'email' })
+      + `<fieldset class="kit-voce"><legend>${L('Un secondo contatto (facoltativo)', 'A second contact (optional)', 'Un segundo contacto (opcional)')}</legend>`
+      + _kitCampo(`${pre}-altro-etichetta`, L('Cosa scrivere', 'What to show', 'Qué mostrar'), 'altro.etichetta', s.altro?.etichetta, { max: 40, segnaposto: L('es. Prenota una call', 'e.g. Book a call', 'p. ej. Reserva una llamada') })
+      + _kitCampo(`${pre}-altro-url`, L('Link', 'Link', 'Enlace'), 'altro.url', s.altro?.url, { max: 300, verifica: 'url', segnaposto: 'https://…' }) + '</fieldset>';
+    default: return Array.isArray(s.voci) ? _kitVoci(s, i) : '';
+  }
+}
+
+function _kitSezioni(fuoco) {
+  const box = document.getElementById('kit-sezioni'), k = KIT_STATO.bozza;
+  if (!box || !k) return;
+  const S = KIT_SEZ(), n = k.sezioni.length;
+  box.innerHTML = k.sezioni.map((s, i) => {
+    const fissa = s.tipo === 'testa' || s.tipo === 'contatti';
+    const stato = _kitStatoSezione(s);
+    return `<details class="kit-sez" data-kit-sez="${i}"${KIT_STATO.aperte.has(s) ? ' open' : ''}>
+      <summary><span class="kit-sez-nome">${esc(s.titolo || S[s.tipo].nome)}</span><span class="kit-sez-stato">${esc(stato)}</span></summary>
+      <div class="kit-sez-corpo">
+        <p class="suggerimento">${esc(S[s.tipo].dice)}</p>
+        ${fissa ? '' : `<div class="riga-flessibile">
+          <label class="riga-check"><input type="checkbox" data-kv="visibile"${s.visibile !== false ? ' checked' : ''}> ${L('Mostra', 'Show', 'Mostrar')}</label>
+          <div class="gr-sfondo-scelte" role="group" aria-label="${esc(L('Larghezza', 'Width', 'Ancho'))}">
+            <button type="button" class="gr-tema${s.larghezza !== 'meta' ? ' on' : ''}" data-kit-larghezza="piena" aria-pressed="${s.larghezza !== 'meta'}">${L('Tutta la riga', 'Full width', 'Todo el ancho')}</button>
+            <button type="button" class="gr-tema${s.larghezza === 'meta' ? ' on' : ''}" data-kit-larghezza="meta" aria-pressed="${s.larghezza === 'meta'}">${L('A metà', 'Half', 'A la mitad')}</button>
+          </div></div>`}
+        ${s.tipo === 'testa' ? '' : _kitCampo(`kit-s${i}-titolo`, L('Titolo', 'Title', 'Título'), 'titolo', s.titolo, { max: 40, segnaposto: S[s.tipo].nome })}
+        ${_kitCorpo(s, i)}
+        ${fissa ? '' : `<div class="riga-flessibile spazio-sopra">
+          <button type="button" class="btn secondario mini" data-kit-az="sez-su"${i <= 1 ? ' disabled' : ''}>${L('Sposta su', 'Move up', 'Subir')}</button>
+          <button type="button" class="btn secondario mini" data-kit-az="sez-giu"${i >= n - 2 ? ' disabled' : ''}>${L('Sposta giù', 'Move down', 'Bajar')}</button>
+          ${s.tipo === 'testo' ? `<button type="button" class="btn secondario mini" data-kit-az="sez-togli">${L('Togli questo testo', 'Remove this text', 'Quitar este texto')}</button>` : ''}
+        </div>`}
+      </div>
+    </details>`;
+  }).join('');
+  box.querySelectorAll('[data-kit-verifica]').forEach(_kitAvvisoCampo);
+  document.getElementById('kit-testo-nuovo').disabled = k.sezioni.filter((s) => s.tipo === 'testo').length >= KIT_MAX.testi;
+  if (fuoco) box.querySelector(fuoco)?.focus({ preventScroll: false });
+}
+
+function _kitNotaColori() {
+  const k = KIT_STATO.bozza, nota = document.getElementById('kit-c-nota');
+  if (!k || !nota || !window.SB_KIT) return;
+  const v = window.SB_KIT.veste(k.colori);
+  nota.textContent = [
+    v.corretti.testo ? L('Il testo su questo fondo non si leggerebbe bene: nel kit esce in nero o in bianco.', 'Text on this background would be hard to read: in the kit it comes out black or white.', 'El texto sobre este fondo no se leería bien: en el kit sale en negro o en blanco.') : '',
+    v.corretti.accento ? L('L’accento su questo fondo si vedrebbe poco: nel kit prende il colore del testo.', 'The accent on this background would barely show: in the kit it takes the text color.', 'El acento sobre este fondo apenas se vería: en el kit toma el color del texto.') : '',
+  ].filter(Boolean).join(' ');
 }
 
 function _kitManiglia(url) {
@@ -9020,85 +9188,138 @@ function _kitManiglia(url) {
   } catch { return String(url).slice(0, 48); }
 }
 
-function _kitDisegno(d, scelte) {
-  const n = d.numeri, m = scelte.mostra, loc = LINGUA === 'en' ? 'en-US' : LINGUA === 'es' ? 'es-ES' : 'it-IT';
+function _kitNumeri(d, m) {
+  const n = d.numeri, loc = LINGUA === 'en' ? 'en-US' : LINGUA === 'es' ? 'es-ES' : 'it-IT';
   const fmt = (x) => Number(x).toLocaleString(loc);
   const quando = new Date(n.a).toLocaleDateString(loc, { day: 'numeric', month: 'long', year: 'numeric' });
-  const numeri = [];
-  const conFollower = m.follower && Number.isFinite(d.follower);
-  if (conFollower) numeri.push({ valore: fmt(d.follower), etichetta: L('follower su Twitch', 'followers on Twitch', 'seguidores en Twitch') });
+  const voci = [];
+  const conFollower = m.follower !== false && Number.isFinite(d.follower);
+  if (conFollower) voci.push({ valore: fmt(d.follower), etichetta: L('follower su Twitch', 'followers on Twitch', 'seguidores en Twitch') });
   if (n.basta.numeri) {
-    if (m.media && n.media != null) numeri.push({ valore: fmt(n.media), etichetta: L('spettatori in media', 'average viewers', 'espectadores de media') });
-    if (m.picco && n.picco != null) numeri.push({ valore: fmt(n.picco), etichetta: L('spettatori al picco', 'peak viewers', 'pico de espectadores') });
-    if (m.ore) numeri.push({ valore: fmt(n.ore), etichetta: L('ore in onda', 'hours live', 'horas en directo') });
-    if (m.dirette) numeri.push({ valore: fmt(n.dirette), etichetta: L('dirette', 'streams', 'directos') });
-    if (m.persone) numeri.push({ valore: fmt(n.persone), etichetta: L('persone in chat', 'people in chat', 'personas en el chat') });
-    if (m.follow) numeri.push({ valore: fmt(n.follow), etichetta: L('follower nuovi', 'new followers', 'seguidores nuevos') });
+    if (m.media !== false && n.media != null) voci.push({ valore: fmt(n.media), etichetta: L('spettatori in media', 'average viewers', 'espectadores de media') });
+    if (m.picco !== false && n.picco != null) voci.push({ valore: fmt(n.picco), etichetta: L('spettatori al picco', 'peak viewers', 'pico de espectadores') });
+    if (m.ore !== false) voci.push({ valore: fmt(n.ore), etichetta: L('ore in onda', 'hours live', 'horas en directo') });
+    if (m.dirette !== false) voci.push({ valore: fmt(n.dirette), etichetta: L('dirette', 'streams', 'directos') });
+    if (m.persone !== false) voci.push({ valore: fmt(n.persone), etichetta: L('persone in chat', 'people in chat', 'personas en el chat') });
+    if (m.follow !== false) voci.push({ valore: fmt(n.follow), etichetta: L('follower nuovi', 'new followers', 'seguidores nuevos') });
   }
-  const delPeriodo = numeri.length > (conFollower ? 1 : 0);
+  const delPeriodo = voci.length > (conFollower ? 1 : 0);
   const nota = delPeriodo
     ? (conFollower
       ? L(`Ultimi ${n.giorni} giorni, dirette concluse, misurati da SocialBot; i follower sono il totale su Twitch. Aggiornati al ${quando}.`, `Last ${n.giorni} days, finished streams, measured by SocialBot; followers are the Twitch total. Updated on ${quando}.`, `Últimos ${n.giorni} días, directos terminados, medidos por SocialBot; los seguidores son el total en Twitch. Actualizados el ${quando}.`)
       : L(`Ultimi ${n.giorni} giorni, dirette concluse, misurati da SocialBot. Aggiornati al ${quando}.`, `Last ${n.giorni} days, finished streams, measured by SocialBot. Updated on ${quando}.`, `Últimos ${n.giorni} días, directos terminados, medidos por SocialBot. Actualizados el ${quando}.`))
     : (conFollower ? L(`I follower sono il totale su Twitch al ${quando}.`, `Followers are the Twitch total on ${quando}.`, `Los seguidores son el total en Twitch el ${quando}.`) : '');
+  return { voci, nota: voci.length ? nota : '' };
+}
+
+function _kitColori(d, k) {
+  if (k.tema === 'miei') return window.SB_KIT.veste(k.colori);
+  if (k.tema === 'pagina') return d.colori;
+  return { ...KIT_TEMI[k.tema], acc: d.colori.acc };
+}
+
+function _kitDisegno(d, k) {
+  const K = window.SB_KIT, S = KIT_SEZ();
   const GIORNI = [L('Lun', 'Mon', 'Lun'), L('Mar', 'Tue', 'Mar'), L('Mer', 'Wed', 'Mié'), L('Gio', 'Thu', 'Jue'), L('Ven', 'Fri', 'Vie'), L('Sab', 'Sat', 'Sáb'), L('Dom', 'Sun', 'Dom')];
   const gg = d.settimana?.giorni || [];
-  const settimana = m.settimana && gg.some((x) => x && !x.off && x.ora) ? GIORNI.map((nome, i) => ({ giorno: nome, ora: gg[i]?.ora || '', off: !!(gg[i]?.off || !gg[i]?.ora) })) : [];
   const fuso = d.settimana?.fuso || 'Europe/Rome';
   const canale = String(stato?.indirizzo || '').replace(/^https?:\/\/(www\.)?/, '');
-  const colori = scelte.tema === 'pagina' ? d.colori : { ...KIT_TEMI[scelte.tema], acc: d.colori.acc };
+  const fuori = (u) => { const x = K.urlKit(u); return x ? { url: x, mostra: _kitManiglia(x) } : null; };
+  const sezioni = k.sezioni.map((s) => {
+    const b = { tipo: s.tipo, titolo: s.titolo || S[s.tipo].nome, larghezza: s.larghezza, visibile: s.visibile !== false };
+    switch (s.tipo) {
+      case 'testa': return { ...b, riga: s.riga, presentazione: s.presentazione };
+      case 'numeri': return { ...b, ..._kitNumeri(d, s.mostra || {}) };
+      case 'categorie': return { ...b, voci: d.numeri.categorie.map((c) => ({ nome: c.altro ? L('Altro', 'Other', 'Otros') : c.nome, quota: c.quota })) };
+      case 'settimana': return {
+        ...b,
+        giorni: gg.some((x) => x && !x.off && x.ora) ? GIORNI.map((nome, i) => ({ giorno: nome, ora: gg[i]?.ora || '', off: !!(gg[i]?.off || !gg[i]?.ora) })) : [],
+        fuso: fuso === 'Europe/Rome' ? L('Orari in ora italiana', 'Times in Italian time', 'Horas en hora italiana') : fuso.replace(/_/g, ' '),
+      };
+      case 'social': return { ...b, voci: d.social.map((x) => ({ d: MARCHI[x.icona]?.d || '', testo: _kitManiglia(x.url), url: x.url })) };
+      case 'lavori': return { ...b, voci: s.voci.filter((v) => v.titolo.trim()).map((v) => ({ titolo: v.titolo.trim(), testo: v.testo, url: K.urlKit(v.url) })) };
+      case 'collaborazioni': return { ...b, voci: s.voci.filter((v) => v.nome.trim()).map((v) => ({ nome: v.nome.trim(), url: K.urlKit(v.url) })) };
+      case 'offerte': return { ...b, voci: s.voci.filter((v) => v.nome.trim()).map((v) => ({ nome: v.nome.trim(), testo: v.testo, prezzo: v.prezzo.trim() })) };
+      case 'testo': return { ...b, testo: s.testo };
+      case 'link': return { ...b, voci: s.voci.map((v) => { const f = fuori(v.url); return f ? { etichetta: v.etichetta.trim(), mostra: f.mostra, url: f.url } : null; }).filter(Boolean) };
+      case 'contatti': { const f = fuori(s.altro?.url); return { ...b, email: K.emailKit(s.email), altro: f ? { etichetta: String(s.altro.etichetta || '').trim(), mostra: f.mostra, url: f.url } : null }; }
+      default: return b;
+    }
+  });
   return {
-    nome: d.display, avatar: KIT_STATO.avatar, colori, presentazione: String(scelte.presentazione || '').trim(),
+    nome: d.display, avatar: KIT_STATO.avatar, colori: _kitColori(d, k), carattere: k.carattere, titoli: k.titoli,
     canale: canale ? { etichetta: canale, url: String(stato.indirizzo) } : null,
-    numeri, nota: numeri.length ? nota : '',
-    categorie: m.categorie ? n.categorie.map((c) => ({ nome: c.altro ? L('Altro', 'Other', 'Otros') : c.nome, quota: c.quota })) : [],
-    settimana, fuso: settimana.length ? (fuso === 'Europe/Rome' ? L('Orari in ora italiana', 'Times in Italian time', 'Horas en hora italiana') : fuso.replace(/_/g, ' ')) : '',
-    social: m.social ? d.social.map((s) => ({ icona: s.icona, d: MARCHI[s.icona]?.d || '', testo: _kitManiglia(s.url), url: s.url })) : [],
-    collaborazioni: scelte.collaborazioni, email: scelte.email,
-    testi: {
-      numeri: L('I numeri', 'The numbers', 'Los números'), trasmetto: L('Cosa trasmetto', 'What I stream', 'Qué transmito'),
-      inOnda: L('Quando sono in onda', 'When I am live', 'Cuándo estoy en directo'), trovarmi: L('Dove trovarmi', 'Where to find me', 'Dónde encontrarme'),
-      collaborazioni: L('Hanno lavorato con me', 'Brands I have worked with', 'Han trabajado conmigo'), contatto: L('Per lavorare insieme', 'To work together', 'Para trabajar juntos'),
-    },
+    sezioni,
+    testi: { pagina: (a, t) => L(`Pagina ${a} di ${t}`, `Page ${a} of ${t}`, `Página ${a} de ${t}`) },
   };
 }
 
-function _kitMancano(d, m) {
-  const n = d.numeri, out = [];
-  if (!n.basta.numeri) out.push(n.dirette === 1
-    ? L(`Negli ultimi ${n.giorni} giorni c’è 1 diretta conclusa: i numeri delle dirette escono da 3 in su.`, `In the last ${n.giorni} days there is 1 finished stream: stream numbers show from 3 up.`, `En los últimos ${n.giorni} días hay 1 directo terminado: los números de los directos salen a partir de 3.`)
-    : L(`Negli ultimi ${n.giorni} giorni ci sono ${n.dirette} dirette concluse: i numeri delle dirette escono da 3 in su.`, `In the last ${n.giorni} days there are ${n.dirette} finished streams: stream numbers show from 3 up.`, `En los últimos ${n.giorni} días hay ${n.dirette} directos terminados: los números de los directos salen a partir de 3.`));
-  else if (m.media && n.media == null) out.push(L('La media degli spettatori esce quando le dirette hanno i conteggi degli spettatori.', 'Average viewers show when streams have viewer counts.', 'La media de espectadores sale cuando los directos tienen recuentos de espectadores.'));
-  if (m.follower && d.piattaforma === 'twitch' && !Number.isFinite(d.follower)) out.push(L('Il totale dei follower adesso non si legge da Twitch: riprova più tardi.', 'The follower total cannot be read from Twitch right now: try again later.', 'El total de seguidores no se puede leer de Twitch ahora: inténtalo más tarde.'));
-  if (m.categorie && n.basta.numeri && !n.basta.categorie) out.push(L('Le categorie si contano dalle dirette di adesso in poi: escono quando ce ne sono almeno 3.', 'Categories are counted from now on: they show once there are at least 3 streams.', 'Las categorías se cuentan desde ahora: salen cuando hay al menos 3 directos.'));
-  if (m.settimana && !(d.settimana?.giorni || []).some((x) => x && !x.off && x.ora)) out.push(L('Per «Quando sono in onda» compila la tua settimana.', 'For «When I am live» fill in your week.', 'Para «Cuándo estoy en directo» rellena tu semana.'));
-  if (m.social && !d.social.length) out.push(L('Per «Dove trovarmi» aggiungi i tuoi social alla pagina link.', 'For «Where to find me» add your socials to your link page.', 'Para «Dónde encontrarme» añade tus redes a tu página de enlaces.'));
+function _kitMancano(d, k) {
+  const n = d.numeri, out = [], S = KIT_SEZ();
+  const su = (t) => k.sezioni.find((s) => s.tipo === t && s.visibile !== false);
+  const num = su('numeri');
+  if (num) {
+    const m = num.mostra || {};
+    if (!n.basta.numeri) out.push(n.dirette === 1
+      ? L(`Negli ultimi ${n.giorni} giorni c’è 1 diretta conclusa: i numeri delle dirette escono da 3 in su.`, `In the last ${n.giorni} days there is 1 finished stream: stream numbers show from 3 up.`, `En los últimos ${n.giorni} días hay 1 directo terminado: los números de los directos salen a partir de 3.`)
+      : L(`Negli ultimi ${n.giorni} giorni ci sono ${n.dirette} dirette concluse: i numeri delle dirette escono da 3 in su.`, `In the last ${n.giorni} days there are ${n.dirette} finished streams: stream numbers show from 3 up.`, `En los últimos ${n.giorni} días hay ${n.dirette} directos terminados: los números de los directos salen a partir de 3.`));
+    else if (m.media !== false && n.media == null) out.push(L('La media degli spettatori esce quando le dirette hanno i conteggi degli spettatori.', 'Average viewers show when streams have viewer counts.', 'La media de espectadores sale cuando los directos tienen recuentos de espectadores.'));
+    if (m.follower !== false && d.piattaforma === 'twitch' && !Number.isFinite(d.follower)) out.push(L('Il totale dei follower adesso non si legge da Twitch: riprova più tardi.', 'The follower total cannot be read from Twitch right now: try again later.', 'El total de seguidores no se puede leer de Twitch ahora: inténtalo más tarde.'));
+  }
+  if (su('categorie') && n.basta.numeri && !n.basta.categorie) out.push(L('Le categorie si contano dalle dirette di adesso in poi: escono quando ce ne sono almeno 3.', 'Categories are counted from now on: they show once there are at least 3 streams.', 'Las categorías se cuentan desde ahora: salen cuando hay al menos 3 directos.'));
+  if (su('settimana') && !(d.settimana?.giorni || []).some((x) => x && !x.off && x.ora)) out.push(L('Per «Quando sono in onda» compila la tua settimana.', 'For «When I am live» fill in your week.', 'Para «Cuándo estoy en directo» rellena tu semana.'));
+  if (su('social') && !d.social.length) out.push(L('Per «Dove trovarmi» aggiungi i tuoi social alla pagina link.', 'For «Where to find me» add your socials to your link page.', 'Para «Dónde encontrarme» añade tus redes a tu página de enlaces.'));
+  for (const s of k.sezioni) {
+    if (s.visibile !== false && _kitVuota(s)) out.push(L(`«${s.titolo || S[s.tipo].nome}» è vuota: compare quando ci scrivi qualcosa.`, `«${s.titolo || S[s.tipo].nome}» is empty: it shows once you write something.`, `«${s.titolo || S[s.tipo].nome}» está vacía: aparece cuando escribes algo.`));
+  }
+  const storti = document.querySelectorAll('#kit-sezioni [aria-invalid="true"]').length;
+  if (storti) out.push(storti === 1
+    ? L('Un indirizzo non va: lo trovi segnato nelle sezioni, e così non compare.', 'One address is wrong: you will find it marked in the sections, and as it is it is not shown.', 'Una dirección no funciona: la encuentras marcada en las secciones, y así no aparece.')
+    : L(`${storti} indirizzi non vanno: li trovi segnati nelle sezioni, e così non compaiono.`, `${storti} addresses are wrong: you will find them marked in the sections, and as they are they are not shown.`, `${storti} direcciones no funcionan: las encuentras marcadas en las secciones, y así no aparecen.`));
   return out;
 }
 
 const KIT_PROBLEMI = () => ({
   nome: L('Il nome è lungo: si vede accorciato.', 'The name is long: it shows shortened.', 'El nombre es largo: se ve acortado.'),
-  presentazione: L('La presentazione non ci sta tutta: si vedono le prime quattro righe.', 'The introduction does not fit: the first four lines show.', 'La presentación no cabe entera: se ven las cuatro primeras líneas.'),
-  collaborazioni: L('I marchi non ci stanno tutti: si vedono le prime tre righe.', 'Not all brands fit: the first three lines show.', 'No caben todas las marcas: se ven las tres primeras líneas.'),
+  presentazione: L('La presentazione non ci sta tutta: si vedono le prime otto righe.', 'The introduction does not fit: the first eight lines show.', 'La presentación no cabe entera: se ven las ocho primeras líneas.'),
+  lavori: L('Il testo di un lavoro è lungo: si vedono le prime tre righe.', 'The text of a work item is long: the first three lines show.', 'El texto de un trabajo es largo: se ven las tres primeras líneas.'),
+  offerte: L('Il testo di una proposta è lungo: si vedono le prime due righe.', 'The text of an offer is long: the first two lines show.', 'El texto de una propuesta es largo: se ven las dos primeras líneas.'),
+  testo: L('Un tuo testo non ci sta tutto: si vede accorciato.', 'One of your texts does not fit: it shows shortened.', 'Uno de tus textos no cabe entero: se ve acortado.'),
   email: L('L’email è troppo lunga per la fascia: si vede accorciata, ma nel PDF il collegamento resta intero.', 'The email is too long for the band: it shows shortened, but in the PDF the link stays whole.', 'El email es demasiado largo para la franja: se ve acortado, pero en el PDF el enlace queda entero.'),
-  pieno: L('Il foglio è troppo pieno: togli qualcosa da mostrare.', 'The sheet is too full: remove something to show.', 'La hoja está demasiado llena: quita algo que mostrar.'),
+  pagine: L('Il kit non ci sta in tre pagine: quello che non entra non compare. Nascondi o accorcia qualcosa.', 'The kit does not fit in three pages: what does not fit is not shown. Hide or shorten something.', 'El kit no cabe en tres páginas: lo que no entra no aparece. Oculta o acorta algo.'),
 });
 
 function kitRifai() {
-  const tela = document.getElementById('kit-tela'), d = KIT_STATO.dati;
-  if (!tela || !window.SB_KIT) return;
+  const box = document.getElementById('kit-fogli'), d = KIT_STATO.dati, k = KIT_STATO.bozza;
+  if (!box || !window.SB_KIT) return;
   const lista = document.getElementById('kit-problemi'), mancano = document.getElementById('kit-mancano');
-  if (!d) {
+  if (!d || !k) {
     lista.innerHTML = KIT_STATO.errore ? `<li class="problema">${esc(KIT_STATO.errore)}</li>` : '';
     return;
   }
-  const scelte = kitDalModulo();
-  const r = window.SB_KIT.disegna(tela.getContext('2d'), _kitDisegno(d, scelte));
-  KIT_STATO.link = r.link;
+  const K = window.SB_KIT, doc = _kitDisegno(d, k);
+  const prova = document.createElement('canvas').getContext('2d');
+  const imp = K.impagina(prova, doc);
+  const tot = imp.pagine.length;
+  while (box.children.length < tot) {
+    const t = document.createElement('canvas');
+    t.width = K.W; t.height = K.H; t.className = 'kit-foglio'; t.setAttribute('role', 'img');
+    box.appendChild(t);
+  }
+  while (box.children.length > tot) box.lastElementChild.remove();
+  KIT_STATO.fogli = [...box.children].map((tela, n) => {
+    tela.setAttribute('aria-label', L(`Pagina ${n + 1} di ${tot} del media kit`, `Media kit page ${n + 1} of ${tot}`, `Página ${n + 1} de ${tot} del media kit`));
+    const R = K.disegnaPagina(tela.getContext('2d'), doc, imp, n);
+    return { tela, link: R.link, testi: R.testi };
+  });
+  document.getElementById('kit-pagine-conto').textContent = tot === 1 ? L('1 pagina', '1 page', '1 página') : L(`${tot} pagine`, `${tot} pages`, `${tot} páginas`);
   const P = KIT_PROBLEMI();
-  lista.innerHTML = r.problemi.map((x) => `<li class="problema">${esc(P[x] || x)}</li>`).join('');
-  mancano.innerHTML = _kitMancano(d, scelte.mostra).map((x) => `<li>${esc(x)}</li>`).join('');
-  document.getElementById('kit-png').disabled = false;
+  lista.innerHTML = imp.problemi.map((x) => `<li class="problema">${esc(P[x] || x)}</li>`).join('');
+  mancano.innerHTML = _kitMancano(d, k).map((x) => `<li>${esc(x)}</li>`).join('');
+  _kitNotaColori();
+  const png = document.getElementById('kit-png');
+  png.textContent = tot === 1 ? L('Scarica PNG', 'Download PNG', 'Descargar PNG') : L(`Scarica PNG (${tot} pagine, zip)`, `Download PNG (${tot} pages, zip)`, `Descargar PNG (${tot} páginas, zip)`);
+  png.disabled = false;
   document.getElementById('kit-pdf').disabled = false;
 }
 
@@ -9108,15 +9329,71 @@ function kitRifaiPresto() {
 }
 
 async function kitScarica(formato, btn) {
-  const tela = document.getElementById('kit-tela');
-  if (!tela || !KIT_STATO.dati) return;
+  if (!KIT_STATO.dati || !KIT_STATO.bozza) return;
   btn.disabled = true;
   try {
     kitRifai();
+    const fogli = KIT_STATO.fogli;
     const nome = `media-kit-${String(stato?.user?.login || 'canale').toLowerCase()}`;
-    if (formato === 'pdf') scaricaBlob(await window.SB_PDF.daTela(tela, { link: KIT_STATO.link, titolo: `Media kit · ${KIT_STATO.dati.display}` }), nome + '.pdf');
-    else scaricaBlob(await firmaPngBlob(await new Promise((ok) => tela.toBlob(ok, 'image/png'))), nome + '.png');
+    if (formato === 'pdf') { scaricaBlob(await window.SB_PDF.daTele(fogli, { titolo: `Media kit · ${KIT_STATO.dati.display}` }), nome + '.pdf'); return; }
+    const png = await Promise.all(fogli.map(async (f) => firmaPngBlob(await new Promise((ok) => f.tela.toBlob(ok, 'image/png')))));
+    if (png.length === 1) scaricaBlob(png[0], nome + '.png');
+    else scaricaBlob(zipSemplice(await Promise.all(png.map(async (b, i) => ({ nome: `${nome}-${i + 1}.png`, dati: new Uint8Array(await b.arrayBuffer()) })))), nome + '.zip');
   } finally { btn.disabled = false; }
+}
+
+function _kitSceltaVeste(b, nome, valore) {
+  const k = KIT_STATO.bozza;
+  b.parentElement.querySelectorAll('button').forEach((x) => { x.classList.toggle('on', x === b); x.setAttribute('aria-pressed', String(x === b)); });
+  k[nome] = valore;
+  if (nome === 'tema') document.getElementById('kit-miei').hidden = valore !== 'miei';
+  segnaDaSalvare(b);
+  kitRifaiPresto();
+}
+
+function _kitAzione(b) {
+  const k = KIT_STATO.bozza;
+  const i = Number(b.closest('[data-kit-sez]')?.dataset.kitSez);
+  const s = k.sezioni[i];
+  if (!s) return;
+  const az = b.dataset.kitAz;
+  const n = k.sezioni.length;
+  let fuoco = null;
+  if (az === 'sez-su' && i > 1) { [k.sezioni[i - 1], k.sezioni[i]] = [s, k.sezioni[i - 1]]; fuoco = `[data-kit-sez="${i - 1}"] [data-kit-az="sez-su"]`; }
+  if (az === 'sez-giu' && i < n - 2) { [k.sezioni[i + 1], k.sezioni[i]] = [s, k.sezioni[i + 1]]; fuoco = `[data-kit-sez="${i + 1}"] [data-kit-az="sez-giu"]`; }
+  if (az === 'sez-togli' && s.tipo === 'testo') { k.sezioni.splice(i, 1); KIT_STATO.aperte.delete(s); fuoco = '#kit-testo-nuovo'; }
+  if (az.startsWith('voce-') && Array.isArray(s.voci)) {
+    const j = Number(b.closest('[data-kit-voce]')?.dataset.kitVoce);
+    const v = s.voci;
+    if (az === 'voce-piu' && v.length < KIT_MAX[s.tipo]) { v.push(KIT_VOCE_NUOVA[s.tipo]()); fuoco = `[data-kit-sez="${i}"] [data-kit-voce="${v.length - 1}"] input`; }
+    if (az === 'voce-togli' && v[j]) { v.splice(j, 1); fuoco = `[data-kit-sez="${i}"] [data-kit-az="voce-piu"]`; }
+    if (az === 'voce-su' && j > 0) { [v[j - 1], v[j]] = [v[j], v[j - 1]]; fuoco = `[data-kit-sez="${i}"] [data-kit-voce="${j - 1}"] [data-kit-az="voce-su"]`; }
+    if (az === 'voce-giu' && j < v.length - 1) { [v[j + 1], v[j]] = [v[j], v[j + 1]]; fuoco = `[data-kit-sez="${i}"] [data-kit-voce="${j + 1}"] [data-kit-az="voce-giu"]`; }
+  }
+  _kitSezioni(fuoco);
+  segnaDaSalvare(document.getElementById('kit-salva'));
+  kitRifaiPresto();
+}
+
+function _kitLeggi(ev) {
+  const el = ev.target, k = KIT_STATO.bozza;
+  const box = el.closest('[data-kit-sez]');
+  const s = box && k?.sezioni[Number(box.dataset.kitSez)];
+  if (!s) return;
+  if (el.dataset.kvMostra) { s.mostra = { ...(s.mostra || {}), [el.dataset.kvMostra]: el.checked }; }
+  else if (el.dataset.kvv) {
+    const v = s.voci?.[Number(el.closest('[data-kit-voce]')?.dataset.kitVoce)];
+    if (v) v[el.dataset.kvv] = el.value;
+  } else if (el.dataset.kv) {
+    const campo = el.dataset.kv;
+    if (campo === 'visibile') s.visibile = el.checked;
+    else if (campo.startsWith('altro.')) s.altro = { ...(s.altro || { etichetta: '', url: '' }), [campo.slice(6)]: el.value };
+    else s[campo] = el.value;
+    if (campo === 'titolo') box.querySelector('.kit-sez-nome').textContent = el.value || KIT_SEZ()[s.tipo].nome;
+  } else return;
+  if (el.dataset.kitVerifica) _kitAvvisoCampo(el);
+  box.querySelector('.kit-sez-stato').textContent = _kitStatoSezione(s);
+  kitRifaiPresto();
 }
 
 async function avviaKit() {
@@ -9124,12 +9401,45 @@ async function avviaKit() {
   if (!scheda) return;
   if (!scheda.dataset.collegata) {
     scheda.dataset.collegata = '1';
-    scheda.addEventListener('input', (ev) => { if (ev.target.closest('.st-comandi')) kitRifaiPresto(); });
+    const sez = document.getElementById('kit-sezioni');
+    sez.addEventListener('input', _kitLeggi);
+    sez.addEventListener('change', _kitLeggi);
+    sez.addEventListener('toggle', (ev) => {
+      const box = ev.target.closest?.('[data-kit-sez]');
+      const s = box && KIT_STATO.bozza?.sezioni[Number(box.dataset.kitSez)];
+      if (s) { if (box.open) KIT_STATO.aperte.add(s); else KIT_STATO.aperte.delete(s); }
+    }, true);
+    document.getElementById('kit-miei').addEventListener('input', (ev) => {
+      const c = ev.target.dataset.kitColore;
+      if (!c || !KIT_STATO.bozza) return;
+      KIT_STATO.bozza.colori = { ...KIT_STATO.bozza.colori, [c]: ev.target.value };
+      kitRifaiPresto();
+    });
     scheda.addEventListener('click', (ev) => {
       const b = ev.target.closest('button');
-      if (!b || !scheda.contains(b)) return;
-      if (b.dataset.kitTema) {
+      if (!b || !scheda.contains(b) || !KIT_STATO.bozza && !/^kit-(png|pdf)$/.test(b.id)) return;
+      for (const nome of ['tema', 'carattere', 'titoli']) {
+        const v = b.getAttribute(`data-kit-${nome}`);
+        if (v) { _kitSceltaVeste(b, nome, v); return; }
+      }
+      if (b.dataset.kitLarghezza) {
+        const box = b.closest('[data-kit-sez]');
+        const s = KIT_STATO.bozza.sezioni[Number(box.dataset.kitSez)];
         b.parentElement.querySelectorAll('button').forEach((x) => { x.classList.toggle('on', x === b); x.setAttribute('aria-pressed', String(x === b)); });
+        s.larghezza = b.dataset.kitLarghezza;
+        box.querySelector('.kit-sez-stato').textContent = _kitStatoSezione(s);
+        segnaDaSalvare(b);
+        kitRifaiPresto();
+        return;
+      }
+      if (b.dataset.kitAz) { _kitAzione(b); return; }
+      if (b.id === 'kit-testo-nuovo') {
+        const k = KIT_STATO.bozza;
+        if (k.sezioni.filter((s) => s.tipo === 'testo').length >= KIT_MAX.testi) return;
+        const nuova = { tipo: 'testo', titolo: '', visibile: true, larghezza: 'piena', testo: '' };
+        k.sezioni.splice(k.sezioni.length - 1, 0, nuova);
+        KIT_STATO.aperte.add(nuova);
+        _kitSezioni(`[data-kit-sez="${k.sezioni.length - 2}"] input`);
         segnaDaSalvare(b);
         kitRifaiPresto();
         return;
@@ -9143,9 +9453,13 @@ async function avviaKit() {
     await caricaMotoreKit();
     const d = await api('/api/streamer/kit');
     await _kitAvatar(String(stato?.user?.login || ''));
-    const prima = !KIT_STATO.dati;
+    const prima = !KIT_STATO.bozza;
     KIT_STATO.dati = d; KIT_STATO.errore = '';
-    if (prima) _kitRiempi(d);
+    if (prima) {
+      KIT_STATO.bozza = _kitPrimaVolta(_kitCopia(d.kit), d);
+      KIT_STATO.aperte = new Set([KIT_STATO.bozza.sezioni[0]]);
+      _kitRiempi();
+    }
   } catch (e) {
     KIT_STATO.errore = L('Il media kit non si carica adesso: riprova fra poco.', 'The media kit does not load right now: try again shortly.', 'El media kit no carga ahora: inténtalo en un rato.');
   }

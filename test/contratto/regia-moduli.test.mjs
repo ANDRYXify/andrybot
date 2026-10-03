@@ -142,7 +142,8 @@ test('l\'editor offre la regia coi nomi letti in pagina, e i modelli pronti usan
   assert.match(campi, /_cons\.scene\)/, 'le scene lette dal programma, in pagina');
   assert.match(campi, /tienilo aperto mentre streami/, 'e l\'editor dice dove gira');
   assert.match(app, /ev\.target\.matches\('\[data-campo="cosa"\]'\)/, 'cambiando «cosa» cambiano i campi');
-  const modelli = app.slice(app.indexOf('function modelloPronto('), app.indexOf("    case 'social':"));
+  const da = app.indexOf('function modelloPronto(');
+  const modelli = app.slice(da, app.indexOf("    case 'social':", da));
   for (const c of ['brb', 'torno', 'raidscena']) assert.match(modelli, new RegExp(`case '${c}'`), c);
   assert.match(modelli, /nomiRegia\(\)/, 'i modelli prendono i nomi dalla regia collegata, se c\'e\'');
   assert.match(app, /data-modello="brb"/);

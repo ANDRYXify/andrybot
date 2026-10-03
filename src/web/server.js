@@ -7428,7 +7428,7 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
       numeri: mediakit.numeri(login), follower,
       social: mediakit.socialDaPagina(pagina), bio: pagina?.tagline || '', colori: coloriDi(pagina),
       settimana: settimana.vistaSettimana(settimana.settimanaDi(s?.settings)),
-      kit: mediakit.normKit(s?.settings?.kit),
+      kit: mediakit.normKit(s?.settings?.kit), salvato: !!s?.settings?.kit,
     });
   }));
 

@@ -10,8 +10,10 @@ diretta e che non sono il bot:
 - **Emote e badge** (`misure`): un'immagine sola, ferma o animata, o un pezzo
   di video, ridotta alle misure che chiedono Twitch, 7TV e Discord, con la
   media fatta sulla luce vera;
-- **Media kit** (`kit`): il foglio A4 da mandare ai marchi, coi numeri delle
-  dirette misurati da noi, in PDF coi link cliccabili o in PNG;
+- **Media kit** (`kit`): il biglietto da visita per i marchi, come un
+  curriculum: sezioni in ordine su una, due o tre pagine A4, coi numeri delle
+  dirette misurati da noi, in PDF coi link cliccabili e il testo che si cerca,
+  o in PNG;
 - **Pannelli** (`pannelli`): i pannelli sotto il canale Twitch, tutti nello
   stesso stile, con link e descrizioni già scritti da quello che il canale ha;
   ognuno può aprire una pagina sua, con quello che nel pannello non ci sta.
@@ -281,30 +283,51 @@ Le immagini di questa scheda non escono dal browser.
 
 ## Media kit
 
-Il foglio che uno streamer manda a un marchio: chi è, cosa trasmette, quanta
-gente lo guarda, quando è in onda, dove trovarlo, come scrivergli. Il calcolo
-sta in `src/features/mediakit.js` (rotta `GET /api/streamer/kit`), il disegno
-in `src/web/public/kit.js` (`SB_KIT`), il PDF in `src/web/public/pdf.js`
+Quello che uno streamer manda a un marchio, fatto come un curriculum: chi è,
+i suoi numeri, i lavori fatti, i marchi con cui ha lavorato, cosa offre, come
+scrivergli. Il modello sta in `src/features/mediakit.js` (rotta
+`GET /api/streamer/kit`), l'impaginazione e il disegno in
+`src/web/public/kit.js` (`SB_KIT`), il PDF in `src/web/public/pdf.js`
 (`SB_PDF`). I due file del pannello si caricano solo quando si apre la scheda.
 
 Non è una pagina pubblica: esiste quando si scarica. Pubblicare numeri che
 oggi sono privati, come la media degli spettatori, vorrebbe un consenso e
 un'informativa a parte.
 
-### Una fonte sola per ogni cosa
+### Un documento di sezioni
 
-| voce | fonte |
-| --- | --- |
-| nome, foto | l'account (`display`, `/u/<login>/avatar`) |
-| presentazione | scritta nella scheda; di partenza la frase della pagina link |
-| dirette, ore, media, picco, follower nuovi | i rapporti degli ultimi 30 giorni, dirette concluse |
-| persone in chat | i messaggi degli ultimi 30 giorni, lo streamer escluso |
-| cosa trasmetti | le categorie dei rapporti (`docs/RAPPORTO.md`) |
-| follower totali | Twitch, `/channels/followers`, adesso |
-| quando sei in onda | la settimana |
-| dove trovarti | i social della pagina link (blocchi `social` e link con l'icona di una piattaforma) |
-| colori «come la pagina link» | `coloriDi` in `linkpagina.js`, la stessa funzione che colora la pagina |
-| marchi, email | scritti nella scheda |
+Il kit è un elenco di sezioni in ordine, che scorre su pagine A4, fino a tre.
+Ogni sezione ha un titolo (riscritto o quello di serie), si mostra o no, e dove
+ha senso sta a tutta riga o a metà: due «a metà» di fila stanno affiancate.
+
+| sezione | cosa c'è | da dove |
+| --- | --- | --- |
+| `testa` | foto, nome, una riga sotto il nome, canale, presentazione | l'account; riga e presentazione scritte (di partenza la frase della pagina link) |
+| `numeri` | quali numeri mostrare, con periodo, fonte e data | i rapporti degli ultimi 30 giorni; il pannello sceglie, non scrive |
+| `categorie` «Cosa trasmetto» | le categorie con la loro quota | i rapporti (`docs/RAPPORTO.md`) |
+| `settimana` «Quando sono in onda» | i giorni e le ore | la settimana |
+| `social` «Dove trovarmi» | i social, cliccabili | la pagina link |
+| `lavori` «I miei lavori» | fino a 6 {titolo, due righe, link} | scritti |
+| `collaborazioni` «Hanno lavorato con me» | fino a 12 marchi, col link se c'è | scritti |
+| `offerte` «Cosa offro» | fino a 6 {proposta, due righe, prezzo} | scritte |
+| `testo` | titolo e testo liberi, da zero a due sezioni | scritti |
+| `link` «Link utili» | fino a 8 {etichetta, link} | scritti |
+| `contatti` | l'email e un secondo contatto {etichetta, link} | scritti |
+
+`normKit` tiene la forma per costruzione: la testa sempre prima e i contatti
+sempre ultimi; le sezioni uniche ci sono sempre, al massimo spente, così il
+pannello le può sempre riaccendere; ogni voce ha un tetto. Un kit salvato
+prima delle sezioni non si migra: `sezioniDi` lo legge come le stesse sezioni
+di allora (testa, numeri, poi categorie, social, settimana e marchi a metà, i
+contatti), quindi chi l'aveva fatto lo ritrova uguale.
+
+Ogni indirizzo passa da `urlKit`: solo http(s) e un nome a dominio vero, e
+«miosito.it» vuol dire https://miosito.it. Le email devono avere la forma di
+un'email. Il pannello usa le stesse due regole (`SB_KIT.urlKit`,
+`SB_KIT.emailKit`) per l'anteprima e il PDF, e
+`test/unita/mediakit.test.mjs` tiene che rispondano come il server: il kit
+scaricato e quello salvato non possono differire. Un indirizzo storto si
+segna nel suo campo e non diventa un link.
 
 ### Onestà per costruzione
 
@@ -318,38 +341,69 @@ un'informativa a parte.
 - **Le percentuali delle categorie sono intere e sommano sempre a 100**: si
   arrotonda per difetto e il resto va a chi ha perso di più
   nell'arrotondamento. Oltre la quarta categoria il resto va in «Altro».
-- **Niente si scrive a mano**: `normKit` tiene solo presentazione, email,
-  marchi, cosa mostrare e colori; un numero mandato dal pannello si perde.
+- **Niente numeri scritti a mano**: la sezione dei numeri sceglie quali
+  mostrare, non cosa dicono; un numero mandato dal pannello si perde.
 - **Ogni numero porta periodo, fonte e data** nella nota sotto la griglia.
 - **Niente dati di altre persone** (classifiche, nomi di chi guarda) e **niente
   soldi**.
 
-### Il foglio
+### L'impaginazione
 
-A4 a 150 punti per pollice (1240×1754). L'impaginazione ha massimi fissi:
-presentazione 4 righe, 8 numeri in due file da 4, 5 categorie, 6 social,
-marchi su 3 righe. Col caso peggiore, tutto pieno e tutto lungo, l'ultima riga
-resta 100 pixel sopra la fascia del contatto (misurato nel browser). Quello
-che non ci sta si accorcia coi puntini e la scheda lo dice; il nome e l'email
-prima si rimpiccioliscono, perché un'email accorciata su un PNG non si può
-ricopiare. I marchi vanno a capo fra un marchio e l'altro, mai dentro un nome.
+A4 a 150 punti per pollice (1240×1754). Misurare e disegnare sono la stessa
+funzione (`penna`: a secco misura, sulla tela disegna), quindi l'altezza
+misurata è per costruzione quella disegnata. `impagina` misura ogni sezione e
+la mette nella pagina: una sezione non si spezza, se non ci sta va alla pagina
+dopo. Le sezioni spente o vuote non occupano posto e non si prendono la
+compagna di riga. I contatti vengono per ultimi, dopo tutto il resto, così il
+bianco resta in fondo alla pagina come in qualunque documento. Oltre la terza
+pagina quello che non entra non compare e la scheda lo dice: niente si taglia
+in silenzio.
 
-L'accento colora le etichette solo se ha contrasto di almeno 3 con lo sfondo
-(testo grande, WCAG); altrimenti le etichette prendono il colore del testo. Il
-testo sulla fascia del contatto è bianco o nero, quello che contrasta di più.
+I tetti delle voci tengono ogni sezione più bassa di una pagina, piena o a
+metà, coi titoli in maiuscolo o normali: `test/unita/kit.test.mjs` lo misura
+con ogni sezione piena fino al tetto. Le stesse prove tengono che niente si
+disegni fuori dal posto che l'impaginazione gli ha dato, che le sezioni non si
+sovrappongano, che le metà si affianchino, che i numeri non lascino un
+riquadro da solo nell'ultima riga, che ogni cosa con un indirizzo sia un link
+e che lo strato di testo segua l'ordine di lettura.
+
+Quello che non ci sta si accorcia coi puntini e la scheda lo dice; il nome e
+l'email prima si rimpiccioliscono, perché un'email accorciata su un PNG non si
+può ricopiare.
+
+### La veste
+
+I colori della pagina link, Carta, Notte o «I miei colori» (fondo, testo,
+accento). Coi miei colori vale la stessa regola dei pannelli: il testo deve
+avere contrasto almeno 4,5 col fondo, se no diventa nero o bianco; l'accento
+almeno 3, se no prende il colore del testo; anche il grigio dei dettagli si
+schiarisce o scurisce finché resta a 4,5 (`SB_KIT.veste`). La scheda dice
+quando un colore è stato corretto. Il carattere: Archivo, con grazie o
+monospaziato; i titoli delle sezioni in maiuscolo spaziato o normali.
 
 ### Il PDF
 
-Scritto da noi: una pagina A4, l'immagine RGB compressa con
-`CompressionStream('deflate')` (zlib, quello che `FlateDecode` vuole), le
-annotazioni `/Link` sopra il canale, i social e l'email, il titolo in UTF-16.
-Gli indirizzi vanno in stringa esadecimale, così nessun carattere può rompere
-la sintassi. `test/unita/pdf.test.mjs` controlla che l'indice punti a ogni
-oggetto, che l'immagine decompressa torni identica, che i link stiano dove
-stavano sulla tela e che il titolo si legga con accenti ed emoji. Una volta il
-file scaricato dal pannello è stato letto anche da pypdf in modalità stretta:
-una pagina A4, il titolo, i sei link coi rettangoli giusti, l'immagine
-1240×1754.
+Scritto da noi (`daPagine`, `daTele`): una pagina A4 per ogni foglio, ognuna
+con la sua immagine RGB compressa con `CompressionStream('deflate')` (zlib,
+quello che `FlateDecode` vuole), le sue annotazioni `/Link` sugli stessi
+rettangoli che il disegno ha registrato, e sotto l'immagine uno strato di
+testo invisibile (`3 Tr`) con Helvetica di serie in WinAnsi: ogni scritta sta
+sulla sua riga di base, stirata con `Tz` alla larghezza misurata sulla tela.
+Così l'email si copia, un marchio si cerca, e un lettore legge il kit anche
+senza guardarlo. Le lettere fuori da WinAnsi diventano «?» solo lì; frecce ed
+emoji si saltano. Gli indirizzi vanno in stringa esadecimale, il titolo in
+UTF-16.
+
+`test/unita/pdf.test.mjs` controlla l'indice, l'albero delle pagine, le
+immagini identiche, i link pagina per pagina e lo strato di testo (posizione,
+larghezza, codifica). Il cancello `scripts/verifica-kit.mjs` lo prova nel
+browser, sulla demo, al telefono e al computer, col PDF vero: tante pagine
+quante l'anteprima, ogni link sul suo rettangolo, l'email e un marchio che si
+trovano come testo, un indirizzo storto che non diventa un link, una sezione
+nascosta che sparisce, una spostata che cambia posto, i miei colori corretti.
+Con `--selftest` rimette quattro difetti e li vuole tutti rossi. Il kit della
+demo, letto anche da pypdf: due pagine, i link di ognuna, il testo estratto
+nell'ordine in cui si legge.
 
 ## Pannelli
 

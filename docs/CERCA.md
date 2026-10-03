@@ -214,6 +214,13 @@ Tre misure:
 - cliccando ci si arriva davvero, sotto gli occhi;
 - sei domande dette a parole finiscono nella scheda giusta.
 
+Le domande a parole si fanno **per prime, a memoria vuota**, prima di ogni
+clic, e il cancello controlla che la memoria sia vuota davvero. Misurano la
+risposta di chi cerca la prima volta. Fatte dopo le altre prove, che cliccano,
+misuravano i clic del cancello: col media kit nuovo il campione da cliccare si
+è spostato su «Costo (monete)», e «quanto costa» finiva lì per due punti e
+mezzo di memoria (102 contro 102,4), non per un difetto della ricerca.
+
 Il confronto è sul senso, non sui caratteri: «Costo ( monete )» e «Costo
 (monete)» sono la stessa etichetta. E la stessa etichetta in più schede vale in
 tutte: «Posizione» sta nelle Penitenze e nell'Overlay Studio, e sono due

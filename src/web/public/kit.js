@@ -5,7 +5,6 @@
   const W = 1240, H = 1754, M = 88;
   const FONT = "Archivo, system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif";
   const f = (peso, px) => `${peso} ${px}px ${FONT}`;
-  const MAX = { presentazione: 4, numeri: 8, categorie: 5, social: 6, collaborazioni: 3 };
 
   function rgbDi(c) {
     const s = String(c || '').trim();
@@ -27,6 +26,37 @@
   function inchiostro(su) {
     return contrasto('#ffffff', su) >= contrasto('#000000', su) ? '#ffffff' : '#000000';
   }
+
+  function mescola(a, b, t) {
+    const x = rgbDi(a), y = rgbDi(b);
+    if (!x || !y) return a;
+    return '#' + x.map((v, i) => Math.round(v + (y[i] - v) * t).toString(16).padStart(2, '0')).join('');
+  }
+
+  function veste(m) {
+    const fondo = rgbDi(m.fondo) ? m.fondo : '#15121a';
+    const testo = contrasto(m.testo, fondo) >= 4.5 ? m.testo : inchiostro(fondo);
+    let k = 0.4, tenue = mescola(testo, fondo, k);
+    while (k > 0 && contrasto(tenue, fondo) < 4.5) { k = Math.max(0, k - 0.05); tenue = mescola(testo, fondo, k); }
+    const acc = contrasto(m.accento, fondo) >= 3 ? m.accento : testo;
+    return {
+      bg: fondo, bg2: mescola(fondo, testo, 0.04), testo, tenue, card: mescola(fondo, testo, 0.06), bordo: mescola(fondo, testo, 0.18), acc,
+      corretti: { testo: testo !== m.testo, accento: acc !== m.accento },
+    };
+  }
+
+  const riga = (v, max) => String(v ?? '').replace(/\s+/g, ' ').trim().slice(0, max);
+  function urlKit(v) {
+    const t = riga(v, 300);
+    if (!t) return '';
+    try {
+      const u = new URL(/^[a-z][a-z0-9+.-]*:/i.test(t) ? t : `https://${t}`);
+      if (!/^https?:$/.test(u.protocol) || !/\.[a-z]{2,}$/i.test(u.hostname)) return '';
+      return u.href.slice(0, 300);
+    } catch { return ''; }
+  }
+  const EMAIL = /^[^\s@<>"'`]+@[^\s@<>"'`]+\.[a-z]{2,}$/i;
+  const emailKit = (v) => { const t = riga(v, 120); return EMAIL.test(t) ? t : ''; };
 
   function taglia(g, t, largo) {
     let s = String(t || '');
@@ -74,179 +104,364 @@
     return { righe: out, tagliato };
   }
 
-  function etichetta(g, t, x, y, colore) {
-    g.font = f(700, 21);
-    g.fillStyle = colore;
-    g.textAlign = 'left';
-    let cx = x;
-    for (const ch of String(t).toUpperCase()) { g.fillText(ch, cx, y); cx += g.measureText(ch).width + 3; }
+  const CARATTERI = {
+    archivo: FONT,
+    grazie: "'Iowan Old Style', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif",
+    mono: "ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace",
+  };
+  const PAGINE = 3, GAP = 56, COL = 48, PIEDE = 40;
+  const ALTO = M, BASSO = H - M - PIEDE;
+  const LIMITI = { testa: 8, testoPiena: 12, testoMeta: 16, lavoroTesto: 3, offertaTesto: 2, nota: 3 };
+
+  function penna(g, d, secco, R) {
+    const c = d.colori;
+    const pila = CARATTERI[d.carattere] || FONT;
+    const P = {
+      g, secco, c, px: 20,
+      acc: contrasto(c.acc, c.bg) >= 3 ? c.acc : c.testo,
+      font(peso, px) { P.px = px; g.font = `${peso} ${px}px ${pila}`; },
+      largo(t) { return g.measureText(String(t)).width; },
+      scrivi(t, x, y, o = {}) {
+        const testo = String(t ?? '');
+        if (!testo) return 0;
+        const w = g.measureText(testo).width;
+        const sx = o.allinea === 'right' ? x - w : o.allinea === 'center' ? x - w / 2 : x;
+        if (!secco) {
+          g.textAlign = 'left';
+          g.fillStyle = o.colore || c.testo;
+          g.fillText(testo, sx, y);
+          R.testi.push({ testo, x: sx, y, px: P.px, w });
+          if (o.url) R.link.push({ x: sx - (o.margine || 0), y: y - P.px * 0.95, w: w + 2 * (o.margine || 0), h: P.px * 1.3, url: o.url });
+        }
+        return w;
+      },
+      area(x, y, w, h, url) { if (!secco && url) R.link.push({ x, y, w, h, url }); },
+      spaziato(t, x, y, colore) {
+        const testo = String(t ?? '');
+        let cx = x;
+        if (!secco) { g.textAlign = 'left'; g.fillStyle = colore; }
+        for (const ch of testo) { if (!secco) g.fillText(ch, cx, y); cx += g.measureText(ch).width + 3; }
+        if (!secco && testo) R.testi.push({ testo, x, y, px: P.px, w: cx - x - 3 });
+        return cx - x;
+      },
+      forma(fn) { if (!secco) { g.save(); fn(g); g.restore(); } },
+    };
+    return P;
   }
 
-  function tondo(g, x, y, w, h, r) { g.beginPath(); g.roundRect(x, y, w, h, r); }
+  function intestazione(P, d, t, x, y) {
+    if (d.titoli === 'normale') {
+      P.font(800, 32);
+      P.scrivi(t, x, y + 30);
+      return 56;
+    }
+    P.font(700, 21);
+    P.spaziato(String(t).toUpperCase(), x, y + 22, P.acc);
+    return 46;
+  }
 
-  function disegna(g, d) {
-    const c = d.colori, link = [], problemi = [];
-    const acc = contrasto(c.acc, c.bg) >= 3 ? c.acc : c.testo;
+  function riquadro(P, x, y, w, h, r, pieno, bordo) {
+    P.forma((g) => { g.beginPath(); g.roundRect(x, y, w, h, r); if (pieno) { g.fillStyle = pieno; g.fill(); } if (bordo) { g.lineWidth = 2; g.strokeStyle = bordo; g.stroke(); } });
+  }
+
+  const SEZIONI = {
+    testa(P, d, s, x, y, w, problemi) {
+      const c = P.c, A = 180;
+      P.forma((g) => {
+        g.beginPath(); g.arc(x + A / 2, y + A / 2, A / 2, 0, 2 * Math.PI); g.clip();
+        if (d.avatar) {
+          const k = Math.max(A / d.avatar.width, A / d.avatar.height), aw = d.avatar.width * k, ah = d.avatar.height * k;
+          g.drawImage(d.avatar, x + (A - aw) / 2, y + (A - ah) / 2, aw, ah);
+        } else {
+          g.fillStyle = c.acc; g.fillRect(x, y, A, A);
+        }
+      });
+      if (!d.avatar) { P.font(800, 84); P.scrivi(String(d.nome || '?').slice(0, 1).toUpperCase(), x + A / 2, y + A / 2 + 30, { allinea: 'center', colore: inchiostro(c.acc) }); }
+      P.forma((g) => { g.strokeStyle = c.acc; g.lineWidth = 6; g.beginPath(); g.arc(x + A / 2, y + A / 2, A / 2 - 3, 0, 2 * Math.PI); g.stroke(); });
+      const x0 = x + A + 44, largo = w - A - 44;
+      let px = 72;
+      for (; px > 44; px -= 2) { P.font(800, px); if (P.largo(d.nome || '') <= largo) break; }
+      P.font(800, px);
+      const nome = taglia(P.g, d.nome || '', largo);
+      if (nome.tagliato) problemi.push('nome');
+      let ty = y + 66;
+      P.scrivi(nome.testo, x0, ty);
+      if (s.riga) { ty += 46; P.font(500, 30); P.scrivi(taglia(P.g, s.riga, largo).testo, x0, ty, { colore: c.tenue }); }
+      if (d.canale) { ty += 44; P.font(500, 28); P.scrivi(taglia(P.g, d.canale.etichetta, largo).testo, x0, ty, { colore: P.acc, url: d.canale.url }); }
+      if (s.presentazione) {
+        P.font(400, 28);
+        const r = righe(P.g, s.presentazione, largo, LIMITI.testa);
+        if (r.tagliato) problemi.push('presentazione');
+        ty += 52;
+        r.righe.forEach((t, i) => P.scrivi(t, x0, ty + i * 40));
+        ty += (r.righe.length - 1) * 40;
+      }
+      return Math.max(A, ty - y + 14);
+    },
+    numeri(P, d, s, x, y, w) {
+      const c = P.c;
+      const voci = s.voci || [];
+      if (!voci.length) return 0;
+      let h = intestazione(P, d, s.titolo, x, y);
+      const n = voci.length;
+      const col = w > 700 ? (n <= 4 ? Math.max(n, 2) : n <= 6 ? 3 : 4) : 2, gap = 20, cw = (w - gap * (col - 1)) / col, ch = 142;
+      voci.forEach((n, i) => {
+        const cx = x + (i % col) * (cw + gap), cy = y + h + Math.floor(i / col) * (ch + gap);
+        riquadro(P, cx, cy, cw, ch, 18, c.card, c.bordo);
+        let vp = 58;
+        for (; vp > 30; vp -= 2) { P.font(800, vp); if (P.largo(n.valore) <= cw - 44) break; }
+        P.scrivi(n.valore, cx + 22, cy + 74);
+        P.font(500, 21);
+        righe(P.g, n.etichetta, cw - 44, 2).righe.forEach((t, k) => P.scrivi(t, cx + 22, cy + 104 + k * 26, { colore: c.tenue }));
+      });
+      const file = Math.ceil(voci.length / col);
+      h += file * ch + (file - 1) * gap;
+      if (s.nota) {
+        P.font(400, 20);
+        const r = righe(P.g, s.nota, w, LIMITI.nota);
+        h += 40;
+        r.righe.forEach((t, i) => P.scrivi(t, x, y + h + i * 28, { colore: c.tenue }));
+        h += (r.righe.length - 1) * 28 + 8;
+      }
+      return h;
+    },
+    categorie(P, d, s, x, y, w) {
+      const c = P.c;
+      if (!s.voci?.length) return 0;
+      let h = intestazione(P, d, s.titolo, x, y) + 4;
+      for (const k of s.voci || []) {
+        P.font(700, 24);
+        const q = `${k.quota}%`;
+        const qw = P.largo(q);
+        P.font(500, 24);
+        P.scrivi(taglia(P.g, k.nome, w - qw - 20).testo, x, y + h + 22);
+        P.font(700, 24);
+        P.scrivi(q, x + w, y + h + 22, { allinea: 'right' });
+        riquadro(P, x, y + h + 34, w, 10, 5, c.bordo);
+        if (k.quota > 0) riquadro(P, x, y + h + 34, Math.max(10, (w * k.quota) / 100), 10, 5, c.acc);
+        h += 58;
+      }
+      return h;
+    },
+    settimana(P, d, s, x, y, w) {
+      const c = P.c;
+      if (!s.giorni?.length) return 0;
+      let h = intestazione(P, d, s.titolo, x, y);
+      const gw = (w - 6 * 8) / 7, gh = 84;
+      let op = 21;
+      for (; op > 14; op--) { P.font(600, op); if (P.largo('00:00') <= gw - 16) break; }
+      (s.giorni || []).forEach((gg, i) => {
+        const cx = x + i * (gw + 8), cy = y + h;
+        riquadro(P, cx, cy, gw, gh, 12, gg.off ? null : c.card, c.bordo);
+        P.font(700, Math.min(19, op)); P.scrivi(gg.giorno, cx + gw / 2, cy + 32, { allinea: 'center', colore: gg.off ? c.tenue : P.acc });
+        P.font(600, op); P.scrivi(gg.off ? '—' : gg.ora, cx + gw / 2, cy + 64, { allinea: 'center', colore: gg.off ? c.tenue : c.testo });
+      });
+      h += gh;
+      if (s.fuso) { P.font(400, 19); h += 32; P.scrivi(s.fuso, x, y + h, { colore: c.tenue }); h += 8; }
+      return h;
+    },
+    social(P, d, s, x, y, w) {
+      const c = P.c;
+      if (!s.voci?.length) return 0;
+      let h = intestazione(P, d, s.titolo, x, y);
+      const col = w > 700 ? 2 : 1, cw = (w - COL * (col - 1)) / col;
+      (s.voci || []).forEach((v, i) => {
+        const cx = x + (i % col) * (cw + COL), cy = y + h + Math.floor(i / col) * 50;
+        if (v.d) P.forma((g) => { g.translate(cx, cy + 4); g.scale(30 / 24, 30 / 24); g.fillStyle = c.testo; g.fill(new Path2D(v.d)); });
+        P.font(500, 24);
+        const t = taglia(P.g, v.testo, cw - 48);
+        const tw = P.scrivi(t.testo, cx + 46, cy + 28);
+        P.area(cx, cy, 46 + tw, 38, v.url);
+      });
+      h += Math.ceil((s.voci || []).length / col) * 50 - 12;
+      return h;
+    },
+    lavori(P, d, s, x, y, w, problemi) {
+      const c = P.c;
+      if (!s.voci?.length) return 0;
+      let h = intestazione(P, d, s.titolo, x, y);
+      (s.voci || []).forEach((v, i) => {
+        if (i) h += 26;
+        P.font(700, 28);
+        const freccia = v.url ? ' ↗' : '';
+        const t = taglia(P.g, v.titolo + freccia, w);
+        h += 30;
+        P.scrivi(t.testo, x, y + h, { colore: v.url ? P.acc : c.testo, url: v.url || '' });
+        if (v.testo) {
+          P.font(400, 23);
+          const r = righe(P.g, v.testo, w, LIMITI.lavoroTesto);
+          if (r.tagliato) problemi.push('lavori');
+          r.righe.forEach((t2) => { h += 34; P.scrivi(t2, x, y + h, { colore: c.tenue }); });
+        }
+      });
+      return h + 10;
+    },
+    collaborazioni(P, d, s, x, y, w) {
+      const c = P.c;
+      if (!s.voci?.length) return 0;
+      let h = intestazione(P, d, s.titolo, x, y);
+      P.font(600, 23);
+      let cx = x, cy = y + h;
+      const ch = 48, pad = 20, gap = 12;
+      for (const v of s.voci || []) {
+        P.font(600, 23);
+        const t = taglia(P.g, v.nome, w - 2 * pad);
+        const cw = P.largo(t.testo) + 2 * pad;
+        if (cx > x && cx + cw > x + w) { cx = x; cy += ch + gap; }
+        riquadro(P, cx, cy, cw, ch, ch / 2, c.card, v.url ? P.acc : c.bordo);
+        P.scrivi(t.testo, cx + pad, cy + 32, { colore: c.testo });
+        P.area(cx, cy, cw, ch, v.url);
+        cx += cw + gap;
+      }
+      return cy + ch - y;
+    },
+    offerte(P, d, s, x, y, w, problemi) {
+      const c = P.c;
+      if (!s.voci?.length) return 0;
+      let h = intestazione(P, d, s.titolo, x, y);
+      (s.voci || []).forEach((v, i) => {
+        if (i) { h += 20; P.forma((g) => { g.fillStyle = c.bordo; g.fillRect(x, y + h, w, 2); }); h += 6; }
+        P.font(700, 26);
+        const pw = v.prezzo ? P.largo(v.prezzo) + 24 : 0;
+        h += 32;
+        P.scrivi(taglia(P.g, v.nome, w - pw).testo, x, y + h);
+        if (v.prezzo) P.scrivi(v.prezzo, x + w, y + h, { allinea: 'right', colore: P.acc });
+        if (v.testo) {
+          P.font(400, 22);
+          const r = righe(P.g, v.testo, w, LIMITI.offertaTesto);
+          if (r.tagliato) problemi.push('offerte');
+          r.righe.forEach((t) => { h += 32; P.scrivi(t, x, y + h, { colore: c.tenue }); });
+        }
+      });
+      return h + 10;
+    },
+    testo(P, d, s, x, y, w, problemi) {
+      if (!String(s.testo || '').trim()) return 0;
+      let h = intestazione(P, d, s.titolo, x, y);
+      P.font(400, 26);
+      const r = righe(P.g, s.testo, w, s.larghezza === 'meta' ? LIMITI.testoMeta : LIMITI.testoPiena);
+      if (r.tagliato) problemi.push('testo');
+      r.righe.forEach((t, i) => P.scrivi(t, x, y + h + 26 + i * 38));
+      return h + 26 + (r.righe.length - 1) * 38 + 12;
+    },
+    link(P, d, s, x, y, w) {
+      const c = P.c;
+      if (!s.voci?.length) return 0;
+      let h = intestazione(P, d, s.titolo, x, y);
+      for (const v of s.voci || []) {
+        h += 34;
+        P.font(700, 25);
+        const eti = v.etichetta || v.mostra;
+        const ew = P.scrivi(taglia(P.g, eti + ' ↗', w).testo, x, y + h, { colore: P.acc, url: v.url });
+        if (v.etichetta && v.mostra) {
+          P.font(400, 21);
+          const resto = w - ew - 16;
+          if (resto > 120) P.scrivi(taglia(P.g, v.mostra, resto).testo, x + ew + 16, y + h, { colore: c.tenue });
+        }
+        h += 12;
+      }
+      return h;
+    },
+    contatti(P, d, s, x, y, w, problemi) {
+      const c = P.c;
+      if (!s.email && !s.altro?.url) return 0;
+      const bh = 124, su = inchiostro(c.acc);
+      riquadro(P, x, y, w, bh, 22, c.acc);
+      let pill = null, destra = x + w - 36;
+      if (s.altro?.url) {
+        P.font(700, 24);
+        const t = taglia(P.g, (s.altro.etichetta || s.altro.mostra) + ' ↗', w / 2 - 72).testo;
+        const pw = P.largo(t) + 44, ph = 56;
+        pill = { t, pw, ph, px: destra - pw, py: y + (bh - ph) / 2 };
+        destra = pill.px - 24;
+      }
+      P.font(700, 21);
+      P.spaziato(String(s.titolo).toUpperCase(), x + 36, y + 44, su);
+      if (s.email) {
+        const largo = destra - (x + 36);
+        let ep = 38;
+        for (; ep > 24; ep -= 2) { P.font(700, ep); if (P.largo(s.email) <= largo) break; }
+        P.font(700, ep);
+        const t = taglia(P.g, s.email, largo);
+        if (t.tagliato) problemi.push('email');
+        P.scrivi(t.testo, x + 36, y + 94, { colore: su, url: 'mailto:' + s.email, margine: 8 });
+      }
+      if (pill) {
+        riquadro(P, pill.px, pill.py, pill.pw, pill.ph, pill.ph / 2, null, su);
+        P.font(700, 24);
+        P.scrivi(pill.t, pill.px + 22, pill.py + 37, { colore: su });
+        P.area(pill.px, pill.py, pill.pw, pill.ph, s.altro.url);
+      }
+      return bh;
+    },
+  };
+
+  function misura(g, d, s, w, problemi) {
+    const P = penna(g, d, true, null);
+    return SEZIONI[s.tipo] ? SEZIONI[s.tipo](P, d, s, 0, 0, w, problemi || []) : 0;
+  }
+
+  function impagina(g, d) {
+    const problemi = [];
+    const largo = W - 2 * M, meta = (largo - COL) / 2;
+    const sezioni = (d.sezioni || []).filter((s) => SEZIONI[s.tipo] && s.visibile !== false);
+    const contatti = sezioni.find((s) => s.tipo === 'contatti');
+    const corpo = sezioni.filter((s) => s.tipo !== 'contatti' && misura(g, d, s, s.larghezza === 'meta' ? meta : largo, null) > 0);
+    const file = [];
+    for (let i = 0; i < corpo.length; i++) {
+      const a = corpo[i];
+      if (a.larghezza === 'meta') {
+        const b = corpo[i + 1]?.larghezza === 'meta' ? corpo[++i] : null;
+        file.push([{ s: a, x: M, w: meta }, ...(b ? [{ s: b, x: M + meta + COL, w: meta }] : [])]);
+      } else file.push([{ s: a, x: M, w: largo }]);
+    }
+    const pagine = [[]];
+    let y = ALTO, fuori = false;
+    for (const fila of file) {
+      for (const p of fila) p.h = misura(g, d, p.s, p.w, problemi);
+      const h = Math.max(...fila.map((p) => p.h));
+      if (!(h > 0)) continue;
+      if (y + h > BASSO && pagine[pagine.length - 1].length) {
+        if (pagine.length >= PAGINE) { fuori = true; break; }
+        pagine.push([]);
+        y = ALTO;
+      }
+      for (const p of fila) pagine[pagine.length - 1].push({ ...p, y });
+      y += h + GAP;
+    }
+    if (contatti && !fuori) {
+      const hc = misura(g, d, contatti, largo, problemi);
+      if (hc > 0) {
+        if (y + hc > BASSO && pagine[pagine.length - 1].length) {
+          if (pagine.length >= PAGINE) fuori = true;
+          else { pagine.push([]); y = ALTO; }
+        }
+        if (!fuori) pagine[pagine.length - 1].push({ s: contatti, x: M, w: largo, y, h: hc });
+      }
+    }
+    if (fuori) problemi.push('pagine');
+    return { pagine, problemi: [...new Set(problemi)] };
+  }
+
+  function disegnaPagina(g, d, imp, n) {
+    const c = d.colori;
+    const R = { link: [], testi: [] };
     const sfondo = g.createLinearGradient(0, 0, 0, H);
     sfondo.addColorStop(0, c.bg); sfondo.addColorStop(1, c.bg2 || c.bg);
     g.fillStyle = sfondo; g.fillRect(0, 0, W, H);
     g.textBaseline = 'alphabetic';
-
-    const A = 180;
-    g.save();
-    g.beginPath(); g.arc(M + A / 2, M + A / 2, A / 2, 0, 2 * Math.PI); g.clip();
-    if (d.avatar) {
-      const k = Math.max(A / d.avatar.width, A / d.avatar.height), w = d.avatar.width * k, h = d.avatar.height * k;
-      g.drawImage(d.avatar, M + (A - w) / 2, M + (A - h) / 2, w, h);
-    } else {
-      g.fillStyle = c.acc; g.fillRect(M, M, A, A);
-      g.fillStyle = inchiostro(c.acc);
-      g.font = f(800, 84); g.textAlign = 'center';
-      g.fillText(String(d.nome || '?').slice(0, 1).toUpperCase(), M + A / 2, M + A / 2 + 30);
+    const P = penna(g, d, false, R);
+    for (const p of imp.pagine[n] || []) SEZIONI[p.s.tipo](P, d, p.s, p.x, p.y, p.w, []);
+    const tot = imp.pagine.length;
+    if (tot > 1) {
+      P.font(500, 19);
+      P.scrivi(String(d.nome || ''), M, H - M + 24, { colore: c.tenue });
+      P.scrivi(d.testi?.pagina ? d.testi.pagina(n + 1, tot) : `${n + 1} / ${tot}`, W - M, H - M + 24, { allinea: 'right', colore: c.tenue });
     }
-    g.restore();
-    g.strokeStyle = c.acc; g.lineWidth = 6;
-    g.beginPath(); g.arc(M + A / 2, M + A / 2, A / 2 - 3, 0, 2 * Math.PI); g.stroke();
-
-    const x0 = M + A + 44, largo = W - M - x0;
-    let px = 72;
-    g.textAlign = 'left';
-    for (; px > 44; px -= 2) { g.font = f(800, px); if (g.measureText(d.nome || '').width <= largo) break; }
-    g.font = f(800, px);
-    const nome = taglia(g, d.nome || '', largo);
-    if (nome.tagliato) problemi.push('nome');
-    g.fillStyle = c.testo; g.fillText(nome.testo, x0, M + 66);
-    if (d.canale) {
-      g.font = f(500, 28); g.fillStyle = acc;
-      const t = taglia(g, d.canale.etichetta, largo);
-      g.fillText(t.testo, x0, M + 112);
-      link.push({ x: x0, y: M + 86, w: g.measureText(t.testo).width, h: 36, url: d.canale.url });
-    }
-    let fondo = M + A;
-    if (d.presentazione) {
-      g.font = f(400, 28); g.fillStyle = c.testo;
-      const r = righe(g, d.presentazione, largo, MAX.presentazione);
-      if (r.tagliato) problemi.push('presentazione');
-      r.righe.forEach((t, i) => g.fillText(t, x0, M + 170 + i * 40));
-      fondo = Math.max(fondo, M + 170 + (r.righe.length - 1) * 40 + 12);
-    }
-    let y = fondo + 56;
-
-    const numeri = (d.numeri || []).slice(0, MAX.numeri);
-    if (numeri.length) {
-      etichetta(g, d.testi.numeri, M, y, acc);
-      const col = 4, gap = 20, cw = (W - 2 * M - gap * (col - 1)) / col, ch = 142;
-      numeri.forEach((n, i) => {
-        const cx = M + (i % col) * (cw + gap), cy = y + 26 + Math.floor(i / col) * (ch + gap);
-        tondo(g, cx, cy, cw, ch, 18); g.fillStyle = c.card; g.fill();
-        g.lineWidth = 2; g.strokeStyle = c.bordo; g.stroke();
-        let vp = 58;
-        for (; vp > 30; vp -= 2) { g.font = f(800, vp); if (g.measureText(n.valore).width <= cw - 44) break; }
-        g.fillStyle = c.testo; g.fillText(n.valore, cx + 22, cy + 74);
-        g.font = f(500, 21); g.fillStyle = c.tenue;
-        righe(g, n.etichetta, cw - 44, 2).righe.forEach((t, k) => g.fillText(t, cx + 22, cy + 104 + k * 26));
-      });
-      const file = Math.ceil(numeri.length / col);
-      y += 26 + file * ch + (file - 1) * gap + 36;
-      if (d.nota) {
-        g.font = f(400, 20); g.fillStyle = c.tenue;
-        const r = righe(g, d.nota, W - 2 * M, 3);
-        r.righe.forEach((t, i) => g.fillText(t, M, y + i * 28));
-        y += (r.righe.length - 1) * 28;
-      }
-      y += 64;
-    }
-
-    const colW = (W - 2 * M - 48) / 2, xs = M, xd = M + colW + 48;
-    let ys = y, yd = y;
-
-    const cat = (d.categorie || []).slice(0, MAX.categorie);
-    if (cat.length) {
-      etichetta(g, d.testi.trasmetto, xs, ys, acc);
-      ys += 44;
-      cat.forEach((k) => {
-        g.font = f(700, 24); g.fillStyle = c.testo; g.textAlign = 'right';
-        const q = `${k.quota}%`;
-        g.fillText(q, xs + colW, ys);
-        const qw = g.measureText(q).width;
-        g.textAlign = 'left'; g.font = f(500, 24);
-        g.fillText(taglia(g, k.nome, colW - qw - 20).testo, xs, ys);
-        tondo(g, xs, ys + 12, colW, 10, 5); g.fillStyle = c.bordo; g.fill();
-        if (k.quota > 0) { tondo(g, xs, ys + 12, Math.max(10, (colW * k.quota) / 100), 10, 5); g.fillStyle = c.acc; g.fill(); }
-        ys += 54;
-      });
-      ys += 30;
-    }
-
-    const giorni = d.settimana || [];
-    if (giorni.length === 7) {
-      etichetta(g, d.testi.inOnda, xs, ys, acc);
-      ys += 22;
-      const gw = (colW - 6 * 8) / 7, gh = 84;
-      giorni.forEach((gg, i) => {
-        const cx = xs + i * (gw + 8);
-        tondo(g, cx, ys, gw, gh, 12);
-        g.fillStyle = gg.off ? 'rgba(0,0,0,0)' : c.card; g.fill();
-        g.lineWidth = 2; g.strokeStyle = c.bordo; g.stroke();
-        g.textAlign = 'center';
-        g.font = f(700, 19); g.fillStyle = gg.off ? c.tenue : acc;
-        g.fillText(gg.giorno, cx + gw / 2, ys + 32);
-        g.font = f(600, gg.off ? 20 : 21); g.fillStyle = gg.off ? c.tenue : c.testo;
-        g.fillText(gg.off ? '—' : gg.ora, cx + gw / 2, ys + 64);
-      });
-      g.textAlign = 'left';
-      ys += gh;
-      if (d.fuso) { g.font = f(400, 19); g.fillStyle = c.tenue; g.fillText(d.fuso, xs, ys + 30); ys += 30; }
-      ys += 30;
-    }
-
-    const soc = (d.social || []).slice(0, MAX.social);
-    if (soc.length) {
-      etichetta(g, d.testi.trovarmi, xd, yd, acc);
-      yd += 24;
-      soc.forEach((s) => {
-        if (s.d) {
-          g.save(); g.translate(xd, yd + 4); g.scale(30 / 24, 30 / 24);
-          g.fillStyle = c.testo; g.fill(new Path2D(s.d)); g.restore();
-        }
-        g.font = f(500, 24); g.fillStyle = c.testo;
-        const t = taglia(g, s.testo, colW - 48);
-        g.fillText(t.testo, xd + 46, yd + 28);
-        link.push({ x: xd, y: yd, w: 46 + g.measureText(t.testo).width, h: 38, url: s.url });
-        yd += 50;
-      });
-      yd += 36;
-    }
-
-    if ((d.collaborazioni || []).length) {
-      etichetta(g, d.testi.collaborazioni, xd, yd, acc);
-      yd += 40;
-      g.font = f(500, 24); g.fillStyle = c.testo;
-      const r = elenco(g, d.collaborazioni, colW, MAX.collaborazioni, ' · ');
-      if (r.tagliato) problemi.push('collaborazioni');
-      r.righe.forEach((t, i) => g.fillText(t, xd, yd + i * 34));
-      yd += (r.righe.length - 1) * 34 + 20;
-    }
-
-    const bh = 124, by = H - M - bh;
-    if (d.email) {
-      tondo(g, M, by, W - 2 * M, bh, 22); g.fillStyle = c.acc; g.fill();
-      const su = inchiostro(c.acc);
-      etichetta(g, d.testi.contatto, M + 36, by + 44, su);
-      let ep = 38;
-      for (; ep > 24; ep -= 2) { g.font = f(700, ep); if (g.measureText(d.email).width <= W - 2 * M - 72) break; }
-      g.font = f(700, ep); g.fillStyle = su;
-      const t = taglia(g, d.email, W - 2 * M - 72);
-      if (t.tagliato) problemi.push('email');
-      g.fillText(t.testo, M + 36, by + 94);
-      link.push({ x: M, y: by, w: W - 2 * M, h: bh, url: 'mailto:' + d.email });
-    }
-    const basso = Math.max(ys, yd);
-    if (basso > (d.email ? by : H - M) - 12) problemi.push('pieno');
-    return { link, problemi, basso };
+    return R;
   }
 
-  const KIT = { W, H, M, MAX, disegna, contrasto, inchiostro, righe, elenco, taglia, rgbDi };
+  const KIT = { W, H, M, PAGINE, ALTO, BASSO, LIMITI, CARATTERI, impagina, disegnaPagina, misura, veste, mescola, urlKit, emailKit, contrasto, inchiostro, righe, elenco, taglia, rgbDi };
   if (typeof module !== 'undefined' && module.exports) module.exports = KIT;
   else radice.SB_KIT = KIT;
 })(typeof window !== 'undefined' ? window : globalThis);

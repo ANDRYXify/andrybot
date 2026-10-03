@@ -88,15 +88,75 @@ test('i social vengono dalla pagina link: una volta sola, solo piattaforme, solo
   assert.deepEqual(K.socialDaPagina(null), []);
 });
 
-test('quello che si salva ha forma: email vera, collaborazioni corte, niente numeri scritti a mano', () => {
-  const k = K.normKit({ presentazione: '  Gioco   a tutto\n\n\n\ne parlo ', email: 'lavoro@andryx.it', collaborazioni: 'Nebbia Audio, , Pixelforno,Nebbia Audio', mostra: { media: false }, tema: 'notte', media: 99999 });
-  assert.deepEqual(k, {
-    presentazione: 'Gioco a tutto\n\ne parlo', email: 'lavoro@andryx.it', collaborazioni: ['Nebbia Audio', 'Pixelforno'],
-    mostra: Object.fromEntries(K.MOSTRA.map((x) => [x, x !== 'media'])), tema: 'notte',
-  });
-  assert.equal(K.normKit({ email: 'non una mail' }).email, '');
-  assert.equal(K.normKit({ email: 'a@b.c"<script>' }).email, '');
+const sez = (k, tipo) => k.sezioni.find((x) => x.tipo === tipo);
+
+test('un kit salvato col modello di prima diventa le stesse sezioni, senza migrare niente', () => {
+  const k = K.normKit({ presentazione: '  Gioco   a tutto\n\n\n\ne parlo ', email: 'lavoro@andryx.it', collaborazioni: 'Nebbia Audio, , Pixelforno,Nebbia Audio', mostra: { media: false, social: false }, tema: 'notte', media: 99999 });
+  assert.equal(k.tema, 'notte');
+  assert.equal(k.sezioni[0].tipo, 'testa', 'la testa per prima');
+  assert.equal(k.sezioni.at(-1).tipo, 'contatti', 'i contatti per ultimi');
+  assert.equal(sez(k, 'testa').presentazione, 'Gioco a tutto\n\ne parlo');
+  assert.equal(sez(k, 'contatti').email, 'lavoro@andryx.it');
+  assert.deepEqual(sez(k, 'collaborazioni').voci, [{ nome: 'Nebbia Audio', url: '' }, { nome: 'Pixelforno', url: '' }], 'i marchi una volta sola');
+  assert.equal(sez(k, 'numeri').mostra.media, false);
+  assert.equal(sez(k, 'numeri').mostra.ore, true);
+  assert.equal(sez(k, 'social').visibile, false, 'una spunta spenta e\' una sezione spenta');
+  assert.deepEqual(k.sezioni.slice(1, 6).map((x) => [x.tipo, x.larghezza]), [['numeri', 'piena'], ['categorie', 'meta'], ['social', 'meta'], ['settimana', 'meta'], ['collaborazioni', 'meta']], 'la pagina di prima: due colonne sotto i numeri');
+  assert.ok(!JSON.stringify(k).includes('99999'), 'un numero non si scrive a mano');
+});
+
+test('le sezioni: ognuna una volta, i testi liberi fino a due, testa e contatti al loro posto', () => {
+  const k = K.normKit({ sezioni: [
+    { tipo: 'contatti', email: 'x@y.it' }, { tipo: 'lavori', voci: [{ titolo: 'Live con Nebbia', url: 'nebbia.it/live' }] },
+    { tipo: 'testo', titolo: 'Uno', testo: 'a' }, { tipo: 'testo', testo: 'b' }, { tipo: 'testo', testo: 'c' },
+    { tipo: 'lavori' }, { tipo: 'boh' }, { tipo: 'testa', larghezza: 'meta', visibile: false },
+  ] });
+  assert.equal(k.sezioni[0].tipo, 'testa');
+  assert.equal(k.sezioni[0].visibile, true, 'la testa non si spegne');
+  assert.equal(k.sezioni[0].larghezza, 'piena', 'e non sta a meta\'');
+  assert.equal(k.sezioni.at(-1).tipo, 'contatti');
+  assert.equal(k.sezioni.filter((x) => x.tipo === 'testo').length, K.MAX_TESTI);
+  assert.equal(k.sezioni.filter((x) => x.tipo === 'lavori').length, 1, 'una volta sola, la prima');
+  assert.equal(sez(k, 'lavori').voci[0].url, 'https://nebbia.it/live', 'un indirizzo senza https lo prende');
+  for (const t of K.UNICHE) assert.equal(k.sezioni.filter((x) => x.tipo === t).length, 1, `${t} c'e' sempre, al massimo spenta`);
+});
+
+test('ogni link e\' uno che il PDF puo\' aprire, e ogni voce ha un tetto', () => {
+  for (const u of ['javascript:alert(1)', 'data:text/html,x', 'ftp://a.it', 'mailto:a@b.it', 'localhost', 'http://intranet']) assert.equal(K.urlKit(u), '', u);
+  assert.equal(K.urlKit('https://example.com/a b'), 'https://example.com/a%20b');
+  const k = K.normKit({ sezioni: [
+    { tipo: 'link', voci: [{ etichetta: 'Sito', url: 'javascript:x' }, { etichetta: 'Prenota', url: 'cal.com/andry' }] },
+    { tipo: 'collaborazioni', voci: Array.from({ length: 30 }, (_, i) => ({ nome: `M${i}` })) },
+    { tipo: 'offerte', voci: [{ nome: 'Integrazione', prezzo: 'da 150 €', testo: 'x'.repeat(500) }] },
+    { tipo: 'contatti', email: 'non una mail', altro: { etichetta: 'Call', url: 'javascript:x' } },
+  ] });
+  assert.deepEqual(sez(k, 'link').voci, [{ etichetta: 'Prenota', url: 'https://cal.com/andry' }], 'un link che non si apre non entra');
+  assert.equal(sez(k, 'collaborazioni').voci.length, K.LIMITI.collaborazioni);
+  assert.equal(sez(k, 'offerte').voci[0].testo.length, K.LIMITI.offertaTesto);
+  assert.equal(sez(k, 'contatti').email, '');
+  assert.deepEqual(sez(k, 'contatti').altro, { etichetta: '', url: '' });
+});
+
+test('la veste: temi, i miei colori solo esadecimali, il carattere fra quelli che ci sono', () => {
+  const k = K.normKit({ tema: 'miei', colori: { fondo: '#000000', testo: 'red', accento: '#FF00AA' }, carattere: 'comic', titoli: 'normale' });
+  assert.equal(k.tema, 'miei');
+  assert.deepEqual(k.colori, { fondo: '#000000', testo: '#f4f1f8', accento: '#FF00AA' });
+  assert.equal(k.carattere, 'archivo');
+  assert.equal(k.titoli, 'normale');
   assert.equal(K.normKit({ tema: 'rosa' }).tema, 'pagina');
-  assert.equal(K.normKit({ collaborazioni: Array.from({ length: 20 }, (_, i) => `M${i}`) }).collaborazioni.length, 8);
-  assert.equal('media' in K.normKit({ media: 5 }), false, 'un numero non si scrive a mano');
+});
+
+test('il pannello e il server dicono la stessa cosa di un link e di un\'email', async () => {
+  // L'anteprima e il PDF si fanno nel pannello prima di salvare: se il pannello
+  // tenesse un link che il server poi butta, il kit scaricato e quello salvato
+  // sarebbero due cose diverse. Le due funzioni stanno in due file (una gira
+  // nel browser), qui si tiene che rispondano uguale.
+  await import('../../src/web/public/kit.js');
+  const C = globalThis.SB_KIT;
+  const indirizzi = ['', '   ', 'miosito.it', 'https://miosito.it/a b', 'http://x.it', 'HTTPS://Esempio.COM/Percorso?q=1#f', 'www.esempio.org/pagina', 'javascript:alert(1)',
+    'data:text/html,x', 'ftp://a.it', 'mailto:a@b.it', 'localhost', 'http://intranet', 'https://192.168.0.1', 'cal.com/andry', `https://lungo.it/${'a'.repeat(400)}`, 'https://città.it/via', ' spazio.it '];
+  for (const u of indirizzi) assert.equal(C.urlKit(u), K.urlKit(u), JSON.stringify(u));
+  const email = ['a@b.it', 'collab@andryx.it', 'non una mail', 'a@b', 'a b@c.it', '<a@b.it>', ' x@y.com ', `${'a'.repeat(130)}@b.it`];
+  const server = (e) => K.normKit({ sezioni: [{ tipo: 'contatti', email: e }] }).sezioni.at(-1).email;
+  for (const e of email) assert.equal(C.emailKit(e), server(e), JSON.stringify(e));
 });

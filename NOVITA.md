@@ -127,6 +127,18 @@ comandi diversi da quelli della riga italiana.
 - In «Da consegnare» e nello storico del negozio le risposte stanno accanto alla loro domanda, ognuna col suo «Copia»; la pagina del negozio dice sotto ogni articolo cosa chiede. [vai: negozio]
   en: In «To deliver» and in the shop history the answers sit next to their question, each with its own «Copy»; the shop page says under each item what it asks for.
   es: En «Por entregar» y en el historial de la tienda las respuestas están junto a su pregunta, cada una con su «Copiar»; la página de la tienda dice bajo cada artículo lo que pide.
+- [importante] Il media kit è come un curriculum: sezioni in ordine fino a tre pagine, coi lavori fatti, i marchi, cosa offri, i link e i tuoi colori. Nel PDF ogni link si apre. [vai: kit]
+  en: The media kit works like a résumé: sections in order across up to three pages, with past work, brands, what you offer, links and your colors. In the PDF every link opens.
+  es: El media kit es como un currículum: secciones en orden hasta tres páginas, con tus trabajos, las marcas, lo que ofreces, los enlaces y tus colores. En el PDF cada enlace se abre.
+  > Il media kit come un curriculum
+  > Un marchio vuole vedere cosa hai fatto, non solo quanta gente ti guarda. Ora ci sono i tuoi lavori coi loro link, i marchi, le proposte col prezzo e un secondo contatto, e le sezioni si spostano, si nascondono e si affiancano.
+  en> The media kit as a résumé
+  en> A brand wants to see what you have done, not only how many people watch you. Now there is your past work with its links, brands, offers with a price and a second contact, and sections move, hide and sit side by side.
+  es> El media kit como un currículum
+  es> Una marca quiere ver lo que has hecho, no solo cuánta gente te ve. Ahora están tus trabajos con sus enlaces, las marcas, las propuestas con precio y un segundo contacto, y las secciones se mueven, se ocultan y se ponen lado a lado.
+- Nel PDF del media kit il testo si seleziona e si cerca: l'email si copia, il nome di un marchio si trova. [vai: kit]
+  en: In the media kit PDF the text can be selected and searched: your email can be copied, a brand name can be found.
+  es: En el PDF del media kit el texto se selecciona y se busca: el email se copia, el nombre de una marca se encuentra.
 - Se il bot si aggiorna mentre lo scudo sta ancora bloccando un'ondata, i blocchi rimasti in fila non si perdono: li trovi in «Rimaste in sospeso», da riprovare. [vai: scudo]
   en: If the bot updates while the shield is still blocking a wave, the blocks left in line are not lost: you find them in «Left pending», ready to retry.
   es: Si el bot se actualiza mientras el escudo todavía bloquea una oleada, los bloqueos que quedaban en fila no se pierden: los encuentras en «Quedaron pendientes», listos para reintentar.

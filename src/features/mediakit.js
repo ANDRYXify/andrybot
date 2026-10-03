@@ -92,22 +92,119 @@ export function socialDaPagina(pagina) {
 // Quello che lo streamer sceglie, come sta nelle impostazioni: si tiene solo
 // quello che ha forma.
 export const MOSTRA = ['follower', 'media', 'picco', 'ore', 'dirette', 'persone', 'follow', 'categorie', 'settimana', 'social'];
-export const TEMI = ['pagina', 'carta', 'notte'];
+export const NUMERI = ['follower', 'media', 'picco', 'ore', 'dirette', 'persone', 'follow'];
+export const TEMI = ['pagina', 'carta', 'notte', 'miei'];
+export const CARATTERI = ['archivo', 'grazie', 'mono'];
 const EMAIL = /^[^\s@<>"'`]+@[^\s@<>"'`]+\.[a-z]{2,}$/i;
+const COLORE = /^#[0-9a-f]{6}$/i;
 const riga = (v, max) => String(v ?? '').replace(/\s+/g, ' ').trim().slice(0, max);
+const testo = (v, max) => String(v ?? '').replace(/\r\n?/g, '\n').replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim().slice(0, max);
+
+// IL KIT E' UN DOCUMENTO DI SEZIONI (docs/STRUMENTI.md, «Media kit»): in
+// ordine, ognuna col suo titolo, che si mostra o no, piena o a meta' pagina.
+// La testa sta sempre per prima e i contatti sempre per ultimi; le sezioni
+// che ci sono una volta sola ci sono SEMPRE (al massimo spente), cosi' il
+// pannello le puo' sempre riaccendere; i testi liberi sono da zero a due.
+// Ogni voce ha un tetto: una sezione non diventa mai piu' alta di una pagina.
+export const UNICHE = ['testa', 'numeri', 'categorie', 'settimana', 'social', 'lavori', 'collaborazioni', 'offerte', 'link', 'contatti'];
+export const TIPI_SEZIONE = [...UNICHE, 'testo'];
+export const MAX_TESTI = 2;
+export const LIMITI = {
+  titolo: 40, riga: 80, presentazione: 600, testo: 800,
+  lavori: 6, lavoroTitolo: 60, lavoroTesto: 200,
+  collaborazioni: 12, marchio: 40,
+  offerte: 6, offertaNome: 50, offertaTesto: 160, prezzo: 30,
+  link: 8, etichetta: 40, url: 300,
+};
+const SEMPRE_PIENE = new Set(['testa', 'contatti']);
+
+// Un indirizzo che il PDF puo' aprire: http(s), e un nome a dominio vero. Chi
+// scrive «miosito.it» intende https://miosito.it.
+export function urlKit(v) {
+  const t = riga(v, LIMITI.url);
+  if (!t) return '';
+  try {
+    const u = new URL(/^[a-z][a-z0-9+.-]*:/i.test(t) ? t : `https://${t}`);
+    if (!/^https?:$/.test(u.protocol) || !/\.[a-z]{2,}$/i.test(u.hostname)) return '';
+    return u.href.slice(0, LIMITI.url);
+  } catch { return ''; }
+}
+const voci = (v, max, fn) => (Array.isArray(v) ? v : []).map((x) => (x && typeof x === 'object' ? fn(x) : null)).filter(Boolean).slice(0, max);
+
+function normSezione(x) {
+  const tipo = TIPI_SEZIONE.includes(x?.tipo) ? x.tipo : '';
+  if (!tipo) return null;
+  const base = { tipo, titolo: riga(x.titolo, LIMITI.titolo), visibile: x.visibile !== false, larghezza: !SEMPRE_PIENE.has(tipo) && x.larghezza === 'meta' ? 'meta' : 'piena' };
+  switch (tipo) {
+    case 'testa': return { ...base, visibile: true, riga: riga(x.riga, LIMITI.riga), presentazione: testo(x.presentazione, LIMITI.presentazione) };
+    case 'numeri': {
+      const mostra = {};
+      for (const k of NUMERI) mostra[k] = x.mostra?.[k] !== false;
+      return { ...base, mostra };
+    }
+    case 'lavori': return { ...base, voci: voci(x.voci, LIMITI.lavori, (v) => { const t = riga(v.titolo, LIMITI.lavoroTitolo); return t ? { titolo: t, testo: testo(v.testo, LIMITI.lavoroTesto), url: urlKit(v.url) } : null; }) };
+    case 'collaborazioni': {
+      const visti = new Set();
+      return { ...base, voci: voci(x.voci, LIMITI.collaborazioni, (v) => { const n = riga(v.nome, LIMITI.marchio); if (!n || visti.has(n.toLowerCase())) return null; visti.add(n.toLowerCase()); return { nome: n, url: urlKit(v.url) }; }) };
+    }
+    case 'offerte': return { ...base, voci: voci(x.voci, LIMITI.offerte, (v) => { const n = riga(v.nome, LIMITI.offertaNome); return n ? { nome: n, testo: testo(v.testo, LIMITI.offertaTesto), prezzo: riga(v.prezzo, LIMITI.prezzo) } : null; }) };
+    case 'testo': return { ...base, testo: testo(x.testo, LIMITI.testo) };
+    case 'link': return { ...base, voci: voci(x.voci, LIMITI.link, (v) => { const u = urlKit(v.url); return u ? { etichetta: riga(v.etichetta, LIMITI.etichetta), url: u } : null; }) };
+    case 'contatti': {
+      const email = riga(x.email, 120);
+      const altro = x.altro && typeof x.altro === 'object' ? { etichetta: riga(x.altro.etichetta, LIMITI.etichetta), url: urlKit(x.altro.url) } : { etichetta: '', url: '' };
+      return { ...base, visibile: true, email: EMAIL.test(email) ? email : '', altro: altro.url ? altro : { etichetta: '', url: '' } };
+    }
+    default: return base;
+  }
+}
+
+// Le sezioni di un kit salvato prima che le sezioni ci fossero: la stessa
+// pagina di allora, scritta col modello nuovo. Cosi' chi l'aveva gia' fatto lo
+// ritrova uguale, e niente va migrato nel database.
+export function sezioniDi(vecchio) {
+  const s = vecchio && typeof vecchio === 'object' ? vecchio : {};
+  const m = s.mostra && typeof s.mostra === 'object' ? s.mostra : {};
+  const marchi = (Array.isArray(s.collaborazioni) ? s.collaborazioni : String(s.collaborazioni ?? '').split(',')).map((c) => ({ nome: c }));
+  return [
+    { tipo: 'testa', presentazione: s.presentazione || '' },
+    { tipo: 'numeri', mostra: m },
+    { tipo: 'categorie', larghezza: 'meta', visibile: m.categorie !== false },
+    { tipo: 'social', larghezza: 'meta', visibile: m.social !== false },
+    { tipo: 'settimana', larghezza: 'meta', visibile: m.settimana !== false },
+    { tipo: 'collaborazioni', larghezza: 'meta', voci: marchi },
+    { tipo: 'contatti', email: s.email || '' },
+  ];
+}
 
 export function normKit(x) {
   const s = x && typeof x === 'object' && !Array.isArray(x) ? x : {};
-  const email = riga(s.email, 120);
-  const mostra = {};
-  for (const k of MOSTRA) mostra[k] = s.mostra?.[k] !== false;
-  const coll = (Array.isArray(s.collaborazioni) ? s.collaborazioni : String(s.collaborazioni ?? '').split(','))
-    .map((c) => riga(c, 40)).filter(Boolean);
+  const grezze = Array.isArray(s.sezioni) ? s.sezioni : sezioniDi(s);
+  const viste = new Set();
+  let testi = 0;
+  const mezzo = [];
+  let testa = null, contatti = null;
+  for (const g of grezze) {
+    const z = normSezione(g);
+    if (!z) continue;
+    if (z.tipo === 'testa') { testa ||= z; continue; }
+    if (z.tipo === 'contatti') { contatti ||= z; continue; }
+    if (z.tipo === 'testo') { if (testi++ < MAX_TESTI) mezzo.push(z); continue; }
+    if (viste.has(z.tipo)) continue;
+    viste.add(z.tipo);
+    mezzo.push(z);
+  }
+  for (const t of UNICHE) {
+    if (t === 'testa' || t === 'contatti' || viste.has(t)) continue;
+    mezzo.push(normSezione({ tipo: t }));
+  }
+  const tema = TEMI.includes(s.tema) ? s.tema : 'pagina';
+  const c = s.colori && typeof s.colori === 'object' ? s.colori : {};
   return {
-    presentazione: String(s.presentazione ?? '').replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim().slice(0, 280),
-    email: EMAIL.test(email) ? email : '',
-    collaborazioni: [...new Set(coll)].slice(0, 8),
-    mostra,
-    tema: TEMI.includes(s.tema) ? s.tema : 'pagina',
+    tema,
+    colori: { fondo: COLORE.test(c.fondo) ? c.fondo : '#15121a', testo: COLORE.test(c.testo) ? c.testo : '#f4f1f8', accento: COLORE.test(c.accento) ? c.accento : '#b8237f' },
+    carattere: CARATTERI.includes(s.carattere) ? s.carattere : 'archivo',
+    titoli: s.titoli === 'normale' ? 'normale' : 'maiuscolo',
+    sezioni: [testa || normSezione({ tipo: 'testa' }), ...mezzo, contatti || normSezione({ tipo: 'contatti' })],
   };
 }
