@@ -7,8 +7,9 @@ diretta e che non sono il bot:
 
 - **QR su misura** (`qr`): un QR con forme, colori, logo e cornice scelti dallo
   streamer, che si scarica solo se riletto dai pixel torna identico;
-- **Emote e badge** (`misure`): un'immagine sola, ridotta alle tre misure che
-  chiede Twitch, con la media fatta sulla luce vera;
+- **Emote e badge** (`misure`): un'immagine sola, ferma o animata, o un pezzo
+  di video, ridotta alle misure che chiedono Twitch, 7TV e Discord, con la
+  media fatta sulla luce vera;
 - **Media kit** (`kit`): il foglio A4 da mandare ai marchi, coi numeri delle
   dirette misurati da noi, in PDF coi link cliccabili o in PNG;
 - **Pannelli** (`pannelli`): i pannelli sotto il canale Twitch, tutti nello
@@ -188,9 +189,17 @@ leggere i pixel. Il pannello riduce l'immagine prima di mandarla (384, 256 o
 
 ## Emote e badge
 
-Twitch chiede le emote a 112, 56 e 28 pixel (fino a 1 MB) e i badge a 72, 36 e
-18 (fino a 25 KB). La scheda prende un'immagine, la mette in un quadrato
-(«intera», col bordo trasparente, o «riempi», tagliando i lati) e la riduce.
+Chi riceve l'emote detta le regole (tabella `MISURE` in `app.js`):
+
+| per | lati | peso ferma | animata |
+| --- | --- | --- | --- |
+| emote Twitch | 112, 56, 28 | 1 MB | GIF, 512 KB l'una, al massimo 60 fotogrammi |
+| badge Twitch | 72, 36, 18 | 25 KB | non si muovono: PNG dal fotogramma fermo |
+| emote 7TV | 128 | 7 MB | GIF, 7 MB, fino a 1000 fotogrammi |
+| emoji Discord | 128 | 256 KB | GIF, 256 KB |
+
+La scheda prende un'immagine, la mette in un quadrato («intera», col bordo
+trasparente, o «riempi», tagliando i lati) e la riduce.
 
 ### Perché la riduzione è nostra
 
@@ -215,8 +224,57 @@ badge a 18 prima del nome, con `srcset` per gli schermi fitti, come fa Twitch.
 Se una misura supera il peso ammesso, o l'immagine di partenza è più piccola
 della misura grande, sotto c'è scritto.
 
-Il download è un PNG per misura o uno zip con tutte (zip senza compressione,
-scritto nel pannello: i PNG sono già compressi).
+Il download è un file per misura o uno zip con tutte (zip senza compressione,
+scritto nel pannello: PNG e GIF sono già compressi).
+
+### Le animazioni
+
+L'ingresso animato è un'immagine (GIF, WebP, APNG, AVIF) letta con
+`ImageDecoder`, che dà ogni fotogramma già composto e la sua durata, o un pezzo
+di video (al massimo 10 s) letto spostando il video a 20 fotogrammi al secondo.
+Un WebM senza durata scritta (quelli di `MediaRecorder`) la rivela spostandosi
+in fondo. Ogni fotogramma si mette in un quadrato di lavoro di 256 pixel (mai
+meno della misura più grande); oltre 200 fotogrammi si ricampionano subito, nel
+tempo.
+
+Il modello sta in `emote-animate.js` (`SB_EMOTE`, con le sue prove in
+`test/unita/emote-animate.test.mjs`):
+
+- **ricampionare nel tempo**: se i fotogrammi sono più di quelli ammessi, se ne
+  prendono `m` a istanti uguali, e per ogni istante quello che si vede in quel
+  momento. I ritardi si arrotondano al centesimo **cumulando**, così il giro
+  dura uguale al centesimo. Un tempo sotto i 2 centesimi vale 10, come lo
+  mostrano i browser;
+- **il fotogramma fermo è il primo**: Twitch, 7TV e Discord mostrano il primo
+  fotogramma dove le animazioni sono spente. La barra sceglie il fermo e
+  l'animazione si **ruota** perché parta da lì: il giro è lo stesso, cambia
+  solo l'inizio;
+- **stare nel peso**: per ogni misura si prova la scala `RIDUZIONI`, che scende
+  sempre (prima i colori, 256, 128, 64, poi un fotogramma su 2, 3, 4,
+  sommando i tempi), e ci si ferma al primo che sta nel peso. Senza dithering:
+  a 28 pixel l'errore sparso cambia da un fotogramma all'altro e brulica;
+- **lampi**: la luminanza relativa media di ogni fotogramma, sul fondo scuro e
+  su quello chiaro di chi la riceve, con la trasparenza come la mostra la GIF
+  (piena o vuota). Un lampo è una coppia di cambi opposti di almeno 0,1 col più
+  scuro sotto 0,8 (WCAG 2.3.1, lampi generali); se in un secondo, contando
+  anche a cavallo del giro, ce ne sono più di tre, la scheda lo dice in rosso.
+
+La GIF esce da `graf-gif.js` (lo stesso delle Grafiche, che senza opzioni
+scrive gli stessi byte di prima) con tre opzioni: il **trasparente** (un indice
+della tavolozza, smaltimento 2: ogni fotogramma si ripulisce, niente scie), un
+**ritardo per fotogramma** e un **tetto ai colori**. Le prove
+(`test/unita/gif-emote.test.mjs`) rileggono la GIF con un decodificatore scritto
+a parte.
+
+Un browser senza `ImageDecoder` legge solo il primo fotogramma: la scheda lo
+riconosce dai byte (più immagini nella GIF, `acTL` nel PNG, il segno di
+animazione nel WebP) e lo dice, invece di dare un'emote ferma in silenzio.
+
+Il cancello `scripts/verifica-emote.mjs` lo prova in un browser vero, su
+telefono e computer, rileggendo ogni uscita col decodificatore del browser:
+misure, fotogrammi, giro, peso, trasparenza, fermo scelto, badge, 7TV, Discord,
+lampi, video e browser che legge solo il primo fotogramma. L'autoprova toglie a
+Twitch il tetto dei 60 fotogrammi.
 
 Le immagini di questa scheda non escono dal browser.
 

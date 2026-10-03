@@ -90,9 +90,7 @@
     const eoi = clear + 1;
     let codeSize = minCode + 1;
     let dict = new Map();
-    const reset = () => { dict = new Map(); for (let i = 0; i < clear; i++) dict.set(String(i), i); };
     let next = eoi + 1;
-    reset();
 
     let acc = 0, accBits = 0;
     const blocco = [];
@@ -103,18 +101,19 @@
     };
 
     emit(clear);
-    let prefisso = String(indici[0]);
+    let prefisso = indici[0];
     for (let i = 1; i < indici.length; i++) {
       const k = indici[i];
-      const combo = prefisso + ',' + k;
-      if (dict.has(combo)) { prefisso = combo; continue; }
-      emit(dict.get(prefisso));
-      dict.set(combo, next++);
+      const chiave = prefisso * 4096 + k;
+      const c = dict.get(chiave);
+      if (c !== undefined) { prefisso = c; continue; }
+      emit(prefisso);
+      dict.set(chiave, next++);
       if (next === (1 << codeSize) + 1 && codeSize < 12) codeSize++;
-      if (next > 4095) { emit(clear); codeSize = minCode + 1; next = eoi + 1; reset(); }
-      prefisso = String(k);
+      if (next > 4095) { emit(clear); codeSize = minCode + 1; next = eoi + 1; dict = new Map(); }
+      prefisso = k;
     }
-    emit(dict.get(prefisso));
+    emit(prefisso);
     emit(eoi);
     if (accBits > 0) { blocco.push(acc & 0xff); }
     flushBlocco();
@@ -122,21 +121,26 @@
     return out.get();
   }
 
-  function encode(frames, w, h, delayCs) {
+  function encode(frames, w, h, delayCs, opz = {}) {
     if (!frames || !frames.length) throw new Error('nessun frame');
     delayCs = Math.max(2, Math.round(delayCs || 8));
+    const trasp = !!opz.trasparenza, dither = opz.dither !== false;
+    const colori = Math.max(trasp ? 3 : 2, Math.min(256, Math.round(opz.colori || 256)));
+    const ritardi = frames.map((_, f) => Math.max(2, Math.round((opz.ritardi && opz.ritardi[f]) || delayCs)));
+    const pieno = (d, j) => !trasp || d[j + 3] >= 128;
 
     const passiF = Math.max(1, Math.floor(frames.length / 6));
     const passoP = Math.max(1, Math.floor((w * h) / 3000));
     const campione = [];
     for (let f = 0; f < frames.length; f += passiF) {
       const d = frames[f];
-      for (let i = 0; i < w * h; i += passoP) { const j = i * 4; campione.push(d[j], d[j + 1], d[j + 2]); }
+      for (let i = 0; i < w * h; i += passoP) { const j = i * 4; if (pieno(d, j)) campione.push(d[j], d[j + 1], d[j + 2]); }
     }
-    const palette = medianCut(campione, 256);
+    const palette = medianCut(campione, trasp ? colori - 1 : colori);
     const nearest = costruisciCache(palette);
+    const iTrasp = trasp ? palette.length : -1;
 
-    let bits = 1; while ((1 << bits) < palette.length) bits++;
+    let bits = 1; while ((1 << bits) < palette.length + (trasp ? 1 : 0)) bits++;
     const tableLen = 1 << bits;
     const minCode = Math.max(2, bits);
 
@@ -159,9 +163,11 @@
       for (let y = 0; y < h; y++) {
         for (let x = 0; x < w; x++) {
           const i = y * w + x;
+          if (!pieno(src, i * 4)) { idxBuf[i] = iTrasp; continue; }
           const r = Math.max(0, Math.min(255, rr[i] | 0)), g = Math.max(0, Math.min(255, gg[i] | 0)), b = Math.max(0, Math.min(255, bb[i] | 0));
           const pi = nearest(r, g, b);
           idxBuf[i] = pi;
+          if (!dither) continue;
           const p = palette[pi];
           const er = r - p[0], eg = g - p[1], eb = b - p[2];
 
@@ -174,7 +180,7 @@
         }
       }
 
-      out.u8(0x21); out.u8(0xF9); out.u8(0x04); out.u8(0x04); out.u16(delayCs); out.u8(0); out.u8(0);
+      out.u8(0x21); out.u8(0xF9); out.u8(0x04); out.u8(trasp ? 0x09 : 0x04); out.u16(ritardi[f]); out.u8(trasp ? iTrasp : 0); out.u8(0);
 
       out.u8(0x2C); out.u16(0); out.u16(0); out.u16(w); out.u16(h); out.u8(0);
       out.u8(minCode);

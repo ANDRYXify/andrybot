@@ -897,6 +897,8 @@ input[type="file"]::file-selector-button:hover { background: var(--acc-600); }
 .mis-chat.scura { color: #efeff1; }
 .mis-chat.chiara { color: #0e0e10; border: 1px solid var(--contorno); }
 .mis-riga img { vertical-align: middle; }
+.mis-tempo input[type="range"] { min-height: 24px; }
+.mis-quale { font-size: .82rem; color: var(--testo-2); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .riga-interruttore .etichetta-stato { font-weight: 700; font-size: 1.02rem; }
 
 .badge { display: inline-flex; align-items: center; border-radius: 999px; padding: .14rem .6rem; font-size: .76rem; font-weight: 600; border: 1px solid var(--border); background: var(--surface-2); color: var(--testo-2); }

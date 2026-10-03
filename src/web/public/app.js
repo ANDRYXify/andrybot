@@ -4033,7 +4033,7 @@ const DESC = {
   donazioni: ['Ricevi donazioni sul tuo conto, con l’avviso in diretta e il grazie in chat che partono da soli.', 'Receive donations on your own account, with the on-stream alert and the chat thanks firing on their own.', 'Recibe donaciones en tu propia cuenta, con el aviso en directo y el gracias en el chat que salen solos.'],
   grafiche: ['La locandina della diretta da postare sui social, coi tuoi colori e il tuo nome.', 'The stream poster to post on socials, with your colors and your name.', 'El cartel del directo para publicar en redes, con tus colores y tu nombre.'],
   qr: ['Un QR con le tue forme, i tuoi colori e il tuo logo, che si scarica solo se si legge.', 'A QR with your shapes, colors and logo, downloadable only if it scans.', 'Un QR con tus formas, tus colores y tu logo, que se descarga solo si se lee.'],
-  misure: ['Emote e badge alle tre misure di Twitch, da un’immagine sola.', 'Emotes and badges at the three Twitch sizes, from a single image.', 'Emotes y badges en los tres tamaños de Twitch, desde una sola imagen.'],
+  misure: ['Emote e badge per Twitch, 7TV e Discord, ferme o animate, da un’immagine sola o da un video corto.', 'Emotes and badges for Twitch, 7TV and Discord, still or animated, from a single image or a short video.', 'Emotes y badges para Twitch, 7TV y Discord, fijos o animados, desde una sola imagen o un vídeo corto.'],
   pannelli: ['I pannelli sotto il tuo canale Twitch, nello stesso stile e già pieni.', 'The panels under your Twitch channel, in one style and already filled in.', 'Los paneles bajo tu canal de Twitch, con un mismo estilo y ya rellenos.'],
   kit: ['Il foglio da mandare ai marchi, coi numeri veri delle tue dirette.', 'The sheet to send to brands, with the real numbers of your streams.', 'La hoja para mandar a las marcas, con los números reales de tus directos.'],
   settimana: ['I giorni in cui vai in onda, scritti una volta: da qui vanno sui calendari e dove li mandi.', 'The days you go live, written once: from here they go onto the calendars and wherever you send them.', 'Los días en que sales en directo, escritos una vez: de aquí van a los calendarios y adonde los mandes.'],
@@ -4234,8 +4234,8 @@ const GUIDE = {
     come: [['Una campagna nuova ha un indirizzo, una data di messa in onda e le sue regole: quanti giorni, quali pacchetti, per quanti canali.', 'A new campaign has an address, an air date and its rules: how many days, which packages, for how many channels.', 'Una campaña nueva tiene una dirección, una fecha de emisión y sus reglas: cuántos días, qué paquetes, para cuántos canales.', '#promo-nuova'], ['Nelle grafiche scegli la misura e i testi, e sposti i tempi: sotto l’anteprima trovi i problemi da sistemare prima di esportare.', 'In the graphics you pick the size and the texts, and move the timings: below the preview you find the problems to fix before exporting.', 'En las gráficas eliges el tamaño y los textos, y mueves los tiempos: debajo de la vista previa están los problemas que arreglar antes de exportar.', '#promo-editor']] },
   qr: { serve: ['Fare un QR che porta alla tua pagina o dove vuoi tu, con le tue forme, i tuoi colori e il tuo logo, sicuro che si legga.', 'Make a QR that leads to your page or wherever you want, with your shapes, colors and logo, sure that it reads.', 'Hacer un QR que lleve a tu página o a donde quieras, con tus formas, tus colores y tu logo, seguro de que se lee.'],
     come: [['Scrivi dove porta, o scegli la tua pagina link.', 'Write where it leads, or pick your link page.', 'Escribe a dónde lleva, o elige tu página de enlaces.', '#qr-testo'], ['Scegli le forme, i colori e se vuoi un logo al centro: l’anteprima si rilegge da sola a ogni cambio.', 'Pick shapes, colors and whether you want a logo in the middle: the preview reads itself back at every change.', 'Elige las formas, los colores y si quieres un logo en el centro: la vista previa se relee sola a cada cambio.', '#qr-tela'], ['Scarica il PNG o l’SVG, e salva lo stile: lo usano anche le Grafiche social.', 'Download the PNG or the SVG, and save the style: Social graphics use it too.', 'Descarga el PNG o el SVG, y guarda el estilo: también lo usan las Gráficas sociales.', '#qr-png']] },
-  misure: { serve: ['Preparare emote e badge alle misure che chiede Twitch, partendo da un’immagine sola.', 'Get emotes and badges ready at the sizes Twitch asks for, starting from a single image.', 'Preparar emotes y badges a los tamaños que pide Twitch, partiendo de una sola imagen.'],
-    come: [['Scegli un’immagine, meglio se grande e quadrata.', 'Choose an image, better if big and square.', 'Elige una imagen, mejor si es grande y cuadrada.', '#mis-scegli'], ['Guarda come viene alle misure vere, sulla chat scura e su quella chiara.', 'See how it looks at real size, on the dark chat and the light one.', 'Mira cómo queda a tamaño real, en el chat oscuro y en el claro.', '#mis-anteprime'], ['Scaricale una per una o tutte in un file zip.', 'Download them one by one or all in a zip file.', 'Descárgalas una a una o todas en un archivo zip.', '#mis-zip']] },
+  misure: { serve: ['Preparare emote e badge alle misure che chiedono Twitch, 7TV e Discord, ferme o animate, partendo da un’immagine sola o da un video corto.', 'Get emotes and badges ready at the sizes Twitch, 7TV and Discord ask for, still or animated, starting from a single image or a short video.', 'Preparar emotes y badges a los tamaños que piden Twitch, 7TV y Discord, fijos o animados, partiendo de una sola imagen o de un vídeo corto.'],
+    come: [['Scegli un’immagine, anche animata, o un video, meglio se grande e quadrato.', 'Choose an image, animated too, or a video, better if big and square.', 'Elige una imagen, también animada, o un vídeo, mejor si es grande y cuadrado.', '#mis-scegli'], ['Scegli per cosa: emote o badge di Twitch, emote di 7TV, emoji di Discord.', 'Choose what it is for: Twitch emote or badge, 7TV emote, Discord emoji.', 'Elige para qué: emote o badge de Twitch, emote de 7TV, emoji de Discord.', '#mis-carta .gr-sfondo-scelte'], ['Se si muove, scegli il fotogramma fermo: l’animazione parte da lì.', 'If it moves, choose the still frame: the animation starts there.', 'Si se mueve, elige el fotograma fijo: la animación empieza ahí.'], ['Guarda come viene alle misure vere, sulla chat scura e su quella chiara.', 'See how it looks at real size, on the dark chat and the light one.', 'Mira cómo queda a tamaño real, en el chat oscuro y en el claro.', '#mis-anteprime'], ['Scaricale una per una o tutte in un file zip.', 'Download them one by one or all in a zip file.', 'Descárgalas una a una o todas en un archivo zip.', '#mis-zip']] },
   pannelli: { serve: ['Fare i pannelli sotto il tuo canale Twitch, tutti nello stesso stile, con link e descrizioni già scritti.', 'Make the panels under your Twitch channel, all in one style, with links and descriptions already written.', 'Hacer los paneles bajo tu canal de Twitch, todos con el mismo estilo, con enlaces y descripciones ya escritos.'],
     come: [['Scegli colori, forma, carattere e altezza: valgono per tutti i pannelli.', 'Pick colors, shape, font and height: they apply to all panels.', 'Elige colores, forma, letra y altura: valen para todos los paneles.', '#pan-carta .gr-sfondo-scelte'], ['Guarda i pannelli: ognuno ha già il suo link e la sua descrizione, e li cambi come vuoi.', 'Look at the panels: each one already has its link and description, and you change them as you like.', 'Mira los paneles: cada uno ya tiene su enlace y su descripción, y los cambias como quieras.', '#pan-voci'], ['Scarica tutti: immagini e testi in un file solo, da mettere su Twitch.', 'Download all: images and texts in one file, to put on Twitch.', 'Descarga todos: imágenes y textos en un solo archivo, para poner en Twitch.', '#pan-zip']] },
   kit: { serve: ['Preparare il foglio da mandare a un marchio: chi sei, cosa trasmetti, i tuoi numeri e come contattarti.', 'Prepare the sheet to send to a brand: who you are, what you stream, your numbers and how to reach you.', 'Preparar la hoja para mandar a una marca: quién eres, qué transmites, tus números y cómo contactarte.'],
@@ -8449,24 +8449,40 @@ function avviaQr() {
   qrRifai().catch(() => {});
 }
 
+const MIS_TWITCH = ['#18181b', '#f7f7f8'];
 const MISURE = {
-  emote: { lati: [112, 56, 28], peso: 1024 * 1024 },
-  badge: { lati: [72, 36, 18], peso: 25 * 1024 },
+  emote: { lati: [112, 56, 28], peso: 1024 * 1024, animata: { peso: 512 * 1024, fotogrammi: 60 }, chat: 28, dove: 'Twitch', sfondi: MIS_TWITCH },
+  badge: { lati: [72, 36, 18], peso: 25 * 1024, animata: null, chat: 18, dove: 'Twitch', sfondi: MIS_TWITCH },
+  '7tv': { lati: [128], peso: 7 * 1024 * 1024, animata: { peso: 7 * 1024 * 1024, fotogrammi: 1000 }, chat: 32, dove: '7TV', sfondi: MIS_TWITCH },
+  discord: { lati: [128], peso: 256 * 1024, animata: { peso: 256 * 1024, fotogrammi: 1000 }, chat: 22, dove: 'Discord', sfondi: ['#313338', '#ffffff'] },
 };
-const MIS_STATO = { img: null, nome: '', file: [], giro: 0 };
+const MIS_VIDEO = { fps: 20, max: 10 };
+const MIS_MAX_FOTOGRAMMI = MIS_VIDEO.fps * MIS_VIDEO.max;
+const MIS_LATO_ANIMATA = 256;
+const MIS_STATO = { img: null, nome: '', file: [], giro: 0, anim: null, fermo: 0, sorgente: null, video: null, url: [], soloPrimo: false };
 
 function pannelloMisure() {
   const scelte = (nome, voci) => `<div class="gr-sfondo-scelte" role="group">${voci.map(([id, n], i) => `<button type="button" class="gr-tema${i === 0 ? ' on' : ''}" data-mis-${nome}="${id}" aria-pressed="${i === 0}">${esc(n)}</button>`).join('')}</div>`;
   return pannello('misure', `
     <div class="carta" id="mis-carta">
       <h2>${_hIco(ICO.misure)}${L('Emote e badge', 'Emotes and badges', 'Emotes y badges')}</h2>
-      <p>${L('Carichi un’immagine sola e ti diamo le misure che chiede Twitch, rimpicciolite bene: la media dei pixel si fa sulla luce vera, non sui numeri del colore, così i bordi restano puliti e i colori non si sporcano.', 'Upload one image and you get the sizes Twitch asks for, shrunk properly: pixels are averaged on real light, not on color numbers, so edges stay clean and colors do not get muddy.', 'Subes una sola imagen y te damos los tamaños que pide Twitch, bien reducidos: la media de los píxeles se hace sobre la luz real, no sobre los números del color, así los bordes quedan limpios y los colores no se ensucian.')}</p>
+      <p>${L('Carichi un’immagine sola, anche animata (GIF, WebP, APNG), o un video corto, e ti diamo le misure che chiedono Twitch, 7TV e Discord, rimpicciolite bene: la media dei pixel si fa sulla luce vera, non sui numeri del colore, così i bordi restano puliti e i colori non si sporcano.', 'Upload one image, animated too (GIF, WebP, APNG), or a short video, and you get the sizes Twitch, 7TV and Discord ask for, shrunk properly: pixels are averaged on real light, not on color numbers, so edges stay clean and colors do not get muddy.', 'Subes una sola imagen, también animada (GIF, WebP, APNG), o un vídeo corto, y te damos los tamaños que piden Twitch, 7TV y Discord, bien reducidos: la media de los píxeles se hace sobre la luz real, no sobre los números del color, así los bordes quedan limpios y los colores no se ensucian.')}</p>
       <div class="promo-azioni spazio-sopra">
-        <button type="button" class="btn" id="mis-scegli">${L('Scegli un’immagine', 'Choose an image', 'Elige una imagen')}</button>
-        <input type="file" id="mis-file" accept="image/png,image/jpeg,image/webp,image/gif" hidden>
+        <button type="button" class="btn" id="mis-scegli">${L('Scegli un’immagine o un video', 'Choose an image or a video', 'Elige una imagen o un vídeo')}</button>
+        <input type="file" id="mis-file" accept="image/png,image/apng,image/jpeg,image/webp,image/gif,image/avif,video/mp4,video/webm,video/quicktime" hidden>
       </div>
-      <div class="campo campo-su"><span>${L('Per cosa', 'For what', 'Para qué')}</span>${scelte('tipo', [['emote', L('Emote (112, 56, 28)', 'Emote (112, 56, 28)', 'Emote (112, 56, 28)')], ['badge', L('Badge (72, 36, 18)', 'Badge (72, 36, 18)', 'Badge (72, 36, 18)')]])}</div>
+      <div class="campo campo-su"><span>${L('Per cosa', 'For what', 'Para qué')}</span>${scelte('tipo', [['emote', L('Emote Twitch (112, 56, 28)', 'Twitch emote (112, 56, 28)', 'Emote de Twitch (112, 56, 28)')], ['badge', L('Badge Twitch (72, 36, 18)', 'Twitch badge (72, 36, 18)', 'Badge de Twitch (72, 36, 18)')], ['7tv', L('Emote 7TV (128)', '7TV emote (128)', 'Emote de 7TV (128)')], ['discord', L('Emoji Discord (128)', 'Discord emoji (128)', 'Emoji de Discord (128)')]])}</div>
       <div class="campo campo-su"><span>${L('Se non è quadrata', 'If it is not square', 'Si no es cuadrada')}</span>${scelte('adatta', [['intera', L('Intera, col bordo trasparente', 'Whole, with a transparent border', 'Entera, con borde transparente')], ['riempi', L('Riempi, tagliando i bordi', 'Fill, cutting the edges', 'Rellenar, recortando los bordes')]])}</div>
+      <div id="mis-tempo" class="mis-tempo spazio-sopra" hidden>
+        <p class="suggerimento" id="mis-tempo-detto" aria-live="polite"></p>
+        <div class="riga-flessibile" id="mis-video" hidden>
+          <label class="campo-num">${L('Da (secondi)', 'From (seconds)', 'Desde (segundos)')}<input type="number" id="mis-da" min="0" step="0.1" value="0"></label>
+          <label class="campo-num">${L('Quanto dura (secondi)', 'How long (seconds)', 'Cuánto dura (segundos)')}<input type="number" id="mis-durata" min="0.2" max="${MIS_VIDEO.max}" step="0.1" value="3"></label>
+        </div>
+        <label class="campo campo-su" for="mis-fermo"><span>${L('Il fotogramma fermo', 'The still frame', 'El fotograma fijo')}</span></label>
+        <div class="promo-tempo"><input type="range" id="mis-fermo" min="0" max="0" value="0" aria-describedby="mis-fermo-detto"><span id="mis-fermo-quale" class="mis-quale"></span></div>
+        <p class="suggerimento" id="mis-fermo-detto">${L('L’animazione parte da qui: è quello che Twitch, 7TV e Discord mostrano quando l’emote sta ferma, e l’unico che vale per i badge.', 'The animation starts here: it is what Twitch, 7TV and Discord show when the emote is still, and the only one that counts for badges.', 'La animación empieza aquí: es lo que Twitch, 7TV y Discord muestran cuando el emote está quieto, y el único que vale para los badges.')}</p>
+      </div>
       <div id="mis-anteprime" class="mis-anteprime spazio-sopra"><p class="vuoto">${L('Scegli un’immagine per vederla alle misure vere, sulla chat scura e su quella chiara.', 'Choose an image to see it at real size, on the dark chat and the light one.', 'Elige una imagen para verla a tamaño real, en el chat oscuro y en el claro.')}</p></div>
       <ul id="mis-problemi" class="promo-problemi"></ul>
       <div class="promo-azioni spazio-sopra"><button type="button" class="btn" id="mis-zip" disabled>${L('Scarica tutte (zip)', 'Download all (zip)', 'Descargar todas (zip)')}</button></div>
@@ -8522,41 +8538,307 @@ function zipSemplice(file) {
   return new Blob([...parti, ...centrale, new Uint8Array(fine.buffer)], { type: 'application/zip' });
 }
 
-async function misureRifai() {
-  const giro = ++MIS_STATO.giro, img = MIS_STATO.img;
-  const box = document.getElementById('mis-anteprime'), lista = document.getElementById('mis-problemi'), zip = document.getElementById('mis-zip');
-  if (!box || !img) return;
-  const tipo = document.querySelector('#scheda-misure [data-mis-tipo].on')?.dataset.misTipo || 'emote';
-  const adatta = document.querySelector('#scheda-misure [data-mis-adatta].on')?.dataset.misAdatta || 'intera';
-  const M = MISURE[tipo], w = img.naturalWidth, h = img.naturalHeight;
-  const S = Math.min(M.lati[0] * 16, Math.max(M.lati[0], adatta === 'intera' ? Math.max(w, h) : Math.min(w, h)));
-  const base = document.createElement('canvas');
-  base.width = S; base.height = S;
-  const g = base.getContext('2d', { willReadFrequently: true });
+const MIS_LATO_MAX = Math.max(...Object.values(MISURE).flatMap((m) => m.lati));
+const _misRuota = (a, k) => a.slice(k).concat(a.slice(0, k));
+const _misPausa = () => new Promise((ok) => setTimeout(ok, 0));
+const _misSec = (s) => Number(s).toLocaleString(localePannello(), { maximumFractionDigits: 2 });
+const _misRgb = (hex) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+const _misScelta = (nome, std) => document.querySelector(`#scheda-misure [data-mis-${nome}].on`)?.getAttribute(`data-mis-${nome}`) || std;
+const _misLatoAnimato = (w, h, adatta) => Math.min(MIS_LATO_ANIMATA, Math.max(MIS_LATO_MAX, adatta === 'intera' ? Math.max(w, h) : Math.min(w, h)));
+
+let _misModuloP = null;
+function _misModulo() {
+  if (window.SB_EMOTE && window.SB_GIF) return Promise.resolve();
+  if (!_misModuloP) {
+    _misModuloP = new Promise((ok, ko) => {
+      const s = document.createElement('script');
+      s.src = '/emote-animate.js'; s.onload = ok;
+      s.onerror = () => { _misModuloP = null; ko(new Error('/emote-animate.js')); };
+      document.head.appendChild(s);
+    });
+  }
+  return _misModuloP;
+}
+
+function _misQuadro(sorgente, w, h, S, adatta) {
+  const c = document.createElement('canvas');
+  c.width = S; c.height = S;
+  const g = c.getContext('2d', { willReadFrequently: true });
   g.imageSmoothingQuality = 'high';
   const k = adatta === 'intera' ? S / Math.max(w, h) : S / Math.min(w, h);
-  g.drawImage(img, (S - w * k) / 2, (S - h * k) / 2, w * k, h * k);
-  const sorgente = g.getImageData(0, 0, S, S);
-  const problemi = [];
-  if (Math.max(w, h) < M.lati[0]) problemi.push(L(`L’immagine è più piccola di ${M.lati[0]} px: la misura grande viene sgranata. Meglio partire da almeno ${M.lati[0] * 4} px.`, `The image is smaller than ${M.lati[0]} px: the big size comes out blurry. Better start from at least ${M.lati[0] * 4} px.`, `La imagen es más pequeña que ${M.lati[0]} px: el tamaño grande sale borroso. Mejor partir de al menos ${M.lati[0] * 4} px.`));
-  const file = [];
-  for (const lato of M.lati) {
-    const c = document.createElement('canvas');
-    c.width = lato; c.height = lato;
-    c.getContext('2d').putImageData(riduciLineare(sorgente, S, lato), 0, 0);
-    const blob = await firmaPngBlob(await new Promise((ok) => c.toBlob(ok, 'image/png')));
-    if (giro !== MIS_STATO.giro) return;
-    if (blob.size > M.peso) problemi.push(L(`La misura ${lato} pesa ${Math.ceil(blob.size / 1024)} KB: Twitch ne accetta al massimo ${Math.round(M.peso / 1024)}.`, `The ${lato} size weighs ${Math.ceil(blob.size / 1024)} KB: Twitch accepts at most ${Math.round(M.peso / 1024)}.`, `El tamaño ${lato} pesa ${Math.ceil(blob.size / 1024)} KB: Twitch acepta como máximo ${Math.round(M.peso / 1024)}.`));
-    file.push({ lato, blob, url: c.toDataURL('image/png'), nome: `${MIS_STATO.nome}-${tipo}-${lato}.png` });
+  g.drawImage(sorgente, (S - w * k) / 2, (S - h * k) / 2, w * k, h * k);
+  return g.getImageData(0, 0, S, S);
+}
+
+function _misAnimataNeiByte(u8) {
+  const testo = (a, b) => String.fromCharCode(...u8.subarray(a, b));
+  if (testo(0, 3) === 'GIF') {
+    let p = 13, n = 0;
+    if (u8[10] & 0x80) p += 3 << ((u8[10] & 7) + 1);
+    const salta = () => { while (p < u8.length && u8[p]) p += u8[p] + 1; p++; };
+    while (p < u8.length) {
+      const b = u8[p++];
+      if (b === 0x21) { p++; salta(); continue; }
+      if (b !== 0x2C) break;
+      const f = u8[p + 8];
+      p += 9;
+      if (f & 0x80) p += 3 << ((f & 7) + 1);
+      p++; salta();
+      if (++n > 1) return true;
+    }
+    return false;
   }
-  MIS_STATO.file = file;
-  const [f4, f2, f1] = file, piccola = `<img src="${f1.url}" srcset="${f2.url} 2x, ${f4.url} 4x" width="${f1.lato}" height="${f1.lato}" alt="">`;
+  if (testo(1, 4) === 'PNG') {
+    for (let p = 8; p + 8 <= u8.length;) {
+      const tipo = testo(p + 4, p + 8);
+      if (tipo === 'acTL') return true;
+      if (tipo === 'IDAT') return false;
+      p += 12 + (((u8[p] << 24) | (u8[p + 1] << 16) | (u8[p + 2] << 8) | u8[p + 3]) >>> 0);
+    }
+    return false;
+  }
+  if (testo(0, 4) === 'RIFF' && testo(8, 12) === 'WEBP') return testo(12, 16) === 'VP8X' && (u8[20] & 0x02) !== 0;
+  return false;
+}
+
+async function _misAnimazione(file, adatta, avanza, vivo) {
+  if (typeof ImageDecoder === 'undefined') return null;
+  const tipo = file.type === 'image/apng' ? 'image/png' : file.type;
+  if (!/^image\/(gif|webp|png|avif)$/.test(tipo) || !(await ImageDecoder.isTypeSupported(tipo).catch(() => false))) return null;
+  const dec = new ImageDecoder({ data: await file.arrayBuffer(), type: tipo });
+  try {
+    await dec.tracks.ready;
+    await dec.completed;
+    const tr = dec.tracks.selectedTrack;
+    if (!tr || !tr.animated || tr.frameCount < 2) return null;
+    const n = tr.frameCount, durate = [], quadri = new Map();
+    let w = 0, h = 0, S = 0;
+    const leggi = async (i, tieni) => {
+      const { image } = await dec.decode({ frameIndex: i });
+      try {
+        if (!S) { w = image.displayWidth; h = image.displayHeight; S = _misLatoAnimato(w, h, adatta); }
+        if (tieni) quadri.set(i, _misQuadro(image, w, h, S, adatta));
+        return (image.duration || 0) / 1000;
+      } finally { image.close(); }
+    };
+    for (let i = 0; i < n; i++) {
+      durate.push(await leggi(i, n <= MIS_MAX_FOTOGRAMMI));
+      if (!vivo()) return null;
+      avanza(i + 1, n);
+    }
+    if (n <= MIS_MAX_FOTOGRAMMI) return { S, w, h, quadri: durate.map((_, i) => quadri.get(i)), durate, originali: n };
+    const piano = SB_EMOTE.ricampiona(durate, MIS_MAX_FOTOGRAMMI);
+    for (const f of piano) {
+      if (quadri.has(f.da)) continue;
+      await leggi(f.da, true);
+      if (!vivo()) return null;
+    }
+    return { S, w, h, quadri: piano.map((f) => quadri.get(f.da)), durate: piano.map((f) => f.cs * 10), originali: n };
+  } finally { dec.close(); }
+}
+
+const _misCerca = (v, t) => new Promise((ok) => {
+  const fatto = () => { clearTimeout(attesa); v.removeEventListener('seeked', fatto); ok(); };
+  const attesa = setTimeout(fatto, 2000);
+  v.addEventListener('seeked', fatto);
+  v.currentTime = t;
+});
+
+function _misApriVideo(file) {
+  return new Promise((ok, ko) => {
+    const v = document.createElement('video'), url = URL.createObjectURL(file);
+    v.muted = true; v.playsInline = true; v.preload = 'auto';
+    v.onloadeddata = async () => {
+      v.onloadeddata = null;
+      if (!Number.isFinite(v.duration)) { await _misCerca(v, 1e7); await _misCerca(v, 0); }
+      ok({ el: v, url, durata: v.duration, w: v.videoWidth || 1, h: v.videoHeight || 1 });
+    };
+    v.onerror = () => { URL.revokeObjectURL(url); ko(new Error('video')); };
+    v.src = url;
+  });
+}
+
+function _misChiudiVideo() {
+  const V = MIS_STATO.video;
+  if (!V) return;
+  MIS_STATO.video = null;
+  V.el.removeAttribute('src'); V.el.load();
+  URL.revokeObjectURL(V.url);
+}
+
+function _misTrattoVideo(V) {
+  const fine = Number.isFinite(V.durata) && V.durata > 0 ? V.durata : MIS_VIDEO.max;
+  const da0 = document.getElementById('mis-da'), du0 = document.getElementById('mis-durata');
+  const leggi = (el, std) => { const x = parseFloat(el?.value); return Number.isFinite(x) ? x : std; };
+  const da = Math.max(0, Math.min(leggi(da0, 0), Math.max(0, fine - 0.2)));
+  const durata = Math.max(0.2, Math.min(leggi(du0, 3), MIS_VIDEO.max, fine - da));
+  const tondo = (x) => String(Math.round(x * 10) / 10);
+  if (da0) { da0.max = tondo(Math.max(0, fine - 0.2)); da0.value = tondo(da); }
+  if (du0) { du0.max = tondo(Math.min(MIS_VIDEO.max, fine)); du0.value = tondo(durata); }
+  return { da, durata };
+}
+
+async function _misFotogrammiVideo(V, adatta, avanza, vivo) {
+  const { da, durata } = _misTrattoVideo(V);
+  const n = Math.max(2, Math.round(durata * MIS_VIDEO.fps)), S = _misLatoAnimato(V.w, V.h, adatta), quadri = [];
+  for (let k = 0; k < n; k++) {
+    await _misCerca(V.el, da + k / MIS_VIDEO.fps);
+    if (!vivo()) return null;
+    quadri.push(_misQuadro(V.el, V.w, V.h, S, adatta));
+    avanza(k + 1, n);
+  }
+  return { S, w: V.w, h: V.h, quadri, durate: quadri.map(() => 1000 / MIS_VIDEO.fps), originali: n, video: { da, durata } };
+}
+
+function _misDiciFermo() {
+  const A = MIS_STATO.anim, r = document.getElementById('mis-fermo'), q = document.getElementById('mis-fermo-quale');
+  if (!A || !r || !q) return;
+  const i = Math.min(A.quadri.length - 1, Number(r.value) || 0);
+  const t = _misSec(A.durate.slice(0, i).reduce((s, x) => s + SB_EMOTE.msVero(x), 0) / 1000);
+  const testo = L(`${i + 1} di ${A.quadri.length}, a ${t} s`, `${i + 1} of ${A.quadri.length}, at ${t} s`, `${i + 1} de ${A.quadri.length}, a los ${t} s`);
+  q.textContent = testo;
+  r.setAttribute('aria-valuetext', testo);
+}
+
+async function _misCarica() {
+  const s = MIS_STATO.sorgente;
+  if (!s) return;
+  const giro = ++MIS_STATO.giro, vivo = () => giro === MIS_STATO.giro;
+  const adatta = _misScelta('adatta', 'intera');
+  const tempo = document.getElementById('mis-tempo'), detto = document.getElementById('mis-tempo-detto');
+  const avanza = (k, n) => {
+    if (!tempo || !detto) return;
+    tempo.hidden = false;
+    detto.textContent = L(`Leggo i fotogrammi: ${k} di ${n}.`, `Reading the frames: ${k} of ${n}.`, `Leyendo los fotogramas: ${k} de ${n}.`);
+  };
+  let A = null, img = null, soloPrimo = false;
+  if (s.video) A = await _misFotogrammiVideo(MIS_STATO.video, adatta, avanza, vivo);
+  else {
+    A = await _misAnimazione(s.file, adatta, avanza, vivo).catch(() => null);
+    if (!vivo()) return;
+    if (!A) {
+      const url = URL.createObjectURL(s.file);
+      img = await _qrImmagine(url).finally(() => URL.revokeObjectURL(url));
+      soloPrimo = _misAnimataNeiByte(new Uint8Array(await s.file.slice(0, 1 << 20).arrayBuffer()));
+    }
+  }
+  if (!vivo()) return;
+  MIS_STATO.anim = A; MIS_STATO.img = img; MIS_STATO.soloPrimo = soloPrimo;
+  MIS_STATO.fermo = A ? Math.min(MIS_STATO.fermo, A.quadri.length - 1) : 0;
+  const r = document.getElementById('mis-fermo');
+  if (r && A) { r.max = String(A.quadri.length - 1); r.value = String(MIS_STATO.fermo); }
+  if (tempo) tempo.hidden = !A;
+  const riga = document.getElementById('mis-video');
+  if (riga) riga.hidden = !s.video;
+  _misDiciFermo();
+  return misureRifai();
+}
+
+async function misureRifai() {
+  const giro = ++MIS_STATO.giro, vivo = () => giro === MIS_STATO.giro;
+  const box = document.getElementById('mis-anteprime'), lista = document.getElementById('mis-problemi'), zip = document.getElementById('mis-zip');
+  const A = MIS_STATO.anim, img = MIS_STATO.img;
+  if (!box || (!A && !img)) return;
+  const tipo = _misScelta('tipo', 'emote'), adatta = _misScelta('adatta', 'intera');
+  const M = MISURE[tipo], anima = !!(A && M.animata);
+  let S, w, h, fermo;
+  if (A) { ({ S, w, h } = A); fermo = A.quadri[MIS_STATO.fermo]; }
+  else {
+    w = img.naturalWidth; h = img.naturalHeight;
+    S = Math.min(M.lati[0] * 16, Math.max(M.lati[0], adatta === 'intera' ? Math.max(w, h) : Math.min(w, h)));
+    fermo = _misQuadro(img, w, h, S, adatta);
+  }
+  const problemi = [], nuovi = [];
+  const lascia = () => nuovi.forEach((u) => URL.revokeObjectURL(u));
+  const quadrato = adatta === 'intera' ? Math.max(w, h) : Math.min(w, h);
+  if (quadrato < M.lati[0]) problemi.push(L(`Il quadrato che esce dall’immagine è di ${quadrato} px, meno di ${M.lati[0]}: la misura grande viene sgranata. Meglio partire da almeno ${M.lati[0] * 4} px.`, `The square that comes out of the image is ${quadrato} px, less than ${M.lati[0]}: the big size comes out blurry. Better start from at least ${M.lati[0] * 4} px.`, `El cuadrado que sale de la imagen es de ${quadrato} px, menos de ${M.lati[0]}: el tamaño grande sale borroso. Mejor partir de al menos ${M.lati[0] * 4} px.`));
+  if (MIS_STATO.soloPrimo && M.animata) problemi.push(L('Questo browser legge solo il primo fotogramma di questa immagine animata: per averla animata aprila con un browser come Chrome o Edge.', 'This browser reads only the first frame of this animated image: to get it animated, open it with a browser like Chrome or Edge.', 'Este navegador solo lee el primer fotograma de esta imagen animada: para tenerla animada, ábrela con un navegador como Chrome o Edge.'));
+  const file = [];
+  let piano = null;
+  if (!anima) {
+    for (const lato of M.lati) {
+      const c = document.createElement('canvas');
+      c.width = lato; c.height = lato;
+      c.getContext('2d').putImageData(riduciLineare(fermo, S, lato), 0, 0);
+      const blob = await firmaPngBlob(await new Promise((ok) => c.toBlob(ok, 'image/png')));
+      if (!vivo()) return lascia();
+      const url = URL.createObjectURL(blob);
+      nuovi.push(url);
+      if (blob.size > M.peso) problemi.push(L(`La misura ${lato} pesa ${Math.ceil(blob.size / 1024)} KB: ${M.dove} ne accetta al massimo ${Math.round(M.peso / 1024)}.`, `The ${lato} size weighs ${Math.ceil(blob.size / 1024)} KB: ${M.dove} accepts at most ${Math.round(M.peso / 1024)}.`, `El tamaño ${lato} pesa ${Math.ceil(blob.size / 1024)} KB: ${M.dove} acepta como máximo ${Math.round(M.peso / 1024)}.`));
+      file.push({ lato, blob, url, nome: `${MIS_STATO.nome}-${tipo}-${lato}.png` });
+    }
+  } else {
+    const quadri = _misRuota(A.quadri, MIS_STATO.fermo);
+    piano = SB_EMOTE.ricampiona(_misRuota(A.durate, MIS_STATO.fermo), M.animata.fotogrammi);
+    const sfondi = M.sfondi.map(_misRgb);
+    for (const lato of M.lati) {
+      await _misPausa();
+      if (!vivo()) return lascia();
+      const ridotti = new Map();
+      for (const f of piano) if (!ridotti.has(f.da)) ridotti.set(f.da, riduciLineare(quadri[f.da], S, lato).data);
+      let scelta = null;
+      for (const [colori, passo] of SB_EMOTE.RIDUZIONI) {
+        await _misPausa();
+        if (!vivo()) return lascia();
+        const p = SB_EMOTE.sfoltisci(piano, passo);
+        const byte = SB_GIF.encode(p.map((f) => ridotti.get(f.da)), lato, lato, 8, { trasparenza: true, ritardi: p.map((f) => f.cs), colori, dither: false });
+        scelta = { byte, colori, piano: p };
+        if (byte.length <= M.animata.peso) break;
+      }
+      const blob = new Blob([scelta.byte], { type: 'image/gif' }), url = URL.createObjectURL(blob);
+      nuovi.push(url);
+      const kb = Math.ceil(blob.size / 1024), max = Math.round(M.animata.peso / 1024);
+      if (blob.size > M.animata.peso) problemi.push(L(`La misura ${lato} pesa ${kb} KB anche ridotta a ${scelta.colori} colori e ${scelta.piano.length} fotogrammi: ${M.dove} ne accetta al massimo ${max}. Accorciala o semplificala.`, `The ${lato} size weighs ${kb} KB even cut down to ${scelta.colori} colors and ${scelta.piano.length} frames: ${M.dove} accepts at most ${max}. Shorten or simplify it.`, `El tamaño ${lato} pesa ${kb} KB incluso reducido a ${scelta.colori} colores y ${scelta.piano.length} fotogramas: ${M.dove} acepta como máximo ${max}. Acórtala o simplifícala.`));
+      const cs = scelta.piano.map((f) => f.cs);
+      const lampi = Math.max(...sfondi.map((c) => SB_EMOTE.lampeggi(scelta.piano.map((f) => SB_EMOTE.luminanza(ridotti.get(f.da), c, true)), cs)));
+      file.push({ lato, blob, url, nome: `${MIS_STATO.nome}-${tipo}-${lato}.gif`, colori: scelta.colori, fotogrammi: scelta.piano.length, lampi });
+    }
+    const lampi = Math.max(...file.map((f) => f.lampi));
+    if (lampi > 3) {
+      problemi.push({
+        grave: true,
+        testo: M.dove === 'Twitch'
+          ? L(`L’animazione lampeggia ${lampi} volte in un secondo: oltre 3 può far male a chi soffre di epilessia fotosensibile, e Twitch la rifiuta. Rallentala o addolcisci i cambi di luce.`, `The animation flashes ${lampi} times in one second: more than 3 can hurt people with photosensitive epilepsy, and Twitch rejects it. Slow it down or soften the light changes.`, `La animación parpadea ${lampi} veces en un segundo: más de 3 puede hacer daño a quien sufre epilepsia fotosensible, y Twitch la rechaza. Ralentízala o suaviza los cambios de luz.`)
+          : L(`L’animazione lampeggia ${lampi} volte in un secondo: oltre 3 può far male a chi soffre di epilessia fotosensibile. Rallentala o addolcisci i cambi di luce.`, `The animation flashes ${lampi} times in one second: more than 3 can hurt people with photosensitive epilepsy. Slow it down or soften the light changes.`, `La animación parpadea ${lampi} veces en un segundo: más de 3 puede hacer daño a quien sufre epilepsia fotosensible. Ralentízala o suaviza los cambios de luz.`),
+      });
+    }
+  }
+  if (!vivo()) return lascia();
+  if (A) {
+    const detto = document.getElementById('mis-tempo-detto'), parti = [];
+    const giroS = A.durate.reduce((s, x) => s + SB_EMOTE.msVero(x), 0) / 1000;
+    if (A.video) parti.push(L(`Dal video prendo ${_misSec(A.video.durata)} s, ${MIS_VIDEO.fps} fotogrammi al secondo (al massimo ${MIS_VIDEO.max} s).`, `From the video I take ${_misSec(A.video.durata)} s, ${MIS_VIDEO.fps} frames per second (at most ${MIS_VIDEO.max} s).`, `Del vídeo tomo ${_misSec(A.video.durata)} s, ${MIS_VIDEO.fps} fotogramas por segundo (como máximo ${MIS_VIDEO.max} s).`));
+    else parti.push(L(`Animata: ${A.originali} fotogrammi, un giro dura ${_misSec(giroS)} s.`, `Animated: ${A.originali} frames, one loop lasts ${_misSec(giroS)} s.`, `Animada: ${A.originali} fotogramas, una vuelta dura ${_misSec(giroS)} s.`));
+    if (!M.animata) parti.push(L(`I badge di ${M.dove} non si muovono: uso il fotogramma fermo.`, `${M.dove} badges do not move: I use the still frame.`, `Los badges de ${M.dove} no se mueven: uso el fotograma fijo.`));
+    else if (piano.length < A.quadri.length) {
+      const alSec = _misSec(Math.round((piano.length / giroS) * 10) / 10);
+      parti.push(L(`${M.dove} ne vuole al massimo ${M.animata.fotogrammi}: ne tengo ${piano.length}, presi a tempi uguali (${alSec} al secondo), e il giro dura uguale. Più è corta, più è fluida.`, `${M.dove} wants at most ${M.animata.fotogrammi}: I keep ${piano.length}, taken at equal times (${alSec} per second), and the loop lasts the same. The shorter it is, the smoother it is.`, `${M.dove} quiere como máximo ${M.animata.fotogrammi}: me quedo con ${piano.length}, tomados a tiempos iguales (${alSec} por segundo), y la vuelta dura lo mismo. Cuanto más corta, más fluida.`));
+    } else if (A.quadri.length < A.originali) parti.push(L(`Per lavorarla ne tengo ${A.quadri.length}, presi a tempi uguali, e il giro dura uguale.`, `To work on it I keep ${A.quadri.length}, taken at equal times, and the loop lasts the same.`, `Para trabajarla me quedo con ${A.quadri.length}, tomados a tiempos iguales, y la vuelta dura lo mismo.`));
+    if (detto) detto.textContent = parti.join(' ');
+  }
+  const vecchi = MIS_STATO.url;
+  MIS_STATO.file = file; MIS_STATO.url = nuovi;
+  const srcset = file.map((f) => `${f.url} ${Math.round((f.lato / M.chat) * 1000) / 1000}x`).join(', ');
+  const piccola = `<img src="${file[file.length - 1].url}" srcset="${srcset}" width="${M.chat}" height="${M.chat}" alt="">`;
   const chi = `<b>${esc(String(stato?.user?.login || 'tu'))}</b>`;
   const riga = (sfondo, cls) => `<div class="mis-chat ${cls}" style="background:${sfondo}"><span class="mis-riga">${tipo === 'badge' ? `${piccola} ${chi}: ${L('ciao a tutti', 'hi everyone', 'hola a todos')}` : `${chi}: ${L('ciao', 'hi', 'hola')} ${piccola} ${L('come va?', 'how is it going?', '¿qué tal?')}`}</span></div>`;
-  box.innerHTML = `<div class="mis-misure">${file.map((f) => `<figure class="mis-misura"><img src="${f.url}" width="${f.lato}" height="${f.lato}" alt="${f.lato} px"><figcaption>${f.lato} px · ${Math.ceil(f.blob.size / 1024)} KB <button type="button" class="btn testo mini" data-mis-scarica="${f.lato}">${L('Scarica', 'Download', 'Descargar')}</button></figcaption></figure>`).join('')}</div>`
-    + riga('#18181b', 'scura') + riga('#f7f7f8', 'chiara');
-  lista.innerHTML = problemi.map((x) => `<li class="problema">${esc(x)}</li>`).join('');
+  const dice = (f) => [`${f.lato} px`, `${Math.ceil(f.blob.size / 1024)} KB`]
+    .concat(f.fotogrammi ? [L(`${f.fotogrammi} fotogrammi`, `${f.fotogrammi} frames`, `${f.fotogrammi} fotogramas`)] : [])
+    .concat(f.colori && f.colori < 256 ? [L(`${f.colori} colori`, `${f.colori} colors`, `${f.colori} colores`)] : [])
+    .join(' · ');
+  box.innerHTML = `<div class="mis-misure">${file.map((f, i) => `<figure class="mis-misura"><img src="${f.url}" width="${f.lato}" height="${f.lato}" alt="${f.lato} px"><figcaption>${esc(dice(f))} <button type="button" class="btn testo mini" data-mis-scarica="${i}">${L('Scarica', 'Download', 'Descargar')}</button></figcaption></figure>`).join('')}</div>`
+    + riga(M.sfondi[0], 'scura') + riga(M.sfondi[1], 'chiara');
+  lista.innerHTML = problemi.map((x) => (typeof x === 'string' ? { testo: x } : x)).map((x) => `<li class="problema${x.grave ? ' grave' : ''}">${esc(x.testo)}</li>`).join('');
   zip.disabled = !file.length;
+  vecchi.forEach((u) => URL.revokeObjectURL(u));
+}
+
+function _misErrore(e, video) {
+  if (e && (e.message === 'immagine' || e.message === 'video')) {
+    toast(video ? L('Questo video non si apre: prova un MP4 o un WebM.', 'This video does not open: try an MP4 or a WebM.', 'Este vídeo no se abre: prueba un MP4 o un WebM.') : L('Questa immagine non si apre: prova un PNG, un JPG o una GIF.', 'This image does not open: try a PNG, a JPG or a GIF.', 'Esta imagen no se abre: prueba un PNG, un JPG o un GIF.'), 'errore');
+    return;
+  }
+  toast((e && e.message) || String(e), 'errore');
 }
 
 function avviaMisure() {
@@ -8570,23 +8852,42 @@ function avviaMisure() {
     for (const nome of ['tipo', 'adatta']) {
       if (b.hasAttribute(`data-mis-${nome}`)) {
         b.parentElement.querySelectorAll('button').forEach((x) => { x.classList.toggle('on', x === b); x.setAttribute('aria-pressed', String(x === b)); });
-        misureRifai().catch((e) => toast(e.message, 'errore'));
+        (nome === 'adatta' && MIS_STATO.anim ? _misCarica() : misureRifai()).catch((e) => _misErrore(e, !!MIS_STATO.video));
         return;
       }
     }
-    if (b.dataset.misScarica) { const f = MIS_STATO.file.find((x) => String(x.lato) === b.dataset.misScarica); if (f) scaricaBlob(f.blob, f.nome); return; }
+    if (b.dataset.misScarica) { const f = MIS_STATO.file[Number(b.dataset.misScarica)]; if (f) scaricaBlob(f.blob, f.nome); return; }
     if (b.id === 'mis-zip' && MIS_STATO.file.length) {
       Promise.all(MIS_STATO.file.map(async (f) => ({ nome: f.nome, dati: new Uint8Array(await f.blob.arrayBuffer()) })))
-        .then((file) => scaricaBlob(zipSemplice(file), `${MIS_STATO.nome}-${document.querySelector('#scheda-misure [data-mis-tipo].on')?.dataset.misTipo || 'emote'}.zip`));
+        .then((file) => scaricaBlob(zipSemplice(file), `${MIS_STATO.nome}-${_misScelta('tipo', 'emote')}.zip`));
     }
   });
+  const fermo = document.getElementById('mis-fermo');
+  fermo.addEventListener('input', () => { MIS_STATO.fermo = Number(fermo.value) || 0; _misDiciFermo(); });
+  fermo.addEventListener('change', () => { MIS_STATO.fermo = Number(fermo.value) || 0; misureRifai().catch((e) => _misErrore(e, !!MIS_STATO.video)); });
+  for (const id of ['mis-da', 'mis-durata']) {
+    document.getElementById(id).addEventListener('change', () => { if (MIS_STATO.video) _misCarica().catch((e) => _misErrore(e, true)); });
+  }
   document.getElementById('mis-file').addEventListener('change', (ev) => {
     const f = ev.target.files && ev.target.files[0];
     ev.target.value = '';
     if (!f) return;
+    const video = /^video\//.test(f.type);
     MIS_STATO.nome = (f.name.replace(/\.[^.]+$/, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'emote').slice(0, 30);
-    _qrImmagine(URL.createObjectURL(f)).then((img) => { MIS_STATO.img = img; return misureRifai(); })
-      .catch(() => toast(L('Questa immagine non si apre: prova un PNG o un JPG.', 'This image does not open: try a PNG or a JPG.', 'Esta imagen no se abre: prueba un PNG o un JPG.'), 'errore'));
+    MIS_STATO.giro++; MIS_STATO.fermo = 0; MIS_STATO.sorgente = null;
+    _misChiudiVideo();
+    _misModulo()
+      .then(() => (video ? _misApriVideo(f) : null))
+      .then((V) => {
+        if (V) {
+          MIS_STATO.video = V;
+          document.getElementById('mis-da').value = '0';
+          document.getElementById('mis-durata').value = '3';
+        }
+        MIS_STATO.sorgente = { file: f, video };
+        return _misCarica();
+      })
+      .catch((e) => _misErrore(e, video));
   });
 }
 

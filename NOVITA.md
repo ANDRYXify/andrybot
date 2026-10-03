@@ -85,6 +85,18 @@ comandi diversi da quelli della riga italiana.
 - Obiettivi e cartelli dello Studio si salvano da soli anche quando ne aggiungi o ne togli uno, come per ogni altro cambiamento. [vai: alert]
   en: Studio goals and signs now also save on their own when you add or remove one, like every other change.
   es: Los objetivos y carteles del Estudio también se guardan solos cuando añades o quitas uno, como cualquier otro cambio.
+- [importante] «Emote e badge» prepara anche le emote animate: da una GIF, un WebP, un APNG o un pezzo di video escono le GIF per Twitch, 7TV e Discord, già nelle loro regole. [vai: misure]
+  en: “Emotes and badges” now prepares animated emotes too: from a GIF, a WebP, an APNG or a piece of video you get GIFs for Twitch, 7TV and Discord, already within their rules.
+  es: «Emotes y badges» prepara también los emotes animados: de un GIF, un WebP, un APNG o un trozo de vídeo salen los GIF para Twitch, 7TV y Discord, ya dentro de sus reglas.
+  > Emote animate pronte da caricare
+  > Twitch vuole al massimo 60 fotogrammi e 512 KB per misura: li teniamo noi, e il giro dura uguale. Scegli il fotogramma fermo, quello che si vede quando l'emote non si muove, e se lampeggia troppo te lo diciamo.
+  en> Animated emotes ready to upload
+  en> Twitch wants at most 60 frames and 512 KB per size: we keep to that, and the loop lasts the same. You pick the still frame, the one shown when the emote is not moving, and if it flashes too much we tell you.
+  es> Emotes animados listos para subir
+  es> Twitch quiere como máximo 60 fotogramas y 512 KB por tamaño: lo cumplimos nosotros, y la vuelta dura lo mismo. Eliges el fotograma fijo, el que se ve cuando el emote no se mueve, y si parpadea demasiado te lo decimos.
+- In «Emote e badge» ci sono anche l'emote di 7TV e l'emoji di Discord, a 128 pixel, provate in chat sui loro colori. [vai: misure]
+  en: “Emotes and badges” also has the 7TV emote and the Discord emoji, at 128 pixels, tried out in chat on their own colors.
+  es: En «Emotes y badges» también están el emote de 7TV y el emoji de Discord, a 128 píxeles, probados en el chat con sus colores.
 
 ## 2026-10-02
 
