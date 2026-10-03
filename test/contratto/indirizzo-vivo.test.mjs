@@ -42,6 +42,21 @@ test('chi aggiorna il server fa rileggere la configurazione alla porta d\'ingres
     'e si ricarica DOPO aver portato il file nuovo, sennò si ricaricherebbe quello di prima');
 });
 
+test('la porta rilegge il Caddyfile NUOVO: un montaggio di file segue l\'inode, e git pull lo sostituisce', () => {
+  // L'impronta del repository contro quella che vede Caddy; se sono diverse,
+  // il file nuovo si valida in un Caddy usa e getta e poi si riavvia quello
+  // vero (una ricarica rileggerebbe il file vecchio). Mai il riavvio senza la
+  // validazione prima.
+  assert.match(AGG, /QUI_CADDY="\$\(sha256sum Caddyfile \| cut -d' ' -f1\)"/);
+  assert.match(AGG, /impronta_caddy\(\) \{ docker compose exec -T caddy sha256sum \/etc\/caddy\/Caddyfile/);
+  const v = AGG.indexOf('docker compose run --rm --no-deps -T caddy caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile');
+  const r = AGG.indexOf('docker compose restart caddy');
+  assert.ok(v > 0 && r > v, 'prima si valida il file nuovo, poi si riavvia');
+  const c = AGG.indexOf('if [ "$(impronta_caddy)" != "$QUI_CADDY" ]');
+  assert.ok(c > 0 && c < v, 'e solo quando Caddy vede un file diverso');
+  assert.match(AGG.slice(r), /^\s*if \[ "\$\(impronta_caddy\)" = "\$QUI_CADDY" \]/m, 'e dopo il riavvio si rimisura');
+});
+
 test('la sonda dell\'indirizzo corto bussa all\'indirizzo, non al DNS', () => {
   assert.ok(!/dns\.lookup/.test(SRV),
     'il DNS risponde anche quando davanti non c\'è niente in ascolto: non dice se l\'indirizzo funziona');

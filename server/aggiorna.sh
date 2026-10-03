@@ -277,8 +277,38 @@ docker compose up -d
 # che non si ricorda. Prima si VALIDA: se la configurazione nuova e' rotta non
 # si ricarica niente, e quella di prima resta a servire il sito.
 passo "La porta d'ingresso rilegge la configurazione"
+# MA UNA RICARICA DA SOLA NON BASTA. Il Caddyfile e' montato come FILE, e un
+# montaggio di file segue l'inode: `git pull` il Caddyfile non lo riscrive, lo
+# SOSTITUISCE con un file nuovo. Il container continua a vedere il vecchio, e
+# la ricarica di Caddy rilegge quello, dicendo pure «riletta ✓». E' successo con la
+# CSP di StreamElements: il codice nuovo c'era, la porta no, e il browser
+# rifiutava la chiamata («Failed to fetch»). Percio' si MISURA: l'impronta del
+# Caddyfile del repository contro quella che vede Caddy. Se sono diverse, il
+# file nuovo si valida in un Caddy usa e getta (che lo monta com'e' adesso) e
+# solo se e' valido si riavvia quello vero: un riavvio rilegge il montaggio.
+# Un paio di secondi di porta chiusa, solo quando il Caddyfile e' cambiato; i
+# certificati stanno nel volume e restano.
+impronta_caddy() { docker compose exec -T caddy sha256sum /etc/caddy/Caddyfile 2>/dev/null | cut -d' ' -f1; }
 if docker compose ps --status running 2>/dev/null | grep -q caddy; then
-  if docker compose exec -T caddy caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile >/dev/null 2>&1; then
+  QUI_CADDY="$(sha256sum Caddyfile | cut -d' ' -f1)"
+  if [ "$(impronta_caddy)" != "$QUI_CADDY" ]; then
+    if docker compose run --rm --no-deps -T caddy caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile >/dev/null 2>&1; then
+      # (con set -e un riavvio fallito chiuderebbe lo script qui, prima del
+      # controllo che il bot sia su e del ritorno indietro: lo si dice e si va avanti)
+      docker compose restart caddy || echo "ATTENZIONE: il riavvio di Caddy non e' riuscito."
+      sleep 2
+      if [ "$(impronta_caddy)" = "$QUI_CADDY" ]; then
+        echo "Caddyfile nuovo caricato ✓ (la porta si e' riavviata: un paio di secondi)"
+      else
+        echo "ATTENZIONE: dopo il riavvio Caddy vede ancora un Caddyfile diverso da quello del repository."
+        echo "    docker compose up -d --force-recreate --no-deps caddy"
+      fi
+    else
+      echo "ATTENZIONE: il Caddyfile nuovo NON e' valido, quindi non l'ho caricato."
+      echo "Il sito resta su con quello di prima. Per vedere l'errore:"
+      echo "    docker compose run --rm --no-deps caddy caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile"
+    fi
+  elif docker compose exec -T caddy caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile >/dev/null 2>&1; then
     if docker compose exec -T caddy caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile; then
       echo "configurazione riletta ✓ — un nome nuovo ci mette qualche secondo a prendersi il certificato."
     else
