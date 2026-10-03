@@ -372,3 +372,18 @@ test('la pagina di ascolto vocale parla tre lingue', () => {
   assert.match(VOCE, /r\.lang = 'it-IT'/, 'il riconoscimento resta in italiano');
   assert.match(VOCE, /Recognition is in Italian/);
 });
+
+// UN CONTATORE NATO NELLA DEMO E' COME UNO NATO DAL SERVER. La demo ne faceva
+// nascere uno con l'aspetto e i comandi vuoti: sulla tela dello Studio senza lo
+// sfondo di serie (accanto a «Morti», che lo ha), e in chat solo «leggi». Il
+// server invece lo completa con le sue basi (overlayDi, verbiDi). La demo ne
+// tiene una copia in un posto solo, e qui la si confronta con quella vera.
+test('nella demo un contatore nuovo nasce con le basi del server', async () => {
+  const { contatori } = await import('../../src/db.js');
+  const demo = new Function(`${corpo('function _demoContBase(')}\n${corpo('function _demoContVerbi(')}\nreturn { base: _demoContBase(), verbi: _demoContVerbi() };`)();
+  assert.deepEqual(demo.base, contatori.overlayDi(null), 'l\'aspetto di serie e\' quello del server');
+  assert.deepEqual(demo.verbi, contatori.verbiDi(null), 'i comandi in chat di serie sono quelli del server');
+  const scrive = APP.slice(APP.indexOf("if (via === '/api/contatori') {"), APP.indexOf('_demoScritture.contatori = lista;'));
+  assert.match(scrive, /verbiCfg: _demoContVerbi\(\), overlayCfg: _demoContBase\(\) \}; lista\.push\(c\)/, 'il contatore nuovo nasce da quelle basi');
+  assert.match(APP, /\], base: _demoContBase\(\) \},/, 'e la demo manda la stessa base che manda il server');
+});

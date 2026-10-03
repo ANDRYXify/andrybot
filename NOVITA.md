@@ -142,9 +142,9 @@ comandi diversi da quelli della riga italiana.
 - Se il bot si aggiorna mentre lo scudo sta ancora bloccando un'ondata, i blocchi rimasti in fila non si perdono: li trovi in «Rimaste in sospeso», da riprovare. [vai: scudo]
   en: If the bot updates while the shield is still blocking a wave, the blocks left in line are not lost: you find them in «Left pending», ready to retry.
   es: Si el bot se actualiza mientras el escudo todavía bloquea una oleada, los bloqueos que quedaban en fila no se pierden: los encuentras en «Quedaron pendientes», listos para reintentar.
-- Nella demo i contatori non spariscono più dopo che ne modifichi o ne crei uno: quello nuovo compare sulla tela dello Studio e l'elenco in «Contatori» si carica. [vai: alert]
-  en: In the demo, counters no longer disappear after you edit or create one: the new one shows up on the Studio canvas and the list in “Counters” loads.
-  es: En la demo los contadores ya no desaparecen después de editar o crear uno: el nuevo aparece en el lienzo del Estudio y la lista de «Contadores» se carga.
+- Nella demo i contatori non spariscono più dopo che ne modifichi o ne crei uno, e quello nuovo nasce sulla tela dello Studio con lo sfondo e i comandi in chat di serie. [vai: alert]
+  en: In the demo, counters no longer disappear after you edit or create one, and a new one appears on the Studio canvas with the default background and chat commands.
+  es: En la demo los contadores ya no desaparecen después de editar o crear uno, y el nuevo aparece en el lienzo del Estudio con el fondo y los comandos de chat predeterminados.
 
 ## 2026-10-02
 
