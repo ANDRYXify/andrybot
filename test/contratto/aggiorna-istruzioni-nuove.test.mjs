@@ -53,17 +53,28 @@ case "$*" in *test*) exit "\${NPM_TEST_ESITO:-0}" ;; esac
 exit 0
 `;
 
-const GIT_ENV = { GIT_AUTHOR_NAME: 'prova', GIT_AUTHOR_EMAIL: 'p@p', GIT_COMMITTER_NAME: 'prova', GIT_COMMITTER_EMAIL: 'p@p', GIT_CONFIG_NOSYSTEM: '1', HOME: tmpdir() };
-const git = (cwd, ...a) => execFileSync('git', ['-c', 'commit.gpgsign=false', '-c', 'init.defaultBranch=main', ...a], { cwd, env: { ...process.env, ...GIT_ENV }, encoding: 'utf8' }).trim();
+// L'ambiente di git che c'e' fuori NON entra qui. Dentro un gancio di git (il
+// pre-push lancia queste prove) GIT_DIR punta al repository vero: con quello
+// ereditato, `git init` e i commit del banco sarebbero finiti nel repository
+// del progetto (e' successo: core.bare acceso, commit «A» e «B» sul suo HEAD).
+const SENZA_GIT = Object.fromEntries(Object.entries(process.env).filter(([k]) => !k.startsWith('GIT_')));
+const GIT_ENV = { ...SENZA_GIT, GIT_AUTHOR_NAME: 'prova', GIT_AUTHOR_EMAIL: 'p@p', GIT_COMMITTER_NAME: 'prova', GIT_COMMITTER_EMAIL: 'p@p', GIT_CONFIG_NOSYSTEM: '1', GIT_CONFIG_GLOBAL: '/dev/null', HOME: tmpdir() };
+const git = (cwd, ...a) => execFileSync('git', ['-c', 'commit.gpgsign=false', '-c', 'init.defaultBranch=main', ...a], { cwd, env: GIT_ENV, encoding: 'utf8' }).trim();
 
 // Un'origine con due commit (A, poi B: lo script e il Caddyfile che porta) e
 // un server fermo su A (o già su B).
 function banco({ scriptB = VERO, caddyB = CADDY_UNO, serverSu = 'A' } = {}) {
   const dir = mkdtempSync(join(tmpdir(), 'andrybot-aggiorna-'));
+  try { return bancoIn(dir, { scriptB, caddyB, serverSu }); } catch (e) { rmSync(dir, { recursive: true, force: true }); throw e; }
+}
+function bancoIn(dir, { scriptB, caddyB, serverSu }) {
   const ori = join(dir, 'origine'), srv = join(dir, 'server'), finto = join(dir, 'finto');
   mkdirSync(join(ori, 'server'), { recursive: true });
   mkdirSync(finto);
   git(dir, 'init', '-q', ori);
+  // il banco e' suo: se git avesse scritto altrove, ci si ferma qui, prima di ogni commit
+  assert.ok(existsSync(join(ori, '.git')), 'il repository del banco sta nel banco');
+  assert.equal(git(ori, 'rev-parse', '--show-toplevel'), ori);
   writeFileSync(join(ori, '.gitignore'), 'data/\n');
   writeFileSync(join(ori, 'server/aggiorna.sh'), VERO);
   writeFileSync(join(ori, 'Caddyfile'), CADDY_UNO);
@@ -89,7 +100,7 @@ function banco({ scriptB = VERO, caddyB = CADDY_UNO, serverSu = 'A' } = {}) {
     lancia: (env = {}) => {
       const r = spawnSync('bash', [join(srv, 'server/aggiorna.sh')], {
         cwd: dir, encoding: 'utf8',
-        env: { ...process.env, ...GIT_ENV, ...env, PATH: `${finto}:${process.env.PATH}`, FINTO: finto },
+        env: { ...GIT_ENV, ...env, PATH: `${finto}:${process.env.PATH}`, FINTO: finto },
       });
       return { codice: r.status, uscita: (r.stdout || '') + (r.stderr || '') };
     },
