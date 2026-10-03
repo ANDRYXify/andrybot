@@ -194,6 +194,17 @@ for (const d of provate) {
 // aperta. Chiederle il segno misurava come la ricerca porta a un elemento su
 // una cosa che elemento non e'.
 const nonArrivate = [];
+await p.evaluate(() => {
+  window.__quiete = async () => {
+    const tetto = Date.now() + 8000;
+    while (document.querySelector('.cerca-mira') && Date.now() < tetto) await new Promise((x) => setTimeout(x, 100));
+    let ultimo = Date.now();
+    const oss = new MutationObserver(() => { ultimo = Date.now(); });
+    oss.observe(document.body, { childList: true, subtree: true, attributes: true, characterData: true });
+    while (Date.now() - ultimo < 400 && Date.now() < tetto + 4000) await new Promise((x) => setTimeout(x, 100));
+    oss.disconnect();
+  };
+});
 for (const d of provate.filter((_, i) => i % 7 === 0).slice(0, 6)) {
   const r = await p.evaluate(async (testo) => {
     if (!document.getElementById('cerca-overlay').classList.contains('aperto')) window.SB_CERCA.apri();
@@ -232,6 +243,11 @@ for (const d of provate.filter((_, i) => i % 7 === 0).slice(0, 6)) {
       r = misura();
       segnata = segnata || r.segnato;
     }
+    // E poi si aspetta che la navigazione FINISCA prima della misura dopo: il
+    // segno si spegne da solo (e con lui il giro che riporta la cosa in vista),
+    // e la scheda smette di ridisegnarsi. Altrimenti la ricerca successiva, o
+    // la prova del fuoco, partono su una pagina che si muove ancora sotto.
+    await window.__quiete();
     return { ...r, segnato: segnata };
   }, d.testo);
   if (!r.laScheda && (!r.segnato || !r.inVista)) nonArrivate.push({ q: d.testo, dove: r.scheda, segnato: r.segnato, inVista: r.inVista });
