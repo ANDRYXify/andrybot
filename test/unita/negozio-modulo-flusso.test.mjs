@@ -77,7 +77,11 @@ test('solo chi ha scritto !compra puo\' usare il codice: stesso account, stessa 
   assert.match(S.frase(ch, ivo.momento, ivo.dati), /quel codice non vale: il modulo è scaduto, o il codice non è tuo\. Riscrivi !compra/);
 });
 
-test('col codice si compra una volta sola, con le risposte di QUELL\'invio', async () => {
+test('col codice si compra una volta sola, con le risposte di QUELL\'invio', async (t) => {
+  // Il codice qui si scrive in chat (tryComando), che legge l'orologio: la
+  // prova lo ferma su ORA, la stessa ora della bozza. Senza, dopo le 18:15 UTC
+  // del 3 ottobre 2026 la bozza era «scaduta» e la prova rossa per sempre.
+  t.mock.timers.enable({ apis: ['Date'], now: ORA });
   const ch = canale({ ada: 500 });
   articolo(ch, { campi: CAMPI });
   const e = await S.compra({ ...giroDi(ch), msg: msg(ch, 'ada'), parola: 'torneo' });
