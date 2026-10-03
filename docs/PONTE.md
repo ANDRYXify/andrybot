@@ -28,6 +28,12 @@ streamer riesca a copiare**: l'export del suo bot, un CSV, o un elenco scritto
 a mano. Un formato nuovo è un lettore nuovo, non un'integrazione nuova — e
 funziona anche con bot mai visti.
 
+L'unica eccezione è StreamElements, ed è la stessa idea: quello che
+StreamElements mostra a tutti senza chiedere niente lo legge il server al posto
+dello streamer, e ne fa **lo stesso testo** che lui avrebbe incollato (vedi
+«Da StreamElements, senza scaricare niente»). Nessun OAuth, nessuna chiave da
+noi: se domani StreamElements cambia, resta l'incolla.
+
 Tre lettori, riconosciuti da soli:
 
 | Formato | Esempio |
@@ -81,7 +87,7 @@ tutto si traduce **per intero**, non per approssimazione:
 |---|---|
 | `$(user)` `${user}` `$(sender)` | `$user` |
 | `$(touser)` | `$touser` |
-| `$(count)` | `$count(<nome del comando>)` |
+| `$(count)` | `$count(<nome del comando>)`, e il modulo fa +1 prima (vedi «I contatori si muovono come prima») |
 | `$(query)` `${message}` | `$args` |
 | `$(1)` `$(2)` | `$arg1` `$arg2` |
 | `$(channel)` `$(game)` `$(title)` `$(uptime)` `$(viewers)` | `$canale` `$gioco` `$titolo` `$uptime` `$spettatori` |
@@ -211,6 +217,138 @@ l'anteprima dei punti ma non li importa, e il pannello glielo dice.
 **Quanti.** Fino a 50.000 persone per file; oltre si dice quante sono rimaste
 fuori. Il testo può arrivare a 1,5 MB.
 
+## Chi può usarlo e quando: mai più accesso di prima
+
+Un comando non è solo nome e risposta. Negli altri bot ha un **livello**
+(tutti, abbonati, VIP, moderatori, il proprietario), un'**attesa** fra un uso e
+l'altro (per tutti e a testa), degli **alias**, può valere solo in diretta o
+solo fuori, può costare punti, può rispondere citando chi lo usa. La prima
+versione del ponte leggeva solo nome e risposta: un `!setgame` che su
+StreamElements era dei moderatori entrava **usabile da tutta la chat**.
+
+La regola adesso è una, e vale per ogni livello che un altro bot può scrivere:
+**mai più accesso di prima**. Dove la scala di qui ha lo stesso gradino si
+prende quello; dove non ce l'ha si sale al gradino più stretto che lo contiene,
+e lo si dice.
+
+| altrove | qui | |
+|---|---|---|
+| StreamElements 100, Nightbot `everyone` | tutti | uguale |
+| 250, `subscriber` | abbonati in su | uguale |
+| 300, `regular` | VIP e moderatori | più stretto: i «regular» qui non ci sono (da rivedere) |
+| 400, `twitch_vip` | VIP e moderatori | uguale |
+| 500, `moderator` | moderatori | uguale |
+| 1000 (super moderatori) | solo tu | più stretto (da rivedere) |
+| 1500, `owner` | solo tu («Per chi») | uguale |
+| sopra 1500 | entra spento | nessuno poteva usarlo |
+| un numero o una parola mai visti | il primo gradino più stretto | da rivedere |
+
+«Solo tu» è la condizione «Per chi» dei Moduli con la persona del canale: se il
+server non sa chi sei, quel comando non entra, invece di entrare più largo. La
+prova (`test/unita/importa-livelli.test.mjs`) passa tutti i livelli da -5 a
+2000 e controlla per ognuno che il gradino scelto stia a quel livello o sopra.
+
+Il resto si porta uguale:
+
+| altrove | qui |
+|---|---|
+| attesa globale e a testa | `cooldown`, `cooldownUtente` (al massimo un giorno, detto) |
+| alias | alias del comando, puliti; uno che coprirebbe un altro comando non entra, detto |
+| solo in diretta / solo fuori / spento in tutti e due | «solo in diretta», «solo fuori diretta», entra spento |
+| costo in punti | costo in monete col cambio dei saldi, **arrotondato in su**: chi non poteva permetterselo prima non può nemmeno qui |
+| risposta «mention» o «reply» | la risposta comincia con `@$user` |
+
+E quello che qui non si fa va **da rivedere**, col perché: la risposta in
+privato (qui sarebbe in chat, davanti a tutti), le parole chiave e le
+espressioni che lo facevano partire senza `!`, le parole del titolo, il comando
+nascosto dall'elenco pubblico, le date di inizio e di fine (uno già scaduto
+entra spento).
+
+Lo stesso vale per un foglio di calcolo: le colonne `userlevel` (o
+`permission`, `livello`), `cooldown`, `usercooldown` e `aliases` si leggono
+come nel JSON.
+
+## I contatori si muovono come prima
+
+Negli altri bot `$(count)` **aggiunge uno** e scrive il numero nuovo. Da noi
+`$count(nome)` scrive e basta, e a muovere il numero è l'azione «Contatore» del
+modulo. Tradurre solo la variabile lasciava un numero fermo per sempre («sei
+morto 0 volte»). Ora il gesto diventa l'azione, prima del messaggio:
+
+| altrove | azione | testo |
+|---|---|---|
+| `$(count)` `${count}` | +1 al contatore del comando | `$count(<comando>)` |
+| `${count morti}` `${count.morti}` `${count morti +1}` | +1 a «morti» | `$count(morti)` |
+| `${count morti 52}` | «morti» a 52 | `$count(morti)` |
+| `${getcount morti}` | nessuna | `$count(morti)` |
+| `${count morti +5}` `${count morti -1}` | qui non si fa: resta grezzo e va da rivedere | |
+
+E il numero a cui era arrivato entra con l'import (StreamElements tiene i
+contatori pubblici, Nightbot lo scrive nel comando come `count`), **solo dove
+qui quel contatore non c'è ancora**: uno che c'è l'hai già usato qui, e un
+import non riscrive di nascosto le tue morti di ieri. L'anteprima mostra tutti e
+due i numeri.
+
+## «Già identico» vuol dire identico in tutto
+
+Prima bastava il testo: un comando entrato per tutti quando era dei moderatori
+restava così anche rifacendo l'import. Ora «identico» guarda nome, alias,
+livello, attese, diretta, costo, contatori e messaggio. Se qualcosa di questo è
+cambiato, l'import **sostituisce** il comando, ma tiene le scelte fatte qui che
+l'import non conosce: il ramo del no, Telegram, «senza !», la probabilità, le
+piattaforme, le monete minime.
+
+## Da StreamElements, senza scaricare niente
+
+StreamElements mostra a chiunque, sulla pagina dei comandi di ogni canale, i
+comandi (tranne i nascosti), i contatori e la classifica dei punti. «Prendi da
+StreamElements» legge **quelli**, dal server, solo quando lo streamer preme il
+tasto: **nessun accesso, nessuna chiave, nessuna password**
+(`src/features/streamelements.js`, rotta
+`POST /api/streamer/comandi/importa/streamelements`).
+
+- **Il canale è quello della sessione**, mai uno scritto a mano: si cerca su
+  StreamElements col nome Twitch di chi è entrato, e si controlla che quel
+  canale sia legato allo stesso account Twitch (`providerId` uguale all'id
+  Twitch della sessione). Un canale omonimo di un altro account non si legge, e
+  dopo il no non parte nient'altro.
+- **I punti li porta solo il proprietario**, come sempre: per un moderatore la
+  classifica non si chiede nemmeno.
+- **Una chiamata per volta**, con una piccola pausa: sono i server di un altro.
+  La classifica arriva a pagine da mille, fino a 50.000 persone (quelle con più
+  punti); se ce ne sono di più l'anteprima lo dice. Se una pagina non arriva ci
+  si ferma e lo si dice: mezza classifica importata sembrerebbe tutta, e non lo
+  è.
+- **Niente resta da noi prima della conferma.** Ne esce lo stesso JSON che lo
+  streamer potrebbe incollare, letto dallo stesso lettore, mostrato nella
+  stessa anteprima. «Importa» lo richiede da capo a StreamElements e applica
+  quello che arriva: nessuna copia tenuta in mezzo.
+
+### Timer e comandi nascosti: la chiave usa e getta, solo nel browser
+
+Timer e comandi nascosti StreamElements non li mostra a tutti: servono le
+credenziali del canale. StreamElements non rilascia più accessi alle app nuove
+(il modulo per registrarle è chiuso), e la sua chiave (il «JWT») apre **tutto
+l'account**. Altri strumenti se la fanno dare e la tengono sui loro server fino
+al logout. Qui no:
+
+- la chiave si incolla in un campo che vive **solo in questa pagina**: il
+  browser la usa per chiedere a StreamElements timer e comandi, e **non arriva
+  mai al nostro server** (nessuna rotta ha un campo per lei: la prova di
+  contratto lo controlla);
+- **appena letta, il campo si svuota**, prima ancora di chiedere; finita la
+  lettura (anche se va storta) la variabile si cancella;
+- non va in cookie, archivio del browser, indirizzo o cache: le richieste
+  partono senza credenziali, senza referrer e senza cache;
+- **ricaricare la pagina la cancella**: per un altro import va incollata di
+  nuovo;
+- l'avviso lo dice per intero: è la chiave di tutto l'account, e chi vuole
+  essere sicuro al cento per cento dopo l'import la rigenera su StreamElements,
+  così quella vecchia smette di funzionare.
+
+Quello che torna (timer e tutti i comandi) finisce nel riquadro di testo, senza
+la chiave, e segue la strada di sempre: anteprima, poi «Importa».
+
 ## Due passi, mai uno
 
 Prima l'**anteprima** — che non tocca niente e dice esattamente cosa
@@ -243,3 +381,13 @@ nome, o un separatore esplicito.
 `test/unita/importacomandi.test.mjs` (lettura, traduzione, anteprima di tutti e
 tre) e `test/unita/importapunti.test.mjs` (il registro nel database: due volte
 lo stesso file, file aggiornato, monete guadagnate nel mezzo, zero, cambio).
+`test/unita/importa-livelli.test.mjs` (ogni livello da -5 a 2000 mai più largo,
+cooldown, alias, diretta, costo, menzione, quello da rivedere, i contatori che
+si muovono, «identico» in tutto, l'import sopra un comando che tiene le scelte
+di qui, e nel motore vero: il comando dei mod non risponde alla chat, il
+contatore sale). `test/unita/streamelements.test.mjs` (con uno StreamElements
+finto: il canale della sessione, i contatori citati, la classifica a pagine una
+chiamata per volta, mai mezza classifica, nessuna chiave nelle chiamate).
+`test/contratto/importa-streamelements.test.mjs` (nessuna rotta riceve la
+chiave; nel pannello la chiave va solo a StreamElements e se ne va subito).
+Nel browser, `scripts/verifica-import-se.mjs` con l'autoprova.

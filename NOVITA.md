@@ -169,6 +169,21 @@ comandi diversi da quelli della riga italiana.
 - L'editor dei giochi fatti da te, nella scheda Giochi, torna a funzionare: aggiungere un'azione, cambiare innesco e salvare si fanno anche da lì. [vai: giochi]
   en: The editor for your own games, in the Games tab, works again: adding an action, changing the trigger and saving all work from there too.
   es: El editor de tus propios juegos, en la pestaña Juegos, vuelve a funcionar: añadir una acción, cambiar el disparador y guardar también se hacen desde ahí.
+- [importante] «Prendi da StreamElements»: comandi, contatori e punti del tuo canale arrivano qui senza scaricare niente e senza dare nessuna password. Prima vedi cosa succede, poi importi. [vai: moduli]
+  en: «Fetch from StreamElements»: your channel's commands, counters and points come over without downloading anything or giving any password. First you see what happens, then you import.
+  es: «Tráelo de StreamElements»: los comandos, contadores y puntos de tu canal llegan aquí sin descargar nada ni dar ninguna contraseña. Primero ves qué pasa, luego importas.
+  > Da StreamElements, senza chiavi
+  > I comandi arrivano con chi può usarli e le loro attese, i contatori col loro numero, i punti del tuo pubblico. Per timer e comandi nascosti la tua chiave resta nel tuo browser e si cancella subito.
+  en> From StreamElements, no keys
+  en> Commands come with who can use them and their cooldowns, counters with their number, your viewers' points. For timers and hidden commands your key stays in your browser and is erased right away.
+  es> Desde StreamElements, sin claves
+  es> Los comandos llegan con quién puede usarlos y sus esperas, los contadores con su número, los puntos de tu público. Para temporizadores y comandos ocultos tu clave se queda en tu navegador y se borra enseguida.
+- L'import dagli altri bot porta chi può usare ogni comando, le attese, gli alias e il costo: un comando solo per i mod non diventa più di tutti. Rifallo per correggere quelli importati prima. [vai: moduli]
+  en: Importing from other bots now brings who can use each command, cooldowns, aliases and cost: a mods-only command no longer becomes everyone's. Import again to fix the ones brought over before.
+  es: La importación de otros bots trae quién puede usar cada comando, las esperas, los alias y el coste: un comando solo para mods ya no pasa a ser de todos. Repítela para corregir los importados antes.
+- Nei comandi importati $(count) torna a contare: il numero sale a ogni uso, come nel bot di prima, e riparte da dove eri arrivato. [vai: moduli]
+  en: In imported commands $(count) counts again: the number goes up with every use, as in your old bot, and picks up where you left off.
+  es: En los comandos importados $(count) vuelve a contar: el número sube con cada uso, como en tu bot anterior, y sigue desde donde te quedaste.
 
 ## 2026-10-02
 

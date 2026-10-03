@@ -197,10 +197,16 @@ socialbot.live, dona.socialbot.live, sostieni.socialbot.live, discord.socialbot.
 			# ogni altro ws:// da una pagina https (misurato: un indirizzo di rete
 			# locale o esterno prende SecurityError). La password di quel programma
 			# resta nel browser: non passa da qui e non arriva al server.
+			# E https://api.streamelements.com, e nient'altro di fuori: per timer
+			# e comandi nascosti lo streamer incolla la chiave di StreamElements, e
+			# la usa il SUO browser verso StreamElements (docs/PONTE.md). Cosi' la
+			# chiave non passa mai dal nostro server; senza questo permesso il
+			# browser rifiuterebbe la chiamata e resterebbe solo la strada di farla
+			# passare da noi, che e' quella che non vogliamo.
 			#   NON allenta l'anti-clickjacking: quello e' frame-ancestors 'none'
 			#   + X-Frame-Options DENY, che restano — questo dice solo COSA
 			#   possiamo incorniciare NOI.
-			Content-Security-Policy "default-src 'self'; script-src 'self' 'inline-speculation-rules'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' ws://127.0.0.1:* ws://localhost:*; frame-src 'self' https://www.youtube-nocookie.com https://player.twitch.tv https://clips.twitch.tv https://www.twitch.tv https://player.kick.com https://www.tiktok.com https://www.instagram.com https://www.facebook.com https://open.spotify.com https://w.soundcloud.com https://soundcloud.com https://widget.deezer.com https://embed.music.apple.com https://player.vimeo.com; frame-ancestors 'none'; base-uri 'self'; object-src 'none'; form-action 'self'"
+			Content-Security-Policy "default-src 'self'; script-src 'self' 'inline-speculation-rules'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' ws://127.0.0.1:* ws://localhost:* https://api.streamelements.com; frame-src 'self' https://www.youtube-nocookie.com https://player.twitch.tv https://clips.twitch.tv https://www.twitch.tv https://player.kick.com https://www.tiktok.com https://www.instagram.com https://www.facebook.com https://open.spotify.com https://w.soundcloud.com https://soundcloud.com https://widget.deezer.com https://embed.music.apple.com https://player.vimeo.com; frame-ancestors 'none'; base-uri 'self'; object-src 'none'; form-action 'self'"
 		}
 		reverse_proxy bot:8090 {
 			header_up X-Edge-Key {env.EDGE_KEY}

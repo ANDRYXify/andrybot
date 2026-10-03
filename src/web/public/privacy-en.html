@@ -239,7 +239,12 @@
       (Stripe Payments Europe, Ireland) or <strong>Satispay</strong> (Satispay Europe, Luxembourg), into the account the
       streamer opens there: what goes to them is the amount, and the name and message chosen by the donor. If the
       streamer connects <strong>Ko-fi</strong> (Ko-fi Labs, United Kingdom), donors give on the streamer's Ko-fi page,
-      and Ko-fi sends us the notifications for those donations. The data lives on <strong>ANDRYXify's server
+      and Ko-fi sends us the notifications for those donations. If the streamer presses «Fetch from StreamElements», our server asks
+      <strong>StreamElements</strong> for what StreamElements already shows everyone for their channel: commands, counters and the
+      points leaderboard (each person's chat name and balance); no key is used, and what comes back serves only the preview
+      and, if they confirm, the import. The StreamElements key a streamer can paste for timers and hidden commands
+      <strong>never reaches us</strong>: their browser uses it to talk to StreamElements, and the page forgets it right away.
+      The data lives on <strong>ANDRYXify's server
       (Hetzner, Germany, in the EU)</strong>, over HTTPS.</p>
       <p class="muted">No selling of data, no advertising tracking, no paid third-party AI.</p>
     </section>

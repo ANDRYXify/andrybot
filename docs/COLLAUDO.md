@@ -286,6 +286,15 @@ Comandi, sulla demo (docs/moduli.md). La sua autoprova rimette tre difetti
 uno alla volta, ognuno nel suo giro, perché messi insieme il primo (l'editor
 che non reagisce) coprirebbe gli altri due: ogni difetto deve far scattare il
 suo controllo.
+Poi `scripts/verifica-import-se.mjs`: «Da StreamElements» nella carta «Porta
+qui quello che hai già», sulla demo, con uno StreamElements finto dentro il
+browser (docs/PONTE.md). Guarda l'anteprima senza chiave e l'impronta che parte
+con «Importa»; con la chiave, che le chiamate vadano solo a StreamElements e che
+la chiave non arrivi al nostro server, non resti nella pagina, nell'archivio
+del browser o nei cookie, e non ci sia più dopo un ricaricamento. Nella demo le
+chiamate al server non escono in rete: il collaudo annota quelle di `api()`, così
+il controllo della fuga non è vuoto. L'autoprova rimette cinque difetti, uno
+alla volta.
 
 Due restano fuori dalla catena. Il primo, e non per dimenticanza, ha bisogno di
 qualcosa che non controlliamo:

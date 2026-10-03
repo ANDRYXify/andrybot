@@ -85,8 +85,11 @@ test('chi arriva dall\'importazione entra nella classifica del pubblico', () => 
 
 test('la rotta: i punti li importa solo il proprietario, e si applica quello che si è visto', () => {
   const server = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '../../src/web/server.js'), 'utf8');
-  const i = server.indexOf("app.post('/api/streamer/comandi/importa'");
-  const rotta = server.slice(i, server.indexOf('}));', i));
+  // le due rotte (testo incollato, StreamElements) passano dallo stesso cuore
+  const i = server.indexOf('async function importaTesto(');
+  assert.ok(i > 0, 'il cuore dell\'import c\'è');
+  const rotta = server.slice(i, server.indexOf('\n  }\n', i));
+  assert.match(server, /app\.post\('\/api\/streamer\/comandi\/importa', requireLogin,[\s\S]{0,300}return importaTesto\(req, res, login, testo\);/);
   assert.match(rotta, /const proprietario = isOwner\(req\);/);
   assert.match(rotta, /if \(!proprietario\) punti = \{ negati: true \};\s*else \{\s*punti = economia\.importa\(/, 'economia.importa solo nel ramo del proprietario');
   assert.equal(rotta.split('importa(').length, 2, 'e da nessun\'altra parte');

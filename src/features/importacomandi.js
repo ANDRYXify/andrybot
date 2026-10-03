@@ -49,6 +49,7 @@ const NON_TRADUCIBILI = [
   [/\$\(\s*twitch\b[^)]*\)/i, 'dati di un altro canale presi al volo', null],
   [/\$\(\s*weather\b[^)]*\)/i, 'il meteo', null],
   [/\$\(\s*(?:youtube|spotify|song|currentsong)\b[^)]*\)/i, 'il brano in ascolto', 'il comando !song delle richieste musicali'],
+  [/\$[({]\s*(?:get)?count\b[^)}]*[)}]/i, 'un contatore mosso in un modo che qui non c’è', 'l’azione «Contatore» dei Moduli'],
   [/\$\{\s*[a-z][\w.]*[^}]*\}/i, 'una variabile del bot di prima', null],
   [/\$\(\s*[a-z][\w.]*[^)]*\)/i, 'una variabile del bot di prima', null],
 ];
@@ -57,13 +58,36 @@ export function normalizzaNome(x) {
   return String(x || '').trim().replace(/^!+/, '').toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 24);
 }
 
+export const nomeContatore = (x) => String(x || '').trim().toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 30);
+
+// IL CONTATORE NEGLI ALTRI BOT SI MUOVE DENTRO IL TESTO: $(count) aggiunge uno
+// e scrive il numero nuovo. Da noi $count(nome) scrive e basta, e a muovere è
+// l'azione «Contatore» del modulo. Tradurre solo la variabile lasciava un
+// numero fermo per sempre («sei morto 0 volte»): qui il gesto diventa
+// l'azione, prima del messaggio, e il testo scrive il numero già mosso.
+//   $(count) ${count}            +1 al contatore del comando
+//   ${count morti} ${count.morti} +1 a «morti»   (anche ${count morti +1})
+//   ${count morti 52}            «morti» a 52
+//   ${getcount morti}            solo il numero
+// +5 o -1 alla volta qui non si fa: resta grezzo, e lo dice NON_TRADUCIBILI.
+const RE_COUNT = /\$[({]\s*(get)?count(?:(?:\s+|\.)([A-Za-z0-9_]{1,30}))?(?:\s+([+-]?\d{1,9}))?\s*[)}]/gi;
+
 // Traduce le variabili e dice cosa resta fuori. Non cambia mai niente in silenzio.
 // `nome` serve a $(count): da noi un contatore ha un nome, e il suo è il comando.
+// `conti` sono le azioni sui contatori che il testo faceva da sé.
 export function traduci(testo, { nome = '' } = {}) {
   let t = String(testo == null ? '' : testo);
 
-  // $(count) → $count(<nome del comando>): da noi i contatori hanno un nome.
-  if (nome) t = t.replace(/\$[({]\s*count\s*[)}]/gi, `$count(${nome})`);
+  const conti = [];
+  t = t.replace(RE_COUNT, (tutto, get, chi, passo) => {
+    const n = nomeContatore(chi || nome);
+    if (!n) return tutto;
+    if (get) return passo === undefined ? `$count(${n})` : tutto;
+    if (passo === undefined || passo === '+1') conti.push({ nome: n, op: 'incrementa' });
+    else if (/^\d+$/.test(passo)) conti.push({ nome: n, op: 'imposta', valore: Number(passo) });
+    else return tutto;
+    return `$count(${n})`;
+  });
   // $(1) $(2) … → $arg1 $arg2 …
   t = t.replace(/\$[({]\s*(\d{1,2})\s*[)}]/g, (_, n) => '$arg' + n);
   // le variabili con un equivalente vero
@@ -79,7 +103,65 @@ export function traduci(testo, { nome = '' } = {}) {
     const m = re.exec(t);
     if (m) { avvisi.push({ tipo: 'non-tradotto', pezzo: m[0].slice(0, 60), cosa, dove }); break; }
   }
-  return { testo: t.trim(), avvisi };
+  return { testo: t.trim(), avvisi, conti };
+}
+
+// ---------------------------------------------------------------- chi può usarlo
+// MAI PIÙ ACCESSO DI PRIMA. Un comando che altrove era dei moderatori, qui
+// non diventa di tutti: prima si leggevano solo nome e risposta, e un
+// «!setgame» solo-mod entrava usabile dalla chat intera.
+// Dove la scala di qui ha lo stesso gradino si prende quello. Dove non ce
+// l'ha (i «regular», i super moderatori, un numero mai visto) si sale al
+// gradino più stretto che lo contiene, e lo si dice. Sopra i moderatori c'è
+// solo il proprietario: lì il comando diventa suo e basta («Per chi»: lui).
+// I gradini, dal più largo: tutti, sub, vip, mod, tu.
+export const GRADINI = ['tutti', 'sub', 'vip', 'mod', 'tu'];
+// StreamElements: 100 tutti, 250 abbonati, 300 regular, 400 VIP,
+// 500 moderatori, 1000 super moderatori, 1500 il proprietario.
+const SOGLIE_SE = [[100, 'tutti'], [250, 'sub'], [400, 'vip'], [500, 'mod'], [1500, 'tu']];
+const AVV_REGULAR = 'era per i «regular», che qui non ci sono: entra per VIP e moderatori';
+const AVV_SUPERMOD = 'era per i super moderatori: qui solo tu, finché non scegli chi in «Per chi»';
+const PAROLE_LIVELLO = new Map([
+  ...['everyone', 'all', 'tutti', 'todos', 'chiunque', 'viewer', 'viewers'].map((k) => [k, { gradino: 'tutti' }]),
+  ...['subscriber', 'subscribers', 'sub', 'subs', 'abbonati', 'abbonato', 'suscriptor', 'suscriptores'].map((k) => [k, { gradino: 'sub' }]),
+  ...['twitch_vip', 'soop_vip', 'vip', 'vips'].map((k) => [k, { gradino: 'vip' }]),
+  ...['regular', 'regulars'].map((k) => [k, { gradino: 'vip', avviso: AVV_REGULAR }]),
+  ...['moderator', 'moderators', 'mod', 'mods', 'moderatore', 'moderatori', 'moderador', 'moderadores'].map((k) => [k, { gradino: 'mod' }]),
+  ...['super_moderator', 'supermoderator', 'super_mod', 'supermod'].map((k) => [k, { gradino: 'tu', avviso: AVV_SUPERMOD }]),
+  ...['owner', 'broadcaster', 'streamer', 'proprietario', 'propietario'].map((k) => [k, { gradino: 'tu' }]),
+  ['admin', { gradino: 'tu', avviso: 'era per gli amministratori di Nightbot: qui solo tu' }],
+]);
+
+// { gradino, avviso? } da come lo scrive l'altro bot. Assente = tutti: è
+// quello che diceva il testo senza livello, e quello che si faceva prima.
+export function livelloDa(v) {
+  if (v === undefined || v === null || String(v).trim() === '') return { gradino: 'tutti' };
+  const s = String(v).trim();
+  if (/^-?\d+$/.test(s)) {
+    const n = Number(s);
+    for (const [soglia, gradino] of SOGLIE_SE) {
+      if (n > soglia) continue;
+      if (n === soglia || gradino === 'tutti') return { gradino };
+      if (n === 300) return { gradino, avviso: AVV_REGULAR };
+      if (n === 1000) return { gradino, avviso: AVV_SUPERMOD };
+      return { gradino, avviso: `un livello d’accesso che non conosco (${n}): entra col primo più stretto` };
+    }
+    // sopra il proprietario non c'è nessuno: là il comando non lo usava
+    // nessuno, e qui entra spento
+    return { gradino: 'tu', spento: true, avviso: `nessuno poteva usarlo (livello ${n}): entra spento` };
+  }
+  const k = s.toLowerCase().replace(/[\s-]+/g, '_');
+  return PAROLE_LIVELLO.get(k) || { gradino: 'tu', avviso: `un livello d’accesso che non conosco («${s.slice(0, 30)}»): per ora solo tu` };
+}
+
+// Le condizioni del modulo per quel gradino. «tu» è la persona del canale
+// (`proprietario`, { p, id, login, nome }): senza, il gradino non si può dare
+// e il comando non entra (null), invece di entrare più largo.
+export function condizioniDi(gradino, proprietario) {
+  if (gradino === 'tutti') return {};
+  if (gradino !== 'tu') return { tier: gradino };
+  if (!proprietario || !(proprietario.login || proprietario.id)) return null;
+  return { chi: { modo: 'solo', persone: [proprietario], gruppi: [] } };
 }
 
 // ---------------------------------------------------------------- i numeri dei punti
@@ -246,7 +328,46 @@ function specie(c) {
     || c.online != null || c.offline != null)) return 'timer';
   if (!testi.length && typeof primo(c, CH_UTENTE) === 'string' && primo(c, CH_PUNTI) !== undefined) return 'punti';
   if (primo(c, CH_NOME_CMD) != null && primo(c, CH_RISPOSTA) != null) return 'comando';
+  if (typeof (c.counter ?? c.contatore) === 'string' && Number.isFinite(Number(c.value ?? c.valore ?? c.count))) return 'contatore';
   return null;
+}
+
+// Un comando letto, nella forma comune a tutti i lettori. Oltre a nome,
+// risposta e acceso, quello che decide CHI lo usa e QUANDO, come lo scrivono:
+//   StreamElements { command, reply, enabled, accessLevel, cooldown: { user,
+//     global }, aliases, enabledOnline, enabledOffline, cost, type, keywords,
+//     regex, titleKeywords, hidden, startsAt, expiresAt }
+//   Nightbot { name, message, userLevel, coolDown, count }
+//   un CSV o un file qualunque: livello, cooldown e alias se ci sono.
+const CH_LIVELLO = ['accessLevel', 'userLevel', 'userlevel', 'permission', 'permissions', 'level', 'livello'];
+const intero = (x) => { const n = Number(x); return Number.isFinite(n) && n > 0 ? Math.round(n) : 0; };
+const elenco = (x) => (Array.isArray(x) ? x : (typeof x === 'string' ? x.split(/[\s,]+/) : []))
+  .map((s) => String(s ?? '').trim()).filter(Boolean);
+
+function comandoDaVoce(c) {
+  const v = { nome: String(primo(c, CH_NOME_CMD)), risposta: String(primo(c, CH_RISPOSTA)), attivo: c.enabled !== false && c.active !== false };
+  const lv = primo(c, CH_LIVELLO);
+  if (lv !== undefined) v.livello = lv;
+  if (c.cooldown && typeof c.cooldown === 'object') {
+    v.cooldown = intero(c.cooldown.global);
+    v.cooldownUtente = intero(c.cooldown.user);
+  } else {
+    v.cooldown = intero(primo(c, ['coolDown', 'cooldown', 'globalCooldown']));
+    v.cooldownUtente = intero(primo(c, ['userCooldown', 'cooldownUtente']));
+  }
+  v.alias = elenco(c.aliases);
+  if (c.enabledOnline === false) v.inDiretta = false;
+  if (c.enabledOffline === false) v.fuoriDiretta = false;
+  if (intero(c.cost)) v.costo = intero(c.cost);
+  if (typeof c.type === 'string' && c.type.trim()) v.tipo = c.type.trim().toLowerCase();
+  v.parole = elenco(Array.isArray(c.keywords) ? c.keywords : []);
+  if (typeof c.regex === 'string' && c.regex.trim()) v.regex = c.regex.trim();
+  v.titolo = elenco(Array.isArray(c.titleKeywords) ? c.titleKeywords : []);
+  if (c.hidden === true) v.nascosto = true;
+  if (c.startsAt) v.inizia = c.startsAt;
+  if (c.expiresAt) v.scade = c.expiresAt;
+  if (typeof c.count === 'number' && Number.isFinite(c.count)) v.conta = Math.trunc(c.count);
+  return v;
 }
 
 // Un timer letto, nella forma comune a tutti i lettori:
@@ -287,10 +408,10 @@ function timerDaVoce(c) {
 }
 
 // ---------------------------------------------------------------- i formati
-// Ogni lettore ritorna { comandi, timer, punti, oreFuori } oppure null se nel
-// testo non trova niente di suo.
-const vuoto = () => ({ comandi: [], timer: [], punti: [], oreFuori: false });
-const pieno = (o) => (o.comandi.length || o.timer.length || o.punti.length ? o : null);
+// Ogni lettore ritorna { comandi, timer, punti, contatori, oreFuori } oppure
+// null se nel testo non trova niente di suo.
+const vuoto = () => ({ comandi: [], timer: [], punti: [], contatori: [], oreFuori: false });
+const pieno = (o) => (o.comandi.length || o.timer.length || o.punti.length || o.contatori.length ? o : null);
 
 function daJson(grezzo) {
   let d;
@@ -308,7 +429,10 @@ function daJson(grezzo) {
           break;
         case 'comando':
           // Nightbot {name, message} · StreamElements {command, reply} · altri {cmd, response, text}
-          out.comandi.push({ nome: String(primo(c, CH_NOME_CMD)), risposta: String(primo(c, CH_RISPOSTA)), attivo: c.enabled !== false && c.active !== false });
+          out.comandi.push(comandoDaVoce(c));
+          break;
+        case 'contatore':
+          out.contatori.push({ nome: String(c.counter ?? c.contatore), valore: Number(c.value ?? c.valore ?? c.count) });
           break;
         default: break;
       }
@@ -354,6 +478,10 @@ const COL_RIGHE = colonne(['lines', 'chatlines', 'righe', 'minlines', 'lineminim
 const COL_UTENTE = colonne(['username', 'user', 'utente', 'login', 'viewer', 'spettatore', 'name', 'nome', 'nomeutente', 'displayname']);
 const COL_PUNTI = colonne(['points', 'punti', 'monete', 'coins', 'currency', 'balance', 'saldo', 'amount', 'puntitotali', 'totalpoints']);
 const COL_ORE = colonne(['hours', 'ore', 'minuteswatched', 'watchtime', 'oreguardate', 'minutiguardati', 'time', 'tempo']);
+const COL_LIVELLO = colonne(['userlevel', 'accesslevel', 'permission', 'permissions', 'level', 'livello', 'permessi', 'access', 'perchi']);
+const COL_COOLDOWN = colonne(['cooldown', 'globalcooldown', 'cooldownglobal', 'cooldownglobale', 'attesa']);
+const COL_COOLDOWN_UTENTE = colonne(['usercooldown', 'cooldownuser', 'cooldownutente', 'attesaatesta']);
+const COL_ALIAS = colonne(['aliases', 'alias']);
 const indice = (testa, col) => testa.findIndex((x) => col.has(x));
 const NOME_COMANDO = /^!?[a-zA-Z0-9_]{1,24}$/;
 // «Dopo il nome c'è solo un numero»: la stessa regola per il CSV e per
@@ -387,7 +515,16 @@ function daCsv(grezzo) {
     return pieno(out);
   }
   if (iN >= 0 && iR >= 0) {
-    out.comandi = corpo.map((c) => ({ nome: c[iN] || '', risposta: c[iR] || '' })).filter((x) => x.nome && x.risposta);
+    // livello, cooldown e alias, se il foglio li ha: valgono come nel JSON
+    const iLv = indice(testa, COL_LIVELLO), iCd = indice(testa, COL_COOLDOWN), iCu = indice(testa, COL_COOLDOWN_UTENTE);
+    const iA = testa.findIndex((x, i) => i !== iN && COL_ALIAS.has(x));
+    out.comandi = corpo.map((c) => ({
+      nome: c[iN] || '', risposta: c[iR] || '',
+      ...(iLv >= 0 && (c[iLv] || '').trim() ? { livello: c[iLv].trim() } : {}),
+      ...(iCd >= 0 ? { cooldown: intero(c[iCd]) } : {}),
+      ...(iCu >= 0 ? { cooldownUtente: intero(c[iCu]) } : {}),
+      ...(iA >= 0 ? { alias: elenco(c[iA] || '') } : {}),
+    })).filter((x) => x.nome && x.risposta);
     return pieno(out);
   }
 
@@ -444,16 +581,65 @@ export const FORMATI = [
 ];
 
 // ---------------------------------------------------------------- i moduli che ne escono
-// Il modulo corrispondente a un comando importato: un trigger «comando» e una
-// sola azione «messaggio». È esattamente ciò che un comando di Nightbot è.
-export function moduloDa({ nome, risposta, attivo = true }) {
+// Il modulo corrispondente a un comando importato: un trigger «comando» (con
+// i suoi alias), le condizioni di chi e quando, i contatori che muoveva, e il
+// messaggio. È esattamente ciò che un comando degli altri bot è.
+const azioneConto = (x) => (x.op === 'imposta'
+  ? { tipo: 'contatore', op: 'imposta', nome: x.nome, valore: x.valore }
+  : { tipo: 'contatore', op: 'incrementa', nome: x.nome });
+
+export function moduloDa({ nome, risposta, attivo = true, condizioni = {}, alias = [], conti = [] }) {
   return {
     nome: '!' + nome,
     attivo: attivo !== false,
-    trigger: { tipo: 'comando', comando: nome },
-    condizioni: {},
-    azioni: [{ tipo: 'messaggio', testo: risposta }],
+    trigger: alias.length ? { tipo: 'comando', comando: nome, alias: [...alias] } : { tipo: 'comando', comando: nome },
+    condizioni: { ...condizioni },
+    azioni: [...conti.map(azioneConto), { tipo: 'messaggio', testo: risposta }],
   };
+}
+
+// Le condizioni che un import decide. Le altre (probabilità, piattaforme,
+// monete minime, il ramo del no) sono scelte fatte qui: un import non le vede
+// e non le tocca.
+export const CONDIZIONI_IMPORT = ['tier', 'chi', 'cooldown', 'cooldownUtente', 'soloLive', 'soloOffline', 'costo'];
+
+// Quello che l'import sa di un comando, in una forma confrontabile: «già
+// identico» vuol dire identico in TUTTO questo, non solo nel testo. Prima
+// bastava il testo, e un comando entrato per tutti quando era dei moderatori
+// restava così anche rifacendo l'import.
+function firma(m) {
+  const t = m?.trigger || {};
+  const c = m?.condizioni || {};
+  const cond = {};
+  for (const k of CONDIZIONI_IMPORT) {
+    const v = c[k];
+    if (v === undefined || v === null || v === false || v === 0 || v === '' || (k === 'tier' && v === 'tutti')) continue;
+    cond[k] = k === 'chi' ? {
+      modo: v.modo === 'tranne' ? 'tranne' : 'solo',
+      persone: (v.persone || []).map((q) => `${q?.p || 'twitch'}:${q?.id || String(q?.login || '').toLowerCase()}`).sort(),
+      gruppi: [...(v.gruppi || [])].sort(),
+    } : v;
+  }
+  const azioni = Array.isArray(m?.azioni) ? m.azioni
+    : (m?.risposta != null || m?.response != null ? [{ tipo: 'messaggio', testo: String(m.risposta ?? m.response) }] : []);
+  return JSON.stringify({
+    alias: elenco(t.alias).map(normalizzaNome).filter(Boolean).sort(),
+    cond,
+    azioni: azioni.map((a) => (a?.tipo === 'contatore'
+      ? { c: a.op, n: nomeContatore(a.nome), v: a.op === 'imposta' ? Number(a.valore) || 0 : null }
+      : { t: a?.tipo, x: String(a?.testo ?? '') })),
+  });
+}
+
+// Il comando importato SOPRA quello che c'è già: nome, alias, messaggio e le
+// condizioni dell'import vengono dall'altro bot; le scelte fatte qui (il ramo
+// del no, Telegram, «senza !», le altre condizioni) restano.
+export function sopra(esistente, nuovo) {
+  const condizioni = { ...(esistente?.condizioni || {}) };
+  for (const k of CONDIZIONI_IMPORT) delete condizioni[k];
+  const trigger = { ...(esistente?.trigger || {}), ...nuovo.trigger };
+  if (!nuovo.trigger.alias) delete trigger.alias;
+  return { ...esistente, ...nuovo, id: esistente?.id, trigger, condizioni: { ...condizioni, ...nuovo.condizioni } };
 }
 
 // Il modulo di un timer: innesco «a tempo», un messaggio. «Solo fuori diretta»
@@ -469,37 +655,137 @@ export function moduloTimerDa(v) {
 }
 
 // ---------------------------------------------------------------- anteprima dei comandi
-function anteprimaComandi(letti, { esistenti, max }) {
+export const MAX_COOLDOWN = 86_400;
+const giorno = (ms) => new Date(ms).toISOString().slice(0, 10);
+
+// Un comando letto diventa una voce dell'anteprima. Tutto quello che cambia
+// rispetto a prima è un AVVISO (e la voce va «da rivedere»): un livello più
+// stretto, una risposta in privato che qui sarebbe in chat, le parole chiave
+// che qui non lo fanno partire. Tutto quello che resta uguale si porta e
+// basta, scritto nelle sue condizioni.
+function unComando(c, nome, { cambio, proprietario, ora, altriNomi }) {
+  const { testo: tradotto, avvisi, conti } = traduci(c.risposta, { nome });
+  if (!tradotto) return { perche: 'risposta vuota' };
+  const avvisa = (cosa) => avvisi.push({ tipo: 'comportamento', cosa, dove: null });
+
+  const lv = livelloDa(c.livello);
+  const condizioni = condizioniDi(lv.gradino, proprietario);
+  if (!condizioni) return { perche: 'era solo per il proprietario del canale, e qui non so chi sei' };
+  if (lv.avviso) avvisa(lv.avviso);
+  let attivo = c.attivo !== false && !lv.spento;
+
+  for (const [campo, k] of [['cooldown', 'cooldown'], ['cooldownUtente', 'cooldownUtente']]) {
+    const s = intero(c[campo]);
+    if (!s) continue;
+    condizioni[k] = Math.min(s, MAX_COOLDOWN);
+    if (s > MAX_COOLDOWN) avvisa(`aspettava ${s} secondi fra un uso e l’altro: qui al massimo un giorno`);
+  }
+
+  if (c.inDiretta === false && c.fuoriDiretta === false) attivo = false;
+  else if (c.inDiretta === false) condizioni.soloOffline = true;
+  else if (c.fuoriDiretta === false) condizioni.soloLive = true;
+
+  // I punti di prima diventano monete col cambio dei saldi, ARROTONDATI IN SU:
+  // chi non poteva permetterselo prima non può nemmeno qui.
+  if (intero(c.costo)) condizioni.costo = Math.ceil(intero(c.costo) / cambio);
+
+  let testo = tradotto, menzione = false;
+  if (c.tipo === 'mention' || c.tipo === 'reply') { testo = `@$user ${testo}`; menzione = true; }
+  else if (c.tipo === 'whisper') avvisa('rispondeva in privato a chi lo usava: qui risponde in chat, davanti a tutti');
+  else if (c.tipo && c.tipo !== 'say') avvisa(`un modo di rispondere che non conosco («${c.tipo.slice(0, 20)}»): qui scrive in chat`);
+
+  if (c.parole?.length) avvisa(`partiva anche quando in chat si scriveva «${c.parole.slice(0, 3).join('», «').slice(0, 80)}»: qui solo col comando`);
+  if (c.regex) avvisa('partiva anche coi messaggi che combaciavano con un’espressione: qui solo col comando');
+  if (c.titolo?.length) avvisa('funzionava solo con certe parole nel titolo della diretta: qui sempre');
+  if (c.nascosto) avvisa('era nascosto dall’elenco pubblico dei comandi: qui compare in quello delle tue pagine, se ne mostri uno');
+  const scade = Date.parse(c.scade), inizia = Date.parse(c.inizia);
+  if (Number.isFinite(scade) && scade <= ora) attivo = false;
+  else if (Number.isFinite(scade)) avvisa(`smetteva di funzionare il ${giorno(scade)}: qui resta`);
+  if (Number.isFinite(inizia) && inizia > ora) avvisa(`partiva dal ${giorno(inizia)}: qui funziona da subito`);
+
+  // Gli alias: puliti, senza il nome stesso, e mai sopra un altro comando
+  // (due moduli che rispondono alla stessa parola).
+  const alias = [];
+  for (const a of c.alias || []) {
+    const n = normalizzaNome(a);
+    if (!n || n === nome || alias.includes(n)) continue;
+    if (altriNomi.has(n)) { avvisa(`l’alias !${n} è già il nome di un altro comando: non entra`); continue; }
+    alias.push(n);
+    if (alias.length >= 10) break;
+  }
+
+  return {
+    voce: {
+      nome,
+      risposta: testo.slice(0, 400),
+      originale: String(c.risposta).slice(0, 400),
+      attivo,
+      condizioni,
+      alias,
+      conti,
+      gradino: lv.gradino,
+      menzione,
+      costoPunti: intero(c.costo),
+      spento: attivo === false && c.attivo !== false,
+      avvisi,
+    },
+    // Il numero del contatore del comando, se l'altro bot lo teneva lì
+    // (Nightbot: `count`), e solo se il testo lo usa davvero.
+    contatore: Number.isFinite(c.conta) && conti.some((x) => x.nome === nomeContatore(nome)) ? { nome: nomeContatore(nome), valore: c.conta } : null,
+  };
+}
+
+function anteprimaComandi(letti, { esistenti, max, tasso = 1, proprietario = null, ora = Date.now() }) {
   // Solo i moduli-comando: un modulo a tempo o «parola» con lo stesso nome non
   // è il comando che l'import andrebbe a sostituire.
   const gia = new Map();
   for (const m of esistenti || []) {
     if (m?.trigger?.tipo && m.trigger.tipo !== 'comando') continue;
     const c = m?.trigger?.comando ?? m?.comando ?? m?.name ?? m?.nome;
-    if (c) gia.set(normalizzaNome(c), String(m?.azioni?.[0]?.testo ?? m?.risposta ?? m?.response ?? ''));
+    if (c) gia.set(normalizzaNome(c), m);
   }
+  const cambio = Math.max(1, Math.min(1_000_000, Math.floor(Number(tasso)) || 1));
+  const nomiFile = new Set(letti.slice(0, max).map((c) => normalizzaNome(c.nome)).filter(Boolean));
 
-  const buoni = [], daRivedere = [], scartati = [];
+  const buoni = [], daRivedere = [], scartati = [], contatori = [];
   const visti = new Set();
   for (const c of letti.slice(0, max)) {
     const nome = normalizzaNome(c.nome);
     if (!nome) { scartati.push({ nome: String(c.nome).slice(0, 40), perche: 'nome non utilizzabile' }); continue; }
     if (visti.has(nome)) { scartati.push({ nome, perche: 'ripetuto nel file' }); continue; }
     visti.add(nome);
-    const { testo, avvisi } = traduci(c.risposta, { nome });
-    if (!testo) { scartati.push({ nome, perche: 'risposta vuota' }); continue; }
-    const voce = {
-      nome,
-      risposta: testo.slice(0, 400),
-      originale: String(c.risposta).slice(0, 400),
-      attivo: c.attivo !== false,
-      sovrascrive: gia.has(nome) && gia.get(nome) !== testo,
-      uguale: gia.has(nome) && gia.get(nome) === testo,
-      avvisi,
-    };
-    (avvisi.length ? daRivedere : buoni).push(voce);
+    const altriNomi = new Set([...nomiFile, ...gia.keys()]);
+    altriNomi.delete(nome);
+    const r = unComando(c, nome, { cambio, proprietario, ora, altriNomi });
+    if (r.perche) { scartati.push({ nome, perche: r.perche }); continue; }
+    const e = gia.get(nome);
+    const uguale = !!e && firma(e) === firma(moduloDa(r.voce));
+    const voce = { ...r.voce, uguale, sovrascrive: !!e && !uguale };
+    (voce.avvisi.length ? daRivedere : buoni).push(voce);
+    if (r.contatore) contatori.push(r.contatore);
   }
-  return { buoni, daRivedere, scartati, totale: letti.length, troncato: letti.length > max };
+  return { buoni, daRivedere, scartati, totale: letti.length, troncato: letti.length > max, contatoriDaComandi: contatori };
+}
+
+// ---------------------------------------------------------------- i contatori
+// Il numero a cui era arrivato un contatore. Entra solo dove qui quel
+// contatore non c'è ancora: uno che c'è l'hai già usato qui, e un import non
+// riscrive di nascosto le tue morti di ieri. Lo si mostra, con tutti e due i
+// numeri.
+export const MAX_CONTATORI_IMPORT = 100;
+function anteprimaContatori(letti, { contatoriQui }) {
+  const qui = typeof contatoriQui === 'function' ? contatoriQui() : (contatoriQui || new Map());
+  const voci = [], visti = new Set();
+  for (const k of letti) {
+    const nome = nomeContatore(k?.nome);
+    const valore = Math.trunc(Number(k?.valore));
+    if (!nome || !Number.isFinite(valore) || Math.abs(valore) > TETTO_PUNTI || visti.has(nome)) continue;
+    visti.add(nome);
+    const ora = qui.get(nome);
+    voci.push({ nome, valore, qui: ora ?? null, entra: ora === undefined, uguale: ora === valore });
+    if (voci.length >= MAX_CONTATORI_IMPORT) break;
+  }
+  return voci.length ? { voci } : null;
 }
 
 // ---------------------------------------------------------------- anteprima dei timer
@@ -689,15 +975,19 @@ export function anteprimaPunti(letti, { saldi = new Map(), tasso = 1, escludi = 
 // rivisto e perché, e quanti ce ne stanno. Non tocca niente.
 // I campi dei comandi restano in cima (è la forma di sempre); timer e punti
 // hanno i loro.
-export function anteprima(grezzo, { esistenti = [], max = 500, posti = Infinity, saldi, tasso, escludi } = {}) {
+// `proprietario` è la persona del canale ({ p, id, login, nome }): serve ai
+// comandi che erano solo suoi. `contatoriQui` i contatori che ci sono già
+// (nome → valore, o una funzione che li dà).
+export function anteprima(grezzo, { esistenti = [], max = 500, posti = Infinity, saldi, tasso, escludi, proprietario = null, contatoriQui, ora = Date.now() } = {}) {
   let formato = null, letto = null;
   for (const f of FORMATI) { const r = f.leggi(grezzo); if (r) { formato = f.id; letto = r; break; } }
   if (!letto) {
     return { formato: null, buoni: [], daRivedere: [], scartati: [], totale: 0, posti,
-      timer: { buoni: [], daRivedere: [], scartati: [], totale: 0, troncato: false }, punti: null };
+      timer: { buoni: [], daRivedere: [], scartati: [], totale: 0, troncato: false }, punti: null, contatori: null };
   }
-  const comandi = anteprimaComandi(letto.comandi, { esistenti, max });
+  const { contatoriDaComandi, ...comandi } = anteprimaComandi(letto.comandi, { esistenti, max, tasso, proprietario, ora });
   const timer = anteprimaTimer(letto.timer, { esistenti, risposte: risposteDi(letto.comandi, esistenti) });
   const punti = letto.punti.length ? anteprimaPunti(letto.punti, { saldi, tasso, escludi, oreFuori: letto.oreFuori }) : null;
-  return { formato, ...comandi, posti, timer, punti };
+  const contatori = anteprimaContatori([...letto.contatori, ...contatoriDaComandi], { contatoriQui });
+  return { formato, ...comandi, posti, timer, punti, contatori };
 }

@@ -1036,8 +1036,8 @@ function _demoImport(corpo) {
     buoni: [
       { nome: 'discord', risposta: 'Entra nel Discord: discord.gg/andryx', originale: 'Entra nel Discord: discord.gg/andryx', attivo: true, sovrascrive: false, uguale: false, avvisi: [] },
       { nome: 'ciao', risposta: 'Ciao $user, benvenuto!', originale: 'Ciao $(user), benvenuto!', attivo: true, sovrascrive: false, uguale: false, avvisi: [] },
-      { nome: 'morti', risposta: 'Oggi sono morto $count(morti) volte', originale: 'Oggi sono morto $(count) volte', attivo: true, sovrascrive: false, uguale: false, avvisi: [] },
-      { nome: 'so', risposta: 'Andate a seguire $touser!', originale: 'Andate a seguire $(touser)!', attivo: true, sovrascrive: true, uguale: false, avvisi: [] },
+      { nome: 'morti', risposta: 'Oggi sono morto $count(morti) volte', originale: 'Oggi sono morto $(count) volte', attivo: true, sovrascrive: false, uguale: false, avvisi: [], conti: [{ nome: 'morti', op: 'incrementa' }] },
+      { nome: 'so', risposta: 'Andate a seguire $touser!', originale: 'Andate a seguire $(touser)!', attivo: true, sovrascrive: true, uguale: false, avvisi: [], condizioni: { tier: 'mod', cooldown: 10 }, gradino: 'mod' },
     ],
     daRivedere: [
       { nome: 'meteo', risposta: '$(urlfetch https://api.meteo.example/$args)', originale: '$(urlfetch https://api.meteo.example/$(query))', attivo: true, sovrascrive: false, uguale: false,
@@ -1064,8 +1064,40 @@ function _demoImport(corpo) {
     entrano: voci.reduce((a, x) => a + x.monete, 0), top: voci,
     scartati: [], scartatiTotale: 0, troncato: false, oreFuori: false, soloProprietario: false,
   };
-  if (corpo?.applica) return { ok: true, importati: 3, aggiornati: 1, senzaPosto: 0, falliti: [], timer: { importati: 2, aggiornati: 0 }, punti: { nuovi: 2, aggiornati: 1, invariati: 0 }, anteprima: v };
+  v.contatori = { voci: [{ nome: 'morti', valore: 41, qui: null, entra: true, uguale: false }] };
+  if (corpo?.applica) return { ok: true, importati: 3, aggiornati: 1, senzaPosto: 0, falliti: [], timer: { importati: 2, aggiornati: 0 }, punti: { nuovi: 2, aggiornati: 1, invariati: 0 }, contatori: 1, anteprima: v };
   return { ok: true, anteprima: v };
+}
+
+function _demoImportSE(corpo) {
+  const tasso = Math.max(1, Math.floor(Number(corpo?.tasso) || 1));
+  const voce = (nome, risposta, originale, altro = {}) => ({ nome, risposta, originale, attivo: true, sovrascrive: false, uguale: false, avvisi: [], alias: [], conti: [], condizioni: {}, gradino: 'tutti', ...altro });
+  const v = {
+    formato: 'json', totale: 6, troncato: false, posti: 97,
+    buoni: [
+      voce('discord', 'Entra nel Discord: discord.gg/andryx', 'Entra nel Discord: discord.gg/andryx', { alias: ['dc'], condizioni: { cooldown: 5, cooldownUtente: 15 } }),
+      voce('setgame', 'Categoria cambiata', 'Categoria cambiata', { condizioni: { tier: 'mod' }, gradino: 'mod' }),
+      voce('morti', 'Oggi sono morto $count(morti) volte', 'Oggi sono morto ${count morti} volte', { conti: [{ nome: 'morti', op: 'incrementa' }] }),
+      voce('lurk', '@$user va in lurk, a dopo!', 'va in lurk, a dopo!', { menzione: true, condizioni: { soloLive: true } }),
+      voce('premio', 'Hai vinto un saluto speciale!', 'Hai vinto un saluto speciale!', { condizioni: { costo: Math.ceil(500 / tasso) }, costoPunti: 500 }),
+    ],
+    daRivedere: [
+      voce('vip', 'Benvenuto nel club', 'Benvenuto nel club', { condizioni: { tier: 'vip' }, gradino: 'vip',
+        avvisi: [{ tipo: 'comportamento', cosa: L('era per i «regular», che qui non ci sono: entra per VIP e moderatori', 'it was for «regulars», who do not exist here: it comes in for VIPs and moderators', 'era para los «regulars», que aquí no existen: entra para VIP y moderadores'), dove: null }] }),
+    ],
+    scartati: [],
+    timer: { buoni: [], daRivedere: [], scartati: [], totale: 0, troncato: false },
+  };
+  const gia = { giada: 140 };
+  const voci = [['marco_gioca', 12450], ['giada', 8300], ['lucia_rs', 2710]].map(([utente, punti]) => {
+    const monete = Math.floor(punti / tasso), prima = gia[utente] || 0;
+    return { utente, punti, monete, prima, dopo: prima + monete, nuovo: !prima };
+  });
+  v.punti = { letti: 3, tasso, cambiano: 3, nuovi: 2, invariati: 0, zero: 0, entrano: voci.reduce((a, x) => a + x.monete, 0), top: voci, scartati: [], scartatiTotale: 0, troncato: false, oreFuori: false, soloProprietario: false };
+  v.contatori = { voci: [{ nome: 'morti', valore: 41, qui: null, entra: true, uguale: false }] };
+  const streamelements = { canale: { nome: 'AndryxDemo' }, firma: 'demo', conti: { comandi: 6, contatori: 1, punti: 3, puntiTotali: 3, nomePunti: 'gemme', puntiSpenti: false, puntiChiesti: true } };
+  if (corpo?.applica) return { ok: true, streamelements, importati: 5, aggiornati: 0, senzaPosto: 0, falliti: [], timer: { importati: 0, aggiornati: 0 }, punti: { nuovi: 2, aggiornati: 1, invariati: 0 }, contatori: 1, anteprima: v };
+  return { ok: true, streamelements, anteprima: v };
 }
 
 const _DEMO_RIGHE = {
@@ -1428,6 +1460,7 @@ function apiDemo(percorso, opzioni = {}) {
   ] });
   if (via === '/api/streamer/citazioni/importa') return Promise.resolve({ ok: true, aggiunte: 2, saltate: 0 });
   if (via === '/api/streamer/comandi/importa') return Promise.resolve(_demoImport(opzioni.body));
+  if (via === '/api/streamer/comandi/importa/streamelements') return Promise.resolve(_demoImportSE(opzioni.body));
   if (via === '/api/streamer/libreria/importa') {
     const it = LIB_DEMO.find((x) => x.id === Number(opzioni.body?.id));
     return Promise.resolve({ ok: true, comando: normComandoWeb(it?.nome || 'media') });
@@ -21917,6 +21950,28 @@ function pannelloModuli() {
         <label class="btn secondario" for="imp-file">${_bIco(ICO.carica)}${L('Apri un file', 'Open a file', 'Abre un archivo')}</label>
         <input type="file" id="imp-file" accept=".json,.csv,.txt,text/plain,application/json" hidden>
       </p>
+      <div class="imp-se spazio-sopra" id="imp-se">
+        <h3>${L('Da StreamElements, senza scaricare niente', 'From StreamElements, without downloading anything', 'Desde StreamElements, sin descargar nada')}</h3>
+        <p>${L('Prendo quello che StreamElements mostra a tutti sulla pagina dei tuoi comandi: i comandi (tranne i nascosti), i loro contatori e, se il canale è tuo, i punti del tuo pubblico. <strong>Non serve nessun accesso</strong>: niente password, niente chiavi. Prima di scrivere qualsiasi cosa ti mostro cosa succede.', 'I take what StreamElements shows everyone on your commands page: the commands (except hidden ones), their counters and, if the channel is yours, your viewers\' points. <strong>No access needed</strong>: no password, no keys. Before writing anything I show you what happens.', 'Tomo lo que StreamElements muestra a todos en la página de tus comandos: los comandos (salvo los ocultos), sus contadores y, si el canal es tuyo, los puntos de tu público. <strong>No hace falta ningún acceso</strong>: ni contraseña ni claves. Antes de escribir nada te muestro qué pasa.')}</p>
+        <p class="spazio-sopra"><button class="btn secondario" id="imp-se-prendi">${_bIco(ICO.scarica)}${L('Prendi da StreamElements', 'Fetch from StreamElements', 'Tráelo de StreamElements')}</button></p>
+        <details class="zona-pericolo spazio-sopra" id="imp-se-chiave-box">
+          <summary>${L('Anche i timer e i comandi nascosti: serve la tua chiave, per un momento', 'Timers and hidden commands too: your key is needed, for a moment', 'También los temporizadores y los comandos ocultos: hace falta tu clave, por un momento')}</summary>
+          <div class="riquadro-info spazio-sopra">
+            <strong>${L('La chiave vive solo in questa pagina, e solo per un attimo.', 'The key lives only on this page, and only for a moment.', 'La clave vive solo en esta página, y solo un instante.')}</strong>
+            <ul class="lista-punti">
+              <li>${L('Va da questo browser a StreamElements e basta: <strong>a noi non arriva mai</strong>. Non la salviamo, non finisce in cookie, cache o cronologia.', 'It goes from this browser to StreamElements and nowhere else: <strong>it never reaches us</strong>. We don\'t store it, and it never ends up in cookies, cache or history.', 'Va de este navegador a StreamElements y nada más: <strong>nunca nos llega</strong>. No la guardamos, ni acaba en cookies, caché o historial.')}</li>
+              <li>${L('<strong>Appena la leggo, la cancello</strong> dalla pagina, anche se qualcosa va storto.', '<strong>As soon as I read it, I erase it</strong> from the page, even if something goes wrong.', '<strong>En cuanto la leo, la borro</strong> de la página, aunque algo salga mal.')}</li>
+              <li>${L('<strong>Se ricarichi la pagina, la chiave non c\'è più</strong>: per un altro import va incollata di nuovo.', '<strong>If you reload the page, the key is gone</strong>: for another import you paste it again.', '<strong>Si recargas la página, la clave desaparece</strong>: para otra importación hay que pegarla de nuevo.')}</li>
+              <li>${L('È la chiave di tutto il tuo account StreamElements. Per non correre nessun rischio, dopo l\'import rigenerala su StreamElements: quella vecchia smette di funzionare.', 'It is the key to your whole StreamElements account. To take no risk at all, regenerate it on StreamElements after the import: the old one stops working.', 'Es la clave de toda tu cuenta de StreamElements. Para no correr ningún riesgo, regénerala en StreamElements después de importar: la antigua deja de funcionar.')}</li>
+            </ul>
+          </div>
+          <p class="suggerimento spazio-sopra">${L('Dove si trova: su StreamElements, apri il tuo profilo, «Channels», poi «Show secrets»: è il «JWT Token».', 'Where to find it: on StreamElements, open your profile, «Channels», then «Show secrets»: it is the «JWT Token».', 'Dónde está: en StreamElements, abre tu perfil, «Channels», luego «Show secrets»: es el «JWT Token».')}</p>
+          <label class="campo spazio-sopra" for="imp-se-chiave">${L('La tua chiave (JWT Token)', 'Your key (JWT Token)', 'Tu clave (JWT Token)')}</label>
+          <input type="password" id="imp-se-chiave" class="campo-largo" autocomplete="off" spellcheck="false" autocapitalize="off" data-1p-ignore data-lpignore="true" data-bwignore data-form-type="other">
+          <p class="spazio-sopra"><button class="btn secondario" id="imp-se-leggi">${_bIco(ICO.lucchetto)}${L('Leggi timer e comandi, poi dimentica la chiave', 'Read timers and commands, then forget the key', 'Lee temporizadores y comandos, y olvida la clave')}</button></p>
+          <p id="imp-se-stato" class="suggerimento" role="status" aria-live="polite"></p>
+        </details>
+      </div>
       <div id="imp-esito"></div>
     </div>
 
@@ -30168,18 +30223,76 @@ function attivaPiattaforma() {
 
   let _impVista = null;
   let _impTesto = '';
+  let _impFonte = 'testo';
+  let _impSE = null;
 
   const impTag = (testo, cls = '') => `<span class="imp-tag${cls ? ' ' + cls : ''}">${esc(testo)}</span>`;
   const impStato = (c) => `${c.sovrascrive ? impTag(L('sostituisce quello che hai', 'replaces what you have', 'sustituye el que tienes'), 'imp-sovra') : ''}${c.uguale ? impTag(L('identico: lo salto', 'identical: skipping', 'idéntico: lo salto')) : ''}`;
   const impAvvisi = (c) => (c.avvisi || []).map((a) => `<span class="imp-tag imp-nota">${esc(a.cosa)}${a.dove ? ': ' + L('qui si fa con', 'here you do it with', 'aquí se hace con') + ' ' + esc(a.dove) : ''}</span>`).join('');
   const impNum = (n) => Number(n || 0).toLocaleString(localePannello());
   const impN = (n, uno, tanti) => `${impNum(n)} ${Math.abs(n) === 1 ? uno : tanti}`;
+  const impPer = (c) => {
+    const g = c.gradino || (c.condizioni?.chi ? 'tu' : (c.condizioni?.tier || 'tutti'));
+    return g === 'tu' ? L('solo tu', 'only you', 'solo tú')
+      : g === 'mod' ? L('solo moderatori', 'moderators only', 'solo moderadores')
+      : g === 'vip' ? L('VIP e moderatori', 'VIPs and moderators', 'VIP y moderadores')
+      : g === 'sub' ? L('abbonati, VIP e moderatori', 'subscribers, VIPs and moderators', 'suscriptores, VIP y moderadores') : '';
+  };
+  const impSegni = (c) => {
+    const k = c.condizioni || {}, s = [];
+    const per = impPer(c);
+    if (per) s.push(per);
+    if (k.cooldown) s.push(L(`una volta ogni ${k.cooldown} s`, `once every ${k.cooldown} s`, `una vez cada ${k.cooldown} s`));
+    if (k.cooldownUtente) s.push(L(`${k.cooldownUtente} s a testa`, `${k.cooldownUtente} s per person`, `${k.cooldownUtente} s por persona`));
+    if ((c.alias || []).length) s.push(L('anche', 'also', 'también') + ' ' + c.alias.map((a) => '!' + a).join(' '));
+    if (k.soloLive) s.push(L('solo in diretta', 'only while live', 'solo en directo'));
+    if (k.soloOffline) s.push(L('solo fuori diretta', 'only when offline', 'solo fuera de directo'));
+    if (k.costo) s.push(`${L('costa', 'costs', 'cuesta')} ${impN(k.costo, L('moneta', 'coin', 'moneda'), L('monete', 'coins', 'monedas'))}${c.costoPunti ? ` (${L('erano', 'it was', 'eran')} ${impN(c.costoPunti, L('punto', 'point', 'punto'), L('punti', 'points', 'puntos'))})` : ''}`);
+    for (const x of c.conti || []) s.push(x.op === 'imposta' ? L(`mette «${x.nome}» a ${x.valore}`, `sets «${x.nome}» to ${x.valore}`, `pone «${x.nome}» en ${x.valore}`) : L(`+1 a «${x.nome}»`, `+1 to «${x.nome}»`, `+1 a «${x.nome}»`));
+    if (c.attivo === false) s.push(L('entra spento', 'comes in switched off', 'entra apagado'));
+    return s.map((x) => impTag(x, 'imp-segno')).join('');
+  };
 
   const impRiga = (c) => `<li class="imp-riga">
     <code>!${esc(c.nome)}</code>
     <span class="imp-testo">${esc(c.risposta)}</span>
-    ${impStato(c)}${impAvvisi(c)}
+    ${impSegni(c)}${impStato(c)}${impAvvisi(c)}
   </li>`;
+
+  function impContatori(k) {
+    if (!k?.voci?.length) return '';
+    const riga = (x) => `<li class="imp-riga"><code>${esc(x.nome)}</code><span class="imp-testo">${x.entra
+      ? L(`parte da ${impNum(x.valore)}`, `starts from ${impNum(x.valore)}`, `empieza en ${impNum(x.valore)}`)
+      : (x.uguale ? L(`è già a ${impNum(x.qui)}`, `is already at ${impNum(x.qui)}`, `ya está en ${impNum(x.qui)}`)
+        : L(`qui è a ${impNum(x.qui)}, prima era a ${impNum(x.valore)}: resta ${impNum(x.qui)}`, `here it is at ${impNum(x.qui)}, before it was at ${impNum(x.valore)}: it stays at ${impNum(x.qui)}`, `aquí está en ${impNum(x.qui)}, antes estaba en ${impNum(x.valore)}: se queda en ${impNum(x.qui)}`))}</span></li>`;
+    const restano = k.voci.some((x) => !x.entra && !x.uguale);
+    return `<h4 class="spazio-sopra">${L('Contatori', 'Counters', 'Contadores')}</h4>
+      <ul class="imp-lista">${k.voci.map(riga).join('')}</ul>
+      ${restano ? `<p class="suggerimento">${L('Un contatore che hai già non si riscrive: se vuoi il numero di prima, cambialo dalla carta dei contatori.', 'A counter you already have is not overwritten: if you want the old number, change it from the counters card.', 'Un contador que ya tienes no se sobrescribe: si quieres el número de antes, cámbialo desde la tarjeta de contadores.')}</p>` : ''}`;
+  }
+
+  function impDaSE(se) {
+    if (!se) return '';
+    const c = se.conti || {};
+    return `<div class="riquadro-info spazio-sopra">
+      <strong>${L('Da StreamElements', 'From StreamElements', 'Desde StreamElements')}: ${esc(se.canale?.nome || '')}</strong>.
+      ${L('I comandi nascosti e i timer non si vedono senza la chiave.', 'Hidden commands and timers are not visible without the key.', 'Los comandos ocultos y los temporizadores no se ven sin la clave.')}
+      ${c.puntiTotali > c.punti ? `<br>${L(`Su StreamElements ci sono ${impNum(c.puntiTotali)} persone coi punti: portiamo le prime ${impNum(c.punti)}, quelle con più punti.`, `StreamElements has ${impNum(c.puntiTotali)} people with points: we bring the top ${impNum(c.punti)}, the ones with the most.`, `En StreamElements hay ${impNum(c.puntiTotali)} personas con puntos: traemos las primeras ${impNum(c.punti)}, las que tienen más.`)}` : ''}
+      ${c.puntiSpenti ? `<br>${L('I punti su StreamElements sono spenti: non ce n’è da portare.', 'Points are switched off on StreamElements: there are none to bring.', 'Los puntos en StreamElements están apagados: no hay que traer.')}` : ''}
+      ${!c.puntiChiesti ? `<br>${L('I punti li porta solo il proprietario del canale: non li ho chiesti.', 'Only the channel owner can bring points over: I did not ask for them.', 'Solo el dueño del canal puede traer los puntos: no los he pedido.')}` : ''}
+    </div>`;
+  }
+
+  function impCambio(v) {
+    if (v.punti || ![...v.buoni, ...v.daRivedere].some((c) => c.costoPunti)) return '';
+    return `<div class="griglia-campi spazio-sopra">
+        <div>
+          <label class="campo" for="imp-tasso">${L('Ogni quanti punti di prima, una moneta', 'How many old points make one coin', 'Cuántos puntos de antes hacen una moneda')}</label>
+          <input type="number" id="imp-tasso" min="1" max="1000000" step="1" value="${Number(_impTassoUltimo) || 1}" style="max-width:10rem">
+        </div>
+      </div>
+      <p class="suggerimento">${L('Serve ai comandi che costavano punti: qui costano monete, arrotondate in su.', 'It is used by commands that cost points: here they cost coins, rounded up.', 'Sirve a los comandos que costaban puntos: aquí cuestan monedas, redondeadas hacia arriba.')}</p>`;
+  }
 
   const impQuando = (t) => {
     let q = L(`ogni ${t.minuti} min`, `every ${t.minuti} min`, `cada ${t.minuti} min`);
@@ -30216,7 +30329,7 @@ function attivaPiattaforma() {
           <input type="number" id="imp-tasso" min="1" max="1000000" step="1" value="${p.tasso}" style="max-width:10rem">
         </div>
       </div>
-      <p class="suggerimento">${L('Si sommano alle monete che ognuno ha già qui. Se importi di nuovo, conta l’ultimo file: nessuno riceve due volte gli stessi punti.', 'They add to the coins everyone already has here. If you import again, the latest file counts: nobody gets the same points twice.', 'Se suman a las monedas que cada uno ya tiene aquí. Si importas de nuevo, cuenta el último archivo: nadie recibe dos veces los mismos puntos.')}</p>
+      <p class="suggerimento">${L('Si sommano alle monete che ognuno ha già qui. Se importi di nuovo, conta l’ultima importazione: nessuno riceve due volte gli stessi punti.', 'They add to the coins everyone already has here. If you import again, the latest import counts: nobody gets the same points twice.', 'Se suman a las monedas que cada uno ya tiene aquí. Si importas de nuevo, cuenta la última importación: nadie recibe dos veces los mismos puntos.')}</p>
       ${p.oreFuori ? `<p class="suggerimento">${L('Le ore guardate non si portano: qui si contano da capo.', 'Watch hours do not come over: here they count from scratch.', 'Las horas vistas no se traen: aquí se cuentan desde cero.')}</p>` : ''}
       ${p.top.length ? `<ul class="imp-lista">${p.top.map(riga).join('')}</ul>` : ''}
       ${altri > 0 ? `<p class="suggerimento">${altri === 1 ? L('E un’altra persona.', 'And one more person.', 'Y otra persona.') : `${L('E altre', 'And', 'Y otras')} ${impNum(altri)} ${L('persone', 'more people', 'personas')}.`}</p>` : ''}
@@ -30225,8 +30338,10 @@ function attivaPiattaforma() {
       ${p.soloProprietario && p.cambiano ? `<div class="riquadro-info spazio-sopra">${L('I punti li porta solo il proprietario del canale, come le monete date a mano. Tu vedi cosa succederebbe; importando entrano comandi e timer.', 'Only the channel owner can bring points over, like coins given by hand. You see what would happen; importing brings in commands and timers.', 'Solo el dueño del canal puede traer los puntos, como las monedas dadas a mano. Tú ves qué pasaría; al importar entran comandos y temporizadores.')}</div>` : ''}`;
   }
 
-  function mostraAnteprimaImport(v) {
+  let _impTassoUltimo = 1;
+  function mostraAnteprimaImport(v, se = null) {
     _impVista = v;
+    _impSE = se;
     const box = document.getElementById('imp-esito');
     if (!box) return;
     const t = v.timer || { buoni: [], daRivedere: [], scartati: [], totale: 0 };
@@ -30235,6 +30350,7 @@ function attivaPiattaforma() {
     const letti = [];
     if (v.totale) letti.push(impN(v.totale, L('comando', 'command', 'comando'), L('comandi', 'commands', 'comandos')));
     if (t.totale) letti.push(impN(t.totale, L('timer', 'timer', 'temporizador'), L('timer', 'timers', 'temporizadores')));
+    if (v.contatori?.voci?.length) letti.push(impN(v.contatori.voci.length, L('contatore', 'counter', 'contador'), L('contatori', 'counters', 'contadores')));
     if (p) letti.push(impN(p.letti, L('saldo', 'balance', 'saldo'), L('saldi', 'balances', 'saldos')));
     const riassunto = (x) => {
       const entrano = x.buoni.filter((c) => !c.uguale).length;
@@ -30244,6 +30360,7 @@ function attivaPiattaforma() {
     const daRivedere = v.daRivedere.length || t.daRivedere.length;
     const puntiDaFare = !!(p && p.cambiano && !p.soloProprietario);
     box.innerHTML = `
+      ${impDaSE(se)}
       <div class="riquadro-info spazio-sopra">
         <strong>${L('Ho letto', 'I read', 'He leído')} ${letti.join(', ')}</strong>.
         ${v.posti !== Infinity && nuovi > v.posti ? `<br><strong>${L('Hai posto per', 'You have room for', 'Tienes sitio para')} ${impN(v.posti, L('modulo nuovo', 'new module', 'módulo nuevo'), L('moduli nuovi', 'new modules', 'módulos nuevos'))}</strong>: ${L('il resto non entrerà.', "the rest won't fit.", 'el resto no entrará.')}` : ''}
@@ -30251,7 +30368,7 @@ function attivaPiattaforma() {
       ${v.totale ? `<h4 class="spazio-sopra">${L('Comandi', 'Commands', 'Comandos')}</h4>
         <p>${riassunto(v)}${v.troncato ? `. ${L('Mostro i primi', 'Showing the first', 'Muestro los primeros')} ${v.buoni.length + v.daRivedere.length}` : ''}.</p>
         ${v.buoni.length ? `<ul class="imp-lista">${v.buoni.map(impRiga).join('')}</ul>` : ''}
-        ${v.daRivedere.length ? `<p class="suggerimento spazio-sopra">${L('Da rivedere: usano cose che il bot di prima sapeva fare e qui si fanno in un altro modo. Se li importi così come sono, in chat esce il testo grezzo.', 'To review: they use things the old bot could do that work differently here. If you import them as they are, chat will show the raw text.', 'A revisar: usan cosas que el bot anterior hacía y aquí se hacen de otra forma. Si los importas tal cual, en el chat saldrá el texto en crudo.')}</p>
+        ${v.daRivedere.length ? `<p class="suggerimento spazio-sopra">${L('Da rivedere: qui non si comportano del tutto come prima, e accanto c’è il perché. Se li importi così come sono, entrano come li vedi.', 'To review: here they do not behave quite as before, and the reason is next to each one. If you import them as they are, they come in as you see them.', 'A revisar: aquí no se comportan del todo como antes, y al lado está el porqué. Si los importas tal cual, entran como los ves.')}</p>
           <ul class="imp-lista">${v.daRivedere.map(impRiga).join('')}</ul>` : ''}
         ${impScartati(v.scartati)}` : ''}
       ${t.totale ? `<h4 class="spazio-sopra">${L('Timer', 'Timers', 'Temporizadores')}</h4>
@@ -30260,20 +30377,29 @@ function attivaPiattaforma() {
         ${t.daRivedere.length ? `<p class="suggerimento spazio-sopra">${L('Da rivedere: qui non si comportano del tutto come prima, e accanto c’è il perché.', 'To review: here they do not behave quite as before, and the reason is next to each one.', 'A revisar: aquí no se comportan del todo como antes, y al lado está el porqué.')}</p>
           <ul class="imp-lista">${t.daRivedere.map(impRigaTimer).join('')}</ul>` : ''}
         ${impScartati(t.scartati)}` : ''}
+      ${impCambio(v)}
+      ${impContatori(v.contatori)}
       ${impPunti(p)}
       ${daRivedere ? `<label class="riga-check spazio-sopra"><input type="checkbox" id="imp-anche-rivedere"> ${L('Importa lo stesso quelli da rivedere: li sistemo io dopo', "Import the ones to review anyway: I'll fix them later", 'Importa igual los que hay que revisar: los arreglo yo luego')}</label>` : ''}
-      ${(v.buoni.length || v.daRivedere.length || t.buoni.length || t.daRivedere.length || puntiDaFare) ? `<p class="spazio-sopra"><button class="btn" id="imp-applica">${_bIco(ICO.spunta)}${L('Importa', 'Import', 'Importar')}</button></p>` : ''}`;
+      ${(v.buoni.length || v.daRivedere.length || t.buoni.length || t.daRivedere.length || puntiDaFare || (v.contatori?.voci || []).some((x) => x.entra)) ? `<p class="spazio-sopra"><button class="btn" id="imp-applica">${_bIco(ICO.spunta)}${L('Importa', 'Import', 'Importar')}</button></p>` : ''}`;
 
     document.getElementById('imp-tasso')?.addEventListener('change', () => conErrore(vediImport));
     document.getElementById('imp-applica')?.addEventListener('click', () => conErrore(async () => {
       const b = document.getElementById('imp-applica');
       b.disabled = true; b.textContent = L('Importo…', 'Importing…', 'Importando…');
-      const r = await api('/api/streamer/comandi/importa', { method: 'POST', body: {
-        testo: _impTesto,
+      const daSE = _impFonte === 'se';
+      const corpo = {
         applica: true,
         includiDaRivedere: !!document.getElementById('imp-anche-rivedere')?.checked,
-        tasso: p?.tasso || 1,
-      } });
+        tasso: p?.tasso || _impTassoUltimo || 1,
+      };
+      if (daSE) corpo.firma = _impSE?.firma || ''; else corpo.testo = _impTesto;
+      const r = await api(daSE ? '/api/streamer/comandi/importa/streamelements' : '/api/streamer/comandi/importa', { method: 'POST', body: corpo });
+      if (r.cambiato) {
+        toast(L('Su StreamElements è cambiato qualcosa da quando hai guardato: ecco cosa c’è adesso. Ricontrolla e premi di nuovo Importa.', 'Something changed on StreamElements since you looked: here is what is there now. Check again and press Import again.', 'Algo cambió en StreamElements desde que miraste: esto es lo que hay ahora. Revisa y pulsa Importar otra vez.'), 'errore');
+        mostraAnteprimaImport(r.anteprima, r.streamelements);
+        return;
+      }
       const pezzi = [];
       if (r.importati) pezzi.push(impN(r.importati, L('comando nuovo', 'new command', 'comando nuevo'), L('comandi nuovi', 'new commands', 'comandos nuevos')));
       if (r.aggiornati) pezzi.push(impN(r.aggiornati, L('comando aggiornato', 'command updated', 'comando actualizado'), L('comandi aggiornati', 'commands updated', 'comandos actualizados')));
@@ -30281,18 +30407,22 @@ function attivaPiattaforma() {
       if (r.timer?.aggiornati) pezzi.push(impN(r.timer.aggiornati, L('timer aggiornato', 'timer updated', 'temporizador actualizado'), L('timer aggiornati', 'timers updated', 'temporizadores actualizados')));
       const persone = (r.punti?.nuovi || 0) + (r.punti?.aggiornati || 0);
       if (persone) pezzi.push(`${L('monete a', 'coins for', 'monedas para')} ${impN(persone, L('persona', 'person', 'persona'), L('persone', 'people', 'personas'))}`);
+      if (r.contatori) pezzi.push(impN(r.contatori, L('contatore', 'counter', 'contador'), L('contatori', 'counters', 'contadores')));
       toast(pezzi.length ? L('Fatto: ', 'Done: ', 'Hecho: ') + pezzi.join(', ') : L('Niente da fare: era già tutto qui.', 'Nothing to do: it was all here already.', 'Nada que hacer: ya estaba todo aquí.'));
       if (r.senzaPosto) toast(r.senzaPosto + ' ' + L('non sono entrati: hai finito i posti.', "didn't fit: you're out of room.", 'no entraron: te has quedado sin sitio.'), 'errore');
       if (r.punti?.negati) toast(L('I punti li porta solo il proprietario del canale.', 'Only the channel owner can bring points over.', 'Solo el dueño del canal puede traer los puntos.'), 'errore');
       document.getElementById('imp-esito').innerHTML = '';
       document.getElementById('imp-testo').value = '';
       _impTesto = '';
+      _impFonte = 'testo';
+      _impSE = null;
       aggiornaListe();
     }));
   }
 
-  const impTasso = () => Math.max(1, Math.floor(Number(document.getElementById('imp-tasso')?.value) || 1));
+  const impTasso = () => (_impTassoUltimo = Math.max(1, Math.floor(Number(document.getElementById('imp-tasso')?.value) || _impTassoUltimo || 1)));
   async function vediImport() {
+    if (_impFonte === 'se') return vediDaSE();
     const campo = document.getElementById('imp-testo');
     if (DEMO && !(campo.value || '').trim()) campo.value = IMPORT_DEMO_TESTO;
     const testo = (campo?.value || '').trim();
@@ -30302,10 +30432,66 @@ function attivaPiattaforma() {
     mostraAnteprimaImport(r.anteprima);
   }
 
-  document.getElementById('imp-vedi')?.addEventListener('click', () => conErrore(vediImport));
+  async function vediDaSE() {
+    const b = document.getElementById('imp-se-prendi');
+    const prima = b?.innerHTML;
+    if (b) { b.disabled = true; b.textContent = L('Leggo da StreamElements…', 'Reading from StreamElements…', 'Leyendo de StreamElements…'); }
+    try {
+      const r = await api('/api/streamer/comandi/importa/streamelements', { method: 'POST', body: { tasso: impTasso() } });
+      _impFonte = 'se';
+      _impTesto = '';
+      mostraAnteprimaImport(r.anteprima, r.streamelements);
+      document.getElementById('imp-esito')?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    } finally {
+      if (b) { b.disabled = false; b.innerHTML = prima; }
+    }
+  }
+
+  const SE_API = 'https://api.streamelements.com/kappa/v2';
+  async function leggiConChiaveSE() {
+    const campo = document.getElementById('imp-se-chiave');
+    const stato = document.getElementById('imp-se-stato');
+    let chiave = String(campo?.value || '').trim();
+    if (campo) campo.value = '';
+    if (!chiave) { toast(L('Incolla prima la chiave.', 'Paste the key first.', 'Pega antes la clave.'), 'errore'); return; }
+    const b = document.getElementById('imp-se-leggi');
+    if (b) b.disabled = true;
+    if (stato) stato.textContent = L('Leggo da StreamElements…', 'Reading from StreamElements…', 'Leyendo de StreamElements…');
+    try {
+      const chiedi = async (via) => {
+        const r = await fetch(SE_API + via, {
+          headers: { authorization: 'Bearer ' + chiave, accept: 'application/json' },
+          credentials: 'omit', cache: 'no-store', referrerPolicy: 'no-referrer', mode: 'cors',
+        });
+        if (r.status === 401 || r.status === 403) throw new Error(L('StreamElements non accetta questa chiave: ricopiala da «Show secrets».', 'StreamElements does not accept this key: copy it again from «Show secrets».', 'StreamElements no acepta esta clave: cópiala otra vez desde «Show secrets».'));
+        if (!r.ok) throw new Error(L('StreamElements adesso non risponde come dovrebbe: riprova fra poco.', 'StreamElements is not answering properly right now: try again shortly.', 'StreamElements ahora no responde como debería: inténtalo en un rato.'));
+        return r.json();
+      };
+      const canale = await chiedi('/channels/me');
+      const id = String(canale?._id || '');
+      if (!/^[a-f0-9]{24}$/.test(id)) throw new Error(L('Non trovo il tuo canale su StreamElements.', 'I cannot find your channel on StreamElements.', 'No encuentro tu canal en StreamElements.'));
+      const commands = await chiedi(`/bot/commands/${id}`);
+      const timers = await chiedi(`/bot/timers/${id}`);
+      chiave = '';
+      const testo = document.getElementById('imp-testo');
+      testo.value = JSON.stringify({ commands: Array.isArray(commands) ? commands : [], timers: Array.isArray(timers) ? timers : [] }, null, 1);
+      _impFonte = 'testo';
+      await vediImport();
+    } finally {
+      chiave = '';
+      if (b) b.disabled = false;
+      if (stato) stato.textContent = L('La chiave è stata cancellata da questa pagina.', 'The key has been erased from this page.', 'La clave se ha borrado de esta página.');
+    }
+  }
+
+  document.getElementById('imp-se-prendi')?.addEventListener('click', () => conErrore(async () => { _impFonte = 'se'; await vediDaSE(); }));
+  document.getElementById('imp-se-leggi')?.addEventListener('click', () => conErrore(leggiConChiaveSE));
+  document.getElementById('imp-vedi')?.addEventListener('click', () => conErrore(async () => { _impFonte = 'testo'; await vediImport(); }));
   document.getElementById('imp-testo')?.addEventListener('input', () => {
-    if (!_impTesto) return;
+    if (!_impTesto && _impFonte !== 'se') return;
     _impTesto = '';
+    _impFonte = 'testo';
+    _impSE = null;
     document.getElementById('imp-esito').innerHTML = '';
   });
 

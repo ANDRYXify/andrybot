@@ -156,7 +156,8 @@ import { provaModerazione, verificabile } from '../moderatori/prova.js';
 import { creaGuscio } from './vetrina.js';
 import { creaImpronte, montaStatici } from './impronte.js';
 import { salute } from '../salute.js';
-import { anteprima as anteprimaImport, moduloDa, moduloTimerDa } from '../features/importacomandi.js';
+import { anteprima as anteprimaImport, moduloDa, moduloTimerDa, sopra as importaSopra } from '../features/importacomandi.js';
+import * as streamelements from '../features/streamelements.js';
 import { BOT_NOTI } from '../features/muro.js';
 import { NON_CONTARE } from '../features/watchtime.js';
 import { esporta as esportaDati } from '../features/esporta.js';
@@ -9369,23 +9370,60 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     const login = currentUser(req).login;
     const testo = String(req.body?.testo || '').slice(0, 1_500_000);
     if (!testo.trim()) return res.status(400).json({ errore: 'non c\'è niente da importare' });
+    return importaTesto(req, res, login, testo);
+  }));
 
+  // DA STREAMELEMENTS, SENZA CHIAVI (docs/PONTE.md, «Da StreamElements»): il
+  // server legge quello che StreamElements mostra a tutti per il canale della
+  // SESSIONE (mai un nome scritto nella richiesta), controlla che sia legato
+  // allo stesso account Twitch, e lo passa allo stesso lettore di un export
+  // incollato. Nessuna chiave: questa rotta non ne riceve, e il corpo porta solo
+  // cambio, «applica», «da rivedere» e l'impronta dell'anteprima.
+  // «Importa» rilegge tutto da StreamElements e applica solo se comandi e
+  // contatori sono quelli che lo streamer ha visto: niente si tiene da parte
+  // fra i due passi. Una lettura per canale alla volta.
+  const _seInCorso = new Set();
+  app.post('/api/streamer/comandi/importa/streamelements', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    if (piattaformaDi(login) !== 'twitch') {
+      return res.status(400).json({ errore: 'StreamElements si legge dal tuo canale Twitch, e questo account non è su Twitch.' });
+    }
+    if (_seInCorso.has(login)) return res.status(429).json({ errore: 'Sto già leggendo da StreamElements: un momento.' });
+    _seInCorso.add(login);
+    try {
+      const r = await streamelements.leggi({ login, twitchId: streamers.get(login)?.user_id, punti: isOwner(req) });
+      if (r.errore) return res.status(r.stato || 502).json({ errore: r.errore });
+      const se = { canale: r.canale, conti: r.conti, firma: r.firma };
+      log.info(`#${login}: letti da StreamElements ${r.conti.comandi} comandi, ${r.conti.contatori} contatori, ${r.conti.punti} saldi`);
+      const cambiato = !!req.body?.applica && String(req.body?.firma || '') !== r.firma;
+      return importaTesto(req, res, login, r.testo, { streamelements: se, cambiato }, { applica: !!req.body?.applica && !cambiato });
+    } finally {
+      _seInCorso.delete(login);
+    }
+  }));
+
+  // Il cuore delle due rotte: anteprima o applicazione di un testo letto.
+  async function importaTesto(req, res, login, testo, extra = {}, { applica = !!req.body?.applica } = {}) {
     const gia = modulesDb.list(login) || [];
     const posti = Math.max(0, MAX_MODULI - gia.length);
     // I punti sono monete che si muovono senza che la chat lo veda: come quelle
     // aggiustate a mano, li porta solo il proprietario. Un moderatore vede
     // l'anteprima, e il pannello gli dice perché non li importa.
     const proprietario = isOwner(req);
+    const s = streamers.get(login);
     const vista = anteprimaImport(testo, {
       esistenti: gia, posti, tasso: req.body?.tasso, escludi: BOT_ESCLUSI,
       saldi: () => points.saldi(login),
+      // i comandi che erano solo del proprietario diventano «Per chi: lui»
+      proprietario: arriviRegola.normPersona({ p: piattaformaDi(login), id: piattaformaDi(login) === 'twitch' ? s?.user_id : '', login: nomeSu(login), nome: s?.display }),
+      contatoriQui: () => new Map(contatori.list(login).map((c) => [c.comando, c.valore])),
     });
     if (!vista.formato) {
       return res.status(400).json({ errore: 'non riconosco questo formato: incolla l\'export del tuo bot, un CSV, o un elenco scritto a mano («!comando risposta», «ogni 15 minuti: messaggio», «nome 1200»)' });
     }
     // l'elenco intero dei saldi resta qui: al pannello bastano i conti e i primi
     const mostra = { ...vista, punti: vista.punti ? { ...vista.punti, voci: undefined, soloProprietario: !proprietario } : null };
-    if (!req.body?.applica) return res.json({ ok: true, anteprima: mostra });
+    if (!applica) return res.json({ ok: true, ...extra, anteprima: mostra });
 
     // Applicazione: solo i buoni, più quelli da rivedere se lo streamer lo ha
     // chiesto sapendo cosa sono. Comandi e timer si dividono gli stessi posti.
@@ -9400,12 +9438,25 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
       } catch (e) { falliti.push({ nome, errore: e?.message || 'non riuscito' }); return null; }
     };
 
+    // Un comando che c'è già si aggiorna SOPRA quello che hai: le scelte fatte
+    // qui che l'import non conosce (il ramo del no, Telegram, la probabilità…)
+    // restano.
     const perNome = new Map(gia.filter((m) => m?.trigger?.tipo === 'comando')
-      .map((m) => [String(m.trigger.comando || '').toLowerCase(), m.id]));
+      .map((m) => [String(m.trigger.comando || '').toLowerCase(), m]));
     let importati = 0, aggiornati = 0;
     for (const c of [...vista.buoni, ...(includi ? vista.daRivedere : [])].filter((c) => !c.uguale)) {
-      const r = salva(perNome.get(c.nome), moduloDa(c), c.nome);
+      const e = perNome.get(c.nome);
+      const r = salva(e?.id, e ? importaSopra(e, moduloDa(c)) : moduloDa(c), c.nome);
       if (r === 'nuovo') importati++; else if (r === 'aggiornato') aggiornati++;
+    }
+
+    // I contatori entrano solo dove qui non ci sono: si guarda di nuovo adesso,
+    // perché fra anteprima e conferma uno può essere nato da un comando.
+    let contatoriEntrati = 0;
+    for (const k of vista.contatori?.voci || []) {
+      if (!k.entra || contatori.get(login, k.nome)) continue;
+      contatori.upsert(login, { comando: k.nome, valore: k.valore });
+      contatoriEntrati++;
     }
 
     const perNomeTimer = new Map(gia.filter((m) => m?.trigger?.tipo === 'timer')
@@ -9424,8 +9475,8 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
         log.info(`#${login}: punti importati — ${punti.nuovi} nuovi, ${punti.aggiornati} aggiornati, cambio ${vista.punti.tasso}`);
       }
     }
-    res.json({ ok: true, importati, aggiornati, senzaPosto, falliti, timer, punti, anteprima: mostra });
-  }));
+    res.json({ ok: true, ...extra, importati, aggiornati, senzaPosto, falliti, timer, punti, contatori: contatoriEntrati, anteprima: mostra });
+  }
 
   // PRESET "un clic": crea un comando pronto per cambiare CATEGORIA o TITOLO su Twitch,
   // senza dover configurare a mano l'azione. Riservato a mod/broadcaster (condizioni.tier).
