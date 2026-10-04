@@ -15,6 +15,7 @@
 import { db, streamers, presenze as store, padroneDi } from '../db.js';
 import { config } from '../config.js';
 import { migliaia as migliaiaBit, chiHaCheerato } from './bit.js';
+import { regaliDaRaffica } from './regali.js';
 import { guscioHtml, rigaHtml, numeriHtml, podioHtml, sezioneHtml, cartaLinkHtml, tastoHtml, dueColonneHtml, codiceDi, codiceTesto } from './posta.js';
 
 const norm = (s) => String(s || '').toLowerCase().trim();
@@ -201,7 +202,11 @@ export function raccogli(channel, { inizio, fine, picco = 0 }) {
     const { tipo, dati } = evento(r.text);
     if (tipo === 'channel.follow') out.follow++;
     else if (tipo === 'channel.subscribe') { out.sub++; if (dati.is_gift) out.regali++; }
-    else if (tipo === 'channel.subscription.gift') { const n = Number(dati.total) || 1; out.sub += n; out.regali += n; }
+    // I REGALI SI CONTANO UNA VOLTA. Twitch manda un channel.subscribe per ogni
+    // abbonamento regalato (is_gift), gia' contato qui sopra, piu' la raffica,
+    // che e' l'annuncio: contarla vorrebbe dire contare ogni regalo due volte.
+    // Kick manda solo la raffica, e li' e' l'unico conto che c'e'.
+    else if (tipo === 'channel.subscription.gift') { if (regaliDaRaffica(dati)) { const n = Number(dati.total) || 1; out.sub += n; out.regali += n; } }
     else if (tipo === 'channel.raid') { out.raid++; out.raidSpettatori += Number(dati.viewers) || 0; }
     // Un cheer ANONIMO conta nei Bit e non conta nel nome: la regola sta in
     // bit.js, qui si usa e basta.

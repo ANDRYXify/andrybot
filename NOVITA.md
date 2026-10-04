@@ -130,6 +130,9 @@ comandi diversi da quelli della riga italiana.
 - Quando cambi titolo o categoria su Kick, il bot lo sa subito e non dopo due minuti. [vai: dirette]
   en: When you change your title or category on Kick, the bot knows right away, not two minutes later.
   es: Cuando cambias el título o la categoría en Kick, el bot lo sabe al momento y no dos minutos después.
+- Il rapporto della serata e le statistiche contano una volta sola gli abbonamenti regalati su Twitch: prima tre regali ne dicevano sei. [vai: statistiche]
+  en: The evening report and the stats now count gifted subs on Twitch only once: before, three gifts showed up as six.
+  es: El informe de la noche y las estadísticas cuentan una sola vez las suscripciones regaladas en Twitch: antes, tres regalos aparecían como seis.
 
 ## 2026-10-03
 

@@ -15,6 +15,7 @@
 // Il periodo taglia tutto allo stesso modo, e «da sempre» non taglia niente.
 import { db, rapporti, watchtime, padroneDi } from '../db.js';
 import * as presenze from './presenze.js';
+import { regaliDaRaffica } from './regali.js';
 
 const GIORNO_MS = 24 * 3600_000;
 // Le finestre sono tre e si chiamano come si dicono. Zero vuol dire «da
@@ -55,9 +56,11 @@ function conInCorso(ch, dirette, inCorso, da, ora) {
     if (tipo === 'channel.follow') follow++;
     else if (tipo === 'channel.subscribe') sub++;
     else if (tipo === 'channel.subscription.gift') {
-      let n2 = 1;
-      try { n2 = Number(JSON.parse(t.slice(t.indexOf(' ') + 1))?.total) || 1; } catch { n2 = 1; }
-      sub += n2;
+      // la raffica conta solo fuori da Twitch: li' ogni regalo e' gia' un
+      // channel.subscribe (regali.js)
+      let d2 = {};
+      try { d2 = JSON.parse(t.slice(t.indexOf(' ') + 1)) || {}; } catch { d2 = {}; }
+      if (regaliDaRaffica(d2)) sub += Number(d2.total) || 1;
     } else if (tipo === 'channel.raid') raid++;
   }
   return {

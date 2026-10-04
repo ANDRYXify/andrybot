@@ -94,6 +94,15 @@ test('la diretta in corso si conta, col suo picco e i suoi minuti', () => {
   assert.ok(!senza.dirette.inCorso, 'senza diretta in corso non compare niente');
 });
 
+test('nella diretta in corso i regali si contano una volta: su Twitch uno per uno, su Kick dalla raffica', () => {
+  const ch = 'stat-regali';
+  for (let i = 0; i < 2; i++) memory.logMessage(ch, '[evento]', '', 'channel.subscribe {"is_gift":true}', true, ORA - 10 * 60_000);
+  memory.logMessage(ch, '[evento]', '', 'channel.subscription.gift {"total":2}', true, ORA - 10 * 60_000);
+  memory.logMessage(ch, '[evento]', '', 'channel.subscription.gift {"total":3,"piattaforma":"kick"}', true, ORA - 5 * 60_000);
+  const con = st.riassunto(ch, { periodo: '7', ora: ORA, inCorso: { inizio: ORA - 3600_000, picco: 1 } });
+  assert.equal(con.dirette.sub, 5);
+});
+
 test('il picco e\' il piu\' alto, non la somma', () => {
   const alto = st.riassunto(CH, { periodo: '7', ora: ORA, inCorso: { inizio: ORA - 1000, picco: 500 } });
   assert.equal(alto.dirette.picco, 500, 'se adesso c\'e\' piu\' gente che mai, il picco e\' quello');

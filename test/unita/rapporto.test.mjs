@@ -55,8 +55,11 @@ test('la raccolta legge la finestra giusta: chat, eventi, presenze, clip, donazi
   memory.logMessage(CH, 'fuori', 'Fuori', 'prima', false, da - 10 * MIN);
   memory.logMessage(CH, '[evento]', '', 'channel.follow {"user_login":"x"}', true, da + 4 * MIN);
   memory.logMessage(CH, '[evento]', '', 'channel.follow {"user_login":"y"}', true, da + 5 * MIN);
-  memory.logMessage(CH, '[evento]', '', 'channel.subscribe {"is_gift":true}', true, da + 6 * MIN);
+  // tre abbonamenti regalati su Twitch: arrivano uno per uno, piu' la raffica
+  // che li annuncia; su Kick arriva solo la raffica
+  for (let i = 0; i < 3; i++) memory.logMessage(CH, '[evento]', '', 'channel.subscribe {"is_gift":true}', true, da + 6 * MIN);
   memory.logMessage(CH, '[evento]', '', 'channel.subscription.gift {"total":3}', true, da + 7 * MIN);
+  memory.logMessage(CH, '[evento]', '', 'channel.subscription.gift {"total":2,"piattaforma":"kick"}', true, da + 7 * MIN);
   memory.logMessage(CH, '[evento]', '', 'channel.raid {"viewers":35}', true, da + 8 * MIN);
   memory.logMessage(CH, '[evento]', '', 'channel.follow {"user_login":"tardi"}', true, a + MIN);
   db.prepare('INSERT INTO clips (channel, clip_id, url, reason, ts) VALUES (?,?,?,?,?)').run(CH, 'c1', 'u', 'hype', da + 9 * MIN);
@@ -72,7 +75,7 @@ test('la raccolta legge la finestra giusta: chat, eventi, presenze, clip, donazi
   assert.equal(d.messaggi, 3); assert.equal(d.persone, 2);
   assert.deepEqual(d.top, [{ user: 'Marco', n: 2 }, { user: 'Giada', n: 1 }]);
   assert.equal(d.follow, 2, 'il follow fuori finestra non conta');
-  assert.equal(d.sub, 4); assert.equal(d.regali, 4);
+  assert.equal(d.sub, 5, 'tre regalati su Twitch contati una volta, due su Kick'); assert.equal(d.regali, 5);
   assert.equal(d.raid, 1); assert.equal(d.raidSpettatori, 35);
   assert.equal(d.presenti, 2); assert.equal(d.primeVolte, 1);
   assert.equal(d.clip, 1);
@@ -86,7 +89,7 @@ test('la raccolta legge la finestra giusta: chat, eventi, presenze, clip, donazi
     'Spettatori: picco 48, in media 31',
     'Chat: 3 messaggi da 2 persone',
     'Più attivi: Marco (2), Giada (1)',
-    'Nuovi follower: 2 · Sub: 4 (4 regalati) · Raid: 1 (35 spettatori)',
+    'Nuovi follower: 2 · Sub: 5 (5 regalati) · Raid: 1 (35 spettatori)',
     'Presenti: 2, di cui 1 alla prima volta',
     'Clip: 1 · Donazioni: 2 (15,00 €)',
     '<a href="u">hype</a>',

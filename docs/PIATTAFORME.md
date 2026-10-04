@@ -263,6 +263,14 @@ Dalla stessa porta valgono le stesse regole, con la piattaforma dell'evento:
   (`channel.follow.ritorno`), con `features/seguiti.js` come su Twitch; su Kick
   la persona si riconosce dal nome, come da sempre.
 
+**I regali si contano una volta** (`features/regali.js`, usato da rapporto e
+statistiche). Twitch manda un `channel.subscribe` per ogni abbonamento regalato
+(`is_gift`) e in piu' la raffica (`channel.subscription.gift`), che li annuncia:
+si contano i singoli, e la raffica no. Prima si sommavano tutti e due, e un
+regalo da tre diceva sei. Kick manda solo la raffica (`giftees`), e li' e'
+l'unico conto che c'e': la riga `[evento]` porta `piattaforma`, ed e' quella a
+decidere.
+
 `livestream.metadata.updated` porta titolo e categoria appena lo streamer li
 cambia. Va nella stessa vista del giro (`_vistaKick`, una sola: la aggiornano
 il giro e l'evento), che si fonde con quello che si sapeva. Al rapporto va un
