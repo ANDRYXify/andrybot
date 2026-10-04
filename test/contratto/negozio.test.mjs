@@ -16,7 +16,9 @@ test('i comandi del negozio passano dal vaglio, con la voce del messaggio', () =
   const dentro = bot.slice(bot.indexOf('if (!suo && !vaglio?.salta) {'), bot.indexOf('// Il conteggio automatico delle parole non e\' un comando'));
   assert.match(dentro, /negozio\.tryComando\(cmdMsg, parla, \{/, 'col testo gia\' tradotto nel nome di serie, e la voce di chi ha scritto');
   assert.match(dentro, /helix: this\.helix, effetti: this\.effects, moduli: this\.modules,/, 'con i motori che fanno partire quello che si compra');
-  assert.match(dentro, /live: msg\.piattaforma && msg\.piattaforma !== 'twitch' \? true : this\._liveState\.get\(login\) === true,/);
+  // in diretta vuol dire in onda su una piattaforma qualunque; la chat di
+  // YouTube esiste solo durante una diretta, quindi da li' e' in onda per forza
+  assert.match(dentro, /live: msg\.piattaforma === 'youtube' \? true : this\.inOnda\(login\),/);
 });
 
 test('all\'avvio si rende quello rimasto a meta\', e lo storico si pulisce anche se il bot si riavvia spesso', () => {

@@ -72,6 +72,35 @@ function conInCorso(ch, dirette, inCorso, da, ora) {
   };
 }
 
+// LE DIRETTE PER PIATTAFORMA (docs/STATISTICHE.md, «Una serata, piu'
+// piattaforme»). Un rapporto con dentro piu' piattaforme si conta una volta
+// nelle dirette del canale e una volta in ognuna delle sue; ogni piattaforma
+// porta le SUE ore e il SUO picco, che il rapporto ha gia' tenuto da parte. I
+// rapporti scritti prima che il rapporto le distinguesse sono di Twitch per
+// costruzione: allora solo Twitch li scriveva.
+const PIATTAFORMA_DI_PRIMA = 'twitch';
+function perPiattaforma(ch, da, totali, inCorso, ora) {
+  const per = new Map();
+  const somma = (p, n, oreMs, picco) => {
+    const x = per.get(p) || { piattaforma: p, n: 0, oreMs: 0, picco: 0 };
+    x.n += n; x.oreMs += oreMs; x.picco = Math.max(x.picco, picco);
+    per.set(p, x);
+  };
+  const righe = db.prepare(`SELECT json_extract(p.value,'$.piattaforma') piattaforma, COUNT(*) n,
+      COALESCE(SUM(json_extract(p.value,'$.durataMs')), 0) oreMs, COALESCE(MAX(json_extract(p.value,'$.picco')), 0) picco
+    FROM rapporti r, json_each(r.dati, '$.piattaforme') p WHERE r.channel=? AND r.fine>=? GROUP BY 1`).all(ch, da);
+  for (const x of righe) if (x.piattaforma) somma(String(x.piattaforma), intero(x.n), intero(x.oreMs), intero(x.picco));
+  const vecchi = db.prepare(`SELECT COUNT(*) n, COALESCE(SUM(json_extract(dati,'$.durataMs')), 0) oreMs, COALESCE(MAX(json_extract(dati,'$.picco')), 0) picco
+    FROM rapporti WHERE channel=? AND fine>=? AND json_type(dati, '$.piattaforme') IS NULL`).get(ch, da);
+  if (intero(vecchi.n)) somma(PIATTAFORMA_DI_PRIMA, intero(vecchi.n), intero(vecchi.oreMs), intero(vecchi.picco));
+  for (const x of (inCorso?.piattaforme || [])) {
+    const dentro = Math.max(Number(da) || 0, Number(x.inizio) || 0);
+    if (!x.piattaforma || dentro > ora) continue;
+    somma(String(x.piattaforma), 1, Math.min(intero(x.durataMs), Math.max(0, ora - dentro)), intero(x.picco));
+  }
+  return [...per.values()].sort((a, b) => b.oreMs - a.oreMs || (a.piattaforma < b.piattaforma ? -1 : 1));
+}
+
 export function riassunto(channel, { periodo = '7', ora = Date.now(), n = 10, inCorso = null } = {}) {
   const ch = norm(channel);
   const p = periodoValido(periodo);
@@ -102,6 +131,7 @@ export function riassunto(channel, { periodo = '7', ora = Date.now(), n = 10, in
     n: intero(r.n), oreMs: intero(r.oreMs), picco: intero(r.picco), follow: intero(r.follow),
     sub: intero(r.sub), raid: intero(r.raid), donazioni: intero(r.donazioni), donazioniCent: intero(r.donazioniCent),
   }, inCorso, da, ora);
+  dirette.piattaforme = perPiattaforma(ch, da, dirette, inCorso, ora);
 
   // Le ultime dirette NON dipendono dal periodo: sono l'elenco di com'e' andata
   // le ultime volte, e se uno guarda «sette giorni» dopo una pausa di un mese
@@ -111,6 +141,7 @@ export function riassunto(channel, { periodo = '7', ora = Date.now(), n = 10, in
     durataMs: intero(x.dati?.durataMs), picco: intero(x.dati?.picco), media: intero(x.dati?.media),
     messaggi: intero(x.dati?.messaggi), persone: intero(x.dati?.persone),
     follow: intero(x.dati?.follow), clip: intero(x.dati?.clip),
+    piattaforme: Array.isArray(x.dati?.piattaforme) ? x.dati.piattaforme.map((q) => String(q?.piattaforma || '')).filter(Boolean) : [PIATTAFORMA_DI_PRIMA],
   }));
 
   return {

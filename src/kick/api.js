@@ -115,6 +115,36 @@ export async function ioSuKick(login, opts) {
   return { ok: true, userId: String(u?.user_id ?? ''), nome: String(u?.name || u?.username || '') };
 }
 
+// LA DIRETTA SU KICK ADESSO, letta dal canale (GET /channels, docs.kick.com,
+// «Channels»): se e' in onda, quanti guardano, da quando, il titolo, la
+// categoria. E' il «giro» di Kick, come /streams per Twitch: copre gli eventi
+// che si perdono, e da' gli spettatori, che negli eventi non ci sono.
+// La traduzione e' pura, e si prova senza rete.
+export function daCanale(dati) {
+  const c = Array.isArray(dati) ? dati[0] : (dati && typeof dati === 'object' ? dati : null);
+  if (!c) return null;
+  const st = c.stream && typeof c.stream === 'object' ? c.stream : {};
+  const live = st.is_live === true;
+  const n = Number(st.viewer_count);
+  const inizio = Date.parse(String(st.start_time || '')) || 0;
+  return {
+    live,
+    spettatori: live && Number.isFinite(n) && n >= 0 ? Math.floor(n) : null,
+    inizio: live && inizio > 0 ? inizio : 0,
+    titolo: String(c.stream_title || '').replace(/\s+/g, ' ').trim().slice(0, 140),
+    categoria: String(c.category?.name || '').replace(/\s+/g, ' ').trim().slice(0, 80),
+    slug: String(c.slug || '').toLowerCase().replace(/[^a-z0-9_-]/g, '').slice(0, 40),
+  };
+}
+export async function statoCanale(login, opts) {
+  const id = String(tokenDi(login)?.userId || '');
+  if (!/^\d{1,20}$/.test(id)) return { ok: false, errore: 'non so qual e\' il tuo canale Kick: ricollega Kick' };
+  const r = await chiama(login, '/channels', { query: { broadcaster_user_id: id }, ...opts });
+  if (!r.ok) return r;
+  const c = daCanale(r.dati);
+  return c ? { ok: true, ...c } : { ok: false, errore: 'Kick non ha detto niente del tuo canale' };
+}
+
 // CON QUALE VOCE PARLA IL BOT SU KICK.
 //
 // Kick offre due modi: `user` scrive con l'account di chi ha autorizzato (e

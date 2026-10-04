@@ -2039,7 +2039,10 @@ function _demoGet(via) {
       rapporto: { telegram: true, mail: true },
       posta: { disponibile: true, email: 'andry@esempio.it', confermata: true, inAttesa: false },
       rapporti: [
-        { id: 3, inizio: 1789574400000, fine: 1789583040000, letto: false, inviato: 'telegram,mail', ts: 1789583040000, dati: { durataMs: 8640000, picco: 61, media: 44, giri: 28, messaggi: 1240, persone: 96, top: [{ user: 'lucaplays', n: 120 }, { user: 'giada_ttv', n: 98 }, { user: 'marco99', n: 77 }], follow: 14, sub: 5, regali: 2, raid: 1, raidSpettatori: 35, presenti: 71, primeVolte: 9, clip: 2, donazioni: 2, donazioniCent: 1500, clipElenco: [
+        { id: 3, inizio: 1789574400000, fine: 1789583040000, letto: false, inviato: 'telegram,mail', ts: 1789583040000, dati: { durataMs: 8640000, picco: 61, media: 44, giri: 28, messaggi: 1240, persone: 96, top: [{ user: 'lucaplays', n: 120 }, { user: 'giada_ttv', n: 98 }, { user: 'marco99', n: 77 }], follow: 14, sub: 5, regali: 2, raid: 1, raidSpettatori: 35, presenti: 71, primeVolte: 9, clip: 2, donazioni: 2, donazioniCent: 1500, piattaforme: [
+          { piattaforma: 'twitch', inizio: 1789574400000, fine: 1789583040000, durataMs: 8640000, picco: 52, media: 38, giri: 28 },
+          { piattaforma: 'kick', inizio: 1789576200000, fine: 1789581600000, durataMs: 5400000, picco: 14, media: 9, giri: 18 },
+        ], clipElenco: [
           { id: 'EsempioUno', url: 'https://clips.twitch.tv/EsempioUno', titolo: 'Il salto che non doveva riuscire', durata: 34, motivo: 'la chat si è accesa', ts: 1789578840000 },
           { id: 'EsempioDue', url: 'https://clips.twitch.tv/EsempioDue', titolo: 'Reazione al jumpscare, con sedia', durata: 21, motivo: 'modulo', ts: 1789581720000 },
         ] } },
@@ -2100,7 +2103,8 @@ function _demoGet(via) {
     },
     '/api/streamer/statistiche': {
       periodo: '7', messaggi: 12840, persone: 640, messaggiBot: 1620, clip: 12,
-      dirette: { n: 4, oreMs: 41400000, picco: 61, follow: 38, sub: 9, raid: 3, donazioni: 5, donazioniCent: 4200 },
+      dirette: { n: 4, oreMs: 41400000, picco: 61, follow: 38, sub: 9, raid: 3, donazioni: 5, donazioniCent: 4200,
+        piattaforme: [{ piattaforma: 'twitch', n: 4, oreMs: 41400000, picco: 52 }, { piattaforma: 'kick', n: 1, oreMs: 5400000, picco: 14 }] },
       topChatters: [
         { user: 'lucaplays', n: 1820 }, { user: 'giada_ttv', n: 1390 }, { user: 'marco99', n: 980 },
         { user: 'sara_gg', n: 640 }, { user: 'il_nonno', n: 410 },
@@ -2114,9 +2118,9 @@ function _demoGet(via) {
         { user: 'sara_gg', secondi: 98000 }, { user: 'marco99', secondi: 54000 },
       ],
       ultime: [
-        { id: 3, inizio: 1789574400000, fine: 1789583040000, durataMs: 8640000, picco: 61, media: 44, messaggi: 1240, persone: 96, follow: 14, clip: 2 },
-        { id: 2, inizio: 1789401600000, fine: 1789410960000, durataMs: 9360000, picco: 48, media: 33, messaggi: 980, persone: 80, follow: 9, clip: 2 },
-        { id: 1, inizio: 1789228800000, fine: 1789236000000, durataMs: 7200000, picco: 39, media: 27, messaggi: 610, persone: 54, follow: 6, clip: 1 },
+        { id: 3, inizio: 1789574400000, fine: 1789583040000, durataMs: 8640000, picco: 61, media: 44, messaggi: 1240, persone: 96, follow: 14, clip: 2, piattaforme: ['twitch', 'kick'] },
+        { id: 2, inizio: 1789401600000, fine: 1789410960000, durataMs: 9360000, picco: 48, media: 33, messaggi: 980, persone: 80, follow: 9, clip: 2, piattaforme: ['twitch'] },
+        { id: 1, inizio: 1789228800000, fine: 1789236000000, durataMs: 7200000, picco: 39, media: 27, messaggi: 610, persone: 54, follow: 6, clip: 1, piattaforme: ['twitch'] },
       ],
     },
     '/api/streamer/memoria': {
@@ -22309,21 +22313,26 @@ function pannelloDirette() {
 }
 
 const _durataRap = (ms) => { const m = Math.max(0, Math.round((Number(ms) || 0) / 60000)); const h = Math.floor(m / 60); return h ? `${h}h ${String(m % 60).padStart(2, '0')}m` : `${m}m`; };
+const _statPiattaforma = (p) => ({ twitch: 'Twitch', kick: 'Kick', youtube: 'YouTube' }[p] || String(p || ''));
 function cartaRapporto(r) {
   const d = r.dati || {};
   const num = (v, et) => `<div class="rap-num"><b>${esc(String(v))}</b><span>${esc(et)}</span></div>`;
-  const euro = (c) => ((Number(c) || 0) / 100).toFixed(2).replace('.', ',') + ' €';
+  const euro = (c) => ((Number(c) || 0) / 100).toLocaleString(localePannello(), { style: 'currency', currency: 'EUR' });
   const vie = String(r.inviato || '').split(',').filter(Boolean).map((v) => (v === 'mail' ? L('mail', 'email', 'correo') : 'Telegram'));
+  const piatt = Array.isArray(d.piattaforme) ? d.piattaforme : [];
+  const dove = piatt.some((x) => x.piattaforma !== 'twitch') ? piatt.map((x) => _statPiattaforma(x.piattaforma)).join(' + ') : '';
+  const unaPiatt = (x) => [_durataRap(x.durataMs), ...(x.giri > 0 ? [`${L('picco', 'peak', 'pico')} ${x.picco | 0}`, `${L('in media', 'on average', 'de media')} ${x.media | 0}`] : [])].join(', ');
   return `<div class="rap-carta${r.letto ? '' : ' nuovo'}">
-    <div class="rap-testa"><strong>${esc(dataIt(r.fine || r.ts))}</strong><span class="rap-durata">${esc(_durataRap(d.durataMs))}</span>${r.letto ? '' : `<span class="badge verde">${L('nuovo', 'new', 'nuevo')}</span>`}${vie.length ? `<span class="rap-via">${esc(vie.join(' · '))}</span>` : ''}</div>
+    <div class="rap-testa"><strong>${esc(dataIt(r.fine || r.ts))}</strong><span class="rap-durata">${esc(_durataRap(d.durataMs))}</span>${dove ? `<span class="rap-dove">${esc(dove)}</span>` : ''}${r.letto ? '' : `<span class="badge verde">${L('nuovo', 'new', 'nuevo')}</span>`}${vie.length ? `<span class="rap-via">${esc(vie.join(' · '))}</span>` : ''}</div>
     <div class="rap-griglia">
       ${d.giri > 0 ? num(d.picco, L('picco spettatori', 'viewer peak', 'pico de espectadores')) + num(d.media, L('spettatori in media', 'average viewers', 'espectadores de media')) : ''}
       ${num(d.messaggi | 0, L('messaggi', 'messages', 'mensajes'))}${num(d.persone | 0, L('persone in chat', 'people in chat', 'personas en el chat'))}
       ${num(d.follow | 0, L('nuovi follower', 'new followers', 'nuevos seguidores'))}${num(d.sub | 0, d.regali ? L(`sub (${d.regali} regalati)`, `subs (${d.regali} gifted)`, `subs (${d.regali} regalados)`) : 'sub')}
-      ${d.raid ? num(d.raid, L(`raid (${d.raidSpettatori} spettatori)`, `raids (${d.raidSpettatori} viewers)`, `raids (${d.raidSpettatori} espectadores)`)) : ''}
+      ${d.raid ? num(d.raid, L(`raid (${d.raidSpettatori} spettatori)`, `${d.raid === 1 ? 'raid' : 'raids'} (${d.raidSpettatori} viewers)`, `${d.raid === 1 ? 'raid' : 'raids'} (${d.raidSpettatori} espectadores)`)) : ''}
       ${d.presenti ? num(d.presenti, L('presenti', 'attendees', 'presentes')) : ''}${d.primeVolte ? num(d.primeVolte, L('prime volte', 'first-timers', 'primeras veces')) : ''}
       ${d.clip ? num(d.clip, 'clip') : ''}${d.donazioni ? num(euro(d.donazioniCent), L(`donazioni (${d.donazioni})`, `donations (${d.donazioni})`, `donaciones (${d.donazioni})`)) : ''}
     </div>
+    ${piatt.length > 1 ? `<p class="rap-top">${L('Per piattaforma', 'By platform', 'Por plataforma')}: ${piatt.map((x) => `<strong>${esc(_statPiattaforma(x.piattaforma))}</strong> ${esc(unaPiatt(x))}`).join(' · ')}</p>` : ''}
     ${d.top?.length ? `<p class="rap-top">${L('Più attivi', 'Most active', 'Más activos')}: ${d.top.map((t) => `<strong>${esc(t.user)}</strong> (${t.n})`).join(', ')}</p>` : ''}
     ${clipRapporto(d.clipElenco)}
   </div>`;
@@ -28983,6 +28992,7 @@ function pannelloStatistiche() {
         ${per('7', L('Ultimi 7 giorni', 'Last 7 days', 'Últimos 7 días'))}${per('30', L('Ultimi 30 giorni', 'Last 30 days', 'Últimos 30 días'))}${per('tutto', L('Da sempre', 'All time', 'Desde siempre'))}
       </div>
       <div class="griglia-stat" id="griglia-stat">${attesaHtml('div')}</div>
+      <div id="stat-piattaforme"></div>
     </div>
 
     <div class="carta">
@@ -34021,10 +34031,19 @@ async function caricaStatistiche() {
     riquadro(_statNum(d.sub), 'sub'),
     d.raid ? riquadro(_statNum(d.raid), 'raid') : '',
     riquadro(_statNum(s.clip), 'clip'),
-    d.donazioni ? riquadro(((d.donazioniCent || 0) / 100).toFixed(2).replace('.', ',') + ' €', L(`donazioni (${d.donazioni})`, `donations (${d.donazioni})`, `donaciones (${d.donazioni})`)) : '',
+    d.donazioni ? riquadro(((d.donazioniCent || 0) / 100).toLocaleString(localePannello(), { style: 'currency', currency: 'EUR' }), L(`donazioni (${d.donazioni})`, `donations (${d.donazioni})`, `donaciones (${d.donazioni})`)) : '',
   ].filter(Boolean).join('');
 
   _statSegui(!!vivo);
+
+  const perPiatt = Array.isArray(d.piattaforme) ? d.piattaforme : [];
+  const boxPiatt = document.getElementById('stat-piattaforme');
+  if (boxPiatt) boxPiatt.innerHTML = perPiatt.length > 1
+    ? `<h3 class="spazio-sopra">${L('Per piattaforma', 'By platform', 'Por plataforma')}</h3>
+      <p class="suggerimento">${L('Una serata in onda su più piattaforme conta una volta nelle dirette qui sopra, e una volta in ognuna qui sotto. Il picco qui sopra è quello di tutte insieme nello stesso momento.', 'An evening live on several platforms counts once in the streams above, and once in each one below. The peak above is all of them together at the same moment.', 'Una noche en directo en varias plataformas cuenta una vez en los directos de arriba, y una vez en cada una aquí abajo. El pico de arriba es el de todas juntas en el mismo momento.')}</p>
+      <ul class="lista-voci">${perPiatt.map((x) => `<li><div class="testo-voce"><span class="domanda">${esc(_statPiattaforma(x.piattaforma))}</span>
+        <span class="risposta">${_statNum(x.n)} ${x.n === 1 ? L('diretta', 'stream', 'directo') : L('dirette', 'streams', 'directos')} · ${esc(_statOre(Math.round((x.oreMs || 0) / 1000)))} ${L('in onda', 'on air', 'en antena')} · ${L('picco', 'peak', 'pico')} ${_statNum(x.picco)}</span></div></li>`).join('')}</ul>`
+    : '';
 
   const fila = (n) => `${n} ${n === 1 ? L('diretta di fila', 'stream in a row', 'directo seguido') : L('dirette di fila', 'streams in a row', 'directos seguidos')}`;
   _statGara('lista-presenze', (s.presenze || []).map((p) => ({ chi: p.user, quanto: `${fila(p.serie)} · ${p.dirette} ${L('in tutto', 'overall', 'en total')}` })),
@@ -34039,13 +34058,15 @@ async function caricaStatistiche() {
   const box = document.getElementById('stat-dirette');
   if (box) {
     const u = s.ultime || [];
+    const dove = u.some((x) => (x.piattaforme || []).some((p) => p !== 'twitch'));
+    const doveDi = (x) => (x.piattaforme || []).map(_statPiattaforma).join(' + ') || '—';
     box.innerHTML = u.length
       ? `<div class="tab-stat"><table><thead><tr>
           <th>${L('Quando', 'When', 'Cuándo')}</th><th>${L('Durata', 'Length', 'Duración')}</th><th>${L('Picco', 'Peak', 'Pico')}</th>
           <th>${L('Media', 'Average', 'Media')}</th><th>${L('Messaggi', 'Messages', 'Mensajes')}</th><th>${L('Persone', 'People', 'Personas')}</th>
-          <th>${L('Follower', 'Followers', 'Seguidores')}</th><th>clip</th></tr></thead><tbody>
+          <th>${L('Follower', 'Followers', 'Seguidores')}</th><th>clip</th>${dove ? `<th>${L('Dove', 'Where', 'Dónde')}</th>` : ''}</tr></thead><tbody>
           ${u.map((x) => `<tr><td>${esc(dataIt(x.inizio || x.fine))}</td><td>${esc(_durataRap(x.durataMs))}</td><td>${x.picco || '—'}</td>
-          <td>${x.media || '—'}</td><td>${_statNum(x.messaggi)}</td><td>${_statNum(x.persone)}</td><td>${_statNum(x.follow)}</td><td>${x.clip || '—'}</td></tr>`).join('')}
+          <td>${x.media || '—'}</td><td>${_statNum(x.messaggi)}</td><td>${_statNum(x.persone)}</td><td>${_statNum(x.follow)}</td><td>${x.clip || '—'}</td>${dove ? `<td>${esc(doveDi(x))}</td>` : ''}</tr>`).join('')}
         </tbody></table></div>`
       : `<p class="vuoto">${L('Nessuna diretta ancora: il rapporto nasce quando chiudi.', 'No stream yet: the report is born when you stop.', 'Ningún directo aún: el informe nace cuando cierras.')}</p>`;
   }

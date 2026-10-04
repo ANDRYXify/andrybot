@@ -13,7 +13,7 @@ export default {
   titolo: 'Account e abbonamento: moderatori, dati, piani | SocialBot',
   h1: 'Manuale di account e abbonamento',
   desc: 'Collegare Twitch, Kick e YouTube, entrare con una passkey, far entrare i moderatori, scaricare o cancellare i dati, scegliere piano ed extra.',
-  aggiornata: '2026-09-30',
+  aggiornata: '2026-10-04',
   corpo: [
     { p: [
       'Le due schede stanno nel gruppo «Account» del menù. «Il tuo account» riguarda chi entra e dove lavora il bot. «Abbonamento» riguarda cosa hai acceso e quanto paghi.',
@@ -27,7 +27,7 @@ export default {
     { h3: 'Il tuo canale è su Kick' },
     { p: [
       'Compare solo se il canale che stai gestendo è su Kick. Il bot legge la tua chat di Kick e risponde lì.',
-      'Su Kick funzionano comandi, moduli, giochi e monete, gli avvisi di follow e abbonamento, l\'overlay della diretta e le notifiche social.',
+      'Su Kick funzionano comandi, moduli, giochi e monete, gli avvisi di follow e abbonamento, l\'overlay della diretta e le notifiche social. La diretta su Kick entra nel rapporto della serata e nelle statistiche, insieme a quella su Twitch se trasmetti su tutte e due.',
       'Restano fuori le cose che esistono solo su Twitch: la moderazione automatica, le clip, il cambio di categoria e titolo, i VIP, i punti canale e le emote 7TV. Le monete su Kick arrivano solo da chi scrive, perché Kick non dà l\'elenco di chi guarda in silenzio.',
     ] },
 

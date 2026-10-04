@@ -988,7 +988,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   let _firma = '';
   const ronda = async () => {
     try {
-      const lista = await vetrinaLive.elenco({ helix, inDiretta: (l) => manager?.inDiretta?.(l) });
+      const lista = await vetrinaLive.elenco({ helix, inDiretta: (l) => manager?.inDiretta?.(l), altrove: (l) => manager?.kickVisto?.(l) });
       const piani = abbonamenti.pianiPubblici();
       const firma = lista.map((d) => `${d.login}:${d.spettatori}:${d.categoria}`).join('|') + '\n' + JSON.stringify(piani);
       if (firma === _firma) return;

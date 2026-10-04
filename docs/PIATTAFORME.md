@@ -200,6 +200,42 @@ verifier che non passa mai dalla rete, uno `state` estraneo che non entra, un
 ritorno senza giro in corso che non entra, lo stesso codice che non entra due
 volte, e chi è già dentro che non passa dalla porta della registrazione.
 
+### La diretta su Kick
+
+Una diretta su Kick e' una diretta come quella di Twitch, con le stesse due
+fonti e la stessa regola (`stream/stato-diretta.js`):
+
+- **l'evento** `livestream.status.updated` conta subito, in tutti e due i
+  sensi, e porta l'inizio vero (`started_at`);
+- **il giro**, ogni due minuti (`bot.js`, `_giroKick`), legge il canale
+  (`GET /channels`, `kick/api.js`, `statoCanale`): in onda o no, quanti
+  guardano, da quando, il titolo, la categoria. Copre gli eventi che si
+  perdono, e da' gli spettatori, che negli eventi non ci sono. Un suo «non
+  c'e'» chiude solo se ripetuto e lontano dall'ultimo «c'e'».
+
+Tutte e due passano da `_setLiveAltrove`. Lo stato si tiene fra gli stati vivi
+del canale (`diretta:kick`, con l'inizio): un riavvio a diretta in corso non la
+ricomincia e non la riannuncia, perche' il «prima» e' quello sul disco. L'id
+della diretta per gli avvisi e' il suo inizio: evento e giro dicono lo stesso,
+e l'avviso parte una volta.
+
+Il canale e' **in onda** se lo e' su una piattaforma qualunque (`inOnda`): lo
+leggono la vetrina, il negozio, le presenze. Prima un messaggio da Kick contava
+«in diretta» sempre, anche a canale spento; ora conta lo stato vero. La chat di
+YouTube invece esiste solo durante una diretta, quindi da li' e' in diretta per
+costruzione. La serata, il rapporto e le statistiche sono di tutte le
+piattaforme insieme (docs/STATISTICHE.md, «Una serata, piu' piattaforme»).
+
+Il giro da' anche al cervello la vista della diretta (titolo, categoria,
+spettatori) quando Twitch non gliela da' gia', e alla vetrina della home il
+contorno di chi e' in onda solo su Kick, con l'indirizzo di Kick.
+
+Collaudi: `test/unita/diretta-kick.test.mjs` (un avviso solo fra evento e
+giro, nessun avviso dopo un riavvio, la serata che si chiude con l'ultima
+piattaforma, un giro a vuoto che non chiude), `test/unita/vetrina-live.test.mjs`
+(Kick nella vetrina), `test/unita/kick-canale.test.mjs` (la lettura del
+canale).
+
 ### Cosa NON fa ancora, e perché è detto qui
 
 Antibot e antispam agiscono via Helix (elimina, timeout): hanno senso solo su

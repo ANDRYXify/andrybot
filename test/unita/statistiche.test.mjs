@@ -47,7 +47,9 @@ test('sette giorni: chat, bot ed eventi contati ciascuno per sé', () => {
 
 test('le dirette vengono dai rapporti, e il periodo le taglia', () => {
   const sette = st.riassunto(CH, { periodo: '7', ora: ORA });
-  assert.deepEqual(sette.dirette, { n: 2, oreMs: 5 * 3600_000, picco: 61, follow: 10, sub: 1, raid: 1, donazioni: 0, donazioniCent: 0 });
+  assert.deepEqual(sette.dirette, { n: 2, oreMs: 5 * 3600_000, picco: 61, follow: 10, sub: 1, raid: 1, donazioni: 0, donazioniCent: 0,
+    // i rapporti di prima che le piattaforme si distinguessero sono di Twitch: allora solo Twitch li scriveva
+    piattaforme: [{ piattaforma: 'twitch', n: 2, oreMs: 5 * 3600_000, picco: 61 }] });
   const sempre = st.riassunto(CH, { periodo: 'tutto', ora: ORA });
   assert.equal(sempre.dirette.n, 3);
   assert.equal(sempre.dirette.picco, 90);
@@ -61,7 +63,8 @@ test('le ultime dirette, dalla piu\' recente, con i numeri che servono alla tabe
   assert.equal(r.ultime.length, 3, 'le ultime non dipendono dal periodo');
   assert.equal(r.ultime[0].picco, 40);
   assert.equal(r.ultime[2].picco, 90);
-  assert.deepEqual(Object.keys(r.ultime[0]), ['id', 'inizio', 'fine', 'durataMs', 'picco', 'media', 'messaggi', 'persone', 'follow', 'clip']);
+  assert.deepEqual(Object.keys(r.ultime[0]), ['id', 'inizio', 'fine', 'durataMs', 'picco', 'media', 'messaggi', 'persone', 'follow', 'clip', 'piattaforme']);
+  assert.deepEqual(r.ultime[0].piattaforme, ['twitch']);
 });
 
 test('ore guardate e presenze arrivano dai loro registri', () => {
@@ -116,4 +119,31 @@ test('una diretta che comincia adesso non fa sparire niente', () => {
   assert.equal(con.dirette.oreMs, senza.dirette.oreMs, 'zero minuti in piu\'');
   assert.equal(con.dirette.n, senza.dirette.n + 1, 'ma la diretta c\'e\'');
   assert.equal(con.messaggi, senza.messaggi, 'e la chat non cambia');
+});
+
+// UNA SERATA, PIU' PIATTAFORME: una diretta per il canale, una in ognuna delle sue.
+test('una serata su Twitch e Kick: una diretta nel canale, e ogni piattaforma con le sue ore e il suo picco', () => {
+  const ch = 'stat-multi';
+  rapporti.salva(ch, { inizio: ORA - 3600_000 * 3, fine: ORA - 3600_000, dati: { durataMs: 2 * 3600_000, picco: 130, media: 110, giri: 20,
+    piattaforme: [
+      { piattaforma: 'twitch', inizio: ORA - 3600_000 * 3, fine: ORA - 3600_000, durataMs: 2 * 3600_000, picco: 100, media: 100, giri: 12 },
+      { piattaforma: 'kick', inizio: ORA - 3600_000 * 2, fine: ORA - 3600_000, durataMs: 3600_000, picco: 80, media: 20, giri: 8 },
+    ] } });
+  const r = st.riassunto(ch, { periodo: '7', ora: ORA });
+  assert.equal(r.dirette.n, 1, 'una serata e\' una diretta, anche su due piattaforme');
+  assert.equal(r.dirette.picco, 130, 'il picco della serata e\' quello del rapporto, preso nello stesso momento');
+  assert.deepEqual(r.dirette.piattaforme, [
+    { piattaforma: 'twitch', n: 1, oreMs: 2 * 3600_000, picco: 100 },
+    { piattaforma: 'kick', n: 1, oreMs: 3600_000, picco: 80 },
+  ]);
+  assert.deepEqual(r.ultime[0].piattaforme, ['twitch', 'kick']);
+});
+
+test('la serata in corso entra anche per piattaforma, solo per la parte dentro il periodo', () => {
+  const ch = 'stat-vivo-multi';
+  const inCorso = { inizio: ORA - 3600_000, picco: 50, media: 40, durataMs: 3600_000, piattaforme: [
+    { piattaforma: 'kick', inizio: ORA - 3600_000, durataMs: 3600_000, picco: 50, media: 40, giri: 10 },
+  ] };
+  const r = st.riassunto(ch, { periodo: '7', ora: ORA, inCorso });
+  assert.deepEqual(r.dirette.piattaforme, [{ piattaforma: 'kick', n: 1, oreMs: 3600_000, picco: 50 }]);
 });

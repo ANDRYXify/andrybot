@@ -44,22 +44,27 @@ export function candidati() {
 
 // La carta di un canale: solo cose che sono gia' pubbliche di loro (il nome del
 // canale e cosa sta facendo). Niente che riguardi chi guarda.
-function carta(login, s, stream) {
+// `altrove` e' quello che il giro di Kick ha visto (bot.js, kickVisto): un
+// canale in onda solo su Kick porta a Kick, col titolo e la categoria di li';
+// in onda su tutte e due, chi guarda e' la somma.
+function carta(login, s, stream, altrove) {
+  const k = altrove?.live === true ? altrove : null;
+  const suKick = !stream && !!k;
   return {
     login,
     nome: s?.display || nomeSu(login),
-    piattaforma: piattaformaDi(login),
-    url: urlCanale(login),
-    titolo: String(stream?.title || '').slice(0, 120),
-    categoria: String(stream?.game_name || '').slice(0, 60),
-    spettatori: Number(stream?.viewer_count) || 0,
+    piattaforma: suKick ? 'kick' : piattaformaDi(login),
+    url: suKick && k.slug ? `https://kick.com/${k.slug}` : urlCanale(login),
+    titolo: String(stream?.title || k?.titolo || '').slice(0, 120),
+    categoria: String(stream?.game_name || k?.categoria || '').slice(0, 60),
+    spettatori: (Number(stream?.viewer_count) || 0) + (Number(k?.spettatori) || 0),
   };
 }
 
 // L'elenco per la home. `inDiretta` e' il bot; `helix` serve solo al contorno,
 // e se non risponde le carte restano senza contorno invece di sparire: la
 // vetrina non deve dipendere dal fatto che una piattaforma risponda.
-export async function elenco({ helix, inDiretta, ora = Date.now() } = {}) {
+export async function elenco({ helix, inDiretta, altrove = () => null, ora = Date.now() } = {}) {
   if (ora - _foto.ts < FRESCHEZZA_MS) return _foto.lista;
   if (_inVolo) return _inVolo;
   _inVolo = (async () => {
@@ -74,7 +79,8 @@ export async function elenco({ helix, inDiretta, ora = Date.now() } = {}) {
         }
       } catch { /* senza contorno le carte ci sono lo stesso */ }
     }
-    const lista = vivi.map((l) => carta(l, streamers.get(l), perLogin.get(nomeSu(l))))
+    const sua = (l) => { try { return altrove(l); } catch { return null; } };
+    const lista = vivi.map((l) => carta(l, streamers.get(l), perLogin.get(nomeSu(l)), sua(l)))
       .sort((a, b) => b.spettatori - a.spettatori || a.nome.localeCompare(b.nome));
     _foto = { ts: ora, lista };
     return lista;

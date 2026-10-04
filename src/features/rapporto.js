@@ -18,7 +18,27 @@ import { migliaia as migliaiaBit, chiHaCheerato } from './bit.js';
 import { guscioHtml, rigaHtml, numeriHtml, podioHtml, sezioneHtml, cartaLinkHtml, tastoHtml, dueColonneHtml, codiceDi, codiceTesto } from './posta.js';
 
 const norm = (s) => String(s || '').toLowerCase().trim();
-const sessioni = new Map();   // canale → { inizio, picco, somma, giri }
+// canale → la serata: { inizio, picco, giri, categorie, piattaforme }, e in
+// `piattaforme` una diretta per piattaforma: { primo, inizio, fine, prima,
+// picco, somma, giri, ultimo } (`prima`: il tempo in onda dei tratti gia'
+// finiti, se la piattaforma si e' fermata ed e' ripartita dentro la serata)
+const sessioni = new Map();
+
+// UNA SERATA, PIU' PIATTAFORME (docs/STATISTICHE.md, «Una serata, piu'
+// piattaforme»). Chi trasmette insieme su Twitch e su Kick fa UNA serata: si
+// apre col primo «in onda» e si chiude con l'ultimo «fine». Dentro, ogni
+// piattaforma tiene i suoi numeri, e quelli della serata si ricavano da quelli,
+// non si contano due volte:
+//  · il PICCO e' il massimo della SOMMA presa nello stesso momento (l'ultimo
+//    numero di ogni piattaforma in onda, se e' di questo giro), non la somma dei
+//    picchi, che possono essere a ore diverse;
+//  · la MEDIA e' la somma delle medie, ognuna pesata sul tempo che quella
+//    piattaforma e' stata in onda: con una sola piattaforma e' la sua media.
+export const PIATTAFORMA_DI_SERIE = 'twitch';
+export const FRESCO_MS = 6 * 60_000;
+const normP = (p) => norm(p) || PIATTAFORMA_DI_SERIE;
+const NOMI_PIATTAFORMA = { twitch: 'Twitch', kick: 'Kick', youtube: 'YouTube' };
+export const nomePiattaforma = (p) => NOMI_PIATTAFORMA[normP(p)] || normP(p);
 
 // Dove va il rapporto: Telegram di serie (se la chat privata c'e'), la mail
 // solo se lo streamer l'ha accesa. `attivo` e' il nome della prima versione.
@@ -32,59 +52,106 @@ export function normalizza(b) {
 }
 
 // DA QUANDO E' COMINCIATA non e' una cosa che ci ricordiamo noi: e' una cosa
-// che sappiamo. La dice Twitch quando va in onda, e quando non ce l'abbiamo
-// sotto mano la sanno le presenze, che quella data la scrivono sul disco. La
-// nostra memoria e' l'ultima delle tre, non la prima: se fosse la prima, un
-// riavvio farebbe ricominciare la serata da adesso.
+// che sappiamo. La dice la piattaforma quando va in onda, e quando non ce
+// l'abbiamo sotto mano la sanno le presenze, che quella data la scrivono sul
+// disco. La nostra memoria e' l'ultima delle tre, non la prima: se fosse la
+// prima, un riavvio farebbe ricominciare la serata da adesso.
 function daQuando(ch, inizio, ora) {
   if (inizio > 0 && inizio <= ora) return inizio;
   const vista = Number(store.diretta(ch)?.corrente_ts) || 0;
   return (vista > 0 && vista <= ora) ? vista : ora;
 }
 
-export function apri(channel, { ora = Date.now(), inizio = 0 } = {}) {
+const nuovaPiattaforma = (inizio) => ({ primo: inizio, inizio, fine: 0, prima: 0, picco: 0, somma: 0, giri: 0, ultimo: null });
+const nuovaSerata = (inizio) => ({ inizio, picco: 0, giri: 0, categorie: new Map(), piattaforme: new Map() });
+const altreInOnda = (s, p) => [...s.piattaforme].some(([q, x]) => q !== p && !x.fine);
+
+export function apri(channel, { ora = Date.now(), inizio = 0, piattaforma = PIATTAFORMA_DI_SERIE } = {}) {
   const ch = norm(channel);
   if (!ch) return null;
+  const p = normP(piattaforma);
   const da = daQuando(ch, Number(inizio) || 0, ora);
+  let s = sessioni.get(ch);
+  const sua = s?.piattaforme.get(p);
   // Riaprire la STESSA diretta non la ricomincia. Il picco e la media di stasera
   // sono di stasera: un secondo rilevamento della stessa serata — il bot che
-  // riparte, il watcher che ripassa — non deve azzerarli. Solo un inizio diverso
-  // e' una serata diversa.
-  const gia = sessioni.get(ch);
-  if (gia && gia.inizio === da) return gia;
-  const s = { inizio: da, picco: 0, somma: 0, giri: 0, categorie: new Map() };
-  sessioni.set(ch, s);
+  // riparte, il giro che ripassa — non deve azzerarli. Una diretta con un altro
+  // inizio sulla stessa piattaforma e' una serata nuova, ma solo se nessun'altra
+  // piattaforma e' in onda: se no e' la stessa serata, ripresa li'.
+  if (sua && !sua.fine && (sua.inizio === da || altreInOnda(s, p))) return s;
+  if (s && sua && !altreInOnda(s, p)) s = null;
+  if (!s) { s = nuovaSerata(da); sessioni.set(ch, s); }
+  s.inizio = Math.min(s.inizio, da);
+  const gia = s.piattaforme.get(p);
+  // ripartita dentro la stessa serata: il tratto di prima resta, col suo tempo
+  if (gia) { gia.prima += Math.max(0, gia.fine - gia.inizio); gia.inizio = Math.max(da, gia.fine); gia.fine = 0; }
+  else s.piattaforme.set(p, nuovaPiattaforma(da));
   return s;
 }
 
-// Un giro da cinque minuti, con gli spettatori di quel momento. Senza una
+// Un giro, con gli spettatori di quel momento su una piattaforma. Senza una
 // sessione aperta (bot ripartito a diretta in corso) se ne apre una che parte
 // dall'inizio che le presenze ricordano.
 // La categoria si conta nello stesso giro degli spettatori: la quota di tempo
 // di ogni categoria e' la sua parte dei giri, e un giro senza spettatori validi
 // non conta per nessuno dei due (docs/STRUMENTI.md, il media kit).
-export function osservaGiro(channel, { spettatori = null, categoria = '', ora = Date.now() } = {}) {
+export function osservaGiro(channel, { spettatori = null, categoria = '', ora = Date.now(), piattaforma = PIATTAFORMA_DI_SERIE } = {}) {
   const ch = norm(channel);
   if (!ch) return null;
+  const p = normP(piattaforma);
   let s = sessioni.get(ch);
-  if (!s) s = apri(ch, { ora });
+  if (!s || !s.piattaforme.get(p) || s.piattaforme.get(p).fine) s = apri(ch, { ora, piattaforma: p });
+  const x = s.piattaforme.get(p);
   const n = Number(spettatori);
   if (Number.isFinite(n) && n >= 0) {
-    s.picco = Math.max(s.picco, n); s.somma += n; s.giri++;
+    x.picco = Math.max(x.picco, n); x.somma += n; x.giri++; x.ultimo = { n, ora };
+    let insieme = 0;
+    for (const q of s.piattaforme.values()) if (!q.fine && q.ultimo && ora - q.ultimo.ora <= FRESCO_MS) insieme += q.ultimo.n;
+    s.picco = Math.max(s.picco, insieme);
+    s.giri++;
     const c = String(categoria || '').replace(/\s+/g, ' ').trim().slice(0, 80);
     if (c) s.categorie.set(c, (s.categorie.get(c) || 0) + 1);
   }
   return s;
 }
 
+// Una piattaforma ha finito, la serata forse no: i suoi numeri restano, e da
+// adesso non conta piu' nella somma di chi e' in onda.
+export function chiudiPiattaforma(channel, piattaforma, { ora = Date.now() } = {}) {
+  const x = sessioni.get(norm(channel))?.piattaforme.get(normP(piattaforma));
+  if (x && !x.fine) x.fine = ora;
+  return !!x;
+}
+
+// Le piattaforme in onda nella serata aperta, adesso.
+export function inOndaSu(channel) {
+  const s = sessioni.get(norm(channel));
+  return s ? [...s.piattaforme].filter(([, x]) => !x.fine).map(([p]) => p) : [];
+}
+
 const categorieDi = (s) => [...(s.categorie || new Map())].map(([nome, giri]) => ({ nome, giri })).sort((a, b) => b.giri - a.giri || (a.nome < b.nome ? -1 : a.nome > b.nome ? 1 : 0));
+const mediaDi = (x) => (x.giri ? Math.round(x.somma / x.giri) : 0);
+
+// I numeri di ogni piattaforma e quelli della serata, a un certo istante.
+function numeri(s, ora) {
+  const durataMs = Math.max(0, ora - s.inizio);
+  const piattaforme = [...s.piattaforme].map(([piattaforma, x]) => {
+    const fine = x.fine || ora;
+    return { piattaforma, inizio: x.primo, fine, durataMs: x.prima + Math.max(0, fine - x.inizio), picco: x.picco, media: mediaDi(x), giri: x.giri };
+  }).sort((a, b) => a.inizio - b.inizio || (a.piattaforma < b.piattaforma ? -1 : 1));
+  // la media della serata: ogni media pesata sul suo tempo in onda
+  const pesata = durataMs ? piattaforme.reduce((t, q) => t + q.media * q.durataMs, 0) / durataMs : 0;
+  const media = piattaforme.length === 1 ? piattaforme[0].media : Math.round(pesata);
+  return { inizio: s.inizio, durataMs, picco: s.picco, media, giri: s.giri, piattaforme };
+}
 
 export function chiudi(channel, { ora = Date.now() } = {}) {
   const ch = norm(channel);
   const s = sessioni.get(ch);
   sessioni.delete(ch);
   if (!s) return null;
-  return { inizio: s.inizio, fine: ora, durataMs: Math.max(0, ora - s.inizio), picco: s.picco, media: s.giri ? Math.round(s.somma / s.giri) : 0, giri: s.giri, categorie: categorieDi(s) };
+  const n = numeri(s, ora);
+  return { inizio: n.inizio, fine: ora, durataMs: n.durataMs, picco: n.picco, media: n.media, giri: n.giri, categorie: categorieDi(s), piattaforme: n.piattaforme };
 }
 
 export function aperta(channel) { return sessioni.has(norm(channel)); }
@@ -99,12 +166,8 @@ export function aperta(channel) { return sessioni.has(norm(channel)); }
 export function inCorso(channel, { ora = Date.now() } = {}) {
   const s = sessioni.get(norm(channel));
   if (!s) return null;
-  return {
-    inizio: s.inizio,
-    durataMs: Math.max(0, ora - s.inizio),
-    picco: s.picco,
-    media: s.giri ? Math.round(s.somma / s.giri) : 0,
-  };
+  const n = numeri(s, ora);
+  return { inizio: n.inizio, durataMs: n.durataMs, picco: n.picco, media: n.media, piattaforme: n.piattaforme };
 }
 
 // Quello che e' successo fra inizio e fine, letto dal database. Pura sui dati.
@@ -273,10 +336,22 @@ export function apertura(dati) {
 
 // La seconda riga tiene insieme la serata: quanto sei stato in onda e quante
 // persone sono passate. Sempre quella, perche' e' la cornice, non la notizia.
+// Le piattaforme si nominano quando dicono qualcosa: con una sola, la serata e'
+// quella e basta; con piu' d'una, si dice dove, e ognuna ha i suoi numeri.
+const piuDiUna = (d) => Array.isArray(d.piattaforme) && d.piattaforme.length > 1;
+export function dove(d) {
+  if (!piuDiUna(d)) return '';
+  const n = d.piattaforme.map((x) => nomePiattaforma(x.piattaforma));
+  return ` su ${n.slice(0, -1).join(', ')} e ${n[n.length - 1]}`;
+}
+export function perPiattaforma(d) {
+  if (!piuDiUna(d)) return [];
+  return d.piattaforme.map((x) => ({ nome: nomePiattaforma(x.piattaforma), detto: `${durata(x.durataMs || 0)}${x.giri > 0 ? `, picco ${x.picco}, in media ${x.media}` : ''}` }));
+}
 export function cornice(dati) {
   const d = dati || {};
   const p = d.persone === 1 ? 'una persona' : `${d.persone | 0} persone`;
-  return `Sei stato in onda ${durata(d.durataMs || 0)}, e in chat sono passate ${p}.`;
+  return `Sei stato in onda ${durata(d.durataMs || 0)}${dove(d)}, e in chat sono passate ${p}.`;
 }
 
 // «martedì sera», «domenica pomeriggio»: come lo direbbe uno, non una data.
@@ -307,6 +382,7 @@ export function html(dati, { display = '', quando = '', codice = '' } = {}) {
   // volta» andrebbe a capo male. Dice la stessa cosa in meta' larghezza.
   const resto = [];
   if (d.giri > 0) resto.push(rigaHtml('In media', `${d.media} spettatori`));
+  for (const x of perPiattaforma(d)) resto.push(rigaHtml(x.nome, x.detto));
   if (d.sub) resto.push(rigaHtml('Sub', `${d.sub}${d.regali ? ` (${d.regali} regalat${d.regali === 1 ? 'o' : 'i'})` : ''}`));
   if (d.raid) resto.push(rigaHtml('Raid', `${d.raid} (${d.raidSpettatori} person${d.raidSpettatori === 1 ? 'a' : 'e'})`));
   if (d.bit) resto.push(rigaHtml('Bit', `${migliaiaBit(d.bit)}${d.bitChi ? ` · ${d.bitChi}` : ''}`));
@@ -356,6 +432,8 @@ export function testo(dati) {
   const d = dati || {};
   const righe = [`<b>${apertura(d)}</b>`, cornice(d)];
   if (d.giri > 0) righe.push(`Spettatori: picco ${d.picco}, in media ${d.media}`);
+  const sue = perPiattaforma(d);
+  if (sue.length) righe.push(sue.map((x) => `${x.nome}: ${x.detto}`).join(' · '));
   righe.push(`Chat: ${d.messaggi | 0} messaggi da ${d.persone | 0} ${d.persone === 1 ? 'persona' : 'persone'}`);
   if (d.top?.length) righe.push('Più attivi: ' + d.top.map((t) => `${esc(t.user)} (${t.n})`).join(', '));
   const conto = [`Nuovi follower: ${d.follow | 0}`, `Sub: ${d.sub | 0}${d.regali ? ` (${d.regali} regalat${d.regali === 1 ? 'o' : 'i'})` : ''}`];

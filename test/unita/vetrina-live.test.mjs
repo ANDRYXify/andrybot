@@ -91,3 +91,23 @@ test('non si chiede il contorno a ogni visita', async () => {
   await vetrina.elenco({ ora: t + 2000, inDiretta, helix: contato });
   assert.equal(chiamate, 1, 'dentro al minuto vale la fotografia di prima');
 });
+
+// Kick nella vetrina: il contorno arriva dal giro di Kick (bot.js, kickVisto).
+test('un canale in onda solo su Kick porta a Kick, col titolo e la categoria di li\'', async () => {
+  const altrove = (l) => (l === 'lucaplays' ? { live: true, slug: 'luca_kick', titolo: 'Su Kick stasera', categoria: 'Fortnite', spettatori: 40 } : null);
+  const senzaTwitch = STREAMS.filter((s) => s.user_login !== 'lucaplays');
+  const luca = (await giro({ helix: helixFinto(senzaTwitch), altrove })).find((d) => d.login === 'lucaplays');
+  assert.deepEqual([luca.piattaforma, luca.url, luca.titolo, luca.categoria, luca.spettatori], ['kick', 'https://kick.com/luca_kick', 'Su Kick stasera', 'Fortnite', 40]);
+});
+
+test('in onda su Twitch e su Kick: si va su Twitch, e chi guarda e\' la somma', async () => {
+  const altrove = (l) => (l === 'lucaplays' ? { live: true, slug: 'luca_kick', titolo: 'Su Kick', categoria: 'Fortnite', spettatori: 40 } : null);
+  const luca = (await giro({ helix: helixFinto(STREAMS), altrove })).find((d) => d.login === 'lucaplays');
+  assert.deepEqual([luca.piattaforma, luca.url, luca.titolo, luca.spettatori], ['twitch', 'https://www.twitch.tv/lucaplays', 'Ranked', 127]);
+});
+
+test('quello che Kick ha visto fuori onda non entra nella carta', async () => {
+  const altrove = () => ({ live: false, slug: 'x', titolo: 'vecchio', categoria: 'vecchia', spettatori: 999 });
+  const luca = (await giro({ helix: helixFinto(STREAMS), altrove })).find((d) => d.login === 'lucaplays');
+  assert.equal(luca.spettatori, 87);
+});

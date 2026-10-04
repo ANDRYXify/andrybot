@@ -2511,7 +2511,7 @@ body.ce-aperto { overflow: hidden; }
 .rap-carta { border: 1px solid var(--border); border-radius: var(--r-m); padding: .7rem .85rem; background: var(--surface-2); }
 .rap-carta.nuovo { border-color: var(--acc-bordo); }
 .rap-testa { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; margin-bottom: .45rem; }
-.rap-durata { color: var(--testo-2); font-variant-numeric: tabular-nums; }
+.rap-durata, .rap-dove { color: var(--testo-2); font-variant-numeric: tabular-nums; }
 .rap-via { margin-left: auto; font-size: .8rem; color: var(--testo-3); }
 .rap-griglia { display: grid; grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr)); gap: .35rem .8rem; }
 .rap-clip { display: flex; flex-direction: column; gap: .3rem; margin-top: .55rem; }

@@ -58,7 +58,8 @@ test('i segni delle accoglienze si potano dopo 90 giorni', () => {
 });
 
 test('Kick segna quando comincia la diretta, nel database', () => {
-  assert.match(BOT, /statoVivo\.scrivi\(ev\.channel, 'diretta:' \+ ev\.piattaforma, \{ live: true, da: Date\.now\(\) \}\)/);
+  const f = tratto(BOT, '  async _setLiveAltrove(ch, p, isLive, data, fonte) {', '\n  }\n');
+  assert.match(f, /const da = inizio \|\| Date\.now\(\);\n\s*statoVivo\.scrivi\(ch, 'diretta:' \+ piattaforma, \{ live: true, da \}\)/, 'l\'inizio che dice Kick, o adesso se non lo dice');
 });
 
 test('il server: persone scritte storte no, un comando che esegue se stesso no, i giochi del giro si', () => {

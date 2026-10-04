@@ -167,7 +167,7 @@ test('l\'avviso di una diretta in corso si riscrive coi dati di adesso, e solo s
 
 test('la diretta la decide la regola delle due fonti, e il giro lo dice', () => {
   const bot = readFileSync(new URL('../../src/bot.js', import.meta.url), 'utf8');
-  const f = bot.slice(bot.indexOf('  _setLive(login, isLive, data, fonte = \'evento\') {'));
+  const f = bot.slice(bot.indexOf('  _setLive(login, isLive, data, fonte = \'evento\', piattaforma = \'twitch\') {'));
   assert.match(f.slice(0, 600), /dopoSegnale\(this\._statoDiretta\.get\(ch\), \{ live: !!isLive, fonte, ora: Date\.now\(\) \}\)/);
   assert.match(bot, /onLive: \(login, isLive, data\) => this\._setLive\(login, isLive, data, 'giro'\)/);
 });

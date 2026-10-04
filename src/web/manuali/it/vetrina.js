@@ -9,7 +9,7 @@ export default {
   titolo: 'La tua vetrina: pagina link, donazioni e social | SocialBot',
   h1: 'La tua vetrina: pagina link, donazioni, settimana, grafiche e i tuoi social',
   desc: 'La pagina da mettere in bio, le donazioni sul tuo conto, i giorni in cui vai in onda, le grafiche da pubblicare e gli avvisi quando pubblichi sui social.',
-  aggiornata: '2026-10-03',
+  aggiornata: '2026-10-04',
   corpo: [
     { p: [
       'Cinque schede che lavorano anche quando non sei in onda: la pagina da mettere in bio, le donazioni, i giorni in cui vai in diretta, le grafiche da pubblicare e gli avvisi quando esce qualcosa di tuo sulle altre reti.',
@@ -133,7 +133,7 @@ export default {
 
     { h3: 'La tua diretta in prima pagina' },
     { p: [
-      'Questa carta la vede solo chi ha il canale. Quando sei in onda, il tuo canale può comparire fra le dirette sulla prima pagina di SocialBot: il nome, cosa stai giocando, il titolo della diretta e un collegamento al tuo canale.',
+      'Questa carta la vede solo chi ha il canale. Quando sei in onda, il tuo canale può comparire fra le dirette sulla prima pagina di SocialBot: il nome, cosa stai giocando, il titolo della diretta e un collegamento al tuo canale. Se sei in onda solo su Kick, il collegamento porta al tuo canale su Kick.',
       '«Fammi comparire quando sono in diretta» è spento di base. Acceso, leggi «Comparirai fra le dirette quando sei in onda ✓»; spento, leggi «Non comparirai più in prima pagina ✓» e sparisci subito. Non mostriamo niente dei tuoi spettatori, e niente di tuo che non sia già pubblico sul tuo canale.',
       'La fascia delle dirette si aggiorna ogni minuto e mostra fino a dodici canali. Se nessuno è in onda non compare.',
     ] },

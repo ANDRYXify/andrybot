@@ -70,8 +70,10 @@ export function daEvento(tipo, payload, { canale } = {}) {
       return { ...base, tipo: 'abbonamento', mesi: Math.max(1, Number(p.duration) || 1) };
     case 'channel.subscription.gifts':
       return { ...base, tipo: 'regali', quanti: Math.max(1, (p.giftees || []).length || Number(p.quantity) || 1) };
+    // l'inizio vero della diretta: e' anche il suo nome, per non annunciarla
+    // due volte quando la vede anche il giro (bot.js, _setLiveAltrove)
     case 'livestream.status.updated':
-      return { ...base, tipo: p.is_live ? 'live' : 'fine-live', titolo: String(p.title || '') };
+      return { ...base, tipo: p.is_live ? 'live' : 'fine-live', titolo: String(p.title || ''), inizio: p.is_live ? (Date.parse(String(p.started_at || '')) || 0) : 0 };
     default:
       return null;
   }

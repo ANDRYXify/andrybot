@@ -9,7 +9,7 @@ export default {
   titolo: 'Manuale della diretta: regia, clip, musica, rapporti | SocialBot',
   h1: 'Manuale della diretta: regia, clip, musica, rapporti e statistiche',
   desc: 'Titolo, categoria, pubblicità e raid dal pannello, le clip che nascono da sole, le richieste su Spotify, il rapporto di ogni diretta e i numeri del canale.',
-  aggiornata: '2026-09-30',
+  aggiornata: '2026-10-04',
   corpo: [
     { p: [
       'Queste schede servono <strong>mentre trasmetti</strong> e subito dopo. Stanno nel gruppo «Durante la diretta» del menù: «Regia» apre una barra con tre voci, «Regia», «Clip» e «Musica». Accanto ci sono «Dirette» e «CONSOLify». «Statistiche» sta nel gruppo «Chat e pubblico».',
@@ -197,6 +197,13 @@ export default {
       'Un riavvio del bot a metà serata non perde il rapporto: riparte dall\'inizio della diretta. Al massimo manca il picco di prima del riavvio.',
     ] },
 
+    { h3: 'Una serata su più piattaforme' },
+    { p: [
+      'Se hai collegato Kick nella scheda «Il tuo account», il bot segue anche la diretta su Kick. Se trasmetti su Twitch e su Kick insieme, il rapporto è uno solo: la serata comincia col primo «in onda», su una qualunque delle due, e finisce con l\'ultimo.',
+      'In testa alla carta leggi dove è andata in onda la serata, per esempio «Twitch + Kick». Sotto, «Per piattaforma» dà la durata, il picco e la media di ognuna. Il picco della serata è quello di tutte e due insieme nello stesso momento, non la somma dei due picchi. La media pesa ognuna sul suo tempo in onda.',
+      'Su Kick gli spettatori li legge il bot dal tuo canale ogni due minuti. Una serata solo su Twitch resta com\'era, senza nomi di piattaforme.',
+    ] },
+
     { h3: 'Dove ricevere il rapporto' },
     { p: [
       'Il rapporto resta sempre nella scheda. In più può arrivarti appena chiudi la diretta.',
@@ -249,6 +256,7 @@ export default {
     { p: [
       'Sono gli stessi numeri della scheda «Dirette», non un secondo conto. Una diretta finita conta nel periodo in cui è finita. Di quella in corso conta solo la parte dentro il periodo.',
       'Mentre sei in onda, i riquadri dirette, in onda e picco portano la scritta «adesso» e la scheda si rilegge da sola ogni 30 secondi, finché la finestra è davanti.',
+      'Se nel periodo hai trasmesso su più piattaforme, sotto i riquadri compare «Per piattaforma»: per ognuna quante dirette, quante ore in onda e il picco. Una serata su Twitch e Kick insieme conta una volta nei riquadri e una volta in ognuna. Il picco dei riquadri è quello di tutte insieme nello stesso momento.',
     ] },
 
     { h3: 'Le classifiche' },
@@ -269,6 +277,7 @@ export default {
     { h3: 'Le ultime dirette' },
     { p: [
       'Le ultime 10 dirette, una riga ciascuna: «Quando», «Durata», «Picco», «Media», «Messaggi», «Persone», «Follower», «clip». Non seguono il periodo: dopo una pausa lunga le vedi lo stesso.',
+      'Se una di queste è passata da Kick, compare anche la colonna «Dove», per esempio «Twitch + Kick».',
       'Il tasto «Apri i rapporti» porta alla scheda «Dirette». Senza dirette leggi «Nessuna diretta ancora: il rapporto nasce quando chiudi.»',
     ] },
   ],
@@ -280,7 +289,7 @@ export default {
     { d: 'Non nasce nessuna clip automatica.', r: 'Controlla che l\'extra «Clip Automatiche» sia nel tuo piano, che la levetta sia accesa e che tu sia in diretta con il bot in chat. Dall\'ultima clip passano almeno 4 minuti, e con la sensibilità bassa servono picchi forti. Se Twitch rifiuta la clip, il bot non lo scrive in chat.' },
     { d: '!sr non risponde.', r: 'Servono tutte e tre le cose: Spotify collegato in «Musica», Premium attivo, app aperta e in riproduzione. In modalità «A punti canale (premio)» <code>!sr</code> non mette in coda: risponde di riscattare il premio.' },
     { d: 'Il rapporto non mi arriva su Telegram.', r: 'Serve la chat privata del bot, collegata nella scheda «Telegram». In «Dirette» la levetta «Su Telegram, in privato» deve essere accesa. Il rapporto resta comunque nella scheda «Dirette».' },
-    { d: 'Il rapporto non ha picco e media.', r: 'Gli spettatori si contano ogni cinque minuti mentre il bot è nel canale. Se il bot era spento, o la diretta è finita prima del primo conteggio, quei due numeri non ci sono.' },
+    { d: 'Il rapporto non ha picco e media.', r: 'Gli spettatori si contano ogni cinque minuti mentre il bot è nel canale, e su Kick ogni due minuti, se hai collegato Kick. Se il bot era spento, o la diretta è finita prima del primo conteggio, quei due numeri non ci sono.' },
     { d: '«Chi guarda di più» è vuota.', r: 'Le ore si contano solo in diretta: prima della prima diretta la classifica è vuota. Se resta vuota dopo, controlla nella scheda «Comandi» che la spunta «Conta le ore guardate in chat» sia accesa.' },
     { d: 'Mi è arrivata una mail di SocialBot che non mi convince.', r: 'Guarda il codice in fondo e confrontalo con quello della scheda «Il tuo account», carta «Le mail che ti mandiamo». Se non combacia, non aprire i collegamenti.' },
     { d: 'Se chiudo il pannello si ferma qualcosa?', r: 'Clip automatiche, richieste musicali, messaggi della pubblicità e rapporti girano sul server e vanno avanti. Si fermano i tasti che premi tu e il conto di «Stato diretta». Per le scene comandate dal telefono vedi il <a href="/manuale/consolify">manuale di CONSOLify</a>.' },

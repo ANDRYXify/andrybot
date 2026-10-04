@@ -98,7 +98,7 @@ import { aChi } from './features/risposte.js';
 import { modalitaDi, alLavoro } from './features/quando-lavora.js';
 import { statoVivo } from './db.js';
 import { piattaformaDi } from './identita.js';
-import { tokenDi as tokenKick } from './kick/api.js';
+import { tokenDi as tokenKick, collegati as kickCollegati, statoCanale as statoKick } from './kick/api.js';
 import * as bjFeat from './features/blackjack.js';
 import * as seguitiFeat from './features/seguiti.js';
 import * as negozio from './features/negozio.js';
@@ -109,6 +109,10 @@ import { mappaCanale as emoteDelCanale, soloCanale as emoteSoloDelCanale } from 
 
 const log = makeLog('bot');
 const BOSS_DOPO_RAID_MS = 20_000;
+// Le piattaforme con una diretta fuori da Twitch, che il bot segue da sé (Kick:
+// eventi e giro). YouTube entra qui quando la sua diretta ha una fonte vera.
+export const PIATTAFORME_ALTRE = ['kick'];
+export const GIRO_KICK_MS = 2 * 60_000;
 
 // Una risposta al canarino al minuto per canale: chi conosce la frase non deve
 // poterla usare per far scrivere il bot a raffica.
@@ -331,6 +335,9 @@ export class BotManager {
     avviaBackupAuto();
     // TikTok: rilevamento live best-effort (l'affidabile è il webhook)
     this._tiktokTimer = setInterval(() => this._controllaTikTok().catch(() => {}), 3 * 60_000);
+    // il giro di Kick: la seconda fonte della diretta, e gli spettatori
+    this._kickTimer = setInterval(() => this._giroKick().catch(() => {}), GIRO_KICK_MS);
+    this._kickPrimo = setTimeout(() => this._giroKick().catch(() => {}), 15_000);
     // Dirette degli amici da annunciare su Telegram: non sono canali gestiti dal
     // bot, quindi nessun evento arriva da solo — vanno guardati.
     this._amiciTimer = setInterval(() => this._giroAmici().catch(() => {}), 2 * 60_000);
@@ -423,6 +430,8 @@ export class BotManager {
     clearInterval(this._watchtimeTimer);
     stopBackupAuto();
     clearInterval(this._tiktokTimer);
+    clearInterval(this._kickTimer);
+    clearTimeout(this._kickPrimo);
     clearInterval(this._amiciTimer);
     clearInterval(this._recapitiTimer);
     clearInterval(this._postTimer);
@@ -1100,7 +1109,7 @@ export class BotManager {
     // Chi scrive per la prima volta, e chi torna dopo un'assenza: una parola dal
     // bot, salvo che lo streamer si sia costruito il suo saluto con un Modulo.
     try {
-      const live = msg.piattaforma && msg.piattaforma !== 'twitch' ? true : this._liveState.get(login) === true;
+      const live = msg.piattaforma === 'youtube' ? true : this.inOnda(login);
       presenze.suMessaggio(msg, parla, { live, arrivo, tace: accolto.riguarda });
     } catch (e) { log.debug(`#${login} saluti:`, e?.message || e); }
     // Auguri a chi compie gli anni oggi, al suo primo messaggio: in chat non
@@ -1181,10 +1190,11 @@ export class BotManager {
     songrequest.trySongRequest(cmdMsg, parla).catch((e) => log.error(`#${login} songrequest:`, e?.message || e));
     // il negozio del canale (!negozio, !compra, !borsa): si paga con le monete.
     // Gli servono Twitch, gli overlay e i Moduli per far partire quello che si
-    // compra, e se il canale e' in diretta (fuori da Twitch lo e' per costruzione).
+    // compra, e se il canale e' in onda su una piattaforma qualunque (la chat di
+    // YouTube esiste solo in diretta, quindi da li' lo e' per costruzione).
     negozio.tryComando(cmdMsg, parla, {
       helix: this.helix, effetti: this.effects, moduli: this.modules,
-      live: msg.piattaforma && msg.piattaforma !== 'twitch' ? true : this._liveState.get(login) === true,
+      live: msg.piattaforma === 'youtube' ? true : this.inOnda(login),
     }).catch((e) => log.error(`#${login} negozio:`, e?.message || e));
     // citazioni (!cita) — lo shoutout (!so) lo gestisce comandibase qui sopra
     try { quotes.tryQuoteCommand(msg, parla); } catch (e) { log.error(`#${login} citazioni:`, e?.message || e); }
@@ -1433,7 +1443,7 @@ export class BotManager {
   _scriviInOnda() {
     try {
       const canali = new Set([...this._liveState].filter(([, v]) => v === true).map(([c]) => c));
-      for (const p of ['kick']) for (const r of statoVivo.tutti('diretta:' + p)) if (r.dato?.live === true) canali.add(r.channel);
+      for (const p of PIATTAFORME_ALTRE) for (const r of statoVivo.tutti('diretta:' + p)) if (r.dato?.live === true) canali.add(r.channel);
       const file = join(config.dataDir, '.in-onda');
       writeFileSync(file + '.tmp', JSON.stringify({ canali: [...canali].sort(), ts: Date.now() }));
       renameSync(file + '.tmp', file);
@@ -1450,9 +1460,10 @@ export class BotManager {
   // c'e'» chiude solo se ripetuto e lontano dall'ultimo «c'e'». Prima chiudeva
   // subito: la diretta appena cominciata «finiva» al primo giro e ripartiva al
   // secondo, con due avvisi e un rapporto vuoto in mezzo.
-  _setLive(login, isLive, data, fonte = 'evento') {
+  _setLive(login, isLive, data, fonte = 'evento', piattaforma = 'twitch') {
     const ch = String(login || '').toLowerCase();
     if (!ch) return;
+    if (piattaforma !== 'twitch') return this._setLiveAltrove(ch, piattaforma, isLive, data, fonte);
     const stato = dopoSegnale(this._statoDiretta.get(ch), { live: !!isLive, fonte, ora: Date.now() });
     this._statoDiretta.set(ch, stato);
     isLive = stato.live;
@@ -1472,7 +1483,7 @@ export class BotManager {
     // riavvio non lasciava NESSUN rapporto — alla chiusura non c'era niente da
     // chiudere, e quella serata spariva. Percio' la contabilità si fa sempre, e
     // prima: aprirla due volte non la ricomincia.
-    if (isLive) rapporto.apri(ch, { inizio: Date.parse(data?.started_at) || 0 });
+    if (isLive) rapporto.apri(ch, { inizio: Date.parse(data?.started_at) || 0, piattaforma: 'twitch' });
     // Primo rilevamento (bot appena avviato): NON è una transizione vera.
     // Evita di annunciare "è live!" se il bot riparte a diretta già in corso.
     if (prev === undefined) return;
@@ -1484,10 +1495,112 @@ export class BotManager {
     } else {
       this._chiudiAvvisi(ch);
       this._scalaVipDiretta(ch);
-      this._rapportoDiretta(ch).catch((e) => log.error(`rapporto #${ch}:`, e?.message || e));
+      // la serata finisce con l'ultima piattaforma, non con Twitch
+      rapporto.chiudiPiattaforma(ch, 'twitch');
+      if (!this._inOndaAltrove(ch).length) this._rapportoDiretta(ch).catch((e) => log.error(`rapporto #${ch}:`, e?.message || e));
     }
     this._reagisciAllaDiretta(ch, isLive);   // lei se ne accorge e ti scrive (presente/consapevole)
   }
+
+  // LA DIRETTA FUORI DA TWITCH (docs/PIATTAFORME.md, «La diretta su Kick»).
+  //
+  // Ogni piattaforma ha la sua diretta, e passa dalla STESSA regola di Twitch
+  // (stream/stato-diretta.js): l'evento conta subito, il giro chiude solo se
+  // non la vede due volte di fila e da piu' di cinque minuti. Lo stato si tiene
+  // fra gli stati vivi del canale, quindi un riavvio a diretta in corso non la
+  // ricomincia e non la riannuncia: il «prima» e' quello sul disco, non quello
+  // della memoria appena nata.
+  //
+  // La SERATA e' del canale: si apre col primo «in onda», di qualunque
+  // piattaforma, e il rapporto si chiude con l'ultimo «fine».
+  _inOndaAltrove(ch) {
+    return PIATTAFORME_ALTRE.filter((p) => this.inDirettaSu(ch, p));
+  }
+  // In onda adesso, su una piattaforma qualunque: e' la serata del canale.
+  inOnda(login) {
+    const ch = String(login || '').toLowerCase();
+    return this._liveState?.get(ch) === true || this._inOndaAltrove(ch).length > 0;
+  }
+  async _setLiveAltrove(ch, p, isLive, data, fonte) {
+    const piattaforma = String(p || '').toLowerCase();
+    if (!PIATTAFORME_ALTRE.includes(piattaforma)) return;
+    const mappa = this._statoDiretta || (this._statoDiretta = new Map());
+    const chiave = ch + '|' + piattaforma;
+    const scritto = statoVivo.leggi(ch, 'diretta:' + piattaforma);
+    const eraLive = scritto?.live === true;
+    const prima = mappa.get(chiave) || (eraLive ? { live: true, visto: Date.now(), assenze: 0 } : undefined);
+    const stato = dopoSegnale(prima, { live: !!isLive, fonte, ora: Date.now() });
+    mappa.set(chiave, stato);
+    const inizio = Number(data?.inizio) || Number(scritto?.da) || 0;
+    if (stato.live === eraLive) {
+      // nessun cambio: la serata pero' c'e' (anche dopo un riavvio, che la
+      // sessione in memoria l'ha persa), e aprirla due volte non la ricomincia
+      if (stato.live) rapporto.apri(ch, { inizio, piattaforma });
+      // la fine detta dalla piattaforma chiude quello che di lei e' rimasto
+      // aperto anche se qui non risultava in onda: chiudere due volte non
+      // costa niente, un avviso «e' in diretta» lasciato aperto si'
+      else if (fonte === 'evento') await this._chiudiAvvisiAltrove(ch, piattaforma);
+      return;
+    }
+    const serataPrima = this._liveState?.get(ch) === true || this._inOndaAltrove(ch).length > 0;
+    if (stato.live) {
+      const da = inizio || Date.now();
+      statoVivo.scrivi(ch, 'diretta:' + piattaforma, { live: true, da });
+      this._scriviInOnda();
+      rapporto.apri(ch, { inizio: da, piattaforma });
+      // l'id della diretta e' il suo inizio: l'evento e il giro dicono lo
+      // stesso, e lo stesso avviso non parte due volte
+      try {
+        const d = avvisi.diretta({ piattaforma, login: ch, titolo: data?.titolo || '', id: String(inizio || data?.titolo || da) });
+        if (d) await this.annunciaDiretta(d);
+      } catch (e) { log.error(`avviso live ${piattaforma} #${ch}:`, e?.message || e); }
+      if (!serataPrima) this._storiaDellaDiretta(ch).catch((e) => log.error(`storia della diretta #${ch}:`, e?.message || e));
+      return;
+    }
+    statoVivo.togli(ch, 'diretta:' + piattaforma);
+    this._scriviInOnda();
+    rapporto.chiudiPiattaforma(ch, piattaforma);
+    await this._chiudiAvvisiAltrove(ch, piattaforma);
+    if (!this.inOnda(ch)) await this._rapportoDiretta(ch).catch((e) => log.error(`rapporto #${ch}:`, e?.message || e));
+  }
+  async _chiudiAvvisiAltrove(ch, piattaforma) {
+    try {
+      dirette.dimentica(ch, piattaforma);
+      await this._chiudiDiscord(ch, ch, piattaforma);
+    } catch (e) { log.error(`fine live ${piattaforma} #${ch}:`, e?.message || e); }
+  }
+
+  // IL GIRO DI KICK: ogni due minuti, per ogni canale con Kick collegato, lo
+  // stato del canale su Kick (kick/api.js, statoCanale). E' la seconda fonte
+  // della diretta, come /streams per Twitch: un evento perso non lascia una
+  // diretta aperta, o chiusa, per sempre. E porta gli spettatori, che negli
+  // eventi non ci sono: senza, una serata su Kick non avrebbe ne' picco ne'
+  // media.
+  async _giroKick() {
+    if (this._giroKickInCorso) return;
+    this._giroKickInCorso = true;
+    try {
+      for (const login of kickCollegati()) {
+        if (!streamers.get(login)) continue;
+        try {
+          const c = await statoKick(login);
+          if (!c.ok) continue;
+          if (!this._kickVisto) this._kickVisto = new Map();
+          this._kickVisto.set(login, { live: c.live, spettatori: c.spettatori, titolo: c.titolo, categoria: c.categoria, slug: c.slug, ts: Date.now() });
+          await this._setLiveAltrove(login, 'kick', c.live, { inizio: c.inizio, titolo: c.titolo }, 'giro');
+          if (!c.live) continue;
+          rapporto.osservaGiro(login, { piattaforma: 'kick', spettatori: c.spettatori, categoria: c.categoria });
+          // la vista che il cervello ha della diretta, se Twitch non gliela da' gia'
+          if (this._liveState.get(login) !== true) {
+            const min = c.inizio ? Math.max(0, Math.floor((Date.now() - c.inizio) / 60_000)) : 0;
+            memory.setStreamContext(login, `In live su Kick, ${c.categoria || 'senza categoria'}: "${c.titolo}" con ${c.spettatori ?? 0} spettatori da ${Math.floor(min / 60)}h ${min % 60}m`);
+          }
+        } catch (e) { log.debug(`#${login} giro di Kick:`, e?.message || e); }
+      }
+    } finally { this._giroKickInCorso = false; }
+  }
+  // Quello che il giro di Kick ha visto per ultimo (per la vetrina e la scheda).
+  kickVisto(login) { return this._kickVisto?.get(String(login || '').toLowerCase()) || null; }
 
   // LA STORIA DELLA DIRETTA: se lo streamer l'ha accesa nelle Grafiche, la sua
   // grafica «Live ora» in verticale va nella storia di Instagram. Se non parte,
@@ -1753,17 +1866,11 @@ export class BotManager {
       // `da`: quando e' cominciata, per riconoscere la diretta (le accoglienze
       // di chi arriva in chat ne fanno una per diretta). Nel database: un
       // riavvio a diretta in corso non la ricomincia.
-      if (ev.tipo === 'live') statoVivo.scrivi(ev.channel, 'diretta:' + ev.piattaforma, { live: true, da: Date.now() });
-      if (ev.tipo === 'fine-live') statoVivo.togli(ev.channel, 'diretta:' + ev.piattaforma);
-      if (ev.tipo === 'live' || ev.tipo === 'fine-live') this._scriviInOnda();
-      if (ev.tipo === 'live') {
-        const d = avvisi.diretta({ piattaforma: ev.piattaforma, login: ev.channel, titolo: ev.titolo, id: ev.id || ev.titolo || String(Date.now()) });
-        if (d) await this.annunciaDiretta(d);
-        return;
-      }
-      if (ev.tipo === 'fine-live') {
-        dirette.dimentica(ev.channel, ev.piattaforma);
-        await this._chiudiDiscord(ev.channel, ev.channel, ev.piattaforma);
+      // L'inizio e la fine della diretta passano dalla stessa porta del giro
+      // (_setLiveAltrove): un evento e un giro che dicono la stessa cosa non
+      // la annunciano due volte.
+      if (ev.tipo === 'live' || ev.tipo === 'fine-live') {
+        await this._setLiveAltrove(String(ev.channel).toLowerCase(), ev.piattaforma, ev.tipo === 'live', { inizio: Number(ev.inizio) || 0, titolo: ev.titolo || '' }, 'evento');
         return;
       }
       // Seguiti e abbonamenti alimentano gli alert a schermo GIA' esistenti:
@@ -2497,7 +2604,7 @@ export class BotManager {
   // Chi e' in onda adesso. Lo stato ce l'ha gia' il bot per mille altre cose:
   // chi lo chiede da fuori (la vetrina) non deve andarlo a chiedere di nuovo
   // alla piattaforma.
-  inDiretta(login) { return this._liveState.get(String(login || '').toLowerCase()) === true; }
+  inDiretta(login) { return this.inOnda(login); }
 
   // IL BOT E' NELLA CHAT DEL CANALE ADESSO? E' il badge della scheda Stato, e
   // ogni piattaforma ha il suo modo di esserci: Twitch una connessione, YouTube

@@ -18,8 +18,18 @@ const APP = leggi('src/web/public/app.js');
 const SRV = leggi('src/web/server.js');
 
 test('il bot: apre all\'online, misura a ogni giro, chiude, salva sempre e poi manda dove serve', () => {
-  const live = BOT.slice(BOT.indexOf("_setLive(login, isLive, data, fonte = 'evento') {"), BOT.indexOf('_rapportoDiretta(login) {'));
-  assert.ok(live.includes("rapporto.apri(ch, { inizio: Date.parse(data?.started_at) || 0 });"));
+  const live = BOT.slice(BOT.indexOf("_setLive(login, isLive, data, fonte = 'evento', piattaforma = 'twitch') {"), BOT.indexOf('_rapportoDiretta(login) {'));
+  assert.ok(live.includes("rapporto.apri(ch, { inizio: Date.parse(data?.started_at) || 0, piattaforma: 'twitch' });"));
+  // LA SERATA E' DEL CANALE: si chiude con l'ultima piattaforma in onda, non con Twitch
+  assert.ok(live.includes("rapporto.chiudiPiattaforma(ch, 'twitch');\n      if (!this._inOndaAltrove(ch).length) this._rapportoDiretta(ch).catch("), 'Twitch finita con Kick ancora in onda non chiude la serata');
+  const altrove = BOT.slice(BOT.indexOf('  async _setLiveAltrove('), BOT.indexOf('  async _giroKick('));
+  assert.ok(altrove.includes('rapporto.apri(ch, { inizio: da, piattaforma });') && altrove.includes('if (stato.live) rapporto.apri(ch, { inizio, piattaforma });'), 'Kick apre la sua parte della serata, anche dopo un riavvio');
+  assert.ok(altrove.includes('rapporto.chiudiPiattaforma(ch, piattaforma);') && altrove.includes('if (!this.inOnda(ch)) await this._rapportoDiretta(ch).catch('), 'e la chiude, e il rapporto parte solo se non resta nessuno in onda');
+  assert.ok(BOT.includes("rapporto.osservaGiro(login, { piattaforma: 'kick', spettatori: c.spettatori, categoria: c.categoria });"), 'gli spettatori di Kick dal suo giro');
+  // «in onda» e' lo stato vero del canale: un messaggio da Kick a canale spento non e' in diretta
+  assert.ok(!BOT.includes("msg.piattaforma !== 'twitch' ? true"), 'niente piu\' «fuori da Twitch e\' sempre in diretta»');
+  assert.equal((BOT.match(/msg\.piattaforma === 'youtube' \? true : this\.inOnda\(login\)/g) || []).length, 2, 'presenze e negozio chiedono lo stato vero; YouTube e\' in diretta per costruzione');
+  assert.ok(BOT.includes('inDiretta(login) { return this.inOnda(login); }'), 'chi chiede da fuori (la vetrina) sente tutte le piattaforme');
   // Chiedere i titoli delle clip a Twitch ha reso il rapporto una cosa che
   // aspetta: percio' parte e si lascia andare, e un errore suo non puo' fermare
   // il resto di quello che succede quando una diretta finisce.
@@ -163,7 +173,7 @@ test('il nome del mittente si vede nell\'elenco della posta', () => {
 // e quando quella diretta finiva non c'era niente da chiudere — nessun rapporto,
 // e la serata spariva anche dal conto delle dirette.
 test('un riavvio a diretta accesa non fa sparire la serata', () => {
-  const live = BOT.slice(BOT.indexOf("_setLive(login, isLive, data, fonte = 'evento') {"), BOT.indexOf('_rapportoDiretta(login) {'));
+  const live = BOT.slice(BOT.indexOf("_setLive(login, isLive, data, fonte = 'evento', piattaforma = 'twitch') {"), BOT.indexOf('_rapportoDiretta(login) {'));
   const apre = live.indexOf('rapporto.apri(ch,');
   const esce = live.indexOf('if (prev === undefined) return;');
   assert.ok(apre > 0 && esce > 0, 'le due righe devono esserci tutte e due');

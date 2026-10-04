@@ -43,6 +43,27 @@ comandi diversi da quelli della riga italiana.
 
 ## 2026-10-04
 
+- [importante] Se trasmetti anche su Kick, la diretta su Kick entra nel rapporto della serata e nelle statistiche: Twitch e Kick insieme fanno una serata sola. [vai: dirette]
+  en: If you also stream on Kick, your Kick stream goes into the evening report and the stats: Twitch and Kick together make one evening.
+  es: Si también emites en Kick, tu directo en Kick entra en el informe de la noche y en las estadísticas: Twitch y Kick juntos hacen una sola noche.
+  > Twitch e Kick, una serata sola
+  > Il picco è quello di tutte e due insieme nello stesso momento, non la somma dei due picchi, e la media pesa ognuna sul suo tempo in onda. Il rapporto, anche su Telegram e per mail, dà pure i numeri di ognuna.
+  en> Twitch and Kick, one evening
+  en> The peak is both together at the same moment, not the two peaks added up, and the average weighs each one by its time on air. The report, on Telegram and by email too, also gives each one's numbers.
+  es> Twitch y Kick, una sola noche
+  es> El pico es el de las dos juntas en el mismo momento, no la suma de los dos picos, y la media pesa cada una por su tiempo en antena. El informe, también en Telegram y por correo, da además los números de cada una.
+- Il bot guarda da sé ogni due minuti se sei in onda su Kick: un avviso di Kick perso non lascia più la diretta aperta, o chiusa, per sempre. [vai: dirette]
+  en: The bot checks on its own every two minutes whether you are live on Kick: a missed Kick notice no longer leaves your stream open, or closed, forever.
+  es: El bot mira por su cuenta cada dos minutos si estás en directo en Kick: un aviso de Kick perdido ya no deja tu directo abierto, o cerrado, para siempre.
+- Nelle statistiche, con più piattaforme compare «Per piattaforma», e fra le ultime dirette la colonna «Dove». [vai: statistiche]
+  en: In the stats, with more than one platform you get “By platform”, and the latest streams get a “Where” column.
+  es: En las estadísticas, con más de una plataforma aparece «Por plataforma», y en los últimos directos la columna «Dónde».
+- Nella prima pagina di SocialBot compari anche quando sei in onda solo su Kick, col collegamento al tuo canale su Kick. [vai: pagina]
+  en: On the SocialBot front page you also show up when you are live only on Kick, with a link to your Kick channel.
+  es: En la portada de SocialBot también apareces cuando estás en directo solo en Kick, con el enlace a tu canal de Kick.
+- Gli importi delle donazioni in statistiche e rapporti seguono la lingua del pannello: in inglese €42.00, non più 42,00 €. [vai: statistiche]
+  en: Donation amounts in stats and reports follow the panel language: in English €42.00, no longer 42,00 €.
+  es: Los importes de las donaciones en estadísticas e informes siguen el idioma del panel: en inglés €42.00, ya no 42,00 €.
 - [importante] «Prendi da Nightbot», «Prendi da Fossabot» e «Prendi da Moobot»: i comandi del tuo canale arrivano qui senza scaricare niente e senza dare nessuna password. [vai: moduli]
   en: “Fetch from Nightbot”, “Fetch from Fossabot” and “Fetch from Moobot”: your channel's commands come over without downloading anything or giving any password.
   es: «Tráelo de Nightbot», «Tráelo de Fossabot» y «Tráelo de Moobot»: los comandos de tu canal llegan aquí sin descargar nada ni dar ninguna contraseña.
