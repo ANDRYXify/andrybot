@@ -60,6 +60,8 @@ export function esplosioneDi(cfg, type, data) {
   const ok = (k, quanto) => ev[k].attivo && (ev[k].soglia == null || quanto >= ev[k].soglia) ? { evento: k, figura: ev[k].figura } : null;
   if (type === 'channel.raid') return ok('raid', Number(data?.viewers) || 0);
   if (type === 'channel.cheer') return ok('bit', Number(data?.bits) || 0);
+  // i Kicks di Kick hanno la loro riga: non sono Bit
+  if (type === 'kicks.gifted') return ok('kicks', Number(data?.kicks) || 0);
   if (type === 'channel.hype_train.begin') return ok('trenoParte', 1);
   if (type === 'channel.hype_train.end') return ok('trenoFine', 1);
   const subs = abbonamentiDi(type, data);

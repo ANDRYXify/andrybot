@@ -974,7 +974,7 @@ function _demoContVerbi() {
 
 const _DEMO_EVENTI = [
   { id: 'follow', quanto: null, pausa: 10 }, { id: 'sub', quanto: 'mesi', pausa: 0 }, { id: 'regalo', quanto: 'quanti', pausa: 0 },
-  { id: 'cheer', quanto: 'bit', pausa: 0 }, { id: 'raid', quanto: 'spettatori', pausa: 0 }, { id: 'donazione', quanto: 'importo', pausa: 0 },
+  { id: 'cheer', quanto: 'bit', pausa: 0 }, { id: 'kicks', quanto: 'kicks', pausa: 0 }, { id: 'raid', quanto: 'spettatori', pausa: 0 }, { id: 'donazione', quanto: 'importo', pausa: 0 },
   { id: 'treno', quanto: 'livello', pausa: 0 }, { id: 'obiettivo', quanto: null, pausa: 0 },
 ];
 const _DEMO_LIMITI_EVENTI = { livelli: 5, da: 1000000, pausa: 600 };
@@ -10466,7 +10466,7 @@ function _adessoInOnda(d) {
       ${_numeroVivo('persone', s.persone, L('persone in chat', 'people in chat', 'personas en el chat'))}
       ${_numeroVivo('follow', s.follow, L('nuovi follower', 'new followers', 'nuevos seguidores'))}
       ${s.sub ? _numeroVivo('sub', s.sub, 'sub') : ''}${s.raid ? _numeroVivo('raid', s.raid, 'raid') : ''}
-      ${s.bit ? _numeroVivo('bit', s.bit, 'bit') : ''}${s.clip ? _numeroVivo('clip', s.clip, 'clip') : ''}
+      ${s.bit ? _numeroVivo('bit', s.bit, 'bit') : ''}${s.kicks ? _numeroVivo('kicks', s.kicks, 'Kicks') : ''}${s.clip ? _numeroVivo('clip', s.clip, 'clip') : ''}
     </div>
     ${regia || d.canale ? `<p class="adesso-tasti spazio-sopra">
       ${regia ? `<button type="button" class="btn" data-vai="regia">${L('Apri la Regia', 'Open the control room', 'Abre la realización')}</button>` : ''}
@@ -12654,7 +12654,7 @@ async function _penPremi() {
   montaPicker(boxS, { campo: 'premioSolo', hiddenId: 'pen-premio-solo', attuale: d.premioSolo, titolo: L('Usa solo la parola', 'Use only the word', 'Usa solo la palabra'), nomeDefault: L('Dì solo questa parola', 'Say only this word', 'Di solo esta palabra') });
 }
 
-const SUONO_ALERT_SERIE = { follow: 'campanello', sub: 'tada', cheer: 'moneta', raid: 'trombetta', donazione: 'moneta' };
+const SUONO_ALERT_SERIE = { follow: 'campanello', sub: 'tada', cheer: 'moneta', kicks: 'moneta', raid: 'trombetta', donazione: 'moneta' };
 const _suonoAlertMostrato = (kind, suono) => suono || SUONO_ALERT_SERIE[kind] || 'nessuno';
 function opzioniSuono(sel) {
   const lista = (window.SUONI_PRESET && window.SUONI_PRESET.lista) || [];
@@ -12726,6 +12726,7 @@ const ALERT_TIPI = () => [
   { key: 'follow', twitch: true, nome: L('Nuovo follower', 'New follower', 'Nuevo seguidor'), ph: L('{user} ha seguito il canale!', '{user} followed the channel!', '¡{user} ha seguido el canal!'), vars: '{user}', acc: '#f72fa7' },
   { key: 'sub', twitch: true, nome: L('Abbonamento', 'Subscription', 'Suscripción'), ph: L('{user} si è abbonato! ({mesi} mesi)', '{user} subscribed! ({mesi} months)', '¡{user} se ha suscrito! ({mesi} meses)'), vars: '{user}, {mesi}', acc: '#ffb020' },
   { key: 'cheer', twitch: true, nome: L('Bit (cheer)', 'Bits (cheer)', 'Bits (cheer)'), ph: L('{user} ha lanciato {bits} bit!', '{user} sent {bits} bits!', '¡{user} ha enviado {bits} bits!'), vars: '{user}, {bits}', acc: '#38d39f', soglia: { campo: 'minBits', label: L('Bit minimi', 'Minimum bits', 'Bits mínimos') } },
+  { key: 'kicks', nome: L('Kicks (Kick)', 'Kicks (Kick)', 'Kicks (Kick)'), ph: L('{user} ha regalato {kicks} Kicks!', '{user} gifted {kicks} Kicks!', '¡{user} ha regalado {kicks} Kicks!'), vars: '{user}, {kicks}', acc: '#53fc18', soglia: { campo: 'minKicks', label: L('Kicks minimi', 'Minimum Kicks', 'Kicks mínimos') } },
   { key: 'raid', twitch: true, nome: L('Raid', 'Raid', 'Raid'), ph: L('{user} è arrivato in raid con {viewers} spettatori!', '{user} raided with {viewers} viewers!', '¡{user} ha llegado en raid con {viewers} espectadores!'), vars: '{user}, {viewers}', acc: '#ff4d4d', soglia: { campo: 'minViewers', label: L('Spettatori minimi', 'Minimum viewers', 'Espectadores mínimos') } },
   { key: 'donazione', nome: L('Donazione', 'Donation', 'Donación'), ph: L('{user} ha offerto {importo}! {messaggio}', '{user} tipped {importo}! {messaggio}', '¡{user} ha donado {importo}! {messaggio}'), vars: '{user}, {importo}, {messaggio}', acc: '#1d9e5e', soglia: { campo: 'minImporto', label: L('Importo minimo', 'Minimum amount', 'Importe mínimo') } },
 ];
@@ -13850,7 +13851,7 @@ function pannelloAlert() {
           <p class="suggerimento">${L('Prova una figura: la vedi qui e parte anche nell\'overlay vero.', 'Try a shape: you see it here and it also plays in the real overlay.', 'Prueba una figura: la ves aquí y sale también en el overlay real.')}</p>
           <p class="muro-prove">${MURO_FIGURE().map(([v, t]) => `<button type="button" class="btn secondario mini" data-muro-prova="${v}">${esc(t)}</button>`).join('')}</p>
           <h4 class="spazio-sopra">${L('Eventi', 'Events', 'Eventos')}</h4>
-          <div class="goal-campi"><label class="riga-check"><input type="checkbox" data-c="eventi.raid.attivo"> ${L('Raid', 'Raid', 'Raid')}</label><label class="campo-num">${L('Figura', 'Shape', 'Figura')}${_muroFigSel('eventi.raid.figura', true)}</label><label class="campo-num">${L('da spettatori', 'from viewers', 'desde espectadores')}<input type="number" data-c="eventi.raid.soglia" min="1" max="100000"></label></div><div class="goal-campi"><label class="riga-check"><input type="checkbox" data-c="eventi.sub.attivo"> ${L('Abbonamenti', 'Subs', 'Suscripciones')}</label><label class="campo-num">${L('Figura', 'Shape', 'Figura')}${_muroFigSel('eventi.sub.figura', true)}</label><label class="campo-num">${L('da quanti in un colpo', 'from how many at once', 'desde cuántas de golpe')}<input type="number" data-c="eventi.sub.soglia" min="1" max="1000"></label></div><div class="goal-campi"><label class="riga-check"><input type="checkbox" data-c="eventi.bit.attivo"> ${L('Bit', 'Bits', 'Bits')}</label><label class="campo-num">${L('Figura', 'Shape', 'Figura')}${_muroFigSel('eventi.bit.figura', true)}</label><label class="campo-num">${L('da', 'from', 'desde')}<input type="number" data-c="eventi.bit.soglia" min="1" max="1000000"></label></div><div class="goal-campi"><label class="riga-check"><input type="checkbox" data-c="eventi.dono.attivo"> ${L('Donazioni', 'Donations', 'Donaciones')}</label><label class="campo-num">${L('Figura', 'Shape', 'Figura')}${_muroFigSel('eventi.dono.figura', true)}</label><label class="campo-num">${L('da (nella tua valuta)', 'from (in your currency)', 'desde (en tu moneda)')}<input type="number" data-c="eventi.dono.soglia" min="1" max="100000"></label></div><div class="goal-campi"><label class="riga-check"><input type="checkbox" data-c="eventi.trenoParte.attivo"> ${L('L’hype train parte', 'The hype train starts', 'Empieza el hype train')}</label><label class="campo-num">${L('Figura', 'Shape', 'Figura')}${_muroFigSel('eventi.trenoParte.figura', true)}</label></div><div class="goal-campi"><label class="riga-check"><input type="checkbox" data-c="eventi.trenoFine.attivo"> ${L('L’hype train finisce', 'The hype train ends', 'Termina el hype train')}</label><label class="campo-num">${L('Figura', 'Shape', 'Figura')}${_muroFigSel('eventi.trenoFine.figura', true)}</label></div><div class="goal-campi"><label class="riga-check"><input type="checkbox" data-c="eventi.boss.attivo"> ${L('Il boss cade', 'The boss falls', 'Cae el jefe')}</label><label class="campo-num">${L('Figura', 'Shape', 'Figura')}${_muroFigSel('eventi.boss.figura', true)}</label></div>
+          <div class="goal-campi"><label class="riga-check"><input type="checkbox" data-c="eventi.raid.attivo"> ${L('Raid', 'Raid', 'Raid')}</label><label class="campo-num">${L('Figura', 'Shape', 'Figura')}${_muroFigSel('eventi.raid.figura', true)}</label><label class="campo-num">${L('da spettatori', 'from viewers', 'desde espectadores')}<input type="number" data-c="eventi.raid.soglia" min="1" max="100000"></label></div><div class="goal-campi"><label class="riga-check"><input type="checkbox" data-c="eventi.sub.attivo"> ${L('Abbonamenti', 'Subs', 'Suscripciones')}</label><label class="campo-num">${L('Figura', 'Shape', 'Figura')}${_muroFigSel('eventi.sub.figura', true)}</label><label class="campo-num">${L('da quanti in un colpo', 'from how many at once', 'desde cuántas de golpe')}<input type="number" data-c="eventi.sub.soglia" min="1" max="1000"></label></div><div class="goal-campi"><label class="riga-check"><input type="checkbox" data-c="eventi.bit.attivo"> ${L('Bit', 'Bits', 'Bits')}</label><label class="campo-num">${L('Figura', 'Shape', 'Figura')}${_muroFigSel('eventi.bit.figura', true)}</label><label class="campo-num">${L('da', 'from', 'desde')}<input type="number" data-c="eventi.bit.soglia" min="1" max="1000000"></label></div><div class="goal-campi"><label class="riga-check"><input type="checkbox" data-c="eventi.kicks.attivo"> ${L('Kicks (Kick)', 'Kicks (Kick)', 'Kicks (Kick)')}</label><label class="campo-num">${L('Figura', 'Shape', 'Figura')}${_muroFigSel('eventi.kicks.figura', true)}</label><label class="campo-num">${L('da', 'from', 'desde')}<input type="number" data-c="eventi.kicks.soglia" min="1" max="1000000"></label></div><div class="goal-campi"><label class="riga-check"><input type="checkbox" data-c="eventi.dono.attivo"> ${L('Donazioni', 'Donations', 'Donaciones')}</label><label class="campo-num">${L('Figura', 'Shape', 'Figura')}${_muroFigSel('eventi.dono.figura', true)}</label><label class="campo-num">${L('da (nella tua valuta)', 'from (in your currency)', 'desde (en tu moneda)')}<input type="number" data-c="eventi.dono.soglia" min="1" max="100000"></label></div><div class="goal-campi"><label class="riga-check"><input type="checkbox" data-c="eventi.trenoParte.attivo"> ${L('L’hype train parte', 'The hype train starts', 'Empieza el hype train')}</label><label class="campo-num">${L('Figura', 'Shape', 'Figura')}${_muroFigSel('eventi.trenoParte.figura', true)}</label></div><div class="goal-campi"><label class="riga-check"><input type="checkbox" data-c="eventi.trenoFine.attivo"> ${L('L’hype train finisce', 'The hype train ends', 'Termina el hype train')}</label><label class="campo-num">${L('Figura', 'Shape', 'Figura')}${_muroFigSel('eventi.trenoFine.figura', true)}</label></div><div class="goal-campi"><label class="riga-check"><input type="checkbox" data-c="eventi.boss.attivo"> ${L('Il boss cade', 'The boss falls', 'Cae el jefe')}</label><label class="campo-num">${L('Figura', 'Shape', 'Figura')}${_muroFigSel('eventi.boss.figura', true)}</label></div>
           <h4 class="spazio-sopra">${L('Premi a punti canale', 'Channel-point rewards', 'Recompensas de puntos de canal')}</h4>
           <div id="muro-premi"></div>
           <h4 class="spazio-sopra">${L('Chi', 'Who', 'Quién')}</h4>
@@ -13890,7 +13891,7 @@ function pannelloAlert() {
 
     <details class="carta sez" data-parte="aspetto" id="sez-alert">
       <summary><h3>${_hIco(ICO.megafono)}${L('Alert eventi', 'Event alerts', 'Alertas de eventos')}</h3></summary>
-      <p>${L('Un cartello animato con suono quando arriva un follow, un sub, dei bit o un raid.', 'An animated banner with sound when a follow, sub, bits or a raid comes in.', 'Un cartel animado con sonido cuando llega un follow, un sub, bits o un raid.')}</p>
+      <p>${L('Un cartello animato con suono quando arriva un follow, un sub, dei bit o dei Kicks, un raid o una donazione.', 'An animated banner with sound when a follow, a sub, Bits or Kicks, a raid or a donation comes in.', 'Un cartel animado con sonido cuando llega un follow, un sub, Bits o Kicks, un raid o una donación.')}</p>
       <div class="riga-interruttore spazio-sopra">
         <label class="interruttore"><input type="checkbox" id="al-attivo" ${a.attivo ? 'checked' : ''}><span class="levetta"></span></label>
         <span class="etichetta-stato">${L('Alert eventi', 'Event alerts', 'Alertas de eventos')}</span>
@@ -15074,7 +15075,7 @@ function _vestiEffetti(box) {
 const MURO_PIENO = () => ({ x: 0, y: 0, w: 100, h: 100, r: 0 });
 
 function _defMuro() {
-  return { attivo: false, posizione: 'schermo', xy: null, animazioni: ['sale', 'linea', 'rimbalzo', 'sfreccia', 'cade', 'coriandoli', 'salto', 'lancio', 'pulsa', 'orbita'], fonti: { twitch: true, settetv: true, emoji: false }, perMessaggio: 5, doppioni: true, maxSchermo: 50, coda: 20, grandezza: 8, varia: 30, minPx: 28, maxPx: 140, durata: 6, entrata: 'zoom', ombra: true, arcobaleno: 'treno', chi: 'tutti', escludiBot: true, esclusiPersone: [], esclusiEmote: [], combo: { attivo: true, soglia: 4, finestra: 6, diverse: true, figura: 'fuochi' }, esplosioni: { quante: 30, durata: 6, parola: 'HYPE' }, comando: { figura: 'caso', attesa: 30 }, eventi: { raid: { attivo: true, figura: 'fuochi', soglia: 5 }, sub: { attivo: true, figura: 'cuore', soglia: 1 }, bit: { attivo: true, figura: 'fontana', soglia: 100 }, dono: { attivo: true, figura: 'pioggia', soglia: 5 }, trenoParte: { attivo: true, figura: 'trenino' }, trenoFine: { attivo: true, figura: 'scritta' }, boss: { attivo: true, figura: 'piramide' } }, premi: [] };
+  return { attivo: false, posizione: 'schermo', xy: null, animazioni: ['sale', 'linea', 'rimbalzo', 'sfreccia', 'cade', 'coriandoli', 'salto', 'lancio', 'pulsa', 'orbita'], fonti: { twitch: true, settetv: true, emoji: false }, perMessaggio: 5, doppioni: true, maxSchermo: 50, coda: 20, grandezza: 8, varia: 30, minPx: 28, maxPx: 140, durata: 6, entrata: 'zoom', ombra: true, arcobaleno: 'treno', chi: 'tutti', escludiBot: true, esclusiPersone: [], esclusiEmote: [], combo: { attivo: true, soglia: 4, finestra: 6, diverse: true, figura: 'fuochi' }, esplosioni: { quante: 30, durata: 6, parola: 'HYPE' }, comando: { figura: 'caso', attesa: 30 }, eventi: { raid: { attivo: true, figura: 'fuochi', soglia: 5 }, sub: { attivo: true, figura: 'cuore', soglia: 1 }, bit: { attivo: true, figura: 'fontana', soglia: 100 }, kicks: { attivo: true, figura: 'fontana', soglia: 100 }, dono: { attivo: true, figura: 'pioggia', soglia: 5 }, trenoParte: { attivo: true, figura: 'trenino' }, trenoFine: { attivo: true, figura: 'scritta' }, boss: { attivo: true, figura: 'piramide' } }, premi: [] };
 }
 
 const _muroEsempi = () => window.SB_MURO.ESEMPI.map((url, i) => ({ nome: 'e' + i, url }));
@@ -22396,6 +22397,7 @@ function cartaRapporto(r) {
       ${num(d.messaggi | 0, L('messaggi', 'messages', 'mensajes'))}${num(d.persone | 0, L('persone in chat', 'people in chat', 'personas en el chat'))}
       ${num(d.follow | 0, L('nuovi follower', 'new followers', 'nuevos seguidores'))}${num(d.sub | 0, d.regali ? L(`sub (${d.regali} regalati)`, `subs (${d.regali} gifted)`, `subs (${d.regali} regalados)`) : 'sub')}
       ${d.raid ? num(d.raid, L(`raid (${d.raidSpettatori} spettatori)`, `${d.raid === 1 ? 'raid' : 'raids'} (${d.raidSpettatori} viewers)`, `${d.raid === 1 ? 'raid' : 'raids'} (${d.raidSpettatori} espectadores)`)) : ''}
+      ${d.bit ? num(Number(d.bit).toLocaleString(localePannello()), d.bitChi ? L(`Bit (più di tutti ${d.bitChi})`, `Bits (top: ${d.bitChi})`, `Bits (más que nadie ${d.bitChi})`) : L('Bit', 'Bits', 'Bits')) : ''}${d.kicks ? num(Number(d.kicks).toLocaleString(localePannello()), d.kicksChi ? L(`Kicks (più di tutti ${d.kicksChi})`, `Kicks (top: ${d.kicksChi})`, `Kicks (más que nadie ${d.kicksChi})`) : 'Kicks') : ''}
       ${d.presenti ? num(d.presenti, L('presenti', 'attendees', 'presentes')) : ''}${d.primeVolte ? num(d.primeVolte, L('prime volte', 'first-timers', 'primeras veces')) : ''}
       ${d.clip ? num(d.clip, 'clip') : ''}${d.donazioni ? num(euro(d.donazioniCent), L(`donazioni (${d.donazioni})`, `donations (${d.donazioni})`, `donaciones (${d.donazioni})`)) : ''}
     </div>
@@ -32795,22 +32797,23 @@ async function _prontiModifica(e) {
   document.getElementById('pronti-carta')?.scrollIntoView({ behavior: _menoMoto ? 'auto' : 'smooth', block: 'start' });
 }
 
-const EE_ORDINE = ['follow', 'sub', 'regalo', 'cheer', 'raid', 'donazione', 'treno', 'obiettivo'];
+const EE_ORDINE = ['follow', 'sub', 'regalo', 'cheer', 'kicks', 'raid', 'donazione', 'treno', 'obiettivo'];
 const EE_NOMI = () => ({
   follow: L('Follow', 'Follows', 'Follows'),
   sub: L('Abbonamenti', 'Subscriptions', 'Suscripciones'),
   regalo: L('Abbonamenti regalati', 'Gifted subs', 'Suscripciones regaladas'),
   cheer: L('Bit', 'Bits', 'Bits'),
+  kicks: L('Kicks (Kick)', 'Kicks (Kick)', 'Kicks (Kick)'),
   raid: L('Raid', 'Raids', 'Raids'),
   donazione: L('Donazioni', 'Donations', 'Donaciones'),
   treno: L('Treno dell\'hype', 'Hype train', 'Tren del hype'),
   obiettivo: L('Obiettivo raggiunto', 'Goal reached', 'Objetivo alcanzado'),
 });
-const EE_PRIMO = { follow: 'cuori', sub: 'stelle', regalo: 'palloncini', cheer: 'coriandoli', raid: 'fuochi', donazione: 'coriandoli', treno: 'fuochi', obiettivo: 'fuochi' };
-const EE_PARTENZA = { follow: [[0, 'cuori']], sub: [[1, 'stelle']], regalo: [[1, 'palloncini']], cheer: [[100, 'coriandoli'], [1000, 'fuochi']],
+const EE_PRIMO = { follow: 'cuori', sub: 'stelle', regalo: 'palloncini', cheer: 'coriandoli', kicks: 'coriandoli', raid: 'fuochi', donazione: 'coriandoli', treno: 'fuochi', obiettivo: 'fuochi' };
+const EE_PARTENZA = { follow: [[0, 'cuori']], sub: [[1, 'stelle']], regalo: [[1, 'palloncini']], cheer: [[100, 'coriandoli'], [1000, 'fuochi']], kicks: [[100, 'coriandoli'], [1000, 'fuochi']],
   raid: [[1, 'fuochi']], donazione: [[1, 'coriandoli'], [20, 'fuochi']], treno: [[1, 'fuochi']], obiettivo: [[0, 'fuochi']] };
-const EE_SCALA = { sub: [1, 3, 6, 12, 24, 36, 48, 60], regalo: [1, 5, 10, 20, 50, 100], cheer: [100, 500, 1000, 5000, 10000], raid: [1, 10, 50, 100, 500], donazione: [1, 5, 10, 20, 50, 100], treno: [1, 2, 3, 4, 5] };
-const EE_ALERT = { follow: 'follow', sub: 'sub', regalo: 'sub', cheer: 'cheer', raid: 'raid', donazione: 'donazione' };
+const EE_SCALA = { sub: [1, 3, 6, 12, 24, 36, 48, 60], regalo: [1, 5, 10, 20, 50, 100], cheer: [100, 500, 1000, 5000, 10000], kicks: [100, 500, 1000, 5000, 10000], raid: [1, 10, 50, 100, 500], donazione: [1, 5, 10, 20, 50, 100], treno: [1, 2, 3, 4, 5] };
+const EE_ALERT = { follow: 'follow', sub: 'sub', regalo: 'sub', cheer: 'cheer', kicks: 'kicks', raid: 'raid', donazione: 'donazione' };
 
 let _ee = null;
 STATI_SALVA['ee-salva'] = {
@@ -32835,6 +32838,7 @@ function _eeSoglia(ev, n) {
   if (ev === 'sub') return uno ? L('1 mese', '1 month', '1 mes') : L(`${N} mesi`, `${N} months`, `${N} meses`);
   if (ev === 'regalo') return uno ? L('1 regalato', '1 gifted', '1 regalada') : L(`${N} regalati`, `${N} gifted`, `${N} regaladas`);
   if (ev === 'cheer') return uno ? '1 bit' : L(`${N} bit`, `${N} bits`, `${N} bits`);
+  if (ev === 'kicks') return uno ? '1 Kick' : `${N} Kicks`;
   if (ev === 'raid') return uno ? L('1 spettatore', '1 viewer', '1 espectador') : L(`${N} spettatori`, `${N} viewers`, `${N} espectadores`);
   if (ev === 'donazione') return `${N} ${_eeValuta()}`;
   if (ev === 'treno') return L(`livello ${N}`, `level ${N}`, `nivel ${N}`);
@@ -32848,6 +32852,7 @@ function _eeUnita(ev, n) {
     sub: uno ? L('mese di abbonamento', 'month subscribed', 'mes de suscripción') : L('mesi di abbonamento', 'months subscribed', 'meses de suscripción'),
     regalo: uno ? L('abbonamento regalato', 'gifted sub', 'suscripción regalada') : L('abbonamenti regalati insieme', 'subs gifted at once', 'suscripciones regaladas a la vez'),
     cheer: uno ? 'bit' : L('bit', 'bits', 'bits'),
+    kicks: uno ? 'Kick' : 'Kicks',
     raid: uno ? L('spettatore', 'viewer', 'espectador') : L('spettatori', 'viewers', 'espectadores'),
     donazione: _eeValuta(),
   }[ev] || '';
@@ -34295,6 +34300,7 @@ const EVENTI = [
   ['subscribe', 'Sub / resub', 'Sub / resub', 'Sub / resub'],
   ['raid', 'Raid', 'Raid', 'Raid'],
   ['cheer', 'Bits / cheer', 'Bits / cheer', 'Bits / cheer'],
+  ['kicks', 'Kicks (Kick)', 'Kicks (Kick)', 'Kicks (Kick)'],
   ['redemption', 'Riscatto punti canale', 'Channel points redemption', 'Canje de puntos de canal'],
   ['first', 'Primo messaggio di un utente', 'A user\'s first message', 'Primer mensaje de un usuario'],
   ['online', 'Sei andato in live', 'You went live', 'Has empezado el directo'],
@@ -34306,13 +34312,14 @@ const EVENTI_TXT = {
   subscribe: ['qualcuno si abbona', 'someone subscribes', 'alguien se suscribe'],
   raid: ['parte un raid', 'a raid comes in', 'llega un raid'],
   cheer: ['arrivano dei bits', 'bits come in', 'llegan bits'],
+  kicks: ['arrivano dei Kicks su Kick (usa $kicks nel testo)', 'Kicks come in on Kick (use $kicks in the text)', 'llegan Kicks en Kick (usa $kicks en el texto)'],
   redemption: ['riscattano un premio coi punti', 'someone redeems a points reward', 'alguien canjea un premio con puntos'],
   first: ['un utente scrive per la prima volta', 'a user writes for the first time', 'un usuario escribe por primera vez'],
   online: ['vai in live', 'you go live', 'empiezas el directo'],
   offline: ['finisce la live', 'the stream ends', 'termina el directo'],
   gesto: ['fai un gesto alla webcam (usa $gesto / $emozione nel testo)', 'you make a gesture at the webcam (use $gesto / $emozione in the text)', 'haces un gesto a la webcam (usa $gesto / $emozione en el texto)'],
 };
-const SCALA_EVENTO = { cheer: ['Bit', 'Bits', 'Bits'], raid: ['spettatori', 'viewers', 'espectadores'], subscribe: ['mesi', 'months', 'meses'] };
+const SCALA_EVENTO = { cheer: ['Bit', 'Bits', 'Bits'], kicks: ['Kicks', 'Kicks', 'Kicks'], raid: ['spettatori', 'viewers', 'espectadores'], subscribe: ['mesi', 'months', 'meses'] };
 
 function _quantiModulo(t, c) {
   const unita = (t && t.tipo === 'evento') ? Lv(SCALA_EVENTO[t.evento || '']) : '';

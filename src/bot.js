@@ -1947,6 +1947,8 @@ export class BotManager {
         seguito: 'channel.follow',
         abbonamento: 'channel.subscribe',
         regali: 'channel.subscription.gift',
+        // i Kicks hanno il nome di Kick: Twitch non ha niente di uguale
+        kicks: 'kicks.gifted',
       };
       let type = comeTwitch[ev.tipo];
       if (!type) return;
@@ -1959,12 +1961,10 @@ export class BotManager {
         if (come === 'ritorno') type = 'channel.follow.ritorno';
       }
       const chi = String(ev.utente || '');
-      this._dispatchEvent({
-        channel: String(ev.channel).toLowerCase(),
-        piattaforma,
-        type,
-        data: { user_name: chi, user_login: chi.toLowerCase(), user_id: String(ev.utenteId || ''), cumulative_months: ev.mesi, total: ev.quanti, piattaforma },
-      });
+      const data = { user_name: chi, user_login: chi.toLowerCase(), user_id: String(ev.utenteId || ''), piattaforma };
+      if (ev.tipo === 'kicks') Object.assign(data, { kicks: Number(ev.quanti) || 0, message: String(ev.messaggio || ''), is_anonymous: !chi });
+      else Object.assign(data, { cumulative_months: ev.mesi, total: ev.quanti });
+      this._dispatchEvent({ channel: String(ev.channel).toLowerCase(), piattaforma, type, data });
     } catch (e) { log.error(`evento ${ev.piattaforma} #${ev.channel}:`, e?.message || e); }
   }
 

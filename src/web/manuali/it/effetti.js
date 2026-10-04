@@ -162,6 +162,7 @@ export default {
       ['Abbonamenti', 'i mesi di abbonamento', 'gli abbonamenti nuovi e i rinnovi annunciati in chat; quelli regalati no'],
       ['Abbonamenti regalati', 'quanti ne regala insieme', 'una raffica di regali è un evento solo: venti abbonamenti regalati in un colpo fanno partire un effetto, non venti'],
       ['Bit', 'i bit', 'ogni cheer'],
+      ['Kicks (Kick)', 'i Kicks', 'ogni regalo di Kicks su Kick; i Kicks non si sommano ai bit, hanno i loro livelli'],
       ['Raid', 'gli spettatori del raid', 'ogni raid in arrivo'],
       ['Donazioni', 'l\'importo, nella valuta delle tue donazioni', 'ogni donazione; in un\'altra valuta parte il primo livello, perché un cambio non lo inventiamo'],
       ['Treno dell\'hype', 'il livello del treno', 'quando il treno parte e ogni volta che sale di livello, non a ogni contributo'],

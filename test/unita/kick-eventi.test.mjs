@@ -162,3 +162,65 @@ test('un canale gia\' collegato riceve gli eventi nuovi: si aggiunge solo quello
   assert.equal(r3.ok, false);
   assert.match(r3.errore, /not allowed/);
 });
+
+// I KICKS (docs/PIATTAFORME.md, «I Kicks»): il sostegno di Kick, con un conto
+// suo. Non sono Bit e non si sommano ai Bit; chi li manda in anonimo non ha nome.
+test('i Kicks entrano dalla stessa porta e il rapporto li conta a parte, mai come Bit', async () => {
+  assert.deepEqual(daEvento('kicks.gifted', { sender: { username: 'Rico', user_id: 9 }, gift: { amount: 500, message: 'forza!' } }, { canale: 'kick.k' }),
+    { piattaforma: 'kick', channel: 'kick.k', utente: 'Rico', utenteId: '9', tipo: 'kicks', quanti: 500, messaggio: 'forza!' });
+  const ch = canale();
+  const io = bot();
+  const t0 = Date.now() - 1000;
+  await io.eventoEsterno({ piattaforma: 'kick', channel: ch, tipo: 'kicks', utente: 'Rico', utenteId: '9', quanti: 500, messaggio: 'forza!' });
+  await io.eventoEsterno({ piattaforma: 'kick', channel: ch, tipo: 'kicks', utente: 'Rico', quanti: 100 });
+  await io.eventoEsterno({ piattaforma: 'kick', channel: ch, tipo: 'kicks', utente: '', quanti: 2000 });
+  const ev = io.ricevuti.moduli[0];
+  assert.equal(ev.type, 'kicks.gifted');
+  assert.equal(ev.data.kicks, 500);
+  assert.equal(ev.data.message, 'forza!');
+  assert.equal(io.ricevuti.moduli[2].data.is_anonymous, true);
+  const r = rapporto.raccogli(ch, { inizio: t0, fine: Date.now() + 1000 });
+  assert.equal(r.kicks, 2600);
+  assert.equal(r.kicksChi, 'Rico', 'l\'anonimo da 2000 conta nel totale, non nel nome');
+  assert.equal(r.kicksChiQuanti, 600);
+  assert.equal(r.bit, 0, 'i Kicks non sono Bit');
+  assert.match(rapporto.testo({ ...r, durataMs: 3_600_000 }), /Kicks: 2[.,]600 \(più di tutti Rico, 600\)/);
+  assert.match(rapporto.html({ ...r, durataMs: 3_600_000 }), /Kicks/);
+  assert.doesNotMatch(rapporto.testo({ ...r, durataMs: 3_600_000 }), /Bit:/, 'e nessuna riga di Bit');
+});
+
+test('l\'avviso dei Kicks ha il suo tipo, la sua soglia e la sua scala, e non lo mostra mai Twitch', async () => {
+  const { AlertsEngine } = await import('../../src/features/alerts.js');
+  const { esplosioneDi } = await import('../../src/features/muro.js');
+  const { normMuro } = await import('../../src/web/stile.js');
+  const al = new AlertsEngine({});
+  const s = { alerts: { attivo: true, kicks: { attivo: true, chi: 'twitch', minKicks: 100 } } };
+  const sotto = al._scenaEvento(s, 'kicks.gifted', { user_name: 'Rico', kicks: 50 });
+  assert.equal(sotto.kind, 'kicks');
+  assert.equal(sotto.avviso, null, 'sotto la soglia l\'avviso non parte');
+  assert.equal(sotto.quanto, 50, 'ma l\'effetto dell\'evento sa quanti sono');
+  const sopra = al._scenaEvento(s, 'kicks.gifted', { user_name: 'Rico', kicks: 500 });
+  assert.ok(sopra.avviso, 'Twitch non mostra i Kicks: «chi» non vale, parte il nostro');
+  assert.equal(sopra.vars.kicks, 500);
+  assert.equal(sopra.evento, 'kicks');
+  // la prova dal pannello e' l'evento vero meno i conti
+  assert.equal(al._scenaEvento(s, 'channel.cheer', { bits: 500 }).kind, 'cheer', 'i Bit restano Bit');
+  const muro = normMuro({ attivo: true });
+  assert.equal(esplosioneDi(muro, 'kicks.gifted', { kicks: 500 })?.evento, 'kicks');
+  assert.equal(esplosioneDi(muro, 'kicks.gifted', { kicks: 5 }), null, 'sotto la soglia del muro niente');
+});
+
+test('$kicks nel testo di un modulo dice quanti Kicks, come $bits dice i Bit', async () => {
+  const mod = new ModulesEngine({ effects: null, helix: null });
+  const ctx = mod._ctxDaEvento({ piattaforma: 'kick', type: 'kicks.gifted', data: { user_name: 'Rico', user_login: 'rico', kicks: 750 } }, 'kick.x', 'kicks');
+  assert.equal(await mod.espandi('grazie $user per $kicks Kicks', ctx), 'grazie Rico per 750 Kicks');
+  const { quantitaEvento } = await import('../../src/features/modules.js');
+  assert.equal(quantitaEvento('kicks', ctx._vars), 750, '«Da quanti Kicks in su» guarda i Kicks');
+});
+
+test('il cervello ringrazia per i Kicks con le parole dei Kicks, e chi e\' anonimo resta anonimo', async () => {
+  const { momentoDiEvento } = await import('../../src/ai/brain.js');
+  assert.deepEqual(momentoDiEvento({ type: 'kicks.gifted', data: { user_name: 'Luna', kicks: 500 } }), { momento: 'kicks', dati: { nome: 'Luna', kicks: 500 } });
+  assert.deepEqual(momentoDiEvento({ type: 'kicks.gifted', data: { user_name: '', kicks: 3, is_anonymous: true } }), { momento: 'kicks-anonimo', dati: { kicks: 3 } });
+  assert.equal(momentoDiEvento({ type: 'kicks.gifted', data: { user_name: 'Luna', kicks: 0 } }), null, 'zero Kicks non e\' un regalo');
+});

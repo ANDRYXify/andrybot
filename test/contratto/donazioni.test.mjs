@@ -323,7 +323,7 @@ test('la valuta: l\'obiettivo e le offerte contano solo gli importi nella valuta
 });
 
 test('«Prova l\'avviso» delle donazioni prova una donazione, e l\'alert Donazione accetta i suoi file', () => {
-  assert.ok(SRV.includes("const ALERT_KINDS = ['follow', 'sub', 'cheer', 'raid', 'donazione'];"));
+  assert.ok(SRV.includes("const ALERT_KINDS = ['follow', 'sub', 'cheer', 'kicks', 'raid', 'donazione'];"));
   assert.ok(SRV.includes("const kind = [...ALERT_KINDS, 'chat', 'ultimoFollower', 'ultimoSub'].includes(req.body?.kind) ? req.body.kind : null;"), 'una sola lista, e un evento sconosciuto non diventa un follow');
   assert.ok(SRV.includes("if (!ALERT_KINDS.includes(kind) && !perWidget) return errore('evento non valido');"));
 });

@@ -194,10 +194,10 @@ export function raccogli(channel, { inizio, fine, picco = 0 }) {
     WHERE channel=? AND ts>=? AND ts<=? AND from_bot=0 AND user<>? AND user NOT LIKE '[%'
     GROUP BY user ORDER BY n DESC, user LIMIT 3`).all(ch, da, a, padroneDi(ch)).map((r) => ({ user: r.display || r.user, n: r.n }));
   const out = { messaggi: chat.n | 0, persone: chat.p | 0, top, follow: 0, sub: 0, regali: 0, raid: 0, raidSpettatori: 0, treni: 0, trenoLivello: 0, trenoChi: '',
-    bit: 0, bitChi: '', bitChiQuanti: 0 };
+    bit: 0, bitChi: '', bitChiQuanti: 0, kicks: 0, kicksChi: '', kicksChiQuanti: 0 };
   // Chi ne ha messi di piu' STASERA: e' un conto della serata, non la
   // classifica del mese — quella e' di Twitch e non la rifacciamo noi.
-  const bitPerChi = new Map();
+  const bitPerChi = new Map(), kicksPerChi = new Map();
   for (const r of db.prepare(`SELECT text FROM messages WHERE channel=? AND user='[evento]' AND ts>=? AND ts<=?`).all(ch, da, a)) {
     const { tipo, dati } = evento(r.text);
     if (tipo === 'channel.follow') out.follow++;
@@ -216,6 +216,13 @@ export function raccogli(channel, { inizio, fine, picco = 0 }) {
       const chi = chiHaCheerato(dati);
       if (chi && q > 0) bitPerChi.set(chi, (bitPerChi.get(chi) || 0) + q);
     }
+    // I Kicks di Kick: un conto loro, con la stessa regola dell'anonimo
+    else if (tipo === 'kicks.gifted') {
+      const q = Number(dati.kicks) || 0;
+      out.kicks += q;
+      const chi = chiHaCheerato(dati);
+      if (chi && q > 0) kicksPerChi.set(chi, (kicksPerChi.get(chi) || 0) + q);
+    }
     // L'HYPE TRAIN: si conta solo quando FINISCE. Twitch manda un evento a ogni
     // contributo, e il livello che conta e' quello a cui il treno si e' fermato;
     // sommare i passaggi vorrebbe dire raccontare dieci treni al posto di uno.
@@ -230,6 +237,7 @@ export function raccogli(channel, { inizio, fine, picco = 0 }) {
     }
   }
   for (const [chi, q] of bitPerChi) if (q > out.bitChiQuanti) { out.bitChi = chi; out.bitChiQuanti = q; }
+  for (const [chi, q] of kicksPerChi) if (q > out.kicksChiQuanti) { out.kicksChi = chi; out.kicksChiQuanti = q; }
   const d = store.diretta(ch);
   out.presenti = d?.corrente
     ? db.prepare('SELECT COUNT(*) c FROM presenze WHERE channel=? AND ultima=?').get(ch, d.corrente).c
@@ -317,6 +325,7 @@ const PIU_NOTEVOLE = [
   [(d) => d.raid > 1, (d) => `Sono arrivati ${d.raid} raid, ${d.raidSpettatori} persone in tutto.`],
   [(d) => d.raid === 1, (d) => `È arrivato un raid, con ${d.raidSpettatori} persone al seguito.`],
   [(d) => d.bit >= 1000, (d) => `${migliaiaBit(d.bit)} Bit stasera${d.bitChi ? `, e ${d.bitChi} ne ha messi ${migliaiaBit(d.bitChiQuanti)}` : ''}.`],
+  [(d) => d.kicks >= 1000, (d) => `${migliaiaBit(d.kicks)} Kicks stasera${d.kicksChi ? `, e ${d.kicksChi} ne ha regalati ${migliaiaBit(d.kicksChiQuanti)}` : ''}.`],
   [(d) => d.donazioniCent >= 500, (d) => `Qualcuno ha voluto ringraziare: ${euro(d.donazioniCent)} in donazioni.`],
   [(d) => d.primeVolte >= 3, (d) => `${d.primeVolte} facce nuove in chat, mai viste prima.`],
   [(d) => d.follow >= 10, (d) => `${d.follow} persone hanno premuto segui mentre eri in onda.`],
@@ -393,6 +402,7 @@ export function html(dati, { display = '', quando = '', codice = '' } = {}) {
   if (d.sub) resto.push(rigaHtml('Sub', `${d.sub}${d.regali ? ` (${d.regali} regalat${d.regali === 1 ? 'o' : 'i'})` : ''}`));
   if (d.raid) resto.push(rigaHtml('Raid', `${d.raid} (${d.raidSpettatori} person${d.raidSpettatori === 1 ? 'a' : 'e'})`));
   if (d.bit) resto.push(rigaHtml('Bit', `${migliaiaBit(d.bit)}${d.bitChi ? ` · ${d.bitChi}` : ''}`));
+  if (d.kicks) resto.push(rigaHtml('Kicks', `${migliaiaBit(d.kicks)}${d.kicksChi ? ` · ${d.kicksChi}` : ''}`));
   if (d.presenti) resto.push(rigaHtml('Presenti', `${d.presenti}${d.primeVolte ? ` (${d.primeVolte} nuov${d.primeVolte === 1 ? 'o' : 'i'})` : ''}`));
   if (d.treni) resto.push(rigaHtml('Hype train', trenoValore(d)));
   if (d.donazioni) resto.push(rigaHtml('Donazioni', `${d.donazioni} · ${euro(d.donazioniCent || 0)}`));
@@ -446,6 +456,7 @@ export function testo(dati) {
   const conto = [`Nuovi follower: ${d.follow | 0}`, `Sub: ${d.sub | 0}${d.regali ? ` (${d.regali} regalat${d.regali === 1 ? 'o' : 'i'})` : ''}`];
   if (d.raid) conto.push(`Raid: ${d.raid} (${d.raidSpettatori} spettatori)`);
   if (d.bit) conto.push(`Bit: ${migliaiaBit(d.bit)}${d.bitChi ? ` (più di tutti ${esc(d.bitChi)}, ${migliaiaBit(d.bitChiQuanti)})` : ''}`);
+  if (d.kicks) conto.push(`Kicks: ${migliaiaBit(d.kicks)}${d.kicksChi ? ` (più di tutti ${esc(d.kicksChi)}, ${migliaiaBit(d.kicksChiQuanti)})` : ''}`);
   righe.push(conto.join(' · '));
   if (d.presenti) righe.push(`Presenti: ${d.presenti}${d.primeVolte ? `, di cui ${d.primeVolte} alla prima volta` : ''}`);
   if (d.treni) righe.push(trenoDetto(d));

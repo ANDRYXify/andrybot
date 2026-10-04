@@ -59,10 +59,10 @@ export function daChatMessage(payload, { canale, loginBot = '' } = {}) {
 // devono sapere da dove arrivano.
 export function daEvento(tipo, payload, { canale } = {}) {
   const p = payload || {};
-  const chi = String(p.follower?.username || p.subscriber?.username || p.gifter?.username || p.user?.username || '');
+  const chi = String(p.follower?.username || p.subscriber?.username || p.gifter?.username || p.sender?.username || p.user?.username || '');
   // l'id di Kick della persona: serve a chi modera su Kick (un timeout da un
   // modulo); un regalo anonimo non ce l'ha
-  const id = p.follower?.user_id ?? p.subscriber?.user_id ?? p.gifter?.user_id ?? p.user?.user_id;
+  const id = p.follower?.user_id ?? p.subscriber?.user_id ?? p.gifter?.user_id ?? p.sender?.user_id ?? p.user?.user_id;
   const base = { piattaforma: 'kick', channel: String(canale || '').toLowerCase(), utente: chi, ...(id != null ? { utenteId: String(id) } : {}) };
   switch (tipo) {
     case 'channel.followed':
@@ -75,6 +75,10 @@ export function daEvento(tipo, payload, { canale } = {}) {
       return { ...base, tipo: 'regali', quanti: Math.max(1, (p.giftees || []).length || Number(p.quantity) || 1) };
     // l'inizio vero della diretta: e' anche il suo nome, per non annunciarla
     // due volte quando la vede anche il giro (bot.js, _setLiveAltrove)
+    // I KICKS: il sostegno di Kick. Non sono Bit e non si sommano ai Bit
+    // (docs/PIATTAFORME.md, «I Kicks»): hanno un tipo loro, dappertutto.
+    case 'kicks.gifted':
+      return { ...base, tipo: 'kicks', quanti: Math.max(0, Math.floor(Number(p.gift?.amount) || 0)), messaggio: String(p.gift?.message || '').slice(0, 300) };
     // titolo e categoria cambiati: la stessa vista che il giro rilegge ogni due
     // minuti, subito (bot.js, _vistaKick)
     case 'livestream.metadata.updated':

@@ -271,6 +271,7 @@ export const EVENTI = [
   { name: 'channel.subscription.gifts', version: 1 },
   { name: 'livestream.status.updated', version: 1 },
   { name: 'livestream.metadata.updated', version: 1 },
+  { name: 'kicks.gifted', version: 1 },
 ];
 
 export function iscrivi(login, opts) {

@@ -287,10 +287,49 @@ riesce si riprova fra un'ora, e un evento rifiutato da Kick si dice per nome.
 
 Non agganciati, e perche': `moderation.banned` (su Twitch nessuno usa il bando
 come evento, e un consumatore solo per Kick sarebbe una cosa diversa);
-`kicks.gifted` e `channel.reward.redemption.updated` hanno un loro passo,
-perche' i Kicks non sono Bit e i premi di Kick non sono i punti canale.
+`channel.reward.redemption.updated` ha un passo suo, perche' i premi di Kick non
+sono i punti canale.
 
 Collaudi: `test/unita/kick-eventi.test.mjs`.
+
+### I Kicks
+
+I Kicks sono il sostegno di Kick: gli spettatori li regalano al canale, e con
+quelli possono anche fissare un messaggio in chat. Somigliano ai Bit, ma **non
+sono Bit**: valgono un'altra cifra e si chiamano in un altro modo. Sommarli ai
+Bit vorrebbe dire scrivere nel rapporto un numero che non e' ne' l'uno ne'
+l'altro. Percio' hanno un tipo loro dappertutto, col nome di Kick:
+
+- l'evento `kicks.gifted` v1 (`sender`, `gift.amount`, `gift.message`) diventa
+  `{ tipo: 'kicks', quanti, messaggio }` (`kick/messaggio.js`) ed entra dalla
+  porta di tutti come `kicks.gifted`, con `data.kicks`; chi li manda senza nome
+  e' anonimo (`is_anonymous`), come un cheer anonimo;
+- il **rapporto** li conta a parte (`kicks`, e chi ne ha regalati di piu',
+  `kicksChi`, con la regola dei Bit: l'anonimo conta nel totale e non nel
+  nome), con la sua riga nella mail, su Telegram e nella carta del pannello;
+- i **moduli** hanno l'evento «Kicks (Kick)», la variabile `$kicks` e la soglia
+  «Da quanti Kicks in su» (`QUANTITA_EVENTO`, tenuta uguale alla scala del
+  pannello da `test/contratto/moduli-scala.test.mjs`);
+- il **cervello** ringrazia coi momenti `kicks` e `kicks-anonimo` del frasario,
+  nelle tre lingue e nei tre toni;
+- l'**avviso** ha il suo tipo, «Kicks (Kick)» (`alerts.js`, `MAPPA`;
+  `ALERT_TIPI` nel pannello; `ALERT_KINDS` nel server), con «Kicks minimi»
+  (`minKicks`), suono Moneta e il verde di Kick. Non ha «Chi lo mostra»: Twitch
+  non mostra i Kicks, e `chiAlertOk` lo riporta sempre a SocialBot;
+- gli **effetti degli eventi** hanno «Kicks (Kick)» con i suoi livelli
+  (`effetti-eventi.js`, `EVENTI`), il **muro delle emote** la sua esplosione
+  (`EVENTI_MURO.kicks`, di serie una fontana da 100), e la carta «Adesso» del
+  pannello i Kicks della serata.
+
+Non fanno crescere gli obiettivi dello Studio e non allungano il subathon:
+quelli contano follower, abbonamenti, Bit ed euro, e un obiettivo «Bit» che
+salisse coi Kicks direbbe un numero falso. Se servira', sara' un obiettivo suo.
+
+Le statistiche non contano i Kicks, come non contano i Bit: contano follow, sub
+e raid.
+
+Chi era gia' collegato riceve `kicks.gifted` senza fare niente: il giro di Kick
+aggiunge le iscrizioni che mancano.
 
 ### La moderazione su Kick
 

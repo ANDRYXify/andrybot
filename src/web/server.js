@@ -227,7 +227,7 @@ const CHIAVE_EL = new RegExp(`^(${ELEM_OVERLAY.filter((k) => !FAMIGLIE_EL.includ
 // Gli eventi che hanno un alert suo, come li conosce la scheda Overlay: da qui
 // passano il caricamento dei file di un alert e la sua prova. Una lista sola,
 // cosi' un evento non si prova in una scheda e si rifiuta nell'altra.
-const ALERT_KINDS = ['follow', 'sub', 'cheer', 'raid', 'donazione'];
+const ALERT_KINDS = ['follow', 'sub', 'cheer', 'kicks', 'raid', 'donazione'];
 const PEZZI_GRAFICHE = {
   live: ['logo', 'handle', 'badge', 'titolo', 'pillola', 'sotto', 'qr'],
   programmazione: ['logo', 'handle', 'occhiello', 'titolo', 'righe', 'qr'],
@@ -6972,6 +6972,7 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
         follow: evt('follow', p.follow),
         sub: evt('sub', p.sub),
         cheer: { ...evt('cheer', p.cheer), minBits: clampInt(p.cheer?.minBits, 0, 1e9, 0) },
+        kicks: { ...evt('kicks', p.kicks), minKicks: clampInt(p.kicks?.minKicks, 0, 1e9, 0) },
         raid: { ...evt('raid', p.raid), minViewers: clampInt(p.raid?.minViewers, 0, 1e6, 0) },
         donazione: { ...evt('donazione', p.donazione), minImporto: Math.max(0, Math.min(1e6, Math.round((Number(p.donazione?.minImporto) || 0) * 100) / 100)) },
       };
@@ -8394,7 +8395,7 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
       live.picco = Math.max(Number(corso?.picco) || 0, Number(live.spettatori) || 0);
       const d = rapporto.raccogli(login, { inizio: live.dal, fine: ora, picco: live.picco });
       stasera = { messaggi: d.messaggi, persone: d.persone, follow: d.follow, sub: d.sub, regali: d.regali,
-        raid: d.raid, bit: d.bit, clip: d.clip, donazioni: d.donazioni };
+        raid: d.raid, bit: d.bit, kicks: d.kicks, clip: d.clip, donazioni: d.donazioni };
     }
     const sett = settimana.settimanaDi(streamers.get(login)?.settings);
     const r = rapporti.elenco(login, 1)[0];

@@ -604,6 +604,7 @@ export const EVENTI_MURO = {
   raid: { figura: 'fuochi', soglia: [1, 100000, 5] },
   sub: { figura: 'cuore', soglia: [1, 1000, 1] },
   bit: { figura: 'fontana', soglia: [1, 1000000, 100] },
+  kicks: { figura: 'fontana', soglia: [1, 1000000, 100] },
   dono: { figura: 'pioggia', soglia: [1, 100000, 5] },
   trenoParte: { figura: 'trenino' },
   trenoFine: { figura: 'scritta' },

@@ -21,6 +21,8 @@ export const EVENTI = Object.freeze([
   { id: 'sub', quanto: 'mesi', pausa: 0 },
   { id: 'regalo', quanto: 'quanti', pausa: 0 },
   { id: 'cheer', quanto: 'bit', pausa: 0 },
+  // i Kicks di Kick: una scala loro, mai mescolata ai Bit
+  { id: 'kicks', quanto: 'kicks', pausa: 0 },
   { id: 'raid', quanto: 'spettatori', pausa: 0 },
   { id: 'donazione', quanto: 'importo', pausa: 0 },
   { id: 'treno', quanto: 'livello', pausa: 0 },

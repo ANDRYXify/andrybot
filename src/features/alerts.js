@@ -32,12 +32,15 @@ const MAPPA = {
   'channel.subscription.gift': 'sub',
   'channel.cheer': 'cheer',
   'channel.raid': 'raid',
+  // i Kicks di Kick: un avviso loro (non sono Bit), che mostra solo SocialBot
+  'kicks.gifted': 'kicks',
 };
 
 const DEFAULT_TESTO = {
   follow: '{user} ha seguito il canale!',
   sub: '{user} si è abbonato! ({mesi} mesi)',
   cheer: '{user} ha lanciato {bits} bit!',
+  kicks: '{user} ha regalato {kicks} Kicks!',
   raid: '{user} è arrivato in raid con {viewers} spettatori!',
   donazione: '{user} ha offerto {importo}! {messaggio}',
 };
@@ -45,14 +48,14 @@ const DEFAULT_TESTO = {
 // scelto: il vuoto vuol dire «di serie», com'e' sempre stato, e nessuno si
 // ritrova un alert muto. Lo Studio mostra questo stesso suono (un test li tiene
 // uguali).
-export const DEFAULT_SUONO = { follow: 'campanello', sub: 'tada', cheer: 'moneta', raid: 'trombetta', donazione: 'moneta' };
+export const DEFAULT_SUONO = { follow: 'campanello', sub: 'tada', cheer: 'moneta', kicks: 'moneta', raid: 'trombetta', donazione: 'moneta' };
 export const SUONO_MUTO = 'nessuno';
 // L'avviso suona davvero? Un suono vero (caricato o pronto) e il volume sopra zero.
 const suonaAvviso = (p) => !!p && Number(p.volume) > 0 && (!!p.suonoUrl || SUONI_PRESET.has(p.suono));
 // Quando l'avviso parte anche lui, l'effetto dell'evento arriva un attimo dopo:
 // prima si legge chi e' stato, poi si festeggia (come l'effetto di un'offerta).
 const DOPO_AVVISO_MS = 1200;
-const DEFAULT_ACC = { follow: '#f72fa7', sub: '#ffb020', cheer: '#38d39f', raid: '#ff4d4d', donazione: '#1d9e5e' };
+const DEFAULT_ACC = { follow: '#f72fa7', sub: '#ffb020', cheer: '#38d39f', kicks: '#53fc18', raid: '#ff4d4d', donazione: '#1d9e5e' };
 
 // stile alert di default (usato se lo streamer non lo tocca)
 const STILE_ALERT = { animazione: 'slide', dimTesto: 27, sfondo: '#0f0f14', opacita: 88, testo: '#ffffff', bordoRaggio: 18, bordoSpessore: 2, glow: true, icona: true, font: 'sistema', forma: 'carta', materia: 'piatta', cornice: 'linea', composizione: 'colonna', dimIcona: 46, uscita: 'come', peso: '700', spaziatura: 0, maiuscolo: 'no', ombraTesto: true, evidenziaNome: true };
@@ -113,6 +116,7 @@ export class AlertsEngine {
       user: comeSiChiama(d, raider || 'qualcuno'),
       mesi: d.cumulative_months ?? d.duration_months ?? 1,
       bits: d.bits ?? 0,
+      kicks: d.kicks ?? 0,
       viewers: d.viewers ?? 0,
     };
   }
@@ -173,9 +177,10 @@ export class AlertsEngine {
     // widget, gli obiettivi e la maratona hanno contato lo stesso
     const avviso = !!conf && conf.attivo !== false && chiAlertOk(kind, conf.chi) !== 'twitch'
       && !(kind === 'cheer' && Number(vars.bits) < (Number(conf.minBits) || 0))
+      && !(kind === 'kicks' && Number(vars.kicks) < (Number(conf.minKicks) || 0))
       && !(kind === 'raid' && Number(vars.viewers) < (Number(conf.minViewers) || 0));
     const evento = type === 'channel.subscribe' && data?.is_gift === true ? null : (regalo ? 'regalo' : kind);
-    const quanto = evento ? { follow: null, sub: Number(vars.mesi) || 1, regalo: Number(data?.total) || 1, cheer: Number(vars.bits) || 0, raid: Number(vars.viewers) || 0 }[evento] : null;
+    const quanto = evento ? { follow: null, sub: Number(vars.mesi) || 1, regalo: Number(data?.total) || 1, cheer: Number(vars.bits) || 0, kicks: Number(vars.kicks) || 0, raid: Number(vars.viewers) || 0 }[evento] : null;
     return { kind, vars, regalo, evento, quanto, avviso: avviso ? { a, conf } : null };
   }
 
@@ -206,6 +211,7 @@ export class AlertsEngine {
       sub: ['channel.subscription.message', { user_name: chi, cumulative_months: n || 1 }],
       regalo: ['channel.subscription.gift', { user_name: chi, total: n || 1 }],
       cheer: ['channel.cheer', { user_name: chi, bits: n }],
+      kicks: ['kicks.gifted', { user_name: chi, kicks: n, piattaforma: 'kick' }],
       raid: ['channel.raid', { from_broadcaster_user_name: chi, viewers: n }],
     }[evento];
     let sc = null;
@@ -644,7 +650,7 @@ export class AlertsEngine {
     }
     const a = s.alerts || {};
     const conf = a[kind] || {};
-    this._spara(channel, a, kind, conf, { user: 'MarioRossi', mesi: 3, bits: 500, viewers: 42, importo: formattaImporto(5, s.donazioni?.valuta || 'EUR'), messaggio: 'grande live!' });
+    this._spara(channel, a, kind, conf, { user: 'MarioRossi', mesi: 3, bits: 500, kicks: 500, viewers: 42, importo: formattaImporto(5, s.donazioni?.valuta || 'EUR'), messaggio: 'grande live!' });
     return true;
   }
 }

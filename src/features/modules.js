@@ -86,6 +86,8 @@ const MAPPA_EVENTI = {
   'channel.subscribe': 'subscribe',
   'channel.raid': 'raid',
   'channel.cheer': 'cheer',
+  // i Kicks di Kick: un evento loro, non un cheer (i Kicks non sono Bit)
+  'kicks.gifted': 'kicks',
   'channel.channel_points_custom_reward_redemption.add': 'redemption',
   'stream.online': 'online',
   'stream.offline': 'offline',
@@ -104,7 +106,7 @@ const MAPPA_EVENTI = {
 // invece di rifiutare a vuoto. Dentro gli eventi che ce l'hanno, un valore che
 // non arriva vale ZERO e la soglia lo ferma: sbagliare da questa parte fa
 // perdere un effetto, sbagliare dall'altra lo regala a chi non ha messo nulla.
-const QUANTITA_EVENTO = { cheer: 'bits', raid: 'viewers', subscribe: 'mesi' };
+const QUANTITA_EVENTO = { cheer: 'bits', kicks: 'kicks', raid: 'viewers', subscribe: 'mesi' };
 
 export function quantitaEvento(evento, vars) {
   const chiave = QUANTITA_EVENTO[String(evento || '')];
@@ -1449,6 +1451,7 @@ export class ModulesEngine {
       viewers: ev.viewers != null && ev.viewers !== '' ? String(ev.viewers) : '',
       mesi: ev.mesi != null && ev.mesi !== '' ? String(ev.mesi) : '',
       bits: ev.bits != null && ev.bits !== '' ? String(ev.bits) : '',
+      kicks: ev.kicks != null && ev.kicks !== '' ? String(ev.kicks) : '',
       premio: ev.premio || '',
       // quanto e' costato questo modulo, e quanto e' rimasto dopo il pagamento
       costo: ev.costo || '',
@@ -1603,6 +1606,7 @@ export class ModulesEngine {
         viewers: d.viewers,
         mesi: d.cumulative_months ?? d.duration_months,
         bits: d.bits,
+        kicks: d.kicks,
         premio: d.reward?.title || '',
         // tracking webcam: gesto della mano ($gesto) ed emozione del volto ($emozione)
         gesto: d.gesto || '',
@@ -1648,7 +1652,7 @@ export class ModulesEngine {
       channel, user: nome, userLogin: channel, autore: channel, display: nome,
       args: ['esempio', 'prova'], argsRaw: 'esempio prova', evento: null,
       _livello: TIER_SCALA.mod, staff: true,
-      _vars: { raider: 'RaiderDiProva', viewers: 42, mesi: 3, bits: 100, premio: 'Premio di prova', user: nome },
+      _vars: { raider: 'RaiderDiProva', viewers: 42, mesi: 3, bits: 100, kicks: 500, premio: 'Premio di prova', user: nome },
     };
   }
 

@@ -136,6 +136,18 @@ comandi diversi da quelli della riga italiana.
 - L'avviso delle donazioni si riapre com'era salvato: prima si mostrava spento e vuoto, e salvare un altro avviso lo spegneva davvero. [vai: alert]
   en: The donation alert reopens as you saved it: before, it showed up off and empty, and saving another alert turned it off for real.
   es: El aviso de donaciones se vuelve a abrir como lo guardaste: antes aparecía apagado y vacío, y guardar otro aviso lo apagaba de verdad.
+- [importante] I Kicks di Kick hanno il loro avviso, i loro effetti, l'esplosione sul muro delle emote e un evento per i moduli, e il bot ringrazia in chat. [vai: alert]
+  en: Kick's Kicks get their own alert, their own effects, an emote wall explosion and a module event, and the bot says thanks in chat.
+  es: Los Kicks de Kick tienen su aviso, sus efectos, la explosión en el muro de emotes y un evento para los módulos, y el bot da las gracias en el chat.
+  > I Kicks di Kick, al loro posto
+  > Hanno un nome e un conto loro: non si sommano mai ai Bit. Il rapporto della serata dice quanti ne sono arrivati e chi ne ha regalati di più, e chi li manda in anonimo resta anonimo.
+  en> Kick's Kicks, in their own place
+  en> They have their own name and their own count: they are never added to Bits. The evening report says how many came in and who gifted the most, and anyone sending them anonymously stays anonymous.
+  es> Los Kicks de Kick, en su sitio
+  es> Tienen su nombre y su cuenta: nunca se suman a los Bits. El informe de la noche dice cuántos llegaron y quién regaló más, y quien los manda en anónimo sigue en anónimo.
+- Nella carta del rapporto del pannello compaiono anche i Bit della serata, come nella mail e su Telegram. [vai: statistiche]
+  en: The report card in the panel now also shows the evening's Bits, like the email and Telegram do.
+  es: La tarjeta del informe en el panel ahora también muestra los Bits de la noche, como el correo y Telegram.
 
 ## 2026-10-03
 

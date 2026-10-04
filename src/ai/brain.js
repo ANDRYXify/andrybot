@@ -393,6 +393,12 @@ export function momentoDiEvento(ev) {
       if (!bit) return null;
       return data.is_anonymous || !nome ? { momento: 'bit-anonimo', dati: { bit } } : { momento: 'bit', dati: { nome, bit } };
     }
+    // i Kicks di Kick: un momento loro, con le parole di Kick
+    case 'kicks.gifted': {
+      const kicks = numero(data.kicks);
+      if (!kicks) return null;
+      return data.is_anonymous || !nome ? { momento: 'kicks-anonimo', dati: { kicks } } : { momento: 'kicks', dati: { nome, kicks } };
+    }
     case 'stream.online': return { momento: 'inizio-diretta', dati: {} };
     case 'stream.offline': return { momento: 'fine-diretta', dati: {} };
     case 'channel.channel_points_custom_reward_redemption.add':
