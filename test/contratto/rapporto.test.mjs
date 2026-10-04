@@ -25,7 +25,10 @@ test('il bot: apre all\'online, misura a ogni giro, chiude, salva sempre e poi m
   const altrove = BOT.slice(BOT.indexOf('  async _setLiveAltrove('), BOT.indexOf('  async _giroKick('));
   assert.ok(altrove.includes('rapporto.apri(ch, { inizio: da, piattaforma });') && altrove.includes('if (stato.live) rapporto.apri(ch, { inizio, piattaforma });'), 'Kick apre la sua parte della serata, anche dopo un riavvio');
   assert.ok(altrove.includes('rapporto.chiudiPiattaforma(ch, piattaforma);') && altrove.includes('if (!this.inOnda(ch)) await this._rapportoDiretta(ch).catch('), 'e la chiude, e il rapporto parte solo se non resta nessuno in onda');
-  assert.ok(BOT.includes("rapporto.osservaGiro(login, { piattaforma: 'kick', spettatori: c.spettatori, categoria: c.categoria });"), 'gli spettatori di Kick dal suo giro');
+  // gli spettatori di Kick dal suo giro, passando dalla vista di Kick (una sola,
+  // la aggiorna anche l'evento dei metadati, che pero' il numero non lo porta)
+  assert.ok(BOT.includes('if (c.live) this._vistaKick(login, { spettatori: c.spettatori });'), 'gli spettatori di Kick dal suo giro');
+  assert.ok(BOT.includes("if (nuovo.spettatori !== undefined) rapporto.osservaGiro(login, { piattaforma: 'kick', spettatori: nuovo.spettatori, categoria: v.categoria || '' });"), 'un giro al rapporto solo col numero');
   // «in onda» e' lo stato vero del canale: un messaggio da Kick a canale spento non e' in diretta
   assert.ok(!BOT.includes("msg.piattaforma !== 'twitch' ? true"), 'niente piu\' «fuori da Twitch e\' sempre in diretta»');
   assert.equal((BOT.match(/msg\.piattaforma === 'youtube' \? true : this\.inOnda\(login\)/g) || []).length, 2, 'presenze e negozio chiedono lo stato vero; YouTube e\' in diretta per costruzione');

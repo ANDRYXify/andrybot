@@ -27,7 +27,7 @@ export default {
     { h3: 'Il tuo canale è su Kick' },
     { p: [
       'Compare solo se il canale che stai gestendo è su Kick. Il bot legge la tua chat di Kick e risponde lì.',
-      'Su Kick funzionano comandi, moduli, giochi e monete, gli avvisi di follow e abbonamento, l\'overlay della diretta, le notifiche social e le parole vietate. Se concedi la moderazione su Kick funzionano anche l\'antispam e il timeout dei moduli. La diretta su Kick entra nel rapporto della serata e nelle statistiche, insieme a quella su Twitch se trasmetti su tutte e due.',
+      'Su Kick funzionano comandi, moduli, giochi e monete, gli avvisi di follow e abbonamento, l\'overlay della diretta, le notifiche social e le parole vietate. Se concedi la moderazione su Kick funzionano anche l\'antispam e il timeout dei moduli. La diretta su Kick entra nel rapporto della serata e nelle statistiche, insieme a quella su Twitch se trasmetti su tutte e due, e ci entrano anche i follow e gli abbonamenti di Kick. I moduli con «Un evento del canale» scattano anche per quelli di Kick, e rispondono nella chat di Kick.',
       'Restano fuori le cose che esistono solo su Twitch: lo scudo anti-bot, le clip, il cambio di categoria e titolo, i VIP, i punti canale e le emote 7TV. Le monete su Kick arrivano solo da chi scrive, perché Kick non dà l\'elenco di chi guarda in silenzio.',
     ] },
 

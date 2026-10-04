@@ -118,6 +118,18 @@ comandi diversi da quelli della riga italiana.
 - Nell'Overlay Studio, togliendo un elemento dai livelli la sua riga si disfa dov'era e le altre restano ferme: prima tutte quelle sotto si ridisegnavano. [vai: alert]
   en: In the Overlay Studio, when you remove an element from the layers its row unravels where it was and the others stay still: before, every row below redrew itself.
   es: En el Overlay Studio, al quitar un elemento de las capas su fila se deshace donde estaba y las demás se quedan quietas: antes, todas las de debajo se redibujaban.
+- I follow e gli abbonamenti di Kick ora contano nel rapporto della serata e nelle statistiche: prima entrava solo la diretta. [vai: statistiche]
+  en: Kick follows and subscriptions now count in the evening report and the stats: before, only the stream itself got in.
+  es: Los follows y las suscripciones de Kick ahora cuentan en el informe de la noche y en las estadísticas: antes solo entraba el directo.
+- I moduli con «Un evento del canale» scattano anche per i follow e gli abbonamenti di Kick, rispondono nella chat di Kick e rispettano «Su quali piattaforme». [vai: moduli]
+  en: Modules on “A channel event” now also fire for Kick follows and subscriptions, answer in the Kick chat and respect “On which platforms”.
+  es: Los módulos con «Un evento del canal» también saltan con los follows y las suscripciones de Kick, responden en el chat de Kick y respetan «En qué plataformas».
+- Su Kick chi torna a seguirti dopo mesi riceve il bentornato, come su Twitch, e un follow ripetuto non conta come nuovo. [vai: moduli]
+  en: On Kick, someone who follows you again after months gets a welcome back, like on Twitch, and a repeated follow doesn't count as new.
+  es: En Kick, quien vuelve a seguirte tras meses recibe la bienvenida de vuelta, como en Twitch, y un follow repetido no cuenta como nuevo.
+- Quando cambi titolo o categoria su Kick, il bot lo sa subito e non dopo due minuti. [vai: dirette]
+  en: When you change your title or category on Kick, the bot knows right away, not two minutes later.
+  es: Cuando cambias el título o la categoría en Kick, el bot lo sabe al momento y no dos minutos después.
 
 ## 2026-10-03
 

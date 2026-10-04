@@ -238,6 +238,52 @@ piattaforma, un giro a vuoto che non chiude), `test/unita/vetrina-live.test.mjs`
 (Kick nella vetrina), `test/unita/kick-canale.test.mjs` (la lettura del
 canale).
 
+### Gli eventi di Kick
+
+Follow, abbonamenti e regali di Kick (`kick/messaggio.js`, `daEvento`) si
+traducono nel vocabolario di Twitch (`channel.follow`, `channel.subscribe`,
+`channel.subscription.gift`) ed entrano dalla **stessa porta** degli eventi di
+Twitch: `bot.js`, `eventoEsterno` → `_dispatchEvent`, con `ev.piattaforma`.
+Prima andavano solo agli alert: il rapporto della serata e le statistiche
+(che contano le righe `[evento]` scritte da `_dispatchEvent`) non li vedevano, e
+i moduli «su evento», il cervello e il muro delle emote nemmeno.
+
+Dalla stessa porta valgono le stesse regole, con la piattaforma dell'evento:
+
+- **si risponde dove e' successo**: cervello e moduli parlano con
+  `vocePer({ channel, piattaforma })`, la stessa voce dei messaggi;
+- **quello che parla solo con Twitch ascolta solo Twitch**: le clip (tagliano
+  la diretta di Twitch) e l'anti-bot dei follow;
+- **i moduli sanno la piattaforma** (`_ctxDaEvento`: `piattaforma`, `userId`):
+  un timeout da un modulo su un follow di Kick va a chi modera su Kick, con
+  l'id di Kick che arriva nell'evento; senza id (un regalo anonimo) non si
+  ferma nessuno, e su Twitch non si cerca per nome, perche' li' sarebbe
+  un'altra persona;
+- **un follow ripetuto si ferma, chi torna dopo mesi e' un ritorno**
+  (`channel.follow.ritorno`), con `features/seguiti.js` come su Twitch; su Kick
+  la persona si riconosce dal nome, come da sempre.
+
+`livestream.metadata.updated` porta titolo e categoria appena lo streamer li
+cambia. Va nella stessa vista del giro (`_vistaKick`, una sola: la aggiornano
+il giro e l'evento), che si fonde con quello che si sapeva. Al rapporto va un
+giro solo quando c'e' il numero degli spettatori, che l'evento non porta: un
+giro in piu' peserebbe due volte la categoria, e uno a zero abbasserebbe la
+media. Per lo stesso motivo `rapporto.osservaGiro` legge `null` come «non lo
+so», non come zero.
+
+Un canale collegato prima che l'elenco degli eventi crescesse e' iscritto
+all'elenco di allora. Il giro di Kick, una volta per canale da quando il bot e'
+partito, chiede a Kick a cosa e' iscritto e aggiunge **solo quello che manca**
+(`allineaIscrizioni`): rifare tutto vorrebbe dire iscrizioni doppie. Se non
+riesce si riprova fra un'ora, e un evento rifiutato da Kick si dice per nome.
+
+Non agganciati, e perche': `moderation.banned` (su Twitch nessuno usa il bando
+come evento, e un consumatore solo per Kick sarebbe una cosa diversa);
+`kicks.gifted` e `channel.reward.redemption.updated` hanno un loro passo,
+perche' i Kicks non sono Bit e i premi di Kick non sono i punti canale.
+
+Collaudi: `test/unita/kick-eventi.test.mjs`.
+
 ### La moderazione su Kick
 
 Kick ha le sue rotte di moderazione, documentate: `DELETE /chat/{id}` toglie un

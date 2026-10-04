@@ -1585,6 +1585,10 @@ export class ModulesEngine {
       : (d.is_anonymous ? '' : norm(d.user_login || d.from_broadcaster_user_login || ''));
     return {
       channel,
+      // la piattaforma dell'evento: un timeout va a chi modera LI', e l'id di
+      // chi ha seguito su Kick su Twitch e' un'altra persona (_timeout)
+      piattaforma: ev.piattaforma || 'twitch',
+      userId: String(d.user_id || ''),
       user,
       autore,
       userLogin: norm(d.user_login || d.user_name || ''),

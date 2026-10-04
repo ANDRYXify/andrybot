@@ -270,6 +270,7 @@ export const EVENTI = [
   { name: 'channel.subscription.renewal', version: 1 },
   { name: 'channel.subscription.gifts', version: 1 },
   { name: 'livestream.status.updated', version: 1 },
+  { name: 'livestream.metadata.updated', version: 1 },
 ];
 
 export function iscrivi(login, opts) {
@@ -279,6 +280,25 @@ export function iscrivi(login, opts) {
 }
 export function iscrizioni(login, opts) {
   return chiama(login, '/events/subscriptions', opts);
+}
+
+// Un canale collegato prima che l'elenco crescesse e' iscritto all'elenco di
+// allora: gli eventi nuovi non gli arriverebbero mai, finche' non preme
+// «Riprova gli eventi». Si chiede a Kick a cosa e' iscritto e si aggiunge solo
+// quello che manca: rifare tutto vorrebbe dire iscrizioni doppie.
+export async function allineaIscrizioni(login, opts) {
+  const ora = await iscrizioni(login, opts);
+  if (!ora.ok || !Array.isArray(ora.dati)) return { ok: false, errore: ora.errore || 'Kick non dice a cosa sei iscritto' };
+  const ci = new Set(ora.dati.map((x) => `${x?.event}@${x?.version}`));
+  const mancano = EVENTI.filter((e) => !ci.has(`${e.name}@${e.version}`));
+  if (!mancano.length) return { ok: true, aggiunti: [] };
+  const r = await chiama(login, '/events/subscriptions', { metodo: 'POST', corpo: { events: mancano, method: 'webhook' }, ...opts });
+  if (!r.ok) return { ok: false, errore: r.errore };
+  // Kick risponde evento per evento: uno rifiutato si dice, gli altri restano
+  const rifiutati = (Array.isArray(r.dati) ? r.dati : []).filter((x) => x?.error).map((x) => `${x.name}: ${x.error}`);
+  return rifiutati.length
+    ? { ok: false, errore: rifiutati.join('; '), aggiunti: mancano.map((e) => e.name).filter((n) => !rifiutati.some((x) => x.startsWith(n + ':'))) }
+    : { ok: true, aggiunti: mancano.map((e) => e.name) };
 }
 export async function disiscrivi(login, ids, opts) {
   const lista = (Array.isArray(ids) ? ids : [ids]).filter(Boolean);

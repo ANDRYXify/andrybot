@@ -102,7 +102,9 @@ export function osservaGiro(channel, { spettatori = null, categoria = '', ora = 
   let s = sessioni.get(ch);
   if (!s || !s.piattaforme.get(p) || s.piattaforme.get(p).fine) s = apri(ch, { ora, piattaforma: p });
   const x = s.piattaforme.get(p);
-  const n = Number(spettatori);
+  // «non lo so» non e' zero: Number(null) fa 0, e un giro senza il numero
+  // abbasserebbe la media con una serata vuota che non c'e' stata
+  const n = spettatori == null || spettatori === '' ? NaN : Number(spettatori);
   if (Number.isFinite(n) && n >= 0) {
     x.picco = Math.max(x.picco, n); x.somma += n; x.giri++; x.ultimo = { n, ora };
     let insieme = 0;

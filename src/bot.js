@@ -98,7 +98,7 @@ import { aChi } from './features/risposte.js';
 import { modalitaDi, alLavoro } from './features/quando-lavora.js';
 import { statoVivo } from './db.js';
 import { piattaformaDi, nomeSu } from './identita.js';
-import { tokenDi as tokenKick, collegati as kickCollegati, statoCanale as statoKick, moderatoreKick, puoModerare as puoModerareKick } from './kick/api.js';
+import { tokenDi as tokenKick, collegati as kickCollegati, statoCanale as statoKick, moderatoreKick, puoModerare as puoModerareKick, allineaIscrizioni as allineaKick } from './kick/api.js';
 import * as bjFeat from './features/blackjack.js';
 import * as seguitiFeat from './features/seguiti.js';
 import * as negozio from './features/negozio.js';
@@ -1408,28 +1408,35 @@ export class BotManager {
   }
 
   // Consegna un evento a cervello + moduli + plugin (parte comune).
+  //
+  // Vale per ogni piattaforma (ev.piattaforma, di serie Twitch): si risponde
+  // nella chat dove e' successo, e quello che parla solo con Twitch (le clip
+  // della diretta di Twitch, l'anti-bot dei follow di Twitch) ascolta solo
+  // Twitch.
   _dispatchEvent(ev) {
     const { channel, type, data } = ev;
+    const suTwitch = !ev.piattaforma || ev.piattaforma === 'twitch';
+    const dire = this.vocePer({ channel, piattaforma: ev.piattaforma });
     memory.logMessage(channel, '[evento]', '', rigaEvento(type, data), true);
-    this.brain?.onEvent?.(ev, (text) => this.say(channel, text));
+    this.brain?.onEvent?.(ev, (text) => dire(text));
     // alert overlay (follow/sub/cheer/raid): notifica animata + suono
     try { this.alerts?.onEvent(ev); } catch (e) { log.debug(`#${channel} alert evento:`, e?.message || e); }
     // il muro delle emote esplode per gli eventi che lo streamer ha scelto
     this.muro?.suEvento(ev).catch((e) => log.debug(`#${channel} muro evento:`, e?.message || e));
     // clip automatiche: sub/bit/raid sono momenti forti (le clip li "sentono")
-    try { this.clips?.onEvent(ev); } catch (e) { log.debug(`#${channel} clip evento:`, e?.message || e); }
+    if (suTwitch) { try { this.clips?.onEvent(ev); } catch (e) { log.debug(`#${channel} clip evento:`, e?.message || e); } }
     // la classifica dei Bit tenuta in memoria non vale piu': un cheer e' l'unico
     // momento in cui puo' essere cambiata, quindi e' l'unico in cui vale la pena
     // richiederla. Cosi' chi scrive «!bit» appena dopo si vede gia' dentro.
     if (type === 'channel.cheer') { try { bit.scorda(channel); this._classificaBitInScena(channel); } catch { /* niente */ } }
     // anti-bot: follow-bot (raffiche + nomi noti) e hate-raid
     try {
-      if (type === 'channel.follow') this.antibot?.onFollow(ev);
-      else if (type === 'channel.raid') this.antibot?.onRaid(ev);
+      if (suTwitch && type === 'channel.follow') this.antibot?.onFollow(ev);
+      else if (suTwitch && type === 'channel.raid') this.antibot?.onRaid(ev);
     } catch (e) { log.error(`#${channel} anti-bot evento:`, e?.message || e); }
     if (type === 'channel.raid') { this._bossDelRaid(channel, data); this._arenaDelRaid(channel, data); }
     // moduli: automazioni con trigger 'evento' (follow, sub, raid, cheer, ...)
-    try { this.modules?.onEvent(ev, (t) => this.say(channel, t)); }
+    try { this.modules?.onEvent(ev, (t) => dire(t)); }
     catch (e) { log.error(`#${channel} moduli evento:`, e?.message || e); }
     // la pubblicità che comincia: il messaggio di adesso, e la scadenza del
     // conto per quello di dopo — che è l'unico modo di saperlo, perché un
@@ -1606,24 +1613,56 @@ export class BotManager {
       for (const login of kickCollegati()) {
         if (!streamers.get(login)) continue;
         try {
+          this._allineaEventiKick(login);
           const c = await statoKick(login);
           if (!c.ok) continue;
-          if (!this._kickVisto) this._kickVisto = new Map();
-          this._kickVisto.set(login, { live: c.live, spettatori: c.spettatori, titolo: c.titolo, categoria: c.categoria, slug: c.slug, ts: Date.now() });
+          this._vistaKick(login, { live: c.live, spettatori: c.spettatori, titolo: c.titolo, categoria: c.categoria, slug: c.slug, inizio: c.inizio }, { conta: false });
           await this._setLiveAltrove(login, 'kick', c.live, { inizio: c.inizio, titolo: c.titolo }, 'giro');
-          if (!c.live) continue;
-          rapporto.osservaGiro(login, { piattaforma: 'kick', spettatori: c.spettatori, categoria: c.categoria });
-          // la vista che il cervello ha della diretta, se Twitch non gliela da' gia'
-          if (this._liveState.get(login) !== true) {
-            const min = c.inizio ? Math.max(0, Math.floor((Date.now() - c.inizio) / 60_000)) : 0;
-            memory.setStreamContext(login, `In live su Kick, ${c.categoria || 'senza categoria'}: "${c.titolo}" con ${c.spettatori ?? 0} spettatori da ${Math.floor(min / 60)}h ${min % 60}m`);
-          }
+          if (c.live) this._vistaKick(login, { spettatori: c.spettatori });
         } catch (e) { log.debug(`#${login} giro di Kick:`, e?.message || e); }
       }
     } finally { this._giroKickInCorso = false; }
   }
+  // GLI EVENTI DI KICK ALLINEATI ALL'ELENCO DI ADESSO (kick/api.js,
+  // allineaIscrizioni): una volta per canale da quando il bot e' partito, e se
+  // non riesce si riprova fra un'ora, non a ogni giro.
+  _allineaEventiKick(login) {
+    if (!this._kickAllineati) this._kickAllineati = new Map();
+    const prima = this._kickAllineati.get(login);
+    if (prima === true || (prima && Date.now() - prima < 3_600_000)) return;
+    this._kickAllineati.set(login, Date.now());
+    allineaKick(login).then((r) => {
+      if (!r.ok) { log.warn(`#${login} eventi di Kick da allineare: ${r.errore}`); return; }
+      this._kickAllineati.set(login, true);
+      if (r.aggiunti.length) log.info(`#${login} eventi di Kick aggiunti: ${r.aggiunti.join(', ')}`);
+    }).catch((e) => log.debug(`#${login} allineamento eventi Kick:`, e?.message || e));
+  }
+
   // Quello che il giro di Kick ha visto per ultimo (per la vetrina e la scheda).
   kickVisto(login) { return this._kickVisto?.get(String(login || '').toLowerCase()) || null; }
+
+  // LA VISTA DELLA DIRETTA SU KICK, in un posto solo: la aggiorna il giro ogni
+  // due minuti e l'evento dei metadati appena lo streamer cambia titolo o
+  // categoria. Si fonde con quello che si sapeva (l'evento non porta gli
+  // spettatori), e a diretta in corso va al rapporto e al cervello, se Twitch
+  // non gli da' gia' la sua. `conta: false`: si ricorda e basta (il giro, prima
+  // di sapere se la diretta e' aperta).
+  _vistaKick(login, nuovo, { conta = true } = {}) {
+    if (!this._kickVisto) this._kickVisto = new Map();
+    const v = { ...(this._kickVisto.get(login) || {}) };
+    for (const [k, x] of Object.entries(nuovo || {})) if (x !== undefined) v[k] = x;
+    v.ts = Date.now();
+    this._kickVisto.set(login, v);
+    if (!conta || !v.live) return v;
+    // al rapporto va un giro solo quando c'e' il numero: l'evento dei metadati
+    // non lo porta, e un giro in piu' peserebbe la categoria due volte
+    if (nuovo.spettatori !== undefined) rapporto.osservaGiro(login, { piattaforma: 'kick', spettatori: nuovo.spettatori, categoria: v.categoria || '' });
+    if (this._liveState.get(login) !== true) {
+      const min = v.inizio ? Math.max(0, Math.floor((Date.now() - v.inizio) / 60_000)) : 0;
+      memory.setStreamContext(login, `In live su Kick, ${v.categoria || 'senza categoria'}: "${v.titolo || ''}" con ${v.spettatori ?? 0} spettatori da ${Math.floor(min / 60)}h ${min % 60}m`);
+    }
+    return v;
+  }
 
   // LA STORIA DELLA DIRETTA: se lo streamer l'ha accesa nelle Grafiche, la sua
   // grafica «Live ora» in verticale va nella storia di Instagram. Se non parte,
@@ -1896,26 +1935,36 @@ export class BotManager {
         await this._setLiveAltrove(String(ev.channel).toLowerCase(), ev.piattaforma, ev.tipo === 'live', { inizio: Number(ev.inizio) || 0, titolo: ev.titolo || '' }, 'evento');
         return;
       }
-      // Seguiti e abbonamenti alimentano gli alert a schermo GIA' esistenti:
-      // entrano dalla stessa porta degli eventi Twitch (onEvent), tradotti nel
-      // loro vocabolario. Cosi' un alert configurato una volta vale per tutte
-      // le piattaforme, senza che nessuno debba configurarlo due volte.
+      if (ev.tipo === 'metadati') {
+        this._vistaKick(String(ev.channel).toLowerCase(), { titolo: ev.titolo, categoria: ev.categoria });
+        return;
+      }
+      // Seguiti, abbonamenti e regali entrano dalla STESSA porta degli eventi
+      // Twitch (_dispatchEvent), tradotti nel loro vocabolario e con la loro
+      // piattaforma. Prima andavano solo agli alert: il rapporto e le
+      // statistiche non li contavano, e i moduli «su evento» non scattavano.
       const comeTwitch = {
         seguito: 'channel.follow',
         abbonamento: 'channel.subscribe',
         regali: 'channel.subscription.gift',
       };
-      const type = comeTwitch[ev.tipo];
-      // anche su Kick un follow ripetuto non e' un follower nuovo, e un ritorno
-      // non ha un avviso da follower
-      if (ev.tipo === 'seguito' && seguitiFeat.classifica(ev.channel, ev.piattaforma || 'kick', ev.utente) !== 'nuovo') return;
-      if (type) {
-        this.alerts?.onEvent({
-          channel: ev.channel,
-          type,
-          data: { user_name: ev.utente, cumulative_months: ev.mesi, total: ev.quanti },
-        });
+      let type = comeTwitch[ev.tipo];
+      if (!type) return;
+      const piattaforma = ev.piattaforma || 'kick';
+      // anche su Kick un follow ripetuto non e' un follower nuovo, e chi torna
+      // dopo mesi e' un ritorno, come su Twitch
+      if (ev.tipo === 'seguito') {
+        const come = seguitiFeat.classifica(ev.channel, piattaforma, ev.utente);
+        if (come === 'ripetuto') return;
+        if (come === 'ritorno') type = 'channel.follow.ritorno';
       }
+      const chi = String(ev.utente || '');
+      this._dispatchEvent({
+        channel: String(ev.channel).toLowerCase(),
+        piattaforma,
+        type,
+        data: { user_name: chi, user_login: chi.toLowerCase(), user_id: String(ev.utenteId || ''), cumulative_months: ev.mesi, total: ev.quanti, piattaforma },
+      });
     } catch (e) { log.error(`evento ${ev.piattaforma} #${ev.channel}:`, e?.message || e); }
   }
 

@@ -60,7 +60,10 @@ export function daChatMessage(payload, { canale, loginBot = '' } = {}) {
 export function daEvento(tipo, payload, { canale } = {}) {
   const p = payload || {};
   const chi = String(p.follower?.username || p.subscriber?.username || p.gifter?.username || p.user?.username || '');
-  const base = { piattaforma: 'kick', channel: String(canale || '').toLowerCase(), utente: chi };
+  // l'id di Kick della persona: serve a chi modera su Kick (un timeout da un
+  // modulo); un regalo anonimo non ce l'ha
+  const id = p.follower?.user_id ?? p.subscriber?.user_id ?? p.gifter?.user_id ?? p.user?.user_id;
+  const base = { piattaforma: 'kick', channel: String(canale || '').toLowerCase(), utente: chi, ...(id != null ? { utenteId: String(id) } : {}) };
   switch (tipo) {
     case 'channel.followed':
       return { ...base, tipo: 'seguito' };
@@ -72,6 +75,10 @@ export function daEvento(tipo, payload, { canale } = {}) {
       return { ...base, tipo: 'regali', quanti: Math.max(1, (p.giftees || []).length || Number(p.quantity) || 1) };
     // l'inizio vero della diretta: e' anche il suo nome, per non annunciarla
     // due volte quando la vede anche il giro (bot.js, _setLiveAltrove)
+    // titolo e categoria cambiati: la stessa vista che il giro rilegge ogni due
+    // minuti, subito (bot.js, _vistaKick)
+    case 'livestream.metadata.updated':
+      return { ...base, tipo: 'metadati', titolo: String(p.metadata?.title || ''), categoria: String(p.metadata?.category?.name || '') };
     case 'livestream.status.updated':
       return { ...base, tipo: p.is_live ? 'live' : 'fine-live', titolo: String(p.title || ''), inizio: p.is_live ? (Date.parse(String(p.started_at || '')) || 0) : 0 };
     default:

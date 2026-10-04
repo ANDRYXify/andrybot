@@ -68,7 +68,10 @@ test('nel bot il ripetuto si ferma prima di tutti, il ritorno cambia tipo prima 
   assert.match(corpo, /if \(come === 'ritorno'\) \{ this\._dispatchEvent\(\{ \.\.\.ev, type: 'channel\.follow\.ritorno' \}\); return; \}/);
   const BRAIN = readFileSync(new URL('../../src/ai/brain.js', import.meta.url), 'utf8');
   assert.match(BRAIN, /case 'channel\.follow\.ritorno': return \{ momento: 'follow-ritorno'/, 'il cervello dice bentornato, con la voce del canale');
-  assert.ok(BOT.includes("if (ev.tipo === 'seguito' && seguitiFeat.classifica(ev.channel, ev.piattaforma || 'kick', ev.utente) !== 'nuovo') return;"), 'anche su Kick');
+  // anche su Kick, con la stessa regola: il ripetuto si ferma, il ritorno cambia
+  // tipo (il comportamento lo prova test/unita/kick-eventi.test.mjs)
+  const fuori = BOT.slice(BOT.indexOf('  async eventoEsterno(ev) {'), BOT.indexOf('  async _annunciaTwitch('));
+  assert.ok(fuori.includes("const come = seguitiFeat.classifica(ev.channel, piattaforma, ev.utente);\n        if (come === 'ripetuto') return;\n        if (come === 'ritorno') type = 'channel.follow.ritorno';"), 'anche su Kick');
 });
 
 test('il rapporto della serata conta solo i follower nuovi', () => {
