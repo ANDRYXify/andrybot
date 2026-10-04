@@ -106,3 +106,14 @@ test('il cambio aspetta la fine delle dirette, e l\'immagine si costruisce prima
   assert.match(AGG, /il bot e' rimasto giu' circa \$\(\( \$\(date \+%s\) - FERMO_DA \)\) secondi\./, 'e alla fine si dice quanto e\' rimasto giu\'');
   execFileSync('bash', ['-n', new URL('../../server/aggiorna.sh', import.meta.url).pathname]);
 });
+
+// CON PIPEFAIL un tubo con un lettore che esce prima («| grep -q», «| head»)
+// fa fallire la riga anche quando la parola c'e': la copia del database
+// saltava in silenzio. Nello script si legge tutto prima e si guarda dopo.
+test('nello script nessun tubo con un lettore che esce prima di chi scrive', () => {
+  const codice = AGG.split('\n').filter((r) => !/^\s*#/.test(r)).join('\n');
+  assert.ok(/set -euo pipefail/.test(AGG), 'lo script gira con pipefail');
+  assert.doesNotMatch(codice, /\|\s*grep\s+-q/, '«| grep -q»: usa contiene');
+  assert.doesNotMatch(codice, /\|\s*head\b/, '«| head»: usa prime');
+  assert.match(codice, /contiene\(\) \{ local parola="\$1" out; shift; out="\$\("\$@" 2>\/dev\/null\)" \|\| true;/);
+});

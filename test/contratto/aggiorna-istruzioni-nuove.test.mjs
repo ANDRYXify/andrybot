@@ -30,12 +30,16 @@ const CADDY_DUE = ':8080 {\n\trespond "due"\n}\n';
 const SEGNO_NUOVE = 'echo "ISTRUZIONI-NUOVE"';
 const NUOVO = VERO.replace('set -euo pipefail\n', `set -euo pipefail\n${SEGNO_NUOVE}\n`);
 
+// «ps» scrive le righe a pezzi, con un attimo in mezzo, come un docker vero
+// che non scrive tutto in una volta: chi legge e se ne va alla prima riga
+// («| grep -q») fa ricevere SIGPIPE a chi scrive, e con pipefail la riga fallisce.
+// Senza l'attimo il difetto c'era lo stesso, ma usciva solo sotto carico.
 const FINTO_DOCKER = `#!/usr/bin/env bash
 echo "$*" >> "$FINTO/docker.log"
 [ "$1" = compose ] || exit 0
 shift
 case "$1" in
-  ps) echo "bot-1 running"; [ -f "$FINTO/caddy-gira" ] && echo "caddy-1 running"; exit 0 ;;
+  ps) echo "bot-1 running"; /bin/sleep 0.05; [ -f "$FINTO/caddy-gira" ] && echo "caddy-1 running"; exit 0 ;;
   exec)
     case "$*" in
       *backup.js*) echo "copia fatta e riaperta ok" ;;

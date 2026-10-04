@@ -53,6 +53,15 @@ done
 passo() { echo; echo "==== $* ===="; }
 muori() { echo; echo "FERMO: $*" >&2; exit 1; }
 
+# CON PIPEFAIL, `comando | grep -q` e `comando | head` mentono. Chi legge esce
+# appena ha quello che gli basta, chi scrive riceve SIGPIPE, e la riga intera
+# risulta fallita: una parola che c'e' diventa una parola che non c'e' (la
+# copia del database saltata in silenzio, e' successo nel collaudo), e un
+# elenco lungo ferma lo script. Qui si legge tutto prima e si guarda dopo:
+# nessun tubo ha un lettore che esce prima di chi scrive.
+contiene() { local parola="$1" out; shift; out="$("$@" 2>/dev/null)" || true; [[ "$out" == *"$parola"* ]]; }
+prime() { local n="$1" righe=(); shift; mapfile -t righe < <("$@"); if (( ${#righe[@]} )); then printf '%s\n' "${righe[@]:0:n}"; fi; }
+
 cd "$(dirname "$0")/.."
 RADICE="$(pwd)"
 [ -d .git ] || muori "qui non c'è un repository git ($RADICE)"
@@ -73,14 +82,14 @@ unset AGGIORNA_RIPRESO_DA
 # LA PORTA D'INGRESSO E' PARTE DI QUELLO CHE GIRA. Il Caddyfile e' montato come
 # FILE nel container di Caddy (vedi 6b): conta quello che Caddy vede, non quello
 # che c'e' nel repository. Se Caddy non gira non c'e' niente da mettere in pari.
-caddy_gira() { docker compose ps --status running 2>/dev/null | grep -q caddy; }
+caddy_gira() { contiene caddy docker compose ps --status running; }
 impronta_caddy() { docker compose exec -T caddy sha256sum /etc/caddy/Caddyfile 2>/dev/null | cut -d' ' -f1; }
 porta_in_pari() { ! caddy_gira || [ "$(impronta_caddy)" = "$(sha256sum Caddyfile | cut -d' ' -f1)" ]; }
 
 # ---- 1. la copia di lavoro dev'essere pulita ---------------
 passo "Controllo la copia di lavoro"
 if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
-  git status --short | head -20
+  prime 20 git status --short
   muori "ci sono modifiche non salvate. Committale o annullale prima di aggiornare."
 fi
 PRIMA="$(git rev-parse HEAD)"
@@ -143,7 +152,7 @@ if [ "$PERSI" != "0" ]; then
 fi
 
 echo "$NUOVI commit in arrivo:"
-git log --oneline HEAD..origin/"$RAMO" | head -15
+prime 15 git log --oneline HEAD..origin/"$RAMO"
 
 # ---- 2b. il cervello privato -------------------------------
 # Il codice del cervello vive in un repository a parte (LIA_DIR, di solito la
@@ -155,7 +164,7 @@ LIA_DIR_CONF="$( { grep -E '^LIA_DIR=' .env 2>/dev/null || true; } | tail -1 | c
 LIA_DIR="${LIA_DIR_CONF:-../lia}"
 case "$LIA_DIR" in /*) ;; *) LIA_DIR="$RADICE/$LIA_DIR" ;; esac
 SERVE_LIA=0
-if git show "origin/$RAMO:docker-compose.yml" 2>/dev/null | grep -q 'LIA_DIR'; then SERVE_LIA=1; fi
+if contiene 'LIA_DIR' git show "origin/$RAMO:docker-compose.yml"; then SERVE_LIA=1; fi
 if [ "$SERVE_LIA" = "1" ]; then
   if [ ! -d "$LIA_DIR/.git" ]; then
     echo "Il codice in arrivo si aspetta il cervello privato in $LIA_DIR, e lì non c'è niente."
@@ -164,7 +173,7 @@ if [ "$SERVE_LIA" = "1" ]; then
     muori "senza il cervello privato non aggiorno."
   fi
   if [ -n "$(git -C "$LIA_DIR" status --porcelain --untracked-files=no)" ]; then
-    git -C "$LIA_DIR" status --short | head -10
+    prime 10 git -C "$LIA_DIR" status --short
     muori "il cervello privato ha modifiche non salvate: committale o annullale prima."
   fi
   LIA_PRIMA="${AGGIORNA_LIA_RIPRESO_DA:-$(git -C "$LIA_DIR" rev-parse HEAD)}"
@@ -173,7 +182,7 @@ if [ "$SERVE_LIA" = "1" ]; then
   LIA_RAMO="$(git -C "$LIA_DIR" rev-parse --abbrev-ref HEAD)"
   LIA_NUOVI="$(git -C "$LIA_DIR" rev-list --count HEAD..origin/"$LIA_RAMO" 2>/dev/null || echo 0)"
   echo "$LIA_NUOVI commit in arrivo per il cervello"
-  git -C "$LIA_DIR" log --oneline HEAD..origin/"$LIA_RAMO" | head -10
+  prime 10 git -C "$LIA_DIR" log --oneline HEAD..origin/"$LIA_RAMO"
 else
   echo "il codice in arrivo non lo chiede ancora: niente da fare qui."
 fi
@@ -182,7 +191,7 @@ fi
 passo "Copia di sicurezza del database"
 if [ -n "$RIPRESO" ]; then
   echo "fatta prima di ripartire con le istruzioni nuove."
-elif docker compose ps --status running 2>/dev/null | grep -q bot; then
+elif contiene bot docker compose ps --status running; then
   if docker compose exec -T bot node -e "import('./src/backup.js').then(m=>m.backupOra()).then(r=>{console.log(r.ok?'copia fatta e riaperta ok':'copia FALLITA: '+r.errore);process.exit(r.ok?0:1)})"; then
     echo "database al sicuro."
   else
