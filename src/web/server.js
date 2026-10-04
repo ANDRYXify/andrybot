@@ -113,6 +113,7 @@ import * as negozio from '../features/negozio.js';
 import { ruoliDaVendere } from '../features/negozio-tipi.js';
 import * as negozioPagina from '../features/negozio-pagina.js';
 import * as scudoTg from '../features/tg-scudo-gesti.js';
+import * as decidiTg from '../features/tg-decidi.js';
 import * as tgPorta from '../features/tg-porta.js';
 import * as regolaScudo from '../features/tg-scudo.js';
 import { testiPagina as testiScudoPagina } from '../features/tg-scudo-testi.js';
@@ -3962,6 +3963,7 @@ STREAMER (${su.toUpperCase()}) e non c'entra con l'automazione del marketing.
       stripeAttivo: config.stripe.attivo,
       // i rapporti delle dirette non ancora aperti, per il segno sulla scheda
       rapportiNuovi: rapporti.nuovi(user.login),
+      tgDaDecidere: tgScudo.quanteDaDecidere(user.login),
       postaDisponibile: posta.attiva(),
       // GLI INVITI, uno per volta. Chi li deve vedere si decide QUI e non nel
       // browser: una scelta tenuta nel browser ricompare sull'altro computer e
@@ -10544,6 +10546,7 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
   // gruppo? il gruppo chiede l'approvazione? Lo scudo non si accende se gli manca
   // una cosa grave, e il pannello dice quale (regolaScudo.controlli): un
   // interruttore acceso che poi non fa niente e' peggio di uno che rifiuta.
+  const elencoDaDecidere = (login) => tgScudo.daDecidere(login).map((r) => ({ chat: r.chat_id, id: r.tg_user_id, nome: r.nome, motivo: r.motivo, ts: r.fine || r.ts }));
   async function statoScudo(login) {
     const c = tgConf.get(login);
     let io = null, info = null, me = null;
@@ -10567,6 +10570,9 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
       }),
       inAttesa: tgScudo.inAttesa(login),
       recenti: tgScudo.recenti(login, 20).map((r) => ({ nome: r.nome, stato: r.stato, motivo: r.motivo, ts: r.ts, fine: r.fine, porta: r.via === 'web' })),
+      // chi aspetta che decidi tu (tg-decidi.js), e se te lo si dice anche in privato
+      daDecidere: elencoDaDecidere(login),
+      privato: !!(c?.token && c.owner_tg_id && (c.dm_modo || 'me') !== 'off'),
       porta: { url: scudoTg.urlPorta(login), pubblicata: tgPorta.aperta(login) },
       bot: c?.bot_username || '', gruppo: c?.chat_titolo || '',
       // i colori della pagina, per dire nel pannello come esce la prova «come la pagina»
@@ -10590,6 +10596,38 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     if (c.chat_id) await scudoTg.invito(tgConf.get(login), { salva: salvaInvito(login) }).catch(() => null);
     res.json({ ok: true, ...(await statoScudo(login)) });
   }));
+
+  // DECIDI TU (docs/TELEGRAM.md, «Decidi tu»): il si' o il no a chi aspetta
+  // in coda in Telegram. Chi gestisce lo scudo decide; la decisione la fa
+  // tg-decidi.js, una volta sola anche se arriva da due parti insieme.
+  app.post('/api/streamer/telegram/scudo/decidi', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const c = tgConf.get(login);
+    if (!c?.token) return res.status(400).json({ errore: 'prima collega il bot con il token' });
+    const decisione = String(req.body?.decisione || '');
+    if (!decidiTg.DECISIONI.includes(decisione)) return res.status(400).json({ errore: 'decisione sconosciuta' });
+    const r = await decidiTg.decidi(c, { chatId: String(req.body?.chat || ''), userId: String(req.body?.id || ''), decisione, da: 'pannello' });
+    res.json({ ok: true, esito: r.esito, ...(await statoScudo(login)) });
+  }));
+  // Un'ondata di richieste (cento account che premono «Non riesco a vederla»)
+  // si rifiuta con un tasto solo, una per una e con le stesse regole.
+  app.post('/api/streamer/telegram/scudo/rifiuta-tutte', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const c = tgConf.get(login);
+    if (!c?.token) return res.status(400).json({ errore: 'prima collega il bot con il token' });
+    let rifiutate = 0;
+    for (const r of tgScudo.daDecidere(login, 100)) {
+      const x = await decidiTg.decidi(c, { chatId: r.chat_id, userId: r.tg_user_id, decisione: 'rifiuta', da: 'pannello' });
+      if (x.esito === 'bocciata' || x.esito === 'sparita') rifiutate++;
+    }
+    res.json({ ok: true, rifiutate, ...(await statoScudo(login)) });
+  }));
+  // Chi aspetta: il pannello lo rilegge ogni tanto, per il puntino e per
+  // l'elenco. Solo il database: niente chiamate a Telegram a ogni giro.
+  app.get('/api/streamer/telegram/da-decidere', requireLogin, (req, res) => {
+    const login = currentUser(req).login;
+    res.json({ n: tgScudo.quanteDaDecidere(login), lista: elencoDaDecidere(login) });
+  });
 
   // L'ANTEPRIMA DELLA PORTA nel pannello: «Entra» fa la prova vera, con una
   // prova tenuta in memoria e un Telegram che non chiama nessuno. Sono gli
@@ -10825,6 +10863,12 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
         return;
       }
       if (req.body?.callback_query) {
+        // il si' o il no del proprietario, dal messaggio in privato; ogni altro
+        // tasto e' del cancello
+        if (decidiTg.leggiTasto(req.body.callback_query.data)) {
+          decidiTg.premuto(conf, req.body.callback_query).catch((e) => log.debug('decidi:', e?.message || e));
+          return;
+        }
         cancello.premuto(conf, req.body.callback_query).catch((e) => log.debug('cancello:', e?.message || e));
         return;
       }

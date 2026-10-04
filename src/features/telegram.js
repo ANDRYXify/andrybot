@@ -100,6 +100,14 @@ export async function inviaMessaggio(token, chatId, testo, { anteprima = true, t
   return tgCall(token, 'sendMessage', { post: true, params });
 }
 
+// Riscrive un messaggio gia' mandato. Senza `tastiera` i tasti spariscono:
+// un messaggio che ha gia' avuto la sua risposta non deve offrirne un'altra.
+export async function modificaMessaggio(token, chatId, messageId, testo, { tastiera = null } = {}) {
+  const params = { chat_id: chatId, message_id: Number(messageId) || 0, text: testo, parse_mode: 'HTML', disable_web_page_preview: true };
+  if (tastiera) params.reply_markup = tastiera;
+  return tgCall(token, 'editMessageText', { post: true, params });
+}
+
 // Manda una FOTO con la sua didascalia. È la carta della diretta: si vede grande
 // nel gruppo, invece dell'anteprima del link che disegna la piattaforma ed è
 // uguale per tutti.

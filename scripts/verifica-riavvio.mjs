@@ -39,6 +39,7 @@ const DECISO = [
   ['features/penitenze.js', 'attive', 'resta', 'il premio a punti canale e\' gia\' stato pagato: la sfida non puo\' sparire a meta\''],
   ['features/antibot.js', 'assetti', 'resta', 'la serranda: quello che il bot ha chiuso su Twitch va riaperto, il livello di allarme no'],
   ['features/antibot.js', 'ritmi', 'resta', 'il ritmo del canale si impara in trenta follow, e in memoria non ci arrivava mai'],
+  ['features/tg-decidi.js', '_finestre', 'volatile', 'il tetto ai messaggi «decidi tu» in privato: dopo un riavvio si riparte da zero, e al peggio arriva qualche messaggio in piu\'. Le richieste stanno nel database'],
   ['features/antibot.js', 'avvisati', 'volatile', 'a chi l\'avviso del trattenimento e\' gia\' stato detto: dopo un riavvio, al massimo, lo si ridice una volta'],
   ['features/modalita-chat.js', 'sveglie', 'volatile', 'le sveglie delle modalita\' a tempo: la fine sta nel database (statoVivo), e all\'avvio si ripuntano da li\''],
   ['features/attese-giochi.js', 'fine', 'volatile', 'le attese fra due giocate: un riavvio le azzera, e al peggio si gioca un po\' prima. Nessuna tiene monete'],

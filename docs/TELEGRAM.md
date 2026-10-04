@@ -284,11 +284,66 @@ cancello: una porta sola per persona (`tg-ingresso.daRichiesta`,
   canale e vecchio al massimo un'ora (`tgapp.validaInitDataCon`). Dal corpo
   delle chiamate arrivano ai gesti solo i quattro campi della pagina.
 - **Chi non riesce a vedere la prova non viene rifiutato.** «Non riesco a
-  vederla» manda sempre la richiesta agli amministratori.
+  vederla» lascia sempre la richiesta a chi gestisce il gruppo («Decidi tu»,
+  qui sotto).
 - **Chi e' rifiutato aspetta mezz'ora** prima di poter riprovare.
 - **Dati minimi.** Id Telegram, nome, esito e ora; la bio non si legge. Le righe
   si potano dopo sette giorni, e lo scarico dei dati non le porta
   (`esporta.NEGATE`).
+
+### Decidi tu: il si' e il no dal pannello
+
+Ogni strada che finisce «agli amministratori» (la scelta «Decido io», «Non
+riesco a vederla», la pagina che non si apre, il privato che non parte, il
+link «decidi tu» della porta) lascia in Telegram una **richiesta di ingresso
+in coda**: chi l'ha fatta ha premuto il tasto di Telegram per chiedere di
+entrare, non e' nel gruppo, non legge niente e non puo' fare niente se non
+aspettare. Prima la vedeva solo chi apriva la lista delle richieste dentro
+Telegram, e lo streamer non sapeva che c'era (`src/features/tg-decidi.js`).
+
+Scartato: farla entrare muta, col cancello. Un membro muto **legge** il
+gruppo, quindi «aspetta senza poter fare niente» non sarebbe vero, e cadrebbe
+«nessuno entra senza passa».
+
+- **Cos'e' una richiesta da decidere.** Una riga dello scudo con
+  `stato='admin'` e `via=''`: una persona vera con la sua richiesta in coda.
+  Le prove della porta (`via='web'`) non lo sono mai.
+- **Una decisione sola.** `tgScudo.decidi` passa da `admin` a un esito nella
+  stessa istruzione: pannello, messaggio in privato e un amministratore in
+  Telegram che arrivano insieme non danno due esiti. La riga si segna PRIMA
+  di dirlo a Telegram, come ogni esito dello scudo.
+- **Telegram che non risponde non perde niente.** La riga torna `admin` com'era
+  (`riapri`): la decisione non c'e' stata, si puo' rifare.
+- **Telegram che non ha piu' la richiesta lo dice.** `HIDE_REQUESTER_MISSING`
+  (ritirata, o rifiutata da un amministratore dentro Telegram, che a noi non
+  arriva) diventa `sparita`; `USER_ALREADY_PARTICIPANT` diventa `dentro`.
+  Un amministratore che la fa entrare in Telegram chiude la riga col
+  `chat_member` (`entrataDaTelegram`), subito.
+- **Chi e' rifiutato aspetta mezz'ora**, contata dalla decisione (`fine`), come
+  dopo una prova non superata.
+- **Dove lo si sa.** Nel pannello: `tgDaDecidere` nello stato (il puntino sulla
+  voce «Telegram» e un avviso all'apertura), la carta in cima alla scheda,
+  l'elenco nella carta dello scudo con «Fai entrare», «Rifiuta» e «Rifiuta
+  tutte», e un giro ogni minuto (`/api/streamer/telegram/da-decidere`) che
+  legge solo il database. In privato su Telegram, se il proprietario ha
+  collegato la chat e non l'ha spenta: un messaggio coi due tasti, il nome che
+  apre il profilo, riscritto con l'esito da qualunque parte arrivi la
+  decisione.
+- **I tasti in privato valgono solo per il proprietario**, nella sua chat col
+  bot (`owner_tg_id`, sia chi preme sia la chat). A ogni pressione si risponde.
+- **Un tetto ai messaggi.** Al massimo cinque in dieci minuti per canale, poi
+  uno solo che dice dove sono le altre. Si tiene in memoria: dopo un riavvio si
+  riparte da zero, e il peggio e' qualche messaggio in piu'.
+- **Chi decide nel pannello** e' chi gestisce lo scudo (`requireLogin`, come le
+  sue rotte): il proprietario e i moderatori del pannello.
+- **Dati.** Niente di nuovo da chi chiede. Le righe che aspettano non si
+  potano dopo una settimana come le altre: restano finche' qualcuno decide, al
+  massimo un mese.
+
+Prove: `test/unita/tg-decidi.test.mjs` (le decisioni, le gare, Telegram che
+non risponde o non ha piu' la richiesta, i tasti in privato, il tetto, dove
+nascono le richieste, la potatura) e `test/contratto/tg-scudo-cablaggio.test.mjs`
+(il tasto in privato prima del cancello, le rotte, il numero nello stato).
 
 ### La prova: il codice sta solo nel movimento
 
@@ -361,9 +416,9 @@ cache, non si indicizza, non manda referrer.
     fila per prova): una prova superata fa entrare al massimo una persona. Se
     Telegram non lo da', la prova resta superata e la pagina lo richiede
     («link»); un link scaduto non si rifa', si rifa' la prova;
-  - **agli amministratori** (la scelta «la lascio agli amministratori», o «Non
-    riesco a vederla»): un link che chiede l'approvazione. La richiesta che ne
-    arriva va in coda, senza pagina: decidono loro;
+  - **decidi tu** (la scelta «Decido io», o «Non riesco a vederla»): un link
+    che chiede l'approvazione. La richiesta che ne arriva va in coda, senza
+    pagina, e aspetta il si' o il no («Decidi tu», qui sopra);
   - **no**, o **pagina lasciata scadere**: nessuna chiamata a Telegram. Una
     pagina dimenticata aperta non manda nessuno dagli amministratori.
 - **Il bot riconosce i suoi link.** Chi entra dal link personale lo consuma

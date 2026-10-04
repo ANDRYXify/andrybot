@@ -123,3 +123,28 @@ test('la Mini App si apre dentro Telegram, e il sito sa che quelle strade sono s
   assert.match(pref, /'\/api\/tg-scudo\/'/);
   assert.match(pref, /'\/api\/tg-porta\/'/);
 });
+
+// DECIDI TU (docs/TELEGRAM.md, «Decidi tu»): i fili della decisione.
+//  · il tasto del messaggio in privato va alla decisione PRIMA del cancello,
+//    e ogni altro tasto resta del cancello;
+//  · decide chi gestisce lo scudo (requireLogin, come lo scudo), solo con le
+//    due decisioni che esistono, e sempre «dal pannello»;
+//  · il pannello sa quante aspettano, dallo stato e da un giro leggero che
+//    legge solo il database.
+test('decidi tu: il tasto in privato, le rotte del pannello, il numero che aspetta', () => {
+  const w = tratto(SRV, "app.post('/tg/:secret'", '\n  }));');
+  const tasti = tratto(w, 'if (req.body?.callback_query) {', 'const msg = ');
+  const decidi = tasti.indexOf('decidiTg.premuto(conf, req.body.callback_query)');
+  const cancello = tasti.indexOf('cancello.premuto(conf, req.body.callback_query)');
+  assert.ok(decidi > 0 && cancello > decidi, 'prima la decisione, poi il cancello');
+  assert.match(tasti.slice(0, cancello), /if \(decidiTg\.leggiTasto\(req\.body\.callback_query\.data\)\) \{[\s\S]*?return;\n\s*\}/, 'solo i tasti suoi, e poi si esce');
+  const una = tratto(SRV, "app.post('/api/streamer/telegram/scudo/decidi', requireLogin,", '\n  }));');
+  assert.match(una, /if \(!decidiTg\.DECISIONI\.includes\(decisione\)\) return res\.status\(400\)/);
+  assert.match(una, /da: 'pannello'/);
+  const tutte = tratto(SRV, "app.post('/api/streamer/telegram/scudo/rifiuta-tutte', requireLogin,", '\n  }));');
+  assert.match(tutte, /decisione: 'rifiuta'/);
+  const giro = tratto(SRV, "app.get('/api/streamer/telegram/da-decidere', requireLogin,", '\n  });');
+  assert.ok(!/telegram\./.test(giro), 'il giro del pannello non chiama Telegram');
+  assert.match(SRV, /tgDaDecidere: tgScudo\.quanteDaDecidere\(user\.login\)/);
+  assert.match(tratto(SRV, '  async function statoScudo(login) {', '\n  }\n'), /daDecidere: elencoDaDecidere\(login\)/);
+});

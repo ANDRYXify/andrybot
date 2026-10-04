@@ -382,6 +382,7 @@ async function caricaStato() {
   esitoAcquistoDaIndirizzo();
   esitoPermessiDaIndirizzo();
   esitoPostaDaIndirizzo();
+  avvisaDaDecidere();
   avvisaRapporti();
   collegaRegiaRicordata();
   _mortiRiavvia();
@@ -787,6 +788,30 @@ function invito() {
   f.showModal();
 }
 
+const _testoDaDecidere = (n) => (n === 1
+  ? L('Qualcuno chiede di entrare nel tuo gruppo Telegram: decidi tu, nella scheda Telegram.', 'Someone is asking to join your Telegram group: you decide, in the Telegram tab.', 'Alguien pide entrar en tu grupo de Telegram: decides tú, en la pestaña Telegram.')
+  : L(`${n} persone chiedono di entrare nel tuo gruppo Telegram: decidi tu, nella scheda Telegram.`, `${n} people are asking to join your Telegram group: you decide, in the Telegram tab.`, `${n} personas piden entrar en tu grupo de Telegram: decides tú, en la pestaña Telegram.`));
+let _avvisatoDaDecidere = false;
+let _giroDaDecidere = 0;
+function avvisaDaDecidere() {
+  if (!_avvisatoDaDecidere && stato?.tgDaDecidere > 0 && schedaAttiva !== 'telegram') {
+    _avvisatoDaDecidere = true;
+    toast(_testoDaDecidere(stato.tgDaDecidere));
+  }
+  if (_giroDaDecidere || DEMO || !stato?.telegram?.configurato) return;
+  _giroDaDecidere = setInterval(() => {
+    if (document.hidden) return;
+    api('/api/streamer/telegram/da-decidere').then((r) => {
+      const n = Number(r?.n) || 0;
+      const prima = Number(stato?.tgDaDecidere) || 0;
+      if (SCUDO_TG.d) { SCUDO_TG.d.daDecidere = r.lista || []; disegnaDaDecidere(); }
+      if (n === prima) return;
+      stato.tgDaDecidere = n;
+      rinfrescaPuntino('telegram');
+      if (n > prima && schedaAttiva !== 'telegram') toast(_testoDaDecidere(n));
+    }).catch(() => {});
+  }, 60_000);
+}
 let _avvisatoRapporti = false;
 function avvisaRapporti() {
   if (_avvisatoRapporti || !(stato?.rapportiNuovi > 0) || schedaAttiva === 'dirette' || stato?.user?.role !== 'proprietario') return;
@@ -866,7 +891,7 @@ function statoDemo() {
     identita: 'andryx_demo', identitaDisplay: 'Andryx',
     tier: 'community', stripeAttivo: false,
     linguaChat: L('it', 'en', 'es'),
-    rapportiNuovi: 1, postaDisponibile: true, inviti: [],
+    rapportiNuovi: 1, tgDaDecidere: 2, postaDisponibile: true, inviti: [],
     mieiCanali: _DEMO_CANALI,
     gestisce: { canale: ctx.canale, streamer: ctx.display, nome: ctx.canale },
     indirizzo: 'https://www.twitch.tv/' + ctx.canale,
@@ -1292,6 +1317,8 @@ function apiDemo(percorso, opzioni = {}) {
   if (via.startsWith('/api/streamer/moduli') && metodo !== 'GET' && !via.endsWith('/prova')) return Promise.resolve(_demoModuli(metodo, via, opzioni.body || {}));
   if (via.startsWith('/api/streamer/negozio')) return Promise.resolve(_demoNegozio(metodo, via, opzioni.body));
   if (via === '/api/streamer/telegram/scudo') return Promise.resolve(_demoScudoTg(metodo, opzioni.body));
+  if (via === '/api/streamer/telegram/scudo/decidi' || via === '/api/streamer/telegram/scudo/rifiuta-tutte') return Promise.resolve(_demoDecidiTg(via, opzioni.body));
+  if (via === '/api/streamer/telegram/da-decidere') return Promise.resolve({ n: _demoDaDecidere().length, lista: _demoDaDecidere() });
   if (_DEMO_ANTEPRIMA[via]) return _demoAnteprima(_DEMO_ANTEPRIMA[via], opzioni.body);
   const pan = /^\/api\/paginapannello\/([a-z0-9-]{1,24})(\/anteprima)?$/.exec(via);
   if (pan) return pan[2] ? _demoAnteprima('pannello', opzioni.body) : Promise.resolve(_demoPaginaPannello(metodo, pan[1], opzioni.body || {}));
@@ -1508,6 +1535,24 @@ function _demoAnteprima(quale, pagina) {
       telegram: { gruppo: 'Community di Andryx', scudo: _demoScudoTg().scudo.attivo, regole: _demoScudoTg().scudo.regole.testo } } } });
 }
 
+function _demoDaDecidere() {
+  const ora = Date.now();
+  const tutte = [
+    { chat: '-100123', id: '501', nome: 'Sara', motivo: 'aiuto', ts: ora - 25 * 60_000 },
+    { chat: '-100123', id: '502', nome: 'Luca', motivo: 'porta', ts: ora - 3 * 3_600_000 },
+  ];
+  const decisi = new Set((_demoScritture.tgDecisi || []).map((x) => x.id));
+  return tutte.filter((x) => !decisi.has(x.id));
+}
+function _demoDecidiTg(via, corpo = {}) {
+  const lista = _demoDaDecidere();
+  const scelte = via.endsWith('/rifiuta-tutte') ? lista.map((x) => ({ ...x, decisione: 'rifiuta' })) : lista.filter((x) => x.id === String(corpo.id)).map((x) => ({ ...x, decisione: corpo.decisione }));
+  const ora = Date.now();
+  _demoScritture.tgDecisi = [...(_demoScritture.tgDecisi || []), ...scelte.map((x) => ({ id: x.id, nome: x.nome, stato: x.decisione === 'approva' ? 'dentro' : 'bocciata', ts: x.ts, fine: ora }))];
+  if (stato) stato.tgDaDecidere = _demoDaDecidere().length;
+  const esito = scelte[0] ? (scelte[0].decisione === 'approva' ? 'dentro' : 'bocciata') : 'gia';
+  return { ok: true, esito, rifiutate: via.endsWith('/rifiuta-tutte') ? scelte.length : undefined, ..._demoScudoTg() };
+}
 function _demoScudoTg(metodo, corpo) {
   const base = { attivo: true, minuti: 10, no: 'rifiuta',
     regole: { attivo: true, testo: L('Niente spam e niente insulti. Gli spoiler solo nel topic apposta. Si parla di giochi, di dirette e di quello che vi va, con rispetto.', 'No spam and no insults. Spoilers only in their own topic. We talk about games, streams and whatever you like, with respect.', 'Nada de spam ni de insultos. Los spoilers solo en su tema. Se habla de juegos, de directos y de lo que os apetezca, con respeto.') },
@@ -1523,11 +1568,13 @@ function _demoScudoTg(metodo, corpo) {
       { k: 'guardiano', ok: true, grave: false }, { k: 'porta', ok: true, grave: false }] },
     inAttesa: 1,
     recenti: [
+      ...(_demoScritture.tgDecisi || []).map((x) => ({ nome: x.nome, stato: x.stato, motivo: 'pannello', ts: x.ts, fine: x.fine })),
       { nome: 'Giulia', stato: 'attesa', motivo: '', ts: ora - 60_000, fine: 0 },
       { nome: 'Marco', stato: 'passata', motivo: 'prova', ts: ora - 3_600_000, fine: ora - 3_500_000 },
       { nome: 'nuovo_account_88', stato: 'bocciata', motivo: 'scaduta', ts: ora - 7_200_000, fine: ora - 6_600_000 },
-      { nome: 'Sara', stato: 'admin', motivo: 'aiuto', ts: ora - 86_400_000, fine: ora - 86_300_000 },
-    ],
+    ].sort((a, b) => b.ts - a.ts),
+    daDecidere: _demoDaDecidere(),
+    privato: true,
     porta: { url: 'https://telegram.socialbot.live/' + (stato?.user?.login || 'andryxify'), pubblicata: true },
     bot: 'andryx_live_bot', gruppo: 'Community di Andryx', pagina: { testo: '#f4f2f8', bg: '#0f0d14' },
   };
@@ -4770,7 +4817,24 @@ function gruppoDiScheda(id) {
 }
 
 const nuovoDi = (id) => (id === 'dirette' && stato?.rapportiNuovi > 0
-  ? `<span class="voce-nuovo" role="img" aria-label="${esc(L('rapporti nuovi', 'new reports', 'informes nuevos'))}" title="${esc(L('Rapporti nuovi', 'New reports', 'Informes nuevos'))}"></span>` : '');
+  ? `<span class="voce-nuovo" role="img" aria-label="${esc(L('rapporti nuovi', 'new reports', 'informes nuevos'))}" title="${esc(L('Rapporti nuovi', 'New reports', 'Informes nuevos'))}"></span>`
+  : id === 'telegram' && stato?.tgDaDecidere > 0
+    ? `<span class="voce-nuovo" role="img" aria-label="${esc(L('qualcuno aspetta che decidi', 'someone is waiting for you to decide', 'alguien espera a que decidas'))}" title="${esc(L('Qualcuno chiede di entrare nel gruppo', 'Someone is asking to join the group', 'Alguien pide entrar en el grupo'))}"></span>` : '');
+function rinfrescaPuntino(id) {
+  const b = document.querySelector(`#nav-drawer .drawer-voce[data-scheda="${id}"]`);
+  if (!b) return;
+  const c = b.querySelector('.voce-nuovo');
+  const html = nuovoDi(id);
+  if (html && !c) b.querySelector('span')?.insertAdjacentHTML('afterend', html);
+  if (!html && c) c.remove();
+  const g = b.closest('.drawer-grp[data-grp]');
+  const t = g?.querySelector('.drawer-grp-tit');
+  if (!t) return;
+  const ha = !!g.querySelector('.drawer-voce .voce-nuovo');
+  const gn = t.querySelector('.grp-nuovo');
+  if (ha && !gn) t.querySelector('.grp-nome')?.insertAdjacentHTML('afterend', `<span class="voce-nuovo grp-nuovo" role="img" aria-label="${esc(L('dentro c\'è qualcosa di nuovo', 'something new inside', 'hay algo nuevo dentro'))}"></span>`);
+  if (!ha && gn) gn.remove();
+}
 
 function stretto() {
   try { return !!(window.matchMedia && window.matchMedia('(max-width: 720px)').matches); } catch { return false; }
@@ -22418,7 +22482,7 @@ async function caricaDirette() {
   }));
   if (stato?.rapportiNuovi > 0) {
     stato.rapportiNuovi = 0;
-    document.querySelectorAll('.voce-nuovo').forEach((e) => e.remove());
+    rinfrescaPuntino('dirette');
     if (!DEMO) api('/api/streamer/rapporti/letti', { method: 'POST', body: {} }).catch(() => {});
   }
 }
@@ -23965,7 +24029,7 @@ const PROVA_PAROLE = () => [
   ['fattoTesto', 240, L('Superata: il testo', 'Passed: the text', 'Superada: el texto'), L('Apri Telegram ed entra nel gruppo: il link è tuo…', 'Open Telegram and join the group: the link is yours…', 'Abre Telegram y entra en el grupo: el enlace es tuyo…')],
   ['apri', 40, L('Il tasto per aprire Telegram', 'The button that opens Telegram', 'El botón que abre Telegram'), L('Apri Telegram', 'Open Telegram', 'Abrir Telegram')],
   ['noTesto', 240, L('Non superata: il testo', 'Not passed: the text', 'No superada: el texto'), L('La prova non è andata. Puoi rifarla da capo.', 'The check did not work out. You can take it again from the start.', 'La prueba no ha salido bien. Puedes repetirla desde el principio.')],
-  ['adminTesto', 240, L('Agli amministratori: il testo', 'To the admins: the text', 'A los administradores: el texto'), L('Apri Telegram e chiedi di entrare da qui: decidono gli amministratori.', 'Open Telegram and ask to join from here: the admins decide.', 'Abre Telegram y pide entrar desde aquí: deciden los administradores.')],
+  ['adminTesto', 240, L('Decidi tu: il testo', 'You decide: the text', 'Decides tú: el texto'), L('Apri Telegram e chiedi di entrare da qui: decide chi gestisce il gruppo.', 'Open Telegram and ask to join from here: whoever runs the group decides.', 'Abre Telegram y pide entrar desde aquí: decide quien gestiona el grupo.')],
 ];
 let _lpProvaAperta = false;
 let _lpProvaVista = '';
@@ -23981,7 +24045,7 @@ function lpProvaHtml(b, i) {
       ${vedi('apri', L('Fai la prova', 'Take the check', 'Hacer la prueba'), _bIco(ICO.occhio))}
       ${vedi('dentro', L('Superata', 'Passed', 'Superada'))}
       ${vedi('no', L('Non superata', 'Not passed', 'No superada'))}
-      ${vedi('admin', L('Agli amministratori', 'To the admins', 'A los administradores'))}
+      ${vedi('admin', L('Decidi tu', 'You decide', 'Decides tú'))}
       ${vedi('chiudi', L('Torna alla pagina', 'Back to the page', 'Volver a la página'))}
     </div>
     <h4 class="spazio-sopra">${L('Le parole', 'The words', 'Las palabras')}</h4>
@@ -27845,6 +27909,11 @@ function pannelloTelegram() {
   const tg = stato.telegram || { configurato: false, gruppoOk: false, attivo: false, messaggio: '', botUsername: '', gruppo: '', pinLive: true };
   const ing = tg.ingresso || { attivo: false, minuti: 5, scaduto: 'caccia', testo: '', tasto: '', inAttesa: 0 };
   return pannello('telegram', `
+    <div class="carta" id="tg-chi-aspetta"${stato?.tgDaDecidere > 0 ? '' : ' hidden'}>
+      <h2>${_hIco(ICO.avviso)}${L('Qualcuno chiede di entrare', 'Someone is asking to join', 'Alguien pide entrar')}</h2>
+      <p id="tg-chi-aspetta-testo">${esc(_testoChiAspetta(stato?.tgDaDecidere || 0))}</p>
+      <button type="button" class="btn" id="tg-vai-decidi">${L('Vai all’elenco', 'Go to the list', 'Ir a la lista')}</button>
+    </div>
     <div class="carta" id="box-tglogin" hidden></div>
     <div class="carta">
       <h2>${_hIco(ICO.megafono)}${L('Avviso "sono in diretta" su Telegram', '"I’m live" alert on Telegram', 'Aviso "estoy en directo" en Telegram')}</h2>
@@ -27970,7 +28039,7 @@ function pannelloTelegram() {
     <div class="carta" id="tg-scudo-carta">
       <h2>${_hIco(ICO.scudo)}${L('Scudo all’ingresso', 'Entry shield', 'Escudo de entrada')}</h2>
       <p>${L('Chi vuole entrare nel gruppo passa prima da una prova: un codice che si legge solo mentre si muove, le tue regole e, se vuoi, qualche domanda. Dalla porta del gruppo la fa lì, appena preme «Entra»; chi chiede da un altro link la fa dentro Telegram, sulla stessa pagina. Finché non la supera non è nel gruppo.', 'Whoever wants to join the group first takes a check: a code you can only read while it moves, your rules and, if you want, a few questions. From the group door they take it right there, as soon as they tap «Join»; whoever asks from another link takes it inside Telegram, on the same page. Until they pass it they are not in the group.', 'Quien quiere entrar en el grupo pasa antes por una prueba: un código que solo se lee mientras se mueve, tus normas y, si quieres, unas preguntas. Desde la puerta del grupo la hace allí, en cuanto pulsa «Entrar»; quien lo pide desde otro enlace la hace dentro de Telegram, en la misma página. Hasta que no la supera no está en el grupo.')}</p>
-      <p class="suggerimento">${L('Il codice esiste solo nel movimento: ogni fotogramma da solo è rumore, quindi screenshot, foto dal telefono, Lens e i programmi che leggono le immagini non trovano niente. Chi non riesce a vederlo non viene rifiutato: la sua richiesta passa agli amministratori.', 'The code only exists in motion: each frame on its own is noise, so screenshots, phone photos, Lens and programs that read images find nothing. Whoever cannot see it is not turned away: their request goes to the admins.', 'El código solo existe en movimiento: cada fotograma por sí solo es ruido, así que las capturas, las fotos con el móvil, Lens y los programas que leen imágenes no encuentran nada. Quien no consigue verlo no es rechazado: su solicitud pasa a los administradores.')}</p>
+      <p class="suggerimento">${L('Il codice esiste solo nel movimento: ogni fotogramma da solo è rumore, quindi screenshot, foto dal telefono, Lens e i programmi che leggono le immagini non trovano niente. Chi non riesce a vederlo non viene rifiutato: la sua richiesta aspetta che decidi tu.', 'The code only exists in motion: each frame on its own is noise, so screenshots, phone photos, Lens and programs that read images find nothing. Whoever cannot see it is not turned away: their request waits for you to decide.', 'El código solo existe en movimiento: cada fotograma por sí solo es ruido, así que las capturas, las fotos con el móvil, Lens y los programas que leen imágenes no encuentran nada. Quien no consigue verlo no es rechazado: su solicitud espera a que decidas.')}</p>
       <div id="box-tg-scudo">${attesaHtml()}</div>
     </div>
 
@@ -28015,9 +28084,10 @@ const TGS_ESITI = () => ({
   attesa: L('In attesa della prova', 'Waiting for the check', 'Esperando la prueba'),
   passata: L('Ha superato la prova: è nel gruppo', 'Passed the check: in the group', 'Superó la prueba: está en el grupo'),
   bocciata: L('Rifiutata', 'Declined', 'Rechazada'),
-  admin: L('Passata agli amministratori', 'Left to the admins', 'Pasada a los administradores'),
-  dentro: L('Fatta entrare a mano da un amministratore', 'Let in by hand by an admin', 'Dejada entrar a mano por un administrador'),
+  admin: L('Aspetta che decidi tu', 'Waiting for you to decide', 'Espera a que decidas'),
+  dentro: L('Nel gruppo', 'In the group', 'En el grupo'),
   errore: L('Ha superato la prova, ma Telegram non l’ha fatta entrare', 'Passed the check, but Telegram did not let them in', 'Superó la prueba, pero Telegram no la dejó entrar'),
+  sparita: L('Non c’è più in Telegram: ritirata, o decisa lì dentro', 'No longer in Telegram: withdrawn, or decided in there', 'Ya no está en Telegram: retirada, o decidida allí dentro'),
 });
 const TGS_MOTIVI = () => ({
   prova: L('codice sbagliato', 'wrong code', 'código incorrecto'),
@@ -28026,7 +28096,79 @@ const TGS_MOTIVI = () => ({
   aiuto: L('non riusciva a vedere la prova', 'could not see the check', 'no conseguía ver la prueba'),
   pagina: L('la prova non si è aperta', 'the check did not open', 'la prueba no se abrió'),
   privato: L('il messaggio in privato non è partito', 'the private message did not go out', 'el mensaje privado no salió'),
+  porta: L('dalla porta del gruppo', 'from the group door', 'desde la puerta del grupo'),
+  admin: L('decisa da un amministratore in Telegram', 'decided by an admin in Telegram', 'decidida por un administrador en Telegram'),
+  pannello: L('decisa dal pannello', 'decided from the panel', 'decidida desde el panel'),
+  messaggio: L('decisa dal messaggio in privato', 'decided from the private message', 'decidida desde el mensaje privado'),
 });
+function _testoChiAspetta(n) {
+  return n === 1
+    ? L('Una persona aspetta che decidi se farla entrare nel gruppo.', 'One person is waiting for you to decide whether to let them into the group.', 'Una persona espera a que decidas si dejarla entrar en el grupo.')
+    : L(`${n} persone aspettano che decidi se farle entrare nel gruppo.`, `${n} people are waiting for you to decide whether to let them into the group.`, `${n} personas esperan a que decidas si dejarlas entrar en el grupo.`);
+}
+function disegnaDaDecidere() {
+  const box = document.getElementById('sc-decidi-box');
+  if (!box || !SCUDO_TG.d) return;
+  const dd = SCUDO_TG.d.daDecidere || [];
+  const cima = document.getElementById('tg-chi-aspetta');
+  if (cima) {
+    cima.hidden = !dd.length;
+    const t = document.getElementById('tg-chi-aspetta-testo');
+    if (t) t.textContent = _testoChiAspetta(dd.length);
+    const v = document.getElementById('tg-vai-decidi');
+    if (v && !v.dataset.collegato) {
+      v.dataset.collegato = '1';
+      v.addEventListener('click', () => {
+        const dove = document.getElementById('sc-decidi-box');
+        dove?.scrollIntoView({ block: 'start', behavior: _menoMoto ? 'auto' : 'smooth' });
+        dove?.querySelector('button')?.focus({ preventScroll: true });
+      });
+    }
+  }
+  const M = TGS_MOTIVI();
+  box.innerHTML = dd.length ? `<div class="sc-decidi">
+    <h3>${L('Chi aspetta che decidi tu', 'Who is waiting for you to decide', 'Quién espera a que decidas')} <span class="badge giallo">${dd.length}</span></h3>
+    <p class="suggerimento">${L('Hanno chiesto di entrare e aspettano fuori dal gruppo: non leggono niente finché non dici di sì. Chi rifiuti può chiedere di nuovo fra mezz’ora.', 'They asked to join and wait outside the group: they read nothing until you say yes. Whoever you decline can ask again in half an hour.', 'Pidieron entrar y esperan fuera del grupo: no leen nada hasta que digas que sí. Quien rechaces puede pedirlo de nuevo dentro de media hora.')}</p>
+    <ul class="lista-voci">${dd.map((r) => `<li><div class="testo-voce"><span class="domanda">${esc(r.nome || L('Senza nome', 'No name', 'Sin nombre'))}</span> <span class="meta">${esc(new Date(r.ts).toLocaleString(localePannello(), { dateStyle: 'short', timeStyle: 'short' }))}</span>${M[r.motivo] ? `<br><span class="risposta">${esc(M[r.motivo])}</span>` : ''}</div>
+      <div class="riga-flessibile"><button type="button" class="btn mini" data-sc-decidi="approva" data-chat="${esc(r.chat)}" data-id="${esc(r.id)}">${L('Fai entrare', 'Let in', 'Dejar entrar')}</button><button type="button" class="btn secondario mini" data-sc-decidi="rifiuta" data-chat="${esc(r.chat)}" data-id="${esc(r.id)}">${L('Rifiuta', 'Decline', 'Rechazar')}</button></div></li>`).join('')}</ul>
+    ${dd.length > 1 ? `<p><button type="button" class="btn secondario mini" id="sc-rifiuta-tutte">${L(`Rifiuta tutte (${dd.length})`, `Decline all (${dd.length})`, `Rechazar todas (${dd.length})`)}</button></p>` : ''}
+    <p class="suggerimento">${SCUDO_TG.d.privato
+      ? L('Ogni richiesta ti arriva anche in privato su Telegram, coi due tasti: decidi dove ti è più comodo.', 'Each request also reaches you privately on Telegram, with the two buttons: decide wherever suits you.', 'Cada solicitud te llega también en privado en Telegram, con los dos botones: decide donde te venga mejor.')
+      : L('Per riceverle anche sul telefono, collega la chat privata del bot qui sopra: ti arriva un messaggio coi due tasti.', 'To get them on your phone too, link the bot’s private chat above: you get a message with the two buttons.', 'Para recibirlas también en el teléfono, vincula arriba el chat privado del bot: te llega un mensaje con los dos botones.')}</p>
+  </div>` : '';
+  box.querySelectorAll('[data-sc-decidi]').forEach((b) => b.addEventListener('click', () => conErrore(async () => {
+    box.querySelectorAll('button').forEach((x) => { x.disabled = true; });
+    try {
+      const d = await api('/api/streamer/telegram/scudo/decidi', { method: 'POST', body: { chat: b.dataset.chat, id: b.dataset.id, decisione: b.dataset.scDecidi } });
+      _dopoDecisione(d);
+      toast(({
+        dentro: L('Fatto: è nel gruppo', 'Done: they are in the group', 'Hecho: está en el grupo'),
+        bocciata: L('Richiesta rifiutata', 'Request declined', 'Solicitud rechazada'),
+        sparita: L('Questa richiesta non c’è più in Telegram: è stata ritirata, o l’ha già decisa un amministratore lì dentro', 'This request is no longer in Telegram: it was withdrawn, or an admin already decided it in there', 'Esta solicitud ya no está en Telegram: la retiraron, o ya la decidió un administrador allí dentro'),
+        gia: L('Qualcuno l’ha già decisa', 'Someone already decided it', 'Alguien ya la decidió'),
+        riprova: L('Telegram non ha risposto: riprova fra poco', 'Telegram did not answer: try again shortly', 'Telegram no respondió: inténtalo de nuevo en un momento'),
+      })[d.esito] || L('Fatto', 'Done', 'Hecho'));
+    } finally { box.querySelectorAll('button').forEach((x) => { x.disabled = false; }); }
+  })));
+  document.getElementById('sc-rifiuta-tutte')?.addEventListener('click', () => conErrore(async () => {
+    const n = (SCUDO_TG.d.daDecidere || []).length;
+    const si = await chiediSe({ titolo: L(`Rifiuti tutte e ${n} le richieste?`, `Decline all ${n} requests?`, `¿Rechazas las ${n} solicitudes?`),
+      testo: L('Nessuna di queste persone entra. Chi era davvero dei tuoi può chiedere di nuovo fra mezz’ora.', 'None of these people get in. Anyone who really belongs can ask again in half an hour.', 'Ninguna de estas personas entra. Quien sea de verdad de los tuyos puede pedirlo de nuevo dentro de media hora.'),
+      si: L('Rifiuta tutte', 'Decline all', 'Rechazar todas'), pericolo: true });
+    if (!si) return;
+    const d = await api('/api/streamer/telegram/scudo/rifiuta-tutte', { method: 'POST', body: {} });
+    _dopoDecisione(d);
+    toast(L(`Rifiutate: ${d.rifiutate || 0}`, `Declined: ${d.rifiutate || 0}`, `Rechazadas: ${d.rifiutate || 0}`));
+  }));
+}
+function _dopoDecisione(d) {
+  SCUDO_TG.d = { ...SCUDO_TG.d, ...d, scudo: SCUDO_TG.d.scudo };
+  if (stato) stato.tgDaDecidere = (d.daDecidere || []).length;
+  rinfrescaPuntino('telegram');
+  disegnaDaDecidere();
+  const lista = document.getElementById('sc-recenti');
+  if (lista) lista.outerHTML = _tgsRecentiHtml();
+}
 const _tgsLin = (v) => { const x = v / 255; return x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4; };
 const _tgsLum = (hex) => { const h = String(hex || '').replace('#', ''); if (!/^[0-9a-f]{6}$/i.test(h)) return 0; const [r, g, b] = [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16)); return 0.2126 * _tgsLin(r) + 0.7152 * _tgsLin(g) + 0.0722 * _tgsLin(b); };
 const tgsContrasto = (a, b) => { const [x, y] = [_tgsLum(a), _tgsLum(b)].sort((p, q) => q - p); return (x + 0.05) / (y + 0.05); };
@@ -28082,19 +28224,27 @@ function _tgsDomandaHtml(q, i) {
   </fieldset>`;
 }
 
+function _tgsRecentiHtml() {
+  const d = SCUDO_TG.d, E = TGS_ESITI(), M = TGS_MOTIVI();
+  const righe = (d.recenti || []).map((r) => {
+    const perche = r.stato !== 'passata' && r.motivo && M[r.motivo] ? ` (${esc(M[r.motivo])})` : '';
+    const chi = r.nome || (r.porta ? L('Dalla porta', 'From the door', 'Desde la puerta') : '?');
+    const cosa = r.porta && r.stato === 'admin'
+      ? L('Passata a te: se chiede di entrare da Telegram, la trovi qui sopra', 'Passed to you: if they ask to join from Telegram, you will find them above', 'Pasada a ti: si pide entrar desde Telegram, la encuentras arriba')
+      : (E[r.stato] || r.stato);
+    return `<li><div class="testo-voce"><span class="domanda">${esc(chi)}</span> <span class="meta">${esc(new Date(r.ts).toLocaleString(localePannello(), { dateStyle: 'short', timeStyle: 'short' }))}</span><br><span class="risposta">${esc(cosa)}${perche}</span></div></li>`;
+  }).join('');
+  return `<div id="sc-recenti">${righe ? `<ul class="lista-voci">${righe}</ul>` : `<p class="suggerimento">${L('Ancora nessuna. Si tengono una settimana.', 'None yet. They are kept for a week.', 'Todavía ninguna. Se guardan una semana.')}</p>`}</div>`;
+}
 function disegnaScudoTg() {
   const box = document.getElementById('box-tg-scudo');
   if (!box || !SCUDO_TG.d) return;
-  const d = SCUDO_TG.d, s = SCUDO_TG.bozza, C = TGS_CONTROLLI(), E = TGS_ESITI(), M = TGS_MOTIVI();
+  const d = SCUDO_TG.d, s = SCUDO_TG.bozza, C = TGS_CONTROLLI();
   const voce = (x) => `<li class="tg-stato ${x.ok ? 'ok' : x.grave ? 'guaio' : ''}">${_bIco(x.ok ? ICO.spunta : ICO.avviso)}<span><strong>${esc(C[x.k][0])}</strong>${x.ok ? '' : `<br>${esc(C[x.k][1])}`}</span></li>`;
   const male = d.controlli.lista.filter((x) => !x.ok);
   const bene = d.controlli.lista.filter((x) => x.ok);
-  const recenti = (d.recenti || []).map((r) => {
-    const perche = r.stato !== 'passata' && r.motivo && M[r.motivo] ? ` (${esc(M[r.motivo])})` : '';
-    const chi = r.nome || (r.porta ? L('Dalla porta', 'From the door', 'Desde la puerta') : '?');
-    return `<li><div class="testo-voce"><span class="domanda">${esc(chi)}</span> <span class="meta">${esc(new Date(r.ts).toLocaleString(localePannello(), { dateStyle: 'short', timeStyle: 'short' }))}</span><br><span class="risposta">${esc(E[r.stato] || r.stato)}${perche}</span></div></li>`;
-  }).join('');
   box.innerHTML = `
+    <div id="sc-decidi-box"></div>
     ${male.length ? `<ul class="sc-controlli">${male.map(voce).join('')}</ul>` : ''}
     ${bene.length ? `<details class="sc-bene"><summary>${_bIco(ICO.spunta)}${bene.length === d.controlli.lista.length
       ? L('Tutto pronto: ogni controllo è a posto', 'All set: every check is fine', 'Todo listo: cada comprobación está en orden')
@@ -28120,11 +28270,11 @@ function disegnaScudoTg() {
         <label class="campo" for="sc-no">${L('Chi non la supera', 'Whoever does not pass it', 'Quien no la supera')}</label>
         <select id="sc-no" class="campo-largo">
           <option value="rifiuta"${s.no !== 'admin' ? ' selected' : ''}>${L('La rifiuto', 'I decline it', 'La rechazo')}</option>
-          <option value="admin"${s.no === 'admin' ? ' selected' : ''}>${L('La lascio agli amministratori', 'I leave it to the admins', 'La dejo a los administradores')}</option>
+          <option value="admin"${s.no === 'admin' ? ' selected' : ''}>${L('Decido io', 'I decide', 'Decido yo')}</option>
         </select>
       </div>
     </div>
-    <p class="suggerimento">${L('Chi è rifiutato può chiedere di nuovo fra mezz’ora. Chi preme «Non riesco a vederla» va sempre agli amministratori, mai rifiutato.', 'Whoever is declined can ask again in half an hour. Whoever taps «I can’t see it» always goes to the admins, never declined.', 'Quien es rechazado puede pedirlo de nuevo dentro de media hora. Quien pulsa «No consigo verla» siempre va a los administradores, nunca se rechaza.')}</p>
+    <p class="suggerimento">${L('Chi è rifiutato può chiedere di nuovo fra mezz’ora. Con «Decido io» la richiesta aspetta fuori dal gruppo che tu dica sì o no, qui o dal messaggio in privato. Chi preme «Non riesco a vederla» aspetta sempre la tua decisione, mai rifiutato.', 'Whoever is declined can ask again in half an hour. With «I decide» the request waits outside the group until you say yes or no, here or from the private message. Whoever taps «I can’t see it» always waits for your decision, never declined.', 'Quien es rechazado puede pedirlo de nuevo dentro de media hora. Con «Decido yo» la solicitud espera fuera del grupo a que digas sí o no, aquí o desde el mensaje privado. Quien pulsa «No consigo verla» espera siempre tu decisión, nunca rechazado.')}</p>
 
     <h3 class="spazio-sopra">${L('Le regole', 'The rules', 'Las normas')}</h3>
     <label class="riga-check"><input type="checkbox" id="sc-regole-attivo"${s.regole.attivo ? ' checked' : ''}> ${L('Chiedi di accettarle prima di entrare', 'Ask them to accept them before joining', 'Pide que las acepten antes de entrar')}</label>
@@ -28149,8 +28299,9 @@ function disegnaScudoTg() {
       : `<p class="suggerimento">${L('La porta non è ancora pubblicata: la trovi qui sotto, in «La porta del gruppo».', 'The door is not published yet: you will find it below, in «The group door».', 'La puerta aún no está publicada: la encuentras abajo, en «La puerta del grupo».')}</p>`}
 
     <h3 class="spazio-sopra">${L('Le ultime richieste', 'The latest requests', 'Las últimas solicitudes')}</h3>
-    ${recenti ? `<ul class="lista-voci">${recenti}</ul>` : `<p class="suggerimento">${L('Ancora nessuna. Si tengono una settimana.', 'None yet. They are kept for a week.', 'Todavía ninguna. Se guardan una semana.')}</p>`}`;
+    ${_tgsRecentiHtml()}`;
   collegaScudoTg();
+  disegnaDaDecidere();
 }
 
 function leggiScudoTg() {

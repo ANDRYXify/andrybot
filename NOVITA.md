@@ -43,6 +43,18 @@ comandi diversi da quelli della riga italiana.
 
 ## 2026-10-04
 
+- [importante] Chi chiede di entrare nel tuo gruppo Telegram e aspetta una decisione ora compare nel pannello: con un tasto fai entrare o rifiuti, da qui o dal messaggio in privato. [vai: telegram]
+  en: People asking to join your Telegram group and waiting for a decision now show up in the panel: one button lets them in or declines, from here or from the private message.
+  es: Quien pide entrar en tu grupo de Telegram y espera una decisión ahora aparece en el panel: con un botón decides si entra o no, desde aquí o desde el mensaje privado.
+  > Chi chiede di entrare, lo decidi tu
+  > Prima la richiesta restava in coda dentro Telegram e nessuno te lo diceva. Adesso un puntino nel menù e un avviso ti portano all'elenco, e se hai collegato la chat privata del bot arriva anche lì, coi due tasti. Chi aspetta resta fuori dal gruppo e non legge niente.
+  en> People asking to join: you decide
+  en> Before, the request sat in a queue inside Telegram and nobody told you. Now a dot in the menu and a notice take you to the list, and if you linked the bot's private chat it reaches you there too, with the two buttons. Whoever waits stays outside the group and reads nothing.
+  es> Quien pide entrar: decides tú
+  es> Antes la solicitud se quedaba en cola dentro de Telegram y nadie te lo decía. Ahora un punto en el menú y un aviso te llevan a la lista, y si vinculaste el chat privado del bot te llega también allí, con los dos botones. Quien espera se queda fuera del grupo y no lee nada.
+- Chi aspetta la tua decisione legge che decide chi gestisce il gruppo e che, se entra, il gruppo compare in Telegram: prima gli si prometteva una risposta che col no non arrivava. [vai: telegram]
+  en: Whoever waits for your decision reads that whoever runs the group decides and that, if they get in, the group shows up in Telegram: before, they were promised an answer that never came with a no.
+  es: Quien espera tu decisión lee que decide quien gestiona el grupo y que, si entra, el grupo aparece en Telegram: antes se le prometía una respuesta que con un no nunca llegaba.
 - [importante] Se trasmetti anche su Kick, la diretta su Kick entra nel rapporto della serata e nelle statistiche: Twitch e Kick insieme fanno una serata sola. [vai: dirette]
   en: If you also stream on Kick, your Kick stream goes into the evening report and the stats: Twitch and Kick together make one evening.
   es: Si también emites en Kick, tu directo en Kick entra en el informe de la noche y en las estadísticas: Twitch y Kick juntos hacen una sola noche.

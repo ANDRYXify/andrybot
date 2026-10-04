@@ -1116,6 +1116,9 @@ aggiungiColonna('telegram', 'migrato_chat', "TEXT NOT NULL DEFAULT ''");
 // la supera (una persona, una volta) o a chi va dagli amministratori.
 aggiungiColonna('tg_scudo', 'via', "TEXT NOT NULL DEFAULT ''");
 aggiungiColonna('tg_scudo', 'invito', "TEXT NOT NULL DEFAULT ''");
+// il messaggio in privato che ha detto al proprietario «decidi tu»: si
+// riscrive con l'esito, da qualunque parte arrivi la decisione
+aggiungiColonna('tg_scudo', 'avviso', "TEXT NOT NULL DEFAULT ''");
 db.exec("CREATE INDEX IF NOT EXISTS idx_tgscudo_invito ON tg_scudo(channel, invito) WHERE invito<>''");
 // Il premio in VIP non scade piu' a calendario ma a DIRETTE: un premio che
 // evapora mentre lo streamer sta fermo non e' un premio. `until` resta per i
@@ -4044,19 +4047,53 @@ export const tgScudo = {
   },
   // Le richieste da mostrare nel pannello. Una prova della porta lasciata a
   // meta' (aperta e mai finita, o scaduta) non e' una richiesta: nessuno ha
-  // chiesto di entrare. Si vedono quelle che hanno detto qualcosa.
+  // chiesto di entrare. Si vedono quelle che hanno detto qualcosa. Quelle che
+  // aspettano te stanno in un elenco a parte (daDecidere), non due volte.
   recenti(channel, limite = 20) {
     return db.prepare(`SELECT channel, chat_id, tg_user_id, nome, stato, motivo, ts, fine, via FROM tg_scudo
-      WHERE channel=? AND NOT (via='web' AND (stato='attesa' OR motivo='scaduta')) ORDER BY ts DESC LIMIT ?`)
+      WHERE channel=? AND NOT (via='web' AND (stato='attesa' OR motivo='scaduta'))
+        AND NOT (via='' AND stato='admin') ORDER BY ts DESC LIMIT ?`)
       .all(String(channel).toLowerCase(), limite | 0);
   },
   inAttesa(channel) {
     return db.prepare("SELECT COUNT(*) n FROM tg_scudo WHERE channel=? AND stato='attesa' AND via=''").get(String(channel).toLowerCase())?.n || 0;
   },
+  // LE RICHIESTE CHE DECIDI TU (docs/TELEGRAM.md, «Decidi tu»): una persona
+  // vera (via ''), con la sua richiesta in coda in Telegram, che aspetta un
+  // si' o un no. Una prova della porta (via 'web') non e' una richiesta.
+  daDecidere(channel, limite = 50) {
+    return db.prepare(`SELECT chat_id, tg_user_id, nome, titolo, motivo, ts, fine FROM tg_scudo
+      WHERE channel=? AND stato='admin' AND via='' ORDER BY fine DESC, ts DESC LIMIT ?`)
+      .all(String(channel).toLowerCase(), limite | 0);
+  },
+  quanteDaDecidere(channel) {
+    return db.prepare("SELECT COUNT(*) n FROM tg_scudo WHERE channel=? AND stato='admin' AND via=''").get(String(channel).toLowerCase())?.n || 0;
+  },
+  // Il si' o il no, una volta sola: da 'admin' a un esito, nella stessa
+  // istruzione. Pannello, messaggio in privato e un amministratore in
+  // Telegram che arrivano insieme non danno due esiti.
+  decidi(channel, chatId, userId, stato, motivo = '', ora = now()) {
+    return db.prepare(`UPDATE tg_scudo SET stato=?, motivo=?, fine=?
+      WHERE channel=? AND chat_id=? AND tg_user_id=? AND stato='admin' AND via=''`)
+      .run(String(stato), String(motivo || '').slice(0, 40), Number(ora) || now(), String(channel).toLowerCase(), String(chatId), String(userId)).changes === 1;
+  },
+  // Telegram non ha voluto (rete, permessi): la decisione non c'e' stata, e la
+  // richiesta torna da decidere com'era.
+  riapri(channel, chatId, userId, daStato, motivo = '', fine = 0) {
+    return db.prepare(`UPDATE tg_scudo SET stato='admin', motivo=?, fine=?
+      WHERE channel=? AND chat_id=? AND tg_user_id=? AND stato=? AND via=''`)
+      .run(String(motivo || '').slice(0, 40), Number(fine) || 0, String(channel).toLowerCase(), String(chatId), String(userId), String(daStato)).changes === 1;
+  },
+  segnaAvviso(channel, chatId, userId, avviso) {
+    db.prepare("UPDATE tg_scudo SET avviso=? WHERE channel=? AND chat_id=? AND tg_user_id=? AND via=''")
+      .run(String(avviso || ''), String(channel).toLowerCase(), String(chatId), String(userId));
+  },
   // le richieste finite si tengono una settimana: abbastanza per vederle nel
-  // pannello, non di piu'
-  pota(prima) {
-    return db.prepare("DELETE FROM tg_scudo WHERE stato<>'attesa' AND ts<?").run(Number(prima) || 0).changes;
+  // pannello, non di piu'. Quelle che aspettano una decisione restano finche'
+  // qualcuno decide, ma non per sempre: un mese.
+  pota(prima, primaDaDecidere = prima - 23 * 86_400_000) {
+    return db.prepare(`DELETE FROM tg_scudo WHERE stato<>'attesa' AND ts<?
+      AND NOT (stato='admin' AND via='' AND ts>=?)`).run(Number(prima) || 0, Number(primaDaDecidere) || 0).changes;
   },
 };
 

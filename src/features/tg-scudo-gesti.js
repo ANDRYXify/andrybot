@@ -37,6 +37,7 @@ import {
 } from './tg-scudo.js';
 import { testiScudo, testiPagina } from './tg-scudo-testi.js';
 import * as provaVera from './tg-scudo-prova.js';
+import { avvisa as avvisaDecidi, entrataDaTelegram } from './tg-decidi.js';
 
 const log = makeLog('tg-scudo');
 
@@ -110,6 +111,8 @@ async function chiudiE(conf, riga, decisione, motivo, { telegram, db, ora }) {
     log.debug(`#${conf.channel}: approvazione rifiutata da Telegram (${r?.errore || ''})`);
     return { chiusa: true, stato: 'errore' };
   }
+  // la richiesta resta in coda in Telegram e aspetta te: te lo si dice
+  if (stato === 'admin') await avvisaDecidi(conf, db.prendi(riga.channel, riga.chat_id, riga.tg_user_id), { telegram, db, ora }).catch(() => null);
   return { chiusa: true, stato };
 }
 
@@ -171,8 +174,9 @@ async function richiestaDallaPorta(conf, chi, d) {
   if (!p || p.chat_id !== chi.chatId || !chi.gruppo) return null;
   const persona = { channel: conf.channel, chatId: chi.chatId, userId: chi.userId, nome: chi.nome, titolo: chi.titolo, ora: d.ora() };
   if (p.stato === 'admin') {
-    d.db.finita({ ...persona, stato: 'admin', motivo: 'porta' });
+    const riga = d.db.finita({ ...persona, stato: 'admin', motivo: 'porta' });
     if (chi.queryId) await d.telegram.rispondiRichiesta(conf.token, chi.queryId, 'queue').catch(() => {});
+    await avvisaDecidi(conf, riga, d).catch(() => null);
     return { che: 'admin' };
   }
   if (p.stato === 'passata' && d.db.passa(p.channel, p.chat_id, p.tg_user_id, 'passata', 'dentro', 'porta')) {
@@ -191,6 +195,9 @@ async function richiestaDallaPorta(conf, chi, d) {
 //  · Mentre la sua richiesta era in attesa: lo ha fatto entrare un
 //    amministratore a mano. La richiesta e' finita, e la pagina, se si apre,
 //    lo dice.
+//  · Mentre la sua richiesta aspettava che decidessi tu: l'ha decisa un
+//    amministratore dentro Telegram (tg-decidi.js). La riga si chiude subito,
+//    qui; il messaggio in privato si riscrive dopo.
 export function entrato(conf, update, deps) {
   const d = _con(deps);
   const cm = update?.chat_member;
@@ -202,6 +209,12 @@ export function entrato(conf, update, deps) {
   if (p && p.chat_id === chatId && p.stato === 'passata' && d.db.passa(p.channel, p.chat_id, p.tg_user_id, 'passata', 'dentro', 'porta')) {
     d.db.finita({ channel: conf.channel, chatId, userId: String(u.id), nome: String(u.first_name || u.username || '').slice(0, 64),
       titolo: String(cm.chat.title || '').slice(0, 128), stato: 'dentro', motivo: 'porta', ora: d.ora() });
+    return true;
+  }
+  const prima = d.db.prendi(conf.channel, chatId, String(u.id));
+  if (prima?.stato === 'admin' && !prima.via) {
+    const fatto = entrataDaTelegram(conf, chatId, String(u.id), d);
+    fatto.catch(() => null);
     return true;
   }
   return d.db.chiudi(conf.channel, chatId, String(u.id), 'dentro', 'admin', d.ora());
@@ -530,11 +543,15 @@ export function memoria() {
     },
     esito(_c, _g, _u, stato, motivo = '') { if (r) Object.assign(r, { stato, motivo }); },
     scaduti() { return []; },
+    // una prova della porta non e' mai una richiesta da decidere
+    decidi() { return false; },
+    riapri() { return false; },
+    segnaAvviso() {},
   };
 }
 const fatto = async () => ({ ok: true });
 export const telegramMuto = {
-  rispondiRichiesta: fatto, approvaRichiesta: fatto, rifiutaRichiesta: fatto, mostraVerifica: fatto, inviaMessaggio: fatto,
+  rispondiRichiesta: fatto, approvaRichiesta: fatto, rifiutaRichiesta: fatto, mostraVerifica: fatto, inviaMessaggio: fatto, modificaMessaggio: fatto,
   // l'anteprima della porta mostra un link che non porta da nessuna parte
   creaInvito: async () => ({ ok: true, url: 'https://t.me/+anteprima' }),
 };
