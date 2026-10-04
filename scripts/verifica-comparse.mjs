@@ -41,6 +41,9 @@ const ROTTURE = [
   ['tendina-tardi', /✗ e niente se ne va senza disfarsi/, 'una tendina che si veste tardi: il menu del browser si vede, poi sparisce di colpo'],
   // Il cancello segue i riquadri col contorno: il pannello che lo mostra e' quello
   // delle proprieta', pieno di campi. Le righe dei livelli non ne hanno.
+  // Una riga che se ne va resta nell'elenco mentre si disfa: se fa da segno alle
+  // altre, tutte quelle dopo di lei si spostano, e il disegno le prende per nuove.
+  ['riga-segno', /✗ togliendo un elemento dai livelli/, 'chi se ne va fa da segno: le righe dopo si spostano e si ridisegnano'],
   ['pannello-di-colpo', /✗ e niente se ne va senza disfarsi[^\n]*studio, le proprieta' si arrotolano/, 'un pannello del banco si arrotola di colpo, come quando lo faceva una classe'],
 ];
 if (process.argv.includes('--selftest')) {
@@ -85,6 +88,13 @@ const rompi = async (pg) => {
       };
       Finto.prototype = Vero.prototype;
       window.MutationObserver = Finto;
+    });
+  }
+  if (ROMPI === 'riga-segno') {
+    await pg.route(/\/app\.js(\?|$)/, async (route) => {
+      const r = await route.fetch();
+      const t = (await r.text()).replace("    while (dopo?.classList.contains('esce')) dopo = dopo.nextElementSibling;\n", '');
+      await route.fulfill({ response: r, body: t });
     });
   }
   if (ROMPI === 'pannello-di-colpo') {
@@ -274,6 +284,7 @@ if (!br) { console.log('  –  saltato: manca Chromium o Playwright'); sito.chiu
 const esiti = [];
 const dice = (ok, msg, extra = '') => { esiti.push(ok); console.log(`  ${ok ? '✓' : '✗'} ${msg}${!ok && extra ? `  → ${extra}` : ''}`); };
 const eventiTutti = [];
+let righeMosse = null;
 const attesi = [];
 
 const pagina = async (url, vista, { cookie = true } = {}) => {
@@ -471,9 +482,23 @@ if (tocca('studio')) {
   await fa(pg, D, 'e si chiude', 'sparisce', clic('#ovl-liv-aggiungi'));
   // I livelli sono righe che restano se' stesse: un elemento tolto dall'overlay
   // si disfa dall'elenco, rimesso ci si disegna.
-  await pg.evaluate(() => { window.__comparse.azione = 'preparazione'; document.getElementById('ovl-livelli').scrollIntoView({ block: 'start', behavior: 'instant' }); });
+  // Si porta in vista la RIGA che se ne va, non il pannello: dopo «Aggiungi»,
+  // che sta in fondo a una ventina di righe, il pannello in vista lasciava la
+  // riga sopra lo schermo. Una riga che nessuno vede non ha niente da disfare, e
+  // il gesto passava solo perche' le righe sotto si spostavano e si ridisegnavano.
+  await pg.evaluate(() => { window.__comparse.azione = 'preparazione'; document.querySelector('#ovl-livelli [data-liv="alert"]').scrollIntoView({ block: 'center', behavior: 'instant' }); });
   await pg.waitForTimeout(600);
+  await pg.evaluate(() => {
+    const box = document.getElementById('ovl-livelli');
+    window.__righeMosse = new Set();
+    window.__righeSpia = new MutationObserver((ms) => { for (const m of ms) {
+      if (m.type === 'childList') for (const n of m.addedNodes) { if (n.classList?.contains('ovl-liv')) window.__righeMosse.add(n.dataset.liv + ' si sposta'); }
+      if (m.type === 'attributes' && m.target.classList?.contains('ovl-liv') && m.target.classList.contains('dg-in') && !/\bdg-in\b/.test(m.oldValue || '')) window.__righeMosse.add(m.target.dataset.liv + ' si ridisegna');
+    } });
+    window.__righeSpia.observe(box, { subtree: true, childList: true, attributes: true, attributeFilter: ['class'], attributeOldValue: true });
+  });
   await fa(pg, D, 'un elemento si toglie dall\'overlay', 'sparisce', clic('#ovl-livelli [data-liv="alert"] [data-occhio]'));
+  righeMosse = await pg.evaluate(() => { window.__righeSpia.disconnect(); return [...window.__righeMosse]; });
   await pg.evaluate(() => { window.__comparse.azione = 'preparazione'; document.getElementById('ovl-liv-aggiungi').click(); });
   await pg.waitForTimeout(700);
   await fa(pg, D, 'e ci si rimette', 'compare', clic('#ovl-agg [data-metti="alert"]'));
@@ -519,6 +544,7 @@ const giaFatti = comparse.filter((e) => !e.ok);
 dice(!giaFatti.length, 'niente compare senza disegnarsi', giaFatti.slice(0, 12).map(dir).join(' · '));
 const diColpo = sparizioni.filter((e) => !e.ok);
 dice(!diColpo.length, 'e niente se ne va senza disfarsi', diColpo.slice(0, 12).map(dir).join(' · '));
+if (righeMosse) dice(!righeMosse.length, 'togliendo un elemento dai livelli le altre righe restano dove sono: nessuna si sposta o si ridisegna', righeMosse.slice(0, 8).join(' · '));
 const muti = attesi.filter(([dove, azione, tipo]) => !eventiTutti.some((e) => e.dove === dove && e.azione === azione && e.tipo === tipo));
 dice(!muti.length, `ogni gesto provato fa davvero comparire o sparire qualcosa (${attesi.length} gesti)`, muti.map(([d, a, t]) => `${d}, ${a}: nessun «${t}»`).join(' · '));
 

@@ -16262,6 +16262,8 @@ function _rendiLivelli() {
 
 function _riconciliaLivelli(box, voluti) {
   const presenti = new Map([...box.querySelectorAll(':scope > .ovl-liv:not(.esce)')].map((r) => [r.dataset.liv, r]));
+  const restano = new Set(voluti.map(([k]) => k));
+  for (const [k, r] of presenti) if (!restano.has(k)) { presenti.delete(k); togli(r); }
   const stampo = document.createElement('template');
   let prima = null;
   for (const [k, html] of voluti) {
@@ -16275,11 +16277,11 @@ function _riconciliaLivelli(box, voluti) {
       for (const c of vuole) r.classList.add(c);
       if (r.innerHTML !== nuova.innerHTML) r.innerHTML = nuova.innerHTML;
     } else r = nuova;
-    const dopo = prima ? prima.nextElementSibling : box.firstElementChild;
+    let dopo = prima ? prima.nextElementSibling : box.firstElementChild;
+    while (dopo?.classList.contains('esce')) dopo = dopo.nextElementSibling;
     if (r !== dopo) box.insertBefore(r, dopo);
     prima = r;
   }
-  for (const r of presenti.values()) togli(r);
 }
 
 const PRESA_ICO = '<circle cx="9" cy="6" r="1.2"/><circle cx="15" cy="6" r="1.2"/><circle cx="9" cy="12" r="1.2"/><circle cx="15" cy="12" r="1.2"/><circle cx="9" cy="18" r="1.2"/><circle cx="15" cy="18" r="1.2"/>';

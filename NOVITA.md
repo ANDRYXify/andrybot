@@ -115,6 +115,9 @@ comandi diversi da quelli della riga italiana.
   en> You grant them with “Grant moderation”, in the Kick row or in the moderation Chat tab. On Kick a pause counts in minutes, and in chat the bot states the one actually given. A link to your Kick channel is not spam, and the anti-bot shield stays on Twitch.
   es> Antispam y timeout también en Kick
   es> Los concedes con «Concede la moderación», en la fila de Kick o en la pestaña Chat de la moderación. En Kick la pausa se cuenta en minutos, y en el chat el bot dice la que dio de verdad. Un enlace a tu canal de Kick no es spam, y el escudo anti-bot se queda en Twitch.
+- Nell'Overlay Studio, togliendo un elemento dai livelli la sua riga si disfa dov'era e le altre restano ferme: prima tutte quelle sotto si ridisegnavano. [vai: alert]
+  en: In the Overlay Studio, when you remove an element from the layers its row unravels where it was and the others stay still: before, every row below redrew itself.
+  es: En el Overlay Studio, al quitar un elemento de las capas su fila se deshace donde estaba y las demás se quedan quietas: antes, todas las de debajo se redibujaban.
 
 ## 2026-10-03
 

@@ -514,7 +514,11 @@ test('le righe dei livelli si riconciliano per chiave, e le classi del disegno r
   assert.match(ric, /box\.querySelectorAll\(':scope > \.ovl-liv:not\(\.esce\)'\)\]\.map\(\(r\) => \[r\.dataset\.liv, r\]\)/, 'le righe si ritrovano per chiave');
   assert.match(ric, /if \(!c\.startsWith\('dg-'\) && !vuole\.has\(c\)\) r\.classList\.remove\(c\);/, 'le classi del disegno non si toccano');
   assert.match(ric, /if \(r\.innerHTML !== nuova\.innerHTML\) r\.innerHTML = nuova\.innerHTML;/, 'il dentro cambia solo se e\' cambiato');
-  assert.match(ric, /for \(const r of presenti\.values\(\)\) togli\(r\);/, 'una riga che se ne va si disfa');
+  assert.match(ric, /for \(const \[k, r\] of presenti\) if \(!restano\.has\(k\)\) \{ presenti\.delete\(k\); togli\(r\); \}/, 'una riga che se ne va si disfa');
+  // E se ne va PRIMA che le altre si mettano in fila, e mentre si disfa non fa da
+  // segno: se no ogni riga dopo di lei si sposta, e il disegno la prende per nuova.
+  assert.ok(ric.indexOf('togli(r)') < ric.indexOf('insertBefore'), 'chi se ne va se ne va prima');
+  assert.match(ric, /while \(dopo\?\.classList\.contains\('esce'\)\) dopo = dopo\.nextElementSibling;/, 'chi se ne va non fa da segno alle righe che restano');
   const rendi = funzioneApp('_rendiLivelli');
   assert.ok(rendi.includes('_riconciliaLivelli(box, qui.map((l, i) => [l.k, righe[i]]));'));
   assert.doesNotMatch(rendi, /box\.innerHTML = righe/, 'la lista non si rifa\' da capo');
