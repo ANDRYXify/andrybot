@@ -804,7 +804,7 @@ function avvisaDaDecidere() {
     api('/api/streamer/telegram/da-decidere').then((r) => {
       const n = Number(r?.n) || 0;
       const prima = Number(stato?.tgDaDecidere) || 0;
-      if (SCUDO_TG.d) { SCUDO_TG.d.daDecidere = r.lista || []; disegnaDaDecidere(); }
+      if (SCUDO_TG.d) { SCUDO_TG.d.daDecidere = r.lista || []; SCUDO_TG.d.daDecidereTotale = n; disegnaDaDecidere(); }
       if (n === prima) return;
       stato.tgDaDecidere = n;
       rinfrescaPuntino('telegram');
@@ -28110,11 +28110,12 @@ function disegnaDaDecidere() {
   const box = document.getElementById('sc-decidi-box');
   if (!box || !SCUDO_TG.d) return;
   const dd = SCUDO_TG.d.daDecidere || [];
+  const tot = Math.max(dd.length, Number(SCUDO_TG.d.daDecidereTotale) || 0);
   const cima = document.getElementById('tg-chi-aspetta');
   if (cima) {
-    cima.hidden = !dd.length;
+    cima.hidden = !tot;
     const t = document.getElementById('tg-chi-aspetta-testo');
-    if (t) t.textContent = _testoChiAspetta(dd.length);
+    if (t) t.textContent = _testoChiAspetta(tot);
     const v = document.getElementById('tg-vai-decidi');
     if (v && !v.dataset.collegato) {
       v.dataset.collegato = '1';
@@ -28127,11 +28128,12 @@ function disegnaDaDecidere() {
   }
   const M = TGS_MOTIVI();
   box.innerHTML = dd.length ? `<div class="sc-decidi">
-    <h3>${L('Chi aspetta che decidi tu', 'Who is waiting for you to decide', 'Quién espera a que decidas')} <span class="badge giallo">${dd.length}</span></h3>
+    <h3>${L('Chi aspetta che decidi tu', 'Who is waiting for you to decide', 'Quién espera a que decidas')} <span class="badge giallo">${tot}</span></h3>
     <p class="suggerimento">${L('Hanno chiesto di entrare e aspettano fuori dal gruppo: non leggono niente finché non dici di sì. Chi rifiuti può chiedere di nuovo fra mezz’ora.', 'They asked to join and wait outside the group: they read nothing until you say yes. Whoever you decline can ask again in half an hour.', 'Pidieron entrar y esperan fuera del grupo: no leen nada hasta que digas que sí. Quien rechaces puede pedirlo de nuevo dentro de media hora.')}</p>
     <ul class="lista-voci">${dd.map((r) => `<li><div class="testo-voce"><span class="domanda">${esc(r.nome || L('Senza nome', 'No name', 'Sin nombre'))}</span> <span class="meta">${esc(new Date(r.ts).toLocaleString(localePannello(), { dateStyle: 'short', timeStyle: 'short' }))}</span>${M[r.motivo] ? `<br><span class="risposta">${esc(M[r.motivo])}</span>` : ''}</div>
       <div class="riga-flessibile"><button type="button" class="btn mini" data-sc-decidi="approva" data-chat="${esc(r.chat)}" data-id="${esc(r.id)}">${L('Fai entrare', 'Let in', 'Dejar entrar')}</button><button type="button" class="btn secondario mini" data-sc-decidi="rifiuta" data-chat="${esc(r.chat)}" data-id="${esc(r.id)}">${L('Rifiuta', 'Decline', 'Rechazar')}</button></div></li>`).join('')}</ul>
-    ${dd.length > 1 ? `<p><button type="button" class="btn secondario mini" id="sc-rifiuta-tutte">${L(`Rifiuta tutte (${dd.length})`, `Decline all (${dd.length})`, `Rechazar todas (${dd.length})`)}</button></p>` : ''}
+    ${tot > dd.length ? `<p class="suggerimento">${L(`Qui vedi le ${dd.length} più recenti su ${tot}: quando decidi, arrivano le altre.`, `Here you see the ${dd.length} most recent out of ${tot}: as you decide, the others come up.`, `Aquí ves las ${dd.length} más recientes de ${tot}: a medida que decides, llegan las demás.`)}</p>` : ''}
+    ${tot > 1 ? `<p><button type="button" class="btn secondario mini" id="sc-rifiuta-tutte">${L(`Rifiuta tutte (${tot})`, `Decline all (${tot})`, `Rechazar todas (${tot})`)}</button></p>` : ''}
     <p class="suggerimento">${SCUDO_TG.d.privato
       ? L('Ogni richiesta ti arriva anche in privato su Telegram, coi due tasti: decidi dove ti è più comodo.', 'Each request also reaches you privately on Telegram, with the two buttons: decide wherever suits you.', 'Cada solicitud te llega también en privado en Telegram, con los dos botones: decide donde te venga mejor.')
       : L('Per riceverle anche sul telefono, collega la chat privata del bot qui sopra: ti arriva un messaggio coi due tasti.', 'To get them on your phone too, link the bot’s private chat above: you get a message with the two buttons.', 'Para recibirlas también en el teléfono, vincula arriba el chat privado del bot: te llega un mensaje con los dos botones.')}</p>
@@ -28151,19 +28153,22 @@ function disegnaDaDecidere() {
     } finally { box.querySelectorAll('button').forEach((x) => { x.disabled = false; }); }
   })));
   document.getElementById('sc-rifiuta-tutte')?.addEventListener('click', () => conErrore(async () => {
-    const n = (SCUDO_TG.d.daDecidere || []).length;
+    const n = Math.max((SCUDO_TG.d.daDecidere || []).length, Number(SCUDO_TG.d.daDecidereTotale) || 0);
     const si = await chiediSe({ titolo: L(`Rifiuti tutte e ${n} le richieste?`, `Decline all ${n} requests?`, `¿Rechazas las ${n} solicitudes?`),
       testo: L('Nessuna di queste persone entra. Chi era davvero dei tuoi può chiedere di nuovo fra mezz’ora.', 'None of these people get in. Anyone who really belongs can ask again in half an hour.', 'Ninguna de estas personas entra. Quien sea de verdad de los tuyos puede pedirlo de nuevo dentro de media hora.'),
       si: L('Rifiuta tutte', 'Decline all', 'Rechazar todas'), pericolo: true });
     if (!si) return;
     const d = await api('/api/streamer/telegram/scudo/rifiuta-tutte', { method: 'POST', body: {} });
     _dopoDecisione(d);
-    toast(L(`Rifiutate: ${d.rifiutate || 0}`, `Declined: ${d.rifiutate || 0}`, `Rechazadas: ${d.rifiutate || 0}`));
+    const restano = Number(d.daDecidereTotale) || 0;
+    toast(restano
+      ? L(`Rifiutate: ${d.rifiutate || 0}. Ne restano ${restano}: premi di nuovo «Rifiuta tutte».`, `Declined: ${d.rifiutate || 0}. ${restano} left: press «Decline all» again.`, `Rechazadas: ${d.rifiutate || 0}. Quedan ${restano}: pulsa de nuevo «Rechazar todas».`)
+      : L(`Rifiutate: ${d.rifiutate || 0}`, `Declined: ${d.rifiutate || 0}`, `Rechazadas: ${d.rifiutate || 0}`));
   }));
 }
 function _dopoDecisione(d) {
   SCUDO_TG.d = { ...SCUDO_TG.d, ...d, scudo: SCUDO_TG.d.scudo };
-  if (stato) stato.tgDaDecidere = (d.daDecidere || []).length;
+  if (stato) stato.tgDaDecidere = Math.max((d.daDecidere || []).length, Number(d.daDecidereTotale) || 0);
   rinfrescaPuntino('telegram');
   disegnaDaDecidere();
   const lista = document.getElementById('sc-recenti');

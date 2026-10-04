@@ -146,5 +146,7 @@ test('decidi tu: il tasto in privato, le rotte del pannello, il numero che aspet
   const giro = tratto(SRV, "app.get('/api/streamer/telegram/da-decidere', requireLogin,", '\n  });');
   assert.ok(!/telegram\./.test(giro), 'il giro del pannello non chiama Telegram');
   assert.match(SRV, /tgDaDecidere: tgScudo\.quanteDaDecidere\(user\.login\)/);
-  assert.match(tratto(SRV, '  async function statoScudo(login) {', '\n  }\n'), /daDecidere: elencoDaDecidere\(login\)/);
+  const st = tratto(SRV, '  async function statoScudo(login) {', '\n  }\n');
+  assert.match(st, /daDecidere: elencoDaDecidere\(login\)/);
+  assert.match(st, /daDecidereTotale: tgScudo\.quanteDaDecidere\(login\)/, 'il numero vero, anche oltre quelle elencate');
 });

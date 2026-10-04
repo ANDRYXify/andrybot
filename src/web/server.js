@@ -10572,6 +10572,7 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
       recenti: tgScudo.recenti(login, 20).map((r) => ({ nome: r.nome, stato: r.stato, motivo: r.motivo, ts: r.ts, fine: r.fine, porta: r.via === 'web' })),
       // chi aspetta che decidi tu (tg-decidi.js), e se te lo si dice anche in privato
       daDecidere: elencoDaDecidere(login),
+      daDecidereTotale: tgScudo.quanteDaDecidere(login),
       privato: !!(c?.token && c.owner_tg_id && (c.dm_modo || 'me') !== 'off'),
       porta: { url: scudoTg.urlPorta(login), pubblicata: tgPorta.aperta(login) },
       bot: c?.bot_username || '', gruppo: c?.chat_titolo || '',
@@ -10616,6 +10617,7 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     const c = tgConf.get(login);
     if (!c?.token) return res.status(400).json({ errore: 'prima collega il bot con il token' });
     let rifiutate = 0;
+    // a blocchi di cento: un'ondata piu' grande si finisce premendo di nuovo
     for (const r of tgScudo.daDecidere(login, 100)) {
       const x = await decidiTg.decidi(c, { chatId: r.chat_id, userId: r.tg_user_id, decisione: 'rifiuta', da: 'pannello' });
       if (x.esito === 'bocciata' || x.esito === 'sparita') rifiutate++;

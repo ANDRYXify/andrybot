@@ -55,6 +55,9 @@ comandi diversi da quelli della riga italiana.
 - Chi aspetta la tua decisione legge che decide chi gestisce il gruppo e che, se entra, il gruppo compare in Telegram: prima gli si prometteva una risposta che col no non arrivava. [vai: telegram]
   en: Whoever waits for your decision reads that whoever runs the group decides and that, if they get in, the group shows up in Telegram: before, they were promised an answer that never came with a no.
   es: Quien espera tu decisión lee que decide quien gestiona el grupo y que, si entra, el grupo aparece en Telegram: antes se le prometía una respuesta que con un no nunca llegaba.
+- La privacy ora dice che le richieste che aspettano la tua decisione restano al massimo un mese, e che il messaggio in privato porta il nome di chi chiede. [vai: telegram]
+  en: The privacy notice now says that requests waiting for your decision stay at most one month, and that the private message carries the requester's name.
+  es: La privacidad ahora dice que las solicitudes que esperan tu decisión se quedan como mucho un mes, y que el mensaje privado lleva el nombre de quien la pide.
 - [importante] Se trasmetti anche su Kick, la diretta su Kick entra nel rapporto della serata e nelle statistiche: Twitch e Kick insieme fanno una serata sola. [vai: dirette]
   en: If you also stream on Kick, your Kick stream goes into the evening report and the stats: Twitch and Kick together make one evening.
   es: Si también emites en Kick, tu directo en Kick entra en el informe de la noche y en las estadísticas: Twitch y Kick juntos hacen una sola noche.

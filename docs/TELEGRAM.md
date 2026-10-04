@@ -288,8 +288,9 @@ cancello: una porta sola per persona (`tg-ingresso.daRichiesta`,
   qui sotto).
 - **Chi e' rifiutato aspetta mezz'ora** prima di poter riprovare.
 - **Dati minimi.** Id Telegram, nome, esito e ora; la bio non si legge. Le righe
-  si potano dopo sette giorni, e lo scarico dei dati non le porta
-  (`esporta.NEGATE`).
+  si potano dopo sette giorni (quelle che aspettano una decisione dopo un
+  mese, «Decidi tu»), e lo scarico dei dati non le porta (`esporta.NEGATE`).
+  La privacy lo dice, nelle tre lingue.
 
 ### Decidi tu: il si' e il no dal pannello
 

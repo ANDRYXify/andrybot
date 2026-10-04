@@ -37,7 +37,7 @@
   <meta name="twitter:description" content="What data SocialBot collects, why, how long it keeps it, and how to download or delete it. Tokens stay encrypted on the server and never reach the browser.">
   <meta name="twitter:image" content="https://socialbot.live/icons/og.png?v=9">
   <meta name="twitter:image:alt" content="SocialBot, the bot that writes in chat under your own name, for Twitch and Kick">
-  <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebPage","@id":"https://socialbot.live/en/privacy#webpage","url":"https://socialbot.live/en/privacy","name":"Privacy and security at SocialBot","inLanguage":"en-US","isPartOf":{"@type":"WebSite","@id":"https://socialbot.live/#website","url":"https://socialbot.live/","name":"SocialBot"},"publisher":{"@type":"Organization","@id":"https://socialbot.live/#org","name":"andryxify.it","url":"https://andryxify.it"},"dateModified":"2026-10-03"}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebPage","@id":"https://socialbot.live/en/privacy#webpage","url":"https://socialbot.live/en/privacy","name":"Privacy and security at SocialBot","inLanguage":"en-US","isPartOf":{"@type":"WebSite","@id":"https://socialbot.live/#website","url":"https://socialbot.live/","name":"SocialBot"},"publisher":{"@type":"Organization","@id":"https://socialbot.live/#org","name":"andryxify.it","url":"https://andryxify.it"},"dateModified":"2026-10-04"}</script>
 </head>
 <body>
   <div class="wrap">
@@ -134,8 +134,11 @@
         <li><strong>Requests to join the Telegram group</strong>, only if the streamer turns on the shield: whoever asks to
           join first takes a check on a page. We keep the id of their Telegram account, the name they show up with, the
           group, the outcome of the check and the time; we don't read the account bio. The check is drawn on our server
-          and the code to read never leaves the server. Requests are deleted after <strong>seven days</strong> and are
-          not part of the channel's data export. If the check is taken on the <strong>group door</strong>, in the
+          and the code to read never leaves the server. Requests are deleted after <strong>seven days</strong>;
+          those waiting for the streamer's decision stay until they decide, at most <strong>one month</strong>.
+          They are not part of the channel's data export. If the streamer linked their bot's private chat, when a
+          request waits for their decision we send them there the name the requester shows up with and a link to their
+          Telegram profile, with the buttons to let them in or not. If the check is taken on the <strong>group door</strong>, in the
           browser, we use no cookies: the page gets a random code that it keeps only in memory, and we keep only its
           fingerprint, which is not enough to resume the check. The IP address is used only to limit how many checks
           start from the same connection: it stays in memory for an hour, then it is deleted. Whoever passes the check gets a
@@ -258,7 +261,7 @@
       <h2>How long we keep it</h2>
       <ul>
         <li>Chat messages: <strong>14 days</strong>.</li>
-        <li>Requests to join the Telegram group (id, name, group, outcome, time): <strong>seven days</strong>.</li>
+        <li>Requests to join the Telegram group (id, name, group, outcome, time): <strong>seven days</strong>; those waiting for the streamer's decision, until they decide and at most <strong>one month</strong>.</li>
         <li>When a person got a chat welcome: <strong>90 days</strong>; the people picked stay until the streamer removes them.</li>
         <li>Tokens: as long as the streamer stays connected (they can be revoked by disconnecting).</li>
         <li>Donations (chosen name, message, amount, time): <strong>one year</strong>.</li>
@@ -333,7 +336,7 @@
 
     <footer>
       <p><a href="/en">← Back to the dashboard</a> · <a href="https://www.andryxify.it">andryxify.it</a></p>
-      <p class="aggiornato">SocialBot, a concise and transparent privacy notice. Last updated: <time class="aggiornato-il" datetime="2026-10-03">October 3, 2026</time>.</p>
+      <p class="aggiornato">SocialBot, a concise and transparent privacy notice. Last updated: <time class="aggiornato-il" datetime="2026-10-04">October 4, 2026</time>.</p>
     </footer>
   </div>
 
