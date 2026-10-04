@@ -70,11 +70,28 @@ test('le schede «solo Twitch» si spengono per ogni canale che non è su Twitch
   // Prima si spegnevano solo su Kick: un canale YouTube o Discord vedeva
   // pulsanti che non facevano niente, e il testo diceva sempre «su Kick».
   const { PIATTAFORME } = await import('../../src/identita.js');
-  assert.ok(APP.includes("return !!stato?.piattaforma && stato.piattaforma !== 'twitch' && SOLO_TWITCH.includes(id);"));
+  assert.ok(APP.includes("return !!stato?.piattaforma && stato.piattaforma !== 'twitch' && SOLO_TWITCH.includes(id) && !(ANCHE_SU[id] || []).includes(stato.piattaforma);"));
+  // una scheda «anche su» e' una scheda di SOLO_TWITCH che lavora pure su
+  // un'altra piattaforma vera (le regole su Kick, con la sua moderazione)
+  const anche = APP.match(/const ANCHE_SU = (\{[^}]*\});/);
+  assert.ok(anche, 'ANCHE_SU c\'e\'');
+  const mappa = Function(`return ${anche[1]}`)();
+  const solo = [...APP.match(/const SOLO_TWITCH = \[([^\]]*)\]/)[1].matchAll(/'([a-z-]+)'/g)].map((m) => m[1]);
+  for (const [id, dove] of Object.entries(mappa)) {
+    assert.ok(solo.includes(id), `«${id}» e' in SOLO_TWITCH`);
+    for (const p of dove) assert.ok(PIATTAFORME.some((x) => x.id === p && p !== 'twitch'), `«${p}» e' una piattaforma vera, non Twitch`);
+  }
   const nomi = APP.match(/const NOME_PIATTAFORMA = \{([^}]*)\}/);
   assert.ok(nomi, 'NOME_PIATTAFORMA c’è');
   for (const p of PIATTAFORME) assert.match(nomi[1], new RegExp(`\\b${p.id}: '`), `${p.id} ha il suo nome`);
   const pagina = APP.slice(APP.indexOf('function paginaSoloTwitch('), APP.indexOf('function funzioneChiusa('));
   assert.ok(!/su Kick|on Kick|en Kick/.test(pagina), 'il testo non nomina Kick a tutti');
   assert.equal((pagina.match(/\$\{esc\(dove\)\}/g) || []).length, 3, 'nomina la piattaforma vera, nelle tre lingue');
+});
+
+test('l\'avvio da\' al motore dei moduli chi modera su Kick', () => {
+  // senza, il timeout di un modulo su Kick direbbe «non lo faccio ancora» anche coi permessi
+  const idx = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '../../src/index.js'), 'utf8');
+  assert.match(idx, /import \{ moderatoreKick \} from '\.\/kick\/api\.js'/);
+  assert.match(idx, /new ModulesEngine\(\{[^)]*moderatori: \{ kick: moderatoreKick \}/);
 });

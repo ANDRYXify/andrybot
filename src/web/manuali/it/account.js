@@ -27,8 +27,8 @@ export default {
     { h3: 'Il tuo canale è su Kick' },
     { p: [
       'Compare solo se il canale che stai gestendo è su Kick. Il bot legge la tua chat di Kick e risponde lì.',
-      'Su Kick funzionano comandi, moduli, giochi e monete, gli avvisi di follow e abbonamento, l\'overlay della diretta e le notifiche social. La diretta su Kick entra nel rapporto della serata e nelle statistiche, insieme a quella su Twitch se trasmetti su tutte e due.',
-      'Restano fuori le cose che esistono solo su Twitch: la moderazione automatica, le clip, il cambio di categoria e titolo, i VIP, i punti canale e le emote 7TV. Le monete su Kick arrivano solo da chi scrive, perché Kick non dà l\'elenco di chi guarda in silenzio.',
+      'Su Kick funzionano comandi, moduli, giochi e monete, gli avvisi di follow e abbonamento, l\'overlay della diretta, le notifiche social e le parole vietate. Se concedi la moderazione su Kick funzionano anche l\'antispam e il timeout dei moduli. La diretta su Kick entra nel rapporto della serata e nelle statistiche, insieme a quella su Twitch se trasmetti su tutte e due.',
+      'Restano fuori le cose che esistono solo su Twitch: lo scudo anti-bot, le clip, il cambio di categoria e titolo, i VIP, i punti canale e le emote 7TV. Le monete su Kick arrivano solo da chi scrive, perché Kick non dà l\'elenco di chi guarda in silenzio.',
     ] },
 
     { h3: 'Le tue piattaforme' },
@@ -49,6 +49,7 @@ export default {
       ['Tasto', 'Dove', 'Cosa fa'],
       ['«Collega»', 'Kick, YouTube', 'Apre la piattaforma: accedi, autorizzi e torni qui.'],
       ['«Sistema»', 'Twitch, Kick, YouTube', 'Rifà il collegamento. Su Twitch rinnova i permessi, come «Ricollega i permessi» della scheda «Stato». Su YouTube dà il permesso nuovo per la chat.'],
+      ['«Concedi la moderazione»', 'Kick', 'Ricollega Kick chiedendo anche i permessi di moderazione: con quelli l\'antispam toglie i messaggi e il timeout dei moduli mette in pausa anche nella chat di Kick. Quando li hai, la nota della riga dice «Moderazione su Kick: attiva.» e «Sistema» li tiene.'],
       ['«Riprova gli eventi»', 'Kick', 'Rifà l\'iscrizione agli eventi di Kick. Risponde «Iscritto a N eventi. Scrivi qualcosa nella tua chat Kick e ricarica.»'],
       ['Interruttore della chat', 'YouTube', 'Accende o spegne il bot nella chat delle tue dirette YouTube. Risponde «Chat YouTube accesa» o «Chat YouTube spenta». Lo usa solo il proprietario.'],
       ['«Scollega»', 'Kick, YouTube', 'Chiede «Scollego Kick?» e ricorda che il bot smette di lavorare lì finché non lo ricolleghi. Twitch non si scollega da qui.'],

@@ -97,8 +97,8 @@ import * as bossFeat from './features/boss.js';
 import { aChi } from './features/risposte.js';
 import { modalitaDi, alLavoro } from './features/quando-lavora.js';
 import { statoVivo } from './db.js';
-import { piattaformaDi } from './identita.js';
-import { tokenDi as tokenKick, collegati as kickCollegati, statoCanale as statoKick } from './kick/api.js';
+import { piattaformaDi, nomeSu } from './identita.js';
+import { tokenDi as tokenKick, collegati as kickCollegati, statoCanale as statoKick, moderatoreKick, puoModerare as puoModerareKick } from './kick/api.js';
 import * as bjFeat from './features/blackjack.js';
 import * as seguitiFeat from './features/seguiti.js';
 import * as negozio from './features/negozio.js';
@@ -1053,10 +1053,14 @@ export class BotManager {
 
   async _gestisciMessaggio(login, msg, onMessage, dire = null) {
     const parla = dire || this.vocePer(msg);
-    // Le difese qui sotto agiscono via Helix (elimina, timeout): hanno senso
-    // solo su Twitch. Su un'altra piattaforma il messaggio passa al flusso
-    // normale — meglio nessuna moderazione che una moderazione che finge.
+    // Le difese qui sotto tolgono messaggi e mettono in pausa: servono le mani
+    // di chi modera su QUELLA piattaforma (moderatoreDi). Lo scudo resta di
+    // Twitch (eta' degli account, raid, follow vengono da li'); l'antispam
+    // lavora anche su Kick, quando lo streamer ha dato i permessi di
+    // moderazione. Altrove il messaggio passa al flusso normale: meglio nessuna
+    // moderazione che una moderazione che finge.
     const suTwitch = !msg.piattaforma || msg.piattaforma === 'twitch';
+    const moderatore = this.moderatoreDi(msg);
     // 0) ANTI-BOT: un nome da follow-bot noto che scrive in chat (hate-raid) si
     // ferma subito, prima di ogni altra cosa.
     try {
@@ -1069,7 +1073,7 @@ export class BotManager {
     try { arrivo = presenze.segnaArrivo(msg); } catch (e) { log.debug(`#${login} arrivo:`, e?.message || e); }
     // 1) ANTISPAM: se è spam lo elimina e stop (il bot non "reagisce" allo spam)
     try {
-      if (suTwitch && await antispam.tryAntispam(this.helix, msg, parla)) return;
+      if (moderatore && await antispam.tryAntispam(moderatore, msg, parla, { casa: this._casaDi(login, msg) })) return;
     } catch (e) { log.error(`#${login} antispam:`, e?.message || e); }
     // 2) GIOCHI DEL SITO: se è un comando gestito dal sito, risponde e stop
     try {
@@ -1077,6 +1081,25 @@ export class BotManager {
     } catch (e) { log.error(`#${login} giochi:`, e?.message || e); }
     // 3) flusso normale
     this._elaboraMessaggio(login, msg, onMessage, parla, arrivo);
+  }
+
+  // CHI MODERA, per la piattaforma da cui arriva il messaggio: helix su
+  // Twitch, i permessi di moderazione di Kick su Kick (se lo streamer li ha
+  // dati), nessuno altrove. La forma e' la stessa (deleteMessage,
+  // timeoutUser): chi modera non sa con chi parla.
+  moderatoreDi(msg) {
+    const p = msg?.piattaforma || 'twitch';
+    if (p === 'twitch') return this.helix;
+    if (p === 'kick' && puoModerareKick(msg.channel)) return moderatoreKick;
+    return null;
+  }
+  // La casa del canale sulla piattaforma del messaggio: un link al proprio
+  // canale non e' spam. Su Kick il nome puo' non essere quello di Twitch: vale
+  // quello che il giro di Kick ha visto, e per un canale nato su Kick il suo.
+  _casaDi(login, msg) {
+    if (msg?.piattaforma !== 'kick') return [];
+    const nomi = new Set([this.kickVisto(login)?.slug, piattaformaDi(login) === 'kick' ? nomeSu(login) : ''].filter(Boolean));
+    return [...nomi].map((n) => 'kick.com/' + n);
   }
 
   // Elaborazione normale di un messaggio (chiamata solo se non gestito prima).

@@ -89,7 +89,7 @@ test('dal ponte dei Moduli non passa niente che non sia regia', async () => {
 
 test('il motore riceve il ponte dall\'avvio, il server valida l\'azione, e il ponte resta com\'era', () => {
   const idx = leggi('src/index.js');
-  assert.match(idx, /new ModulesEngine\(\{ effects, helix, regia: passoDiRegia \}\)/, 'il ponte entra nel motore come gli effetti e Helix');
+  assert.match(idx, /new ModulesEngine\(\{ effects, helix, regia: passoDiRegia[ ,]/, 'il ponte entra nel motore come gli effetti e Helix');
   const motore = leggi('src/features/modules.js');
   assert.ok(!/console\.js/.test(motore), 'il motore non importa il ponte: lo riceve');
   assert.match(motore, /case 'regia': \{[\s\S]*?await this\.regia\(ctx\.channel, passo\)/, 'l\'azione chiama la funzione ricevuta');

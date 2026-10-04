@@ -1986,7 +1986,7 @@ function _demoGet(via) {
     ] },
     '/api/streamer/piattaforme': { piattaforme: [
       { id: 'twitch', nome: 'Twitch', disponibile: true, collegato: true, account: 'andryx_demo', attivo: true, daRifare: false, azione: '/auth/permessi', note: '' },
-      { id: 'kick', nome: 'Kick', disponibile: true, collegato: true, account: 'id 448291', attivo: true, daRifare: false, azione: '/auth/kick', note: '' },
+      { id: 'kick', nome: 'Kick', disponibile: true, collegato: true, account: 'id 448291', attivo: true, daRifare: false, azione: '/auth/kick', note: '', moderazione: false, azioneModerazione: '/auth/kick?mod=1' },
       { id: 'youtube', nome: 'YouTube', disponibile: false, collegato: false, account: '', attivo: false, daRifare: false, azione: '', note: 'credenziali pronte: il collegamento arriva a breve' },
     ] },
     '/api/streamer/google-fonts': { fonts: ['Inter', 'Roboto', 'Lobster', 'Bree Serif', 'Bangers', 'Poppins', 'Oswald', 'Pacifico', 'Rubik Mono One', 'Press Start 2P', 'Caveat', 'Anton'] },
@@ -4316,8 +4316,10 @@ const NOME_ADDON = {
 const SOLO_TWITCH = ['regia', 'regole', 'scudo', 'registro', 'emote', 'sondaggi', 'penitenze'];
 const NOME_PIATTAFORMA = { twitch: 'Twitch', kick: 'Kick', youtube: 'YouTube', discord: 'Discord' };
 
+const ANCHE_SU = { regole: ['kick'] };
+
 function soloTwitch(id) {
-  return !!stato?.piattaforma && stato.piattaforma !== 'twitch' && SOLO_TWITCH.includes(id);
+  return !!stato?.piattaforma && stato.piattaforma !== 'twitch' && SOLO_TWITCH.includes(id) && !(ANCHE_SU[id] || []).includes(stato.piattaforma);
 }
 
 function schedaNonUsabile(id) {
@@ -5505,8 +5507,8 @@ function cardKickHtml() {
   if (stato?.piattaforma !== 'kick') return '';
   return `<div class="carta">
     <h2>${_hIco(ICO.fulmine)}${L('Il tuo canale è su Kick', 'Your channel is on Kick', 'Tu canal está en Kick')}</h2>
-    <p>${L('Il bot legge la tua chat di Kick e risponde lì. Funzionano i comandi, i moduli, i giochi e le monete, gli avvisi di follow e abbonamento, l’overlay della diretta e le notifiche social.', 'The bot reads your Kick chat and answers there. Commands, modules, games and coins, follow and subscription alerts, the stream overlay and social notifications all work.', 'El bot lee tu chat de Kick y responde ahí. Funcionan los comandos, los módulos, los juegos y las monedas, los avisos de follow y suscripción, el overlay del directo y las notificaciones sociales.')}</p>
-    <p class="suggerimento spazio-sopra">${L('Restano fuori le cose che sono di Twitch: la moderazione automatica, le clip, il cambio di categoria e titolo, i VIP, i punti canale e le emote 7TV. E le monete su Kick arrivano dai messaggi: l’elenco di chi sta guardando in silenzio Kick non lo dà.', 'What stays out is what belongs to Twitch: automatic moderation, clips, category and title changes, VIPs, channel points and 7TV emotes. And on Kick coins come from messages: Kick doesn’t give the list of silent viewers.', 'Queda fuera lo que es de Twitch: la moderación automática, los clips, el cambio de categoría y título, los VIP, los puntos de canal y los emotes 7TV. Y en Kick las monedas llegan de los mensajes: Kick no da la lista de quien mira en silencio.')}</p>
+    <p>${L('Il bot legge la tua chat di Kick e risponde lì. Funzionano i comandi, i moduli, i giochi e le monete, gli avvisi di follow e abbonamento, l’overlay della diretta, le notifiche social, le parole vietate e, se concedi la moderazione su Kick, l’antispam e il timeout dei moduli.', 'The bot reads your Kick chat and answers there. Commands, modules, games and coins, follow and subscription alerts, the stream overlay, social notifications and banned words all work, and if you grant moderation on Kick, so do antispam and the modules’ timeout.', 'El bot lee tu chat de Kick y responde ahí. Funcionan los comandos, los módulos, los juegos y las monedas, los avisos de follow y suscripción, el overlay del directo, las notificaciones sociales, las palabras prohibidas y, si concedes la moderación en Kick, el antispam y el timeout de los módulos.')}</p>
+    <p class="suggerimento spazio-sopra">${L('Restano fuori le cose che sono di Twitch: lo scudo anti-bot, le clip, il cambio di categoria e titolo, i VIP, i punti canale e le emote 7TV. E le monete su Kick arrivano dai messaggi: l’elenco di chi sta guardando in silenzio Kick non lo dà.', 'What stays out is what belongs to Twitch: the anti-bot shield, clips, category and title changes, VIPs, channel points and 7TV emotes. And on Kick coins come from messages: Kick doesn’t give the list of silent viewers.', 'Queda fuera lo que es de Twitch: el escudo anti-bot, los clips, el cambio de categoría y título, los VIP, los puntos de canal y los emotes 7TV. Y en Kick las monedas llegan de los mensajes: Kick no da la lista de quien mira en silencio.')}</p>
     <p class="suggerimento">${L('Se trasmetti anche su Twitch, entra con il tuo account Twitch: è un canale a sé, con il suo pannello, e lì funziona anche quello che è solo di Twitch.', 'If you also stream on Twitch, sign in with your Twitch account: it’s a channel of its own, with its own panel, and there the Twitch-only features work too.', 'Si también emites en Twitch, entra con tu cuenta de Twitch: es un canal aparte, con su propio panel, y allí funciona también lo que es solo de Twitch.')}</p>
   </div>`;
 }
@@ -29074,6 +29076,7 @@ document.addEventListener('change', (ev) => {
 function pannelloRegole() {
   const s = impostazioni();
   const a = s.antispam || {};
+  const suKick = stato?.piattaforma === 'kick';
   const sel = (v, def) => v === undefined ? def : v;
   return pannello('regole', `
     <div class="carta">
@@ -29089,9 +29092,15 @@ function pannelloRegole() {
       <p>${L('Elimina da solo lo spam e, a chi insiste, dà un timeout crescente.', 'Deletes spam on its own and gives escalating timeouts to repeat offenders.', 'Borra el spam solo y da timeouts crecientes a los reincidentes.')}
       <strong class="primo-piano">${L('Mod, VIP e broadcaster sono sempre esenti.', 'Mods, VIPs and the broadcaster are always exempt.', 'Mods, VIP y el broadcaster están siempre exentos.')}</strong></p>
       ${modTesta('chk-as-attivo', a.attivo, L('Attiva l\'antispam', 'Enable anti-spam', 'Activa el antispam'),
-        stato.moderazioneOk ? L('permessi attivi', 'permissions active', 'permisos activos') : '')}
-      ${!stato.moderazioneOk ? `<p class="suggerimento">${L('Per eliminare i messaggi servono i permessi di moderazione.', 'Deleting messages needs moderation permissions.', 'Para borrar mensajes hacen falta los permisos de moderación.')}
-        <a class="btn secondario mini" href="/auth/permessi">${L('Concedi i permessi', 'Grant permissions', 'Concede los permisos')}</a></p>` : ''}
+        (suKick ? stato.kick?.moderazione : stato.moderazioneOk) ? L('permessi attivi', 'permissions active', 'permisos activos') : '')}
+      ${suKick
+    ? (!stato.kick?.moderazione ? `<p class="suggerimento">${L('Per eliminare i messaggi su Kick servono i permessi di moderazione di Kick.', 'Deleting messages on Kick needs Kick’s moderation permissions.', 'Para borrar mensajes en Kick hacen falta los permisos de moderación de Kick.')}
+        <a class="btn secondario mini" href="/auth/kick?mod=1">${L('Concedi la moderazione', 'Grant moderation', 'Concede la moderación')}</a></p>` : '')
+    : (!stato.moderazioneOk ? `<p class="suggerimento">${L('Per eliminare i messaggi servono i permessi di moderazione.', 'Deleting messages needs moderation permissions.', 'Para borrar mensajes hacen falta los permisos de moderación.')}
+        <a class="btn secondario mini" href="/auth/permessi">${L('Concedi i permessi', 'Grant permissions', 'Concede los permisos')}</a></p>` : '')}
+      ${!suKick && stato.kick?.collegato ? `<p class="suggerimento">${stato.kick.moderazione
+    ? L('Vale anche nella chat di Kick: lì toglie i messaggi e mette in pausa con i permessi di Kick.', 'It also works in the Kick chat: there it removes messages and pauses people with Kick’s permissions.', 'Vale también en el chat de Kick: allí quita los mensajes y pausa con los permisos de Kick.')
+    : `${L('Nella chat di Kick vale solo dopo che concedi la moderazione su Kick.', 'In the Kick chat it only works once you grant moderation on Kick.', 'En el chat de Kick solo vale después de conceder la moderación en Kick.')} <a class="btn secondario mini" href="/auth/kick?mod=1">${L('Concedi la moderazione', 'Grant moderation', 'Concede la moderación')}</a>`}</p>` : ''}
 
       <div class="mod-corpo" data-legato="chk-as-attivo">
         <div class="mod-sez">
@@ -29108,7 +29117,10 @@ function pannelloRegole() {
           </div>
           <label class="campo" for="txt-as-whitelist">${L('Domini sempre permessi (uno per riga)', 'Always-allowed domains (one per line)', 'Dominios siempre permitidos (uno por línea)')}</label>
           <textarea id="txt-as-whitelist" placeholder="${L('es. youtube.com&#10;instagram.com/tuonome', 'e.g. youtube.com&#10;instagram.com/yourname', 'p. ej. youtube.com&#10;instagram.com/tunombre')}">${esc((Array.isArray(a.whitelist) ? a.whitelist : []).join('\n'))}</textarea>
-          <p class="suggerimento">${L('Il tuo canale, le clip di Twitch e andryxify.it sono già permessi.', 'Your channel, Twitch clips and andryxify.it are already allowed.', 'Tu canal, los clips de Twitch y andryxify.it ya están permitidos.')}</p>
+          <p class="suggerimento">${suKick
+            ? L('Il tuo canale su Kick, le clip di Twitch e andryxify.it sono già permessi.', 'Your Kick channel, Twitch clips and andryxify.it are already allowed.', 'Tu canal de Kick, los clips de Twitch y andryxify.it ya están permitidos.')
+            : L('Il tuo canale, le clip di Twitch e andryxify.it sono già permessi.', 'Your channel, Twitch clips and andryxify.it are already allowed.', 'Tu canal, los clips de Twitch y andryxify.it ya están permitidos.')
+              + (stato.kick?.collegato ? ' ' + L('Nella chat di Kick vale anche il tuo canale su Kick.', 'In the Kick chat your Kick channel counts too.', 'En el chat de Kick vale también tu canal de Kick.') : '')}</p>
         </div>
 
         <div class="mod-sez">
@@ -35719,6 +35731,7 @@ function rigaPiattaforma(p) {
       ? (p.azione ? `<a class="btn secondario mini" href="${esc(p.azione)}">${L('Collega', 'Connect', 'Conectar')}</a>` : '')
       : `${p.rifaiEventi ? `<button type="button" class="btn mini" data-kick-eventi>${L('Riprova gli eventi', 'Retry events', 'Reintentar eventos')}</button>` : ''}
          ${p.daRifare && !p.rifaiEventi ? `<a class="btn mini" href="${esc(p.azione)}">${L('Sistema', 'Fix', 'Arreglar')}</a>` : ''}
+         ${p.id === 'kick' && !p.moderazione && p.azioneModerazione ? `<a class="btn secondario mini" href="${esc(p.azioneModerazione)}">${L('Concedi la moderazione', 'Grant moderation', 'Concede la moderación')}</a>` : ''}
          ${p.chatDisponibile ? `<label class="interruttore mini" title="${esc(L('Il bot legge e risponde nella chat delle tue dirette YouTube', 'The bot reads and answers in your YouTube live chat', 'El bot lee y responde en el chat de tus directos de YouTube'))}">
             <input type="checkbox" data-yt-chat${p.chatAccesa ? ' checked' : ''} aria-label="${esc(L('Chat delle dirette YouTube', 'YouTube live chat', 'Chat de los directos de YouTube'))}"><span class="levetta"></span></label>` : ''}
          ${p.id !== 'twitch' ? `<button type="button" class="btn secondario mini" data-scollega="${esc(p.id)}">${L('Scollega', 'Disconnect', 'Desconectar')}</button>` : ''}`);
@@ -35728,6 +35741,9 @@ function rigaPiattaforma(p) {
     <span class="badge ${stato.cl}">${stato.txt}</span>
     ${p.note ? `<span class="pf-nota">${esc(p.note)}</span>` : ''}
     ${p.canaleAParte ? `<span class="pf-nota">${esc(_notaCanaleAParte())}</span>` : ''}
+    ${p.id === 'kick' && p.collegato ? `<span class="pf-nota">${esc(p.moderazione
+    ? L('Moderazione su Kick: attiva. L’antispam toglie i messaggi e il timeout dei moduli mette in pausa anche su Kick.', 'Moderation on Kick: on. Antispam removes messages and the modules’ timeout pauses people on Kick too.', 'Moderación en Kick: activa. El antispam quita los mensajes y el timeout de los módulos pausa también en Kick.')
+    : L('Moderazione su Kick: non concessa. Con «Concedi la moderazione» l’antispam toglie i messaggi e il timeout dei moduli mette in pausa anche su Kick.', 'Moderation on Kick: not granted. With “Grant moderation” antispam removes messages and the modules’ timeout pauses people on Kick too.', 'Moderación en Kick: no concedida. Con «Concede la moderación» el antispam quita los mensajes y el timeout de los módulos pausa también en Kick.'))}</span>` : ''}
     <span class="pf-azioni">${azione}</span>
   </li>`;
 }

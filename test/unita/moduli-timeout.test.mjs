@@ -46,19 +46,21 @@ test('il timeout arriva a chi ha scritto, per id, e mai come ban', async () => {
   assert.equal(fatti[3][1], 'id-tizio', 'senza id lo cerca per nome');
 });
 
-test('chi ha scritto su Kick o su YouTube non va a Twitch: il suo id li\' e\' un\'altra persona', async () => {
-  const { m, fatti } = motore();
-  let cercati = 0;
-  m.helix.getUserByLogin = async (login) => { cercati++; return { id: 'id-' + login }; };
+test('chi ha scritto su Kick si mette in pausa su Kick, mai su Twitch; su YouTube non c\'e\' chi modera', async () => {
+  const kick = [];
+  const helix = { timeoutUser: async (...a) => { kick.push(['twitch', ...a]); return { ok: true }; }, getUserByLogin: async () => { kick.push(['cerca']); return { id: 'x' }; } };
+  const m = new ModulesEngine({ helix, moderatori: { kick: { timeoutUser: async (...a) => { kick.push(['kick', ...a]); return { ok: true }; } } } });
   const detto = [];
-  await m.esegui(modulo(60), chat({ piattaforma: 'kick', userId: '42', staff: true }), (t) => detto.push(t));
-  await m.esegui(modulo(60), chat({ piattaforma: 'youtube', userId: 'UCabc' }), (t) => detto.push(t));
-  await m.esegui(modulo(60), chat({ piattaforma: 'kick', userId: '' }), (t) => detto.push(t));
-  assert.deepEqual([fatti.length, cercati], [0, 0], 'nessuna chiamata a Twitch, nemmeno per cercare il nome');
-  assert.equal(detto.length, 1, 'lo si dice solo allo staff');
-  assert.match(detto[0], /Su Kick il timeout/);
-  await m.esegui(modulo(60), chat({ piattaforma: 'twitch' }), () => {});
-  assert.equal(fatti.length, 1, 'su Twitch si');
+  await m.esegui(modulo(300), chat({ piattaforma: 'kick', userId: '42' }), (t) => detto.push(t));
+  assert.deepEqual(kick, [['kick', 'canale', '42', 300, 'timeout da un comando del canale']], 'a Kick, coi secondi: i minuti li fa chi parla con Kick');
+  await m.esegui(modulo(300), chat({ piattaforma: 'kick', userId: '' }), (t) => detto.push(t));
+  assert.equal(kick.length, 1, 'senza id su Kick non si cerca per nome su Twitch');
+  await m.esegui(modulo(60), chat({ piattaforma: 'youtube', userId: 'UCabc', staff: true }), (t) => detto.push(t));
+  assert.equal(kick.length, 1, 'YouTube: nessuna chiamata');
+  assert.match(detto.at(-1), /Su YouTube il timeout/);
+  const senza = new ModulesEngine({ helix, moderatori: { kick: { timeoutUser: async () => ({ ok: false, motivo: 'permesso mancante' }) } } });
+  await senza.esegui(modulo(60), chat({ piattaforma: 'kick', userId: '42', staff: true }), (t) => detto.push(t));
+  assert.match(detto.at(-1), /permessi di moderazione di Kick/, 'allo staff il rimedio di Kick, non quello di Twitch');
 });
 
 test('lo streamer non si mette in pausa: timer, voce e prova non fermano nessuno', async () => {

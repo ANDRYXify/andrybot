@@ -106,6 +106,15 @@ comandi diversi da quelli della riga italiana.
 - Nell'immagine del link di pagina link, donazioni e negozio la scritta in alto segue la lingua del canale: prima «I MIEI LINK» e «SOSTIENIMI» restavano in italiano. [vai: pagina]
   en: In the link image of your link page, donations and shop, the label at the top follows the channel language: before, “I MIEI LINK” and “SOSTIENIMI” stayed in Italian.
   es: En la imagen del enlace de tu página de enlaces, donaciones y tienda, el rótulo de arriba sigue el idioma del canal: antes «I MIEI LINK» y «SOSTIENIMI» se quedaban en italiano.
+- [importante] Su Kick ora lavorano anche l'antispam e il timeout dei moduli: concedi la moderazione dalla riga di Kick e il bot toglie lo spam e mette in pausa chi insiste. [vai: regole]
+  en: On Kick, antispam and the modules' timeout now work too: grant moderation from the Kick row and the bot removes spam and pauses whoever keeps at it.
+  es: En Kick ahora funcionan también el antispam y el timeout de los módulos: concede la moderación desde la fila de Kick y el bot quita el spam y pausa a quien insiste.
+  > Antispam e timeout anche su Kick
+  > Li concedi con «Concedi la moderazione», nella riga di Kick o nella scheda Chat della moderazione. Su Kick la pausa si conta in minuti, e in chat il bot dice quella data davvero. Il link al tuo canale su Kick non è spam, e lo scudo anti-bot resta su Twitch.
+  en> Antispam and timeout on Kick too
+  en> You grant them with “Grant moderation”, in the Kick row or in the moderation Chat tab. On Kick a pause counts in minutes, and in chat the bot states the one actually given. A link to your Kick channel is not spam, and the anti-bot shield stays on Twitch.
+  es> Antispam y timeout también en Kick
+  es> Los concedes con «Concede la moderación», en la fila de Kick o en la pestaña Chat de la moderación. En Kick la pausa se cuenta en minutos, y en el chat el bot dice la que dio de verdad. Un enlace a tu canal de Kick no es spam, y el escudo anti-bot se queda en Twitch.
 
 ## 2026-10-03
 

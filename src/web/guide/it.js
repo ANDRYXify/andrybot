@@ -313,7 +313,7 @@ export const GUIDE_IT = [
     titolo: 'Bot per Kick in italiano: cosa c\'è e cosa cambia da Twitch',
     h1: 'Bot per Kick: cosa c\'è, e cosa cambia da Twitch',
     desc: 'Su Kick l\'API ufficiale c\'è, ma funziona in modo diverso da quella di Twitch, e si vede. Quali bot ci sono davvero, cosa sanno fare e cosa no.',
-    aggiornata: '2026-09-06',
+    aggiornata: '2026-10-04',
     tipo: 'articolo',
     corpo: [
       { p: [
@@ -351,7 +351,7 @@ export const GUIDE_IT = [
       ], passi: [
         { t: 'Collega Kick', d: 'Sei nuovo? Premi «Registrati con Kick» nella home. Usi già SocialBot con Twitch? Apri «Il tuo account» e premi «Collega» accanto a Kick. In tutti e due i casi arrivi su Kick, non su un modulo dove scrivi la password qui. Se un servizio ti chiede la password di Kick dentro il suo sito, chiudi la pagina.' },
         { t: 'Leggi i quattro permessi di base', d: 'Sapere chi ha autorizzato, leggere titolo e stato della diretta, scrivere in chat, ricevere gli eventi. Sono il minimo perché il bot funzioni: con meno, ammutolisce.' },
-        { t: 'Sappi a che punto è la moderazione', d: 'Bannare e cancellare messaggi sono <strong>due permessi a parte</strong> di Kick, e il collegamento normale non li chiede. L\'antispam e lo scudo anti-bot di SocialBot lavorano solo sulla chat di Twitch, quindi su Kick restano spenti. Lì il bot richiama comunque chi scrive le parole vietate, ma non cancella messaggi e non dà timeout.' },
+        { t: 'Sappi a che punto è la moderazione', d: 'Bannare e cancellare messaggi sono <strong>due permessi a parte</strong> di Kick, e il collegamento normale non li chiede. In SocialBot li concedi con «Concedi la moderazione», nella riga di Kick: da lì l\'antispam toglie i messaggi anche su Kick e il timeout dei moduli mette in pausa anche lì. Senza, il bot richiama chi scrive le parole vietate ma non cancella e non mette in pausa. Lo scudo anti-bot resta sulla sola Twitch.' },
         { t: 'Controlla che gli eventi arrivino', d: 'Dopo il collegamento, la riga di Kick in «Le tue piattaforme» dice «attivo» quando l\'iscrizione agli eventi è andata a buon fine, o «da sistemare» se no. Se non è ancora arrivato niente compare il tasto «Riprova gli eventi». Da Kick riceviamo i messaggi di chat, i follow, gli abbonamenti (nuovi, rinnovi e regalati) e il cambio di stato della diretta.' },
         { t: 'Usa il bot come su Twitch', d: 'Comandi, moduli, giochi e monete, avvisi di follow e abbonamenti e l\'<a href="/guide/overlay-obs-per-twitch">overlay</a> funzionano allo stesso modo. Resta fuori quello che è di Twitch: moderazione automatica, clip, cambio di categoria e titolo, VIP, punti canale ed emote 7TV.' },
       ] },
@@ -371,7 +371,7 @@ export const GUIDE_IT = [
     titolo: 'Bot per moderare la chat di Twitch: cosa fa davvero | SocialBot',
     h1: 'Bot per moderare la chat di Twitch',
     desc: 'Twitch ha già AutoMod, chat solo follower e parole vietate. Cosa aggiunge davvero un bot, cosa conviene lasciare a Twitch, e come non cacciare le persone vere.',
-    aggiornata: '2026-09-06',
+    aggiornata: '2026-10-04',
     tipo: 'articolo',
     corpo: [
       { p: [
@@ -413,7 +413,7 @@ export const GUIDE_IT = [
       { d: 'Un bot di moderazione può mettere in timeout al posto mio?', r: 'Sì, se gli concedi il permesso di moderazione. Senza quel permesso può leggere e scrivere ma non punire. È un permesso che puoi revocare in qualsiasi momento dalle impostazioni di Twitch.' },
       { d: 'Il bot può zittire un moderatore per sbaglio?', r: 'Non dovrebbe mai: streamer e moderatori vanno esentati dalle regole automatiche per costruzione. Se succede, è una regola scritta male.' },
       { d: 'Meglio accendere tutte le regole subito?', r: 'No. I falsi positivi non si vedono, perché chi viene zittito per sbaglio non protesta: se ne va. Conviene partire larghi e stringere solo dove hai avuto un problema vero.' },
-      { d: 'La moderazione automatica funziona anche su Kick?', r: 'In generale in parte: Kick espone meno della API di Twitch, quindi le difese più fini sono più semplici. In SocialBot l\'antispam e lo scudo lavorano solo sulla chat di Twitch. Su Kick il bot richiama comunque chi scrive le parole vietate, ma non cancella messaggi e non dà timeout.' },
+      { d: 'La moderazione automatica funziona anche su Kick?', r: 'In generale in parte: Kick espone meno della API di Twitch, quindi le difese più fini sono più semplici. In SocialBot su Kick lavorano le parole vietate e, se concedi la moderazione su Kick, l\'antispam, che toglie i messaggi e mette in pausa chi insiste. Lo scudo anti-bot lavora solo sulla chat di Twitch.' },
     ],
   },
 

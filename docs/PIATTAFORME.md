@@ -190,8 +190,10 @@ confronta le due liste apposta.
 Cosa cambia nel prodotto: niente, tranne le cose che parlano davvero con Twitch.
 Il bot non entra in una chat Twitch senza un token Twitch, quindi il giro delle
 connessioni si esclude da sé; e il pannello **spegne** le schede che su Kick non
-avrebbero con cosa lavorare (moderazione, regia, emote 7TV) dicendo perché,
-invece di mostrare pulsanti che non fanno niente. Le monete su Kick arrivano dai
+avrebbero con cosa lavorare (scudo anti-bot, registro, regia, emote 7TV)
+dicendo perché, invece di mostrare pulsanti che non fanno niente. La scheda
+*Chat* della moderazione resta: su Kick ha con cosa lavorare (sotto, «La
+moderazione su Kick»). Le monete su Kick arrivano dai
 messaggi: l'elenco di chi guarda in silenzio Kick non lo dà.
 
 Il collaudo (`test/contratto/kick-accesso.test.mjs`) monta le rotte vere su
@@ -236,13 +238,64 @@ piattaforma, un giro a vuoto che non chiude), `test/unita/vetrina-live.test.mjs`
 (Kick nella vetrina), `test/unita/kick-canale.test.mjs` (la lettura del
 canale).
 
+### La moderazione su Kick
+
+Kick ha le sue rotte di moderazione, documentate: `DELETE /chat/{id}` toglie un
+messaggio (permesso `moderation:chat_message:manage`), `POST /moderation/bans`
+mette in pausa o bandisce e `DELETE /moderation/bans` toglie il bando
+(permesso `moderation:ban`). I due permessi non sono nel collegamento normale:
+lo streamer li concede con «Concedi la moderazione», che ricollega Kick con
+`?mod=1` (`kick/auth.js`, `SCOPE_MOD`). Chi li ha dati li tiene anche quando
+ricollega: «Sistema» porta a `?mod=1` se i permessi ci sono già.
+
+`kick/api.js` espone `moderatoreKick`, con la **stessa forma di helix**
+(`deleteMessage`, `timeoutUser`, `unbanUser`, risposta `{ ok }` o
+`{ ok: false, motivo }` con le stesse parole). L'antispam e il timeout dei
+moduli non sanno con chi parlano: il bot sceglie chi modera dalla piattaforma
+del messaggio (`bot.js`, `moderatoreDi`; `modules.js`, `_timeout`):
+
+- **Twitch**: helix;
+- **Kick**: `moderatoreKick`, ma solo se i permessi ci sono (`puoModerare`).
+  Senza, nessuno: non si fa una chiamata che sappiamo già rifiutata;
+- **YouTube**: nessuno, per ora.
+
+Le regole che non si nascondono:
+
+- **l'id è della piattaforma del messaggio**. L'id di chi scrive su Kick, su
+  Twitch è un'altra persona o nessuno: mandarlo all'altra piattaforma vorrebbe
+  dire fermare uno sconosciuto. Cercare per nome si fa solo su Twitch, perché
+  su Kick l'id arriva col messaggio;
+- **la pausa su Kick è in minuti** (da 1 a 10080), su Twitch in secondi. Si
+  arrotonda in su, così una pausa chiesta non diventa mai più corta, e in chat
+  si dice quella data davvero (`minuti` nella risposta). Zero vuol dire bando
+  in tutte e due: per questo antispam e moduli non chiedono mai zero;
+- **si dice solo quello che è successo**. Un messaggio che non si è potuto
+  togliere non si annuncia «rimosso» e il bot non ci risponde; una pausa
+  rifiutata non si annuncia. Un permesso mancante sul timeout di un modulo si
+  dice allo staff con il rimedio di Kick, al pubblico senza dashboard;
+- **un messaggio già sparito** (404) è fatto, come su Twitch;
+- **la casa del canale non è spam**: nella chat di Kick passa il link al
+  proprio canale su Kick (lo slug visto dal giro, o il nome per un canale nato
+  su Kick), e il link al canale Twitch passa solo per un canale di Twitch.
+
+Nel pannello: la riga di Kick in «Le tue piattaforme» dice se la moderazione è
+attiva e ha il tasto per concederla; la scheda *Chat* della moderazione su un
+canale di Kick legge i permessi di Kick (`/api/me`, `kick.moderazione`), e su
+un canale di Twitch con Kick collegato dice se l'antispam vale anche lì.
+
+Collaudi: `test/unita/kick-moderazione.test.mjs` (le rotte vere di Kick, i
+minuti, il permesso, il 404), `test/unita/kick-antispam.test.mjs` (chi modera
+per piattaforma, la casa, quello che si dice in chat),
+`test/unita/moduli-timeout.test.mjs` (il timeout di un modulo va alla
+piattaforma del messaggio).
+
 ### Cosa NON fa ancora, e perché è detto qui
 
-Antibot e antispam agiscono via Helix (elimina, timeout): hanno senso solo su
-Twitch. Su Kick il messaggio passa direttamente al flusso normale — **meglio
-nessuna moderazione che una moderazione che finge di esserci**. Kick ha le sue
-rotte di moderazione (`moderation:ban`, `moderation:chat_message:manage`): sono
-già negli scope facoltativi, l'aggancio è il passo dopo.
+Lo scudo anti-bot lavora solo su Twitch: legge eventi (follow a ondate, raid,
+account nuovi) e usa leve (Shield Mode, solo follower) che Kick non espone allo
+stesso modo. Su Kick non lo fingiamo — **meglio nessuna moderazione che una
+moderazione che finge di esserci**. La chat di YouTube non ha ancora chi
+modera: lì valgono solo le parole vietate (il richiamo).
 
 ## YouTube
 

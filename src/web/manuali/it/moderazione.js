@@ -9,13 +9,13 @@ export default {
   titolo: 'Manuale della moderazione: antispam e scudo anti-bot | SocialBot',
   h1: 'Manuale della moderazione: antispam e scudo anti-bot',
   desc: 'Parole vietate, antispam con le soglie vere, lo scudo anti-bot con i suoi sei livelli e il registro: cosa fa ogni controllo, di base e limiti.',
-  aggiornata: '2026-09-24',
+  aggiornata: '2026-10-04',
   corpo: [
     { p: [
       'La moderazione sta in <em>Chat e pubblico</em> → <em>Moderazione</em>. In cima trovi tre schede: <strong>Chat</strong>, <strong>Scudo</strong> e <strong>Registro</strong>.',
       '<em>Chat</em> pulisce i messaggi di tutti i giorni: parole vietate, spam, link. <em>Scudo</em> difende il canale da follow-bot e hate-raid. <em>Registro</em> ti racconta cosa ha fatto lo scudo e ti lascia decidere sui casi dubbi.',
-      'Tutte e tre sono comprese nel pacchetto gratuito <strong>Essenziale</strong>. Lavorano sulla chat di <strong>Twitch</strong>: se il tuo canale è su Kick, YouTube o Discord, le tre schede mostrano «Solo su Twitch».',
-      'Il bot agisce con i permessi di moderazione che hai concesso tu su Twitch. Non c\'è un account estraneo da promuovere a moderatore.',
+      'Tutte e tre sono comprese nel pacchetto gratuito <strong>Essenziale</strong>. Lavorano sulla chat di <strong>Twitch</strong>. <em>Chat</em> lavora anche su <strong>Kick</strong>: su un canale di Kick la scheda c\'è, e <em>Scudo</em> e <em>Registro</em> mostrano «Solo su Twitch». Su YouTube e Discord le tre schede mostrano «Solo su Twitch».',
+      'Il bot agisce con i permessi di moderazione che hai concesso tu: su Twitch, e su Kick con «Concedi la moderazione». Non c\'è un account estraneo da promuovere a moderatore.',
     ] },
 
     { h2: 'Moderazione: parole vietate e antispam', scheda: 'regole', p: [
@@ -31,16 +31,17 @@ export default {
       'Il messaggio <strong>resta in chat</strong>: il richiamo non cancella niente. Per toglierlo serve un moderatore.',
       'Il confronto ignora maiuscole e accenti, e cerca la parola anche dentro altre parole. Una parola corta scatta più spesso di quanto pensi: «ora» ferma anche «allora». Scegli parole abbastanza lunghe da non comparire per caso.',
       'Tu e i moderatori della chat non venite richiamati. I VIP sì.',
-      'Il richiamo vale anche nelle chat di Kick e YouTube che hai collegato al canale.',
+      'Il richiamo vale anche nelle chat di Kick e YouTube che hai collegato al canale, ognuna col suo limite di una volta ogni 30 secondi.',
     ] },
 
     { h3: 'Antispam automatico' },
     { p: [
       'Elimina da solo lo spam e, a chi insiste, dà un timeout crescente. Si accende con «Attiva l\'antispam», in cima alla carta. Di base è spento.',
       'Quando l\'interruttore è spento il resto della carta si attenua: le scelte restano, ma non lavorano.',
-      'Per cancellare messaggi e dare timeout servono i permessi di moderazione. Se li hai, accanto all\'interruttore leggi «permessi attivi». Se mancano, leggi «Per eliminare i messaggi servono i permessi di moderazione.»: premi «Concedi i permessi» e autorizza su Twitch.',
+      'Per cancellare messaggi e dare timeout servono i permessi di moderazione. Se li hai, accanto all\'interruttore leggi «permessi attivi». Se mancano, leggi «Per eliminare i messaggi servono i permessi di moderazione.»: premi «Concedi i permessi» e autorizza su Twitch. Su un canale di Kick leggi «Per eliminare i messaggi su Kick servono i permessi di moderazione di Kick.» e premi «Concedi la moderazione».',
+      'Se il messaggio non si riesce a togliere (un permesso tolto nel frattempo), il bot non dice «messaggio rimosso» e non risponde allo spam. Se la pausa non riesce, non la annuncia.',
       '<strong>Tu e i moderatori siete sempre esenti</strong> da tutti i filtri. I VIP da tutti tranne quello dei link, che ha una regola sua. Gli abbonati passano il filtro dei link solo se il livello scelto li comprende.',
-      'L\'antispam lavora sempre, in diretta e fuori diretta. Guarda solo la chat di Twitch.',
+      'L\'antispam lavora sempre, in diretta e fuori diretta. Guarda la chat di Twitch e, se hai concesso la moderazione su Kick, anche quella di Kick: lì toglie i messaggi e la pausa si conta in minuti, arrotondati in su. Se il tuo canale è su Twitch e hai collegato Kick, sotto l\'interruttore la carta dice se vale anche lì, e se no ha il tasto «Concedi la moderazione». La chat di YouTube non la guarda.',
       'Dopo ogni modifica premi «Salva antispam».',
     ] },
 
@@ -55,7 +56,7 @@ export default {
     { p: [
       'In «Domini sempre permessi (uno per riga)» metti gli indirizzi che passano per chiunque: il tuo Discord, il tuo sito, i tuoi social. Tiene fino a <strong>30 righe</strong>. Puoi incollare anche l\'indirizzo intero: <code>https://</code> e <code>www.</code> vengono tolti da soli.',
       'Una riga con solo il dominio, come <code>youtube.com</code>, vale anche per i suoi sottodomini. Una riga con un percorso, come <code>instagram.com/tuonome</code>, fa passare solo quel percorso e quello che sta sotto.',
-      'Senza scriverli sono già permessi il tuo canale Twitch, le clip di Twitch e andryxify.it. Il pannello lo ricorda sotto il campo.',
+      'Senza scriverli sono già permessi il tuo canale Twitch, le clip di Twitch e andryxify.it. Nella chat di Kick vale anche il tuo canale su Kick, e su un canale di Kick il tuo canale è quello su Kick. Il pannello lo ricorda sotto il campo.',
       'Il controllo guarda <strong>l\'indirizzo</strong>, non il testo intorno. Nominare un dominio permesso non fa passare un link diverso. Se un messaggio ha più link, ognuno deve essere permesso.',
       'Un indirizzo con <code>http</code>, con <code>www.</code> o con un percorso (<code>sito.it/pagina</code>) conta sempre come link. Un dominio nudo conta solo se finisce in un\'estensione che in chat non si scrive per caso, come <code>.com</code>, <code>.net</code>, <code>.org</code>, <code>.tv</code>, <code>.gg</code>. Così «lascia stare.io ci provo» resta una frase.',
     ] },
@@ -287,7 +288,7 @@ export default {
     ] },
   ],
   faq: [
-    { d: 'L\'antispam non cancella niente. Perché?', r: 'Controlla che «Attiva l\'antispam» sia acceso e che tu abbia premuto «Salva antispam». Se nella carta leggi «Per eliminare i messaggi servono i permessi di moderazione.», premi «Concedi i permessi». Tu e i moderatori siete esenti da tutto, i VIP da tutto tranne i link, e l\'antispam guarda solo la chat di Twitch.' },
+    { d: 'L\'antispam non cancella niente. Perché?', r: 'Controlla che «Attiva l\'antispam» sia acceso e che tu abbia premuto «Salva antispam». Se nella carta leggi «Per eliminare i messaggi servono i permessi di moderazione.», premi «Concedi i permessi». Su un canale di Kick la frase è «Per eliminare i messaggi su Kick servono i permessi di moderazione di Kick.» e il tasto «Concedi la moderazione». Tu e i moderatori siete esenti da tutto, i VIP da tutto tranne i link. La chat di YouTube l\'antispam non la guarda.' },
     { d: 'Il link del mio Discord viene cancellato.', r: 'Aggiungi il dominio in «Domini sempre permessi (uno per riga)», per esempio <code>discord.gg</code>, e premi «Salva antispam». Da lì passa per chiunque.' },
     { d: 'Un VIP non riesce a postare un link.', r: 'In «Possono postare link:» hai scelto «solo mod». Scegli «VIP e mod» o un livello più largo e premi «Salva antispam».' },
     { d: 'Ha cancellato un messaggio che andava bene.', r: 'Con «Avvisa in chat quando elimina» acceso il motivo è scritto nel messaggio del bot. Il caso più comune sono le maiuscole: «AHAHAH SIIIII» supera l\'80%. Spegni la voce che scatta troppo e premi «Salva antispam».' },

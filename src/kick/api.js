@@ -11,7 +11,7 @@
 // scadenza, e una sola volta anche se dieci messaggi partono insieme.
 import { tokens } from '../db.js';
 import { makeLog } from '../logger.js';
-import { rinnova, daRinnovare } from './auth.js';
+import { rinnova, daRinnovare, SCOPE_MOD } from './auth.js';
 import { segna } from './eco.js';
 
 const log = makeLog('kick');
@@ -195,6 +195,71 @@ export async function scrivi(login, testo, { rispondiA = '', ...opts } = {}) {
 
 // Solo per il collaudo.
 export function _azzeraVoce() { voce.clear(); }
+
+// LA MODERAZIONE SU KICK (docs/PIATTAFORME.md, «La moderazione su Kick»).
+//
+// Le stesse tre cose di Twitch (togliere un messaggio, mettere in pausa o
+// bandire, togliere il bando) con la stessa forma di helix: { ok } o
+// { ok: false, motivo }, con le stesse parole per i motivi. Cosi' l'antispam e
+// i moduli non sanno con chi parlano, e un motivo nuovo non va insegnato due
+// volte.
+//
+// Due differenze che non si nascondono:
+//  · Kick conta la pausa in MINUTI (da 1 a 10080), Twitch in secondi. Si
+//    arrotonda in su: una pausa chiesta non diventa mai piu' corta. Zero
+//    secondi vuol dire bando, come in helix;
+//  · i permessi di moderazione su Kick sono a parte, e lo streamer li da'
+//    ricollegando Kick con la moderazione. Senza, non si chiama niente: una
+//    chiamata che sappiamo gia' rifiutata e' solo rumore nei registri di Kick.
+export const PAUSA_MAX_MIN = 10080;
+export function puoModerare(login) {
+  const s = tokenDi(String(login || '').toLowerCase())?.scopes;
+  return Array.isArray(s) && SCOPE_MOD.every((x) => s.includes(x));
+}
+const motivoDi = (r) => (r.stato === 401 || r.stato === 403 ? 'permesso mancante'
+  : r.stato === 429 ? 'troppe richieste' : 'errore Kick');
+const intero = (x) => { const n = Number(x); return Number.isSafeInteger(n) && n > 0 ? n : 0; };
+
+export async function cancellaMessaggio(login, messageId, { fetchImpl } = {}) {
+  const chi = String(login || '').toLowerCase();
+  const id = String(messageId || '');
+  if (!/^[0-9a-z-]{1,64}$/i.test(id)) return { ok: false, motivo: 'dati mancanti' };
+  if (!puoModerare(chi)) return { ok: false, motivo: 'permesso mancante' };
+  const r = await chiama(chi, '/chat/' + encodeURIComponent(id), { metodo: 'DELETE', fetchImpl });
+  // gia' sparito (tolto da un moderatore, o dall'autore): come per Twitch, e' fatto
+  if (r.ok || r.stato === 404) return { ok: true };
+  return { ok: false, motivo: motivoDi(r) };
+}
+
+export async function pausa(login, userId, secondi, motivo = '', { fetchImpl } = {}) {
+  const chi = String(login || '').toLowerCase();
+  const b = intero(tokenDi(chi)?.userId), u = intero(userId);
+  if (!b || !u) return { ok: false, motivo: 'dati mancanti' };
+  if (!puoModerare(chi)) return { ok: false, motivo: 'permesso mancante' };
+  const corpo = { broadcaster_user_id: b, user_id: u };
+  const s = Math.round(Number(secondi) || 0);
+  if (s > 0) corpo.duration = Math.min(PAUSA_MAX_MIN, Math.max(1, Math.ceil(s / 60)));
+  const m = String(motivo || '').trim().slice(0, 100);
+  if (m) corpo.reason = m;
+  const r = await chiama(chi, '/moderation/bans', { metodo: 'POST', corpo, fetchImpl });
+  return r.ok ? { ok: true, minuti: corpo.duration || 0 } : { ok: false, motivo: motivoDi(r) };
+}
+
+export async function sbanna(login, userId, { fetchImpl } = {}) {
+  const chi = String(login || '').toLowerCase();
+  const b = intero(tokenDi(chi)?.userId), u = intero(userId);
+  if (!b || !u) return { ok: false, motivo: 'dati mancanti' };
+  if (!puoModerare(chi)) return { ok: false, motivo: 'permesso mancante' };
+  const r = await chiama(chi, '/moderation/bans', { metodo: 'DELETE', corpo: { broadcaster_user_id: b, user_id: u }, fetchImpl });
+  return r.ok ? { ok: true } : { ok: false, motivo: motivoDi(r) };
+}
+
+// La forma di helix, per chi modera senza sapere su quale piattaforma.
+export const moderatoreKick = Object.freeze({
+  deleteMessage: (canale, id) => cancellaMessaggio(canale, id),
+  timeoutUser: (canale, utente, secondi, motivo) => pausa(canale, utente, secondi, motivo),
+  unbanUser: (canale, utente) => sbanna(canale, utente),
+});
 
 // Gli eventi che vogliamo ricevere sul webhook. La chat è il cuore; gli altri
 // alimentano alert e moduli che già esistono.

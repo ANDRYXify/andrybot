@@ -130,10 +130,16 @@ function livelloUtente(msg) {
   return TIER_SCALA.tutti;
 }
 
+const NOME_PIATTAFORMA = { twitch: 'Twitch', kick: 'Kick', youtube: 'YouTube' };
+
 export class ModulesEngine {
-  constructor({ effects, helix, regia, pausaTimerMs } = {}) {
+  constructor({ effects, helix, regia, pausaTimerMs, moderatori } = {}) {
     this.effects = effects || null;
     this.helix = helix || null;
+    // Chi modera fuori da Twitch, con la forma di helix (src/kick/api.js,
+    // moderatoreKick): la pausa si chiede alla piattaforma da cui e' arrivato
+    // il messaggio, mai a un'altra.
+    this.moderatori = moderatori && typeof moderatori === 'object' ? moderatori : {};
     // La regia (scena, fonte, transizione) la fa la pagina del pannello aperta
     // sul computer dello streamer, attraverso il ponte di CONSOLify: qui arriva
     // solo la funzione che gli passa un passo, e questo file non conosce il ponte.
@@ -1135,32 +1141,39 @@ export class ModulesEngine {
   // autore, e li' non c'e' nessuno da fermare. L'esito si dice come per le
   // altre azioni: il permesso che manca (il rimedio solo allo staff), e chi non
   // si puo' fermare perche' e' moderatore o VIP.
-  // La pausa e' di Twitch: helix parla solo con Twitch, e l'id di chi ha
-  // scritto su Kick o su YouTube su Twitch e' un'altra persona, o nessuno.
-  // Mandarlo li' vorrebbe dire fermare uno sconosciuto. Fuori da Twitch il
-  // timeout non parte, e allo staff si dice perche'.
+  // La pausa si chiede alla piattaforma da cui e' arrivato il messaggio: l'id
+  // di chi ha scritto su Kick, su Twitch e' un'altra persona, o nessuno.
+  // Mandarlo li' vorrebbe dire fermare uno sconosciuto. Dove non c'e' chi
+  // modera (YouTube) il timeout non parte, e allo staff si dice perche'.
   async _timeout(ctx, secondi, dire = () => {}) {
     const login = norm(ctx.userLogin || '');
     if (!login || login === norm(ctx.channel)) { log.debug(`#${ctx.channel} timeout: nessuno da mettere in pausa`); return; }
     const dove = ctx.piattaforma || 'twitch';
-    if (dove !== 'twitch') {
-      log.debug(`#${ctx.channel} timeout: ${login} ha scritto su ${dove}, e la pausa e' di Twitch`);
-      if (ctx.staff) dire(`⏸️ Su ${dove === 'kick' ? 'Kick' : 'YouTube'} il timeout di un comando non lo faccio ancora: funziona sulla chat di Twitch.`);
+    const mod = dove === 'twitch' ? this.helix : this.moderatori[dove];
+    if (!mod?.timeoutUser) {
+      log.debug(`#${ctx.channel} timeout: ${login} ha scritto su ${dove}, e li' non c'e' chi modera`);
+      if (ctx.staff) dire(`⏸️ Su ${NOME_PIATTAFORMA[dove] || dove} il timeout di un comando non lo faccio ancora: funziona sulla chat di Twitch e di Kick.`);
       return;
     }
     let id = String(ctx.userId || '');
-    if (!id) id = String((await this.helix?.getUserByLogin?.(login).catch(() => null))?.id || '');
+    // cercare per nome si puo' solo su Twitch: su Kick l'id arriva col messaggio
+    if (!id && dove === 'twitch') id = String((await this.helix?.getUserByLogin?.(login).catch(() => null))?.id || '');
     if (!id) { log.debug(`#${ctx.channel} timeout: non trovo ${login}`); return; }
     const durata = Math.max(1, Math.min(1_209_600, Math.round(secondi) || 600));
-    const r = await this.helix?.timeoutUser?.(ctx.channel, id, durata, 'timeout da un comando del canale')
+    const r = await mod.timeoutUser(ctx.channel, id, durata, 'timeout da un comando del canale')
       .catch((e) => ({ ok: false, motivo: e?.message || 'errore' }));
     if (r?.ok) return;
     const motivo = String(r?.motivo || 'non disponibile');
     if (motivo.includes('permesso')) {
-      dire(aChiPuo(ctx.staff, {
-        staff: '🔒 Mi manca il permesso di moderazione per il timeout: riautorizza dalla dashboard.',
-        pubblico: '🔒 Adesso non posso mettere in pausa nessuno.',
-      }));
+      dire(dove === 'kick'
+        ? aChiPuo(ctx.staff, {
+          staff: '🔒 Mi mancano i permessi di moderazione di Kick per il timeout: ricollega Kick con la moderazione dalla dashboard.',
+          pubblico: '🔒 Adesso non posso mettere in pausa nessuno.',
+        })
+        : aChiPuo(ctx.staff, {
+          staff: '🔒 Mi manca il permesso di moderazione per il timeout: riautorizza dalla dashboard.',
+          pubblico: '🔒 Adesso non posso mettere in pausa nessuno.',
+        }));
     } else if (motivo.includes('mod/VIP')) {
       dire(`🛡️ Non posso mettere in pausa ${ctx.display || login}: moderatori e VIP non si possono.`);
     } else {

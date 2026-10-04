@@ -7,6 +7,7 @@
 // il flusso dei messaggi né lanciare: ogni cosa è in try/catch a monte.
 import { makeLog } from '../logger.js';
 import { streamers } from '../db.js';
+import { piattaformaDi } from '../identita.js';
 
 const log = makeLog('antispam');
 
@@ -105,13 +106,16 @@ export function linkPermesso(link, permessi) {
   return false;
 }
 
-// domini permessi "di base": il canale stesso, le clip e il sito
+// domini permessi "di base": il canale stesso, le clip e il sito. Il canale
+// su Twitch c'e' solo se e' un canale di Twitch; la sua casa sulle altre
+// piattaforme (kick.com/<nome>) la dice chi chiama, in `cfg.casa`.
+const pulisciDominio = (d) => String(d || '').toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/$/, '').trim();
 function whitelistBase(channel, cfg) {
   const l = String(channel || '').toLowerCase();
-  const extra = (Array.isArray(cfg.whitelist) ? cfg.whitelist : [])
-    .map((d) => String(d || '').toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/$/, '').trim())
-    .filter(Boolean);
-  return ['twitch.tv/' + l, 'clips.twitch.tv', 'andryxify.it', ...extra];
+  const extra = (Array.isArray(cfg.whitelist) ? cfg.whitelist : []).map(pulisciDominio).filter(Boolean);
+  const casa = (Array.isArray(cfg.casa) ? cfg.casa : []).map(pulisciDominio).filter(Boolean);
+  const suTwitch = piattaformaDi(l) === 'twitch' ? ['twitch.tv/' + l] : [];
+  return [...suTwitch, 'clips.twitch.tv', 'andryxify.it', ...casa, ...extra];
 }
 
 function haLinkNonPermesso(testo, channel, cfg) {
@@ -253,10 +257,15 @@ function durataTimeout(chiave, cfg) {
 // -------------------------------------------------------- azione completa
 // Valuta il messaggio e, se è spam, lo elimina (e timeout ai recidivi).
 // Ritorna true se ha agito. Non lancia mai.
-export async function tryAntispam(helix, msg, say) {
+//
+// `mod` e' chi modera, con la forma di helix (deleteMessage, timeoutUser): helix
+// per Twitch, moderatoreKick per Kick. Si dice in chat solo quello che e'
+// successo davvero: un messaggio che non si e' potuto togliere non si dice
+// «rimosso», e una pausa rifiutata non si annuncia.
+export async function tryAntispam(mod, msg, say, { casa = [] } = {}) {
   try {
     if (!msg || msg.isSelf || !msg.id) return false;
-    const cfg = { ...ANTISPAM_DEFAULT, ...(streamers.get(msg.channel)?.settings?.antispam || {}) };
+    const cfg = { ...ANTISPAM_DEFAULT, ...(streamers.get(msg.channel)?.settings?.antispam || {}), casa };
     if (!cfg.attivo) return false;
 
     if (Date.now() - ultimaPulizia > 60_000) pulisci();
@@ -265,11 +274,19 @@ export async function tryAntispam(helix, msg, say) {
     if (!esito) return false;
 
     // elimina il messaggio
-    await helix.deleteMessage(msg.channel, msg.id).catch(() => {});
+    const tolto = await mod.deleteMessage(msg.channel, msg.id).catch((e) => ({ ok: false, motivo: e?.message || 'errore' }));
+    if (tolto?.ok === false) {
+      // lo spam resta li': il bot non ci risponde, ma non dice di averlo tolto
+      log.warn(`#${msg.channel} antispam: non riesco a togliere il messaggio di ${msg.user} (${tolto.motivo})`);
+      return true;
+    }
     // timeout crescente ai recidivi
-    const durata = durataTimeout(msg.channel + '|' + msg.user, cfg);
+    let durata = durataTimeout(msg.channel + '|' + msg.user, cfg);
     if (durata > 0 && msg.userId) {
-      await helix.timeoutUser(msg.channel, msg.userId, durata, 'antispam: ' + esito.motivo).catch(() => {});
+      const p = await mod.timeoutUser(msg.channel, msg.userId, durata, 'antispam: ' + esito.motivo).catch(() => ({ ok: false }));
+      if (p?.ok === false) durata = 0;
+      // si dice la pausa data davvero: Kick la conta in minuti interi
+      else if (p?.minuti > 0) durata = p.minuti * 60;
     }
     if (cfg.avvisa && typeof say === 'function') {
       const nome = msg.display || msg.user;

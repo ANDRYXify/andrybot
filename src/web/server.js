@@ -3761,7 +3761,13 @@ STREAMER (${su.toUpperCase()}) e non c'entra con l'automazione del marketing.
       account: tk?.userId ? ('id ' + tk.userId) : '',
       attivo: !!tk?.accessToken && kickEventi > 0,
       daRifare: !!tk?.accessToken && (kickEventi === 0 || !!kickErrore),
-      azione: '/auth/kick',
+      // La moderazione su Kick e' un permesso a parte (kick/auth.js,
+      // SCOPE_MOD). Chi l'ha data la tiene anche quando ricollega: un
+      // «Sistema» che la chiedesse di nuovo senza moderazione gliela
+      // toglierebbe senza dirlo.
+      moderazione: !!tk?.accessToken && kickApi.puoModerare(login),
+      azioneModerazione: '/auth/kick?mod=1',
+      azione: tk?.accessToken && kickApi.puoModerare(login) ? '/auth/kick?mod=1' : '/auth/kick',
       note: perche(),
       // il pulsante per rifare l'iscrizione: serve solo quando non arriva niente
       rifaiEventi: !!tk?.accessToken && !kd.ultimo,
@@ -3935,6 +3941,9 @@ STREAMER (${su.toUpperCase()}) e non c'entra con l'automazione del marketing.
       scopeMancanti: user ? scopeMancanti(user.login) : [],
       vipOk: user ? vipOk(user.login) : false,
       moderazioneOk: user ? moderazioneOk(user.login) : false,
+      // Kick collegato e i suoi permessi di moderazione (kick/api.js,
+      // puoModerare): l'antispam e il timeout dei moduli valgono anche li'
+      kick: user ? { collegato: !!kickApi.tokenDi(user.login)?.accessToken, moderazione: kickApi.puoModerare(user.login) } : null,
       canaleOk: user ? canaleOk(user.login) : false,
       // Regia (Vai live): quali permessi ha concesso per gestire la diretta dal bot
       regia: user ? { broadcast: canaleOk(user.login), raid: raidOk(user.login), commercial: commercialOk(user.login), ads: adsOk(user.login) } : null,
