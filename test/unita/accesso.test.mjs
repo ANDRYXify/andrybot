@@ -55,6 +55,17 @@ test('lo store: si salva ripulito, scade da solo, si toglie, e ogni passo va in 
   assert.equal(accessi.elenco().length, 0);
 });
 
+test('un canale di Kick, YouTube o Discord si apre a mano come uno di Twitch; una forma che non e\' nostra no', () => {
+  for (const login of ['kick.iannice', 'yt.qualcuno', 'dc.server_1']) {
+    accessi.set(login, { modo: 'tutto' }, 'andryxify');
+    assert.ok(ha(login, 'studio') && ha(login, 'notifiche'), `${login}: tutto = accesso pieno`);
+    assert.equal(accessi.togli(login, 'andryxify'), true);
+  }
+  for (const storto of ['kick..x', '.x', 'tw.x', '../x', 'kick.', 'a b']) {
+    assert.throws(() => accessi.set(storto, { modo: 'tutto' }), /login/, storto);
+  }
+});
+
 test('con un abbonamento vero le scelte si sommano e il blocco toglie', () => {
   subscriptions.set('paga', { tier: 'base', pacchetti: ['clip'], status: 'active' });
   assert.ok(ha('paga', 'clipAuto') && ha('paga', 'studio') && !ha('paga', 'voce'));

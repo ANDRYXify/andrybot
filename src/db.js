@@ -10,7 +10,7 @@ import { join } from 'node:path';
 import { config } from './config.js';
 import { cifra, decifra, eCifrato, anello, anelloCorrente } from './segreti.js';
 import { istruzioneGenere } from './ai/genere.js';
-import { nomeSu } from './identita.js';
+import { nomeSu, eLoginNostro } from './identita.js';
 import { makeLog } from './logger.js';
 import { normChi, normTriggerArrivo, normPersona } from './features/arrivi-regola.js';
 
@@ -2230,7 +2230,9 @@ export const accessi = {
   elenco() { return db.prepare('SELECT * FROM accessi ORDER BY ts DESC').all().map((r) => this._riga(r)); },
   set(login, { modo, funzioni, scade, nota, motivo } = {}, chi = '') {
     const l = String(login || '').toLowerCase();
-    if (!/^[a-z0-9_]{1,30}$/.test(l)) throw new Error('login non valido');
+    // la forma dei canali e' una sola (identita.js): un canale di Kick,
+    // YouTube o Discord ha il prefisso col punto, e qui non era previsto
+    if (!eLoginNostro(l)) throw new Error('login non valido');
     if (!MODI_ACCESSO.includes(modo)) throw new Error('modo non valido');
     const prima = this.get(l);
     const f = {};
