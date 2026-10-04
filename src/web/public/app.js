@@ -30655,9 +30655,10 @@ function attivaPiattaforma() {
 
   document.getElementById('imp-se-prendi')?.addEventListener('click', () => conErrore(async () => { _impFonte = 'se'; await vediDaSE(); }));
   document.getElementById('imp-se-leggi')?.addEventListener('click', () => conErrore(leggiConChiaveSE));
-  for (const bot of Object.keys(IMP_BOT)) {
-    document.getElementById('imp-da-' + bot)?.addEventListener('click', () => conErrore(async () => { _impFonte = bot; await vediDaBot(bot); }));
-  }
+  const prendiDa = (bot) => () => conErrore(async () => { _impFonte = bot; await vediDaBot(bot); });
+  document.getElementById('imp-da-nightbot')?.addEventListener('click', prendiDa('nightbot'));
+  document.getElementById('imp-da-fossabot')?.addEventListener('click', prendiDa('fossabot'));
+  document.getElementById('imp-da-moobot')?.addEventListener('click', prendiDa('moobot'));
   document.getElementById('imp-vedi')?.addEventListener('click', () => conErrore(async () => { _impFonte = 'testo'; await vediImport(); }));
   document.getElementById('imp-testo')?.addEventListener('input', () => {
     if (!_impTesto && _impFonte === 'testo') return;
