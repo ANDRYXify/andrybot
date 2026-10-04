@@ -1135,9 +1135,19 @@ export class ModulesEngine {
   // autore, e li' non c'e' nessuno da fermare. L'esito si dice come per le
   // altre azioni: il permesso che manca (il rimedio solo allo staff), e chi non
   // si puo' fermare perche' e' moderatore o VIP.
+  // La pausa e' di Twitch: helix parla solo con Twitch, e l'id di chi ha
+  // scritto su Kick o su YouTube su Twitch e' un'altra persona, o nessuno.
+  // Mandarlo li' vorrebbe dire fermare uno sconosciuto. Fuori da Twitch il
+  // timeout non parte, e allo staff si dice perche'.
   async _timeout(ctx, secondi, dire = () => {}) {
     const login = norm(ctx.userLogin || '');
     if (!login || login === norm(ctx.channel)) { log.debug(`#${ctx.channel} timeout: nessuno da mettere in pausa`); return; }
+    const dove = ctx.piattaforma || 'twitch';
+    if (dove !== 'twitch') {
+      log.debug(`#${ctx.channel} timeout: ${login} ha scritto su ${dove}, e la pausa e' di Twitch`);
+      if (ctx.staff) dire(`⏸️ Su ${dove === 'kick' ? 'Kick' : 'YouTube'} il timeout di un comando non lo faccio ancora: funziona sulla chat di Twitch.`);
+      return;
+    }
     let id = String(ctx.userId || '');
     if (!id) id = String((await this.helix?.getUserByLogin?.(login).catch(() => null))?.id || '');
     if (!id) { log.debug(`#${ctx.channel} timeout: non trovo ${login}`); return; }

@@ -46,6 +46,21 @@ test('il timeout arriva a chi ha scritto, per id, e mai come ban', async () => {
   assert.equal(fatti[3][1], 'id-tizio', 'senza id lo cerca per nome');
 });
 
+test('chi ha scritto su Kick o su YouTube non va a Twitch: il suo id li\' e\' un\'altra persona', async () => {
+  const { m, fatti } = motore();
+  let cercati = 0;
+  m.helix.getUserByLogin = async (login) => { cercati++; return { id: 'id-' + login }; };
+  const detto = [];
+  await m.esegui(modulo(60), chat({ piattaforma: 'kick', userId: '42', staff: true }), (t) => detto.push(t));
+  await m.esegui(modulo(60), chat({ piattaforma: 'youtube', userId: 'UCabc' }), (t) => detto.push(t));
+  await m.esegui(modulo(60), chat({ piattaforma: 'kick', userId: '' }), (t) => detto.push(t));
+  assert.deepEqual([fatti.length, cercati], [0, 0], 'nessuna chiamata a Twitch, nemmeno per cercare il nome');
+  assert.equal(detto.length, 1, 'lo si dice solo allo staff');
+  assert.match(detto[0], /Su Kick il timeout/);
+  await m.esegui(modulo(60), chat({ piattaforma: 'twitch' }), () => {});
+  assert.equal(fatti.length, 1, 'su Twitch si');
+});
+
 test('lo streamer non si mette in pausa: timer, voce e prova non fermano nessuno', async () => {
   const { m, fatti } = motore();
   await m.esegui(modulo(60), m._ctxTimer('canale'), () => {});

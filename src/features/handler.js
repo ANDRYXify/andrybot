@@ -72,8 +72,13 @@ function ruoloDi(msg) {
   return (r.mod || r.sub || r.vip || r.primo) ? r : null;
 }
 
+// L'ultimo richiamo di ogni chat (il canale su una piattaforma). Sta fuori dal
+// gestore perche' fuori da Twitch il gestore nasce a ogni messaggio
+// (bot.js, messaggioEsterno): tenuto dentro, il tempo ripartiva ogni volta e
+// su Kick e YouTube il richiamo usciva a ogni parola vietata.
+const ultimoAvvisoMod = new Map(); // canale|piattaforma → ts dell'ultimo richiamo
+
 export function createMessageHandler({ chat, brain, botLogin }) {
-  const ultimoAvvisoMod = new Map(); // canale → ts dell'ultimo richiamo di moderazione
 
   // -------------------------------------------------- comandi con la "!"
   // SOLO i comandi definiti dallo streamer. Se non esiste, silenzio: niente
@@ -111,9 +116,10 @@ export function createMessageHandler({ chat, brain, botLogin }) {
     // d. moderazione (mod e broadcaster sono esenti dal richiamo)
     const esito = checkMessage(text, streamer.settings);
     if (!esito.ok && !isMod && !isBroadcaster) {
-      const ultimo = ultimoAvvisoMod.get(channel) || 0;
+      const dove = channel + '|' + (msg.piattaforma || 'twitch');
+      const ultimo = ultimoAvvisoMod.get(dove) || 0;
       if (Date.now() - ultimo > COOLDOWN_MODERAZIONE) {
-        ultimoAvvisoMod.set(channel, Date.now());
+        ultimoAvvisoMod.set(dove, Date.now());
         chat.say(channel, '@' + display + ' evitiamo questo linguaggio qui 🙏');
       }
       return;

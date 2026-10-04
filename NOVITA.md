@@ -43,6 +43,12 @@ comandi diversi da quelli della riga italiana.
 
 ## 2026-10-04
 
+- L'azione «Timeout in chat» di un modulo, su un messaggio scritto su Kick o YouTube, non va più a Twitch: lì quell'id era un'altra persona. Allo staff il bot dice che lì non lo fa ancora. [vai: moduli]
+  en: A module's “Chat timeout” action, on a message written on Kick or YouTube, no longer goes to Twitch: that id was someone else there. The bot tells the staff it does not do it there yet.
+  es: La acción «Timeout en el chat» de un módulo, sobre un mensaje escrito en Kick o YouTube, ya no va a Twitch: allí ese id era otra persona. El bot le dice al staff que allí aún no lo hace.
+- Su Kick e YouTube il richiamo delle parole vietate esce al massimo una volta ogni trenta secondi, come su Twitch: prima usciva a ogni parola. [vai: regole]
+  en: On Kick and YouTube the banned-words reminder goes out at most once every thirty seconds, like on Twitch: before, it went out on every word.
+  es: En Kick y YouTube el aviso de las palabras prohibidas sale como mucho una vez cada treinta segundos, como en Twitch: antes salía con cada palabra.
 - [importante] Chi chiede di entrare nel tuo gruppo Telegram e aspetta una decisione ora compare nel pannello: con un tasto fai entrare o rifiuti, da qui o dal messaggio in privato. [vai: telegram]
   en: People asking to join your Telegram group and waiting for a decision now show up in the panel: one button lets them in or declines, from here or from the private message.
   es: Quien pide entrar en tu grupo de Telegram y espera una decisión ahora aparece en el panel: con un botón decides si entra o no, desde aquí o desde el mensaje privado.
