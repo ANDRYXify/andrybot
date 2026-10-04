@@ -69,6 +69,16 @@ export const CLASSIFICATI = [
   ['src/features/negozio-pagina.js', 'Apri il pannello', 'pagina del negozio chiuso: il tasto dentro quel riquadro'],
   ['src/features/negozio-pagina.js', 'You open it from the dashboard', 'pagina del negozio chiuso, in inglese: la nota del riquadro «Is this your shop?»'],
   ['src/features/negozio-pagina.js', 'Open the dashboard', 'pagina del negozio chiuso, in inglese: il tasto dentro quel riquadro'],
+  // Decidi tu (tg-decidi.js): il messaggio va in privato su Telegram al solo
+  // proprietario (owner_tg_id), e i tasti valgono solo per lui. 'pannello' li'
+  // non e' una frase: e' da dove arriva una decisione (il motivo della riga).
+  ['src/features/tg-decidi.js', "'pannello'", 'non e\' un testo: e\' il motivo «deciso dal pannello»'],
+  ['src/features/tg-decidi.js', 'Aspetta fuori dal gruppo finché non decidi', 'in privato su Telegram, al solo proprietario'],
+  ['src/features/tg-decidi.js', 'They wait outside the group until you decide', 'in privato su Telegram, al solo proprietario (in inglese)'],
+  ['src/features/tg-decidi.js', 'Espera fuera del grupo hasta que decidas', 'in privato su Telegram, al solo proprietario (in spagnolo)'],
+  ['src/features/tg-decidi.js', 'Stanno arrivando molte richieste', 'in privato su Telegram, al solo proprietario'],
+  ['src/features/tg-decidi.js', 'Lots of requests to join', 'in privato su Telegram, al solo proprietario (in inglese)'],
+  ['src/features/tg-decidi.js', 'Están llegando muchas solicitudes', 'in privato su Telegram, al solo proprietario (in spagnolo)'],
   // La porta del gruppo Telegram che non c'e' (pagina web, non chat): stessa
   // forma, il riquadro «E' il tuo gruppo?».
   ['src/features/tg-porta.js', 'La porta si apre dal pannello', 'porta del gruppo chiusa: la nota del riquadro «È il tuo gruppo?»'],
