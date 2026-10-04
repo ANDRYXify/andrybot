@@ -2012,16 +2012,44 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // della pagina, oppure e' quella che lo streamer ha rifatto. Si tiene in
   // memoria un'ora, e si rifa' quando cambia la pagina, la carta o la faccia.
   const _cartePagina = new Map();          // login|quale → { buf, chiave, ts }
-  const qualePagina = (v) => (['dona', 'negozio'].includes(String(v || '')) ? String(v) : 'link');
+  // UNA RIGA PER PAGINA, e le pagine sono quelle di TEMI_PAGINA (il contratto
+  // vuole le stesse chiavi qui, nel database e nei temi): se c'e', quando si
+  // apre, com'e' fatta, il suo indirizzo e le righe della sua carta.
+  const PAGINE_CARTA = {
+    link: {
+      aperta: (l) => !!linkPage.get(l)?.attiva,
+      pagina: (l, d) => linkPage.conDefault(l, d),
+      url: (l) => `${config.baseUrl}/u/${l}`,
+      righe: (l, d, p) => ({ nome: p.headline || d, titolo: p.tagline || '' }),
+    },
+    dona: {
+      aperta: (l) => !!paginaDona.get(l)?.attiva,
+      pagina: (l, d) => aspettoDi(paginaDona.conDefault(l, d), linkPage.get(l)),
+      url: (l) => donazioni.urlPaginaDona(l),
+      righe: (l, d, p) => ({ nome: d, titolo: p.tagline || '' }),
+    },
+    negozio: {
+      aperta: (l) => negozio.aperto(l),
+      pagina: (l, d) => negozioPagina.paginaDi(l, d),
+      url: (l) => negozio.urlPaginaNegozio(l),
+      righe: (l, d) => negozioPagina.righeCarta(l, d),
+    },
+    telegram: {
+      aperta: (l) => tgPorta.aperta(l),
+      pagina: (l, d) => tgPorta.paginaDi(l, d),
+      url: (l) => scudoTg.urlPorta(l),
+      righe: (l, d) => tgPorta.righeCarta(l, d),
+    },
+  };
+  const qualePagina = (v) => (Object.hasOwn(PAGINE_CARTA, String(v || '')) ? String(v) : 'link');
   async function datiCartaPagina(login, quale) {
     const s = streamers.get(login);
     const display = s?.display || login;
-    const p = quale === 'negozio' ? negozioPagina.paginaDi(login, display)
-      : quale === 'dona' ? aspettoDi(paginaDona.conDefault(login, display), linkPage.get(login)) : linkPage.conDefault(login, display);
-    const url = quale === 'negozio' ? negozio.urlPaginaNegozio(login) : quale === 'dona' ? donazioni.urlPaginaDona(login) : `${config.baseUrl}/u/${login}`;
+    const P = PAGINE_CARTA[qualePagina(quale)];
+    const p = P.pagina(login, display);
+    const url = P.url(login);
     const foto = p.avatar === 'no' ? '' : (p.avatar || await avatarDi(login) || '');
-    const righe = quale === 'negozio' ? negozioPagina.righeCarta(login, display)
-      : { nome: quale === 'dona' ? display : (p.headline || display), titolo: p.tagline || '' };
+    const righe = P.righe(login, display, p);
     return {
       ...righe, gioco: '', spettatori: '',
       login, link: url.replace(/^https?:\/\//, ''), piattaforma: piattaformaDi(login),
@@ -2049,8 +2077,8 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   const rottaCartaPagina = (quale) => wrap(async (req, res) => {
     const login = String(req.params.user || '').toLowerCase();
     if (!eLoginNostro(login)) return notFound(res);
-    const p = quale === 'negozio' ? (negozio.aperto(login) ? { attiva: true } : null) : (quale === 'dona' ? paginaDona : linkPage).get(login);
-    if (!p || !p.attiva) return notFound(res);
+    // una pagina spenta non ha anteprima
+    if (!PAGINE_CARTA[quale].aperta(login)) return notFound(res);
     const png = await pngCartaPagina(login, quale);
     if (!png) return notFound(res);
     res.set('Content-Type', 'image/png').set('Cache-Control', 'public, max-age=3600').send(png);
@@ -2058,6 +2086,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   app.get('/u/:user/anteprima.png', rottaCartaPagina('link'));
   app.get('/u/:user/anteprima-dona.png', rottaCartaPagina('dona'));
   app.get('/u/:user/anteprima-negozio.png', rottaCartaPagina('negozio'));
+  app.get('/u/:user/anteprima-telegram.png', rottaCartaPagina('telegram'));
   // l'indirizzo dell'immagine da scrivere nella pagina: solo se il server sa disegnarla
   const immagineAnteprimaDi = (login, quale) => (cartaLive.disegnabile() ? `${config.baseUrl}/u/${login}/anteprima${quale === 'link' ? '' : '-' + quale}.png` : '');
 
@@ -2283,7 +2312,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     if (s && tgPorta.aperta(login)) {
       const inv = await scudoTg.invito(tgConf.get(login), { salva: salvaInvito(login) }).catch(() => null);
       if (inv?.ok) {
-        html = tgPorta.htmlPorta(login, { display: s.display || login, avatar: await avatarDi(login), baseUrl: config.baseUrl, invito: inv.url });
+        html = tgPorta.htmlPorta(login, { display: s.display || login, avatar: await avatarDi(login), baseUrl: config.baseUrl, invito: inv.url, immagineAnteprima: immagineAnteprimaDi(login, 'telegram') });
       }
     }
     if (!html) {
@@ -2817,6 +2846,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     // primo che bussa
     const c = tgConf.get(login);
     if (c?.token && c.chat_id) await scudoTg.invito(c, { salva: salvaInvito(login) }).catch(() => null);
+    _cartePagina.delete(login + '|telegram');
     res.json({ ok: true, url: scudoTg.urlPorta(login), pubblicata: tgPorta.aperta(login), salvati: p?.blocchi?.length || 0, inviati, pagina: pubblicaPorta(p) });
   }));
   app.post('/api/paginatelegram/anteprima', requireOwner, wrap(async (req, res) => {

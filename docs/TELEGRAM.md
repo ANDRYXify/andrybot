@@ -384,6 +384,13 @@ cache, non si indicizza, non manda referrer.
   demo la prova non si apre (non c'e' un bot): lo dice, e gli esiti si
   guardano lo stesso.
 
+- **L'anteprima del link** della porta e' una carta come quella della pagina
+  link (docs/CARTA-LIVE.md, «La carta dell'anteprima del link»): la sua
+  (`TEMI_PAGINA.telegram`), rifatta nell'editor della porta in «Quando
+  condividi il link», servita a `/u/<canale>/anteprima-telegram.png` solo
+  finche' la porta e' aperta, e scritta nella pagina come `og:image`. Chi
+  incolla `telegram.<dominio>` senza canale finisce sul sito, e vede la sua.
+
 ### Cosa serve
 
 HTTPS, il bot interattivo acceso, il gruppo collegato, il bot amministratore

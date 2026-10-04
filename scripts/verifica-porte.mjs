@@ -122,6 +122,7 @@ const PUBBLICHE = new Map([
   ['POST /api/tg-scudo/:canale/:azione', 'le quattro chiamate della prova: la persona e la richiesta vengono SOLO dalla firma di Telegram, controllata col token del bot di quel canale (tgScudo/identifica), con un tetto al minuto'],
   ['POST /api/tg-porta/:canale/:azione', 'la prova sulla porta del gruppo, nel browser: la persona e\' SOLO il codice che il server ha dato alla pagina (nel database ne resta l\'impronta, scudoTg.identificaPorta), la porta dev\'essere pubblicata e lo scudo acceso, con un tetto al minuto e uno all\'ora sulle prove nuove'],
   ['GET /u/:user/anteprima-negozio.png', 'l\'anteprima del link della pagina del negozio: come sopra'],
+  ['GET /u/:user/anteprima-telegram.png', 'l\'anteprima del link della porta del gruppo Telegram: come sopra, e solo se la porta e\' aperta'],
   ['GET /u/:user/img/:file', 'immagini della pagina link'],
   ['GET /u/:user/privacy', 'informativa della pagina link'],
   ['GET /sostieni', 'la pagina per sostenere il progetto: pubblica, e non chiede un account a nessuno'],

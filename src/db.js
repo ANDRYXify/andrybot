@@ -533,9 +533,9 @@ CREATE TABLE IF NOT EXISTS carte_live (  -- la grafica con cui si annuncia «son
   ts INTEGER NOT NULL DEFAULT 0
 );
 
-CREATE TABLE IF NOT EXISTS carte_pagina (  -- l'anteprima del link (pagina link, pagina delle donazioni), se lo streamer l'ha rifatta
+CREATE TABLE IF NOT EXISTS carte_pagina (  -- l'anteprima del link di una pagina pubblica, se lo streamer l'ha rifatta
   channel TEXT NOT NULL,
-  quale TEXT NOT NULL,                     -- link | dona
+  quale TEXT NOT NULL,                     -- link | dona | negozio | telegram (QUALI_CARTA_PAGINA)
   dati TEXT NOT NULL DEFAULT '',           -- la carta intera, come la scrive l'editor
   ts INTEGER NOT NULL DEFAULT 0,
   PRIMARY KEY (channel, quale)
@@ -3745,8 +3745,11 @@ export const carteLive = {
 
 // L'anteprima del link, rifatta dallo streamer: una per pagina (link, dona,
 // negozio). Niente riga = standard (la carta vestita col colore della pagina).
+// Le pagine che hanno un'anteprima del link: le stesse di TEMI_PAGINA
+// (carta-disegno.js), e un contratto lo controlla.
+export const QUALI_CARTA_PAGINA = ['link', 'dona', 'negozio', 'telegram'];
 export const cartePagina = {
-  _quale: (q) => (q === 'dona' || q === 'negozio' ? q : 'link'),
+  _quale: (q) => (QUALI_CARTA_PAGINA.includes(q) ? q : 'link'),
   get(channel, quale) {
     const r = db.prepare('SELECT * FROM carte_pagina WHERE channel=? AND quale=?').get(String(channel).toLowerCase(), this._quale(quale));
     if (!r) return null;

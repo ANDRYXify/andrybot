@@ -319,6 +319,19 @@ export function paginaDiPartenza(canale, display) {
     blocchi: PEZZI_DI_SERIE.map((b) => ({ ...b })) };
 }
 
+// Le righe della carta dell'anteprima del link (carta-disegno.js, TEMI_PAGINA.telegram),
+// come quelle del negozio: il nome e' chi fa la diretta, sotto il sottotitolo
+// della porta, o il titolo se e' suo (non quello di partenza), o la riga di
+// partenza.
+export function righeCarta(canale, display) {
+  const ch = String(canale || '').toLowerCase();
+  const p = paginaDi(ch, display);
+  const t = T[lin(preferenzeDi(ch).lingua)];
+  const nome = display || ch;
+  const suo = p.headline && p.headline !== t.partenza(nome) ? p.headline : '';
+  return { nome, titolo: p.tagline || suo || t.riga };
+}
+
 // I colori della porta, per chi la descrive da fuori (il pannello dice come
 // esce la prova «coi colori della pagina»).
 export const coloriPorta = (canale, display) => coloriDi(paginaDi(canale, display));

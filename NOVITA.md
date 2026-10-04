@@ -58,6 +58,12 @@ comandi diversi da quelli della riga italiana.
 - Se un comando importato non riesce a entrare, il pannello ora lo dice e dice perché: prima non lo diceva. [vai: moduli]
   en: If an imported command cannot get in, the panel now says so and says why: before, it stayed silent.
   es: Si un comando importado no consigue entrar, el panel ahora lo dice y dice por qué: antes no decía nada.
+- La porta del gruppo Telegram ha la sua immagine quando condividi il link: la vedi e la rifai in «Quando condividi il link», come per la pagina link. [vai: telegram]
+  en: Your Telegram group door has its own image when you share the link: see it and redo it in “When you share the link”, like your link page.
+  es: La puerta de tu grupo de Telegram tiene su imagen cuando compartes el enlace: la ves y la rehaces en «Cuando compartes el enlace», como la página de enlaces.
+- Nell'immagine del link di pagina link, donazioni e negozio la scritta in alto segue la lingua del canale: prima «I MIEI LINK» e «SOSTIENIMI» restavano in italiano. [vai: pagina]
+  en: In the link image of your link page, donations and shop, the label at the top follows the channel language: before, “I MIEI LINK” and “SOSTIENIMI” stayed in Italian.
+  es: En la imagen del enlace de tu página de enlaces, donaciones y tienda, el rótulo de arriba sigue el idioma del canal: antes «I MIEI LINK» y «SOSTIENIMI» se quedaban en italiano.
 
 ## 2026-10-03
 

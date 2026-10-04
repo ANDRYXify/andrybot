@@ -275,11 +275,23 @@ export function temaPerPiattaforma(p) {
 // sottotitolo, un trattino, l'indirizzo. DONA — taglio: un fondo sfumato, una
 // striscia di colore a destra, la targhetta tagliata, il nome condensato.
 // NEGOZIO — vetrina: un fondo con l'alone in basso, la faccia quadrata come
-// un'etichetta, la targhetta del negozio nella lingua del canale, il nome.
-export const SEGNALE_PAGINA = { link: '#7C5CFF', dona: '#FF4FA3', negozio: '#2BB673' };
-// La targhetta del negozio parla la lingua del canale: e' la sola parola della
-// carta che non scrive lo streamer.
-const TARGHETTA_NEGOZIO = { it: 'IL NEGOZIO', en: 'SHOP', es: 'LA TIENDA' };
+// un'etichetta, la targhetta del negozio, il nome. TELEGRAM — la porta del
+// gruppo: l'alone in alto a destra, la faccia con l'angolo tagliato, la
+// targhetta del gruppo, il nome.
+//
+// L'ELENCO DELLE PAGINE E' QUESTO (le chiavi di TEMI_PAGINA, NOMI_TEMI_PAGINA):
+// il database, le rotte dell'immagine e il pannello lo leggono da qui, e un
+// contratto vuole che non ne manchi nessuna (test/contratto/anteprima-link).
+export const SEGNALE_PAGINA = { link: '#7C5CFF', dona: '#FF4FA3', negozio: '#2BB673', telegram: '#2AABEE' };
+// La targhetta parla la lingua del canale: e' la sola parola della carta di
+// partenza che non scrive lo streamer, e un canale inglese non deve trovarsela
+// in italiano. Il preset tiene quella italiana.
+const TARGHETTE = {
+  link: { it: 'I MIEI LINK', en: 'MY LINKS', es: 'MIS ENLACES' },
+  dona: { it: 'SOSTIENIMI', en: 'SUPPORT ME', es: 'APÓYAME' },
+  negozio: { it: 'IL NEGOZIO', en: 'SHOP', es: 'LA TIENDA' },
+  telegram: { it: 'IL GRUPPO TELEGRAM', en: 'TELEGRAM GROUP', es: 'GRUPO DE TELEGRAM' },
+};
 
 export const TEMI_PAGINA = {
   link: {
@@ -335,6 +347,24 @@ export const TEMI_PAGINA = {
       { id: 'trattino', tipo: 'riga', x: 520, y: 416, larghezza: 56, altezza: 5, colore: '#2BB673' },
       { id: 'indirizzo', tipo: 'testo', x: 520, y: 472, testo: '{link}',
         carattere: 'Archivo', corpo: 27, colore: '#8FA399', larghezza: 630 },
+    ],
+  },
+  telegram: {
+    nome: 'Il gruppo',
+    ...MISURA_PAGINA,
+    fondo: { tipo: 'alone', tinta: '#0B1218', alone: '#2AABEE', alone2: '#134D6B', cx: 86, cy: 8, r: 66 },
+    elementi: [
+      { id: 'avatar', tipo: 'avatar', x: 290, y: 315, d: 290, forma: 'tagliato',
+        bordo: '#2AABEE', spessore: 5, aureola: false },
+      { id: 'targhetta', tipo: 'targhetta', x: 520, y: 172, testo: 'IL GRUPPO TELEGRAM',
+        sfondo: '#2AABEE', colore: '#FFFFFF', carattere: 'Archivo Black', corpo: 24, punto: false },
+      { id: 'nome', tipo: 'testo', x: 520, y: 318, testo: '{nome}',
+        carattere: 'Archivo Black', corpo: 74, colore: '#FFFFFF', larghezza: 630 },
+      { id: 'titolo', tipo: 'testo', x: 520, y: 376, testo: '{titolo}',
+        carattere: 'Archivo', corpo: 31, colore: '#BFD3E0', larghezza: 630 },
+      { id: 'trattino', tipo: 'riga', x: 520, y: 416, larghezza: 56, altezza: 5, colore: '#2AABEE' },
+      { id: 'indirizzo', tipo: 'testo', x: 520, y: 472, testo: '{link}',
+        carattere: 'Archivo', corpo: 27, colore: '#8BA3B3', larghezza: 630 },
     ],
   },
 };
@@ -394,20 +424,17 @@ export function tintaCarta(carta, segnale, accento) {
 export function cartaPaginaDi({ dati, quale, accento, lingua = 'it' } = {}) {
   if (dati && Array.isArray(dati.elementi) && dati.elementi.length) return normCarta(dati);
   const q = TEMI_PAGINA[quale] ? quale : 'link';
-  let tema = TEMI_PAGINA[q];
-  if (q === 'negozio') {
-    const scritta = TARGHETTA_NEGOZIO[lingua] || TARGHETTA_NEGOZIO.it;
-    tema = { ...tema, elementi: tema.elementi.map((e) => (e.id === 'targhetta' ? { ...e, testo: scritta } : e)) };
-  }
+  const scritta = TARGHETTE[q][lingua] || TARGHETTE[q].it;
+  const tema = { ...TEMI_PAGINA[q], elementi: TEMI_PAGINA[q].elementi.map((e) => (e.id === 'targhetta' ? { ...e, testo: scritta } : e)) };
   return normCarta(tintaCarta(tema, SEGNALE_PAGINA[q], accento || SEGNALE_PAGINA[q]));
 }
 
-// Le vesti da cui ripartire nell'editor dell'anteprima: i tre disegni delle
+// Le vesti da cui ripartire nell'editor dell'anteprima: i disegni delle
 // pagine, ognuno col colore della pagina e con la targhetta della pagina che si
 // sta vestendo (la carta del negozio vestita «Striscia» dice ancora «il
 // negozio», non «sostienimi»). Lo stesso aspetto dei temi della locandina:
 // id, nome, nomi nelle tre lingue, carta.
-const VESTI_PAGINA = { link: ['Alone', 'Glow', 'Halo'], dona: ['Striscia', 'Stripe', 'Franja'], negozio: ['Cornice', 'Frame', 'Marco'] };
+const VESTI_PAGINA = { link: ['Alone', 'Glow', 'Halo'], dona: ['Striscia', 'Stripe', 'Franja'], negozio: ['Cornice', 'Frame', 'Marco'], telegram: ['Angolo', 'Corner', 'Esquina'] };
 export function vestiPagina({ quale, accento, lingua = 'it' } = {}) {
   const q = TEMI_PAGINA[quale] ? quale : 'link';
   const targa = (cartaPaginaDi({ quale: q, accento, lingua }).elementi.find((e) => e.tipo === 'targhetta') || {}).testo;

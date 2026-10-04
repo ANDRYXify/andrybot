@@ -4,12 +4,16 @@
 // Telegram e agli altri (la carta, altrimenti copertina o faccia), le rotte
 // pubbliche e quelle del proprietario esistono coi loro guardiani, e il
 // pannello la mostra e la manda allo stesso editor delle locandine.
+// LE PAGINE SONO UN ELENCO SOLO (le chiavi di TEMI_PAGINA): database, server,
+// rotte, dichiarazioni delle porte e pannello hanno le stesse, nessuna esclusa.
+// E' cosi' che la porta del gruppo Telegram era rimasta senza.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { renderLinkPage, accentoDi } from '../../src/features/linkpagina.js';
+import { NOMI_TEMI_PAGINA } from '../../src/features/carta-disegno.js';
 const RAD = join(dirname(fileURLToPath(import.meta.url)), '../..');
 const leggi = (p) => readFileSync(join(RAD, p), 'utf8');
 // L'icona del sito col suo timbro, quello unico di tutte le icone: si legge dal
@@ -50,26 +54,45 @@ test('il colore della pagina: quello del tema, sennò quello del preset', () => 
   assert.match(accentoDi({}), /^#[0-9a-fA-F]{3,6}$/);
 });
 
-test('le rotte: tre pubbliche per le chat, quattro del proprietario, una cache che si rifa\' quando serve', () => {
-  assert.ok(SRV.includes("app.get('/u/:user/anteprima.png', rottaCartaPagina('link'));") && SRV.includes("app.get('/u/:user/anteprima-dona.png', rottaCartaPagina('dona'));")
-    && SRV.includes("app.get('/u/:user/anteprima-negozio.png', rottaCartaPagina('negozio'));"));
-  assert.match(PORTE, /\['GET \/u\/:user\/anteprima\.png', /); assert.match(PORTE, /\['GET \/u\/:user\/anteprima-dona\.png', /);
-  assert.match(PORTE, /\['GET \/u\/:user\/anteprima-negozio\.png', /);
+// Le righe di PAGINE_CARTA nel server: le chiavi della tabella, in ordine.
+const tabella = (() => {
+  const i = SRV.indexOf('const PAGINE_CARTA = {');
+  assert.ok(i >= 0, 'il server ha la tabella delle pagine');
+  const corpo = SRV.slice(i, SRV.indexOf('\n  };\n', i));
+  return [...corpo.matchAll(/^ {4}(\w+): \{$/gm)].map((m) => m[1]);
+})();
+const pngDi = (q) => `/u/:user/anteprima${q === 'link' ? '' : '-' + q}.png`;
+
+test('un elenco solo: temi, server e rotte hanno le stesse pagine', () => {
+  assert.deepEqual(tabella, NOMI_TEMI_PAGINA, 'PAGINE_CARTA ha una riga per ogni tema, e nessuna in piu\'');
+  assert.ok(SRV.includes("const qualePagina = (v) => (Object.hasOwn(PAGINE_CARTA, String(v || '')) ? String(v) : 'link');"), 'il server riconosce le pagine dalla tabella');
+  for (const q of NOMI_TEMI_PAGINA) {
+    assert.ok(SRV.includes(`app.get('${pngDi(q)}', rottaCartaPagina('${q}'));`), `${q}: la rotta dell'immagine`);
+    assert.ok(PORTE.includes(`['GET ${pngDi(q)}', `), `${q}: la rotta e' dichiarata fra le porte`);
+    assert.ok(SRV.includes(`immagineAnteprima: immagineAnteprimaDi(login, '${q}')`), `${q}: la pagina scrive la sua immagine`);
+  }
+});
+
+test('le rotte: una pubblica per pagina per le chat, quattro del proprietario, una cache che si rifa\' quando serve', () => {
   for (const v of ['get', 'put', 'delete']) assert.ok(SRV.includes(`app.${v}('/api/paginacarta', requireOwner,`), v);
   assert.ok(SRV.includes("app.get('/api/paginacarta.png', requireOwner,"));
-  assert.ok(SRV.includes("if (!p || !p.attiva) return notFound(res);\n    const png = await pngCartaPagina(login, quale);"), 'una pagina spenta non ha anteprima');
+  assert.ok(SRV.includes("if (!PAGINE_CARTA[quale].aperta(login)) return notFound(res);\n    const png = await pngCartaPagina(login, quale);"), 'una pagina spenta non ha anteprima');
+  assert.ok(SRV.includes("aperta: (l) => tgPorta.aperta(l),"), 'la porta ha l\'anteprima solo se e\' aperta');
   assert.ok(SRV.includes("const chiave = `${dati.ts}|${mia?.ts || 0}|${dati.avatar.length}|${dati.accento}`;"), 'la cache sa quando la carta e\' vecchia');
   assert.ok(SRV.includes("cartePagina.set(login, quale, req.body.carta ? cartaLive.normCarta(req.body.carta) : null);"), 'si salva quello che il server ha ripulito');
   assert.ok(SRV.includes("set('Cache-Control', 'public, max-age=3600')"), 'le chat la tengono un\'ora');
-  assert.equal((SRV.match(/immagineAnteprima: immagineAnteprimaDi\(login, '(link|dona|negozio)'\)/g) || []).length, 3, 'tutte e tre le pagine la scrivono');
   assert.ok(SRV.includes("const immagineAnteprimaDi = (login, quale) => (cartaLive.disegnabile() ?"), 'solo se il server sa disegnarla');
 });
 
 test('il pannello: il riquadro nell\'editor della pagina, lo stesso editor delle locandine col suo titolo', () => {
   assert.ok(APP.includes('<div id="lp-carta-box">') && APP.includes("await api('/api/paginacarta?quale=' + LP.quale)"), 'la carta della pagina che si sta modificando');
-  assert.ok(SRV.includes("const qualePagina = (v) => (['dona', 'negozio'].includes(String(v || '')) ? String(v) : 'link');"), 'e il server conosce le tre pagine');
+  // il riquadro c'e' in ogni editor di pagina che si condivide: fuori solo le
+  // pagine dei pannelli di Twitch, che si aprono dal pannello e non si mandano
+  assert.ok(APP.includes("${LP.quale === 'pannello' ? '' : `<details class=\"carta sez\">\n          <summary><h3>${L('Quando condividi il link'"), 'fuori solo le pagine dei pannelli');
   assert.ok(APP.includes("const mod = await import('/carta-editor.js');\n      mod.apri({ ..._cartaPagina, titolo:"), 'lo stesso editor, col titolo dell\'anteprima');
   assert.ok(APP.includes('id="lp-carta-standard"') && APP.includes("{ method: 'DELETE' }"), 'si torna a quella standard');
   assert.ok(leggi('src/web/public/carta-editor.js').includes("esc(stato.titolo || L('Editor della locandina'"), 'l\'editor prende il titolo da chi lo apre');
-  assert.ok(APP.includes("F['/api/paginacarta'] = cartaPag('link');"), 'anche in demo (che legge la via senza la domanda)');
+  assert.ok(APP.includes("if (via === '/api/paginacarta') return Promise.resolve(_demoGet('/api/paginacarta?quale=' +"), 'anche in demo, la carta della pagina che si sta modificando');
+  const demo = APP.slice(APP.indexOf('const PAG_DEMO = {'), APP.indexOf('\n  };\n', APP.indexOf('const PAG_DEMO = {')));
+  assert.deepEqual([...demo.matchAll(/^ {4}(\w+): \['/gm)].map((m) => m[1]), NOMI_TEMI_PAGINA, 'la demo ha una carta per ogni pagina');
 });

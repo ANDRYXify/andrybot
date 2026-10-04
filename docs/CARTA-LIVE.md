@@ -273,10 +273,27 @@ colori — `Emoji_Presentation` — più i pittogrammi che U+FE0F promuove. Le s
 ## La carta dell'anteprima del link
 
 La stessa famiglia serve anche l'anteprima che le chat mostrano quando
-qualcuno incolla la pagina link o quella delle donazioni. Due preset in
-`TEMI_PAGINA` (`link`, `dona`), misura `MISURA_PAGINA` (1200×630), un impianto
-diverso dalla locandina perché qui non c'è una diretta da annunciare ma una
-persona da riconoscere: la faccia, il nome grande, il sottotitolo, l'indirizzo.
+qualcuno incolla una pagina pubblica: la pagina link, quella delle donazioni,
+il negozio e la porta del gruppo Telegram. Un preset per pagina in
+`TEMI_PAGINA` (`link`, `dona`, `negozio`, `telegram`), misura `MISURA_PAGINA`
+(1200×630), un impianto diverso dalla locandina perché qui non c'è una diretta
+da annunciare ma una persona da riconoscere: la faccia, il nome grande, il
+sottotitolo, l'indirizzo.
+
+**Un elenco solo.** Le pagine con un'anteprima sono le chiavi di `TEMI_PAGINA`
+(`NOMI_TEMI_PAGINA`), e da lì vengono tutte le altre: il database
+(`QUALI_CARTA_PAGINA`), la tabella del server (`PAGINE_CARTA`: se la pagina è
+aperta, com'è fatta, il suo indirizzo, le righe della carta), le rotte
+dell'immagine, le porte dichiarate e il pannello. Il contratto
+(`test/contratto/anteprima-link.test.mjs`) le vuole uguali, una per una. Prima
+l'elenco era scritto a mano in sei posti, ed è così che la porta del gruppo era
+rimasta senza la sua.
+
+**La targhetta parla la lingua del canale**, in ogni pagina: «I MIEI LINK»,
+«MY LINKS», «MIS ENLACES»; «SOSTIENIMI», «SUPPORT ME», «APÓYAME»; e così il
+negozio e il gruppo. È la sola parola della carta di partenza che non scrive lo
+streamer, e prima un canale inglese la trovava in italiano. Il preset tiene
+quella italiana.
 
 **Standard ma non fissa.** Ogni preset ha un **segnale** (`SEGNALE_PAGINA`), il
 colore che nel disegno fa da accento; `tintaCarta(carta, segnale, accento)` lo
@@ -288,9 +305,15 @@ altrimenti il preset tinto.
 
 Il pannello la mostra nel riquadro «Quando condividi il link» dell'editor della
 pagina e apre lo stesso `carta-editor.js` (titolo suo, misura sua). Le **vesti**
-sono i tre disegni delle pagine (`vestiPagina`: «Alone», «Striscia», «Cornice»),
-ognuno col colore della pagina e con la targhetta della pagina che si sta
-vestendo.
+sono i disegni delle pagine (`vestiPagina`: «Alone», «Striscia», «Cornice»,
+«Angolo»), ognuno col colore della pagina e con la targhetta della pagina che
+si sta vestendo, nella lingua del canale.
+
+**La carta della porta del gruppo.** Alone in alto a destra, la faccia con
+l'angolo tagliato, la targhetta del gruppo, il nome di chi fa la diretta; sotto
+il sottotitolo della porta, o il titolo se l'ha cambiato, o la riga di partenza
+(`righeCarta` in `src/features/tg-porta.js`, come quella del negozio). C'è solo
+se la porta è aperta (pubblicata, col bot nel gruppo), come le altre pagine.
 
 **La carta del negozio.** La targhetta dice già «il negozio»: il nome grande è
 quello del canale, non «Il negozio di …», che la ripeteva. Sotto va la riga
@@ -298,6 +321,7 @@ dello streamer, se l'ha scritta; poi il titolo della pagina, se l'ha cambiato;
 sennò una riga che dice cosa ci si trova («Cosa si compra in chat, e quanto
 costa»). Mai vuota: una riga vuota lasciava un buco nella carta
 (`righeCarta`, in `src/features/negozio-pagina.js`). Le rotte:
-`GET/PUT/DELETE /api/paginacarta?quale=link|dona`, `GET /api/paginacarta.png`
-per il proprietario; `GET /u/<login>/anteprima.png` e `anteprima-dona.png`
+`GET/PUT/DELETE /api/paginacarta?quale=link|dona|negozio|telegram`,
+`GET /api/paginacarta.png` per il proprietario; `GET /u/<login>/anteprima.png`,
+`anteprima-dona.png`, `anteprima-negozio.png` e `anteprima-telegram.png`
 pubbliche, con cache di un'ora rifatta quando cambiano pagina, carta o faccia.

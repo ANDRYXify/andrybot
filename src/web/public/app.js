@@ -1269,6 +1269,7 @@ function apiDemo(percorso, opzioni = {}) {
   const via = percorso.split('?')[0];
   const domanda = new URLSearchParams(percorso.split('?')[1] || '').get('q') || '';
   if (metodo === 'GET' && via === '/api/streamer/adesso') return Promise.resolve(_demoAdesso());
+  if (via === '/api/paginacarta') return Promise.resolve(_demoGet('/api/paginacarta?quale=' + (new URLSearchParams(percorso.split('?')[1] || '').get('quale') || 'link')));
   if (via.startsWith('/api/streamer/automatiche')) return Promise.resolve(_demoAuto(via, opzioni.body));
   if (metodo === 'GET' && via === '/api/streamer/grafiche/storia') {
     const accesa = !!_demoScritture.storiaLive;
@@ -2214,11 +2215,21 @@ function _demoGet(via) {
         { tipo: 'comecompra', titolo: '', testo: '' }, { tipo: 'piede', link: true, canale: true }] } };
   const statoDona = { paginaUrl: 'https://dona.socialbot.live/andryxify', conto: { stato: 'nessuno', coda: '', nota: '' }, satispay: { stato: 'nessuno', coda: '', nota: '' }, kofi: { stato: 'nessuno', pagina: '', token: false, valuta: 'EUR', webhook: 'https://socialbot.live/dona/kofi/andryxify' }, riepilogo: { oggi: [], mese: [], anno: [], sempre: [] }, ultime: [], daApprovare: [] };
   F['/api/donazioni/stato'] = statoDona; F['/api/donazioni/stato?rileggi=1'] = statoDona;
-  const cartaPag = (quale) => ({ quale, mia: false, disegnabile: true, immagine: '',
-    carta: { nome: quale === 'dona' ? 'Sostienimi' : 'I miei link', larghezza: 1200, altezza: 630, fondo: {}, elementi: [] },
-    dati: { nome: 'ANDRYXify', titolo: quale === 'dona' ? 'Se ti piace quello che faccio, un caffè aiuta.' : 'Dirette, giochi e chiacchiere', gioco: '', login: 'andryxify', link: quale === 'dona' ? 'dona.socialbot.live/andryxify' : 'socialbot.live/u/andryxify', avatar: '' },
-    vocabolario: { ...F['/api/streamer/telegram/carta'].vocabolario, misura: { larghezza: 1200, altezza: 630 }, temi: [] } });
+  const PAG_DEMO = {
+    link: ['I miei link', L('Dirette, giochi e chiacchiere', 'Streams, games and chatter', 'Directos, juegos y charla'), 'socialbot.live/u/andryxify'],
+    dona: ['Sostienimi', L('Se ti piace quello che faccio, un caffè aiuta.', 'If you like what I do, a coffee helps.', 'Si te gusta lo que hago, un café ayuda.'), 'dona.socialbot.live/andryxify'],
+    negozio: ['Il negozio', L('Quello che puoi prendere con le monete del canale', 'What you can get with the channel coins', 'Lo que puedes conseguir con las monedas del canal'), 'negozio.socialbot.live/andryxify'],
+    telegram: ['Il gruppo', L('Si chiacchiera anche quando la diretta è spenta', 'The chat goes on when the stream is off', 'Se charla también cuando el directo está apagado'), 'telegram.socialbot.live/andryxify'],
+  };
+  const cartaPag = (quale) => {
+    const [nome, titolo, link] = PAG_DEMO[quale] || PAG_DEMO.link;
+    return { quale, mia: false, disegnabile: true, immagine: '',
+      carta: { nome, larghezza: 1200, altezza: 630, fondo: {}, elementi: [] },
+      dati: { nome: 'ANDRYXify', titolo, gioco: '', login: 'andryxify', link, avatar: '' },
+      vocabolario: { ...F['/api/streamer/telegram/carta'].vocabolario, misura: { larghezza: 1200, altezza: 630 }, temi: [] } };
+  };
   F['/api/paginacarta'] = cartaPag('link');
+  for (const q of Object.keys(PAG_DEMO)) F['/api/paginacarta?quale=' + q] = cartaPag(q);
   F['/api/paginatelegram'] = { ...F['/api/linkpage'], url: 'https://telegram.socialbot.live/andryxify', pubblicata: true, visite: null, suggeriti: [],
     tipi: ['intestazione', 'gruppo', 'scudo', 'regole', 'piede', 'titolo', 'testo', 'link', 'separatore', 'spazio', 'immagine'],
     aspettoLink: { template: F['/api/linkpage'].pagina.template, tema: F['/api/linkpage'].pagina.tema },
@@ -23169,7 +23180,7 @@ async function caricaPaginaLink(ridisegna = false, quale = null) {
           </div>
         </details>
 
-        ${LP.quale === 'pannello' || LP.quale === 'telegram' ? '' : `<details class="carta sez">
+        ${LP.quale === 'pannello' ? '' : `<details class="carta sez">
           <summary><h3>${L('Quando condividi il link', 'When you share the link', 'Cuando compartes el enlace')}</h3></summary>
           <p class="suggerimento">${L('Su Telegram, WhatsApp e Discord il link mostra questa immagine, disegnata coi colori della tua pagina. La puoi rifare come vuoi con lo stesso editor delle locandine.', 'On Telegram, WhatsApp and Discord the link shows this image, drawn in your page\'s colors. You can redo it as you like with the same editor as the posters.', 'En Telegram, WhatsApp y Discord el enlace muestra esta imagen, dibujada con los colores de tu página. Puedes rehacerla como quieras con el mismo editor de los carteles.')}</p>
           <div id="lp-carta-box">${attesaHtml()}</div>

@@ -1,26 +1,30 @@
 // © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
 // Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
-// LA CARTA DELL'ANTEPRIMA DEL LINK: tre preset fatti di dati, che tornano
-// identici dal giro della ripulitura e dalla tinta col proprio segnale; la
-// tinta con un altro colore veste il disegno senza toccare il resto; la carta
-// rifatta vince sullo standard; l'immagine si rende e il testo disegna davvero;
-// e la carta di ognuna delle due pagine si salva e si toglie per conto suo.
+// LA CARTA DELL'ANTEPRIMA DEL LINK: un preset fatto di dati per ogni pagina che
+// si condivide (link, donazioni, negozio, porta del gruppo Telegram), che torna
+// identico dal giro della ripulitura e dalla tinta col proprio segnale; la
+// tinta con un altro colore veste il disegno senza toccare il resto; la
+// targhetta parla la lingua del canale; la carta rifatta vince sullo standard;
+// l'immagine si rende e il testo disegna davvero; e la carta di ogni pagina si
+// salva e si toglie per conto suo.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { cartellaUsaEGetta } from '../aiuto.mjs';
 
 const usaEGetta = cartellaUsaEGetta('andrybot-carta-pagina-');
-const { cartePagina } = await import('../../src/db.js');
+const { cartePagina, QUALI_CARTA_PAGINA } = await import('../../src/db.js');
 const {
   TEMI_PAGINA, NOMI_TEMI_PAGINA, SEGNALE_PAGINA, MISURA_PAGINA,
-  tintaCarta, cartaPaginaDi, normCarta, svgCarta, resaCarta, disegnabile, mescola, suColore,
+  tintaCarta, cartaPaginaDi, normCarta, svgCarta, resaCarta, disegnabile, mescola, suColore, vestiPagina,
 } = await import('../../src/features/cartalive.js');
 process.on('exit', () => usaEGetta.pulisci());
 
 const DATI = { nome: 'ANDRYXify', titolo: 'Dirette, giochi e chiacchiere', login: 'andryxify', link: 'socialbot.live/u/andryxify', avatar: '' };
 
-test('i preset delle tre pagine, fatti di dati, nella misura dell\'anteprima', () => {
-  assert.deepEqual(NOMI_TEMI_PAGINA, ['link', 'dona', 'negozio']);
+test('i preset delle pagine, fatti di dati, nella misura dell\'anteprima', () => {
+  assert.deepEqual(NOMI_TEMI_PAGINA, ['link', 'dona', 'negozio', 'telegram']);
+  assert.deepEqual(QUALI_CARTA_PAGINA, NOMI_TEMI_PAGINA, 'il database conosce le stesse pagine dei temi');
+  assert.deepEqual(Object.keys(SEGNALE_PAGINA), NOMI_TEMI_PAGINA, 'ogni pagina ha il suo segnale');
   for (const q of NOMI_TEMI_PAGINA) {
     const t = TEMI_PAGINA[q];
     assert.equal(t.larghezza, MISURA_PAGINA.larghezza); assert.equal(t.altezza, 630);
@@ -83,6 +87,21 @@ test('il disegno porta nome, sottotitolo e indirizzo, e in PNG il testo disegna 
   }
 });
 
+test('la targhetta parla la lingua del canale, in ogni pagina e in ogni veste', () => {
+  const targa = (c) => c.elementi.find((e) => e.tipo === 'targhetta')?.testo;
+  for (const q of NOMI_TEMI_PAGINA) {
+    const [it, en, es] = ['it', 'en', 'es'].map((lingua) => targa(cartaPaginaDi({ quale: q, lingua })));
+    assert.equal(it, targa(TEMI_PAGINA[q]), `${q}: in italiano e\' quella del preset`);
+    assert.ok(en && es && en !== it && es !== it, `${q}: in inglese e in spagnolo non resta italiana (${it} / ${en} / ${es})`);
+    for (const t of [it, en, es]) assert.equal(t, t.toUpperCase(), `${q}: «${t}» e\' maiuscola come il preset`);
+    for (const lingua of ['en', 'es']) {
+      const attesa = targa(cartaPaginaDi({ quale: q, lingua }));
+      for (const v of vestiPagina({ quale: q, lingua })) assert.equal(targa(v.carta), attesa, `${q}/${lingua}: la veste «${v.nome}» dice ancora la sua pagina, nella sua lingua`);
+    }
+  }
+  assert.equal(targa(cartaPaginaDi({ quale: 'telegram', lingua: 'xx' })), targa(TEMI_PAGINA.telegram), 'una lingua che non c\'e\' ricade sull\'italiano');
+});
+
 test('una carta per pagina: si salva, si rilegge ripulita, si toglie senza toccare l\'altra', () => {
   assert.equal(cartePagina.get('andry', 'link'), null);
   const mia = { nome: 'Mia', larghezza: 1200, altezza: 630, fondo: { tipo: 'tinta', tinta: '#111111' }, elementi: [{ id: 'nome', tipo: 'testo', x: 10, y: 10, testo: '{nome}' }] };
@@ -93,4 +112,9 @@ test('una carta per pagina: si salva, si rilegge ripulita, si toglie senza tocca
   assert.equal(cartePagina.set('andry', 'link', null), null);
   assert.equal(cartePagina.get('andry', 'link'), null); assert.ok(cartePagina.get('andry', 'dona'));
   assert.equal(cartePagina.set('andry', 'dona', { elementi: [] }), null, 'senza elementi non e\' una carta: via');
+  // ogni pagina ha il suo posto: quella della porta non finisce su quella dei link
+  cartePagina.set('andry', 'telegram', { ...mia, nome: 'Porta' });
+  assert.equal(cartePagina.get('andry', 'telegram').dati.nome, 'Porta');
+  assert.equal(cartePagina.get('andry', 'link'), null, 'la carta della porta non e\' quella dei link');
+  for (const q of QUALI_CARTA_PAGINA) cartePagina.set('andry', q, null);
 });

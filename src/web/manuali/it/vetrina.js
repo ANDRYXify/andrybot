@@ -59,7 +59,7 @@ export default {
 
     { h3: 'Quando condividi il link' },
     { p: [
-      'Su Telegram, WhatsApp e Discord il link della pagina mostra un\'immagine disegnata coi colori della tua pagina, con nome, sottotitolo, foto e indirizzo. In questa sezione la vedi.',
+      'Su Telegram, WhatsApp e Discord il link della pagina mostra un\'immagine disegnata coi colori della tua pagina, con nome, sottotitolo, foto e indirizzo. In questa sezione la vedi. Ce l\'hanno la pagina link, quella delle donazioni, il negozio e la porta del gruppo Telegram, ognuna col suo disegno. La scritta in alto, come «I MIEI LINK», è nella lingua del canale.',
       '«Apri l\'editor» apre lo stesso editor delle locandine. Scegli un pezzo e lo cambi, lo trascini sulla tela, lo accendi o lo spegni, lo porti più avanti o più indietro, lo duplichi o lo elimini. Hai «Annulla» e «Rifai». «Salva» mette la tua al posto di quella standard, e se chiudi senza salvare te lo chiede prima.',
       '«Torna a quella standard» compare quando ne hai una tua, e la cancella.',
       'Telegram e WhatsApp tengono in memoria l\'immagine per un po\'. Se l\'hai cambiata e vedi ancora la vecchia, aspetta o rimanda il link.',

@@ -19,7 +19,8 @@ const tratto = (testo, da, n) => { const i = testo.indexOf(da); assert.ok(i >= 0
 test('ogni strada che mostra la pagina delle donazioni passa da aspettoDi', () => {
   assert.match(tratto(SRV, "app.get('/dona/:login', wrap(", 1400), /renderLinkPage\(aspettoDi\(p, link\),/, 'la pagina');
   assert.match(tratto(SRV, "app.get('/dona/:user/privacy'", 900), /pagina: aspettoDi\(p, linkPage\.get\(login\)\)/, 'la sua informativa');
-  assert.match(tratto(SRV, 'async function datiCartaPagina(', 500), /quale === 'dona' \? aspettoDi\(paginaDona\.conDefault\(login, display\), linkPage\.get\(login\)\)/, 'l\'immagine dell\'anteprima del link');
+  assert.match(tratto(SRV, '    dona: {\n      aperta:', 400), /pagina: \(l, d\) => aspettoDi\(paginaDona\.conDefault\(l, d\), linkPage\.get\(l\)\),/, 'l\'immagine dell\'anteprima del link');
+  assert.match(tratto(SRV, 'async function datiCartaPagina(', 500), /const p = P\.pagina\(login, display\);/, 'e l\'immagine prende la pagina da quella riga');
   assert.match(tratto(SRV, "app.post('/api/paginadona/anteprima'", 700), /htmlAnteprima\('dona', [\s\S]*link: linkPage\.get\(login\)/, 'l\'anteprima del pannello');
   const ant = tratto(ANT, 'export function htmlAnteprima(', 1200);
   assert.match(ant, /const archivio = dona \? paginaDona : dietro \? paginaPannello : null;/, 'l\'anteprima delle donazioni pulisce con l\'archivio delle donazioni');
