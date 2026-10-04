@@ -349,6 +349,53 @@ al logout. Qui no:
 Quello che torna (timer e tutti i comandi) finisce nel riquadro di testo, senza
 la chiave, e segue la strada di sempre: anteprima, poi «Importa».
 
+## Dagli altri bot: Nightbot, Fossabot, Moobot
+
+Le stesse regole di StreamElements, per i tre bot che mostrano a chiunque i
+comandi di un canale (`src/features/altribot.js`, rotta
+`POST /api/streamer/comandi/importa/da/<bot>`): nessun accesso, nessuna
+chiave, il canale della sessione e non uno scritto a mano, e il controllo che
+sia legato allo stesso account Twitch (Nightbot `providerId`, Fossabot
+`provider_id`, Moobot `userid`, che e' l'id Twitch). Dopo un no non parte
+nient'altro.
+
+Cosa mostra ognuno, e quindi cosa si porta:
+
+| | comandi | chi puo' usarli | attese | alias | in diretta / fuori | conto |
+|---|---|---|---|---|---|---|
+| Nightbot | si' | si' (`userLevel`) | si' | no | no | si' (`count`) |
+| Fossabot | si' | si' (ruoli) | no | si' | si' | no |
+| Moobot | si' | **no** | no | si' (comandi «Alias for !x») | no | no |
+
+Timer e punti nessuno dei tre li mostra a chi non ha l'accesso: per quelli
+resta il riquadro di testo, con l'export se il bot ne fa uno o una riga per
+timer («ogni 15 minuti: …», anche «every» e «cada»).
+
+- **Fossabot: i ruoli non danno mai piu' accesso di prima.** I suoi ruoli sono
+  insiemi (abbonati, VIP, moderatori, ruoli fatti dallo streamer); la scala di
+  qui e' una fila (tutti, abbonati, VIP, moderatori, tu, e ogni gradino ammette
+  quelli sopra). Si prende il gradino **piu' largo la cui fila verso l'alto sta
+  tutta dentro i ruoli ammessi** (lo streamer c'e' sempre): abbonati e
+  moderatori senza i VIP diventano «moderatori e su», perche' «abbonati e su»
+  farebbe entrare i VIP che la' restavano fuori. Chi resta fuori in piu' lo si
+  dice, e il comando va «da rivedere». Un ruolo fatto dallo streamer qui non
+  c'e': il comando entra solo per lui finche' non sceglie in «Per chi». La
+  prova lo verifica su tutte le combinazioni.
+- **Fossabot: i comandi di serie restano la'.** Nell'elenco pubblico di
+  `!uptime`, `!game` e simili c'e' la loro descrizione, non una risposta:
+  importati risponderebbero con la descrizione. SocialBot ha i suoi.
+- **Moobot entra tutto «da rivedere», solo per lo streamer**: non dice chi
+  poteva usare i comandi, e senza saperlo l'unico gradino che non allarga
+  niente e' il piu' stretto. La sua parte di chi scrive (`<username>`) diventa
+  quella di qui; le altre restano scritte come sono, e lo si dice. Senza la
+  spunta «Importa lo stesso quelli da rivedere» non entra niente, e il
+  pannello lo dice e porta alla spunta (sotto, «Dopo Importa»).
+- **Nightbot**: un nome con un segno davanti diverso dal punto esclamativo
+  (`~ciao`) qui si scrive col punto esclamativo, e lo si dice.
+- **Due passi con l'impronta**: «Importa» rilegge tutto dal bot e applica solo
+  se i comandi sono quelli che lo streamer ha visto (anche solo chi poteva
+  usarli cambia l'impronta). Una lettura per canale e per bot alla volta.
+
 ## Due passi, mai uno
 
 Prima l'**anteprima** — che non tocca niente e dice esattamente cosa
@@ -364,6 +411,14 @@ Questo vale anche nei dettagli: «Importa» manda il testo e il cambio
 dell'anteprima che si ha davanti, non quello che c'è nella casella in quel
 momento, e toccare il testo cancella l'anteprima. Cambiare il cambio rifà
 l'anteprima prima di poter importare.
+
+**Dopo Importa** il pannello dice quello che e' successo, e solo quello: i
+nuovi e gli aggiornati, e quanti da rivedere sono rimasti fuori perche' la
+spunta non c'era. Se c'erano solo quelli non dice «era gia' tutto qui» (non
+e' vero): dice che non ha importato niente e come portarli, l'anteprima resta
+e la spunta si accende sotto gli occhi. «Niente da fare» si dice solo quando
+non resta fuori niente; un modulo che non riesce a entrare si dice col suo
+perche'.
 
 I comandi importati diventano **Moduli** (trigger «comando» + azione
 «messaggio»): è esattamente ciò che un comando di Nightbot è, e lo streamer li
@@ -390,4 +445,12 @@ finto: il canale della sessione, i contatori citati, la classifica a pagine una
 chiamata per volta, mai mezza classifica, nessuna chiave nelle chiamate).
 `test/contratto/importa-streamelements.test.mjs` (nessuna rotta riceve la
 chiave; nel pannello la chiave va solo a StreamElements e se ne va subito).
-Nel browser, `scripts/verifica-import-se.mjs` con l'autoprova.
+`test/unita/altribot.test.mjs` (con un Nightbot, un Fossabot e un Moobot finti
+nella forma di quelli veri: il canale della sessione, nessuna chiave, i ruoli
+mai piu' larghi su ogni combinazione, i comandi di serie lasciati la', Moobot da
+rivedere, l'impronta) e `test/contratto/importa-altribot.test.mjs` (la rotta:
+il canale della sessione, l'impronta, nessuna chiave).
+Nel browser, `scripts/verifica-import-se.mjs` con l'autoprova: anche i tre
+tasti, ognuno sulla sua rotta, e «Dopo Importa» con Fossabot (uno da rivedere
+resta fuori, e lo dice) e Moobot (solo da rivedere: niente «era gia' tutto
+qui», l'anteprima resta, con la spunta entrano).

@@ -41,6 +41,24 @@ questa non è una cosa da ricordarsi: il cancello boccia una riga pubblica senza
 traduzione, una traduzione staccata dalla sua riga, o una che dice numeri e
 comandi diversi da quelli della riga italiana.
 
+## 2026-10-04
+
+- [importante] «Prendi da Nightbot», «Prendi da Fossabot» e «Prendi da Moobot»: i comandi del tuo canale arrivano qui senza scaricare niente e senza dare nessuna password. [vai: moduli]
+  en: “Fetch from Nightbot”, “Fetch from Fossabot” and “Fetch from Moobot”: your channel's commands come over without downloading anything or giving any password.
+  es: «Tráelo de Nightbot», «Tráelo de Fossabot» y «Tráelo de Moobot»: los comandos de tu canal llegan aquí sin descargar nada ni dar ninguna contraseña.
+  > Da Nightbot, Fossabot e Moobot, senza chiavi
+  > Ogni comando entra con chi poteva usarlo, mai più largo di prima, con le attese, il conto e gli alias. Moobot non dice chi poteva usarli: i suoi comandi sono da rivedere, ed entrano solo per te finché non scegli.
+  en> From Nightbot, Fossabot and Moobot, no keys
+  en> Each command comes in with who could use it, never wider than before, with its cooldowns, count and aliases. Moobot does not say who could use them: its commands need review and come in for you only until you choose.
+  es> Desde Nightbot, Fossabot y Moobot, sin claves
+  es> Cada comando entra con quién podía usarlo, nunca más amplio que antes, con sus esperas, su contador y sus alias. Moobot no dice quién podía usarlos: sus comandos son para revisar y entran solo para ti hasta que elijas.
+- Dopo «Importa» il pannello dice quanti da rivedere sono rimasti fuori, e se c'erano solo quelli spiega come portarli invece di dire «era già tutto qui». [vai: moduli]
+  en: After “Import” the panel says how many to review were left out, and if those were all there was it explains how to bring them over instead of saying “it was all here already”.
+  es: Tras «Importar» el panel dice cuántos para revisar se quedaron fuera, y si solo había esos explica cómo traerlos en vez de decir «ya estaba todo aquí».
+- Se un comando importato non riesce a entrare, il pannello ora lo dice e dice perché: prima non lo diceva. [vai: moduli]
+  en: If an imported command cannot get in, the panel now says so and says why: before, it stayed silent.
+  es: Si un comando importado no consigue entrar, el panel ahora lo dice y dice por qué: antes no decía nada.
+
 ## 2026-10-03
 
 - [importante] Negli effetti pronti, al posto dei coriandoli, delle stelle o delle scintille puoi mettere immagini, GIF ed emote di Twitch o 7TV. Il moto resta quello dell'effetto. [vai: effetti]

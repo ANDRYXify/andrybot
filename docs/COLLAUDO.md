@@ -322,8 +322,13 @@ con «Importa»; con la chiave, che le chiamate vadano solo a StreamElements e c
 la chiave non arrivi al nostro server, non resti nella pagina, nell'archivio
 del browser o nei cookie, e non ci sia più dopo un ricaricamento. Nella demo le
 chiamate al server non escono in rete: il collaudo annota quelle di `api()`, così
-il controllo della fuga non è vuoto. L'autoprova rimette cinque difetti, uno
-alla volta.
+il controllo della fuga non è vuoto. Poi i tre tasti «Prendi da Nightbot»,
+«Prendi da Fossabot» e «Prendi da Moobot»: ognuno sulla sua rotta, l'anteprima
+che dice da quale canale legge, «Importa» con l'impronta, quanti da rivedere
+restano fuori, e con Moobot (tutti da rivedere) che senza spunta dice di non
+aver importato niente e come portarli, con l'anteprima che resta. I messaggi
+si leggono marcando quelli già visti, perché se ne vanno da soli e contarli
+sbaglia. L'autoprova rimette otto difetti, uno alla volta.
 
 Due restano fuori dalla catena. Il primo, e non per dimenticanza, ha bisogno di
 qualcosa che non controlliamo:

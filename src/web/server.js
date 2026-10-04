@@ -158,6 +158,7 @@ import { creaImpronte, montaStatici } from './impronte.js';
 import { salute } from '../salute.js';
 import { anteprima as anteprimaImport, moduloDa, moduloTimerDa, sopra as importaSopra } from '../features/importacomandi.js';
 import * as streamelements from '../features/streamelements.js';
+import * as altribot from '../features/altribot.js';
 import { BOT_NOTI } from '../features/muro.js';
 import { NON_CONTARE } from '../features/watchtime.js';
 import { esporta as esportaDati } from '../features/esporta.js';
@@ -9452,6 +9453,37 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
       return importaTesto(req, res, login, r.testo, { streamelements: se, cambiato }, { applica: !!req.body?.applica && !cambiato });
     } finally {
       _seInCorso.delete(login);
+    }
+  }));
+
+  // DAGLI ALTRI BOT, SENZA CHIAVI (docs/PONTE.md, «Dagli altri bot»):
+  // Nightbot, Fossabot e Moobot, con le regole di StreamElements. Il bot viene
+  // dall'indirizzo (solo i tre che si conoscono), il canale dalla SESSIONE; il
+  // corpo porta solo «applica», l'impronta e quello che legge il cuore.
+  // «Importa» rilegge tutto e applica solo se e' quello che si e' visto. Una
+  // lettura per canale e per bot alla volta. (Questa rotta sta dopo quella di
+  // StreamElements: «/importa/streamelements» resta sua.)
+  const _altroInCorso = new Set();
+  app.post('/api/streamer/comandi/importa/da/:bot', requireLogin, wrap(async (req, res) => {
+    const bot = String(req.params.bot || '');
+    if (!altribot.QUALI_BOT.includes(bot)) return notFound(res);
+    const login = currentUser(req).login;
+    const nomeBot = altribot.BOT[bot].nome;
+    if (piattaformaDi(login) !== 'twitch') {
+      return res.status(400).json({ errore: `${nomeBot} si legge dal tuo canale Twitch, e questo account non è su Twitch.` });
+    }
+    const chiave = `${bot}:${login}`;
+    if (_altroInCorso.has(chiave)) return res.status(429).json({ errore: `Sto già leggendo da ${nomeBot}: un momento.` });
+    _altroInCorso.add(chiave);
+    try {
+      const r = await altribot.leggi(bot, { login, twitchId: streamers.get(login)?.user_id });
+      if (r.errore) return res.status(r.stato || 502).json({ errore: r.errore });
+      const da = { bot, nome: nomeBot, canale: r.canale, conti: r.conti, firma: r.firma };
+      log.info(`#${login}: letti da ${nomeBot} ${r.conti.comandi} comandi`);
+      const cambiato = !!req.body?.applica && String(req.body?.firma || '') !== r.firma;
+      return importaTesto(req, res, login, r.testo, { da, cambiato }, { applica: !!req.body?.applica && !cambiato });
+    } finally {
+      _altroInCorso.delete(chiave);
     }
   }));
 

@@ -367,6 +367,9 @@ function comandoDaVoce(c) {
   if (c.startsAt) v.inizia = c.startsAt;
   if (c.expiresAt) v.scade = c.expiresAt;
   if (typeof c.count === 'number' && Number.isFinite(c.count)) v.conta = Math.trunc(c.count);
+  // quello che il ponte da un altro bot ha gia' visto cambiare (altribot.js):
+  // un ruolo che qui non c'e', chi resta fuori in piu'. Va detto come gli altri
+  if (Array.isArray(c.avvisi)) v.avvisiFonte = c.avvisi.map((a) => String(a ?? '').trim().slice(0, 300)).filter(Boolean).slice(0, 5);
   return v;
 }
 
@@ -667,6 +670,7 @@ function unComando(c, nome, { cambio, proprietario, ora, altriNomi }) {
   const { testo: tradotto, avvisi, conti } = traduci(c.risposta, { nome });
   if (!tradotto) return { perche: 'risposta vuota' };
   const avvisa = (cosa) => avvisi.push({ tipo: 'comportamento', cosa, dove: null });
+  for (const a of c.avvisiFonte || []) avvisa(a);
 
   const lv = livelloDa(c.livello);
   const condizioni = condizioniDi(lv.gradino, proprietario);

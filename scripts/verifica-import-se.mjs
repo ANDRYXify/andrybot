@@ -15,16 +15,25 @@
 //    (indirizzo, corpo o intestazioni); il campo e' vuoto appena premuto; la
 //    chiave non resta nel riquadro, ne' nell'archivio del browser, ne' nei
 //    cookie; la pagina dice che l'ha cancellata; ricaricando non c'e' niente;
+//  · DAGLI ALTRI BOT: la carta dice che non serve nessun accesso e che nessuno
+//    entra piu' largo; ognuno dei tre tasti chiede la sua rotta e mostra da
+//    quale canale legge; «Importa» manda l'impronta, e quanti da rivedere sono
+//    rimasti fuori lo dice; con solo comandi da rivedere (Moobot) non dice
+//    «era gia' tutto qui» ma come portarli, e l'anteprima resta con la spunta
+//    a portata;
 //  · niente scorre di lato, nessun errore.
 //
 // Uso: node scripts/verifica-import-se.mjs             (esce 1 se una promessa non tiene)
-//      node scripts/verifica-import-se.mjs --selftest  (rimette cinque difetti, uno alla volta:
+//      node scripts/verifica-import-se.mjs --selftest  (rimette otto difetti, uno alla volta:
 //                                                       il campo che non si svuota, la chiave che
 //                                                       resta nella pagina, l'anteprima
 //                                                       senza chi puo' usarlo, «Importa» senza
 //                                                       impronta, la chiave mandata al nostro
-//                                                       server; ognuno deve far scattare il suo
-//                                                       controllo)
+//                                                       server, il tasto di un bot sulla rotta
+//                                                       sbagliata, i rimasti fuori taciuti,
+//                                                       «era gia' tutto qui» con solo comandi
+//                                                       da rivedere; ognuno deve far scattare il
+//                                                       suo controllo)
 
 import { apriSito, apriBrowser } from './_sito.mjs';
 
@@ -36,7 +45,10 @@ const DIFETTI = [
   { nome: 'il campo che non si svuota', da: "    if (campo) campo.value = '';\n    if (!chiave)", a: '    if (!chiave)', visto: 'il campo della chiave non si svuota' },
   { nome: 'la chiave nel testo', da: "      chiave = '';\n      const testo = document.getElementById('imp-testo');", a: "      const testo = document.getElementById('imp-testo');\n      testo.dataset.k = chiave;", visto: 'la chiave resta nella pagina' },
   { nome: 'l\'anteprima senza chi', da: '${impSegni(c)}${impStato(c)}', a: '${impStato(c)}', visto: 'non dice chi puo\' usare' },
-  { nome: '«Importa» senza impronta', da: "if (daSE) corpo.firma = _impSE?.firma || ''; else", a: 'if (daSE) ; else', visto: 'non manda l\'impronta' },
+  { nome: '«Importa» senza impronta', da: "if (daFuori) corpo.firma = _impDa?.firma || ''; else", a: 'if (daFuori) ; else', visto: 'non manda l\'impronta' },
+  { nome: 'il tasto di un bot sulla rotta sbagliata', da: ": '/api/streamer/comandi/importa/da/' + f);", a: ": '/api/streamer/comandi/importa/streamelements');", visto: 'non chiede la rotta sua' },
+  { nome: 'i rimasti fuori taciuti', da: '        if (restaFuori) pezzi.push(', a: '        if (false) pezzi.push(', visto: 'non dice quanti da rivedere sono rimasti fuori' },
+  { nome: '«era gia\' tutto qui» con solo comandi da rivedere', da: 'const soloDaRivedere = !pezzi.length && restaFuori > 0', a: 'const soloDaRivedere = false && restaFuori > 0', visto: 'non dice che non ha importato niente e come portarli' },
   { nome: 'la chiave mandata a noi', da: "      const canale = await chiedi('/channels/me');", a: "      api('/api/streamer/comandi/importa', { method: 'POST', body: { testo: chiave } }).catch(() => {});\n      const canale = await chiedi('/channels/me');", visto: 'una richiesta al nostro server porta la chiave' },
 ];
 
@@ -159,6 +171,53 @@ async function giro([W, H], difetto = null) {
   dice(/"commands"/.test(pagina.testo) && /"timers"/.test(pagina.testo) && /segreto/.test(pagina.testo), `${dove}: timer e comandi nascosti non sono nel riquadro`);
   dice(/cancellata/.test(pagina.stato), `${dove}: la pagina non dice che la chiave e' stata cancellata`);
   dice(pagina.anteprima, `${dove}: dopo la chiave non parte l'anteprima`);
+
+  // dagli altri bot: i tre tasti, ognuno sulla sua rotta
+  // i toast se ne vanno da soli: si segnano quelli gia' visti, e si leggono i nuovi
+  const segnaAvvisi = () => p.evaluate(() => document.querySelectorAll('#toast-box .toast').forEach((t) => { t.dataset.visto = '1'; }));
+  const avvisiNuovi = () => p.evaluate(() => [...document.querySelectorAll('#toast-box .toast:not([data-visto])')].map((t) => t.textContent));
+  const carta2 = await p.evaluate(() => document.getElementById('imp-da')?.textContent.replace(/\s+/g, ' ') || '');
+  dice(/Non serve nessun accesso/.test(carta2) && /mai più largo/.test(carta2), `${dove}: la carta degli altri bot non dice che non serve nessun accesso e che nessuno entra più largo`);
+  const applica = async (bot) => {
+    const primaC = (await chiamate()).length;
+    await segnaAvvisi();
+    await p.click('#imp-applica');
+    await p.waitForTimeout(600);
+    const invio = (await chiamate()).slice(primaC).find((r) => r.percorso.includes('/api/streamer/comandi/importa'));
+    const corpo = (() => { try { return JSON.parse(invio?.corpo || '{}') || {}; } catch { return {}; } })();
+    dice(invio?.percorso.endsWith(`/importa/da/${bot}`) && corpo.applica === true && typeof corpo.firma === 'string' && corpo.firma.length > 0 && !('testo' in corpo),
+      `${dove}: «Importa» da ${bot} non manda l'impronta di quello che si e' visto (${JSON.stringify(corpo).slice(0, 120)})`);
+    return { corpo, detto: (await avvisiNuovi()).join(' | ') };
+  };
+  for (const [bot, nome] of [['nightbot', 'Nightbot'], ['fossabot', 'Fossabot'], ['moobot', 'Moobot']]) {
+    const primaC = (await chiamate()).length;
+    await p.click(`#imp-da-${bot}`);
+    await p.waitForFunction((n) => (document.getElementById('imp-esito')?.textContent || '').includes(`Da ${n}: AndryxDemo`), nome, { timeout: 8000 }).catch(() => {});
+    const chiesta = (await chiamate()).slice(primaC).find((r) => r.percorso.includes('/api/streamer/comandi/importa'));
+    dice(chiesta?.percorso.endsWith(`/importa/da/${bot}`), `${dove}: «Prendi da ${nome}» non chiede la rotta sua (${chiesta?.percorso || 'nessuna'})`);
+    const v = await p.evaluate(() => document.getElementById('imp-esito').textContent.replace(/\s+/g, ' '));
+    dice(v.includes(`Da ${nome}: AndryxDemo`), `${dove}: l'anteprima di ${nome} non dice da quale canale legge`);
+    if (bot === 'fossabot') {
+      // due buoni e uno da rivedere, senza spunta: entrano i buoni, e si dice chi resta fuori
+      const { detto } = await applica(bot);
+      dice(/Fatto: 2 comandi nuovi/.test(detto) && /1 da rivedere è rimasto fuori/.test(detto), `${dove}: dopo «Importa» da Fossabot non dice quanti da rivedere sono rimasti fuori (${detto})`);
+    }
+    if (bot === 'moobot') {
+      dice(/solo tu/.test(v) && /Importa lo stesso quelli da rivedere/.test(v), `${dove}: l'anteprima di Moobot non dice che entrano solo per te e come portarli`);
+      // tutti da rivedere: senza spunta non entra niente, e lo dice
+      const senza = await applica(bot);
+      dice(senza.corpo.includiDaRivedere === false && /Non ho importato niente/.test(senza.detto) && /Importa lo stesso quelli da rivedere/.test(senza.detto) && !/era già tutto qui/.test(senza.detto),
+        `${dove}: con solo comandi da rivedere, «Importa» non dice che non ha importato niente e come portarli (${senza.detto})`);
+      const resta = await p.evaluate(() => ({ righe: document.querySelectorAll('#imp-esito .imp-riga').length, fuoco: document.activeElement?.id || '', tasto: !document.getElementById('imp-applica')?.disabled }));
+      dice(resta.righe === 2 && resta.fuoco === 'imp-anche-rivedere' && resta.tasto, `${dove}: dopo «Importa» senza spunta l'anteprima non resta con la spunta a portata (${JSON.stringify(resta)})`);
+      if (await p.$('#imp-anche-rivedere')) {
+        await p.check('#imp-anche-rivedere');
+        const con = await applica(bot);
+        dice(con.corpo.includiDaRivedere === true && /Fatto: 2 comandi nuovi/.test(con.detto), `${dove}: con la spunta i comandi di Moobot non entrano (${con.detto})`);
+      }
+    }
+  }
+
   const largo = await p.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
   dice(largo <= 0, `${dove}: la pagina scorre di lato di ${largo}px`);
 
@@ -185,7 +244,7 @@ try {
   } else {
     let tutte = [];
     for (const sc of SCHERMI) tutte = tutte.concat((await giro(sc)).rotte);
-    console.log(tutte.length ? `\n${tutte.length} cose non tornano.` : '\nDa StreamElements: senza chiave l\'anteprima giusta, con la chiave solo verso StreamElements e subito dimenticata, al telefono e al computer. ✓');
+    console.log(tutte.length ? `\n${tutte.length} cose non tornano.` : '\nDa StreamElements: senza chiave l\'anteprima giusta, con la chiave solo verso StreamElements e subito dimenticata; da Nightbot, Fossabot e Moobot la rotta loro, l\'impronta e chi resta fuori detto; al telefono e al computer. ✓');
     esito = tutte.length ? 1 : 0;
   }
 } finally {
