@@ -133,6 +133,9 @@ comandi diversi da quelli della riga italiana.
 - Il rapporto della serata e le statistiche contano una volta sola gli abbonamenti regalati su Twitch: prima tre regali ne dicevano sei. [vai: statistiche]
   en: The evening report and the stats now count gifted subs on Twitch only once: before, three gifts showed up as six.
   es: El informe de la noche y las estadísticas cuentan una sola vez las suscripciones regaladas en Twitch: antes, tres regalos aparecían como seis.
+- L'avviso delle donazioni si riapre com'era salvato: prima si mostrava spento e vuoto, e salvare un altro avviso lo spegneva davvero. [vai: alert]
+  en: The donation alert reopens as you saved it: before, it showed up off and empty, and saving another alert turned it off for real.
+  es: El aviso de donaciones se vuelve a abrir como lo guardaste: antes aparecía apagado y vacío, y guardar otro aviso lo apagaba de verdad.
 
 ## 2026-10-03
 

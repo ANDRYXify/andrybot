@@ -285,10 +285,7 @@ function impostazioni() {
         xy: (a.xy && typeof a.xy === 'object') ? a.xy : null,
         durata: typeof a.durata === 'number' ? a.durata : 6000,
         stile: { animazione: 'slide', dimTesto: 27, sfondo: '#0f0f14', opacita: 88, testo: '#ffffff', bordoRaggio: 18, bordoSpessore: 2, glow: true, icona: true, font: 'sistema', ...(a.stile && typeof a.stile === 'object' ? a.stile : {}) },
-        follow: ev(a.follow, { suono: 'campanello', colore: '#f72fa7' }),
-        sub: ev(a.sub, { suono: 'tada', colore: '#ffb020' }),
-        cheer: ev(a.cheer, { suono: 'moneta', colore: '#38d39f' }),
-        raid: ev(a.raid, { suono: 'trombetta', colore: '#ff4d4d' }),
+        ...Object.fromEntries(ALERT_TIPI().map((t) => [t.key, ev(a[t.key], { suono: SUONO_ALERT_SERIE[t.key], colore: t.acc })])),
       };
     })(),
     chatOverlay: (() => {
@@ -938,7 +935,8 @@ function statoDemo() {
           follow: { attivo: true, testo: '{user} ha seguito il canale!', suono: 'campanello', colore: '#f72fa7' },
           sub: { attivo: true, testo: '{user} si è abbonato! ({mesi} mesi)', suono: 'tada', colore: '#ffb020' },
           cheer: { attivo: true, testo: '{user} ha lanciato {bits} bit!', suono: 'moneta', colore: '#38d39f', minBits: 100 },
-          raid: { attivo: true, testo: '{user} è arrivato in raid con {viewers}!', suono: 'trombetta', colore: '#ff4d4d', minViewers: 2 } },
+          raid: { attivo: true, testo: '{user} è arrivato in raid con {viewers}!', suono: 'trombetta', colore: '#ff4d4d', minViewers: 2 },
+          donazione: { attivo: true, testo: '{user} ha offerto {importo}! {messaggio}', suono: 'moneta', colore: '#1d9e5e', minImporto: 1 } },
         effettiEventi: _demoEventiBase(),
         chatOverlay: { attivo: false, posizione: 'basso-sinistra', max: 8, fadeSec: 0, dim: 'media' },
         overlayGoals: [
@@ -17390,7 +17388,8 @@ function _riempiConfig(d) {
     _impostaEl(b.querySelector('.al-attivo'), c.attivo); _impostaEl(b.querySelector('.al-chi'), c.chi); chiAlertMostra(b); _impostaEl(b.querySelector('.al-testo'), c.testo);
     _impostaEl(b.querySelector('.al-suono'), _suonoAlertMostrato(b.dataset.alert, c.suono)); _impostaEl(b.querySelector('.al-colore'), c.accento || c.colore);
     _impostaEl(b.querySelector('.al-font'), c.font || ''); _impostaEl(b.querySelector('.al-vol'), c.volume != null ? c.volume : 100);
-    const sog = b.querySelector('.al-soglia'); if (sog) _impostaEl(sog, c.minBits != null ? c.minBits : c.minImporto != null ? c.minImporto : c.minViewers);
+    const campo = ALERT_TIPI().find((t) => t.key === b.dataset.alert)?.soglia?.campo;
+    const sog = b.querySelector('.al-soglia'); if (sog && campo) _impostaEl(sog, c[campo]);
   });
 
   api('/api/streamer/effetti').then((r) => popolaMediaSuoniAlert(r.effetti || [], a)).catch(() => {  });
