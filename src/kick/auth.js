@@ -26,6 +26,16 @@ export const SCOPE = [
 // Chiesti solo se lo streamer vuole la moderazione: si aggiungono a parte.
 export const SCOPE_MOD = ['moderation:ban', 'moderation:chat_message:manage'];
 
+// I PERMESSI ARRIVATI DOPO, per quello che fanno. Kick non aggiunge permessi a
+// un token gia' dato: chi ha collegato prima non li ha, e li concede
+// ricollegando. Da qui si ricavano sia i controlli (kick/api.js, haPermesso)
+// sia quello che la riga di Kick del pannello dice che manca: una lista sola,
+// cosi' un permesso nuovo non puo' restare fuori da uno dei due.
+export const PERMESSI_NUOVI = Object.freeze([
+  Object.freeze({ id: 'canale', scope: Object.freeze(['channel:write']) }),
+  Object.freeze({ id: 'premi', scope: Object.freeze(['channel:rewards:read', 'channel:rewards:write']) }),
+]);
+
 export function configurato() {
   return !!(config.kickClientId && config.kickClientSecret);
 }

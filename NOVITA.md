@@ -152,11 +152,11 @@ comandi diversi da quelli della riga italiana.
   en: On Kick you change title and category like on Twitch: with !titolo and !categoria in the Kick chat, by voice and from the private Telegram chat.
   es: En Kick cambias el título y la categoría como en Twitch: con !titolo y !categoria en el chat de Kick, por voz y desde el privado de Telegram.
   > Titolo e categoria anche su Kick
-  > Prima si cambiavano solo su Twitch. Adesso un comando scritto nella chat di Kick cambia Kick, e la voce e Telegram cambiano la piattaforma del tuo canale. Se Kick era già collegato, premi «Concedi titolo e categoria» sulla riga di Kick.
+  > Prima si cambiavano solo su Twitch. Adesso un comando scritto nella chat di Kick cambia Kick, e la voce e Telegram cambiano la piattaforma del tuo canale. Se Kick era già collegato, premi «Aggiorna i permessi di Kick» sulla riga di Kick.
   en> Title and category on Kick too
-  en> Before, they only changed on Twitch. Now a command typed in the Kick chat changes Kick, and voice and Telegram change your channel's platform. If Kick was already connected, press “Grant title and category” on the Kick row.
+  en> Before, they only changed on Twitch. Now a command typed in the Kick chat changes Kick, and voice and Telegram change your channel's platform. If Kick was already connected, press “Update Kick permissions” on the Kick row.
   es> Título y categoría también en Kick
-  es> Antes solo se cambiaban en Twitch. Ahora un comando escrito en el chat de Kick cambia Kick, y la voz y Telegram cambian la plataforma de tu canal. Si Kick ya estaba conectado, pulsa «Concede título y categoría» en la fila de Kick.
+  es> Antes solo se cambiaban en Twitch. Ahora un comando escrito en el chat de Kick cambia Kick, y la voz y Telegram cambian la plataforma de tu canal. Si Kick ya estaba conectado, pulsa «Actualiza los permisos de Kick» en la fila de Kick.
 - Su un canale Kick la scheda dei comandi a voce non chiede più il permesso di Twitch: dice Kick, con il tasto per il permesso giusto. [vai: ascolto]
   en: On a Kick channel the voice commands tab no longer asks for Twitch's permission: it says Kick, with the button for the right permission.
   es: En un canal de Kick la pestaña de comandos por voz ya no pide el permiso de Twitch: dice Kick, con el botón para el permiso correcto.
@@ -169,9 +169,15 @@ comandi diversi da quelli della riga italiana.
 - Se Kick manda due volte lo stesso evento, il bot lo conta e ci risponde una volta sola. [vai: account]
   en: If Kick sends the same event twice, the bot counts it and replies to it only once.
   es: Si Kick manda dos veces el mismo evento, el bot lo cuenta y le responde una sola vez.
-- I riscatti dei premi del canale su Kick arrivano al bot: un premio con il nome della richiesta musicale o delle penitenze funziona anche lì, e il bot risponde su Kick. [vai: musica]
-  en: Kick channel reward redemptions now reach the bot: a reward named like your song request or penance reward works there too, and the bot replies on Kick.
-  es: Los canjes de las recompensas del canal en Kick llegan al bot: una recompensa con el nombre de la petición musical o de las penitencias funciona también allí, y el bot responde en Kick.
+- [importante] I premi del canale funzionano anche su Kick: avvisi ed effetti, richieste musicali, penitenze, contatori e muro delle emote, creati e scelti dal pannello. [vai: effetti]
+  en: Channel rewards now work on Kick too: alerts and effects, song requests, penances, counters and the emote wall, created and picked from the panel.
+  es: Las recompensas del canal funcionan también en Kick: avisos y efectos, peticiones musicales, penitencias, contadores y el muro de emotes, creados y elegidos desde el panel.
+  > I premi del canale anche su Kick
+  > Quando qualcuno riscatta un premio su Kick, il bot fa quello che hai scelto e risponde nella chat di Kick. Se Kick era già collegato, premi «Aggiorna i permessi di Kick» sulla riga di Kick. Se trasmetti anche su Twitch, nei tuoi elenchi trovi i premi di tutte e due.
+  en> Channel rewards on Kick too
+  en> When someone redeems a reward on Kick, the bot does what you picked and replies in the Kick chat. If Kick was already connected, press “Update Kick permissions” on the Kick row. If you also stream on Twitch, your lists show the rewards from both.
+  es> Las recompensas del canal también en Kick
+  es> Cuando alguien canjea una recompensa en Kick, el bot hace lo que elegiste y responde en el chat de Kick. Si Kick ya estaba conectado, pulsa «Actualiza los permisos de Kick» en la fila de Kick. Si también emites en Twitch, en tus listas encuentras las recompensas de las dos.
 
 ## 2026-10-03
 

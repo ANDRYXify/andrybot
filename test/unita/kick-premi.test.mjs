@@ -224,3 +224,28 @@ test('«punti rimborsati» si dice solo su Twitch, dove il rifiuto rimborsa per 
   assert.equal((src.match(/rimb && rimborsa \? ' Punti rimborsati\.'/g) || []).length, 2);
   assert.doesNotMatch(src, /rimb \? ' Punti rimborsati\.'/);
 });
+
+// --- i permessi arrivati dopo: una lista sola --------------------------------------
+
+test('i permessi arrivati dopo stanno in una lista, e da li\' si ricavano controlli e mancanti', async () => {
+  const { PERMESSI_NUOVI } = await import('../../src/kick/auth.js');
+  assert.deepEqual(PERMESSI_NUOVI.map((p) => p.id), ['canale', 'premi']);
+  for (const p of PERMESSI_NUOVI) for (const s of p.scope) assert.ok(SCOPE.includes(s), `${s} si chiede nel collegamento`);
+  const vecchio = ['user:read', 'channel:read', 'chat:write', 'events:subscribe'];
+  K.salvaToken('kick.pv1', { accessToken: 'tok', refreshToken: '', scopes: vecchio, expiresAt: Date.now() + 3_600_000 }, '9');
+  assert.deepEqual(K.permessiMancanti('kick.pv1'), ['canale', 'premi']);
+  assert.equal(K.puoCambiareCanale('kick.pv1'), false);
+  assert.equal(K.puoPremiare('kick.pv1'), false);
+  K.salvaToken('kick.pv2', { accessToken: 'tok', refreshToken: '', scopes: [...vecchio, 'channel:write', 'channel:rewards:read'], expiresAt: Date.now() + 3_600_000 }, '9');
+  assert.deepEqual(K.permessiMancanti('kick.pv2'), ['premi'], 'un permesso a meta\' manca ancora');
+  assert.equal(K.puoCambiareCanale('kick.pv2'), true);
+  K.salvaToken('kick.pv3', { accessToken: 'tok', refreshToken: '', scopes: SCOPE, expiresAt: Date.now() + 3_600_000 }, '9');
+  assert.deepEqual(K.permessiMancanti('kick.pv3'), []);
+  assert.deepEqual(K.permessiMancanti('kick.nessuno'), [], 'senza collegamento non manca niente: manca Kick');
+});
+
+test('un id di Kick si riconosce dalla forma: ULID, non UUID', () => {
+  assert.equal(K.eIdKick(PREMIO), true);
+  assert.equal(K.eIdKick('0f3c2b1a-1111-2222-3333-444455556666'), false);
+  assert.equal(K.eIdKick(''), false);
+});

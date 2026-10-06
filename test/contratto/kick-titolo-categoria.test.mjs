@@ -56,8 +56,8 @@ test('il privato Telegram passa dalla stessa strada', () => {
 
 test('il pannello sa se Kick puo\' cambiare il canale e offre il tasto; la voce dice il rimedio di Kick', () => {
   assert.match(SRV, /canale: kickApi\.puoCambiareCanale\(user\.login\)/, '/api/me');
-  assert.match(SRV, /canale: !!tk\?\.accessToken && kickApi\.puoCambiareCanale\(login\),/, 'la riga di Kick');
-  assert.match(APP, /p\.id === 'kick' && p\.canale === false && !\(p\.daRifare && !p\.rifaiEventi\) \? `<a class="btn secondario mini" href="\$\{esc\(p\.azione\)\}">/);
+  assert.match(SRV, /mancano: kickApi\.permessiMancanti\(login\),/, 'la riga di Kick dice quali permessi mancano');
+  assert.match(APP, /p\.id === 'kick' && \(p\.mancano \|\| \[\]\)\.length && !\(p\.daRifare && !p\.rifaiEventi\) \? `<a class="btn secondario mini" href="\$\{esc\(p\.azione\)\}">/);
   assert.match(APP, /const mancaPermesso = !DEMO && \(suKick \? stato\.kick\?\.canale === false :/);
   assert.match(VOCE, /if \(esito\.piattaforma === 'kick'\) return L\('manca il permesso di Kick/);
   assert.match(SRV, /errore: 'permesso', riautorizza: true, piattaforma: piattaformaDi\(login\)/);

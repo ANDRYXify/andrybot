@@ -31,7 +31,7 @@ export default {
       'Se manca il nome il pannello dice «Scrivi il nome del comando (senza !).», se manca la risposta «Scrivi cosa deve rispondere il bot.». Il pannello non controlla se il nome esiste già: due moduli con lo stesso comando rispondono tutti e due.',
     ] },
     { p: [
-      'Nel riquadro <strong>«Comandi pronti (1 clic)»</strong> ci sono due comandi già configurati, riservati a moderatori e streamer. <strong>«Crea comando !categoria»</strong> crea <code>!categoria</code> (anche <code>!gioco</code>): in chat si scrive <code>!categoria Fortnite</code> e il bot cerca la categoria più somigliante. <strong>«Crea comando !titolo»</strong> crea <code>!titolo</code>, che si usa come <code>!titolo In diretta!</code>. Se il comando c\'è già, accanto leggi «!categoria esiste già ✓» e non ne nasce un secondo. Cambiano titolo e categoria sulla piattaforma da cui si scrive: Twitch o Kick. Su Twitch serve il permesso <em>Gestione canale</em>, su Kick «Concedi titolo e categoria» nella riga di Kick di «Le tue piattaforme».',
+      'Nel riquadro <strong>«Comandi pronti (1 clic)»</strong> ci sono due comandi già configurati, riservati a moderatori e streamer. <strong>«Crea comando !categoria»</strong> crea <code>!categoria</code> (anche <code>!gioco</code>): in chat si scrive <code>!categoria Fortnite</code> e il bot cerca la categoria più somigliante. <strong>«Crea comando !titolo»</strong> crea <code>!titolo</code>, che si usa come <code>!titolo In diretta!</code>. Se il comando c\'è già, accanto leggi «!categoria esiste già ✓» e non ne nasce un secondo. Cambiano titolo e categoria sulla piattaforma da cui si scrive: Twitch o Kick. Su Twitch serve il permesso <em>Gestione canale</em>, su Kick «Aggiorna i permessi di Kick» nella riga di Kick di «Le tue piattaforme».',
       'Lo stesso lo fai dentro una risposta qualsiasi con <code>$categoria($args)</code> e <code>$titolo($args)</code>: il pezzo sparisce dal messaggio, il cambio avviene, e la conferma la scrivi tu attorno.',
     ] },
 
@@ -227,8 +227,8 @@ export default {
       ['Scrivi in chat', 'manda un messaggio', 'il testo, fino a 400 caratteri; «Una frase a caso»: scrivine una per riga, ogni volta ne esce una', ''],
       ['Fai partire un effetto', 'lancia un tuo effetto o suono, senza guardare chi può usarlo e le sue attese', '«Quale effetto», fra i tuoi effetti accesi; il tasto accanto lo prende dalla libreria o lo carica dal computer, anche se non hai ancora effetti', 'un effetto creato in <em>Scena &amp; overlay</em>, <em>Effetti &amp; suoni</em>, e l\'overlay in scena'],
       ['Crea una clip', 'salva una clip del momento e scrive in chat «Clip salvata!» col link', 'nessuno', 'diretta su Twitch e il permesso clip'],
-      ['Cambia categoria', 'cerca la categoria più somigliante e la imposta, sulla piattaforma da cui arriva il comando (Twitch o Kick)', '«Categoria / gioco», anche con variabili come <code>$args</code>; «Annuncia il cambio in chat»', 'su Twitch il permesso <em>Gestione canale</em>, su Kick «Concedi titolo e categoria»'],
-      ['Cambia titolo stream', 'cambia il titolo della diretta, sulla piattaforma da cui arriva il comando (Twitch o Kick)', '«Nuovo titolo», fino a 140 caratteri, con variabili; «Annuncia il cambio in chat»', 'su Twitch il permesso <em>Gestione canale</em>, su Kick «Concedi titolo e categoria»'],
+      ['Cambia categoria', 'cerca la categoria più somigliante e la imposta, sulla piattaforma da cui arriva il comando (Twitch o Kick)', '«Categoria / gioco», anche con variabili come <code>$args</code>; «Annuncia il cambio in chat»', 'su Twitch il permesso <em>Gestione canale</em>, su Kick «Aggiorna i permessi di Kick»'],
+      ['Cambia titolo stream', 'cambia il titolo della diretta, sulla piattaforma da cui arriva il comando (Twitch o Kick)', '«Nuovo titolo», fino a 140 caratteri, con variabili; «Annuncia il cambio in chat»', 'su Twitch il permesso <em>Gestione canale</em>, su Kick «Aggiorna i permessi di Kick»'],
       ['Contatore', 'muove un contatore', '«Nome contatore»; «Operazione»: «Incrementa (+1)», «Azzera», «Imposta a…»; «Valore (se "imposta")»', 'niente: se il contatore non c\'è ancora, nasce nella carta <em>Contatori</em>'],
       ['Chiama un webhook', 'manda i dati del momento a un indirizzo tuo', '«URL del tuo servizio (https)»; «Usa la risposta come messaggio in chat»', 'un tuo servizio'],
       ['Aspetta', 'una pausa prima dell\'azione dopo', '«Secondi da aspettare», di base 2', 'al massimo 30 secondi'],
@@ -421,7 +421,7 @@ export default {
     ] },
     { p: [
       'Ogni contatore ha una riga col valore e i tasti: <strong>«Accendi a schermo»</strong> o <strong>«Spegni a schermo»</strong>, <strong>+</strong> e <strong>−</strong> del passo, <strong>«Reset»</strong>, <strong>«Crea premio»</strong> o <strong>«Scollega premio»</strong>, e il cestino per eliminarlo. Eliminare chiede conferma: il numero si perde e il comando smette di rispondere.',
-      '<strong>«Crea premio»</strong> (solo il proprietario) crea su Twitch un premio a punti canale col nome dell\'etichetta. Chiede quanti punti costa: di base 100, da 1 a 1.000.000. Chi lo riscatta fa salire il contatore di un passo. Serve il permesso dei punti canale: senza, il pannello dice «Creazione premio non riuscita (hai concesso i permessi punti canale?)». Se elimini il contatore il premio resta su Twitch, e lo togli da lì.',
+      '<strong>«Crea premio»</strong> (solo il proprietario) crea sulla piattaforma del canale, Twitch o Kick, un premio a punti canale col nome dell\'etichetta. Chiede quanti punti costa: di base 100, da 1 a 1.000.000. Chi lo riscatta fa salire il contatore di un passo. Serve il permesso dei punti canale: senza, il pannello dice dove si concede: su Twitch nella scheda «Stato» con «Aggiorna i permessi», su Kick con «Aggiorna i permessi di Kick». Se elimini il contatore il premio resta su Twitch, e lo togli da lì.',
     ] },
     { p: ['<strong>«Comandi e permessi»</strong>. Sette verbi, e per ognuno scegli con quali parole si chiama e chi può usarlo: «Tutti», «Solo sub», «VIP e sopra», «Mod e streamer». Le parole si separano con uno spazio, fino a sei per verbo. Lasciare vuota la casella toglie quel comando. Poi premi «Salva comandi».'] },
     { tabella: [
@@ -582,7 +582,7 @@ export default {
       ['«Annuncia il cambio in chat»', 'acceso', 'il bot scrive «🎮 Categoria aggiornata: …»'],
     ] },
     { p: [
-      'La parola chiave va detta <em>prima</em> del nome: «categoria Fortnite», non «metti Fortnite». Su Twitch serve il permesso <em>Gestione canale</em>: se manca, sotto compare un avviso con «Concedi il permesso», autorizzi e torni qui. Su Kick serve il permesso di Kick per titolo e categoria: se manca, l\'avviso ha «Concedi titolo e categoria», che ricollega Kick.',
+      'La parola chiave va detta <em>prima</em> del nome: «categoria Fortnite», non «metti Fortnite». Su Twitch serve il permesso <em>Gestione canale</em>: se manca, sotto compare un avviso con «Concedi il permesso», autorizzi e torni qui. Su Kick serve il permesso di Kick per titolo e categoria: se manca, l\'avviso ha «Aggiorna i permessi di Kick», che ricollega Kick.',
     ] },
 
     { h3: 'Cambia titolo a voce' },
@@ -595,7 +595,7 @@ export default {
       ['«Parola chiave (quella che dici prima del titolo)»', 'titolo', '30 caratteri; per esempio «nuovo titolo»'],
       ['«Annuncia il cambio in chat»', 'acceso', 'il bot scrive «📝 Titolo aggiornato: …»'],
     ] },
-    { p: ['Usa lo stesso permesso della categoria. Su Twitch, se manca, l\'avviso ha il collegamento «Concedilo qui»; su Kick «Concedi titolo e categoria».'] },
+    { p: ['Usa lo stesso permesso della categoria. Su Twitch, se manca, l\'avviso ha il collegamento «Concedilo qui»; su Kick «Aggiorna i permessi di Kick».'] },
 
     { h3: 'Impara mentre parlo' },
     { p: [
@@ -628,7 +628,7 @@ export default {
       ['«categoria non trovata per "…"»', 'nessuna categoria somiglia abbastanza: ridillo più chiaro'],
       ['«non sono riuscito a cambiare categoria», «non sono riuscito a cambiare titolo»', 'la piattaforma non ha accettato il cambio: riprova fra poco'],
       ['«manca il permesso di gestione canale»', 'concedi il permesso <em>Gestione canale</em> dalla scheda <em>Comandi vocali</em>'],
-      ['«manca il permesso di Kick per cambiare titolo e categoria…»', 'il canale è su Kick: premi «Concedi titolo e categoria» sulla riga di Kick in <em>Account → Il tuo account → Le tue piattaforme</em>'],
+      ['«manca il permesso di Kick per cambiare titolo e categoria…»', 'il canale è su Kick: premi «Aggiorna i permessi di Kick» sulla riga di Kick in <em>Account → Il tuo account → Le tue piattaforme</em>'],
       ['«su questa piattaforma titolo e categoria non si cambiano ancora…»', 'il canale è su YouTube: titolo e categoria a voce valgono per Twitch e Kick'],
       ['«Permesso microfono negato…»', 'consenti il microfono per questo sito dall\'icona nella barra del browser e premi di nuovo «Avvia ascolto»'],
       ['«Sessione scaduta: rientra dalla dashboard e riapri questa pagina.»', 'entra di nuovo nel pannello e riapri la pagina'],

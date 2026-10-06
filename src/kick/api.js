@@ -11,7 +11,7 @@
 // scadenza, e una sola volta anche se dieci messaggi partono insieme.
 import { tokens } from '../db.js';
 import { makeLog } from '../logger.js';
-import { rinnova, daRinnovare, SCOPE_MOD } from './auth.js';
+import { rinnova, daRinnovare, SCOPE_MOD, PERMESSI_NUOVI } from './auth.js';
 import { segna } from './eco.js';
 
 const log = makeLog('kick');
@@ -271,9 +271,18 @@ export const moderatoreKick = Object.freeze({
 // cambia il canale non sanno con chi parlano. Il permesso e' channel:write: chi
 // ha collegato Kick prima che lo chiedessimo deve ricollegarlo, e finche' non lo
 // fa non si chiama niente.
-export function puoCambiareCanale(login) {
+export function puoCambiareCanale(login) { return haPermesso(login, 'canale'); }
+
+// Ha il permesso arrivato dopo (kick/auth.js, PERMESSI_NUOVI)? E quali gli
+// mancano, per la riga di Kick del pannello.
+export function haPermesso(login, id) {
+  const p = PERMESSI_NUOVI.find((x) => x.id === id);
   const s = tokenDi(String(login || '').toLowerCase())?.scopes;
-  return Array.isArray(s) && s.includes('channel:write');
+  return !!p && Array.isArray(s) && p.scope.every((x) => s.includes(x));
+}
+export function permessiMancanti(login) {
+  if (!tokenDi(String(login || '').toLowerCase())?.accessToken) return [];
+  return PERMESSI_NUOVI.filter((p) => !haPermesso(login, p.id)).map((p) => p.id);
 }
 
 // La ricerca per nome e' quella della v1 (q); se Kick la toglie, si prova la v2
@@ -323,10 +332,10 @@ export function canaleKick(login, { fetchImpl } = {}) {
 // :write; senza, non si chiama Kick. Gli id dei premi e dei riscatti sono ULID.
 // Solo l'app che ha creato un premio puo' cambiarlo o toglierlo.
 const ULID = /^[0-9A-Z]{26}$/i;
-export function puoPremiare(login) {
-  const s = tokenDi(String(login || '').toLowerCase())?.scopes;
-  return Array.isArray(s) && s.includes('channel:rewards:write');
-}
+export function puoPremiare(login) { return haPermesso(login, 'premi'); }
+// Un id di Kick (ULID) o di Twitch (UUID): chi toglie un premio lo chiede a chi
+// l'ha dato, e lo riconosce dalla forma dell'id.
+export const eIdKick = (id) => ULID.test(String(id || ''));
 const premioDa = (r) => ({
   id: String(r.id), title: String(r.title || ''), cost: Number(r.cost) || 0,
   enabled: r.is_enabled !== false, richiedeTesto: !!r.is_user_input_required, piattaforma: 'kick',
@@ -337,8 +346,7 @@ export function premiKick(login, { fetchImpl } = {}) {
   return Object.freeze({
     piattaforma: 'kick',
     async listaRewardsTutti() {
-      const s = tokenDi(chi)?.scopes;
-      if (!Array.isArray(s) || !s.some((x) => x === 'channel:rewards:read' || x === 'channel:rewards:write')) return [];
+      if (!puoPremiare(chi)) return [];
       const r = await chiama(chi, '/channels/rewards', { fetchImpl });
       return r.ok && Array.isArray(r.dati) ? r.dati.filter((x) => x?.id).map(premioDa) : [];
     },

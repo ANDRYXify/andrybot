@@ -430,9 +430,11 @@ filtra per nome e vuole almeno tre lettere.
 
 `channel:write` adesso è nel collegamento normale (`kick/auth.js`, `SCOPE`). Chi
 ha collegato Kick prima non ce l'ha, e Kick non aggiunge permessi a un token già
-dato: la riga di Kick in «Le tue piattaforme» lo dice («Titolo e categoria su
-Kick: non concessi.») e ha il tasto «Concedi titolo e categoria», che ricollega
-Kick con la stessa azione di «Sistema», quindi la moderazione, se c'era, resta.
+dato: la riga di Kick in «Le tue piattaforme» dice quali permessi arrivati dopo
+mancano e ha il tasto «Aggiorna i permessi di Kick», che ricollega Kick con la
+stessa azione di «Sistema», quindi la moderazione, se c'era, resta. La lista è
+una sola (`kick/auth.js`, `PERMESSI_NUOVI`): da lì si ricavano sia i controlli
+(`haPermesso`) sia quello che la riga dice che manca (`permessiMancanti`).
 Senza il permesso non si chiama Kick: si sa già che rifiuterebbe.
 I permessi restano anche quando il token si rinnova: nel rinnovo lo `scope` è
 facoltativo, e quando manca vuol dire «gli stessi di prima» (RFC 6749, §6).
@@ -497,8 +499,22 @@ Chi riconosce il premio per **nome** (richiesta musicale, penitenze) lo riconosc
 anche su Kick, se il premio ha lo stesso nome. Chi lo riconosce per **id** (avvisi
 dei premi, contatori, muro) vuole il premio di Kick scelto o creato dal pannello.
 
+**Nel pannello**, chi premia per il canale lo decide un posto solo
+(`web/server.js`, `premiDi`): la piattaforma del canale, col suo permesso e il
+suo rimedio. Le rotte dei premi (avvisi, suoni, richiesta musicale, penitenze,
+contatori) chiedono a lui e creano il premio lì; un premio si toglie da chi l'ha
+dato, riconosciuto dalla forma dell'id (ULID per Kick). Su un canale di Twitch
+con Kick collegato l'elenco ha anche i premi di Kick (`tuttiIPremi`), e quando
+ce ne sono di tutte e due accanto al nome si legge dove sta. I cinque riquadri
+dei premi, senza permesso, dicono il rimedio della piattaforma
+(`_premiFuoriDaTwitch`): a chi è su Kick «Aggiorna i permessi di Kick», mai i
+permessi di Twitch. La scheda delle penitenze si apre anche su Kick
+(`ANCHE_SU`).
+
 Collaudi: `test/unita/kick-premi.test.mjs` (l'esempio di docs.kick.com, la
-nascita, la porta, chi premia, le penitenze, il rimborso).
+nascita, la porta, chi premia, le penitenze, il rimborso, la lista dei
+permessi), `test/contratto/kick-premi-pannello.test.mjs` (le rotte, la lista
+mista, i riquadri).
 
 ### Cosa NON fa ancora, e perché è detto qui
 

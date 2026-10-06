@@ -139,7 +139,7 @@ export default {
       'Cosa serve:',
     ] },
     { ul: [
-      'un canale Twitch con i <strong>punti canale</strong>, che Twitch dà ai canali Affiliate e Partner, e il permesso dei punti canale: su un\'altra piattaforma la scheda dice «Solo su Twitch»;',
+      'un canale con i <strong>punti canale</strong>: su Twitch li hanno i canali Affiliate e Partner, e serve il permesso dei punti canale; su Kick servono i permessi dei premi di Kick, che concedi con «Aggiorna i permessi di Kick». Su YouTube e Discord la scheda dice che lì non ci sono;',
       'l\'extra <strong>«Comandi Vocali»</strong>, da solo o nel pacchetto «Tutto»: lo trovi nella scheda «Abbonamento», spiegata nel <a href="/manuale/account">manuale dell\'account</a>;',
       'la <strong>pagina di ascolto</strong> aperta mentre sei in diretta: la apri dalla scheda «Comandi vocali» con «Apri l\'ascolto vocale», spiegata nel <a href="/manuale/moduli">manuale dei comandi</a>.',
     ] },

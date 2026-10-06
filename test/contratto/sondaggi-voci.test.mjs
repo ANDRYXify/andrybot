@@ -96,7 +96,14 @@ test('se manca un permesso, il messaggio dice dove si concede, non un indirizzo'
   const srv = leggi('src/web/server.js');
   const zona = srv.slice(srv.indexOf("app.post('/api/penitenze/premio'"), srv.indexOf("app.post('/api/predizioni/risolvi'"));
   assert.ok(!zona.includes('da /auth/permessi'), 'penitenze, sondaggi e predizioni');
-  assert.equal((zona.match(/nella scheda «Stato» premi «Aggiorna i permessi»/g) || []).length, 4);
+  assert.equal((zona.match(/nella scheda «Stato» premi «Aggiorna i permessi»/g) || []).length, 2, 'sondaggi e predizioni');
+  // le penitenze lo dicono con la frase dei premi, che sa la piattaforma del canale
+  const pen = srv.slice(srv.indexOf("app.post('/api/penitenze/premio'"), srv.indexOf("app.post('/api/penitenze/premio'") + 2500);
+  assert.equal((pen.match(/errore: permessoPremi\(pd\)/g) || []).length, 2, 'penitenze: prima e dopo aver chiesto il premio');
+  const frase = srv.slice(srv.indexOf('const permessoPremi = (pd) =>'), srv.indexOf('const permessoPremi = (pd) =>') + 400);
+  assert.match(frase, /'Manca il permesso dei punti canale: nella scheda «Stato» premi «Aggiorna i permessi»\.'/);
+  assert.match(frase, /premi «Aggiorna i permessi di Kick»\./, 'su Kick, dove si concede su Kick');
+  assert.doesNotMatch(frase, /\/auth\//, 'mai un indirizzo');
   const chat = leggi('src/features/sondaggi.js');
   assert.ok(!chat.includes('/auth/permessi') && chat.includes('lo streamer lo rimette dal pannello, scheda «Stato», con «Aggiorna i permessi»'));
 });

@@ -15,7 +15,7 @@ export default {
       'Qui carichi suoni, immagini, GIF e video e li fai partire nell\'overlay: da un comando in chat, da un follow, dai bit o da un raid, da un gesto davanti alla webcam o da un premio a punti canale. Ci sono anche otto effetti pronti, disegnati da noi. Gli stessi media li ritrovi negli alert, nel player, nei cartelli e in ogni campo che ha il pulsante «Dalla libreria».',
       'La scheda ha quattro parti, con le linguette sotto il titolo. <strong>«I tuoi effetti»</strong>: la libreria dei media, «Carica un effetto», gli effetti pronti e l\'elenco dei tuoi. <strong>«Per gli eventi»</strong>: cosa parte a un follow, a un abbonamento, ai bit, a un raid, a una donazione, al treno dell\'hype e quando un obiettivo arriva al traguardo. <strong>«Punti canale»</strong>: gli effetti sui premi di Twitch. <strong>«Webcam»</strong>: i gesti e le espressioni. Una modifica lasciata in una parte resta da salvare anche se passi a un\'altra.',
       'La scheda sta nel gruppo «Scena & overlay» ed è compresa in ogni piano, anche in quello gratuito. Se leggi «Chiusa da andryxify», per il tuo canale è chiusa, e sotto c\'è il motivo quando c\'è.',
-      'La usano il proprietario del canale e i moderatori. I premi a punti canale sono di Twitch e chiedono il permesso dei punti canale.',
+      'La usano il proprietario del canale e i moderatori. I premi a punti canale sono quelli della piattaforma del canale, Twitch o Kick, e chiedono il permesso dei suoi punti canale. Su un canale di Twitch con Kick collegato compaiono anche i premi di Kick, con accanto «Kick».',
       'Gli effetti compaiono in ogni overlay dove c\'è l\'elemento «Effetti a schermo». Il suono esce dalla diretta se nella sorgente Browser di OBS hai spuntato «Controlla l\'audio via OBS» (<a href="/manuale/overlay">manuale dell\'Overlay Studio</a>).',
     ] },
 
@@ -193,7 +193,7 @@ export default {
 
     { h3: 'Effetti sui tuoi punti canale' },
     { p: [
-      'Attacca un effetto a un premio a punti canale che hai già su Twitch. Quando qualcuno lo riscatta, nell\'overlay parte quello che scegli.',
+      'Attacca un effetto a un premio a punti canale che hai già, su Twitch o su Kick. Quando qualcuno lo riscatta, nell\'overlay parte quello che scegli.',
       'La carta elenca tutti i tuoi premi, anche quelli creati fuori da qui. Per ognuno scegli fra «niente», «Suoni pronti», «I miei suoni caricati», «Immagini / Video» ed «Effetti pronti a tutto schermo». Il pulsante della libreria sceglie da lì. Nel campo sotto scrivi un messaggio in chat facoltativo, fino a 300 caratteri, con <code>{user}</code> per chi riscatta.',
       'Si salva da solo: «Effetto impostato ✓» e «Messaggio salvato ✓». Senza effetto e senza messaggio il premio torna libero.',
       '«Prova» fa sentire nel pannello un suono pronto. Su un tuo media o su un effetto pronto apre l\'anteprima, com\'è in onda, e da lì lo mandi all\'overlay. Senza scelta leggi «Scegli prima un effetto.»',
@@ -209,12 +209,12 @@ export default {
     ] },
     { p: [
       'Un media che in «I tuoi effetti» va a tutto schermo non ha una posizione: al posto del box leggi «A tutto schermo: questo media copre lo schermo, e la posizione qui non serve. Si cambia in «I tuoi effetti».»',
-      'Se leggi «Per leggere i tuoi punti canale serve un permesso in più.», premi «Concedi il permesso» e autorizza di nuovo Twitch.',
+      'Se leggi «Per leggere i tuoi punti canale serve un permesso in più.», premi «Concedi il permesso» e autorizza di nuovo Twitch. Su un canale Kick leggi «Per i premi del canale su Kick servono i permessi dei premi di Kick.»: premi «Aggiorna i permessi di Kick».',
       'Se non hai ancora premi, creane uno nella carta qui sotto e torna qui.',
     ] },
 
     { h3: 'Alert a punti canale' },
-    { p: ['Crea un premio a punti canale nuovo su Twitch. Quando uno spettatore lo riscatta spendendo i suoi punti, parte un effetto nell\'overlay, un messaggio in chat, o tutti e due. Il premio compare da solo nella tua pagina Twitch.'] },
+    { p: ['Crea un premio a punti canale nuovo sulla piattaforma del canale, Twitch o Kick. Quando uno spettatore lo riscatta spendendo i suoi punti, parte un effetto nell\'overlay, un messaggio in chat, o tutti e due. Il premio compare da solo nella tua pagina. Su Kick il riscatto passa dalla coda delle richieste e il bot lo accetta da solo quando l\'ha fatto.'] },
     { tabella: [
       ['Campo', 'Di base', 'Limiti'],
       ['«Nome del premio»', 'vuoto', 'da 2 a 45 caratteri'],

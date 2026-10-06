@@ -27,8 +27,8 @@ export default {
     { h3: 'Il tuo canale è su Kick' },
     { p: [
       'Compare solo se il canale che stai gestendo è su Kick. Il bot legge la tua chat di Kick e risponde lì.',
-      'Su Kick funzionano comandi, moduli, timer, giochi e monete, gli avvisi di follow e abbonamento, l\'overlay della diretta, le notifiche social e le parole vietate. Se concedi la moderazione su Kick funzionano anche l\'antispam e il timeout dei moduli. La diretta su Kick entra nel rapporto della serata e nelle statistiche, insieme a quella su Twitch se trasmetti su tutte e due, e ci entrano anche i follow e gli abbonamenti di Kick. I moduli con «Un evento del canale» scattano anche per quelli di Kick, e rispondono nella chat di Kick. Con «Concedi titolo e categoria» <code>!titolo</code>, <code>!categoria</code>, la voce e Telegram cambiano titolo e categoria su Kick.',
-      'Restano fuori le cose che esistono solo su Twitch: lo scudo anti-bot, le clip, i VIP, i punti canale e le emote 7TV. Le monete su Kick arrivano solo da chi scrive, perché Kick non dà l\'elenco di chi guarda in silenzio.',
+      'Su Kick funzionano comandi, moduli, timer, giochi e monete, gli avvisi di follow e abbonamento, l\'overlay della diretta, le notifiche social e le parole vietate. Se concedi la moderazione su Kick funzionano anche l\'antispam e il timeout dei moduli. La diretta su Kick entra nel rapporto della serata e nelle statistiche, insieme a quella su Twitch se trasmetti su tutte e due, e ci entrano anche i follow e gli abbonamenti di Kick. I moduli con «Un evento del canale» scattano anche per quelli di Kick, e rispondono nella chat di Kick. Con «Aggiorna i permessi di Kick» <code>!titolo</code>, <code>!categoria</code>, la voce e Telegram cambiano titolo e categoria su Kick, e i premi del canale di Kick fanno partire avvisi, richieste musicali, penitenze, contatori e il muro delle emote.',
+      'Restano fuori le cose che esistono solo su Twitch: lo scudo anti-bot, le clip, i VIP e le emote 7TV. Le monete su Kick arrivano solo da chi scrive, perché Kick non dà l\'elenco di chi guarda in silenzio.',
     ] },
 
     { h3: 'Le tue piattaforme' },
@@ -50,7 +50,7 @@ export default {
       ['«Collega»', 'Kick, YouTube', 'Apre la piattaforma: accedi, autorizzi e torni qui.'],
       ['«Sistema»', 'Twitch, Kick, YouTube', 'Rifà il collegamento. Su Twitch rinnova i permessi, come «Ricollega i permessi» della scheda «Stato». Su YouTube dà il permesso nuovo per la chat.'],
       ['«Concedi la moderazione»', 'Kick', 'Ricollega Kick chiedendo anche i permessi di moderazione: con quelli l\'antispam toglie i messaggi e il timeout dei moduli mette in pausa anche nella chat di Kick. Quando li hai, la nota della riga dice «Moderazione su Kick: attiva.» e «Sistema» li tiene.'],
-      ['«Concedi titolo e categoria»', 'Kick', 'Compare se hai collegato Kick prima che il bot chiedesse il permesso di cambiare titolo e categoria. Ricollega Kick, e la moderazione, se l\'hai data, resta. Senza, la nota della riga dice «Titolo e categoria su Kick: non concessi.».'],
+      ['«Aggiorna i permessi di Kick»', 'Kick', 'Compare se hai collegato Kick prima che il bot chiedesse dei permessi nuovi: cambiare titolo e categoria, e i premi del canale. La nota della riga dice quali mancano. Ricollega Kick e li concede tutti insieme; la moderazione, se l\'hai data, resta.'],
       ['«Riprova gli eventi»', 'Kick', 'Rifà l\'iscrizione agli eventi di Kick. Risponde «Iscritto a N eventi. Scrivi qualcosa nella tua chat Kick e ricarica.»'],
       ['Interruttore della chat', 'YouTube', 'Accende o spegne il bot nella chat delle tue dirette YouTube. Risponde «Chat YouTube accesa» o «Chat YouTube spenta». Lo usa solo il proprietario.'],
       ['«Scollega»', 'Kick, YouTube', 'Chiede «Scollego Kick?» e ricorda che il bot smette di lavorare lì finché non lo ricolleghi. Twitch non si scollega da qui.'],

@@ -1984,7 +1984,7 @@ function _demoGet(via) {
     ] },
     '/api/streamer/piattaforme': { piattaforme: [
       { id: 'twitch', nome: 'Twitch', disponibile: true, collegato: true, account: 'andryx_demo', attivo: true, daRifare: false, azione: '/auth/permessi', note: '' },
-      { id: 'kick', nome: 'Kick', disponibile: true, collegato: true, account: 'id 448291', attivo: true, daRifare: false, azione: '/auth/kick', note: '', moderazione: false, azioneModerazione: '/auth/kick?mod=1', canale: true },
+      { id: 'kick', nome: 'Kick', disponibile: true, collegato: true, account: 'id 448291', attivo: true, daRifare: false, azione: '/auth/kick', note: '', moderazione: false, azioneModerazione: '/auth/kick?mod=1', mancano: [] },
       { id: 'youtube', nome: 'YouTube', disponibile: false, collegato: false, account: '', attivo: false, daRifare: false, azione: '', note: 'credenziali pronte: il collegamento arriva a breve' },
     ] },
     '/api/streamer/google-fonts': { fonts: ['Inter', 'Roboto', 'Lobster', 'Bree Serif', 'Bangers', 'Poppins', 'Oswald', 'Pacifico', 'Rubik Mono One', 'Press Start 2P', 'Caveat', 'Anton'] },
@@ -4314,7 +4314,7 @@ const NOME_ADDON = {
 const SOLO_TWITCH = ['regia', 'regole', 'scudo', 'registro', 'emote', 'sondaggi', 'penitenze'];
 const NOME_PIATTAFORMA = { twitch: 'Twitch', kick: 'Kick', youtube: 'YouTube', discord: 'Discord' };
 
-const ANCHE_SU = { regole: ['kick'] };
+const ANCHE_SU = { regole: ['kick'], penitenze: ['kick'] };
 
 function soloTwitch(id) {
   return !!stato?.piattaforma && stato.piattaforma !== 'twitch' && SOLO_TWITCH.includes(id) && !(ANCHE_SU[id] || []).includes(stato.piattaforma);
@@ -10951,7 +10951,7 @@ function pannelloAscolto() {
   const cambiaQui = doveCanale === 'twitch' || suKick;
   const mancaPermesso = !DEMO && (suKick ? stato.kick?.canale === false : (doveCanale === 'twitch' && stato.canaleOk === false));
   const permessoKick = () => `<p class="nota-lettura">${L('Per cambiare titolo e categoria su Kick il bot ha bisogno del permesso di Kick.', 'To change title and category on Kick the bot needs Kick’s permission.', 'Para cambiar título y categoría en Kick el bot necesita el permiso de Kick.')}
-      <a href="${stato.kick?.moderazione ? '/auth/kick?mod=1' : '/auth/kick'}">${L('Concedi titolo e categoria', 'Grant title and category', 'Concede título y categoría')}</a> ${L('(ricolleghi Kick: la moderazione, se l’hai data, resta).', '(you reconnect Kick: moderation, if you granted it, stays).', '(vuelves a conectar Kick: la moderación, si la diste, se queda).')}</p>`;
+      <a href="${stato.kick?.moderazione ? '/auth/kick?mod=1' : '/auth/kick'}">${L('Aggiorna i permessi di Kick', 'Update Kick permissions', 'Actualiza los permisos de Kick')}</a> ${L('(ricolleghi Kick: la moderazione, se l’hai data, resta).', '(you reconnect Kick: moderation, if you granted it, stays).', '(vuelves a conectar Kick: la moderación, si la diste, se queda).')}</p>`;
   const nonQui = () => `<p class="nota-lettura">${L(`Su ${nomeDove} titolo e categoria non si cambiano ancora: questa carta vale per i canali su Twitch e su Kick.`, `On ${nomeDove} title and category can’t be changed yet: this card works for channels on Twitch and Kick.`, `En ${nomeDove} el título y la categoría todavía no se cambian: esta tarjeta vale para los canales en Twitch y en Kick.`)}</p>`;
 
   return pannello('ascolto', `
@@ -11147,6 +11147,41 @@ async function salvaMusica(silenzioso) {
   if (!silenzioso) toast(L('Impostazioni musica salvate', 'Music settings saved', 'Ajustes de música guardados'));
 }
 
+function _premiFuoriDaTwitch(d) {
+  const dove = d?.piattaforma || 'twitch';
+  if (dove === 'twitch') return '';
+  if (dove === 'kick') return `${L('Per i premi del canale su Kick servono i permessi dei premi di Kick.', 'Kick channel rewards need Kick’s reward permissions.', 'Las recompensas del canal en Kick necesitan los permisos de recompensas de Kick.')}
+    <a class="btn secondario mini" href="${esc(d.rimedio || '/auth/kick')}">${L('Aggiorna i permessi di Kick', 'Update Kick permissions', 'Actualiza los permisos de Kick')}</a>`;
+  const nome = NOME_PIATTAFORMA[dove] || dove;
+  return L(`Su ${nome} i premi del canale non ci sono: valgono su Twitch e su Kick.`, `${nome} has no channel rewards: they work on Twitch and Kick.`, `En ${nome} no hay recompensas del canal: valen en Twitch y en Kick.`);
+}
+
+function _premiSu(d) {
+  return NOME_PIATTAFORMA[d?.piattaforma || stato?.piattaforma || 'twitch'] || 'Twitch';
+}
+
+function _premiMisti(tutti) {
+  return new Set((tutti || []).map((r) => r.piattaforma || 'twitch')).size > 1;
+}
+
+function _doveIlPremio(r, misti) {
+  return misti ? ` · ${NOME_PIATTAFORMA[r.piattaforma || 'twitch'] || ''}` : '';
+}
+
+function _premiPerNome(tutti) {
+  const m = new Map();
+  for (const r of tutti || []) {
+    const x = m.get(r.title) || { ...r, dove: [] };
+    if (!x.dove.includes(r.piattaforma || 'twitch')) x.dove.push(r.piattaforma || 'twitch');
+    m.set(r.title, x);
+  }
+  return [...m.values()];
+}
+
+function _doveIlNome(r, misti) {
+  return misti ? ` · ${r.dove.map((p) => NOME_PIATTAFORMA[p] || p).join(L(' e ', ' and ', ' y '))}` : '';
+}
+
 async function caricaPremiMusica() {
   const box = document.getElementById('musica-premi-box');
   if (!box) return;
@@ -11154,12 +11189,13 @@ async function caricaPremiMusica() {
   let d;
   try { d = await api('/api/musica/premi'); } catch { box.innerHTML = `<p>${L('Impossibile leggere i premi.', 'Couldn’t read the rewards.', 'No se pueden leer las recompensas.')}</p>`; return; }
   if (!d.permessoOk) {
-    box.innerHTML = `<div class="riquadro-info">${L('Per usare i premi a punti canale serve il permesso Punti canale di Twitch.', 'To use channel-point rewards you need Twitch’s Channel Points permission.', 'Para usar las recompensas de puntos de canal necesitas el permiso Puntos de canal de Twitch.')}
+    box.innerHTML = _premiFuoriDaTwitch(d) ? `<div class="riquadro-info">${_premiFuoriDaTwitch(d)}</div>` : `<div class="riquadro-info">${L('Per usare i premi a punti canale serve il permesso Punti canale di Twitch.', 'To use channel-point rewards you need Twitch’s Channel Points permission.', 'Para usar las recompensas de puntos de canal necesitas el permiso Puntos de canal de Twitch.')}
       <a href="/auth/permessi">${L('Concedi il permesso', 'Grant the permission', 'Concede el permiso')}</a> ${L('(ti riporta qui dopo l\'autorizzazione).', '(it brings you back here after authorizing).', '(te devuelve aquí tras autorizar).')}</div>`;
     return;
   }
-  const eleggibili = (d.tutti || []).filter((r) => r.richiedeTesto);
-  const esclusi = (d.tutti || []).length - eleggibili.length;
+  const misti = _premiMisti(d.tutti);
+  const eleggibili = _premiPerNome((d.tutti || []).filter((r) => r.richiedeTesto));
+  const esclusi = _premiPerNome(d.tutti).length - eleggibili.length;
   const inp = document.getElementById('musica-premio');
   const attuale = (inp?.value || d.premio || '').trim();
 
@@ -11170,7 +11206,7 @@ async function caricaPremiMusica() {
         <div><label class="campo" for="musica-nuovo-nome">${L('Nome', 'Name', 'Nombre')}</label><input type="text" id="musica-nuovo-nome" value="${L('Richiesta musicale', 'Music request', 'Petición musical')}"></div>
         <div><label class="campo" for="musica-nuovo-costo">${L('Costo (punti canale)', 'Cost (channel points)', 'Coste (puntos de canal)')}</label><input type="number" id="musica-nuovo-costo" min="1" value="500"></div>
       </div>
-      <button class="btn secondario spazio-sopra" id="musica-crea-premio">${L('Crea il premio su Twitch', 'Create the reward on Twitch', 'Crea la recompensa en Twitch')}</button>
+      <button class="btn secondario spazio-sopra" id="musica-crea-premio">${L(`Crea il premio su ${_premiSu(d)}`, `Create the reward on ${_premiSu(d)}`, `Crea la recompensa en ${_premiSu(d)}`)}</button>
       <p class="suggerimento">${L('Lo creo io con la "richiesta di testo" già attiva e lo seleziono qui.', 'I create it with "require text" already on and select it here.', 'La creo con "requerir texto" ya activado y la selecciono aquí.')}</p>
     </details>`;
 
@@ -11180,7 +11216,7 @@ async function caricaPremiMusica() {
     box.innerHTML = `
       <label class="campo" for="musica-premio-sel">${L('Premio usato per le richieste', 'Reward used for requests', 'Recompensa usada para las peticiones')}</label>
       <select id="musica-premio-sel">
-        ${eleggibili.map((r) => `<option value="${esc(r.title)}"${r.title === attuale ? ' selected' : ''}>${esc(r.title)} (${r.cost} ${L('punti', 'points', 'puntos')})</option>`).join('')}
+        ${eleggibili.map((r) => `<option value="${esc(r.title)}"${r.title === attuale ? ' selected' : ''}>${esc(r.title)} (${r.cost} ${L('punti', 'points', 'puntos')}${_doveIlNome(r, misti)})</option>`).join('')}
       </select>
       ${esclusi ? `<p class="suggerimento">${esclusi} ${esclusi === 1 ? L('altro premio non ha', 'other reward doesn’t have', 'otra recompensa no tiene') : L('altri premi non hanno', 'other rewards don’t have', 'otras recompensas no tienen')} ${L('la richiesta di testo, quindi', 'require text, so', 'requerir texto, así que')} ${esclusi === 1 ? L('non compare', 'it doesn’t appear', 'no aparece') : L('non compaiono', 'they don’t appear', 'no aparecen')} ${L('qui.', 'here.', 'aquí.')}</p>` : ''}
       ${formCrea}`;
@@ -11195,7 +11231,7 @@ async function caricaPremiMusica() {
     const titolo = (document.getElementById('musica-nuovo-nome')?.value || L('Richiesta musicale', 'Music request', 'Petición musical')).trim();
     const costo = Number(document.getElementById('musica-nuovo-costo')?.value) || 500;
     const r = await api('/api/musica/premio', { method: 'POST', body: { titolo, costo } });
-    if (r?.reward) { if (inp) inp.value = r.reward.title; toast(L('Premio creato su Twitch!', 'Reward created on Twitch!', '¡Recompensa creada en Twitch!')); caricaPremiMusica(); }
+    if (r?.reward) { if (inp) inp.value = r.reward.title; toast(L(`Premio creato su ${_premiSu(d)}!`, `Reward created on ${_premiSu(d)}!`, `¡Recompensa creada en ${_premiSu(d)}!`)); caricaPremiMusica(); }
   }));
 }
 
@@ -12613,14 +12649,15 @@ async function _penPremi() {
   let d;
   try { d = await api('/api/penitenze/premi'); } catch { boxV.innerHTML = boxS.innerHTML = `<p class="suggerimento">${L('Impossibile leggere i premi.', 'Couldn’t read the rewards.', 'No se pueden leer las recompensas.')}</p>`; return; }
   if (!d.permessoOk) {
-    boxV.innerHTML = `<div class="riquadro-info">${L(`Per i premi a punti canale serve il permesso dei punti canale: nella scheda «${tScheda('stato')}» premi «Aggiorna i permessi», poi torna qui.`, `Channel-point rewards need the channel points permission: in the «${tScheda('stato')}» tab press «Update permissions», then come back here.`, `Las recompensas de puntos de canal necesitan el permiso de puntos de canal: en la pestaña «${tScheda('stato')}» pulsa «Actualizar permisos», luego vuelve aquí.`)}
+    boxV.innerHTML = _premiFuoriDaTwitch(d) ? `<div class="riquadro-info">${_premiFuoriDaTwitch(d)}</div>` : `<div class="riquadro-info">${L(`Per i premi a punti canale serve il permesso dei punti canale: nella scheda «${tScheda('stato')}» premi «Aggiorna i permessi», poi torna qui.`, `Channel-point rewards need the channel points permission: in the «${tScheda('stato')}» tab press «Update permissions», then come back here.`, `Las recompensas de puntos de canal necesitan el permiso de puntos de canal: en la pestaña «${tScheda('stato')}» pulsa «Actualizar permisos», luego vuelve aquí.`)}
       <p class="spazio-sopra"><a class="btn secondario mini" href="/auth/permessi">${_bIco(ICO.chiave)}${L('Aggiorna i permessi', 'Update permissions', 'Actualizar permisos')}</a></p></div>`;
     boxS.innerHTML = '';
     return;
   }
 
-  const eleggibili = (d.tutti || []).filter((r) => r.richiedeTesto);
-  const esclusi = (d.tutti || []).length - eleggibili.length;
+  const misti = _premiMisti(d.tutti);
+  const eleggibili = _premiPerNome((d.tutti || []).filter((r) => r.richiedeTesto));
+  const esclusi = _premiPerNome(d.tutti).length - eleggibili.length;
   const montaPicker = (box, { campo, hiddenId, attuale, nomeDefault, titolo }) => {
     const inp = document.getElementById(hiddenId);
     const cur = (inp?.value || attuale || '').trim();
@@ -12632,7 +12669,7 @@ async function _penPremi() {
           <div><label class="campo" for="${nomeId}">${L('Nome', 'Name', 'Nombre')}</label><input type="text" id="${nomeId}" value="${esc(nomeDefault)}"></div>
           <div><label class="campo" for="${costoId}">${L('Costo (punti canale)', 'Cost (channel points)', 'Coste (puntos de canal)')}</label><input type="number" id="${costoId}" min="1" value="500"></div>
         </div>
-        <button class="btn secondario spazio-sopra" id="${creaId}">${L('Crea il premio su Twitch', 'Create the reward on Twitch', 'Crea la recompensa en Twitch')}</button>
+        <button class="btn secondario spazio-sopra" id="${creaId}">${L(`Crea il premio su ${_premiSu(d)}`, `Create the reward on ${_premiSu(d)}`, `Crea la recompensa en ${_premiSu(d)}`)}</button>
       </details>`;
     if (!eleggibili.length) {
       box.innerHTML = `<div class="riquadro-info">${L('Non hai premi con la <strong>richiesta di testo</strong>', 'You have no rewards <strong>that require text</strong>', 'No tienes recompensas <strong>que requieran texto</strong>')}${esclusi ? ` (${esclusi} ${L('non ', 'not ', 'no ')}${esclusi === 1 ? L('adatto', 'suitable', 'apta') : L('adatti', 'suitable', 'aptas')})` : ''}. ${L('Creane uno qui.', 'Create one here.', 'Crea una aquí.')}</div>${formCrea}`;
@@ -12640,7 +12677,7 @@ async function _penPremi() {
       const nessuno = `<option value=""${cur ? '' : ' selected'}>${L('— nessuno —', '— none —', '— ninguno —')}</option>`;
       box.innerHTML = `
         <select id="${selId}" aria-label="${esc(L('Premio per', 'Reward for', 'Recompensa para') + ' ' + titolo)}">
-          ${nessuno}${eleggibili.map((r) => `<option value="${esc(r.title)}"${r.title === cur ? ' selected' : ''}>${esc(r.title)} — ${r.cost} ${L('punti', 'points', 'puntos')}</option>`).join('')}
+          ${nessuno}${eleggibili.map((r) => `<option value="${esc(r.title)}"${r.title === cur ? ' selected' : ''}>${esc(r.title)} · ${r.cost} ${L('punti', 'points', 'puntos')}${_doveIlNome(r, misti)}</option>`).join('')}
         </select>${formCrea}`;
       const sel = document.getElementById(selId);
       if (cur && !eleggibili.some((r) => r.title === cur)) sel.value = '';
@@ -12656,7 +12693,7 @@ async function _penPremi() {
         if (inp) inp.value = r.reward.title;
         if (r.penitenze && stato?.streamer) stato.streamer.settings = { ...(stato.streamer.settings || {}), penitenze: r.penitenze };
         _penInterruttore(r.penitenze ? r.penitenze.attivo : true);
-        toast(L('Premio creato su Twitch!', 'Reward created on Twitch!', '¡Recompensa creada en Twitch!'));
+        toast(L(`Premio creato su ${_premiSu(d)}!`, `Reward created on ${_premiSu(d)}!`, `¡Recompensa creada en ${_premiSu(d)}!`));
         _penPremi();
       }
     }));
@@ -15161,7 +15198,8 @@ function _leggiPremiMuro() {
 
 function _rigaPremioMuro(p) {
   const tutti = _muroPremiTutti || [];
-  const opz = tutti.map((r) => `<option value="${esc(r.id)}"${r.id === p.id ? ' selected' : ''}>${esc(r.title)}</option>`).join('')
+  const misti = _premiMisti(tutti);
+  const opz = tutti.map((r) => `<option value="${esc(r.id)}"${r.id === p.id ? ' selected' : ''}>${esc(r.title)}${_doveIlPremio(r, misti)}</option>`).join('')
     + (p.id && !tutti.some((r) => r.id === p.id) ? `<option value="${esc(p.id)}" selected>${esc(p.titolo || p.id)}</option>` : '');
   const fig = [...MURO_FIGURE(), ['caso', L('A caso', 'Random', 'Al azar')]].map(([v, t]) => `<option value="${v}"${v === (p.figura || 'caso') ? ' selected' : ''}>${esc(t)}</option>`).join('');
   return `<div class="goal-campi" data-premio>
@@ -15179,7 +15217,7 @@ async function _disegnaPremiMuro() {
     try {
       const d = await api('/api/streamer/premi');
       if (!d.permessoOk) {
-        box.innerHTML = `<p class="vuoto">${L('Per scegliere un premio a punti canale serve un permesso in più.', 'Picking a channel-point reward requires an extra permission.', 'Para elegir una recompensa de puntos de canal se necesita un permiso adicional.')}
+        box.innerHTML = _premiFuoriDaTwitch(d) ? `<p class="vuoto">${_premiFuoriDaTwitch(d)}</p>` : `<p class="vuoto">${L('Per scegliere un premio a punti canale serve un permesso in più.', 'Picking a channel-point reward requires an extra permission.', 'Para elegir una recompensa de puntos de canal se necesita un permiso adicional.')}
           <a class="btn secondario mini" href="/auth/permessi">${L('Concedi il permesso', 'Grant the permission', 'Concede el permiso')}</a></p>`;
         return;
       }
@@ -15190,7 +15228,7 @@ async function _disegnaPremiMuro() {
   box.innerHTML = premi.map(_rigaPremioMuro).join('')
     + (_muroPremiTutti.length
       ? (premi.length < 10 ? `<p><button type="button" class="btn secondario mini" data-premio-piu>${_bIco(ICO.piu)}${L('Aggiungi un premio', 'Add a reward', 'Añadir una recompensa')}</button></p>` : '')
-      : `<p class="vuoto">${L('Non hai ancora premi a punti canale su Twitch: creane uno e torna qui.', 'You have no channel-point rewards on Twitch yet: create one and come back here.', 'Aún no tienes recompensas de puntos de canal en Twitch: crea una y vuelve aquí.')}</p>`);
+      : `<p class="vuoto">${L(`Non hai ancora premi a punti canale su ${_premiSu()}: creane uno e torna qui.`, `You have no channel-point rewards on ${_premiSu()} yet: create one and come back here.`, `Aún no tienes recompensas de puntos de canal en ${_premiSu()}: crea una y vuelve aquí.`)}</p>`);
 }
 
 const VESTITORE = { musica: _vestiMusica, pen: _vestiPen, timer: _vestiTimer, pubblicita: _vestiPubblicita, treno: _vestiTreno, bit: _vestiBit, boss: _vestiBoss, arena: _vestiArena, scritta: _vestiScritta, etichetta: _vestiEtichetta, muro: _vestiMuro, effetti: _vestiEffetti };
@@ -21437,9 +21475,9 @@ function pannelloEffetti() {
 
     <div class="carta" data-zona="punti">
       <h2>${_hIco(ICO.giveaway)}${L('Alert a punti canale', 'Channel-point alerts', 'Alertas de puntos de canal')}</h2>
-      <p>${L('Crea un', 'Create a', 'Crea una')} <strong class="primo-piano">${L('premio a punti canale', 'channel-point reward', 'recompensa de puntos de canal')}</strong> ${L('di Twitch: quando uno spettatore lo riscatta', 'on Twitch: when a viewer redeems it', 'de Twitch: cuando un espectador la canjea')}
+      <p>${L('Crea un', 'Create a', 'Crea una')} <strong class="primo-piano">${L('premio a punti canale', 'channel-point reward', 'recompensa de puntos de canal')}</strong> ${L(`di ${_premiSu()}: quando uno spettatore lo riscatta`, `on ${_premiSu()}: when a viewer redeems it`, `de ${_premiSu()}: cuando un espectador la canjea`)}
       (${L('spendendo i suoi punti', 'spending their points', 'gastando sus puntos')}), ${L('parte un', 'an', 'se lanza un')} <strong>${L('effetto', 'effect', 'efecto')}</strong> ${L('nell\'overlay e/o un', 'plays in the overlay and/or a', 'en el overlay y/o un')} <strong>${L('messaggio', 'message', 'mensaje')}</strong> ${L('in chat.', 'in chat.', 'en el chat.')}
-      ${L('Il premio compare da solo nella tua pagina Twitch.', 'The reward appears automatically on your Twitch page.', 'La recompensa aparece sola en tu página de Twitch.')}</p>
+      ${L(`Il premio compare da solo nella tua pagina ${_premiSu()}.`, `The reward appears automatically on your ${_premiSu()} page.`, `La recompensa aparece sola en tu página de ${_premiSu()}.`)}</p>
       <div id="premi-box">${attesaHtml()}</div>
     </div>`);
 }
@@ -21450,13 +21488,15 @@ async function caricaSuoniPremi() {
   let d;
   try { d = await api('/api/streamer/premi'); } catch (e) { box.innerHTML = `<p class="vuoto">${L('Errore', 'Error', 'Error')}: ${esc(e.message)}</p>`; return; }
   if (!d.permessoOk) {
-    box.innerHTML = `<p class="vuoto">${L('Per leggere i tuoi punti canale serve un permesso in più.', 'Reading your channel points requires an extra permission.', 'Para leer tus puntos de canal se necesita un permiso adicional.')}
+    box.innerHTML = _premiFuoriDaTwitch(d) ? `<p class="vuoto">${_premiFuoriDaTwitch(d)}</p>` : `<p class="vuoto">${L('Per leggere i tuoi punti canale serve un permesso in più.', 'Reading your channel points requires an extra permission.', 'Para leer tus puntos de canal se necesita un permiso adicional.')}
       <a class="btn secondario mini" href="/auth/permessi">${L('Concedi il permesso', 'Grant the permission', 'Concede el permiso')}</a></p>`;
     return;
   }
   const tutti = d.tutti || [];
+  const misti = _premiMisti(tutti);
   if (!tutti.length) {
-    box.innerHTML = `<div class="riquadro-info">${L('Non hai ancora premi a punti canale su Twitch. Creane uno (anche qui sotto, in «Alert a punti canale») e poi torna qui per dargli un suono.', 'You don\'t have any channel-point rewards on Twitch yet. Create one (also below, in «Channel-point alerts») and then come back here to give it a sound.', 'Aún no tienes recompensas de puntos de canal en Twitch. Crea una (también abajo, en «Alertas de puntos de canal») y luego vuelve aquí para darle un sonido.')}</div>`;
+    const su = NOME_PIATTAFORMA[d.piattaforma || 'twitch'] || 'Twitch';
+    box.innerHTML = `<div class="riquadro-info">${L(`Non hai ancora premi a punti canale su ${su}. Creane uno (anche qui sotto, in «Alert a punti canale») e poi torna qui per dargli un suono.`, `You don't have any channel-point rewards on ${su} yet. Create one (also below, in «Channel-point alerts») and then come back here to give it a sound.`, `Aún no tienes recompensas de puntos de canal en ${su}. Crea una (también abajo, en «Alertas de puntos de canal») y luego vuelve aquí para darle un sonido.`)}</div>`;
     return;
   }
   const mappa = {};
@@ -21484,7 +21524,7 @@ async function caricaSuoniPremi() {
     const selVal = m.effetto ? 'effetto:' + m.effetto : (m.suono || '');
     return `<li data-reward="${esc(r.id)}" data-titolo="${esc(r.title)}" data-costo="${r.cost || 0}">
       <div class="riga-premio-suono">
-        <span class="nome-premio"><strong>${esc(r.title)}</strong> <span class="suggerimento">${r.cost || 0} ${L('punti', 'points', 'puntos')}</span></span>
+        <span class="nome-premio"><strong>${esc(r.title)}</strong> <span class="suggerimento">${r.cost || 0} ${L('punti', 'points', 'puntos')}${_doveIlPremio(r, misti)}</span></span>
         <span class="controlli-suono">
           <select class="sel-effetto" aria-label="${esc(L('Effetto per', 'Effect for', 'Efecto para') + ' ' + r.title)}">${opzScelta(selVal)}</select>
           <button type="button" class="btn secondario mini sel-lib ico-sola" title="${L('Dalla libreria', 'From the library', 'De la biblioteca')}" aria-label="${L('Dalla libreria', 'From the library', 'De la biblioteca')}">${_bIco(ICO.libro)}</button>
@@ -21613,7 +21653,7 @@ async function caricaPremi() {
   let d;
   try { d = await api('/api/streamer/premi'); } catch (e) { box.innerHTML = `<p class="vuoto">${L('Errore', 'Error', 'Error')}: ${esc(e.message)}</p>`; return; }
   if (!d.permessoOk) {
-    box.innerHTML = `<p class="vuoto">${L('Per creare premi a punti canale serve un permesso in più.', 'Creating channel-point rewards requires an extra permission.', 'Para crear recompensas de puntos de canal se necesita un permiso adicional.')}
+    box.innerHTML = _premiFuoriDaTwitch(d) ? `<p class="vuoto">${_premiFuoriDaTwitch(d)}</p>` : `<p class="vuoto">${L('Per creare premi a punti canale serve un permesso in più.', 'Creating channel-point rewards requires an extra permission.', 'Para crear recompensas de puntos de canal se necesita un permiso adicional.')}
       <a class="btn secondario mini" href="/auth/permessi">${L('Concedi il permesso', 'Grant the permission', 'Concede el permiso')}</a></p>`;
     return;
   }
@@ -21649,7 +21689,7 @@ async function caricaPremi() {
       testo: (document.getElementById('premio-testo').value || '').trim(),
     };
     await api('/api/streamer/premi', { method: 'POST', body });
-    toast(L('Premio creato — lo trovi tra i punti canale su Twitch.', 'Reward created — you\'ll find it in your Twitch channel points.', 'Recompensa creada — la encontrarás en tus puntos de canal de Twitch.'));
+    toast(L(`Premio creato: lo trovi tra i punti canale su ${_premiSu(d)}.`, `Reward created: you'll find it in your ${_premiSu(d)} channel points.`, `Recompensa creada: la encontrarás en tus puntos de canal de ${_premiSu(d)}.`));
     caricaPremi();
   }));
   box.querySelectorAll('.rimuovi-premio').forEach((a) => a.addEventListener('click', (ev) => { ev.preventDefault(); conErrore(async () => {
@@ -35738,10 +35778,16 @@ function _notaCanaleAParte() {
     `Tu canal está en ${dove}: Twitch no se añade a este canal. Si también emites en Twitch, entra con tu cuenta de Twitch: es un canal aparte, con su propio panel.`);
 }
 
-function _notaCanaleKick() {
-  return stato?.piattaforma === 'kick'
-    ? L('Titolo e categoria su Kick: non concessi. Con «Concedi titolo e categoria» li cambiano !titolo e !categoria, la voce e Telegram.', 'Title and category on Kick: not granted. With “Grant title and category” !titolo and !categoria, voice and Telegram can change them.', 'Título y categoría en Kick: no concedidos. Con «Concede título y categoría» los cambian !titolo y !categoria, la voz y Telegram.')
-    : L('Titolo e categoria su Kick: non concessi. Con «Concedi titolo e categoria» !titolo e !categoria scritti nella chat di Kick li cambiano su Kick.', 'Title and category on Kick: not granted. With “Grant title and category” !titolo and !categoria typed in the Kick chat change them on Kick.', 'Título y categoría en Kick: no concedidos. Con «Concede título y categoría» !titolo y !categoria escritos en el chat de Kick los cambian en Kick.');
+const PERMESSI_KICK = {
+  canale: () => L('titolo e categoria', 'title and category', 'título y categoría'),
+  premi: () => L('premi del canale', 'channel rewards', 'recompensas del canal'),
+};
+
+function _notaPermessiKick(p) {
+  const cosa = (p.mancano || []).map((id) => (PERMESSI_KICK[id] ? PERMESSI_KICK[id]() : id)).join(', ');
+  return L(`Su Kick mancano dei permessi arrivati dopo: ${cosa}. «Aggiorna i permessi di Kick» li concede; la moderazione, se l’hai data, resta.`,
+    `Some newer Kick permissions are missing: ${cosa}. “Update Kick permissions” grants them; moderation, if you granted it, stays.`,
+    `En Kick faltan permisos que llegaron después: ${cosa}. «Actualiza los permisos de Kick» los concede; la moderación, si la diste, se queda.`);
 }
 
 function rigaPiattaforma(p) {
@@ -35757,7 +35803,7 @@ function rigaPiattaforma(p) {
       : `${p.rifaiEventi ? `<button type="button" class="btn mini" data-kick-eventi>${L('Riprova gli eventi', 'Retry events', 'Reintentar eventos')}</button>` : ''}
          ${p.daRifare && !p.rifaiEventi ? `<a class="btn mini" href="${esc(p.azione)}">${L('Sistema', 'Fix', 'Arreglar')}</a>` : ''}
          ${p.id === 'kick' && !p.moderazione && p.azioneModerazione ? `<a class="btn secondario mini" href="${esc(p.azioneModerazione)}">${L('Concedi la moderazione', 'Grant moderation', 'Concede la moderación')}</a>` : ''}
-         ${p.id === 'kick' && p.canale === false && !(p.daRifare && !p.rifaiEventi) ? `<a class="btn secondario mini" href="${esc(p.azione)}">${L('Concedi titolo e categoria', 'Grant title and category', 'Concede título y categoría')}</a>` : ''}
+         ${p.id === 'kick' && (p.mancano || []).length && !(p.daRifare && !p.rifaiEventi) ? `<a class="btn secondario mini" href="${esc(p.azione)}">${L('Aggiorna i permessi di Kick', 'Update Kick permissions', 'Actualiza los permisos de Kick')}</a>` : ''}
          ${p.chatDisponibile ? `<label class="interruttore mini" title="${esc(L('Il bot legge e risponde nella chat delle tue dirette YouTube', 'The bot reads and answers in your YouTube live chat', 'El bot lee y responde en el chat de tus directos de YouTube'))}">
             <input type="checkbox" data-yt-chat${p.chatAccesa ? ' checked' : ''} aria-label="${esc(L('Chat delle dirette YouTube', 'YouTube live chat', 'Chat de los directos de YouTube'))}"><span class="levetta"></span></label>` : ''}
          ${p.id !== 'twitch' ? `<button type="button" class="btn secondario mini" data-scollega="${esc(p.id)}">${L('Scollega', 'Disconnect', 'Desconectar')}</button>` : ''}`);
@@ -35770,7 +35816,7 @@ function rigaPiattaforma(p) {
     ${p.id === 'kick' && p.collegato ? `<span class="pf-nota">${esc(p.moderazione
     ? L('Moderazione su Kick: attiva. L’antispam toglie i messaggi e il timeout dei moduli mette in pausa anche su Kick.', 'Moderation on Kick: on. Antispam removes messages and the modules’ timeout pauses people on Kick too.', 'Moderación en Kick: activa. El antispam quita los mensajes y el timeout de los módulos pausa también en Kick.')
     : L('Moderazione su Kick: non concessa. Con «Concedi la moderazione» l’antispam toglie i messaggi e il timeout dei moduli mette in pausa anche su Kick.', 'Moderation on Kick: not granted. With “Grant moderation” antispam removes messages and the modules’ timeout pauses people on Kick too.', 'Moderación en Kick: no concedida. Con «Concede la moderación» el antispam quita los mensajes y el timeout de los módulos pausa también en Kick.'))}</span>` : ''}
-    ${p.id === 'kick' && p.collegato && p.canale === false ? `<span class="pf-nota">${esc(_notaCanaleKick())}</span>` : ''}
+    ${p.id === 'kick' && p.collegato && (p.mancano || []).length ? `<span class="pf-nota">${esc(_notaPermessiKick(p))}</span>` : ''}
     <span class="pf-azioni">${azione}</span>
   </li>`;
 }

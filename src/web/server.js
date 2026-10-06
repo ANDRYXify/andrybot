@@ -1163,6 +1163,40 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // ha concesso il permesso per creare/gestire i premi a punti canale?
   const redemptionsOk = (login) =>
     !!(tokens.get('broadcaster', login)?.scopes?.includes('channel:manage:redemptions'));
+  // CHI PREMIA PER IL CANALE: la piattaforma del canale. Twitch con helix e il
+  // permesso dei punti canale, Kick con premiKick (la stessa forma) e i
+  // permessi dei premi di Kick; altrove nessuno. Al pannello va anche il
+  // rimedio della stessa piattaforma, cosi' non manda mai a Twitch chi e' su
+  // Kick (docs/PIATTAFORME.md, «I premi del canale su Kick»).
+  const premiDi = (login) => {
+    const p = piattaformaDi(login);
+    if (p === 'twitch') return { piattaforma: 'twitch', premiatore: helix, permessoOk: redemptionsOk(login), rimedio: '/auth/permessi' };
+    if (p === 'kick') return { piattaforma: 'kick', premiatore: kickApi.premiKick(login), permessoOk: kickApi.puoPremiare(login), rimedio: kickApi.puoModerare(login) ? '/auth/kick?mod=1' : '/auth/kick' };
+    return { piattaforma: p, premiatore: null, permessoOk: false, rimedio: '' };
+  };
+  // Tutti i premi che il canale puo' usare, ognuno con la sua piattaforma:
+  // quelli della sua, e su un canale di Twitch con Kick collegato anche quelli
+  // di Kick (un riscatto di Kick arriva con l'id del premio di Kick).
+  const tuttiIPremi = async (login) => {
+    const pd = premiDi(login);
+    const suoi = pd.permessoOk && pd.premiatore ? await pd.premiatore.listaRewardsTutti(login).catch(() => []) : [];
+    const lista = (suoi || []).map((r) => ({ ...r, piattaforma: pd.piattaforma }));
+    if (pd.piattaforma === 'twitch' && kickApi.puoPremiare(login)) {
+      const k = await kickApi.premiKick(login).listaRewardsTutti(login).catch(() => []);
+      lista.push(...k);
+    }
+    return lista;
+  };
+  // Il pannello puo' leggere i premi da almeno una piattaforma?
+  const premiLeggibili = (login) => premiDi(login).permessoOk || kickApi.puoPremiare(login);
+  // Il permesso dei punti canale che manca, detto con DOVE si concede, nella
+  // piattaforma del canale: mai un indirizzo, mai i permessi di Twitch a chi e'
+  // su Kick.
+  const permessoPremi = (pd) => (pd?.piattaforma === 'kick'
+    ? 'Manca il permesso dei premi di Kick: nella scheda «Il tuo account», in «Le tue piattaforme», premi «Aggiorna i permessi di Kick».'
+    : 'Manca il permesso dei punti canale: nella scheda «Stato» premi «Aggiorna i permessi».');
+  // Il nome della piattaforma che ha rifiutato, per dirlo giusto.
+  const nomeDi = (p) => ({ twitch: 'Twitch', kick: 'Kick', youtube: 'YouTube', discord: 'Discord' }[p] || p);
   // Regia: permessi per raid / pubblicità / lettura programmazione ads (aggiunti
   // dopo → richiedono una ri-autorizzazione da /auth/permessi).
   const raidOk = (login) =>
@@ -3778,10 +3812,10 @@ STREAMER (${su.toUpperCase()}) e non c'entra con l'automazione del marketing.
       moderazione: !!tk?.accessToken && kickApi.puoModerare(login),
       azioneModerazione: '/auth/kick?mod=1',
       azione: tk?.accessToken && kickApi.puoModerare(login) ? '/auth/kick?mod=1' : '/auth/kick',
-      // Titolo e categoria (!titolo, !categoria, voce, Telegram) vogliono
-      // channel:write, chiesto da quando c'e'. Chi ha collegato prima lo
-      // concede ricollegando, con la stessa azione: la moderazione resta.
-      canale: !!tk?.accessToken && kickApi.puoCambiareCanale(login),
+      // I permessi arrivati dopo (kick/auth.js, PERMESSI_NUOVI: titolo e
+      // categoria, premi del canale) che a questo collegamento mancano. Si
+      // concedono ricollegando, con la stessa azione: la moderazione resta.
+      mancano: kickApi.permessiMancanti(login),
       note: perche(),
       // il pulsante per rifare l'iscrizione: serve solo quando non arriva niente
       rifaiEventi: !!tk?.accessToken && !kd.ultimo,
@@ -3957,7 +3991,7 @@ STREAMER (${su.toUpperCase()}) e non c'entra con l'automazione del marketing.
       moderazioneOk: user ? moderazioneOk(user.login) : false,
       // Kick collegato e i suoi permessi di moderazione (kick/api.js,
       // puoModerare): l'antispam e il timeout dei moduli valgono anche li'
-      kick: user ? { collegato: !!kickApi.tokenDi(user.login)?.accessToken, moderazione: kickApi.puoModerare(user.login), canale: kickApi.puoCambiareCanale(user.login) } : null,
+      kick: user ? { collegato: !!kickApi.tokenDi(user.login)?.accessToken, moderazione: kickApi.puoModerare(user.login), canale: kickApi.puoCambiareCanale(user.login), premi: kickApi.puoPremiare(user.login) } : null,
       canaleOk: user ? canaleOk(user.login) : false,
       // Regia (Vai live): quali permessi ha concesso per gestire la diretta dal bot
       regia: user ? { broadcast: canaleOk(user.login), raid: raidOk(user.login), commercial: commercialOk(user.login), ads: adsOk(user.login) } : null,
@@ -5116,9 +5150,11 @@ STREAMER (${su.toUpperCase()}) e non c'entra con l'automazione del marketing.
     if (req.body?.scollega) { contatori.upsert(login, { comando: cmd, rewardId: '' }); return res.json({ ok: true, collegato: false }); }
     const costo = Math.max(1, Math.min(1000000, parseInt(req.body?.costo, 10) || 100));
     const titolo = String(req.body?.titolo || c.etichetta || cmd).slice(0, 45);
+    const pd = premiDi(login);
+    if (!pd.premiatore) return res.status(400).json({ errore: `Su ${nomeDi(pd.piattaforma)} i premi del canale non ci sono.` });
     let reward;
-    try { reward = await helix.creaReward(login, { titolo, costo }); }
-    catch (e) { return res.status(400).json({ errore: 'Creazione premio non riuscita (hai concesso i permessi punti canale?).' }); }
+    try { reward = await pd.premiatore.creaReward(login, { titolo, costo }); }
+    catch (e) { return res.status(400).json({ errore: e?.status === 403 ? permessoPremi(pd) : 'Creazione premio non riuscita.', permesso: e?.status === 403, rimedio: pd.rimedio }); }
     if (!reward?.id) return res.status(400).json({ errore: 'Creazione premio non riuscita.' });
     contatori.upsert(login, { comando: cmd, rewardId: reward.id });
     res.json({ ok: true, collegato: true, titolo });
@@ -6606,25 +6642,29 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
   // hai già e quali nomi sono occupati) + creazione del premio dedicato.
   app.get('/api/musica/premi', requireOwner, wrap(async (req, res) => {
     const login = currentUser(req).login;
-    if (!redemptionsOk(login)) return res.json({ permessoOk: false, tutti: [], premio: '' });
-    const tutti = await helix.listaRewardsTutti(login).catch(() => []);
-    res.json({ permessoOk: true, tutti, premio: streamers.get(login)?.settings?.musica?.premio || '' });
+    const pd = premiDi(login);
+    const base = { piattaforma: pd.piattaforma, rimedio: pd.rimedio };
+    if (!premiLeggibili(login)) return res.json({ ...base, permessoOk: false, tutti: [], premio: '' });
+    const tutti = await tuttiIPremi(login);
+    res.json({ ...base, permessoOk: true, puoCreare: pd.permessoOk, tutti, premio: streamers.get(login)?.settings?.musica?.premio || '' });
   }));
 
   app.post('/api/musica/premio', requireOwner, gateFeature('musica', 'La musica'), wrap(async (req, res) => {
     const login = currentUser(req).login;
-    if (!redemptionsOk(login)) return res.status(403).json({ errore: 'Concedi il permesso "punti canale" da /auth/permessi', permesso: true });
+    const pd = premiDi(login);
+    const dove = nomeDi(pd.piattaforma);
+    if (!pd.permessoOk) return res.status(403).json({ errore: permessoPremi(pd), permesso: true, rimedio: pd.rimedio });
     const titolo = (String(req.body?.titolo || '').trim() || 'Richiesta musicale').slice(0, 45);
     const costo = Math.max(1, Math.round(Number(req.body?.costo) || 500));
     let reward;
     try {
-      reward = await helix.creaReward(login, { titolo, costo, userInput: true, prompt: 'Scrivi la canzone (nome e artista)' });
+      reward = await pd.premiatore.creaReward(login, { titolo, costo, userInput: true, prompt: 'Scrivi la canzone (nome e artista)' });
     } catch (e) {
-      if (e.status === 403) return res.status(403).json({ errore: 'Permesso mancante: concedi "punti canale" da /auth/permessi', permesso: true });
-      if (e.status === 400) return res.status(400).json({ errore: 'Twitch ha rifiutato il premio: forse esiste già un premio con questo nome.' });
-      return res.status(502).json({ errore: 'Twitch non ha creato il premio.' });
+      if (e.status === 403) return res.status(403).json({ errore: permessoPremi(pd), permesso: true, rimedio: pd.rimedio });
+      if (e.status === 400) return res.status(400).json({ errore: `${dove} ha rifiutato il premio: forse esiste già un premio con questo nome.` });
+      return res.status(502).json({ errore: `${dove} non ha creato il premio.` });
     }
-    if (!reward?.id) return res.status(502).json({ errore: 'Twitch non ha creato il premio.' });
+    if (!reward?.id) return res.status(502).json({ errore: `${dove} non ha creato il premio.` });
     // imposta subito la modalità "punti" con questo premio
     const s = streamers.get(login);
     const musica = { ...(s.settings?.musica || {}), modo: 'punti', premio: reward.title };
@@ -6635,18 +6675,22 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
   // Penitenze: elenco premi (per scegliere quello che le attiva) e creazione.
   app.get('/api/penitenze/premi', requireOwner, wrap(async (req, res) => {
     const login = currentUser(req).login;
-    if (!redemptionsOk(login)) return res.json({ permessoOk: false, tutti: [], premioVieta: '', premioSolo: '' });
-    const tutti = await helix.listaRewardsTutti(login).catch(() => []);
+    const pd = premiDi(login);
+    const base = { piattaforma: pd.piattaforma, rimedio: pd.rimedio };
+    if (!premiLeggibili(login)) return res.json({ ...base, permessoOk: false, tutti: [], premioVieta: '', premioSolo: '' });
+    const tutti = await tuttiIPremi(login);
     const pen = streamers.get(login)?.settings?.penitenze || {};
     // retrocompat: il vecchio premioTesto/premio diventa il premio "vieta"
     const premioVieta = pen.premioVieta || pen.premioTesto || (pen.modo === 'parola' ? pen.premio : '') || '';
     const premioSolo = pen.premioSolo || '';
-    res.json({ permessoOk: true, tutti, premioVieta, premioSolo });
+    res.json({ ...base, permessoOk: true, puoCreare: pd.permessoOk, tutti, premioVieta, premioSolo });
   }));
 
   app.post('/api/penitenze/premio', requireOwner, wrap(async (req, res) => {
     const login = currentUser(req).login;
-    if (!redemptionsOk(login)) return res.status(403).json({ errore: 'Manca il permesso dei punti canale: nella scheda «Stato» premi «Aggiorna i permessi».', permesso: true });
+    const pd = premiDi(login);
+    const dove = nomeDi(pd.piattaforma);
+    if (!pd.permessoOk) return res.status(403).json({ errore: permessoPremi(pd), permesso: true, rimedio: pd.rimedio });
     // campo = quale dei due premi (vieta = ban, solo = inverso)
     const campo = req.body?.campo === 'premioSolo' ? 'premioSolo' : 'premioVieta';
     const nomeDefault = campo === 'premioSolo' ? 'Dì solo questa parola' : 'Vietami una parola';
@@ -6657,13 +6701,13 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
       : 'Scrivi la parola da vietare allo streamer';
     let reward;
     try {
-      reward = await helix.creaReward(login, { titolo, costo, userInput: true, prompt });
+      reward = await pd.premiatore.creaReward(login, { titolo, costo, userInput: true, prompt });
     } catch (e) {
-      if (e.status === 403) return res.status(403).json({ errore: 'Manca il permesso dei punti canale: nella scheda «Stato» premi «Aggiorna i permessi».', permesso: true });
-      if (e.status === 400) return res.status(400).json({ errore: 'Twitch ha rifiutato il premio: forse esiste già un premio con questo nome.' });
-      return res.status(502).json({ errore: 'Twitch non ha creato il premio.' });
+      if (e.status === 403) return res.status(403).json({ errore: permessoPremi(pd), permesso: true, rimedio: pd.rimedio });
+      if (e.status === 400) return res.status(400).json({ errore: `${dove} ha rifiutato il premio: forse esiste già un premio con questo nome.` });
+      return res.status(502).json({ errore: `${dove} non ha creato il premio.` });
     }
-    if (!reward?.id) return res.status(502).json({ errore: 'Twitch non ha creato il premio.' });
+    if (!reward?.id) return res.status(502).json({ errore: `${dove} non ha creato il premio.` });
     const s = streamers.get(login);
     const penitenze = { ...(s.settings?.penitenze || {}), attivo: true, [campo]: reward.title };
     streamers.setSettings(login, { ...s.settings, penitenze });
@@ -9214,15 +9258,20 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
   // ---- Alert a PUNTI CANALE (Twitch Custom Rewards) ----
   app.get('/api/streamer/premi', requireLogin, wrap(async (req, res) => {
     const login = currentUser(req).login;
-    const permessoOk = redemptionsOk(login);
-    // "tutti" = i premi a punti canale già esistenti su Twitch, così lo streamer
-    // può attaccare un suono a QUALSIASI riscatto, non solo a quelli creati qui.
-    const tutti = permessoOk ? await helix.listaRewardsTutti(login).catch(() => []) : [];
+    const pd = premiDi(login);
+    const permessoOk = premiLeggibili(login);
+    // "tutti" = i premi a punti canale già esistenti, sulla piattaforma del
+    // canale (e su Kick, se collegato): così lo streamer può attaccare un suono
+    // a QUALSIASI riscatto, non solo a quelli creati qui.
+    const tutti = permessoOk ? await tuttiIPremi(login) : [];
     res.json({
       premi: pointAlerts.list(login),
       effetti: effectsDb.list(login).map((e) => ({ comando: e.comando, tipo: e.tipo, schermo: e.schermo || '' })),
       tutti,
       permessoOk,
+      puoCreare: pd.permessoOk,
+      piattaforma: pd.piattaforma,
+      rimedio: pd.rimedio,
     });
   }));
 
@@ -9232,7 +9281,7 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
   app.post('/api/streamer/premi/suono', requireLogin, wrap(async (req, res) => {
     if (!esigiFunzione(req, res, 'effetti', 'Gli effetti e i premi a punti canale')) return;
     const login = currentUser(req).login;
-    if (!redemptionsOk(login)) return res.status(403).json({ errore: 'Concedi il permesso "punti canale" da /auth/permessi', permesso: true });
+    if (!premiLeggibili(login)) return res.status(403).json({ errore: permessoPremi(premiDi(login)), permesso: true, rimedio: premiDi(login).rimedio });
     const b = req.body || {};
     const rewardId = String(b.rewardId || '').trim();
     if (!rewardId) return res.status(400).json({ errore: 'premio mancante' });
@@ -9268,7 +9317,9 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
   app.post('/api/streamer/premi', requireLogin, wrap(async (req, res) => {
     if (!esigiFunzione(req, res, 'effetti', 'Gli effetti e i premi a punti canale')) return;
     const login = currentUser(req).login;
-    if (!redemptionsOk(login)) return res.status(403).json({ errore: 'Concedi il permesso "punti canale" da /auth/permessi', permesso: true });
+    const pd = premiDi(login);
+    const dove = nomeDi(pd.piattaforma);
+    if (!pd.permessoOk) return res.status(403).json({ errore: permessoPremi(pd), permesso: true, rimedio: pd.rimedio });
     const b = req.body || {};
     const titolo = String(b.titolo || '').trim().slice(0, 45);
     const costo = Math.max(1, Math.round(Number(b.costo) || 100));
@@ -9278,13 +9329,13 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     if (!effetto && !testo) return res.status(400).json({ errore: 'scegli un effetto o scrivi un messaggio' });
     let reward;
     try {
-      reward = await helix.creaReward(login, { titolo, costo });
+      reward = await pd.premiatore.creaReward(login, { titolo, costo });
     } catch (e) {
-      if (e.status === 403) return res.status(403).json({ errore: 'Permesso mancante: concedi "punti canale" da /auth/permessi', permesso: true });
-      if (e.status === 400) return res.status(400).json({ errore: 'Twitch ha rifiutato il premio (nome già usato?)' });
-      return res.status(502).json({ errore: 'Twitch non ha creato il premio' });
+      if (e.status === 403) return res.status(403).json({ errore: permessoPremi(pd), permesso: true, rimedio: pd.rimedio });
+      if (e.status === 400) return res.status(400).json({ errore: `${dove} ha rifiutato il premio (nome già usato?)` });
+      return res.status(502).json({ errore: `${dove} non ha creato il premio` });
     }
-    if (!reward?.id) return res.status(502).json({ errore: 'Twitch non ha creato il premio' });
+    if (!reward?.id) return res.status(502).json({ errore: `${dove} non ha creato il premio` });
     pointAlerts.add(login, { rewardId: reward.id, titolo: reward.title, costo: reward.cost, effetto, testo });
     res.json({ ok: true, premi: pointAlerts.list(login) });
   }));
@@ -9292,7 +9343,9 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
   app.delete('/api/streamer/premi/:rewardId', requireLogin, wrap(async (req, res) => {
     const login = currentUser(req).login;
     const rid = String(req.params.rewardId || '');
-    try { await helix.eliminaReward(login, rid); } catch { /* forse già tolto su Twitch */ }
+    // si toglie da chi l'ha dato: l'id di Kick ha un'altra forma (ULID)
+    const chi = kickApi.eIdKick(rid) ? kickApi.premiKick(login) : helix;
+    try { await chi.eliminaReward(login, rid); } catch { /* forse già tolto sulla piattaforma */ }
     pointAlerts.remove(login, rid);
     res.json({ ok: true, premi: pointAlerts.list(login) });
   }));
@@ -11008,7 +11061,7 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
             const dove = suKick ? 'Kick' : 'Twitch';
             const tg = (t) => telegram.inviaMessaggio(conf.token, chat.id, t).catch(() => {});
             const permessoMancante = suKick
-              ? '🔒 Mi manca il permesso di Kick per cambiare titolo e categoria: dalla dashboard, Account → Il tuo account → Le tue piattaforme, premi «Concedi titolo e categoria» sulla riga di Kick.'
+              ? '🔒 Mi manca il permesso di Kick per cambiare titolo e categoria: dalla dashboard, Account → Il tuo account → Le tue piattaforme, premi «Aggiorna i permessi di Kick» sulla riga di Kick.'
               : '🔒 Mi manca il permesso Twitch per cambiare titolo e categoria: riautorizza dalla dashboard (Permessi).';
             const valore = raw.replace(/^\/\S+\s*/, '').trim();
             const eTitolo = cmd === 'titolo';
