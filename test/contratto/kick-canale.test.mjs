@@ -92,6 +92,6 @@ test('le schede «solo Twitch» si spengono per ogni canale che non è su Twitch
 test('l\'avvio da\' al motore dei moduli chi modera su Kick', () => {
   // senza, il timeout di un modulo su Kick direbbe «non lo faccio ancora» anche coi permessi
   const idx = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '../../src/index.js'), 'utf8');
-  assert.match(idx, /import \{ moderatoreKick \} from '\.\/kick\/api\.js'/);
+  assert.match(idx, /import \{[^}]*\bmoderatoreKick\b[^}]*\} from '\.\/kick\/api\.js'/);
   assert.match(idx, /new ModulesEngine\(\{[^)]*moderatori: \{ kick: moderatoreKick \}/);
 });

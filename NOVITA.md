@@ -148,6 +148,18 @@ comandi diversi da quelli della riga italiana.
 - Nella carta del rapporto del pannello compaiono anche i Bit della serata, come nella mail e su Telegram. [vai: statistiche]
   en: The report card in the panel now also shows the evening's Bits, like the email and Telegram do.
   es: La tarjeta del informe en el panel ahora también muestra los Bits de la noche, como el correo y Telegram.
+- [importante] Su Kick cambi titolo e categoria come su Twitch: con !titolo e !categoria nella chat di Kick, a voce e dal privato Telegram. [vai: account]
+  en: On Kick you change title and category like on Twitch: with !titolo and !categoria in the Kick chat, by voice and from the private Telegram chat.
+  es: En Kick cambias el título y la categoría como en Twitch: con !titolo y !categoria en el chat de Kick, por voz y desde el privado de Telegram.
+  > Titolo e categoria anche su Kick
+  > Prima si cambiavano solo su Twitch. Adesso un comando scritto nella chat di Kick cambia Kick, e la voce e Telegram cambiano la piattaforma del tuo canale. Se Kick era già collegato, premi «Concedi titolo e categoria» sulla riga di Kick.
+  en> Title and category on Kick too
+  en> Before, they only changed on Twitch. Now a command typed in the Kick chat changes Kick, and voice and Telegram change your channel's platform. If Kick was already connected, press “Grant title and category” on the Kick row.
+  es> Título y categoría también en Kick
+  es> Antes solo se cambiaban en Twitch. Ahora un comando escrito en el chat de Kick cambia Kick, y la voz y Telegram cambian la plataforma de tu canal. Si Kick ya estaba conectado, pulsa «Concede título y categoría» en la fila de Kick.
+- Su un canale Kick la scheda dei comandi a voce non chiede più il permesso di Twitch: dice Kick, con il tasto per il permesso giusto. [vai: ascolto]
+  en: On a Kick channel the voice commands tab no longer asks for Twitch's permission: it says Kick, with the button for the right permission.
+  es: En un canal de Kick la pestaña de comandos por voz ya no pide el permiso de Twitch: dice Kick, con el botón para el permiso correcto.
 
 ## 2026-10-03
 

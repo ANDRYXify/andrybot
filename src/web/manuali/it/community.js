@@ -129,7 +129,7 @@ export default {
       'un avviso se il permesso di Twitch è scaduto e il bot non entra più nella tua chat.',
     ] },
     { p: [
-      'In privato, solo a te, il bot accetta anche <code>/categoria</code> seguito da un gioco, che cambia la categoria su Twitch, e <code>/titolo</code> seguito dal testo, che cambia il titolo della diretta. Se manca il permesso di Twitch te lo scrive.',
+      'In privato, solo a te, il bot accetta anche <code>/categoria</code> seguito da un gioco, che cambia la categoria, e <code>/titolo</code> seguito dal testo, che cambia il titolo della diretta. Valgono per la piattaforma del canale, Twitch o Kick. Se manca il permesso te lo scrive, con quello che serve per darlo.',
     ] },
     { p: [
       '<strong>«Ti scrive per prima (proattiva e curiosa)».</strong> Di base acceso. Ogni tanto il bot ti scrive in privato di sua iniziativa: una domanda, una cosa che non sa ancora, un commento, due parole quando cominci o finisci una diretta. Non a orari fissi e mai di notte. Servono la chat privata collegata e «Rispondimi in chat privata» acceso.',

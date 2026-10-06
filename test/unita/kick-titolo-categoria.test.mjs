@@ -1,0 +1,189 @@
+// © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+// Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
+// TITOLO E CATEGORIA SU KICK (src/kick/api.js, docs/PIATTAFORME.md «Titolo e
+// categoria su Kick»), con le chiamate nella forma di docs.kick.com:
+//  · cambiare: PATCH /public/v1/channels con stream_title e category_id
+//    (intero), permesso channel:write, risposta 204;
+//  · cercare la categoria: GET /public/v1/categories?q=, e se Kick non la da'
+//    piu', GET /public/v2/categories?name= (che vuole almeno tre lettere);
+//  · senza channel:write non si chiama niente, e l'errore ha la forma di helix
+//    (.status 403), cosi' chi cambia il canale non sa con chi parla;
+//  · il motore dei moduli chiede alla piattaforma da cui si scrive; timer,
+//    voce, API, Telegram e prova alla piattaforma del canale; YouTube a nessuno.
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { cartellaUsaEGetta } from '../aiuto.mjs';
+
+const casa = cartellaUsaEGetta('andrybot-kick-titolo-');
+const K = await import('../../src/kick/api.js');
+const { SCOPE } = await import('../../src/kick/auth.js');
+const { risolviCategoria } = await import('../../src/features/categoria.js');
+const { ModulesEngine } = await import('../../src/features/modules.js');
+process.on('exit', () => casa.pulisci());
+
+const TOK = (scopes) => ({ accessToken: 'tok', refreshToken: '', scopes, expiresAt: Date.now() + 3_600_000 });
+const conCanale = (login) => K.salvaToken(login, TOK(SCOPE), '123');
+const senzaCanale = (login) => K.salvaToken(login, TOK(SCOPE.filter((s) => s !== 'channel:write')), '123');
+function rete(risposte = [[204, null]]) {
+  const chiamate = [];
+  const fetchImpl = async (url, o = {}) => {
+    chiamate.push({ url: String(url), metodo: o.method, corpo: o.body ? JSON.parse(o.body) : null });
+    const [stato, corpo] = risposte[Math.min(chiamate.length - 1, risposte.length - 1)];
+    return new Response(stato === 204 ? null : JSON.stringify(corpo), { status: stato });
+  };
+  return { chiamate, fetchImpl };
+}
+
+test('il collegamento di Kick chiede channel:write, e solo chi ce l\'ha puo\' cambiare il canale', () => {
+  assert.ok(SCOPE.includes('channel:write'));
+  conCanale('kick.uno');
+  senzaCanale('kick.due');
+  assert.equal(K.puoCambiareCanale('kick.uno'), true);
+  assert.equal(K.puoCambiareCanale('KICK.UNO'), true, 'il login si legge in minuscolo');
+  assert.equal(K.puoCambiareCanale('kick.due'), false);
+  assert.equal(K.puoCambiareCanale('kick.nessuno'), false);
+});
+
+test('titolo e categoria con la chiamata di Kick: PATCH /channels, titolo fino a 140, categoria intera', async () => {
+  conCanale('kick.tre');
+  const r = rete();
+  assert.deepEqual(await K.cambiaCanale('kick.tre', { titolo: '  Si gioca  ', categoria: '42' }, r), { ok: true });
+  assert.deepEqual([r.chiamate[0].metodo, r.chiamate[0].url], ['PATCH', 'https://api.kick.com/public/v1/channels']);
+  assert.deepEqual(r.chiamate[0].corpo, { stream_title: 'Si gioca', category_id: 42 });
+  await K.cambiaCanale('kick.tre', { titolo: 'x'.repeat(300) }, r);
+  assert.deepEqual(r.chiamate[1].corpo, { stream_title: 'x'.repeat(140) }, 'senza categoria non si manda la categoria');
+  await K.cambiaCanale('kick.tre', { categoria: 7 }, r);
+  assert.deepEqual(r.chiamate[2].corpo, { category_id: 7 }, 'senza titolo non si tocca il titolo');
+  assert.deepEqual(await K.cambiaCanale('kick.tre', { titolo: '   ', categoria: 'fortnite' }, r), { ok: false, motivo: 'dati mancanti' });
+  assert.equal(r.chiamate.length, 3, 'una categoria che non e\' un id non parte');
+});
+
+test('senza channel:write non si chiama Kick; gli errori di Kick hanno le parole di helix', async () => {
+  senzaCanale('kick.quattro');
+  const r = rete();
+  assert.deepEqual(await K.cambiaCanale('kick.quattro', { titolo: 'ciao' }, r), { ok: false, stato: 403, motivo: 'permesso mancante' });
+  assert.equal(r.chiamate.length, 0);
+  conCanale('kick.cinque');
+  assert.deepEqual(await K.cambiaCanale('kick.cinque', { titolo: 'ciao' }, rete([[403, { message: 'no' }]])), { ok: false, stato: 403, motivo: 'permesso mancante' });
+  assert.deepEqual(await K.cambiaCanale('kick.cinque', { titolo: 'ciao' }, rete([[429, { message: 'piano' }]])), { ok: false, stato: 429, motivo: 'troppe richieste' });
+});
+
+test('la ricerca delle categorie: prima la v1, poi la v2 per nome; le categorie tornano come quelle di Twitch', async () => {
+  conCanale('kick.sei');
+  const v1 = rete([[200, { data: [{ id: 101, name: 'Fortnite', thumbnail: 'x' }, { id: null, name: 'senza id' }, { id: 5 }] }]]);
+  assert.deepEqual(await K.cercaCategorie('kick.sei', ' fortnite ', v1), [{ id: '101', name: 'Fortnite' }]);
+  assert.equal(v1.chiamate.length, 1);
+  assert.equal(v1.chiamate[0].url, 'https://api.kick.com/public/v1/categories?q=fortnite');
+  const v2 = rete([[404, { message: 'gone' }], [200, { data: [{ id: 202, name: 'Elden Ring' }] }]]);
+  assert.deepEqual(await K.cercaCategorie('kick.sei', 'elden', v2), [{ id: '202', name: 'Elden Ring' }]);
+  assert.equal(v2.chiamate[1].url, 'https://api.kick.com/public/v2/categories?name=elden');
+  const corta = rete([[404, { message: 'gone' }]]);
+  assert.deepEqual(await K.cercaCategorie('kick.sei', 'fo', corta), []);
+  assert.equal(corta.chiamate.length, 1, 'la v2 vuole almeno tre lettere: non si chiede');
+  const vuota = rete();
+  assert.deepEqual(await K.cercaCategorie('kick.sei', '   ', vuota), []);
+  assert.equal(vuota.chiamate.length, 0);
+});
+
+test('canaleKick ha la forma di helix: risolviCategoria e setChannelInfo non sanno con chi parlano', async () => {
+  conCanale('kick.sette');
+  const r = rete([[200, { data: [{ id: 101, name: 'Fortnite' }] }], [204, null]]);
+  const c = K.canaleKick('kick.sette', r);
+  assert.equal(c.piattaforma, 'kick');
+  assert.ok(Object.isFrozen(c));
+  const cat = await risolviCategoria(c, 'fortnite');
+  assert.equal(cat?.name, 'Fortnite');
+  assert.equal(await c.setChannelInfo('kick.sette', { gameId: cat.id }), true);
+  assert.deepEqual(r.chiamate.at(-1), { url: 'https://api.kick.com/public/v1/channels', metodo: 'PATCH', corpo: { category_id: 101 } });
+  senzaCanale('kick.otto');
+  await assert.rejects(K.canaleKick('kick.otto', rete()).setChannelInfo('kick.otto', { title: 'x' }),
+    (e) => e.status === 403, 'senza permesso, l\'errore di helix: .status 403');
+});
+
+// --- il motore dei moduli: chi cambia il canale --------------------------------
+
+function motore() {
+  const fatti = [];
+  const finto = (dove) => ({
+    searchCategories: async () => [{ id: '9', name: 'Fortnite' }],
+    setChannelInfo: async (canale, patch) => { fatti.push([dove, canale, patch]); return true; },
+  });
+  const chiesti = [];
+  const m = new ModulesEngine({ helix: finto('twitch'), canali: { kick: (canale) => { chiesti.push(canale); return finto('kick'); } } });
+  return { m, fatti, chiesti };
+}
+const titolo = { id: 1, attivo: true, trigger: { tipo: 'comando', comando: 'titolo' }, azioni: [{ tipo: 'titolo', testo: 'Nuovo titolo', annuncia: true }] };
+const categoria = { id: 2, attivo: true, trigger: { tipo: 'comando', comando: 'categoria' }, azioni: [{ tipo: 'categoria', gioco: 'fortnite', annuncia: true }] };
+const ctx = (extra = {}) => ({ channel: 'canale', user: 'Mod', userLogin: 'mod', userId: '42', display: 'Mod', args: [], argsRaw: '', _livello: 3, staff: true, _vars: {}, ...extra });
+const esegui = (m, modulo, c, detto = []) => m.esegui(modulo, c, (t) => detto.push(t), { saltaCondizioni: true });
+
+test('un comando scritto su Kick cambia Kick, uno scritto su Twitch cambia Twitch', async () => {
+  const { m, fatti, chiesti } = motore();
+  const detto = [];
+  await esegui(m, titolo, ctx({ piattaforma: 'kick' }), detto);
+  await esegui(m, categoria, ctx({ piattaforma: 'kick' }), detto);
+  await esegui(m, titolo, ctx({ piattaforma: 'twitch' }), detto);
+  assert.deepEqual(fatti, [
+    ['kick', 'canale', { title: 'Nuovo titolo' }],
+    ['kick', 'canale', { gameId: '9' }],
+    ['twitch', 'canale', { title: 'Nuovo titolo' }],
+  ]);
+  assert.deepEqual(chiesti, ['canale', 'canale'], 'il canale di Kick si chiede per il canale nostro');
+  assert.deepEqual(detto, ['📝 Titolo aggiornato: Nuovo titolo', '🎮 Categoria aggiornata: Fortnite', '📝 Titolo aggiornato: Nuovo titolo']);
+});
+
+test('timer, voce, API e Telegram valgono per la piattaforma del canale: un canale nato su Kick non chiede a Twitch', async () => {
+  const { m, fatti } = motore();
+  await esegui(m, titolo, ctx({ channel: 'kick.nato' }));
+  await esegui(m, titolo, ctx({ channel: 'canaletwitch' }));
+  assert.deepEqual(fatti.map((f) => f.slice(0, 2)), [['kick', 'kick.nato'], ['twitch', 'canaletwitch']]);
+});
+
+test('la voce e il privato Telegram chiedono con la stessa regola: la piattaforma del canale', () => {
+  const kick = { piattaforma: 'kick' };
+  const helix = { piattaforma: 'twitch' };
+  const chiesti = [];
+  const m = new ModulesEngine({ helix, canali: { kick: (c) => { chiesti.push(c); return kick; } } });
+  assert.equal(m.canalePer('KICK.Nato'), kick);
+  assert.deepEqual(chiesti, ['kick.nato']);
+  assert.equal(m.canalePer('canaletwitch'), helix);
+  assert.equal(m.canalePer('yt.uc123'), null, 'YouTube: nessuno');
+  assert.equal(new ModulesEngine({ helix }).canalePer('kick.nato'), null, 'senza adattatore di Kick, nessuno: mai helix');
+});
+
+test('su YouTube non c\'e\' chi cambia il canale: nessuna chiamata, e allo staff si dice dove si puo\'', async () => {
+  const { m, fatti } = motore();
+  const detto = [];
+  await esegui(m, titolo, ctx({ piattaforma: 'youtube' }), detto);
+  await esegui(m, categoria, ctx({ piattaforma: 'youtube', staff: false }), detto);
+  await esegui(m, titolo, ctx({ piattaforma: 'youtube', staff: false }), detto);
+  assert.equal(fatti.length, 0);
+  assert.equal(detto.length, 1, 'al pubblico non si spiega niente');
+  assert.match(detto[0], /Su YouTube il titolo non si cambia ancora/);
+  assert.match(detto[0], /Twitch e su Kick/);
+});
+
+test('il permesso che manca su Kick si dice con il rimedio di Kick, e al pubblico senza dashboard', async () => {
+  const detto = [];
+  const nega = { searchCategories: async () => [], setChannelInfo: async () => { throw Object.assign(new Error('permesso mancante'), { status: 403 }); } };
+  const m = new ModulesEngine({ helix: nega, canali: { kick: () => nega } });
+  await esegui(m, titolo, ctx({ piattaforma: 'kick' }), detto);
+  await esegui(m, titolo, ctx({ piattaforma: 'kick', staff: false }), detto);
+  await esegui(m, titolo, ctx({ piattaforma: 'twitch' }), detto);
+  assert.equal(detto.length, 3);
+  assert.match(detto[0], /permesso di Kick/);
+  assert.match(detto[0], /ricollega Kick/);
+  assert.doesNotMatch(detto[1], /dashboard|Kick/);
+  assert.doesNotMatch(detto[2], /Kick/, 'su Twitch il rimedio e\' quello di Twitch');
+});
+
+test('le azioni inline $titolo() e $categoria() seguono la stessa strada, e il token non esce mai in chat', async () => {
+  const { m, fatti } = motore();
+  const t1 = await m.espandi('Ecco $titolo(Da Kick) fatto', ctx({ piattaforma: 'kick' }));
+  const t2 = await m.espandi('$categoria(fortnite)ok', ctx({ piattaforma: 'twitch' }));
+  const t3 = await m.espandi('Su YouTube $titolo(niente) resta', ctx({ piattaforma: 'youtube' }));
+  assert.deepEqual(fatti, [['kick', 'canale', { title: 'Da Kick' }], ['twitch', 'canale', { gameId: '9' }]]);
+  assert.equal(t1, 'Ecco  fatto');
+  assert.equal(t2, 'ok');
+  assert.equal(t3, 'Su YouTube  resta');
+});

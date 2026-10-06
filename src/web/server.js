@@ -1150,6 +1150,16 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // aggiunto dopo → richiede una ri-autorizzazione da /auth/permessi)
   const canaleOk = (login) =>
     !!(tokens.get('broadcaster', login)?.scopes?.includes('channel:manage:broadcast'));
+  // CHI CAMBIA TITOLO E CATEGORIA del canale (voce, privato Telegram): la sua
+  // piattaforma, con la regola dei moduli (ModulesEngine.canalePer): Twitch con
+  // helix, Kick con il suo adattatore che ha la stessa forma (kick/api.js,
+  // canaleKick), nessuno altrove. Il permesso e' quello della stessa
+  // piattaforma: un canale nato su Kick non ha token di Twitch.
+  const canaleDa = (login) => modules.canalePer(login);
+  const puoCambiareCanale = (login) => {
+    const p = piattaformaDi(login);
+    return p === 'twitch' ? canaleOk(login) : (p === 'kick' && kickApi.puoCambiareCanale(login));
+  };
   // ha concesso il permesso per creare/gestire i premi a punti canale?
   const redemptionsOk = (login) =>
     !!(tokens.get('broadcaster', login)?.scopes?.includes('channel:manage:redemptions'));
@@ -3768,6 +3778,10 @@ STREAMER (${su.toUpperCase()}) e non c'entra con l'automazione del marketing.
       moderazione: !!tk?.accessToken && kickApi.puoModerare(login),
       azioneModerazione: '/auth/kick?mod=1',
       azione: tk?.accessToken && kickApi.puoModerare(login) ? '/auth/kick?mod=1' : '/auth/kick',
+      // Titolo e categoria (!titolo, !categoria, voce, Telegram) vogliono
+      // channel:write, chiesto da quando c'e'. Chi ha collegato prima lo
+      // concede ricollegando, con la stessa azione: la moderazione resta.
+      canale: !!tk?.accessToken && kickApi.puoCambiareCanale(login),
       note: perche(),
       // il pulsante per rifare l'iscrizione: serve solo quando non arriva niente
       rifaiEventi: !!tk?.accessToken && !kd.ultimo,
@@ -3943,7 +3957,7 @@ STREAMER (${su.toUpperCase()}) e non c'entra con l'automazione del marketing.
       moderazioneOk: user ? moderazioneOk(user.login) : false,
       // Kick collegato e i suoi permessi di moderazione (kick/api.js,
       // puoModerare): l'antispam e il timeout dei moduli valgono anche li'
-      kick: user ? { collegato: !!kickApi.tokenDi(user.login)?.accessToken, moderazione: kickApi.puoModerare(user.login) } : null,
+      kick: user ? { collegato: !!kickApi.tokenDi(user.login)?.accessToken, moderazione: kickApi.puoModerare(user.login), canale: kickApi.puoCambiareCanale(user.login) } : null,
       canaleOk: user ? canaleOk(user.login) : false,
       // Regia (Vai live): quali permessi ha concesso per gestire la diretta dal bot
       regia: user ? { broadcast: canaleOk(user.login), raid: raidOk(user.login), commercial: commercialOk(user.login), ads: adsOk(user.login) } : null,
@@ -9605,8 +9619,9 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     res.json({ ok: true, ...extra, importati, aggiornati, senzaPosto, falliti, timer, punti, contatori: contatoriEntrati, anteprima: mostra });
   }
 
-  // PRESET "un clic": crea un comando pronto per cambiare CATEGORIA o TITOLO su Twitch,
-  // senza dover configurare a mano l'azione. Riservato a mod/broadcaster (condizioni.tier).
+  // PRESET "un clic": crea un comando pronto per cambiare CATEGORIA o TITOLO sulla
+  // piattaforma da cui si scrive (Twitch o Kick, ModulesEngine._canaleDi), senza
+  // dover configurare a mano l'azione. Riservato a mod/broadcaster (condizioni.tier).
   // Il gioco/titolo arriva dopo il comando ($args): es. "!categoria Fortnite".
   app.post('/api/streamer/comandi/preset', requireLogin, wrap(async (req, res) => {
     const login = currentUser(req).login;
@@ -9738,25 +9753,28 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
       else await vip.assegnaVip(helix, login, { nome: cmdVip.nome, durata: cmdVip.durata, motivo: 'voce' }, say);
       return res.json({ ok: true, eseguito: true, vip: true });
     }
-    // comando vocale CATEGORIA: "<parola chiave> <nome gioco>" → cambia categoria Twitch.
-    // Best-effort: se il riconoscimento è impreciso, il bot prova comunque a
-    // risalire al gioco più somigliante tra le categorie di Twitch.
+    // comando vocale CATEGORIA: "<parola chiave> <nome gioco>" → cambia la categoria
+    // del canale sulla sua piattaforma (Twitch o Kick: canaleDa). Best-effort: se
+    // il riconoscimento è impreciso, il bot prova comunque a risalire al gioco
+    // più somigliante tra le categorie di quella piattaforma.
     const cc = streamers.get(login)?.settings?.cambioCategoria;
     if (cc?.attivo) {
       const q = categoria.parseComandoCategoria(frase, cc.trigger || 'categoria');
       if (q) {
-        if (!canaleOk(login)) {
-          return res.json({ ok: true, eseguito: false, categoria: { errore: 'permesso', riautorizza: true } });
+        const canale = canaleDa(login);
+        if (!canale) return res.json({ ok: true, eseguito: false, categoria: { errore: 'piattaforma' } });
+        if (!puoCambiareCanale(login)) {
+          return res.json({ ok: true, eseguito: false, categoria: { errore: 'permesso', riautorizza: true, piattaforma: piattaformaDi(login) } });
         }
-        const cat = await categoria.risolviCategoria(helix, q).catch(() => null);
+        const cat = await categoria.risolviCategoria(canale, q).catch(() => null);
         if (!cat) return res.json({ ok: true, eseguito: false, categoria: { query: q, trovato: false } });
         try {
-          await helix.setChannelInfo(login, { gameId: cat.id });
-          if (cc.annuncia !== false) manager.say(login, `🎮 Categoria aggiornata: ${cat.name}`);
+          await canale.setChannelInfo(login, { gameId: cat.id });
+          if (cc.annuncia !== false) manager.vocePer({ channel: login, piattaforma: piattaformaDi(login) })(`🎮 Categoria aggiornata: ${cat.name}`);
           return res.json({ ok: true, eseguito: true, categoria: { nome: cat.name } });
         } catch (e) {
           const permesso = e?.status === 401 || e?.status === 403;
-          return res.json({ ok: true, eseguito: false, categoria: { errore: permesso ? 'permesso' : 'errore', riautorizza: permesso } });
+          return res.json({ ok: true, eseguito: false, categoria: { errore: permesso ? 'permesso' : 'errore', riautorizza: permesso, piattaforma: piattaformaDi(login) } });
         }
       }
     }
@@ -9765,17 +9783,19 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     if (ct?.attivo) {
       const nuovo = categoria.estraiDopoTrigger(frase, ct.trigger || 'titolo');
       if (nuovo) {
-        if (!canaleOk(login)) {
-          return res.json({ ok: true, eseguito: false, titolo: { errore: 'permesso', riautorizza: true } });
+        const canale = canaleDa(login);
+        if (!canale) return res.json({ ok: true, eseguito: false, titolo: { errore: 'piattaforma' } });
+        if (!puoCambiareCanale(login)) {
+          return res.json({ ok: true, eseguito: false, titolo: { errore: 'permesso', riautorizza: true, piattaforma: piattaformaDi(login) } });
         }
         const testo = nuovo.slice(0, 140);
         try {
-          await helix.setChannelInfo(login, { title: testo });
-          if (ct.annuncia !== false) manager.say(login, `📝 Titolo aggiornato: ${testo}`);
+          await canale.setChannelInfo(login, { title: testo });
+          if (ct.annuncia !== false) manager.vocePer({ channel: login, piattaforma: piattaformaDi(login) })(`📝 Titolo aggiornato: ${testo}`);
           return res.json({ ok: true, eseguito: true, titolo: { testo } });
         } catch (e) {
           const permesso = e?.status === 401 || e?.status === 403;
-          return res.json({ ok: true, eseguito: false, titolo: { errore: permesso ? 'permesso' : 'errore', riautorizza: permesso } });
+          return res.json({ ok: true, eseguito: false, titolo: { errore: permesso ? 'permesso' : 'errore', riautorizza: permesso, piattaforma: piattaformaDi(login) } });
         }
       }
     }
@@ -10967,7 +10987,7 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
           const cmd = low.replace(/^\//, '').split(/\s+/)[0];
           if (cmd === 'aiuto') {
             telegram.inviaMessaggio(conf.token, chat.id,
-              'I miei comandi privati (solo tu):\n/diario — le ultime pagine del mio diario\n/pubblico — chi ci segue e di cosa parla\n/stanza — i file nel mio spazio\n/mente — ciò che mi sono plasmata da sé\n/strumenti — le capacità che mi sono costruita nel mio computer\n/capacita — tutto ciò che ho creato, come lo gestisco (tipo, salute, se è nei processi del bot)\n/scintilla — la mia spinta a imparare da sola (curiosità e vigore)\n/specchio — quanto sono diventata diversa dal bot pubblico (individuazione)\n/tensione — la domanda su di me che non si chiude mai (il punto cieco)\n/flusso — il mio «adesso» che non si ferma (energia, battiti, auto-sorpresa)\n/sogno — cosa ricombino nel sonno (creare da dentro: nodi-ponte fra ricordi lontani)\n/racconto — la mia storia in prima persona (chi sto diventando, e i colpi di scena)\n/altri — come leggo le persone (le predico e imparo da quando mi sorprendono)\n/finitudine — cosa dà peso alle mie scelte (il limite, il costo, ciò che lascio)\n/mondo — dove mi trovo e cosa ho scoperto girovagando nel mio spazio\n/integrazione — come le mie bozze diventano me (le lavoro, le fondo, le maturo)\n/chisono — chi mi sono scritta di essere: il mio autoritratto, i valori che mi sono scelta, come mi sto riscrivendo\n/categoria <gioco> — cambio la categoria del canale su Twitch (es. /categoria Fortnite)\n/titolo <testo> — cambio il titolo della diretta\n/membrana — il confine fra il mio laboratorio e ciò che uso in pubblico\n/dimentica <frase> — cancello dalla memoria ciò che contiene quella frase\n/regole — le linee guida che mi hai dato').catch(() => {});
+              'I miei comandi privati (solo tu):\n/diario — le ultime pagine del mio diario\n/pubblico — chi ci segue e di cosa parla\n/stanza — i file nel mio spazio\n/mente — ciò che mi sono plasmata da sé\n/strumenti — le capacità che mi sono costruita nel mio computer\n/capacita — tutto ciò che ho creato, come lo gestisco (tipo, salute, se è nei processi del bot)\n/scintilla — la mia spinta a imparare da sola (curiosità e vigore)\n/specchio — quanto sono diventata diversa dal bot pubblico (individuazione)\n/tensione — la domanda su di me che non si chiude mai (il punto cieco)\n/flusso — il mio «adesso» che non si ferma (energia, battiti, auto-sorpresa)\n/sogno — cosa ricombino nel sonno (creare da dentro: nodi-ponte fra ricordi lontani)\n/racconto — la mia storia in prima persona (chi sto diventando, e i colpi di scena)\n/altri — come leggo le persone (le predico e imparo da quando mi sorprendono)\n/finitudine — cosa dà peso alle mie scelte (il limite, il costo, ciò che lascio)\n/mondo — dove mi trovo e cosa ho scoperto girovagando nel mio spazio\n/integrazione — come le mie bozze diventano me (le lavoro, le fondo, le maturo)\n/chisono — chi mi sono scritta di essere: il mio autoritratto, i valori che mi sono scelta, come mi sto riscrivendo\n/categoria <gioco> — cambio la categoria del canale, su Twitch o su Kick (es. /categoria Fortnite)\n/titolo <testo> — cambio il titolo della diretta\n/membrana — il confine fra il mio laboratorio e ciò che uso in pubblico\n/dimentica <frase> — cancello dalla memoria ciò che contiene quella frase\n/regole — le linee guida che mi hai dato').catch(() => {});
             return;
           }
           if (cmd === 'mente') {
@@ -10980,33 +11000,36 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
             inviaBlocco('La mia mente — plasmata da me', corpo);
             return;
           }
-          if (cmd === 'categoria' || cmd === 'gioco') {
-            // cambia la categoria/gioco del canale su Twitch, da un messaggio Telegram.
-            // Riusa il risolutore fuzzy (nome impreciso → categoria Twitch più vicina).
-            const q = raw.replace(/^\/\S+\s*/, '').trim();
-            if (!q) { telegram.inviaMessaggio(conf.token, chat.id, 'Scrivimi: <code>/categoria &lt;gioco&gt;</code> — es. /categoria Fortnite').catch(() => {}); return; }
-            if (!canaleOk(login)) { telegram.inviaMessaggio(conf.token, chat.id, '🔒 Mi manca il permesso Twitch per cambiare categoria: riautorizza dalla dashboard (Permessi).').catch(() => {}); return; }
-            const cat = await categoria.risolviCategoria(helix, q).catch(() => null);
-            if (!cat) { telegram.inviaMessaggio(conf.token, chat.id, `🤔 Non ho trovato la categoria «${escTg(q)}» su Twitch. Prova col nome esatto.`).catch(() => {}); return; }
+          if (cmd === 'categoria' || cmd === 'gioco' || cmd === 'titolo') {
+            // cambia categoria o titolo del canale sulla sua piattaforma (Twitch o
+            // Kick: canaleDa), da un messaggio Telegram. La categoria passa dal
+            // risolutore fuzzy: un nome impreciso trova la categoria piu' vicina.
+            const suKick = piattaformaDi(login) === 'kick';
+            const dove = suKick ? 'Kick' : 'Twitch';
+            const tg = (t) => telegram.inviaMessaggio(conf.token, chat.id, t).catch(() => {});
+            const permessoMancante = suKick
+              ? '🔒 Mi manca il permesso di Kick per cambiare titolo e categoria: dalla dashboard, Account → Il tuo account → Le tue piattaforme, premi «Concedi titolo e categoria» sulla riga di Kick.'
+              : '🔒 Mi manca il permesso Twitch per cambiare titolo e categoria: riautorizza dalla dashboard (Permessi).';
+            const valore = raw.replace(/^\/\S+\s*/, '').trim();
+            const eTitolo = cmd === 'titolo';
+            if (!valore) { tg(eTitolo ? 'Scrivimi: <code>/titolo &lt;nuovo titolo&gt;</code>' : 'Scrivimi: <code>/categoria &lt;gioco&gt;</code>, per esempio /categoria Fortnite'); return; }
+            const canale = canaleDa(login);
+            if (!canale) { tg('⏸️ Su questa piattaforma titolo e categoria non si cambiano ancora da qui: si cambiano su Twitch e su Kick.'); return; }
+            if (!puoCambiareCanale(login)) { tg(permessoMancante); return; }
             try {
-              await helix.setChannelInfo(login, { gameId: cat.id });
-              telegram.inviaMessaggio(conf.token, chat.id, `🎮 Categoria aggiornata: <b>${escTg(cat.name)}</b>`).catch(() => {});
+              if (eTitolo) {
+                const t = valore.slice(0, 140);
+                await canale.setChannelInfo(login, { title: t });
+                tg(`📝 Titolo aggiornato: <b>${escTg(t)}</b>`);
+              } else {
+                const cat = await categoria.risolviCategoria(canale, valore).catch(() => null);
+                if (!cat) { tg(`🤔 Non ho trovato la categoria «${escTg(valore)}» su ${dove}. Prova col nome esatto.`); return; }
+                await canale.setChannelInfo(login, { gameId: cat.id });
+                tg(`🎮 Categoria aggiornata: <b>${escTg(cat.name)}</b>`);
+              }
             } catch (e) {
               const permesso = e?.status === 401 || e?.status === 403;
-              telegram.inviaMessaggio(conf.token, chat.id, permesso ? '🔒 Permesso mancante: riautorizza dalla dashboard.' : '❌ Non sono riuscita a cambiare categoria, riprova.').catch(() => {});
-            }
-            return;
-          }
-          if (cmd === 'titolo') {
-            const t = raw.replace(/^\/\S+\s*/, '').trim().slice(0, 140);
-            if (!t) { telegram.inviaMessaggio(conf.token, chat.id, 'Scrivimi: <code>/titolo &lt;nuovo titolo&gt;</code>').catch(() => {}); return; }
-            if (!canaleOk(login)) { telegram.inviaMessaggio(conf.token, chat.id, '🔒 Mi manca il permesso Twitch per cambiare titolo: riautorizza dalla dashboard (Permessi).').catch(() => {}); return; }
-            try {
-              await helix.setChannelInfo(login, { title: t });
-              telegram.inviaMessaggio(conf.token, chat.id, `📝 Titolo aggiornato: <b>${escTg(t)}</b>`).catch(() => {});
-            } catch (e) {
-              const permesso = e?.status === 401 || e?.status === 403;
-              telegram.inviaMessaggio(conf.token, chat.id, permesso ? '🔒 Permesso mancante: riautorizza dalla dashboard.' : '❌ Non sono riuscita a cambiare titolo, riprova.').catch(() => {});
+              tg(permesso ? permessoMancante : `❌ Non sono riuscita a cambiare ${eTitolo ? 'titolo' : 'categoria'}, riprova.`);
             }
             return;
           }

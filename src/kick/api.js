@@ -58,10 +58,10 @@ export async function tokenBuono(login, { fetchImpl = fetch, ora = Date.now() } 
   return p;
 }
 
-async function chiama(login, percorso, { metodo = 'GET', corpo = null, query = null, fetchImpl = fetch } = {}) {
+async function chiama(login, percorso, { metodo = 'GET', corpo = null, query = null, fetchImpl = fetch, base = API } = {}) {
   const t = await tokenBuono(login, { fetchImpl });
   if (!t?.accessToken) return { ok: false, errore: 'account Kick non collegato (o da ricollegare)' };
-  const url = API + percorso + (query ? '?' + new URLSearchParams(query) : '');
+  const url = base + percorso + (query ? '?' + new URLSearchParams(query) : '');
   try {
     const r = await fetchImpl(url, {
       method: metodo,
@@ -260,6 +260,57 @@ export const moderatoreKick = Object.freeze({
   timeoutUser: (canale, utente, secondi, motivo) => pausa(canale, utente, secondi, motivo),
   unbanUser: (canale, utente) => sbanna(canale, utente),
 });
+
+// TITOLO E CATEGORIA SU KICK (docs/PIATTAFORME.md, «Titolo e categoria su
+// Kick»). Lo stesso aspetto di helix (searchCategories, setChannelInfo), cosi'
+// la ricerca della categoria (features/categoria.js, risolviCategoria) e chi
+// cambia il canale non sanno con chi parlano. Il permesso e' channel:write: chi
+// ha collegato Kick prima che lo chiedessimo deve ricollegarlo, e finche' non lo
+// fa non si chiama niente.
+export function puoCambiareCanale(login) {
+  const s = tokenDi(String(login || '').toLowerCase())?.scopes;
+  return Array.isArray(s) && s.includes('channel:write');
+}
+
+// La ricerca per nome e' quella della v1 (q); se Kick la toglie, si prova la v2
+// (name), che filtra per nome. Le categorie tornano come quelle di Twitch.
+export async function cercaCategorie(login, q, { fetchImpl } = {}) {
+  const chi = String(login || '').toLowerCase();
+  const testo = String(q || '').trim().slice(0, 100);
+  if (!testo) return [];
+  let r = await chiama(chi, '/categories', { query: { q: testo }, fetchImpl });
+  if (!r.ok && testo.length >= 3) r = await chiama(chi, '/categories', { query: { name: testo }, fetchImpl, base: API.replace(/\/v1$/, '/v2') });
+  const lista = r.ok && Array.isArray(r.dati) ? r.dati : [];
+  return lista.filter((c) => c?.id != null && c?.name).map((c) => ({ id: String(c.id), name: String(c.name) }));
+}
+
+export async function cambiaCanale(login, { titolo, categoria } = {}, { fetchImpl } = {}) {
+  const chi = String(login || '').toLowerCase();
+  const corpo = {};
+  const t = String(titolo ?? '').trim();
+  if (t) corpo.stream_title = t.slice(0, 140);
+  const c = intero(categoria);
+  if (c) corpo.category_id = c;
+  if (!Object.keys(corpo).length) return { ok: false, motivo: 'dati mancanti' };
+  if (!puoCambiareCanale(chi)) return { ok: false, stato: 403, motivo: 'permesso mancante' };
+  const r = await chiama(chi, '/channels', { metodo: 'PATCH', corpo, fetchImpl });
+  return r.ok ? { ok: true } : { ok: false, stato: r.stato || 0, motivo: motivoDi(r) };
+}
+
+// Il canale Kick di un canale nostro, con l'aspetto di helix. setChannelInfo
+// lancia un errore con .status come helix: 403 per un permesso che manca.
+export function canaleKick(login, { fetchImpl } = {}) {
+  const chi = String(login || '').toLowerCase();
+  return Object.freeze({
+    piattaforma: 'kick',
+    searchCategories: (q) => cercaCategorie(chi, q, { fetchImpl }),
+    async setChannelInfo(_canale, { gameId, title } = {}) {
+      const r = await cambiaCanale(chi, { titolo: title, categoria: gameId }, { fetchImpl });
+      if (r.ok) return true;
+      throw Object.assign(new Error(r.motivo || 'errore Kick'), { status: r.stato || 0 });
+    },
+  });
+}
 
 // Gli eventi che vogliamo ricevere sul webhook. La chat è il cuore; gli altri
 // alimentano alert e moduli che già esistono.

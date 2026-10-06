@@ -7,6 +7,11 @@ Telegram: in tutti e tre i casi il testo arriva intero a `risolviCategoria`
 (`src/features/categoria.js`), che chiede a Twitch i nomi possibili e ne
 sceglie uno. Il testo arrivava già intero anche prima. Sbagliava la scelta.
 
+Su Kick è lo stesso, con i nomi di Kick: `risolviCategoria` riceve chi cerca
+(helix o l'adattatore di Kick, che hanno la stessa forma) e non sa con chi parla.
+Chi viene scelto per piattaforma è spiegato in `docs/PIATTAFORME.md`, «Titolo e
+categoria su Kick».
+
 ## Il guasto: il premio andava al nome più corto
 
 Il confronto era fatto lettera per lettera, e dava un premio a chi «cominciava

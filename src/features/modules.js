@@ -28,6 +28,7 @@ import { makeLog } from '../logger.js';
 import { leggiDurata, DURATA_DI_SERIE } from './modalita-chat.js';
 import { aggiornaSchermo } from './contatori.js';
 import { aChiPuo, eStaff } from './risposte.js';
+import { piattaformaDi } from '../identita.js';
 import * as prossime from './prossime.js';
 import * as formati from './preferenze.js';
 import { preferenzeDi } from './preferenze.js';
@@ -135,13 +136,17 @@ function livelloUtente(msg) {
 const NOME_PIATTAFORMA = { twitch: 'Twitch', kick: 'Kick', youtube: 'YouTube' };
 
 export class ModulesEngine {
-  constructor({ effects, helix, regia, pausaTimerMs, moderatori } = {}) {
+  constructor({ effects, helix, regia, pausaTimerMs, moderatori, canali } = {}) {
     this.effects = effects || null;
     this.helix = helix || null;
     // Chi modera fuori da Twitch, con la forma di helix (src/kick/api.js,
     // moderatoreKick): la pausa si chiede alla piattaforma da cui e' arrivato
     // il messaggio, mai a un'altra.
     this.moderatori = moderatori && typeof moderatori === 'object' ? moderatori : {};
+    // Chi cambia titolo e categoria fuori da Twitch: per piattaforma, una
+    // funzione che dal canale da' un oggetto con la forma di helix
+    // (searchCategories, setChannelInfo; src/kick/api.js, canaleKick).
+    this.canali = canali && typeof canali === 'object' ? canali : {};
     // La regia (scena, fonte, transizione) la fa la pagina del pannello aperta
     // sul computer dello streamer, attraverso il ponte di CONSOLify: qui arriva
     // solo la funzione che gli passa un passo, e questo file non conosce il ponte.
@@ -998,20 +1003,20 @@ export class ModulesEngine {
         // Se il testo è impreciso, il bot sceglie la categoria Twitch più somigliante.
         const q = (await this.espandi(azione.gioco, ctx, { noAzioni: true })).trim();
         if (!q) return;
-        const cat = await risolviCategoria(this.helix, q).catch(() => null);
+        const canale = this._canaleDi(ctx);
+        if (!canale) {
+          if (azione.annuncia !== false && ctx.staff) dire(this._canaleAssente(ctx, 'la categoria'));
+          return;
+        }
+        const cat = await risolviCategoria(canale, q).catch(() => null);
         if (!cat) { if (azione.annuncia !== false) dire(`🤔 Non ho trovato la categoria "${q}".`); return; }
         try {
-          await this.helix?.setChannelInfo?.(ctx.channel, { gameId: cat.id });
+          await canale.setChannelInfo?.(ctx.channel, { gameId: cat.id });
           if (azione.annuncia !== false) dire(`🎮 Categoria aggiornata: ${cat.name}`);
         } catch (e) {
-          // scope mancante o errore Twitch: non blocca le altre azioni
+          // permesso mancante o errore della piattaforma: non blocca le altre azioni
           log.debug('categoria via modulo fallita:', e?.message || e);
-          if (azione.annuncia !== false && (e?.status === 401 || e?.status === 403)) {
-            dire(aChiPuo(ctx.staff, {
-              staff: '🔒 Mi manca il permesso per cambiare categoria: riautorizza dalla dashboard.',
-              pubblico: '🔒 Adesso non posso cambiare la categoria.',
-            }));
-          }
+          if (azione.annuncia !== false && (e?.status === 401 || e?.status === 403)) dire(this._permessoCanale(ctx, 'la categoria'));
         }
         return;
       }
@@ -1046,17 +1051,17 @@ export class ModulesEngine {
         // ($args, $gioco, ...): es. "In diretta: $gioco con la community!".
         const t = (await this.espandi(azione.testo, ctx, { noAzioni: true })).trim().slice(0, 140);
         if (!t) return;
+        const canale = this._canaleDi(ctx);
+        if (!canale) {
+          if (azione.annuncia !== false && ctx.staff) dire(this._canaleAssente(ctx, 'il titolo'));
+          return;
+        }
         try {
-          await this.helix?.setChannelInfo?.(ctx.channel, { title: t });
+          await canale.setChannelInfo?.(ctx.channel, { title: t });
           if (azione.annuncia !== false) dire(`📝 Titolo aggiornato: ${t}`);
         } catch (e) {
           log.debug('titolo via modulo fallita:', e?.message || e);
-          if (azione.annuncia !== false && (e?.status === 401 || e?.status === 403)) {
-            dire(aChiPuo(ctx.staff, {
-              staff: '🔒 Mi manca il permesso per cambiare titolo: riautorizza dalla dashboard.',
-              pubblico: '🔒 Adesso non posso cambiare il titolo.',
-            }));
-          }
+          if (azione.annuncia !== false && (e?.status === 401 || e?.status === 403)) dire(this._permessoCanale(ctx, 'il titolo'));
         }
         return;
       }
@@ -1134,6 +1139,48 @@ export class ModulesEngine {
     return null;
   }
 
+  // CHI CAMBIA TITOLO E CATEGORIA: la piattaforma da cui e' chiesto. Un
+  // !titolo scritto nella chat di Kick cambia il titolo su Kick, uno scritto su
+  // Twitch quello su Twitch. Timer, voce, API, Telegram e prova non arrivano da
+  // una chat: valgono per la piattaforma del canale, cosi' un canale nato su
+  // Kick non chiede mai a Twitch. Dove non c'e' chi lo fa (YouTube) e' null.
+  _doveCanale(ctx) {
+    return ctx.piattaforma || piattaformaDi(ctx.channel) || 'twitch';
+  }
+
+  _canaleDi(ctx) {
+    const dove = this._doveCanale(ctx);
+    if (dove === 'twitch') return this.helix || null;
+    const f = this.canali[dove];
+    return typeof f === 'function' ? f(ctx.channel) : null;
+  }
+
+  // Lo stesso per chi cambia il canale fuori da una chat e fuori dai moduli
+  // (la voce e il privato Telegram, src/web/server.js): la piattaforma del
+  // canale. Una regola sola, decisa qui.
+  canalePer(login) {
+    return this._canaleDi({ channel: String(login || '').toLowerCase() });
+  }
+
+  // Il permesso che manca, detto con il rimedio della sua piattaforma.
+  _permessoCanale(ctx, cosa) {
+    return this._doveCanale(ctx) === 'kick'
+      ? aChiPuo(ctx.staff, {
+        staff: `🔒 Mi manca il permesso di Kick per cambiare ${cosa}: ricollega Kick dalla dashboard.`,
+        pubblico: `🔒 Adesso non posso cambiare ${cosa}.`,
+      })
+      : aChiPuo(ctx.staff, {
+        staff: `🔒 Mi manca il permesso per cambiare ${cosa}: riautorizza dalla dashboard.`,
+        pubblico: `🔒 Adesso non posso cambiare ${cosa}.`,
+      });
+  }
+
+  // Dove non c'e' chi cambia il canale, allo staff si dice perche' e dove si puo'.
+  _canaleAssente(ctx, cosa) {
+    const dove = this._doveCanale(ctx);
+    return `⏸️ Su ${NOME_PIATTAFORMA[dove] || dove} ${cosa} non si cambia ancora da qui: si cambia su Twitch e su Kick.`;
+  }
+
   // Azione di moderazione "timeout": la proviamo SOLO se Helix espone un metodo
   // dedicato. Non inventiamo endpoint/scope: se manca, si logga e si salta.
   // TIMEOUT: mette in pausa chi ha fatto scattare il modulo. Passa da
@@ -1193,25 +1240,28 @@ export class ModulesEngine {
     if (!s) return '';
 
     // AZIONI inline nei comandi: $titolo(...) cambia il titolo, $categoria(...)
-    // (alias $gioco(...)) cambia la categoria/gioco su Twitch. Sono effetti
-    // collaterali: li eseguiamo qui e togliamo il token dal testo, così lo
-    // streamer scrive la sua conferma attorno (es. "!fortnite → $categoria(Fortnite) Si gioca!").
+    // (alias $gioco(...)) cambia la categoria/gioco, sulla piattaforma da cui si
+    // scrive (_canaleDi). Sono effetti collaterali: li eseguiamo qui e togliamo
+    // il token dal testo, così lo streamer scrive la sua conferma attorno (es.
+    // "!fortnite → $categoria(Fortnite) Si gioca!"). Il token si toglie anche
+    // dove non c'e' chi cambia il canale: in chat non esce mai a meta'.
     // opts.noAzioni evita il rientro quando espandiamo il contenuto interno.
-    if (this.helix && !opts.noAzioni) {
+    if (!opts.noAzioni) {
       const azioni = [];
       s = s.replace(/\$(titolo|categoria|gioco)\(([^)]*)\)/gi, (_, tipo, inner) => {
         azioni.push({ tipo: tipo.toLowerCase() === 'titolo' ? 'titolo' : 'categoria', inner });
         return '';
       });
+      const canale = azioni.length ? this._canaleDi(ctx) : null;
       for (const a of azioni) {
         const valore = (await this.espandi(a.inner, ctx, { noAzioni: true })).trim();
-        if (!valore) continue;
+        if (!valore || !canale) continue;
         try {
           if (a.tipo === 'titolo') {
-            await this.helix.setChannelInfo?.(ctx.channel, { title: valore.slice(0, 140) });
+            await canale.setChannelInfo?.(ctx.channel, { title: valore.slice(0, 140) });
           } else {
-            const cat = await risolviCategoria(this.helix, valore).catch(() => null);
-            if (cat) await this.helix.setChannelInfo?.(ctx.channel, { gameId: cat.id });
+            const cat = await risolviCategoria(canale, valore).catch(() => null);
+            if (cat) await canale.setChannelInfo?.(ctx.channel, { gameId: cat.id });
           }
         } catch (e) { log.debug(`azione inline ${a.tipo} fallita:`, e?.message || e); }
       }

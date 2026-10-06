@@ -165,18 +165,29 @@ async function inviaFrase(frase) {
     const tit = dati && dati.titolo;
     if (cat) {
       if (dati.eseguito && cat.nome) logga(L('categoria cambiata in "', 'category changed to "', 'categoría cambiada a "') + cat.nome + '"');
-      else if (cat.riautorizza) logga(L('manca il permesso di gestione canale: concedilo nel pannello, da Chat e pubblico → Comandi → Comandi vocali', 'the manage channel permission is missing: grant it in the panel, from Chat & audience → Commands → Voice commands', 'falta el permiso de gestión del canal: concédelo en el panel, desde Chat y público → Comandos → Comandos de voz'));
+      else if (cat.riautorizza) logga(permessoMancante(cat));
+      else if (cat.errore === 'piattaforma') logga(piattaformaAssente());
       else if (cat.trovato === false) logga(L('categoria non trovata per "', 'no category found for "', 'categoría no encontrada para "') + (cat.query || '') + '"');
       else logga(L('non sono riuscito a cambiare categoria', 'I could not change the category', 'no he podido cambiar la categoría'));
     } else if (tit) {
       if (dati.eseguito && tit.testo) logga(L('titolo cambiato in "', 'title changed to "', 'título cambiado a "') + tit.testo + '"');
-      else if (tit.riautorizza) logga(L('manca il permesso di gestione canale: concedilo nel pannello, da Chat e pubblico → Comandi → Comandi vocali', 'the manage channel permission is missing: grant it in the panel, from Chat & audience → Commands → Voice commands', 'falta el permiso de gestión del canal: concédelo en el panel, desde Chat y público → Comandos → Comandos de voz'));
+      else if (tit.riautorizza) logga(permessoMancante(tit));
+      else if (tit.errore === 'piattaforma') logga(piattaformaAssente());
       else logga(L('non sono riuscito a cambiare titolo', 'I could not change the title', 'no he podido cambiar el título'));
     } else if (dati && dati.eseguito) logga('"' + frase + L('" → modulo scattato', '" → module fired', '" → módulo disparado'));
     else logga('"' + frase + L('" inviato (nessun modulo ha reagito)', '" sent (no module reacted)', '" enviado (ningún módulo ha reaccionado)'));
   } catch (e) {
     logga(L('invio non riuscito: ', 'sending failed: ', 'envío fallido: ') + (e && e.message ? e.message : e));
   }
+}
+
+function permessoMancante(esito) {
+  if (esito.piattaforma === 'kick') return L('manca il permesso di Kick per cambiare titolo e categoria: nel pannello, da Account → Il tuo account → Le tue piattaforme, premi «Concedi titolo e categoria» sulla riga di Kick', 'Kick’s permission to change title and category is missing: in the panel, from Account → Your account → Your platforms, press “Grant title and category” on the Kick row', 'falta el permiso de Kick para cambiar título y categoría: en el panel, desde Cuenta → Tu cuenta → Tus plataformas, pulsa «Concede título y categoría» en la fila de Kick');
+  return L('manca il permesso di gestione canale: concedilo nel pannello, da Chat e pubblico → Comandi → Comandi vocali', 'the manage channel permission is missing: grant it in the panel, from Chat & audience → Commands → Voice commands', 'falta el permiso de gestión del canal: concédelo en el panel, desde Chat y público → Comandos → Comandos de voz');
+}
+
+function piattaformaAssente() {
+  return L('su questa piattaforma titolo e categoria non si cambiano ancora: si cambiano su Twitch e su Kick', 'title and category can’t be changed on this platform yet: they can on Twitch and Kick', 'en esta plataforma el título y la categoría todavía no se cambian: se cambian en Twitch y en Kick');
 }
 
 let penitenzaInCorso = false;

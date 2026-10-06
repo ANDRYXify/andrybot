@@ -382,6 +382,47 @@ per piattaforma, la casa, quello che si dice in chat),
 `test/unita/moduli-timeout.test.mjs` (il timeout di un modulo va alla
 piattaforma del messaggio).
 
+### Titolo e categoria su Kick
+
+Kick ha la sua rotta, documentata: `PATCH /public/v1/channels` con
+`stream_title` e `category_id` (un intero), permesso `channel:write`, risposta
+204. Le categorie si cercano con `GET /public/v1/categories?q=`, che Kick dà per
+deprecata; se non risponde si prova `GET /public/v2/categories?name=`, che
+filtra per nome e vuole almeno tre lettere.
+
+`channel:write` adesso è nel collegamento normale (`kick/auth.js`, `SCOPE`). Chi
+ha collegato Kick prima non ce l'ha, e Kick non aggiunge permessi a un token già
+dato: la riga di Kick in «Le tue piattaforme» lo dice («Titolo e categoria su
+Kick: non concessi.») e ha il tasto «Concedi titolo e categoria», che ricollega
+Kick con la stessa azione di «Sistema», quindi la moderazione, se c'era, resta.
+Senza il permesso non si chiama Kick: si sa già che rifiuterebbe.
+
+`kick/api.js` espone `canaleKick(login)`, con la **stessa forma di helix**
+(`searchCategories`, `setChannelInfo`; l'errore ha `.status`, 403 per il
+permesso). Così `risolviCategoria` (`docs/CATEGORIA.md`) sceglie fra i nomi di
+Kick con le stesse regole, e chi cambia il canale non sa con chi parla.
+
+**Chi cambia il canale** lo decide un posto solo, il motore dei moduli
+(`modules.js`, `_canaleDi` e `canalePer`):
+
+- un comando scritto in chat, o un modulo partito da un evento: la piattaforma
+  da cui arriva. `!titolo` nella chat di Kick cambia Kick, nella chat di Twitch
+  cambia Twitch, anche sullo stesso canale;
+- timer, voce, API, privato Telegram e prova non arrivano da una chat: valgono
+  per la piattaforma del canale. Un canale nato su Kick non chiede mai a Twitch;
+  un canale di Twitch con Kick collegato cambia Twitch;
+- YouTube: nessuno, per ora. Allo staff si dice dove si può, al pubblico niente.
+
+La voce e il privato Telegram (`web/server.js`) chiedono al motore
+(`canaleDa`), con il permesso della stessa piattaforma (`puoCambiareCanale`), e
+annunciano con la voce della piattaforma (`vocePer`). Il rimedio detto è quello
+della piattaforma: su Kick «ricollega Kick», su Twitch «riautorizza».
+
+Collaudi: `test/unita/kick-titolo-categoria.test.mjs` (le chiamate vere di
+Kick, la v2, il permesso, chi cambia per piattaforma, le azioni inline),
+`test/contratto/kick-titolo-categoria.test.mjs` (voce, Telegram, avvio,
+pannello e pagina della voce passano di lì).
+
 ### Cosa NON fa ancora, e perché è detto qui
 
 Lo scudo anti-bot lavora solo su Twitch: legge eventi (follow a ondate, raid,

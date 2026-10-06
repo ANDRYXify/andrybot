@@ -31,7 +31,7 @@ export default {
       'Se manca il nome il pannello dice «Scrivi il nome del comando (senza !).», se manca la risposta «Scrivi cosa deve rispondere il bot.». Il pannello non controlla se il nome esiste già: due moduli con lo stesso comando rispondono tutti e due.',
     ] },
     { p: [
-      'Nel riquadro <strong>«Comandi pronti (1 clic)»</strong> ci sono due comandi già configurati, riservati a moderatori e streamer. <strong>«Crea comando !categoria»</strong> crea <code>!categoria</code> (anche <code>!gioco</code>): in chat si scrive <code>!categoria Fortnite</code> e il bot cerca su Twitch la categoria più somigliante. <strong>«Crea comando !titolo»</strong> crea <code>!titolo</code>, che si usa come <code>!titolo In diretta!</code>. Se il comando c\'è già, accanto leggi «!categoria esiste già ✓» e non ne nasce un secondo. Serve il permesso <em>Gestione canale</em> di Twitch.',
+      'Nel riquadro <strong>«Comandi pronti (1 clic)»</strong> ci sono due comandi già configurati, riservati a moderatori e streamer. <strong>«Crea comando !categoria»</strong> crea <code>!categoria</code> (anche <code>!gioco</code>): in chat si scrive <code>!categoria Fortnite</code> e il bot cerca la categoria più somigliante. <strong>«Crea comando !titolo»</strong> crea <code>!titolo</code>, che si usa come <code>!titolo In diretta!</code>. Se il comando c\'è già, accanto leggi «!categoria esiste già ✓» e non ne nasce un secondo. Cambiano titolo e categoria sulla piattaforma da cui si scrive: Twitch o Kick. Su Twitch serve il permesso <em>Gestione canale</em>, su Kick «Concedi titolo e categoria» nella riga di Kick di «Le tue piattaforme».',
       'Lo stesso lo fai dentro una risposta qualsiasi con <code>$categoria($args)</code> e <code>$titolo($args)</code>: il pezzo sparisce dal messaggio, il cambio avviene, e la conferma la scrivi tu attorno.',
     ] },
 
@@ -227,8 +227,8 @@ export default {
       ['Scrivi in chat', 'manda un messaggio', 'il testo, fino a 400 caratteri; «Una frase a caso»: scrivine una per riga, ogni volta ne esce una', ''],
       ['Fai partire un effetto', 'lancia un tuo effetto o suono, senza guardare chi può usarlo e le sue attese', '«Quale effetto», fra i tuoi effetti accesi; il tasto accanto lo prende dalla libreria o lo carica dal computer, anche se non hai ancora effetti', 'un effetto creato in <em>Scena &amp; overlay</em>, <em>Effetti &amp; suoni</em>, e l\'overlay in scena'],
       ['Crea una clip', 'salva una clip del momento e scrive in chat «Clip salvata!» col link', 'nessuno', 'diretta su Twitch e il permesso clip'],
-      ['Cambia categoria Twitch', 'cerca su Twitch la categoria più somigliante e la imposta', '«Categoria / gioco», anche con variabili come <code>$args</code>; «Annuncia il cambio in chat»', 'il permesso <em>Gestione canale</em>'],
-      ['Cambia titolo stream', 'cambia il titolo della diretta', '«Nuovo titolo», fino a 140 caratteri, con variabili; «Annuncia il cambio in chat»', 'il permesso <em>Gestione canale</em>'],
+      ['Cambia categoria', 'cerca la categoria più somigliante e la imposta, sulla piattaforma da cui arriva il comando (Twitch o Kick)', '«Categoria / gioco», anche con variabili come <code>$args</code>; «Annuncia il cambio in chat»', 'su Twitch il permesso <em>Gestione canale</em>, su Kick «Concedi titolo e categoria»'],
+      ['Cambia titolo stream', 'cambia il titolo della diretta, sulla piattaforma da cui arriva il comando (Twitch o Kick)', '«Nuovo titolo», fino a 140 caratteri, con variabili; «Annuncia il cambio in chat»', 'su Twitch il permesso <em>Gestione canale</em>, su Kick «Concedi titolo e categoria»'],
       ['Contatore', 'muove un contatore', '«Nome contatore»; «Operazione»: «Incrementa (+1)», «Azzera», «Imposta a…»; «Valore (se "imposta")»', 'niente: se il contatore non c\'è ancora, nasce nella carta <em>Contatori</em>'],
       ['Chiama un webhook', 'manda i dati del momento a un indirizzo tuo', '«URL del tuo servizio (https)»; «Usa la risposta come messaggio in chat»', 'un tuo servizio'],
       ['Aspetta', 'una pausa prima dell\'azione dopo', '«Secondi da aspettare», di base 2', 'al massimo 30 secondi'],
@@ -244,8 +244,8 @@ export default {
       ['Esegui un comando', 'fa quello che fa un altro tuo comando o modulo, come se l\'avesse scritto la stessa persona: con le sue condizioni, ma senza farle pagare', '«Quale comando», fra i tuoi moduli e i comandi creati in chat', 'un comando non esegue mai se stesso, e al massimo tre si chiamano in fila'],
     ] },
     { p: [
-      '<strong>Messaggi del bot.</strong> Con «Annuncia il cambio in chat» acceso, categoria e titolo scrivono «🎮 Categoria aggiornata: …» e «📝 Titolo aggiornato: …», e se la categoria non si trova «🤔 Non ho trovato la categoria "…".». Se manca il permesso per categoria, titolo, annuncio, shoutout o timeout, il bot lo dice in chat con un 🔒 e le altre azioni vanno avanti: se il comando l\'ha scritto uno dello staff (tu o un moderatore) gli dice anche di riautorizzare dalla dashboard, agli altri solo che adesso non può. Un moderatore o un VIP non si mette in pausa, e il bot lo dice: «🛡️ Non posso mettere in pausa …: moderatori e VIP non si possono.». La clip, se non riesce (canale spento o permesso mancante), non scrive niente. Lo shoutout scrive il «Messaggio extra» solo se è riuscito.',
-      '<strong>Cambia categoria.</strong> Fra le categorie di Twitch sceglie quella che contiene le parole che hai scritto: «diablo 4» non diventa «Diablo». Capisce i numeri romani o scritti in lettere e le sigle più usate, come «gta 5» o «cs2». Se nessuna somiglia abbastanza, non cambia niente.',
+      '<strong>Messaggi del bot.</strong> Con «Annuncia il cambio in chat» acceso, categoria e titolo scrivono «🎮 Categoria aggiornata: …» e «📝 Titolo aggiornato: …», e se la categoria non si trova «🤔 Non ho trovato la categoria "…".». Se manca il permesso per categoria, titolo, annuncio, shoutout o timeout, il bot lo dice in chat con un 🔒 e le altre azioni vanno avanti: se il comando l\'ha scritto uno dello staff (tu o un moderatore) gli dice anche di riautorizzare dalla dashboard, agli altri solo che adesso non può. Su Kick il rimedio detto allo staff è ricollegare Kick. Timer, voce e API non arrivano da una chat: cambiano titolo e categoria sulla piattaforma del canale. Su YouTube titolo e categoria non si cambiano ancora: allo staff il bot dice «⏸️ Su YouTube il titolo non si cambia ancora da qui: si cambia su Twitch e su Kick.». Un moderatore o un VIP non si mette in pausa, e il bot lo dice: «🛡️ Non posso mettere in pausa …: moderatori e VIP non si possono.». La clip, se non riesce (canale spento o permesso mancante), non scrive niente. Lo shoutout scrive il «Messaggio extra» solo se è riuscito.',
+      '<strong>Cambia categoria.</strong> Fra le categorie della piattaforma, Twitch o Kick, sceglie quella che contiene le parole che hai scritto: «diablo 4» non diventa «Diablo». Capisce i numeri romani o scritti in lettere e le sigle più usate, come «gta 5» o «cs2». Se nessuna somiglia abbastanza, non cambia niente.',
       '<strong>Contatore.</strong> «Incrementa (+1)» aggiunge uno, qualunque sia il passo del contatore; «Azzera» riporta a zero; «Imposta a…» mette il numero di «Valore (se "imposta")». Il nome è quello del comando del contatore, senza <code>!</code>: <code>morti</code> muove lo stesso numero di <code>!morti</code>, di <code>$count(morti)</code> e di CONTATORify. Se quel contatore non c\'è ancora, nasce nella carta <em>Contatori</em>. L\'azione cambia il numero senza scriverlo in chat: per dirlo aggiungi «Scrivi in chat» con <code>$count(morti)</code>.',
       '<strong>Dai o togli punti.</strong> «A chi» ha quattro scelte: «Chi ha scritto», «Chi è taggato dopo il comando», «Uno a caso fra chi è in chat» (pescato fra chi ha scritto di recente, di preferenza non l\'autore) e «Un nome fisso», che chiede il «Nome utente». In un modulo che parte da un evento, «Chi ha scritto» è chi segue, si abbona, riscatta o fa raid; in un timer, all\'inizio o alla fine della diretta e da Telegram non c\'è nessuno, e il passo salta. «Quanti» accetta un numero o una variabile: <code>$random(10,50)</code>, <code>$arg1</code>. Dopo, <code>$mossa</code> dice quante monete si sono mosse davvero e <code>$bersaglio</code> su chi: a chi ha 5 monete non se ne tolgono 80. Le azioni che seguono vedono la stessa cifra, così un furto dà al ladro esattamente quello che ha tolto.',
       '<strong>Chiama un webhook.</strong> Il bot manda in <code>POST</code> un JSON con canale, chi ha scritto, gli argomenti, l\'evento e le variabili del momento. Se rispondi con <code>{"reply": "testo"}</code> e hai spuntato «Usa la risposta come messaggio in chat», il bot scrive quel testo, con le variabili già espanse. Accetta solo indirizzi <code>http</code> e <code>https</code>, non raggiunge indirizzi di una rete privata, non segue i reindirizzamenti, aspetta 5 secondi e legge fino a 10 KB di risposta.',
@@ -573,7 +573,7 @@ export default {
 
     { h3: 'Cambia categoria a voce' },
     { p: [
-      'Dici la parola chiave seguita dal gioco, «<strong>categoria</strong> Fortnite», e il bot cambia la categoria del canale su Twitch. Se ti sente male prova comunque a indovinare il gioco più somigliante fra le categorie di Twitch. Conta ogni parola che dici: «diablo 4» non diventa «Diablo». Capisce i numeri romani o detti in lettere e le sigle più usate, come «gta 5» o «cs2». Se nessuna categoria somiglia abbastanza non cambia niente.',
+      'Dici la parola chiave seguita dal gioco, «<strong>categoria</strong> Fortnite», e il bot cambia la categoria del canale sulla sua piattaforma, Twitch o Kick. Se ti sente male prova comunque a indovinare il gioco più somigliante fra le categorie di quella piattaforma. Su YouTube titolo e categoria non si cambiano ancora, e la carta lo dice. Conta ogni parola che dici: «diablo 4» non diventa «Diablo». Capisce i numeri romani o detti in lettere e le sigle più usate, come «gta 5» o «cs2». Se nessuna categoria somiglia abbastanza non cambia niente.',
     ] },
     { tabella: [
       ['Controllo', 'Di base', 'Limiti'],
@@ -582,12 +582,12 @@ export default {
       ['«Annuncia il cambio in chat»', 'acceso', 'il bot scrive «🎮 Categoria aggiornata: …»'],
     ] },
     { p: [
-      'La parola chiave va detta <em>prima</em> del nome: «categoria Fortnite», non «metti Fortnite». Serve il permesso <em>Gestione canale</em> di Twitch. Se manca, sotto compare un avviso con «Concedi il permesso»: autorizzi e torni qui.',
+      'La parola chiave va detta <em>prima</em> del nome: «categoria Fortnite», non «metti Fortnite». Su Twitch serve il permesso <em>Gestione canale</em>: se manca, sotto compare un avviso con «Concedi il permesso», autorizzi e torni qui. Su Kick serve il permesso di Kick per titolo e categoria: se manca, l\'avviso ha «Concedi titolo e categoria», che ricollega Kick.',
     ] },
 
     { h3: 'Cambia titolo a voce' },
     { p: [
-      'Dici la parola chiave seguita dal titolo, «<strong>titolo</strong> Si torna su Elden Ring, si punta al boss!», e il bot aggiorna il titolo della diretta su Twitch, come lo dici. Il titolo si ferma a 140 caratteri.',
+      'Dici la parola chiave seguita dal titolo, «<strong>titolo</strong> Si torna su Elden Ring, si punta al boss!», e il bot aggiorna il titolo della diretta sulla piattaforma del canale, Twitch o Kick, come lo dici. Il titolo si ferma a 140 caratteri.',
     ] },
     { tabella: [
       ['Controllo', 'Di base', 'Limiti'],
@@ -595,7 +595,7 @@ export default {
       ['«Parola chiave (quella che dici prima del titolo)»', 'titolo', '30 caratteri; per esempio «nuovo titolo»'],
       ['«Annuncia il cambio in chat»', 'acceso', 'il bot scrive «📝 Titolo aggiornato: …»'],
     ] },
-    { p: ['Usa lo stesso permesso <em>Gestione canale</em> della categoria: se manca, l\'avviso ha il collegamento «Concedilo qui».'] },
+    { p: ['Usa lo stesso permesso della categoria. Su Twitch, se manca, l\'avviso ha il collegamento «Concedilo qui»; su Kick «Concedi titolo e categoria».'] },
 
     { h3: 'Impara mentre parlo' },
     { p: [
@@ -626,8 +626,10 @@ export default {
       ['«"…" inviato (nessun modulo ha reagito)»', 'la frase è arrivata ma nessun modulo è partito: guarda le condizioni del modulo, e se hai il pacchetto «Comandi Vocali»'],
       ['«categoria cambiata in "…"», «titolo cambiato in "…"»', 'fatto'],
       ['«categoria non trovata per "…"»', 'nessuna categoria somiglia abbastanza: ridillo più chiaro'],
-      ['«non sono riuscito a cambiare categoria», «non sono riuscito a cambiare titolo»', 'Twitch non ha accettato il cambio: riprova fra poco'],
+      ['«non sono riuscito a cambiare categoria», «non sono riuscito a cambiare titolo»', 'la piattaforma non ha accettato il cambio: riprova fra poco'],
       ['«manca il permesso di gestione canale»', 'concedi il permesso <em>Gestione canale</em> dalla scheda <em>Comandi vocali</em>'],
+      ['«manca il permesso di Kick per cambiare titolo e categoria…»', 'il canale è su Kick: premi «Concedi titolo e categoria» sulla riga di Kick in <em>Account → Il tuo account → Le tue piattaforme</em>'],
+      ['«su questa piattaforma titolo e categoria non si cambiano ancora…»', 'il canale è su YouTube: titolo e categoria a voce valgono per Twitch e Kick'],
       ['«Permesso microfono negato…»', 'consenti il microfono per questo sito dall\'icona nella barra del browser e premi di nuovo «Avvia ascolto»'],
       ['«Sessione scaduta: rientra dalla dashboard e riapri questa pagina.»', 'entra di nuovo nel pannello e riapri la pagina'],
       ['«Nessun motore vocale disponibile in questo browser: prova con Chrome.»', 'cambia browser'],

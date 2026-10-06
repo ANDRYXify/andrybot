@@ -1984,7 +1984,7 @@ function _demoGet(via) {
     ] },
     '/api/streamer/piattaforme': { piattaforme: [
       { id: 'twitch', nome: 'Twitch', disponibile: true, collegato: true, account: 'andryx_demo', attivo: true, daRifare: false, azione: '/auth/permessi', note: '' },
-      { id: 'kick', nome: 'Kick', disponibile: true, collegato: true, account: 'id 448291', attivo: true, daRifare: false, azione: '/auth/kick', note: '', moderazione: false, azioneModerazione: '/auth/kick?mod=1' },
+      { id: 'kick', nome: 'Kick', disponibile: true, collegato: true, account: 'id 448291', attivo: true, daRifare: false, azione: '/auth/kick', note: '', moderazione: false, azioneModerazione: '/auth/kick?mod=1', canale: true },
       { id: 'youtube', nome: 'YouTube', disponibile: false, collegato: false, account: '', attivo: false, daRifare: false, azione: '', note: 'credenziali pronte: il collegamento arriva a breve' },
     ] },
     '/api/streamer/google-fonts': { fonts: ['Inter', 'Roboto', 'Lobster', 'Bree Serif', 'Bangers', 'Poppins', 'Oswald', 'Pacifico', 'Rubik Mono One', 'Press Start 2P', 'Caveat', 'Anton'] },
@@ -10945,7 +10945,14 @@ function pannelloAscolto() {
   const ct = s.cambioTitolo || { attivo: false, trigger: COMANDO_TITOLO, annuncia: true };
   const iv = s.imparaVoce || { attivo: false };
   const proprietario = stato?.ruolo !== 'moderatore';
-  const mancaPermesso = !DEMO && stato.canaleOk === false;
+  const doveCanale = stato?.piattaforma || 'twitch';
+  const suKick = doveCanale === 'kick';
+  const nomeDove = NOME_PIATTAFORMA[doveCanale] || doveCanale;
+  const cambiaQui = doveCanale === 'twitch' || suKick;
+  const mancaPermesso = !DEMO && (suKick ? stato.kick?.canale === false : (doveCanale === 'twitch' && stato.canaleOk === false));
+  const permessoKick = () => `<p class="nota-lettura">${L('Per cambiare titolo e categoria su Kick il bot ha bisogno del permesso di Kick.', 'To change title and category on Kick the bot needs Kick’s permission.', 'Para cambiar título y categoría en Kick el bot necesita el permiso de Kick.')}
+      <a href="${stato.kick?.moderazione ? '/auth/kick?mod=1' : '/auth/kick'}">${L('Concedi titolo e categoria', 'Grant title and category', 'Concede título y categoría')}</a> ${L('(ricolleghi Kick: la moderazione, se l’hai data, resta).', '(you reconnect Kick: moderation, if you granted it, stays).', '(vuelves a conectar Kick: la moderación, si la diste, se queda).')}</p>`;
+  const nonQui = () => `<p class="nota-lettura">${L(`Su ${nomeDove} titolo e categoria non si cambiano ancora: questa carta vale per i canali su Twitch e su Kick.`, `On ${nomeDove} title and category can’t be changed yet: this card works for channels on Twitch and Kick.`, `En ${nomeDove} el título y la categoría todavía no se cambian: esta tarjeta vale para los canales en Twitch y en Kick.`)}</p>`;
 
   return pannello('ascolto', `
     <div class="carta">
@@ -10982,7 +10989,8 @@ function pannelloAscolto() {
     <div class="carta">
       <h2>${_hIco(ICO.giochi)}${L('Cambia categoria a voce', 'Change category by voice', 'Cambia categoría por voz')}</h2>
       <p>${L('Dici', 'Say', 'Di')} <strong class="primo-piano">«<span id="cat-esempio">${esc(cc.trigger || COMANDO_CATEGORIA)}</span> <em>${L('nome del gioco', 'game name', 'nombre del juego')}</em>»</strong>
-      ${L('mentre streammi e il bot cambia la categoria del canale su Twitch. Se ti sente male, prova comunque a indovinare il gioco più somigliante tra le categorie di Twitch.', 'while you stream and the bot changes the channel category on Twitch. If it mishears you, it still tries to guess the closest game among Twitch categories.', 'mientras haces directo y el bot cambia la categoría del canal en Twitch. Si te oye mal, intenta igualmente adivinar el juego más parecido entre las categorías de Twitch.')}</p>
+      ${L(`mentre streammi e il bot cambia la categoria del canale su ${nomeDove}. Se ti sente male, prova comunque a indovinare il gioco più somigliante tra le categorie di ${nomeDove}.`, `while you stream and the bot changes the channel category on ${nomeDove}. If it mishears you, it still tries to guess the closest game among ${nomeDove} categories.`, `mientras haces directo y el bot cambia la categoría del canal en ${nomeDove}. Si te oye mal, intenta igualmente adivinar el juego más parecido entre las categorías de ${nomeDove}.`)}</p>
+      ${cambiaQui ? '' : nonQui()}
       <div class="riga-interruttore spazio-sopra">
         <label class="interruttore">
           <input type="checkbox" id="chk-categoria" ${cc.attivo ? 'checked' : ''}>
@@ -10997,7 +11005,8 @@ function pannelloAscolto() {
         <label for="chk-cat-annuncia">${L('Annuncia il cambio in chat', 'Announce the change in chat', 'Anuncia el cambio en el chat')}</label>
       </div>
       <p class="spazio-sopra"><button class="btn" id="btn-salva-categoria">${L('Salva', 'Save', 'Guardar')}</button></p>
-      ${mancaPermesso ? `<p class="nota-lettura">${L('Per cambiare categoria il bot ha bisogno del permesso', 'To change the category the bot needs the', 'Para cambiar la categoría el bot necesita el permiso')} <strong>${L('Gestione canale', 'Manage Channel', 'Gestión del canal')}</strong> ${L('su Twitch.', 'permission on Twitch.', 'en Twitch.')}
+      ${mancaPermesso && suKick ? permessoKick() : ''}
+      ${mancaPermesso && !suKick ? `<p class="nota-lettura">${L('Per cambiare categoria il bot ha bisogno del permesso', 'To change the category the bot needs the', 'Para cambiar la categoría el bot necesita el permiso')} <strong>${L('Gestione canale', 'Manage Channel', 'Gestión del canal')}</strong> ${L('su Twitch.', 'permission on Twitch.', 'en Twitch.')}
       <a href="/auth/permessi">${L('Concedi il permesso', 'Grant the permission', 'Concede el permiso')}</a> ${L('(ti riporta qui dopo l\'autorizzazione).', '(it brings you back here after authorizing).', '(te devuelve aquí tras autorizar).')}</p>` : ''}
       <p class="suggerimento spazio-sopra">${L('Esempi: «categoria Fortnite», «categoria League of Legends». La parola chiave è a tua scelta (es. «gioco», «passa a»). Funziona dalla stessa pagina di ascolto vocale qui sopra.', 'Examples: “categoria Fortnite”, “categoria League of Legends”. Recognition is in Italian, so the keyword is an Italian word of your choice (e.g. “gioco”, “passa a”). It works from the same voice-listening page above.', 'Ejemplos: «categoria Fortnite», «categoria League of Legends». El reconocimiento es en italiano, así que la palabra clave es una palabra italiana que eliges tú (p. ej. «gioco», «passa a»). Funciona desde la misma página de escucha por voz de arriba.')}</p>
     </div>
@@ -11005,7 +11014,8 @@ function pannelloAscolto() {
     <div class="carta">
       <h2>${_hIco(ICO.scrivi)}${L('Cambia titolo a voce', 'Change title by voice', 'Cambia el título por voz')}</h2>
       <p>${L('Dici', 'Say', 'Di')} <strong class="primo-piano">«<span id="tit-esempio">${esc(ct.trigger || COMANDO_TITOLO)}</span> <em>${L('il tuo titolo', 'your title', 'tu título')}</em>»</strong>
-      ${L('e il bot aggiorna il titolo dello stream su Twitch (testo libero, come lo dici).', 'and the bot updates the stream title on Twitch (free text, as you say it).', 'y el bot actualiza el título del directo en Twitch (texto libre, como lo dices).')}</p>
+      ${L(`e il bot aggiorna il titolo dello stream su ${nomeDove} (testo libero, come lo dici).`, `and the bot updates the stream title on ${nomeDove} (free text, as you say it).`, `y el bot actualiza el título del directo en ${nomeDove} (texto libre, como lo dices).`)}</p>
+      ${cambiaQui ? '' : nonQui()}
       <div class="riga-interruttore spazio-sopra">
         <label class="interruttore">
           <input type="checkbox" id="chk-titolo" ${ct.attivo ? 'checked' : ''}>
@@ -11020,7 +11030,8 @@ function pannelloAscolto() {
         <label for="chk-tit-annuncia">${L('Annuncia il cambio in chat', 'Announce the change in chat', 'Anuncia el cambio en el chat')}</label>
       </div>
       <p class="spazio-sopra"><button class="btn" id="btn-salva-titolo">${L('Salva', 'Save', 'Guardar')}</button></p>
-      ${mancaPermesso ? `<p class="nota-lettura">${L('Anche il titolo usa il permesso', 'The title also uses the', 'El título también usa el permiso')} <strong>${L('Gestione canale', 'Manage Channel', 'Gestión del canal')}</strong> ${L('.', ' permission.', '.')}
+      ${mancaPermesso && suKick ? permessoKick() : ''}
+      ${mancaPermesso && !suKick ? `<p class="nota-lettura">${L('Anche il titolo usa il permesso', 'The title also uses the', 'El título también usa el permiso')} <strong>${L('Gestione canale', 'Manage Channel', 'Gestión del canal')}</strong> ${L('.', ' permission.', '.')}
       <a href="/auth/permessi">${L('Concedilo qui', 'Grant it here', 'Concédelo aquí')}</a> ${L('(vale per categoria e titolo).', '(applies to category and title).', '(vale para categoría y título).')}</p>` : ''}
       <p class="suggerimento spazio-sopra">${L('Esempio: «titolo Si torna su Elden Ring, si punta al boss!». Puoi cambiare la parola chiave (es. «nuovo titolo»). Stessa pagina di ascolto vocale qui sopra.', 'Example: “title Back on Elden Ring, going for the boss!”. You can change the keyword (e.g. “new title”). Same voice-listening page above.', 'Ejemplo: «título ¡Volvemos a Elden Ring, a por el jefe!». Puedes cambiar la palabra clave (p. ej. «nuevo título»). Misma página de escucha por voz de arriba.')}</p>
     </div>
@@ -21993,7 +22004,7 @@ function pannelloModuli() {
       </p>
       <div class="riquadro-info spazio-sopra">
         <strong>${L('Comandi pronti (1 clic)', 'Ready-made commands (1 click)', 'Comandos listos (1 clic)')}</strong>
-        <p class="suggerimento">${L('Creo per te il comando già configurato per i mod. Poi in chat basta', 'I create the command already set up for mods. Then in chat just type', 'Creo el comando ya configurado para mods. Luego en el chat basta')} <code>!categoria Fortnite</code> ${L('o', 'or', 'o')} <code>!titolo In diretta!</code>, ${L('e anche da Telegram in privato con', 'and also from Telegram in private with', 'y también desde Telegram en privado con')} <code>/categoria</code> · <code>/titolo</code>.</p>
+        <p class="suggerimento">${L('Creo per te il comando già configurato per i mod. Poi in chat basta', 'I create the command already set up for mods. Then in chat just type', 'Creo el comando ya configurado para mods. Luego en el chat basta')} <code>!categoria Fortnite</code> ${L('o', 'or', 'o')} <code>!titolo In diretta!</code>, ${L('e anche da Telegram in privato con', 'and also from Telegram in private with', 'y también desde Telegram en privado con')} <code>/categoria</code> · <code>/titolo</code>. ${L('Cambiano titolo e categoria sulla piattaforma da cui si scrive: Twitch o Kick.', 'They change title and category on the platform they’re typed on: Twitch or Kick.', 'Cambian título y categoría en la plataforma desde la que se escribe: Twitch o Kick.')}</p>
         <p>
           <button class="btn secondario" id="btn-preset-categoria">${L('Crea comando !categoria', 'Create !categoria command', 'Crear comando !categoria')}</button>
           <button class="btn secondario" id="btn-preset-titolo">${L('Crea comando !titolo', 'Create !titolo command', 'Crear comando !titolo')}</button>
@@ -34373,7 +34384,7 @@ const AZIONI = [
   ['messaggio', 'Scrivi in chat', 'Write in chat', 'Escribe en el chat'],
   ['effetto', 'Fai partire un effetto', 'Play an effect', 'Lanza un efecto'],
   ['clip', 'Crea una clip', 'Create a clip', 'Crea un clip'],
-  ['categoria', 'Cambia categoria Twitch', 'Change Twitch category', 'Cambia la categoría de Twitch'],
+  ['categoria', 'Cambia categoria', 'Change category', 'Cambia la categoría'],
   ['titolo', 'Cambia titolo stream', 'Change stream title', 'Cambia el título del directo'],
   ['contatore', 'Contatore', 'Counter', 'Contador'],
   ['webhook', 'Chiama un webhook', 'Call a webhook', 'Llama a un webhook'],
@@ -35727,6 +35738,12 @@ function _notaCanaleAParte() {
     `Tu canal está en ${dove}: Twitch no se añade a este canal. Si también emites en Twitch, entra con tu cuenta de Twitch: es un canal aparte, con su propio panel.`);
 }
 
+function _notaCanaleKick() {
+  return stato?.piattaforma === 'kick'
+    ? L('Titolo e categoria su Kick: non concessi. Con «Concedi titolo e categoria» li cambiano !titolo e !categoria, la voce e Telegram.', 'Title and category on Kick: not granted. With “Grant title and category” !titolo and !categoria, voice and Telegram can change them.', 'Título y categoría en Kick: no concedidos. Con «Concede título y categoría» los cambian !titolo y !categoria, la voz y Telegram.')
+    : L('Titolo e categoria su Kick: non concessi. Con «Concedi titolo e categoria» !titolo e !categoria scritti nella chat di Kick li cambiano su Kick.', 'Title and category on Kick: not granted. With “Grant title and category” !titolo and !categoria typed in the Kick chat change them on Kick.', 'Título y categoría en Kick: no concedidos. Con «Concede título y categoría» !titolo y !categoria escritos en el chat de Kick los cambian en Kick.');
+}
+
 function rigaPiattaforma(p) {
   const stato = !p.disponibile
     ? { cl: '', txt: L('non disponibile', 'not available', 'no disponible') }
@@ -35740,6 +35757,7 @@ function rigaPiattaforma(p) {
       : `${p.rifaiEventi ? `<button type="button" class="btn mini" data-kick-eventi>${L('Riprova gli eventi', 'Retry events', 'Reintentar eventos')}</button>` : ''}
          ${p.daRifare && !p.rifaiEventi ? `<a class="btn mini" href="${esc(p.azione)}">${L('Sistema', 'Fix', 'Arreglar')}</a>` : ''}
          ${p.id === 'kick' && !p.moderazione && p.azioneModerazione ? `<a class="btn secondario mini" href="${esc(p.azioneModerazione)}">${L('Concedi la moderazione', 'Grant moderation', 'Concede la moderación')}</a>` : ''}
+         ${p.id === 'kick' && p.canale === false && !(p.daRifare && !p.rifaiEventi) ? `<a class="btn secondario mini" href="${esc(p.azione)}">${L('Concedi titolo e categoria', 'Grant title and category', 'Concede título y categoría')}</a>` : ''}
          ${p.chatDisponibile ? `<label class="interruttore mini" title="${esc(L('Il bot legge e risponde nella chat delle tue dirette YouTube', 'The bot reads and answers in your YouTube live chat', 'El bot lee y responde en el chat de tus directos de YouTube'))}">
             <input type="checkbox" data-yt-chat${p.chatAccesa ? ' checked' : ''} aria-label="${esc(L('Chat delle dirette YouTube', 'YouTube live chat', 'Chat de los directos de YouTube'))}"><span class="levetta"></span></label>` : ''}
          ${p.id !== 'twitch' ? `<button type="button" class="btn secondario mini" data-scollega="${esc(p.id)}">${L('Scollega', 'Disconnect', 'Desconectar')}</button>` : ''}`);
@@ -35752,6 +35770,7 @@ function rigaPiattaforma(p) {
     ${p.id === 'kick' && p.collegato ? `<span class="pf-nota">${esc(p.moderazione
     ? L('Moderazione su Kick: attiva. L’antispam toglie i messaggi e il timeout dei moduli mette in pausa anche su Kick.', 'Moderation on Kick: on. Antispam removes messages and the modules’ timeout pauses people on Kick too.', 'Moderación en Kick: activa. El antispam quita los mensajes y el timeout de los módulos pausa también en Kick.')
     : L('Moderazione su Kick: non concessa. Con «Concedi la moderazione» l’antispam toglie i messaggi e il timeout dei moduli mette in pausa anche su Kick.', 'Moderation on Kick: not granted. With “Grant moderation” antispam removes messages and the modules’ timeout pauses people on Kick too.', 'Moderación en Kick: no concedida. Con «Concede la moderación» el antispam quita los mensajes y el timeout de los módulos pausa también en Kick.'))}</span>` : ''}
+    ${p.id === 'kick' && p.collegato && p.canale === false ? `<span class="pf-nota">${esc(_notaCanaleKick())}</span>` : ''}
     <span class="pf-azioni">${azione}</span>
   </li>`;
 }

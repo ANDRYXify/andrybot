@@ -17,6 +17,7 @@ export const ID_BASE = 'https://id.kick.com/oauth';
 export const SCOPE = [
   'user:read',            // sapere chi ha autorizzato
   'channel:read',         // titolo, categoria, stato della diretta
+  'channel:write',        // cambiare titolo e categoria (!titolo, !categoria)
   'chat:write',           // far parlare il bot in chat
   'events:subscribe',     // ricevere i messaggi e gli eventi via webhook
 ];
