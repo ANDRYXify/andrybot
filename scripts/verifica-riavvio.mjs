@@ -132,6 +132,8 @@ const DECISO = [
   ['features/studio.js', 'sessioni', 'volatile', 'sessioni di trasmissione: sono connessioni, muoiono col processo'],
   ['features/trackinggiochi.js', '_ultimoSfida', 'volatile', 'anti-spam di !sfida, finestra corta'],
   ['bot.js', 'units', 'volatile', 'connessioni chat: si riaprono all\'avvio'],
+  ['bot.js', '_diretteDelGiro', 'volatile', 'la diretta del giro delle ore (presenze.direttaDelGiro): dopo un riavvio riparte dall\'id della piattaforma in onda, che e\' lo stesso di prima (Twitch lo stream, Kick il suo inizio); al peggio, se nel frattempo la diretta e\' passata da Twitch a Kick, il tetto delle monete riparte, come succedeva prima. Ore, monete e presenze gia\' contate stanno nel database'],
+  ['features/scriventi.js', 'registro', 'volatile', 'chi ha scritto su Kick negli ultimi due giri delle ore: dopo un riavvio si perde al piu\' un giro, finche\' qualcuno non riscrive; ore, monete e presenze gia\' contate stanno nel database'],
   ['bot.js', '_statoDiretta', 'volatile', 'i segnali delle due fonti sulla diretta (stato-diretta.js): dopo un riavvio il primo segnale li riparte, e il primo rilevamento non annuncia niente; gli avvisi gia\' mandati stanno nei recapiti, nel database'],
   ['bot.js', '_chatKO', 'volatile', 'chi ha la chat scollegata: si riscopre al primo tentativo'],
   ['bot.js', 'listeners', 'volatile', 'ascolto audio: e\' una connessione'],
