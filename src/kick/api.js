@@ -316,6 +316,69 @@ export function canaleKick(login, { fetchImpl } = {}) {
   });
 }
 
+// I PREMI DEL CANALE SU KICK (docs/PIATTAFORME.md, «I premi del canale su
+// Kick»), con la forma di helix (creaReward, listaRewardsTutti, eliminaReward,
+// aggiornaRedemption): avvisi dei premi, richieste musicali, penitenze e
+// contatori non sanno con chi parlano. I permessi sono channel:rewards:read e
+// :write; senza, non si chiama Kick. Gli id dei premi e dei riscatti sono ULID.
+// Solo l'app che ha creato un premio puo' cambiarlo o toglierlo.
+const ULID = /^[0-9A-Z]{26}$/i;
+export function puoPremiare(login) {
+  const s = tokenDi(String(login || '').toLowerCase())?.scopes;
+  return Array.isArray(s) && s.includes('channel:rewards:write');
+}
+const premioDa = (r) => ({
+  id: String(r.id), title: String(r.title || ''), cost: Number(r.cost) || 0,
+  enabled: r.is_enabled !== false, richiedeTesto: !!r.is_user_input_required, piattaforma: 'kick',
+});
+
+export function premiKick(login, { fetchImpl } = {}) {
+  const chi = String(login || '').toLowerCase();
+  return Object.freeze({
+    piattaforma: 'kick',
+    async listaRewardsTutti() {
+      const s = tokenDi(chi)?.scopes;
+      if (!Array.isArray(s) || !s.some((x) => x === 'channel:rewards:read' || x === 'channel:rewards:write')) return [];
+      const r = await chiama(chi, '/channels/rewards', { fetchImpl });
+      return r.ok && Array.isArray(r.dati) ? r.dati.filter((x) => x?.id).map(premioDa) : [];
+    },
+    // Ritorna {id, title, cost} come helix, o lancia con .status (403 per il
+    // permesso, 400 per un nome rifiutato).
+    async creaReward(_canale, { titolo, costo, prompt, userInput } = {}) {
+      if (!puoPremiare(chi)) throw Object.assign(new Error('permesso mancante'), { status: 403 });
+      const corpo = {
+        title: String(titolo || '').trim().slice(0, 50),
+        cost: Math.max(1, Math.round(Number(costo) || 100)),
+        is_enabled: true,
+        // i riscatti passano dalla coda: il bot li accetta quando li ha fatti,
+        // e li rifiuta quando non riesce (una canzone che non trova)
+        should_redemptions_skip_request_queue: false,
+      };
+      if (userInput) { corpo.is_user_input_required = true; corpo.description = String(prompt || '').slice(0, 200); }
+      const r = await chiama(chi, '/channels/rewards', { metodo: 'POST', corpo, fetchImpl });
+      if (!r.ok) throw Object.assign(new Error(r.errore || 'errore Kick'), { status: r.stato || 0 });
+      const d = Array.isArray(r.dati) ? r.dati[0] : r.dati;
+      return d?.id ? { id: String(d.id), title: String(d.title || corpo.title), cost: Number(d.cost) || corpo.cost } : null;
+    },
+    async eliminaReward(_canale, rewardId) {
+      const id = String(rewardId || '');
+      if (!ULID.test(id) || !puoPremiare(chi)) return false;
+      const r = await chiama(chi, '/channels/rewards/' + id, { metodo: 'DELETE', fetchImpl });
+      return r.ok;
+    },
+    // FULFILLED → accettato, CANCELED → rifiutato. Dice solo se Kick l'ha fatto:
+    // il rimborso dei punti al rifiuto Kick non lo documenta, e non si promette.
+    async aggiornaRedemption(_canale, _rewardId, redemptionId, status) {
+      const id = String(redemptionId || '');
+      if (!ULID.test(id) || !puoPremiare(chi)) return false;
+      const dove = status === 'CANCELED' ? 'reject' : 'accept';
+      const r = await chiama(chi, '/channels/rewards/redemptions/' + dove, { metodo: 'POST', corpo: { ids: [id] }, fetchImpl });
+      // la risposta elenca solo i riscatti NON riusciti
+      return r.ok && !(Array.isArray(r.dati) && r.dati.some((x) => String(x?.id || '') === id));
+    },
+  });
+}
+
 // Gli eventi che vogliamo ricevere sul webhook. La chat è il cuore; gli altri
 // alimentano alert e moduli che già esistono.
 export const EVENTI = [
@@ -327,6 +390,7 @@ export const EVENTI = [
   { name: 'livestream.status.updated', version: 1 },
   { name: 'livestream.metadata.updated', version: 1 },
   { name: 'kicks.gifted', version: 1 },
+  { name: 'channel.reward.redemption.updated', version: 1 },
 ];
 
 export function iscrivi(login, opts) {

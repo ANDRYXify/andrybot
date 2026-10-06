@@ -465,6 +465,41 @@ Kick, la v2, il permesso, chi cambia per piattaforma, le azioni inline),
 `test/contratto/kick-titolo-categoria.test.mjs` (voce, Telegram, avvio,
 pannello e pagina della voce passano di lì).
 
+### I premi del canale su Kick
+
+Le fonti (docs.kick.com): l'evento `channel.reward.redemption.updated` v1, con
+`id`, `user_input`, `status` (`pending`, `accepted`, `rejected`), `reward`
+(`id`, `title`, `cost`, `description`) e `redeemer`; le rotte
+`/public/v1/channels/rewards` (elenco, crea, cambia, togli: cambiare e togliere
+solo all'app che ha creato il premio) e `.../redemptions/accept` e `reject`
+(fino a 25 id), con i permessi `channel:rewards:read` e `:write`, ora nel
+collegamento normale. Sul rimborso dei punti quando si rifiuta i documenti non
+dicono niente: su Kick il bot non promette mai «punti rimborsati».
+
+**Un riscatto nasce una volta.** Kick manda lo stesso evento quando il riscatto
+nasce (in attesa, o già accettato se il premio salta la coda) e a ogni cambio di
+stato, quando lo streamer lo accetta o lo rifiuta. La nascita è la prima volta che
+si vede quell'id con uno stato che non sia «rifiutato» (`kick/riscatti.js`); gli
+id visti stanno nel database, gli ultimi 500 per canale, così un riavvio fra la
+nascita e l'accettazione non lo fa rinascere.
+
+**Una porta sola.** Il riscatto di Kick si traduce nella forma di quello di
+Twitch (`channel.channel_points_custom_reward_redemption.add`, con `reward`,
+`user_input` e `piattaforma: 'kick'`) e passa da `_riscatto` (`bot.js`), la
+stessa porta dei riscatti di Twitch: avviso del premio, richiesta musicale,
+penitenza, contatore, muro delle emote; poi moduli e memoria, con la
+piattaforma. Si risponde nella chat di Kick, e il riscatto si chiude con chi
+premia su Kick: `premiKick` ha la forma di helix (`aggiornaRedemption`:
+completato → accetta, annullato → rifiuta). La penitenza ricorda dove è stata
+riscattata (`dove`), e parla lì anche alla fine.
+
+Chi riconosce il premio per **nome** (richiesta musicale, penitenze) lo riconosce
+anche su Kick, se il premio ha lo stesso nome. Chi lo riconosce per **id** (avvisi
+dei premi, contatori, muro) vuole il premio di Kick scelto o creato dal pannello.
+
+Collaudi: `test/unita/kick-premi.test.mjs` (l'esempio di docs.kick.com, la
+nascita, la porta, chi premia, le penitenze, il rimborso).
+
 ### Cosa NON fa ancora, e perché è detto qui
 
 Lo scudo anti-bot lavora solo su Twitch: legge eventi (follow a ondate, raid,

@@ -169,6 +169,9 @@ comandi diversi da quelli della riga italiana.
 - Se Kick manda due volte lo stesso evento, il bot lo conta e ci risponde una volta sola. [vai: account]
   en: If Kick sends the same event twice, the bot counts it and replies to it only once.
   es: Si Kick manda dos veces el mismo evento, el bot lo cuenta y le responde una sola vez.
+- I riscatti dei premi del canale su Kick arrivano al bot: un premio con il nome della richiesta musicale o delle penitenze funziona anche lì, e il bot risponde su Kick. [vai: musica]
+  en: Kick channel reward redemptions now reach the bot: a reward named like your song request or penance reward works there too, and the bot replies on Kick.
+  es: Los canjes de las recompensas del canal en Kick llegan al bot: una recompensa con el nombre de la petición musical o de las penitencias funciona también allí, y el bot responde en Kick.
 
 ## 2026-10-03
 

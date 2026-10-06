@@ -148,7 +148,9 @@ export class PenitenzeEngine {
 
       const durata = Math.max(1, Math.min(15, Math.round(Number(c.durataMin)) || 2));
       const id = this._nextId++;
-      const pen = { id, modo, tipo, valore, chi, count: 0, scadenza: Date.now() + durata * 60_000, ultimaFrase: '', ultimaTs: 0 };
+      // dove: la piattaforma del riscatto, per parlare li' anche alla fine
+      const dove = String(data?.piattaforma || 'twitch');
+      const pen = { id, modo, tipo, valore, chi, dove, count: 0, scadenza: Date.now() + durata * 60_000, ultimaFrase: '', ultimaTs: 0 };
       const lista = this.attive.get(channel) || [];
       lista.push(pen);
       this.attive.set(channel, lista);
@@ -159,7 +161,7 @@ export class PenitenzeEngine {
       const regola = modo === 'vieta'
         ? `${chi} ti ha VIETATO ${cosa} per ${durata} ${durata === 1 ? 'minuto' : 'minuti'}! Se la dici… si conta. 😈`
         : `${chi} ti obbliga a dire SOLO ${cosa} per ${durata} ${durata === 1 ? 'minuto' : 'minuti'}! Ogni altra frase… si conta. 😈`;
-      this.say(channel, `🔒 ${regola}`);
+      this.say(channel, `🔒 ${regola}`, dove);
       this._overlay(channel, { azione: 'start', id, modo, cosa: tipo, valore, durata, ...this._overlayOpts(c) });
       log.info(`penitenza #${id} su #${channel}: ${modo} "${valore}" ${durata}m (da ${chi})`);
       return true;
@@ -227,7 +229,7 @@ export class PenitenzeEngine {
     if (p.count > 0) {
       const pen = await this._scegliPenitenza(channel, c);
       const volte = p.count === 1 ? '1 volta' : `${p.count} volte`;
-      this.say(channel, `⏱️ Tempo scaduto! ${cosa}: beccato ${volte} → PENITENZA: ${pen}${p.count > 1 ? ` ×${p.count}` : ''} 😈`);
+      this.say(channel, `⏱️ Tempo scaduto! ${cosa}: beccato ${volte} → PENITENZA: ${pen}${p.count > 1 ? ` ×${p.count}` : ''} 😈`, p.dove);
       this._overlay(channel, { azione: 'end', id: p.id, count: p.count, penitenza: pen });
       // effetto/suono di fine penitenza. Formato: "preset:<id>" (suono pronto),
       // "effetto:<comando>" (effetto caricato) o, per retrocompatibilità, il
@@ -240,7 +242,7 @@ export class PenitenzeEngine {
         } catch { /* niente */ }
       }
     } else {
-      this.say(channel, `✅ Tempo scaduto! ${cosa}: 0 penitenze — salvo! 🎉`);
+      this.say(channel, `✅ Tempo scaduto! ${cosa}: 0 penitenze — salvo! 🎉`, p.dove);
       this._overlay(channel, { azione: 'end', id: p.id, count: 0, penitenza: '' });
     }
   }

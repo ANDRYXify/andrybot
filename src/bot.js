@@ -103,7 +103,8 @@ import { piattaformaDi, nomeSu } from './identita.js';
 // annunci): bot.js, puoParlare. YouTube no: la quota per scrivere nella chat
 // delle dirette e' una sola per tutto il servizio, e ogni messaggio la consuma.
 const PARLA_DA_SOLO = Object.freeze({ twitch: true, kick: true, youtube: false });
-import { tokenDi as tokenKick, collegati as kickCollegati, statoCanale as statoKick, moderatoreKick, puoModerare as puoModerareKick, allineaIscrizioni as allineaKick } from './kick/api.js';
+import { tokenDi as tokenKick, collegati as kickCollegati, statoCanale as statoKick, moderatoreKick, puoModerare as puoModerareKick, allineaIscrizioni as allineaKick, premiKick } from './kick/api.js';
+import * as riscattiKick from './kick/riscatti.js';
 import * as bjFeat from './features/blackjack.js';
 import * as seguitiFeat from './features/seguiti.js';
 import * as negozio from './features/negozio.js';
@@ -264,7 +265,9 @@ export class BotManager {
       }
     } catch (e) { log.error('arena rimborsi:', e?.message || e); }
     this.penitenze = new PenitenzeEngine({
-      say: (ch, t) => this.say(ch, t),
+      // la penitenza parla dove e' stata riscattata (dove: la sua piattaforma);
+      // quelle salvate prima non lo sanno, e parlano nella chat del canale
+      say: (ch, t, dove) => this.parlaDove(ch, t, dove),
       effects: this.effects,
       // penitenza scelta dall'IA: chiede al cervello una penitenza breve e
       // giocosa. Se il cervello non è disponibile ritorna null → rete di sicurezza.
@@ -493,6 +496,13 @@ export class BotManager {
     else if (this.puoParlare(channel)) this.vocePer({ channel, piattaforma: p })(t, opzioni);
     else return;
     try { this._momenti.osserva(channel, { ts: Date.now(), user: channel, testo: t, dalBot: true }); } catch { /* niente */ }
+  }
+
+  // Parla nella chat della piattaforma dove e' successa una cosa (un riscatto,
+  // una penitenza). Senza piattaforma, nella chat del canale.
+  parlaDove(channel, text, piattaforma) {
+    if (piattaforma) this.vocePer({ channel, piattaforma })(text);
+    else this.say(channel, text);
   }
 
   // IL BOT PUO' PARLARE DI SUA INIZIATIVA in questo canale? Sulla piattaforma
@@ -1385,19 +1395,8 @@ export class BotManager {
       this._setLive(channel, type === 'stream.online', data);
       return;
     }
-    // riscatto di un premio a PUNTI CANALE → alert mappato (effetto + messaggio)
-    if (type === 'channel.channel_points_custom_reward_redemption.add') {
-      this._premioRiscattato(channel, data);
-      // richiesta musicale a punti canale: se il premio è quello configurato,
-      // il testo del riscatto diventa una canzone in coda su Spotify.
-      songrequest.perRedemptionMusica(this.helix, channel, data, (t) => this.say(channel, t)).catch(() => {});
-      // penitenza a punti canale: vieta una parola/lettera allo streamer a tempo.
-      try { this.penitenze?.daRiscatto(channel, data); } catch (e) { log.debug(`#${channel} penitenza:`, e?.message || e); }
-      // contatore a punti canale: riscatto → +step (annuncio + overlay OBS).
-      try { contatori.perRiscatto(channel, data, (t) => this.say(channel, t), (p) => this.effects?.emit?.(channel, p)); } catch (e) { log.debug(`#${channel} contatore riscatto:`, e?.message || e); }
-      // esplosione sul muro delle emote, se il premio e' fra quelli scelti
-      try { this.muro?.suPremio(channel, data); } catch (e) { log.debug(`#${channel} muro premio:`, e?.message || e); }
-    }
+    // riscatto di un premio a PUNTI CANALE: la porta di tutti i riscatti
+    if (type === 'channel.channel_points_custom_reward_redemption.add') this._riscatto(channel, data);
     // Chi toglie e rimette il follow non e' un follower nuovo (features/seguiti.js):
     // il ripetuto si ferma qui, il ritorno cambia tipo prima di chiunque.
     if (type === 'channel.follow') {
@@ -1410,10 +1409,31 @@ export class BotManager {
     this._dispatchEvent(ev);
   }
 
+  // UN RISCATTO DI UN PREMIO DEL CANALE, da qualunque piattaforma: Twitch, o
+  // Kick tradotto nella stessa forma (eventoEsterno). Si risponde dove e'
+  // successo, e il riscatto si chiude con chi premia su QUELLA piattaforma:
+  // helix, o premiKick che ha la sua forma. Quello che riconosce il premio
+  // (per nome o per id) non sa da dove arriva.
+  _riscatto(channel, data) {
+    const piattaforma = data?.piattaforma || 'twitch';
+    const dire = this.vocePer({ channel, piattaforma });
+    const premiatore = piattaforma === 'twitch' ? this.helix : (piattaforma === 'kick' ? premiKick(channel) : null);
+    // avviso del premio: effetto in overlay e messaggio in chat
+    this._premioRiscattato(channel, data, dire, premiatore);
+    // richiesta musicale: se il premio e' quello scelto, il testo e' la canzone
+    songrequest.perRedemptionMusica(premiatore, channel, data, dire).catch(() => {});
+    // penitenza: vieta (o impone) una parola o una lettera allo streamer, a tempo
+    try { this.penitenze?.daRiscatto(channel, data); } catch (e) { log.debug(`#${channel} penitenza:`, e?.message || e); }
+    // contatore: riscatto → +step (annuncio + overlay OBS)
+    try { contatori.perRiscatto(channel, data, dire, (p) => this.effects?.emit?.(channel, p)); } catch (e) { log.debug(`#${channel} contatore riscatto:`, e?.message || e); }
+    // esplosione sul muro delle emote, se il premio e' fra quelli scelti
+    try { this.muro?.suPremio(channel, data); } catch (e) { log.debug(`#${channel} muro premio:`, e?.message || e); }
+  }
+
   // Uno spettatore ha riscattato un premio a punti canale: se è mappato a un
   // alert, lo spariamo (effetto in overlay + eventuale messaggio in chat) e
   // segniamo il riscatto come completato.
-  _premioRiscattato(channel, data) {
+  _premioRiscattato(channel, data, dire = (t) => this.say(channel, t), premiatore = this.helix) {
     try {
       const rewardId = data?.reward?.id;
       if (!rewardId) return;
@@ -1426,9 +1446,9 @@ export class BotManager {
         try { this.effects?.fireConOpzioni?.(channel, m.effetto, opz); } catch { /* niente */ }
       }
       if (m.suono) { try { this.effects?.firePreset?.(channel, m.suono, m.titolo, 100); } catch { /* niente */ } }
-      if (m.testo) this.say(channel, String(m.testo).replace(/\{user\}/g, utente).slice(0, 400));
+      if (m.testo) dire(String(m.testo).replace(/\{user\}/g, utente).slice(0, 400));
       // togli il riscatto dalla coda "in sospeso" (best-effort, solo premi nostri)
-      this.helix?.aggiornaRedemption?.(channel, rewardId, data?.id, 'FULFILLED').catch(() => {});
+      Promise.resolve(premiatore?.aggiornaRedemption?.(channel, rewardId, data?.id, 'FULFILLED')).catch(() => {});
       log.info(`premio punti canale «${m.titolo}» riscattato da ${utente} su #${channel}`);
     } catch (e) { log.error('premioRiscattato:', e?.message || e); }
   }
@@ -1963,6 +1983,24 @@ export class BotManager {
       }
       if (ev.tipo === 'metadati') {
         this._vistaKick(String(ev.channel).toLowerCase(), { titolo: ev.titolo, categoria: ev.categoria });
+        return;
+      }
+      // UN RISCATTO DI KICK: si fa solo quando nasce (kick/riscatti.js), poi
+      // passa dalla stessa porta dei riscatti di Twitch, con la stessa forma.
+      if (ev.tipo === 'riscatto') {
+        const ch = String(ev.channel).toLowerCase();
+        const r = ev.riscatto || {};
+        if (!riscattiKick.nascita(ch, r)) return;
+        const piattaforma = ev.piattaforma || 'kick';
+        const chi = String(ev.utente || '');
+        const data = {
+          id: String(r.id || ''), status: String(r.stato || ''), user_input: String(r.testo || ''),
+          user_name: chi, user_login: chi.toLowerCase(), user_id: String(ev.utenteId || ''),
+          reward: { id: String(r.premio?.id || ''), title: String(r.premio?.titolo || ''), cost: Number(r.premio?.costo) || 0, prompt: String(r.premio?.descrizione || '') },
+          piattaforma,
+        };
+        this._riscatto(ch, data);
+        this._dispatchEvent({ channel: ch, piattaforma, type: 'channel.channel_points_custom_reward_redemption.add', data });
         return;
       }
       // Seguiti, abbonamenti e regali entrano dalla STESSA porta degli eventi

@@ -18,6 +18,8 @@ export const SCOPE = [
   'user:read',            // sapere chi ha autorizzato
   'channel:read',         // titolo, categoria, stato della diretta
   'channel:write',        // cambiare titolo e categoria (!titolo, !categoria)
+  'channel:rewards:read', // i premi del canale (elencarli nel pannello)
+  'channel:rewards:write', // crearli, e accettare o rifiutare i riscatti
   'chat:write',           // far parlare il bot in chat
   'events:subscribe',     // ricevere i messaggi e gli eventi via webhook
 ];

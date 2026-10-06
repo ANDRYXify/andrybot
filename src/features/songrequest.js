@@ -208,7 +208,11 @@ export async function trySongRequest(msg, say) {
 // canale è in modo "punti" e il premio riscattato ha il nome configurato, il
 // testo del riscatto (user_input) è la canzone → la mettiamo in coda.
 // Ritorna true se ha gestito il riscatto (per non doppiarlo con altri alert).
-export async function perRedemptionMusica(helix, channel, data, say) {
+//
+// `premiatore` ha la forma di helix (aggiornaRedemption): helix su Twitch,
+// premiKick su Kick. «Punti rimborsati» si dice solo dove il rifiuto rimborsa
+// per documentazione, cioe' su Twitch: Kick non lo dice, e non si promette.
+export async function perRedemptionMusica(premiatore, channel, data, say) {
   try {
     const cfg = configMusica(channel);
     if (cfg.modo !== 'punti' || !cfg.premio) return false;
@@ -222,19 +226,20 @@ export async function perRedemptionMusica(helix, channel, data, say) {
     // dall'app; con un premio creato a mano da Twitch, Twitch non lo consente e
     // il rimborso non avviene (in quel caso non promettiamo un rimborso).
     const segna = async (stato) => {
-      if (!helix?.aggiornaRedemption || !rewardId || !redId) return false;
-      try { return await helix.aggiornaRedemption(channel, rewardId, redId, stato); }
+      if (!premiatore?.aggiornaRedemption || !rewardId || !redId) return false;
+      try { return await premiatore.aggiornaRedemption(channel, rewardId, redId, stato); }
       catch { return false; }
     };
+    const rimborsa = (data?.piattaforma || 'twitch') === 'twitch';
     const q = taglia(data?.user_input);
     if (!q) {
       const rimb = await segna('CANCELED');
-      say(`🎵 ${chi}, scrivi il nome della canzone nel riscatto!${rimb ? ' Punti rimborsati.' : ''}`);
+      say(`🎵 ${chi}, scrivi il nome della canzone nel riscatto!${rimb && rimborsa ? ' Punti rimborsati.' : ''}`);
       return true;
     }
     const esito = await accoda(channel, q, `🎵 ${chi} ha messo in coda: `);
     if (esito.ok) { await segna('FULFILLED'); say(esito.msg); }
-    else { const rimb = await segna('CANCELED'); say(esito.msg + (rimb ? ' Punti rimborsati.' : '')); }
+    else { const rimb = await segna('CANCELED'); say(esito.msg + (rimb && rimborsa ? ' Punti rimborsati.' : '')); }
     return true;
   } catch (e) {
     log.error('perRedemptionMusica:', e?.message || e);

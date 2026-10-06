@@ -59,10 +59,10 @@ export function daChatMessage(payload, { canale, loginBot = '' } = {}) {
 // devono sapere da dove arrivano.
 export function daEvento(tipo, payload, { canale } = {}) {
   const p = payload || {};
-  const chi = String(p.follower?.username || p.subscriber?.username || p.gifter?.username || p.sender?.username || p.user?.username || '');
+  const chi = String(p.follower?.username || p.subscriber?.username || p.gifter?.username || p.sender?.username || p.redeemer?.username || p.user?.username || '');
   // l'id di Kick della persona: serve a chi modera su Kick (un timeout da un
   // modulo); un regalo anonimo non ce l'ha
-  const id = p.follower?.user_id ?? p.subscriber?.user_id ?? p.gifter?.user_id ?? p.sender?.user_id ?? p.user?.user_id;
+  const id = p.follower?.user_id ?? p.subscriber?.user_id ?? p.gifter?.user_id ?? p.sender?.user_id ?? p.redeemer?.user_id ?? p.user?.user_id;
   const base = { piattaforma: 'kick', channel: String(canale || '').toLowerCase(), utente: chi, ...(id != null ? { utenteId: String(id) } : {}) };
   switch (tipo) {
     case 'channel.followed':
@@ -79,6 +79,19 @@ export function daEvento(tipo, payload, { canale } = {}) {
     // (docs/PIATTAFORME.md, «I Kicks»): hanno un tipo loro, dappertutto.
     case 'kicks.gifted':
       return { ...base, tipo: 'kicks', quanti: Math.max(0, Math.floor(Number(p.gift?.amount) || 0)), messaggio: String(p.gift?.message || '').slice(0, 300) };
+    // UN RISCATTO DI UN PREMIO DEL CANALE. Kick manda lo stesso evento quando
+    // nasce e a ogni cambio di stato: quale sia la nascita lo decide il bot
+    // (kick/riscatti.js), qui si dice solo cosa e' arrivato.
+    case 'channel.reward.redemption.updated':
+      if (!p.id || !p.reward?.id) return null;
+      return {
+        ...base, tipo: 'riscatto',
+        riscatto: {
+          id: String(p.id), stato: String(p.status || ''),
+          testo: String(p.user_input || '').slice(0, 500),
+          premio: { id: String(p.reward.id), titolo: String(p.reward.title || '').slice(0, 100), costo: Math.max(0, Number(p.reward.cost) || 0), descrizione: String(p.reward.description || '').slice(0, 200) },
+        },
+      };
     // titolo e categoria cambiati: la stessa vista che il giro rilegge ogni due
     // minuti, subito (bot.js, _vistaKick)
     case 'livestream.metadata.updated':
