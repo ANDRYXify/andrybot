@@ -491,6 +491,24 @@ export const normPubblicita = (x) => {
   };
 };
 
+// I PREMI A TEMPO (docs/PREMI-A-TEMPO.md). Un elemento della scena come il
+// treno: una carta per ogni tempo in corso, col nome del premio, quanto manca,
+// una barra che si svuota e chi l'ha riscattato. I tempi non li sceglie lo
+// Studio: li porta il bot (premi-tempo.js, inCorso). Qui quante carte al piu',
+// se mostrare la barra e chi.
+export const normTempi = (x) => {
+  x = x || {};
+  return {
+    attivo: x.attivo === true,
+    quanti: clampInt(x.quanti, 1, 5, 3),
+    barra: x.barra !== false,
+    mostraChi: x.mostraChi !== false,
+    posizione: unoDi(x.posizione, POS_ANG, 'alto-destra'),
+    xy: xyOk(x.xy),
+    stile: normWidgetStile(x.stile),
+  };
+};
+
 // IL TRENO. E' un elemento della scena come gli altri — stessa veste, stesso
 // angolo, stesso trascinamento — piu' le due scelte che sono solo sue: se
 // mostrare chi ha spinto di piu', e se dirlo in chat. La chat e la scena sono

@@ -77,6 +77,7 @@ import * as donaStripe from '../features/donazioni-stripe.js';
 import * as donaSatispay from '../features/donazioni-satispay.js';
 import * as donaMedia from '../features/donazioni-media.js';
 import * as spotify from '../features/spotify.js';
+import * as musicaOverlayFeat from '../features/musica-overlay.js';
 import * as giveaway from '../features/giveaway.js';
 import * as webauthn from './webauthn.js';
 import { comprimi, convertiPerEmote, svgInPng, LATO_LIBRERIA, normChiave } from '../features/compress.js';
@@ -121,6 +122,7 @@ import * as provaScudo from '../features/tg-scudo-prova.js';
 import { stato as statoArena } from '../features/arena.js';
 import { VOCI as VOCI_TWITCH } from '../features/sondaggi.js';
 import * as modalitaChat from '../features/modalita-chat.js';
+import * as premiTempo from '../features/premi-tempo.js';
 import { LIMITI_AZIONI } from '../features/modules.js';
 import { normModalita } from '../features/quando-lavora.js';
 import * as instagram from '../features/instagram.js';
@@ -182,7 +184,7 @@ import {
   ICONE_OVL_K, icoOk, PESO_OVL, MAIUSC_OVL, USCITA_OVL,
   FORME_OVL, MATERIE_OVL, CORNICI_OVL, COMP_OVL, chiAlertOk,
   normAlertStile, normChatStile, normWidgetStile, normOverlayWidgetCfg, normOverlayStile, normGoals, MAX_GOAL,
-  normMusica, normTimer, normPubblicita, normTreno, normBit, normBoss, normScritta, normEtichetta, normMuro, FIGURE_MURO, normCartelli, normDisegno,
+  normMusica, normTimer, normPubblicita, normTempi, normTreno, normBit, normBoss, normScritta, normEtichetta, normMuro, FIGURE_MURO, normCartelli, normDisegno,
   normArena,
 } from './stile.js';
 
@@ -191,7 +193,7 @@ import {
 // di canale (alerts/chatOverlay/overlayWidget). Retro-compatibile: se non c'è
 // una lista `overlays`, ne ricaviamo uno solo ("principale") con tutto visibile
 // e le posizioni attuali → chi ha già l'overlay lo vede identico.
-const ELEM_OVERLAY = ['alert', 'chat', 'wf', 'ws', 'goal', 'cont', 'cart', 'musica', 'timer', 'pubblicita', 'treno', 'bit', 'pen', 'boss', 'arena', 'scritta', 'etichetta', 'muro', 'effetti', 'consolify'];
+const ELEM_OVERLAY = ['alert', 'chat', 'wf', 'ws', 'goal', 'cont', 'cart', 'musica', 'timer', 'pubblicita', 'tempi', 'treno', 'bit', 'pen', 'boss', 'arena', 'scritta', 'etichetta', 'muro', 'effetti', 'consolify'];
 const _mostraDefault = () => ELEM_OVERLAY.reduce((o, k) => (o[k] = true, o), {});
 // Gli elementi nati da un interruttore che c'era gia' (docs/OVERLAY.md, «Lo
 // stesso interruttore di prima»): finche' in un overlay non sono scritti,
@@ -1195,6 +1197,33 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     }
     return lista;
   };
+  // I premi come li vede la carta «Premi a tempo»: per ognuno la durata che
+  // dice il nome (o la descrizione), cosa fa pensare il nome, la scelta dello
+  // streamer e il tempo che vale adesso. La regola e' una sola, in
+  // premi-tempo.js: il pannello la legge, non la rifa'.
+  const tempiDeiPremi = (login, tutti) => {
+    const salvati = new Map(pointAlerts.list(login).map((r) => [r.reward_id, premiTempo.leggiSalvato(r)]));
+    return (tutti || []).map((r) => {
+      const piattaforma = r.piattaforma || 'twitch';
+      const dalNome = premiTempo.durataDalTesto(r.title);
+      const dallaDescrizione = dalNome ? null : premiTempo.durataDalTesto(r.descrizione);
+      return {
+        id: r.id, titolo: r.title, costo: r.cost || 0, piattaforma,
+        dalNome: dalNome || dallaDescrizione || 0,
+        origine: dalNome ? 'nome' : (dallaDescrizione ? 'descrizione' : ''),
+        suggerita: premiTempo.cosaDalNome(r.title),
+        cose: premiTempo.COSE_DI(piattaforma),
+        salvato: salvati.get(r.id) || null,
+        vale: premiTempo.tempoDi(salvati.get(r.id), { title: r.title, prompt: r.descrizione }, piattaforma),
+      };
+    });
+  };
+  const ERRORI_TEMPO = {
+    'solo-twitch': 'su Kick un premio a tempo può essere solo un conto alla rovescia',
+    durata: 'la durata va da 10 secondi a 30 giorni',
+    'vip-corto': 'un VIP a tempo dura almeno un minuto',
+    'modo-lungo': 'una modalità della chat dura al massimo un\'ora',
+  };
   // Il pannello puo' leggere i premi da almeno una piattaforma?
   const premiLeggibili = (login) => premiDi(login).permessoOk || kickApi.puoPremiare(login);
   // Il permesso dei punti canale che manca, detto con DOVE si concede, nella
@@ -1632,39 +1661,14 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   }));
 
   // COSA STA SUONANDO, per il player dell'overlay. Spotify non sa spingere:
-  // qualcuno deve chiedere. Chiede l'OVERLAY, non il server a vuoto — cosi'
-  // quando nessuno guarda non partono chiamate. E la risposta e' in cache per
-  // qualche secondo, quindi dieci sorgenti browser aperte valgono comunque una
-  // chiamata sola: e' il numero di spettatori che non deve pesare su Spotify.
-  const musicaCache = new Map();   // login → { ts, dati }
-  const musicaUltima = new Map();  // login → { ts, dati }  l'ultima lettura CERTA
-  const MUSICA_CACHE_MS = 4000;
-  const MUSICA_MEMORIA_MS = 60000;
+  // qualcuno deve chiedere. Chiede l'OVERLAY, non il server a vuoto: quando
+  // nessuno guarda non partono chiamate. Cache, ultima lettura buona, una
+  // lettura alla volta e risposte che valgono per adesso stanno in
+  // features/musica-overlay.js (docs/OVERLAY.md, «Il player non si blocca»).
+  const musicaOverlay = musicaOverlayFeat.lettore({ spotify });
   app.get('/overlay/:login/musica', wrap(async (req, res) => {
     if (!chiaveOk(req)) return notFound(res);
-    const login = String(req.params.login).toLowerCase();
-    const ora = Date.now();
-    const c = musicaCache.get(login);
-    if (c && ora - c.ts < MUSICA_CACHE_MS) return res.json(c.dati);
-    let dati = { stato: 'niente', suona: false };
-    try {
-      if (spotify.collegato(login)) {
-        dati = await spotify.oraSuona(login);
-        if (dati.id) {
-          const b = await spotify.battito(login, dati.id);
-          if (b) { dati.bpm = b.bpm; dati.energia = b.energia; }
-        }
-      }
-    } catch { dati = { stato: 'ignoto', suona: false }; }
-    // Quando non lo sappiamo si risponde con l'ultima cosa certa, se e' fresca:
-    // un intoppo di un attimo non deve spegnere un player che sta suonando.
-    if (dati.stato === 'ignoto') {
-      const u = musicaUltima.get(login);
-      if (u && ora - u.ts < MUSICA_MEMORIA_MS) dati = u.dati;
-    } else {
-      musicaUltima.set(login, { ts: ora, dati });
-    }
-    musicaCache.set(login, { ts: ora, dati });
+    const dati = await musicaOverlay.musica(String(req.params.login).toLowerCase());
     res.set('Cache-Control', 'no-store');
     res.json(dati);
   }));
@@ -7080,6 +7084,7 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
       out.overlayTreno = normTreno(b.overlayTreno);
     }
     if (b.overlayPubblicita !== undefined) out.overlayPubblicita = normPubblicita(b.overlayPubblicita);
+    if (b.overlayTempi !== undefined) out.overlayTempi = normTempi(b.overlayTempi);
     if (b.overlayCartelli !== undefined) {
       out.overlayCartelli = normCartelli(b.overlayCartelli);
     }
@@ -7507,7 +7512,7 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     // OVERLAY IN TEMPO REALE: se è cambiato qualcosa che l'overlay mostra
     // (CSS, widget, chat, alert, temi, stato), spingiamo SUBITO il nuovo tema
     // via SSE così la fonte OBS si aggiorna da sola, senza bisogno di refresh.
-    if (['overlayCss', 'overlayWidget', 'chatOverlay', 'alerts', 'overlayTemplates', 'overlayStato', 'overlays', 'overlayGoals', 'overlayMusica', 'overlayTimer', 'overlayPubblicita', 'overlayTreno', 'overlayBit', 'overlayBoss', 'overlayArena', 'overlayScritta', 'overlayEtichetta', 'overlayMuro', 'overlayCartelli', 'fontPersonali'].some((k) => k in out)) {
+    if (['overlayCss', 'overlayWidget', 'chatOverlay', 'alerts', 'overlayTemplates', 'overlayStato', 'overlays', 'overlayGoals', 'overlayMusica', 'overlayTimer', 'overlayPubblicita', 'overlayTempi', 'overlayTreno', 'overlayBit', 'overlayBoss', 'overlayArena', 'overlayScritta', 'overlayEtichetta', 'overlayMuro', 'overlayCartelli', 'fontPersonali'].some((k) => k in out)) {
       // segnale di RICARICA: ogni overlay ricarica il PROPRIO tema (per ?o=id),
       // così più overlay diversi si aggiornano ciascuno col suo layout.
       try { effects.emit(user.login, { tipo: 'tema' }); }
@@ -9273,6 +9278,8 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     // a QUALSIASI riscatto, non solo a quelli creati qui.
     const tutti = permessoOk ? await tuttiIPremi(login) : [];
     res.json({
+      tempi: tempiDeiPremi(login, tutti),
+      inCorso: premiTempo.inCorso(login),
       premi: pointAlerts.list(login),
       effetti: effectsDb.list(login).map((e) => ({ comando: e.comando, tipo: e.tipo, schermo: e.schermo || '' })),
       tutti,
@@ -9310,7 +9317,8 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     const opzioni = (xy || chroma) ? JSON.stringify({ xy: xy || null, chroma }) : '';
     const esistente = pointAlerts.getByReward(login, rewardId) || {};
     if (!suono && !effetto && !testo) {
-      pointAlerts.remove(login, rewardId);
+      // il tempo del premio, se c'e', resta: e' un'altra scelta
+      pointAlerts.togliAvviso(login, rewardId);
     } else {
       pointAlerts.add(login, {
         rewardId,
@@ -9320,6 +9328,57 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
       });
     }
     res.json({ ok: true, premi: pointAlerts.list(login) });
+  }));
+
+  // I PREMI A TEMPO (docs/PREMI-A-TEMPO.md). Si salvano tutti insieme, dalla
+  // carta «Premi a tempo». La piattaforma di un premio la dice il suo id, non
+  // il pannello: un premio di Kick non puo' accendere una modalita' di Twitch.
+  // Una scelta uguale a quella di serie non si scrive: il premio torna a
+  // durare quanto dice il suo nome, e rinominarlo lo cambia.
+  app.post('/api/streamer/premi/tempi', requireLogin, wrap(async (req, res) => {
+    if (!esigiFunzione(req, res, 'effetti', 'Gli effetti e i premi a punti canale')) return;
+    const login = currentUser(req).login;
+    if (!premiLeggibili(login)) return res.status(403).json({ errore: permessoPremi(premiDi(login)), permesso: true, rimedio: premiDi(login).rimedio });
+    const righe = Array.isArray(req.body?.premi) ? req.body.premi.slice(0, 100) : [];
+    const pronte = [];
+    for (const r of righe) {
+      const rewardId = String(r?.rewardId || '').trim().slice(0, 64);
+      if (!rewardId) continue;
+      const piattaforma = kickApi.eIdKick(rewardId) ? 'kick' : 'twitch';
+      const n = premiTempo.normTempo(r?.tempo, piattaforma);
+      const titolo = String(r?.titolo || '').slice(0, 60);
+      if (n.errore) return res.status(400).json({ errore: ERRORI_TEMPO[n.errore] || 'scelta non valida', codice: n.errore, premio: titolo });
+      pronte.push({ rewardId, titolo, costo: Number(r?.costo) || 0, tempo: premiTempo.eDiSerie(n.tempo) ? null : n.tempo });
+    }
+    for (const r of pronte) pointAlerts.impostaTempo(login, r);
+    const tutti = await tuttiIPremi(login);
+    res.json({ ok: true, tempi: tempiDeiPremi(login, tutti), inCorso: premiTempo.inCorso(login) });
+  }));
+
+  // La prova di un premio a tempo: il suo conto alla rovescia, solo in scena
+  // (premi-tempo.js, prova). La durata e' quella che vale adesso, salvata.
+  app.post('/api/streamer/premi/tempi/prova', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const rewardId = String(req.body?.rewardId || '').trim().slice(0, 64);
+    const premio = (await tuttiIPremi(login)).find((r) => r.id === rewardId);
+    if (!premio) return res.status(404).json({ errore: 'premio sconosciuto' });
+    // la durata che il pannello mostra, anche se non e' ancora salvata: si prova
+    // quello che si vede; senza, quella che vale adesso
+    const vista = Math.round(Number(req.body?.durata) || 0);
+    const t = vista ? null : premiTempo.tempoDi(premiTempo.leggiSalvato(pointAlerts.getByReward(login, rewardId)), { title: premio.title, prompt: premio.descrizione }, premio.piattaforma || 'twitch');
+    const durata = vista || t?.durata || 0;
+    if (durata < premiTempo.DURATA_MIN || durata > premiTempo.DURATA_MAX) return res.status(400).json({ errore: 'il premio non e\' a tempo', codice: 'non-a-tempo' });
+    const r = manager.premiTempo?.prova(login, { rewardId, titolo: premio.title, durata, chi: streamers.get(login)?.display || login });
+    res.json({ ok: !!r, inCorso: premiTempo.inCorso(login) });
+  }));
+
+  // Finire prima un tempo in corso: un premio, o una modalita' della chat.
+  app.post('/api/streamer/premi/tempi/ferma', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const chiave = String(req.body?.chiave || '');
+    if (!/^(p:[A-Za-z0-9-]{1,64}|m:(emote|unici|sub))$/.test(chiave)) return res.status(400).json({ errore: 'tempo sconosciuto' });
+    const fatto = await manager.premiTempo?.ferma(login, chiave);
+    res.json({ ok: !!fatto, inCorso: premiTempo.inCorso(login) });
   }));
 
   app.post('/api/streamer/premi', requireLogin, wrap(async (req, res) => {

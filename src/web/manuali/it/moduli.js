@@ -163,6 +163,7 @@ export default {
       ['Bits / cheer', 'qualcuno manda dei bit', '<code>$bits</code>'],
       ['Kicks (Kick)', 'qualcuno regala dei Kicks su Kick', '<code>$kicks</code>'],
       ['Riscatto punti canale', 'qualcuno riscatta un qualsiasi premio a punti canale', '<code>$premio</code>'],
+      ['Finisce il tempo di un premio', 'finisce il tempo di un premio a punti canale che dura (carta «Premi a tempo» in Effetti), anche se lo ferma prima un mod o lo streamer', '<code>$premio</code>, <code>$user</code> è chi l\'ha riscattato per ultimo'],
       ['Primo messaggio di un utente', 'qualcuno scrive per la prima volta nel tuo canale (lo segna Twitch)', '<code>$user</code>'],
       ['Sei andato in live', 'la diretta comincia', ''],
       ['Fine live', 'la diretta finisce', ''],

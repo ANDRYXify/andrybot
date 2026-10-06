@@ -523,6 +523,7 @@ export default {
     ] },
     { p: [
       'Le stesse modalità le accende un Modulo, con l\'azione «Modalità della chat a tempo»: un premio a punti canale, un evento come un hype train o un raid, un comando tuo come <code>!festa $arg1</code>. La chat ci arriva da sola con <code>!sblocca</code>, pagando in monete.',
+      'Per un premio a punti canale c\'è anche una strada più corta: nella carta «Premi a tempo», in «Effetti & suoni», apri il premio e in «Cosa dura» scegli la modalità. Il premio la accende per il suo tempo, e se un mod l\'aveva già accesa i punti tornano a chi l\'ha riscattato (<a href="/manuale/effetti">manuale degli effetti</a>). Con <code>!tempi</code> chiunque vede quanto manca.',
       'Se la modalità era già accesa da un mod, il bot non la tocca e alla fine non la spegne; con <code>off</code> ti dice che si spegne dalle impostazioni della chat di Twitch. Se la accendi di nuovo mentre corre, dura fino alla fine più lontana delle due. La fine resta segnata anche se il bot si riavvia.',
       'Chat lenta e soli follower non ci sono: le usa lo scudo, e uno sblocco per gioco non deve riaprirle in mezzo a un raid.',
       'I tre comandi stanno nella scheda «Comandi», nella famiglia «Modalità della chat a tempo»: lì li spegni, li rinomini o li riservi.',

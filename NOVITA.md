@@ -214,6 +214,30 @@ comandi diversi da quelli della riga italiana.
 - «Per tutti i momenti» mette in ogni momento la scelta che vale davvero: dove non hai frasi tue resta «Le nostre», e la carta non risulta da salvare per niente. [vai: personalita]
   en: “For every moment” gives each moment the choice that really applies: where you have no lines of your own it stays “Ours”, and the card no longer shows as unsaved for nothing.
   es: «Para todos los momentos» pone en cada momento la opción que vale de verdad: donde no tienes frases tuyas se queda «Las nuestras», y la tarjeta ya no aparece sin guardar por nada.
+- [importante] I premi a punti canale che durano hanno un tempo vero: il bot lo fa partire, lo dice in chat, lo mostra sull'overlay e lo chiude da solo. [vai: effetti]
+  en: Channel-point rewards that last now have a real timer: the bot starts it, says so in chat, shows it on the overlay and ends it by itself.
+  es: Las recompensas de puntos de canal que duran tienen ahora un tiempo de verdad: el bot lo pone en marcha, lo dice en el chat, lo muestra en el overlay y lo cierra solo.
+  > I premi a punti canale a tempo
+  > Il tempo lo legge dal nome del premio, anche per quelli che hai già. Nella carta «Premi a tempo» lo cambi e scegli cosa dura: su Twitch anche la chat in solo emote o il VIP. Se non si può fare, i punti tornano.
+  en> Timed channel-point rewards
+  en> It reads the time from the reward name, for the rewards you already have too. In the “Timed rewards” card you change it and choose what lasts: on Twitch even emote-only chat or VIP. If it can't happen, the points go back.
+  es> Las recompensas de puntos de canal con tiempo
+  es> Lee el tiempo del nombre de la recompensa, también de las que ya tienes. En la tarjeta «Recompensas con tiempo» lo cambias y eliges qué dura: en Twitch también el chat en solo emotes o el VIP. Si no se puede, los puntos vuelven.
+- Il pezzo «Premi a tempo» dell'Overlay Studio mostra i premi che durano mentre corrono: il nome, quanto manca, una barra e chi li ha riscattati. Ci sono anche le modalità della chat accese a tempo da un mod. [vai: alert]
+  en: The “Timed rewards” piece in the Overlay Studio shows the lasting rewards while they run: the name, the time left, a bar and who redeemed them. Chat modes a mod turned on for a time show up too.
+  es: La pieza «Recompensas con tiempo» del Overlay Studio muestra las recompensas que duran mientras corren: nombre, cuánto falta, una barra y quién las canjeó. También salen los modos del chat que un mod activó con tiempo.
+- In chat chiunque scrive !tempi e sa quali premi a tempo stanno correndo e quanto manca; un mod li ferma con !tempi stop. [vai: moduli]
+  en: In chat anyone can type !tempi to see which timed rewards are running and how long is left; a mod ends them with !tempi stop.
+  es: En el chat cualquiera escribe !tempi y sabe qué recompensas con tiempo están corriendo y cuánto falta; un mod las para con !tempi stop.
+- Nei Moduli c'è l'evento «Finisce il tempo di un premio», con $premio e $user, per far partire qualcosa quando il tempo di un premio finisce. [vai: moduli]
+  en: Modules have a new “A timed reward runs out” event, with $premio and $user, to trigger something when a reward's time ends.
+  es: En los Módulos está el evento «Termina el tiempo de una recompensa», con $premio y $user, para lanzar algo cuando termina el tiempo de una recompensa.
+- Una penitenza riscattata con un premio che dice un tempo nel nome dura quel tempo, invece della durata scelta nella scheda delle penitenze. [vai: penitenze]
+  en: A penance redeemed with a reward that says a time in its name lasts that long, instead of the duration set in the penances tab.
+  es: Una penitencia canjeada con una recompensa que dice un tiempo en el nombre dura ese tiempo, en lugar de la duración elegida en la pestaña de penitencias.
+- Il player di Spotify sull'overlay non si blocca più su una canzone: una risposta che non arriva scade, la barra non torna indietro e a fine brano il prossimo arriva subito. [vai: alert]
+  en: The Spotify player on the overlay no longer gets stuck on a song: a reply that never comes times out, the bar never jumps back and the next song shows up right when one ends.
+  es: El reproductor de Spotify del overlay ya no se queda atascado en una canción: una respuesta que no llega caduca, la barra no vuelve atrás y al terminar un tema el siguiente llega enseguida.
 
 ## 2026-10-03
 

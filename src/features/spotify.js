@@ -13,6 +13,27 @@ import { makeLog } from '../logger.js';
 
 const log = makeLog('spotify');
 
+// NIENTE ASPETTA PER SEMPRE, NIENTE INSISTE (docs/OVERLAY.md, «Il player non si
+// blocca»):
+//  · ogni chiamata ha un tempo limite: una risposta appesa teneva fermo il
+//    player dell'overlay fino a cinque minuti;
+//  · un 429 dice quanto aspettare (Retry-After), e si aspetta: il limite e'
+//    dell'app, quindi la pausa vale per tutti i canali che usano quell'app.
+//    Richiedere subito teneva l'app limitata;
+//  · il token si rinnova una volta alla volta: due rinnovi insieme partono
+//    dallo stesso token di rinnovo, e se Spotify lo cambia al primo il
+//    secondo puo' fallire.
+let TEMPO_MAX = 6000;
+let ora = () => Date.now();
+const fermiFino = new Map();     // app (clientId) → fino a quando Spotify ha chiesto di aspettare
+const rinnovi = new Map();       // login → rinnovo del token in corso
+export function _prove({ tempoMax, orologio, azzera } = {}) {
+  if (tempoMax) TEMPO_MAX = tempoMax;
+  if (orologio) ora = orologio;
+  if (azzera) { fermiFino.clear(); rinnovi.clear(); battiti.clear(); battitiInVolo.clear(); senzaBattito.clear(); }
+}
+const limite = () => AbortSignal.timeout(TEMPO_MAX);
+
 const ACCOUNTS = 'https://accounts.spotify.com';
 const API = 'https://api.spotify.com/v1';
 // aggiungere alla coda + leggere la riproduzione in corso
@@ -58,6 +79,7 @@ async function tokenCall(login, params) {
   try {
     const r = await fetch(`${ACCOUNTS}/api/token`, {
       method: 'POST',
+      signal: limite(),
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
         Authorization: 'Basic ' + Buffer.from(`${c.clientId}:${c.clientSecret}`).toString('base64'),
@@ -74,7 +96,7 @@ async function tokenCall(login, params) {
 export async function collega(login, code) {
   const j = await tokenCall(login, { grant_type: 'authorization_code', code, redirect_uri: config.spotify.redirectUri });
   if (!j?.access_token) return false;
-  spotifyTokens.set(login, { access: j.access_token, refresh: j.refresh_token || '', scadenza: Date.now() + (j.expires_in || 3600) * 1000 });
+  spotifyTokens.set(login, { access: j.access_token, refresh: j.refresh_token || '', scadenza: ora() + (j.expires_in || 3600) * 1000 });
   return true;
 }
 
@@ -82,14 +104,23 @@ export async function collega(login, code) {
 async function tokenValido(login) {
   const t = spotifyTokens.get(login);
   if (!t?.refresh) return null;
-  if (t.access && (t.scadenza - 30000) > Date.now()) return t.access;
-  const j = await tokenCall(login, { grant_type: 'refresh_token', refresh_token: t.refresh });
-  if (!j?.access_token) return null;
-  spotifyTokens.set(login, { access: j.access_token, refresh: j.refresh_token || t.refresh, scadenza: Date.now() + (j.expires_in || 3600) * 1000 });
-  return j.access_token;
+  if (t.access && (t.scadenza - 30000) > ora()) return t.access;
+  let p = rinnovi.get(login);
+  if (!p) {
+    p = (async () => {
+      const j = await tokenCall(login, { grant_type: 'refresh_token', refresh_token: t.refresh });
+      if (!j?.access_token) return null;
+      spotifyTokens.set(login, { access: j.access_token, refresh: j.refresh_token || t.refresh, scadenza: ora() + (j.expires_in || 3600) * 1000 });
+      return j.access_token;
+    })().finally(() => rinnovi.delete(login));
+    rinnovi.set(login, p);
+  }
+  return p;
 }
 
 async function apiCall(login, method, path, { query, body } = {}) {
+  const app = credenziali(login).clientId || '';
+  if ((fermiFino.get(app) || 0) > ora()) return { ok: false, status: 429 };
   const tok = await tokenValido(login);
   if (!tok) return { ok: false, status: 401 };
   let url = API + path;
@@ -97,9 +128,16 @@ async function apiCall(login, method, path, { query, body } = {}) {
   try {
     const r = await fetch(url, {
       method,
+      signal: limite(),
       headers: { Authorization: 'Bearer ' + tok, ...(body ? { 'Content-Type': 'application/json' } : {}) },
       body: body ? JSON.stringify(body) : undefined,
     });
+    if (r.status === 429) {
+      const s = Number(r.headers?.get?.('retry-after'));
+      const ms = Math.min(10 * 60_000, Math.max(1000, (Number.isFinite(s) && s > 0 ? s : 5) * 1000));
+      fermiFino.set(app, ora() + ms);
+      log.warn(`Spotify chiede di aspettare ${Math.round(ms / 1000)} s`);
+    }
     let dati = null;
     try { dati = r.status === 204 ? null : await r.json(); } catch { /* niente */ }
     return { ok: r.ok, status: r.status, dati };
@@ -198,23 +236,39 @@ export async function oraSuona(login) {
 // l'energia vengono da Spotify, e la FASE si ricava da dove sei nella canzone.
 // Se Spotify non lo da' (l'endpoint non e' garantito a tutte le app), si torna
 // null e il player balla come prima: mai un errore a schermo per questo.
+//
+// Si ricorda solo una risposta certa: un brano che ha il battito, o uno che
+// Spotify dice di non avere. Un intoppo (rete, 429) non lascia quel brano senza
+// battito per sempre. E se Spotify dice che quest'app il battito non lo puo'
+// leggere (403: le app nuove non hanno /audio-features), non si chiede piu'
+// per un giorno: sarebbe una chiamata buttata a ogni canzone.
 const battiti = new Map();
-export async function battito(login, idBrano) {
+const battitiInVolo = new Map();
+const senzaBattito = new Map();   // app → fino a quando non chiederlo
+export function battito(login, idBrano) {
   const id = String(idBrano || '');
-  if (!id) return null;
+  if (!id) return Promise.resolve(null);
   const c = battiti.get(id);
-  if (c !== undefined) return c;
-  let fuori = null;
-  try {
+  if (c !== undefined) return Promise.resolve(c);
+  const app = credenziali(login).clientId || '';
+  if ((senzaBattito.get(app) || 0) > ora()) return Promise.resolve(null);
+  let p = battitiInVolo.get(id);
+  if (p) return p;
+  p = (async () => {
     const r = await apiCall(login, 'GET', '/audio-features/' + encodeURIComponent(id));
+    if (r.status === 403 || r.status === 401) { if (r.status === 403) senzaBattito.set(app, ora() + 86_400_000); return null; }
     const d = r.dati;
-    if (d && Number(d.tempo) > 0) {
-      fuori = { bpm: Math.round(Number(d.tempo)), energia: Math.max(0, Math.min(1, Number(d.energy) || 0.5)) };
+    if (r.ok && d && Number(d.tempo) > 0) {
+      const fuori = { bpm: Math.round(Number(d.tempo)), energia: Math.max(0, Math.min(1, Number(d.energy) || 0.5)) };
+      if (battiti.size > 300) battiti.clear();
+      battiti.set(id, fuori);
+      return fuori;
     }
-  } catch (e) { fuori = null; }
-  if (battiti.size > 300) battiti.clear();
-  battiti.set(id, fuori);
-  return fuori;
+    if (r.ok || r.status === 404) battiti.set(id, null);
+    return null;
+  })().catch(() => null).finally(() => battitiInVolo.delete(id));
+  battitiInVolo.set(id, p);
+  return p;
 }
 
 // Il brano di adesso per !song: anche in pausa e' quello che stai ascoltando.

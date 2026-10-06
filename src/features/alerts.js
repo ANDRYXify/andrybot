@@ -8,6 +8,7 @@
 // Tutta la configurazione (e lo stato dei widget) vive in streamers.settings.
 import { streamers, effects as effectsDb, statoVivo } from '../db.js';
 import { linguaChat } from './lingua-canale.js';
+import { inCorso as tempiInCorso } from './premi-tempo.js';
 
 // I titoli di base del conto alla pubblicita', nella lingua della chat: li
 // legge chi guarda la diretta.
@@ -593,6 +594,9 @@ export class AlertsEngine {
       musica: this._musicaConVideo(channel, s.overlayMusica),
       timer: (s.overlayTimer && typeof s.overlayTimer === 'object') ? s.overlayTimer : null,
       pubblicita: this._pubblicitaInScena(channel, s),
+      // i premi a tempo: la configurazione del pezzo, e quello che corre adesso
+      // letto dai posti che lo tengono (premi-tempo.js)
+      tempi: (s.overlayTempi && typeof s.overlayTempi === 'object') ? { ...s.overlayTempi, elenco: tempiInCorso(channel) } : null,
       treno: (s.overlayTreno && typeof s.overlayTreno === 'object') ? s.overlayTreno : null,
       bit: (s.overlayBit && typeof s.overlayBit === 'object') ? s.overlayBit : null,
       boss: (s.overlayBoss && typeof s.overlayBoss === 'object') ? s.overlayBoss : null,

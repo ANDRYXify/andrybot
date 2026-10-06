@@ -53,6 +53,7 @@ export const MODULI = {
   discord: { nome: ['Ruoli su Discord', 'Discord roles', 'Roles en Discord'], file: 'discord-collega.js', acceso: () => true },
   scudo: { nome: ['Scudo', 'Shield', 'Escudo'], file: 'antibot.js', acceso: (s) => !!s.antibot?.attivo },
   modalita: { nome: ['Modalità della chat a tempo', 'Timed chat modes', 'Modos del chat con tiempo'], file: 'modalita-chat.js', acceso: () => true },
+  premi: { nome: ['Premi a tempo', 'Timed rewards', 'Recompensas con tiempo'], file: 'premi-tempo.js', acceso: () => true },
   muro: { nome: ['Muro delle emote', 'Emote wall', 'Muro de emotes'], file: 'muro.js', acceso: (s) => s.overlayMuro?.attivo === true },
   // La dichiarazione che in chat risponde anche un'intelligenza artificiale
   // (AI Act, art. 50) non dipende da nessun interruttore: la sua famiglia e'
@@ -281,6 +282,10 @@ export const COMANDI = [
 
   // LE MODALITA' DELLA CHAT A TEMPO: quello che Twitch accende e basta, qui si
   // accende per un tempo. Senza durata due minuti, con «5m» cinque.
+  // I PREMI A PUNTI CANALE CHE DURANO (premi-tempo.js): cosa corre e quanto
+  // manca, per tutti; un mod lo ferma prima.
+  { id: 'tempi', modulo: 'premi', nomi: ['tempi', 'timers', 'tiempos'], titolo: ['Premi a tempo in corso', 'Running timed rewards', 'Recompensas con tiempo en curso'],
+    cosa: ['Dice quali premi a punti canale a tempo stanno correndo e quanto manca, comprese le modalità della chat accese a tempo. Un mod scrive !tempi stop per fermarli tutti, o !tempi stop e il nome per uno solo.', 'Says which timed channel-point rewards are running and how long is left, including chat modes turned on for a time. A mod types !tempi stop to end them all, or !tempi stop and a name for just one.', 'Dice qué recompensas de puntos de canal con tiempo están corriendo y cuánto falta, incluidos los modos del chat activados con tiempo. Un mod escribe !tempi stop para pararlas todas, o !tempi stop y el nombre para una sola.'] },
   { id: 'soloemote', modulo: 'modalita', nomi: ['soloemote'], titolo: ['Solo emote a tempo', 'Timed emote-only', 'Solo emotes con tiempo'], chi: 'mod',
     cosa: ['Mette la chat in solo emote per due minuti, o per il tempo che scrivi (!soloemote 5m). Poi torna com\'era da sola.', 'Puts the chat in emote-only for two minutes, or for the time you write (!soloemote 5m). Then it goes back by itself.', 'Pone el chat en solo emotes dos minutos, o el tiempo que escribas (!soloemote 5m). Luego vuelve solo a como estaba.'] },
   { id: 'messaggiunici', modulo: 'modalita', nomi: ['messaggiunici'], titolo: ['Messaggi unici a tempo', 'Timed unique chat', 'Mensajes únicos con tiempo'], chi: 'mod',

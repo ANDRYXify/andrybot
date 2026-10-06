@@ -9,8 +9,9 @@ import * as diretta from './diretta.js';
 import * as community from './community.js';
 import * as avvisi from './avvisi.js';
 import * as giochi from './giochi.js';
+import * as premi from './premi.js';
 
-const TUTTI = [diretta, community, avvisi, giochi];
+const TUTTI = [diretta, community, avvisi, giochi, premi];
 
 export const GRUPPI = TUTTI.map((g) => ({ id: g.GRUPPO.id, titolo: g.GRUPPO.titolo, momenti: Object.keys(g.MOMENTI) }));
 

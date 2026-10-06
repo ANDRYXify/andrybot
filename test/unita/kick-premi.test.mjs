@@ -148,9 +148,10 @@ const senzaPremi = (login) => K.salvaToken(login, { accessToken: 'tok', refreshT
 test('chi premia su Kick ha la forma di helix, con le chiamate di Kick', async () => {
   conPremi('kick.p1');
   assert.ok(SCOPE.includes('channel:rewards:read') && SCOPE.includes('channel:rewards:write'));
-  const lista = rete(200, { data: [{ id: PREMIO, title: 'Uban Request', cost: 1000, is_enabled: true, is_user_input_required: true }] });
+  const lista = rete(200, { data: [{ id: PREMIO, title: 'Uban Request', cost: 1000, is_enabled: true, is_user_input_required: true, description: 'Only good reasons pls' }] });
+  // la descrizione serve ai premi a tempo: un premio puo' dire la sua durata li'
   assert.deepEqual(await K.premiKick('kick.p1', lista).listaRewardsTutti('kick.p1'),
-    [{ id: PREMIO, title: 'Uban Request', cost: 1000, enabled: true, richiedeTesto: true, piattaforma: 'kick' }]);
+    [{ id: PREMIO, title: 'Uban Request', cost: 1000, enabled: true, richiedeTesto: true, piattaforma: 'kick', descrizione: 'Only good reasons pls' }]);
   assert.equal(lista.chiamate[0].url, 'https://api.kick.com/public/v1/channels/rewards');
   const crea = rete(200, { data: { id: PREMIO, title: 'Vietami una parola', cost: 500 } });
   const r = await K.premiKick('kick.p1', crea).creaReward('kick.p1', { titolo: 'x'.repeat(80), costo: 500, userInput: true, prompt: 'Scrivi la parola' });

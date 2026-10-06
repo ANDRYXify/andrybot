@@ -89,7 +89,10 @@ e spagnoli: la lingua fa parte della voce.
 
 - **Il motore** è `src/features/voce.js`, con l'interfaccia scritta in testa:
   `voce.di(canale, momento, dati)` dà la frase o niente. Il frasario sta in
-  `src/features/frasario/`, un file per gruppo (diretta, community, avvisi).
+  `src/features/frasario/`, un file per gruppo (diretta, community, avvisi,
+  giochi, premi). Il gruppo «I premi a punti canale» ha le frasi dei premi a
+  tempo (partenza, tempo che cresce, fine, rimborso, «non si può») e le
+  risposte di `!tempi` (docs/PREMI-A-TEMPO.md).
 - **L'ordine del giro** è un ordinamento per impronta (canale, momento, numero
   del giro, frase): due canali partono da frasi diverse, nessuna torna prima
   che siano uscite tutte, il giro dopo non comincia dall'ultima. A che punto è

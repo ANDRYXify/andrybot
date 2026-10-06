@@ -13,7 +13,7 @@ export default {
   corpo: [
     { h2: 'Overlay Studio', scheda: 'alert', p: [
       'L\'overlay è <strong>una pagina web</strong>. In OBS si mette come sorgente <em>Browser</em>. Da lì in poi quello che decidi nella scheda «Overlay Studio», nel gruppo «Scena & overlay», compare in diretta senza toccare più niente in OBS.',
-      'La scheda si apre sul <strong>banco</strong>: a sinistra i livelli, al centro la tela 1920×1080, a destra le proprietà. Le impostazioni di alert, chat, ultimo follower e sub, player, conto alla rovescia, conto alla pubblicità, hype train, classifica Bit, boss, arena delle emote, testo a schermo, nome del comando e muro delle emote stanno dentro «Proprietà»: selezioni l\'elemento sulla tela e le trovi lì, divise in gruppi che si aprono uno alla volta. Sotto il banco restano le carte «Metterlo nella diretta», «Gli obiettivi», «Cartelli» e «CSS avanzato».',
+      'La scheda si apre sul <strong>banco</strong>: a sinistra i livelli, al centro la tela 1920×1080, a destra le proprietà. Le impostazioni di alert, chat, ultimo follower e sub, player, conto alla rovescia, conto alla pubblicità, premi a tempo, hype train, classifica Bit, boss, arena delle emote, testo a schermo, nome del comando e muro delle emote stanno dentro «Proprietà»: selezioni l\'elemento sulla tela e le trovi lì, divise in gruppi che si aprono uno alla volta. Sotto il banco restano le carte «Metterlo nella diretta», «Gli obiettivi», «Cartelli» e «CSS avanzato».',
       'In testa alla scheda <strong>«Tutto schermo»</strong> toglie il menù di lato e lascia tutta la larghezza alla tela. Il menù si disfa a matita e aspetta sul bordo sinistro: ci arrivi col cursore e si ridisegna, lo lasci e si disfa. «Rimetti il menù» lo riporta di lato. Il browser ricorda la scelta per questa scheda.',
       'La scheda c\'è in ogni piano, anche in quello gratuito. La usano il proprietario del canale e i moderatori. Le poche cose riservate al proprietario sono segnate qui sotto.',
       'Su un telefono tenuto in verticale compare la carta «Gira il telefono»: il banco lavora in orizzontale.',
@@ -91,6 +91,7 @@ export default {
       ['«Player musica»', 'Quello che stai ascoltando su Spotify.', 'in basso a sinistra', 'qui, in «Proprietà»'],
       ['«Conto alla rovescia»', 'Quanto manca all\'inizio, anche in subathon.', 'in alto a destra', 'qui, in «Proprietà»'],
       ['«Conto alla pubblicità»', 'Quanto manca alla prossima pubblicità, e durante la pausa quanto manca al ritorno. I tempi li dice Twitch.', 'in alto a destra', 'qui, in «Proprietà»'],
+      ['«Premi a tempo»', 'I premi a punti canale che durano, mentre corrono: nome, quanto manca, una barra, chi l\'ha riscattato. Anche le modalità della chat accese a tempo.', 'in alto a destra', 'qui, in «Proprietà»; quanto dura un premio in «Effetti & suoni»'],
       ['«Hype train»', 'Il treno di Twitch: livello, barra, tempo che resta.', 'in alto a destra', 'qui, in «Proprietà»'],
       ['«Classifica Bit»', 'Chi ha messo più Bit.', 'in alto a sinistra', 'qui, in «Proprietà»'],
       ['«Sfida a tempo»', 'La carta della penitenza riscattata coi punti canale.', 'in alto a destra', 'scheda «Penitenze»'],
@@ -116,12 +117,12 @@ export default {
       ['Ultimo follower e ultimo sub', 'interruttore, testo, icona, aspetto', 'il nome mostrato'],
       ['CSS avanzato', 'tutto', ''],
       ['Obiettivi e cartelli', 'se si vedono e dove', 'traguardo e conto, testo o immagine, aspetto'],
-      ['Player, conto alla rovescia, conto alla pubblicità, hype train, classifica Bit, sfida a tempo, boss, arena delle emote, testo a schermo, nome del comando, contatori, muro delle emote', 'se si vedono e dove', 'tutte le impostazioni e l\'aspetto'],
+      ['Player, conto alla rovescia, conto alla pubblicità, premi a tempo, hype train, classifica Bit, sfida a tempo, boss, arena delle emote, testo a schermo, nome del comando, contatori, muro delle emote', 'se si vedono e dove', 'tutte le impostazioni e l\'aspetto'],
       ['Effetti a schermo', 'se si vedono, dove e quanto grandi', 'cosa fa ogni effetto, nella scheda «Effetti & suoni»'],
     ] },
     { p: [
       'Per avere due obiettivi o due cartelli con un aspetto diverso in due scene ne fai due, e in ogni overlay accendi quello giusto.',
-      '<strong>Si salvano da soli</strong>, appena molli il mouse o cambi un valore: posizioni, dimensioni, rotazioni, riquadri, blocchi, ordine dei livelli, visibilità, occasioni, «Quali chat in questo overlay», player, conto alla rovescia, conto alla pubblicità, hype train, classifica Bit, boss, arena delle emote, testo a schermo, nome del comando, muro delle emote, obiettivi, cartelli e contatori. I loro pulsanti «Salva» salvano subito, senza aspettare.',
+      '<strong>Si salvano da soli</strong>, appena molli il mouse o cambi un valore: posizioni, dimensioni, rotazioni, riquadri, blocchi, ordine dei livelli, visibilità, occasioni, «Quali chat in questo overlay», player, conto alla rovescia, conto alla pubblicità, premi a tempo, hype train, classifica Bit, boss, arena delle emote, testo a schermo, nome del comando, muro delle emote, obiettivi, cartelli e contatori. I loro pulsanti «Salva» salvano subito, senza aspettare.',
       '<strong>Aspettano un pulsante</strong>: alert eventi («Salva alert»), chat a schermo («Salva chat»), ultimo follower e ultimo sub, CSS («Salva CSS»). «Salva overlay» li salva tutti insieme. Finché non salvi, in basso resta il riquadro delle modifiche non salvate, con «Mostra» per tornarci e «Annulla» per tornare a com\'era; se rimetti a mano com\'era, sparisce da solo. Se cambi scheda, overlay o pagina il pannello chiede prima e ti dice cosa hai cambiato.',
       'Se un salvataggio non riesce leggi «Non riesco a salvare: controlla la connessione, riprovo al prossimo cambiamento.»',
       'In cima a ogni gruppo «Aspetto» c\'è la riga <strong>«Veste»</strong> con dieci vesti pronte: Viola classico, Neon, Minimal chiaro, Retro arcade, Manga, Vetro, Terminale, Nastro, Esagoni, Stile Twitch. Una veste cambia l\'elemento che stai guardando; sul muro delle emote accende o spegne l\'ombra. «a tutto l’overlay» stende la veste scelta su tutti gli elementi. Dopo cambi a mano quello che vuoi. Se premi «a tutto l’overlay» senza aver scelto una veste leggi «Scegli prima una veste qui sopra.»',
@@ -169,6 +170,7 @@ export default {
       'Con la disposizione <strong>«libera»</strong> compare «Le parti»: scegli il «Pezzo» e ne scrivi «X», «Y», la «Larghezza» (da 5 a 100) e l\'allineamento del «Testo». Sulla tela trascini ogni pezzo; righe e barra hanno una maniglia a destra per la larghezza. «Come in riga» li rimette in fila.',
       'Il video è tuo: un loop corto caricato in «Effetti & suoni», perché Spotify non dà un video del brano. Con i temi vinile e CD la copertina resta quella del disco.',
       '«Niente onde» le toglie, non le lascia ferme. La copertina pulsa solo se Spotify dice il tempo del brano. Quando non lo dice resta ferma, e le onde ballano comunque.',
+      '<strong>Un intoppo non lo ferma.</strong> Se Spotify per un momento non risponde, resta la canzone che c\'era e la barra continua. Una risposta che non arriva si lascia perdere dopo pochi secondi, e alla fine di un brano il prossimo si chiede subito. Se quindici secondi dopo la fine non si sa ancora cosa suona, il player fa come con la musica ferma.',
     ] },
 
     { h3: 'Conto alla rovescia e subathon' },
@@ -212,6 +214,20 @@ export default {
       ['«Resta anche durante la pausa, col conto del ritorno»', 'acceso', ''],
     ] },
     { p: ['Quando la pausa comincia il conto passa da solo al titolo di «Durante la pausa». Arrivato a zero se ne va: non resta mai un 0:00 a schermo. Se apri o ricarichi l\'overlay a pausa in corso, riparte da dove era.'] },
+
+    { h3: 'Premi a tempo' },
+    { p: [
+      'Una carta per ogni premio a punti canale che sta durando: il nome del premio, quanto manca, una barra che si svuota e chi l\'ha riscattato, l\'ultimo per primo. Ci sono anche le modalità della chat accese a tempo, da un premio o da un mod con <code>!soloemote</code>: chi guarda vede lo stesso effetto e si chiede la stessa cosa. Prima quello che finisce prima. Arrivato a zero se ne va, e un riscatto nuovo compare da solo.',
+      'Qui non scegli nessun tempo: quanto dura ogni premio si sceglie in «Effetti & suoni», carta «Premi a tempo» (<a href="/manuale/effetti">manuale degli effetti</a>). Un VIP a tempo non è un conto alla rovescia e non compare.',
+    ] },
+    { tabella: [
+      ['Impostazione', 'Di base', 'Limiti'],
+      ['«Premi a tempo» (interruttore)', 'spento', ''],
+      ['«Dove»', 'in alto a destra', 'i quattro angoli, o dove lo trascini'],
+      ['«Quanti al massimo»', '3', 'da 1 a 5'],
+      ['«Una barra che si svuota col tempo»', 'acceso', ''],
+      ['«Chi l\'ha riscattato»', 'acceso', 'gli ultimi due, e quanti altri'],
+    ] },
 
     { h3: 'Hype train' },
     { p: ['Il treno lo fa Twitch: livello, punti e tempo che resta li decide lui, e qui si vedono. Non c\'è niente da far partire. Quando il treno parte compare; quando Twitch dice che è finito, la carta resta il tempo di leggere il livello raggiunto e poi va via. Se il pannello ti chiede un permesso nuovo di Twitch, serve per questo.'] },
@@ -445,6 +461,7 @@ export default {
     { d: 'Chi ha il link può fare danni?', r: 'Può far comparire cose nel tuo overlay. Non entra nel pannello né nel tuo account. Se il link è scappato, il proprietario preme due volte la chiave accanto al link: il vecchio smette subito di funzionare.' },
     { d: 'Stasera è una serata diversa: devo rifare l\'overlay?', r: 'No. Crea un\'occasione con «Nuova…», accendi e sposti quello che serve e spunta «In onda adesso». A fine serata la spegni e torna tutto com\'era.' },
     { d: 'I moderatori possono lavorare sull\'overlay?', r: 'Sì: spostano, accendono, vestono e salvano. Fare un link nuovo e le prove di alert, chat, ultimo follower e sub e delle figure del muro restano al proprietario.' },
+    { d: 'Il player è rimasto su una canzone vecchia.', r: 'Succede quando Spotify non risponde: il player tiene la canzone che c\'era finché non arriva una lettura nuova, e quindici secondi dopo la fine di quella canzone fa come con la musica ferma. Se capita spesso, controlla nella scheda «Musica» che Spotify sia ancora collegato.' },
     { d: 'L\'obiettivo conta anche a canale spento?', r: 'Conta gli eventi che arrivano, e i follow arrivano anche offline. Se non li vuoi, spegnilo e riaccendilo quando serve.' },
   ],
 };

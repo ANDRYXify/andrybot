@@ -342,6 +342,7 @@ export const eIdKick = (id) => ULID.test(String(id || ''));
 const premioDa = (r) => ({
   id: String(r.id), title: String(r.title || ''), cost: Number(r.cost) || 0,
   enabled: r.is_enabled !== false, richiedeTesto: !!r.is_user_input_required, piattaforma: 'kick',
+  descrizione: String(r.description || ''),
 });
 
 export function premiKick(login, { fetchImpl } = {}) {

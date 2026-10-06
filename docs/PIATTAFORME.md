@@ -523,11 +523,20 @@ suo rimedio. Le rotte dei premi (avvisi, suoni, richiesta musicale, penitenze,
 contatori) chiedono a lui e creano il premio lì; un premio si toglie da chi l'ha
 dato, riconosciuto dalla forma dell'id (ULID per Kick). Su un canale di Twitch
 con Kick collegato l'elenco ha anche i premi di Kick (`tuttiIPremi`), e quando
-ce ne sono di tutte e due accanto al nome si legge dove sta. I cinque riquadri
+ce ne sono di tutte e due accanto al nome si legge dove sta. I sei riquadri
 dei premi, senza permesso, dicono il rimedio della piattaforma
 (`_premiFuoriDaTwitch`): a chi è su Kick «Aggiorna i permessi di Kick», mai i
 permessi di Twitch. La scheda delle penitenze si apre anche su Kick
 (`ANCHE_SU`).
+
+**I premi a tempo** (docs/PREMI-A-TEMPO.md) valgono anche su Kick, con la
+durata letta dal nome o dalla descrizione del premio (`description`, letta
+come `descrizione` da `premiKick`). Su Kick un premio a tempo può essere solo
+un conto alla rovescia: le modalità della chat e il VIP a tempo passano da
+API di Twitch che su Kick non ci sono, e il server rifiuta di salvarli per un
+premio di Kick (`normTempo`, «solo-twitch»), riconosciuto dalla forma dell'id.
+Il conto alla rovescia non può fallire, quindi su Kick un premio a tempo non
+si annulla mai, e la promessa del rimborso non si fa.
 
 Collaudi: `test/unita/kick-premi.test.mjs` (l'esempio di docs.kick.com, la
 nascita, la porta, chi premia, le penitenze, il rimborso, la lista dei

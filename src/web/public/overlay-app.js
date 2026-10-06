@@ -644,7 +644,7 @@ function penStart(ev) {
   card.innerHTML = '<span class="pen-parola"><small>' + eti + '</small>' + escHtml(parola) + '</span><span class="pen-num">0</span><span class="pen-tempo"></span>';
   penBox.appendChild(card);
   penCard[ev.id] = card;
-  const scadenza = Date.now() + Math.max(1, Number(ev.durata) || 2) * 60000;
+  const scadenza = Number(ev.fine) > Date.now() ? Number(ev.fine) : Date.now() + Math.max(0.5, Number(ev.durata) || 2) * 60000;
   const tempo = card.querySelector('.pen-tempo');
   const batti = () => { tempo.textContent = oreMinSec(scadenza - Date.now()); };
   batti();
@@ -1204,6 +1204,7 @@ function ricevi(m) {
     else if (dati.tipo === 'timer') { MIO.timerFine = Number(dati.fine) || MIO.timerFine; disegnaTimer(); }
     else if (dati.tipo === 'pubblicita') { MIO.pubblStato = { prossima: Number(dati.prossima) || 0, pausaFino: Number(dati.pausaFino) || 0 }; disegnaPubblicita(); }
     else if (dati.tipo === 'treno') { MIO.trenoStato = dati.treno || null; disegnaTreno(); }
+    else if (dati.tipo === 'tempi') { MIO.tempiElenco = Array.isArray(dati.elenco) ? dati.elenco : []; disegnaTempi(); }
     else if (dati.tipo === 'bit') { if (Array.isArray(dati.righe)) MIO.bitRighe = dati.righe; disegnaBit(); }
     else if (dati.tipo === 'tema') caricaTema();
     else if (dati.tipo === 'testo') mostraTesto(dati);
@@ -1338,6 +1339,7 @@ const musicaEl = {};
 let musicaVista = { stato: 'ignoto', suona: false };
 let musicaVuoti = 0;
 let musicaLetta = 0;
+let musicaChiesta = 0;
 let musicaInVolo = false;
 
 const MUSICA_ICO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>';
@@ -1461,9 +1463,10 @@ function disegnaMusica() {
   const cfg = MIO.musica;
   if (!cfg || !cfg.attivo || !mostra('musica')) return togliMusica();
   const d = musicaVista;
-  const stato = (d && d.stato) || 'niente';
+  const scaduta = musicaFinitaDa() > 15000;
+  const stato = scaduta ? 'niente' : ((d && d.stato) || 'niente');
   if (stato === 'ignoto') return;
-  if (stato === 'niente' && musicaEl.n && musicaVuoti < 2) return;
+  if (stato === 'niente' && musicaEl.n && musicaVuoti < 2 && !scaduta) return;
   const fermo = stato !== 'suona';
   if (fermo && cfg.quandoFermo !== 'resta') return togliMusica();
   const vivo = stato === 'suona' || stato === 'pausa';
@@ -1647,17 +1650,31 @@ function orologio(ms) {
 async function chiediMusica() {
   if (musicaInVolo) return;
   musicaInVolo = true;
+  musicaChiesta = Date.now();
+  const ferma = typeof AbortController === 'function' ? new AbortController() : null;
+  const tempo = setTimeout(function () { if (ferma) ferma.abort(); }, 8000);
   try {
-    const r = await fetch('/overlay/' + encodeURIComponent(login) + '/musica' + location.search);
+    const r = await fetch('/overlay/' + encodeURIComponent(login) + '/musica' + location.search, ferma ? { signal: ferma.signal } : undefined);
     if (r.ok) {
       const d = await r.json();
-      if (d && d.stato === 'niente') musicaVuoti++; else musicaVuoti = 0;
-      musicaVista = d;
-      musicaLetta = Date.now();
+      if (d && d.stato !== 'ignoto') {
+        if (d.stato === 'niente') musicaVuoti++; else musicaVuoti = 0;
+        musicaVista = d;
+        musicaLetta = Date.now();
+      }
     }
-  } catch (e) { /* niente: alla prossima */ }
-  musicaInVolo = false;
+  } catch (e) { }
+  finally {
+    clearTimeout(tempo);
+    musicaInVolo = false;
+  }
   disegnaMusica();
+}
+
+function musicaFinitaDa() {
+  const d = musicaVista;
+  if (!d || !d.suona || !Number(d.durata)) return -Infinity;
+  return (Number(d.ms) || 0) + (Date.now() - musicaLetta) - Number(d.durata);
 }
 
 const timerEl = {};
@@ -1739,6 +1756,72 @@ function togliPubblicita() {
   el.classList.remove('dentro');
   el.classList.add('esce');
   pubblEl.uscita = setTimeout(via, 520);
+}
+
+const tempiEl = { righe: {} };
+
+function disegnaTempi() {
+  const cfg = MIO.tempi;
+  const ora = Date.now();
+  const elenco = (Array.isArray(MIO.tempiElenco) ? MIO.tempiElenco : []).filter(function (t) { return t && t.chiave && Number(t.fino) > ora; })
+    .sort(function (a, b) { return Number(a.fino) - Number(b.fino); });
+  if (!cfg || !cfg.attivo || !mostra('tempi') || !elenco.length) return togliTempi();
+  let el = tempiEl.n;
+  const nato = !el;
+  if (!el) {
+    el = document.createElement('div');
+    tempiEl.n = el;
+    tempiEl.righe = {};
+  }
+  if (tempiEl.uscita) { clearTimeout(tempiEl.uscita); tempiEl.uscita = 0; el.classList.remove('esce'); }
+  posa(wboxes[cfg.posizione] || wboxes['alto-destra'] || document.body, el);
+  const st = cfg.stile || {};
+  el.className = 'ovl-widget ovl-tempi dim-' + (st.dim || 'media') + ' ' + classiIdentita(st, 'nessuna')
+    + (el.classList.contains('dentro') ? ' dentro' : '');
+  const quanti = elenco.slice(0, Math.max(1, Math.min(5, Number(cfg.quanti) || 3)));
+  const viste = {};
+  quanti.forEach(function (t, i) {
+    viste[t.chiave] = true;
+    let r = tempiEl.righe[t.chiave];
+    if (!r) {
+      r = document.createElement('div');
+      r.className = 'tp-riga';
+      r.innerHTML = '<div class="tp-testa"><span class="tp-tit"></span><span class="tp-tempo"></span></div>'
+        + '<div class="tp-barra"><i></i></div><div class="tp-chi"></div>';
+      tempiEl.righe[t.chiave] = r;
+    }
+    r.classList.remove('esce');
+    if (el.children[i] !== r) el.insertBefore(r, el.children[i] || null);
+    r.querySelector('.tp-tit').textContent = String(t.titolo || '');
+    r.querySelector('.tp-tempo').textContent = oreMinSec(Number(t.fino) - ora);
+    const tutto = Math.max(1, Number(t.fino) - (Number(t.da) || ora));
+    r.querySelector('.tp-barra').hidden = cfg.barra === false;
+    r.querySelector('.tp-barra i').style.setProperty('--q', Math.max(0, Math.min(1, (Number(t.fino) - ora) / tutto)).toFixed(4));
+    const chi = Array.isArray(t.chi) ? t.chi : [];
+    r.querySelector('.tp-chi').textContent = cfg.mostraChi === false || !chi.length ? ''
+      : chi.slice(-2).reverse().join(', ') + (chi.length > 2 ? ' +' + (chi.length - 2) : '');
+  });
+  Object.keys(tempiEl.righe).forEach(function (k) {
+    if (viste[k]) return;
+    const r = tempiEl.righe[k];
+    delete tempiEl.righe[k];
+    if (fermiIMotori()) { r.remove(); return; }
+    r.classList.add('esce');
+    setTimeout(function () { r.remove(); }, 450);
+  });
+  vestiElemento(el, cfg, 'nessuna', 'tempi');
+  if (nato) requestAnimationFrame(() => el.classList.add('dentro'));
+}
+
+function togliTempi() {
+  const el = tempiEl.n;
+  if (!el) return;
+  const via = () => { el.remove(); if (tempiEl.n === el) { tempiEl.n = null; tempiEl.righe = {}; } tempiEl.uscita = 0; };
+  if (fermiIMotori()) return via();
+  if (tempiEl.uscita) return;
+  el.classList.remove('dentro');
+  el.classList.add('esce');
+  tempiEl.uscita = setTimeout(via, 520);
 }
 
 const trenoEl = {};
@@ -1877,10 +1960,12 @@ setInterval(() => {
   if (MIO.timer && MIO.timer.attivo && mostra('timer')) disegnaTimer();
   if (MIO.pubbl && MIO.pubbl.attivo) disegnaPubblicita();
   if (MIO.treno && MIO.treno.attivo && mostra('treno')) disegnaTreno();
+  if (MIO.tempi && MIO.tempi.attivo) disegnaTempi();
   const vivo = MIO.musica && MIO.musica.attivo && mostra('musica');
   if (!vivo) return;
   avanzaBarra();
-  if (Date.now() - musicaLetta > 5000) chiediMusica();
+  const daChiesta = Date.now() - musicaChiesta;
+  if (daChiesta > 5000 || (musicaFinitaDa() > 1000 && daChiesta > 1500)) chiediMusica();
 }, 1000);
 
 function applicaTema(t) {
@@ -1918,6 +2003,9 @@ function applicaTema(t) {
   MIO.treno = t.treno || null;
   MIO.trenoStato = (stato.treno && typeof stato.treno === 'object') ? stato.treno : null;
   disegnaTreno();
+  MIO.tempi = t.tempi || null;
+  MIO.tempiElenco = (MIO.tempi && Array.isArray(MIO.tempi.elenco)) ? MIO.tempi.elenco : [];
+  disegnaTempi();
   MIO.boss = t.boss || null;
   ridisegnaBoss();
   MIO.arena = t.arena || null;

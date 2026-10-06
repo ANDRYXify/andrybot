@@ -1144,6 +1144,7 @@ aggiungiColonna('battute', 'risate', 'INTEGER NOT NULL DEFAULT 0');
 aggiungiColonna('battute', 'schema', "TEXT NOT NULL DEFAULT ''");
 aggiungiColonna('point_alerts', 'suono', "TEXT NOT NULL DEFAULT ''");   // suono PRESET sul riscatto (id preset)
 aggiungiColonna('point_alerts', 'opzioni', "TEXT NOT NULL DEFAULT ''"); // posizione + green screen dell'effetto (JSON)
+aggiungiColonna('point_alerts', 'tempo', "TEXT NOT NULL DEFAULT ''");   // premio a tempo: la scelta dello streamer (JSON, premi-tempo.js)
 // La pagina delle donazioni puo' seguire l'aspetto della pagina link invece di
 // tenerne uno suo (docs/DONAZIONI.md, «L'aspetto della pagina link»). Vuoto =
 // salvata prima di questa scelta: tiene il suo.
@@ -5206,11 +5207,11 @@ export const guide = {
 // il bot spara l'alert. Per canale.
 export const pointAlerts = {
   list(channel) {
-    return db.prepare('SELECT reward_id, titolo, costo, effetto, suono, testo, opzioni, ts FROM point_alerts WHERE channel=? ORDER BY ts DESC')
+    return db.prepare('SELECT reward_id, titolo, costo, effetto, suono, testo, opzioni, tempo, ts FROM point_alerts WHERE channel=? ORDER BY ts DESC')
       .all(String(channel).toLowerCase());
   },
   getByReward(channel, rewardId) {
-    return db.prepare('SELECT reward_id, titolo, costo, effetto, suono, testo, opzioni FROM point_alerts WHERE channel=? AND reward_id=?')
+    return db.prepare('SELECT reward_id, titolo, costo, effetto, suono, testo, opzioni, tempo FROM point_alerts WHERE channel=? AND reward_id=?')
       .get(String(channel).toLowerCase(), String(rewardId)) || null;
   },
   add(channel, { rewardId, titolo, costo, effetto, suono, testo, opzioni }) {
@@ -5225,6 +5226,33 @@ export const pointAlerts = {
   },
   remove(channel, rewardId) {
     db.prepare('DELETE FROM point_alerts WHERE channel=? AND reward_id=?').run(String(channel).toLowerCase(), String(rewardId));
+  },
+  // L'effetto e il messaggio se ne vanno, la scelta del tempo resta: sono due
+  // cose dello stesso premio, e toglierne una non deve cancellare l'altra.
+  togliAvviso(channel, rewardId) {
+    const ch = String(channel).toLowerCase();
+    const r = this.getByReward(ch, rewardId);
+    if (!r) return;
+    if (r.tempo) db.prepare("UPDATE point_alerts SET effetto='', suono='', testo='', opzioni='' WHERE channel=? AND reward_id=?").run(ch, String(rewardId));
+    else this.remove(ch, rewardId);
+  },
+  // LA SCELTA DEL TEMPO di un premio (premi-tempo.js, normTempo), senza
+  // toccare effetto e messaggio. `tempo` null la toglie: il premio torna a
+  // durare quanto dice il suo nome.
+  impostaTempo(channel, { rewardId, titolo, costo, tempo }) {
+    const ch = String(channel).toLowerCase();
+    const id = String(rewardId);
+    const json = tempo ? JSON.stringify(tempo).slice(0, 1000) : '';
+    const r = this.getByReward(ch, id);
+    if (!r) {
+      if (!json) return;
+      db.prepare(`INSERT INTO point_alerts(channel, reward_id, titolo, costo, effetto, suono, testo, opzioni, tempo, ts)
+        VALUES(?,?,?,?,'','','','',?,?)`).run(ch, id, String(titolo || '').slice(0, 60), Math.max(0, Math.round(Number(costo) || 0)), json, now());
+      return;
+    }
+    if (!json && !r.effetto && !r.suono && !r.testo) { this.remove(ch, id); return; }
+    db.prepare('UPDATE point_alerts SET tempo=?, titolo=CASE WHEN ?<>\'\' THEN ? ELSE titolo END WHERE channel=? AND reward_id=?')
+      .run(json, String(titolo || ''), String(titolo || '').slice(0, 60), ch, id);
   },
 };
 

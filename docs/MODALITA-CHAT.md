@@ -46,6 +46,24 @@ scudo contro gli attacchi. Se uno sblocco per gioco le spegnesse alla sua fine,
 riaprirebbe la serranda in mezzo a un raid. I due elenchi non si toccano, e una
 prova lo controlla (`CAMPI_DELLO_SCUDO`).
 
+## Accese da un premio a tempo
+
+Un premio a punti canale che dura può accendere una modalità per il suo tempo
+(docs/PREMI-A-TEMPO.md). Non c'è una copia del tempo da qualche altra parte:
+la riga della modalità (`modalita:<modo>`) ricorda anche il **premio** che l'ha
+accesa e **chi** l'ha riscattato (`accendiPer(..., { premio })`, i nomi in coda
+senza doppioni), e l'overlay e `!tempi` leggono da lì (`premi-tempo.js`,
+`inCorso`). Per questo un mod che la spegne con `!soloemote off` la toglie
+anche dall'overlay: è sparita la riga che si leggeva.
+
+Chi mostra i tempi lo sa subito: ogni volta che una modalità si accende, si
+allunga o si spegne, il motore chiama `quandoCambia(canale)`, e il bot manda
+all'overlay l'elenco nuovo. Vale anche per le modalità accese da un mod.
+
+Le regole di sopra restano tutte: un premio che trova la modalità già accesa
+da un mod non la tocca, e i punti tornano a chi l'ha riscattato; arrivato al
+tetto di un'ora, un riscatto che non sposterebbe la fine non si fa.
+
 ## Sbloccare con le monete
 
 `!sblocca` costa `costoMinuto × minuti` (50 al minuto di serie, due minuti se
@@ -64,7 +82,7 @@ dall'economia invece di girare, e un'economia che ha solo entrate si gonfia.
 | i comandi dei mod | `tryComando` nello stesso file, nel registro come famiglia «modalità» |
 | l'azione dei Moduli | `src/features/modules.js` (`case 'modalita'`) |
 | lo sblocco con le monete | `src/features/games.js` (`sblocca`), le manopole in `giochi-conf.js` |
-| le prove | `test/unita/modalita-chat.test.mjs` |
+| le prove | `test/unita/modalita-chat.test.mjs`, e per i premi `test/unita/premi-tempo.test.mjs` |
 
 Serve il permesso `moderator:manage:chat_settings`, che si chiedeva già per la
 serranda dello scudo: nessuno deve riautorizzare niente.

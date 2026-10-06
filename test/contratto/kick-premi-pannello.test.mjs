@@ -31,7 +31,7 @@ test('una regola sola: la piattaforma del canale, col suo permesso e il suo rime
 test('le rotte dei premi chiedono a premiDi, mai a helix a mano', () => {
   assert.doesNotMatch(SRV, /helix\.(creaReward|listaRewardsTutti|listaRewards|eliminaReward)\(/, 'nessun premio chiesto a Twitch a mano');
   assert.equal((SRV.match(/pd\.premiatore\.creaReward\(/g) || []).length, 4, 'contatori, musica, penitenze, avvisi');
-  assert.equal((SRV.match(/await tuttiIPremi\(login\)/g) || []).length, 3, 'musica, penitenze, avvisi');
+  assert.equal((SRV.match(/await tuttiIPremi\(login\)/g) || []).length, 5, 'musica, penitenze, avvisi, premi a tempo e la loro prova');
   assert.match(SRV, /const chi = kickApi\.eIdKick\(rid\) \? kickApi\.premiKick\(login\) : helix;/, 'si toglie da chi l\'ha dato');
   for (const rotta of ["app.get('/api/musica/premi'", "app.get('/api/penitenze/premi'", "app.get('/api/streamer/premi'"]) {
     const corpo = tra(SRV, rotta, '}));');
@@ -46,8 +46,8 @@ test('un canale di Twitch con Kick collegato vede anche i premi di Kick', () => 
   assert.match(r, /\.\.\.r, piattaforma: pd\.piattaforma/, 'ogni premio con la sua piattaforma');
 });
 
-test('i cinque riquadri dei premi dicono il rimedio della piattaforma, e la scheda penitenze si apre su Kick', () => {
-  assert.equal((APP.match(/_premiFuoriDaTwitch\(d\) \? /g) || []).length, 5);
+test('i sei riquadri dei premi dicono il rimedio della piattaforma, e la scheda penitenze si apre su Kick', () => {
+  assert.equal((APP.match(/_premiFuoriDaTwitch\(d\) \? /g) || []).length, 6, 'premi, effetti sui premi, premi a tempo, musica, penitenze, muro');
   assert.match(APP, /const ANCHE_SU = \{[^}]*penitenze: \['kick'\][^}]*\};/);
   const f = tra(APP, 'function _premiFuoriDaTwitch(d) {', '\n}\n');
   assert.match(f, /href="\$\{esc\(d\.rimedio \|\| '\/auth\/kick'\)\}">\$\{L\('Aggiorna i permessi di Kick'/);

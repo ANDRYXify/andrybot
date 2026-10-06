@@ -146,6 +146,46 @@ export async function assegnaVipLogin(helix, channel, login, durata, motivo = 'p
   } catch (e) { log.error('assegnaVipLogin:', e?.message || e); return { ok: false }; }
 }
 
+// IL VIP DI UN PREMIO A PUNTI CANALE A TEMPO (docs/PREMI-A-TEMPO.md): chi lo
+// riscatta e' VIP per `ms`. Tre regole, e nessuna si appoggia ai codici di
+// errore di Twitch, che non sono documentati con chiarezza:
+//  · un VIP che non e' nostro e a tempo non si tocca: per sempre, a dirette, o
+//    dato a mano dallo streamer (lo si chiede a Twitch prima di dare, invece di
+//    scoprirlo da un rifiuto). Il premio non ha niente da aggiungere;
+//  · un VIP non si accorcia mai: «si somma» aggiunge `ms` alla fine, «riparte
+//    da adesso» la porta a adesso + ms solo se e' piu' lontana;
+//  · un premio che non cambia niente non e' fatto, e chi l'ha pagato riavra' i
+//    punti (premi-tempo.js).
+// Ritorna { ok, esito: 'via'|'piu', fino } oppure { ok: false, motivo }.
+export async function vipPerPremio(helix, channel, login, ms, doppio = 'somma', ora = Date.now()) {
+  try {
+    const l = String(login || '').toLowerCase();
+    const durata = Math.round(Number(ms) || 0);
+    if (!l || durata <= 0) return { ok: false, motivo: 'dati' };
+    const gia = vips.get(channel, l);
+    if (gia && !(Number(gia.until) > 0)) return { ok: false, motivo: 'gia' };
+    if (!gia) {
+      const dati = await helix.getVips(channel);
+      if (dati === null) return { ok: false, motivo: 'twitch' };
+      if (dati.some((v) => String(v.user_login || '').toLowerCase() === l)) return { ok: false, motivo: 'gia' };
+    }
+    const u = await helix.getUserByLogin(l).catch(() => null);
+    if (!u?.id) return { ok: false, motivo: 'utente' };
+    let fino = ora + durata;
+    if (gia) {
+      const fine = Number(gia.until);
+      fino = doppio === 'adesso' ? Math.max(fine, ora + durata) : Math.max(fine, ora) + durata;
+      if (fino <= fine) return { ok: false, motivo: 'gia' };
+    }
+    // anche se e' nostro: un mod puo' averlo tolto a mano nel frattempo
+    const r = await helix.addVip(channel, u.id);
+    if (!r.ok) return { ok: false, motivo: r.motivo || 'twitch' };
+    if (r.gia && !gia) return { ok: false, motivo: 'gia' };
+    vips.set(channel, { user: l, userId: u.id, display: u.display_name || gia?.display || l, until: fino, dirette: 0, motivo: 'punti' });
+    return { ok: true, esito: gia ? 'piu' : 'via', fino };
+  } catch (e) { log.error('vipPerPremio:', e?.message || e); return { ok: false, motivo: 'errore' }; }
+}
+
 // comandi in chat (solo mod/streamer): !vip @nome [durata] · !unvip @nome · !viplista
 export async function tryVipCommand(helix, msg, say) {
   try {

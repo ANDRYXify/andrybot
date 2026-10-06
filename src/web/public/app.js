@@ -244,6 +244,7 @@ function impostazioni() {
     overlayMusica: (s.overlayMusica && typeof s.overlayMusica === 'object') ? s.overlayMusica : {},
     overlayTimer: (s.overlayTimer && typeof s.overlayTimer === 'object') ? s.overlayTimer : {},
     overlayPubblicita: (s.overlayPubblicita && typeof s.overlayPubblicita === 'object') ? s.overlayPubblicita : {},
+    overlayTempi: (s.overlayTempi && typeof s.overlayTempi === 'object') ? s.overlayTempi : {},
     formaMonete: typeof s.formaMonete === 'string' ? s.formaMonete : '',
     overlayTreno: (s.overlayTreno && typeof s.overlayTreno === 'object') ? s.overlayTreno : {},
     overlayBit: (s.overlayBit && typeof s.overlayBit === 'object') ? s.overlayBit : {},
@@ -1928,6 +1929,7 @@ function _demoGet(via) {
       { id: "predizione", modulo: "sondaggi", moduloNome: ["Sondaggi e predizioni","Polls and predictions","Encuestas y predicciones"], moduloAcceso: true, voce: null, gruppo: null, regole: null, titolo: ["Predizione","Prediction","Predicción"], cosa: ["Apre una predizione. Con «vince» la risolve, con «annulla» rimborsa.","Opens a prediction. With «vince» it resolves, with «annulla» it refunds.","Abre una predicción. Con «vince» la resuelve, con «annulla» reembolsa."], costa: false, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["predizione","prediction","pronostico"], rinominato: false, chi: "mod", chiMinimo: "mod", attesaTutti: 0 },
       { id: "sr", modulo: "musica", moduloNome: ["Richieste musicali","Music requests","Peticiones musicales"], moduloAcceso: true, voce: null, gruppo: null, regole: null, titolo: ["Richiedi una canzone","Request a song","Pide una canción"], cosa: ["Mette un brano nella coda di Spotify.","Puts a track in the Spotify queue.","Pone un tema en la cola de Spotify."], costa: false, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["sr","songrequest","richiedi","canzone"], rinominato: false, chi: "tutti", chiMinimo: "tutti", attesaTutti: 0 },
       { id: "song", modulo: "musica", moduloNome: ["Richieste musicali","Music requests","Peticiones musicales"], moduloAcceso: true, voce: null, gruppo: null, regole: null, titolo: ["Cosa sta suonando","What's playing","Qué está sonando"], cosa: ["Dice il brano in riproduzione.","Says the track that is playing.","Dice el tema que está sonando."], costa: false, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["song","brano","np","nowplaying"], rinominato: false, chi: "tutti", chiMinimo: "tutti", attesaTutti: 0 },
+      { id: "tempi", modulo: "premi", moduloNome: ["Premi a tempo","Timed rewards","Recompensas con tiempo"], moduloAcceso: true, voce: null, gruppo: null, regole: null, titolo: ["Premi a tempo in corso","Running timed rewards","Recompensas con tiempo en curso"], cosa: ["Dice quali premi a punti canale a tempo stanno correndo e quanto manca, comprese le modalità della chat accese a tempo. Un mod scrive !tempi stop per fermarli tutti, o !tempi stop e il nome per uno solo.","Says which timed channel-point rewards are running and how long is left, including chat modes turned on for a time. A mod types !tempi stop to end them all, or !tempi stop and a name for just one.","Dice qué recompensas de puntos de canal con tiempo están corriendo y cuánto falta, incluidos los modos del chat activados con tiempo. Un mod escribe !tempi stop para pararlas todas, o !tempi stop y el nombre para una sola."], costa: false, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["tempi","timers","tiempos"], rinominato: false, chi: "tutti", chiMinimo: "tutti", attesaTutti: 0 },
       { id: "soloemote", modulo: "modalita", moduloNome: ["Modalità della chat a tempo","Timed chat modes","Modos del chat con tiempo"], moduloAcceso: true, voce: null, gruppo: null, regole: null, titolo: ["Solo emote a tempo","Timed emote-only","Solo emotes con tiempo"], cosa: ["Mette la chat in solo emote per due minuti, o per il tempo che scrivi (!soloemote 5m). Poi torna com'era da sola.","Puts the chat in emote-only for two minutes, or for the time you write (!soloemote 5m). Then it goes back by itself.","Pone el chat en solo emotes dos minutos, o el tiempo que escribas (!soloemote 5m). Luego vuelve solo a como estaba."], costa: false, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["soloemote"], rinominato: false, chi: "mod", chiMinimo: "mod", attesaTutti: 0 },
       { id: "messaggiunici", modulo: "modalita", moduloNome: ["Modalità della chat a tempo","Timed chat modes","Modos del chat con tiempo"], moduloAcceso: true, voce: null, gruppo: null, regole: null, titolo: ["Messaggi unici a tempo","Timed unique chat","Mensajes únicos con tiempo"], cosa: ["Per un tempo nessuno può ripetere un messaggio già scritto. Due minuti se non dici quanto.","For a while nobody can repeat a message already written. Two minutes unless you say how long.","Durante un tiempo nadie puede repetir un mensaje ya escrito. Dos minutos si no dices cuánto."], costa: false, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["messaggiunici"], rinominato: false, chi: "mod", chiMinimo: "mod", attesaTutti: 0 },
       { id: "soloabbonati", modulo: "modalita", moduloNome: ["Modalità della chat a tempo","Timed chat modes","Modos del chat con tiempo"], moduloAcceso: true, voce: null, gruppo: null, regole: null, titolo: ["Solo abbonati a tempo","Timed subscribers-only","Solo suscriptores con tiempo"], cosa: ["Per un tempo scrivono solo gli abbonati. Due minuti se non dici quanto.","For a while only subscribers can write. Two minutes unless you say how long.","Durante un tiempo solo escriben los suscriptores. Dos minutos si no dices cuánto."], costa: false, attesa: 0, spegnibile: true, rinominabile: true, acceso: true, vivo: true, nomi: ["soloabbonati"], rinominato: false, chi: "mod", chiMinimo: "mod", attesaTutti: 0 },
@@ -2028,6 +2030,19 @@ function _demoGet(via) {
         { id: 'r2', title: 'Applauso', cost: 300, richiedeTesto: false },
         { id: 'r3', title: 'Bevi l\'acqua', cost: 150, richiedeTesto: false },
         { id: 'r4', title: 'Cambia gioco', cost: 2000, richiedeTesto: true },
+        { id: 'r5', title: 'Solo emote 5 minuti', cost: 1500, richiedeTesto: false },
+        { id: 'r6', title: 'Parla in inglese per 10 minuti', cost: 3000, richiedeTesto: false },
+      ],
+      tempi: [
+        { id: 'r1', titolo: 'Airhorn', costo: 500, piattaforma: 'twitch', dalNome: 0, origine: '', suggerita: null, cose: ['tempo', 'emote', 'unici', 'sub', 'vip'], salvato: null, vale: null },
+        { id: 'r2', titolo: 'Applauso', costo: 300, piattaforma: 'twitch', dalNome: 0, origine: '', suggerita: null, cose: ['tempo', 'emote', 'unici', 'sub', 'vip'], salvato: null, vale: null },
+        { id: 'r3', titolo: 'Bevi l\'acqua', costo: 150, piattaforma: 'twitch', dalNome: 0, origine: '', suggerita: null, cose: ['tempo', 'emote', 'unici', 'sub', 'vip'], salvato: null, vale: null },
+        { id: 'r4', titolo: 'Cambia gioco', costo: 2000, piattaforma: 'twitch', dalNome: 0, origine: '', suggerita: null, cose: ['tempo', 'emote', 'unici', 'sub', 'vip'], salvato: null, vale: null },
+        { id: 'r5', titolo: 'Solo emote 5 minuti', costo: 1500, piattaforma: 'twitch', dalNome: 300, origine: 'nome', suggerita: 'emote', cose: ['tempo', 'emote', 'unici', 'sub', 'vip'], salvato: null, vale: { durata: 300, origine: 'nome', cosa: 'tempo', doppio: 'somma', fineChat: true, testoFine: '' } },
+        { id: 'r6', titolo: 'Parla in inglese per 10 minuti', costo: 3000, piattaforma: 'twitch', dalNome: 600, origine: 'nome', suggerita: null, cose: ['tempo', 'emote', 'unici', 'sub', 'vip'], salvato: null, vale: { durata: 600, origine: 'nome', cosa: 'tempo', doppio: 'somma', fineChat: true, testoFine: '' } },
+      ],
+      inCorso: [
+        { chiave: 'p:r6', cosa: 'tempo', titolo: 'Parla in inglese per 10 minuti', chi: ['Luna'], da: Date.now() - 4 * 60000, fino: Date.now() + 6 * 60000 + 12000 },
       ],
     },
     '/api/streamer/guide': {
@@ -13867,6 +13882,29 @@ function pannelloAlert() {
       <p class="spazio-sopra"><button class="btn" data-salva-cfg="pubblicita">${L('Salva', 'Save', 'Guardar')}</button></p>
     </details>
 
+    <details class="carta sez" data-parte="aspetto" id="sez-tempi">
+      <summary><h3>${_hIco(ICO.orologio)}${L('Premi a tempo', 'Timed rewards', 'Recompensas con tiempo')}</h3></summary>
+      <p>${L('I premi a punti canale che durano, mentre corrono: il nome del premio, quanto manca, una barra che si svuota e chi l\'ha riscattato. Ci sono anche le modalità della chat accese a tempo, da un premio o da un mod. Quanto dura un premio si sceglie in «Effetti», nella carta «Premi a tempo».', 'Channel-point rewards that last, while they run: the reward name, the time left, a bar that empties and who redeemed it. Chat modes turned on for a time, by a reward or by a mod, show up too. How long a reward lasts is set in «Effects», in the «Timed rewards» card.', 'Las recompensas de puntos de canal que duran, mientras corren: el nombre de la recompensa, cuánto falta, una barra que se vacía y quién la canjeó. También aparecen los modos del chat activados con tiempo, por una recompensa o por un mod. Cuánto dura una recompensa se elige en «Efectos», en la tarjeta «Recompensas con tiempo».')}</p>
+      <div data-cfg="tempi">
+        <div class="riga-interruttore spazio-sopra">
+          <label class="interruttore"><input type="checkbox" data-c="attivo" id="tempi-attivo"><span class="levetta"></span></label>
+          <span class="etichetta-stato">${L('Premi a tempo', 'Timed rewards', 'Recompensas con tiempo')}</span>
+        </div>
+        <div class="goal-campi spazio-sopra">
+          <label class="campo-num">${L('Dove', 'Where', 'Dónde')}<select data-c="posizione">${POS4_OPTS().map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join('')}</select></label>
+          <label class="campo-num">${L('Quanti al massimo', 'How many at most', 'Cuántas como máximo')}<select data-c="quanti">${[1, 2, 3, 4, 5].map((n) => `<option value="${n}">${n}</option>`).join('')}</select></label>
+        </div>
+        <label class="riga-check spazio-sopra"><input type="checkbox" data-c="barra"> ${L('Una barra che si svuota col tempo', 'A bar that empties as time runs', 'Una barra que se vacía con el tiempo')}</label>
+        <label class="riga-check"><input type="checkbox" data-c="mostraChi"> ${L('Chi l\'ha riscattato', 'Who redeemed it', 'Quién la canjeó')}</label>
+        <p class="suggerimento">${L('Quando ce ne sono di più, si vedono prima quelli che finiscono prima.', 'When there are more, the ones ending first come first.', 'Cuando hay más, se ven primero las que terminan antes.')}</p>
+        <div class="asp-blocco" data-asp="tempi" data-cfg-di="tempi">
+          <h4 class="spazio-sopra">${L('Aspetto', 'Appearance', 'Aspecto')}</h4>
+          ${_vesteCampi()}
+        </div>
+      </div>
+      <p class="spazio-sopra"><button class="btn" data-salva-cfg="tempi">${L('Salva', 'Save', 'Guardar')}</button></p>
+    </details>
+
     <details class="carta sez" data-parte="aspetto" id="sez-treno">
       <summary><h3>${_hIco(ICO.treno)}Hype train</h3></summary>
       <p>${L('Il treno lo fa Twitch: livello, punti e quanto manca li decide lui, e qui si vedono. Niente da contare e niente da far partire — quando parte, parte.', 'The train is Twitch’s: level, points and time left are its call, and here you see them. Nothing to count and nothing to start — when it goes, it goes.', 'El tren lo hace Twitch: nivel, puntos y lo que falta los decide él, y aquí se ven. Nada que contar y nada que arrancar — cuando sale, sale.')}</p>
@@ -14337,7 +14375,7 @@ async function montaFontBrowser(box, targetId) {
 let _conta = [];
 const CONT_BASE = 40;
 const FISSI = ['alert', 'chat', 'wf', 'ws'];
-const ELEM_OVL = [...FISSI, 'goal', 'cont', 'cart', 'musica', 'timer', 'pubblicita', 'treno', 'bit', 'pen', 'boss', 'arena', 'scritta', 'etichetta', 'muro', 'effetti', 'consolify'];
+const ELEM_OVL = [...FISSI, 'goal', 'cont', 'cart', 'musica', 'timer', 'pubblicita', 'tempi', 'treno', 'bit', 'pen', 'boss', 'arena', 'scritta', 'etichetta', 'muro', 'effetti', 'consolify'];
 const ELEM_SCENA = ELEM_OVL.filter((k) => k !== 'effetti');
 const CHAT_DA = [['twitch', 'Twitch'], ['kick', 'Kick']];
 let occSel = '';
@@ -15077,6 +15115,25 @@ function _vestiTimer(box, cfg) {
     : _orologioGiu(fine > 0 ? manca : (Number(cfg.minuti) || 15) * 60000);
 }
 
+function _defTempi() {
+  return { attivo: false, quanti: 3, barra: true, mostraChi: true, posizione: 'alto-destra', xy: null, stile: VESTE_DEF() };
+}
+
+function _vestiTempi(box, cfg) {
+  const st = cfg.stile || {};
+  box.className = 'ovl-widget ovl-tempi dentro dim-' + (st.dim || 'media') + ' ' + classiIdentita(st, 'nessuna');
+  _setVars(box, { '--bg': st.sfondo, '--op': (st.opacita != null ? st.opacita : 85) + '%', '--fg': st.testo,
+    '--acc': st.accento, '--radius': (st.bordoRaggio != null ? st.bordoRaggio : 12) + 'px', '--font': fontStile(st) });
+  const esempi = [
+    [L('Parla in inglese', 'Speak Italian', 'Habla en inglés'), 6 * 60000 + 12000, 0.62, ['Luna']],
+    [L('Solo emote', 'Emote only', 'Solo emotes'), 72000, 0.4, ['Marco', 'Bea']],
+    [L('Niente HUD', 'No HUD', 'Sin HUD'), 14 * 60000, 0.93, ['Sam']],
+  ].slice(0, Math.max(1, Math.min(3, Number(cfg.quanti) || 3)));
+  box.innerHTML = esempi.map(([tit, ms, q, chi]) => '<div class="tp-riga"><div class="tp-testa"><span class="tp-tit">' + esc(tit) + '</span><span class="tp-tempo">' + _orologioGiu(ms) + '</span></div>'
+    + (cfg.barra === false ? '' : '<div class="tp-barra"><i style="--q:' + q + '"></i></div>')
+    + (cfg.mostraChi === false ? '' : '<div class="tp-chi">' + esc(chi.slice().reverse().join(', ')) + '</div>') + '</div>').join('');
+}
+
 function _defPubblicita() {
   return { attivo: false, titolo: '', titoloPausa: '', mostraDa: 0, pausa: true, posizione: 'alto-destra', xy: null, stile: VESTE_DEF() };
 }
@@ -15384,7 +15441,7 @@ async function _disegnaPremiMuro() {
       : `<p class="vuoto">${L(`Non hai ancora premi a punti canale su ${_premiSu()}: creane uno e torna qui.`, `You have no channel-point rewards on ${_premiSu()} yet: create one and come back here.`, `Aún no tienes recompensas de puntos de canal en ${_premiSu()}: crea una y vuelve aquí.`)}</p>`);
 }
 
-const VESTITORE = { musica: _vestiMusica, pen: _vestiPen, timer: _vestiTimer, pubblicita: _vestiPubblicita, treno: _vestiTreno, bit: _vestiBit, boss: _vestiBoss, arena: _vestiArena, scritta: _vestiScritta, etichetta: _vestiEtichetta, muro: _vestiMuro, effetti: _vestiEffetti };
+const VESTITORE = { musica: _vestiMusica, pen: _vestiPen, timer: _vestiTimer, pubblicita: _vestiPubblicita, tempi: _vestiTempi, treno: _vestiTreno, bit: _vestiBit, boss: _vestiBoss, arena: _vestiArena, scritta: _vestiScritta, etichetta: _vestiEtichetta, muro: _vestiMuro, effetti: _vestiEffetti };
 
 function _orologioGiu(ms) {
   const t = Math.max(0, Math.ceil(ms / 1000));
@@ -15679,6 +15736,7 @@ const PEZZI_EL = () => [
   ['musica', '#sez-musica'],
   ['timer', '#sez-timer'],
   ['pubblicita', '#sez-pubblicita'],
+  ['tempi', '#sez-tempi'],
   ['treno', '#sez-treno'],
   ['bit', '#sez-bit'],
   ['boss', '#sez-boss'],
@@ -16010,6 +16068,7 @@ const ELEMENTI = () => {
   out.push({ k: 'musica', ico: ICO.musica, n: L('Player musica', 'Music player', 'Reproductor de música'), cfg: 'overlayMusica' });
   out.push({ k: 'timer', ico: ICO.orologio, n: L('Conto alla rovescia', 'Countdown', 'Cuenta atrás'), cfg: 'overlayTimer' });
   out.push({ k: 'pubblicita', ico: ICO.megafono, n: L('Conto alla pubblicità', 'Ad countdown', 'Cuenta atrás de anuncios'), cfg: 'overlayPubblicita' });
+  out.push({ k: 'tempi', ico: ICO.orologio, n: L('Premi a tempo', 'Timed rewards', 'Recompensas con tiempo'), cfg: 'overlayTempi' });
   out.push({ k: 'treno', ico: ICO.treno, n: L('Hype train', 'Hype train', 'Hype train'), cfg: 'overlayTreno' });
   out.push({ k: 'bit', ico: ICO.podio, n: L('Classifica Bit', 'Bits leaderboard', 'Clasificación de Bits'), cfg: 'overlayBit' });
   out.push({ k: 'pen', ico: ICO.penitenza, n: L('Sfida a tempo', 'Timed challenge', 'Reto a tiempo'), cfg: 'penitenze' });
@@ -16069,7 +16128,7 @@ function _defTimer() {
     minuti: 15, posizione: 'alto-destra', xy: null, stile: VESTE_DEF() };
 }
 
-const _DEF_EL = { musica: _defMusica, timer: _defTimer, pubblicita: _defPubblicita, treno: _defTreno, bit: _defBit, boss: _defBoss, arena: _defArena, scritta: _defScritta, etichetta: _defEtichetta, muro: _defMuro, effetti: () => ({ attivo: true, posizione: 'centro', xy: null }), pen: () => ({ attivo: false, durataMin: 2, overlay: { posizione: 'alto-destra', colore: '#ff2d2d' } }) };
+const _DEF_EL = { musica: _defMusica, timer: _defTimer, pubblicita: _defPubblicita, tempi: _defTempi, treno: _defTreno, bit: _defBit, boss: _defBoss, arena: _defArena, scritta: _defScritta, etichetta: _defEtichetta, muro: _defMuro, effetti: () => ({ attivo: true, posizione: 'centro', xy: null }), pen: () => ({ attivo: false, durataMin: 2, overlay: { posizione: 'alto-destra', colore: '#ff2d2d' } }) };
 
 function _cfgEl(k) {
   const e = ELEM(k);
@@ -21627,6 +21686,13 @@ function pannelloEffetti() {
       <div id="suoni-premi-box">${attesaHtml()}</div>
     </div>
 
+    <div class="carta" data-zona="punti" id="carta-tempi">
+      <h2>${_hIco(ICO.orologio)}${L('Premi a tempo', 'Timed rewards', 'Recompensas con tiempo')}</h2>
+      <p>${L('Un premio che', 'A reward that', 'Una recompensa que')} <strong class="primo-piano">${L('dura', 'lasts', 'dura')}</strong> (${L('«Solo emote per 5 minuti», «Parla in inglese per 10 minuti», «VIP per un giorno»', '«Emote only for 5 minutes», «Speak in an accent for 10 minutes», «VIP for a day»', '«Solo emotes 5 minutos», «Habla en inglés 10 minutos», «VIP por un día»')}):
+      ${L('quando qualcuno lo riscatta, il bot fa partire il tempo, lo dice in chat, lo mostra sull\'overlay e lo chiude da solo. Il tempo lo legge dal', 'when someone redeems it, the bot starts the clock, says so in chat, shows it on the overlay and ends it by itself. It reads the time from the', 'cuando alguien la canjea, el bot pone en marcha el tiempo, lo dice en el chat, lo muestra en el overlay y lo cierra solo. El tiempo lo lee del')} <strong>${L('nome del premio', 'reward name', 'nombre de la recompensa')}</strong>: ${L('qui lo cambi, e scegli cosa dura.', 'here you change it, and choose what lasts.', 'aquí lo cambias, y eliges qué dura.')}</p>
+      <div id="tempi-box">${attesaHtml()}</div>
+    </div>
+
     <div class="carta" data-zona="punti">
       <h2>${_hIco(ICO.giveaway)}${L('Alert a punti canale', 'Channel-point alerts', 'Alertas de puntos de canal')}</h2>
       <p>${L('Crea un', 'Create a', 'Crea una')} <strong class="primo-piano">${L('premio a punti canale', 'channel-point reward', 'recompensa de puntos de canal')}</strong> ${L(`di ${_premiSu()}: quando uno spettatore lo riscatta`, `on ${_premiSu()}: when a viewer redeems it`, `de ${_premiSu()}: cuando un espectador la canjea`)}
@@ -21640,7 +21706,11 @@ async function caricaSuoniPremi() {
   const box = document.getElementById('suoni-premi-box');
   if (!box) return;
   let d;
-  try { d = await api('/api/streamer/premi'); } catch (e) { box.innerHTML = `<p class="vuoto">${L('Errore', 'Error', 'Error')}: ${esc(e.message)}</p>`; return; }
+  try { d = await api('/api/streamer/premi'); } catch (e) {
+    for (const b of [box, document.getElementById('tempi-box')]) if (b) b.innerHTML = `<p class="vuoto">${L('Errore', 'Error', 'Error')}: ${esc(e.message)}</p>`;
+    return;
+  }
+  _disegnaTempiPremi(d);
   if (!d.permessoOk) {
     box.innerHTML = _premiFuoriDaTwitch(d) ? `<p class="vuoto">${_premiFuoriDaTwitch(d)}</p>` : `<p class="vuoto">${L('Per leggere i tuoi punti canale serve un permesso in più.', 'Reading your channel points requires an extra permission.', 'Para leer tus puntos de canal se necesita un permiso adicional.')}
       <a class="btn secondario mini" href="/auth/permessi">${L('Concedi il permesso', 'Grant the permission', 'Concede el permiso')}</a></p>`;
@@ -21801,6 +21871,239 @@ function _premioEditorPos(box, comando, tipo, st, salva, schermo = '') {
   box.querySelector('.pp-r').addEventListener('change', salva);
 }
 
+const _PAROLE_TEMPO = () => [
+  [604800, L('settimana', 'week', 'semana'), L('settimane', 'weeks', 'semanas')],
+  [86400, L('giorno', 'day', 'día'), L('giorni', 'days', 'días')],
+  [3600, L('ora', 'hour', 'hora'), L('ore', 'hours', 'horas')],
+  [60, L('minuto', 'minute', 'minuto'), L('minuti', 'minutes', 'minutos')],
+  [1, L('secondo', 'second', 'segundo'), L('secondi', 'seconds', 'segundos')],
+];
+
+function _paroleTempo(sec) {
+  const P = _PAROLE_TEMPO();
+  const s = Math.max(0, Math.round(Number(sec) || 0));
+  const una = (n, [, a, b]) => n + ' ' + (n === 1 ? a : b);
+  if (s >= 604800 && s % 604800 === 0) return una(s / 604800, P[0]);
+  const pezzi = [];
+  let r = s;
+  for (const u of P.slice(1)) { const n = Math.floor(r / u[0]); r -= n * u[0]; if (n) pezzi.push(una(n, u)); }
+  return pezzi.slice(0, 2).join(L(' e ', ' and ', ' y ')) || una(0, P[4]);
+}
+
+const _COSA_TEMPO = () => ({
+  tempo: [L('Solo il tempo', 'Just the time', 'Solo el tiempo'),
+    L('Il bot dice quando parte e quando finisce, e sull\'overlay si vede quanto manca, col conto alla rovescia. Va bene per le sfide: «parla in inglese», «niente HUD», «gioca con una mano».', 'The bot says when it starts and when it ends, and the overlay shows the time left. Good for challenges: «speak in an accent», «no HUD», «play one-handed».', 'El bot dice cuándo empieza y cuándo termina, y en el overlay se ve cuánto falta. Va bien para los retos: «habla en inglés», «sin HUD», «juega con una mano».')],
+  emote: [L('Chat in solo emote', 'Chat in emote-only', 'Chat en solo emotes'),
+    L('La chat va in solo emote e alla fine torna com\'era, da sola. Al massimo un\'ora. Se l\'ha già accesa un mod, il premio non si fa e i punti tornano.', 'The chat goes emote-only and goes back by itself at the end. One hour at most. If a mod already turned it on, the reward does not happen and the points go back.', 'El chat pasa a solo emotes y al final vuelve solo a como estaba. Una hora como máximo. Si ya lo activó un mod, la recompensa no se hace y los puntos vuelven.')],
+  unici: [L('Chat in messaggi unici', 'Chat in unique-chat', 'Chat en mensajes únicos'),
+    L('Per quel tempo nessuno può ripetere un messaggio già scritto, poi la chat torna com\'era. Al massimo un\'ora.', 'For that time nobody can repeat a message already written, then the chat goes back. One hour at most.', 'Durante ese tiempo nadie puede repetir un mensaje ya escrito, luego el chat vuelve a como estaba. Una hora como máximo.')],
+  sub: [L('Chat solo abbonati', 'Chat for subscribers only', 'Chat solo suscriptores'),
+    L('Per quel tempo scrive solo chi è abbonato, poi la chat torna com\'era. Al massimo un\'ora.', 'For that time only subscribers can write, then the chat goes back. One hour at most.', 'Durante ese tiempo solo escriben los suscriptores, luego el chat vuelve a como estaba. Una hora como máximo.')],
+  vip: [L('VIP a chi lo riscatta', 'VIP for whoever redeems it', 'VIP para quien la canjea'),
+    L('Chi lo riscatta è VIP per quel tempo, almeno un minuto. Un VIP che c\'è già non si accorcia mai, e un VIP che hai dato tu a mano non si tocca: in quei casi il premio non si fa e i punti tornano.', 'Whoever redeems it is VIP for that time, at least one minute. An existing VIP is never shortened, and a VIP you gave by hand is left alone: in those cases the reward does not happen and the points go back.', 'Quien la canjea es VIP durante ese tiempo, al menos un minuto. Un VIP que ya existe nunca se acorta, y un VIP que diste tú a mano no se toca: en esos casos la recompensa no se hace y los puntos vuelven.')],
+});
+
+const _ERRORI_TEMPO = () => ({
+  'solo-twitch': L('Su Kick un premio a tempo può essere solo un conto alla rovescia.', 'On Kick a timed reward can only be a countdown.', 'En Kick una recompensa con tiempo solo puede ser una cuenta atrás.'),
+  durata: L('La durata va da 10 secondi a 30 giorni.', 'The duration goes from 10 seconds to 30 days.', 'La duración va de 10 segundos a 30 días.'),
+  'vip-corto': L('Un VIP a tempo dura almeno un minuto.', 'A timed VIP lasts at least one minute.', 'Un VIP con tiempo dura al menos un minuto.'),
+  'modo-lungo': L('Una modalità della chat dura al massimo un\'ora.', 'A chat mode lasts one hour at most.', 'Un modo del chat dura una hora como máximo.'),
+});
+
+function _unitaDi(sec) { return [86400, 3600, 60].find((u) => sec >= u && sec % u === 0) || (sec >= 60 ? 60 : 1); }
+
+function _disegnaTempiPremi(d) {
+  const box = document.getElementById('tempi-box');
+  if (!box) return;
+  if (!d.permessoOk) {
+    box.innerHTML = _premiFuoriDaTwitch(d) ? `<p class="vuoto">${_premiFuoriDaTwitch(d)}</p>` : `<p class="vuoto">${L('Per leggere i tuoi punti canale serve un permesso in più.', 'Reading your channel points requires an extra permission.', 'Para leer tus puntos de canal se necesita un permiso adicional.')}
+      <a class="btn secondario mini" href="/auth/permessi">${L('Concedi il permesso', 'Grant the permission', 'Concede el permiso')}</a></p>`;
+    return;
+  }
+  const tempi = Array.isArray(d.tempi) ? d.tempi : [];
+  const aperti = new Set([...box.querySelectorAll('.tempi-premio > details[open]')].map((x) => x.parentElement.dataset.reward));
+  const misti = _premiMisti(tempi.map((r) => ({ piattaforma: r.piattaforma })));
+  const cose = _COSA_TEMPO();
+  const unita = [[86400, L('giorni', 'days', 'días')], [3600, L('ore', 'hours', 'horas')], [60, L('minuti', 'minutes', 'minutos')], [1, L('secondi', 'seconds', 'segundos')]];
+  const studio = impostazioni().overlayTempi?.attivo
+    ? ''
+    : `<p class="suggerimento tempi-studio">${L('Sull\'overlay si vedono col pezzo «Premi a tempo» dell\'Overlay Studio, che adesso è spento.', 'On the overlay they show with the «Timed rewards» piece of the Overlay Studio, which is off now.', 'En el overlay se ven con la pieza «Recompensas con tiempo» del Overlay Studio, que ahora está apagada.')}
+      <button type="button" class="btn secondario mini" data-vai-scheda="alert">${L('Apri lo Studio', 'Open the Studio', 'Abre el Studio')}</button></p>`;
+  const righe = tempi.map((r, i) => {
+    const sv = r.salvato || {};
+    const modo = sv.spento ? 'no' : (sv.durata ? 'scelta' : (r.dalNome ? 'nome' : 'no'));
+    const quanto = sv.durata || r.dalNome || 300;
+    const u = _unitaDi(quanto);
+    const cosa = r.cose.includes(sv.cosa) ? sv.cosa : 'tempo';
+    const dove = r.piattaforma === 'kick' || misti ? ` (${NOME_PIATTAFORMA[r.piattaforma] || r.piattaforma})` : '';
+    return `<li class="tempi-premio" data-reward="${esc(r.id)}" data-titolo="${esc(r.titolo)}" data-costo="${Number(r.costo) || 0}" data-dal-nome="${Number(r.dalNome) || 0}" data-suggerita="${esc(r.suggerita || '')}">
+      <details${aperti.has(r.id) ? ' open' : ''}>
+        <summary><span class="tempi-nome"><strong>${esc(r.titolo)}</strong> <span class="suggerimento">${Number(r.costo) || 0} ${L('punti', 'points', 'puntos')}${esc(dove)}</span></span> <span class="tempi-stato" data-tempi-stato></span></summary>
+        <div class="tempi-corpo">
+          <fieldset class="tempi-quanto">
+            <legend class="campo">${L('Quanto dura', 'How long it lasts', 'Cuánto dura')}</legend>
+            <label class="riga-check"><input type="radio" name="tq-${i}" value="nome"${modo === 'nome' ? ' checked' : ''}${r.dalNome ? '' : ' disabled'}> ${r.dalNome
+              ? `${r.origine === 'descrizione' ? L('Come dice la descrizione', 'As the description says', 'Como dice la descripción') : L('Come dice il nome', 'As the name says', 'Como dice el nombre')}: <strong>${esc(_paroleTempo(r.dalNome))}</strong>`
+              : L('Il nome non dice un tempo', 'The name does not say a time', 'El nombre no dice un tiempo')}</label>
+            <label class="riga-check"><input type="radio" name="tq-${i}" value="scelta"${modo === 'scelta' ? ' checked' : ''}> ${L('Lo scelgo io', 'I choose it', 'Lo elijo yo')}</label>
+            <span class="tempi-scelta">
+              <input type="number" class="tq-n" min="1" max="43200" step="1" value="${Math.round(quanto / u)}" aria-label="${esc(L('Quanto', 'How much', 'Cuánto'))}">
+              <select class="tq-u" aria-label="${esc(L('Unità', 'Unit', 'Unidad'))}">${unita.map(([v, t]) => `<option value="${v}"${v === u ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select>
+            </span>
+            <label class="riga-check"><input type="radio" name="tq-${i}" value="no"${modo === 'no' ? ' checked' : ''}> ${L('Non è a tempo', 'Not timed', 'No es con tiempo')}</label>
+          </fieldset>
+          <div class="tempi-se">
+            <label class="campo" for="tq-cosa-${i}">${L('Cosa dura', 'What lasts', 'Qué dura')}</label>
+            <select id="tq-cosa-${i}" class="tq-cosa"${r.cose.length < 2 ? ' disabled' : ''}>${r.cose.map((c) => `<option value="${c}"${c === cosa ? ' selected' : ''}>${esc(cose[c][0])}</option>`).join('')}</select>
+            <p class="suggerimento tq-nota"></p>
+            ${r.cose.length < 2 ? `<p class="suggerimento">${L('Su Kick un premio a tempo è un conto alla rovescia: le modalità della chat e il VIP a tempo si fanno coi premi di Twitch.', 'On Kick a timed reward is a countdown: chat modes and timed VIP work with Twitch rewards.', 'En Kick una recompensa con tiempo es una cuenta atrás: los modos del chat y el VIP con tiempo funcionan con las recompensas de Twitch.')}</p>` : ''}
+            <p class="tempi-suggerita" hidden></p>
+            <label class="campo" for="tq-doppio-${i}">${L('Se lo riscattano mentre il tempo corre', 'If someone redeems it while the time runs', 'Si la canjean mientras corre el tiempo')}</label>
+            <select id="tq-doppio-${i}" class="tq-doppio">
+              <option value="somma"${sv.doppio !== 'adesso' ? ' selected' : ''}>${L('Si somma', 'It adds up', 'Se suma')}</option>
+              <option value="adesso"${sv.doppio === 'adesso' ? ' selected' : ''}>${L('Riparte da adesso', 'Restarts from now', 'Vuelve a empezar')}</option>
+            </select>
+            <p class="suggerimento tq-nota-doppio"></p>
+            <p class="tempi-prova"><button type="button" class="btn secondario mini" data-tempi-prova>${L('Prova sull\'overlay', 'Test on the overlay', 'Prueba en el overlay')}</button> <span class="suggerimento">${L('Solo in scena, col tempo che vedi qui: niente chat, niente VIP, la chat resta com\'è.', 'On screen only, with the time you see here: no chat, no VIP, the chat stays as it is.', 'Solo en escena, con el tiempo que ves aquí: nada de chat, nada de VIP, el chat se queda como está.')}</span></p>
+            <div class="tempi-fine">
+              <label class="riga-check spazio-sopra"><input type="checkbox" class="tq-fine"${sv.fineChat === false ? '' : ' checked'}> ${L('Dillo in chat quando finisce', 'Say it in chat when it ends', 'Decirlo en el chat cuando termine')}</label>
+              <input type="text" class="campo-largo tq-testo-fine" maxlength="200" value="${esc(sv.testoFine || '')}" aria-label="${esc(L('Frase di fine per', 'End line for', 'Frase de final para') + ' ' + r.titolo)}" placeholder="${esc(L('Frase tua alla fine (facoltativa): {premio}, {user}', 'Your own line at the end (optional): {premio}, {user}', 'Tu frase al final (opcional): {premio}, {user}'))}">
+            </div>
+          </div>
+        </div>
+      </details>
+    </li>`;
+  }).join('');
+  box.innerHTML = `
+    <div class="tempi-incorso" data-tempi-incorso></div>
+    ${studio}
+    ${tempi.length
+    ? `<ul class="tempi-lista">${righe}</ul>
+      <p class="spazio-sopra"><button type="button" class="btn" id="btn-salva-tempi">${L('Salva i premi a tempo', 'Save the timed rewards', 'Guardar las recompensas con tiempo')}</button></p>`
+    : `<div class="riquadro-info">${L(`Non hai ancora premi a punti canale su ${_premiSu(d)}. Creane uno con un tempo nel nome («Solo emote 5 minuti») e torna qui.`, `You don't have any channel-point rewards on ${_premiSu(d)} yet. Create one with a time in its name («Emote only 5 minutes») and come back here.`, `Aún no tienes recompensas de puntos de canal en ${_premiSu(d)}. Crea una con un tiempo en el nombre («Solo emotes 5 minutos») y vuelve aquí.`)}</div>`}`;
+  _disegnaInCorso(d.inCorso || []);
+  box.querySelectorAll('.tempi-premio').forEach((li) => {
+    _ritoccaTempo(li);
+    li.addEventListener('change', () => _ritoccaTempo(li));
+    li.addEventListener('input', (ev) => { if (ev.target.matches('.tq-n')) _ritoccaTempo(li); });
+    li.querySelector('[data-tempi-prova]').addEventListener('click', () => conErrore(async () => {
+      const quanto = _quantoTempo(li);
+      const r = await api('/api/streamer/premi/tempi/prova', { method: 'POST', body: { rewardId: li.dataset.reward, durata: quanto } });
+      toast(L(`Prova partita: ${_paroleTempo(quanto)} sull'overlay.`, `Test started: ${_paroleTempo(quanto)} on the overlay.`, `Prueba en marcha: ${_paroleTempo(quanto)} en el overlay.`));
+      const ora = Date.now();
+      _disegnaInCorso(Array.isArray(r?.inCorso) ? r.inCorso
+        : [..._inCorsoVisti().filter((x) => x.chiave !== 'p:' + li.dataset.reward), { chiave: 'p:' + li.dataset.reward, titolo: li.dataset.titolo, chi: [], da: ora, fino: ora + quanto * 1000 }]);
+    }));
+    li.querySelector('.tempi-suggerita').addEventListener('click', (ev) => {
+      const b = ev.target.closest('[data-tempi-fai]');
+      if (!b) return;
+      const sel = li.querySelector('.tq-cosa');
+      sel.value = b.dataset.tempiFai;
+      sel.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+  });
+  _g('btn-salva-tempi')?.addEventListener('click', () => conErrore(async () => {
+    const premi = [...box.querySelectorAll('.tempi-premio')].map(_leggiTempo);
+    let r;
+    try { r = await api('/api/streamer/premi/tempi', { method: 'POST', body: { premi } }); } catch (e) {
+      const cod = e?.dati?.codice;
+      if (cod && _ERRORI_TEMPO()[cod]) throw new Error((e.dati.premio ? `«${e.dati.premio}»: ` : '') + _ERRORI_TEMPO()[cod]);
+      throw e;
+    }
+    toast(L('Premi a tempo salvati ✓', 'Timed rewards saved ✓', 'Recompensas con tiempo guardadas ✓'));
+    if (r && Array.isArray(r.tempi)) _disegnaTempiPremi({ ...d, tempi: r.tempi, inCorso: r.inCorso || [] });
+  }));
+}
+
+function _modoTempo(li) { return li.querySelector('input[type=radio]:checked')?.value || 'no'; }
+
+function _quantoTempo(li) {
+  const modo = _modoTempo(li);
+  if (modo === 'nome') return Number(li.dataset.dalNome) || 0;
+  if (modo === 'scelta') return Math.round((Number(li.querySelector('.tq-n').value) || 0) * (Number(li.querySelector('.tq-u').value) || 60));
+  return 0;
+}
+
+function _leggiTempo(li) {
+  const modo = _modoTempo(li);
+  return {
+    rewardId: li.dataset.reward, titolo: li.dataset.titolo, costo: Number(li.dataset.costo) || 0,
+    tempo: {
+      spento: modo === 'no' && Number(li.dataset.dalNome) > 0,
+      durata: modo === 'scelta' ? _quantoTempo(li) : 0,
+      cosa: li.querySelector('.tq-cosa').value,
+      doppio: li.querySelector('.tq-doppio').value,
+      fineChat: li.querySelector('.tq-fine').checked,
+      testoFine: li.querySelector('.tq-testo-fine').value.trim(),
+    },
+  };
+}
+
+function _ritoccaTempo(li) {
+  const modo = _modoTempo(li);
+  const quanto = _quantoTempo(li);
+  const cosa = li.querySelector('.tq-cosa').value;
+  const cose = _COSA_TEMPO();
+  li.querySelector('.tempi-scelta').hidden = modo !== 'scelta';
+  li.querySelector('.tempi-se').hidden = !quanto;
+  li.querySelector('.tempi-fine').hidden = cosa !== 'tempo';
+  li.querySelector('.tq-nota').textContent = (cose[cosa] || cose.tempo)[1];
+  li.querySelector('.tq-nota-doppio').textContent = li.querySelector('.tq-doppio').value === 'adesso'
+    ? L(`Chi lo riscatta mentre corre lo riporta a ${_paroleTempo(quanto)} da quel momento, se così finisce più tardi. Se no non cambierebbe niente, e i punti tornano.`, `Whoever redeems it while it runs brings it back to ${_paroleTempo(quanto)} from that moment, if that ends later. Otherwise nothing would change, and the points go back.`, `Quien la canjea mientras corre la devuelve a ${_paroleTempo(quanto)} desde ese momento, si así termina más tarde. Si no, no cambiaría nada, y los puntos vuelven.`)
+    : L(`Chi lo riscatta mentre corre aggiunge ${_paroleTempo(quanto)} al tempo che resta: ognuno ha tutto quello che ha pagato.`, `Whoever redeems it while it runs adds ${_paroleTempo(quanto)} to the time left: everyone gets all they paid for.`, `Quien la canjea mientras corre añade ${_paroleTempo(quanto)} al tiempo que queda: cada uno tiene todo lo que pagó.`);
+  const sugg = li.dataset.suggerita;
+  const box = li.querySelector('.tempi-suggerita');
+  const offri = !!(quanto && sugg && sugg !== cosa && cosa === 'tempo' && [...li.querySelector('.tq-cosa').options].some((o) => o.value === sugg));
+  box.hidden = !offri;
+  box.innerHTML = offri ? `${esc(L('Il nome fa pensare a', 'The name suggests', 'El nombre hace pensar en'))} «${esc(cose[sugg][0])}». ${esc(L('Il bot lo fa davvero solo se lo scegli tu.', 'The bot really does it only if you choose it.', 'El bot lo hace de verdad solo si lo eliges tú.'))} <button type="button" class="btn secondario mini" data-tempi-fai="${esc(sugg)}">${esc(L('Fallo davvero', 'Really do it', 'Hazlo de verdad'))}</button>` : '';
+  const stato = li.querySelector('[data-tempi-stato]');
+  stato.classList.toggle('acceso', !!quanto);
+  stato.textContent = quanto
+    ? `${_paroleTempo(quanto)}${cosa !== 'tempo' ? ' · ' + (cose[cosa] || cose.tempo)[0] : ''}${modo === 'nome' ? ' · ' + L('dal nome', 'from the name', 'del nombre') : ''}`
+    : L('Non a tempo', 'Not timed', 'Sin tiempo');
+}
+
+let _tempiOrologio = 0;
+let _tempiVisti = [];
+const _inCorsoVisti = () => _tempiVisti.filter((x) => Number(x.fino) > Date.now());
+
+function _disegnaInCorso(lista) {
+  const box = document.querySelector('[data-tempi-incorso]');
+  if (!box) return;
+  const ora = Date.now();
+  const vivi = (lista || []).filter((x) => Number(x.fino) > ora).sort((a, b) => Number(a.fino) - Number(b.fino));
+  _tempiVisti = vivi;
+  box.innerHTML = vivi.length ? `<h3>${L('Adesso', 'Now', 'Ahora')}</h3>
+    <ul class="tempi-correnti">${vivi.map((x) => `<li data-tempi-chiave="${esc(x.chiave)}">
+      <span><strong>${esc(x.titolo)}</strong>${(x.chi || []).length ? ` <span class="suggerimento">${esc(x.chi.slice().reverse().join(', '))}</span>` : ''}</span>
+      <span class="tempi-resta" data-tempi-fino="${Number(x.fino)}"></span>
+      <button type="button" class="btn secondario mini" data-tempi-ferma="${esc(x.chiave)}">${L('Ferma', 'Stop', 'Parar')}</button>
+    </li>`).join('')}</ul>` : '';
+  box.querySelectorAll('[data-tempi-ferma]').forEach((b) => b.addEventListener('click', () => conErrore(async () => {
+    if (!(await chiediSe({ titolo: L('Lo fermo adesso?', 'Stop it now?', '¿Lo paro ahora?'),
+      testo: L('Finisce subito, come se fosse scaduto: la chat lo sente, e una modalità della chat torna com\'era.', 'It ends right away, as if it ran out: the chat hears it, and a chat mode goes back to how it was.', 'Termina enseguida, como si se hubiera agotado: el chat lo oye, y un modo del chat vuelve a como estaba.'),
+      si: L('Fermalo', 'Stop it', 'Páralo') }))) return;
+    const r = await api('/api/streamer/premi/tempi/ferma', { method: 'POST', body: { chiave: b.dataset.tempiFerma } });
+    toast(r?.ok === false ? L('Era già finito.', 'It had already ended.', 'Ya había terminado.') : L('Fermato ✓', 'Stopped ✓', 'Parado ✓'));
+    _disegnaInCorso(Array.isArray(r?.inCorso) ? r.inCorso : _inCorsoVisti().filter((x) => x.chiave !== b.dataset.tempiFerma));
+  })));
+  _battiInCorso();
+  clearInterval(_tempiOrologio);
+  _tempiOrologio = vivi.length ? setInterval(_battiInCorso, 1000) : 0;
+}
+
+function _battiInCorso() {
+  const box = document.querySelector('[data-tempi-incorso]');
+  if (!box) { clearInterval(_tempiOrologio); _tempiOrologio = 0; return; }
+  const ora = Date.now();
+  for (const el of box.querySelectorAll('[data-tempi-fino]')) {
+    const resta = Number(el.dataset.tempiFino) - ora;
+    if (resta <= 0) { el.closest('li')?.remove(); continue; }
+    el.textContent = _orologioGiu(resta);
+  }
+  if (!box.querySelector('[data-tempi-fino]')) { box.innerHTML = ''; clearInterval(_tempiOrologio); _tempiOrologio = 0; }
+}
+
 async function caricaPremi() {
   const box = document.getElementById('premi-box');
   if (!box) return;
@@ -21845,6 +22148,7 @@ async function caricaPremi() {
     await api('/api/streamer/premi', { method: 'POST', body });
     toast(L(`Premio creato: lo trovi tra i punti canale su ${_premiSu(d)}.`, `Reward created: you'll find it in your ${_premiSu(d)} channel points.`, `Recompensa creada: la encontrarás en tus puntos de canal de ${_premiSu(d)}.`));
     caricaPremi();
+    caricaSuoniPremi();
   }));
   box.querySelectorAll('.rimuovi-premio').forEach((a) => a.addEventListener('click', (ev) => { ev.preventDefault(); conErrore(async () => {
     if (!(await chiediSe({ titolo: L('Elimino questo premio da Twitch?', 'Delete this reward from Twitch?', '¿Elimino esta recompensa de Twitch?'), pericolo: true,
@@ -21853,6 +22157,7 @@ async function caricaPremi() {
     await api('/api/streamer/premi/' + encodeURIComponent(a.dataset.id), { method: 'DELETE' });
     toast(L('Premio eliminato.', 'Reward deleted.', 'Recompensa eliminada.'));
     caricaPremi();
+    caricaSuoniPremi();
   }); }));
 }
 
@@ -31527,7 +31832,7 @@ function caricaDatiScheda(id) {
   if (id === 'giveaway') caricaGiveaway();
   if (id === 'penitenze') caricaPenitenze();
   if (id === 'alert') { caricaAlert(); caricaPiattaforme().then(_rendiQualiChat); _goalBozza = null; _cartBozza = null; _bozzaEl = {}; disegnaGoal(); disegnaCartelli(); caricaContaStudio();
-    riempiCfgForm('musica'); riempiCfgForm('timer'); riempiCfgForm('pubblicita'); riempiCfgForm('treno'); riempiCfgForm('bit'); riempiCfgForm('boss'); riempiCfgForm('arena'); riempiCfgForm('scritta'); riempiCfgForm('etichetta'); _segnaTimer(Number(impostazioni().overlayStato?.timer?.fine) || 0); requestAnimationFrame(() => { applicaSottoSchede('alert'); montaBanco(); _bancoScegliSeServe(); }); }
+    riempiCfgForm('musica'); riempiCfgForm('timer'); riempiCfgForm('pubblicita'); riempiCfgForm('tempi'); riempiCfgForm('treno'); riempiCfgForm('bit'); riempiCfgForm('boss'); riempiCfgForm('arena'); riempiCfgForm('scritta'); riempiCfgForm('etichetta'); _segnaTimer(Number(impostazioni().overlayStato?.timer?.fine) || 0); requestAnimationFrame(() => { applicaSottoSchede('alert'); montaBanco(); _bancoScegliSeServe(); }); }
   else smontaBanco();
   if (id === 'regia') caricaRegia();
   if (id === 'consolify') caricaConsolify();
@@ -34507,6 +34812,7 @@ const EVENTI = [
   ['cheer', 'Bits / cheer', 'Bits / cheer', 'Bits / cheer'],
   ['kicks', 'Kicks (Kick)', 'Kicks (Kick)', 'Kicks (Kick)'],
   ['redemption', 'Riscatto punti canale', 'Channel points redemption', 'Canje de puntos de canal'],
+  ['finetempo', 'Finisce il tempo di un premio', 'A timed reward runs out', 'Termina el tiempo de una recompensa'],
   ['first', 'Primo messaggio di un utente', 'A user\'s first message', 'Primer mensaje de un usuario'],
   ['online', 'Sei andato in live', 'You went live', 'Has empezado el directo'],
   ['offline', 'Fine live', 'Stream ended', 'Fin del directo'],
@@ -34519,6 +34825,7 @@ const EVENTI_TXT = {
   cheer: ['arrivano dei bits', 'bits come in', 'llegan bits'],
   kicks: ['arrivano dei Kicks su Kick (usa $kicks nel testo)', 'Kicks come in on Kick (use $kicks in the text)', 'llegan Kicks en Kick (usa $kicks en el texto)'],
   redemption: ['riscattano un premio coi punti', 'someone redeems a points reward', 'alguien canjea un premio con puntos'],
+  finetempo: ['finisce il tempo di un premio a punti canale che dura (usa $premio e $user nel testo)', 'a channel-point reward with a duration runs out (use $premio and $user in the text)', 'termina el tiempo de una recompensa de puntos de canal con duración (usa $premio y $user en el texto)'],
   first: ['un utente scrive per la prima volta', 'a user writes for the first time', 'un usuario escribe por primera vez'],
   online: ['vai in live', 'you go live', 'empiezas el directo'],
   offline: ['finisce la live', 'the stream ends', 'termina el directo'],

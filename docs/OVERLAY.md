@@ -230,7 +230,8 @@ Gli stati adesso sono quattro e vogliono dire cose diverse:
 | `ignoto` | la lettura non è riuscita | non si decide: si tiene quel che c'è |
 
 Su `ignoto` il server risponde con l'ultima lettura certa se ha meno di un
-minuto, e non la mette in cache; l'overlay, dal canto suo, non tocca niente. Su
+minuto, portata ad adesso (vedi sotto); l'overlay, dal canto suo, non tocca
+niente, nemmeno la barra. Su
 `niente` serve una seconda lettura concorde — il vuoto fra due tracce dura meno
 di così. La tolleranza vale solo per **togliere** un player già a schermo: se non
 c'è ancora, non c'è nessun lampeggio da evitare e si decide subito.
@@ -240,6 +241,70 @@ sparire di colpo è brutto quanto lampeggiare.
 
 `scripts/verifica-player.mjs` misura quella tabella riga per riga, con un finto
 Spotify che passa da «suona» a un intoppo, al vuoto fra due tracce, alla pausa.
+
+### Il player non si blocca
+
+A volte il player si fermava su una canzone a caso, o ci metteva molto a
+caricarsi. Le cause, una per una:
+
+1. **Una richiesta appesa fermava tutte le altre.** L'overlay chiede una cosa
+   alla volta, e la sua richiesta non aveva un tempo limite: una risposta che
+   non arrivava mai (un pacchetto perso, la rete del PC di OBS che sbatte)
+   lasciava il player sull'ultima canzone per minuti, o finché non si
+   ricaricava la sorgente. Lo stesso verso Spotify: una chiamata appesa teneva
+   appesa la risposta all'overlay fino a cinque minuti.
+2. **La risposta riportava indietro il tempo.** La cache di quattro secondi e
+   la memoria dell'ultima lettura buona rimandavano il punto della canzone com'era
+   quando era stato letto, e l'overlay lo prendeva per il punto di adesso: la
+   barra tornava indietro fino a quattro secondi a ogni lettura, e quando
+   Spotify non rispondeva una canzone già finita ripartiva sullo schermo per un
+   minuto.
+3. **Un «non lo so» azzerava la barra.** L'overlay non decideva su `ignoto`, ma
+   copiava comunque la lettura, senza brano e senza punto.
+4. **A canzone finita si aspettava il giro.** La prossima si chiedeva al giro
+   dei cinque secondi, più la cache: fino a nove secondi col titolo vecchio.
+5. **A Spotify si chiedeva male.** Un `429` (troppe richieste) non fermava
+   niente, e richiamare subito allungava il blocco; due letture insieme
+   rinnovavano il token due volte, e se Spotify cambia il token di rinnovo il
+   secondo rinnovo può fallire; il battito si aspettava prima di rispondere, e
+   un'app che non può leggerlo (le app più nuove non hanno quel dato) lo
+   richiedeva a ogni canzone.
+
+Il modello, adesso (`features/musica-overlay.js`, `features/spotify.js`):
+
+- **Niente aspetta per sempre.** Otto secondi per la richiesta dell'overlay,
+  sei per ogni chiamata a Spotify, rinnovo del token compreso. Scaduto il tempo
+  la lettura è `ignoto`, e la prossima parte.
+- **Quello che si risponde vale per adesso.** Una lettura dice a che punto era
+  la canzone quando è stata letta: il server la porta ad adesso (`adesso`), sia
+  dalla cache sia dalla memoria, fino alla durata del brano e non oltre. La
+  barra non torna mai indietro.
+- **Una canzone finita non si ripete.** La cache vale quattro secondi, ma non
+  oltre la fine del brano che dice: a brano finito il server rilegge (al massimo
+  una volta al secondo), e l'overlay chiede un secondo dopo la fine e poi ogni
+  due (il suo battito è di un secondo), invece di aspettare il giro dei cinque.
+  Se quindici secondi dopo la fine nessuna lettura ha detto cosa suona, il
+  player non finge: vale come `niente`.
+- **Un «non lo so» non tocca niente.** L'overlay tiene la lettura che aveva, e
+  la barra continua.
+- **A Spotify si chiede il meno possibile.** Una lettura alla volta per canale
+  (dieci sorgenti, una chiamata); un rinnovo del token alla volta; un `429`
+  ferma le chiamate per il tempo che dice Spotify (`Retry-After`, fra un
+  secondo e dieci minuti; cinque secondi se non lo dice) per tutti i canali di
+  quell'app, perché il limite è dell'app; il battito si aspetta 400 ms, poi si
+  risponde senza e arriva alla lettura dopo; un `403` sul battito vale per
+  l'app, e per un giorno non lo si chiede. In cache va solo quello che è certo
+  (il battito, o «questo brano non ce l'ha»), mai un intoppo.
+
+`test/unita/musica-overlay.test.mjs` prova ogni regola con un orologio finto.
+`scripts/verifica-player.mjs`, fra i cancelli, le misura nel browser con un
+finto server che fa come il vero: una canzone che suona va avanti col tempo (un
+finto che rimanda sempre lo stesso punto terrebbe viva per sempre una canzone
+finita), il flusso manda il suo battito e il tema riletto è quello messo (senza,
+dopo 75 secondi l'overlay si ricollegava, rileggeva un tema vuoto e spegneva il
+player per una ragione che non c'entra). Ogni misura si fa dopo che l'evento è
+successo, non a un tempo fisso, e la sua autoprova rompe l'overlay in quattro
+punti e pretende il rosso.
 
 ### L'ombra sapeva solo fare rettangoli
 
@@ -2015,3 +2080,15 @@ con la stessa funzione della tela.
   grande quanto la tela, ci avrebbe disegnato sotto un'ellisse colorata. La
   classe della tela ora si chiama `el-spento`, e una prova controlla che
   nessun altro foglio usi quel nome.
+
+## I premi a tempo
+
+Un pezzo della scena come il conto alla pubblicità (`tempi`, impostazioni in
+`overlayTempi`, `normTempi` in `web/stile.js`): una carta per ogni premio a
+punti canale che sta durando, e per ogni modalità della chat accesa a tempo.
+I tempi non li sceglie lo Studio. Il tema porta l'elenco di quello che corre
+(`premi-tempo.js`, `inCorso`, letto dai posti che tengono ogni tempo) e il bot
+lo rimanda a ogni cambio (`{ tipo: 'tempi', elenco }`); l'overlay conta da sé
+ogni secondo, ordina da sé e fa uscire con un'animazione la carta che finisce.
+Il modello sta in docs/PREMI-A-TEMPO.md, il collaudo in
+`scripts/verifica-premi-tempo.mjs`.

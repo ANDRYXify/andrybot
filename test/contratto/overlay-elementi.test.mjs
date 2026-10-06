@@ -199,13 +199,20 @@ test('player e conto alla rovescia entrano dalla stessa porta degli altri', () =
 // Spotify non sa spingere: qualcuno deve chiedere. Se a chiedere fosse il
 // server a vuoto, dieci streamer con l'overlay chiuso farebbero comunque
 // traffico; e senza cache, dieci sorgenti browser aperte varrebbero dieci
-// chiamate. Chiede l'overlay, e la risposta e' in cache.
+// chiamate. Chiede l'overlay, e la risposta e' in cache: la cache, una lettura
+// alla volta e la risposta portata ad adesso stanno in features/musica-overlay.js,
+// e le prova test/unita/musica-overlay.test.mjs. Qui si guarda che la rotta
+// passi da li'.
 test('il player non martella Spotify', () => {
   const srv = leggi('src/web/server.js');
   const i = srv.indexOf("app.get('/overlay/:login/musica'");
   assert.ok(i > 0, 'l’endpoint c’è');
   const corpo = srv.slice(i, srv.indexOf('}));', i));
-  assert.ok(/if \(c && ora - c\.ts < /.test(corpo), 'che risponde dalla cache prima di chiamare Spotify');
+  assert.match(srv, /const musicaOverlay = musicaOverlayFeat\.lettore\(\{ spotify \}\);/, 'un lettore solo per il server, con la sua cache');
+  assert.ok(/await musicaOverlay\.musica\(/.test(corpo) && !/spotify\.oraSuona/.test(corpo), 'la rotta chiede al lettore, mai a Spotify direttamente');
+  const mo = leggi('src/features/musica-overlay.js');
+  const m0 = mo.slice(mo.indexOf('async musica(login) {'));
+  assert.ok(/if \(c && ora - c\.ts < CACHE_MS/.test(m0) && m0.indexOf('CACHE_MS') < m0.indexOf('leggi(login)'), 'che risponde dalla cache prima di chiamare Spotify');
   assert.ok(/chiaveOk\(req\)/.test(corpo), 'e protetto dalla chiave dell’overlay');
   const m = OVL.slice(OVL.indexOf('setInterval(() => {'), OVL.indexOf('function applicaTema'));
   assert.ok(/mostra\('musica'\)/.test(m) && /if \(!vivo\) return;/.test(m),
@@ -217,7 +224,7 @@ test('il player non martella Spotify', () => {
 // aperte dicono la stessa cosa e un riavvio non lo azzera.
 test('il player balla sul battito vero del brano', () => {
   const sp = leggi('src/features/spotify.js');
-  assert.ok(/export async function battito\(/.test(sp), 'il battito si chiede a Spotify');
+  assert.ok(/export function battito\(/.test(sp), 'il battito si chiede a Spotify (una promessa sola per brano, condivisa da chi la chiede insieme)');
   assert.ok(/audio-features/.test(sp), 'dall’endpoint delle caratteristiche');
   const i = OVL.indexOf('function battitoDelBrano(');
   assert.ok(i > 0, 'e l’overlay lo usa');
@@ -518,7 +525,7 @@ test('un elemento che resta a schermo non viene ri-appeso a ogni disegno', () =>
   // e' nato un elemento nuovo, e va guardato che anche lui si posi invece di
   // farsi ri-appendere.
   const quanti = (OVL.match(/\n\s*posa\(wboxes\[/g) || []).length;
-  assert.equal(quanti, 8, `i pezzi che restano a schermo sono otto (contatori, obiettivo, musica, conto alla rovescia, conto alla pubblicita', treno, classifica Bit, cartelli), e devono passare tutti dalla posa (${quanti})`);
+  assert.equal(quanti, 9, `i pezzi che restano a schermo sono nove (contatori, obiettivo, musica, conto alla rovescia, conto alla pubblicita', premi a tempo, treno, classifica Bit, cartelli), e devono passare tutti dalla posa (${quanti})`);
 });
 
 test('un contatore nuovo si fa dal banco, non mandando lo streamer altrove', () => {

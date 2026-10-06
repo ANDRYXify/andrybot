@@ -45,6 +45,9 @@ export const DURATA_MIN = 10;
 export const DURATA_MAX = 3600;
 const RIPROVA_MS = 30_000;
 const chiave = (modo) => `modalita:${modo}`;
+// La riga di una modalita' accesa a tempo: la leggono anche i premi a tempo
+// (premi-tempo.js), per l'overlay e per !tempi, invece di tenerne una copia.
+export const chiaveModo = chiave;
 
 // «2m», «90s», «5» (minuti), «1h», «2 min», «30 secondi». Vuoto vuol dire di
 // serie; una cosa che non e' una durata vuol dire null, e chi chiama lo dice.
@@ -66,6 +69,13 @@ export function durataAParole(s) {
   return [min, sec].filter(Boolean).join(' e ');
 }
 
+// Il premio che ha acceso (o allungato) una modalita': il nome dell'ultimo, e
+// chi l'ha riscattato in coda a chi c'era, senza doppioni.
+function conPremio(prima, { titolo, chi } = {}) {
+  const nomi = [...(Array.isArray(prima?.chi) ? prima.chi : []).filter((x) => x !== chi), chi].filter(Boolean).slice(-5);
+  return { titolo: String(titolo || prima?.titolo || '').slice(0, 60), chi: nomi };
+}
+
 export class ModalitaChat {
   constructor({ helix, say = null, orologio = () => Date.now(), timer = setTimeout, annulla = clearTimeout } = {}) {
     this.helix = helix;
@@ -77,8 +87,10 @@ export class ModalitaChat {
   }
 
   // Accende `modo` per `secondi`. Ritorna cosa e' successo, perche' chi chiama
-  // sappia cosa dire (o tacere).
-  async accendiPer(channel, modo, secondi = DURATA_DI_SERIE, { annuncia = true } = {}) {
+  // sappia cosa dire (o tacere). `premio` ({ titolo, chi }) e' il premio a
+  // punti canale che l'ha accesa: la riga lo ricorda, e chi l'ha riscattato si
+  // aggiunge a chi c'era.
+  async accendiPer(channel, modo, secondi = DURATA_DI_SERIE, { annuncia = true, premio = null } = {}) {
     const ch = String(channel || '').toLowerCase();
     const def = MODI[modo];
     if (!ch || !def) return { ok: false, esito: 'errore', motivo: 'modalità sconosciuta' };
@@ -91,8 +103,9 @@ export class ModalitaChat {
       const ora = await this.helix?.leggiChat?.(ch).catch(() => null);
       if (ora && !ora[def.campo]) await this.helix?.impostaChat?.(ch, { [def.campo]: true }).catch(() => null);
       const fino = Math.max(gia.fino, adesso + durata * 1000);
-      statoVivo.scrivi(ch, chiave(modo), { ...gia, fino });
+      statoVivo.scrivi(ch, chiave(modo), { ...gia, fino, ...(premio ? { premio: conPremio(gia.premio, premio) } : {}) });
       this._punta(ch, modo, fino);
+      this._cambiata(ch);
       if (annuncia) this.say?.(ch, `⏳ Modalità ${def.nome} allungata: fino a fra ${durataAParole(Math.round((fino - adesso) / 1000))}.`);
       return { ok: true, esito: 'esteso', fino };
     }
@@ -101,8 +114,9 @@ export class ModalitaChat {
     const r = await this.helix?.impostaChat?.(ch, { [def.campo]: true }).catch(() => null);
     if (!r?.ok) return { ok: false, esito: 'errore', motivo: r?.motivo || 'errore Twitch' };
     const fino = adesso + durata * 1000;
-    statoVivo.scrivi(ch, chiave(modo), { fino, da: adesso });
+    statoVivo.scrivi(ch, chiave(modo), { fino, da: adesso, ...(premio ? { premio: conPremio(null, premio) } : {}) });
     this._punta(ch, modo, fino);
+    this._cambiata(ch);
     if (annuncia) this.say?.(ch, `🎉 Chat in modalità ${def.nome} per ${durataAParole(durata)}!`);
     return { ok: true, esito: 'acceso', fino };
   }
@@ -130,7 +144,14 @@ export class ModalitaChat {
       return;
     }
     statoVivo.togli(ch, chiave(modo));
+    this._cambiata(ch);
     this.say?.(ch, `✓ Fine della modalità ${MODI[modo].nome}: chat di nuovo libera.`);
+  }
+
+  // Chi mostra i tempi in corso (l'overlay dei premi a tempo) lo sa subito,
+  // anche quando a cambiare la chat e' un mod col comando.
+  _cambiata(ch) {
+    try { this.quandoCambia?.(ch); } catch (e) { log.debug('quandoCambia:', e?.message || e); }
   }
 
   // Finire prima: solo quello che si era acceso noi.

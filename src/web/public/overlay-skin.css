@@ -465,6 +465,32 @@
 .ovl-treno.dim-grande { font-size: 1.25rem; min-width: 19rem; }
 .ovl-treno.dim-enorme { font-size: 1.6rem; min-width: 24rem; }
 
+.ovl-tempi { display: grid; gap: .55rem; min-width: 15rem; max-width: 26rem; }
+.ovl-tempi .tp-riga { display: grid; gap: .28rem; transition: opacity .4s ease, transform .4s ease; }
+.ovl-tempi .tp-riga.esce { opacity: 0; transform: translateX(.6rem); }
+.ovl-tempi .tp-testa { display: flex; align-items: baseline; gap: .7rem; }
+.ovl-tempi .tp-tit { font-weight: 800; letter-spacing: .01em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.ovl-tempi .tp-tempo { margin-left: auto; font-variant-numeric: tabular-nums; font-weight: 800; color: var(--acc); font-size: 1.15em; }
+.ovl-tempi .tp-barra {
+  height: .42rem; border-radius: 999px; overflow: hidden;
+  background: color-mix(in srgb, var(--fg) 16%, transparent);
+}
+.ovl-tempi .tp-barra[hidden] { display: none; }
+.ovl-tempi .tp-barra i {
+  display: block; height: 100%; width: 100%; border-radius: inherit;
+  transform-origin: left center; transform: scaleX(var(--q, 1));
+  background: linear-gradient(90deg, color-mix(in srgb, var(--acc) 70%, #fff), var(--acc));
+  transition: transform 1s linear;
+}
+.ovl-tempi .tp-chi { font-size: .8em; opacity: .82; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ovl-tempi .tp-chi:empty { display: none; }
+.ovl-tempi.dim-piccola { font-size: .85rem; min-width: 12rem; }
+.ovl-tempi.dim-grande { font-size: 1.25rem; min-width: 19rem; max-width: 32rem; }
+.ovl-tempi.dim-enorme { font-size: 1.6rem; min-width: 24rem; max-width: 40rem; }
+.ovl-tempi { opacity: 0; transition: opacity .4s ease, transform .45s cubic-bezier(.2, .9, .25, 1); transform: translateY(-8px); }
+.ovl-tempi.dentro { opacity: 1; transform: none; }
+.ovl-tempi.esce { opacity: 0; transform: translateY(-10px) scale(.96); transition: opacity .34s ease, transform .4s ease; }
+
 .ovl-treno { opacity: 0; transition: opacity .4s ease, transform .45s cubic-bezier(.2, .9, .25, 1); transform: translateY(-8px); }
 .ovl-treno.dentro { opacity: 1; transform: none; }
 .ovl-treno.esce { opacity: 0; transform: translateY(-10px) scale(.96); transition: opacity .34s ease, transform .4s ease; }
@@ -1075,7 +1101,7 @@
   .ovl-musica .m-velo, .ovl-musica .m-cover::before, .ovl-musica .m-cover::after,
   .ovl-musica.tema-terminale .m-riga2 .m-scorri::after { animation: none; }
   .ovl-musica[class*="entra-"] { opacity: 1; transform: none; transition: none; }
-  .ovl-musica.esce, .ovl-timer, .ovl-timer.esce, .ovl-treno, .ovl-treno.esce { transition: none; }
+  .ovl-musica.esce, .ovl-timer, .ovl-timer.esce, .ovl-treno, .ovl-treno.esce, .ovl-tempi, .ovl-tempi.esce, .ovl-tempi .tp-riga, .ovl-tempi .tp-barra i { transition: none; }
   .ovl-musica .m-cover::before, .ovl-musica .m-cover::after, .ovl-musica .m-velo, .ovl-musica .m-riga, .ovl-musica .m-sotto, .ovl-musica .m-onde, .ovl-musica .m-disco { transition: none; }
   .ovl-musica.dentro, .ovl-musica.esce { animation: none; }
   .ovl-musica.tema-manga[class*="entra-"]:not(.entra-niente) { transform: none; }

@@ -422,7 +422,7 @@ export class Helix {
     const j = await this._request('GET', '/channel_points/custom_rewards', {
       query: { broadcaster_id: s.user_id }, token,
     });
-    return (j?.data || []).map((r) => ({ id: r.id, title: r.title, cost: r.cost, enabled: r.is_enabled, richiedeTesto: !!r.is_user_input_required }));
+    return (j?.data || []).map((r) => ({ id: r.id, title: r.title, cost: r.cost, enabled: r.is_enabled, richiedeTesto: !!r.is_user_input_required, descrizione: String(r.prompt || '') }));
   }
 
   // Elimina un premio (solo quelli creati da noi).

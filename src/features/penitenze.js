@@ -17,6 +17,7 @@
 // positivi.
 import { streamers, statoVivo } from '../db.js';
 import { makeLog } from '../logger.js';
+import { durataAParole } from './premi-tempo.js';
 
 const log = makeLog('penitenze');
 
@@ -126,7 +127,9 @@ export class PenitenzeEngine {
   }
 
   // Riscatto → avvia una penitenza a contatore. Ritorna true se gestito.
-  daRiscatto(channel, data) {
+  // `secondi` e' quanto dura il premio, se lo dice (premi-tempo.js): vince
+  // sulla durata della carta, perche' chi riscatta legge il nome del premio.
+  daRiscatto(channel, data, { secondi = 0 } = {}) {
     try {
       const c = this.cfg(channel);
       if (!c || c.attivo === false) return false;
@@ -146,11 +149,15 @@ export class PenitenzeEngine {
         else { valore = scegli(LETTERE); tipo = 'lettera'; }
       } else if (valore.length === 1) tipo = 'lettera';
 
-      const durata = Math.max(1, Math.min(15, Math.round(Number(c.durataMin)) || 2));
+      const dalPremio = Math.round(Number(secondi) || 0);
+      const sec = dalPremio
+        ? Math.max(30, Math.min(3600, dalPremio))
+        : 60 * Math.max(1, Math.min(15, Math.round(Number(c.durataMin)) || 2));
+      const perQuanto = durataAParole(sec, 'it');
       const id = this._nextId++;
       // dove: la piattaforma del riscatto, per parlare li' anche alla fine
       const dove = String(data?.piattaforma || 'twitch');
-      const pen = { id, modo, tipo, valore, chi, dove, count: 0, scadenza: Date.now() + durata * 60_000, ultimaFrase: '', ultimaTs: 0 };
+      const pen = { id, modo, tipo, valore, chi, dove, count: 0, scadenza: Date.now() + sec * 1000, ultimaFrase: '', ultimaTs: 0 };
       const lista = this.attive.get(channel) || [];
       lista.push(pen);
       this.attive.set(channel, lista);
@@ -159,11 +166,11 @@ export class PenitenzeEngine {
 
       const cosa = tipo === 'lettera' ? `la lettera "${valore.toUpperCase()}"` : `la parola "${valore}"`;
       const regola = modo === 'vieta'
-        ? `${chi} ti ha VIETATO ${cosa} per ${durata} ${durata === 1 ? 'minuto' : 'minuti'}! Se la dici… si conta. 😈`
-        : `${chi} ti obbliga a dire SOLO ${cosa} per ${durata} ${durata === 1 ? 'minuto' : 'minuti'}! Ogni altra frase… si conta. 😈`;
+        ? `${chi} ti ha VIETATO ${cosa} per ${perQuanto}! Se la dici… si conta. 😈`
+        : `${chi} ti obbliga a dire SOLO ${cosa} per ${perQuanto}! Ogni altra frase… si conta. 😈`;
       this.say(channel, `🔒 ${regola}`, dove);
-      this._overlay(channel, { azione: 'start', id, modo, cosa: tipo, valore, durata, ...this._overlayOpts(c) });
-      log.info(`penitenza #${id} su #${channel}: ${modo} "${valore}" ${durata}m (da ${chi})`);
+      this._overlay(channel, { azione: 'start', id, modo, cosa: tipo, valore, durata: sec / 60, fine: pen.scadenza, ...this._overlayOpts(c) });
+      log.info(`penitenza #${id} su #${channel}: ${modo} "${valore}" ${sec}s (da ${chi})`);
       return true;
     } catch (e) { log.error(`daRiscatto #${channel}:`, e?.message || e); return false; }
   }

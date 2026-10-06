@@ -94,6 +94,7 @@ import * as pub from './features/pubblicita.js';
 import * as voce from './features/voce.js';
 import { linguaChat } from './features/lingua-canale.js';
 import * as modalitaFeat from './features/modalita-chat.js';
+import * as premiTempo from './features/premi-tempo.js';
 import * as bossFeat from './features/boss.js';
 import { aChi } from './features/risposte.js';
 import { modalitaDi, alLavoro } from './features/quando-lavora.js';
@@ -233,6 +234,24 @@ export class BotManager {
     this.modalita.riprendi();
     if (this.modules) this.modules.modalita = this.modalita;
     games.impostaModalita(this.modalita);
+    // I premi a punti canale che durano (docs/PREMI-A-TEMPO.md): il tempo parte
+    // al riscatto, si vede sull'overlay e finisce da solo. Si parla nella chat
+    // dove il premio e' stato riscattato; la fine e' un evento per i Moduli.
+    this.premiTempo = new premiTempo.PremiATempo({
+      say: (ch, t, dove) => this.vocePer({ channel: ch, piattaforma: dove })(t),
+      emit: (ch, p) => this.effects?.emit?.(ch, p),
+      modalita: this.modalita,
+      vip: (ch, login, ms, doppio) => vip.vipPerPremio(this.helix, ch, login, ms, doppio),
+      // un VIP breve finisce quando deve, non alla ronda dopo; per quelli lunghi
+      // basta la ronda dei cinque minuti (e un setTimeout oltre 24 giorni scatta subito)
+      vipScade: (ms) => { if (ms > 6 * 3_600_000) return; const t = setTimeout(() => vip.controllaScadenze(this.helix).catch(() => {}), ms + 2000); t.unref?.(); },
+      quandoFinisce: (ch, r) => this._dispatchEvent({
+        channel: ch, piattaforma: r.dove || 'twitch', type: 'premio.tempo.fine',
+        data: { reward: { id: r.rewardId, title: r.titolo }, user_name: (r.chi || []).at(-1) || '', user_login: r.login || '', piattaforma: r.dove || 'twitch' },
+      }),
+    });
+    this.modalita.quandoCambia = (ch) => this.premiTempo.manda(ch);
+    this.premiTempo.riprendi();
     // Le mani di blackjack rimaste aperte da prima di un riavvio: nessuno le puo'
     // piu' giocare, e la puntata torna a chi l'aveva messa. E glielo si dice,
     // appena il suo canale torna in chat: senza, la mano spariva e la puntata
@@ -454,6 +473,7 @@ export class BotManager {
     clearInterval(this._eventiDcTimer);
     clearInterval(this._pubTimer);
     this.modalita?.ferma();
+    this.premiTempo?.spegni();
     for (const t of this._pubSveglie.values()) clearTimeout(t);
     this._pubSveglie.clear();
     clearInterval(this._cancelloTimer);
@@ -1239,6 +1259,8 @@ export class BotManager {
       // le modalita' della chat a tempo: !soloemote 5m, !messaggiunici, !soloabbonati
       if (this.modalita) modalitaFeat.tryComando(this.modalita, cmdMsg, parla).catch((e) => log.error(`#${login} modalità:`, e?.message || e));
     }
+    // i premi a tempo: !tempi (cosa corre e quanto manca), !tempi stop per i mod
+    premiTempo.tryComando(this.premiTempo, cmdMsg, parla).catch((e) => log.error(`#${login} premi a tempo:`, e?.message || e));
     // minigiochi: !dado, !slot, !trivia, ...
     try { games.tryGame(cmdMsg, parla); }
     catch (e) { log.error(`#${login} giochi:`, e?.message || e); }
@@ -1455,12 +1477,21 @@ export class BotManager {
     const piattaforma = data?.piattaforma || 'twitch';
     const dire = this.vocePer({ channel, piattaforma });
     const premiatore = piattaforma === 'twitch' ? this.helix : (piattaforma === 'kick' ? premiKick(channel) : null);
-    // avviso del premio: effetto in overlay e messaggio in chat
-    this._premioRiscattato(channel, data, dire, premiatore);
+    // quanto dura il premio: la scelta dello streamer, se no il suo nome
+    let tempo = null;
+    try { tempo = premiTempo.tempoDelRiscatto(channel, data); } catch (e) { log.debug(`#${channel} premio a tempo:`, e?.message || e); }
+    // penitenza: vieta (o impone) una parola o una lettera allo streamer. Ha il
+    // suo conto e la sua carta sull'overlay, e dura quanto dice il premio.
+    let penitenza = false;
+    try { penitenza = !!this.penitenze?.daRiscatto(channel, data, { secondi: tempo?.durata }); } catch (e) { log.debug(`#${channel} penitenza:`, e?.message || e); }
+    // un premio che dura: prima la cosa che dura, poi effetto e messaggio (se
+    // non si puo' fare, i punti tornano e non si festeggia niente)
+    if (tempo && !penitenza) {
+      this.premiTempo.daRiscatto(channel, data, tempo, { premiatore, avviso: (o) => this._premioRiscattato(channel, data, dire, premiatore, o) })
+        .catch((e) => log.error(`#${channel} premio a tempo:`, e?.message || e));
+    } else this._premioRiscattato(channel, data, dire, premiatore);
     // richiesta musicale: se il premio e' quello scelto, il testo e' la canzone
     songrequest.perRedemptionMusica(premiatore, channel, data, dire).catch(() => {});
-    // penitenza: vieta (o impone) una parola o una lettera allo streamer, a tempo
-    try { this.penitenze?.daRiscatto(channel, data); } catch (e) { log.debug(`#${channel} penitenza:`, e?.message || e); }
     // contatore: riscatto → +step (annuncio + overlay OBS)
     try { contatori.perRiscatto(channel, data, dire, (p) => this.effects?.emit?.(channel, p)); } catch (e) { log.debug(`#${channel} contatore riscatto:`, e?.message || e); }
     // esplosione sul muro delle emote, se il premio e' fra quelli scelti
@@ -1470,12 +1501,17 @@ export class BotManager {
   // Uno spettatore ha riscattato un premio a punti canale: se è mappato a un
   // alert, lo spariamo (effetto in overlay + eventuale messaggio in chat) e
   // segniamo il riscatto come completato.
-  _premioRiscattato(channel, data, dire = (t) => this.say(channel, t), premiatore = this.helix) {
+  //
+  // Per un premio a tempo lo chiama premi-tempo.js quando la cosa che dura c'e'
+  // gia': `chiudi` false (il riscatto lo chiude lui), `durata` per {durata} nel
+  // messaggio. Ritorna { detto }: se il premio ha un messaggio suo, la frase di
+  // partenza della voce non serve.
+  _premioRiscattato(channel, data, dire = (t) => this.say(channel, t), premiatore = this.helix, { chiudi = true, durata = '' } = {}) {
     try {
       const rewardId = data?.reward?.id;
-      if (!rewardId) return;
+      if (!rewardId) return { detto: false };
       const m = pointAlerts.getByReward(channel, rewardId);
-      if (!m) return;                                   // premio non nostro / non mappato
+      if (!m) return { detto: false };                  // premio non nostro / non mappato
       const utente = data?.user_name || data?.user_login || 'qualcuno';
       if (m.effetto) {
         let opz = {};
@@ -1483,11 +1519,12 @@ export class BotManager {
         try { this.effects?.fireConOpzioni?.(channel, m.effetto, opz); } catch { /* niente */ }
       }
       if (m.suono) { try { this.effects?.firePreset?.(channel, m.suono, m.titolo, 100); } catch { /* niente */ } }
-      if (m.testo) dire(String(m.testo).replace(/\{user\}/g, utente).slice(0, 400));
+      if (m.testo) dire(String(m.testo).replace(/\{user\}/g, utente).replace(/\{durata\}/g, durata).slice(0, 400));
       // togli il riscatto dalla coda "in sospeso" (best-effort, solo premi nostri)
-      Promise.resolve(premiatore?.aggiornaRedemption?.(channel, rewardId, data?.id, 'FULFILLED')).catch(() => {});
+      if (chiudi) Promise.resolve(premiatore?.aggiornaRedemption?.(channel, rewardId, data?.id, 'FULFILLED')).catch(() => {});
       log.info(`premio punti canale «${m.titolo}» riscattato da ${utente} su #${channel}`);
-    } catch (e) { log.error('premioRiscattato:', e?.message || e); }
+      return { detto: !!m.testo };
+    } catch (e) { log.error('premioRiscattato:', e?.message || e); return { detto: false }; }
   }
 
   // Consegna un evento a cervello + moduli + plugin (parte comune).

@@ -90,6 +90,9 @@ const MAPPA_EVENTI = {
   // i Kicks di Kick: un evento loro, non un cheer (i Kicks non sono Bit)
   'kicks.gifted': 'kicks',
   'channel.channel_points_custom_reward_redemption.add': 'redemption',
+  // la fine del tempo di un premio a punti canale che dura (premi-tempo.js):
+  // $premio e $user sono il premio e chi l'ha riscattato per ultimo
+  'premio.tempo.fine': 'finetempo',
   'stream.online': 'online',
   'stream.offline': 'offline',
   // Gesti/espressioni dalla webcam (overlay tracking, libreria Human): un gesto
