@@ -353,7 +353,7 @@ export default {
       ['<code>!ag</code>', '<code>!agentify</code>', 'tutti', 'Manda il comando ai giochi di andryxify.it.'],
     ] },
     { p: [
-      'I giochi con la webcam vogliono il tracking: nella scheda «Effetti & suoni», carta «Effetti dai gesti (webcam)», accendi «Attiva il tracking webcam» e «Minigiochi con la webcam (gesti ed espressioni)». Il puzzle vuole anche «Puzzle con le mani (pizzica e trascina)». Il tracking è spiegato nel <a href="/manuale/effetti">manuale di Effetti & suoni</a>.',
+      'I giochi con la webcam (ci stiamo lavorando: funzionano, ma possono cambiare) vogliono il tracking: nella scheda «Effetti & suoni», carta «Effetti dai gesti (webcam)», accendi «Attiva il tracking webcam» e «Minigiochi con la webcam (gesti ed espressioni)». Il puzzle vuole anche «Puzzle con le mani (pizzica e trascina)». Il tracking è spiegato nel <a href="/manuale/effetti">manuale di Effetti & suoni</a>.',
       'I comandi del giveaway sono spiegati nel <a href="/manuale/interazione">manuale di sondaggi, giveaway e penitenze</a>.',
     ] },
 

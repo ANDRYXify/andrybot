@@ -21,6 +21,7 @@ export default {
 
     { h3: 'Effetti dai gesti (webcam)' },
     { p: [
+      '<strong>Ci stiamo lavorando.</strong> È una parte secondaria che stiamo ancora rifinendo: funziona, ma può cambiare. Nella carta lo dice l\'etichetta «Ci stiamo lavorando».',
       'Un overlay che legge i gesti delle mani e le espressioni del volto e fa partire effetti a schermo. Gira tutto nel browser: la webcam non esce dal tuo computer, al bot arriva solo il nome del gesto.',
       '«Attiva il tracking webcam» è acceso di serie. Il setup consigliato tiene la webcam come sorgente normale di OBS, con qualità e ritardo intatti, e usa due link.',
     ] },

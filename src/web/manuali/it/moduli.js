@@ -552,6 +552,7 @@ export default {
 
     { h3: 'Momenti salienti (dal server)' },
     { p: [
+      '<strong>Ci stiamo lavorando.</strong> È una parte secondaria che stiamo ancora rifinendo: funziona, ma può cambiare. Per ora ascolta solo le dirette su Twitch: su un canale di un\'altra piattaforma la carta lo dice.',
       'Qui è il <strong>server</strong> che ascolta l\'audio della tua diretta Twitch e crea una clip da solo quando «esplode»: urla, risate, hype. Funziona anche se il tuo computer è occupato a giocare, e non c\'entra col microfono.',
     ] },
     { tabella: [

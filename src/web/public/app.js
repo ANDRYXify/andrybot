@@ -4597,6 +4597,11 @@ const ICO = {
 
 const BADGE = { ok: 'verde', attenzione: 'giallo', male: 'rosso', accento: 'viola' };
 
+function _inLavorazione(extra = '') {
+  return `<p class="suggerimento"><span class="badge ${BADGE.accento}">${L('Ci stiamo lavorando', 'We’re working on it', 'Estamos trabajando en ello')}</span>
+    ${L('È una parte secondaria che stiamo ancora rifinendo: funziona, ma può cambiare.', 'It’s a secondary part we’re still polishing: it works, but it may change.', 'Es una parte secundaria que todavía estamos puliendo: funciona, pero puede cambiar.')}${extra ? ' ' + extra : ''}</p>`;
+}
+
 const _bIco = (d) => `<svg class="b-ico" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
 
 const SEZ_BANCO = 'alert';
@@ -10960,6 +10965,7 @@ function pannelloAscolto() {
       <p>${L('Il bot ascolta l\'audio della tua live e crea una clip da solo quando "esplode": urla, risate, hype.', 'The bot listens to your live audio and clips on its own when it "explodes": shouts, laughter, hype.', 'El bot escucha el audio de tu directo y crea un clip solo cuando "explota": gritos, risas, hype.')}</p>
       <div class="riga-interruttore spazio-sopra">
         <label class="interruttore">
+      ${_inLavorazione(stato?.piattaforma && stato.piattaforma !== 'twitch' ? L('Per ora ascolta solo le dirette su Twitch.', 'For now it only listens to Twitch streams.', 'Por ahora solo escucha los directos en Twitch.') : '')}
           <input type="checkbox" id="toggle-ascolto" ${s.ascoltoLive ? 'checked' : ''}>
           <span class="levetta"></span>
         </label>
@@ -21235,15 +21241,15 @@ function initStudio() {
 }
 
 const TRK_GESTI = [
-  ['victory', 'Vittoria'], ['thumbup', 'Pollice su'], ['openpalm', 'Mano aperta'],
-  ['point', 'Indice'], ['fist', 'Pugno'],
-  ['happy', 'Felice'], ['sad', 'Triste'], ['angry', 'Arrabbiato'], ['surprise', 'Sorpreso'],
+  ['victory', ['Vittoria', 'Victory', 'Victoria']], ['thumbup', ['Pollice su', 'Thumbs up', 'Pulgar arriba']], ['openpalm', ['Mano aperta', 'Open hand', 'Mano abierta']],
+  ['point', ['Indice', 'Index finger', 'Índice']], ['fist', ['Pugno', 'Fist', 'Puño']],
+  ['happy', ['Felice', 'Happy', 'Feliz']], ['sad', ['Triste', 'Sad', 'Triste']], ['angry', ['Arrabbiato', 'Angry', 'Enfadado']], ['surprise', ['Sorpreso', 'Surprised', 'Sorprendido']],
 ];
 function pannelloEffetti() {
   const trk = impostazioni().tracking || {};
   const mappa = (trk.mappa && typeof trk.mappa === 'object') ? trk.mappa : {};
   const mappaChat = (trk.mappaChat && typeof trk.mappaChat === 'object') ? trk.mappaChat : {};
-  const righeTrk = TRK_GESTI.map(([g, et]) => `
+  const righeTrk = TRK_GESTI.map(([g, nomi]) => [g, L(...nomi)]).map(([g, et]) => `
     <div class="trk-riga">
       <span class="trk-et">${et}</span>
       <span class="lib-scelta"><input type="text" class="trk-eff" list="trk-eff-list" data-g="${g}" maxlength="40" aria-label="${esc(L('Comando effetto per', 'Effect command for', 'Comando de efecto para'))} ${esc(et)}" placeholder="${L('comando effetto (es. airhorn)', 'effect command (e.g. airhorn)', 'comando de efecto (p. ej. airhorn)')}" value="${esc(mappa[g] || '')}">${tastoLibreriaHtml()}</span>
@@ -21261,7 +21267,8 @@ function pannelloEffetti() {
   return pannello('effetti', `
     <div class="carta" data-zona="webcam">
       <h2>${_hIco(ICO.effetti)}${L('Effetti dai gesti (webcam)', 'Effects from gestures (webcam)', 'Efectos por gestos (webcam)')}</h2>
-      <p>${L('Un overlay per la diretta che', 'An stream overlay that', 'Un overlay para el directo que')} <strong class="primo-piano">${L('legge i gesti delle mani e le espressioni del volto', 'reads hand gestures and face expressions', 'lee los gestos de las manos y las expresiones de la cara')}</strong> ${L('dalla webcam e fa partire effetti a schermo. Gira tutto nel Browser Source: la webcam', 'from the webcam and fires on-screen effects. It all runs in the Browser Source: the webcam', 'de la webcam y lanza efectos en pantalla. Todo corre en el Browser Source: la webcam')} <strong>${L('non esce mai dal tuo PC', 'never leaves your PC', 'nunca sale de tu PC')}</strong> — ${L('al bot arriva solo il nome del gesto.', 'the bot only receives the gesture name.', 'al bot solo llega el nombre del gesto.')}</p>
+      ${_inLavorazione()}
+      <p>${L('Un overlay per la diretta che', 'A stream overlay that', 'Un overlay para el directo que')} <strong class="primo-piano">${L('legge i gesti delle mani e le espressioni del volto', 'reads hand gestures and face expressions', 'lee los gestos de las manos y las expresiones de la cara')}</strong> ${L('dalla webcam e fa partire effetti a schermo. Gira tutto nel Browser Source: la webcam', 'from the webcam and fires on-screen effects. It all runs in the Browser Source: the webcam', 'de la webcam y lanza efectos en pantalla. Todo corre en el Browser Source: la webcam')} <strong>${L('non esce mai dal tuo PC', 'never leaves your PC', 'nunca sale de tu PC')}</strong> — ${L('al bot arriva solo il nome del gesto.', 'the bot only receives the gesture name.', 'al bot solo llega el nombre del gesto.')}</p>
       <div class="riga-check">
         <input type="checkbox" id="trk-attivo" ${trk.attivo !== false ? 'checked' : ''}>
         <label for="trk-attivo">${L('Attiva il tracking webcam', 'Enable webcam tracking', 'Activa el tracking de webcam')}</label>

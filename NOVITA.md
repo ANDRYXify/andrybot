@@ -178,6 +178,12 @@ comandi diversi da quelli della riga italiana.
   en> When someone redeems a reward on Kick, the bot does what you picked and replies in the Kick chat. If Kick was already connected, press “Update Kick permissions” on the Kick row. If you also stream on Twitch, your lists show the rewards from both.
   es> Las recompensas del canal también en Kick
   es> Cuando alguien canjea una recompensa en Kick, el bot hace lo que elegiste y responde en el chat de Kick. Si Kick ya estaba conectado, pulsa «Actualiza los permisos de Kick» en la fila de Kick. Si también emites en Twitch, en tus listas encuentras las recompensas de las dos.
+- «Momenti salienti» e «Effetti dai gesti» portano l'etichetta «Ci stiamo lavorando»: funzionano, ma sono parti secondarie che possono ancora cambiare. [vai: ascolto]
+  en: “Highlights” and “Effects from gestures” carry the “We’re working on it” label: they work, but they are secondary parts that may still change.
+  es: «Momentos destacados» y «Efectos por gestos» llevan la etiqueta «Estamos trabajando en ello»: funcionan, pero son partes secundarias que todavía pueden cambiar.
+- Nella carta «Effetti dai gesti» i nomi dei gesti e delle espressioni si leggono anche in inglese e in spagnolo. [vai: effetti]
+  en: In the “Effects from gestures” card, gesture and expression names now show in English and Spanish too.
+  es: En la tarjeta «Efectos por gestos» los nombres de los gestos y de las expresiones se leen también en inglés y en español.
 
 ## 2026-10-03
 
