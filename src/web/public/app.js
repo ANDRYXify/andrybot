@@ -10642,6 +10642,7 @@ function cartaFrasiBot() {
 }
 
 let _frasi = null;
+let _frasiScelte = {};
 
 const _FRASI_MODI = () => ({
   nostre: L('Le nostre', 'Ours', 'Las nuestras'),
@@ -10683,7 +10684,7 @@ function _frasiAdesso(m, modo, mie) {
 function _frasiMomentoHtml(m) {
   const modi = _FRASI_MODI();
   return `<details class="spazio-sopra" data-momento="${esc(m.id)}">
-      <summary>${esc(Lv(m.titolo))} <span class="badge" data-stato>${esc(modi[m.modo] || modi.nostre)}</span></summary>
+      <summary>${esc(Lv(m.titolo))} <span class="badge" data-stato>${esc(modi[_frasiModo(m)] || modi.nostre)}</span></summary>
     </details>`;
 }
 
@@ -10694,12 +10695,12 @@ function _frasiDentroHtml(m) {
   return `<div data-dentro>
       <p class="suggerimento">${esc(Lv(m.quando))}</p>
       <label class="campo" for="${esc(id)}-modo">${L('Quali frasi', 'Which lines', 'Qué frases')}</label>
-      <select id="${esc(id)}-modo" data-modo>${scelte.map((k) => `<option value="${k}"${m.modo === k ? ' selected' : ''}>${esc(modi[k])}</option>`).join('')}</select>
+      <select id="${esc(id)}-modo" data-modo>${scelte.map((k) => `<option value="${k}"${_frasiModo(m) === k ? ' selected' : ''}>${esc(modi[k])}</option>`).join('')}</select>
       <label class="campo" for="${esc(id)}-sue">${L('Le mie frasi (una per riga)', 'My lines (one per line)', 'Mis frases (una por línea)')}</label>
       <textarea id="${esc(id)}-sue" class="campo-largo" rows="3" data-sue>${esc((m.sue || []).join('\n'))}</textarea>
       <p class="suggerimento">${L('Puoi usare', 'You can use', 'Puedes usar')} ${m.dati.map((x) => `<code>{${esc(x)}}</code>`).join(' ')}. ${L('Una frase che nomina un dato che manca non esce: esce un’altra.', 'A line that names missing data is not sent: another one is.', 'Una frase que nombra un dato que falta no sale: sale otra.')}</p>
       <p class="campo">${L('Le frasi di adesso', 'The lines right now', 'Las frases de ahora')}</p>
-      <ul class="lista-voci" data-adesso>${_frasiAdesso(m, m.modo, m.sue || [])}</ul>
+      <ul class="lista-voci" data-adesso>${_frasiAdesso(m, _frasiModo(m), m.sue || [])}</ul>
       <div class="riga-flessibile spazio-sopra"><button type="button" class="btn secondario mini" data-prova>${L('Prova', 'Try it', 'Probar')}</button></div>
       <p class="campo" data-provate-titolo hidden>${L('Le prossime che uscirebbero, con dati di esempio', 'The next ones that would come out, with sample data', 'Las próximas que saldrían, con datos de ejemplo')}</p>
       <ol class="lista-voci" data-provate hidden></ol>
@@ -10720,11 +10721,13 @@ async function caricaFrasiBot() {
   try { d = await api('/api/streamer/voce'); } catch { box.innerHTML = `<p class="vuoto">${L('Non disponibile ora.', 'Not available right now.', 'No disponible ahora.')}</p>`; return; }
   if (!Array.isArray(d?.gruppi)) { box.innerHTML = ''; return; }
   _frasi = d;
+  _frasiScelte = Object.fromEntries(_frasiTutti().map((m) => [m.id, m.modo]));
   const lingue = { it: L('italiano', 'Italian', 'italiano'), en: L('inglese', 'English', 'inglés'), es: L('spagnolo', 'Spanish', 'español') };
   const toni = { scherzoso: L('scherzoso', 'playful', 'bromista'), amichevole: L('amichevole', 'friendly', 'amistoso'), serio: L('serio', 'serious', 'serio') };
   const comm = document.getElementById('inp-community');
   if (comm && document.activeElement !== comm) comm.value = d.community || '';
   box.innerHTML = `<p class="suggerimento">${L('Adesso parlano in', 'Right now they speak', 'Ahora hablan en')} <strong>${esc(lingue[d.lingua] || d.lingua)}</strong> ${L('e col tono', 'with the tone', 'y con el tono')} <strong>${esc(toni[d.tono] || d.tono)}</strong>. ${L('Il tono lo scegli qui sopra, la lingua della chat in', 'You pick the tone above, the chat language in', 'El tono lo eliges arriba, el idioma del chat en')} <a href="#account" data-scheda="account">${L('Account, Preferenze del canale', 'Account, Channel preferences', 'Cuenta, Preferencias del canal')}</a>.</p>`
+    + _frasiTuttiHtml()
     + d.gruppi.map((g) => `<h3 class="spazio-sopra">${esc(Lv(g.titolo))}</h3>${g.momenti.map(_frasiMomentoHtml).join('')}`).join('');
   box.removeEventListener('toggle', _frasiApri, true);
   box.addEventListener('toggle', _frasiApri, true);
@@ -10734,10 +10737,14 @@ async function caricaFrasiBot() {
     const m = _frasiMomento(el.dataset.momento);
     if (!m) return;
     const modo = el.querySelector('[data-modo]').value;
+    _frasiScelte[m.id] = modo;
     el.querySelector('[data-stato]').textContent = _FRASI_MODI()[modo];
     el.querySelector('[data-adesso]').innerHTML = _frasiAdesso(m, modo, _frasiDelMomento(el));
+    _frasiRidisegnaTutti();
   };
   box.onclick = (ev) => {
+    const tutti = ev.target.closest('[data-frasi-tutti]');
+    if (tutti) { _frasiPerTutti(tutti.dataset.frasiTutti); return; }
     const b = ev.target.closest('[data-prova]');
     if (!b) return;
     const el = b.closest('[data-momento]');
@@ -10755,7 +10762,103 @@ async function caricaFrasiBot() {
         : `<li class="vuoto">${L('Adesso qui non uscirebbe niente.', 'Nothing would come out here right now.', 'Ahora aquí no saldría nada.')}</li>`;
     });
   };
+  _frasiRidisegnaTutti();
 }
+
+const _frasiTutti = () => (_frasi?.gruppi || []).flatMap((g) => g.momenti);
+const _frasiModo = (m) => _frasiScelte[m.id] || m.modo || 'nostre';
+const _frasiEl = (id) => document.querySelector(`#frasi-bot [data-momento="${CSS.escape(id)}"]`);
+
+function _frasiSueDi(m) {
+  const el = _frasiEl(m.id);
+  return el?.querySelector('[data-dentro]') ? _frasiDelMomento(el) : (m.sue || []);
+}
+
+function _frasiEffetto(modo, m) {
+  if ((modo === 'sue' || modo === 'miste') && !_frasiSueDi(m).length) return 'nostre';
+  if (modo === 'spento' && !m.spegnibile) return 'nostre';
+  return modo;
+}
+
+const _frasiApplica = (x, m) => (x === 'spento' && !m.spegnibile ? _frasiModo(m) : x);
+
+function _frasiTuttiOra() {
+  const tutti = _frasiTutti();
+  if (!tutti.length) return '';
+  const modi = Object.keys(_FRASI_MODI());
+  const vale = (x) => tutti.every((m) => _frasiEffetto(_frasiModo(m), m) === _frasiEffetto(_frasiApplica(x, m), m));
+  const scelto = modi.find((x) => tutti.every((m) => _frasiModo(m) === _frasiApplica(x, m)));
+  return [scelto, ...modi].find((x) => x && vale(x)) || '';
+}
+
+function _frasiTuttiHtml() {
+  const modi = _FRASI_MODI();
+  const fissi = _frasiTutti().filter((m) => !m.spegnibile).map((m) => `«${Lv(m.titolo)}»`);
+  const elenco = fissi.length > 1 ? fissi.slice(0, -1).join(', ') + L(' e ', ' and ', ' y ') + fissi.at(-1) : (fissi[0] || '');
+  return `<div class="spazio-sopra">
+      <p class="campo" id="frasi-tutti-tit">${L('Per tutti i momenti', 'For every moment', 'Para todos los momentos')}</p>
+      <div class="gr-sfondo-scelte" role="group" aria-labelledby="frasi-tutti-tit">${Object.keys(modi).map((k) => `<button type="button" class="gr-tema" data-frasi-tutti="${k}" aria-pressed="false">${esc(modi[k])}</button>`).join('')}</div>
+      <p class="suggerimento" data-frasi-conto aria-live="polite"></p>
+      <p class="suggerimento">${L('Parti da qui, poi cambi i momenti uno per uno. «Le nostre e le mie» e «Solo le mie» valgono dove hai scritto frasi tue: negli altri restano le nostre.', 'Start here, then change the moments one by one. “Ours and mine” and “Only mine” apply where you wrote lines of yours: elsewhere ours stay.', 'Empieza aquí, luego cambias los momentos uno a uno. «Las nuestras y las mías» y «Solo las mías» valen donde escribiste frases tuyas: en los demás se quedan las nuestras.')}${fissi.length ? ' ' + L(`«Spento» non tocca ${elenco}: si spengono nelle loro schede.`, `“Off” doesn’t touch ${elenco}: you switch them off in their own tabs.`, `«Apagado» no toca ${elenco}: se apagan en sus pestañas.`) : ''}</p>
+    </div>`;
+}
+
+function _frasiRidisegnaTutti() {
+  const box = document.getElementById('frasi-bot');
+  if (!box) return;
+  const x = _frasiTuttiOra();
+  box.querySelectorAll('[data-frasi-tutti]').forEach((b) => {
+    const su = b.dataset.frasiTutti === x;
+    b.classList.toggle('on', su);
+    b.setAttribute('aria-pressed', String(su));
+  });
+  const conto = { nostre: 0, miste: 0, sue: 0, spento: 0 };
+  for (const m of _frasiTutti()) conto[_frasiEffetto(_frasiModo(m), m)]++;
+  const come = {
+    nostre: (n) => L('con le nostre frasi', 'with our lines', 'con nuestras frases'),
+    miste: (n) => L('con le nostre e le tue', 'with ours and yours', 'con las nuestras y las tuyas'),
+    sue: (n) => L('solo con le tue', 'with only yours', 'solo con las tuyas'),
+    spento: (n) => (n === 1 ? L('spento', 'off', 'apagado') : L('spenti', 'off', 'apagados')),
+  };
+  const pezzi = Object.keys(conto).filter((k) => conto[k]).map((k, i) => {
+    const n = conto[k];
+    const nome = i ? '' : ' ' + (n === 1 ? L('momento', 'moment', 'momento') : L('momenti', 'moments', 'momentos'));
+    return `${n}${nome} ${come[k](n)}`;
+  });
+  const el = box.querySelector('[data-frasi-conto]');
+  if (el) el.textContent = pezzi.length ? L('Adesso: ', 'Right now: ', 'Ahora: ') + pezzi.join(', ') + '.' : '';
+}
+
+function _frasiPerTutti(x) {
+  if (!_FRASI_MODI()[x]) return;
+  for (const m of _frasiTutti()) {
+    const nuovo = _frasiApplica(x, m);
+    _frasiScelte[m.id] = nuovo;
+    _frasiMostra(m);
+  }
+  _frasiRidisegnaTutti();
+  _ripensaPresto();
+}
+
+function _frasiMostra(m) {
+  const el = _frasiEl(m.id);
+  if (!el) return;
+  const modo = _frasiModo(m);
+  const sel = el.querySelector('[data-modo]');
+  if (sel && sel.value !== modo) { sel.value = modo; sel.dispatchEvent(new Event('change', { bubbles: true })); return; }
+  el.querySelector('[data-stato]').textContent = _FRASI_MODI()[modo];
+  const adesso = el.querySelector('[data-adesso]');
+  if (adesso) adesso.innerHTML = _frasiAdesso(m, modo, _frasiDelMomento(el));
+}
+
+STATI_SALVA['btn-salva-frasi'] = {
+  stato: () => (_frasi ? _frasiTutti().map((m) => [m.id, _frasiModo(m)]) : null),
+  rimetti: (v) => {
+    _frasiScelte = Object.fromEntries(Array.isArray(v) ? v : []);
+    for (const m of _frasiTutti()) _frasiMostra(m);
+    _frasiRidisegnaTutti();
+  },
+};
 
 function _frasiMomento(id) {
   for (const g of _frasi?.gruppi || []) for (const m of g.momenti) if (m.id === id) return m;
@@ -10769,7 +10872,7 @@ async function salvaFrasiBot() {
   for (const el of box.querySelectorAll('[data-momento]')) {
     const m = _frasiMomento(el.dataset.momento);
     if (!m) continue;
-    if (!el.querySelector('[data-dentro]')) { momenti[m.id] = { modo: m.modo, frasi: m.sue || [] }; continue; }
+    if (!el.querySelector('[data-dentro]')) { momenti[m.id] = { modo: _frasiModo(m), frasi: m.sue || [] }; continue; }
     const frasi = _frasiDelMomento(el);
     for (const f of frasi) {
       const ignoto = _segnoIgnoto(f, m.dati);

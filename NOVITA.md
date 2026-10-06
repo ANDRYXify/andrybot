@@ -202,6 +202,12 @@ comandi diversi da quelli della riga italiana.
   en> Kick doesn't say who watches silently, so there whoever chats counts. If you stream on Twitch and Kick together it's one evening: anyone with the same name on both counts once, and milestones show up in both chats.
   es> Horas vistas y asistencias también en Kick
   es> Kick no dice quién mira en silencio, así que allí cuenta quien escribe. Si emites en Twitch y Kick a la vez la noche es una sola: quien tiene el mismo nombre en las dos cuenta una vez, y los logros se leen en los dos chats.
+- In «Le frasi del bot» quattro tasti mettono lo stesso modo a tutti i momenti insieme (le nostre, le nostre e le tue, solo le tue, spento): poi rifinisci un momento alla volta. [vai: personalita]
+  en: In “The bot’s lines” four buttons set the same mode for every moment at once (ours, ours and yours, only yours, off): then you fine-tune one moment at a time.
+  es: En «Las frases del bot» cuatro botones ponen el mismo modo a todos los momentos a la vez (las nuestras, las nuestras y las tuyas, solo las tuyas, apagado): luego ajustas un momento cada vez.
+- Le etichette sopra i gruppi di scelte, nel pannello, si leggono come le altre etichette dei campi. [vai: personalita]
+  en: The labels above groups of choices in the panel now read like the other field labels.
+  es: Las etiquetas sobre los grupos de opciones del panel se leen ahora como las demás etiquetas de los campos.
 
 ## 2026-10-03
 

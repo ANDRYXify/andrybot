@@ -711,7 +711,7 @@ span.rg-on.gc-fisso { width: 34px; }
 
 :focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; border-radius: 4px; }
 
-label.campo { display: block; margin: .85rem 0 .3rem; font-weight: 600; font-size: .88rem; }
+label.campo, p.campo { display: block; margin: .85rem 0 .3rem; font-weight: 600; font-size: .88rem; }
 .campo.campo-su { display: flex; flex-direction: column; gap: .3rem; margin: .85rem 0 0; font-weight: 600; font-size: .88rem; }
 .campo-su input, .campo-su select, .campo-su textarea { font-weight: 400; }
 .campo-su input[type="number"] { width: 100%; }
