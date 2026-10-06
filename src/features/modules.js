@@ -998,26 +998,18 @@ export class ModulesEngine {
         return;
       }
       case 'categoria': {
-        // cambia la categoria/gioco del canale su Twitch. Il "gioco" può usare le
-        // variabili ($args, $arg1, ...): così "!gioco fortnite" → categoria Fortnite.
-        // Se il testo è impreciso, il bot sceglie la categoria Twitch più somigliante.
+        // cambia la categoria/gioco del canale (_canaliDi: dove si chiede). Il
+        // "gioco" può usare le variabili ($args, $arg1, ...): così "!gioco
+        // fortnite" → categoria Fortnite. Se il testo è impreciso, il bot sceglie
+        // la categoria più somigliante fra quelle di ogni piattaforma.
         const q = (await this.espandi(azione.gioco, ctx, { noAzioni: true })).trim();
         if (!q) return;
-        const canale = this._canaleDi(ctx);
-        if (!canale) {
+        const esiti = await this._cambia(ctx, 'categoria', q);
+        if (!esiti.length) {
           if (azione.annuncia !== false && ctx.staff) dire(this._canaleAssente(ctx, 'la categoria'));
           return;
         }
-        const cat = await risolviCategoria(canale, q).catch(() => null);
-        if (!cat) { if (azione.annuncia !== false) dire(`🤔 Non ho trovato la categoria "${q}".`); return; }
-        try {
-          await canale.setChannelInfo?.(ctx.channel, { gameId: cat.id });
-          if (azione.annuncia !== false) dire(`🎮 Categoria aggiornata: ${cat.name}`);
-        } catch (e) {
-          // permesso mancante o errore della piattaforma: non blocca le altre azioni
-          log.debug('categoria via modulo fallita:', e?.message || e);
-          if (azione.annuncia !== false && (e?.status === 401 || e?.status === 403)) dire(this._permessoCanale(ctx, 'la categoria'));
-        }
+        if (azione.annuncia !== false) for (const t of this._diCambio(ctx, esiti, 'categoria', q)) dire(t);
         return;
       }
       case 'musica': {
@@ -1047,22 +1039,17 @@ export class ModulesEngine {
         return;
       }
       case 'titolo': {
-        // cambia il titolo dello stream su Twitch. Testo libero, con variabili
-        // ($args, $gioco, ...): es. "In diretta: $gioco con la community!".
+        // cambia il titolo dello stream (_canaliDi: dove si chiede). Testo
+        // libero, con variabili ($args, $gioco, ...): es. "In diretta: $gioco
+        // con la community!".
         const t = (await this.espandi(azione.testo, ctx, { noAzioni: true })).trim().slice(0, 140);
         if (!t) return;
-        const canale = this._canaleDi(ctx);
-        if (!canale) {
+        const esiti = await this._cambia(ctx, 'titolo', t);
+        if (!esiti.length) {
           if (azione.annuncia !== false && ctx.staff) dire(this._canaleAssente(ctx, 'il titolo'));
           return;
         }
-        try {
-          await canale.setChannelInfo?.(ctx.channel, { title: t });
-          if (azione.annuncia !== false) dire(`📝 Titolo aggiornato: ${t}`);
-        } catch (e) {
-          log.debug('titolo via modulo fallita:', e?.message || e);
-          if (azione.annuncia !== false && (e?.status === 401 || e?.status === 403)) dire(this._permessoCanale(ctx, 'il titolo'));
-        }
+        if (azione.annuncia !== false) for (const r of this._diCambio(ctx, esiti, 'titolo', t)) dire(r);
         return;
       }
       case 'annuncia': {
@@ -1139,11 +1126,10 @@ export class ModulesEngine {
     return null;
   }
 
-  // CHI CAMBIA TITOLO E CATEGORIA: la piattaforma da cui e' chiesto. Un
-  // !titolo scritto nella chat di Kick cambia il titolo su Kick, uno scritto su
-  // Twitch quello su Twitch. Timer, voce, API, Telegram e prova non arrivano da
-  // una chat: valgono per la piattaforma del canale, cosi' un canale nato su
-  // Kick non chiede mai a Twitch. Dove non c'e' chi lo fa (YouTube) e' null.
+  // CHI CAMBIA TITOLO E CATEGORIA su una piattaforma: la piattaforma da cui e'
+  // chiesto, o quella del canale. Un canale nato su Kick non chiede mai a
+  // Twitch. Dove non c'e' chi lo fa (YouTube) e' null. Su quali piattaforme si
+  // cambia lo dice _canaliDi, qui sotto.
   _doveCanale(ctx) {
     return ctx.piattaforma || piattaformaDi(ctx.channel) || 'twitch';
   }
@@ -1155,11 +1141,81 @@ export class ModulesEngine {
     return typeof f === 'function' ? f(ctx.channel) : null;
   }
 
-  // Lo stesso per chi cambia il canale fuori da una chat e fuori dai moduli
-  // (la voce e il privato Telegram, src/web/server.js): la piattaforma del
-  // canale. Una regola sola, decisa qui.
-  canalePer(login) {
-    return this._canaleDi({ channel: String(login || '').toLowerCase() });
+  // DOVE SI CAMBIA, IN TUTTO. Un comando scritto in chat, o un modulo partito
+  // da un evento, cambia la piattaforma da cui arriva: un !titolo scritto su
+  // Kick cambia Kick, uno scritto su Twitch cambia Twitch. Quello che non
+  // arriva da una chat (timer, voce, API, Telegram, prova) vale per il CANALE,
+  // cioe' per tutte le sue piattaforme: quella di casa, e le altre dove lo
+  // streamer le ha collegate (l'adattatore dice se e' collegato: un canale di
+  // Twitch senza Kick non chiede a Kick). Coppie [piattaforma, chi la cambia].
+  _canaliDi(ctx) {
+    if (ctx.piattaforma) { const c = this._canaleDi(ctx); return c ? [[ctx.piattaforma, c]] : []; }
+    const casa = this._doveCanale(ctx);
+    const lista = [];
+    const c = this._canaleDi({ ...ctx, piattaforma: casa });
+    if (c) lista.push([casa, c]);
+    for (const [dove, f] of Object.entries(this.canali)) {
+      if (dove === casa || typeof f !== 'function') continue;
+      const altro = f(ctx.channel);
+      if (altro?.collegato) lista.push([dove, altro]);
+    }
+    return lista;
+  }
+
+  // IL CAMBIO, UNA PIATTAFORMA ALLA VOLTA. La categoria si cerca fra quelle di
+  // ciascuna (nomi e id sono diversi su Twitch e su Kick), e l'esito e' per
+  // piattaforma: una puo' dire di no mentre l'altra dice si'. Chi lo racconta
+  // (la chat qui, la pagina della voce e Telegram nel server) lo dice a modo
+  // suo. permesso(dove), se c'e', si chiede prima di chiamare la piattaforma.
+  async _cambia(ctx, cosa, valore, { permesso } = {}) {
+    const esiti = [];
+    for (const [dove, canale] of this._canaliDi(ctx)) {
+      if (permesso && !permesso(dove)) { esiti.push({ dove, permesso: true }); continue; }
+      try {
+        if (cosa === 'titolo') {
+          await canale.setChannelInfo?.(ctx.channel, { title: valore });
+          esiti.push({ dove, ok: true, nome: valore });
+          continue;
+        }
+        const cat = await risolviCategoria(canale, valore).catch(() => null);
+        if (!cat) { esiti.push({ dove, nonTrovata: true }); continue; }
+        await canale.setChannelInfo?.(ctx.channel, { gameId: cat.id });
+        esiti.push({ dove, ok: true, nome: cat.name });
+      } catch (e) {
+        // permesso mancante o errore della piattaforma: non ferma le altre
+        log.debug(`${cosa} non cambiato su ${dove}:`, e?.message || e);
+        esiti.push({ dove, permesso: e?.status === 401 || e?.status === 403, errore: true });
+      }
+    }
+    return esiti;
+  }
+
+  // Lo stesso per chi cambia il canale fuori dai moduli (la voce e il privato
+  // Telegram, src/web/server.js): una regola sola, decisa qui.
+  cambiaCanale(login, cosa, valore, opzioni) {
+    return this._cambia({ channel: String(login || '').toLowerCase() }, cosa, valore, opzioni);
+  }
+
+  // Cosa si dice dopo un cambio. Con una piattaforma sola, come sempre; con
+  // piu' piattaforme si dice dove quando serve: se una ha detto di no, o se la
+  // categoria ha un nome diverso su ciascuna.
+  _diCambio(ctx, esiti, cosa, q) {
+    const piu = esiti.length > 1;
+    const nome = (d) => NOME_PIATTAFORMA[d] || d;
+    const su = (d) => (piu ? ` su ${nome(d)}` : '');
+    const fatti = esiti.filter((e) => e.ok);
+    const righe = [];
+    if (fatti.length) {
+      const dove = piu && fatti.length < esiti.length ? ` (su ${fatti.map((e) => nome(e.dove)).join(' e ')})` : '';
+      if (cosa === 'titolo') righe.push(`📝 Titolo aggiornato: ${q}${dove}`);
+      else if (new Set(fatti.map((e) => e.nome)).size === 1) righe.push(`🎮 Categoria aggiornata: ${fatti[0].nome}${dove}`);
+      else righe.push(`🎮 Categoria aggiornata: ${fatti.map((e) => `${e.nome} su ${nome(e.dove)}`).join(', ')}`);
+    }
+    for (const e of esiti) {
+      if (e.nonTrovata) righe.push(`🤔 Non ho trovato la categoria "${q}"${su(e.dove)}.`);
+      else if (e.permesso) righe.push(this._permessoCanale({ ...ctx, piattaforma: e.dove }, cosa === 'titolo' ? 'il titolo' : 'la categoria'));
+    }
+    return righe;
   }
 
   // Il permesso che manca, detto con il rimedio della sua piattaforma.
@@ -1240,8 +1296,9 @@ export class ModulesEngine {
     if (!s) return '';
 
     // AZIONI inline nei comandi: $titolo(...) cambia il titolo, $categoria(...)
-    // (alias $gioco(...)) cambia la categoria/gioco, sulla piattaforma da cui si
-    // scrive (_canaleDi). Sono effetti collaterali: li eseguiamo qui e togliamo
+    // (alias $gioco(...)) cambia la categoria/gioco, dove si chiede (_canaliDi:
+    // la piattaforma da cui si scrive; da un timer, tutte quelle del canale).
+    // Sono effetti collaterali: li eseguiamo qui e togliamo
     // il token dal testo, così lo streamer scrive la sua conferma attorno (es.
     // "!fortnite → $categoria(Fortnite) Si gioca!"). Il token si toglie anche
     // dove non c'e' chi cambia il canale: in chat non esce mai a meta'.
@@ -1252,18 +1309,9 @@ export class ModulesEngine {
         azioni.push({ tipo: tipo.toLowerCase() === 'titolo' ? 'titolo' : 'categoria', inner });
         return '';
       });
-      const canale = azioni.length ? this._canaleDi(ctx) : null;
       for (const a of azioni) {
         const valore = (await this.espandi(a.inner, ctx, { noAzioni: true })).trim();
-        if (!valore || !canale) continue;
-        try {
-          if (a.tipo === 'titolo') {
-            await canale.setChannelInfo?.(ctx.channel, { title: valore.slice(0, 140) });
-          } else {
-            const cat = await risolviCategoria(canale, valore).catch(() => null);
-            if (cat) await canale.setChannelInfo?.(ctx.channel, { gameId: cat.id });
-          }
-        } catch (e) { log.debug(`azione inline ${a.tipo} fallita:`, e?.message || e); }
+        if (valore) await this._cambia(ctx, a.tipo, a.tipo === 'titolo' ? valore.slice(0, 140) : valore);
       }
     }
 

@@ -10,7 +10,10 @@ sceglie uno. Il testo arrivava già intero anche prima. Sbagliava la scelta.
 Su Kick è lo stesso, con i nomi di Kick: `risolviCategoria` riceve chi cerca
 (helix o l'adattatore di Kick, che hanno la stessa forma) e non sa con chi parla.
 Chi viene scelto per piattaforma è spiegato in `docs/PIATTAFORME.md`, «Titolo e
-categoria su Kick».
+categoria su Kick». Quando si cambia su più piattaforme insieme (un canale di
+Twitch con Kick collegato, da timer, voce o Telegram), la categoria si cerca
+due volte, una fra i nomi di ciascuna: «fortnite» può diventare «Fortnite» su
+Twitch e un nome un po' diverso su Kick, ognuno col suo id.
 
 ## Il guasto: il premio andava al nome più corto
 

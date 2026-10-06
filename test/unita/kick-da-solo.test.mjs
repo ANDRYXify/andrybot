@@ -61,6 +61,15 @@ test('su Twitch la presenza e\' l\'unita\' di chat, come prima', () => {
   assert.deepEqual(io.detti, []);
 });
 
+test('la chat di un\'altra piattaforma dello stesso canale si chiede per nome: la chat di Kick di un canale di Twitch', () => {
+  const io = Object.create(BotManager.prototype);
+  io.units = new Map([['casa', { connesso: true }]]);
+  assert.equal(io.inChat('casa'), true, 'senza dove, la chat di casa');
+  assert.equal(io.inChat('casa', 'twitch'), true);
+  assert.equal(io.inChat('casa', 'kick'), false, 'Kick non collegato: il bot li\' non c\'e\', anche se su Twitch si\'');
+  assert.equal(io.inChat('kick.giada', 'twitch'), false, 'un canale nato su Kick su Twitch non c\'e\'');
+});
+
 // --- la diretta di Kick nel motore dei moduli ----------------------------------
 
 function motore({ live = true, vista = {} } = {}) {

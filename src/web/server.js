@@ -1150,16 +1150,24 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // aggiunto dopo → richiede una ri-autorizzazione da /auth/permessi)
   const canaleOk = (login) =>
     !!(tokens.get('broadcaster', login)?.scopes?.includes('channel:manage:broadcast'));
-  // CHI CAMBIA TITOLO E CATEGORIA del canale (voce, privato Telegram): la sua
-  // piattaforma, con la regola dei moduli (ModulesEngine.canalePer): Twitch con
-  // helix, Kick con il suo adattatore che ha la stessa forma (kick/api.js,
-  // canaleKick), nessuno altrove. Il permesso e' quello della stessa
-  // piattaforma: un canale nato su Kick non ha token di Twitch.
-  const canaleDa = (login) => modules.canalePer(login);
-  const puoCambiareCanale = (login) => {
-    const p = piattaformaDi(login);
-    return p === 'twitch' ? canaleOk(login) : (p === 'kick' && kickApi.puoCambiareCanale(login));
+  // CHI CAMBIA TITOLO E CATEGORIA del canale (voce, privato Telegram): il
+  // motore dei moduli, con la sua regola (ModulesEngine._canaliDi). Quello che
+  // non arriva da una chat vale per tutte le piattaforme del canale: quella di
+  // casa, e Kick su un canale di Twitch quando lo streamer l'ha collegato.
+  // Twitch con helix, Kick con il suo adattatore che ha la stessa forma
+  // (kick/api.js, canaleKick), nessuno altrove. Il permesso e' quello di
+  // ciascuna: un canale nato su Kick non ha token di Twitch. Un esito per
+  // piattaforma: una puo' dire di no mentre l'altra dice si'.
+  const puoCambiareSu = (dove, login) => (dove === 'twitch' ? canaleOk(login) : (dove === 'kick' && kickApi.puoCambiareCanale(login)));
+  const cambiaIlCanale = (login, cosa, valore) => modules.cambiaCanale(login, cosa, valore, { permesso: (dove) => puoCambiareSu(dove, login) });
+  // L'annuncio, nella chat di ciascuna piattaforma dove il cambio e' riuscito e
+  // dove il bot e' al lavoro: chi guarda su Kick legge la categoria di Kick.
+  const annunciaCambio = (login, esiti, testo) => {
+    for (const e of esiti) if (e.ok && manager.inChat?.(login, e.dove)) manager.vocePer({ channel: login, piattaforma: e.dove })(testo(e));
   };
+  // Alla pagina della voce, un esito per piattaforma (voce.js, esitoCambio).
+  const esitiVoce = (esiti) => esiti.map((e) => (e.ok ? { piattaforma: e.dove, nome: e.nome }
+    : { piattaforma: e.dove, errore: e.permesso ? 'permesso' : (e.nonTrovata ? 'nonTrovata' : 'errore'), riautorizza: !!e.permesso }));
   // ha concesso il permesso per creare/gestire i premi a punti canale?
   const redemptionsOk = (login) =>
     !!(tokens.get('broadcaster', login)?.scopes?.includes('channel:manage:redemptions'));
@@ -9807,28 +9815,17 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
       return res.json({ ok: true, eseguito: true, vip: true });
     }
     // comando vocale CATEGORIA: "<parola chiave> <nome gioco>" → cambia la categoria
-    // del canale sulla sua piattaforma (Twitch o Kick: canaleDa). Best-effort: se
-    // il riconoscimento è impreciso, il bot prova comunque a risalire al gioco
-    // più somigliante tra le categorie di quella piattaforma.
+    // del canale su ogni sua piattaforma (Twitch, e Kick se collegato:
+    // cambiaIlCanale). Best-effort: se il riconoscimento è impreciso, il bot prova
+    // comunque a risalire al gioco più somigliante tra le categorie di ciascuna.
     const cc = streamers.get(login)?.settings?.cambioCategoria;
     if (cc?.attivo) {
       const q = categoria.parseComandoCategoria(frase, cc.trigger || 'categoria');
       if (q) {
-        const canale = canaleDa(login);
-        if (!canale) return res.json({ ok: true, eseguito: false, categoria: { errore: 'piattaforma' } });
-        if (!puoCambiareCanale(login)) {
-          return res.json({ ok: true, eseguito: false, categoria: { errore: 'permesso', riautorizza: true, piattaforma: piattaformaDi(login) } });
-        }
-        const cat = await categoria.risolviCategoria(canale, q).catch(() => null);
-        if (!cat) return res.json({ ok: true, eseguito: false, categoria: { query: q, trovato: false } });
-        try {
-          await canale.setChannelInfo(login, { gameId: cat.id });
-          if (cc.annuncia !== false) manager.vocePer({ channel: login, piattaforma: piattaformaDi(login) })(`🎮 Categoria aggiornata: ${cat.name}`);
-          return res.json({ ok: true, eseguito: true, categoria: { nome: cat.name } });
-        } catch (e) {
-          const permesso = e?.status === 401 || e?.status === 403;
-          return res.json({ ok: true, eseguito: false, categoria: { errore: permesso ? 'permesso' : 'errore', riautorizza: permesso, piattaforma: piattaformaDi(login) } });
-        }
+        const esiti = await cambiaIlCanale(login, 'categoria', q);
+        if (!esiti.length) return res.json({ ok: true, eseguito: false, categoria: { errore: 'piattaforma' } });
+        if (cc.annuncia !== false) annunciaCambio(login, esiti, (e) => `🎮 Categoria aggiornata: ${e.nome}`);
+        return res.json({ ok: true, eseguito: esiti.some((e) => e.ok), categoria: { query: q, esiti: esitiVoce(esiti) } });
       }
     }
     // comando vocale TITOLO: "<parola chiave> <testo libero>" → cambia il titolo dello stream.
@@ -9836,20 +9833,11 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     if (ct?.attivo) {
       const nuovo = categoria.estraiDopoTrigger(frase, ct.trigger || 'titolo');
       if (nuovo) {
-        const canale = canaleDa(login);
-        if (!canale) return res.json({ ok: true, eseguito: false, titolo: { errore: 'piattaforma' } });
-        if (!puoCambiareCanale(login)) {
-          return res.json({ ok: true, eseguito: false, titolo: { errore: 'permesso', riautorizza: true, piattaforma: piattaformaDi(login) } });
-        }
         const testo = nuovo.slice(0, 140);
-        try {
-          await canale.setChannelInfo(login, { title: testo });
-          if (ct.annuncia !== false) manager.vocePer({ channel: login, piattaforma: piattaformaDi(login) })(`📝 Titolo aggiornato: ${testo}`);
-          return res.json({ ok: true, eseguito: true, titolo: { testo } });
-        } catch (e) {
-          const permesso = e?.status === 401 || e?.status === 403;
-          return res.json({ ok: true, eseguito: false, titolo: { errore: permesso ? 'permesso' : 'errore', riautorizza: permesso, piattaforma: piattaformaDi(login) } });
-        }
+        const esiti = await cambiaIlCanale(login, 'titolo', testo);
+        if (!esiti.length) return res.json({ ok: true, eseguito: false, titolo: { errore: 'piattaforma' } });
+        if (ct.annuncia !== false) annunciaCambio(login, esiti, () => `📝 Titolo aggiornato: ${testo}`);
+        return res.json({ ok: true, eseguito: esiti.some((e) => e.ok), titolo: { testo, esiti: esitiVoce(esiti) } });
       }
     }
     // la stessa risposta va anche nel gruppo Telegram se il modulo è abilitato
@@ -11054,36 +11042,32 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
             return;
           }
           if (cmd === 'categoria' || cmd === 'gioco' || cmd === 'titolo') {
-            // cambia categoria o titolo del canale sulla sua piattaforma (Twitch o
-            // Kick: canaleDa), da un messaggio Telegram. La categoria passa dal
-            // risolutore fuzzy: un nome impreciso trova la categoria piu' vicina.
-            const suKick = piattaformaDi(login) === 'kick';
-            const dove = suKick ? 'Kick' : 'Twitch';
+            // cambia categoria o titolo del canale su ogni sua piattaforma
+            // (Twitch, e Kick se collegato: cambiaIlCanale), da un messaggio
+            // Telegram. La categoria passa dal risolutore fuzzy: un nome
+            // impreciso trova la categoria piu' vicina su ciascuna. Una riga per
+            // piattaforma quando sono piu' d'una.
             const tg = (t) => telegram.inviaMessaggio(conf.token, chat.id, t).catch(() => {});
-            const permessoMancante = suKick
-              ? '🔒 Mi manca il permesso di Kick per cambiare titolo e categoria: dalla dashboard, Account → Il tuo account → Le tue piattaforme, premi «Aggiorna i permessi di Kick» sulla riga di Kick.'
-              : '🔒 Mi manca il permesso Twitch per cambiare titolo e categoria: riautorizza dalla dashboard (Permessi).';
+            const permessoMancante = {
+              kick: '🔒 Mi manca il permesso di Kick per cambiare titolo e categoria: dalla dashboard, Account → Il tuo account → Le tue piattaforme, premi «Aggiorna i permessi di Kick» sulla riga di Kick.',
+              twitch: '🔒 Mi manca il permesso Twitch per cambiare titolo e categoria: riautorizza dalla dashboard (Permessi).',
+            };
             const valore = raw.replace(/^\/\S+\s*/, '').trim();
             const eTitolo = cmd === 'titolo';
             if (!valore) { tg(eTitolo ? 'Scrivimi: <code>/titolo &lt;nuovo titolo&gt;</code>' : 'Scrivimi: <code>/categoria &lt;gioco&gt;</code>, per esempio /categoria Fortnite'); return; }
-            const canale = canaleDa(login);
-            if (!canale) { tg('⏸️ Su questa piattaforma titolo e categoria non si cambiano ancora da qui: si cambiano su Twitch e su Kick.'); return; }
-            if (!puoCambiareCanale(login)) { tg(permessoMancante); return; }
-            try {
-              if (eTitolo) {
-                const t = valore.slice(0, 140);
-                await canale.setChannelInfo(login, { title: t });
-                tg(`📝 Titolo aggiornato: <b>${escTg(t)}</b>`);
-              } else {
-                const cat = await categoria.risolviCategoria(canale, valore).catch(() => null);
-                if (!cat) { tg(`🤔 Non ho trovato la categoria «${escTg(valore)}» su ${dove}. Prova col nome esatto.`); return; }
-                await canale.setChannelInfo(login, { gameId: cat.id });
-                tg(`🎮 Categoria aggiornata: <b>${escTg(cat.name)}</b>`);
-              }
-            } catch (e) {
-              const permesso = e?.status === 401 || e?.status === 403;
-              tg(permesso ? permessoMancante : `❌ Non sono riuscita a cambiare ${eTitolo ? 'titolo' : 'categoria'}, riprova.`);
-            }
+            const t = eTitolo ? valore.slice(0, 140) : valore;
+            const esiti = await cambiaIlCanale(login, eTitolo ? 'titolo' : 'categoria', t);
+            if (!esiti.length) { tg('⏸️ Su questa piattaforma titolo e categoria non si cambiano ancora da qui: si cambiano su Twitch e su Kick.'); return; }
+            const piu = esiti.length > 1;
+            const nome = (d) => NOME_PIATTAFORMA[d] || d;
+            const righe = esiti.map((e) => {
+              const su = piu ? ` su ${nome(e.dove)}` : '';
+              if (e.ok) return eTitolo ? `📝 Titolo aggiornato${su}: <b>${escTg(e.nome)}</b>` : `🎮 Categoria aggiornata${su}: <b>${escTg(e.nome)}</b>`;
+              if (e.permesso) return permessoMancante[e.dove] || `🔒 Mi manca il permesso per cambiare ${eTitolo ? 'il titolo' : 'la categoria'}${su}.`;
+              if (e.nonTrovata) return `🤔 Non ho trovato la categoria «${escTg(valore)}» su ${nome(e.dove)}. Prova col nome esatto.`;
+              return `❌ Non sono riuscita a cambiare ${eTitolo ? 'il titolo' : 'la categoria'}${su}, riprova.`;
+            });
+            tg([...new Set(righe)].join('\n'));
             return;
           }
           if (cmd === 'autoautorialita' || cmd === 'chisono') {

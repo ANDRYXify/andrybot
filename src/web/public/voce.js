@@ -163,17 +163,10 @@ async function inviaFrase(frase) {
     const dati = await res.json().catch(() => ({}));
     const cat = dati && dati.categoria;
     const tit = dati && dati.titolo;
-    if (cat) {
-      if (dati.eseguito && cat.nome) logga(L('categoria cambiata in "', 'category changed to "', 'categoría cambiada a "') + cat.nome + '"');
-      else if (cat.riautorizza) logga(permessoMancante(cat));
-      else if (cat.errore === 'piattaforma') logga(piattaformaAssente());
-      else if (cat.trovato === false) logga(L('categoria non trovata per "', 'no category found for "', 'categoría no encontrada para "') + (cat.query || '') + '"');
-      else logga(L('non sono riuscito a cambiare categoria', 'I could not change the category', 'no he podido cambiar la categoría'));
-    } else if (tit) {
-      if (dati.eseguito && tit.testo) logga(L('titolo cambiato in "', 'title changed to "', 'título cambiado a "') + tit.testo + '"');
-      else if (tit.riautorizza) logga(permessoMancante(tit));
-      else if (tit.errore === 'piattaforma') logga(piattaformaAssente());
-      else logga(L('non sono riuscito a cambiare titolo', 'I could not change the title', 'no he podido cambiar el título'));
+    if (cat || tit) {
+      const esito = cat || tit;
+      if (esito.errore === 'piattaforma') logga(piattaformaAssente());
+      else for (const e of esito.esiti || []) logga(esitoCambio(e, cat ? 'categoria' : 'titolo', esito, (esito.esiti || []).length > 1));
     } else if (dati && dati.eseguito) logga('"' + frase + L('" → modulo scattato', '" → module fired', '" → módulo disparado'));
     else logga('"' + frase + L('" inviato (nessun modulo ha reagito)', '" sent (no module reacted)', '" enviado (ningún módulo ha reaccionado)'));
   } catch (e) {
@@ -181,9 +174,18 @@ async function inviaFrase(frase) {
   }
 }
 
+const NOME_PIATTAFORMA = { twitch: 'Twitch', kick: 'Kick', youtube: 'YouTube' };
+function esitoCambio(e, cosa, chiesto, piu) {
+  const su = piu ? ' ' + L('su', 'on', 'en') + ' ' + (NOME_PIATTAFORMA[e.piattaforma] || e.piattaforma) : '';
+  if (e.nome) return (cosa === 'categoria' ? L('categoria cambiata in "', 'category changed to "', 'categoría cambiada a "') : L('titolo cambiato in "', 'title changed to "', 'título cambiado a "')) + e.nome + '"' + su;
+  if (e.riautorizza) return permessoMancante(e);
+  if (e.errore === 'nonTrovata') return L('categoria non trovata per "', 'no category found for "', 'categoría no encontrada para "') + (chiesto.query || '') + '"' + su;
+  return (cosa === 'categoria' ? L('non sono riuscito a cambiare categoria', 'I could not change the category', 'no he podido cambiar la categoría') : L('non sono riuscito a cambiare titolo', 'I could not change the title', 'no he podido cambiar el título')) + su;
+}
+
 function permessoMancante(esito) {
   if (esito.piattaforma === 'kick') return L('manca il permesso di Kick per cambiare titolo e categoria: nel pannello, da Account → Il tuo account → Le tue piattaforme, premi «Aggiorna i permessi di Kick» sulla riga di Kick', 'Kick’s permission to change title and category is missing: in the panel, from Account → Your account → Your platforms, press “Update Kick permissions” on the Kick row', 'falta el permiso de Kick para cambiar título y categoría: en el panel, desde Cuenta → Tu cuenta → Tus plataformas, pulsa «Actualiza los permisos de Kick» en la fila de Kick');
-  return L('manca il permesso di gestione canale: concedilo nel pannello, da Chat e pubblico → Comandi → Comandi vocali', 'the manage channel permission is missing: grant it in the panel, from Chat & audience → Commands → Voice commands', 'falta el permiso de gestión del canal: concédelo en el panel, desde Chat y público → Comandos → Comandos de voz');
+  return L('manca il permesso di gestione canale di Twitch: concedilo nel pannello, da Chat e pubblico → Comandi → Comandi vocali', 'Twitch’s manage channel permission is missing: grant it in the panel, from Chat & audience → Commands → Voice commands', 'falta el permiso de gestión del canal de Twitch: concédelo en el panel, desde Chat y público → Comandos → Comandos de voz');
 }
 
 function piattaformaAssente() {

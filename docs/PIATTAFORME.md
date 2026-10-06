@@ -447,23 +447,41 @@ permesso). Così `risolviCategoria` (`docs/CATEGORIA.md`) sceglie fra i nomi di
 Kick con le stesse regole, e chi cambia il canale non sa con chi parla.
 
 **Chi cambia il canale** lo decide un posto solo, il motore dei moduli
-(`modules.js`, `_canaleDi` e `canalePer`):
+(`modules.js`, `_canaliDi`, `_cambia` e `cambiaCanale`):
 
 - un comando scritto in chat, o un modulo partito da un evento: la piattaforma
   da cui arriva. `!titolo` nella chat di Kick cambia Kick, nella chat di Twitch
   cambia Twitch, anche sullo stesso canale;
 - timer, voce, API, privato Telegram e prova non arrivano da una chat: valgono
-  per la piattaforma del canale. Un canale nato su Kick non chiede mai a Twitch;
-  un canale di Twitch con Kick collegato cambia Twitch;
+  per il canale, cioè per **tutte le sue piattaforme**. Un canale di Twitch con
+  Kick collegato cambia Twitch e Kick insieme; uno senza Kick cambia solo
+  Twitch (l'adattatore di Kick dice se è collegato, `canaleKick(...).collegato`).
+  Un canale nato su Kick non chiede mai a Twitch;
 - YouTube: nessuno, per ora. Allo staff si dice dove si può, al pubblico niente.
 
+Il cambio si fa **una piattaforma alla volta** (`_cambia`): la categoria si
+cerca fra quelle di ciascuna (nomi e id sono diversi su Twitch e su Kick), e
+l'esito è per piattaforma. Una può dire di no (un permesso che manca, una
+categoria che lì non c'è) mentre l'altra cambia lo stesso. In chat, se tutto è
+riuscito, si dice una riga come sempre; si dice dove solo quando serve: se una
+piattaforma ha detto di no («(su Twitch)» e il rimedio dell'altra), o se la
+categoria ha un nome diverso su ciascuna.
+
 La voce e il privato Telegram (`web/server.js`) chiedono al motore
-(`canaleDa`), con il permesso della stessa piattaforma (`puoCambiareCanale`), e
-annunciano con la voce della piattaforma (`vocePer`). Il rimedio detto è quello
-della piattaforma: su Kick «ricollega Kick», su Twitch «riautorizza».
+(`cambiaIlCanale`), con il permesso di ciascuna piattaforma chiesto prima
+(`puoCambiareSu`): senza, quella piattaforma non si chiama. La voce annuncia
+nella chat di ogni piattaforma dove il cambio è riuscito e dove il bot è al
+lavoro (`annunciaCambio`, `inChat(login, piattaforma)`), con la voce di quella
+piattaforma (`vocePer`): chi guarda su Kick legge la categoria di Kick. Alla
+pagina della voce torna un esito per piattaforma (`esitiVoce`), Telegram
+risponde con una riga per piattaforma. Il rimedio detto è quello della
+piattaforma che ha detto di no: su Kick «Aggiorna i permessi di Kick», su
+Twitch «riautorizza». La scheda della voce nel pannello dice su quali
+piattaforme cambia e quali permessi mancano, per ciascuna.
 
 Collaudi: `test/unita/kick-titolo-categoria.test.mjs` (le chiamate vere di
-Kick, la v2, il permesso, chi cambia per piattaforma, le azioni inline),
+Kick, la v2, il permesso, chi cambia per piattaforma, tutte e due su un canale
+di Twitch con Kick collegato, un esito per piattaforma, le azioni inline),
 `test/contratto/kick-titolo-categoria.test.mjs` (voce, Telegram, avvio,
 pannello e pagina della voce passano di lì).
 

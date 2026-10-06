@@ -9,7 +9,9 @@
 //  · senza channel:write non si chiama niente, e l'errore ha la forma di helix
 //    (.status 403), cosi' chi cambia il canale non sa con chi parla;
 //  · il motore dei moduli chiede alla piattaforma da cui si scrive; timer,
-//    voce, API, Telegram e prova alla piattaforma del canale; YouTube a nessuno.
+//    voce, API, Telegram e prova a tutte quelle del canale: la sua, e Kick su
+//    un canale di Twitch se lo streamer l'ha collegato; YouTube a nessuno;
+//  · un esito per piattaforma: una dice di no, l'altra cambia lo stesso.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { cartellaUsaEGetta } from '../aiuto.mjs';
@@ -91,6 +93,8 @@ test('canaleKick ha la forma di helix: risolviCategoria e setChannelInfo non san
   const c = K.canaleKick('kick.sette', r);
   assert.equal(c.piattaforma, 'kick');
   assert.ok(Object.isFrozen(c));
+  assert.equal(c.collegato, true, 'Kick collegato');
+  assert.equal(K.canaleKick('mai.collegato').collegato, false, 'senza token, non collegato');
   const cat = await risolviCategoria(c, 'fortnite');
   assert.equal(cat?.name, 'Fortnite');
   assert.equal(await c.setChannelInfo('kick.sette', { gameId: cat.id }), true);
@@ -102,14 +106,21 @@ test('canaleKick ha la forma di helix: risolviCategoria e setChannelInfo non san
 
 // --- il motore dei moduli: chi cambia il canale --------------------------------
 
-function motore() {
+// collegati: i canali di Twitch che hanno collegato anche Kick. nomi: il nome
+// della categoria su ciascuna piattaforma; nega: chi risponde 403.
+function motore({ collegati = [], nomi = {}, nega = [] } = {}) {
   const fatti = [];
-  const finto = (dove) => ({
-    searchCategories: async () => [{ id: '9', name: 'Fortnite' }],
-    setChannelInfo: async (canale, patch) => { fatti.push([dove, canale, patch]); return true; },
+  const finto = (dove, collegato = true) => ({
+    collegato,
+    searchCategories: async () => [{ id: dove === 'kick' ? '77' : '9', name: nomi[dove] || 'Fortnite' }],
+    setChannelInfo: async (canale, patch) => {
+      if (nega.includes(dove)) throw Object.assign(new Error('permesso mancante'), { status: 403 });
+      fatti.push([dove, canale, patch]);
+      return true;
+    },
   });
   const chiesti = [];
-  const m = new ModulesEngine({ helix: finto('twitch'), canali: { kick: (canale) => { chiesti.push(canale); return finto('kick'); } } });
+  const m = new ModulesEngine({ helix: finto('twitch'), canali: { kick: (canale) => { chiesti.push(canale); return finto('kick', canale.startsWith('kick.') || collegati.includes(canale)); } } });
   return { m, fatti, chiesti };
 }
 const titolo = { id: 1, attivo: true, trigger: { tipo: 'comando', comando: 'titolo' }, azioni: [{ tipo: 'titolo', testo: 'Nuovo titolo', annuncia: true }] };
@@ -125,30 +136,71 @@ test('un comando scritto su Kick cambia Kick, uno scritto su Twitch cambia Twitc
   await esegui(m, titolo, ctx({ piattaforma: 'twitch' }), detto);
   assert.deepEqual(fatti, [
     ['kick', 'canale', { title: 'Nuovo titolo' }],
-    ['kick', 'canale', { gameId: '9' }],
+    ['kick', 'canale', { gameId: '77' }],
     ['twitch', 'canale', { title: 'Nuovo titolo' }],
   ]);
   assert.deepEqual(chiesti, ['canale', 'canale'], 'il canale di Kick si chiede per il canale nostro');
   assert.deepEqual(detto, ['📝 Titolo aggiornato: Nuovo titolo', '🎮 Categoria aggiornata: Fortnite', '📝 Titolo aggiornato: Nuovo titolo']);
 });
 
-test('timer, voce, API e Telegram valgono per la piattaforma del canale: un canale nato su Kick non chiede a Twitch', async () => {
+test('timer, voce, API e Telegram valgono per il canale: un canale nato su Kick non chiede a Twitch, uno di Twitch senza Kick non chiede a Kick', async () => {
   const { m, fatti } = motore();
   await esegui(m, titolo, ctx({ channel: 'kick.nato' }));
   await esegui(m, titolo, ctx({ channel: 'canaletwitch' }));
   assert.deepEqual(fatti.map((f) => f.slice(0, 2)), [['kick', 'kick.nato'], ['twitch', 'canaletwitch']]);
 });
 
-test('la voce e il privato Telegram chiedono con la stessa regola: la piattaforma del canale', () => {
-  const kick = { piattaforma: 'kick' };
-  const helix = { piattaforma: 'twitch' };
-  const chiesti = [];
-  const m = new ModulesEngine({ helix, canali: { kick: (c) => { chiesti.push(c); return kick; } } });
-  assert.equal(m.canalePer('KICK.Nato'), kick);
-  assert.deepEqual(chiesti, ['kick.nato']);
-  assert.equal(m.canalePer('canaletwitch'), helix);
-  assert.equal(m.canalePer('yt.uc123'), null, 'YouTube: nessuno');
-  assert.equal(new ModulesEngine({ helix }).canalePer('kick.nato'), null, 'senza adattatore di Kick, nessuno: mai helix');
+test('su un canale di Twitch con Kick collegato, quello che non arriva da una chat cambia tutte e due; la chat cambia la sua', async () => {
+  const { m, fatti } = motore({ collegati: ['canale'] });
+  const detto = [];
+  await esegui(m, titolo, ctx(), detto);
+  await esegui(m, categoria, ctx(), detto);
+  assert.deepEqual(fatti, [
+    ['twitch', 'canale', { title: 'Nuovo titolo' }], ['kick', 'canale', { title: 'Nuovo titolo' }],
+    ['twitch', 'canale', { gameId: '9' }], ['kick', 'canale', { gameId: '77' }],
+  ], 'su Kick la categoria e\' quella di Kick, con il suo id');
+  assert.deepEqual(detto, ['📝 Titolo aggiornato: Nuovo titolo', '🎮 Categoria aggiornata: Fortnite'], 'riuscito ovunque: una riga, come sempre');
+  fatti.length = 0;
+  await esegui(m, titolo, ctx({ piattaforma: 'twitch' }));
+  await esegui(m, titolo, ctx({ piattaforma: 'kick' }));
+  assert.deepEqual(fatti.map((f) => f[0]), ['twitch', 'kick'], 'da una chat, solo la sua piattaforma');
+  fatti.length = 0;
+  await m.espandi('$titolo(Da un timer)', ctx());
+  assert.deepEqual(fatti.map((f) => f[0]), ['twitch', 'kick'], 'le azioni in linea con la stessa regola');
+});
+
+test('un esito per piattaforma: una dice di no e l\'altra cambia lo stesso; dove serve si dice dove', async () => {
+  const detto = [];
+  const a = motore({ collegati: ['canale'], nega: ['kick'] });
+  await esegui(a.m, titolo, ctx(), detto);
+  assert.deepEqual(a.fatti.map((f) => f[0]), ['twitch'], 'il no di Kick non ferma Twitch');
+  assert.equal(detto[0], '📝 Titolo aggiornato: Nuovo titolo (su Twitch)');
+  assert.match(detto[1], /permesso di Kick/, 'col rimedio di Kick');
+  assert.equal(detto.length, 2);
+  detto.length = 0;
+  const b = motore({ collegati: ['canale'], nomi: { kick: 'Fortnite: Battle Royale' } });
+  await esegui(b.m, categoria, ctx(), detto);
+  assert.deepEqual(detto, ['🎮 Categoria aggiornata: Fortnite su Twitch, Fortnite: Battle Royale su Kick']);
+  detto.length = 0;
+  const c = new ModulesEngine({
+    helix: { searchCategories: async () => [], setChannelInfo: async () => true },
+    canali: { kick: () => ({ collegato: true, searchCategories: async () => [{ id: '77', name: 'Fortnite' }], setChannelInfo: async () => true }) },
+  });
+  await esegui(c, categoria, ctx(), detto);
+  assert.deepEqual(detto, ['🎮 Categoria aggiornata: Fortnite (su Kick)', '🤔 Non ho trovato la categoria "fortnite" su Twitch.']);
+});
+
+test('la voce e il privato Telegram cambiano con la stessa regola, e il permesso si chiede prima per piattaforma', async () => {
+  const { m, fatti, chiesti } = motore({ collegati: ['canaletwitch'] });
+  assert.deepEqual(await m.cambiaCanale('KICK.Nato', 'titolo', 'x'), [{ dove: 'kick', ok: true, nome: 'x' }]);
+  assert.deepEqual(chiesti, ['kick.nato'], 'il canale si legge in minuscolo');
+  assert.deepEqual((await m.cambiaCanale('canaletwitch', 'categoria', 'fortnite')).map((e) => [e.dove, e.ok]), [['twitch', true], ['kick', true]]);
+  assert.deepEqual(await m.cambiaCanale('yt.uc123', 'titolo', 'x'), [], 'YouTube: nessuno');
+  fatti.length = 0;
+  const esiti = await m.cambiaCanale('canaletwitch', 'titolo', 'y', { permesso: (dove) => dove === 'twitch' });
+  assert.deepEqual(esiti, [{ dove: 'twitch', ok: true, nome: 'y' }, { dove: 'kick', permesso: true }]);
+  assert.deepEqual(fatti.map((f) => f[0]), ['twitch'], 'senza permesso, Kick non si chiama');
+  assert.deepEqual(await new ModulesEngine({ helix: { setChannelInfo: async () => true } }).cambiaCanale('kick.nato', 'titolo', 'x'), [], 'senza adattatore di Kick, nessuno: mai helix');
 });
 
 test('su YouTube non c\'e\' chi cambia il canale: nessuna chiamata, e allo staff si dice dove si puo\'', async () => {

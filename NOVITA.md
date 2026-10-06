@@ -184,6 +184,15 @@ comandi diversi da quelli della riga italiana.
 - Nella carta «Effetti dai gesti» i nomi dei gesti e delle espressioni si leggono anche in inglese e in spagnolo. [vai: effetti]
   en: In the “Effects from gestures” card, gesture and expression names now show in English and Spanish too.
   es: En la tarjeta «Efectos por gestos» los nombres de los gestos y de las expresiones se leen también en inglés y en español.
+- [importante] Se trasmetti su Twitch e Kick insieme, timer, voce e Telegram cambiano titolo e categoria su tutte e due; !titolo e !categoria cambiano la piattaforma della chat in cui li scrivi. [vai: ascolto]
+  en: If you stream on Twitch and Kick together, timers, voice and Telegram change title and category on both; !titolo and !categoria change the platform of the chat you type them in.
+  es: Si emites en Twitch y Kick a la vez, los temporizadores, la voz y Telegram cambian el título y la categoría en las dos; !titolo y !categoria cambian la plataforma del chat donde los escribes.
+  > Titolo e categoria su Twitch e Kick insieme
+  > Con Kick collegato a un canale di Twitch, quello che non scrivi in chat vale per tutte e due: la categoria si cerca fra i nomi di ciascuna, e se una dice di no l'altra cambia lo stesso. Il bot ti dice dove è riuscito.
+  en> Title and category on Twitch and Kick together
+  en> With Kick connected to a Twitch channel, what you don't type in chat applies to both: the category is looked up among each one's names, and if one says no the other still changes. The bot tells you where it worked.
+  es> Título y categoría en Twitch y Kick a la vez
+  es> Con Kick conectado a un canal de Twitch, lo que no escribes en el chat vale para las dos: la categoría se busca entre los nombres de cada una, y si una dice que no, la otra cambia igual. El bot te dice dónde funcionó.
 
 ## 2026-10-03
 

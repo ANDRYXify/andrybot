@@ -312,10 +312,13 @@ export async function cambiaCanale(login, { titolo, categoria } = {}, { fetchImp
 
 // Il canale Kick di un canale nostro, con l'aspetto di helix. setChannelInfo
 // lancia un errore con .status come helix: 403 per un permesso che manca.
+// collegato dice se lo streamer ha collegato Kick: su un canale di Twitch il
+// motore dei moduli cambia anche Kick solo se c'e' (ModulesEngine._canaliDi).
 export function canaleKick(login, { fetchImpl } = {}) {
   const chi = String(login || '').toLowerCase();
   return Object.freeze({
     piattaforma: 'kick',
+    collegato: !!tokenDi(chi)?.accessToken,
     searchCategories: (q) => cercaCategorie(chi, q, { fetchImpl }),
     async setChannelInfo(_canale, { gameId, title } = {}) {
       const r = await cambiaCanale(chi, { titolo: title, categoria: gameId }, { fetchImpl });

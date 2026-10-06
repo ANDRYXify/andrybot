@@ -2746,9 +2746,11 @@ export class BotManager {
   // ogni piattaforma ha il suo modo di esserci: Twitch una connessione, YouTube
   // una chat che si legge solo durante una diretta, Kick un collegamento che il
   // bot usa finche' lavora. Un canale Discord una chat sua non ce l'ha: null.
-  inChat(login) {
+  // dove: la chat di un'altra piattaforma dello stesso canale (la chat di Kick
+  // di un canale di Twitch); senza, quella di casa.
+  inChat(login, dove) {
     const l = String(login || '').toLowerCase();
-    const p = piattaformaDi(l);
+    const p = dove || piattaformaDi(l);
     if (p === 'twitch') return !!this.units.get(l)?.connesso;
     if (p === 'youtube') return !!this.chatYT?.stato(l)?.inDiretta;
     if (p === 'kick') return !!tokenKick(l)?.accessToken && alLavoro(streamers.get(l), { inDiretta: this.inDirettaSu(l, 'kick') });
