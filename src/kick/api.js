@@ -43,7 +43,11 @@ export async function tokenBuono(login, { fetchImpl = fetch, ora = Date.now() } 
   if (_inCorso.has(chi)) return _inCorso.get(chi);
   const p = (async () => {
     try {
-      const nuovo = await rinnova(t.refreshToken, { fetchImpl });
+      // Nel rinnovo lo scope e' facoltativo: se manca vuol dire «gli stessi di
+      // prima» (RFC 6749, §6). Leggerlo come «nessuno» spegnerebbe da solo, al
+      // primo rinnovo, la moderazione e il cambio di titolo e categoria.
+      const letto = await rinnova(t.refreshToken, { fetchImpl });
+      const nuovo = letto.scopes?.length ? letto : { ...letto, scopes: t.scopes || [] };
       salvaToken(chi, nuovo, t.userId);
       log.info(`@${chi}: token Kick rinnovato`);
       return nuovo;

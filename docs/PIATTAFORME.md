@@ -396,6 +396,10 @@ dato: la riga di Kick in «Le tue piattaforme» lo dice («Titolo e categoria su
 Kick: non concessi.») e ha il tasto «Concedi titolo e categoria», che ricollega
 Kick con la stessa azione di «Sistema», quindi la moderazione, se c'era, resta.
 Senza il permesso non si chiama Kick: si sa già che rifiuterebbe.
+I permessi restano anche quando il token si rinnova: nel rinnovo lo `scope` è
+facoltativo, e quando manca vuol dire «gli stessi di prima» (RFC 6749, §6).
+Leggerlo come «nessuno» spegnerebbe da solo, al primo rinnovo, questo e la
+moderazione (`kick/api.js`, `tokenBuono`; `test/unita/kick-rinnovo.test.mjs`).
 
 `kick/api.js` espone `canaleKick(login)`, con la **stessa forma di helix**
 (`searchCategories`, `setChannelInfo`; l'errore ha `.status`, 403 per il

@@ -160,6 +160,9 @@ comandi diversi da quelli della riga italiana.
 - Su un canale Kick la scheda dei comandi a voce non chiede più il permesso di Twitch: dice Kick, con il tasto per il permesso giusto. [vai: ascolto]
   en: On a Kick channel the voice commands tab no longer asks for Twitch's permission: it says Kick, with the button for the right permission.
   es: En un canal de Kick la pestaña de comandos por voz ya no pide el permiso de Twitch: dice Kick, con el botón para el permiso correcto.
+- Su Kick la moderazione, il titolo e la categoria restano concessi anche quando Kick rinnova l'accesso del bot: non serve ricollegare. [vai: account]
+  en: On Kick, moderation, title and category stay granted even when Kick renews the bot's access: no need to reconnect.
+  es: En Kick la moderación, el título y la categoría siguen concedidos aunque Kick renueve el acceso del bot: no hace falta volver a conectar.
 
 ## 2026-10-03
 
