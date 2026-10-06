@@ -3531,9 +3531,47 @@ function _leggiRegione(R) {
   return { elementi, valori: elementi.map(_valoreCampo), stati: _statiDi(R) };
 }
 
-function _firmaRegione(l) {
-  const valori = l.valori.filter((v, i) => !_siSalvano.has(l.elementi[i]));
-  return valori.join('\u0000') + '\u0002' + l.stati.map((x) => x.json).join('\u0001');
+const _nascite = new WeakMap();
+function _osservaNascite() {
+  new MutationObserver((lista) => {
+    for (const m of lista) for (const n of m.addedNodes) {
+      if (!(n instanceof Element)) continue;
+      const campi = n.matches('input, select, textarea') ? [n] : n.querySelectorAll('input, select, textarea');
+      for (const el of campi) if (!_nascite.has(el)) _nascite.set(el, _valoreCampo(el));
+    }
+  }).observe(document.body, { childList: true, subtree: true });
+}
+
+const _firmaStati = (l) => l.stati.map((x) => x.json).join('\u0001');
+
+function _confronto(r, ora) {
+  const base = r.base;
+  const dove = new Map(base.elementi.map((el, i) => [el, i]));
+  const presi = new Set();
+  const nati = [];
+  const coppie = [];
+  ora.elementi.forEach((el, i) => {
+    if (_siSalvano.has(el)) return;
+    const j = dove.get(el);
+    if (j === undefined) { nati.push(i); return; }
+    presi.add(j);
+    coppie.push([el, ora.valori[i], base.valori[j]]);
+  });
+  const sparite = base.elementi.map((el, j) => j).filter((j) => !presi.has(j) && !_siSalvano.has(base.elementi[j]));
+  nati.forEach((i, k) => {
+    const el = ora.elementi[i];
+    const j = sparite[k];
+    const b = el.dataset && el.dataset.salvato !== undefined ? el.dataset.salvato
+      : j !== undefined ? base.valori[j] : _nascite.get(el);
+    coppie.push([el, ora.valori[i], b]);
+  });
+  return { coppie, perse: Math.max(0, sparite.length - nati.length) };
+}
+
+function _diversa(r, ora) {
+  if (_firmaStati(ora) !== _firmaStati(r.base)) return true;
+  const { coppie, perse } = _confronto(r, ora);
+  return perse > 0 || coppie.some(([, v, b]) => v !== b);
 }
 
 function _prendiBase(R) {
@@ -3546,15 +3584,12 @@ function _ripensaRegione(R, r) {
   r.dalUtente = false;
   if (r.ignota) { r.sporca = true; return; }
   r.ora = _leggiRegione(R);
-  r.sporca = _firmaRegione(r.ora) !== _firmaRegione(r.base);
+  r.sporca = _diversa(r, r.ora);
 }
 
 function _cambiati(r) {
   if (!r.sporca || r.ignota || !r.ora) return [];
-  const { base, ora } = r;
-  if (base.elementi.length === ora.elementi.length) return ora.elementi.filter((el, i) => ora.valori[i] !== base.valori[i] && !_siSalvano.has(el));
-  const prima = new Map(base.elementi.map((el, i) => [el, base.valori[i]]));
-  return ora.elementi.filter((el, i) => !prima.has(el) || prima.get(el) !== ora.valori[i]);
+  return _confronto(r, r.ora).coppie.filter(([, v, b]) => v !== b).map(([el]) => el);
 }
 
 let _ripensa = 0, _ripensaTutte = false;
@@ -3703,17 +3738,16 @@ function _rimettiRegione(R, r) {
     if (!f.rimetti) return false;
     f.rimetti(JSON.parse(base.get(x.id)));
   }
-  const ora = _leggiRegione(R);
-  if (ora.elementi.length !== r.base.valori.length) return _firmaRegione(ora) === _firmaRegione(r.base);
-  ora.elementi.forEach((el, i) => {
-    const v = r.base.valori[i];
-    if (_valoreCampo(el) === v) return;
+  const { coppie, perse } = _confronto(r, _leggiRegione(R));
+  if (perse) return false;
+  for (const [el, , v] of coppie) {
+    if (v === undefined || _valoreCampo(el) === v) continue;
     if (el.type === 'checkbox' || el.type === 'radio') el.checked = v === '1';
     else el.value = v;
     el.dispatchEvent(new Event('input', { bubbles: true }));
     el.dispatchEvent(new Event('change', { bubbles: true }));
-  });
-  return _firmaRegione(_leggiRegione(R)) === _firmaRegione(r.base);
+  }
+  return !_diversa(r, _leggiRegione(R));
 }
 
 function _annullaModifiche() {
@@ -3774,6 +3808,7 @@ function avviaBarraSalva() {
     + `<button type="button" class="sv-chiudi" data-sv-chiudi aria-label="${esc(L('Chiudi l\'avviso', 'Dismiss', 'Cerrar el aviso'))}" title="${esc(L('Chiudi l\'avviso', 'Dismiss', 'Cerrar el aviso'))}">`
     + '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>';
   document.body.appendChild(_salvaBarra);
+  _osservaNascite();
   if (typeof ResizeObserver === 'function') new ResizeObserver(() => document.body.style.setProperty('--alto-salva', `${_salvaBarra.offsetHeight}px`)).observe(_salvaBarra);
 
   const mettiDaParte = () => {
@@ -10695,7 +10730,7 @@ function _frasiDentroHtml(m) {
   return `<div data-dentro>
       <p class="suggerimento">${esc(Lv(m.quando))}</p>
       <label class="campo" for="${esc(id)}-modo">${L('Quali frasi', 'Which lines', 'Qué frases')}</label>
-      <select id="${esc(id)}-modo" data-modo>${scelte.map((k) => `<option value="${k}"${_frasiModo(m) === k ? ' selected' : ''}>${esc(modi[k])}</option>`).join('')}</select>
+      <select id="${esc(id)}-modo" data-modo data-salvato="${esc(m.modo)}">${scelte.map((k) => `<option value="${k}"${_frasiModo(m) === k ? ' selected' : ''}>${esc(modi[k])}</option>`).join('')}</select>
       <label class="campo" for="${esc(id)}-sue">${L('Le mie frasi (una per riga)', 'My lines (one per line)', 'Mis frases (una por línea)')}</label>
       <textarea id="${esc(id)}-sue" class="campo-largo" rows="3" data-sue>${esc((m.sue || []).join('\n'))}</textarea>
       <p class="suggerimento">${L('Puoi usare', 'You can use', 'Puedes usar')} ${m.dati.map((x) => `<code>{${esc(x)}}</code>`).join(' ')}. ${L('Una frase che nomina un dato che manca non esce: esce un’altra.', 'A line that names missing data is not sent: another one is.', 'Una frase que nombra un dato que falta no sale: sale otra.')}</p>
@@ -10780,7 +10815,7 @@ function _frasiEffetto(modo, m) {
   return modo;
 }
 
-const _frasiApplica = (x, m) => (x === 'spento' && !m.spegnibile ? _frasiModo(m) : x);
+const _frasiApplica = (x, m) => (x === 'spento' && !m.spegnibile ? _frasiModo(m) : _frasiEffetto(x, m));
 
 function _frasiTuttiOra() {
   const tutti = _frasiTutti();

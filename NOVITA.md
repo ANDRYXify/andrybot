@@ -208,6 +208,12 @@ comandi diversi da quelli della riga italiana.
 - Le etichette sopra i gruppi di scelte, nel pannello, si leggono come le altre etichette dei campi. [vai: personalita]
   en: The labels above groups of choices in the panel now read like the other field labels.
   es: Las etiquetas sobre los grupos de opciones del panel se leen ahora como las demás etiquetas de los campos.
+- Il riquadro «Modifiche non salvate» non si confonde più quando apri una parte dopo aver cambiato qualcosa: rimettendo com'era si spegne, e «Annulla» rimette tutto senza ricaricare la pagina. [vai: personalita]
+  en: The “Unsaved changes” box no longer gets confused when you open a section after changing something: putting things back turns it off, and “Discard” restores everything without reloading the page.
+  es: El recuadro «Cambios sin guardar» ya no se confunde cuando abres una parte después de cambiar algo: al dejarlo como estaba se apaga, y «Descartar» lo devuelve todo sin recargar la página.
+- «Per tutti i momenti» mette in ogni momento la scelta che vale davvero: dove non hai frasi tue resta «Le nostre», e la carta non risulta da salvare per niente. [vai: personalita]
+  en: “For every moment” gives each moment the choice that really applies: where you have no lines of your own it stays “Ours”, and the card no longer shows as unsaved for nothing.
+  es: «Para todos los momentos» pone en cada momento la opción que vale de verdad: donde no tienes frases tuyas se queda «Las nuestras», y la tarjeta ya no aparece sin guardar por nada.
 
 ## 2026-10-03
 

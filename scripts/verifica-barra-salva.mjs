@@ -18,6 +18,8 @@
 //  · un campo che si salva da solo non resta «da salvare»;
 //  · una carta senza salva non finisce sotto il salva di un'altra;
 //  · «Annulla» rimette i valori; la X mette da parte finche' non cambi altro;
+//  · una parte che si apre dopo un cambiamento (campi nati dopo la base) non
+//    sporca niente da sola, e «Annulla» la rimette senza ricaricare;
 //  · uscendo, la finestra dice cosa e dove; «Resta qui» porta al campo, in
 //    vista, segnato e col fuoco; «Salva ed esci» aspetta l'esito vero;
 //  · un editor a stato JS (Pannelli): aggiungo e tolgo, torna pulito;
@@ -73,11 +75,11 @@ const avvia = corpoDi('avviaBarraSalva');
 dice(/addEventListener\('input', cambiato, true\)/.test(avvia) && !/'click', 'pointerup', 'keyup'/.test(avvia),
   'si ripensa per un campo cambiato, non per ogni clic (un clic che carica non e\' una modifica)');
 
-const DIFESA = '  r.sporca = _firmaRegione(r.ora) !== _firmaRegione(r.base);';
+const DIFESA = '  r.sporca = _diversa(r, r.ora);';
 if (SELFTEST) {
   if (!originale.includes(DIFESA)) { console.log('  ✗ non trovo la difesa da togliere'); process.exit(1); }
   console.log('  tolgo: il confronto con la base (una modifica resta «da salvare» anche rimessa com\'era)\n');
-  fs.writeFileSync(APP, originale.replace(DIFESA, '  r.sporca = r.sporca || _firmaRegione(r.ora) !== _firmaRegione(r.base);'));
+  fs.writeFileSync(APP, originale.replace(DIFESA, '  r.sporca = r.sporca || _diversa(r, r.ora);'));
 }
 const ripristina = () => { if (SELFTEST) fs.writeFileSync(APP, originale); };
 process.on('exit', ripristina);
@@ -144,6 +146,21 @@ const premi = async (p, sel) => {
   const r = await p.evaluate((s) => { const q = document.querySelector(s).getBoundingClientRect(); return { x: q.left + q.width / 2, y: q.top + q.height / 2 }; }, sel);
   await p.mouse.click(r.x, r.y);
   await fotogrammi(p);
+};
+// «Annulla» premuto come lo preme una persona: dice se la pagina e' rimasta
+// (true) o si e' ricaricata (false), invece di cadere con lei.
+const annullaQui = async (p) => {
+  let via = false;
+  const segna = (f) => { if (f === p.mainFrame()) via = true; };
+  p.on('framenavigated', segna);
+  try { await premi(p, '#barra-salva .sv-annulla'); }
+  catch (e) {
+    if (!via && !/context was destroyed|navigation/i.test(String(e?.message))) throw e;
+    via = true;
+    await p.waitForLoadState('domcontentloaded').catch(() => {});
+  }
+  p.off('framenavigated', segna);
+  return !via;
 };
 const conRete = (p, su) => p.evaluate((s) => {
   if (!window.__vero) window.__vero = window.apiDemo;
@@ -252,6 +269,56 @@ for (const [larg, alt, nome] of [[390, 844, 'telefono'], [1280, 900, 'computer']
   q = await quadro(p);
   const dopo = await p.evaluate((s) => document.querySelector(s).value, campi.testo);
   dice(dopo === prima && q.sporche.length === 0 && !q.dentro, `${nome}: «Annulla» rimette il valore di prima e spegne tutto`, JSON.stringify({ prima, dopo, q }));
+
+  // ---- 5b. una parte che si apre DOPO un cambiamento ----------------------
+  // I campi che nascono dopo la base (un momento delle frasi, aperto a
+  // richiesta) hanno come base il valore con cui nascono, o quello salvato che
+  // dichiarano (data-salvato): rimettere com'era pulisce, e «Annulla» li
+  // rimette al posto senza ricaricare la pagina.
+  const apriMomento = async () => {
+    const sel = await p.evaluate(() => {
+      const d = document.querySelector('#frasi-bot details[data-momento]:not([open])');
+      if (!d) return '';
+      d.id = d.id || 'cb-mom-' + d.dataset.momento;
+      return '#' + d.id + ' > summary';
+    });
+    if (sel) { await tocca(p, sel); await p.waitForTimeout(150); await fotogrammi(p); }
+    return !!sel;
+  };
+  const frasiSporca = async () => (await quadro(p)).sporche.some((x) => /frasi/i.test(x));
+  const premuto = () => p.evaluate(() => [...document.querySelectorAll('[data-frasi-tutti][aria-pressed="true"]')].map((x) => x.dataset.frasiTutti).join());
+  await scrivi(p, campi.altro, 'q');
+  const aperto1 = await apriMomento();
+  await tocca(p, campi.altro);
+  await p.keyboard.press('Control+End');
+  await cancella(p, 1);
+  dice(aperto1 && !(await frasiSporca()), `${nome}: cambio, apro una parte nuova, rimetto com'era: pulita`, JSON.stringify(await quadro(p)));
+  const valoreFrasi = await p.evaluate((x) => document.querySelector(x).value, campi.altro);
+  await scrivi(p, campi.altro, 'q');
+  const aperto2 = await apriMomento();
+  await lontano(p, '#btn-salva-frasi');
+  if (!await annullaQui(p)) {
+    dice(false, `${nome}: cambio, apro una parte nuova, «Annulla»: tutto al posto, senza ricaricare`, 'la pagina si e\' ricaricata');
+    await p.close(); continue;
+  }
+  q = await quadro(p);
+  const rimessa = await p.evaluate((x) => document.querySelector(x).value, campi.altro);
+  dice(aperto2 && rimessa === valoreFrasi && q.sporche.length === 0,
+    `${nome}: cambio, apro una parte nuova, «Annulla»: tutto al posto, senza ricaricare`, JSON.stringify({ rimessa, valoreFrasi, q }));
+  const primaTutti = await premuto();
+  await tocca(p, '[data-frasi-tutti="spento"]');
+  const aperto3 = await apriMomento();
+  const tendina = await p.evaluate(() => [...document.querySelectorAll('#frasi-bot details[open] [data-modo]')].pop()?.value);
+  await lontano(p, '#btn-salva-frasi');
+  if (!await annullaQui(p)) {
+    dice(false, `${nome}: «Spento» per tutti, apro un momento (nasce già spento), «Annulla»: torna la scelta salvata, senza ricaricare`, 'la pagina si e\' ricaricata');
+    await p.close(); continue;
+  }
+  q = await quadro(p);
+  const dopoTutti = await premuto();
+  const tendine = await p.evaluate(() => [...document.querySelectorAll('#frasi-bot details[open] [data-modo]')].map((x) => x.value === x.dataset.salvato));
+  dice(aperto3 && tendina === 'spento' && dopoTutti === primaTutti && tendine.every(Boolean) && q.sporche.length === 0,
+    `${nome}: «Spento» per tutti, apro un momento (nasce già spento), «Annulla»: torna la scelta salvata, senza ricaricare`, JSON.stringify({ tendina, primaTutti, dopoTutti, tendine, q }));
   await scrivi(p, campi.testo, 'w');
   await lontano(p, '#btn-salva-personalita');
   await premi(p, '#barra-salva [data-sv-chiudi]');

@@ -116,16 +116,20 @@ test('per tutti i momenti: il tasto premuto si ricava dalle scelte, e dice il ve
   assert.equal(prova({ a: 'spento', b: 'nostre', c: 'nostre', avviso: 'nostre' }), '', 'un momento cambiato a mano: nessun tasto');
   const senzaMie = { gruppi: [{ momenti: [mom('a'), mom('c')] }] };
   assert.equal(regola()({ frasi: senzaMie, scelte: { a: 'nostre', c: 'nostre' } }).ora(), 'nostre', 'quando piu\' tasti dicono lo stesso, quello scelto davvero');
-  assert.equal(regola()({ frasi: senzaMie, scelte: { a: 'sue', c: 'sue' } }).ora(), 'sue');
+  assert.equal(regola()({ frasi: senzaMie, scelte: { a: 'sue', c: 'sue' } }).ora(), 'nostre', 'senza frasi tue da nessuna parte, «Solo le mie» scelto a mano sono le nostre');
 });
 
-test('per tutti i momenti: «Spento» lascia com\'e\' chi non si spegne, e gli altri modi valgono per tutti', () => {
-  const fisso = mom('avviso', { spegnibile: false });
-  const r = regola()({ frasi: { gruppi: [{ momenti: [mom('a'), fisso] }] }, scelte: { a: 'nostre', avviso: 'miste' } });
+test('per tutti i momenti: ogni momento riceve la scelta che il server salverebbe', () => {
+  const fisso = mom('avviso', { spegnibile: false, sue: ['mia'] });
+  const conMie = mom('b', { sue: ['mia'] });
+  const r = regola()({ frasi: { gruppi: [{ momenti: [mom('a'), conMie, fisso] }] }, scelte: { a: 'nostre', b: 'nostre', avviso: 'miste' } });
   assert.equal(r.applica('spento', mom('a')), 'spento');
-  assert.equal(r.applica('spento', fisso), 'miste', 'resta la sua scelta');
-  assert.equal(r.applica('sue', fisso), 'sue');
-  assert.equal(r.effetto('spento', fisso), 'nostre', 'e se gli arrivasse, varrebbe le nostre, come sul server');
+  assert.equal(r.applica('spento', fisso), 'miste', '«Spento» lascia com\'e\' chi non si spegne');
+  assert.equal(r.applica('sue', conMie), 'sue');
+  assert.equal(r.applica('miste', fisso), 'miste');
+  assert.equal(r.applica('sue', mom('a')), 'nostre', 'dove non ci sono frasi tue restano le nostre: il segno non dice una scelta che non vale');
+  assert.equal(r.applica('miste', mom('a')), 'nostre');
+  assert.equal(r.effetto('spento', fisso), 'nostre', 'e se a chi non si spegne arrivasse «Spento», varrebbe le nostre, come sul server');
 });
 
 test('per tutti i momenti: i fili (tasti, stato per la barra, salvataggio dei momenti chiusi)', () => {

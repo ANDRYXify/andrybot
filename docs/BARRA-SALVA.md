@@ -35,6 +35,10 @@ Le cause, trovate leggendo il codice:
    ricaricano. Il riquadro spariva e lo stato restava cambiato.
 9. **Salvare «Personalità» ridisegnava «Le frasi del bot»** e cancellava quello
    che ci avevi scritto senza salvare.
+10. **I campi nati dopo la base si confrontavano per posizione.** Se cambiavi
+    qualcosa e poi aprivi una parte a richiesta (un momento delle frasi), le due
+    liste non avevano più la stessa lunghezza: la carta restava «da salvare»
+    anche rimessa com'era, e «Annulla» ricaricava la pagina.
 
 ## Il modello
 
@@ -77,7 +81,26 @@ regione da pulita.
 - Così un valore messo dal codice su una carta pulita, come un caricamento,
   diventa la base e non accende niente.
 
-**Da salvare** vuol dire `firma ≠ base`. Si ricalcola:
+**La base è per campo**, legata al campo stesso e non alla sua posizione
+(`_confronto`):
+
+- un campo che c'era quando la base è stata presa ha come base il suo valore di
+  allora;
+- un campo ridisegnato al posto di uno sparito prende la base di quello che
+  sostituisce, nell'ordine: è una carta che si ridisegna;
+- un campo nato dopo, senza nessuno da sostituire, ha come base il valore con
+  cui è nato. Una parte che si apre a richiesta si disegna da quello che è
+  salvato, e un osservatore delle nascite (`_osservaNascite`, un
+  `MutationObserver`) ne registra il valore nel momento in cui il campo entra
+  nella pagina, prima che tu possa toccarlo;
+- un campo che nasce già con una scelta non salvata, perché si disegna da uno
+  stato JS in attesa (la tendina di un momento dopo «Per tutti i momenti»),
+  dichiara da sé il valore salvato con `data-salvato`, nella forma di
+  `_valoreCampo` (`'1'`/`'0'` per le spunte);
+- un campo della base sparito senza nessuno al suo posto è un cambiamento, e
+  «Annulla» non può rimetterlo: ricarica la pagina.
+
+**Da salvare** vuol dire `firma ≠ base`, campo per campo (`_diversa`). Si ricalcola:
 
 - dopo un `input` o un `change`;
 - dopo `segnaDaSalvare(el)`, il segnale degli editor a stato JS;
@@ -169,6 +192,9 @@ corso, quel campo esce dalla firma per sempre.
   tolte), chiama `segnaDaSalvare(el)` dopo il cambiamento, anche dopo un'attesa.
 - Se l'editor carica un altro elemento nella stessa carta, chiede prima con
   `_primaDiCambiare(salva)` e dopo il caricamento chiama `_scordaRegione(salva)`.
+- Se una parte a richiesta disegna un campo da uno stato JS non ancora salvato,
+  il campo dice il suo valore salvato con `data-salvato`. Se si disegna da quello
+  che è salvato, non serve niente: basta l'osservatore delle nascite.
 
 ## Prove
 
@@ -183,6 +209,10 @@ corso, quel campo esce dalla firma per sempre.
   senza salva non finisca sotto un'altra;
 - «Annulla», la X, la finestra d'uscita con l'elenco, «Resta qui» (campo in
   vista, segnato, col fuoco) e «Salva ed esci» a rete giù e su;
+- una parte che si apre dopo un cambiamento: rimettendo com'era la carta torna
+  pulita, e «Annulla» rimette al posto anche i campi nati dopo (e quelli che
+  dichiarano `data-salvato`) senza ricaricare. Se la pagina si ricarica, il
+  cancello lo dice;
 - i Pannelli: aggiungo e tolgo.
 
 L'autoprova rimette il «da salvare» appiccicoso e pretende il rosso.
