@@ -75,7 +75,7 @@ export default {
     { tabella: [
       ['Entrata', 'A chi', 'Quando', 'Di base'],
       ['Messaggio', 'a chi scrive', 'al massimo una volta ogni 60 secondi a testa, anche a canale spento', '2 monete'],
-      ['Presenza', 'a chi è in chat, anche in silenzio', 'ogni 5 minuti, solo in diretta', '5 monete'],
+      ['Presenza', 'a chi è in chat, anche in silenzio (su Kick a chi scrive)', 'ogni 5 minuti, solo in diretta', '5 monete'],
       ['In più, a chi scrive', 'a chi ha scritto in quei 5 minuti', 'ogni 5 minuti, solo in diretta', '5 monete'],
     ] },
     { p: [
@@ -117,7 +117,7 @@ export default {
       `In una diretta di due ore, con i valori di base, chi scrive spesso prende ${CIFRA(DIRETTA_DI_SERIE().spesso)} monete, chi scrive ogni tanto ${CIFRA(DIRETTA_DI_SERIE().ogniTanto)}, chi guarda in silenzio ${CIFRA(DIRETTA_DI_SERIE().silenzio)}.`,
       '<strong>I bot non prendono mai monete</strong>, e non è una scelta: quelli di servizio, quelli che lo scudo conosce e quelli della tua lista «Blocca sempre». Non salgono in classifica e non vincono premi. Lo stesso vale per le ore guardate e le serie di presenze. Se lo scudo prende per bot una persona, mettila fra gli esentati dello scudo e torna a ricevere.',
       '<strong>L\'ora doppia</strong>: per un tempo che scegli, tutto quello che arriva da solo vale due volte (o fino a cinque). La accendi qui con «Accendi l\'ora doppia», o in chat un moderatore scrive <code>!doppio 30</code> per mezz\'ora, <code>!doppio 60 3</code> per un\'ora al triplo, <code>!doppio stop</code> per finire. Salvare le regole non la spegne, e un riavvio non la allunga.',
-      'La lista di chi è in chat la dà Twitch ogni 5 minuti: serve il permesso «ore guardate», che vedi nella scheda «Stato».',
+      'La lista di chi è in chat la dà Twitch ogni 5 minuti: serve il permesso «ore guardate», che vedi nella scheda «Stato». Kick una lista così non la dà: lì conta chi scrive, e un messaggio vale dieci minuti. Chi sta su Twitch e su Kick con lo stesso nome conta una volta.',
     ] },
 
     { h3: 'Quanto durano le monete' },
@@ -139,7 +139,7 @@ export default {
 
     { h3: 'Presenze e saluti' },
     { p: [
-      'Chi resta in chat almeno dieci minuti è <strong>presente</strong> a quella diretta, anche in silenzio. Presente anche alla diretta dopo, la sua <strong>serie</strong> sale a due. Chi ne salta una riparte da uno, e il record resta.',
+      'Chi resta in chat almeno dieci minuti è <strong>presente</strong> a quella diretta, anche in silenzio; su Kick basta un messaggio durante la diretta. Presente anche alla diretta dopo, la sua <strong>serie</strong> sale a due. Chi ne salta una riparte da uno, e il record resta.',
       'A ogni diretta contata arriva un bonus: <strong>bonus × serie</strong>, fino al tetto. Con i valori di base sono 10 monete alla prima diretta, 30 alla terza di fila, 100 dalla decima in poi.',
       'Una diretta è una sessione: se il bot o Twitch cadono e tornano entro mezz\'ora, è ancora la stessa. Ognuno vede la sua serie con <code>!serie</code>, e la classifica con <code>!classificaserie</code>, che in fondo dice anche a che punto è chi l\'ha chiesta.',
     ] },

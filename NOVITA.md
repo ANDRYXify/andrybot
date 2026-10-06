@@ -193,6 +193,15 @@ comandi diversi da quelli della riga italiana.
   en> With Kick connected to a Twitch channel, what you don't type in chat applies to both: the category is looked up among each one's names, and if one says no the other still changes. The bot tells you where it worked.
   es> Título y categoría en Twitch y Kick a la vez
   es> Con Kick conectado a un canal de Twitch, lo que no escribes en el chat vale para las dos: la categoría se busca entre los nombres de cada una, y si una dice que no, la otra cambia igual. El bot te dice dónde funcionó.
+- [importante] Su Kick contano anche le ore guardate, le monete di presenza e le presenze alla diretta: lì conta chi scrive, e un messaggio vale dieci minuti. [vai: giochi]
+  en: On Kick, watch time, presence coins and stream attendance count too: there, whoever chats counts, and one message is worth ten minutes.
+  es: En Kick también cuentan las horas vistas, las monedas de presencia y las asistencias al directo: allí cuenta quien escribe, y un mensaje vale diez minutos.
+  > Ore guardate e presenze anche su Kick
+  > Kick non dice chi guarda in silenzio, quindi lì conta chi scrive. Se trasmetti su Twitch e Kick insieme la serata è una sola: chi ha lo stesso nome sulle due conta una volta, e i traguardi si leggono in tutte e due le chat.
+  en> Watch time and attendance on Kick too
+  en> Kick doesn't say who watches silently, so there whoever chats counts. If you stream on Twitch and Kick together it's one evening: anyone with the same name on both counts once, and milestones show up in both chats.
+  es> Horas vistas y asistencias también en Kick
+  es> Kick no dice quién mira en silencio, así que allí cuenta quien escribe. Si emites en Twitch y Kick a la vez la noche es una sola: quien tiene el mismo nombre en las dos cuenta una vez, y los logros se leen en los dos chats.
 
 ## 2026-10-03
 

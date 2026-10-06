@@ -28,7 +28,7 @@ export default {
     { p: [
       'Compare solo se il canale che stai gestendo è su Kick. Il bot legge la tua chat di Kick e risponde lì.',
       'Su Kick funzionano comandi, moduli, timer, giochi e monete, gli avvisi di follow e abbonamento, l\'overlay della diretta, le notifiche social e le parole vietate. Se concedi la moderazione su Kick funzionano anche l\'antispam e il timeout dei moduli. La diretta su Kick entra nel rapporto della serata e nelle statistiche, insieme a quella su Twitch se trasmetti su tutte e due, e ci entrano anche i follow e gli abbonamenti di Kick. I moduli con «Un evento del canale» scattano anche per quelli di Kick, e rispondono nella chat di Kick. Con «Aggiorna i permessi di Kick» <code>!titolo</code>, <code>!categoria</code>, la voce e Telegram cambiano titolo e categoria su Kick: su un canale di Twitch timer, voce e Telegram li cambiano su Twitch e Kick insieme, mentre <code>!titolo</code> e <code>!categoria</code> cambiano la piattaforma della chat in cui li scrivi, e i premi del canale di Kick fanno partire avvisi, richieste musicali, penitenze, contatori e il muro delle emote.',
-      'Restano fuori le cose che esistono solo su Twitch: lo scudo anti-bot, le clip, i VIP e le emote 7TV. Le monete su Kick arrivano solo da chi scrive, perché Kick non dà l\'elenco di chi guarda in silenzio.',
+      'Restano fuori le cose che esistono solo su Twitch: lo scudo anti-bot, le clip, i VIP e le emote 7TV. Kick non dà l\'elenco di chi guarda in silenzio: lì ore guardate, monete di presenza e presenze alla diretta contano chi scrive, e un messaggio vale dieci minuti. Se trasmetti su Twitch e Kick insieme, chi ha lo stesso nome sulle due conta una volta.',
     ] },
 
     { h3: 'Le tue piattaforme' },

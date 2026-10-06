@@ -534,6 +534,50 @@ nascita, la porta, chi premia, le penitenze, il rimborso, la lista dei
 permessi), `test/contratto/kick-premi-pannello.test.mjs` (le rotte, la lista
 mista, i riquadri).
 
+### Ore guardate, presenze e monete su Kick
+
+Su Twitch chi c'è lo dice Twitch: ogni cinque minuti l'elenco di chi è in chat
+(`getChatters`), anche chi sta zitto. Kick un elenco così non lo dà, quindi su
+Kick **è presente chi scrive** (`features/scriventi.js`): il registro tiene,
+per canale e piattaforma, l'ultima volta che ognuno ha scritto. Si segna nel
+tubo dei messaggi allo stesso punto dell'arrivo (`presenze.segnaArrivo`): dopo
+l'anti-bot, prima dell'antispam. Non contano lo streamer e il bot; i bot noti
+li toglie chi conta (`ePersona`), come su Twitch.
+
+**Un messaggio vale due giri**: quello in cui cade e il successivo. I giri sono
+contati sui giri veri, non su un orologio: ogni giro ricorda quando è passato e
+chiede chi ha scritto dopo il penultimo, così un giro in ritardo non toglie e
+non aggiunge niente. Due giri sono anche la soglia della presenza alla diretta
+(`presenze.js`, `GIRI_MINIMI`): un messaggio durante la diretta basta. Un buco
+fra due giri (il canale fuori onda) fa ricominciare: quello scritto a canale
+spento non vale per la diretta dopo. Il registro vive in memoria, come quello
+di chi è in chat (`games.js`): un riavvio lo svuota, e al più si perde un giro.
+
+**La serata è del canale**, e il giro delle ore (`bot.js`, `_tickWatchtime`)
+gira per canale: quelli con la chat di Twitch e quelli in onda su Kick, anche
+nati su Kick. La lista è una sola, unita per nome (`scriventi.unisci`): la
+chiave dell'economia del canale è il nome, e chi sta su Twitch e su Kick con lo
+stesso nome conta una volta, mai due. Su quella lista girano le ore
+(`watchtime.accredita`), le monete di presenza (`games.giroMonete`) e le
+presenze alla diretta (`presenze.giroDiretta`). Restano di Twitch quelle che
+hanno bisogno dell'elenco di chi sta zitto: il censimento, il giro dell'anti-bot,
+gli arrivi «anche se non scrive» e la presenza per i giochi (`segnaPresenza`:
+chi scrive su Kick ce l'ha già da `games.accredita`).
+
+**La diretta del giro** segue la regola delle presenze (`direttaDelGiro`):
+l'id di Twitch se Twitch è in onda, se no `kick:` e l'inizio su Kick, ed entro
+mezz'ora è la stessa diretta anche se l'id cambia. Così Twitch che finisce e
+Kick che continua sono la stessa diretta per il tetto delle monete e per le
+presenze, e l'economia sa che un canale nato su Kick è in diretta.
+
+I traguardi delle presenze si dicono **nelle chat in onda** (`_direAllaSerata`):
+su Twitch se la diretta è su Twitch, su Kick se il bot ci lavora, su tutte e due
+se è su tutte e due.
+
+Collaudi: `test/unita/kick-ore-guardate.test.mjs` (chi conta, due giri sui giri
+veri, il buco, la lista unita, il canale nato su Kick, Twitch e Kick insieme,
+solo Twitch come prima, gli annunci).
+
 ### Cosa NON fa ancora, e perché è detto qui
 
 Lo scudo anti-bot lavora solo su Twitch: legge eventi (follow a ondate, raid,

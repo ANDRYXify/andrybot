@@ -39,12 +39,14 @@ test('le monete per messaggio non guardano la diretta', () => {
   assert.equal(points.get(CANALE, 'nina'), prima + 2);
 });
 
-test('il giro parte solo quando Twitch dice che il canale e\' in diretta', () => {
+test('il giro parte solo quando il canale e\' in diretta, su Twitch o su Kick', () => {
   const bot = leggi('src/bot.js');
   const giro = bot.slice(bot.indexOf('async _tickWatchtime() {'), bot.indexOf('  _giro() {'));
-  assert.ok(giro.indexOf('if (!stream) continue;') > 0);
-  assert.ok(giro.indexOf('games.giroMonete(login, chatters, { live: true, diretta: stream.id })') > giro.indexOf('if (!stream) continue;'),
-    'e porta l\'id della diretta: e\' la chiave del tetto per diretta (docs/ECONOMIA.md)');
+  assert.ok(giro.includes('const chatters = stream ? await this.helix.getChatters(login) : [];'), 'l\'elenco di Twitch solo se Twitch dice che e\' in diretta');
+  assert.ok(giro.includes("const daKick = this.inDirettaSu(login, 'kick') ? scriventi.giro(login, 'kick', { ora }) : [];"), 'chi scrive su Kick solo se Kick e\' in diretta');
+  const vuoto = giro.indexOf('if (!presenti.length) continue;');
+  assert.ok(vuoto > 0 && giro.indexOf('games.giroMonete(login, presenti, { live: true, diretta: diretta.corrente })') > vuoto,
+    'e porta l\'id della diretta: e\' la chiave del tetto per diretta (docs/ECONOMIA.md), la stessa delle presenze');
 });
 
 test('la casella non c\'e\' piu\': ne\' nel pannello, ne\' fra i punti che il server salva', () => {

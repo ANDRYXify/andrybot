@@ -267,7 +267,7 @@ export default {
       ['«Monete dello staff»', 'Le monete dei tuoi moderatori, separate dal pubblico.', '«Nessuno del tuo staff ha monete: è normale, moderi invece di giocare.» Se manca il permesso per leggere i moderatori, restano nel pubblico e la carta ha il tasto «Concedi i permessi».'],
       ['«Chi c’è sempre»', 'Le dirette di fila, e quante in tutto. Una presenza conta dopo dieci minuti in chat, anche senza scrivere.', '«Ancora nessuna serie: la presenza si conta dopo dieci minuti in chat.»'],
       ['«Chi scrive di più»', 'I messaggi nel periodo.', '«Ancora nessuno ha scritto in questo periodo.»'],
-      ['«Chi guarda di più»', 'Le ore guardate: cinque minuti a ogni giro, a chi è in chat mentre sei in diretta, anche senza scrivere. I bot più noti non contano.', '«Ancora nessuna ora contata: si contano mentre sei in diretta, a chi resta in chat anche senza scrivere.» Se hai spento il conteggio: «Il conteggio delle ore è spento: lo riaccendi nella scheda Comandi, carta «Comodità in chat».»'],
+      ['«Chi guarda di più»', 'Le ore guardate: cinque minuti a ogni giro, a chi è in chat mentre sei in diretta, anche senza scrivere. Su Kick a chi scrive: un messaggio vale dieci minuti. I bot più noti non contano.', '«Ancora nessuna ora contata: si contano mentre sei in diretta, a chi resta in chat anche senza scrivere.» Se hai spento il conteggio: «Il conteggio delle ore è spento: lo riaccendi nella scheda Comandi, carta «Comodità in chat».»'],
     ] },
     { p: [
       'Il conteggio delle ore è acceso di base. La spunta è «Conta le ore guardate in chat», nella carta «Comodità in chat» della scheda «Comandi».',

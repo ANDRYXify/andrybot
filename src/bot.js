@@ -26,6 +26,7 @@ import * as giveaway from './features/giveaway.js';
 import * as watchtime from './features/watchtime.js';
 import * as comandibase from './features/comandibase.js';
 import * as presenze from './features/presenze.js';
+import * as scriventi from './features/scriventi.js';
 import * as arrivi from './features/arrivi.js';
 import * as rapporto from './features/rapporto.js';
 import * as posta from './features/posta.js';
@@ -181,6 +182,7 @@ export class BotManager {
     this._stopReflection = null;
     this._capAvvisoDato = false;     // il tetto ascolti è già stato loggato una volta?
     this._liveState = new Map();     // login → bool: se lo streamer è in live adesso
+    this._diretteDelGiro = new Map(); // login → la diretta del giro delle ore (presenze.direttaDelGiro)
     this._statoDiretta = new Map();  // login → { live, visto, assenze }: i segnali delle due fonti (stato-diretta.js)
     // La pubblicità, per canale: {prossima, letto, dettoPer, ultimaPausa,
     // secondi, finisceA, dettoDopo}. Sta in memoria e non su disco apposta: è
@@ -332,10 +334,11 @@ export class BotManager {
     setTimeout(() => aggiornaListaBot().catch(() => {}), 30_000);
     this._listaBotTimer = setInterval(() => aggiornaListaBot().catch(() => {}), 12 * 60 * 60_000);
     // Ore guardate: ogni 5 minuti, per ogni canale LIVE, accredito il tempo a chi
-    // è in chat (lista chatters di Twitch → anche i lurker). 300s a tick = 1:1 col
-    // tempo reale. Se manca lo scope moderator:read:chatters, getChatters dà [] e
-    // semplicemente non si conteggia nulla.
-    this._watchtimeTimer = setInterval(() => this._tickWatchtime().catch(() => {}), 5 * 60_000);
+    // è in chat (lista chatters di Twitch → anche i lurker; su Kick chi ha
+    // scritto). 300s a tick = 1:1 col tempo reale. Se manca lo scope
+    // moderator:read:chatters, getChatters dà [] e su Twitch non si conteggia
+    // nulla. Il passo e' quello di scriventi.PASSO_MS: un messaggio vale due giri.
+    this._watchtimeTimer = setInterval(() => this._tickWatchtime().catch(() => {}), scriventi.PASSO_MS);
     // Backup automatico del database: tutto (comandi, temi, monete, moderatori,
     // pagine link, token) vive in un solo SQLite. Copie coerenti e periodiche in
     // dataDir/backup, non scaricabili dal web. Uno ~90s dopo l'avvio, poi a
@@ -717,29 +720,33 @@ export class BotManager {
     } catch (e) { log.error(`#${login} conto dei VIP:`, e?.message || e); }
   }
 
-  // Ore guardate: per ogni canale connesso e LIVE, accredita 5 minuti a chi è in
-  // chat (lista chatters di Twitch). Un canale offline non conta. Best-effort:
-  // ogni canale in try/catch, così uno che fallisce non blocca gli altri.
+  // IL GIRO DELLE ORE, ogni cinque minuti, per ogni canale in onda: accredita
+  // 5 minuti a chi c'e', e sulla stessa lista girano le monete di presenza e le
+  // presenze alla diretta. Chi c'e' lo dice ogni piattaforma a modo suo: su
+  // Twitch l'elenco di chi e' in chat (getChatters, anche chi sta zitto), su
+  // Kick chi ha scritto (features/scriventi.js: Kick un elenco non lo da').
+  // La serata e' del CANALE: una lista sola, unita per nome, cosi' chi sta su
+  // Twitch e su Kick con lo stesso nome conta una volta, non due (docs/
+  // PIATTAFORME.md, «Ore guardate, presenze e monete su Kick»). Un canale fuori
+  // onda non conta. Best-effort: ogni canale in try/catch, cosi' uno che
+  // fallisce non blocca gli altri.
   async _tickWatchtime() {
     const passoSec = 300;
-    for (const login of this.units.keys()) {
+    const ora = Date.now();
+    // in onda su Kick, e ancora nostro (come nel giro di Kick)
+    const suKick = statoVivo.tutti('diretta:kick').filter((r) => r.dato?.live === true && streamers.get(r.channel)).map((r) => r.channel);
+    for (const login of new Set([...this.units.keys(), ...suKick])) {
       try {
-        const stream = await this.helix.getStream(login);
-        if (!stream) continue;
-        const chatters = await this.helix.getChatters(login);
+        const stream = this.units.has(login) ? await this.helix.getStream(login) : null;
+        const chatters = stream ? await this.helix.getChatters(login) : [];
         if (chatters.length) {
-          watchtime.accredita(login, chatters, passoSec);
-          // Stesso giro, stessa lista, ancora: chi c'e' viene censito per
-          // capire in quanti canali nostri sta nello stesso momento. E' il
+          // Quello che si sa solo dall'elenco di Twitch. Chi c'e' viene censito
+          // per capire in quanti canali nostri sta nello stesso momento: e' il
           // segnale che una persona non puo' produrre, e non costa nemmeno una
-          // chiamata in piu' — la lista ce l'abbiamo gia' in mano.
+          // chiamata in piu' (la lista ce l'abbiamo gia' in mano).
           try { censisci(login, chatters); } catch (e) { log.debug(`#${login} censimento:`, e?.message || e); }
           this.antibot?.giroPresenze?.(login, chatters)
             .catch((e) => log.debug(`#${login} giro presenze:`, e?.message || e));
-          // Stesso giro, stessa lista: le monete di presenza non costano
-          // nemmeno una chiamata in piu' a Twitch.
-          try { games.giroMonete(login, chatters, { live: true, diretta: stream.id }); }
-          catch (e) { log.debug(`#${login} monete:`, e?.message || e); }
           // E la presenza, che finora si deduceva dal parlare. Dedurla dal
           // parlare ha un buco che non si chiude con un caso particolare: i
           // messaggi che il bot manda non gli tornano indietro su IRC (serve a
@@ -750,13 +757,8 @@ export class BotManager {
           // chi e' nella stanza, non chi ha parlato di recente.
           try { for (const u of chatters) games.segnaPresenza(login, u); }
           catch (e) { log.debug(`#${login} presenze:`, e?.message || e); }
-          // Diretta dopo diretta: chi c'e' per due giri e' presente a questa
-          // diretta e la sua serie cresce. Stessa lista, e ai traguardi una riga.
-          try {
-            const esito = presenze.giroDiretta(login, { streamId: stream.id, chatters });
-            for (const t of presenze.annunciDi(login, esito)) this.say(login, t);
-          } catch (e) { log.debug(`#${login} serie di presenze:`, e?.message || e); }
           // e gli spettatori di questo giro, per il rapporto di fine diretta
+          // (quelli di Kick ci vanno dal giro di Kick, _vistaKick)
           try { rapporto.osservaGiro(login, { spettatori: stream.viewer_count, categoria: stream.game_name }); }
           catch (e) { log.debug(`#${login} rapporto:`, e?.message || e); }
           // Chi e' entrato senza scrivere, fra le persone scelte per nome con
@@ -764,7 +766,39 @@ export class BotManager {
           arrivi.suGiro(login, chatters, { engine: this.modules, say: (t) => this.say(login, t), twitchInizio: Date.parse(stream.started_at) || this._inizioTwitch(login) }, { helix: this.helix })
             .catch((e) => log.debug(`#${login} arrivi in silenzio:`, e?.message || e));
         }
+        const daKick = this.inDirettaSu(login, 'kick') ? scriventi.giro(login, 'kick', { ora }) : [];
+        const presenti = scriventi.unisci(chatters, daKick);
+        if (!presenti.length) continue;
+        // LA DIRETTA DEL GIRO, con la regola delle presenze (presenze.js,
+        // direttaDelGiro): entro mezz'ora e' la stessa, anche se cambia la
+        // piattaforma (Twitch finisce, Kick continua). Cosi' il tetto delle
+        // monete e la presenza alla diretta parlano della stessa diretta.
+        const candidata = stream?.id || ('kick:' + (statoVivo.leggi(login, 'diretta:kick')?.da || ''));
+        const diretta = presenze.direttaDelGiro(this._diretteDelGiro.get(login), { streamId: candidata, ora });
+        this._diretteDelGiro.set(login, diretta);
+        watchtime.accredita(login, presenti, passoSec);
+        // Stesso giro, stessa lista: le monete di presenza non costano
+        // nemmeno una chiamata in piu'.
+        try { games.giroMonete(login, presenti, { live: true, diretta: diretta.corrente }); }
+        catch (e) { log.debug(`#${login} monete:`, e?.message || e); }
+        // Diretta dopo diretta: chi c'e' per due giri e' presente a questa
+        // diretta e la sua serie cresce. Stessa lista, e ai traguardi una riga.
+        try {
+          const esito = presenze.giroDiretta(login, { streamId: diretta.corrente, chatters: presenti, ora });
+          for (const t of presenze.annunciDi(login, esito)) this._direAllaSerata(login, t, { suTwitch: !!stream });
+        } catch (e) { log.debug(`#${login} serie di presenze:`, e?.message || e); }
       } catch (e) { log.debug(`#${login} ore:`, e?.message || e); }
+    }
+  }
+
+  // DIRE ALLA SERATA: nella chat di ogni piattaforma in onda dove il bot e' al
+  // lavoro. Le righe del giro (i traguardi delle presenze) parlano di chi c'e',
+  // e chi c'e' sta li': su Twitch se la diretta e' su Twitch, su Kick se e' su
+  // Kick, su tutte e due se e' su tutte e due.
+  _direAllaSerata(login, t, { suTwitch = false } = {}) {
+    if (suTwitch) this.say(login, t);
+    for (const p of PIATTAFORME_ALTRE) {
+      if (PARLA_DA_SOLO[p] && this.inDirettaSu(login, p) && this.inChat(login, p)) this.vocePer({ channel: login, piattaforma: p })(t);
     }
   }
 
@@ -1107,6 +1141,9 @@ export class BotManager {
     // l'anti-bot, perche' un nome da follow-bot noto non e' una persona.
     let arrivo = null;
     try { arrivo = presenze.segnaArrivo(msg); } catch (e) { log.debug(`#${login} arrivo:`, e?.message || e); }
+    // E ha scritto: su Kick e' cosi' che si sa chi c'e', per il giro delle ore
+    // (features/scriventi.js). Stesso posto, stessa ragione.
+    try { scriventi.segna(msg); } catch (e) { log.debug(`#${login} chi scrive:`, e?.message || e); }
     // 1) ANTISPAM: se è spam lo elimina e stop (il bot non "reagisce" allo spam)
     try {
       if (moderatore && await antispam.tryAntispam(moderatore, msg, parla, { casa: this._casaDi(login, msg) })) return;

@@ -68,6 +68,10 @@ L'ordine è il progetto:
 5. **I moltiplicatori.** Abbonati, VIP, e l'«ora doppia» a tempo.
 6. **I tetti.** Al massimo N monete automatiche per persona per diretta, e nessuno supera un saldo
    massimo con le monete automatiche. Il tetto taglia la quota a quanto manca, non la butta.
+   «Diretta» è quella del giro delle ore, con la regola delle presenze (`presenze.direttaDelGiro`):
+   entro mezz'ora è la stessa anche se l'id cambia, una diretta di Twitch ripartita o Twitch che
+   finisce mentre Kick continua. Il tetto e la presenza parlano della stessa diretta
+   (docs/PIATTAFORME.md, «Ore guardate, presenze e monete su Kick»).
 7. **Si scrive.** Saldo, guadagno della diretta, ultimo segno di vita.
 
 Giochi, negozio e Moduli **non** passano dalla porta: sono scambi decisi da qualcuno (punto,

@@ -40,7 +40,7 @@ export default {
     { tabella: [
       ['Interruttore', 'Di base', 'Cosa fa'],
       ['«Gestisci i comandi dalla chat (per i mod)»', 'spento', 'I moderatori creano comandi di solo testo senza aprire il pannello: <code>!comando aggiungi !nome risposta</code>, <code>!comando modifica !nome risposta</code>, <code>!comando elimina !nome</code>, <code>!comando lista</code>, e le forme corte <code>!addcom</code>, <code>!editcom</code>, <code>!delcom</code>.'],
-      ['«Conta le ore guardate in chat»', 'acceso', 'Ogni cinque minuti di diretta accredita il tempo a chi è in chat, anche a chi non scrive. Accende <code>!ore</code>, <code>!classificaore</code> e la variabile <code>$ore</code>.'],
+      ['«Conta le ore guardate in chat»', 'acceso', 'Ogni cinque minuti di diretta accredita il tempo a chi è in chat, anche a chi non scrive (su Kick a chi scrive). Accende <code>!ore</code>, <code>!classificaore</code> e la variabile <code>$ore</code>.'],
       ['«Comandi base pronti»', 'acceso', 'Accende <code>!so</code>/<code>!shoutout</code> (solo moderatori e streamer, solo in diretta), <code>!followage</code> (da quanto una persona segue il canale), <code>!channelage</code> (da quanto esiste il canale, o quello di chi nomini), <code>!uptime</code>, <code>!prossima</code> (quando è la prossima diretta, dalla settimana o dal Programma di Twitch) e <code>!bit</code>.'],
     ] },
     { p: [
