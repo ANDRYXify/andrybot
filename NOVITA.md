@@ -163,6 +163,9 @@ comandi diversi da quelli della riga italiana.
 - Su Kick la moderazione, il titolo e la categoria restano concessi anche quando Kick rinnova l'accesso del bot: non serve ricollegare. [vai: account]
   en: On Kick, moderation, title and category stay granted even when Kick renews the bot's access: no need to reconnect.
   es: En Kick la moderación, el título y la categoría siguen concedidos aunque Kick renueve el acceso del bot: no hace falta volver a conectar.
+- Su un canale Kick i timer parlano nella chat di Kick, e così penitenze, contatori e tutto quello che il bot dice da solo; $titolo, $gioco e $uptime dicono la diretta su Kick. [vai: moduli]
+  en: On a Kick channel, timers speak in the Kick chat, and so do penances, counters and everything the bot says on its own; $titolo, $gioco and $uptime show the Kick stream.
+  es: En un canal de Kick los temporizadores hablan en el chat de Kick, y también las penitencias, los contadores y todo lo que el bot dice por su cuenta; $titolo, $gioco y $uptime dicen el directo en Kick.
 
 ## 2026-10-03
 

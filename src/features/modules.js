@@ -1722,9 +1722,27 @@ export class ModulesEngine {
     const ora = Date.now();
     if (c && ora - c.ts < CACHE_STREAM_MS) return c.stream;
     let stream = null;
-    try { stream = await this.helix?.getStream(ch); } catch { stream = null; }
+    if (piattaformaDi(ch) === 'kick') stream = this._direttaKick(ch);
+    else { try { stream = await this.helix?.getStream(ch); } catch { stream = null; } }
     this._streamCache.set(ch, { stream, ts: ora });
     return stream;
+  }
+
+  // LA DIRETTA DI UN CANALE NATO SU KICK, con la forma di quella di Twitch
+  // (title, game_name, viewer_count, started_at): la vista che il bot tiene
+  // col giro e con gli eventi di Kick (bot.js, kickVisto e inDirettaSu).
+  // Chiederla a Twitch voleva dire «mai in diretta»: i timer «solo in diretta»
+  // non partivano, e $titolo, $gioco, $uptime e $spettatori restavano vuoti.
+  _direttaKick(ch) {
+    const m = this.manager;
+    if (!m?.inDirettaSu?.(ch, 'kick')) return null;
+    const v = m.kickVisto?.(ch) || {};
+    return {
+      title: String(v.titolo || ''),
+      game_name: String(v.categoria || ''),
+      viewer_count: v.spettatori == null || !Number.isFinite(Number(v.spettatori)) ? null : Number(v.spettatori),
+      started_at: v.inizio ? new Date(v.inizio).toISOString() : '',
+    };
   }
 
   _payloadWebhook(ctx) {

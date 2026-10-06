@@ -382,6 +382,32 @@ per piattaforma, la casa, quello che si dice in chat),
 `test/unita/moduli-timeout.test.mjs` (il timeout di un modulo va alla
 piattaforma del messaggio).
 
+### Il bot parla anche da solo, su Kick
+
+Fuori da Twitch non c'è un'unità di chat: le unità sono le connessioni alla chat
+di Twitch, e un canale nato su Kick non ne ha una. `manager.say` le usava sole,
+quindi su Kick restava muto tutto quello che il bot dice di sua iniziativa: i
+timer dei moduli, le penitenze, i contatori, i rimborsi di blackjack e arena,
+i moduli partiti da voce, API o Telegram. Le risposte funzionavano perché
+passano da `vocePer`.
+
+La regola adesso è una (`bot.js`, `say` e `puoParlare`): il bot parla di sua
+iniziativa **nella chat della piattaforma del canale, se lì è al lavoro**. Su
+Twitch è la sua unità, come prima; su Kick il collegamento e l'orario di lavoro
+del bot (`inChat`). YouTube no, per scelta (`PARLA_DA_SOLO`): la quota per
+scrivere nella chat delle dirette è una sola per tutto il servizio, e i messaggi
+detti da solo la finirebbero per tutti. Lì il bot risponde a chi scrive, e basta.
+
+Lo stesso per la diretta: il motore dei moduli la chiedeva solo a Twitch, e per
+un canale nato su Kick era «mai in diretta». I timer «solo in diretta» non
+partivano, e `$titolo`, `$gioco`, `$uptime` e `$spettatori` restavano vuoti.
+Adesso la legge dalla vista che il bot tiene della diretta su Kick (il giro e gli
+eventi di Kick: `kickVisto`, `inDirettaSu`), con la forma di quella di Twitch
+(`modules.js`, `_direttaKick`). Senza il numero degli spettatori,
+`$spettatori` resta vuoto: zero direbbe una cosa falsa.
+
+Collaudi: `test/unita/kick-da-solo.test.mjs`.
+
 ### Titolo e categoria su Kick
 
 Kick ha la sua rotta, documentata: `PATCH /public/v1/channels` con

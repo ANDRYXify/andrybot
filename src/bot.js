@@ -98,6 +98,11 @@ import { aChi } from './features/risposte.js';
 import { modalitaDi, alLavoro } from './features/quando-lavora.js';
 import { statoVivo } from './db.js';
 import { piattaformaDi, nomeSu } from './identita.js';
+
+// Dove il bot parla DI SUA INIZIATIVA (timer, messaggi spontanei, penitenze,
+// annunci): bot.js, puoParlare. YouTube no: la quota per scrivere nella chat
+// delle dirette e' una sola per tutto il servizio, e ogni messaggio la consuma.
+const PARLA_DA_SOLO = Object.freeze({ twitch: true, kick: true, youtube: false });
 import { tokenDi as tokenKick, collegati as kickCollegati, statoCanale as statoKick, moderatoreKick, puoModerare as puoModerareKick, allineaIscrizioni as allineaKick } from './kick/api.js';
 import * as bjFeat from './features/blackjack.js';
 import * as seguitiFeat from './features/seguiti.js';
@@ -476,10 +481,31 @@ export class BotManager {
   // passata dallo scegli stamperebbe in chat il marcatore, e sarebbe un difetto
   // che si legge da fuori. Applicarlo due volte non fa danno: dopo la prima
   // passata di marcatori non ne restano.
+  //
+  // FUORI DA TWITCH NON C'E' UN'UNITA': su un canale nato su Kick si parla con
+  // la voce di Kick, e solo se il bot e' al lavoro in quella chat (puoParlare).
+  // Senza, timer, penitenze, contatori e tutto quello che il bot dice di sua
+  // iniziativa restavano muti su Kick, senza dirlo a nessuno.
   say(channel, text, opzioni) {
     const t = accorda(text, streamers.get(channel)?.settings?.genere);
-    this.units.get(channel)?.chat.say(channel, t, opzioni);
+    const p = piattaformaDi(channel);
+    if (p === 'twitch') this.units.get(channel)?.chat.say(channel, t, opzioni);
+    else if (this.puoParlare(channel)) this.vocePer({ channel, piattaforma: p })(t, opzioni);
+    else return;
     try { this._momenti.osserva(channel, { ts: Date.now(), user: channel, testo: t, dalBot: true }); } catch { /* niente */ }
+  }
+
+  // IL BOT PUO' PARLARE DI SUA INIZIATIVA in questo canale? Sulla piattaforma
+  // del canale, se li' e' al lavoro: su Twitch c'e' la sua unita', su Kick il
+  // collegamento e l'orario di lavoro (inChat). Su YouTube no, per scelta
+  // (PARLA_DA_SOLO): la quota per scrivere in chat e' una sola per tutto il
+  // servizio, e i messaggi detti da solo la finirebbero per tutti. Li' il bot
+  // risponde a chi scrive, e basta.
+  puoParlare(channel) {
+    const l = String(channel || '').toLowerCase();
+    const p = piattaformaDi(l);
+    if (p === 'twitch') return this.units.has(l);
+    return PARLA_DA_SOLO[p] === true && !!this.inChat(l);
   }
 
   // Una riga detta di sua iniziativa: esce come le altre, e in piu' finisce nel
@@ -496,7 +522,7 @@ export class BotManager {
   _dettaDaSoloConCalma(channel, tipo, text, opzioni) {
     if (!text) return;
     const attesa = attesaUmana(String(text).length, this._momenti.ritmo(channel), Math.random());
-    setTimeout(() => { if (this.units.has(channel)) this._dettaDaSolo(channel, tipo, text, opzioni); }, attesa);
+    setTimeout(() => { if (this.puoParlare(channel)) this._dettaDaSolo(channel, tipo, text, opzioni); }, attesa);
   }
 
   spontanee(channel) { return spontanea.elenco(this._spontanee, channel); }
@@ -766,7 +792,7 @@ export class BotManager {
       if (!bossFeat.vieneColRaid(login, data?.viewers)) return;
       const chi = data?.from_broadcaster_user_name || data?.from_broadcaster_user_login || '';
       const t = setTimeout(() => {
-        if (!this.units.has(login)) return;
+        if (!this.puoParlare(login)) return;
         let prima = true;
         bossFeat.arriva(login, (x) => { if (prima) { prima = false; this._dettaDaSolo(login, 'boss', x); } else this.say(login, x); }, { annuncio: chi ? `Il raid di ${chi} arriva giusto in tempo. ` : '' });
       }, BOSS_DOPO_RAID_MS);
@@ -782,7 +808,7 @@ export class BotManager {
       if (!arenaFeat.vieneColRaid(login, data?.viewers)) return;
       const chi = data?.from_broadcaster_user_name || data?.from_broadcaster_user_login || '';
       const t = setTimeout(() => {
-        if (!this.units.has(login)) return;
+        if (!this.puoParlare(login)) return;
         let prima = true;
         arenaFeat.apri(login, (x) => { if (prima) { prima = false; this._dettaDaSolo(login, 'arena', x); } else this.say(login, x); }, { annuncio: chi ? `Il raid di ${chi} arriva giusto in tempo. ` : '' });
       }, BOSS_DOPO_RAID_MS);
@@ -2540,8 +2566,8 @@ export class BotManager {
           }
         } catch (e) { log.warn(`notifica TikTok Telegram #${l}:`, e?.message || e); }
       }
-      // annuncio in chat Twitch (se acceso e il bot è connesso)
-      if (tk.annunciaChat && this.units.has(l)) {
+      // annuncio in chat (se acceso e il bot è al lavoro nella chat del canale)
+      if (tk.annunciaChat && this.puoParlare(l)) {
         this.say(l, `🎵 Sono in diretta anche su TikTok! Passate a salutare 👉 ${tiktok.urlLive(tk.username)}`);
       }
       log.info(`notifica TikTok inviata per #${l}`);
@@ -2663,7 +2689,7 @@ export class BotManager {
         piattaforma, login: l, display: s?.display || l, titolo, url, gioco: '', spettatori: null,
         voce: riga, lingua: linguaChat(l), messaggio,
       }, { post: true }).catch(() => {});
-      if (annunciaChat && this.units.has(l) && url) {
+      if (annunciaChat && this.puoParlare(l) && url) {
         const info = { tiktok: ['🎵', 'TikTok'], instagram: ['📸', 'Instagram'], youtube: ['📺', 'YouTube'] }[piattaforma] || ['📺', 'YouTube'];
         this.say(l, `${info[0]} Nuovo contenuto su ${info[1]}! 👉 ${url}`);
       }
