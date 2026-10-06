@@ -166,6 +166,9 @@ comandi diversi da quelli della riga italiana.
 - Su un canale Kick i timer parlano nella chat di Kick, e così penitenze, contatori e tutto quello che il bot dice da solo; $titolo, $gioco e $uptime dicono la diretta su Kick. [vai: moduli]
   en: On a Kick channel, timers speak in the Kick chat, and so do penances, counters and everything the bot says on its own; $titolo, $gioco and $uptime show the Kick stream.
   es: En un canal de Kick los temporizadores hablan en el chat de Kick, y también las penitencias, los contadores y todo lo que el bot dice por su cuenta; $titolo, $gioco y $uptime dicen el directo en Kick.
+- Se Kick manda due volte lo stesso evento, il bot lo conta e ci risponde una volta sola. [vai: account]
+  en: If Kick sends the same event twice, the bot counts it and replies to it only once.
+  es: Si Kick manda dos veces el mismo evento, el bot lo cuenta y le responde una sola vez.
 
 ## 2026-10-03
 

@@ -109,6 +109,18 @@ un'intestazione. Ora la rotta prende i byte da sé con `express.raw({ type: () =
 true })`, e il collaudo firma davvero e bussa con tre etichette diverse (provato
 rosso togliendo la lettura grezza).
 
+### Lo stesso evento due volte
+
+Kick dice che `Kick-Event-Message-Id` è la chiave di idempotenza: lo stesso
+evento può arrivare di nuovo. Senza ricordarlo, un abbonamento o dei Kicks
+contavano due volte e il bot rispondeva due volte. Il webhook ricorda gli id per
+due finestre della firma (`FINESTRA_MS`, prima e dopo l'ora dell'evento): oltre,
+la firma rifiuta l'evento come vecchio, quindi un doppio non passa mai. Il
+diario segna lo stesso ogni arrivo, perché dice se Kick bussa. La memoria è
+quella del processo: un riavvio proprio fra i due arrivi è l'unico buco, e il
+bot risponde a Kick prima di lavorare, quindi Kick non ha motivo di riprovare.
+Collaudo: `test/contratto/kick-webhook.test.mjs`.
+
 ### Con quale voce scrive il bot
 
 Kick offre due modi per mandare un messaggio: `user` scrive con l'account di chi

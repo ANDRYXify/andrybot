@@ -142,6 +142,22 @@ test('un evento di un canale che non è nostro si segna ma non entra nel bot', a
   } finally { await s.chiudi(); }
 });
 
+test('lo stesso evento arrivato due volte entra una volta sola (Kick-Event-Message-Id)', async () => {
+  const K = await import('../../src/kick/api.js');
+  K.salvaToken('kick.doppio', { accessToken: 'tok', refreshToken: '', scopes: [], expiresAt: Date.now() + 3_600_000 }, '4242');
+  const s = await servi();
+  try {
+    await bussa(s.base, { corpo: EVENTO, id: 'stesso' });
+    await bussa(s.base, { corpo: EVENTO, id: 'stesso' });
+    await new Promise((r) => setTimeout(r, 50));
+    assert.equal(visti.length, 1, 'il secondo e\' lo stesso evento: non si rifa\'');
+    assert.equal(diario.stato().arrivi, 2, 'ma il diario sa che Kick ha bussato due volte');
+    await bussa(s.base, { corpo: EVENTO, id: 'altro' });
+    await new Promise((r) => setTimeout(r, 50));
+    assert.equal(visti.length, 2, 'un evento diverso entra');
+  } finally { await s.chiudi(); K.scollega('kick.doppio'); }
+});
+
 test('anche la risposta che non parte finisce nel diario', async () => {
   diario._azzera();
   const { voceKick } = await import('../../src/kick/voce.js');

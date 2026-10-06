@@ -19,7 +19,7 @@ import { config } from '../config.js';
 import * as giro from '../giro.js';
 import * as auth from './auth.js';
 import * as api from './api.js';
-import { chiavePubblica, verificaFirma } from './firma.js';
+import { chiavePubblica, verificaFirma, FINESTRA_MS } from './firma.js';
 import { daChatMessage, daEvento } from './messaggio.js';
 import { nostro } from './eco.js';
 import * as diario from './diario.js';
@@ -27,6 +27,21 @@ import * as diario from './diario.js';
 const log = makeLog('kick');
 
 export function montaKick(app, { requireLogin, currentUser, wrap, annotaIngresso, suMessaggio, suEvento, registra }) {
+  // LO STESSO EVENTO DUE VOLTE. Kick dice che Kick-Event-Message-Id e' la
+  // chiave di idempotenza: lo stesso evento puo' arrivare di nuovo, e senza
+  // ricordarlo un abbonamento o dei Kicks contavano due volte, e il bot
+  // rispondeva due volte. Si ricorda per due finestre della firma
+  // (FINESTRA_MS, prima e dopo l'ora dell'evento): oltre, la firma lo rifiuta
+  // comunque come vecchio, quindi un doppio non passa mai.
+  const giaArrivati = new Map();   // id → quando l'abbiamo visto
+  const doppio = (id, ora = Date.now()) => {
+    if (!id) return false;
+    for (const [k, t] of giaArrivati) { if (ora - t > 2 * FINESTRA_MS) giaArrivati.delete(k); else break; }
+    if (giaArrivati.has(id)) return true;
+    giaArrivati.set(id, ora);
+    return false;
+  };
+
   // --- 1. si parte -----------------------------------------------------
   // Due porte, lo stesso giro. `/auth/kick` e' lo streamer che gia' e' dentro e
   // collega il suo Kick al canale che ha; `/accedi/kick` e' chi su Twitch non
@@ -154,6 +169,10 @@ export function montaKick(app, { requireLogin, currentUser, wrap, annotaIngresso
       // l'id del canale e il nostro si e' perso.
       diario.segnaArrivo({ tipo, canale: canale || '' });
       if (!canale) return;                        // evento di un canale che non è nostro
+      if (doppio(String(req.get('Kick-Event-Message-Id') || ''))) {
+        log.debug(`@${canale}: evento Kick gia' arrivato (${tipo}), non lo rifaccio`);
+        return;
+      }
 
       if (tipo === 'chat.message.sent') {
         const msg = daChatMessage(p, { canale });
