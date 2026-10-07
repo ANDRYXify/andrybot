@@ -201,7 +201,8 @@ export default {
 
     { h3: 'Conto alla pubblicità' },
     { p: [
-      'Dice a chi guarda quanto manca alla prossima pausa pubblicitaria, e durante la pausa quanto manca al tuo ritorno. Qui non scegli nessun tempo: li dice Twitch, e il conto li segue da solo, anche quando rimandi la pausa. Si vede solo mentre sei in diretta e c\'è una pausa in programma; negli altri momenti non c\'è niente a schermo.',
+      'Dice a chi guarda quanto manca alla prossima pausa pubblicitaria, e durante la pausa quanto manca al tuo ritorno. Qui non scegli nessun tempo: li dice Twitch, e il conto li segue da solo, anche quando rimandi la pausa. Si vede solo mentre sei in diretta e c\'è una pausa in programma o in corso; negli altri momenti non c\'è niente a schermo.',
+      'Vale anche per le pubblicità che mandi a mano. Quelle mandate da Twitch, da una pulsantiera o da un altro programma il bot le sa quando partono: da lì il conto del ritorno. Quella che programmi dalla regia con un anticipo (<a href="/manuale/diretta">manuale della diretta</a>) si conta già da prima, e se ce n\'è anche una in programma su Twitch il conto va verso la prima delle due.',
       'Serve il permesso di leggere la programmazione delle pubblicità. Se manca, nella scheda «Stato» premi «Aggiorna i permessi». Gli avvisi in chat sulla pubblicità (<a href="/manuale/diretta">manuale della diretta</a>) sono un\'altra cosa: il conto funziona anche con quelli spenti.',
     ] },
     { tabella: [

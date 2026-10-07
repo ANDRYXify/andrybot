@@ -64,12 +64,129 @@ cinque minuti — esattamente quanto sposta uno snooze — e di serie è un minu
 ## Una pausa si annuncia una volta sola
 
 EventSub può consegnare due volte lo stesso messaggio. A distinguere due pause
-è l'**istante d'inizio**, non il fatto di aver ricevuto qualcosa. Un evento
-senza istante non si annuncia affatto: senza, non si saprebbe riconoscere il
-doppione, e non si potrebbe promettere di non annunciarlo due volte.
+è l'**istante d'inizio**, non il fatto di aver ricevuto qualcosa: lo stesso
+inizio è il messaggio rimandato, un inizio diverso è Twitch che dice una cosa
+nuova, e vale. Un evento senza istante non si annuncia affatto: senza, non si
+saprebbe riconoscere il doppione, e non si potrebbe promettere di non
+annunciarlo due volte.
+
+La stessa pausa può però arrivare anche da due strade diverse: la nostra stima,
+quando la lancia la regia, e l'evento di Twitch (sotto). Lì l'inizio non basta,
+perché la stima non conosce l'inizio vero: le due sono la stessa pausa quando
+**si sovrappongono** (`stessaPausa`), perché Twitch non ne fa partire una
+seconda mentre la prima va. La stima parte dall'istante in cui il bot ha
+**chiesto** il lancio, che non può venire dopo l'inizio vero: così la stima e
+l'evento si sovrappongono anche quando l'evento non porta la durata.
 
 Il preavviso ha la stessa regola con un'altra chiave: l'istante ANNUNCIATO
 (`next_ad_at`). Due letture dello stesso programma non sono due pause.
+
+## Le pubblicità lanciate a mano
+
+Una pubblicità la può lanciare lo streamer, oltre al programma di Twitch, da
+tre posti, e per ognuno il bot sa una cosa diversa:
+
+| da dove | cosa sa il bot, e quando |
+| --- | --- |
+| Twitch (il tasto della dashboard), una pulsantiera, un altro programma | l'evento `channel.ad_break.begin`, uguale a quello delle pause in programma (`is_automatic` è falso): Twitch lo manda per tutte, «either manually or automatically via ads manager» |
+| il tasto «Manda pubblicità» della regia, adesso | la risposta di Twitch al lancio (`POST /channels/commercial`), con la durata vera, **subito**; poi anche l'evento |
+| il tasto della regia «fra 30 secondi … 5 minuti» | l'istante in cui partirà, **prima**: è l'unica pausa a mano che si può contare in anticipo |
+
+Da qui le regole.
+
+**L'evento vale per tutte.** Non c'è niente da distinguere fra una pausa in
+programma e una lanciata a mano: il conto del ritorno, l'annuncio e il «sono
+tornato» partono dall'evento in tutti e due i casi. Il programma (`next_ad_at`)
+invece conosce solo le pause in programma, quindi il conto «prima» di una pausa
+a mano esiste solo se la si lancia dalla regia con un anticipo.
+
+**Il nostro tasto non aspetta Twitch.** Quando il lancio riesce, la pausa si
+registra subito con quello che si sa: comincia adesso, dura quanto ha risposto
+Twitch (`_pubblicitaPartita` con `stima`). La scena passa al conto del ritorno e
+la chat ha l'annuncio subito, anche se l'evento tarda o non arriva (una linea
+EventSub che cade e si ricollega). È una **stima**: l'inizio vero lo dice
+Twitch.
+
+**Il dato di Twitch vince sulla stima, e la stessa pausa non si annuncia due
+volte.** L'evento che arriva dopo il nostro lancio si sovrappone alla stima:
+è la stessa pausa (sopra). Se ne prendono inizio e durata, si ripunta la
+sveglia del ritorno, e non si dice niente in chat. Se invece l'evento arriva
+prima della risposta al lancio (Twitch è veloce), la stima che arriva dopo
+trova già la pausa di Twitch e non tocca niente: una stima non scrive mai sopra
+un dato di Twitch.
+
+**Il lancio con anticipo è un appuntamento** (`lancio`: quando e quanto). Fino
+all'istante, la scena lo conta come una pausa in programma («Pubblicità fra»),
+e se in programma c'è anche quella di Twitch si conta la prima delle due
+(`perOverlay`). In chat il preavviso esce come per quelle in programma, a
+`quanto` secondi dall'istante. All'istante il bot lancia, e da lì è il caso di
+sopra. Un appuntamento non si tiene per forza:
+
+- **si annulla** dalla regia, e il conto sparisce dalla scena;
+- **una pausa che parte prima lo consuma**: se Twitch fa partire la sua, una
+  seconda subito dopo Twitch la rifiuterebbe, e comunque nessuno la vuole;
+- **fuori diretta non si lancia**: se la diretta finisce prima, l'appuntamento
+  cade, e il giro lo toglie;
+- **un lancio che Twitch rifiuta** (troppo presto dopo un'altra, permesso
+  tolto) toglie il conto dalla scena e lascia nella regia il perché;
+- **sopravvive a un riavvio**, perché è una cosa che lo streamer ha chiesto e
+  che il bot deve fare: sta fra gli stati vivi (`pubblicita-lancio`), e
+  all'avvio torna in memoria con la sua sveglia, all'istante fissato. Non
+  aspetta il primo giro: il giro guarda solo i canali di cui ha già visto la
+  diretta, e per allora l'istante può essere passato. Ogni appuntamento in
+  memoria ha la sua sveglia, da qualunque parte arrivi (`_statoPubblicita`).
+  Se l'istante è passato mentre il bot era fermo, non si lancia: una
+  pubblicità che parte tre minuti dopo il previsto, senza che nessuno l'abbia
+  chiesta in quel momento, è peggio di niente. Il preavviso già detto non si
+  ripete (`detto` è salvato con l'appuntamento);
+- **si tiene anche con chat e scena spente**: la pubblicità l'ha chiesta lo
+  streamer, gli annunci sono un'altra cosa. Il giro non butta lo stato di un
+  canale che ha un appuntamento, o un'attesa di Twitch da mostrare; e la pausa
+  del lancio, o quella che parte prima e consuma l'appuntamento, si registra
+  comunque (`_pubblicitaPartita`): le regole del lancio non dipendono da chi
+  ascolta. Il lancio riprende lo stato DOPO la risposta di Twitch, perché
+  mentre Twitch rispondeva il giro può averlo lasciato andare.
+
+Un appuntamento per canale: uno nuovo prende il posto del vecchio, e anche un
+lancio «adesso» lo sostituisce. L'anticipo va da zero a cinque minuti
+(`LANCIO_MAX_S`, lo stesso tetto del preavviso): più in là sarebbe un
+programma, e quello lo fa già Twitch.
+
+**Un preavviso solo, per la prima pausa.** Se l'appuntamento cade prima della
+pausa in programma (o insieme), in chat avvisa lui, e il preavviso del
+programma tace (`preavviso`): dopo una pausa Twitch sposta il programma, e due
+«fra poco la pubblicità» per un minuto solo sarebbero uno di troppo. Se invece
+la pausa in programma viene prima, avvisa lei, e il preavviso del lancio tace
+(`preavvisoLancio`): quando comincia, consuma l'appuntamento.
+
+**I no si dicono prima, non all'istante fissato** (`lancioValido`). Il no di
+Twitch a un appuntamento arriverebbe all'istante fissato, con lo streamer
+distratto a giocare; quello che il bot sa già, lo dice quando si preme:
+
+- fra una pubblicità e l'altra Twitch vuole un'**attesa** (`retry_after` nella
+  risposta al lancio, `prossimoLancioDa`): un lancio che cadrebbe prima si
+  rifiuta subito (`presto`), adesso o con anticipo, e la regia mostra fra
+  quanto si può;
+- un appuntamento **dentro la pausa in corso** si rifiuta (`in-pausa`);
+- un appuntamento **senza la diretta vista** si rifiuta (`senza-diretta`):
+  fuori diretta il giro lo toglierebbe subito.
+
+Il lancio di adesso invece lo decide Twitch, che risponde subito e sa più di
+noi: il bot vede la diretta entro un minuto, e un «non sei in diretta» falso
+sarebbe peggio di un tentativo.
+
+**I motivi sono codici.** Il modello (`senza-diretta`, `in-pausa`, `presto`),
+Twitch (`startCommercial`: `offline`, `presto`, `rifiutata`, `permesso`,
+`canale`, `errore`) e il bot (`prima`, `finita`, per l'appuntamento consumato)
+danno un codice; il server lo dice in italiano (`PERCHE_LANCIO`), il pannello
+nella lingua di chi lo usa (`_regiaAdMotivo`). Un 400 di Twitch vuol dire due
+cose diverse, e lo distingue il suo messaggio: l'attesa non ancora finita, o la
+diretta spenta. Prima diceva sempre «devi essere in diretta».
+
+**Chi può lanciare.** Solo lo streamer, dal pannello: su Twitch una pubblicità
+la lancia il broadcaster (o un suo editor, dalla dashboard). Un comando in chat
+o un'azione dei moduli darebbero il tasto ai moderatori, cioè più di quello che
+Twitch concede: non c'è, finché lo streamer non lo chiede sapendolo.
 
 ## La pausa finisce a inizio + durata
 
@@ -306,10 +423,12 @@ nell'anteprima quelli che l'overlay scriverà.
 | la lettura del programma | `programmaDa`, chiamata da `src/twitch/helix.js` (`getAdSchedule`) |
 | la sottoscrizione a Twitch | `src/twitch/events.js` |
 | il giro, le sveglie e l'ascolto dell'evento | `src/bot.js` (`_giroPubblicita`, `_statoPubblicita`, `_leggiProgramma`, `_sveglia`, `_preavviso`, `_pubblicitaPartita`, `_sonoTornato`) |
+| il lancio dalla regia | `src/bot.js` (`lanciaPubblicita`, `annullaLancio`, `statoLancio`, `_lancia`, `_armaLancio`, `_preavvisoLancio`, `_salvaLancio`, `_togliLancio`; la ripresa all'avvio in `start`), il modello (`lancioValido`, `lancioDa`, `stessaPausa`, `preavvisoLancio`), `src/twitch/helix.js` (`startCommercial`) |
 | il conto sull'overlay | `src/bot.js` (`_pubInScena`), `src/features/alerts.js` (`_pubblicitaInScena`), `src/web/public/overlay-app.js` (`disegnaPubblicita`), `src/web/stile.js` (`normPubblicita`) |
-| le porte | `src/web/server.js` (`/api/streamer/regia`, `/regia/pubblicita/messaggi`) |
+| le porte | `src/web/server.js` (`/api/streamer/regia`, `/regia/pubblicita/messaggi`, `/regia/pubblicita`, `/regia/pubblicita/annulla`, `/regia/pubblicita/stato`) |
 | la carta nel pannello | `src/web/public/app.js` (`_pubDisegna`, `_pubLeggi`) |
-| le prove | `test/unita/pubblicita.test.mjs`, `test/unita/pubblicita-sveglie.test.mjs` (orologio finto), `test/unita/pubblicita-overlay.test.mjs`, `test/unita/pubblicita-letture.test.mjs` (errori, dopo la pausa, snooze, letture vecchie: orologio finto), `test/contratto/pubblicita.test.mjs`, `test/contratto/pubblicita-scena.test.mjs`, `scripts/verifica-pubblicita-scena.mjs` (browser vero) |
+| il lancio nel pannello | `src/web/public/app.js` (`_regiaProssimaPub`, `_regiaAdRighe`, `_regiaAdDisegna`, `_regiaAdAggiorna`, `_regiaAdRileggi`, `_regiaAdMotivo`; in prova `_demoPubblicita`) |
+| le prove | `test/unita/pubblicita.test.mjs`, `test/unita/pubblicita-sveglie.test.mjs` (orologio finto), `test/unita/pubblicita-overlay.test.mjs`, `test/unita/pubblicita-letture.test.mjs` (errori, dopo la pausa, snooze, letture vecchie: orologio finto), `test/unita/pubblicita-lancio.test.mjs` (stima ed evento, appuntamento, riavvio, limiti: orologio finto e un Twitch finto), `test/contratto/pubblicita.test.mjs`, `test/contratto/pubblicita-scena.test.mjs`, `scripts/verifica-pubblicita-scena.mjs` (browser vero) |
 
 ## Il pannello (il ragionamento, che nei file serviti non si può scrivere)
 
@@ -327,5 +446,31 @@ durerà. Finito il conto, le due voci spariscono: la pausa è partita, e il
 programma nuovo si vede ricaricando.
 
 I limiti (colori ammessi, minimo e massimo del preavviso, tetto della
-tolleranza) arrivano dal server insieme alla configurazione. Scritti anche nel
-pannello, un giorno direbbero due cose diverse.
+tolleranza, anticipo e durata del lancio) arrivano dal server insieme alla
+configurazione. Scritti anche nel pannello, un giorno direbbero due cose
+diverse: le scelte del pannello fuori dai limiti si nascondono.
+
+**Il lancio.** Accanto alla durata c'è «quando»: adesso, o fra 30 secondi, 1, 2
+o 5 minuti. Sotto il tasto, una riga dice lo stato del lancio, e c'è solo
+quando ha qualcosa da dire:
+
+- l'appuntamento, col conto e il suo «Annulla»;
+- «sta partendo…» fra l'istante fissato e la risposta di Twitch;
+- la pausa in corso, col conto del ritorno;
+- il perché dell'ultimo lancio non partito (per dieci minuti: dopo è storia);
+- fra quanto Twitch ne permette un'altra.
+
+«Prossima pubblicità», nello stato della diretta, è la prima fra quella in
+programma e l'appuntamento: la stessa che conta l'overlay. Due numeri diversi
+per la stessa domanda, uno in regia e uno in scena, sarebbero un errore anche
+se tutti e due veri.
+
+Passato l'istante fissato, il pannello rilegge solo lo stato del lancio
+(`/regia/pubblicita/stato`), qualche volta, finché arriva com'è andata. Non
+ricarica la regia: riscriverebbe titolo e tag mentre li stai scrivendo.
+
+Per chi usa un lettore di schermo, la riga cambia ogni secondo ma si annuncia
+una volta per ogni cosa nuova (un'area `role="status"` a parte, nascosta alla
+vista): un conto letto a voce ogni secondo coprirebbe tutto il resto. Se la
+riga cambia mentre il fuoco è sul suo «Annulla», il fuoco torna sul tasto del
+lancio invece di perdersi.

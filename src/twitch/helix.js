@@ -136,9 +136,12 @@ export class Helix {
   // { ok, ... } con un 'motivo' leggibile in caso di errore (niente eccezioni al chiamante).
 
   // Pubblicità (ad-break) di N secondi. Serve essere LIVE + scope 'channel:edit:commercial'.
+  // L'esito porta un `codice` oltre al `motivo`: il motivo e' la frase per chi
+  // legge in italiano, il codice e' quello che il pannello traduce.
   async startCommercial(channelLogin, length) {
+    const no = (codice, motivo) => ({ ok: false, codice, motivo });
     const s = streamers.get(channelLogin);
-    if (!s?.user_id) return { ok: false, motivo: 'canale sconosciuto' };
+    if (!s?.user_id) return no('canale', 'canale sconosciuto');
     const token = await this.auth.getToken('broadcaster', channelLogin);
     const len = Math.max(30, Math.min(180, Math.round(Number(length) || 60)));
     try {
@@ -146,10 +149,14 @@ export class Helix {
       const d = j?.data?.[0] || {};
       return { ok: true, length: d.length || len, retry: d.retry_after || 0, messaggio: d.message || '' };
     } catch (e) {
-      if (e.status === 400) return { ok: false, motivo: 'devi essere in diretta per lanciare una pubblicità' };
-      if (e.status === 401 || e.status === 403) return { ok: false, motivo: 'permesso mancante (ri-concedi i permessi)' };
-      if (e.status === 429) return { ok: false, motivo: 'troppo presto per un\'altra pubblicità' };
-      return { ok: false, motivo: 'errore Twitch' };
+      // Un 400 di Twitch vuol dire due cose diverse, e lo dice il suo messaggio:
+      // la pausa di prima non ha ancora finito il suo tempo, o non sei in diretta.
+      if (e.status === 400 && /cooldown|another commercial/i.test(e.message)) return no('presto', 'troppo presto per un\'altra pubblicità');
+      if (e.status === 400 && /live|streaming/i.test(e.message)) return no('offline', 'devi essere in diretta per lanciare una pubblicità');
+      if (e.status === 400) return no('rifiutata', 'Twitch non ha accettato la pubblicità');
+      if (e.status === 401 || e.status === 403) return no('permesso', 'permesso mancante (ri-concedi i permessi)');
+      if (e.status === 429) return no('presto', 'troppo presto per un\'altra pubblicità');
+      return no('errore', 'errore Twitch');
     }
   }
 

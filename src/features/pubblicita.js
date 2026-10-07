@@ -57,6 +57,13 @@ export const TOLLERANZA_MAX = 600;
 // sa. Tagliarlo vorrebbe dire annunciare in chat un numero che Twitch non ha
 // mai detto.
 export const DURATA_MAX = 300;
+// IL LANCIO DALLA REGIA. Una pubblicita' lanciata a mano dura da 30 a 180
+// secondi (Twitch), e l'anticipo con cui la si programma va da zero allo stesso
+// tetto del preavviso: piu' in la' sarebbe un programma, e quello lo fa gia'
+// Twitch. Vedi docs/PUBBLICITA.md, «Le pubblicita' lanciate a mano».
+export const LANCIO_MIN_DURATA = 30;
+export const LANCIO_MAX_DURATA = 180;
+export const LANCIO_MAX_S = PREAVVISO_MAX;
 // Ogni quanto il bot guarda il programma. Serve anche al modello: la finestra
 // in cui il programma va letto si ricava da qui (vedi `vaGuardato`).
 export const GIRO_MS = 30_000;
@@ -271,19 +278,60 @@ export function vaGuardatoPerOverlay(stato, adesso = Date.now()) {
 // l'overlay la sta gia' mostrando: ripartire senza vorrebbe dire togliergli il
 // conto del ritorno a meta'. Si riprende solo quella. Il «sono tornato» in chat
 // no: lo dice una sveglia, e nessuna sveglia la punta.
-export function riprendi(salvato, adesso = Date.now()) {
+//
+// Il lancio programmato dalla regia invece si riprende: e' una cosa che lo
+// streamer ha chiesto e che il bot deve fare. Ma solo se il suo istante non e'
+// passato mentre il bot era fermo: una pubblicita' che parte in ritardo, senza
+// che nessuno l'abbia chiesta in quel momento, e' peggio di niente.
+export function riprendi(salvato, adesso = Date.now(), lancio = null) {
   const fine = Number(salvato?.pausaFino) || 0;
-  return fine > adesso ? { finisceA: fine } : {};
+  const out = fine > adesso ? { finisceA: fine } : {};
+  const l = lancioDa(lancio);
+  if (l && l.quando > adesso) out.lancio = l;
+  return out;
+}
+
+// Un appuntamento di lancio letto da dove sta (gli stati vivi), o null.
+export function lancioDa(v) {
+  const quando = Number(v?.quando) || 0;
+  const secondi = durataValida(v?.secondi);
+  if (!quando || !secondi) return null;
+  return { quando, secondi, detto: v?.detto === true };
 }
 
 // Quello che l'overlay deve sapere, e basta: la prossima pausa e la fine di
 // quella in corso. Fuori diretta niente: Twitch non ne programma, e un conto a
-// canale spento sarebbe inventato.
+// canale spento sarebbe inventato. La prossima e' la prima fra quella in
+// programma e quella lanciata con anticipo dalla regia.
 export function perOverlay(stato, live, adesso = Date.now()) {
   if (!live) return { prossima: 0, pausaFino: 0 };
   const pausaFino = Number(stato?.finisceA) > adesso ? Number(stato.finisceA) : 0;
-  const prossima = Number(stato?.prossima) > adesso ? Number(stato.prossima) : 0;
+  const futuri = [Number(stato?.prossima), Number(stato?.lancio?.quando)].filter((t) => t > adesso);
+  const prossima = futuri.length ? Math.min(...futuri) : 0;
   return { prossima: pausaFino ? 0 : prossima, pausaFino };
+}
+
+// UN LANCIO DALLA REGIA, controllato prima di partire: quanto dura (30..180,
+// come vuole Twitch), fra quanto (0..LANCIO_MAX_S), e se Twitch lo permette in
+// quell'istante (`prossimoLancioDa`, dall'attesa che Twitch ha detto al lancio
+// di prima). Torna { secondi, fra, quando } o { errore, da? }: l'errore e' un
+// codice, che il server e il pannello dicono a parole.
+//
+// Il lancio di adesso lo decide Twitch, che risponde subito e sa piu' di noi:
+// il bot puo' non vedere ancora la diretta (la vede entro un minuto), e un «non
+// sei in diretta» falso e' peggio di un tentativo. Un appuntamento invece si
+// controlla qui, perche' il no di Twitch arriverebbe solo all'istante fissato,
+// a streamer distratto: serve che il bot veda la diretta (fuori diretta il giro
+// lo toglierebbe subito) e che l'istante cada dopo la pausa in corso.
+export function lancioValido({ secondi, fra } = {}, { live = false, prossimoLancioDa = 0, pausaFino = 0 } = {}, adesso = Date.now()) {
+  const s = numero(secondi, LANCIO_MIN_DURATA, LANCIO_MAX_DURATA, 60);
+  const f = numero(fra, 0, LANCIO_MAX_S, 0);
+  const quando = adesso + f * 1000;
+  if (Number(prossimoLancioDa) > quando) return { errore: 'presto', da: Number(prossimoLancioDa) };
+  if (!f) return { secondi: s, fra: 0, quando };
+  if (!live) return { errore: 'senza-diretta' };
+  if (Number(pausaFino) > quando) return { errore: 'in-pausa', da: Number(pausaFino) };
+  return { secondi: s, fra: f, quando };
 }
 
 // L'istante a cui puntare la sveglia del preavviso, o 0 se e' ancora presto.
@@ -303,13 +351,30 @@ export function quandoAvvisare(conf, stato, programma, adesso = Date.now()) {
 // sposta cinque minuti piu' in la', e alla sveglia ne mancano allora quanto +
 // cinque minuti, fuori dalla finestra per qualunque preavviso. Una volta per
 // pausa, e la pausa e' l'ISTANTE annunciato.
+//
+// UN PREAVVISO PER LA PRIMA PAUSA. Se prima di quella in programma c'e' un
+// lancio della regia, il preavviso e' il suo (`preavvisoLancio`): dopo quella
+// pausa Twitch sposta il programma, e due «fra poco la pubblicita'» per un
+// minuto solo sarebbero uno di troppo. Lo stesso al contrario.
 export function preavviso(conf, stato, programma, adesso = Date.now()) {
   if (!siDice(conf, 'prima')) return null;
   const quando = Number(programma?.prossima) || 0;
   if (!quando || quando <= adesso) return null;
   if (quando - adesso > conf.quanto * 1000) return null;
   if (String(stato?.dettoPer || '') === String(quando)) return null;
+  const lancio = Number(stato?.lancio?.quando) || 0;
+  if (lancio > adesso && lancio <= quando) return null;
   return { quando, secondi: durataValida(programma?.durata) };
+}
+
+// Il preavviso del lancio dalla regia, una volta, se la chat lo dice. La pausa
+// in programma che viene prima lo toglie: quando comincia consuma il lancio.
+export function preavvisoLancio(conf, stato, adesso = Date.now()) {
+  const l = stato?.lancio;
+  if (!l || l.detto || !(Number(l.quando) > adesso) || !siDice(conf, 'prima')) return null;
+  const prossima = Number(stato?.prossima) || 0;
+  if (prossima > adesso && prossima < l.quando) return null;
+  return { quando: l.quando, secondi: l.secondi };
 }
 
 // ── La pausa che comincia ─────────────────────────────────────────────────
@@ -317,23 +382,44 @@ export function preavviso(conf, stato, programma, adesso = Date.now()) {
 // quando finisce. Serve a due cose che non dipendono l'una dall'altra: gli
 // annunci in chat e il conto sull'overlay. Tutte e due la registrano anche se
 // l'altra e' spenta.
-export function pausaDa(evento, stato, adesso = Date.now()) {
+//
+// LA STIMA E IL DATO. La pausa lanciata dalla regia si registra subito, con
+// l'inizio stimato (`stima`); l'evento di Twitch della stessa pausa arriva
+// prima o dopo. Le due cose sono la stessa pausa quando si sovrappongono
+// (`stessaPausa`): Twitch non ne fa partire una seconda mentre la prima va.
+// L'evento che arriva sopra la stima ne prende il posto (`stessa`: inizio e
+// durata di Twitch, e niente annuncio); la stima che arriva sopra l'evento non
+// tocca niente. Fra due eventi di Twitch decide l'inizio, come sempre: lo stesso
+// inizio e' il messaggio rimandato, un inizio diverso e' Twitch che dice una
+// cosa nuova, e vale.
+export function stessaPausa(stato, p) {
+  const inizio0 = Number(stato?.ultimaPausa) || 0;
+  if (!inizio0 || !p?.inizio) return false;
+  const fine0 = Math.max(inizio0, fineDellaPausa(stato));
+  const fine = Math.max(p.inizio, Number(p.finisceA) || 0);
+  return p.inizio < fine0 && fine >= inizio0;
+}
+
+export function pausaDa(evento, stato, adesso = Date.now(), { stima = false } = {}) {
   // L'istante dichiarato. Nei documenti si chiama `started_at`; c'e' chi l'ha
   // ricevuto come `timestamp`, e sono la stessa cosa.
   const inizio = istante(evento?.started_at ?? evento?.timestamp);
   // Senza un istante non si sa distinguere una pausa da un doppione, e senza
   // saperlo distinguere non si puo' promettere di non annunciarla due volte.
   if (!inizio) return null;
-  if (String(stato?.ultimaPausa || '') === String(inizio)) return null;
   const secondi = durataValida(evento?.duration_seconds);
   const finisceA = secondi ? Math.min(inizio, adesso) + secondi * 1000 : 0;
-  return { inizio, secondi, finisceA };
+  const p = { inizio, secondi, finisceA, stima, stessa: false };
+  const nota = !!stato?.stima;
+  if (nota === stima) return String(stato?.ultimaPausa || '') === String(inizio) ? null : p;
+  if (!stessaPausa(stato, p)) return p;
+  return stima ? null : { ...p, stessa: true };
 }
 
-export function allaPartenza(conf, stato, evento, adesso = Date.now()) {
-  const p = pausaDa(evento, stato, adesso);
+export function allaPartenza(conf, stato, evento, adesso = Date.now(), { stima = false } = {}) {
+  const p = pausaDa(evento, stato, adesso, { stima });
   if (!p) return null;
-  const { inizio, secondi } = p;
+  const { inizio, secondi, stessa } = p;
   // LA PAUSA FINISCE A INIZIO + DURATA, qualunque sia il momento in cui
   // l'evento arriva: un evento in ritardo ha gia' consumato parte della pausa,
   // e contare da quando arriva sposterebbe la fine di tutto quel ritardo. Il
@@ -341,9 +427,10 @@ export function allaPartenza(conf, stato, evento, adesso = Date.now()) {
   // la pausa non puo' essere cominciata dopo che ce l'hanno detto.
   // Senza durata non c'e' una fine da contare, quindi nessun «sono tornato».
   const finisceA = p.finisceA;
-  // A pausa gia' finita, «pubblicita' per 90 secondi» sarebbe falso.
+  // A pausa gia' finita, «pubblicita' per 90 secondi» sarebbe falso. E la
+  // stessa pausa, gia' annunciata con la stima, non si annuncia di nuovo.
   const inCorso = !secondi || finisceA > adesso;
-  return { inizio, secondi, finisceA, dire: inCorso && siDice(conf, 'durante') };
+  return { inizio, secondi, finisceA, stima, stessa, dire: !stessa && inCorso && siDice(conf, 'durante') };
 }
 
 // ── La pausa che finisce, che e' un conto e non un evento ────────────────

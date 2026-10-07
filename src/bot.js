@@ -444,6 +444,10 @@ export class BotManager {
     // passaggio (vedi `pub.vaGuardato`). Il preavviso e il «sono tornato» non
     // li dice il giro: sono istanti, e li dicono due sveglie puntate lì.
     this._pubTimer = setInterval(() => this._giroPubblicita(), pub.GIRO_MS);
+    // Un lancio programmato dalla regia prima del riavvio riparte da qui, con
+    // la sua sveglia all'istante fissato: il giro lo troverebbe solo dopo aver
+    // visto la diretta, e per allora l'istante puo' essere passato.
+    for (const r of statoVivo.tutti('pubblicita-lancio')) if (streamers.get(r.channel)) this._statoPubblicita(r.channel);
     log.info('SocialBot avviato');
   }
 
@@ -2397,7 +2401,12 @@ export class BotManager {
       const conf = this._confPubblicita(ch);
       const inScena = s.overlayPubblicita?.attivo === true;
       if (!conf.acceso) { this._spegniSveglia(ch, 'prima'); this._spegniSveglia(ch, 'dopo'); }
-      if (!conf.acceso && !inScena) { this._pub.delete(ch); continue; }
+      // Il lancio dalla regia si tiene anche con chat e scena spente: la
+      // pubblicita' l'ha chiesta lo streamer, gli annunci sono un'altra cosa. E
+      // con lui l'attesa che Twitch ha detto, che la regia deve poter mostrare.
+      const tenuto = this._pub.get(ch);
+      const haLancio = !!(tenuto?.lancio || Number(tenuto?.prossimoLancioDa) > adesso || statoVivo.leggi(ch, 'pubblicita-lancio'));
+      if (!conf.acceso && !inScena && !haLancio) { this._pub.delete(ch); continue; }
       const stato = this._statoPubblicita(ch, adesso);
       // Fuori diretta il programma non si chiede: Twitch lo lascia vuoto
       // apposta, e sarebbe una telefonata per una risposta che sappiamo gia'.
@@ -2417,6 +2426,8 @@ export class BotManager {
       // dopo si rilegge al primo giro, invece di aspettare la rilettura. E
       // anche gli errori si dimenticano: la diretta dopo comincia leggendo.
       if (!live) Object.assign(stato, { prossima: 0, letto: 0, falliti: 0, fallitoA: 0 });
+      // e un lancio programmato fuori diretta non si fa: la diretta e' finita prima
+      if (!live && stato.lancio) { this._togliLancio(ch, stato); this._esitoLancio(ch, stato, { ok: false, motivo: 'finita' }); }
       this._pubInScena(ch);
     }
   }
@@ -2429,8 +2440,14 @@ export class BotManager {
   _statoPubblicita(ch, adesso = Date.now()) {
     let stato = this._pub.get(ch);
     if (!stato) {
-      stato = pub.riprendi(statoVivo.leggi(ch, 'pubblicita'), adesso);
+      const lancio = statoVivo.leggi(ch, 'pubblicita-lancio');
+      stato = pub.riprendi(statoVivo.leggi(ch, 'pubblicita'), adesso, lancio);
+      // Un appuntamento passato mentre il bot era fermo non si fa, e non si
+      // tiene. Quello ripreso ha subito la sua sveglia: ogni appuntamento in
+      // memoria ne ha una, da qualunque parte arrivi.
+      if (lancio && !stato.lancio) statoVivo.togli(ch, 'pubblicita-lancio');
       this._pub.set(ch, stato);
+      if (stato.lancio) this._armaLancio(ch, stato);
     }
     return stato;
   }
@@ -2527,33 +2544,151 @@ export class BotManager {
     } catch (e) { log.debug(`#${ch} annuncio pubblicita':`, e?.message || e); }
   }
 
-  // LA PAUSA CHE COMINCIA. Arriva da EventSub, ed e' l'unico momento in cui
-  // Twitch ci dice qualcosa: da qui escono il messaggio di adesso e la
-  // sveglia del «sono tornato», puntata a inizio + durata.
-  async _pubblicitaPartita(ch, dati) {
+  // LA PAUSA CHE COMINCIA. Arriva da EventSub, per le pause in programma e per
+  // quelle lanciate a mano (da Twitch, da un altro programma): da qui escono il
+  // messaggio di adesso e la sveglia del «sono tornato», puntata a inizio +
+  // durata. Quando la lancia la regia arriva anche prima, come `stima`: la
+  // stessa pausa, che l'evento poi corregge senza annunciarla di nuovo (vedi
+  // `pausaDa` e docs/PUBBLICITA.md, «Le pubblicita' lanciate a mano»).
+  //
+  // Con chat e scena spente la pausa non serve a nessuno, tranne che al lancio
+  // dalla regia: la sua pausa, e quella che parte prima del suo appuntamento e
+  // lo consuma, si registrano comunque. Le regole del lancio non dipendono da
+  // chi ascolta.
+  async _pubblicitaPartita(ch, dati, { stima = false } = {}) {
     const s = streamers.get(ch)?.settings || {};
     const conf = this._confPubblicita(ch);
     const inScena = s.overlayPubblicita?.attivo === true;
-    if (!conf.acceso && !inScena) return;
+    const perLancio = stima || !!(this._pub.get(ch)?.lancio || statoVivo.leggi(ch, 'pubblicita-lancio'));
+    if (!conf.acceso && !inScena && !perLancio) return;
     const stato = this._statoPubblicita(ch);
-    const a = pub.allaPartenza(conf, stato, dati, Date.now());
+    const a = pub.allaPartenza(conf, stato, dati, Date.now(), { stima });
     if (!a) return;
     stato.ultimaPausa = String(a.inizio);
     stato.secondi = a.secondi;
     stato.finisceA = a.finisceA;
-    stato.dettoDopo = false;
-    // La pausa e' cominciata: il preavviso di quella li' ha finito il suo
-    // mestiere, e la prossima e' un'altra cosa da guardare da capo. Una
-    // lettura ancora in volo non la riscrive: e' stata chiesta con un'altra
-    // `ultimaPausa` (vedi `dopoLettura`).
-    stato.prossima = 0;
-    stato.dettoPer = '';
+    stato.stima = stima;
+    if (!a.stessa) {
+      stato.dettoDopo = false;
+      // La pausa e' cominciata: il preavviso di quella li' ha finito il suo
+      // mestiere, e la prossima e' un'altra cosa da guardare da capo. Una
+      // lettura ancora in volo non la riscrive: e' stata chiesta con un'altra
+      // `ultimaPausa` (vedi `dopoLettura`).
+      stato.prossima = 0;
+      stato.dettoPer = '';
+      // E un lancio programmato non serve piu': o e' questo, o una seconda
+      // pubblicita' subito dopo Twitch la rifiuterebbe, e nessuno la vuole.
+      if (stato.lancio) { this._togliLancio(ch, stato); this._esitoLancio(ch, stato, { ok: false, motivo: 'prima' }); }
+    }
     this._pubInScena(ch);
     this._spegniSveglia(ch, 'prima');
     if (!conf.acceso) return;
-    if (a.finisceA) this._sveglia(ch, 'dopo', a.finisceA, () => this._sonoTornato(ch));
-    else this._spegniSveglia(ch, 'dopo');
+    if (a.finisceA && !stato.dettoDopo) this._sveglia(ch, 'dopo', a.finisceA, () => this._sonoTornato(ch));
+    else if (!a.finisceA) this._spegniSveglia(ch, 'dopo');
     if (a.dire) await this._annuncio(ch, conf, this._frasePubblicita(ch, 'durante', a.secondi));
+  }
+
+  // ── LA PUBBLICITA' LANCIATA DALLA REGIA ─────────────────────────────────
+  // Subito, o con un anticipo (un appuntamento, `lancio`). Il modello e le
+  // regole stanno in docs/PUBBLICITA.md, «Le pubblicita' lanciate a mano».
+  async lanciaPubblicita(ch, { secondi, fra } = {}) {
+    const adesso = Date.now();
+    const stato = this._statoPubblicita(ch, adesso);
+    const v = pub.lancioValido({ secondi, fra }, { live: this._liveState.get(ch) === true, prossimoLancioDa: stato.prossimoLancioDa, pausaFino: stato.finisceA }, adesso);
+    if (v.errore) return { ok: false, motivo: v.errore, da: v.da || 0 };
+    if (!v.fra) return this._lancia(ch, v.secondi);
+    stato.lancio = { quando: v.quando, secondi: v.secondi, detto: false };
+    stato.esitoLancio = null;
+    this._salvaLancio(ch, stato);
+    this._armaLancio(ch, stato);
+    this._pubInScena(ch);
+    return { ok: true, quando: v.quando, secondi: v.secondi };
+  }
+
+  // Dallo stato ripreso, non dalla memoria: subito dopo un riavvio
+  // l'appuntamento sta ancora solo negli stati vivi, e il primo giro lo
+  // rimetterebbe in piedi proprio mentre lo streamer l'ha annullato.
+  annullaLancio(ch) {
+    const stato = this._statoPubblicita(ch);
+    if (!stato.lancio) return { ok: false };
+    this._togliLancio(ch, stato);
+    stato.esitoLancio = null;
+    this._pubInScena(ch);
+    return { ok: true };
+  }
+
+  // Quello che la regia mostra: l'appuntamento, com'e' andato l'ultimo lancio,
+  // da quando Twitch ne permette un altro, e la pausa in corso.
+  statoLancio(ch, adesso = Date.now()) {
+    const stato = this._statoPubblicita(ch, adesso);
+    const l = stato.lancio;
+    return {
+      lancio: l && l.quando > adesso ? { quando: l.quando, secondi: l.secondi } : null,
+      esito: stato.esitoLancio || null,
+      prossimoLancioDa: Number(stato.prossimoLancioDa) > adesso ? Number(stato.prossimoLancioDa) : 0,
+      pausaFino: Number(stato.finisceA) > adesso ? Number(stato.finisceA) : 0,
+    };
+  }
+
+  // IL LANCIO. L'appuntamento si consuma comunque vada. La pausa si registra
+  // subito come stima, dall'istante in cui il lancio e' stato CHIESTO: non puo'
+  // venire dopo l'inizio vero, cosi' l'evento di Twitch la ritrova. Lo stato si
+  // riprende dopo la risposta: mentre Twitch rispondeva il giro puo' averlo
+  // lasciato andare, e l'esito scritto su quello vecchio non lo vedrebbe nessuno.
+  async _lancia(ch, secondi) {
+    this._togliLancio(ch, this._statoPubblicita(ch));
+    const chiesto = Date.now();
+    const r = await this.helix?.startCommercial?.(ch, secondi).catch(() => null);
+    const stato = this._statoPubblicita(ch);
+    if (!r?.ok) {
+      this._pubInScena(ch);
+      return this._esitoLancio(ch, stato, { ok: false, motivo: r?.codice || 'errore' });
+    }
+    if (Number(r.retry) > 0) stato.prossimoLancioDa = Date.now() + Number(r.retry) * 1000;
+    this._esitoLancio(ch, stato, { ok: true, secondi: r.length });
+    await this._pubblicitaPartita(ch, { started_at: new Date(chiesto).toISOString(), duration_seconds: r.length }, { stima: true });
+    return { ok: true, length: r.length, retry: Number(r.retry) || 0 };
+  }
+
+  _esitoLancio(ch, stato, esito) {
+    stato.esitoLancio = { ...esito, a: Date.now() };
+    if (!esito.ok) log.info(`#${ch} pubblicità dalla regia non partita: ${esito.motivo}`);
+    return esito;
+  }
+
+  // La sveglia del lancio, e quella del preavviso in chat se la chat lo dice:
+  // a `quanto` secondi dall'istante, come per le pause in programma, una volta.
+  _armaLancio(ch, stato) {
+    const l = stato.lancio;
+    if (!l) return;
+    this._sveglia(ch, 'lancio', l.quando, () => this._lancia(ch, l.secondi));
+    const conf = this._confPubblicita(ch);
+    if (!l.detto && pub.siDice(conf, 'prima')) {
+      this._sveglia(ch, 'prima-lancio', Math.max(Date.now(), l.quando - conf.quanto * 1000), () => this._preavvisoLancio(ch));
+    } else this._spegniSveglia(ch, 'prima-lancio');
+  }
+
+  async _preavvisoLancio(ch) {
+    const stato = this._pub.get(ch);
+    if (!stato || !this._liveState.get(ch)) return;
+    const conf = this._confPubblicita(ch);
+    const avviso = pub.preavvisoLancio(conf, stato, Date.now());
+    if (!avviso) return;
+    stato.lancio.detto = true;
+    this._salvaLancio(ch, stato);
+    await this._annuncio(ch, conf, this._frasePubblicita(ch, 'prima', avviso.secondi));
+  }
+
+  _salvaLancio(ch, stato) {
+    if (stato.lancio) statoVivo.scrivi(ch, 'pubblicita-lancio', stato.lancio);
+    else statoVivo.togli(ch, 'pubblicita-lancio');
+  }
+
+  _togliLancio(ch, stato) {
+    stato.lancio = null;
+    this._salvaLancio(ch, stato);
+    this._spegniSveglia(ch, 'lancio');
+    this._spegniSveglia(ch, 'prima-lancio');
   }
 
   // LA PAUSA CHE FINISCE. La sveglia e' sempre quella dell'ultima pausa (una

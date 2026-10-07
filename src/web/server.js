@@ -8416,10 +8416,13 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     // porta loro: la pubblicita' sta gia' qui, e una scheda nuova per tre
     // caselle di testo sarebbe un menu in piu' da cercare.
     res.json({ permessi, live, canale, ads, pubblicita: pubblicita.normalizzaPubblicita(s?.settings?.pubblicita),
+      // il lancio dalla regia: l'appuntamento, com'e' andato l'ultimo, l'attesa di Twitch
+      lancio: manager.statoLancio?.(login) || null,
       // I limiti li decide il modello, non il pannello: cosi' il pannello li
       // mostra invece di ripeterli, e un giorno non dicono due cose diverse.
       limiti: { colori: pubblicita.COLORI, preavvisoMin: pubblicita.PREAVVISO_MIN,
-        preavvisoMax: pubblicita.PREAVVISO_MAX, tolleranzaMax: pubblicita.TOLLERANZA_MAX } });
+        preavvisoMax: pubblicita.PREAVVISO_MAX, tolleranzaMax: pubblicita.TOLLERANZA_MAX,
+        lancioMax: pubblicita.LANCIO_MAX_S, durataMin: pubblicita.LANCIO_MIN_DURATA, durataMax: pubblicita.LANCIO_MAX_DURATA } });
   }));
 
   // LA COPERTINA DI UN GIOCO, dal nostro indirizzo. La storia «Stasera alle…»
@@ -8562,14 +8565,41 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     res.json({ ok: true, position: r.position });
   }));
 
-  // pubblicità (ad-break)
+  // pubblicità (ad-break), subito o con un anticipo. Passa dal bot e non da
+  // Twitch direttamente: cosi' la scena e la chat lo sanno subito, e la pausa
+  // che poi arriva da Twitch si riconosce come la stessa (docs/PUBBLICITA.md,
+  // «Le pubblicita' lanciate a mano»).
+  // Il motivo e' un codice (pubblicita.lancioValido, helix.startCommercial): qui
+  // la frase per chi legge l'errore cosi' com'e', il pannello lo dice nella sua lingua.
+  const PERCHE_LANCIO = {
+    'senza-diretta': 'Il bot non ti vede ancora in diretta: una pubblicità con anticipo si programma a diretta accesa.',
+    'in-pausa': 'C\'è già una pubblicità in corso: programmala per dopo la sua fine.',
+    presto: 'Twitch non permette un\'altra pubblicità così presto.',
+    offline: 'Twitch non ti vede in diretta: la pubblicità parte solo a diretta accesa.',
+    permesso: 'Manca il permesso «pubblicità»: concedilo da /auth/permessi.',
+    rifiutata: 'Twitch non ha accettato la pubblicità.',
+    canale: 'Il canale non è ancora collegato a Twitch.',
+    errore: 'Twitch non ha risposto: riprova fra poco.',
+  };
   app.post('/api/streamer/regia/pubblicita', requireLogin, wrap(async (req, res) => {
     const login = currentUser(req).login;
     if (!commercialOk(login)) return res.status(403).json({ errore: 'Concedi il permesso "pubblicità" da /auth/permessi', permesso: true });
-    const r = await helix.startCommercial(login, req.body?.durata);
-    if (!r.ok) return res.status(400).json({ errore: r.motivo || 'non riuscito' });
-    res.json({ ok: true, length: r.length });
+    const r = await manager.lanciaPubblicita(login, { secondi: req.body?.durata, fra: req.body?.fra });
+    if (!r.ok) return res.status(400).json({ errore: PERCHE_LANCIO[r.motivo] || r.motivo || 'non riuscito', motivo: r.motivo, da: r.da || 0 });
+    res.json({ ok: true, length: r.length || 0, retry: r.retry || 0, quando: r.quando || 0, secondi: r.secondi || 0, ...manager.statoLancio(login) });
   }));
+
+  app.post('/api/streamer/regia/pubblicita/annulla', requireLogin, (req, res) => {
+    const login = currentUser(req).login;
+    const r = manager.annullaLancio(login);
+    res.json({ ok: r.ok, ...manager.statoLancio(login) });
+  });
+
+  // Il pannello lo rilegge quando l'istante di un lancio e' passato, per dire
+  // com'e' andato senza ricaricare tutta la regia (e i campi che stai scrivendo).
+  app.get('/api/streamer/regia/pubblicita/stato', requireLogin, (req, res) => {
+    res.json(manager.statoLancio(currentUser(req).login));
+  });
 
   // raid verso un altro canale
   app.post('/api/streamer/regia/raid', requireLogin, wrap(async (req, res) => {

@@ -57,7 +57,10 @@ test('il programma di Twitch lo legge un posto solo', () => {
   for (const [nome, testo] of [['helix', HELIX], ['bot', BOT], ['server', SRV], ['pannello', APP]]) {
     assert.ok(!/next_ad_at|nextAt/.test(testo), `${nome} legge il programma per conto suo`);
   }
-  assert.match(APP, /_fraSecondi\(ads\?\.prossima\)/, 'il pannello conta dai millisecondi');
+  // La prossima del pannello e' la prima fra quella in programma e quella
+  // lanciata dalla regia con un anticipo: tutte e due in millisecondi.
+  assert.match(APP, /const t = Number\(ads\?\.prossima\) \|\| 0;/, 'il pannello legge la prossima in millisecondi');
+  assert.match(APP, /const fra = _fraSecondi\(prossima\.quando\);/, 'e conta da li\'');
 });
 
 test('fuori diretta non si chiede niente a Twitch', () => {
@@ -136,4 +139,36 @@ test('e la pagina pubblica lo racconta', () => {
   assert.ok(/pubblicit|ad break|anuncio/i.test(VISTA), 'chi sta decidendo se prenderlo non lo vedrebbe');
   const NOV = leggi('NOVITA.md');
   assert.ok(/pubblicit/i.test(NOV), 'e chi lo usa già nemmeno');
+});
+
+test('il lancio dalla regia passa dal bot, e la regia lo vede', () => {
+  // Il server non chiama Twitch per conto suo: se lo facesse la scena e la chat
+  // saprebbero della pausa solo dall'evento, in ritardo o mai (docs/PUBBLICITA.md,
+  // «Le pubblicita' lanciate a mano»).
+  const rotta = SRV.slice(SRV.indexOf("app.post('/api/streamer/regia/pubblicita',"), SRV.indexOf("// raid verso un altro canale"));
+  assert.match(rotta, /await manager\.lanciaPubblicita\(login, \{ secondi: req\.body\?\.durata, fra: req\.body\?\.fra \}\)/);
+  assert.ok(!/helix\.startCommercial\(/.test(SRV), 'il server non lancia da solo');
+  assert.equal((BOT.match(/startCommercial/g) || []).length, 1, 'e il bot lancia da un posto solo, _lancia');
+  assert.match(rotta, /app\.post\('\/api\/streamer\/regia\/pubblicita\/annulla', requireLogin,/);
+  assert.match(rotta, /app\.get\('\/api\/streamer\/regia\/pubblicita\/stato', requireLogin,/);
+  assert.match(SRV, /lancio: manager\.statoLancio\?\.\(login\) \|\| null,/, 'la regia legge l\'appuntamento all\'apertura');
+  // Ogni motivo che il modello o Twitch possono dare ha la sua frase, nel server e nel pannello.
+  const HELIX = leggi('src/twitch/helix.js');
+  const codici = new Set([...HELIX.matchAll(/return no\('([a-z-]+)'/g)].map((m) => m[1]));
+  for (const m of P.lancioValido.toString().matchAll(/errore: '([a-z-]+)'/g)) codici.add(m[1]);
+  for (const m of BOT.matchAll(/_esitoLancio\(ch, stato, \{ ok: false, motivo: '([a-z-]+)' \}\)/g)) codici.add(m[1]);
+  assert.ok(codici.size >= 10, 'i codici si leggono tutti');
+  const perche = SRV.slice(SRV.indexOf('const PERCHE_LANCIO = {'), SRV.indexOf("app.post('/api/streamer/regia/pubblicita',"));
+  const motivi = APP.slice(APP.indexOf('function _regiaAdMotivo('), APP.indexOf('function _regiaAdRighe('));
+  for (const c of codici) {
+    if (c !== 'prima' && c !== 'finita') assert.ok(perche.includes(`${/-/.test(c) ? `'${c}'` : c}:`), `il server non sa dire «${c}»`);
+    assert.ok(motivi.includes(`${/-/.test(c) ? `'${c}'` : c}:`), `il pannello non sa dire «${c}»`);
+  }
+  // Un appuntamento preso prima di un riavvio riparte dall'avvio, non dal primo giro.
+  assert.match(BOT, /for \(const r of statoVivo\.tutti\('pubblicita-lancio'\)\) if \(streamers\.get\(r\.channel\)\) this\._statoPubblicita\(r\.channel\);/);
+  // Il pannello chiede l'anticipo e mostra l'appuntamento con il suo «Annulla».
+  assert.match(APP, /id="regia-ad-fra"/);
+  assert.match(APP, /body: \{ durata: Number\(_g\('regia-ad-durata'\)\?\.value\) \|\| 60, fra \}/);
+  assert.match(APP, /id="regia-ad-annulla"/);
+  assert.match(APP, /'\/api\/streamer\/regia\/pubblicita\/annulla'/);
 });

@@ -274,6 +274,18 @@ comandi diversi da quelli della riga italiana.
 - Un timer appena fermato, un boss appena battuto o un contatore appena cambiato non tornano più indietro quando l'overlay rilegge le sue scelte nello stesso istante. [vai: alert]
   en: A timer you just stopped, a boss just defeated or a counter just changed no longer jump back when the overlay reloads its settings at that same moment.
   es: Un temporizador recién parado, un jefe recién vencido o un contador recién cambiado ya no vuelven atrás cuando el overlay recarga sus opciones en ese mismo momento.
+- [importante] In regia «Manda pubblicità» ha anche un «quando»: adesso, o fra 30 secondi, 1, 2 o 5 minuti. Con l'anticipo l'overlay conta fino alla partenza e la chat riceve l'avviso. [vai: regia]
+  en: In the control room, “Run an ad” now also has a “when”: now, or in 30 seconds, 1, 2 or 5 minutes. With a delay, the overlay counts down to it and chat gets the heads-up.
+  es: En la realización, «Lanzar anuncio» ahora también tiene un «cuándo»: ahora, o en 30 segundos, 1, 2 o 5 minutos. Con antelación, el overlay cuenta hasta la salida y el chat recibe el aviso.
+  > Programma la pubblicità, con il conto in scena
+  > Sapere quando parte la pausa ti lascia chiudere il discorso e salutare la chat. Chi guarda vede il conto alla rovescia, e puoi annullarla fino all'ultimo secondo.
+  en> Schedule an ad, with the countdown on stage
+  en> Knowing when the break starts lets you wrap up and say goodbye to chat. Viewers see the countdown, and you can cancel it until the last second.
+  es> Programa el anuncio, con la cuenta en pantalla
+  es> Saber cuándo empieza la pausa te deja cerrar lo que dices y despedirte del chat. Quien mira ve la cuenta atrás, y puedes cancelarlo hasta el último segundo.
+- Una pubblicità mandata dalla regia si conta e si annuncia subito, senza aspettare Twitch, e una volta sola. Se non parte, la regia dice il perché vero invece di «devi essere in diretta» per tutto. [vai: regia]
+  en: An ad run from the control room is counted and announced right away, without waiting for Twitch, and only once. If it does not start, the control room gives the real reason instead of “you must be live” for everything.
+  es: Un anuncio lanzado desde la realización se cuenta y se anuncia enseguida, sin esperar a Twitch, y una sola vez. Si no empieza, la realización da el motivo real en vez de «tienes que estar en directo» para todo.
 
 ## 2026-10-03
 

@@ -28,7 +28,7 @@ export default {
     { p: [
       'Fuori onda leggi «OFFLINE» e la frase «Non sei in diretta adesso. Titolo, categoria e tag puoi impostarli lo stesso.»',
       'In onda leggi «LIVE», gli «Spettatori» e da quanto sei in diretta («Da»), che avanza da solo ogni secondo.',
-      'Se Twitch ha già in programma la prossima pubblicità, compaiono anche «Prossima pubblicità», con il conto alla rovescia, e «Durerà». Servono il permesso della programmazione pubblicità e la diretta accesa. Lo stesso conto lo puoi mostrare a chi guarda: è il «Conto alla pubblicità» dell\'Overlay Studio (<a href="/manuale/overlay">manuale dell\'overlay</a>).',
+      'Se Twitch ha già in programma la prossima pubblicità, compaiono anche «Prossima pubblicità», con il conto alla rovescia, e «Durerà». Servono il permesso della programmazione pubblicità e la diretta accesa. Se ne hai programmata una dalla regia (sotto, «Manda pubblicità» con un anticipo), il conto va verso la prima delle due. Lo stesso conto lo puoi mostrare a chi guarda: è il «Conto alla pubblicità» dell\'Overlay Studio (<a href="/manuale/overlay">manuale dell\'overlay</a>).',
       'Il numero degli spettatori non si aggiorna da solo: premi «Aggiorna» per rileggerlo.',
     ] },
 
@@ -48,11 +48,19 @@ export default {
       ['Azione', 'Cosa fa', 'Cosa vedi'],
       ['«Crea clip»', 'Fa una clip del momento su Twitch e la apre in una nuova scheda. La clip finisce in «Ultime clip», nel rapporto della serata e nelle statistiche, come quelle automatiche.', '«Clip creata!». Fuori onda: «Nessuna clip: devi essere in diretta.»'],
       ['«Marker»', 'Mette un segno in quel punto della registrazione, con la nota che scrivi in «Nota del marker (facoltativa)», fino a 140 caratteri. Quando monti il video lo ritrovi lì.', '«Marker messo nel VOD». Fuori onda: «devi essere in diretta per mettere un marker».'],
-      ['«Manda pubblicità»', 'Fa partire subito la pubblicità, per la durata scelta accanto: 30, 60, 90, 120, 150 o 180 secondi. Di base 60.', '«Pubblicità di 60s avviata». Fuori onda: «devi essere in diretta per lanciare una pubblicità». Se ne hai appena mandata una: «troppo presto per un\'altra pubblicità».'],
+      ['«Manda pubblicità»', 'Fa partire la pubblicità per la durata scelta accanto (30, 60, 90, 120, 150 o 180 secondi, di base 60), al momento scelto nel secondo menù: «adesso», o fra 30 secondi, 1, 2 o 5 minuti. Con l\'anticipo, il conto sull\'overlay parte subito e la chat riceve l\'avviso «Prima che parta».', '«Pubblicità di 60s avviata», oppure «Pubblicità di 60s programmata: il conto è partito». Se non parte, il messaggio dice perché: per esempio «Twitch non ti vede in diretta», «Twitch non ne permette un’altra così presto. Si può fra 7m 40s», «c’è già una pubblicità in corso».'],
       ['«Avvia raid»', 'Manda i tuoi spettatori sul canale che scrivi in «canale da raidare», fino a 30 caratteri. La @ davanti puoi lasciarla.', '«Raid verso … avviata». Se qualcosa non va: «scrivi il canale da raidare», «canale di destinazione non trovato», «non puoi raidare te stesso», «c\'è già una raid in corso», «devi essere in diretta per fare una raid».'],
       ['«Annulla»', 'Ferma il raid in preparazione.', '«Raid annullata».'],
     ] },
     { p: ['La riga della pubblicità compare solo se hai concesso il permesso della pubblicità, quella del raid solo con il permesso dei raid. Il marker usa il permesso gestione canale.'] },
+    { h3: 'La pubblicità programmata' },
+    { p: [
+      'Sotto «Manda pubblicità» una riga dice com\'è messa, e c\'è solo quando ha qualcosa da dire: la pubblicità programmata con il suo conto e il tasto «Annulla», «La pubblicità sta partendo…» nell\'istante in cui il bot la chiede a Twitch, la pausa in corso con quanto manca al ritorno, il perché dell\'ultima che non è partita, e fra quanto Twitch ne permette un\'altra.',
+      'Una pubblicità programmata parte all\'istante fissato anche se chiudi il pannello: la fa partire il bot. Non parte se la annulli, se prima parte un\'altra pubblicità (quella automatica di Twitch, o una che mandi da Twitch), se la diretta finisce prima, o se Twitch dice di no. Ne tieni una alla volta: una nuova, o «adesso», prende il posto di quella programmata.',
+      'Regge un riavvio del bot. Se però il suo istante passa mentre il bot è fermo, non parte in ritardo.',
+      'Per programmarla il bot deve vederti in diretta, e l\'istante deve cadere dopo la pausa in corso e dopo l\'attesa che Twitch chiede fra una pubblicità e l\'altra. Per quella di adesso decide Twitch.',
+      'Si lancia solo da qui, e la lancia solo il proprietario del canale: su Twitch la pubblicità è una cosa del canale, e un comando in chat la darebbe in mano anche ai moderatori.',
+    ] },
 
     { h3: 'Quando parte la pubblicità' },
     { p: [
@@ -68,8 +76,8 @@ export default {
     ] },
     { tabella: [
       ['Momento', 'Nelle frasi del bot', 'Quando esce'],
-      ['«Prima che parta»', '«Prima della pubblicità»', 'A «Quanto prima avviso» secondi dalla pausa. Il bot lo ricava dalla programmazione di Twitch, che esiste solo mentre sei in onda. Se rimandi la pausa, l\'avviso segue la nuova ora.'],
-      ['«Appena parte»', '«La pubblicità parte»', 'Quando Twitch dice che la pausa è partita, con la sua durata. Vale per quella che mandi tu e per quella automatica di Twitch.'],
+      ['«Prima che parta»', '«Prima della pubblicità»', 'A «Quanto prima avviso» secondi dalla pausa. Il bot lo ricava dalla programmazione di Twitch, che esiste solo mentre sei in onda. Se rimandi la pausa, l\'avviso segue la nuova ora. Per una pubblicità programmata dalla regia, a «Quanto prima avviso» secondi dal suo istante, o subito se manca meno. Se ce ne sono due vicine, avvisa solo la prima.'],
+      ['«Appena parte»', '«La pubblicità parte»', 'Quando Twitch dice che la pausa è partita, con la sua durata. Vale per quella automatica e per quelle che mandi a mano, da qui, da Twitch o da un altro programma. Quella mandata da qui si annuncia appena Twitch accetta, una volta sola.'],
       ['«Quando torni»', '«Dopo la pubblicità»', 'A fine pausa, se sei ancora in onda. Twitch non avvisa quando finisce: il bot conta i secondi che gli ha detto alla partenza. Se Twitch non ha detto quanto dura, non esce. Se il bot si riavvia nel mezzo, il conto si perde e sta zitto invece di salutare in ritardo.'],
     ] },
     { p: [
@@ -285,6 +293,8 @@ export default {
     { d: 'Cambio il titolo e su Twitch non cambia.', r: 'Manca il permesso gestione canale. In cima a «Regia» c\'è il riquadro con «Concedi i permessi»: lo preme il proprietario del canale.' },
     { d: 'Non vedo «Manda pubblicità» o «Avvia raid».', r: 'Quelle righe compaiono solo con i permessi della pubblicità e dei raid. Concedili dal riquadro in cima a «Regia».' },
     { d: '«Prima che parta» non esce mai.', r: 'Serve il permesso della programmazione pubblicità, e Twitch dà la programmazione solo mentre sei in onda. Controlla che la levetta del momento sia accesa e che il testo non sia vuoto. Se il testo usa {secondi} e Twitch non dice la durata, la riga non esce.' },
+    { d: 'Mando la pubblicità da Twitch o da un altro programma: il conto e i messaggi ci sono?', r: 'Sì, appena parte: Twitch avvisa il bot per ogni pausa, anche quelle mandate a mano, e da lì partono il conto del ritorno sull\'overlay, «Appena parte» e «Quando torni». Il conto e l\'avviso di prima ci sono solo per le pause in programma su Twitch e per quelle che programmi dalla regia: una pubblicità mandata da Twitch il bot la sa solo quando parte.' },
+    { d: 'Ho programmato una pubblicità e non è partita.', r: 'Guarda la riga sotto «Manda pubblicità»: dice perché, per esempio «è partita prima un’altra pubblicità» o «la diretta è finita prima». Se il bot era fermo all\'istante fissato, non parte in ritardo.' },
     { d: '«Quando torni» non è uscito.', r: 'Esce solo se Twitch ha detto quanto dura la pausa, se sei ancora in onda e se il bot non si è riavviato nel mezzo. Se la fine è passata da più di «Quanto ritardo accetto», il bot sta zitto apposta.' },
     { d: 'Non nasce nessuna clip automatica.', r: 'Controlla che l\'extra «Clip Automatiche» sia nel tuo piano, che la levetta sia accesa e che tu sia in diretta con il bot in chat. Dall\'ultima clip passano almeno 4 minuti, e con la sensibilità bassa servono picchi forti. Se Twitch rifiuta la clip, il bot non lo scrive in chat.' },
     { d: '!sr non risponde.', r: 'Servono tutte e tre le cose: Spotify collegato in «Musica», Premium attivo, app aperta e in riproduzione. In modalità «A punti canale (premio)» <code>!sr</code> non mette in coda: risponde di riscattare il premio.' },
@@ -292,6 +302,6 @@ export default {
     { d: 'Il rapporto non ha picco e media.', r: 'Gli spettatori si contano ogni cinque minuti mentre il bot è nel canale, e su Kick ogni due minuti, se hai collegato Kick. Se il bot era spento, o la diretta è finita prima del primo conteggio, quei due numeri non ci sono.' },
     { d: '«Chi guarda di più» è vuota.', r: 'Le ore si contano solo in diretta: prima della prima diretta la classifica è vuota. Se resta vuota dopo, controlla nella scheda «Comandi» che la spunta «Conta le ore guardate in chat» sia accesa.' },
     { d: 'Mi è arrivata una mail di SocialBot che non mi convince.', r: 'Guarda il codice in fondo e confrontalo con quello della scheda «Il tuo account», carta «Le mail che ti mandiamo». Se non combacia, non aprire i collegamenti.' },
-    { d: 'Se chiudo il pannello si ferma qualcosa?', r: 'Clip automatiche, richieste musicali, messaggi della pubblicità e rapporti girano sul server e vanno avanti. Si fermano i tasti che premi tu e il conto di «Stato diretta». Per le scene comandate dal telefono vedi il <a href="/manuale/consolify">manuale di CONSOLify</a>.' },
+    { d: 'Se chiudo il pannello si ferma qualcosa?', r: 'Clip automatiche, richieste musicali, messaggi della pubblicità, la pubblicità programmata e rapporti girano sul server e vanno avanti. Si fermano i tasti che premi tu e il conto di «Stato diretta». Per le scene comandate dal telefono vedi il <a href="/manuale/consolify">manuale di CONSOLify</a>.' },
   ],
 };

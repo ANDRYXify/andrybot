@@ -1068,6 +1068,11 @@ input[type="file"]::file-selector-button:hover { background: var(--acc-600); }
 .regia-riga { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; }
 .regia-riga input[type="text"] { flex: 1 1 180px; min-width: 140px; }
 .regia-riga .btn { white-space: nowrap; }
+.regia-ad-stato { display: flex; flex-direction: column; gap: .35rem; }
+.regia-ad-stato[hidden] { display: none; }
+.regia-ad-stato .tg-stato { margin: 0; font-variant-numeric: tabular-nums; }
+.regia-ad-stato .tg-stato:not(.ok):not(.guaio) { color: var(--testo); background: var(--surface-2); border: 1px solid var(--border); }
+.regia-ad-stato .tg-stato .btn { margin-left: .35rem; vertical-align: baseline; }
 
 .b-ico { vertical-align: -2px; margin-right: .35rem; flex: none; }
 .lib-tab .b-ico, .studio-add .btn .b-ico { margin-right: .3rem; }

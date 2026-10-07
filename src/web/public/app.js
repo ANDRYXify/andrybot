@@ -1288,6 +1288,33 @@ function _demoModuli(metodo, via, b) {
   return { ok: true, ...(id != null ? { id } : {}) };
 }
 
+function _demoPubblicita(via, b) {
+  const ora = Date.now();
+  const s = _demoScritture.pubLancio || (_demoScritture.pubLancio = { lancio: null, esito: null, prossimoLancioDa: 0, pausaFino: 0 });
+  const parte = (quando, secondi) => Object.assign(s, { lancio: null, pausaFino: quando + secondi * 1000, prossimoLancioDa: quando + 480_000, esito: { ok: true, secondi, a: quando } });
+  if (s.lancio && s.lancio.quando <= ora) parte(s.lancio.quando, s.lancio.secondi);
+  const stato = () => ({ lancio: s.lancio, esito: s.esito, prossimoLancioDa: s.prossimoLancioDa > ora ? s.prossimoLancioDa : 0, pausaFino: s.pausaFino > ora ? s.pausaFino : 0 });
+  const no = (motivo, da) => Promise.reject(Object.assign(new Error(_regiaAdMotivo(motivo)), { dati: { motivo, da } }));
+  if (via === '/api/streamer/regia/pubblicita/annulla') {
+    const c = !!s.lancio;
+    s.lancio = null;
+    return Promise.resolve({ ok: c, ...stato() });
+  }
+  if (via !== '/api/streamer/regia/pubblicita') return Promise.resolve(stato());
+  const secondi = Math.max(30, Math.min(180, Math.round(Number(b.durata) || 60)));
+  const fra = Math.max(0, Math.min(300, Math.round(Number(b.fra) || 0)));
+  const quando = ora + fra * 1000;
+  if (s.prossimoLancioDa > quando) return no('presto', s.prossimoLancioDa);
+  if (fra && s.pausaFino > quando) return no('in-pausa', s.pausaFino);
+  if (fra) {
+    s.lancio = { quando, secondi };
+    s.esito = null;
+    return Promise.resolve({ ok: true, quando, secondi, ...stato() });
+  }
+  parte(ora, secondi);
+  return Promise.resolve({ ok: true, length: secondi, retry: 480, ...stato() });
+}
+
 function apiDemo(percorso, opzioni = {}) {
   const metodo = (opzioni.method || 'GET').toUpperCase();
   const via = percorso.split('?')[0];
@@ -1350,6 +1377,8 @@ function apiDemo(percorso, opzioni = {}) {
     const d = _demoScritture.doppio;
     return Promise.resolve({ doppio: d && d.fino > Date.now() ? d : null });
   }
+  if (via === '/api/streamer/regia/pubblicita/messaggi') return Promise.resolve({ ok: true, pubblicita: { ...(opzioni.body?.pubblicita || {}) } });
+  if (via.startsWith('/api/streamer/regia/pubblicita')) return _demoPubblicita(via, opzioni.body || {});
   if (metodo === 'GET') return Promise.resolve(_demoGet(via));
 
   if (via === '/api/streamer/impostazioni' && Array.isArray(opzioni.body?.overlays)) {
@@ -20012,8 +20041,17 @@ function pannelloRegia() {
             <option value="90">90s</option><option value="120">120s</option>
             <option value="150">150s</option><option value="180">180s</option>
           </select>
-          <button type="button" class="btn secondario" id="regia-ad" title="${esc(L('Fa partire subito la pubblicità per la durata scelta qui accanto', 'Starts the ad break right now, for the length chosen next to it', 'Lanza la publicidad ahora mismo, con la duración elegida al lado'))}">${_bIco(ICO.tv)}${L('Manda pubblicità', 'Run an ad', 'Lanzar anuncio')}</button>
+          <select aria-label="${esc(L('Quando parte la pubblicità', 'When the ad starts', 'Cuándo empieza el anuncio'))}" id="regia-ad-fra">
+            <option value="0" selected>${L('adesso', 'now', 'ahora')}</option>
+            <option value="30">${L('fra 30s', 'in 30s', 'en 30s')}</option>
+            <option value="60">${L('fra 1 minuto', 'in 1 minute', 'en 1 minuto')}</option>
+            <option value="120">${L('fra 2 minuti', 'in 2 minutes', 'en 2 minutos')}</option>
+            <option value="300">${L('fra 5 minuti', 'in 5 minutes', 'en 5 minutos')}</option>
+          </select>
+          <button type="button" class="btn secondario" id="regia-ad" title="${esc(L('Fa partire la pubblicità per la durata scelta, adesso o fra il tempo scelto. Con l’anticipo, l’overlay conta fino alla partenza e la chat riceve il preavviso.', 'Starts the ad break for the chosen length, now or after the chosen time. With a delay, the overlay counts down to it and chat gets the heads-up.', 'Lanza el anuncio con la duración elegida, ahora o tras el tiempo elegido. Con antelación, el overlay cuenta hasta la salida y el chat recibe el aviso.'))}">${_bIco(ICO.tv)}${L('Manda pubblicità', 'Run an ad', 'Lanzar anuncio')}</button>
         </div>
+        <div id="regia-ad-stato" class="regia-ad-stato" hidden></div>
+        <p id="regia-ad-detto" class="solo-lettori" role="status"></p>
         <div class="regia-riga" id="regia-raid-box">
           <input aria-label="${esc(L('canale da raidare', 'channel to raid', 'canal a raidear'))}" type="text" id="regia-raid-canale" placeholder="${L('canale da raidare', 'channel to raid', 'canal a raidear')}" maxlength="30">
           <button type="button" class="btn secondario" id="regia-raid" title="${esc(L('Manda i tuoi spettatori sul canale scelto e chiude la tua diretta', 'Sends your viewers to the chosen channel and ends your live', 'Envía a tus espectadores al canal elegido y termina tu directo'))}">${_bIco(ICO.freccia)}${L('Avvia raid', 'Start raid', 'Iniciar raid')}</button>
@@ -20066,9 +20104,9 @@ function _pubDisegna() {
         <span class="suggerimento">${L('secondi', 'seconds', 'segundos')}</span>
       </div>
       ${momento('prima', L('Prima che parta', 'Before it starts', 'Antes de que empiece'),
-    L('Lo ricavo dalla programmazione di Twitch, che esiste solo mentre sei in onda. Sta vicino alla pausa apposta: uno snooze la sposta di cinque minuti, e un annuncio in chat non si ritira.', 'I work it out from the Twitch Schedule, which only exists while you are live. It stays close to the break on purpose: a snooze moves it by five minutes, and a chat announcement cannot be taken back.', 'Lo saco de la programación de Twitch, que solo existe mientras estás en directo. Se queda cerca de la pausa a propósito: un snooze la mueve cinco minutos, y un anuncio en el chat no se retira.'))}
+    L('Lo ricavo dalla programmazione di Twitch, che esiste solo mentre sei in onda. Sta vicino alla pausa apposta: uno snooze la sposta di cinque minuti, e un annuncio in chat non si ritira. Per una pubblicità che mandi da qui con un anticipo lo so da me, e avviso allo stesso modo.', 'I work it out from the Twitch Schedule, which only exists while you are live. It stays close to the break on purpose: a snooze moves it by five minutes, and a chat announcement cannot be taken back. For an ad you run from here with a delay I know it myself, and I warn the same way.', 'Lo saco de la programación de Twitch, que solo existe mientras estás en directo. Se queda cerca de la pausa a propósito: un snooze la mueve cinco minutos, y un anuncio en el chat no se retira. Para un anuncio que lanzas desde aquí con antelación lo sé yo, y aviso igual.'))}
       ${momento('durante', L('Appena parte', 'As it starts', 'Nada más empezar'),
-    L('Questo me lo dice Twitch, e mi dice anche quanto dura.', 'Twitch tells me this one, and how long it lasts.', 'Esto me lo dice Twitch, y también cuánto dura.'))}
+    L('Questo me lo dice Twitch, e mi dice anche quanto dura. Vale anche per le pubblicità mandate a mano, da qui, da Twitch o da un altro programma.', 'Twitch tells me this one, and how long it lasts. It also works for ads run by hand, from here, from Twitch or from another program.', 'Esto me lo dice Twitch, y también cuánto dura. Vale también para los anuncios lanzados a mano, desde aquí, desde Twitch o desde otro programa.'))}
       ${momento('dopo', L('Quando torni', 'When you are back', 'Cuando vuelves'),
     L('Per la fine Twitch non manda niente: conto io i secondi che mi ha detto. Se mi riavvio nel mezzo il conto si perde, e allora sto zitta invece di salutarti in ritardo.', 'Twitch sends nothing for the end: I count the seconds it told me. If I restart in the middle the count is lost, and then I keep quiet instead of greeting you late.', 'Para el final Twitch no manda nada: cuento yo los segundos que me dijo. Si me reinicio en medio se pierde la cuenta, y entonces me callo en vez de saludarte tarde.'))}
       <p class="suggerimento spazio-sopra">${L('Le frasi cambiano col tuo canale, nella sua lingua e nel suo tono, e quando Twitch dice quanto dura la pausa lo dicono anche loro. Le scegli, le scrivi tu o ne spegni una per sempre in', 'The lines change with your channel, in its language and tone, and when Twitch says how long the break lasts they say it too. You pick them, write your own or switch one off for good in', 'Las frases cambian con tu canal, en su idioma y su tono, y cuando Twitch dice cuánto dura la pausa también lo dicen. Las eliges, escribes las tuyas o apagas una para siempre en')} <a href="#personalita" data-scheda="personalita">${L('Personalità, «Le frasi del bot»', 'Personality, “The bot’s lines”', 'Personalidad, «Las frases del bot»')}</a>. ${L('Qui le spegni per una sera.', 'Here you switch them off for one evening.', 'Aquí las apagas por una noche.')}</p>
@@ -20094,6 +20132,11 @@ function _pubLeggi() {
 let _regiaGameId = '';
 STATI_SALVA['regia-salva-canale'] = { stato: () => _regiaGameId };
 let _regiaUptimeTimer = null;
+let _regiaLive = null;
+let _regiaAds = null;
+let _regiaAd = null;
+let _regiaAdChiave = '';
+let _regiaAdRilettura = null;
 let _catListe = 0;
 
 function _fmtUptime(startedAt) {
@@ -20106,9 +20149,9 @@ function _fmtUptime(startedAt) {
   return (h ? h + 'h ' : '') + (h ? due(m) : m) + 'm ' + due(ss) + 's';
 }
 
-function _fraSecondi(istante) {
+function _fraSecondi(istante, ora = Date.now()) {
   const t = Number(istante) || 0;
-  return t ? Math.ceil((t - Date.now()) / 1000) : 0;
+  return t ? Math.ceil((t - ora) / 1000) : 0;
 }
 
 function _fmtSecondi(s) {
@@ -20118,17 +20161,111 @@ function _fmtSecondi(s) {
   return (h ? h + 'h ' + due(m) : m) + 'm ' + due(ss) + 's';
 }
 
+function _regiaProssimaPub(ads) {
+  const ora = Date.now();
+  const l = _regiaAd?.lancio;
+  const t = Number(ads?.prossima) || 0;
+  if (l && l.quando > ora && (!(t > ora) || l.quando <= t)) return { quando: l.quando, durata: Number(l.secondi) || 0 };
+  return t > ora ? { quando: t, durata: Number(ads?.durata) || 0 } : { quando: 0, durata: 0 };
+}
+
+function _regiaAdMotivo(m) {
+  const t = {
+    'senza-diretta': L('il bot non ti vede ancora in diretta', 'the bot cannot see you live yet', 'el bot aún no te ve en directo'),
+    'in-pausa': L('c’è già una pubblicità in corso', 'an ad break is already running', 'ya hay un anuncio en curso'),
+    presto: L('Twitch non ne permette un’altra così presto', 'Twitch does not allow another one this soon', 'Twitch no permite otro tan pronto'),
+    offline: L('Twitch non ti vede in diretta', 'Twitch does not see you live', 'Twitch no te ve en directo'),
+    permesso: L('manca il permesso «pubblicità»', 'the “ads” permission is missing', 'falta el permiso «anuncios»'),
+    rifiutata: L('Twitch non l’ha accettata', 'Twitch did not accept it', 'Twitch no lo aceptó'),
+    canale: L('il canale non è collegato a Twitch', 'the channel is not linked to Twitch', 'el canal no está conectado a Twitch'),
+    errore: L('Twitch non ha risposto', 'Twitch did not answer', 'Twitch no respondió'),
+    prima: L('è partita prima un’altra pubblicità', 'another ad break started first', 'empezó antes otro anuncio'),
+    finita: L('la diretta è finita prima', 'the stream ended first', 'el directo terminó antes'),
+  };
+  return t[m] || '';
+}
+
+function _regiaAdRighe(ora) {
+  const a = _regiaAd || {};
+  const righe = [];
+  const conto = (t) => `<strong data-conto="${Number(t)}">${_fmtSecondi(Math.max(0, _fraSecondi(t, ora)))}</strong>`;
+  const l = a.lancio;
+  if (l && l.quando > ora) {
+    const testo = L(`Pubblicità di ${l.secondi}s fra`, `${l.secondi}s ad in`, `Anuncio de ${l.secondi}s en`);
+    righe.push({ chiave: 'lancio' + l.quando, cls: '', detto: `${testo} ${_fmtSecondi(_fraSecondi(l.quando, ora))}`,
+      html: `${_bIco(ICO.tv)}${testo} ${conto(l.quando)}. <button type="button" class="btn secondario mini" id="regia-ad-annulla">${L('Annulla', 'Cancel', 'Cancelar')}</button>` });
+  } else if (l) {
+    const testo = L('La pubblicità sta partendo…', 'The ad is starting…', 'El anuncio está empezando…');
+    righe.push({ chiave: 'parte' + l.quando, cls: '', detto: testo, html: `${_bIco(ICO.tv)}${testo}` });
+  } else if (Number(a.pausaFino) > ora) {
+    const testo = L('Pubblicità in corso: torni fra', 'Ad break running: you are back in', 'Anuncio en curso: vuelves en');
+    righe.push({ chiave: 'pausa' + a.pausaFino, cls: '', detto: `${testo} ${_fmtSecondi(_fraSecondi(a.pausaFino, ora))}`,
+      html: `${_bIco(ICO.tv)}${testo} ${conto(a.pausaFino)}.` });
+  } else if (a.esito && !a.esito.ok && ora - Number(a.esito.a) < 10 * 60_000) {
+    const testo = `${L('L’ultima pubblicità non è partita:', 'The last ad did not start:', 'El último anuncio no empezó:')} ${_regiaAdMotivo(a.esito.motivo) || L('Twitch non l’ha fatta partire', 'Twitch did not start it', 'Twitch no lo lanzó')}.`;
+    righe.push({ chiave: 'esito' + a.esito.a, cls: ' guaio', detto: testo, html: `${_bIco(ICO.avviso)}${esc(testo)}` });
+  }
+  if (Number(a.prossimoLancioDa) > ora && !(l && l.quando > ora)) {
+    const testo = L('Twitch ne permette un’altra fra', 'Twitch allows another one in', 'Twitch permite otro en');
+    righe.push({ chiave: 'attesa' + a.prossimoLancioDa, cls: '', detto: `${testo} ${_fmtSecondi(_fraSecondi(a.prossimoLancioDa, ora))}`,
+      html: `${_bIco(ICO.orologio)}${testo} ${conto(a.prossimoLancioDa)}.` });
+  }
+  return righe;
+}
+
+function _regiaAdDisegna(ora = Date.now()) {
+  const box = _g('regia-ad-stato');
+  if (!box) return false;
+  const righe = _regiaAdRighe(ora);
+  const chiave = righe.map((r) => r.chiave).join('|');
+  if (chiave !== _regiaAdChiave) {
+    const fuoco = box.contains(document.activeElement);
+    _regiaAdChiave = chiave;
+    box.innerHTML = righe.map((r) => `<p class="tg-stato${r.cls}">${r.html}</p>`).join('');
+    box.hidden = !righe.length;
+    const detto = _g('regia-ad-detto');
+    if (detto) detto.textContent = righe.map((r) => r.detto).join(' ');
+    if (fuoco) _g('regia-ad')?.focus();
+  } else {
+    box.querySelectorAll('[data-conto]').forEach((el) => { el.textContent = _fmtSecondi(Math.max(0, _fraSecondi(el.dataset.conto, ora))); });
+  }
+  const l = _regiaAd?.lancio;
+  if (l && l.quando <= ora && !_regiaAdRilettura) _regiaAdRileggi(0, l.quando);
+  return righe.some((r) => !r.chiave.startsWith('esito')) || !!l;
+}
+
+function _regiaAdAggiorna(dati) {
+  if (dati) _regiaAd = { lancio: dati.lancio || null, esito: dati.esito || null, prossimoLancioDa: Number(dati.prossimoLancioDa) || 0, pausaFino: Number(dati.pausaFino) || 0 };
+  if (_regiaLive) renderRegiaStato(_regiaLive, _regiaAds);
+  _regiaOrologio();
+}
+
+function _regiaAdRileggi(volte, dopo = 0) {
+  clearTimeout(_regiaAdRilettura);
+  _regiaAdRilettura = setTimeout(async () => {
+    let d = null;
+    try { d = await api('/api/streamer/regia/pubblicita/stato'); } catch {  }
+    const arrivato = d && (!dopo || d.lancio || (d.esito && Number(d.esito.a) >= dopo - 1000));
+    if (!arrivato && volte < 5) { _regiaAdRileggi(volte + 1, dopo); return; }
+    _regiaAdRilettura = null;
+    _regiaAdAggiorna(d || { ..._regiaAd, lancio: null });
+  }, 1500);
+}
+
 function renderRegiaStato(live, ads) {
   const box = document.getElementById('regia-stato');
   if (!box) return;
+  _regiaLive = live;
+  _regiaAds = ads;
   if (!live || !live.online) {
     box.innerHTML = `<div class="regia-badge off">● OFFLINE</div><p class="tenue spazio-sopra">${L('Non sei in diretta adesso. Titolo, categoria e tag puoi impostarli lo stesso.', 'You’re not live right now. You can still set the title, category and tags.', 'No estás en directo ahora. Igualmente puedes fijar título, categoría y etiquetas.')}</p>`;
     return;
   }
   let adInfo = '';
-  const fra = _fraSecondi(ads?.prossima);
+  const prossima = _regiaProssimaPub(ads);
+  const fra = _fraSecondi(prossima.quando);
   if (fra > 0) {
-    const dura = Number(ads?.durata) || 0;
+    const dura = prossima.durata;
     adInfo = `<div class="regia-metrica" data-pub-prossima><span>${L('Prossima pubblicità', 'Next ad', 'Próximo anuncio')}</span><strong id="regia-pub-fra">${_fmtSecondi(fra)}</strong></div>`
       + (dura > 0 ? `<div class="regia-metrica" data-pub-prossima><span>${L('Durerà', 'It will last', 'Durará')}</span><strong>${_fmtSecondi(dura)}</strong></div>` : '');
   }
@@ -20145,13 +20282,16 @@ async function caricaRegia() {
   const box = document.getElementById('regia-stato');
   if (!box) return;
   if (DEMO) {
+    _regiaAd = await api('/api/streamer/regia/pubblicita/stato');
     renderRegiaStato({ online: true, viewers: _DEMO_DIRETTA.spettatori, startedAt: new Date(_DEMO_DIRETTA.dal).toISOString() }, null);
+    _regiaOrologio();
     const sel = document.getElementById('regia-gioco-sel'); if (sel) sel.textContent = _DEMO_DIRETTA.gioco;
     _pub = { conf: { acceso: true, colore: 'primary', quanto: 60, tolleranza: 120,
       prima: { acceso: true, testo: 'Fra poco parte la pubblicità: restate qui, torno subito.' },
       durante: { acceso: true, testo: 'Pubblicità per {secondi} secondi. Non andate via, ci vediamo fra poco.' },
       dopo: { acceso: true, testo: 'Eccomi, sono tornato.' } },
-    limiti: { colori: ['primary', 'blue', 'green', 'orange', 'purple'], preavvisoMin: 15, preavvisoMax: 300, tolleranzaMax: 600 } };
+    limiti: { colori: ['primary', 'blue', 'green', 'orange', 'purple'], preavvisoMin: 15, preavvisoMax: 300, tolleranzaMax: 600, lancioMax: 300, durataMin: 30, durataMax: 180 } };
+    _regiaAdLimiti(_pub.limiti);
     _pubDisegna();
     return;
   }
@@ -20172,20 +20312,9 @@ async function caricaRegia() {
     } else banner.hidden = true;
   }
 
+  _regiaAd = d.lancio || null;
   renderRegiaStato(d.live, d.ads);
-  clearInterval(_regiaUptimeTimer);
-  if (d.live && d.live.online && d.live.startedAt) {
-    _regiaUptimeTimer = setInterval(() => {
-      const u = document.getElementById('regia-uptime');
-      if (!u) { clearInterval(_regiaUptimeTimer); return; }
-      u.textContent = _fmtUptime(d.live.startedAt);
-      const f = document.getElementById('regia-pub-fra');
-      if (!f) return;
-      const fra = _fraSecondi(d.ads?.prossima);
-      if (fra > 0) f.textContent = _fmtSecondi(fra);
-      else document.querySelectorAll('[data-pub-prossima]').forEach((el) => el.remove());
-    }, 1000);
-  }
+  _regiaOrologio();
 
   const t = document.getElementById('regia-titolo'); if (t) t.value = d.canale?.title || '';
   const tags = document.getElementById('regia-tags'); if (tags) tags.value = (d.canale?.tags || []).join(', ');
@@ -20196,7 +20325,36 @@ async function caricaRegia() {
   const raidBox = document.getElementById('regia-raid-box'); if (raidBox) raidBox.style.display = p.raid ? '' : 'none';
 
   _pub = { conf: d.pubblicita, limiti: d.limiti, permessi: p };
+  _regiaAdLimiti(d.limiti);
   _pubDisegna();
+}
+
+function _regiaTic() {
+  const ora = Date.now();
+  let ancora = false;
+  const u = _g('regia-uptime');
+  if (u && _regiaLive?.online && _regiaLive.startedAt) { u.textContent = _fmtUptime(_regiaLive.startedAt); ancora = true; }
+  const f = _g('regia-pub-fra');
+  if (f) {
+    const fra = _fraSecondi(_regiaProssimaPub(_regiaAds).quando, ora);
+    if (fra > 0) { f.textContent = _fmtSecondi(fra); ancora = true; }
+    else document.querySelectorAll('[data-pub-prossima]').forEach((el) => el.remove());
+  }
+  return _regiaAdDisegna(ora) || ancora;
+}
+
+function _regiaOrologio() {
+  clearInterval(_regiaUptimeTimer);
+  _regiaUptimeTimer = null;
+  if (!_regiaTic()) return;
+  _regiaUptimeTimer = setInterval(() => { if (!_regiaTic()) { clearInterval(_regiaUptimeTimer); _regiaUptimeTimer = null; } }, 1000);
+}
+
+function _regiaAdLimiti(lim) {
+  const max = Number(lim?.lancioMax) || 300;
+  _g('regia-ad-fra')?.querySelectorAll('option').forEach((o) => { o.hidden = o.disabled = Number(o.value) > max; });
+  const dMin = Number(lim?.durataMin) || 30, dMax = Number(lim?.durataMax) || 180;
+  _g('regia-ad-durata')?.querySelectorAll('option').forEach((o) => { o.hidden = o.disabled = Number(o.value) < dMin || Number(o.value) > dMax; });
 }
 
 function _cercaCategorie(input, lista, { alScegli, dilloSeVuoto = false }) {
@@ -31595,9 +31753,29 @@ function attivaPiattaforma() {
     toast(L('Marker messo nel VOD', 'Marker added to the VOD', 'Marcador puesto en el VOD'));
   }));
   document.getElementById('regia-ad')?.addEventListener('click', () => conErrore(async () => {
-    const r = await api('/api/streamer/regia/pubblicita', { method: 'POST', body: { durata: Number(document.getElementById('regia-ad-durata')?.value) || 60 } });
-    toast(L(`Pubblicità di ${r.length}s avviata`, `${r.length}s ad started`, `Anuncio de ${r.length}s iniciado`));
+    const fra = Number(_g('regia-ad-fra')?.value) || 0;
+    let r;
+    try {
+      r = await api('/api/streamer/regia/pubblicita', { method: 'POST', body: { durata: Number(_g('regia-ad-durata')?.value) || 60, fra } });
+    } catch (e) {
+      const perche = _regiaAdMotivo(e.dati?.motivo);
+      const da = _fraSecondi(e.dati?.da);
+      if (!e.dati?.da) _regiaAdRileggi(5);
+      throw new Error(perche ? `${L('la pubblicità non parte:', 'the ad does not start:', 'el anuncio no empieza:')} ${perche}${da > 0 ? `. ${L('Si può fra', 'You can in', 'Se puede en')} ${_fmtSecondi(da)}` : ''}.` : e.message);
+    }
+    _regiaAdAggiorna(r);
+    if (r.quando) toast(L(`Pubblicità di ${r.secondi}s programmata: il conto è partito`, `${r.secondi}s ad scheduled: the countdown has started`, `Anuncio de ${r.secondi}s programado: la cuenta ha empezado`));
+    else toast(L(`Pubblicità di ${r.length}s avviata`, `${r.length}s ad started`, `Anuncio de ${r.length}s iniciado`));
   }));
+  _g('regia-ad-stato')?.addEventListener('click', (e) => {
+    if (!e.target.closest?.('#regia-ad-annulla')) return;
+    conErrore(async () => {
+      const r = await api('/api/streamer/regia/pubblicita/annulla', { method: 'POST' });
+      _regiaAdAggiorna(r);
+      _g('regia-ad')?.focus();
+      toast(r.ok ? L('Pubblicità annullata', 'Ad canceled', 'Anuncio cancelado') : L('Non c’era più niente da annullare', 'There was nothing left to cancel', 'Ya no había nada que cancelar'));
+    });
+  });
   document.getElementById('regia-raid')?.addEventListener('click', () => conErrore(async () => {
     const c = document.getElementById('regia-raid-canale')?.value || '';
     const r = await api('/api/streamer/regia/raid', { method: 'POST', body: { canale: c } });
