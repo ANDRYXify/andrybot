@@ -154,6 +154,16 @@ export function coinvolto(canale, login, giudizio = GIUDIZI.SOSPETTO, punti = 0,
   return inc;
 }
 
+// Un follow arrivato a scudo alzato, e non festeggiato (antibot.taciFollow).
+// Si conta e basta: chi era lo sa gia' `coinvolti`, se lo scudo l'ha giudicato.
+export function segnaTaciuto(canale) {
+  const inc = aperto(canale);
+  if (!inc) return null;
+  inc.taciuti = (Number(inc.taciuti) || 0) + 1;
+  programmaSalvataggio();
+  return inc;
+}
+
 // Cosa abbiamo fatto, e come è andata. La riga arriva dall'esecutore: qui si
 // conta e basta.
 export function segnaAzione(canale, { azione, esito }) {
@@ -235,6 +245,7 @@ export function sintesi(inc) {
     durata: Math.round(((inc.chiuso || Date.now()) - inc.aperto) / 1000),
     picco: inc.picco, azioni: inc.azioni,
     coinvolti: Object.keys(inc.coinvolti).length, per,
+    taciuti: Number(inc.taciuti) || 0,
     righe: inc.timeline.length,
   };
 }

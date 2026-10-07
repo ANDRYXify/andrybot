@@ -59,6 +59,11 @@ Tutto passa da un punto solo, `registra()`, che è già l'unico posto da cui pas
 ogni intervento. L'incidente si riempie da lì e nessuno deve ricordarsi di
 aggiornarlo.
 
+Un conto a parte: i **follow taciuti** (`taciuti`, `segnaTaciuto`). Da attacco in
+su un follow non si festeggia e non entra nel rapporto né nelle statistiche
+(docs/SCUDO.md): l'incidente è l'unico posto dove resta, come numero. Chi era, se
+lo scudo l'ha giudicato, lo dicono già i coinvolti.
+
 ## Il picco
 
 Dice **quanto è stato grave**, non com'è adesso: si aggiorna solo se si sale.
@@ -81,7 +86,9 @@ diversi avrebbero lo stesso nome.
 - `GET /api/antibot/incidenti` — l'elenco, con le sei risposte per ciascuno.
 - `GET /api/antibot/incidenti/:id` — uno solo, con la timeline e i coinvolti
   divisi per giudizio.
-- La console dello scudo riporta l'incidente aperto, se c'è.
+- La console dello scudo riporta l'incidente aperto, se c'è, e mentre i follow
+  sono fermi quanti ne sono arrivati senza festa. Il dettaglio di un incidente li
+  conta accanto ai giudizi.
 
 Vivono in `data/incidenti.json`. Si tengono centottanta giorni, e al massimo
 duecento per canale.

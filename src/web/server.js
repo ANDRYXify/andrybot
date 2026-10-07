@@ -49,7 +49,7 @@ import * as cancello from '../features/tg-cancello.js';
 import { permessiDi as permessiDiChat, guai as guaiCancello } from '../features/tg-ingresso.js';
 import { EVENTI as EVENTI_EFFETTI, MAX_LIVELLI as MAX_LIVELLI_EFFETTI, MAX_DA as MAX_DA_EFFETTI, MAX_PAUSA as MAX_PAUSA_EFFETTI, normalizza as normalizzaEffettiEventi } from '../features/effetti-eventi.js';
 import { elenco as elencoComandi, normalizza as normalizzaComandi, unisci as unisciComandi, collisioni as collisioniComandi, LIVELLI as LIVELLI_COMANDO, MODULI as MODULI_COMANDO, GRUPPI as GRUPPI_COMANDO } from '../features/comandi-registro.js';
-import { erroriScudo, statoEsecutore, azioniFallite, riprovaFallite, bonifica as bonificaIncidente, conNome, ESENTI_MAX, bloccaDaConsole } from '../features/antibot.js';
+import { erroriScudo, statoEsecutore, azioniFallite, riprovaFallite, bonifica as bonificaIncidente, conNome, ESENTI_MAX, bloccaDaConsole, taciFollow as taciFollowScudo } from '../features/antibot.js';
 import { statoCensimento } from '../features/punteggio.js';
 import { aperto as incidenteAperto, elenco as elencoIncidenti, uno as unIncidente, sintesi as sintesiIncidente } from '../features/incidenti.js';
 import { rapporto as rapportoBonifica, anteprima as anteprimaBonifica } from '../features/bonifica.js';
@@ -4158,6 +4158,9 @@ STREAMER (${su.toUpperCase()}) e non c'entra con l'automazione del marketing.
         coda: codaBan(login),
         assettoAuto: cfg.assettoAuto !== false,
         bloccoSulNascere: cfg.bloccoSulNascere !== false,
+        // i follow non si festeggiano: la levetta, e se adesso e' cosi'
+        taciFollow: cfg.taciFollow !== false,
+        followFermi: taciFollowScudo(login),
         togliFollow: cfg.togliFollow !== false,
         pulizia: _pulizie.get(login) || null,
         presenze: cfg.presenze !== false,

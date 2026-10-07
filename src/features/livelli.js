@@ -125,6 +125,14 @@ export function assettoDi(livello) {
     followerDaMinuti: l >= N.serrata ? 60 : 10,
     shieldMode: l >= N.attacco,
     bloccaOndata: l >= N.attacco,
+    // Sotto attacco un follow non si festeggia: niente alert, voce, effetti,
+    // ringraziamenti, muro, moduli, e non conta negli obiettivi. Con un'ondata
+    // di bot sarebbero trecento nomi da fabbrica (e spesso insulti) sullo
+    // schermo. La stessa soglia della serranda: l'attacco e' dichiarato. Il
+    // prezzo, detto allo streamer: in quei minuti non ha l'alert nemmeno chi
+    // segue davvero. Vedi docs/SCUDO.md, «Sotto attacco il follow non si
+    // festeggia».
+    taciFollow: l >= N.attacco,
     // Quante ore deve avere un account per non essere «appena nato». Più si
     // sale, più la porta è stretta.
     oreMinime: l >= N.serrata ? 168 : l >= N.difesa ? 72 : 24,

@@ -105,6 +105,7 @@ export default {
       '«in fila»: le azioni del tuo canale che aspettano il loro turno con Twitch. Compare solo se ce ne sono.',
       '«sola osservazione», se l\'hai accesa.',
       '«Attacco in corso da …» con il collegamento «Guarda nel registro», durante un attacco.',
+      '«Gli alert dei follow sono fermi finché dura.», da «sotto attacco» in su, con quanti follow sono arrivati senza festa.',
       '«Per bannare davvero servono i permessi di moderazione.» con «Concedi i permessi», se i permessi mancano.',
     ] },
     { p: [
@@ -133,7 +134,7 @@ export default {
       ['«sto guardando»', 'Lo scudo guarda di più e non tocca nessuno. Controlla i nomi da bot e chi guarda molti canali anche se hai spento quelle voci.'],
       ['«in allerta»', 'Gli account appena creati che scrivono vengono segnalati ai moderatori, anche se il trattenimento è spento.'],
       ['«in difesa»', 'Chat lenta, un messaggio ogni 10 secondi. I messaggi degli account nati da poco vengono trattenuti.'],
-      ['«sotto attacco»', 'Chat ai soli follower (chi segue da almeno 10 minuti) e Shield Mode di Twitch. Un\'ondata di follow riconosciuta come finta viene bloccata tutta insieme.'],
+      ['«sotto attacco»', 'Chat ai soli follower (chi segue da almeno 10 minuti) e Shield Mode di Twitch. Un\'ondata di follow riconosciuta come finta viene bloccata tutta insieme. I follow non fanno più partire alert e il resto (sotto, «Sotto attacco, niente alert dei follow»).'],
       ['«serrata»', 'Come «sotto attacco», con la porta più stretta: chat lenta a 30 secondi e solo chi segue da almeno 60 minuti.'],
     ] },
     { p: [
@@ -165,10 +166,12 @@ export default {
       ['«Rileva le ondate di follow (attacco follow-bot)»', 'acceso', '', 'Conta i follow e fa scattare l\'allarme.'],
       ['«Allarme oltre … follow in … secondi»', '10 follow in 30 secondi', 'da 3 a 100 follow, da 5 a 300 secondi', 'Con 10 e 30, il decimo follow nel giro di mezzo minuto fa scattare l\'allarme.'],
       ['«Durante un\'ondata, banna anche i follow sospetti (aggressivo)»', 'spento', '', 'Finché dura l\'allarme, ogni nuovo follow riceve l\'azione di «Cosa fare quando è sicuro», cioè il blocco. Colpisce anche le persone vere arrivate in quel momento.'],
+      ['«Sotto attacco, niente alert dei follow»', 'acceso', '', 'Da «sotto attacco» in su un follow di Twitch non fa partire alert, suoni, voce, effetti, ringraziamenti in chat, muro delle emote e moduli, non cambia «ultimo follower» e obiettivi e non entra nel rapporto della serata né nelle statistiche. Quelli già in fila in scena si buttano, quello a schermo finisce. Quando lo scudo scende a «in difesa», i follow tornano a fare festa.'],
     ] },
     { p: [
       'L\'allarme finisce nel registro e alza il livello dello scudo. Da solo non banna e non blocca nessuno.',
       'Quando lo scudo arriva a «sotto attacco» e l\'ondata è riconosciuta come finta, la blocca <strong>tutta insieme</strong>, compresi i primi follow che hanno fatto scattare l\'allarme. Chi scrive nel tuo canale da tempo viene lasciato stare.',
+      'Con «Sotto attacco, niente alert dei follow» c\'è un prezzo: in quei minuti l\'alert non lo ha nemmeno chi segue davvero. Una clip che gira da sola non arriva a «sotto attacco», quindi non ferma niente. Il follow che fa scattare l\'attacco è già fermo, perché lo scudo lo guarda per primo. In sola osservazione gli alert restano, e il registro scrive che li avrebbe fermati. Kick non c\'entra: lo scudo guarda Twitch, e i follow di Kick fanno festa come sempre. Gli alert che mostra Twitch (la scelta «Twitch» o «Tutti e due» negli alert) non passano dal bot e non si possono fermare da qui.',
     ] },
 
     { p: ['<strong>Chi fermare.</strong>'] },
@@ -247,6 +250,7 @@ export default {
       ['«certi»', 'Riconosciuti come parte dell\'attacco: lo scudo li ha fermati.'],
       ['«sospetti»', 'Arrivati durante l\'ondata finta, senza prove che vengano dalla stessa fabbrica. Lo scudo non li ha toccati.'],
       ['«legittimi»', 'Arrivati durante l\'attacco senza niente contro. Restano dove sono.'],
+      ['«follow senza alert»', 'I follow arrivati mentre gli alert dei follow erano fermi. Compare solo se ce ne sono stati.'],
     ] },
     { p: [
       '<strong>La pulizia.</strong> Se ci sono follower giudicati bot, leggi «Si possono togliere N follower giudicati bot.». Si tolgono i <strong>certi</strong> di cui Twitch ha dato l\'id, con il blocco, così sparisce anche il follow. I legittimi non compaiono nemmeno. I nomi in «Non toccare mai» e i bot di servizio restano fuori.',
@@ -296,6 +300,7 @@ export default {
     { d: 'Lo scudo scatta a ogni clip che gira.', r: 'Alza «Allarme oltre … follow in … secondi» o scegli «prudente» in «Quanto presto reagire:», poi premi «Salva lo scudo». Un\'ondata di persone vere da sola non chiude la chat: la chiude solo la prova che è una macchina.' },
     { d: 'Uno spettatore nuovo non riesce a scrivere.', r: 'Il suo account è più giovane delle ore impostate e il messaggio viene trattenuto. Scrivi <code>!permetti nome</code> in chat, oppure aggiungilo in «Non toccare mai».' },
     { d: 'La chat è rimasta ai soli follower.', r: 'Lo scudo scende di un gradino ogni 5 minuti di calma e riapre da solo quello che aveva chiuso. Se la chat ai soli follower l\'avevi messa tu prima dell\'attacco, la togli tu da Twitch.' },
+    { d: 'Durante un attacco non escono gli alert dei follow.', r: 'È voluto: con un\'ondata di bot sarebbero centinaia di nomi finti sullo schermo. Tornano quando lo scudo scende a «in difesa». Se li vuoi comunque, spegni «Sotto attacco, niente alert dei follow» e premi «Salva lo scudo».' },
     { d: 'Lo scudo non chiude la chat e non attiva lo Shield Mode.', r: 'Mancano i permessi aggiunti per lo scudo. In <em>Stato</em> cerca la carta «Nuovi permessi da concedere» e premi «Aggiorna i permessi».' },
     { d: 'Il mio moderatore non vede lo stato dello scudo e il registro.', r: 'Sono del proprietario del canale. Un moderatore del pannello può cambiare i filtri e le scelte dello scudo; il registro e le liste no. Come si invita un moderatore lo trovi nel <a href="/manuale/account">manuale dell\'account</a>.' },
     { d: '«Togli i follower finti» non accetta il numero.', r: 'Il numero è cambiato mentre guardavi: sono arrivati altri giudizi. Riscrivi il numero nuovo che ti mostra il pannello.' },

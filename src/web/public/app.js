@@ -29293,7 +29293,9 @@ function pannelloScudo() {
         </div>
         <div class="mod-griglia spazio-sopra">
           ${modVoce('chk-ab-rafbanna', ab.rafficaBanna, L('Durante un\'ondata, banna anche i follow sospetti (aggressivo)', 'During a wave, also ban suspicious follows (aggressive)', 'Durante una oleada, banea también los follows sospechosos (agresivo)'))}
+          ${modVoce('chk-ab-tacifollow', sel(ab.taciFollow, true), L('Sotto attacco, niente alert dei follow', 'Under attack, no follow alerts', 'Bajo ataque, sin alertas de follows'))}
         </div>
+        <p class="suggerimento">${L('Mentre lo scudo segna «sotto attacco», un follow non fa partire alert, suoni, effetti, ringraziamenti in chat, muro delle emote e moduli, e non entra negli obiettivi né nel rapporto della serata: con un\'ondata di bot sarebbero centinaia di nomi da fabbrica sullo schermo. Il prezzo: in quei minuti l\'alert non lo ha nemmeno chi segue davvero. Gli alert che mostra Twitch non dipendono da noi.', 'While the shield says “under attack”, a follow triggers no alert, sound, effect, chat thanks, emote wall or modules, and does not count toward goals or the stream report: with a bot wave it would be hundreds of factory-made names on screen. The cost: in those minutes, even people who really follow get no alert. Alerts shown by Twitch are not up to us.', 'Mientras el escudo marca «bajo ataque», un follow no lanza alertas, sonidos, efectos, agradecimientos en el chat, muro de emotes ni módulos, y no entra en los objetivos ni en el informe del directo: con una oleada de bots serían cientos de nombres de fábrica en pantalla. El precio: en esos minutos ni siquiera quien sigue de verdad tiene su alerta. Las alertas que muestra Twitch no dependen de nosotros.')}</p>
         </div>
 
         <div class="mod-sez">
@@ -29514,6 +29516,7 @@ async function apriIncidente(id) {
   box.innerHTML = `
     <div class="reg-inc-conti">
       ${[['certo', L('certi', 'certain', 'seguros')], ['sospetto', L('sospetti', 'suspect', 'sospechosos')], ['legittimo', L('legittimi', 'legitimate', 'legítimos')]].map(([g, nome]) => `<span class="reg-conto"><b>${Number(per[g] || 0)}</b> ${nome}</span>`).join('')}
+      ${Number(d.incidente?.taciuti) ? `<span class="reg-conto"><b>${Number(d.incidente.taciuti)}</b> ${L('follow senza alert', 'follows without an alert', 'follows sin alerta')}</span>` : ''}
     </div>
     ${(d.timeline || []).length ? `<ol class="reg-timeline">${d.timeline.slice(-12).map((t) => `<li><small>${regQuando(t.ts)}</small> ${esc(t.cosa || '')}</li>`).join('')}</ol>` : ''}
     ${ant.quanti ? `
@@ -29724,6 +29727,7 @@ async function caricaScudo() {
     </div>
     ${s.aVuoto ? `<p class="suggerimento spazio-sopra"><span class="badge giallo">${L('sola osservazione', 'observe only', 'solo observar')}</span> ${L('lo scudo scrive cosa farebbe e non tocca nessuno.', 'the shield logs what it would do and touches nobody.', 'el escudo anota lo que haría y no toca a nadie.')}</p>` : ''}
     ${s.incidente ? `<p class="suggerimento spazio-sopra">${L('Attacco in corso da', 'Attack ongoing since', 'Ataque en curso desde')} ${regQuando(s.incidente.aperto)}. <a href="#registro" data-scheda="registro">${L('Guarda nel registro', 'See it in the log', 'Míralo en el registro')}</a></p>` : ''}
+    ${s.followFermi ? `<p class="suggerimento">${L('Gli alert dei follow sono fermi finché dura.', 'Follow alerts are paused while it lasts.', 'Las alertas de follows están paradas mientras dure.')}${Number(s.incidente?.taciuti) ? ` ${L('Follow arrivati senza festa:', 'Follows that came in without a celebration:', 'Follows llegados sin celebración:')} <b>${Number(s.incidente.taciuti)}</b>.` : ''}</p>` : ''}
     ${!s.moderazioneOk ? `<p class="suggerimento spazio-sopra">${L('Per bannare davvero servono i permessi di moderazione.', 'To actually ban, moderation permissions are needed.', 'Para banear de verdad hacen falta permisos de moderación.')} <a class="btn secondario mini" href="/auth/permessi">${L('Concedi i permessi', 'Grant permissions', 'Concede los permisos')}</a></p>` : ''}`;
 
   scudoRenderLista('extra', d.liste?.extra || []);
@@ -30315,6 +30319,7 @@ function attivaPiattaforma() {
         rafficaQuanti: Number(document.getElementById('inp-ab-quanti').value),
         rafficaSecondi: Number(document.getElementById('inp-ab-secondi').value),
         rafficaBanna: document.getElementById('chk-ab-rafbanna').checked,
+        taciFollow: document.getElementById('chk-ab-tacifollow').checked,
         nomiBot: document.getElementById('chk-ab-nomi').checked,
         listaAuto: document.getElementById('chk-ab-listaauto').checked,
         presenze: document.getElementById('chk-ab-presenze').checked,

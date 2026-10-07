@@ -76,7 +76,7 @@ import { ClipEngine } from './features/clips.js';
 import { PenitenzeEngine } from './features/penitenze.js';
 import { AlertsEngine } from './features/alerts.js';
 import { MuroEmote } from './features/muro.js';
-import { AntiBot, caricaListaBotDaDisco, aggiornaListaBot, caricaRegistroDaDisco, spegniScudo } from './features/antibot.js';
+import { AntiBot, caricaListaBotDaDisco, aggiornaListaBot, caricaRegistroDaDisco, spegniScudo, taciFollow, contaTaciuto } from './features/antibot.js';
 import { censisci } from './features/punteggio.js';
 import { carica as caricaRete } from './features/rete.js';
 import { carica as caricaIncidenti } from './features/incidenti.js';
@@ -220,13 +220,15 @@ export class BotManager {
     this.clips = new ClipEngine({ helix: this.helix, say: (ch, t) => this.say(ch, t) });
     // Il muro delle emote: la chat, gli eventi e i premi che fanno volare emote.
     this.muro = new MuroEmote({ effects: this.effects, helix: this.helix });
-    this.alerts = new AlertsEngine({ effects: this.effects, say: (ch, t) => this.say(ch, t), muro: this.muro });
+    this.alerts = new AlertsEngine({ effects: this.effects, say: (ch, t) => this.say(ch, t), taci: (ch) => taciFollow(ch), muro: this.muro });
     // Anti-bot (stile Sery_Bot): raffiche di follow, nomi da bot, hate-raid.
     this.antibot = new AntiBot({
       helix: this.helix,
       say: (ch, t) => this.say(ch, t),
       chatSettings: (ch, o) => this.helix.chatSoloFollower(ch, !!o.followersOnly, 0),
       alert: (ch, a) => { try { this.alerts?.manuale?.(ch, a); } catch { /* facolt. */ } },
+      // lo scudo e' salito ad attacco: le scene buttano i follow ancora in fila
+      followFermi: (ch) => this.effects?.emit?.(ch, { tipo: 'scudo', followFermi: true }),
     });
     // Le modalita' della chat a tempo (solo emote per due minuti): quello che
     // era acceso prima di un riavvio si riprende da dove era.
@@ -1540,6 +1542,21 @@ export class BotManager {
   _dispatchEvent(ev) {
     const { channel, type, data } = ev;
     const suTwitch = !ev.piattaforma || ev.piattaforma === 'twitch';
+    // IL FOLLOW SOTTO ATTACCO (docs/SCUDO.md). Lo scudo lo vede PER PRIMO: il
+    // livello lo scrive prima di qualunque attesa, quindi quando torna qui il
+    // follow che ha fatto scattare l'attacco e' gia' dentro. A scudo alzato il
+    // follow arriva solo a lui: niente alert, voce, effetti, ringraziamenti,
+    // muro, moduli, plugin, e niente riga nel rapporto e nelle statistiche (sono
+    // bot, che col blocco Twitch toglie anche dal conto). Si conta
+    // nell'incidente. Anche il «bentornato»: e' un follow come gli altri. Kick
+    // no: lo scudo guarda solo Twitch.
+    if (suTwitch && (type === 'channel.follow' || type === 'channel.follow.ritorno')) {
+      if (type === 'channel.follow') {
+        try { Promise.resolve(this.antibot?.onFollow(ev)).catch((e) => log.error(`#${channel} anti-bot follow:`, e?.message || e)); }
+        catch (e) { log.error(`#${channel} anti-bot evento:`, e?.message || e); }
+      }
+      if (taciFollow(channel)) { contaTaciuto(channel); return; }
+    }
     const dire = this.vocePer({ channel, piattaforma: ev.piattaforma });
     memory.logMessage(channel, '[evento]', '', rigaEvento(type, data), true);
     this.brain?.onEvent?.(ev, (text) => dire(text));
@@ -1553,10 +1570,9 @@ export class BotManager {
     // momento in cui puo' essere cambiata, quindi e' l'unico in cui vale la pena
     // richiederla. Cosi' chi scrive «!bit» appena dopo si vede gia' dentro.
     if (type === 'channel.cheer') { try { bit.scorda(channel); this._classificaBitInScena(channel); } catch { /* niente */ } }
-    // anti-bot: follow-bot (raffiche + nomi noti) e hate-raid
+    // anti-bot: l'hate-raid. I follow li ha gia' visti, in cima.
     try {
-      if (suTwitch && type === 'channel.follow') this.antibot?.onFollow(ev);
-      else if (suTwitch && type === 'channel.raid') this.antibot?.onRaid(ev);
+      if (suTwitch && type === 'channel.raid') this.antibot?.onRaid(ev);
     } catch (e) { log.error(`#${channel} anti-bot evento:`, e?.message || e); }
     if (type === 'channel.raid') { this._bossDelRaid(channel, data); this._arenaDelRaid(channel, data); }
     // moduli: automazioni con trigger 'evento' (follow, sub, raid, cheer, ...)

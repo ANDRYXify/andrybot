@@ -88,6 +88,7 @@ export function normalizzaAntibot(vecchio = {}, arrivato = {}) {
     bloccoSulNascere: a.bloccoSulNascere !== false,
     coroQuanti: num(a.coroQuanti, 3, 20, 4),
     togliFollow: a.togliFollow !== false,
+    taciFollow: a.taciFollow !== false,
     aVuoto: a.aVuoto === true,
     modo: ['prudente', 'bilanciata', 'aggressiva'].includes(a.modo) ? a.modo : 'bilanciata',
     presenze: a.presenze !== false,

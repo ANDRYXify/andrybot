@@ -137,6 +137,54 @@ di tre minuti — è il limite di Twitch, non nostro.
 Il giudizio sull'ondata si rifà ogni venticinque follow: un'ondata può cambiare
 faccia a metà.
 
+## Sotto attacco il follow non si festeggia
+
+Un'ondata di follow-bot sono centinaia di nomi da fabbrica, spesso insulti, e
+ognuno era una festa: l'alert in scena col suo suono e la sua voce, l'effetto,
+il ringraziamento in chat, l'esplosione del muro delle emote, i moduli, l'«ultimo
+follower» e l'obiettivo che salivano. Il limite dei novanta secondi in coda
+(docs/OVERLAY.md, regola 9) li riduceva, non li toglieva.
+
+Ora da **attacco** in su un follow di Twitch arriva **solo allo scudo**. Una
+regola sola, `taciFollow` in `assettoDi`: la stessa soglia della serranda,
+perché è il momento in cui l'attacco è dichiarato.
+
+- **Lo scudo guarda per primo.** Il bot gli passa il follow prima di chiunque
+  altro (`_dispatchEvent`), e lo scudo scrive il livello nuovo prima di
+  qualunque attesa (`_alza`). Così, quando il bot chiede `taciFollow`, anche il
+  follow che ha fatto scattare l'attacco è già dentro. Prima lo scudo lo vedeva
+  per ultimo, dopo che tutti gli altri l'avevano già festeggiato.
+- **Taciuto vuol dire tutto.** Niente alert, suono, voce, effetto, ringraziamento,
+  muro, moduli, plugin, ultimo follower, obiettivo; e niente riga fra gli eventi,
+  quindi niente nel rapporto della serata e nelle statistiche. Sono bot, che col
+  blocco Twitch toglie anche dal conto dei follower. Il follow si conta
+  nell'**incidente** (`taciuti`), che è l'unico posto dove resta: la console lo
+  mostra mentre dura e nel dettaglio dopo.
+- **Il «bentornato» pure**: è un follow come gli altri. **Kick no**: lo scudo
+  guarda solo Twitch. Gli altri eventi (sub, bit, raid, donazioni) si festeggiano
+  come sempre.
+- **Quello che era già in fila.** Nell'istante in cui si sale ad attacco il bot
+  dice alle scene di buttare i follow ancora in fila (`followFermi`, il messaggio
+  `{ tipo: 'scudo' }`); quello sullo schermo finisce. Le scene riconoscono i
+  follow di Twitch dal segno `scudo` che il server mette sui loro alert ed
+  effetti: un follow di Kick in fila nello stesso istante resta. L'effetto di un
+  follow parte un attimo dopo il suo alert, e prima di partire ricontrolla.
+- **Due eccezioni, scelte dallo streamer.** In **sola osservazione** non tace
+  niente e il registro scrive che l'avrebbe fatto, come per le modalità della
+  chat. E c'è una levetta, accesa di serie («Sotto attacco, niente alert dei
+  follow»), per chi preferisce la festa comunque.
+- **Quando lo scudo scende**, a «difesa», i follow tornano a fare festa: la
+  serranda si riapre lì, e la festa con lei.
+
+Il prezzo, detto nel pannello: in quei minuti l'alert non lo ha nemmeno chi
+segue davvero. Una clip virale da sola non arriva ad attacco (la raffica pesa al
+massimo 45 punti, l'attacco ne chiede 70 nella modalità di serie), quindi non
+tace niente; ci arriva un'ondata giudicata artificiale, il coro, il
+gocciolamento dalla stessa fabbrica.
+
+Gli alert che mostra **Twitch** (la scelta «Twitch» o «Tutti e due» negli alert,
+docs/ALERT-TWITCH.md) non passano da noi e non si possono fermare da qui.
+
 ## Il coro
 
 È la firma dell'hate-raid, ed è quello che mancava del tutto: non conta chi scrive

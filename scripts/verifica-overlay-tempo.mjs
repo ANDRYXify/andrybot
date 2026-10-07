@@ -96,6 +96,14 @@ const ROTTURE = [
     'un tema che non si applica non lo dice a nessuno'],
   [OVL, "    if (ev.kind === 'follow' && ora - (ev._arrivo || ora) > FOLLOW_VECCHIO_MS) continue;\n", '',
     'un follow rimasto in coda per minuti esce lo stesso'],
+  [OVL, "  for (let i = codaAlert.length - 1; i >= 0; i--) if (codaAlert[i].scudo === true) codaAlert.splice(i, 1);\n", '',
+    'sotto attacco i follow in fila escono lo stesso'],
+  [OVL, "  for (let i = codaVisiva.length - 1; i >= 0; i--) if (codaVisiva[i].scudo === true) codaVisiva.splice(i, 1);\n", '',
+    'sotto attacco gli effetti dei follow in fila escono lo stesso'],
+  [OVL, "if (codaAlert[i].scudo === true) codaAlert.splice", "if (codaAlert[i].kind === 'follow') codaAlert.splice",
+    'sotto attacco spariscono anche i follow di Kick, che lo scudo non guarda'],
+  [OVL, "    else if (dati.tipo === 'scudo') { if (dati.followFermi) fermaFollow(); }\n", '',
+    'il messaggio dello scudo non arriva alla scena'],
   [CSS, 'line-height: 1.15; overflow-wrap: anywhere;\n  letter-spacing', 'line-height: 1.15;\n  letter-spacing',
     'un nome lunghissimo esce dal riquadro dell\'alert'],
   [OVL, 'const VERSO = /[\\u202A-\\u202E\\u2066-\\u2069]/g;', 'const VERSO = /(?!)/g;',
@@ -590,6 +598,33 @@ const PROVE = {
     dice(!v.some((a) => /Fede/.test(a)), 'un follow rimasto in coda per due minuti non esce', 'uscito: ' + v.join(' · '));
     dice(v.some((a) => /Sara/.test(a)), 'l\'abbonamento in coda esce', 'usciti: ' + v.join(' · '));
     dice(v.some((a) => /Gino/.test(a)), 'e un follow appena arrivato esce', 'usciti: ' + v.join(' · '));
+  },
+
+  // 15b. SOTTO ATTACCO I FOLLOW IN FILA NON ESCONO (docs/SCUDO.md). Un alert a
+  // schermo e dietro due follow di Twitch, uno di Kick e un abbonamento; tre
+  // effetti, quello di mezzo di un follow di Twitch. Lo scudo sale: quello a
+  // schermo finisce, i follow di Twitch e il loro effetto non escono piu', il
+  // resto si'. Il segno lo mette il server (alerts.js, `scudo`).
+  async scudoFerma() {
+    const s = await scena('scudo-ferma');
+    await s.collegato();
+    await spiaScena(s);
+    s.ovl.manda({ tipo: 'alert', kind: 'sub', testo: 'Primo si e\' abbonato', durata: 2000 });
+    s.ovl.manda({ tipo: 'alert', kind: 'follow', scudo: true, testo: 'zzq1 ha cominciato a seguire', durata: 2000 });
+    s.ovl.manda({ tipo: 'alert', kind: 'follow', scudo: true, testo: 'zzq2 ha cominciato a seguire', durata: 2000 });
+    s.ovl.manda({ tipo: 'alert', kind: 'follow', testo: 'Kira ha cominciato a seguire', durata: 2000 });
+    s.ovl.manda({ tipo: 'alert', kind: 'sub', testo: 'Sara si e\' abbonata', durata: 2000 });
+    s.ovl.manda({ tipo: 'immagine', url: immagine(1), durata: 1500 });
+    s.ovl.manda({ tipo: 'immagine', url: immagine(2), durata: 1500, scudo: true });
+    s.ovl.manda({ tipo: 'immagine', url: immagine(3), durata: 1500 });
+    await s.finche(() => window.__alert.length >= 1 && window.__effetti.length >= 1, null, 3000);
+    s.ovl.manda({ tipo: 'scudo', followFermi: true });
+    await s.finche(() => window.__alert.some((a) => /Sara/.test(a)) && window.__effetti.length >= 2, null, 15000);
+    await attesa(2500);
+    const v = await s.leggi(() => ({ alert: window.__alert, effetti: window.__effetti }));
+    dice(!v.alert.some((a) => /zzq/.test(a)), 'sotto attacco i follow di Twitch in fila non escono', 'usciti: ' + v.alert.join(' · '));
+    dice(v.alert.some((a) => /Kira/.test(a)) && v.alert.some((a) => /Sara/.test(a)), 'il follow di Kick e l\'abbonamento in fila escono', 'usciti: ' + v.alert.join(' · '));
+    dice(v.effetti.length === 2 && !v.effetti.includes(immagine(2)), 'l\'effetto del follow di Twitch in fila non esce, gli altri si\'', `usciti ${v.effetti.length}`);
   },
 
   // 16. I TESTI STANNO NEL RIQUADRO. Un nome lunghissimo senza spazi va a capo

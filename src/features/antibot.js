@@ -79,6 +79,7 @@ export const ANTIBOT_DEFAULT = {
   bloccoSulNascere: true,      // ban in blocco dell'ondata quando è artificiale
   coroQuanti: 4,               // quante bocche diverse per lo stesso messaggio = coro
   togliFollow: true,           // sui follow-bot certi usa il BLOCCO, che toglie il follow
+  taciFollow: true,            // sotto attacco i follow non si festeggiano (docs/SCUDO.md)
 };
 
 // Bot NOTORIAMENTE buoni: non si toccano mai. In minuscolo.
@@ -461,6 +462,23 @@ export function assetto(channel) {
   return { livello: a.livello, numero: LIV.N[a.livello] ?? 0, punti: a.punti || 0, motivo: a.motivo, da: a.da, segnali: a.segnali || {} };
 }
 
+// SOTTO ATTACCO IL FOLLOW NON SI FESTEGGIA (docs/SCUDO.md). Lo decide il
+// livello (`taciFollow` in livelli.js), e due scelte dello streamer: la levetta
+// (accesa di serie) e la sola osservazione, in cui lo scudo non cambia niente
+// sul canale e scrive soltanto che l'avrebbe fatto. Lo chiede il bot per ogni
+// follow di Twitch, DOPO averlo fatto vedere allo scudo: cosi' anche il follow
+// che fa scattare l'attacco e' gia' dentro.
+export function taciFollow(channel, cfg = scudoDi(channel)) {
+  if (!cfg?.attivo || cfg.taciFollow === false || cfg.aVuoto === true) return false;
+  return assettoDi(assetto(channel).livello).taciFollow === true;
+}
+
+// Un follow taciuto si conta nell'incidente: e' l'unico posto in cui resta, e
+// il conto dice allo streamer quanta festa gli e' stata risparmiata.
+export function contaTaciuto(channel) {
+  try { inc.segnaTaciuto(norm(channel)); } catch (e) {  }
+}
+
 // ── Ritmo abituale del canale ───────────────────────────────────────────────
 // Una soglia sola non può valere per un canale da dieci spettatori e per uno da
 // cinquemila: su quello grande dieci follow in mezzo minuto sono un martedì
@@ -818,9 +836,12 @@ export async function spegniScudo(opzioni) {
 }
 
 export class AntiBot {
-  constructor({ helix, alert, say, chatSettings } = {}) {
+  constructor({ helix, alert, say, chatSettings, followFermi } = {}) {
     this.helix = helix;
     this.alert = alert;                 // (channel, {tipo, testo}) per l'overlay (facolt.)
+    // (channel): i follow si sono appena fermati. Il bot lo dice alle scene,
+    // che buttano gli alert dei follow ancora in fila (facolt.).
+    this.followFermi = followFermi;
     this.say = say;                      // (channel, testo)
     this.chatSettings = chatSettings;    // (channel, {followersOnly}) se il bot sa farlo (facolt.)
     // Chi decide non esegue: l'esecutore e' un altro modulo, e l'unica cosa che
@@ -922,6 +943,7 @@ export class AntiBot {
   async _alza(channel, livello, motivo, cfg, extra = {}) {
     const ch = norm(channel);
     const prima = assetti.get(ch);
+    const daLivello = prima?.livello || ASSETTO.CALMA;
     // Non si scende mai passando di qui: alzare è un gesto, abbassare è il
     // tempo che passa. Un allarme più lieve mentre ce n'è uno grave in corso
     // rimanda il rientro, non lo anticipa.
@@ -948,6 +970,18 @@ export class AntiBot {
     this.alert?.(ch, { tipo: 'antibot', testo: dev.serranda ? 'Sotto attacco: scudo alzato' : `Livello ${livello}` });
     if (extra.punti !== undefined) a.punti = extra.punti;
     if (extra.segnali) a.segnali = extra.segnali;
+
+    // I FOLLOW SI FERMANO qui, nell'istante in cui si sale: da adesso il bot
+    // non li festeggia (`taciFollow`), e quelli gia' in fila nelle scene si
+    // buttano. Non dipende da `assettoAuto`: quella e' la serranda su Twitch,
+    // questa e' una cosa nostra. In sola osservazione si scrive e basta.
+    if (dev.taciFollow && !assettoDi(daLivello).taciFollow && cfg.taciFollow !== false) {
+      if (this._aVuoto(cfg)) registra(ch, { azione: 'assetto', motivo: `${livello}: niente alert dei follow`, esito: 'a-vuoto' });
+      else {
+        try { inc.racconta(ch, 'i follow non si festeggiano finché dura'); } catch (e) {  }
+        try { this.followFermi?.(ch); } catch (e) { log.debug(`#${ch} follow fermi:`, e?.message || e); }
+      }
+    }
 
     if (cfg.assettoAuto === false) return;
 

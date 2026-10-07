@@ -27,7 +27,7 @@ migliore, «per prudenza».
 | 1 | **osservo** | i controlli sui nomi e sulle presenze si accendono; niente si tocca |
 | 2 | **allerta** | gli account appena nati che scrivono vengono **segnalati** ai mod |
 | 3 | **difesa** | chat lenta, e i messaggi degli account nati da poche ore vengono **trattenuti**: si tocca il messaggio, non la persona |
-| 4 | **attacco** | la serranda — chat ai soli follower, Shield Mode — e l'ondata artificiale viene bloccata |
+| 4 | **attacco** | la serranda — chat ai soli follower, Shield Mode — e l'ondata artificiale viene bloccata; i follow non si festeggiano più (docs/SCUDO.md) |
 | 5 | **serrata** | la porta è più stretta: follower da un'ora, chat lenta a trenta secondi, account da una settimana |
 
 Non sono sei nomi per tre comportamenti. Una prova confronta ogni scalino col

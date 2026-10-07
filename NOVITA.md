@@ -286,6 +286,15 @@ comandi diversi da quelli della riga italiana.
 - Una pubblicità mandata dalla regia si conta e si annuncia subito, senza aspettare Twitch, e una volta sola. Se non parte, la regia dice il perché vero invece di «devi essere in diretta» per tutto. [vai: regia]
   en: An ad run from the control room is counted and announced right away, without waiting for Twitch, and only once. If it does not start, the control room gives the real reason instead of “you must be live” for everything.
   es: Un anuncio lanzado desde la realización se cuenta y se anuncia enseguida, sin esperar a Twitch, y una sola vez. Si no empieza, la realización da el motivo real en vez de «tienes que estar en directo» para todo.
+- [importante] Durante un attacco di follow-bot i follow non fanno più partire alert, suoni, effetti, ringraziamenti, muro e moduli, e non gonfiano obiettivi e rapporto. Si sceglie nello scudo. [vai: scudo]
+  en: During a follow-bot attack, follows no longer trigger alerts, sounds, effects, thank-yous, the emote wall or modules, and do not inflate goals or the report. You choose it in the shield.
+  es: Durante un ataque de follow-bots, los follows ya no lanzan alertas, sonidos, efectos, agradecimientos, muro ni módulos, y no inflan objetivos ni informe. Se elige en el escudo.
+  > Sotto attacco, niente festa ai bot
+  > Un'ondata di follow-bot erano centinaia di nomi finti, spesso insulti, sullo schermo e in chat. Ora li vede solo lo scudo, e quelli già in fila si buttano. Il prezzo: in quei minuti anche chi segue davvero non ha il suo alert.
+  en> Under attack, no party for the bots
+  en> A follow-bot wave meant hundreds of fake names, often insults, on screen and in chat. Now only the shield sees them, and the ones already queued are dropped. The cost: in those minutes, even real followers get no alert.
+  es> Bajo ataque, nada de fiesta para los bots
+  es> Una oleada de follow-bots eran cientos de nombres falsos, a menudo insultos, en pantalla y en el chat. Ahora solo los ve el escudo, y los que ya estaban en cola se descartan. El precio: en esos minutos ni quien sigue de verdad tiene su alerta.
 
 ## 2026-10-03
 

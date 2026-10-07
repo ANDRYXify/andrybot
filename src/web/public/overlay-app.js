@@ -866,6 +866,11 @@ function posizionaContenitore(el, xy, corner) {
 const FOLLOW_VECCHIO_MS = 90000;
 function alert(ev) { if (!mostra('alert')) return; ev._arrivo = Date.now(); codaAlert.push(ev); mostraAlertProssimo(); }
 
+function fermaFollow() {
+  for (let i = codaAlert.length - 1; i >= 0; i--) if (codaAlert[i].scudo === true) codaAlert.splice(i, 1);
+  for (let i = codaVisiva.length - 1; i >= 0; i--) if (codaVisiva[i].scudo === true) codaVisiva.splice(i, 1);
+}
+
 function prossimoAlert() {
   const ora = Date.now();
   while (codaAlert.length) {
@@ -1381,6 +1386,7 @@ function ricevi(m) {
     else if (dati.tipo === 'preset') { if (mostra('effetti')) suonaPreset(dati); }
     else if (dati.tipo === 'penitenza') { if (mostra('pen')) penitenza(dati); }
     else if (dati.tipo === 'alert') alert(dati);
+    else if (dati.tipo === 'scudo') { if (dati.followFermi) fermaFollow(); }
     else if (dati.tipo === 'chat') chat(dati);
     else if (dati.tipo === 'muro') muroChat(dati);
     else if (dati.tipo === 'muro-esplodi') muroEsplodi(dati);

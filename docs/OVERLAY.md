@@ -918,6 +918,13 @@ stesse. Qui le regole, e per ognuna cosa la rompeva.
     e la carta spariva prima di dire com'era andata. Ora l'assenza dal tema
     decide solo per le penitenze ancora nel loro tempo; una scaduta la chiude
     il suo esito, o se ne va da sola quindici secondi dopo (regola 1).
+14. **Sotto attacco i follow in fila si buttano.** Da «attacco» lo scudo non fa
+    festeggiare i follow di Twitch (docs/SCUDO.md), ma quelli arrivati un attimo
+    prima erano già in fila in scena. Nell'istante in cui lo scudo sale arriva
+    il messaggio `{ tipo: 'scudo', followFermi: true }`, e la pagina toglie dalle
+    due code (alert ed effetti) quello che porta il segno `scudo`, che il server
+    mette solo sui follow di Twitch. Quello a schermo finisce. Non c'è stato da
+    tenere: dopo, quei follow il server non li manda proprio.
 
 Le regole del conto alla pubblicità lato server (una lettura fallita non vuol
 dire «nessuna pubblicità», lo snooze si segue, dopo una pausa il programma si
