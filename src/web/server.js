@@ -120,6 +120,7 @@ import * as regolaScudo from '../features/tg-scudo.js';
 import { testiPagina as testiScudoPagina } from '../features/tg-scudo-testi.js';
 import * as provaScudo from '../features/tg-scudo-prova.js';
 import { stato as statoArena } from '../features/arena.js';
+import { bossInCorso } from '../features/boss.js';
 import { VOCI as VOCI_TWITCH } from '../features/sondaggi.js';
 import * as modalitaChat from '../features/modalita-chat.js';
 import * as premiTempo from '../features/premi-tempo.js';
@@ -1624,6 +1625,9 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   app.get('/overlay/:login/tema', wrap(async (req, res) => {
     if (!chiaveOk(req)) return notFound(res);
     const login = String(req.params.login).toLowerCase();
+    // il numero d'ordine PRIMA di leggere lo stato: ogni evento uscito fino a
+    // qui e' gia' nello stato che segue, e quelli dopo hanno un numero piu' alto
+    const seq = effects.seqOra();
     await rinfrescaGoalVivi(login);
     const base = manager.alerts?.tema(login) || { css: '', widget: {}, stato: {} };
     // Overlay richiesto (?o=id): ha il SUO layout (cosa mostra + dove) e, con
@@ -1637,6 +1641,15 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       // la classifica dei Bit non e' mai comparsa in diretta, e i caratteri
       // caricati si vedevano nello Studio ma non in onda.
       ...base,
+      // L'ora del server: l'orologio di tutti i conti in scena. E lo stato di
+      // quello che vive di eventi (contatori, boss, penitenze): una pagina che
+      // si riapre, o un flusso che torna, lo rifa' da qui, e quello che e'
+      // finito mentre la linea era giu' se ne va (docs/OVERLAY.md, «Quello che
+      // sta in scena e' stato»).
+      ora: Date.now(),
+      seq,
+      contatori: contatori.list(login).map((c) => contatori.payloadOverlay(c)),
+      stato: { ...(base.stato || {}), boss: bossInCorso(login), penitenze: manager.penitenze?.statoOverlay?.(login) || [] },
       // CSS: quello dell'overlay se impostato, altrimenti quello di canale
       css: (ov.css != null && ov.css !== '') ? ov.css : base.css,
       // WIDGET (config + stile): per-overlay se presente, altrimenti di canale.
@@ -1686,9 +1699,10 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     const login = String(req.params.login).toLowerCase();
     const cfg = streamers.get(login)?.settings?.overlayBit;
     if (!cfg?.attivo) return res.json({ righe: [] });
+    const seq = effects.seqOra();
     const righe = await bitFeat.classifica(helix, login, { periodo: cfg.periodo || 'month' });
     res.set('Cache-Control', 'no-store');
-    res.json({ righe: righe ? righe.slice(0, 10) : null });
+    res.json({ righe: righe ? righe.slice(0, 10) : null, seq });
   }));
 
   // Mappa emote 7TV (globali + del canale) per la "chat a schermo": l'overlay la
@@ -1736,12 +1750,17 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     const suo = streamers.get(login);
     if (suo && !suo.settings?.overlayVisto) streamers.setSettings(login, { ...(suo.settings || {}), overlayVisto: Date.now() });
     effects.addClient(login, res);
+    // Il primo battito subito, con l'ora del server: l'overlay misura da li' lo
+    // scarto del suo orologio (docs/OVERLAY.md, «Un orologio solo»).
+    res.write(`data: ${JSON.stringify({ tipo: 'battito', ora: Date.now() })}\n\n`);
     // Un'arena in corso si racconta subito a chi arriva: con seme, combattenti,
     // regole e istante di partenza l'overlay rifa' la partita fino ad adesso
     // (docs/ARENA.md). Senza, un overlay riaperto a meta' non saprebbe niente.
+    // E se non c'e', lo si dice: un'arena la cui fine si e' persa per strada
+    // (una linea caduta, un riavvio del bot) non resta in scena per sempre.
     try {
       const arena = statoArena(login);
-      if (arena) res.write(`data: ${JSON.stringify({ tipo: 'arena', azione: 'stato', ...arena })}\n\n`);
+      res.write(`data: ${JSON.stringify(arena ? { tipo: 'arena', azione: 'stato', ...arena } : { tipo: 'arena', azione: 'nessuna' })}\n\n`);
     } catch (e) { log.debug(`#${login} arena all'apertura:`, e?.message || e); }
     req.on('close', () => effects.removeClient(login, res));
   });

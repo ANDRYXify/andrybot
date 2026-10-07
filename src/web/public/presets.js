@@ -72,13 +72,20 @@
 
   const lista = Object.keys(RICETTE).map((id) => ({ id, nome: NOMI[id] || id }));
 
-  function suona(id, volume, destino) {
+  function volume(v) {
+    if (v === undefined || v === null || v === '') return 1;
+    const n = Number(v);
+    return Number.isFinite(n) ? Math.min(1, Math.max(0, n / 100)) : 1;
+  }
+
+  function suona(id, quanto, destino) {
     const ricetta = RICETTE[id];
     if (!ricetta) return false;
+    const v = volume(quanto);
+    if (v === 0) return true;
     const c = (destino && destino.ac) ? destino.ac : ctx();
     if (!c) return false;
     const master = c.createGain();
-    const v = Math.min(1, Math.max(0, (Number(volume) || 100) / 100));
     master.gain.value = v;
     const nodi = (destino && Array.isArray(destino.nodi) && destino.nodi.length) ? destino.nodi : [c.destination];
     for (const n of nodi) { try { master.connect(n); } catch (e) {  } }
@@ -87,7 +94,7 @@
     return true;
   }
 
-  window.SUONI_PRESET = { lista, suona, nomi: NOMI };
+  window.SUONI_PRESET = { lista, suona, volume, nomi: NOMI };
 
   const D = (d) => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + d + '</svg>';
   const ICONE = {

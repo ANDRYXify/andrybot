@@ -74,7 +74,8 @@ test('il pezzo dell\'overlay sta dove sta ogni pezzo', () => {
   assert.match(APP, /tempi: _vestiTempi,/);
   assert.match(APP, /tempi: _defTempi,/);
   assert.match(APP, /out\.push\(\{ k: 'tempi', ico: ICO\.orologio,[^}]*cfg: 'overlayTempi' \}\);/);
-  assert.match(APP, /riempiCfgForm\('tempi'\);/);
+  assert.match(APP, /for \(const k of new Set\(\[\.\.\.document\.querySelectorAll\('\[data-cfg\]'\)\]\.map\(\(n\) => n\.dataset\.cfg\)\)\) riempiCfgForm\(k\);/, 'il suo modulo si riempie come ogni modulo che c\'e\'');
+  assert.match(APP, /data-cfg="tempi"/);
   assert.match(SRV, /if \(b\.overlayTempi !== undefined\) out\.overlayTempi = normTempi\(b\.overlayTempi\);/);
   assert.match(SRV, /'overlayPubblicita', 'overlayTempi', 'overlayTreno'/, 'cambiarlo ricarica gli overlay aperti');
   assert.match(ALR, /tempi: \(s\.overlayTempi && typeof s\.overlayTempi === 'object'\) \? \{ \.\.\.s\.overlayTempi, elenco: tempiInCorso\(channel\) \} : null,/);

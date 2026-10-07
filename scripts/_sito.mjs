@@ -48,36 +48,87 @@ function pannello() {
 // passare ad apriSito come `overlay`. Serve la pagina, il tema (`tema()`), il
 // brano in corso (`musica()`) e il flusso SSE, con quel che serve a un collaudo:
 // `manda(ev)` spinge un evento a chi e' collegato, `cadi()` butta giu' i socket,
-// `st.giu` fa rispondere 502 come il proxy durante un riavvio, e `st` conta cosa
-// la pagina ha chiesto (tema, guai, connessioni).
-export function overlayFinto({ login = 'prova', tema = () => ({}), musica = () => ({ stato: 'niente' }) } = {}) {
-  const st = { giu: false, stream: [], socket: new Set(), tema: 0, musica: 0, guai: [], connessioni: 0 };
+// `st.giu` fa rispondere 502 come il proxy durante un riavvio (a tutto: flusso,
+// tema e il resto), e `st` conta cosa la pagina ha chiesto (tema, guai,
+// connessioni, e in `chieste` ogni altra strada, per nome).
+//
+// Fa quello che fa il server vero, perche' una pagina che si regge solo sul
+// finto non si regge in diretta: il tema porta l'ora del server (`ora`, che un
+// collaudo puo' togliere mettendo `ora: undefined` nel suo tema); alla
+// connessione il flusso manda subito il primo battito con l'ora e lo stato
+// dell'arena (`arena()`, di serie nessuna). `rispondi(sotto)` decide le altre
+// strade (es. '/badges', '/timer/parti'): torna { stato, corpo, ritardo } o
+// null per la risposta vuota di serie (`ritardo` in ms: la risposta e' letta
+// alla richiesta e consegnata dopo).
+//
+// Due guasti a parte, che in diretta capitano: `st.temaGiu` fa rispondere 500
+// solo al tema (una lettura che fallisce mentre il flusso c'e'), e
+// `attesaFlusso` (ms) fa aprire il flusso in ritardo (un proxy lento), cosi'
+// che la pagina abbia il tema prima del primo battito.
+//
+// Il numero d'ordine, come il server (features/effects.js, seqOra): ogni
+// evento mandato ne porta uno nuovo, il tema e la classifica dei Bit quello di
+// quando lo stato e' stato letto. `st.ritardoTema` (ms) consegna il tema in
+// ritardo, letto pero' alla richiesta: e' il tema che parte prima di un evento
+// e arriva dopo.
+export function overlayFinto({ login = 'prova', tema = () => ({}), musica = () => ({ stato: 'niente' }), arena = () => null, ora = () => Date.now(), rispondi = () => null, attesaFlusso = 0 } = {}) {
+  const st = { giu: false, temaGiu: false, ritardoTema: 0, seq: Date.now() * 1000, stream: [], socket: new Set(), tema: 0, musica: 0, guai: [], connessioni: 0, chieste: {} };
   const base = '/overlay/' + login;
   const json = (res, o) => { res.writeHead(200, { 'content-type': 'application/json' }); res.end(JSON.stringify(o)); };
   return {
     st,
-    manda(ev) { for (const r of st.stream) r.write('data: ' + JSON.stringify(ev) + '\n\n'); },
+    manda(ev) { const riga = 'data: ' + JSON.stringify({ ...ev, seq: ++st.seq }) + '\n\n'; for (const r of st.stream) r.write(riga); },
     cadi() { for (const s of st.socket) s.destroy(); },
     gestisci(req, res, q) {
       if (q !== base && !q.startsWith(base + '/')) return false;
       if (q === base + '/stream') {
         st.connessioni++;
         if (st.giu) { res.writeHead(502, { 'content-type': 'text/html' }); res.end('bad gateway'); return true; }
-        res.writeHead(200, { 'content-type': 'text/event-stream', 'cache-control': 'no-cache' });
-        res.write(': connesso\n\n');
-        st.stream.push(res); st.socket.add(res.socket);
+        const apri = () => {
+          if (res.destroyed) return;
+          res.writeHead(200, { 'content-type': 'text/event-stream', 'cache-control': 'no-cache' });
+          res.write(': connesso\n\n');
+          const a = arena();
+          res.write('data: ' + JSON.stringify({ tipo: 'battito', ora: ora() }) + '\n\n');
+          res.write('data: ' + JSON.stringify(a ? { tipo: 'arena', azione: 'stato', ...a } : { tipo: 'arena', azione: 'nessuna' }) + '\n\n');
+          st.stream.push(res); st.socket.add(res.socket);
+        };
         req.on('close', () => { st.stream = st.stream.filter((r) => r !== res); st.socket.delete(res.socket); });
-        return true;
-      }
-      if (q === base + '/tema') { st.tema++; json(res, tema()); return true; }
-      if (q === base + '/musica') { st.musica++; json(res, musica()); return true; }
-      if (q === base + '/guaio') {
-        let b = '';
-        req.on('data', (c) => { b += c; });
-        req.on('end', () => { try { st.guai.push(JSON.parse(b).dove); } catch { /* niente */ } json(res, { ok: true }); });
+        if (attesaFlusso > 0) setTimeout(apri, attesaFlusso); else apri();
         return true;
       }
       if (q === base) { res.writeHead(200, { 'content-type': TIPI['.html'] }); res.end(fs.readFileSync(path.join(PUB, 'overlay.html'))); return true; }
+      const sotto = q.slice(base.length);
+      st.chieste[sotto] = (st.chieste[sotto] || 0) + 1;
+      if (sotto === '/tema') st.tema++;
+      if (sotto === '/musica') st.musica++;
+      // `st.guai` e' quello che la pagina ha DETTO, anche quando il proxy non
+      // lo lasciava passare: durante un riavvio il server non sente niente, e
+      // quello che si misura e' quante volte la pagina ci prova.
+      if (sotto === '/guaio') {
+        let b = '';
+        req.on('data', (c) => { b += c; });
+        req.on('end', () => {
+          try { st.guai.push(JSON.parse(b).dove); } catch { /* niente */ }
+          if (st.giu) { res.writeHead(502, { 'content-type': 'text/html' }); res.end('bad gateway'); } else json(res, { ok: true });
+        });
+        return true;
+      }
+      if (st.giu) { res.writeHead(502, { 'content-type': 'text/html' }); res.end('bad gateway'); return true; }
+      if (sotto === '/tema' && st.temaGiu) { res.writeHead(500, { 'content-type': 'application/json' }); res.end('{"error":"guasto"}'); return true; }
+      if (sotto === '/tema') {
+        const corpo = { ora: ora(), seq: st.seq, ...tema() };
+        if (st.ritardoTema > 0) setTimeout(() => json(res, corpo), st.ritardoTema); else json(res, corpo);
+        return true;
+      }
+      if (sotto === '/musica') { json(res, musica()); return true; }
+      const r = rispondi(sotto, req);
+      if (r) {
+        const corpo = sotto === '/bit' && r.corpo && typeof r.corpo === 'object' ? { seq: st.seq, ...r.corpo } : (r.corpo ?? {});
+        const via = () => { res.writeHead(r.stato || 200, { 'content-type': 'application/json' }); res.end(JSON.stringify(corpo)); };
+        if (r.ritardo > 0) setTimeout(via, r.ritardo); else via();
+        return true;
+      }
       json(res, {});
       return true;
     },

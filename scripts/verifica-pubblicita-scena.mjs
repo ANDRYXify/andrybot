@@ -10,6 +10,8 @@
 //    conta da solo il numero resta li';
 //  · un conto arrivato a zero che resta a schermo a dire 0:00;
 //  · una pausa che comincia e la scena che non se ne accorge;
+//  · la pausa che arriva mentre il conto a zero se ne sta andando, e resta
+//    trasparente: c'e', ma non si vede (il difetto che si vedeva in diretta);
 //  · le scelte dello streamer che non contano: da quanto prima mostrarlo, se
 //    restare durante la pausa, l'interruttore, l'overlay che non lo vuole.
 //
@@ -33,6 +35,8 @@ const ROTTURE = [
     'una pausa che comincia non arriva in scena'],
   [OVL, "&& (!cfg.mostraDa || prossima - ora <= cfg.mostraDa * 60000)", '',
     '«da quando si vede» non conta niente'],
+  [OVL, '  rientra(pubblEl, el);\n', "  if (pubblEl.uscita) { clearTimeout(pubblEl.uscita); pubblEl.uscita = 0; el.classList.remove('esce'); }\n",
+    'la pausa che arriva mentre il conto se ne va resta trasparente'],
   [OVL, "if (cfg.pausa !== false) { titolo", 'if (true) { titolo',
     'chi non lo vuole durante la pausa se lo ritrova'],
   [OVL, "!cfg.attivo || !mostra('pubblicita')", '!cfg.attivo',
@@ -85,13 +89,18 @@ async function giro(cfg, stato, { mostra = {}, poi = null, dopo = 0 } = {}) {
   await page.waitForFunction((f) => document.getElementById('css-utente')?.textContent.includes(f), FIRMA, { timeout: 15000 });
   if (poi) {
     for (let i = 0; i < 100 && ovl.st.stream.length < 1; i++) await attesa(50);
+    // come il server vero: quello che l'evento dice, il tema lo sa gia'. Una
+    // pagina che rilegge il tema in quel momento (succede all'apertura del
+    // flusso) non deve tornare indietro per colpa del finto.
+    TEMA = { ...TEMA, pubblicita: { ...TEMA.pubblicita, stato: poi } };
     ovl.manda({ tipo: 'pubblicita', ...poi });
   }
-  await attesa(400);
+  await attesa(700);
   const leggi = () => page.$$eval('.ovl-pubblicita:not(.esce)', (l) => l.map((n) => ({
     tit: (n.querySelector('.t-tit') || {}).textContent || '',
     num: (n.querySelector('.t-num') || {}).textContent || '',
     classi: n.className,
+    opacita: Number(getComputedStyle(n).opacity),
   })));
   const prima = (await leggi())[0] || null;
   let poiLetto = null;
@@ -104,6 +113,7 @@ try {
   // 1. UNA PAUSA IN PROGRAMMA SI VEDE, E IL CONTO SCENDE DA SOLO.
   let r = await giro(CFG, { prossima: Date.now() + 4 * 60000 + 30000, pausaFino: 0 }, { dopo: 2200 });
   dice(!!r.prima, 'una pausa in programma compare in scena', 'non c\'e\' niente a schermo');
+  dice(!!r.prima && r.prima.opacita > 0.95, 'e si vede davvero, non trasparente', r.prima ? `opacita' ${r.prima.opacita}` : '');
   dice(!!r.prima && r.prima.tit === 'Pubblicità fra', 'col titolo di prima della pausa', r.prima ? `dice: «${r.prima.tit}»` : '');
   dice(!!r.prima && Math.abs(secondi(r.prima.num) - 270) <= 2, 'e quanto manca, preso dall\'istante che dice Twitch', r.prima ? `dice: ${r.prima.num}` : '');
   dice(!!r.poi && secondi(r.prima?.num) - secondi(r.poi.num) >= 2, 'il conto scende da solo, senza nessun messaggio', r.poi ? `da ${r.prima?.num} a ${r.poi.num}` : 'sparito');
@@ -117,6 +127,29 @@ try {
   r = await giro(CFG, { prossima: Date.now() + 20 * 60000, pausaFino: 0 }, { poi: { prossima: 0, pausaFino: Date.now() + 90000 } });
   dice(!!r.prima && r.prima.tit === 'Torno fra' && /in-pausa/.test(r.prima.classi), 'quando la pausa comincia, la scena conta il ritorno', r.prima ? `dice: «${r.prima.tit}» ${r.prima.classi}` : 'sparito');
   dice(!!r.prima && Math.abs(secondi(r.prima.num) - 90) <= 2, 'fino alla fine vera della pausa', r.prima ? `dice: ${r.prima.num}` : '');
+
+  // 3b. IL CONTO ARRIVA A ZERO, COMINCIA AD ANDARSENE, E UN ATTIMO DOPO IL BOT
+  // DICE CHE LA PAUSA E' COMINCIATA: e' l'ordine vero delle cose in diretta. Il
+  // riquadro che torna mentre se ne va deve tornare visibile.
+  {
+    TEMA = { css: FIRMA, widget: {}, goals: [], conti: {}, musica: null, timer: null, pubblicita: { ...CFG, stato: { prossima: Date.now() + 1500, pausaFino: 0 } }, stato: {}, mostra: {}, xy: {}, alertStile: null, chatStile: null };
+    const page = await browser.newPage();
+    page.on('pageerror', (e) => errori.push(String(e.message || e)));
+    await page.goto(base + '/overlay/prova?key=x');
+    await page.waitForFunction((f) => document.getElementById('css-utente')?.textContent.includes(f), FIRMA, { timeout: 15000 });
+    for (let i = 0; i < 100 && ovl.st.stream.length < 1; i++) await attesa(50);
+    let uscendo = false;
+    for (let i = 0; i < 120 && !uscendo; i++) { uscendo = await page.$('.ovl-pubblicita.esce').then((n) => !!n); if (!uscendo) await attesa(30); }
+    dice(uscendo, 'a zero il conto comincia ad andarsene', 'non se ne va');
+    const pausa = { prossima: 0, pausaFino: Date.now() + 60000 };
+    TEMA = { ...TEMA, pubblicita: { ...TEMA.pubblicita, stato: pausa } };
+    ovl.manda({ tipo: 'pubblicita', ...pausa });
+    await attesa(900);
+    const n = await page.$$eval('.ovl-pubblicita', (l) => l.map((x) => ({ tit: (x.querySelector('.t-tit') || {}).textContent || '', opacita: Number(getComputedStyle(x).opacity), classi: x.className })));
+    const v = n[0] || null;
+    dice(n.length === 1 && v.tit === 'Torno fra' && v.opacita > 0.95 && !/esce/.test(v.classi), 'la pausa che arriva mentre il conto se ne va si vede, piena', v ? `«${v.tit}», opacita' ${v.opacita}, classi «${v.classi}»` : 'sparita');
+    await page.close();
+  }
 
   // 4. LE SCELTE DELLO STREAMER.
   r = await giro({ ...CFG, mostraDa: 2 }, { prossima: Date.now() + 5 * 60000, pausaFino: 0 });

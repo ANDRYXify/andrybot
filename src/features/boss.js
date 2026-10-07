@@ -59,9 +59,12 @@ export function personeAttive(channel) {
   return memory.recentChatters(channel, ATTIVI_MS, 100000).length;
 }
 
+// Il boss in corso, con l'istante in cui scappa e quanto dura in tutto: l'overlay
+// che si riapre a meta' rifa' la carta col tempo che resta, e una carta la cui
+// fine si e' persa per strada se ne va perche' qui non c'e' piu'.
 export const bossInCorso = (channel) => {
   const b = bossi.get(channel);
-  return b ? { nome: b.nome, vita: b.vita, vitaMax: b.vitaMax } : null;
+  return b ? { nome: b.nome, vita: b.vita, vitaMax: b.vitaMax, fine: b.fine, durata: b.durata } : null;
 };
 
 export function arriva(channel, say, { annuncio = '' } = {}) {
@@ -69,7 +72,7 @@ export function arriva(channel, say, { annuncio = '' } = {}) {
   const c = conf(channel);
   const vitaMax = Math.max(c.minimo, personeAttive(channel)) * c.vitaPerPersona;
   const b = { nome: scegli(c.nomi), vita: vitaMax, vitaMax, danni: new Map(), soglia: 0, say,
-    fine: Date.now() + c.durata * 1000, nuovi: new Map(), ultimo: 0, bollettino: null };
+    fine: Date.now() + c.durata * 1000, durata: c.durata, nuovi: new Map(), ultimo: 0, bollettino: null };
   b.timer = setTimeout(() => scappa(channel), c.durata * 1000);
   b.timer.unref?.();
   bossi.set(channel, b);

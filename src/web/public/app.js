@@ -13482,7 +13482,8 @@ function leggiCfgDalForm(k) {
     const via = el.dataset.c.split('.');
     if ('insieme' in el.dataset) { (insiemi[el.dataset.c] = insiemi[el.dataset.c] || { via, v: [] }); if (el.checked) insiemi[el.dataset.c].v.push(el.value); continue; }
     const v = 'lista' in el.dataset ? el.value.split(/[\s,]+/).filter(Boolean)
-      : el.type === 'checkbox' ? el.checked : (el.type === 'number' || el.type === 'range' ? Number(el.value) : el.value);
+      : el.type === 'checkbox' ? el.checked
+        : (el.type === 'number' || el.type === 'range' || typeof _viaDi(c, via) === 'number') ? Number(el.value) : el.value;
     _scriviVia(c, via, v);
   }
   for (const x of Object.values(insiemi)) _scriviVia(c, x.via, x.v);
@@ -14054,11 +14055,14 @@ function pannelloAlert() {
           </div>
           <h4 class="spazio-sopra">${L('Grandezza e veste', 'Size and look', 'Tamaño y aspecto')}</h4>
           <div class="goal-campi">
-            <label class="campo-num">${L('Grandezza (% del lato corto dell\'area)', 'Size (% of the short side of the area)', 'Tamaño (% del lado corto del área)')}<input type="number" data-c="grandezza" min="2" max="40"></label>
+            <label class="campo-num">${L('Grandezza (% del lato corto dell\'area)', 'Size (% of the short side of the area)', 'Tamaño (% del lado corto del área)')}<input type="number" data-c="grandezza" min="2" max="50"></label>
             <label class="campo-num">${L('Quanto varia (%)', 'How much it varies (%)', 'Cuánto varía (%)')}<input type="number" data-c="varia" min="0" max="100"></label>
             <label class="campo-num">${L('Minimo (px)', 'Minimum (px)', 'Mínimo (px)')}<input type="number" data-c="minPx" min="12" max="400"></label>
-            <label class="campo-num">${L('Massimo (px)', 'Maximum (px)', 'Máximo (px)')}<input type="number" data-c="maxPx" min="12" max="600"></label>
+            <label class="campo-num">${L('Massimo (px)', 'Maximum (px)', 'Máximo (px)')}<input type="number" data-c="maxPx" min="12" max="1080"></label>
           </div>
+          <p class="suggerimento" data-muro-misure aria-live="polite"></p>
+          <div class="goal-campi"><label class="campo-num">${L('Opacità (%)', 'Opacity (%)', 'Opacidad (%)')}<input type="number" data-c="opacita" min="10" max="100"></label></div>
+          <label class="riga-check"><input type="checkbox" data-c="gira"> ${L('Le emote ruotano mentre si muovono', 'Emotes spin as they move', 'Los emotes giran mientras se mueven')}</label>
           <label class="riga-check"><input type="checkbox" data-c="ombra"> ${L('Ombra', 'Shadow', 'Sombra')}</label>
           <div class="goal-campi"><label class="campo-num">${L('Colori che girano', 'Cycling colors', 'Colores que giran')}<select data-c="arcobaleno"><option value="mai">${L('Mai', 'Never', 'Nunca')}</option><option value="sempre">${L('Sempre', 'Always', 'Siempre')}</option><option value="treno">${L('Durante l\'hype train', 'During the hype train', 'Durante el hype train')}</option></select></label></div>
           <h4 class="spazio-sopra">${L('Quante', 'How many', 'Cuántos')}</h4>
@@ -14074,12 +14078,18 @@ function pannelloAlert() {
             <label class="campo-num">${L('Finisce dopo (secondi senza ripetizioni)', 'Ends after (seconds without repeats)', 'Termina tras (segundos sin repeticiones)')}<input type="number" data-c="combo.finestra" min="2" max="30"></label>
             <label class="campo-num">${L('Poi esplode in', 'Then explodes into', 'Luego explota en')}${_muroFigSel('combo.figura', true)}</label>
           </div>
+          <div class="goal-campi">
+            <label class="campo-num">${L('Cresce a ogni ripetizione (%)', 'Grows with each repeat (%)', 'Crece con cada repetición (%)')}<input type="number" data-c="combo.passo" min="5" max="50"></label>
+            <label class="campo-num">${L('Cresce fino al (% della grandezza)', 'Grows up to (% of the size)', 'Crece hasta el (% del tamaño)')}<input type="number" data-c="combo.massimo" min="150" max="800" step="50"></label>
+          </div>
           <label class="riga-check"><input type="checkbox" data-c="combo.diverse"> ${L('Conta una volta per persona', 'Counts once per person', 'Cuenta una vez por persona')}</label>
+          <label class="riga-check"><input type="checkbox" data-c="combo.contatore"> ${L('Mostra il contatore («×12»)', 'Show the counter («×12»)', 'Muestra el contador («×12»)')}</label>
           <h4 class="spazio-sopra">${L('Esplosioni', 'Explosions', 'Explosiones')}</h4>
           <div class="goal-campi">
             <label class="campo-num">${L('Quante emote', 'How many emotes', 'Cuántos emotes')}<input type="number" data-c="esplosioni.quante" min="5" max="80"></label>
             <label class="campo-num">${L('Durata (secondi)', 'Duration (seconds)', 'Duración (segundos)')}<input type="number" data-c="esplosioni.durata" min="3" max="15"></label>
             <label class="campo-num">${L('La parola della scritta', 'The word for «Word»', 'La palabra de «Palabra»')}<input type="text" data-c="esplosioni.parola" maxlength="8"></label>
+            <label class="campo-num">${L('Grandezza (% del lato corto, 0 = come le emote)', 'Size (% of the short side, 0 = like the emotes)', 'Tamaño (% del lado corto, 0 = como los emotes)')}<input type="number" data-c="esplosioni.grandezza" min="0" max="50"></label>
           </div>
           <div class="goal-campi">
             <label class="campo-num">${L('Con !esplodi', 'With !esplodi', 'Con !esplodi')}${_muroFigSel('comando.figura', true)}</label>
@@ -15333,7 +15343,7 @@ function _vestiEffetti(box) {
 const MURO_PIENO = () => ({ x: 0, y: 0, w: 100, h: 100, r: 0 });
 
 function _defMuro() {
-  return { attivo: false, posizione: 'schermo', xy: null, animazioni: ['sale', 'linea', 'rimbalzo', 'sfreccia', 'cade', 'coriandoli', 'salto', 'lancio', 'pulsa', 'orbita'], fonti: { twitch: true, settetv: true, emoji: false }, perMessaggio: 5, doppioni: true, maxSchermo: 50, coda: 20, grandezza: 8, varia: 30, minPx: 28, maxPx: 140, durata: 6, entrata: 'zoom', ombra: true, arcobaleno: 'treno', chi: 'tutti', escludiBot: true, esclusiPersone: [], esclusiEmote: [], combo: { attivo: true, soglia: 4, finestra: 6, diverse: true, figura: 'fuochi' }, esplosioni: { quante: 30, durata: 6, parola: 'HYPE' }, comando: { figura: 'caso', attesa: 30 }, eventi: { raid: { attivo: true, figura: 'fuochi', soglia: 5 }, sub: { attivo: true, figura: 'cuore', soglia: 1 }, bit: { attivo: true, figura: 'fontana', soglia: 100 }, kicks: { attivo: true, figura: 'fontana', soglia: 100 }, dono: { attivo: true, figura: 'pioggia', soglia: 5 }, trenoParte: { attivo: true, figura: 'trenino' }, trenoFine: { attivo: true, figura: 'scritta' }, boss: { attivo: true, figura: 'piramide' } }, premi: [] };
+  return { attivo: false, posizione: 'schermo', xy: null, animazioni: ['sale', 'linea', 'rimbalzo', 'sfreccia', 'cade', 'coriandoli', 'salto', 'lancio', 'pulsa', 'orbita'], fonti: { twitch: true, settetv: true, emoji: false }, perMessaggio: 5, doppioni: true, maxSchermo: 50, coda: 20, grandezza: 8, varia: 30, minPx: 28, maxPx: 140, durata: 6, entrata: 'zoom', gira: true, opacita: 100, ombra: true, arcobaleno: 'treno', chi: 'tutti', escludiBot: true, esclusiPersone: [], esclusiEmote: [], combo: { attivo: true, soglia: 4, finestra: 6, diverse: true, figura: 'fuochi', massimo: 300, passo: 12, contatore: true }, esplosioni: { quante: 30, durata: 6, parola: 'HYPE', grandezza: 0 }, comando: { figura: 'caso', attesa: 30 }, eventi: { raid: { attivo: true, figura: 'fuochi', soglia: 5 }, sub: { attivo: true, figura: 'cuore', soglia: 1 }, bit: { attivo: true, figura: 'fontana', soglia: 100 }, kicks: { attivo: true, figura: 'fontana', soglia: 100 }, dono: { attivo: true, figura: 'pioggia', soglia: 5 }, trenoParte: { attivo: true, figura: 'trenino' }, trenoFine: { attivo: true, figura: 'scritta' }, boss: { attivo: true, figura: 'piramide' } }, premi: [] };
 }
 
 const _muroEsempi = () => window.SB_MURO.ESEMPI.map((url, i) => ({ nome: 'e' + i, url }));
@@ -15367,8 +15377,26 @@ function _muroFermo(box, cfg) {
   });
 }
 
+function _muroMisure(cfg) {
+  const p = document.querySelector('[data-muro-misure]');
+  if (!p || !window.SB_MURO) return;
+  const xy = cfg.xy && cfg.xy.w ? cfg.xy : MURO_PIENO();
+  const area = { w: Math.round(OVL_W * xy.w / 100), h: Math.round(OVL_H * xy.h / 100) };
+  const m = window.SB_MURO.misure(area, cfg);
+  const da = Math.round(m.da), a = Math.round(m.a);
+  const dove = L(`nell'area di ${area.w}×${area.h} px`, `in the ${area.w}×${area.h} px area`, `en el área de ${area.w}×${area.h} px`);
+  const quanto = da === a ? L(`Le emote misurano ${a} px ${dove}.`, `Emotes measure ${a} px ${dove}.`, `Los emotes miden ${a} px ${dove}.`)
+    : L(`Le emote misurano da ${da} a ${a} px ${dove}.`, `Emotes measure ${da} to ${a} px ${dove}.`, `Los emotes miden de ${da} a ${a} px ${dove}.`);
+  const ferma = m.ferma === 'massimo' ? L(` Le più grandi si fermano al massimo di ${Math.round(m.max)} px: alzalo per farle crescere.`, ` The biggest stop at the ${Math.round(m.max)} px maximum: raise it to let them grow.`, ` Los más grandes se detienen en el máximo de ${Math.round(m.max)} px: súbelo para que crezcan.`)
+    : m.ferma === 'meta' ? L(' Le più grandi si fermano a metà del lato corto dell\'area, perché ogni movimento ci stia.', ' The biggest stop at half the short side of the area, so every motion fits.', ' Los más grandes se detienen en la mitad del lado corto del área, para que quepa cada movimiento.') : '';
+  const alza = m.alza ? L(` Le più piccole partono dal minimo di ${Math.round(m.min)} px.`, ` The smallest start at the ${Math.round(m.min)} px minimum.`, ` Los más pequeños empiezan en el mínimo de ${Math.round(m.min)} px.`) : '';
+  p.textContent = quanto + ferma + alza;
+}
+
 function _vestiMuro(box, cfg) {
   box.className = 'ovl-muro';
+  box.style.opacity = cfg.attivo && Number(cfg.opacita) < 100 ? String(Math.max(10, Number(cfg.opacita) || 100) / 100) : '';
+  _muroMisure(cfg);
   if (!window.SB_MURO) return;
   if (!cfg.attivo || _menoMoto) { _muroFerma(); _muroFermo(box, cfg); return; }
   if (_muroGiro && _muroGiro.box === box) return;
@@ -16130,13 +16158,22 @@ function _defTimer() {
 
 const _DEF_EL = { musica: _defMusica, timer: _defTimer, pubblicita: _defPubblicita, tempi: _defTempi, treno: _defTreno, bit: _defBit, boss: _defBoss, arena: _defArena, scritta: _defScritta, etichetta: _defEtichetta, muro: _defMuro, effetti: () => ({ attivo: true, posizione: 'centro', xy: null }), pen: () => ({ attivo: false, durataMin: 2, overlay: { posizione: 'alto-destra', colore: '#ff2d2d' } }) };
 
+const _pianoObj = (x) => !!x && typeof x === 'object' && !Array.isArray(x);
+function _unisci(base, su) {
+  if (!_pianoObj(base) || !_pianoObj(su)) return su === undefined ? base : su;
+  const out = { ...base };
+  for (const k of Object.keys(su)) out[k] = _unisci(base[k], su[k]);
+  return out;
+}
+
 function _cfgEl(k) {
   const e = ELEM(k);
   if (!e || !e.cfg) return {};
   if (!_bozzaEl[k]) {
     const base = _DEF_EL[k] ? _DEF_EL[k]() : {};
-    const su = JSON.parse(JSON.stringify(impostazioni()[e.cfg] || {}));
-    _bozzaEl[k] = { ...base, ...su, stile: { ...base.stile, ...(su.stile || {}) } };
+    const salvato = (stato?.streamer?.settings || {})[e.cfg];
+    const su = JSON.parse(JSON.stringify(_pianoObj(salvato) ? salvato : {}));
+    _bozzaEl[k] = { ..._unisci(base, su), stile: { ...base.stile, ...(su.stile || {}) } };
   }
   return _bozzaEl[k];
 }
@@ -31832,7 +31869,8 @@ function caricaDatiScheda(id) {
   if (id === 'giveaway') caricaGiveaway();
   if (id === 'penitenze') caricaPenitenze();
   if (id === 'alert') { caricaAlert(); caricaPiattaforme().then(_rendiQualiChat); _goalBozza = null; _cartBozza = null; _bozzaEl = {}; disegnaGoal(); disegnaCartelli(); caricaContaStudio();
-    riempiCfgForm('musica'); riempiCfgForm('timer'); riempiCfgForm('pubblicita'); riempiCfgForm('tempi'); riempiCfgForm('treno'); riempiCfgForm('bit'); riempiCfgForm('boss'); riempiCfgForm('arena'); riempiCfgForm('scritta'); riempiCfgForm('etichetta'); _segnaTimer(Number(impostazioni().overlayStato?.timer?.fine) || 0); requestAnimationFrame(() => { applicaSottoSchede('alert'); montaBanco(); _bancoScegliSeServe(); }); }
+    for (const k of new Set([...document.querySelectorAll('[data-cfg]')].map((n) => n.dataset.cfg))) riempiCfgForm(k);
+    _segnaTimer(Number(impostazioni().overlayStato?.timer?.fine) || 0); requestAnimationFrame(() => { applicaSottoSchede('alert'); montaBanco(); _bancoScegliSeServe(); }); }
   else smontaBanco();
   if (id === 'regia') caricaRegia();
   if (id === 'consolify') caricaConsolify();

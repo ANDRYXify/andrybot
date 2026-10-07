@@ -2387,40 +2387,77 @@ export class BotManager {
   // Lo stato della pubblicita' serve a due cose: gli annunci in chat e il conto
   // sull'overlay. Si tiene se lo usa almeno una delle due, e il programma si
   // rilegge quando serve a una delle due, ognuna col suo passo.
+  //
+  // Ogni canale decide col suo `adesso`: il giro aspetta Twitch canale per
+  // canale, e l'ultimo non deve decidere su un orologio di mezzo minuto fa.
   async _giroPubblicita() {
-    const adesso = Date.now();
     for (const [ch, live] of this._liveState) {
+      const adesso = Date.now();
       const s = streamers.get(ch)?.settings || {};
       const conf = this._confPubblicita(ch);
       const inScena = s.overlayPubblicita?.attivo === true;
       if (!conf.acceso) { this._spegniSveglia(ch, 'prima'); this._spegniSveglia(ch, 'dopo'); }
       if (!conf.acceso && !inScena) { this._pub.delete(ch); continue; }
-      const stato = this._pub.get(ch) || pub.riprendi(statoVivo.leggi(ch, 'pubblicita'), adesso);
+      const stato = this._statoPubblicita(ch, adesso);
       // Fuori diretta il programma non si chiede: Twitch lo lascia vuoto
       // apposta, e sarebbe una telefonata per una risposta che sappiamo gia'.
       const perChat = conf.acceso && pub.vaGuardato(conf, stato, adesso);
       const perScena = inScena && pub.vaGuardatoPerOverlay(stato, adesso);
       if (live && (perChat || perScena)) {
-        const p = await this.helix?.getAdSchedule?.(ch).catch(() => null);
-        stato.prossima = p?.prossima || 0;
-        stato.letto = adesso;
-        if (conf.acceso) {
+        const { p, applicata } = await this._leggiProgramma(ch, stato);
+        // Mentre si aspettava Twitch il canale puo' aver spento tutte e due le
+        // cose: il suo stato non c'e' piu', e non lo si rimette.
+        if (this._pub.get(ch) !== stato) continue;
+        if (applicata && conf.acceso) {
           const dire = pub.quandoAvvisare(conf, stato, p, adesso);
           if (dire) this._sveglia(ch, 'prima', dire, () => this._preavviso(ch));
         }
       }
       // Fuori diretta il programma che si sapeva non vale piu': alla diretta
-      // dopo si rilegge al primo giro, invece di aspettare la rilettura.
-      if (!live) { stato.prossima = 0; stato.letto = 0; }
-      this._pub.set(ch, stato);
-      if (inScena) this._pubInScena(ch);
+      // dopo si rilegge al primo giro, invece di aspettare la rilettura. E
+      // anche gli errori si dimenticano: la diretta dopo comincia leggendo.
+      if (!live) Object.assign(stato, { prossima: 0, letto: 0, falliti: 0, fallitoA: 0 });
+      this._pubInScena(ch);
     }
+  }
+
+  // LO STATO DI UN CANALE E' UNO SOLO. Nasce qui, e sta in memoria PRIMA di
+  // qualunque attesa: il giro, la pausa che comincia e il preavviso toccano lo
+  // stesso oggetto. Prima il giro ne teneva uno suo mentre aspettava Twitch e
+  // alla fine lo rimetteva in memoria: una pausa cominciata in quel mezzo
+  // secondo (il primo giro dopo un riavvio) spariva dalla scena e dalla chat.
+  _statoPubblicita(ch, adesso = Date.now()) {
+    let stato = this._pub.get(ch);
+    if (!stato) {
+      stato = pub.riprendi(statoVivo.leggi(ch, 'pubblicita'), adesso);
+      this._pub.set(ch, stato);
+    }
+    return stato;
+  }
+
+  // LA LETTURA DEL PROGRAMMA, in un posto solo per il giro e per il preavviso.
+  // Quello che una lettura fa allo stato lo decide il modello (`dopoLettura`):
+  // un errore non diventa «nessuna pausa», e una lettura chiesta prima di una
+  // pausa cominciata nel frattempo non la cancella.
+  async _leggiProgramma(ch, stato) {
+    const chiesto = Date.now();
+    const pausa = stato.ultimaPausa;
+    const p = await this.helix?.getAdSchedule?.(ch).catch(() => null);
+    const { applicata, ...campi } = pub.dopoLettura(stato, p || null, { chiesto, pausa });
+    Object.assign(stato, campi);
+    return { p: applicata ? p : null, applicata };
   }
 
   // IL CONTO SULL'OVERLAY. Si manda solo quando cambia, e si tiene fra gli
   // stati vivi del canale: un overlay che si apre (o si ricarica) a pausa in
   // corso lo trova li', invece di aspettare il giro dopo.
+  //
+  // CHI CAMBIA LO STATO, LO MANDA: la chiamano il giro, la pausa che comincia,
+  // il preavviso che rilegge e la fine della pausa. Se il conto in scena e'
+  // acceso lo guarda lei, e il dato uguale non lo rimanda: chiamarla una volta
+  // di troppo non costa niente, una di meno lascia la scena indietro.
   _pubInScena(ch) {
+    if (streamers.get(ch)?.settings?.overlayPubblicita?.attivo !== true) return;
     const dato = pub.perOverlay(this._pub.get(ch), this._liveState.get(ch) === true, Date.now());
     const prima = statoVivo.leggi(ch, 'pubblicita');
     if (prima && prima.prossima === dato.prossima && prima.pausaFino === dato.pausaFino) return;
@@ -2464,18 +2501,18 @@ export class BotManager {
   }
 
   // IL PREAVVISO, all'istante giusto. Il programma si rilegge adesso: se uno
-  // snooze ha spostato la pausa, il preavviso di quella li' non si dice.
+  // snooze ha spostato la pausa, il preavviso di quella li' non si dice. E
+  // quello che si e' appena letto la scena lo sa subito, non al giro dopo.
   async _preavviso(ch) {
     if (!this._liveState.get(ch)) return;
     const conf = this._confPubblicita(ch);
     if (!conf.acceso) return;
-    const p = await this.helix?.getAdSchedule?.(ch).catch(() => null);
-    const adesso = Date.now();
-    const stato = this._pub.get(ch) || {};
-    if (p) { stato.prossima = p.prossima; stato.letto = adesso; }
-    const avviso = p ? pub.preavviso(conf, stato, p, adesso) : null;
+    const stato = this._statoPubblicita(ch);
+    const { p, applicata } = await this._leggiProgramma(ch, stato);
+    if (this._pub.get(ch) !== stato) return;
+    const avviso = applicata ? pub.preavviso(conf, stato, p, Date.now()) : null;
     if (avviso) stato.dettoPer = String(avviso.quando);
-    this._pub.set(ch, stato);
+    this._pubInScena(ch);
     if (avviso) await this._annuncio(ch, conf, this._frasePubblicita(ch, 'prima', avviso.secondi));
   }
 
@@ -2498,7 +2535,7 @@ export class BotManager {
     const conf = this._confPubblicita(ch);
     const inScena = s.overlayPubblicita?.attivo === true;
     if (!conf.acceso && !inScena) return;
-    const stato = this._pub.get(ch) || {};
+    const stato = this._statoPubblicita(ch);
     const a = pub.allaPartenza(conf, stato, dati, Date.now());
     if (!a) return;
     stato.ultimaPausa = String(a.inizio);
@@ -2506,11 +2543,12 @@ export class BotManager {
     stato.finisceA = a.finisceA;
     stato.dettoDopo = false;
     // La pausa e' cominciata: il preavviso di quella li' ha finito il suo
-    // mestiere, e la prossima e' un'altra cosa da guardare da capo.
+    // mestiere, e la prossima e' un'altra cosa da guardare da capo. Una
+    // lettura ancora in volo non la riscrive: e' stata chiesta con un'altra
+    // `ultimaPausa` (vedi `dopoLettura`).
     stato.prossima = 0;
     stato.dettoPer = '';
-    this._pub.set(ch, stato);
-    if (inScena) this._pubInScena(ch);
+    this._pubInScena(ch);
     this._spegniSveglia(ch, 'prima');
     if (!conf.acceso) return;
     if (a.finisceA) this._sveglia(ch, 'dopo', a.finisceA, () => this._sonoTornato(ch));
@@ -2529,6 +2567,7 @@ export class BotManager {
     if (!fine) return;
     stato.dettoDopo = true;
     stato.finisceA = 0;
+    this._pubInScena(ch);
     if (fine.dire && this._liveState.get(ch)) await this._annuncio(ch, conf, this._frasePubblicita(ch, 'dopo', fine.secondi));
   }
 

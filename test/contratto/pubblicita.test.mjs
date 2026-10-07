@@ -62,7 +62,14 @@ test('il programma di Twitch lo legge un posto solo', () => {
 
 test('fuori diretta non si chiede niente a Twitch', () => {
   const f = BOT.slice(BOT.indexOf('async _giroPubblicita()'), BOT.indexOf('async _annuncio('));
-  assert.match(f, /if \(live && \(perChat \|\| perScena\)\) \{\n\s*const p = await this\.helix\?\.getAdSchedule/, 'il programma si chiede solo a chi e\' in onda');
+  assert.match(f, /if \(live && \(perChat \|\| perScena\)\) \{\n\s*const \{ p, applicata \} = await this\._leggiProgramma\(ch, stato\);/, 'il programma si chiede solo a chi e\' in onda');
+  // E lo si chiede da un posto solo, che passa per il modello: una seconda
+  // chiamata scritta a mano tornerebbe a dire «nessuna pausa» a ogni errore.
+  assert.equal((BOT.match(/getAdSchedule/g) || []).length, 1, 'getAdSchedule si chiama solo in _leggiProgramma');
+  const leggi = BOT.slice(BOT.indexOf('async _leggiProgramma('), BOT.indexOf('_pubInScena(ch) {'));
+  assert.match(leggi, /await this\.helix\?\.getAdSchedule\?\.\(ch\)/, 'e li\' si chiede');
+  assert.match(leggi, /pub\.dopoLettura\(stato, p \|\| null, \{ chiesto, pausa \}\)/, 'e quello che fa allo stato lo decide il modello');
+  assert.match(f, /await this\._leggiProgramma\(ch, stato\);\n\s*if \(this\._pub\.get\(ch\) !== stato\) return;/, 'anche il preavviso legge da li\'');
   assert.match(f, /const perChat = conf\.acceso && pub\.vaGuardato\(/, 'per la chat col passo degli annunci');
   assert.match(f, /const perScena = inScena && pub\.vaGuardatoPerOverlay\(/, 'per l\'overlay col suo');
   assert.match(f, /for \(const \[ch, live\] of this\._liveState\)/, 'e chi e\' in onda lo dice la fonte unica');

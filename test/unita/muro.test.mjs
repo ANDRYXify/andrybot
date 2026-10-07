@@ -70,6 +70,63 @@ test('la grandezza sta nei limiti scelti, e mai oltre meta\' del lato corto', ()
   }
 });
 
+// LA MISURA DEL PANNELLO E' QUELLA DELLA DIRETTA. Il pannello scrive da quanto a
+// quanto misurano le emote, e quale limite le ferma, con `misure`; ogni emote in
+// onda prende la sua grandezza da `lato`, che passa da li'. Qui si guarda che
+// gli estremi di `lato` siano proprio quelli che il pannello dice.
+test('la grandezza che il pannello dice e\' quella delle emote in diretta, e dice quale limite la ferma', () => {
+  const casi = [
+    { grandezza: 8, varia: 30, minPx: 28, maxPx: 140 },
+    { grandezza: 20, varia: 30, minPx: 28, maxPx: 140 },
+    { grandezza: 50, varia: 100, minPx: 12, maxPx: 1080 },
+    { grandezza: 2, varia: 0, minPx: 60, maxPx: 600 },
+  ];
+  for (const area of AREE) {
+    for (const cfg of casi) {
+      const m = M.misure(area, cfg);
+      assert.equal(M.lato(area, cfg, () => 0), m.da, `${area.nome} ${JSON.stringify(cfg)}: il piu' piccolo`);
+      assert.ok(Math.abs(M.lato(area, cfg, () => 0.999999) - m.a) < 0.01, `${area.nome}: il piu' grande`);
+      assert.ok(m.a <= Math.min(area.w, area.h) / 2 + EPS && m.a <= Math.max(m.max, 2) + EPS);
+    }
+  }
+  assert.equal(M.misure({ w: 1920, h: 1080 }, casi[1]).ferma, 'massimo', 'il 20% di 1080 col massimo a 140: lo ferma il massimo');
+  assert.equal(M.misure({ w: 1920, h: 1080 }, casi[0]).ferma, '', 'l\'8% ci sta');
+  assert.equal(M.misure({ w: 400, h: 300 }, casi[2]).ferma, 'meta', 'in un riquadro piccolo lo ferma la meta\' dell\'area');
+  assert.equal(M.misure({ w: 1920, h: 1080 }, casi[3]).alza, 'minimo');
+});
+
+// NITIDE A OGNI GRANDEZZA: la misura dell'immagine piu' piccola che basta.
+test('l\'immagine dell\'emote e\' la piu\' piccola che basta per la sua grandezza, e le altre restano come sono', () => {
+  const tw = (m) => `https://static-cdn.jtvnw.net/emoticons/v2/25/default/dark/${m}`;
+  const st = (m) => `https://cdn.7tv.app/emote/01ABCdef/${m}.webp`;
+  assert.equal(M.nitida(tw('2.0'), 20), tw('1.0'));
+  assert.equal(M.nitida(tw('2.0'), 56), tw('2.0'));
+  assert.equal(M.nitida(tw('2.0'), 57), tw('3.0'));
+  assert.equal(M.nitida(tw('1.0'), 600), tw('3.0'), 'oltre l\'ultima, l\'ultima');
+  assert.equal(M.nitida(tw('2.0'), 40, 2), tw('3.0'), 'con la densita\' dello schermo');
+  assert.equal(M.nitida(st('2x'), 30), st('1x'));
+  assert.equal(M.nitida(st('2x'), 90), st('3x'));
+  assert.equal(M.nitida(st('2x'), 140), st('4x'));
+  for (const altro of ['data:image/svg+xml,abc', 'https://cdn.betterttv.net/emote/abc/3x', 'https://static-cdn.jtvnw.net/emoticons/v2/25/default/dark/2.0?x=1', '']) {
+    assert.equal(M.nitida(altro, 140), altro, 'quello che non conosce non lo tocca');
+  }
+});
+
+// SENZA ROTAZIONE la traiettoria e' la stessa: cambia solo l'angolo, a zero.
+test('le emote che non ruotano fanno la stessa strada, con l\'angolo a zero', () => {
+  const rnd = seme(5);
+  for (const nome of M.ANIMAZIONI) {
+    const tr = M.anima(nome, AREE[0], 80, rnd, { durata: 6 });
+    const si = M.fotogrammi(tr, 80, { entrata: 'zoom' });
+    const no = M.fotogrammi(tr, 80, { entrata: 'zoom', gira: false });
+    assert.equal(si.length, no.length);
+    for (let i = 0; i < si.length; i++) {
+      assert.match(no[i].transform, /rotate\(0deg\)/, nome);
+      assert.equal(no[i].transform.replace(/rotate\([^)]*\)/, ''), si[i].transform.replace(/rotate\([^)]*\)/, ''), nome);
+    }
+  }
+});
+
 test('nessuna animazione salta: fra due istanti vicinissimi l\'emote si sposta di pochissimo', () => {
   for (const nome of M.ANIMAZIONI) {
     perOgni(nome, ({ tr, dove }) => {
@@ -363,11 +420,11 @@ test('combo: dalla soglia l\'emote resta una e cresce; chiusa la finestra esplod
   const c = M.combo({ soglia: 3, finestra: 6, diverse: true });
   const K = { nome: 'Kappa', url: 'k' };
   assert.equal(c.passo(K, 'a', 0).azione, 'lancia');
-  assert.deepEqual(js(c.passo(K, 'a', 1000)), { azione: 'lancia', n: 1 }, 'la stessa persona non conta due volte');
+  assert.deepEqual(js(c.passo(K, 'a', 1000)), { azione: 'lancia', n: 1, chiuse: [] }, 'la stessa persona non conta due volte');
   assert.equal(c.passo(K, 'b', 2000).azione, 'lancia');
-  assert.deepEqual(js(c.passo(K, 'c', 3000)), { azione: 'apri', n: 3 });
-  assert.deepEqual(js(c.passo(K, 'd', 4000)), { azione: 'cresci', n: 4 });
-  assert.deepEqual(js(c.passo(K, 'd', 5000)), { azione: 'niente', n: 4 }, 'aperta, un doppione non lancia un\'altra emote uguale');
+  assert.deepEqual(js(c.passo(K, 'c', 3000)), { azione: 'apri', n: 3, chiuse: [] });
+  assert.deepEqual(js(c.passo(K, 'd', 4000)), { azione: 'cresci', n: 4, chiuse: [] });
+  assert.deepEqual(js(c.passo(K, 'd', 5000)), { azione: 'niente', n: 4, chiuse: [] }, 'aperta, un doppione non lancia un\'altra emote uguale');
   assert.deepEqual(js(c.scadute(9900)), []);
   assert.deepEqual(js(c.scadute(10001)), [{ nome: 'Kappa', url: 'k', emoji: false, n: 4 }]);
   assert.deepEqual(js(c.aperte()), []);
@@ -379,6 +436,44 @@ test('combo: dalla soglia l\'emote resta una e cresce; chiusa la finestra esplod
   assert.equal(M.crescita(3, 3), 1);
   assert.ok(M.crescita(10, 3) > M.crescita(9, 3));
   assert.equal(M.crescita(999, 3), 3);
+  assert.equal(M.crescita(999, 3, 6), 6, 'fino a quanto cresce lo sceglie lo streamer');
+  assert.equal(M.crescita(5, 3, 8, 0.5), 2, 'e di quanto a ogni ripetizione');
+});
+
+// IL DIFETTO DELLE COMBO PIANTATE IN SCENA. Il messaggio che arrivava dopo la
+// finestra cancellava la combo in silenzio: chi la mostrava non lo sapeva, e la
+// sua emote restava sulla scena per sempre. Una combo aperta si chiude in un
+// posto solo e chi la chiude la dice: qualunque sia l'ordine fra il giro e i
+// messaggi, ogni combo aperta esce esattamente una volta.
+test('combo: una combo scaduta non sparisce in silenzio, la dice il primo che la chiude, e una volta sola', () => {
+  const c = M.combo({ soglia: 2, finestra: 2, diverse: true });
+  const K = { nome: 'Kappa', url: 'k' };
+  c.passo(K, 'a', 0);
+  assert.equal(c.passo(K, 'b', 100).azione, 'apri');
+  const r = c.passo(K, 'c', 5000);
+  assert.deepEqual(js(r.chiuse), [{ nome: 'Kappa', url: 'k', emoji: false, n: 2 }], 'scaduta: il messaggio dopo la chiude e la dice');
+  assert.equal(r.azione, 'lancia', 'e la stessa emote riparte da capo');
+  assert.deepEqual(js(c.scadute(5100)), [], 'chiusa una volta, il giro non la ridice');
+  const P = { nome: 'Pog', url: 'p' };
+  c.passo(P, 'a', 6000); c.passo(P, 'b', 6100);
+  assert.deepEqual(js(c.passo(K, 'd', 9000).chiuse.map((x) => x.nome)), ['Pog'], 'si chiudono anche le combo di un\'altra emote');
+  // con ogni ordine fra giro e messaggi, le aperte e le chiuse tornano pari
+  for (let k = 1; k <= 40; k++) {
+    const r2 = seme(k);
+    const m = M.combo({ soglia: 3, finestra: 2, diverse: k % 2 === 0 });
+    const nomi = ['A', 'B', 'C'];
+    let ts = 0, aperte = 0, chiuse = 0;
+    for (let i = 0; i < 400; i++) {
+      ts += Math.floor(r2() * 900);
+      if (r2() < 0.2) { chiuse += m.scadute(ts).length; continue; }
+      const e = { nome: nomi[Math.floor(r2() * 3)], url: 'x' };
+      const p = m.passo(e, 'u' + Math.floor(r2() * 6), ts);
+      chiuse += p.chiuse.length;
+      if (p.azione === 'apri') aperte++;
+    }
+    chiuse += m.scadute(ts + 10_000).length;
+    assert.equal(chiuse, aperte, `seme ${k}: ogni combo aperta si chiude una volta`);
+  }
 });
 
 test('la coda: oltre il massimo aspettano poche, perde le piu\' vecchie, e scarta quelle scadute', () => {

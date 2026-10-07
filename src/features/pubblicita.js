@@ -41,12 +41,15 @@
 export const COLORI = Object.freeze(['primary', 'blue', 'green', 'orange', 'purple']);
 export const MOMENTI = Object.freeze(['prima', 'durante', 'dopo']);
 
+// Quanto sposta la pausa uno snooze di Twitch. Da qui scendono due cose: il
+// preavviso piu' lontano che si puo' dare, e la finestra in cui il conto
+// sull'overlay rilegge il programma a ogni giro (vedi `vaGuardatoPerOverlay`).
+export const SNOOZE_MS = 5 * 60_000;
 // Quanto prima si avvisa. Il minimo e' quindici secondi — meno non e' un
-// preavviso, e' un annuncio in ritardo — e il massimo cinque minuti, che e'
-// esattamente quanto sposta uno snooze: oltre, il preavviso potrebbe parlare di
-// una pausa che non arrivera'.
+// preavviso, e' un annuncio in ritardo — e il massimo e' uno snooze: oltre, il
+// preavviso potrebbe parlare di una pausa che non arrivera'.
 export const PREAVVISO_MIN = 15;
-export const PREAVVISO_MAX = 300;
+export const PREAVVISO_MAX = SNOOZE_MS / 1000;
 // Oltre questi secondi di ritardo il «sono tornato» non si dice piu'.
 export const TOLLERANZA_MAX = 600;
 // Una pausa non dura piu' di tre minuti (Twitch). Un numero fuori da 1..300
@@ -144,6 +147,72 @@ export function datiDi({ secondi = 0, canale = '' } = {}) {
   return out;
 }
 
+// ── Le letture del programma ──────────────────────────────────────────────
+//
+// Del programma lo stato di un canale tiene `prossima` (la pausa secondo
+// l'ultima lettura RIUSCITA, 0 se Twitch ha detto «nessuna»), `letto` (quando
+// quella lettura e' stata CHIESTA, 0 se mai) e `falliti`/`fallitoA` (quante
+// letture di fila sono andate male, e quando l'ultima).
+//
+// NON SO NON VUOL DIRE NESSUNA. Una lettura fallita non tocca ne' `prossima` ne'
+// `letto`: cambia solo il conto degli errori. Le condizioni che l'avevano
+// chiesta restano vere, e la lettura si rifa'. Prima un errore scriveva
+// «nessuna pausa, letto adesso»: un intoppo di un attimo toglieva il conto
+// dalla scena, e per cinque minuti nessuno lo richiedeva.
+//
+// L'ATTESA DOPO GLI ERRORI. Dopo n errori di fila si aspetta GIRO_MS · 2^(n-1),
+// mai oltre RILETTURA_MS: il primo errore si riprova al giro dopo, un permesso
+// tolto non diventa una chiamata ogni mezzo minuto per tutta la sera. La soglia
+// sta a meta' giro: setInterval non e' un metronomo, e un giro che arriva un
+// attimo prima del suo istante non deve slittare di un giro intero.
+export function attesaDopoErrori(falliti) {
+  const n = Math.floor(Number(falliti) || 0);
+  return n > 0 ? Math.min(GIRO_MS * 2 ** (n - 1), RILETTURA_MS) : 0;
+}
+
+export function inAttesa(stato, adesso = Date.now()) {
+  const attesa = attesaDopoErrori(stato?.falliti);
+  return attesa > 0 && adesso - (Number(stato?.fallitoA) || 0) < attesa - GIRO_MS / 2;
+}
+
+// COSA FA UNA LETTURA ALLO STATO. `chiesto` e' l'istante in cui e' stata chiesta,
+// `pausa` la pausa che lo stato conosceva in quell'istante (`ultimaPausa`).
+// Torna i campi da scrivere, e se la lettura e' stata applicata.
+//
+// Una lettura riuscita si applica solo se e' ancora vera: se mentre la si
+// aspettava e' cominciata una pausa, racconta il programma di prima, e
+// scriverla sopra rimetterebbe in scena una pausa gia' partita; se e' piu'
+// vecchia di quella che si ha (due giri sovrapposti), scriverebbe il passato
+// sopra il presente. In tutti e due i casi la chiamata pero' e' andata: il
+// conto degli errori si azzera.
+export function dopoLettura(stato, programma, { chiesto = Date.now(), pausa = '' } = {}) {
+  if (!programma) return { applicata: false, falliti: (Number(stato?.falliti) || 0) + 1, fallitoA: chiesto };
+  const vecchia = String(stato?.ultimaPausa || '') !== String(pausa || '') || chiesto < (Number(stato?.letto) || 0);
+  if (vecchia) return { applicata: false, falliti: 0, fallitoA: 0 };
+  return { applicata: true, prossima: Number(programma.prossima) || 0, letto: chiesto, falliti: 0, fallitoA: 0 };
+}
+
+// La fine dell'ultima pausa: quella contata all'evento, o, se e' gia' stata
+// consumata dal «sono tornato», inizio + durata.
+export function fineDellaPausa(stato) {
+  const inizio = Number(stato?.ultimaPausa) || 0;
+  return Number(stato?.finisceA) || (inizio ? inizio + durataValida(stato?.secondi) * 1000 : 0);
+}
+
+// DOPO UNA PAUSA IL PROGRAMMA NON SI SA, finche' una lettura chiesta dopo la
+// fine non porta una pausa ancora da venire: Twitch mette in programma la
+// prossima, ma non ci dice quando. Una lettura fallita, o che dice ancora 0,
+// non chiude niente. Vale per RILETTURA_MS dalla fine, poi si torna al passo di
+// sempre: un canale che non ha piu' pause in programma non va richiesto ogni
+// mezzo minuto per tutta la sera. Prima si leggeva una volta sola, e se quella
+// lettura andava male il conto spariva per cinque minuti dopo ogni pausa.
+export function dopoLaPausa(stato, adesso = Date.now()) {
+  const fine = fineDellaPausa(stato);
+  if (!fine || fine > adesso || adesso - fine >= RILETTURA_MS) return false;
+  const letto = Number(stato?.letto) || 0;
+  return !(letto >= fine && (Number(stato?.prossima) || 0) > letto);
+}
+
 // ── Il preavviso ──────────────────────────────────────────────────────────
 //
 // IL PREAVVISO SI DICE A `quanto` SECONDI DALLA PAUSA, non «a un giro di
@@ -156,9 +225,11 @@ export function datiDi({ secondi = 0, canale = '' } = {}) {
 // tarda, e a quel giro alla pausa mancano al piu' quanto + 2 GIRO_MS. E' questa
 // la finestra, ricavata dal passo del giro e non scelta a occhio. Fuori
 // finestra si legge solo se non si sa niente, se la pausa e' passata, o se
-// l'ultima lettura e' vecchia.
+// l'ultima lettura e' vecchia. E dopo un errore non prima che l'attesa sia
+// passata: la chiamata e' una, per la chat e per la scena.
 export function vaGuardato(conf, stato, adesso = Date.now()) {
   if (!siDice(conf, 'prima')) return false;
+  if (inAttesa(stato, adesso)) return false;
   const prossima = Number(stato?.prossima) || 0;
   if (!prossima) return true;
   if (prossima <= adesso) return true;
@@ -172,18 +243,27 @@ export function vaGuardato(conf, stato, adesso = Date.now()) {
 // pausa (uno snooze la sposta, e il conto deve seguirla), quando la pausa
 // doveva essere gia' partita, e alla fine di una pausa, quando Twitch mette in
 // programma la prossima. Senza nessuna pausa in programma, e senza una pausa
-// finita dopo l'ultima lettura, non si chiede ogni mezzo minuto: la risposta
-// non cambia.
+// appena finita, non si chiede ogni mezzo minuto: la risposta non cambia.
+//
+// LA FINESTRA DELLO SNOOZE. Dentro SNOOZE_MS un conto lasciato indietro da uno
+// snooze arriverebbe a zero per una pausa che non c'e': li' si legge a ogni
+// giro, e lo snooze si vede entro un giro. Piu' in la', uno snooze non ancora
+// letto sposta un conto che ha ancora piu' di SNOOZE_MS + 2 GIRO_MS davanti, e
+// lo corregge al piu' tardi la prima lettura dentro la finestra, che si misura
+// sulla pausa che si sapeva: quella lettura c'e' per costruzione. I due giri di
+// margine sono quelli del preavviso: in due giri ne cade almeno uno anche
+// quando un giro tarda. Prima la finestra era di due giri e basta, e uno
+// snooze premuto quattro minuti prima restava invisibile per piu' di tre.
 export function vaGuardatoPerOverlay(stato, adesso = Date.now()) {
+  if (inAttesa(stato, adesso)) return false;
   const prossima = Number(stato?.prossima) || 0;
   const letto = Number(stato?.letto) || 0;
+  if (!letto) return true;
   if (adesso - letto >= RILETTURA_MS) return true;
-  const inizio = Number(stato?.ultimaPausa) || 0;
-  const finePausa = Number(stato?.finisceA) || (inizio ? inizio + durataValida(stato?.secondi) * 1000 : 0);
-  if (finePausa && finePausa <= adesso && letto < finePausa) return true;
+  if (dopoLaPausa(stato, adesso)) return true;
   if (!prossima) return false;
   if (prossima <= adesso) return true;
-  return prossima - adesso <= 2 * GIRO_MS;
+  return prossima - adesso <= SNOOZE_MS + 2 * GIRO_MS;
 }
 
 // DOPO UN RIAVVIO. Il conto dei secondi non sopravvive (vedi `_pub` nel bot),

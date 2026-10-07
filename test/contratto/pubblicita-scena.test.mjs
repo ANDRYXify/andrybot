@@ -40,7 +40,8 @@ test('e\' un elemento come gli altri, di qua e di la\' dal filo', () => {
   assert.ok(/const VESTITORE = \{[^}]*\bpubblicita: _vestiPubblicita\b/.test(APP), 'sulla tela c\'e\' la sua carta');
   assert.ok(/const _DEF_EL = \{[^\n]*\bpubblicita: _defPubblicita\b/.test(APP), 'e i suoi valori di partenza');
   assert.ok(/\['pubblicita', '#sez-pubblicita'\]/.test(APP) && /<div class="asp-blocco" data-asp="pubblicita" data-cfg-di="pubblicita">/.test(APP), 'e nell\'ispettore il suo blocco');
-  assert.ok(/riempiCfgForm\('pubblicita'\);/.test(APP) && /data-salva-cfg="pubblicita"/.test(APP), 'la carta si riempie e si salva');
+  assert.ok(/for \(const k of new Set\(\[\.\.\.document\.querySelectorAll\('\[data-cfg\]'\)\]\.map\(\(n\) => n\.dataset\.cfg\)\)\) riempiCfgForm\(k\);/.test(APP)
+    && /data-cfg="pubblicita"/.test(APP) && /data-salva-cfg="pubblicita"/.test(APP), 'la carta si riempie (come ogni modulo che c\'e\') e si salva');
   assert.ok(/if \(b\.overlayPubblicita !== undefined\) out\.overlayPubblicita = normPubblicita\(b\.overlayPubblicita\);/.test(SRV), 'il server ripulisce quello che arriva');
   assert.ok(/\['overlayCss'[^\]]*'overlayPubblicita'[^\]]*\]\.some\(\(k\) => k in out\)/.test(SRV), 'salvarlo avvisa gli overlay aperti');
 });
@@ -48,7 +49,7 @@ test('e\' un elemento come gli altri, di qua e di la\' dal filo', () => {
 test('in diretta conta da solo, fra un messaggio e l\'altro', () => {
   assert.ok(OVL.includes("else if (dati.tipo === 'pubblicita') { MIO.pubblStato = { prossima: Number(dati.prossima) || 0, pausaFino: Number(dati.pausaFino) || 0 }; disegnaPubblicita(); }"),
     'il bot manda gli istanti, non i secondi che mancano: il conto lo fa l\'overlay');
-  assert.ok(/setInterval\(\(\) => \{[^]*?if \(MIO\.pubbl && MIO\.pubbl\.attivo\) disegnaPubblicita\(\);/.test(OVL), 'ogni secondo');
+  assert.ok(/function giro\(\) \{[^]*?if \(MIO\.pubbl && MIO\.pubbl\.attivo\) disegnaPubblicita\(\);/.test(OVL) && /setTimeout\(giroSecondo, dopo\);/.test(OVL), 'ogni secondo, a meta\' del secondo del server');
   assert.ok(/MIO\.pubblStato = \(MIO\.pubbl && MIO\.pubbl\.stato\) \|\| \{ prossima: 0, pausaFino: 0 \};/.test(OVL), 'un overlay che si apre a pausa in corso parte dallo stato del tema');
   assert.ok(/vestiElemento\(el, cfg, 'nessuna', 'pubblicita'\);/.test(OVL), 'la posa passa dalla porta di tutti, con la sua chiave');
   assert.ok(/!mostra\('pubblicita'\)/.test(OVL.slice(OVL.indexOf('function disegnaPubblicita('), OVL.indexOf('function togliPubblicita('))), 'e un overlay che non lo mostra non lo mostra');

@@ -214,7 +214,7 @@ test('il player non martella Spotify', () => {
   const m0 = mo.slice(mo.indexOf('async musica(login) {'));
   assert.ok(/if \(c && ora - c\.ts < CACHE_MS/.test(m0) && m0.indexOf('CACHE_MS') < m0.indexOf('leggi(login)'), 'che risponde dalla cache prima di chiamare Spotify');
   assert.ok(/chiaveOk\(req\)/.test(corpo), 'e protetto dalla chiave dell’overlay');
-  const m = OVL.slice(OVL.indexOf('setInterval(() => {'), OVL.indexOf('function applicaTema'));
+  const m = OVL.slice(OVL.indexOf('function giro() {'), OVL.indexOf('function giroSecondo('));
   assert.ok(/mostra\('musica'\)/.test(m) && /if \(!vivo\) return;/.test(m),
     'e chi non ha il player in scena non chiede niente');
 });

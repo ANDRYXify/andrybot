@@ -659,12 +659,14 @@ export const normMuro = (x) => {
     doppioni: x.doppioni !== false,
     maxSchermo: clampInt(x.maxSchermo, 1, 150, 50),
     coda: clampInt(x.coda, 0, 100, 20),
-    grandezza: clampInt(x.grandezza, 2, 40, 8),
+    grandezza: clampInt(x.grandezza, 2, 50, 8),
     varia: clampInt(x.varia, 0, 100, 30),
     minPx,
-    maxPx: clampInt(x.maxPx, minPx, 600, Math.max(minPx, 140)),
+    maxPx: clampInt(x.maxPx, minPx, 1080, Math.max(minPx, 140)),
     durata: clampInt(x.durata, 2, 20, 6),
     entrata: unoDi(x.entrata, ENTRATA_MURO, 'zoom'),
+    gira: x.gira !== false,
+    opacita: clampInt(x.opacita, 10, 100, 100),
     ombra: x.ombra !== false,
     arcobaleno: unoDi(x.arcobaleno, ARCOBALENO_MURO, 'treno'),
     chi: unoDi(x.chi, LIVELLI_MURO, 'tutti'),
@@ -672,8 +674,10 @@ export const normMuro = (x) => {
     esclusiPersone: listaMuro(x.esclusiPersone, /^[a-z0-9_]{1,25}$/, 40, true),
     esclusiEmote: listaMuro(x.esclusiEmote, /^[^\s<>"'`]{1,40}$/, 60, false),
     combo: { attivo: c.attivo !== false, soglia: clampInt(c.soglia, 2, 50, 4), finestra: clampInt(c.finestra, 2, 30, 6),
-      diverse: c.diverse !== false, figura: unoDi(c.figura, FIGURA_MURO, 'fuochi') },
-    esplosioni: { quante: clampInt(e.quante, 5, 80, 30), durata: clampInt(e.durata, 3, 15, 6), parola: parolaMuro(e.parola) },
+      diverse: c.diverse !== false, figura: unoDi(c.figura, FIGURA_MURO, 'fuochi'),
+      massimo: clampInt(c.massimo, 150, 800, 300), passo: clampInt(c.passo, 5, 50, 12), contatore: c.contatore !== false },
+    esplosioni: { quante: clampInt(e.quante, 5, 80, 30), durata: clampInt(e.durata, 3, 15, 6), parola: parolaMuro(e.parola),
+      grandezza: clampInt(e.grandezza, 0, 50, 0) },
     comando: { figura: unoDi(k.figura, FIGURA_MURO, 'caso'), attesa: clampInt(k.attesa, 0, 600, 30) },
     eventi,
     premi: (Array.isArray(x.premi) ? x.premi : []).filter((p) => p && /^[a-zA-Z0-9-]{1,64}$/.test(String(p.id || '')))
@@ -681,6 +685,25 @@ export const normMuro = (x) => {
       .map((p) => ({ id: String(p.id), titolo: String(p.titolo || '').slice(0, 60), figura: unoDi(p.figura, FIGURA_MURO, 'caso') })),
   };
 };
+
+// IL MURO SALVATO DAL MODULO VUOTO (docs/MURO-EMOTE.md, «Il modulo che si
+// salvava vuoto»). Per un difetto del pannello i campi del muro non si
+// riempivano mai, e toccarne uno salvava gli altri vuoti: dopo questa pulizia
+// diventavano tutti il loro minimo insieme, con le due fonti spente. Nessuno lo
+// sceglie apposta, perche' cosi' il muro non puo' mostrare niente: e'
+// l'impronta del difetto, e solo quella si ripara. Restano le cose che il
+// difetto non toccava: acceso o spento, dove sta, i premi.
+export function muroRotto(m) {
+  if (!m || typeof m !== 'object') return false;
+  const f = m.fonti || {};
+  return f.twitch === false && f.settetv === false && f.emoji !== true
+    && m.maxSchermo === 1 && m.coda === 0 && m.perMessaggio === 1
+    && m.grandezza === 2 && m.varia === 0 && m.durata === 2
+    && m.minPx === 12 && m.maxPx === 12;
+}
+export const riparaMuro = (m) => (muroRotto(m)
+  ? normMuro({ attivo: m.attivo, posizione: m.posizione, xy: m.xy, premi: m.premi })
+  : m);
 
 // LA CLASSIFICA DEI BIT in scena. Le righe non sono nostre: sono quelle che da'
 // Twitch, e qui si sceglie solo quante mostrarne e di che periodo. Il periodo e'

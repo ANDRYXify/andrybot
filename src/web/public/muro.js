@@ -25,16 +25,28 @@
     };
   }
 
-  function lato(area, cfg, rnd) {
-    const d = dado(rnd);
+  function misure(area, cfg) {
     const c = cfg || {};
     const corto = Math.max(1, Math.min(area.w, area.h));
     const base = corto * stringi(Number(c.grandezza) || 8, 1, 50) / 100;
     const varia = stringi(Number(c.varia) || 0, 0, 100) / 100;
     const min = Math.max(4, Number(c.minPx) || 4);
     const max = Math.max(min, Number(c.maxPx) || 4096);
-    const s = stringi(base * (1 + varia * (2 * d.u() - 1)), min, max);
-    return Math.max(2, Math.min(s, corto / 2));
+    const tetto = Math.max(2, corto / 2);
+    const misura = (k) => Math.max(2, Math.min(stringi(base * k, min, max), tetto));
+    const alto = base * (1 + varia), basso = base * (1 - varia);
+    return {
+      base, varia, min, max, tetto, misura,
+      da: misura(1 - varia), a: misura(1 + varia),
+      ferma: alto > tetto && tetto <= max ? 'meta' : alto > max ? 'massimo' : '',
+      alza: basso < min ? 'minimo' : '',
+    };
+  }
+
+  function lato(area, cfg, rnd) {
+    const d = dado(rnd);
+    const m = misure(area, cfg);
+    return m.misura(1 + m.varia * (2 * d.u() - 1));
   }
 
   function fotogramma(x, y, r, sx, sy, o) {
@@ -277,6 +289,7 @@
     const o = opz || {};
     const h = s / 2;
     const modo = tr.nasceDentro ? (o.entrata || 'zoom') : 'nessuna';
+    const gira = o.gira !== false;
     return tempi(tr, o.fps).map((t) => {
       const f = tr.p(t);
       const env = inviluppo(t, modo);
@@ -284,7 +297,7 @@
       const op = (modo === 'dissolvenza' ? env : 1) * f.o;
       return {
         offset: t,
-        transform: 'translate(' + cifra(f.x - h) + 'px,' + cifra(f.y - h) + 'px) rotate(' + cifra(f.r) + 'deg) scale(' + cifra(f.sx * k) + ',' + cifra(f.sy * k) + ')',
+        transform: 'translate(' + cifra(f.x - h) + 'px,' + cifra(f.y - h) + 'px) rotate(' + (gira ? cifra(f.r) : 0) + 'deg) scale(' + cifra(f.sx * k) + ',' + cifra(f.sy * k) + ')',
         opacity: cifra(op),
       };
     });
@@ -615,35 +628,40 @@
     const finestra = Math.max(1000, (Number(c.finestra) || 6) * 1000);
     const diverse = c.diverse !== false;
     const stato = new Map();
+    const chiudi = (ts) => {
+      const out = [];
+      for (const [k, v] of stato) {
+        if (ts - v.ultimo <= finestra) continue;
+        stato.delete(k);
+        if (v.n >= soglia) out.push({ nome: v.nome, url: v.url, emoji: v.emoji, n: v.n });
+      }
+      return out;
+    };
     return {
       soglia, finestra,
       passo(e, chi, ts) {
+        const chiuse = chiudi(ts);
         let v = stato.get(e.nome);
-        if (v && ts - v.ultimo > finestra) { stato.delete(e.nome); v = null; }
         if (!v) { v = { nome: e.nome, url: e.url, emoji: !!e.emoji, n: 0, ultimo: ts, chi: new Set() }; stato.set(e.nome, v); }
         const conta = !diverse || !v.chi.has(chi);
         const aperta = v.n >= soglia;
-        if (!conta) return aperta ? { azione: 'niente', n: v.n } : { azione: 'lancia', n: v.n };
+        if (!conta) return { azione: aperta ? 'niente' : 'lancia', n: v.n, chiuse };
         v.chi.add(chi);
         v.n++;
         v.ultimo = ts;
-        if (aperta) return { azione: 'cresci', n: v.n };
-        return { azione: v.n === soglia ? 'apri' : 'lancia', n: v.n };
+        if (aperta) return { azione: 'cresci', n: v.n, chiuse };
+        return { azione: v.n === soglia ? 'apri' : 'lancia', n: v.n, chiuse };
       },
-      scadute(ts) {
-        const out = [];
-        for (const [k, v] of stato) {
-          if (ts - v.ultimo <= finestra) continue;
-          stato.delete(k);
-          if (v.n >= soglia) out.push({ nome: v.nome, url: v.url, emoji: v.emoji, n: v.n });
-        }
-        return out;
-      },
+      scadute: chiudi,
       aperte() { return [...stato.values()].filter((v) => v.n >= soglia).map((v) => ({ nome: v.nome, n: v.n })); },
     };
   }
 
-  function crescita(n, soglia) { return Math.min(3, 1 + Math.max(0, n - soglia) * 0.12); }
+  function crescita(n, soglia, massimo, passo) {
+    const tetto = Math.max(1, Number(massimo) || 3);
+    const p = Math.max(0, Number(passo == null ? 0.12 : passo) || 0);
+    return Math.min(tetto, 1 + Math.max(0, n - soglia) * p);
+  }
 
   function coda(cfg) {
     const c = cfg || {};
@@ -685,6 +703,22 @@
     faccia('#ff9a3c', '<circle cx="39" cy="46" r="7" fill="#1b1325"/><path d="M64 47h18" stroke="#1b1325" stroke-width="6" stroke-linecap="round"/>', '<path d="M36 70q20 14 40-4" fill="none" stroke="#1b1325" stroke-width="7" stroke-linecap="round"/>'),
   ];
 
+  const MISURE_TWITCH = [[28, '1.0'], [56, '2.0'], [112, '3.0']];
+  const MISURE_7TV = [[32, '1x'], [64, '2x'], [96, '3x'], [128, '4x']];
+  const TWITCH = /^(https:\/\/static-cdn\.jtvnw\.net\/emoticons\/v2\/[^/?#]+\/[^/?#]+\/[^/?#]+\/)(?:1\.0|2\.0|3\.0)$/;
+  const SETTETV = /^(https:\/\/cdn\.7tv\.app\/emote\/[A-Za-z0-9]+\/)[1-4]x\.webp$/;
+  const quale = (misure, px) => { for (const [m, nome] of misure) if (px <= m) return nome; return misure[misure.length - 1][1]; };
+
+  function nitida(url, s, densita) {
+    const u = String(url || '');
+    const px = Math.max(1, Number(s) || 1) * Math.max(1, Number(densita) || 1);
+    let m = TWITCH.exec(u);
+    if (m) return m[1] + quale(MISURE_TWITCH, px);
+    m = SETTETV.exec(u);
+    if (m) return m[1] + quale(MISURE_7TV, px) + '.webp';
+    return u;
+  }
+
   function nodo(e, s, veste) {
     const v = veste || {};
     const el = document.createElement('div');
@@ -700,8 +734,13 @@
     } else {
       const i = document.createElement('img');
       i.alt = ''; i.decoding = 'async'; i.referrerPolicy = 'no-referrer';
-      i.addEventListener('error', () => { el.style.visibility = 'hidden'; }, { once: true });
-      i.src = e.url;
+      const giusta = nitida(e.url, s, typeof window !== 'undefined' ? window.devicePixelRatio : 1);
+      i.addEventListener('error', function rotta() {
+        if (i.getAttribute('src') !== e.url) { i.src = e.url; return; }
+        i.removeEventListener('error', rotta);
+        el.style.visibility = 'hidden';
+      });
+      i.src = giusta;
       el.appendChild(i);
     }
     return el;
@@ -724,13 +763,13 @@
     const el = nodo(e, s, veste);
     el.style.opacity = '0';
     box.appendChild(el);
-    muovi(el, fotogrammi(tr, s, { entrata: cfg.entrata }), tr.durata, 0, fatto);
+    muovi(el, fotogrammi(tr, s, { entrata: cfg.entrata, gira: cfg.gira }), tr.durata, 0, fatto);
   }
 
   function esplosione(box, nome, pool, n, cfg, veste) {
     const area = areaDi(box);
-    const s = lato(area, Object.assign({}, cfg, { varia: 0 }), Math.random);
     const e = cfg.esplosioni || {};
+    const s = lato(area, Object.assign({}, cfg, { varia: 0 }, Number(e.grandezza) > 0 ? { grandezza: e.grandezza } : {}), Math.random);
     const F = figura(nome, area, s, n, Math.random, { durata: e.durata, parola: e.parola });
     let fine = 0;
     for (const m of F.membri) {
@@ -738,11 +777,11 @@
       const el = nodo(pool[Math.floor(Math.random() * pool.length)], l, veste);
       el.style.opacity = '0';
       box.appendChild(el);
-      muovi(el, fotogrammi(m.tr, l, { entrata: 'nessuna' }), m.tr.durata, m.ritardo);
+      muovi(el, fotogrammi(m.tr, l, { entrata: 'nessuna', gira: cfg.gira }), m.tr.durata, m.ritardo);
       fine = Math.max(fine, m.ritardo + m.tr.durata);
     }
     return fine;
   }
 
-  window.SB_MURO = { ANIMAZIONI, FIGURE, GLIFI, ESEMPI, lato, anima, fotogrammi, tempi, figura, punti, parola, emoteDi, combo, crescita, coda, cuoreX, cuoreY, nodo, muovi, lancia, esplosione };
+  window.SB_MURO = { ANIMAZIONI, FIGURE, GLIFI, ESEMPI, misure, lato, anima, fotogrammi, tempi, figura, punti, parola, emoteDi, combo, crescita, coda, cuoreX, cuoreY, nitida, nodo, muovi, lancia, esplosione };
 })();

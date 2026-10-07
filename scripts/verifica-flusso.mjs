@@ -14,7 +14,11 @@
 //      il tema (gli eventi persi non tornano: lo stato si rilegge) e la chat
 //      riprende a scrivere;
 //   2. una linea aperta ma muta viene riaperta (il battito del server e' un
-//      evento, e la pagina lo aspetta);
+//      evento, e la pagina lo aspetta); e anche una linea che non si apre mai
+//      (un proxy che accetta e non risponde): prima il guardiano guardava solo
+//      le linee aperte, e una appesa restava appesa per sempre. Ogni tentativo
+//      ricomincia il conto del silenzio, se no dopo il primo si ritenterebbe a
+//      ogni giro del guardiano;
 //   3. il silenzio ammesso dalla pagina e' piu' lungo di tre battiti del server,
 //      cosi' un battito in ritardo non fa riaprire una linea sana;
 //   4. il guaio si racconta una volta per caduta e una al ritorno, non a ogni
@@ -38,8 +42,12 @@ const ROTTURE = [
     'dopo un 502 la pagina non riprova mai piu\''],
   ['src/web/public/flusso.js', 'else if (tornato && o.suRitorno) { try { o.suRitorno(n); } catch (e) {} }', '',
     'al ritorno nessuno viene avvisato, e lo stato non si rilegge'],
-  ['src/web/public/flusso.js', 'if (Date.now() - ultimo > o.silenzio) { segnaCaduta(); tentativi++; collega(); }', '',
+  ['src/web/public/flusso.js', 'if (ora() - ultimo > o.silenzio) { segnaCaduta(); tentativi++; collega(); }', '',
     'una linea aperta ma muta resta muta per sempre'],
+  ['src/web/public/flusso.js', 'if (chiuso || !es || es.readyState === 2) return;', 'if (chiuso || !es || es.readyState !== 1) return;',
+    'una linea che non si apre mai resta appesa per sempre'],
+  ['src/web/public/flusso.js', '      ultimo = ora();\n      try { es = new EventSource(url); }', '      try { es = new EventSource(url); }',
+    'dopo il primo silenzio si ritenta a ogni giro del guardiano'],
   ['src/web/public/overlay-app.js', 'suRitorno: (n) => { caricaTema();', 'suRitorno: (n) => {',
     'l\'overlay torna su ma non rilegge il tema'],
   ['src/web/public/overlay-app.js', 'silenzio: 75000,', 'silenzio: 30000,',
@@ -109,17 +117,26 @@ const PAGINA_SILENZIO = `<!doctype html><script src="/flusso.js"></script><scrip
   window.aperture = 0;
   SB_FLUSSO.apri('/muto', { silenzio: 2500, suAperto: function () { aperture++; }, suRitorno: function () { aperture++; } });
 </script>`;
+// La linea appesa: il proxy accetta la richiesta e non risponde mai, nemmeno
+// le intestazioni. L'EventSource resta «in collegamento» per sempre.
+const PAGINA_APPESA = `<!doctype html><script src="/flusso.js"></script><script>
+  SB_FLUSSO.apri('/appeso', { silenzio: 2500 });
+</script>`;
+const appesi = new Set();
 
 const browser = await apriBrowser();
 if (!browser) { console.log('  –  saltato: manca Chromium o Playwright'); process.exit(0); }
 const ovl = overlayFinto({ tema: () => TEMA });
 const st = ovl.st;
 st.muti = 0;
+st.appesi = 0;
 const { base, chiudi } = await apriSito({
   overlay: ovl,
   rotte: (req, res, q) => {
     if (q === '/muto') { st.muti++; res.writeHead(200, SSE); res.write('data: {"n":1}\n\n'); return true; }
     if (q === '/prova-silenzio') { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' }); res.end(PAGINA_SILENZIO); return true; }
+    if (q === '/appeso') { st.appesi++; appesi.add(req.socket); return true; }
+    if (q === '/prova-appesa') { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' }); res.end(PAGINA_APPESA); return true; }
     return false;
   },
 });
@@ -163,8 +180,22 @@ try {
   await finche(() => st.muti >= 2, 9000, 'una linea aperta ma muta viene riaperta (silenzio ammesso 2,5 s)',
     'il socket resta aperto e nessuno se ne accorge');
   await p2.close();
+
+  // --- 3. la linea appesa --------------------------------------------------
+  const p3 = await browser.newPage();
+  await p3.goto(base + '/prova-appesa');
+  await finche(() => st.appesi >= 1, 5000, 'la prova della linea appesa chiede la linea');
+  await finche(() => st.appesi >= 2, 9000, 'una linea che non si apre mai viene ritentata (silenzio ammesso 2,5 s)',
+    'resta appesa: la pagina aspetta per sempre');
+  const n0 = st.appesi;
+  await attesa(6000);
+  const fatti = st.appesi - n0;
+  dice(fatti >= 1 && fatti <= 3, `ogni tentativo ricomincia il conto del silenzio (${fatti} tentativi in 6 s, con 2,5 s ammessi)`,
+    'si ritenta a ogni giro del guardiano');
+  await p3.close();
 } finally {
   await browser.close();
+  for (const s of appesi) s.destroy();
   chiudi();
   ovl.cadi();
 }
@@ -173,5 +204,5 @@ const rossi = esiti.filter((e) => !e.ok);
 for (const e of esiti) console.log((e.ok ? '  ✓ ' : '  ✗ ') + e.msg + (e.extra && !e.ok ? `  → ${e.extra}` : ''));
 console.log(rossi.length
   ? `\n${rossi.length} ${rossi.length === 1 ? 'cosa non torna' : 'cose non tornano'}: l'overlay in OBS non sopravviverebbe a un riavvio.`
-  : '\nL\'overlay sopravvive al riavvio e alla linea muta. ✓');
+  : '\nL\'overlay sopravvive al riavvio, alla linea muta e a quella appesa. ✓');
 process.exit(rossi.length ? 1 : 0);

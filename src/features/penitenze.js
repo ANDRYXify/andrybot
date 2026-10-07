@@ -254,6 +254,17 @@ export class PenitenzeEngine {
     }
   }
 
+  // Le penitenze in corso come le racconta l'overlay all'inizio: la sua carta si
+  // rifa' da qui quando la pagina si riapre o il flusso torna, e una carta la
+  // cui fine si e' persa per strada se ne va perche' qui non c'e' piu'
+  // (docs/OVERLAY.md, «Quello che sta in scena e' stato»).
+  statoOverlay(channel) {
+    const ora = Date.now();
+    const opz = this._overlayOpts(this.cfg(channel));
+    return (this.attive.get(channel) || []).filter((p) => p.scadenza > ora)
+      .map((p) => ({ id: p.id, modo: p.modo, cosa: p.tipo, valore: p.valore, count: p.count, fine: p.scadenza, ...opz }));
+  }
+
   // Penitenze attive del canale (per overlay/pannello).
   stato(channel) {
     const ora = Date.now();

@@ -739,6 +739,22 @@ di prima, non zero), che sia acceso solo lui sulla tela e nei livelli, che il
 titolo sia il suo; che lasciandolo non resti niente acceso; e che sotto la tela
 non sia rimasto **nessun** campo.
 
+### Un modulo mostra quello che il pezzo ha, e rileggerlo non cambia niente
+
+Due elenchi scritti a mano, a parte dall'elenco dei pezzi, facevano perdere le
+scelte. Quello dei moduli da riempire all'apertura non aveva il muro delle
+emote: i suoi campi restavano vuoti, e toccarne uno salvava tutti gli altri
+vuoti (docs/MURO-EMOTE.md, «Il modulo che si salvava vuoto»). Quello delle
+impostazioni del pannello non portava le scelte salvate di muro, boss, arena,
+testo a schermo e nome del comando: i loro moduli partivano sempre dalle scelte
+di serie, e ogni salvataggio, dopo un ricaricamento del pannello, rimetteva le
+scelte di serie al posto di quelle dello streamer. Ora i moduli da riempire si
+ricavano dalla pagina, la bozza parte dalla scelta salvata nelle impostazioni
+del canale fusa a ogni livello con quelle di serie, e un campo si rilegge col
+tipo del valore che ha. `scripts/verifica-campi-pezzi.mjs` lo misura per ogni
+modulo che c'è: rileggere un modulo appena riempito restituisce la stessa
+bozza, e una scelta salvata si vede nel suo modulo.
+
 ## Due cose piccole che rendevano il banco scomodo
 
 **L'occhio di un livello non si vedeva cambiare.** Lo cliccavi, l'elemento
@@ -800,6 +816,159 @@ al ritorno (`flusso-tornato`, con i tentativi), non a ogni prova.
 
 Le sorgenti rimaste aperte da prima di questo cambiamento hanno la pagina
 vecchia: vanno ricaricate una volta.
+
+## Il controllo dell'overlay nel tempo: cosa si rompeva, e le regole
+
+Chiesto così: «riesci un po' a fare un check delle funzioni in generale
+dell'overlay? giusto per capire se funzionano effettivamente correttamente»,
+perché il muro delle emote e il conto alla pubblicità «a una certa si
+rompevano». L'overlay è stato guardato per pezzi, ognuno con sonde nel browser
+vero (pagina vera, finto server che si comporta come il vero, orologio della
+pagina spinto avanti per ore): pubblicità; conto alla rovescia, treno, premi a
+tempo, penitenze, boss, arena e classifica Bit; alert, chat, effetti, contatori,
+obiettivi e cartelli. I difetti veri trovati violavano poche regole, sempre le
+stesse. Qui le regole, e per ognuna cosa la rompeva.
+
+1. **Quello che sta in scena è stato, e lo stato si rilegge.** Un evento che si
+   perde (una linea che cade, un riavvio del bot) non torna; lo stato sì, perché
+   a ogni apertura e a ogni ritorno la pagina rilegge il tema. Valeva per conto,
+   treno, premi a tempo, pubblicità, obiettivi e widget; **non** per contatori,
+   boss, penitenze e arena, che vivevano solo dei loro eventi: dopo un
+   ricaricamento della sorgente sparivano, e se la loro fine si perdeva
+   restavano a schermo per sempre. Ora il tema porta anche loro, e la pagina li
+   riconcilia; chi ha un istante di fine scade da sé anche se la fine non
+   arriva.
+2. **Collegata vuol dire col tema applicato.** Una pagina aperta mentre il bot
+   era giù (un aggiornamento, un riavvio) non leggeva più il tema nemmeno quando
+   il bot tornava: il flusso chiamava «tornato» solo dopo una caduta, non al
+   primo collegamento riuscito dopo dei tentativi falliti, e la lettura del tema
+   non riprovava. Restavano un alert su un overlay di sola chat, niente CSS,
+   niente obiettivi. Ora il tema si legge a ogni apertura riuscita, e riprova
+   finché non arriva. E il flusso si accorge anche di una linea che non si apre
+   mai, non solo di una aperta e muta, e il suo silenzio si misura con un
+   orologio che non salta quando il PC cambia ora.
+3. **Un orologio solo, quello del server.** Ogni conto (alla rovescia, alla
+   pubblicità, del treno, dei premi a tempo, delle penitenze) confrontava gli
+   istanti del server con l'ora del PC di OBS, sbagliando di quanto sbaglia il
+   PC: tre minuti avanti, e la pausa pubblicitaria non si vedeva affatto. Ora il
+   battito del flusso e il tema portano l'ora del server, la pagina misura lo
+   scarto col suo orologio che non salta, e tutti i conti lo usano. Il giro di
+   ogni secondo cade a metà del secondo del server, così le cifre scendono di
+   uno alla volta, tutte insieme, senza saltarne una.
+4. **Un elemento che rientra si vede.** Il conto alla pubblicità, se ricompariva
+   nel mezzo secondo della sua uscita (la pausa che comincia proprio quando il
+   conto arriva a zero), restava sulla pagina ma invisibile per tutta la pausa.
+   Lo stesso per conto alla rovescia, premi a tempo, treno e classifica Bit. Ora
+   rientrano tutti da un punto solo (`rientra`), che rimette la classe che li
+   rende visibili.
+5. **Spento vuol dire spento.** Alert ed effetti in coda continuavano a uscire
+   dopo che lo streamer li aveva spenti, e le righe della chat restavano ferme a
+   schermo con la chat spenta o spostata. Ora una coda è vuota per costruzione
+   mentre il suo elemento è spento: spegnerlo la svuota, e da spento non si
+   riempie (l'evento si scarta all'ingresso). Un controllo in più all'uscita
+   non servirebbe a niente: non potrebbe mai scattare. La chat si riconcilia
+   col tema come gli altri pezzi.
+6. **Un posto occupato si libera sempre.** Un errore mentre si disegnava un
+   alert o un effetto lasciava la coda occupata per sempre. Ora il posto si
+   libera comunque, e l'errore si racconta fra i guai dell'overlay.
+7. **Lo zero è silenzio.** Un suono pronto a volume 0 suonava al massimo, anche
+   quello che l'opzione «muto» degli effetti degli eventi manda apposta a zero.
+   Il volume ha una definizione sola (`SUONI_PRESET.volume`).
+8. **«Ferma» ferma, e «Parte da solo» parte una volta.** «Ferma» manda la fine
+   a zero, e la pagina leggeva lo zero come «non detto»: il conto continuava in
+   scena. «Parte da solo» ripartiva a ogni rilettura del tema (un salvataggio,
+   un ritorno del flusso), anche a conto finito o fermato. Ora parte quando la
+   pagina si apre, come dice il manuale, una volta per apertura.
+9. **Un follow vecchio non è più una notizia.** Una raffica di follow (spesso
+   bot) metteva in coda mezz'ora di alert. Gli alert di follow che aspettano da
+   più di novanta secondi si lasciano; quelli che costano (abbonamenti, bit,
+   donazioni, raid, Kicks) si mostrano tutti.
+10. **Quello che scrive la gente non esce dalla carta.** Un testo con un
+    indirizzo lunghissimo usciva dalla carta dell'alert e dallo schermo; un nome
+    con un carattere che gira il verso della scrittura rovesciava tutta la
+    frase. Ora il testo va a capo dovunque serva, e i nomi sono isolati.
+11. **Quello che si accumula ha un tetto.** Cinquanta suoni in un colpo davano
+    cinquanta etichette insieme, trenta testi dei moduli uscivano dallo schermo.
+    Ora ne restano gli ultimi, gli altri lasciano il posto.
+12. **Quello che arriva da fuori si riprova e si rinfresca.** I badge della chat
+    non riprovavano dopo un caricamento fallito (mezz'ora senza), e la
+    classifica dei Bit non si rileggeva al cambio del periodo.
+13. **Vince il dato più nuovo.** Il tema si legge con una richiesta, gli eventi
+    arrivano dal flusso: sono due strade, e niente garantisce l'ordine. Un tema
+    chiesto un attimo prima di un evento e arrivato un attimo dopo riportava la
+    scena a prima: il timer appena fermato ripartiva, il boss appena battuto
+    tornava in piedi, il contatore tornava al numero vecchio. Succede proprio
+    quando una lettura è in viaggio, cioè a ogni apertura e a ogni ritorno della
+    linea. Ora ogni messaggio verso gli overlay porta un numero d'ordine
+    (`seq`, in `features/effects.js`), e il tema porta quello di quando lo stato
+    è stato letto, letto **prima** dello stato. La pagina tiene, per ogni pezzo
+    (timer, pubblicità, treno, premi a tempo, obiettivi, ultimo follower e sub,
+    boss, ogni penitenza, ogni contatore, classifica dei Bit), il numero
+    dell'ultimo evento: un tema più vecchio non tocca quel pezzo. Funziona perché
+    chi manda un evento cambia lo stato **prima** di mandarlo (verificato in
+    ognuno: alerts, treno, subathon, boss, penitenze, premi a tempo, contatori,
+    pubblicità). I numeri partono dall'ora di avvio per mille: dopo un riavvio
+    crescono ancora, e una pagina rimasta aperta non scambia i numeri nuovi per
+    vecchi. La configurazione (posizioni, veste, cosa si mostra) non ha numero:
+    la cambia solo il tema.
+
+    Un caso a parte, stessa famiglia: allo scadere di una penitenza il server
+    la toglie dall'elenco subito, e l'esito lo sceglie dopo (a volte lo chiede
+    all'IA: un secondo o due). Un tema riletto in quel mezzo non la elenca più,
+    e la carta spariva prima di dire com'era andata. Ora l'assenza dal tema
+    decide solo per le penitenze ancora nel loro tempo; una scaduta la chiude
+    il suo esito, o se ne va da sola quindici secondi dopo (regola 1).
+
+Le regole del conto alla pubblicità lato server (una lettura fallita non vuol
+dire «nessuna pubblicità», lo snooze si segue, dopo una pausa il programma si
+rilegge finché non c'è) stanno in docs/PUBBLICITA.md; quelle del muro delle
+emote in docs/MURO-EMOTE.md.
+
+### Il collaudo delle regole
+
+`scripts/verifica-overlay-tempo.mjs` prova ogni regola nella pagina vera, come
+succede in diretta: la linea che cade e torna, la prima lettura del tema che
+fallisce, il tema letto prima che il flusso si apra, il PC di OBS cinque minuti
+avanti o tre indietro, la fine di un boss o di un'arena che non arriva, due
+minuti di alert lunghi con un follow in coda dietro. Il tempo che passa lo
+spinge avanti l'orologio della pagina (`page.clock`), e il finto server manda
+intanto i battiti con l'ora che va avanti con lui, come il vero. La regola 6 si
+prova guastando apposta una volta il disegno di un alert, di un effetto, il
+giro dei secondi e l'applicazione del tema: quello dopo deve andare, e il
+guasto si deve dire al server. Con `--selftest` toglie dal codice, una alla
+volta, ognuna delle cose che tengono in piedi le regole, e pretende il rosso.
+La regola 13 si prova facendo partire il tema (e la classifica dei Bit) prima
+degli eventi e arrivare un secondo dopo: il finto server li legge alla
+richiesta e li consegna in ritardo (`st.ritardoTema`). La prova controlla anche
+di essere vera: gli eventi devono partire mentre il tema è in viaggio. La prima
+versione chiamava la lettura dei Bit aspettandone la risposta, e gli eventi
+partivano dopo: restava verde anche togliendo la regola dal codice. Rompere
+apposta la regola, prima di fidarsi del verde, è quello che l'ha mostrato.
+
+Il collaudo stesso aveva un difetto dello stesso genere, e l'ha mostrato
+diventando rosso a caso: mandava un evento («Ferma») senza cambiare lo stato
+del finto server, e la pagina, rileggendo il tema in quel momento, tornava
+indietro. Il server vero cambia lo stato prima di mandare l'evento; ora anche
+il finto (`s.cambia`). E le attese a tempo fisso sono diventate «guarda finché
+succede», con un tetto: il risultato non dipende più da quanto è carica la
+macchina.
+
+Il finto server (`overlayFinto` in `scripts/_sito.mjs`) ora saluta come il
+vero: il tema porta l'ora e il numero d'ordine di quando è letto, ogni evento
+porta il suo, e a chi si collega arrivano subito il primo battito e lo stato
+dell'arena («nessuna» se non c'è). Durante un riavvio (`st.giu`)
+risponde 502 a tutto, non solo al flusso, come il proxy. Un finto che fa meno
+del vero fa passare per buona una pagina che si regge solo su di lui. Il caso
+è successo misurando: col finto vecchio la segnalazione «la linea è caduta»
+arrivava sempre; col proxy vero, durante un riavvio, non può arrivare. Non è
+un difetto: quella del ritorno («dopo N tentativi») arriva sempre e dice già
+la caduta. Il collaudo del flusso ora conta quante volte la pagina lo dice,
+non quante il server riesce a sentirlo.
+
+Il caso del conto alla pubblicità che restava trasparente ha il suo passo in
+`scripts/verifica-pubblicita-scena.mjs`, nell'ordine vero delle cose: il conto
+arriva a zero, comincia ad andarsene, e un attimo dopo il bot dice che la pausa
+è cominciata.
 
 ## Anteprima = diretta: cosa divergeva, e il cancello che lo misura
 

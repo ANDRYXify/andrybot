@@ -123,6 +123,11 @@ e comunque ogni cinque minuti (`RILETTURA_MS`): il programma può cambiare senza
 nessun evento, se lo streamer tocca le impostazioni della pubblicità a diretta
 accesa.
 
+E una chiamata che non va non si ripete ogni mezzo minuto per sempre: dopo `n`
+errori di fila si riprova dopo `GIRO_MS · 2^(n−1)`, mai oltre `RILETTURA_MS`
+(vedi «Non so non vuol dire nessuna», più sotto). Un permesso tolto costa una
+chiamata ogni cinque minuti, non centoventi l'ora.
+
 ## Una casella vuota vuol dire «non dire niente»
 
 Non «usa quello di serie». Chi svuota la casella sta spegnendo quel momento, e
@@ -186,17 +191,97 @@ si apre, o si ricarica, a pausa in corso lo trova nel tema, invece di
 aspettare il giro dopo. Il tema scarta i tempi già passati: uno stato vecchio
 vale come niente.
 
+**Chi cambia lo stato, lo manda.** `_pubInScena` la chiamano tutti i posti
+che toccano quello che l'overlay deve sapere: il giro, la pausa che comincia,
+il preavviso che rilegge il programma, la fine della pausa. Guarda lei se il
+conto è acceso in scena, e manda solo se il dato è cambiato: chiamarla una
+volta di troppo non costa niente, una di meno vuol dire una scena in ritardo.
+Era successo: il preavviso rileggeva il programma, trovava lo snooze, e la
+scena lo sapeva solo al giro dopo.
+
 **Cosa arriva, e basta** (`perOverlay`). Fuori diretta niente: Twitch non ne
 programma, e un conto a canale spento sarebbe inventato. Durante la pausa la
 sua fine, e la prossima no. Un istante già passato non si conta.
 
-**Quando rileggere il programma** (`vaGuardatoPerOverlay`). Il programma cambia
-in tre momenti, e si rilegge in quelli: vicino alla pausa (uno snooze la
-sposta), quando la pausa doveva essere già partita, e **alla fine di una
-pausa**, quando Twitch mette in programma la prossima. Fuori da questi, ogni
-cinque minuti come per la chat. Senza la regola della fine, dopo ogni pausa il
-conto sarebbe sparito fino a cinque minuti. E fuori diretta si dimentica anche
-quando si è letto: alla diretta dopo si rilegge al primo giro.
+### Quello che il bot sa del programma, e quello che non sa
+
+Lo stato di un canale tiene, del programma, tre cose:
+
+| campo | vuol dire |
+| --- | --- |
+| `prossima` | la prossima pausa secondo l'**ultima lettura riuscita**; `0` vuol dire che Twitch ha risposto «nessuna» |
+| `letto` | l'istante in cui è stata **chiesta** quella lettura; `0` vuol dire mai (o fuori diretta) |
+| `falliti`, `fallitoA` | quante letture di fila sono andate male, e quando l'ultima |
+
+**Non so non vuol dire nessuna.** Una lettura che non va (Twitch che non
+risponde, un 503, un permesso tolto: `getAdSchedule` torna `null`) non tocca
+né `prossima` né `letto`. Cambia solo il conto degli errori. Le condizioni che
+avevano chiesto quella lettura restano quindi vere, e la lettura si rifà, al
+giro dopo. Il conto in scena intanto continua verso l'ultima pausa che si
+sapeva, che è la cosa più vera che abbiamo. Prima un errore scriveva
+`prossima = 0` e `letto = adesso`: un intoppo di un attimo diventava
+«nessuna pausa», il conto spariva dalla scena e per cinque minuti nessuno lo
+richiedeva.
+
+Se l'errore si ripete (un permesso tolto non guarisce da solo), si riprova
+sempre più piano: dopo `n` errori di fila si aspetta `GIRO_MS · 2^(n−1)`, mai
+oltre `RILETTURA_MS`, cioè 30 s, 1, 2, 4, 5, 5… minuti. L'attesa vale per tutte
+e due le ragioni di leggere, chat e scena: la chiamata è una. La soglia sta a
+metà giro (`attesa − GIRO_MS/2`): `setInterval` non è un metronomo, e un giro
+che arriva un attimo prima del suo istante non deve slittare di un giro intero.
+Una lettura riuscita azzera il conto. Fuori diretta si azzera tutto, e la
+diretta dopo comincia con una lettura.
+
+**Dopo una pausa il programma non si sa, finché Twitch non dice la prossima.**
+Dalla fine della pausa (`finisceA`, oppure inizio + durata) si rilegge a ogni
+giro, finché una lettura chiesta **dopo la fine** non porta una pausa ancora da
+venire. Una lettura che fallisce, o che dice ancora `0`, non chiude niente.
+Questo per `RILETTURA_MS` dalla fine; poi si torna al passo di sempre, perché
+un canale che non ha più pause in programma non va richiesto ogni mezzo minuto
+per tutta la sera. Prima la regola della fine leggeva **una volta sola**: se
+quella lettura falliva, o arrivava prima che Twitch avesse messo in programma la
+prossima, il conto restava sparito per cinque minuti dopo la pausa.
+
+**Uno snooze si segue entro un giro.** `SNOOZE_MS` è quanto uno snooze sposta la
+pausa: cinque minuti. Quando alla prossima pausa mancano al più
+`SNOOZE_MS + 2·GIRO_MS` si legge a ogni giro, quindi uno snooze si vede entro un
+giro. Dentro quei cinque minuti un conto lasciato indietro arriverebbe a zero
+per una pausa che non c'è: è lì che la differenza si vede. Più in là, uno snooze
+non ancora letto sposta un conto che ha ancora più di `SNOOZE_MS + 2·GIRO_MS`
+davanti, e lo corregge al più tardi la prima lettura dentro la finestra. La
+finestra si misura sulla pausa che si sapeva, quindi quella lettura c'è per
+costruzione. I due giri di margine sono quelli del preavviso: in un intervallo
+di due giri ne cadono due, quindi uno anche quando un giro tarda. Prima la
+finestra era di due giri e basta: uno snooze premuto quattro minuti prima
+restava invisibile per più di tre minuti, poi il conto saltava da 0:40 a 5:40.
+È anche per questo che `PREAVVISO_MAX` è `SNOOZE_MS`: un numero solo.
+
+**Uno stato per canale, e una lettura vecchia non scrive sopra una nuova.** Lo
+stato di un canale nasce in un posto solo (`_statoPubblicita`), ed è in memoria
+**prima** di qualunque attesa: il giro, la pausa che comincia e il preavviso
+toccano lo stesso oggetto. Una lettura si applica (`dopoLettura`) solo se non è
+cominciata una pausa mentre la si aspettava (`ultimaPausa` è quella di quando è
+stata chiesta) e se non è più vecchia di quella che si ha (`letto`). Una lettura
+partita prima della pausa racconta il programma di prima, e riscriverlo sopra la
+pausa vorrebbe dire rimettere in scena una pausa già partita. Prima il primo
+giro dopo un riavvio teneva un oggetto suo durante l'attesa, e alla fine lo
+rimetteva in memoria. Una pausa cominciata in quel mezzo secondo spariva: il
+conto del ritorno dalla scena, e il «sono tornato» dalla chat.
+
+**Quando rileggere** (`vaGuardatoPerOverlay`), nell'ordine:
+
+1. dopo un errore, finché non è passata l'attesa: no;
+2. mai letto: sì;
+3. ultima lettura più vecchia di `RILETTURA_MS`: sì;
+4. dopo una pausa, finché non si sa la prossima (sopra): sì;
+5. nessuna pausa in programma: no;
+6. la pausa doveva essere già partita: sì;
+7. alla pausa mancano al più `SNOOZE_MS + 2·GIRO_MS`: sì.
+
+La chat (`vaGuardato`) ha le sue finestre (quelle del preavviso) ma la stessa
+attesa dopo un errore e la stessa regola: non so non vuol dire nessuna. E fuori
+diretta si dimentica anche quando si è letto: alla diretta dopo si rilegge al
+primo giro.
 
 **Dopo un riavvio** (`riprendi`). Il conto dei secondi della pausa è
 volatile, e deve esserlo per la chat: salutare in ritardo è peggio che stare
@@ -220,11 +305,11 @@ nell'anteprima quelli che l'overlay scriverà.
 | il modello e gli invarianti | `src/features/pubblicita.js` |
 | la lettura del programma | `programmaDa`, chiamata da `src/twitch/helix.js` (`getAdSchedule`) |
 | la sottoscrizione a Twitch | `src/twitch/events.js` |
-| il giro, le sveglie e l'ascolto dell'evento | `src/bot.js` (`_giroPubblicita`, `_sveglia`, `_preavviso`, `_pubblicitaPartita`, `_sonoTornato`) |
+| il giro, le sveglie e l'ascolto dell'evento | `src/bot.js` (`_giroPubblicita`, `_statoPubblicita`, `_leggiProgramma`, `_sveglia`, `_preavviso`, `_pubblicitaPartita`, `_sonoTornato`) |
 | il conto sull'overlay | `src/bot.js` (`_pubInScena`), `src/features/alerts.js` (`_pubblicitaInScena`), `src/web/public/overlay-app.js` (`disegnaPubblicita`), `src/web/stile.js` (`normPubblicita`) |
 | le porte | `src/web/server.js` (`/api/streamer/regia`, `/regia/pubblicita/messaggi`) |
 | la carta nel pannello | `src/web/public/app.js` (`_pubDisegna`, `_pubLeggi`) |
-| le prove | `test/unita/pubblicita.test.mjs`, `test/unita/pubblicita-sveglie.test.mjs` (orologio finto), `test/unita/pubblicita-overlay.test.mjs`, `test/contratto/pubblicita.test.mjs`, `test/contratto/pubblicita-scena.test.mjs`, `scripts/verifica-pubblicita-scena.mjs` (browser vero) |
+| le prove | `test/unita/pubblicita.test.mjs`, `test/unita/pubblicita-sveglie.test.mjs` (orologio finto), `test/unita/pubblicita-overlay.test.mjs`, `test/unita/pubblicita-letture.test.mjs` (errori, dopo la pausa, snooze, letture vecchie: orologio finto), `test/contratto/pubblicita.test.mjs`, `test/contratto/pubblicita-scena.test.mjs`, `scripts/verifica-pubblicita-scena.mjs` (browser vero) |
 
 ## Il pannello (il ragionamento, che nei file serviti non si può scrivere)
 

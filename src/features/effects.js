@@ -30,7 +30,17 @@ export class EffectsEngine {
     this._clients = new Map();    // channel → Set<res> (connessioni SSE degli overlay)
     this._trkClients = new Map(); // channel → Set<res> (overlay TRACKING: canale a parte)
     this._cooldown = new Map();   // 'channel|comando' → epoch ms di fine cooldown
+    // IL NUMERO D'ORDINE di quello che esce verso gli overlay. Ogni messaggio
+    // ne porta uno, e il tema riletto porta quello che c'era quando lo stato e'
+    // stato letto (seqOra). La pagina tiene, per ogni pezzo, il dato piu' nuovo:
+    // un tema partito prima di un evento e arrivato dopo non lo cancella
+    // (docs/OVERLAY.md, «Vince il dato piu' nuovo»). Parte dall'ora di avvio
+    // per mille, cosi' cresce anche fra un riavvio e l'altro: una pagina rimasta
+    // aperta non scambia i numeri del processo nuovo per numeri vecchi.
+    this._seq = Date.now() * 1000;
   }
+
+  seqOra() { return this._seq; }
 
   // ------------------------------------------------------ registro overlay (SSE)
 
@@ -89,7 +99,7 @@ export class EffectsEngine {
     const ch = norm(channel);
     const set = this._clients.get(ch);
     if (!set || !set.size) return;
-    const riga = `data: ${JSON.stringify(payload)}\n\n`;
+    const riga = `data: ${JSON.stringify({ ...payload, seq: ++this._seq })}\n\n`;
     for (const res of set) {
       try { res.write(riga); } catch { /* client morto: verrà tolto su 'close' */ }
     }
@@ -111,10 +121,13 @@ export class EffectsEngine {
   // flusso quando tace troppo (flusso.js, «silenzio»). Al canale del tracking
   // resta il commento: i suoi comandi vanno a un gestore che non ha un tipo da
   // ignorare.
+  // Il battito porta l'ora del server: e' l'orologio di tutti i conti in scena
+  // (docs/OVERLAY.md, «Un orologio solo, quello del server»).
   ping() {
+    const riga = `data: ${JSON.stringify({ tipo: 'battito', ora: Date.now() })}\n\n`;
     for (const set of this._clients.values()) {
       for (const res of set) {
-        try { res.write('data: {"tipo":"battito"}\n\n'); } catch { /* ignora: il close pulirà */ }
+        try { res.write(riga); } catch { /* ignora: il close pulirà */ }
       }
     }
     for (const set of this._trkClients.values()) {

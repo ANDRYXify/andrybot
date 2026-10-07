@@ -238,9 +238,42 @@ comandi diversi da quelli della riga italiana.
 - Il player di Spotify sull'overlay non si blocca più su una canzone: una risposta che non arriva scade, la barra non torna indietro e a fine brano il prossimo arriva subito. [vai: alert]
   en: The Spotify player on the overlay no longer gets stuck on a song: a reply that never comes times out, the bar never jumps back and the next song shows up right when one ends.
   es: El reproductor de Spotify del overlay ya no se queda atascado en una canción: una respuesta que no llega caduca, la barra no vuelve atrás y al terminar un tema el siguiente llega enseguida.
+- Le scelte del muro delle emote ora restano: toccare un campo nello Studio poteva spegnere le sue emote, e i muri rotti così si riparano da soli. [vai: alert]
+  en: Emote wall choices now stick: touching one field in the Studio could switch its emotes off, and walls broken that way repair themselves.
+  es: Las opciones del muro de emotes ahora se quedan: tocar un campo en el Studio podía apagar sus emotes, y los muros rotos así se reparan solos.
+- Boss, arena delle emote, testo a schermo e nome del comando ora mostrano nello Studio le scelte salvate: prima, dopo un ricaricamento, un salvataggio rimetteva quelle di serie. [vai: alert]
+  en: The boss, emote arena, on-screen text and command name now show their saved choices in the Studio: before, after a reload, a save put the defaults back.
+  es: El jefe, la arena de emotes, el texto en pantalla y el nombre del comando ahora muestran en el Studio sus opciones guardadas: antes, tras recargar, guardar volvía a las de serie.
+- Il muro delle emote ha più scelte: opacità, emote che ruotano o no, grandezza delle esplosioni, quanto cresce una combo e il suo contatore. Sotto la grandezza leggi quanto misurano davvero. [vai: alert]
+  en: The emote wall has more choices: opacity, spinning or not, explosion size, how much a combo grows and its counter. Under the size you read how big emotes really are.
+  es: El muro de emotes tiene más opciones: opacidad, emotes que giran o no, tamaño de las explosiones, cuánto crece un combo y su contador. Bajo el tamaño lees cuánto miden de verdad.
+- Sul muro le emote delle combo non restano più piantate sulla scena, e ogni emote usa l'immagine della misura giusta: grande, resta nitida. [vai: alert]
+  en: On the wall, combo emotes no longer stay stuck on the scene, and every emote uses the right image size: big ones stay sharp.
+  es: En el muro, los emotes de los combos ya no se quedan clavados en la escena, y cada emote usa la imagen del tamaño justo: los grandes se ven nítidos.
+- Il conto alla pubblicità non sparisce più all'inizio della pausa: tornava trasparente. E segue subito un rinvio, o la prossima pausa dopo un errore di Twitch. [vai: alert]
+  en: The ad countdown no longer vanishes when the break starts: it came back transparent. It also follows a snooze right away, and the next break after a Twitch error.
+  es: La cuenta a la publicidad ya no desaparece al empezar la pausa: volvía transparente. Y sigue enseguida un aplazamiento, o la próxima pausa tras un error de Twitch.
+- Il timer dell'overlay: «Ferma» lo toglie davvero dalla scena, e «Parte da solo» parte una volta quando apri l'overlay, non a ogni ricollegamento. [vai: alert]
+  en: The overlay timer: “Stop” really takes it off the scene, and “Starts by itself” starts once when you open the overlay, not on every reconnection.
+  es: El temporizador del overlay: «Parar» lo quita de verdad de la escena, y «Arranca solo» arranca una vez al abrir el overlay, no en cada reconexión.
+- Riaprendo l'overlay, o quando la linea torna, contatori, boss, penitenze e arena si rivedono come sono, e quelli finiti nel frattempo se ne vanno da soli. [vai: alert]
+  en: When you reopen the overlay, or the connection comes back, counters, boss, penalties and arena show up as they are, and those that ended meanwhile leave on their own.
+  es: Al reabrir el overlay, o al volver la conexión, contadores, jefe, penitencias y arena se ven como están, y los que terminaron mientras tanto se van solos.
+- I conti dell'overlay (timer, pubblicità, premi a tempo, treno, penitenze) seguono l'ora del server: sono giusti anche col computer di OBS avanti o indietro. [vai: alert]
+  en: Overlay countdowns (timer, ads, timed rewards, train, penalties) follow the server clock: they are right even if the OBS computer clock is ahead or behind.
+  es: Las cuentas del overlay (temporizador, publicidad, premios con tiempo, tren, penitencias) siguen la hora del servidor: son exactas aunque el reloj del PC de OBS vaya mal.
+- Un alert o un suono a volume zero ora è muto: prima suonava al massimo. Spegnendo alert, effetti o chat in un overlay, quello che era in coda non esce più. [vai: alert]
+  en: An alert or sound at zero volume is now silent: before, it played at full volume. Turning off alerts, effects or chat in an overlay, what was queued no longer shows up.
+  es: Una alerta o un sonido a volumen cero ahora está en silencio: antes sonaba al máximo. Al apagar alertas, efectos o chat en un overlay, lo que estaba en cola ya no sale.
+- Un follow rimasto in coda per minuti non esce più in ritardo, un nome lunghissimo va a capo dentro l'alert e una raffica di comandi o scritte non riempie lo schermo. [vai: alert]
+  en: A follow stuck in the queue for minutes no longer shows up late, a very long name wraps inside the alert, and a burst of commands or texts does not fill the screen.
+  es: Un follow que lleva minutos en cola ya no sale tarde, un nombre larguísimo se ajusta dentro de la alerta y una ráfaga de comandos o textos no llena la pantalla.
 - Un abbonamento, un follow o dei bit non danno più un alert doppio quando Twitch rimanda lo stesso evento, e non si perdono quando Twitch sposta la connessione. [vai: alert]
   en: A sub, follow or bits no longer give a double alert when Twitch resends the same event, and they are not lost when Twitch moves the connection.
   es: Una suscripción, un follow o unos bits ya no dan una alerta doble cuando Twitch reenvía el mismo evento, y no se pierden cuando Twitch mueve la conexión.
+- Un timer appena fermato, un boss appena battuto o un contatore appena cambiato non tornano più indietro quando l'overlay rilegge le sue scelte nello stesso istante. [vai: alert]
+  en: A timer you just stopped, a boss just defeated or a counter just changed no longer jump back when the overlay reloads its settings at that same moment.
+  es: Un temporizador recién parado, un jefe recién vencido o un contador recién cambiado ya no vuelven atrás cuando el overlay recarga sus opciones en ese mismo momento.
 
 ## 2026-10-03
 

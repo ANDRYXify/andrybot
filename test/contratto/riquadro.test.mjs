@@ -49,7 +49,7 @@ test('una resa sola, letta da tutte e due le pagine, e dopo il contenuto', () =>
   dopo('unGoal', "classList.toggle('pieno'", "posaElemento(el, 'goal:'");
   dopo('disegnaTimer', ".querySelector('.t-num').textContent", "vestiElemento(el, cfg, 'nessuna', 'timer')");
   dopo('disegnaMusica', "scrivi(el.querySelector('.m-scorri2')", "vestiElemento(el, cfg, 'nessuna', 'musica')");
-  dopo('mostraAlertProssimo', 'alertBox.appendChild(card);', 'posizionaContenitore(alertBox,');
+  dopo('disegnaAlert', 'alertBox.appendChild(card);', 'posizionaContenitore(alertBox,');
   dopo('contatore', 'el.style.fontFamily = fontStackCont(d.font);', 'window.SB_RIQUADRO.posa(el, mio, {})');
   assert.ok(/if \(chatBox\.classList\.contains\('riquadro'\)\) window\.SB_RIQUADRO\.ritaglia\(chatBox\);/.test(OVL), 'la chat nel riquadro taglia dall\'alto');
   assert.ok(/if \(st\.larghezza && !chatBox\.classList\.contains\('riquadro'\)\)/.test(OVL), 'nel riquadro la larghezza e\' quella del riquadro');

@@ -68,7 +68,8 @@ test('in diretta si accende col suo interruttore, si veste e si posa come gli al
 });
 
 test('chi apre l\'overlay a meta\' riceve lo stato, e lo traduce nel suo orologio', () => {
-  assert.ok(/const arena = statoArena\(login\);\n      if \(arena\) res\.write\(`data: \$\{JSON\.stringify\(\{ tipo: 'arena', azione: 'stato', \.\.\.arena \}\)\}\\n\\n`\);/.test(SRV), 'il flusso lo manda appena ci si collega');
+  assert.ok(/const arena = statoArena\(login\);\n      res\.write\(`data: \$\{JSON\.stringify\(arena \? \{ tipo: 'arena', azione: 'stato', \.\.\.arena \} : \{ tipo: 'arena', azione: 'nessuna' \}\)\}\\n\\n`\);/.test(SRV), 'il flusso lo manda appena ci si collega, e dice anche quando non ce n\'e\'');
+  assert.ok(/if \(a === 'fine' \|\| a === 'annullata' \|\| a === 'nessuna'\) \{/.test(OVL), 'e un\'arena la cui fine si e\' persa se ne va al ritorno');
   assert.ok(/ARENA\.scarto = Date\.now\(\) - Number\(ev\.ora\);/.test(OVL) && /const oraArena = \(\) => Date\.now\(\) - ARENA\.scarto;/.test(OVL),
     'gli istanti del server si leggono con lo scarto misurato all\'arrivo, non con l\'ora del computer della diretta');
   assert.ok(/else window\.SB_ARENA\.corri\(ARENA\.s, passoArena\(\)\);/.test(OVL), 'e la partita corre fino ad adesso senza disegnare');

@@ -150,6 +150,25 @@ Una combo è una macchina a stati, pura: per ogni emote l'ultima volta che è
 arrivata, quante volte, e chi l'ha mandata. Si conta una volta per persona,
 se lo si sceglie: una persona sola che ripete non fa una combo della chat.
 
+Quanto cresce lo sceglie lo streamer: di quanto a ogni ripetizione (di serie
+il 12%) e fino a quanto (di serie ×3), e mai oltre il 90% del lato corto
+dell'area, perché una combo che esce dall'area non si legge più. Il contatore
+«×12» si può spegnere.
+
+**Una combo si chiude in un posto solo, e chi la chiude la dice.** È la regola
+che mancava, e il suo difetto si vedeva in diretta: dopo un po' di chat le
+emote delle combo restavano piantate sulla scena, una sopra l'altra, senza
+esplodere mai. A chiudere una combo erano in due: il giro di ogni 250 ms
+(`scadute`), che la faceva esplodere e toglieva la sua emote, e il passo del
+primo messaggio arrivato dopo la finestra, che cancellava la combo **in
+silenzio**. Quando vinceva il passo, la combo nuova della stessa emote prendeva
+il posto della vecchia nell'elenco delle aperte, e la vecchia restava a schermo
+senza più nessuno che sapesse toglierla. Con la chat che ripete, e con OBS che
+rallenta i timer di una sorgente nascosta, succedeva spesso. Ora il passo,
+prima di contare, chiude le scadute e le **restituisce** come il giro
+(`chiuse`), e l'overlay le tratta con la stessa funzione: una combo aperta
+finisce sempre in un'esplosione e nella sua emote che se ne va.
+
 ### Chi e quanto
 
 - **Chi**: gli stessi livelli dei comandi (tutti, abbonati, VIP, moderatori);
@@ -165,7 +184,82 @@ se lo si sceglie: una persona sola che ripete non fa una combo della chat.
 ### La veste
 
 Grandezza, variazione e limiti in pixel, durata, entrata e uscita, ombra, e un
-colore che ruota («arcobaleno») mai, sempre o durante l'hype train.
+colore che ruota («arcobaleno») mai, sempre o durante l'hype train. In più:
+
+- **opacità** di tutto il muro, dal 10 al 100%: un muro leggero non copre il
+  gioco. Vale per l'area intera (emote, combo, esplosioni), quindi non tocca
+  l'inviluppo di entrata e uscita di ognuna;
+- **rotazione**: chi non vuole emote che girano la spegne, e ogni movimento
+  resta la stessa traiettoria con la rotazione a zero (il rimbalzo scivola
+  invece di rotolare);
+- **la grandezza delle esplosioni**, a parte: «come le emote», o una sua
+  percentuale del lato corto. Le figure che hanno una geometria (piramide,
+  scritta, cuore) restano chiuse dai loro conti, quindi una grandezza troppo
+  grande non le rompe: le stringe.
+
+### La grandezza si legge in pixel
+
+La grandezza è una percentuale del lato corto dell'area, variata, chiusa fra un
+minimo e un massimo in pixel e mai più di metà del lato corto. Erano quattro
+numeri che si contraddicevano in silenzio: col massimo di serie a 140 px, alzare
+la grandezza oltre il 13% circa su uno schermo 1080p non cambiava più niente, e
+chi la alzava pensava che non funzionasse. Ora il pannello scrive sotto i campi
+**quanto misurano davvero** le emote nell'area scelta, da quanto a quanto, e
+quale limite le sta fermando. Il conto è uno solo: `SB_MURO.misure`, la stessa
+funzione da cui `lato` prende la grandezza di ogni emote in diretta. I limiti
+sono più larghi: grandezza fino al 50%, massimo fino a 1080 px (metà del lato
+corto di una tela 4K).
+
+### Nitide a ogni grandezza
+
+Twitch dà ogni emote in tre misure (28, 56 e 112 px) e 7TV in quattro (32, 64,
+96 e 128 px). Il muro usava sempre la seconda, e un'emote disegnata a 140 px
+era la 56 px stirata: sfocata. Ora `nitida` sceglie la misura più piccola che
+basta per la grandezza a schermo, per la densità di pixel dello schermo; oltre
+l'ultima usa l'ultima. Se la misura scelta non c'è, l'immagine torna a quella
+che è arrivata col messaggio, che c'è di sicuro.
+
+### Il modulo che si salvava vuoto
+
+Il difetto più grave del muro non stava nell'overlay ma nel pannello, ed è con
+ogni probabilità il «a un certo punto si rompe» che si vedeva in diretta. I
+campi del muro nello Studio **non si riempivano mai** con le scelte salvate:
+l'elenco dei moduli da riempire all'apertura era scritto a mano, a parte
+dall'elenco dei pezzi, e il muro era entrato nel secondo e non nel primo.
+Bastava toccare un campo qualunque, anche solo l'ombra, e il salvataggio
+automatico rileggeva tutti gli altri vuoti: zero emote per messaggio, zero a
+schermo, durata zero, le due fonti spente, gli eventi spenti. Il server li
+riportava ai loro minimi, ma con le fonti spente dal muro non volava più niente.
+In più le impostazioni del pannello non portavano proprio la scelta salvata del
+muro (né quelle di boss, arena, testo a schermo e nome del comando): anche
+riempito, il modulo sarebbe partito dalle scelte di serie, e ogni salvataggio
+le avrebbe rimesse al posto di quelle dello streamer.
+
+Corretto alla fonte, per tutti i pezzi e non per il muro:
+
+- i moduli da riempire si ricavano dalla pagina (ogni `[data-cfg]` che c'è),
+  non da un elenco;
+- la bozza di un pezzo parte dalla scelta salvata così com'è nelle impostazioni
+  del canale (`_cfgEl`), fusa **a ogni livello** con le scelte di serie: una
+  scelta salvata prima che esistessero i campi nuovi li riceve di serie, e non
+  uno zero letto da un campo vuoto;
+- un campo si rilegge col tipo del valore che contiene: una tendina con valori
+  numerici torna un numero, non un testo.
+
+`scripts/verifica-campi-pezzi.mjs` misura la regola per ogni modulo, senza
+elenchi da tenere aggiornati: rileggere un modulo appena riempito restituisce
+la stessa bozza, e una scelta salvata si vede nel suo modulo.
+
+**I muri già rotti si riparano una volta sola.** Correggere il pannello non
+rimette a posto quello che il difetto ha già salvato. Un muro salvato dal
+modulo vuoto ha un'impronta precisa: le due fonti spente, uno a schermo,
+nessuno in attesa, uno per messaggio, grandezza 2, nessuna variazione, durata
+2, minimo e massimo a 12 px, tutti insieme. Nessuno lo sceglie apposta, perché
+così il muro non può mostrare niente. All'avvio, una volta sola
+(`riparaMuriUnaTantum`), i muri con quell'impronta tornano alle scelte di
+serie, e tengono quello che il difetto non toccava: acceso o spento, l'area, i
+premi. Un muro con anche un solo campo diverso dall'impronta è una scelta, e
+resta com'è.
 
 ## Chi fa cosa
 
@@ -195,6 +289,16 @@ tela e' fermo: sei emote posate, sbiadite come ogni elemento spento. Il pannello
 Il cancello dell'anteprima misura l'area sulla tela e in onda.
 
 ## Le prove
+
+`scripts/verifica-muro.mjs` gira nella pagina vera dell'overlay: crea apposta
+l'ordine che lasciava le combo in scena (con l'orologio della pagina fermo, il
+messaggio dopo la finestra arriva prima del giro), guarda che le emote in volo
+siano quante il conto dice e che il muro si svuoti, e misura ogni scelta della
+veste dove si vede: opacità, rotazione nei fotogrammi, grandezza delle
+esplosioni, contatore e tetto delle combo, e la misura dell'immagine chiesta a
+Twitch. La sua autoprova rompe ognuna di queste cose e pretende il rosso.
+`test/unita/muro-riparato.test.mjs`: l'impronta del modulo vuoto, e la
+riparazione una volta sola.
 
 `test/unita/muro.test.mjs`: ogni animazione e ogni figura, con generatori ai
 due estremi e con molti semi, sotto aree larghe, alte, piccole e strette:

@@ -12,6 +12,47 @@ const urlTimerParti = '/overlay/' + encodeURIComponent(login) + '/timer/parti' +
 const MIO = { mostra: { alert: true, chat: true, wf: true, ws: true, effetti: true }, xy: {}, stile: { alert: null, chat: null }, widget: {} };
 const mostra = (k) => MIO.mostra[k] !== false;
 
+const mono = () => performance.timeOrigin + performance.now();
+const OROLOGIO = { campioni: [] };
+function campioneOra(oraServer) {
+  const n = Number(oraServer);
+  if (!Number.isFinite(n) || n <= 0) return;
+  const t = mono();
+  const c = OROLOGIO.campioni;
+  c.push({ t, s: n - t });
+  while (c.length && t - c[0].t > 120000) c.shift();
+  if (c.length > 64) c.splice(0, c.length - 64);
+}
+function scartoOra() {
+  const c = OROLOGIO.campioni;
+  if (!c.length) return Date.now() - mono();
+  let m = -Infinity;
+  for (const x of c) if (x.s > m) m = x.s;
+  return m;
+}
+function adesso() { return mono() + scartoOra(); }
+function oraScena() { return Math.floor(adesso() / 1000) * 1000; }
+
+const VISTI = {};
+function chiaveDi(d) {
+  switch (d.tipo) {
+    case 'timer': case 'pubblicita': case 'treno': case 'tempi': case 'goal': case 'boss': case 'bit': return d.tipo;
+    case 'widget': return 'widget:' + d.id;
+    case 'contatore': return 'cont:' + String(d.comando || '').toLowerCase();
+    case 'penitenza': return 'pen:' + d.id;
+    default: return '';
+  }
+}
+function segnaVisto(d) {
+  const k = chiaveDi(d);
+  const n = Number(d.seq);
+  if (k && Number.isFinite(n) && n > (VISTI[k] || 0)) VISTI[k] = n;
+}
+function vale(k, t) {
+  const n = Number(t && t.seq);
+  return !Number.isFinite(n) || (VISTI[k] || 0) <= n;
+}
+
 const muroBox = document.getElementById('muro');
 const palco = document.getElementById('palco');
 const palcoLibero = document.getElementById('palco-libero');
@@ -26,13 +67,19 @@ const codaVisiva = [];
 let occupato = false;
 
 function mostraProssimo() {
-  if (occupato || !codaVisiva.length) return;
-  occupato = true;
+  if (occupato) return;
   const ev = codaVisiva.shift();
-  if (ev.tipo === 'immagine') mostraImmagine(ev);
-  else if (ev.tipo === 'video') mostraVideo(ev);
-  else if (ev.tipo === 'disegno') mostraDisegno(ev);
-  else finito();
+  if (!ev) return;
+  occupato = true;
+  try {
+    if (ev.tipo === 'immagine') mostraImmagine(ev);
+    else if (ev.tipo === 'video') mostraVideo(ev);
+    else if (ev.tipo === 'disegno') mostraDisegno(ev);
+    else finito();
+  } catch (e) {
+    guaio('effetto-rotto', String(e && e.message || e));
+    finito();
+  }
 }
 
 function finito() {
@@ -64,9 +111,7 @@ function durataMs(ev, fallback) {
 }
 
 function volume01(ev) {
-  const n = Number(ev.volume);
-  const v = Number.isFinite(n) ? n : 100;
-  return Math.min(1, Math.max(0, v / 100));
+  return window.SUONI_PRESET ? window.SUONI_PRESET.volume(ev.volume) : 1;
 }
 
 const tiraXY = (v, f) => Math.round((50 * (f - 1) - v * f) * 100) / 100;
@@ -100,7 +145,12 @@ function posizionaEffetto(el, pos) {
 
 const inAscolto = new Set();
 
+const _guaiDetti = {};
 function guaio(dove, perche) {
+  const chiave = dove + '|' + String(perche || '');
+  const ora = Date.now();
+  if (_guaiDetti[chiave] && ora - _guaiDetti[chiave] < 60000) return;
+  _guaiDetti[chiave] = ora;
   try {
     fetch(urlGuaio, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -315,6 +365,7 @@ function mostraTesto(ev) {
   const t = String(ev.testo || '').slice(0, 400);
   if (!t || !scrittaAccesa()) return;
   const durata = durataMs(ev, 5000);
+  lasciaPosto(testi, TESTI_MAX);
   const el = document.createElement('div');
   const corpo = document.createElement('div');
   corpo.className = 'scritta-corpo';
@@ -373,9 +424,13 @@ function boss(ev) {
       + '<div class="boss-barra"><div class="boss-scia"></div><div class="boss-vita"></div></div>'
       + '<div class="boss-tempo"></div><div class="boss-fine"></div></div><div class="boss-danni"></div>';
     carta.querySelector('.boss-nome').textContent = String(ev.nome || '').slice(0, 80);
-    carta.querySelector('.boss-tempo').style.animationDuration = Math.max(1, Number(ev.durata) || 90) + 's';
+    const durata = Math.max(1, Number(ev.durata) || 90);
+    const barraTempo = carta.querySelector('.boss-tempo');
+    barraTempo.style.animationDuration = durata + 's';
+    const trascorso = Math.max(0, Math.min(durata, Number(ev.trascorso) || 0));
+    if (trascorso) barraTempo.style.animationDelay = '-' + trascorso + 's';
     bossBox.appendChild(carta);
-    bossScena = { carta, vitaMax: Math.max(1, Number(ev.vitaMax) || 1) };
+    bossScena = { carta, vitaMax: Math.max(1, Number(ev.vitaMax) || 1), fine: Number(ev.fine) > 0 ? Number(ev.fine) : adesso() + (durata - trascorso) * 1000 };
     bossVita(ev.vita);
     vestiBoss(carta);
     return;
@@ -405,6 +460,55 @@ function boss(ev) {
     try { window.SUONI_PRESET && window.SUONI_PRESET.suona(ev.vinto ? 'tada' : 'whoosh', ev.vinto ? 80 : 50); } catch (e) {  }
     setTimeout(() => { carta._stato += ' boss-via'; carta.classList.add('boss-via'); }, 2400);
     setTimeout(() => carta.remove(), 3100);
+  }
+}
+
+const FINE_PERSA_MS = 15000;
+
+function riconciliaBoss(b) {
+  if (!b) { if (bossScena) bossVia(); return; }
+  if (!bossScena) {
+    const durata = Math.max(1, Number(b.durata) || 90);
+    boss({ azione: 'arriva', nome: b.nome, vita: b.vita, vitaMax: b.vitaMax, durata, fine: b.fine, trascorso: durata - Math.max(0, (Number(b.fine) - adesso()) / 1000) });
+    return;
+  }
+  bossVita(b.vita);
+}
+
+function riconciliaPenitenze(lista, t) {
+  if (!Array.isArray(lista)) return;
+  const vive = {};
+  for (const p of lista) if (p && p.id != null) vive[p.id] = p;
+  for (const id of Object.keys(penCard)) {
+    const card = penCard[id];
+    if (vive[id] || card._finita || !vale('pen:' + id, t) || card._scadenza <= adesso()) continue;
+    clearInterval(card._orologio);
+    card.remove();
+    delete penCard[id];
+  }
+  for (const p of Object.values(vive)) {
+    if (!vale('pen:' + p.id, t)) continue;
+    if (!penCard[p.id]) penStart({ ...p, azione: 'start' });
+    const num = penCard[p.id] && penCard[p.id].querySelector('.pen-num');
+    if (num && p.count != null) num.textContent = String(p.count);
+  }
+}
+
+const ARENA_FINE_PERSA_MS = 45000;
+
+function scadonoDaSoli() {
+  const ora = adesso();
+  const d = ARENA.d;
+  const persa = d && ((ARENA.finitaA && ora - ARENA.finitaA > ARENA_FINE_PERSA_MS)
+    || (d.fase === 'iscrizioni' && d.fine && ora - d.fine > ARENA_FINE_PERSA_MS));
+  if (persa) arena({ azione: 'nessuna' });
+  if (bossScena && bossScena.fine && ora > bossScena.fine + FINE_PERSA_MS) bossVia();
+  for (const id of Object.keys(penCard)) {
+    const card = penCard[id];
+    if (card._finita || !card._scadenza || ora <= card._scadenza + FINE_PERSA_MS) continue;
+    clearInterval(card._orologio);
+    card.remove();
+    delete penCard[id];
   }
 }
 
@@ -500,12 +604,15 @@ function arenaVittoria(ev) {
 function arena(ev) {
   if (!window.SB_ARENA) return;
   const a = ev.azione;
-  if (a === 'fine' || a === 'annullata') {
+  if (a === 'nessuna' && !ARENA.d && !ARENA.carta) return;
+  if (a === 'fine' || a === 'annullata' || a === 'nessuna') {
+    ARENA.finitaA = 0;
     ARENA.d = null; ARENA.s = null; ARENA.vista.clear(); ARENA.bersagli.clear(); ARENA.info.clear(); ARENA.lampi.length = 0;
     arenaVia();
     return;
   }
-  if (Number.isFinite(Number(ev.ora))) ARENA.scarto = Date.now() - Number(ev.ora);
+  if (Number.isFinite(Number(ev.ora))) { ARENA.scarto = Date.now() - Number(ev.ora); campioneOra(ev.ora); }
+  if (a === 'iscrizioni' || a === 'battaglia' || a === 'stato') ARENA.finitaA = 0;
   if (a === 'iscrizioni' || (a === 'stato' && ev.fase === 'iscrizioni')) {
     ARENA.info = new Map();
     ARENA.vista.clear();
@@ -596,6 +703,7 @@ function arenaFotogramma() {
       const eventi = A.passo(s);
       if (vicino && eventi.length) lampiArena(eventi, ora);
     }
+    if (s.fine && !ARENA.finitaA) ARENA.finitaA = adesso();
     const q = s.fine || s.passo < obiettivo ? 1 : Math.max(0, Math.min(1, (ora - d.t0) * A.PASSO / 1000 - s.passo));
     sc = T.scenaDi(s, ARENA.info, q);
     const trascorso = ora - d.t0;
@@ -644,9 +752,10 @@ function penStart(ev) {
   card.innerHTML = '<span class="pen-parola"><small>' + eti + '</small>' + escHtml(parola) + '</span><span class="pen-num">0</span><span class="pen-tempo"></span>';
   penBox.appendChild(card);
   penCard[ev.id] = card;
-  const scadenza = Number(ev.fine) > Date.now() ? Number(ev.fine) : Date.now() + Math.max(0.5, Number(ev.durata) || 2) * 60000;
+  const scadenza = Number(ev.fine) > adesso() ? Number(ev.fine) : adesso() + Math.max(0.5, Number(ev.durata) || 2) * 60000;
+  card._scadenza = scadenza;
   const tempo = card.querySelector('.pen-tempo');
-  const batti = () => { tempo.textContent = oreMinSec(scadenza - Date.now()); };
+  const batti = () => { tempo.textContent = oreMinSec(scadenza - oraScena()); };
   batti();
   card._orologio = setInterval(batti, 1000);
   penPosa();
@@ -676,6 +785,7 @@ function penEnd(ev) {
     ? 'PENITENZA: ' + escHtml(String(ev.penitenza || '')) + (ev.count > 1 ? ' ×' + ev.count : '')
     : 'Salvo!';
   clearInterval(card._orologio);
+  card._finita = true;
   card.innerHTML = '<span class="pen-esito">' + esito + '</span>';
   penPosa();
   setTimeout(() => {
@@ -684,8 +794,11 @@ function penEnd(ev) {
   }, ev.count > 0 ? 6000 : 2500);
 }
 
+const VERSO = /[\u202A-\u202E\u2066-\u2069]/g;
+function senzaVerso(s) { return String(s).replace(VERSO, ''); }
+
 function escHtml(s) {
-  return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  return senzaVerso(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
 const codaAlert = [];
@@ -750,7 +863,20 @@ function posizionaContenitore(el, xy, corner) {
   }
 }
 
-function alert(ev) { if (!mostra('alert')) return; codaAlert.push(ev); mostraAlertProssimo(); }
+const FOLLOW_VECCHIO_MS = 90000;
+function alert(ev) { if (!mostra('alert')) return; ev._arrivo = Date.now(); codaAlert.push(ev); mostraAlertProssimo(); }
+
+function prossimoAlert() {
+  const ora = Date.now();
+  while (codaAlert.length) {
+    const ev = codaAlert.shift();
+    if (ev.kind === 'follow' && ora - (ev._arrivo || ora) > FOLLOW_VECCHIO_MS) continue;
+    return ev;
+  }
+  return null;
+}
+
+function liberaAlert() { alertOccupato = false; setTimeout(mostraAlertProssimo, 250); }
 
 const _AX = {
   forma: ['carta', 'pillola', 'squadrata', 'taglio', 'insegna', 'esagono', 'nastro', 'fumetto'],
@@ -771,9 +897,18 @@ function classeComp(st) {
 }
 
 function mostraAlertProssimo() {
-  if (alertOccupato || !codaAlert.length) return;
+  if (alertOccupato) return;
+  const ev = prossimoAlert();
+  if (!ev) return;
   alertOccupato = true;
-  const ev = codaAlert.shift();
+  try { disegnaAlert(ev); } catch (e) {
+    guaio('alert-rotto', String(e && e.message || e));
+    alertBox.querySelectorAll('.alert-card:not(.dentro)').forEach((c) => c.remove());
+    liberaAlert();
+  }
+}
+
+function disegnaAlert(ev) {
 
   const st = MIO.stile.alert || ev.stile || {};
   const card = document.createElement('div');
@@ -790,7 +925,7 @@ function mostraAlertProssimo() {
     '--spaz': (Number(st.spaziatura) || 0) + 'px',
     '--ombra-testo': st.ombraTesto === false ? 'none' : '0 2px 10px rgba(0,0,0,.45)',
   });
-  const testoHtml = escHtml(ev.testo || '').replace(/^(\S+)/, '<b>$1</b>');
+  const testoHtml = escHtml(ev.testo || '').replace(/^(\S+)/, '<b><bdi>$1</bdi></b>');
 
   let mediaHtml = '';
   if (ev.mediaUrl) {
@@ -805,18 +940,18 @@ function mostraAlertProssimo() {
   card.innerHTML = mediaHtml + '<div class="alert-ico">' + icoScelta + '</div><div class="alert-testo">' + testoHtml + '</div>';
   alertBox.appendChild(card);
   posizionaContenitore(alertBox, MIO.xy.alert || ev.xy, ev.posizione || 'alto-centro');
-  const vol01 = (ev.volume != null ? ev.volume : 100) / 100;
+  const vol01 = volume01(ev);
   const vid = card.querySelector('video.alert-media'); if (vid) { try { vid.volume = vol01; } catch (e) {  } }
   requestAnimationFrame(() => card.classList.add('dentro'));
 
   try {
     if (ev.suonoUrl) suonaUrl(ev.suonoUrl, vol01, 'suono-alert');
-    else if (ev.suono && window.SUONI_PRESET) window.SUONI_PRESET.suona(ev.suono, ev.volume != null ? ev.volume : 100);
+    else if (ev.suono && window.SUONI_PRESET) window.SUONI_PRESET.suona(ev.suono, ev.volume);
   } catch (e) {  }
   const durata = Math.max(2000, Number(ev.durata) || 6000);
   setTimeout(() => {
     card.classList.remove('dentro');
-    setTimeout(() => { card.remove(); alertOccupato = false; setTimeout(mostraAlertProssimo, 250); }, 450);
+    setTimeout(() => { card.remove(); liberaAlert(); }, 450);
   }, durata);
 }
 
@@ -837,11 +972,15 @@ async function caricaEmote() {
 }
 
 let BADGE = {};
+let _badgeRiprova = null;
 async function caricaBadge() {
+  clearTimeout(_badgeRiprova);
+  let presi = false;
   try {
     const r = await fetch('/overlay/' + encodeURIComponent(login) + '/badges' + location.search);
-    if (r.ok) { const m = await r.json(); if (m && typeof m === 'object') BADGE = m; }
+    if (r.ok) { const m = await r.json(); if (m && typeof m === 'object') { BADGE = m; presi = true; } }
   } catch (e) {  }
+  if (!presi) _badgeRiprova = setTimeout(caricaBadge, 60 * 1000);
 }
 
 function aggiungiStemmi(riga, ev) {
@@ -914,35 +1053,61 @@ function segnaOrigine(riga, da) {
   if (pezzi) disegna(riga, pezzi, 'chat-da');
 }
 
-function chat(ev) {
-  if (!mostra('chat')) return;
-  const da = String(ev.piattaforma || 'twitch').toLowerCase();
-  if (!mostra('chat:' + da)) return;
-  const st = MIO.stile.chat || ev.stile || {};
-  posizionaContenitore(chatBox, MIO.xy.chat || ev.xy, ev.posizione || 'basso-sinistra');
+const chatPosa = { xy: null, posizione: 'basso-sinistra', stile: null };
+
+function posaChat(st) {
+  posizionaContenitore(chatBox, MIO.xy.chat || chatPosa.xy, chatPosa.posizione);
   if (st.larghezza && !chatBox.classList.contains('riquadro')) chatBox.style.maxWidth = st.larghezza + 'vw';
-  const destra = !ev.xy && /destra/.test(ev.posizione || '');
-  const riga = document.createElement('div');
+}
+
+function vestiRigaChat(riga, st) {
+  const tieni = ['dentro', 'uscita'].filter((c) => riga.classList.contains(c));
   riga.className = 'chat-riga dim-' + (st.dim || 'media') + ' anim-' + (st.animazione || 'slide') + (st.ombra !== false ? ' ombra' : '') + (st.grassettoUser !== false ? ' user-bold' : '')
     + ' maiusc-' + (st.maiuscolo || 'no') + ' ' + classiIdentita(st, 'nessuna');
+  for (const c of tieni) riga.classList.add(c);
   applicaVars(riga, { '--peso': String(st.peso || '700'), '--spaz': (Number(st.spaziatura) || 0) + 'px',
     '--ombra-testo': st.ombraTesto === true ? '0 2px 8px rgba(0,0,0,.6)' : 'none' });
   applicaVars(riga, {
     '--bg': st.sfondo, '--op': st.opacita != null ? st.opacita + '%' : null,
     '--fg': st.testo, '--radius': st.bordoRaggio != null ? st.bordoRaggio + 'px' : null, '--font': fontDi(st) || null,
   });
+}
+
+function ridisegnaChat() {
+  if (!mostra('chat')) { chatBox.textContent = ''; return; }
+  for (const r of [...chatBox.querySelectorAll('.chat-riga')]) if (!mostra('chat:' + (r.dataset.da || 'twitch'))) r.remove();
+  if (!chatBox.children.length) return;
+  const st = MIO.stile.chat || chatPosa.stile || {};
+  posaChat(st);
+  chatBox.querySelectorAll('.chat-riga').forEach((r) => vestiRigaChat(r, st));
+  if (chatBox.classList.contains('riquadro')) window.SB_RIQUADRO.ritaglia(chatBox);
+}
+
+function chat(ev) {
+  if (!mostra('chat')) return;
+  const da = String(ev.piattaforma || 'twitch').toLowerCase();
+  if (!mostra('chat:' + da)) return;
+  const st = MIO.stile.chat || ev.stile || {};
+  chatPosa.xy = ev.xy || null;
+  chatPosa.posizione = ev.posizione || 'basso-sinistra';
+  chatPosa.stile = ev.stile || null;
+  posaChat(st);
+  const destra = !ev.xy && /destra/.test(ev.posizione || '');
+  const riga = document.createElement('div');
+  riga.dataset.da = da;
+  vestiRigaChat(riga, st);
   if (destra) riga.style.transform = 'translateX(10px)';
   if (st.segnaDaDove) segnaOrigine(riga, da);
   aggiungiStemmi(riga, ev);
   if (ev.corona) disegna(riga, CORONA, 'chat-corona');
   const u = document.createElement('span');
   u.className = 'chat-user';
-  u.textContent = ev.user || '';
+  u.textContent = senzaVerso(ev.user || '');
 
   const cu = (st.username && st.username !== 'twitch') ? st.username : ev.colore;
   if (cu) u.style.color = cu;
   riga.appendChild(u);
-  testoConEmote(riga, ev.testo || '', ev.emotiTwitch);
+  testoConEmote(riga, senzaVerso(ev.testo || ''), ev.emotiTwitch);
   chatBox.appendChild(riga);
   requestAnimationFrame(() => { riga.style.transform = ''; riga.classList.add('dentro'); });
   const max = Math.max(1, Number(ev.max) || 8);
@@ -1005,8 +1170,21 @@ function vestiEtichetta(el) {
 
 function posaEtichette() { posizionaContenitore(etichette, MIO.xy.etichetta, 'basso-centro'); }
 
+const ETICHETTE_MAX = 4;
+const TESTI_MAX = 3;
+function lasciaPosto(box, max) {
+  const vivi = [...box.children].filter((n) => !n._via);
+  for (const n of vivi.slice(0, Math.max(0, vivi.length - max + 1))) {
+    n._via = true;
+    n._dentro = false;
+    n.classList.remove('dentro');
+    setTimeout(() => n.remove(), 300);
+  }
+}
+
 function etichettaVolatile(comando, durata, conPrefisso = true) {
   if (!comando || !etichettaAccesa()) return;
+  lasciaPosto(etichette, ETICHETTE_MAX);
   const el = document.createElement('div');
   el.textContent = (conPrefisso ? '!' : '') + comando;
   etichette.appendChild(el);
@@ -1037,7 +1215,7 @@ function posaMuro() {
 
 function areaMuro() { return { w: muroBox.clientWidth || window.innerWidth, h: muroBox.clientHeight || window.innerHeight }; }
 
-function trenoInCorso() { const t = MIO.trenoStato; return MURO.trenoFino > Date.now() || !!(t && !t.finito && Number(t.scade) > Date.now()); }
+function trenoInCorso() { const t = MIO.trenoStato; const ora = adesso(); return MURO.trenoFino > ora || !!(t && !t.finito && Number(t.scade) > ora); }
 function arcobalenoOra() { const a = MIO.muro && MIO.muro.arcobaleno; return a === 'sempre' || (a === 'treno' && trenoInCorso()); }
 
 function vesteMuro() { return { ombra: MIO.muro.ombra !== false, arcobaleno: arcobalenoOra() }; }
@@ -1060,7 +1238,7 @@ function apriCombo(e, n) {
   const c = MIO.muro;
   const area = areaMuro();
   const s = window.SB_MURO.lato(area, { ...c, varia: 0 }, Math.random);
-  const kmax = Math.max(1, Math.min(3, (0.9 * Math.min(area.w, area.h)) / s));
+  const kmax = Math.max(1, Math.min((Number(c.combo.massimo) || 300) / 100, (0.9 * Math.min(area.w, area.h)) / s));
   const m = (s * kmax) / 2;
   const x = m + Math.random() * Math.max(0, area.w - 2 * m);
   const y = m + Math.random() * Math.max(0, area.h - 2 * m);
@@ -1070,6 +1248,7 @@ function apriCombo(e, n) {
   const conta = document.createElement('b');
   conta.className = 'muro-conta';
   conta.style.fontSize = Math.round(s * 0.34) + 'px';
+  if (c.combo.contatore === false) conta.hidden = true;
   el.appendChild(conta);
   muroBox.appendChild(el);
   MURO.aperte.set(e.nome, { el, conta, s, x, y, kmax, soglia: MURO.combo.soglia, n: 0 });
@@ -1080,7 +1259,8 @@ function cresciCombo(nome, n) {
   const v = MURO.aperte.get(nome);
   if (!v) return;
   v.n = Math.max(v.n, n);
-  const k = Math.min(v.kmax, window.SB_MURO.crescita(v.n, v.soglia));
+  const cc = (MIO.muro && MIO.muro.combo) || {};
+  const k = Math.min(v.kmax, window.SB_MURO.crescita(v.n, v.soglia, v.kmax, (Number(cc.passo) || 12) / 100));
   v.conta.textContent = '\u00d7' + v.n;
   v.el.style.transform = 'translate(' + (v.x - v.s / 2) + 'px,' + (v.y - v.s / 2) + 'px) scale(' + k + ')';
   v.el.classList.remove('batte');
@@ -1088,20 +1268,23 @@ function cresciCombo(nome, n) {
   v.el.classList.add('batte');
 }
 
+function chiudiCombo(x) {
+  const v = MURO.aperte.get(x.nome);
+  MURO.aperte.delete(x.nome);
+  if (v) { v.el.classList.add('scoppia'); setTimeout(() => v.el.remove(), 260); }
+  const c = MIO.muro;
+  esplodi(c.combo.figura, [x], Math.min(c.esplosioni.quante, Math.max(8, x.n)));
+}
+
 function scadonoCombo() {
   if (!MURO.combo) return;
-  for (const x of MURO.combo.scadute(Date.now())) {
-    const v = MURO.aperte.get(x.nome);
-    MURO.aperte.delete(x.nome);
-    if (v) { v.el.classList.add('scoppia'); setTimeout(() => v.el.remove(), 260); }
-    const c = MIO.muro;
-    esplodi(c.combo.figura, [x], Math.min(c.esplosioni.quante, Math.max(8, x.n)));
-  }
+  for (const x of MURO.combo.scadute(Date.now())) chiudiCombo(x);
 }
 
 function preparaMuro() {
   posaMuro();
   const c = MIO.muro;
+  muroBox.style.opacity = muroAcceso() && Number(c.opacita) < 100 ? String(Math.max(10, Number(c.opacita) || 100) / 100) : '';
   const chiave = muroAcceso() ? JSON.stringify([c.maxSchermo, c.coda, c.combo]) : '';
   if (chiave === MURO.chiave) return;
   MURO.chiave = chiave;
@@ -1126,6 +1309,7 @@ function muroChat(d) {
       if (contate.has(e.nome)) { if (MURO.aperte.has(e.nome)) continue; entraEmote(e, ora); continue; }
       contate.add(e.nome);
       const r = MURO.combo.passo(e, String(d.chi || ''), ora);
+      for (const x of r.chiuse) chiudiCombo(x);
       if (r.azione === 'apri') { apriCombo(e, r.n); continue; }
       if (r.azione === 'cresci') { cresciCombo(e.nome, r.n); continue; }
       if (r.azione === 'niente') continue;
@@ -1188,7 +1372,9 @@ function muroBoss(d) {
 function ricevi(m) {
   let dati;
   try { dati = JSON.parse(m.data); } catch (e) { return; }
-  if (!dati || !dati.tipo || dati.tipo === 'battito') return;
+  if (!dati || !dati.tipo) return;
+  if (dati.tipo === 'battito') { campioneOra(dati.ora); return; }
+  segnaVisto(dati);
   if (dati.da === 'consolify' && !mostra('consolify')) return;
 
     if (dati.tipo === 'audio') { if (mostra('effetti')) suona(dati); }
@@ -1198,10 +1384,10 @@ function ricevi(m) {
     else if (dati.tipo === 'chat') chat(dati);
     else if (dati.tipo === 'muro') muroChat(dati);
     else if (dati.tipo === 'muro-esplodi') muroEsplodi(dati);
-    else if (dati.tipo === 'muro-treno') MURO.trenoFino = Number(dati.per) > 0 ? Date.now() + Number(dati.per) : 0;
-    else if (dati.tipo === 'widget') { if (mostra(dati.id === 'ultimoSub' ? 'ws' : 'wf')) widget(dati.id, (MIO.widget && MIO.widget[dati.id]) || dati.cfg, dati.valore); }
-    else if (dati.tipo === 'goal') { MIO.goals = Array.isArray(dati.goals) ? dati.goals : MIO.goals; goal(MIO.goals, dati.conti || {}); }
-    else if (dati.tipo === 'timer') { MIO.timerFine = Number(dati.fine) || MIO.timerFine; disegnaTimer(); }
+    else if (dati.tipo === 'muro-treno') MURO.trenoFino = Number(dati.per) > 0 ? adesso() + Number(dati.per) : 0;
+    else if (dati.tipo === 'widget') { WIDGET_VALORE[dati.id] = dati.valore; if (mostra(dati.id === 'ultimoSub' ? 'ws' : 'wf')) widget(dati.id, (MIO.widget && MIO.widget[dati.id]) || dati.cfg, dati.valore); }
+    else if (dati.tipo === 'goal') { MIO.goals = Array.isArray(dati.goals) ? dati.goals : MIO.goals; MIO.goalConti = dati.conti || {}; goal(MIO.goals, MIO.goalConti); }
+    else if (dati.tipo === 'timer') { const f = Number(dati.fine); if (Number.isFinite(f)) MIO.timerFine = f; disegnaTimer(); }
     else if (dati.tipo === 'pubblicita') { MIO.pubblStato = { prossima: Number(dati.prossima) || 0, pausaFino: Number(dati.pausaFino) || 0 }; disegnaPubblicita(); }
     else if (dati.tipo === 'treno') { MIO.trenoStato = dati.treno || null; disegnaTreno(); }
     else if (dati.tipo === 'tempi') { MIO.tempiElenco = Array.isArray(dati.elenco) ? dati.elenco : []; disegnaTempi(); }
@@ -1218,6 +1404,7 @@ function connetti() {
   window.SB_FLUSSO.apri(urlStream, {
     silenzio: 75000,
     suMessaggio: ricevi,
+    suAperto: () => caricaTema(),
     suCaduta: () => guaio('flusso-caduto', 'il flusso si e\' interrotto, riprovo'),
     suRitorno: (n) => { caricaTema(); guaio('flusso-tornato', n ? 'dopo ' + n + ' tentativi' : 'al primo colpo'); },
   });
@@ -1229,7 +1416,26 @@ function fontStackCont(f) {
   const m = window.FONT_CONT || {};
   return m[f] || m.system || 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';
 }
+const contatoriVisti = {};
+const WIDGET_VALORE = {};
+
+function riconciliaContatori(lista, t) {
+  if (Array.isArray(lista)) {
+    for (const k of Object.keys(contatoriVisti)) if (vale('cont:' + k, t)) delete contatoriVisti[k];
+    for (const d of lista) {
+      const k = d && d.comando ? String(d.comando).toLowerCase() : '';
+      if (k && vale('cont:' + k, t)) contatoriVisti[k] = d;
+    }
+    document.querySelectorAll('.contatore-widget').forEach((el) => {
+      const cmd = String(el.dataset.el || '').replace(/^cont:/, '');
+      if (!contatoriVisti[cmd]) el.remove();
+    });
+  }
+  for (const d of Object.values(contatoriVisti)) contatore(d);
+}
+
 function contatore(d) {
+  if (d && d.comando) contatoriVisti[String(d.comando).toLowerCase()] = d;
   const id = 'cont-' + String(d.comando || '').replace(/[^a-z0-9_]/gi, '').slice(0, 30);
   let el = document.getElementById(id);
   const cmd = String(d.comando || '').toLowerCase();
@@ -1395,13 +1601,15 @@ function togliMusica() {
   musicaEl.uscita = setTimeout(via, 880);
 }
 
-function restaMusica(el) {
-  if (!musicaEl.uscita) return;
-  clearTimeout(musicaEl.uscita);
-  musicaEl.uscita = 0;
+function rientra(reg, el) {
+  if (!reg.uscita) return;
+  clearTimeout(reg.uscita);
+  reg.uscita = 0;
   el.classList.remove('esce');
   el.classList.add('dentro');
 }
+
+function restaMusica(el) { rientra(musicaEl, el); }
 
 const tinteNote = new Map();
 function tintaDaCopertina(url, poi) {
@@ -1682,7 +1890,7 @@ const timerEl = {};
 function disegnaTimer() {
   const cfg = MIO.timer;
   const fine = Number(MIO.timerFine) || 0;
-  const manca = fine - Date.now();
+  const manca = fine - oraScena();
   const finito = manca <= 0;
   if (!cfg || !cfg.attivo || !mostra('timer') || !fine || (finito && cfg.aFine === 'sparisce')) return togliTimer();
   let el = timerEl.n;
@@ -1692,7 +1900,7 @@ function disegnaTimer() {
     el.innerHTML = '<span class="t-tit"></span><span class="t-num"></span>';
     timerEl.n = el;
   }
-  if (timerEl.uscita) { clearTimeout(timerEl.uscita); timerEl.uscita = 0; el.classList.remove('esce'); }
+  rientra(timerEl, el);
   posa(wboxes[cfg.posizione] || wboxes['alto-destra'] || document.body, el);
   el.className = 'ovl-widget ovl-timer dim-' + ((cfg.stile || {}).dim || 'media') + ' ' + classiIdentita(cfg.stile, 'nessuna')
     + (finito ? ' finito' : '') + (el.classList.contains('dentro') ? ' dentro' : '');
@@ -1718,7 +1926,7 @@ const pubblEl = {};
 function disegnaPubblicita() {
   const cfg = MIO.pubbl;
   const st = MIO.pubblStato || {};
-  const ora = Date.now();
+  const ora = oraScena();
   const pausaFino = Number(st.pausaFino) || 0;
   const prossima = Number(st.prossima) || 0;
   let titolo = '';
@@ -1737,7 +1945,7 @@ function disegnaPubblicita() {
     el.innerHTML = '<span class="t-tit"></span><span class="t-num"></span>';
     pubblEl.n = el;
   }
-  if (pubblEl.uscita) { clearTimeout(pubblEl.uscita); pubblEl.uscita = 0; el.classList.remove('esce'); }
+  rientra(pubblEl, el);
   posa(wboxes[cfg.posizione] || wboxes['alto-destra'] || document.body, el);
   el.className = 'ovl-widget ovl-timer ovl-pubblicita dim-' + ((cfg.stile || {}).dim || 'media') + ' ' + classiIdentita(cfg.stile, 'nessuna')
     + (inPausa ? ' in-pausa' : '') + (el.classList.contains('dentro') ? ' dentro' : '');
@@ -1762,7 +1970,7 @@ const tempiEl = { righe: {} };
 
 function disegnaTempi() {
   const cfg = MIO.tempi;
-  const ora = Date.now();
+  const ora = oraScena();
   const elenco = (Array.isArray(MIO.tempiElenco) ? MIO.tempiElenco : []).filter(function (t) { return t && t.chiave && Number(t.fino) > ora; })
     .sort(function (a, b) { return Number(a.fino) - Number(b.fino); });
   if (!cfg || !cfg.attivo || !mostra('tempi') || !elenco.length) return togliTempi();
@@ -1773,7 +1981,7 @@ function disegnaTempi() {
     tempiEl.n = el;
     tempiEl.righe = {};
   }
-  if (tempiEl.uscita) { clearTimeout(tempiEl.uscita); tempiEl.uscita = 0; el.classList.remove('esce'); }
+  rientra(tempiEl, el);
   posa(wboxes[cfg.posizione] || wboxes['alto-destra'] || document.body, el);
   const st = cfg.stile || {};
   el.className = 'ovl-widget ovl-tempi dim-' + (st.dim || 'media') + ' ' + classiIdentita(st, 'nessuna')
@@ -1830,7 +2038,7 @@ const TRENO_ICO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" st
 function disegnaTreno() {
   const cfg = MIO.treno;
   const t = MIO.trenoStato;
-  const ora = Date.now();
+  const ora = oraScena();
   if (!cfg || !cfg.attivo || !mostra('treno') || !t || !(Number(t.scade) > ora)) return togliTreno();
   let el = trenoEl.n;
   const nato = !el;
@@ -1842,7 +2050,7 @@ function disegnaTreno() {
       + '<div class="tr-pie"><span class="tr-chi"></span><span class="tr-tempo"></span></div>';
     trenoEl.n = el;
   }
-  if (trenoEl.uscita) { clearTimeout(trenoEl.uscita); trenoEl.uscita = 0; el.classList.remove('esce'); }
+  rientra(trenoEl, el);
   posa(wboxes[cfg.posizione] || wboxes['alto-destra'] || document.body, el);
   const st = cfg.stile || {};
   const finito = !!t.finito;
@@ -1872,14 +2080,16 @@ const bitEl = {};
 const BIT_ICO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4v-7H4z"/><path d="M10 20h4V6h-4z"/><path d="M16 20h4v-10h-4z"/></svg>';
 
 let bitInVolo = false;
+let bitChiesta = 0;
 async function chiediBit() {
   if (bitInVolo) return;
   bitInVolo = true;
+  bitChiesta = Date.now();
   try {
     const r = await fetch('/overlay/' + encodeURIComponent(login) + '/bit' + location.search);
     if (r.ok) {
       const d = await r.json();
-      if (Array.isArray(d && d.righe)) MIO.bitRighe = d.righe;
+      if (Array.isArray(d && d.righe) && vale('bit', d)) MIO.bitRighe = d.righe;
     }
   } catch (e) { /* niente: resta quello che c'era */ }
   bitInVolo = false;
@@ -1897,6 +2107,7 @@ function disegnaBit() {
     el.innerHTML = '<div class="bt-testa"><span class="bt-ico">' + BIT_ICO + '</span><span class="bt-tit"></span></div><ol class="bt-righe"></ol>';
     bitEl.n = el;
   }
+  rientra(bitEl, el);
   posa(wboxes[cfg.posizione] || wboxes['alto-sinistra'] || document.body, el);
   const st = cfg.stile || {};
   el.className = 'ovl-widget ovl-bit dim-' + (st.dim || 'media') + ' ' + classiIdentita(st, 'nessuna')
@@ -1956,20 +2167,36 @@ function oreMinSec(ms) {
   return (o ? o + ':' + dd(m) : String(m)) + ':' + dd(s);
 }
 
-setInterval(() => {
+function giro() {
   if (MIO.timer && MIO.timer.attivo && mostra('timer')) disegnaTimer();
   if (MIO.pubbl && MIO.pubbl.attivo) disegnaPubblicita();
   if (MIO.treno && MIO.treno.attivo && mostra('treno')) disegnaTreno();
   if (MIO.tempi && MIO.tempi.attivo) disegnaTempi();
+  scadonoDaSoli();
+  if (MIO.bit && MIO.bit.attivo && mostra('bit') && Date.now() - bitChiesta > 5 * 60 * 1000) chiediBit();
   const vivo = MIO.musica && MIO.musica.attivo && mostra('musica');
   if (!vivo) return;
   avanzaBarra();
   const daChiesta = Date.now() - musicaChiesta;
   if (daChiesta > 5000 || (musicaFinitaDa() > 1000 && daChiesta > 1500)) chiediMusica();
-}, 1000);
+}
+
+function giroSecondo() {
+  try { giro(); } catch (e) { guaio('giro-rotto', String(e && e.message || e)); }
+  const resto = ((adesso() % 1000) + 1000) % 1000;
+  let dopo = (1500 - resto) % 1000 || 1000;
+  if (dopo < 50) dopo += 1000;
+  setTimeout(giroSecondo, dopo);
+}
+setTimeout(giroSecondo, 0);
+
+let temaApplicato = false;
 
 function applicaTema(t) {
+  if (t && t.ora) campioneOra(t.ora);
   MIO.mostra = (t && t.mostra) ? t.mostra : MIO.mostra;
+  if (!mostra('alert')) codaAlert.length = 0;
+  if (!mostra('effetti')) codaVisiva.length = 0;
   MIO.ordine = (t && Array.isArray(t.ordine)) ? t.ordine : [];
   MIO.xy = (t && t.xy) ? t.xy : {};
 
@@ -1980,17 +2207,22 @@ function applicaTema(t) {
   MIO.widget = w;
   const stato = t.stato || {};
 
-  widget('ultimoFollower', mostra('wf') ? w.ultimoFollower : { attivo: false }, stato.ultimoFollower);
-  widget('ultimoSub', mostra('ws') ? w.ultimoSub : { attivo: false }, stato.ultimoSub);
-  MIO.goals = Array.isArray(t.goals) ? t.goals : [];
-  goal(MIO.goals, t.conti || stato.goals || {});
+  for (const [id, k] of [['ultimoFollower', 'wf'], ['ultimoSub', 'ws']]) {
+    if (vale('widget:' + id, t)) WIDGET_VALORE[id] = stato[id];
+    widget(id, mostra(k) ? w[id] : { attivo: false }, WIDGET_VALORE[id]);
+  }
+  ridisegnaChat();
+  if (vale('goal', t)) { MIO.goals = Array.isArray(t.goals) ? t.goals : []; MIO.goalConti = t.conti || stato.goals || {}; }
+  goal(MIO.goals || [], MIO.goalConti || {});
   MIO.cartelli = Array.isArray(t.cartelli) ? t.cartelli : [];
   cartelli(MIO.cartelli);
 
   MIO.musica = t.musica || null;
   MIO.timer = t.timer || null;
-  MIO.timerFine = Number(stato.timer && stato.timer.fine) || 0;
-  if (MIO.timer && MIO.timer.attivo && MIO.timer.partiDaSolo && mostra('timer') && MIO.timerFine <= Date.now()) {
+  if (vale('timer', t)) MIO.timerFine = Number(stato.timer && stato.timer.fine) || 0;
+  const apertura = !temaApplicato;
+  temaApplicato = true;
+  if (apertura && MIO.timer && MIO.timer.attivo && MIO.timer.partiDaSolo && mostra('timer') && MIO.timerFine <= adesso()) {
     fetch(urlTimerParti, { method: 'POST' })
       .then(function (r) { return r.json(); })
       .then(function (d) { if (d && d.fine) { MIO.timerFine = d.fine; disegnaTimer(); } })
@@ -1998,16 +2230,19 @@ function applicaTema(t) {
   }
   disegnaTimer();
   MIO.pubbl = t.pubblicita || null;
-  MIO.pubblStato = (MIO.pubbl && MIO.pubbl.stato) || { prossima: 0, pausaFino: 0 };
+  if (vale('pubblicita', t)) MIO.pubblStato = (MIO.pubbl && MIO.pubbl.stato) || { prossima: 0, pausaFino: 0 };
   disegnaPubblicita();
   MIO.treno = t.treno || null;
-  MIO.trenoStato = (stato.treno && typeof stato.treno === 'object') ? stato.treno : null;
+  if (vale('treno', t)) MIO.trenoStato = (stato.treno && typeof stato.treno === 'object') ? stato.treno : null;
   disegnaTreno();
   MIO.tempi = t.tempi || null;
-  MIO.tempiElenco = (MIO.tempi && Array.isArray(MIO.tempi.elenco)) ? MIO.tempi.elenco : [];
+  if (vale('tempi', t)) MIO.tempiElenco = (MIO.tempi && Array.isArray(MIO.tempi.elenco)) ? MIO.tempi.elenco : [];
   disegnaTempi();
   MIO.boss = t.boss || null;
   ridisegnaBoss();
+  if ('boss' in stato && vale('boss', t)) riconciliaBoss(stato.boss);
+  if ('penitenze' in stato) riconciliaPenitenze(stato.penitenze, t);
+  riconciliaContatori(Array.isArray(t.contatori) ? t.contatori : null, t);
   MIO.arena = t.arena || null;
   ridisegnaArena();
   MIO.scritta = t.scritta || null;
@@ -2023,11 +2258,25 @@ function applicaTema(t) {
   applicaOrdine();
 }
 
+const TEMA_PASSI = [1000, 2000, 4000, 8000, 15000];
+const temaLettura = { inVolo: false, ancora: false, riprova: 0, passo: 0 };
 async function caricaTema() {
+  const l = temaLettura;
+  if (l.inVolo) { l.ancora = true; return; }
+  l.inVolo = true;
+  clearTimeout(l.riprova);
+  let preso = null;
   try {
     const r = await fetch('/overlay/' + encodeURIComponent(login) + '/tema' + location.search);
-    if (r.ok) applicaTema(await r.json());
+    if (r.ok) preso = await r.json();
   } catch (e) {  }
+  l.inVolo = false;
+  if (preso) {
+    l.passo = 0;
+    try { applicaTema(preso); } catch (e) { guaio('tema-rotto', String(e && e.message || e)); }
+  }
+  if (l.ancora) { l.ancora = false; caricaTema(); return; }
+  if (!preso) l.riprova = setTimeout(caricaTema, TEMA_PASSI[Math.min(l.passo++, TEMA_PASSI.length - 1)]);
 }
 
 if (login) {

@@ -27,8 +27,13 @@ test('il battito agli overlay e\' un evento con un tipo, al tracking un commento
   const ovl = [], trk = [];
   e.addClient('canale', { write: (s) => ovl.push(s) });
   e.addTrkClient('canale', { write: (s) => trk.push(s) });
+  const prima = Date.now();
   e.ping();
-  assert.deepEqual(ovl, ['data: {"tipo":"battito"}\n\n'], 'l\'overlay riceve un evento che puo\' riconoscere');
+  assert.equal(ovl.length, 1);
+  assert.match(ovl[0], /^data: \{[^\n]*\}\n\n$/, 'l\'overlay riceve un evento che puo\' riconoscere');
+  const b = JSON.parse(ovl[0].slice(6));
+  assert.equal(b.tipo, 'battito');
+  assert.ok(b.ora >= prima && b.ora <= Date.now(), 'con l\'ora del server: l\'orologio di tutti i conti in scena');
   assert.deepEqual(trk, [': ping\n\n'], 'il tracking riceve il commento di sempre');
   e.ping();
   assert.equal(ovl.length, 2, 'un battito per chiamata, non di piu\'');
@@ -56,7 +61,8 @@ test('nessuna pagina apre un EventSource per conto suo', () => {
 
 test('l\'overlay ignora il battito, riapre da solo e al ritorno rilegge il tema', () => {
   const o = leggi('src/web/public/overlay-app.js');
-  assert.ok(/dati\.tipo === 'battito'\) return/.test(o), 'il battito non e\' un evento da mostrare');
+  assert.ok(/if \(dati\.tipo === 'battito'\) \{ campioneOra\(dati\.ora\); return; \}/.test(o), 'il battito non e\' un evento da mostrare: porta solo l\'ora del server');
+  assert.ok(/suAperto: \(\) => caricaTema\(\),/.test(o), 'il tema si legge a ogni apertura riuscita, anche la prima dopo dei tentativi falliti');
   assert.ok(/SB_FLUSSO\.apri\(urlStream,\s*\{[^}]*silenzio:\s*75000/.test(o), 'il flusso dell\'overlay ha un silenzio ammesso');
   assert.ok(/suRitorno: \(n\) => \{ caricaTema\(\);/.test(o), 'al ritorno rilegge il tema');
   assert.ok(/suCaduta: \(\) => guaio\('flusso-caduto'/.test(o), 'una caduta si racconta al server');

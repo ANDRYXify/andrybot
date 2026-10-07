@@ -58,7 +58,10 @@ test('il programma si rilegge quando puo\' essere cambiato, e non di piu\'', () 
   assert.equal(g({ prossima: 0, letto: ORA - P.RILETTURA_MS }), true, 'ma una lettura vecchia si rifa\'');
   assert.equal(g({ prossima: ORA + 40 * MIN, letto: ORA - 1000 }), false, 'fra quaranta minuti: non si richiede ogni giro');
   assert.equal(g({ prossima: ORA + 2 * P.GIRO_MS, letto: ORA - 1000 }), true, 'vicina: si riguarda, cosi\' uno snooze si vede');
-  assert.equal(g({ prossima: ORA + 2 * P.GIRO_MS + 1, letto: ORA - 1000 }), false, 'appena fuori dalla finestra no');
+  // La finestra e' quella dello snooze (vedi pubblicita-letture.test.mjs):
+  // dentro i cinque minuti che uno snooze puo' spostare si legge a ogni giro.
+  assert.equal(g({ prossima: ORA + P.SNOOZE_MS + 2 * P.GIRO_MS, letto: ORA - 1000 }), true, 'a uno snooze e due giri: si riguarda');
+  assert.equal(g({ prossima: ORA + P.SNOOZE_MS + 2 * P.GIRO_MS + 1, letto: ORA - 1000 }), false, 'appena fuori dalla finestra no');
   assert.equal(g({ prossima: ORA - 1000, letto: ORA - 1000 }), true, 'doveva essere gia\' partita: si riguarda');
 });
 
@@ -66,7 +69,12 @@ test('finita una pausa il programma si rilegge: Twitch ha messo in programma la 
   const inizio = ORA - 90_000;
   const pausa = { ultimaPausa: String(inizio), secondi: 60, prossima: 0 };
   assert.equal(P.vaGuardatoPerOverlay({ ...pausa, letto: inizio + 10_000 }, ORA), true, 'letto durante la pausa, che adesso e\' finita');
-  assert.equal(P.vaGuardatoPerOverlay({ ...pausa, letto: inizio + 70_000 }, ORA), false, 'letto dopo la fine: gia\' fatto');
+  // Una lettura dopo la fine chiude la regola solo se porta la prossima pausa:
+  // se Twitch dice ancora «nessuna», la prossima non si sa ancora.
+  assert.equal(P.vaGuardatoPerOverlay({ ...pausa, prossima: ORA + 30 * MIN, letto: inizio + 70_000 }, ORA), false,
+    'letto dopo la fine, con la prossima pausa: gia\' fatto');
+  assert.equal(P.vaGuardatoPerOverlay({ ...pausa, letto: inizio + 70_000 }, ORA), true,
+    'letto dopo la fine, ma senza la prossima: si rilegge');
   assert.equal(P.vaGuardatoPerOverlay({ ...pausa, letto: inizio + 10_000 }, inizio + 30_000), false, 'a pausa in corso no: il conto e\' quello della fine');
   assert.equal(P.vaGuardatoPerOverlay({ ultimaPausa: String(inizio), secondi: 0, prossima: 0, letto: inizio - 1000 }, ORA), true,
     'senza la durata la fine non si sa: si rilegge dopo l\'inizio');

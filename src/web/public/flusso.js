@@ -4,11 +4,12 @@
 (function () {
   'use strict';
   var PASSI = [1000, 2000, 4000, 8000, 15000];
+  var ora = function () { return (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now(); };
 
   function apri(url, o) {
     o = o || {};
     var es = null, chiuso = false, caduto = false, tentativi = 0, timer = 0, guardia = 0;
-    var ultimo = Date.now(), apertoUnaVolta = false;
+    var ultimo = ora(), apertoUnaVolta = false;
 
     function passo() { return PASSI[Math.min(tentativi++, PASSI.length - 1)]; }
     function segnaCaduta() {
@@ -23,17 +24,18 @@
     function collega() {
       if (chiuso) return;
       if (es) { try { es.close(); } catch (e) {} }
+      ultimo = ora();
       try { es = new EventSource(url); }
       catch (e) { es = null; segnaCaduta(); riapri(passo()); return; }
       es.onopen = function () {
-        ultimo = Date.now();
+        ultimo = ora();
         var tornato = caduto, n = tentativi;
         caduto = false; tentativi = 0;
         if (!apertoUnaVolta) { apertoUnaVolta = true; if (o.suAperto) { try { o.suAperto(); } catch (e) {} } }
         else if (tornato && o.suRitorno) { try { o.suRitorno(n); } catch (e) {} }
       };
       es.onmessage = function (m) {
-        ultimo = Date.now();
+        ultimo = ora();
         if (o.suMessaggio) o.suMessaggio(m);
       };
       es.onerror = function () {
@@ -44,8 +46,8 @@
     collega();
     if (o.silenzio > 0) {
       guardia = setInterval(function () {
-        if (chiuso || !es || es.readyState !== 1) return;
-        if (Date.now() - ultimo > o.silenzio) { segnaCaduta(); tentativi++; collega(); }
+        if (chiuso || !es || es.readyState === 2) return;
+        if (ora() - ultimo > o.silenzio) { segnaCaduta(); tentativi++; collega(); }
       }, Math.max(1000, Math.min(o.silenzio / 3, 10000)));
     }
     return {

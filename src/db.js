@@ -13,6 +13,7 @@ import { istruzioneGenere } from './ai/genere.js';
 import { nomeSu, eLoginNostro } from './identita.js';
 import { makeLog } from './logger.js';
 import { normChi, normTriggerArrivo, normPersona } from './features/arrivi-regola.js';
+import { muroRotto, riparaMuro } from './web/stile.js';
 
 const log = makeLog('db');
 
@@ -1369,6 +1370,36 @@ export function rinnovaChiaviOverlayUnaTantum() {
   } catch { return 0; /* best-effort: non blocca l'avvio */ }
 }
 rinnovaChiaviOverlayUnaTantum();
+
+// IL MURO DELLE EMOTE SALVATO DAL MODULO VUOTO, riparato una volta sola
+// (docs/MURO-EMOTE.md, «Il modulo che si salvava vuoto»). Il pannello non
+// riempiva i campi del muro, e chi ne toccava uno salvava tutti gli altri al
+// loro minimo, con le fonti spente: un muro che non mostra piu' niente. Il
+// difetto e' chiuso nel pannello; qui si riparano i muri che ha gia' rotto, e
+// solo quelli che ne portano l'impronta (`muroRotto`).
+export function riparaMuriUnaTantum() {
+  const FLAG = 'muro_modulo_vuoto_v1';
+  try {
+    const gia = db.prepare("SELECT 1 FROM facts WHERE channel='__migrazioni__' AND key=?").get(FLAG);
+    if (gia) return 0;
+    const righe = db.prepare('SELECT login, settings FROM streamers').all();
+    const scrivi = db.prepare('UPDATE streamers SET settings=? WHERE login=?');
+    let n = 0;
+    db.transaction(() => {
+      for (const r of righe) {
+        const s = safeJson(r.settings) || {};
+        if (!muroRotto(s.overlayMuro)) continue;
+        scrivi.run(JSON.stringify({ ...s, overlayMuro: riparaMuro(s.overlayMuro) }), r.login);
+        n++;
+      }
+      db.prepare(`INSERT INTO facts (channel, key, value, ts) VALUES ('__migrazioni__', ?, ?, ?)
+        ON CONFLICT(channel, key) DO UPDATE SET value=excluded.value, ts=excluded.ts`).run(FLAG, String(n), Date.now());
+    })();
+    if (n > 0) log.info(`muri delle emote salvati vuoti dal pannello, riparati una tantum: ${n} canali`);
+    return n;
+  } catch { return 0; /* best-effort: non blocca l'avvio */ }
+}
+riparaMuriUnaTantum();
 
 // Contatori: colonna `overlay` (JSON aspetto/posizione del widget) sui DB esistenti.
 (() => {
