@@ -183,7 +183,11 @@ const riquadroDi = (d) => RIQUADRO[d?.lingua] || RIQUADRO.it;
 // L'INCORNICIATO della diretta. Sta in una funzione sua perche' lo usano in
 // due: l'avviso che parte da solo e quello che parte verso piu' canali. Due
 // copie vorrebbero dire due incorniciati che col tempo diventano diversi.
-export function incornicia(d) {
+//
+// `piccola`: l'immagine della diretta va nell'angolo invece che sotto, larga.
+// E' l'avviso di un ospite in un posto che riceve anche le dirette di casa
+// (features/rilievo.js): si legge, ma non occupa lo schermo.
+export function incornicia(d, { piccola = false } = {}) {
   const p = String(d?.piattaforma || 'twitch');
   const r = riquadroDi(d);
   const campi = [];
@@ -198,7 +202,7 @@ export function incornicia(d) {
     ...(campi.length ? { fields: campi } : {}),
     footer: { text: 'SocialBot • ' + (NOMI[p] || p) },
   };
-  if (d?.miniatura) emb.image = { url: d.miniatura + `?t=${Math.floor(Date.now() / 1000)}` };
+  if (d?.miniatura) emb[piccola ? 'thumbnail' : 'image'] = { url: d.miniatura + `?t=${Math.floor(Date.now() / 1000)}` };
   return emb;
 }
 
@@ -275,14 +279,22 @@ export async function diffondi(token, dest, d, { post = false } = {}) {
 }
 
 // Il messaggio di un avviso per UN posto: il suo testo e il suo ruolo.
-export function avvisoPer(t, d, { post = false } = {}) {
+//
+// Con `ospite` (features/rilievo.js) l'avviso arriva in sordina: il ruolo non
+// si chiama, il messaggio parte senza notifica (lo stesso «@silent» che si
+// scrive a mano su Discord) e l'immagine sta nell'angolo. Cosi' la notifica
+// che suona e l'immagine larga restano della diretta di casa.
+export const SENZA_NOTIFICA = 1 << 12;
+
+export function avvisoPer(t, d, { post = false, ospite = false } = {}) {
   const testo = post ? testoPost(d) : testoDiretta(d, t?.messaggio);
-  const ruolo = String(t?.ruolo || '').replace(/[^0-9]/g, '');
+  const ruolo = ospite ? '' : String(t?.ruolo || '').replace(/[^0-9]/g, '');
   const payload = {
     content: ((ruolo ? `<@&${ruolo}> ` : '') + testo).slice(0, 1990),
     allowed_mentions: ruolo ? { roles: [ruolo] } : { parse: [] },
   };
-  if (!post) payload.embeds = [incornicia(d)];
+  if (ospite) payload.flags = SENZA_NOTIFICA;
+  if (!post) payload.embeds = [incornicia(d, { piccola: ospite })];
   return payload;
 }
 
@@ -299,8 +311,10 @@ export async function consegna(token, t, payload) {
 
 // L'AVVISO DI DIRETTA AGGIORNATO: lo stesso testo (la chiamata al ruolo non
 // risuona, riscrivere non chiama nessuno) e il riquadro con i dati di adesso.
-export async function aggiornaAvviso(token, t, msgId, contenuto, d) {
-  const corpo = { content: String(contenuto || '').slice(0, 1990), embeds: [incornicia(d)], allowed_mentions: { parse: [] } };
+// `piccola` tiene l'immagine nell'angolo dove era nell'angolo: un ospite che
+// alla prima riscrittura si allarga sarebbe di nuovo in primo piano.
+export async function aggiornaAvviso(token, t, msgId, contenuto, d, { piccola = false } = {}) {
+  const corpo = { content: String(contenuto || '').slice(0, 1990), embeds: [incornicia(d, { piccola })], allowed_mentions: { parse: [] } };
   return riscrivi(token, t, msgId, corpo);
 }
 

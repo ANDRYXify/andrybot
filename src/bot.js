@@ -68,6 +68,7 @@ import { ChatYoutube } from './youtube/chat.js';
 import { voceYoutube } from './youtube/voce.js';
 import { collegati as youtubeCollegati } from './youtube/api.js';
 import * as avvisi from './features/avvisi.js';
+import { rilievo } from './features/rilievo.js';
 import { dirette, guide, vips, linkPage, recapiti } from './db.js';
 import { dopoErrore, chiaveDiretta, AGGIORNA_OGNI_MS, TIENI_MS } from './features/recapiti.js';
 import * as cancello from './features/tg-cancello.js';
@@ -1965,9 +1966,15 @@ export class BotManager {
     const ora = Date.now();
     const piattaforma = post ? `post-${d.piattaforma}` : String(d.piattaforma || 'twitch');
     const diretta = post ? (String(d.url || '') || `al:${ora}`) : chiaveDiretta(d, ora);
+    // IL RILIEVO di ogni posto (features/rilievo.js). Sta nel recapito, non si
+    // ricalcola: un ritentativo o una riscrittura devono arrivare come il primo
+    // invio, anche se nel frattempo qualcuno ha toccato la levetta.
+    const risalto = avvisiConf.get(login).risalto.discord;
     let inviati = 0;
     for (const t of buoni) {
-      const rec = recapiti.nuovo({ channel: login, trasporto: 'discord', destId: t.id, streamer: chi || login, piattaforma, diretta, dati: { d, post, chiudi }, ora });
+      const ospite = !post && rilievo({ casa: login, chi: chi || login, posto: t, risalto }).ruolo === 'ospite';
+      const dati = ospite ? { d, post, chiudi, ospite } : { d, post, chiudi };
+      const rec = recapiti.nuovo({ channel: login, trasporto: 'discord', destId: t.id, streamer: chi || login, piattaforma, diretta, dati, ora });
       if (!rec) continue;
       if (await this._consegnaDiscord(rec, t, token)) inviati++;
     }
@@ -1978,8 +1985,8 @@ export class BotManager {
   // Un tentativo di un recapito: arrivato, da ritentare, o perso
   // (features/recapiti.js decide quale).
   async _consegnaDiscord(rec, t, token) {
-    const { d, post } = rec.dati || {};
-    const payload = discord.avvisoPer(t, d, { post });
+    const { d, post, ospite } = rec.dati || {};
+    const payload = discord.avvisoPer(t, d, { post, ospite: ospite === true });
     const r = await discord.consegna(token, t, payload);
     const ora = Date.now();
     if (r.ok) { recapiti.mandato(rec.id, { msgId: r.id, corpo: payload.content, ora }); return true; }
@@ -2028,7 +2035,7 @@ export class BotManager {
       const t = dcDest.get(rec.channel, rec.dest_id);
       const token = dcApi.tokenDi(dcRuoli.get(rec.channel));
       if (t && (token || t.webhook)) {
-        const r = await discord.aggiornaAvviso(token, t, rec.msg_id, rec.corpo, d);
+        const r = await discord.aggiornaAvviso(token, t, rec.msg_id, rec.corpo, d, { piccola: rec.dati?.ospite === true });
         if (!r.ok) log.debug(`aggiorna avviso di #${rec.streamer} in ${t.canale_nome || t.canale}: ${r.errore}`);
       }
       recapiti.aggiornato(rec.id, { dati: { ...rec.dati, d }, ora });
@@ -2157,31 +2164,51 @@ export class BotManager {
     tgDest.migra(login, conf);                       // il vecchio gruppo unico diventa la prima destinazione
     const dest = tgDest.perEvento(login, evento, streamerLogin);
     if (!dest.length) return { inviati: 0 };
+    // IL RILIEVO di ogni posto (features/rilievo.js): la diretta di casa ha
+    // tutto, quella di un ospite, dove arriva anche la casa, arriva in sordina.
+    // I posti si raggruppano per rilievo, e ogni gruppo parte con la sua foto
+    // (o senza), il suo testo e il suo suono.
+    const risalto = avvisiConf.get(login).risalto.telegram;
+    const gruppi = new Map();
+    for (const d of dest) {
+      const r = rilievo({ casa: login, chi: streamerLogin, posto: d, risalto });
+      if (!gruppi.has(r.ruolo)) gruppi.set(r.ruolo, { r, posti: [] });
+      gruppi.get(r.ruolo).posti.push(d);
+    }
     // LA CARTA. La decisione «va allegata?» sta in cartalive.js, e la fa anche
     // la prova dal pannello: due decisioni separate vorrebbero dire una prova
-    // che prova qualcosa di diverso da quello che parte davvero.
-    const foto = await cartaLive.fotoPerEvento(login, evento, { chi: streamerLogin, info, helix: this.helix });
-    // Il testo si compone DOPO aver saputo se la locandina parte: con l'immagine
-    // dice meno, perche' titolo e gioco sono gia' disegnati dentro. Comporlo
-    // prima vorrebbe dire mandare due volte la stessa cosa.
-    const testo = typeof componiTesto === 'function' ? componiTesto(!!foto) : componiTesto;
-    const esiti = await telegram.diffondi(conf.token, dest, testo, { anteprima: true, foto });
-    let inviati = 0;
-    for (const e of esiti) {
-      if (!e.ok) continue;
-      inviati++;
-      const msgId = e.result?.message_id;
-      if (!msgId) continue;
-      if (pin) {
-        if (chi) tgMsg.segna(login, e.dest.id, chi, msgId);
-        else tgDest.setMsgId(e.dest.id, msgId);
-      }
-      if (pin && e.dest.pin) {
-        const p = await telegram.fissaMessaggio(conf.token, e.dest.chat_id, msgId, { silenzioso: false });
-        if (!p.ok) log.warn(`pin Telegram ${e.dest.titolo || e.dest.chat_id}: ${p.errore} (il bot è admin con permesso di fissare?)`);
+    // che prova qualcosa di diverso da quello che parte davvero. Si disegna
+    // solo se qualche posto la riceve: per un ospite in sordina sarebbe
+    // lavoro buttato.
+    const vuoleCarta = [...gruppi.values()].some((g) => g.r.carta);
+    const foto = vuoleCarta ? await cartaLive.fotoPerEvento(login, evento, { chi: streamerLogin, info, helix: this.helix }) : null;
+    let inviati = 0, sordina = 0;
+    for (const { r, posti } of gruppi.values()) {
+      const conFoto = r.carta ? foto : null;
+      // Il testo si compone DOPO aver saputo se la locandina parte: con
+      // l'immagine dice meno, perche' titolo e gioco sono gia' disegnati
+      // dentro. Comporlo prima vorrebbe dire mandare due volte la stessa cosa.
+      const testo = typeof componiTesto === 'function' ? componiTesto(!!conFoto) : componiTesto;
+      const esiti = await telegram.diffondi(conf.token, posti, testo, { anteprima: true, foto: conFoto, silenzioso: !r.suona, media: r.anteprima });
+      for (const e of esiti) {
+        if (!e.ok) continue;
+        inviati++;
+        if (!r.suona) sordina++;
+        const msgId = e.result?.message_id;
+        if (!msgId) continue;
+        // ricordato anche quando non si fissa: dove il posto fissa, a diretta
+        // finita l'avviso si toglie lo stesso
+        if (pin) {
+          if (chi) tgMsg.segna(login, e.dest.id, chi, msgId);
+          else tgDest.setMsgId(e.dest.id, msgId);
+        }
+        if (pin && e.dest.pin && r.fissa) {
+          const p = await telegram.fissaMessaggio(conf.token, e.dest.chat_id, msgId, { silenzioso: false });
+          if (!p.ok) log.warn(`pin Telegram ${e.dest.titolo || e.dest.chat_id}: ${p.errore} (il bot è admin con permesso di fissare?)`);
+        }
       }
     }
-    if (inviati) log.info(`Telegram: «${evento}» di #${streamerLogin} inviato a ${inviati}/${dest.length} destinazioni di #${login}`);
+    if (inviati) log.info(`Telegram: «${evento}» di #${streamerLogin} inviato a ${inviati}/${dest.length} destinazioni di #${login}${sordina ? ` (${sordina} in sordina)` : ''}`);
     return { inviati, totale: dest.length };
   }
 

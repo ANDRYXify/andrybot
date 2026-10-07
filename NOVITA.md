@@ -41,6 +41,21 @@ questa non è una cosa da ricordarsi: il cancello boccia una riga pubblica senza
 traduzione, una traduzione staccata dalla sua riga, o una che dice numeri e
 comandi diversi da quelli della riga italiana.
 
+## 2026-10-07
+
+- [importante] Dove arrivano anche le tue dirette, quelle di amici e community arrivano in sordina: senza suono, senza locandina e mai fissate su Telegram, senza ruolo chiamato su Discord. [vai: telegram]
+  en: Where your streams land too, friends’ and community streams arrive quietly: no sound, no poster and never pinned on Telegram, no role ping on Discord.
+  es: Donde también llegan tus directos, los de amigos y comunidad llegan en voz baja: sin sonido, sin cartel y sin fijar en Telegram, sin llamar al rol en Discord.
+  > La tua diretta in primo piano
+  > Con tanti streamer annunciati il gruppo suonava a ogni diretta, e l'ultimo avviso fissato si prendeva la cima anche mentre eri in onda tu. Ora la notifica che suona e il messaggio in cima sono tuoi. Dove arrivano solo gli altri restano pieni, e la levetta sta accanto alla community.
+  en> Your stream comes first
+  en> With many streamers announced, the group rang at every stream, and the last pinned alert took the top even while you were live. Now the notification that rings and the message at the top are yours. Where only others land they stay full, and the switch sits next to the community one.
+  es> Tu directo en primer plano
+  es> Con muchos streamers anunciados, el grupo sonaba con cada directo, y el último aviso fijado se quedaba arriba incluso mientras emitías tú. Ahora la notificación que suena y el mensaje de arriba son tuyos. Donde solo llegan los demás siguen completos, y el interruptor está junto al de la comunidad.
+- Rispondere «non mostrare più» a un piccolo avviso non spegne più gli annunci della community su Discord, e spegnere la community su Telegram la spegne davvero. [vai: telegram]
+  en: Answering “don’t show again” to a small notice no longer turns off community announcements on Discord, and turning off the community on Telegram really turns it off.
+  es: Responder «no mostrar más» a un pequeño aviso ya no apaga los anuncios de la comunidad en Discord, y apagar la comunidad en Telegram la apaga de verdad.
+
 ## 2026-10-04
 
 - L'azione «Timeout in chat» di un modulo, su un messaggio scritto su Kick o YouTube, non va più a Twitch: lì quell'id era un'altra persona. Allo staff il bot dice che lì non lo fa ancora. [vai: moduli]

@@ -82,7 +82,7 @@ arrivargli mai, e resteresti a chiederti perche il topic non compare.
 ## Le dirette degli amici
 
 Un amico non e un canale gestito dal bot, quindi **nessun evento arriva da solo**: c'e un giro ogni
-2 minuti (`_giroAmiciTelegram`) che chiede a Twitch se sono live, con anti-doppioni sull'id della
+2 minuti (`_giroAmici`) che chiede a Twitch se sono live, con anti-doppioni sull'id della
 diretta. Prima di accettare un amico si controlla che il canale **esista davvero** su Twitch: meglio
 dirlo subito che restare in silenzio per sempre.
 
@@ -118,6 +118,27 @@ destinazione non basta — la fine della diretta di uno cancellerebbe l'avviso d
 c'e `telegram_msg`, con chiave `(canale, destinazione, streamer)`: ogni avviso ricorda il proprio
 messaggio, e quando quella diretta finisce si toglie **solo il suo**. La fine si rileva nel giro dei
 due minuti: se Twitch dice che non e piu live e avevamo annunciato, si chiude.
+
+## La tua diretta in primo piano
+
+Dove arrivano anche le dirette di casa, quelle degli altri arrivano **in sordina**:
+senza suono (`disable_notification`), senza locandina, mai fissate, con l'anteprima
+del link piccola (`link_preview_options.prefer_small_media`). La diretta di casa
+ha la locandina, suona, si fissa dove il posto fissa, e senza locandina chiede
+l'anteprima grande. Dove arrivano solo gli altri, i loro avvisi restano pieni.
+
+Il motivo e il fissato: Telegram mostra in cima al gruppo l'**ultimo** messaggio
+fissato, quindi l'amico che andava in diretta dopo di te si prendeva la cima
+mentre eri in onda, e ogni fissato con notifica faceva suonare il gruppo una
+seconda volta.
+
+`_diffondiTelegram` raggruppa i posti per rilievo e manda ogni gruppo con la sua
+foto (o senza), il suo testo e il suo suono. L'avviso in sordina si ricorda in
+`telegram_msg` come gli altri: non si fissa, ma a diretta finita si toglie dove il
+posto fissa. La prova dal pannello è un avviso di casa e parte col suo rilievo,
+come quello vero: anche lì, senza locandina, l'anteprima grande. La regola, i tre
+rilievi e la levetta (accesa di serie, una per sezione) sono in
+docs/DISCORD-AVVISI.md, «La tua diretta in primo piano».
 
 ## Collaudo
 

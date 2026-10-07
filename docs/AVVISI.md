@@ -46,6 +46,11 @@ sparisce comunque). «Domani», «Fra una settimana», «Non mostrarlo più». E
 basta vale domani. Le risposte restano nel server, non nel browser: una scelta
 tenuta nel browser torna a galla sul telefono.
 
+Stanno in `settings.avvisi`, e quel cassetto è **solo loro**. Fino a ottobre 2026
+ci stavano anche le levette degli annunci (community e primo piano), e ognuno,
+salvando, buttava via l'altro; adesso quelle stanno in `settings.avvisiConf`
+(docs/DISCORD-AVVISI.md, «Il cassetto è suo»).
+
 In Account c'è l'interruttore per spegnerli tutti, inviti compresi.
 
 ## «Hai già provato…?»

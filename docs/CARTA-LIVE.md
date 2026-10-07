@@ -224,6 +224,11 @@ vede, perché il messaggio arriva lo stesso.
 sta andando in diretta, e da lui vengono nome, faccia e titolo. Quando un canale
 annuncia le dirette degli amici, la grafica resta la sua e cambia il contenuto.
 
+Con «La tua diretta in primo piano» (docs/DISCORD-AVVISI.md) la locandina è della
+casa: la diretta di un altro, in un posto che riceve anche le tue, arriva senza.
+La riceve dove arrivano solo gli altri, o con la levetta spenta. Se nessun posto
+la riceve, non si disegna.
+
 Se `info` non porta il titolo — alla prova il canale è spento, e all'annuncio
 vero Twitch a volte dice «è partita» prima di avere il titolo — si prende quello
 del **canale**, che resta scritto anche a diretta finita.

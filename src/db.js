@@ -3638,29 +3638,60 @@ export const tgMsg = {
 // guardano la stessa lista ma decidono da sole chi far entrare.
 export const TRASPORTI = ['telegram', 'discord'];
 
+//
+// `risalto` e' «la tua diretta in primo piano» (features/rilievo.js), anche lei
+// per trasporto e accesa di serie: chi non l'ha mai toccata la trova accesa,
+// perche' e' quello che uno si aspetta da un gruppo che e' suo.
+export const LEVETTE_AVVISI = ['community', 'risalto'];
+
+//
+// IL CASSETTO E' SUO: `settings.avvisiConf`. Prima stava in `settings.avvisi`,
+// lo stesso cassetto dove i piccoli avvisi su cosa manca (features/cosa-manca.js)
+// tengono le risposte, e ognuno dei due, salvando, buttava via l'altro: un
+// «non mostrare piu'» spegneva gli annunci della community su Discord, e una
+// levetta della community faceva tornare gli avvisi gia' chiusi. Il trasloco si
+// fa una volta all'avvio (separaLevetteAvvisiUnaTantum); la lettura del posto
+// vecchio resta solo come rete, se il trasloco non fosse riuscito.
+const _levetteDi = (settings) => {
+  if (settings?.avvisiConf && typeof settings.avvisiConf === 'object') return settings.avvisiConf;
+  const vecchio = settings?.avvisi?.community;
+  return vecchio && typeof vecchio === 'object' ? { community: vecchio } : null;
+};
+
 export const avvisiConf = {
   get(channel) {
     const c = String(channel).toLowerCase();
-    const a = streamers.get(c)?.settings?.avvisi;
+    const a = _levetteDi(streamers.get(c)?.settings);
     const vecchia = !!tgConf.get(c)?.community_live;
-    const com = a && a.community && typeof a.community === 'object' ? a.community : null;
+    const di = (k) => (a && a[k] && typeof a[k] === 'object' ? a[k] : null);
+    const com = di('community');
+    const ris = di('risalto');
     return {
       community: {
         // finche' nessuno salva qui, per Telegram vale la vecchia levetta
         telegram: com && com.telegram !== undefined ? !!com.telegram : vecchia,
         discord: com && com.discord !== undefined ? !!com.discord : false,
       },
+      risalto: {
+        telegram: ris && ris.telegram !== undefined ? !!ris.telegram : true,
+        discord: ris && ris.discord !== undefined ? !!ris.discord : true,
+      },
     };
   },
-  // `community` e' l'oggetto per trasporto: si passa solo quello che cambia.
+  // Ogni levetta e' l'oggetto per trasporto: si passa solo quello che cambia,
+  // e quello che non si passa resta com'era. Si salva tutto, ogni volta: una
+  // levetta che si scrive da sola cancellerebbe le altre.
   set(channel, campi = {}) {
     const c = String(channel).toLowerCase();
-    const cur = this.get(c).community;
+    const cur = this.get(c);
     const settings = streamers.get(c)?.settings || {};
-    const com = campi.community || {};
-    const v = { community: {} };
-    for (const t of TRASPORTI) v.community[t] = (com[t] !== undefined ? !!com[t] : !!cur[t]) ? 1 : 0;
-    streamers.setSettings(c, { ...settings, avvisi: v });
+    const v = {};
+    for (const k of LEVETTE_AVVISI) {
+      const nuovi = campi[k] || {};
+      v[k] = {};
+      for (const t of TRASPORTI) v[k][t] = (nuovi[t] !== undefined ? !!nuovi[t] : !!cur[k][t]) ? 1 : 0;
+    }
+    streamers.setSettings(c, { ...settings, avvisiConf: v });
     return this.get(c);
   },
   // qualcuno, da qualche parte, vuole le dirette della community?
@@ -3669,6 +3700,36 @@ export const avvisiConf = {
     return TRASPORTI.some((t) => com[t]);
   },
 };
+
+// IL TRASLOCO DELLE LEVETTE, una volta sola: da `settings.avvisi.community`
+// a `settings.avvisiConf.community`, e in `settings.avvisi` restano solo le
+// risposte ai piccoli avvisi. Chi ha gia' il cassetto nuovo non si tocca.
+export function separaLevetteAvvisiUnaTantum() {
+  const FLAG = 'levette_avvisi_separate_v1';
+  try {
+    if (db.prepare("SELECT 1 FROM facts WHERE channel='__migrazioni__' AND key=?").get(FLAG)) return 0;
+    const righe = db.prepare('SELECT login, settings FROM streamers').all();
+    const scrivi = db.prepare('UPDATE streamers SET settings=? WHERE login=?');
+    let n = 0;
+    db.transaction(() => {
+      for (const r of righe) {
+        const s = safeJson(r.settings) || {};
+        const vecchio = s.avvisi && typeof s.avvisi === 'object' ? s.avvisi.community : undefined;
+        if (vecchio === undefined) continue;
+        const { community: _via, ...risposte } = s.avvisi;
+        const nuovo = { ...s, avvisi: risposte };
+        if (!(s.avvisiConf && typeof s.avvisiConf === 'object') && vecchio && typeof vecchio === 'object') nuovo.avvisiConf = { community: vecchio };
+        scrivi.run(JSON.stringify(nuovo), r.login);
+        n++;
+      }
+      db.prepare(`INSERT INTO facts (channel, key, value, ts) VALUES ('__migrazioni__', ?, ?, ?)
+        ON CONFLICT(channel, key) DO UPDATE SET value=excluded.value, ts=excluded.ts`).run(FLAG, String(n), Date.now());
+    })();
+    if (n > 0) log.info(`levette degli avvisi separate dalle risposte ai piccoli avvisi: ${n} canali`);
+    return n;
+  } catch { return 0; /* best-effort: non blocca l'avvio */ }
+}
+separaLevetteAvvisiUnaTantum();
 
 // ALTRI streamer di cui annunciare la diretta (oltre alla propria).
 //

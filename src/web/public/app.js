@@ -1786,7 +1786,7 @@ function _demoGet(via) {
       destinazioni: [
         { id: 1, canale: '200000000000000001', canaleNome: 'annunci', webhook: false, eventi: ['live', 'kick'], streamer: ['andryx_demo'],
           messaggio: '', ruolo: '100000000000000011', chiudi: true, attivo: true },
-        { id: 2, canale: '200000000000000002', canaleNome: 'amici-in-diretta', webhook: false, eventi: ['live'], streamer: [],
+        { id: 2, canale: '200000000000000002', canaleNome: 'amici-in-diretta', webhook: false, eventi: ['live'], streamer: ['pincopallo', 'tizia'],
           messaggio: '{nome} è in diretta · {link}', ruolo: '', chiudi: false, attivo: true },
       ],
       canali: [
@@ -1809,7 +1809,7 @@ function _demoGet(via) {
         { id: 7, login: 'pincopallo', display: 'PincoPallo', attivo: true, fonte: 'mano' },
         { id: 8, login: 'tizia', display: 'Tizia', attivo: true, fonte: 'community' },
       ],
-      community: true, communityQuanti: 12 },
+      community: true, communityQuanti: 12, risalto: true, ospitiSu: 'live' },
     '/api/streamer/dcserver/registro': { giri: [
       { quando: Date.now() - 3 * 3600000, chi: 'andryx_demo', distruttivo: 0, creati: 3, sistemati: 1, tolti: 0, nomi: '', errori: '' },
       { quando: Date.now() - 6 * 86400000, chi: 'andryx_demo', distruttivo: 1, creati: 0, sistemati: 2, tolti: 2, nomi: 'vecchio-canale, Roba Vecchia', errori: '' },
@@ -1997,6 +1997,8 @@ function _demoGet(via) {
       ],
       communityLive: true,
       communityQuanti: 14,
+      risalto: true,
+      ospitiSu: 'live',
       amici: [
         { id: 1, login: 'lucaplays', display: 'LucaPlays', messaggio: '', attivo: true, fonte: 'mano' },
         { id: 2, login: 'giada_ttv', display: 'Giada_TTV', messaggio: '', attivo: true, fonte: 'community' },
@@ -3237,6 +3239,21 @@ function collegaCartaLive() {
   });
 }
 
+function _rilievoRiga(t, d, dove) {
+  if (d.risalto === false) return '';
+  const chi = t.streamer || [];
+  const ev = t.eventi || [];
+  const ospiti = (d.amici || []).map((a) => a.login);
+  const prende = (l) => !chi.length || chi.includes(l);
+  if (!ospiti.length || (ev.length && !ev.includes(d.ospitiSu || 'live')) || !ospiti.some(prende)) return '';
+  if (prende(d.io)) {
+    return `<p class="suggerimento">${dove === 'discord'
+      ? L('Qui arrivano anche le tue dirette: quelle degli altri arrivano in sordina, senza chiamare il ruolo e con l’immagine piccola.', 'Your streams land here too: other streamers’ arrive quietly, without pinging the role and with a small image.', 'Aquí también llegan tus directos: los de los demás llegan en voz baja, sin llamar al rol y con la imagen pequeña.')
+      : L('Qui arrivano anche le tue dirette: quelle degli altri arrivano in sordina, senza suono e senza essere fissate.', 'Your streams land here too: other streamers’ arrive quietly, without sound and never pinned.', 'Aquí también llegan tus directos: los de los demás llegan en voz baja, sin sonido y sin fijarse.')}</p>`;
+  }
+  return `<p class="suggerimento">${L('Qui arrivano solo gli altri: i loro avvisi arrivano pieni, come i tuoi.', 'Only others land here: their alerts arrive full, like yours.', 'Aquí solo llegan los demás: sus avisos llegan completos, como los tuyos.')}</p>`;
+}
+
 async function caricaTgDestinazioni() {
   const box = document.getElementById('tg-destinazioni');
   if (!box) return;
@@ -3272,6 +3289,7 @@ async function caricaTgDestinazioni() {
         <div class="tg-spunte">
           ${persone.map((pp) => `<label class="tg-spunta"><input type="checkbox" data-chi="${esc(pp.login)}"${t.streamer.length === 0 || t.streamer.includes(pp.login) ? ' checked' : ''}><span>${esc(pp.display)}</span></label>`).join('')}
         </div>
+        <div data-rilievo>${_rilievoRiga(t, d, 'telegram')}</div>
         <div class="riga-flessibile spazio-sopra">
           <label class="tg-spunta"><input type="checkbox" data-pin${t.pin ? ' checked' : ''}><span>${L('Fissa l’avviso qui', 'Pin the alert here', 'Fija el aviso aquí')}</span></label>
           <label class="tg-spunta"><input type="checkbox" data-attivo${t.attivo ? ' checked' : ''}><span>${L('Attiva', 'Active', 'Activa')}</span></label>
@@ -3337,6 +3355,13 @@ async function caricaTgDestinazioni() {
         <span>${L(`Quando un membro della community va in diretta, l’avviso compare dove hai deciso in «Quale avviso va dove», e a diretta finita si toglie dove era fissato. In lista entrano <strong>solo i membri verificati e confermati</strong> da andryxify.it: chi ha soltanto un account gratuito o un piano a pagamento non compare. Ora sono <strong>${d.communityQuanti || 0}</strong> canali, e la lista si aggiorna da sé.`, `When a community member goes live, the alert lands where you decided in «Which alert goes where», and when the live ends it is removed where it was pinned. The list holds <strong>only verified and confirmed members</strong> from andryxify.it: anyone with just a free account or a paid plan doesn’t show up. Right now that’s <strong>${d.communityQuanti || 0}</strong> channels, and the list keeps itself up to date.`, `Cuando un miembro de la comunidad emite, el aviso llega donde decidiste en «Qué aviso va dónde», y al terminar se quita donde estaba fijado. En la lista entran <strong>solo los miembros verificados y confirmados</strong> por andryxify.it: quien solo tiene una cuenta gratuita o un plan de pago no aparece. Ahora son <strong>${d.communityQuanti || 0}</strong> canales, y la lista se actualiza sola.`)}</span>
       </span>
     </label>
+    <label class="tg-community">
+      <input type="checkbox" id="tg-risalto"${d.risalto !== false ? ' checked' : ''}>
+      <span class="tg-community-corpo">
+        <strong>${L('La tua diretta in primo piano', 'Your stream comes first', 'Tu directo en primer plano')}</strong>
+        <span>${L('Dove arrivano anche le tue dirette, quelle degli altri arrivano <strong>in sordina</strong>: senza suono, senza locandina, mai fissate, con l’anteprima del link piccola. Così la notifica che suona e il messaggio in cima al gruppo restano tuoi. Dove arrivano solo gli altri, i loro avvisi restano pieni. Spenta, tutti gli avvisi arrivano uguali.', 'Where your streams land too, other streamers’ streams arrive <strong>quietly</strong>: no sound, no poster, never pinned, with a small link preview. That way the notification that rings and the message at the top of the group stay yours. Where only others land, their alerts stay full. Off, every alert arrives the same.', 'Donde también llegan tus directos, los de los demás llegan <strong>en voz baja</strong>: sin sonido, sin cartel, nunca fijados, con la vista previa del enlace pequeña. Así la notificación que suena y el mensaje arriba del grupo siguen siendo tuyos. Donde solo llegan los demás, sus avisos siguen completos. Apagado, todos los avisos llegan iguales.')}</span>
+      </span>
+    </label>
     <div class="tg-amici">
       ${amici.map((a) => a.fonte === 'community'
         ? `<span class="tg-amico auto" title="${L('Dalla community: entra ed esce da solo', 'From the community: comes and goes by itself', 'De la comunidad: entra y sale solo')}">${_bIco(ICO.utenti)}${esc(a.display || a.login)}</span>`
@@ -3367,6 +3392,16 @@ function collegaTgDestinazioni() {
   box.dataset.collegato = '1';
 
   box.addEventListener('change', (e) => {
+    if (e.target.id === 'tg-risalto') {
+      const attivo = e.target.checked;
+      return conErrore(async () => {
+        await api('/api/streamer/telegram/risalto', { method: 'POST', body: { attivo } });
+        toast(attivo
+          ? L('La tua diretta è in primo piano: gli altri arrivano in sordina dove arrivi anche tu.', 'Your stream comes first: others arrive quietly where you land too.', 'Tu directo está en primer plano: los demás llegan en voz baja donde llegas tú también.')
+          : L('Tutti gli avvisi arrivano uguali.', 'Every alert arrives the same.', 'Todos los avisos llegan iguales.'));
+        await caricaTgDestinazioni();
+      });
+    }
     if (e.target.id === 'tg-community') {
       const attivo = e.target.checked;
       return conErrore(async () => {
@@ -26530,6 +26565,7 @@ async function caricaDcAvvisi() {
         <div class="tg-spunte">
           ${persone.map((pp) => `<label class="tg-spunta"><input type="checkbox" data-chi="${esc(pp.login)}"${t.streamer.length === 0 || t.streamer.includes(pp.login) ? ' checked' : ''}><span>${esc(pp.display)}</span></label>`).join('')}
         </div>` : ''}
+        <div data-rilievo>${_rilievoRiga(t, d, 'discord')}</div>
         <label class="campo spazio-sopra" for="dca-testo-${t.id}">${L('Il testo', 'The text', 'El texto')}</label>
         <textarea rows="2" id="dca-testo-${t.id}" data-testo placeholder="${esc(L('Vuoto: una riga delle frasi del bot e il link', 'Empty: a line from the bot’s lines and the link', 'Vacío: una línea de las frases del bot y el enlace'))}">${esc(t.messaggio || '')}</textarea>
         <p class="suggerimento">${L('Segnaposto:', 'Placeholders:', 'Marcadores:')} <code>{nome}</code> <code>{titolo}</code> <code>{gioco}</code> <code>{spettatori}</code> <code>{link}</code> <code>{piattaforma}</code>. ${L('Vuoto = una riga delle frasi del bot, nella lingua del tuo canale (Personalità, «Le frasi del bot»). Titolo, gioco e spettatori sono già dentro il riquadro sotto il messaggio. Vale per le dirette: i post nuovi arrivano con le loro parole, senza riquadro.', 'Empty = a line from the bot’s lines, in your channel’s language (Personality, “The bot’s lines”). Title, game and viewers are already inside the box under the message. It is for streams: new posts arrive with their own words, without the box.', 'Vacío = una línea de las frases del bot, en el idioma de tu canal (Personalidad, «Las frases del bot»). Título, juego y espectadores ya están dentro del recuadro bajo el mensaje. Vale para los directos: los posts nuevos llegan con sus propias palabras, sin recuadro.')}</p>
@@ -26574,6 +26610,13 @@ async function caricaDcAvvisi() {
           <span>${L(`Vale per questo server e basta: accenderlo qui non accende niente su Telegram. Entrano <strong>solo i membri verificati e confermati</strong> da andryxify.it. Ora sono <strong>${d.communityQuanti || 0}</strong> canali, e la lista si aggiorna da sé.`, `It applies to this server only: turning it on here turns nothing on in Telegram. Only <strong>verified and confirmed members</strong> of andryxify.it get in. Right now that is <strong>${d.communityQuanti || 0}</strong> channels, and the list keeps itself up to date.`, `Vale solo para este servidor: encenderlo aquí no enciende nada en Telegram. Entran <strong>solo los miembros verificados y confirmados</strong> de andryxify.it. Ahora son <strong>${d.communityQuanti || 0}</strong> canales, y la lista se actualiza sola.`)}</span>
         </span>
       </label>
+      <label class="tg-community">
+        <input type="checkbox" id="dca-risalto"${d.risalto !== false ? ' checked' : ''}>
+        <span class="tg-community-corpo">
+          <strong>${L('La tua diretta in primo piano', 'Your stream comes first', 'Tu directo en primer plano')}</strong>
+          <span>${L('Dove arrivano anche le tue dirette, quelle degli altri arrivano <strong>in sordina</strong>: senza chiamare il ruolo, senza notifica e con l’immagine piccola nell’angolo. Così la notifica e l’immagine grande restano tue. Dove arrivano solo gli altri, i loro avvisi restano come i tuoi. Vale per questo server e basta; spenta, tutti gli avvisi arrivano uguali.', 'Where your streams land too, other streamers’ streams arrive <strong>quietly</strong>: no role ping, no notification, and a small image in the corner. That way the notification and the big image stay yours. Where only others land, their alerts stay like yours. It applies to this server only; off, every alert arrives the same.', 'Donde también llegan tus directos, los de los demás llegan <strong>en voz baja</strong>: sin llamar al rol, sin notificación y con la imagen pequeña en la esquina. Así la notificación y la imagen grande siguen siendo tuyas. Donde solo llegan los demás, sus avisos siguen como los tuyos. Vale solo para este servidor; apagado, todos los avisos llegan iguales.')}</span>
+        </span>
+      </label>
       <div class="tg-amici">
         ${mano.map((a) => `<span class="tg-amico${a.attivo ? '' : ' spenta'}">${esc(a.display || a.login)}<button type="button" data-dca-amico="${a.id}" aria-label="${L('Togli', 'Remove', 'Quitar')}">×</button></span>`).join('')}
         ${(d.amici || []).filter((a) => a.fonte === 'community').map((a) => `<span class="tg-amico auto" title="${L('Dalla community: entra ed esce da solo', 'From the community: comes and goes by itself', 'De la comunidad: entra y sale solo')}">${_bIco(ICO.utenti)}${esc(a.display || a.login)}</span>`).join('')}
@@ -26585,6 +26628,13 @@ async function caricaDcAvvisi() {
       </div>`;
   }
   _dcaCollega();
+}
+
+function _dcaRilievo(el) {
+  const posto = el.querySelector('[data-rilievo]');
+  if (!posto || !_dcaDati) return;
+  const { eventi, streamer } = _dcaLeggi(el);
+  posto.innerHTML = _rilievoRiga({ eventi, streamer }, _dcaDati, 'discord');
 }
 
 function _dcaLeggi(el) {
@@ -26662,8 +26712,19 @@ function _dcaCollega() {
   s.addEventListener('change', (e) => {
     const com = e.target.closest('#dca-community');
     if (com) { conErrore(async () => { await api('/api/streamer/discord/avvisi/community', { method: 'POST', body: { attivo: com.checked } }); await caricaDcAvvisi(); }); return; }
+    const ris = e.target.closest('#dca-risalto');
+    if (ris) {
+      conErrore(async () => {
+        await api('/api/streamer/discord/avvisi/risalto', { method: 'POST', body: { attivo: ris.checked } });
+        toast(ris.checked
+          ? L('La tua diretta è in primo piano: gli altri arrivano in sordina dove arrivi anche tu.', 'Your stream comes first: others arrive quietly where you land too.', 'Tu directo está en primer plano: los demás llegan en voz baja donde llegas tú también.')
+          : L('Tutti gli avvisi arrivano uguali.', 'Every alert arrives the same.', 'Todos los avisos llegan iguales.'));
+        await caricaDcAvvisi();
+      });
+      return;
+    }
     const d = e.target.closest('[data-dca]');
-    if (d) salva(d);
+    if (d) { salva(d); _dcaRilievo(d); }
   });
   s.addEventListener('input', (e) => {
     const d = e.target.closest('[data-dca]');

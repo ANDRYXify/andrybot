@@ -1122,6 +1122,10 @@ export async function mandaMessaggio(token, canale, messaggio) {
   if (messaggio?.content) corpo.content = String(messaggio.content).slice(0, 2000);
   if (Array.isArray(messaggio?.embeds) && messaggio.embeds.length) corpo.embeds = messaggio.embeds.slice(0, 10);
   if (messaggio?.allowed_mentions) corpo.allowed_mentions = messaggio.allowed_mentions;
+  // Dei segni del messaggio passa solo «senza notifica» (1 << 12): e' l'unico
+  // che un avviso chiede, e una porta che lascia passare tutto lascia passare
+  // anche quello che nessuno ha voluto.
+  if ((Number(messaggio?.flags) || 0) & (1 << 12)) corpo.flags = 1 << 12;
   if (!corpo.content && !corpo.embeds) return { ok: false, errore: 'un messaggio vuoto non si manda' };
   const r = await chiama(token, `/channels/${canale}/messages`, { metodo: 'POST', corpo });
   if (!r.ok) return r;

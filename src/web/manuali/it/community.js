@@ -84,12 +84,15 @@ export default {
     { p: [
       'La spunta «Fissa l\'avviso in cima durante la live e rimuovilo quando stacco», sotto il messaggio, è il valore di base dei posti che aggiungi. Poi decide la «Fissa l’avviso qui» di ogni posto, anche per la diretta su TikTok.',
       'Per fissare l\'avviso il bot dev\'essere amministratore con il permesso di fissare i messaggi. Senza quel permesso l\'avviso non resta in cima, ma a fine diretta viene tolto lo stesso. Telegram lascia cancellare a un bot i suoi messaggi solo entro 48 ore.',
+      'Con «La tua diretta in primo piano» accesa, le dirette degli altri non si fissano nei posti dove arrivano anche le tue: in cima resta la tua. A fine diretta il loro avviso si toglie lo stesso, dove il posto fissa.',
       '<strong>«Quale avviso va dove»</strong> mette tutto in una tabella: ogni riga è un avviso, ogni colonna è un posto. Spunti l\'incrocio e si salva da solo. Se una riga dice «non arriva da nessuna parte», quell\'avviso oggi non va da nessuna parte. Un avviso spuntato su due posti arriva in tutti e due. Le colonne dei posti spenti non si toccano.',
     ] },
     { p: [
       '<strong>«Altri streamer da annunciare».</strong> Le dirette di altri canali Twitch, annunciate insieme alle tue. Scrivi il nome in «nome canale Twitch (es. pincopallo)» e premi «Aggiungi». Ne tieni fino a 10. Il canale deve esistere su Twitch, e il tuo non serve aggiungerlo. Il bot controlla ogni due minuti chi è in onda, e per ogni posto scegli in «Di chi» di chi vuoi gli avvisi. La × accanto al nome lo toglie.',
       '«Annuncia anche le dirette della community» aggiunge da solo i canali dei membri verificati e confermati da andryxify.it. Chi ha solo un account gratuito o un piano a pagamento non c\'è. La lista si aggiorna da sé, e questo interruttore vale solo per Telegram.',
       'La lista degli streamer è una sola, la stessa della scheda «Avvisi» di Discord: uno aggiunto qui compare anche lì. Cosa annunciare lo decide ogni scheda per conto suo.',
+      '<strong>«La tua diretta in primo piano».</strong> Accesa di serie. Dove arrivano anche le tue dirette, quelle degli altri arrivano in sordina: senza suono, senza locandina, mai fissate e con l\'anteprima del link piccola. Così la notifica che suona e il messaggio in cima al gruppo restano tuoi, anche quando un amico va in onda dopo di te. La tua diretta invece ha tutto: la locandina, il suono e il messaggio fissato dove il posto fissa.',
+      'Dove arrivano solo gli altri (in «Di chi» non c\'è «Io»), i loro avvisi restano pieni, con la locandina e il suono. È il modo di avere un gruppo o un topic tutto per le dirette degli amici. Spenta, tutti gli avvisi arrivano uguali, come prima. In ogni posto una riga ti dice cosa succede lì alle dirette degli altri. Vale solo per Telegram: Discord ha la sua.',
     ] },
     { p: [
       '<strong>«Messaggio dell\'avviso».</strong> Il testo che parte. Segnaposto: <code>{nome}</code>, <code>{titolo}</code>, <code>{gioco}</code>, <code>{spettatori}</code>, <code>{link}</code>. Al massimo 800 caratteri. Una riga che resta vuota perché manca il dato sparisce.',
@@ -373,6 +376,8 @@ export default {
       'Oltre a te, altri streamer. Scrivi il nome del canale Twitch e premi «Aggiungi»: al massimo 10, e il canale deve esistere su Twitch. La lista è la stessa della scheda Telegram: uno aggiunto lì compare qui.',
       '«Annuncia anche le dirette della community» vale per questo server e basta: accenderlo qui non accende niente su Telegram. Entrano solo i membri verificati e confermati da andryxify.it, e la lista si aggiorna da sé.',
       'I canali aggiunti a mano hanno la ×; quelli della community entrano ed escono da soli. Poi, per ogni canale del server, scegli in «Di chi» di chi vuoi gli avvisi.',
+      '<strong>«La tua diretta in primo piano».</strong> Accesa di serie, e vale per questo server e basta. Nei canali dove arrivano anche le tue dirette, quelle degli altri arrivano in sordina: non chiamano il ruolo, partono senza notifica e hanno l\'immagine piccola nell\'angolo. Così la notifica e l\'immagine grande restano tue. Resta così anche quando il bot aggiorna l\'avviso coi dati di adesso.',
+      'Nei canali dove arrivano solo gli altri, i loro avvisi restano come i tuoi, col ruolo chiamato. Spenta, tutti gli avvisi arrivano uguali, come prima. In ogni canale una riga ti dice cosa succede lì alle dirette degli altri, e cambia appena tocchi «Di chi».',
     ] },
 
     { h3: 'Gli appuntamenti sul calendario' },

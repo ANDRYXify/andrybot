@@ -173,6 +173,7 @@ import * as kickDiario from '../kick/diario.js';
 import { montaYoutube } from '../youtube/rotte.js';
 import * as ytApi from '../youtube/api.js';
 import * as avvisi from '../features/avvisi.js';
+import { rilievo } from '../features/rilievo.js';
 import * as comandiChat from '../features/comandichat.js';
 import { nomePulito, formaValida } from '../features/moneta.js';
 
@@ -5632,6 +5633,8 @@ STREAMER (${su.toUpperCase()}) e non c'entra con l'automazione del marketing.
       amici: amici.lista(login).map((a) => ({ id: a.id, login: a.login, display: a.display, attivo: !!a.attivo, fonte: a.fonte || 'mano' })),
       community: !!avvisiConf.get(login).community.discord,
       communityQuanti: streamers.membriCommunity(login).length,
+      risalto: avvisiConf.get(login).risalto.discord,
+      ospitiSu: avvisi.eventoDi('twitch'),
       io: login,
       conDiretta: conDiretta(piattaformaDi(login)),
     });
@@ -5699,6 +5702,13 @@ STREAMER (${su.toUpperCase()}) e non c'entra con l'automazione del marketing.
       ? streamers.membriCommunity(login).map((x) => ({ login: x.login, display: x.display }))
       : []);
     res.json({ ok: true, quanti: attivo ? amici.lista(login).filter((a) => a.fonte === 'community').length : 0 });
+  }));
+
+  // «La tua diretta in primo piano», per il SOLO Discord (features/rilievo.js).
+  app.post('/api/streamer/discord/avvisi/risalto', requireOwner, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const attivo = !!req.body?.attivo;
+    res.json({ ok: true, risalto: avvisiConf.set(login, { risalto: { discord: attivo } }).risalto.discord });
   }));
 
   app.post('/api/streamer/ruoli', requireOwner, wrap(async (req, res) => {
@@ -10488,8 +10498,14 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
         pin: !!d.pin, attivo: !!d.attivo,
       })),
       amici: amici.lista(login).map((a) => ({ id: a.id, login: a.login, display: a.display, messaggio: a.messaggio, attivo: !!a.attivo, fonte: a.fonte || 'mano' })),
-      communityLive: !!c?.community_live,
+      // la levetta si legge da dove la legge il bot: la vecchia colonna di
+      // Telegram vale solo finche' nessuno ha salvato le levette nuove
+      communityLive: avvisiConf.get(login).community.telegram,
       communityQuanti: streamers.membriCommunity(login).length,
+      risalto: avvisiConf.get(login).risalto.telegram,
+      // l'avviso con cui arrivano le dirette degli altri (la lista degli
+      // altri e' di Twitch): il pannello lo usa per dire cosa succede in ogni posto
+      ospitiSu: avvisi.eventoDi('twitch'),
       eventi: TG_EVENTI,
       io: login,
     });
@@ -10573,8 +10589,10 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     const evento = avvisi.eventoDi(piattaformaDi(login)) || avvisi.eventoDi('twitch');
     const foto = await cartaLive.fotoPerEvento(login, evento, { info: info || {}, helix });
     const testo = avvisi.messaggio(conVoceDiProva(login, dir), c.messaggio, { conLocandina: !!foto });
+    // la prova e' un avviso di casa: col suo rilievo, come quello vero
+    const media = rilievo({ casa: login, chi: login, posto: d, risalto: avvisiConf.get(login).risalto.telegram }).anteprima;
     const esiti = await telegram.diffondi(c.token, [{ id: d.id, chat_id: d.chat_id, thread_id: d.thread_id, titolo: d.titolo || '' }],
-      '🧪 <i>Anteprima notifica</i>\n\n' + testo, { anteprima: true, foto });
+      '🧪 <i>Anteprima notifica</i>\n\n' + testo, { anteprima: true, foto, media });
     const r = esiti[0] || { ok: false, errore: 'nessuna destinazione' };
     if (!r.ok) return res.status(400).json({ errore: r.errore });
     res.json({ ok: true, conFoto: !!foto });
@@ -10649,12 +10667,24 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     const c = tgConf.get(login);
     if (!c?.token) return res.status(400).json({ errore: 'prima collega il bot con il token' });
     const attivo = !!req.body?.attivo;
+    // Si scrive dove il bot legge (avvisiConf). Prima si scriveva solo nella
+    // colonna vecchia: chi aveva gia' toccato la levetta di Discord la spegneva
+    // qui, il pannello la mostrava spenta, e il bot continuava ad annunciare.
+    avvisiConf.set(login, { community: { telegram: attivo } });
     tgConf.set(login, { communityLive: attivo });
-    // allinea subito la lista, senza aspettare il giro dei due minuti
-    amici.sincronizzaCommunity(login, attivo
+    // allinea subito la lista, senza aspettare il giro dei due minuti; la lista
+    // e' condivisa: si svuota solo se non la vuole piu' nessuno
+    amici.sincronizzaCommunity(login, avvisiConf.vuoleCommunity(login)
       ? streamers.membriCommunity(login).map((x) => ({ login: x.login, display: x.display }))
       : []);
     res.json({ ok: true, quanti: attivo ? amici.lista(login).filter((a) => a.fonte === 'community').length : 0 });
+  }));
+
+  // «La tua diretta in primo piano», per il SOLO Telegram (features/rilievo.js).
+  app.post('/api/streamer/telegram/risalto', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const attivo = !!req.body?.attivo;
+    res.json({ ok: true, risalto: avvisiConf.set(login, { risalto: { telegram: attivo } }).risalto.telegram });
   }));
 
   // ── AMICI: altri streamer di cui annunciare la diretta ────────────────────
@@ -10877,8 +10907,9 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     const evento = avvisi.eventoDi(piattaformaDi(login)) || avvisi.eventoDi('twitch');
     const foto = await cartaLive.fotoPerEvento(login, evento, { info: info || {}, helix });
     const testo = avvisi.messaggio(conVoceDiProva(login, dir), c.messaggio, { conLocandina: !!foto });
+    const media = rilievo({ casa: login, chi: login, risalto: avvisiConf.get(login).risalto.telegram }).anteprima;
     const esiti = await telegram.diffondi(c.token, [{ id: 0, chat_id: c.chat_id, titolo: 'gruppo' }],
-      '🧪 <i>Anteprima notifica</i>\n\n' + testo, { anteprima: true, foto });
+      '🧪 <i>Anteprima notifica</i>\n\n' + testo, { anteprima: true, foto, media });
     const r = esiti[0] || { ok: false, errore: 'nessuna destinazione' };
     if (!r.ok) return res.status(400).json({ errore: r.errore });
     res.json({ ok: true, conFoto: !!foto });

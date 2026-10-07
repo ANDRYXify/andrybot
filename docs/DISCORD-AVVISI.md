@@ -107,14 +107,80 @@ sbaglio nel testo svegliava l'intero server.
 
 ### «Anche la community» è per trasporto
 
-`avvisiConf` tiene `settings.avvisi.community = { telegram, discord }`. La lista
+`avvisiConf` tiene `settings.avvisiConf.community = { telegram, discord }`. La lista
 di chi guardare è condivisa — si sincronizza se la vuole **almeno una** sezione —
 ma al momento dell'avviso ogni trasporto controlla la sua levetta: chi arriva
 dalla community entra solo dove è stato chiesto. Chi è stato aggiunto a mano
 entra sempre, perché l'ha scelto lo streamer.
 
-La migrazione si fa **leggendo**: finché nessuno salva in `settings.avvisi`, per
-Telegram vale la vecchia `telegram.community_live`. Nessun dato si sposta.
+La migrazione si fa **leggendo**: finché nessuno salva le levette, per Telegram
+vale la vecchia `telegram.community_live`. Nessun dato si sposta.
+
+**Il cassetto è suo (ottobre 2026).** Le levette stavano in `settings.avvisi`, lo
+stesso cassetto dove i piccoli avvisi su cosa manca (docs/AVVISI.md) tengono le
+risposte, e ognuno dei due, salvando, buttava via l'altro: un «non mostrare più»
+spegneva in silenzio gli annunci della community su Discord, e una levetta della
+community faceva tornare gli avvisi già chiusi. Adesso le levette stanno in
+`settings.avvisiConf`; `separaLevetteAvvisiUnaTantum` (in `db.js`) le trasloca
+una volta all'avvio, lasciando le risposte dove sono, e chi aveva già il cassetto
+nuovo non si tocca. La lettura del posto vecchio resta solo come rete.
+
+**Le porte scrivono dove il bot legge.** La levetta della community di Telegram
+(`POST /api/streamer/telegram/community`) scriveva solo nella colonna vecchia,
+mentre il bot leggeva `avvisiConf`: chi aveva già toccato la levetta di Discord
+spegneva Telegram, vedeva la levetta spenta, e il bot continuava ad annunciare.
+Adesso scrive in `avvisiConf` (e tiene allineata la colonna vecchia), il pannello
+legge da lì, e la lista condivisa si svuota solo se non la vuole più nessuna
+sezione. `test/contratto/rilievo-porte.test.mjs` lo fissa.
+
+### La tua diretta in primo piano
+
+Il gruppo e il server sono di chi li ha collegati; le dirette degli amici e della
+community ci passano come **ospiti**. Prima arrivavano identiche a quelle di casa:
+la locandina, il suono, il messaggio fissato, il ruolo chiamato. Con cinque amici
+in diretta il gruppo suonava cinque volte, e su Telegram l'ultimo fissato si
+prendeva la cima del gruppo anche mentre il padrone di casa era in onda.
+
+La regola sta in un posto solo, `features/rilievo.js`, e vale per tutti e due i
+trasporti. `rilievo({ casa, chi, posto, risalto })` dà uno di tre rilievi:
+
+| rilievo | quando | Telegram | Discord |
+| --- | --- | --- | --- |
+| **casa** | la diretta è dello streamer del canale, su qualunque piattaforma | locandina, suono, fissato dove il posto fissa, anteprima grande se la locandina non c'è | ruolo chiamato, immagine larga |
+| **ospite** | la diretta è di un altro, in un posto che riceve anche la casa (filtro «di chi» vuoto o con lo streamer dentro) | niente locandina, senza suono, mai fissato, anteprima piccola | nessun ruolo, senza notifica (`flags: 1 << 12`, il «@silent»), immagine nell'angolo |
+| **pari** | la diretta è di un altro, in un posto che riceve solo gli altri; oppure levetta spenta | come è sempre stato | come è sempre stato |
+
+Il rilievo non sceglie **dove** va un avviso (lo decidono la matrice e la lista
+degli altri), sceglie **come** arriva dove va già. Con la levetta spenta tutto
+torna com'era, casa compresa: «spento» vuol dire «come prima».
+
+La levetta è **per trasporto** (`settings.avvisiConf.risalto = { telegram, discord }`)
+e accesa di serie. Le porte: `POST /api/streamer/telegram/risalto` e
+`POST /api/streamer/discord/avvisi/risalto`, ognuna tocca solo la sua.
+
+Cosa non si rompe nel tempo:
+
+- **Su Discord il rilievo sta nel recapito** (`dati.ospite`), non si ricalcola: un
+  ritentativo o una riscrittura coi dati di adesso arrivano come il primo invio,
+  anche se nel frattempo qualcuno ha toccato la levetta. Senza, il primo
+  aggiornamento avrebbe rimesso l'immagine larga all'ospite.
+- **La porta dei segni del bot** (`discord-api.mandaMessaggio`) lascia passare
+  solo «senza notifica»: una porta che lascia passare tutto lascia passare anche
+  quello che nessuno ha voluto. Il webhook manda il messaggio così com'è.
+- **Su Telegram l'avviso in sordina si ricorda lo stesso** (`telegram_msg`): non
+  si fissa, ma a diretta finita si toglie dove il posto fissa, come gli altri.
+- **La locandina si disegna solo se qualche posto la riceve**: per un ospite che
+  arriva solo in sordina sarebbe lavoro buttato (e chiamate a Twitch).
+- **Le due strade dell'anteprima non si mescolano**: chi chiede una misura passa
+  tutto da `link_preview_options`, chi non la chiede usa ancora
+  `disable_web_page_preview`, come prima.
+
+Il pannello dice, in ogni posto, cosa ci succede alle dirette degli altri («qui
+arrivano anche le tue: quelle degli altri arrivano in sordina» oppure «qui
+arrivano solo gli altri»), e solo dove arrivano davvero: il server dice con quale
+avviso arrivano gli altri (`ospitiSu`), e un posto che riceve solo i post o solo
+la casa non ha la riga. La riga segue la stessa regola del bot:
+`test/unita/rilievo.test.mjs` la confronta con `rilievo()` su 240 casi.
 
 ### La lista degli amici ha un nome onesto
 
