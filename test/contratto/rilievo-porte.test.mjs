@@ -43,7 +43,7 @@ test('il pannello ha le due levette, collegate alle loro porte, e la riga che di
   assert.match(APP, /api\('\/api\/streamer\/telegram\/risalto', \{ method: 'POST', body: \{ attivo \} \}\)/);
   assert.match(APP, /api\('\/api\/streamer\/discord\/avvisi\/risalto', \{ method: 'POST', body: \{ attivo: ris\.checked \} \}\)/);
   assert.equal((APP.match(/<div data-rilievo>\$\{_rilievoRiga\(t, d, '(telegram|discord)'\)\}<\/div>/g) || []).length, 2, 'la riga in ogni posto, di Telegram e di Discord');
-  assert.match(APP, /if \(d\) \{ salva\(d\); _dcaRilievo\(d\); \}/, 'su Discord la riga segue le spunte senza ricaricare');
+  assert.match(APP, /if \(d && !_ultimaSpunta\(e, 'discord'\)\) \{ salva\(d\); _dcaRilievo\(d\); \}/, 'su Discord la riga segue le spunte senza ricaricare (dopo la guardia dell\'ultima spunta)');
   for (const via of ["app.get('/api/streamer/telegram/destinazioni'", "app.get('/api/streamer/discord/avvisi'"]) {
     assert.match(rotta(via, 6000), /ospitiSu: avvisi\.eventoDi\('twitch'\),/, `il server dice con quale avviso arrivano gli altri (${via})`);
   }
