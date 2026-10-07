@@ -43,6 +43,29 @@ regola di precedenza implicita, che sarebbe magia: l'ho reso **visibile**. Nel p
 «**Dove finisce cosa**», che per ogni evento elenca dove andra a finire davvero. Se un evento
 finisce in due posti lo vedi prima che succeda; se non finisce da nessuna parte, pure.
 
+## Il filtro che non mente
+
+«Nessuno» non si scrive: il vuoto vuol dire «tutto», e un posto che non deve
+ricevere niente si **spegne** («Attiva» qui, «Acceso» su Discord). Il pannello
+pero' lo scriveva lo stesso, per sbaglio, in due modi:
+
+- togliendo **tutte** le spunte di «Di chi» o di «Quali avvisi arrivano qui» (o
+  tutte le celle di una colonna della matrice) si salvava il vuoto, cioe' «tutto»;
+- un nome **uscito dalla lista** (un amico tolto, un membro uscito dalla
+  community) restava nel filtro ma non nelle spunte. Il posto non riceveva piu'
+  niente, il pannello mostrava tutto spento, e il primo tocco a qualunque cosa
+  del posto, anche «Fissa», lo faceva diventare «tutti» senza dirlo.
+
+Adesso l'ultima spunta di un gruppo non si toglie (torna accesa e il pannello
+dice come spegnere il posto), e lo stesso vale per l'ultima cella di una colonna
+della matrice. Un nome uscito si vede fra le spunte, segnato «non più in lista»,
+e resta finche' non lo togli tu: i membri della community escono e rientrano da
+soli, e toglierlo in automatico perderebbe la scelta. Se un posto non riceve piu'
+niente perche' tutti quelli scelti sono usciti, il pannello lo dice. La matrice
+conta un avviso come «arrivato» solo dove arrivano le tue cose, e segna «solo
+gli altri» i posti che ricevono solo le dirette degli altri.
+`test/unita/posti-di-chi.test.mjs` lo fissa.
+
 ## La migrazione
 
 `tgDest.migra(canale, conf)` gira a ogni lettura ed e **idempotente**: se il canale non ha ancora

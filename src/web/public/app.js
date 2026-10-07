@@ -3239,6 +3239,40 @@ function collegaCartaLive() {
   });
 }
 
+function _chiDelPosto(t, persone) {
+  const via = (t.streamer || []).filter((l) => !persone.some((p) => p.login === l));
+  return [...persone, ...via.map((l) => ({ login: l, display: l, via: true }))];
+}
+
+function _chiTesto(t, persone) {
+  if (!(t.streamer || []).length) return L('tutti', 'everyone', 'todos');
+  return t.streamer.map((l) => persone.find((p) => p.login === l)?.display || `${l} (${L('non più in lista', 'no longer listed', 'ya no está en la lista')})`).join(', ');
+}
+
+function _chiSpunte(t, persone) {
+  return _chiDelPosto(t, persone).map((pp) => `<label class="tg-spunta"><input type="checkbox" data-chi="${esc(pp.login)}"${!(t.streamer || []).length || t.streamer.includes(pp.login) ? ' checked' : ''}><span>${esc(pp.display)}${pp.via ? ` <span class="tenue">(${L('non più in lista', 'no longer listed', 'ya no está en la lista')})</span>` : ''}</span></label>`).join('');
+}
+
+function _chiNessuno(t, persone, dove) {
+  const chi = t.streamer || [];
+  if (!chi.length || chi.some((l) => persone.some((p) => p.login === l))) return '';
+  return `<p class="tg-stato guaio">${_bIco(ICO.avviso)}${dove === 'discord'
+    ? L('Qui non arriva niente: chi hai scelto in «Di chi» non è più tra gli streamer annunciati. Spunta qualcun altro, o spegni il canale con «Acceso».', 'Nothing lands here: whoever you picked in «Whose» is no longer among the announced streamers. Tick someone else, or turn the channel off with «On».', 'Aquí no llega nada: quien elegiste en «De quién» ya no está entre los streamers anunciados. Marca a otra persona, o apaga el canal con «Encendido».')
+    : L('Qui non arriva niente: chi hai scelto in «Di chi» non è più tra gli streamer annunciati. Spunta qualcun altro, o spegni il posto con «Attiva».', 'Nothing lands here: whoever you picked in «Whose» is no longer among the announced streamers. Tick someone else, or turn the place off with «Active».', 'Aquí no llega nada: quien elegiste en «De quién» ya no está entre los streamers anunciados. Marca a otra persona, o apaga el sitio con «Activa».')}</p>`;
+}
+
+function _ultimaSpunta(e, dove) {
+  const t = e.target;
+  if (!t.matches('[data-ev], [data-chi]') || t.checked) return false;
+  const gruppo = t.closest('.tg-spunte');
+  if (!gruppo || gruppo.querySelector('input:checked')) return false;
+  t.checked = true;
+  toast(dove === 'discord'
+    ? L('Almeno una spunta resta: per non ricevere niente in un canale, spegnilo con «Acceso».', 'At least one tick stays: to receive nothing in a channel, turn it off with «On».', 'Al menos una marca se queda: para no recibir nada en un canal, apágalo con «Encendido».')
+    : L('Almeno una spunta resta: per non ricevere niente in un posto, spegnilo con «Attiva».', 'At least one tick stays: to receive nothing in a place, turn it off with «Active».', 'Al menos una marca se queda: para no recibir nada en un sitio, apágalo con «Activa».'));
+  return true;
+}
+
 function _rilievoRiga(t, d, dove) {
   if (d.risalto === false) return '';
   const chi = t.streamer || [];
@@ -3271,9 +3305,7 @@ async function caricaTgDestinazioni() {
   const carta = (t) => {
     const dove = esc(t.titolo || t.chatId) + (t.threadNome ? ' <span class="tg-topic">' + esc(t.threadNome) + '</span>' : '');
     const evTxt = t.eventi.length ? t.eventi.map(nomeEv).join(' · ') : L('tutti gli eventi', 'all events', 'todos los eventos');
-    const chiTxt = t.streamer.length
-      ? t.streamer.map((l) => (persone.find((p) => p.login === l)?.display || l)).join(', ')
-      : L('tutti', 'everyone', 'todos');
+    const chiTxt = _chiTesto(t, persone);
     return `<details class="tg-dest${t.attivo ? '' : ' spenta'}" data-dest="${t.id}">
       <summary>
         <span class="tg-dest-ico">${_bIco(TG_ICO_TIPO(t.tipo))}</span>
@@ -3287,8 +3319,9 @@ async function caricaTgDestinazioni() {
         </div>
         <p class="campo spazio-sopra">${L('Di chi', 'Whose', 'De quién')}</p>
         <div class="tg-spunte">
-          ${persone.map((pp) => `<label class="tg-spunta"><input type="checkbox" data-chi="${esc(pp.login)}"${t.streamer.length === 0 || t.streamer.includes(pp.login) ? ' checked' : ''}><span>${esc(pp.display)}</span></label>`).join('')}
+          ${_chiSpunte(t, persone)}
         </div>
+        ${_chiNessuno(t, persone, 'telegram')}
         <div data-rilievo>${_rilievoRiga(t, d, 'telegram')}</div>
         <div class="riga-flessibile spazio-sopra">
           <label class="tg-spunta"><input type="checkbox" data-pin${t.pin ? ' checked' : ''}><span>${L('Fissa l’avviso qui', 'Pin the alert here', 'Fija el aviso aquí')}</span></label>
@@ -3302,13 +3335,15 @@ async function caricaTgDestinazioni() {
 
   const dest = d.destinazioni || [];
   const accetta = (t, k) => !t.eventi.length || t.eventi.includes(k);
+  const tuoi = (t) => !t.streamer.length || t.streamer.includes(d.io);
   const intestazioni = dest.map((t) => `<th title="${esc((t.titolo || t.chatId) + (t.threadNome ? ' / ' + t.threadNome : ''))}">
       <span class="tgm-dove">${esc(t.threadNome || t.titolo || t.chatId)}</span>
       ${t.threadNome ? `<span class="tgm-sotto">${esc(t.titolo)}</span>` : `<span class="tgm-sotto">${t.tipo === 'channel' ? L('canale', 'channel', 'canal') : L('gruppo', 'group', 'grupo')}</span>`}
+      ${tuoi(t) ? '' : `<span class="tgm-sotto">${L('solo gli altri', 'others only', 'solo los demás')}</span>`}
       ${t.attivo ? '' : `<span class="tgm-spenta">${L('spenta', 'off', 'apagada')}</span>`}
     </th>`).join('');
   const righe = eventi.map((e) => {
-    const dove = dest.filter((t) => t.attivo && accetta(t, e.k)).length;
+    const dove = dest.filter((t) => t.attivo && accetta(t, e.k) && tuoi(t)).length;
     return `<tr${dove ? '' : ' class="orfano"'}>
       <th scope="row">${esc(L(e.it, e.en, e.es))}${dove ? '' : `<span class="tgm-orfano">${L('non arriva da nessuna parte', 'lands nowhere', 'no llega a ninguna parte')}</span>`}</th>
       ${dest.map((t) => `<td>
@@ -3417,6 +3452,11 @@ function collegaTgDestinazioni() {
       const idDest = mx.dataset.mxDest;
       const tutte = [...box.querySelectorAll(`[data-mx-dest="${idDest}"]`)];
       const scelti = tutte.filter((i) => i.checked).map((i) => i.dataset.mxEv);
+      if (!scelti.length) {
+        mx.checked = true;
+        toast(L('Almeno un avviso resta in ogni posto: per non ricevere niente lì, spegnilo con «Attiva».', 'At least one alert stays in each place: to receive nothing there, turn it off with «Active».', 'Al menos un aviso se queda en cada sitio: para no recibir nada allí, apágalo con «Activa».'));
+        return;
+      }
       return conErrore(async () => {
         await api('/api/streamer/telegram/destinazioni/' + idDest, {
           method: 'PATCH',
@@ -3426,7 +3466,7 @@ function collegaTgDestinazioni() {
       });
     }
     const d = e.target.closest('.tg-dest');
-    if (!d) return;
+    if (!d || _ultimaSpunta(e, 'telegram')) return;
     conErrore(async () => {
       await api('/api/streamer/telegram/destinazioni/' + d.dataset.dest, { method: 'PATCH', body: _tgLeggiDest(d) });
       await caricaTgDestinazioni();
@@ -26547,9 +26587,7 @@ async function caricaDcAvvisi() {
   const carta = (t) => {
     const nome = t.webhook ? L('webhook', 'webhook', 'webhook') : (nomeCanale(t.canale) || t.canaleNome || t.canale);
     const evTxt = t.eventi.length ? t.eventi.map(nomeEv).join(' · ') : L('tutti gli avvisi', 'all alerts', 'todos los avisos');
-    const chiTxt = t.streamer.length
-      ? t.streamer.map((l) => (persone.find((p) => p.login === l)?.display || l)).join(', ')
-      : L('tutti', 'everyone', 'todos');
+    const chiTxt = _chiTesto(t, persone);
     return `<details class="tg-dest${t.attivo ? '' : ' spenta'}" data-dca="${t.id}" data-si-salva>
       <summary>
         <span class="tg-dest-ico">${_bIco(ICO.chat)}</span>
@@ -26561,10 +26599,11 @@ async function caricaDcAvvisi() {
         <div class="tg-spunte">
           ${eventi.map((e) => `<label class="tg-spunta"><input type="checkbox" data-ev="${e.k}"${t.eventi.length === 0 || t.eventi.includes(e.k) ? ' checked' : ''}><span>${esc(L(e.it, e.en, e.es))}</span></label>`).join('')}
         </div>
-        ${persone.length ? `<p class="campo spazio-sopra">${L('Di chi', 'Whose', 'De quién')}</p>
+        ${_chiDelPosto(t, persone).length ? `<p class="campo spazio-sopra">${L('Di chi', 'Whose', 'De quién')}</p>
         <div class="tg-spunte">
-          ${persone.map((pp) => `<label class="tg-spunta"><input type="checkbox" data-chi="${esc(pp.login)}"${t.streamer.length === 0 || t.streamer.includes(pp.login) ? ' checked' : ''}><span>${esc(pp.display)}</span></label>`).join('')}
+          ${_chiSpunte(t, persone)}
         </div>` : ''}
+        ${_chiNessuno(t, persone, 'discord')}
         <div data-rilievo>${_rilievoRiga(t, d, 'discord')}</div>
         <label class="campo spazio-sopra" for="dca-testo-${t.id}">${L('Il testo', 'The text', 'El texto')}</label>
         <textarea rows="2" id="dca-testo-${t.id}" data-testo placeholder="${esc(L('Vuoto: una riga delle frasi del bot e il link', 'Empty: a line from the bot’s lines and the link', 'Vacío: una línea de las frases del bot y el enlace'))}">${esc(t.messaggio || '')}</textarea>
@@ -26724,7 +26763,7 @@ function _dcaCollega() {
       return;
     }
     const d = e.target.closest('[data-dca]');
-    if (d) { salva(d); _dcaRilievo(d); }
+    if (d && !_ultimaSpunta(e, 'discord')) { salva(d); _dcaRilievo(d); }
   });
   s.addEventListener('input', (e) => {
     const d = e.target.closest('[data-dca]');

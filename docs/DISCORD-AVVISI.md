@@ -133,6 +133,14 @@ Adesso scrive in `avvisiConf` (e tiene allineata la colonna vecchia), il pannell
 legge da lì, e la lista condivisa si svuota solo se non la vuole più nessuna
 sezione. `test/contratto/rilievo-porte.test.mjs` lo fissa.
 
+### Il filtro che non mente
+
+Le stesse regole dei posti di Telegram (docs/TELEGRAM.md, «Il filtro che non
+mente»): l'ultima spunta di «Di chi» e di «Quali avvisi arrivano qui» non si
+toglie, un nome uscito dalla lista si vede segnato «non più in lista» e resta, e
+se un canale non riceve piu' niente il pannello lo dice. Per non ricevere niente
+in un canale si usa «Acceso».
+
 ### La tua diretta in primo piano
 
 Il gruppo e il server sono di chi li ha collegati; le dirette degli amici e della

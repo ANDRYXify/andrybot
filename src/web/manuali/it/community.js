@@ -75,7 +75,7 @@ export default {
     { tabella: [
       ['Controllo', 'Cosa fa', 'Di base'],
       ['«Quali avvisi arrivano qui»', 'Sette voci: «Diretta su Twitch», «Diretta su Kick», «Diretta su YouTube», «Diretta su TikTok», «Nuovo video su YouTube», «Nuovo post su Instagram», «Nuovo post su TikTok».', 'Tutte'],
-      ['«Di chi»', '«Io» e gli altri streamer che annunci.', 'Tutti'],
+      ['«Di chi»', '«Io» e gli altri streamer che annunci. Uno che non annunci più resta qui, segnato «non più in lista», finché non lo togli tu.', 'Tutti'],
       ['«Fissa l’avviso qui»', 'Fissa in cima l\'avviso della diretta finché sei in onda, e lo toglie quando finisci.', 'Come la spunta «Fissa l\'avviso in cima durante la live e rimuovilo quando stacco» al momento in cui aggiungi il posto'],
       ['«Attiva»', 'Spenta, il posto resta in elenco ma non riceve niente.', 'Accesa'],
       ['«Prova»', 'Manda qui un\'anteprima dell\'avviso, con la locandina se è accesa. Leggi «Anteprima mandata: guarda su Telegram.».', ''],
@@ -83,6 +83,7 @@ export default {
     ] },
     { p: [
       'La spunta «Fissa l\'avviso in cima durante la live e rimuovilo quando stacco», sotto il messaggio, è il valore di base dei posti che aggiungi. Poi decide la «Fissa l’avviso qui» di ogni posto, anche per la diretta su TikTok.',
+      'In «Quali avvisi arrivano qui» e in «Di chi» resta sempre almeno una spunta: se togli l\'ultima torna accesa. Per non ricevere niente in un posto, spegnilo con «Attiva». Se tutti quelli che hai scelto in «Di chi» non sono più in lista, il posto non riceve niente e il pannello te lo dice.',
       'Per fissare l\'avviso il bot dev\'essere amministratore con il permesso di fissare i messaggi. Senza quel permesso l\'avviso non resta in cima, ma a fine diretta viene tolto lo stesso. Telegram lascia cancellare a un bot i suoi messaggi solo entro 48 ore.',
       'Con «La tua diretta in primo piano» accesa, le dirette degli altri non si fissano nei posti dove arrivano anche le tue: in cima resta la tua. A fine diretta il loro avviso si toglie lo stesso, dove il posto fissa.',
       '<strong>«Quale avviso va dove»</strong> mette tutto in una tabella: ogni riga è un avviso, ogni colonna è un posto. Spunti l\'incrocio e si salva da solo. Se una riga dice «non arriva da nessuna parte», quell\'avviso oggi non va da nessuna parte. Un avviso spuntato su due posti arriva in tutti e due. Le colonne dei posti spenti non si toccano.',
@@ -355,7 +356,7 @@ export default {
     { tabella: [
       ['Controllo', 'Cosa fa', 'Di base e limiti'],
       ['«Quali avvisi arrivano qui»', 'Le stesse sette voci di Telegram: le dirette su Twitch, Kick, YouTube e TikTok, e i post nuovi su YouTube, Instagram e TikTok.', 'Tutti'],
-      ['«Di chi»', '«Io» e gli altri streamer che annunci. Se sei entrato solo con Discord, «Io» non c\'è: annunci gli altri.', 'Tutti'],
+      ['«Di chi»', '«Io» e gli altri streamer che annunci. Se sei entrato solo con Discord, «Io» non c\'è: annunci gli altri. Uno che non annunci più resta qui, segnato «non più in lista», finché non lo togli tu.', 'Tutti. Almeno una spunta resta: per non ricevere niente, spegni il canale con «Acceso».'],
       ['«Il testo»', 'Le parole sopra il riquadro, per le dirette. Segnaposto <code>{nome}</code>, <code>{titolo}</code>, <code>{gioco}</code>, <code>{spettatori}</code>, <code>{link}</code>, <code>{piattaforma}</code>.', 'Vuoto: l\'icona, una riga delle frasi del bot nella lingua del canale e il link. Al massimo 1800 caratteri.'],
       ['«Chiama un ruolo»', 'Menziona quel ruolo, e nessun altro.', '«nessuno»'],
       ['«Chiudi l\'avviso a diretta finita»', 'A diretta finita riscrive l\'avviso con «⚫», il nome e una riga delle frasi del bot, nella lingua del canale.', 'Spento'],

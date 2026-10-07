@@ -52,6 +52,9 @@ comandi diversi da quelli della riga italiana.
   en> With many streamers announced, the group rang at every stream, and the last pinned alert took the top even while you were live. Now the notification that rings and the message at the top are yours. Where only others land they stay full, and the switch sits next to the community one.
   es> Tu directo en primer plano
   es> Con muchos streamers anunciados, el grupo sonaba con cada directo, y el último aviso fijado se quedaba arriba incluso mientras emitías tú. Ahora la notificación que suena y el mensaje de arriba son tuyos. Donde solo llegan los demás siguen completos, y el interruptor está junto al de la comunidad.
+- Nei posti di Telegram e Discord l'ultima spunta di «Di chi» e «Quali avvisi» non si toglie più: prima, togliendole tutte, il posto riceveva tutto. Uno streamer tolto dalla lista resta visibile, segnato. [vai: telegram]
+  en: In Telegram and Discord places the last tick of «Whose» and «Which alerts» can no longer be removed: before, removing them all made the place receive everything. A streamer taken off the list stays visible, marked.
+  es: En los sitios de Telegram y Discord la última marca de «De quién» y «Qué avisos» ya no se quita: antes, quitándolas todas, el sitio lo recibía todo. Un streamer quitado de la lista sigue visible, marcado.
 - Rispondere «non mostrare più» a un piccolo avviso non spegne più gli annunci della community su Discord, e spegnere la community su Telegram la spegne davvero. [vai: telegram]
   en: Answering “don’t show again” to a small notice no longer turns off community announcements on Discord, and turning off the community on Telegram really turns it off.
   es: Responder «no mostrar más» a un pequeño aviso ya no apaga los anuncios de la comunidad en Discord, y apagar la comunidad en Telegram la apaga de verdad.
