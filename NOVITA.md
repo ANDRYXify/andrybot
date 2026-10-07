@@ -238,6 +238,9 @@ comandi diversi da quelli della riga italiana.
 - Il player di Spotify sull'overlay non si blocca più su una canzone: una risposta che non arriva scade, la barra non torna indietro e a fine brano il prossimo arriva subito. [vai: alert]
   en: The Spotify player on the overlay no longer gets stuck on a song: a reply that never comes times out, the bar never jumps back and the next song shows up right when one ends.
   es: El reproductor de Spotify del overlay ya no se queda atascado en una canción: una respuesta que no llega caduca, la barra no vuelve atrás y al terminar un tema el siguiente llega enseguida.
+- Un abbonamento, un follow o dei bit non danno più un alert doppio quando Twitch rimanda lo stesso evento, e non si perdono quando Twitch sposta la connessione. [vai: alert]
+  en: A sub, follow or bits no longer give a double alert when Twitch resends the same event, and they are not lost when Twitch moves the connection.
+  es: Una suscripción, un follow o unos bits ya no dan una alerta doble cuando Twitch reenvía el mismo evento, y no se pierden cuando Twitch mueve la conexión.
 
 ## 2026-10-03
 

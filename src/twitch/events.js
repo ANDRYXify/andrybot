@@ -21,6 +21,13 @@ const RETE_MS = 15_000;         // una richiesta che non risponde e' morta, non 
 // «stream.online» fino alla prossima riconnessione — che su una connessione
 // sana puo' non arrivare mai. Un 403 invece e' uno scope mancante: non si riprova.
 const RIPROVA_MS = [15_000, 60_000, 240_000];
+// LO STESSO EVENTO DUE VOLTE. Twitch consegna «almeno una volta»: se non e'
+// sicuro che un evento sia arrivato lo rimanda, con lo stesso message_id
+// (docs EventSub, WebSocket reference). Un abbonamento rimandato era un alert
+// doppio, un obiettivo contato due volte. Gli id visti si tengono per dieci
+// minuti, al massimo mille per canale: un rinvio arriva in pochi secondi.
+const VISTI_MS = 10 * 60_000;
+const VISTI_MAX = 1000;
 
 // Sottoscrizioni desiderate per un broadcaster (bid = user_id).
 // Ognuna viene tentata singolarmente: se manca lo scope, Twitch la
@@ -88,6 +95,8 @@ export class EventHub {
       backoff: BACKOFF_MIN,
       closing: false,
       carryOver: false,   // true quando seguiamo un session_reconnect (le sub sopravvivono)
+      vecchia: null,      // durante un session_reconnect, la connessione di prima: porta eventi finche' la nuova non da' il benvenuto
+      visti: new Map(),   // message_id gia' passati al bot → istante
       riprova: null,      // timer per le sottoscrizioni rifiutate per un motivo passeggero
       sessionId: '',
     };
@@ -116,6 +125,7 @@ export class EventHub {
     clearTimeout(state.guard);
     clearTimeout(state.timer);
     clearTimeout(state.riprova);
+    this._chiudiVecchia(state);
     try { state.ws?.close(); } catch { /* già chiuso */ }
     this._conns.delete(state.login);
     log.info(`EventSub: non osservo più ${state.login}`);
@@ -158,26 +168,36 @@ export class EventHub {
   }
 
   async _onMessage(state, ws, ev) {
-    if (state.ws !== ws || state.closing) return;    // messaggio da una connessione vecchia
-    this._armGuard(state);                            // qualsiasi messaggio azzera la guardia
+    if (state.closing) return;
+    // Durante un session_reconnect la connessione di prima porta ancora eventi:
+    // Twitch li manda li' finche' la nuova non ha ricevuto il benvenuto («The
+    // old connection receives events up until you connect to the new URL and
+    // receive the welcome message»). Prima la si ignorava appena aperta la
+    // nuova, e un evento arrivato in quel mezzo secondo si perdeva.
+    const vecchia = ws === state.vecchia;
+    if (state.ws !== ws && !vecchia) return;          // messaggio da una connessione ormai chiusa
+    if (!vecchia) this._armGuard(state);              // la guardia e' della connessione nuova
 
     let msg;
     try { msg = JSON.parse(String(ev.data)); } catch { return; }
     const type = msg?.metadata?.message_type;
+    if (vecchia && type !== 'notification') return;  // dalla vecchia contano solo gli eventi
 
     switch (type) {
       case 'session_welcome': {
         state.backoff = BACKOFF_MIN;
         const sessionId = msg.payload?.session?.id;
-        // dopo un session_reconnect le sottoscrizioni sopravvivono: non ricrearle
-        if (state.carryOver) { state.carryOver = false; break; }
+        // dopo un session_reconnect le sottoscrizioni sopravvivono: non ricrearle.
+        // E solo adesso la connessione di prima si chiude, come chiede Twitch.
+        if (state.carryOver) { state.carryOver = false; this._chiudiVecchia(state); break; }
         state.sessionId = sessionId || '';
         clearTimeout(state.riprova);
         if (sessionId) await this._subscribeAll(state, sessionId, desiredSubs(state.userId), 0);
         break;
       }
       case 'notification': {
-        // evento vero e proprio → lo passiamo al bot
+        // evento vero e proprio → lo passiamo al bot, una volta sola
+        if (this._giaVisto(state, msg.metadata?.message_id)) break;
         this.onEvent?.({
           channel: state.login,
           type: msg.payload?.subscription?.type,
@@ -192,8 +212,10 @@ export class EventHub {
         log.info(`EventSub ${state.login}: reconnect richiesto dal server`);
         state.carryOver = !!url;
         const old = state.ws;
+        this._chiudiVecchia(state);
+        if (url) state.vecchia = old;                 // si chiude al benvenuto della nuova
         this._connect(state, url || WS_URL);
-        try { old?.close(); } catch { /* niente */ }
+        if (!url) { try { old?.close(); } catch { /* niente */ } }
         break;
       }
       case 'revocation': {
@@ -213,7 +235,32 @@ export class EventHub {
     if (state.closing) return;
     clearTimeout(state.guard);
     clearTimeout(state.riprova);
+    // la nuova e' caduta prima del benvenuto: si riparte da capo, senza la vecchia
+    this._chiudiVecchia(state);
     this._scheduleReconnect(state);
+  }
+
+  _chiudiVecchia(state) {
+    const v = state.vecchia;
+    state.vecchia = null;
+    try { v?.close(); } catch { /* già chiusa */ }
+  }
+
+  // Vero se quel message_id e' passato negli ultimi VISTI_MS. Prima si
+  // dimentica quello che e' scaduto (e quanto serve a restare entro
+  // VISTI_MAX), poi si guarda: la mappa e' in ordine di arrivo, i piu' vecchi
+  // stanno davanti e se ne vanno per primi.
+  _giaVisto(state, id) {
+    if (!id) return false;
+    const v = state.visti;
+    const ora = Date.now();
+    for (const [k, t] of v) {
+      if (v.size < VISTI_MAX && ora - t < VISTI_MS) break;
+      v.delete(k);
+    }
+    if (v.has(id)) return true;
+    v.set(id, ora);
+    return false;
   }
 
   // Riconnessione con backoff; su una connessione nuova le sottoscrizioni

@@ -49,6 +49,30 @@ sana può non arrivare mai. Si riprova dopo 15 s, 60 s, 240 s, solo le rifiutate
 un 403 è uno scope mancante e non si riprova. Una sessione nuova cancella le
 riprove della vecchia: le rifà lei.
 
+**Ogni evento arriva, e arriva una volta.** Due frasi della documentazione di
+Twitch, che il bot non seguiva:
+
+- «Twitch sends messages at least once, but if Twitch is unsure of whether you
+  received a notification, it'll resend the message. If Twitch resends the
+  message, the message ID will be the same.» Un abbonamento rimandato era un
+  alert doppio e un obiettivo contato due volte. Ora un `message_id` già
+  passato si scarta. Gli id si ricordano per dieci minuti, al massimo mille per
+  canale: un rinvio arriva in pochi secondi, e la memoria non cresce. Quello
+  scaduto si dimentica **prima** di guardare, così «dieci minuti» vuol dire
+  dieci minuti e non «finché non arriva un evento nuovo».
+- Durante un `session_reconnect` «the old connection receives events up until
+  you connect to the new URL and receive the welcome message», e «you should
+  not close the old connection until you receive a Welcome message on the new
+  connection». Il bot chiudeva la vecchia appena aperta la nuova, e la
+  ignorava: un evento arrivato in quel mezzo secondo si perdeva. Ora la
+  vecchia (`state.vecchia`) resta aperta e porta i suoi eventi finché la nuova
+  non dà il benvenuto, e solo allora si chiude. Dalla vecchia contano solo gli
+  eventi: un benvenuto o un altro spostamento da lì non fanno niente. La
+  guardia del silenzio è della nuova: gli eventi della vecchia non la tengono
+  in vita. Se la nuova cade prima del benvenuto, si chiude anche la vecchia e
+  si riparte da capo, con le sottoscrizioni rifatte. Lo stesso evento
+  consegnato su tutte e due passa una volta, per la regola di sopra.
+
 ## L'API
 
 **Una richiesta che non risponde è morta, non lenta.** Ogni `fetch` verso
@@ -66,7 +90,8 @@ di aspettare la rete.
 
 ## Le prove
 
-`test/unita/chat-irc.test.mjs` e `test/unita/eventsub-riprova.test.mjs`: un
+`test/unita/chat-irc.test.mjs`, `test/unita/eventsub-riprova.test.mjs` e
+`test/unita/eventsub-consegna.test.mjs` (doppioni e spostamenti di sessione): un
 socket finto e il tempo in mano (`mock.timers`). Ogni comportamento qui sopra ha
 la sua riga, compresi il socket che muore senza `close` e la riprova che non
 sopravvive a una sessione nuova.
