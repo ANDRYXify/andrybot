@@ -400,20 +400,28 @@ await p.evaluate(() => { document.body.classList.remove('leggero'); });
 await p.emulateMedia({ reducedMotion: 'reduce' });
 await p.evaluate((x) => window.SB_APP.vai(x), unaScena.da);
 await p.waitForTimeout(700);
+// Si guarda finche' si sono visti tutti e due, il disfare e il disegnare, con
+// un tetto largo: una finestra fissa di un secondo misurava il carico della
+// macchina, non il disegno (sotto carico la scena nuova cominciava dopo, e il
+// cancello era rosso con un pannello giusto). Con i disegni istantanei la
+// china a meta' strada non si vede mai, e si arriva al tetto: rosso lo stesso.
 await p.evaluate(() => {
-  window.__meta = { su: 0, via: 0 };
+  window.__meta = { su: 0, via: 0, fine: false };
   const t0 = performance.now();
   const giro = () => {
     for (const c of document.querySelectorAll('svg.dg-tela .dg-china')) {
       const o = parseFloat(getComputedStyle(c).strokeDashoffset);
       if (o > 0.001 && o < 0.999) window.__meta[c.classList.contains('dg-sfila') ? 'via' : 'su']++;
     }
-    if (performance.now() - t0 < 900) requestAnimationFrame(giro);
+    const visti = window.__meta.su > 0 && window.__meta.via > 0;
+    if (!visti && performance.now() - t0 < 8000) requestAnimationFrame(giro);
+    else window.__meta.fine = true;
   };
   requestAnimationFrame(giro);
 });
 await p.evaluate((x) => window.SB_APP.vai(x), unaScena.a);
-await p.waitForTimeout(1000);
+await p.waitForFunction(() => window.__meta.fine, null, { timeout: 15000 });
+await p.waitForTimeout(400);
 interruttori.menoMoto = await p.evaluate(() => window.__meta);
 await p.emulateMedia({ reducedMotion: 'no-preference' });
 
