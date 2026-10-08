@@ -28,6 +28,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { makeLog } from '../logger.js';
 import { config } from '../config.js';
+import { N as LIVELLO_N } from './livelli.js';
 
 const log = makeLog('incidenti');
 const norm = (s) => String(s || '').toLowerCase().trim();
@@ -35,6 +36,13 @@ const norm = (s) => String(s || '').toLowerCase().trim();
 // Quanto silenzio serve prima che un attacco che riprende conti come nuovo.
 export const RIAPRE_MS = 15 * 60 * 1000;
 const TIMELINE_MAX = 300;
+// Il rapporto di un attacco (docs/INCIDENTI.md, «Il rapporto dell'attacco»)
+// vuole sapere anche COME e' andato, non solo come e' finito: la scala dei
+// livelli, i follow minuto per minuto, i raid. Ognuno ha un tetto: un attacco
+// di due giorni non deve diventare un file di dieci mega.
+const LIVELLI_MAX = 100;
+const CURVA_MAX = 2880;        // minuti: due giorni
+const RAID_MAX = 50;
 const PER_CANALE = 200;
 const VECCHI_MS = 180 * 24 * 60 * 60 * 1000;
 const FILE = () => join(config.dataDir, 'incidenti.json');
@@ -77,12 +85,15 @@ export function apri(canale, { tipo = 'ignoto', motivo = '', livello = '' } = {}
   }
 
   const inc = {
-    id: nuovoId(), canale: ch, tipo,
+    id: nuovoId(), canale: ch, tipo, motivo: String(motivo || '').slice(0, 200),
     aperto: Date.now(), chiuso: null, riaperture: 0,
-    picco: { livello: livello || '', ts: Date.now(), quanti: 0 },
+    picco: { livello: livello || '', ts: Date.now(), quanti: 0, punti: 0 },
     coinvolti: {},                         // login → { giudizio, punti, ts }
     azioni: {},                            // azione → { fatte, fallite, aVuoto }
     timeline: [],
+    livelli: livello ? [{ ts: Date.now(), livello }] : [],   // la scala, salite e discese
+    curva: {},                             // minuto → [follow, tolti]
+    raid: [],                              // { ts, da, quanti }
   };
   tutti.set(inc.id, inc);
   apertiPerCanale.set(ch, inc.id);
@@ -124,13 +135,91 @@ export function racconta(canale, cosa) {
   return inc;
 }
 
-// Quanto forte è andato. Il picco si aggiorna solo se si sale: serve a dire
-// quanto è stato grave, non com'è adesso.
-export function segnaPicco(canale, { livello = '', quanti = 0 } = {}) {
+// Quanto forte è andato. Il picco SOLO SALE: serve a dire quanto è stato grave,
+// non com'è adesso. Il livello si confronta per gradino (livelli.js), non per
+// nome: prima bastava un nome diverso, e un attacco in serrata che riprendeva in
+// «osservo» si ritrovava col picco in «osservo». I punti e i segnali sono quelli
+// del momento piu' grave, e stanno insieme al livello: dicono PERCHE' e' salito.
+export function segnaPicco(canale, { livello = '', quanti = 0, punti = 0, segnali = null } = {}) {
   const inc = aperto(canale);
   if (!inc) return null;
-  if (quanti > (inc.picco.quanti || 0)) inc.picco = { livello: livello || inc.picco.livello, ts: Date.now(), quanti };
-  else if (livello && livello !== inc.picco.livello && !inc.picco.quanti) inc.picco = { livello, ts: Date.now(), quanti: 0 };
+  const p = inc.picco || (inc.picco = { livello: '', ts: inc.aperto, quanti: 0, punti: 0 });
+  const piuAlto = livello && (LIVELLO_N[livello] ?? -1) > (LIVELLO_N[p.livello] ?? -1);
+  if (piuAlto) { p.livello = livello; p.ts = Date.now(); }
+  if (Number(quanti) > (Number(p.quanti) || 0)) p.quanti = Number(quanti);
+  if (Number(punti) > (Number(p.punti) || 0) || (piuAlto && segnali)) {
+    p.punti = Math.max(Number(p.punti) || 0, Number(punti) || 0);
+    if (segnali && typeof segnali === 'object') p.segnali = { ...segnali };
+  }
+  programmaSalvataggio();
+  return inc;
+}
+
+// LA SCALA: ogni cambio di livello, salita o discesa. Il picco dice fin dove si
+// e' arrivati; la scala dice come, e quanto e' durato ogni gradino.
+export function segnaLivello(canale, livello) {
+  const inc = aperto(canale);
+  if (!inc || !livello) return null;
+  const s = inc.livelli || (inc.livelli = []);
+  if (s.length && s[s.length - 1].livello === livello) return inc;
+  s.push({ ts: Date.now(), livello });
+  if (s.length > LIVELLI_MAX) s.splice(0, s.length - LIVELLI_MAX);
+  programmaSalvataggio();
+  return inc;
+}
+
+// LA CURVA: i follow arrivati e quelli tolti, minuto per minuto. E' il grafico
+// del rapporto, e il numero piu' onesto su quanto e' stato grosso l'attacco.
+// Il minuto e' quello dell'evento (`ts`), non quello in cui ci arriva.
+function segnaCurva(inc, ts, colonna, n = 1) {
+  const m = Math.floor((Number(ts) || Date.now()) / 60000);
+  const c = inc.curva || (inc.curva = {});
+  const v = c[m] || (c[m] = [0, 0]);
+  v[colonna] += n;
+  const chiavi = Object.keys(c);
+  if (chiavi.length > CURVA_MAX) {
+    chiavi.map(Number).sort((a, b) => a - b).slice(0, chiavi.length - CURVA_MAX).forEach((k) => { delete c[k]; });
+  }
+  programmaSalvataggio();
+}
+
+export function segnaFollow(canale, ts = Date.now()) {
+  const inc = aperto(canale);
+  if (!inc) return null;
+  segnaCurva(inc, ts, 0);
+  return inc;
+}
+
+// FIN DOVE SI E' AVVISATO lo streamer per questo attacco: il gradino piu' alto
+// di cui ha gia' ricevuto il messaggio (rapporto-attacco.js, devoAvvisare). Sta
+// nell'incidente, e quindi resiste a un riavvio: un riavvio non deve fargli
+// arrivare lo stesso avviso due volte.
+export function segnaAvvisato(canale, livello) {
+  const inc = aperto(canale);
+  if (!inc || !livello) return null;
+  inc.avvisato = livello;
+  programmaSalvataggio();
+  return inc;
+}
+
+// Il rapporto e' partito, e da dove: il pannello lo dice, e non si manda due volte.
+export function segnaRapporto(id, dove) {
+  const inc = uno(id);
+  if (!inc || !dove) return null;
+  const r = inc.rapporto || (inc.rapporto = {});
+  r[dove] = Date.now();
+  programmaSalvataggio();
+  return inc;
+}
+
+// I raid arrivati mentre l'attacco era in corso: un raid vero in mezzo a
+// un'ondata cambia la lettura del grafico, e va detto.
+export function segnaRaid(canale, { da = '', quanti = 0 } = {}) {
+  const inc = aperto(canale);
+  if (!inc) return null;
+  const r = inc.raid || (inc.raid = []);
+  r.push({ ts: Date.now(), da: norm(da), quanti: Number(quanti) || 0 });
+  if (r.length > RAID_MAX) r.splice(0, r.length - RAID_MAX);
   programmaSalvataggio();
   return inc;
 }
@@ -165,11 +254,13 @@ export function segnaTaciuto(canale) {
 }
 
 // Cosa abbiamo fatto, e come è andata. La riga arriva dall'esecutore: qui si
-// conta e basta.
+// conta e basta. Quelle che tolgono qualcuno dal canale vanno anche nella curva.
+const TOGLIE = new Set(['blocca', 'ban', 'timeout']);
 export function segnaAzione(canale, { azione, esito }) {
   const inc = aperto(canale);
   if (!inc || !azione) return null;
   const c = inc.azioni[azione] || { fatte: 0, fallite: 0, aVuoto: 0 };
+  if (esito === 'fatto' && TOGLIE.has(azione)) segnaCurva(inc, Date.now(), 1);
   if (esito === 'fatto') c.fatte++;
   else if (esito === 'a-vuoto') c.aVuoto++;
   else if (esito === 'fallito') c.fallite++;
@@ -239,15 +330,36 @@ export function sintesi(inc) {
   if (!inc) return null;
   const per = Object.fromEntries(Object.values(GIUDIZI).map((g) => [g, 0]));
   for (const v of Object.values(inc.coinvolti)) per[v.giudizio] = (per[v.giudizio] || 0) + 1;
+  let follow = 0, tolti = 0;
+  for (const v of Object.values(inc.curva || {})) { follow += Number(v?.[0]) || 0; tolti += Number(v?.[1]) || 0; }
   return {
-    id: inc.id, canale: inc.canale, tipo: inc.tipo,
+    id: inc.id, canale: inc.canale, tipo: inc.tipo, motivo: inc.motivo || '',
     aperto: inc.aperto, chiuso: inc.chiuso, riaperture: inc.riaperture,
     durata: Math.round(((inc.chiuso || Date.now()) - inc.aperto) / 1000),
     picco: inc.picco, azioni: inc.azioni,
     coinvolti: Object.keys(inc.coinvolti).length, per,
     taciuti: Number(inc.taciuti) || 0,
+    follow, tolti, raid: (inc.raid || []).length,
     righe: inc.timeline.length,
   };
+}
+
+// I DATI DI UN CANALE, per la sua esportazione e per la sua cancellazione. Gli
+// attacchi stanno in un file solo per tutti: senza queste due, chi scaricava i
+// suoi dati non ci trovava i suoi attacchi, e chi cancellava l'account se li
+// lasciava dietro, coi nomi di chi c'era dentro.
+export function diCanale(canale) {
+  const ch = norm(canale);
+  return [...tutti.values()].filter((i) => i.canale === ch).sort((a, b) => a.aperto - b.aperto);
+}
+
+export function dimenticaCanale(canale) {
+  const ch = norm(canale);
+  let n = 0;
+  for (const [id, inc] of tutti) if (inc.canale === ch) { tutti.delete(id); n++; }
+  apertiPerCanale.delete(ch);
+  if (n) { daSalvare = true; salva().catch(() => {}); }
+  return n;
 }
 
 export function stato() {

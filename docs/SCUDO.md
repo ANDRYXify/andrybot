@@ -29,18 +29,27 @@ pratica non proteggevano quasi nessuno. E soprattutto:
 
 ## L'assetto
 
-Ora c'è **un livello per canale** — `calma`, `sospetto`, `attacco` — che sale
-quando arriva evidenza e scende da solo dopo cinque minuti di quiete. Tutte le
-difese leggono quello. Un fatto, un posto dove è scritto.
+Ora c'è **un livello per canale**, che sale quando arriva evidenza e scende da
+solo dopo cinque minuti di quiete. Tutte le difese leggono quello. Un fatto, un
+posto dove è scritto.
 
-In `attacco` lo scudo alza da sé:
+All'inizio i livelli erano tre (`calma`, `sospetto`, `attacco`), e `sospetto`
+non faceva niente. Oggi sono sei, e ognuno fa una cosa che gli altri non fanno:
+`calma`, `osservo` (si guardano i nomi, non si tocca niente), `allerta` (la
+soglia si abbassa, gli account appena nati che scrivono si segnalano ai mod),
+`difesa` (chat lenta, i messaggi degli account di poche ore si trattengono),
+`attacco` e `serrata`. Il modello per esteso è in docs/LIVELLI.md.
+
+Da `attacco` in su lo scudo alza da sé:
 
 - **Shield Mode** di Twitch (`PUT /helix/moderation/shield_mode`);
-- **chat ai soli follower** da almeno dieci minuti — che taglia fuori gli account
-  appena creati per l'occasione;
-- **chat lenta** a dieci secondi, per strozzare il volume;
-- e internamente accende la trattenuta dei messaggi da account nuovissimi e il
-  controllo dei nomi.
+- **chat ai soli follower** da almeno dieci minuti (un'ora in `serrata`), che
+  taglia fuori gli account appena creati per l'occasione;
+- **chat lenta** a dieci secondi (trenta in `serrata`), per strozzare il volume;
+- e blocca l'ondata riconosciuta come artificiale.
+
+Ogni volta che il livello cambia, l'attacco lo scrive nella sua scala, e il
+rapporto lo racconta (docs/INCIDENTI.md, «Il rapporto dell'attacco»).
 
 Al rientro in calma rimette a posto **solo ciò che aveva mosso lui**: quello che
 lo streamer aveva già acceso per conto suo resta acceso.
@@ -294,6 +303,13 @@ lo segnala da sola, come per gli altri):
 
 Senza, lo scudo funziona lo stesso ma con una mano legata: banna e trattiene, non
 può chiudere la chat.
+
+## La sezione «Scudo e attacchi»
+
+Nel menu lo scudo ha un gruppo suo: **Lo scudo** (le impostazioni e lo stato
+vivo), **Gli attacchi** (ogni attacco col suo rapporto, gli avvisi, gli altri
+scudi) e **Registro** (ogni intervento, uno per riga). Gli attacchi, gli avvisi
+in privato e il puntino sono descritti in docs/INCIDENTI.md.
 
 ## Cosa si vede dalla console
 

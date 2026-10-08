@@ -312,11 +312,18 @@ export function registra(channel, dati) {
   const ch = norm(channel);
   if (!ch) return null;
   const arr = registriMem.get(ch) || [];
+  // L'INCIDENTE della riga: quello aperto adesso, o quello che chi registra
+  // dice (l'esecutore lo sa, e una riga che arriva un attimo dopo la chiusura
+  // e' ancora di quell'attacco). Senza, il rapporto di un attacco non sapeva
+  // quali righe del registro erano sue.
+  let incidente = String(dati.incidente || '');
+  if (!incidente) { try { incidente = inc.aperto(ch)?.id || ''; } catch (e) { incidente = ''; } }
   const voce = {
     id: nuovoId(), ts: Date.now(),
     login: norm(dati.login) || '', userId: dati.userId || '',
     azione: dati.azione || 'segnala', motivo: String(dati.motivo || ''),
     esito: dati.esito || 'fatto', stato: dati.stato || 'chiuso', ris: null,
+    ...(incidente ? { incidente } : {}),
   };
   arr.push(voce);
   if (arr.length > REG_MAX) arr.splice(0, arr.length - REG_MAX);
@@ -337,6 +344,22 @@ export function registra(channel, dati) {
 export function registro(channel, { limite = 100 } = {}) {
   const arr = registriMem.get(norm(channel)) || [];
   return arr.slice(-limite).reverse();
+}
+
+// Le righe di un attacco: quelle che portano il suo id.
+export function registroDi(channel, incidente) {
+  const id = String(incidente || '');
+  if (!id) return [];
+  return (registriMem.get(norm(channel)) || []).filter((v) => v.incidente === id);
+}
+
+// Per la cancellazione dell'account: il registro e' in un file per tutti.
+export function dimenticaRegistro(channel) {
+  const ch = norm(channel);
+  if (!registriMem.delete(ch)) return false;
+  regDaSalvare = true;
+  salvaRegistro().catch(() => {});
+  return true;
 }
 
 export function segnalazioniAperte(channel) {
@@ -429,14 +452,26 @@ function motivoDa(s = {}, punti = 0) {
 // Che razza di attacco e'. Si legge da come l'ha descritto chi ha dato
 // l'allarme: e' l'unico che lo sa, e riscriverlo da capo altrove vorrebbe dire
 // tenere la stessa cosa in due posti.
-function tipoDi(motivo = '') {
+//
+// Prima si leggeva dal TESTO del motivo, e «onda lenta» non c'era mai: il
+// motivo dice «gocciolamento su dieci minuti», e il gocciolamento finiva fra le
+// ondate di follow. Adesso si legge dai SEGNALI, che sono la stessa cosa da cui
+// nasce il motivo; il testo resta solo per chi non ne ha.
+export function tipoDi(motivo = '', segnali = null) {
+  const sg = segnali && typeof segnali === 'object' ? segnali : null;
+  if (sg) {
+    if (sg.coro) return 'coro';
+    if (sg.ondaLenta) return 'onda-lenta';
+    if (sg.follow) return 'ondata-follow';
+  }
   const m = String(motivo).toLowerCase();
   if (m.includes('stesso messaggio')) return 'coro';
-  if (m.includes('onda lenta')) return 'onda-lenta';
+  if (m.includes('gocciolamento') || m.includes('onda lenta')) return 'onda-lenta';
   if (m.includes('follow')) return 'ondata-follow';
   return 'ignoto';
 }
 const QUIETE_MS = 5 * 60 * 1000;         // quanto silenzio serve per tornare in pace
+export const RAID_GRANDE = 50;           // da qui un raid si scrive nel registro
 const assetti = new Map();               // channel -> { livello, da, motivo, ripristino, timer }
 
 // La SERRANDA e' l'unica cosa dell'assetto che deve sopravvivere a un riavvio,
@@ -836,9 +871,14 @@ export async function spegniScudo(opzioni) {
 }
 
 export class AntiBot {
-  constructor({ helix, alert, say, chatSettings, followFermi } = {}) {
+  constructor({ helix, alert, say, chatSettings, followFermi, attaccoFinito } = {}) {
     this.helix = helix;
-    this.alert = alert;                 // (channel, {tipo, testo}) per l'overlay (facolt.)
+    // (channel, {tipo, livello, motivo, incidente, testo}): lo scudo e' salito, o
+    // e' arrivato un raid grande. Il bot decide se e dove avvisare lo streamer
+    // (_avvisoScudo), secondo le sue scelte (facolt.).
+    this.alert = alert;
+    // (channel, idIncidente): l'attacco e' finito, se ne fa il rapporto (facolt.).
+    this.attaccoFinito = attaccoFinito;
     // (channel): i follow si sono appena fermati. Il bot lo dice alle scene,
     // che buttano gli alert dei follow ancora in fila (facolt.).
     this.followFermi = followFermi;
@@ -964,10 +1004,19 @@ export class AntiBot {
     // L'incidente nasce qui: un attacco e' una cosa sola, non trecento righe.
     // Si apre alla prima salita, e se ne era appena chiuso uno si riapre quello
     // — un'ondata che riprende non e' un attacco nuovo.
-    try { inc.apri(ch, { tipo: tipoDi(motivo), motivo, livello }); inc.segnaPicco(ch, { livello }); } catch (e) {  }
+    let incId = '';
+    try {
+      const i = inc.apri(ch, { tipo: tipoDi(motivo, extra.segnali), motivo, livello });
+      incId = i?.id || '';
+      inc.segnaLivello(ch, livello);
+      inc.segnaPicco(ch, { livello, punti: extra.punti, segnali: extra.segnali });
+    } catch (e) {  }
     registra(ch, { azione: 'assetto', motivo: `${livello}: ${motivo}`, esito: 'avviso' });
     const dev = assettoDi(livello);
-    this.alert?.(ch, { tipo: 'antibot', testo: dev.serranda ? 'Sotto attacco: scudo alzato' : `Livello ${livello}` });
+    // L'AVVISO allo streamer: lo raccoglie il bot (_avvisoScudo) e decide lui
+    // dove mandarlo e se, secondo le scelte dello streamer. Qui si dice cosa e'
+    // successo, con i dati per dirlo bene.
+    this.alert?.(ch, { tipo: 'antibot', livello, daLivello, motivo, incidente: incId, testo: dev.serranda ? 'Sotto attacco: scudo alzato' : `Livello ${livello}` });
     if (extra.punti !== undefined) a.punti = extra.punti;
     if (extra.segnali) a.segnali = extra.segnali;
 
@@ -1042,6 +1091,7 @@ export class AntiBot {
       a.livello = sotto;
       a.segnali = {};
       a.punti = 0;
+      try { inc.segnaLivello(ch, sotto); } catch (e) {  }
       log.info(`#${ch} assetto → ${sotto.toUpperCase()} (si scende un gradino)`);
       registra(ch, { azione: 'assetto', motivo: `rientro a ${sotto}`, esito: 'fatto' });
       // Quello che il livello nuovo non prevede più si spegne subito: restare
@@ -1067,7 +1117,11 @@ export class AntiBot {
     const durata = Math.round((Date.now() - a.da) / 1000);
     log.info(`#${ch} assetto → calma dopo ${durata}s`);
     registra(ch, { azione: 'assetto', motivo: `rientro in calma dopo ${durata}s`, esito: 'fatto' });
-    try { inc.chiudi(ch, `rientro in calma dopo ${durata}s`); } catch (e) {  }
+    let finito = null;
+    try { inc.segnaLivello(ch, ASSETTO.CALMA); finito = inc.chiudi(ch, `rientro in calma dopo ${durata}s`); } catch (e) {  }
+    // L'attacco e' finito: il bot ne fa il rapporto (_attaccoFinito), se lo
+    // streamer lo vuole e se e' stato abbastanza grave da meritarlo.
+    if (finito) { try { this.attaccoFinito?.(ch, finito.id); } catch (e) { log.debug(`#${ch} rapporto dell'attacco:`, e?.message || e); } }
     const c = this.cfg(ch);
     if (c.avvisa && LIV.almeno(a.livello, ASSETTO.ATTACCO)) this.say?.(ch, '🛡️ Passata. Chat riaperta.');
   }
@@ -1185,6 +1239,10 @@ export class AntiBot {
     const login = norm(d.user_login || d.user_name);
     const userId = d.user_id;
     if (!login || !userId) return;
+    // Ogni follow arrivato durante un attacco entra nella sua curva, anche chi
+    // poi lo scudo lascia stare: il grafico conta quanti sono arrivati, non
+    // quanti ne abbiamo giudicati.
+    try { inc.segnaFollow(channel, Number.isFinite(ev.ts) ? Number(ev.ts) : Date.now()); } catch (e) {  }
     if (BUONI.has(login) || (cfg.esenti || []).map(norm).includes(login)) return;
 
     // L'ISTANTE DELL'EVENTO, non quello in cui ci arriva. Twitch ci manda
@@ -1217,8 +1275,11 @@ export class AntiBot {
         const g = ondataArtificiale(arr, cfg);
         segnali.artificiale = !!g.certo;
         raffiche.set(channel, ora + 120000);
-        registra(channel, { azione: 'raffica', motivo: `${arr.length} follow in ${cfg.rafficaSecondi}s (soglia ${soglia}) · ${g.motivo}`, esito: 'avviso' });
+        // Prima si valuta, poi si scrive: la valutazione apre l'attacco, e la
+        // raffica che l'ha fatto scattare entra cosi' nel suo racconto. Scritta
+        // prima, restava fuori dall'unico attacco che raccontava.
         await this._valuta(channel, segnali, cfg);
+        registra(channel, { azione: 'raffica', motivo: `${arr.length} follow in ${cfg.rafficaSecondi}s (soglia ${soglia}) · ${g.motivo}`, esito: 'avviso' });
         const a = assetti.get(channel);
         // undefined = «non lo so ancora»: si torna a chiedere al prossimo
         // follow, invece di aspettare il venticinquesimo con un «no» che non
@@ -1559,10 +1620,16 @@ export class AntiBot {
     // per gridare «attacco» servono più bocche.
     const quando = Number.isFinite(ev.ts) ? Number(ev.ts) : Date.now();
     raidRecenti.set(channel, quando + RAID_CONTESTO_MS);
-    try { inc.racconta(channel, `raid da ${n}: sensibilità del coro abbassata per dieci minuti`); } catch (e) {  }
-    if (n >= 50 && cfg.avvisa) {
-      this.alert?.(channel, { tipo: 'antibot', testo: `Raid da ${n}: controlla che sia genuino` });
-      registra(channel, { login: norm(ev.data?.from_login || ev.data?.from_name), azione: 'raid', motivo: `raid da ${n} spettatori`, esito: 'avviso' });
+    const da = norm(ev.data?.from_login || ev.data?.from_name);
+    try { inc.racconta(channel, `raid da ${n}: sensibilità del coro abbassata per dieci minuti`); inc.segnaRaid(channel, { da, quanti: n }); } catch (e) {  }
+    // Un raid grande si SCRIVE sempre: e' un fatto che lo scudo deve poter
+    // rileggere. Prima si scriveva solo con «Avvisa in chat» acceso, e chi
+    // l'aveva spento non ne trovava traccia. L'avviso allo streamer non
+    // dipende da quella levetta (che e' la chat): lo decide il bot con le sue
+    // scelte (_avvisoScudo, «anche per i raid»).
+    if (n >= RAID_GRANDE) {
+      registra(channel, { login: da, azione: 'raid', motivo: `raid da ${n} spettatori`, esito: 'avviso' });
+      this.alert?.(channel, { tipo: 'raid', quanti: n, da, testo: `Raid da ${n}: controlla che sia genuino` });
     }
   }
 }

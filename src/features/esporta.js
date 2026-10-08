@@ -15,6 +15,8 @@
 // contiene segreti va negata di proposito, e il collaudo lo pretende.
 
 import { db } from '../db.js';
+import { diCanale as attacchiDiCanale } from './incidenti.js';
+import { registro as registroScudo } from './antibot.js';
 
 // Le colonne con cui una riga dice "sono di questo streamer".
 const COLONNE_CANALE = ['channel', 'login', 'streamer'];
@@ -78,6 +80,16 @@ export function esporta(login, { limite = 20_000 } = {}) {
     dati.messages_miei = db.prepare('SELECT * FROM messages WHERE channel=? AND user=? ORDER BY ts DESC LIMIT ?')
       .all(chi, chi, Math.min(limite, 5000));
   } catch { /* la tabella potrebbe non esserci in un database di prova */ }
+
+  // GLI ATTACCHI E IL REGISTRO DELLO SCUDO non stanno nel database: stanno in
+  // due file per tutti i canali (incidenti.js, antibot.js). Senza queste righe
+  // chi scaricava i suoi dati non ci trovava i suoi attacchi.
+  try {
+    const att = attacchiDiCanale(chi);
+    if (att.length) dati.attacchi = att;
+    const reg = registroScudo(chi, { limite: 500 });
+    if (reg.length) dati.registro_scudo = reg;
+  } catch { /* lo scudo potrebbe non essere caricato */ }
 
   return {
     formato: 1,

@@ -26,6 +26,8 @@ import path from 'node:path';
 import { db } from '../db.js';
 import { config } from '../config.js';
 import { tabelleDiCanale } from './esporta.js';
+import { diCanale as attacchiDiCanale, dimenticaCanale as dimenticaAttacchi } from './incidenti.js';
+import { registro as registroScudo, dimenticaRegistro } from './antibot.js';
 import { eLoginNostro, nomeSu } from '../identita.js';
 
 // Un canale valido e' quello che identita.js chiama nostro: con il suo
@@ -90,6 +92,14 @@ export function cancella(login, { conferma } = {}) {
     catch { /* se un file resta bloccato, il resto e' comunque andato */ }
   }
 
+  // Gli attacchi e il registro dello scudo: due file per tutti, con dentro i
+  // nomi di chi c'era. Restavano dopo la cancellazione dell'account.
+  try {
+    const n = dimenticaAttacchi(chi);
+    if (n) righe.attacchi = n;
+    if (dimenticaRegistro(chi)) righe.registro_scudo = 1;
+  } catch { /* lo scudo potrebbe non essere caricato */ }
+
   return { canale: chi, quando: new Date().toISOString(), righe, cartelle, tabelleGuardate: tabelle.length };
 }
 
@@ -105,6 +115,12 @@ export function restiDi(login) {
   try {
     const n = db.prepare('SELECT COUNT(*) c FROM friends WHERE user=?').get(chi).c;
     if (n) resti.friends = n;
+  } catch { /* niente */ }
+  try {
+    const a = attacchiDiCanale(chi).length;
+    if (a) resti.attacchi = a;
+    const r = registroScudo(chi, { limite: 1 }).length;
+    if (r) resti.registro_scudo = r;
   } catch { /* niente */ }
   const cartelle = cartelleDiCanale(chi).map((d) => path.relative(config.dataDir, d));
   return { righe: resti, cartelle };

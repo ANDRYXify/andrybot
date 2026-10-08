@@ -77,10 +77,11 @@ import { ClipEngine } from './features/clips.js';
 import { PenitenzeEngine } from './features/penitenze.js';
 import { AlertsEngine } from './features/alerts.js';
 import { MuroEmote } from './features/muro.js';
-import { AntiBot, caricaListaBotDaDisco, aggiornaListaBot, caricaRegistroDaDisco, spegniScudo, taciFollow, contaTaciuto } from './features/antibot.js';
+import { AntiBot, caricaListaBotDaDisco, aggiornaListaBot, caricaRegistroDaDisco, spegniScudo, taciFollow, contaTaciuto, registroDi } from './features/antibot.js';
+import * as rapportoAttacco from './features/rapporto-attacco.js';
 import { censisci } from './features/punteggio.js';
 import { carica as caricaRete } from './features/rete.js';
-import { carica as caricaIncidenti } from './features/incidenti.js';
+import { carica as caricaIncidenti, aperto as incidenteAperto, uno as unIncidente, segnaAvvisato, segnaRapporto } from './features/incidenti.js';
 import { scheduleReflection } from './ai/reflection.js';
 import { StreamWatcher } from './stream/watcher.js';
 import { dopoSegnale } from './stream/stato-diretta.js';
@@ -227,7 +228,10 @@ export class BotManager {
       helix: this.helix,
       say: (ch, t) => this.say(ch, t),
       chatSettings: (ch, o) => this.helix.chatSoloFollower(ch, !!o.followersOnly, 0),
-      alert: (ch, a) => { try { this.alerts?.manuale?.(ch, a); } catch { /* facolt. */ } },
+      // Gli avvisi dello scudo allo streamer. Prima andavano a `alerts.manuale`,
+      // che non e' mai esistito: lo scudo si alzava e nessuno lo sapeva.
+      alert: (ch, a) => { this._avvisoScudo(ch, a).catch((e) => log.debug(`#${ch} avviso dello scudo:`, e?.message || e)); },
+      attaccoFinito: (ch, id) => { this._rapportoAttacco(ch, id).catch((e) => log.debug(`#${ch} rapporto dell'attacco:`, e?.message || e)); },
       // lo scudo e' salito ad attacco: le scene buttano i follow ancora in fila
       followFermi: (ch) => this.effects?.emit?.(ch, { tipo: 'scudo', followFermi: true }),
     });
@@ -1818,6 +1822,63 @@ export class BotManager {
     if (conf?.token && conf.owner_tg_id && (conf.dm_modo || 'me') !== 'off') {
       const testo = `La storia di Instagram della diretta non è partita: ${telegram.escHtml(r.errore)}. Il riquadro della storia, nelle Grafiche, dice come rimediare.`;
       await telegram.inviaMessaggio(conf.token, conf.owner_tg_id, testo, { anteprima: false }).catch(() => {});
+    }
+  }
+
+  // GLI AVVISI DELLO SCUDO (docs/INCIDENTI.md, «Gli avvisi»). Nel sito c'e'
+  // sempre: il puntino sulla scheda «Gli attacchi» lo calcola il server dagli
+  // incidenti. Qui si manda quello che esce dal sito, secondo le scelte dello
+  // streamer: dal livello che ha scelto in su, una volta per gradino per
+  // attacco, in privato su Telegram e per mail. I raid grandi a parte.
+  async _avvisoScudo(login, a = {}) {
+    const cfg = this.antibot?.cfg?.(login) || {};
+    const av = rapportoAttacco.avvisiDi(cfg);
+    if (a.tipo === 'raid') { if (!av.raid) return; }
+    else {
+      const i = incidenteAperto(login);
+      if (!rapportoAttacco.devoAvvisare({ livello: a.livello, soglia: av.soglia, giaAvvisato: i?.avvisato })) return;
+      if (i) segnaAvvisato(login, a.livello);
+    }
+    const lingua = linguaChat(login);
+    const link = `${config.baseUrl.replace(/\/$/, '')}/#attacchi`;
+    const conf = tgConf.get(login);
+    if (av.telegram && conf?.token && conf.owner_tg_id && (conf.dm_modo || 'me') !== 'off') {
+      await telegram.inviaMessaggio(conf.token, conf.owner_tg_id, rapportoAttacco.testoAvviso(a, { lingua, link }), { anteprima: false }).catch(() => {});
+    }
+    const pst = postaStreamer.get(login);
+    if (av.mail && pst?.confermata && pst.email && posta.attiva()) {
+      const testo = rapportoAttacco.testoAvviso(a, { lingua, link }).replace(/<[^>]+>/g, '');
+      await posta.invia({ a: pst.email, oggetto: testo.split('\n')[0].replace(/^🛡️\s*/, ''), testo }).catch((e) => log.warn(`#${login} avviso dello scudo via mail:`, e?.message || e));
+    }
+  }
+
+  // IL RAPPORTO DELL'ATTACCO, a attacco finito: resta sempre nella scheda «Gli
+  // attacchi»; esce in privato solo se l'attacco e' arrivato alla soglia scelta
+  // (uno «sto guardando» di due minuti non merita un messaggio) e solo dove lo
+  // streamer l'ha chiesto.
+  async _rapportoAttacco(login, id) {
+    const i = unIncidente(id);
+    if (!i) return;
+    const cfg = this.antibot?.cfg?.(login) || {};
+    const av = rapportoAttacco.avvisiDi(cfg);
+    if (!rapportoAttacco.meritaRapporto(i, av.soglia)) return;
+    const r = rapportoAttacco.rapportoAttacco(i, { registro: registroDi(login, id) });
+    const lingua = linguaChat(login);
+    const link = `${config.baseUrl.replace(/\/$/, '')}/#attacchi`;
+    const conf = tgConf.get(login);
+    if (av.rapportoTelegram && conf?.token && conf.owner_tg_id && (conf.dm_modo || 'me') !== 'off') {
+      const ok = await telegram.inviaMessaggio(conf.token, conf.owner_tg_id, rapportoAttacco.testoRapporto(r, { lingua, link }), { anteprima: false }).catch(() => null);
+      if (ok?.ok) segnaRapporto(id, 'telegram');
+    }
+    const pst = postaStreamer.get(login);
+    if (av.rapportoMail && pst?.confermata && pst.email && posta.attiva()) {
+      const display = streamers.get(login)?.display || login;
+      const codice = posta.codiceDi(login);
+      await posta.invia({
+        a: pst.email, oggetto: rapportoAttacco.oggettoRapporto(r, lingua),
+        testo: rapportoAttacco.testoPianoRapporto(r, { lingua, link, codice }),
+        html: rapportoAttacco.htmlRapporto(r, { lingua, link, display, codice }),
+      }).then(() => segnaRapporto(id, 'mail')).catch((e) => log.warn(`#${login} rapporto dell'attacco via mail:`, e?.message || e));
     }
   }
 

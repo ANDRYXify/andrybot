@@ -41,6 +41,24 @@ questa non è una cosa da ricordarsi: il cancello boccia una riga pubblica senza
 traduzione, una traduzione staccata dalla sua riga, o una che dice numeri e
 comandi diversi da quelli della riga italiana.
 
+## 2026-10-08
+
+- [importante] Lo scudo ha una sezione sua, Scudo e attacchi: ogni attacco ha il suo rapporto, con grafico, livelli, chi c'era e cosa gli è stato fatto, e ti avviso in privato su Telegram o per mail. [vai: attacchi]
+  en: The shield has its own section, Shield & attacks: every attack has its report, with chart, levels, who was there and what was done to them, and I warn you privately on Telegram or by email.
+  es: El escudo tiene su sección, Escudo y ataques: cada ataque tiene su informe, con gráfico, niveles, quién estaba y qué se le hizo, y te aviso en privado por Telegram o por correo.
+  > Gli attacchi, ognuno col suo rapporto
+  > Dopo un attacco restavano centinaia di righe nel registro da rimettere insieme a mano. Ora ogni attacco dice quando è cominciato, quanto è salito, chi c'era e cosa è stato fatto. Se arriva alla soglia che scegli te lo dico in privato, e a fine attacco ti mando il rapporto.
+  en> Every attack with its own report
+  en> After an attack, hundreds of log rows were left to piece together by hand. Now every attack tells when it started, how high it went, who was there and what was done. If it reaches the threshold you pick I tell you privately, and when it ends I send you the report.
+  es> Cada ataque con su informe
+  es> Tras un ataque quedaban cientos de filas en el registro que juntar a mano. Ahora cada ataque dice cuándo empezó, hasta dónde subió, quién estaba y qué se hizo. Si llega al umbral que eliges te lo digo en privado, y al terminar te mando el informe.
+- Il picco di un attacco ripreso più in basso non si abbassa più, le onde lente si chiamano col loro nome, e un raid grande si scrive nel registro anche con l'avviso in chat spento. [vai: attacchi]
+  en: The peak of an attack that resumes lower no longer drops, slow waves are called by their name, and a big raid is written in the log even with the chat notice off.
+  es: El pico de un ataque que se reanuda más abajo ya no baja, las olas lentas se llaman por su nombre, y una raid grande se anota en el registro incluso con el aviso en el chat apagado.
+- Il registro delle donazioni scaricato in CSV non fa più partire una formula scritta da chi dona, come succedeva aprendolo in un foglio di calcolo. [vai: donazioni]
+  en: The donations log downloaded as CSV no longer runs a formula written by a donor, as happened when opening it in a spreadsheet.
+  es: El registro de donaciones descargado en CSV ya no ejecuta una fórmula escrita por quien dona, como pasaba al abrirlo en una hoja de cálculo.
+
 ## 2026-10-07
 
 - [importante] Dove arrivano anche le tue dirette, quelle di amici e community arrivano in sordina: senza suono, senza locandina e mai fissate su Telegram, senza ruolo chiamato su Discord. [vai: telegram]

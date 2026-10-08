@@ -52,6 +52,10 @@ import { elenco as elencoComandi, normalizza as normalizzaComandi, unisci as uni
 import { erroriScudo, statoEsecutore, azioniFallite, riprovaFallite, bonifica as bonificaIncidente, conNome, ESENTI_MAX, bloccaDaConsole, taciFollow as taciFollowScudo } from '../features/antibot.js';
 import { statoCensimento } from '../features/punteggio.js';
 import { aperto as incidenteAperto, elenco as elencoIncidenti, uno as unIncidente, sintesi as sintesiIncidente } from '../features/incidenti.js';
+import { rapportoAttacco, csvCoinvolti, almenoSoglia, avvisiDi as avvisiScudoDi, LIVELLI_AVVISO, racconto as raccontoAttacco } from '../features/rapporto-attacco.js';
+import { rigaCsv } from '../features/csv.js';
+import { registroDi as registroDiAttacco } from '../features/antibot.js';
+import { statoVivo } from '../db.js';
 import { rapporto as rapportoBonifica, anteprima as anteprimaBonifica } from '../features/bonifica.js';
 import { stato as statoRete, elenco as elencoRete, dimentica as dimenticaRete } from '../features/rete.js';
 import { statoListaBot, registro as registroAntibot, segnalazioniAperte, risolviSegnalazione, sintesiRegistro, registra as registraAntibot, nomeBot, valutaAccount, assetto as assettoAntibot, sogliaRaffica, codaBan } from '../features/antibot.js';
@@ -4052,6 +4056,8 @@ STREAMER (${su.toUpperCase()}) e non c'entra con l'automazione del marketing.
       stripeAttivo: config.stripe.attivo,
       // i rapporti delle dirette non ancora aperti, per il segno sulla scheda
       rapportiNuovi: rapporti.nuovi(user.login),
+      // gli attacchi nuovi arrivati alla soglia: il puntino su «Gli attacchi»
+      attacchiNuovi: isOwner(req) ? attacchiNuovi(user.login.toLowerCase()) : 0,
       tgDaDecidere: tgScudo.quanteDaDecidere(user.login),
       postaDisponibile: posta.attiva(),
       // GLI INVITI, uno per volta. Chi li deve vedere si decide QUI e non nel
@@ -4141,6 +4147,95 @@ STREAMER (${su.toUpperCase()}) e non c'entra con l'automazione del marketing.
     const giudizi = Array.isArray(req.body?.giudizi) ? req.body.giudizi : ['certo'];
     const esito = await bonificaIncidente(req.params.id, giudizi, req.body?.conferma, { canale: login });
     res.status(esito.ok ? 200 : (esito.codice === 'non-trovato' ? 404 : 409)).json(esito);
+  });
+
+  // ── GLI ATTACCHI: la scheda sua (docs/INCIDENTI.md, «Il rapporto dell'attacco»)
+  // L'elenco, il rapporto intero di uno, i coinvolti da scaricare, «visti», e
+  // dove avvisare. Solo il proprietario, come tutto lo scudo.
+  const ATTACCHI_VISTI = 'attacchi-visti';
+  const attacchiVisti = (login) => Number(statoVivo.leggi(login, ATTACCHI_VISTI)?.ts) || 0;
+  // Il puntino sulla scheda: gli attacchi arrivati alla soglia dello
+  // streamer, nati dopo l'ultima volta che ha guardato. Quelli piu' piccoli
+  // si vedono entrando, ma non bussano.
+  const attacchiNuovi = (login) => {
+    const soglia = avvisiScudoDi(_abCfg(login)).soglia;
+    const visti = attacchiVisti(login);
+    return elencoIncidenti(login, { limite: 200 }).filter((i) => i.aperto > visti && almenoSoglia(i.picco?.livello, soglia)).length;
+  };
+
+  app.get('/api/antibot/attacchi', requireOwner, (req, res) => {
+    const login = currentUser(req).login.toLowerCase();
+    const cfg = _abCfg(login);
+    const c = tgConf.get(login);
+    const tg = tgScudo.conti(login);
+    res.json({
+      elenco: elencoIncidenti(login, { limite: 200 }),
+      visti: attacchiVisti(login),
+      avvisi: avvisiScudoDi(cfg),
+      livelli: LIVELLI_AVVISO,
+      // dove possono arrivare gli avvisi, per dire nel pannello cosa manca
+      dove: { telegram: !!(c?.token && c.owner_tg_id && (c.dm_modo || 'me') !== 'off'), mail: !!mailDi(login) },
+      attivo: !!cfg.attivo,
+      altri: {
+        telegram: { collegato: !!(c?.token && c.chat_id), conti: tg, daDecidere: tgScudo.quanteDaDecidere(login) },
+      },
+    });
+  });
+
+  // La veglia del pannello aperto: un attacco che arriva mentre lo streamer
+  // e' su un'altra scheda accende il puntino senza ricaricare, e la scheda
+  // degli attacchi si rinfresca da sola finche' l'attacco e' in corso.
+  app.get('/api/antibot/veglia', requireOwner, (req, res) => {
+    const login = currentUser(req).login.toLowerCase();
+    const i = incidenteAperto(login);
+    res.json({
+      nuovi: attacchiNuovi(login),
+      inCorso: i ? { id: i.id, aperto: i.aperto, livello: assettoAntibot(login).livello } : null,
+    });
+  });
+
+  app.get('/api/antibot/attacchi/:id', requireOwner, (req, res) => {
+    const login = currentUser(req).login.toLowerCase();
+    const i = unIncidente(req.params.id);
+    if (!i || i.canale !== login) return res.status(404).json({ errore: 'non trovato' });
+    const giudizi = String(req.query.giudizi || 'certo').split(',').filter(Boolean);
+    const r = rapportoAttacco(i, { registro: registroDiAttacco(login, i.id) });
+    res.json({
+      rapporto: r,
+      // il racconto nelle tre lingue: le frasi sono quelle di Telegram e della
+      // mail, e il pannello sceglie la sua
+      racconto: { it: raccontoAttacco(r, 'it'), en: raccontoAttacco(r, 'en'), es: raccontoAttacco(r, 'es') },
+      bonifica: { rapporto: rapportoBonifica(i.id), anteprima: anteprimaBonifica(i.id, giudizi) },
+      inviato: i.rapporto || {},
+    });
+  });
+
+  app.get('/api/antibot/attacchi/:id/coinvolti.csv', requireOwner, (req, res) => {
+    const login = currentUser(req).login.toLowerCase();
+    const i = unIncidente(req.params.id);
+    if (!i || i.canale !== login) return res.status(404).json({ errore: 'non trovato' });
+    const r = rapportoAttacco(i, { registro: registroDiAttacco(login, i.id) });
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${String(i.id).replace(/[^A-Za-z0-9-]/g, '')}-coinvolti.csv"`);
+    res.send('\uFEFF' + csvCoinvolti(r));
+  });
+
+  app.post('/api/antibot/attacchi/visti', requireOwner, (req, res) => {
+    const login = currentUser(req).login.toLowerCase();
+    statoVivo.scrivi(login, ATTACCHI_VISTI, { ts: Date.now() });
+    res.json({ ok: true });
+  });
+
+  // Dove e da che livello avvisare: si salva dentro le impostazioni dello
+  // scudo, passando dallo stesso normalizzatore di tutto il resto.
+  app.post('/api/antibot/avvisi', requireOwner, (req, res) => {
+    const login = currentUser(req).login.toLowerCase();
+    const s = streamers.get(login);
+    if (!s) return res.status(404).json({ errore: 'streamer sconosciuto' });
+    const vecchio = s.settings?.antibot || {};
+    const antibot = normalizzaAntibot(vecchio, { avvisiScudo: req.body?.avvisi || {} });
+    streamers.setSettings(login, { ...(s.settings || {}), antibot: { ...vecchio, avvisiScudo: antibot.avvisiScudo } });
+    res.json({ ok: true, avvisi: antibot.avvisiScudo });
   });
 
   app.get('/api/antibot/console', requireOwner, (req, res) => {
@@ -4278,9 +4373,16 @@ STREAMER (${su.toUpperCase()}) e non c'entra con l'automazione del marketing.
     // «Blocca» toglie anche il follow e passa dall'esecutore dello scudo, che lo
     // scrive nel registro e ripiega sul ban se il blocco non si puo' fare. Lo
     // sbannare non punisce nessuno: resta qui.
-    const azione = req.body?.azione === 'sbanna' ? 'sbanna' : 'blocca';
+    // «Sblocca» disfa un blocco: dal rapporto di un attacco, su chi si e'
+    // rivelato una persona. Il follow non torna da solo: potra' rifarlo lui.
+    const azione = ['sbanna', 'sblocca'].includes(req.body?.azione) ? req.body.azione : 'blocca';
     if (!/^\d+$/.test(userId)) return res.status(400).json({ errore: 'Utente non valido.' });
     if (!moderazioneOk(login)) return res.status(403).json({ errore: 'Servono i permessi di moderazione.', codice: 'permessi' });
+    if (azione === 'sblocca') {
+      const r = await helix.sbloccaUtente(login, userId).catch(() => null);
+      registraAntibot(login, { login: nome, userId, azione: 'sblocca', motivo: 'dalla console', esito: r?.ok ? 'fatto' : 'fallito' });
+      return res.json({ ok: !!r?.ok, motivo: r?.motivo || '' });
+    }
     if (azione === 'sbanna') {
       const r = await helix.unbanUser(login, userId).catch(() => null);
       registraAntibot(login, { login: nome, userId, azione: 'sbanna', motivo: 'dalla console', esito: r?.ok ? 'fatto' : 'fallito' });
@@ -4566,13 +4668,14 @@ STREAMER (${su.toUpperCase()}) e non c'entra con l'automazione del marketing.
   // il registro completo, da aprire in un foglio di calcolo: e' dello streamer, e solo suo
   app.get('/api/donazioni/esporta.csv', requireOwner, wrap(async (req, res) => {
     const login = currentUser(req).login;
-    const cella = (v) => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
-    const righe = [['quando', 'fonte', 'nome', 'importo', 'valuta', 'messaggio', 'rimborsata'].join(';')];
+    // nome e messaggio li scrive chi dona: le celle si disinnescano (csv.js),
+    // sennò un messaggio «=HYPERLINK(...)» diventava una formula aprendo il file
+    const righe = [rigaCsv(['quando', 'fonte', 'nome', 'importo', 'valuta', 'messaggio', 'rimborsata'], ';')];
     let prima = 0;
     for (;;) {
       const p = registroDonazioni.elenco(login, { prima, n: 200 });
       if (!p.length) break;
-      for (const r of p) righe.push([new Date(r.pagata_at).toISOString(), r.fonte, cella(r.nome), (r.importo / 100).toFixed(2).replace('.', ','), r.valuta, cella(r.messaggio), r.rimborsata_at ? 'si' : 'no'].join(';'));
+      for (const r of p) righe.push(rigaCsv([new Date(r.pagata_at).toISOString(), r.fonte, r.nome, (r.importo / 100).toFixed(2).replace('.', ','), r.valuta, r.messaggio, r.rimborsata_at ? 'si' : 'no'], ';'));
       prima = p[p.length - 1].pagata_at;
       if (righe.length > 20_000) break;
     }

@@ -388,6 +388,7 @@ async function caricaStato() {
   avvisoCosaManca();
   invito();
   invitoRecensione();
+  vegliaAttacchi();
 }
 
 const AVVISI_MANCA = {
@@ -810,6 +811,36 @@ function avvisaDaDecidere() {
     }).catch(() => {});
   }, 60_000);
 }
+let _vegliaAttacchi = 0;
+let _vegliaInCorso = '';
+function _attOccupato() {
+  const a = document.activeElement;
+  if (a && a.closest?.('#scheda-attacchi') && /^(INPUT|SELECT|TEXTAREA)$/.test(a.tagName)) return true;
+  return [...document.querySelectorAll('#att-rapporto input[id^="bon-conferma-"]')].some((i) => i.value.trim());
+}
+function vegliaAttacchi() {
+  if (_vegliaAttacchi || DEMO || stato?.user?.role !== 'proprietario') return;
+  const giro = () => {
+    const passo = _vegliaInCorso && schedaAttiva === 'attacchi' ? 20_000 : 60_000;
+    _vegliaAttacchi = setTimeout(() => {
+      if (document.hidden) { giro(); return; }
+      api('/api/antibot/veglia').then((r) => {
+        const n = Number(r?.nuovi) || 0;
+        const prima = Number(stato?.attacchiNuovi) || 0;
+        const qui = schedaAttiva === 'attacchi';
+        const inCorso = r?.inCorso?.id || '';
+        if (n !== prima) {
+          stato.attacchiNuovi = n;
+          rinfrescaPuntino('attacchi');
+          if (n > prima && !qui) toast(L('Lo scudo è salito: c’è un attacco. Lo segui nella scheda Gli attacchi.', 'The shield went up: there is an attack. Follow it in the Attacks tab.', 'El escudo ha subido: hay un ataque. Síguelo en la pestaña Los ataques.'));
+        }
+        if (qui && (inCorso || _vegliaInCorso || n > prima) && !_attOccupato()) caricaAttacchi();
+        _vegliaInCorso = inCorso;
+      }).catch(() => {}).finally(giro);
+    }, passo);
+  };
+  giro();
+}
 let _avvisatoRapporti = false;
 function avvisaRapporti() {
   if (_avvisatoRapporti || !(stato?.rapportiNuovi > 0) || schedaAttiva === 'dirette' || stato?.user?.role !== 'proprietario') return;
@@ -889,7 +920,7 @@ function statoDemo() {
     identita: 'andryx_demo', identitaDisplay: 'Andryx',
     tier: 'community', stripeAttivo: false,
     linguaChat: L('it', 'en', 'es'),
-    rapportiNuovi: 1, tgDaDecidere: 2, postaDisponibile: true, inviti: [],
+    rapportiNuovi: 1, tgDaDecidere: 2, attacchiNuovi: 1, postaDisponibile: true, inviti: [],
     mieiCanali: _DEMO_CANALI,
     gestisce: { canale: ctx.canale, streamer: ctx.display, nome: ctx.canale },
     indirizzo: 'https://www.twitch.tv/' + ctx.canale,
@@ -1343,6 +1374,11 @@ function apiDemo(percorso, opzioni = {}) {
   if (via.startsWith('/api/streamer/moduli') && metodo !== 'GET' && !via.endsWith('/prova')) return Promise.resolve(_demoModuli(metodo, via, opzioni.body || {}));
   if (via.startsWith('/api/streamer/negozio')) return Promise.resolve(_demoNegozio(metodo, via, opzioni.body));
   if (via === '/api/streamer/telegram/scudo') return Promise.resolve(_demoScudoTg(metodo, opzioni.body));
+  if (metodo === 'GET' && /^\/api\/antibot\/attacchi\/INC-[0-9-]+$/.test(via)) return Promise.resolve(_demoAttacco(via.split('/').pop()));
+  if (via === '/api/antibot/avvisi') {
+    _demoScritture.avvisiScudo = { ..._demoAttacchi().avvisi, ...(_demoScritture.avvisiScudo || {}), ...(opzioni.body?.avvisi || {}) };
+    return Promise.resolve({ ok: true, avvisi: _demoScritture.avvisiScudo });
+  }
   if (via === '/api/streamer/telegram/scudo/decidi' || via === '/api/streamer/telegram/scudo/rifiuta-tutte') return Promise.resolve(_demoDecidiTg(via, opzioni.body));
   if (via === '/api/streamer/telegram/da-decidere') return Promise.resolve({ n: _demoDaDecidere().length, lista: _demoDaDecidere() });
   if (_DEMO_ANTEPRIMA[via]) return _demoAnteprima(_DEMO_ANTEPRIMA[via], opzioni.body);
@@ -1758,6 +1794,67 @@ function _demoProvaFrasi(b) {
   return pool.slice(0, 3).map((f) => _fraseLeggibile(f).replace(/\{([a-z]+)\}/g, (_, k) => String(dati[k] ?? '')));
 }
 
+function _demoAttacchi() {
+  const ora = Date.now();
+  const g = 86_400_000;
+  const ultimo = ora - 2 * g + 3_600_000;
+  return {
+    visti: ora - 3 * g,
+    avvisi: { soglia: 'attacco', telegram: true, mail: false, rapportoTelegram: true, rapportoMail: true, raid: true, ...(_demoScritture.avvisiScudo || {}) },
+    livelli: ['osservo', 'allerta', 'difesa', 'attacco', 'serrata'],
+    dove: { telegram: true, mail: true },
+    attivo: true,
+    altri: { telegram: { collegato: true, conti: { passata: 41, dentro: 6, bocciata: 13, attesa: 1 }, daDecidere: 2 } },
+    elenco: [
+      { id: 'INC-2026-000042', tipo: 'ondata-follow', motivo: '78/100 · 212 follow (soglia 18) · cadenza da macchina', aperto: ultimo, chiuso: ultimo + 31 * 60_000, riaperture: 0, durata: 31 * 60, picco: { livello: 'serrata', ts: ultimo + 4 * 60_000, quanti: 0, punti: 92 }, azioni: {}, coinvolti: 236, per: { certo: 198, sospetto: 26, legittimo: 12 }, taciuti: 214, follow: 241, tolti: 198, raid: 1, righe: 18 },
+      { id: 'INC-2026-000037', tipo: 'coro', motivo: '70/100 · stesso messaggio da 9 account', aperto: ora - 9 * g, chiuso: ora - 9 * g + 7 * 60_000, riaperture: 0, durata: 7 * 60, picco: { livello: 'attacco', ts: ora - 9 * g + 60_000, quanti: 0, punti: 70 }, azioni: {}, coinvolti: 9, per: { certo: 9, sospetto: 0, legittimo: 0 }, taciuti: 0, follow: 0, tolti: 9, raid: 0, righe: 6 },
+      { id: 'INC-2026-000031', tipo: 'onda-lenta', motivo: '41/100 · gocciolamento su dieci minuti', aperto: ora - 16 * g, chiuso: ora - 16 * g + 19 * 60_000, riaperture: 1, durata: 19 * 60, picco: { livello: 'allerta', ts: ora - 16 * g + 60_000, quanti: 0, punti: 41 }, azioni: {}, coinvolti: 14, per: { certo: 0, sospetto: 11, legittimo: 3 }, taciuti: 0, follow: 23, tolti: 0, raid: 0, righe: 7 },
+    ],
+  };
+}
+
+function _demoAttacco(id) {
+  const base = _demoAttacchi().elenco.find((i) => i.id === id) || _demoAttacchi().elenco[0];
+  const a = base.aperto;
+  const minuti = Math.max(1, Math.round(base.durata / 60));
+  const picchi = base.tipo === 'ondata-follow' ? [2, 6, 31, 58, 44, 27, 15, 11, 8, 6, 5, 4, 3, 3, 2, 2, 2, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 0, 1, 0, 0] : base.tipo === 'onda-lenta' ? Array.from({ length: minuti }, (_, i) => (i % 3 === 0 ? 2 : 1)) : Array.from({ length: minuti }, () => 0);
+  const punti = picchi.slice(0, minuti).map((f, i) => ({ ts: a + i * 60_000, follow: f, tolti: base.tipo === 'ondata-follow' ? Math.max(0, Math.round(f * 0.82)) : 0 }));
+  const nomi = ['xxtrexxbot01', 'luna_view4u', 'grizzlyfan_77', 'pixelcrab_02', 'darkmoon_9131', 'nebula_ok', 'mario_sempre', 'giulia_live', 'kappa_ttv_88', 'vortex_51212'];
+  const giudizi = ['certo', 'certo', 'sospetto', 'certo', 'certo', 'sospetto', 'legittimo', 'legittimo', 'certo', 'certo'];
+  const coinvolti = nomi.map((l, i) => ({ login: l, userId: String(800100 + i), giudizio: giudizi[i], punti: giudizi[i] === 'certo' ? 8 : giudizi[i] === 'sospetto' ? 5 : 0, ts: a + (i + 1) * 40_000, fatto: giudizi[i] === 'certo' ? { azione: 'blocca', esito: 'fatto', ts: a + (i + 2) * 40_000 } : null }));
+  const scala = base.tipo === 'ondata-follow'
+    ? [['allerta', 0, 2], ['attacco', 2, 4], ['serrata', 4, 14], ['attacco', 14, 19], ['difesa', 19, 24], ['allerta', 24, 29], ['osservo', 29, 31]]
+    : [[base.picco.livello, 0, minuti]];
+  const r = {
+    id: base.id, canale: 'andryx_demo', tipo: base.tipo, motivo: base.motivo, aperto: a, chiuso: base.chiuso, inCorso: false,
+    durata: base.durata, riaperture: base.riaperture, picco: base.picco,
+    scala: scala.map(([l, da, ai]) => ({ livello: l, da: a + da * 60_000, a: a + ai * 60_000, durata: (ai - da) * 60 })),
+    curva: { passo: 1, punti },
+    numeri: { follow: base.follow, tolti: base.tolti, bloccati: base.tolti, ban: 0, timeout: 0, cancellati: base.tipo === 'coro' ? 9 : 0, trattenuti: base.tipo === 'coro' ? 3 : 0, falliti: base.tipo === 'ondata-follow' ? 2 : 0, aVuoto: 0, taciuti: base.taciuti, coinvolti: base.coinvolti, certo: base.per.certo, sospetto: base.per.sospetto, legittimo: base.per.legittimo, raid: base.raid, righe: base.righe },
+    raid: base.raid ? [{ ts: a + 22 * 60_000, da: 'amica_streamer', quanti: 64 }] : [],
+    coinvolti,
+    timeline: [
+      { ts: a, cosa: `aperto: ${base.motivo}` },
+      { ts: a + 30_000, cosa: 'raffica: 212 follow in 30s (soglia 18) · cadenza da macchina' },
+      { ts: a + 4 * 60_000, cosa: 'assetto: serrata: chat ai soli follower e Shield Mode' },
+      { ts: a + 4 * 60_000 + 5000, cosa: 'i follow non si festeggiano finché dura' },
+      { ts: a + 22 * 60_000, cosa: 'raid da 64: sensibilità del coro abbassata per dieci minuti' },
+      { ts: base.chiuso, cosa: `chiuso: rientro in calma dopo ${base.durata}s` },
+    ].slice(0, base.tipo === 'ondata-follow' ? 6 : 2),
+    avvisato: base.picco.livello,
+  };
+  const frasi = (l) => [
+    l === 'it' ? `${base.tipo === 'ondata-follow' ? 'Ondata di follow' : base.tipo === 'coro' ? 'Lo stesso messaggio da tanti account' : 'Follow a goccia'}: durato ${minuti} minuti.` : l === 'en' ? `${base.tipo === 'ondata-follow' ? 'Follow wave' : base.tipo === 'coro' ? 'The same message from many accounts' : 'Slow follow drip'}: it lasted ${minuti} minutes.` : `${base.tipo === 'ondata-follow' ? 'Oleada de follows' : base.tipo === 'coro' ? 'El mismo mensaje de muchas cuentas' : 'Follows a cuentagotas'}: duró ${minuti} minutos.`,
+    l === 'it' ? `Account coinvolti: ${base.coinvolti} (${base.per.certo} bot certi, ${base.per.sospetto} sospetti, ${base.per.legittimo} persone vere lasciate stare).` : l === 'en' ? `Accounts involved: ${base.coinvolti} (${base.per.certo} certain bots, ${base.per.sospetto} suspects, ${base.per.legittimo} real people left alone).` : `Cuentas implicadas: ${base.coinvolti} (${base.per.certo} bots seguros, ${base.per.sospetto} sospechosas, ${base.per.legittimo} personas reales sin tocar).`,
+  ];
+  return {
+    rapporto: r,
+    racconto: { it: frasi('it'), en: frasi('en'), es: frasi('es') },
+    bonifica: { rapporto: { quanti: base.per }, anteprima: { quanti: base.tipo === 'ondata-follow' ? 31 : 0 } },
+    inviato: base.tipo === 'ondata-follow' ? { telegram: base.chiuso + 5000, mail: base.chiuso + 9000 } : {},
+  };
+}
+
 function _demoGet(via) {
   if (via === '/api/streamer/overlays' && _demoScritture.overlays) return { overlays: _demoScritture.overlays };
   if (via === '/api/streamer/effetti' && _demoScritture.effetti) return { overlayUrl: 'https://socialbot.live/overlay/andryx_demo', effetti: _demoScritture.effetti };
@@ -2126,6 +2223,7 @@ function _demoGet(via) {
         { id: 4, comando: 'festa', tipo: 'disegno', tier: 'tutti', cooldown: 20, volume: 80, durata: 6000, schermo: '', disegno: { nome: 'fuochi', colori: ['#ff5a5a', '#ffd166', '#4cc9f0'], quanti: 'normale', durata: 8, suono: 'tada' } },
       ],
     },
+    '/api/antibot/attacchi': _demoAttacchi(),
     '/api/streamer/rapporti': {
       rapporto: { telegram: true, mail: true },
       posta: { disponibile: true, email: 'andry@esempio.it', confermata: true, inAttesa: false },
@@ -4216,7 +4314,6 @@ function vistaDisabilitato() {
 const FAMIGLIE = [
   { id: 'bot', nome: 'Il bot', parti: ['personalita', 'conoscenza', 'memoria'] },
   { id: 'comandi', nome: 'Comandi', parti: ['moduli', 'ascolto'] },
-  { id: 'moderazione', nome: 'Moderazione', parti: ['regole', 'scudo', 'registro'] },
   { id: 'interazione', nome: 'Giochi', parti: ['giochi', 'sondaggi', 'giveaway', 'penitenze'] },
   { id: 'inonda', nome: 'Regia', parti: ['regia', 'clip', 'musica'] },
   { id: 'discord', nome: 'Discord', parti: ['ruoli', 'dcavvisi', 'dcserver', 'dcentra', 'dcfiltro'] },
@@ -4237,6 +4334,11 @@ const GRUPPI = [
     ['giochi', 'Giochi'],
     ['negozio', 'Negozio'],
     ['statistiche', 'Statistiche'],
+  ] },
+  { id: 'difesa', nome: 'Scudo e attacchi', schede: [
+    ['scudo', 'Lo scudo'],
+    ['attacchi', 'Gli attacchi'],
+    ['registro', 'Registro'],
   ] },
   { id: 'diretta', nome: 'Durante la diretta', schede: [
     ['regia', 'Regia'],
@@ -4289,6 +4391,7 @@ const T_GRUPPO = {
   inizio: ['Stato', 'Status', 'Estado'],
   bot: ['Il tuo bot', 'Your bot', 'Tu bot'],
   pubblico: ['Chat e pubblico', 'Chat & audience', 'Chat y público'],
+  difesa: ['Scudo e attacchi', 'Shield & attacks', 'Escudo y ataques'],
   diretta: ['Durante la diretta', 'During the live', 'Durante el directo'],
   scena: ['Scena & overlay', 'Scene & overlay', 'Escena y overlay'],
   vetrina: ['La tua vetrina', 'Your showcase', 'Tu escaparate'],
@@ -4316,6 +4419,7 @@ const T_SCHEDA = {
   regole: ['Moderazione', 'Moderation', 'Moderación'],
   scudo: ['Scudo anti-bot', 'Anti-bot shield', 'Escudo anti-bot'],
   registro: ['Registro dello scudo', 'Shield log', 'Registro del escudo'],
+  attacchi: ['Gli attacchi', 'The attacks', 'Los ataques'],
   dcavvisi: ['Avvisi su Discord', 'Discord alerts', 'Avisos en Discord'],
   dcserver: ['Il server Discord', 'Your Discord server', 'Tu servidor de Discord'],
   dcentra: ['Chi entra nel server', 'Who joins the server', 'Quién entra al servidor'],
@@ -4376,6 +4480,8 @@ const ICONA = {
   moduli:      _ico('<rect x="3" y="4" width="18" height="16" rx="2.2"/><path d="M7.5 9.5 10.5 12l-3 2.5"/><path d="M13 15h4"/>'),
   regole:      _ico('<path d="M12 3.2 19 6v5c0 4.8-3.4 7.8-7 8.8-3.6-1-7-4-7-8.8V6z"/>'),
   scudo:       _ico('<path d="M12 3.2 19 6v5c0 4.8-3.4 7.8-7 8.8-3.6-1-7-4-7-8.8V6z"/><path d="m9 12 2 2 4-4"/>'),
+  attacchi:    _ico('<path d="M12 3.2 19 6v5c0 4.8-3.4 7.8-7 8.8-3.6-1-7-4-7-8.8V6z"/><path d="m12.6 7.5-2.8 4.6h2.6l-1 4.4 3-5h-2.6z"/>'),
+  registro:    _ico('<rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3h6v1"/><path d="M9 10h6"/><path d="M9 14h6"/><path d="M9 18h3"/>'),
   giochi:      _ico('<rect x="2" y="7.5" width="20" height="9" rx="4.5"/><path d="M7 11v3"/><path d="M5.5 12.5h3"/><circle cx="16" cy="11.5" r=".9" fill="currentColor" stroke="none"/><circle cx="18" cy="13.5" r=".9" fill="currentColor" stroke="none"/>'),
   negozio:     _ico('<path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/>'),
   effetti:     _ico('<path d="M4 9v6h4l5 4V5L8 9z"/><path d="M17 9.5a4 4 0 0 1 0 5"/>'),
@@ -4415,7 +4521,8 @@ const DESC = {
   moduli: ['Crea comandi, automazioni e contatori per la tua chat.', 'Create commands, automations and counters for your chat.', 'Crea comandos, automatizaciones y contadores para tu chat.'],
   regole: ['I filtri sui messaggi: parole vietate e antispam.', 'Message filters: banned words and anti-spam.', 'Los filtros de los mensajes: palabras prohibidas y antispam.'],
   scudo: ['La difesa dagli attacchi: ondate di follow-bot e hate-raid.', 'Defense against attacks: follow-bot waves and hate-raids.', 'La defensa contra los ataques: oleadas de follow-bots y hate-raids.'],
-  registro: ['Cosa è successo: attacchi, interventi e casi da rivedere.', 'What happened: attacks, actions and cases to review.', 'Qué ha pasado: ataques, acciones y casos por revisar.'],
+  registro: ['Ogni intervento dello scudo, i casi da rivedere e quello rimasto in sospeso.', 'Every shield action, the cases to review and what is left pending.', 'Cada intervención del escudo, los casos por revisar y lo que quedó pendiente.'],
+  attacchi: ['Ogni attacco col suo rapporto, come ti avviso e gli altri scudi.', 'Every attack with its report, how I tell you and the other shields.', 'Cada ataque con su informe, cómo te aviso y los otros escudos.'],
   giochi: ['Mini-giochi, monete e classifiche per la chat.', 'Minigames, coins and leaderboards for chat.', 'Minijuegos, monedas y clasificaciones para el chat.'],
   negozio: ['Cosa si compra con le monete del canale, chi lo compra, cosa c’è da consegnare, e la pagina del negozio.', 'What can be bought with channel coins, who buys it, what there is to deliver, and the shop page.', 'Qué se compra con las monedas del canal, quién lo compra, qué hay que entregar, y la página de la tienda.'],
   effetti: ['Effetti, suoni, GIF e video da lanciare in chat o in overlay — con libreria condivisa.', 'Effects, sounds, GIFs and videos to trigger in chat or overlay — with a shared library.', 'Efectos, sonidos, GIF y vídeos para lanzar en el chat o en el overlay — con biblioteca compartida.'],
@@ -4652,8 +4759,10 @@ const GUIDE = {
     come: [['Per ogni giorno l’ora e cosa fai, un gioco o un titolo; se quel giorno riposi, spunta «riposo».', 'For each day the time and what you do, a game or a title; if you rest that day, tick «day off».', 'Para cada día la hora y qué haces, un juego o un título; si ese día descansas, marca «descanso».', '#sett-giorni'], ['Salvando, i calendari si rimettono in pari da soli: quello di Discord e il Programma di Twitch.', 'Saving brings the calendars in line by themselves: Discord’s and the Twitch Schedule.', 'Al guardar, los calendarios se ponen al día solos: el de Discord y el Programa de Twitch.', '#sett-salva'], ['Spunta dove mandare l’immagine e premi «Manda»: compaiono solo i posti che hai collegato.', 'Tick where to send the image and press «Send»: only the places you connected show up.', 'Marca adónde mandar la imagen y pulsa «Manda»: solo aparecen los sitios que has conectado.', '#sett-dove']] },
   scudo: { serve: ['La difesa dagli attacchi: le ondate di finti follower e gli account-bot che spammano in chat.', 'Defense against attacks: waves of fake followers and bot accounts spamming chat.', 'La defensa contra los ataques: oleadas de seguidores falsos y cuentas-bot que spamean el chat.'],
     come: [['Accendi la protezione: sotto trovi lo stato di adesso.', 'Turn the protection on: below you see how things stand right now.', 'Enciende la protección: debajo ves cómo está ahora.', '#chk-ab-attivo'], ['Scegli quanto presto reagire e cosa fare quando è sicuro.', 'Choose how soon to react and what to do when it is sure.', 'Elige con qué rapidez reaccionar y qué hacer cuando está seguro.', '#sel-ab-modo'], ['Se non ti fidi ancora, accendi la sola osservazione: scrive cosa farebbe e non tocca nessuno.', 'If you do not trust it yet, turn on observe-only: it logs what it would do and touches nobody.', 'Si aún no te fías, enciende solo observar: anota lo que haría y no toca a nadie.', '#chk-ab-avuoto'], ['Le due liste in fondo si salvano da sole.', 'The two lists at the bottom save themselves.', 'Las dos listas de abajo se guardan solas.', '#scudo-add-esenti']] },
+  attacchi: { serve: ['Leggere ogni attacco per intero, ripulire dopo, e scegliere come saperlo quando succede.', 'Read every attack in full, clean up afterwards, and choose how to find out when it happens.', 'Leer cada ataque entero, limpiar después y elegir cómo enterarte cuando pasa.'],
+    come: [['Apri un attacco dall\'elenco: dentro c\'è il rapporto intero, col grafico dei follow e chi c\'era.', 'Open an attack from the list: inside there is the full report, with the follow chart and who was there.', 'Abre un ataque de la lista: dentro está el informe completo, con el gráfico de follows y quién estaba.', '#att-elenco'], ['Scegli da che livello avvisarti e dove: Telegram in privato, la mail, il rapporto a attacco finito.', 'Choose from which level to tell you and where: Telegram privately, email, the report when it is over.', 'Elige desde qué nivel avisarte y dónde: Telegram en privado, el correo, el informe al terminar.', '#att-soglia'], ['In fondo, gli altri scudi: chi entra nel gruppo Telegram e nel server Discord.', 'At the bottom, the other shields: who joins the Telegram group and the Discord server.', 'Abajo, los otros escudos: quién entra en el grupo de Telegram y en el servidor de Discord.', '#att-altri']] },
   registro: { serve: ['Vedere cosa ha fatto lo scudo, decidere tu sui casi dubbi e ripulire dopo un attacco.', 'See what the shield did, decide the doubtful cases yourself and clean up after an attack.', 'Ver qué hizo el escudo, decidir tú los casos dudosos y limpiar después de un ataque.'],
-    come: [['In cima ci sono i numeri: oggi, sette giorni, quanto è rimasto da decidere.', 'At the top there are the numbers: today, seven days, how much is left to decide.', 'Arriba están los números: hoy, siete días, cuánto queda por decidir.', '#reg-numeri'], ['Ogni intervento è scritto qui: cosa, a chi, perché, com\'è andata e quando.', 'Every action is written here: what, to whom, why, how it went and when.', 'Cada acción se escribe aquí: qué, a quién, por qué, cómo fue y cuándo.', '#scudo-registro'], ['Quando c\'è qualcosa da decidere o un attacco da ripulire, qui sopra compaiono le carte che servono.', 'When there is something to decide or an attack to clean up, the cards you need appear above.', 'Cuando hay algo que decidir o un ataque que limpiar, arriba aparecen las fichas necesarias.', '#reg-numeri'], ['La pulizia dei follower passa in rassegna chi ti segue già.', 'The follower cleanup goes through who already follows you.', 'La limpieza de seguidores repasa quién ya te sigue.', '#scudo-scan-btn']] },
+    come: [['In cima ci sono i numeri: oggi, sette giorni, quanto è rimasto da decidere.', 'At the top there are the numbers: today, seven days, how much is left to decide.', 'Arriba están los números: hoy, siete días, cuánto queda por decidir.', '#reg-numeri'], ['Ogni intervento è scritto qui: cosa, a chi, perché, com\'è andata e quando.', 'Every action is written here: what, to whom, why, how it went and when.', 'Cada acción se escribe aquí: qué, a quién, por qué, cómo fue y cuándo.', '#scudo-registro'], ['Quando c\'è qualcosa da decidere o un\'azione rimasta in sospeso, qui sopra compaiono le carte che servono.', 'When there is something to decide or an action left pending, the cards you need appear above.', 'Cuando hay algo que decidir o una acción pendiente, arriba aparecen las fichas necesarias.', '#reg-numeri'], ['La pulizia dei follower passa in rassegna chi ti segue già.', 'The follower cleanup goes through who already follows you.', 'La limpieza de seguidores repasa quién ya te sigue.', '#scudo-scan-btn']] },
 };
 
 const _icoGuida = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1.3.5 2.6 1.5 3.5.8.8 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>';
@@ -4978,7 +5087,9 @@ function gruppoDiScheda(id) {
 const nuovoDi = (id) => (id === 'dirette' && stato?.rapportiNuovi > 0
   ? `<span class="voce-nuovo" role="img" aria-label="${esc(L('rapporti nuovi', 'new reports', 'informes nuevos'))}" title="${esc(L('Rapporti nuovi', 'New reports', 'Informes nuevos'))}"></span>`
   : id === 'telegram' && stato?.tgDaDecidere > 0
-    ? `<span class="voce-nuovo" role="img" aria-label="${esc(L('qualcuno aspetta che decidi', 'someone is waiting for you to decide', 'alguien espera a que decidas'))}" title="${esc(L('Qualcuno chiede di entrare nel gruppo', 'Someone is asking to join the group', 'Alguien pide entrar en el grupo'))}"></span>` : '');
+    ? `<span class="voce-nuovo" role="img" aria-label="${esc(L('qualcuno aspetta che decidi', 'someone is waiting for you to decide', 'alguien espera a que decidas'))}" title="${esc(L('Qualcuno chiede di entrare nel gruppo', 'Someone is asking to join the group', 'Alguien pide entrar en el grupo'))}"></span>`
+    : id === 'attacchi' && stato?.attacchiNuovi > 0
+      ? `<span class="voce-nuovo" role="img" aria-label="${esc(L('attacchi nuovi', 'new attacks', 'ataques nuevos'))}" title="${esc(L('Un attacco nuovo da guardare', 'A new attack to look at', 'Un ataque nuevo que mirar'))}"></span>` : '');
 function rinfrescaPuntino(id) {
   const b = document.querySelector(`#nav-drawer .drawer-voce[data-scheda="${id}"]`);
   if (!b) return;
@@ -5705,6 +5816,7 @@ function vistaPiattaforma() {
     ${pannelloRegole()}
     ${pannelloScudo()}
     ${pannelloRegistro()}
+    ${pannelloAttacchi()}
     ${pannelloGiochi()}
     ${pannelloNegozio()}
     ${pannelloRegia()}
@@ -29463,11 +29575,7 @@ function pannelloRegistro() {
       <div id="scudo-segnalazioni"></div>
     </div>
 
-    <div class="carta" id="reg-carta-incidenti" hidden>
-      <h2>${_hIco(ICO.fulmine)}${L('Gli attacchi', 'The attacks', 'Los ataques')}</h2>
-      <p class="suggerimento">${L('Un attacco per volta, non trecento righe di registro: quando è cominciato, quanto è durato, chi c\'era e cosa ha fatto lo scudo.', 'One attack at a time, not three hundred log lines: when it started, how long it lasted, who was there and what the shield did.', 'Un ataque cada vez, no trescientas líneas de registro: cuándo empezó, cuánto duró, quién estaba y qué hizo el escudo.')}</p>
-      <div id="reg-incidenti"></div>
-    </div>
+    <p class="suggerimento">${L('Gli attacchi, ognuno col suo rapporto, hanno una scheda tutta loro:', 'The attacks, each with its report, have a tab of their own:', 'Los ataques, cada uno con su informe, tienen una pestaña propia:')} <a href="#attacchi" data-scheda="attacchi">${L('Gli attacchi', 'The attacks', 'Los ataques')}</a>.</p>
 
     <div class="carta" id="reg-carta-sospese" hidden>
       <h2>${_hIco(ICO.attesa)}${L('Rimaste in sospeso', 'Left pending', 'Quedaron pendientes')}</h2>
@@ -29557,7 +29665,6 @@ async function caricaRegistro() {
     : `<p class="vuoto">${L('Ancora nessun intervento registrato.', 'No actions recorded yet.', 'Aún no hay acciones registradas.')}</p>`;
 
   caricaSospese(inSospeso);
-  caricaIncidenti();
 }
 
 async function caricaSospese(quante) {
@@ -29582,90 +29689,11 @@ async function caricaSospese(quante) {
   } catch (e) { box.innerHTML = ''; }
 }
 
-async function caricaIncidenti() {
-  const carta = document.getElementById('reg-carta-incidenti');
-  const box = document.getElementById('reg-incidenti');
-  if (!carta || !box) return;
-  let elenco = [];
-  try { elenco = (await api('/api/antibot/incidenti')).elenco || []; } catch (e) { elenco = []; }
-  carta.hidden = !elenco.length;
-  if (!elenco.length) return;
-  box.innerHTML = elenco.slice(0, 20).map((i) => `
-    <div class="reg-inc">
-      <button type="button" class="reg-inc-testa" data-incidente="${esc(i.id)}" aria-expanded="false">
-        <span class="reg-inc-quando">${regQuando(i.aperto)}</span>
-        <span class="reg-inc-tipo">${esc(i.tipo || '')}</span>
-        <span class="reg-inc-picco">${esc(i.picco?.livello || '')}</span>
-        <span class="reg-inc-durata">${i.chiuso ? regDurata(i.chiuso - i.aperto) : L('in corso', 'ongoing', 'en curso')}</span>
-      </button>
-      <div class="reg-inc-corpo" id="inc-${esc(i.id)}" hidden></div>
-    </div>`).join('');
-}
-
-async function apriIncidente(id) {
-  const box = document.getElementById('inc-' + id);
-  if (!box) return;
-  box.innerHTML = `${attesaHtml()}`;
-  let d, b;
-  try { d = await api('/api/antibot/incidenti/' + encodeURIComponent(id)); }
-  catch (e) { box.innerHTML = `<p class="vuoto">${L('Non disponibile ora.', 'Not available now.', 'No disponible ahora.')}</p>`; return; }
-  try { b = await api('/api/antibot/incidenti/' + encodeURIComponent(id) + '/bonifica'); } catch (e) { b = null; }
-  const r = b?.rapporto || {};
-  const ant = b?.anteprima || {};
-  const per = r.perGiudizio || {};
-  box.innerHTML = `
-    <div class="reg-inc-conti">
-      ${[['certo', L('certi', 'certain', 'seguros')], ['sospetto', L('sospetti', 'suspect', 'sospechosos')], ['legittimo', L('legittimi', 'legitimate', 'legítimos')]].map(([g, nome]) => `<span class="reg-conto"><b>${Number(per[g] || 0)}</b> ${nome}</span>`).join('')}
-      ${Number(d.incidente?.taciuti) ? `<span class="reg-conto"><b>${Number(d.incidente.taciuti)}</b> ${L('follow senza alert', 'follows without an alert', 'follows sin alerta')}</span>` : ''}
-    </div>
-    ${(d.timeline || []).length ? `<ol class="reg-timeline">${d.timeline.slice(-12).map((t) => `<li><small>${regQuando(t.ts)}</small> ${esc(t.cosa || '')}</li>`).join('')}</ol>` : ''}
-    ${ant.quanti ? `
-      <div class="reg-bonifica">
-        <p>${L('Si possono togliere', 'Can be removed', 'Se pueden quitar')} <b>${ant.quanti}</b> ${L('follower giudicati bot. Le persone vere restano dove sono, e non compaiono nemmeno qui.', 'followers judged to be bots. Real people stay where they are, and do not even show up here.', 'seguidores juzgados como bots. Las personas de verdad se quedan donde están, y ni siquiera aparecen aquí.')}</p>
-        <div class="riga-flessibile">
-          <label class="suggerimento" for="bon-conferma-${esc(id)}">${L('Riscrivi il numero per confermare:', 'Retype the number to confirm:', 'Reescribe el número para confirmar:')}</label>
-          <input id="bon-conferma-${esc(id)}" inputmode="numeric" maxlength="6" style="width:6rem" placeholder="${ant.quanti}">
-          <button type="button" class="btn mini" data-bonifica="${esc(id)}">${L('Togli i follower finti', 'Remove the fake followers', 'Quita los seguidores falsos')}</button>
-        </div>
-      </div>` : `<p class="suggerimento">${L('Niente da ripulire: nessun account giudicato bot con l\'id di Twitch a disposizione.', 'Nothing to clean up: no account judged a bot with a Twitch id available.', 'Nada que limpiar: ninguna cuenta juzgada bot con el id de Twitch disponible.')}</p>`}`;
-}
-
 let _regLegato = false;
 function regWire() {
   if (_regLegato) return;
   _regLegato = true;
   document.addEventListener('click', async (ev) => {
-    const t = ev.target.closest?.('[data-incidente]');
-    if (t) {
-      ev.preventDefault();
-      const id = t.dataset.incidente;
-      const box = document.getElementById('inc-' + id);
-      if (!box) return;
-      const apri = box.hidden;
-      box.hidden = !apri;
-      t.setAttribute('aria-expanded', apri ? 'true' : 'false');
-      if (apri && !box.dataset.pieno) { box.dataset.pieno = '1'; apriIncidente(id); }
-      return;
-    }
-    const bon = ev.target.closest?.('[data-bonifica]');
-    if (bon) {
-      ev.preventDefault();
-      const id = bon.dataset.bonifica;
-      const campo = document.getElementById('bon-conferma-' + id);
-      const conferma = (campo?.value || '').trim();
-      if (!conferma) { toast(L('Riscrivi il numero per confermare.', 'Retype the number to confirm.', 'Reescribe el número para confirmar.')); return; }
-      bon.disabled = true;
-      try {
-        const r = await api('/api/antibot/incidenti/' + encodeURIComponent(id) + '/bonifica', { method: 'POST', body: { giudizi: ['certo'], conferma } });
-        toast(testoBonifica(r));
-        const box = document.getElementById('inc-' + id); if (box) { box.dataset.pieno = ''; apriIncidente(id); box.dataset.pieno = '1'; }
-      } catch (e) {
-        toast(testoBonifica(e.dati || {}), 'errore');
-        if (e.dati?.codice === 'numero-cambiato') { const box = document.getElementById('inc-' + id); if (box) { box.dataset.pieno = ''; apriIncidente(id); box.dataset.pieno = '1'; } }
-      }
-      bon.disabled = false;
-      return;
-    }
     if (ev.target.closest?.('#reg-riprova')) {
       ev.preventDefault();
       try {
@@ -29690,6 +29718,366 @@ function testoBonifica(r) {
   return L('Non riuscito: riprova fra poco.', 'It did not work: try again shortly.', 'No se pudo: inténtalo de nuevo en un momento.');
 }
 
+const ATT_TIPO = {
+  'ondata-follow': ['Ondata di follow', 'Follow wave', 'Oleada de follows'],
+  'onda-lenta': ['Follow a goccia', 'Slow follow drip', 'Follows a cuentagotas'],
+  coro: ['Lo stesso messaggio da tanti account', 'The same message from many accounts', 'El mismo mensaje de muchas cuentas'],
+  misto: ['Attacco misto', 'Mixed attack', 'Ataque mixto'],
+  ignoto: ['Movimento sospetto', 'Suspicious activity', 'Actividad sospechosa'],
+};
+const ATT_GIUDIZIO = {
+  certo: ['bot certo', 'certain bot', 'bot seguro'],
+  sospetto: ['sospetto', 'suspect', 'sospechoso'],
+  legittimo: ['persona vera', 'real person', 'persona real'],
+};
+function attTipo(t) { const x = ATT_TIPO[t] || ATT_TIPO.ignoto; return L(x[0], x[1], x[2]); }
+function attGiudizio(g) { const x = ATT_GIUDIZIO[g] || [g, g, g]; return L(x[0], x[1], x[2]); }
+function attLivello(l) { return `<span class="att-liv att-liv-${esc(l || 'calma')}">${esc(scudoLivello(l || 'calma'))}</span>`; }
+function attOra(ts) {
+  try { return new Date(ts).toLocaleTimeString(localePannello(), { hour: '2-digit', minute: '2-digit' }); } catch (e) { return ''; }
+}
+
+function pannelloAttacchi() {
+  return pannello('attacchi', `
+    <div class="carta" id="att-carta-elenco">
+      <h2>${_hIco(ICO.fulmine)}${L('Gli attacchi', 'The attacks', 'Los ataques')}</h2>
+      <p class="suggerimento">${L('Un attacco è una cosa sola, non trecento righe di registro: quando è cominciato, fin dove è salito, quanti sono arrivati, chi c’era e cosa ha fatto lo scudo. Aprilo per il rapporto intero.', 'An attack is one thing, not three hundred log lines: when it started, how high it went, how many came in, who was there and what the shield did. Open it for the full report.', 'Un ataque es una sola cosa, no trescientas líneas de registro: cuándo empezó, hasta dónde subió, cuántos llegaron, quién estaba y qué hizo el escudo. Ábrelo para el informe completo.')}</p>
+      <div id="att-elenco">${attesaHtml()}</div>
+    </div>
+    <div class="carta" id="att-carta-rapporto" hidden>
+      <div id="att-rapporto"></div>
+    </div>
+    <div class="carta" id="att-carta-avvisi">
+      <h2>${_hIco(ICO.megafono)}${L('Come ti avviso', 'How I tell you', 'Cómo te aviso')}</h2>
+      <div id="att-avvisi" data-non-salva>${attesaHtml()}</div>
+    </div>
+    <div class="carta" id="att-carta-altri">
+      <h2>${_hIco(ICO.scudo)}${L('Gli altri scudi', 'The other shields', 'Los otros escudos')}</h2>
+      <div id="att-altri"></div>
+    </div>`);
+}
+
+let _attDati = null;
+let _attAperto = '';
+let _attCoinvolti = { filtro: 'tutti', cerca: '', quanti: 200 };
+
+async function caricaAttacchi() {
+  attWire();
+  const box = document.getElementById('att-elenco');
+  if (!box) return;
+  let d;
+  try { d = await api('/api/antibot/attacchi'); }
+  catch (e) { box.innerHTML = `<p class="vuoto">${L('Non disponibile ora.', 'Not available now.', 'No disponible ahora.')}</p>`; return; }
+  _attDati = d;
+  attDisegnaElenco();
+  attDisegnaAvvisi();
+  attDisegnaAltri();
+  if (_attAperto) attApri(_attAperto, { senzaScorrere: true });
+  if (stato && stato.attacchiNuovi) {
+    api('/api/antibot/attacchi/visti', { method: 'POST' }).then(() => { stato.attacchiNuovi = 0; rinfrescaPuntino('attacchi'); }).catch(() => {});
+  }
+}
+
+function attDisegnaElenco() {
+  const box = document.getElementById('att-elenco');
+  if (!box || !_attDati) return;
+  const d = _attDati;
+  const elenco = d.elenco || [];
+  const fuoriTwitch = !!stato?.piattaforma && stato.piattaforma !== 'twitch';
+  const nota = fuoriTwitch ? `<p class="suggerimento">${L('Lo scudo contro gli attacchi lavora su Twitch: qui sotto trovi comunque gli altri scudi.', 'The shield against attacks works on Twitch: you still find the other shields below.', 'El escudo contra los ataques trabaja en Twitch: abajo encuentras igualmente los otros escudos.')}</p>` : '';
+  const spento = !d.attivo && !fuoriTwitch ? `<p class="tg-stato guaio">${_bIco(ICO.avviso)}${L('Lo scudo è spento: gli attacchi non si fermano e non si scrivono.', 'The shield is off: attacks are not stopped and not written down.', 'El escudo está apagado: los ataques no se paran ni se anotan.')} <button type="button" class="btn secondario mini" data-att-vai="scudo">${L('Accendilo', 'Turn it on', 'Enciéndelo')}</button></p>` : '';
+  if (!elenco.length) {
+    box.innerHTML = nota + spento + `<p class="vuoto">${L('Nessun attacco, per ora. Quando lo scudo sale, l’attacco compare qui con il suo rapporto.', 'No attacks, for now. When the shield rises, the attack shows up here with its report.', 'Ningún ataque, por ahora. Cuando el escudo sube, el ataque aparece aquí con su informe.')}</p>`;
+    return;
+  }
+  const visti = Number(d.visti) || 0;
+  box.innerHTML = nota + spento + `<div class="att-elenco">${elenco.map((i) => `
+    <button type="button" class="att-riga${i.aperto > visti ? ' nuovo' : ''}${i.chiuso ? '' : ' in-corso'}" data-att="${esc(i.id)}" aria-pressed="${_attAperto === i.id ? 'true' : 'false'}">
+      <span class="att-riga-quando">${regQuando(i.aperto)}</span>
+      <span class="att-riga-tipo">${esc(attTipo(i.tipo))}</span>
+      <span class="att-riga-picco">${attLivello(i.picco?.livello)}</span>
+      <span class="att-riga-conti">${Number(i.follow) ? `${Number(i.follow)} ${L('follow', 'follows', 'follows')} · ${Number(i.tolti) || 0} ${L('tolti', 'removed', 'quitados')}` : `${Number(i.coinvolti) || 0} ${L('coinvolti', 'involved', 'implicados')}`}</span>
+      <span class="att-riga-durata">${i.chiuso ? regDurata(i.chiuso - i.aperto) : `<b>${L('in corso', 'ongoing', 'en curso')}</b>`}</span>
+    </button>`).join('')}</div>`;
+}
+
+function attDisegnaAvvisi() {
+  const box = document.getElementById('att-avvisi');
+  if (!box || !_attDati) return;
+  const a = _attDati.avvisi || {};
+  const dove = _attDati.dove || {};
+  const spunta = (k, testo, attivo = true, manca = '') => `<label class="tg-spunta${attivo ? '' : ' via'}"><input type="checkbox" data-att-av="${k}"${a[k] ? ' checked' : ''}${attivo ? '' : ' disabled'}><span>${testo}${manca ? ` <span class="tenue">(${manca})</span>` : ''}</span></label>`;
+  const noTg = dove.telegram ? '' : L('collega la chat privata nella scheda Telegram', 'connect the private chat in the Telegram tab', 'conecta el chat privado en la pestaña Telegram');
+  const noMail = dove.mail ? '' : L('aggiungi e conferma la mail in «Il tuo account»', 'add and confirm your email in «Your account»', 'añade y confirma el correo en «Tu cuenta»');
+  box.innerHTML = `
+    <p class="suggerimento">${L('Nel sito l’attacco c’è sempre: quando ne arriva uno nuovo dalla soglia in su, sulla voce «Gli attacchi» compare un puntino. Qui scegli cosa ti arriva anche fuori.', 'On the site the attack is always there: when a new one arrives from the threshold up, a dot shows on «The attacks». Here you choose what also reaches you outside.', 'En el sitio el ataque siempre está: cuando llega uno nuevo desde el umbral hacia arriba, aparece un punto en «Los ataques». Aquí eliges qué te llega también fuera.')}</p>
+    <label class="campo" for="att-soglia">${L('Avvisami da questo livello in su', 'Tell me from this level up', 'Avísame desde este nivel hacia arriba')}</label>
+    <select id="att-soglia" class="campo-largo">${(_attDati.livelli || []).map((l) => `<option value="${esc(l)}"${a.soglia === l ? ' selected' : ''}>${esc(scudoLivello(l))}</option>`).join('')}</select>
+    <p class="campo spazio-sopra">${L('Quando lo scudo sale', 'When the shield rises', 'Cuando el escudo sube')}</p>
+    <div class="tg-spunte">
+      ${spunta('telegram', L('In privato su Telegram', 'Privately on Telegram', 'En privado en Telegram'), !!dove.telegram, noTg)}
+      ${spunta('mail', L('Per mail', 'By email', 'Por correo'), !!dove.mail, noMail)}
+      ${spunta('raid', L('Anche per i raid da 50 spettatori in su', 'Also for raids of 50 viewers or more', 'También para los raids de 50 espectadores o más'))}
+    </div>
+    <p class="campo spazio-sopra">${L('A attacco finito, il rapporto', 'When the attack is over, the report', 'Al terminar el ataque, el informe')}</p>
+    <div class="tg-spunte">
+      ${spunta('rapportoTelegram', L('In privato su Telegram', 'Privately on Telegram', 'En privado en Telegram'), !!dove.telegram, noTg)}
+      ${spunta('rapportoMail', L('Per mail', 'By email', 'Por correo'), !!dove.mail, noMail)}
+    </div>
+    <p class="suggerimento spazio-sopra">${L('Una volta per gradino, per attacco: se l’attacco fa su e giù non ti arriva un messaggio a ogni oscillazione. Gli attacchi sotto la soglia restano qui, senza bussare.', 'Once per step, per attack: if the attack goes up and down you do not get a message at every swing. Attacks under the threshold stay here, without knocking.', 'Una vez por escalón, por ataque: si el ataque sube y baja no te llega un mensaje a cada vaivén. Los ataques bajo el umbral se quedan aquí, sin llamar.')}</p>`;
+}
+
+function attDisegnaAltri() {
+  const box = document.getElementById('att-altri');
+  if (!box || !_attDati) return;
+  const tg = _attDati.altri?.telegram || {};
+  const c = tg.conti || {};
+  const entrati = (Number(c.passata) || 0) + (Number(c.dentro) || 0);
+  const fermati = Number(c.bocciata) || 0;
+  const attesa = (Number(c.attesa) || 0) + (Number(tg.daDecidere) || 0);
+  box.innerHTML = `
+    <div class="att-altro">
+      <div>
+        <strong>${L('Telegram: chi entra nel gruppo', 'Telegram: who joins the group', 'Telegram: quién entra en el grupo')}</strong>
+        <span>${tg.collegato
+    ? L(`Ultimi 7 giorni: ${entrati} entrati, ${fermati} fermati, ${attesa} in attesa.`, `Last 7 days: ${entrati} in, ${fermati} stopped, ${attesa} waiting.`, `Últimos 7 días: ${entrati} entraron, ${fermati} frenados, ${attesa} en espera.`)
+    : L('Il gruppo non è collegato.', 'The group is not connected.', 'El grupo no está conectado.')}</span>
+      </div>
+      <button type="button" class="btn secondario mini" data-att-vai="telegram">${L('Vai', 'Go', 'Ir')}</button>
+    </div>
+    <div class="att-altro">
+      <div>
+        <strong>${L('Discord: chi entra nel server', 'Discord: who joins the server', 'Discord: quién entra en el servidor')}</strong>
+        <span>${L('La porta d’ingresso e i ruoli dei nuovi.', 'The front door and the newcomers’ roles.', 'La puerta de entrada y los roles de los nuevos.')}</span>
+      </div>
+      <button type="button" class="btn secondario mini" data-att-vai="dcentra">${L('Vai', 'Go', 'Ir')}</button>
+    </div>
+    <div class="att-altro">
+      <div>
+        <strong>${L('Discord: il filtro dei messaggi', 'Discord: the message filter', 'Discord: el filtro de mensajes')}</strong>
+        <span>${L('Le parole e i link che il server ferma da solo.', 'The words and links the server stops by itself.', 'Las palabras y los enlaces que el servidor frena solo.')}</span>
+      </div>
+      <button type="button" class="btn secondario mini" data-att-vai="dcfiltro">${L('Vai', 'Go', 'Ir')}</button>
+    </div>`;
+}
+
+async function attApri(id, { senzaScorrere = false } = {}) {
+  const carta = document.getElementById('att-carta-rapporto');
+  const box = document.getElementById('att-rapporto');
+  if (!carta || !box) return;
+  const stesso = senzaScorrere && _attAperto === id && !!box._dati;
+  _attAperto = id;
+  if (!stesso) _attCoinvolti = { filtro: 'tutti', cerca: '', quanti: 200 };
+  document.querySelectorAll('[data-att]').forEach((b) => b.setAttribute('aria-pressed', b.dataset.att === id ? 'true' : 'false'));
+  carta.hidden = false;
+  if (!stesso) box.innerHTML = attesaHtml();
+  let d;
+  try { d = await api('/api/antibot/attacchi/' + encodeURIComponent(id)); }
+  catch (e) { box.innerHTML = `<p class="vuoto">${L('Questo attacco non è più disponibile.', 'This attack is no longer available.', 'Este ataque ya no está disponible.')}</p>`; return; }
+  box._dati = d;
+  box.innerHTML = attRapportoHtml(d);
+  attDisegnaCoinvolti();
+  if (!senzaScorrere) { carta.scrollIntoView({ behavior: 'smooth', block: 'start' }); box.querySelector('h2')?.focus({ preventScroll: true }); }
+}
+
+function attRapportoHtml(d) {
+  const r = d.rapporto || {};
+  const n = r.numeri || {};
+  const frasi = (d.racconto || {})[LINGUA] || (d.racconto || {}).it || [];
+  const kpi = (v, t, cl = '') => `<div class="kpi ${cl}"><b>${Number(v) || 0}</b><span>${t}</span></div>`;
+  const inviato = d.inviato || {};
+  const mandato = [inviato.telegram ? L('su Telegram', 'on Telegram', 'en Telegram') : '', inviato.mail ? L('per mail', 'by email', 'por correo') : ''].filter(Boolean).join(L(' e ', ' and ', ' y '));
+  return `
+    <div class="att-testa">
+      <button type="button" class="btn secondario mini" data-att-chiudi>${_bIco(ICO.indietro)}${L('Tutti gli attacchi', 'All attacks', 'Todos los ataques')}</button>
+      <h2 tabindex="-1">${_hIco(ICO.fulmine)}${esc(attTipo(r.tipo))}</h2>
+      <p class="att-quando">${regQuando(r.aperto)} · ${r.inCorso ? `<b>${L('in corso', 'ongoing', 'en curso')}</b>` : regDurata((r.durata || 0) * 1000)} · ${L('fino a', 'up to', 'hasta')} ${attLivello(r.picco?.livello)}${r.riaperture ? ` · ${L('ripreso', 'resumed', 'retomado')} ${r.riaperture} ${r.riaperture === 1 ? L('volta', 'time', 'vez') : L('volte', 'times', 'veces')}` : ''}</p>
+      ${r.motivo ? `<p class="suggerimento">${L('Perché è scattato:', 'Why it triggered:', 'Por qué saltó:')} ${esc(r.motivo)}</p>` : ''}
+    </div>
+    ${frasi.length ? `<ul class="att-racconto">${frasi.map((f) => `<li>${esc(f)}</li>`).join('')}</ul>` : ''}
+    <div class="scudo-kpi att-kpi">
+      ${kpi(n.follow, L('follow arrivati', 'follows in', 'follows recibidos'))}
+      ${kpi(n.tolti, L('tolti', 'removed', 'quitados'), n.tolti ? 'ok' : '')}
+      ${kpi(n.certo, L('bot certi', 'certain bots', 'bots seguros'))}
+      ${kpi(n.sospetto, L('sospetti', 'suspects', 'sospechosos'), n.sospetto ? 'warn' : '')}
+      ${kpi(n.legittimo, L('persone vere salve', 'real people kept', 'personas reales a salvo'))}
+      ${kpi((n.cancellati || 0) + (n.trattenuti || 0), L('messaggi fermati', 'messages stopped', 'mensajes frenados'))}
+      ${kpi(n.taciuti, L('follow senza alert', 'follows without alert', 'follows sin alerta'))}
+      ${n.falliti ? kpi(n.falliti, L('non riuscite', 'failed', 'fallidas'), 'warn') : ''}
+    </div>
+    <h3 class="spazio-sopra">${L('I follow minuto per minuto', 'Follows minute by minute', 'Follows minuto a minuto')}</h3>
+    ${attGraficoHtml(r.curva)}
+    ${(r.scala || []).length ? `<h3 class="spazio-sopra">${L('La scala dello scudo', 'The shield’s ladder', 'La escalera del escudo')}</h3>
+    <ol class="att-scala">${r.scala.map((g) => `<li>${attLivello(g.livello)} <span>${attOra(g.da)}</span> <small>${regDurata((g.durata || 0) * 1000)}</small></li>`).join('')}</ol>` : ''}
+    ${(r.raid || []).length ? `<h3 class="spazio-sopra">${L('Raid arrivati nel frattempo', 'Raids that came in meanwhile', 'Raids recibidos mientras tanto')}</h3>
+    <ul class="att-raid">${r.raid.map((x) => `<li>${attOra(x.ts)} · ${x.da ? '@' + esc(x.da) + ' · ' : ''}${Number(x.quanti) || 0} ${L('spettatori', 'viewers', 'espectadores')}</li>`).join('')}</ul>` : ''}
+    <h3 class="spazio-sopra">${L('Chi c’era', 'Who was there', 'Quién estaba')}</h3>
+    <div id="att-coinvolti"></div>
+    <details class="att-cronaca spazio-sopra">
+      <summary>${L('La cronaca, riga per riga', 'The timeline, line by line', 'La crónica, línea a línea')} (${(r.timeline || []).length})</summary>
+      <ol class="reg-timeline">${(r.timeline || []).map((t) => `<li><small>${regQuando(t.ts)}</small> ${esc(t.cosa || '')}</li>`).join('')}</ol>
+    </details>
+    ${attBonificaHtml(r.id, d.bonifica || {})}
+    <p class="riga-flessibile spazio-sopra">
+      <a class="btn secondario mini" href="/api/antibot/attacchi/${encodeURIComponent(r.id)}/coinvolti.csv" download data-att-csv>${_bIco(ICO.scarica)}${L('Scarica chi c’era (CSV)', 'Download who was there (CSV)', 'Descarga quién estaba (CSV)')}</a>
+      ${mandato ? `<span class="suggerimento">${L('Rapporto mandato', 'Report sent', 'Informe enviado')} ${mandato}.</span>` : ''}
+    </p>`;
+}
+
+function attGraficoHtml(curva) {
+  const punti = (curva && curva.punti) || [];
+  if (!punti.length || !punti.some((p) => p.follow || p.tolti)) return `<p class="vuoto">${L('Nessun follow arrivato durante l’attacco.', 'No follows came in during the attack.', 'No llegó ningún follow durante el ataque.')}</p>`;
+  const L0 = 600, A = 120, n = punti.length;
+  const max = Math.max(1, ...punti.map((p) => Math.max(p.follow, p.tolti)));
+  const largo = L0 / n;
+  const barra = Math.max(1, largo * 0.8);
+  const y = (v) => A - (v / max) * (A - 4);
+  const sbarre = punti.map((p, i) => {
+    const x = i * largo + (largo - barra) / 2;
+    return `${p.follow ? `<rect class="att-g-follow" x="${x.toFixed(1)}" y="${y(p.follow).toFixed(1)}" width="${barra.toFixed(1)}" height="${(A - y(p.follow)).toFixed(1)}"></rect>` : ''}${p.tolti ? `<rect class="att-g-tolti" x="${x.toFixed(1)}" y="${y(p.tolti).toFixed(1)}" width="${barra.toFixed(1)}" height="${(A - y(p.tolti)).toFixed(1)}"></rect>` : ''}`;
+  }).join('');
+  const picco = punti.reduce((a, p) => (p.follow > a.follow ? p : a), punti[0]);
+  const passo = Number(curva.passo) || 1;
+  const descr = L(`Follow arrivati ogni ${passo === 1 ? 'minuto' : passo + ' minuti'}: al massimo ${picco.follow} alle ${attOra(picco.ts)}.`, `Follows per ${passo === 1 ? 'minute' : passo + ' minutes'}: at most ${picco.follow} at ${attOra(picco.ts)}.`, `Follows cada ${passo === 1 ? 'minuto' : passo + ' minutos'}: como mucho ${picco.follow} a las ${attOra(picco.ts)}.`);
+  return `<figure class="att-grafico">
+    <svg viewBox="0 0 ${L0} ${A}" preserveAspectRatio="none" role="img" aria-label="${esc(descr)}"><line class="att-g-base" x1="0" y1="${A}" x2="${L0}" y2="${A}"></line>${sbarre}</svg>
+    <figcaption><span>${attOra(punti[0].ts)}</span><span class="att-g-leggenda"><i class="att-g-follow"></i>${L('arrivati', 'came in', 'recibidos')} <i class="att-g-tolti"></i>${L('tolti', 'removed', 'quitados')} · max ${max}</span><span>${attOra(punti[punti.length - 1].ts)}</span></figcaption>
+  </figure>`;
+}
+
+function attBonificaHtml(id, b) {
+  const q = b.rapporto?.quanti || {};
+  const ant = b.anteprima || {};
+  const conti = `<div class="reg-inc-conti">${[['certo', L('bot certi', 'certain bots', 'bots seguros')], ['sospetto', L('sospetti', 'suspects', 'sospechosos')], ['legittimo', L('persone vere', 'real people', 'personas reales')]].map(([g, nome]) => `<span class="reg-conto"><b>${Number(q[g] || 0)}</b> ${nome}</span>`).join('')}</div>`;
+  return `<h3 class="spazio-sopra">${L('Ripulire dopo l’attacco', 'Cleaning up after the attack', 'Limpiar después del ataque')}</h3>${conti}
+    ${ant.quanti ? `
+      <div class="reg-bonifica">
+        <p>${L('Si possono togliere', 'Can be removed', 'Se pueden quitar')} <b>${ant.quanti}</b> ${L('follower giudicati bot. Le persone vere restano dove sono, e non compaiono nemmeno qui.', 'followers judged to be bots. Real people stay where they are, and do not even show up here.', 'seguidores juzgados como bots. Las personas de verdad se quedan donde están, y ni siquiera aparecen aquí.')}</p>
+        <div class="riga-flessibile">
+          <label class="suggerimento" for="bon-conferma-${esc(id)}">${L('Riscrivi il numero per confermare:', 'Retype the number to confirm:', 'Reescribe el número para confirmar:')}</label>
+          <input id="bon-conferma-${esc(id)}" inputmode="numeric" maxlength="6" style="width:6rem" placeholder="${ant.quanti}" data-non-salva>
+          <button type="button" class="btn mini" data-bonifica="${esc(id)}">${L('Togli i follower finti', 'Remove the fake followers', 'Quita los seguidores falsos')}</button>
+        </div>
+      </div>` : `<p class="suggerimento">${L('Niente da ripulire: nessun account giudicato bot con l\'id di Twitch a disposizione.', 'Nothing to clean up: no account judged a bot with a Twitch id available.', 'Nada que limpiar: ninguna cuenta juzgada bot con el id de Twitch disponible.')}</p>`}`;
+}
+
+function attDisegnaCoinvolti() {
+  const box = document.getElementById('att-coinvolti');
+  const d = document.getElementById('att-rapporto')?._dati;
+  if (!box || !d) return;
+  const tutti = d.rapporto?.coinvolti || [];
+  if (!tutti.length) { box.innerHTML = `<p class="vuoto">${L('Nessun account giudicato in questo attacco.', 'No account was judged in this attack.', 'Ninguna cuenta juzgada en este ataque.')}</p>`; return; }
+  const f = _attCoinvolti;
+  const conti = { tutti: tutti.length, certo: 0, sospetto: 0, legittimo: 0 };
+  tutti.forEach((c) => { if (conti[c.giudizio] !== undefined) conti[c.giudizio]++; });
+  const cerca = f.cerca.trim().toLowerCase();
+  const visti = tutti.filter((c) => (f.filtro === 'tutti' || c.giudizio === f.filtro) && (!cerca || c.login.includes(cerca)));
+  const filtri = [['tutti', L('tutti', 'all', 'todos')], ['certo', L('bot certi', 'certain bots', 'bots seguros')], ['sospetto', L('sospetti', 'suspects', 'sospechosos')], ['legittimo', L('persone vere', 'real people', 'personas reales')]];
+  const fatto = (c) => (c.fatto ? `${esc(scudoAzioneTesto(c.fatto.azione))} ${scudoEsito(c.fatto.esito)}` : `<span class="tenue">${L('nessuna azione', 'no action', 'ninguna acción')}</span>`);
+  const azioni = (c) => {
+    const a = [];
+    if (c.userId && c.fatto?.azione === 'blocca' && c.fatto.esito === 'fatto') a.push(`<button type="button" class="btn secondario mini" data-att-azione="sblocca" data-login="${esc(c.login)}" data-uid="${esc(c.userId)}">${L('Sblocca', 'Unblock', 'Desbloquear')}</button>`);
+    if (c.userId && c.fatto?.azione === 'ban' && c.fatto.esito === 'fatto') a.push(`<button type="button" class="btn secondario mini" data-att-azione="sbanna" data-login="${esc(c.login)}" data-uid="${esc(c.userId)}">${L('Sbanna', 'Unban', 'Desbanear')}</button>`);
+    if (c.giudizio !== 'legittimo') a.push(`<button type="button" class="btn secondario mini" data-att-azione="esente" data-login="${esc(c.login)}">${L('È a posto', 'They are fine', 'Está bien')}</button>`);
+    return a.join('');
+  };
+  box.innerHTML = `
+    <div class="riga-flessibile att-filtri" data-non-salva>
+      ${filtri.map(([k, t]) => `<button type="button" class="btn secondario mini${f.filtro === k ? ' attivo' : ''}" data-att-filtro="${k}" aria-pressed="${f.filtro === k ? 'true' : 'false'}">${t} (${conti[k]})</button>`).join('')}
+      <input type="search" id="att-cerca" class="campo-largo" placeholder="${esc(L('cerca un nome', 'search a name', 'busca un nombre'))}" aria-label="${esc(L('cerca un nome fra chi c’era', 'search a name among who was there', 'busca un nombre entre quienes estaban'))}" value="${esc(f.cerca)}">
+    </div>
+    ${visti.length ? `<div class="att-coinvolti">${visti.slice(0, f.quanti).map((c) => `
+      <div class="att-chi">
+        <span class="att-chi-nome">@${esc(c.login)}</span>
+        <span class="att-giudizio att-g-${esc(c.giudizio)}">${esc(attGiudizio(c.giudizio))}</span>
+        <span class="att-chi-fatto">${fatto(c)}</span>
+        <small>${c.ts ? attOra(c.ts) : ''}</small>
+        <span class="att-chi-azioni">${azioni(c)}</span>
+      </div>`).join('')}</div>
+    ${visti.length > f.quanti ? `<p><button type="button" class="btn secondario mini" data-att-altri>${L(`Mostra altri (${visti.length - f.quanti})`, `Show more (${visti.length - f.quanti})`, `Mostrar más (${visti.length - f.quanti})`)}</button></p>` : ''}`
+    : `<p class="vuoto">${L('Nessuno corrisponde.', 'Nobody matches.', 'Nadie coincide.')}</p>`}`;
+}
+
+let _attLegato = false;
+function attWire() {
+  if (_attLegato) return;
+  _attLegato = true;
+  document.addEventListener('click', async (ev) => {
+    if (!ev.target.closest?.('#scheda-attacchi')) return;
+    if (DEMO && ev.target.closest('[data-att-csv]')) { ev.preventDefault(); toast(L('Nella prova non si scarica: accedi per farlo davvero.', 'In the demo there is no download: log in to do it for real.', 'En la demo no se descarga: inicia sesión para hacerlo de verdad.')); return; }
+    const riga = ev.target.closest('[data-att]');
+    if (riga) { ev.preventDefault(); attApri(riga.dataset.att); return; }
+    if (ev.target.closest('[data-att-chiudi]')) {
+      ev.preventDefault();
+      _attAperto = '';
+      const carta = document.getElementById('att-carta-rapporto');
+      if (carta) carta.hidden = true;
+      document.querySelectorAll('[data-att]').forEach((b) => b.setAttribute('aria-pressed', 'false'));
+      document.getElementById('att-carta-elenco')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+    const vai = ev.target.closest('[data-att-vai]');
+    if (vai) { ev.preventDefault(); vaiAScheda(vai.dataset.attVai); return; }
+    const fl = ev.target.closest('[data-att-filtro]');
+    if (fl) { _attCoinvolti.filtro = fl.dataset.attFiltro; _attCoinvolti.quanti = 200; attDisegnaCoinvolti(); return; }
+    if (ev.target.closest('[data-att-altri]')) { _attCoinvolti.quanti += 200; attDisegnaCoinvolti(); return; }
+    const az = ev.target.closest('[data-att-azione]');
+    if (az) {
+      ev.preventDefault();
+      const azione = az.dataset.attAzione;
+      az.disabled = true;
+      try {
+        if (azione === 'esente') {
+          await api('/api/antibot/lista', { method: 'POST', body: { lista: 'esenti', azione: 'aggiungi', nome: az.dataset.login } });
+          toast(L(`@${az.dataset.login} è a posto: lo scudo non lo toccherà più.`, `@${az.dataset.login} is fine: the shield will not touch them again.`, `@${az.dataset.login} está bien: el escudo ya no lo tocará.`));
+        } else {
+          const r = await api('/api/antibot/azione', { method: 'POST', body: { azione, userId: az.dataset.uid, login: az.dataset.login } });
+          if (r.ok) toast(azione === 'sblocca' ? L(`@${az.dataset.login} sbloccato: può tornare a seguirti.`, `@${az.dataset.login} unblocked: they can follow you again.`, `@${az.dataset.login} desbloqueado: puede volver a seguirte.`) : L(`@${az.dataset.login} sbannato.`, `@${az.dataset.login} unbanned.`, `@${az.dataset.login} desbaneado.`));
+          else toast(r.motivo === 'permesso mancante' ? L('Manca il permesso su Twitch: ricollega il canale.', 'The Twitch permission is missing: reconnect the channel.', 'Falta el permiso en Twitch: vuelve a conectar el canal.') : L('Non riuscito: riprova fra poco.', 'It did not work: try again shortly.', 'No se pudo: inténtalo de nuevo en un momento.'), 'errore');
+        }
+        if (_attAperto) attApri(_attAperto, { senzaScorrere: true });
+      } catch (e) { toast(e.message || L('Non riuscito', 'Failed', 'Falló'), 'errore'); az.disabled = false; }
+      return;
+    }
+    const bon = ev.target.closest('[data-bonifica]');
+    if (bon) {
+      ev.preventDefault();
+      const id = bon.dataset.bonifica;
+      const conferma = (document.getElementById('bon-conferma-' + id)?.value || '').trim();
+      if (!conferma) { toast(L('Riscrivi il numero per confermare.', 'Retype the number to confirm.', 'Reescribe el número para confirmar.')); return; }
+      bon.disabled = true;
+      try {
+        const r = await api('/api/antibot/incidenti/' + encodeURIComponent(id) + '/bonifica', { method: 'POST', body: { giudizi: ['certo'], conferma } });
+        toast(testoBonifica(r));
+      } catch (e) { toast(testoBonifica(e.dati || {}), 'errore'); }
+      attApri(id, { senzaScorrere: true });
+    }
+  });
+  document.addEventListener('input', (ev) => {
+    if (ev.target.id !== 'att-cerca') return;
+    _attCoinvolti.cerca = ev.target.value;
+    _attCoinvolti.quanti = 200;
+    clearTimeout(attWire._t);
+    attWire._t = setTimeout(() => {
+      attDisegnaCoinvolti();
+      const c = document.getElementById('att-cerca');
+      if (c) { c.focus(); c.setSelectionRange(c.value.length, c.value.length); }
+    }, 200);
+  });
+  document.addEventListener('change', (ev) => {
+    if (!ev.target.closest?.('#att-avvisi')) return;
+    const avvisi = {};
+    const sel = document.getElementById('att-soglia');
+    if (sel) avvisi.soglia = sel.value;
+    document.querySelectorAll('#att-avvisi [data-att-av]').forEach((i) => { if (!i.disabled) avvisi[i.dataset.attAv] = i.checked; });
+    conErrore(async () => {
+      const r = await api('/api/antibot/avvisi', { method: 'POST', body: { avvisi } });
+      if (_attDati) _attDati.avvisi = r.avvisi;
+      toast(L('Salvato ✓', 'Saved ✓', 'Guardado ✓'));
+    });
+  });
+}
+
 function testoListaPiena(n) {
   return L(`La lista è piena (${n} nomi): togline qualcuno, poi aggiungi.`, `The list is full (${n} names): remove someone, then add.`, `La lista está llena (${n} nombres): quita a alguien y luego añade.`);
 }
@@ -29697,6 +30085,7 @@ function scudoAzioneTesto(a) {
   return {
     ban: L('Bannato', 'Banned', 'Baneado'),
     sbanna: L('Sbannato', 'Unbanned', 'Desbaneado'),
+    sblocca: L('Sbloccato', 'Unblocked', 'Desbloqueado'),
     timeout: L('Timeout', 'Timeout', 'Timeout'),
     blocca: L('Bloccato', 'Blocked', 'Bloqueado'),
     cancella: L('Messaggio tolto', 'Message removed', 'Mensaje quitado'),
@@ -29826,7 +30215,7 @@ async function caricaScudo() {
       ${coda ? `<div class="kpi warn"><b>${coda}</b><span>${L('in fila', 'queued', 'en cola')}</span></div>` : ''}
     </div>
     ${s.aVuoto ? `<p class="suggerimento spazio-sopra"><span class="badge giallo">${L('sola osservazione', 'observe only', 'solo observar')}</span> ${L('lo scudo scrive cosa farebbe e non tocca nessuno.', 'the shield logs what it would do and touches nobody.', 'el escudo anota lo que haría y no toca a nadie.')}</p>` : ''}
-    ${s.incidente ? `<p class="suggerimento spazio-sopra">${L('Attacco in corso da', 'Attack ongoing since', 'Ataque en curso desde')} ${regQuando(s.incidente.aperto)}. <a href="#registro" data-scheda="registro">${L('Guarda nel registro', 'See it in the log', 'Míralo en el registro')}</a></p>` : ''}
+    ${s.incidente ? `<p class="suggerimento spazio-sopra">${L('Attacco in corso da', 'Attack ongoing since', 'Ataque en curso desde')} ${regQuando(s.incidente.aperto)}. <a href="#attacchi" data-scheda="attacchi">${L('Segui l’attacco', 'Follow the attack', 'Sigue el ataque')}</a></p>` : ''}
     ${s.followFermi ? `<p class="suggerimento">${L('Gli alert dei follow sono fermi finché dura.', 'Follow alerts are paused while it lasts.', 'Las alertas de follows están paradas mientras dure.')}${Number(s.incidente?.taciuti) ? ` ${L('Follow arrivati senza festa:', 'Follows that came in without a celebration:', 'Follows llegados sin celebración:')} <b>${Number(s.incidente.taciuti)}</b>.` : ''}</p>` : ''}
     ${!s.moderazioneOk ? `<p class="suggerimento spazio-sopra">${L('Per bannare davvero servono i permessi di moderazione.', 'To actually ban, moderation permissions are needed.', 'Para banear de verdad hacen falta permisos de moderación.')} <a class="btn secondario mini" href="/auth/permessi">${L('Concedi i permessi', 'Grant permissions', 'Concede los permisos')}</a></p>` : ''}`;
 
@@ -32179,6 +32568,7 @@ function caricaDatiScheda(id) {
   modSincronizza();
   if (id === 'scudo') caricaScudo();
   if (id === 'registro') caricaRegistro();
+  if (id === 'attacchi') caricaAttacchi();
   if (id === 'sottoscrizione') caricaSottoscrizione();
   if (id === 'dirette') caricaDirette();
   if (id === 'admin' && stato.isAdmin) { caricaTabellaAdmin(); caricaSalute(); caricaLicenza(); caricaBackup(); caricaRecensioniAdmin(); caricaAnima(); caricaLLM(); caricaVita(); caricaEcosistema(); }

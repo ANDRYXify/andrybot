@@ -21,6 +21,8 @@
 // Sono funzioni pure: prendono il vecchio e il nuovo, ritornano l'oggetto
 // completo. Così la regola si può provare senza accendere un server.
 
+import { LIVELLI } from '../features/livelli.js';
+
 const AZIONI = ['ban', 'timeout', 'segnala'];
 const LIVELLI_LINK = ['tutti', 'sub', 'vip', 'mod'];
 const CHAT_AZIONI = ['elimina', 'segnala'];
@@ -63,6 +65,23 @@ export function normalizzaAntispam(vecchio = {}, arrivato = {}) {
   };
 }
 
+// GLI AVVISI DELLO SCUDO allo streamer (docs/INCIDENTI.md, «Gli avvisi»): da
+// che livello, e dove. Telegram in privato si', la mail per il rapporto, che si
+// legge con calma. «Calma» non e' una soglia: vorrebbe dire avvisare sempre.
+export const SOGLIA_DI_SERIE = 'attacco';
+export const LIVELLI_AVVISO = LIVELLI.filter((l) => l !== 'calma');
+export const AVVISI_DI_SERIE = Object.freeze({ soglia: SOGLIA_DI_SERIE, telegram: true, mail: false, rapportoTelegram: true, rapportoMail: true, raid: true });
+
+export function avvisiDi(cfg = {}) {
+  const a = cfg && typeof cfg.avvisiScudo === 'object' && cfg.avvisiScudo ? cfg.avvisiScudo : {};
+  const si = (k) => (a[k] === undefined ? AVVISI_DI_SERIE[k] : a[k] === true);
+  return {
+    soglia: LIVELLI_AVVISO.includes(a.soglia) ? a.soglia : SOGLIA_DI_SERIE,
+    telegram: si('telegram'), mail: si('mail'),
+    rapportoTelegram: si('rapportoTelegram'), rapportoMail: si('rapportoMail'), raid: si('raid'),
+  };
+}
+
 export function normalizzaAntibot(vecchio = {}, arrivato = {}) {
   const a = { ...(vecchio || {}), ...(arrivato || {}) };
   return {
@@ -92,5 +111,7 @@ export function normalizzaAntibot(vecchio = {}, arrivato = {}) {
     aVuoto: a.aVuoto === true,
     modo: ['prudente', 'bilanciata', 'aggressiva'].includes(a.modo) ? a.modo : 'bilanciata',
     presenze: a.presenze !== false,
+    // un oggetto arrivato a meta' si completa con quello che c'era
+    avvisiScudo: avvisiDi({ avvisiScudo: { ...(vecchio?.avvisiScudo || {}), ...(arrivato?.avvisiScudo || {}) } }),
   };
 }

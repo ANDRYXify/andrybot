@@ -5,15 +5,15 @@
 
 export default {
   slug: 'moderazione',
-  schede: ['regole', 'scudo', 'registro'],
+  schede: ['regole', 'scudo', 'attacchi', 'registro'],
   titolo: 'Manuale della moderazione: antispam e scudo anti-bot | SocialBot',
   h1: 'Manuale della moderazione: antispam e scudo anti-bot',
-  desc: 'Parole vietate, antispam con le soglie vere, lo scudo anti-bot con i suoi sei livelli e il registro: cosa fa ogni controllo, di base e limiti.',
-  aggiornata: '2026-10-04',
+  desc: 'Parole vietate, antispam con le soglie vere, lo scudo anti-bot con i suoi sei livelli, il rapporto di ogni attacco e il registro: cosa fa ogni controllo, di base e limiti.',
+  aggiornata: '2026-10-08',
   corpo: [
     { p: [
-      'La moderazione sta in <em>Chat e pubblico</em> → <em>Moderazione</em>. In cima trovi tre schede: <strong>Chat</strong>, <strong>Scudo</strong> e <strong>Registro</strong>.',
-      '<em>Chat</em> pulisce i messaggi di tutti i giorni: parole vietate, spam, link. <em>Scudo</em> difende il canale da follow-bot e hate-raid. <em>Registro</em> ti racconta cosa ha fatto lo scudo e ti lascia decidere sui casi dubbi.',
+      'La moderazione della chat sta in <em>Chat e pubblico</em> → <em>Moderazione</em>. Lo scudo ha una sezione tutta sua nel menu, <em>Scudo e attacchi</em>, con tre schede: <strong>Scudo anti-bot</strong>, <strong>Gli attacchi</strong> e <strong>Registro dello scudo</strong>.',
+      '<em>Moderazione</em> pulisce i messaggi di tutti i giorni: parole vietate, spam, link. <em>Scudo anti-bot</em> difende il canale da follow-bot e hate-raid. <em>Gli attacchi</em> ti dà il rapporto di ogni attacco e ti avvisa quando lo scudo si alza. <em>Registro dello scudo</em> ti racconta ogni intervento e ti lascia decidere sui casi dubbi.',
       'Tutte e tre sono comprese nel pacchetto gratuito <strong>Essenziale</strong>. Lavorano sulla chat di <strong>Twitch</strong>. <em>Chat</em> lavora anche su <strong>Kick</strong>: su un canale di Kick la scheda c\'è, e <em>Scudo</em> e <em>Registro</em> mostrano «Solo su Twitch». Su YouTube e Discord le tre schede mostrano «Solo su Twitch».',
       'Il bot agisce con i permessi di moderazione che hai concesso tu: su Twitch, e su Kick con «Concedi la moderazione». Non c\'è un account estraneo da promuovere a moderatore.',
     ] },
@@ -144,7 +144,7 @@ export default {
       'Se il bot si riavvia durante un attacco, alla ripartenza riapre quello che aveva chiuso.',
       'Un\'ondata di follow che sembra gente vera, per esempio dopo una clip che gira o un raid, alza l\'attenzione ma da sola non chiude la chat. Per arrivare a «sotto attacco» serve la prova che è una macchina: follow a passo regolare, nomi usciti dalla stessa fabbrica, oppure un coro in chat.',
       'Il <strong>coro</strong> è lo stesso messaggio scritto da più account diversi nel giro di mezzo minuto: è la firma dell\'hate-raid. Lo scudo cancella quei messaggi e sale a «sotto attacco». I messaggi corti, come un saluto o un\'emote, non contano. Nei dieci minuti dopo un raid vero servono molti più account, perché chi arriva saluta tutto insieme.',
-      'Quando arriva un raid da almeno 50 spettatori, con «Avvisa in chat quando interviene» acceso, l\'overlay ti chiede di controllare che sia genuino e il registro lo annota.',
+      'Quando arriva un raid da almeno 50 spettatori il registro lo annota sempre. Se in «Gli attacchi» hai lasciato «Anche per i raid da 50 spettatori in su», ti arriva anche un avviso in privato che ti chiede di controllare che sia genuino.',
     ] },
 
     { p: ['<strong>Cosa scrive in chat</strong>, con «Avvisa in chat quando interviene» acceso:'] },
@@ -212,8 +212,72 @@ export default {
       'Questa carta la vede solo il proprietario del canale.',
     ] },
 
+    { h2: 'Gli attacchi', scheda: 'attacchi', p: [
+      'Ogni attacco col suo rapporto, come ti avviso quando lo scudo si alza, e un riepilogo degli altri scudi. La scheda la vede solo il proprietario del canale.',
+      'Un attacco comincia quando lo scudo sale dalla calma e finisce quando ci torna. Un attacco che riprende entro 15 minuti dalla fine continua nello stesso rapporto. Gli attacchi restano per 180 giorni, fino a 200 per canale.',
+      'Quando arriva un attacco nuovo dal livello che hai scelto in su, sulla voce «Gli attacchi» del menu compare un puntino. Sparisce quando apri la scheda.',
+      'Il puntino compare anche col pannello già aperto: il sito controlla ogni minuto, e se sei in un\'altra scheda te lo dice con un avviso. Con la scheda aperta e un attacco in corso, il rapporto si aggiorna da solo ogni venti secondi, e si ferma mentre scrivi.',
+    ] },
+
+    { h3: 'L\'elenco' },
+    { p: [
+      'Ogni riga dice quando è cominciato, che tipo di attacco era, il livello più alto raggiunto, quanti follow sono arrivati e quanti sono stati tolti, e quanto è durato, oppure «in corso».',
+      'I tipi: «Ondata di follow» (tanti follow in poco tempo), «Follow a goccia» (pochi follow alla volta per dieci minuti, dalla stessa fabbrica di nomi), «Lo stesso messaggio da tanti account» (il coro dell\'hate-raid), «Attacco misto» quando ripreso in un modo diverso, «Movimento sospetto» quando non si sa di più.',
+      'Se lo scudo è spento leggi «Lo scudo è spento: gli attacchi non si fermano e non si scrivono.» con il tasto «Accendilo».',
+    ] },
+
+    { h3: 'Il rapporto' },
+    { p: [
+      'Premi una riga: si apre il rapporto intero. In testa quando, quanto è durato, fin dove è salito e perché è scattato. Sotto le frasi del racconto, le stesse che ti arrivano su Telegram e per mail.',
+    ] },
+    { tabella: [
+      ['Pezzo', 'Cosa dice'],
+      ['I numeri', '«follow arrivati», «tolti», «bot certi», «sospetti», «persone vere salve», «messaggi fermati», «follow senza alert» e, se ce ne sono, le azioni «non riuscite».'],
+      ['«I follow minuto per minuto»', 'Il grafico dell\'attacco: in un colore i follow arrivati, nell\'altro quelli tolti. Sopra le dodici ore ogni barra vale più minuti.'],
+      ['«La scala dello scudo»', 'Ogni gradino, salita e discesa, con l\'ora e quanto è durato.'],
+      ['«Raid arrivati nel frattempo»', 'I raid arrivati mentre l\'attacco era in corso, con chi li ha mandati e quanti spettatori.'],
+      ['«Chi c\'era»', 'Ogni account giudicato, con il giudizio e cosa gli è stato fatto. Si filtra per giudizio e si cerca per nome.'],
+      ['«La cronaca, riga per riga»', 'Tutti i fatti dell\'attacco in ordine di tempo, chiusi in una tendina.'],
+      ['«Ripulire dopo l\'attacco»', 'La pulizia dei follower rimasti, con i conti per giudizio.'],
+      ['«Scarica chi c\'era (CSV)»', 'L\'elenco degli account con giudizio, ora e azione, da aprire con un foglio di calcolo.'],
+    ] },
+    { tabella: [
+      ['Giudizio', 'Chi è'],
+      ['«bot certo»', 'Riconosciuto come parte dell\'attacco: lo scudo l\'ha fermato.'],
+      ['«sospetto»', 'Arrivato durante l\'ondata finta, senza prove che venga dalla stessa fabbrica. Lo scudo non l\'ha toccato.'],
+      ['«persona vera»', 'Arrivato durante l\'attacco senza niente contro. Resta dove è.'],
+    ] },
+    { p: [
+      'Accanto a ogni account ci sono i tasti per rimediare: «Sblocca» se lo scudo l\'ha bloccato, «Sbanna» se l\'ha bannato, «È a posto» per metterlo in «Non toccare mai». Chi sblocchi non torna a seguirti da solo: può rifarlo lui.',
+      '<strong>La pulizia.</strong> Se ci sono follower giudicati bot, leggi «Si possono togliere N follower giudicati bot.». Si tolgono i <strong>certi</strong> di cui Twitch ha dato l\'id, con il blocco, così sparisce anche il follow. Le persone vere non compaiono nemmeno. I nomi in «Non toccare mai» e i bot di servizio restano fuori.',
+      'Per confermare riscrivi quel numero in «Riscrivi il numero per confermare:» e premi «Togli i follower finti». Il messaggio che compare ti dice quanti account toglie. Se nel frattempo il numero è cambiato, la conferma non vale: il pannello ti dice il numero nuovo, e lo riscrivi. In sola osservazione la pulizia scrive cosa farebbe e non toglie nessuno.',
+      'Se il rapporto ti è già arrivato, in fondo leggi dove: «Rapporto mandato su Telegram», «per mail» o tutti e due.',
+    ] },
+
+    { h3: 'Come ti avviso' },
+    { p: [
+      'Nel sito l\'attacco c\'è sempre. Qui scegli cosa ti arriva anche fuori. Le scelte si salvano da sole.',
+    ] },
+    { tabella: [
+      ['Controllo', 'Cosa fa', 'Di base'],
+      ['«Avvisami da questo livello in su»', 'Da che livello lo scudo ti avvisa: da «sto guardando» fino a «serrata». Sotto, gli attacchi restano nella scheda senza bussare, e senza puntino.', '«sotto attacco»'],
+      ['«Quando lo scudo sale»: «In privato su Telegram»', 'Un messaggio corto col livello, il perché e il link alla scheda. Una volta per gradino, per attacco: se l\'attacco fa su e giù non ti arriva a ogni oscillazione.', 'Acceso, se hai collegato la chat privata'],
+      ['«Per mail»', 'Lo stesso avviso alla tua mail.', 'Spento'],
+      ['«Anche per i raid da 50 spettatori in su»', 'Un avviso quando arriva un raid grande, per controllare che sia genuino.', 'Acceso'],
+      ['«A attacco finito, il rapporto»', 'Il racconto e i numeri dell\'attacco, su Telegram in privato e per mail, col link al rapporto intero. Solo per gli attacchi arrivati alla soglia.', 'Tutti e due accesi'],
+    ] },
+    { p: [
+      'Telegram in privato si collega nella scheda Telegram (vedi il <a href="/manuale/community">manuale delle community</a>), la mail nella scheda «Il tuo account». Finché mancano, la spunta resta grigia e accanto c\'è scritto dove collegarli.',
+    ] },
+
+    { h3: 'Gli altri scudi' },
+    { p: [
+      'Un riepilogo degli scudi fuori da Twitch, con il tasto «Vai» per ognuno: chi è entrato, chi è stato fermato e chi aspetta nel gruppo Telegram negli ultimi sette giorni, poi la porta d\'ingresso e il filtro del server Discord.',
+      'Su un canale solo Kick la scheda c\'è lo stesso: lo scudo contro gli attacchi lavora su Twitch, gli altri scudi restano.',
+    ] },
+
     { h2: 'Registro dello scudo', scheda: 'registro', p: [
-      'Cosa ha fatto lo scudo, i casi su cui decidi tu e la pulizia dopo un attacco. Non ci sono impostazioni.',
+      'Cosa ha fatto lo scudo, intervento per intervento, e i casi su cui decidi tu. Non ci sono impostazioni. Gli attacchi, ognuno col suo rapporto, stanno nella scheda «Gli attacchi».',
       'Il registro lo vede solo il proprietario del canale. I moderatori del pannello non lo vedono.',
       'Le carte compaiono solo quando hanno qualcosa da mostrare. Se non si carica leggi «Non disponibile ora.»: ricarica la pagina.',
     ] },
@@ -238,27 +302,6 @@ export default {
       ['«Ignora»', 'Chiude il caso. Non cambia nessuna lista.'],
     ] },
     { p: ['Dopo la scelta il caso sparisce dall\'elenco.'] },
-
-    { h3: 'Gli attacchi' },
-    { p: [
-      'Un attacco per volta, non trecento righe. Ogni riga dice quando è cominciato, che tipo di attacco era, il livello più alto raggiunto e quanto è durato, oppure «in corso». Vedi gli ultimi 20.',
-      'Un attacco che riprende entro 15 minuti dalla fine continua nella stessa riga. Gli attacchi restano nel registro per 180 giorni.',
-      'Premi una riga per aprirla. Dentro trovi chi c\'era, contato per giudizio, e gli ultimi fatti in ordine di tempo.',
-    ] },
-    { tabella: [
-      ['Giudizio', 'Chi è'],
-      ['«certi»', 'Riconosciuti come parte dell\'attacco: lo scudo li ha fermati.'],
-      ['«sospetti»', 'Arrivati durante l\'ondata finta, senza prove che vengano dalla stessa fabbrica. Lo scudo non li ha toccati.'],
-      ['«legittimi»', 'Arrivati durante l\'attacco senza niente contro. Restano dove sono.'],
-      ['«follow senza alert»', 'I follow arrivati mentre gli alert dei follow erano fermi. Compare solo se ce ne sono stati.'],
-    ] },
-    { p: [
-      '<strong>La pulizia.</strong> Se ci sono follower giudicati bot, leggi «Si possono togliere N follower giudicati bot.». Si tolgono i <strong>certi</strong> di cui Twitch ha dato l\'id, con il blocco, così sparisce anche il follow. I legittimi non compaiono nemmeno. I nomi in «Non toccare mai» e i bot di servizio restano fuori.',
-      'Per confermare riscrivi quel numero in «Riscrivi il numero per confermare:» e premi «Togli i follower finti». Il messaggio che compare ti dice quanti account toglie. Le singole azioni le ritrovi in «Interventi recenti».',
-      'Se nel frattempo il numero è cambiato, la conferma non vale: il pannello ti dice il numero nuovo, e lo riscrivi.',
-      'In sola osservazione la pulizia scrive cosa farebbe e non toglie nessuno.',
-      'Se non c\'è niente da togliere leggi «Niente da ripulire: nessun account giudicato bot con l\'id di Twitch a disposizione.».',
-    ] },
 
     { h3: 'Rimaste in sospeso' },
     { p: [

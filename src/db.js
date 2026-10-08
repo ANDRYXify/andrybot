@@ -4164,6 +4164,13 @@ export const tgScudo = {
   quanteDaDecidere(channel) {
     return db.prepare("SELECT COUNT(*) n FROM tg_scudo WHERE channel=? AND stato='admin' AND via=''").get(String(channel).toLowerCase())?.n || 0;
   },
+  // Quante persone vere (via '') sono passate dalla porta da `dal`, per esito:
+  // il riepilogo della carta «Gli altri scudi» nella sezione Scudo e attacchi.
+  conti(channel, dal = now() - 7 * 86_400_000) {
+    const righe = db.prepare("SELECT stato, COUNT(*) n FROM tg_scudo WHERE channel=? AND via='' AND ts>=? GROUP BY stato")
+      .all(String(channel).toLowerCase(), msIntero(dal));
+    return Object.fromEntries(righe.map((r) => [r.stato, r.n]));
+  },
   // Il si' o il no, una volta sola: da 'admin' a un esito, nella stessa
   // istruzione. Pannello, messaggio in privato e un amministratore in
   // Telegram che arrivano insieme non danno due esiti.
