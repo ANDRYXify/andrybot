@@ -15,6 +15,17 @@ const log = makeLog('helix');
 const BASE = 'https://api.twitch.tv/helix';
 const RETE_MS = 15_000;
 
+// Che cosa vuol dire un errore sulla lista dei follower. `conCursore`: se la
+// pagina chiesta veniva da un segnaposto, un 400 vuol dire che il segnaposto
+// non vale piu' (e si riparte da capo), non che la domanda era storta.
+export function erroreDiPagina(e, conCursore = false) {
+  const st = Number(e?.status) || 0;
+  if (st === 401 || st === 403) return { ok: false, motivo: 'permesso' };
+  if (st === 429) return { ok: false, motivo: 'troppe', riprova: e.reset || 0 };
+  if (st === 400 && conCursore) return { ok: false, motivo: 'cursore' };
+  return { ok: false, motivo: 'twitch', dettaglio: String(e?.message || e).slice(0, 200) };
+}
+
 export class Helix {
   constructor({ auth }) {
     this.auth = auth;
@@ -48,6 +59,10 @@ export class Helix {
       const text = await res.text().catch(() => '');
       const err = new Error(`Helix ${method} ${path} → ${res.status} ${text}`.trim());
       err.status = res.status;
+      // Quando Twitch dice «troppe richieste» dice anche quando il secchio si
+      // riempie (secondi dall'epoca): chi aspetta, aspetta il giusto.
+      const reset = Number(res.headers?.get?.('ratelimit-reset'));
+      if (Number.isFinite(reset) && reset > 0) err.reset = reset * 1000;
       throw err;
     }
     if (res.status === 204) return null;          // nessun contenuto
@@ -881,6 +896,47 @@ export class Helix {
     } catch (e) { log.debug('getRecentFollowers:', e?.message || e); return []; }
   }
 
+  // UNA PAGINA DELLA LISTA DEI FOLLOWER, per chi la scorre tutta (la scheda «I
+  // tuoi follower»). A differenza di getRecentFollowers non tace gli errori:
+  // un permesso che manca, Twitch che chiede di rallentare, un segnaposto
+  // scaduto e Twitch giu' sono quattro cose da trattare in quattro modi, e
+  // «nessuno» non e' una di queste.
+  async paginaFollower(channelLogin, { dopo = '' } = {}) {
+    const s = streamers.get(channelLogin);
+    if (!s?.user_id) return { ok: false, motivo: 'canale' };
+    try {
+      const token = await this.auth.getToken('broadcaster', channelLogin);
+      const query = { broadcaster_id: s.user_id, first: 100 };
+      if (dopo) query.after = dopo;
+      const j = await this._request('GET', '/channels/followers', { query, token });
+      return { ok: true, righe: j?.data || [], cursore: j?.pagination?.cursor || '', totale: Number(j?.total) || 0 };
+    } catch (e) { return erroreDiPagina(e, !!dopo); }
+  }
+
+  // GLI ABBONATI, tutti: l'elenco di Twitch a pagine da cento. Serve a
+  // proteggere chi ti sostiene prima di una pulizia in massa: costa una
+  // chiamata ogni cento abbonati, invece di una ogni cento follower. Torna un
+  // insieme di id, o null se non si e' potuto chiedere (mai un insieme vuoto
+  // per dire «non lo so»).
+  async elencoAbbonati(channelLogin, { pagineMax = 500 } = {}) {
+    const s = streamers.get(channelLogin);
+    if (!s?.user_id) return null;
+    const fuori = new Set();
+    try {
+      const token = await this.auth.getToken('broadcaster', channelLogin);
+      let cursore = '';
+      for (let i = 0; i < pagineMax; i++) {
+        const query = { broadcaster_id: s.user_id, first: 100 };
+        if (cursore) query.after = cursore;
+        const j = await this._request('GET', '/subscriptions', { query, token });
+        for (const r of j?.data || []) if (r?.user_id && String(r.user_id) !== String(s.user_id)) fuori.add(String(r.user_id));
+        cursore = j?.pagination?.cursor || '';
+        if (!cursore) return fuori;
+      }
+      return fuori;
+    } catch (e) { log.debug('elencoAbbonati:', e?.message || e); return null; }
+  }
+
   // Quanti seguono il canale, adesso. Serve a far partire un obiettivo da dove
   // sei gia' arrivato invece che da zero. null = non si sa (permesso mancante).
   async quantiFollower(channelLogin) {
@@ -916,6 +972,33 @@ export class Helix {
       const j = await this._request('GET', '/users?' + params.toString());
       return j?.data || [];
     } catch (e) { log.debug('getUsersByIds:', e?.message || e); return []; }
+  }
+
+  // I PROFILI, dicendo se la domanda e' andata. getUsersByIds tace gli errori,
+  // e qui non si puo': un id che manca dalla risposta vuol dire «Twitch non lo
+  // trova piu'» (account chiuso o sospeso) solo se la risposta c'e' stata.
+  async profiliPerId(ids) {
+    const arr = [...new Set((ids || []).filter(Boolean).map(String))].slice(0, 100);
+    if (!arr.length) return { ok: true, utenti: [] };
+    const params = new URLSearchParams();
+    for (const id of arr) params.append('id', id);
+    try {
+      const j = await this._request('GET', '/users?' + params.toString());
+      return { ok: true, utenti: j?.data || [] };
+    } catch (e) { return erroreDiPagina(e); }
+  }
+
+  // Questa persona segue il canale, e da quando? { ok, segue, quando } oppure
+  // { ok:false } quando non si e' potuto chiedere.
+  async seguitoDa(channelLogin, userId) {
+    const s = streamers.get(channelLogin);
+    if (!s?.user_id || !userId) return { ok: false, motivo: 'canale' };
+    try {
+      const token = await this.auth.getToken('broadcaster', channelLogin);
+      const j = await this._request('GET', '/channels/followers', { query: { broadcaster_id: s.user_id, user_id: String(userId) }, token });
+      const r = j?.data?.[0];
+      return { ok: true, segue: !!r?.followed_at, quando: r?.followed_at ? Date.parse(r.followed_at) || 0 : 0 };
+    } catch (e) { return erroreDiPagina(e); }
   }
 
   // Utenti in blocco per login (fino a 100, che e' il tetto dell'endpoint).
@@ -991,6 +1074,7 @@ export class Helix {
     } catch (e) {
       if (e.status === 401 || e.status === 403) return { ok: false, motivo: 'permesso mancante' };
       if (e.status === 400) return { ok: false, motivo: 'non posso bloccarlo' };
+      if (e.status === 429) return { ok: false, motivo: 'troppe richieste', riprova: e.reset || 0 };
       log.debug('bloccaUtente:', e?.message || e);
       return { ok: false, motivo: 'errore Twitch' };
     }
@@ -1004,6 +1088,7 @@ export class Helix {
       return { ok: true };
     } catch (e) {
       if (e.status === 401 || e.status === 403) return { ok: false, motivo: 'permesso mancante' };
+      if (e.status === 429) return { ok: false, motivo: 'troppe richieste', riprova: e.reset || 0 };
       log.debug('sbloccaUtente:', e?.message || e);
       return { ok: false, motivo: 'errore Twitch' };
     }

@@ -28,6 +28,7 @@ import { config } from '../config.js';
 import { tabelleDiCanale } from './esporta.js';
 import { diCanale as attacchiDiCanale, dimenticaCanale as dimenticaAttacchi } from './incidenti.js';
 import { registro as registroScudo, dimenticaRegistro } from './antibot.js';
+import { dimentica as dimenticaFollower } from './follower.js';
 import { eLoginNostro, nomeSu } from '../identita.js';
 
 // Un canale valido e' quello che identita.js chiama nostro: con il suo
@@ -69,6 +70,10 @@ export function cancella(login, { conferma } = {}) {
   const chi = String(login || '').trim().toLowerCase();
   if (!eLoginNostro(chi)) throw new Error('canale non valido');
   if (!confermaValida(chi, conferma)) throw new Error('la conferma non combacia');
+
+  // Prima di togliere le righe: un giro o un lavoro sui follower ancora in
+  // volo le riscriverebbe alla prossima pagina letta da Twitch.
+  dimenticaFollower(chi);
 
   const righe = {};
   const tabelle = tabelleDiCanale();

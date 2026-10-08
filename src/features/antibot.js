@@ -28,7 +28,7 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { makeLog } from '../logger.js';
-import { streamers, statoVivo, memory } from '../db.js';
+import { streamers, statoVivo, memory, followerElenco } from '../db.js';
 import { punteggio as punteggia, inCentesimi, nomeGenerato, canaliInsieme, segnaGiudizio, erroriDi, GIUDIZI_CHIAVE, SOGLIA_SEGNALA } from './punteggio.js';
 import * as rete from './rete.js';
 import { Esecutore, verdetto, AZIONI, daFare } from './enforcement.js';
@@ -170,6 +170,12 @@ export function nomeBot(login, cfg = {}) {
   if (cfg.listaAuto !== false && listaEsterna.has(l)) return true;   // lista aggiornata
   return PATTERN_BOT.some((re) => re.test(l));
 }
+
+// Le due domande sul nome, separate: e' nella lista pubblica (e lo streamer
+// la usa)? ha la forma dei bot promozionali? La lista dei follower le dice
+// come motivi diversi, perche' per chi legge sono due cose diverse.
+export const inListaBot = (login, cfg = {}) => cfg.listaAuto !== false && listaEsterna.has(norm(login));
+export const nomePromozionale = (login) => PATTERN_BOT.some((re) => re.test(norm(login)));
 
 // E' UN BOT? Per le cose che contano le PERSONE (monete, ore guardate, presenze)
 // la domanda e' un fatto, non una scelta dello scudo: un bot di servizio, un bot
@@ -316,8 +322,11 @@ export function registra(channel, dati) {
   // dice (l'esecutore lo sa, e una riga che arriva un attimo dopo la chiusura
   // e' ancora di quell'attacco). Senza, il rapporto di un attacco non sapeva
   // quali righe del registro erano sue.
-  let incidente = String(dati.incidente || '');
-  if (!incidente) { try { incidente = inc.aperto(ch)?.id || ''; } catch (e) { incidente = ''; } }
+  // Una riga FUORI dall'attacco (`fuoriAttacco`): quello che lo streamer fa a
+  // mano dalla lista dei follower non e' una mossa della difesa, e contato
+  // nell'attacco aperto ne gonfierebbe il rapporto.
+  let incidente = dati.fuoriAttacco ? '' : String(dati.incidente || '');
+  if (!incidente && !dati.fuoriAttacco) { try { incidente = inc.aperto(ch)?.id || ''; } catch (e) { incidente = ''; } }
   const voce = {
     id: nuovoId(), ts: Date.now(),
     login: norm(dati.login) || '', userId: dati.userId || '',
@@ -330,12 +339,24 @@ export function registra(channel, dati) {
   registriMem.set(ch, arr);
   programmaSalvataggioReg();
 
+  // La lista dei follower sa subito chi e' stato bloccato o sbloccato, da
+  // chiunque (lo scudo in un attacco, la bonifica, la lista stessa). Un
+  // bloccato non segue piu': lasciarlo fra i follower vorrebbe dire offrirlo a
+  // un «togli il follow» che, sbloccandolo, gli riaprirebbe la porta.
+  try {
+    if (voce.userId && voce.esito === 'fatto') {
+      if (voce.azione === 'blocca') followerElenco.segnaStato(ch, voce.userId, 'bloccato', voce.ts, { uscito: true });
+      else if (voce.azione === 'sblocca') followerElenco.sbloccato(ch, voce.userId, voce.ts);
+    }
+  } catch (e) { /* la lista dei follower non c'e' (un database di prova): niente da segnare */ }
+
   // L'incidente si riempie da qui, che e' l'unico punto da cui passa tutto.
   // Le AZIONI si contano e basta: quattrocento righe «bloccato» in una timeline
   // non raccontano niente, un numero si'. Gli eventi salienti invece si
   // raccontano, perche' sono quelli che rispondono a «cos'e' successo e quando».
   try {
-    if (AZIONI_ESECUTORE.has(voce.azione)) inc.segnaAzione(ch, { azione: voce.azione, esito: voce.esito });
+    if (dati.fuoriAttacco) { /* fuori dall'attacco: non si conta e non si racconta */ }
+    else if (AZIONI_ESECUTORE.has(voce.azione)) inc.segnaAzione(ch, { azione: voce.azione, esito: voce.esito });
     else if (DA_RACCONTARE.has(voce.azione)) inc.racconta(ch, `${voce.azione}: ${voce.motivo}`.slice(0, 200));
   } catch (e) {  }
   return voce;
@@ -799,15 +820,6 @@ export function codaBan(channel) {
 export const statoEsecutore = (canale) => (canale ? esecutore?.stato(canale) || null : null);
 export const azioniFallite = ({ limite = 100, canale } = {}) => (canale ? esecutore?.fallitiInSospeso({ limite, canale }) || [] : []);
 export const riprovaFallite = (ch) => esecutore?.riprovaFalliti(ch) || 0;
-
-// Un blocco chiesto a mano dal pannello (la pulizia dei follower) passa dallo
-// stesso esecutore dello scudo: la stessa fila, le stesse riprove, lo stesso
-// registro, e il ripiego sul ban se il blocco non si puo' fare. E' una scelta
-// dello streamer, quindi vale anche in sola osservazione.
-export function bloccaDaConsole(canale, { login = '', userId = '' } = {}) {
-  if (!esecutore) return Promise.resolve({ ok: false, motivo: 'scudo non avviato' });
-  return esecutore.esegui(verdetto({ canale: norm(canale), login: norm(login), userId: String(userId), azione: AZIONI.BLOCCA, motivi: ['dalla console'], origine: 'console' }));
-}
 
 // Quanto sbaglia lo scudo, misurato sui suoi stessi giudizi: chi era stato
 // segnato come «probabile macchina» e poi si e' messo a parlare in chat era una
@@ -1551,59 +1563,6 @@ export class AntiBot {
     if (segnalati) { try { statoVivo.scrivi(ch, GIUDIZI_CHIAVE, elenco); } catch (e) {  } }
     if (segnalati) log.info(`#${ch} giro presenze: ${segnalati} segnalati su ${candidati.length} guardati`);
     return { guardati: candidati.length, segnalati };
-  }
-
-  // ── Pulizia della lista follower ──────────────────────────────────────────
-  // La difesa in tempo reale ferma quello che arriva adesso. Non tocca chi è già
-  // dentro: i bot che hanno seguito prima che lo scudo fosse acceso, e quelli
-  // finiti nella lista pubblica soltanto dopo aver seguito. Restano lì a gonfiare
-  // il numero, che è il danno vero di un follow-bot.
-  //
-  // Qui si scorre la lista follower e si BLOCCA chi è riconosciuto — di nuovo:
-  // blocco, non ban, perché è l'unica azione che toglie il follow.
-  //
-  // Due prudenze. Si guardano solo i nomi già noti o che corrispondono ai
-  // pattern, mai il punteggio di sospetto: qui non c'è un attacco in corso a
-  // giustificare un margine di errore, e un fan vero rimosso non torna. E si va
-  // al ritmo della coda, perché un canale con diecimila follower sono cento
-  // pagine e altrettante migliaia di chiamate.
-  async pulisciFollower(channel, { max = 3000, prova = false, alPasso = null } = {}) {
-    const ch = norm(channel);
-    const cfg = this.cfg(ch);
-    const esiti = { guardati: 0, trovati: [], bloccati: 0, falliti: 0, totale: 0 };
-    let cursore = '', pagine = 0;
-    while (esiti.guardati < max && pagine < 60) {
-      const arr = await this.helix?.getRecentFollowers?.(ch, { first: 100, dopo: cursore }).catch(() => []);
-      if (!arr || !arr.length) break;
-      if (!esiti.totale) esiti.totale = arr.totale || 0;
-      pagine++;
-      for (const f of arr) {
-        esiti.guardati++;
-        const login = norm(f.user_login || f.user_name);
-        if (!login || BUONI.has(login)) continue;
-        if ((cfg.esenti || []).map(norm).includes(login)) continue;
-        if (!nomeBot(login, cfg)) continue;
-        esiti.trovati.push({ login, userId: f.user_id, seguito: f.followed_at });
-      }
-      cursore = arr.cursore || '';
-      if (!cursore) break;
-      if (alPasso) alPasso({ ...esiti, trovati: esiti.trovati.length });
-    }
-    if (prova || !esiti.trovati.length) return esiti;
-
-    // Anche qui si decide e basta. Il ritmo, la riprova e la coda dei falliti
-    // li tiene l'esecutore, che e' lo stesso di un attacco in corso: cosi' una
-    // pulizia lanciata durante un'ondata non si mette a gareggiare con la
-    // difesa per il rate limit, si mette in fila dietro — e ci va dietro sul
-    // serio, perche' la pulizia e' la meno urgente di tutte.
-    const esiti2 = await Promise.all(esiti.trovati.map((v) => this.esecutore.esegui(verdetto({
-      canale: ch, login: v.login, userId: v.userId, azione: AZIONI.BLOCCA,
-      motivi: ['pulizia lista follower: nome da bot noto'], origine: 'pulizia',
-      confidenza: 0.99, aVuoto: this._aVuoto(cfg),
-    }))));
-    for (const r of esiti2) { if (r?.ok) esiti.bloccati++; else esiti.falliti++; }
-    log.info(`#${ch} pulizia follower: ${esiti.bloccati} bot rimossi su ${esiti.guardati} guardati`);
-    return esiti;
   }
 
   // Evento raid: un raid enorme da un account minuscolo/nuovo è un classico

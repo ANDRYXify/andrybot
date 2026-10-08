@@ -251,7 +251,6 @@ body.leggero .cerca-voce, body.leggero .cerca-sugg .chip-domanda, body.leggero .
 .att-scala li, .att-raid li { font-size: .84rem; color: var(--testo-2); }
 .att-scala small { color: var(--testo-3); margin-left: 4px; }
 .att-filtri { gap: 6px; margin-bottom: 10px; }
-.att-filtri .btn.attivo { border-color: var(--acc); color: var(--acc); }
 .att-filtri input[type="search"] { flex: 1 1 180px; min-width: 0; }
 .att-coinvolti { display: flex; flex-direction: column; }
 .att-chi { display: grid; grid-template-columns: minmax(0, 1.4fr) auto minmax(0, 1.2fr) auto auto; gap: 10px; align-items: center; padding: 8px 0; border-top: 1px solid var(--border); font-size: .86rem; }
@@ -276,6 +275,39 @@ body.leggero .cerca-voce, body.leggero .cerca-sugg .chip-domanda, body.leggero .
   .att-chi { grid-template-columns: 1fr auto; row-gap: 4px; }
   .att-chi-fatto, .att-chi-azioni { grid-column: 1 / -1; justify-content: flex-start; }
   .att-chi small { display: none; }
+}
+.fol-kpi { margin-bottom: 8px; }
+.fol-barra { height: 8px; border-radius: 999px; background: var(--surface-2-tinta); overflow: hidden; margin: 6px 0 10px; }
+.fol-barra i { display: block; height: 100%; background: var(--acc); border-radius: inherit; }
+.fol-conti { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.fol-conti .btn b { margin-left: 4px; font-variant-numeric: tabular-nums; }
+.fol-filtri { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: flex-end; margin-bottom: 10px; }
+.fol-filtri input[type="search"] { flex: 1 1 200px; min-width: 0; }
+.fol-campo { display: flex; flex-direction: column; gap: 4px; font-size: .8rem; color: var(--testo-2); }
+.fol-massa { padding: 10px 12px; margin: 4px 0 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); }
+.fol-massa > p { margin: 0 0 8px; font-size: .88rem; }
+.fol-conferma { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.fol-conferma .suggerimento { flex-basis: 100%; margin: 4px 0 0; }
+.fol-elenco { display: flex; flex-direction: column; }
+.fol-riga { display: grid; grid-template-columns: minmax(0, 1.2fr) auto minmax(0, 1.5fr) minmax(110px, auto) auto; gap: 10px; align-items: center; padding: 9px 0; border-top: 1px solid var(--border); font-size: .86rem; }
+.fol-riga:first-child { border-top: none; }
+.fol-riga.uscito { opacity: .72; }
+.fol-chi { overflow-wrap: anywhere; display: flex; flex-wrap: wrap; gap: 4px 6px; align-items: center; }
+.fol-motivi { color: var(--testo-2); font-size: .82rem; }
+.fol-date { color: var(--testo-3); font-size: .76rem; line-height: 1.35; }
+.fol-azioni { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+.fol-liv-protetto { color: var(--verde); border-color: var(--verde-bordo); background: var(--verde-soft); }
+.fol-liv-noto { color: var(--rosso); border-color: var(--rosso-bordo); background: var(--rosso-soft); }
+.fol-liv-probabile { color: var(--rosso); border-color: var(--rosso-bordo); background: transparent; }
+.fol-liv-dubbio { color: var(--ambra); border-color: var(--ambra-bordo); background: var(--ambra-soft); }
+.fol-mini { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: .84rem; }
+.fol-mini span { display: inline-flex; gap: 6px; align-items: center; }
+.fol-profilo { display: flex; gap: 14px; align-items: flex-start; }
+.fol-profilo img { width: 56px; height: 56px; border-radius: 50%; flex: none; object-fit: cover; background: var(--surface-2-tinta); }
+.fol-profilo p { margin: 0 0 6px; }
+@media (max-width: 640px) {
+  .fol-riga { grid-template-columns: 1fr auto; row-gap: 4px; }
+  .fol-motivi, .fol-date, .fol-azioni { grid-column: 1 / -1; justify-content: flex-start; }
 }
 .reg-inc + .reg-inc { border-top: 1px solid var(--border); }
 .reg-inc-testa { display: grid; grid-template-columns: minmax(110px, auto) minmax(70px, auto) 1fr auto; gap: 12px; align-items: center; width: 100%; padding: 12px 0; background: none; border: none; text-align: left; font: inherit; color: inherit; cursor: pointer; }
@@ -806,7 +838,6 @@ body.pad-guida, body.pad-guida * { cursor: none !important; }
 }
 .vol-metro i {
   display: block; height: 100%; border-radius: 999px; background: var(--acc);
-  transition: width var(--t-medio, .4s) var(--molla-medio, var(--an-morbido));
 }
 .vol-voce.proposta .vol-metro i { background: var(--ambra); }
 .vol-corpo { min-width: 0; }

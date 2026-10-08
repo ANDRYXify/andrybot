@@ -791,6 +791,26 @@ CREATE TABLE IF NOT EXISTS seguiti (         -- chi ha gia' seguito il canale: u
   PRIMARY KEY (channel, chi)
 );
 
+CREATE TABLE IF NOT EXISTS follower_elenco (  -- chi ti segue su Twitch, per guardare la lista e pulirla (features/follower.js)
+  channel TEXT NOT NULL,
+  user_id TEXT NOT NULL,
+  login TEXT NOT NULL DEFAULT '',
+  nome TEXT NOT NULL DEFAULT '',
+  seguito INTEGER NOT NULL DEFAULT 0,        -- quando ha seguito, per Twitch
+  creato INTEGER NOT NULL DEFAULT 0,         -- quando e' nato l'account: 0 non ancora chiesto, -1 Twitch non lo trova piu'
+  foto_base INTEGER NOT NULL DEFAULT 0,      -- 1 se la foto e' quella di base (la foto non si tiene)
+  bio_vuota INTEGER NOT NULL DEFAULT 0,      -- 1 se la bio e' vuota (la bio non si tiene)
+  tipo TEXT NOT NULL DEFAULT '',             -- '' | 'affiliate' | 'partner'
+  ruolo TEXT NOT NULL DEFAULT '',            -- 'mod' | 'vip' | 'sub' | '', all'ultima lettura
+  fiducia INTEGER NOT NULL DEFAULT 0,        -- quanto e' di casa nel canale, all'ultimo giro
+  visto INTEGER NOT NULL DEFAULT 0,          -- l'ultima volta che l'abbiamo visto seguire
+  uscito INTEGER NOT NULL DEFAULT 0,         -- quando ci siamo accorti che non segue piu' (0: segue)
+  stato TEXT NOT NULL DEFAULT '',            -- '' | 'tolto' | 'bloccato' | 'apposto'
+  stato_ts INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (channel, user_id)
+);
+CREATE INDEX IF NOT EXISTS follower_elenco_login ON follower_elenco(channel, login);
+
 CREATE TABLE IF NOT EXISTS stato_vivo (      -- lo stato dei motori che deve sopravvivere a un riavvio
   channel TEXT NOT NULL,
   chiave TEXT NOT NULL,                      -- 'giveaway' | 'penitenza' | 'assetto' | 'ritmo' | 'arena-quote'
@@ -5797,6 +5817,120 @@ export const seguiti = {
     const ins = db.prepare('INSERT OR IGNORE INTO seguiti (channel, chi, primo, ultimo, volte) VALUES (?,?,?,?,1)');
     const tutto = db.transaction((l) => { for (const chi of l) ins.run(String(channel || '').toLowerCase(), String(chi || ''), ora, ora); });
     tutto(chiList || []);
+  },
+};
+
+// LA LISTA DEI FOLLOWER (features/follower.js). Lo store e' muto: chi e' un
+// bot e cosa si fa lo decide follower.js. Si tengono solo i fatti che servono
+// al giudizio: la foto e la bio non si scrivono, si scrive se sono quelle di
+// base (docs/FOLLOWER.md, privacy).
+const _ch = (c) => String(c || '').toLowerCase();
+export const followerElenco = {
+  // Una pagina della lista (o un follow appena arrivato): chi c'e' e' visto
+  // adesso, segue, e se era stato tolto o bloccato e ricompare vuol dire che
+  // e' tornato da solo.
+  dallaPagina(channel, righe, ora = now()) {
+    const ins = db.prepare(`INSERT INTO follower_elenco (channel, user_id, login, nome, seguito, visto, uscito)
+      VALUES (?,?,?,?,?,?,0)
+      ON CONFLICT(channel, user_id) DO UPDATE SET login=excluded.login, nome=excluded.nome,
+        seguito=CASE WHEN excluded.seguito > 0 THEN excluded.seguito ELSE follower_elenco.seguito END,
+        visto=excluded.visto, uscito=0,
+        stato=CASE WHEN follower_elenco.stato IN ('tolto','bloccato') THEN '' ELSE follower_elenco.stato END`);
+    const tutto = db.transaction((l) => {
+      for (const r of l) {
+        const id = String(r?.user_id || '');
+        if (!id) continue;
+        ins.run(_ch(channel), id, String(r.user_login || '').toLowerCase().slice(0, 40), String(r.user_name || r.user_login || '').slice(0, 60), Date.parse(r.followed_at || '') || 0, ora);
+      }
+    });
+    tutto(righe || []);
+  },
+  // Fra questi, chi non ha ancora la data di nascita.
+  senzaNascita(channel, ids = []) {
+    const l = [...new Set(ids.map(String).filter(Boolean))];
+    if (!l.length) return [];
+    const fuori = [];
+    for (let i = 0; i < l.length; i += 400) {
+      const pezzo = l.slice(i, i + 400);
+      for (const r of db.prepare(`SELECT user_id FROM follower_elenco WHERE channel=? AND creato=0 AND user_id IN (${pezzo.map(() => '?').join(',')})`).all(_ch(channel), ...pezzo)) fuori.push(r.user_id);
+    }
+    return fuori;
+  },
+  // I profili arrivati da Twitch. Chi era chiesto e non c'e' nella risposta,
+  // Twitch non lo trova piu': account chiuso o sospeso.
+  nascite(channel, chiesti = [], utenti = []) {
+    const per = new Map((utenti || []).map((u) => [String(u.id), u]));
+    const up = db.prepare('UPDATE follower_elenco SET creato=?, foto_base=?, bio_vuota=?, tipo=? WHERE channel=? AND user_id=?');
+    const tutto = db.transaction(() => {
+      for (const id0 of chiesti) {
+        const id = String(id0);
+        const u = per.get(id);
+        if (!u) { up.run(-1, 0, 0, '', _ch(channel), id); continue; }
+        up.run(Date.parse(u.created_at || '') || 0, /user-default-pictures/i.test(u.profile_image_url || '') ? 1 : 0, String(u.description || '').trim() ? 0 : 1, ['affiliate', 'partner'].includes(u.broadcaster_type) ? u.broadcaster_type : '', _ch(channel), id);
+      }
+    });
+    tutto();
+  },
+  // A giro completo: chi non e' stato visto da quando il giro e' partito non
+  // segue piu'.
+  segnaUsciti(channel, avvio, ora = now()) {
+    return db.prepare('UPDATE follower_elenco SET uscito=? WHERE channel=? AND uscito=0 AND visto<?').run(ora, _ch(channel), avvio).changes;
+  },
+  // I ruoli: per ogni ruolo letto (un insieme di id), si cancella quello di
+  // prima e si scrive quello nuovo. Un ruolo non letto (null) resta com'era.
+  // L'ordine conta: chi e' insieme moderatore e abbonato e' moderatore.
+  ruoli(channel, mappa = {}) {
+    const ch = _ch(channel);
+    const tutto = db.transaction(() => {
+      for (const ruolo of ['sub', 'vip', 'mod']) {
+        const ids = mappa[ruolo];
+        if (!ids) continue;
+        db.prepare("UPDATE follower_elenco SET ruolo='' WHERE channel=? AND ruolo=?").run(ch, ruolo);
+        const up = db.prepare('UPDATE follower_elenco SET ruolo=? WHERE channel=? AND user_id=?');
+        for (const id of ids) up.run(ruolo, ch, String(id));
+      }
+    });
+    tutto();
+  },
+  fiducie(channel, perLogin = new Map()) {
+    const ch = _ch(channel);
+    const up = db.prepare('UPDATE follower_elenco SET fiducia=? WHERE channel=? AND login=?');
+    const tutto = db.transaction(() => {
+      db.prepare('UPDATE follower_elenco SET fiducia=0 WHERE channel=?').run(ch);
+      for (const [l, n] of perLogin) if (n) up.run(Math.round(n), ch, String(l));
+    });
+    tutto();
+  },
+  tutte(channel) {
+    return db.prepare('SELECT * FROM follower_elenco WHERE channel=?').all(_ch(channel));
+  },
+  una(channel, userId) {
+    return db.prepare('SELECT * FROM follower_elenco WHERE channel=? AND user_id=?').get(_ch(channel), String(userId || '')) || null;
+  },
+  conta(channel) {
+    return db.prepare('SELECT COUNT(*) n FROM follower_elenco WHERE channel=? AND uscito=0').get(_ch(channel)).n;
+  },
+  // Lo stato che decide lo streamer. `uscito`: l'azione l'ha tolto dalla
+  // lista di Twitch, e lo sappiamo adesso, senza aspettare il prossimo giro.
+  segnaStato(channel, userId, stato, ora = now(), { uscito = false } = {}) {
+    db.prepare(`UPDATE follower_elenco SET stato=?, stato_ts=?${uscito ? ', uscito=?' : ''} WHERE channel=? AND user_id=?`)
+      .run(...(uscito ? [stato, ora, ora] : [stato, ora]), _ch(channel), String(userId || ''));
+  },
+  // Lo scudo ha sbloccato qualcuno che era bloccato: non e' piu' bloccato (e
+  // resta uscito: il follow non torna da solo). Chi era in un altro stato non
+  // si tocca.
+  sbloccato(channel, userId, ora = now()) {
+    db.prepare("UPDATE follower_elenco SET stato='', stato_ts=? WHERE channel=? AND user_id=? AND stato='bloccato'")
+      .run(ora, _ch(channel), String(userId || ''));
+  },
+  segnaStatoMolti(channel, ids = [], stato, ora = now()) {
+    const up = db.prepare('UPDATE follower_elenco SET stato=?, stato_ts=? WHERE channel=? AND user_id=?');
+    const tutto = db.transaction(() => { for (const id of ids) up.run(stato, ora, _ch(channel), String(id)); });
+    tutto();
+  },
+  // Chi non segue piu' da piu' di un mese se ne va dalla lista.
+  pota(prima) {
+    return db.prepare('DELETE FROM follower_elenco WHERE uscito>0 AND uscito<?').run(prima).changes;
   },
 };
 

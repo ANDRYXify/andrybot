@@ -58,6 +58,18 @@ comandi diversi da quelli della riga italiana.
 - Il registro delle donazioni scaricato in CSV non fa più partire una formula scritta da chi dona, come succedeva aprendolo in un foglio di calcolo. [vai: donazioni]
   en: The donations log downloaded as CSV no longer runs a formula written by a donor, as happened when opening it in a spreadsheet.
   es: El registro de donaciones descargado en CSV ya no ejecuta una fórmula escrita por quien dona, como pasaba al abrirlo en una hoja de cálculo.
+- [importante] C'è la scheda I tuoi follower: la lista intera da Twitch, i bot trovati col loro perché, e la pulizia in massa che non tocca mai abbonati, VIP, moderatori e chi è di casa. [vai: follower]
+  en: There is the Your followers tab: the full list from Twitch, the bots found with their reason, and a bulk cleanup that never touches subscribers, VIPs, moderators and regulars.
+  es: Está la pestaña Tus seguidores: la lista completa de Twitch, los bots encontrados con su porqué, y una limpieza en masa que nunca toca suscriptores, VIP, moderadores ni habituales.
+  > La lista intera dei tuoi follower
+  > Prima si guardavano solo gli ultimi cento follower, e la pulizia prendeva solo i nomi già noti. Ora leggi tutta la lista, vedi chi è nato e arrivato insieme ad altri, e togli il follow a un gruppo scrivendo il numero: blocco e sblocco, mai un ban.
+  en> The full list of your followers
+  en> Before, only the last hundred followers were checked, and the cleanup only took names already known. Now you read the whole list, see who was created and arrived together with others, and remove a group by typing the number: block and unblock, never a ban.
+  es> La lista completa de tus seguidores
+  es> Antes solo se miraban los últimos cien seguidores, y la limpieza solo tomaba nombres ya conocidos. Ahora lees toda la lista, ves quién se creó y llegó junto a otros, y quitas el follow a un grupo escribiendo el número: bloqueo y desbloqueo, nunca un baneo.
+- Nel rapporto di un attacco, Sblocca e Sbanna senza i permessi di moderazione dicono dove riconcederli, invece di un errore generico. [vai: attacchi]
+  en: In an attack report, Unblock and Unban without moderation permissions tell you where to grant them again, instead of a generic error.
+  es: En el informe de un ataque, Desbloquear y Desbanear sin permisos de moderación dicen dónde volver a darlos, en lugar de un error genérico.
 
 ## 2026-10-07
 

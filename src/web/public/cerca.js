@@ -20,6 +20,7 @@
     scudo: 'scudo anti-bot antibot blocca bot follow-bot follow bot hate-raid raid ondata ondate sospetti blocklist allowlist lista bot commanderroot sery_bot shield protezione difesa attacco livelli sola osservazione prudente bilanciata aggressiva escudo protección',
     registro: 'registro interventi segnalazioni da rivedere incidenti attacchi timeline bonifica pulizia follower sospese riprova cronologia storico log azioni escudo registro acciones',
     attacchi: 'attacchi attacco rapporto rapporti incidenti ondata ondate raid grafico follow al minuto avvisi avvisami avviso telegram mail scudo alzato coinvolti chi c era bonifica ripulire csv altri scudi attacks attack report alerts ataques ataque informe avisos',
+    follower: 'follower seguaci chi mi segue lista follower bot finti follow finti togli follow rimuovi follower pulizia pulire bot noti probabili ondata fabbrica account nuovi account chiusi blocca sblocca a posto controlla un nome csv followers fake followers remove follower cleanup bots seguidores falsos quitar seguidor limpieza',
     giochi: 'giochi minigiochi classifiche monete punti coin economia leaderboard ore guardate watchtime fedeltà rank vip games juegos clasificación monedas livelli',
     sondaggi: 'sondaggi predizioni poll prediction votazioni voto encuestas predicciones votar',
     giveaway: 'giveaway estrazione premi raffle sorteggio vincitori concorso sorteo premios',

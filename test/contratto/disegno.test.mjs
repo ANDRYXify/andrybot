@@ -430,7 +430,7 @@ test('una riga tolta si disfa prima di andarsene, e chi legge non la conta piu\'
   const i = APP.indexOf('function togli(');
   const t = APP.slice(i, APP.indexOf('\n}\n', i));
   assert.match(t, /el\.classList\.add\('esce'\);\n\s*el\.inert = true;\n\s*setTimeout\(\(\) => \{ el\.remove\(\); poi\?\.\(\); \}, _duraUscita\(\) \+ 20\);/);
-  for (const x of ["togli(ban.closest('.scudo-seg'));", "togli(b.closest('.dona-livello'),", 'togli(riga, _disegnaPremiMuro);', "const r = rim.closest('.azione-riga'); r?.classList.add('esce'); aggiornaRiassunto(); togli(r);", "const r = rimF.closest('.frase-trigger'); r?.classList.add('esce'); aggiornaRiassunto(); togli(r);"]) assert.ok(APP.includes(x), x);
+  for (const x of ["togli(b.closest('.dona-livello'),", 'togli(riga, _disegnaPremiMuro);', "const r = rim.closest('.azione-riga'); r?.classList.add('esce'); aggiornaRiassunto(); togli(r);", "const r = rimF.closest('.frase-trigger'); r?.classList.add('esce'); aggiornaRiassunto(); togli(r);"]) assert.ok(APP.includes(x), x);
   for (const x of ["querySelectorAll('[data-premio]:not(.esce)')", "querySelectorAll('#dona-livelli .dona-livello:not(.esce)')", "querySelectorAll('#lista-azioni .azione-riga:not(.esce)')", "querySelectorAll('#lista-altrimenti .azione-riga:not(.esce)')", "querySelectorAll('#lista-frasi-trigger .frase-trigger:not(.esce) .mod-testo-trigger')"]) assert.ok(APP.includes(x), 'chi legge salta le righe che se ne vanno: ' + x);
   assert.doesNotMatch(APP, /closest\('\.(azione-riga|frase-trigger|dona-livello|scudo-seg)'\)\?\.remove\(\)/, 'nessuna riga sparisce di colpo');
 });

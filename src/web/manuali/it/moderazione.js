@@ -5,14 +5,14 @@
 
 export default {
   slug: 'moderazione',
-  schede: ['regole', 'scudo', 'attacchi', 'registro'],
+  schede: ['regole', 'scudo', 'attacchi', 'follower', 'registro'],
   titolo: 'Manuale della moderazione: antispam e scudo anti-bot | SocialBot',
   h1: 'Manuale della moderazione: antispam e scudo anti-bot',
-  desc: 'Parole vietate, antispam con le soglie vere, lo scudo anti-bot con i suoi sei livelli, il rapporto di ogni attacco e il registro: cosa fa ogni controllo, di base e limiti.',
+  desc: 'Parole vietate, antispam, lo scudo anti-bot coi suoi sei livelli, il rapporto di ogni attacco, la pulizia dei follower e il registro: cosa fa ogni controllo.',
   aggiornata: '2026-10-08',
   corpo: [
     { p: [
-      'La moderazione della chat sta in <em>Chat e pubblico</em> → <em>Moderazione</em>. Lo scudo ha una sezione tutta sua nel menu, <em>Scudo e attacchi</em>, con tre schede: <strong>Scudo anti-bot</strong>, <strong>Gli attacchi</strong> e <strong>Registro dello scudo</strong>.',
+      'La moderazione della chat sta in <em>Chat e pubblico</em> → <em>Moderazione</em>. Lo scudo ha una sezione tutta sua nel menu, <em>Scudo e attacchi</em>, con quattro schede: <strong>Scudo anti-bot</strong>, <strong>Gli attacchi</strong>, <strong>I tuoi follower</strong> e <strong>Registro dello scudo</strong>.',
       '<em>Moderazione</em> pulisce i messaggi di tutti i giorni: parole vietate, spam, link. <em>Scudo anti-bot</em> difende il canale da follow-bot e hate-raid. <em>Gli attacchi</em> ti dà il rapporto di ogni attacco e ti avvisa quando lo scudo si alza. <em>Registro dello scudo</em> ti racconta ogni intervento e ti lascia decidere sui casi dubbi.',
       'Tutte e tre sono comprese nel pacchetto gratuito <strong>Essenziale</strong>. Lavorano sulla chat di <strong>Twitch</strong>. <em>Chat</em> lavora anche su <strong>Kick</strong>: su un canale di Kick la scheda c\'è, e <em>Scudo</em> e <em>Registro</em> mostrano «Solo su Twitch». Su YouTube e Discord le tre schede mostrano «Solo su Twitch».',
       'Il bot agisce con i permessi di moderazione che hai concesso tu: su Twitch, e su Kick con «Concedi la moderazione». Non c\'è un account estraneo da promuovere a moderatore.',
@@ -276,8 +276,65 @@ export default {
       'Su un canale solo Kick la scheda c\'è lo stesso: lo scudo contro gli attacchi lavora su Twitch, gli altri scudi restano.',
     ] },
 
+    { h2: 'I tuoi follower', scheda: 'follower', p: [
+      'La lista intera di chi ti segue su Twitch, chi sembra un bot e perché, e la pulizia. Niente si tocca da solo: decidi tu. La scheda la vede solo il proprietario del canale, e c\'è solo su Twitch: Kick e YouTube non danno la lista.',
+      'Togliere il follow non è un ban. Twitch non ha un tasto per togliere un follower: il bot lo blocca e lo sblocca subito, che è l\'unico modo. La persona sparisce dalla lista, e se è una persona vera può tornare a seguirti quando vuole. Il bot non banna mai, nemmeno se il blocco non riesce.',
+    ] },
+
+    { h3: 'Leggere la lista' },
+    { p: [
+      'La prima volta premi «Leggi la lista». Il bot la legge da Twitch cento follower al secondo, con la barra che avanza; puoi chiudere la pagina, la lettura va avanti da sola e riprende anche dopo un riavvio. «Ferma» la ferma dov\'è, «Riprendi» la fa ripartire da lì.',
+      'A lettura finita vedi quanti follower hai su Twitch, quanti sono nella lista e quanti sono bot noti o probabili, con la data dell\'ultima lettura. I follow nuovi entrano da soli mentre arrivano; «Rileggi la lista» serve a vedere chi se n\'è andato.',
+      'Se leggi «Ho letto meno follower di quanti Twitch dice di averne», la lettura non è arrivata in fondo: chi non segue più non viene segnato finché una lettura non arriva in fondo, per non dare per uscito chi non è stato letto.',
+      'Se leggi «Manca il permesso per leggere i tuoi follower.» premi «Concedi i permessi». Se Twitch non risponde la lettura si ferma e premi «Riprendi».',
+    ] },
+
+    { h3: 'I gruppi' },
+    { p: [
+      'Ogni follower ha un gruppo, e accanto il perché, in parole. I tasti in cima alla lista mostrano un gruppo alla volta, col numero.',
+    ] },
+    { tabella: [
+      ['Gruppo', 'Chi ci finisce'],
+      ['«Bot noti»', 'Il nome è nella lista pubblica dei bot, ha la forma dei bot che vendono follower, o l\'hai messo in «Blocca sempre».'],
+      ['«Probabili bot»', 'È nato insieme ad altri tuoi follower e arrivato insieme a loro (una fabbrica di account), oppure è stato riconosciuto da più canali, o lo scudo l\'ha fermato in un attacco qui.'],
+      ['«Da guardare»', 'Uno solo di quei segnali: arrivato in un\'ondata (un raid vero, per esempio), nato negli stessi minuti di altri, sospettato in un attacco, o un account appena nato con la foto di base, la bio vuota e un nome che sembra generato.'],
+      ['«Puliti»', 'Niente di strano. Uno spettatore nuovo e timido è qui.'],
+      ['«Protetti»', 'Abbonati, VIP, moderatori, chi è di casa (scrive in chat da tempo), chi è in «Non toccare mai», chi hai segnato «È a posto», i bot di servizio e tu. Non finiscono mai in un\'azione in massa.'],
+      ['«Account chiusi»', 'Twitch non li trova più: chiusi o sospesi. Non si possono toccare.'],
+      ['«Non seguono più» e «Tolti da qui»', 'Chi se n\'è andato, e chi hai tolto o bloccato da questa scheda. Restano in lista trenta giorni, poi spariscono.'],
+    ] },
+    { p: [
+      'Nato insieme e arrivato insieme vuol dire due fatti diversi: in una lista di persone vere il caso li mette insieme quasi mai, e infatti un raid di gente vera resta fra «Da guardare». Quanto vicini devono essere lo calcola il bot dalla tua lista: una lista grande alza la soglia da sola, così il caso non fa scattare niente.',
+      'Sopra i gruppi trovi la ricerca per nome, «Account nato» (nelle ultime 24 ore, 7 giorni, 30 giorni, nell\'ultimo anno), l\'ordine e «solo con la foto di base».',
+    ] },
+
+    { h3: 'Togliere, bloccare, segnare a posto' },
+    { p: [
+      'Ogni riga ha i suoi tasti: «Togli il follow», «Blocca», «È a posto» (e «Non più a posto» per annullare). Chi è bloccato ha «Sblocca». Su un protetto il bot chiede prima: «Questo account è protetto», con il perché.',
+      'Per un gruppo intero premi il tasto sopra la lista, per esempio «Togli il follow a 37», e scrivi il numero per confermare. Il numero deve essere quello che il bot conta in quel momento: se nel frattempo è cambiato leggi «Il numero non torna: adesso sono N.».',
+      'In massa non si toccano mai i protetti e gli account chiusi, i puliti non si tolgono e non si bloccano, e «Segna a posto» vale solo per chi è «Da guardare»: uno per uno si può tutto. Prima di partire il bot rilegge abbonati, VIP e moderatori, e di nuovo ogni dieci minuti: chi si abbona nel frattempo resta fuori. Se non riesce a leggerli non parte, e lo dice.',
+      'Il lavoro in massa va avanti da solo anche se chiudi la pagina, e riprende dopo un riavvio. Sotto attacco si mette in pausa per lasciare Twitch alla difesa, e lo dice: «In pausa: lo scudo è sotto attacco». «Ferma» e «Riprendi» fanno quello che dicono. Al massimo ventimila per volta.',
+      'Se Twitch blocca ma non vuole sbloccare, la persona resta bloccata e la trovi sotto, con il tasto «Sblocca».',
+      'Nel «Registro dello scudo» un lavoro in massa scrive una riga quando parte e una quando finisce, non una per account. Quello che fai da questa scheda non entra nel rapporto di un attacco.',
+    ] },
+
+    { h3: 'Le ondate trovate' },
+    { p: [
+      'Gli arrivi di tanti follow nello stesso minuto, con quanti erano, quanti sono nati insieme e quanti sono protetti. «Guardali» mostra solo quelli; «Tutta la lista» torna a tutti.',
+    ] },
+
+    { h3: 'Controlla un nome' },
+    { p: [
+      'Scrivi un nome di Twitch e premi «Controlla»: vedi la foto, quando è nato l\'account, se ti segue e da quando, il gruppo e il perché, con i tasti se ti segue. La foto e la bio si mostrano e basta: non si tengono.',
+    ] },
+
+    { h3: 'Scaricare la lista' },
+    { p: [
+      '«Scarica questa lista (CSV)» scarica la lista che stai guardando, coi filtri che hai scelto e i motivi nella tua lingua, da aprire in un foglio di calcolo.',
+    ] },
+
     { h2: 'Registro dello scudo', scheda: 'registro', p: [
-      'Cosa ha fatto lo scudo, intervento per intervento, e i casi su cui decidi tu. Non ci sono impostazioni. Gli attacchi, ognuno col suo rapporto, stanno nella scheda «Gli attacchi».',
+      'Cosa ha fatto lo scudo, intervento per intervento, e i casi su cui decidi tu. Non ci sono impostazioni. Gli attacchi, ognuno col suo rapporto, stanno nella scheda «Gli attacchi»; la pulizia dei follower in «I tuoi follower».',
       'Il registro lo vede solo il proprietario del canale. I moderatori del pannello non lo vedono.',
       'Le carte compaiono solo quando hanno qualcosa da mostrare. Se non si carica leggi «Non disponibile ora.»: ricarica la pagina.',
     ] },
@@ -314,15 +371,6 @@ export default {
       'Le ultime 120 righe del registro. Ogni riga dice cosa è stato fatto, a chi, perché, com\'è andata e quando.',
       'L\'esito è «fatto», «non riuscito», «avviso» o «in attesa». «in attesa» vuol dire che l\'azione è in fila per Twitch. Le righe della sola osservazione dicono che l\'azione non è stata eseguita.',
       'Se non c\'è ancora niente leggi «Ancora nessun intervento registrato.».',
-    ] },
-
-    { h3: 'Pulizia follower' },
-    { p: [
-      '«Scansiona i follower recenti» controlla i tuoi <strong>ultimi 100 follower</strong> contro la lista dei bot noti, la forma dei nomi e il profilo. Non fa niente da solo: ti mostra i sospetti e decidi tu.',
-      'Il risultato dice «Controllati N · M sospetti». Per ogni sospetto vedi il rischio e i motivi, e un pulsante «Blocca». Il blocco toglie il follow, e il numero dei follower torna pulito: leggi «Bloccato ✓: il follow non c\'è più.».',
-      'Se il blocco non si può fare, perché manca il permesso di blocco o Twitch dice di no, il bot banna al suo posto e lo dice: «Bannato: il blocco non si poteva fare, e il follow resta.». Il ban impedisce di scrivere nel tuo canale, ma l\'account resta fra i follower.',
-      'Se non trova nessuno leggi «Nessun follower sospetto tra i recenti. Pulito.». Se ripremi entro 30 secondi ti mostra lo stesso risultato.',
-      'Se mancano i permessi leggi «Per bloccare servono i permessi di moderazione.»: premi «Concedi». Se Twitch non risponde leggi «Scansione non riuscita.».',
     ] },
 
     { h2: 'Come tararlo' },

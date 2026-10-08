@@ -57,13 +57,13 @@ test('le scelte di avviso passano dal normalizzatore, e non toccano il resto del
 
 test('«Sblocca» disfa un blocco e si scrive nel registro', () => {
   const r = rotta("app.post('/api/antibot/azione', ", 2200);
-  assert.match(r, /\['sbanna', 'sblocca'\]\.includes\(req\.body\?\.azione\)/);
+  assert.match(r, /if \(!\['sbanna', 'sblocca'\]\.includes\(azione\)\) return res\.status\(400\)/, 'e nient\'altro: bloccare a mano si fa dalla lista dei follower');
   assert.match(r, /helix\.sbloccaUtente\(login, userId\)/);
   assert.match(r, /registraAntibot\(login, \{ login: nome, userId, azione: 'sblocca'/);
 });
 
 test('il menu: un gruppo suo con lo scudo, gli attacchi e il registro', () => {
-  assert.match(APP, /\{ id: 'difesa', nome: 'Scudo e attacchi', schede: \[\n\s+\['scudo', 'Lo scudo'\],\n\s+\['attacchi', 'Gli attacchi'\],\n\s+\['registro', 'Registro'\],\n\s+\] \}/);
+  assert.match(APP, /\{ id: 'difesa', nome: 'Scudo e attacchi', schede: \[\n\s+\['scudo', 'Lo scudo'\],\n\s+\['attacchi', 'Gli attacchi'\],\n\s+\['follower', 'I tuoi follower'\],\n\s+\['registro', 'Registro'\],\n\s+\] \}/);
   assert.doesNotMatch(pezzo('const FAMIGLIE = [', '];'), /'scudo'|'registro'|id: 'moderazione'/, 'lo scudo non sta piu\' in un\'altra famiglia');
   assert.match(APP, /if \(id === 'attacchi'\) caricaAttacchi\(\);/);
   assert.match(APP, /: id === 'attacchi' && stato\?\.attacchiNuovi > 0/, 'il puntino');
@@ -80,7 +80,7 @@ test('la veglia: solo il proprietario, non nella prova, ferma a scheda nascosta,
   assert.match(v, /if \(document\.hidden\) \{ giro\(\); return; \}/);
   assert.match(v, /if \(qui && \(inCorso \|\| _vegliaInCorso \|\| n > prima\) && !_attOccupato\(\)\) caricaAttacchi\(\);/);
   assert.match(v, /if \(n > prima && !qui\) toast\(/);
-  assert.match(APP, /  invitoRecensione\(\);\n  vegliaAttacchi\(\);\n\}/, 'parte all\'apertura del pannello, dopo il resto');
+  assert.match(APP, /  esitoPostaDaIndirizzo\(\);\n  vegliaAttacchi\(\);\n  avvisaDaDecidere\(\);/, 'parte all\'apertura del pannello');
   const o = pezzo('function _attOccupato() {', 'function vegliaAttacchi()');
   assert.match(o, /bon-conferma-/, 'un numero di conferma scritto a meta\' non si cancella');
 });

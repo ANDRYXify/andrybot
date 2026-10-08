@@ -247,13 +247,17 @@ test('ogni riga del registro dello scudo ha un nome nel pannello, nelle tre ling
   // pretende un nome per ciascuno.
   const { readFileSync } = await import('node:fs');
   const leggi = (f) => readFileSync(new URL(`../../${f}`, import.meta.url), 'utf8');
-  const AB = leggi('src/features/antibot.js'), SRV = leggi('src/web/server.js'), APP = leggi('src/web/public/app.js');
+  const AB = leggi('src/features/antibot.js'), SRV = leggi('src/web/server.js'), APP = leggi('src/web/public/app.js'), FOL = leggi('src/features/follower.js');
   const { AZIONI } = await import('../../src/features/enforcement.js');
   const azioni = new Set(Object.values(AZIONI));
   for (const t of [AB, SRV]) {
     for (const m of t.matchAll(/registra(?:Antibot)?\([^)]*?azione: '([a-z-]+)'/g)) azioni.add(m[1]);
   }
   azioni.add('sbanna');
+  // la lista dei follower scrive col nome dell'azione che le passa (togli,
+  // blocca, sblocca) e con «pulizia» per il lavoro in massa
+  for (const m of FOL.matchAll(/registra\([^)]*?azione: '([a-z-]+)'/g)) azioni.add(m[1]);
+  for (const a of ['togli', 'blocca', 'sblocca']) azioni.add(a);
   const esiti = new Set(['fatto', 'fallito', 'a-vuoto']);
   for (const m of AB.matchAll(/registra\([^)]*?esito: '([a-z-]+)'/g)) esiti.add(m[1]);
   const corpo = (nome) => { const i = APP.indexOf(`function ${nome}(`); return APP.slice(i, APP.indexOf('\n}\n', i)); };
@@ -272,10 +276,10 @@ test('dal registro si ricarica il registro, e un tasto rifiutato dice perche\'',
   assert.ok(SRV.includes("codice: 'permessi'") && APP.includes("e.dati?.codice === 'permessi'"), 'senza permessi lo dice, e dice dove riconcederli');
 });
 
-test('la pulizia dei follower blocca come lo scudo, e se ripiega sul ban lo dice', async () => {
-  // «Banna» lasciava il follow: il numero restava gonfiato e la persona non
-  // spariva dalla lista. Il tasto adesso passa dall'esecutore dello scudo: la
-  // stessa fila, lo stesso registro, lo stesso ripiego sul ban.
+test('lo scudo blocca, e se ripiega sul ban lo dice; a mano dal pannello il ripiego non c\'e\'', async () => {
+  // Durante un attacco lo scudo blocca (il blocco toglie il follow) e, se il
+  // blocco non si puo' fare, ripiega sul ban e lo scrive. A mano, dalla lista
+  // dei follower, non si ripiega mai: si toglie il follow o si blocca e basta.
   const { Esecutore, verdetto, AZIONI } = await import('../../src/features/enforcement.js');
   const fatte = [];
   const righe = [];
@@ -296,12 +300,13 @@ test('la pulizia dei follower blocca come lo scudo, e se ripiega sul ban lo dice
   assert.deepEqual(fatte.splice(0), ['blocca', 'ban0'], 'senza blocco un ban per sempre, non un timeout');
   assert.ok(righe.some((x) => x.motivo === 'dalla console' && /ripiego: ban/.test(x.risposta)), 'e il registro lo scrive');
 
+  // Il blocco a mano dal pannello non ripiega piu' sul ban: si fa dalla lista
+  // dei follower (features/follower.js), che toglie il follow o blocca e basta.
   const { readFileSync } = await import('node:fs');
   const leggi = (f) => readFileSync(new URL(`../../${f}`, import.meta.url), 'utf8');
-  const APP = leggi('src/web/public/app.js'), SRV = leggi('src/web/server.js'), AB = leggi('src/features/antibot.js');
-  assert.match(AB, /export function bloccaDaConsole\([\s\S]*?esecutore\.esegui\(verdetto\(\{[^}]*azione: AZIONI\.BLOCCA/, 'la console chiede un blocco all\'esecutore');
-  assert.ok(SRV.includes('await bloccaDaConsole(login, { login: nome, userId })'), 'e il tasto passa da li\'');
-  assert.ok(APP.includes("data-scudo-blocca data-userid=") && APP.includes("azione: 'blocca' }"), 'il tasto chiede il blocco');
-  assert.ok(!APP.includes('data-scudo-ban'), 'nessun tasto «Banna» rimasto');
-  assert.ok(APP.includes("toast(r.ripiego === 'ban'"), 'il pannello dice se e\' stato un ban');
+  const APP = leggi('src/web/public/app.js'), SRV = leggi('src/web/server.js'), AB = leggi('src/features/antibot.js'), FOL = leggi('src/features/follower.js');
+  assert.doesNotMatch(AB, /bloccaDaConsole/, 'nessun blocco a mano con ripiego sul ban');
+  assert.doesNotMatch(SRV, /bloccaDaConsole|'\/api\/antibot\/scan'|'\/api\/antibot\/pulizia'/, 'e nessuna porta che ci porti');
+  assert.doesNotMatch(FOL, /timeoutUser|esecutore|AZIONI\.BAN/, 'la lista dei follower non banna mai');
+  assert.ok(!APP.includes('data-scudo-ban') && !APP.includes('data-scudo-blocca'), 'nessun tasto «Banna» o «Blocca» della console rimasto');
 });

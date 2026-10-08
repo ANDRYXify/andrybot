@@ -9,7 +9,7 @@
 // andavano su disco. Qui si fissa:
 //  · nel prodotto un solo `new AntiBot(`, quello del bot (il simulatore ha il
 //    suo, che e' un gioco e si ferma da se');
-//  · il server usa lo scudo vivo, e senza bot lo dice;
+//  · la pulizia dei follower ha una casa sua e non ne accende un altro;
 //  · il bot si spegne con spegniScudo, e spegniScudo ferma ogni fila e ogni
 //    orologio e scrive quello che aspettava di essere scritto.
 import test from 'node:test';
@@ -41,13 +41,15 @@ test('nel prodotto c\'e\' un solo scudo: quello del bot', () => {
   assert.match(SIM, /await scudo\.ferma\(\{ conserva: false \}\);/, 'e quello del simulatore si ferma a fine scenario');
 });
 
-test('il server usa lo scudo vivo, e senza bot lo dice', () => {
+test('la pulizia dei follower non passa dallo scudo, e non ne fa un secondo', () => {
+  // La pulizia ha una casa sua (features/follower.js): legge la lista con le
+  // sue pagine, rallenta da se' e si mette in fila dietro lo scudo quando e'
+  // sotto attacco. Non tocca l'esecutore dello scudo e non ne accende un altro.
   const SRV = senzaCommenti(readFileSync(join(RAD, 'src/web/server.js'), 'utf8'));
-  assert.match(SRV, /const scudoVivo = \(\) => manager\?\.antibot \|\| null;/);
-  const i = SRV.indexOf("app.post('/api/antibot/pulizia'");
-  const pulizia = SRV.slice(i, SRV.indexOf("app.post('/api/antibot/azione'", i));
-  assert.match(pulizia, /const scudo = scudoVivo\(\);\n\s*if \(!scudo\) return res\.status\(503\)/);
-  assert.equal((pulizia.match(/scudo\.pulisciFollower\(/g) || []).length, 2, 'la prova e la pulizia vera');
+  assert.doesNotMatch(SRV, /\/api\/antibot\/pulizia|pulisciFollower|scudoVivo/);
+  const FOL = senzaCommenti(readFileSync(join(RAD, 'src/features/follower.js'), 'utf8'));
+  assert.doesNotMatch(FOL, /new AntiBot|esecutore/);
+  assert.match(FOL, /let scudoAlto = \(ch\) => almeno\(ch, 'attacco'\);/, 'e sotto attacco aspetta');
 });
 
 test('il bot si spegne con spegniScudo', () => {

@@ -111,7 +111,12 @@ test('un nome entra nelle liste da una porta sola, col tetto del salvataggio', a
   }
   const seg = rotta('/api/antibot/segnalazione');
   assert.ok(seg.indexOf("'lista-piena'") < seg.indexOf('risolviSegnalazione('), 'una lista piena non chiude il caso: resta da decidere');
-  assert.equal(APP.split("e.dati?.codice === 'lista-piena' ? testoListaPiena(e.dati.massimo)").length - 1, 2, 'il pannello lo dice in tutte e due le strade');
+  // ogni strada del pannello che aggiunge un nome (la scheda dello scudo, «Da
+  // rivedere», «È a posto» dal rapporto di un attacco) dice la lista piena
+  const aggiunte = (APP.match(/api\('\/api\/antibot\/lista', \{ method: 'POST', body: \{ lista: [^}]*azione: 'aggiungi'/g) || []).length
+    + (APP.match(/api\('\/api\/antibot\/segnalazione', \{ method: 'POST'/g) || []).length;
+  assert.ok(aggiunte >= 3, `le strade che aggiungono un nome: ${aggiunte}`);
+  assert.equal(APP.split("e.dati?.codice === 'lista-piena' ? testoListaPiena(e.dati.massimo)").length - 1, aggiunte, 'il pannello lo dice in ogni strada che aggiunge un nome');
   const { normalizzaAntibot } = await import('../../src/web/impostazioni-moderazione.js');
   const salvata = normalizzaAntibot({}, { esenti: [...piena, 'nuovo_arrivato'], extra: piena });
   assert.equal(salvata.esenti.length, ab.ESENTI_MAX, 'il salvataggio taglia allo stesso tetto dell\'aggiunta');

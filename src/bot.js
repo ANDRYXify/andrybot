@@ -111,6 +111,7 @@ import { tokenDi as tokenKick, collegati as kickCollegati, statoCanale as statoK
 import * as riscattiKick from './kick/riscatti.js';
 import * as bjFeat from './features/blackjack.js';
 import * as seguitiFeat from './features/seguiti.js';
+import * as followerFeat from './features/follower.js';
 import * as negozio from './features/negozio.js';
 import * as arenaFeat from './features/arena.js';
 import * as giroRegole from './features/giro-regole.js';
@@ -235,6 +236,10 @@ export class BotManager {
       // lo scudo e' salito ad attacco: le scene buttano i follow ancora in fila
       followFermi: (ch) => this.effects?.emit?.(ch, { tipo: 'scudo', followFermi: true }),
     });
+    // La lista dei follower (docs/FOLLOWER.md): una lettura della lista o una
+    // pulizia rimaste a meta' prima di un riavvio ripartono da dove erano.
+    followerFeat.configura({ helix: this.helix });
+    followerFeat.riprendiTutto();
     // Le modalita' della chat a tempo (solo emote per due minuti): quello che
     // era acceso prima di un riavvio si riprende da dove era.
     this.modalita = new modalitaFeat.ModalitaChat({ helix: this.helix, say: (ch, t) => this.say(ch, t) });
@@ -411,6 +416,8 @@ export class BotManager {
       // i segni delle accoglienze (chi arriva in chat): dopo 90 giorni non
       // servono piu' a niente
       try { arriviDb.pota(Date.now() - 90 * 86_400_000); } catch { /* il prossimo giro */ }
+      // dalla lista dei follower, chi non segue piu' da un mese
+      try { followerFeat.pota(); } catch { /* il prossimo giro */ }
     }, 60 * 60_000);
     // Il giro dei giochi automatici (giro-giochi.js): un orologio solo per le
     // manche, il boss, l'arena, la catena, la conta e la corsa che partono da
@@ -1470,6 +1477,8 @@ export class BotManager {
     // Chi toglie e rimette il follow non e' un follower nuovo (features/seguiti.js):
     // il ripetuto si ferma qui, il ritorno cambia tipo prima di chiunque.
     if (type === 'channel.follow') {
+      // nella lista dei follower subito, anche se ripetuto: segue adesso
+      try { followerFeat.arrivato(channel, data || {}); } catch (e) { log.debug(`#${channel} lista dei follower:`, e?.message || e); }
       let come = 'nuovo';
       try { come = seguitiFeat.classifica(channel, 'twitch', data?.user_id || data?.user_login); }
       catch (e) { log.error(`#${channel} follow:`, e?.message || e); }

@@ -380,6 +380,7 @@ async function caricaStato() {
   esitoAcquistoDaIndirizzo();
   esitoPermessiDaIndirizzo();
   esitoPostaDaIndirizzo();
+  vegliaAttacchi();
   avvisaDaDecidere();
   avvisaRapporti();
   collegaRegiaRicordata();
@@ -388,7 +389,6 @@ async function caricaStato() {
   avvisoCosaManca();
   invito();
   invitoRecensione();
-  vegliaAttacchi();
 }
 
 const AVVISI_MANCA = {
@@ -1375,6 +1375,10 @@ function apiDemo(percorso, opzioni = {}) {
   if (via.startsWith('/api/streamer/negozio')) return Promise.resolve(_demoNegozio(metodo, via, opzioni.body));
   if (via === '/api/streamer/telegram/scudo') return Promise.resolve(_demoScudoTg(metodo, opzioni.body));
   if (metodo === 'GET' && /^\/api\/antibot\/attacchi\/INC-[0-9-]+$/.test(via)) return Promise.resolve(_demoAttacco(via.split('/').pop()));
+  if (via.startsWith('/api/follower/')) {
+    try { const r = _demoFollower(metodo, via, percorso, opzioni.body || {}); if (r) return Promise.resolve(r); }
+    catch (e) { return Promise.reject(e); }
+  }
   if (via === '/api/antibot/avvisi') {
     _demoScritture.avvisiScudo = { ..._demoAttacchi().avvisi, ...(_demoScritture.avvisiScudo || {}), ...(opzioni.body?.avvisi || {}) };
     return Promise.resolve({ ok: true, avvisi: _demoScritture.avvisiScudo });
@@ -1792,6 +1796,142 @@ function _demoProvaFrasi(b) {
   const pool = b?.modo === 'sue' && mie.length ? mie : (b?.modo === 'miste' ? [...m.nostre, ...mie] : m.nostre);
   const dati = { nome: 'Luna', bit: 500, piattaforma: 'Twitch', community: 'ciurma' };
   return pool.slice(0, 3).map((f) => _fraseLeggibile(f).replace(/\{([a-z]+)\}/g, (_, k) => String(dati[k] ?? '')));
+}
+
+let _demoFol = null;
+function _demoFolLista() {
+  if (_demoFol) return _demoFol;
+  const ora = Date.now();
+  const g = 86_400_000;
+  const passo = (i, n) => ((i * 7919) % n) / n;
+  const righe = [];
+  const metti = (r) => righe.push({ foto_base: false, ruolo: '', stato: '', uscito: 0, chiuso: false, motivi: [], ...r });
+  const nomi = ['lucia_gioca', 'marco87', 'giuliapixel', 'ilfra_tv', 'sara_draws', 'teo_speedrun', 'nonnaGamer', 'pietro_live', 'ale_pad', 'vale_cosplay', 'fede_retro', 'chiaraplays', 'dario_kart', 'elisa_lofi', 'matte_fps', 'bea_cozy', 'luca_tattico', 'anna_notte', 'gabri_mod', 'simo_sim'];
+  for (let i = 0; i < 170; i++) {
+    const n = nomi[i % nomi.length] + (i >= nomi.length ? String(i) : '');
+    metti({ user_id: String(5000 + i), login: n.toLowerCase(), nome: n, livello: 'pulito', seguito: ora - Math.round(passo(i, 170) * 700 * g) - g, creato: ora - Math.round((1 + passo(i + 3, 170) * 9) * 365 * g) });
+  }
+  [['gabri_mod', 'mod'], ['vale_cosplay', 'vip'], ['marco87', 'sub'], ['lucia_gioca', 'sub'], ['ilfra_tv', 'casa']].forEach(([l, k]) => {
+    const r = righe.find((x) => x.login === l);
+    if (r) { r.livello = 'protetto'; r.motivi = [{ k }]; if (k !== 'casa') r.ruolo = k; }
+  });
+  ['followers_4u_now', 'cheap_viewers_it', 'buy_follows_fast', 'viewerbotstore', 'streamboo_promo', 'getfollowersnow', 'followerclub_x', 'hitfollow_99', 'bigfollows_it', 'viewers_shop_1', 'botarmy_live', 'followers4free'].forEach((l, i) => {
+    metti({ user_id: String(7000 + i), login: l, nome: l, livello: 'noto', seguito: ora - (40 + i * 13) * g, creato: ora - (60 + i * 17) * g, foto_base: true, motivi: [{ k: i % 3 ? 'nomebot' : 'lista' }] });
+  });
+  const fabbricaArrivo = ora - 2 * g + 3_600_000;
+  const fabbricaNascita = ora - 34 * g;
+  for (let i = 0; i < 26; i++) {
+    const l = ['xkqz', 'mrvt', 'plnd', 'wtrs'][i % 4] + String(48210 + i * 7);
+    metti({ user_id: String(8000 + i), login: l, nome: l, livello: 'probabile', seguito: fabbricaArrivo + i * 2300, creato: fabbricaNascita + i * 18_000, foto_base: true, motivi: [{ k: 'fabbrica', gemelli: 26, ondata: 26 }, { k: 'foto' }, { k: 'bio' }, { k: 'nomegenerato' }] });
+  }
+  const raid = ora - 6 * g + 7_200_000;
+  for (let i = 0; i < 14; i++) {
+    const l = ['amici_di_rob', 'robfan', 'la_ciurma', 'nave_pirata'][i % 4] + (i + 1);
+    metti({ user_id: String(9000 + i), login: l, nome: l, livello: 'dubbio', seguito: raid + i * 3100, creato: ora - (200 + i * 140) * g, motivi: [{ k: 'ondata', ondata: 14 }] });
+  }
+  for (let i = 0; i < 4; i++) {
+    metti({ user_id: String(9500 + i), login: 'nuovo_' + (i + 1), nome: 'Nuovo' + (i + 1), livello: 'dubbio', seguito: ora - (i + 1) * 3_600_000, creato: ora - (i + 2) * 3_600_000, foto_base: true, motivi: [{ k: 'oggi' }, { k: 'foto' }, { k: 'bio' }, { k: 'nomegenerato' }] });
+  }
+  for (let i = 0; i < 3; i++) {
+    metti({ user_id: String(9700 + i), login: 'sparito_' + (i + 1), nome: 'sparito_' + (i + 1), livello: 'pulito', chiuso: true, creato: -1, seguito: ora - (300 + i * 50) * g, motivi: [{ k: 'chiuso' }] });
+  }
+  for (let i = 0; i < 6; i++) {
+    const tolto = i < 2;
+    metti({ user_id: String(9800 + i), login: (tolto ? 'promo_bot_' : 'passato_') + (i + 1), nome: (tolto ? 'promo_bot_' : 'passato_') + (i + 1), livello: tolto ? 'noto' : 'pulito', seguito: ora - (90 + i * 20) * g, creato: ora - (400 + i * 30) * g, uscito: ora - (3 + i) * g, stato: tolto ? 'tolto' : '', motivi: tolto ? [{ k: 'nomebot' }] : [] });
+  }
+  _demoFol = { righe, ondate: [
+    { inizio: fabbricaArrivo, fine: fabbricaArrivo + 25 * 2300, quanti: 26, nati: 26, protetti: 0 },
+    { inizio: raid, fine: raid + 13 * 3100, quanti: 14, nati: 0, protetti: 0 },
+  ], lavoro: null };
+  return _demoFol;
+}
+
+function _demoFolFiltra(q) {
+  const d = _demoFolLista();
+  const ora = Date.now();
+  const liv = q.get('livello') || 'tutti';
+  const cerca = (q.get('cerca') || '').toLowerCase().replace(/[^a-z0-9_]/g, '');
+  const eta = Number(q.get('eta')) || 0;
+  const foto = q.get('foto') === '1';
+  const ond = (q.get('ondata') || '').match(/^(\d+)-(\d+)$/);
+  const fuori = liv === 'usciti' || liv === 'tolti';
+  let r = d.righe.filter((x) => (fuori ? !!x.uscito : !x.uscito)
+    && (liv !== 'tolti' || x.stato === 'tolto' || x.stato === 'bloccato')
+    && (liv !== 'chiusi' || x.chiuso)
+    && (!['protetto', 'noto', 'probabile', 'dubbio', 'pulito'].includes(liv) || x.livello === liv)
+    && (!cerca || x.login.includes(cerca))
+    && (!eta || (x.creato > 0 && ora - x.creato < eta * 86_400_000))
+    && (!foto || x.foto_base)
+    && (!ond || (x.seguito >= Number(ond[1]) && x.seguito <= Number(ond[2]))));
+  const ordine = q.get('ordine') || 'recenti';
+  r = r.sort(ordine === 'vecchi' ? (a, b) => a.seguito - b.seguito : ordine === 'nati' ? (a, b) => b.creato - a.creato : ordine === 'nome' ? (a, b) => a.login.localeCompare(b.login) : (a, b) => b.seguito - a.seguito);
+  return r;
+}
+
+function _demoFolAzionabile(x, a) {
+  if (a === 'sblocca') return x.stato === 'bloccato';
+  if (x.livello === 'protetto' || x.chiuso) return false;
+  if (a === 'apposto') return !x.uscito && x.livello === 'dubbio';
+  return x.livello !== 'pulito' && !x.uscito && x.stato !== 'bloccato' && x.stato !== 'tolto';
+}
+
+function _demoFolConti() {
+  const c = { tutti: 0, protetto: 0, noto: 0, probabile: 0, dubbio: 0, pulito: 0, chiusi: 0, usciti: 0, tolti: 0 };
+  for (const x of _demoFolLista().righe) {
+    if (x.uscito) { c.usciti++; if (x.stato === 'tolto' || x.stato === 'bloccato') c.tolti++; continue; }
+    c.tutti++; c[x.livello]++; if (x.chiuso) c.chiusi++;
+  }
+  return c;
+}
+
+function _demoFolFai(x, azione, ora) {
+  if (azione === 'togli') Object.assign(x, { stato: 'tolto', uscito: ora });
+  else if (azione === 'blocca') Object.assign(x, { stato: 'bloccato', uscito: ora });
+  else if (azione === 'sblocca') x.stato = '';
+  else if (azione === 'apposto') Object.assign(x, { prima: x.prima || { livello: x.livello, motivi: x.motivi }, stato: 'apposto', livello: 'protetto', motivi: [{ k: 'apposto' }] });
+  else if (azione === 'nonapposto') Object.assign(x, { stato: '', ...(x.prima || { livello: 'pulito', motivi: [] }), prima: null });
+}
+
+function _demoFollower(metodo, via, percorso, body = {}) {
+  const d = _demoFolLista();
+  const q = new URLSearchParams(percorso.split('?')[1] || '');
+  const ora = Date.now();
+  if (via === '/api/follower/stato') {
+    return { giro: { stato: 'finito', motivo: '', letti: d.righe.length, totale: d.righe.filter((x) => !x.uscito).length, avvio: ora - 3_600_000, fine: ora - 3_500_000, completo: true, ultimoCompleto: ora - 3_500_000, ruoli: { mod: true, vip: true, sub: true, tutti: true } },
+      inCorso: { giro: false, lavoro: false }, conti: _demoFolConti(), ondate: d.ondate, soglie: { gemelli: 4, ondata: 5 }, lavoro: d.lavoro, permessi: true };
+  }
+  if (via === '/api/follower/elenco') {
+    const tutte = _demoFolFiltra(q);
+    const da = Number(q.get('da')) || 0;
+    const massa = {};
+    for (const a of ['togli', 'blocca', 'apposto', 'sblocca']) massa[a] = tutte.filter((x) => _demoFolAzionabile(x, a)).length;
+    return { totale: tutte.length, righe: tutte.slice(da, da + 100).map((x) => ({ ...x, prima: undefined })), massa, protetti: tutte.filter((x) => x.livello === 'protetto').length };
+  }
+  if (via === '/api/follower/giro' || via === '/api/follower/lavoro/ferma' || via === '/api/follower/lavoro/riprendi') return { ok: true };
+  if (via === '/api/follower/azione' && metodo === 'POST') {
+    const x = d.righe.find((r) => r.user_id === String(body.userId || ''));
+    if (!x) return { ok: false };
+    if ((body.azione === 'togli' || body.azione === 'blocca') && x.livello === 'protetto' && !body.forza) {
+      const e = new Error('protetto'); e.dati = { errore: 'protetto', motivi: x.motivi }; throw e;
+    }
+    _demoFolFai(x, body.azione, ora);
+    return { ok: true, riga: { ...x, prima: undefined } };
+  }
+  if (via === '/api/follower/lavoro' && metodo === 'POST') {
+    const tutte = _demoFolFiltra(new URLSearchParams(Object.entries(body.filtro || {}).filter(([, v]) => v !== '' && v !== false).map(([k, v]) => [k, v === true ? '1' : String(v)]))).filter((x) => _demoFolAzionabile(x, body.azione));
+    if (Number(body.conferma) !== tutte.length) { const e = new Error('conferma'); e.dati = { errore: 'conferma', quanti: tutte.length }; throw e; }
+    for (const x of tutte) _demoFolFai(x, body.azione, ora);
+    if (body.azione !== 'apposto') d.lavoro = { id: 'demo', azione: body.azione, totale: tutte.length, fatti: tutte.length, falliti: 0, saltati: 0, fatto: tutte.length, stato: 'finito', motivo: '', attesaScudo: false, avvio: ora, fine: ora, nonRiusciti: [], bloccatiRimasti: [] };
+    return { ok: true, fatti: tutte.length, lavoro: d.lavoro };
+  }
+  if (via === '/api/follower/lavoro') return { lavoro: d.lavoro };
+  if (via === '/api/follower/controlla') {
+    const nome = (q.get('nome') || '').toLowerCase().replace(/^@/, '');
+    const x = d.righe.find((r) => r.login === nome);
+    if (!x) return { ok: true, trovato: false, login: nome };
+    return { ok: true, trovato: true, user_id: x.user_id, profilo: { login: x.login, nome: x.nome, foto: '', bio: '', creato: x.creato, tipo: '' }, segue: !x.uscito, seguito: x.seguito, inLista: true, livello: x.livello, motivi: x.motivi, stato: x.stato };
+  }
+  return null;
 }
 
 function _demoAttacchi() {
@@ -4338,6 +4478,7 @@ const GRUPPI = [
   { id: 'difesa', nome: 'Scudo e attacchi', schede: [
     ['scudo', 'Lo scudo'],
     ['attacchi', 'Gli attacchi'],
+    ['follower', 'I tuoi follower'],
     ['registro', 'Registro'],
   ] },
   { id: 'diretta', nome: 'Durante la diretta', schede: [
@@ -4420,6 +4561,7 @@ const T_SCHEDA = {
   scudo: ['Scudo anti-bot', 'Anti-bot shield', 'Escudo anti-bot'],
   registro: ['Registro dello scudo', 'Shield log', 'Registro del escudo'],
   attacchi: ['Gli attacchi', 'The attacks', 'Los ataques'],
+  follower: ['I tuoi follower', 'Your followers', 'Tus seguidores'],
   dcavvisi: ['Avvisi su Discord', 'Discord alerts', 'Avisos en Discord'],
   dcserver: ['Il server Discord', 'Your Discord server', 'Tu servidor de Discord'],
   dcentra: ['Chi entra nel server', 'Who joins the server', 'Quién entra al servidor'],
@@ -4481,6 +4623,7 @@ const ICONA = {
   regole:      _ico('<path d="M12 3.2 19 6v5c0 4.8-3.4 7.8-7 8.8-3.6-1-7-4-7-8.8V6z"/>'),
   scudo:       _ico('<path d="M12 3.2 19 6v5c0 4.8-3.4 7.8-7 8.8-3.6-1-7-4-7-8.8V6z"/><path d="m9 12 2 2 4-4"/>'),
   attacchi:    _ico('<path d="M12 3.2 19 6v5c0 4.8-3.4 7.8-7 8.8-3.6-1-7-4-7-8.8V6z"/><path d="m12.6 7.5-2.8 4.6h2.6l-1 4.4 3-5h-2.6z"/>'),
+  follower:    _ico('<path d="M15 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="m16 11 2 2 4-4"/>'),
   registro:    _ico('<rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3h6v1"/><path d="M9 10h6"/><path d="M9 14h6"/><path d="M9 18h3"/>'),
   giochi:      _ico('<rect x="2" y="7.5" width="20" height="9" rx="4.5"/><path d="M7 11v3"/><path d="M5.5 12.5h3"/><circle cx="16" cy="11.5" r=".9" fill="currentColor" stroke="none"/><circle cx="18" cy="13.5" r=".9" fill="currentColor" stroke="none"/>'),
   negozio:     _ico('<path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/>'),
@@ -4523,6 +4666,7 @@ const DESC = {
   scudo: ['La difesa dagli attacchi: ondate di follow-bot e hate-raid.', 'Defense against attacks: follow-bot waves and hate-raids.', 'La defensa contra los ataques: oleadas de follow-bots y hate-raids.'],
   registro: ['Ogni intervento dello scudo, i casi da rivedere e quello rimasto in sospeso.', 'Every shield action, the cases to review and what is left pending.', 'Cada intervención del escudo, los casos por revisar y lo que quedó pendiente.'],
   attacchi: ['Ogni attacco col suo rapporto, come ti avviso e gli altri scudi.', 'Every attack with its report, how I tell you and the other shields.', 'Cada ataque con su informe, cómo te aviso y los otros escudos.'],
+  follower: ['La lista intera di chi ti segue, i bot trovati e perché, e la pulizia.', 'The full list of who follows you, the bots found and why, and the cleanup.', 'La lista completa de quién te sigue, los bots encontrados y por qué, y la limpieza.'],
   giochi: ['Mini-giochi, monete e classifiche per la chat.', 'Minigames, coins and leaderboards for chat.', 'Minijuegos, monedas y clasificaciones para el chat.'],
   negozio: ['Cosa si compra con le monete del canale, chi lo compra, cosa c’è da consegnare, e la pagina del negozio.', 'What can be bought with channel coins, who buys it, what there is to deliver, and the shop page.', 'Qué se compra con las monedas del canal, quién lo compra, qué hay que entregar, y la página de la tienda.'],
   effetti: ['Effetti, suoni, GIF e video da lanciare in chat o in overlay — con libreria condivisa.', 'Effects, sounds, GIFs and videos to trigger in chat or overlay — with a shared library.', 'Efectos, sonidos, GIF y vídeos para lanzar en el chat o en el overlay — con biblioteca compartida.'],
@@ -4572,7 +4716,7 @@ const NOME_ADDON = {
   squadra: ['Squadra', 'Squadra', 'Squadra'],
 };
 
-const SOLO_TWITCH = ['regia', 'regole', 'scudo', 'registro', 'emote', 'sondaggi', 'penitenze'];
+const SOLO_TWITCH = ['regia', 'regole', 'scudo', 'registro', 'follower', 'emote', 'sondaggi', 'penitenze'];
 const NOME_PIATTAFORMA = { twitch: 'Twitch', kick: 'Kick', youtube: 'YouTube', discord: 'Discord' };
 
 const ANCHE_SU = { regole: ['kick'], penitenze: ['kick'] };
@@ -4761,8 +4905,10 @@ const GUIDE = {
     come: [['Accendi la protezione: sotto trovi lo stato di adesso.', 'Turn the protection on: below you see how things stand right now.', 'Enciende la protección: debajo ves cómo está ahora.', '#chk-ab-attivo'], ['Scegli quanto presto reagire e cosa fare quando è sicuro.', 'Choose how soon to react and what to do when it is sure.', 'Elige con qué rapidez reaccionar y qué hacer cuando está seguro.', '#sel-ab-modo'], ['Se non ti fidi ancora, accendi la sola osservazione: scrive cosa farebbe e non tocca nessuno.', 'If you do not trust it yet, turn on observe-only: it logs what it would do and touches nobody.', 'Si aún no te fías, enciende solo observar: anota lo que haría y no toca a nadie.', '#chk-ab-avuoto'], ['Le due liste in fondo si salvano da sole.', 'The two lists at the bottom save themselves.', 'Las dos listas de abajo se guardan solas.', '#scudo-add-esenti']] },
   attacchi: { serve: ['Leggere ogni attacco per intero, ripulire dopo, e scegliere come saperlo quando succede.', 'Read every attack in full, clean up afterwards, and choose how to find out when it happens.', 'Leer cada ataque entero, limpiar después y elegir cómo enterarte cuando pasa.'],
     come: [['Apri un attacco dall\'elenco: dentro c\'è il rapporto intero, col grafico dei follow e chi c\'era.', 'Open an attack from the list: inside there is the full report, with the follow chart and who was there.', 'Abre un ataque de la lista: dentro está el informe completo, con el gráfico de follows y quién estaba.', '#att-elenco'], ['Scegli da che livello avvisarti e dove: Telegram in privato, la mail, il rapporto a attacco finito.', 'Choose from which level to tell you and where: Telegram privately, email, the report when it is over.', 'Elige desde qué nivel avisarte y dónde: Telegram en privado, el correo, el informe al terminar.', '#att-soglia'], ['In fondo, gli altri scudi: chi entra nel gruppo Telegram e nel server Discord.', 'At the bottom, the other shields: who joins the Telegram group and the Discord server.', 'Abajo, los otros escudos: quién entra en el grupo de Telegram y en el servidor de Discord.', '#att-altri']] },
+  follower: { serve: ['Vedere tutti i tuoi follower, trovare i bot con i loro motivi e toglierli, senza toccare chi ti sostiene.', 'See all your followers, find the bots with their reasons and remove them, without touching who supports you.', 'Ver todos tus seguidores, encontrar los bots con sus motivos y quitarlos, sin tocar a quien te apoya.'],
+    come: [['Leggi la lista: la prima volta ci vuole qualche minuto, poi i follow nuovi entrano da soli.', 'Read the list: the first time it takes a few minutes, then new follows come in on their own.', 'Lee la lista: la primera vez tarda unos minutos, luego los follows nuevos entran solos.', '#fol-testa'], ['Scegli un gruppo: bot noti, probabili, da guardare. Ognuno dice perché è lì.', 'Pick a group: known bots, likely, to check. Each one says why it is there.', 'Elige un grupo: bots conocidos, probables, a revisar. Cada uno dice por qué está ahí.', '#fol-conti'], ['Tocca uno per uno, o tutti quelli del gruppo scrivendo il numero per confermare. Abbonati, VIP, moderatori e chi è di casa restano sempre fuori.', 'Act one by one, or on the whole group by typing the number to confirm. Subscribers, VIPs, moderators and regulars always stay out.', 'Actúa uno por uno, o sobre todo el grupo escribiendo el número para confirmar. Suscriptores, VIP, moderadores y habituales siempre quedan fuera.', '#fol-elenco'], ['Un nome solo: controllalo qui sotto.', 'Just one name: check it below.', 'Un solo nombre: revísalo aquí abajo.', '#fol-carta-controlla']] },
   registro: { serve: ['Vedere cosa ha fatto lo scudo, decidere tu sui casi dubbi e ripulire dopo un attacco.', 'See what the shield did, decide the doubtful cases yourself and clean up after an attack.', 'Ver qué hizo el escudo, decidir tú los casos dudosos y limpiar después de un ataque.'],
-    come: [['In cima ci sono i numeri: oggi, sette giorni, quanto è rimasto da decidere.', 'At the top there are the numbers: today, seven days, how much is left to decide.', 'Arriba están los números: hoy, siete días, cuánto queda por decidir.', '#reg-numeri'], ['Ogni intervento è scritto qui: cosa, a chi, perché, com\'è andata e quando.', 'Every action is written here: what, to whom, why, how it went and when.', 'Cada acción se escribe aquí: qué, a quién, por qué, cómo fue y cuándo.', '#scudo-registro'], ['Quando c\'è qualcosa da decidere o un\'azione rimasta in sospeso, qui sopra compaiono le carte che servono.', 'When there is something to decide or an action left pending, the cards you need appear above.', 'Cuando hay algo que decidir o una acción pendiente, arriba aparecen las fichas necesarias.', '#reg-numeri'], ['La pulizia dei follower passa in rassegna chi ti segue già.', 'The follower cleanup goes through who already follows you.', 'La limpieza de seguidores repasa quién ya te sigue.', '#scudo-scan-btn']] },
+    come: [['In cima ci sono i numeri: oggi, sette giorni, quanto è rimasto da decidere.', 'At the top there are the numbers: today, seven days, how much is left to decide.', 'Arriba están los números: hoy, siete días, cuánto queda por decidir.', '#reg-numeri'], ['Ogni intervento è scritto qui: cosa, a chi, perché, com\'è andata e quando.', 'Every action is written here: what, to whom, why, how it went and when.', 'Cada acción se escribe aquí: qué, a quién, por qué, cómo fue y cuándo.', '#scudo-registro'], ['Quando c\'è qualcosa da decidere o un\'azione rimasta in sospeso, qui sopra compaiono le carte che servono.', 'When there is something to decide or an action left pending, the cards you need appear above.', 'Cuando hay algo que decidir o una acción pendiente, arriba aparecen las fichas necesarias.', '#reg-numeri']] },
 };
 
 const _icoGuida = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1.3.5 2.6 1.5 3.5.8.8 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>';
@@ -5817,6 +5963,7 @@ function vistaPiattaforma() {
     ${pannelloScudo()}
     ${pannelloRegistro()}
     ${pannelloAttacchi()}
+    ${pannelloFollower()}
     ${pannelloGiochi()}
     ${pannelloNegozio()}
     ${pannelloRegia()}
@@ -29575,7 +29722,7 @@ function pannelloRegistro() {
       <div id="scudo-segnalazioni"></div>
     </div>
 
-    <p class="suggerimento">${L('Gli attacchi, ognuno col suo rapporto, hanno una scheda tutta loro:', 'The attacks, each with its report, have a tab of their own:', 'Los ataques, cada uno con su informe, tienen una pestaña propia:')} <a href="#attacchi" data-scheda="attacchi">${L('Gli attacchi', 'The attacks', 'Los ataques')}</a>.</p>
+    <p class="suggerimento">${L('Gli attacchi, ognuno col suo rapporto, hanno una scheda tutta loro:', 'The attacks, each with its report, have a tab of their own:', 'Los ataques, cada uno con su informe, tienen una pestaña propia:')} <a href="#attacchi" data-scheda="attacchi">${L('Gli attacchi', 'The attacks', 'Los ataques')}</a>. ${L('La pulizia dei follower sta in', 'The follower cleanup is in', 'La limpieza de seguidores está en')} <a href="#follower" data-scheda="follower">${L('I tuoi follower', 'Your followers', 'Tus seguidores')}</a>.</p>
 
     <div class="carta" id="reg-carta-sospese" hidden>
       <h2>${_hIco(ICO.attesa)}${L('Rimaste in sospeso', 'Left pending', 'Quedaron pendientes')}</h2>
@@ -29589,12 +29736,6 @@ function pannelloRegistro() {
       <div id="scudo-registro"></div>
     </div>
 
-    <div class="carta">
-      <h2>${_hIco(ICO.utenti)}${L('Pulizia follower', 'Follower cleanup', 'Limpieza de seguidores')}</h2>
-      <p class="suggerimento">${L('Controlla i follower più recenti contro la lista bot e le euristiche. Non banna nulla da solo: ti mostra i sospetti e decidi tu.', 'Checks your most recent followers against the bot list and heuristics. It bans nothing on its own: it shows suspects and you decide.', 'Comprueba tus seguidores más recientes contra la lista de bots y las heurísticas. No banea nada solo: te muestra sospechosos y decides tú.')}</p>
-      <p><button type="button" class="btn secondario" id="scudo-scan-btn" title="${esc(L('Ricontrolla i follower arrivati di recente e segnala quelli che sembrano finti. Non banna nessuno da solo', 'Re-checks recent followers and flags the ones that look fake. It bans nobody on its own', 'Revisa los seguidores recientes y señala los que parecen falsos. No banea a nadie por su cuenta'))}">${L('Scansiona i follower recenti', 'Scan recent followers', 'Escanear seguidores recientes')}</button></p>
-      <div id="scudo-scan-esito"></div>
-    </div>
   `);
 }
 
@@ -29767,7 +29908,7 @@ async function caricaAttacchi() {
   if (!box) return;
   let d;
   try { d = await api('/api/antibot/attacchi'); }
-  catch (e) { box.innerHTML = `<p class="vuoto">${L('Non disponibile ora.', 'Not available now.', 'No disponible ahora.')}</p>`; return; }
+  catch (e) { box.innerHTML = `<p class="vuoto">${stato?.ruolo === 'moderatore' ? L('Gli attacchi li vede solo il proprietario del canale.', 'Only the channel owner sees the attacks.', 'Los ataques solo los ve el propietario del canal.') : L('Non disponibile ora.', 'Not available now.', 'No disponible ahora.')}</p>`; return; }
   _attDati = d;
   attDisegnaElenco();
   attDisegnaAvvisi();
@@ -30036,7 +30177,12 @@ function attWire() {
           else toast(r.motivo === 'permesso mancante' ? L('Manca il permesso su Twitch: ricollega il canale.', 'The Twitch permission is missing: reconnect the channel.', 'Falta el permiso en Twitch: vuelve a conectar el canal.') : L('Non riuscito: riprova fra poco.', 'It did not work: try again shortly.', 'No se pudo: inténtalo de nuevo en un momento.'), 'errore');
         }
         if (_attAperto) attApri(_attAperto, { senzaScorrere: true });
-      } catch (e) { toast(e.message || L('Non riuscito', 'Failed', 'Falló'), 'errore'); az.disabled = false; }
+      } catch (e) {
+        toast(e.dati?.codice === 'permessi'
+          ? L('Mancano i permessi di moderazione: li riconcedi da Stato, con «Aggiorna i permessi».', 'Moderation permissions are missing: grant them again from Status, with “Update permissions”.', 'Faltan los permisos de moderación: vuelve a darlos desde Estado, con «Actualizar permisos».')
+          : e.dati?.codice === 'lista-piena' ? testoListaPiena(e.dati.massimo) : (e.message || L('Non riuscito', 'Failed', 'Falló')), 'errore');
+        az.disabled = false;
+      }
       return;
     }
     const bon = ev.target.closest('[data-bonifica]');
@@ -30086,6 +30232,8 @@ function scudoAzioneTesto(a) {
     ban: L('Bannato', 'Banned', 'Baneado'),
     sbanna: L('Sbannato', 'Unbanned', 'Desbaneado'),
     sblocca: L('Sbloccato', 'Unblocked', 'Desbloqueado'),
+    togli: L('Follow tolto', 'Follow removed', 'Follow quitado'),
+    pulizia: L('Pulizia dei follower', 'Follower cleanup', 'Limpieza de seguidores'),
     timeout: L('Timeout', 'Timeout', 'Timeout'),
     blocca: L('Bloccato', 'Blocked', 'Bloqueado'),
     cancella: L('Messaggio tolto', 'Message removed', 'Mensaje quitado'),
@@ -30112,6 +30260,486 @@ function scudoEsito(e) {
   }[e] || ['', e];
   return `<span class="scudo-esito ${m[0]}">${m[1]}</span>`;
 }
+const FOL_LIVELLO = {
+  protetto: ['protetto', 'protected', 'protegido'],
+  noto: ['bot noto', 'known bot', 'bot conocido'],
+  probabile: ['probabile bot', 'likely bot', 'bot probable'],
+  dubbio: ['da guardare', 'to check', 'a revisar'],
+  pulito: ['pulito', 'clean', 'limpio'],
+};
+const FOL_FILTRI = [
+  ['tutti', 'Tutti', 'All', 'Todos'],
+  ['noto', 'Bot noti', 'Known bots', 'Bots conocidos'],
+  ['probabile', 'Probabili bot', 'Likely bots', 'Bots probables'],
+  ['dubbio', 'Da guardare', 'To check', 'A revisar'],
+  ['pulito', 'Puliti', 'Clean', 'Limpios'],
+  ['protetto', 'Protetti', 'Protected', 'Protegidos'],
+  ['chiusi', 'Account chiusi', 'Closed accounts', 'Cuentas cerradas'],
+  ['usciti', 'Non seguono più', 'No longer follow', 'Ya no siguen'],
+  ['tolti', 'Tolti da qui', 'Removed from here', 'Quitados desde aquí'],
+];
+const FOL_MOTIVO = {
+  apposto: () => L('l’hai segnato come a posto', 'you marked them as fine', 'lo marcaste como correcto'),
+  tu: () => L('sei tu', 'it’s you', 'eres tú'),
+  servizio: () => L('bot di servizio', 'service bot', 'bot de servicio'),
+  esente: () => L('in «Non toccare mai»', 'in «Never touch»', 'en «Nunca tocar»'),
+  mod: () => L('moderatore', 'moderator', 'moderador'),
+  vip: () => L('VIP', 'VIP', 'VIP'),
+  sub: () => L('abbonato', 'subscriber', 'suscriptor'),
+  casa: () => L('di casa: scrive qui da tempo', 'a regular: chats here for a long time', 'de la casa: escribe aquí desde hace tiempo'),
+  bloccasempre: () => L('in «Blocca sempre»', 'in «Always block»', 'en «Bloquear siempre»'),
+  lista: () => L('nella lista pubblica dei bot', 'in the public bot list', 'en la lista pública de bots'),
+  nomebot: () => L('nome da bot promozionale', 'promo bot name', 'nombre de bot promocional'),
+  fabbrica: (m) => L(`nato insieme ad altri ${m.gemelli - 1} e arrivato con loro`, `created with ${m.gemelli - 1} others and arrived with them`, `creado con otros ${m.gemelli - 1} y llegado con ellos`),
+  gemelli: (m) => L(`nato negli stessi minuti di altri ${m.gemelli - 1} follower`, `created in the same minutes as ${m.gemelli - 1} other followers`, `creado en los mismos minutos que otros ${m.gemelli - 1} seguidores`),
+  ondata: (m) => L(`arrivato con altri ${m.ondata - 1} nello stesso minuto`, `arrived with ${m.ondata - 1} others in the same minute`, `llegó con otros ${m.ondata - 1} en el mismo minuto`),
+  rete: (m) => L(`riconosciuto da ${m.n} altri canali`, `recognized by ${m.n} other channels`, `reconocido por ${m.n} otros canales`),
+  fermato: () => L('fermato dallo scudo in un attacco', 'stopped by the shield in an attack', 'detenido por el escudo en un ataque'),
+  sospettato: () => L('sospettato durante un attacco', 'suspected during an attack', 'sospechoso durante un ataque'),
+  oggi: () => L('account di oggi', 'account from today', 'cuenta de hoy'),
+  giovane: (m) => L(`account di ${m.giorni} giorni`, `${m.giorni}-day-old account`, `cuenta de ${m.giorni} días`),
+  foto: () => L('foto di base', 'default picture', 'foto por defecto'),
+  bio: () => L('bio vuota', 'empty bio', 'bio vacía'),
+  nomegenerato: () => L('nome che sembra generato', 'name that looks generated', 'nombre que parece generado'),
+  chiuso: () => L('account chiuso o sospeso', 'account closed or suspended', 'cuenta cerrada o suspendida'),
+  streamer: () => L('affiliato o partner su Twitch', 'Twitch affiliate or partner', 'afiliado o partner en Twitch'),
+};
+const folLivello = (l) => { const v = FOL_LIVELLO[l]; return v ? L(v[0], v[1], v[2]) : l; };
+const folMotivi = (motivi) => (motivi || []).map((m) => (FOL_MOTIVO[m.k] ? FOL_MOTIVO[m.k](m) : m.k)).join(' · ');
+const folData = (ts) => { try { return Number(ts) > 0 ? new Date(Number(ts)).toLocaleDateString(localePannello(), { day: 'numeric', month: 'short', year: 'numeric' }) : ''; } catch (e) { return ''; } };
+const folNum = (n) => { try { return Number(n || 0).toLocaleString(localePannello()); } catch (e) { return String(n || 0); } };
+const FOL_AZIONE = {
+  togli: () => L('Togli il follow', 'Remove follow', 'Quitar follow'),
+  blocca: () => L('Blocca', 'Block', 'Bloquear'),
+  apposto: () => L('È a posto', 'They are fine', 'Está bien'),
+  nonapposto: () => L('Non più a posto', 'No longer fine', 'Ya no está bien'),
+  sblocca: () => L('Sblocca', 'Unblock', 'Desbloquear'),
+};
+
+const FOL_MASSA_FORTE = new Set(['togli', 'blocca']);
+let _folStato = null;
+let _folFiltro = { livello: 'tutti', cerca: '', eta: '', foto: false, ordine: 'recenti', ondata: '' };
+let _folRighe = [];
+let _folTotale = 0;
+let _folMassa = null;
+let _folProtetti = 0;
+let _folGiro = 0;
+let _folLegato = false;
+let _folCercaTimer = 0;
+let _folConferma = '';
+let _folEraInCorso = false;
+
+function pannelloFollower() {
+  return pannello('follower', `
+    <div class="carta" id="fol-carta-testa">
+      <h2>${_hIco(ICO.utenti)}${L('I tuoi follower', 'Your followers', 'Tus seguidores')}</h2>
+      <p class="suggerimento">${L('La lista intera di chi ti segue su Twitch, con chi sembra un bot e perché. Niente si tocca da solo: decidi tu. Togliere il follow non è un ban: la persona può tornare a seguirti quando vuole.', 'The full list of who follows you on Twitch, with who looks like a bot and why. Nothing is touched on its own: you decide. Removing a follow is not a ban: the person can follow you again whenever they want.', 'La lista completa de quién te sigue en Twitch, con quién parece un bot y por qué. Nada se toca solo: decides tú. Quitar el follow no es un baneo: la persona puede volver a seguirte cuando quiera.')}</p>
+      <div id="fol-testa">${attesaHtml()}</div>
+    </div>
+    <div class="carta" id="fol-carta-lavoro" hidden>
+      <div id="fol-lavoro"></div>
+    </div>
+    <div class="carta" id="fol-carta-lista">
+      <h2>${_hIco(ICO.lista)}${L('La lista', 'The list', 'La lista')}</h2>
+      <div id="fol-conti" class="fol-conti" data-non-salva></div>
+      <div class="fol-filtri" data-non-salva>
+        <input type="search" id="fol-cerca" placeholder="${esc(L('cerca un nome', 'search a name', 'busca un nombre'))}" aria-label="${esc(L('cerca un nome nella lista', 'search a name in the list', 'busca un nombre en la lista'))}" autocomplete="off">
+        <label class="fol-campo">${L('Account nato', 'Account created', 'Cuenta creada')}
+          <select id="fol-eta">
+            <option value="">${L('quando vuoi', 'any time', 'cuando sea')}</option>
+            <option value="1">${L('nelle ultime 24 ore', 'in the last 24 hours', 'en las últimas 24 horas')}</option>
+            <option value="7">${L('negli ultimi 7 giorni', 'in the last 7 days', 'en los últimos 7 días')}</option>
+            <option value="30">${L('negli ultimi 30 giorni', 'in the last 30 days', 'en los últimos 30 días')}</option>
+            <option value="365">${L('nell’ultimo anno', 'in the last year', 'en el último año')}</option>
+          </select>
+        </label>
+        <label class="fol-campo">${L('In ordine', 'Order', 'Orden')}
+          <select id="fol-ordine">
+            <option value="recenti">${L('chi ha seguito da poco', 'newest follows first', 'follows más recientes')}</option>
+            <option value="vecchi">${L('chi segue da più tempo', 'oldest follows first', 'follows más antiguos')}</option>
+            <option value="nati">${L('account più giovani', 'youngest accounts', 'cuentas más jóvenes')}</option>
+            <option value="nome">${L('per nome', 'by name', 'por nombre')}</option>
+          </select>
+        </label>
+        <label class="tg-spunta"><input type="checkbox" id="fol-foto"><span>${L('solo con la foto di base', 'only with the default picture', 'solo con la foto por defecto')}</span></label>
+      </div>
+      <div id="fol-ondata-scelta"></div>
+      <div id="fol-massa" data-non-salva></div>
+      <div id="fol-elenco" class="fol-elenco">${attesaHtml()}</div>
+      <p class="riga-flessibile spazio-sopra">
+        <button type="button" class="btn secondario mini" id="fol-altri" hidden>${L('Mostra altri', 'Show more', 'Mostrar más')}</button>
+        <a class="btn secondario mini" id="fol-csv" href="/api/follower/esporta.csv" download>${_bIco(ICO.scarica)}${L('Scarica questa lista (CSV)', 'Download this list (CSV)', 'Descarga esta lista (CSV)')}</a>
+      </p>
+    </div>
+    <div class="carta" id="fol-carta-ondate">
+      <h2>${_hIco(ICO.onda)}${L('Le ondate trovate', 'The waves found', 'Las oleadas encontradas')}</h2>
+      <p class="suggerimento">${L('Tanti follow arrivati nello stesso minuto. Se sono anche nati insieme, è una fabbrica di bot; se sono nati in anni diversi, è gente vera, per esempio da un raid.', 'Many follows arriving in the same minute. If they were also created together, it is a bot factory; if they were created years apart, they are real people, for example from a raid.', 'Muchos follows llegados en el mismo minuto. Si además se crearon juntos, es una fábrica de bots; si se crearon con años de diferencia, es gente real, por ejemplo de una raid.')}</p>
+      <div id="fol-ondate"></div>
+    </div>
+    <div class="carta" id="fol-carta-controlla">
+      <h2>${_hIco(ICO.occhio)}${L('Controlla un nome', 'Check a name', 'Revisa un nombre')}</h2>
+      <p class="suggerimento">${L('Scrivi un nome di Twitch: ti dico se ti segue, da quando, e cosa ne penso.', 'Type a Twitch name: I tell you if they follow you, since when, and what I think.', 'Escribe un nombre de Twitch: te digo si te sigue, desde cuándo y qué pienso.')}</p>
+      <div class="riga-flessibile" data-non-salva>
+        <input type="text" id="fol-nome" maxlength="32" placeholder="@nome" aria-label="${esc(L('nome da controllare', 'name to check', 'nombre a revisar'))}" autocomplete="off">
+        <button type="button" class="btn secondario" id="fol-controlla">${L('Controlla', 'Check', 'Revisar')}</button>
+      </div>
+      <div id="fol-esito"></div>
+    </div>`);
+}
+
+function folQuery(extra = {}) {
+  const f = { ..._folFiltro, ...extra };
+  const q = new URLSearchParams();
+  for (const [k, v] of Object.entries(f)) if (v !== '' && v !== false && v != null) q.set(k, v === true ? '1' : String(v));
+  return q.toString();
+}
+
+async function caricaFollower() {
+  folWire();
+  await folRinfresca();
+  await folCaricaElenco();
+}
+
+async function folRinfresca() {
+  let d;
+  try { d = await api('/api/follower/stato'); }
+  catch (e) {
+    const box = document.getElementById('fol-testa');
+    if (box) box.innerHTML = `<p class="vuoto">${e.dati?.codice === 'solo-twitch' ? L('La lista dei follower c’è solo su Twitch.', 'The follower list is only on Twitch.', 'La lista de seguidores solo está en Twitch.') : stato?.ruolo === 'moderatore' ? L('La lista dei follower la vede solo il proprietario del canale.', 'Only the channel owner sees the follower list.', 'La lista de seguidores solo la ve el propietario del canal.') : L('Non disponibile ora.', 'Not available now.', 'No disponible ahora.')}</p>`;
+    return null;
+  }
+  _folStato = d;
+  folDisegnaTesta();
+  folDisegnaLavoro();
+  folDisegnaConti();
+  folDisegnaOndate();
+  folVeglia();
+  return d;
+}
+
+function folVeglia() {
+  const d = _folStato;
+  const inCorso = !!(d && (d.inCorso?.giro || d.inCorso?.lavoro));
+  if (_folEraInCorso && !inCorso) folCaricaElenco();
+  _folEraInCorso = inCorso;
+  clearTimeout(_folGiro);
+  if (!inCorso || DEMO) return;
+  _folGiro = setTimeout(() => {
+    if (document.hidden || schedaAttiva !== 'follower') { folVeglia(); return; }
+    folRinfresca();
+  }, 3000);
+}
+
+function folBarra(fatti, totale) {
+  const p = totale > 0 ? Math.min(100, Math.round((fatti / totale) * 100)) : 0;
+  return `<div class="fol-barra" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${p}"><i style="width:${p}%"></i></div>`;
+}
+
+function folDisegnaTesta() {
+  const box = document.getElementById('fol-testa');
+  if (!box || !_folStato) return;
+  const g = _folStato.giro;
+  const inCorso = !!_folStato.inCorso?.giro;
+  const permesso = `<a class="btn secondario mini" href="/auth/permessi">${L('Concedi i permessi', 'Grant permissions', 'Concede los permisos')}</a>`;
+  let html = '';
+  if (inCorso) {
+    html = `<p>${L('Sto leggendo la lista', 'Reading the list', 'Leyendo la lista')}: <b>${folNum(g?.letti)}</b>${g?.totale ? ` ${L('su', 'of', 'de')} ${folNum(g.totale)}` : ''}.</p>${folBarra(g?.letti || 0, g?.totale || 0)}
+      <p class="suggerimento">${L('Cento follower al secondo: puoi lasciare la pagina, la lettura va avanti da sola e riprende anche dopo un riavvio.', 'A hundred followers per second: you can leave the page, the reading goes on by itself and resumes even after a restart.', 'Cien seguidores por segundo: puedes dejar la página, la lectura sigue sola y se reanuda incluso tras un reinicio.')}</p>
+      <p><button type="button" class="btn secondario mini" data-fol-giro="ferma">${L('Ferma', 'Stop', 'Detener')}</button></p>`;
+  } else if (!g) {
+    html = `<p>${L('Non ho ancora letto la tua lista.', 'I have not read your list yet.', 'Todavía no he leído tu lista.')}</p>
+      <p><button type="button" class="btn" data-fol-giro="avvia">${L('Leggi la lista', 'Read the list', 'Leer la lista')}</button></p>`;
+  } else if (g.stato === 'errore' && g.motivo === 'permesso') {
+    html = `<p class="tg-stato guaio">${_bIco(ICO.avviso)}${L('Manca il permesso per leggere i tuoi follower.', 'The permission to read your followers is missing.', 'Falta el permiso para leer tus seguidores.')} ${permesso}</p>`;
+  } else if (g.stato === 'errore' || g.stato === 'fermo') {
+    html = `<p>${g.stato === 'fermo' ? L('Lettura fermata a', 'Reading stopped at', 'Lectura detenida en') : L('Twitch non ha risposto, mi sono fermata a', 'Twitch did not answer, I stopped at', 'Twitch no respondió, me detuve en')} <b>${folNum(g.letti)}</b>${g.totale ? ` ${L('su', 'of', 'de')} ${folNum(g.totale)}` : ''}.</p>
+      <p><button type="button" class="btn" data-fol-giro="avvia">${L('Riprendi', 'Resume', 'Reanudar')}</button></p>`;
+  } else {
+    const c = _folStato.conti || {};
+    html = `<div class="scudo-kpi fol-kpi">
+        <div class="kpi"><b>${folNum(g.totale)}</b><span>${L('follower su Twitch', 'followers on Twitch', 'seguidores en Twitch')}</span></div>
+        <div class="kpi"><b>${folNum(c.tutti)}</b><span>${L('nella lista', 'in the list', 'en la lista')}</span></div>
+        <div class="kpi"><b>${folNum((c.noto || 0) + (c.probabile || 0))}</b><span>${L('bot noti o probabili', 'known or likely bots', 'bots conocidos o probables')}</span></div>
+      </div>
+      <p class="suggerimento">${L('Letta il', 'Read on', 'Leída el')} ${folData(g.fine)}. ${L('I follow nuovi entrano da soli; rileggi ogni tanto per vedere chi se n’è andato.', 'New follows come in on their own; read again now and then to see who left.', 'Los follows nuevos entran solos; vuelve a leer de vez en cuando para ver quién se fue.')}</p>
+      ${g.completo ? '' : `<p class="suggerimento">${L('Ho letto meno follower di quanti Twitch dice di averne: chi non segue più non lo segno finché una lettura non arriva in fondo.', 'I read fewer followers than Twitch says you have: I do not mark who left until a reading gets to the end.', 'Leí menos seguidores de los que Twitch dice que tienes: no marco quién se fue hasta que una lectura llegue al final.')}</p>`}
+      ${g.ruoli && !g.ruoli.tutti ? `<p class="tg-stato guaio">${_bIco(ICO.avviso)}${L('Non riesco a leggere abbonati, VIP o moderatori: le azioni in massa restano ferme finché non concedi i permessi, per non toccare chi ti sostiene.', 'I cannot read subscribers, VIPs or moderators: bulk actions stay off until you grant the permissions, so nobody who supports you is touched.', 'No puedo leer suscriptores, VIP o moderadores: las acciones en masa quedan paradas hasta que concedas los permisos, para no tocar a quien te apoya.')} ${permesso}</p>` : ''}
+      <p><button type="button" class="btn secondario" data-fol-giro="avvia">${L('Rileggi la lista', 'Read the list again', 'Volver a leer la lista')}</button></p>`;
+  }
+  box.innerHTML = html;
+}
+
+function folDisegnaLavoro() {
+  const carta = document.getElementById('fol-carta-lavoro');
+  const box = document.getElementById('fol-lavoro');
+  if (!carta || !box || !_folStato) return;
+  const l = _folStato.lavoro;
+  if (!l || (l.stato === 'finito' && Date.now() - (l.fine || 0) > 86_400_000)) { carta.hidden = true; return; }
+  carta.hidden = false;
+  const cosa = { togli: L('togliere il follow', 'remove the follow', 'quitar el follow'), blocca: L('bloccare', 'block', 'bloquear'), sblocca: L('sbloccare', 'unblock', 'desbloquear'), apposto: L('segnare a posto', 'mark as fine', 'marcar como correcto') }[l.azione] || l.azione;
+  const numeri = `<b>${folNum(l.fatti)}</b> ${L('fatti', 'done', 'hechos')} · ${folNum(l.falliti)} ${L('non riusciti', 'failed', 'fallidos')} · ${folNum(l.saltati)} ${L('lasciati stare', 'left alone', 'dejados en paz')} · ${L('su', 'of', 'de')} ${folNum(l.totale)}`;
+  let testa = '', tasti = '';
+  if (l.stato === 'in corso') {
+    testa = `${L('Sto lavorando', 'Working', 'Trabajando')}: ${cosa}.`;
+    tasti = `<button type="button" class="btn secondario mini" data-fol-lavoro="ferma">${L('Ferma', 'Stop', 'Detener')}</button>`;
+  } else if (l.stato === 'fermo') {
+    testa = L('Fermato.', 'Stopped.', 'Detenido.');
+    tasti = `<button type="button" class="btn mini" data-fol-lavoro="riprendi">${L('Riprendi', 'Resume', 'Reanudar')}</button>`;
+  } else if (l.stato === 'errore') {
+    testa = l.motivo === 'permesso' ? L('Fermato: manca il permesso di bloccare.', 'Stopped: the permission to block is missing.', 'Detenido: falta el permiso para bloquear.') : L('Fermato: Twitch non ha risposto.', 'Stopped: Twitch did not answer.', 'Detenido: Twitch no respondió.');
+    tasti = `${l.motivo === 'permesso' ? `<a class="btn secondario mini" href="/auth/permessi">${L('Concedi i permessi', 'Grant permissions', 'Concede los permisos')}</a> ` : ''}<button type="button" class="btn mini" data-fol-lavoro="riprendi">${L('Riprendi', 'Resume', 'Reanudar')}</button>`;
+  } else testa = `${L('Fatto', 'Done', 'Hecho')}: ${cosa}.`;
+  const scudo = l.attesaScudo ? `<p class="tg-stato guaio">${_bIco(ICO.scudo)}${L('In pausa: lo scudo è sotto attacco, e Twitch serve alla difesa. Riprendo da sola quando torna giù.', 'Paused: the shield is under attack, and Twitch is needed for defense. I resume on my own when it goes down.', 'En pausa: el escudo está bajo ataque y Twitch hace falta para la defensa. Sigo sola cuando baje.')}</p>` : '';
+  const rimasti = (l.bloccatiRimasti || []).length ? `<p class="suggerimento spazio-sopra">${L('Bloccati ma non sbloccati (Twitch non ha voluto): restano bloccati finché non li sblocchi.', 'Blocked but not unblocked (Twitch refused): they stay blocked until you unblock them.', 'Bloqueados pero no desbloqueados (Twitch no quiso): siguen bloqueados hasta que los desbloquees.')}</p>
+    <div class="fol-mini">${l.bloccatiRimasti.map((b) => `<span>@${esc(b.login)} <button type="button" class="btn secondario mini" data-fol-azione="sblocca" data-fol-id="${esc(b.id)}">${FOL_AZIONE.sblocca()}</button></span>`).join('')}</div>` : '';
+  const falliti = (l.nonRiusciti || []).length ? `<details class="spazio-sopra"><summary>${L('Non riusciti', 'Failed', 'Fallidos')} (${folNum(l.falliti)})</summary><p class="fol-mini">${l.nonRiusciti.map((f) => `<span>@${esc(f.login)}: ${esc(f.motivo || '?')}</span>`).join('')}</p></details>` : '';
+  box.innerHTML = `<h3>${testa}</h3>${folBarra(l.fatto || 0, l.totale || 0)}<p>${numeri}</p>${scudo}<p>${tasti}</p>${rimasti}${falliti}`;
+}
+
+function folDisegnaConti() {
+  const box = document.getElementById('fol-conti');
+  if (!box || !_folStato) return;
+  const c = _folStato.conti || {};
+  box.innerHTML = FOL_FILTRI.map(([k, it, en, es]) => `<button type="button" class="btn secondario mini fol-filtro fol-f-${k}${_folFiltro.livello === k ? ' attivo' : ''}" data-fol-livello="${k}" aria-pressed="${_folFiltro.livello === k ? 'true' : 'false'}">${L(it, en, es)} <b>${folNum(c[k] || 0)}</b></button>`).join('');
+}
+
+function folDisegnaOndate() {
+  const box = document.getElementById('fol-ondate');
+  if (!box || !_folStato) return;
+  const o = _folStato.ondate || [];
+  if (!o.length) { box.innerHTML = `<p class="vuoto">${L('Nessuna ondata nella tua lista.', 'No waves in your list.', 'Ninguna oleada en tu lista.')}</p>`; return; }
+  box.innerHTML = o.map((x) => `
+    <div class="att-altro">
+      <div><b>${folData(x.inizio)} ${attOra(x.inizio)}</b>
+        <span>${folNum(x.quanti)} ${L('arrivati insieme', 'arrived together', 'llegados juntos')} · ${folNum(x.nati)} ${L('nati insieme', 'created together', 'creados juntos')}${x.protetti ? ` · ${folNum(x.protetti)} ${L('protetti', 'protected', 'protegidos')}` : ''}</span></div>
+      <button type="button" class="btn secondario mini" data-fol-ondata="${x.inizio}-${x.fine}">${L('Guardali', 'Look at them', 'Míralos')}</button>
+    </div>`).join('');
+}
+
+async function folCaricaElenco({ altri = false } = {}) {
+  const box = document.getElementById('fol-elenco');
+  if (!box) return;
+  const da = altri ? _folRighe.length : 0;
+  let d;
+  try { d = await api('/api/follower/elenco?' + folQuery({ da, quanti: 100 })); }
+  catch (e) { if (!altri) box.innerHTML = `<p class="vuoto">${L('Non disponibile ora.', 'Not available now.', 'No disponible ahora.')}</p>`; return; }
+  _folRighe = altri ? _folRighe.concat(d.righe || []) : (d.righe || []);
+  _folTotale = d.totale || 0;
+  _folMassa = d.massa || null;
+  _folProtetti = d.protetti || 0;
+  folDisegnaElenco();
+  folDisegnaMassa();
+  const csv = document.getElementById('fol-csv');
+  if (csv) csv.href = '/api/follower/esporta.csv?' + folQuery({ lingua: LINGUA });
+  const sc = document.getElementById('fol-ondata-scelta');
+  if (sc) sc.innerHTML = _folFiltro.ondata ? `<p class="suggerimento">${L('Stai guardando un’ondata.', 'You are looking at a wave.', 'Estás mirando una oleada.')} <button type="button" class="btn secondario mini" data-fol-ondata="">${L('Tutta la lista', 'Whole list', 'Toda la lista')}</button></p>` : '';
+}
+
+function folTasti(x) {
+  const t = (a) => `<button type="button" class="btn secondario mini" data-fol-azione="${a}" data-fol-id="${esc(x.user_id)}">${FOL_AZIONE[a]()}</button>`;
+  if (x.uscito) return x.stato === 'bloccato' ? t('sblocca') : '';
+  if (x.chiuso) return '';
+  const a = [t('togli'), t('blocca')];
+  if (x.stato === 'apposto') a.push(t('nonapposto'));
+  else if (x.livello !== 'protetto') a.push(t('apposto'));
+  return a.join('');
+}
+
+function folRigaHtml(x) {
+  const statoTesto = x.stato === 'tolto' ? L('follow tolto da qui', 'follow removed from here', 'follow quitado desde aquí')
+    : x.stato === 'bloccato' ? L('bloccato', 'blocked', 'bloqueado')
+      : x.uscito ? L('non segue più', 'no longer follows', 'ya no sigue') : '';
+  const ruolo = { mod: L('mod', 'mod', 'mod'), vip: 'VIP', sub: L('abbonato', 'sub', 'suscriptor') }[x.ruolo] || '';
+  return `
+    <div class="fol-riga${x.uscito ? ' uscito' : ''}" data-fol-riga="${esc(x.user_id)}">
+      <div class="fol-chi"><b>@${esc(x.login)}</b>${x.nome && x.nome.toLowerCase() !== x.login ? ` <span class="tenue">${esc(x.nome)}</span>` : ''}${ruolo ? ` <span class="att-giudizio att-g-legittimo">${ruolo}</span>` : ''}</div>
+      <span class="att-liv fol-liv-${esc(x.livello)}">${folLivello(x.livello)}</span>
+      <span class="fol-motivi">${esc(folMotivi(x.motivi))}${statoTesto ? ` <span class="tenue">(${statoTesto})</span>` : ''}</span>
+      <small class="fol-date">${L('segue dal', 'follows since', 'sigue desde')} ${folData(x.seguito)}<br>${x.chiuso ? L('account chiuso', 'account closed', 'cuenta cerrada') : `${L('nato il', 'created', 'creada el')} ${folData(x.creato)}`}</small>
+      <span class="fol-azioni">${folTasti(x)}</span>
+    </div>`;
+}
+
+function folDisegnaElenco() {
+  const box = document.getElementById('fol-elenco');
+  if (!box) return;
+  const altri = document.getElementById('fol-altri');
+  if (altri) { altri.hidden = _folRighe.length >= _folTotale; altri.textContent = L(`Mostra altri (${folNum(_folTotale - _folRighe.length)})`, `Show more (${folNum(_folTotale - _folRighe.length)})`, `Mostrar más (${folNum(_folTotale - _folRighe.length)})`); }
+  if (!_folRighe.length) {
+    box.innerHTML = `<p class="vuoto">${_folStato?.giro ? L('Nessuno corrisponde.', 'Nobody matches.', 'Nadie coincide.') : L('La lista si riempie quando la leggi.', 'The list fills up when you read it.', 'La lista se llena cuando la lees.')}</p>`;
+    return;
+  }
+  box.innerHTML = _folRighe.map(folRigaHtml).join('');
+}
+
+function folDisegnaMassa() {
+  const box = document.getElementById('fol-massa');
+  if (!box) return;
+  const m = _folMassa || {};
+  const voci = [['togli', m.togli], ['blocca', m.blocca], ['apposto', m.apposto], ['sblocca', m.sblocca]].filter(([, n]) => n > 0);
+  if (!voci.length || DEMO && !_folStato?.giro) { box.innerHTML = ''; return; }
+  const testo = { togli: (n) => L(`Togli il follow a ${folNum(n)}`, `Remove the follow of ${folNum(n)}`, `Quita el follow a ${folNum(n)}`), blocca: (n) => L(`Blocca ${folNum(n)}`, `Block ${folNum(n)}`, `Bloquea ${folNum(n)}`), apposto: (n) => L(`Segna ${folNum(n)} a posto`, `Mark ${folNum(n)} as fine`, `Marca ${folNum(n)} como correctos`), sblocca: (n) => L(`Sblocca ${folNum(n)}`, `Unblock ${folNum(n)}`, `Desbloquea ${folNum(n)}`) };
+  const fuori = [];
+  if (_folProtetti) fuori.push(L(`${folNum(_folProtetti)} protetti restano fuori`, `${folNum(_folProtetti)} protected stay out`, `${folNum(_folProtetti)} protegidos quedan fuera`));
+  if (_folFiltro.livello === 'tutti' || _folFiltro.livello === 'pulito') fuori.push(L('i puliti non si tolgono in massa: uno per uno, se vuoi', 'clean ones are not removed in bulk: one by one, if you want', 'los limpios no se quitan en masa: uno por uno, si quieres'));
+  const aperta = _folConferma && m[_folConferma] > 0;
+  box.innerHTML = `<div class="fol-massa">
+      <p>${L('Su questa lista', 'On this list', 'En esta lista')} (${folNum(_folTotale)})${fuori.length ? `: ${fuori.join('; ')}` : ''}.</p>
+      <div class="riga-flessibile">${voci.map(([a, n]) => `<button type="button" class="${FOL_MASSA_FORTE.has(a) ? 'btn mini' : 'btn secondario mini'}" data-fol-massa="${a}">${testo[a](n)}</button>`).join('')}</div>
+      ${aperta ? `<div class="fol-conferma spazio-sopra">
+        <label for="fol-conferma-n">${L(`Per confermare scrivi ${m[_folConferma]}:`, `To confirm type ${m[_folConferma]}:`, `Para confirmar escribe ${m[_folConferma]}:`)}</label>
+        <input id="fol-conferma-n" inputmode="numeric" maxlength="6" style="width:7rem" placeholder="${m[_folConferma]}" autocomplete="off">
+        <button type="button" class="btn mini" data-fol-via="${_folConferma}">${L('Conferma', 'Confirm', 'Confirmar')}</button>
+        <button type="button" class="btn secondario mini" data-fol-annulla>${L('Annulla', 'Cancel', 'Cancelar')}</button>
+        <p class="suggerimento">${_folConferma === 'togli' ? L('Ogni account viene bloccato e subito sbloccato: è l’unico modo che Twitch dà per togliere un follower. Non è un ban, e chi è una persona può tornare a seguirti.', 'Each account is blocked and right away unblocked: it is the only way Twitch gives to remove a follower. It is not a ban, and a real person can follow you again.', 'Cada cuenta se bloquea y enseguida se desbloquea: es la única forma que da Twitch de quitar un seguidor. No es un baneo, y una persona real puede volver a seguirte.') : _folConferma === 'blocca' ? L('Bloccati, non possono più seguirti né scriverti in privato finché non li sblocchi.', 'Blocked, they can no longer follow you or whisper you until you unblock them.', 'Bloqueados, ya no pueden seguirte ni escribirte en privado hasta que los desbloquees.') : ''}</p>
+      </div>` : ''}
+    </div>`;
+  if (aperta) document.getElementById('fol-conferma-n')?.focus();
+}
+
+async function folControlla() {
+  const inp = document.getElementById('fol-nome');
+  const box = document.getElementById('fol-esito');
+  if (!inp || !box) return;
+  const nome = inp.value.trim().replace(/^@/, '');
+  if (!nome) return;
+  box.innerHTML = attesaHtml();
+  let r;
+  try { r = await api('/api/follower/controlla?nome=' + encodeURIComponent(nome)); }
+  catch (e) { box.innerHTML = `<p class="vuoto">${e.dati?.errore === 'nome' ? L('Questo non è un nome di Twitch.', 'This is not a Twitch name.', 'Esto no es un nombre de Twitch.') : L('Non disponibile ora.', 'Not available now.', 'No disponible ahora.')}</p>`; return; }
+  if (!r.trovato) { box.innerHTML = `<p class="vuoto">${L('Su Twitch non c’è nessuno con questo nome.', 'There is nobody with this name on Twitch.', 'En Twitch no hay nadie con este nombre.')}</p>`; return; }
+  const p = r.profilo || {};
+  const segue = r.segue === true ? `${L('Ti segue dal', 'Follows you since', 'Te sigue desde')} ${folData(r.seguito)}.` : r.segue === false ? L('Non ti segue.', 'Does not follow you.', 'No te sigue.') : L('Non so se ti segue: Twitch non ha risposto.', 'I do not know if they follow you: Twitch did not answer.', 'No sé si te sigue: Twitch no respondió.');
+  const x = { user_id: r.user_id, login: p.login, livello: r.livello, stato: r.stato, uscito: r.segue === true ? 0 : 1, chiuso: false };
+  box.innerHTML = `<div class="fol-profilo spazio-sopra">
+      ${p.foto ? `<img src="${esc(p.foto)}" alt="" width="56" height="56" loading="lazy" referrerpolicy="no-referrer">` : ''}
+      <div>
+        <p><b>@${esc(p.login)}</b> ${p.nome && p.nome.toLowerCase() !== p.login ? `<span class="tenue">${esc(p.nome)}</span>` : ''} <span class="att-liv fol-liv-${esc(r.livello)}">${folLivello(r.livello)}</span></p>
+        <p>${segue} ${L('Account nato il', 'Account created on', 'Cuenta creada el')} ${folData(p.creato)}.</p>
+        ${r.motivi?.length ? `<p class="suggerimento">${esc(folMotivi(r.motivi))}</p>` : ''}
+        ${p.bio ? `<p class="tenue">${esc(p.bio)}</p>` : ''}
+        ${r.inLista ? `<p class="fol-azioni">${folTasti(x)}</p>` : ''}
+      </div>
+    </div>`;
+}
+
+async function folAzione(btn, forza = false) {
+  const azione = btn.dataset.folAzione;
+  const userId = btn.dataset.folId;
+  btn.disabled = true;
+  try {
+    const r = await api('/api/follower/azione', { method: 'POST', body: { azione, userId, forza } });
+    toast(r.bloccatoRimasto ? L('Bloccato, ma Twitch non ha voluto sbloccarlo: resta bloccato finché non premi Sblocca.', 'Blocked, but Twitch would not unblock: they stay blocked until you press Unblock.', 'Bloqueado, pero Twitch no quiso desbloquearlo: sigue bloqueado hasta que pulses Desbloquear.')
+      : { togli: L('Follow tolto ✓', 'Follow removed ✓', 'Follow quitado ✓'), blocca: L('Bloccato ✓', 'Blocked ✓', 'Bloqueado ✓'), sblocca: L('Sbloccato ✓', 'Unblocked ✓', 'Desbloqueado ✓'), apposto: L('Segnato a posto ✓', 'Marked as fine ✓', 'Marcado como correcto ✓'), nonapposto: L('Non più a posto ✓', 'No longer fine ✓', 'Ya no está bien ✓') }[azione]);
+    if (r.riga) {
+      const i = _folRighe.findIndex((x) => x.user_id === r.riga.user_id);
+      if (i >= 0) { _folRighe[i] = r.riga; const el = document.querySelector(`[data-fol-riga="${CSS.escape(r.riga.user_id)}"]`); if (el) el.outerHTML = folRigaHtml(r.riga); }
+    }
+    if (btn.closest('#fol-esito')) folControlla();
+    folRinfresca();
+  } catch (e) {
+    btn.disabled = false;
+    if (e.dati?.errore === 'protetto' && !forza) {
+      const ok = await chiediSe({ titolo: L('Questo account è protetto', 'This account is protected', 'Esta cuenta está protegida'), testo: `${folMotivi(e.dati.motivi)}. ${L('Vuoi farlo lo stesso?', 'Do you want to do it anyway?', '¿Quieres hacerlo igualmente?')}`, si: FOL_AZIONE[azione](), pericolo: true });
+      if (ok) folAzione(btn, true);
+      return;
+    }
+    toast(e.dati?.motivo === 'permesso mancante' ? L('Manca il permesso di bloccare: lo concedi da Stato, con «Aggiorna i permessi».', 'The permission to block is missing: grant it from Status, with “Update permissions”.', 'Falta el permiso para bloquear: lo concedes desde Estado, con «Actualizar permisos».') : L('Non riuscito', 'Failed', 'Falló') + (e.dati?.motivo ? ': ' + e.dati.motivo : ''), 'errore');
+  }
+}
+
+async function folAvviaMassa(azione) {
+  const inp = document.getElementById('fol-conferma-n');
+  const n = Number(String(inp?.value || '').replace(/\D/g, ''));
+  try {
+    const r = await api('/api/follower/lavoro', { method: 'POST', body: { azione, filtro: { ..._folFiltro }, conferma: n } });
+    _folConferma = '';
+    toast(azione === 'apposto' ? L(`${folNum(r.fatti)} segnati a posto ✓`, `${folNum(r.fatti)} marked as fine ✓`, `${folNum(r.fatti)} marcados como correctos ✓`) : L('Partito: lo trovi qui sopra, e va avanti anche se chiudi la pagina.', 'Started: you find it above, and it goes on even if you close the page.', 'En marcha: lo encuentras arriba, y sigue aunque cierres la página.'));
+    await folRinfresca();
+    folCaricaElenco();
+  } catch (e) {
+    const d = e.dati || {};
+    if (d.errore === 'conferma') {
+      if (_folMassa) _folMassa[azione] = d.quanti;
+      folDisegnaMassa();
+      toast(L(`Il numero non torna: adesso sono ${d.quanti}.`, `The number does not match: now they are ${d.quanti}.`, `El número no cuadra: ahora son ${d.quanti}.`), 'errore');
+      return;
+    }
+    toast(d.errore === 'ruoli' ? L('Non riesco a leggere abbonati, VIP o moderatori: per non toccare chi ti sostiene non parto.', 'I cannot read subscribers, VIPs or moderators: to avoid touching who supports you, I do not start.', 'No puedo leer suscriptores, VIP o moderadores: para no tocar a quien te apoya, no empiezo.')
+      : d.errore === 'troppi' ? L(`Sono ${d.quanti}: al massimo ${d.massimo} per volta. Restringi la lista.`, `They are ${d.quanti}: at most ${d.massimo} at a time. Narrow the list.`, `Son ${d.quanti}: como máximo ${d.massimo} a la vez. Acota la lista.`)
+        : d.errore === 'in-corso' ? L('C’è già un lavoro in corso: aspetta che finisca, o fermalo.', 'There is already a job running: wait for it to finish, or stop it.', 'Ya hay un trabajo en curso: espera a que termine, o detenlo.')
+          : L('Non riuscito', 'Failed', 'Falló'), 'errore');
+  }
+}
+
+function folFiltraDiNuovo() {
+  _folConferma = '';
+  folDisegnaConti();
+  folCaricaElenco();
+}
+
+function folWire() {
+  if (_folLegato) return;
+  _folLegato = true;
+  document.addEventListener('click', async (ev) => {
+    if (!ev.target.closest?.('#scheda-follower')) return;
+    if (DEMO && ev.target.closest('#fol-csv')) { ev.preventDefault(); toast(L('Nella prova non si scarica: accedi per farlo davvero.', 'In the demo there is no download: log in to do it for real.', 'En la demo no se descarga: inicia sesión para hacerlo de verdad.')); return; }
+    const g = ev.target.closest('[data-fol-giro]');
+    if (g) {
+      ev.preventDefault();
+      g.disabled = true;
+      try { await api('/api/follower/giro', { method: 'POST', body: { azione: g.dataset.folGiro } }); }
+      catch (e) { toast(L('Non riuscito', 'Failed', 'Falló'), 'errore'); }
+      await folRinfresca();
+      return;
+    }
+    const lav = ev.target.closest('[data-fol-lavoro]');
+    if (lav) {
+      ev.preventDefault();
+      lav.disabled = true;
+      try { await api('/api/follower/lavoro/' + (lav.dataset.folLavoro === 'ferma' ? 'ferma' : 'riprendi'), { method: 'POST' }); }
+      catch (e) { toast(L('Non riuscito', 'Failed', 'Falló'), 'errore'); }
+      await folRinfresca();
+      return;
+    }
+    const liv = ev.target.closest('[data-fol-livello]');
+    if (liv) { ev.preventDefault(); _folFiltro.livello = liv.dataset.folLivello; folFiltraDiNuovo(); return; }
+    const ond = ev.target.closest('[data-fol-ondata]');
+    if (ond) {
+      ev.preventDefault();
+      _folFiltro.ondata = ond.dataset.folOndata;
+      if (_folFiltro.ondata) { _folFiltro.livello = 'tutti'; document.getElementById('fol-carta-lista')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+      folFiltraDiNuovo();
+      return;
+    }
+    if (ev.target.closest('#fol-altri')) { ev.preventDefault(); folCaricaElenco({ altri: true }); return; }
+    const az = ev.target.closest('[data-fol-azione]');
+    if (az) { ev.preventDefault(); folAzione(az); return; }
+    const ma = ev.target.closest('[data-fol-massa]');
+    if (ma) { ev.preventDefault(); _folConferma = ma.dataset.folMassa; folDisegnaMassa(); return; }
+    if (ev.target.closest('[data-fol-annulla]')) { ev.preventDefault(); _folConferma = ''; folDisegnaMassa(); return; }
+    const via = ev.target.closest('[data-fol-via]');
+    if (via) { ev.preventDefault(); via.disabled = true; await folAvviaMassa(via.dataset.folVia); via.disabled = false; return; }
+    if (ev.target.closest('#fol-controlla')) { ev.preventDefault(); folControlla(); }
+  });
+  document.addEventListener('input', (ev) => {
+    if (ev.target?.id !== 'fol-cerca') return;
+    clearTimeout(_folCercaTimer);
+    _folCercaTimer = setTimeout(() => { _folFiltro.cerca = ev.target.value.trim(); folFiltraDiNuovo(); }, 300);
+  });
+  document.addEventListener('change', (ev) => {
+    const id = ev.target?.id;
+    if (id === 'fol-eta') { _folFiltro.eta = ev.target.value; folFiltraDiNuovo(); }
+    else if (id === 'fol-ordine') { _folFiltro.ordine = ev.target.value; folFiltraDiNuovo(); }
+    else if (id === 'fol-foto') { _folFiltro.foto = ev.target.checked; folFiltraDiNuovo(); }
+  });
+  document.addEventListener('keydown', (ev) => {
+    if (ev.key !== 'Enter') return;
+    if (ev.target?.id === 'fol-nome') { ev.preventDefault(); folControlla(); }
+    else if (ev.target?.id === 'fol-conferma-n' && _folConferma) { ev.preventDefault(); folAvviaMassa(_folConferma); }
+  });
+}
+
 function scudoQuando(ts) {
   try { return new Date(ts).toLocaleString(localePannello(), { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }); } catch (e) { return ''; }
 }
@@ -30129,37 +30757,6 @@ function scudoWire() {
         if (ris.closest('#scheda-registro')) caricaRegistro(); else caricaScudo();
       }
       catch (e) { toast(e.dati?.codice === 'lista-piena' ? testoListaPiena(e.dati.massimo) : L('Non riuscito', 'Failed', 'Falló'), 'errore'); }
-      return;
-    }
-    if (ev.target.closest('#scudo-scan-btn')) {
-      ev.preventDefault();
-      const btn = ev.target.closest('#scudo-scan-btn'), out = document.getElementById('scudo-scan-esito');
-      btn.disabled = true;
-      if (out) out.innerHTML = `<p class="vuoto">${L('Scansiono i follower…', 'Scanning followers…', 'Escaneando seguidores…')}</p>`;
-      try { scudoRenderScan(await api('/api/antibot/scan', { method: 'POST' })); }
-      catch (e) { if (out) out.innerHTML = `<p class="vuoto">${L('Scansione non riuscita.', 'Scan failed.', 'Escaneo fallido.')}</p>`; }
-      btn.disabled = false;
-      return;
-    }
-    const ban = ev.target.closest('[data-scudo-blocca]');
-    if (ban) {
-      ev.preventDefault();
-      ban.disabled = true;
-      try {
-        const r = await api('/api/antibot/azione', { method: 'POST', body: { userId: ban.dataset.userid, login: ban.dataset.login, azione: 'blocca' } });
-        if (r.ok) {
-          toast(r.ripiego === 'ban'
-            ? L('Bannato: il blocco non si poteva fare, e il follow resta.', 'Banned: blocking was not possible, and the follow stays.', 'Baneado: no se pudo bloquear, y el follow se queda.')
-            : L('Bloccato ✓: il follow non c\'è più.', 'Blocked ✓: the follow is gone.', 'Bloqueado ✓: el follow ya no está.'));
-          togli(ban.closest('.scudo-seg'));
-        }
-        else { toast(L('Non riuscito', 'Failed', 'Falló') + (r.motivo ? ': ' + r.motivo : ''), 'errore'); ban.disabled = false; }
-      } catch (e) {
-        toast(e.dati?.codice === 'permessi'
-          ? L('Mancano i permessi di moderazione: li riconcedi da Stato, con «Aggiorna i permessi».', 'Moderation permissions are missing: grant them again from Status, with “Update permissions”.', 'Faltan los permisos de moderación: vuelve a darlos desde Estado, con «Actualizar permisos».')
-          : L('Non riuscito', 'Failed', 'Falló'), 'errore');
-        ban.disabled = false;
-      }
       return;
     }
     const add = ev.target.closest('[data-scudo-add]');
@@ -30221,24 +30818,6 @@ async function caricaScudo() {
 
   scudoRenderLista('extra', d.liste?.extra || []);
   scudoRenderLista('esenti', d.liste?.esenti || []);
-}
-function scudoRenderScan(d) {
-  const box = document.getElementById('scudo-scan-esito');
-  if (!box) return;
-  const list = d.sospetti || [];
-  const avviso = d.permessi === false ? `<p class="suggerimento">${L('Per bloccare servono i permessi di moderazione.', 'To block, moderation permissions are needed.', 'Para bloquear hacen falta permisos de moderación.')} <a class="btn secondario mini" href="/auth/permessi">${L('Concedi', 'Grant', 'Conceder')}</a></p>` : '';
-  box.innerHTML = avviso + (list.length
-    ? `<p class="suggerimento spazio-sopra">${L('Controllati', 'Checked', 'Comprobados')} ${d.scansionati} · <b>${list.length}</b> ${L('sospetti', 'suspects', 'sospechosos')}</p>` + list.map((v) => `
-      <div class="scudo-seg">
-        <div class="scudo-seg-info">
-          <b>@${esc(v.login || '?')}</b>
-          <span>${L('rischio', 'risk', 'riesgo')} ${v.rischio} · ${esc((v.motivi || []).join(', ') || L('nome sospetto', 'suspicious name', 'nombre sospechoso'))}</span>
-        </div>
-        <div class="scudo-seg-azioni">
-          <button type="button" class="btn mini" data-scudo-blocca data-userid="${esc(v.userId)}" data-login="${esc(v.login)}">${L('Blocca', 'Block', 'Bloquear')}</button>
-        </div>
-      </div>`).join('')
-    : `<p class="vuoto spazio-sopra">${L('Nessun follower sospetto tra i recenti. Pulito.', 'No suspicious followers among the recent ones. All clean.', 'Ningún seguidor sospechoso entre los recientes. Limpio.')}</p>`);
 }
 function scudoRenderLista(campo, nomi) {
   const el = document.getElementById('scudo-lista-' + campo);
@@ -32569,6 +33148,7 @@ function caricaDatiScheda(id) {
   if (id === 'scudo') caricaScudo();
   if (id === 'registro') caricaRegistro();
   if (id === 'attacchi') caricaAttacchi();
+  if (id === 'follower') caricaFollower();
   if (id === 'sottoscrizione') caricaSottoscrizione();
   if (id === 'dirette') caricaDirette();
   if (id === 'admin' && stato.isAdmin) { caricaTabellaAdmin(); caricaSalute(); caricaLicenza(); caricaBackup(); caricaRecensioniAdmin(); caricaAnima(); caricaLLM(); caricaVita(); caricaEcosistema(); }

@@ -292,11 +292,14 @@ export function precedenti(canale, logins = []) {
     const l = norm(l0);
     if (l && !cercati.has(l)) { cercati.set(l, { colpito: 0, sospettato: 0 }); fuori.set(l, cercati.get(l)); }
   }
+  // Si scorrono i coinvolti di ogni attacco, non i nomi cercati: la lista dei
+  // follower ne chiede decine di migliaia alla volta, e gli attacchi hanno
+  // pochi coinvolti ciascuno.
   for (const inc of tutti.values()) {
     if (inc.canale !== ch) continue;
-    for (const [l, v] of cercati) {
-      const c = inc.coinvolti[l];
-      if (!c) continue;
+    for (const [l, c] of Object.entries(inc.coinvolti || {})) {
+      const v = cercati.get(l);
+      if (!v || !c) continue;
       const quando = Number(c.ts) || 0;
       if (!quando) continue;
       if (c.giudizio === GIUDIZI.CERTO) { if (quando > v.colpito) v.colpito = quando; }

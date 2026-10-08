@@ -40,7 +40,9 @@ for (const nome of FOGLI) {
     const corpo = m[1];
     if (/\ball\b/.test(corpo)) { guai.push(`${nome}: «transition: all» muove qualunque cosa, anche il layout`); continue; }
     for (const p of LAYOUT) {
-      if (new RegExp(`(^|[,\\s])${p}\\s+[\\d.]`).test(corpo) || new RegExp(`(^|[,\\s])${p}\\s*($|,)`).test(corpo)) {
+      // la proprieta' come parola intera, qualunque cosa la segua: una durata
+      // («width .4s»), una variabile («width var(--t)») o niente.
+      if (new RegExp(`(^|[,\\s])${p}(?=[\\s,]|$)`).test(corpo)) {
         guai.push(`${nome}: una transizione muove «${p}», che rifà i conti della pagina a ogni fotogramma`);
       }
     }

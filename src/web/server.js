@@ -49,16 +49,17 @@ import * as cancello from '../features/tg-cancello.js';
 import { permessiDi as permessiDiChat, guai as guaiCancello } from '../features/tg-ingresso.js';
 import { EVENTI as EVENTI_EFFETTI, MAX_LIVELLI as MAX_LIVELLI_EFFETTI, MAX_DA as MAX_DA_EFFETTI, MAX_PAUSA as MAX_PAUSA_EFFETTI, normalizza as normalizzaEffettiEventi } from '../features/effetti-eventi.js';
 import { elenco as elencoComandi, normalizza as normalizzaComandi, unisci as unisciComandi, collisioni as collisioniComandi, LIVELLI as LIVELLI_COMANDO, MODULI as MODULI_COMANDO, GRUPPI as GRUPPI_COMANDO } from '../features/comandi-registro.js';
-import { erroriScudo, statoEsecutore, azioniFallite, riprovaFallite, bonifica as bonificaIncidente, conNome, ESENTI_MAX, bloccaDaConsole, taciFollow as taciFollowScudo } from '../features/antibot.js';
+import { erroriScudo, statoEsecutore, azioniFallite, riprovaFallite, bonifica as bonificaIncidente, conNome, ESENTI_MAX, taciFollow as taciFollowScudo } from '../features/antibot.js';
 import { statoCensimento } from '../features/punteggio.js';
 import { aperto as incidenteAperto, elenco as elencoIncidenti, uno as unIncidente, sintesi as sintesiIncidente } from '../features/incidenti.js';
 import { rapportoAttacco, csvCoinvolti, almenoSoglia, avvisiDi as avvisiScudoDi, LIVELLI_AVVISO, racconto as raccontoAttacco } from '../features/rapporto-attacco.js';
 import { rigaCsv } from '../features/csv.js';
+import * as followerFeat from '../features/follower.js';
 import { registroDi as registroDiAttacco } from '../features/antibot.js';
 import { statoVivo } from '../db.js';
 import { rapporto as rapportoBonifica, anteprima as anteprimaBonifica } from '../features/bonifica.js';
 import { stato as statoRete, elenco as elencoRete, dimentica as dimenticaRete } from '../features/rete.js';
-import { statoListaBot, registro as registroAntibot, segnalazioniAperte, risolviSegnalazione, sintesiRegistro, registra as registraAntibot, nomeBot, valutaAccount, assetto as assettoAntibot, sogliaRaffica, codaBan } from '../features/antibot.js';
+import { statoListaBot, registro as registroAntibot, segnalazioniAperte, risolviSegnalazione, sintesiRegistro, registra as registraAntibot, assetto as assettoAntibot, sogliaRaffica, codaBan } from '../features/antibot.js';
 import { statoBackup, backupOra } from '../backup.js';
 import { risolviCanaleId } from '../features/youtube.js';
 import * as abbonamenti from '../features/abbonamenti.js';
@@ -4081,15 +4082,6 @@ STREAMER (${su.toUpperCase()}) e non c'entra con l'automazione del marketing.
   // Console anti-bot: la "certezza". Mostra COSA ha fatto lo scudo (registro con
   // esito reale), le segnalazioni da rivedere, e le liste dello streamer.
   const _abCfg = (login) => ({ ...(streamers.get(login)?.settings?.antibot || {}) });
-  const _pulizie = new Map();
-  // La pulizia della lista follower passa dallo scudo VIVO, quello del bot: la
-  // sua fila e' la stessa di un attacco in corso, cosi' la pulizia ci va
-  // dietro invece di gareggiare per il rate limit, e quello che non riesce
-  // finisce fra le «Rimaste in sospeso» del pannello. Prima qui c'era un
-  // secondo scudo, con una seconda fila, i suoi falliti scritti sopra quelli
-  // del primo nello stesso file e una seconda riapertura delle serrande a ogni
-  // avvio. Lo scudo e' uno per processo (test/contratto/scudo-uno.test.mjs).
-  const scudoVivo = () => manager?.antibot || null;
   // La lista che i canali hanno costruito insieme. Solo i confermati, e mai i
   // canali che li hanno segnalati: quelli non escono dal modulo.
   app.get('/api/antibot/rete', requireOwner, (req, res) => {
@@ -4238,6 +4230,96 @@ STREAMER (${su.toUpperCase()}) e non c'entra con l'automazione del marketing.
     res.json({ ok: true, avvisi: antibot.avvisiScudo });
   });
 
+  // ── I TUOI FOLLOWER (docs/FOLLOWER.md) ──────────────────────────────────────
+  // La lista intera di chi segue su Twitch, chi sembra una macchina e perche',
+  // e la pulizia. Solo il proprietario, e solo per un canale di Twitch: Kick e
+  // YouTube non danno la lista. Ogni porta passa da features/follower.js, che
+  // e' l'unico posto che decide chi si tocca.
+  followerFeat.configura({ helix });
+  const followerDi = (req, res) => {
+    const login = currentUser(req).login.toLowerCase();
+    if (piattaformaDi(login) !== 'twitch') { res.status(400).json({ errore: 'La lista dei follower c\'e\' solo su Twitch.', codice: 'solo-twitch' }); return null; }
+    return login;
+  };
+  // il filtro arriva dalla query (GET) o dal corpo (POST), sempre ripulito
+  const filtroFollower = (q = {}) => ({ livello: q.livello, cerca: q.cerca, eta: q.eta, dal: q.dal, al: q.al, foto: q.foto, ondata: q.ondata, ordine: q.ordine });
+
+  app.get('/api/follower/stato', requireOwner, (req, res) => {
+    const login = followerDi(req, res); if (!login) return;
+    res.json({ ...followerFeat.riepilogo(login), permessi: moderazioneOk(login) });
+  });
+
+  // Leggi (o rileggi) la lista; con { azione: 'ferma' } si ferma dov'e'.
+  app.post('/api/follower/giro', requireOwner, (req, res) => {
+    const login = followerDi(req, res); if (!login) return;
+    if (req.body?.azione === 'ferma') return res.json({ ok: followerFeat.fermaGiro(login) });
+    res.json(followerFeat.avviaGiro(login, { daCapo: req.body?.daCapo === true }));
+  });
+
+  app.get('/api/follower/elenco', requireOwner, (req, res) => {
+    const login = followerDi(req, res); if (!login) return;
+    const filtro = filtroFollower(req.query);
+    const p = followerFeat.pagina(login, filtro, { da: req.query.da, quanti: req.query.quanti });
+    // quanti toccherebbe ogni azione in massa su questo filtro: lo stesso conto
+    // che il lavoro rifara' alla conferma
+    const massa = {};
+    for (const a of ['togli', 'blocca', 'apposto', 'sblocca']) massa[a] = followerFeat.bersagli(login, { azione: a, filtro }).tocca.length;
+    res.json({ ...p, massa, protetti: followerFeat.bersagli(login, { azione: 'togli', filtro }).protetti });
+  });
+
+  app.post('/api/follower/azione', requireOwner, wrap(async (req, res) => {
+    const login = followerDi(req, res); if (!login) return;
+    const r = await followerFeat.azione(login, { azione: String(req.body?.azione || ''), userId: String(req.body?.userId || ''), forza: req.body?.forza === true });
+    if (!r.ok && r.errore) return res.status(r.errore === 'sconosciuto' ? 404 : 409).json(r);
+    res.json({ ...r, riga: r.riga ? followerFeat.rigaPerPannello(r.riga) : null });
+  }));
+
+  app.post('/api/follower/lavoro', requireOwner, wrap(async (req, res) => {
+    const login = followerDi(req, res); if (!login) return;
+    const ids = Array.isArray(req.body?.ids) ? req.body.ids.map(String).filter((x) => /^\d+$/.test(x)).slice(0, followerFeat.LAVORO_MAX) : null;
+    const r = await followerFeat.avviaLavoro(login, { azione: String(req.body?.azione || ''), filtro: filtroFollower(req.body?.filtro || {}), ids, conferma: req.body?.conferma });
+    if (!r.ok) return res.status(r.errore === 'conferma' ? 409 : 400).json(r);
+    res.json(r);
+  }));
+
+  app.get('/api/follower/lavoro', requireOwner, (req, res) => {
+    const login = followerDi(req, res); if (!login) return;
+    res.json({ lavoro: followerFeat.sintesiLavoro(followerFeat.statoLavoro(login)) });
+  });
+  app.post('/api/follower/lavoro/ferma', requireOwner, (req, res) => {
+    const login = followerDi(req, res); if (!login) return;
+    res.json({ ok: followerFeat.fermaLavoro(login) });
+  });
+  app.post('/api/follower/lavoro/riprendi', requireOwner, (req, res) => {
+    const login = followerDi(req, res); if (!login) return;
+    const r = followerFeat.riprendiLavoro(login);
+    res.status(r.ok ? 200 : 400).json(r);
+  });
+
+  // «Controlla un nome»: il profilo vivo da Twitch. Se segue e non e' ancora
+  // in lista, entra adesso, cosi' i tasti funzionano subito. La foto si passa
+  // solo se e' di Twitch.
+  app.get('/api/follower/controlla', requireOwner, wrap(async (req, res) => {
+    const login = followerDi(req, res); if (!login) return;
+    const r = await followerFeat.controlla(login, String(req.query.nome || ''));
+    if (!r.ok) return res.status(400).json(r);
+    if (r.trovato && r.segue && !r.inLista) {
+      followerFeat.arrivato(login, { user_id: r.user_id, user_login: r.profilo.login, user_name: r.profilo.nome, followed_at: r.seguito ? new Date(r.seguito).toISOString() : '' });
+      r.inLista = true;
+    }
+    if (r.profilo && !/^https:\/\/static-cdn\.jtvnw\.net\//.test(r.profilo.foto)) r.profilo.foto = '';
+    res.json(r);
+  }));
+
+  app.get('/api/follower/esporta.csv', requireOwner, (req, res) => {
+    const login = followerDi(req, res); if (!login) return;
+    const lingua = ['it', 'en', 'es'].includes(req.query.lingua) ? req.query.lingua : 'it';
+    res.set('Content-Type', 'text/csv; charset=utf-8');
+    res.set('Content-Disposition', `attachment; filename="follower-${login}.csv"`);
+    res.set('Cache-Control', 'private, no-store');
+    res.send('﻿' + followerFeat.csv(login, filtroFollower(req.query), lingua));
+  });
+
   app.get('/api/antibot/console', requireOwner, (req, res) => {
     const login = currentUser(req).login.toLowerCase();
     const cfg = _abCfg(login);
@@ -4258,7 +4340,6 @@ STREAMER (${su.toUpperCase()}) e non c'entra con l'automazione del marketing.
         taciFollow: cfg.taciFollow !== false,
         followFermi: taciFollowScudo(login),
         togliFollow: cfg.togliFollow !== false,
-        pulizia: _pulizie.get(login) || null,
         presenze: cfg.presenze !== false,
         censimento: statoCensimento(),
         rete: statoRete(),
@@ -4310,72 +4391,17 @@ STREAMER (${su.toUpperCase()}) e non c'entra con l'automazione del marketing.
     res.json({ ok: true, bannato });
   }));
 
-  // Scansiona i follower recenti contro la lista bot e le euristiche. NON agisce:
-  // ritorna i sospetti, lo streamer decide. Stile "pulizia follower" di CommanderRoot.
-  const _scanCache = new Map();          // login → { ts, dati }
-  app.post('/api/antibot/scan', requireOwner, wrap(async (req, res) => {
-    const login = currentUser(req).login.toLowerCase();
-    // Cooldown: la scansione chiama Helix (bucket condiviso tra tutti i canali).
-    // Entro 30s restituiamo l'ultimo risultato invece di rimartellare Twitch.
-    const c = _scanCache.get(login);
-    if (c && Date.now() - c.ts < 30000) return res.json({ ...c.dati, cache: true });
-    const cfg = _abCfg(login);
-    const foll = await helix.getRecentFollowers(login, { first: 100 });
-    if (!foll.length) { const d = { sospetti: [], scansionati: 0, permessi: moderazioneOk(login) }; _scanCache.set(login, { ts: Date.now(), dati: d }); return res.json(d); }
-    const ids = foll.map((f) => f.user_id).filter(Boolean);
-    const utenti = await helix.getUsersByIds(ids);
-    const perId = new Map(utenti.map((u) => [u.id, u]));
-    const sospetti = [];
-    for (const f of foll) {
-      const u = perId.get(f.user_id);
-      const nb = nomeBot(f.user_login, cfg);
-      const val = valutaAccount(u, cfg);
-      if (nb || val.rischio >= Number(cfg.soglia || 70)) {
-        const motivi = val.motivi.slice();
-        if (nb && !motivi.includes('nome da bot')) motivi.unshift('nome da bot');
-        sospetti.push({ login: f.user_login, userId: f.user_id, rischio: Math.max(val.rischio, nb ? 60 : 0), motivi, seguito: f.followed_at });
-      }
-    }
-    sospetti.sort((a, b) => b.rischio - a.rischio);
-    const dati = { sospetti, scansionati: foll.length, permessi: moderazioneOk(login) };
-    _scanCache.set(login, { ts: Date.now(), dati });
-    res.json(dati);
-  }));
-
-  // Pulizia della lista follower: prima si guarda, poi si agisce.
-  // In prova restituisce chi verrebbe tolto senza toccare niente. Confermata,
-  // parte in sottofondo (un canale grande sono migliaia di chiamate a Twitch) e
-  // l'avanzamento si legge dalla console.
-  app.post('/api/antibot/pulizia', requireOwner, wrap(async (req, res) => {
-    const login = currentUser(req).login.toLowerCase();
-    const prova = req.body?.prova !== false;
-    const inCorso = _pulizie.get(login);
-    if (inCorso && inCorso.attiva) return res.json({ ...inCorso, giaInCorso: true });
-    const scudo = scudoVivo();
-    if (!scudo) return res.status(503).json({ errore: 'scudo non attivo: il bot non è partito' });
-    if (prova) {
-      const e = await scudo.pulisciFollower(login, { max: 3000, prova: true });
-      return res.json({ prova: true, guardati: e.guardati, totale: e.totale, trovati: e.trovati.slice(0, 200), quanti: e.trovati.length });
-    }
-    const stato = { attiva: true, guardati: 0, trovati: 0, bloccati: 0, falliti: 0, avvio: Date.now() };
-    _pulizie.set(login, stato);
-    res.json({ avviata: true });
-    scudo.pulisciFollower(login, { max: 3000, alPasso: (p) => Object.assign(stato, p) })
-      .then((e) => Object.assign(stato, e, { trovati: e.trovati.length, attiva: false, fine: Date.now() }))
-      .catch(() => Object.assign(stato, { attiva: false, errore: true }));
-  }));
-
-  // Azione manuale su un utente (dalla scansione o dal registro): ban o revoca.
+  // Azione manuale su un utente, dal rapporto di un attacco: disfare un ban o un blocco.
   app.post('/api/antibot/azione', requireOwner, wrap(async (req, res) => {
     const login = currentUser(req).login.toLowerCase();
     const userId = String(req.body?.userId || '');
     const nome = String(req.body?.login || '').toLowerCase();
-    // «Blocca» toglie anche il follow e passa dall'esecutore dello scudo, che lo
-    // scrive nel registro e ripiega sul ban se il blocco non si puo' fare. Lo
-    // sbannare non punisce nessuno: resta qui.
-    // «Sblocca» disfa un blocco: dal rapporto di un attacco, su chi si e'
+    // «Sbanna» e «Sblocca» disfano: dal rapporto di un attacco, su chi si e'
     // rivelato una persona. Il follow non torna da solo: potra' rifarlo lui.
-    const azione = ['sbanna', 'sblocca'].includes(req.body?.azione) ? req.body.azione : 'blocca';
+    // Bloccare a mano si fa dalla lista dei follower (features/follower.js),
+    // che toglie il follow senza ripiegare mai sul ban: qui non c'e' piu'.
+    const azione = String(req.body?.azione || '');
+    if (!['sbanna', 'sblocca'].includes(azione)) return res.status(400).json({ errore: 'Azione non valida.' });
     if (!/^\d+$/.test(userId)) return res.status(400).json({ errore: 'Utente non valido.' });
     if (!moderazioneOk(login)) return res.status(403).json({ errore: 'Servono i permessi di moderazione.', codice: 'permessi' });
     if (azione === 'sblocca') {
@@ -4383,13 +4409,9 @@ STREAMER (${su.toUpperCase()}) e non c'entra con l'automazione del marketing.
       registraAntibot(login, { login: nome, userId, azione: 'sblocca', motivo: 'dalla console', esito: r?.ok ? 'fatto' : 'fallito' });
       return res.json({ ok: !!r?.ok, motivo: r?.motivo || '' });
     }
-    if (azione === 'sbanna') {
-      const r = await helix.unbanUser(login, userId).catch(() => null);
-      registraAntibot(login, { login: nome, userId, azione: 'sbanna', motivo: 'dalla console', esito: r?.ok ? 'fatto' : 'fallito' });
-      return res.json({ ok: !!r?.ok, motivo: r?.motivo || '' });
-    }
-    const r = await bloccaDaConsole(login, { login: nome, userId }).catch(() => null);
-    res.json({ ok: !!r?.ok, motivo: r?.motivo || '', ripiego: r?.ripiego || '' });
+    const r = await helix.unbanUser(login, userId).catch(() => null);
+    registraAntibot(login, { login: nome, userId, azione: 'sbanna', motivo: 'dalla console', esito: r?.ok ? 'fatto' : 'fallito' });
+    res.json({ ok: !!r?.ok, motivo: r?.motivo || '' });
   }));
 
   // Aggiunge/toglie un nome dalla blocklist ('extra') o allowlist ('esenti').

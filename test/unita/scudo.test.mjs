@@ -410,28 +410,6 @@ test('in chat si banna, sui follow si blocca', async () => {
   assert.deepEqual(h.f.bannati, ['c1'], 'in chat: ban, che e\' moderazione');
 });
 
-test('la pulizia in prova non tocca niente, quella vera prende solo i bot', async () => {
-  const ch = 'pulizia1';
-  streamers.upsertApproved(ch, 'Pulizia', '25');
-  streamers.setEnabled(ch, true);
-  streamers.setSettings(ch, { antibot: { attivo: true, avvisa: false } });
-  const h = helixFinto();
-  h.f.follower = [
-    { user_id: '1', user_login: 'andrea_gamer' },
-    { user_id: '2', user_login: 'buy_followers_now' },
-    { user_id: '3', user_login: 'nightbot' },
-    { user_id: '4', user_login: 'cheapviewers' },
-    { user_id: '5', user_login: 'lucia98' },
-  ];
-  const scudo = new ab.AntiBot({ helix: h });
-  const prova = await scudo.pulisciFollower(ch, { prova: true });
-  assert.equal(prova.trovati.length, 2, 'in prova si dice chi, e basta');
-  assert.equal(h.f.bloccati.length, 0, 'in prova non si tocca niente');
-  const vero = await scudo.pulisciFollower(ch, {});
-  assert.equal(vero.bloccati, 2);
-  assert.deepEqual(h.f.bloccati.sort(), ['2', '4'], 'i fan veri e Nightbot non si sfiorano');
-});
-
 test('un inciampo di rete non spegne per sempre il controllo di un account', async () => {
   // La data di nascita e' un fatto e si ricorda. «Non ho potuto chiedere» non
   // e' un fatto: ricordarlo vorrebbe dire non controllare mai piu' proprio

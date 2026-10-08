@@ -277,20 +277,14 @@ La difesa in tempo reale ferma quello che arriva adesso. Non tocca chi è già n
 lista: i bot che hanno seguito prima che lo scudo fosse acceso, e quelli finiti
 nelle liste pubbliche **dopo** aver seguito.
 
-`pulisciFollower` scorre la lista follower e blocca i riconosciuti, con due
-prudenze:
+Per quelli c'è la scheda «I tuoi follower» (docs/FOLLOWER.md): la lista intera,
+chi sembra un bot e perché, e la pulizia, che toglie il follow bloccando e
+sbloccando e non ripiega mai sul ban. Non passa dall'esecutore dello scudo:
+legge la lista con le sue pagine e il suo ritmo, e sotto attacco si mette in
+pausa per lasciare le chiamate alla difesa.
 
-- guarda **solo** i nomi noti o corrispondenti ai pattern, mai il punteggio di
-  sospetto. Qui non c'è un attacco in corso a giustificare un margine d'errore, e
-  un fan vero rimosso non torna;
-- va al ritmo della coda, perché un canale con diecimila follower sono cento
-  pagine e altrettante migliaia di chiamate.
-
-L'endpoint `/api/antibot/pulizia` funziona in due tempi: **in prova** dice chi
-verrebbe tolto senza toccare niente; confermata, parte in sottofondo e
-l'avanzamento si legge dalla console. Prima si guarda, poi si agisce. Passa
-dallo scudo vivo del bot, quindi dalla sua fila: senza bot avviato risponde
-«scudo non attivo» invece di accenderne un secondo.
+Prima qui c'erano una scansione degli ultimi cento follower e una pulizia che
+prendeva solo i nomi noti e ripiegava sul ban: sono state tolte.
 
 ## Permessi
 
@@ -308,8 +302,9 @@ può chiudere la chat.
 
 Nel menu lo scudo ha un gruppo suo: **Lo scudo** (le impostazioni e lo stato
 vivo), **Gli attacchi** (ogni attacco col suo rapporto, gli avvisi, gli altri
-scudi) e **Registro** (ogni intervento, uno per riga). Gli attacchi, gli avvisi
-in privato e il puntino sono descritti in docs/INCIDENTI.md.
+scudi), **I tuoi follower** (la lista intera, i bot trovati, la pulizia) e
+**Registro** (ogni intervento, uno per riga). Gli attacchi, gli avvisi in privato
+e il puntino sono descritti in docs/INCIDENTI.md; i follower in docs/FOLLOWER.md.
 
 ## Cosa si vede dalla console
 
