@@ -101,11 +101,27 @@ stati rimandati indietro. Lo streamer vede solo il rifiuto, detto per quello
 che è: «il server è sotto sforzo, riprova fra un minuto», oppure «hai già un
 caricamento in corso».
 
-## Cosa resta per l'alleggerimento
+## L'alleggerimento
 
-La porta ferma l'accumulo; non rende leggero quello che pesa. Restano da fare,
-misure alla mano:
-- il disegno delle carte (avvisi della diretta) e del captcha di Telegram
-  avviene sul filo del bot (resvg sincrono): va spostato fuori dal ciclo;
+La porta ferma l'accumulo; non rende leggero quello che pesa. L'alleggerimento
+si decide sulle misure, non a occhio.
+
+**Lo strumento.** In «Salute», «Misura 60 secondi» registra sul server vero il
+profilo della CPU del bot (a campioni, dal suo inspector), i fermi del ciclo, la
+raccolta della memoria e la memoria prima e dopo (`src/misura.js`). Il rapporto
+dice dove va il tempo per file e per funzione del codice: solo nomi e righe,
+mai argomenti o messaggi. Niente fotografie della memoria, che conterrebbero i
+dati delle persone. Una misura alla volta, solo l'amministratore. Va fatta
+durante una diretta, quando il carico è vero.
+
+**Fatto: il disegno fuori dal filo.** Una carta della diretta (1200×630)
+fermava il bot circa 30 ms, metà per rasterizzare e metà per codificare il
+PNG; il captcha di Telegram e le icone SVG lo stesso, in piccolo. Ora tutto il
+disegno passa da un filo suo (`src/disegno.js`): misurato sulla stessa
+macchina, il fermo più lungo del ciclo durante cinque carte è sceso da 30 a
+6 ms. Un collaudo tiene fermo che resvg si usi solo in quel filo.
+
+**Da fare, misure alla mano:**
+- le aree che la misura sul server vero mette in cima;
 - la memoria del bot e le sue cache, area per area;
-- i timer che girano anche quando non c'è nessuno in diretta.
+- i giri periodici che lavorano anche quando nessuno è in diretta.

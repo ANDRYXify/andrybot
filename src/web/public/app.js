@@ -38627,8 +38627,38 @@ async function caricaSalute() {
       Node <strong>${esc(d.node || '')}</strong> &nbsp;·&nbsp;
       ${L('Backup', 'Backup', 'Copia')}: <strong>${d.backup?.conteggio || 0}</strong> ${L('copie', 'copies', 'copias')}${d.backup?.prova ? (d.backup.prova.ok ? ` <span class="badge verde">${L('riapribile', 'restorable', 'restaurable')}</span>` : ` <span class="badge rosso">${L('NON riapribile', 'NOT restorable', 'NO restaurable')}</span>`) : ''}
     </p>
-    <p class="spazio-sopra"><button class="btn secondario mini" id="btn-salute-agg">${_bIco(ICO.grafico)}${L('Aggiorna', 'Refresh', 'Actualizar')}</button></p>`;
+    <p class="spazio-sopra"><button class="btn secondario mini" id="btn-salute-agg">${_bIco(ICO.grafico)}${L('Aggiorna', 'Refresh', 'Actualizar')}</button>
+      <button class="btn secondario mini" id="btn-misura">${_bIco(ICO.grafico)}${L('Misura 60 secondi', 'Measure 60 seconds', 'Medir 60 segundos')}</button></p>
+    <div id="misura-esito" class="spazio-sopra"></div>`;
   document.getElementById('btn-salute-agg')?.addEventListener('click', () => caricaSalute());
+  document.getElementById('btn-misura')?.addEventListener('click', (ev) => misuraServer(ev.currentTarget));
+}
+
+async function misuraServer(bottone) {
+  const box = document.getElementById('misura-esito');
+  if (!box) return;
+  bottone.disabled = true;
+  box.innerHTML = `<p class="suggerimento">${L('Misuro per 60 secondi: intanto il bot lavora come sempre. Meglio durante una diretta, quando il carico è vero.', 'Measuring for 60 seconds: the bot keeps working meanwhile. Best during a live stream, when the load is real.', 'Midiendo durante 60 segundos: mientras tanto el bot trabaja como siempre. Mejor durante un directo, cuando la carga es real.')}</p>`;
+  let r;
+  try { r = await api('/api/admin/misura', { method: 'POST', body: { secondi: 60 } }); }
+  catch (e) { box.innerHTML = `<p class="vuoto">${esc(e.message)}</p>`; bottone.disabled = false; return; }
+  bottone.disabled = false;
+  const p = r.profilo || {};
+  const riga = (x) => `<li><code>${esc(x.area)}</code>${x.funzione ? ` ${esc(x.funzione)}:${x.riga}` : ''} <strong>${x.ms} ms</strong> (${x.quota}%)</li>`;
+  box.innerHTML = `
+    <p><span class="badge">${L('ciclo', 'loop', 'ciclo')} p99 ${r.ciclo.p99} ms · max ${r.ciclo.max} ms</span>
+      <span class="badge">${L('raccolta memoria', 'garbage collection', 'recolección de memoria')} ${r.gc.ms} ms (${r.gc.volte})</span>
+      <span class="badge">${L('memoria', 'memory', 'memoria')} ${r.memoria.rssPrima} → ${r.memoria.rssDopo} MB</span>
+      <span class="badge">${L('fermo', 'idle', 'inactivo')} ${p.categorie?.inattivo?.quota ?? '?'}%</span></p>
+    <p class="suggerimento"><strong>${L('Dove va la CPU, per file', 'Where the CPU goes, by file', 'Dónde va la CPU, por archivo')}</strong></p>
+    <ul class="salute-motivi">${(p.perArea || []).slice(0, 8).map(riga).join('')}</ul>
+    <p class="suggerimento"><strong>${L('Le funzioni più pesanti', 'The heaviest functions', 'Las funciones más pesadas')}</strong></p>
+    <ul class="salute-motivi">${(p.perFunzione || []).slice(0, 10).map(riga).join('')}</ul>
+    <p><button class="btn secondario mini" id="btn-misura-copia">${L('Copia il rapporto', 'Copy the report', 'Copiar el informe')}</button></p>`;
+  document.getElementById('btn-misura-copia')?.addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText(JSON.stringify(r, null, 1)); toast(L('Rapporto copiato.', 'Report copied.', 'Informe copiado.')); }
+    catch { toast(L('Non riesco a copiare: seleziona il testo a mano.', 'I can\'t copy: select the text by hand.', 'No puedo copiar: selecciona el texto a mano.')); }
+  });
 }
 
 async function caricaBackup() {

@@ -43,6 +43,8 @@ import { join } from 'node:path';
 import { randomBytes, randomInt } from 'node:crypto';
 import { CARTELLA_CARATTERI } from './carta-servita.js';
 import { larghezzaTesto } from './carta-disegno.js';
+import { disegna } from '../disegno.js';
+
 
 // La griglia dei puntini: ogni cella e' un puntino, due pixel sullo schermo.
 export const LARGO = 160;
@@ -121,12 +123,10 @@ export function svgLettere(codice, caso = casoVero) {
 // lettera la copre per piu' di meta'.
 export async function maschera(codice, caso) {
   if (!disegnabile()) return null;
-  const { Resvg } = await import('@resvg/resvg-js');
-  const r = new Resvg(svgLettere(codice, caso), {
+  const r = await disegna(svgLettere(codice, caso), {
     font: { loadSystemFonts: false, fontFiles: file(), defaultFontFamily: CARATTERE },
     fitTo: { mode: 'width', value: LARGO },
-  }).render();
-  // `pixels` e' una copia nuova a ogni lettura: si prende una volta sola
+  }, { pixels: true });
   const px = r.pixels;
   const m = new Uint8Array(LARGO * ALTO);
   for (let i = 0; i < m.length; i++) m[i] = px[i * 4 + 3] > 127 ? 1 : 0;

@@ -8,6 +8,8 @@ import { risorse } from '../risorse.js';
 import { stat, unlink, readFile, writeFile, copyFile, open } from 'node:fs/promises';
 import { join } from 'node:path';
 import { makeLog } from '../logger.js';
+import { disegna } from '../disegno.js';
+
 
 const log = makeLog('effects');
 
@@ -420,10 +422,8 @@ async function convertiDentro(tempPath, tipoDichiarato, destDir, id) {
 // dipende da un header e' una difesa che una riga di configurazione puo'
 // togliere. Quindi l'SVG non si conserva: si RASTERIZZA, e resta solo l'immagine.
 async function svgDentro(tempPath, destPath, lato = 256) {
-  const { Resvg } = await import('@resvg/resvg-js');
   const sorgente = await readFile(tempPath, 'utf8');
-  const r = new Resvg(sorgente, { fitTo: { mode: 'width', value: Math.max(16, Math.min(1024, lato | 0)) } });
-  const png = Buffer.from(r.render().asPng());
+  const { png } = await disegna(sorgente, { fitTo: { mode: 'width', value: Math.max(16, Math.min(1024, lato | 0)) } });
   await writeFile(destPath, png);
   try { await unlink(tempPath); } catch { /* gia' tolto */ }
   return png.length;

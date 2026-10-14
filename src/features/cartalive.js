@@ -31,6 +31,8 @@ import { piattaformaDi, nomeSu } from '../identita.js';
 import { eUnaDiretta, piattaformaDiEvento } from './avvisi.js';
 import { CARATTERI, MISURA, cartaDi, svgCarta } from './carta-disegno.js';
 import { CARTELLA_CARATTERI } from './carta-servita.js';
+import { disegna } from '../disegno.js';
+
 
 // Quello che serve anche a chi importa da qui: una porta sola.
 export * from './carta-disegno.js';
@@ -59,19 +61,19 @@ export function disegnabile() {
 // La carta RESA, pixel per pixel. Una sola strada per disegnare: il PNG che
 // parte e quello che il collaudo guarda sono la stessa immagine, non due cose
 // che si somigliano.
-export async function resaCarta(carta, dati = {}) {
+// Il disegno avviene fuori dal filo del bot (src/disegno.js). `voglio` dice se
+// serve il PNG da mandare, i pixel da guardare, o tutti e due.
+export async function resaCarta(carta, dati = {}, voglio = { pixels: true }) {
   if (!disegnabile()) return null;
-  const { Resvg } = await import('@resvg/resvg-js');
-  const r = new Resvg(svgCarta(carta, dati), {
+  return disegna(svgCarta(carta, dati), {
     font: { loadSystemFonts: false, fontFiles: fontDisponibili(), defaultFontFamily: 'Archivo' },
     fitTo: { mode: 'width', value: Math.max(200, Number(carta?.larghezza) || MISURA.larghezza) },
-  });
-  return r.render();
+  }, voglio);
 }
 
 export async function pngCarta(carta, dati = {}) {
-  const resa = await resaCarta(carta, dati);
-  return resa ? Buffer.from(resa.asPng()) : null;
+  const resa = await resaCarta(carta, dati, { png: true });
+  return resa?.png || null;
 }
 
 // L'avatar come data URI, pronto da infilare nella carta. Ritorna '' se non si

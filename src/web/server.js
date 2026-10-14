@@ -14,6 +14,7 @@ import https from 'node:https';
 import crypto from 'node:crypto';
 import { mkdirSync, readFileSync, writeFileSync, rmSync, existsSync, readdirSync, statSync, unlinkSync, renameSync, copyFileSync, createWriteStream, mkdtempSync, openSync, readSync, closeSync } from 'node:fs';
 import { risorse } from '../risorse.js';
+import { misura as misuraServer } from '../misura.js';
 import { tmpdir } from 'node:os';
 import { unlink, readFile, mkdir, rename } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
@@ -12142,6 +12143,13 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
       risorse: risorse.stato(),
     });
   });
+
+  // La misura del server vero (src/misura.js): profilo della CPU, fermi del
+  // ciclo e memoria per N secondi. Solo nomi e righe del codice, mai dati.
+  app.post('/api/admin/misura', requireAdmin, wrap(async (req, res) => {
+    try { res.json(await misuraServer({ secondi: req.body?.secondi })); }
+    catch (e) { res.status(e?.inCorso ? 429 : 500).json({ errore: e?.message || 'La misura non è riuscita.' }); }
+  }));
 
   // Twitch, Kick e YouTube ognuna per conto suo (features/piattaforme-admin.js).
   const piattaformeAdmin = (login) => {
