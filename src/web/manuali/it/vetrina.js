@@ -1,24 +1,24 @@
 // © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
 // Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
-// Manuale: La tua vetrina (pagina link, donazioni, settimana, grafiche, i tuoi social).
+// Manuale: Vetrina (pagina link, donazioni, settimana, grafiche, i tuoi social).
 // La forma dei manuali e il perche' stanno in src/web/manuali.js; le lingue in docs/LINGUE.md.
 
 export default {
   slug: 'vetrina',
   schede: ['pagina', 'donazioni', 'settimana', 'grafiche', 'notifiche'],
-  titolo: 'La tua vetrina: pagina link, donazioni e social | SocialBot',
-  h1: 'La tua vetrina: pagina link, donazioni, settimana, grafiche e i tuoi social',
+  titolo: 'Vetrina: pagina link, donazioni e social | SocialBot',
+  h1: 'Vetrina: pagina link, donazioni, settimana, grafiche e i tuoi social',
   desc: 'La pagina da mettere in bio, le donazioni sul tuo conto, i giorni in cui vai in onda, le grafiche da pubblicare e gli avvisi quando pubblichi sui social.',
   aggiornata: '2026-10-14',
   corpo: [
     { p: [
       'Cinque schede che lavorano anche quando non sei in onda: la pagina da mettere in bio, le donazioni, i giorni in cui vai in diretta, le grafiche da pubblicare e gli avvisi quando esce qualcosa di tuo sulle altre reti.',
-      'Telegram e Discord hanno un manuale a parte: <a href="/manuale/community">Le tue community</a>.',
+      'Telegram e Discord hanno un manuale a parte: <a href="/manuale/community">Community</a>.',
     ] },
 
     // ── PAGINA LINK ─────────────────────────────────────────────────────────
     { h2: 'Pagina link', scheda: 'pagina', p: [
-      'Una pagina pubblica con tutti i tuoi link, all\'indirizzo <code>socialbot.live/u/tuonome</code>, da mettere nella bio di Instagram o TikTok. C\'è in tutti i piani, anche nell\'Essenziale gratuito, e per ogni canale: Twitch, Kick, YouTube o un server Discord. Chi usa SocialBot solo per un server Discord ha questa scheda, e non le altre quattro di «La tua vetrina».',
+      'Una pagina pubblica con tutti i tuoi link, all\'indirizzo <code>socialbot.live/u/tuonome</code>, da mettere nella bio di Instagram o TikTok. C\'è in tutti i piani, anche nell\'Essenziale gratuito, e per ogni canale: Twitch, Kick, YouTube o un server Discord. Chi usa SocialBot solo per un server Discord ha questa scheda, e non le altre quattro di «Vetrina».',
       'La costruisce e la pubblica solo chi ha il canale. Un moderatore apre la scheda, ma l\'editor gli risponde «solo il proprietario del canale può farlo».',
       'La pagina si apre e si legge anche con JavaScript spento. Gli script aggiungono solo qualche comodità: il conto alla rovescia, gli effetti di sfondo che si muovono, il modulo delle donazioni senza cambiare pagina e la scelta sui contenuti di altri siti. La pagina non usa cookie e non sa chi la apre: conta solo quante volte viene aperta.',
       'Nella scheda del browser la pagina ha come icona la foto che mostra in alto, la tua o quella che hai caricato. Se la foto non la mostri, resta l\'icona di SocialBot.',
@@ -293,7 +293,7 @@ export default {
     // ── LA TUA SETTIMANA ────────────────────────────────────────────────────
     { h2: 'La tua settimana', scheda: 'settimana', p: [
       'I giorni in cui vai in onda, scritti una volta sola. Da qui li prendono la grafica della settimana, «Stasera alle…», il Programma del tuo canale Twitch e il calendario del tuo server Discord. Da qui mandi anche l\'immagine della settimana dove vuoi.',
-      'C\'è in tutti i piani e la usa chi ha il canale. I posti dove mandarla compaiono solo se li hai collegati: Telegram e Discord nel manuale <a href="/manuale/community">Le tue community</a>, Instagram nella scheda «I tuoi social», che chiede il piano Base.',
+      'C\'è in tutti i piani e la usa chi ha il canale. I posti dove mandarla compaiono solo se li hai collegati: Telegram e Discord nel manuale <a href="/manuale/community">Community</a>, Instagram nella scheda «Social», che chiede il piano Base.',
     ] },
 
     { h3: 'I tuoi giorni' },
@@ -337,13 +337,13 @@ export default {
     // ── GRAFICHE SOCIAL ─────────────────────────────────────────────────────
     { h2: 'Grafiche social', scheda: 'grafiche', p: [
       'Tre grafiche pronte da pubblicare: la <strong>programmazione settimanale</strong>, il <strong>«Live ora»</strong> e <strong>«Stasera alle…»</strong>, che annuncia la prossima diretta della tua settimana con la copertina del gioco. Parti da uno stile pronto o da un tema, cambi quello che vuoi, sposti i pezzi sull\'anteprima, e la scarichi, la condividi o la metti nella storia di Instagram. Alcune possono anche uscire da sole.',
-      'C\'è in tutti i piani. La storia di Instagram chiede Instagram collegato nella scheda «I tuoi social», che è del piano Base. La storia e le uscite automatiche le gestisce chi ha il canale: un moderatore prepara, scarica e condivide le grafiche, e al posto del riquadro di Instagram legge «Le storie di Instagram e le pubblicazioni automatiche le gestisce chi ha il canale».',
+      'C\'è in tutti i piani. La storia di Instagram chiede Instagram collegato nella scheda «Social», che è del piano Base. La storia e le uscite automatiche le gestisce chi ha il canale: un moderatore prepara, scarica e condivide le grafiche, e al posto del riquadro di Instagram legge «Le storie di Instagram e le pubblicazioni automatiche le gestisce chi ha il canale».',
     ] },
 
     { h3: 'La storia di Instagram' },
     { p: ['Il riquadro in cima alla carta cambia con lo stato di Instagram.'] },
     { ul: [
-      'Instagram non collegato: «Collega Instagram» ti porta a «I tuoi social».',
+      'Instagram non collegato: «Collega Instagram» ti porta a «Social».',
       'Collegato ma senza il permesso di pubblicare: «La storia di Instagram non può partire», con «Vai a Instagram».',
       'Collegato: «Metti nella storia» manda la grafica che vedi, in formato storia, e resta 24 ore. Leggi «Fatto: è nella tua storia.» o «Non è partita:» col motivo.',
     ] },
@@ -361,7 +361,7 @@ export default {
     ] },
     { p: [
       '<strong>La conferma della settimana.</strong> Con «Chiedimi prima se va bene, il giorno prima» acceso (lo è di base), 24 ore prima arriva una mail alla mail dei rapporti, se l\'hai confermata nella scheda «Dirette», e un messaggio nella chat privata del tuo bot Telegram, se l\'hai collegata. La mail mostra la settimana com\'è, con «Va bene così» e «Non pubblicare»; il messaggio su Telegram ha «Conferma», «Cambiala» e «Non pubblicare». I link aprono una pagina dove premi il tasto: aprirli soltanto non decide niente. Senza conferma non esce.',
-      'La confermi anche da qui e da «La tua settimana», con «Va bene così». Salvare la settimana non la conferma. Se dopo aver confermato vedi un errore, «Non pubblicare» la ferma fino al momento dell\'uscita, dalla mail, da Telegram o dal pannello; «Pubblicala lo stesso» la rimette in uscita.',
+      'La confermi anche da qui e da «Settimana», con «Va bene così». Salvare la settimana non la conferma. Se dopo aver confermato vedi un errore, «Non pubblicare» la ferma fino al momento dell\'uscita, dalla mail, da Telegram o dal pannello; «Pubblicala lo stesso» la rimette in uscita.',
       'Senza una mail confermata e senza Telegram leggi «Non ho una mail confermata né Telegram per chiedertelo: la richiesta la trovi qui e nella Settimana.». Con la conferma spenta la settimana esce da sola, e «Non pubblicare» resta per fermarla.',
     ] },
     { p: ['Sotto ogni uscita leggi quando esce la prossima e com\'è andata l\'ultima. Se qualcosa non va, leggi cosa.'] },
@@ -481,7 +481,7 @@ export default {
     { h2: 'I tuoi social', scheda: 'notifiche', p: [
       'Avvisare chi ti segue quando pubblichi sulle altre reti: il post nuovo su Instagram, il video e la diretta su TikTok, il video su YouTube, e gli altri siti che hanno un feed. Qui colleghi anche Instagram per le storie delle Grafiche.',
       '<strong>Serve il piano Base.</strong> Senza, la scheda mostra «Non nel tuo piano», con «Guarda la demo» e il tasto per sbloccarla. I piani sono nel <a href="/manuale/account">manuale dell\'abbonamento</a>.',
-      'Gli avvisi partono nei gruppi e nei canali Telegram dove hai acceso quell\'avviso e nei canali Discord che lo ricevono. Se spunti «Annuncia anche nella chat Twitch», nella tua chat esce anche una riga col link. Dove va cosa su Telegram e Discord lo trovi nel manuale <a href="/manuale/community">Le tue community</a>. Il messaggio che scrivi qui è quello di Telegram; su Discord ogni canale ha il suo testo.',
+      'Gli avvisi partono nei gruppi e nei canali Telegram dove hai acceso quell\'avviso e nei canali Discord che lo ricevono. Se spunti «Annuncia anche nella chat Twitch», nella tua chat esce anche una riga col link. Dove va cosa su Telegram e Discord lo trovi nel manuale <a href="/manuale/community">Community</a>. Il messaggio che scrivi qui è quello di Telegram; su Discord ogni canale ha il suo testo.',
       'Gli account li collega solo chi ha il canale: un moderatore legge «Instagram lo collega chi ha il canale.» e, per TikTok, «Lo collega chi ha il canale.».',
     ] },
 
@@ -536,7 +536,7 @@ export default {
     ] },
     { p: [
       'Se nella scheda Telegram hai acceso l\'avviso fissato, l\'avviso di TikTok resta fissato finché sei in diretta e sparisce quando stacchi.',
-      '<strong>La via affidabile.</strong> Un\'automazione tua (IFTTT, Zapier, Comandi rapidi) sull\'evento «vado live su TikTok» chiama <code>POST socialbot.live/api/ext/tuonome</code> con l\'intestazione <code>Authorization: Bearer LA-TUA-CHIAVE-API</code> e il corpo <code>{"azione":"tiktok-live"}</code>. La chiave API sta in «Chat e pubblico» → «Comandi».',
+      '<strong>La via affidabile.</strong> Un\'automazione tua (IFTTT, Zapier, Comandi rapidi) sull\'evento «vado live su TikTok» chiama <code>POST socialbot.live/api/ext/tuonome</code> con l\'intestazione <code>Authorization: Bearer LA-TUA-CHIAVE-API</code> e il corpo <code>{"azione":"tiktok-live"}</code>. La chiave API sta in «Chat» → «Comandi».',
     ] },
 
     { h3: 'Nuovo video su YouTube' },

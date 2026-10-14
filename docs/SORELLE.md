@@ -20,6 +20,13 @@ telegram, notifiche, statistiche.
 Nessuno se n'era accorto perché una barra che manca non fa rumore: fa solo un
 clic in più, ogni volta.
 
+## Aggiornamento: quando la barra del gruppo si vede
+
+Con il riordino del menu (docs/MENU.md) la barra delle sorelle del gruppo
+compare solo dove il menu non è a schermo: sul telefono e a tutto schermo.
+Sul computer, col menu di lato, ripeteva le voci che avevi accanto. E una
+pagina che ha le sue parti non ha anche le sorelle: una barra sola.
+
 ## La regola, una sola
 
 **Una scheda ha sempre delle sorelle**: quelle della sua *famiglia* se ne ha

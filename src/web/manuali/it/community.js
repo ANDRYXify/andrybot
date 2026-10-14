@@ -1,18 +1,18 @@
 // © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
 // Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
-// Manuale: Le tue community, Telegram e Discord. La forma dei manuali e il perche' stanno in
+// Manuale: Community, Telegram e Discord. La forma dei manuali e il perche' stanno in
 // src/web/manuali.js; le lingue in docs/LINGUE.md.
 
 export default {
   slug: 'community',
   schede: ['telegram', 'ruoli', 'dcavvisi', 'dcserver', 'dcentra', 'dcfiltro'],
-  titolo: 'Le tue community: Telegram e Discord | SocialBot',
-  h1: 'Le tue community: il manuale di Telegram e Discord',
+  titolo: 'Community: Telegram e Discord | SocialBot',
+  h1: 'Community: il manuale di Telegram e Discord',
   desc: 'Telegram e Discord dal pannello: avvisi in gruppi e topic, cancello e scudo all\'ingresso, porta del gruppo, compleanni, chat privata, ruoli, calendario e filtro.',
   aggiornata: '2026-10-04',
   corpo: [
     { p: [
-      'Nel menù, il gruppo «Le tue community» ha due voci: «Telegram» e «Discord». Telegram è una scheda sola. Discord ne ha cinque, in fila in cima alla pagina: «Ruoli», «Avvisi», «Il server», «Chi entra», «Il filtro».',
+      'Nel menù, il gruppo «Community» ha due voci: «Telegram» e «Discord». Telegram è una scheda sola. Discord ne ha cinque, in fila in cima alla pagina: «Ruoli», «Avvisi», «Il server», «Chi entra», «Il filtro».',
       'Su Telegram il bot è <strong>tuo</strong>: lo crei tu con @BotFather e ci dai la sua chiave. Su Discord porti nel tuo server il nostro bot, con un tasto.',
     ] },
     { tabella: [
@@ -26,7 +26,7 @@ export default {
     ] },
     { p: [
       'Le schede Discord sono del proprietario del canale. Un moderatore del pannello le vede nel menù ma non le può usare.',
-      'Se sei entrato in SocialBot solo con Discord, nel gruppo «Le tue community» trovi solo Discord: la scheda Telegram non c\'è.',
+      'Se sei entrato in SocialBot solo con Discord, nel gruppo «Community» trovi solo Discord: la scheda Telegram non c\'è.',
       'I piani e cosa comprendono stanno nella scheda «Abbonamento» (<a href="/manuale/account">manuale dell\'account</a>).',
     ] },
 
@@ -54,7 +54,7 @@ export default {
       { t: 'Accendi l\'avviso. ', d: 'Spunta «Avvisa il gruppo quando vado in diretta» e premi «Salva».' },
     ] },
     { p: [
-      'Senza quella spunta, su Telegram non partono gli avvisi delle dirette su Twitch, Kick e YouTube, né le tue né quelle degli altri streamer. La diretta su TikTok e i post nuovi hanno la loro levetta nella scheda «I tuoi social», e su Telegram arrivano anche senza.',
+      'Senza quella spunta, su Telegram non partono gli avvisi delle dirette su Twitch, Kick e YouTube, né le tue né quelle degli altri streamer. La diretta su TikTok e i post nuovi hanno la loro levetta nella scheda «Social», e su Telegram arrivano anche senza.',
     ] },
     { tabella: [
       ['Cosa leggi', 'Cosa fare'],
@@ -105,7 +105,7 @@ export default {
       '«Salva» registra il messaggio e le spunte. La spunta «Avvisa il gruppo quando vado in diretta» si accende appena c\'è un posto dove mandare l\'avviso: il gruppo di «Rileva gruppo» oppure un posto qualsiasi dell\'elenco. Senza posti leggi «collega prima un gruppo o un canale».',
       '«Manda una prova» manda nel gruppo collegato lo stesso avviso che partirà davvero, locandina compresa. Si usa quando c\'è un gruppo.',
       '«Scollega», dopo la conferma, stacca il bot: con lui se ne vanno il gruppo collegato, l\'avviso acceso, il bot interattivo e la chat privata. Per riaccenderlo incolli di nuovo il token.',
-      'Gli avvisi dei post nuovi si accendono nella scheda «I tuoi social» (<a href="/manuale/vetrina">manuale della vetrina</a>). Qui scegli dove arrivano.',
+      'Gli avvisi dei post nuovi si accendono nella scheda «Social» (<a href="/manuale/vetrina">manuale della vetrina</a>). Qui scegli dove arrivano.',
     ] },
 
     { h3: 'La locandina della diretta' },
@@ -117,7 +117,7 @@ export default {
 
     { h3: 'Bot interattivo su Telegram' },
     { p: [
-      '<strong>«Bot interattivo nel gruppo».</strong> Acceso, il bot legge i messaggi del gruppo e risponde ai comandi. Rispondono i comandi e le frasi che crei in «Chat e pubblico» → «Comandi» con la spunta «Abilita anche su Telegram» (<a href="/manuale/moduli">manuale dei comandi</a>). Su Telegram il <code>!</code> non serve.',
+      '<strong>«Bot interattivo nel gruppo».</strong> Acceso, il bot legge i messaggi del gruppo e risponde ai comandi. Rispondono i comandi e le frasi che crei in «Chat» → «Comandi» con la spunta «Abilita anche su Telegram» (<a href="/manuale/moduli">manuale dei comandi</a>). Su Telegram il <code>!</code> non serve.',
       'Il bot dev\'essere nel gruppo. Da acceso, se non hai ancora un gruppo collegato, il primo messaggio scritto in un gruppo lo aggancia da solo.',
       '@BotFather tiene accesa la privacy dei bot: in un gruppo il tuo bot riceve solo i comandi con la <code>/</code>. Per fargli leggere tutto, anche i comandi senza <code>/</code> e chi scrive per l\'elenco dei membri, scrivi a @BotFather <code>/setprivacy</code> e scegli Disable.',
     ] },
@@ -241,7 +241,7 @@ export default {
       '«Compleanni registrati» è l\'elenco unico, con il numero accanto. Accanto a ogni nome leggi «dalla chat» o «aggiunto a mano»; quelli senza nota arrivano dal gruppo. «Rimuovi» toglie una data.',
       '«Membri del gruppo» elenca chi ha scritto nel gruppo e non ha ancora una data. Telegram non lascia leggere l\'intera lista dei membri: «Carica amministratori» aggiunge gli amministratori, che sono l\'unico elenco che concede. Per vedere tutti quelli che scrivono, togli la privacy del bot su @BotFather. Per ogni membro scrivi giorno e mese e premi «Aggiungi»: il giorno del compleanno viene taggato.',
       '«Aggiungi un compleanno a mano (senza tag)» vuole nome, giorno e mese. Quel nome viene scritto negli auguri ma non taggato.',
-      'Se leggi «metti un nome» o «data non valida (giorno/mese)», manca il nome o la data non esiste. «collega prima il bot e il gruppo» vuol dire che serve un gruppo collegato. Gli effetti si preparano nella scheda «Effetti & suoni» (<a href="/manuale/effetti">manuale degli effetti</a>).',
+      'Se leggi «metti un nome» o «data non valida (giorno/mese)», manca il nome o la data non esiste. «collega prima il bot e il gruppo» vuol dire che serve un gruppo collegato. Gli effetti si preparano nella scheda «Effetti e suoni» (<a href="/manuale/effetti">manuale degli effetti</a>).',
     ] },
 
     // ─────────────────────────────────────────────────────────── DISCORD · RUOLI
@@ -384,7 +384,7 @@ export default {
     { h3: 'Gli appuntamenti sul calendario' },
     { p: [
       'L\'avviso dice che sei partito. Questo dice quando torni: la tua settimana finisce sul calendario del server come appuntamenti, e chi ti segue mette il promemoria. Le serate con la stessa ora e la stessa cosa diventano un appuntamento solo, che si ripete ogni settimana.',
-      'Giorni, orari e quanto dura una diretta vengono dalla scheda «La tua settimana» (<a href="/manuale/vetrina">manuale della vetrina</a>). Se è vuota leggi «La tua settimana è vuota…» e il tasto «Vai a scriverla»; se è piena vedi gli appuntamenti che ne uscirebbero e «Cambiali».',
+      'Giorni, orari e quanto dura una diretta vengono dalla scheda «Settimana» (<a href="/manuale/vetrina">manuale della vetrina</a>). Se è vuota leggi «La tua settimana è vuota…» e il tasto «Vai a scriverla»; se è piena vedi gli appuntamenti che ne uscirebbero e «Cambiali».',
     ] },
     { tabella: [
       ['Controllo', 'Cosa fa', 'Limiti'],

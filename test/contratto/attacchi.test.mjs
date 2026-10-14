@@ -63,7 +63,7 @@ test('«Sblocca» disfa un blocco e si scrive nel registro', () => {
 });
 
 test('il menu: un gruppo suo con lo scudo, gli attacchi e il registro', () => {
-  assert.match(APP, /\{ id: 'difesa', nome: 'Scudo e attacchi', schede: \[\n\s+\['scudo', 'Lo scudo'\],\n\s+\['attacchi', 'Gli attacchi'\],\n\s+\['follower', 'I tuoi follower'\],\n\s+\['registro', 'Registro'\],\n\s+\] \}/);
+  assert.match(APP, /\{ id: 'difesa', nome: 'Scudo e attacchi', schede: \[\n\s+\['scudo', 'Scudo anti-bot'\],\n\s+\['attacchi', 'Attacchi'\],\n\s+\['follower', 'Follower'\],\n\s+\['registro', 'Registro'\],\n\s+\] \}/);
   assert.doesNotMatch(pezzo('const FAMIGLIE = [', '];'), /'scudo'|'registro'|id: 'moderazione'/, 'lo scudo non sta piu\' in un\'altra famiglia');
   assert.match(APP, /if \(id === 'attacchi'\) caricaAttacchi\(\);/);
   assert.match(APP, /: id === 'attacchi' && stato\?\.attacchiNuovi > 0/, 'il puntino');

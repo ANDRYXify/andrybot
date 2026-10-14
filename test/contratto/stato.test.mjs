@@ -38,7 +38,7 @@ test('in Stato la diretta, il bot e cosa c\'e\' da sistemare; il resto nella sua
     assert.ok(!s.includes(`id="${id}"`), `#${id} non sta in Stato`);
   }
   const a = funzione(APP, 'pannelloAccount');
-  for (const id of DELL_ACCOUNT) assert.ok(a.includes(`id="${id}"`), `#${id} sta in «Il tuo account»`);
+  for (const id of DELL_ACCOUNT) assert.ok(a.includes(`id="${id}"`), `#${id} sta in «Accesso e dati»`);
   const c = funzione(APP, 'pannelloConoscenza');
   for (const id of DELLA_CONOSCENZA) assert.ok(c.includes(`id="${id}"`), `#${id} sta in Conoscenza`);
   for (const id of [...DELL_ACCOUNT, ...DELLA_CONOSCENZA, 'toggle-bot', 'carta-adesso']) {
@@ -52,19 +52,19 @@ test('ogni scheda carica quello che mostra', () => {
   const riga = (id) => d.split('\n').find((r) => r.includes(`id === '${id}'`)) || '';
   assert.match(riga('stato'), /caricaAdesso\(\)/);
   for (const f of ['caricaPasskey', 'caricaModeratori', 'caricaRichiesteMod', 'caricaMieRichieste', 'caricaPiattaforme', 'caricaCodiciPosta', 'collegaCancella']) {
-    assert.ok(riga('account').includes(`${f}()`), `«Il tuo account» chiama ${f}`);
+    assert.ok(riga('account').includes(`${f}()`), `«Accesso e dati» chiama ${f}`);
     assert.ok(!riga('stato').includes(`${f}()`), `Stato non chiama piu' ${f}`);
   }
   assert.ok(riga('conoscenza').includes('caricaRetePanoramica()'), 'la rete si carica dove sta');
 });
 
-test('il menu ha Stato all\'inizio e «Il tuo account» nel gruppo Account', () => {
+test('il menu ha Stato all\'inizio e «Accesso e dati» nel gruppo Account', () => {
   const g = APP.slice(APP.indexOf('const GRUPPI = ['), APP.indexOf('\n];', APP.indexOf('const GRUPPI = [')));
   assert.match(g, /^const GRUPPI = \[\n {2}\{ id: 'inizio', nome: 'Stato', schede: \[\n {4}\['stato', 'Stato'\],\n {2}\] \},/, 'Stato e\' la prima voce, da sola');
-  assert.match(g, /\{ id: 'account', nome: 'Account', schede: \[\n {4}\['account', 'Il tuo account'\],\n {4}\['sottoscrizione', 'Abbonamento'\],/);
+  assert.match(g, /\{ id: 'account', nome: 'Account', schede: \[\n {4}\['account', 'Accesso e dati'\],\n {4}\['sottoscrizione', 'Abbonamento'\],/);
   assert.match(APP, /const SOLO_DISCORD = new Set\(\[[^\]]*'account'/, 'anche chi ha solo Discord ha il suo account');
   const c = funzione(APP, 'navDrawerHtml');
-  assert.ok(c.includes('g.schede.length === 1') && c.includes('if (ripete) return `<div class="drawer-grp drawer-solo">${voci}</div>`;'), 'un titolo che ripete l\'unica voce non si scrive, e quel gruppo non si chiude');
+  assert.ok(c.includes('if (g.schede.length === 1) return `<div class="drawer-grp drawer-solo">${voci}</div>`;'), 'un gruppo con una voce sola e\' una voce: niente titolo, niente da chiudere');
 });
 
 test('la Home non conta niente di suo: legge chi i numeri li tiene gia\'', () => {

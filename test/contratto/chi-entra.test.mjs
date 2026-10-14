@@ -125,8 +125,7 @@ test('la scheda e\' registrata dove si registrano le schede', () => {
   // ignorare i rossi.
   assert.match(APP, /\{ id: 'discord', nome: 'Discord', parti: \[[^\]]*'dcentra'/, 'la barra della famiglia Discord');
   assert.match(APP, /SOLO_DISCORD = new Set\(\[[^\]]*'dcentra'/, 'chi entra solo da Discord deve vederla');
-  assert.match(APP, /\n {2}dcentra: \['Chi entra nel server'/, 'il nome della scheda');
-  assert.match(APP, /\n {2}dcentra: \['Chi entra', /, 'il nome corto nella barra');
+  assert.match(APP, /\n {2}dcentra: \['Chi entra', 'Who joins', 'Quién entra'\]/, 'un nome solo: nella barra della famiglia e nel titolo');
   assert.match(APP, /\n {2}dcentra: {5}_ico\(/, 'l\'icona');
   assert.match(APP, /\n {2}dcentra: \['Chi può scrivere appena entra/, 'la descrizione');
   assert.match(APP, /\n {2}dcentra: \{ serve: \[/, 'l\'aiuto');

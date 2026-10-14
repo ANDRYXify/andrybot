@@ -20,7 +20,7 @@ test('sulla tela c\'e\' la sua area, con un esempio fatto come un effetto vero',
   assert.ok(/out\.push\(\{ k: 'effetti', ico: ICO\.effetti, n: L\('Effetti a schermo'[^}]*cfg: 'overlayEffetti' \}\);/.test(APP));
   assert.ok(/const VESTITORE = \{[^}]*\beffetti: _vestiEffetti\b/.test(APP));
   assert.ok(/box\.innerHTML = '<img class="effetto dentro" alt="" src="' \+ EFFETTO_ESEMPIO \+ '">';/.test(APP), 'senza misure fisse, come l\'immagine vera');
-  assert.ok(/effetti: \['effetti', \[[^\]]+\], 'posto'\]/.test(APP), 'e l\'ispettore dice cosa si sceglie qui');
+  assert.ok(/effetti: \['effetti', T_SCHEDA\.effetti, 'posto'\]/.test(APP), 'e l\'ispettore dice cosa si sceglie qui');
 });
 
 test('le misure sono del contenitore, e la stessa regola centra l\'area in onda e sulla tela', () => {

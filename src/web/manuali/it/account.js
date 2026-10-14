@@ -16,7 +16,7 @@ export default {
   aggiornata: '2026-10-04',
   corpo: [
     { p: [
-      'Le due schede stanno nel gruppo «Account» del menù. «Il tuo account» riguarda chi entra e dove lavora il bot. «Abbonamento» riguarda cosa hai acceso e quanto paghi.',
+      'Le due schede stanno nel gruppo «Account» del menù. «Accesso e dati» riguarda chi entra e dove lavora il bot. «Abbonamento» riguarda cosa hai acceso e quanto paghi.',
     ] },
 
     { h2: 'Il tuo account', scheda: 'account', p: [
@@ -179,7 +179,7 @@ export default {
       ['«Il tuo overlay non l’hai ancora aperto»', 'Il link del tuo overlay non è mai stato aperto nel programma con cui trasmetti.', '«Overlay Studio»'],
       ['«Non hai ancora un comando tuo»', 'Nel canale non c\'è nessun comando e nessun modulo fatto da te. I due moduli del kit di partenza, «Benvenuto ai nuovi» e «Promemoria follow», finché restano com\'erano non contano.', '«Comandi»'],
       ['«La tua pagina link non è pubblicata»', 'La pagina link non è accesa.', '«Pagina link»'],
-      ['«La tua settimana è vuota»', 'In «La tua settimana» non c\'è nessun giorno con un\'ora.', '«La tua settimana»'],
+      ['«La tua settimana è vuota»', 'In «Settimana» non c\'è nessun giorno con un\'ora.', '«Settimana»'],
     ] },
     { p: [
       'Sotto ogni avviso ci sono quattro tasti. «Fammi vedere» ti porta dove si sistema e lo rimanda a domani. «Domani» e «Fra una settimana» lo rimandano. «Non mostrarlo più» lo toglie per sempre. Esc vale come «Domani».',
@@ -188,13 +188,13 @@ export default {
     { tabella: [
       ['Invito', 'Dove porta «Fammi vedere»'],
       ['«Hai già provato le Grafiche social?»', '«Grafiche social»'],
-      ['«Hai già provato gli Effetti?»', '«Effetti & suoni»'],
+      ['«Hai già provato gli Effetti?»', '«Effetti e suoni»'],
       ['«Hai mai visto il muro delle emote?»', '«Overlay Studio»'],
       ['«Hai già provato CONSOLify?»', '«CONSOLify»'],
       ['«Hai un server Discord?»', '«Discord»'],
       ['«Hai un gruppo Telegram?»', '«Telegram»'],
       ['«Hai già una pagina per le donazioni?»', '«Donazioni»'],
-      ['«Hai già fatto un gioco tuo?»', '«Giochi & classifiche»'],
+      ['«Hai già fatto un gioco tuo?»', '«Giochi»'],
       ['«Il bot sa già chi sei?»', '«Conoscenza»'],
       ['«Usi le emote 7TV?»', '«Emote (7TV)», solo per i canali Twitch'],
       ['«Hai già un QR che porta al tuo canale?»', '«QR su misura»'],
@@ -349,12 +349,12 @@ export default {
     { d: 'Un moderatore vede i miei dati di pagamento?', r: 'No. Vede il piano del canale e cosa è acceso. La carta e le fatture stanno nel portale dei pagamenti, che è del proprietario.' },
     { d: 'Uno sconosciuto può chiedermi di moderare il mio canale?', r: 'Su Twitch, se Twitch dice che quella persona non ti modera, la richiesta non parte. Negli altri casi, e su Kick e YouTube sempre, ti arriva marcata «da controllare tu». Finché non dici di sì quella persona non vede niente, e ognuno può avere al massimo 3 richieste in attesa.' },
     { d: 'Il mio moderatore dice che il link non funziona.', r: 'L\'invito dura 72 ore e si usa una volta. In «I tuoi moderatori» premi «Rigenera» e mandagli il link nuovo. Deve entrare con lo stesso account che hai scritto nell\'invito, sulla stessa piattaforma.' },
-    { d: 'Moderavo già un canale: devo aspettare che mi mandi il link?', r: 'No. Nella scheda «Il tuo account», carta «Moderi il canale di qualcun altro?», scrivi il nome del canale e premi «Manda la richiesta».' },
+    { d: 'Moderavo già un canale: devo aspettare che mi mandi il link?', r: 'No. Nella scheda «Accesso e dati», carta «Moderi il canale di qualcun altro?», scrivi il nome del canale e premi «Manda la richiesta».' },
     { d: 'Ho perso il telefono con la passkey.', r: 'Entra nel pannello con il tuo account di Twitch, Kick o YouTube, poi togli quella passkey da «Le tue passkey» con «Rimuovi».' },
     { d: 'Posso avere il bot su due canali?', r: 'Ogni canale ha il suo abbonamento, perché ogni canale ha la sua chat, le sue monete e i suoi comandi.' },
     { d: 'Voglio cancellare tutto ma ho un abbonamento.', r: 'Non serve disdirlo prima: la cancellazione lo disdice su Stripe, e se Stripe non risponde non cancella niente. Dopo non ci sono altri addebiti.' },
-    { d: 'Mi è arrivata una mail di SocialBot e ho dei dubbi.', r: 'Guarda il codice in fondo alla mail e confrontalo con «Le mail che ti mandiamo» nella scheda «Il tuo account». Se non combacia, non aprire i collegamenti e scrivicelo.' },
-    { d: 'Come tolgo gli avvisi in basso a destra?', r: 'Uno alla volta con «Non mostrarlo più», o con «Non mi interessa» per gli inviti «Hai già provato…?». Tutti insieme spegnendo «Mostrameli» nella carta «Avvisi e cose da provare» della scheda «Il tuo account».' },
+    { d: 'Mi è arrivata una mail di SocialBot e ho dei dubbi.', r: 'Guarda il codice in fondo alla mail e confrontalo con «Le mail che ti mandiamo» nella scheda «Accesso e dati». Se non combacia, non aprire i collegamenti e scrivicelo.' },
+    { d: 'Come tolgo gli avvisi in basso a destra?', r: 'Uno alla volta con «Non mostrarlo più», o con «Non mi interessa» per gli inviti «Hai già provato…?». Tutti insieme spegnendo «Mostrameli» nella carta «Avvisi e cose da provare» della scheda «Accesso e dati».' },
     { d: 'Non riesco ancora a lasciare una recensione.', r: 'Servono 7 giorni dall\'attivazione del canale e 2 dirette col bot acceso, oppure, se usi solo Discord, il bot al lavoro sul tuo server. La carta «La tua recensione» dice cosa manca.' },
   ],
 };

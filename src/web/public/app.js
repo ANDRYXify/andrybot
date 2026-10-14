@@ -2731,6 +2731,15 @@ function _osservatore() {
   return _rivObs;
 }
 
+function mostraFerme(scope) {
+  const obs = _osservatore();
+  for (const c of scope.querySelectorAll('.carta.rivela')) { obs.unobserve(c); c.classList.remove('rivela'); c.classList.add('dentro'); }
+  if (_menoMoto) return;
+  scope.classList.remove('scambio');
+  void scope.offsetWidth;
+  scope.classList.add('scambio');
+}
+
 function avviaComparsa(sezioni) {
   const t = document.getElementById('pagina-testata');
   if (t) {
@@ -4485,10 +4494,7 @@ function vistaDisabilitato() {
 }
 
 const FAMIGLIE = [
-  { id: 'bot', nome: 'Il bot', parti: ['personalita', 'conoscenza', 'memoria'] },
-  { id: 'comandi', nome: 'Comandi', parti: ['moduli', 'ascolto'] },
-  { id: 'interazione', nome: 'Giochi', parti: ['giochi', 'sondaggi', 'giveaway', 'penitenze'] },
-  { id: 'inonda', nome: 'Regia', parti: ['regia', 'clip', 'musica'] },
+  { id: 'bot', nome: 'Il bot', parti: ['personalita', 'conoscenza', 'memoria', 'ascolto'] },
   { id: 'discord', nome: 'Discord', parti: ['ruoli', 'dcavvisi', 'dcserver', 'dcentra', 'dcfiltro'] },
 ];
 const famigliaDi = (scheda) => FAMIGLIE.find((f) => f.parti.includes(scheda)) || null;
@@ -4498,40 +4504,50 @@ const GRUPPI = [
   { id: 'inizio', nome: 'Stato', schede: [
     ['stato', 'Stato'],
   ] },
-  { id: 'bot', nome: 'Il tuo bot', schede: [
+  { id: 'bot', nome: 'Il bot', schede: [
     ['personalita', 'Il bot'],
   ] },
-  { id: 'pubblico', nome: 'Chat e pubblico', schede: [
+  { id: 'pubblico', nome: 'Chat', schede: [
     ['moduli', 'Comandi'],
     ['regole', 'Moderazione'],
-    ['giochi', 'Giochi'],
     ['negozio', 'Negozio'],
-    ['statistiche', 'Statistiche'],
   ] },
-  { id: 'difesa', nome: 'Scudo e attacchi', schede: [
-    ['scudo', 'Lo scudo'],
-    ['attacchi', 'Gli attacchi'],
-    ['follower', 'I tuoi follower'],
-    ['registro', 'Registro'],
+  { id: 'gioca', nome: 'Intrattenimento', schede: [
+    ['giochi', 'Giochi'],
+    ['partite', 'Partite'],
+    ['sondaggi', 'Sondaggi e predizioni'],
+    ['giveaway', 'Giveaway'],
+    ['penitenze', 'Penitenze'],
   ] },
-  { id: 'diretta', nome: 'Durante la diretta', schede: [
+  { id: 'diretta', nome: 'In diretta', schede: [
     ['regia', 'Regia'],
-    ['dirette', 'Dirette'],
+    ['clip', 'Clip'],
+    ['musica', 'Musica'],
     ['consolify', 'CONSOLify'],
   ] },
-  { id: 'scena', nome: 'Scena & overlay', schede: [
+  { id: 'scena', nome: 'Scena e overlay', schede: [
     ['alert', 'Overlay Studio'],
-    ['effetti', 'Effetti & suoni'],
+    ['effetti', 'Effetti e suoni'],
     ['emote', 'Emote (7TV)'],
   ] },
-  { id: 'vetrina', nome: 'La tua vetrina', schede: [
+  { id: 'difesa', nome: 'Scudo e attacchi', schede: [
+    ['scudo', 'Scudo anti-bot'],
+    ['attacchi', 'Attacchi'],
+    ['follower', 'Follower'],
+    ['registro', 'Registro'],
+  ] },
+  { id: 'numeri', nome: 'Numeri', schede: [
+    ['statistiche', 'Statistiche'],
+    ['dirette', 'Dirette'],
+  ] },
+  { id: 'vetrina', nome: 'Vetrina', schede: [
     ['pagina', 'Pagina link'],
     ['donazioni', 'Donazioni'],
     ['settimana', 'Settimana'],
-    ['grafiche', 'Grafiche'],
-    ['notifiche', 'I tuoi social'],
+    ['grafiche', 'Grafiche social'],
+    ['notifiche', 'Social'],
   ] },
-  { id: 'community', nome: 'Le tue community', schede: [
+  { id: 'community', nome: 'Community', schede: [
     ['telegram', 'Telegram'],
     ['ruoli', 'Discord'],
   ] },
@@ -4542,13 +4558,13 @@ const GRUPPI = [
     ['pannelli', 'Pannelli'],
   ] },
   { id: 'account', nome: 'Account', schede: [
-    ['account', 'Il tuo account'],
+    ['account', 'Accesso e dati'],
     ['sottoscrizione', 'Abbonamento'],
   ] },
 ];
 
 const GRUPPO_ADMIN = { id: 'admin', nome: 'Admin', schede: [
-  ['admin', 'Admin'],
+  ['admin', 'Gestione'],
   ['avatar', 'Avatar 3D'],
   ['promo', 'Promo'],
 ] };
@@ -4563,67 +4579,86 @@ function schedaValida(id) {
 
 const T_GRUPPO = {
   inizio: ['Stato', 'Status', 'Estado'],
-  bot: ['Il tuo bot', 'Your bot', 'Tu bot'],
-  pubblico: ['Chat e pubblico', 'Chat & audience', 'Chat y público'],
+  bot: ['Il bot', 'The bot', 'El bot'],
+  pubblico: ['Chat', 'Chat', 'Chat'],
+  gioca: ['Intrattenimento', 'Entertainment', 'Entretenimiento'],
+  diretta: ['In diretta', 'Live', 'En directo'],
+  scena: ['Scena e overlay', 'Scene & overlay', 'Escena y overlay'],
   difesa: ['Scudo e attacchi', 'Shield & attacks', 'Escudo y ataques'],
-  diretta: ['Durante la diretta', 'During the live', 'Durante el directo'],
-  scena: ['Scena & overlay', 'Scene & overlay', 'Escena y overlay'],
-  vetrina: ['La tua vetrina', 'Your showcase', 'Tu escaparate'],
-  community: ['Le tue community', 'Your communities', 'Tus comunidades'],
+  numeri: ['Numeri', 'Numbers', 'Números'],
+  vetrina: ['Vetrina', 'Showcase', 'Escaparate'],
+  community: ['Community', 'Communities', 'Comunidades'],
   strumenti: ['Strumenti', 'Tools', 'Herramientas'],
   account: ['Account', 'Account', 'Cuenta'],
   admin: ['Admin', 'Admin', 'Admin'],
 };
+const T_FAMIGLIA = {
+  bot: ['Il bot', 'The bot', 'El bot'],
+  discord: ['Discord', 'Discord', 'Discord'],
+};
 const T_SCHEDA = {
   stato: ['Stato', 'Status', 'Estado'],
-  donazioni: ['Donazioni', 'Donations', 'Donaciones'],
-  consolify: ['CONSOLify', 'CONSOLify', 'CONSOLify'],
-  account: ['Il tuo account', 'Your account', 'Tu cuenta'],
   personalita: ['Personalità', 'Personality', 'Personalidad'],
   conoscenza: ['Conoscenza', 'Knowledge', 'Conocimiento'],
   memoria: ['Memoria', 'Memory', 'Memoria'],
+  ascolto: ['Comandi vocali', 'Voice commands', 'Comandos de voz'],
+  moduli: ['Comandi', 'Commands', 'Comandos'],
+  regole: ['Moderazione', 'Moderation', 'Moderación'],
+  negozio: ['Negozio', 'Shop', 'Tienda'],
+  giochi: ['Giochi', 'Games', 'Juegos'],
+  partite: ['Partite', 'Matches', 'Partidas'],
+  sondaggi: ['Sondaggi e predizioni', 'Polls & predictions', 'Encuestas y predicciones'],
+  giveaway: ['Giveaway', 'Giveaways', 'Sorteos'],
+  penitenze: ['Penitenze', 'Forfeits', 'Penitencias'],
+  regia: ['Regia', 'Control room', 'Realización'],
+  clip: ['Clip', 'Clips', 'Clips'],
+  musica: ['Musica', 'Music', 'Música'],
+  consolify: ['CONSOLify', 'CONSOLify', 'CONSOLify'],
+  alert: ['Overlay Studio', 'Overlay Studio', 'Overlay Studio'],
+  effetti: ['Effetti e suoni', 'Effects & sounds', 'Efectos y sonidos'],
+  emote: ['Emote (7TV)', 'Emotes (7TV)', 'Emotes (7TV)'],
+  scudo: ['Scudo anti-bot', 'Anti-bot shield', 'Escudo anti-bot'],
+  attacchi: ['Attacchi', 'Attacks', 'Ataques'],
+  follower: ['Follower', 'Followers', 'Seguidores'],
+  registro: ['Registro', 'Log', 'Registro'],
   statistiche: ['Statistiche', 'Stats', 'Estadísticas'],
-  avatar: ['Avatar 3D', 'Avatar 3D', 'Avatar 3D'],
-  promo: ['Promo', 'Promo', 'Promo'],
+  dirette: ['Dirette', 'Streams', 'Directos'],
+  pagina: ['Pagina link', 'Link page', 'Página de enlaces'],
+  donazioni: ['Donazioni', 'Donations', 'Donaciones'],
+  settimana: ['Settimana', 'Week', 'Semana'],
+  grafiche: ['Grafiche social', 'Social graphics', 'Gráficas sociales'],
+  notifiche: ['Social', 'Socials', 'Redes'],
+  telegram: ['Telegram', 'Telegram', 'Telegram'],
+  ruoli: ['Ruoli', 'Roles', 'Roles'],
+  dcavvisi: ['Avvisi', 'Alerts', 'Avisos'],
+  dcserver: ['Server', 'Server', 'Servidor'],
+  dcentra: ['Chi entra', 'Who joins', 'Quién entra'],
+  dcfiltro: ['Filtro', 'Filter', 'Filtro'],
   qr: ['QR su misura', 'Custom QR', 'QR a medida'],
   misure: ['Emote e badge', 'Emotes and badges', 'Emotes y badges'],
   kit: ['Media kit', 'Media kit', 'Media kit'],
   pannelli: ['Pannelli', 'Panels', 'Paneles'],
-  moduli: ['Comandi', 'Commands', 'Comandos'],
-  regole: ['Moderazione', 'Moderation', 'Moderación'],
-  scudo: ['Scudo anti-bot', 'Anti-bot shield', 'Escudo anti-bot'],
-  registro: ['Registro dello scudo', 'Shield log', 'Registro del escudo'],
-  attacchi: ['Gli attacchi', 'The attacks', 'Los ataques'],
-  follower: ['I tuoi follower', 'Your followers', 'Tus seguidores'],
-  dcavvisi: ['Avvisi su Discord', 'Discord alerts', 'Avisos en Discord'],
-  dcserver: ['Il server Discord', 'Your Discord server', 'Tu servidor de Discord'],
-  dcentra: ['Chi entra nel server', 'Who joins the server', 'Quién entra al servidor'],
-  dcfiltro: ['Il filtro del server', 'The server filter', 'El filtro del servidor'],
-  giochi: ['Giochi & classifiche', 'Games & leaderboards', 'Juegos y clasificaciones'],
-  negozio: ['Negozio', 'Shop', 'Tienda'],
-  regia: ['Regia', 'Control room', 'Realización'],
-  studio: ['Studio Web', 'Web Studio', 'Estudio Web'],
-  clip: ['Clip', 'Clips', 'Clips'],
-  ascolto: ['Comandi vocali', 'Voice commands', 'Comandos de voz'],
-  musica: ['Musica', 'Music', 'Música'],
-  sondaggi: ['Sondaggi & predizioni', 'Polls & predictions', 'Encuestas y predicciones'],
-  giveaway: ['Giveaway', 'Giveaway', 'Sorteo'],
-  penitenze: ['Penitenze', 'Forfeits', 'Penitencias'],
-  alert: ['Overlay Studio', 'Overlay Studio', 'Overlay Studio'],
-  emote: ['Emote (7TV)', 'Emotes (7TV)', 'Emotes (7TV)'],
-  notifiche: ['I tuoi social', 'Your socials', 'Tus redes'],
-  telegram: ['Telegram', 'Telegram', 'Telegram'],
-  ruoli: ['Discord', 'Discord', 'Discord'],
-  dirette: ['Dirette', 'Streams', 'Directos'],
+  account: ['Accesso e dati', 'Access & data', 'Acceso y datos'],
   sottoscrizione: ['Abbonamento', 'Subscription', 'Suscripción'],
-  pagina: ['Pagina link', 'Link page', 'Página de enlaces'],
-  effetti: ['Effetti & suoni', 'Effects & sounds', 'Efectos y sonidos'],
-  grafiche: ['Grafiche social', 'Social graphics', 'Gráficas sociales'],
-  settimana: ['La tua settimana', 'Your week', 'Tu semana'],
-  admin: ['Admin', 'Admin', 'Admin'],
+  studio: ['Studio Web', 'Web Studio', 'Estudio Web'],
+  admin: ['Gestione', 'Management', 'Gestión'],
+  avatar: ['Avatar 3D', 'Avatar 3D', 'Avatar 3D'],
+  promo: ['Promo', 'Promo', 'Promo'],
 };
 const tGruppo = (id, fb) => { const t = T_GRUPPO[id]; return t ? L(t[0], t[1], t[2]) : (fb || id); };
 const tScheda = (id, fb) => { const t = T_SCHEDA[id]; return t ? L(t[0], t[1], t[2]) : (fb || id); };
+const tFamiglia = (id, fb) => { const t = T_FAMIGLIA[id]; return t ? L(t[0], t[1], t[2]) : (fb || id); };
+const voceDelMenu = (id) => { const f = famigliaDi(id); return f ? tFamiglia(f.id, f.nome) : tScheda(id); };
+function percorso(id) {
+  const f = famigliaDi(id);
+  const voce = f ? f.parti[0] : id;
+  const g = GRUPPI.find((x) => x.schede.some(([sid]) => sid === voce));
+  const pezzi = [];
+  if (g && g.schede.length > 1) pezzi.push(tGruppo(g.id, g.nome));
+  pezzi.push(voceDelMenu(voce));
+  if (f) pezzi.push(tScheda(id));
+  return pezzi.join(' → ');
+}
 
 const SOLO_DISCORD = new Set(['ruoli', 'dcavvisi', 'dcserver', 'dcentra', 'dcfiltro', 'pagina', 'stato', 'account', 'sottoscrizione']);
 const senzaDiretta = () => stato?.piattaforma === 'discord';
@@ -4669,6 +4704,7 @@ const ICONA = {
   dcfiltro:    _ico('<path d="M4 5h16l-6 7v6l-4 2v-8z"/>'),
   musica:      _ico('<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>'),
   sondaggi:    _ico('<path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/>'),
+  partite:     _ico('<path d="M16 11a3 3 0 1 0 0-6"/><path d="M8 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path d="M2 20c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5"/><path d="M16 14.6c3 .2 6 2.2 6 5.4"/>'),
   giveaway:    _ico('<rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5C11 3 12 8 12 8s1-5 4.5-5a2.5 2.5 0 0 1 0 5"/>'),
   penitenze:   _ico('<rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>'),
   alert:       _ico('<rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/><path d="M6 8h4"/><path d="M6 11h2"/>'),
@@ -4713,6 +4749,7 @@ const DESC = {
   dcfiltro: ['Le parole, le liste, lo spam e le menzioni che sul tuo server non passano.', 'The words, lists, spam and mentions that do not get through on your server.', 'Las palabras, listas, spam y menciones que en tu servidor no pasan.'],
   musica: ['Richieste musicali: gli spettatori mettono canzoni in coda su Spotify.', 'Music requests: viewers queue songs on Spotify.', 'Peticiones musicales: los espectadores ponen canciones en cola en Spotify.'],
   sondaggi: ['Crea sondaggi e predizioni Twitch al volo.', 'Create Twitch polls and predictions on the fly.', 'Crea encuestas y predicciones de Twitch al vuelo.'],
+  partite: ['Giochi con la chat: fila, chi gioca ogni manche, risultati e monete.', 'Play with your chat: queue, who plays each round, results and coins.', 'Juega con tu chat: fila, quién juega cada ronda, resultados y monedas.'],
   giveaway: ['Organizza estrazioni a premi per la community.', 'Run prize giveaways for your community.', 'Organiza sorteos de premios para tu comunidad.'],
   penitenze: ['Con i punti canale la chat ti vieta una parola — o ti obbliga a dire solo quella. Se sbagli, penitenza.', 'With channel points chat bans a word for you — or forces you to say only that one. Slip up and you owe a forfeit.', 'Con los puntos de canal el chat te prohíbe una palabra — o te obliga a decir solo esa. Si fallas, penitencia.'],
   alert: ['Il tuo overlay: alert, chat a schermo, widget e temi, tutto personalizzabile.', 'Your stream overlay: alerts, on-screen chat, widgets and themes, all customizable.', 'Tu overlay: alertas, chat en pantalla, widgets y temas, todo personalizable.'],
@@ -4735,7 +4772,7 @@ const DESC = {
 };
 const descScheda = (id) => { const d = DESC[id]; return d ? L(d[0], d[1], d[2]) : ''; };
 
-const SCHEDA_FUNZ = { giochi: 'giochi', negozio: 'giochi', musica: 'musica', ascolto: 'voce', notifiche: 'notifiche', telegram: 'notifiche', effetti: 'effetti', sondaggi: 'effetti', studio: 'studio' };
+const SCHEDA_FUNZ = { giochi: 'giochi', negozio: 'giochi', partite: 'giochi', musica: 'musica', ascolto: 'voce', notifiche: 'notifiche', telegram: 'notifiche', effetti: 'effetti', sondaggi: 'effetti', studio: 'studio' };
 const FUNZ_ADDON = { giochi: 'giochi', musica: 'musica', voce: 'voce', notifiche: 'base', effetti: 'effetti', clipAuto: 'clip', studio: 'base', moderatori: 'base' };
 
 const NOME_ADDON = {
@@ -4894,6 +4931,8 @@ const GUIDE = {
     come: [['Connetti Spotify (serve Premium + app aperta).', 'Connect Spotify (needs Premium + the app open).', 'Conecta Spotify (necesitas Premium + la app abierta).', '#spotify-box'], ['Scegli come si “paga” la richiesta: libera, sub, monete, bit o punti canale.', 'Choose how a request is “paid”: free, subs, coins, bits or channel points.', 'Elige cómo se “paga” la petición: libre, subs, monedas, bits o puntos de canal.', '#musica-modo'], ['Gli spettatori usano !sr <canzone>; !song mostra cosa suona.', 'Viewers use !sr <song>; !song shows what’s playing.', 'Los espectadores usan !sr <canción>; !song muestra qué suena.', '']] },
   sondaggi: { serve: ['Lanciare sondaggi e predizioni Twitch direttamente da qui.', 'Launch Twitch polls and predictions right from here.', 'Lanzar encuestas y predicciones de Twitch directamente desde aquí.'],
     come: [['Scrivi la domanda e le opzioni (o titolo ed esiti).', 'Write the question and options (or title and outcomes).', 'Escribe la pregunta y las opciones (o título y resultados).', '#poll-titolo'], ['Lancia: gli spettatori votano/puntano dall’app.', 'Launch: viewers vote/bet from the app.', 'Lanza: los espectadores votan/apuestan desde la app.', '#poll-crea'], ['Chiudi il sondaggio o scegli l’esito vincente della predizione.', 'Close the poll or pick the winning prediction outcome.', 'Cierra la encuesta o elige el resultado ganador de la predicción.', '#sondaggio-attivo']] },
+  partite: { serve: ['Giocare con la chat (una custom, un quiz) senza tenere a mente chi tocca e chi ha vinto.', 'Play with your chat (a custom lobby, a quiz) without keeping track of whose turn it is and who won.', 'Jugar con tu chat (una partida personalizada, un quiz) sin llevar la cuenta de a quién le toca y quién ganó.'],
+    come: [['Apri la partita con le regole che vuoi: costo d\'ingresso, posti, solo abbonati, punti per posto.', 'Open the match with the rules you want: entry cost, seats, subs only, points per place.', 'Abre la partida con las reglas que quieras: coste de entrada, plazas, solo suscriptores, puntos por puesto.', '#partita-box'], ['Chi vuole giocare entra in fila con !gioco; tu scegli chi gioca la manche, in fila, a caso o a mano.', 'Whoever wants to play joins the queue with !gioco; you pick who plays the round, in order, at random or by hand.', 'Quien quiere jugar entra en la fila con !gioco; tú eliges quién juega la ronda, en orden, al azar o a mano.', '#partita-box'], ['Finita la manche, clicca i giocatori nell\'ordine d\'arrivo: le monete arrivano da sole.', 'When the round ends, click the players in finishing order: the coins arrive by themselves.', 'Al terminar la ronda, pulsa a los jugadores en orden de llegada: las monedas llegan solas.', '#partita-box']] },
   giveaway: { serve: ['Organizzare estrazioni a premi per la community.', 'Run prize giveaways for your community.', 'Organizar sorteos de premios para tu comunidad.'],
     come: [['Apri il giveaway indicando il premio; puoi dare più possibilità a sub e VIP e scegliere la parola d\'ingresso.', 'Open the giveaway and set the prize; you can give subs and VIPs better odds and pick the join keyword.', 'Abre el sorteo indicando el premio; puedes dar más posibilidades a subs y VIPs y elegir la palabra de entrada.', '#gw-premio'], ['La community entra scrivendo !join (o la tua parola) in chat. Con !biglietti @nome regali chance extra.', 'The community joins by typing !join (or your keyword) in chat. With !biglietti @name you grant extra chances.', 'La comunidad entra escribiendo !join (o tu palabra) en el chat. Con !biglietti @nombre das chances extra.', '#gw-keyword'], ['Estrai uno o più vincitori dal pannello o con !estrai N (puoi ripetere).', 'Draw one or more winners from the panel or with !estrai N (you can repeat).', 'Saca uno o varios ganadores desde el panel o con !estrai N (puedes repetir).', '#giveaway-stato']] },
   penitenze: { serve: ['Trasformare un premio a punti canale in una sfida a tempo: il bot conta quante volte sbagli (con «+1» a schermo) e alla fine fa partire una penitenza.', 'Turn a channel-point reward into a timed challenge: the bot counts your slip-ups (with an on-screen «+1») and triggers a forfeit at the end.', 'Convertir una recompensa de puntos de canal en un reto cronometrado: el bot cuenta cuántas veces fallas (con un «+1» en pantalla) y al final lanza una penitencia.'],
@@ -4962,6 +5001,7 @@ const ICO = {
   sliders: '<line x1="4" x2="4" y1="21" y2="14"/><line x1="4" x2="4" y1="10" y2="3"/><line x1="12" x2="12" y1="21" y2="12"/><line x1="12" x2="12" y1="8" y2="3"/><line x1="20" x2="20" y1="21" y2="16"/><line x1="20" x2="20" y1="12" y2="3"/><line x1="2" x2="6" y1="14" y2="14"/><line x1="10" x2="14" y1="8" y2="8"/><line x1="18" x2="22" y1="16" y2="16"/>',
   sondaggi: '<path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/>',
   predizioni: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>',
+  partite: '<path d="M16 11a3 3 0 1 0 0-6"/><path d="M8 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path d="M2 20c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5"/><path d="M16 14.6c3 .2 6 2.2 6 5.4"/>',
   giveaway: '<rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5C11 3 12 8 12 8s1-5 4.5-5a2.5 2.5 0 0 1 0 5"/>',
   rocket: '<path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/>',
   attesa: '<path d="M5 22h14"/><path d="M5 2h14"/><path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22"/><path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2"/>',
@@ -5098,27 +5138,12 @@ function miniGuida({ titolo, serve = '', passi = [], note = [], aperta = false }
 
 function infoScheda(id) {
   const f = famigliaDi(id);
-  if (f) {
-    const g = elencoGruppi().find((x) => x.schede.some(([sid]) => f.parti.includes(sid)));
-    return { area: g ? tGruppo(g.id, g.nome) : '', titolo: tFamiglia(f.id, f.nome) };
-  }
+  if (f) return { area: tFamiglia(f.id, f.nome), titolo: tScheda(id) };
   for (const g of elencoGruppi()) {
-    const s = g.schede.find(([sid]) => sid === id);
-    if (s) return g.schede.length === 1 ? { area: '', titolo: tGruppo(g.id, g.nome) } : { area: tGruppo(g.id, g.nome), titolo: tScheda(s[0], s[1]) };
+    if (!g.schede.some(([sid]) => sid === id)) continue;
+    return { area: g.schede.length === 1 ? '' : tGruppo(g.id, g.nome), titolo: tScheda(id) };
   }
-  return { area: '', titolo: id };
-}
-
-const FAM_ETI = {
-  bot: ['Il bot', 'The bot', 'El bot'],
-  comandi: ['Comandi', 'Commands', 'Comandos'],
-  moderazione: ['Moderazione', 'Moderation', 'Moderación'],
-  interazione: ['Giochi', 'Games', 'Juegos'],
-  inonda: ['Regia', 'Control room', 'Realización'],
-};
-function tFamiglia(id, def) {
-  const e = FAM_ETI[id];
-  return e ? L(e[0], e[1], e[2]) : def;
+  return { area: '', titolo: tScheda(id) };
 }
 
 const SOTTO_SCHEDE = {
@@ -5187,7 +5212,7 @@ function scegliSotto(scheda, id) {
   });
   applicaSottoSchede(scheda);
   const pan = document.querySelector('.pannello-scheda.visibile');
-  if (pan) rivelaCarte(pan);
+  if (pan) mostraFerme(pan);
   requestAnimationFrame(misuraSopraBanco);
   _ripensaBarraSalva();
   return true;
@@ -5210,49 +5235,25 @@ document.addEventListener('click', (ev) => {
   scegliSotto(schedaAttiva, b.dataset.sotto);
 });
 
-const T_PARTE = {
-  regole: ['Chat', 'Chat', 'Chat'],
-  scudo: ['Scudo', 'Shield', 'Escudo'],
-  registro: ['Registro', 'Log', 'Registro'],
-  ruoli: ['Ruoli', 'Roles', 'Roles'],
-  dcavvisi: ['Avvisi', 'Alerts', 'Avisos'],
-  dcserver: ['Il server', 'The server', 'El servidor'],
-  dcentra: ['Chi entra', 'Who joins', 'Quién entra'],
-  dcfiltro: ['Il filtro', 'The filter', 'El filtro'],
-};
-
 function sorelleDi(id) {
   const f = famigliaDi(id);
-  if (f) return f;
+  if (f) return { ...f, nome: tFamiglia(f.id, f.nome), etichetta: (p) => tScheda(p) };
+  if (SOTTO_SCHEDE[id]) return null;
   const g = elencoGruppi().find((x) => x.schede.some(([sid]) => sid === id));
   if (!g) return null;
-  return { id: g.id, nome: g.nome, parti: g.schede.map(([sid]) => sid),
-    etichette: new Map(g.schede.map(([sid, nome]) => [sid, tScheda(sid, nome)])), dalGruppo: true };
+  return { id: g.id, nome: tGruppo(g.id, g.nome), parti: g.schede.map(([sid]) => sid), etichetta: voceDelMenu, dalGruppo: true };
 }
 
 function barraFamigliaHtml(id) {
   const f = sorelleDi(id);
   if (!f || f.parti.length < 2) return '';
   const voci = f.parti.map((p) => {
-    const c = T_PARTE[p];
-    const t = f.etichette?.get(p) || (c ? L(c[0], c[1], c[2]) : tScheda(p, _nomeSchedaGrezzo(p)));
     const on = p === id;
     return `<button type="button" class="fam-scheda${on ? ' on' : ''}" data-scheda="${esc(p)}"`
-      + `${on ? ' aria-current="page"' : ''}>${esc(t)}</button>`;
+      + `${on ? ' aria-current="page"' : ''}>${esc(f.etichetta(p))}</button>`;
   }).join('');
-  return `<div class="fam-barra" role="tablist" aria-label="${esc(f.dalGruppo ? tGruppo(f.id, f.nome) : tFamiglia(f.id, f.nome))}">${voci}</div>`;
+  return `<div class="fam-barra${f.dalGruppo ? ' dal-gruppo' : ''}" role="tablist" aria-label="${esc(f.nome)}">${voci}</div>`;
 }
-
-const NOMI_SCHEDA = {
-  personalita: 'Personalità', conoscenza: 'Conoscenza', memoria: 'Memoria',
-  moduli: 'Comandi', ascolto: 'Comandi vocali',
-  regole: 'Filtri e regole', scudo: 'Scudo anti-bot', registro: 'Registro dello scudo',
-  giochi: 'Giochi & classifiche', sondaggi: 'Sondaggi & predizioni',
-  giveaway: 'Giveaway', penitenze: 'Penitenze',
-  regia: 'Regia', clip: 'Clip', musica: 'Musica',
-  ruoli: 'Discord', dcavvisi: 'Avvisi su Discord', dcserver: 'Il server Discord', dcentra: 'Chi entra nel server', dcfiltro: 'Il filtro del server',
-};
-const _nomeSchedaGrezzo = (id) => NOMI_SCHEDA[id] || id;
 
 function gruppoDiScheda(id) {
   const diretto = elencoGruppi().find((x) => x.schede.some(([sid]) => sid === id));
@@ -5294,9 +5295,6 @@ function tocco() {
 
 const T_GIU = {
   stato: ['Stato', 'Status', 'Estado'],
-  bot: ['Bot', 'Bot', 'Bot'],
-  pubblico: ['Chat', 'Chat', 'Chat'],
-  diretta: ['Diretta', 'Live', 'Directo'],
   altro: ['Altro', 'More', 'Más'],
 };
 const _icoAltro = _ico('<circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/>');
@@ -5305,14 +5303,14 @@ function barraGiuHtml() {
   const gruppi = elencoGruppi();
   const voce = (chiave, ico, attivo, attr) =>
     `<button type="button" class="bg-voce${attivo ? ' on' : ''}" ${attr}>
-      <span class="bg-ico">${ico}</span><span class="bg-eti">${esc(L(...T_GIU[chiave]))}</span></button>`;
+      <span class="bg-ico">${ico}</span><span class="bg-eti">${esc(T_GIU[chiave] ? L(...T_GIU[chiave]) : tGruppo(chiave))}</span></button>`;
   let coperta = schedaAttiva === 'stato';
   let out = voce('stato', ICONA.stato || '', schedaAttiva === 'stato', 'data-scheda="stato"');
   for (const gid of ['bot', 'pubblico', 'diretta']) {
     const g = gruppi.find((x) => x.id === gid);
     if (!g || !g.schede.length) continue;
     const prima = g.schede.find(([id]) => !schedaBloccata(id)) || g.schede[0];
-    const attivo = g.schede.some(([id]) => id === schedaAttiva);
+    const attivo = g.schede.some(([id]) => voceAttiva(id, schedaAttiva));
     if (attivo) coperta = true;
     out += voce(gid, ICONA[g.schede[0][0]] || '', attivo, `data-scheda="${prima[0]}"`);
   }
@@ -5380,11 +5378,10 @@ function giraGruppo(bottone) {
 
 function navDrawerHtml() {
   return elencoGruppi().map((g) => {
-    const voci = g.schede.map(([id, nome]) =>
-      `<button class="drawer-voce${voceAttiva(id, schedaAttiva) ? ' on' : ''}${schedaNonUsabile(id) ? ' bloccata' : ''}" data-scheda="${id}"${voceAttiva(id, schedaAttiva) ? ' aria-current="page"' : ''}>${ICONA[id] || ''}<span>${esc(tScheda(id, nome))}</span>${nuovoDi(id)}${schedaNonUsabile(id) ? '<span class="voce-lock" aria-hidden="true">' + _bIco(ICO.lucchetto) + '</span>' : ''}</button>`).join('');
+    const voci = g.schede.map(([id]) =>
+      `<button class="drawer-voce${voceAttiva(id, schedaAttiva) ? ' on' : ''}${schedaNonUsabile(id) ? ' bloccata' : ''}" data-scheda="${id}"${voceAttiva(id, schedaAttiva) ? ' aria-current="page"' : ''}>${ICONA[id] || ''}<span>${esc(voceDelMenu(id))}</span>${nuovoDi(id)}${schedaNonUsabile(id) ? '<span class="voce-lock" aria-hidden="true">' + _bIco(ICO.lucchetto) + '</span>' : ''}</button>`).join('');
     const titolo = tGruppo(g.id, g.nome);
-    const ripete = g.schede.length === 1 && tScheda(g.schede[0][0], g.schede[0][1]) === titolo;
-    if (ripete) return `<div class="drawer-grp drawer-solo">${voci}</div>`;
+    if (g.schede.length === 1) return `<div class="drawer-grp drawer-solo">${voci}</div>`;
     const aperto = gruppiAperti().has(g.id);
     const nuovo = g.schede.some(([id]) => nuovoDi(id))
       ? `<span class="voce-nuovo grp-nuovo" role="img" aria-label="${esc(L('dentro c\'è qualcosa di nuovo', 'something new inside', 'hay algo nuevo dentro'))}"></span>` : '';
@@ -5444,6 +5441,7 @@ function cambiaSchermo() {
   _cambioSchermo = setTimeout(() => dopo(true), dura);
 }
 
+let _titoloFermo = false;
 function aggiornaTestataPagina() {
   const el = document.getElementById('pagina-testata');
   if (!el) return;
@@ -5456,7 +5454,7 @@ function aggiornaTestataPagina() {
   const gid = gruppoDiScheda(schedaAttiva);
   if (gid) el.style.setProperty('--gc', `var(--g-${gid}, var(--g-def))`); else el.style.removeProperty('--gc');
   const h1Prima = el.querySelector('h1');
-  const stessoTitolo = !!h1Prima && h1Prima.textContent.trim() === String(titolo).trim();
+  const stessoTitolo = _titoloFermo || (!!h1Prima && h1Prima.textContent.trim() === String(titolo).trim());
   el.innerHTML =
     `${area ? `<div class="pt-occhiello">${esc(area)}</div>` : ''}` +
     `<h1${stessoTitolo ? ' class="fermo"' : ''}>${titoloParole(titolo)}</h1>` +
@@ -6008,6 +6006,7 @@ function vistaPiattaforma() {
     ${pannelloMusica()}
     ${pannelloSondaggi()}
     ${pannelloGiveaway()}
+    ${pannelloPartite()}
     ${pannelloPenitenze()}
     ${pannelloAlert()}
     ${pannelloEffetti()}
@@ -11364,7 +11363,7 @@ function _adessoFuoriOnda(d) {
     prossima = `<div class="adesso-blocco">
       <p class="adesso-occhiello">${L('La prossima', 'Next up', 'La próxima')}</p>
       <p>${L('Scrivi i giorni in cui vai in onda: qui vedi quando tocca, e li usano anche la grafica e i calendari.', 'Write the days you go live: here you see when it’s next, and the graphic and the calendars use them too.', 'Escribe los días en que sales en directo: aquí ves cuándo toca, y también los usan la gráfica y los calendarios.')}</p>
-      <p><button type="button" class="btn secondario" data-vai="settimana">${L('La tua settimana', 'Your week', 'Tu semana')}</button></p>
+      <p><button type="button" class="btn secondario" data-vai="settimana">${esc(tScheda('settimana'))}</button></p>
     </div>`;
   } else prossima = '';
   const ultima = u ? `<div class="adesso-blocco">
@@ -11964,7 +11963,7 @@ function pannelloAscolto() {
       </p>
       <p class="suggerimento spazio-sopra">${L('Tienila aperta mentre streammi. Su Chrome ed Edge usa il riconoscimento del browser. Dove il browser non ce l\'ha (per esempio Dia, Arc, Brave) usa un motore locale: la prima volta scarica un modello di qualche decina di MB, poi va anche offline.', 'Keep it open while you stream. On Chrome and Edge it uses the browser\'s recognition. Where the browser has none (for example Dia, Arc, Brave) it uses a local engine: the first time it downloads a model of a few tens of MB, then it works offline too.', 'Mantenla abierta mientras haces directo. En Chrome y Edge usa el reconocimiento del navegador. Donde el navegador no lo tiene (por ejemplo Dia, Arc, Brave) usa un motor local: la primera vez descarga un modelo de unas decenas de MB, luego funciona también sin conexión.')}</p>
       <p class="suggerimento">${L('I comandi vocali si creano e modificano in', 'Voice commands are created and edited in', 'Los comandos por voz se crean y editan en')}
-      <strong class="primo-piano">${L('Chat e pubblico → Comandi', 'Chat & audience → Commands', 'Chat y público → Comandos')}</strong> (${L('innesco "Comando vocale"', '"Voice command" trigger', 'disparador "Comando por voz"')}).</p>
+      <strong class="primo-piano">${esc(percorso('moduli'))}</strong> (${L('innesco "Comando vocale"', '"Voice command" trigger', 'disparador "Comando por voz"')}).</p>
     </div>
 
     <div class="carta">
@@ -13392,8 +13391,13 @@ function pannelloGiveaway() {
         <button class="btn spazio-sopra" id="gw-apri">${L('Apri il giveaway', 'Open the giveaway', 'Abrir el sorteo')}</button>
       </div>
     </div>
+`);
+}
+
+function pannelloPartite() {
+  return pannello('partite', `
     <div class="carta" id="partita-carta">
-      <h2>${_hIco(ICO.giochi)}${L('Partite con la chat', 'Games with chat', 'Partidas con el chat')}</h2>
+      <h2>${_hIco(ICO.partite)}${L('Partite con la chat', 'Games with chat', 'Partidas con el chat')}</h2>
       <p>${L('Giochi con la chat (una custom, un quiz): chi vuole si mette in fila con <code>!gioco</code>, tu scegli chi gioca ogni manche, dici com\'è andata e le monete arrivano da sole.', 'You play with chat (a custom lobby, a quiz): whoever wants joins the queue with <code>!gioco</code>, you pick who plays each round, say how it went and the coins arrive by themselves.', 'Juegas con el chat (una partida personalizada, un quiz): quien quiere entra en la fila con <code>!gioco</code>, eliges quién juega cada ronda, dices cómo fue y las monedas llegan solas.')}</p>
       <div id="partita-box" class="spazio-sopra">${attesaHtml()}</div>
     </div>`);
@@ -13535,7 +13539,7 @@ async function caricaPartita() {
   catch (e) { box.innerHTML = `<p>${L('Impossibile leggere la partita.', 'Couldn’t read the game.', 'No se pudo leer la partida.')}</p>`; return; }
   const aperto = document.activeElement && box.contains(document.activeElement) && /INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName);
   if (!aperto) _partitaDisegna();
-  if (!_partitaGiro && _partita?.attiva) _partitaGiro = setInterval(() => { if (!document.hidden) caricaPartita(); }, 5000);
+  if (!_partitaGiro && _partita?.attiva) _partitaGiro = setInterval(() => { if (!document.hidden && schedaAttiva === 'partite') caricaPartita(); }, 5000);
   if (_partitaGiro && !_partita?.attiva) { clearInterval(_partitaGiro); _partitaGiro = null; }
 }
 
@@ -13646,7 +13650,7 @@ function pannelloPenitenze() {
         <button type="button" class="btn secondario mini ico-sola" id="pen-effetto-lib" title="${L('Dalla libreria', 'From the library', 'De la biblioteca')}" aria-label="${esc(L('Dalla libreria', 'From the library', 'De la biblioteca'))}">${_bIco(ICO.libro)}</button>
         <button type="button" class="btn secondario mini ico-sola" id="pen-effetto-prova" title="${L('Prova', 'Test', 'Probar')}" aria-label="${esc(L('Prova', 'Test', 'Probar'))}">${_bIco('<path d="m6 3 14 9-14 9Z"/>')}</button>
       </div>
-      <p class="suggerimento">${L('Scegli un suono pronto o un tuo effetto (audio/immagine/video). Ne carichi altri dalla scheda «Effetti & suoni».', 'Pick a ready-made sound or one of your effects (audio/image/video). Upload more from the «Effects & sounds» tab.', 'Elige un sonido listo o uno de tus efectos (audio/imagen/vídeo). Sube más desde la pestaña «Efectos y sonidos».')}</p>
+      <p class="suggerimento">${L('Scegli un suono pronto o un tuo effetto (audio/immagine/video). Ne carichi altri dalla scheda «Effetti e suoni».', 'Pick a ready-made sound or one of your effects (audio/image/video). Upload more from the «Effects & sounds» tab.', 'Elige un sonido listo o uno de tus efectos (audio/imagen/vídeo). Sube más desde la pestaña «Efectos y sonidos».')}</p>
       <p class="spazio-sopra"><button class="btn" id="pen-salva">${L('Salva', 'Save', 'Guardar')}</button></p>
     </div>
 
@@ -14297,7 +14301,7 @@ function disegnaCartelli() {
       ${img
         ? `<label class="campo" for="cart-img-${esc(c.id)}">${L('Quale immagine', 'Which image', 'Qué imagen')}</label>
            <select id="cart-img-${esc(c.id)}" data-k="effetto">${_optImgCartello(c.effetto)}</select>
-           <p class="suggerimento">${L('Sono le immagini della tua libreria in «Effetti & suoni»: caricale lì e le trovi qui.', 'These are the images in your «Effects & sounds» library: upload them there and you find them here.', 'Son las imágenes de tu biblioteca en «Efectos y sonidos»: súbelas allí y las encuentras aquí.')}</p>`
+           <p class="suggerimento">${L('Sono le immagini della tua libreria in «Effetti e suoni»: caricale lì e le trovi qui.', 'These are the images in your «Effects & sounds» library: upload them there and you find them here.', 'Son las imágenes de tu biblioteca en «Efectos y sonidos»: súbelas allí y las encuentras aquí.')}</p>`
         : `<label class="campo" for="cart-txt-${esc(c.id)}">${L('Cosa c’è scritto', 'What it says', 'Qué pone')}</label>
            <textarea id="cart-txt-${esc(c.id)}" data-k="testo" rows="2" maxlength="300" placeholder="${L('Torno subito', 'Be right back', 'Vuelvo enseguida')}">${esc(c.testo || '')}</textarea>
            <div class="goal-campi">
@@ -14983,7 +14987,7 @@ function pannelloAlert() {
     <details class="carta sez" data-parte="aspetto" id="sez-etichetta">
       <summary><h3>${_hIco(ICO.fulmine)}${L('Nome del comando', 'Command name', 'Nombre del comando')}</h3></summary>
       <p>${L('La pastiglia col nome del comando che compare quando parte un effetto, per esempio «!applausi»: chi guarda capisce chi l\'ha fatto partire e come rifarlo.', 'The pill with the command name that shows when an effect fires, for example «!applause»: viewers see what started it and how to do it again.', 'La pastilla con el nombre del comando que aparece cuando sale un efecto, por ejemplo «!aplausos»: quien mira entiende qué lo lanzó y cómo repetirlo.')}</p>
-      <p><button type="button" class="btn secondario mini" data-vai-scheda="effetti">${_bIco(ICO.effetti)}${L('Apri Effetti & suoni', 'Open Effects & sounds', 'Abrir Efectos y sonidos')}</button></p>
+      <p><button type="button" class="btn secondario mini" data-vai-scheda="effetti">${_bIco(ICO.effetti)}${L('Apri Effetti e suoni', 'Open Effects & sounds', 'Abrir Efectos y sonidos')}</button></p>
       <div data-cfg="etichetta">
         <div class="riga-interruttore spazio-sopra">
           <label class="interruttore"><input type="checkbox" data-c="attivo" id="eti-attivo"><span class="levetta"></span></label>
@@ -16609,10 +16613,10 @@ function deseleziona() {
   aggiornaInspector();
 }
 const ALTROVE = {
-  cont: ['moduli', ['Comandi', 'Commands', 'Comandos']],
-  pen: ['penitenze', ['Penitenze', 'Forfeits', 'Penitencias']],
-  effetti: ['effetti', ['Effetti & suoni', 'Effects & sounds', 'Efectos y sonidos'], 'posto'],
-  consolify: ['consolify', ['CONSOLify', 'CONSOLify', 'CONSOLify']],
+  cont: ['moduli', T_SCHEDA.moduli],
+  pen: ['penitenze', T_SCHEDA.penitenze],
+  effetti: ['effetti', T_SCHEDA.effetti, 'posto'],
+  consolify: ['consolify', T_SCHEDA.consolify],
 };
 
 function _altrove(box, senzaBlocco) {
@@ -19175,8 +19179,8 @@ function novScheda(id) {
     if (s) return { nome: tScheda(id, s[1]), area: tGruppo(g.id, g.nome) };
   }
   const f = famigliaDi(id);
-  if (f) return { nome: tScheda(id, _nomeSchedaGrezzo(id)), area: tFamiglia(f.id, f.nome) };
-  return { nome: tScheda(id, _nomeSchedaGrezzo(id)), area: '' };
+  if (f) return { nome: tScheda(id), area: tFamiglia(f.id, f.nome) };
+  return { nome: tScheda(id), area: '' };
 }
 
 function novTitolo(id) {
@@ -25817,7 +25821,7 @@ function lpCampiNegozio(b, i, d) {
   if (b.tipo === 'comecompra') {
     return `${titolo(L('Titolo (vuoto: «Come si compra»)', 'Heading (empty: «How to buy»)', 'Título (vacío: «Cómo se compra»)'))}
       <input type="text" class="spazio-sopra" data-lpb="${i}" data-lpf="testo" maxlength="${d.limiti.sotto}" value="${esc(b.testo || '')}" placeholder="${esc(L('Una riga in più (facoltativa)', 'One more line (optional)', 'Una línea más (opcional)'))}">
-      <p class="suggerimento">${L('Il comando scritto in pagina è quello vero: se rinomini !compra nella scheda «Comandi», qui cambia da solo. La frase sulla moneta usa il suo nome e come se ne parla, dalla scheda «Giochi & classifiche».', 'The command written on the page is the real one: if you rename !compra in the «Commands» tab, it changes here by itself. The line about the coins uses their name and how chat talks about them, from the «Games & leaderboards» tab.', 'El comando escrito en la página es el de verdad: si renombras !compra en la pestaña «Comandos», aquí cambia solo. La frase sobre la moneda usa su nombre y cómo se habla de ella, desde la pestaña «Juegos y clasificaciones».')}</p>`;
+      <p class="suggerimento">${L('Il comando scritto in pagina è quello vero: se rinomini !compra nella scheda «Comandi», qui cambia da solo. La frase sulla moneta usa il suo nome e come se ne parla, dalla scheda «Giochi».', 'The command written on the page is the real one: if you rename !compra in the «Commands» tab, it changes here by itself. The line about the coins uses their name and how chat talks about them, from the «Games» tab.', 'El comando escrito en la página es el de verdad: si renombras !compra en la pestaña «Comandos», aquí cambia solo. La frase sobre la moneda usa su nombre y cómo se habla de ella, desde la pestaña «Juegos».')}</p>`;
   }
   return `${casella('link', L('Il link alla mia pagina link', 'The link to my link page', 'El enlace a mi página de enlaces'))}
       ${casella('canale', L('Il link al mio canale', 'The link to my channel', 'El enlace a mi canal'))}
@@ -25991,7 +25995,7 @@ function lpRenderBlocchi() {
     } else if (b.tipo === 'programma') {
       campi = `<input type="text" data-lpb="${i}" data-lpf="titolo" maxlength="${d.limiti.label}" value="${esc(b.titolo || '')}" placeholder="${esc(L('Titolo (es. QUANDO SONO IN DIRETTA)', 'Heading (e.g. WHEN I AM LIVE)', 'Título (p. ej. CUÁNDO ESTOY EN DIRECTO)'))}">
         <label class="riga-check spazio-sopra"><input type="checkbox" data-lpb="${i}" data-lpf="prossima"${b.prossima !== false ? ' checked' : ''}> ${L('Segna la prossima diretta', 'Mark the next stream', 'Marca el próximo directo')}</label>
-        <p class="suggerimento">${L('I giorni e le ore vengono dalla scheda «La tua settimana» e si aggiornano da soli: la cambi là e cambia anche qui.', 'The days and times come from the «Your week» tab and update by themselves: change it there and it changes here too.', 'Los días y las horas vienen de la pestaña «Tu semana» y se actualizan solos: la cambias allí y cambia también aquí.')}</p>`;
+        <p class="suggerimento">${L('I giorni e le ore vengono dalla scheda «Settimana» e si aggiornano da soli: la cambi là e cambia anche qui.', 'The days and times come from the «Week» tab and update by themselves: change it there and it changes here too.', 'Los días y las horas vienen de la pestaña «Semana» y se actualizan solos: la cambias allí y cambia también aquí.')}</p>`;
     } else if (b.tipo === 'comandi') {
       campi = `<input type="text" data-lpb="${i}" data-lpf="titolo" maxlength="${d.limiti.label}" value="${esc(b.titolo || '')}" placeholder="${esc(L('Titolo (es. I COMANDI DELLA CHAT)', 'Heading (e.g. CHAT COMMANDS)', 'Título (p. ej. LOS COMANDOS DEL CHAT)'))}">
         <label class="riga-check spazio-sopra"><input type="checkbox" data-lpb="${i}" data-lpf="risposte"${b.risposte !== false ? ' checked' : ''}> ${L('Scrivi anche cosa risponde il bot', 'Also show what the bot answers', 'Escribe también qué responde el bot')}</label>
@@ -29681,7 +29685,7 @@ function pannelloTelegram() {
     ${tg.configurato ? `
     <div class="carta">
       <h2>${_hIco(ICO.bot)}${L('Bot interattivo su Telegram', 'Interactive bot on Telegram', 'Bot interactivo en Telegram')}</h2>
-      <p>${L('Con la', 'With', 'Con el')} <strong class="primo-piano">${L('modalità interattiva', 'interactive mode', 'modo interactivo')}</strong> ${L('il bot <strong>legge i messaggi</strong> del gruppo e risponde ai comandi. I comandi si creano in <strong>Chat e pubblico → Comandi</strong>: crea un modulo con innesco <em>Comando</em> e spunta <strong>«Abilita anche su Telegram»</strong> (su Telegram funziona anche senza <code>!</code>). Valgono anche a voce dall\'ascolto vocale.', 'the bot <strong>reads the group’s messages</strong> and replies to commands. Commands are created in <strong>Chat &amp; audience → Commands</strong>: create a module with a <em>Command</em> trigger and check <strong>“Enable on Telegram too”</strong> (on Telegram it works even without <code>!</code>). They also work by voice from voice listening.', 'el bot <strong>lee los mensajes</strong> del grupo y responde a los comandos. Los comandos se crean en <strong>Chat y público → Comandos</strong>: crea un módulo con disparador <em>Comando</em> y marca <strong>«Habilitar también en Telegram»</strong> (en Telegram funciona incluso sin <code>!</code>). También valen por voz desde la escucha por voz.')}</p>
+      <p>${L('Con la', 'With', 'Con el')} <strong class="primo-piano">${L('modalità interattiva', 'interactive mode', 'modo interactivo')}</strong> ${L('il bot <strong>legge i messaggi</strong> del gruppo e risponde ai comandi. I comandi si creano in <strong>' + esc(percorso('moduli')) + '</strong>: crea un modulo con innesco <em>Comando</em> e spunta <strong>«Abilita anche su Telegram»</strong> (su Telegram funziona anche senza <code>!</code>). Valgono anche a voce dall\'ascolto vocale.', 'the bot <strong>reads the group’s messages</strong> and replies to commands. Commands are created in <strong>' + esc(percorso('moduli')) + '</strong>: create a module with a <em>Command</em> trigger and check <strong>“Enable on Telegram too”</strong> (on Telegram it works even without <code>!</code>). They also work by voice from voice listening.', 'el bot <strong>lee los mensajes</strong> del grupo y responde a los comandos. Los comandos se crean en <strong>' + esc(percorso('moduli')) + '</strong>: crea un módulo con disparador <em>Comando</em> y marca <strong>«Habilitar también en Telegram»</strong> (en Telegram funciona incluso sin <code>!</code>). También valen por voz desde la escucha por voz.')}</p>
 
       <div class="riga-interruttore spazio-sopra">
         <label class="interruttore"><input type="checkbox" id="chk-tg-interattivo" ${tg.interattivo ? 'checked' : ''}><span class="levetta"></span></label>
@@ -30190,7 +30194,7 @@ function pannelloNotifiche() {
       <p class="suggerimento"><strong class="primo-piano">${L('Via affidabile (webhook):', 'Reliable way (webhook):', 'Vía fiable (webhook):')}</strong> ${L('collega una tua automazione (IFTTT/Zapier/Shortcut) all\'evento "vado live su TikTok" e falle chiamare in POST:', 'connect an automation of yours (IFTTT/Zapier/Shortcut) to the "I go live on TikTok" event and have it POST:', 'conecta una automatización tuya (IFTTT/Zapier/Shortcut) al evento "voy en directo en TikTok" y haz que llame en POST:')}</p>
       <p><code>POST ${esc(location.origin)}/api/ext/${esc(stato.user.login)}</code></p>
       <p class="suggerimento">${L('con header', 'with header', 'con cabecera')} <code>Authorization: Bearer ${L('LA-TUA-CHIAVE-API', 'YOUR-API-KEY', 'TU-CLAVE-API')}</code> ${L('e corpo', 'and body', 'y cuerpo')}
-      <code>{"azione":"tiktok-live"}</code>. ${L('La chiave API la trovi in', 'Find the API key in', 'La clave API está en')} <strong>${L('Chat e pubblico → Comandi', 'Chat & audience → Commands', 'Chat y público → Comandos')}</strong>.</p>
+      <code>{"azione":"tiktok-live"}</code>. ${L('La chiave API la trovi in', 'Find the API key in', 'La clave API está en')} <strong>${esc(percorso('moduli'))}</strong>.</p>
     </div>
 
     <div class="carta">
@@ -30588,9 +30592,9 @@ function attDisegnaAvvisi() {
   const dove = _attDati.dove || {};
   const spunta = (k, testo, attivo = true, manca = '') => `<label class="tg-spunta${attivo ? '' : ' via'}"><input type="checkbox" data-att-av="${k}"${a[k] ? ' checked' : ''}${attivo ? '' : ' disabled'}><span>${testo}${manca ? ` <span class="tenue">(${manca})</span>` : ''}</span></label>`;
   const noTg = dove.telegram ? '' : L('collega la chat privata nella scheda Telegram', 'connect the private chat in the Telegram tab', 'conecta el chat privado en la pestaña Telegram');
-  const noMail = dove.mail ? '' : L('aggiungi e conferma la mail in «Il tuo account»', 'add and confirm your email in «Your account»', 'añade y confirma el correo en «Tu cuenta»');
+  const noMail = dove.mail ? '' : L('aggiungi e conferma la mail in «Accesso e dati»', 'add and confirm your email in «Access & data»', 'añade y confirma el correo en «Acceso y datos»');
   box.innerHTML = `
-    <p class="suggerimento">${L('Nel sito l’attacco c’è sempre: quando ne arriva uno nuovo dalla soglia in su, sulla voce «Gli attacchi» compare un puntino. Qui scegli cosa ti arriva anche fuori.', 'On the site the attack is always there: when a new one arrives from the threshold up, a dot shows on «The attacks». Here you choose what also reaches you outside.', 'En el sitio el ataque siempre está: cuando llega uno nuevo desde el umbral hacia arriba, aparece un punto en «Los ataques». Aquí eliges qué te llega también fuera.')}</p>
+    <p class="suggerimento">${L('Nel sito l’attacco c’è sempre: quando ne arriva uno nuovo dalla soglia in su, sulla voce «Attacchi» compare un puntino. Qui scegli cosa ti arriva anche fuori.', 'On the site the attack is always there: when a new one arrives from the threshold up, a dot shows on «Attacks». Here you choose what also reaches you outside.', 'En el sitio el ataque siempre está: cuando llega uno nuevo desde el umbral hacia arriba, aparece un punto en «Ataques». Aquí eliges qué te llega también fuera.')}</p>
     <label class="campo" for="att-soglia">${L('Avvisami da questo livello in su', 'Tell me from this level up', 'Avísame desde este nivel hacia arriba')}</label>
     <select id="att-soglia" class="campo-largo">${(_attDati.livelli || []).map((l) => `<option value="${esc(l)}"${a.soglia === l ? ' selected' : ''}>${esc(scudoLivello(l))}</option>`).join('')}</select>
     <p class="campo spazio-sopra">${L('Quando lo scudo sale', 'When the shield rises', 'Cuando el escudo sube')}</p>
@@ -33757,7 +33761,8 @@ function caricaDatiScheda(id) {
   if (id === 'clip') caricaClip();
   if (id === 'musica') caricaSpotify();
   if (id === 'sondaggi') caricaSondaggi();
-  if (id === 'giveaway') { caricaGiveaway(); caricaPartita(); }
+  if (id === 'giveaway') caricaGiveaway();
+  if (id === 'partite') caricaPartita();
   if (id === 'penitenze') caricaPenitenze();
   if (id === 'alert') { caricaAlert(); caricaPiattaforme().then(_rendiQualiChat); _goalBozza = null; _cartBozza = null; _bozzaEl = {}; disegnaGoal(); disegnaCartelli(); caricaContaStudio();
     for (const k of new Set([...document.querySelectorAll('[data-cfg]')].map((n) => n.dataset.cfg))) riempiCfgForm(k);
@@ -35733,7 +35738,7 @@ function _alEffettoRiga(kind) {
   const quali = kind === 'sub' ? ['sub', 'regalo'] : [kind];
   const parti = quali.map((e) => { const v = voci[e]; return v?.attivo && v.livelli?.length ? (quali.length > 1 ? EE_NOMI()[e] + ': ' : '') + _eeResa(e, v) : ''; }).filter(Boolean);
   const testo = parti.length ? L('Effetto a tutto schermo: ', 'Full-screen effect: ', 'Efecto a pantalla completa: ') + parti.join('; ') + '.' : L('Nessun effetto a tutto schermo per questo evento.', 'No full-screen effect for this event.', 'Ningún efecto a pantalla completa para este evento.');
-  return `${_bIco(ICO.fulmine)}${esc(testo)} <button type="button" class="rg-vai" data-ee-vai="${kind}">${parti.length ? L('Cambialo in Effetti & suoni', 'Change it in Effects & sounds', 'Cámbialo en Efectos y sonidos') : L('Sceglilo in Effetti & suoni', 'Choose it in Effects & sounds', 'Elígelo en Efectos y sonidos')}</button>`;
+  return `${_bIco(ICO.fulmine)}${esc(testo)} <button type="button" class="rg-vai" data-ee-vai="${kind}">${parti.length ? L('Cambialo in Effetti e suoni', 'Change it in Effects & sounds', 'Cámbialo en Efectos y sonidos') : L('Sceglilo in Effetti e suoni', 'Choose it in Effects & sounds', 'Elígelo en Efectos y sonidos')}</button>`;
 }
 
 function _alEffettoAggiorna() {
@@ -37505,7 +37510,7 @@ function disegnaCampiQuando(t) {
       return `
         <label class="campo" for="mod-frasi-voce">${L('Frasi da ascoltare (una per riga)', 'Phrases to listen for (one per line)', 'Frases que escuchar (una por línea)')}</label>
         <textarea id="mod-frasi-voce" placeholder="${esc(FRASI_VOCE_DI_SERIE.join('\n'))}">${esc(frasi.join('\n'))}</textarea>
-        <p class="suggerimento">${L('Quando al microfono dici una di queste frasi, il modulo scatta. Scrivile in minuscolo, una per riga. L\'ascolto si avvia con «Apri l\'ascolto vocale», in <strong>Chat e pubblico → Comandi → Comandi vocali</strong>.', 'When you say one of these phrases into the mic, the module fires. Write them in lower case, one per line. The recognition is in Italian. Listening starts with «Open voice listening», in <strong>Chat & audience → Commands → Voice commands</strong>.', 'Cuando dices al micrófono una de estas frases, el módulo se dispara. Escríbelas en minúsculas, una por línea. El reconocimiento es en italiano. La escucha se inicia con «Abre la escucha por voz», en <strong>Chat y público → Comandos → Comandos de voz</strong>.')}</p>
+        <p class="suggerimento">${L('Quando al microfono dici una di queste frasi, il modulo scatta. Scrivile in minuscolo, una per riga. L\'ascolto si avvia con «Apri l\'ascolto vocale», in <strong>' + esc(percorso('ascolto')) + '</strong>.', 'When you say one of these phrases into the mic, the module fires. Write them in lower case, one per line. The recognition is in Italian. Listening starts with «Open voice listening», in <strong>' + esc(percorso('ascolto')) + '</strong>.', 'Cuando dices al micrófono una de estas frases, el módulo se dispara. Escríbelas en minúsculas, una por línea. El reconocimiento es en italiano. La escucha se inicia con «Abre la escucha por voz», en <strong>' + esc(percorso('ascolto')) + '</strong>.')}</p>
         <div class="riga-check" style="margin-top:.4rem">
           <input type="checkbox" id="mod-telegram" ${moduloInModifica?.telegram ? 'checked' : ''}>
           <label for="mod-telegram">${L('Manda il messaggio anche su <b>Telegram</b> quando lo dico a voce (serve il bot interattivo).', 'Also send the message on <b>Telegram</b> when I say it (needs the interactive bot).', 'Manda el mensaje también a <b>Telegram</b> cuando lo digo por voz (hace falta el bot interactivo).')}</label>
@@ -37588,7 +37593,7 @@ function disegnaCampiAzione(a) {
   const opzioni = (voci, scelta) => voci.map(([v, t]) => `<option value="${v}" ${scelta === v ? 'selected' : ''}>${esc(t)}</option>`).join('');
   const etichetta = (t) => `<label class="campo">${esc(t)}</label>`;
   const aria = (t) => `aria-label="${esc(t)}"`;
-  const gestione = `${L('Serve il permesso', 'It needs the', 'Hace falta el permiso')} <strong class="primo-piano">${L('Gestione canale', 'Manage Channel', 'Gestión del canal')}</strong>${L(': se manca, lo concedi da', ' permission: if it is missing, grant it from', ': si falta, lo concedes desde')} <strong>${L('Chat e pubblico → Comandi → Comandi vocali', 'Chat & audience → Commands → Voice commands', 'Chat y público → Comandos → Comandos de voz')}</strong>.`;
+  const gestione = `${L('Serve il permesso', 'It needs the', 'Hace falta el permiso')} <strong class="primo-piano">${L('Gestione canale', 'Manage Channel', 'Gestión del canal')}</strong>${L(': se manca, lo concedi da', ' permission: if it is missing, grant it from', ': si falta, lo concedes desde')} <strong>${esc(percorso('ascolto'))}</strong>.`;
   const annuncia = (t) => `
         <div class="riga-check spazio-sopra">
           <input type="checkbox" data-campo="annuncia" ${a.annuncia !== false ? 'checked' : ''}>
@@ -37630,7 +37635,7 @@ function disegnaCampiAzione(a) {
     case 'effetto': {
       const eff = datiModuli?.effettiDisponibili || [];
       if (!eff.length) {
-        return `<p class="suggerimento">${L('Non hai ancora effetti: carica prima un effetto in', 'You have no effects yet: first upload an effect in', 'Todavía no tienes efectos: sube primero un efecto en')} <strong>${L('Scena &amp; overlay → Effetti &amp; suoni', 'Scene &amp; overlay → Effects &amp; sounds', 'Escena y overlay → Efectos y sonidos')}</strong>.</p>
+        return `<p class="suggerimento">${L('Non hai ancora effetti: carica prima un effetto in', 'You have no effects yet: first upload an effect in', 'Todavía no tienes efectos: sube primero un efecto en')} <strong>${esc(percorso('effetti'))}</strong>.</p>
           <span class="lib-scelta"><input type="hidden" data-campo="comando" value="${esc(a.comando || '')}">${tastoLibreriaHtml()} <span class="lib-scelto">${a.comando ? '!' + esc(a.comando) : esc(L('o prendilo dalla libreria, o caricalo qui', 'or take it from the library, or upload it here', 'o tómalo de la biblioteca, o súbelo aquí'))}</span></span>`;
       }
       return `
@@ -37780,7 +37785,7 @@ function disegnaCampiAzione(a) {
         <input ${aria(L('Brano da mettere in coda', 'Track to queue', 'Canción que poner en cola'))} type="text" data-campo="brano" data-var-target placeholder="${esc(L('es. Blinding Lights oppure $args', 'e.g. Blinding Lights or $args', 'p. ej. Blinding Lights o $args'))}" value="${esc(a.brano || '')}">
         ${pillole}
         ${annuncia(L('Annuncia in chat il brano aggiunto', 'Announce the added track in chat', 'Anuncia en el chat la canción añadida'))}
-        <p class="suggerimento">${L('Aggiunge il brano alla coda del tuo Spotify. Le richieste musicali sono nel piano Essenziale: serve Spotify collegato (Premium, con l\'app aperta) in', 'Adds the track to your Spotify queue. Music requests are in the Essential plan: it needs Spotify connected (Premium, with the app open) in', 'Añade la canción a la cola de tu Spotify. Las peticiones musicales están en el plan Esencial: hace falta Spotify conectado (Premium, con la app abierta) en')} <strong>${L('Durante la diretta → Regia → Musica', 'During the live → Control room → Music', 'Durante el directo → Realización → Música')}</strong>.</p>`;
+        <p class="suggerimento">${L('Aggiunge il brano alla coda del tuo Spotify. Le richieste musicali sono nel piano Essenziale: serve Spotify collegato (Premium, con l\'app aperta) in', 'Adds the track to your Spotify queue. Music requests are in the Essential plan: it needs Spotify connected (Premium, with the app open) in', 'Añade la canción a la cola de tu Spotify. Las peticiones musicales están en el plan Esencial: hace falta Spotify conectado (Premium, con la app abierta) en')} <strong>${esc(percorso('musica'))}</strong>.</p>`;
     case 'annuncia':
       return `
         <textarea ${aria(L('Testo dell\'annuncio', 'Announcement text', 'Texto del anuncio'))} data-campo="testo" data-var-target placeholder="${esc(L('es. Benvenuti nella live! Oggi si gioca a $gioco', 'e.g. Welcome to the stream! Today we play $gioco', 'p. ej. ¡Bienvenidos al directo! Hoy se juega a $gioco'))}">${esc(a.testo || '')}</textarea>
@@ -39226,8 +39231,10 @@ function _scambiaScheda(id, sezioni) {
     p.classList.toggle('visibile', p.dataset.scheda === id));
   const testata = document.getElementById('pagina-testata');
   if (testata) testata.classList.remove('entra');
+  _titoloFermo = true;
   aggiornaTestataPagina();
-  sezioni.forEach((p) => rivelaCarte(p));
+  _titoloFermo = false;
+  sezioni.forEach((p) => mostraFerme(p));
   applicaSottoSchede(id);
   caricaDatiScheda(id);
   azzeraBarraSalva();
@@ -39429,7 +39436,7 @@ window.SB_APP = {
   get gruppi() { return GRUPPI; },
   get gruppoAdmin() { return GRUPPO_ADMIN; },
   get famiglie() { return FAMIGLIE; },
-  nomeScheda(id) { try { return tScheda(id, _nomeSchedaGrezzo(id)); } catch (e) { return id; } },
+  nomeScheda(id) { try { return tScheda(id); } catch (e) { return id; } },
   get isAdmin() { return !!(typeof stato !== 'undefined' && stato && stato.isAdmin); },
   get schedaAttiva() { return schedaAttiva; },
   get menoMoto() { return _menoMoto; },

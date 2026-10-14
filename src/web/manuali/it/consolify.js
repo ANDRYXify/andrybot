@@ -12,7 +12,7 @@ export default {
   aggiornata: '2026-09-27',
   corpo: [
     { h2: 'CONSOLify: la plancia dei tasti', scheda: 'consolify', p: [
-      'CONSOLify è una griglia di tasti grandi. La apri sul telefono, sul tablet o su un secondo schermo, e con un tocco fai partire una cosa. Sta nel gruppo «Durante la diretta» del menù.',
+      'CONSOLify è una griglia di tasti grandi. La apri sul telefono, sul tablet o su un secondo schermo, e con un tocco fai partire una cosa. Sta nel gruppo «In diretta» del menù.',
       'Ogni tasto <strong>dice com\'è andata</strong>: sotto compare la risposta, per esempio il numero nuovo del contatore. Se qualcosa non riesce, il tasto si colora e dice perché.',
       'Non serve nessun piano: CONSOLify c\'è anche nell\'Essenziale. I moderatori che hai fatto entrare nel pannello premono e modificano i tasti come te, e possono rigenerare la chiave.',
       'Sul telefono in verticale la plancia non si vede e compare «Gira il telefono». In orizzontale i tasti stanno larghi e li prendi al primo colpo.',
@@ -30,7 +30,7 @@ export default {
       ['Azione', 'Cosa fa', 'Da dove nasce'],
       ['Per un contatore «Morti»: «Morti +1» e «Morti −1», col passo del contatore', 'Cambia il numero, lo scrive in chat e aggiorna il contatore a schermo, se lo mostri.', 'Da ogni contatore della scheda «Comandi».'],
       ['«Morti a zero»', 'Riporta il contatore a zero, lo scrive in chat e aggiorna lo schermo.', 'Da ogni contatore.'],
-      ['«!nome» dell\'effetto', 'Fa partire l\'effetto nell\'overlay, come quando lo chiama la chat.', 'Da ogni effetto della scheda «Effetti & suoni».'],
+      ['«!nome» dell\'effetto', 'Fa partire l\'effetto nell\'overlay, come quando lo chiama la chat.', 'Da ogni effetto della scheda «Effetti e suoni».'],
       ['«Racconta una battuta»', 'Il bot ne dice una: prima dalle battute del canale, se sono finite ne costruisce una.', 'C\'è sempre.'],
       ['«Fai dire una frase»', 'Il bot scrive in chat la frase che metti nel passo, fino a 200 caratteri.', 'C\'è sempre.'],
     ] },
@@ -137,7 +137,7 @@ export default {
   faq: [
     { d: 'Serve una tastiera fisica?', r: 'No. CONSOLify funziona da sola sul telefono, sul tablet o su un secondo schermo. La tastiera fisica è in più e usa gli stessi tasti.' },
     { d: 'Posso usarla sul telefono mentre trasmetto dal computer?', r: 'Sì, è pensata per questo. Entra nel pannello dal telefono e apri «CONSOLify».' },
-    { d: 'Perché nell\'elenco non trovo un\'azione?', r: 'Le azioni nascono dai contatori e dagli effetti. Crea il contatore in «Comandi» o l\'effetto in «Effetti & suoni» e l\'azione compare da sola. Se avevi già CONSOLify aperta, premi «Aggiorna».' },
+    { d: 'Perché nell\'elenco non trovo un\'azione?', r: 'Le azioni nascono dai contatori e dagli effetti. Crea il contatore in «Comandi» o l\'effetto in «Effetti e suoni» e l\'azione compare da sola. Se avevi già CONSOLify aperta, premi «Aggiorna».' },
     { d: 'Premo un effetto e dice «nessun overlay collegato».', r: 'L\'overlay non è aperto nel programma con cui trasmetti. Aggiungilo come sorgente e riprova: la spia in alto diventa «overlay collegato».' },
     { d: 'Dal telefono il cambio scena dice «nessuna pagina di regia aperta».', r: 'Sul computer della regia il pannello deve essere aperto e collegato al programma. Aprilo lì, premi «Collega» la prima volta e lascialo aperto: dalle volte dopo si ricollega da solo.' },
     { d: '«Collega» dice che il programma non risponde.', r: 'Controlla che il programma sia aperto sullo stesso computer e che il suo server WebSocket sia acceso. Se usa una porta diversa da 4455 o 4444, scrivila in «Oppure a mano».' },

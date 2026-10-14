@@ -35,7 +35,7 @@ const app = readFileSync('src/web/public/app.js', 'utf8');
 const srv = readFileSync('src/web/server.js', 'utf8');
 
 test('la scheda Negozio sta nel gruppo della chat, registrata per intero', () => {
-  const gruppo = app.slice(app.indexOf("{ id: 'pubblico', nome: 'Chat e pubblico'"), app.indexOf("{ id: 'diretta', nome:"));
+  const gruppo = app.slice(app.indexOf("{ id: 'pubblico', nome: 'Chat'"), app.indexOf("{ id: 'gioca', nome:"));
   assert.match(gruppo, /\['negozio', 'Negozio'\]/);
   assert.match(app, /negozio: \['Negozio', 'Shop', 'Tienda'\],/, 'il nome nelle tre lingue, come le altre (T_SCHEDA)');
   assert.match(app, /\n {2}negozio: \s*_ico\(/, 'l\'icona nel menu');

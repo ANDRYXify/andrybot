@@ -87,7 +87,7 @@ comandi diversi da quelli della riga italiana.
   en: Deleting your account during an attack stops the shield right away: no actions left in line, and nothing writes to the log afterwards.
   es: Al borrar tu cuenta durante un ataque, el escudo se detiene al momento: ninguna acción queda en cola y nada vuelve a escribir en el registro después.
 
-- [importante] Partite con la chat: chi vuole giocare si mette in fila con !gioco, tu scegli chi gioca ogni manche e dai l'esito, le monete arrivano da sole. [vai: giveaway]
+- [importante] Partite con la chat: chi vuole giocare si mette in fila con !gioco, tu scegli chi gioca ogni manche e dai l'esito, le monete arrivano da sole. [vai: partite]
   en: Games with chat: whoever wants to play joins the queue with !gioco, you pick who plays each round and give the result, and the coins arrive by themselves.
   es: Partidas con el chat: quien quiere jugar entra en la fila con !gioco, eliges quién juega cada ronda y das el resultado, y las monedas llegan solas.
   > Giochi con la chat, e le monete arrivano da sole
@@ -96,6 +96,16 @@ comandi diversi da quelli della riga italiana.
   en> A custom lobby, a quiz: the queue builds itself in chat, you pick who plays and say how it went. You can charge an entry fee, give coins per place and let moderators run the game too.
   es> Partidas con el chat, y las monedas llegan solas
   es> Una partida personalizada, un quiz: la fila se forma sola en el chat, eliges quién juega y dices cómo fue. Puedes cobrar la entrada, dar monedas por puesto y dejar la partida también a los moderadores.
+
+- [importante] Il menu del pannello è riordinato: ogni cosa ha un nome solo, uguale nel menu, nel titolo e nei manuali, e in ogni pagina c'è al massimo una barra. Le Partite con la chat hanno la loro scheda. [vai: stato]
+  en: The panel menu is reorganized: everything has one name, the same in the menu, the title and the manuals, and every page has at most one bar. Games with chat have their own tab.
+  es: El menú del panel está reordenado: cada cosa tiene un solo nombre, igual en el menú, en el título y en los manuales, y cada página tiene como mucho una barra. Las partidas con el chat tienen su pestaña.
+  > Il menu, più ordinato
+  > Niente più barre una sopra l'altra né nomi diversi per la stessa cosa. I giochi, le partite, i sondaggi, il giveaway e le penitenze stanno in «Intrattenimento»; regia, clip e musica in «In diretta»; statistiche e dirette in «Numeri».
+  en> The menu, tidier
+  en> No more bars stacked on top of each other or different names for the same thing. Games, matches, polls, giveaways and forfeits are in «Entertainment»; control room, clips and music in «Live»; stats and streams in «Numbers».
+  es> El menú, más ordenado
+  es> Se acabaron las barras una encima de otra y los nombres distintos para lo mismo. Los juegos, las partidas, las encuestas, los sorteos y las penitencias están en «Entretenimiento»; realización, clips y música en «En directo»; estadísticas y directos en «Números».
 
 ## 2026-10-08
 

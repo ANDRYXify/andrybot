@@ -10,7 +10,7 @@ sole secondo lo schema scelto. Una partita è una serata di manche.
 Codice: `src/features/partite.js`. Porte: i comandi (registrati in
 `comandi-registro.js`, modulo `partite`, rinominabili), le rotte
 `/api/streamer/partita` e `/api/streamer/partita/:mossa` del server, la carta
-«Partite con la chat» nella scheda Giveaway del pannello. Prova:
+«Partite con la chat» nella scheda Partite del pannello (gruppo Intrattenimento). Prova:
 `test/unita/partite.test.mjs`.
 
 ## Chi comanda

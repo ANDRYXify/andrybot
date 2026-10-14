@@ -776,6 +776,16 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--acc); width: 1
   .fam-barra::-webkit-scrollbar { display: none; }
   .fam-scheda { flex: 0 0 auto; }
 }
+.fam-barra.dal-gruppo { display: none; }
+body.tutto-schermo .fam-barra.dal-gruppo { display: flex; }
+@media (max-width: 720px) {
+  .fam-barra.dal-gruppo { display: flex; }
+}
+.pannello-scheda.scambio { animation: scambio-dolce .22s ease-out; }
+@keyframes scambio-dolce { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  .pannello-scheda.scambio { animation: none; }
+}
 .fam-barra.sotto-barra {
   width: 100%; margin-top: .8rem; padding: 0; gap: 2px;
   background: none; border: 0; border-bottom: 1px solid var(--border); border-radius: 0;

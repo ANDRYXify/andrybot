@@ -13,9 +13,9 @@ export default {
   corpo: [
     { p: [
       'In chat il bot scrive <strong>a nome tuo</strong>: chi guarda vede il tuo account, non uno estraneo. Qui decidi come parla, cosa sa e cosa si ricorda.',
-      'Nel menù, sotto «Il tuo bot», trovi la pagina «Il bot» con tre schede in alto: «Personalità», «Conoscenza» e «Memoria».',
+      'Nel menù c\'è la voce «Il bot»: apre una pagina con quattro schede in alto, «Personalità», «Conoscenza», «Memoria» e «Comandi vocali». Qui trovi le prime tre; «Comandi vocali» ha il suo <a href="/manuale/moduli">manuale</a>.',
       'Sono comprese in Essenziale, il pacchetto gratuito. Valgono nella chat della diretta di ogni canale collegato. Un canale solo Discord non le ha. Perché il bot parli in chat deve essere acceso nella scheda «Stato».',
-      'Tu e i moderatori del pannello potete cambiare tutto quello che c\'è in queste tre schede, tranne «Azzera ciò che ha imparato», che vede e usa solo il proprietario del canale. I moderatori si invitano da «Il tuo account» e servono almeno il piano Base: vedi il <a href="/manuale/account">manuale dell\'account</a>.',
+      'Tu e i moderatori del pannello potete cambiare tutto quello che c\'è in queste tre schede, tranne «Azzera ciò che ha imparato», che vede e usa solo il proprietario del canale. I moderatori si invitano da «Accesso e dati» e servono almeno il piano Base: vedi il <a href="/manuale/account">manuale dell\'account</a>.',
     ] },
 
     // ------------------------------------------------------------ PERSONALITÀ
@@ -82,7 +82,7 @@ export default {
       'Mai due volte in 6 minuti. Per rispondere a una domanda rimasta sola bastano 2 minuti.',
       'Se può scegliere, non fa due volte di fila la stessa cosa.',
       'Se hai scritto tu negli ultimi 45 secondi, la chat è tua e il bot aspetta.',
-      'Una battuta al più ogni 20 minuti. Le battute le scrivi in «Giochi & classifiche», carta «Battute», dove c\'è anche l\'interruttore «Ogni tanto ne dice una da solo» (vedi il <a href="/manuale/giochi">manuale dei giochi</a>).',
+      'Una battuta al più ogni 20 minuti. Le battute le scrivi in «Giochi», carta «Battute», dove c\'è anche l\'interruttore «Ogni tanto ne dice una da solo» (vedi il <a href="/manuale/giochi">manuale dei giochi</a>).',
       'Il promemoria dei social al più ogni 45 minuti, e solo in diretta.',
       'Con «Solo mentre sono in diretta» spuntato, a diretta spenta non dice niente di sua iniziativa.',
       'Le cose sue, le righe sull\'onda e i rilanci li scrive il modello. Con «Risposte intelligenti» spento, da solo dice solo le battute e il promemoria dei social.',
@@ -113,7 +113,7 @@ export default {
     { p: [
       '<strong>Le tue frasi.</strong> Una per riga, fino a 50 frasi da 200 caratteri: le frasi e i caratteri in più non vengono salvati. Non sono frasi da ripetere. Il bot le legge prima di rispondere come esempi di come scrivi, per suonare come te, e per questo servono «Risposte intelligenti» accese.',
       '<strong>Adatta la personalità al mio canale.</strong> Acceso, agli esempi delle tue frasi il bot aggiunge da solo le cose che dici in diretta, se usi l\'ascolto, e i tuoi messaggi in chat: così suona come te anche senza che tu scriva niente. Spento, usa solo le frasi che hai scritto tu. Il cambio vale dalla risposta dopo.',
-      'Le battute da dire in chat sono un\'altra cosa e stanno in «Giochi & classifiche».',
+      'Le battute da dire in chat sono un\'altra cosa e stanno in «Giochi».',
     ] },
 
     { h3: 'Le frasi del bot' },
@@ -304,7 +304,7 @@ export default {
     ] },
     { h3: 'Il bot che ti riconosce' },
     { p: [
-      'Al primo messaggio di una persona nuova il bot la saluta, e saluta anche chi torna dopo settimane (di base tre). I due testi li scrivi tu nella scheda «Giochi & classifiche», carta «Presenze e saluti», con <code>{user}</code>, <code>{giorni}</code>, <code>{serie}</code> e <code>{dirette}</code>: un testo vuoto spegne quel saluto. Chi c\'è a più dirette di fila lo vedi nella scheda «Statistiche», nella classifica «Chi c’è sempre». Tutto il resto delle presenze sta nel <a href="/manuale/giochi">manuale dei giochi</a>.',
+      'Al primo messaggio di una persona nuova il bot la saluta, e saluta anche chi torna dopo settimane (di base tre). I due testi li scrivi tu nella scheda «Giochi», carta «Presenze e saluti», con <code>{user}</code>, <code>{giorni}</code>, <code>{serie}</code> e <code>{dirette}</code>: un testo vuoto spegne quel saluto. Chi c\'è a più dirette di fila lo vedi nella scheda «Statistiche», nella classifica «Chi c’è sempre». Tutto il resto delle presenze sta nel <a href="/manuale/giochi">manuale dei giochi</a>.',
       'Se ti sei costruito un modulo sul primo messaggio, vince il tuo. Il bot non saluta a raffica: un raid porta cinquanta persone in un colpo, e cinquanta saluti sarebbero spam.',
     ] },
 

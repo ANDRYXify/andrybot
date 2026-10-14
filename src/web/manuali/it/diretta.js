@@ -12,7 +12,7 @@ export default {
   aggiornata: '2026-10-14',
   corpo: [
     { p: [
-      'Queste schede servono <strong>mentre trasmetti</strong> e subito dopo. Stanno nel gruppo «Durante la diretta» del menù: «Regia» apre una barra con tre voci, «Regia», «Clip» e «Musica». Accanto ci sono «Dirette» e «CONSOLify». «Statistiche» sta nel gruppo «Chat e pubblico».',
+      'Queste schede servono <strong>mentre trasmetti</strong> e subito dopo. Stanno nel gruppo «In diretta» del menù: «Regia», «Clip», «Musica» e «CONSOLify». «Dirette» e «Statistiche» stanno nel gruppo «Numeri».',
       'Clip automatiche, richieste musicali, messaggi della pubblicità e rapporti girano sul server: vanno avanti anche se chiudi il pannello. I tasti a portata di dito hanno il loro manuale: <a href="/manuale/consolify">CONSOLify</a>.',
       'I moderatori che hai fatto entrare nel pannello usano queste schede come te. Restano a te, proprietario del canale, i permessi di Twitch, il collegamento con Spotify, i premi a punti canale della musica e l\'indirizzo mail dei rapporti.',
       'Se usi SocialBot solo per Discord, queste schede non compaiono.',
@@ -208,7 +208,7 @@ export default {
 
     { h3: 'Una serata su più piattaforme' },
     { p: [
-      'Se hai collegato Kick nella scheda «Il tuo account», il bot segue anche la diretta su Kick. Se trasmetti su Twitch e su Kick insieme, il rapporto è uno solo: la serata comincia col primo «in onda», su una qualunque delle due, e finisce con l\'ultimo.',
+      'Se hai collegato Kick nella scheda «Accesso e dati», il bot segue anche la diretta su Kick. Se trasmetti su Twitch e su Kick insieme, il rapporto è uno solo: la serata comincia col primo «in onda», su una qualunque delle due, e finisce con l\'ultimo.',
       'In testa alla carta leggi dove è andata in onda la serata, per esempio «Twitch + Kick». Sotto, «Per piattaforma» dà la durata, il picco e la media di ognuna. Il picco della serata è quello di tutte e due insieme nello stesso momento, non la somma dei due picchi. La media pesa ognuna sul suo tempo in onda.',
       'Su Kick gli spettatori li legge il bot dal tuo canale ogni due minuti. Una serata solo su Twitch resta com\'era, senza nomi di piattaforme.',
     ] },
@@ -216,7 +216,7 @@ export default {
     { h3: 'Dove ricevere il rapporto' },
     { p: [
       'Il rapporto resta sempre nella scheda. In più può arrivarti appena chiudi la diretta.',
-      '<strong>«Su Telegram, in privato»</strong> è acceso di base. Il rapporto arriva nella chat privata del tuo bot Telegram, che si collega nella scheda «Telegram» del gruppo «Le tue community» (piano Base). Quando è collegata vedi «pronto». Se non lo è, la carta te lo dice con il collegamento alla scheda.',
+      '<strong>«Su Telegram, in privato»</strong> è acceso di base. Il rapporto arriva nella chat privata del tuo bot Telegram, che si collega nella scheda «Telegram» del gruppo «Community» (piano Base). Quando è collegata vedi «pronto». Se non lo è, la carta te lo dice con il collegamento alla scheda.',
       '<strong>Via mail.</strong> La mail la manda il nostro server. Se sul server la posta non è configurata, i campi sono spenti e la carta dice che il rapporto arriva su Telegram. L\'indirizzo lo mette e lo toglie solo il proprietario.',
     ] },
     { passi: [
@@ -242,7 +242,7 @@ export default {
     { p: [
       'La riga d\'apertura segue un ordine fisso: un record di spettatori, i raid, almeno 1.000 bit, almeno 5 € di donazioni, almeno 3 facce nuove, almeno 10 follower, i sub, almeno 200 messaggi, infine quanti messaggi ci sono stati. Senza nemmeno un messaggio: «Serata tranquilla.». Chi fa un cheer anonimo conta nel totale dei bit e resta senza nome.',
       'La mail apre con quella riga, poi i tre numeri grossi (picco, messaggi, follower), chi ha scritto di più, il resto della serata e le clip. In fondo c\'è il tasto «Apri le tue dirette».',
-      '<strong>Come sai che una mail è nostra.</strong> In fondo a ogni mail c\'è un codice di verifica. Lo trovi solo nella scheda «Il tuo account», carta «Le mail che ti mandiamo», che vede solo il proprietario. Cambia ogni lunedì ed è diverso per ogni canale. Lì ci sono anche quelli delle settimane passate del mese, per le mail che apri in ritardo. Se il codice non combacia, quella mail non l\'abbiamo scritta noi: non aprire i collegamenti.',
+      '<strong>Come sai che una mail è nostra.</strong> In fondo a ogni mail c\'è un codice di verifica. Lo trovi solo nella scheda «Accesso e dati», carta «Le mail che ti mandiamo», che vede solo il proprietario. Cambia ogni lunedì ed è diverso per ogni canale. Lì ci sono anche quelli delle settimane passate del mese, per le mail che apri in ritardo. Se il codice non combacia, quella mail non l\'abbiamo scritta noi: non aprire i collegamenti.',
     ] },
 
     // ------------------------------------------------------------ STATISTICHE
@@ -280,7 +280,7 @@ export default {
     ] },
     { p: [
       'Il conteggio delle ore è acceso di base. La spunta è «Conta le ore guardate in chat», nella carta «Comodità in chat» della scheda «Comandi».',
-      'Le monete si regolano nella scheda «Giochi & classifiche»: <a href="/manuale/giochi">manuale dei giochi</a>.',
+      'Le monete si regolano nella scheda «Giochi»: <a href="/manuale/giochi">manuale dei giochi</a>.',
     ] },
 
     { h3: 'Le ultime dirette' },
@@ -302,7 +302,7 @@ export default {
     { d: 'Il rapporto non mi arriva su Telegram.', r: 'Serve la chat privata del bot, collegata nella scheda «Telegram». In «Dirette» la levetta «Su Telegram, in privato» deve essere accesa. Il rapporto resta comunque nella scheda «Dirette».' },
     { d: 'Il rapporto non ha picco e media.', r: 'Gli spettatori si contano ogni cinque minuti mentre il bot è nel canale, e su Kick ogni due minuti, se hai collegato Kick. Se il bot era spento, o la diretta è finita prima del primo conteggio, quei due numeri non ci sono.' },
     { d: '«Chi guarda di più» è vuota.', r: 'Le ore si contano solo in diretta: prima della prima diretta la classifica è vuota. Se resta vuota dopo, controlla nella scheda «Comandi» che la spunta «Conta le ore guardate in chat» sia accesa.' },
-    { d: 'Mi è arrivata una mail di SocialBot che non mi convince.', r: 'Guarda il codice in fondo e confrontalo con quello della scheda «Il tuo account», carta «Le mail che ti mandiamo». Se non combacia, non aprire i collegamenti.' },
+    { d: 'Mi è arrivata una mail di SocialBot che non mi convince.', r: 'Guarda il codice in fondo e confrontalo con quello della scheda «Accesso e dati», carta «Le mail che ti mandiamo». Se non combacia, non aprire i collegamenti.' },
     { d: 'Se chiudo il pannello si ferma qualcosa?', r: 'Clip automatiche, richieste musicali, messaggi della pubblicità, la pubblicità programmata e rapporti girano sul server e vanno avanti. Si fermano i tasti che premi tu e il conto di «Stato diretta». Per le scene comandate dal telefono vedi il <a href="/manuale/consolify">manuale di CONSOLify</a>.' },
   ],
 };

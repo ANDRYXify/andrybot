@@ -18,7 +18,7 @@ export default {
   corpo: [
     { p: [
       'Il negozio è un posto in cui si paga solo con le <strong>monete del canale</strong>, cioè con il tempo passato in chat e in diretta. Le monete non si comprano e non diventano soldi. Tu decidi cosa c\'è, quanto costa e chi lo può comprare; chi guarda compra dalla chat.',
-      'La scheda sta in «Chat e pubblico», voce «Negozio». Le monete, le regole per guadagnarle e la classifica restano nella scheda «Giochi & classifiche» (vedi il <a href="/manuale/giochi">manuale dei giochi</a>): il negozio le spende soltanto.',
+      'La scheda sta nel gruppo «Chat» del menù, voce «Negozio». Le monete, le regole per guadagnarle e la classifica restano nella scheda «Giochi» (vedi il <a href="/manuale/giochi">manuale dei giochi</a>): il negozio le spende soltanto.',
     ] },
 
     { h2: 'Negozio', scheda: 'negozio', p: [
@@ -166,7 +166,7 @@ export default {
     { p: [
       'Questi comandi li spegni, li rinomini o li riservi nella scheda «Comandi», come gli altri comandi pronti. Rispondono solo col negozio aperto.',
       'Il bot risponde a chi ha scritto, nella lingua della chat scelta nelle preferenze, con i numeri e le date nel formato del canale.',
-      'Le monete le chiama col nome scritto in «Come si chiamano le monete», nella scheda «Giochi & classifiche», e le parole intorno le accorda come hai scelto in «Come se ne parla in chat». Con dei Semi di girasole, dopo un acquisto il bot scrive «I tuoi Semi di girasole: 450».',
+      'Le monete le chiama col nome scritto in «Come si chiamano le monete», nella scheda «Giochi», e le parole intorno le accorda come hai scelto in «Come se ne parla in chat». Con dei Semi di girasole, dopo un acquisto il bot scrive «I tuoi Semi di girasole: 450».',
     ] },
     { h3: 'Come va un acquisto' },
     { passi: [

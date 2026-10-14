@@ -27,7 +27,7 @@ test('I tuoi social: gli account stanno in cima, e da li\' si collega tutto', ()
   assert.equal(titoli[0], 'I tuoi account', 'il primo riquadro');
   const account = p.slice(p.indexOf('id="social-account"'), p.indexOf('<div class="carta">', p.indexOf('id="social-account"')));
   for (const id of ['ig-collega-box', 'tiktok-post-box', 'inp-yt-canale']) assert.ok(account.includes(`id="${id}"`), `${id} fra gli account`);
-  assert.match(APP, /\['notifiche', 'I tuoi social'\]/, 'e la scheda si chiama per quello che contiene');
+  assert.match(APP, /\['notifiche', 'Social'\]/, 'e la scheda si chiama per quello che contiene');
 });
 
 test('niente sotto-schede, niente riquadri ripetuti, niente riquadri che sono solo un rimando', () => {

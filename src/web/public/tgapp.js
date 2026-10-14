@@ -40,7 +40,7 @@ function vistaCollega(codice, nome) {
       <div class="codice">${esc(codice)}</div>
       <ol>
         <li>${L('Apri la dashboard su', 'Open the dashboard at', 'Abre el panel en')} <b>socialbot.live</b> ${L('(dalla mail/notifica di andryxify).', '(from your andryxify email/notification).', '(desde tu correo/notificación de andryxify).')}</li>
-        <li>${L('Vai su <b>Le tue community → Telegram</b>, nella carta «Accedi e gestisci da Telegram», e inserisci il codice qui sopra.', 'Go to <b>Your communities → Telegram</b>, in the «Log in & manage from Telegram» card, and enter the code above.', 'Ve a <b>Tus comunidades → Telegram</b>, en la tarjeta «Accede y gestiona desde Telegram», e introduce el código de arriba.')}</li>
+        <li>${L('Vai su <b>Community → Telegram</b>, nella carta «Accedi e gestisci da Telegram», e inserisci il codice qui sopra.', 'Go to <b>Communities → Telegram</b>, in the «Log in & manage from Telegram» card, and enter the code above.', 'Ve a <b>Comunidades → Telegram</b>, en la tarjeta «Accede y gestiona desde Telegram», e introduce el código de arriba.')}</li>
         <li>${L('Torna qui e riapri la Mini App: sarai dentro!', 'Come back here and reopen the Mini App: you’re in!', 'Vuelve aquí y reabre la Mini App: ¡ya estás dentro!')}</li>
       </ol>
     </div>

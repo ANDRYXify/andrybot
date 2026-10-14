@@ -184,8 +184,8 @@ function esitoCambio(e, cosa, chiesto, piu) {
 }
 
 function permessoMancante(esito) {
-  if (esito.piattaforma === 'kick') return L('manca il permesso di Kick per cambiare titolo e categoria: nel pannello, da Account → Il tuo account → Le tue piattaforme, premi «Aggiorna i permessi di Kick» sulla riga di Kick', 'Kick’s permission to change title and category is missing: in the panel, from Account → Your account → Your platforms, press “Update Kick permissions” on the Kick row', 'falta el permiso de Kick para cambiar título y categoría: en el panel, desde Cuenta → Tu cuenta → Tus plataformas, pulsa «Actualiza los permisos de Kick» en la fila de Kick');
-  return L('manca il permesso di gestione canale di Twitch: concedilo nel pannello, da Chat e pubblico → Comandi → Comandi vocali', 'Twitch’s manage channel permission is missing: grant it in the panel, from Chat & audience → Commands → Voice commands', 'falta el permiso de gestión del canal de Twitch: concédelo en el panel, desde Chat y público → Comandos → Comandos de voz');
+  if (esito.piattaforma === 'kick') return L('manca il permesso di Kick per cambiare titolo e categoria: nel pannello, da Account → Accesso e dati → Le tue piattaforme, premi «Aggiorna i permessi di Kick» sulla riga di Kick', 'Kick’s permission to change title and category is missing: in the panel, from Account → Access & data → Your platforms, press “Update Kick permissions” on the Kick row', 'falta el permiso de Kick para cambiar título y categoría: en el panel, desde Cuenta → Acceso y datos → Tus plataformas, pulsa «Actualiza los permisos de Kick» en la fila de Kick');
+  return L('manca il permesso di gestione canale di Twitch: concedilo nel pannello, in «Il bot → Comandi vocali»', 'Twitch’s manage channel permission is missing: grant it in the panel, in «The bot → Voice commands»', 'falta el permiso de gestión del canal de Twitch: concédelo en el panel, en «El bot → Comandos de voz»');
 }
 
 function piattaformaAssente() {

@@ -59,9 +59,9 @@ test('il bot: il follow entra in lista subito, giri e lavori ripartono, gli usci
 });
 
 test('il pannello: una scheda nel gruppo dello scudo, solo Twitch, coi suoi nomi e la sua guida', () => {
-  assert.match(APP, /\['attacchi', 'Gli attacchi'\],\n\s+\['follower', 'I tuoi follower'\],\n\s+\['registro', 'Registro'\],/);
+  assert.match(APP, /\['attacchi', 'Attacchi'\],\n\s+\['follower', 'Follower'\],\n\s+\['registro', 'Registro'\],/);
   assert.match(APP, /const SOLO_TWITCH = \[[^\]]*'follower'/);
-  assert.match(APP, /  follower: \['I tuoi follower', 'Your followers', 'Tus seguidores'\],/);
+  assert.match(APP, /  follower: \['Follower', 'Followers', 'Seguidores'\],/);
   assert.match(APP, /  follower:    _ico\(/);
   assert.match(APP, /if \(id === 'follower'\) caricaFollower\(\);/);
   assert.match(APP, /\$\{pannelloAttacchi\(\)\}\n\s+\$\{pannelloFollower\(\)\}/);

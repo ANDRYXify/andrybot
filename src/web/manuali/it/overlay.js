@@ -12,7 +12,7 @@ export default {
   aggiornata: '2026-10-14',
   corpo: [
     { h2: 'Overlay Studio', scheda: 'alert', p: [
-      'L\'overlay è <strong>una pagina web</strong>. In OBS si mette come sorgente <em>Browser</em>. Da lì in poi quello che decidi nella scheda «Overlay Studio», nel gruppo «Scena & overlay», compare in diretta senza toccare più niente in OBS.',
+      'L\'overlay è <strong>una pagina web</strong>. In OBS si mette come sorgente <em>Browser</em>. Da lì in poi quello che decidi nella scheda «Overlay Studio», nel gruppo «Scena e overlay», compare in diretta senza toccare più niente in OBS.',
       'La scheda si apre sul <strong>banco</strong>: a sinistra i livelli, al centro la tela 1920×1080, a destra le proprietà. Le impostazioni di alert, chat, ultimo follower e sub, player, conto alla rovescia, conto alla pubblicità, premi a tempo, hype train, classifica Bit, boss, arena delle emote, testo a schermo, nome del comando e muro delle emote stanno dentro «Proprietà»: selezioni l\'elemento sulla tela e le trovi lì, divise in gruppi che si aprono uno alla volta. Sotto il banco restano le carte «Metterlo nella diretta», «Gli obiettivi», «Cartelli» e «CSS avanzato».',
       'In testa alla scheda <strong>«Tutto schermo»</strong> toglie il menù di lato e lascia tutta la larghezza alla tela. Il menù si disfa a matita e aspetta sul bordo sinistro: ci arrivi col cursore e si ridisegna, lo lasci e si disfa. «Rimetti il menù» lo riporta di lato. Il browser ricorda la scelta per questa scheda.',
       'La scheda c\'è in ogni piano, anche in quello gratuito. La usano il proprietario del canale e i moderatori. Le poche cose riservate al proprietario sono segnate qui sotto.',
@@ -29,7 +29,7 @@ export default {
       ['«Duplica»', 'Copia visibilità, posizioni, aspetto e CSS in un overlay nuovo, con un link suo. Il nome di serie finisce con «(copia)».'],
       ['«Elimina»', 'Toglie l\'overlay dopo una conferma. Il suo link smette di funzionare e in OBS resta una sorgente vuota. L\'ultimo overlay non si toglie: «Deve restare almeno un overlay.»'],
       ['«link overlay»', 'Il link sta nascosto apposta. L\'icona dei due fogli lo copia, l\'occhio lo apre in una scheda del browser per guardarlo.'],
-      ['La chiave accanto al link', 'Solo il proprietario. Premi una volta e poi di nuovo entro cinque secondi: nasce un link nuovo e il vecchio smette subito di funzionare, per tutti gli overlay e per i link della webcam in «Effetti & suoni». Poi rimetti il link nuovo nelle sorgenti di OBS.'],
+      ['La chiave accanto al link', 'Solo il proprietario. Premi una volta e poi di nuovo entro cinque secondi: nasce un link nuovo e il vecchio smette subito di funzionare, per tutti gli overlay e per i link della webcam in «Effetti e suoni». Poi rimetti il link nuovo nelle sorgenti di OBS.'],
       ['«Salva overlay»', 'Salva insieme alert, chat, ultimo follower e sub, CSS e visibilità. OBS non va riavviato.'],
       ['«?»', 'Apre «Come funziona» in cima alla scheda.'],
     ] },
@@ -91,19 +91,19 @@ export default {
       ['«Player musica»', 'Quello che stai ascoltando su Spotify.', 'in basso a sinistra', 'qui, in «Proprietà»'],
       ['«Conto alla rovescia»', 'Quanto manca all\'inizio, anche in subathon.', 'in alto a destra', 'qui, in «Proprietà»'],
       ['«Conto alla pubblicità»', 'Quanto manca alla prossima pubblicità, e durante la pausa quanto manca al ritorno. I tempi li dice Twitch.', 'in alto a destra', 'qui, in «Proprietà»'],
-      ['«Premi a tempo»', 'I premi a punti canale che durano, mentre corrono: nome, quanto manca, una barra, chi l\'ha riscattato. Anche le modalità della chat accese a tempo.', 'in alto a destra', 'qui, in «Proprietà»; quanto dura un premio in «Effetti & suoni»'],
+      ['«Premi a tempo»', 'I premi a punti canale che durano, mentre corrono: nome, quanto manca, una barra, chi l\'ha riscattato. Anche le modalità della chat accese a tempo.', 'in alto a destra', 'qui, in «Proprietà»; quanto dura un premio in «Effetti e suoni»'],
       ['«Hype train»', 'Il treno di Twitch: livello, barra, tempo che resta.', 'in alto a destra', 'qui, in «Proprietà»'],
       ['«Classifica Bit»', 'Chi ha messo più Bit.', 'in alto a sinistra', 'qui, in «Proprietà»'],
       ['«Sfida a tempo»', 'La carta della penitenza riscattata coi punti canale.', 'in alto a destra', 'scheda «Penitenze»'],
       ['«Boss»', 'La carta del boss di turno: nome, vita, tempo che resta, chi lo colpisce e quanto.', 'in alto al centro', 'scheda «Giochi»'],
       ['«Arena delle emote»', 'L\'arena in cui la chat combatte con le sue emote. Si vede solo mentre un\'arena è aperta.', 'al centro', 'scheda «Giochi»'],
       ['«Testo a schermo»', 'La scritta che un comando manda con «Mostra testo sull\'overlay».', 'al centro', 'scheda «Comandi»'],
-      ['«Nome del comando»', 'La pastiglia «!comando» che compare quando parte un effetto.', 'in basso al centro', 'scheda «Effetti & suoni»'],
+      ['«Nome del comando»', 'La pastiglia «!comando» che compare quando parte un effetto.', 'in basso al centro', 'scheda «Effetti e suoni»'],
       ['«Muro delle emote»', 'Le emote che la chat scrive volano sulla scena; la stessa emote ripetuta cresce e poi esplode. Di serie spento.', 'tutto lo schermo', 'qui, in «Proprietà»'],
-      ['«Effetti a schermo»', 'L\'area dove compaiono le immagini e i video dei tuoi effetti.', 'al centro', 'scheda «Effetti & suoni»'],
+      ['«Effetti a schermo»', 'L\'area dove compaiono le immagini e i video dei tuoi effetti.', 'al centro', 'scheda «Effetti e suoni»'],
     ] },
     { p: [
-      'Le immagini e i video di «Effetti & suoni» compaiono nell\'elemento <strong>«Effetti a schermo»</strong>: lo sposti e lo ridimensioni come gli altri, e in un riquadro si adattano senza deformarsi. Sulla tela c\'è un\'immagine d\'esempio, messa come un effetto vero. Quelli che hai messo <strong>a tutto schermo</strong>, e gli effetti pronti, non passano da quest\'area: coprono lo schermo, al posto degli effetti nell\'ordine dei livelli. Anche loro compaiono solo negli overlay dove «Effetti a schermo» c\'è. Un premio a punti canale con una posizione sua la tiene, sullo schermo intero: si sceglie nella scheda «Effetti & suoni» (<a href="/manuale/effetti">manuale degli effetti</a>). I tasti di CONSOLify non sono elementi della tela: compaiono in ogni overlay.',
+      'Le immagini e i video di «Effetti e suoni» compaiono nell\'elemento <strong>«Effetti a schermo»</strong>: lo sposti e lo ridimensioni come gli altri, e in un riquadro si adattano senza deformarsi. Sulla tela c\'è un\'immagine d\'esempio, messa come un effetto vero. Quelli che hai messo <strong>a tutto schermo</strong>, e gli effetti pronti, non passano da quest\'area: coprono lo schermo, al posto degli effetti nell\'ordine dei livelli. Anche loro compaiono solo negli overlay dove «Effetti a schermo» c\'è. Un premio a punti canale con una posizione sua la tiene, sullo schermo intero: si sceglie nella scheda «Effetti e suoni» (<a href="/manuale/effetti">manuale degli effetti</a>). I tasti di CONSOLify non sono elementi della tela: compaiono in ogni overlay.',
       'Un <strong>contatore</strong> si crea anche da qui: «Aggiungi», poi «Un contatore». Si apre «Un contatore nuovo» con «Comando (senza !)» fino a 30 caratteri, «Etichetta» fino a 40, «Emoji» facoltativa, «Passo (+)» da 1 a 1000 e «Parola automatica» facoltativa, che fa +1 ogni volta che quella parola compare in chat. «Crea e mettilo qui» lo mette in questo overlay. «Crea in una copia dell\'overlay» fa un overlay nuovo con tutto quello che vedi più il contatore, e lascia com\'è quello di sempre. Con 12 overlay la copia non si può fare. Se il comando è già di un altro contatore, il pannello te lo dice e il contatore lo rimetti dall\'elenco di «Aggiungi».',
       'In «Proprietà» un contatore ha «A schermo», «Cosa scrive» (fino a 80 caratteri, con <code>{emoji}</code>, <code>{etichetta}</code> e <code>{valore}</code>; di serie <code>{emoji} {etichetta}: {valore}</code>), i colori «Testo» e «Sfondo», «Carattere» (Sistema, Inter, Space Grotesk, JetBrains Mono, Fraunces, Bricolage), «Senza sfondo» e «Grassetto». La dimensione al 100% vale 40 pixel di altezza. Il valore lo muovete in chat con <code>!comando+</code> e <code>!comando reset</code>; il resto sta nel <a href="/manuale/moduli">manuale dei comandi</a>.',
     ] },
@@ -118,7 +118,7 @@ export default {
       ['CSS avanzato', 'tutto', ''],
       ['Obiettivi e cartelli', 'se si vedono e dove', 'traguardo e conto, testo o immagine, aspetto'],
       ['Player, conto alla rovescia, conto alla pubblicità, premi a tempo, hype train, classifica Bit, sfida a tempo, boss, arena delle emote, testo a schermo, nome del comando, contatori, muro delle emote', 'se si vedono e dove', 'tutte le impostazioni e l\'aspetto'],
-      ['Effetti a schermo', 'se si vedono, dove e quanto grandi', 'cosa fa ogni effetto, nella scheda «Effetti & suoni»'],
+      ['Effetti a schermo', 'se si vedono, dove e quanto grandi', 'cosa fa ogni effetto, nella scheda «Effetti e suoni»'],
     ] },
     { p: [
       'Per avere due obiettivi o due cartelli con un aspetto diverso in due scene ne fai due, e in ogni overlay accendi quello giusto.',
@@ -155,7 +155,7 @@ export default {
       ['«Se è in pausa»', 'sparisce', 'sparisce · resta a schermo'],
       ['«Le onde»', 'onde che ballano', 'onde che ballano · onde e copertina che pulsa · niente onde'],
       ['«Sfondo»', 'niente', 'niente · copertina sfocata · colori del disco · il mio video, sfocato'],
-      ['«Il mio video»', 'nessuno', 'un video caricato in «Effetti & suoni», in loop e muto'],
+      ['«Il mio video»', 'nessuno', 'un video caricato in «Effetti e suoni», in loop e muto'],
       ['«Corpo»', 'Normale', 'Slim · Normale · Cicciotto: la taglia di tutto il player'],
       ['«Tema»', 'Nessuno', 'Vinile · CD · Cassetta · Terminale · Manga · Esagono'],
       ['«Larghezza del testo»', '0', 'da 0 a 30; a 0 decide il corpo'],
@@ -168,7 +168,7 @@ export default {
     { p: [
       'Ogni <strong>tema</strong> porta la sua figura e si muove solo mentre suona. Il vinile sporge da dietro e gira. Il CD gira e cambia riflesso. La cassetta fa girare le bobine. Il terminale ha prompt e cursore. Il manga ha un retino che pulsa. L\'esagono ha la copertina a sei lati e un anello che ruota. Ogni tema entra ed esce come l\'oggetto vero. «Rivedi l\'entrata» te lo mostra sulla tela.',
       'Con la disposizione <strong>«libera»</strong> compare «Le parti»: scegli il «Pezzo» e ne scrivi «X», «Y», la «Larghezza» (da 5 a 100) e l\'allineamento del «Testo». Sulla tela trascini ogni pezzo; righe e barra hanno una maniglia a destra per la larghezza. «Come in riga» li rimette in fila.',
-      'Il video è tuo: un loop corto caricato in «Effetti & suoni», perché Spotify non dà un video del brano. Con i temi vinile e CD la copertina resta quella del disco.',
+      'Il video è tuo: un loop corto caricato in «Effetti e suoni», perché Spotify non dà un video del brano. Con i temi vinile e CD la copertina resta quella del disco.',
       '«Niente onde» le toglie, non le lascia ferme. La copertina pulsa solo se Spotify dice il tempo del brano. Quando non lo dice resta ferma, e le onde ballano comunque.',
       '<strong>Un intoppo non lo ferma.</strong> Se Spotify per un momento non risponde, resta la canzone che c\'era e la barra continua. Una risposta che non arriva si lascia perdere dopo pochi secondi, e alla fine di un brano il prossimo si chiede subito. Se quindici secondi dopo la fine non si sa ancora cosa suona, il player fa come con la musica ferma.',
     ] },
@@ -219,7 +219,7 @@ export default {
     { h3: 'Premi a tempo' },
     { p: [
       'Una carta per ogni premio a punti canale che sta durando: il nome del premio, quanto manca, una barra che si svuota e chi l\'ha riscattato, l\'ultimo per primo. Ci sono anche le modalità della chat accese a tempo, da un premio o da un mod con <code>!soloemote</code>: chi guarda vede lo stesso effetto e si chiede la stessa cosa. Prima quello che finisce prima. Arrivato a zero se ne va, e un riscatto nuovo compare da solo.',
-      'Qui non scegli nessun tempo: quanto dura ogni premio si sceglie in «Effetti & suoni», carta «Premi a tempo» (<a href="/manuale/effetti">manuale degli effetti</a>). Un VIP a tempo non è un conto alla rovescia e non compare.',
+      'Qui non scegli nessun tempo: quanto dura ogni premio si sceglie in «Effetti e suoni», carta «Premi a tempo» (<a href="/manuale/effetti">manuale degli effetti</a>). Un VIP a tempo non è un conto alla rovescia e non compare.',
     ] },
     { tabella: [
       ['Impostazione', 'Di base', 'Limiti'],
@@ -277,7 +277,7 @@ export default {
 
     { h3: 'Nome del comando' },
     { p: [
-      'La pastiglia col nome del comando che compare quando parte un effetto, per esempio «!applausi»: chi guarda capisce chi l\'ha fatto partire e come rifarlo. Gli effetti si fanno nella scheda «Effetti & suoni», con «Apri Effetti & suoni».',
+      'La pastiglia col nome del comando che compare quando parte un effetto, per esempio «!applausi»: chi guarda capisce chi l\'ha fatto partire e come rifarlo. Gli effetti si fanno nella scheda «Effetti e suoni», con «Apri Effetti e suoni».',
       '«Mostralo nella scena» è acceso di serie. Di serie la pastiglia sta in basso al centro, rosa e tonda. La sposti, la vesti e la togli da un overlay come gli altri elementi.',
     ] },
 
@@ -335,11 +335,11 @@ export default {
       ['«Cosa c’è scritto»', 'vuoto', '300 caratteri, anche su più righe'],
       ['«Allineato»', 'a sinistra', 'a sinistra · al centro · a destra'],
       ['«Va a capo dopo (% schermo)»', '0', 'da 0 a 100; a 0 è largo quanto la riga più lunga'],
-      ['«Quale immagine»', 'nessuna', 'le immagini che hai in «Effetti & suoni»'],
+      ['«Quale immagine»', 'nessuna', 'le immagini che hai in «Effetti e suoni»'],
       ['«Dove» (in «Proprietà»)', 'in basso a sinistra', 'i quattro angoli, o dove lo trascini'],
       ['Aspetto (in «Proprietà»)', 'nessuna scatola: opacità dello sfondo 0, cornice «Nessuna»', '«Dimensione», «Carattere» e «Testo» per le scritte, «Sfondo», «Opacità sfondo», «Angoli», «Forma», «Materia», «Cornice»'],
     ] },
-    { p: ['Di suo un cartello non ha una scatola dietro. Se la vuoi alzi l\'opacità dello sfondo e scegli forma, materia e cornice. Le immagini si caricano in «Effetti & suoni» e qui si trovano già pronte.'] },
+    { p: ['Di suo un cartello non ha una scatola dietro. Se la vuoi alzi l\'opacità dello sfondo e scegli forma, materia e cornice. Le immagini si caricano in «Effetti e suoni» e qui si trovano già pronte.'] },
 
     { h3: 'Alert eventi' },
     { p: ['Un cartello animato con suono quando arriva un evento. Servono due interruttori accesi: quello generale «Alert eventi», acceso di serie, e quello del singolo evento, spento di serie.'] },
@@ -361,7 +361,7 @@ export default {
       '«Icona» sceglie fra venti icone (Stella, Cuore, Fulmine, Megafono, Corona, Fuoco, Diamante, Trofeo, Regalo, Razzo, Scudo, Cuffie, Controller, Nota, Fumetto, Campana, Scintille, Saluto, Occhio, Moneta) e le tue immagini, sotto «Le mie».',
       '«Suono» sceglie fra tredici suoni pronti (Campanello, Campana, Goccia d\'acqua, Moneta, Tamburo, Trombetta, Errore / buzzer, Ta-daa!, Pop, Whoosh, Applausi, Laser, Power-up) e i tuoi, sotto «I miei suoni caricati». Di serie ogni evento ha il suono della tabella, e il menù lo mostra scelto; «Nessun suono» lascia l\'alert in silenzio.',
       '«Immagine o video» mette una tua immagine o un tuo video accanto al testo. Suono e immagine partono insieme: una tua GIF col tuo suono.',
-      'Accanto a icona, suono e immagine ci sono «La mia icona…», «Carica un suono tuo», «Carica immagine/video tuo» e «Dalla libreria». Il file caricato si comprime, finisce nella tua libreria di «Effetti & suoni» e si assegna subito. Vale per tutti e cinque gli eventi, donazione compresa. Il file arriva a 60 MB. Il suono vuole un file audio, l\'immagine o video un\'immagine o un video, l\'icona un\'immagine; se sbagli tipo il pannello te lo dice. Un file caricato così diventa anche un comando in chat col nome del file, che solo i moderatori possono lanciare.',
+      'Accanto a icona, suono e immagine ci sono «La mia icona…», «Carica un suono tuo», «Carica immagine/video tuo» e «Dalla libreria». Il file caricato si comprime, finisce nella tua libreria di «Effetti e suoni» e si assegna subito. Vale per tutti e cinque gli eventi, donazione compresa. Il file arriva a 60 MB. Il suono vuole un file audio, l\'immagine o video un\'immagine o un video, l\'icona un\'immagine; se sbagli tipo il pannello te lo dice. Un file caricato così diventa anche un comando in chat col nome del file, che solo i moderatori possono lanciare.',
       '«Prova» salva e manda all\'overlay l\'alert di quell\'evento con valori finti: MarioRossi, 3 mesi, 500 bit, 42 spettatori, 5 nella valuta delle tue donazioni col messaggio «grande live!». Le prove sono del proprietario del canale. L\'overlay deve essere aperto, in OBS o in una scheda.',
     ] },
     { tabella: [

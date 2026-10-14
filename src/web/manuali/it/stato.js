@@ -77,7 +77,7 @@ export default {
     ] },
     { p: ['<strong>Quando non sei in onda</strong> vedi «Non sei in diretta» e due blocchi:'] },
     { ul: [
-      '«La prossima»: il giorno e l\'ora della prossima diretta, presi da «La tua settimana». Se è oggi, vedi anche quanti minuti o ore mancano. Sotto c\'è cosa fai e la categoria. Se la settimana è vuota, il proprietario vede un invito a scriverla e il tasto «La tua settimana». Come si compila sta nel <a href="/manuale/vetrina">manuale della vetrina</a>.',
+      '«La prossima»: il giorno e l\'ora della prossima diretta, presi da «Settimana». Se è oggi, vedi anche quanti minuti o ore mancano. Sotto c\'è cosa fai e la categoria. Se la settimana è vuota, il proprietario vede un invito a scriverla e il tasto «Settimana». Come si compila sta nel <a href="/manuale/vetrina">manuale della vetrina</a>.',
       '«L\'ultima»: quando è finita la diretta precedente, quanto è durata, il «picco spettatori» se c\'era un dato, i «nuovi follower» e i «messaggi». Il tasto «Tutte le dirette» porta alla scheda con tutti i rapporti.',
     ] },
     { p: ['Se il pannello non riesce a sapere se sei in onda, la carta dice «Adesso non riesco a sapere se sei in onda. Riprovo fra un minuto.» e riprova da sola.'] },
@@ -98,7 +98,7 @@ export default {
       'L\'interruttore vale sopra la modalità: da spento, il bot non risponde in nessun caso.',
       '<strong>Spegnerlo non cancella nulla.</strong> Comandi, monete, memoria e impostazioni restano, e quando lo riaccendi riparte da dove era rimasto.',
       'L\'interruttore e la modalità li usa anche un moderatore.',
-      'Se trasmetti su Kick o su YouTube, lo stato del collegamento con quelle chat sta nella carta «Le tue piattaforme» della scheda «Il tuo account».',
+      'Se trasmetti su Kick o su YouTube, lo stato del collegamento con quelle chat sta nella carta «Le tue piattaforme» della scheda «Accesso e dati».',
     ] },
     { p: ['Il proprietario di un canale Twitch vede anche la riga «Permessi:» con sei badge. Verde con la spunta vuol dire dato, giallo con «da concedere» vuol dire che manca.'] },
     { tabella: [
@@ -126,7 +126,7 @@ export default {
     { d: 'Ho cambiato la password di Twitch e il bot è sparito.', r: 'Twitch ha invalidato il permesso. Il bot prova a rinnovarlo da solo. Se non ci riesce compare la carta «Il bot è scollegato dalla chat»: premi «Ricollega i permessi», confermi su Twitch e il bot rientra.' },
     { d: 'Lo shoutout o <code>!ore</code> non funzionano.', r: 'Guarda la riga «Permessi:» nella carta «Il tuo bot». Se il badge è giallo con «da concedere», premi «Aggiorna i permessi».' },
     { d: 'Sono in onda ma la carta dice «Non sei in diretta».', r: 'La carta si aggiorna una volta al minuto. Aspetta un minuto, oppure passa a un\'altra finestra e torna: si aggiorna anche così.' },
-    { d: '«La prossima» non compare.', r: 'Viene da «La tua settimana». Se non hai scritto i giorni in cui vai in onda, il proprietario vede il tasto «La tua settimana» per compilarla.' },
+    { d: '«La prossima» non compare.', r: 'Viene da «Settimana». Se non hai scritto i giorni in cui vai in onda, il proprietario vede il tasto «Settimana» per compilarla.' },
     { d: 'Perché non vedo quanti spettatori ho?', r: 'Il numero degli spettatori lo dà solo Twitch. Su Kick e YouTube la carta mostra la durata e i numeri della chat.' },
     { d: 'Spegnere il bot cancella qualcosa?', r: 'No. Il bot esce dalla chat e basta: quando lo riaccendi ritrovi tutto.' },
     { d: 'Un moderatore può spegnere il bot?', r: 'Sì: l\'interruttore e la modalità li usa anche un moderatore. I permessi Twitch invece li dà solo il proprietario.' },

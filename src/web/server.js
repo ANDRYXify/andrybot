@@ -1239,7 +1239,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // piattaforma del canale: mai un indirizzo, mai i permessi di Twitch a chi e'
   // su Kick.
   const permessoPremi = (pd) => (pd?.piattaforma === 'kick'
-    ? 'Manca il permesso dei premi di Kick: nella scheda «Il tuo account», in «Le tue piattaforme», premi «Aggiorna i permessi di Kick».'
+    ? 'Manca il permesso dei premi di Kick: nella scheda «Accesso e dati», in «Le tue piattaforme», premi «Aggiorna i permessi di Kick».'
     : 'Manca il permesso dei punti canale: nella scheda «Stato» premi «Aggiorna i permessi».');
   // Il nome della piattaforma che ha rifiutato, per dirlo giusto.
   const nomeDi = (p) => ({ twitch: 'Twitch', kick: 'Kick', youtube: 'YouTube', discord: 'Discord' }[p] || p);
@@ -11466,7 +11466,7 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
             // piattaforma quando sono piu' d'una.
             const tg = (t) => telegram.inviaMessaggio(conf.token, chat.id, t).catch(() => {});
             const permessoMancante = {
-              kick: '🔒 Mi manca il permesso di Kick per cambiare titolo e categoria: dalla dashboard, Account → Il tuo account → Le tue piattaforme, premi «Aggiorna i permessi di Kick» sulla riga di Kick.',
+              kick: '🔒 Mi manca il permesso di Kick per cambiare titolo e categoria: dalla dashboard, Account → Accesso e dati → Le tue piattaforme, premi «Aggiorna i permessi di Kick» sulla riga di Kick.',
               twitch: '🔒 Mi manca il permesso Twitch per cambiare titolo e categoria: riautorizza dalla dashboard (Permessi).',
             };
             const valore = raw.replace(/^\/\S+\s*/, '').trim();

@@ -108,7 +108,7 @@ function oggetto(nome) {
 test('i percorsi dell\'editor dei moduli e della pagina di ascolto sono quelli del menu', () => {
   // i nomi in tutte e tre le lingue: l'editor parla la lingua del pannello
   const gruppi = new Set(Object.values(oggetto('T_GRUPPO')).flat());
-  const nomi = new Set([...gruppi, ...Object.values(oggetto('T_SCHEDA')).flat(), ...Object.values(oggetto('FAM_ETI')).flat(),
+  const nomi = new Set([...gruppi, ...Object.values(oggetto('T_SCHEDA')).flat(), ...Object.values(oggetto('T_FAMIGLIA')).flat(),
     ...[...APP.matchAll(/\{ id: '[a-z]+', nome: '([^']+)', parti: \[/g)].map((m) => m[1])]);
   const pulito = (x) => x.replace(/&amp;/g, '&').replace(/<[^>]+>/g, '').trim();
   const percorsi = [];

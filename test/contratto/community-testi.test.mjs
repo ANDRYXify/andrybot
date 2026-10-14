@@ -47,10 +47,10 @@ test('niente rimandi a schede che lo streamer non apre', () => {
 });
 
 test('il gruppo dei comandi si chiama come nel menù, nelle tre lingue', () => {
-  const g = tre(APP.slice(APP.indexOf('const T_GRUPPO')), 'pubblico');
-  const s = tre(APP.slice(APP.indexOf('const T_SCHEDA')), 'moduli');
-  const amp = (x) => x.replace(/&/g, '&amp;');
-  for (let i = 0; i < 3; i++) assert.ok(TG.includes(`<strong>${amp(g[i])} → ${s[i]}</strong>`), `${g[i]} → ${s[i]}`);
+  // Il percorso non si scrive a mano: lo costruisce percorso() dalle tabelle
+  // del menu, cosi' un nome cambiato li' cambia anche qui.
+  assert.equal((TG.match(/<strong>' \+ esc\(percorso\('moduli'\)\) \+ '<\/strong>/g) || []).length, 3, 'nelle tre lingue');
+  assert.ok(!/→ (Comandi|Commands|Comandos)<\/strong>/.test(TG), 'nessun percorso scritto a mano');
 });
 
 test('l\'interruttore del bot interattivo si chiama come si chiama, ovunque lo si nomini', () => {

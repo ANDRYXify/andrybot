@@ -12,15 +12,15 @@ export default {
   schede: ['giochi'],
   titolo: 'Manuale dei giochi e delle monete | SocialBot',
   h1: 'Manuale dei giochi e delle monete',
-  desc: 'Le monete della chat, ogni carta della scheda Giochi & classifiche, i comandi di gioco con costi e premi veri, le manche e i giochi da creare.',
+  desc: 'Le monete della chat, ogni carta della scheda Giochi, i comandi di gioco con costi e premi veri, le manche e i giochi da creare.',
   aggiornata: '2026-10-03',
   corpo: [
     { p: [
       'La chat ha una <strong>moneta</strong>: si guadagna guardando e scrivendo, si spende nei giochi. Il nome lo scegli tu, di base sono «monete».',
-      'Tutto si regola da «Chat e pubblico», voce «Giochi», nella scheda «Giochi & classifiche». Qui trovi prima ogni carta della scheda, poi i comandi in chat, come funziona ogni gioco e le manche.',
+      'Tutto si regola dalla scheda «Giochi», nel gruppo «Intrattenimento» del menù. Qui trovi prima ogni carta della scheda, poi i comandi in chat, come funziona ogni gioco e le manche.',
     ] },
 
-    { h2: 'Giochi & classifiche', scheda: 'giochi', p: [
+    { h2: 'Giochi', scheda: 'giochi', p: [
       'Minigiochi, monete e classifiche per la chat. Giochi, monete, classifiche e premio in VIP sono nel piano Essenziale, quello gratuito.',
       'La scheda la usano il proprietario del canale e i moderatori del pannello. Solo il proprietario vede la riga per aggiustare le monete a mano e il rimando per portare qui i punti da un altro bot.',
       'La scheda ha quattro parti, che scegli con le linguette sotto il titolo: «I giochi» (ogni gioco, chi aspetta di più, i giochi tuoi e quelli del sito), «Monete e classifica» (come si guadagnano, presenze e saluti, classifica e VIP), «Giochi automatici» e «Citazioni e battute». Il pannello si ricorda l\'ultima che hai aperto. La ricerca, il giro guidato e i link dalle altre schede aprono da soli la parte giusta.',
@@ -52,7 +52,7 @@ export default {
     ] },
     { p: [
       'Un comando che di serie è dei moderatori, come <code>!boss</code> o <code>!estrai</code>, resta dei moderatori: puoi solo restringere un comando, mai aprirlo a più persone.',
-      'Una famiglia spenta zittisce tutti i suoi comandi, anche quelli accesi, e il gioco lo dice appena lo apri. «Giochi in chat» e «Sorteggi» si accendono con «Attiva i minigiochi in chat», i giochi con la webcam e il puzzle nella scheda «Effetti & suoni», i giochi del sito nella carta «Giochi del sito andryxify.it».',
+      'Una famiglia spenta zittisce tutti i suoi comandi, anche quelli accesi, e il gioco lo dice appena lo apri. «Giochi in chat» e «Sorteggi» si accendono con «Attiva i minigiochi in chat», i giochi con la webcam e il puzzle nella scheda «Effetti e suoni», i giochi del sito nella carta «Giochi del sito andryxify.it».',
       'Gli stessi comandi, insieme a tutti gli altri comandi pronti del bot, stanno anche nella scheda «Comandi».',
       'Accanto al nome vedi quanto rende il gioco con i valori che hai scelto, e cambia mentre li muovi. La scritta diventa rossa quando un gioco a puntata comincia a creare monete, cioè ne restituisce più di 100 ogni 100 giocate, o quando la pesca, il boss o l\'arena automatici rendono più della presenza: in quel caso la scritta lo dice, con quanto dà la presenza.',
       'Dentro ogni gioco una riga dice coi numeri cosa succede davvero: quanto paga ogni tris della slot, quanto aspetta chi ha giocato, e quanto in più chi insiste, volta per volta. Cambia mentre scrivi.',
@@ -353,7 +353,7 @@ export default {
       ['<code>!ag</code>', '<code>!agentify</code>', 'tutti', 'Manda il comando ai giochi di andryxify.it.'],
     ] },
     { p: [
-      'I giochi con la webcam (ci stiamo lavorando: funzionano, ma possono cambiare) vogliono il tracking: nella scheda «Effetti & suoni», carta «Effetti dai gesti (webcam)», accendi «Attiva il tracking webcam» e «Minigiochi con la webcam (gesti ed espressioni)». Il puzzle vuole anche «Puzzle con le mani (pizzica e trascina)». Il tracking è spiegato nel <a href="/manuale/effetti">manuale di Effetti & suoni</a>.',
+      'I giochi con la webcam (ci stiamo lavorando: funzionano, ma possono cambiare) vogliono il tracking: nella scheda «Effetti e suoni», carta «Effetti dai gesti (webcam)», accendi «Attiva il tracking webcam» e «Minigiochi con la webcam (gesti ed espressioni)». Il puzzle vuole anche «Puzzle con le mani (pizzica e trascina)». Il tracking è spiegato nel <a href="/manuale/effetti">manuale di Effetti e suoni</a>.',
       'I comandi del giveaway sono spiegati nel <a href="/manuale/interazione">manuale di sondaggi, giveaway e penitenze</a>.',
     ] },
 
@@ -523,7 +523,7 @@ export default {
     ] },
     { p: [
       'Le stesse modalità le accende un Modulo, con l\'azione «Modalità della chat a tempo»: un premio a punti canale, un evento come un hype train o un raid, un comando tuo come <code>!festa $arg1</code>. La chat ci arriva da sola con <code>!sblocca</code>, pagando in monete.',
-      'Per un premio a punti canale c\'è anche una strada più corta: nella carta «Premi a tempo», in «Effetti & suoni», apri il premio e in «Cosa dura» scegli la modalità. Il premio la accende per il suo tempo, e se un mod l\'aveva già accesa i punti tornano a chi l\'ha riscattato (<a href="/manuale/effetti">manuale degli effetti</a>). Con <code>!tempi</code> chiunque vede quanto manca.',
+      'Per un premio a punti canale c\'è anche una strada più corta: nella carta «Premi a tempo», in «Effetti e suoni», apri il premio e in «Cosa dura» scegli la modalità. Il premio la accende per il suo tempo, e se un mod l\'aveva già accesa i punti tornano a chi l\'ha riscattato (<a href="/manuale/effetti">manuale degli effetti</a>). Con <code>!tempi</code> chiunque vede quanto manca.',
       'Se la modalità era già accesa da un mod, il bot non la tocca e alla fine non la spegne; con <code>off</code> ti dice che si spegne dalle impostazioni della chat di Twitch. Se la accendi di nuovo mentre corre, dura fino alla fine più lontana delle due. La fine resta segnata anche se il bot si riavvia.',
       'Chat lenta e soli follower non ci sono: le usa lo scudo, e uno sblocco per gioco non deve riaprirle in mezzo a un raid.',
       'I tre comandi stanno nella scheda «Comandi», nella famiglia «Modalità della chat a tempo»: lì li spegni, li rinomini o li riservi.',

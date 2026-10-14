@@ -39,8 +39,7 @@ test('il permesso dei premi della Musica si concede da dove si concede davvero',
 });
 
 test('la Regia ha un nome solo, e la sua guida elenca le azioni che ha davvero', () => {
-  const fam = pezzo('const FAM_ETI = {', '};');
-  assert.match(fam, /inonda: \['Regia', 'Control room', 'Realización'\]/, 'barra e scheda si chiamano uguale');
+  assert.doesNotMatch(pezzo('const FAMIGLIE = [', '];'), /'regia'/, 'la Regia e\' una voce del menu, non la testa di una famiglia con un altro nome');
   assert.match(APP, /regia: \['Regia', 'Control room', 'Realización'\]/);
   assert.match(APP, /'Usa le azioni rapide durante la live: clip, marker, pubblicità, raid\.', '[^']*clips, markers, ads, raids\.', '[^']*clips, marcadores, anuncios, raids\.'/);
 });

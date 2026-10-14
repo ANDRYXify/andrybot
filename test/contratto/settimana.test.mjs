@@ -90,7 +90,7 @@ test('i tasti «Vai a…» portano tutti da qualche parte', () => {
 });
 
 test('nel pannello la settimana ha una scheda sua, e le grafiche non la riscrivono', () => {
-  assert.match(APP, /\['settimana', 'Settimana'\],\n\s+\['grafiche', 'Grafiche'\],/);
+  assert.match(APP, /\['settimana', 'Settimana'\],\n\s+\['grafiche', 'Grafiche social'\],/);
   assert.ok(!/gr-riga-giorno/.test(APP), 'i giorni non si scrivono piu\' nelle grafiche');
   assert.match(APP, /function grafGiorni\(giorni\) \{\n\s+const gg = GIORNI_CORTI\(\);/, 'e sulla grafica escono nella lingua del pannello');
   assert.ok(!/GR_GIORNI/.test(APP), 'non c\'e\' piu\' l\'elenco in italiano e basta');

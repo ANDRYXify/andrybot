@@ -69,8 +69,7 @@ test('la modalita\' distruttiva arriva anche qui', () => {
 test('la scheda e\' registrata dove si registrano le schede', () => {
   assert.match(APP, /\{ id: 'discord', nome: 'Discord', parti: \[[^\]]*'dcfiltro'/);
   assert.match(APP, /SOLO_DISCORD = new Set\(\[[^\]]*'dcfiltro'/);
-  assert.match(APP, /\n {2}dcfiltro: \['Il filtro del server'/);
-  assert.match(APP, /\n {2}dcfiltro: \['Il filtro', /);
+  assert.match(APP, /\n {2}dcfiltro: \['Filtro', 'Filter', 'Filtro'\]/);
   assert.match(APP, /\n {2}dcfiltro: {4}_ico\(/);
   assert.match(APP, /\n {2}dcfiltro: \['Le parole, le liste/);
   assert.match(APP, /\n {2}dcfiltro: \{ serve: \[/);

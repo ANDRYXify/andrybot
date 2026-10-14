@@ -8,18 +8,18 @@ const { sondaggio: OPZ, predizione: ESI } = VOCI;
 
 export default {
   slug: 'interazione',
-  schede: ['sondaggi', 'giveaway', 'penitenze'],
+  schede: ['partite', 'sondaggi', 'giveaway', 'penitenze'],
   titolo: 'Manuale di sondaggi, giveaway, partite e penitenze | SocialBot',
   h1: 'Manuale di sondaggi, giveaway, partite e penitenze',
   desc: 'Sondaggi e predizioni di Twitch, giveaway con le probabilità che scegli tu, partite con la chat e penitenze contate a voce: ogni carta e ogni comando.',
   aggiornata: '2026-10-14',
   corpo: [
     { p: [
-      'Tre schede che servono <strong>mentre trasmetti</strong>. Stanno in «Chat e pubblico», voce «Giochi», accanto a «Giochi & classifiche».',
+      'Quattro schede che servono <strong>mentre trasmetti</strong>. Stanno nel gruppo «Intrattenimento» del menù, accanto a «Giochi»: «Partite», «Sondaggi e predizioni», «Giveaway» e «Penitenze».',
       'Il bot apre e chiude i voti di Twitch, pesa i biglietti del giveaway ed estrae, ascolta quello che dici durante una penitenza e tiene il conto.',
     ] },
 
-    { h2: 'Sondaggi & predizioni', scheda: 'sondaggi', p: [
+    { h2: 'Sondaggi e predizioni', scheda: 'sondaggi', p: [
       'Apri sondaggi e predizioni <strong>veri di Twitch</strong>, quelli che compaiono sopra il player, senza passare dalla dashboard di Twitch.',
       'Funzionano solo sui canali Twitch: su un canale di un\'altra piattaforma la scheda dice «Solo su Twitch» e non mostra i controlli. Twitch dà sondaggi e predizioni ai canali Affiliate e Partner. Sono nel piano Essenziale, quello gratuito.',
       'Dal pannello li apre solo il proprietario del canale. I moderatori li aprono dalla chat, con i comandi spiegati più sotto.',
@@ -71,7 +71,7 @@ export default {
 
     { h2: 'Giveaway', scheda: 'giveaway', p: [
       'Un\'estrazione a premi: la community entra scrivendo una parola in chat, e tu estrai il vincitore. L\'estrazione è pesata: puoi dare più possibilità ad abbonati e VIP, ma nessuno vince di sicuro.',
-      'È nel piano Essenziale, quello gratuito, e vuole «Attiva i minigiochi in chat» acceso nella scheda «Giochi & classifiche». Con i minigiochi spenti il giveaway non si apre, né dal pannello né dalla chat.',
+      'È nel piano Essenziale, quello gratuito, e vuole «Attiva i minigiochi in chat» acceso nella scheda «Giochi». Con i minigiochi spenti il giveaway non si apre, né dal pannello né dalla chat.',
       'Dal pannello lo gestisce solo il proprietario del canale. I moderatori lo gestiscono dalla chat.',
     ] },
 
@@ -128,11 +128,11 @@ export default {
       'Con il giveaway riservato, chi non è abbonato scrive la parola e non succede niente.',
       'Un giveaway alla volta per canale. Se ce n\'è uno aperto senza nessuno dentro, aprirne un altro lo sostituisce. Se qualcuno è già entrato, il pannello dice «C\'è già un giveaway aperto.».',
       'Il giveaway resta aperto anche se il bot si riavvia, con i partecipanti e i loro biglietti. Uno dimenticato aperto per più di sette giorni non viene più ripreso.',
-      'I comandi del giveaway li spegni, li rinomini o li riservi nella scheda «Giochi & classifiche», in «Gioco per gioco» fra «Gli altri comandi», oppure nella scheda «Comandi»: vedi il <a href="/manuale/giochi">manuale dei giochi</a>.',
+      'I comandi del giveaway li spegni, li rinomini o li riservi nella scheda «Giochi», in «Gioco per gioco» fra «Gli altri comandi», oppure nella scheda «Comandi»: vedi il <a href="/manuale/giochi">manuale dei giochi</a>.',
     ] },
 
-    { h2: 'Partite con la chat', scheda: 'giveaway', p: [
-      'Nella stessa scheda del giveaway, la carta «Partite con la chat» serve quando giochi CON la chat: una custom, un quiz, una lobby. Chi vuole giocare si mette in fila, tu scegli chi gioca ogni manche, dici com\'è andata e le monete arrivano da sole.',
+    { h2: 'Partite con la chat', scheda: 'partite', p: [
+      'La scheda «Partite» serve quando giochi CON la chat: una custom, un quiz, una lobby. Chi vuole giocare si mette in fila, tu scegli chi gioca ogni manche, dici com\'è andata e le monete arrivano da sole.',
       'Per aprirla scrivi il gioco e scegli le regole, poi premi «Apri la partita»: il bot lo annuncia in chat. Le regole che usi restano per la prossima volta.',
     ] },
     { tabella: [
@@ -163,7 +163,7 @@ export default {
       ['<code>!vince @primo @secondo</code>', 'streamer (e mod se lo permetti)', 'L\'esito della manche, in ordine d\'arrivo. <code>!vince nessuno</code> chiude senza piazzamenti. Vale anche <code>!esito</code>.'],
     ] },
     { p: [
-      'I comandi delle partite li rinomini, li spegni o li riservi come gli altri, nella scheda «Comandi» o in «Giochi & classifiche»: con un nome tuo diventano i tuoi comandi. Le partite partono solo con i minigiochi accesi.',
+      'I comandi delle partite li rinomini, li spegni o li riservi come gli altri, nella scheda «Comandi» o in «Giochi»: con un nome tuo diventano i tuoi comandi. Le partite partono solo con i minigiochi accesi.',
       'I punti canale di Twitch non si possono regalare da fuori: per questo i premi delle partite sono le monete del canale.',
     ] },
 
@@ -196,7 +196,7 @@ export default {
     { p: [
       'Premi «Salva»: il pannello scrive «Penitenze salvate». Anche l\'interruttore vale solo dopo «Salva».',
       'Con «La inventa l\'IA» non serve scrivere una lista: se l\'IA non risponde, il bot pesca dalla tua lista, e se è vuota da una lista pronta. Con «La scelgo dalla mia lista» e la lista vuota, la penitenza la inventa l\'IA.',
-      'Accanto al menù dell\'effetto, il tasto «Dalla libreria» ti fa scegliere un effetto dalla libreria e lo salva subito: «Effetto impostato ✓». Il tasto «Prova» fa sentire un suono pronto nel tuo browser, e manda un tuo effetto all\'overlay. Gli effetti si caricano nella scheda «Effetti & suoni», spiegata nel <a href="/manuale/effetti">manuale degli effetti</a>.',
+      'Accanto al menù dell\'effetto, il tasto «Dalla libreria» ti fa scegliere un effetto dalla libreria e lo salva subito: «Effetto impostato ✓». Il tasto «Prova» fa sentire un suono pronto nel tuo browser, e manda un tuo effetto all\'overlay. Gli effetti si caricano nella scheda «Effetti e suoni», spiegata nel <a href="/manuale/effetti">manuale degli effetti</a>.',
       'I controlli che si salvano da soli, come l\'effetto dalla libreria, la posizione del contatore e il premio di un modo, salvano insieme tutta la scheda così com\'è in quel momento, interruttore compreso.',
     ] },
 
@@ -258,7 +258,7 @@ export default {
     { ul: [
       `<strong>Il sondaggio non si apre.</strong> Se il pannello chiede un permesso, nella scheda «Stato» premi «Aggiorna i permessi». Se dice che Twitch l\'ha rifiutato, forse ce n\'è già uno aperto: chiudilo. Servono almeno ${OPZ.min} opzioni, e il canale deve essere Affiliate o Partner.`,
       '<strong>Il pannello dice «solo il proprietario del canale può farlo».</strong> Sondaggi, predizioni e giveaway dal pannello sono del proprietario. Da moderatore usa i comandi in chat.',
-      '<strong>Il giveaway non si apre.</strong> Accendi «Attiva i minigiochi in chat» nella scheda «Giochi & classifiche». Se c\'è già un giveaway con qualcuno dentro, chiudilo prima con «Annulla».',
+      '<strong>Il giveaway non si apre.</strong> Accendi «Attiva i minigiochi in chat» nella scheda «Giochi». Se c\'è già un giveaway con qualcuno dentro, chiudilo prima con «Annulla».',
       '<strong>Nessuno entra nel giveaway.</strong> Controlla la parola d\'ingresso: se l\'hai cambiata, in chat va scritta quella, non <code>!join</code>. Con «Riservato agli abbonati (sub)» acceso, chi non è abbonato non entra.',
       '<strong>Vincono sempre gli stessi.</strong> Guarda le probabilità: con numeri alti un gruppo piccolo di abbonati domina. Metti tutto a 1 e diventa un\'estrazione alla pari.',
       '<strong>Il riscatto non fa partire la penitenza.</strong> Controlla che le penitenze siano accese e salvate, e che nel menù di quel modo ci sia il premio giusto. Se hai rinominato il premio su Twitch, sceglilo di nuovo.',

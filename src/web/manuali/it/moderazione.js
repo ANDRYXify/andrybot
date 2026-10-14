@@ -12,8 +12,8 @@ export default {
   aggiornata: '2026-10-14',
   corpo: [
     { p: [
-      'La moderazione della chat sta in <em>Chat e pubblico</em> → <em>Moderazione</em>. Lo scudo ha una sezione tutta sua nel menu, <em>Scudo e attacchi</em>, con quattro schede: <strong>Scudo anti-bot</strong>, <strong>Gli attacchi</strong>, <strong>I tuoi follower</strong> e <strong>Registro dello scudo</strong>.',
-      '<em>Moderazione</em> pulisce i messaggi di tutti i giorni: parole vietate, spam, link. <em>Scudo anti-bot</em> difende il canale da follow-bot e hate-raid. <em>Gli attacchi</em> ti dà il rapporto di ogni attacco e ti avvisa quando lo scudo si alza. <em>Registro dello scudo</em> ti racconta ogni intervento e ti lascia decidere sui casi dubbi.',
+      'La moderazione della chat sta in <em>Chat</em> → <em>Moderazione</em>. Lo scudo ha una sezione tutta sua nel menu, <em>Scudo e attacchi</em>, con quattro schede: <strong>Scudo anti-bot</strong>, <strong>Attacchi</strong>, <strong>Follower</strong> e <strong>Registro</strong>.',
+      '<em>Moderazione</em> pulisce i messaggi di tutti i giorni: parole vietate, spam, link. <em>Scudo anti-bot</em> difende il canale da follow-bot e hate-raid. <em>Gli attacchi</em> ti dà il rapporto di ogni attacco e ti avvisa quando lo scudo si alza. <em>Registro</em> ti racconta ogni intervento e ti lascia decidere sui casi dubbi.',
       'Tutte e tre sono comprese nel pacchetto gratuito <strong>Essenziale</strong>. Lavorano sulla chat di <strong>Twitch</strong>. <em>Chat</em> lavora anche su <strong>Kick</strong>: su un canale di Kick la scheda c\'è, e <em>Scudo</em> e <em>Registro</em> mostrano «Solo su Twitch». Su YouTube e Discord le tre schede mostrano «Solo su Twitch».',
       'Il bot agisce con i permessi di moderazione che hai concesso tu: su Twitch, e su Kick con «Concedi la moderazione». Non c\'è un account estraneo da promuovere a moderatore.',
     ] },
@@ -144,7 +144,7 @@ export default {
       'Se il bot si riavvia durante un attacco, alla ripartenza riapre quello che aveva chiuso.',
       'Un\'ondata di follow che sembra gente vera, per esempio dopo una clip che gira o un raid, alza l\'attenzione ma da sola non chiude la chat. Per arrivare a «sotto attacco» serve la prova che è una macchina: follow a passo regolare, nomi usciti dalla stessa fabbrica, oppure un coro in chat.',
       'Il <strong>coro</strong> è lo stesso messaggio scritto da più account diversi nel giro di mezzo minuto: è la firma dell\'hate-raid. Lo scudo cancella quei messaggi e sale a «sotto attacco». I messaggi corti, come un saluto o un\'emote, non contano. Nei dieci minuti dopo un raid vero servono molti più account, perché chi arriva saluta tutto insieme.',
-      'Quando arriva un raid da almeno 50 spettatori il registro lo annota sempre. Se in «Gli attacchi» hai lasciato «Anche per i raid da 50 spettatori in su», ti arriva anche un avviso in privato che ti chiede di controllare che sia genuino.',
+      'Quando arriva un raid da almeno 50 spettatori il registro lo annota sempre. Se in «Attacchi» hai lasciato «Anche per i raid da 50 spettatori in su», ti arriva anche un avviso in privato che ti chiede di controllare che sia genuino.',
     ] },
 
     { p: ['<strong>Cosa scrive in chat</strong>, con «Avvisa in chat quando interviene» acceso:'] },
@@ -215,7 +215,7 @@ export default {
     { h2: 'Gli attacchi', scheda: 'attacchi', p: [
       'Ogni attacco col suo rapporto, come ti avviso quando lo scudo si alza, e un riepilogo degli altri scudi. La scheda la vede solo il proprietario del canale.',
       'Un attacco comincia quando lo scudo sale dalla calma e finisce quando ci torna. Un attacco che riprende entro 15 minuti dalla fine continua nello stesso rapporto. Gli attacchi restano per 180 giorni, fino a 200 per canale.',
-      'Quando arriva un attacco nuovo dal livello che hai scelto in su, sulla voce «Gli attacchi» del menu compare un puntino. Sparisce quando apri la scheda.',
+      'Quando arriva un attacco nuovo dal livello che hai scelto in su, sulla voce «Attacchi» del menu compare un puntino. Sparisce quando apri la scheda.',
       'Il puntino compare anche col pannello già aperto: il sito controlla ogni minuto, e se sei in un\'altra scheda te lo dice con un avviso. Con la scheda aperta e un attacco in corso, il rapporto si aggiorna da solo ogni venti secondi, e si ferma mentre scrivi.',
     ] },
 
@@ -267,7 +267,7 @@ export default {
       ['«A attacco finito, il rapporto»', 'Il racconto e i numeri dell\'attacco, su Telegram in privato e per mail, col link al rapporto intero. Solo per gli attacchi arrivati alla soglia.', 'Tutti e due accesi'],
     ] },
     { p: [
-      'Telegram in privato si collega nella scheda Telegram (vedi il <a href="/manuale/community">manuale delle community</a>), la mail nella scheda «Il tuo account». Finché mancano, la spunta resta grigia e accanto c\'è scritto dove collegarli.',
+      'Telegram in privato si collega nella scheda Telegram (vedi il <a href="/manuale/community">manuale delle community</a>), la mail nella scheda «Accesso e dati». Finché mancano, la spunta resta grigia e accanto c\'è scritto dove collegarli.',
     ] },
 
     { h3: 'Gli altri scudi' },
@@ -315,7 +315,7 @@ export default {
       'In massa non si toccano mai i protetti e gli account chiusi, i puliti non si tolgono e non si bloccano, e «Segna a posto» vale solo per chi è «Da guardare»: uno per uno si può tutto. Prima di partire il bot rilegge abbonati, VIP e moderatori, e di nuovo ogni dieci minuti: chi si abbona nel frattempo resta fuori. Se non riesce a leggerli non parte, e lo dice.',
       'Il lavoro in massa va avanti da solo anche se chiudi la pagina, e riprende dopo un riavvio. Sotto attacco si mette in pausa per lasciare Twitch alla difesa, e lo dice: «In pausa: lo scudo è sotto attacco». «Ferma» e «Riprendi» fanno quello che dicono. Al massimo ventimila per volta.',
       'Se Twitch blocca ma non vuole sbloccare, la persona resta bloccata e la trovi sotto, con il tasto «Sblocca».',
-      'Nel «Registro dello scudo» un lavoro in massa scrive una riga quando parte e una quando finisce, non una per account. Quello che fai da questa scheda non entra nel rapporto di un attacco.',
+      'Nel «Registro» un lavoro in massa scrive una riga quando parte e una quando finisce, non una per account. Quello che fai da questa scheda non entra nel rapporto di un attacco.',
     ] },
 
     { h3: 'Le ondate trovate' },
@@ -333,8 +333,8 @@ export default {
       '«Scarica questa lista (CSV)» scarica la lista che stai guardando, coi filtri che hai scelto e i motivi nella tua lingua, da aprire in un foglio di calcolo.',
     ] },
 
-    { h2: 'Registro dello scudo', scheda: 'registro', p: [
-      'Cosa ha fatto lo scudo, intervento per intervento, e i casi su cui decidi tu. Non ci sono impostazioni. Gli attacchi, ognuno col suo rapporto, stanno nella scheda «Gli attacchi»; la pulizia dei follower in «I tuoi follower».',
+    { h2: 'Registro', scheda: 'registro', p: [
+      'Cosa ha fatto lo scudo, intervento per intervento, e i casi su cui decidi tu. Non ci sono impostazioni. Gli attacchi, ognuno col suo rapporto, stanno nella scheda «Attacchi»; la pulizia dei follower in «Follower».',
       'Il registro lo vede solo il proprietario del canale. I moderatori del pannello non lo vedono.',
       'Le carte compaiono solo quando hanno qualcosa da mostrare. Se non si carica leggi «Non disponibile ora.»: ricarica la pagina.',
     ] },

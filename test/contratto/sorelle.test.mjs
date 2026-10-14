@@ -33,8 +33,12 @@ test('e `famigliaDi` e\' rimasta quella di prima', () => {
 });
 
 test('i nomi nella barra sono quelli che hai letto nel menu', () => {
-  assert.match(APP, /etichette: new Map\(g\.schede\.map\(\(\[sid, nome\]\) => \[sid, tScheda\(sid, nome\)\]\)\)/);
-  assert.match(APP, /f\.etichette\?\.get\(p\) \|\|/, 'e vincono su quelli lunghi');
+  assert.match(APP, /if \(f\) return \{ \.\.\.f, nome: tFamiglia\(f\.id, f\.nome\), etichetta: \(p\) => tScheda\(p\) \};/, 'dentro una famiglia, il nome di ogni parte');
+  assert.match(APP, /parti: g\.schede\.map\(\(\[sid\]\) => sid\), etichetta: voceDelMenu, dalGruppo: true/, 'fra le voci di un gruppo, il nome del menu');
+});
+
+test('una pagina con le sue parti non ha anche la barra del gruppo', () => {
+  assert.match(APP, /if \(SOTTO_SCHEDE\[id\]\) return null;/);
 });
 
 test('il cancello che lo guarda gira insieme agli altri', () => {

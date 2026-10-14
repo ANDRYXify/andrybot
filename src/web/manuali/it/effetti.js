@@ -1,6 +1,6 @@
 // © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
 // Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
-// Manuale: Effetti & suoni. La forma dei manuali e il perche' stanno in
+// Manuale: Effetti e suoni. La forma dei manuali e il perche' stanno in
 // src/web/manuali.js; le lingue in docs/LINGUE.md.
 
 export default {
@@ -11,10 +11,10 @@ export default {
   desc: 'Suoni, immagini e video da lanciare in chat, la libreria condivisa, effetti a un follow, ai bit o a un raid, i gesti della webcam e i premi a punti canale.',
   aggiornata: '2026-10-03',
   corpo: [
-    { h2: 'Effetti & suoni', scheda: 'effetti', p: [
+    { h2: 'Effetti e suoni', scheda: 'effetti', p: [
       'Qui carichi suoni, immagini, GIF e video e li fai partire nell\'overlay: da un comando in chat, da un follow, dai bit o da un raid, da un gesto davanti alla webcam o da un premio a punti canale. Ci sono anche otto effetti pronti, disegnati da noi. Gli stessi media li ritrovi negli alert, nel player, nei cartelli e in ogni campo che ha il pulsante «Dalla libreria».',
       'La scheda ha quattro parti, con le linguette sotto il titolo. <strong>«I tuoi effetti»</strong>: la libreria dei media, «Carica un effetto», gli effetti pronti e l\'elenco dei tuoi. <strong>«Per gli eventi»</strong>: cosa parte a un follow, a un abbonamento, ai bit, a un raid, a una donazione, al treno dell\'hype e quando un obiettivo arriva al traguardo. <strong>«Punti canale»</strong>: gli effetti sui premi di Twitch. <strong>«Webcam»</strong>: i gesti e le espressioni. Una modifica lasciata in una parte resta da salvare anche se passi a un\'altra.',
-      'La scheda sta nel gruppo «Scena & overlay» ed è compresa in ogni piano, anche in quello gratuito. Se leggi «Chiusa da andryxify», per il tuo canale è chiusa, e sotto c\'è il motivo quando c\'è.',
+      'La scheda sta nel gruppo «Scena e overlay» ed è compresa in ogni piano, anche in quello gratuito. Se leggi «Chiusa da andryxify», per il tuo canale è chiusa, e sotto c\'è il motivo quando c\'è.',
       'La usano il proprietario del canale e i moderatori. I premi a punti canale sono quelli della piattaforma del canale, Twitch o Kick, e chiedono il permesso dei suoi punti canale. Su un canale di Twitch con Kick collegato compaiono anche i premi di Kick, con accanto «Kick».',
       'Gli effetti compaiono in ogni overlay dove c\'è l\'elemento «Effetti a schermo». Il suono esce dalla diretta se nella sorgente Browser di OBS hai spuntato «Controlla l\'audio via OBS» (<a href="/manuale/overlay">manuale dell\'Overlay Studio</a>).',
     ] },
