@@ -147,6 +147,35 @@ prende comunque multistream e immagine di riserva da SocialBot. Lo Studio non
 promette di sostituire OBS per tutti: promette di non servire per la maggior
 parte.
 
+## Più potenza dall'hardware: tre livelli, non uno
+
+Il browser ha un tetto (sopra). Per chi vuole tutto l'hardware ci sono tre
+strade, in ordine di costo:
+
+1. **OBS come motore, comandato da SocialBot.** Il ponte della regia
+   (docs/REGIA-PONTE.md) parla già con OBS dal websocket pubblico, stabile fra
+   le versioni. Da lì SocialBot può creare e tenere allineate le scene (le
+   stesse dell'Overlay Studio, con l'overlay come sorgente browser), i filtri
+   audio e l'uscita verso il tramite con un gettone della sessione: la chiave
+   della piattaforma resta sul server. OBS porta tutto quello che il browser
+   non ha (audio di una sola applicazione su Windows, NVENC/QSV/AMF/VideoToolbox,
+   VST, NDI, camera virtuale, scorciatoie globali) e lo streamer non configura
+   niente a mano. Costo basso: nessun binario nostro da firmare e mantenere.
+2. **Un'applicazione nostra sul dispositivo** («il ponte di SocialBot»), solo
+   se le misure diranno che serve: per esempio l'unione di più connessioni
+   (wifi e telefono insieme) per le dirette in giro, o l'audio di una sola
+   applicazione su macOS senza OBS. Regole se si fa: si collega lei al server
+   (nessuna porta aperta sul pc), si abbina con una passkey o un codice breve,
+   esegue solo un elenco chiuso di comandi, si aggiorna da sola con firma
+   verificata. Costo vero: tre sistemi, firma su Windows e notarizzazione su
+   macOS, manutenzione a ogni sistema nuovo.
+3. **OSify**, dove tutto questo è già di casa (PipeWire, codificatori, QoS).
+
+In tutti e tre i casi il dispositivo dice al pannello cosa sa fare (scheda
+video, codificatori, audio per applicazione, camere) e lo Studio sceglie da
+sé: lo streamer non deve sapere cos'è NVENC. E il server resta un tramite:
+nessuna di queste strade gli aggiunge lavoro.
+
 ## Cose da verificare prima del codice (fase 0)
 
 - che cosa accettano davvero le tre piattaforme: codec (H.264, HEVC, AV1),
