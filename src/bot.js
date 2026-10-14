@@ -23,6 +23,7 @@ import { accorda } from './ai/genere.js';
 import * as registro from './features/comandi-registro.js';
 import * as personalizzati from './features/personalizzati.js';
 import * as giveaway from './features/giveaway.js';
+import * as partite from './features/partite.js';
 import * as watchtime from './features/watchtime.js';
 import * as comandibase from './features/comandibase.js';
 import * as presenze from './features/presenze.js';
@@ -1285,6 +1286,9 @@ export class BotManager {
     // giveaway / sorteggi (!giveaway, !join, !estrai) — segue l'add-on Giochi
     try { giveaway.tryGiveaway(cmdMsg, parla); }
     catch (e) { log.error(`#${login} giveaway:`, e?.message || e); }
+    // partite con la chat (!partita, !gioco, !scegli, !vince)
+    try { partite.tryPartita(cmdMsg, parla); }
+    catch (e) { log.error(`#${login} partite:`, e?.message || e); }
     // ore guardate / fedeltà (!ore, !classificaore)
     try { watchtime.tryComando(cmdMsg, parla); }
     catch (e) { log.error(`#${login} ore:`, e?.message || e); }

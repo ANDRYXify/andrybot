@@ -9,10 +9,10 @@ const { sondaggio: OPZ, predizione: ESI } = VOCI;
 export default {
   slug: 'interazione',
   schede: ['sondaggi', 'giveaway', 'penitenze'],
-  titolo: 'Manuale di sondaggi, giveaway e penitenze | SocialBot',
-  h1: 'Manuale di sondaggi, giveaway e penitenze',
-  desc: 'Sondaggi e predizioni di Twitch, il giveaway con le probabilità che scegli tu, le penitenze a punti canale contate a voce: ogni carta e ogni comando.',
-  aggiornata: '2026-09-30',
+  titolo: 'Manuale di sondaggi, giveaway, partite e penitenze | SocialBot',
+  h1: 'Manuale di sondaggi, giveaway, partite e penitenze',
+  desc: 'Sondaggi e predizioni di Twitch, il giveaway con le probabilità che scegli tu, le partite con la chat con fila e monete, le penitenze a punti canale contate a voce: ogni carta e ogni comando.',
+  aggiornata: '2026-10-14',
   corpo: [
     { p: [
       'Tre schede che servono <strong>mentre trasmetti</strong>. Stanno in «Chat e pubblico», voce «Giochi», accanto a «Giochi & classifiche».',
@@ -129,6 +129,42 @@ export default {
       'Un giveaway alla volta per canale. Se ce n\'è uno aperto senza nessuno dentro, aprirne un altro lo sostituisce. Se qualcuno è già entrato, il pannello dice «C\'è già un giveaway aperto.».',
       'Il giveaway resta aperto anche se il bot si riavvia, con i partecipanti e i loro biglietti. Uno dimenticato aperto per più di sette giorni non viene più ripreso.',
       'I comandi del giveaway li spegni, li rinomini o li riservi nella scheda «Giochi & classifiche», in «Gioco per gioco» fra «Gli altri comandi», oppure nella scheda «Comandi»: vedi il <a href="/manuale/giochi">manuale dei giochi</a>.',
+    ] },
+
+    { h2: 'Partite con la chat', scheda: 'giveaway', p: [
+      'Nella stessa scheda del giveaway, la carta «Partite con la chat» serve quando giochi CON la chat: una custom, un quiz, una lobby. Chi vuole giocare si mette in fila, tu scegli chi gioca ogni manche, dici com\'è andata e le monete arrivano da sole.',
+      'Per aprirla scrivi il gioco e scegli le regole, poi premi «Apri la partita»: il bot lo annuncia in chat. Le regole che usi restano per la prossima volta.',
+    ] },
+    { tabella: [
+      ['Regola', 'Di serie', 'Cosa fa'],
+      ['«Costo per entrare»', '0', 'Monete che si pagano entrando in fila. Tornano a chi esce senza aver giocato e a chi è ancora in fila quando la partita finisce. Chi è stato scelto le ha spese.'],
+      ['«Posti in fila»', '0', 'Quanti possono stare in fila insieme. Con 0 non c\'è limite.'],
+      ['«Monete per posto»', '100, 50, 25', 'Quante monete prende il primo, il secondo, il terzo e così via, fino a 20 posti.'],
+      ['«Monete a chi gioca»', '0', 'Arrivano a chiunque giochi la manche, oltre a quelle del posto.'],
+      ['«Chiede il nome nel gioco»', 'spento', 'Si entra scrivendo anche il nome nel gioco: <code>!gioco NomeNelGioco</code>. Lo vedi accanto al nome nella fila.'],
+      ['«Solo abbonati»', 'spento', 'In fila solo chi è abbonato, i moderatori e tu.'],
+      ['«Chi ha giocato torna in fondo alla fila»', 'acceso', 'Finita la manche, chi ha giocato si rimette in coda da solo, senza pagare di nuovo. Spento, esce e rientra se vuole.'],
+      ['«Anche i moderatori possono comandarla»', 'spento', 'I moderatori possono aprire, scegliere, dare l\'esito e chiudere: in chat e da qui, se hai dato loro l\'accesso al pannello. Lo accendi e lo spegni solo tu.'],
+    ] },
+    { p: [
+      '<strong>Una manche.</strong> Scegli quanti giocano e premi «I primi in fila» o «A caso», oppure spunta i nomi nella fila e premi «Questi». Chi è scelto esce dalla fila e il bot dice in chat a chi tocca. Finita la manche, tocca i giocatori nell\'ordine d\'arrivo e premi «Dai l\'esito»: le monete arrivano subito e il bot dice la classifica della manche. «Nessun piazzamento» chiude la manche dando solo le monete di chi gioca.',
+      'Una manche alla volta: finché quella aperta non ha l\'esito, non se ne sceglie un\'altra.',
+      '<strong>Tornare indietro.</strong> «Torna indietro di un passo» annulla l\'ultima cosa fatta. Se l\'ultima manche ha l\'esito, toglie esattamente le monete date e la riapre, così dai l\'esito giusto. Se non ce l\'ha, annulla la scelta e i giocatori tornano in testa alla fila.',
+      '<strong>Finire.</strong> «Finisci la partita» fa dire al bot la classifica della serata e rende le monete a chi era ancora in fila e aveva pagato. La partita resta aperta anche se il bot si riavvia; una dimenticata per più di due giorni non viene più ripresa.',
+      'Sotto la fila c\'è la «Classifica della serata», con le monete e le vittorie di ognuno. Le regole di una partita aperta si cambiano in «Regole di questa partita», tranne il costo: chi ha pagato ha pagato quello.',
+    ] },
+    { tabella: [
+      ['Comando', 'Chi', 'Cosa fa'],
+      ['<code>!gioco</code>', 'tutti', 'Entra in fila. Con «Chiede il nome nel gioco», <code>!gioco NomeNelGioco</code>. Vale anche <code>!iscrivimi</code>. Chi entra non riceve risposta, per non riempire la chat: la riceve se qualcosa non va.'],
+      ['<code>!esco</code>', 'tutti', 'Esce dalla fila e riprende le monete pagate. Vale anche <code>!esci</code>.'],
+      ['<code>!lista</code>', 'tutti', 'Dice a che posto sei, quanti sono in fila e chi gioca adesso. Vale anche <code>!fila</code>.'],
+      ['<code>!partita nome del gioco</code>', 'streamer (e mod se lo permetti)', 'Apre la partita con le ultime regole. <code>!partita chiudi</code> e <code>!partita apri</code> chiudono e riaprono la fila, <code>!partita annulla</code> torna indietro di un passo, <code>!partita fine</code> chiude la serata. Senza permesso, dice com\'è la partita.'],
+      ['<code>!scegli 4</code>', 'streamer (e mod se lo permetti)', 'I primi quattro in fila giocano. <code>!scegli caso 4</code> ne prende quattro a caso, <code>!scegli @anna @bruno</code> per nome.'],
+      ['<code>!vince @primo @secondo</code>', 'streamer (e mod se lo permetti)', 'L\'esito della manche, in ordine d\'arrivo. <code>!vince nessuno</code> chiude senza piazzamenti. Vale anche <code>!esito</code>.'],
+    ] },
+    { p: [
+      'I comandi delle partite li rinomini, li spegni o li riservi come gli altri, nella scheda «Comandi» o in «Giochi & classifiche»: con un nome tuo diventano i tuoi comandi. Le partite partono solo con i minigiochi accesi.',
+      'I punti canale di Twitch non si possono regalare da fuori: per questo i premi delle partite sono le monete del canale.',
     ] },
 
     { h2: 'Penitenze', scheda: 'penitenze', p: [

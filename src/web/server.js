@@ -84,6 +84,7 @@ import * as donaMedia from '../features/donazioni-media.js';
 import * as spotify from '../features/spotify.js';
 import * as musicaOverlayFeat from '../features/musica-overlay.js';
 import * as giveaway from '../features/giveaway.js';
+import * as partite from '../features/partite.js';
 import * as webauthn from './webauthn.js';
 import { comprimi, convertiPerEmote, svgInPng, LATO_LIBRERIA, normChiave } from '../features/compress.js';
 import { StudioEngine, QUALITA as STUDIO_QUALITA } from '../features/studio.js';
@@ -7047,6 +7048,72 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
   // ------------------------------------------------------------ GIVEAWAY (dal pannello)
   // Stato in memoria condiviso col bot (stesso processo). Gli spettatori entrano
   // con !join in chat; lo streamer apre/estrae/annulla da qui. Si apre solo con i minigiochi accesi.
+  // PARTITE CON LA CHAT (features/partite.js). Le comanda lo streamer; i
+  // moderatori delegati solo se lui ha acceso «anche i moderatori», e chi la
+  // concede e la toglie e' solo lui. Quello che si fa dal pannello si dice in
+  // chat con le stesse parole dei comandi (partite.FRASI).
+  const partitaChi = (req) => {
+    const u = currentUser(req);
+    return { login: u.login, owner: isOwner(req) };
+  };
+  const partitaPorta = (req, res) => {
+    const c = partitaChi(req);
+    if (!c.owner && !partite.puoComandare(c.login, { isMod: true })) {
+      res.status(403).json({ errore: 'La partita la comanda lo streamer: può dare il permesso ai moderatori.' });
+      return null;
+    }
+    return c;
+  };
+  const partitaDi = (r, frase) => (login) => { if (r.ok && frase) { try { manager.say(login, frase); } catch { /* il bot non e' in chat */ } } };
+  const ERRORI_PARTITA = {
+    'giochi-spenti': 'Le partite partono solo con i minigiochi accesi: in «Giochi & classifiche» accendi «Attiva i minigiochi in chat».',
+    'gia-aperta': 'C\'è già una partita aperta.',
+    nessuna: 'Nessuna partita aperta.',
+    'manche-aperta': 'La manche è ancora aperta: dai l\'esito o annullala.',
+    'fila-vuota': 'La fila è vuota.',
+    'non-in-fila': 'Qualcuno non è in fila.',
+    'nessuna-manche': 'Nessuna manche in corso.',
+    'non-giocava': 'Qualcuno non giocava questa manche.',
+  };
+  const rispondiPartita = (res, login, r) => (r.ok ? res.json({ ...r, stato: partite.stato(login) })
+    : res.status(400).json({ ...r, codice: r.errore, errore: ERRORI_PARTITA[r.errore] || 'Non riuscito.' }));
+  app.get('/api/streamer/partita', requireLogin, (req, res) => {
+    const c = partitaChi(req);
+    res.json({ ...partite.stato(c.login), puoi: c.owner || partite.puoComandare(c.login, { isMod: true }), proprietario: c.owner, limiti: partite.LIMITI });
+  });
+  app.post('/api/streamer/partita/:mossa', requireLogin, (req, res) => {
+    const c = partitaPorta(req, res);
+    if (!c) return;
+    const b = req.body || {};
+    const login = c.login;
+    let r;
+    let frase = '';
+    switch (req.params.mossa) {
+      case 'apri': {
+        const regole = { ...(b.regole || {}) };
+        if (!c.owner) regole.staff = partite.regoleDi(login).staff;   // il permesso ai moderatori lo da' solo lo streamer
+        r = partite.apri(login, { nome: b.nome, regole });
+        if (r.ok) frase = partite.FRASI.apertura(login, r);
+        break;
+      }
+      case 'regole': {
+        const regole = { ...(b.regole || {}) };
+        if (!c.owner) delete regole.staff;
+        r = partite.cambiaRegole(login, regole);
+        break;
+      }
+      case 'iscrizioni': r = partite.iscrizioni(login, b.aperta === true); if (r.ok) frase = partite.FRASI.iscrizioni(login, r.aperta); break;
+      case 'scegli': r = partite.scegli(login, { quanti: b.quanti, modo: b.modo === 'caso' ? 'caso' : 'fila', chi: Array.isArray(b.chi) ? b.chi : null }); if (r.ok) frase = partite.FRASI.scelta(login, r); break;
+      case 'esito': r = partite.esito(login, Array.isArray(b.ordine) ? b.ordine : []); if (r.ok) frase = partite.FRASI.esito(login, r); break;
+      case 'annulla': r = partite.annulla(login); if (r.ok) frase = partite.FRASI.annullo(login, r); break;
+      case 'togli': r = partite.esci(login, b.user); break;
+      case 'fine': r = partite.fine(login); if (r.ok) frase = partite.FRASI.fine(login, r); break;
+      default: return res.status(404).json({ errore: 'mossa sconosciuta' });
+    }
+    partitaDi(r, b.annuncia === false ? '' : frase)(login);
+    rispondiPartita(res, login, r);
+  });
+
   app.get('/api/giveaway/stato', requireOwner, (req, res) => {
     res.json(giveaway.stato(currentUser(req).login));
   });

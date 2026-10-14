@@ -87,6 +87,16 @@ comandi diversi da quelli della riga italiana.
   en: Deleting your account during an attack stops the shield right away: no actions left in line, and nothing writes to the log afterwards.
   es: Al borrar tu cuenta durante un ataque, el escudo se detiene al momento: ninguna acción queda en cola y nada vuelve a escribir en el registro después.
 
+- [importante] Partite con la chat: chi vuole giocare si mette in fila con !gioco, tu scegli chi gioca ogni manche e dai l'esito, le monete arrivano da sole. [vai: giveaway]
+  en: Games with chat: whoever wants to play joins the queue with !gioco, you pick who plays each round and give the result, and the coins arrive by themselves.
+  es: Partidas con el chat: quien quiere jugar entra en la fila con !gioco, eliges quién juega cada ronda y das el resultado, y las monedas llegan solas.
+  > Giochi con la chat, e le monete arrivano da sole
+  > Una custom, un quiz, una lobby: la fila si fa da sola in chat, tu scegli chi gioca e dici com'è andata. Puoi far pagare l'ingresso, dare monete per posto e lasciare la partita anche ai moderatori.
+  en> Games with chat, and the coins arrive by themselves
+  en> A custom lobby, a quiz: the queue builds itself in chat, you pick who plays and say how it went. You can charge an entry fee, give coins per place and let moderators run the game too.
+  es> Partidas con el chat, y las monedas llegan solas
+  es> Una partida personalizada, un quiz: la fila se forma sola en el chat, eliges quién juega y dices cómo fue. Puedes cobrar la entrada, dar monedas por puesto y dejar la partida también a los moderadores.
+
 ## 2026-10-08
 
 - [importante] Lo scudo ha una sezione sua, Scudo e attacchi: ogni attacco ha il suo rapporto, con grafico, livelli, chi c'era e cosa gli è stato fatto, e ti avviso in privato su Telegram o per mail. [vai: attacchi]

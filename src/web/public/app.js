@@ -13385,7 +13385,152 @@ function pannelloGiveaway() {
         </div>
         <button class="btn spazio-sopra" id="gw-apri">${L('Apri il giveaway', 'Open the giveaway', 'Abrir el sorteo')}</button>
       </div>
+    </div>
+    <div class="carta" id="partita-carta">
+      <h2>${_hIco(ICO.giochi)}${L('Partite con la chat', 'Games with chat', 'Partidas con el chat')}</h2>
+      <p>${L('Giochi con la chat (una custom, un quiz): chi vuole si mette in fila con <code>!gioco</code>, tu scegli chi gioca ogni manche, dici com\'è andata e le monete arrivano da sole.', 'You play with chat (a custom lobby, a quiz): whoever wants joins the queue with <code>!gioco</code>, you pick who plays each round, say how it went and the coins arrive by themselves.', 'Juegas con el chat (una partida personalizada, un quiz): quien quiere entra en la fila con <code>!gioco</code>, eliges quién juega cada ronda, dices cómo fue y las monedas llegan solas.')}</p>
+      <div id="partita-box" class="spazio-sopra">${attesaHtml()}</div>
     </div>`);
+}
+
+let _partita = null;
+let _partitaOrdine = [];
+let _partitaScelti = new Set();
+let _partitaGiro = null;
+const _ptNum = (id, d = 0) => { const n = parseInt(_g(id)?.value, 10); return Number.isFinite(n) ? n : d; };
+
+function _partitaRegoleForm(r, proprietario) {
+  const ck = (id, on, testo, spento = false) => `<label class="riga-check"><input type="checkbox" id="${id}"${on ? ' checked' : ''}${spento ? ' disabled' : ''}> ${testo}</label>`;
+  return `
+    <div class="griglia-campi">
+      <div><label class="campo" for="pt-costo">${L('Costo per entrare', 'Entry cost', 'Coste de entrada')} <span class="tenue">(${nomeMonetaUI()}, ${L('0 = gratis', '0 = free', '0 = gratis')})</span></label><input type="number" id="pt-costo" min="0" value="${Number(r.costo) || 0}"></div>
+      <div><label class="campo" for="pt-max">${L('Posti in fila', 'Queue spots', 'Puestos en la fila')} <span class="tenue">(${L('0 = senza limite', '0 = no limit', '0 = sin límite')})</span></label><input type="number" id="pt-max" min="0" value="${Number(r.max) || 0}"></div>
+      <div><label class="campo" for="pt-punti">${L('Monete per posto', 'Coins per place', 'Monedas por puesto')} <span class="tenue">(${L('primo, secondo, terzo…', 'first, second, third…', 'primero, segundo, tercero…')})</span></label><input type="text" id="pt-punti" value="${esc((r.punti || []).join(', '))}" placeholder="100, 50, 25"></div>
+      <div><label class="campo" for="pt-part">${L('Monete a chi gioca', 'Coins for playing', 'Monedas por jugar')}</label><input type="number" id="pt-part" min="0" value="${Number(r.partecipazione) || 0}"></div>
+    </div>
+    ${ck('pt-nick', r.nick, L('Chiede il nome nel gioco (<code>!gioco TuoNome</code>)', 'Asks for the in-game name (<code>!gioco YourName</code>)', 'Pide el nombre en el juego (<code>!gioco TuNombre</code>)'))}
+    ${ck('pt-sub', r.soloSub, L('Solo abbonati', 'Subscribers only', 'Solo suscriptores'))}
+    ${ck('pt-rot', r.rotazione !== false, L('Chi ha giocato torna in fondo alla fila', 'Whoever played goes back to the end of the queue', 'Quien jugó vuelve al final de la fila'))}
+    ${ck('pt-staff', r.staff, L('Anche i moderatori possono comandarla (in chat e da qui)', 'Moderators can run it too (in chat and from here)', 'Los moderadores también pueden llevarla (en el chat y desde aquí)'), !proprietario)}`;
+}
+function _partitaRegoleLette() {
+  return {
+    costo: _ptNum('pt-costo'), max: _ptNum('pt-max'), partecipazione: _ptNum('pt-part'),
+    punti: String(_g('pt-punti')?.value || '').split(/[,;\s]+/).map((x) => parseInt(x, 10)).filter((n) => Number.isFinite(n) && n >= 0),
+    nick: !!_g('pt-nick')?.checked, soloSub: !!_g('pt-sub')?.checked, rotazione: !!_g('pt-rot')?.checked, staff: !!_g('pt-staff')?.checked,
+  };
+}
+
+async function _partitaMossa(mossa, body = {}) {
+  const r = await api('/api/streamer/partita/' + mossa, { method: 'POST', body });
+  if (r?.stato) { _partita = { ..._partita, ...r.stato }; _partitaDisegna(); }
+  return r;
+}
+
+function _partitaDisegna() {
+  const box = _g('partita-box');
+  if (!box) return;
+  const d = _partita || {};
+  if (!d.puoi) { box.innerHTML = `<p class="tenue">${L('La partita la comanda lo streamer: può dare il permesso ai moderatori.', 'The streamer runs the game: they can allow moderators.', 'La partida la lleva el streamer: puede dar permiso a los moderadores.')}</p>`; return; }
+  if (!d.attiva) {
+    box.innerHTML = `
+      <label class="campo" for="pt-nome">${L('Gioco', 'Game', 'Juego')}</label>
+      <input type="text" id="pt-nome" class="campo-largo" maxlength="60" placeholder="${L('es. Fortnite, Among Us, un quiz', 'e.g. Fortnite, Among Us, a quiz', 'p. ej. Fortnite, Among Us, un quiz')}">
+      ${_partitaRegoleForm(d.regole || {}, d.proprietario)}
+      <p class="spazio-sopra"><button class="btn" id="pt-apri">${L('Apri la partita', 'Open the game', 'Abrir la partida')}</button></p>`;
+    _g('pt-apri').onclick = () => conErrore(async () => {
+      await _partitaMossa('apri', { nome: _g('pt-nome').value, regole: _partitaRegoleLette() });
+      toast(L('Partita aperta: il bot lo dice in chat.', 'Game open: the bot says so in chat.', 'Partida abierta: el bot lo dice en el chat.'));
+    });
+    return;
+  }
+  const inGioco = d.inGioco;
+  const fila = d.fila || [];
+  const nome = (x) => `${esc(x.display || x.user)}${x.nick ? `&nbsp;<span class="tenue">(${esc(x.nick)})</span>` : ''}`;
+  const ordine = _partitaOrdine.filter((u) => inGioco?.giocatori.some((g) => g.user === u));
+  const manche = inGioco ? `
+    <div class="riquadro-info spazio-sopra">
+      <p><strong>${L('Manche', 'Round', 'Ronda')} ${inGioco.n}</strong>. ${L('Tocca i giocatori nell\'ordine d\'arrivo, poi «Dai l\'esito».', 'Tap the players in finishing order, then «Give the result».', 'Toca a los jugadores en orden de llegada y luego «Dar el resultado».')}</p>
+      <div class="riga-flessibile spazio-sopra">${inGioco.giocatori.map((g) => { const i = ordine.indexOf(g.user); return `<button class="btn ${i >= 0 ? '' : 'secondario'} mini" data-pt-posto="${esc(g.user)}">${i >= 0 ? `${i + 1}° ` : ''}${nome(g)}</button>`; }).join('')}</div>
+      <div class="riga-flessibile spazio-sopra">
+        <button class="btn" id="pt-esito">${L('Dai l\'esito', 'Give the result', 'Dar el resultado')}</button>
+        <button class="btn secondario" id="pt-nessuno">${L('Nessun piazzamento', 'No placings', 'Sin puestos')}</button>
+      </div>
+    </div>` : `
+    <div class="riga-flessibile spazio-sopra">
+      <label class="campo-piccola" for="pt-quanti">${L('Quanti giocano', 'How many play', 'Cuántos juegan')}</label>
+      <input type="number" id="pt-quanti" min="1" max="${d.limiti?.scegliMax || 100}" value="${Math.min(Math.max(1, fila.length), 4) || 1}" style="max-width:5rem">
+      <button class="btn" id="pt-scegli-fila">${L('I primi in fila', 'First in queue', 'Los primeros de la fila')}</button>
+      <button class="btn secondario" id="pt-scegli-caso">${L('A caso', 'At random', 'Al azar')}</button>
+      ${_partitaScelti.size ? `<button class="btn secondario" id="pt-scegli-nomi">${L('Questi', 'These', 'Estos')} (${_partitaScelti.size})</button>` : ''}
+    </div>`;
+  const righe = fila.map((x) => `<tr>
+      ${inGioco ? '' : `<td><input type="checkbox" data-pt-sel="${esc(x.user)}"${_partitaScelti.has(x.user) ? ' checked' : ''} aria-label="${esc(L('Scegli', 'Pick', 'Elegir'))} ${esc(x.display || x.user)}"></td>`}
+      <td>${x.posto}°</td><td>${nome(x)}${x.pagato ? ` <span class="badge">${L('pagato', 'paid', 'pagado')}</span>` : ''}</td>
+      <td><button class="btn secondario mini" data-pt-togli="${esc(x.user)}">${L('Togli', 'Remove', 'Quitar')}</button></td></tr>`).join('');
+  const cl = (d.classifica || []).slice(0, 10).map((t, i) => `<tr><td>${i + 1}°</td><td>${esc(t.display || t.user)}</td><td>${t.monete}</td><td>${t.vittorie}</td></tr>`).join('');
+  box.innerHTML = `
+    <p><strong>${esc(d.nome || L('Partita', 'Game', 'Partida'))}</strong> · ${fila.length} ${L('in fila', 'in queue', 'en la fila')} · ${d.manche} ${L('manche', 'rounds', 'rondas')}
+      · <span class="badge ${d.aperta ? 'verde' : 'giallo'}">${d.aperta ? L('fila aperta', 'queue open', 'fila abierta') : L('fila chiusa', 'queue closed', 'fila cerrada')}</span></p>
+    ${manche}
+    <h3 class="spazio-sopra">${L('La fila', 'The queue', 'La fila')}</h3>
+    ${fila.length ? `<div class="scorrevole"><table class="tabella"><tbody>${righe}</tbody></table></div>` : `<p class="tenue">${L('Nessuno in fila: in chat si entra con', 'Nobody in queue: in chat people join with', 'Nadie en la fila: en el chat se entra con')} <code>!gioco</code>.</p>`}
+    ${cl ? `<h3 class="spazio-sopra">${L('Classifica della serata', 'Tonight\'s ranking', 'Clasificación de la noche')}</h3>
+      <div class="scorrevole"><table class="tabella"><thead><tr><th></th><th>${L('Chi', 'Who', 'Quién')}</th><th>${esc(nomeMonetaUI())}</th><th>${L('Vittorie', 'Wins', 'Victorias')}</th></tr></thead><tbody>${cl}</tbody></table></div>` : ''}
+    <details class="spazio-sopra"><summary>${L('Regole di questa partita', 'This game\'s rules', 'Reglas de esta partida')}</summary>
+      ${_partitaRegoleForm(d.regole || {}, d.proprietario)}
+      <p class="suggerimento">${L('Il costo resta quello con cui è stata aperta: chi ha pagato ha pagato quello.', 'The cost stays the one it opened with: whoever paid, paid that.', 'El coste sigue siendo el de la apertura: quien pagó, pagó eso.')}</p>
+      <button class="btn secondario mini" id="pt-regole">${L('Salva le regole', 'Save the rules', 'Guardar las reglas')}</button>
+    </details>
+    <div class="riga-flessibile spazio-sopra">
+      <button class="btn secondario" id="pt-iscr">${d.aperta ? L('Chiudi la fila', 'Close the queue', 'Cerrar la fila') : L('Riapri la fila', 'Reopen the queue', 'Reabrir la fila')}</button>
+      <button class="btn secondario" id="pt-annulla">${L('Torna indietro di un passo', 'Undo one step', 'Deshacer un paso')}</button>
+      <button class="btn pericolo" id="pt-fine">${L('Finisci la partita', 'End the game', 'Terminar la partida')}</button>
+    </div>`;
+  const costo = _g('pt-costo'); if (costo) costo.disabled = true;
+  box.querySelectorAll('[data-pt-posto]').forEach((b) => { b.onclick = () => { const u = b.dataset.ptPosto; const i = _partitaOrdine.indexOf(u); if (i >= 0) _partitaOrdine.splice(i, 1); else _partitaOrdine.push(u); _partitaDisegna(); }; });
+  box.querySelectorAll('[data-pt-sel]').forEach((c) => { c.onchange = () => { if (c.checked) _partitaScelti.add(c.dataset.ptSel); else _partitaScelti.delete(c.dataset.ptSel); _partitaDisegna(); }; });
+  box.querySelectorAll('[data-pt-togli]').forEach((b) => { b.onclick = () => conErrore(async () => { await _partitaMossa('togli', { user: b.dataset.ptTogli }); }); });
+  const su = (id, f) => { const b = _g(id); if (b) b.onclick = () => conErrore(f); };
+  su('pt-esito', async () => { await _partitaMossa('esito', { ordine: ordine }); _partitaOrdine = []; toast(L('Esito dato: le monete sono arrivate.', 'Result given: the coins arrived.', 'Resultado dado: las monedas llegaron.')); });
+  su('pt-nessuno', async () => { await _partitaMossa('esito', { ordine: [] }); _partitaOrdine = []; });
+  su('pt-scegli-fila', async () => { await _partitaMossa('scegli', { quanti: _ptNum('pt-quanti', 1), modo: 'fila' }); _partitaScelti = new Set(); });
+  su('pt-scegli-caso', async () => { await _partitaMossa('scegli', { quanti: _ptNum('pt-quanti', 1), modo: 'caso' }); _partitaScelti = new Set(); });
+  su('pt-scegli-nomi', async () => { await _partitaMossa('scegli', { chi: [..._partitaScelti] }); _partitaScelti = new Set(); });
+  su('pt-iscr', async () => { await _partitaMossa('iscrizioni', { aperta: !d.aperta }); });
+  su('pt-regole', async () => { await _partitaMossa('regole', { regole: _partitaRegoleLette() }); toast(L('Regole salvate.', 'Rules saved.', 'Reglas guardadas.')); });
+  su('pt-annulla', async () => {
+    if (!(await chiediSe({ titolo: L('Torno indietro di un passo?', 'Undo one step?', '¿Deshago un paso?'),
+      testo: L('Se l\'ultima manche ha l\'esito, le monete date tornano indietro e la manche si riapre. Se non ce l\'ha, i giocatori tornano in testa alla fila.', 'If the last round has a result, the coins given go back and the round reopens. If not, the players go back to the front of the queue.', 'Si la última ronda tiene resultado, las monedas dadas vuelven y la ronda se reabre. Si no, los jugadores vuelven al principio de la fila.'),
+      si: L('Torna indietro', 'Undo', 'Deshacer') }))) return;
+    await _partitaMossa('annulla'); _partitaOrdine = [];
+  });
+  su('pt-fine', async () => {
+    if (!(await chiediSe({ titolo: L('Finisco la partita?', 'End the game?', '¿Termino la partida?'), pericolo: true,
+      testo: L('Il bot dice la classifica in chat. Chi è ancora in fila e aveva pagato si riprende le monete.', 'The bot posts the ranking in chat. Whoever is still in queue and paid gets the coins back.', 'El bot dice la clasificación en el chat. Quien sigue en la fila y pagó recupera las monedas.'),
+      si: L('Finisci', 'End it', 'Terminar') }))) return;
+    await _partitaMossa('fine'); _partita = { ..._partita, attiva: false }; caricaPartita();
+  });
+}
+
+async function caricaPartita() {
+  const box = _g('partita-box');
+  if (!box) { clearInterval(_partitaGiro); _partitaGiro = null; return; }
+  if (DEMO) {
+    _partita = { puoi: true, proprietario: true, attiva: true, aperta: true, nome: 'Fortnite', manche: 1, limiti: { scegliMax: 100 },
+      regole: { costo: 0, max: 0, punti: [100, 50, 25], partecipazione: 5, nick: true, soloSub: false, rotazione: true, staff: false },
+      fila: [{ posto: 1, user: 'lucia', display: 'Lucia', nick: 'LuxGG' }, { posto: 2, user: 'marco', display: 'Marco', nick: 'Marko' }],
+      inGioco: { n: 2, giocatori: [{ user: 'gina', display: 'Gina', nick: 'Ginny' }, { user: 'ugo', display: 'Ugo', nick: 'U90' }] },
+      classifica: [{ user: 'gina', display: 'Gina', monete: 105, vittorie: 1 }, { user: 'ugo', display: 'Ugo', monete: 55, vittorie: 0 }] };
+    _partitaDisegna();
+    return;
+  }
+  try { _partita = await api('/api/streamer/partita'); }
+  catch (e) { box.innerHTML = `<p>${L('Impossibile leggere la partita.', 'Couldn’t read the game.', 'No se pudo leer la partida.')}</p>`; return; }
+  const aperto = document.activeElement && box.contains(document.activeElement) && /INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName);
+  if (!aperto) _partitaDisegna();
+  if (!_partitaGiro && _partita?.attiva) _partitaGiro = setInterval(() => { if (!document.hidden) caricaPartita(); }, 5000);
+  if (_partitaGiro && !_partita?.attiva) { clearInterval(_partitaGiro); _partitaGiro = null; }
 }
 
 async function caricaGiveaway() {
@@ -33606,7 +33751,7 @@ function caricaDatiScheda(id) {
   if (id === 'clip') caricaClip();
   if (id === 'musica') caricaSpotify();
   if (id === 'sondaggi') caricaSondaggi();
-  if (id === 'giveaway') caricaGiveaway();
+  if (id === 'giveaway') { caricaGiveaway(); caricaPartita(); }
   if (id === 'penitenze') caricaPenitenze();
   if (id === 'alert') { caricaAlert(); caricaPiattaforme().then(_rendiQualiChat); _goalBozza = null; _cartBozza = null; _bozzaEl = {}; disegnaGoal(); disegnaCartelli(); caricaContaStudio();
     for (const k of new Set([...document.querySelectorAll('[data-cfg]')].map((n) => n.dataset.cfg))) riempiCfgForm(k);

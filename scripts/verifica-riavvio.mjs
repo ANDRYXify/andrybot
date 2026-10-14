@@ -25,6 +25,7 @@
 // Uso: node scripts/verifica-riavvio.mjs
 //      node scripts/verifica-riavvio.mjs --selftest   (deve diventare rosso)
 
+import './_dati-usa-e-getta.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -36,6 +37,7 @@ const SELFTEST = process.argv.includes('--selftest');
 // verdetto: 'resta' (ha una casa nel database) | 'volatile' (muore col processo, e va bene)
 const DECISO = [
   ['features/giveaway.js', 'attivi', 'resta', 'i biglietti sono una cosa che qualcuno si e\' guadagnato scrivendo !join'],
+  ['features/partite.js', 'attive', 'resta', 'la fila, le manche e chi ha pagato per entrare: una serata con la chat non si perde a una pubblicazione'],
   ['features/penitenze.js', 'attive', 'resta', 'il premio a punti canale e\' gia\' stato pagato: la sfida non puo\' sparire a meta\''],
   ['features/antibot.js', 'assetti', 'resta', 'la serranda: quello che il bot ha chiuso su Twitch va riaperto, il livello di allarme no'],
   ['features/antibot.js', 'ritmi', 'resta', 'il ritmo del canale si impara in trenta follow, e in memoria non ci arrivava mai'],
