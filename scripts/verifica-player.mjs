@@ -178,7 +178,13 @@ await pg.waitForFunction(() => {
 }, null, { timeout: 10000 });
 dici({ ...BRANO, stato: 'pausa', suona: false });
 await pg.evaluate(() => chiediMusica());
-await passa(120);
+// Non un tempo fisso: la risposta arriva quando arriva (sotto carico anche dopo
+// mezzo secondo). Si aspetta il primo dei due fatti: comincia a uscire, oppure
+// non c'e' piu'. Sparito senza essere mai uscito e' il difetto.
+await pg.waitForFunction(() => {
+  const e = document.querySelector('.ovl-musica');
+  return !e || e.classList.contains('esce');
+}, null, { timeout: 5000, polling: 'raf' }).catch(() => {});
 const uscita = await pg.evaluate(() => {
   const e = document.querySelector('.ovl-musica');
   if (!e) return { cE: false };
@@ -186,7 +192,7 @@ const uscita = await pg.evaluate(() => {
 });
 prove.push({ nome: 'se ne va con una transizione, non di colpo',
   atteso: true, avuto: !!(uscita.cE && uscita.esce), ok: !!(uscita.cE && uscita.esce) });
-await passa(900);
+await pg.waitForFunction(() => !document.querySelector('.ovl-musica'), null, { timeout: 5000 }).catch(() => {});
 await prova('e poi sparisce davvero', false);
 
 // ── IL PLAYER NON SI BLOCCA ─────────────────────────────────────────────────
