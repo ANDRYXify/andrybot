@@ -76,6 +76,77 @@ non si taglia mai: tagliarla è il danno peggiore che si possa fare.
    in più (RTMP o SRT) accanto a Caddy: è una decisione di esposizione da
    prendere apposta, non un dettaglio.
 
+## Le scene sono quelle dell'Overlay Studio
+
+Lo Studio della diretta non ha un editor suo: parte dalle scene che lo
+streamer ha già fatto. Una scena è l'overlay di sempre più le sorgenti
+(schermo, camera, immagini) messe sotto o sopra i suoi elementi, con lo stesso
+ordine dei livelli. Una scena, un posto dove si modifica: quello che va in OBS
+come sorgente browser e quello che va in onda dallo Studio sono la stessa cosa.
+
+**Come si compone senza pesare.** La scena è una pagina: le sorgenti sono
+elementi video, l'overlay è quello che è già. A comporla è il browser stesso,
+con la scheda video, come fa con qualunque pagina; poi si cattura l'elemento
+della scena già composto (Element Capture o Region Capture di Chrome) e si
+codifica. Nessun fotogramma passa dal JavaScript, e la trasparenza non serve
+perché la composizione è già fatta.
+
+Scene speciali, fatte nello stesso editor: «sta per iniziare», «pausa»,
+«torno subito», «fine». La scena «torno subito» è anche quella che va in onda
+quando il dispositivo sparisce: si codifica prima di partire (vedi sopra).
+
+Cambio di scena: a mano, con un tasto, dal telefono (regia), o da solo con gli
+automatismi della regia che ci sono già (eventi, pubblicità, raid). Transizioni
+a taglio, dissolvenza o con un video.
+
+## Le sorgenti
+
+| sorgente | come | limiti veri |
+|---|---|---|
+| schermo, finestra, scheda | `getDisplayMedia` | il browser chiede ogni volta quale |
+| camera, schede di acquisizione (Elgato e simili) | `getUserMedia`: le schede di acquisizione si vedono come camere | |
+| microfoni | `getUserMedia`, con riduzione del rumore ed eco | |
+| il telefono come camera | il telefono entra da un QR e manda il video al pc da pari a pari (WebRTC); il server fa solo da tramite per presentarli | |
+| immagini, video, testi, widget | elementi della scena | |
+| pagine web | iframe nella scena | i siti che vietano di farsi incorniciare non si vedono |
+| audio del gioco | audio di sistema da `getDisplayMedia` | intero sistema solo su Windows e ChromeOS; su macOS solo l'audio di una scheda; mai di una sola applicazione (lo fa OSify con PipeWire) |
+
+## L'audio: un mixer vero
+
+Ogni sorgente audio è un canale del mixer (Web Audio): volume, muto, misuratore,
+ascolto in cuffia. Per canale: porta del rumore, compressore, equalizzatore,
+limitatore (AudioWorklet, sul dispositivo). Abbassamento automatico della musica
+quando lo streamer parla. Premi-per-parlare. I suoni degli alert e degli
+effetti passano dal mixer come un canale, non da un'uscita a parte.
+
+Mix diversi per uscite diverse: per esempio la traccia per i VOD di Twitch
+senza musica (il problema dei diritti), e la diretta con. Il dispositivo
+codifica due tracce audio, che costano poco.
+
+## Le uscite
+
+Per ogni piattaforma: accesa o spenta anche a diretta in corso, la qualità
+(una versione per piattaforma se serve), il mix audio. In più la registrazione
+sul dispositivo, a qualità piena, mai sul server.
+
+## Prima di andare in onda
+
+Un controllo che dice in un colpo d'occhio: permessi di camera, microfono e
+schermo; codifica con la scheda video sì o no; prova della banda in uscita e
+qualità consigliata; scena e sorgenti pronte. Una tenda per la privacy: si
+cattura una finestra e non lo schermo intero, e una scena «coperta» con un
+tasto, per le notifiche e le password.
+
+## Quello che resta a OBS
+
+Il browser non sa: plugin VST, NDI, audio di una sola applicazione,
+scorciatoie globali quando il browser non è davanti (si usano il telefono come
+regia o una Stream Deck tramite la regia), camera virtuale. Per chi gioca su
+un pc solo con giochi pesanti OBS resta una strada buona, e con la strada 3
+prende comunque multistream e immagine di riserva da SocialBot. Lo Studio non
+promette di sostituire OBS per tutti: promette di non servire per la maggior
+parte.
+
 ## Cose da verificare prima del codice (fase 0)
 
 - che cosa accettano davvero le tre piattaforme: codec (H.264, HEVC, AV1),
@@ -83,6 +154,10 @@ non si taglia mai: tagliarla è il danno peggiore che si possa fare.
   diretta (serve per cucire il giro dell'immagine);
 - WebCodecs sui dispositivi veri: codifica con la scheda video, AAC (su Linux
   Chromium non c'è: serve un codificatore AAC in WebAssembly sul dispositivo);
+- Element Capture / Region Capture: su quali Chrome, e se la scheda catturata
+  continua a disegnare quando lo streamer è nella finestra del gioco (una
+  finestra a parte o il Picture-in-Picture del documento la tengono viva);
+- tracce audio multiple attraverso il tramite (la traccia VOD di Twitch);
 - WebTransport: Caddy oggi non lo inoltra. Si parte da WebSocket con controllo
   del flusso fatto da noi; QUIC dopo;
 - la chiave di trasmissione: Twitch la dà col permesso già previsto, YouTube
