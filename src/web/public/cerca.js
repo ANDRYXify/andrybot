@@ -27,6 +27,7 @@
     partite: 'partite partita con la chat fila coda lobby custom manche giocatori iscriviti gioco esito vincitori monete matches queue players round partidas fila ronda',
     penitenze: 'penitenze penalità punti canale sfide riscatti contatore morti forfeit castigos retos muertes',
     regia: 'regia diretta live comandi rapidi durante la diretta titolo categoria pubblicità stream directo título anuncios',
+    studio: 'studio diretta dal sito senza obs beta multistream twitch kick youtube scene camera webcam schermo mixer audio osify live from site without obs directo desde el sitio sin obs',
     clip: 'clip momenti highlight ritaglia registra clips momentos grabar',
     musica: 'musica spotify song request canzoni richieste brani coda music playlist canciones cola dj',
     alert: 'overlay alert studio scena widget browser source obs allerte follow sub bit raid chat a schermo emote 7tv avvisi notifica a schermo layout editor livelli sovrimpressione escena capa aviso occasione occasioni subathon torno subito pausa serata speciale compleanno evento modelli aggiunta temporanea ocasion ocasiones occasion contatore contatori counter contador copia dell overlay duplica scena',
