@@ -48,6 +48,7 @@ export const CLASSIFICATI = [
   ['src/features/modalita-chat.js', 'riautorizza dalla dashboard', 'le modalita\' della chat rispondono solo a streamer e mod'],
   ['src/features/trackinggiochi.js', 'Il tracking webcam è spento: accendilo nel pannello', 'detto solo a streamer e mod'],
   ['src/features/trackinggiochi.js', 'Il Puzzle è spento: accendilo nel pannello', 'il puzzle lo avviano solo streamer e mod'],
+  ['src/features/partite.js', 'può dare il permesso ai moderatori dal pannello', 'detto solo al moderatore senza permesso: dice che decide lo streamer, non chiede niente a chi legge'],
   ['src/features/comandi-registro.js', 'senza aprire il pannello', 'descrive un comando dei mod: non chiede niente a chi legge'],
   ['src/features/donazioni-satispay.js', 'Genera un codice nuovo e ricoll', 'errore del collegamento, nel pannello del proprietario'],
   ['src/features/donazioni-satispay.js', 'Generane uno nuovo dal tuo pannello', 'errore del collegamento, nel pannello del proprietario'],
