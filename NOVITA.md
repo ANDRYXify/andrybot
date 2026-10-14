@@ -64,6 +64,9 @@ comandi diversi da quelli della riga italiana.
 - Nella scheda QR su misura c'è scritto che nelle Grafiche «Dove porta» e la frase della cornice non contano: lì il QR porta sempre all'indirizzo scritto accanto. [vai: qr]
   en: The Custom QR tab now says that in Graphics «Where it leads» and the frame line do not count: there the QR always leads to the address written next to it.
   es: La pestaña QR a medida dice que en Gráficas «A dónde lleva» y la frase del marco no cuentan: allí el QR siempre lleva a la dirección escrita al lado.
+- Cancellando l'account vanno via anche la storia automatica della diretta e lo stato delle pubblicazioni automatiche, che restavano sul disco. [vai: account]
+  en: Deleting your account now also removes the automatic stream story and the state of automatic posts, which stayed on disk.
+  es: Al borrar tu cuenta se van también la historia automática del directo y el estado de las publicaciones automáticas, que quedaban en el disco.
 
 ## 2026-10-08
 

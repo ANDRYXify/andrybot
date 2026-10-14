@@ -17,6 +17,9 @@
 // Stessa idea per i file: non c'e' un elenco di cartelle da tenere aggiornato.
 // Si guarda dentro la cartella dei dati e si prende ogni `data/<qualcosa>/<login>`
 // che esiste — oggi sono gli effetti e gli sfondi, domani quello che sara'.
+// Per i FILE col nome del canale dentro cartelle condivise, invece, l'elenco
+// delle cartelle c'e', ed e' tenuto legato al codice da una prova
+// (CARTELLE_DI_FILE, piu' sotto, dice perche').
 //
 // Cosa NON si cancella: `anima` (e' una riga sola, condivisa da tutto il bot, e
 // non contiene niente di questa persona). Tutto il resto va via.
@@ -60,6 +63,35 @@ export function cartelleDiCanale(login) {
   return out;
 }
 
+// I FILE di un canale, non cartelle: stanno in una cartella condivisa e portano
+// il suo nome (lo stato delle automatiche, «automatiche/<login>.json»; la
+// storia della diretta e il suo stato, «storie-live/<login>.jpg» e «.json»).
+// Restavano sul disco dopo la cancellazione, perche' si cercavano solo le
+// cartelle «<dati>/<qualcosa>/<login>».
+//
+// Qui l'elenco delle cartelle e' SCRITTO, non indovinato dai nomi: in una
+// cartella come «campagne» i file hanno il nome di una citta', e un canale che
+// si chiamasse «milano» porterebbe via la campagna di Milano. Perche' l'elenco
+// non invecchi, una prova cerca nel codice chi scrive file col nome di un
+// canale e pretende che la sua cartella sia qui.
+//
+// Del canale e' il file «<login>.<estensione>», con una sola estensione (piu'
+// il «.tmp» di una scrittura a meta'): «kick.foo.json» e' del canale kick.foo,
+// non del canale «kick».
+export const CARTELLE_DI_FILE = ['automatiche', 'storie-live'];
+export function fileDiCanale(login) {
+  const out = [];
+  for (const c of CARTELLE_DI_FILE) {
+    let nomi = [];
+    try { nomi = fs.readdirSync(path.join(config.dataDir, c), { withFileTypes: true }); } catch { continue; }
+    for (const f of nomi) {
+      if (!f.isFile() || !f.name.startsWith(login + '.')) continue;
+      if (/^[a-z0-9]+(\.tmp)?$/.test(f.name.slice(login.length + 1))) out.push(path.join(config.dataDir, c, f.name));
+    }
+  }
+  return out;
+}
+
 // Cancella tutto quello che e' di questo canale. `conferma` deve essere il nome
 // del canale scritto a mano: una cosa che non si annulla non si fa per sbaglio,
 // e un bottone da solo si preme per sbaglio.
@@ -96,6 +128,10 @@ export function cancella(login, { conferma } = {}) {
     try { fs.rmSync(d, { recursive: true, force: true }); cartelle.push(path.relative(config.dataDir, d)); }
     catch { /* se un file resta bloccato, il resto e' comunque andato */ }
   }
+  for (const f of fileDiCanale(chi)) {
+    try { fs.rmSync(f, { force: true }); cartelle.push(path.relative(config.dataDir, f)); }
+    catch { /* come sopra */ }
+  }
 
   // Gli attacchi e il registro dello scudo: due file per tutti, con dentro i
   // nomi di chi c'era. Restavano dopo la cancellazione dell'account.
@@ -127,6 +163,6 @@ export function restiDi(login) {
     const r = registroScudo(chi, { limite: 1 }).length;
     if (r) resti.registro_scudo = r;
   } catch { /* niente */ }
-  const cartelle = cartelleDiCanale(chi).map((d) => path.relative(config.dataDir, d));
+  const cartelle = [...cartelleDiCanale(chi), ...fileDiCanale(chi)].map((d) => path.relative(config.dataDir, d));
   return { righe: resti, cartelle };
 }

@@ -19,7 +19,7 @@ import { cartellaUsaEGetta } from '../aiuto.mjs';
 
 const casa = cartellaUsaEGetta('cancella-');
 const { db, streamers, commands, points, modules } = await import('../../src/db.js');
-const { cancella, restiDi, cartelleDiCanale, confermaValida } = await import('../../src/features/cancella.js');
+const { cancella, restiDi, cartelleDiCanale, confermaValida, CARTELLE_DI_FILE, fileDiCanale } = await import('../../src/features/cancella.js');
 const { tabelleDiCanale } = await import('../../src/features/esporta.js');
 test.after(() => casa.pulisci());
 
@@ -127,4 +127,36 @@ test('il pannello conferma col nome che il server dichiara, e chi paga viene dis
   const [conf, disd, canc] = ['confermaCancellazione(login', 'abbonamenti.disdiciPerSempre(subscriptions.get(login))', 'cancellaDati(login'].map((x) => rotta.indexOf(x));
   assert.ok(conf > 0 && conf < disd && disd < canc, 'prima la conferma, poi la disdetta, poi i dati');
   assert.match(rotta, /if \(!disdetta\.ok\) \{\n\s*return res\.status\(409\)/, 'se non disdice, non cancella');
+});
+
+test('anche i file col nome del canale vanno via, e solo quelli', () => {
+  const dati = process.env.DATA_DIR;
+  const scrivi = (rel) => { const p = path.join(dati, rel); fs.mkdirSync(path.dirname(p), { recursive: true }); fs.writeFileSync(p, 'x'); return p; };
+  streamers.upsertApproved('gamma', 'gamma', '1');
+  const suoi = ['automatiche/gamma.json', 'storie-live/gamma.jpg', 'storie-live/gamma.json', 'storie-live/gamma.jpg.tmp'].map(scrivi);
+  const altrui = ['automatiche/delta.json', 'storie-live/gammadue.jpg', 'storie-live/gammax.jpg', 'storie-live/gammaxjson', 'storie-live/gamma.altro.json', 'campagne/gamma.json', 'automatiche/kick.gamma.json'].map(scrivi);
+  assert.deepEqual(fileDiCanale('gamma').sort(), suoi.sort());
+  assert.deepEqual(restiDi('gamma').cartelle.filter((c) => !c.includes('/gamma/')).sort(), suoi.map((p) => path.relative(dati, p)).sort(), 'chi guarda prima di premere li vede');
+  const esito = cancella('gamma', { conferma: 'gamma' });
+  for (const p of suoi) assert.equal(fs.existsSync(p), false, `via: ${path.relative(dati, p)}`);
+  for (const p of altrui) assert.equal(fs.existsSync(p), true, `resta: ${path.relative(dati, p)}`);
+  assert.ok(suoi.every((p) => esito.cartelle.includes(path.relative(dati, p))), 'e la cancellazione dice di averli tolti');
+  assert.deepEqual(fileDiCanale('gamma'), []);
+});
+
+test('ogni modulo che scrive file col nome di un canale ha la sua cartella nell\'elenco', () => {
+  // L'inventario si legge dal codice: chi scrive «join(<cartella>, `${login}.<est>`)»
+  // tiene un file del canale in una cartella condivisa. Un modulo nuovo che lo
+  // fa senza la sua cartella in CARTELLE_DI_FILE lascerebbe quei file sul disco
+  // dopo la cancellazione dell'account.
+  const NOTI = { 'src/features/automatiche.js': 'automatiche', 'src/features/storia-ig.js': 'storie-live' };
+  const giu = (d) => fs.readdirSync(d, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? (e.name === 'public' ? [] : giu(path.join(d, e.name))) : e.name.endsWith('.js') ? [path.join(d, e.name)] : []));
+  const re = /join\(([^()`]*(?:\([^()]*\))?[^()`]*),\s*`\$\{[a-zA-Z_]+\}\.(\$\{[a-zA-Z_]+\}|[a-z0-9]+)`\)/;
+  const radice = new URL('../../', import.meta.url).pathname;
+  const trovati = giu(path.join(radice, 'src')).filter((f) => re.test(fs.readFileSync(f, 'utf8'))).map((f) => path.relative(radice, f)).sort();
+  assert.deepEqual(trovati, Object.keys(NOTI).sort(), 'un modulo nuovo scrive file col nome di un canale: aggiungi la sua cartella a CARTELLE_DI_FILE (cancella.js) e qui');
+  for (const [f, cartella] of Object.entries(NOTI)) {
+    assert.match(fs.readFileSync(path.join(radice, f), 'utf8'), new RegExp(`join\\(config\\.dataDir, '${cartella}'\\)`), `${f} scrive in «${cartella}»`);
+  }
+  assert.deepEqual([...CARTELLE_DI_FILE].sort(), Object.values(NOTI).sort());
 });
