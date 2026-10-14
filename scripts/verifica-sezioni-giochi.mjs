@@ -21,6 +21,7 @@
 // Uso: node scripts/verifica-sezioni-giochi.mjs              (esce 1 se qualcosa non torna)
 //      node scripts/verifica-sezioni-giochi.mjs --selftest   (la barra dimentica le parti chiuse: deve uscire rosso)
 
+import './_dati-usa-e-getta.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';

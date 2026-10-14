@@ -12,6 +12,7 @@
 //
 // Qui la home si compone con la STESSA funzione del server. Un posto solo.
 
+import './_dati-usa-e-getta.mjs';
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -142,7 +143,6 @@ export function overlayFinto({ login = 'prova', tema = () => ({}), musica = () =
 let _anteprima = null;
 function anteprimaDemo() {
   if (!_anteprima) {
-    process.env.DATA_DIR = process.env.DATA_DIR || fs.mkdtempSync(path.join(tmpdir(), 'sito-'));
     _anteprima = import('../src/web/anteprima-pagine.js');
   }
   return _anteprima;

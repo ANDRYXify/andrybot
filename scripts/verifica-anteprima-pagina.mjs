@@ -34,6 +34,7 @@
 //                                                             il contenitore al negozio e la porta
 //                                                             dell'anteprima della demo, e li vuole rossi)
 
+import './_dati-usa-e-getta.mjs';
 import { apriSito, apriBrowser } from './_sito.mjs';
 
 const SELFTEST = process.argv.includes('--selftest');

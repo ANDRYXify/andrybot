@@ -18,6 +18,7 @@
 // E si controlla anche la cosa che rompe un editor senza che nessuno lo noti:
 // che quello che scrivi resti scritto quando tocchi altro. Un editor che si
 // ridisegna troppo cancella le parole sotto le dita.
+import './_dati-usa-e-getta.mjs';
 import { apriSito, apriBrowser } from './_sito.mjs';
 
 const esiti = [];

@@ -22,6 +22,7 @@
 //
 // Uso: node scripts/verifica-veste.mjs   (esce 1 se una veste non arriva)
 
+import './_dati-usa-e-getta.mjs';
 import { apriSito, chromiumQui } from './_sito.mjs';
 
 const CHROMIUM = chromiumQui();

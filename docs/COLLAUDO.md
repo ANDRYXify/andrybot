@@ -363,6 +363,32 @@ alla prima esecuzione. Il valore non è «GitHub esegue le prove»: è «le prov
 girano prima che il codice esca». Il gancio dà quella garanzia senza dipendere
 da nessuno; Actions resta la conferma, non l'unica rete.
 
+## Le prove non toccano mai i dati veri
+
+Sul server `aggiorna.sh` fa girare prove e cancelli nella cartella del bot,
+dove `./data` è il database vero. Fino al 2026-10-14 un cancello
+(`verifica-scudo-tg.mjs`) importava `_sito.mjs`, che apriva il database prima
+di scegliersi una cartella usa e getta: a ogni aggiornamento rinascevano nei
+dati veri i canali `prova`, `proven` e `spento`, e toglierli dall'admin non
+serviva a niente.
+
+Tre cose, ognuna da sola basterebbe:
+
+- `npm test` e `npm run cancelli` partono con `SB_COLLAUDO=1` e una cartella
+  nuova fatta da `mktemp`, qualunque cosa ci sia nell'ambiente;
+- ogni `scripts/verifica-*.mjs` e `_sito.mjs` importa per primo
+  `scripts/_dati-usa-e-getta.mjs`, che sceglie la cartella prima che qualunque
+  modulo legga `config.js`;
+- `config.js`, con `SB_COLLAUDO=1`, si rifiuta di partire sulla cartella vera
+  (`CARTELLA_VERA`): una prova nuova che sbaglia ordine si ferma con un errore
+  che dice cosa è successo, invece di scrivere.
+
+`test/contratto/collaudo-dati.test.mjs` tiene legate le tre cose. Quello che i
+giri vecchi hanno lasciato si riconosce dall'impronta del cancello (un token
+Telegram che Telegram non dà mai, sul gruppo finto) e va via da solo
+all'avvio, solo se il canale non ha collegato né Twitch né Kick
+(`togliCanaliDiCollaudo` in `features/cancella.js`).
+
 ## Il collaudo non deve sapere su che macchina gira
 
 Due deploy fermati dallo stesso difetto, e vale la pena scriverlo.

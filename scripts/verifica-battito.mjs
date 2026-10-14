@@ -27,6 +27,7 @@
 //
 // Uso: node scripts/verifica-battito.mjs   (esce 1 se qualcosa non torna)
 
+import './_dati-usa-e-getta.mjs';
 import http from 'node:http';
 import { readFileSync, mkdtempSync, rmSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';

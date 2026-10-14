@@ -33,22 +33,21 @@
 //                                                      ignorati, il codice in una risposta; li
 //                                                      vuole tutti rossi, ognuno da solo)
 
-import { mkdtempSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import './_dati-usa-e-getta.mjs';
 import { join } from 'node:path';
 import { apriSito, apriBrowser } from './_sito.mjs';
 
-process.env.DATA_DIR = process.env.DATA_DIR || mkdtempSync(join(tmpdir(), 'porta-'));
 const { tgConf, tgScudo, paginaTelegram, streamers } = await import('../src/db.js');
 const G = await import('../src/features/tg-scudo-gesti.js');
 const S = await import('../src/features/tg-scudo.js');
 const { htmlPorta } = await import('../src/features/tg-porta.js');
 const { testiScudo } = await import('../src/features/tg-scudo-testi.js');
+const { IMPRONTA_DI_COLLAUDO } = await import('../src/features/cancella.js');
 
 const SELFTEST = process.argv.includes('--selftest');
 // al computer la porta di un canale che parla italiano, al telefono quella di uno che parla inglese
 const SCHERMI = [[1280, 800, 'it', 'prova'], [390, 844, 'en', 'proven']];
-const CHAT = '-100900';
+const CHAT = IMPRONTA_DI_COLLAUDO.chatId;
 const FIRMA = 'firma-di-prova';
 const FISSO = 'https://t.me/+linkdelgruppo';
 const SCUDO = S.normScudo({
@@ -62,7 +61,7 @@ const PROVA = { titolo: 'Il codice segreto della ciurma', fattoTitolo: 'Benvenut
 function canale(ch, { scudo = SCUDO, lingua = 'it' } = {}) {
   streamers.upsertApproved(ch, ch, '');
   streamers.setSettings(ch, { preferenze: { lingua } });
-  tgConf.set(ch, { token: '1:finto', chatId: CHAT, chatTitolo: 'Il gruppo di prova' });
+  tgConf.set(ch, { token: IMPRONTA_DI_COLLAUDO.token, chatId: CHAT, chatTitolo: 'Il gruppo di prova' });
   tgConf.setInterattivo(ch, true, 'segreto-' + ch);
   tgConf.setScudo(ch, scudo);
   paginaTelegram.salva(ch, {

@@ -15,6 +15,7 @@
 //
 // Uso: node scripts/verifica-vetrina.mjs
 
+import './_dati-usa-e-getta.mjs';
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -27,7 +28,6 @@ import { chromiumQui } from './_sito.mjs';
 // I prezzi arrivano dal listino vero, non da una sua imitazione. La cartella
 // usa e getta serve perche' il listino tira dentro la configurazione: il banco
 // non tocca niente di quello che c'e' sul disco.
-process.env.DATA_DIR = process.env.DATA_DIR || mkdtempSync(path.join(tmpdir(), 'vetrina-'));
 const { pianiPubblici } = await import('../src/features/abbonamenti.js');
 const PIANI = pianiPubblici();
 

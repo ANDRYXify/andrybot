@@ -53,6 +53,7 @@
 // Uso: node scripts/verifica-scelte.mjs             (esce 1 se una scelta e' staccata, storta o attaccata a un'altra)
 //      node scripts/verifica-scelte.mjs --selftest  (rimette i difetti di prima e vuole vederli rossi)
 
+import './_dati-usa-e-getta.mjs';
 import { apriSito, apriBrowser } from './_sito.mjs';
 const { pianiPubblici } = await import('../src/features/abbonamenti.js');
 

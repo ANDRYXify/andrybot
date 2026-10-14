@@ -21,6 +21,7 @@
 // Uso: node scripts/verifica-emote.mjs              (esce 1 se qualcosa non torna)
 //      node scripts/verifica-emote.mjs --selftest   (Twitch senza il tetto dei 60 fotogrammi: deve uscire rosso)
 
+import './_dati-usa-e-getta.mjs';
 import fs from 'node:fs';
 import vm from 'node:vm';
 import path from 'node:path';

@@ -19,6 +19,7 @@
 //
 // Uso: node scripts/verifica-dieta.mjs   (--selftest per provare il cancello)
 
+import './_dati-usa-e-getta.mjs';
 import { execFileSync } from 'node:child_process';
 import http from 'node:http';
 import fs from 'node:fs';
@@ -29,7 +30,6 @@ import { fileURLToPath } from 'node:url';
 import { guscioVetrina, guscioPannello, RISORSE_VETRINA } from '../src/web/vetrina-vista.js';
 
 import { chromiumQui } from './_sito.mjs';
-process.env.DATA_DIR = process.env.DATA_DIR || fs.mkdtempSync(path.join(tmpdir(), 'dieta-'));
 const { pianiPubblici } = await import('../src/features/abbonamenti.js');
 const PIANI = pianiPubblici();
 

@@ -20,6 +20,7 @@
 //
 // Uso: node scripts/verifica-barra.mjs   (esce 1 se qualcosa non torna)
 
+import './_dati-usa-e-getta.mjs';
 import { apriSito, chromiumQui } from './_sito.mjs';
 
 const CHROMIUM = chromiumQui();

@@ -171,7 +171,8 @@ import * as altribot from '../features/altribot.js';
 import { BOT_NOTI } from '../features/muro.js';
 import { NON_CONTARE } from '../features/watchtime.js';
 import { esporta as esportaDati } from '../features/esporta.js';
-import { cancella as cancellaDati, restiDi, confermaValida as confermaCancellazione } from '../features/cancella.js';
+import { piattaformeDi } from '../features/piattaforme-admin.js';
+import { cancella as cancellaDati, restiDi, confermaValida as confermaCancellazione, parolaDiConferma, canaliDiCollaudo } from '../features/cancella.js';
 import { montaKick } from '../kick/rotte.js';
 import * as kickApi from '../kick/api.js';
 import * as kickDiario from '../kick/diario.js';
@@ -12028,9 +12029,25 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     });
   });
 
+  // Twitch, Kick e YouTube ognuna per conto suo (features/piattaforme-admin.js).
+  const piattaformeAdmin = (login) => {
+    const kickPronto = !!(config.kickClientId && config.kickClientSecret);
+    const ytAperto = !!(config.youtubeClientId && config.youtubeClientSecret) && !!config.youtubeAperto;
+    return piattaformeDi({
+      twitch: tokens.get('broadcaster', login), scopeTwitch: SCOPES.broadcaster,
+      kick: { pronto: kickPronto, token: kickPronto ? kickApi.tokenDi(login) : null, puoModerare: kickApi.puoModerare(login), mancano: kickApi.permessiMancanti(login) },
+      youtube: { aperto: ytAperto, token: ytAperto ? ytApi.tokenDi(login) : null },
+    });
+  };
+
   app.get('/api/admin/streamers', requireAdmin, wrap(async (req, res) => {
+    const diCollaudo = new Set(canaliDiCollaudo());
     res.json(streamers.list().map((s) => ({
       ...s,
+      piattaforma: piattaformaDi(s.login),
+      conferma: parolaDiConferma(s.login),
+      diCollaudo: diCollaudo.has(s.login),
+      piattaforme: piattaformeAdmin(s.login),
       permessiOk: permessiOk(s.login),
       knowledgeCount: knowledge.count(s.login),
     })));
@@ -12053,9 +12070,24 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     res.json({ ok: true });
   }));
 
+  // Due modi di togliere. Senza `tutto` va via l'accesso (la riga e il
+  // permesso Twitch) e il resto aspetta un eventuale ritorno. Con `tutto` e' la
+  // stessa cancellazione dell'account, con la stessa conferma scritta a mano e
+  // la stessa disdetta prima dei dati: chi paga non resta con un abbonamento
+  // che non si gestisce piu' da nessuna parte.
   app.post('/api/admin/rimuovi', requireAdmin, wrap(async (req, res) => {
     const login = String(req.body?.login || '').toLowerCase().trim();
     if (!login) return res.status(400).json({ errore: 'login mancante' });
+    if (req.body?.tutto === true) {
+      if (!confermaCancellazione(login, req.body?.conferma)) return res.status(400).json({ errore: 'la conferma non combacia' });
+      const disdetta = await abbonamenti.disdiciPerSempre(subscriptions.get(login));
+      if (!disdetta.ok) return res.status(409).json({ errore: 'Non riesco a disdire il suo abbonamento su Stripe: non ho cancellato niente.' });
+      let esito;
+      try { esito = cancellaDati(login, { conferma: req.body?.conferma }); }
+      catch (e) { return res.status(400).json({ errore: e?.message || 'cancellazione non riuscita' }); }
+      sync();
+      return res.json({ ok: true, ...esito });
+    }
     streamers.remove(login);
     tokens.delete('broadcaster', login);
     sync();

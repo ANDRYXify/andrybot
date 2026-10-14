@@ -70,6 +70,17 @@ const dataDir = resolve(process.cwd(), env('DATA_DIR', './data'));
 if (dentroIlPubblico(dataDir)) {
   throw new Error(`La cartella dei dati (${dataDir}) starebbe dentro quella pubblica del sito: imposta DATA_DIR o parti dalla radice del progetto.`);
 }
+// IL COLLAUDO NON TOCCA I DATI VERI. Prove e cancelli girano anche sul server,
+// nella radice del progetto, dove «./data» e' la cartella vera: un modulo che
+// apriva i dati prima che il cancello scegliesse la sua cartella ci scriveva i
+// canali di prova (scripts/_dati-usa-e-getta.mjs dice com'e' successo). Con
+// SB_COLLAUDO acceso (lo accendono gli script «test» e «cancelli» e la
+// cartella usa e getta dei cancelli) la cartella di serie della radice e'
+// rifiutata: un errore subito, invece di righe finte nel database di tutti.
+export const CARTELLA_VERA = resolve(dirname(fileURLToPath(import.meta.url)), '..', 'data');
+if (process.env.SB_COLLAUDO === '1' && dataDir === CARTELLA_VERA) {
+  throw new Error(`Collaudo sui dati veri (${dataDir}): una prova o un cancello ha aperto i dati prima di scegliersi una cartella usa e getta.`);
+}
 mkdirSync(dataDir, { recursive: true });
 
 // Segreto di sessione: da .env se impostato, altrimenti generato al

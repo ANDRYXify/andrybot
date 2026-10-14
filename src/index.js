@@ -15,6 +15,7 @@ import { moderatoreKick, canaleKick } from './kick/api.js';
 import { passoDiRegia } from './features/console.js';
 import { PluginBus, caricaPlugin } from './features/plugins.js';
 import { startWeb } from './web/server.js';
+import { togliCanaliDiCollaudo } from './features/cancella.js';
 import { startApprovalSync } from './web/gate.js';
 import { contaRifiuto, avviaVigilanza } from './salute.js';
 import * as licenza from './licenza.js';
@@ -58,6 +59,12 @@ try { const n = migraSegreti(); if (n) log.info(`sicurezza: ${n} segreti portati
 try {
   statoVivo.scrivi('[proprieta]', 'firma', { firma: filigrana.FIRMA, copyright: filigrana.COPYRIGHT, presentazione: licenza.firma(), da: new Date().toISOString() });
 } catch (e) { log.warn('marca di proprieta\':', e?.message || e); }
+
+// I canali che un cancello lasciava nei dati veri (features/cancella.js,
+// IMPRONTA_DI_COLLAUDO): via all'avvio, detto nel registro uno per uno.
+try {
+  for (const e of togliCanaliDiCollaudo()) log.info(`pulizia: tolto il canale di prova «${e.canale}» lasciato da un collaudo`);
+} catch (e) { log.warn('pulizia dei canali di prova:', e?.message || e); }
 
 const auth = new TwitchAuth();
 const helix = new Helix({ auth });

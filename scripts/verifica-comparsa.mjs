@@ -21,6 +21,7 @@
 // Uso: node scripts/verifica-comparsa.mjs
 //      node scripts/verifica-comparsa.mjs --selftest   (deve diventare rosso)
 
+import './_dati-usa-e-getta.mjs';
 import { apriSito, chromiumQui } from './_sito.mjs';
 
 const CHROMIUM = chromiumQui();

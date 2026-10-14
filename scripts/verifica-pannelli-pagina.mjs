@@ -20,6 +20,7 @@
 //                                                            nasce vuota, link scritto a mano anche
 //                                                            con la pagina; li vuole tutti rossi)
 
+import './_dati-usa-e-getta.mjs';
 import { apriSito, apriBrowser } from './_sito.mjs';
 
 const SELFTEST = process.argv.includes('--selftest');

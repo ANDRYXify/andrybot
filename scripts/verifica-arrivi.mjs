@@ -22,6 +22,7 @@
 //                                                    entra, «Per chi» perso al salvataggio; ognuno
 //                                                    deve far scattare il suo controllo)
 
+import './_dati-usa-e-getta.mjs';
 import { apriSito, apriBrowser } from './_sito.mjs';
 
 const SELFTEST = process.argv.includes('--selftest');

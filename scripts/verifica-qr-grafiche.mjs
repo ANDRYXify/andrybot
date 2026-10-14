@@ -57,6 +57,7 @@
 // caso del difetto; alla fine gli stessi passi senza rotture devono venire
 // verdi, a cache fredda.
 
+import './_dati-usa-e-getta.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 import { apriSito, apriBrowser, PUB } from './_sito.mjs';

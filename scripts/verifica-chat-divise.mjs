@@ -15,6 +15,7 @@
 //
 //   node scripts/verifica-chat-divise.mjs                  → esce 1 se qualcosa non torna
 //   node scripts/verifica-chat-divise.mjs --selftest       → rompe e pretende il rosso
+import './_dati-usa-e-getta.mjs';
 import { execFileSync } from 'node:child_process';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';

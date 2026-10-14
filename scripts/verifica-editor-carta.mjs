@@ -25,6 +25,7 @@
 // Uso: node scripts/verifica-editor-carta.mjs             (esce 1 se un gesto non fa quello che dice)
 //      node scripts/verifica-editor-carta.mjs --selftest  (rimette il peso sbagliato e blocca le maniglie, e li vuole rossi)
 
+import './_dati-usa-e-getta.mjs';
 import { apriSito, apriBrowser } from './_sito.mjs';
 
 const SELFTEST = process.argv.includes('--selftest');

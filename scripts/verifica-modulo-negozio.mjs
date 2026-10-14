@@ -19,6 +19,7 @@
 //                                                           slegato dal campo, un campo che allarga
 //                                                           la pagina; li vuole tutti rossi)
 
+import './_dati-usa-e-getta.mjs';
 import { apriSito, apriBrowser } from './_sito.mjs';
 import { normCampi, htmlModulo } from '../src/features/negozio-moduli.js';
 import { vesteDi } from '../src/features/linkpagina.js';

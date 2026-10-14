@@ -54,6 +54,7 @@
 // Uso: node scripts/verifica-contorni.mjs
 //      node scripts/verifica-contorni.mjs --selftest   (deve diventare rosso)
 
+import './_dati-usa-e-getta.mjs';
 import { apriSito, chromiumQui } from './_sito.mjs';
 const CHROMIUM = chromiumQui();
 const PLAYWRIGHT = process.env.PLAYWRIGHT || '/opt/node22/lib/node_modules/playwright/index.mjs';

@@ -13,6 +13,7 @@
 //
 // Uso: node scripts/verifica-minecraft.mjs   (esce 1 se qualcosa non torna)
 
+import './_dati-usa-e-getta.mjs';
 import http from 'node:http';
 import { readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';

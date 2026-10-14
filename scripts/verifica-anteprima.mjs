@@ -22,6 +22,7 @@
 // Uso: node scripts/verifica-anteprima.mjs            (esce 1 se qualcosa non torna)
 //      node scripts/verifica-anteprima.mjs --selftest (rompe una cosa per volta)
 
+import './_dati-usa-e-getta.mjs';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';

@@ -24,13 +24,13 @@
 // Uso: node scripts/copia-vetrina.mjs        (riscrive src/web/public/style-vetrina.css)
 //      node scripts/copia-vetrina.mjs --prova (dice se il file e' allineato, non scrive)
 
+import './_dati-usa-e-getta.mjs';
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 
-process.env.DATA_DIR = process.env.DATA_DIR || fs.mkdtempSync(path.join(tmpdir(), 'copia-vetrina-'));
 const { guscioVetrina } = await import('../src/web/vetrina-vista.js');
 const { pianiPubblici } = await import('../src/features/abbonamenti.js');
 

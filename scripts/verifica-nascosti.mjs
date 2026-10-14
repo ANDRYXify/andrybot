@@ -24,6 +24,7 @@
 // Questo cancello non guarda il CSS: guarda la PAGINA. Apre il pannello e le
 // pagine pubbliche in un browser vero e chiede al browser, per ogni elemento
 // che dice `hidden`, se davvero non si vede.
+import './_dati-usa-e-getta.mjs';
 import { apriSito, apriBrowser, overlayFinto } from './_sito.mjs';
 
 const ovl = overlayFinto({});

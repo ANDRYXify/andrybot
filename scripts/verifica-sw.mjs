@@ -15,6 +15,7 @@
 // Serve un browser, quindi non sta fra i cancelli di `npm run cancelli`:
 //   node scripts/verifica-sw.mjs
 
+import './_dati-usa-e-getta.mjs';
 import http from 'node:http';
 import { readFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';

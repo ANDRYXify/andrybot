@@ -37875,10 +37875,11 @@ function vistaAdminContenuto() {
     </div>
     <div class="carta">
       <h2>Streamer</h2>
+      <p class="suggerimento" id="riassunto-streamer"></p>
       <div class="scorrevole">
         <table class="tabella">
-          <thead><tr><th>Streamer</th><th>Login</th><th>${L('Stato', 'Status', 'Estado')}</th><th>${L('Permessi', 'Permissions', 'Permisos')}</th><th>${L('Conoscenza', 'Knowledge', 'Conocimiento')}</th><th>${L('Azioni', 'Actions', 'Acciones')}</th></tr></thead>
-          <tbody id="tabella-streamer"><tr><td colspan="6" class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</td></tr></tbody>
+          <thead><tr><th>Streamer</th><th>${L('Stato', 'Status', 'Estado')}</th><th>Twitch</th><th>Kick</th><th>YouTube</th><th>${L('Conoscenza', 'Knowledge', 'Conocimiento')}</th><th>${L('Azioni', 'Actions', 'Acciones')}</th></tr></thead>
+          <tbody id="tabella-streamer"><tr><td colspan="7" class="vuoto">${L('Caricamento…', 'Loading…', 'Cargando…')}</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -38587,31 +38588,64 @@ function _rigaAccessoHtml() {
   return `<p class="acc-avviso">${t}${fino}${nota}.</p>`;
 }
 
+const _ADMIN_PERMESSI = {
+  moderazione: () => L('moderazione', 'moderation', 'moderación'),
+  canale: () => L('titolo e categoria', 'title and category', 'título y categoría'),
+  premi: () => L('premi del canale', 'channel rewards', 'recompensas del canal'),
+  chat: () => L('chat', 'chat', 'chat'),
+};
+function _cellaPiattaforma(p) {
+  if (!p) return '';
+  if (!p.disponibile) return `<span class="badge" title="${L('Non configurata sul server', 'Not configured on the server', 'No configurada en el servidor')}">${L('spenta', 'off', 'apagada')}</span>`;
+  if (!p.collegato) return `<span class="tenue">${L('non collegato', 'not linked', 'no vinculado')}</span>`;
+  const manca = (p.mancano || []).map((x) => (_ADMIN_PERMESSI[x] ? _ADMIN_PERMESSI[x]() : x));
+  if (!manca.length && p.chat) return `<span class="badge verde">${L('tutto a posto', 'all set', 'todo listo')}</span>`;
+  const testa = p.chat ? `<span class="badge giallo">${L('collegato', 'linked', 'vinculado')}</span>` : `<span class="badge rosso">${L('senza chat', 'no chat', 'sin chat')}</span>`;
+  const quanti = manca.length ? `<div class="tenue" title="${esc(manca.join(', '))}">${L('mancano', 'missing', 'faltan')} ${manca.length > 3 ? manca.length + ' ' + L('permessi', 'permissions', 'permisos') : esc(manca.join(', '))}</div>` : '';
+  return testa + quanti;
+}
+const _PIATTAFORME_ADMIN = ['twitch', 'kick', 'youtube'];
+function _riassuntoStreamer(lista) {
+  const conta = (f) => lista.filter(f).length;
+  const pezzi = [`${lista.length} ${L('streamer', 'streamers', 'streamers')}`];
+  for (const id of _PIATTAFORME_ADMIN) {
+    const n = conta((s) => s.piattaforme?.[id]?.collegato);
+    if (n) pezzi.push(`${n} ${L('su', 'on', 'en')} ${id === 'youtube' ? 'YouTube' : id[0].toUpperCase() + id.slice(1)}`);
+  }
+  const nessuna = conta((s) => !_PIATTAFORME_ADMIN.some((id) => s.piattaforme?.[id]?.collegato));
+  if (nessuna) pezzi.push(`${nessuna} ${L('senza piattaforme collegate', 'with no linked platform', 'sin plataformas vinculadas')}`);
+  const prova = conta((s) => s.diCollaudo);
+  if (prova) pezzi.push(`${prova} ${L('di prova, tolti al prossimo riavvio', 'test channels, removed at the next restart', 'de prueba, se quitan en el próximo reinicio')}`);
+  return pezzi.join(' · ');
+}
+
 async function caricaTabellaAdmin() {
   const tbody = document.getElementById('tabella-streamer');
   if (!tbody) return;
   try {
     const lista = await api('/api/admin/streamers');
-    if (!lista.length) { tbody.innerHTML = `<tr><td colspan="6" class="vuoto">${L('Nessuno streamer ancora.', 'No streamers yet.', 'Aún no hay streamers.')}</td></tr>`; return; }
+    const riassunto = document.getElementById('riassunto-streamer');
+    if (riassunto) riassunto.textContent = lista.length ? _riassuntoStreamer(lista) : '';
+    if (!lista.length) { tbody.innerHTML = `<tr><td colspan="7" class="vuoto">${L('Nessuno streamer ancora.', 'No streamers yet.', 'Aún no hay streamers.')}</td></tr>`; return; }
 
     const badgeStato = {
       pending: `<span class="badge giallo">${L('in attesa', 'pending', 'en espera')}</span>`,
       approved: `<span class="badge verde">${L('approvato', 'approved', 'aprobado')}</span>`,
       disabled: `<span class="badge rosso">${L('disabilitato', 'disabled', 'deshabilitado')}</span>`,
     };
+    const casa = { twitch: 'Twitch', kick: 'Kick', youtube: 'YouTube', discord: 'Discord' };
     tbody.innerHTML = lista.map((s) => `
       <tr>
-        <td>${esc(s.display || s.login)}</td>
-        <td><code>${esc(s.login)}</code></td>
+        <td>${esc(s.display || s.login)}<div class="tenue"><code>${esc(s.login)}</code>${s.piattaforma && s.piattaforma !== 'twitch' ? ` · ${L('account', 'account', 'cuenta')} ${esc(casa[s.piattaforma] || s.piattaforma)}` : ''}</div>${s.diCollaudo ? `<span class="badge rosso" title="${L('Lasciato da un collaudo: va via da solo al prossimo riavvio', 'Left by a test run: it goes away by itself at the next restart', 'Dejado por una prueba: se va solo en el próximo reinicio')}">${L('di prova', 'test', 'de prueba')}</span>` : ''}</td>
         <td>${badgeStato[s.status] || esc(s.status)}${s.manuale ? ` <span class="badge" title="${L('Gestito a mano: il sync col sito non lo tocca', 'Manual: the site sync leaves it alone', 'Manual: la sync del sitio no lo toca')}">${_bIco(ICO.lucchetto)} ${L('manuale', 'manual', 'manual')}</span>` : (Number(s.grazia_fino) > 0 ? ` <span class="badge giallo" title="${L('In grazia: verrà disabilitato se non riconfermato', 'In grace: will be disabled if not reconfirmed', 'En gracia: se deshabilitará si no se reconfirma')} (${new Date(Number(s.grazia_fino)).toLocaleDateString()})">${_bIco(ICO.attesa)} ${L('grazia', 'grace', 'gracia')}</span>` : '')}</td>
-        <td>${s.permessiOk ? '✔' : '✘'}</td>
+        ${_PIATTAFORME_ADMIN.map((id) => `<td>${_cellaPiattaforma(s.piattaforme?.[id])}</td>`).join('')}
         <td>${s.knowledgeCount}</td>
         <td>
           ${s.status !== 'approved' ? `<button class="btn mini" data-azione="approved" data-login="${esc(s.login)}">${L('Approva', 'Approve', 'Aprobar')}</button>` : ''}
           ${s.status === 'approved' ? `<button class="btn secondario mini" data-azione="disabled" data-login="${esc(s.login)}">${L('Disabilita', 'Disable', 'Deshabilitar')}</button>` : ''}
           ${s.manuale ? `<button class="btn secondario mini" data-azione="auto" data-login="${esc(s.login)}" data-stato="${esc(s.status)}" title="${L('Rimetti sotto il controllo automatico del sito', 'Put back under the site auto-control', 'Vuelve al control automático del sitio')}">↻ ${L('Auto', 'Auto', 'Auto')}</button>` : ''}
           <button class="btn secondario mini" data-azione="accessi" data-login="${esc(s.login)}">${L('Accessi', 'Access', 'Accesos')}</button>
-          <button class="btn pericolo mini" data-azione="rimuovi" data-login="${esc(s.login)}">${L('Rimuovi', 'Remove', 'Quitar')}</button>
+          <button class="btn pericolo mini" data-azione="rimuovi" data-login="${esc(s.login)}" data-conferma="${esc(s.conferma || s.login)}">${L('Rimuovi', 'Remove', 'Quitar')}</button>
         </td>
       </tr>`).join('');
 
@@ -38622,11 +38656,29 @@ async function caricaTabellaAdmin() {
       conErrore(async () => {
         if (azione === 'accessi') { await apriAccessi(btn.closest('tr'), login); return; }
         if (azione === 'rimuovi') {
-          if (!(await chiediSe({ titolo: L(`Rimuovo del tutto ${login}?`, `Completely remove ${login}?`, `¿Elimino por completo a ${login}?`), pericolo: true,
-            testo: L('Se ne vanno anche i suoi permessi, e non si torna indietro.', 'Their permissions go too, and there is no going back.', 'Sus permisos también se van, y no hay vuelta atrás.'),
-            si: L('Rimuovilo', 'Remove them', 'Elimínalo') }))) return;
-          await api('/api/admin/rimuovi', { method: 'POST', body: { login } });
-          toast(L(`${login} rimosso.`, `${login} removed.`, `${login} eliminado.`));
+          const scelta = await chiediScelta({ titolo: L(`Cosa tolgo di ${login}?`, `What do I remove for ${login}?`, `¿Qué quito de ${login}?`), fuoco: 'no',
+            elenco: [
+              { titolo: L('Solo l\'accesso', 'Access only', 'Solo el acceso'), cosa: L('esce dall\'elenco e perde il permesso Twitch; comandi, Telegram e pagine restano e tornano se si ricollega.', 'leaves the list and loses the Twitch permission; commands, Telegram and pages stay and come back if they link again.', 'sale de la lista y pierde el permiso de Twitch; comandos, Telegram y páginas se quedan y vuelven si se vincula otra vez.') },
+              { titolo: L('Tutto', 'Everything', 'Todo'), cosa: L('ogni dato del canale, come se cancellasse l\'account. Non si torna indietro.', 'every piece of channel data, as if they deleted the account. There is no going back.', 'todos los datos del canal, como si borrara la cuenta. No hay vuelta atrás.') },
+            ],
+            azioni: [
+              { id: 'accesso', testo: L('Solo l\'accesso', 'Access only', 'Solo el acceso'), tono: 'pericolo' },
+              { id: 'tutto', testo: L('Tutto', 'Everything', 'Todo'), tono: 'pericolo' },
+              { id: 'no', testo: L('Lascia stare', 'Never mind', 'Déjalo'), tono: 'secondario' },
+            ] });
+          if (scelta === 'accesso') {
+            await api('/api/admin/rimuovi', { method: 'POST', body: { login } });
+            toast(L(`${login} rimosso.`, `${login} removed.`, `${login} eliminado.`));
+          } else if (scelta === 'tutto') {
+            const parola = btn.dataset.conferma || login;
+            const scritto = await chiediTesto({ titolo: L('Scrivi il nome del canale per confermare', 'Type the channel name to confirm', 'Escribe el nombre del canal para confirmar'),
+              testo: L(`Scrivi «${parola}». Tutto quello che è suo va via per sempre.`, `Type "${parola}". Everything of theirs goes away for good.`, `Escribe «${parola}». Todo lo suyo se va para siempre.`),
+              ok: L('Cancella tutto', 'Delete everything', 'Borrar todo'), max: 80, pericolo: true });
+            if (scritto == null) return;
+            const r = await api('/api/admin/rimuovi', { method: 'POST', body: { login, tutto: true, conferma: String(scritto).trim() } });
+            const righe = Object.values(r.righe || {}).reduce((a, n) => a + n, 0);
+            toast(L(`${login} cancellato del tutto (${righe} righe, ${(r.cartelle || []).length} file e cartelle).`, `${login} fully deleted (${righe} rows, ${(r.cartelle || []).length} files and folders).`, `${login} borrado por completo (${righe} filas, ${(r.cartelle || []).length} archivos y carpetas).`));
+          } else return;
         } else if (azione === 'auto') {
           await api('/api/admin/stato', { method: 'POST', body: { login, status: btn.dataset.stato || 'approved', manuale: false } });
           toast(L(`${login} torna in automatico (sync col sito).`, `${login} back to auto (site sync).`, `${login} vuelve a automático (sync del sitio).`));
@@ -38643,7 +38695,7 @@ async function caricaTabellaAdmin() {
       });
     };
   } catch (e) {
-    tbody.innerHTML = `<tr><td colspan="6" class="vuoto">${L('Errore', 'Error', 'Error')}: ${esc(e.message)}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7" class="vuoto">${L('Errore', 'Error', 'Error')}: ${esc(e.message)}</td></tr>`;
   }
 }
 

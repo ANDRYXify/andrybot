@@ -25,6 +25,7 @@
 // Uso: node scripts/verifica-comparse.mjs
 //      node scripts/verifica-comparse.mjs --selftest   (rompe una cosa per volta)
 
+import './_dati-usa-e-getta.mjs';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { apriSito, apriBrowser } from './_sito.mjs';

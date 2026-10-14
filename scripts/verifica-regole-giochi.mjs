@@ -18,6 +18,7 @@
 // Uso: node scripts/verifica-regole-giochi.mjs              (esce 1 se qualcosa non torna)
 //      node scripts/verifica-regole-giochi.mjs --selftest   (le caselle non si nascondono piu': deve uscire rosso)
 
+import './_dati-usa-e-getta.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';

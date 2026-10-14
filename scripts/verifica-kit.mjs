@@ -18,6 +18,7 @@
 //                                                 buono, il PDF senza testo, una sezione vuota
 //                                                 che disegna il suo titolo; li vuole tutti rossi)
 
+import './_dati-usa-e-getta.mjs';
 import { apriSito, apriBrowser } from './_sito.mjs';
 
 const SELFTEST = process.argv.includes('--selftest');

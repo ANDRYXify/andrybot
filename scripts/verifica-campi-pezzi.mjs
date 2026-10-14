@@ -58,6 +58,7 @@ if (process.argv.includes('--selftest')) {
   process.exit(cieche ? 1 : 0);
 }
 
+import './_dati-usa-e-getta.mjs';
 import { apriSito, apriBrowser } from './_sito.mjs';
 
 const b = await apriBrowser();

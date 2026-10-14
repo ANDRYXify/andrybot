@@ -26,7 +26,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { db } from '../db.js';
+import { db, tgConf, tokens } from '../db.js';
 import { config } from '../config.js';
 import { tabelleDiCanale } from './esporta.js';
 import { diCanale as attacchiDiCanale, dimenticaCanale as dimenticaAttacchi } from './incidenti.js';
@@ -165,4 +165,34 @@ export function restiDi(login) {
   } catch { /* niente */ }
   const cartelle = [...cartelleDiCanale(chi), ...fileDiCanale(chi)].map((d) => path.relative(config.dataDir, d));
   return { righe: resti, cartelle };
+}
+
+// I CANALI DI PROVA RIMASTI NEI DATI VERI. Fino al 2026-10-14 un cancello
+// (scripts/verifica-scudo-tg.mjs) apriva il database prima di scegliersi una
+// cartella usa e getta, e sul server — dove aggiorna.sh fa girare prove e
+// cancelli — creava `prova`, `proven` e `spento` nei dati veri, a ogni
+// aggiornamento. La causa e' chiusa (scripts/_dati-usa-e-getta.mjs e la guardia
+// in config.js); qui si toglie quello che ha lasciato.
+//
+// Si riconoscono dall'impronta, non dal nome: un token Telegram che Telegram
+// non da' mai (il suo e' «numero:35 caratteri») sul gruppo finto del cancello.
+// Il nome da solo non basta, perche' «prova» puo' essere un canale vero. E per
+// stare doppiamente dalla parte giusta: un canale che ha collegato Twitch o
+// Kick e' di una persona, e non si tocca qualunque cosa ci sia nel Telegram.
+export const IMPRONTA_DI_COLLAUDO = Object.freeze({ token: '1:finto', chatId: '-100900' });
+
+export function canaliDiCollaudo() {
+  let righe = [];
+  try { righe = db.prepare('SELECT channel FROM telegram WHERE chat_id=?').all(IMPRONTA_DI_COLLAUDO.chatId); }
+  catch { return []; }
+  return righe.map((r) => r.channel).filter((ch) =>
+    tgConf.get(ch)?.token === IMPRONTA_DI_COLLAUDO.token
+    && !tokens.get('broadcaster', ch)?.accessToken
+    && !tokens.get('kick', ch)?.accessToken);
+}
+
+// All'avvio. La conferma e' il nome stesso: a chiederla e' l'impronta, non un
+// bottone premuto per sbaglio.
+export function togliCanaliDiCollaudo() {
+  return canaliDiCollaudo().map((ch) => cancella(ch, { conferma: ch }));
 }

@@ -27,6 +27,7 @@
 // Uso: node scripts/verifica-inchiostro.mjs
 //      node scripts/verifica-inchiostro.mjs --selftest   (deve diventare rosso)
 
+import './_dati-usa-e-getta.mjs';
 import { apriSito, chromiumQui } from './_sito.mjs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';

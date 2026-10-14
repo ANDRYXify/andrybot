@@ -27,6 +27,7 @@
 // Uso: node scripts/verifica-cerca.mjs
 //      node scripts/verifica-cerca.mjs --selftest   (deve diventare rosso)
 
+import './_dati-usa-e-getta.mjs';
 import { apriSito, chromiumQui } from './_sito.mjs';
 
 const CHROMIUM = chromiumQui();

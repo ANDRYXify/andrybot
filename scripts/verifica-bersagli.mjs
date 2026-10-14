@@ -22,6 +22,7 @@
 // Uso: node scripts/verifica-bersagli.mjs             (esce 1 se ce n'e' uno)
 //      node scripts/verifica-bersagli.mjs --selftest  (ne mette uno apposta)
 
+import './_dati-usa-e-getta.mjs';
 import { apriSito, apriBrowser } from './_sito.mjs';
 
 const SELFTEST = process.argv.includes('--selftest');

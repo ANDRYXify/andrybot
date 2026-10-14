@@ -36,6 +36,7 @@
 // Uso: node scripts/verifica-grafiche.mjs            (esce 1 se qualcosa non va)
 //      node scripts/verifica-grafiche.mjs --selftest (le rotture devono vedersi)
 
+import './_dati-usa-e-getta.mjs';
 import { apriSito, apriBrowser } from './_sito.mjs';
 
 const SELFTEST = process.argv.includes('--selftest');

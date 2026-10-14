@@ -29,6 +29,7 @@
 //      SB_MINI=1 node scripts/verifica-studio.mjs   (lo stesso, sul banco minificato come lo
 //                                                    serve il server; si lancia a mano)
 
+import './_dati-usa-e-getta.mjs';
 import { apriSito, chromiumQui, PUB } from './_sito.mjs';
 import fs from 'node:fs';
 import path from 'node:path';

@@ -30,6 +30,7 @@
 //
 // Uso: node scripts/verifica-seo.mjs [--selftest]
 
+import './_dati-usa-e-getta.mjs';
 import { readFileSync, statSync, readdirSync, mkdtempSync, rmSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { tmpdir } from 'node:os';

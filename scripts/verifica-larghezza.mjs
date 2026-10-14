@@ -47,6 +47,7 @@
 // Uso: node scripts/verifica-larghezza.mjs
 //      node scripts/verifica-larghezza.mjs --selftest   (rompe una cosa per volta)
 
+import './_dati-usa-e-getta.mjs';
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -55,7 +56,6 @@ import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
 import { apriSito, chromiumQui } from './_sito.mjs';
 
-process.env.DATA_DIR = process.env.DATA_DIR || fs.mkdtempSync(path.join(tmpdir(), 'larghezza-'));
 const RAD = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PUB = path.join(RAD, 'src/web/public');
 const CHROMIUM = chromiumQui();

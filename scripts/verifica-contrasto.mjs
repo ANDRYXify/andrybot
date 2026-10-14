@@ -15,6 +15,7 @@
 //
 // Uso: node scripts/verifica-contrasto.mjs   (esce 1 se qualcosa non si legge)
 
+import './_dati-usa-e-getta.mjs';
 import { apriSito, chromiumQui } from './_sito.mjs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';

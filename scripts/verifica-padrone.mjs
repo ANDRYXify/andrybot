@@ -29,6 +29,7 @@
 //      node scripts/verifica-padrone.mjs --selftest  (rimette la transizione
 //                                                     sul transform: rosso)
 
+import './_dati-usa-e-getta.mjs';
 import { apriSito, chromiumQui } from './_sito.mjs';
 import fs from 'node:fs';
 import path from 'node:path';

@@ -50,6 +50,7 @@
 // Uso: node scripts/verifica-stacco.mjs
 //      node scripts/verifica-stacco.mjs --selftest   (rompe una cosa per volta)
 
+import './_dati-usa-e-getta.mjs';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { apriSito, chromiumQui } from './_sito.mjs';

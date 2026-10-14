@@ -18,6 +18,7 @@
 //
 // Uso: node scripts/verifica-pagina-link.mjs
 
+import './_dati-usa-e-getta.mjs';
 import { apriSito, chromiumQui } from './_sito.mjs';
 
 const CHROMIUM = chromiumQui();

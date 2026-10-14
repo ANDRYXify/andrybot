@@ -160,3 +160,30 @@ test('ogni modulo che scrive file col nome di un canale ha la sua cartella nell\
   }
   assert.deepEqual([...CARTELLE_DI_FILE].sort(), Object.values(NOTI).sort());
 });
+
+test('i canali lasciati da un collaudo si riconoscono dall\'impronta e vanno via tutti interi', async () => {
+  const { tgConf, tokens } = await import('../../src/db.js');
+  const { canaliDiCollaudo, togliCanaliDiCollaudo, IMPRONTA_DI_COLLAUDO: I } = await import('../../src/features/cancella.js');
+  const finto = (ch) => { riempi(ch); tgConf.set(ch, { token: I.token, chatId: I.chatId }); };
+  finto('relitto');
+  finto('relitto-tw'); tokens.save('broadcaster', 'relitto-tw', { accessToken: 'a', scopes: [] });
+  finto('relitto-kick'); tokens.save('kick', 'relitto-kick', { accessToken: 'a', scopes: [] });
+  riempi('vero'); tgConf.set('vero', { token: '123456:' + 'A'.repeat(35), chatId: I.chatId });
+  riempi('altrogruppo'); tgConf.set('altrogruppo', { token: I.token, chatId: '-100123' });
+  assert.deepEqual(canaliDiCollaudo(), ['relitto']);
+  assert.deepEqual(togliCanaliDiCollaudo().map((e) => e.canale), ['relitto']);
+  assert.deepEqual(restiDi('relitto'), { righe: {}, cartelle: [] });
+  for (const ch of ['relitto-tw', 'relitto-kick', 'vero', 'altrogruppo']) assert.ok(streamers.get(ch), ch + ' toccato');
+  assert.deepEqual(togliCanaliDiCollaudo(), []);
+});
+
+test('il cancello che li creava usa la stessa impronta, e l\'avvio li toglie prima di partire', () => {
+  const qui = (p) => fs.readFileSync(new URL('../../' + p, import.meta.url), 'utf8');
+  const cancello = qui('scripts/verifica-scudo-tg.mjs');
+  assert.match(cancello, /token: IMPRONTA_DI_COLLAUDO\.token/);
+  assert.match(cancello, /const CHAT = IMPRONTA_DI_COLLAUDO\.chatId;/);
+  assert.doesNotMatch(cancello, /'1:finto'|'-100900'/);
+  const avvio = qui('src/index.js');
+  const pulizia = avvio.indexOf('togliCanaliDiCollaudo()');
+  assert.ok(pulizia > 0 && pulizia < avvio.indexOf('new BotManager('), 'la pulizia viene prima del bot');
+});

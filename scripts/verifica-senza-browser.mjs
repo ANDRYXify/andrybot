@@ -21,6 +21,7 @@
 //
 // Uso: node scripts/verifica-senza-browser.mjs   (esce 1 se qualcosa non torna)
 
+import './_dati-usa-e-getta.mjs';
 import { readFileSync, readdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';

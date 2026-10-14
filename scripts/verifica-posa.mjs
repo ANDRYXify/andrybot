@@ -30,6 +30,7 @@
 //      node scripts/verifica-posa.mjs --selftest (rimette la formula vecchia:
 //                                                 DEVE diventare rosso)
 
+import './_dati-usa-e-getta.mjs';
 import { apriSito, chromiumQui } from './_sito.mjs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
