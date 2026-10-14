@@ -28,7 +28,7 @@ const AIUTI = aiutiPerScheda();
 // aprono da una scheda madre e nella barra non compaiono. Leggendo la barra si
 // otteneva un elenco piu' corto del vero, e un aiuto legittimo sembrava rotto.
 const SCHEDE = [...new Set([...APP.matchAll(/pannello\('([a-z0-9-]+)'/g)].map((m) => m[1]))]
-  .filter((id) => !['admin', 'studio'].includes(id));
+  .filter((id) => id !== 'admin');
 
 test('qualche scheda ha la sua pagina', () => {
   assert.ok(SCHEDE.length >= 10, `schede del pannello: ${SCHEDE.length}`);

@@ -453,9 +453,9 @@ export const GUIDE_IT = [
         'Preferiamo dirlo prima. Dal browser l\'audio del gioco si prende da tutto il sistema solo su Windows e ChromeOS; su macOS solo quello di una scheda del browser. L\'audio di una sola applicazione, i plugin audio VST, NDI e le scorciatoie quando il browser non è davanti restano cose da programma installato.',
         'Per questo ci saranno altre due strade: <strong>OBS comandato da SocialBot</strong>, che configura le scene, l\'audio e l\'uscita al posto tuo, e <a href="/guide/osify-sistema-per-lo-streaming">OSify</a>, il sistema operativo pensato per lo streaming, dove tutto questo è già di casa.',
       ] },
-      { h2: 'Come chiedere di provarlo per primo', passi: [
+      { h2: DENTRO.it, passi: [
         { t: 'Entra in SocialBot', d: 'Con l\'account con cui streammi, su Twitch o su Kick. L\'Essenziale è gratis.' },
-        { t: 'Apri «Studio Web» nel menù', d: 'Sta in «In diretta». Lì trovi lo stato aggiornato della beta.' },
+        { t: 'Apri la scheda «Studio Web»', d: 'Sta nel menù, in «In diretta». Lì trovi lo stato aggiornato della beta.' },
         { t: 'Premi «Voglio provarlo per primo»', d: 'Non ti chiediamo altri dati: resta segnato sul tuo account, e quando la beta apre te lo diciamo dal pannello. Puoi toglierti quando vuoi con lo stesso tasto.' },
       ] },
     ],
