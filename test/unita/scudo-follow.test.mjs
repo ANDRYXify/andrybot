@@ -84,9 +84,14 @@ test('lo scudo guarda per primo: il follow che fa scattare l\'attacco e\' gia\' 
   canale(ch);
   const { io, visti, righe } = bot(ch);
   let scattato = -1;
+  // L'ondata ha il suo tempo dentro (ev.ts, come gli eventi veri e il
+  // simulatore): sedici follow in tre secondi. Senza, il tempo era quello della
+  // macchina, e sotto carico le sedici consegne si allargavano fino a non fare
+  // piu' un'ondata: rosso con uno scudo giusto.
+  const t0 = Date.now();
   for (let i = 0; i < 16; i++) {
     const prima = ab.assetto(ch).livello;
-    io._dispatchEvent(follow(ch, i));
+    io._dispatchEvent(follow(ch, i, { ts: t0 + i * 200 }));
     if (scattato < 0 && !LIV.almeno(prima, 'attacco') && LIV.almeno(ab.assetto(ch).livello, 'attacco')) scattato = i;
     await flush();
   }
