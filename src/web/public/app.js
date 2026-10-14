@@ -38655,10 +38655,7 @@ async function misuraServer(bottone) {
     <p class="suggerimento"><strong>${L('Le funzioni più pesanti', 'The heaviest functions', 'Las funciones más pesadas')}</strong></p>
     <ul class="salute-motivi">${(p.perFunzione || []).slice(0, 10).map(riga).join('')}</ul>
     <p><button class="btn secondario mini" id="btn-misura-copia">${L('Copia il rapporto', 'Copy the report', 'Copiar el informe')}</button></p>`;
-  document.getElementById('btn-misura-copia')?.addEventListener('click', async () => {
-    try { await navigator.clipboard.writeText(JSON.stringify(r, null, 1)); toast(L('Rapporto copiato.', 'Report copied.', 'Informe copiado.')); }
-    catch { toast(L('Non riesco a copiare: seleziona il testo a mano.', 'I can\'t copy: select the text by hand.', 'No puedo copiar: selecciona el texto a mano.')); }
-  });
+  document.getElementById('btn-misura-copia')?.addEventListener('click', () => copiaTesto(JSON.stringify(r, null, 1), L('Rapporto copiato.', 'Report copied.', 'Informe copiado.')));
 }
 
 async function caricaBackup() {
