@@ -97,10 +97,10 @@ comandi diversi da quelli della riga italiana.
   es> Partidas con el chat, y las monedas llegan solas
   es> Una partida personalizada, un quiz: la fila se forma sola en el chat, eliges quién juega y dices cómo fue. Puedes cobrar la entrada, dar monedas por puesto y dejar la partida también a los moderadores.
 
-- [importante] Il menu del pannello è riordinato: ogni cosa ha un nome solo, uguale nel menu, nel titolo e nei manuali, e in ogni pagina c'è al massimo una barra. Le Partite con la chat hanno la loro scheda. [vai: stato]
+- [importante] Il menù del pannello è riordinato: ogni cosa ha un nome solo, uguale nel menù, nel titolo e nei manuali, e in ogni pagina c'è al massimo una barra. Le Partite con la chat hanno la loro scheda. [vai: stato]
   en: The panel menu is reorganized: everything has one name, the same in the menu, the title and the manuals, and every page has at most one bar. Games with chat have their own tab.
   es: El menú del panel está reordenado: cada cosa tiene un solo nombre, igual en el menú, en el título y en los manuales, y cada página tiene como mucho una barra. Las partidas con el chat tienen su pestaña.
-  > Il menu, più ordinato
+  > Il menù, più ordinato
   > Niente più barre una sopra l'altra né nomi diversi per la stessa cosa. I giochi, le partite, i sondaggi, il giveaway e le penitenze stanno in «Intrattenimento»; regia, clip e musica in «In diretta»; statistiche e dirette in «Numeri».
   en> The menu, tidier
   en> No more bars stacked on top of each other or different names for the same thing. Games, matches, polls, giveaways and forfeits are in «Entertainment»; control room, clips and music in «Live»; stats and streams in «Numbers».
