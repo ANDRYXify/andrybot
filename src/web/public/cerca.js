@@ -24,6 +24,7 @@
     giochi: 'giochi minigiochi classifiche monete punti coin economia leaderboard ore guardate watchtime fedeltà rank vip games juegos clasificación monedas livelli',
     sondaggi: 'sondaggi predizioni poll prediction votazioni voto encuestas predicciones votar',
     giveaway: 'giveaway estrazione premi raffle sorteggio vincitori concorso sorteo premios',
+    partite: 'partite partita con la chat fila coda lobby custom manche giocatori iscriviti gioco esito vincitori monete matches queue players round partidas fila ronda',
     penitenze: 'penitenze penalità punti canale sfide riscatti contatore morti forfeit castigos retos muertes',
     regia: 'regia diretta live comandi rapidi durante la diretta titolo categoria pubblicità stream directo título anuncios',
     clip: 'clip momenti highlight ritaglia registra clips momentos grabar',
