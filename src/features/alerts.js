@@ -180,8 +180,9 @@ export class AlertsEngine {
     const a = s?.alerts;
     const conf = a && a.attivo !== false ? a[kind] : null;
     // lo streamer ha scelto l'alert di Twitch: il nostro non parte, ma i
-    // widget, gli obiettivi e la maratona hanno contato lo stesso
-    const avviso = !!conf && conf.attivo !== false && chiAlertOk(kind, conf.chi) !== 'twitch'
+    // widget, gli obiettivi e la maratona hanno contato lo stesso. Solo per
+    // gli eventi di Twitch: quelli di Kick Twitch non li mostra.
+    const avviso = !!conf && conf.attivo !== false && chiAlertOk(kind, conf.chi, data?.piattaforma) !== 'twitch'
       && !(kind === 'cheer' && Number(vars.bits) < (Number(conf.minBits) || 0))
       && !(kind === 'kicks' && Number(vars.kicks) < (Number(conf.minKicks) || 0))
       && !(kind === 'raid' && Number(vars.viewers) < (Number(conf.minViewers) || 0));
@@ -537,13 +538,14 @@ export class AlertsEngine {
         // regna puo' cambiare mentre l'overlay e' aperto.
         corona: portaCorona(channel, msg.user, piattaformaDi(msg)),
         user: msg.display || msg.user || '',
-        colore: msg?.tags?.color || '',
+        colore: stemmi.coloreDi(msg),
         testo: testo.slice(0, 200),
         // stemmi: Twitch (stringa "setId/version,…" risolta nell'overlay) + 7TV (url già risolto)
         badges: msg?.tags?.badges || '',
-        badge7tv: stemmi.badge7tv(msg?.userId || msg?.tags?.['user-id']),
-        // emote NATIVE di Twitch presenti in QUESTO messaggio: nome→url (dal tag "emotes")
-        emotiTwitch: emote.twitchInMessaggio(msg?.tags?.emotes, msg?.text),
+        badge7tv: stemmi.badge7tvDi(msg),
+        stemmiKick: stemmi.stemmiKick(msg),
+        // emote NATIVE della piattaforma di chi scrive (Twitch o Kick): nome→url
+        emotiTwitch: emote.nativeInMessaggio(msg),
         posizione: c.posizione || 'basso-sinistra',
         xy: c.xy || null,
         max: Math.max(1, Math.min(20, Number(c.max) || 8)),
@@ -569,11 +571,12 @@ export class AlertsEngine {
         piattaforma: piattaformaDi(msg),
         corona: portaCorona(channel, msg.user, piattaformaDi(msg)),
         user: msg.display || msg.user || '',
-        colore: msg?.tags?.color || '',
+        colore: stemmi.coloreDi(msg),
         testo: testo.slice(0, 300),
         badges: msg?.tags?.badges || '',
-        badge7tv: stemmi.badge7tv(msg?.userId || msg?.tags?.['user-id']),
-        emotiTwitch: emote.twitchInMessaggio(msg?.tags?.emotes, msg?.text),
+        badge7tv: stemmi.badge7tvDi(msg),
+        stemmiKick: stemmi.stemmiKick(msg),
+        emotiTwitch: emote.nativeInMessaggio(msg),
       });
     } catch (e) { log.debug('onChatRaw:', e?.message || e); }
   }

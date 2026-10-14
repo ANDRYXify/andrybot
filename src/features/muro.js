@@ -107,7 +107,7 @@ export class MuroEmote {
         tipo: 'muro',
         chi: chiE(msg),
         testo: testo.slice(0, 300),
-        emotiTwitch: emote.twitchInMessaggio(msg?.tags?.emotes, msg?.text),
+        emotiTwitch: emote.nativeInMessaggio(msg),
       });
     } catch (e) { log.debug('suChat:', e?.message || e); }
   }
@@ -128,7 +128,7 @@ export class MuroEmote {
     this.esplodi(channel, cfg.comando.figura, {
       da: 'comando',
       parole: parole(resto.join(' ')),
-      emotiTwitch: emote.twitchInMessaggio(msg?.tags?.emotes, msg?.text),
+      emotiTwitch: emote.nativeInMessaggio(msg),
     });
     return true;
   }

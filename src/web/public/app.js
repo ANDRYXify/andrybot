@@ -13762,9 +13762,11 @@ const ALERT_TIPI = () => [
 
 const ALERT_TWITCH_AIUTO = 'https://link.twitch.tv/SettingUpTwitchAlerts';
 const CHI_ALERT_OPTS = () => [['socialbot', 'SocialBot'], ['twitch', 'Twitch'], ['entrambi', L('Tutti e due', 'Both', 'Los dos')]];
+function _alConKick() { return _piattaformeAttive.some((x) => x.id === 'kick'); }
 function notaChiAlert(chi) {
   const link = `<a href="${ALERT_TWITCH_AIUTO}" target="_blank" rel="noopener">${L('Come si impostano su Twitch', 'How to set them up on Twitch', 'Cómo se configuran en Twitch')}</a>`;
-  if (chi === 'twitch') return L('Lo mostra Twitch, con l\'alert che imposti su Twitch: da qui non parte niente. Widget, obiettivi e subathon vanno avanti come prima.', 'Twitch shows it, with the alert you set up on Twitch: nothing plays from here. Widgets, goals and subathon keep working as before.', 'La muestra Twitch, con la alerta que configuras en Twitch: desde aquí no sale nada. Widgets, objetivos y subathon siguen funcionando como antes.') + ' ' + link;
+  if (chi === 'twitch') return L('Lo mostra Twitch, con l\'alert che imposti su Twitch: da qui non parte niente. Widget, obiettivi e subathon vanno avanti come prima.', 'Twitch shows it, with the alert you set up on Twitch: nothing plays from here. Widgets, goals and subathon keep working as before.', 'La muestra Twitch, con la alerta que configuras en Twitch: desde aquí no sale nada. Widgets, objetivos y subathon siguen funcionando como antes.')
+    + (_alConKick() ? ' ' + L('Gli eventi di Kick invece li mostra SocialBot, con il testo e lo stile qui sotto: Twitch non li vede.', 'Kick events are shown by SocialBot instead, with the text and style below: Twitch does not see them.', 'Los eventos de Kick, en cambio, los muestra SocialBot, con el texto y el estilo de abajo: Twitch no los ve.') : '') + ' ' + link;
   if (chi === 'entrambi') return L('Partono tutti e due, il nostro e quello di Twitch. Mettili in due punti diversi dello schermo, così non si coprono.', 'Both play, ours and Twitch\'s. Put them in two different spots on screen so they don\'t cover each other.', 'Salen las dos, la nuestra y la de Twitch. Ponlas en dos sitios distintos de la pantalla para que no se tapen.') + ' ' + link;
   return L('Lo mostra SocialBot. Se su Twitch hai acceso anche i suoi alert, questo evento compare due volte: lì puoi spegnerli.', 'SocialBot shows it. If Twitch\'s own alerts are on too, this event shows up twice: you can turn them off there.', 'La muestra SocialBot. Si en Twitch tienes activadas también sus alertas, este evento aparece dos veces: allí puedes apagarlas.') + ' ' + link;
 }
@@ -13772,7 +13774,7 @@ function chiAlertMostra(b) {
   const sel = b && b.querySelector('.al-chi');
   if (!sel) return;
   const nostro = b.querySelector('.al-nostro');
-  if (nostro) nostro.hidden = sel.value === 'twitch';
+  if (nostro) nostro.hidden = sel.value === 'twitch' && !_alConKick();
   const nota = b.querySelector('.al-chi-nota');
   if (nota) nota.innerHTML = notaChiAlert(sel.value);
 }
@@ -13881,7 +13883,7 @@ function bloccoAlert(t, a) {
         <strong>${t.nome}</strong>
       </div>${riga}
       <p class="suggerimento al-effetto" data-al-effetto="${t.key}">${_alEffettoRiga(t.key)}</p>
-      <div class="al-nostro"${chi === 'twitch' ? ' hidden' : ''}>
+      <div class="al-nostro"${chi === 'twitch' && !_alConKick() ? ' hidden' : ''}>
       <label class="campo spazio-sopra">${L('Testo', 'Text', 'Texto')} <span class="tenue">— ${L('segnaposto', 'placeholders', 'marcadores')}: ${esc(t.vars)}</span></label>
       <input type="text" class="al-testo campo-largo" aria-label="${esc(L('Testo di', 'Text of', 'Texto de') + ' ' + t.nome)}" maxlength="200" placeholder="${esc(t.ph)}" value="${esc(c.testo || '')}">
       <div class="griglia-campi spazio-sopra">
@@ -14854,7 +14856,7 @@ function pannelloAlert() {
         </div>
         <div class="asp-blocco" data-asp="muro" data-cfg-di="muro">
           <h4 class="spazio-sopra">${L('Cosa vola', 'What flies', 'Qué vuela')}</h4>
-          <label class="riga-check"><input type="checkbox" data-c="fonti.twitch"> ${L('Emote di Twitch', 'Twitch emotes', 'Emotes de Twitch')}</label>
+          <label class="riga-check"><input type="checkbox" data-c="fonti.twitch"> ${L('Emote di Twitch e Kick', 'Twitch and Kick emotes', 'Emotes de Twitch y Kick')}</label>
           <label class="riga-check"><input type="checkbox" data-c="fonti.settetv"> ${L('Emote 7TV del canale', 'Channel 7TV emotes', 'Emotes 7TV del canal')}</label>
           <label class="riga-check"><input type="checkbox" data-c="fonti.emoji"> ${L('Emoji', 'Emoji', 'Emoji')}</label>
           <label class="riga-check"><input type="checkbox" data-c="doppioni"> ${L('La stessa emote più volte nello stesso messaggio', 'The same emote several times in one message', 'El mismo emote varias veces en un mensaje')}</label>

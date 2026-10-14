@@ -52,12 +52,12 @@ test('il server tiene la scelta per ognuno dei cinque eventi, col suo nome', () 
   }
 });
 
-test('con «Twitch» il blocco si chiude, all\'apertura e al cambio, e la nota porta alla guida di Twitch', () => {
+test('con «Twitch» il blocco si chiude (se Kick non c\'e\'), all\'apertura e al cambio, e la nota porta alla guida di Twitch', () => {
   const blocco = tratto(APP, 'function bloccoAlert(t, a) {', '\n}\n');
-  assert.match(blocco, /<div class="al-nostro"\$\{chi === 'twitch' \? ' hidden' : ''\}>/);
+  assert.match(blocco, /<div class="al-nostro"\$\{chi === 'twitch' && !_alConKick\(\) \? ' hidden' : ''\}>/);
   assert.ok(blocco.indexOf('class="al-nostro"') < blocco.indexOf('class="btn secondario mini al-prova"'), 'la prova sta dentro quello che si chiude');
   const mostra = tratto(APP, 'function chiAlertMostra(b) {', '\n}\n');
-  assert.match(mostra, /nostro\.hidden = sel\.value === 'twitch';/);
+  assert.match(mostra, /nostro\.hidden = sel\.value === 'twitch' && !_alConKick\(\);/);
   assert.match(mostra, /nota\.innerHTML = notaChiAlert\(sel\.value\);/);
   assert.match(APP, /closest\('\.al-chi'\);\n\s+if \(sel\) chiAlertMostra\(sel\.closest\('\.alert-blocco'\)\);/);
   const nota = tratto(APP, 'function notaChiAlert(chi) {', '\n}\n');

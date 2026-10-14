@@ -124,7 +124,11 @@ export const DIM_WIDGET = ['piccola', 'media', 'grande', 'enorme'];
 // SocialBot e basta, qualunque cosa ci sia scritto.
 export const CHI_ALERT = ['socialbot', 'twitch', 'entrambi'];
 export const EVENTI_TWITCH = ['follow', 'sub', 'cheer', 'raid'];
-export const chiAlertOk = (kind, v) => (EVENTI_TWITCH.includes(kind) && CHI_ALERT.includes(v) ? v : 'socialbot');
+// La scelta vale per gli eventi che arrivano DA Twitch: un follow o un sub di
+// Kick Twitch non lo vede, e lasciarlo «a Twitch» voleva dire non mostrarlo
+// affatto. Per ogni altra piattaforma l'alert e' il nostro.
+export const chiAlertOk = (kind, v, piattaforma = 'twitch') => (String(piattaforma || 'twitch').toLowerCase() === 'twitch'
+  && EVENTI_TWITCH.includes(kind) && CHI_ALERT.includes(v) ? v : 'socialbot');
 
 export const normAlertStile = (st) => {
   st = st || {};

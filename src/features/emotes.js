@@ -164,3 +164,24 @@ export function twitchInMessaggio(emotesTag, testo) {
   }
   return out;
 }
+
+// Emote NATIVE di Kick presenti in UN messaggio: kick/messaggio.js le ha gia'
+// tolte dal testo (resta il nome) e messe nel tag «id:nome,id:nome». L'id e'
+// solo cifre, quindi l'url resta sulla CDN di Kick e non si puo' portare altrove.
+export function kickInMessaggio(emoteTag) {
+  const out = {};
+  for (const parte of String(emoteTag || '').split(',')) {
+    const m = /^(\d{1,20}):(\w{1,100})$/.exec(parte);
+    if (m) out[m[2]] = `https://files.kick.com/emotes/${m[1]}/fullsize`;
+  }
+  return out;
+}
+
+// LE EMOTE DELLA PIATTAFORMA DEL MESSAGGIO, qualunque sia. Chi mette le emote a
+// schermo (chat, muro, arena) chiede questa, non quella di Twitch: cosi' un
+// posto nuovo non dimentica Kick. Il campo che le porta all'overlay si chiama
+// ancora `emotiTwitch` (lo leggono overlay, muro e Studio), ma contiene le
+// emote native di chi ha scritto, Twitch o Kick.
+export function nativeInMessaggio(msg, testo = msg?.text) {
+  return { ...twitchInMessaggio(msg?.tags?.emotes, testo), ...kickInMessaggio(msg?.tags?.['kick-emote']) };
+}

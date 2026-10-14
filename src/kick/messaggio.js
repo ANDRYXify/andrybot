@@ -18,11 +18,28 @@ const distintivi = (sender) => new Set(
   (sender?.identity?.badges || []).map((b) => String(b?.type || b || '').toLowerCase()).filter(Boolean),
 );
 
+// LE EMOTE DI KICK. Kick le scrive nel testo come `[emote:ID:NOME]`: lasciate
+// cosi', la chat a schermo mostrava il codice, l'antispam contava le parentesi
+// come simboli e la lunghezza come testo, e la memoria della chat ricordava
+// codici invece di parole. Si fa come Twitch: nel testo resta il NOME (quello
+// che la persona ha scelto), e le emote viaggiano a parte, nel tag
+// `kick-emote` («id:nome,id:nome»), da cui l'overlay ricava l'immagine. Un
+// nome solo una volta: a schermo conta che nome porta a quale immagine.
+const EMOTE_KICK = /\[emote:(\d{1,20}):(\w{1,100})\]/g;
+export function senzaCodiciEmote(testo) {
+  const emote = new Map();
+  const pulito = String(testo ?? '').replace(EMOTE_KICK, (_, id, nome) => {
+    if (!emote.has(nome)) emote.set(nome, id);
+    return nome;
+  });
+  return { testo: pulito, emote: [...emote].map(([nome, id]) => `${id}:${nome}`).join(',') };
+}
+
 // `canale` è il login con cui lo streamer è registrato DA NOI: le funzioni del
 // bot ragionano per canale nostro, non per id di piattaforma.
 export function daChatMessage(payload, { canale, loginBot = '' } = {}) {
   const p = payload || {};
-  const testo = String(p.content ?? '');
+  const { testo, emote } = senzaCodiciEmote(p.content);
   const sender = p.sender || {};
   const utente = String(sender.username || '').toLowerCase();
   if (!canale || !utente || !testo) return null;
@@ -49,6 +66,7 @@ export function daChatMessage(payload, { canale, loginBot = '' } = {}) {
     tags: {
       'kick-badges': [...b].join(','),
       'kick-colore': String(sender.identity?.username_color || ''),
+      'kick-emote': emote,
       'kick-risposta-a': String(p.replies_to?.message_id || ''),
     },
   };

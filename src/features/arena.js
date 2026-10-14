@@ -39,7 +39,8 @@ import * as economia from './economia.js';
 import { valoriDi, regoleDa } from './giochi-conf.js';
 import { nomeIn, puoUsare, vivo, moduloAcceso } from './comandi-registro.js';
 import { BOT_NOTI } from './muro.js';
-import { twitchInMessaggio } from './emotes.js';
+import { nativeInMessaggio } from './emotes.js';
+import { coloreDi } from './badges.js';
 import { aspetta, giocato } from './attese-giochi.js';
 import { aChi } from './risposte.js';
 import { nomeMoneta } from './moneta.js';
@@ -165,7 +166,6 @@ export function emoteDi({ scelta, parole, twitch } = {}, mappe = {}, id = '') {
   return { nome: k, url: mappe.proprie[k] };
 }
 
-const COLORE_OK = /^#[0-9a-f]{6}$/i;
 const pubblico = (c) => ({ id: c.id, nome: c.nome, colore: c.colore, emote: c.emote });
 
 // ── la partita ──────────────────────────────────────────────────────────
@@ -312,9 +312,9 @@ function entra(channel, p, msg, say, { comando = false } = {}) {
   const testo = msg.testoScritto ?? msg.text;
   const x = {
     id, nome,
-    colore: COLORE_OK.test(String(msg.tags?.color || '')) ? msg.tags.color : '',
+    colore: coloreDi(msg),
     parole: paroleDi(testo),
-    twitch: twitchInMessaggio(msg.tags?.emotes, testo),
+    twitch: nativeInMessaggio(msg, testo),
     scelta: arenaEmote.get(channel, id),
   };
   x.emote = emoteDi(x, p.mappe, id);
@@ -463,7 +463,7 @@ export async function scegliEmote(channel, msg, say) {
   const p = partite.get(channel);
   const gia = p?.mappe?.tutte;
   const tutte = gia && Object.keys(gia).length ? gia : await caricaEmote.tutte(channel).catch(() => ({}));
-  const e = primaEmote(parole, twitchInMessaggio(msg.tags?.emotes, testo), tutte);
+  const e = primaEmote(parole, nativeInMessaggio(msg, testo), tutte);
   if (!e) { risposta(di(FRASI.emoteNonTrovata, { nome })); return; }
   arenaEmote.scegli(channel, id, e);
   risposta(di(FRASI.emoteScelta, { nome, emote: e.nome }));

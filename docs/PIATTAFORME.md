@@ -587,6 +587,23 @@ Collaudi: `test/unita/kick-ore-guardate.test.mjs` (chi conta, due giri sui giri
 veri, il buco, la lista unita, il canale nato su Kick, Twitch e Kick insieme,
 solo Twitch come prima, gli annunci).
 
+### La chat di Kick a schermo
+
+Kick scrive le emote nel testo come `[emote:ID:NOME]`. `kick/messaggio.js`
+(`senzaCodiciEmote`) lascia nel testo il NOME, come fa Twitch, e mette le emote
+a parte nel tag `kick-emote` («id:nome,id:nome»): cosi' la chat a schermo, il
+muro, l'arena e la memoria leggono parole, e l'antispam non conta parentesi e
+cifre come simboli. L'immagine si ricava dall'id (solo cifre) sulla CDN di
+Kick (`emotes.js`, `kickInMessaggio`); chi mette emote a schermo chiede
+`nativeInMessaggio(msg)`, che le da' per la piattaforma di chi scrive.
+
+Il colore del nome arriva in `kick-colore`, gli stemmi in `kick-badges` come
+tipi senza immagine. `badges.js` li legge (`coloreDi`, `stemmiKick`) e l'overlay
+disegna gli stemmi da se' (`STEMMA_KICK` in `overlay-app.js`, un colore per
+ognuno in `overlay-skin.css`). Lo stemma 7TV si cerca per id di Twitch: per chi
+scrive da Kick non si chiede (`badge7tvDi`), perche' lo stesso numero e' di
+un'altra persona. La prova e' `test/unita/kick-chat-overlay.test.mjs`.
+
 ### Cosa NON fa ancora, e perché è detto qui
 
 Lo scudo anti-bot lavora solo su Twitch: legge eventi (follow a ondate, raid,

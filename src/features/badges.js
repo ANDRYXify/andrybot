@@ -66,3 +66,31 @@ async function _fetch7tv(id) {
     cache7.set(id, { ts: Date.now(), url: '' });   // niente: nessun badge (non ritentare a raffica)
   }
 }
+
+// --- Il colore del nome: Twitch lo manda in `color`, Kick in `kick-colore`
+// (kick/messaggio.js). Passa solo un colore esadecimale: quello che arriva da
+// fuori va a finire nello stile della riga. Esce sempre a sei cifre, perche'
+// chi lo legge a valle (l'arena) lo scompone in rosso, verde e blu. ---
+export function coloreDi(msg) {
+  const c = String(msg?.tags?.color || msg?.tags?.['kick-colore'] || '').trim();
+  if (/^#[0-9a-f]{6}$/i.test(c)) return c;
+  const m = /^#([0-9a-f])([0-9a-f])([0-9a-f])$/i.exec(c);
+  return m ? `#${m[1]}${m[1]}${m[2]}${m[2]}${m[3]}${m[3]}` : '';
+}
+
+// --- Kick: gli stemmi arrivano come tipi (broadcaster, moderator…), senza
+// immagini. L'overlay li disegna da se'; qui passano solo quelli che sa
+// disegnare, in ordine di importanza, e solo per chi scrive da Kick. ---
+export const STEMMI_KICK = Object.freeze(['broadcaster', 'moderator', 'vip', 'og', 'founder', 'subscriber', 'sub_gifter', 'verified']);
+export function stemmiKick(msg) {
+  if (String(msg?.piattaforma || '').toLowerCase() !== 'kick') return [];
+  const tipi = new Set(String(msg?.tags?.['kick-badges'] || '').split(',').map((x) => x.trim().toLowerCase()));
+  return STEMMI_KICK.filter((t) => tipi.has(t));
+}
+
+// --- 7TV si cerca per id di Twitch: l'id di chi scrive da Kick e' un altro
+// numero, e chiederlo a 7TV darebbe lo stemma di una persona qualunque. ---
+export function badge7tvDi(msg) {
+  if (String(msg?.piattaforma || 'twitch').toLowerCase() !== 'twitch') return '';
+  return badge7tv(msg?.userId || msg?.tags?.['user-id']);
+}

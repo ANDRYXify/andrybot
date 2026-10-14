@@ -9,7 +9,7 @@ export default {
   titolo: 'Manuale dell\'Overlay Studio: alert, chat, obiettivi | SocialBot',
   h1: 'Manuale dell\'Overlay Studio',
   desc: 'Comporre l\'overlay per OBS: overlay e occasioni, la tela, alert, chat, player, conto alla rovescia, obiettivi e cartelli, con i valori di base e i limiti.',
-  aggiornata: '2026-10-03',
+  aggiornata: '2026-10-14',
   corpo: [
     { h2: 'Overlay Studio', scheda: 'alert', p: [
       'L\'overlay è <strong>una pagina web</strong>. In OBS si mette come sorgente <em>Browser</em>. Da lì in poi quello che decidi nella scheda «Overlay Studio», nel gruppo «Scena & overlay», compare in diretta senza toccare più niente in OBS.',
@@ -288,7 +288,7 @@ export default {
     ] },
     { tabella: [
       ['Cosa', 'Come funziona', 'Di serie'],
-      ['«Cosa vola»', '«Emote di Twitch», «Emote 7TV del canale» ed «Emoji». «Al massimo per messaggio», da 1 a 20. «La stessa emote più volte nello stesso messaggio»: spenta, ogni emote di un messaggio vola una volta sola.', 'Twitch e 7TV, 5 per messaggio, ripetute sì'],
+      ['«Cosa vola»', '«Emote di Twitch e Kick» (quelle della piattaforma di chi scrive), «Emote 7TV del canale» ed «Emoji». «Al massimo per messaggio», da 1 a 20. «La stessa emote più volte nello stesso messaggio»: spenta, ogni emote di un messaggio vola una volta sola.', 'Twitch e 7TV, 5 per messaggio, ripetute sì'],
       ['«Movimenti»', 'Dieci: sale come una bolla, attraversa dritta, rimbalza sul fondo, sfreccia, resta appesa e cade, scende come un foglio, salta dal basso, lanciata rimbalza ed esce, batte ferma in un punto, gira attorno al centro. Ogni emote ne pesca uno fra quelli accesi, e almeno uno resta acceso. «Come compare chi nasce dentro l\'area»: «Si ingrandisce», «Appare piano» o «Compare e basta». «Durata (secondi)» da 2 a 20.', 'tutti accesi, si ingrandisce, 6 secondi'],
       ['«Grandezza e veste»', '«Grandezza (% del lato corto dell\'area)» da 2 a 50, «Quanto varia (%)», «Minimo (px)» e «Massimo (px)» fino a 1080. Mai più di metà del lato corto, così ogni movimento ci sta anche in un\'area bassa. Sotto i campi leggi quanto misurano davvero le emote nell\'area scelta, da quanto a quanto, e quale limite le ferma: se alzi la grandezza e non cambia niente, è il massimo in pixel che le tiene. «Opacità (%)» da 10 a 100, per tutto il muro. «Le emote ruotano mentre si muovono»: spento, fanno la stessa strada senza girare. «Ombra», e «Colori che girano»: «Mai», «Sempre» o «Durante l\'hype train». L\'immagine di ogni emote è quella della misura giusta per la sua grandezza, così resta nitida anche grande.', '8%, varia del 30%, da 28 a 140 px; opacità 100%; ruotano; ombra; colori durante l\'hype train'],
       ['«Quante»', '«Al massimo a schermo», da 1 a 150. Oltre, le nuove aspettano in una coda breve, «In attesa oltre il massimo» da 0 a 100, che perde le più vecchie; quelle in attesa da più di otto secondi si lasciano perdere, perché arriverebbero fuori tempo.', '50 a schermo, 20 in attesa'],
@@ -353,8 +353,8 @@ export default {
       ['«Donazione»', '<code>{user} ha offerto {importo}! {messaggio}</code>', 'Moneta', 'verde scuro', '«Importo minimo»'],
     ] },
     { p: [
-      'Follow, sub, bit e raid hanno anche <strong>«Chi lo mostra»</strong>: «SocialBot», di serie, «Twitch» oppure «Tutti e due». Con «Twitch» il nostro alert non parte e il resto del riquadro si chiude: l\'evento lo mostrano gli alert di Twitch, che si impostano su Twitch (<a href="https://link.twitch.tv/SettingUpTwitchAlerts">come si fa</a>). Twitch non dà un modo per cambiarli o farli partire da fuori, per questo qui si sceglie solo chi li mostra. Ultimo follower, ultimo sub, obiettivi e subathon contano l\'evento in ogni caso, tranne i follow durante un attacco (sotto).',
-      'Con «Tutti e due» partono il nostro e quello di Twitch: mettili in due punti diversi dello schermo, così non si coprono. Con «SocialBot», se su Twitch hai acceso anche i suoi alert, l\'evento compare due volte. La donazione e i Kicks non passano da Twitch e li mostra sempre SocialBot. I Kicks arrivano solo se hai collegato Kick. Se vuoi i nostri alert con l\'aria di quelli di Twitch, c\'è la veste «Stile Twitch»: niente riquadro, l\'immagine grande sopra e il nome in viola, poi cambi quello che vuoi.',
+      'Follow, sub, bit e raid hanno anche <strong>«Chi lo mostra»</strong>: «SocialBot», di serie, «Twitch» oppure «Tutti e due». Con «Twitch» il nostro alert non parte per gli eventi di Twitch e il resto del riquadro si chiude: l\'evento lo mostrano gli alert di Twitch, che si impostano su Twitch (<a href="https://link.twitch.tv/SettingUpTwitchAlerts">come si fa</a>). Twitch non dà un modo per cambiarli o farli partire da fuori, per questo qui si sceglie solo chi li mostra. Ultimo follower, ultimo sub, obiettivi e subathon contano l\'evento in ogni caso, tranne i follow durante un attacco (sotto).',
+      'Con «Tutti e due» partono il nostro e quello di Twitch: mettili in due punti diversi dello schermo, così non si coprono. Con «SocialBot», se su Twitch hai acceso anche i suoi alert, l\'evento compare due volte. La donazione e i Kicks non passano da Twitch e li mostra sempre SocialBot. I Kicks arrivano solo se hai collegato Kick. Anche i follow e i sub di Kick li mostra SocialBot, qualunque sia la scelta, perché Twitch non li vede: con Kick collegato il riquadro resta aperto anche con «Twitch». Se vuoi i nostri alert con l\'aria di quelli di Twitch, c\'è la veste «Stile Twitch»: niente riquadro, l\'immagine grande sopra e il nome in viola, poi cambi quello che vuoi.',
       '<strong>Durante un attacco di follow-bot</strong>, da quando lo scudo segna «sotto attacco», un follow di Twitch non fa partire il suo alert né il resto: ultimo follower e obiettivi restano fermi, e i follow già in fila non escono. Quello a schermo finisce. Si sceglie nello scudo, con «Sotto attacco, niente alert dei follow» (<a href="/manuale/moderazione">manuale della moderazione</a>).',
       'Sotto la soglia l\'alert non parte: è il modo di non suonare per un bit solo. Le donazioni arrivano dai servizi collegati nella scheda «Donazioni» (<a href="/manuale/vetrina">manuale della vetrina</a>).',
       'Ogni evento ha «Testo», fino a 200 caratteri; lasciato vuoto vale quello di serie. Ha anche «Colore», «Volume» da 0 a 100 e «Font», che di serie segue lo stile comune e se lo cambi vale per quell\'evento soltanto.',
@@ -394,7 +394,7 @@ export default {
     ] },
 
     { h3: 'Chat a schermo' },
-    { p: ['I messaggi della chat in sovraimpressione, con le emote di Twitch e quelle 7TV come immagini e i badge accanto al nome. I messaggi che cominciano con <code>!</code> non compaiono, e ogni riga si ferma a 200 caratteri. Le emote 7TV si gestiscono in «Emote (7TV)» (<a href="/manuale/emote">manuale delle emote</a>).'] },
+    { p: ['I messaggi della chat in sovraimpressione, con le emote di Twitch, di Kick e quelle 7TV come immagini, i badge accanto al nome e il colore che ognuno ha scelto. Per chi scrive da Kick i badge (streamer, moderatore, VIP, OG, fondatore, abbonato, chi regala abbonamenti, verificato) sono disegnati da SocialBot, ognuno col suo colore. I messaggi che cominciano con <code>!</code> non compaiono, e ogni riga si ferma a 200 caratteri. Le emote 7TV si gestiscono in «Emote (7TV)» (<a href="/manuale/emote">manuale delle emote</a>).'] },
     { tabella: [
       ['Impostazione', 'Di base', 'Limiti'],
       ['«Chat a schermo» (interruttore)', 'spento', ''],

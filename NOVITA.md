@@ -68,6 +68,13 @@ comandi diversi da quelli della riga italiana.
   en: Deleting your account now also removes the automatic stream story and the state of automatic posts, which stayed on disk.
   es: Al borrar tu cuenta se van también la historia automática del directo y el estado de las publicaciones automáticas, que quedaban en el disco.
 
+- Nella chat a schermo i messaggi di Kick hanno il colore del nome, gli stemmi e le emote vere, invece del codice dell'emote. Le emote di Kick volano anche nel muro e nell'arena. [vai: alert]
+  en: In the on-screen chat Kick messages now have the name color, the badges and real emotes instead of the emote code. Kick emotes also fly on the wall and in the arena.
+  es: En el chat en pantalla los mensajes de Kick tienen el color del nombre, las insignias y los emotes de verdad, en vez del código del emote. Los emotes de Kick vuelan también en el muro y en la arena.
+- Con «lo mostra Twitch» gli alert dei follow e dei sub di Kick sparivano: ora li mostra SocialBot, perché Twitch non li vede. [vai: alert]
+  en: With "Twitch shows it", Kick follow and sub alerts no longer vanish: SocialBot shows them now, since Twitch does not see them.
+  es: Con «la muestra Twitch», las alertas de follows y subs de Kick ya no desaparecen: ahora las muestra SocialBot, porque Twitch no las ve.
+
 ## 2026-10-08
 
 - [importante] Lo scudo ha una sezione sua, Scudo e attacchi: ogni attacco ha il suo rapporto, con grafico, livelli, chi c'era e cosa gli è stato fatto, e ti avviso in privato su Telegram o per mail. [vai: attacchi]

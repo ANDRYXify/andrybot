@@ -1000,8 +1000,20 @@ function aggiungiStemmi(riga, ev) {
     riga.appendChild(i);
   };
   if (ev.badges) for (const b of String(ev.badges).split(',')) { const u = BADGE[b.trim()]; if (u) img(u, b); }
+  if (Array.isArray(ev.stemmiKick)) for (const t of ev.stemmiKick) { if (STEMMA_KICK[t]) disegna(riga, STEMMA_KICK[t], 'chat-badge chat-stemma stemma-' + t); }
   if (ev.badge7tv) img(ev.badge7tv, '7tv');
 }
+
+const STEMMA_KICK = {
+  broadcaster: [['path', { d: 'M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z' }], ['path', { d: 'M19 10v2a7 7 0 0 1-14 0v-2' }], ['line', { x1: '12', y1: '19', x2: '12', y2: '22' }]],
+  moderator: [['polyline', { points: '14.5 17.5 3 6 3 3 6 3 17.5 14.5' }], ['line', { x1: '13', y1: '19', x2: '19', y2: '13' }], ['line', { x1: '16', y1: '16', x2: '20', y2: '20' }], ['line', { x1: '19', y1: '21', x2: '21', y2: '19' }]],
+  vip: [['path', { d: 'M6 3h12l4 6-10 13L2 9z' }], ['path', { d: 'M2 9h20' }], ['path', { d: 'M11 3 8 9l4 13 4-13-3-6' }]],
+  og: [['path', { d: 'M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z' }]],
+  founder: [['path', { d: 'M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z' }], ['line', { x1: '4', y1: '22', x2: '4', y2: '15' }]],
+  subscriber: [['polygon', { points: '12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2' }]],
+  sub_gifter: [['rect', { x: '3', y: '8', width: '18', height: '4', rx: '1' }], ['path', { d: 'M12 8v13' }], ['path', { d: 'M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7' }], ['path', { d: 'M7.5 8a2.5 2.5 0 0 1 0-5C10 3 12 8 12 8s2-5 4.5-5a2.5 2.5 0 0 1 0 5' }]],
+  verified: [['circle', { cx: '12', cy: '12', r: '10' }], ['path', { d: 'm9 12 2 2 4-4' }]],
+};
 
 function emoteUrl(mappa, nome) {
   return mappa && Object.prototype.hasOwnProperty.call(mappa, nome) && typeof mappa[nome] === 'string' ? mappa[nome] : '';

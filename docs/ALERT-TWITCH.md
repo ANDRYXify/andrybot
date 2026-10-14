@@ -39,6 +39,14 @@ streamer accende da sé. Il pannello lo dice nella nota sotto la scelta, e con
 sempre a `socialbot`, qualunque cosa ci sia scritto, e il pannello non offre la
 scelta.
 
+Vale anche per la piattaforma: un follow o un sub di Kick Twitch non lo vede,
+quindi `chiAlertOk(kind, chi, piattaforma)` lo riporta a `socialbot` per ogni
+evento che non arriva da Twitch. Fino al 2026-10-14 non guardava la
+piattaforma, e chi aveva scelto `twitch` non vedeva nessun alert degli eventi di
+Kick. Con Kick collegato il pannello non nasconde più testo e stile del nostro
+alert anche quando la scelta è `twitch`, e la nota dice che gli eventi di Kick
+li mostra SocialBot.
+
 ## Cosa continua a contare
 
 La scelta tocca solo l'alert. Nel motore (`src/features/alerts.js`, `onEvent`)
