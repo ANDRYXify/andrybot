@@ -16,6 +16,8 @@ const casa = cartellaUsaEGetta('incidenti-');
 const { streamers } = await import('../../src/db.js');
 const I = await import('../../src/features/incidenti.js');
 const ab = await import('../../src/features/antibot.js');
+// lo scudo scrive solo per un canale che c'e' (incidenti.apri, antibot.registra)
+for (const c of ['tizio', 'altro', 'uno', 'due']) streamers.request(c, c, '1');
 test.after(async () => { await ab.spegniScudo(); casa.pulisci(); });
 
 // ─────────────────────────────────────────── aprire, chiudere, riaprire

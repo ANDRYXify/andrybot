@@ -316,7 +316,10 @@ function nuovoId() { return Date.now().toString(36) + '-' + (regSeq++).toString(
 // controlla che non ne manchi nessuno.
 export function registra(channel, dati) {
   const ch = norm(channel);
-  if (!ch) return null;
+  // Si scrive solo per un canale che c'e'. Un lavoro ancora in volo (una
+  // chiamata a Twitch, una bonifica) puo' tornare dopo che l'account e' stato
+  // cancellato: la sua riga riaprirebbe il registro di chi se n'e' andato.
+  if (!ch || !streamers.get(ch)) return null;
   const arr = registriMem.get(ch) || [];
   // L'INCIDENTE della riga: quello aperto adesso, o quello che chi registra
   // dice (l'esecutore lo sa, e una riga che arriva un attimo dopo la chiusura
@@ -900,7 +903,7 @@ export class AntiBot {
     // sa di noi e' dove scrivere quello che ha fatto.
     this.esecutore = new Esecutore({ helix, annota: (ch, riga) => registra(ch, riga) });
     esecutore = this.esecutore;
-    this.esecutore.caricaFalliti().catch(() => {});
+    this.esecutore.caricaFalliti({ esiste: (ch) => !!streamers.get(ch) }).catch(() => {});
     this._riapri = setTimeout(() => { this._riapriSerrande().catch(() => {}); }, 4000);
     this._riapri.unref?.();
     accesi.add(this);

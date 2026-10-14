@@ -60,6 +60,8 @@ test('il bot si spegne con spegniScudo', () => {
 });
 
 test('spegniScudo ferma ogni fila e ogni orologio, e scrive quello che aspettava', async () => {
+  const { streamers } = await import('../../src/db.js');
+  streamers.request('unocanale', 'unocanale', '1');
   let chiamate = 0;
   const lento = { timeoutUser: async () => ({ ok: true }), bloccaUtente: async () => { chiamate++; return { ok: true }; } };
   const uno = new ab.AntiBot({ helix: lento });

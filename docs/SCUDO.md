@@ -286,6 +286,28 @@ pausa per lasciare le chiamate alla difesa.
 Prima qui c'erano una scansione degli ultimi cento follower e una pulizia che
 prendeva solo i nomi noti e ripiegava sul ban: sono state tolte.
 
+## Un account cancellato a metà di un attacco
+
+La fila dello scudo va al ritmo di Twitch: fra la decisione e la chiamata
+possono passare minuti. Se l'account si cancella nel mezzo
+(`features/cancella.js`), tre cose:
+
+- **la fila**: `dimenticaCanale` di `enforcement.js` toglie le voci del canale
+  ancora da fare (chi le aspetta riceve «l'account è stato cancellato»), toglie
+  le azioni in sospeso, che stanno su disco con nomi e motivi, e riscrive il
+  file subito;
+- **la chiamata già partita**: ogni voce porta l'epoca del suo canale, e la
+  cancellazione la fa avanzare. Quando Twitch risponde, una voce con l'epoca
+  vecchia non scrive niente: né registro, né conti, né sospese;
+- **chi scrive dopo**: il registro (`antibot.registra`) e l'apertura di un
+  attacco (`incidenti.apri`) scrivono solo per un canale che esiste. Una
+  bonifica o un orologio che arrivano tardi non riaprono niente.
+
+Al riavvio, le azioni in sospeso di un canale che non c'è più non si
+riprendono e spariscono dal file. `restiDi` conta anche la fila
+(`fila_scudo`). La prova è `test/unita/scudo-cancellato.test.mjs`, con una
+chiamata a Twitch tenuta sospesa a mano mentre l'account si cancella.
+
 ## Permessi
 
 Servono due scope nuovi, e chi era già collegato deve riautorizzare (la dashboard

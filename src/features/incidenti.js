@@ -28,6 +28,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { makeLog } from '../logger.js';
 import { config } from '../config.js';
+import { streamers } from '../db.js';
 import { N as LIVELLO_N } from './livelli.js';
 
 const log = makeLog('incidenti');
@@ -68,7 +69,8 @@ function nuovoId() {
 // Apre un incidente, oppure RIAPRE l'ultimo se si è chiuso da poco.
 export function apri(canale, { tipo = 'ignoto', motivo = '', livello = '' } = {}) {
   const ch = norm(canale);
-  if (!ch) return null;
+  // un attacco si apre solo su un canale che c'e' (come il registro dello scudo)
+  if (!ch || !streamers.get(ch)) return null;
   const gia = aperto(ch);
   if (gia) return gia;
 

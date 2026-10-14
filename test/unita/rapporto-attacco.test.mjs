@@ -32,7 +32,9 @@ const { BotManager } = await import('../../src/bot.js');
 test.after(async () => { await ab.spegniScudo(); casa.pulisci(); });
 
 let giro = 0;
-const canale = () => `att${++giro}`;
+// lo scudo scrive solo per un canale che c'e': ogni canale della prova nasce qui
+const esiste = (ch) => { streamers.request(ch, ch, '1'); return ch; };
+const canale = () => esiste(`att${++giro}`);
 
 // ── La memoria dell'attacco ─────────────────────────────────────────────────
 test('il picco solo sale: un attacco ripreso piu\' in basso non abbassa il picco', () => {
@@ -115,7 +117,7 @@ test('ogni riga del registro sa di quale attacco e\'', () => {
 // ── Tre attacchi veri, giocati dal simulatore ───────────────────────────────
 for (const [nome, tipo] of [['ondata-veloce', 'ondata-follow'], ['ondata-lenta', 'onda-lenta'], ['coro', 'coro']]) {
   test(`un attacco intero (${nome}): tipo, scala, picco coi segnali, curva`, async () => {
-    const ch = `sim-${nome}`;
+    const ch = esiste(`sim-${nome}`);
     streamers.upsertApproved(ch, ch, '1');
     streamers.setEnabled(ch, true);
     streamers.setSettings(ch, { antibot: { attivo: true, avvisa: false, rafficaQuanti: 10, rafficaSecondi: 30 } });

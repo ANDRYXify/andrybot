@@ -83,6 +83,10 @@ comandi diversi da quelli della riga italiana.
   en: In the Control room, title and category update on Twitch and Kick together, and you read where it worked and where it did not. Kick-only streamers see their own stream and search Kick categories.
   es: En Realización, título y categoría se actualizan en Twitch y en Kick a la vez, y lees dónde funcionó y dónde no. Quien está solo en Kick ve su directo y busca entre las categorías de Kick.
 
+- Cancellando l'account durante un attacco, lo scudo smette subito: niente azioni ancora in fila, e niente torna a scrivere nel registro dopo. [vai: account]
+  en: Deleting your account during an attack stops the shield right away: no actions left in line, and nothing writes to the log afterwards.
+  es: Al borrar tu cuenta durante un ataque, el escudo se detiene al momento: ninguna acción queda en cola y nada vuelve a escribir en el registro después.
+
 ## 2026-10-08
 
 - [importante] Lo scudo ha una sezione sua, Scudo e attacchi: ogni attacco ha il suo rapporto, con grafico, livelli, chi c'era e cosa gli è stato fatto, e ti avviso in privato su Telegram o per mail. [vai: attacchi]

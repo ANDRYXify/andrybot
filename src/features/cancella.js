@@ -32,6 +32,7 @@ import { tabelleDiCanale } from './esporta.js';
 import { diCanale as attacchiDiCanale, dimenticaCanale as dimenticaAttacchi } from './incidenti.js';
 import { registro as registroScudo, dimenticaRegistro } from './antibot.js';
 import { dimentica as dimenticaFollower } from './follower.js';
+import { dimenticaCanale as dimenticaFila, sospeseDi } from './enforcement.js';
 import { eLoginNostro, nomeSu } from '../identita.js';
 
 // Un canale valido e' quello che identita.js chiama nostro: con il suo
@@ -106,6 +107,11 @@ export function cancella(login, { conferma } = {}) {
   // Prima di togliere le righe: un giro o un lavoro sui follower ancora in
   // volo le riscriverebbe alla prossima pagina letta da Twitch.
   dimenticaFollower(chi);
+  // E la fila dello scudo: quello che aspettava non si fa, le azioni in sospeso
+  // (nomi e motivi, su disco) vanno via, e una chiamata a Twitch gia' partita
+  // torna senza scrivere niente (enforcement.js, l'epoca del canale).
+  let fila = 0;
+  try { fila = dimenticaFila(chi); } catch { /* lo scudo potrebbe non essere caricato */ }
 
   const righe = {};
   const tabelle = tabelleDiCanale();
@@ -139,6 +145,7 @@ export function cancella(login, { conferma } = {}) {
     const n = dimenticaAttacchi(chi);
     if (n) righe.attacchi = n;
     if (dimenticaRegistro(chi)) righe.registro_scudo = 1;
+    if (fila) righe.fila_scudo = fila;
   } catch { /* lo scudo potrebbe non essere caricato */ }
 
   return { canale: chi, quando: new Date().toISOString(), righe, cartelle, tabelleGuardate: tabelle.length };
@@ -162,6 +169,8 @@ export function restiDi(login) {
     if (a) resti.attacchi = a;
     const r = registroScudo(chi, { limite: 1 }).length;
     if (r) resti.registro_scudo = r;
+    const f = sospeseDi(chi);
+    if (f) resti.fila_scudo = f;
   } catch { /* niente */ }
   const cartelle = [...cartelleDiCanale(chi), ...fileDiCanale(chi)].map((d) => path.relative(config.dataDir, d));
   return { righe: resti, cartelle };

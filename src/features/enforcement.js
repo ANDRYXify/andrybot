@@ -93,6 +93,32 @@ export class Esecutore {
     this._contiPer = new Map();
     this._fermo = null;
     this._sveglia = null;
+    // L'EPOCA DI OGNI CANALE. Cancellare l'account la fa avanzare: una chiamata
+    // a Twitch partita prima torna con l'epoca vecchia, e non scrive niente.
+    this._epoche = new Map();
+    esecutori.add(this);
+  }
+
+  _epoca(canale) { return this._epoche.get(norm(canale)) || 0; }
+
+  // DIMENTICARE UN CANALE (la cancellazione dell'account, features/cancella.js).
+  // Quello che era in fila non si fa, le azioni in sospeso vanno via dal disco
+  // (portano nomi e motivi), i conti si azzerano, e quello che e' gia' partito
+  // torna a vuoto. Ritorna quante voci ha tolto.
+  dimentica(canale) {
+    const ch = norm(canale);
+    if (!ch) return 0;
+    this._epoche.set(ch, this._epoca(ch) + 1);
+    const via = this._coda.filter((x) => norm(x.v.canale) === ch);
+    this._coda = this._coda.filter((x) => norm(x.v.canale) !== ch);
+    for (const voce of via) voce.risolvi({ ok: false, motivo: CANCELLATO });
+    const prima = this._falliti.length;
+    this._falliti = this._falliti.filter((f) => norm(f.canale) !== ch);
+    for (const k of [...this._inCoda.keys()]) if (norm(k.split('|')[0]) === ch) this._inCoda.delete(k);
+    this._contiPer.delete(ch);
+    const tolte = via.length + (prima - this._falliti.length);
+    if (prima !== this._falliti.length) this.salvaFalliti().catch(() => {});
+    return tolte;
   }
 
   _conta(canale, chiave) {
@@ -143,7 +169,7 @@ export class Esecutore {
     this._inCoda.set(chiave, Date.now());
     this._conta(v.canale, 'decisi');
     return new Promise((risolvi) => {
-      this._coda.push({ v, risolvi, tentativi: 0 });
+      this._coda.push({ v, risolvi, tentativi: 0, epoca: this._epoca(v.canale) });
       this._coda.sort((a, b) => (URGENZA[a.v.azione] ?? 9) - (URGENZA[b.v.azione] ?? 9) || a.v.ts - b.v.ts);
       this._svuota().catch((e) => log.error('coda:', e?.message || e));
     });
@@ -201,6 +227,7 @@ export class Esecutore {
   // non un debito con Twitch.
   async ferma({ conserva = true } = {}) {
     if (!this._fermo) this._fermo = { conserva };
+    esecutori.delete(this);
     this._sveglia?.();
     this._congedaTutti(this._coda.splice(0));
     await this._lettura;
@@ -236,6 +263,8 @@ export class Esecutore {
     }
 
     const r = await this._chiama(v);
+    // l'account e' stato cancellato mentre Twitch rispondeva: niente da scrivere
+    if (voce.epoca !== this._epoca(v.canale)) return { ok: false, motivo: CANCELLATO };
     if (r?.ok) {
       this._conta(v.canale, 'fatti');
       this.annota(v.canale, rigaDi(v, r));
@@ -332,11 +361,16 @@ export class Esecutore {
   // primi istanti, prima che il file sia letto, non sparisce sotto la lista
   // vecchia. E chi ferma l'esecutore aspetta la lettura, cosi' quello che
   // scrive contiene tutte e due.
-  caricaFalliti() {
+  // `esiste(canale)`: le righe di un canale che non c'e' piu' (cancellato
+  // prima che la cancellazione sapesse di questo file) non si riprendono e
+  // alla prossima scrittura spariscono dal disco.
+  caricaFalliti({ esiste = null } = {}) {
     this._lettura = (async () => {
       try {
         const j = JSON.parse(await readFile(FILE(), 'utf8'));
-        const letti = (j?.righe || []).filter((f) => f && f.canale && f.azione);
+        const letti = (j?.righe || []).filter((f) => f && f.canale && f.azione
+          && !this._epoca(f.canale) && (!esiste || esiste(norm(f.canale))));
+        if (letti.length < (j?.righe || []).length) this.salvaFalliti().catch(() => {});
         this._falliti = [...letti, ...this._falliti].slice(-FALLITI_MAX);
         if (letti.length) log.info(`coda dei falliti: ${letti.length} azioni ancora in sospeso`);
       } catch (e) { /* prima volta: nessun file */ }
@@ -347,6 +381,27 @@ export class Esecutore {
 
 const FILE = () => join(config.dataDir, 'azioni-fallite.json');
 const FERMATA = 'il bot si è fermato prima di farla';
+const CANCELLATO = 'l\'account è stato cancellato';
+
+// Tutti gli esecutori vivi: la cancellazione di un account non sa quale scudo
+// stia lavorando per quel canale, e li avvisa tutti.
+const esecutori = new Set();
+export function dimenticaCanale(canale) {
+  let n = 0;
+  for (const e of esecutori) n += e.dimentica(canale);
+  return n;
+}
+// quante azioni di un canale aspettano ancora, in fila o in sospeso (per chi
+// controlla una cancellazione)
+export function sospeseDi(canale) {
+  const ch = norm(canale);
+  let n = 0;
+  for (const e of esecutori) {
+    n += e._falliti.filter((f) => norm(f.canale) === ch).length;
+    n += e._coda.filter((x) => norm(x.v.canale) === ch).length;
+  }
+  return n;
+}
 const motivoCorto = (v) => (v.motivi.join(', ') || v.origine || 'scudo').slice(0, 200);
 
 // La riga del registro. Ci sta quello che si è CHIESTO e quello che è tornato,

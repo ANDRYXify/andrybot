@@ -167,6 +167,7 @@ test('il precedente lo leggono gli incidenti, non chi chiama', () => {
   // Se dovesse portarlo il chiamante, il primo che se ne dimentica ottiene una
   // reputazione che non può peggiorare mai — e non se ne accorge nessuno.
   const ch = 'precedenti1';
+  streamers.request(ch, ch, '1');
   inc.azzera();
   inc.apri(ch, { tipo: 'ondata', motivo: 'prova' });
   inc.coinvolto(ch, 'fermato', inc.GIUDIZI.CERTO, 9, 'u1');
@@ -185,6 +186,7 @@ test('di un precedente conta la volta più recente, non la prima', () => {
   // Tenere la prima vorrebbe dire che chi torna a farlo ogni mese si vede il
   // peso scendere lo stesso, come se non fosse più successo niente.
   const ch = 'precedenti2';
+  streamers.request(ch, ch, '1');
   inc.azzera();
   inc.apri(ch, { tipo: 'ondata' });
   inc.coinvolto(ch, 'tizio', inc.GIUDIZI.CERTO, 0, 'u1');
@@ -208,6 +210,7 @@ test('e la lettura in blocco legge le stesse cose di quella singola', () => {
   // strada saltasse i precedenti, il debito non esisterebbe proprio quando
   // serve.
   const ch = 'precedenti3';
+  streamers.request(ch, ch, '1');
   inc.azzera();
   inc.apri(ch, { tipo: 'ondata' });
   inc.coinvolto(ch, 'sporco', inc.GIUDIZI.CERTO, 0, 'u1');
@@ -223,6 +226,7 @@ test('e la lettura in blocco legge le stesse cose di quella singola', () => {
 
 test('chi scrive qui da mesi non finisce nell\'ondata, anche col nome sfortunato', async () => {
   const ch = 'fedeli1';
+  streamers.request(ch, ch, '1');
   streamers.upsertApproved(ch, 'Fedeli', 'A1');
   streamers.setEnabled(ch, true);
   streamers.setSettings(ch, { antibot: { attivo: true, avvisa: false, rafficaQuanti: 10, rafficaSecondi: 30 } });
@@ -251,6 +255,7 @@ test('chi scrive qui da mesi non finisce nell\'ondata, anche col nome sfortunato
 
 test('ma una storia di un giorno non salva nessuno', async () => {
   const ch = 'fedeli2';
+  streamers.request(ch, ch, '1');
   streamers.upsertApproved(ch, 'Fedeli2', 'A2');
   streamers.setEnabled(ch, true);
   streamers.setSettings(ch, { antibot: { attivo: true, avvisa: false, rafficaQuanti: 10, rafficaSecondi: 30 } });

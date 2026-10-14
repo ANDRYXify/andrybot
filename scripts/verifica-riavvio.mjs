@@ -92,6 +92,8 @@ const DECISO = [
   ['features/follower.js', 'versioni', 'volatile', 'il contatore che dice alla vista dei follower che la lista e\' cambiata: dopo un riavvio la vista non c\'e\' piu\' e si ricalcola comunque'],
   ['features/follower.js', 'viste', 'volatile', 'la lista dei follower gia\' giudicata, tenuta per il pannello: si ricalcola dalla tabella follower_elenco alla prima domanda'],
   ['features/follower.js', 'epoche', 'volatile', 'l\'epoca di ogni canale, che zittisce un giro o un lavoro rimasti in volo quando l\'account si cancella: dopo un riavvio non c\'e\' niente in volo, e la cancellazione ha gia\' tolto dal database lo stato da cui ripartirebbero'],
+  ['features/enforcement.js', 'esecutori', 'volatile', 'gli esecutori vivi, da avvisare quando un account si cancella: ognuno nasce con il suo scudo e se ne va quando si ferma'],
+  ['features/enforcement.js', '_epoche', 'volatile', 'l\'epoca di ogni canale nella fila dello scudo, che zittisce una chiamata a Twitch rimasta in volo quando l\'account si cancella: dopo un riavvio non c\'e\' niente in volo, e le azioni in sospeso di un canale che non c\'e\' piu\' non si rileggono'],
   ['features/punteggio.js', 'visti', 'volatile', 'chi e\' in chat e in quanti canali: si ricostruisce da solo al primo giro, cioe\' in cinque minuti'],
   ['features/presenze.js', 'giri', 'volatile', 'quanti giri di fila una persona e\' in chat in questa diretta: dopo un riavvio si ricontano due giri, dieci minuti, e le presenze gia\' contate stanno nel database'],
   ['features/presenze.js', 'annunci', 'volatile', 'un minuto di riposo fra due annunci di traguardo'],
