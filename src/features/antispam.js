@@ -8,6 +8,7 @@
 import { makeLog } from '../logger.js';
 import { streamers } from '../db.js';
 import { piattaformaDi } from '../identita.js';
+import { senzaEmote } from './emotes.js';
 
 const log = makeLog('antispam');
 
@@ -230,8 +231,8 @@ export function valuta(msg, cfg) {
     const ora = Date.now();
     if (lista.filter((r) => ora - r.ts < FIN_FLOOD).length >= MAX_FLOOD) return { motivo: 'flood (troppi messaggi)' };
   }
-  // TUTTO MAIUSCOLO
-  if (cfg.maiuscole && troppeMaiuscole(testo)) return { motivo: 'troppe maiuscole' };
+  // TUTTO MAIUSCOLO, contando le parole e non le emote: «GG KEKW KEKW» non grida
+  if (cfg.maiuscole && troppeMaiuscole(senzaEmote(msg, testo))) return { motivo: 'troppe maiuscole' };
   // valanga di menzioni
   if (cfg.menzioni && troppeMenzioni(testo)) return { motivo: 'troppe menzioni' };
   // ASCII-art / zalgo / muri di simboli

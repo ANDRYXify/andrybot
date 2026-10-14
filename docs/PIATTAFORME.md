@@ -609,7 +609,25 @@ un'altra persona. La prova e' `test/unita/kick-chat-overlay.test.mjs`.
 Lo scudo anti-bot lavora solo su Twitch: legge eventi (follow a ondate, raid,
 account nuovi) e usa leve (Shield Mode, solo follower) che Kick non espone allo
 stesso modo. Su Kick non lo fingiamo — **meglio nessuna moderazione che una
-moderazione che finge di esserci**. La chat di YouTube non ha ancora chi
+moderazione che finge di esserci**.
+
+Su Kick, con i permessi di moderazione, lavora l'antispam intero (link,
+ripetizioni, flood, maiuscole, menzioni, simboli, lunghezza, emoji), con la
+pausa che Kick conta in minuti. Dal 2026-10-14 vede il testo senza i codici
+delle emote, e le maiuscole contano le parole e non le emote, su Kick come su
+Twitch («GG KEKW KEKW» non grida).
+
+Cosa dello scudo manca su Kick, e perché:
+
+- l'età dell'account: Kick non la manda col messaggio né col follow;
+- togliere un follower: l'API di Kick non ha la chiamata;
+- «Blocca sempre», i nomi da bot e il coro in chat: si potrebbero fare con la
+  moderazione di Kick, ma il registro dello scudo e la bonifica ragionano per
+  nome di Twitch. Un nome di Kick nel registro farebbe agire la bonifica su
+  chi ha lo stesso nome su Twitch, cioè su un'altra persona. Prima serve un
+  registro che sappia la piattaforma di ognuno;
+- le ondate di follow: il conto si potrebbe fare, ma oggi zittire gli alert
+  durante un'ondata vale solo per i follow di Twitch. La chat di YouTube non ha ancora chi
 modera: lì valgono solo le parole vietate (il richiamo).
 
 ## YouTube

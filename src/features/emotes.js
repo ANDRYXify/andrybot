@@ -185,3 +185,19 @@ export function kickInMessaggio(emoteTag) {
 export function nativeInMessaggio(msg, testo = msg?.text) {
   return { ...twitchInMessaggio(msg?.tags?.emotes, testo), ...kickInMessaggio(msg?.tags?.['kick-emote']) };
 }
+
+// Le emote del canale gia' in memoria, SENZA chiederle a nessuno: per chi deve
+// decidere subito (l'antispam, che non aspetta la rete a ogni messaggio). Se
+// nessuno le ha ancora lette, e' vuota: vale solo come aiuto in piu'.
+export function canaleInCache(login) {
+  const c = cacheCanale.get(String(login || '').toLowerCase().trim());
+  return c?.mappa && typeof c.mappa === 'object' ? c.mappa : {};
+}
+
+// Il testo senza le parole che sono emote (del messaggio o del canale). Una
+// faccina si chiama come vuole chi l'ha fatta, spesso in maiuscolo: non e' un
+// grido.
+export function senzaEmote(msg, testo = msg?.text) {
+  const emote = { ...canaleInCache(msg?.channel), ...nativeInMessaggio(msg, testo) };
+  return String(testo || '').split(/(\s+)/).filter((p) => !Object.prototype.hasOwnProperty.call(emote, p)).join('');
+}

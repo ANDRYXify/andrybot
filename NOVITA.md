@@ -75,6 +75,10 @@ comandi diversi da quelli della riga italiana.
   en: With "Twitch shows it", Kick follow and sub alerts no longer vanish: SocialBot shows them now, since Twitch does not see them.
   es: Con «la muestra Twitch», las alertas de follows y subs de Kick ya no desaparecen: ahora las muestra SocialBot, porque Twitch no las ve.
 
+- L'antispam non toglie più i messaggi fatti di emote per «troppe maiuscole»: conta le parole, non i nomi delle emote, su Twitch come su Kick. [vai: regole]
+  en: The antispam no longer removes emote messages for "too many capitals": it counts words, not emote names, on Twitch as on Kick.
+  es: El antispam ya no quita los mensajes hechos de emotes por «demasiadas mayúsculas»: cuenta las palabras, no los nombres de los emotes, en Twitch como en Kick.
+
 ## 2026-10-08
 
 - [importante] Lo scudo ha una sezione sua, Scudo e attacchi: ogni attacco ha il suo rapporto, con grafico, livelli, chi c'era e cosa gli è stato fatto, e ti avviso in privato su Telegram o per mail. [vai: attacchi]

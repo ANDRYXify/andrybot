@@ -9,7 +9,7 @@ export default {
   titolo: 'Manuale della moderazione: antispam e scudo anti-bot | SocialBot',
   h1: 'Manuale della moderazione: antispam e scudo anti-bot',
   desc: 'Parole vietate, antispam, lo scudo anti-bot coi suoi sei livelli, il rapporto di ogni attacco, la pulizia dei follower e il registro: cosa fa ogni controllo.',
-  aggiornata: '2026-10-08',
+  aggiornata: '2026-10-14',
   corpo: [
     { p: [
       'La moderazione della chat sta in <em>Chat e pubblico</em> → <em>Moderazione</em>. Lo scudo ha una sezione tutta sua nel menu, <em>Scudo e attacchi</em>, con quattro schede: <strong>Scudo anti-bot</strong>, <strong>Gli attacchi</strong>, <strong>I tuoi follower</strong> e <strong>Registro dello scudo</strong>.',
@@ -66,7 +66,7 @@ export default {
       ['Voce nel pannello', 'Di base', 'Quando scatta', 'Motivo in chat'],
       ['«Copypasta e messaggi ripetuti»', 'acceso', 'La stessa persona manda lo stesso testo per la terza volta in 40 secondi. Contano i testi di almeno 6 caratteri.', 'messaggio ripetuto (spam)'],
       ['«Flood: troppi messaggi di fila»', 'acceso', 'La stessa persona manda 6 messaggi in 8 secondi.', 'flood (troppi messaggi)'],
-      ['«Messaggi TUTTI MAIUSCOLI»', 'acceso', 'Almeno 12 lettere, e almeno l\'80% sono maiuscole.', 'troppe maiuscole'],
+      ['«Messaggi TUTTI MAIUSCOLI»', 'acceso', 'Almeno 12 lettere, e almeno l\'80% sono maiuscole. Le emote non contano: «GG KEKW KEKW» non è un grido.', 'troppe maiuscole'],
       ['«Valanghe di @menzioni»', 'acceso', 'Quattro o più <code>@nome</code> nello stesso messaggio.', 'troppe menzioni'],
       ['«ASCII-art, «zalgo» e muri di simboli»', 'spento', 'Testo pieno di segni sovrapposti, un blocco unico di 40 o più caratteri senza spazi, o un messaggio fatto quasi solo di simboli. I messaggi sotto gli 8 caratteri non contano.', 'troppi simboli / caratteri strani'],
       ['«Messaggi più lunghi di … caratteri»', 'spento, 350', 'Il messaggio supera il numero. Da 50 a 500.', 'messaggio troppo lungo'],

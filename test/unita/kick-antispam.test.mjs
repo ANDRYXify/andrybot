@@ -89,3 +89,17 @@ test('si annuncia la pausa data davvero, non quella chiesta', async () => {
   assert.equal(m.fatti[2][2], 60);
   assert.match(detti[1], /pausa di 2 min/);
 });
+
+test('le emote non gridano: su Kick e su Twitch le maiuscole contano solo le parole', async () => {
+  const { daChatMessage } = await import('../../src/kick/messaggio.js');
+  const cfg = { ...antispam.ANTISPAM_DEFAULT, attivo: true, simboli: true };
+  const codici = 'gg ' + Array.from({ length: 6 }, (_, i) => `[emote:3722${i}:KEKW${i}]`).join(' ');
+  const k = daChatMessage({ message_id: 'x', content: codici, sender: { user_id: 1, username: 'tizio', identity: { badges: [] } } }, { canale: 'kick.c1' });
+  assert.equal(antispam.valuta(k, cfg), null, 'Kick: un messaggio di emote non e\' spam');
+  const t = { channel: 'c2', user: 'tizia', text: 'gg KEKW KEKW KEKW KEKW', tags: { emotes: '1:3-6,8-11,13-16,18-21' } };
+  assert.equal(antispam.valuta(t, cfg), null, 'Twitch: le emote native non contano');
+  const grido = { channel: 'c3', user: 'urla', text: 'SMETTETELA SUBITO TUTTI QUANTI ADESSO' };
+  assert.deepEqual(antispam.valuta(grido, cfg), { motivo: 'troppe maiuscole' }, 'un grido vero resta un grido');
+  const misto = { ...k, channel: 'kick.c4', user: 'altro', text: 'BASTA SPAMMARE QUI DENTRO ' + k.text };
+  assert.deepEqual(antispam.valuta(misto, cfg), { motivo: 'troppe maiuscole' }, 'le emote non coprono il grido che c\'e\'');
+});
