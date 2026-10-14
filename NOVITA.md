@@ -79,6 +79,10 @@ comandi diversi da quelli della riga italiana.
   en: The antispam no longer removes emote messages for "too many capitals": it counts words, not emote names, on Twitch as on Kick.
   es: El antispam ya no quita los mensajes hechos de emotes por «demasiadas mayúsculas»: cuenta las palabras, no los nombres de los emotes, en Twitch como en Kick.
 
+- In Regia titolo e categoria si aggiornano su Twitch e su Kick insieme, e leggi dove è andato e dove no. Chi sta solo su Kick vede la sua diretta e cerca fra le categorie di Kick. [vai: regia]
+  en: In the Control room, title and category update on Twitch and Kick together, and you read where it worked and where it did not. Kick-only streamers see their own stream and search Kick categories.
+  es: En Realización, título y categoría se actualizan en Twitch y en Kick a la vez, y lees dónde funcionó y dónde no. Quien está solo en Kick ve su directo y busca entre las categorías de Kick.
+
 ## 2026-10-08
 
 - [importante] Lo scudo ha una sezione sua, Scudo e attacchi: ogni attacco ha il suo rapporto, con grafico, livelli, chi c'era e cosa gli è stato fatto, e ti avviso in privato su Telegram o per mail. [vai: attacchi]

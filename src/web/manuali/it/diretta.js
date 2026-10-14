@@ -9,7 +9,7 @@ export default {
   titolo: 'Manuale della diretta: regia, clip, musica, rapporti | SocialBot',
   h1: 'Manuale della diretta: regia, clip, musica, rapporti e statistiche',
   desc: 'Titolo, categoria, pubblicità e raid dal pannello, le clip che nascono da sole, le richieste su Spotify, il rapporto di ogni diretta e i numeri del canale.',
-  aggiornata: '2026-10-04',
+  aggiornata: '2026-10-14',
   corpo: [
     { p: [
       'Queste schede servono <strong>mentre trasmetti</strong> e subito dopo. Stanno nel gruppo «Durante la diretta» del menù: «Regia» apre una barra con tre voci, «Regia», «Clip» e «Musica». Accanto ci sono «Dirette» e «CONSOLify». «Statistiche» sta nel gruppo «Chat e pubblico».',
@@ -33,14 +33,15 @@ export default {
     ] },
 
     { h3: 'Info del canale' },
-    { p: ['Titolo, categoria e tag si cambiano anche fuori onda, quindi puoi preparare la diretta prima di accendere. Premi «Salva info canale»: Twitch li aggiorna subito e leggi «Info canale aggiornate ✓».'] },
+    { p: ['Titolo, categoria e tag si cambiano anche fuori onda, quindi puoi preparare la diretta prima di accendere. Premi «Salva info canale»: titolo e categoria si aggiornano subito su Twitch e, se l\'hai collegato, anche su Kick. Leggi dove è andato, per esempio «Aggiornato su Twitch e Kick.», e dove no, con il perché.'] },
     { tabella: [
       ['Campo', 'Limite', 'Come si usa'],
       ['«Titolo della diretta»', '140 caratteri', 'Parte con il titolo che hai adesso su Twitch.'],
-      ['«Categoria / gioco»', '8 risultati per ricerca', 'Accanto a «Ora:» vedi quella attuale. In «Cerca un gioco/categoria…» scrivi almeno 2 lettere e scegli dall\'elenco di Twitch, col mouse o con le frecce e Invio. Se non trova niente leggi «Nessun risultato». Se non scegli niente resta quella di prima.'],
+      ['«Categoria / gioco»', '8 risultati per ricerca', 'Accanto a «Ora:» vedi quella attuale. In «Cerca un gioco/categoria…» scrivi almeno 2 lettere e scegli dall\'elenco (di Twitch, o di Kick se hai solo Kick), col mouse o con le frecce e Invio. Se non trova niente leggi «Nessun risultato». Se non scegli niente resta quella di prima.'],
       ['«Tag»', '10 tag', 'Separali con una virgola: oltre il decimo non si salvano. Twitch accetta tag fino a 25 caratteri, senza spazi né simboli.'],
     ] },
-    { p: ['Serve il permesso gestione canale. Senza, al salvataggio leggi «Concedi il permesso "gestione canale" da /auth/permessi». Se Twitch rifiuta qualcosa, per esempio un tag, vedi il suo messaggio d\'errore.'] },
+    { p: ['Su Twitch serve il permesso gestione canale, su Kick quello di titolo e categoria. Se ne manca uno leggi «Su Kick manca il permesso: ricollegalo.» (o Twitch), e l\'altra piattaforma si aggiorna lo stesso. Su Kick la categoria si cerca col nome che hai scelto: se lì non c\'è, leggi «Su Kick non trovo questa categoria.». I tag ci sono solo su Twitch.',
+      'Con Kick collegato, in cima alla Regia c\'è una nota che dice cosa vale dove. Chi sta solo su Kick non vede tag, azioni rapide e pubblicità: Kick non lascia fare clip, marker, pubblicità e raid alle app.'] },
 
     { h3: 'Azioni rapide' },
     { p: ['Funzionano solo <strong>mentre sei in diretta</strong>: fuori onda Twitch le rifiuta e il pannello te lo dice.'] },

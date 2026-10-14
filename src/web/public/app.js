@@ -4863,7 +4863,7 @@ const GUIDE = {
   consolify: { serve: ['Avere i tasti del tuo canale sotto le dita mentre streami (contatori, effetti, una battuta, una frase), sul telefono, sul tablet o su una tastiera fisica.', 'Have your channel’s keys under your fingers while you stream (counters, effects, a joke, a line), on your phone, tablet or a physical key pad.', 'Tener las teclas de tu canal bajo los dedos mientras emites (contadores, efectos, un chiste, una frase), en el móvil, la tablet o un teclado físico.'],
     come: [['Premi «Modifica i tasti» e poi il «+»: nasce un tasto vuoto, e nei suoi passi trovi già le tue azioni, perché nascono dai tuoi contatori e dai tuoi effetti.', 'Press “Edit the keys”, then the “+”: an empty key is born, and in its steps you already find your actions, because they come from your own counters and effects.', 'Pulsa «Editar las teclas» y luego el «+»: nace una tecla vacía, y en sus pasos ya encuentras tus acciones, porque nacen de tus contadores y tus efectos.', '#cons-modifica'], ['Premi «Fatto» e prova: sotto ogni tasto compare com\'è andata, per esempio il numero nuovo del contatore.', 'Press “Done” and try it: under each key you see how it went, for example the counter’s new number.', 'Pulsa «Hecho» y pruébalo: bajo cada tecla aparece cómo ha ido, por ejemplo el número nuevo del contador.', '#cons-plancia'], ['Apri questa pagina sul telefono e tienila lì mentre streami: la griglia si adatta da sé.', 'Open this page on your phone and keep it there while you stream: the grid adapts on its own.', 'Abre esta página en el móvil y tenla ahí mientras emites: la cuadrícula se adapta sola.', ''], ['Per una tastiera fisica: ogni tasto qui ha il suo indirizzo. Copialo e incollalo in un tasto con un componente di chiamate web: punta al tasto, non all\'azione, quindi se domani gli cambi mestiere lì non rifai niente.', 'For a physical key pad: every key here has its own address. Copy it into a key with a web-request component: it points at the key, not the action, so if tomorrow you change what it does you redo nothing there.', 'Para un teclado físico: cada tecla de aquí tiene su dirección. Cópiala en una tecla con un componente de peticiones web: apunta a la tecla, no a la acción, así si mañana cambias lo que hace no rehaces nada allí.', '#cons-indirizzi'], ['Se un indirizzo finisce in una clip, rigenera la chiave: quelli vecchi smettono di funzionare subito.', 'If an address ends up in a clip, regenerate the key: the old ones stop working immediately.', 'Si una dirección acaba en un clip, regenera la clave: las viejas dejan de funcionar enseguida.', '#cons-revoca']] },
   regia: { serve: ['Gestire la diretta dal pannello: titolo, categoria, marker e le azioni rapide, senza aprire Twitch.', 'Run your stream from the panel: title, category, markers and quick actions, without opening Twitch.', 'Gestionar el directo desde el panel: título, categoría, marcadores y acciones rápidas, sin abrir Twitch.'],
-    come: [['Cambia titolo e categoria e salva: si aggiornano su Twitch subito.', 'Change title and category and save: they update on Twitch right away.', 'Cambia título y categoría y guarda: se actualizan en Twitch al instante.', '#regia-titolo'], ['Usa le azioni rapide durante la live: clip, marker, pubblicità, raid.', 'Use the quick actions during the stream: clips, markers, ads, raids.', 'Usa las acciones rápidas durante el directo: clips, marcadores, anuncios, raids.', '#regia-clip'], ['Tieni il pannello aperto su un secondo schermo mentre streami.', 'Keep the panel open on a second screen while you stream.', 'Ten el panel abierto en una segunda pantalla mientras emites.', '']] },
+    come: [['Cambia titolo e categoria e salva: si aggiornano subito su Twitch e su Kick, se li hai collegati.', 'Change title and category and save: they update right away on Twitch and Kick, if you linked them.', 'Cambia título y categoría y guarda: se actualizan al instante en Twitch y en Kick, si los has conectado.', '#regia-titolo'], ['Usa le azioni rapide durante la live: clip, marker, pubblicità, raid.', 'Use the quick actions during the stream: clips, markers, ads, raids.', 'Usa las acciones rápidas durante el directo: clips, marcadores, anuncios, raids.', '#regia-clip'], ['Tieni il pannello aperto su un secondo schermo mentre streami.', 'Keep the panel open on a second screen while you stream.', 'Ten el panel abierto en una segunda pantalla mientras emites.', '']] },
   dirette: { serve: ['Rileggere com’è andata ogni diretta e scegliere dove ricevere il rapporto.', 'Look back at how each stream went and choose where to get the report.', 'Repasar cómo fue cada directo y elegir dónde recibir el informe.'],
     come: [['Ogni diretta finita è una carta: durata, spettatori, chat, follower, presenti, clip e donazioni.', 'Every finished stream is a card: duration, viewers, chat, followers, attendees, clips and donations.', 'Cada directo terminado es una tarjeta: duración, espectadores, chat, seguidores, presentes, clips y donaciones.', '#lista-rapporti'], ['Accendi Telegram se hai collegato la chat privata: il rapporto arriva lì appena chiudi.', 'Turn on Telegram if you linked the private chat: the report lands there as soon as you end.', 'Enciende Telegram si vinculaste el chat privado: el informe llega allí en cuanto cierras.', '#chk-rap-telegram'], ['Per la mail scrivi l’indirizzo e conferma dal messaggio che ti arriva.', 'For email, write the address and confirm from the message you get.', 'Para el correo escribe la dirección y confirma desde el mensaje que te llega.', '#inp-posta']] },
   sottoscrizione: { serve: ['Vedere cosa hai attivo, cosa comprende, quanto paghi e come cambiarlo o annullarlo.', 'See what you have active, what it includes, what you pay and how to change or cancel it.', 'Ver qué tienes activo, qué incluye, cuánto pagas y cómo cambiarlo o cancelarlo.'],
@@ -20787,6 +20787,7 @@ function collegaMorti() {
 function pannelloRegia() {
   return pannello('regia', `
     <div class="carta evidenziata" id="regia-permessi-banner" hidden></div>
+    <div class="carta" id="regia-kick-nota" hidden></div>
 
     <div class="carta">
       <h2>${_hIco(ICO.onda)}${L('Stato diretta', 'Stream status', 'Estado del directo')}</h2>
@@ -20807,13 +20808,15 @@ function pannelloRegia() {
         <div id="regia-gioco-lista" class="cat-lista" hidden></div>
       </div>
 
+      <div data-solo-twitch>
       <label class="campo spazio-sopra" for="regia-tags">${L('Tag', 'Tags', 'Etiquetas')} <span class="tenue">(${L('separati da virgola, max 10', 'comma-separated, max 10', 'separadas por comas, máx. 10')})</span></label>
       <input type="text" id="regia-tags" class="campo-largo" placeholder="${L('italiano, chill, ranked', 'english, chill, ranked', 'español, chill, ranked')}">
+      </div>
 
       <p class="spazio-sopra"><button type="button" class="btn" id="regia-salva-canale" title="${esc(L('Cambia titolo e categoria della diretta adesso, senza aprire Twitch', 'Changes the live title and category right now, without opening Twitch', 'Cambia el título y la categoría del directo ahora, sin abrir Twitch'))}">${L('Salva info canale', 'Save channel info', 'Guardar info del canal')}</button></p>
     </div>
 
-    <div class="carta">
+    <div class="carta" data-solo-twitch>
       <h2>${_hIco(ICO.fulmine)}${L('Azioni rapide', 'Quick actions', 'Acciones rápidas')}</h2>
       <div class="regia-azioni">
         <button type="button" class="btn secondario" id="regia-clip" title="${esc(L("Salva gli ultimi trenta secondi di diretta come clip su Twitch, senza aprire nient'altro", 'Saves the last thirty seconds of the live as a Twitch clip, without opening anything else', 'Guarda los últimos treinta segundos del directo como clip en Twitch, sin abrir nada más'))}">${_bIco(ICO.clip)}${L('Crea clip', 'Create clip', 'Crear clip')}</button>
@@ -20847,7 +20850,7 @@ function pannelloRegia() {
       <p class="suggerimento spazio-sopra">${L('Clip e marker (e la pubblicità/raid) funzionano solo <strong>mentre sei in diretta</strong>. Il video della live lo fa ancora OBS: qui gestisci tutto il resto.', 'Clips and markers (and ads/raids) only work <strong>while you’re live</strong>. OBS still does the video: here you manage everything else.', 'Los clips y marcadores (y los anuncios/raids) solo funcionan <strong>mientras estás en directo</strong>. El vídeo sigue haciéndolo OBS: aquí gestionas todo lo demás.')}</p>
     </div>
 
-    <div class="carta">
+    <div class="carta" data-solo-twitch>
       <h2>${_hIco(ICO.tv)}${L('Quando parte la pubblicità', 'When an ad break starts', 'Cuando empieza la publicidad')}</h2>
       <p class="suggerimento">${L('La chat resta sola e chi arriva vede uno schermo che non sei tu. Tre righe evidenziate cambiano la serata: prima, durante e quando torni.', 'Chat is left alone and whoever arrives sees a screen that is not you. Three highlighted lines change the evening: before, during, and when you are back.', 'El chat se queda solo y quien llega ve una pantalla que no eres tú. Tres líneas destacadas cambian la noche: antes, durante y cuando vuelves.')}</p>
       <div id="pub-box" class="spazio-sopra"></div>
@@ -20916,6 +20919,8 @@ function _pubLeggi() {
 }
 
 let _regiaGameId = '';
+let _regiaGameNome = '';
+let _regiaPiattaforme = null;
 STATI_SALVA['regia-salva-canale'] = { stato: () => _regiaGameId };
 let _regiaUptimeTimer = null;
 let _regiaLive = null;
@@ -21085,10 +21090,24 @@ async function caricaRegia() {
   try { d = await api('/api/streamer/regia'); } catch (e) { box.innerHTML = `<p class="vuoto">${L('Errore:', 'Error:', 'Error:')} ${esc(e.message)}</p>`; return; }
 
   const p = d.permessi || {};
+  const tw = d.piattaforme?.twitch?.collegato !== false;
+  const kk = d.piattaforme?.kick || null;
+  _regiaPiattaforme = d.piattaforme || null;
   const mancanti = [];
-  if (!p.broadcast) mancanti.push(L('gestione canale (titolo/categoria/marker)', 'manage channel (title/category/marker)', 'gestión del canal (título/categoría/marcador)'));
-  if (!p.raid) mancanti.push('raid');
-  if (!p.commercial) mancanti.push(L('pubblicità', 'ads', 'anuncios'));
+  if (tw && !p.broadcast) mancanti.push(L('gestione canale (titolo/categoria/marker)', 'manage channel (title/category/marker)', 'gestión del canal (título/categoría/marcador)'));
+  if (tw && !p.raid) mancanti.push('raid');
+  if (tw && !p.commercial) mancanti.push(L('pubblicità', 'ads', 'anuncios'));
+  const kickNota = _g('regia-kick-nota');
+  if (kickNota) {
+    const righe = [];
+    if (kk && !kk.canale) righe.push(`${L('Su Kick manca il permesso per titolo e categoria.', 'On Kick the permission for title and category is missing.', 'En Kick falta el permiso para título y categoría.')} <a href="${esc(kk.azione || '/auth/kick')}">${L('Ricollega Kick', 'Reconnect Kick', 'Vuelve a conectar Kick')}</a>`);
+    if (kk && tw) righe.push(L('Titolo e categoria si aggiornano su Twitch e su Kick insieme. Tag, clip, marker, pubblicità e raid sono solo di Twitch: Kick non li lascia fare alle app.', 'Title and category update on Twitch and Kick together. Tags, clips, markers, ads and raids are Twitch only: Kick does not let apps do them.', 'Título y categoría se actualizan en Twitch y en Kick a la vez. Etiquetas, clips, marcadores, anuncios y raids son solo de Twitch: Kick no deja que las apps los hagan.'));
+    if (kk && !tw) righe.push(L('Da qui cambi titolo e categoria su Kick. Tag, clip, marker, pubblicità e raid non ci sono: Kick non li lascia fare alle app.', 'From here you change title and category on Kick. Tags, clips, markers, ads and raids are not here: Kick does not let apps do them.', 'Desde aquí cambias título y categoría en Kick. Etiquetas, clips, marcadores, anuncios y raids no están: Kick no deja que las apps los hagan.'));
+    kickNota.hidden = !righe.length;
+    kickNota.innerHTML = righe.map((r) => `<p>${r}</p>`).join('');
+  }
+  const soloTwitch = document.querySelectorAll('[data-solo-twitch]');
+  soloTwitch.forEach((el) => { el.hidden = !tw; });
   const banner = document.getElementById('regia-permessi-banner');
   if (banner) {
     if (mancanti.length) {
@@ -21105,6 +21124,7 @@ async function caricaRegia() {
   const t = document.getElementById('regia-titolo'); if (t) t.value = d.canale?.title || '';
   const tags = document.getElementById('regia-tags'); if (tags) tags.value = (d.canale?.tags || []).join(', ');
   _regiaGameId = d.canale?.gameId || '';
+  _regiaGameNome = '';
   const sel = document.getElementById('regia-gioco-sel'); if (sel) sel.textContent = d.canale?.gameName || L('nessuna', 'none', 'ninguna');
 
   const adBox = document.getElementById('regia-ad-box'); if (adBox) adBox.style.display = p.commercial ? '' : 'none';
@@ -21213,10 +21233,26 @@ async function salvaRegiaCanale() {
   const titolo = document.getElementById('regia-titolo')?.value || '';
   const tagsRaw = document.getElementById('regia-tags')?.value || '';
   const tags = tagsRaw.split(',').map((x) => x.trim()).filter(Boolean).slice(0, 10);
-  const body = { titolo, tags };
-  if (_regiaGameId) body.giocoId = _regiaGameId;
-  await api('/api/streamer/regia/canale', { method: 'POST', body });
-  toast(L('Info canale aggiornate ✓', 'Channel info updated ✓', 'Info del canal actualizada ✓'));
+  const body = { titolo };
+  if (_regiaPiattaforme?.twitch?.collegato !== false) body.tags = tags;
+  if (_regiaGameNome) body.giocoNome = _regiaGameNome;
+  const r = await api('/api/streamer/regia/canale', { method: 'POST', body });
+  toast(_regiaEsiti(r.esiti || []), (r.esiti || []).every((e) => e.ok) ? 'ok' : 'errore');
+}
+
+const _REGIA_DOVE = { twitch: 'Twitch', kick: 'Kick' };
+function _regiaEsiti(esiti) {
+  const dove = (e) => _REGIA_DOVE[e.dove] || e.dove;
+  const fatti = [...new Set(esiti.filter((e) => e.ok).map(dove))];
+  const righe = [];
+  if (fatti.length) righe.push(L(`Aggiornato su ${fatti.join(' e ')}.`, `Updated on ${fatti.join(' and ')}.`, `Actualizado en ${fatti.join(' y ')}.`));
+  for (const e of esiti) {
+    if (e.ok) continue;
+    if (e.nonTrovata) righe.push(L(`Su ${dove(e)} non trovo questa categoria.`, `I can't find this category on ${dove(e)}.`, `En ${dove(e)} no encuentro esta categoría.`));
+    else if (e.permesso) righe.push(L(`Su ${dove(e)} manca il permesso: ricollegalo.`, `The permission is missing on ${dove(e)}: reconnect it.`, `En ${dove(e)} falta el permiso: vuelve a conectarlo.`));
+    else righe.push(L(`Su ${dove(e)} non è andato: riprova fra poco.`, `It didn't work on ${dove(e)}: try again shortly.`, `En ${dove(e)} no ha funcionado: inténtalo de nuevo en un rato.`));
+  }
+  return [...new Set(righe)].join(' ');
 }
 
 function pannelloStudio() {
@@ -33324,6 +33360,7 @@ function attivaPiattaforma() {
   const gCerca = document.getElementById('regia-gioco-cerca');
   _cercaCategorie(gCerca, document.getElementById('regia-gioco-lista'), { dilloSeVuoto: true, alScegli: (g) => {
     _regiaGameId = g.id;
+    _regiaGameNome = String(g.name || '');
     const sel = document.getElementById('regia-gioco-sel'); if (sel) sel.textContent = g.name;
     gCerca.value = '';
     segnaDaSalvare(sel || gCerca);

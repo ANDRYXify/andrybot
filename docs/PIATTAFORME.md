@@ -485,6 +485,22 @@ di Twitch con Kick collegato, un esito per piattaforma, le azioni inline),
 `test/contratto/kick-titolo-categoria.test.mjs` (voce, Telegram, avvio,
 pannello e pagina della voce passano di lì).
 
+### La Regia con Kick
+
+Nella Regia titolo e categoria passano da `cambiaIlCanale`, la stessa regola
+della voce e del privato Telegram: Twitch e Kick, ognuna col suo permesso, un
+esito per ognuna (`/api/streamer/regia/canale` risponde `{ ok, esiti }` e il
+pannello dice «Aggiornato su Twitch e Kick.» o cosa manca e dove). La
+categoria viaggia col NOME scelto, non con l'id di Twitch, e ogni piattaforma
+la cerca fra le sue. Tag e lingua restano di Twitch.
+
+Lo stato (`/api/streamer/regia`) porta `piattaforme`: chi sta solo su Kick
+vede la sua diretta e il suo canale (da `statoCanale`), cerca fra le categorie
+di Kick, e non vede tag, azioni rapide e pubblicità, che Kick non lascia fare
+alle app; la nota in cima lo dice. Prima chi stava su Kick riceveva «concedi il
+permesso» di Twitch, e chi stava su tutte e due aggiornava solo Twitch. La
+prova è `test/contratto/regia-kick.test.mjs`.
+
 ### I premi del canale su Kick
 
 Le fonti (docs.kick.com): l'evento `channel.reward.redemption.updated` v1, con

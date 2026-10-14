@@ -8608,10 +8608,28 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
       if (ci) canale = { title: ci.title || '', gameId: ci.game_id || '', gameName: ci.game_name || '', tags: ci.tags || [], language: ci.broadcaster_language || '' };
     } catch { /* niente */ }
     if (permessi.ads) { try { ads = await helix.getAdSchedule(login); } catch { /* niente */ } }
+    // OGNI PIATTAFORMA PER CONTO SUO. Titolo e categoria si cambiano anche su
+    // Kick (cambiaIlCanale); clip, marker, pubblicita' e raid sono solo di
+    // Twitch, perche' Kick non li lascia fare alle app. Chi sta solo su Kick
+    // vede la sua diretta e il suo canale, non un Twitch spento.
+    const twitch = !!tokens.get('broadcaster', login)?.accessToken;
+    const kickPronto = !!(config.kickClientId && config.kickClientSecret);
+    let kick = null;
+    if (kickPronto && kickApi.tokenDi(login)?.accessToken) {
+      const st = await kickApi.statoCanale(login).catch(() => null);
+      kick = { collegato: true, canale: kickApi.puoCambiareCanale(login),
+        azione: kickApi.puoModerare(login) ? '/auth/kick?mod=1' : '/auth/kick',
+        titolo: st?.ok ? st.titolo : '', categoria: st?.ok ? st.categoria : '', live: !!st?.ok && !!st.live };
+      if (!twitch) {
+        if (st?.ok && st.live) live = { online: true, title: st.titolo, gameName: st.categoria, viewers: st.spettatori ?? 0, startedAt: st.inizio ? new Date(st.inizio).toISOString() : null };
+        canale = { ...canale, title: kick.titolo, gameName: kick.categoria };
+      }
+    }
+    const piattaforme = { twitch: { collegato: twitch }, kick };
     // I tre messaggi intorno alla pausa viaggiano con la regia e non con una
     // porta loro: la pubblicita' sta gia' qui, e una scheda nuova per tre
     // caselle di testo sarebbe un menu in piu' da cercare.
-    res.json({ permessi, live, canale, ads, pubblicita: pubblicita.normalizzaPubblicita(s?.settings?.pubblicita),
+    res.json({ permessi, piattaforme, live, canale, ads, pubblicita: pubblicita.normalizzaPubblicita(s?.settings?.pubblicita),
       // il lancio dalla regia: l'appuntamento, com'e' andato l'ultimo, l'attesa di Twitch
       lancio: manager.statoLancio?.(login) || null,
       // I limiti li decide il modello, non il pannello: cosi' il pannello li
@@ -8713,34 +8731,41 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
   app.get('/api/streamer/regia/giochi', requireLogin, wrap(async (req, res) => {
     const q = String(req.query.q || '').trim();
     if (!q) return res.json({ giochi: [] });
-    const giochi = await helix.searchCategories(q).catch(() => []);
+    // chi non ha Twitch cerca fra le categorie di Kick: e' li' che le mettera'
+    const login = currentUser(req).login;
+    const soloKick = !tokens.get('broadcaster', login)?.accessToken && !!kickApi.tokenDi(login)?.accessToken;
+    const giochi = await (soloKick ? kickApi.cercaCategorie(login, q) : helix.searchCategories(q)).catch(() => []);
     res.json({ giochi });
   }));
 
-  // aggiorna titolo / categoria / tag / lingua del canale
+  // TITOLO E CATEGORIA, SU OGNI PIATTAFORMA DEL CANALE. La stessa regola della
+  // voce e del privato Telegram (cambiaIlCanale): Twitch e Kick, ciascuna col
+  // suo permesso, un esito per ciascuna. La categoria si manda col nome scelto
+  // e ogni piattaforma la cerca fra le sue: su Kick ha un altro id. Tag e
+  // lingua ci sono solo su Twitch. Prima la Regia parlava solo con Twitch: chi
+  // stava su Kick riceveva «concedi il permesso» di Twitch, e chi stava su
+  // tutte e due aggiornava solo Twitch.
   app.post('/api/streamer/regia/canale', requireLogin, wrap(async (req, res) => {
     const login = currentUser(req).login;
-    if (!canaleOk(login)) return res.status(403).json({ errore: 'Concedi il permesso "gestione canale" da /auth/permessi', permesso: true });
     const b = req.body || {};
+    const esiti = [];
+    const titolo = typeof b.titolo === 'string' ? b.titolo.replace(/\s+/g, ' ').trim().slice(0, 140) : '';
+    if (titolo) for (const e of await cambiaIlCanale(login, 'titolo', titolo)) esiti.push({ ...e, cosa: 'titolo' });
+    const gioco = typeof b.giocoNome === 'string' ? b.giocoNome.trim().slice(0, 100) : '';
+    if (gioco) for (const e of await cambiaIlCanale(login, 'categoria', gioco)) esiti.push({ ...e, cosa: 'categoria' });
     const patch = {};
-    if (typeof b.titolo === 'string') patch.title = b.titolo;
-    if (b.giocoId) patch.gameId = String(b.giocoId);
-    else if (typeof b.giocoNome === 'string' && b.giocoNome.trim()) {
-      const r = await helix.searchCategories(b.giocoNome.trim()).catch(() => []);
-      if (r[0]) patch.gameId = r[0].id;
-    }
     if (Array.isArray(b.tags)) patch.tags = b.tags.map((t) => String(t).trim()).filter(Boolean).slice(0, 10);
     if (b.lingua) patch.language = String(b.lingua);
-    if (!Object.keys(patch).length) return res.status(400).json({ errore: 'niente da aggiornare' });
-    try {
-      await helix.setChannelInfo(login, patch);
-      res.json({ ok: true });
-    } catch (e) {
-      if (e.status === 401 || e.status === 403) return res.status(403).json({ errore: 'permesso mancante (ri-concedi i permessi)', permesso: true });
-      res.status(400).json({ errore: e?.message || 'aggiornamento non riuscito' });
+    if (Object.keys(patch).length && tokens.get('broadcaster', login)?.accessToken) {
+      if (!canaleOk(login)) esiti.push({ dove: 'twitch', cosa: 'tag', permesso: true });
+      else {
+        try { await helix.setChannelInfo(login, patch); esiti.push({ dove: 'twitch', cosa: 'tag', ok: true }); }
+        catch (e) { esiti.push({ dove: 'twitch', cosa: 'tag', permesso: e?.status === 401 || e?.status === 403, errore: true }); }
+      }
     }
+    if (!esiti.length) return res.status(400).json({ errore: 'niente da aggiornare' });
+    res.json({ ok: esiti.some((e) => e.ok), esiti });
   }));
-
   // crea una clip del momento (serve essere in diretta)
   app.post('/api/streamer/regia/clip', requireLogin, wrap(async (req, res) => {
     const login = currentUser(req).login;
