@@ -101,6 +101,37 @@ stati rimandati indietro. Lo streamer vede solo il rifiuto, detto per quello
 che è: «il server è sotto sforzo, riprova fra un minuto», oppure «hai già un
 caricamento in corso».
 
+## Il lavoro va dove sta chi lo chiede
+
+Il modo più forte di alleggerire il server è non fargli fare il lavoro degli
+altri. Ogni lavoro pesante ha un padrone: lo streamer che carica, che è in
+diretta, che chiede la carta. **Se il dispositivo del padrone è collegato e
+sa farlo, lo fa lui; se no lo fa il server, dalla porta.** Il risultato ha lo
+stesso contratto da tutte e due le parti, e il server lo ricontrolla con una
+lettura leggera (formato, misure, durata, peso, dati nascosti tolti) prima di
+tenerlo.
+
+| lavoro | sul dispositivo del padrone |
+|---|---|
+| compressione dei caricamenti | nel browser prima di caricare (WebCodecs, WebAssembly): meno peso anche in rete |
+| video promo | già codificato nel browser; manca solo l'H.264, che WebCodecs sa fare |
+| ascolto delle dirette (clip sui picchi) | il dispositivo che trasmette ha già l'audio: il volume si misura lì, niente streamlink né ffmpeg sul server |
+| carte e storie aperte dal pannello | disegnate nel browser |
+| carte e storie automatiche (pannello chiuso) | sul server; con OSify, il suo demone le fa anche a pannello chiuso |
+
+**OSify** è il caso migliore: un demone sempre acceso, che prende i lavori del
+suo padrone anche quando il browser è chiuso, con i codificatori della scheda
+video e l'audio di sistema. Ma la maggior parte di questi lavori il browser li
+sa fare già: OSify aggiunge la presenza a pannello chiuso, non è una condizione.
+
+**Cosa NON si frammenta**, per scelta:
+- il lavoro di un utente sulla macchina di un altro: i dati di una persona non
+  vanno mai sul dispositivo di un'altra, e un risultato fatto da un estraneo
+  non si può dare per buono;
+- il lavoro in tempo reale del bot (chat, eventi delle piattaforme, alert):
+  le piattaforme parlano col server, e deve restare lì;
+- il cervello: è privato e vive sul server; non si spezza su macchine altrui.
+
 ## L'alleggerimento
 
 La porta ferma l'accumulo; non rende leggero quello che pesa. L'alleggerimento
