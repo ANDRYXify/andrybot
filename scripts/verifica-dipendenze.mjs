@@ -13,6 +13,7 @@
 // Il controllo costa un millisecondo, quindi può stare nel gancio pre-push,
 // dove `npm ci` (che ci mette secondi e scarica) non starebbe mai.
 
+import './_dati-usa-e-getta.mjs';
 import { readFileSync } from 'node:fs';
 
 const pkg = JSON.parse(readFileSync('package.json', 'utf8'));

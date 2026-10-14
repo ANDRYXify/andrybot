@@ -16,6 +16,7 @@
 //   node scripts/verifica-firma.mjs            controlla
 //   node scripts/verifica-firma.mjs --scrivi   mette la firma dove manca
 //   node scripts/verifica-firma.mjs --selftest rompe un file finto e guarda che se ne accorga
+import './_dati-usa-e-getta.mjs';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';

@@ -28,6 +28,7 @@
 // Uso: node scripts/verifica-immagine.mjs
 //      node scripts/verifica-immagine.mjs --selftest   (deve diventare rosso)
 
+import './_dati-usa-e-getta.mjs';
 import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs';
 import { join, dirname, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';

@@ -16,6 +16,7 @@
 // Uso: node scripts/verifica-accenti.mjs             (esce 1 se ne trova)
 //      node scripts/verifica-accenti.mjs --selftest
 
+import './_dati-usa-e-getta.mjs';
 import { readFileSync, writeFileSync, readdirSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';

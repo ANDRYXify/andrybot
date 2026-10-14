@@ -24,6 +24,7 @@
 //      node scripts/verifica-modo.mjs --selftest  (rompe una cosa per volta e
 //        pretende che il cancello diventi rosso)
 
+import './_dati-usa-e-getta.mjs';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';

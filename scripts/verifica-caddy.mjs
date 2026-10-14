@@ -27,6 +27,7 @@
 //
 // Uso: node scripts/verifica-caddy.mjs   (esce 1 se qualcosa non torna)
 
+import './_dati-usa-e-getta.mjs';
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';

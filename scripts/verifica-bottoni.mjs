@@ -21,6 +21,7 @@
 // (<label for>) o vive in una tabella di corrispondenze, e un campo che si
 // limita a mostrare un valore non ha niente da agganciare. Il difetto "premo e
 // non succede niente" e' dei bottoni.
+import './_dati-usa-e-getta.mjs';
 import { readFileSync } from 'node:fs';
 
 const FILE = [

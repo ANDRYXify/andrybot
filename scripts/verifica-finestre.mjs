@@ -49,6 +49,7 @@
 // Uso: node scripts/verifica-finestre.mjs              (esce 1 se ne trova)
 //      node scripts/verifica-finestre.mjs --selftest
 
+import './_dati-usa-e-getta.mjs';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join, relative } from 'node:path';

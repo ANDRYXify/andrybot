@@ -24,6 +24,7 @@
 //  · leggere un membro, per sapere che ruoli ha.
 //
 // Uso: node scripts/verifica-poteri.mjs   (esce 1 se qualcosa non torna)
+import './_dati-usa-e-getta.mjs';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join, relative } from 'node:path';

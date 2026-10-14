@@ -27,6 +27,7 @@
 //      node scripts/verifica-separazione.mjs --selftest  (rompe una cosa per volta
 //        e pretende il rosso)
 
+import './_dati-usa-e-getta.mjs';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';

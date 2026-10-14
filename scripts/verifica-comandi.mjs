@@ -25,6 +25,7 @@
 //
 // Uso: node scripts/verifica-comandi.mjs [--selftest]
 
+import './_dati-usa-e-getta.mjs';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';

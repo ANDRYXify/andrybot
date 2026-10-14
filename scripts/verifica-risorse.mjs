@@ -11,6 +11,7 @@
 //
 // Uso: node scripts/verifica-risorse.mjs   (esce 1 se manca qualcosa)
 
+import './_dati-usa-e-getta.mjs';
 import { readFileSync, readdirSync, existsSync, statSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';

@@ -19,6 +19,7 @@
 //
 // Uso: node scripts/verifica-insegne.mjs   (--selftest pretende il rosso)
 
+import './_dati-usa-e-getta.mjs';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';

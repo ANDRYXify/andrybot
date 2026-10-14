@@ -26,6 +26,7 @@
 // Uso: node scripts/verifica-salvataggi.mjs
 //      node scripts/verifica-salvataggi.mjs --selftest   (deve diventare rosso)
 
+import './_dati-usa-e-getta.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';

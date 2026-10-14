@@ -27,13 +27,14 @@ test('«test» e «cancelli» partono con una cartella dei dati usa e getta e co
   }
 });
 
-test('ogni cancello che tocca i dati sceglie la sua cartella per prima cosa', () => {
-  // gli attrezzi a mano (posta-chiave, simula, marchio) lavorano apposta sui dati veri: qui solo i cancelli
+test('ogni cancello sceglie la sua cartella per prima cosa, nessuno escluso', () => {
+  // Tutti, non solo quelli che «toccano i dati» a guardarli: un cancello che
+  // importa un modulo che importa config.js tocca i dati senza nominarli, ed
+  // era sfuggito (verifica-sezioni). Gli attrezzi a mano (posta-chiave,
+  // simula, marchio) lavorano apposta sui dati veri: qui solo i cancelli.
   const cartella = join(RAD, 'scripts');
-  const tocca = /DATA_DIR|_sito\.mjs|\.\.\/src\/db\.js/;
   for (const f of readdirSync(cartella).filter((x) => /^(verifica-.*|_sito)\.mjs$/.test(x))) {
     const t = readFileSync(join(cartella, f), 'utf8');
-    if (!tocca.test(t) || !/(\bimport\b[^\n]*\.\.\/src\/|_sito\.mjs|DATA_DIR =)/.test(t)) continue;
     const primo = (t.match(/^import [^\n]*$/m) || [''])[0];
     assert.equal(primo, "import './_dati-usa-e-getta.mjs';", `${f}: il primo import deve essere la cartella usa e getta`);
     assert.doesNotMatch(t, /process\.env\.DATA_DIR = process\.env\.DATA_DIR \|\|/, `${f}: niente cartella ereditata`);

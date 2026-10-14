@@ -22,6 +22,7 @@
 // Uso: node scripts/verifica-tavolozza.mjs
 //      node scripts/verifica-tavolozza.mjs --selftest  (un nome senza padrone: deve diventare rosso)
 
+import './_dati-usa-e-getta.mjs';
 import { readFileSync, readdirSync } from 'node:fs';
 import { dirname, join, extname } from 'node:path';
 import { fileURLToPath } from 'node:url';

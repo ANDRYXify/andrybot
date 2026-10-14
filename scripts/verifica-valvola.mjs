@@ -26,6 +26,7 @@
 //        pretende che il cancello diventi rosso: un cancello che non e' mai
 //        rosso non e' un cancello, e' una decorazione)
 
+import './_dati-usa-e-getta.mjs';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { senzaCommentiJs, corpoJs } from './_codice.mjs';
 import { execFileSync } from 'node:child_process';

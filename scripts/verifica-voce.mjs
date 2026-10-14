@@ -24,6 +24,7 @@
 //
 // Uso: node scripts/verifica-voce.mjs [--selftest]
 
+import './_dati-usa-e-getta.mjs';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';

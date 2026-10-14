@@ -30,6 +30,7 @@
 // Uso: node scripts/verifica-conoscenza.mjs             (esce 1 se qualcosa non torna)
 //      node scripts/verifica-conoscenza.mjs --selftest  (rompe e pretende il rosso)
 
+import './_dati-usa-e-getta.mjs';
 import { readFileSync, writeFileSync, readdirSync } from 'node:fs';
 import { senzaCommentiJs, corpoJs } from './_codice.mjs';
 import { execFileSync } from 'node:child_process';

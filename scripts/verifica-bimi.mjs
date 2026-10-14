@@ -11,6 +11,7 @@
 // carattere che chi guarda non ha), un titolo, un quadrato, e non piu' di 32 kB.
 //
 // Uso: node scripts/verifica-bimi.mjs   (esce 1 se qualcosa non torna)
+import './_dati-usa-e-getta.mjs';
 import { readFileSync, existsSync, statSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';

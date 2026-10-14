@@ -15,6 +15,7 @@
 //
 // Uso: node scripts/verifica-moto.mjs
 
+import './_dati-usa-e-getta.mjs';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';

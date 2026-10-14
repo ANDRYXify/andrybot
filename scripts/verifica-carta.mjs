@@ -36,6 +36,7 @@
 //      node scripts/verifica-carta.mjs --selftest  (rompe una cosa per volta e
 //        pretende che il cancello diventi rosso)
 
+import './_dati-usa-e-getta.mjs';
 import { readFileSync, writeFileSync, readdirSync, existsSync, mkdtempSync, rmSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';

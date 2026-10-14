@@ -20,6 +20,7 @@
 // Uso: node scripts/verifica-minificazione.mjs
 //      node scripts/verifica-minificazione.mjs --selftest   (deve diventare rosso)
 
+import './_dati-usa-e-getta.mjs';
 import { readdirSync, readFileSync } from 'node:fs';
 import { join, dirname, extname } from 'node:path';
 import { fileURLToPath } from 'node:url';

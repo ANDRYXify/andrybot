@@ -23,6 +23,7 @@
 // Uso: node scripts/verifica-tocco.mjs             (esce 1 se qualcuna e' fuori)
 //      node scripts/verifica-tocco.mjs --selftest  (ne scrive una fuori apposta)
 
+import './_dati-usa-e-getta.mjs';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';

@@ -10,6 +10,7 @@
 // Questo confronto legge le due liste dai sorgenti e le mette a paragone.
 //
 //   node scripts/verifica-stile.mjs     → esce 1 se non concordano
+import './_dati-usa-e-getta.mjs';
 import { readFileSync } from 'node:fs';
 
 const app = readFileSync('src/web/public/app.js', 'utf8');

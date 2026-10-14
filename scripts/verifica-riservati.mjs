@@ -15,6 +15,7 @@
 // Uso: node scripts/verifica-riservati.mjs              (esce 1 se qualcosa è tracciato)
 //      node scripts/verifica-riservati.mjs --selftest   (le parole di ogni lingua, provate)
 
+import './_dati-usa-e-getta.mjs';
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 

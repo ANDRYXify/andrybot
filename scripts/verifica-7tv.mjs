@@ -10,6 +10,8 @@
 //
 // Uso: node scripts/verifica-7tv.mjs   (esce 1 se il contratto e' cambiato)
 
+import './_dati-usa-e-getta.mjs';
+
 const GQL = 'https://7tv.io/v3/gql';
 const GQL4 = 'https://7tv.io/v4/gql';
 const REST4 = 'https://7tv.io/v4';

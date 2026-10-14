@@ -26,6 +26,7 @@
 // Uso: node scripts/verifica-esposizione.mjs
 //      node scripts/verifica-esposizione.mjs --selftest   (deve diventare rosso)
 
+import './_dati-usa-e-getta.mjs';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';

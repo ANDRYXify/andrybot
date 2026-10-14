@@ -21,6 +21,7 @@
 // Uso: node scripts/verifica-novita.mjs              (esce 1 se qualcosa non torna)
 //      node scripts/verifica-novita.mjs --selftest   (rompe le traduzioni e pretende di vederlo)
 
+import './_dati-usa-e-getta.mjs';
 import { execFileSync } from 'node:child_process';
 import { EMOJI } from './_emoji.mjs';
 import { readFileSync } from 'node:fs';
