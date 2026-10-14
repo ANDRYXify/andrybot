@@ -13497,21 +13497,21 @@ function _partitaDisegna() {
   box.querySelectorAll('[data-pt-posto]').forEach((b) => { b.onclick = () => { const u = b.dataset.ptPosto; const i = _partitaOrdine.indexOf(u); if (i >= 0) _partitaOrdine.splice(i, 1); else _partitaOrdine.push(u); _partitaDisegna(); }; });
   box.querySelectorAll('[data-pt-sel]').forEach((c) => { c.onchange = () => { if (c.checked) _partitaScelti.add(c.dataset.ptSel); else _partitaScelti.delete(c.dataset.ptSel); _partitaDisegna(); }; });
   box.querySelectorAll('[data-pt-togli]').forEach((b) => { b.onclick = () => conErrore(async () => { await _partitaMossa('togli', { user: b.dataset.ptTogli }); }); });
-  const su = (id, f) => { const b = _g(id); if (b) b.onclick = () => conErrore(f); };
-  su('pt-esito', async () => { await _partitaMossa('esito', { ordine: ordine }); _partitaOrdine = []; toast(L('Esito dato: le monete sono arrivate.', 'Result given: the coins arrived.', 'Resultado dado: las monedas llegaron.')); });
-  su('pt-nessuno', async () => { await _partitaMossa('esito', { ordine: [] }); _partitaOrdine = []; });
-  su('pt-scegli-fila', async () => { await _partitaMossa('scegli', { quanti: _ptNum('pt-quanti', 1), modo: 'fila' }); _partitaScelti = new Set(); });
-  su('pt-scegli-caso', async () => { await _partitaMossa('scegli', { quanti: _ptNum('pt-quanti', 1), modo: 'caso' }); _partitaScelti = new Set(); });
-  su('pt-scegli-nomi', async () => { await _partitaMossa('scegli', { chi: [..._partitaScelti] }); _partitaScelti = new Set(); });
-  su('pt-iscr', async () => { await _partitaMossa('iscrizioni', { aperta: !d.aperta }); });
-  su('pt-regole', async () => { await _partitaMossa('regole', { regole: _partitaRegoleLette() }); toast(L('Regole salvate.', 'Rules saved.', 'Reglas guardadas.')); });
-  su('pt-annulla', async () => {
+  const su = (b, f) => { if (b) b.onclick = () => conErrore(f); };
+  su(_g('pt-esito'), async () => { await _partitaMossa('esito', { ordine: ordine }); _partitaOrdine = []; toast(L('Esito dato: le monete sono arrivate.', 'Result given: the coins arrived.', 'Resultado dado: las monedas llegaron.')); });
+  su(_g('pt-nessuno'), async () => { await _partitaMossa('esito', { ordine: [] }); _partitaOrdine = []; });
+  su(_g('pt-scegli-fila'), async () => { await _partitaMossa('scegli', { quanti: _ptNum('pt-quanti', 1), modo: 'fila' }); _partitaScelti = new Set(); });
+  su(_g('pt-scegli-caso'), async () => { await _partitaMossa('scegli', { quanti: _ptNum('pt-quanti', 1), modo: 'caso' }); _partitaScelti = new Set(); });
+  su(_g('pt-scegli-nomi'), async () => { await _partitaMossa('scegli', { chi: [..._partitaScelti] }); _partitaScelti = new Set(); });
+  su(_g('pt-iscr'), async () => { await _partitaMossa('iscrizioni', { aperta: !d.aperta }); });
+  su(_g('pt-regole'), async () => { await _partitaMossa('regole', { regole: _partitaRegoleLette() }); toast(L('Regole salvate.', 'Rules saved.', 'Reglas guardadas.')); });
+  su(_g('pt-annulla'), async () => {
     if (!(await chiediSe({ titolo: L('Torno indietro di un passo?', 'Undo one step?', '¿Deshago un paso?'),
       testo: L('Se l\'ultima manche ha l\'esito, le monete date tornano indietro e la manche si riapre. Se non ce l\'ha, i giocatori tornano in testa alla fila.', 'If the last round has a result, the coins given go back and the round reopens. If not, the players go back to the front of the queue.', 'Si la última ronda tiene resultado, las monedas dadas vuelven y la ronda se reabre. Si no, los jugadores vuelven al principio de la fila.'),
       si: L('Torna indietro', 'Undo', 'Deshacer') }))) return;
     await _partitaMossa('annulla'); _partitaOrdine = [];
   });
-  su('pt-fine', async () => {
+  su(_g('pt-fine'), async () => {
     if (!(await chiediSe({ titolo: L('Finisco la partita?', 'End the game?', '¿Termino la partida?'), pericolo: true,
       testo: L('Il bot dice la classifica in chat. Chi è ancora in fila e aveva pagato si riprende le monete.', 'The bot posts the ranking in chat. Whoever is still in queue and paid gets the coins back.', 'El bot dice la clasificación en el chat. Quien sigue en la fila y pagó recupera las monedas.'),
       si: L('Finisci', 'End it', 'Terminar') }))) return;
