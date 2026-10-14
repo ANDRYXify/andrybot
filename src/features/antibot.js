@@ -159,15 +159,16 @@ export async function aggiornaListaBot() {
 }
 
 // Un nome è da follow-bot? (esclusi i bot buoni e gli esentati dello streamer)
-export function nomeBot(login, cfg = {}) {
+// La lista aggiornata e' di nomi di Twitch: su Kick quel nome puo' essere di
+// un'altra persona, e non vale. La FORMA del nome (i bot promozionali) vale
+// dappertutto: e' come e' fatto il nome, non chi lo porta.
+export function nomeBot(login, cfg = {}, piattaforma = 'twitch') {
   const l = norm(login);
   if (!l) return false;
   if (BUONI.has(l)) return false;
-  const esenti = (cfg.esenti || []).map(norm);
-  if (esenti.includes(l)) return false;
-  const extra = (cfg.extra || []).map(norm).filter(Boolean);
-  if (extra.includes(l)) return true;                 // esatto, aggiunto dallo streamer
-  if (cfg.listaAuto !== false && listaEsterna.has(l)) return true;   // lista aggiornata
+  if (esente(cfg, l, piattaforma)) return false;
+  if (inLista(cfg.extra, l, piattaforma)) return true;   // esatto, aggiunto dallo streamer
+  if (piattaformaScudo(piattaforma) === 'twitch' && cfg.listaAuto !== false && listaEsterna.has(l)) return true;   // lista aggiornata
   return PATTERN_BOT.some((re) => re.test(l));
 }
 
@@ -193,14 +194,27 @@ export function eBot(login, cfg = {}) {
 export const scudoDi = (channel) => ({ ...ANTIBOT_DEFAULT, ...(streamers.get(norm(channel))?.settings?.antibot || {}) });
 export const ePersona = (channel, login) => !eBot(login, scudoDi(channel));
 
+// UNA PERSONA E' (piattaforma, nome). Un «mario» su Twitch e un «mario» su Kick
+// sono due persone: nelle liste dello streamer quello di Kick si scrive
+// «kick:mario», e un nome senza prefisso e' di Twitch, come e' sempre stato.
+// Cosi' «Blocca sempre» su Kick non tocca mai chi ha lo stesso nome su Twitch,
+// e il contrario (docs/SCUDO.md, «Su Kick»).
+export const piattaformaScudo = (p) => (p === 'kick' ? 'kick' : 'twitch');
+export const chiavePersona = (piattaforma, login) => (piattaformaScudo(piattaforma) === 'kick' ? 'kick:' : '') + norm(login);
+const inLista = (lista, login, piattaforma) => (lista || []).map(norm).filter(Boolean).includes(chiavePersona(piattaforma, login));
+const esente = (cfg, login, piattaforma) => inLista(cfg.esenti, login, piattaforma);
+// Le finestre che contano follow e cori: separate per piattaforma. Sono due
+// popolazioni con ritmi loro, e i nomi si ripetono fra le due.
+const finestraDi = (channel, piattaforma) => norm(channel) + (piattaformaScudo(piattaforma) === 'kick' ? '|kick' : '');
+
 // La lista «Blocca sempre» e' dello streamer, e dice «sempre»: vale con lo
 // scudo acceso anche quando l'elenco dei nomi da bot e' spento. Prima stava
 // dentro nomeBot, e spegnendo quell'elenco si spegneva anche lei.
-export function inBloccaSempre(login, cfg = {}) {
+export function inBloccaSempre(login, cfg = {}, piattaforma = 'twitch') {
   const l = norm(login);
   if (!l || BUONI.has(l)) return false;
-  if ((cfg.esenti || []).map(norm).includes(l)) return false;
-  return (cfg.extra || []).map(norm).filter(Boolean).includes(l);
+  if (esente(cfg, l, piattaforma)) return false;
+  return inLista(cfg.extra, l, piattaforma);
 }
 
 // Quanto è "nuovo di zecca e vuoto" un account? Ritorna { rischio, motivi }.
@@ -333,6 +347,7 @@ export function registra(channel, dati) {
   const voce = {
     id: nuovoId(), ts: Date.now(),
     login: norm(dati.login) || '', userId: dati.userId || '',
+    ...(dati.piattaforma === 'kick' ? { piattaforma: 'kick' } : {}),
     azione: dati.azione || 'segnala', motivo: String(dati.motivo || ''),
     esito: dati.esito || 'fatto', stato: dati.stato || 'chiuso', ris: null,
     ...(incidente ? { incidente } : {}),
@@ -347,7 +362,8 @@ export function registra(channel, dati) {
   // bloccato non segue piu': lasciarlo fra i follower vorrebbe dire offrirlo a
   // un «togli il follow» che, sbloccandolo, gli riaprirebbe la porta.
   try {
-    if (voce.userId && voce.esito === 'fatto') {
+    // e' la lista di Twitch: una riga di Kick ha un id di Kick, che li' e' un altro
+    if (voce.userId && voce.esito === 'fatto' && voce.piattaforma !== 'kick') {
       if (voce.azione === 'blocca') followerElenco.segnaStato(ch, voce.userId, 'bloccato', voce.ts, { uscito: true });
       else if (voce.azione === 'sblocca') followerElenco.sbloccato(ch, voce.userId, voce.ts);
     }
@@ -846,10 +862,11 @@ export async function bonifica(incidente, giudizi, conferma, { canale } = {}) {
   if (!buona.ok) return { ok: false, ...buona };
 
   const cfg = { ...ANTIBOT_DEFAULT, ...(streamers.get(r.canale)?.settings?.antibot || {}) };
-  const esenti = (cfg.esenti || []).map(norm);
+  // Ognuno sulla SUA piattaforma: in un attacco su un canale con Twitch e Kick
+  // ci sono persone di tutte e due, e su Kick il blocco non c'e' (il ban si').
   const verdetti = bon.verdettiPer(incidente, giudizi, { aVuoto: cfg.aVuoto === true })
-    .filter((v) => !BUONI.has(norm(v.login)) && !esenti.includes(norm(v.login)))
-    .map((v) => verdetto({ ...v, azione: cfg.togliFollow === false ? AZIONI.BAN : AZIONI.BLOCCA }));
+    .filter((v) => !BUONI.has(norm(v.login)) && !esente(cfg, v.login, v.piattaforma))
+    .map((v) => verdetto({ ...v, azione: v.piattaforma === 'kick' || cfg.togliFollow === false ? AZIONI.BAN : AZIONI.BLOCCA }));
 
   registra(r.canale, { azione: 'bonifica', motivo: `${verdetti.length} account tolti dopo ${r.incidente}`, esito: 'in-attesa' });
   log.warn(`#${r.canale} bonifica ${r.incidente}: ${verdetti.length} account in fila`);
@@ -857,7 +874,7 @@ export async function bonifica(incidente, giudizi, conferma, { canale } = {}) {
     esecutore.esegui(v).then((x) => {
       // Nella rete condivisa entra solo quello che è andato a buon fine
       // davvero: non un doppione, non una prova a vuoto, non un fallimento.
-      if (x?.ok && !x.aVuoto && !x.doppione && !x.saltato) { try { rete.segnala(r.canale, v.login, 'ondata'); } catch (e) {  } }
+      if (v.piattaforma !== 'kick' && x?.ok && !x.aVuoto && !x.doppione && !x.saltato) { try { rete.segnala(r.canale, v.login, 'ondata'); } catch (e) {  } }
     }).catch(() => {});
   }
   return { ok: true, quanti: verdetti.length, risparmiati: r.quanti.legittimo };
@@ -886,8 +903,9 @@ export async function spegniScudo(opzioni) {
 }
 
 export class AntiBot {
-  constructor({ helix, alert, say, chatSettings, followFermi, attaccoFinito } = {}) {
+  constructor({ helix, kick, alert, say, chatSettings, followFermi, attaccoFinito } = {}) {
     this.helix = helix;
+    this.kick = kick;                    // chi modera su Kick (kick/api.js, moderatoreKick)
     // (channel, {tipo, livello, motivo, incidente, testo}): lo scudo e' salito, o
     // e' arrivato un raid grande. Il bot decide se e dove avvisare lo streamer
     // (_avvisoScudo), secondo le sue scelte (facolt.).
@@ -897,11 +915,11 @@ export class AntiBot {
     // (channel): i follow si sono appena fermati. Il bot lo dice alle scene,
     // che buttano gli alert dei follow ancora in fila (facolt.).
     this.followFermi = followFermi;
-    this.say = say;                      // (channel, testo)
+    this.say = say;                      // (channel, testo, piattaforma): dove e' successo
     this.chatSettings = chatSettings;    // (channel, {followersOnly}) se il bot sa farlo (facolt.)
     // Chi decide non esegue: l'esecutore e' un altro modulo, e l'unica cosa che
     // sa di noi e' dove scrivere quello che ha fatto.
-    this.esecutore = new Esecutore({ helix, annota: (ch, riga) => registra(ch, riga) });
+    this.esecutore = new Esecutore({ helix, kick, annota: (ch, riga) => registra(ch, riga) });
     esecutore = this.esecutore;
     this.esecutore.caricaFalliti({ esiste: (ch) => !!streamers.get(ch) }).catch(() => {});
     this._riapri = setTimeout(() => { this._riapriSerrande().catch(() => {}); }, 4000);
@@ -978,7 +996,7 @@ export class AntiBot {
   // Un punteggio continuo invece di tre interruttori: «nove follow quando la
   // soglia è dieci» e «zero follow» non sono la stessa cosa, e col booleano lo
   // diventavano. Da qui esce il livello, e dal livello cosa fa lo scudo.
-  async _valuta(channel, nuovi, cfg) {
+  async _valuta(channel, nuovi, cfg, piattaforma = 'twitch') {
     const ch = norm(channel);
     const a = assetti.get(ch);
     const segnali = { ...(a?.segnali || {}), ...nuovi };
@@ -987,9 +1005,10 @@ export class AntiBot {
     const livello = livelloDa(punti, modo);
     if (a) { a.segnali = segnali; a.punti = punti; }
     if (LIV.N[livello] > LIV.N[assetto(ch).livello]) {
-      await this._alza(ch, livello, motivoDa(segnali, punti), cfg, { segnali, punti });
+      await this._alza(ch, livello, motivoDa(segnali, punti), cfg, { segnali, punti, piattaforma });
     } else if (a) {
       this._rimanda(ch);          // il pericolo c'è ancora: si rimanda il rientro
+      if (this._entra(a, piattaforma, ch)) await this._leve(ch, a, cfg, a.motivo);
     }
     return { punti, livello };
   }
@@ -1002,8 +1021,10 @@ export class AntiBot {
     // Non si scende mai passando di qui: alzare è un gesto, abbassare è il
     // tempo che passa. Un allarme più lieve mentre ce n'è uno grave in corso
     // rimanda il rientro, non lo anticipa.
+    const p = piattaformaScudo(extra.piattaforma);
     if (prima && LIV.N[prima.livello] > LIV.N[livello]) {
       this._rimanda(ch);
+      if (this._entra(prima, p, ch)) await this._leve(ch, prima, cfg, prima.motivo);
       return;
     }
     const salita = !prima || prima.livello !== livello;
@@ -1013,7 +1034,11 @@ export class AntiBot {
     if (salita) a.da = Date.now();
     assetti.set(ch, a);
     this._rimanda(ch);
-    if (!salita) return;
+    const entrata = this._entra(a, p, ch);
+    if (!salita) {
+      if (entrata) await this._leve(ch, a, cfg, motivo);
+      return;
+    }
 
     log.warn(`#${ch} assetto → ${livello.toUpperCase()}: ${motivo}`);
     // L'incidente nasce qui: un attacco e' una cosa sola, non trecento righe.
@@ -1047,15 +1072,45 @@ export class AntiBot {
       }
     }
 
+    await this._leve(ch, a, cfg, motivo);
+  }
+
+  // DA DOVE ARRIVA L'ATTACCO. Il livello del canale e' uno, ma le leve sono della
+  // piattaforma: un'ondata di follow su Kick non chiude la chat di Twitch.
+  // Si segna ogni piattaforma che ha portato un segnale; torna true la prima
+  // volta che una entra, perche' le sue leve vanno mosse adesso.
+  _entra(a, piattaforma, ch = '') {
+    const p = piattaformaScudo(piattaforma);
+    if (!(a.piattaforme instanceof Set)) a.piattaforme = new Set();
+    if (a.piattaforme.has(p)) return false;
+    a.piattaforme.add(p);
+    if (a.piattaforme.size > 1 && ch) { try { inc.racconta(ch, `l'attacco arriva anche da ${p === 'kick' ? 'Kick' : 'Twitch'}`); } catch (e) {  } }
+    return true;
+  }
+
+  // LE LEVE DEL LIVELLO, su ogni piattaforma attaccata. Su Twitch la chat lenta
+  // e la serranda (solo follower, Shield Mode). Kick non ha le modalita' della
+  // chat nell'API pubblica: li' lo scudo lavora persona per persona (ban,
+  // pausa, messaggi tolti) e lo dice in chat, se lo streamer vuole.
+  async _leve(ch, a, cfg, motivo) {
     if (cfg.assettoAuto === false) return;
+    const dev = assettoDi(a.livello);
+    const suTwitch = a.piattaforme?.has('twitch');
+    const suKick = a.piattaforme?.has('kick');
 
     // In sola osservazione lo scudo scrive cosa farebbe e non tocca la chat:
     // nemmeno le modalita', che valgono per tutti quelli che scrivono.
     if (this._aVuoto(cfg)) {
-      const farebbe = [dev.chatLenta ? `chat lenta ${dev.chatLenta}s` : '', dev.serranda ? 'soli follower e Shield Mode' : ''].filter(Boolean).join(', ');
-      if (farebbe) registra(ch, { azione: 'assetto', motivo: `${livello}: ${farebbe}`, esito: 'a-vuoto' });
+      const farebbe = suTwitch ? [dev.chatLenta ? `chat lenta ${dev.chatLenta}s` : '', dev.serranda ? 'soli follower e Shield Mode' : ''].filter(Boolean).join(', ') : '';
+      if (farebbe) registra(ch, { azione: 'assetto', motivo: `${a.livello}: ${farebbe}`, esito: 'a-vuoto' });
       return;
     }
+
+    if (suKick && dev.serranda && cfg.avvisa && !a.avvisatoKick) {
+      a.avvisatoKick = true;
+      this.say?.(ch, `🛡️ Scudo alzato: ${motivo}. Gli account dell'attacco vengono fermati uno per uno.`, 'kick');
+    }
+    if (!suTwitch) return;
 
     // Ogni scalino accende quello che gli tocca, e niente di più. La chat lenta
     // arriva a «difesa», la serranda solo ad «attacco»: fra il non far niente e
@@ -1066,7 +1121,7 @@ export class AntiBot {
       if (r?.ok) rip.lenta = true;
     }
     if (dev.serranda) {
-      if (cfg.avvisa) this.say?.(ch, `🛡️ Scudo alzato: ${motivo}. Chat ai soli follower finché non passa.`);
+      if (cfg.avvisa && !rip.follower) this.say?.(ch, `🛡️ Scudo alzato: ${motivo}. Chat ai soli follower finché non passa.`, 'twitch');
       // La serranda. Ogni pezzo si segna solo se l'ha alzato LUI: quello che lo
       // streamer aveva già acceso per conto suo non va spento al ritorno in pace.
       if (!rip.follower) {
@@ -1138,17 +1193,20 @@ export class AntiBot {
     // streamer lo vuole e se e' stato abbastanza grave da meritarlo.
     if (finito) { try { this.attaccoFinito?.(ch, finito.id); } catch (e) { log.debug(`#${ch} rapporto dell'attacco:`, e?.message || e); } }
     const c = this.cfg(ch);
-    if (c.avvisa && LIV.almeno(a.livello, ASSETTO.ATTACCO)) this.say?.(ch, '🛡️ Passata. Chat riaperta.');
+    // Si dice dove era successo: «chat riaperta» solo dove la chat era stata chiusa.
+    if (c.avvisa && LIV.almeno(a.livello, ASSETTO.ATTACCO)) {
+      if (a.piattaforme?.has('twitch') || !a.piattaforme?.size) this.say?.(ch, rip.follower ? '🛡️ Passata. Chat riaperta.' : '🛡️ Passata.', 'twitch');
+      if (a.piattaforme?.has('kick')) this.say?.(ch, '🛡️ Passata.', 'kick');
+    }
   }
 
   // ── Il blocco sul nascere ─────────────────────────────────────────────────
   // Prende TUTTA l'ondata, compresi quelli arrivati prima dell'allarme, e la
   // consegna all'esecutore. Qui non si chiama Twitch: si decide, e si scrive
   // cosa si e' deciso.
-  async _blocca(channel, voci, motivo, cfg) {
+  async _blocca(channel, voci, motivo, cfg, p = 'twitch') {
     const ch = norm(channel);
-    const esenti = (cfg.esenti || []).map(norm);
-    const puliti = voci.filter((v) => v.userId && norm(v.login) && !BUONI.has(norm(v.login)) && !esenti.includes(norm(v.login)));
+    const puliti = voci.filter((v) => v.userId && norm(v.login) && !BUONI.has(norm(v.login)) && !esente(cfg, v.login, p));
 
     // CHI È ARRIVATO INSIEME, E CHI C'ERA PER CASO. Il giudizio sulla cadenza
     // vale sull'insieme e non dice niente sul singolo: dentro la finestra ci
@@ -1166,7 +1224,7 @@ export class AntiBot {
       log.info(`#${ch} ${diCasa.length} lasciati stare: scrivono qui da tempo`);
       try {
         inc.racconta(ch, `${diCasa.length} account lasciati stare: scrivono in questo canale da tempo`);
-        for (const v of diCasa) inc.coinvolto(ch, v.login, inc.GIUDIZI.LEGITTIMO, 0, v.userId);
+        for (const v of diCasa) inc.coinvolto(ch, v.login, inc.GIUDIZI.LEGITTIMO, 0, v.userId, p);
       } catch (e) {  }
     }
 
@@ -1181,10 +1239,11 @@ export class AntiBot {
     }
     const verdetti = bersagli
       .map((v) => verdetto({
-        canale: ch, login: v.login, userId: v.userId,
+        canale: ch, login: v.login, userId: v.userId, piattaforma: p,
         // Sui follow il blocco, non il ban: e' l'unica azione che toglie il
         // follow finto dalla lista, e il numero gonfiato e' il danno vero.
-        azione: cfg.togliFollow === false ? AZIONI.BAN : AZIONI.BLOCCA,
+        // Su Kick il blocco non c'e' (ne' togliere un follower): li' il ban.
+        azione: p === 'kick' || cfg.togliFollow === false ? AZIONI.BAN : AZIONI.BLOCCA,
         motivi: [v.motivo || 'ondata follow-bot'], origine: 'ondata',
         incidente: inc.aperto(ch)?.id || '',
         confidenza: 0.95, aVuoto: this._aVuoto(cfg),
@@ -1197,14 +1256,15 @@ export class AntiBot {
     // rete finirebbero nomi che non sono stati toccati.
     const n = verdetti.length;
     log.warn(`#${ch} blocco sul nascere: ${n} account in fila (${motivo})`);
-    registra(ch, { azione: 'blocco', motivo: `${n} account dell'ondata → blocco (${motivo})`, esito: 'in-attesa' });
-    if (cfg.avvisa && !this._aVuoto(cfg)) this.say?.(ch, `🛡️ Ondata artificiale: sto ripulendo ${n} account finti.`);
+    registra(ch, { azione: 'blocco', piattaforma: p, motivo: `${n} account dell'ondata${p === 'kick' ? ' su Kick' : ''} → ${p === 'kick' ? 'ban' : 'blocco'} (${motivo})`, esito: 'in-attesa' });
+    if (cfg.avvisa && !this._aVuoto(cfg)) this.say?.(ch, `🛡️ Ondata artificiale: sto ripulendo ${n} account finti.`, p);
     for (const v of verdetti) {
-      try { inc.coinvolto(ch, v.login, inc.GIUDIZI.CERTO, v.punti, v.userId); } catch (e) {  }
+      try { inc.coinvolto(ch, v.login, inc.GIUDIZI.CERTO, v.punti, v.userId, p); } catch (e) {  }
       this.esecutore.esegui(v).then((r) => {
         // Nella rete entra solo quello che e' andato a buon fine DAVVERO: non
-        // un doppione, non una prova a vuoto, non un tentativo fallito.
-        if (r?.ok && !r.aVuoto && !r.doppione && !r.saltato) { try { rete.segnala(ch, v.login, 'ondata'); } catch (e) {  } }
+        // un doppione, non una prova a vuoto, non un tentativo fallito. E solo
+        // di Twitch: la rete e' fatta di nomi di Twitch.
+        if (p === 'twitch' && r?.ok && !r.aVuoto && !r.doppione && !r.saltato) { try { rete.segnala(ch, v.login, 'ondata'); } catch (e) {  } }
       }).catch(() => {});
     }
     return n;
@@ -1216,13 +1276,14 @@ export class AntiBot {
   // coda dei falliti. Sono due mestieri, e adesso stanno in due posti.
   async _agisci(channel, userId, login, motivo, cfg, origine = 'chat', extra = {}) {
     const ch = norm(channel);
+    const p = piattaformaScudo(extra.piattaforma);
     if (cfg.azione === 'segnala') {
       // Decidere di non fare niente è una decisione, e va scritta come le
       // altre: sennò «il bot non ha fatto niente» e «il bot non se n'è
       // accorto» si leggono uguali.
       log.warn(`#${ch} bot segnalato: @${login} (${motivo})`);
-      if (cfg.avvisa) this.say?.(ch, `⚠️ Possibile bot: @${login} (${motivo})`);
-      registra(ch, { login, userId, azione: 'segnala', motivo, esito: 'in-attesa', stato: 'aperto' });
+      if (cfg.avvisa) this.say?.(ch, `⚠️ Possibile bot: @${login} (${motivo})`, p);
+      registra(ch, { login, userId, piattaforma: p, azione: 'segnala', motivo, esito: 'in-attesa', stato: 'aperto' });
       return { ok: true, saltato: true };
     }
 
@@ -1230,14 +1291,15 @@ export class AntiBot {
     // qui: un account bannato RESTA follower, e il numero gonfiato è il danno.
     // In chat invece l'azione giusta è il ban: lì è moderazione, non pulizia
     // della lista.
+    // Su Kick il blocco non c'e': un follow si ferma col ban.
     let azione;
-    if (origine === 'follow' && cfg.togliFollow !== false) azione = AZIONI.BLOCCA;
+    if (origine === 'follow' && cfg.togliFollow !== false && p === 'twitch') azione = AZIONI.BLOCCA;
     else if (cfg.azione === 'timeout') azione = AZIONI.TIMEOUT;
     else azione = AZIONI.BAN;
 
-    try { inc.coinvolto(ch, login, inc.GIUDIZI.CERTO, extra.punti || 0, userId); } catch (e) {  }
+    try { inc.coinvolto(ch, login, inc.GIUDIZI.CERTO, extra.punti || 0, userId, p); } catch (e) {  }
     return this.esecutore.esegui(verdetto({
-      canale: ch, login, userId, azione,
+      canale: ch, login, userId, azione, piattaforma: p,
       motivi: [motivo], origine, incidente: inc.aperto(ch)?.id || '',
       durata: azione === AZIONI.TIMEOUT ? Number(cfg.timeoutSec || 1209600) : 0,
       punti: extra.punti || 0, confidenza: extra.confidenza ?? 0.9,
@@ -1245,12 +1307,16 @@ export class AntiBot {
     }));
   }
 
-  // Evento follow (channel.follow v2): user_id, user_login, user_name.
+  // Evento follow (channel.follow v2): user_id, user_login, user_name. Anche di
+  // Kick (bot.js, eventoEsterno), con `piattaforma: 'kick'`: lo stesso giudizio,
+  // sulle finestre di Kick, e le azioni sulla moderazione di Kick.
   async onFollow(ev) {
     const channel = norm(ev.channel);
     const cfg = this.cfg(channel);
     if (!cfg.attivo) return;
     const d = ev.data || {};
+    const p = piattaformaScudo(ev.piattaforma || d.piattaforma);
+    const fin = finestraDi(channel, p);
     const login = norm(d.user_login || d.user_name);
     const userId = d.user_id;
     if (!login || !userId) return;
@@ -1258,7 +1324,7 @@ export class AntiBot {
     // poi lo scudo lascia stare: il grafico conta quanti sono arrivati, non
     // quanti ne abbiamo giudicati.
     try { inc.segnaFollow(channel, Number.isFinite(ev.ts) ? Number(ev.ts) : Date.now()); } catch (e) {  }
-    if (BUONI.has(login) || (cfg.esenti || []).map(norm).includes(login)) return;
+    if (BUONI.has(login) || esente(cfg, login, p)) return;
 
     // L'ISTANTE DELL'EVENTO, non quello in cui ci arriva. Twitch ci manda
     // quando è successo; se il bot è indietro di due secondi — una riconnessione,
@@ -1272,13 +1338,13 @@ export class AntiBot {
     // dentro la finestra e la cadenza misurata non vuol più dire niente.
     const ora = Number.isFinite(ev.ts) ? Number(ev.ts) : Date.now();
     const eraAttacco = LIV.almeno(assetto(channel).livello, ASSETTO.ATTACCO);
-    if (!eraAttacco) segnaRitmo(channel, ora);      // la normalità si impara in pace, non sotto attacco
+    if (!eraAttacco) segnaRitmo(fin, ora);      // la normalità si impara in pace, non sotto attacco
     const wMs = Number(cfg.rafficaSecondi ?? 30) * 1000;
-    const arr = segnaOndata(channel, ora, userId, login, wMs);
-    const lunga = segnaLunga(channel, ora, userId, login);
+    const arr = segnaOndata(fin, ora, userId, login, wMs);
+    const lunga = segnaLunga(fin, ora, userId, login);
 
     if (cfg.raffica) {
-      const soglia = sogliaRaffica(channel, cfg, ora);
+      const soglia = sogliaRaffica(fin, cfg, ora);
       // I SEGNALI, non le decisioni. Ogni follow aggiorna quello che si sa del
       // canale in questo momento; a decidere quanto è grave — e quindi cosa
       // fare — è una funzione sola, che pesa tutto insieme. Prima ogni
@@ -1293,15 +1359,15 @@ export class AntiBot {
         // Prima si valuta, poi si scrive: la valutazione apre l'attacco, e la
         // raffica che l'ha fatto scattare entra cosi' nel suo racconto. Scritta
         // prima, restava fuori dall'unico attacco che raccontava.
-        await this._valuta(channel, segnali, cfg);
-        registra(channel, { azione: 'raffica', motivo: `${arr.length} follow in ${cfg.rafficaSecondi}s (soglia ${soglia}) · ${g.motivo}`, esito: 'avviso' });
+        await this._valuta(channel, segnali, cfg, p);
+        registra(channel, { azione: 'raffica', piattaforma: p, motivo: `${arr.length} follow ${p === 'kick' ? 'su Kick ' : ''}in ${cfg.rafficaSecondi}s (soglia ${soglia}) · ${g.motivo}`, esito: 'avviso' });
         const a = assetti.get(channel);
         // undefined = «non lo so ancora»: si torna a chiedere al prossimo
         // follow, invece di aspettare il venticinquesimo con un «no» che non
         // era un no.
         if (a) a.artificiale = g.basta ? g.certo : undefined;
         if (g.certo && cfg.bloccoSulNascere !== false && LIV.almeno(assetto(channel).livello, ASSETTO.ATTACCO)) {
-          await this._blocca(channel, arr.map((v) => ({ ...v, motivo: 'ondata follow-bot' })), g.motivo, cfg);
+          await this._blocca(channel, arr.map((v) => ({ ...v, motivo: 'ondata follow-bot' })), g.motivo, cfg, p);
         }
       } else if (lunga.onda && !eraAttacco) {
         // IL GOCCIOLAMENTO. Un follow ogni quattro secondi per dieci minuti non
@@ -1312,25 +1378,25 @@ export class AntiBot {
         const g = dominante(lunga.voci);
         segnali.ondaLenta = true;
         segnali.gruppo = !!g;
-        await this._valuta(channel, segnali, cfg);
+        await this._valuta(channel, segnali, cfg, p);
         if (g && LIV.almeno(assetto(channel).livello, ASSETTO.ATTACCO)) {
           const a2 = assetti.get(channel);
           if (a2) { a2.artificiale = true; a2.motivoArt = g.motivo; }
           if (cfg.bloccoSulNascere !== false) {
-            await this._blocca(channel, lunga.voci.map((v) => ({ ...v, motivo: 'ondata lenta: ' + g.motivo })), g.motivo, cfg);
+            await this._blocca(channel, lunga.voci.map((v) => ({ ...v, motivo: 'ondata lenta: ' + g.motivo })), g.motivo, cfg, p);
           }
         }
       } else if (arr.length >= Math.ceil(soglia / 2) && !eraAttacco) {
         // Sotto la soglia ma non tranquillo: qui prima non succedeva niente, e
         // il livello «osservo» esiste apposta — guardare di più non costa a
         // nessuno.
-        await this._valuta(channel, segnali, cfg);
+        await this._valuta(channel, segnali, cfg, p);
       }
     }
 
     // nome già noto come bot: si agisce sempre, attacco o non attacco
-    if (inBloccaSempre(login, cfg)) return this._agisci(channel, userId, login, 'nella lista «Blocca sempre»', cfg, 'follow');
-    if (cfg.nomiBot && nomeBot(login, cfg)) return this._agisci(channel, userId, login, 'nome da bot', cfg, 'follow');
+    if (inBloccaSempre(login, cfg, p)) return this._agisci(channel, userId, login, 'nella lista «Blocca sempre»', cfg, 'follow', { piattaforma: p });
+    if (cfg.nomiBot && nomeBot(login, cfg, p)) return this._agisci(channel, userId, login, 'nome da bot', cfg, 'follow', { piattaforma: p });
 
     // Attacco in corso e ondata giudicata artificiale: ogni follow che arriva
     // adesso viene dallo stesso posto e va in coda senza altre domande.
@@ -1354,13 +1420,13 @@ export class AntiBot {
         // a quelli di prima: chi non viene dalla stessa fabbrica resta fuori,
         // ed è segnato come sospetto invece che tolto.
         if (prima === true && a.gruppo && !appartiene(login, a.gruppo)) {
-          try { inc.coinvolto(channel, login, inc.GIUDIZI.SOSPETTO); } catch (e) {  }
+          try { inc.coinvolto(channel, login, inc.GIUDIZI.SOSPETTO, 0, userId, p); } catch (e) {  }
           return;
         }
         const voci = prima === true
           ? [{ ts: ora, userId, login, motivo: 'follow durante ondata artificiale' }]
           : arr.map((v) => ({ ...v, motivo: 'ondata follow-bot' }));
-        await this._blocca(channel, voci, a.motivoArt || 'ondata artificiale', cfg);
+        await this._blocca(channel, voci, a.motivoArt || 'ondata artificiale', cfg, p);
         return;
       }
     }
@@ -1373,18 +1439,20 @@ export class AntiBot {
     // stesso, ed è proprio la gente che arriva ai livelli bassi quella che non
     // si dovrà toccare quando si ripulisce.
     if (a && LIV.N[a.livello] > 0) {
-      try { inc.coinvolto(channel, login, a.artificiale ? inc.GIUDIZI.SOSPETTO : inc.GIUDIZI.LEGITTIMO, 0, userId); } catch (e) {  }
+      try { inc.coinvolto(channel, login, a.artificiale ? inc.GIUDIZI.SOSPETTO : inc.GIUDIZI.LEGITTIMO, 0, userId, p); } catch (e) {  }
     }
 
     // vecchio interruttore: bannare i follow dell'ondata anche senza certezza
     if (cfg.raffica && cfg.rafficaBanna && inRaffica(channel)) {
-      return this._agisci(channel, userId, login, 'follow durante ondata', cfg, 'follow');
+      return this._agisci(channel, userId, login, 'follow durante ondata', cfg, 'follow', { piattaforma: p });
     }
 
     // 3. account sospetto (una chiamata a Twitch). NON durante una raffica: lì
     // l'attacco è già gestito in aggregato, e fare una chiamata Helix per OGNI
     // follow di un'ondata amplificherebbe l'attacco in centinaia di richieste.
-    if (cfg.controllaAccount && this.helix?.getUserByLogin && !inRaffica(channel)) {
+    // Solo su Twitch: Kick non dice quando e' nato un account, e chiedere a
+    // Twitch il profilo di un nome di Kick vorrebbe dire giudicare un altro.
+    if (p === 'twitch' && cfg.controllaAccount && this.helix?.getUserByLogin && !inRaffica(channel)) {
       const u = await this.helix.getUserByLogin(login).catch(() => null);
       const { rischio, motivi, forte } = valutaAccount(u, cfg, { canale: channel });
       // Il numero da solo non basta mai: senza un fatto che una persona non può
@@ -1412,7 +1480,11 @@ export class AntiBot {
     // difese, nemmeno il coro: un treno di cheer tutti uguali e' una festa.
     if (Number(msg.bits) > 0) return false;
     const login = norm(msg.user || msg.username);
-    if (!login || BUONI.has(login) || (cfg.esenti || []).map(norm).includes(login)) return false;
+    // Su Kick: le stesse difese, sulle persone di Kick e con la moderazione di
+    // Kick. Non la trattenuta degli account appena nati, piu' sotto: Kick non
+    // dice quando e' nato un account.
+    const p = piattaformaScudo(msg.piattaforma);
+    if (!login || BUONI.has(login) || esente(cfg, login, p)) return false;
 
     // Le tre difese in chat sono cose diverse e stanno su tre interruttori
     // diversi. Prima erano tutte dietro a `nomiBot`: chi spegneva l'elenco dei
@@ -1420,28 +1492,28 @@ export class AntiBot {
     // via anche il CORO, che e' la firma dell'hate-raid, e la trattenuta degli
     // account appena nati. Spegneva una cosa e ne perdeva tre, e nessuno glielo
     // diceva.
-    if (inBloccaSempre(login, cfg)) { await this._agisci(channel, msg.userId, login, 'nella lista «Blocca sempre»', cfg); return true; }
-    if (cfg.nomiBot && nomeBot(login, cfg)) { await this._agisci(channel, msg.userId, login, 'nome da bot in chat', cfg); return true; }
+    if (inBloccaSempre(login, cfg, p)) { await this._agisci(channel, msg.userId, login, 'nella lista «Blocca sempre»', cfg, 'chat', { piattaforma: p }); return true; }
+    if (cfg.nomiBot && nomeBot(login, cfg, p)) { await this._agisci(channel, msg.userId, login, 'nome da bot in chat', cfg, 'chat', { piattaforma: p }); return true; }
 
     // Il coro: lo stesso messaggio da molte bocche diverse in pochi secondi.
     // È la firma dell'hate-raid, e non dipende da chi scrive né da quanto è
     // vecchio il suo account — solo da quello che esce dalle bocche.
-    const c = segnaCoro(channel, msg.text || msg.message || '', login, cfg, msg.ts);
+    const c = segnaCoro(finestraDi(channel, p), msg.text || msg.message || '', login, cfg, msg.ts);
     if (c.coro) {
-      const motivo = `stesso messaggio da ${c.quanti} account diversi in mezzo minuto`;
-      await this._valuta(channel, { coro: true, coroBocche: c.quanti }, cfg);
-      try { inc.coinvolto(channel, login, inc.GIUDIZI.CERTO, 0, msg.userId); } catch (e) {  }
+      const motivo = `stesso messaggio da ${c.quanti} account diversi in mezzo minuto${p === 'kick' ? ' su Kick' : ''}`;
+      await this._valuta(channel, { coro: true, coroBocche: c.quanti }, cfg, p);
+      try { inc.coinvolto(channel, login, inc.GIUDIZI.CERTO, 0, msg.userId, p); } catch (e) {  }
       const r = await this.esecutore.esegui(verdetto({
-        canale: channel, login, userId: msg.userId, azione: AZIONI.CANCELLA,
+        canale: channel, login, userId: msg.userId, azione: AZIONI.CANCELLA, piattaforma: p,
         messaggio: msg.id, motivi: [motivo], origine: 'coro', incidente: inc.aperto(channel)?.id || '',
         confidenza: 0.9, aVuoto: this._aVuoto(cfg),
       }));
-      if (r?.ok && !r.aVuoto && !r.doppione) { try { rete.segnala(channel, login, 'coro'); } catch (e) {  } }
+      if (p === 'twitch' && r?.ok && !r.aVuoto && !r.doppione) { try { rete.segnala(channel, login, 'coro'); } catch (e) {  } }
       return true;
     }
 
     // account nuovissimo che scrive: l'equivalente automatico del "Restricted".
-    if (cfg.chatNuovi && this.helix?.getUserByLogin && msg.userId) {
+    if (p === 'twitch' && cfg.chatNuovi && this.helix?.getUserByLogin && msg.userId) {
       let creato = nascita.get(msg.userId)?.creato;
       if (creato === undefined) {
         // Si ricorda un FATTO (la data di nascita, che non cambia mai), non un
@@ -1501,15 +1573,17 @@ export class AntiBot {
     const nome = nomeIn(ch, 'permetti');
     const chi = norm(String(testo.split(/\s+/)[1] || '').replace(/^@/, ''));
     if (!NOME_TWITCH.test(chi)) { say(`🛡️ Si usa così: !${nome} nome`); return true; }
+    // detto in chat su Kick, parla di una persona di Kick
+    const p = piattaformaScudo(msg.piattaforma);
     const s = streamers.get(ch);
     const ab = { ...(s?.settings?.antibot || {}) };
-    const r = conNome(ab.esenti, chi);
+    const r = conNome(ab.esenti, chiavePersona(p, chi));
     if (r.piena) {
       say(`🛡️ La lista di chi può sempre scrivere è piena (${ESENTI_MAX}): togline qualcuno dal pannello, nello Scudo.`);
       return true;
     }
     if (r.nuovo) streamers.setSettings(ch, { ...(s?.settings || {}), antibot: { ...ab, esenti: r.lista } });
-    registra(ch, { login: chi, azione: 'permesso', motivo: `fatto scrivere da @${norm(msg.user)}`, esito: 'fatto' });
+    registra(ch, { login: chi, piattaforma: p, azione: 'permesso', motivo: `fatto scrivere da @${norm(msg.user)}`, esito: 'fatto' });
     say(`✓ @${chi} ora può scrivere.`);
     return true;
   }

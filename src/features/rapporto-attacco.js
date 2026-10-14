@@ -108,8 +108,8 @@ const PESO_AZIONE = { ban: 5, blocca: 4, timeout: 3, cancella: 2, limita: 1 };
 export function coinvoltiDi(inc, registro = []) {
   const fatto = new Map();
   for (const r of registro) {
-    const l = String(r?.login || '').toLowerCase();
-    if (!l || !PESO_AZIONE[r.azione]) continue;
+    const l = (r?.piattaforma === 'kick' ? 'kick:' : '') + String(r?.login || '').toLowerCase();
+    if (!l || l === 'kick:' || !PESO_AZIONE[r.azione]) continue;
     const gia = fatto.get(l);
     if (!gia || (PESO_AZIONE[r.azione] > PESO_AZIONE[gia.azione]) || (r.azione === gia.azione && r.ts > gia.ts)) {
       fatto.set(l, { azione: r.azione, esito: r.esito, ts: r.ts });
@@ -117,7 +117,7 @@ export function coinvoltiDi(inc, registro = []) {
   }
   const ordine = { certo: 0, sospetto: 1, legittimo: 2 };
   return Object.entries(inc?.coinvolti || {})
-    .map(([login, v]) => ({ login, userId: String(v?.userId || ''), giudizio: v?.giudizio || 'sospetto', punti: Number(v?.punti) || 0, ts: Number(v?.ts) || 0, fatto: fatto.get(login) || null }))
+    .map(([chiave, v]) => ({ login: v?.piattaforma === 'kick' ? (v.login || chiave.replace(/^kick:/, '')) : chiave, ...(v?.piattaforma === 'kick' ? { piattaforma: 'kick' } : {}), userId: String(v?.userId || ''), giudizio: v?.giudizio || 'sospetto', punti: Number(v?.punti) || 0, ts: Number(v?.ts) || 0, fatto: fatto.get(chiave) || null }))
     .sort((a, b) => (ordine[a.giudizio] ?? 3) - (ordine[b.giudizio] ?? 3) || a.ts - b.ts);
 }
 
@@ -236,8 +236,8 @@ export function oggettoRapporto(r, lingua = 'it') {
 // a Twitch, un foglio). Le celle si disinnescano in csv.js: un nome come
 // «=HYPERLINK(...)» non deve diventare un comando aprendo il file.
 export function csvCoinvolti(r) {
-  const testa = ['login', 'user_id', 'giudizio', 'punti', 'quando', 'azione', 'esito'];
-  const righe = (r?.coinvolti || []).map((c) => [c.login, c.userId, c.giudizio, c.punti, c.ts ? new Date(c.ts).toISOString() : '', c.fatto?.azione || '', c.fatto?.esito || ''].map(cellaCsv).join(','));
+  const testa = ['login', 'user_id', 'giudizio', 'punti', 'quando', 'azione', 'esito', 'piattaforma'];
+  const righe = (r?.coinvolti || []).map((c) => [c.login, c.userId, c.giudizio, c.punti, c.ts ? new Date(c.ts).toISOString() : '', c.fatto?.azione || '', c.fatto?.esito || '', c.piattaforma || 'twitch'].map(cellaCsv).join(','));
   return [testa.join(','), ...righe].join('\n') + '\n';
 }
 

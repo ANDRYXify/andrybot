@@ -308,6 +308,43 @@ riprendono e spariscono dal file. `restiDi` conta anche la fila
 (`fila_scudo`). La prova è `test/unita/scudo-cancellato.test.mjs`, con una
 chiamata a Twitch tenuta sospesa a mano mentre l'account si cancella.
 
+## Su Kick
+
+Dal 2026-10-14 lo scudo lavora anche su Kick. Il modello è uno solo: **una
+persona è (piattaforma, nome, id)**. «mario» su Twitch e «mario» su Kick sono
+due persone, e anche gli id numerici si ripetono fra le due: un id di Kick dato
+a Twitch colpirebbe qualcun altro. Per questo la piattaforma sta dentro ogni
+pezzo, e chi agisce sceglie la leva dalla piattaforma della persona, mai dal
+canale (un canale su Twitch con Kick collegato riceve persone da tutte e due).
+
+- **Verdetti e registro**: un verdetto e una riga di Kick portano
+  `piattaforma: 'kick'`; senza, sono di Twitch, come tutto quello scritto
+  prima. L'esecutore (enforcement.js, `_chiama`) manda una riga di Kick alla
+  moderazione di Kick (kick/api.js, `moderatoreKick`) e mai a helix. Su Kick il
+  blocco non c'è: il «blocca» diventa un ban, scritto come tale.
+- **Il livello è del canale, le leve della piattaforma.** Un attacco su Kick alza
+  lo scudo del canale, e a scudo alzato nessun follow si festeggia, da
+  qualunque piattaforma arrivi. Ma la serranda (solo follower, chat lenta,
+  Shield Mode) è di Twitch e si alza solo se l'attacco tocca Twitch: l'assetto
+  si segna da quali piattaforme sono arrivati i segnali (`_entra`), e se Twitch
+  entra a scudo già alzato, la serranda si alza allora (`_leve`).
+- **Le finestre** che contano follow e cori sono separate per piattaforma
+  (`finestraDi`): due popolazioni con ritmi loro.
+- **Le liste**: «kick:nome» per una persona di Kick; un nome senza prefisso è
+  di Twitch, come è sempre stato.
+- **Chi era coinvolto** in un attacco: la chiave è il nome per Twitch e
+  «kick:nome» per Kick (incidenti.js, `chiaveCoinvolto`). La bonifica agisce su
+  ognuno con la sua piattaforma.
+- **Cosa resta di Twitch**: l'età dell'account e il profilo (Kick non li dice, e
+  chiederli a Twitch per un nome di Kick vorrebbe dire giudicare un altro), la
+  lista aggiornata dei bot e la rete condivisa (nomi di Twitch), la lista dei
+  follower e il blocco (l'API di Kick non li ha), la serranda (l'API pubblica di
+  Kick non ha le modalità della chat).
+
+In chat su Kick lo scudo lavora solo col permesso di moderazione di Kick, come
+l'antispam. Le prove stanno in `test/unita/scudo-kick.test.mjs` (con le
+rotture) e `test/contratto/scudo-kick-console.test.mjs`.
+
 ## Permessi
 
 Servono due scope nuovi, e chi era già collegato deve riautorizzare (la dashboard

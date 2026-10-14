@@ -58,10 +58,17 @@ const nuovoId = () => Date.now().toString(36) + '-' + (seq++).toString(36);
 
 // Un verdetto è una decisione scritta, non una chiamata. Ci sta dentro il
 // perché, così il registro e la dashboard non devono ricostruirlo dopo.
-export function verdetto({ canale, login, userId, azione, motivi = [], punti = 0, confidenza = 1, origine = '', incidente = '', durata = 0, messaggio = '', aVuoto = false }) {
+// LA PIATTAFORMA DELLA PERSONA (docs/SCUDO.md, «Su Kick»). Un nome su Twitch e
+// lo stesso nome su Kick sono due persone, e anche i numeri degli id si
+// ripetono fra le due. Un verdetto di Kick porta `piattaforma: 'kick'`; senza,
+// e' di Twitch, come tutto quello scritto prima che Kick ci fosse.
+export const suKick = (v) => v?.piattaforma === 'kick';
+
+export function verdetto({ canale, login, userId, azione, motivi = [], punti = 0, confidenza = 1, origine = '', incidente = '', durata = 0, messaggio = '', aVuoto = false, piattaforma = '' }) {
   return {
     id: nuovoId(), ts: Date.now(),
     canale: norm(canale), login: norm(login), userId: String(userId || ''),
+    ...(piattaforma === 'kick' ? { piattaforma: 'kick' } : {}),
     azione, motivi: [].concat(motivi).filter(Boolean),
     punti: Number(punti) || 0, confidenza: Number(confidenza) || 0,
     origine, incidente, durata: Number(durata) || 0, messaggio: String(messaggio || ''),
@@ -75,8 +82,11 @@ export class Esecutore {
   // `annota(canale, riga)` è dove finisce il registro: l'esecutore non sa
   // niente dello scudo, gli passa quello che ha fatto e chi lo tiene se lo
   // tiene. Così i due moduli non si conoscono.
-  constructor({ helix, annota } = {}) {
+  constructor({ helix, kick, annota } = {}) {
     this.helix = helix;
+    // Chi modera su Kick, con la stessa forma di helix (kick/api.js,
+    // moderatoreKick). Un verdetto di Kick va solo a lui.
+    this.kick = kick;
     this.annota = typeof annota === 'function' ? annota : () => {};
     this._coda = [];
     this._inCoda = new Map();          // 'canale|login|azione' → ts (doppioni)
@@ -157,7 +167,7 @@ export class Esecutore {
   // com'è andata può attendere il proprio pezzo invece che tutta la fila.
   esegui(v) {
     if (!daFare(v)) { this.annota(v?.canale, rigaDi(v, { ok: true, motivo: 'nessuna azione' })); return Promise.resolve({ ok: true, saltato: true }); }
-    const chiave = `${v.canale}|${v.login || v.userId}|${v.azione}`;
+    const chiave = `${v.canale}|${suKick(v) ? 'kick:' : ''}${v.login || v.userId}|${v.azione}`;
     const visto = this._inCoda.get(chiave);
     if (visto && Date.now() - visto < DOPPIONE_MS) {
       // IDEMPOTENZA. Lo stesso evento consegnato due volte da Twitch, o due
@@ -272,7 +282,7 @@ export class Esecutore {
     }
 
     // Un 429 non è un fallimento: è «più piano». Si rientra e si riprova.
-    if (r?.motivo === 'errore Twitch' || r?.motivo === 'troppe richieste') {
+    if (r?.motivo === 'errore Twitch' || r?.motivo === 'errore Kick' || r?.motivo === 'troppe richieste') {
       voce.tentativi++;
       if (voce.tentativi < TENTATIVI) {
         this._pausaFino = Date.now() + PAUSA_429_MS * voce.tentativi;   // rientro che cresce
@@ -292,11 +302,20 @@ export class Esecutore {
     return r || { ok: false };
   }
 
-  // L'unico punto che tocca Twitch. Tutto il resto di questo file non sa
-  // nemmeno che Twitch esista.
+  // L'unico punto che tocca le piattaforme. Tutto il resto di questo file non
+  // sa nemmeno che esistano. La leva la sceglie la PIATTAFORMA DEL VERDETTO, mai
+  // il canale: un canale su Twitch con Kick collegato riceve persone da tutte e
+  // due, e un id di Kick dato a helix colpirebbe un'altra persona su Twitch.
   async _chiama(v) {
-    const h = this.helix;
+    const kick = suKick(v);
+    const h = kick ? this.kick : this.helix;
     try {
+      // Kick non blocca e non toglie il follow (docs.kick.com: solo bando,
+      // pausa e messaggi). Il «blocca» li' e' un ban, scritto come tale.
+      if (kick && v.azione === AZIONI.BLOCCA) {
+        const b = await h?.timeoutUser?.(v.canale, v.userId, 0, motivoCorto(v));
+        return b?.ok ? { ...b, ripiego: 'ban, Kick non toglie il follow' } : (b || { ok: false, motivo: 'non disponibile' });
+      }
       switch (v.azione) {
         case AZIONI.CANCELLA:
         case AZIONI.LIMITA:
@@ -333,7 +352,7 @@ export class Esecutore {
     for (const f of this._falliti) (!ch || f.canale === ch ? ripresi : tenuti).push(f);
     this._falliti = tenuti;
     for (const f of ripresi) {
-      this._inCoda.delete(`${f.canale}|${f.login || f.userId}|${f.azione}`);
+      this._inCoda.delete(`${f.canale}|${suKick(f) ? 'kick:' : ''}${f.login || f.userId}|${f.azione}`);
       this.esegui({ ...f, id: nuovoId(), ts: Date.now() }).catch(() => {});
     }
     this.salvaFalliti().catch(() => {});
@@ -410,6 +429,7 @@ const motivoCorto = (v) => (v.motivi.join(', ') || v.origine || 'scudo').slice(0
 function rigaDi(v, r, esito) {
   return {
     login: v?.login || '', userId: v?.userId || '',
+    ...(suKick(v) ? { piattaforma: 'kick' } : {}),
     azione: v?.azione || 'niente',
     motivo: (v?.motivi || []).join(', ') || v?.origine || '',
     esito: esito || (r?.ok ? 'fatto' : 'fallito'),

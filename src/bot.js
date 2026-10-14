@@ -228,7 +228,9 @@ export class BotManager {
     // Anti-bot (stile Sery_Bot): raffiche di follow, nomi da bot, hate-raid.
     this.antibot = new AntiBot({
       helix: this.helix,
-      say: (ch, t) => this.say(ch, t),
+      kick: moderatoreKick,
+      // lo scudo parla dove e' successo: un'ondata su Kick si dice nella chat di Kick
+      say: (ch, t, p) => (!p || p === piattaformaDi(ch) ? this.say(ch, t) : this.vocePer({ channel: ch, piattaforma: p })(t)),
       chatSettings: (ch, o) => this.helix.chatSoloFollower(ch, !!o.followersOnly, 0),
       // Gli avvisi dello scudo allo streamer. Prima andavano a `alerts.manuale`,
       // che non e' mai esistito: lo scudo si alzava e nessuno lo sapeva.
@@ -1163,17 +1165,18 @@ export class BotManager {
   async _gestisciMessaggio(login, msg, onMessage, dire = null) {
     const parla = dire || this.vocePer(msg);
     // Le difese qui sotto tolgono messaggi e mettono in pausa: servono le mani
-    // di chi modera su QUELLA piattaforma (moderatoreDi). Lo scudo resta di
-    // Twitch (eta' degli account, raid, follow vengono da li'); l'antispam
-    // lavora anche su Kick, quando lo streamer ha dato i permessi di
-    // moderazione. Altrove il messaggio passa al flusso normale: meglio nessuna
-    // moderazione che una moderazione che finge.
+    // di chi modera su QUELLA piattaforma (moderatoreDi). Lo scudo e l'antispam
+    // lavorano anche su Kick quando lo streamer ha dato i permessi di
+    // moderazione (lo scudo senza l'eta' degli account, che Kick non dice:
+    // docs/SCUDO.md, «Su Kick»). Altrove il messaggio passa al flusso normale:
+    // meglio nessuna moderazione che una moderazione che finge.
     const suTwitch = !msg.piattaforma || msg.piattaforma === 'twitch';
+    const scudoQui = suTwitch || (msg.piattaforma === 'kick' && puoModerareKick(msg.channel));
     const moderatore = this.moderatoreDi(msg);
     // 0) ANTI-BOT: un nome da follow-bot noto che scrive in chat (hate-raid) si
     // ferma subito, prima di ogni altra cosa.
     try {
-      if (suTwitch && await this.antibot?.controllaChat(msg)) return;
+      if (scudoQui && await this.antibot?.controllaChat(msg)) return;
     } catch (e) { log.error(`#${login} anti-bot chat:`, e?.message || e); }
     // Chi scrive e' arrivato, anche se l'antispam qui sotto lo ferma: la prima
     // presenza si segna prima dei controlli (presenze.segnaArrivo). Dopo
@@ -1566,9 +1569,12 @@ export class BotManager {
     // follow arriva solo a lui: niente alert, voce, effetti, ringraziamenti,
     // muro, moduli, plugin, e niente riga nel rapporto e nelle statistiche (sono
     // bot, che col blocco Twitch toglie anche dal conto). Si conta
-    // nell'incidente. Anche il «bentornato»: e' un follow come gli altri. Kick
-    // no: lo scudo guarda solo Twitch.
-    if (suTwitch && (type === 'channel.follow' || type === 'channel.follow.ritorno')) {
+    // nell'incidente. Anche il «bentornato»: e' un follow come gli altri. E i
+    // follow di Kick, con lo stesso giudizio sulle finestre di Kick (docs/SCUDO.md,
+    // «Su Kick»): un attacco alza lo scudo del canale, e a scudo alzato non si
+    // festeggia nessun follow, da qualunque piattaforma arrivi.
+    const scudoFollow = suTwitch || ev.piattaforma === 'kick';
+    if (scudoFollow && (type === 'channel.follow' || type === 'channel.follow.ritorno')) {
       if (type === 'channel.follow') {
         try { Promise.resolve(this.antibot?.onFollow(ev)).catch((e) => log.error(`#${channel} anti-bot follow:`, e?.message || e)); }
         catch (e) { log.error(`#${channel} anti-bot evento:`, e?.message || e); }

@@ -58,13 +58,13 @@ test('un follow e un abbonamento su Kick finiscono nella serata, e il rapporto l
   assert.deepEqual(io.ricevuti.alert, ['channel.follow', 'channel.subscribe', 'channel.subscription.gift'], 'e gli alert ci sono ancora');
 });
 
-test('si risponde nella chat di Kick, e le clip e l\'anti-bot di Twitch non lo sentono', async () => {
+test('si risponde nella chat di Kick, le clip di Twitch non lo sentono e lo scudo si\' (docs/SCUDO.md, «Su Kick»)', async () => {
   const ch = canale();
   const io = bot();
   await io.eventoEsterno({ piattaforma: 'kick', channel: ch, tipo: 'seguito', utente: 'Pino' });
   assert.deepEqual(io.detti, [['kick', 'che bello'], ['kick', 'grazie Pino']], 'il cervello e i moduli parlano su Kick');
   assert.equal(io.ricevuti.clip, 0);
-  assert.equal(io.ricevuti.antibot, 0);
+  assert.equal(io.ricevuti.antibot, 1, 'lo scudo guarda anche i follow di Kick');
   assert.equal(io.ricevuti.moduli[0].piattaforma, 'kick');
   // Twitch resta com'era
   const tw = bot();

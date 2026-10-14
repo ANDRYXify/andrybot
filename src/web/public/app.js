@@ -4789,7 +4789,7 @@ const NOME_ADDON = {
 const SOLO_TWITCH = ['regia', 'regole', 'scudo', 'registro', 'follower', 'emote', 'sondaggi', 'penitenze'];
 const NOME_PIATTAFORMA = { twitch: 'Twitch', kick: 'Kick', youtube: 'YouTube', discord: 'Discord' };
 
-const ANCHE_SU = { regole: ['kick'], penitenze: ['kick'] };
+const ANCHE_SU = { regole: ['kick'], penitenze: ['kick'], scudo: ['kick'], registro: ['kick'] };
 
 function soloTwitch(id) {
   return !!stato?.piattaforma && stato.piattaforma !== 'twitch' && SOLO_TWITCH.includes(id) && !(ANCHE_SU[id] || []).includes(stato.piattaforma);
@@ -30251,6 +30251,7 @@ function pannelloScudo() {
       <h2>${_hIco(ICO.scudo)}${L('Lo scudo', 'The shield', 'El escudo')}</h2>
       <p>${L('Difesa dagli attacchi: le ondate di finti follower e gli account-bot che spammano in chat.', 'Defense against attacks: waves of fake followers and bot accounts spamming chat.', 'Defensa contra los ataques: oleadas de seguidores falsos y cuentas-bot que spamean el chat.')}
       <strong class="primo-piano">${L('In dubbio avvisa, non caccia i fan veri.', 'When unsure it warns, it doesn’t kick real fans.', 'En duda avisa, no echa a los fans de verdad.')}</strong></p>
+      <p class="suggerimento" id="scudo-nota-kick" hidden>${L('Su Kick lo scudo riconosce le ondate di follow e il coro in chat, e ferma i bot col ban (Kick non toglie il follow). Kick non ha la chat ai soli follower, la chat lenta e lo Shield Mode, e non dice quanto è vecchio un account: quelle parti valgono solo su Twitch. Per agire su Kick serve il permesso di moderazione di Kick.', 'On Kick the shield spots follow waves and chat choruses, and stops bots with a ban (Kick does not remove the follow). Kick has no followers-only chat, slow mode or Shield Mode, and does not say how old an account is: those parts only work on Twitch. To act on Kick it needs Kick\'s moderation permission.', 'En Kick el escudo detecta las oleadas de follows y el coro en el chat, y para a los bots con un baneo (Kick no quita el follow). Kick no tiene chat solo para seguidores, modo lento ni Shield Mode, y no dice cuánto tiempo tiene una cuenta: esas partes solo funcionan en Twitch. Para actuar en Kick necesita el permiso de moderación de Kick.')}</p>
       ${modTesta('chk-ab-attivo', ab.attivo, L('Attiva la protezione anti-bot', 'Enable anti-bot protection', 'Activa la protección anti-bot'))}
       <div id="scudo-stato" class="spazio-sopra"></div>
       <div class="mod-corpo" data-legato="chk-ab-attivo">
@@ -30334,17 +30335,18 @@ function pannelloScudo() {
     <div class="carta">
       <h2>${_hIco(ICO.lista)}${L('Le tue liste', 'Your lists', 'Tus listas')}</h2>
       <p class="suggerimento">${L('Queste due si salvano da sole, appena aggiungi o togli un nome.', 'These two save themselves as soon as you add or remove a name.', 'Estas dos se guardan solas en cuanto añades o quitas un nombre.')}</p>
+      <p class="suggerimento">${L('Un nome vale per Twitch. Per una persona di Kick scrivi <code>kick:nome</code>: lo stesso nome sulle due piattaforme può essere di due persone diverse.', 'A name counts for Twitch. For someone on Kick write <code>kick:name</code>: the same name on the two platforms can belong to two different people.', 'Un nombre vale para Twitch. Para alguien de Kick escribe <code>kick:nombre</code>: el mismo nombre en las dos plataformas puede ser de dos personas distintas.')}</p>
       <div class="scudo-liste">
         <div>
           <h3>${L('Blocca sempre', 'Always block', 'Bloquear siempre')}</h3>
           <p class="suggerimento">${L('Questi nomi vengono sempre fermati.', 'These names are always stopped.', 'Estos nombres se paran siempre.')}</p>
-          <div class="riga-flessibile"><input aria-label="${esc(L('nome account da bloccare sempre', 'account name to always block', 'nombre de cuenta a bloquear siempre'))}" id="scudo-add-extra" maxlength="30" placeholder="${L('nome account', 'account name', 'nombre cuenta')}"><button type="button" class="btn secondario mini" data-scudo-add="extra">${L('Aggiungi', 'Add', 'Añadir')}</button></div>
+          <div class="riga-flessibile"><input aria-label="${esc(L('nome account da bloccare sempre', 'account name to always block', 'nombre de cuenta a bloquear siempre'))}" id="scudo-add-extra" maxlength="35" placeholder="${L('nome account', 'account name', 'nombre cuenta')}"><button type="button" class="btn secondario mini" data-scudo-add="extra">${L('Aggiungi', 'Add', 'Añadir')}</button></div>
           <div id="scudo-lista-extra" class="scudo-chips"></div>
         </div>
         <div>
           <h3>${L('Non toccare mai', 'Never touch', 'Nunca tocar')}</h3>
           <p class="suggerimento">${L('Questi non vengono mai fermati, oltre a mod, VIP e sub.', 'These are never stopped, besides mods, VIPs and subs.', 'Estos nunca se paran, además de mods, VIP y subs.')}</p>
-          <div class="riga-flessibile"><input aria-label="${esc(L('nome account da non toccare mai', 'account name to never touch', 'nombre de cuenta que nunca tocar'))}" id="scudo-add-esenti" maxlength="30" placeholder="${L('nome account', 'account name', 'nombre cuenta')}"><button type="button" class="btn secondario mini" data-scudo-add="esenti">${L('Aggiungi', 'Add', 'Añadir')}</button></div>
+          <div class="riga-flessibile"><input aria-label="${esc(L('nome account da non toccare mai', 'account name to never touch', 'nombre de cuenta que nunca tocar'))}" id="scudo-add-esenti" maxlength="35" placeholder="${L('nome account', 'account name', 'nombre cuenta')}"><button type="button" class="btn secondario mini" data-scudo-add="esenti">${L('Aggiungi', 'Add', 'Añadir')}</button></div>
           <div id="scudo-lista-esenti" class="scudo-chips"></div>
         </div>
       </div>
@@ -30425,7 +30427,7 @@ async function caricaRegistro() {
   if (seg && quante) seg.innerHTML = d.segnalazioni.map((v) => `
       <div class="scudo-seg">
         <div class="scudo-seg-info">
-          <b>@${esc(v.login || '?')}</b>
+          <b>@${esc(v.login || '?')}${suKickBadge(v)}</b>
           <span>${esc(scudoAzioneTesto(v.azione))} · ${esc(v.motivo || '')}</span>
           <small>${regQuando(v.ts)}</small>
         </div>
@@ -30441,7 +30443,7 @@ async function caricaRegistro() {
     ? `<div class="scudo-reg">${d.registro.map((v) => `
       <div class="scudo-reg-riga">
         <span class="scudo-reg-a">${esc(scudoAzioneTesto(v.azione))}</span>
-        <span class="scudo-reg-chi">${v.login ? '@' + esc(v.login) : ''}</span>
+        <span class="scudo-reg-chi">${v.login ? '@' + esc(v.login) : ''}${suKickBadge(v)}</span>
         <span class="scudo-reg-perche">${esc(v.motivo || '')}</span>
         ${scudoEsito(v.esito)}
         <small>${regQuando(v.ts)}</small>
@@ -30465,7 +30467,7 @@ async function caricaSospese(quante) {
       ? `<div class="scudo-reg">${righe.slice(0, 60).map((v) => `
         <div class="scudo-reg-riga">
           <span class="scudo-reg-a">${esc(scudoAzioneTesto(v.azione))}</span>
-          <span class="scudo-reg-chi">${v.login ? '@' + esc(v.login) : ''}</span>
+          <span class="scudo-reg-chi">${v.login ? '@' + esc(v.login) : ''}${suKickBadge(v)}</span>
           <span class="scudo-reg-perche">${esc(v.motivo || v.errore || '')}</span>
           <small>${regQuando(v.ts)}</small>
         </div>`).join('')}</div>`
@@ -30761,8 +30763,9 @@ function attDisegnaCoinvolti() {
   const azioni = (c) => {
     const a = [];
     if (c.userId && c.fatto?.azione === 'blocca' && c.fatto.esito === 'fatto') a.push(`<button type="button" class="btn secondario mini" data-att-azione="sblocca" data-login="${esc(c.login)}" data-uid="${esc(c.userId)}">${L('Sblocca', 'Unblock', 'Desbloquear')}</button>`);
-    if (c.userId && c.fatto?.azione === 'ban' && c.fatto.esito === 'fatto') a.push(`<button type="button" class="btn secondario mini" data-att-azione="sbanna" data-login="${esc(c.login)}" data-uid="${esc(c.userId)}">${L('Sbanna', 'Unban', 'Desbanear')}</button>`);
-    if (c.giudizio !== 'legittimo') a.push(`<button type="button" class="btn secondario mini" data-att-azione="esente" data-login="${esc(c.login)}">${L('È a posto', 'They are fine', 'Está bien')}</button>`);
+    const pf = c.piattaforma === 'kick' ? ' data-pf="kick"' : '';
+    if (c.userId && c.fatto?.azione === 'ban' && c.fatto.esito === 'fatto') a.push(`<button type="button" class="btn secondario mini" data-att-azione="sbanna" data-login="${esc(c.login)}" data-uid="${esc(c.userId)}"${pf}>${L('Sbanna', 'Unban', 'Desbanear')}</button>`);
+    if (c.giudizio !== 'legittimo') a.push(`<button type="button" class="btn secondario mini" data-att-azione="esente" data-login="${esc(c.login)}"${pf}>${L('È a posto', 'They are fine', 'Está bien')}</button>`);
     return a.join('');
   };
   box.innerHTML = `
@@ -30772,7 +30775,7 @@ function attDisegnaCoinvolti() {
     </div>
     ${visti.length ? `<div class="att-coinvolti">${visti.slice(0, f.quanti).map((c) => `
       <div class="att-chi">
-        <span class="att-chi-nome">@${esc(c.login)}</span>
+        <span class="att-chi-nome">@${esc(c.login)}${suKickBadge(c)}</span>
         <span class="att-giudizio att-g-${esc(c.giudizio)}">${esc(attGiudizio(c.giudizio))}</span>
         <span class="att-chi-fatto">${fatto(c)}</span>
         <small>${c.ts ? attOra(c.ts) : ''}</small>
@@ -30811,17 +30814,20 @@ function attWire() {
       const azione = az.dataset.attAzione;
       az.disabled = true;
       try {
+        const suKick = az.dataset.pf === 'kick';
         if (azione === 'esente') {
-          await api('/api/antibot/lista', { method: 'POST', body: { lista: 'esenti', azione: 'aggiungi', nome: az.dataset.login } });
+          await api('/api/antibot/lista', { method: 'POST', body: { lista: 'esenti', azione: 'aggiungi', nome: (suKick ? 'kick:' : '') + az.dataset.login } });
           toast(L(`@${az.dataset.login} è a posto: lo scudo non lo toccherà più.`, `@${az.dataset.login} is fine: the shield will not touch them again.`, `@${az.dataset.login} está bien: el escudo ya no lo tocará.`));
         } else {
-          const r = await api('/api/antibot/azione', { method: 'POST', body: { azione, userId: az.dataset.uid, login: az.dataset.login } });
+          const r = await api('/api/antibot/azione', { method: 'POST', body: { azione, userId: az.dataset.uid, login: az.dataset.login, ...(suKick ? { piattaforma: 'kick' } : {}) } });
           if (r.ok) toast(azione === 'sblocca' ? L(`@${az.dataset.login} sbloccato: può tornare a seguirti.`, `@${az.dataset.login} unblocked: they can follow you again.`, `@${az.dataset.login} desbloqueado: puede volver a seguirte.`) : L(`@${az.dataset.login} sbannato.`, `@${az.dataset.login} unbanned.`, `@${az.dataset.login} desbaneado.`));
-          else toast(r.motivo === 'permesso mancante' ? L('Manca il permesso su Twitch: ricollega il canale.', 'The Twitch permission is missing: reconnect the channel.', 'Falta el permiso en Twitch: vuelve a conectar el canal.') : L('Non riuscito: riprova fra poco.', 'It did not work: try again shortly.', 'No se pudo: inténtalo de nuevo en un momento.'), 'errore');
+          else toast(r.motivo === 'permesso mancante' ? (suKick ? L('Manca il permesso su Kick: ricollega Kick con la moderazione.', 'The Kick permission is missing: reconnect Kick with moderation.', 'Falta el permiso en Kick: vuelve a conectar Kick con la moderación.') : L('Manca il permesso su Twitch: ricollega il canale.', 'The Twitch permission is missing: reconnect the channel.', 'Falta el permiso en Twitch: vuelve a conectar el canal.')) : L('Non riuscito: riprova fra poco.', 'It did not work: try again shortly.', 'No se pudo: inténtalo de nuevo en un momento.'), 'errore');
         }
         if (_attAperto) attApri(_attAperto, { senzaScorrere: true });
       } catch (e) {
-        toast(e.dati?.codice === 'permessi'
+        toast(e.dati?.codice === 'permessi-kick'
+          ? L('Mancano i permessi di moderazione di Kick: ricollega Kick da Accesso e dati.', 'Kick moderation permissions are missing: reconnect Kick from Access & data.', 'Faltan los permisos de moderación de Kick: vuelve a conectar Kick desde Acceso y datos.')
+          : e.dati?.codice === 'permessi'
           ? L('Mancano i permessi di moderazione: li riconcedi da Stato, con «Aggiorna i permessi».', 'Moderation permissions are missing: grant them again from Status, with “Update permissions”.', 'Faltan los permisos de moderación: vuelve a darlos desde Estado, con «Actualizar permisos».')
           : e.dati?.codice === 'lista-piena' ? testoListaPiena(e.dati.massimo) : (e.message || L('Non riuscito', 'Failed', 'Falló')), 'errore');
         az.disabled = false;
@@ -30870,6 +30876,8 @@ function attWire() {
 function testoListaPiena(n) {
   return L(`La lista è piena (${n} nomi): togline qualcuno, poi aggiungi.`, `The list is full (${n} names): remove someone, then add.`, `La lista está llena (${n} nombres): quita a alguien y luego añade.`);
 }
+const suKickBadge = (v) => (v?.piattaforma === 'kick' ? ` <span class="badge pf-badge" title="${esc(L('Su Kick', 'On Kick', 'En Kick'))}">Kick</span>` : '');
+
 function scudoAzioneTesto(a) {
   return {
     ban: L('Bannato', 'Banned', 'Baneado'),
@@ -31409,7 +31417,7 @@ function scudoWire() {
       const nome = (inp?.value || '').trim();
       if (!nome) return;
       try { await api('/api/antibot/lista', { method: 'POST', body: { lista: campo, azione: 'aggiungi', nome } }); if (inp) inp.value = ''; caricaScudo(); }
-      catch (e) { toast(e.dati?.codice === 'lista-piena' ? testoListaPiena(e.dati.massimo) : L('Non riuscito', 'Failed', 'Falló'), 'errore'); }
+      catch (e) { toast(e.dati?.codice === 'lista-piena' ? testoListaPiena(e.dati.massimo) : (e.message || L('Non riuscito', 'Failed', 'Falló')), 'errore'); }
       return;
     }
     const del = ev.target.closest('[data-scudo-del]');
@@ -31439,6 +31447,8 @@ async function caricaScudo() {
   scudoWire();
   caricaStatoListaBot();
   modSincronizza();
+  const notaKick = document.getElementById('scudo-nota-kick');
+  if (notaKick) notaKick.hidden = !(stato?.piattaforma === 'kick' || stato?.kick?.collegato);
   const box = document.getElementById('scudo-stato');
   if (!box) return;
   let d;
@@ -31466,7 +31476,7 @@ function scudoRenderLista(campo, nomi) {
   const el = document.getElementById('scudo-lista-' + campo);
   if (!el) return;
   el.innerHTML = nomi.length
-    ? nomi.map((n) => `<span class="scudo-chip">@${esc(n)}<button type="button" class="scudo-chip-x" data-scudo-del="${campo}" data-nome="${esc(n)}" aria-label="${L('Togli', 'Remove', 'Quitar')}">×</button></span>`).join('')
+    ? nomi.map((n) => `<span class="scudo-chip">@${esc(String(n).replace(/^kick:/, ''))}${suKickBadge({ piattaforma: /^kick:/.test(n) ? 'kick' : '' })}<button type="button" class="scudo-chip-x" data-scudo-del="${campo}" data-nome="${esc(n)}" aria-label="${L('Togli', 'Remove', 'Quitar')}">×</button></span>`).join('')
     : `<span class="suggerimento">${L('Vuota.', 'Empty.', 'Vacía.')}</span>`;
 }
 

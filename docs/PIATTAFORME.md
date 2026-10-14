@@ -202,7 +202,7 @@ confronta le due liste apposta.
 Cosa cambia nel prodotto: niente, tranne le cose che parlano davvero con Twitch.
 Il bot non entra in una chat Twitch senza un token Twitch, quindi il giro delle
 connessioni si esclude da sé; e il pannello **spegne** le schede che su Kick non
-avrebbero con cosa lavorare (scudo anti-bot, registro, regia, emote 7TV)
+avrebbero con cosa lavorare (regia, emote 7TV)
 dicendo perché, invece di mostrare pulsanti che non fanno niente. La scheda
 *Chat* della moderazione resta: su Kick ha con cosa lavorare (sotto, «La
 moderazione su Kick»). Le monete su Kick arrivano dai
@@ -620,31 +620,42 @@ ognuno in `overlay-skin.css`). Lo stemma 7TV si cerca per id di Twitch: per chi
 scrive da Kick non si chiede (`badge7tvDi`), perche' lo stesso numero e' di
 un'altra persona. La prova e' `test/unita/kick-chat-overlay.test.mjs`.
 
-### Cosa NON fa ancora, e perché è detto qui
+### Lo scudo su Kick (dal 2026-10-14)
 
-Lo scudo anti-bot lavora solo su Twitch: legge eventi (follow a ondate, raid,
-account nuovi) e usa leve (Shield Mode, solo follower) che Kick non espone allo
-stesso modo. Su Kick non lo fingiamo — **meglio nessuna moderazione che una
-moderazione che finge di esserci**.
+Lo scudo anti-bot lavora anche su Kick, con quello che l'API pubblica di Kick
+permette (docs.kick.com, verificato il 2026-10-14): bando e pausa
+(`POST/DELETE /moderation/bans`) e togliere un messaggio (`DELETE /chat/:id`).
+Il come sta in docs/SCUDO.md, «Su Kick». In breve:
 
-Su Kick, con i permessi di moderazione, lavora l'antispam intero (link,
-ripetizioni, flood, maiuscole, menzioni, simboli, lunghezza, emoji), con la
-pausa che Kick conta in minuti. Dal 2026-10-14 vede il testo senza i codici
-delle emote, e le maiuscole contano le parole e non le emote, su Kick come su
-Twitch («GG KEKW KEKW» non grida).
+- le ondate di follow si riconoscono con lo stesso giudizio di Twitch, su
+  finestre di Kick; a scudo alzato i follow di Kick non si festeggiano;
+- i bot di un'ondata si fermano col ban (su Kick il blocco non c'è);
+- in chat: il coro, i nomi da bot, «Blocca sempre»; serve il permesso di
+  moderazione di Kick, come per l'antispam;
+- il registro, il rapporto dell'attacco e la bonifica sanno di che piattaforma
+  è ogni persona: «mario» su Kick e su Twitch sono due righe, e nelle liste
+  quello di Kick si scrive «kick:mario».
+
+Su Kick l'antispam lavora intero (link, ripetizioni, flood, maiuscole,
+menzioni, simboli, lunghezza, emoji), con la pausa che Kick conta in minuti, e
+vede il testo senza i codici delle emote («GG KEKW KEKW» non grida).
 
 Cosa dello scudo manca su Kick, e perché:
 
-- l'età dell'account: Kick non la manda col messaggio né col follow;
-- togliere un follower: l'API di Kick non ha la chiamata;
-- «Blocca sempre», i nomi da bot e il coro in chat: si potrebbero fare con la
-  moderazione di Kick, ma il registro dello scudo e la bonifica ragionano per
-  nome di Twitch. Un nome di Kick nel registro farebbe agire la bonifica su
-  chi ha lo stesso nome su Twitch, cioè su un'altra persona. Prima serve un
-  registro che sappia la piattaforma di ognuno;
-- le ondate di follow: il conto si potrebbe fare, ma oggi zittire gli alert
-  durante un'ondata vale solo per i follow di Twitch. La chat di YouTube non ha ancora chi
-modera: lì valgono solo le parole vietate (il richiamo).
+- l'età dell'account e il profilo: Kick non li manda col messaggio né col
+  follow, e chiedere a Twitch il profilo di un nome di Kick vorrebbe dire
+  giudicare un'altra persona. Quindi niente trattenuta dei messaggi degli
+  account nuovi e niente controllo del profilo al follow;
+- la serranda (solo follower, chat lenta, Shield Mode): l'API pubblica di Kick
+  non ha le modalità della chat. Un attacco solo su Kick non chiude la chat di
+  Twitch; se arriva anche su Twitch, la serranda di Twitch si alza allora;
+- togliere un follower o bloccare: l'API di Kick non ha la chiamata. Il follow
+  finto resta nel conto di Kick, l'account non può più scrivere;
+- la lista aggiornata dei bot e la rete condivisa sono nomi di Twitch: su Kick
+  non valgono. La forma dei nomi da bot promozionali invece sì.
+
+La chat di YouTube non ha ancora chi modera: lì valgono solo le parole vietate
+(il richiamo).
 
 ## YouTube
 

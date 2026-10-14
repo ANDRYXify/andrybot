@@ -228,10 +228,16 @@ export function segnaRaid(canale, { da = '', quanti = 0 } = {}) {
 
 // Chi c'era, e come lo giudichiamo. Un giudizio più grave sostituisce uno più
 // lieve, mai il contrario: durante un attacco si scopre, non si dimentica.
-export function coinvolto(canale, login, giudizio = GIUDIZI.SOSPETTO, punti = 0, userId = '') {
+// Una persona e' (piattaforma, nome): la chiave e' il nome per Twitch, come e'
+// sempre stato, e «kick:nome» per Kick, con il nome e la piattaforma anche
+// dentro la riga. Due «mario» sulle due piattaforme sono due righe.
+export const chiaveCoinvolto = (login, piattaforma = 'twitch') => (piattaforma === 'kick' ? 'kick:' : '') + norm(login);
+export function coinvolto(canale, login, giudizio = GIUDIZI.SOSPETTO, punti = 0, userId = '', piattaforma = 'twitch') {
   const inc = aperto(canale);
-  const l = norm(login);
-  if (!inc || !l) return null;
+  const nome = norm(login);
+  if (!inc || !nome) return null;
+  const kick = piattaforma === 'kick';
+  const l = chiaveCoinvolto(nome, piattaforma);
   const gia = inc.coinvolti[l];
   // L'id si tiene anche quando il giudizio non cambia: senza, dopo l'attacco
   // non si può fare niente a nessuno — Twitch vuole l'id, non il nome.
@@ -240,7 +246,7 @@ export function coinvolto(canale, login, giudizio = GIUDIZI.SOSPETTO, punti = 0,
     if (id && !gia.userId) { gia.userId = id; programmaSalvataggio(); }
     return inc;
   }
-  inc.coinvolti[l] = { giudizio, punti: Number(punti) || 0, ts: Date.now(), userId: id };
+  inc.coinvolti[l] = { giudizio, punti: Number(punti) || 0, ts: Date.now(), userId: id, ...(kick ? { piattaforma: 'kick', login: nome } : {}) };
   programmaSalvataggio();
   return inc;
 }

@@ -45,8 +45,9 @@ export function rapporto(incidente) {
   const i = typeof incidente === 'string' ? inc.uno(incidente) : incidente;
   if (!i) return null;
   const per = Object.fromEntries(Object.values(inc.GIUDIZI).map((g) => [g, []]));
-  for (const [login, v] of Object.entries(i.coinvolti || {})) {
-    (per[v.giudizio] || per.sospetto).push({ login, userId: v.userId || '', punti: v.punti || 0, ts: v.ts });
+  for (const [chiave, v] of Object.entries(i.coinvolti || {})) {
+    const kick = v.piattaforma === 'kick';
+    (per[v.giudizio] || per.sospetto).push({ login: kick ? (v.login || chiave.replace(/^kick:/, '')) : chiave, userId: v.userId || '', punti: v.punti || 0, ts: v.ts, ...(kick ? { piattaforma: 'kick' } : {}) });
   }
   const g = dominante(per.certo.map((x) => ({ login: x.login })));
   return {
@@ -100,7 +101,7 @@ export function verdettiPer(incidente, giudizi, { aVuoto = false } = {}) {
   const r = rapporto(incidente);
   if (!r) return [];
   return candidati(incidente, giudizi).map((x) => ({
-    canale: r.canale, login: x.login, userId: x.userId,
+    canale: r.canale, login: x.login, userId: x.userId, ...(x.piattaforma === 'kick' ? { piattaforma: 'kick' } : {}),
     motivi: [`bonifica ${r.incidente}: giudicato ${x.giudizio} durante l'attacco`],
     origine: 'bonifica', incidente: r.incidente, punti: x.punti, confidenza: x.giudizio === inc.GIUDIZI.CERTO ? 0.99 : 0.7,
     aVuoto,

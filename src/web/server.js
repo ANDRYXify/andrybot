@@ -7,7 +7,7 @@
 // conoscenza, clip e regole, e consulta memoria e statistiche.
 // L'amministratore (andryxify) approva e gestisce gli streamer.
 import express from 'express';
-import { normalizzaAntispam, normalizzaAntibot } from './impostazioni-moderazione.js';
+import { normalizzaAntispam, normalizzaAntibot, nomeAccount } from './impostazioni-moderazione.js';
 import cookieSession from 'cookie-session';
 import multer from 'multer';
 import https from 'node:https';
@@ -4380,7 +4380,9 @@ STREAMER (${su.toUpperCase()}) e non c'entra con l'automazione del marketing.
     const campo = esito === 'blocca' ? 'extra' : 'esenti';
     const s = streamers.get(login);
     const ab = { ...(s?.settings?.antibot || {}) };
-    const inLista = esito === 'ignora' ? null : conNome(ab[campo], v.login);
+    // la persona della riga, sulla SUA piattaforma: «kick:nome» per Kick
+    const suKick = v.piattaforma === 'kick';
+    const inLista = esito === 'ignora' ? null : conNome(ab[campo], (suKick ? 'kick:' : '') + v.login);
     // Una lista piena non chiude il caso: resta da decidere, e lo si dice.
     if (inLista?.piena) return res.status(409).json({ errore: `La lista è piena (${ESENTI_MAX} nomi).`, codice: 'lista-piena', massimo: ESENTI_MAX });
     // Chiudiamo PRIMA (flip sincrono di stato): se due richieste arrivano insieme,
@@ -4389,11 +4391,14 @@ STREAMER (${su.toUpperCase()}) e non c'entra con l'automazione del marketing.
     if (!chiuso) return res.json({ ok: true, gia: true });
     let bannato = null;
     if (inLista?.nuovo) streamers.setSettings(login, { ...(s?.settings || {}), antibot: { ...ab, [campo]: inLista.lista } });
-    // "Blocca sempre" bandisce ANCHE subito, se abbiamo l'id e i permessi.
-    if (esito === 'blocca' && v.userId && moderazioneOk(login)) {
-      const r = await helix.timeoutUser(login, v.userId, 0, 'anti-bot: bloccato dalla console').catch(() => null);
+    // "Blocca sempre" bandisce ANCHE subito, se abbiamo l'id e i permessi. Su
+    // Kick con la moderazione di Kick: l'id di Kick dato a Twitch sarebbe un altro.
+    if (esito === 'blocca' && v.userId && (suKick ? kickApi.puoModerare(login) : moderazioneOk(login))) {
+      const r = suKick
+        ? await kickApi.pausa(login, v.userId, 0, 'anti-bot: bloccato dalla console').catch(() => null)
+        : await helix.timeoutUser(login, v.userId, 0, 'anti-bot: bloccato dalla console').catch(() => null);
       bannato = !!r?.ok;
-      registraAntibot(login, { login: v.login, userId: v.userId, azione: 'ban', motivo: 'bloccato dalla console', esito: r?.ok ? 'fatto' : 'fallito' });
+      registraAntibot(login, { login: v.login, userId: v.userId, ...(suKick ? { piattaforma: 'kick' } : {}), azione: 'ban', motivo: 'bloccato dalla console', esito: r?.ok ? 'fatto' : 'fallito' });
     }
     res.json({ ok: true, bannato });
   }));
@@ -4410,6 +4415,15 @@ STREAMER (${su.toUpperCase()}) e non c'entra con l'automazione del marketing.
     const azione = String(req.body?.azione || '');
     if (!['sbanna', 'sblocca'].includes(azione)) return res.status(400).json({ errore: 'Azione non valida.' });
     if (!/^\d+$/.test(userId)) return res.status(400).json({ errore: 'Utente non valido.' });
+    // Su Kick: si toglie il bando con la moderazione di Kick. Il blocco su Kick
+    // non c'e', e quindi nemmeno lo sblocco.
+    if (req.body?.piattaforma === 'kick') {
+      if (azione !== 'sbanna') return res.status(400).json({ errore: 'Su Kick non si blocca: si può solo togliere il bando.', codice: 'kick-senza-blocco' });
+      if (!kickApi.puoModerare(login)) return res.status(403).json({ errore: 'Servono i permessi di moderazione di Kick.', codice: 'permessi-kick' });
+      const r = await kickApi.sbanna(login, userId).catch(() => null);
+      registraAntibot(login, { login: nome, userId, piattaforma: 'kick', azione: 'sbanna', motivo: 'dalla console', esito: r?.ok ? 'fatto' : 'fallito' });
+      return res.json({ ok: !!r?.ok, motivo: r?.motivo || '' });
+    }
     if (!moderazioneOk(login)) return res.status(403).json({ errore: 'Servono i permessi di moderazione.', codice: 'permessi' });
     if (azione === 'sblocca') {
       const r = await helix.sbloccaUtente(login, userId).catch(() => null);
@@ -4426,7 +4440,9 @@ STREAMER (${su.toUpperCase()}) e non c'entra con l'automazione del marketing.
     const login = currentUser(req).login.toLowerCase();
     const campo = req.body?.lista === 'esenti' ? 'esenti' : 'extra';
     const azione = req.body?.azione === 'togli' ? 'togli' : 'aggiungi';
-    const nome = String(req.body?.nome || '').toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 30);
+    // «kick:nome» per una persona di Kick (docs/SCUDO.md): lo stesso controllo
+    // della lista salvata, cosi' quello che entra e' quello che resta
+    const nome = nomeAccount(String(req.body?.nome || '').replace(/^@/, ''));
     if (!nome) return res.status(400).json({ errore: 'Nome non valido.' });
     const s = streamers.get(login);
     const ab = { ...(s?.settings?.antibot || {}) };

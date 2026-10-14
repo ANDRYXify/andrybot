@@ -11,7 +11,7 @@
 //    l'attacco e' gia' taciuto;
 //  · taciuto vuol dire niente alert, voce, ringraziamento, muro, moduli,
 //    plugin, e niente riga nel rapporto; il conto va nell'incidente;
-//  · vale per il «bentornato», non per Kick e non per gli altri eventi;
+//  · vale per il «bentornato» e per i follow di Kick, non per gli altri eventi;
 //  · si ferma una volta: le scene buttano i follow in fila, e l'effetto che
 //    parte un attimo dopo il suo alert ricontrolla;
 //  · in sola osservazione e con la levetta spenta non tace niente;
@@ -107,7 +107,7 @@ test('lo scudo guarda per primo: il follow che fa scattare l\'attacco e\' gia\' 
   assert.equal(visti.fermi, 1, 'dall\'attacco alla serrata i follow erano gia\' fermi: niente da buttare di nuovo');
 });
 
-test('sotto attacco: il «bentornato» tace, Kick e gli altri eventi no', async () => {
+test('sotto attacco: il «bentornato» e i follow di Kick tacciono, gli altri eventi no', async () => {
   const ch = 'ondaaltri';
   canale(ch);
   const { io, visti } = bot(ch);
@@ -115,10 +115,10 @@ test('sotto attacco: il «bentornato» tace, Kick e gli altri eventi no', async 
   io._dispatchEvent({ ...follow(ch, 1), type: 'channel.follow.ritorno' });
   assert.deepEqual(visti.alert, [], 'il bentornato e\' un follow come gli altri');
   io._dispatchEvent(follow(ch, 2, { piattaforma: 'kick' }));
-  assert.deepEqual(visti.alert, ['channel.follow'], 'lo scudo guarda solo Twitch: il follow di Kick fa festa');
+  assert.deepEqual(visti.alert, [], 'lo scudo guarda anche Kick: a scudo alzato il follow di Kick non fa festa');
   io._dispatchEvent({ channel: ch, type: 'channel.subscribe', data: { user_name: 'Anna' } });
   io._dispatchEvent({ channel: ch, type: 'channel.cheer', data: { user_name: 'Anna', bits: 100 } });
-  assert.deepEqual(visti.alert, ['channel.follow', 'channel.subscribe', 'channel.cheer'], 'un sub o dei bit sotto attacco si festeggiano');
+  assert.deepEqual(visti.alert, ['channel.subscribe', 'channel.cheer'], 'un sub o dei bit sotto attacco si festeggiano');
   await flush();
 });
 
@@ -169,7 +169,7 @@ streamers.request(CH, 'Scena', '1');
 streamers.setStatus?.(CH, 'approved');
 class Spia extends EffectsEngine { constructor() { super(); this.mandati = []; } emit(ch, p) { this.mandati.push(p); } }
 
-test('l\'alert e l\'effetto di un follow di Twitch portano il segno; quelli di Kick e degli altri eventi no', () => {
+test('l\'alert e l\'effetto di un follow di Twitch o di Kick portano il segno; quelli degli altri eventi no', () => {
   const fx = new Spia();
   const motore = new AlertsEngine({ effects: fx });
   streamers.setSettings(CH, { overlayGoals: [], overlayStato: {},
@@ -179,7 +179,9 @@ test('l\'alert e l\'effetto di un follow di Twitch portano il segno; quelli di K
   motore.onEvent({ channel: CH, type: 'channel.follow', data: { user_name: 'Anna' } });
   assert.equal(alert().at(-1).scudo, true, 'il follow di Twitch');
   motore.onEvent({ channel: CH, type: 'channel.follow', piattaforma: 'kick', data: { user_name: 'Anna' } });
-  assert.equal(alert().at(-1).scudo, undefined, 'il follow di Kick no: lo scudo non lo guarda');
+  assert.equal(alert().at(-1).scudo, true, 'anche il follow di Kick: lo scudo lo guarda');
+  motore.onEvent({ channel: CH, type: 'channel.follow', piattaforma: 'youtube', data: { user_name: 'Anna' } });
+  assert.equal(alert().at(-1).scudo, undefined, 'una piattaforma che lo scudo non guarda no');
   motore.onEvent({ channel: CH, type: 'channel.subscribe', data: { user_name: 'Anna' } });
   assert.equal(alert().at(-1).scudo, undefined, 'il sub no');
 });
@@ -199,7 +201,10 @@ test('l\'effetto di un follow che parte dopo l\'alert ricontrolla lo scudo', (t)
   assert.equal(disegni().length, 0, 'lo scudo e\' salito fra l\'alert e l\'effetto: l\'effetto non parte');
   motore.onEvent({ channel: CH, type: 'channel.follow', piattaforma: 'kick', data: { user_name: 'Anna' } });
   t.mock.timers.tick(1200);
-  assert.equal(disegni().length, 1, 'quello di un follow di Kick si');
+  assert.equal(disegni().length, 0, 'nemmeno quello di un follow di Kick');
+  motore.onEvent({ channel: CH, type: 'channel.follow', piattaforma: 'youtube', data: { user_name: 'Anna' } });
+  t.mock.timers.tick(1200);
+  assert.equal(disegni().length, 1, 'quello di una piattaforma che lo scudo non guarda si');
   assert.equal(disegni()[0].scudo, undefined);
   sotto = false;
   motore.onEvent({ channel: CH, type: 'channel.follow', data: { user_name: 'Anna' } });

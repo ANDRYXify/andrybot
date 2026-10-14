@@ -207,7 +207,7 @@ test('il racconto c\'e\' nelle tre lingue, senza HTML, e l\'avviso disinnesca il
 
 test('il CSV dei coinvolti non diventa un comando aprendolo', () => {
   const csv = R.csvCoinvolti(R.rapportoAttacco(attaccoFinto()));
-  assert.ok(csv.startsWith('login,user_id,giudizio,punti,quando,azione,esito\n'));
+  assert.ok(csv.startsWith('login,user_id,giudizio,punti,quando,azione,esito,piattaforma\n'), 'con la piattaforma di ognuno (docs/SCUDO.md, «Su Kick»)');
   assert.ok(csv.includes("\n'=cmd,4,certo,"), 'il segno di formula si disinnesca');
 });
 

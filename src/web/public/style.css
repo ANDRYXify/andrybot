@@ -941,6 +941,7 @@ input[type="file"]::file-selector-button:hover { background: var(--acc-600); }
 .riga-interruttore .etichetta-stato { font-weight: 700; font-size: 1.02rem; }
 
 .badge { display: inline-flex; align-items: center; border-radius: 999px; padding: .14rem .6rem; font-size: .76rem; font-weight: 600; border: 1px solid var(--border); background: var(--surface-2); color: var(--testo-2); }
+.badge.pf-badge { margin-left: .35rem; padding: .02rem .45rem; font-size: .68rem; vertical-align: middle; }
 .badge.viola, .badge.marchio { border: var(--contorno-sp) solid var(--contorno); border-width: var(--tratto-mano); border-radius: var(--ang-mano); box-shadow: var(--alone-contorno); }
 .badge.verde  { color: var(--verde); border-color: var(--verde-bordo); background: var(--verde-soft); }
 .badge.rosso  { color: var(--rosso); border-color: var(--rosso-bordo); background: var(--rosso-soft); }

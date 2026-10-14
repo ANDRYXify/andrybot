@@ -107,6 +107,16 @@ comandi diversi da quelli della riga italiana.
   es> El menú, más ordenado
   es> Se acabaron las barras una encima de otra y los nombres distintos para lo mismo. Los juegos, las partidas, las encuestas, los sorteos y las penitencias están en «Entretenimiento»; realización, clips y música en «En directo»; estadísticas y directos en «Números».
 
+- [importante] Lo scudo anti-bot lavora anche su Kick: riconosce le ondate di follow e il coro in chat, ferma i bot col ban e a scudo alzato non festeggia i follow. Nel registro le righe di Kick hanno la loro etichetta. [vai: scudo]
+  en: The anti-bot shield now works on Kick too: it spots follow waves and chat choruses, stops bots with a ban and doesn't celebrate follows while it is raised. In the log, Kick rows have their own label.
+  es: El escudo anti-bot ahora funciona en Kick: detecta oleadas de follows y coros en el chat, para a los bots con un baneo y no celebra follows mientras está levantado. En el registro las filas de Kick tienen su etiqueta.
+  > Lo scudo arriva su Kick
+  > Un'ondata di follow-bot su Kick ora alza lo scudo come su Twitch: niente alert finti a schermo, e i bot fermati col ban. Serve la moderazione di Kick; nelle liste una persona di Kick si scrive kick:nome.
+  en> The shield comes to Kick
+  en> A wave of follow-bots on Kick now raises the shield just like on Twitch: no fake alerts on screen, and the bots stopped with a ban. It needs Kick moderation; in the lists a Kick user is written kick:name.
+  es> El escudo llega a Kick
+  es> Una oleada de follow-bots en Kick ahora levanta el escudo igual que en Twitch: nada de alertas falsas en pantalla, y los bots parados con un baneo. Necesita la moderación de Kick; en las listas una persona de Kick se escribe kick:nombre.
+
 ## 2026-10-08
 
 - [importante] Lo scudo ha una sezione sua, Scudo e attacchi: ogni attacco ha il suo rapporto, con grafico, livelli, chi c'era e cosa gli è stato fatto, e ti avviso in privato su Telegram o per mail. [vai: attacchi]

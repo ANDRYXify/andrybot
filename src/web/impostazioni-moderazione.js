@@ -33,10 +33,12 @@ const num = (v, min, max, def) => Math.min(max, Math.max(min, Math.round(Number(
 // potrebbe davvero avere, al massimo NOMI_MAX. Lo stesso tetto vale quando un
 // nome si aggiunge da solo (conNome in src/features/antibot.js), cosi' il
 // salvataggio non taglia mai un nome che l'aggiunta aveva accettato.
+// Un nome di Kick si scrive «kick:nome» (docs/SCUDO.md, «Su Kick»): lo stesso
+// nome sulle due piattaforme e' di due persone diverse.
 export const NOMI_MAX = 200;
 export const nomeAccount = (x) => {
-  const n = String(x ?? '').toLowerCase().trim().replace(/^@/, '');
-  return /^[a-z0-9_]{2,30}$/.test(n) ? n : '';
+  const n = String(x ?? '').toLowerCase().trim().replace(/^@/, '').replace(/^kick:\s*@?/, 'kick:');
+  return /^(kick:)?[a-z0-9_]{2,30}$/.test(n) ? n : '';
 };
 const nomi = (v) => (Array.isArray(v) ? v : String(v || '').split(/[\s,]+/))
   .map(nomeAccount).filter(Boolean)

@@ -102,8 +102,8 @@ export class AlertsEngine {
     this.effects = effects || null;
     this.say = say || null;
     this.muro = muro || null;
-    // (channel) → vero se lo scudo e' sotto attacco e i follow di Twitch non si
-    // festeggiano (antibot.taciFollow). Il bot non ci manda nemmeno quei follow;
+    // (channel) → vero se lo scudo e' sotto attacco e i follow (di Twitch e di
+    // Kick) non si festeggiano (antibot.taciFollow). Il bot non ci manda nemmeno quei follow;
     // serve per l'effetto che parte un attimo DOPO il suo alert.
     this.taci = taci || null;
     this._pausaEventi = new Map(); // 'canale|evento' → epoch ms prima del quale quell'effetto tace
@@ -145,7 +145,8 @@ export class AlertsEngine {
       const sc = this._scenaEvento(this.cfg(channel), type, data);
       if (!sc) return;
       const { kind, vars, regalo } = sc;
-      sc.followTwitch = kind === 'follow' && (!ev.piattaforma || ev.piattaforma === 'twitch');
+      // i follow che lo scudo guarda: Twitch e Kick (docs/SCUDO.md, «Su Kick»)
+      sc.followScudo = kind === 'follow' && (!ev.piattaforma || ev.piattaforma === 'twitch' || ev.piattaforma === 'kick');
       // widget persistenti: si aggiornano a prescindere dall'alert
       if (kind === 'follow') this._aggiornaWidget(channel, 'ultimoFollower', vars.user);
       if (kind === 'sub') this._aggiornaWidget(channel, 'ultimoSub', vars.user);
@@ -198,10 +199,10 @@ export class AlertsEngine {
   // suona e lo streamer l'ha chiesto, l'effetto parte senza suono.
   // `voce` e `prova` li passa solo la prova (le scelte non salvate, senza pausa).
   _vaInOnda(channel, sc, { voce = null, prova = false } = {}) {
-    const pa = sc.avviso ? this._spara(channel, sc.avviso.a, sc.kind, sc.avviso.conf, sc.vars, { scudo: sc.followTwitch === true }) : null;
+    const pa = sc.avviso ? this._spara(channel, sc.avviso.a, sc.kind, sc.avviso.conf, sc.vars, { scudo: sc.followScudo === true }) : null;
     const dopo = pa ? DOPO_AVVISO_MS : 0;
     const offerta = sc.offerta ? this._sparaEffetto(channel, sc.offerta, DOPO_AVVISO_MS) : false;
-    const effetto = sc.evento && !offerta ? this._effettoEvento(channel, sc.evento, sc.quanto, dopo, { voce, prova, alertSuona: suonaAvviso(pa), followTwitch: sc.followTwitch === true }) : null;
+    const effetto = sc.evento && !offerta ? this._effettoEvento(channel, sc.evento, sc.quanto, dopo, { voce, prova, alertSuona: suonaAvviso(pa), followScudo: sc.followScudo === true }) : null;
     const obiettivo = sc.obiettivo ? this._effettoEvento(channel, 'obiettivo', null, dopo) : null;
     return { avviso: !!pa, offerta, effetto, obiettivo };
   }
@@ -238,7 +239,7 @@ export class AlertsEngine {
   // le scelte salvate sono rimaste.
   // Ritorna cosa e' successo: { parte, da } o { parte: false, perche }, con
   // perche' fra piano, spento, vuoto, sotto, pausa, manca e muto.
-  _effettoEvento(channel, evento, quanto, ritardoMs = 0, { voce = null, prova = false, alertSuona = false, followTwitch = false } = {}) {
+  _effettoEvento(channel, evento, quanto, ritardoMs = 0, { voce = null, prova = false, alertSuona = false, followScudo = false } = {}) {
     try {
       if (!this.effects?.emit) return { parte: false, perche: 'manca' };
       if (!canaleHa(channel, 'effetti')) return { parte: false, perche: 'piano' };
@@ -261,9 +262,9 @@ export class AlertsEngine {
       const muto = alertSuona && v.muto === true;
       if (muto && soloSuono) return { parte: false, perche: 'muto', da: livello.da };
       if (!prova) this._pausaEventi.set(chiave, ora + (Number(v.pausa) || 0) * 1000);
-      const q = { ...p, comando: '', da: 'evento', evento, ...(muto ? { volume: 0 } : {}), ...(followTwitch ? { scudo: true } : {}) };
+      const q = { ...p, comando: '', da: 'evento', evento, ...(muto ? { volume: 0 } : {}), ...(followScudo ? { scudo: true } : {}) };
       const manda = () => {
-        if (followTwitch && this.taci?.(channel)) return;
+        if (followScudo && this.taci?.(channel)) return;
         try { this.effects.emit(channel, q); } catch (x) { log.debug('effetto evento:', x?.message || x); }
       };
       if (ritardoMs > 0) setTimeout(manda, ritardoMs).unref?.(); else manda();
@@ -462,7 +463,7 @@ export class AlertsEngine {
     } catch { return null; }
   }
 
-  // `scudo`: e' il follow di Twitch, che lo scudo puo' fermare anche quando e'
+  // `scudo`: e' un follow che lo scudo guarda (Twitch, Kick), e puo' fermare anche quando e'
   // gia' in fila nella scena (overlay-app.js, il messaggio «scudo»).
   _spara(channel, a, kind, conf, vars, { scudo = false } = {}) {
     const s = this.cfg(channel);

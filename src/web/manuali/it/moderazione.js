@@ -14,7 +14,7 @@ export default {
     { p: [
       'La moderazione della chat sta in <em>Chat</em> → <em>Moderazione</em>. Lo scudo ha una sezione tutta sua nel menu, <em>Scudo e attacchi</em>, con quattro schede: <strong>Scudo anti-bot</strong>, <strong>Attacchi</strong>, <strong>Follower</strong> e <strong>Registro</strong>.',
       '<em>Moderazione</em> pulisce i messaggi di tutti i giorni: parole vietate, spam, link. <em>Scudo anti-bot</em> difende il canale da follow-bot e hate-raid. <em>Gli attacchi</em> ti dà il rapporto di ogni attacco e ti avvisa quando lo scudo si alza. <em>Registro</em> ti racconta ogni intervento e ti lascia decidere sui casi dubbi.',
-      'Tutte e tre sono comprese nel pacchetto gratuito <strong>Essenziale</strong>. Lavorano sulla chat di <strong>Twitch</strong>. <em>Chat</em> lavora anche su <strong>Kick</strong>: su un canale di Kick la scheda c\'è, e <em>Scudo</em> e <em>Registro</em> mostrano «Solo su Twitch». Su YouTube e Discord le tre schede mostrano «Solo su Twitch».',
+      'Tutte e tre sono comprese nel pacchetto gratuito <strong>Essenziale</strong>. Lavorano sulla chat di <strong>Twitch</strong> e su quella di <strong>Kick</strong>: su un canale di Kick ci sono tutte e tre. Su YouTube e Discord mostrano «Solo su Twitch».',
       'Il bot agisce con i permessi di moderazione che hai concesso tu: su Twitch, e su Kick con «Concedi la moderazione». Non c\'è un account estraneo da promuovere a moderatore.',
     ] },
 
@@ -171,7 +171,7 @@ export default {
     { p: [
       'L\'allarme finisce nel registro e alza il livello dello scudo. Da solo non banna e non blocca nessuno.',
       'Quando lo scudo arriva a «sotto attacco» e l\'ondata è riconosciuta come finta, la blocca <strong>tutta insieme</strong>, compresi i primi follow che hanno fatto scattare l\'allarme. Chi scrive nel tuo canale da tempo viene lasciato stare.',
-      'Con «Sotto attacco, niente alert dei follow» c\'è un prezzo: in quei minuti l\'alert non lo ha nemmeno chi segue davvero. Una clip che gira da sola non arriva a «sotto attacco», quindi non ferma niente. Il follow che fa scattare l\'attacco è già fermo, perché lo scudo lo guarda per primo. In sola osservazione gli alert restano, e il registro scrive che li avrebbe fermati. Kick non c\'entra: lo scudo guarda Twitch, e i follow di Kick fanno festa come sempre. Gli alert che mostra Twitch (la scelta «Twitch» o «Tutti e due» negli alert) non passano dal bot e non si possono fermare da qui.',
+      'Con «Sotto attacco, niente alert dei follow» c\'è un prezzo: in quei minuti l\'alert non lo ha nemmeno chi segue davvero. Una clip che gira da sola non arriva a «sotto attacco», quindi non ferma niente. Il follow che fa scattare l\'attacco è già fermo, perché lo scudo lo guarda per primo. In sola osservazione gli alert restano, e il registro scrive che li avrebbe fermati. Vale anche per i follow di Kick: a scudo alzato nessun follow si festeggia, da qualunque piattaforma arrivi. Gli alert che mostra Twitch (la scelta «Twitch» o «Tutti e due» negli alert) non passano dal bot e non si possono fermare da qui.',
     ] },
 
     { p: ['<strong>Chi fermare.</strong>'] },
@@ -270,10 +270,17 @@ export default {
       'Telegram in privato si collega nella scheda Telegram (vedi il <a href="/manuale/community">manuale delle community</a>), la mail nella scheda «Accesso e dati». Finché mancano, la spunta resta grigia e accanto c\'è scritto dove collegarli.',
     ] },
 
+    { h3: 'Lo scudo su Kick' },
+    { p: [
+      'Lo scudo guarda anche Kick. Riconosce le ondate di follow con lo stesso giudizio di Twitch, contando i follow di Kick a parte, e il coro in chat. Ferma i bot col ban: Kick non permette di bloccare o di togliere un follower, quindi il follow finto resta nel conto di Kick ma l\'account non scrive più. Il livello dello scudo è uno per il canale: un attacco su Kick lo alza, e a scudo alzato nessun follow si festeggia.',
+      'Kick non ha la chat ai soli follower, la chat lenta e lo Shield Mode, e non dice quanto è vecchio un account. Quindi su Kick niente serranda e niente trattenuta dei messaggi degli account nuovi. Un attacco solo su Kick non chiude la chat di Twitch; se l\'attacco arriva anche su Twitch, la serranda di Twitch si alza allora.',
+      'Per agire su Kick serve la moderazione di Kick («Concedi la moderazione»). Senza, lo scudo riconosce l\'attacco e ferma gli alert, e le azioni restano in sospeso nel registro finché non la concedi.',
+      'Nel registro e nel rapporto di un attacco le righe di Kick hanno l\'etichetta «Kick», e «Sbanna» toglie il bando su Kick. Nelle liste «Blocca sempre» e «Non toccare mai» una persona di Kick si scrive <code>kick:nome</code>: lo stesso nome su Twitch e su Kick può essere di due persone diverse, e un nome senza prefisso vale per Twitch.',
+    ] },
     { h3: 'Gli altri scudi' },
     { p: [
       'Un riepilogo degli scudi fuori da Twitch, con il tasto «Vai» per ognuno: chi è entrato, chi è stato fermato e chi aspetta nel gruppo Telegram negli ultimi sette giorni, poi la porta d\'ingresso e il filtro del server Discord.',
-      'Su un canale solo Kick la scheda c\'è lo stesso: lo scudo contro gli attacchi lavora su Twitch, gli altri scudi restano.',
+      'Su un canale solo Kick la scheda c\'è, con lo scudo contro gli attacchi che lavora su Kick e gli altri scudi.',
     ] },
 
     { h2: 'I tuoi follower', scheda: 'follower', p: [
