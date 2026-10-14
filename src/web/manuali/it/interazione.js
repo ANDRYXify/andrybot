@@ -11,7 +11,7 @@ export default {
   schede: ['sondaggi', 'giveaway', 'penitenze'],
   titolo: 'Manuale di sondaggi, giveaway, partite e penitenze | SocialBot',
   h1: 'Manuale di sondaggi, giveaway, partite e penitenze',
-  desc: 'Sondaggi e predizioni di Twitch, il giveaway con le probabilità che scegli tu, le partite con la chat con fila e monete, le penitenze a punti canale contate a voce: ogni carta e ogni comando.',
+  desc: 'Sondaggi e predizioni di Twitch, giveaway con le probabilità che scegli tu, partite con la chat e penitenze contate a voce: ogni carta e ogni comando.',
   aggiornata: '2026-10-14',
   corpo: [
     { p: [
