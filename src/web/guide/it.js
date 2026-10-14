@@ -413,7 +413,108 @@ export const GUIDE_IT = [
       { d: 'Un bot di moderazione può mettere in timeout al posto mio?', r: 'Sì, se gli concedi il permesso di moderazione. Senza quel permesso può leggere e scrivere ma non punire. È un permesso che puoi revocare in qualsiasi momento dalle impostazioni di Twitch.' },
       { d: 'Il bot può zittire un moderatore per sbaglio?', r: 'Non dovrebbe mai: streamer e moderatori vanno esentati dalle regole automatiche per costruzione. Se succede, è una regola scritta male.' },
       { d: 'Meglio accendere tutte le regole subito?', r: 'No. I falsi positivi non si vedono, perché chi viene zittito per sbaglio non protesta: se ne va. Conviene partire larghi e stringere solo dove hai avuto un problema vero.' },
-      { d: 'La moderazione automatica funziona anche su Kick?', r: 'In generale in parte: Kick espone meno della API di Twitch, quindi le difese più fini sono più semplici. In SocialBot su Kick lavorano le parole vietate e, se concedi la moderazione su Kick, l\'antispam, che toglie i messaggi e mette in pausa chi insiste. Lo scudo anti-bot lavora solo sulla chat di Twitch.' },
+      { d: 'La moderazione automatica funziona anche su Kick?', r: 'In generale in parte: Kick espone meno della API di Twitch, quindi le difese più fini sono più semplici. In SocialBot su Kick lavorano le parole vietate e, se concedi la moderazione su Kick, l\'antispam, che toglie i messaggi e mette in pausa chi insiste. Anche lo scudo anti-bot lavora su Kick: riconosce le ondate di follow e i cori in chat e ferma i bot con il ban, perché Kick non permette di bloccarli o di togliere il follow.' },
+    ],
+  },
+
+  {
+    slug: 'diretta-dal-sito',
+    schede: ['studio'],
+    titolo: 'In diretta dal sito, senza OBS: lo Studio di SocialBot (beta)',
+    h1: 'In diretta dal sito, senza OBS: lo Studio di SocialBot',
+    desc: 'Lo Studio per andare in diretta da SocialBot su Twitch, Kick e YouTube insieme: come funzionerà, cosa fa il tuo pc, cosa fa il server. Beta in preparazione.',
+    aggiornata: '2026-10-14',
+    tipo: 'articolo',
+    corpo: [
+      { p: [
+        '<strong>A che punto è: beta in preparazione.</strong> Lo Studio oggi non si può ancora usare. Questa pagina dice come sarà e perché è fatto così, e da dove chiedere di provarlo per primo. Quando apre la beta lo trovi scritto qui e nelle novità del pannello.',
+        'L\'idea è semplice: andare in diretta senza installare OBS, partendo dalle scene che hai già fatto nell\'Overlay Studio, su Twitch, Kick e YouTube insieme, con una diretta fluida anche quando la connessione non è perfetta.',
+      ] },
+      { h2: 'Perché la prima versione laggava, e questa no', p: [
+        'Una prima versione dello Studio c\'era già, e l\'abbiamo spenta prima di farla usare a qualcuno: le dirette laggavano. Il motivo non era un dettaglio da sistemare ma il disegno. Il video si comprimeva due volte, una nel browser e una sul nostro server, e la seconda compressione si mangiava il processore del server proprio mentre doveva tenere la chat e gli alert di tutti.',
+        'La versione nuova ribalta il disegno: <strong>tutto il lavoro sul video lo fa il tuo dispositivo</strong>, con la sua scheda video. Il server non comprime niente: riceve la tua diretta già pronta e ne manda una copia a ogni piattaforma. Il carico non cresce con la qualità, e il lag del server sparisce per costruzione.',
+      ] },
+      { h2: 'Le scene sono quelle dell\'Overlay Studio', p: [
+        'Lo Studio non ha un editor suo. Parte dalle scene che hai già: una scena è il tuo overlay con le sorgenti messe sopra o sotto i suoi elementi, cioè lo schermo, la camera, le immagini. Quello che metti in OBS come sorgente browser e quello che va in onda dallo Studio sono la stessa cosa, modificata in un posto solo.',
+        'Ci saranno le scene speciali che servono a ogni diretta, fatte nello stesso editor: sta per iniziare, pausa, torno subito, fine. Le cambi a mano, con un tasto, dal telefono, o da sole con gli automatismi della regia che usi già.',
+      ] },
+      { h2: 'Le sorgenti e l\'audio', ul: [
+        '<strong>Schermo, finestra o scheda</strong> del browser, e una o più camere. Le schede di acquisizione si vedono come camere, quindi funzionano anche quelle.',
+        '<strong>Il telefono come seconda camera</strong>: lo colleghi con un QR, e il video passa direttamente dal telefono al pc.',
+        '<strong>Un mixer vero</strong>: per ogni sorgente volume, muto, misuratore, ascolto in cuffia, riduzione del rumore, compressore, equalizzatore. La musica si abbassa da sola quando parli.',
+        '<strong>Mix diversi per uscite diverse</strong>: per esempio la traccia per i VOD di Twitch senza musica, e la diretta con.',
+        '<strong>Le uscite</strong>: Twitch, Kick e YouTube accese o spente anche a diretta in corso, ognuna con la sua qualità, più la registrazione sul tuo dispositivo.',
+      ] },
+      { h2: 'Quando la connessione traballa', p: [
+        'È la parte a cui teniamo di più. Se la rete cala, lo Studio abbassa la qualità da solo e la rialza quando la rete torna. Se la rete è quasi ferma, manda solo la tua voce e sullo schermo resta un\'immagine che scegli tu, o l\'ultimo fotogramma. Se il dispositivo sparisce del tutto, il server tiene la diretta accesa con la tua scena «torno subito»: la diretta non cade, chi ti segue non riceve un secondo avviso, il VOD resta uno solo. Quando torni, si riparte da dove eri. Se non torni entro il tempo che hai scelto, la diretta si chiude da sola.',
+        'Il 2K e il 4K ci saranno dove le piattaforme li accettano: oggi il 4K ha senso su YouTube, mentre Twitch e Kick restano intorno al 1080p. Lo Studio può mandare una qualità diversa a ogni piattaforma. Il 4K però chiede una connessione larga e stabile: con una linea debole lo Studio scende da solo, ed è giusto così.',
+      ] },
+      { h2: 'Cosa il browser non sa fare', p: [
+        'Preferiamo dirlo prima. Dal browser l\'audio del gioco si prende da tutto il sistema solo su Windows e ChromeOS; su macOS solo quello di una scheda del browser. L\'audio di una sola applicazione, i plugin audio VST, NDI e le scorciatoie quando il browser non è davanti restano cose da programma installato.',
+        'Per questo ci saranno altre due strade: <strong>OBS comandato da SocialBot</strong>, che configura le scene, l\'audio e l\'uscita al posto tuo, e <a href="/guide/osify-sistema-per-lo-streaming">OSify</a>, il sistema operativo pensato per lo streaming, dove tutto questo è già di casa.',
+      ] },
+      { h2: 'Come chiedere di provarlo per primo', passi: [
+        { t: 'Entra in SocialBot', d: 'Con l\'account con cui streammi, su Twitch o su Kick. L\'Essenziale è gratis.' },
+        { t: 'Apri «Studio Web» nel menù', d: 'Sta in «In diretta». Lì trovi lo stato aggiornato della beta.' },
+        { t: 'Premi «Voglio provarlo per primo»', d: 'Non ti chiediamo altri dati: resta segnato sul tuo account, e quando la beta apre te lo diciamo dal pannello. Puoi toglierti quando vuoi con lo stesso tasto.' },
+      ] },
+    ],
+    faq: [
+      { d: 'Lo Studio di SocialBot si può già usare?', r: 'No. È una beta in preparazione: questa pagina dice come sarà. Dal pannello puoi chiedere di provarlo per primo, e quando apre te lo diciamo lì.' },
+      { d: 'Sostituisce OBS?', r: 'Per la maggior parte degli streamer sì, perché scene, overlay, audio e multistream stanno in un posto solo. Chi gioca a titoli pesanti su un solo pc o usa plugin audio può trovarsi meglio con OBS, e potrà farselo configurare da SocialBot.' },
+      { d: 'Rallenta il mio pc?', r: 'Il video lo comprime la tua scheda video, come fa OBS quando usi il codificatore hardware. Il server non lo ricomprime: per questo la diretta non dipende da quanto è carico.' },
+      { d: 'Si può andare in diretta su Twitch, Kick e YouTube insieme?', r: 'Sì: è uno degli scopi. Il tuo dispositivo manda una diretta sola e il server ne fa una copia per ogni piattaforma, così la tua connessione non si divide in tre.' },
+    ],
+  },
+
+  {
+    slug: 'osify-sistema-per-lo-streaming',
+    titolo: 'OSify: il sistema operativo per lo streaming (pre-alpha)',
+    h1: 'OSify: il sistema operativo pensato per lo streaming',
+    desc: 'OSify è un sistema Linux pensato per giocare, creare e andare in diretta, anche su pc vecchi. È in pre-alpha: cosa fa, per chi è, come provarlo senza rischi.',
+    aggiornata: '2026-10-14',
+    tipo: 'articolo',
+    corpo: [
+      { p: [
+        '<strong>A che punto è: pre-alpha.</strong> OSify è un progetto in lavorazione, non un prodotto finito. Può non avviarsi sul tuo pc, può avere funzioni che non vanno ancora, e se lo installi sul disco può cancellare quello che c\'è. Leggi la parte su come provarlo senza rischi prima di scaricarlo.',
+        'OSify è un sistema operativo basato su Linux fatto dallo stesso autore di SocialBot. È un progetto a parte, aperto, con licenza GPL v3: lo trovi su <a href="https://github.com/ANDRYXify/OSify">GitHub</a>. Qui spieghiamo cos\'è e perché lo nominiamo accanto a SocialBot.',
+      ] },
+      { h2: 'Perché un sistema operativo per chi fa dirette', p: [
+        'Chi fa dirette chiede al pc tre cose insieme: far girare il gioco, comprimere il video e tenere la connessione stabile. Su un sistema qualunque queste tre cose si pestano i piedi: il gioco ruba il processore all\'encoder, un aggiornamento in sottofondo riempie la banda, l\'audio scatta. OSify nasce per mettere ordine in questo: dare la precedenza a quello che conta mentre sei in diretta.',
+        'È anche il posto dove lo <a href="/guide/diretta-dal-sito">Studio di SocialBot</a> potrà dare il meglio: su OSify il tuo pc fa il lavoro pesante per te, con tutto quello che un browser da solo non può prendere.',
+      ] },
+      { h2: 'Le idee su cui è costruito', ul: [
+        '<strong>La rete prima di tutto</strong>: un regolatore del traffico (CAKE) che evita che la banda si intasi mentre sei in diretta e giochi online insieme.',
+        '<strong>L\'audio separato per tracce</strong>: gioco, voce, musica e microfono su canali distinti, con la traccia per i VOD di Twitch senza musica.',
+        '<strong>La codifica con la scheda video</strong>: OBS configurato da sé con il codificatore della tua scheda video (NVIDIA, AMD o Intel), per non pesare sul processore.',
+        '<strong>Una diretta, più piattaforme</strong>: un inoltro locale verso Twitch, Kick e YouTube.',
+        '<strong>Gioco e programmazione</strong>: un lanciatore per i giochi, compresi quelli per Windows e i retrogiochi, e un ambiente per programmare.',
+      ] },
+      { p: [
+        'In pre-alpha non tutto quello che è descritto nel progetto funziona già su ogni macchina. Le idee sono queste; quanto ognuna è pronta lo dice il repository, versione per versione.',
+      ] },
+      { h2: 'Due edizioni', p: [
+        '<strong>Standard</strong> è per i pc moderni a 64 bit e chiede un processore con le istruzioni AVX2: in pratica Intel dal 2013 in poi (Haswell) e AMD Ryzen. È l\'edizione per giocare e andare in diretta.',
+        '<strong>Vintage</strong> è per i pc vecchi a 32 bit, come i netbook con processore Atom e un giga di memoria, con schermi piccoli. Non è per le dirette: serve a ridare vita a un computer che altrimenti finirebbe in un cassetto.',
+      ] },
+      { h2: 'Come provarlo senza rischi', passi: [
+        { t: 'Fai una copia dei tuoi dati', d: 'Prima di tutto, sempre. Una pre-alpha può fare danni anche quando sembra andare tutto bene.' },
+        { t: 'Provalo da una chiavetta, senza installarlo', d: 'Scarica l\'immagine ISO della tua edizione dalla pagina delle versioni su GitHub e scrivila su una chiavetta (con Ventoy o balenaEtcher). Avviando dalla chiavetta il sistema gira senza toccare il disco.' },
+        { t: 'Controlla che il file sia quello giusto', d: 'Nella pagina delle versioni c\'è il file SHA256SUMS con le impronte di ogni immagine: confrontale con quella del file che hai scaricato.' },
+        { t: 'Installa solo su un pc di prova', d: 'Se vuoi installarlo, fallo su un computer o un disco che puoi perdere. In questa fase sconsigliamo l\'installatore che parte da Windows senza chiavetta: crea una partizione e cambia l\'avvio del pc, e se qualcosa va storto è più difficile tornare indietro.' },
+      ] },
+      { h2: 'Cosa c\'entra con SocialBot', p: [
+        'SocialBot funziona su qualunque sistema: Windows, macOS, Linux, telefono. OSify non serve per usarlo e non lo sarà mai. Lo nominiamo perché è il posto dove la diretta dal sito potrà andare più lontano: l\'audio di una sola applicazione, i codificatori della scheda video, la rete regolata per la diretta. Il lavoro del tuo pc resta sul tuo pc: niente di quello che fai va su macchine di altri.',
+      ] },
+      { h2: 'Come segnalare un problema', p: [
+        'Essendo una pre-alpha, le segnalazioni sono la cosa più preziosa. Aprile nella sezione Issues del <a href="https://github.com/ANDRYXify/OSify">repository</a>, dicendo quale edizione hai provato, su che computer e che cosa è successo. Non scrivere password o dati personali nelle segnalazioni: sono pubbliche.',
+      ] },
+    ],
+    faq: [
+      { d: 'OSify è gratis?', r: 'Sì. È un progetto aperto con licenza GPL v3: lo scarichi, lo usi e puoi leggerne il codice.' },
+      { d: 'Posso usarlo come sistema principale?', r: 'Non ancora. È in pre-alpha: provalo da una chiavetta o su un pc di prova, e tieni una copia dei tuoi dati.' },
+      { d: 'Serve OSify per usare SocialBot?', r: 'No. SocialBot funziona su qualunque sistema. OSify è un\'aggiunta per chi vuole spremere di più il proprio pc in diretta.' },
+      { d: 'Il mio pc è compatibile?', r: 'L\'edizione Standard chiede un processore a 64 bit con AVX2 (Intel dal 2013, AMD Ryzen). L\'edizione Vintage gira sui pc a 32 bit, anche con un giga di memoria.' },
     ],
   },
 

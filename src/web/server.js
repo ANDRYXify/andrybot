@@ -4043,7 +4043,7 @@ STREAMER (${su.toUpperCase()}) e non c'entra con l'automazione del marketing.
       // Regia (Vai live): quali permessi ha concesso per gestire la diretta dal bot
       regia: user ? { broadcast: canaleOk(user.login), raid: raidOk(user.login), commercial: commercialOk(user.login), ads: adsOk(user.login) } : null,
       // Studio Web: acceso? permesso stream key concesso? live in corso?
-      studio: user ? { attivo: config.studioAttivo, keyOk: studioKeyOk(user.login), live: studio.attiva(user.login) } : null,
+      studio: user ? { attivo: config.studioAttivo, keyOk: studioKeyOk(user.login), live: studio.attiva(user.login), beta: !!streamers.get(user.login)?.settings?.betaStudio } : null,
       telegram: user ? statoTelegram(user.login) : null,
       knowledgeCount: user ? knowledge.count(user.login) : 0,
       preaddestramento: user
@@ -12141,8 +12141,23 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
       node: process.version,
       backup: statoBackup(),
       risorse: risorse.stato(),
+      betaStudio: streamers.list().filter((x) => x.settings?.betaStudio).length,
     });
   });
+
+  // Lo Studio della diretta e' una beta in preparazione (docs/DIRETTA.md): chi
+  // vuole provarlo per primo lo segna qui, sul suo account, senza altri dati.
+  // Lo stesso tasto lo toglie.
+  app.post('/api/streamer/studio-beta', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const s = streamers.get(login);
+    if (!s) return res.status(404).json({ errore: 'Account non trovato.' });
+    const voglio = req.body?.voglio === true;
+    const settings = { ...(s.settings || {}) };
+    if (voglio) settings.betaStudio = Date.now(); else delete settings.betaStudio;
+    streamers.setSettings(login, settings);
+    res.json({ ok: true, voglio });
+  }));
 
   // La misura del server vero (src/misura.js): profilo della CPU, fermi del
   // ciclo e memoria per N secondi. Solo nomi e righe del codice, mai dati.

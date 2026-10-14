@@ -50,6 +50,25 @@ test('la vetrina non promette una diretta dal browser', () => {
   }
 });
 
+// La vetrina puo' nominare lo Studio solo dentro «In arrivo», con lo stato
+// scritto sopra il titolo nelle tre lingue (docs/DIRETTA.md): una beta in
+// preparazione detta come tale non e' una promessa, una frase sciolta si'.
+test('nella vetrina lo Studio sta solo in «In arrivo», con lo stato accanto', async () => {
+  const { vetrinaHtml } = await import('../../src/web/vetrina-vista.js');
+  const STATO = { it: 'Beta in preparazione', en: 'Beta in preparation', es: 'Beta en preparación' };
+  for (const l of ['it', 'en', 'es']) {
+    const h = vetrinaHtml(l);
+    const i = h.indexOf('<section class="vt-sez" id="in-arrivo">');
+    assert.ok(i >= 0, `${l}: manca «In arrivo»`);
+    const dentro = h.slice(i, h.indexOf('</section>', i));
+    const fuori = h.slice(0, i) + h.slice(h.indexOf('</section>', i));
+    const beta = dentro.slice(dentro.indexOf('data-stato="beta"'), dentro.indexOf('data-stato="pre-alpha"'));
+    assert.ok(beta.includes(STATO[l]), `${l}: lo Studio senza «${STATO[l]}»`);
+    assert.ok(dentro.includes('data-stato="pre-alpha"') && dentro.includes('Pre-alpha'), `${l}: OSify senza «pre-alpha»`);
+    assert.ok(!/diretta-dal-sito|senza OBS|without OBS|sin OBS|dal browser|from the browser|desde el navegador/.test(fuori), `${l}: lo Studio nominato fuori da «In arrivo»`);
+  }
+});
+
 test('nemmeno le descrizioni che finiscono nei motori di ricerca', () => {
   const s = leggi('src/web/server.js');
   for (const m of s.matchAll(/(?:ogDesc|twDesc|description): '([^']*)'/g)) {

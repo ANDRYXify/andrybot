@@ -594,6 +594,36 @@ function faqVetrina(L, l) {
   ];
 }
 
+// IN ARRIVO: due cose dette per quello che sono oggi. Lo Studio non si usa
+// ancora (docs/DIRETTA.md) e OSify e' una pre-alpha: lo stato sta scritto sopra
+// il titolo, e il collaudo (studio-spento) tiene fermo che lo Studio si nomini
+// nella vetrina solo qui dentro, con lo stato accanto.
+function inArrivoHtml(L, l) {
+  const inItaliano = l === 'it' ? '' : ` <span class="vt-lingua">(${L('', 'in Italian', 'en italiano')})</span>`;
+  return `
+    <section class="vt-sez" id="in-arrivo">
+      <div class="vt-testa">
+        <h2 class="vt-tit">${L('In arrivo', 'Coming up', 'Lo que viene')}</h2>
+        <p class="vt-testo">${L('Due cose a cui stiamo lavorando, dette per quello che sono oggi.', 'Two things we are working on, described as they are today.', 'Dos cosas en las que estamos trabajando, contadas tal como están hoy.')}</p>
+      </div>
+      <div class="vt-arrivo">
+        <article data-stato="beta">
+          <span class="vt-stato">${L('Beta in preparazione', 'Beta in preparation', 'Beta en preparación')}</span>
+          <h3>${L('Lo Studio della diretta', 'The live Studio', 'El Estudio del directo')}</h3>
+          <p>${L('In diretta dal sito, senza OBS: le scene dell’Overlay Studio, su Twitch, Kick e YouTube insieme. Il video lo comprime il tuo pc, e se la rete traballa la diretta non cade. Non si può ancora usare: dal pannello chiedi di provarlo per primo.', 'Go live from the site, without OBS: your Overlay Studio scenes, on Twitch, Kick and YouTube at once. Your own computer compresses the video, and if the network wobbles the stream stays up. It is not usable yet: ask to try it first from the panel.', 'En directo desde el sitio, sin OBS: las escenas del Overlay Studio, en Twitch, Kick y YouTube a la vez. El vídeo lo comprime tu ordenador, y si la red falla el directo no se cae. Aún no se puede usar: desde el panel pide probarlo el primero.')}</p>
+          <a href="/guide/diretta-dal-sito">${L('Come sarà', 'How it will work', 'Cómo será')}</a>${inItaliano}
+        </article>
+        <article data-stato="pre-alpha">
+          <span class="vt-stato">Pre-alpha</span>
+          <h3>OSify</h3>
+          <p>${L('Il sistema operativo pensato per giocare e andare in diretta, anche sui pc vecchi. Gratis e aperto. È all’inizio: provalo da una chiavetta, non sul pc di tutti i giorni.', 'The operating system designed for gaming and streaming, old computers included. Free and open. It is at an early stage: try it from a USB stick, not on your everyday computer.', 'El sistema operativo pensado para jugar y emitir en directo, también en ordenadores viejos. Gratis y abierto. Está empezando: pruébalo desde un USB, no en el ordenador de cada día.')}</p>
+          <a href="/guide/osify-sistema-per-lo-streaming">${L('Cos’è e come provarlo', 'What it is and how to try it', 'Qué es y cómo probarlo')}</a>${inItaliano}
+          <span aria-hidden="true"> · </span><a href="https://github.com/ANDRYXify/OSify" rel="noopener">GitHub</a>
+        </article>
+      </div>
+    </section>`;
+}
+
 function corpo(L, l, kick, youtube, dirette, piani, recensioni) {
   // con chi ci si registra: Twitch sempre, Kick e YouTube quando la porta e' aperta.
   // L'invito in fondo deve dire le stesse cose dell'apertura: una lista sola.
@@ -658,6 +688,8 @@ function corpo(L, l, kick, youtube, dirette, piani, recensioni) {
       </div>
       ${capacitaHtml(L)}
     </section>
+
+    ${inArrivoHtml(L, l)}
 
     <section class="vt-sez" id="listino">
       <div class="vt-testa centro">

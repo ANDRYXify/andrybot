@@ -121,6 +121,16 @@ comandi diversi da quelli della riga italiana.
   en: Heavy uploads go one at a time per person, and wait when the server is very busy: chat, alerts and stories always come first.
   es: Las subidas pesadas van de una en una por persona, y esperan cuando el servidor está muy cargado: el chat, las alertas y las historias siempre van primero.
 
+- [importante] Lo Studio per andare in diretta dal sito, senza OBS, è una beta in preparazione: in «In diretta», alla voce «Studio Web», chiedi di provarlo per primo. [vai: studio]
+  en: The Studio for going live from the site, without OBS, is a beta in preparation: in «Live», under «Web Studio», ask to try it first.
+  es: El Estudio para emitir en directo desde el sitio, sin OBS, es una beta en preparación: en «En directo», en «Estudio Web», pide probarlo el primero.
+  > In diretta dal sito, presto in beta
+  > Scene dell'Overlay Studio, Twitch, Kick e YouTube insieme, e la diretta che non cade se la rete traballa. Non si usa ancora: chi lo chiede lo prova per primo.
+  en> Live from the site, soon in beta
+  en> Overlay Studio scenes, Twitch, Kick and YouTube at once, and a stream that stays up when the network wobbles. Not usable yet: whoever asks tries it first.
+  es> En directo desde el sitio, pronto en beta
+  es> Escenas del Overlay Studio, Twitch, Kick y YouTube a la vez, y un directo que no se cae si la red falla. Aún no se usa: quien lo pide lo prueba el primero.
+
 ## 2026-10-08
 
 - [importante] Lo scudo ha una sezione sua, Scudo e attacchi: ogni attacco ha il suo rapporto, con grafico, livelli, chi c'era e cosa gli è stato fatto, e ti avviso in privato su Telegram o per mail. [vai: attacchi]

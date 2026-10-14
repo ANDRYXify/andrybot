@@ -115,15 +115,15 @@ copre('giochi', 'ricette a punti', ricette);
 // L'elenco vero delle schede non si scrive: sono i pannelli che app.js disegna.
 // Se domani ne nasce uno, questo cancello diventa rosso finche' qualcuno non lo
 // spiega da qualche parte.
-// Tre schede restano fuori DI PROPOSITO, ed e' scritto qui perche' un buco
+// Due schede restano fuori DI PROPOSITO, ed e' scritto qui perche' un buco
 // silenzioso e un'esclusione decisa si somigliano troppo:
 //   · 'admin'  non e' del prodotto, e' nostra;
 //   · 'promo'  (le campagne e le loro pubblicita') nemmeno: la usa solo
 //              l'admin, e ha il suo aiuto dentro la scheda;
-//   · 'studio' (andare in diretta dal browser) non si documenta, per scelta:
-//              finche' resta cosi', una pagina pubblica che la
-//              spiega prometterebbe una cosa che non vogliamo promettere.
-const FUORI = new Set(['admin', 'promo', 'studio']);
+// Lo Studio della diretta era fuori finche' non si poteva dire come stava. Ora
+// la guida «In diretta dal sito» lo spiega come beta in preparazione, con lo
+// stato in testa (docs/DIRETTA.md), e la scheda ha il suo aiuto come le altre.
+const FUORI = new Set(['admin', 'promo']);
 const schede = [...new Set([...app.matchAll(/pannello\('([a-z0-9-]+)'/g)].map((m) => m[1]))]
   .filter((s) => !FUORI.has(s));
 const aiuti = aiutiPerScheda();
