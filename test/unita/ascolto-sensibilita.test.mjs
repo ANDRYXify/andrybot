@@ -46,3 +46,23 @@ test('il giro degli ascolti passa la sensibilita\' salvata a quello gia\' partit
   assert.equal(finto.listeners.get('canale'), inPiedi, 'non lo riavvia');
   assert.equal(inPiedi.sensibilita, 9, 'ma gli passa la sensibilita\' nuova');
 });
+
+// Lo scudo delle risorse (docs/RISORSE.md): l'ascolto e' lavoro pesante e lungo.
+test('col server in rosso gli ascolti cedono e rendono il posto', async (t) => {
+  const { risorse } = await import('../../src/risorse.js');
+  t.mock.method(risorse, 'deveCedere', (classe) => classe === 'ascolto');
+  let fermato = 0, reso = 0;
+  const l = { stop() { fermato++; }, rendi() { reso++; } };
+  const finto = { running: true, listeners: new Map([['canale', l]]), _spegniAscolto: BotManager.prototype._spegniAscolto, helix: { getStream: async () => ({}) } };
+  await BotManager.prototype.reconcileListeners.call(finto);
+  assert.equal(finto.listeners.size, 0);
+  assert.deepEqual([fermato, reso], [1, 1]);
+});
+
+test('senza posto un ascolto nuovo non parte', async (t) => {
+  const { risorse } = await import('../../src/risorse.js');
+  t.mock.method(risorse, 'prova', () => null);
+  const finto = { running: true, listeners: new Map(), _spegniAscolto: BotManager.prototype._spegniAscolto, helix: { getStream: async () => ({ id: '1' }) } };
+  await BotManager.prototype.reconcileListeners.call(finto);
+  assert.equal(finto.listeners.size, 0);
+});

@@ -87,6 +87,7 @@ import { scheduleReflection } from './ai/reflection.js';
 import { StreamWatcher } from './stream/watcher.js';
 import { dopoSegnale } from './stream/stato-diretta.js';
 import { LiveListener } from './stream/listener.js';
+import { risorse } from './risorse.js';
 import { avviaBackupAuto, stopBackupAuto } from './backup.js';
 import * as dcGiro from './features/discord-giro.js';
 import * as dcEventi from './features/discord-eventi.js';
@@ -506,8 +507,7 @@ export class BotManager {
     this.watcher?.stop();
     try { this.chatYT?.spegniTutti(); } catch { /* niente */ }
     // spegni tutti gli ascolti live (audio): non devono restare orfani
-    for (const [, l] of this.listeners) { try { l.stop(); } catch { /* niente */ } }
-    this.listeners.clear();
+    for (const [login, l] of this.listeners) this._spegniAscolto(login, l);
     await this.events?.stop?.();
     // salva i modelli IA locali (semantica auto-addestrata) prima di chiudere
     try { model.salvaTutto(); } catch { /* niente */ }
@@ -685,9 +685,13 @@ export class BotManager {
       // L'aggancio viene da chi la chat ce l'ha in mano: e' l'ultima riga detta
       // ALLA STANZA, non l'ultima riga qualunque. Il cervello dice la sua su
       // quella, invece di pescarsela da solo.
+      // lavoro di fondo del cervello: col server sotto sforzo si salta (docs/RISORSE.md)
+      const rendi = risorse.prova('cervello', login);
+      if (!rendi) return;
       Promise.resolve().then(() => this.brain.iniziativa(login, { spunto, aggancio: momento.aggancio }))
         .then((t) => this._dettaDaSoloConCalma(login, tipo, t))
-        .catch((e) => log.debug(`#${login} ${tipo}:`, e?.message || e));
+        .catch((e) => log.debug(`#${login} ${tipo}:`, e?.message || e))
+        .finally(rendi);
       return;
     }
     if (tipo === 'battuta') {
@@ -911,7 +915,8 @@ export class BotManager {
         const s = streamers.get(login);
         if (s?.settings?.iaLocale === false) continue;   // IA locale spenta → niente allenamento
         const attivo = this._liveState.get(login) === true || (memory.messageRate?.(login) || 0) >= 1;
-        if (attivo) this.brain.distilla(login).catch(() => {});
+        const rendi = attivo ? risorse.prova('cervello', login) : null;
+        if (rendi) this.brain.distilla(login).catch(() => {}).finally(rendi);
       }
     } catch (e) { log.error('distilla:', e?.message || e); }
   }
@@ -1391,11 +1396,18 @@ export class BotManager {
     // bot fermo: nessun ascolto deve sopravvivere
     if (!this.running) {
       for (const [login, l] of this.listeners) {
-        try { l.stop(); } catch { /* niente */ }
-        this.listeners.delete(login);
+        this._spegniAscolto(login, l);
       }
       return;
     }
+
+    // lo scudo delle risorse (docs/RISORSE.md): in rosso l'ascolto cede il posto
+    if (risorse.deveCedere('ascolto')) {
+      for (const [login, l] of this.listeners) this._spegniAscolto(login, l);
+      if (!this._cedutoAvvisoDato) { log.warn('ascolti live fermati: il server è sotto sforzo, ripartono da soli al ritorno del verde'); this._cedutoAvvisoDato = true; }
+      return;
+    }
+    this._cedutoAvvisoDato = false;
 
     const cap = config.maxListeners;
 
@@ -1406,8 +1418,7 @@ export class BotManager {
     // 1) spegni gli ascolti non più desiderati o morti (offline/binario assente)
     for (const [login, l] of this.listeners) {
       if (!voglionoSet.has(login) || l.morto) {
-        try { l.stop(); } catch { /* niente */ }
-        this.listeners.delete(login);
+        this._spegniAscolto(login, l);
         log.info(`ascolto live spento per #${login}`);
       }
     }
@@ -1415,8 +1426,7 @@ export class BotManager {
     // cap a 0 = funzione globalmente disattivata: spegni tutto e non avviare nulla
     if (cap <= 0) {
       for (const [login, l] of this.listeners) {
-        try { l.stop(); } catch { /* niente */ }
-        this.listeners.delete(login);
+        this._spegniAscolto(login, l);
         log.info(`ascolto live spento per #${login} (funzione disattivata)`);
       }
       return;
@@ -1443,6 +1453,8 @@ export class BotManager {
       try { live = await this.helix.getStream(login); }
       catch (e) { log.debug(`ascolto: getStream #${login} fallito:`, e?.message || e); continue; }
       if (!live) continue;
+      const rendi = risorse.prova('ascolto', login);
+      if (!rendi) continue;
 
       const listener = new LiveListener({
         login,
@@ -1454,16 +1466,24 @@ export class BotManager {
         log,
       });
       try {
+        listener.rendi = rendi;
         listener.start();
         this.listeners.set(login, listener);
         log.info(`ascolto live avviato per #${login} (sensibilità ${sensibilita})`);
       } catch (e) {
         log.error(`avvio ascolto live #${login} fallito:`, e?.message || e);
+        rendi();
       }
     }
 
     // tornati sotto il tetto: si potrà ri-loggare il prossimo "cap raggiunto"
     if (this.listeners.size < cap) this._capAvvisoDato = false;
+  }
+
+  _spegniAscolto(login, l) {
+    try { l.stop(); } catch { /* niente */ }
+    try { l.rendi?.(); } catch { /* niente */ }
+    this.listeners.delete(login);
   }
 
   // Crea una clip a comando (usata dall'API vocale / ingresso esterno).

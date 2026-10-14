@@ -30,12 +30,12 @@ export const mimeOk = (mime) => Object.prototype.hasOwnProperty.call(MIME_OK, St
 
 // Salva il file di chi dona: lo ricomprime (che cancella sempre il temporaneo)
 // e torna { file, tipo, durata }. `comprimi` si puo' sostituire nel collaudo.
-export async function salva(login, tempPath, mime, { comprimi = comprimiDiSerie, ora = Date.now() } = {}) {
+export async function salva(login, tempPath, mime, { comprimi = comprimiDiSerie, ora = Date.now(), chi } = {}) {
   if (!mimeOk(mime)) throw new Error('serve un\'immagine (PNG, JPG, WEBP o GIF)');
   const dir = cartella(login);
   mkdirSync(dir, { recursive: true });
   const id = PREFISSO + ora + '_' + crypto.randomBytes(4).toString('hex');
-  const e = await comprimi(tempPath, mime, dir, id);
+  const e = await comprimi(tempPath, mime, dir, id, { chi });
   if (!e?.file || !FILE_OK.test(e.file)) throw new Error('immagine non salvata');
   return { file: e.file, tipo: e.tipo === 'video' ? 'video' : 'immagine', durata: Math.max(0, Math.round(Number(e.durata) || 0)) };
 }

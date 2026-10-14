@@ -58,7 +58,7 @@ test('il segreto di Telegram si confronta a tempo costante', () => {
 test('un SVG caricato come icona non resta un SVG', () => {
   const r = rotta('/api/streamer/console/icona');
   assert.match(r, /if \(est === 'svg'\)/, 'l\'SVG si riconosce');
-  assert.match(r, /svgInPng\(req\.file\.path, join\(dove, nome\)\)/, 'e si rasterizza');
+  assert.match(r, /svgInPng\(req\.file\.path, join\(dove, nome\), 256, \{ chi: login \}\)/, 'e si rasterizza, dalla porta delle risorse');
   assert.match(r, /ico_\$\{crypto\.randomBytes\(6\)\.toString\('hex'\)\}\.png/, 'in un PNG');
 });
 

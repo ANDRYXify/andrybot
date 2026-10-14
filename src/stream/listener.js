@@ -9,7 +9,7 @@
 // Vincoli: nessuna analisi video, consumi ridotti (un canale = una coppia
 // streamlink+ffmpeg che decodifica solo l'audio). Il pool nel BotManager
 // impone un CAP globale di ascolti simultanei.
-import { spawn } from 'node:child_process';
+import { risorse } from '../risorse.js';
 import readline from 'node:readline';
 
 // --- parametri dell'algoritmo di rilevamento picco --------------------
@@ -92,7 +92,7 @@ export class LiveListener {
     // streamlink: preferisce lo stream "audio_only", ripiega su "worst".
     let streamlink;
     try {
-      streamlink = spawn('streamlink', [
+      streamlink = risorse.avvia('streamlink', [
         '--twitch-disable-ads',
         '--default-stream', 'audio_only,worst',
         '--stdout',
@@ -113,7 +113,7 @@ export class LiveListener {
 
     let ffmpeg;
     try {
-      ffmpeg = spawn('ffmpeg', argsFfmpeg, { stdio: ['pipe', 'ignore', 'pipe'] });
+      ffmpeg = risorse.avvia('ffmpeg', argsFfmpeg, { stdio: ['pipe', 'ignore', 'pipe'] });
     } catch (e) {
       this.log.debug(`ascolto #${this.login}: ffmpeg non avviabile:`, e?.message || e);
       this._uccidi(streamlink);

@@ -4,7 +4,7 @@
 // Usa il binario di sistema `ffmpeg` (niente dipendenze npm): audio, immagini
 // e video vengono ridotti a file piccolissimi, adatti a un overlay per OBS.
 // Obiettivo: qualità "sufficiente" e peso minimo, così l'overlay resta fluido.
-import { spawn } from 'node:child_process';
+import { risorse } from '../risorse.js';
 import { stat, unlink, readFile, writeFile, copyFile, open } from 'node:fs/promises';
 import { join } from 'node:path';
 import { makeLog } from '../logger.js';
@@ -127,7 +127,7 @@ async function testaDi(percorso, n = 32) {
 function sonda(percorso) {
   return new Promise((resolve) => {
     let proc;
-    try { proc = spawn('ffmpeg', ['-hide_banner', '-i', percorso], { stdio: ['ignore', 'ignore', 'pipe'] }); } catch { return resolve(null); }
+    try { proc = risorse.avvia('ffmpeg', ['-hide_banner', '-i', percorso], { stdio: ['ignore', 'ignore', 'pipe'] }); } catch { return resolve(null); }
     let err = '';
     const timer = setTimeout(() => { try { proc.kill('SIGKILL'); } catch { /* gia' morto */ } }, 20_000);
     proc.stderr?.on('data', (d) => { if (err.length < 20_000) err += d.toString(); });
@@ -213,7 +213,7 @@ function eseguiFfmpeg(args) {
   return new Promise((resolve, reject) => {
     let proc;
     try {
-      proc = spawn('ffmpeg', args, { stdio: ['ignore', 'ignore', 'pipe'] });
+      proc = risorse.avvia('ffmpeg', args, { stdio: ['ignore', 'ignore', 'pipe'] });
     } catch {
       return reject(new Error('ffmpeg non disponibile'));
     }
@@ -249,7 +249,7 @@ function sondaDurataMs(percorso) {
   return new Promise((resolve) => {
     let proc;
     try {
-      proc = spawn('ffprobe', [
+      proc = risorse.avvia('ffprobe', [
         '-v', 'error',
         '-show_entries', 'format=duration',
         '-of', 'default=noprint_wrappers=1:nokey=1',
@@ -290,7 +290,7 @@ async function verificaOutput(percorso) {
 // Comprime `tempPath` (file appena caricato) in `destDir` con nome basato su `id`.
 // `tipoDichiarato` è il mimetype (o un nome file) usato per capire audio/immagine/video.
 // Ritorna { tipo, file, durata } oppure lancia un errore. Cancella SEMPRE il tempPath.
-export async function comprimi(tempPath, tipoDichiarato, destDir, id, { latoImmagine = IMG_MAX_LATO, chiave = null } = {}) {
+async function comprimiDentro(tempPath, tipoDichiarato, destDir, id, { latoImmagine = IMG_MAX_LATO, chiave = null } = {}) {
   try {
     const tipo0 = await tipoDi(tempPath, tipoDichiarato);
     // Con uno sfondo da togliere niente si tiene com'e'. Un WebP animato lo
@@ -367,7 +367,7 @@ export async function comprimi(tempPath, tipoDichiarato, destDir, id, { latoImma
 // Converte un file caricato in un WebP pronto per 7TV (immagine → WebP statico;
 // GIF/video → WebP ANIMATO con alpha preservata). Ritorna { file, animato, byte }
 // oppure lancia. Cancella SEMPRE il tempPath.
-export async function convertiPerEmote(tempPath, tipoDichiarato, destDir, id) {
+async function convertiDentro(tempPath, tipoDichiarato, destDir, id) {
   try {
     if (await tipoDi(tempPath, tipoDichiarato) === 'audio') throw new Error('un\'emote non può essere un audio');
     if (webpAnimato(await testaDi(tempPath))) {
@@ -419,7 +419,7 @@ export async function convertiPerEmote(tempPath, tipoDichiarato, destDir, id) {
 // dentro roba di qualcun altro. La CSP lo tiene a bada, ma una difesa che
 // dipende da un header e' una difesa che una riga di configurazione puo'
 // togliere. Quindi l'SVG non si conserva: si RASTERIZZA, e resta solo l'immagine.
-export async function svgInPng(tempPath, destPath, lato = 256) {
+async function svgDentro(tempPath, destPath, lato = 256) {
   const { Resvg } = await import('@resvg/resvg-js');
   const sorgente = await readFile(tempPath, 'utf8');
   const r = new Resvg(sorgente, { fitTo: { mode: 'width', value: Math.max(16, Math.min(1024, lato | 0)) } });
@@ -427,4 +427,27 @@ export async function svgInPng(tempPath, destPath, lato = 256) {
   await writeFile(destPath, png);
   try { await unlink(tempPath); } catch { /* gia' tolto */ }
   return png.length;
+}
+
+// LA PORTA (docs/RISORSE.md). Ogni compressione passa dallo scudo delle risorse,
+// classe «media»: una a testa, poche insieme, nessuna col server in rosso. Il
+// rifiuto cancella il temporaneo come farebbe la compressione: chi chiama non
+// deve sapere da quale strada e' uscito.
+async function dallaPorta(tempPath, chi, fn) {
+  let esci;
+  try { esci = await risorse.entra('media', chi); }
+  catch (e) { try { await unlink(tempPath); } catch { /* gia' tolto */ } throw e; }
+  try { return await fn(); } finally { esci(); }
+}
+
+export function comprimi(tempPath, tipoDichiarato, destDir, id, opzioni = {}) {
+  return dallaPorta(tempPath, opzioni.chi, () => comprimiDentro(tempPath, tipoDichiarato, destDir, id, opzioni));
+}
+
+export function convertiPerEmote(tempPath, tipoDichiarato, destDir, id, { chi } = {}) {
+  return dallaPorta(tempPath, chi, () => convertiDentro(tempPath, tipoDichiarato, destDir, id));
+}
+
+export function svgInPng(tempPath, destPath, lato = 256, { chi } = {}) {
+  return dallaPorta(tempPath, chi, () => svgDentro(tempPath, destPath, lato));
 }

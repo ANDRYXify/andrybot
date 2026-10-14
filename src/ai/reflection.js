@@ -6,6 +6,7 @@
 // ogni 6 ore, un canale alla volta per non stressare il DB.
 import { makeLog } from '../logger.js';
 import { streamers } from '../db.js';
+import { risorse } from '../risorse.js';
 
 const log = makeLog('reflection');
 
@@ -31,11 +32,13 @@ export function scheduleReflection({ brain }) {
       const attivi = streamers.active();
       log.debug(`riflessione su ${attivi.length} canali`);
       for (const s of attivi) {
+        const rendi = risorse.prova('cervello', s.login);
+        if (!rendi) continue;
         try {
           await brain.reflect(s.login);
         } catch (e) {
           log.error(`riflessione #${s.login}:`, e?.message || e);
-        }
+        } finally { rendi(); }
       }
     } finally {
       inCorso = false;
@@ -47,7 +50,11 @@ export function scheduleReflection({ brain }) {
 
   // Seeding del manuale umano: una pagina per giro finché il set base è completo
   // (poi seminaProssimoModulo non fa più nulla, solo una lettura leggera).
-  const semina = () => { brain.seminaProssimoModulo?.().catch(() => {}); };
+  const semina = () => {
+    const rendi = risorse.prova('cervello', 'semina');
+    if (!rendi) return;
+    Promise.resolve(brain.seminaProssimoModulo?.()).catch(() => {}).finally(rendi);
+  };
   const seedPrimo = setTimeout(semina, SEED_PRIMO);
   const seedTimer = setInterval(semina, SEED_OGNI);
 

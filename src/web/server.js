@@ -13,7 +13,7 @@ import multer from 'multer';
 import https from 'node:https';
 import crypto from 'node:crypto';
 import { mkdirSync, readFileSync, writeFileSync, rmSync, existsSync, readdirSync, statSync, unlinkSync, renameSync, copyFileSync, createWriteStream, mkdtempSync, openSync, readSync, closeSync } from 'node:fs';
-import { spawn } from 'node:child_process';
+import { risorse } from '../risorse.js';
 import { tmpdir } from 'node:os';
 import { unlink, readFile, mkdir, rename } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
@@ -185,6 +185,8 @@ import * as comandiChat from '../features/comandichat.js';
 import { nomePulito, formaValida } from '../features/moneta.js';
 
 const log = makeLog('web');
+// La porta delle risorse ha detto no (docs/RISORSE.md): e' un 503, non un errore di chi chiede.
+const statoDi = (e, altrimenti = 400) => (e?.occupato ? 503 : altrimenti);
 const logOverlay = makeLog('overlay');
 
 const SETTE_GIORNI_MS = 7 * 24 * 60 * 60 * 1000;
@@ -4858,8 +4860,11 @@ STREAMER (${su.toUpperCase()}) e non c'entra con l'automazione del marketing.
       if (!donazioni.mediaAmmesso(cfg, m.importoCent / 100)) return rispondi(400, { errore: 'L\'immagine si puo\' allegare da ' + donazioni.formattaImporto(pr.da, cfg.valuta) + ' in su.' });
       if (!donaMedia.mimeOk(req.file.mimetype)) return rispondi(400, { errore: 'Serve un\'immagine: PNG, JPG, WEBP o GIF.' });
       if (spazioEsaurito(login) || registroDonazioni.mediaInAttesa(login) >= donaMedia.MAX_IN_ATTESA) return rispondi(400, { errore: 'In questo momento le immagini non si possono allegare: dona senza, oppure riprova piu\' tardi.' });
-      try { media = await donaMedia.salva(login, req.file.path, req.file.mimetype); }
-      catch (e) { log.warn('immagine di chi dona:', e?.message || e); return rispondi(400, { errore: 'L\'immagine non si e\' potuta salvare: prova con un altro file, o dona senza.' }); }
+      try { media = await donaMedia.salva(login, req.file.path, req.file.mimetype, { chi: 'dono:' + req.ip }); }
+      catch (e) {
+        if (e?.occupato) return rispondi(503, { errore: e.message + ' Oppure dona senza immagine.' });
+        log.warn('immagine di chi dona:', e?.message || e); return rispondi(400, { errore: 'L\'immagine non si e\' potuta salvare: prova con un altro file, o dona senza.' });
+      }
     }
     // senza una scelta, il primo
     const mezzo = mezzi.includes(String(req.body?.mezzo || '')) ? String(req.body.mezzo) : mezzi[0];
@@ -5446,8 +5451,8 @@ STREAMER (${su.toUpperCase()}) e non c'entra con l'automazione del marketing.
     mkdirSync(destDir, { recursive: true });
     const id = `e_${Date.now()}_${crypto.randomBytes(3).toString('hex')}`;
     let conv;
-    try { conv = await convertiPerEmote(f.path, f.mimetype || f.originalname, destDir, id); }
-    catch (e) { return res.status(400).json({ errore: e?.message || 'Conversione non riuscita.' }); }
+    try { conv = await convertiPerEmote(f.path, f.mimetype || f.originalname, destDir, id, { chi: login }); }
+    catch (e) { return res.status(statoDi(e)).json({ errore: e?.message || 'Conversione non riuscita.' }); }
 
     const outPath = join(destDir, conv.file);
     try {
@@ -8604,8 +8609,8 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     if (est === 'svg') {
       // un SVG e' un documento, non un'immagine: resta solo l'immagine
       nome = `ico_${crypto.randomBytes(6).toString('hex')}.png`;
-      try { await svgInPng(req.file.path, join(dove, nome)); }
-      catch { await pulisciTemp(req.file.path); return res.status(415).json({ ok: false, motivo: 'immagine non leggibile' }); }
+      try { await svgInPng(req.file.path, join(dove, nome), 256, { chi: login }); }
+      catch (e) { await pulisciTemp(req.file.path); return e?.occupato ? res.status(503).json({ ok: false, motivo: e.message }) : res.status(415).json({ ok: false, motivo: 'immagine non leggibile' }); }
     } else {
       nome = `ico_${crypto.randomBytes(6).toString('hex')}.${est}`;
       await rename(req.file.path, join(dove, nome));
@@ -8628,11 +8633,11 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     const destDir = join(effectsRoot, login);
     mkdirSync(destDir, { recursive: true });
     try {
-      const esito = await comprimi(req.file.path, req.file.mimetype, destDir, `cons_${crypto.randomBytes(6).toString('hex')}`);
+      const esito = await comprimi(req.file.path, req.file.mimetype, destDir, `cons_${crypto.randomBytes(6).toString('hex')}`, { chi: login });
       res.json({ ok: true, file: esito.file, genere: esito.tipo, durata: esito.durata });
     } catch (e) {
       await pulisciTemp(req.file.path);
-      res.status(400).json({ ok: false, motivo: e?.message || 'non riuscito' });
+      res.status(statoDi(e)).json({ ok: false, motivo: e?.message || 'non riuscito' });
     }
   }));
 
@@ -9157,10 +9162,10 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     // compressione del media principale: comprimi() cancella comunque il temp
     let esito;
     try {
-      esito = await comprimi(fileMedia.path, fileMedia.mimetype, destDir, `${Date.now()}_${comando}`, { latoImmagine: LATO_LIBRERIA, chiave });
+      esito = await comprimi(fileMedia.path, fileMedia.mimetype, destDir, `${Date.now()}_${comando}`, { latoImmagine: LATO_LIBRERIA, chiave, chi: login });
     } catch (e) {
       await pulisciTemp(fileSuono?.path);
-      return res.status(400).json({ errore: e?.message || 'compressione fallita' });
+      return res.status(statoDi(e)).json({ errore: e?.message || 'compressione fallita' });
     }
 
     // COMBO: suono abbinato — solo se il media è immagine/video e il file è audio.
@@ -9171,10 +9176,10 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
         return res.status(400).json({ errore: 'il suono abbinato si può mettere solo su immagini o video' });
       }
       try {
-        esitoSuono = await comprimi(fileSuono.path, fileSuono.mimetype, destDir, `${Date.now()}_${comando}_snd`);
+        esitoSuono = await comprimi(fileSuono.path, fileSuono.mimetype, destDir, `${Date.now()}_${comando}_snd`, { chi: login });
       } catch (e) {
         await pulisciTemp(join(destDir, esito.file));
-        return res.status(400).json({ errore: e?.message || 'compressione suono fallita' });
+        return res.status(statoDi(e)).json({ errore: e?.message || 'compressione suono fallita' });
       }
       if (esitoSuono.tipo !== 'audio') {
         await pulisciTemp(join(destDir, esito.file)); await pulisciTemp(join(destDir, esitoSuono.file));
@@ -9569,9 +9574,9 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
 
     let esito;
     try {
-      esito = await comprimi(req.file.path, req.file.mimetype, destDir, `${Date.now()}_${comando}`, { latoImmagine: LATO_LIBRERIA });
+      esito = await comprimi(req.file.path, req.file.mimetype, destDir, `${Date.now()}_${comando}`, { latoImmagine: LATO_LIBRERIA, chi: login });
     } catch (e) {
-      return res.status(400).json({ errore: e?.message || 'compressione fallita' });
+      return res.status(statoDi(e)).json({ errore: e?.message || 'compressione fallita' });
     }
     // coerenza slot ↔ tipo del file
     if (slot === 'suono' && esito.tipo !== 'audio') {
@@ -12134,6 +12139,7 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
       rss: mem.rss,
       node: process.version,
       backup: statoBackup(),
+      risorse: risorse.stato(),
     });
   });
 
@@ -12634,7 +12640,7 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     if (!c) return res.status(404).json({ errore: 'Campagna sconosciuta.' });
     const b = Buffer.isBuffer(req.body) ? req.body : Buffer.alloc(0);
     if (!pngDi(b, 1200, 630)) return res.status(400).json({ errore: 'L\'anteprima deve essere un PNG di 1200x630.' });
-    const leggera = await alleggerisci(b, { w: 1200, h: 630 });
+    const leggera = await alleggerisci(b, { w: 1200, h: 630, chi: 'admin' });
     mkdirSync(dirCampagne, { recursive: true });
     writeFileSync(join(dirCampagne, id + '.png'), leggera);
     const v = crypto.createHash('sha256').update(leggera).digest('hex').slice(0, 10);
@@ -12654,16 +12660,16 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
   // BT.709 (li converte il motore, una volta sola, dal canvas): qui non si
   // converte niente, si dichiara solo quello che sono, sull'ingresso e nel file. Uno alla volta: e' lavoro
   // pesante, e il file arriva su disco a pezzi, non in memoria.
-  let promoInCorso = false;
   const PROMO_MAX = 700 * 1024 * 1024;
   app.post('/api/admin/promo/video', requireAdmin, wrap(async (req, res) => {
-    if (promoInCorso) return res.status(429).json({ errore: 'Sto già facendo un video: aspetta che finisca.' });
+    let rendi;
+    try { rendi = await risorse.entra('video', 'promo'); }
+    catch (e) { return e?.motivo === 'tuo' ? res.status(429).json({ errore: 'Sto già facendo un video: aspetta che finisca.' }) : res.status(503).json({ errore: e?.message || 'Il server è sotto sforzo: riprova fra un minuto.' }); }
     const nome = String(req.query.nome || 'promo').toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 80) || 'promo';
     const fps = [24, 25, 30, 50, 60].includes(Number(req.query.fps)) ? Number(req.query.fps) : 30;
-    promoInCorso = true;
     const dir = mkdtempSync(join(tmpdir(), 'promo-'));
     const ivf = join(dir, 'in.ivf'), mp4 = join(dir, 'out.mp4');
-    const pulisci = () => { promoInCorso = false; rmSync(dir, { recursive: true, force: true }); };
+    const pulisci = () => { rendi(); rmSync(dir, { recursive: true, force: true }); };
     try {
       await new Promise((ok, ko) => {
         let n = 0;
@@ -12676,7 +12682,7 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
       readSync(fd, testa, 0, 32, 0); closeSync(fd);
       if (testa.subarray(0, 4).toString('latin1') !== 'DKIF') throw new Error('non è un video che conosco');
       await new Promise((ok, ko) => {
-        const p = spawn('ffmpeg', ['-hide_banner', '-loglevel', 'error', '-y', '-f', 'ivf', '-i', ivf, '-c:v', 'libx264', '-profile:v', 'high',
+        const p = risorse.avvia('ffmpeg', ['-hide_banner', '-loglevel', 'error', '-y', '-f', 'ivf', '-i', ivf, '-c:v', 'libx264', '-profile:v', 'high',
           '-vf', 'setparams=colorspace=bt709:color_primaries=bt709:color_trc=bt709:range=tv,format=yuv420p', '-colorspace', 'bt709', '-color_primaries', 'bt709', '-color_trc', 'bt709',
           '-pix_fmt', 'yuv420p', '-crf', '14', '-preset', 'slow', '-r', String(fps), '-movflags', '+faststart', '-an', mp4], { stdio: ['ignore', 'ignore', 'pipe'] });
         let err = '';

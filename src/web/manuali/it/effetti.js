@@ -9,7 +9,7 @@ export default {
   titolo: 'Manuale degli effetti: media, eventi e punti canale | SocialBot',
   h1: 'Manuale degli effetti: media, eventi, gesti e punti canale',
   desc: 'Suoni, immagini e video da lanciare in chat, la libreria condivisa, effetti a un follow, ai bit o a un raid, i gesti della webcam e i premi a punti canale.',
-  aggiornata: '2026-10-03',
+  aggiornata: '2026-10-14',
   corpo: [
     { h2: 'Effetti e suoni', scheda: 'effetti', p: [
       'Qui carichi suoni, immagini, GIF e video e li fai partire nell\'overlay: da un comando in chat, da un follow, dai bit o da un raid, da un gesto davanti alla webcam o da un premio a punti canale. Ci sono anche otto effetti pronti, disegnati da noi. Gli stessi media li ritrovi negli alert, nel player, nei cartelli e in ogni campo che ha il pulsante «Dalla libreria».',
@@ -100,6 +100,9 @@ export default {
       ['Messaggio', 'Cosa vuol dire'],
       ['«Scegli un file da caricare.»', 'Manca il file.'],
       ['«file troppo grande (max 60MB)»', 'Il file supera 60 MB: accorcialo o rimpiccioliscilo prima.'],
+      ['«Hai già un lavoro di questo tipo in corso: aspetta che finisca, poi manda il prossimo.»', 'Un caricamento alla volta per persona: il prossimo lo mandi quando il primo ha finito.'],
+      ['«Il server è sotto sforzo in questo momento: riprova fra un minuto. Chat, alert e storie intanto vanno come sempre.»', 'Quando il server è molto carico i caricamenti aspettano, perché chat, alert e storie hanno la precedenza. Riprova fra un minuto: il file non è stato salvato.'],
+      ['«Ci sono già troppi lavori in fila: riprova fra un minuto.»', 'Tanti caricamenti tutti insieme da più canali: riprova fra poco.'],
       ['«tipo di file non supportato (usa audio, immagine o video)»', 'Il file non è audio, immagine o video.'],
       ['«questo file non lo so leggere: vanno bene PNG, JPG, WebP, AVIF, GIF, TIFF, MP4, WebM, MOV, MKV, AVI, MP3, WAV e OGG»', 'Il file dice di essere un\'immagine o un video, ma dentro non c\'è niente che si possa leggere: salvalo in uno di quei formati.'],
       ['«da un AVIF lo sfondo non si toglie: caricalo com\'è, o esportalo in PNG, WebP o video e riprova»', 'Un AVIF va in onda così com\'è: caricalo senza togliere lo sfondo, o esportalo in un altro formato.'],

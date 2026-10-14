@@ -5,7 +5,7 @@
 // MediaRecorder e invia i pezzi al server; qui li diamo in pasto a UN processo
 // ffmpeg per streamer, che li transcodifica e li SPINGE verso l'ingest RTMP di
 // Twitch. La stream key resta sul server: al browser non arriva mai.
-import { spawn } from 'node:child_process';
+import { risorse } from '../risorse.js';
 import { config } from '../config.js';
 import { makeLog } from '../logger.js';
 
@@ -68,7 +68,7 @@ export class StudioEngine {
     const rtmpUrl = `${config.twitchRtmp}/${streamKey}`;
     let ff;
     try {
-      ff = spawn('ffmpeg', argomenti(rtmpUrl, q), { stdio: ['pipe', 'ignore', 'pipe'] });
+      ff = risorse.avvia('ffmpeg', argomenti(rtmpUrl, q), { stdio: ['pipe', 'ignore', 'pipe'] });
     } catch {
       return { ok: false, motivo: 'streaming non disponibile su questo server (manca ffmpeg)' };
     }

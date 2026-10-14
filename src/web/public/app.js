@@ -38562,6 +38562,30 @@ async function caricaLicenza() {
   }));
 }
 
+const NOMI_RISORSE = {
+  media: ['Caricamenti', 'Uploads', 'Subidas'],
+  video: ['Video promo', 'Promo video', 'Vídeo promo'],
+  ascolto: ['Ascolto delle dirette', 'Live listening', 'Escucha de directos'],
+  cervello: ['Cervello di fondo', 'Background brain', 'Cerebro de fondo'],
+  diretta: ['Tramite delle dirette', 'Stream relay', 'Relé de directos'],
+};
+function saluteRisorse(r) {
+  if (!r) return '';
+  const lv = { verde: [BADGE.ok, L('verde', 'green', 'verde')], giallo: [BADGE.attenzione, L('giallo', 'yellow', 'amarillo')], rosso: [BADGE.male, L('rosso', 'red', 'rojo')] }[r.livello] || ['', r.livello];
+  const m = r.misura || {};
+  const pz = (v) => (v == null ? '?' : Math.round(v) + '%');
+  const righe = Object.entries(r.classi || {}).filter(([, c]) => c.inCorso || c.inFila || c.entrati || Object.values(c.rifiutati || {}).some(Boolean)).map(([k, c]) => {
+    const nome = NOMI_RISORSE[k] ? L(...NOMI_RISORSE[k]) : k;
+    const rif = Object.values(c.rifiutati || {}).reduce((a, b) => a + b, 0);
+    return `<li><strong>${esc(nome)}</strong>: ${c.inCorso} ${L('in corso', 'running', 'en curso')}, ${c.inFila} ${L('in fila', 'queued', 'en cola')}, ${c.entrati} ${L('fatti', 'done', 'hechos')}${rif ? `, <span class="badge ${BADGE.attenzione}">${rif} ${L('rimandati', 'turned away', 'rechazados')}</span>` : ''}</li>`;
+  });
+  return `<div class="spazio-sopra">
+    <p><span class="badge ${lv[0]}">${L('Risorse', 'Resources', 'Recursos')}: ${esc(lv[1])}</span>
+      <span class="suggerimento">${L('ritardo del bot', 'bot delay', 'retraso del bot')} ${m.ritardoMs ?? '?'} ms · CPU ${pz(m.cpuPsi)} · ${L('memoria libera', 'free memory', 'memoria libre')} ${m.memLibera == null ? '?' : Math.round(m.memLibera * 100) + '%'}</span></p>
+    ${righe.length ? `<ul class="salute-motivi">${righe.join('')}</ul>` : `<p class="suggerimento">${L('Nessun lavoro pesante dall’avvio.', 'No heavy work since start.', 'Ningún trabajo pesado desde el inicio.')}</p>`}
+  </div>`;
+}
+
 async function caricaSalute() {
   const box = document.getElementById('salute-box');
   if (!box) return;
@@ -38586,6 +38610,7 @@ async function caricaSalute() {
       ${ko ? `&nbsp; <span class="badge rosso">${ko} ${L('scollegati (token)', 'disconnected (token)', 'desconectados (token)')}: ${(d.chatKO || []).map((c) => '#' + esc(c)).join(', ')}</span>` : ''}
       ${d.ascoltando ? `&nbsp; <span class="badge">${d.ascoltando} ${L('in ascolto live', 'live listening', 'escuchando en directo')}</span>` : ''}
     </p>
+    ${saluteRisorse(d.risorse)}
     ${(d.motivi || []).length ? `<ul class="salute-motivi spazio-sopra">${d.motivi.map((m) => `<li>${esc(m)}</li>`).join('')}</ul>` : ''}
     ${caldi.length ? `<div class="spazio-sopra">
       <p class="suggerimento"><strong>${L('Errori nell’ultima ora', 'Errors in the last hour', 'Errores en la última hora')}</strong> — ${err.totaleRecenti} ${L('in tutto', 'in total', 'en total')}</p>

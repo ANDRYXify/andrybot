@@ -188,7 +188,7 @@ test('il colore scelto nel pannello arriva a ffmpeg: il modulo lo manda, il serv
   assert.ok(i > 0);
   const corpo = SRV.slice(i, SRV.indexOf('\n  }\n', i));
   assert.match(corpo, /chiave = normChiave\(JSON\.parse\(String\(req\.body\?\.chiave \|\| 'null'\)\)\)/);
-  assert.match(corpo, /await comprimi\(fileMedia\.path, [^;]*\{ latoImmagine: LATO_LIBRERIA, chiave \}\)/);
+  assert.match(corpo, /await comprimi\(fileMedia\.path, [^;]*\{ latoImmagine: LATO_LIBRERIA, chiave, chi: login \}\)/);
 });
 
 test('con ffmpeg vero: la formula del pannello e colorkey danno lo stesso risultato, pixel per pixel', { skip: !ffmpeg && 'ffmpeg non c\'e\' su questa macchina' }, () => {

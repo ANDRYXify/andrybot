@@ -117,6 +117,10 @@ comandi diversi da quelli della riga italiana.
   es> El escudo llega a Kick
   es> Una oleada de follow-bots en Kick ahora levanta el escudo igual que en Twitch: nada de alertas falsas en pantalla, y los bots parados con un baneo. Necesita la moderación de Kick; en las listas una persona de Kick se escribe kick:nombre.
 
+- I caricamenti pesanti vanno uno alla volta per persona, e col server molto carico aspettano: chat, alert e storie hanno sempre la precedenza. [vai: effetti]
+  en: Heavy uploads go one at a time per person, and wait when the server is very busy: chat, alerts and stories always come first.
+  es: Las subidas pesadas van de una en una por persona, y esperan cuando el servidor está muy cargado: el chat, las alertas y las historias siempre van primero.
+
 ## 2026-10-08
 
 - [importante] Lo scudo ha una sezione sua, Scudo e attacchi: ogni attacco ha il suo rapporto, con grafico, livelli, chi c'era e cosa gli è stato fatto, e ti avviso in privato su Telegram o per mail. [vai: attacchi]

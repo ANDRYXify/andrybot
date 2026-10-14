@@ -50,6 +50,12 @@ services:
     # molte connessioni contemporanee — comprese quelle tenute apposta lente
     # alle esche — senza restare a corto di descrittori.
     pids_limit: 1024
+    # Lo scudo delle risorse (docs/RISORSE.md): con la macchina contesa il bot
+    # riceve la CPU per primo (peso doppio), e se il kernel deve uccidere
+    # qualcuno per la memoria, il bot e' l'ultimo. Alert, comandi e storie
+    # restano vivi anche quando il resto pesa.
+    cpu_shares: 2048
+    oom_score_adj: -500
     ulimits:
       nofile:
         soft: 65535
