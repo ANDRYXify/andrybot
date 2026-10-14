@@ -6,8 +6,10 @@ Tre momenti della settimana di uno streamer escono da soli, se li accende:
 
 1. **Prima della diretta.** La storia «Stasera alle…» del giorno, un tempo
    scelto prima dell'inizio: 15 o 30 minuti, 1, 2, 3, 4, 6, 8 o 12 ore.
-2. **Quando vai in diretta.** La storia «Live ora». C'è già
-   (`features/storia-ig.js`), e resta com'è: qui si accende accanto alle altre.
+2. **Quando vai in diretta.** La storia «Live ora», su qualunque piattaforma
+   apra la serata. C'è già (`features/storia-ig.js`, docs/GRAFICHE.md): qui si
+   accende accanto alle altre, e si prepara con le stesse regole, con una
+   differenza detta sotto (le grafiche salvate dopo la fanno solo rifare).
 3. **La settimana.** La grafica della Settimana nei posti di «Manda» (Telegram,
    Discord, la storia di Instagram), il giorno e all'ora scelti; di serie la
    domenica alle 18. Con «Chiedimi prima» acceso (di serie), il giorno prima
@@ -27,11 +29,26 @@ manda al server:
 
 - quando accendi un'automatica;
 - ogni volta che salvi le Grafiche;
-- ogni volta che salvi la Settimana.
+- ogni volta che salvi la Settimana;
+- ogni volta che salvi lo stile del QR;
+- da sole, all'apertura del pannello, se qualcosa di acceso è rimasto
+  indietro o è da rifare (sotto).
 
 Per «Prima della diretta» sono una storia per ogni giorno in onda (al massimo
 sette), ognuna col suo gioco, la sua copertina e il suo testo. Per «La
 settimana» sono due: il post e la storia.
+
+Ogni immagine esce dal pannello da `grafEsporta`, la stessa strada di PNG,
+Condividi e «Manda»: il QR col tuo stile è pronto prima della foto (logo
+compreso), e si rilegge nella JPEG vera prima di mandarla. Un'immagine il cui
+QR non si rilegge non parte: il pannello dice cosa cambiare. Il perché e i
+gradini del QR stanno in docs/GRAFICHE.md, capitolo 12.
+
+Il pannello non disegna con quello che ha in memoria: la vista
+(`GET /api/streamer/automatiche`) gli dà la versione delle Grafiche,
+l'impronta della Settimana, lo stile del QR (`qr`) e la sua firma
+(`firmaQr`). Se la versione o la settimana che ha non tornano con quelle del
+server, rilegge le impostazioni prima di disegnare.
 
 ## Un'immagine vecchia non esce
 
@@ -40,7 +57,35 @@ versione delle Grafiche (un numero che il server alza a ogni salvataggio). Nel
 momento di pubblicare il server le confronta con quelle di adesso: se non
 combaciano, la grafica racconterebbe una settimana che non c'è più, e non
 esce. Lo si dice nel pannello, e su Telegram se è collegato, con cosa fare
-(aprire le Grafiche basta: si ripreparano da sole).
+(aprire le Grafiche basta: si ripreparano da sole). La finestra è stretta per
+costruzione: salvare le Grafiche o la Settimana le riprepara subito.
+
+La storia «Live ora» fa eccezione: una versione delle Grafiche diversa la
+rende «da rifare», non vecchia (sotto), e se vai in diretta parte. Lì non c'è
+una settimana da raccontare, e una «Live ora» col titolo di ieri è meglio di
+una diretta senza storia.
+
+## Un QR di prima esce lo stesso
+
+Ogni immagine porta anche la **firma del QR** con cui è nata
+(`firmaStileQr`, docs/GRAFICHE.md): lo stile normalizzato, senza testo e
+cornice, con la versione del disegno e, col logo «la tua foto», l'indirizzo
+della foto. Qui la regola è l'opposto della versione:
+
+- **una firma diversa o assente non ferma niente.** L'immagine è «da rifare»
+  (`daRifare` nella vista, per nome), ma se è il momento esce: il QR funziona
+  e porta allo stesso posto, cambia solo l'aspetto. Una storia mancata per un
+  colore del QR sarebbe un danno più grande del colore;
+- l'ultima uscita lo ricorda (`qrVecchio: true`) se è partita con un'immagine
+  da rifare;
+- un'immagine che non c'è non è «da rifare», è da fare: lo dice `pronte`. Il
+  pannello prepara quello che ha `!pronte[n] || daRifare[n]`.
+
+Quando il pannello manda un'immagine rimanda la firma che la vista gli ha dato.
+Se intanto lo stile è cambiato, il server risponde 409 col codice
+`qr-cambiato` e la firma di adesso, e tiene l'immagine di prima: quella nuova
+nascerebbe già vecchia. Il pannello rilegge e ridisegna, una volta. Una firma
+assente (un pannello di prima) si accetta, e l'immagine si salva da rifare.
 
 ## Il testo del giorno
 
@@ -102,9 +147,10 @@ Telegram, la pagina del link e il pannello hanno tutti «Non pubblicare».
 
 In un file per streamer, accanto alle immagini, come la storia della diretta:
 cosa è acceso, l'anticipo, il giorno e l'ora della settimana, le conferme,
-l'ultima uscita di ognuna e perché. Non nelle impostazioni, che si riscrivono
-da altre strade: un interruttore che un salvataggio altrui potesse spegnere in
-silenzio sarebbe peggio di nessun interruttore.
+l'ultima uscita di ognuna e perché, e per ogni immagine da dove è nata
+(impronta, versione, firma del QR, anticipo). Non nelle impostazioni, che si
+riscrivono da altre strade: un interruttore che un salvataggio altrui potesse
+spegnere in silenzio sarebbe peggio di nessun interruttore.
 
 ## I perché, nella lingua di chi legge
 
@@ -112,7 +158,9 @@ Quando un'uscita non parte per una ragione nostra, lo stato tiene un codice
 (`non-pronta`, `settimana-cambiata`, `grafiche-cambiate`, `anticipo-cambiato`,
 `in-diretta`, `non-confermata`, `fermata`, `nessun-posto`): il pannello lo dice nella
 lingua di chi lo usa, e su Telegram va la frase in italiano. Un rifiuto di
-Instagram, di Telegram o di Discord arriva com'è.
+Instagram, di Telegram o di Discord arriva com'è. Lo stesso vale per il 409 di
+una firma superata: la frase del server è in italiano, il pannello parte dal
+codice (`qr-cambiato`).
 
 ## Nel pannello
 
@@ -123,9 +171,34 @@ Instagram, di Telegram o di Discord arriva com'è.
   ognuna, quando esce la prossima e com'è andata l'ultima; per la settimana,
   il tasto «Va bene così» finché non è confermata, «Non pubblicare» quando
   sta per uscire, «Pubblicala lo stesso» quando l'hai fermata.
-- **Aprendo le Grafiche** il pannello guarda se qualche immagine è rimasta
-  indietro (`pronte` nella vista) e la riprepara da solo: è quello che
-  promettono i messaggi di errore.
+- **All'apertura del pannello**, non solo delle Grafiche, il pannello del
+  proprietario guarda se qualche immagine accesa è rimasta indietro o è da
+  rifare (`pronte`, `daRifare` e `live` nella vista, solo per i giorni in
+  onda) e la riprepara da solo, in un momento di quiete: otto secondi dopo e
+  quando il browser è libero, una volta per sessione e per canale. È quello che
+  promettono i messaggi di errore, e non dipende dal ricordarsi di aprire una
+  scheda.
+- **Salvare** le Grafiche o lo stile del QR riprepara la Live (se accesa) e le
+  automatiche accese, e il messaggio dice cosa è stato rifatto. Un giro alla
+  volta: uno nuovo ferma quello vecchio prima che mandi qualcosa.
+- **Da rifare.** Sotto le uscite con un'immagine da rifare si legge «Sono di
+  prima che cambiassi…»: se è il momento escono così, e intanto si rifanno da
+  sole. Per «Prima della diretta» e «La settimana» vuol dire solo il QR (lo
+  stile, o la foto col logo «la tua foto»): con le Grafiche cambiate
+  l'immagine è vecchia, non da rifare, e non esce (sopra). Per la Live vale
+  per tutte e due, e la riga accanto alla spunta lo dice.
+- **Guardare cosa uscirà.** «Guarda cosa uscirà» (la prossima storia prima della
+  diretta), «Guarda il post che uscirà» e «e la storia» (la settimana), «Guarda
+  cosa partirà» (la Live) aprono l'immagine che il server tiene, così com'è:
+  `GET /api/streamer/automatiche/immagine/:nome` e
+  `GET /api/streamer/grafiche/storia-live.jpg`, solo per il proprietario, mai in
+  cache (`private, no-store`), 404 se non c'è. Servono anche ai collaudi: è
+  l'immagine vera che partirà, non una copia ridisegnata.
+- **I moderatori** non vedono la carta: le porte delle immagini sono del solo
+  proprietario, e il loro pannello dice che le storie automatiche le gestisce
+  chi ha il canale. Uno stile del QR salvato da un moderatore rende «da
+  rifare» le immagini, che si ripreparano quando il proprietario apre il
+  pannello.
 - **Settimana, «Mandala»**: una riga dice se la settimana esce da sola e
   quando, con «Va bene così»; se è spenta, porta alla carta.
 - **Il motore delle grafiche** riceve la diretta da disegnare nella

@@ -386,6 +386,7 @@ async function caricaStato() {
   collegaRegiaRicordata();
   _mortiRiavvia();
   _fmAvvia().catch(() => {});
+  autoAllAvvio();
   avvisoCosaManca();
   invito();
   invitoRecensione();
@@ -909,6 +910,11 @@ const _DEMO_SETTIMANA = {
     'hollow knight: silksong': { id: '1829', name: 'Hollow Knight: Silksong' }, 'minecraft con la chat': { id: '27471', name: 'Minecraft' } } },
 };
 
+const _DEMO_QR = Object.freeze({
+  moduli: 'penna', occhi: 'tondi', scuro: '#1d2a6b', chiaro: '#ffffff', occhio: '', cornice: '', logo: 'immagine', logoLato: 100, testo: '',
+  logoImg: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAoUlEQVR42tXXSw6AIAwFQM7t0bycbtVo0/dB2iZuDNJBROgY3WIf2xFdS5JOxbDJZYSaWIK4k0MIpMNr2BBLAWxyCwKdTwXwimgFiIICKKNnP8YbQhn9171fALYl2QYQvWpmGmSAuhogABN9ABlEtuNsO+hPiIws25YGuLZpaEd0A6AzAbO8omfgExG70dCAJ8IJ6HMsL1GYlCnNShSnM+MElwYp5w54UeAAAAAASUVORK5CYII=',
+});
+
 function statoDemo() {
   const ctx = _DEMO_CANALI.find((c) => c.canale === _demoCanale) || _DEMO_CANALI[0];
   const mod = ctx.role === 'moderatore';
@@ -944,6 +950,8 @@ function statoDemo() {
         cambioTitolo: { attivo: false, trigger: COMANDO_TITOLO, annuncia: true },
         imparaVoce: { attivo: false },
         settimana: _DEMO_SETTIMANA,
+        qr: { ..._DEMO_QR },
+        grafiche: { qr: true, rev: 1 },
         premioVip: {
           monete: { attivo: true, periodo: 'settimana', saltaPerenni: true, posti: [{ dirette: 3, titolo: '' }, { dirette: 2, titolo: '' }] },
           bit: { attivo: true, periodo: 'mese', saltaPerenni: true, saluto: '{user} è il re dei Bit, con {bit} Bit. Bentornato.',
@@ -1217,9 +1225,23 @@ function _demoProssima(ora) {
   return { quando: d.getTime(), ora: '21:00', att: 'Baldur\'s Gate 3', categoria: 'Baldur\'s Gate 3', categoriaId: '', fuso: Intl.DateTimeFormat().resolvedOptions().timeZone || 'Europe/Rome' };
 }
 
+const _demoFirmaQr = () => _qrImpronta(JSON.stringify(stato?.streamer?.settings?.qr || {}));
+const _demoRev = () => Number(stato?.streamer?.settings?.grafiche?.rev) || 0;
+const _demoQrCambiato = () => { const e = new Error('Lo stile del QR è cambiato mentre la grafica si preparava: riprova.'); e.dati = { errore: e.message, codice: 'qr-cambiato', firmaQr: _demoFirmaQr() }; return e; };
+
+function _demoLive() {
+  const l = _demoScritture.storiaLive;
+  const pronta = !!l?.attiva;
+  return { attiva: pronta, pronta, daRifare: pronta && (l.firmaQr !== _demoFirmaQr() || l.rev !== _demoRev()), ultima: pronta ? { ts: Date.now() - 86_400_000, ok: true, errore: '' } : null };
+}
+
 function _demoAuto(via, corpo) {
-  const a = _demoScritture.auto = _demoScritture.auto || { conf: { prima: { attiva: false, anticipo: 120 }, settimana: { attiva: false, giorno: 6, ora: '18:00', chiedi: true } }, confermata: 0 };
-  if (via.endsWith('/immagine')) return { ok: true };
+  const a = _demoScritture.auto = _demoScritture.auto || { conf: { prima: { attiva: false, anticipo: 120 }, settimana: { attiva: false, giorno: 6, ora: '18:00', chiedi: true } }, confermata: 0, immagini: {} };
+  if (via.endsWith('/immagine')) {
+    if (corpo?.firmaQr && corpo.firmaQr !== _demoFirmaQr()) return Promise.reject(_demoQrCambiato());
+    a.immagini[String(corpo?.nome || '')] = { firmaQr: String(corpo?.firmaQr || ''), rev: Number(corpo?.rev) || 0, anticipo: Number(corpo?.anticipo) || 0 };
+    return { ok: true };
+  }
   if (via === '/api/streamer/automatiche' && corpo?.conf) a.conf = corpo.conf;
   const prossima = (g, ora) => {
     const [h, m] = String(ora).split(':').map(Number);
@@ -1235,8 +1257,12 @@ function _demoAuto(via, corpo) {
   const uscita = prossima(a.conf.settimana.giorno, a.conf.settimana.ora);
   if (via.endsWith('/conferma')) { a.confermata = uscita; a.fermata = 0; }
   if (via.endsWith('/ferma')) { a.fermata = uscita; a.confermata = 0; }
-  return { conf: a.conf, impronta: '0123456789abcdef', rev: 1, pronte: {}, mail: true, telegram: true, ig: true,
-    live: { attiva: !!_demoScritture.storiaLive, pronta: !!_demoScritture.storiaLive, ultima: null }, dove: { tg: 1, dc: 1, ig: true },
+  const firmaQr = _demoFirmaQr(), rev = _demoRev();
+  const nomi = ['prima-0', 'prima-1', 'prima-2', 'prima-3', 'prima-4', 'prima-5', 'prima-6', 'settimana-post', 'settimana-storia'];
+  const pronte = Object.fromEntries(nomi.map((n) => { const m = a.immagini[n]; return [n, !!m && m.rev === rev && (!n.startsWith('prima') || m.anticipo === a.conf.prima.anticipo)]; }));
+  const daRifare = Object.fromEntries(nomi.map((n) => [n, !!a.immagini[n] && a.immagini[n].firmaQr !== firmaQr]));
+  return { conf: a.conf, impronta: '0123456789abcdef', rev, qr: { ...(stato?.streamer?.settings?.qr || {}) }, firmaQr, pronte, daRifare, mail: true, telegram: true, ig: true,
+    live: _demoLive(), dove: { tg: 1, dc: 1, ig: true },
     prima: { prossima: primo ? { per: primo.quando, esce: primo.esce, giorno: primo.giorno } : null, ultima: null, slot },
     settimana: { prossima: uscita, confermata: a.confermata === uscita, fermata: a.fermata === uscita, chiesta: false, ultima: null } };
 }
@@ -1352,11 +1378,8 @@ function apiDemo(percorso, opzioni = {}) {
   const domanda = new URLSearchParams(percorso.split('?')[1] || '').get('q') || '';
   if (metodo === 'GET' && via === '/api/streamer/adesso') return Promise.resolve(_demoAdesso());
   if (via === '/api/paginacarta') return Promise.resolve(_demoGet('/api/paginacarta?quale=' + (new URLSearchParams(percorso.split('?')[1] || '').get('quale') || 'link')));
-  if (via.startsWith('/api/streamer/automatiche')) return Promise.resolve(_demoAuto(via, opzioni.body));
-  if (metodo === 'GET' && via === '/api/streamer/grafiche/storia') {
-    const accesa = !!_demoScritture.storiaLive;
-    return Promise.resolve({ ig: { puo: true }, live: { attiva: accesa, pronta: accesa, ultima: accesa ? { ts: Date.now() - 86_400_000, ok: true, errore: '' } : null } });
-  }
+  if (via.startsWith('/api/streamer/automatiche')) return Promise.resolve().then(() => _demoAuto(via, opzioni.body));
+  if (metodo === 'GET' && via === '/api/streamer/grafiche/storia') return Promise.resolve({ ig: { puo: true }, live: _demoLive() });
   if (metodo === 'GET' && via === '/api/streamer/regia/giochi') return Promise.resolve({ giochi: _demoGiochi(domanda) });
   if (via === '/api/streamer/giochi/regole') {
     if (metodo === 'POST') _demoScritture.regole = opzioni.body?.giochiConf || {};
@@ -1461,8 +1484,10 @@ function apiDemo(percorso, opzioni = {}) {
     return Promise.resolve({ ok: true, errore: '' });
   }
   if (via === '/api/streamer/grafiche/storia-live') {
-    _demoScritture.storiaLive = !!opzioni.body?.attiva;
-    return Promise.resolve({ ok: true });
+    const b = opzioni.body || {};
+    if (b.attiva && b.firmaQr && b.firmaQr !== _demoFirmaQr()) return Promise.reject(_demoQrCambiato());
+    _demoScritture.storiaLive = b.attiva ? { attiva: true, firmaQr: String(b.firmaQr || ''), rev: Number(b.rev) || 0 } : null;
+    return Promise.resolve({ ok: true, live: _demoLive() });
   }
   if (via === '/api/streamer/settimana/manda') {
     toast(L('In demo non mando davvero', 'In demo mode I do not really send it', 'En demo no lo mando de verdad'));
@@ -2950,9 +2975,11 @@ function renderAreaUtente() {
       const canale = v.dataset.canale;
       v.closest('.switch-canale-menu')?.setAttribute('hidden', '');
       if (canale === attuale) return;
+      autoFerma();
       await api('/api/cambia-canale', { method: 'POST', body: { channel: canale } });
       stato = await api('/api/me'); await ridisegna();
       toast(L('Ora gestisci @', 'Now managing @', 'Ahora gestionas @') + (stato.user.display || stato.user.login) + (stato.ruolo === 'moderatore' ? L(' come moderatore', ' as moderator', ' como moderador') : L(' come proprietario', ' as owner', ' como propietario')));
+      autoAllAvvio();
     })));
   wireSwitchCanaleGlobale();
 }
@@ -4890,7 +4917,7 @@ const GUIDE = {
   promo: { serve: ['Creare le campagne con un regalo per chi arriva dal QR di una pubblicità, e disegnare le grafiche e i video da mandare in onda.', 'Create campaigns with a gift for whoever arrives from an ad’s QR, and draw the graphics and videos to put on air.', 'Crear campañas con un regalo para quien llega desde el QR de un anuncio, y dibujar las gráficas y los vídeos para emitir.'],
     come: [['Una campagna nuova ha un indirizzo, una data di messa in onda e le sue regole: quanti giorni, quali pacchetti, per quanti canali.', 'A new campaign has an address, an air date and its rules: how many days, which packages, for how many channels.', 'Una campaña nueva tiene una dirección, una fecha de emisión y sus reglas: cuántos días, qué paquetes, para cuántos canales.', '#promo-nuova'], ['Nelle grafiche scegli la misura e i testi, e sposti i tempi: sotto l’anteprima trovi i problemi da sistemare prima di esportare.', 'In the graphics you pick the size and the texts, and move the timings: below the preview you find the problems to fix before exporting.', 'En las gráficas eliges el tamaño y los textos, y mueves los tiempos: debajo de la vista previa están los problemas que arreglar antes de exportar.', '#promo-editor']] },
   qr: { serve: ['Fare un QR che porta alla tua pagina o dove vuoi tu, con le tue forme, i tuoi colori e il tuo logo, sicuro che si legga.', 'Make a QR that leads to your page or wherever you want, with your shapes, colors and logo, sure that it reads.', 'Hacer un QR que lleve a tu página o a donde quieras, con tus formas, tus colores y tu logo, seguro de que se lee.'],
-    come: [['Scrivi dove porta, o scegli la tua pagina link.', 'Write where it leads, or pick your link page.', 'Escribe a dónde lleva, o elige tu página de enlaces.', '#qr-testo'], ['Scegli le forme, i colori e se vuoi un logo al centro: l’anteprima si rilegge da sola a ogni cambio.', 'Pick shapes, colors and whether you want a logo in the middle: the preview reads itself back at every change.', 'Elige las formas, los colores y si quieres un logo en el centro: la vista previa se relee sola a cada cambio.', '#qr-tela'], ['Scarica il PNG o l’SVG, e salva lo stile: lo usano anche le Grafiche social.', 'Download the PNG or the SVG, and save the style: Social graphics use it too.', 'Descarga el PNG o el SVG, y guarda el estilo: también lo usan las Gráficas sociales.', '#qr-png']] },
+    come: [['Scrivi dove porta, o scegli la tua pagina link.', 'Write where it leads, or pick your link page.', 'Escribe a dónde lleva, o elige tu página de enlaces.', '#qr-testo'], ['Scegli le forme, i colori e se vuoi un logo al centro: l’anteprima si rilegge da sola a ogni cambio.', 'Pick shapes, colors and whether you want a logo in the middle: the preview reads itself back at every change.', 'Elige las formas, los colores y si quieres un logo en el centro: la vista previa se relee sola a cada cambio.', '#qr-tela'], ['Scarica il PNG o l’SVG, e salva lo stile: lo usano anche le Grafiche social, e le storie che escono da sole si rifanno subito col QR nuovo. Sotto vedi come uscirà nelle Grafiche.', 'Download the PNG or the SVG, and save the style: Social graphics use it too, and the stories that go out by themselves are redone right away with the new QR. Below you see how it will come out in Graphics.', 'Descarga el PNG o el SVG, y guarda el estilo: también lo usan las Gráficas sociales, y las historias que salen solas se rehacen enseguida con el QR nuevo. Debajo ves cómo saldrá en las Gráficas.', '#qr-png']] },
   misure: { serve: ['Preparare emote e badge alle misure che chiedono Twitch, 7TV e Discord, ferme o animate, partendo da un’immagine sola o da un video corto.', 'Get emotes and badges ready at the sizes Twitch, 7TV and Discord ask for, still or animated, starting from a single image or a short video.', 'Preparar emotes y badges a los tamaños que piden Twitch, 7TV y Discord, fijos o animados, partiendo de una sola imagen o de un vídeo corto.'],
     come: [['Scegli un’immagine, anche animata, o un video, meglio se grande e quadrato.', 'Choose an image, animated too, or a video, better if big and square.', 'Elige una imagen, también animada, o un vídeo, mejor si es grande y cuadrado.', '#mis-scegli'], ['Scegli per cosa: emote o badge di Twitch, emote di 7TV, emoji di Discord.', 'Choose what it is for: Twitch emote or badge, 7TV emote, Discord emoji.', 'Elige para qué: emote o badge de Twitch, emote de 7TV, emoji de Discord.', '#mis-carta .gr-sfondo-scelte'], ['Se si muove, scegli il fotogramma fermo: l’animazione parte da lì.', 'If it moves, choose the still frame: the animation starts there.', 'Si se mueve, elige el fotograma fijo: la animación empieza ahí.'], ['Guarda come viene alle misure vere, sulla chat scura e su quella chiara.', 'See how it looks at real size, on the dark chat and the light one.', 'Mira cómo queda a tamaño real, en el chat oscuro y en el claro.', '#mis-anteprime'], ['Scaricale una per una o tutte in un file zip.', 'Download them one by one or all in a zip file.', 'Descárgalas una a una o todas en un archivo zip.', '#mis-zip']] },
   pannelli: { serve: ['Fare i pannelli sotto il tuo canale Twitch, tutti nello stesso stile, con link e descrizioni già scritti.', 'Make the panels under your Twitch channel, all in one style, with links and descriptions already written.', 'Hacer los paneles bajo tu canal de Twitch, todos con el mismo estilo, con enlaces y descripciones ya escritos.'],
@@ -6400,18 +6427,22 @@ function _settDisegnaDove() {
 let _settImg = { sfondo: false, logo: false };
 let _settFotogramma = 0;
 
+function _settRidisegna() {
+  if (_settFotogramma) return;
+  _settFotogramma = requestAnimationFrame(() => {
+    _settFotogramma = 0;
+    const tela = _g('sett-anteprima');
+    if (tela) grafMostra(tela, { ...grafConfig(), tipo: 'programmazione', formato: 'post', giorni: grafGiorni(_settLeggiGiorni()) });
+  });
+}
+
+document.addEventListener('sb-qr-pronto', () => { if (_g('sett-anteprima')) _settRidisegna(); });
+
 function _settDisegnaAnteprima() {
   const cv = _g('sett-anteprima');
   if (!cv) return;
   const c = { ...grafConfig(), tipo: 'programmazione', giorni: grafGiorni(_settLeggiGiorni()) };
-  const disegna = () => {
-    if (_settFotogramma) return;
-    _settFotogramma = requestAnimationFrame(() => {
-      _settFotogramma = 0;
-      const tela = _g('sett-anteprima');
-      if (tela) grafMostra(tela, { ...grafConfig(), tipo: 'programmazione', formato: 'post', giorni: grafGiorni(_settLeggiGiorni()) });
-    });
-  };
+  const disegna = _settRidisegna;
   if (c.sfondo === 'immagine' && c.sfondoImg && !_settImg.sfondo) { _settImg.sfondo = true; grafCaricaImg(c.sfondoImg, disegna); }
   if (c.logoImg && !_settImg.logo) { _settImg.logo = true; grafCaricaLogo(c.logoImg, disegna); }
   disegna();
@@ -6477,6 +6508,7 @@ async function caricaSettimana() {
 async function _settAuto() {
   const box = _g('sett-auto');
   if (!box) return;
+  if (stato?.ruolo === 'moderatore') { box.innerHTML = `<p class="suggerimento">${L('Le uscite automatiche le gestisce chi ha il canale.', 'Automatic posts are managed by the channel owner.', 'Las publicaciones automáticas las gestiona quien tiene el canal.')}</p>`; return; }
   let v = null;
   try { v = await api('/api/streamer/automatiche'); } catch { v = null; }
   if (!v || _g('sett-auto') !== box) return;
@@ -6558,8 +6590,8 @@ function collegaSettimana() {
       await grafFontPronti();
       const c = { ...grafConfig(), tipo: 'programmazione', giorni: grafGiorni(_settLeggiGiorni()) };
       const corpo = { testo: _g('sett-testo')?.value || '', dove };
-      if (dove.tg.length || dove.dc.length) corpo.immagine = grafJpeg({ ...c, formato: 'post' });
-      if (dove.ig) corpo.storia = grafJpeg({ ...c, formato: 'storia' });
+      if (dove.tg.length || dove.dc.length) corpo.immagine = (await grafEsporta({ ...c, formato: 'post' })).url;
+      if (dove.ig) corpo.storia = (await grafEsporta({ ...c, formato: 'storia' })).url;
       const r = await api('/api/streamer/settimana/manda', { method: 'POST', body: corpo });
       if (stato?.streamer) stato.streamer.settings = { ...(stato.streamer.settings || {}), settimana: { ...settimanaOra(), dove } };
       const box = _g('sett-esiti');
@@ -6751,6 +6783,7 @@ function pannelloGrafiche() {
               ${grafCanale() ? `<button type="button" class="gr-tema${c.dest === 'twitch' ? ' on' : ''}" data-gr-dest="twitch">${esc(grafCanale().replace(/[^/@]+$/, '…'))}</button>` : ''}
             </div>
             <label class="riga-check spazio-sopra"><input type="checkbox" id="gr-qr" ${c.qr ? 'checked' : ''}> <strong>${L('Stampa un QR + il link del canale sull\'immagine', 'Print a QR + the channel link on the image', 'Imprime un QR + el enlace del canal en la imagen')}</strong></label>
+            <p class="suggerimento" id="gr-qr-gradino" role="status" aria-live="polite" hidden></p>
             <p class="suggerimento">${L('Su Instagram l\'immagine del feed non è cliccabile: col QR chi la vede arriva comunque al canale. Per un link tappabile usa lo sticker «link» nelle Storie o il link in bio.', 'On Instagram feed images aren\'t clickable: with the QR viewers still reach the channel. For a tappable link use the «link» sticker in Stories or the link in bio.', 'En Instagram la imagen del feed no es clicable: con el QR quien la ve igual llega al canal. Para un enlace tocable usa el sticker «enlace» en Stories o el link en bio.')}</p>
             <label class="campo spazio-sopra" for="gr-didascalia">${L('Didascalia pronta', 'Ready-made caption', 'Descripción lista')} <span class="tenue">${L('(modificabile)', '(editable)', '(editable)')}</span></label>
             <textarea id="gr-didascalia" rows="3" class="campo-largo" style="resize:vertical"></textarea>
@@ -7365,15 +7398,63 @@ let _grafTelaLavoro = null;
 const grafTelaLavoro = () => _grafTelaLavoro || (_grafTelaLavoro = grafTelaNuova());
 
 const GR_JPEG_MAX = 760_000;
-function grafJpeg(c, massimo = GR_JPEG_MAX) {
-  const tela = grafTelaNuova();
-  grafDisegna(tela, c, 0, 1);
-  let url = '';
-  for (const q of [0.9, 0.82, 0.74, 0.66, 0.58, 0.5]) {
-    url = tela.toDataURL('image/jpeg', q);
-    if ((url.length - url.indexOf(',') - 1) * 0.75 <= massimo) break;
+const GR_JPEG_QUALITA = [0.9, 0.82, 0.74, 0.66, 0.58, 0.5];
+
+const _grafErroreQr = () => new Error(L('il QR di questa grafica, riletto dall’immagine che esce, non torna: non la faccio uscire. Apri «QR su misura» e prova colori con più contrasto o un logo più piccolo.', 'the QR on this graphic, read back from the image that goes out, does not match: I will not let it out. Open «Custom QR» and try colors with more contrast or a smaller logo.', 'el QR de esta gráfica, releído desde la imagen que sale, no coincide: no la dejo salir. Abre «QR a medida» y prueba colores con más contraste o un logo más pequeño.'));
+
+function _grafDecodifica(sorgente) {
+  const url = sorgente instanceof Blob ? URL.createObjectURL(sorgente) : sorgente;
+  return new Promise((ok, ko) => {
+    const im = new Image();
+    im.onload = () => ok(im);
+    im.onerror = () => ko(new Error(L('l’immagine non si rilegge', 'the image cannot be read back', 'la imagen no se puede releer')));
+    im.src = url;
+  }).finally(() => { if (url !== sorgente) URL.revokeObjectURL(url); });
+}
+
+async function _grafRileggiQr(sorgente, posto) {
+  const im = await _grafDecodifica(sorgente), v = posto.voce;
+  const t = document.createElement('canvas');
+  t.width = v.geo.W; t.height = v.geo.H;
+  const g = t.getContext('2d', { willReadFrequently: true });
+  g.drawImage(im, -posto.x, -posto.y);
+  return window.SB_QR.rileggi(g.getImageData(0, 0, t.width, t.height), v.p, v.geo).ok;
+}
+
+function _grafRileggiScalato(pixel, posto, k) {
+  if (!posto?.voce?.geo) return false;
+  const v = posto.voce, geo = { ...v.geo, m: v.geo.m * k, x0: (posto.x + v.geo.x0) * k, y0: (posto.y + v.geo.y0) * k };
+  return window.SB_QR.rileggi(pixel, v.p, geo).ok;
+}
+
+async function grafEsporta(c, { scala = 1, formato = 'jpeg', qualita = 0, massimo = GR_JPEG_MAX, stile = null } = {}) {
+  if (!window.SB_SCENE) throw new Error(L('il motore delle grafiche non si è caricato: ricarica la pagina', 'the graphics engine did not load: reload the page', 'el motor de las gráficas no se ha cargado: recarga la página'));
+  await grafFontPronti();
+  const s = Math.max(1, Math.min(3, Math.round(Number(scala) || 1)));
+  const st = stile ? qrStileDi(stile) : qrStileSalvato();
+  const lay = grafDisposizione(c);
+  let voce = null;
+  if (lay.qr) {
+    if (!window.SB_QR) throw new Error(L('il motore del QR non si è caricato: ricarica la pagina', 'the QR engine did not load: reload the page', 'el motor del QR no se ha cargado: recarga la página'));
+    voce = await qrPronto('https://' + grafUrlCanale(c), lay.qr.w, s, st);
+    if (!voce.tela || !voce.legge) throw _grafErroreQr();
   }
-  return url;
+  const tela = grafTelaNuova();
+  grafDisegna(tela, { ...c, _esporta: true, _qr: voce, _qrStile: st }, 0, s);
+  const posto = tela._qrPosto;
+  if (voce && posto?.voce !== voce) throw _grafErroreQr();
+  let blob = null, url = '';
+  if (formato === 'png' || qualita) {
+    blob = await new Promise((ok) => tela.toBlob(ok, formato === 'png' ? 'image/png' : 'image/jpeg', qualita || undefined));
+    if (!blob) throw new Error(L('l’immagine non si è creata', 'the image was not created', 'la imagen no se ha creado'));
+  } else {
+    for (const q of GR_JPEG_QUALITA) {
+      url = tela.toDataURL('image/jpeg', q);
+      if ((url.length - url.indexOf(',') - 1) * 0.75 <= massimo) break;
+    }
+  }
+  if (voce && !(await _grafRileggiQr(blob || url, posto))) throw _grafErroreQr();
+  return { url, blob, voce };
 }
 
 function grafMostra(canvas, c, t = 0) {
@@ -7381,6 +7462,8 @@ function grafMostra(canvas, c, t = 0) {
   const tela = grafTelaLavoro();
   grafDisegna(tela, c, t, 1);
   canvas._pezzi = tela._pezzi;
+  canvas._qrPosto = tela._qrPosto;
+  canvas._qrVoce = tela._qrVoce;
   if (canvas.width !== tela.width) canvas.width = tela.width;
   if (canvas.height !== tela.height) canvas.height = tela.height;
   const ctx = canvas.getContext('2d');
@@ -7392,6 +7475,8 @@ function grafMostra(canvas, c, t = 0) {
 function grafDisegna(canvas, c, t = 0, scala = 1) {
   if (!canvas || !window.SB_SCENE) return;
   _grafRaccolta = {};
+  canvas._qrPosto = null;
+  canvas._qrVoce = null;
   try { _grafDisegna(canvas, c, t, scala); } finally { canvas._pezzi = _grafRaccolta; _grafRaccolta = null; }
 }
 
@@ -7441,28 +7526,87 @@ function _grafDisegna(canvas, c, t, scala) {
   grafQr(ctx, sc, pal, c, lay);
 }
 
-let _grQr = null;
-function _grQrTela(full, P) {
-  const st = qrStileSalvato(), chiave = full + '|' + Math.round(P) + '|' + JSON.stringify(st);
-  if (_grQr && _grQr.chiave === chiave) return _grQr;
-  const prova = (p) => {
-    const geo = window.SB_QR.geometria(p, Math.round(P)), tela = document.createElement('canvas');
+const _qrGradinoPeso = (v) => (v ? ['tuo', 'senza-logo', 'morbido', 'serie'].indexOf(v.gradino) : 9);
+
+function _qrGradinoDetto(v) {
+  if (!v || !v.p) return L('senza QR: l’indirizzo non ci sta.', 'without a QR: the address does not fit.', 'sin QR: la dirección no cabe.');
+  const perche = {
+    'logo-grande': L('con questo indirizzo il logo coprirebbe i segni che servono a leggerlo', 'with this address the logo would cover the marks needed to read it', 'con esta dirección el logo taparía las marcas que hacen falta para leerlo'),
+    'logo-assente': L('il logo non si è caricato, fra poco si riprova', 'the logo did not load, it will be tried again shortly', 'el logo no se ha cargado, en un rato se vuelve a intentar'),
+    penna: L('il disegno a penna non si è caricato, fra poco si riprova', 'the hand-drawn engine did not load, it will be tried again shortly', 'el dibujo a mano no se ha cargado, en un rato se vuelve a intentar'),
+    colori: L('i tuoi colori non hanno abbastanza contrasto per essere letti', 'your colors do not have enough contrast to be read', 'tus colores no tienen suficiente contraste para leerse'),
+    rilettura: L('riletto dai pixel a questa misura non tornava', 'read back from the pixels at this size it did not match', 'releído desde los píxeles a este tamaño no coincidía'),
+  };
+  if (v.gradino === 'tuo') return L('col tuo stile ✓', 'with your style ✓', 'con tu estilo ✓');
+  if (v.gradino === 'senza-logo') return L('col tuo stile ma senza logo: ', 'with your style but without the logo: ', 'con tu estilo pero sin logo: ') + (perche[v.motivo] || '') + '.';
+  if (v.gradino === 'morbido') {
+    const logo = v.motivi.find((m) => m === 'logo-grande' || m === 'logo-assente');
+    return L('con forme morbide al posto della penna: ', 'with soft shapes instead of hand drawn: ', 'con formas suaves en lugar de a mano: ') + perche.penna + (logo ? L('; e senza logo: ', '; and without the logo: ', '; y sin logo: ') + perche[logo] : '') + '.';
+  }
+  return L('quello di serie: ', 'the standard one: ', 'el estándar: ') + (perche[v.motivo] || perche.rilettura) + '.';
+}
+
+const QR_VOCI_MAX = 8;
+const _qrVoci = new Map();
+const _qrChiave = (full, P, scala, st) => `${full}|${Math.round(P)}|${scala}|${st.firma}`;
+
+function _qrFai(full, P, scala, st, { penna, logo }) {
+  const lato = Math.round(P);
+  let ultima = null;
+  for (const g of window.SB_QR.gradini(full, st, { penna, logo, seme: st.seme })) {
+    if (!g.p.qr) break;
+    const geo = window.SB_QR.misura(g.p, lato, scala), tela = document.createElement('canvas');
     tela.width = geo.W; tela.height = geo.H;
-    const g = tela.getContext('2d', { willReadFrequently: true });
-    window.SB_QR.disegna(g, p, geo);
-    return { tela, chiaro: p.stile.chiaro, ok: window.SB_QR.rileggi(g.getImageData(0, 0, geo.W, geo.H), p, geo).ok };
+    const ctx = tela.getContext('2d', { willReadFrequently: true });
+    window.SB_QR.disegna(ctx, g.p, geo);
+    const voce = { tela, chiaro: g.p.stile.chiaro, gradino: g.gradino, motivo: g.motivo, motivi: g.motivi, geo, lato1: window.SB_QR.geometria(g.p, lato).W, p: g.p, full, P: lato, scala, legge: true };
+    if (window.SB_QR.rileggi(ctx.getImageData(0, 0, geo.W, geo.H), g.p, geo).ok) return voce;
+    ultima = { ...voce, legge: false };
+  }
+  return ultima || { tela: null, chiaro: '#ffffff', gradino: 'nessuno', motivo: 'testo', motivi: ['testo'], geo: null, lato1: 0, p: null, full, P: lato, scala, legge: false };
+}
+
+function qrPronto(full, P, scala = 1, st = qrStileSalvato()) {
+  const chiave = _qrChiave(full, P, scala, st);
+  const v = _qrVoci.get(chiave);
+  if (v && !(v.scade && Date.now() > v.scade)) {
+    _qrVoci.delete(chiave); _qrVoci.set(chiave, v);
+    return v.promessa;
+  }
+  const voce = { chiave, pronta: null, provvisoria: null, promessa: null, scade: 0 };
+  const servePenna = st.moduli === 'penna' || st.occhi === 'penna', serveLogo = st.logo !== 'no';
+  const fatta = (penna, logo) => {
+    const r = { ..._qrFai(full, P, scala, st, { penna, logo }), chiave };
+    voce.pronta = r;
+    voce.scade = r.motivi.includes('penna') ? Date.now() + QR_MOTORE_RIPROVA_MS : r.motivi.includes('logo-assente') ? Date.now() + QR_LOGO_RIPROVA_MS : 0;
+    return r;
   };
-  const fai = (logo) => {
-    const p = window.SB_QR.progetto(full, { ...st, cornice: '', logo, logoLato: st.logoLato / 100, seme: 'qr:' + String(stato?.user?.login || '') });
-    const mio = p.qr && !p.problemi.length ? prova(p) : null;
-    return mio && mio.ok ? mio : prova(window.SB_QR.progetto(full, {}));
-  };
-  const qui = { chiave, ...fai(null) };
-  _grQr = qui;
-  const rifai = (logo) => { if (_grQr === qui) { Object.assign(qui, fai(logo)); document.dispatchEvent(new Event('sb-qr-pronto')); } };
-  const serve = (st.moduli === 'penna' || st.occhi === 'penna') && !window.SB_PENNA;
-  (serve ? caricaMotoreQr() : Promise.resolve()).then(() => (st.logo !== 'no' ? _qrLogo(st) : null)).then((logo) => { if (serve || logo) rifai(logo); }).catch(() => {});
-  return qui;
+  if ((!servePenna || window.SB_PENNA) && (!serveLogo || _qrLogoPronto(st))) {
+    try { voce.promessa = Promise.resolve(fatta(!!window.SB_PENNA, _qrLogoPronto(st))); } catch (e) { voce.promessa = Promise.reject(e); }
+  } else {
+    voce.promessa = Promise.all([servePenna ? caricaMotoreQr() : true, serveLogo ? _qrLogo(st) : null]).then(([penna, logo]) => {
+      const r = fatta(penna, logo);
+      document.dispatchEvent(new CustomEvent('sb-qr-pronto', { detail: { chiave } }));
+      return r;
+    });
+  }
+  voce.promessa.catch(() => { if (_qrVoci.get(chiave) === voce) _qrVoci.delete(chiave); });
+  _qrVoci.set(chiave, voce);
+  while (_qrVoci.size > QR_VOCI_MAX) _qrVoci.delete(_qrVoci.keys().next().value);
+  return voce.promessa;
+}
+
+function _grQrTela(full, P, scala = 1, st = qrStileSalvato()) {
+  const chiave = _qrChiave(full, P, scala, st);
+  let v = _qrVoci.get(chiave);
+  if (!v || (v.scade && Date.now() > v.scade)) {
+    qrPronto(full, P, scala, st).catch(() => {});
+    v = _qrVoci.get(chiave);
+  }
+  if (!v) return null;
+  if (v.pronta) return v.pronta;
+  if (!v.provvisoria) v.provvisoria = { ..._qrFai(full, P, scala, st, { penna: !!window.SB_PENNA, logo: _qrLogoPronto(st) }), chiave, provvisoria: true };
+  return v.provvisoria;
 }
 
 function grafQr(ctx, sc, pal, c, lay) {
@@ -7471,18 +7615,37 @@ function grafQr(ctx, sc, pal, c, lay) {
     const url = grafUrlCanale(c);
     const full = 'https://' + url;
     const { x, y, w: P } = lay.qr;
-    const q = _grQrTela(full, P);
+    const st = c._qrStile || qrStileSalvato(), s = Math.max(1, Math.round(sc));
+    let q;
+    if (c._esporta) {
+      q = c._qr;
+      if (!q || q.provvisoria || !q.tela || q.chiave !== _qrChiave(full, P, s, st)) throw new Error('qr-non-pronto');
+    } else q = _grQrTela(full, P, s, st);
+    ctx.canvas._qrVoce = q;
     _grafSegna('qr', { x, y, w: P, h: P });
     ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.30)'; ctx.shadowBlur = 22; ctx.shadowOffsetY = 6;
-    ctx.fillStyle = q.chiaro; grRoundRect(ctx, x, y, P, P, 26); ctx.fill(); ctx.restore();
-    const bordo = (P - q.tela.width) / 2;
-    ctx.save(); grRoundRect(ctx, x, y, P, P, 26); ctx.clip();
-    ctx.drawImage(q.tela, Math.round(x + bordo), Math.round(y + bordo));
-    ctx.restore();
+    ctx.fillStyle = q?.chiaro || '#ffffff'; grRoundRect(ctx, x, y, P, P, 26); ctx.fill(); ctx.restore();
+    if (q?.tela) {
+      const X = Math.round((x + (P - q.lato1) / 2) * s), Y = Math.round((y + (P - q.lato1) / 2) * s);
+      ctx.save(); grRoundRect(ctx, x, y, P, P, 26); ctx.clip();
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.drawImage(q.tela, X, Y);
+      ctx.restore();
+      ctx.canvas._qrPosto = { x: X, y: Y, voce: q };
+    }
     const u = lay.qr.url;
     ctx.font = `700 ${u.px}px ${GR_BASE}`; ctx.textAlign = 'left';
     grafScritta(ctx, sc, pal, { testo: grClip(ctx, url, u.max), x: u.x, base: u.base, font: `700 ${u.px}px ${GR_BASE}`, colori: [pal.txt], px: u.px, peso: u.peso, pezzo: 'qr' });
-  } catch (e) {  }
+  } catch (e) { if (c._esporta) throw e; }
+}
+
+function _grQrGradinoHtml(c, v) {
+  if (!c?.qr) return '';
+  const tasto = (t) => ` <button type="button" class="btn secondario mini" data-vai="qr">${t}</button>`;
+  if (!qrStileSalvato().salvato) return esc(L('Il QR di questa grafica è quello di serie: non hai ancora salvato uno stile tuo.', 'The QR on this graphic is the standard one: you have not saved a style of your own yet.', 'El QR de esta gráfica es el estándar: aún no has guardado un estilo tuyo.')) + tasto(L('Fallo su misura', 'Make it custom', 'Hazlo a medida'));
+  if (!v) return '';
+  if (v.provvisoria) return esc(L('Sto preparando il QR col tuo stile…', 'Preparing the QR with your style…', 'Preparando el QR con tu estilo…'));
+  return esc(L('Il QR di questa grafica esce ', 'The QR on this graphic comes out ', 'El QR de esta gráfica sale ') + _qrGradinoDetto(v)) + tasto(L('QR su misura', 'Custom QR', 'QR a medida'));
 }
 
 let _grafRiprendi = null;
@@ -7495,9 +7658,11 @@ function _grIgLiveHtml(live) {
   let esito = '';
   if (live.attiva && !live.pronta) {
     esito = problemaHtml({
-      titolo: L('La storia automatica è accesa, ma la grafica non è pronta', 'The automatic story is on, but the graphic is not ready', 'La historia automática está activada, pero la gráfica no está lista'),
-      testo: L('Spegnila e riaccendila: la grafica si prepara di nuovo.', 'Turn it off and on again: the graphic gets prepared again.', 'Desactívala y vuelve a activarla: la gráfica se prepara de nuevo.'),
+      titolo: L('La storia automatica è accesa, ma la grafica non è ancora pronta', 'The automatic story is on, but the graphic is not ready yet', 'La historia automática está activada, pero la gráfica aún no está lista'),
+      testo: L('Si prepara da sola adesso che hai aperto le Grafiche: fra poco qui lo vedi. Se resta così, il motivo compare in un avviso.', 'It prepares itself now that you opened Graphics: you will see it here shortly. If it stays like this, the reason shows up in a notice.', 'Se prepara sola ahora que has abierto Gráficas: en un rato lo ves aquí. Si sigue así, el motivo aparece en un aviso.'),
     });
+  } else if (live.attiva && live.daRifare) {
+    esito = `<p class="suggerimento">${L('La grafica pronta è di prima che cambiassi le Grafiche o lo stile del QR: se vai in diretta adesso parte lei, e intanto si rifà da sola.', 'The ready graphic is from before you changed Graphics or the QR style: if you go live now that one goes out, and meanwhile it redoes itself.', 'La gráfica lista es de antes de que cambiaras Gráficas o el estilo del QR: si sales en directo ahora sale esa, y mientras tanto se rehace sola.')}</p>`;
   } else if (live.ultima && !live.ultima.ok) {
     esito = problemaHtml({
       titolo: L('L’ultima storia automatica non è partita', 'The last automatic story did not go out', 'La última historia automática no ha salido'),
@@ -7507,8 +7672,9 @@ function _grIgLiveHtml(live) {
   } else if (live.ultima?.ok) {
     esito = `<p class="suggerimento">${L('L’ultima è partita il', 'The last one went out on', 'La última salió el')} ${esc(quando(live.ultima.ts))}.</p>`;
   }
-  return `<label class="riga-check gr-ig-auto"><input type="checkbox" id="gr-ig-live"${live.attiva ? ' checked' : ''}> ${L('Quando vai in diretta su Twitch, la storia «Live ora» parte da sola', 'When you go live on Twitch, the «Live now» story goes out by itself', 'Cuando sales en directo en Twitch, la historia «En directo» sale sola')}</label>
-    <p class="suggerimento">${L('Parte la tua grafica «Live ora» in verticale, com’è quando accendi l’opzione o salvi le impostazioni. Il gioco scritto resta quello: se cambia ogni volta, lascialo vuoto. Al massimo una per diretta.', 'Your «Live now» graphic goes out, vertical, as it is when you turn this on or save the settings. The game you wrote stays the same: if it changes every time, leave it empty. At most one per stream.', 'Sale tu gráfica «En directo» en vertical, tal como está cuando activas la opción o guardas los ajustes. El juego escrito se queda igual: si cambia cada vez, déjalo vacío. Como mucho una por directo.')}</p>
+  const guarda = live.attiva && live.pronta && !DEMO ? ` <a href="/api/streamer/grafiche/storia-live.jpg" target="_blank" rel="noopener">${L('Guarda cosa partirà', 'See what will go out', 'Mira lo que saldrá')}</a>` : '';
+  return `<label class="riga-check gr-ig-auto"><input type="checkbox" id="gr-ig-live"${live.attiva ? ' checked' : ''}> ${L('Quando vai in diretta, la storia «Live ora» parte da sola', 'When you go live, the «Live now» story goes out by itself', 'Cuando sales en directo, la historia «En directo» sale sola')}</label>
+    <p class="suggerimento">${L('Vale su ogni piattaforma da cui vai in diretta. Parte la tua grafica «Live ora» in verticale, come l’hai salvata, col QR del tuo stile: si rifà da sola quando salvi le Grafiche o lo stile del QR. Il gioco scritto resta quello: se cambia ogni volta, lascialo vuoto. Al massimo una per diretta.', 'It works on every platform you go live from. Your «Live now» graphic goes out, vertical, as you saved it, with the QR in your style: it redoes itself when you save Graphics or the QR style. The game you wrote stays the same: if it changes every time, leave it empty. At most one per stream.', 'Vale en cada plataforma desde la que sales en directo. Sale tu gráfica «En directo» en vertical, como la guardaste, con el QR de tu estilo: se rehace sola cuando guardas Gráficas o el estilo del QR. El juego escrito se queda igual: si cambia cada vez, déjalo vacío. Como mucho una por directo.')}${guarda}</p>
     ${esito}`;
 }
 
@@ -7525,9 +7691,12 @@ function _grIgHtml(ig, errore = false, live = null) {
     <span id="gr-ig-esito" class="suggerimento" role="status"></span></p>`;
 }
 
+const _grSoloChiHaIlCanale = () => `<p class="suggerimento">${L('Le storie di Instagram e le pubblicazioni automatiche le gestisce chi ha il canale: da qui puoi preparare le grafiche, scaricarle e condividerle.', 'Instagram stories and automatic posts are managed by the channel owner: from here you can prepare the graphics, download them and share them.', 'Las historias de Instagram y las publicaciones automáticas las gestiona quien tiene el canal: desde aquí puedes preparar las gráficas, descargarlas y compartirlas.')}</p>`;
+
 async function caricaStoriaIg() {
   const box = _g('gr-ig');
   if (!box) return;
+  if (stato?.ruolo === 'moderatore') { box.innerHTML = _grSoloChiHaIlCanale(); return; }
   let d = null;
   try { d = await api('/api/streamer/grafiche/storia'); } catch { d = null; }
   _grIgLive = d?.live || null;
@@ -7569,6 +7738,9 @@ function _grAutoHtml(v) {
       ? L('Nella tua Settimana non c’è nessun giorno in onda.', 'Your Week has no live day.', 'Tu Semana no tiene ningún día en directo.')
       : v.prima.prossima ? L(`La prossima esce ${_autoQuando(v.prima.prossima.esce)}, per la diretta di ${_autoQuando(v.prima.prossima.per)}.`, `The next one goes out ${_autoQuando(v.prima.prossima.esce)}, for the stream on ${_autoQuando(v.prima.prossima.per)}.`, `La próxima sale ${_autoQuando(v.prima.prossima.esce)}, para el directo del ${_autoQuando(v.prima.prossima.per)}.`) : '';
   }
+  const guarda = (nome) => (!DEMO && v.pronte?.[nome] ? ` <a href="/api/streamer/automatiche/immagine/${nome}" target="_blank" rel="noopener">${L('Guarda cosa uscirà', 'See what will go out', 'Mira lo que saldrá')}</a>` : '');
+  const daRifare = (nomi) => (nomi.some((n) => v.daRifare?.[n]) ? `<p class="suggerimento">${L('Sono di prima che cambiassi le Grafiche o lo stile del QR: se è il momento escono così, e intanto si rifanno da sole.', 'They are from before you changed Graphics or the QR style: if it is time they go out like this, and meanwhile they redo themselves.', 'Son de antes de que cambiaras Gráficas o el estilo del QR: si es el momento salen así, y mientras tanto se rehacen solas.')}</p>` : '');
+  if (primaStato && v.prima.prossima) primaStato += guarda(`prima-${v.prima.prossima.giorno}`);
   const anticipi = AUTO_ANTICIPI.map((m) => `<option value="${m}"${m === cp.anticipo ? ' selected' : ''}>${esc(_autoAnticipo(m))}</option>`).join('');
   const giorni = GIORNI_LUNGHI().map((g, i) => `<option value="${i}"${i === cs.giorno ? ' selected' : ''}>${esc(g)}</option>`).join('');
   const posti = v.dove.tg + v.dove.dc + (v.dove.ig ? 1 : 0);
@@ -7589,14 +7761,16 @@ function _grAutoHtml(v) {
         if (!v.mail && !v.telegram) righe.push(L('Non ho una mail confermata né Telegram per chiedertelo: la richiesta la trovi qui e nella Settimana.', 'I have neither a confirmed email nor Telegram to ask you: the request is here and in your Week.', 'No tengo un correo confirmado ni Telegram para preguntártelo: la petición está aquí y en tu Semana.'));
       }
     }
-    settStato = righe.map((r) => `<p class="suggerimento">${r}</p>`).join('');
+    const vedi = (nome, t) => `<a href="/api/streamer/automatiche/immagine/${nome}" target="_blank" rel="noopener">${t}</a>`;
+    if (!DEMO && v.settimana.prossima && v.pronte?.['settimana-post']) righe.push(vedi('settimana-post', L('Guarda il post che uscirà', 'See the post that will go out', 'Mira el post que saldrá')) + (v.pronte['settimana-storia'] ? ' · ' + vedi('settimana-storia', L('e la storia', 'and the story', 'y la historia')) : ''));
+    settStato = righe.map((r) => `<p class="suggerimento">${r}</p>`).join('') + daRifare(['settimana-post', 'settimana-storia']);
   }
   return `<h3>${L('In automatico', 'Automatic', 'Automático')}</h3>
-    <p class="suggerimento">${L('Escono da sole, con le grafiche come le hai fatte qui. Si preparano ogni volta che salvi le Grafiche o la Settimana.', 'They go out by themselves, with the graphics as you made them here. They are prepared every time you save Graphics or your Week.', 'Salen solas, con las gráficas como las hiciste aquí. Se preparan cada vez que guardas Gráficas o tu Semana.')}</p>
+    <p class="suggerimento">${L('Escono da sole, con le grafiche come le hai salvate qui e il QR del tuo stile. Si preparano ogni volta che salvi le Grafiche, la Settimana o lo stile del QR, e da sole quando apri il pannello, se serve.', 'They go out by themselves, with the graphics as you saved them here and the QR in your style. They are prepared every time you save Graphics, your Week or the QR style, and by themselves when you open the panel, if needed.', 'Salen solas, con las gráficas como las guardaste aquí y el QR de tu estilo. Se preparan cada vez que guardas Gráficas, tu Semana o el estilo del QR, y solas cuando abres el panel, si hace falta.')}</p>
     <div class="gr-auto-riga">
       <label class="riga-check"><input type="checkbox" data-auto="prima"${cp.attiva ? ' checked' : ''}${v.ig ? '' : ' disabled'}> <span><strong>${L('Prima della diretta', 'Before the stream', 'Antes del directo')}</strong>: ${L('la storia «Stasera alle…» del giorno', 'the day’s «Tonight at…» story', 'la historia «Esta noche a las…» del día')}</span></label>
       <label class="gr-auto-quanto">${L('Esce', 'It goes out', 'Sale')} <select data-auto-anticipo${v.ig ? '' : ' disabled'}>${anticipi}</select> ${L('prima dell’inizio', 'before the start', 'antes del inicio')}</label>
-      ${serveIg}${primaStato ? `<p class="suggerimento">${primaStato}</p>` : ''}${cp.attiva ? _autoUltima(v.prima.ultima) : ''}
+      ${serveIg}${primaStato ? `<p class="suggerimento">${primaStato}</p>` : ''}${v.ig && cp.attiva ? daRifare((v.prima.slot || []).map((sl) => `prima-${sl.giorno}`)) : ''}${cp.attiva ? _autoUltima(v.prima.ultima) : ''}
     </div>
     <div class="gr-auto-riga">
       <p class="gr-auto-tit"><strong>${L('Quando vai in diretta', 'When you go live', 'Cuando sales en directo')}</strong></p>
@@ -7613,6 +7787,7 @@ function _grAutoHtml(v) {
 async function caricaAuto() {
   const box = _g('gr-auto');
   if (!box) return null;
+  if (stato?.ruolo === 'moderatore') { box.innerHTML = ''; box.hidden = true; return null; }
   let v = null;
   try { v = await api('/api/streamer/automatiche'); } catch { v = null; }
   _grAuto = v;
@@ -7623,28 +7798,166 @@ async function caricaAuto() {
 
 const _autoCarica = (cache, src) => new Promise((ok) => { if (!src) { ok(); return; } grafCaricaIn(cache, src, ok); });
 
+const _AUTO_FERMO = Symbol('giro vecchio');
+const AUTO_AVVIO_MS = 8000;
+let _autoGiro = 0;
+let _liveGiro = 0;
+const _autoAvvio = new Set();
+
+function autoFerma() {
+  _autoGiro++;
+  _liveGiro++;
+}
+
+async function _rileggiImpostazioni() {
+  if (DEMO) return;
+  const me = await api('/api/me');
+  if (me?.streamer?.settings && stato?.streamer) stato.streamer.settings = me.streamer.settings;
+}
+
+function _autoSettimanaUguale(v) {
+  const g = settimanaOra().giorni, slot = v.prima?.slot || [];
+  return g.filter((x) => !x.off && x.ora).length === slot.length
+    && slot.every((sl) => g[sl.giorno] && !g[sl.giorno].off && g[sl.giorno].ora === String(sl.ora || '') && g[sl.giorno].att === String(sl.att || ''));
+}
+
+async function _autoAllinea(v) {
+  if (Number(v.rev) !== (Number(stato?.streamer?.settings?.grafiche?.rev) || 0) || !_autoSettimanaUguale(v)) await _rileggiImpostazioni();
+}
+
+const _autoStile = (v) => (v?.qr && typeof v.qr === 'object' ? { ...v.qr, foto: v.firmaQr || '' } : null);
+
+const _autoImmagini = (c) => Promise.all([_autoCarica(grafImg, c.sfondo === 'immagine' ? c.sfondoImg : ''), _autoCarica(grafLogo, c.logoImg)]);
+
 async function autoPrepara(v = null) {
-  v = v || await api('/api/streamer/automatiche').catch(() => null);
-  if (!v || (!v.conf.prima.attiva && !v.conf.settimana.attiva)) return v;
-  await grafFontPronti();
-  const c = grafConfig();
-  await Promise.all([_autoCarica(grafImg, c.sfondo === 'immagine' ? c.sfondoImg : ''), _autoCarica(grafLogo, c.logoImg)]);
-  const manda = (nome, immagine, extra = {}) => api('/api/streamer/automatiche/immagine', { method: 'POST', body: { nome, immagine, impronta: v.impronta, rev: v.rev, ...extra } });
-  if (v.conf.prima.attiva && v.ig) {
-    for (const sl of v.prima.slot) {
-      const cop = { el: null, pronto: false, src: '' };
-      const src = sl.categoriaId ? '/api/streamer/grafiche/copertina/' + sl.categoriaId : '';
-      await _autoCarica(cop, src);
-      const cc = { ...c, tipo: 'prossima', formato: 'storia', quandoTesto: '', _prossima: sl, _rif: sl.esce, _copertina: cop };
-      await manda(`prima-${sl.giorno}`, grafJpeg(cc), { anticipo: v.conf.prima.anticipo });
+  const giro = ++_autoGiro, vecchio = () => giro !== _autoGiro;
+  for (let volta = 0; ; volta++) {
+    v = v || await api('/api/streamer/automatiche').catch(() => null);
+    if (!v || vecchio()) return v;
+    const prima = !!(v.conf.prima.attiva && v.ig), sett = !!v.conf.settimana.attiva;
+    if (!prima && !sett) return v;
+    try {
+      await _autoAllinea(v);
+      if (vecchio()) return v;
+      const c = grafConfig();
+      await _autoImmagini(c);
+      const stile = _autoStile(v);
+      const manda = async (nome, cc, extra = {}) => {
+        const { url } = await grafEsporta(cc, { stile });
+        if (vecchio()) throw _AUTO_FERMO;
+        await api('/api/streamer/automatiche/immagine', { method: 'POST', body: { nome, immagine: url, impronta: v.impronta, rev: v.rev, firmaQr: v.firmaQr || '', ...extra } });
+      };
+      if (prima) {
+        for (const sl of v.prima.slot) {
+          const cop = { el: null, pronto: false, src: '' };
+          const src = sl.categoriaId ? '/api/streamer/grafiche/copertina/' + sl.categoriaId : '';
+          await _autoCarica(cop, src);
+          const cc = { ...c, tipo: 'prossima', formato: 'storia', quandoTesto: '', _prossima: sl, _rif: sl.esce, _copertina: cop };
+          await manda(`prima-${sl.giorno}`, cc, { anticipo: v.conf.prima.anticipo });
+        }
+      }
+      if (sett) {
+        const cs = { ...c, tipo: 'programmazione', giorni: grafGiorni() };
+        await manda('settimana-post', { ...cs, formato: 'post' }, { testo: grafDidascalia(cs) });
+        await manda('settimana-storia', { ...cs, formato: 'storia' });
+      }
+      return vecchio() ? v : await api('/api/streamer/automatiche').catch(() => v);
+    } catch (e) {
+      if (e === _AUTO_FERMO) return v;
+      if (e?.dati?.codice !== 'qr-cambiato' || volta) throw e;
+      await _rileggiImpostazioni();
+      v = null;
     }
   }
-  if (v.conf.settimana.attiva) {
-    const cs = { ...c, tipo: 'programmazione', giorni: grafGiorni() };
-    await manda('settimana-post', grafJpeg({ ...cs, formato: 'post' }), { testo: grafDidascalia(cs) });
-    await manda('settimana-storia', grafJpeg({ ...cs, formato: 'storia' }));
+}
+
+async function livePrepara(v = null) {
+  const giro = ++_liveGiro, vecchio = () => giro !== _liveGiro;
+  for (let volta = 0; ; volta++) {
+    v = v || await api('/api/streamer/automatiche');
+    if (vecchio()) return null;
+    try {
+      await _autoAllinea(v);
+      if (vecchio()) return null;
+      const c = grafConfig();
+      await _autoImmagini(c);
+      const { url } = await grafEsporta({ ...c, tipo: 'live', formato: 'storia' }, { stile: _autoStile(v) });
+      if (vecchio()) return null;
+      return await api('/api/streamer/grafiche/storia-live', { method: 'POST', body: { attiva: true, immagine: url, firmaQr: v.firmaQr || '', rev: v.rev } });
+    } catch (e) {
+      if (e?.dati?.codice !== 'qr-cambiato' || volta) throw e;
+      await _rileggiImpostazioni();
+      v = null;
+    }
   }
-  return api('/api/streamer/automatiche').catch(() => v);
+}
+
+function _autoDaFare(v) {
+  if (!v?.conf) return { auto: false, live: false };
+  const prima = !!(v.conf.prima.attiva && v.ig), sett = !!v.conf.settimana.attiva;
+  const giorni = new Set((v.prima?.slot || []).map((sl) => `prima-${sl.giorno}`));
+  const tocca = (n) => (n.startsWith('prima-') ? prima && giorni.has(n) : n.startsWith('settimana-') ? sett : false);
+  const auto = Object.entries(v.pronte || {}).some(([n, ok]) => !ok && tocca(n)) || Object.entries(v.daRifare || {}).some(([n, si]) => si && tocca(n));
+  const live = !!v.live?.attiva && (!v.live.pronta || !!v.live.daRifare);
+  return { auto, live };
+}
+
+async function autoRiprendi(v) {
+  const f = _autoDaFare(v);
+  if (f.live) await livePrepara(v);
+  if (f.auto) await autoPrepara(v);
+  return f.live || f.auto;
+}
+
+const _elenco = (a) => (a.length < 2 ? a.join('') : a.slice(0, -1).join(', ') + L(' e ', ' and ', ' y ') + a[a.length - 1]);
+
+async function ripreparaGrafiche() {
+  const v = await api('/api/streamer/automatiche');
+  const fatte = [];
+  if (v.live?.attiva) {
+    await livePrepara(v);
+    fatte.push(L('la storia «Live ora»', 'the «Live now» story', 'la historia «En directo»'));
+  }
+  const prima = !!(v.conf.prima.attiva && v.ig && (v.prima?.slot || []).length), sett = !!v.conf.settimana.attiva;
+  if (prima || sett) {
+    await autoPrepara(v);
+    if (prima) fatte.push(L('le storie prima della diretta', 'the stories before the stream', 'las historias antes del directo'));
+    if (sett) fatte.push(L('la settimana', 'the week', 'la semana'));
+  }
+  return fatte;
+}
+
+async function qrSalvaERiprepara() {
+  await salvaImpostazioni({ qr: qrStileDalModulo() }, '');
+  qrRifaiPresto();
+  const salvato = L('Stile del QR salvato ✓', 'QR style saved ✓', 'Estilo del QR guardado ✓');
+  if (stato?.ruolo === 'moderatore') {
+    toast(salvato + ' ' + L('Le storie che escono da sole le prepara di nuovo il pannello di chi ha il canale.', 'The stories that go out by themselves get prepared again by the channel owner’s panel.', 'Las historias que salen solas las vuelve a preparar el panel de quien tiene el canal.'));
+    return;
+  }
+  let fatte;
+  try { fatte = await ripreparaGrafiche(); } catch (e) {
+    toast(salvato + ' ' + L('Ma le storie che escono da sole non si sono preparate: ', 'But the stories that go out by themselves were not prepared: ', 'Pero las historias que salen solas no se han preparado: ') + e.message, 'errore');
+    return;
+  }
+  if (_g('gr-auto')) caricaAuto();
+  toast(salvato + ' ' + (fatte.length
+    ? L('Rifatte col QR nuovo: ', 'Redone with the new QR: ', 'Rehechas con el QR nuevo: ') + _elenco(fatte) + '.'
+    : L('Lo usano da adesso le Grafiche che fai.', 'Graphics use it from now on.', 'Las Gráficas lo usan desde ahora.')));
+}
+
+function autoAllAvvio() {
+  const login = String(stato?.user?.login || '');
+  if (!login || _autoAvvio.has(login) || DEMO || stato?.ruolo === 'moderatore' || stato?.streamer?.status !== 'approved') return;
+  _autoAvvio.add(login);
+  const vai = () => {
+    if (String(stato?.user?.login || '') !== login) return;
+    api('/api/streamer/automatiche')
+      .then((v) => autoRiprendi(v))
+      .then((fatto) => { if (fatto && _g('gr-auto')) caricaAuto(); })
+      .catch(() => {});
+  };
+  setTimeout(() => (typeof requestIdleCallback === 'function' ? requestIdleCallback(vai, { timeout: 30_000 }) : vai()), AUTO_AVVIO_MS);
 }
 
 function initGrafiche() {
@@ -7655,18 +7968,35 @@ function initGrafiche() {
   let c = grafConfig();
   STATI_SALVA['gr-salva'] = { completo: true, stato: () => ({ ...c, giorni: undefined }) };
 
+  let gradinoDetto = null;
+  const mostraGradinoQr = () => {
+    const riga = document.getElementById('gr-qr-gradino');
+    if (!riga) return;
+    const html = _grQrGradinoHtml(c, canvas._qrVoce);
+    if (html === gradinoDetto) return;
+    gradinoDetto = html;
+    riga.innerHTML = html;
+    riga.hidden = !html;
+  };
   const frame = () => {
     grafRAF = null;
     if (schedaAttiva !== 'grafiche' || !canvas.isConnected) return;
     grafDisegna(canvas, c, performance.now());
+    mostraGradinoQr();
     grafRAF = requestAnimationFrame(frame);
   };
   let _fermo = 0;
   const disegnaFermo = () => {
     _fermo = 0;
-    if (!grafAnimato(c) && canvas.isConnected) grafMostra(canvas, c);
+    if (!grafAnimato(c) && canvas.isConnected) { grafMostra(canvas, c); mostraGradinoQr(); }
   };
-  document.addEventListener('sb-qr-pronto', () => { if (canvas.isConnected) disegnaFermo(); });
+  let _miniQr = 0;
+  document.addEventListener('sb-qr-pronto', () => {
+    if (!canvas.isConnected) return;
+    disegnaFermo();
+    clearTimeout(_miniQr);
+    _miniQr = setTimeout(() => { if (canvas.isConnected) miniature(); }, 250);
+  });
   let didascaliaManuale = false;
   const aggiornaDidascalia = () => {
     const ta = document.getElementById('gr-didascalia');
@@ -7698,15 +8028,16 @@ function initGrafiche() {
     grafCaricaIn(grafCopertina, grafCopertinaSrc(c), () => { mostraProssima(); ridisegna(); });
   }).catch(() => {});
   const riprendiAuto = () => caricaAuto().then((v) => {
-    if (v && Object.entries(v.pronte || {}).some(([n, ok]) => !ok && ((n.startsWith('prima') && v.conf.prima.attiva && v.ig) || (n.startsWith('settimana') && v.conf.settimana.attiva)))) {
-      autoPrepara(v).then(() => caricaAuto()).catch(() => {});
-    }
+    const f = _autoDaFare(v);
+    if (!f.auto && !f.live) return;
+    autoRiprendi(v).then((fatto) => { if (fatto) caricaAuto(); }).catch((e) => {
+      if (schedaAttiva === 'grafiche') toast(L('Le storie che escono da sole non si sono preparate: ', 'The stories that go out by themselves were not prepared: ', 'Las historias que salen solas no se han preparado: ') + e.message, 'errore');
+    });
   });
   _grafRiprendi = () => { c.giorni = grafGiorni(); ridisegna(); caricaStoriaIg(); riprendiAuto(); if (c.tipo === 'prossima') caricaProssima(); };
   if (c.tipo === 'prossima') caricaProssima();
   caricaStoriaIg();
   riprendiAuto();
-  const storiaLive = () => grafJpeg({ ...c, tipo: 'live', formato: 'storia' });
   const leggiAuto = (box) => ({
     prima: { attiva: !!box.querySelector('[data-auto="prima"]')?.checked, anticipo: Number(box.querySelector('[data-auto-anticipo]')?.value) },
     settimana: {
@@ -7751,8 +8082,8 @@ function initGrafiche() {
     x.disabled = true;
     conErrore(async () => {
       try {
-        if (accendi) await grafFontPronti();
-        await api('/api/streamer/grafiche/storia-live', { method: 'POST', body: accendi ? { attiva: true, immagine: storiaLive() } : { attiva: false } });
+        if (accendi) await livePrepara();
+        else { _liveGiro++; await api('/api/streamer/grafiche/storia-live', { method: 'POST', body: { attiva: false } }); }
         toast(accendi ? L('Storia automatica accesa ✓', 'Automatic story on ✓', 'Historia automática activada ✓') : L('Storia automatica spenta', 'Automatic story off', 'Historia automática desactivada'));
         await caricaAuto();
       } catch (e) { x.checked = !accendi; throw e; } finally { x.disabled = false; }
@@ -7768,8 +8099,8 @@ function initGrafiche() {
     if (esito) esito.textContent = '';
     conErrore(async () => {
       try {
-        await grafFontPronti();
-        const r = await api('/api/streamer/grafiche/storia', { method: 'POST', body: { immagine: grafJpeg({ ...c, formato: 'storia' }) } });
+        const { url } = await grafEsporta({ ...c, formato: 'storia' });
+        const r = await api('/api/streamer/grafiche/storia', { method: 'POST', body: { immagine: url } });
         if (r?.ok) {
           if (esito) esito.textContent = L('Fatto: è nella tua storia.', 'Done: it is in your story.', 'Hecho: está en tu historia.');
           toast(L('È nella tua storia ✓', 'It is in your story ✓', 'Está en tu historia ✓'));
@@ -8230,27 +8561,26 @@ function initGrafiche() {
     grafCaricaLogo('', ridisegna);
   });
 
-  document.getElementById('gr-scarica')?.addEventListener('click', async () => {
-    await grafFontPronti();
-    const full = grafTelaNuova();
-    grafDisegna(full, c, 0, 2);
-    full.toBlob(async (blob) => {
-      if (!blob) return;
-      const firmato = await firmaPngBlob(blob);
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(firmato);
-      a.download = `socialbot-${c.tipo}-${(stato?.user?.login || 'canale')}.png`;
-      a.click();
-      setTimeout(() => URL.revokeObjectURL(a.href), 4000);
-    }, 'image/png');
+  document.getElementById('gr-scarica')?.addEventListener('click', (ev) => {
+    const b = ev.currentTarget;
+    if (b.disabled) return;
+    b.disabled = true;
+    conErrore(async () => {
+      try {
+        const { blob } = await grafEsporta(c, { scala: 2, formato: 'png' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(await firmaPngBlob(blob));
+        a.download = `socialbot-${c.tipo}-${(stato?.user?.login || 'canale')}.png`;
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+      } finally { b.disabled = false; }
+    });
   });
   document.getElementById('gr-salva')?.addEventListener('click', () => conErrore(async () => {
     await salvaImpostazioni({ grafiche: c }, L('Grafica salvata ✓', 'Graphic saved ✓', 'Gráfica guardada ✓'));
-    if (_grIgLive?.attiva) {
-      await grafFontPronti();
-      await api('/api/streamer/grafiche/storia-live', { method: 'POST', body: { attiva: true, immagine: storiaLive() } });
-    }
-    await autoPrepara();
+    if (stato?.ruolo === 'moderatore') return;
+    const fatte = await ripreparaGrafiche();
+    if (fatte.length) toast(L('Rifatte con le grafiche nuove: ', 'Redone with the new graphics: ', 'Rehechas con las gráficas nuevas: ') + _elenco(fatte) + '.');
     await caricaAuto();
   }));
 
@@ -8270,26 +8600,20 @@ function initGrafiche() {
     const btn = ev.currentTarget, testo0 = btn.textContent;
     btn.disabled = true;
     try {
-
-      await grafFontPronti();
-      const full = grafTelaNuova();
-      grafDisegna(full, c, 0, 2);
-      const blob = await new Promise((res) => full.toBlob(res, 'image/jpeg', 0.92));
-      if (!blob) throw new Error('render');
+      const { blob } = await grafEsporta(c, { scala: 2, qualita: 0.92 });
       const file = new File([blob], `socialbot-${c.tipo}-${(stato?.user?.login || 'canale')}.jpg`, { type: 'image/jpeg' });
       const dida = (document.getElementById('gr-didascalia')?.value || grafDidascalia(c)).trim();
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-
-        await navigator.share({ files: [file], text: dida, title: 'SocialBot' });
-      } else {
-
+      const scarica = async () => {
         const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
         a.download = file.name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
         await copiaTesto(dida, L('Immagine scaricata e didascalia copiata: apri Instagram e incolla', 'Image downloaded and caption copied: open Instagram and paste', 'Imagen descargada y descripción copiada: abre Instagram y pega'),
           { titolo: L('Immagine scaricata: copia la didascalia', 'Image downloaded: copy the caption', 'Imagen descargada: copia la descripción') });
-      }
+      };
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        try { await navigator.share({ files: [file], text: dida, title: 'SocialBot' }); } catch (e) { if (e?.name === 'NotAllowedError') await scarica(); else throw e; }
+      } else await scarica();
     } catch (e) {
-      if (!e || e.name !== 'AbortError') toast(L('Condivisione non riuscita.', 'Sharing failed.', 'No se pudo compartir.'), 'errore');
+      if (!e || e.name !== 'AbortError') toast(L('Condivisione non riuscita: ', 'Sharing failed: ', 'No se pudo compartir: ') + (e?.message || ''), 'errore');
     } finally { btn.disabled = false; btn.textContent = testo0; }
   });
   aggiornaDidascalia();
@@ -8299,10 +8623,15 @@ function initGrafiche() {
     if (!window.SB_GIF) { toast(L('Export GIF non disponibile su questo browser.', 'GIF export unavailable on this browser.', 'Exportación GIF no disponible en este navegador.'), 'errore'); return; }
     if (grafRAF) { cancelAnimationFrame(grafRAF); grafRAF = null; }
     btn.disabled = true;
+    let qrPiccolo = false;
     try {
       await grafFontPronti();
+      const lay = grafDisposizione(c), st = qrStileSalvato();
+      const voce = lay.qr && window.SB_QR ? await qrPronto('https://' + grafUrlCanale(c), lay.qr.w, 1, st) : null;
+      if (lay.qr && (!voce?.tela || !voce.legge)) throw _grafErroreQr();
+      const cg = voce ? { ...c, _esporta: true, _qr: voce, _qrStile: st } : c;
       const full = document.createElement('canvas');
-      grafDisegna(full, c, 0);
+      grafDisegna(full, cg, 0);
       const scala = Math.min(1, 600 / Math.max(full.width, full.height));
       const gw = Math.round(full.width * scala), gh = Math.round(full.height * scala);
       const off = document.createElement('canvas'); off.width = gw; off.height = gh;
@@ -8312,10 +8641,12 @@ function initGrafiche() {
       const nFrame = animato ? Math.round(grafVelocita(c).durata / dt) : 1;
       const frames = [];
       for (let i = 0; i < nFrame; i++) {
-        grafDisegna(full, c, i * dt);
+        grafDisegna(full, cg, i * dt);
         octx.clearRect(0, 0, gw, gh);
         octx.drawImage(full, 0, 0, gw, gh);
-        frames.push(octx.getImageData(0, 0, gw, gh).data);
+        const img = octx.getImageData(0, 0, gw, gh);
+        if (!i && voce) qrPiccolo = !_grafRileggiScalato(img, full._qrPosto, gw / full.width);
+        frames.push(img.data);
         btn.textContent = L('Creo… ', 'Building… ', 'Creando… ') + Math.round((i + 1) / nFrame * 100) + '%';
         if (i % 4 === 0) await new Promise((r) => setTimeout(r, 0));
       }
@@ -8327,6 +8658,7 @@ function initGrafiche() {
       a.download = `socialbot-${c.tipo}-${(stato?.user?.login || 'canale')}.gif`;
       a.click();
       setTimeout(() => URL.revokeObjectURL(a.href), 8000);
+      if (qrPiccolo) toast(L('Nella GIF, larga al massimo 600 px, il QR viene troppo piccolo per essere letto da un telefono: se serve il QR, usa il PNG o il video.', 'In the GIF, at most 600 px wide, the QR comes out too small for a phone to read: if you need the QR, use the PNG or the video.', 'En el GIF, de 600 px como mucho, el QR sale demasiado pequeño para que lo lea un móvil: si necesitas el QR, usa el PNG o el vídeo.'), 'errore');
     } catch (e) {
       toast(L('GIF non riuscita: ', 'GIF failed: ', 'GIF fallida: ') + (e && e.message ? e.message : e), 'errore');
     } finally {
@@ -8335,10 +8667,20 @@ function initGrafiche() {
     }
   });
 
-  document.getElementById('gr-scarica-video')?.addEventListener('click', (ev) => {
+  document.getElementById('gr-scarica-video')?.addEventListener('click', async (ev) => {
     const btn = ev.currentTarget;
+    if (btn.disabled) return;
     if (typeof MediaRecorder === 'undefined' || !canvas.captureStream) {
       toast(L('Il tuo browser non supporta l\'export video.', "Your browser doesn't support video export.", 'Tu navegador no soporta la exportación de vídeo.'), 'errore'); return;
+    }
+    const lay = grafDisposizione(c);
+    if (lay.qr && window.SB_QR) {
+      const prima = btn.textContent;
+      btn.disabled = true; btn.textContent = L('Preparo il QR…', 'Preparing the QR…', 'Preparando el QR…');
+      const v = await qrPronto('https://' + grafUrlCanale(c), lay.qr.w, 1, qrStileSalvato()).catch(() => null);
+      btn.disabled = false; btn.textContent = prima;
+      if (!v?.tela || !v.legge) { toast(L('Video non registrato: ', 'Video not recorded: ', 'Vídeo no grabado: ') + _grafErroreQr().message, 'errore'); return; }
+      disegnaFermo();
     }
     if (!grafRAF) frame();
     let mime = 'video/webm;codecs=vp9';
@@ -8862,18 +9204,45 @@ const QR_TAVOLOZZE = () => [
   ['#1f4d2b', '#fbfaf5', L('Bosco', 'Forest', 'Bosque')],
 ];
 
-function qrStileSalvato() {
-  const s = impostazioni().qr || {};
+const _QR_NESSUNO = Object.freeze({});
+const _qrStili = new WeakMap();
+
+function _qrImpronta(t) {
+  let a = 0x811c9dc5, b = 0x9e3779b9;
+  for (let i = 0; i < t.length; i++) {
+    const c = t.charCodeAt(i);
+    a = Math.imul(a ^ c, 0x01000193);
+    b = Math.imul(b ^ c, 0x85ebca6b) ^ (b >>> 13);
+  }
+  return (a >>> 0).toString(16).padStart(8, '0') + (b >>> 0).toString(16).padStart(8, '0');
+}
+
+function qrStileDi(grezzo) {
+  const s = grezzo && typeof grezzo === 'object' ? grezzo : _QR_NESSUNO;
+  const seme = 'qr:' + String(stato?.user?.login || '');
+  const fatto = _qrStili.get(s);
+  if (fatto && fatto.seme === seme) return fatto;
   const tra = (v, voci, b) => (voci.some(([id]) => id === v) ? v : b);
   const col = (v, b) => (/^#[0-9a-f]{6}$/i.test(String(v || '')) ? String(v).toLowerCase() : b);
-  return {
+  const img = typeof s.logoImg === 'string' && /^data:image\/(png|jpeg|webp);base64,/.test(s.logoImg) ? s.logoImg : '';
+  let logo = tra(s.logo, QR_LOGHI(), 'no');
+  if (logo === 'immagine' && !img) logo = 'no';
+  const st = {
     moduli: tra(s.moduli, QR_MODULI(), 'quadrati'), occhi: tra(s.occhi, QR_OCCHI(), 'quadrati'),
     scuro: col(s.scuro, '#150910'), chiaro: col(s.chiaro, '#ffffff'), occhio: col(s.occhio, ''),
-    cornice: typeof s.cornice === 'string' ? s.cornice : '', logo: tra(s.logo, QR_LOGHI(), 'no'),
-    logoImg: typeof s.logoImg === 'string' ? s.logoImg : '',
-    logoLato: Number.isFinite(Number(s.logoLato)) ? Math.max(20, Math.min(100, Number(s.logoLato))) : 100,
-    testo: typeof s.testo === 'string' ? s.testo : '',
+    cornice: typeof s.cornice === 'string' ? s.cornice : '', logo, logoImg: logo === 'immagine' ? img : '',
+    logoLato: Number.isFinite(Number(s.logoLato)) ? Math.max(20, Math.min(100, Math.round(Number(s.logoLato)))) : 100,
+    testo: typeof s.testo === 'string' ? s.testo : '', seme, salvato: s !== _QR_NESSUNO,
+    foto: logo === 'foto' && /^[0-9a-f]{16}$/.test(String(s.foto || '')) ? String(s.foto) : '',
   };
+  st.firma = _qrImpronta(JSON.stringify([st.moduli, st.occhi, st.scuro, st.chiaro, st.occhio, st.logo, st.logoImg, st.logoLato, seme, st.foto]));
+  Object.freeze(st);
+  _qrStili.set(s, st);
+  return st;
+}
+
+function qrStileSalvato() {
+  return qrStileDi(stato?.streamer?.settings?.qr);
 }
 
 function _qrVie() {
@@ -8929,7 +9298,8 @@ function pannelloQr() {
             <button type="button" class="btn secondario" id="qr-svg" disabled>${L('Scarica SVG', 'Download SVG', 'Descargar SVG')}</button>
             <button type="button" class="btn secondario" id="qr-salva">${L('Salva lo stile', 'Save the style', 'Guardar el estilo')}</button>
           </div>
-          <p class="suggerimento">${L('Lo stile salvato lo usano anche le Grafiche social, per il QR che mettono nelle immagini.', 'The saved style is also used by Social graphics, for the QR they put in the images.', 'El estilo guardado también lo usan las Gráficas sociales, para el QR que ponen en las imágenes.')}</p>
+          <p class="suggerimento">${L('Lo stile salvato lo usano anche le Grafiche social, per il QR che mettono nelle immagini, comprese le storie che escono da sole: salvandolo si preparano di nuovo. Lì «Dove porta» e la frase sotto non contano: il QR porta sempre al tuo canale, senza cornice.', 'The saved style is also used by Social graphics, for the QR they put in the images, including the stories that go out by themselves: saving it prepares them again. There «Where it leads» and the line below do not count: the QR always leads to your channel, without a frame.', 'El estilo guardado también lo usan las Gráficas sociales, para el QR que ponen en las imágenes, incluidas las historias que salen solas: al guardarlo se preparan de nuevo. Allí «A dónde lleva» y la frase de debajo no cuentan: el QR siempre lleva a tu canal, sin marco.')}</p>
+          <p class="suggerimento" id="qr-grafiche" role="status" aria-live="polite"></p>
           </div>
         </div>
       </div>
@@ -8940,20 +9310,55 @@ function _qrImmagine(src) {
   return new Promise((ok, ko) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => ko(new Error('immagine')); i.src = src; });
 }
 
+const QR_LOGO_ATTESA_MS = 8000;
+const QR_LOGO_RIPROVA_MS = 30_000;
+
+function _qrLogoSrc(st) {
+  if (!st || st.logo === 'no') return '';
+  return st.logo === 'foto' ? `/u/${encodeURIComponent(String(stato?.user?.login || '').toLowerCase())}/avatar${st.foto ? '?v=' + st.foto : ''}` : String(st.logoImg || '');
+}
+
+function _qrLogoPronto(st) {
+  return QR_STATO.loghi.get(_qrLogoSrc(st))?.pronto || null;
+}
+
 function _qrLogo(st) {
-  if (st.logo === 'no') return Promise.resolve(null);
-  const src = st.logo === 'foto' ? `/u/${encodeURIComponent(String(stato?.user?.login || '').toLowerCase())}/avatar` : st.logoImg;
+  const src = _qrLogoSrc(st);
   if (!src) return Promise.resolve(null);
-  if (!QR_STATO.loghi.has(src)) {
-    QR_STATO.loghi.set(src, _qrImmagine(src).then((img) => {
+  const v = QR_STATO.loghi.get(src);
+  if (v?.pronto) return Promise.resolve(v.pronto);
+  if (v?.promessa) return v.promessa;
+  if (v?.ko && Date.now() - v.ko < QR_LOGO_RIPROVA_MS) return Promise.resolve(null);
+  const voce = { pronto: null, promessa: null, ko: 0 };
+  QR_STATO.loghi.set(src, voce);
+  voce.promessa = new Promise((ok) => {
+    let finito = false;
+    const fine = (logo) => {
+      if (finito) return;
+      finito = true; voce.promessa = null;
+      if (!logo) voce.ko = Date.now();
+      ok(logo);
+    };
+    const attesa = setTimeout(() => fine(null), QR_LOGO_ATTESA_MS);
+    _qrImmagine(src).then((img) => {
       const lato = Math.min(512, Math.max(img.naturalWidth, img.naturalHeight)), k = lato / Math.max(img.naturalWidth, img.naturalHeight);
       const c = document.createElement('canvas');
       c.width = Math.max(1, Math.round(img.naturalWidth * k)); c.height = Math.max(1, Math.round(img.naturalHeight * k));
       c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
-      return { img: c, url: c.toDataURL('image/png'), w: c.width, h: c.height };
-    }).catch(() => null));
-  }
-  return QR_STATO.loghi.get(src);
+      const tardi = finito;
+      voce.pronto = { img: c, url: c.toDataURL('image/png'), w: c.width, h: c.height };
+      voce.ko = 0;
+      clearTimeout(attesa);
+      fine(voce.pronto);
+      if (tardi) _qrDimentica('logo-assente');
+    }).catch(() => { clearTimeout(attesa); fine(null); });
+  });
+  return voce.promessa;
+}
+
+function _qrDimentica(motivo) {
+  for (const [k, v] of _qrVoci) if (v.pronta?.motivi?.includes(motivo)) _qrVoci.delete(k);
+  document.dispatchEvent(new CustomEvent('sb-qr-pronto', { detail: { motivo } }));
 }
 
 function qrStileDalModulo() {
@@ -8972,9 +9377,35 @@ function qrStileDalModulo() {
 
 STATI_SALVA['qr-salva'] = { completo: true, stato: () => qrStileDalModulo() };
 
+const QR_MOTORE_ATTESA_MS = 15_000;
+const QR_MOTORE_RIPROVA_MS = 60_000;
+let _qrMotore = null;
+let _qrMotoreKo = 0;
+
 function caricaMotoreQr() {
-  if (window.SB_PENNA) return Promise.resolve();
-  return new Promise((ok, ko) => { const s = document.createElement('script'); s.src = '/penna.js'; s.onload = ok; s.onerror = () => ko(new Error('/penna.js')); document.head.appendChild(s); });
+  if (window.SB_PENNA) return Promise.resolve(true);
+  if (_qrMotore) return _qrMotore;
+  if (_qrMotoreKo && Date.now() - _qrMotoreKo < QR_MOTORE_RIPROVA_MS) return Promise.resolve(false);
+  _qrMotore = new Promise((ok) => {
+    const s = document.createElement('script');
+    let finito = false;
+    const fine = () => {
+      if (finito) return;
+      finito = true; clearTimeout(attesa); _qrMotore = null;
+      const c = !!window.SB_PENNA;
+      if (!c) _qrMotoreKo = Date.now();
+      ok(c);
+    };
+    const attesa = setTimeout(fine, QR_MOTORE_ATTESA_MS);
+    s.src = '/penna.js';
+    s.onload = () => {
+      if (!finito) { fine(); return; }
+      if (window.SB_PENNA) { _qrMotoreKo = 0; _qrDimentica('penna'); }
+    };
+    s.onerror = () => { s.remove(); fine(); };
+    document.head.appendChild(s);
+  });
+  return _qrMotore;
 }
 
 function _qrProgetto(st, logo) {
@@ -8985,8 +9416,9 @@ async function qrRifai() {
   const giro = ++QR_STATO.giro;
   const tela = document.getElementById('qr-tela');
   if (!tela || !window.SB_QR) return;
-  await caricaMotoreQr();
   const st = qrStileDalModulo();
+  const serve = st.moduli === 'penna' || st.occhi === 'penna';
+  const penna = serve ? await caricaMotoreQr() : true;
   if (st.cornice && document.fonts?.load) await document.fonts.load("400 40px 'Permanent Marker'").catch(() => {});
   const logo = await _qrLogo(st);
   if (giro !== QR_STATO.giro) return;
@@ -8995,6 +9427,7 @@ async function qrRifai() {
   const esito = document.getElementById('qr-esito'), lista = document.getElementById('qr-problemi');
   const problemi = [...(p.problemi || [])];
   if (st.logo !== 'no' && !logo && p.qr) problemi.push({ dice: st.logo === 'foto' ? L('La tua foto non si è caricata: riprova più tardi, o carica un’immagine.', 'Your picture did not load: try again later, or upload an image.', 'Tu foto no se ha cargado: inténtalo más tarde, o sube una imagen.') : L('Scegli un’immagine da mettere al centro.', 'Choose an image to put in the middle.', 'Elige una imagen para poner en el centro.') });
+  if (!penna) problemi.push({ dice: L('Il disegno a penna non si è caricato: quelle che vedi sono le forme morbide. Riprova fra un minuto.', 'The hand-drawn engine did not load: what you see are the soft shapes. Try again in a minute.', 'El dibujo a mano no se ha cargado: lo que ves son las formas suaves. Inténtalo de nuevo en un minuto.') });
   let legge = false;
   if (p.qr) {
     const geo = window.SB_QR.geometria(p, 480);
@@ -9015,6 +9448,18 @@ async function qrRifai() {
   esito.classList.toggle('ok', ok);
   document.getElementById('qr-png').disabled = !ok;
   document.getElementById('qr-svg').disabled = !ok;
+  await qrRigaGrafiche(st, giro);
+}
+
+async function qrRigaGrafiche(grezzo, giro) {
+  const riga = document.getElementById('qr-grafiche');
+  if (!riga || !window.SB_QR) return;
+  const st = qrStileDi(grezzo), full = 'https://' + grafUrlCanale(grafConfig());
+  const voci = await Promise.all([180, 190].map((P) => qrPronto(full, P, 1, st).catch(() => null)));
+  if (giro !== QR_STATO.giro || !riga.isConnected) return;
+  const v = voci.filter(Boolean).sort((a, b) => _qrGradinoPeso(b) - _qrGradinoPeso(a))[0];
+  const salvato = qrStileSalvato().firma === st.firma;
+  riga.textContent = (salvato ? L('Nelle Grafiche il QR esce ', 'In Graphics the QR comes out ', 'En las Gráficas el QR sale ') : L('Nelle Grafiche, quando salvi, il QR esce ', 'In Graphics, once you save, the QR comes out ', 'En las Gráficas, cuando guardes, el QR sale ')) + _qrGradinoDetto(v);
 }
 
 function qrRifaiPresto() {
@@ -9122,7 +9567,12 @@ function avviaQr() {
       }
       if (b.id === 'qr-png') qrScarica('png', b).catch((e) => toast(e.message, 'errore'));
       if (b.id === 'qr-svg') qrScarica('svg', b).catch((e) => toast(e.message, 'errore'));
-      if (b.id === 'qr-salva') conErrore(() => salvaImpostazioni({ qr: qrStileDalModulo() }, L('Stile del QR salvato', 'QR style saved', 'Estilo del QR guardado')));
+      if (b.id === 'qr-salva' && !b.disabled) {
+        b.disabled = true;
+        conErrore(async () => {
+          try { await qrSalvaERiprepara(); } finally { b.disabled = false; }
+        });
+      }
     });
     document.getElementById('qr-file').addEventListener('change', (ev) => {
       const f = ev.target.files && ev.target.files[0];

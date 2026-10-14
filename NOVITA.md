@@ -41,6 +41,30 @@ questa non è una cosa da ricordarsi: il cancello boccia una riga pubblica senza
 traduzione, una traduzione staccata dalla sua riga, o una che dice numeri e
 comandi diversi da quelli della riga italiana.
 
+## 2026-10-14
+
+- Le storie che escono da sole hanno il tuo QR su misura, logo compreso: prima la storia «Live ora» e quelle prima della diretta uscivano col QR semplice. [vai: grafiche]
+  en: Stories that go out by themselves now carry your custom QR, logo included: before, the «Live now» story and the ones before the stream went out with the plain QR.
+  es: Las historias que salen solas llevan tu QR a medida, logo incluido: antes la historia «En directo» y las de antes del directo salían con el QR simple.
+- Quando salvi lo stile del QR, le storie già pronte si rifanno subito e te lo dico. Se intanto è l'ora, esce quella di prima: il QR porta comunque allo stesso posto. [vai: qr]
+  en: When you save the QR style, stories already prepared are redone right away and I tell you. If it is time in the meantime, the previous one goes out: the QR still leads to the same place.
+  es: Cuando guardas el estilo del QR, las historias ya listas se rehacen enseguida y te lo digo. Si mientras tanto llega la hora, sale la anterior: el QR lleva igualmente al mismo sitio.
+- Sotto il QR delle Grafiche leggi come esce: col tuo stile, senza logo, con forme morbide o quello di serie, e perché. Un'immagine il cui QR non si rilegge non esce. [vai: grafiche]
+  en: Under the QR in Graphics you read how it comes out: with your style, without the logo, with soft shapes or the standard one, and why. An image whose QR does not read back does not go out.
+  es: Bajo el QR de Gráficas lees cómo sale: con tu estilo, sin logo, con formas suaves o el estándar, y por qué. Una imagen cuyo QR no se relee no sale.
+- Scarica PNG e Condividi hanno il QR nitido, disegnato alla misura vera e non ingrandito. La GIF ti avvisa se il QR viene troppo piccolo per leggersi. [vai: grafiche]
+  en: Download PNG and Share have a sharp QR, drawn at its real size instead of enlarged. The GIF warns you if the QR comes out too small to be read.
+  es: Descargar PNG y Compartir tienen el QR nítido, dibujado a su tamaño real y no ampliado. El GIF te avisa si el QR sale demasiado pequeño para leerse.
+- La storia «Live ora» automatica parte com'è salvata, senza le modifiche non salvate. Se la grafica non è pronta si prepara da sola quando apri il pannello: non serve spegnerla e riaccenderla. [vai: grafiche]
+  en: The automatic «Live now» story goes out as you saved it, without unsaved changes. If the graphic is not ready it prepares itself when you open the panel: no need to turn it off and on again.
+  es: La historia «En directo» automática sale como la guardaste, sin los cambios sin guardar. Si la gráfica no está lista se prepara sola al abrir el panel: no hace falta apagarla y encenderla.
+- Accanto a ogni uscita automatica pronta c'è un link, come «Guarda cosa uscirà», che apre l'immagine vera che partirà. [vai: grafiche]
+  en: Next to every automatic post that is ready there is a link, like «See what will go out», that opens the real image that will be posted.
+  es: Junto a cada publicación automática lista hay un enlace, como «Mira lo que saldrá», que abre la imagen real que se publicará.
+- Nella scheda QR su misura c'è scritto che nelle Grafiche «Dove porta» e la frase della cornice non contano: lì il QR porta sempre all'indirizzo scritto accanto. [vai: qr]
+  en: The Custom QR tab now says that in Graphics «Where it leads» and the frame line do not count: there the QR always leads to the address written next to it.
+  es: La pestaña QR a medida dice que en Gráficas «A dónde lleva» y la frase del marco no cuentan: allí el QR siempre lleva a la dirección escrita al lado.
+
 ## 2026-10-08
 
 - [importante] Lo scudo ha una sezione sua, Scudo e attacchi: ogni attacco ha il suo rapporto, con grafico, livelli, chi c'era e cosa gli è stato fatto, e ti avviso in privato su Telegram o per mail. [vai: attacchi]

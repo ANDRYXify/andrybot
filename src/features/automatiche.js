@@ -9,6 +9,9 @@
 //    porta da dove e' nata: l'impronta della settimana e la versione delle
 //    grafiche. Se nel frattempo una delle due e' cambiata, l'immagine
 //    racconterebbe una settimana che non c'e' piu': non esce, e lo si dice.
+//    Porta anche la firma dello stile del QR (src/features/qr-stile.js): se
+//    lo stile e' cambiato l'immagine e' «da rifare», ma esce lo stesso, perche'
+//    il suo QR si legge e porta allo stesso posto. Il pannello la riprepara.
 //  · UNA VOLTA SOLA. Lo stato ricorda cosa e' uscito, per chiave: l'istante
 //    d'inizio della diretta, l'istante d'uscita della settimana. Un giro che
 //    ripassa, o due giri che si accavallano, non pubblicano due volte.
@@ -28,6 +31,7 @@ import { config } from '../config.js';
 import { prossimaDiretta, chiaveAtt } from './settimana.js';
 import { fusoValido, prossimaVolta } from './discord-eventi.js';
 import { guscioHtml, tastoHtml, codiceTesto } from './posta.js';
+import { FIRMA_RE } from './qr-stile.js';
 
 export const ANTICIPI = [15, 30, 60, 120, 180, 240, 360, 480, 720];
 export const ANTICIPO_BASE = 120;
@@ -118,9 +122,18 @@ export function salvaImmagine(login, nome, byte, meta) {
   const s = leggi(login);
   s.immagini[nome] = {
     impronta: String(meta?.impronta || ''), rev: Number(meta?.rev) || 0,
-    anticipo: Number(meta?.anticipo) || 0, testo: String(meta?.testo || '').slice(0, 2000), ts: Date.now(),
+    anticipo: Number(meta?.anticipo) || 0, testo: String(meta?.testo || '').slice(0, 2000),
+    firmaQr: FIRMA_RE.test(String(meta?.firmaQr || '')) ? String(meta.firmaQr) : '', ts: Date.now(),
   };
   scrivi(login, s);
+}
+
+// Da rifare: c'e' un'immagine, ma il suo QR non e' nato dallo stile di adesso
+// (firma diversa), o non si sa da quale (firma assente: un'immagine di prima
+// della firma). Un'immagine che non c'e' non e' da rifare, e' da fare: lo dice
+// `pronte`. Non ferma nessuna uscita.
+export function daRifare(meta, firmaQr) {
+  return !!meta && (!meta.firmaQr || String(meta.firmaQr) !== String(firmaQr || ''));
 }
 
 export function immagine(login, nome) {
@@ -260,10 +273,13 @@ export const fermaDalPannello = (login, sett, adesso = Date.now()) => decidiDalP
 // ── il giro ────────────────────────────────────────────────────────────────
 // Ogni minuto, per chi ha qualcosa di acceso. Quello che serve da fuori arriva
 // come funzione, cosi' le prove lo sostituiscono senza toccare la rete.
+// `firmaQr` e' la firma dello stile del QR di adesso: non ferma niente (una
+// immagine da rifare esce lo stesso), ma l'ultima uscita si ricorda se e'
+// partita col QR di prima (`qrVecchio`), cosi' il pannello lo puo' dire.
 const inCorso = new Set();
 const ricorda = (lista, v) => [...lista.filter((x) => x !== v), v].slice(-FATTE_MAX);
 
-export async function giro(login, { sett, rev, adesso = Date.now(), inDiretta = false, pubblicaStoria, mandaSettimana, chiediConferma, avvisa = async () => {} }) {
+export async function giro(login, { sett, rev, firmaQr, adesso = Date.now(), inDiretta = false, pubblicaStoria, mandaSettimana, chiediConferma, avvisa = async () => {} }) {
   if (inCorso.has(login)) return [];
   inCorso.add(login);
   const fatto = [];
@@ -276,15 +292,16 @@ export async function giro(login, { sett, rev, adesso = Date.now(), inDiretta = 
       s.prima.fatte = ricorda(s.prima.fatte, p.per);
       scrivi(login, s);
       const nome = `prima-${p.giorno}`;
-      let r;
+      let r, vecchio = false;
       if (inDiretta) r = { ok: false, saltata: true, codice: 'in-diretta' };
       else {
         const motivo = motivoVecchia(s.immagini[nome], { impronta: imp, rev, anticipo: s.conf.prima.anticipo });
         const byte = motivo ? null : immagine(login, nome);
+        vecchio = firmaQr !== undefined && daRifare(s.immagini[nome], firmaQr);
         r = byte ? await pubblicaStoria(byte) : { ok: false, codice: motivo || 'non-pronta' };
       }
       s = leggi(login);
-      s.prima.ultima = { ts: adesso, per: p.per, ...esito(r) };
+      s.prima.ultima = { ts: adesso, per: p.per, ...esito(r), qrVecchio: vecchio && !!r.ok };
       scrivi(login, s);
       fatto.push({ cosa: 'prima', ...s.prima.ultima });
       if (!r.ok && !r.saltata) await avvisa('prima', s.prima.ultima);
@@ -302,18 +319,20 @@ export async function giro(login, { sett, rev, adesso = Date.now(), inDiretta = 
     if (w) {
       s.settimana.fatte = ricorda(s.settimana.fatte, w.per);
       scrivi(login, s);
-      let r;
+      let r, vecchio = false;
       if (s.settimana.fermata === w.per) r = { ok: false, saltata: true, codice: 'fermata' };
       else if (s.conf.settimana.chiedi && s.settimana.confermata !== w.per) r = { ok: false, saltata: true, codice: 'non-confermata' };
       else {
         const motivo = motivoVecchia(s.immagini['settimana-post'], { impronta: imp, rev }) || motivoVecchia(s.immagini['settimana-storia'], { impronta: imp, rev });
         const post = motivo ? null : immagine(login, 'settimana-post'), storia = motivo ? null : immagine(login, 'settimana-storia');
+        vecchio = firmaQr !== undefined && (daRifare(s.immagini['settimana-post'], firmaQr) || daRifare(s.immagini['settimana-storia'], firmaQr));
         r = post && storia
           ? await mandaSettimana({ byte: post, storia, testo: s.immagini['settimana-post'].testo || '' })
           : { ok: false, codice: motivo || 'non-pronta' };
       }
       s = leggi(login);
-      s.settimana.ultima = { ts: adesso, per: w.per, ...esito(r), esiti: r.esiti || [] };
+      const uscita = !!r.ok || (r.esiti || []).some((e) => e?.ok);
+      s.settimana.ultima = { ts: adesso, per: w.per, ...esito(r), esiti: r.esiti || [], qrVecchio: vecchio && uscita };
       scrivi(login, s);
       fatto.push({ cosa: 'settimana', ...s.settimana.ultima });
       if (!r.ok) await avvisa('settimana', s.settimana.ultima);
@@ -323,8 +342,10 @@ export async function giro(login, { sett, rev, adesso = Date.now(), inDiretta = 
 }
 
 // Quello che vede il pannello: cosa e' acceso, quando esce la prossima, com'e'
-// andata l'ultima, e se la settimana aspetta una conferma.
-export function vista(login, { sett, rev, adesso = Date.now() }) {
+// andata l'ultima, e se la settimana aspetta una conferma. Con la firma del QR
+// di adesso, anche quali immagini sono da rifare: senza, non lo si puo' sapere,
+// e non lo si dice (meglio niente che un «tutto a posto» inventato).
+export function vista(login, { sett, rev, firmaQr, adesso = Date.now() }) {
   const s = leggi(login);
   const imp = improntaImmagini(sett);
   const p = prossimaDiretta(sett, new Date(adesso));
@@ -343,6 +364,7 @@ export function vista(login, { sett, rev, adesso = Date.now() }) {
   }).filter(Boolean);
   return {
     conf: s.conf, impronta: imp, pronte,
+    ...(firmaQr !== undefined ? { daRifare: Object.fromEntries(IMMAGINI.map((n) => [n, daRifare(s.immagini[n], firmaQr)])) } : {}),
     prima: { prossima: p ? { per: p.quando, esce: p.quando - s.conf.prima.anticipo * 60_000, giorno: p.giorno } : null, ultima: s.prima.ultima, slot },
     settimana: {
       prossima: uscita || null,

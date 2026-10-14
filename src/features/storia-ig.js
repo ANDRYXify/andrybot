@@ -15,6 +15,7 @@ import { join } from 'node:path';
 import { config } from '../config.js';
 import * as instagram from './instagram.js';
 import { credenzialiInstagram } from './instagram-credenziali.js';
+import { FIRMA_RE } from './qr-stile.js';
 
 export const PUBBLICO_RE = /^[a-f0-9]{32}\.jpg$/;
 const PUBBLICO_VITA_MS = 30 * 60_000;
@@ -54,6 +55,12 @@ export async function pubblicaStoria(login, byte, { pubblica = instagram.pubblic
 // tiene fino al momento giusto. Una per diretta: se la diretta cade e riparte
 // entro tre ore, la storia c'e' gia', e una seconda uguale sarebbe rumore.
 //
+// L'immagine porta da dove e' nata: la firma dello stile del QR
+// (src/features/qr-stile.js) e la versione delle grafiche. Se una delle due
+// non e' piu' quella di adesso, e' «da rifare»: parte lo stesso (meglio la
+// storia col QR o le scritte di prima che nessuna storia), e il pannello del
+// proprietario la riprepara appena si apre.
+//
 // Lo stato sta accanto all'immagine, in un file per streamer: accesa o no,
 // l'ultima volta che e' partita (o perche' no). Niente nelle impostazioni, che
 // si riscrivono da altre strade: un interruttore che un salvataggio altrui
@@ -79,17 +86,39 @@ function scrivi(p, dati) {
 
 const scriviStato = (login, s) => scrivi(file(login, 'json'), JSON.stringify(s));
 
-export function statoLive(login) {
+// Com'e' la storia della diretta. `daRifare` c'e' solo se chi chiede dice la
+// firma del QR di adesso (e, se la sa, la versione delle grafiche): senza, non
+// lo si puo' sapere. Da rifare vuol dire che un'immagine c'e', ma non e' nata
+// da quelle di adesso, o non si sa da quali (un'immagine di prima della
+// firma); se l'immagine non c'e', non e' pronta, e lo dice `pronta`.
+export function statoLive(login, attuali = {}) {
   const s = leggiStato(login);
   let pronta = false;
   try { pronta = existsSync(file(login, 'jpg')); } catch { pronta = false; }
-  return { attiva: !!s.attiva, pronta, ultima: s.ultima || null };
+  const st = { attiva: !!s.attiva, pronta, ultima: s.ultima || null };
+  if (attuali?.firmaQr !== undefined) {
+    const vecchia = !s.firmaQr || String(s.firmaQr) !== String(attuali.firmaQr || '')
+      || (attuali.rev !== undefined && Number(s.rev) !== Number(attuali.rev));
+    st.daRifare = pronta && vecchia;
+  }
+  return st;
 }
 
-export function accendiLive(login, byte, adesso = Date.now()) {
+// Accenderla vuol dire avere l'immagine, con la firma del QR e la versione
+// delle grafiche da cui e' nata. Una firma storta vale come nessuna firma.
+export function accendiLive(login, byte, { firmaQr = '', rev = 0, adesso = Date.now() } = {}) {
   scrivi(file(login, 'jpg'), byte);
-  scriviStato(login, { ...leggiStato(login), attiva: true, preparata: adesso });
+  scriviStato(login, {
+    ...leggiStato(login), attiva: true, preparata: adesso,
+    firmaQr: FIRMA_RE.test(String(firmaQr || '')) ? String(firmaQr) : '', rev: Math.max(0, Math.round(Number(rev)) || 0),
+  });
   return statoLive(login);
+}
+
+// L'immagine che partira', cosi' com'e': il pannello la mostra a chi vuole
+// vederla prima, e i collaudi la rileggono.
+export function immagineLive(login) {
+  try { return readFileSync(file(login, 'jpg')); } catch { return null; }
 }
 
 export function spegniLive(login) {
@@ -109,7 +138,7 @@ export async function storiaDellaDiretta(login, { adesso = Date.now(), pubblica 
   try { byte = readFileSync(file(login, 'jpg')); } catch { byte = null; }
   const r = byte
     ? await pubblicaStoria(login, byte, pubblica ? { pubblica } : {})
-    : { ok: false, errore: 'la grafica non e\' pronta: riaccendi la storia automatica dalle Grafiche' };
+    : { ok: false, errore: 'la grafica non e\' pronta: apri le Grafiche, si prepara da sola' };
   const ultima = { ts: adesso, ok: !!r.ok, errore: r.ok ? '' : String(r.errore || '') };
   scriviStato(login, { ...leggiStato(login), ultima, ...(r.ok ? { riuscita: adesso } : {}) });
   return { fatto: true, ...ultima };

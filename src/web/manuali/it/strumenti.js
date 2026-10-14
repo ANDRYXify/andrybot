@@ -10,7 +10,7 @@ export default {
   titolo: 'Manuale degli strumenti: QR, emote, kit e pannelli | SocialBot',
   h1: 'Manuale degli strumenti',
   desc: 'QR col tuo logo che si legge davvero, emote e badge anche animate per Twitch, 7TV e Discord, media kit come un curriculum coi numeri veri, pannelli già pieni.',
-  aggiornata: '2026-10-03',
+  aggiornata: '2026-10-14',
   corpo: [
     { p: [
       'Nel menù del pannello, sotto <em>Strumenti</em>, ci sono le cose che servono intorno alla diretta: il <strong>QR su misura</strong>, le <strong>emote e i badge</strong> alle misure di Twitch, 7TV e Discord, ferme o animate, il <strong>media kit</strong> e i <strong>pannelli</strong> del canale.',
@@ -19,7 +19,7 @@ export default {
 
     { h2: 'QR su misura', scheda: 'qr' },
     { p: [
-      'In cima scrivi dove porta il QR. I tasti sotto lo riempiono per te con la tua <strong>pagina link</strong> o il tuo canale, ma puoi scriverci qualunque indirizzo o testo.',
+      'In cima, in <em>Dove porta</em>, scrivi dove porta il QR. I tasti sotto lo riempiono per te con la tua <strong>pagina link</strong> o il tuo canale, ma puoi scriverci qualunque indirizzo o testo. Vale per il QR che scarichi da qui: nelle Grafiche social il QR porta sempre all\'indirizzo scritto accanto (più sotto, «Nelle Grafiche social»).',
       'Nel QR c\'è proprio quello che hai scritto, senza passaggi da noi: non scade, e funziona finché funziona il link che ci hai messo.',
     ] },
     { h3: 'Forme e colori' },
@@ -53,8 +53,19 @@ export default {
     { ul: [
       '<strong>PNG</strong> a 1024, 2048 o 4096 pixel. Il più grande è per la stampa.',
       '<strong>SVG</strong>: un disegno che si ingrandisce senza perdere niente, col logo e il carattere della frase dentro il file.',
-      '<strong>Salva lo stile</strong>: lo ritrovi la volta dopo, e lo usano le <em>Grafiche social</em> per il QR che mettono nelle immagini, senza cornice. Se lì il QR con il tuo stile non si rileggesse, le Grafiche usano quello semplice.',
+      '<strong>Salva lo stile</strong>: lo ritrovi la volta dopo, e lo usano le <em>Grafiche social</em> per il QR che mettono nelle immagini, comprese le storie che escono da sole. Salvandolo, quelle storie si rifanno subito col QR nuovo, e leggi «Rifatte col QR nuovo:» con quali. Se non hai uscite automatiche accese, leggi che lo usano da adesso le Grafiche. Se lo salva un moderatore, quelle storie le rifà il pannello di chi ha il canale, quando lo apre.',
     ] },
+    { h3: 'Nelle Grafiche social' },
+    { p: [
+      'Nelle Grafiche valgono forme, colori e logo, con la sua grandezza. <em>Dove porta</em> e la frase della cornice no: il QR di una grafica porta sempre all\'indirizzo che ha scritto accanto, quello scelto nelle Grafiche in «Condivisione & link al canale», e ha già il suo riquadro. Un QR che porta altrove rispetto alla scritta che ha accanto sarebbe un tranello per chi lo inquadra.',
+      'Sotto <em>Salva lo stile</em> leggi come esce il QR nelle Grafiche: «Nelle Grafiche il QR esce col tuo stile ✓», o, se quello che vedi non l\'hai ancora salvato, «Nelle Grafiche, quando salvi, il QR esce…». Quando lo stile intero non si può fare, si perde il meno possibile, un passo alla volta, e c\'è scritto perché:',
+    ] },
+    { ul: [
+      '<strong>Senza logo.</strong> Forme e colori restano i tuoi. Succede se il logo non si è caricato (si riprova da solo fra poco), se col logo riletto non tornava (rimpicciolisci il logo), o con un indirizzo così lungo che il logo coprirebbe i segni fissi del codice: gli indirizzi delle Grafiche sono abbastanza corti, quindi è raro.',
+      '<strong>Forme morbide al posto della penna.</strong> Il disegno a penna non si è caricato, di solito per la rete: si riprova da solo fra poco, e le grafiche si rifanno. Se resta così, ricarica la pagina.',
+      '<strong>Quello di serie.</strong> Solo quando i tuoi colori non hanno abbastanza contrasto per essere letti, o quando niente col tuo stile si rilegge. Scegli colori più lontani fra loro, col fondo più chiaro dei quadratini, e salva di nuovo.',
+    ] },
+    { p: ['Un\'immagine delle Grafiche esce solo col QR pronto, logo compreso, e riletto dall\'immagine vera, anche quando è un JPEG compresso. Se non torna non esce, e ti dico cosa cambiare qui.'] },
 
     { h2: 'Emote e badge', scheda: 'misure' },
     { p: ['Twitch chiede ogni emote in tre misure, <strong>112, 56 e 28</strong> pixel, e ogni badge in tre, <strong>72, 36 e 18</strong>. 7TV e Discord ne vogliono una sola, da <strong>128</strong>. Qui carichi un\'immagine sola, ferma o animata (GIF, WebP, APNG), o un video corto, e le hai tutte, pronte da caricare.'] },
@@ -165,6 +176,9 @@ export default {
       '<strong>I tasti per scaricare il QR sono spenti.</strong> Sotto l\'anteprima c\'è scritto perché: di solito sono i colori troppo vicini, o un logo che con quel link non ci sta.',
       '<strong>Il logo non ci sta.</strong> Il link è troppo lungo: accorcialo. L\'indirizzo della tua pagina link è già corto.',
       '<strong>La tua foto non compare.</strong> È quella del canale, e a volte non arriva subito: riprova, o carica un\'immagine.',
+      '<strong>Nelle Grafiche il QR esce senza logo, con forme morbide o di serie.</strong> Sotto <em>Salva lo stile</em>, e nelle Grafiche sotto la casella del QR, c\'è scritto perché. Cosa fare è qui sopra, in «Nelle Grafiche social».',
+      '<strong>Una grafica non esce: «il QR di questa grafica, riletto dall’immagine che esce, non torna».</strong> Qui prova colori con più contrasto o un logo più piccolo, e salva lo stile.',
+      '<strong>Ho cambiato lo stile ma una storia è uscita col QR di prima.</strong> Era l\'ora prima che fosse rifatta: il QR portava comunque allo stesso posto. Le prossime escono col QR nuovo.',
       '<strong>Voglio cambiare il logo caricato.</strong> Quando è scelto <em>Un\'immagine</em>, sotto c\'è <em>Cambia immagine</em>.',
       '<strong>La misura grande delle emote è sgranata.</strong> L\'immagine di partenza è piccola: parti da almeno quattro volte la misura più grande.',
       '<strong>Una GIF animata esce ferma.</strong> Qui si prende il primo fotogramma: le emote animate si preparano a parte.',
@@ -182,6 +196,7 @@ export default {
     { d: 'Il QR scade?', r: 'No. Dentro c\'è solo il link che hai scritto, senza passaggi da noi: funziona finché funziona quel link.' },
     { d: 'Posso fare un QR per un sito che non è il mio canale?', r: 'Sì: nel campo in cima scrivi qualunque indirizzo o testo.' },
     { d: 'Quanto grande lo devo stampare?', r: 'Almeno 2 cm di lato. Se va inquadrato da lontano, circa un decimo della distanza: per tre metri, trenta centimetri.' },
+    { d: 'Lo stile del QR vale anche per le storie che escono da sole?', r: 'Sì: la storia «Live ora», quelle prima della diretta e la settimana escono col QR del tuo stile, logo compreso. Quando lo salvi si rifanno subito.' },
     { d: 'Perché col logo il QR ha più quadratini?', r: 'Col logo usiamo la correzione più alta, che aggiunge codici di riserva: sono loro a recuperare la parte che il logo copre.' },
     { d: 'Le immagini delle emote finiscono sul vostro server?', r: 'No: si rimpiccioliscono nel tuo browser, e da lì le scarichi. Anche i video.' },
     { d: 'Perché la mia emote animata è a scatti?', r: 'Twitch tiene 60 fotogrammi: un\'animazione di 4 secondi ne mostra 15 al secondo, una di 2 secondi 30. Accorciala e torna fluida.' },

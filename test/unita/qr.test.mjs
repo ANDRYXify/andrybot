@@ -185,3 +185,145 @@ test('il danno di un riquadro si conta per blocco, e i disegni fissi non si tocc
   assert.ok(d.quota > 0 && d.quota < 1);
   assert.ok(Q.danno(q, [0]).funzioni === 1, 'l\'angolo e\' un occhio');
 });
+
+// ── I GRADINI DEL QR DI UNA GRAFICA (docs/STRUMENTI.md) ────────────────────
+// Le Grafiche disegnano il QR con lo stile salvato nella scheda «QR su misura».
+// Quando non si puo' tutto, si scende di un gradino alla volta e si dice
+// perche': il tuo stile, poi senza logo, poi le forme morbide al posto della
+// penna, e quello di serie solo se i colori non si leggono o se la rilettura
+// fallisce. Prima c'era un ripiego unico, «tutto o di serie»: un logo che non
+// ci stava buttava via anche forme e colori.
+const LOGO = { img: null, w: 1, h: 1 };
+const PAGINA = (login) => 'https://socialbot.live/u/' + login;
+const NOMI = 'andryx_demo1234567890streamerxyz';
+
+test('i gradini: il logo che non ci sta toglie il logo, non lo stile', () => {
+  const g = (testo, stile, opz) => { const s = Q.scegli(testo, stile, opz); return [s.gradino, s.motivo]; };
+  assert.deepEqual(g(PAGINA('andryx'), {}, {}), ['tuo', ''], 'lo stile di serie salvato e\' il tuo');
+  const mio = { moduli: 'puntini', occhi: 'tondi', scuro: '#1d2a6b', chiaro: '#ffffff', logo: 'immagine', logoLato: 100 };
+  const tuo = Q.scegli(PAGINA('andryx'), mio, { logo: LOGO, penna: true });
+  assert.deepEqual([tuo.gradino, tuo.p.qr.livello, !!tuo.p.targa], ['tuo', 'H', true], 'col logo: livello H e il riquadro al centro');
+  const lungo = PAGINA('x'.repeat(40));
+  assert.ok(Q.codifica(lungo, { livello: 'H' }).versione >= 7, 'la prova e\' davvero una versione 7 o piu\'');
+  const giu = Q.scegli(lungo, mio, { logo: LOGO, penna: true });
+  assert.deepEqual([giu.gradino, giu.motivo], ['senza-logo', 'logo-grande'], 'dalla 7 in su un allineamento sta al centro: niente logo, ma non quello di serie');
+  assert.deepEqual([giu.p.stile.moduli, giu.p.stile.occhi, giu.p.stile.scuro, giu.p.qr.livello, giu.p.targa], ['puntini', 'tondi', '#1d2a6b', 'M', null], 'forme e colori restano, e senza logo torna il livello M');
+  assert.deepEqual(g(PAGINA('andryx'), { logo: 'foto' }, { logo: null }), ['senza-logo', 'logo-assente'], 'la foto che non arriva');
+  const morbido = Q.scegli(PAGINA('andryx'), { moduli: 'penna', occhi: 'penna' }, { penna: false });
+  assert.deepEqual([morbido.gradino, morbido.motivo, morbido.p.stile.moduli, morbido.p.stile.occhi], ['morbido', 'penna', 'morbidi', 'morbidi'], 'senza il motore della penna: morbidi, ed e\' detto');
+  const due = Q.scegli(PAGINA('andryx'), { moduli: 'penna', logo: 'foto' }, { penna: false, logo: null });
+  assert.deepEqual([due.gradino, due.motivi], ['morbido', ['logo-assente', 'penna']], 'due guai insieme: il gradino piu\' basso, e tutti e due i perche\'');
+  const colori = Q.scegli(PAGINA('andryx'), { ...mio, scuro: '#eeeeee' }, { logo: LOGO, penna: true });
+  assert.deepEqual([colori.gradino, colori.motivo, colori.p.stile.moduli, colori.p.stile.scuro], ['serie', 'colori', 'quadrati', '#150910'], 'solo i colori illeggibili portano a quello di serie');
+  assert.equal(Q.scegli('', mio, {}).gradino, 'nessuno', 'senza testo non c\'e\' QR');
+});
+
+test('i gradini dopo il primo sono i ripieghi della rilettura, in ordine', () => {
+  const mio = { moduli: 'penna', occhi: 'penna', logo: 'immagine' };
+  const lista = Q.gradini(PAGINA('andryx'), mio, { logo: LOGO, penna: true, seme: 'qr:andryx' });
+  assert.deepEqual(lista.map((x) => [x.gradino, x.motivo]), [['tuo', ''], ['senza-logo', 'rilettura'], ['serie', 'rilettura']]);
+  assert.ok(lista.every((x) => x.p.stile.seme === 'qr:andryx'), 'il seme della penna e\' quello del canale');
+  assert.ok(Q.GRADINI.indexOf('senza-logo') < Q.GRADINI.indexOf('morbido') && Q.GRADINI.indexOf('morbido') < Q.GRADINI.indexOf('serie'));
+  const a = Q.gradini(PAGINA('andryx'), mio, { logo: LOGO, penna: true, seme: 's' });
+  const b = Q.gradini(PAGINA('andryx'), mio, { logo: LOGO, penna: true, seme: 's' });
+  assert.deepEqual(a.map((x) => Q.percorsi(x.p, Q.geometria(x.p, 180)).moduli), b.map((x) => Q.percorsi(x.p, Q.geometria(x.p, 180)).moduli), 'deterministico: stessi ingressi, stesso disegno');
+});
+
+test('la misura logica resta la stessa a ogni scala: il modulo cresce intero, niente bitmap ingrandita', () => {
+  for (const login of ['abc', 'andryx', NOMI.slice(0, 30)]) for (const P of [180, 190]) for (const stile of [{}, { logo: 'foto' }]) {
+    const p = Q.scegli(PAGINA(login), stile, { logo: LOGO, penna: true }).p, g1 = Q.geometria(p, P);
+    assert.ok(g1.W <= P, `${login} ${P}: il QR sta nel suo riquadro`);
+    for (const s of [1, 2, 3]) {
+      const g = Q.misura(p, P, s);
+      assert.deepEqual([g.m, g.W, g.x0, g.y0], [g1.m * s, g1.W * s, g1.x0 * s, g1.y0 * s], `${login} ${P} a scala ${s}`);
+    }
+  }
+});
+
+// Il disegno vero, pixel per pixel: i tracciati di moduli e occhi riempiti
+// come fa la tela (nonzero per i moduli, evenodd per gli occhi), campionati al
+// centro di ogni pixel. Il logo e' il caso peggiore: ogni modulo sotto il suo
+// riquadro esce al contrario.
+function dipingi(p, geo) {
+  const { W, H, m, n, x0, y0 } = geo, d = Q.percorsi(p, geo), s = p.stile;
+  const rgb = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
+  const data = new Uint8ClampedArray(W * H * 4);
+  const metti = (i, c) => { data[i * 4] = c[0]; data[i * 4 + 1] = c[1]; data[i * 4 + 2] = c[2]; data[i * 4 + 3] = 255; };
+  const chiaro = rgb(s.chiaro), scuro = rgb(s.scuro);
+  for (let i = 0; i < W * H; i++) metti(i, chiaro);
+  const riempi = (tracciato, colore, pari) => {
+    const righe = Array.from({ length: H }, () => []);
+    for (const c of contorni(tracciato)) {
+      const pt = c.slice();
+      if (pt.length && (pt[0][0] !== pt[pt.length - 1][0] || pt[0][1] !== pt[pt.length - 1][1])) pt.push(pt[0]);
+      for (let k = 1; k < pt.length; k++) {
+        const [xa, ya] = pt[k - 1], [xb, yb] = pt[k];
+        if (ya === yb) continue;
+        const r0 = Math.max(0, Math.ceil(Math.min(ya, yb) - 0.5)), r1 = Math.min(H - 1, Math.ceil(Math.max(ya, yb) - 0.5) - 1);
+        for (let r = r0; r <= r1; r++) righe[r].push([xa, ya, xb, yb]);
+      }
+    }
+    righe.forEach((lati, r) => {
+      const y = r + 0.5;
+      const tagli = lati.map(([xa, ya, xb, yb]) => ({ x: xa + ((y - ya) * (xb - xa)) / (yb - ya), v: yb > ya ? 1 : -1 })).sort((a, b) => a.x - b.x);
+      let w = 0;
+      for (let i = 0; i + 1 < tagli.length; i++) {
+        w = pari ? w ^ 1 : w + tagli[i].v;
+        if (!w) continue;
+        for (let x = Math.max(0, Math.ceil(tagli[i].x - 0.5)); x < Math.min(W, Math.ceil(tagli[i + 1].x - 0.5)); x++) metti(r * W + x, colore);
+      }
+    });
+  };
+  riempi(d.moduli, scuro, false);
+  riempi(d.occhi, rgb(s.occhio || s.scuro), true);
+  if (d.targa) {
+    const T = d.targa;
+    for (let y = Math.floor(T.y); y < T.y + T.lato; y++) for (let x = Math.floor(T.x); x < T.x + T.lato; x++) {
+      const mx = Math.floor((x + 0.5 - x0) / m), my = Math.floor((y + 0.5 - y0) / m);
+      if (mx >= 0 && my >= 0 && mx < n && my < n) metti(y * W + x, p.qr.scuro[my * n + mx] ? chiaro : scuro);
+    }
+  }
+  return { width: W, height: H, data };
+}
+
+test('a 180 e 190 px gli indirizzi veri si rileggono dal disegno, con ogni forma e col logo peggiore', () => {
+  // Ogni lunghezza della pagina link con lo stile di serie; le forme e i loghi
+  // sulle lunghezze dove cambia la versione e sugli indirizzi delle piattaforme.
+  const indirizzi = [], conForme = new Set();
+  for (let k = 3; k <= 30; k++) indirizzi.push(PAGINA(NOMI.slice(0, k)));
+  for (const k of [3, 6, 17, 30]) conForme.add(PAGINA(NOMI.slice(0, k)));
+  for (const [l, u] of [['kick.' + NOMI.slice(0, 25), 'kick.com/' + NOMI.slice(0, 25)], ['yt.' + NOMI.slice(0, 27), 'youtube.com/@' + NOMI.slice(0, 27)], ['andryx', 'twitch.tv/andryx'], [NOMI.slice(0, 25), 'twitch.tv/' + NOMI.slice(0, 25)]]) {
+    indirizzi.push(PAGINA(l), 'https://' + u);
+    conForme.add(PAGINA(l)).add('https://' + u);
+  }
+  const stili = [
+    {},
+    { moduli: 'penna', occhi: 'penna', scuro: '#1d2a6b', logo: 'immagine', logoLato: 100 },
+    { moduli: 'puntini', occhi: 'tondi', scuro: '#1f4d2b', chiaro: '#fbfaf5', logo: 'foto', logoLato: 60 },
+    { moduli: 'morbidi', occhi: 'morbidi', scuro: '#ba007a' },
+  ];
+  let casi = 0;
+  for (const testo of indirizzi) for (const [i, stile] of stili.entries()) {
+    if (i && !conForme.has(testo)) continue;
+    const scelta = Q.scegli(testo, stile, { logo: LOGO, penna: true, seme: 'qr:prova' });
+    assert.equal(scelta.gradino, 'tuo', `${testo}: col logo ci sta (versione ${scelta.p.qr.versione})`);
+    for (const P of [180, 190]) for (const s of i ? [1, 2] : [1]) {
+      const geo = Q.misura(scelta.p, P, s);
+      const r = Q.rileggi(dipingi(scelta.p, geo), scelta.p, geo);
+      assert.ok(r.ok, `${testo} stile ${i} a ${P} px (scala ${s}, modulo ${geo.m} px): non si rilegge`);
+      casi++;
+    }
+  }
+  assert.ok(casi >= 80, `casi provati: ${casi}`);
+});
+
+test('la rilettura sa dire di no: un QR guastato oltre la correzione non torna', () => {
+  const p = Q.scegli(PAGINA('andryx'), {}, {}).p, geo = Q.misura(p, 180, 1), img = dipingi(p, geo);
+  const { m, x0, y0, n } = geo;
+  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
+    if (p.qr.funzione[y * n + x] || (x * 7 + y * 3) % 2) continue;
+    const cx = Math.floor(x0 + (x + 0.5) * m), cy = Math.floor(y0 + (y + 0.5) * m), i = (cy * geo.W + cx) * 4;
+    for (let k = 0; k < 3; k++) img.data[i + k] = 255 - img.data[i + k];
+  }
+  assert.equal(Q.rileggi(img, p, geo).ok, false);
+});

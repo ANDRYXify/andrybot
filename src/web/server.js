@@ -143,7 +143,7 @@ import * as automatiche from '../features/automatiche.js';
 import * as campagne from '../features/campagne.js';
 import { paginaCampagna, titoloDi } from './campagna-vista.js';
 import { pngDi, alleggerisci } from './png-leggero.js';
-import { normStileQr } from '../features/qr-stile.js';
+import { normStileQr, firmaStileQr, firmaMandata } from '../features/qr-stile.js';
 import * as mediakit from '../features/mediakit.js';
 import * as pannelliTw from '../features/pannelli.js';
 import * as promemoriaLicenza from '../features/licenza-promemoria.js';
@@ -2059,29 +2059,34 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // (static-cdn.jtvnw.net) da certi browser/reti (blocker privacy, filtri) non
   // si carica: l'immagine spariva anche se l'URL era valido. Qui la prende il
   // server (che la raggiunge sempre) e la ristrasmette same-origin, con cache.
-  const _avatarCache = new Map();          // login → { buf, tipo, ts }
+  // La foto tenuta in memoria vale solo finche' l'indirizzo e' lo stesso: il
+  // QR delle grafiche col logo «la tua foto» porta nella sua firma l'indirizzo
+  // (firmaQrDi), e una foto nuova deve arrivare al pannello che ridisegna, non
+  // quella di un'ora fa con la firma di adesso.
+  const _avatarCache = new Map();          // login → { buf, tipo, ts, url }
   app.get('/u/:user/avatar', wrap(async (req, res) => {
     const login = String(req.params.user || '').toLowerCase();
     if (!eLoginNostro(login)) return notFound(res);
     const c = _avatarCache.get(login);
-    if (c && Date.now() - c.ts < 3600000) {
+    if (c && Date.now() - c.ts < 3600000 && c.url === (streamers.get(login)?.avatar || '')) {
       res.set('Content-Type', c.tipo); res.set('Cache-Control', 'public, max-age=3600');
       return res.end(c.buf);
     }
     const url = await avatarDi(login);
     if (!url) return notFound(res);
     try {
+      let usato = url;
       let r = await fetch(url).catch(() => null);
       // URL in cache scaduto (404)? Riprendiamo quello fresco da Twitch e riproviamo una volta.
       if (!r || !r.ok) {
         const fresh = await avatarDi(login, { aggiorna: true });
-        if (fresh && fresh !== url) r = await fetch(fresh).catch(() => null);
+        if (fresh && fresh !== url) { usato = fresh; r = await fetch(fresh).catch(() => null); }
       }
       if (!r || !r.ok) return notFound(res);
       const buf = Buffer.from(await r.arrayBuffer());
       const tipo = r.headers.get('content-type') || 'image/png';
       if (_avatarCache.size > 300) { const primo = _avatarCache.keys().next().value; if (primo !== undefined) _avatarCache.delete(primo); }
-      _avatarCache.set(login, { buf, tipo, ts: Date.now() });
+      _avatarCache.set(login, { buf, tipo, ts: Date.now(), url: usato });
       res.set('Content-Type', tipo); res.set('Cache-Control', 'public, max-age=3600');
       res.end(buf);
     } catch (e) { notFound(res); }
@@ -6537,24 +6542,59 @@ STREAMER (${su.toUpperCase()}) e non c'entra con l'automazione del marketing.
     } finally { _mandando.delete(login); }
   }));
 
+  // LA FIRMA DEL QR (src/features/qr-stile.js). Le immagini che il pannello
+  // prepara e il server tiene (la storia «Live ora», quelle delle uscite
+  // automatiche) portano la firma dello stile del QR con cui sono nate, e la
+  // versione delle grafiche. Il pannello disegna con lo stile che il server gli
+  // da' (qr e firmaQr, nella vista delle automatiche) e rimanda quella firma:
+  // se intanto e' cambiata, 409 col codice 'qr-cambiato' e la firma di
+  // adesso, e il pannello rilegge e ridisegna. Una firma assente (un pannello
+  // di prima) si accetta, e l'immagine resta «da rifare».
+  // Col logo «la tua foto» la firma porta l'indirizzo della foto: quello di
+  // avatarDi, lo stesso che /u/<login>/avatar scarica per il pannello. Una
+  // foto nuova fa rifare le immagini anche se lo stile e' lo stesso.
+  const revDi = (login) => Number(streamers.get(login)?.settings?.grafiche?.rev) || 0;
+  const qrDi = (login) => normStileQr(streamers.get(login)?.settings?.qr);
+  const firmaQrDi = async (login, qr = qrDi(login)) =>
+    firmaStileQr(qr, { avatar: qr.logo === 'foto' ? await avatarDi(login).catch(() => '') : '' });
+  const qrCambiato = (firmaQr) => ({ errore: 'Lo stile del QR e\' cambiato mentre la grafica si preparava: riprova, si rifa\' con quello nuovo.', codice: 'qr-cambiato', firmaQr });
+  const liveDi = async (login) => storiaIg.statoLive(login, { firmaQr: await firmaQrDi(login), rev: revDi(login) });
+
   // LA STORIA DALLE GRAFICHE: la grafica che hai davanti, gia' verticale, nella
   // tua storia. Il pannello chiede prima se si puo', cosi' il tasto non promette
   // quello che non puo' fare; poi la pubblica dallo stesso posto di «Manda».
+  // Con la storia della diretta: accesa, pronta, da rifare, com'e' andata.
   app.get('/api/streamer/grafiche/storia', requireOwner, wrap(async (req, res) => {
     const login = currentUser(req).login;
-    res.json({ ig: await storiaIgPossibile(login), live: storiaIg.statoLive(login) });
+    res.json({ ig: await storiaIgPossibile(login), live: await liveDi(login) });
   }));
 
   // La storia che parte da sola quando comincia la diretta. Accenderla vuol dire
   // mandare la grafica gia' pronta: senza, l'interruttore sarebbe acceso su
-  // niente. Spegnerla toglie anche l'immagine.
+  // niente. Spegnerla toglie anche l'immagine. La grafica porta la firma del QR
+  // e la versione delle grafiche da cui e' nata: rimandarla ogni volta che
+  // cambiano e' il modo di tenerla giusta.
   app.post('/api/streamer/grafiche/storia-live', requireOwner, wrap(async (req, res) => {
     const login = currentUser(req).login;
-    if (!req.body?.attiva) return res.json({ ok: true, live: storiaIg.spegniLive(login) });
+    if (!req.body?.attiva) { storiaIg.spegniLive(login); return res.json({ ok: true, live: await liveDi(login) }); }
     const byte = leggiJpeg(req.body?.immagine);
     if (!byte) return res.status(400).json({ errore: 'La grafica non e\' arrivata intera: riprova.' });
-    res.json({ ok: true, live: storiaIg.accendiLive(login, byte) });
+    const firmaQr = await firmaQrDi(login);
+    const firma = firmaMandata(req.body?.firmaQr, firmaQr);
+    if (!firma.ok) return res.status(409).json(qrCambiato(firmaQr));
+    storiaIg.accendiLive(login, byte, { firmaQr: firma.firma, rev: Math.max(0, Math.round(Number(req.body?.rev)) || 0) });
+    res.json({ ok: true, live: storiaIg.statoLive(login, { firmaQr, rev: revDi(login) }) });
   }));
+
+  // L'IMMAGINE CHE PARTIRA', cosi' come il server la tiene: per «Guarda cosa
+  // partira'» nel pannello, e per i collaudi che rileggono il QR dai suoi
+  // pixel. Solo del proprietario, come le porte che la salvano, e mai in una
+  // cache: e' sua, e cambia a ogni preparazione.
+  app.get('/api/streamer/grafiche/storia-live.jpg', requireOwner, (req, res) => {
+    const byte = storiaIg.immagineLive(currentUser(req).login);
+    if (!byte) return res.status(404).json({ errore: 'La grafica della storia della diretta non c\'e\'.' });
+    res.set('Cache-Control', 'private, no-store').type('image/jpeg').send(byte);
+  });
 
   app.post('/api/streamer/grafiche/storia', requireOwner, wrap(async (req, res) => {
     const login = currentUser(req).login;
@@ -6575,24 +6615,30 @@ STREAMER (${su.toUpperCase()}) e non c'entra con l'automazione del marketing.
   // quelle giuste, e si pubblicano nel loro momento dalla stessa strada di
   // «Metti nella storia» e di «Manda».
   const settDi = (login) => settimana.settimanaDi(streamers.get(login)?.settings);
-  const revDi = (login) => Number(streamers.get(login)?.settings?.grafiche?.rev) || 0;
   const tgPrivato = (login) => { const c = tgConf.get(login); return c?.token && c.owner_tg_id && (c.dm_modo || 'me') !== 'off' ? c : null; };
   const mailDi = (login) => { const p = postaStreamer.get(login); return p?.confermata && p.email && posta.attiva() ? p.email : ''; };
-  const vistaAutomatiche = (login) => ({
-    ...automatiche.vista(login, { sett: settDi(login), rev: revDi(login) }),
-    rev: revDi(login), mail: !!mailDi(login), telegram: !!tgPrivato(login), ig: !!credenzialiInstagram(login),
-    live: storiaIg.statoLive(login),
-    dove: (() => { const d = settDi(login).dove || {}; return { tg: (d.tg || []).length, dc: (d.dc || []).length, ig: !!d.ig }; })(),
-  });
+  // La vista porta anche lo stile del QR di adesso e la sua firma: il pannello
+  // disegna con QUESTO stile, non con quello che ha in memoria, e rimanda
+  // QUESTA firma. Cosi' quello che disegna e quello che il server controlla
+  // sono la stessa cosa, anche se lo stile e' stato salvato da un'altra scheda.
+  const vistaAutomatiche = async (login) => {
+    const qr = qrDi(login), firmaQr = await firmaQrDi(login, qr), rev = revDi(login);
+    return {
+      ...automatiche.vista(login, { sett: settDi(login), rev, firmaQr }),
+      rev, qr, firmaQr, mail: !!mailDi(login), telegram: !!tgPrivato(login), ig: !!credenzialiInstagram(login),
+      live: storiaIg.statoLive(login, { firmaQr, rev }),
+      dove: (() => { const d = settDi(login).dove || {}; return { tg: (d.tg || []).length, dc: (d.dc || []).length, ig: !!d.ig }; })(),
+    };
+  };
 
   app.get('/api/streamer/automatiche', requireOwner, wrap(async (req, res) => {
-    res.json(vistaAutomatiche(currentUser(req).login));
+    res.json(await vistaAutomatiche(currentUser(req).login));
   }));
 
   app.post('/api/streamer/automatiche', requireOwner, wrap(async (req, res) => {
     const login = currentUser(req).login;
     automatiche.salvaConf(login, req.body?.conf);
-    res.json(vistaAutomatiche(login));
+    res.json(await vistaAutomatiche(login));
   }));
 
   app.post('/api/streamer/automatiche/immagine', requireOwner, wrap(async (req, res) => {
@@ -6603,25 +6649,36 @@ STREAMER (${su.toUpperCase()}) e non c'entra con l'automazione del marketing.
     if (!byte) return res.status(400).json({ errore: 'La grafica non e\' arrivata intera: riprova.' });
     const impronta = String(req.body?.impronta || '');
     if (!/^[0-9a-f]{16}$/.test(impronta)) return res.status(400).json({ errore: 'La grafica non dice da quale settimana e\' nata.' });
+    const firmaQr = await firmaQrDi(login);
+    const firma = firmaMandata(req.body?.firmaQr, firmaQr);
+    if (!firma.ok) return res.status(409).json(qrCambiato(firmaQr));
     automatiche.salvaImmagine(login, nome, byte, {
       impronta, rev: Math.max(0, Math.round(Number(req.body?.rev)) || 0),
-      anticipo: Number(req.body?.anticipo) || 0, testo: String(req.body?.testo || '').slice(0, 2000),
+      anticipo: Number(req.body?.anticipo) || 0, testo: String(req.body?.testo || '').slice(0, 2000), firmaQr: firma.firma,
     });
     res.json({ ok: true });
   }));
+
+  // Quella che partira', cosi' come il server la tiene (vedi storia-live.jpg).
+  app.get('/api/streamer/automatiche/immagine/:nome', requireOwner, (req, res) => {
+    const nome = String(req.params.nome || '');
+    const byte = automatiche.IMMAGINI.includes(nome) ? automatiche.immagine(currentUser(req).login, nome) : null;
+    if (!byte) return res.status(404).json({ errore: 'Questa grafica non e\' ancora pronta.' });
+    res.set('Cache-Control', 'private, no-store').type('image/jpeg').send(byte);
+  });
 
   app.post('/api/streamer/automatiche/conferma', requireOwner, wrap(async (req, res) => {
     const login = currentUser(req).login;
     const r = automatiche.confermaDalPannello(login, settDi(login));
     if (!r.ok) return res.status(409).json({ errore: 'Non c\'e\' un\'uscita della settimana da confermare.' });
-    res.json(vistaAutomatiche(login));
+    res.json(await vistaAutomatiche(login));
   }));
 
   app.post('/api/streamer/automatiche/ferma', requireOwner, wrap(async (req, res) => {
     const login = currentUser(req).login;
     const r = automatiche.fermaDalPannello(login, settDi(login));
     if (!r.ok) return res.status(409).json({ errore: 'Non c\'e\' un\'uscita della settimana da fermare.' });
-    res.json(vistaAutomatiche(login));
+    res.json(await vistaAutomatiche(login));
   }));
 
   // Il link della mail porta qui: una pagina che dice cosa uscira' e quando, e
@@ -6701,7 +6758,7 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     for (const login of automatiche.accese()) {
       const sett = settDi(login);
       await automatiche.giro(login, {
-        sett, rev: revDi(login), inDiretta: !!manager?.inDiretta?.(login),
+        sett, rev: revDi(login), firmaQr: await firmaQrDi(login), inDiretta: !!manager?.inDiretta?.(login),
         pubblicaStoria: (byte) => storiaIg.pubblicaStoria(login, byte),
         mandaSettimana: async ({ byte, storia, testo }) => {
           const esiti = await mandaLaSettimana(login, { byte, storia, testo, dove: sett.dove });

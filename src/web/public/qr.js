@@ -438,6 +438,42 @@
     return { m, n, W: m * T, H: m * (T + fascia), x0: m * (QUIETE + bordo), y0: m * (QUIETE + bordo), bordo, fascia, T };
   }
 
+  function misura(p, latoPx, scala) {
+    const g = geometria(p, latoPx), s = Math.max(1, Number(scala) || 1);
+    return geometria(p, g.m * g.T * s);
+  }
+
+  const GRADINI = ['tuo', 'senza-logo', 'morbido', 'serie'];
+  const DI_SERIE = { moduli: 'quadrati', occhi: 'quadrati', scuro: '#150910', chiaro: '#ffffff', occhio: '', logo: 'no', logoLato: 100 };
+
+  function gradini(testo, stile, opz) {
+    const o = opz || {}, s = Object.assign({}, DI_SERIE, stile || {}), seme = String(o.seme || 'qr');
+    const serie = progetto(testo, { seme });
+    if (!serie.qr) return [{ p: serie, gradino: 'nessuno', motivo: 'testo', motivi: ['testo'] }];
+    const penna = !(s.moduli === 'penna' || s.occhi === 'penna') || !!o.penna;
+    const forma = (f) => (f === 'penna' && !penna ? 'morbidi' : f);
+    const base = { moduli: forma(s.moduli), occhi: forma(s.occhi), scuro: s.scuro, chiaro: s.chiaro, occhio: s.occhio || '', cornice: '', coloreCornice: '', seme };
+    const nudo = progetto(testo, base);
+    if (nudo.problemi.length) return [{ p: serie, gradino: 'serie', motivo: 'colori', motivi: ['colori'] }];
+    const vuoleLogo = !!s.logo && s.logo !== 'no', motivi = [];
+    let conLogo = null;
+    if (vuoleLogo && !o.logo) motivi.push('logo-assente');
+    else if (vuoleLogo) {
+      const p = progetto(testo, Object.assign({}, base, { logo: o.logo, logoLato: Math.max(0.2, Math.min(1, (Number(s.logoLato) || 100) / 100)) }));
+      if (p.problemi.length || !p.targa) motivi.push('logo-grande'); else conLogo = p;
+    }
+    if (!penna) motivi.push('penna');
+    const fuori = [];
+    if (conLogo) fuori.push({ p: conLogo, gradino: penna ? 'tuo' : 'morbido', motivo: penna ? '' : 'penna', motivi: motivi.slice() });
+    const persoLogo = conLogo ? 'rilettura' : motivi[0];
+    const gNudo = !penna ? 'morbido' : vuoleLogo ? 'senza-logo' : 'tuo';
+    fuori.push({ p: nudo, gradino: gNudo, motivo: gNudo === 'tuo' ? '' : gNudo === 'morbido' ? 'penna' : persoLogo, motivi: conLogo ? motivi.concat('rilettura') : motivi.slice() });
+    fuori.push({ p: serie, gradino: 'serie', motivo: 'rilettura', motivi: ['rilettura'] });
+    return fuori;
+  }
+
+  const scegli = (testo, stile, opz) => gradini(testo, stile, opz)[0];
+
   const rett = (x, y, w, h) => `M${f2(x)} ${f2(y)}h${f2(w)}v${f2(h)}h${f2(-w)}Z`;
   function morbido(x, y, w, h, r) {
     const [a, b, c, d] = r;
@@ -563,7 +599,7 @@
     return { ok: !!letto && letto.testo === p.testo, letto };
   }
 
-  const QR = { LIVELLI, BLOCCHI, QUIETE, CONTRASTO, STILI, lato, datiDi, allineamenti, versioneMinima, codifica, leggi, correggi, sindromi, danno, penalita, MASCHERE, luceDi, targaMassima, progetto, geometria, percorsi, misuraFrase, disegna, svg, rileggi };
+  const QR = { LIVELLI, BLOCCHI, QUIETE, CONTRASTO, STILI, GRADINI, lato, datiDi, allineamenti, versioneMinima, codifica, leggi, correggi, sindromi, danno, penalita, MASCHERE, luceDi, targaMassima, progetto, geometria, misura, gradini, scegli, percorsi, misuraFrase, disegna, svg, rileggi };
   if (typeof module !== 'undefined' && module.exports) module.exports = QR;
   else radice.SB_QR = QR;
 })(typeof window !== 'undefined' ? window : globalThis);

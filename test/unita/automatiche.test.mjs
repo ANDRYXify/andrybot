@@ -181,3 +181,83 @@ test('il pannello riceve i giorni in onda, ognuno col suo momento d\'uscita e la
   ]);
   assert.equal(v.pronte['prima-2'], false, 'senza immagine non e\' pronta');
 });
+
+// LA FIRMA DEL QR (src/features/qr-stile.js): ogni immagine porta la firma
+// dello stile del QR con cui e' nata. Diversa da quella di adesso, o assente,
+// vuol dire «da rifare»: e' MORBIDO, l'immagine esce lo stesso (il suo QR si
+// legge e porta allo stesso posto), e il pannello la riprepara.
+const F1 = 'a1b2c3d4e5f60718', F2 = '0f1e2d3c4b5a6978';
+
+test('da rifare: c\'e\' un\'immagine, ma non e\' nata dal QR di adesso', () => {
+  assert.equal(A.daRifare(null, F1), false, 'un\'immagine che non c\'e\' e\' da fare, non da rifare: lo dice «pronte»');
+  assert.equal(A.daRifare(undefined, F1), false);
+  assert.equal(A.daRifare({ firmaQr: F1 }, F1), false, 'nata da questo stile');
+  assert.equal(A.daRifare({ firmaQr: F2 }, F1), true, 'nata da un altro');
+  assert.equal(A.daRifare({ firmaQr: '' }, F1), true, 'senza firma: non si sa da quale, quindi si rifa\'');
+  assert.equal(A.daRifare({}, F1), true, 'un\'immagine di prima della firma');
+  assert.equal(A.daRifare({ firmaQr: '' }, ''), true, 'anche se chi chiede non ha la firma');
+});
+
+test('la firma si salva con l\'immagine, e una storta vale come nessuna', () => {
+  const imp = A.improntaImmagini(SETT);
+  A.salvaImmagine('firme', 'prima-2', Buffer.from('a'), { impronta: imp, rev: 1, anticipo: 120, firmaQr: F1 });
+  A.salvaImmagine('firme', 'prima-3', Buffer.from('b'), { impronta: imp, rev: 1, anticipo: 120, firmaQr: 'non-una-firma' });
+  A.salvaImmagine('firme', 'settimana-post', Buffer.from('c'), { impronta: imp, rev: 1 });
+  const im = A.leggi('firme').immagini;
+  assert.deepEqual([im['prima-2'].firmaQr, im['prima-3'].firmaQr, im['settimana-post'].firmaQr], [F1, '', '']);
+});
+
+test('il pannello sa quali immagini sono da rifare, e da rifare non vuol dire non pronta', () => {
+  const login = 'firmevista';
+  A.salvaConf(login, { prima: { attiva: true, anticipo: 120 } });
+  const imp = A.improntaImmagini(SETT);
+  A.salvaImmagine(login, 'prima-2', Buffer.from('a'), { impronta: imp, rev: 5, anticipo: 120, firmaQr: F1 });
+  A.salvaImmagine(login, 'prima-3', Buffer.from('b'), { impronta: imp, rev: 5, anticipo: 120 });
+  const adesso = Z('2026-09-28T10:00:00Z');
+  const senza = A.vista(login, { sett: SETT, rev: 5, adesso });
+  assert.equal('daRifare' in senza, false, 'senza la firma di adesso non lo si puo\' sapere, e non si inventa');
+  const v = A.vista(login, { sett: SETT, rev: 5, firmaQr: F1, adesso });
+  assert.deepEqual(Object.keys(v.daRifare), A.IMMAGINI, 'una voce per ogni immagine');
+  assert.deepEqual(Object.entries(v.daRifare).filter(([, x]) => x).map(([n]) => n), ['prima-3'], 'solo quella senza firma');
+  const w = A.vista(login, { sett: SETT, rev: 5, firmaQr: F2, adesso });
+  assert.deepEqual(Object.entries(w.daRifare).filter(([, x]) => x).map(([n]) => n), ['prima-2', 'prima-3'], 'cambiato lo stile, tutte e due');
+  assert.equal(w.pronte['prima-2'], true, 'e restano pronte: il QR vecchio si legge e porta allo stesso posto');
+  assert.equal(w.pronte['prima-3'], true);
+});
+
+test('il giro non si ferma per la firma, e si ricorda se e\' uscita col QR di prima', async () => {
+  const login = 'firmegiro';
+  A.salvaConf(login, { prima: { attiva: true, anticipo: 120 }, settimana: { attiva: true, giorno: 6, ora: '18:00', chiedi: false } });
+  const imp = A.improntaImmagini(SETT);
+  const uscite = [], mandate = [];
+  const fuori = {
+    pubblicaStoria: async (b) => { uscite.push(String(b)); return { ok: true }; },
+    mandaSettimana: async (m) => { mandate.push(m); return { ok: true, esiti: [{ dove: 'tg', ok: true }] }; },
+    chiediConferma: async () => {},
+  };
+  A.salvaImmagine(login, 'prima-2', Buffer.from('vecchia'), { impronta: imp, rev: 7, anticipo: 120, firmaQr: F1 });
+  await A.giro(login, { sett: SETT, rev: 7, firmaQr: F2, adesso: Z('2026-09-30T17:30:00Z'), ...fuori });
+  assert.deepEqual(uscite, ['vecchia'], 'esce lo stesso');
+  assert.equal(A.leggi(login).prima.ultima.ok, true);
+  assert.equal(A.leggi(login).prima.ultima.qrVecchio, true, 'e si sa che aveva il QR di prima');
+
+  A.salvaImmagine(login, 'prima-2', Buffer.from('nuova'), { impronta: imp, rev: 7, anticipo: 120, firmaQr: F2 });
+  await A.giro(login, { sett: SETT, rev: 7, firmaQr: F2, adesso: Z('2026-10-07T17:30:00Z'), ...fuori });
+  assert.deepEqual(uscite, ['vecchia', 'nuova']);
+  assert.equal(A.leggi(login).prima.ultima.qrVecchio, false, 'quella giusta no');
+
+  A.salvaImmagine(login, 'prima-2', Buffer.from('senza'), { impronta: imp, rev: 7, anticipo: 120 });
+  await A.giro(login, { sett: SETT, rev: 7, adesso: Z('2026-10-14T17:30:00Z'), ...fuori });
+  assert.equal(A.leggi(login).prima.ultima.qrVecchio, false, 'senza la firma di adesso non si accusa nessuno');
+
+  A.salvaImmagine(login, 'prima-2', Buffer.from('rotta'), { impronta: imp, rev: 6, anticipo: 120, firmaQr: F1 });
+  await A.giro(login, { sett: SETT, rev: 7, firmaQr: F2, adesso: Z('2026-10-21T17:30:00Z'), ...fuori });
+  assert.equal(uscite.length, 3, 'le regole di prima restano: grafiche cambiate, non esce');
+  assert.deepEqual([A.leggi(login).prima.ultima.codice, A.leggi(login).prima.ultima.qrVecchio], ['grafiche-cambiate', false], 'e non e\' uscita, quindi niente QR di prima');
+
+  A.salvaImmagine(login, 'settimana-post', Buffer.from('post'), { impronta: imp, rev: 7, firmaQr: F2 });
+  A.salvaImmagine(login, 'settimana-storia', Buffer.from('storia'), { impronta: imp, rev: 7, firmaQr: F1 });
+  await A.giro(login, { sett: SETT, rev: 7, firmaQr: F2, adesso: Z('2026-10-11T16:01:00Z'), ...fuori });
+  assert.equal(mandate.length, 1, 'la settimana esce anche con una delle due da rifare');
+  assert.equal(A.leggi(login).settimana.ultima.qrVecchio, true);
+});

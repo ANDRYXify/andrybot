@@ -9,7 +9,7 @@ export default {
   titolo: 'La tua vetrina: pagina link, donazioni e social | SocialBot',
   h1: 'La tua vetrina: pagina link, donazioni, settimana, grafiche e i tuoi social',
   desc: 'La pagina da mettere in bio, le donazioni sul tuo conto, i giorni in cui vai in onda, le grafiche da pubblicare e gli avvisi quando pubblichi sui social.',
-  aggiornata: '2026-10-04',
+  aggiornata: '2026-10-14',
   corpo: [
     { p: [
       'Cinque schede che lavorano anche quando non sei in onda: la pagina da mettere in bio, le donazioni, i giorni in cui vai in diretta, le grafiche da pubblicare e gli avvisi quando esce qualcosa di tuo sulle altre reti.',
@@ -337,7 +337,7 @@ export default {
     // ── GRAFICHE SOCIAL ─────────────────────────────────────────────────────
     { h2: 'Grafiche social', scheda: 'grafiche', p: [
       'Tre grafiche pronte da pubblicare: la <strong>programmazione settimanale</strong>, il <strong>«Live ora»</strong> e <strong>«Stasera alle…»</strong>, che annuncia la prossima diretta della tua settimana con la copertina del gioco. Parti da uno stile pronto o da un tema, cambi quello che vuoi, sposti i pezzi sull\'anteprima, e la scarichi, la condividi o la metti nella storia di Instagram. Alcune possono anche uscire da sole.',
-      'C\'è in tutti i piani. La storia di Instagram chiede Instagram collegato nella scheda «I tuoi social», che è del piano Base. La storia e le uscite automatiche le gestisce chi ha il canale.',
+      'C\'è in tutti i piani. La storia di Instagram chiede Instagram collegato nella scheda «I tuoi social», che è del piano Base. La storia e le uscite automatiche le gestisce chi ha il canale: un moderatore prepara, scarica e condivide le grafiche, e al posto del riquadro di Instagram legge «Le storie di Instagram e le pubblicazioni automatiche le gestisce chi ha il canale».',
     ] },
 
     { h3: 'La storia di Instagram' },
@@ -350,12 +350,13 @@ export default {
 
     { h3: 'In automatico' },
     { p: [
-      'Tre uscite che partono da sole, ognuna col suo interruttore. Le grafiche sono quelle che hai fatto qui, e si preparano quando accendi un\'uscita, ogni volta che salvi le Grafiche o la Settimana, e quando apri le Grafiche se sono rimaste indietro. Ogni cambio si salva subito: leggi «Pubblicazioni automatiche salvate ✓», e per «Live ora» «Storia automatica accesa ✓».',
+      'Tre uscite che partono da sole, ognuna col suo interruttore. Le grafiche sono quelle che hai salvato qui, col QR del tuo stile, logo compreso. Si preparano quando accendi un\'uscita, ogni volta che salvi le Grafiche, la Settimana o lo stile del QR, e da sole quando apri il pannello, se sono rimaste indietro: non serve aprire le Grafiche. Ogni cambio si salva subito: leggi «Pubblicazioni automatiche salvate ✓», e per «Live ora» «Storia automatica accesa ✓».',
+      'Accanto a ogni uscita pronta c\'è un link per vedere l\'immagine che partirà davvero: «Guarda cosa uscirà» per la storia prima della diretta, «Guarda il post che uscirà» e «la storia» per la settimana, «Guarda cosa partirà» per «Live ora».',
     ] },
     { tabella: [
       ['Uscita', 'Cosa esce e quando', 'Di base'],
       ['«Prima della diretta»', 'La storia «Stasera alle…» di ogni giorno in onda della tua settimana, con «Esce … prima dell’inizio»: 15 o 30 minuti, un\'ora, 2, 3, 4, 6, 8 o 12 ore. Il testo è quello del momento in cui esce: «Stasera alle 21:00», «Oggi alle 15:00» per una diretta prima delle 17, o «Domani alle 00:30» se l\'anticipo scavalca la mezzanotte. Se sei già in diretta non esce: tocca a «Live ora». Serve Instagram collegato.', 'spenta; 2 ore'],
-      ['«Quando vai in diretta»', '«Quando vai in diretta su Twitch, la storia «Live ora» parte da sola»: la tua grafica «Live ora» in verticale, com\'era quando hai acceso la casella o premuto «Salva impostazioni». Al massimo una per diretta. Il gioco scritto resta quello: se cambi gioco ogni volta, lascia vuoto «Gioco / categoria». Serve Instagram collegato.', 'spenta'],
+      ['«Quando vai in diretta»', '«Quando vai in diretta, la storia «Live ora» parte da sola»: vale su ogni piattaforma da cui vai in diretta, Twitch, Kick o YouTube. Parte la tua grafica «Live ora» in verticale, come l\'hai salvata con «Salva impostazioni», col QR del tuo stile: le modifiche non salvate non partono. Al massimo una per diretta. Il gioco scritto resta quello: se cambi gioco ogni volta, lascia vuoto «Gioco / categoria». Serve Instagram collegato.', 'spenta'],
       ['«La settimana»', 'La grafica della Settimana nei posti spuntati in «Mandala», nel giorno e all\'ora che scegli in «Ogni … alle …», entro un\'ora da quell\'ora. Esce con le parole di base, quelle che trovi in «Mandala» prima di cambiarle.', 'spenta; domenica alle 18:00'],
     ] },
     { p: [
@@ -365,13 +366,20 @@ export default {
     ] },
     { p: ['Sotto ogni uscita leggi quando esce la prossima e com\'è andata l\'ultima. Se qualcosa non va, leggi cosa.'] },
     { ul: [
-      'La grafica non era pronta, oppure la settimana, le grafiche o l\'anticipo erano cambiati dopo che l\'immagine era stata preparata: un\'immagine vecchia non esce. Aprire le Grafiche basta a ripreparare tutto.',
+      'La grafica non era pronta, oppure la settimana, le grafiche o l\'anticipo erano cambiati dopo che l\'immagine era stata preparata: un\'immagine vecchia non esce. Aprire il pannello basta a ripreparare tutto.',
       'Eri già in diretta: è uscita «Live ora», se l\'hai accesa.',
       'Non l\'avevi confermata, o l\'avevi fermata tu.',
       'Nella Settimana non c\'era nessun posto dove mandarla: leggi «Nella Settimana non hai scelto dove mandarla: spunta i posti in «Mandala».», con «Apri la Settimana».',
       'Nella tua Settimana non c\'è nessun giorno in onda: la storia prima della diretta non ha niente da annunciare.',
     ] },
-    { p: ['Quando un\'uscita non riesce, te lo scrivo anche nella chat privata del tuo bot Telegram, se l\'hai collegata. Per la storia «Live ora», se leggi «La storia automatica è accesa, ma la grafica non è pronta», spegnila e riaccendila: la grafica si prepara di nuovo.'] },
+    { p: [
+      'Quando un\'uscita non riesce, te lo scrivo anche nella chat privata del tuo bot Telegram, se l\'hai collegata.',
+      'Per la storia «Live ora», se leggi «La storia automatica è accesa, ma la grafica non è ancora pronta», non devi fare niente: si prepara da sola adesso che hai aperto le Grafiche, e fra poco lo vedi. Si prepara anche appena apri il pannello, senza entrare nelle Grafiche. Se resta così, il motivo compare in un avviso. Spegnerla e riaccenderla non serve. Se ti arriva su Telegram «la grafica non è pronta», apri le Grafiche: si prepara da sola.',
+    ] },
+    { p: [
+      '<strong>Le grafiche da rifare.</strong> Quando cambi lo stile del QR, o la foto del canale se al centro del QR c\'è la tua foto, le immagini già pronte restano quelle di prima finché il pannello non le rifà, e sotto l\'uscita leggi «Sono di prima che cambiassi…». Non devi fare niente: se è l\'ora escono così, col QR che porta comunque allo stesso posto, e il pannello le rifà appena può. Se lo stile lo salva un moderatore, le rifà il tuo pannello quando lo apri.',
+      'Per «Live ora» lo leggi accanto alla casella, «La grafica pronta è di prima che cambiassi le Grafiche o lo stile del QR…», e vale anche quando hai salvato grafiche nuove: se vai in diretta prima che sia rifatta, parte quella di prima. Per le altre due uscite, invece, una grafica salvata dopo e non ancora rifatta non esce: è il caso «le grafiche erano cambiate» qui sopra. Succede di rado, perché «Salva impostazioni» le rifà subito.',
+    ] },
 
     { h3: 'Tipo e formato' },
     { ul: [
@@ -423,7 +431,21 @@ export default {
     { p: [
       '«Condivisione & link al canale»: scegli se la grafica porta a <code>socialbot.live/u/…</code>, la tua pagina link, o all\'indirizzo del tuo canale, come <code>twitch.tv/…</code>, <code>kick.com/…</code> o <code>youtube.com/@…</code>.',
       '«Stampa un QR + il link del canale sull\'immagine» mette in basso un QR con l\'indirizzo scritto accanto. Su Instagram l\'immagine del feed non è cliccabile: col QR chi la vede arriva lo stesso al canale. Le righe dei giorni gli fanno posto.',
-      'Il QR prende lo stile che hai salvato in «QR su misura», nel gruppo «Strumenti»: forme, colori e logo, senza la frase della cornice. Se con quello stile non si rileggerebbe, esce il QR di base. Come si prepara lo stile è nel <a href="/manuale/strumenti">manuale degli strumenti</a>.',
+      'Il QR prende lo stile che hai salvato in «QR su misura», nel gruppo «Strumenti»: forme, colori e logo. «Dove porta» e la frase della cornice qui non contano: il QR di una grafica porta sempre all\'indirizzo che ha scritto accanto, quello che scegli qui sopra, e ha già il suo riquadro. Come si prepara lo stile è nel <a href="/manuale/strumenti">manuale degli strumenti</a>.',
+      'Sotto la casella leggi come esce il QR di quella grafica, e perché:',
+    ] },
+    { ul: [
+      '«Il QR di questa grafica esce col tuo stile ✓»: tutto come l\'hai scelto, logo compreso.',
+      '«…col tuo stile ma senza logo»: forme e colori sono i tuoi, il logo no. Se «il logo non si è caricato», si riprova da solo fra poco. Se il logo «coprirebbe i segni che servono a leggerlo», l\'indirizzo è troppo lungo per un logo: qui sopra scegli quello più corto. Se riletto «non tornava», rimpicciolisci il logo in «QR su misura».',
+      '«…con forme morbide al posto della penna»: il disegno a penna non si è caricato, di solito per la rete. Si riprova da solo fra poco, e la grafica si rifà; se resta così, ricarica la pagina.',
+      '«…quello di serie»: i tuoi colori non hanno abbastanza contrasto per essere letti, o niente col tuo stile si rileggeva. In «QR su misura» scegli colori più lontani fra loro, col fondo più chiaro dei quadratini.',
+      '«Il QR di questa grafica è quello di serie: non hai ancora salvato uno stile tuo.»: «Fallo su misura» ti porta a «QR su misura».',
+      '«Sto preparando il QR col tuo stile…»: un momento, finché arrivano il logo e il disegno a penna. Le immagini che escono aspettano: non escono mai con un QR a metà.',
+    ] },
+    { p: [
+      'Prima che un\'immagine esca, con «Scarica PNG», «Condividi», «Metti nella storia», «Manda» della Settimana o da sola, il QR si rilegge dall\'immagine vera, anche quando è un JPEG compresso. Se non torna, l\'immagine non esce, e leggi «il QR di questa grafica, riletto dall’immagine che esce, non torna: non la faccio uscire», con cosa cambiare in «QR su misura».',
+    ] },
+    { p: [
       '«Didascalia pronta (modificabile)» è il testo da mettere sotto il post, già scritto col link e diverso per ogni tipo. Se lo cambi, resta il tuo finché hai la scheda aperta; non si salva. «Copia didascalia» lo copia.',
     ] },
 
@@ -431,10 +453,10 @@ export default {
     { tabella: [
       ['Tasto', 'Cosa esce'],
       ['«Condividi»', 'Sul telefono apre la condivisione del sistema, con l\'immagine e la didascalia. Dove non c\'è, scarica l\'immagine e copia la didascalia.'],
-      ['«Scarica PNG»', 'L\'immagine a doppia risoluzione, 2160 px di larghezza: più nitida, e Instagram la rimpicciolisce invece di sgranarla.'],
-      ['«Scarica GIF animata»', 'Un giro intero dell\'animazione, 4 secondi (8 con velocità lenta), fino a 600 px di lato. Ricomincia senza scatti. Con un tema fermo è un\'immagine sola.'],
-      ['«Scarica video»', 'Un video WebM dello stesso giro, più pesante e di qualità più alta.'],
-      ['«Salva impostazioni»', 'Ricorda tutto per la prossima volta, anche i pezzi spostati. Leggi «Grafica salvata ✓». Con «Live ora» automatica accesa aggiorna la grafica che parte in diretta, e ripara le grafiche delle altre uscite automatiche.'],
+      ['«Scarica PNG»', 'L\'immagine a doppia risoluzione, 2160 px di larghezza: più nitida, e Instagram la rimpicciolisce invece di sgranarla. Anche il QR è disegnato a quella misura, nitido, non ingrandito.'],
+      ['«Scarica GIF animata»', 'Un giro intero dell\'animazione, 4 secondi (8 con velocità lenta), fino a 600 px di lato. Ricomincia senza scatti. Con un tema fermo è un\'immagine sola. A quella misura il QR viene piccolo: se un telefono non lo leggerebbe, la GIF si scarica lo stesso e leggi «Nella GIF, larga al massimo 600 px, il QR viene troppo piccolo per essere letto da un telefono: se serve il QR, usa il PNG o il video.»'],
+      ['«Scarica video»', 'Un video WebM dello stesso giro, più pesante e di qualità più alta. Parte quando il QR è pronto («Preparo il QR…»); se il QR non si rilegge, il video non si registra e leggi perché.'],
+      ['«Salva impostazioni»', 'Ricorda tutto per la prossima volta, anche i pezzi spostati. Leggi «Grafica salvata ✓». Rifà subito le grafiche delle uscite automatiche accese, «Live ora» compresa, e leggi «Rifatte con le grafiche nuove:» con quali.'],
     ] },
     { p: [
       'Le modifiche non si salvano da sole: senza «Salva impostazioni», alla prossima apertura ritrovi quelle di prima.',
@@ -555,6 +577,8 @@ export default {
     { d: 'Ho già Ko-fi: devo cambiarlo?', r: 'No. Lo colleghi nella prima carta delle Donazioni con l\'indirizzo della tua pagina e il token: chi dona trova il tasto Ko-fi, e ogni mancia fa partire l\'avviso e sale l\'obiettivo.' },
     { d: 'Chi dona può mandare un\'immagine qualsiasi in diretta?', r: 'No. Solo da un importo che scegli tu, e di base l\'immagine aspetta il tuo ok in «Da mandare in onda». «Scarta» la cancella dal server.' },
     { d: 'Le grafiche escono da sole?', r: 'Solo quelle che accendi in «In automatico», nelle Grafiche social: la storia prima di ogni diretta, la storia «Live ora» quando vai in diretta, e la settimana il giorno che scegli, dopo che l\'hai confermata. Il resto lo scarichi o lo mandi tu.' },
+    { d: 'Ho cambiato lo stile del QR: le storie che escono da sole lo prendono?', r: 'Sì. Quando premi «Salva lo stile» si rifanno subito, e leggi «Rifatte col QR nuovo:» con quali. Se l\'uscita arriva prima che siano rifatte, esce quella di prima: il QR porta comunque allo stesso posto.' },
+    { d: 'Perché il QR delle grafiche non porta dove ho scritto in «Dove porta»?', r: 'Perché il QR di una grafica porta dove porta la grafica: all\'indirizzo scritto accanto, che scegli in «Condivisione & link al canale». «Dove porta» e la frase della cornice valgono per il QR che scarichi da «QR su misura».' },
     { d: 'Ho confermato la settimana ma c\'è un errore. Come la fermo?', r: 'Premi «Non pubblicare» nella mail, nel messaggio su Telegram, nelle Grafiche social o nella tua settimana. Vale fino al momento dell\'uscita. Se ci ripensi, «Pubblicala lo stesso».' },
     { d: 'Perché non posso mandare la settimana nelle storie di Twitch o YouTube?', r: 'Twitch non apre le storie a nessuna app, e YouTube le ha chiuse nel 2023.' },
     { d: 'Ho acceso l\'avviso ma il primo video non è stato annunciato.', r: 'Il primo giro dopo che lo accendi memorizza l\'ultimo video e non avvisa, per non annunciare una cosa vecchia. L\'avviso parte dal video dopo.' },

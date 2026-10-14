@@ -42,14 +42,29 @@ test('la storia di ogni giorno si disegna per quel giorno, col testo di quando e
     'la sua diretta, la sua copertina, e il testo riferito al momento in cui esce; il «Quando» scritto a mano vale per un giorno solo');
   assert.ok(APP.includes('return p ? _quandoProssima(p, c._rif).giorno'), 'il testo del giorno sa rispetto a quando');
   assert.ok(APP.includes('const ora = Number(adesso) || _oraServer();'));
-  assert.ok(prep.includes('rev: v.rev') && prep.includes('impronta: v.impronta'), 'ogni immagine porta da dove e\' nata');
+  assert.ok(prep.includes('rev: v.rev') && prep.includes('impronta: v.impronta') && prep.includes("firmaQr: v.firmaQr || ''"), 'ogni immagine porta da dove e\' nata, firma del QR compresa');
+  assert.ok(prep.includes('const stile = _autoStile(v);') && prep.includes('await grafEsporta(cc, { stile })'), 'e il suo QR si disegna con lo stile che il server ha dato, non con quello in memoria');
 });
 
+// Quello che le immagini disegnano sono tre cose: le Grafiche, la Settimana e
+// lo stile del QR. Salvarne una le riprepara tutte quelle accese (la storia
+// «Live ora» compresa), e il pannello del proprietario le riprepara anche da
+// solo quando si apre, se il server le dice non pronte o da rifare.
 test('si ripreparano quando cambia quello che disegnano', () => {
   const salvaGr = APP.slice(APP.indexOf("document.getElementById('gr-salva')?.addEventListener"), APP.indexOf("document.querySelectorAll('[data-gr-dest]')"));
-  assert.ok(salvaGr.includes('await autoPrepara();'), 'salvando le Grafiche');
+  assert.ok(salvaGr.includes('await ripreparaGrafiche();'), 'salvando le Grafiche');
   const salvaSett = APP.slice(APP.indexOf("_g('sett-salva')?.addEventListener"), APP.indexOf("_g('sett-manda')?.addEventListener"));
   assert.ok(salvaSett.includes('await autoPrepara().catch(() => {});'), 'salvando la Settimana');
+  const qrSalva = APP.slice(APP.indexOf("if (b.id === 'qr-salva'"), APP.indexOf("document.getElementById('qr-file').addEventListener"));
+  assert.ok(qrSalva.includes('await qrSalvaERiprepara();'), 'salvando lo stile del QR');
+  const salvaQr = APP.slice(APP.indexOf('async function qrSalvaERiprepara('), APP.indexOf('function autoAllAvvio('));
+  assert.ok(salvaQr.indexOf('salvaImpostazioni({ qr: qrStileDalModulo() }') >= 0 && salvaQr.indexOf('salvaImpostazioni({ qr: qrStileDalModulo() }') < salvaQr.indexOf('await ripreparaGrafiche()'), 'prima si salva, poi si riprepara');
+  const rip = APP.slice(APP.indexOf('async function ripreparaGrafiche('), APP.indexOf('async function qrSalvaERiprepara('));
+  assert.ok(rip.includes('await livePrepara(v);') && rip.includes('await autoPrepara(v);'), 'la storia della diretta e le automatiche');
+  const avvio = APP.slice(APP.indexOf('function autoAllAvvio('), APP.indexOf('\n}\n', APP.indexOf('function autoAllAvvio(')));
+  assert.ok(avvio.includes('DEMO') && avvio.includes("stato?.ruolo === 'moderatore'") && avvio.includes('autoRiprendi(v)') && avvio.includes('requestIdleCallback'), 'all\'avvio, solo per il proprietario, in un momento di quiete');
+  const avvioPannello = APP.slice(APP.indexOf('async function caricaStato('), APP.indexOf('\n}\n', APP.indexOf('async function caricaStato(')));
+  assert.ok(avvioPannello.includes('\n  autoAllAvvio();\n'), 'e lo chiama l\'avvio del pannello');
   assert.match(SRV, /rev: \(Number\(s\.settings\?\.grafiche\?\.rev\) \|\| 0\) \+ 1,/, 'e ogni salvataggio delle Grafiche alza la versione');
 });
 

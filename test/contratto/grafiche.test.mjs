@@ -100,7 +100,13 @@ test('il motore arriva prima del pannello, e i caratteri prima di disegnare', ()
   const html = leggi('src/web/public/index.html');
   assert.ok(html.indexOf('graf-scene.js') > 0 && html.indexOf('graf-scene.js') < html.indexOf('src="app.js"'));
   for (const f of ['Archivo', 'Instrument Serif', 'Permanent Marker', 'Zen Kaku Gothic New']) assert.ok(leggi('src/web/public/font.css').includes(`font-family: '${f}'`), `${f} non e' servito dal sito`);
-  assert.equal([...APP.matchAll(/await grafFontPronti\(\);/g)].length >= 4, true, 'PNG, condividi, GIF e «Manda» aspettano i caratteri');
+  // Ogni immagine che esce passa da grafEsporta (test/contratto/qr-grafiche),
+  // che aspetta i caratteri prima di disegnare: PNG, Condividi, «Manda», le
+  // storie. La GIF disegna i suoi fotogrammi da se', e li aspetta anche lei.
+  const esporta = APP.slice(APP.indexOf('async function grafEsporta('), APP.indexOf('\n}\n', APP.indexOf('async function grafEsporta(')));
+  assert.ok(esporta.includes('await grafFontPronti();') && esporta.indexOf('await grafFontPronti();') < esporta.indexOf('grafDisegna('), 'grafEsporta aspetta i caratteri prima di disegnare');
+  const gif = APP.slice(APP.indexOf("_g('gr-scarica-gif')") >= 0 ? APP.indexOf("_g('gr-scarica-gif')") : APP.indexOf("getElementById('gr-scarica-gif')"), APP.indexOf("getElementById('gr-scarica-video')"));
+  assert.ok(gif.includes('await grafFontPronti();') && gif.indexOf('await grafFontPronti();') < gif.indexOf('grafDisegna(full'), 'e la GIF anche');
 });
 
 test('niente emoji di serie: il logo e\' l\'iniziale, e il vecchio 🎮 di serie si toglie', () => {
@@ -129,8 +135,8 @@ test('la storia e\' verticale, e «Manda» manda a ogni posto la sua forma', () 
   const tr = APP.slice(APP.indexOf('function _grafTrasla(v, dy) {'), APP.indexOf('function grafDisposizione(c) {'));
   assert.ok(/\(k === 'y' \|\| k === 'base' \|\| k === 'orizzonte'\)/.test(tr), 'si sposta tutto quello che ha una quota');
   const manda = APP.slice(APP.indexOf("_g('sett-manda')?.addEventListener('click'"), APP.indexOf("const r = await api('/api/streamer/settimana/manda'"));
-  assert.ok(manda.includes("corpo.immagine = grafJpeg({ ...c, formato: 'post' })"), 'ai canali il post');
-  assert.ok(manda.includes("if (dove.ig) corpo.storia = grafJpeg({ ...c, formato: 'storia' })"), 'alla storia la storia');
+  assert.ok(manda.includes("corpo.immagine = (await grafEsporta({ ...c, formato: 'post' })).url"), 'ai canali il post');
+  assert.ok(manda.includes("if (dove.ig) corpo.storia = (await grafEsporta({ ...c, formato: 'storia' })).url"), 'alla storia la storia');
   const srv = SRV.slice(SRV.indexOf('async function mandaLaSettimana('), SRV.indexOf("app.get('/api/streamer/grafiche/storia'"));
   assert.ok(srv.length > 0 && srv.includes('esiti.push'), 'la strada di «Manda», e solo lei');
   assert.ok(srv.includes('esiti: await mandaLaSettimana(login, { byte, storia, testo, dove })'), 'la rotta passa di li\'');
@@ -166,13 +172,13 @@ test('«Metti nella storia»: tre stati che si vedono, e parte sempre la storia'
   const p = APP.slice(APP.indexOf('function pannelloGrafiche()'), APP.indexOf('function grClip('));
   assert.ok(p.indexOf('id="gr-ig"') > 0 && p.indexOf('id="gr-ig"') < p.indexOf('class="gr-tipo"'), 'in cima alla scheda, prima di tutto il resto');
   const i = APP.slice(APP.indexOf('function initGrafiche()'), APP.indexOf('function problemaHtml('));
-  assert.ok(i.includes("immagine: grafJpeg({ ...c, formato: 'storia' })"), 'nella storia va sempre la storia, anche se stai guardando il post');
+  assert.ok(i.includes("const { url } = await grafEsporta({ ...c, formato: 'storia' });") && i.includes("{ method: 'POST', body: { immagine: url } }"), 'nella storia va sempre la storia, anche se stai guardando il post');
   assert.ok(i.includes('_grafRiprendi = () => { c.giorni = grafGiorni(); ridisegna(); caricaStoriaIg();'), 'tornando nella scheda, lo stato si rilegge: magari Instagram l\'hai appena collegato');
   assert.match(i, /_grafRiprendi = [^\n]*if \(c\.tipo === 'prossima'\) caricaProssima\(\);/, 'e la prossima diretta, che nel frattempo puo\' essere cambiata');
   const get = SRV.slice(SRV.indexOf("app.get('/api/streamer/grafiche/storia'"), SRV.indexOf("app.post('/api/streamer/grafiche/storia'"));
   assert.match(get, /requireOwner/);
   assert.ok(get.includes('ig: await storiaIgPossibile(login)'), 'si chiede come per la Settimana');
-  assert.ok(get.includes('live: storiaIg.statoLive(login)'), 'e con la storia della diretta: accesa, pronta, com\'e\' andata l\'ultima');
+  assert.ok(/live: await liveDi\(login\)/.test(get) && /storiaIg\.statoLive\(login, \{ firmaQr[^}]*rev/.test(SRV), 'e con la storia della diretta: accesa, pronta, da rifare (firma del QR e versione), com\'e\' andata l\'ultima');
   const post = SRV.slice(SRV.indexOf("app.post('/api/streamer/grafiche/storia'"), SRV.indexOf("app.delete('/api/streamer/ruoli'"));
   assert.match(post, /requireOwner/);
   assert.ok(post.includes('const byte = leggiJpeg(req.body?.immagine);'), 'un JPEG vero e piccolo, come per «Manda»');
@@ -203,11 +209,20 @@ test('la storia della diretta: la prepara il pannello, la pubblica la diretta, e
     'se non parte, lo streamer lo sa anche su Telegram');
   const rotta = SRV.slice(SRV.indexOf("app.post('/api/streamer/grafiche/storia-live'"), SRV.indexOf("app.post('/api/streamer/grafiche/storia',"));
   assert.match(rotta, /requireOwner/);
-  assert.ok(rotta.includes('storiaIg.spegniLive(login)') && rotta.includes('storiaIg.accendiLive(login, byte)'), 'accendere vuol dire mandare la grafica, spegnere la toglie');
+  assert.ok(rotta.includes('storiaIg.spegniLive(login)') && /storiaIg\.accendiLive\(login, byte, \{[^}]*firmaQr/.test(rotta), 'accendere vuol dire mandare la grafica con la firma del suo QR, spegnere la toglie');
   assert.ok(rotta.includes('const byte = leggiJpeg(req.body?.immagine);'), 'un JPEG vero e piccolo');
+  assert.ok(/status\(409\)/.test(rotta), 'e una firma che non e\' piu\' quella di adesso si rifiuta');
+  // Il pannello la disegna dallo stato del server: le Grafiche salvate e lo
+  // stile del QR che il server gli da', e rimanda la sua firma e la versione.
+  const live = APP.slice(APP.indexOf('async function livePrepara('), APP.indexOf('function _autoDaFare('));
+  assert.ok(live.includes("await grafEsporta({ ...c, tipo: 'live', formato: 'storia' }, { stile: _autoStile(v) })"), 'la storia della diretta e\' la grafica «Live ora» in verticale, col QR del server');
+  assert.ok(live.includes("body: { attiva: true, immagine: url, firmaQr: v.firmaQr || '', rev: v.rev }"), 'con la firma e la versione da cui e\' nata');
+  assert.ok(live.includes("e?.dati?.codice !== 'qr-cambiato' || volta") && live.includes('await _rileggiImpostazioni();'), 'al 409 rilegge e ridisegna, una volta');
   const i = APP.slice(APP.indexOf('function initGrafiche()'), APP.indexOf('function problemaHtml('));
-  assert.ok(i.includes("const storiaLive = () => grafJpeg({ ...c, tipo: 'live', formato: 'storia' });"), 'la storia della diretta e\' la grafica «Live ora» in verticale');
-  assert.ok(/if \(_grIgLive\?\.attiva\) \{[\s\S]{0,200}immagine: storiaLive\(\)/.test(i), 'e salvando le grafiche si rifa\'');
+  assert.ok(i.includes('if (accendi) await livePrepara();'), 'accenderla la prepara');
+  const rip = APP.slice(APP.indexOf('async function ripreparaGrafiche('), APP.indexOf('async function qrSalvaERiprepara('));
+  assert.ok(rip.includes('if (v.live?.attiva) {') && rip.includes('await livePrepara(v);'), 'e salvando le grafiche, o lo stile del QR, si rifa\'');
+  assert.ok(i.includes('const fatte = await ripreparaGrafiche();'), 'salvando le grafiche');
   const html = APP.slice(APP.indexOf('function _grIgLiveHtml(live) {'), APP.indexOf('function _grIgHtml('));
   assert.ok(html.includes('live.attiva && !live.pronta') && html.includes('live.ultima && !live.ultima.ok'), 'accesa senza grafica, o l\'ultima non partita: si vede');
 });

@@ -82,6 +82,16 @@ corretti con Berlekamp–Massey, Chien e Forney, dati decodificati. Restituisce
   direzione, per ogni forma di occhio.
 - **Nessun puntino negli allineamenti:** con i quadratini a puntini, gli
   allineamenti hanno la forma degli occhi.
+- **I gradini delle grafiche:** la versione 7 col logo dà `senza-logo` e non
+  `serie`, i colori illeggibili danno `serie`, senza penna `morbido`, due guai
+  insieme li dicono tutti e due; la lista è in ordine e deterministica.
+- **La misura logica resta la stessa** da scala 1 a 3.
+- **Si rilegge dal disegno vero:** un rasterizzatore dei tracciati di moduli e
+  occhi, col logo come caso peggiore (ogni modulo sotto la targa disegnato al
+  contrario), per la pagina link con nomi da 3 a 30 caratteri e per gli
+  indirizzi di Twitch, Kick e YouTube, a 180 e 190 pixel, con quattro stili,
+  anche a scala 2; e un QR guastato oltre la correzione non si
+  rilegge.
 
 I test sono stati provati guastando il codice: N2 spenta, N3 contata da un
 lato solo (da ognuno dei due), le colonne saltate nella penalità, una riga
@@ -167,15 +177,45 @@ Quello che la rilettura non vede: la stampa, la prospettiva, la sfocatura. Per
 questo il margine di correzione resta metà libero, e il manuale dice la misura
 minima di stampa.
 
+### Per le grafiche: la misura e i gradini
+
+Due funzioni servono a chi mette il QR dentro un'altra immagine.
+
+- **`misura(p, latoPx, scala)`.** Il modulo si sceglie a scala 1
+  (`geometria(p, latoPx)`), e a scala `s` diventa esattamente `m1·s`. Così
+  un'immagine grande ha lo stesso QR di quella piccola, con ogni modulo più
+  grande di un numero intero di pixel, invece di una bitmap ingrandita e
+  sfocata.
+- **`gradini(testo, stile, { logo, penna, seme })`.** La lista ordinata dei QR
+  da provare, ognuno col suo `gradino` e il suo `motivo`: `tuo` (lo stile
+  intero), `senza-logo` (`logo-grande`, `logo-assente`, `rilettura`),
+  `morbido` (`penna`: senza il motore della penna le forme a penna diventano
+  morbide), `serie` (`colori`, `rilettura`). Un logo che non ci sta toglie solo
+  il logo: forme e colori restano, e il livello torna M. Dalla versione 7 in su
+  c'è un allineamento proprio al centro, e la targa del logo non ci può stare:
+  col livello H succede da 59 caratteri in su. Solo i colori senza contrasto
+  portano dritti al QR di serie, perché lì nessun altro gradino si leggerebbe.
+  `scegli` dà il primo.
+
+Chi usa i gradini disegna ognuno alla misura vera, lo rilegge con `rileggi` e
+tiene il primo che torna: la lista dice cosa provare, la rilettura dice cosa
+tenere.
+
 ### Dove si usa
 
 - **Scheda QR su misura.** PNG a 1024, 2048 o 4096 pixel, o SVG con il logo e
   il carattere della frase dentro il file (niente riferimenti esterni: l'SVG
   scaricato si apre ovunque uguale).
 - **Grafiche social.** Lo stile salvato (`impostazioni.qr`, normalizzato da
-  `src/features/qr-stile.js`) disegna il QR delle grafiche, senza cornice. Anche
-  lì il QR si rilegge: se con lo stile dello streamer non tornasse, si usa
-  quello di serie.
+  `src/features/qr-stile.js`) disegna il QR di ogni grafica, comprese le
+  storie che escono da sole. Valgono forme, colori e logo; non valgono «Dove
+  porta» (il QR porta all'indirizzo scritto accanto, quello della grafica) e
+  la cornice con la frase (la grafica ha già il suo riquadro). Il QR è pronto,
+  logo compreso, prima che l'immagine esca, e si rilegge nell'immagine vera,
+  JPEG compresa. Quando lo stile intero non si può fare si scende un gradino
+  alla volta (senza logo, forme morbide, di serie), e il pannello dice quale e
+  perché. Il modello sta in `docs/GRAFICHE.md`, capitolo 12; qui sotto la parte
+  del motore.
 - **Promo.** Le grafiche delle campagne prendono la matrice da
   `SB_QR.codifica(…, { livello: 'M' })` e la disegnano a modo loro
   (`docs/PROMO.md`).
@@ -189,6 +229,36 @@ base64, al massimo 200 000 caratteri): niente SVG, che può portare script,
 niente indirizzi di fuori, che sporcherebbero la tela e non si potrebbero più
 leggere i pixel. Il pannello riduce l'immagine prima di mandarla (384, 256 o
 192 pixel di lato, finché ci sta).
+
+### La firma dello stile
+
+Le immagini che il server tiene per le uscite automatiche e per la storia
+della diretta devono dire con che stile del QR sono nate, se no salvare lo
+stile non può sapere cosa rifare. `firmaStileQr(stile, { avatar })` dà 16
+cifre esadecimali: lo sha256 dello stile normalizzato, con `DISEGNO_QR` (la
+versione del disegno) e, col logo «la tua foto», l'indirizzo della foto.
+
+- Dentro ci sono solo le cose che cambiano il disegno nelle grafiche: forme,
+  colori, logo, grandezza del logo, l'immagine del logo se il logo è
+  «immagine».
+- Fuori restano il testo e la cornice, che nelle grafiche non si usano.
+- Due stili che si disegnano uguali hanno la stessa firma: l'ordine delle
+  chiavi non conta, la grandezza del logo senza logo non conta, gli occhi del
+  colore dei quadratini valgono come «nessun colore per gli occhi» (`qr.js` li
+  disegna uguali).
+- `DISEGNO_QR` si alza quando il disegno del QR nelle grafiche cambia in un
+  modo che deve far rifare le immagini già salvate. Se un giorno `qr.js`
+  disegnasse diversi due casi che oggi sono uguali (gli occhi, la grandezza
+  senza logo), va alzato.
+- Con la foto conta l'indirizzo, non i byte: su Twitch l'indirizzo cambia
+  quando cambia la foto. Una piattaforma che desse un indirizzo nuovo per la
+  stessa foto farebbe solo rifare un'immagine in più.
+
+`firmaMandata(v, attuale)` dice cosa fare di una firma che arriva col pannello:
+assente vale come «non la so» (si accetta, e l'immagine resta da rifare),
+uguale a quella di adesso è buona, diversa o storta è un 409 `qr-cambiato`. Le
+prove sono in `test/unita/qr-stile.test.mjs`: quattordici varianti che devono
+avere firme tutte diverse, e gli stili equivalenti che devono averla uguale.
 
 ## Emote e badge
 
