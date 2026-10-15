@@ -2877,3 +2877,94 @@ select.eff-evento { width: auto; max-width: 100%; min-height: 0; padding: .3rem 
 .tempi-studio { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
 .tempi-prova { display: flex; align-items: baseline; gap: .3rem .6rem; flex-wrap: wrap; margin: .4rem 0 0; }
 .tempi-prova .suggerimento { margin: 0; }
+
+.tel { position: fixed; inset: 0; z-index: 1000; background: #000; color: #fff; overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; font-size: 16px; line-height: 1.35; }
+body.tel-aperta { overflow: hidden; overscroll-behavior: none; }
+body.tel-aperta #toast-box { z-index: 1100; left: 12px; right: 12px; top: calc(env(safe-area-inset-top, 0px) + 176px); bottom: auto; }
+.tel button { font: inherit; color: inherit; touch-action: manipulation; cursor: pointer; }
+.tel button:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+.tel .b-ico { margin: 0; vertical-align: 0; }
+.tel-palco { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; touch-action: none; }
+.tel-palco canvas { display: block; width: 100%; height: 100%; object-fit: contain; }
+.tel-su { position: absolute; top: calc(env(safe-area-inset-top, 0px) + 8px); left: 10px; right: 10px; display: flex; align-items: center; gap: 6px; pointer-events: none; }
+.tel-su > * { pointer-events: auto; }
+.tel-stato, .tel-info { display: inline-flex; align-items: center; gap: .3rem; padding: .3rem .65rem; border-radius: 999px; background: #000000a6; font-size: .82rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.tel-stato.in-onda { background: #e0245e; }
+.tel-info.bassa { background: #b3261e; }
+.tel-rete { gap: 2px; align-items: flex-end; height: 28px; }
+.tel-rete i { display: block; width: 4px; border-radius: 1px; background: #fff; opacity: .35; }
+.tel-rete i:nth-child(1) { height: 6px; } .tel-rete i:nth-child(2) { height: 10px; } .tel-rete i:nth-child(3) { height: 14px; }
+.tel-rete[data-q="1"] i:nth-child(-n+1), .tel-rete[data-q="2"] i:nth-child(-n+2), .tel-rete[data-q="3"] i { opacity: 1; }
+.tel-rete[data-q="0"] i { background: #ff5a5a; opacity: 1; }
+.tel-rete[data-q="1"] i:nth-child(-n+1) { background: #ffb020; }
+.tel-esci { margin-left: auto; width: 48px; min-height: 48px; border-radius: 50%; }
+.tel-riassunto { position: absolute; top: calc(env(safe-area-inset-top, 0px) + 62px); left: 50%; transform: translateX(-50%); max-width: calc(100% - 20px); min-height: 48px; padding: 0 16px; border: 0; border-radius: 999px; background: #000000a6; font-size: .86rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tel-avviso, .tel-alert { position: absolute; left: 12px; right: 12px; top: calc(env(safe-area-inset-top, 0px) + 118px); padding: .7rem 1rem; border-radius: 14px; background: #000000cc; font-weight: 700; text-align: center; }
+.tel-alert { top: calc(env(safe-area-inset-top, 0px) + 62px); background: #e0245e; font-size: 1.1rem; }
+.tel-chat { position: absolute; left: 10px; bottom: calc(env(safe-area-inset-bottom, 0px) + 164px); width: min(78%, 440px); max-height: 34vh; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end; gap: 4px; -webkit-mask-image: linear-gradient(to bottom, transparent, #000 24%); mask-image: linear-gradient(to bottom, transparent, #000 24%); }
+.tel-chat[data-g="s"], .tel-chat-piena { font-size: 15px; }
+.tel-chat[data-g="m"] { font-size: 18px; }
+.tel-chat[data-g="l"] { font-size: 23px; }
+.tel-chat .studio-chat-riga, .tel-chat-piena .studio-chat-riga { align-self: flex-start; max-width: 100%; padding: .2rem .55rem; border-radius: 10px; background: #000000b3; text-shadow: 0 1px 2px #000; word-break: break-word; }
+.tel-chat .studio-chat-user { color: #ffd54a; }
+.tel-scene { position: absolute; left: 0; right: 0; bottom: calc(env(safe-area-inset-bottom, 0px) + 98px); display: flex; gap: 8px; padding: 0 10px; overflow-x: auto; scrollbar-width: none; touch-action: pan-x; overscroll-behavior-x: contain; }
+.tel-scene::-webkit-scrollbar { display: none; }
+.tel-scena { flex: none; display: inline-flex; align-items: center; gap: .35rem; min-height: 48px; padding: 0 16px; border: 2px solid transparent; border-radius: 999px; background: #ffffff26; font-weight: 700; white-space: nowrap; }
+.tel-scena.attiva { background: #fff; color: #000; }
+.tel-barra { position: absolute; left: 0; right: 0; bottom: 0; display: grid; grid-template-columns: 1fr 1fr auto 1fr 1fr; gap: 8px; align-items: center; padding: 10px 10px calc(env(safe-area-inset-bottom, 0px) + 10px); background: linear-gradient(to bottom, transparent, #000000c0 45%); }
+.tel-tasto { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-width: 48px; min-height: 60px; padding: 4px; border: 0; border-radius: 16px; background: #ffffff26; font-size: .74rem; font-weight: 700; }
+.tel-tasto[data-stato="muto"], .tel-tasto[data-stato="scena"] { background: #b3261e; }
+.tel-vai { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; width: 80px; height: 80px; border: 0; border-radius: 50%; background: #e0245e; font-size: .78rem; font-weight: 800; box-shadow: 0 0 0 4px #ffffff40; }
+.tel-vai.in-onda { background: #fff; color: #c2185b; font-size: .66rem; }
+@property --tel-p { syntax: '<number>'; inherits: false; initial-value: 0; }
+.tel-anello { position: absolute; inset: -7px; border-radius: 50%; pointer-events: none; --tel-p: 0; background: conic-gradient(#e0245e calc(var(--tel-p) * 1turn), transparent 0); -webkit-mask: radial-gradient(circle, transparent 58%, #000 60%); mask: radial-gradient(circle, transparent 58%, #000 60%); }
+.tel-vai.tenendo .tel-anello { animation: telTieni 1.5s linear forwards; }
+@keyframes telTieni { to { --tel-p: 1; } }
+.tel-foglio { position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; max-height: 84dvh; overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y; padding: 14px 16px calc(env(safe-area-inset-bottom, 0px) + 18px); border-radius: 22px 22px 0 0; background: #17171f; box-shadow: 0 -8px 30px #0009; user-select: text; -webkit-user-select: text; }
+.tel-foglio h3 { margin: 0; font-size: 1.15rem; }
+.tel-foglio h4 { margin: 1.1rem 0 .5rem; font-size: .8rem; letter-spacing: .06em; text-transform: uppercase; color: #ffffffa8; }
+.tel-foglio p { margin: .6rem 0; color: #ffffffd9; }
+.tel-foglio-testa { position: sticky; top: -14px; z-index: 1; display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: -14px -16px 6px; padding: 10px 10px 10px 16px; background: #17171f; }
+.tel-foglio-chiudi { width: 48px; min-height: 48px; border: 0; border-radius: 50%; background: #ffffff1f; }
+.tel-foglio-chiudi .b-ico { transform: rotate(90deg); }
+.tel-scenari { display: grid; gap: 8px; }
+.tel-scenario { display: grid; grid-template-columns: auto 1fr; column-gap: 12px; align-items: center; min-height: 64px; padding: 10px 14px; border: 2px solid transparent; border-radius: 16px; background: #ffffff14; text-align: left; }
+.tel-scenario .b-ico { grid-row: span 2; width: 26px; height: 26px; }
+.tel-scenario span { font-size: .84rem; color: #ffffffb3; }
+.tel-scenario.attivo { border-color: #e0245e; background: #e0245e2e; }
+.tel-scenario.fuori { border-style: dashed; border-color: #ffffff40; }
+.tel-gruppo, .tel-righe { display: flex; flex-wrap: wrap; gap: 8px; }
+.tel-chip { display: inline-flex; align-items: center; gap: .35rem; min-height: 48px; padding: 0 16px; border: 0; border-radius: 999px; background: #ffffff1f; font-weight: 700; }
+.tel-chip.attivo { background: #fff; color: #000; }
+.tel-chip:disabled { opacity: .45; cursor: not-allowed; }
+.tel-grande { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 56px; margin-top: 10px; padding: 0 16px; border: 0; border-radius: 16px; background: #ffffff1f; font-weight: 700; text-align: left; }
+.tel-grande.attivo { background: #fff; color: #000; }
+.tel-grande.primario { justify-content: center; background: #e0245e; }
+.tel-grande.pericolo { background: #b3261e; }
+.tel-griglia { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.tel-griglia .tel-grande { margin-top: 0; }
+.tel-campo { width: 100%; min-height: 50px; padding: 0 14px; border: 1px solid #ffffff40; border-radius: 14px; background: #0d0d12; color: #fff; font-size: 16px; }
+.tel-check { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.tel-check li { display: flex; align-items: flex-start; gap: 8px; }
+.tel-check li.no { color: #ffb4a9; }
+.tel-check li.ok { color: #b6f2c4; }
+.tel-lista { margin: .4rem 0; padding-left: 1.1rem; display: grid; gap: .5rem; }
+.tel-nota { font-size: .84rem; color: #ffffffa8 !important; }
+.tel-zoom { display: grid; gap: 6px; margin-top: 14px; font-weight: 700; }
+.tel-zoom input { width: 100%; min-height: 48px; }
+.tel-chat-piena { max-height: 46dvh; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; touch-action: pan-y; }
+.tel-conto { position: absolute; inset: 0; z-index: 3; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; border: 0; background: #000000a6; }
+.tel-conto strong { font-size: min(40vmin, 220px); line-height: 1; }
+.tel-blocco { position: absolute; inset: 0; z-index: 4; display: flex; align-items: flex-end; justify-content: center; padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 120px); background: #00000040; }
+.tel-sblocca { position: relative; overflow: hidden; display: inline-flex; align-items: center; gap: 10px; min-height: 64px; padding: 0 24px; border: 2px solid #ffffff80; border-radius: 999px; background: #000000cc; font-weight: 700; }
+.tel-sblocca::after { content: ''; position: absolute; left: 0; bottom: 0; height: 4px; width: 0; background: #fff; }
+.tel-sblocca.tenendo::after { animation: telSblocca 1.5s linear forwards; }
+@keyframes telSblocca { to { width: 100%; } }
+@media (orientation: landscape) and (max-height: 520px) {
+  .tel-barra { top: 0; left: auto; width: 104px; grid-template-columns: 1fr; grid-template-rows: repeat(5, auto); align-content: center; justify-items: center; padding: 8px calc(env(safe-area-inset-right, 0px) + 10px) 8px 10px; background: linear-gradient(to right, transparent, #000000c0 40%); }
+  .tel-tasto { width: 72px; min-height: 52px; }
+  .tel-vai { width: 72px; height: 72px; }
+  .tel-scene { right: 112px; bottom: calc(env(safe-area-inset-bottom, 0px) + 10px); }
+  .tel-chat { bottom: 70px; max-height: 46vh; width: min(52%, 440px); }
+  .tel-foglio { left: 50%; right: auto; width: min(100%, 620px); transform: translateX(-50%); max-height: 94dvh; }
+}
