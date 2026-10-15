@@ -38,7 +38,16 @@ catch { console.log('Playwright non c\'e\' su questa macchina: collaudo saltato.
 //  · scorrere il dito non cambia scena;
 //  · i tasti della barra scendono sotto i 48 punti;
 //  · il tasto «indietro» chiude la regia anche in diretta;
-//  · la regia resta dentro la scheda, dove un antenato animato la rinchiude.
+//  · la regia resta dentro la scheda, dove un antenato animato la rinchiude;
+// e per la fotocamera (docs/DIRETTA.md, «La fotocamera del telefono»), una per
+// garanzia: i vincoli chiesti in verticale; l'automatica che ritaglia sempre;
+// lo zoom digitale che non ingrandisce; lo zoom della fotocamera che non si
+// chiede; le due dita che non spostano; lo specchio che non specchia; le bande
+// nere invece che sfumate; l'avviso del telefono storto che tace; l'obiettivo
+// che non si ricorda; l'obiettivo sparito che lascia senza fotocamera; lo zoom
+// rifiutato che resta senza effetto; i bottoni volanti sopra i comandi; i nomi
+// di Android illeggibili; la scelta del computer che non arriva alla scena; i
+// tasti tondi troppo piccoli.
 const SELFTEST = process.argv.includes('--selftest');
 // Difetti che si coprono a vicenda non si rimettono insieme («un tocco chiude»
 // spegnerebbe la diretta prima di poter misurare il rilascio): ogni gruppo e'
@@ -62,10 +71,28 @@ const DIFETTI = {
     ["      STUDIO.palcoNascosto = !(p?._inVista || (a && !a.closest('[hidden]') && a._inVista));", '      STUDIO.palcoNascosto = false;', 'la tela fuori schermo non si disegna', 6, /scorsa fuori dallo schermo/],
     ['  if (libero && !STUDIO.ridisegna && !viva && !STUDIO.eraViva) {', '  if (false) {', 'a riposo non si disegna', 4, /a riposo/],
     ["  const fps = STUDIO.live || STUDIO.avvio ? (STUDIO_QUAL[STUDIO.qual] || STUDIO_QUAL['720p30']).fps : 30;", "  const fps = 1000;", 'fuori diretta al massimo 30 disegni', 4, /30 volte al secondo/],
+    ['  const v = { width: { ideal: ww }, height: { ideal: hh }, frameRate:', '  const v = { width: { ideal: hh }, height: { ideal: ww }, frameRate:', 'la fotocamera si chiede in orizzontale', 7, /si chiede in orizzontale/],
+    ['zoom: cam && !C.hw ? C.zoom : 1,', 'zoom: 1,', 'lo zoom digitale ingrandisce', 7, /il tasto «1×» ingrandisce/],
+    ['await tr.applyConstraints({ advanced: [{ zoom: studioClamp(', 'await ({ advanced: [{ zoom: studioClamp(', 'si usa lo zoom della fotocamera', 7, /ha uno zoom suo/],
+    ['    studioCamSposta(mx - T.pinza.mx, my - T.pinza.my);\n', '', 'due dita spostano', 7, /spostandole insieme/],
+    ['  if (r.specchio) { c.translate(2 * r.dx + r.dw, 0); c.scale(-1, 1); }\n', '', 'lo specchio specchia', 7, /Specchia» rovescia/],
+    ['  if (r.bande && STUDIO.M.SFUMATE.includes(f.tipo)) studioSfumato(c, el, vw, vh, p);\n', '', 'le bande sono sfumate', 8, /sfondo sfumato, non il nero/],
+    ["  if (k === 'dritto') studioTelAvviso(", '  if (false) studioTelAvviso(', 'si dice di tenere il telefono dritto', 7, /regia dice di tenere il telefono dritto/],
+    ['STUDIO.dev.lente[fm] = id;', 'void id;', "l'obiettivo si ricorda per lato", 7, /si ricorda per quel lato/],
+    ['    if (!ripiego || !/Overconstrained|NotFound/', '    if (true || !/Overconstrained|NotFound/', "l'obiettivo sparito non lascia al buio", 7, /obiettivo che non c'e' piu'/],
+    ['  } catch (e) { C.hw = null; C.zoom = studioClamp(', '  } catch (e) { void 0; C.zoom = studioClamp(', 'lo zoom rifiutato passa allo Studio', 7, /rifiuta lo zoom/],
+    ['  if (STUDIO.cap.camEl && prima && (prima.h !== ora.h || prima.fps !== ora.fps)) studioCambiaCamera(STUDIO.dev.camId);', '', 'la fotocamera segue la qualita\'', 7, /si riapre alla misura nuova/],
+    ["  if (t.id === 'sp-adatta' && f.inq) {", "  if (t.id === 'sp-adatta' && false) {", 'la scelta del computer arriva alla scena', 7, /la scelta finisce nella scena/],
+  ],
+  '/js/studio-modello.js': [
+    ["  return taglio <= TAGLIO_MAX + 1e-9 ? 'ritaglia' : 'intera';", "  return 'ritaglia';", "l'automatica non taglia piu' di un terzo", 7, /si vede intera: niente zoom/],
+    ['  if (m) return `${', '  if (false) return `${', 'i nomi di Android si leggono', 7, /coi nomi del telefono/],
   ],
   '/style.css': [
     ['.studio-mobile #studio-docks > .studio-dock:not(.studio-controlli)', '.studio-mobile .studio-docks > .studio-dock:not(.studio-controlli)', 'sul telefono Proprieta\' e Chat restano', 1, /proprieta' si vedono anche sul telefono/],
     ['min-width: 48px; min-height: 60px; padding: 4px;', 'min-width: 30px; min-height: 30px; padding: 0;', 'i tasti sono da pollice', 1, /il pollice arriva a tutto/],
+    ['  body.in-studio #cerca-lancia, body.in-studio #plancia-lancia,', '  body.in-studio #nessuno, body.in-studio #plancia-lancia,', 'niente bottoni volanti nello Studio', 7, /niente bottoni volanti/],
+    ['width: 52px; height: 52px; padding: 0; border: 0; border-radius: 50%;', 'width: 30px; height: 30px; padding: 0; border: 0; border-radius: 50%;', 'i tasti tondi sono da pollice', 7, /tasti della fotocamera sulla tela/],
   ],
 };
 const GRUPPI = [...new Set(Object.values(DIFETTI).flat().map((d) => d[3]))].sort();
@@ -347,7 +374,7 @@ console.log('Regia da telefono (390×844, a tocco):');
 
   const pollice = await p.evaluate(() => {
     const H = innerHeight, W = innerWidth, fuori = [];
-    for (const b of document.querySelectorAll('.tel-barra button, .tel-scene button')) {
+    for (const b of document.querySelectorAll('.tel-barra button, .tel-scene button, .tel-cam button')) {
       const r = b.getBoundingClientRect();
       if (r.right <= 0 || r.left >= W) continue;
       if (r.width < 48 || r.height < 48) fuori.push(`${b.textContent.trim() || b.dataset.tel}: ${Math.round(r.width)}×${Math.round(r.height)}`);
@@ -462,6 +489,171 @@ console.log('Regia da telefono (390×844, a tocco):');
   });
   ok('col telefono di traverso la barra va sul lato del pollice, intera', orizz.fuori.length === 0 && orizz.largo <= 0, orizz.fuori.join('; '));
   ok('nessun errore di pagina nella regia', err.length === 0, err.join(' | '));
+  await p.close();
+}
+
+// ---------------------------------------------------------------- fotocamera sul telefono
+// La fotocamera finta e' una tela dipinta (rosso a sinistra, blu a destra,
+// verde in cima, grigio in mezzo) mandata in un <video>: si legge sulla tela
+// del programma quale parte del frame va in onda. Cambiarle misura e' come
+// girare il telefono: il <video> manda 'resize', come quello vero.
+console.log('Fotocamera sul telefono (390×844, a tocco):');
+{
+  const { p, err } = await apri({ width: 390, height: 844, telefono: true });
+  await p.waitForFunction(() => STUDIO.tel?.aperta, null, { timeout: 10000 }).catch(() => {});
+  await p.evaluate(() => { studioTelScegliScenario('giro'); studioMobileFormato('v'); STUDIO.tel.foglio = ''; renderStudioTel(); });
+  const vinc = await p.evaluate(() => { const v = studioVincoliVideo(); return { w: v.width.ideal, h: v.height.ideal, lavoro: STUDIO.lavoro }; });
+  ok('la fotocamera si chiede in orizzontale anche andando in verticale: e\' il telefono a girarla come lo tieni', vinc.w > vinc.h && vinc.lavoro === 'v', JSON.stringify(vinc));
+
+  await p.evaluate(async () => {
+    const c = document.createElement('canvas'); c.width = 1280; c.height = 720;
+    const dipingi = () => { const g = c.getContext('2d'), w = c.width, h = c.height; g.fillStyle = '#808080'; g.fillRect(0, 0, w, h); g.fillStyle = '#ff0000'; g.fillRect(0, 0, w * 0.2, h); g.fillStyle = '#0000ff'; g.fillRect(w * 0.8, 0, w * 0.2, h); g.fillStyle = '#00ff00'; g.fillRect(w * 0.2, 0, w * 0.6, h * 0.1); };
+    dipingi(); setInterval(dipingi, 50);
+    window.__finta = { c, dipingi };
+    const stream = c.captureStream(30), v = document.createElement('video');
+    v.muted = true; v.playsInline = true; v.srcObject = stream; v.addEventListener('resize', studioCamForma);
+    await v.play().catch(() => {});
+    STUDIO.cap.camStream = stream; STUDIO.cap.camEl = v;
+    STUDIO.overlay.chat = []; STUDIO.overlay.fx = []; STUDIO.overlay.alert = null;
+    STUDIO.doc.inOnda = STUDIO.doc.scene.find((s) => s.fonti.some((f) => f.tipo === 'webcam')).id;
+    studioCamDopo(); avviaLoopStudio(); renderStudioTutto();
+  });
+  await p.waitForFunction(() => STUDIO.cap.camEl.videoWidth === 1280, null, { timeout: 5000 }).catch(() => {});
+  await p.waitForTimeout(400);
+  const px = (fx, fy) => p.evaluate(([fx, fy]) => { const c = STUDIO.tele[STUDIO.lavoro], d = c.getContext('2d').getImageData(Math.floor(c.width * fx), Math.floor(c.height * fy), 1, 1).data; return [d[0], d[1], d[2]]; }, [fx, fy]);
+  const tinta = ([r, g, b]) => (r > 170 && g < 90 && b < 90 ? 'rosso' : b > 170 && r < 90 && g < 90 ? 'blu' : g > 170 && r < 90 && b < 90 ? 'verde' : Math.abs(r - 128) < 32 && Math.abs(g - 128) < 32 && Math.abs(b - 128) < 32 ? 'grigio' : `${r},${g},${b}`);
+  const riga = async (fy) => [tinta(await px(0.05, fy)), tinta(await px(0.5, fy)), tinta(await px(0.95, fy))].join(' ');
+  const attendi = () => p.waitForTimeout(350);
+
+  const oriz = await riga(0.5), banda = await px(0.5, 0.12);
+  const fondoBanda = Math.abs(banda[0] - 11) + Math.abs(banda[1] - 11) + Math.abs(banda[2] - 15);
+  const avvisoDritto = await p.evaluate(() => document.getElementById('tel-avviso').textContent);
+  ok('un\'immagine orizzontale in verticale si vede intera: niente zoom di tre volte', oriz === 'rosso grigio blu', oriz);
+  ok('e sopra e sotto c\'e\' lo sfondo sfumato, non il nero', oriz === 'rosso grigio blu' && fondoBanda > 40, banda.join(','));
+  ok('e la regia dice di tenere il telefono dritto', /dritto|upright/i.test(avvisoDritto), avvisoDritto);
+
+  await clic(p, '[data-tel="camera"]');
+  await clic(p, '[data-cam-adatta="ritaglia"]'); await attendi();
+  const riempi = await riga(0.5), cima = tinta(await px(0.5, 0.03));
+  ok('«Riempi» riempie lo schermo tagliando i lati, solo se lo chiedi', riempi === 'grigio grigio grigio' && cima === 'verde', `${riempi} / cima ${cima}`);
+  await clic(p, '[data-cam-adatta="auto"]');
+  await p.evaluate(() => { const { c, dipingi } = window.__finta; c.width = 720; c.height = 1280; dipingi(); });
+  await p.waitForFunction(() => STUDIO.cap.camEl.videoWidth === 720, null, { timeout: 5000 }).catch(() => {});
+  await attendi();
+  const dritto = await riga(0.5), cimaD = tinta(await px(0.5, 0.03));
+  ok('girato il telefono dritto, la fotocamera riempie lo schermo senza ingrandire: si vede tutto quello che vede', dritto === 'rosso grigio blu' && cimaD === 'verde', `${dritto} / cima ${cimaD}`);
+
+  await assicura(p);
+  const tondi = await p.evaluate(() => [...document.querySelectorAll('.tel-cam button')].map((b) => { const r = b.getBoundingClientRect(); return { w: Math.round(r.width), h: Math.round(r.height), basso: r.top > innerHeight / 2, coperto: document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2) !== b && !b.contains(document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2)) }; }));
+  ok('i tasti della fotocamera sulla tela sono da pollice: 48 punti, nella meta\' bassa, scoperti', tondi.length === 2 && tondi.every((t) => t.w >= 48 && t.h >= 48 && t.basso && !t.coperto), JSON.stringify(tondi));
+  await clic(p, '#tel-zoom-passo'); await attendi();
+  const z2 = { z: await p.evaluate(() => STUDIO.cam.zoom), testo: await p.evaluate(() => document.getElementById('tel-zoom-passo').textContent), riga: await riga(0.5) };
+  ok('il tasto «1×» ingrandisce a 2×: senza zoom della fotocamera lo fa lo Studio', z2.z === 2 && z2.testo === '2×' && z2.riga === 'grigio grigio grigio', JSON.stringify(z2));
+  await clic(p, '#tel-zoom-passo'); const z3 = await p.evaluate(() => STUDIO.cam.zoom);
+  await clic(p, '#tel-zoom-passo'); const z1 = await p.evaluate(() => STUDIO.cam.zoom);
+  ok('e a tocchi va a 3× e torna a 1×', z3 === 3 && z1 === 1, `${z3}, ${z1}`);
+
+  const dita = (tipo, id, x, y) => p.evaluate(([tipo, id, x, y]) => { const t = document.getElementById('tel-palco'); t.dispatchEvent(new PointerEvent(tipo, { pointerId: id, pointerType: 'touch', isPrimary: id === 1, clientX: x, clientY: y, bubbles: true, cancelable: true })); }, [tipo, id, x, y]);
+  await dita('pointerdown', 1, 150, 420); await dita('pointerdown', 2, 240, 420);
+  for (const x of [270, 300, 330]) await dita('pointermove', 2, x, 420);
+  const pz = await p.evaluate(() => STUDIO.cam.zoom);
+  for (const k of [1, 2, 3]) { await dita('pointermove', 1, 150 + k * 50, 420); await dita('pointermove', 2, 330 + k * 50, 420); }
+  await dita('pointerup', 1, 300, 420); await dita('pointerup', 2, 480, 420); await attendi();
+  const sp = { zoom: pz, cx: await p.evaluate(() => studioCamFonte().inq.v.cx), sx: tinta(await px(0.05, 0.5)) };
+  ok('con due dita si ingrandisce e, spostandole insieme, si sposta l\'inquadratura', Math.abs(sp.zoom - 2) < 0.05 && sp.cx < -0.5 && sp.sx === 'rosso', JSON.stringify(sp));
+  ok('l\'inquadratura spostata si salva con la scena', await p.evaluate(() => STUDIO.salvo.stato === 'attesa' || !!STUDIO.salvo.timer || STUDIO.salvo.stato === 'salvato'));
+
+  await p.evaluate(() => { studioCamZoom(1, false); studioCamCentra(); });
+  await assicura(p); await clic(p, '[data-tel="camera"]');
+  await clic(p, '[data-tel="specchio"]'); await attendi();
+  const sp1 = await riga(0.5), ricordo = await p.evaluate(() => JSON.parse(localStorage.getItem('andrybot-studio-cam:' + studioChi()) || '{}').specchio);
+  ok('«Specchia» rovescia la fotocamera davanti, anche in onda, e il telefono se lo ricorda', sp1 === 'blu grigio rosso' && ricordo === true, `${sp1} · ${ricordo}`);
+  await clic(p, '[data-tel="specchio"]'); await attendi();
+
+  await p.evaluate(() => {
+    const tr = STUDIO.cap.camStream.getVideoTracks()[0];
+    window.__zoomHw = [];
+    tr.getCapabilities = () => ({ zoom: { min: 1, max: 8, step: 0.1 } });
+    tr.getSettings = () => ({ zoom: 1, deviceId: 'finta' });
+    tr.applyConstraints = async (c) => { window.__zoomHw.push(c.advanced[0].zoom); };
+    studioCamDopo();
+  });
+  await assicura(p);
+  await clic(p, '#tel-zoom-passo'); await attendi();
+  const hw = { chiesti: await p.evaluate(() => window.__zoomHw), riga: await riga(0.5) };
+  ok('se la fotocamera ha uno zoom suo, lo Studio usa quello: l\'immagine resta nitida e non si ritaglia due volte', hw.chiesti.includes(2) && hw.riga === 'rosso grigio blu', JSON.stringify(hw));
+  await p.evaluate(() => { STUDIO.cap.camStream.getVideoTracks()[0].applyConstraints = async () => { throw new Error('no'); }; });
+  await clic(p, '#tel-zoom-passo'); await attendi();
+  const rif = { hw: await p.evaluate(() => STUDIO.cam.hw), z: await p.evaluate(() => STUDIO.cam.zoom), riga: await riga(0.5) };
+  ok('se la fotocamera rifiuta lo zoom, lo fa lo Studio: lo zoom non resta mai senza effetto', rif.hw === null && rif.z === 3 && rif.riga === 'grigio grigio grigio', JSON.stringify(rif));
+  await p.evaluate(() => studioCamZoom(1, false));
+
+  await p.evaluate(() => {
+    const finte = { a: 'environment', b: 'user' };
+    STUDIO.dev.cams = [{ deviceId: 'a', label: 'camera2 0, facing back' }, { deviceId: 'b', label: 'camera2 1, facing front' }, { deviceId: 'c', label: '' }];
+    STUDIO.dev.mics = [{ deviceId: 'm1', label: 'Microfono iPhone' }, { deviceId: 'm2', label: 'AirPods' }];
+    window.__chiesti = [];
+    navigator.mediaDevices.enumerateDevices = async () => [...STUDIO.dev.cams.map((d) => ({ ...d, kind: 'videoinput' })), ...STUDIO.dev.mics.map((d) => ({ ...d, kind: 'audioinput' }))];
+    navigator.mediaDevices.getUserMedia = async ({ video }) => {
+      const id = video.deviceId?.exact || '', fm = video.facingMode || '';
+      window.__chiesti.push(id || fm);
+      if (id === 'zzz') { const e = new Error('non c\'e\''); e.name = 'OverconstrainedError'; throw e; }
+      const lato = id ? finte[id] || 'environment' : fm, dev = id || (fm === 'user' ? 'b' : 'a');
+      const s = window.__finta.c.captureStream(30), tr = s.getVideoTracks()[0];
+      tr.getSettings = () => ({ deviceId: dev, facingMode: lato }); tr.getCapabilities = () => ({});
+      return s;
+    };
+    STUDIO.tel.foglio = 'camera'; renderStudioTelFoglio();
+  });
+  const lenti = await p.evaluate(() => [...document.querySelectorAll('[data-tel-lente]')].map((b) => b.textContent.trim()));
+  ok('il foglio Fotocamera elenca gli obiettivi coi nomi del telefono', lenti.join('|') === 'Dietro 1|Davanti 2|Fotocamera 3', lenti.join('|'));
+  await clic(p, '[data-tel-lente="a"]'); await p.waitForTimeout(500);
+  const l1 = await p.evaluate(() => ({ lente: STUDIO.dev.lente.environment, facing: STUDIO.dev.facing, camId: STUDIO.dev.camId, attivo: document.querySelector('[data-tel-lente="a"]')?.classList.contains('attivo') }));
+  await clic(p, '[data-tel="gira"]'); await p.waitForTimeout(500);
+  await clic(p, '[data-tel="gira"]'); await p.waitForTimeout(500);
+  const giri = await p.evaluate(() => window.__chiesti.slice(-2));
+  ok('l\'obiettivo scelto si ricorda per quel lato: girando e tornando torna quello', l1.lente === 'a' && l1.facing === 'environment' && l1.camId === '' && l1.attivo && giri.join() === 'user,a', JSON.stringify({ l1, giri }));
+  await p.evaluate(() => { STUDIO.dev.lente.environment = 'zzz'; STUDIO.dev.facing = 'user'; });
+  await clic(p, '[data-tel="gira"]'); await p.waitForTimeout(500);
+  const vecchia = await p.evaluate(() => ({ chiesti: window.__chiesti.slice(-2), lente: STUDIO.dev.lente.environment, cam: !!STUDIO.cap.camEl, facing: STUDIO.cam.facing }));
+  ok('un obiettivo che non c\'e\' piu\' non lascia senza fotocamera: si torna a quello di serie, e lo si dimentica', vecchia.chiesti.join() === 'zzz,environment' && vecchia.lente === '' && vecchia.cam && vecchia.facing === 'environment', JSON.stringify(vecchia));
+
+  await assicura(p); await clic(p, '[data-tel="camera"]');
+  const primaQ = await p.evaluate(() => window.__chiesti.length);
+  await clic(p, '[data-tel-qual="1080p30"]'); await p.waitForTimeout(500);
+  const qual = await p.evaluate((n) => ({ qual: STUDIO.qual, h: studioVincoliVideo().height.ideal, riaperta: window.__chiesti.length > n }), primaQ);
+  ok('la qualita\' si sceglie dal telefono, e la fotocamera si riapre alla misura nuova', qual.qual === '1080p30' && qual.h === 1080 && qual.riaperta, JSON.stringify(qual));
+  await clic(p, '[data-tel-qual="720p30"]'); await p.waitForTimeout(300);
+
+  await assicura(p); await clic(p, '[data-tel="altro"]');
+  const altro = await p.evaluate(() => ({ torcia: !!document.querySelector('#tel-foglio [data-tel="torcia"]'), zoom: !!document.querySelector('#tel-foglio [data-cam-zoom]'), mic: [...document.querySelectorAll('#tel-foglio [data-tel-mic] option')].map((o) => o.textContent), cam: !!document.querySelector('#tel-foglio [data-tel="camera"]') }));
+  ok('in «Altro» si sceglie il microfono (AirPods, esterno), e la fotocamera ha il suo foglio', altro.mic.length === 3 && altro.mic.includes('AirPods') && altro.cam && !altro.zoom && !altro.torcia, JSON.stringify(altro));
+
+  await p.evaluate(() => studioTelChiudi()); await p.waitForTimeout(250);
+  const pann = await p.evaluate(() => ({ tasto: !!document.querySelector('#studio-mobile-barra [data-tel="camera-da-pannello"]'), lente: getComputedStyle(document.getElementById('cerca-lancia') || document.body).display, h: Math.round(document.getElementById('studio-palco-prog').getBoundingClientRect().height), vh: innerHeight }));
+  ok('nello Studio sul telefono niente bottoni volanti sopra i comandi, e la tela lascia posto ai tasti', pann.lente === 'none' && pann.h <= pann.vh * 0.5, JSON.stringify(pann));
+  await clic(p, '#studio-mobile-barra [data-tel="camera-da-pannello"]'); await p.waitForTimeout(250);
+  ok('«Zoom e obiettivo» dal pannello apre la regia sul foglio Fotocamera', pann.tasto && await p.evaluate(() => STUDIO.tel.aperta && STUDIO.tel.foglio === 'camera'));
+  ok('nessun errore di pagina con la fotocamera', err.length === 0, err.join(' | '));
+  await p.close();
+}
+
+// ---------------------------------------------------------------- fotocamera sul computer
+console.log('Fotocamera sul computer (1280×900):');
+{
+  const { p, err } = await apri({ width: 1280, height: 900, telefono: false });
+  await p.evaluate(async () => {
+    const c = document.createElement('canvas'); c.width = 640; c.height = 480; c.getContext('2d').fillRect(0, 0, 640, 480);
+    const v = document.createElement('video'); v.muted = true; v.srcObject = c.captureStream(10); await v.play().catch(() => {});
+    STUDIO.cap.camStream = v.srcObject; STUDIO.cap.camEl = v; studioCamDopo();
+    const f = studioAddFonte('webcam'); STUDIO.sel = f.id; renderStudioTutto(); studioApriImpostazioni?.();
+  });
+  await p.waitForTimeout(300);
+  const d = await p.evaluate(() => ({ adatta: !!document.getElementById('sp-adatta'), cx: !!document.getElementById('sp-cx'), zoom: !!document.querySelector('#studio-cam-extra [data-cam-zoom]'), specchio: !!document.querySelector('#studio-cam-extra [data-cam-specchio]') }));
+  ok('sul computer la fonte dice come sta nel riquadro, e la fotocamera ha zoom e specchio', d.adatta && d.cx && d.zoom && d.specchio, JSON.stringify(d));
+  await p.evaluate(() => { const s = document.getElementById('sp-adatta'); s.value = 'intera'; s.dispatchEvent(new Event('input', { bubbles: true })); });
+  ok('e la scelta finisce nella scena, per il formato su cui lavori', await p.evaluate(() => studioTrovaFonte(STUDIO.sel).inq[STUDIO.lavoro].adatta === 'intera'));
+  ok('nessun errore di pagina', err.length === 0, err.join(' | '));
   await p.close();
 }
 

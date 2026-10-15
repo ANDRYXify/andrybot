@@ -18,6 +18,12 @@ export const SCENARI = Object.freeze({
   gioco: Object.freeze({ disponibile: false, facing: '', audio: 'voce', voce: false, categorie: Object.freeze([]), scene: Object.freeze([]) }),
 });
 export const CHAT_GRANDEZZE = Object.freeze(['s', 'm', 'l']);
+export const ADATTA = Object.freeze(['auto', 'ritaglia', 'intera']);
+export const INQUADRABILI = Object.freeze(['webcam', 'schermo', 'video', 'immagine']);
+export const SFUMATE = Object.freeze(['webcam', 'schermo', 'video']);
+export const TAGLIO_MAX = 1.5;
+export const ZOOM_DIGITALE_MAX = 3;
+export const PASSI_ZOOM = Object.freeze([1, 2, 3]);
 
 const ID = /^[a-z0-9]{1,24}$/;
 const IMPRONTA = /^[0-9a-f]{64}$/;
@@ -62,6 +68,57 @@ function posizione(p, tipo, f, prop) {
   return { x: num(p.x, -w + 20, W - 20, 0), y: num(p.y, -h + 20, H - 20, 0), w, h, vis: p.vis !== false };
 }
 
+const centro = (v) => Math.round(num(v, -1, 1, 0) * 1000) / 1000;
+
+function inq(q, tipo) {
+  const o = q && typeof q === 'object' ? q : {};
+  return { adatta: ADATTA.includes(o.adatta) ? o.adatta : (tipo === 'immagine' ? 'intera' : 'auto'), cx: centro(o.cx), cy: centro(o.cy) };
+}
+
+export function modoAdatta(vw, vh, bw, bh, adatta) {
+  if (adatta === 'ritaglia' || adatta === 'intera') return adatta;
+  const taglio = Math.max(bw / vw, bh / vh) / Math.min(bw / vw, bh / vh);
+  return taglio <= TAGLIO_MAX + 1e-9 ? 'ritaglia' : 'intera';
+}
+
+export function inquadra(vw, vh, box, q = {}, { zoom = 1, specchio = false } = {}) {
+  if (!(vw > 0 && vh > 0 && box && box.w > 0 && box.h > 0)) return null;
+  const modo = modoAdatta(vw, vh, box.w, box.h, q?.adatta);
+  const z = num(zoom, 1, 64, 1);
+  const s = (modo === 'ritaglia' ? Math.max(box.w / vw, box.h / vh) : Math.min(box.w / vw, box.h / vh)) * z;
+  const sw = Math.min(vw, box.w / s), sh = Math.min(vh, box.h / s);
+  const cx = num(q?.cx, -1, 1, 0), cy = num(q?.cy, -1, 1, 0);
+  const sx = (vw - sw) / 2 * (1 + (specchio ? -cx : cx)), sy = (vh - sh) / 2 * (1 + cy);
+  const dw = sw * s, dh = sh * s;
+  return { modo, s, sx, sy, sw, sh, dx: box.x + (box.w - dw) / 2, dy: box.y + (box.h - dh) / 2, dw, dh, bande: dw < box.w - 0.5 || dh < box.h - 0.5, specchio: !!specchio };
+}
+
+export function spostaCentro(r, vw, vh, q, ddx, ddy) {
+  const mx = (vw - r.sw) / 2, my = (vh - r.sh) / 2;
+  return {
+    cx: mx > 0.5 ? centro(num(q?.cx, -1, 1, 0) - ddx / r.s / mx) : centro(q?.cx),
+    cy: my > 0.5 ? centro(num(q?.cy, -1, 1, 0) - ddy / r.s / my) : centro(q?.cy),
+  };
+}
+
+export function prossimoZoom(z, max) {
+  const passi = PASSI_ZOOM.filter((p) => p <= max + 1e-9);
+  return passi.find((p) => p > z + 0.05) ?? 1;
+}
+
+export function orientamentoStorto(vw, vh, f) {
+  if (!(vw > 0 && vh > 0)) return '';
+  if (f === 'v' && vw > vh * 1.05) return 'dritto';
+  if (f === 'o' && vh > vw * 1.05) return 'lato';
+  return '';
+}
+
+export function nomeCamera(label, i, t) {
+  const m = /camera2 (\d+), facing (front|back)/i.exec(String(label || ''));
+  if (m) return `${m[2].toLowerCase() === 'front' ? t.davanti : t.dietro} ${Number(m[1]) + 1}`;
+  return String(label || '').trim().slice(0, 60) || `${t.fotocamera} ${i + 1}`;
+}
+
 function media(m) {
   if (!m || typeof m !== 'object') return null;
   return {
@@ -83,6 +140,7 @@ export function normalizzaFonte(f, usati) {
   if (f.tipo === 'overlay') { pos.o = { ...posizioneDiSerie('overlay', 'o'), vis: pos.o.vis }; pos.v = { ...posizioneDiSerie('overlay', 'v'), vis: pos.v.vis }; }
   const out = { id, tipo: f.tipo, nome: testo(f.nome, LIMITI.nome) || f.tipo, pos };
   if (m) out.media = m;
+  if (INQUADRABILI.includes(f.tipo)) out.inq = { o: inq(f.inq?.o, f.tipo), v: inq(f.inq?.v, f.tipo) };
   if (f.tipo === 'overlay') out.overlay = /^[A-Za-z0-9_-]{1,40}$/.test(String(f.overlay || '')) ? String(f.overlay) : '';
   if (f.tipo === 'testo') {
     out.testo = testo(f.testo, LIMITI.testo);

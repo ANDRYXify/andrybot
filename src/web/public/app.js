@@ -40,6 +40,7 @@ function dataIt(ts) {
 
 function toast(msg, tipo = 'ok') {
   if (tipo === 'errore') { try { aiutoDopoErrore(); } catch (e) {  } }
+  if (document.body.classList.contains('tel-aperta') && document.getElementById('tel-avviso')) { studioTelAvviso(msg, 4000, tipo === 'errore'); return; }
   const box = document.getElementById('toast-box');
   const el = document.createElement('div');
   el.className = 'toast' + (tipo === 'errore' ? ' errore' : '');
@@ -4961,7 +4962,7 @@ const GUIDE = {
   dcfiltro: { serve: ['Decidere cosa sul tuo server non si scrive: le tue parole, le liste che Discord tiene aggiornate da sé, lo spam e le raffiche di menzioni. Lo ferma Discord prima che il messaggio esista, non un bot che lo legge dopo.', 'Decide what does not get written on your server: your own words, the lists Discord keeps updated by itself, spam and mention raids. Discord stops it before the message exists, not a bot reading it afterwards.', 'Decidir qué no se escribe en tu servidor: tus palabras, las listas que Discord mantiene solo, el spam y las ráfagas de menciones. Lo para Discord antes de que el mensaje exista, no un bot que lo lee después.'],
     come: [['Le tue liste stanno in «Parole da non scrivere», una per ogni cosa che vuoi fermare. Si scrive anche a pezzi: «insult*» prende tutto quello che comincia così.', 'Your own lists live in «Words that do not get written», one per thing you want stopped. Partial words work too: «insult*» catches everything starting like that.', 'Tus listas están en «Palabras que no se escriben», una por cada cosa que quieras parar. También a trozos: «insult*» coge todo lo que empiece así.', '#dcf-parole'], ['Le liste già pronte le aggiorna Discord in tutte le lingue: tu scegli quali accendere.', 'The ready-made lists are updated by Discord in every language: you choose which to switch on.', 'Las listas ya hechas las actualiza Discord en todos los idiomas: tú eliges cuáles encender.', '#dcf-liste'], ['Per ogni regola decidi cosa succede quando scatta, e chi e dove non tocca: passano i ruoli che spunti in «Questi ruoli passano». Con le regole di base ci sono già quelli dello staff della traccia.', 'For each rule you decide what happens when it fires, and who and where it leaves alone: the roles you tick in «These roles get through» get through. With the basic rules the track’s staff roles are already there.', 'Para cada regla decides qué pasa cuando salta, y a quién y dónde no toca: pasan los roles que marques en «Estos roles pasan». Con las reglas básicas ya están los del staff de la plantilla.', '#dcf-menzioni'], ['«Fammi vedere cosa faresti» e poi «Costruisci»: il filtro parte insieme ai canali, in un giro solo.', '«Show me what you would do» and then «Build it»: the filter goes out together with the channels, in one go.', '«Enséñame qué harías» y luego «Constrúyelo»: el filtro sale junto con los canales, de una sola vez.', '#dcf-vedi']] },
   studio: { serve: ['Andare in diretta dal sito, senza OBS, con uno studio fatto come OBS: scene, fonti, mixer, transizioni, anteprima e programma. In orizzontale, in verticale o in tutti e due insieme. È una beta aperta: il video lo fa il tuo dispositivo, il server lo passa a Twitch, Kick, YouTube o a un server tuo.', 'Going live from the site, without OBS, with a studio built like OBS: scenes, sources, mixer, transitions, preview and program. Horizontal, vertical or both at once. It is an open beta: your device makes the video, the server passes it on to Twitch, Kick, YouTube or your own server.', 'Emitir en directo desde el sitio, sin OBS, con un estudio hecho como OBS: escenas, fuentes, mezclador, transiciones, vista previa y programa. En horizontal, en vertical o en los dos a la vez. Es una beta abierta: tu dispositivo hace el vídeo, el servidor lo pasa a Twitch, Kick, YouTube o a un servidor tuyo.'],
-    come: [['Premi «Voglio provarlo» ed entri subito. Serve un browser aggiornato: Chrome o Edge su computer, Chrome su Android.', 'Press «I want to try it» and you are in right away. It needs an up-to-date browser: Chrome or Edge on a computer, Chrome on Android.', 'Pulsa «Quiero probarlo» y entras enseguida. Necesita un navegador actualizado: Chrome o Edge en el ordenador, Chrome en Android.', '#studio-beta-riga'], ['Componi le scene come in OBS: a sinistra le scene, accanto le fonti (webcam, schermo, immagini e GIF, video, testo, overlay). Ogni scena sceglie quale dei tuoi overlay usare, dal pannello Fonti. Trascina e ridimensiona sulla tela; le frecce spostano di un punto, con Maiuscole di dieci.', 'Build your scenes as in OBS: scenes on the left, sources next to them (webcam, screen, images and GIFs, video, text, overlay). Every scene picks which of your overlays to use, from the Sources dock. Drag and resize on the canvas; the arrow keys move by one point, with Shift by ten.', 'Compón las escenas como en OBS: a la izquierda las escenas, al lado las fuentes (webcam, pantalla, imágenes y GIF, vídeo, texto, overlay). Cada escena elige cuál de tus overlays usar, desde el panel Fuentes. Arrastra y cambia el tamaño en el lienzo; las flechas mueven un punto, con Mayúsculas diez.', ''], ['«Modalità studio» apre anteprima e programma affiancati: prepari la scena dopo senza che il pubblico la veda, e «Transizione» la manda in onda con un taglio o una dissolvenza.', '«Studio mode» opens preview and program side by side: you prepare the next scene without the audience seeing it, and «Transition» puts it on air with a cut or a fade.', '«Modo estudio» abre vista previa y programa lado a lado: preparas la escena siguiente sin que el público la vea, y «Transición» la pone en el aire con un corte o un fundido.', ''], ['In «Impostazioni» scegli i formati: orizzontale, verticale o tutti e due. Con tutti e due partono due dirette vere, e ogni fonte ha una posizione per formato. Poi scegli dove va la diretta: Twitch e Kick sono già pronti se li hai collegati, YouTube, TikTok o un server tuo si aggiungono con la chiave di trasmissione, che resta cifrata.', 'In «Settings» pick the formats: horizontal, vertical or both. With both, two real streams start, and every source has a position per format. Then choose where the stream goes: Twitch and Kick are ready if you connected them, YouTube, TikTok or your own server are added with the stream key, which stays encrypted.', 'En «Ajustes» eliges los formatos: horizontal, vertical o los dos. Con los dos salen dos directos de verdad, y cada fuente tiene una posición por formato. Luego eliges adónde va el directo: Twitch y Kick ya están listos si los conectaste, YouTube, TikTok o un servidor tuyo se añaden con la clave de emisión, que queda cifrada.', ''], ['Sul telefono si apre la regia, a schermo intero e fatta per il pollice: scegli cosa fai (in giro, in camera, mani al lavoro, musica) e prepara scene, fotocamera e audio. Scorri il dito sulla tela per cambiare scena, due tocchi girano la fotocamera, e la diretta si chiude tenendo premuto.', 'On a phone the controls open full screen, built for the thumb: choose what you do (out and about, on camera, hands at work, music) and it sets up scenes, camera and audio. Swipe on the canvas to switch scenes, double tap flips the camera, and you end the stream by holding the button.', 'En el teléfono se abre el control a pantalla completa, hecho para el pulgar: eliges qué haces (de paseo, en cámara, manos a la obra, música) y prepara escenas, cámara y audio. Desliza el dedo sobre el lienzo para cambiar de escena, dos toques giran la cámara, y el directo se cierra manteniendo pulsado.', ''], ['In diretta dal telefono la chat si legge grande, e una voce può leggertela in cuffia; gli alert fanno vibrare. «Blocca i tocchi» evita i tocchi in tasca. Se cambi app va in onda la scritta di riserva, e al ritorno fotocamera e microfono ripartono da soli.', 'Streaming from the phone the chat reads big, and a voice can read it to you in your headphones; alerts make it vibrate. «Lock touches» avoids pocket taps. If you switch apps your fallback text goes on air, and when you are back camera and microphone restart by themselves.', 'En directo desde el teléfono el chat se lee grande, y una voz puede leértelo en los auriculares; las alertas hacen vibrar. «Bloquear toques» evita toques en el bolsillo. Si cambias de app sale tu texto de reserva, y al volver cámara y micrófono arrancan solos.', ''], ['Le scene si salvano da sole sul tuo account, cifrate. Immagini, GIF e video restano sul dispositivo: su un altro computer al loro posto c’è un riquadro col nome del file, e lo ricarichi una volta per tutte le scene che lo usano.', 'Scenes save by themselves to your account, encrypted. Images, GIFs and videos stay on the device: on another computer a box with the file name stands in their place, and you load it once for every scene that uses it.', 'Las escenas se guardan solas en tu cuenta, cifradas. Imágenes, GIF y vídeos se quedan en el dispositivo: en otro ordenador en su lugar hay un recuadro con el nombre del archivo, y lo vuelves a cargar una vez para todas las escenas que lo usan.', ''], ['Scrivi la frase della tua immagine di riserva e quanti minuti aspettare: se la rete rallenta resta la tua voce su quell’immagine, se cade va in onda lei, e se non torni la diretta si chiude da sola.', 'Write the line for your backup image and how many minutes to wait: if the network slows down your voice stays over that image, if it drops the image goes on air, and if you do not come back the stream ends by itself.', 'Escribe la frase de tu imagen de reserva y cuántos minutos esperar: si la red va lenta queda tu voz sobre esa imagen, si cae sale ella, y si no vuelves el directo se cierra solo.', ''], ['Con OSify acceso, i suoi canali audio (gioco, voce, musica) compaiono da soli: «Usa i canali di OSify» li mette ognuno al suo posto nel mixer.', 'With OSify running, its audio channels (game, voice, music) show up by themselves: «Use the OSify channels» puts each one in its place in the mixer.', 'Con OSify encendido, sus canales de audio (juego, voz, música) aparecen solos: «Usar los canales de OSify» pone cada uno en su sitio en el mezclador.', '']] },
+    come: [['Premi «Voglio provarlo» ed entri subito. Serve un browser aggiornato: Chrome o Edge su computer, Chrome su Android.', 'Press «I want to try it» and you are in right away. It needs an up-to-date browser: Chrome or Edge on a computer, Chrome on Android.', 'Pulsa «Quiero probarlo» y entras enseguida. Necesita un navegador actualizado: Chrome o Edge en el ordenador, Chrome en Android.', '#studio-beta-riga'], ['Componi le scene come in OBS: a sinistra le scene, accanto le fonti (webcam, schermo, immagini e GIF, video, testo, overlay). Ogni scena sceglie quale dei tuoi overlay usare, dal pannello Fonti. Trascina e ridimensiona sulla tela; le frecce spostano di un punto, con Maiuscole di dieci.', 'Build your scenes as in OBS: scenes on the left, sources next to them (webcam, screen, images and GIFs, video, text, overlay). Every scene picks which of your overlays to use, from the Sources dock. Drag and resize on the canvas; the arrow keys move by one point, with Shift by ten.', 'Compón las escenas como en OBS: a la izquierda las escenas, al lado las fuentes (webcam, pantalla, imágenes y GIF, vídeo, texto, overlay). Cada escena elige cuál de tus overlays usar, desde el panel Fuentes. Arrastra y cambia el tamaño en el lienzo; las flechas mueven un punto, con Mayúsculas diez.', ''], ['«Modalità studio» apre anteprima e programma affiancati: prepari la scena dopo senza che il pubblico la veda, e «Transizione» la manda in onda con un taglio o una dissolvenza.', '«Studio mode» opens preview and program side by side: you prepare the next scene without the audience seeing it, and «Transition» puts it on air with a cut or a fade.', '«Modo estudio» abre vista previa y programa lado a lado: preparas la escena siguiente sin que el público la vea, y «Transición» la pone en el aire con un corte o un fundido.', ''], ['In «Impostazioni» scegli i formati: orizzontale, verticale o tutti e due. Con tutti e due partono due dirette vere, e ogni fonte ha una posizione per formato. Poi scegli dove va la diretta: Twitch e Kick sono già pronti se li hai collegati, YouTube, TikTok o un server tuo si aggiungono con la chiave di trasmissione, che resta cifrata.', 'In «Settings» pick the formats: horizontal, vertical or both. With both, two real streams start, and every source has a position per format. Then choose where the stream goes: Twitch and Kick are ready if you connected them, YouTube, TikTok or your own server are added with the stream key, which stays encrypted.', 'En «Ajustes» eliges los formatos: horizontal, vertical o los dos. Con los dos salen dos directos de verdad, y cada fuente tiene una posición por formato. Luego eliges adónde va el directo: Twitch y Kick ya están listos si los conectaste, YouTube, TikTok o un servidor tuyo se añaden con la clave de emisión, que queda cifrada.', ''], ['Sul telefono si apre la regia, a schermo intero e fatta per il pollice: scegli cosa fai (in giro, in camera, mani al lavoro, musica) e prepara scene, fotocamera e audio. Scorri il dito sulla tela per cambiare scena, due tocchi girano la fotocamera, e la diretta si chiude tenendo premuto.', 'On a phone the controls open full screen, built for the thumb: choose what you do (out and about, on camera, hands at work, music) and it sets up scenes, camera and audio. Swipe on the canvas to switch scenes, double tap flips the camera, and you end the stream by holding the button.', 'En el teléfono se abre el control a pantalla completa, hecho para el pulgar: eliges qué haces (de paseo, en cámara, manos a la obra, música) y prepara escenas, cámara y audio. Desliza el dedo sobre el lienzo para cambiar de escena, dos toques giran la cámara, y el directo se cierra manteniendo pulsado.', ''], ['In diretta dal telefono la chat si legge grande, e una voce può leggertela in cuffia; gli alert fanno vibrare. «Blocca i tocchi» evita i tocchi in tasca. Se cambi app va in onda la scritta di riserva, e al ritorno fotocamera e microfono ripartono da soli.', 'Streaming from the phone the chat reads big, and a voice can read it to you in your headphones; alerts make it vibrate. «Lock touches» avoids pocket taps. If you switch apps your fallback text goes on air, and when you are back camera and microphone restart by themselves.', 'En directo desde el teléfono el chat se lee grande, y una voz puede leértelo en los auriculares; las alertas hacen vibrar. «Bloquear toques» evita toques en el bolsillo. Si cambias de app sale tu texto de reserva, y al volver cámara y micrófono arrancan solos.', ''], ['La fotocamera: il tasto «1×» sulla tela ingrandisce a tocchi, con due dita fai lo zoom e sposti l’inquadratura, e il tasto della fotocamera apre il suo foglio: gira, specchia, scegli l’obiettivo, lo zoom e come sta l’immagine (Automatica, Riempi, Intera). Sul computer lo stesso è nelle Proprietà della fonte.', 'The camera: the «1×» button on the canvas zooms in steps, with two fingers you zoom and move the framing, and the camera button opens its sheet: flip, mirror, pick the lens, the zoom and how the picture sits (Automatic, Fill, Whole). On a computer the same is in the source’s Properties.', 'La cámara: el botón «1×» sobre el lienzo amplía a toques, con dos dedos haces zoom y mueves el encuadre, y el botón de la cámara abre su hoja: girar, espejo, elegir el objetivo, el zoom y cómo queda la imagen (Automático, Llenar, Entera). En el ordenador lo mismo está en las Propiedades de la fuente.', ''], ['Le scene si salvano da sole sul tuo account, cifrate. Immagini, GIF e video restano sul dispositivo: su un altro computer al loro posto c’è un riquadro col nome del file, e lo ricarichi una volta per tutte le scene che lo usano.', 'Scenes save by themselves to your account, encrypted. Images, GIFs and videos stay on the device: on another computer a box with the file name stands in their place, and you load it once for every scene that uses it.', 'Las escenas se guardan solas en tu cuenta, cifradas. Imágenes, GIF y vídeos se quedan en el dispositivo: en otro ordenador en su lugar hay un recuadro con el nombre del archivo, y lo vuelves a cargar una vez para todas las escenas que lo usan.', ''], ['Scrivi la frase della tua immagine di riserva e quanti minuti aspettare: se la rete rallenta resta la tua voce su quell’immagine, se cade va in onda lei, e se non torni la diretta si chiude da sola.', 'Write the line for your backup image and how many minutes to wait: if the network slows down your voice stays over that image, if it drops the image goes on air, and if you do not come back the stream ends by itself.', 'Escribe la frase de tu imagen de reserva y cuántos minutos esperar: si la red va lenta queda tu voz sobre esa imagen, si cae sale ella, y si no vuelves el directo se cierra solo.', ''], ['Con OSify acceso, i suoi canali audio (gioco, voce, musica) compaiono da soli: «Usa i canali di OSify» li mette ognuno al suo posto nel mixer.', 'With OSify running, its audio channels (game, voice, music) show up by themselves: «Use the OSify channels» puts each one in its place in the mixer.', 'Con OSify encendido, sus canales de audio (juego, voz, música) aparecen solos: «Usar los canales de OSify» pone cada uno en su sitio en el mezclador.', '']] },
   alert: { serve: ['Comporre quello che si vede sulla diretta — alert, chat a schermo, obiettivi, contatori — e prendere il link da mettere in OBS.', 'Compose what shows on your stream — alerts, on-screen chat, goals, counters — and get the link to put in OBS.', 'Componer lo que se ve en el directo — alertas, chat en pantalla, objetivos, contadores — y coger el enlace para poner en OBS.'],
     come: [['Nei «Livelli», a sinistra, c\'è tutto quello che può comparire: l\'occhio lo toglie da questo overlay.', 'In «Layers», on the left, there is everything that can show up: the eye takes it out of this overlay.', 'En «Capas», a la izquierda, está todo lo que puede aparecer: el ojo lo quita de este overlay.', '#ovl-livelli'], ['Sulla tela trascini ogni cosa dove la vuoi: si aggancia da sola ai bordi e agli altri, le frecce la spostano al pixel.', 'On the canvas you drag everything where you want it: it snaps to the edges and to the others, the arrows move it pixel by pixel.', 'En el lienzo arrastras cada cosa donde la quieras: se ajusta sola a los bordes y a las demás, las flechas la mueven píxel a píxel.', '#ovl-preview'], ['Clicca un elemento sulla tela: a destra si apre «Proprietà», e lì si veste — colori, carattere, forma, dimensione, rotazione.', 'Click an element on the canvas: «Properties» opens on the right, and there it gets dressed — colors, font, shape, size, rotation.', 'Haz clic en un elemento del lienzo: a la derecha se abre «Propiedades», y ahí se viste — colores, fuente, forma, tamaño, rotación.', '#ovl-tela'], ['Copia il link qui sopra e mettilo in OBS come sorgente Browser, 1920×1080. Ogni overlay ha il suo.', 'Copy the link above and put it in OBS as a Browser source, 1920×1080. Each overlay has its own.', 'Copia el enlace de arriba y ponlo en OBS como fuente Navegador, 1920×1080. Cada overlay tiene el suyo.', '#inp-overlay-url'], ['Per le sere diverse dalle altre c\'è l\'occasione: un\'aggiunta sopra l\'overlay che hai già. La accendi e compare, la spegni e torna tutto com\'era.', 'For the nights that are not like the others there is the occasion: an add-on over the overlay you already have. Turn it on and it shows up, turn it off and everything is back as it was.', 'Para las noches que no son como las demás está la ocasión: un añadido sobre el overlay que ya tienes. La enciendes y aparece, la apagas y todo vuelve como estaba.', '#ovl-occ-quale']] },
   emote: { serve: ['Gestire a 360° le emote 7TV del tuo canale — aggiungerle, toglierle e rinominarle — direttamente dal bot. Le emote 7TV compaiono anche nella chat a schermo dell\'overlay.', 'Fully manage your channel’s 7TV emotes — add, remove and rename them — right from the bot. 7TV emotes also show up in the overlay’s on-screen chat.', 'Gestiona al 100% las emotes 7TV de tu canal — añadirlas, quitarlas y renombrarlas — directamente desde el bot. Las emotes 7TV también aparecen en el chat en pantalla del overlay.'],
@@ -5045,6 +5046,7 @@ const ICO = {
   bot: '<path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/>',
   torta: '<path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8"/><path d="M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2.5 2 4 2 2-1 2-1"/><path d="M2 21h20"/><path d="M7 8v3"/><path d="M12 8v3"/><path d="M17 8v3"/><path d="M7 4h.01"/><path d="M12 4h.01"/><path d="M17 4h.01"/>',
   tv: '<rect width="20" height="15" x="2" y="7" rx="2"/><polyline points="17 2 12 7 7 2"/>',
+  specchio: '<path d="M12 3v18" stroke-dasharray="2 2.5"/><path d="M9 7 3 17h6z"/><path d="M15 7l6 10h-6z"/>',
   fotocamera: '<path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/>',
   divieto: '<circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/>',
   scudo: '<path d="M12 3.2 19 6v5c0 4.8-3.4 7.8-7 8.8-3.6-1-7-4-7-8.8V6z"/>',
@@ -21558,6 +21560,7 @@ function pannelloStudio() {
           <h3 class="studio-dock-tit" id="studio-t-io">${_bIco(ICO.sliders)}${L('Ingressi e qualità', 'Inputs and quality', 'Entradas y calidad')}</h3>
           <label class="campo" for="studio-cam-sel">${L('Fotocamera', 'Camera', 'Cámara')}</label>
           <select id="studio-cam-sel" class="campo-largo"></select>
+          <div id="studio-cam-extra" hidden></div>
           <label class="campo spazio-sopra" for="studio-mic-sel">${L('Microfono', 'Microphone', 'Micrófono')}</label>
           <select id="studio-mic-sel" class="campo-largo"></select>
           <label class="campo spazio-sopra" for="studio-qual-sel">${L('Qualità della diretta', 'Stream quality', 'Calidad del directo')}</label>
@@ -21620,6 +21623,10 @@ function pannelloStudio() {
       <div class="tel-alert" id="tel-alert" hidden role="status"></div>
       <div class="tel-chat" id="tel-chat" data-g="m" data-tel="chat"></div>
       <div class="tel-scene" id="tel-scene" role="group" aria-label="${esc(L('Scene', 'Scenes', 'Escenas'))}"></div>
+      <div class="tel-cam" id="tel-cam" hidden>
+        <button type="button" class="tel-tondo" id="tel-zoom-passo" data-tel="zoom-passo" aria-label="${esc(L('Zoom: tocca per cambiarlo', 'Zoom: tap to change it', 'Zoom: toca para cambiarlo'))}">1×</button>
+        <button type="button" class="tel-tondo" data-tel="camera" aria-label="${esc(L('Fotocamera: obiettivo, zoom, inquadratura', 'Camera: lens, zoom, framing', 'Cámara: objetivo, zoom, encuadre'))}">${_bIco(ICO.fotocamera)}</button>
+      </div>
       <div class="tel-barra">
         <button type="button" class="tel-tasto" data-tel="mic"></button>
         <button type="button" class="tel-tasto" data-tel="gira">${_bIco(ICO.aggiorna)}<span>${L('Gira', 'Flip', 'Girar')}</span></button>
@@ -21660,7 +21667,8 @@ const STUDIO = {
   drag: null, addTipo: null, ricollega: null, _wired: false,
 
   qual: '720p30',
-  dev: { cams: [], mics: [], camId: '', micId: '', facing: '' },
+  dev: { cams: [], mics: [], camId: '', micId: '', facing: '', lente: { user: '', environment: '' } },
+  cam: { zoom: 1, specchio: false, hw: null, facing: '', id: '', luce: null, luceV: 0, torcia: false, zoomInVolo: false, zoomDopo: false },
   ov: { list: [], sel: '', mostra: null, xy: null, key: '' },
   emote: {},
   emoteImg: {},
@@ -21780,7 +21788,7 @@ function avviaLoopStudio() {
 function studioDisegnaScena(c, scena, f) {
   if (!scena) return;
   const { W, H } = STUDIO.M.FORMATI[f];
-  for (const x of scena.fonti) { const p = x.pos[f]; if (p.vis) disegnaFonte(c, x, p, W, H); }
+  for (const x of scena.fonti) { const p = x.pos[f]; if (p.vis) disegnaFonte(c, x, p, W, H, f); }
 }
 
 function studioDisegnaPiena(cx, tela, scena, f) {
@@ -21857,25 +21865,33 @@ function studioFineTransizione() {
   studioSporco();
 }
 
-function studioCover(c, el, x, y, w, h) {
-  const vw = el.videoWidth || el.naturalWidth, vh = el.videoHeight || el.naturalHeight; if (!vw) return;
-  const r = Math.max(w / vw, h / vh), dw = vw * r, dh = vh * r;
-  c.save(); c.beginPath(); c.rect(x, y, w, h); c.clip();
-  try { c.drawImage(el, x + (w - dw) / 2, y + (h - dh) / 2, dw, dh); } catch (e) {  }
+function studioSfumato(c, el, vw, vh, p) {
+  const S = STUDIO.sfumo || (STUDIO.sfumo = { a: document.createElement('canvas'), b: document.createElement('canvas') });
+  const misura = (tela, lato) => { const k = lato / Math.max(p.w, p.h), w = Math.max(2, Math.round(p.w * k)), h = Math.max(2, Math.round(p.h * k)); if (tela.width !== w || tela.height !== h) { tela.width = w; tela.height = h; } return tela; };
+  const a = misura(S.a, 160), b = misura(S.b, 24), ga = a.getContext('2d'), gb = b.getContext('2d');
+  const s = Math.max(a.width / vw, a.height / vh);
+  try { ga.drawImage(el, (a.width - vw * s) / 2, (a.height - vh * s) / 2, vw * s, vh * s); gb.drawImage(a, 0, 0, b.width, b.height); } catch (e) { return; }
+  c.imageSmoothingEnabled = true;
+  c.drawImage(b, p.x, p.y, p.w, p.h);
+  c.fillStyle = 'rgba(0,0,0,.32)'; c.fillRect(p.x, p.y, p.w, p.h);
+}
+
+function studioInquadrata(c, el, f, p, fk) {
+  const vw = el.videoWidth || el.naturalWidth, vh = el.videoHeight || el.naturalHeight; if (!vw || !vh) return;
+  const cam = f.tipo === 'webcam', C = STUDIO.cam;
+  const r = STUDIO.M.inquadra(vw, vh, p, f.inq?.[fk], { zoom: cam && !C.hw ? C.zoom : 1, specchio: cam && studioCamSpecchiata() });
+  if (!r) return;
+  c.save(); c.beginPath(); c.rect(p.x, p.y, p.w, p.h); c.clip();
+  if (r.specchio) { c.translate(2 * r.dx + r.dw, 0); c.scale(-1, 1); }
+  if (r.bande && STUDIO.M.SFUMATE.includes(f.tipo)) studioSfumato(c, el, vw, vh, p);
+  try { c.drawImage(el, r.sx, r.sy, r.sw, r.sh, r.dx, r.dy, r.dw, r.dh); } catch (e) {  }
   c.restore();
 }
 
-function studioContain(c, el, x, y, w, h) {
-  const vw = el.videoWidth || el.naturalWidth, vh = el.videoHeight || el.naturalHeight; if (!vw) return;
-  const r = Math.min(w / vw, h / vh), dw = vw * r, dh = vh * r;
-  try { c.drawImage(el, x + (w - dw) / 2, y + (h - dh) / 2, dw, dh); } catch (e) {  }
-}
-
-function disegnaFonte(c, f, p, W, H) {
-  if (f.tipo === 'webcam') { if (STUDIO.cap.camEl) studioCover(c, STUDIO.cap.camEl, p.x, p.y, p.w, p.h); return; }
-  if (f.tipo === 'schermo') { if (STUDIO.cap.scrEl) studioCover(c, STUDIO.cap.scrEl, p.x, p.y, p.w, p.h); return; }
-  if (f.tipo === 'immagine') { const m = STUDIO.media[f.media?.impronta]; if (m) studioContain(c, m.el, p.x, p.y, p.w, p.h); return; }
-  if (f.tipo === 'video') { const m = STUDIO.media[f.media?.impronta]; if (m) studioCover(c, m.el, p.x, p.y, p.w, p.h); return; }
+function disegnaFonte(c, f, p, W, H, fk) {
+  if (f.tipo === 'webcam') { if (STUDIO.cap.camEl) studioInquadrata(c, STUDIO.cap.camEl, f, p, fk); return; }
+  if (f.tipo === 'schermo') { if (STUDIO.cap.scrEl) studioInquadrata(c, STUDIO.cap.scrEl, f, p, fk); return; }
+  if (f.tipo === 'immagine' || f.tipo === 'video') { const m = STUDIO.media[f.media?.impronta]; if (m) studioInquadrata(c, m.el, f, p, fk); return; }
   if (f.tipo === 'testo') { disegnaTestoFonte(c, f, p); return; }
   if (f.tipo === 'overlay') { disegnaOverlayStudio(c, W, H); return; }
 }
@@ -22060,11 +22076,176 @@ function studioSSE(sseUrl) {
 function studioVincoliVideo() {
   const q = STUDIO_QUAL[STUDIO.qual] || STUDIO_QUAL['720p30'];
   const hh = Math.min(q.h, 1080), ww = Math.round(hh * 16 / 9);
-  const verticale = STUDIO.mobile && STUDIO.lavoro === 'v';
-  const v = { width: { ideal: verticale ? hh : ww }, height: { ideal: verticale ? ww : hh }, frameRate: { ideal: Math.min(q.fps, 60) } };
+  const v = { width: { ideal: ww }, height: { ideal: hh }, frameRate: { ideal: Math.min(q.fps, 60) } };
+  const lente = STUDIO.dev.facing ? STUDIO.dev.lente[STUDIO.dev.facing] : '';
   if (STUDIO.dev.camId) v.deviceId = { exact: STUDIO.dev.camId };
+  else if (lente) v.deviceId = { exact: lente };
   else if (STUDIO.dev.facing) v.facingMode = STUDIO.dev.facing;
   return v;
+}
+
+const studioZoomVeroChiedibile = () => studioTelefono() && !!navigator.userAgentData && !!navigator.mediaDevices.getSupportedConstraints?.().zoom;
+
+async function studioChiediVideo() {
+  const v = studioVincoliVideo();
+  if (studioZoomVeroChiedibile()) {
+    try { return await navigator.mediaDevices.getUserMedia({ video: { ...v, zoom: true }, audio: false }); }
+    catch (e) { if (e?.name === 'NotAllowedError') throw e; }
+  }
+  return navigator.mediaDevices.getUserMedia({ video: v, audio: false });
+}
+
+async function studioApriVideo(ripiego) {
+  try { return await studioChiediVideo(); }
+  catch (e) {
+    const D = STUDIO.dev, lente = D.facing ? D.lente[D.facing] : '';
+    if (!ripiego || !/Overconstrained|NotFound/.test(e?.name || '') || (!D.camId && !lente)) throw e;
+    if (D.camId) D.camId = ''; else D.lente[D.facing] = '';
+    studioCamRicorda();
+    return studioChiediVideo();
+  }
+}
+
+const _camChiave = () => 'andrybot-studio-cam:' + studioChi();
+function studioCamRicorda() {
+  try { localStorage.setItem(_camChiave(), JSON.stringify({ camId: STUDIO.dev.camId, lente: STUDIO.dev.lente, specchio: STUDIO.cam.specchio })); } catch (e) {  }
+}
+function studioCamRileggi() {
+  let o = null;
+  try { o = JSON.parse(localStorage.getItem(_camChiave()) || 'null'); } catch (e) {  }
+  if (!o || typeof o !== 'object') return;
+  const id = (v) => (typeof v === 'string' && v.length <= 200 ? v : '');
+  STUDIO.dev.camId = id(o.camId);
+  STUDIO.dev.lente = { user: id(o.lente?.user), environment: id(o.lente?.environment) };
+  STUDIO.cam.specchio = o.specchio === true;
+}
+
+function studioCamDopo() {
+  const tr = studioTelTraccia(), C = STUDIO.cam;
+  let cap = {}, st = {};
+  try { cap = tr?.getCapabilities?.() || {}; } catch (e) {  }
+  try { st = tr?.getSettings?.() || {}; } catch (e) {  }
+  const z = cap.zoom, ec = cap.exposureCompensation;
+  C.hw = z && z.min > 0 && z.max > z.min ? { min: z.min, max: z.max } : null;
+  C.zoom = C.hw ? studioClamp((Number(st.zoom) || C.hw.min) / C.hw.min, 1, C.hw.max / C.hw.min) : 1;
+  C.luce = ec && ec.max > ec.min ? { min: ec.min, max: ec.max, step: ec.step || (ec.max - ec.min) / 20 } : null;
+  C.luceV = Number(st.exposureCompensation) || 0;
+  C.torcia = !!cap.torch;
+  C.facing = typeof st.facingMode === 'string' ? st.facingMode : '';
+  C.id = st.deviceId || '';
+  if (C.facing === 'user' || C.facing === 'environment') STUDIO.dev.facing = C.facing;
+  if (STUDIO.tel) { STUDIO.tel.torcia = false; STUDIO.tel.storto = null; }
+  studioCamForma();
+  studioCamAggiornaUi();
+}
+
+const studioCamSpecchiata = () => STUDIO.cam.specchio && STUDIO.cam.facing !== 'environment';
+const studioCamZoomMax = () => (STUDIO.cam.hw ? STUDIO.cam.hw.max / STUDIO.cam.hw.min : STUDIO.M.ZOOM_DIGITALE_MAX);
+const studioZoomTesto = (z) => (Math.round(z * 10) / 10).toLocaleString(L('it-IT', 'en-US', 'es-ES')) + '×';
+
+function studioCamZoom(z, avviso = true) {
+  const C = STUDIO.cam;
+  C.zoom = studioClamp(Number(z) || 1, 1, studioCamZoomMax());
+  if (C.hw) studioCamZoomHw(); else studioRidisegna();
+  if (avviso && STUDIO.tel?.aperta) studioTelAvviso(L('Zoom ', 'Zoom ', 'Zoom ') + studioZoomTesto(C.zoom), 1200);
+  studioCamAggiornaUi();
+}
+
+async function studioCamZoomHw() {
+  const C = STUDIO.cam, tr = studioTelTraccia(); if (!tr || !C.hw) return;
+  if (C.zoomInVolo) { C.zoomDopo = true; return; }
+  C.zoomInVolo = true;
+  try {
+    do { C.zoomDopo = false; await tr.applyConstraints({ advanced: [{ zoom: studioClamp(C.hw.min * C.zoom, C.hw.min, C.hw.max) }] }); } while (C.zoomDopo && C.hw);
+  } catch (e) { C.hw = null; C.zoom = studioClamp(C.zoom, 1, studioCamZoomMax()); studioRidisegna(); studioCamAggiornaUi(); }
+  finally { C.zoomInVolo = false; }
+}
+
+async function studioCamLuce(v) {
+  const C = STUDIO.cam, tr = studioTelTraccia(); if (!tr || !C.luce) return;
+  C.luceV = studioClamp(Number(v) || 0, C.luce.min, C.luce.max);
+  try { await tr.applyConstraints({ advanced: [{ exposureCompensation: C.luceV }] }); } catch (e) {  }
+}
+
+function studioCamSpecchia() {
+  STUDIO.cam.specchio = !STUDIO.cam.specchio;
+  studioCamRicorda(); studioRidisegna(); studioCamAggiornaUi();
+}
+
+async function studioScegliLente(id) {
+  await studioCambiaCamera(id);
+  const fm = STUDIO.cam.facing;
+  if (STUDIO.dev.camId === id && (fm === 'user' || fm === 'environment')) { STUDIO.dev.lente[fm] = id; STUDIO.dev.facing = fm; STUDIO.dev.camId = ''; }
+  studioCamRicorda();
+  renderStudioTel();
+}
+
+function studioCamFonte() {
+  const s = studioScena(STUDIO.doc?.inOnda);
+  return s?.fonti.find((f) => f.tipo === 'webcam' && f.pos[STUDIO.lavoro]?.vis) || null;
+}
+
+function studioCamSposta(dxPx, dyPx) {
+  const f = studioCamFonte(), el = STUDIO.cap.camEl, tela = STUDIO.tele[STUDIO.lavoro];
+  if (!f || !el || !el.videoWidth || !tela || (!dxPx && !dyPx)) return;
+  const { W, H } = STUDIO.M.FORMATI[STUDIO.lavoro], r0 = tela.getBoundingClientRect();
+  const k = Math.min(r0.width / W, r0.height / H) || 1;
+  const q = f.inq[STUDIO.lavoro], C = STUDIO.cam;
+  const r = STUDIO.M.inquadra(el.videoWidth, el.videoHeight, f.pos[STUDIO.lavoro], q, { zoom: C.hw ? 1 : C.zoom, specchio: studioCamSpecchiata() });
+  if (!r) return;
+  const n = STUDIO.M.spostaCentro(r, el.videoWidth, el.videoHeight, q, dxPx / k, dyPx / k);
+  if (n.cx === q.cx && n.cy === q.cy) return;
+  q.cx = n.cx; q.cy = n.cy;
+  studioSporco();
+}
+
+function studioCamAdatta(a) {
+  const f = studioCamFonte(); if (!f || !STUDIO.M.ADATTA.includes(a)) return;
+  f.inq[STUDIO.lavoro].adatta = a;
+  studioSporco(); renderStudioTelFoglio(); renderStudioProp();
+}
+
+function studioCamCentra() {
+  const f = studioCamFonte(); if (!f) return;
+  Object.assign(f.inq[STUDIO.lavoro], { cx: 0, cy: 0 });
+  studioSporco(); renderStudioProp();
+}
+
+function studioCamForma() {
+  studioRidisegna();
+  const el = STUDIO.cap.camEl, T = STUDIO.tel;
+  if (!el || !T?.aperta || !STUDIO.M) return;
+  const k = STUDIO.M.orientamentoStorto(el.videoWidth, el.videoHeight, STUDIO.lavoro);
+  if (k === T.storto) return;
+  const prima = T.storto;
+  T.storto = k;
+  if (k === 'dritto') studioTelAvviso(L('La diretta è in verticale: tieni il telefono dritto e l’immagine riempie lo schermo.', 'The stream is vertical: hold the phone upright and the picture fills the screen.', 'El directo es vertical: sujeta el teléfono derecho y la imagen llena la pantalla.'), 6000);
+  else if (k === 'lato') studioTelAvviso(L('La diretta è in orizzontale: gira il telefono di lato e l’immagine riempie lo schermo.', 'The stream is horizontal: turn the phone sideways and the picture fills the screen.', 'El directo es horizontal: gira el teléfono de lado y la imagen llena la pantalla.'), 6000);
+  else if (prima && T.avvisoStorto) studioTelAvviso('');
+  if (k) T.avvisoStorto = true;
+}
+
+function renderStudioCamExtra() {
+  const el = document.getElementById('studio-cam-extra'); if (!el) return;
+  if (!STUDIO.cap.camEl || !STUDIO.M) { el.hidden = true; el.innerHTML = ''; delete el.dataset.firma; return; }
+  const C = STUDIO.cam, zmax = studioCamZoomMax(), firma = `${C.hw ? 1 : 0}|${zmax}`;
+  el.hidden = false;
+  if (el.dataset.firma === firma) return;
+  el.dataset.firma = firma;
+  el.innerHTML = `<label class="campo spazio-sopra" for="studio-cam-zoom">${L('Zoom della fotocamera:', 'Camera zoom:', 'Zoom de la cámara:')} <strong data-cam-zoomout>${studioZoomTesto(C.zoom)}</strong></label>
+    <input id="studio-cam-zoom" type="range" data-cam-zoom min="1" max="${Math.round(zmax * 10) / 10}" step="0.1" value="${C.zoom}">
+    ${C.hw ? '' : `<p class="suggerimento">${L('Zoom digitale: oltre 2× l’immagine si sgrana.', 'Digital zoom: beyond 2× the picture gets grainy.', 'Zoom digital: más allá de 2× la imagen se ve granulada.')}</p>`}
+    <label class="riga-check spazio-sopra"><input type="checkbox" data-cam-specchio${C.specchio ? ' checked' : ''}> ${L('Specchia la fotocamera davanti (anche in onda)', 'Mirror the front camera (on air too)', 'Espejo de la cámara delantera (también en el aire)')}</label>`;
+}
+
+function studioCamAggiornaUi() {
+  const C = STUDIO.cam;
+  const passo = document.getElementById('tel-zoom-passo'); if (passo) passo.textContent = studioZoomTesto(C.zoom);
+  for (const o of document.querySelectorAll('[data-cam-zoomout]')) o.textContent = studioZoomTesto(C.zoom);
+  for (const r of document.querySelectorAll('[data-cam-zoom]')) { r.max = String(Math.round(studioCamZoomMax() * 10) / 10); if (document.activeElement !== r) r.value = String(C.zoom); }
+  for (const b of document.querySelectorAll('[data-cam-specchio]')) { if (b.type === 'checkbox') b.checked = C.specchio; else { b.classList.toggle('attivo', C.specchio); b.setAttribute('aria-pressed', String(C.specchio)); } }
+  for (const b of document.querySelectorAll('[data-cam-zoomp]')) { const on = Math.abs(Number(b.dataset.camZoomp) - C.zoom) < 0.05; b.classList.toggle('attivo', on); b.setAttribute('aria-pressed', String(on)); }
+  renderStudioCamExtra();
 }
 
 function studioVincoliAudio() {
@@ -22077,9 +22258,11 @@ async function studioCapWebcam() {
   if (DEMO) { toast(L('In demo la webcam non parte — accedi per farlo davvero.', 'In demo the webcam won’t start — log in to do it for real.', 'En demo la webcam no arranca — inicia sesión para hacerlo de verdad.')); return false; }
   if (STUDIO.cap.camEl) return true;
   try {
-    STUDIO.cap.camStream = await navigator.mediaDevices.getUserMedia({ video: studioVincoliVideo(), audio: false });
-    const v = document.createElement('video'); v.srcObject = STUDIO.cap.camStream; v.muted = true; v.playsInline = true; await v.play().catch(() => {});
-    STUDIO.cap.camEl = v; avviaLoopStudio(); studioPopolaDispositivi(); return true;
+    STUDIO.cap.camStream = await studioApriVideo(true);
+    const v = document.createElement('video'); v.srcObject = STUDIO.cap.camStream; v.muted = true; v.playsInline = true;
+    v.addEventListener('resize', studioCamForma);
+    await v.play().catch(() => {});
+    STUDIO.cap.camEl = v; studioCamDopo(); avviaLoopStudio(); studioPopolaDispositivi(); return true;
   } catch (e) { toast(L('Webcam non disponibile: ', 'Webcam not available: ', 'Webcam no disponible: ') + e.message, 'errore'); return false; }
 }
 
@@ -22089,11 +22272,12 @@ async function studioCambiaCamera(camId) {
   if (!STUDIO.cap.camEl) { studioPopolaDispositivi(); return; }
   const vecchioStream = STUDIO.cap.camStream;
   try {
-    const nuovo = await navigator.mediaDevices.getUserMedia({ video: studioVincoliVideo(), audio: false });
+    const nuovo = await studioApriVideo(!camId);
     STUDIO.cap.camStream = nuovo;
     STUDIO.cap.camEl.srcObject = nuovo;
     await STUDIO.cap.camEl.play().catch(() => {});
     try { vecchioStream && vecchioStream.getTracks().forEach((t) => t.stop()); } catch (e) {  }
+    studioCamDopo(); studioCamRicorda();
     studioPopolaDispositivi();
   } catch (e) {
 
@@ -22153,6 +22337,7 @@ async function studioCambiaMic(micId) {
 async function studioPopolaDispositivi() {
   try {
     if (!navigator.mediaDevices?.enumerateDevices) return;
+    if (!STUDIO.dev.ascolta && navigator.mediaDevices.addEventListener) { STUDIO.dev.ascolta = true; navigator.mediaDevices.addEventListener('devicechange', () => studioPopolaDispositivi()); }
     const dev = await navigator.mediaDevices.enumerateDevices();
     STUDIO.dev.cams = dev.filter((d) => d.kind === 'videoinput');
     STUDIO.dev.mics = dev.filter((d) => d.kind === 'audioinput');
@@ -22166,6 +22351,7 @@ async function studioPopolaDispositivi() {
     STUDIO.dev.osify = STUDIO.dev.mics.filter((d) => /osify/i.test(d.label || '') && !/stream.?mix|master/i.test(d.label || ''));
   } catch (e) {  }
   studioMostraOsify();
+  if (STUDIO.tel?.aperta && (STUDIO.tel.foglio === 'camera' || STUDIO.tel.foglio === 'altro')) renderStudioTelFoglio();
 }
 
 function studioMostraOsify() {
@@ -22194,7 +22380,10 @@ async function studioOsifyUsa() {
 
 function studioApplicaQualita(key) {
   if (STUDIO.live) return;
+  const prima = STUDIO_QUAL[STUDIO.qual];
   STUDIO.qual = STUDIO_QUAL[key] ? key : '720p30';
+  const ora = STUDIO_QUAL[STUDIO.qual];
+  if (STUDIO.cap.camEl && prima && (prima.h !== ora.h || prima.fps !== ora.fps)) studioCambiaCamera(STUDIO.dev.camId);
   if (STUDIO.M) studioMisureTele();
   try { localStorage.setItem('andrybot-studio-qual:' + (stato?.user?.login || 'anon'), STUDIO.qual); } catch (e) {  }
 }
@@ -22796,6 +22985,7 @@ async function caricaStudio() {
   if (!STUDIO.MD) STUDIO.MD = await import('/js/studio-media.js');
   studioAggiornaMobile();
   if (!STUDIO.doc) await studioCaricaScene();
+  if (!STUDIO.cap.camEl) studioCamRileggi();
   try { const q = localStorage.getItem('andrybot-studio-qual:' + studioChi()); if (q && STUDIO_QUAL[q]) STUDIO.qual = q; } catch (e) {  }
   studioApplicaQualita(STUDIO.qual);
   avviaLoopStudio();
@@ -22939,7 +23129,7 @@ function renderStudioLavoro() {
 function studioCambiaLavoro(f) {
   if (!STUDIO.doc || !STUDIO.doc.scelte.formati[f] || STUDIO.lavoro === f) return;
   STUDIO.lavoro = f; STUDIO.doc.scelte.lavoro = f;
-  renderStudioTutto(); studioSporco();
+  renderStudioTutto(); studioSporco(); studioCamForma();
 }
 
 function renderStudioScene() {
@@ -23095,6 +23285,17 @@ function renderStudioProp() {
     extra = `<p class="suggerimento">${_bIco(ICO.immagine)}${esc(f.media.nome || '')}${mb}${studioManca(f) ? ` · <strong>${L('manca su questo dispositivo', 'missing on this device', 'falta en este dispositivo')}</strong>` : ''}</p>
       <button type="button" class="btn secondario mini" data-ricollega="${esc(f.id)}">${L('Cambia il file', 'Change the file', 'Cambiar el archivo')}</button>`;
   }
+  const q = f.inq?.[STUDIO.lavoro];
+  if (q) {
+    const voci = [['auto', L('Automatica: riempie, ma non taglia più di un terzo', 'Automatic: fills, but never cuts more than a third', 'Automático: llena, pero no corta más de un tercio')], ['ritaglia', L('Riempie il riquadro (taglia i bordi)', 'Fills the frame (cuts the edges)', 'Llena el recuadro (corta los bordes)')], ['intera', STUDIO.M.SFUMATE.includes(f.tipo) ? L('Intera, con le bande sfumate', 'Whole, with blurred bands', 'Entera, con bandas difuminadas') : L('Intera, con le bande trasparenti', 'Whole, with transparent bands', 'Entera, con bandas transparentes')]];
+    extra += `<label class="campo spazio-sopra" for="sp-adatta">${L('L’immagine nel riquadro', 'The picture in the frame', 'La imagen en el recuadro')}</label>
+      <select id="sp-adatta" class="campo-largo">${voci.map(([k, n]) => `<option value="${k}"${q.adatta === k ? ' selected' : ''}>${n}</option>`).join('')}</select>
+      <div class="griglia-campi spazio-sopra">
+        <div><label class="campo" for="sp-cx">${L('Sposta di lato', 'Move sideways', 'Mover de lado')}</label><input id="sp-cx" type="range" min="-100" max="100" value="${Math.round(q.cx * 100)}"></div>
+        <div><label class="campo" for="sp-cy">${L('Sposta su e giù', 'Move up and down', 'Mover arriba y abajo')}</label><input id="sp-cy" type="range" min="-100" max="100" value="${Math.round(q.cy * 100)}"></div>
+      </div>
+      <p class="suggerimento">${L('Spostare conta solo dove l’immagine è tagliata o ingrandita dallo zoom: lì scegli quale parte si vede.', 'Moving only matters where the picture is cut or enlarged by the zoom: there you choose which part shows.', 'Mover solo cuenta donde la imagen está cortada o ampliada por el zoom: ahí eliges qué parte se ve.')}</p>`;
+  }
   const altro = STUDIO.doc.scelte.formati.o && STUDIO.doc.scelte.formati.v;
   el.innerHTML = `
     <label class="campo" for="sp-nome">${L('Nome', 'Name', 'Nombre')}</label>
@@ -23165,6 +23366,7 @@ function renderStudioMobile() {
     <div class="studio-mriga" role="group" aria-label="${esc(L('Formato', 'Format', 'Formato'))}">${chip('v', L('Verticale', 'Vertical', 'Vertical'))}${chip('o', L('Orizzontale', 'Horizontal', 'Horizontal'))}${chip('ov', L('Tutti e due', 'Both', 'Los dos'))}</div>
     <div class="studio-mriga">
       <button type="button" class="btn secondario" data-mcam="1">${_bIco(ICO.fotocamera)}${STUDIO.cap.camEl ? L('Gira la fotocamera', 'Flip the camera', 'Girar la cámara') : L('Fotocamera', 'Camera', 'Cámara')}</button>
+      ${STUDIO.cap.camEl && studioTelefono() ? `<button type="button" class="btn secondario" data-tel="camera-da-pannello">${_bIco(ICO.sliders)}${L('Zoom e obiettivo', 'Zoom and lens', 'Zoom y objetivo')}</button>` : ''}
       <button type="button" class="btn secondario" data-cap="mic"${STUDIO.cap.micStream ? ' disabled' : ''}>${_bIco(ICO.altoparlante)}${STUDIO.cap.micStream ? L('Microfono attivo', 'Microphone on', 'Micrófono activo') : L('Microfono', 'Microphone', 'Micrófono')}</button>
       <button type="button" class="btn secondario" data-add="testo">${_bIco(ICO.testo)}${L('Testo', 'Text', 'Texto')}</button>
       <button type="button" class="btn secondario" data-add="immagine">${_bIco(ICO.immagine)}${L('Immagine', 'Image', 'Imagen')}</button>
@@ -23191,7 +23393,7 @@ const TEL_TESTI_PRONTE = () => ({
 });
 
 function studioTelStato() {
-  if (!STUDIO.tel) STUDIO.tel = { aperta: false, foglio: '', blocco: false, conto: null, tieni: null, sblocca: null, avviso: '', avvisoT: 0, alertT: 0, batteria: null, spettatori: null, rete: 3, giroSpett: 0, tocchi: new Map(), pinza: null, tap: 0, zoom: null, torcia: false, schermo: false, chiusa: false, voceInCoda: 0, mostraChat: true, titolo: null, categoria: '' };
+  if (!STUDIO.tel) STUDIO.tel = { aperta: false, foglio: '', blocco: false, conto: null, tieni: null, sblocca: null, avviso: '', avvisoT: 0, alertT: 0, batteria: null, spettatori: null, rete: 3, giroSpett: 0, tocchi: new Map(), pinza: null, tap: 0, storto: null, torcia: false, schermo: false, chiusa: false, voceInCoda: 0, mostraChat: true, titolo: null, categoria: '' };
   return STUDIO.tel;
 }
 const studioTelScelte = () => STUDIO.doc?.scelte.telefono || { scenario: '', chat: 'm', voce: false, vibra: true };
@@ -23243,10 +23445,10 @@ function studioTelFoglio(quale) {
   renderStudioTelFoglio();
 }
 
-function studioTelAvviso(testo, ms = 5000) {
+function studioTelAvviso(testo, ms = 5000, errore = false) {
   const T = studioTelStato(), el = document.getElementById('tel-avviso');
-  T.avviso = testo || '';
-  if (el) { el.textContent = T.avviso; el.hidden = !T.avviso; }
+  T.avviso = testo || ''; T.avvisoStorto = false;
+  if (el) { el.textContent = T.avviso; el.hidden = !T.avviso; el.classList.toggle('errore', !!errore); }
   clearTimeout(T.avvisoT);
   if (T.avviso && ms) T.avvisoT = setTimeout(() => studioTelAvviso(''), ms);
 }
@@ -23308,6 +23510,8 @@ function renderStudioTel() {
     vai.setAttribute('aria-label', live ? L('Tieni premuto per chiudere la diretta', 'Hold to end the stream', 'Mantén pulsado para cerrar el directo') : L('Vai in diretta', 'Go live', 'Emitir en directo'));
   }
   const chat = document.getElementById('tel-chat'); if (chat) { chat.dataset.g = studioTelScelte().chat; chat.hidden = !T.mostraChat; }
+  const cam = document.getElementById('tel-cam'); if (cam) cam.hidden = !STUDIO.cap.camEl;
+  studioCamAggiornaUi();
   const blocco = document.getElementById('tel-blocco'); if (blocco) blocco.hidden = !T.blocco;
   const conto = document.getElementById('tel-conto'); if (conto) { conto.hidden = T.conto == null; if (T.conto != null) conto.innerHTML = `<strong>${T.conto}</strong><span>${L('Tocca per annullare', 'Tap to cancel', 'Toca para cancelar')}</span>`; }
   renderStudioTelFoglio();
@@ -23359,11 +23563,10 @@ function renderStudioTelFoglio() {
     return;
   }
   if (T.foglio === 'altro') {
-    const tr = studioTelTraccia(), cap = tr?.getCapabilities?.() || {};
-    const f = STUDIO.doc.scelte.formati;
+    const f = STUDIO.doc.scelte.formati, mics = STUDIO.dev.mics || [];
     el.innerHTML = `<div class="tel-foglio-testa"><h3>${L('Altro', 'More', 'Más')}</h3>${chiudi}</div>
       <div class="tel-griglia">
-        ${cap.torch ? `<button type="button" class="tel-grande${T.torcia ? ' attivo' : ''}" data-tel="torcia" aria-pressed="${T.torcia}">${_bIco(ICO.fulmine)}${L('Torcia', 'Torch', 'Linterna')}</button>` : ''}
+        <button type="button" class="tel-grande" data-tel="camera">${_bIco(ICO.fotocamera)}${L('Fotocamera', 'Camera', 'Cámara')}</button>
         <button type="button" class="tel-grande" data-tel="blocca">${_bIco(ICO.lucchetto)}${L('Blocca i tocchi', 'Lock touches', 'Bloquear toques')}</button>
         ${live && studioDestScelte().has('twitch') ? `<button type="button" class="tel-grande" data-tel="clip">${_bIco(ICO.clip)}${L('Fai una clip', 'Make a clip', 'Haz un clip')}</button>` : ''}
         <button type="button" class="tel-grande${sc.vibra ? ' attivo' : ''}" data-tel="vibra" aria-pressed="${sc.vibra}">${_bIco(ICO.telefono)}${L('Vibra agli alert', 'Vibrate on alerts', 'Vibrar con alertas')}</button>
@@ -23372,8 +23575,37 @@ function renderStudioTelFoglio() {
         <button type="button" class="tel-grande" data-tel="esci">${_bIco(ICO.moduli)}${L('Studio completo', 'Full studio', 'Estudio completo')}</button>
         ${live ? `<button type="button" class="tel-grande pericolo" data-tel="ferma-chiedi">${_bIco(ICO.stop)}${L('Chiudi la diretta…', 'End the stream…', 'Cerrar el directo…')}</button>` : ''}
       </div>
-      ${STUDIO.ov.list.length > 1 ? `<label class="tel-zoom">${L('Overlay di questa scena', 'This scene’s overlay', 'Overlay de esta escena')}<select class="tel-campo" data-tel-overlay>${studioOpzioniOverlay(studioOverlayInOnda() || studioOverlayDi(null))}</select></label>` : ''}
-      ${cap.zoom ? `<label class="tel-zoom">${L('Zoom', 'Zoom', 'Zoom')}<input type="range" data-tel-zoom min="${cap.zoom.min}" max="${cap.zoom.max}" step="${cap.zoom.step || 0.1}" value="${T.zoom ?? cap.zoom.min}"></label>` : ''}`;
+      ${STUDIO.ov.list.length > 1 ? `<label class="tel-etichetta">${L('Overlay di questa scena', 'This scene’s overlay', 'Overlay de esta escena')}<select class="tel-campo" data-tel-overlay>${studioOpzioniOverlay(studioOverlayInOnda() || studioOverlayDi(null))}</select></label>` : ''}
+      ${mics.length > 1 ? `<label class="tel-etichetta">${L('Microfono', 'Microphone', 'Micrófono')}<select class="tel-campo" data-tel-mic><option value="">${L('Quello del telefono', 'The phone’s own', 'El del teléfono')}</option>${mics.map((m, i) => `<option value="${esc(m.deviceId)}"${m.deviceId === STUDIO.dev.micId ? ' selected' : ''}>${esc(m.label || L('Microfono ', 'Microphone ', 'Micrófono ') + (i + 1))}</option>`).join('')}</select></label>
+      <p class="tel-nota">${L('Cuffie col filo, AirPods o un microfono esterno: collegali e sceglili qui.', 'Wired headphones, AirPods or an external mic: connect them and pick them here.', 'Auriculares con cable, AirPods o un micrófono externo: conéctalos y elígelos aquí.')}</p>` : ''}`;
+    return;
+  }
+  if (T.foglio === 'camera') {
+    const C = STUDIO.cam, fc = studioCamFonte(), q = fc?.inq?.[STUDIO.lavoro], cams = STUDIO.dev.cams || [];
+    const nomi = { davanti: L('Davanti', 'Front', 'Delantera'), dietro: L('Dietro', 'Back', 'Trasera'), fotocamera: L('Fotocamera', 'Camera', 'Cámara') };
+    const zmax = studioCamZoomMax(), passi = STUDIO.M.PASSI_ZOOM.filter((z) => z <= zmax + 1e-9);
+    const chip = (attr, v, testo, on) => `<button type="button" class="tel-chip${on ? ' attivo' : ''}" ${attr}="${esc(String(v))}" aria-pressed="${on}">${testo}</button>`;
+    el.innerHTML = `<div class="tel-foglio-testa"><h3>${L('Fotocamera', 'Camera', 'Cámara')}</h3>${chiudi}</div>
+      ${STUDIO.cap.camEl ? `<div class="tel-griglia">
+        <button type="button" class="tel-grande" data-tel="gira">${_bIco(ICO.aggiorna)}${L('Gira', 'Flip', 'Girar')}</button>
+        <button type="button" class="tel-grande${C.specchio ? ' attivo' : ''}" data-tel="specchio" data-cam-specchio aria-pressed="${C.specchio}">${_bIco(ICO.specchio)}${L('Specchia', 'Mirror', 'Espejo')}</button>
+        ${C.torcia ? `<button type="button" class="tel-grande${T.torcia ? ' attivo' : ''}" data-tel="torcia" aria-pressed="${T.torcia}">${_bIco(ICO.fulmine)}${L('Torcia', 'Torch', 'Linterna')}</button>` : ''}
+      </div>
+      <p class="tel-nota">${L('«Specchia» vale per la fotocamera davanti: anche il pubblico ti vede come allo specchio, e le scritte escono al contrario.', '“Mirror” is for the front camera: the audience sees you as in a mirror too, and writing comes out backwards.', '«Espejo» vale para la cámara delantera: el público también te ve como en un espejo, y lo escrito sale al revés.')}</p>
+      ${cams.length > 1 ? `<h4>${L('Obiettivo', 'Lens', 'Objetivo')}</h4><div class="tel-lenti">${cams.map((d, i) => chip('data-tel-lente', d.deviceId, esc(STUDIO.M.nomeCamera(d.label, i, nomi)), d.deviceId === C.id)).join('')}</div>
+      <p class="tel-nota">${L('I nomi sono quelli del telefono: grandangolo, ultra grandangolo, teleobiettivo. Lo Studio si ricorda quale usi davanti e quale dietro.', 'The names are the phone’s own: wide, ultra wide, telephoto. The Studio remembers which one you use at the front and at the back.', 'Los nombres son los del teléfono: gran angular, ultra gran angular, teleobjetivo. El Estudio recuerda cuál usas delante y cuál detrás.')}</p>` : ''}
+      <h4>${L('Zoom', 'Zoom', 'Zoom')} <output data-cam-zoomout>${studioZoomTesto(C.zoom)}</output></h4>
+      <input type="range" class="tel-cursore" data-cam-zoom min="1" max="${Math.round(zmax * 10) / 10}" step="0.1" value="${C.zoom}" aria-label="${esc(L('Zoom', 'Zoom', 'Zoom'))}">
+      <div class="tel-gruppo">${passi.map((z) => chip('data-cam-zoomp', z, z + '×', Math.abs(z - C.zoom) < 0.05)).join('')}</div>
+      <p class="tel-nota">${C.hw ? L('È lo zoom della fotocamera: l’immagine resta nitida. Con due dita sulla tela lo cambi senza aprire questo foglio.', 'It is the camera’s own zoom: the picture stays sharp. With two fingers on the canvas you change it without opening this sheet.', 'Es el zoom de la cámara: la imagen sigue nítida. Con dos dedos sobre el lienzo lo cambias sin abrir esta hoja.') : L('Questa fotocamera non ha uno zoom suo, quindi l’immagine la ingrandisce lo Studio: oltre 2× si sgrana. Per avvicinarti senza perdere nitidezza scegli un obiettivo più lungo, se c’è.', 'This camera has no zoom of its own, so the Studio enlarges the picture: beyond 2× it gets grainy. To get closer without losing sharpness pick a longer lens, if there is one.', 'Esta cámara no tiene zoom propio, así que la imagen la amplía el Estudio: más allá de 2× se ve granulada. Para acercarte sin perder nitidez elige un objetivo más largo, si lo hay.')}</p>
+      ${q ? `<h4>${L('Inquadratura', 'Framing', 'Encuadre')}</h4>
+      <div class="tel-gruppo">${[['auto', L('Automatica', 'Automatic', 'Automático')], ['ritaglia', L('Riempi', 'Fill', 'Llenar')], ['intera', L('Intera', 'Whole', 'Entera')]].map(([k, n]) => chip('data-cam-adatta', k, n, q.adatta === k)).join('')}<button type="button" class="tel-chip" data-tel="centra">${L('Al centro', 'Centered', 'Al centro')}</button></div>
+      <p class="tel-nota">${L('Automatica riempie lo schermo, ma se per riempirlo dovesse tagliare più di un terzo dell’immagine la mostra intera, con lo sfondo sfumato. Con due dita sulla tela: allarghi per lo zoom, trascini per spostare l’inquadratura.', 'Automatic fills the screen, but if filling it meant cutting more than a third of the picture it shows it whole, with a blurred background. With two fingers on the canvas: spread to zoom, drag to move the framing.', 'Automático llena la pantalla, pero si para llenarla tuviera que cortar más de un tercio de la imagen la muestra entera, con el fondo difuminado. Con dos dedos sobre el lienzo: separas para el zoom, arrastras para mover el encuadre.')}</p>` : ''}
+      ${C.luce ? `<h4>${L('Luce', 'Brightness', 'Luz')}</h4><input type="range" class="tel-cursore" data-cam-luce min="${C.luce.min}" max="${C.luce.max}" step="${C.luce.step}" value="${C.luceV}" aria-label="${esc(L('Luce', 'Brightness', 'Luz'))}">` : ''}
+      <h4>${L('Qualità', 'Quality', 'Calidad')}</h4>
+      <div class="tel-gruppo">${[...new Set(['720p30', '1080p30', STUDIO.qual])].map((k) => `<button type="button" class="tel-chip${STUDIO.qual === k ? ' attivo' : ''}" data-tel-qual="${k}" aria-pressed="${STUDIO.qual === k}"${STUDIO.live ? ' disabled' : ''}>${k.replace('p', 'p ').replace(/(\d+)$/, '$1 fps')}</button>`).join('')}</div>
+      <p class="tel-nota">${STUDIO.live ? L('La qualità si cambia fuori diretta.', 'Quality changes off air.', 'La calidad se cambia fuera del directo.') : L('720p va bene quasi ovunque; 1080p è più nitida ma consuma più batteria e più rete.', '720p works almost everywhere; 1080p is sharper but uses more battery and more data.', '720p va bien casi en todas partes; 1080p es más nítida pero gasta más batería y más red.')}</p>`
+      : `<p>${L('La fotocamera è spenta.', 'The camera is off.', 'La cámara está apagada.')}</p><button type="button" class="tel-grande primario" data-tel="accendi">${_bIco(ICO.fotocamera)}${L('Accendi fotocamera e microfono', 'Turn on camera and microphone', 'Enciende cámara y micrófono')}</button>`}`;
     return;
   }
   const scenari = Object.entries(SC).map(([k, v]) => `<button type="button" class="tel-scenario${sc.scenario === k ? ' attivo' : ''}${STUDIO.M.SCENARI[k].disponibile ? '' : ' fuori'}" data-tel-scenario="${k}" aria-pressed="${sc.scenario === k}">${_bIco(ICO[v.ico])}<strong>${v.nome}</strong><span>${v.dice}</span></button>`).join('');
@@ -23584,7 +23816,7 @@ function studioTelPalcoGiu(ev) {
   T.tocchi.set(ev.pointerId, { x: ev.clientX, y: ev.clientY, x0: ev.clientX, y0: ev.clientY, t0: performance.now() });
   if (T.tocchi.size === 2) {
     const [a, b] = [...T.tocchi.values()];
-    T.pinza = { d0: Math.hypot(a.x - b.x, a.y - b.y), z0: T.zoom };
+    T.pinza = { d0: Math.hypot(a.x - b.x, a.y - b.y), z0: STUDIO.cam.zoom, mx: (a.x + b.x) / 2, my: (a.y + b.y) / 2 };
   }
   try { ev.currentTarget.setPointerCapture?.(ev.pointerId); } catch (e) {  }
 }
@@ -23592,12 +23824,12 @@ function studioTelPalcoGiu(ev) {
 function studioTelPalcoMuovi(ev) {
   const T = studioTelStato(), p = T.tocchi.get(ev.pointerId); if (!p) return;
   p.x = ev.clientX; p.y = ev.clientY;
-  if (T.pinza && T.tocchi.size === 2) {
-    const tr = studioTelTraccia(), cap = tr?.getCapabilities?.()?.zoom;
-    if (!cap) return;
+  if (T.pinza && T.tocchi.size === 2 && STUDIO.cap.camEl) {
     const [a, b] = [...T.tocchi.values()];
-    const z = studioClamp((T.pinza.z0 ?? cap.min) * Math.hypot(a.x - b.x, a.y - b.y) / Math.max(1, T.pinza.d0), cap.min, cap.max);
-    studioTelZoom(z);
+    const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+    studioCamZoom(T.pinza.z0 * Math.hypot(a.x - b.x, a.y - b.y) / Math.max(1, T.pinza.d0));
+    studioCamSposta(mx - T.pinza.mx, my - T.pinza.my);
+    T.pinza.mx = mx; T.pinza.my = my;
   }
 }
 
@@ -23613,12 +23845,6 @@ function studioTelPalcoSu(ev) {
     if (ora - T.tap < 320) { T.tap = 0; conErrore(() => studioGiraCamera()); }
     else T.tap = ora;
   }
-}
-
-async function studioTelZoom(z) {
-  const T = studioTelStato(), tr = studioTelTraccia(); if (!tr) return;
-  T.zoom = z;
-  try { await tr.applyConstraints({ advanced: [{ zoom: z }] }); } catch (e) {  }
 }
 
 async function studioTelTorcia() {
@@ -23670,7 +23896,7 @@ function studioTelAzione(azione, el) {
   if (azione === 'apri') return studioTelApri();
   if (azione === 'esci') { if (T.aperta) { try { if (history.state?.studioTel) history.back(); else studioTelChiudi(); } catch (e) { studioTelChiudi(); } } return; }
   if (azione === 'foglio-chiudi' || azione === 'fatto') { if (T.foglio === 'prepara') studioTelSalvaCanale(); T.foglio = ''; renderStudioTelFoglio(); return; }
-  if (azione === 'prepara' || azione === 'altro' || azione === 'chat') { if (T.foglio === 'prepara' && azione !== 'prepara') studioTelSalvaCanale(); return studioTelFoglio(azione); }
+  if (azione === 'prepara' || azione === 'altro' || azione === 'chat' || azione === 'camera') { if (T.foglio === 'prepara' && azione !== 'prepara') studioTelSalvaCanale(); return studioTelFoglio(azione); }
   if (azione === 'vai') return studioTelVai();
   if (azione === 'conto') return studioTelAnnullaConto();
   if (azione === 'mic') {
@@ -23679,7 +23905,11 @@ function studioTelAzione(azione, el) {
     try { navigator.vibrate?.(20); } catch (e) {  }
     return;
   }
-  if (azione === 'gira') return conErrore(async () => { await studioGiraCamera(); T.zoom = null; T.torcia = false; studioTelSeguiTracce(); renderStudioTel(); });
+  if (azione === 'gira') return conErrore(async () => { await studioGiraCamera(); studioTelSeguiTracce(); renderStudioTel(); });
+  if (azione === 'zoom-passo') return studioCamZoom(STUDIO.M.prossimoZoom(STUDIO.cam.zoom, studioCamZoomMax()));
+  if (azione === 'specchio') return studioCamSpecchia();
+  if (azione === 'centra') { studioCamCentra(); studioTelAvviso(L('Inquadratura al centro', 'Framing centered', 'Encuadre al centro'), 1200); return; }
+  if (azione === 'camera-da-pannello') { studioTelApri(); if (studioTelStato().foglio !== 'camera') studioTelFoglio('camera'); return; }
   if (azione === 'accendi') return conErrore(() => studioTelAccendi());
   if (azione === 'pronte') return studioTelAggiungiPronte();
   if (azione === 'blocca') { T.blocco = true; T.foglio = ''; renderStudioTel(); studioTelAvviso(L('Tocchi bloccati: tieni premuto il lucchetto per sbloccare.', 'Touches locked: hold the padlock to unlock.', 'Toques bloqueados: mantén pulsado el candado para desbloquear.'), 4000); return; }
@@ -23706,7 +23936,7 @@ async function studioMobileFormato(k) {
   const d = STUDIO.doc; if (!d || STUDIO.live) return;
   d.scelte.formati = { o: k !== 'v', v: k !== 'o' };
   STUDIO.lavoro = k === 'o' ? 'o' : 'v'; d.scelte.lavoro = STUDIO.lavoro;
-  renderStudioTutto(); studioRenderIO(); studioRenderDestinazioni(); studioSporco(); renderStudioTel();
+  renderStudioTutto(); studioRenderIO(); studioRenderDestinazioni(); studioSporco(); renderStudioTel(); studioCamForma();
   studioControllaSupporto();
 }
 
@@ -23740,6 +23970,10 @@ async function onStudioClick(ev) {
   const tde = t.closest('[data-tel-dest]'); if (tde) { const ins = studioDestScelte(); if (ins.has(tde.dataset.telDest)) ins.delete(tde.dataset.telDest); else ins.add(tde.dataset.telDest); studioScriviDestScelte(ins); renderStudioTel(); return; }
   const tch = t.closest('[data-tel-chat]'); if (tch) { STUDIO.doc.scelte.telefono.chat = tch.dataset.telChat; studioSporco(); renderStudioTel(); return; }
   const tca = t.closest('[data-tel-cat]'); if (tca) { const T = studioTelStato(); T.categoria = T.categoria === tca.dataset.telCat ? '' : tca.dataset.telCat; renderStudioTelFoglio(); return; }
+  const len = t.closest('[data-tel-lente]'); if (len) return conErrore(() => studioScegliLente(len.dataset.telLente));
+  const zp = t.closest('[data-cam-zoomp]'); if (zp) return studioCamZoom(Number(zp.dataset.camZoomp));
+  const ad = t.closest('[data-cam-adatta]'); if (ad) return studioCamAdatta(ad.dataset.camAdatta);
+  const tq = t.closest('[data-tel-qual]'); if (tq) { studioApplicaQualita(tq.dataset.telQual); studioRenderIO(); studioControllaSupporto(); renderStudioTelFoglio(); return; }
   const tel = t.closest('[data-tel]'); if (tel) return studioTelAzione(tel.dataset.tel, tel);
   const add = t.closest('[data-add]'); if (add) return conErrore(() => studioAggiungi(add.dataset.add));
   const pr = t.closest('[data-scena-pronte]');
@@ -23813,11 +24047,16 @@ function onStudioInput(ev) {
   if (t.id === 'sp-overlay') { studioScegliOverlay(t.value, studioTrovaFonte(STUDIO.sel)); return; }
   if (t.dataset.telOverlay !== undefined) { studioScegliOverlay(t.value); renderStudioTelFoglio(); return; }
   if (t.id === 'studio-qual-sel') { studioApplicaQualita(t.value); studioControllaSupporto(); return; }
-  if (t.dataset.telZoom !== undefined) { studioTelZoom(Number(t.value)); return; }
+  if (t.dataset.camZoom !== undefined) { studioCamZoom(Number(t.value), false); return; }
+  if (t.dataset.camLuce !== undefined) { studioCamLuce(t.value); return; }
+  if (t.dataset.telMic !== undefined) { conErrore(() => studioCambiaMic(t.value)); return; }
+  if (t.dataset.camSpecchio !== undefined && t.type === 'checkbox') { if (t.checked !== STUDIO.cam.specchio) studioCamSpecchia(); return; }
   if (t.id === 'studio-trans-ms') { if (STUDIO.doc) { STUDIO.doc.scelte.transizione.ms = studioClamp(Number(t.value) || 300, 100, 3000); studioSporco(); } return; }
   const f = studioTrovaFonte(STUDIO.sel); if (!f) return;
   if (t.id === 'sp-nome') { f.nome = t.value.slice(0, STUDIO.M.LIMITI.nome); const n = document.querySelector(`#studio-fonti [data-fonte="${CSS.escape(f.id)}"] .sf-nome`); if (n) n.textContent = f.nome; const bn = STUDIO.ui?.querySelector(`[data-box="${CSS.escape(f.id)}"] .sfb-nome`); if (bn) bn.textContent = f.nome; studioSporco(); return; }
   if (t.id === 'sp-testo') { f.testo = t.value.slice(0, STUDIO.M.LIMITI.testo); studioSporco(); return; }
+  if (t.id === 'sp-adatta' && f.inq) { f.inq[STUDIO.lavoro].adatta = STUDIO.M.ADATTA.includes(t.value) ? t.value : 'auto'; studioSporco(); if (STUDIO.tel?.foglio === 'camera') renderStudioTelFoglio(); return; }
+  if ((t.id === 'sp-cx' || t.id === 'sp-cy') && f.inq) { f.inq[STUDIO.lavoro][t.id === 'sp-cx' ? 'cx' : 'cy'] = studioClamp(Number(t.value) / 100, -1, 1); studioSporco(); return; }
   if (t.id === 'sp-colore') { f.colore = t.value; studioSporco(); return; }
   if (t.id === 'sp-dim') { f.dim = Number(t.value); const v = document.getElementById('sp-dim-v'); if (v) v.textContent = t.value; studioSporco(); return; }
 }

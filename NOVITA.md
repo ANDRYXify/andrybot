@@ -43,6 +43,22 @@ comandi diversi da quelli della riga italiana.
 
 ## 2026-10-15
 
+- [importante] Dal telefono la fotocamera non esce più ingrandita: si vede tutto quello che vede, e scegli obiettivo, zoom, inquadratura e specchio. [vai: studio]
+  en: From the phone the camera no longer comes out zoomed in: it shows all it sees, and you pick lens, zoom, framing and mirror.
+  es: Desde el teléfono la cámara ya no sale ampliada: se ve todo lo que ve, y eliges objetivo, zoom, encuadre y espejo.
+  > La fotocamera del telefono, giusta e tua
+  > Andando in verticale l'immagine usciva ingrandita tre volte. Ora si vede intera, e dal foglio Fotocamera scegli l'obiettivo, lo zoom (anche a tocchi o con due dita) e quale parte si vede.
+  en> The phone camera, right and yours
+  en> Going vertical the picture came out zoomed three times. Now it shows whole, and from the Camera sheet you pick the lens, the zoom (with taps or two fingers too) and which part shows.
+  es> La cámara del teléfono, bien y a tu gusto
+  es> Yendo en vertical la imagen salía ampliada tres veces. Ahora se ve entera, y desde la hoja Cámara eliges el objetivo, el zoom (también a toques o con dos dedos) y qué parte se ve.
+- Nello Studio ogni webcam, schermo, video o immagine sceglie come sta nel suo riquadro: lo riempie, si vede intera con lo sfondo sfumato, o decide da sola senza tagliare più di un terzo. [vai: studio]
+  en: In the Studio every webcam, screen, video or image chooses how it sits in its frame: it fills it, shows whole with a blurred background, or decides by itself without cutting more than a third.
+  es: En el Estudio cada webcam, pantalla, vídeo o imagen elige cómo queda en su recuadro: lo llena, se ve entera con el fondo difuminado, o decide sola sin cortar más de un tercio.
+- Nella regia dal telefono scegli il microfono (cuffie, AirPods o uno esterno), e i messaggi non coprono più i tasti né i pannelli aperti. [vai: studio]
+  en: In the phone controls you pick the microphone (headphones, AirPods or an external one), and messages no longer cover the buttons or the open panels.
+  es: En el control del teléfono eliges el micrófono (auriculares, AirPods o uno externo), y los mensajes ya no tapan los botones ni los paneles abiertos.
+
 - Nello Studio ogni scena sceglie quale dei tuoi overlay usare, e cambiando scena passa da sola a quello giusto. Le scene nuove nascono con l'overlay. [vai: studio]
   en: In the Studio every scene picks which of your overlays to use, and switching scenes moves to the right one by itself. New scenes start with the overlay.
   es: En el Estudio cada escena elige cuál de tus overlays usar, y al cambiar de escena pasa sola al correcto. Las escenas nuevas nacen con el overlay.

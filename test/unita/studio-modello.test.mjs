@@ -6,7 +6,7 @@
 // che i media sono segnaposto e non file, e che la transizione va da 0 a 1.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { normalizza, nuovaFonte, migraVecchie, impronteUsate, lega, mescola, dispostoRapido, pesa, formatoDi, dirette, escluse, FORMATI, LIMITI, SCENARI, AUDIO, TESTI_PRONTE, scenePronte, applicaPronte, sceneVuote, scenaAccanto, vincoliAudio, overlayDi } from '../../src/web/public/js/studio-modello.js';
+import { normalizza, nuovaFonte, migraVecchie, impronteUsate, lega, mescola, dispostoRapido, pesa, formatoDi, dirette, escluse, FORMATI, LIMITI, SCENARI, AUDIO, TESTI_PRONTE, scenePronte, applicaPronte, sceneVuote, scenaAccanto, vincoliAudio, overlayDi, inquadra, modoAdatta, spostaCentro, prossimoZoom, orientamentoStorto, nomeCamera, TAGLIO_MAX, ZOOM_DIGITALE_MAX, INQUADRABILI } from '../../src/web/public/js/studio-modello.js';
 
 const IMP = 'a'.repeat(64), IMP2 = 'b'.repeat(64);
 
@@ -202,4 +202,90 @@ test('la fonte Overlay ricorda quale dei tuoi overlay usa; se quello non c\'e\' 
   assert.equal(overlayDi({ overlay: 'gioco' }, {}, []), 'gioco', 'finche\' l\'elenco non e\' arrivato vale la scelta');
   assert.equal(overlayDi(null, {}, []), '');
   assert.equal(normalizza({ scelte: { overlay: 'a b' } }).scelte.overlay, '');
+});
+
+const VICINO = (a, b, msg) => assert.ok(Math.abs(a - b) < 1e-6, `${msg}: ${a} contro ${b}`);
+
+test('l\'inquadratura non esce mai dal frame né dal riquadro, e non stira mai l\'immagine', () => {
+  const frame = [[1280, 720], [720, 1280], [640, 480], [480, 640], [1920, 1080], [1080, 1080], [3840, 1080]];
+  const box = [{ x: 0, y: 0, w: 720, h: 1280 }, { x: 0, y: 0, w: 1280, h: 720 }, { x: 900, y: 500, w: 384, h: 216 }, { x: -50, y: 40, w: 300, h: 300 }];
+  let casi = 0;
+  for (const [vw, vh] of frame) for (const b of box) for (const adatta of ['auto', 'ritaglia', 'intera']) for (const zoom of [1, 1.7, 3]) for (const cx of [-1, -0.3, 0, 1]) for (const cy of [-1, 0, 0.6]) for (const specchio of [false, true]) {
+    const r = inquadra(vw, vh, b, { adatta, cx, cy }, { zoom, specchio });
+    casi++;
+    assert.ok(r.sx >= -1e-6 && r.sy >= -1e-6 && r.sx + r.sw <= vw + 1e-6 && r.sy + r.sh <= vh + 1e-6, 'la finestra sta nel frame');
+    assert.ok(r.dx >= b.x - 1e-6 && r.dy >= b.y - 1e-6 && r.dx + r.dw <= b.x + b.w + 1e-6 && r.dy + r.dh <= b.y + b.h + 1e-6, 'il disegno sta nel riquadro');
+    VICINO(r.sw / r.sh, r.dw / r.dh, 'le proporzioni restano quelle vere');
+    if (r.modo === 'ritaglia') assert.ok(!r.bande && Math.abs(r.dw - b.w) < 1e-6 && Math.abs(r.dh - b.h) < 1e-6, 'ritaglia riempie tutto il riquadro');
+    if (r.modo === 'intera' && zoom === 1) assert.ok(Math.abs(r.sw - vw) < 1e-6 && Math.abs(r.sh - vh) < 1e-6, 'intera senza zoom non taglia niente');
+    if (adatta === 'auto' && zoom === 1) assert.ok(Math.min(r.sw / vw, r.sh / vh) >= 1 / TAGLIO_MAX - 1e-6, 'da sola non taglia mai più di un terzo');
+    const uno = inquadra(vw, vh, b, { adatta, cx, cy }, { zoom: 1, specchio });
+    if (r.modo === 'ritaglia') { VICINO(r.sw, uno.sw / zoom, 'lo zoom stringe la finestra di quanto dice'); VICINO(r.sh, uno.sh / zoom, 'anche in altezza'); }
+  }
+  assert.equal(casi, 7 * 4 * 3 * 3 * 4 * 3 * 2);
+  for (const z of [0.5, -3, 'x', null]) assert.deepEqual(inquadra(1280, 720, box[0], { adatta: 'intera' }, { zoom: z }), inquadra(1280, 720, box[0], { adatta: 'intera' }, { zoom: 1 }), `uno zoom ${z} vale 1×: l'immagine non rimpicciolisce mai sotto il riquadro`);
+});
+
+test('il telefono dritto in verticale si vede intero; un frame orizzontale non si ritaglia più tre volte da solo', () => {
+  const tela = { x: 0, y: 0, w: 720, h: 1280 };
+  const dritto = inquadra(720, 1280, tela, { adatta: 'auto' });
+  assert.equal(dritto.modo, 'ritaglia'); VICINO(dritto.sw, 720, 'tutta la larghezza'); VICINO(dritto.sh, 1280, 'tutta l\'altezza');
+  const storto = inquadra(1280, 720, tela, { adatta: 'auto' });
+  assert.equal(storto.modo, 'intera'); assert.ok(storto.bande); VICINO(storto.sw, 1280, 'niente tagliato');
+  const chiesto = inquadra(1280, 720, tela, { adatta: 'ritaglia' });
+  assert.ok(chiesto.sw / 1280 < 0.32, 'il ritaglio pieno di un frame orizzontale è lo zoom di 3 volte: succede solo se lo chiedi');
+  assert.equal(modoAdatta(640, 480, 1280, 720, 'auto'), 'ritaglia', 'una webcam 4:3 in 16:9 riempie');
+  assert.equal(modoAdatta(1080, 1080, 720, 1280, 'auto'), 'intera', 'un quadrato in verticale si mostra intero');
+});
+
+test('trascinare sposta l\'inquadratura dalla parte giusta, anche specchiata, e non esce mai dal frame', () => {
+  const tela = { x: 0, y: 0, w: 720, h: 1280 };
+  for (const specchio of [false, true]) {
+    const q = { adatta: 'ritaglia', cx: 0, cy: 0 };
+    const r = inquadra(1280, 720, tela, q, { specchio });
+    const dopo = spostaCentro(r, 1280, 720, q, 100, 0);
+    assert.ok(dopo.cx < 0, 'il contenuto segue il dito: si vede quello che stava a sinistra');
+    const r2 = inquadra(1280, 720, tela, { ...q, ...dopo }, { specchio });
+    if (specchio) assert.ok(r2.sx > r.sx, 'specchiata, la sinistra vista è la destra del frame'); else assert.ok(r2.sx < r.sx);
+    assert.equal(spostaCentro(r, 1280, 720, q, 1e6, -1e6).cx, -1);
+    assert.equal(spostaCentro(r, 1280, 720, q, 1e6, -1e6).cy, 0, 'dove non c\'è margine non si sposta');
+  }
+  const dritto = inquadra(720, 1280, tela, { adatta: 'ritaglia', cx: 0.4, cy: 0 });
+  assert.equal(spostaCentro(dritto, 720, 1280, { cx: 0.4, cy: 0 }, 300, 0).cx, 0.4, 'senza margine il centro resta dov\'era: uno zoom dopo non salta al bordo');
+});
+
+test('lo zoom a tocchi va 1×, 2×, 3× e torna a 1×, senza superare il massimo', () => {
+  assert.equal(prossimoZoom(1, ZOOM_DIGITALE_MAX), 2);
+  assert.equal(prossimoZoom(2, ZOOM_DIGITALE_MAX), 3);
+  assert.equal(prossimoZoom(3, ZOOM_DIGITALE_MAX), 1);
+  assert.equal(prossimoZoom(1.4, 10), 2);
+  assert.equal(prossimoZoom(1, 1.8), 1, 'se la fotocamera non arriva a 2×, resta a 1×');
+  assert.equal(prossimoZoom(1, 2), 2); assert.equal(prossimoZoom(2, 2), 1);
+});
+
+test('il telefono storto rispetto al formato si dice, il resto no', () => {
+  assert.equal(orientamentoStorto(1280, 720, 'v'), 'dritto');
+  assert.equal(orientamentoStorto(720, 1280, 'o'), 'lato');
+  assert.equal(orientamentoStorto(720, 1280, 'v'), '');
+  assert.equal(orientamentoStorto(1280, 720, 'o'), '');
+  assert.equal(orientamentoStorto(0, 0, 'v'), '');
+});
+
+test('le fotocamere hanno il nome del sistema; quelle di Android si leggono davanti o dietro', () => {
+  const t = { davanti: 'Davanti', dietro: 'Dietro', fotocamera: 'Fotocamera' };
+  assert.equal(nomeCamera('camera2 0, facing back', 0, t), 'Dietro 1');
+  assert.equal(nomeCamera('camera2 1, facing front', 1, t), 'Davanti 2');
+  assert.equal(nomeCamera('Fotocamera posteriore ultra grandangolare', 2, t), 'Fotocamera posteriore ultra grandangolare');
+  assert.equal(nomeCamera('', 3, t), 'Fotocamera 4');
+});
+
+test('ogni fonte con un\'immagine ha l\'inquadratura nei due formati; le immagini nascono intere, il resto automatico', () => {
+  for (const tipo of INQUADRABILI) {
+    const f = tipo === 'immagine' || tipo === 'video' ? nuovaFonte(tipo, { media: { impronta: IMP, nome: 'x', mime: 'image/png', w: 10, h: 10, byte: 1 } }) : nuovaFonte(tipo);
+    for (const k of ['o', 'v']) assert.deepEqual(f.inq[k], { adatta: tipo === 'immagine' ? 'intera' : 'auto', cx: 0, cy: 0 });
+  }
+  assert.equal(nuovaFonte('testo').inq, undefined); assert.equal(nuovaFonte('overlay').inq, undefined);
+  const d = normalizza({ scene: [{ nome: 'S', fonti: [{ tipo: 'webcam', inq: { o: { adatta: 'boh', cx: 9, cy: 'x' }, v: { adatta: 'ritaglia', cx: -0.25, cy: 0.5 } } }] }] });
+  assert.deepEqual(d.scene[0].fonti[0].inq, { o: { adatta: 'auto', cx: 1, cy: 0 }, v: { adatta: 'ritaglia', cx: -0.25, cy: 0.5 } });
+  assert.deepEqual(normalizza(d), d);
 });

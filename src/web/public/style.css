@@ -1192,6 +1192,10 @@ input[type="file"]::file-selector-button:hover { background: var(--acc-600); }
 .studio-dest-fmt { max-width: 150px; }
 
 .studio-mobile-barra { display: flex; flex-direction: column; gap: .5rem; margin-top: .7rem; }
+.studio-mobile .studio-palco[data-f="v"] { width: min(100%, calc(min(48vh, 720px) * 9 / 16)); }
+@media (max-width: 760px) {
+  body.in-studio #cerca-lancia, body.in-studio #plancia-lancia, body.in-studio .rec-invito, body.in-studio .manca-avviso { display: none !important; }
+}
 .studio-mobile-barra:empty { display: none; }
 .studio-mriga { display: flex; flex-wrap: wrap; gap: .4rem; }
 .studio-mriga .btn { flex: 1 1 calc(50% - .4rem); justify-content: center; }
@@ -2903,6 +2907,8 @@ body.tel-aperta #toast-box { z-index: 1100; left: 12px; right: 12px; top: calc(e
 .tel-esci { margin-left: auto; width: 48px; min-height: 48px; border-radius: 50%; }
 .tel-riassunto { position: absolute; top: calc(env(safe-area-inset-top, 0px) + 62px); left: 50%; transform: translateX(-50%); max-width: calc(100% - 20px); min-height: 48px; padding: 0 16px; border: 0; border-radius: 999px; background: #000000a6; font-size: .86rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .tel-avviso, .tel-alert { position: absolute; left: 12px; right: 12px; top: calc(env(safe-area-inset-top, 0px) + 118px); padding: .7rem 1rem; border-radius: 14px; background: #000000cc; font-weight: 700; text-align: center; }
+.tel-avviso { z-index: 5; pointer-events: none; }
+.tel-avviso.errore { background: #b3261e; }
 .tel-alert { top: calc(env(safe-area-inset-top, 0px) + 62px); background: #e0245e; font-size: 1.1rem; }
 .tel-chat { position: absolute; left: 10px; bottom: calc(env(safe-area-inset-bottom, 0px) + 164px); width: min(78%, 440px); max-height: 34vh; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end; gap: 4px; -webkit-mask-image: linear-gradient(to bottom, transparent, #000 24%); mask-image: linear-gradient(to bottom, transparent, #000 24%); }
 .tel-chat[data-g="s"], .tel-chat-piena { font-size: 15px; }
@@ -2915,7 +2921,7 @@ body.tel-aperta #toast-box { z-index: 1100; left: 12px; right: 12px; top: calc(e
 .tel-scena { flex: none; display: inline-flex; align-items: center; gap: .35rem; min-height: 48px; padding: 0 16px; border: 2px solid transparent; border-radius: 999px; background: #ffffff26; font-weight: 700; white-space: nowrap; }
 .tel-scena.attiva { background: #fff; color: #000; }
 .tel-barra { position: absolute; left: 0; right: 0; bottom: 0; display: grid; grid-template-columns: 1fr 1fr auto 1fr 1fr; gap: 8px; align-items: center; padding: 10px 10px calc(env(safe-area-inset-bottom, 0px) + 10px); background: linear-gradient(to bottom, transparent, #000000c0 45%); }
-.tel-tasto { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-width: 48px; min-height: 60px; padding: 4px; border: 0; border-radius: 16px; background: #ffffff26; font-size: .74rem; font-weight: 700; }
+.tel-tasto { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-width: 48px; min-height: 60px; padding: 4px; border: 0; border-radius: 16px; background: #ffffff26; font-size: .7rem; white-space: nowrap; font-weight: 700; }
 .tel-tasto[data-stato="muto"], .tel-tasto[data-stato="scena"] { background: #b3261e; }
 .tel-vai { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; width: 80px; height: 80px; border: 0; border-radius: 50%; background: #e0245e; font-size: .78rem; font-weight: 800; box-shadow: 0 0 0 4px #ffffff40; }
 .tel-vai.in-onda { background: #fff; color: #c2185b; font-size: .72rem; line-height: 1.1; text-align: center; }
@@ -2923,7 +2929,7 @@ body.tel-aperta #toast-box { z-index: 1100; left: 12px; right: 12px; top: calc(e
 .tel-anello { position: absolute; inset: -7px; border-radius: 50%; pointer-events: none; --tel-p: 0; background: conic-gradient(#e0245e calc(var(--tel-p) * 1turn), transparent 0); -webkit-mask: radial-gradient(circle, transparent 58%, #000 60%); mask: radial-gradient(circle, transparent 58%, #000 60%); }
 .tel-vai.tenendo .tel-anello { animation: telTieni 1.5s linear forwards; }
 @keyframes telTieni { to { --tel-p: 1; } }
-.tel-foglio { position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; max-height: 84dvh; overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y; padding: 0 16px calc(env(safe-area-inset-bottom, 0px) + 18px); border-radius: 22px 22px 0 0; background: #17171f; box-shadow: 0 -8px 30px #0009; user-select: text; -webkit-user-select: text; }
+.tel-foglio { position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; max-height: calc(100dvh - env(safe-area-inset-top, 0px) - 196px); overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y; padding: 0 16px calc(env(safe-area-inset-bottom, 0px) + 18px); border-radius: 22px 22px 0 0; background: #17171f; box-shadow: 0 -8px 30px #0009; user-select: text; -webkit-user-select: text; }
 .tel-foglio h3 { margin: 0; font-size: 1.15rem; }
 .tel-foglio h4 { margin: 1.1rem 0 .5rem; font-size: .8rem; letter-spacing: .06em; text-transform: uppercase; color: #ffffffa8; }
 .tel-foglio p { margin: .6rem 0; color: #ffffffd9; }
@@ -2953,8 +2959,13 @@ body.tel-aperta #toast-box { z-index: 1100; left: 12px; right: 12px; top: calc(e
 .tel-check li.ok { color: #b6f2c4; }
 .tel-lista { margin: .4rem 0; padding-left: 1.1rem; display: grid; gap: .5rem; }
 .tel-nota { font-size: .84rem; color: #ffffffa8 !important; }
-.tel-zoom { display: grid; gap: 6px; margin-top: 14px; font-weight: 700; }
-.tel-zoom input { width: 100%; min-height: 48px; }
+.tel-etichetta { display: grid; gap: 6px; margin-top: 14px; font-weight: 700; }
+.tel-cam { position: absolute; right: 10px; bottom: calc(env(safe-area-inset-bottom, 0px) + 164px); display: flex; flex-direction: column; gap: 10px; }
+.tel-tondo { display: flex; align-items: center; justify-content: center; width: 52px; height: 52px; padding: 0; border: 0; border-radius: 50%; background: #000000a6; box-shadow: 0 0 0 1px #ffffff40; font-size: .92rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+.tel-lenti { display: grid; gap: 8px; }
+.tel-lenti .tel-chip { justify-content: flex-start; min-height: 52px; border-radius: 14px; text-align: left; }
+.tel-cursore { display: block; width: 100%; min-height: 48px; margin: 0; accent-color: #e0245e; touch-action: pan-x; }
+.tel-foglio h4 output { margin-left: .35rem; color: #fff; letter-spacing: 0; text-transform: none; font-variant-numeric: tabular-nums; }
 .tel-chat-piena { max-height: 46dvh; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; touch-action: pan-y; }
 .tel-conto { position: absolute; inset: 0; z-index: 3; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; border: 0; background: #000000a6; }
 .tel-conto strong { font-size: min(40vmin, 220px); line-height: 1; }
@@ -2969,6 +2980,7 @@ body.tel-aperta #toast-box { z-index: 1100; left: 12px; right: 12px; top: calc(e
   .tel-tasto { width: 72px; min-height: 52px; }
   .tel-vai { width: 72px; height: 72px; }
   .tel-scene { right: 112px; bottom: calc(env(safe-area-inset-bottom, 0px) + 10px); }
+  .tel-cam { right: 116px; top: calc(env(safe-area-inset-top, 0px) + 62px); bottom: auto; }
   .tel-chat { bottom: 70px; max-height: 46vh; width: min(52%, 440px); }
   .tel-foglio { left: 50%; right: auto; width: min(100%, 620px); transform: translateX(-50%); max-height: 94dvh; }
 }

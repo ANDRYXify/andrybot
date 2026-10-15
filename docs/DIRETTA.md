@@ -343,8 +343,10 @@ prima.
 - In alto, piccolo: lo stato (pronto, o in diretta col tempo), gli spettatori,
   la rete in tre tacche (rossa quando va in onda la riserva), la batteria.
 - Al centro il programma, a tutto schermo. Scorrendo col dito a destra o a
-  sinistra si cambia scena; con due dita si fa lo zoom della fotocamera, se lo
-  sa fare; due tocchi girano la fotocamera.
+  sinistra si cambia scena; con due dita si fa lo zoom e, spostandole insieme,
+  si sposta l'inquadratura; due tocchi girano la fotocamera.
+- A destra, sopra le scene, due tasti tondi: lo zoom a tocchi (1×, 2×, 3× e di
+  nuovo 1×) e il foglio «Fotocamera».
 - In basso a sinistra la chat, con le scritte grandi e un fondo che si legge
   anche al sole; la si ingrandisce con un tocco, e può leggerla una voce in
   cuffia. Gli alert compaiono in alto e il telefono vibra, dove si può.
@@ -353,10 +355,16 @@ prima.
   diretta diventa ■, da tenere premuto), chat, «Altro».
 - «Chat»: la chat intera, la grandezza delle scritte, la voce che la legge,
   e se tenerla sullo schermo.
-- «Altro»: torcia, zoom, blocca i tocchi, clip (Twitch), vibrazione agli alert,
-  quale formato guardare (con tutti e due accesi), scenario e destinazioni
-  (prima di partire), lo Studio completo, e «Chiudi la diretta…» con la
-  conferma, per chi non può tenere premuto.
+- «Fotocamera»: gira, specchia, l'obiettivo, lo zoom, l'inquadratura, la luce
+  e la torcia (vedi sotto).
+- «Altro»: la fotocamera, blocca i tocchi, clip (Twitch), vibrazione agli
+  alert, quale formato guardare (con tutti e due accesi), scenario e
+  destinazioni (prima di partire), lo Studio completo, l'overlay della scena,
+  il microfono (quello del telefono, le cuffie col filo, gli AirPods, uno
+  esterno), e «Chiudi la diretta…» con la conferma, per chi non può tenere
+  premuto.
+- I messaggi della regia passano da un posto solo, sotto la riga in alto:
+  sopra ai fogli aperti, mai sopra ai tasti.
 - La pressione lunga non apre il menù del telefono, e il clic che certi
   browser mandano al rilascio non fa ripartire niente.
 
@@ -380,6 +388,67 @@ con le cuffie, perché dall'altoparlante finirebbe nel microfono.
 - Lo schermo non si spegne durante la diretta (Wake Lock). Se si passa a
   un'altra app il telefono ferma la pagina: va in onda la riserva fino al
   ritorno, entro i minuti scelti, e la regia lo dice prima di partire.
+
+### La fotocamera del telefono
+
+**Il difetto da cui si parte.** Andando in verticale dal telefono la
+fotocamera usciva ingrandita tre volte. Lo Studio chiedeva l'immagine coi
+numeri del verticale (720×1280). Ma i browser applicano i vincoli sempre come
+il sensore, in orizzontale: Safari su iOS 26, chiesto il verticale, rende il
+formato orizzontale del sensore senza girarlo (WebKit 323550). E lo Studio
+disegnava ogni fotocamera «a riempire»: un 16:9 dentro un 9:16 lascia vedere
+il 32% della larghezza, cioè uno zoom di 3,16 volte.
+
+**Corretto per costruzione.**
+- La fotocamera si chiede sempre coi numeri orizzontali: è il telefono a
+  girarla come lo si tiene. Non ci si fida di quello che la traccia dice di
+  sé: si disegna dal frame vero, a ogni fotogramma, e quando il frame cambia
+  forma (si gira il telefono) il `<video>` lo dice e la tela si ridisegna.
+- Una geometria sola, pura, nel modello: `inquadra(frame, riquadro,
+  inquadratura, {zoom, specchio})`. Garantisce, e il collaudo lo prova su
+  migliaia di casi: la parte presa sta dentro il frame, il disegno sta dentro
+  il riquadro, le proporzioni restano quelle vere (niente stirato).
+- Tre modi, per ogni fonte e per ogni formato, salvati con la scena:
+  **Automatica** (di serie) riempie il riquadro, ma se per riempirlo dovesse
+  tagliare più di un terzo dell'immagine la mostra intera; **Riempi** taglia i
+  bordi sempre; **Intera** non taglia mai. Le bande che restano sono lo stesso
+  video, sfumato e scurito, come fanno le app dei social; per le immagini
+  restano trasparenti (un logo PNG non prende un fondo).
+- Dove l'immagine è tagliata o ingrandita si sceglie quale parte si vede: con
+  due dita sulla regia, coi cursori nelle Proprietà sul computer. Il centro non
+  esce mai dal frame, e dove non c'è margine non si muove (uno zoom dopo non
+  salta al bordo).
+
+**Lo zoom è della fotocamera, come nell'app Fotocamera:** vale in tutte le
+scene e in tutti e due i formati. Se la fotocamera ha uno zoom suo (molti
+Android, alcuni iPhone) lo Studio usa quello, e l'immagine resta nitida; se
+non ce l'ha, o lo rifiuta, ingrandisce lo Studio, fino a 3×, e lo dice (oltre
+2× si sgrana). Lo zoom non resta mai senza effetto. Torna a 1× quando si
+cambia fotocamera, come nel telefono.
+
+**L'obiettivo.** Il foglio «Fotocamera» elenca le fotocamere coi nomi che dà
+il telefono, già nella sua lingua (grandangolo, ultra grandangolo,
+teleobiettivo, frontale); quelli di Android («camera2 0, facing back») si
+leggono «Dietro 1», «Davanti 2». L'obiettivo scelto si ricorda per il suo lato:
+girando e tornando dietro torna quello. Se un obiettivo ricordato non c'è più
+(un altro telefono, un permesso tolto) si apre quello di serie, senza errori,
+e lo si dimentica. Scelte e specchio stanno nel browser del dispositivo, non
+sul server.
+
+**Specchia** vale per la fotocamera davanti: anche il pubblico vede come allo
+specchio, e le scritte escono al contrario; di serie è spento.
+
+**Luce e torcia** compaiono solo dove la fotocamera le sa fare (la luce è la
+compensazione dell'esposizione di Chrome su Android).
+
+**Il telefono storto.** Se la diretta è verticale e il telefono è tenuto di
+lato (o il contrario), l'immagine si vede intera con le bande sfumate e la
+regia dice come tenerlo; raddrizzato, l'avviso sparisce da solo.
+
+**Sul computer** le Proprietà di ogni webcam, schermo, video o immagine
+hanno «L'immagine nel riquadro» e i due cursori per spostarla; sotto la
+scelta della fotocamera, lo zoom e lo specchio. Un microfono o una fotocamera
+attaccati dopo compaiono da soli.
 
 ## Dopo: le scene dell'Overlay Studio
 
