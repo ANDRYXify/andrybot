@@ -79,7 +79,7 @@ const DIFETTI = {
     ['  if (r.bande && STUDIO.M.SFUMATE.includes(f.tipo)) studioSfumato(c, el, vw, vh, p);\n', '', 'le bande sono sfumate', 8, /sfondo sfumato, non il nero/],
     ["  if (k === 'dritto') studioTelAvviso(", '  if (false) studioTelAvviso(', 'si dice di tenere il telefono dritto', 7, /regia dice di tenere il telefono dritto/],
     ['STUDIO.dev.lente[fm] = id;', 'void id;', "l'obiettivo si ricorda per lato", 7, /si ricorda per quel lato/],
-    ["  const nome = document.querySelector('#tel-cam-nome span'); if (nome && STUDIO.cap.camEl) nome.textContent = studioCamEtichetta();\n", '', 'si vede quale fotocamera e\' in uso', 7, /quale fotocamera e' in uso/],
+    ["  const nome = document.querySelector('.tel-cam-nome span'); if (nome && STUDIO.cap.camEl) nome.textContent = studioCamEtichetta();\n", '', 'si vede quale fotocamera e\' in uso', 7, /quale fotocamera e' in uso/],
     ['    if (!ripiego || !/Overconstrained|NotFound/', '    if (true || !/Overconstrained|NotFound/', "l'obiettivo sparito non lascia al buio", 7, /obiettivo che non c'e' piu'/],
     ['  } catch (e) { C.hw = null; C.zoom = studioClamp(', '  } catch (e) { void 0; C.zoom = studioClamp(', 'lo zoom rifiutato passa allo Studio', 7, /rifiuta lo zoom/],
     ['  if (STUDIO.cap.camEl && prima && (prima.h !== ora.h || prima.fps !== ora.fps)) studioCambiaCamera(STUDIO.dev.camId);', '', 'la fotocamera segue la qualita\'', 7, /si riapre alla misura nuova/],
@@ -611,7 +611,7 @@ console.log('Fotocamera sul telefono (390×844, a tocco):');
   ok('il foglio Fotocamera elenca gli obiettivi coi nomi del telefono', lenti.join('|') === 'Dietro 1|Davanti 2|Fotocamera 3', lenti.join('|'));
   await clic(p, '[data-tel-lente="a"]'); await p.waitForTimeout(500);
   const l1 = await p.evaluate(() => ({ lente: STUDIO.dev.lente.environment, facing: STUDIO.dev.facing, camId: STUDIO.dev.camId, attivo: document.querySelector('[data-tel-lente="a"]')?.classList.contains('attivo') }));
-  const vista = await p.evaluate(() => { const f = document.getElementById('tel-foglio'); return { nome: document.querySelector('#tel-cam-nome span')?.textContent || '', stato: document.querySelector('#tel-foglio [data-cam-stato]')?.textContent || '', alto: f.scrollHeight, visto: f.clientHeight }; });
+  const vista = await p.evaluate(() => { const f = document.getElementById('tel-foglio'); return { nome: document.querySelector('.tel-cam-nome span')?.textContent || '', stato: document.querySelector('#tel-foglio [data-cam-stato]')?.textContent || '', alto: f.scrollHeight, visto: f.clientHeight }; });
   ok('sulla tela si legge quale fotocamera e\' in uso, e il foglio dice obiettivo, zoom e inquadratura', vista.nome === 'Dietro 1' && /^Dietro 1 · 1×/.test(vista.stato), JSON.stringify(vista));
   ok('il foglio Fotocamera sta tutto in una schermata: obiettivi, zoom, inquadratura e qualita\' senza scorrere', vista.alto <= vista.visto + 1, JSON.stringify(vista));
   await clic(p, '[data-tel="gira"]'); await p.waitForTimeout(500);

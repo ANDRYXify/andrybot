@@ -16,9 +16,18 @@
 // gia' questa. Sempre nuova, anche se fuori ce n'e' gia' una: un cancello non
 // lavora mai sui dati di qualcun altro. SB_COLLAUDO accende la guardia di
 // config.js, che rifiuta la cartella vera anche se qualcuno sbaglia l'ordine.
-import { mkdtempSync } from 'node:fs';
+//
+// E se ne va con lui. Prima restava: ottomila cartelle «cancello-» in /tmp
+// dopo qualche giorno di collaudi, e sul server il collaudo di ogni
+// aggiornamento riempiva il disco un po' di piu'. All'uscita (anche con
+// process.exit) la cartella si toglie; un processo ucciso a forza la lascia,
+// ma i giri di `npm test` e `npm run cancelli` girano gia' con TMPDIR in una
+// cartella loro, che si toglie a giro finito (package.json).
+import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-process.env.DATA_DIR = mkdtempSync(join(tmpdir(), 'cancello-'));
+const cartella = mkdtempSync(join(tmpdir(), 'cancello-'));
+process.env.DATA_DIR = cartella;
 process.env.SB_COLLAUDO = '1';
+process.on('exit', () => { try { rmSync(cartella, { recursive: true, force: true }); } catch { /* gia' andata */ } });

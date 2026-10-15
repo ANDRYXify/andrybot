@@ -49,7 +49,7 @@ export function argomenti(destinazioni, audioCodec) {
 
 const mascherato = (s, destinazioni) => destinazioni.reduce((t, d) => t.split(d.url).join(`[${d.nome || d.id}]`), String(s));
 
-export function creaTramite({ risorse = risorseDiSerie, ffmpeg = 'ffmpeg', ora = () => Date.now(), bandaMbps = 300, log = null, ogniMs = 100 } = {}) {
+export function creaTramite({ risorse = risorseDiSerie, ffmpeg = 'ffmpeg', ora = () => Date.now(), bandaMbps = 300, log = null, ogniMs = 100, alCambio = null } = {}) {
   const sessioni = new Map();
   let giro = null;
 
@@ -118,6 +118,18 @@ export function creaTramite({ risorse = risorseDiSerie, ffmpeg = 'ffmpeg', ora =
     }
   }
 
+  // Chi trasmette lo si dice a chi aspetta per riavviare (src/in-onda.js), nello
+  // stesso giro in cui la sessione nasce o finisce.
+  // Dentro un avvio che sostituisce la diretta di prima si dice una volta sola,
+  // alla fine: in mezzo il canale non c'e', e chi legge in quell'istante
+  // crederebbe che nessuno trasmetta.
+  let rinvio = 0, daDire = false;
+  const cambiato = () => {
+    if (rinvio) { daDire = true; return; }
+    daDire = false;
+    try { alCambio?.(); } catch { /* chi ascolta non ferma la diretta */ }
+  };
+
   function fine(s, motivo) {
     if (s.finita) return;
     s.finita = true;
@@ -126,7 +138,7 @@ export function creaTramite({ risorse = risorseDiSerie, ffmpeg = 'ffmpeg', ora =
     const ff = s.ff;
     setTimeout(() => { try { if (ff.exitCode == null) ff.kill('SIGKILL'); } catch { /* niente */ } }, 3_000).unref?.();
     s.rendi();
-    if (sessioni.get(s.login) === s) sessioni.delete(s.login);
+    if (sessioni.get(s.login) === s) { sessioni.delete(s.login); cambiato(); }
     s.ultimaFine = { motivo, alle: ora(), errore: s.errore };
     finite.set(s.login, s.ultimaFine);
     spegniGiroSeVuoto();
@@ -142,7 +154,11 @@ export function creaTramite({ risorse = risorseDiSerie, ffmpeg = 'ffmpeg', ora =
     && s.misure === `${video?.larghezza}x${video?.altezza}` && Buffer.from(video?.config || []).equals(s.config.video)
     && Buffer.from(audio?.config || []).equals(s.config.audio);
 
-  function avvia(login, { destinazioni, video, audio, kbps, assenzaMaxMs = ASSENZA_MAX_MS, riprendi = false } = {}) {
+  function avvia(login, opzioni) {
+    rinvio++;
+    try { return avviaDavvero(login, opzioni); } finally { rinvio--; if (daDire) cambiato(); }
+  }
+  function avviaDavvero(login, { destinazioni, video, audio, kbps, assenzaMaxMs = ASSENZA_MAX_MS, riprendi = false } = {}) {
     const ch = String(login || '').toLowerCase();
     if (!ch) return { ok: false, motivo: 'chi' };
     const prima = sessioni.get(ch);
@@ -178,6 +194,7 @@ export function creaTramite({ risorse = risorseDiSerie, ffmpeg = 'ffmpeg', ora =
     };
     sessioni.set(ch, s);
     finite.delete(ch);
+    cambiato();
     let err = '';
     ff.stderr?.on('data', (d) => { err = (err + d).slice(-2000); s.errore = mascherato(err.trim().split('\n').pop() || '', dest).slice(0, 300); });
     ff.stdin?.on('error', () => {});
@@ -268,6 +285,8 @@ export function creaTramite({ risorse = risorseDiSerie, ffmpeg = 'ffmpeg', ora =
     avvia, riserva, pacchi, stato,
     ferma: (login, motivo = 'fermata', turno = null) => { const s = sessioni.get(String(login || '').toLowerCase()); if (!s || (turno && turno !== s.turno)) return false; fine(s, motivo); return true; },
     attiva: (login) => sessioni.has(String(login || '').toLowerCase()),
+    // I canali in diretta dallo Studio, in un formato o nell'altro.
+    canali: () => [...new Set([...sessioni.keys()].map((k) => k.replace(/#v$/, '')))],
     chiudiTutto: () => { for (const s of [...sessioni.values()]) fine(s, 'spegnimento'); },
     curaTempo: (login) => { const s = sessioni.get(String(login || '').toLowerCase()); if (s) curaTempo(s); },
   };

@@ -43,6 +43,9 @@ const GUARDIANI = [
   'combacia',        // impronta di un token esterno (Ko-fi), a tempo costante: come la chiave API
   'currentUser',     // legge la sessione: senza, non c'e' niente da leggere
   'soloProprietario',
+  'cancelliRegia',   // le rotte della regia dei dispositivi: requireOwner e Studio aperto (rotte-dispositivi.js)
+  'camDi',           // un dispositivo collegato: la sua chiave contro l'impronta salvata, e lo Studio aperto
+  'usaBiglietto',    // il flusso di un dispositivo: un biglietto monouso da un minuto, dato solo a chi ha la chiave
 ];
 
 // I guardiani che PRETENDONO la sessione. Tutti gli altri parlano anche a chi
@@ -50,7 +53,7 @@ const GUARDIANI = [
 // tastiera, un gioco, una piattaforma; chi legge la sessione senza pretenderla
 // e' scritto apposta per servire anche chi non ce l'ha. L'elenco e' quello
 // corto, cosi' un guardiano nuovo nasce dalla parte di chi bussa da fuori.
-const SOLO_SESSIONE = new Set(['requireAdmin', 'requireLogin', 'requireMod', 'requireOwner', 'soloProprietario']);
+const SOLO_SESSIONE = new Set(['requireAdmin', 'requireLogin', 'requireMod', 'requireOwner', 'soloProprietario', 'cancelliRegia']);
 
 // Le porte aperte, una per una, col motivo. Sono la faccia pubblica del sito:
 // pagine che chiunque deve poter leggere, ritorni dei login esterni, e i due
@@ -151,6 +154,11 @@ const PUBBLICHE = new Map([
   ['GET /icona/:login/:file', 'icona di un tasto: pubblica di proposito, serve fuori dal sito'],
   ['POST /api/passkey/login/inizio', 'il login non puo chiedere di essere gia loggati'],
   ['POST /api/passkey/login/fine', 'il login non puo chiedere di essere gia loggati'],
+  ['GET /cam', 'la pagina del telefono-fotocamera: un dispositivo una sessione non ce l\'ha, entra con un invito o un codice'],
+  ['GET /cam/:token', 'la stessa pagina aperta dal QR: il token e\' un invito monouso da dieci minuti, e la pagina non mostra niente di nessuno'],
+  ['GET /api/cam/invito/:token', 'dice solo di quale canale e\' un invito valido: token monouso da dieci minuti, e un tetto per indirizzo'],
+  ['POST /api/cam/entra', 'entrare con un invito o un codice di sei cifre: tetto per indirizzo e in tutto, e la chiave del dispositivo la sa solo lui'],
+  ['GET /api/cam/versione', 'la versione del sito per il telefono-fotocamera, che una sessione non ce l\'ha: l\'impronta dei file pubblici, nient\'altro'],
 ]);
 
 // Pubbliche per il guardiano, ma dietro il cancello della sessione: servono a
@@ -226,8 +234,8 @@ leggiRotte(sorgente, (i) => i, 'src/web/server.js');
 // le separa la riga che le monta. E un file che registra rotte senza che qui
 // lo si legga e' rosso: una porta che il cancello non vede e' la prossima
 // che si scopre dopo.
-const moduli = [...sorgente.matchAll(/import \{ (monta\w+) \} from '(\.\.\/[\w-]+\/rotte\.js)';/g)]
-  .map((x) => ({ file: join('src', x[2].slice(3)), pos: sorgente.indexOf(`${x[1]}(app`) }));
+const moduli = [...sorgente.matchAll(/import \{ (monta\w+) \} from '((?:\.\.|\.)\/[\w/-]*rotte[\w-]*\.js)';/g)]
+  .map((x) => ({ file: join('src', 'web', x[2]), pos: sorgente.indexOf(`${x[1]}(app`) }));
 for (const x of moduli) leggiRotte(readFileSync(join(RAD, x.file), 'utf8'), () => x.pos, x.file);
 const conRotte = readdirSync(join(RAD, 'src'), { recursive: true })
   .map((f) => join('src', String(f)))

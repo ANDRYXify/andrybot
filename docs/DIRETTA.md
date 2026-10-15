@@ -50,6 +50,12 @@ alternare alla diretta senza ricodificare niente.
 - **Torna:** riprende dal primo fotogramma chiave nuovo.
 - **Non torna:** dopo il tempo scelto dallo streamer (per esempio 10 minuti) la
   diretta si chiude davvero.
+- **Il bot si aggiorna:** il server non si riavvia mentre una diretta dallo
+  Studio è in corso (conta da quando parte, verso qualunque destinazione), e
+  nei pochi secondi del cambio lo Studio non ne fa partire una nuova: riprova
+  da solo. La pagina dello Studio in diretta non si ricarica mai da sola; se
+  la si aggiorna a mano, la diretta resta in onda con la scritta di riserva e
+  «Riprendi la diretta» la riprende senza interruzioni. Vedi `AGGIORNARE.md`.
 
 ## Quanto pesa sul server (16 GB)
 

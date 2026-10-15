@@ -39,7 +39,7 @@ test('i segnali contano come tempo reale, e il tetto generale sta sopra a quelli
 });
 
 test('il server monta le rotte coi cancelli veri, e cancellare l\'account dimentica i dispositivi', () => {
-  assert.match(SRV, /montaDispositivi\(app, \{\s*salotto, proprietario: \[requireOwner, studioAperto\]/);
+  assert.match(SRV, /montaDispositivi\(app, \{\s*salotto, cancelliRegia: \[requireOwner, studioAperto\]/);
   assert.equal((SRV.match(/cancellaDati\(login, \{ conferma: req\.body\?\.conferma \}\); salotto\.dimentica\(login\);/g) || []).length, 2, 'tutte e due le strade della cancellazione');
 });
 
@@ -65,7 +65,7 @@ async function banco() {
   await new Promise((ok) => srv.listen(0, '127.0.0.1', ok));
   const base = `http://127.0.0.1:${srv.address().port}`;
   montaDispositivi(app, {
-    salotto, proprietario: [(req, res, next) => (req.get('x-prova') === 'proprietario' ? next() : res.status(401).json({ errore: 'sessione' }))],
+    salotto, cancelliRegia: [(req, res, next) => (req.get('x-prova') === 'proprietario' ? next() : res.status(401).json({ errore: 'sessione' }))],
     loginDi: () => 'andrea', studioPerMe: () => true, eLoginNostro: (l) => l === 'andrea',
     camHtml: join(PUB, 'cam.html'), baseUrl: base,
   });

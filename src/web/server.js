@@ -92,6 +92,7 @@ import * as partite from '../features/partite.js';
 import * as webauthn from './webauthn.js';
 import { comprimi, convertiPerEmote, svgInPng, LATO_LIBRERIA, normChiave } from '../features/compress.js';
 import { creaTramite, indirizzoBuono, BITRATE_MAX_KBPS } from '../features/diretta.js';
+import { inOnda } from '../in-onda.js';
 import { normalizza as normalizzaStudio, pesa as pesaStudio, LIMITI as LIMITI_STUDIO } from './public/js/studio-modello.js';
 import { seedStreamer } from '../features/seed.js';
 import { eDelKit } from '../features/seed.js';
@@ -883,6 +884,23 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // L'impronta dei file serviti: la stessa che marca i gusci e quella che poi
   // decide chi riceve `immutable`. Una sola, sennò le due meta' si scollano.
   const impronte = creaImpronte(publicDir);
+  // LA VERSIONE DEL SITO SU OGNI RISPOSTA (docs/AGGIORNARE.md). Sta in
+  // Server-Timing perche' e' l'unica intestazione che una pagina sa leggere
+  // del SUO documento (performance.getEntriesByType('navigation')): cosi' ogni
+  // pagina sa con certezza con quale versione e' nata, e da ogni risposta dopo
+  // sa se il server e' cambiato. I moduli composti dal server entrano anche
+  // loro (sono definiti piu' giu': a richiesta arrivano gia' pronti).
+  let _versione = '', _versioneAlle = 0;
+  const versioneSito = () => {
+    const adesso = Date.now();
+    if (!_versione || adesso - _versioneAlle > 10_000) {
+      let composti = [];
+      try { composti = [REGOLE_ECONOMIA_JS, REGOLE_GIRO_JS, REGOLE_COMUNI_JS, DISEGNO_JS]; } catch { /* non ancora */ }
+      _versione = impronte.versione(composti);
+      _versioneAlle = adesso;
+    }
+    return _versione;
+  };
   const NOVITA_MD = join(dirname(fileURLToPath(import.meta.url)), '../../NOVITA.md');
   // Le cose del cervello stanno in un repository a parte, montato in sola lettura
   // (LIA_ROOT; in Docker /app/lia, in sviluppo la cartella accanto a questa). Da
@@ -932,6 +950,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     if (currentUser(req) || guscio.aperto(req.path)) return next();
     return notFound(res);
   });
+  app.use((req, res, next) => { res.set('Server-Timing', `sbv;desc="${versioneSito()}"`); next(); });
 
   // DUE GUSCI DALLO STESSO index.html: quello di chi legge e quello di chi
   // lavora. Li compone `src/web/vetrina-vista.js`, che sa anche quali risorse
@@ -1369,7 +1388,12 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
 
   // Lo Studio della diretta (docs/DIRETTA.md): il tramite copia verso le
   // piattaforme quello che il dispositivo ha gia' codificato.
-  const tramite = creaTramite({ bandaMbps: config.direttaBandaMbps, log });
+  const tramite = creaTramite({ bandaMbps: config.direttaBandaMbps, log, alCambio: () => inOnda.cambiato() });
+  // Chi trasmette dallo Studio e' in onda per aggiorna.sh come chi trasmette da
+  // OBS (src/in-onda.js): il riavvio lo aspetta. E se questo processo e' nato da
+  // un riavvio annunciato, l'annuncio ha finito il suo lavoro.
+  inOnda.fonte('studio', () => tramite.canali());
+  inOnda.dimenticaRiavvio();
   const chiudiStudio = () => { try { tramite.chiudiTutto(); } catch { /* niente */ } };
   // Per chi e' aperto lo Studio: a tutti con STUDIO_WEB=1, a chi e' nella beta
   // finche' la beta e' aperta.
@@ -1753,6 +1777,13 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       res.set('Cache-Control', 'public, max-age=600');
       res.json(mappa || {});
     } catch { res.json({}); }
+  });
+
+  // La versione per le fonti di OBS, e se il canale e' in onda: una fonte non
+  // si ricarica mai in diretta (docs/AGGIORNARE.md).
+  app.get('/overlay/:login/versione', (req, res) => {
+    if (!chiaveOk(req)) return notFound(res);
+    conVersione(res, { live: inOnda.inOnda(req.params.login) });
   });
 
   // flusso SSE degli effetti in tempo reale
@@ -8974,6 +9005,7 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     carico: 'Il server è sotto sforzo in questo momento: riprova fra un minuto. Chat, alert e storie intanto vanno come sempre.',
     ffmpeg: 'Il tramite non è disponibile su questo server.',
     nessuna: 'Nessuna diretta in corso.',
+    aggiornamento: 'Il bot si sta aggiornando proprio adesso: la diretta parte appena è di nuovo su, fra pochi secondi.',
     pacchi: 'Pacchetti non validi.',
     riserva: 'La riserva deve cominciare da un fotogramma chiave e avere anche l\'audio.',
     troppo: 'Stai mandando più di quanto hai dichiarato: la diretta è stata fermata.',
@@ -9007,8 +9039,14 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
   // anche il collaudo da browser; qui le si danno i cancelli veri.
   const turnAcceso = !!(config.turnUrl && config.turnSegreto);
   const salotto = creaSalotto({ archivio: studioDispositivi, turn: turnAcceso ? { url: config.turnUrl, segreto: config.turnSegreto } : null });
+  // LA VERSIONE, A CHI LA CHIEDE (docs/AGGIORNARE.md): il pannello con la sua
+  // sessione, il telefono-fotocamera da una porta sua (una sessione non ce
+  // l'ha). Le fonti di OBS la chiedono con la chiave del canale, piu' sotto.
+  const conVersione = (res, extra = {}) => res.set('Cache-Control', 'no-store').json({ v: versioneSito(), ...extra });
+  app.get('/api/versione', requireLogin, (req, res) => conVersione(res));
+  app.get('/api/cam/versione', (req, res) => conVersione(res));
   montaDispositivi(app, {
-    salotto, proprietario: [requireOwner, studioAperto], loginDi: (req) => currentUser(req).login, studioPerMe, eLoginNostro,
+    salotto, cancelliRegia: [requireOwner, studioAperto], loginDi: (req) => currentUser(req).login, studioPerMe, eLoginNostro,
     camHtml: guscio.pagina('cam.html', '/cam'), baseUrl: config.baseUrl, turnAcceso,
   });
 
@@ -9041,6 +9079,10 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     if (streamers.get(login)?.status !== 'approved') return res.status(403).json({ errore: 'non sei ancora abilitato' });
     const b = req.body || {};
     const f = b.formato === 'v' ? 'v' : 'o';
+    // Il riavvio annunciato (src/in-onda.js): una diretta nuova adesso verrebbe
+    // tagliata fra pochi secondi. Lo Studio riprova da solo. (Si guarda subito,
+    // per non chiedere chiavi a vuoto, e di nuovo prima di partire.)
+    if (inOnda.riavvioImminente() && !tramite.attiva(sessioneDi(login, f))) return res.status(503).json({ errore: MOTIVI_DIRETTA.aggiornamento, motivo: 'aggiornamento' });
     const scelte = [...new Set((Array.isArray(b.destinazioni) ? b.destinazioni : []).map(String))].slice(0, MAX_DESTINAZIONI + 2);
     if (f === 'v' && scelte.includes('twitch')) return res.status(400).json({ errore: 'Twitch riceve solo la diretta orizzontale.', motivo: 'formato' });
     const altra = tramite.stato(sessioneDi(login, f === 'v' ? 'o' : 'v'));
@@ -9063,6 +9105,10 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
       }
     }
     const v = b.video || {}, a = b.audio || {};
+    // Di nuovo qui, dopo le attese per le chiavi e nello stesso giro in cui la
+    // sessione nasce e si scrive in data/.in-onda: aggiorna.sh, che mette il
+    // segnale e POI rilegge il file, o trova questa diretta o la vede rifiutata.
+    if (inOnda.riavvioImminente() && !tramite.attiva(sessioneDi(login, f))) return res.status(503).json({ errore: MOTIVI_DIRETTA.aggiornamento, motivo: 'aggiornamento' });
     const r = tramite.avvia(sessioneDi(login, f), {
       destinazioni,
       video: { codec: v.codec === 'avc1' ? 'avc1' : String(v.codec || ''), config: b64(v.config), larghezza: Number(v.larghezza) || 0, altezza: Number(v.altezza) || 0, fps: Number(v.fps) || 0 },

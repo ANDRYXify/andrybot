@@ -23,7 +23,11 @@ const PKG = JSON.parse(readFileSync(join(RAD, 'package.json'), 'utf8'));
 
 test('«test» e «cancelli» partono con una cartella dei dati usa e getta e col collaudo acceso', () => {
   for (const s of ['test', 'cancelli']) {
-    assert.match(PKG.scripts[s], /^export SB_COLLAUDO=1 DATA_DIR=\$\(mktemp -d -t [a-z]+-XXXXXX\) && /, s);
+    assert.match(PKG.scripts[s], /^export SB_COLLAUDO=1 T=\$\(mktemp -d -t [a-z]+-XXXXXX\) && export TMPDIR=\$T DATA_DIR=\$T\/dati && mkdir -p \$DATA_DIR && \{ /, s);
+    // Tutto quello che il giro crea (dati, cartelle delle prove, profili di
+    // Chromium) sta in $T, e $T se ne va alla fine, rosso o verde: prima
+    // restavano migliaia di cartelle in /tmp, e sul server a ogni aggiornamento.
+    assert.match(PKG.scripts[s], / \}; s=\$\?; rm -rf "\$T"; exit \$s$/, s);
   }
 });
 

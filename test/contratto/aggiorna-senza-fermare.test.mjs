@@ -10,8 +10,10 @@
 //  · il bot scrive chi e' in onda in un file suo, e lo riscrive a ogni cambio;
 //  · lo script lo legge giusto (si fa girare la sua funzione, non una copia);
 //  · il collaudo parte alla priorita' piu' bassa, e un collaudo verde si ricorda;
-//  · il cambio aspetta la fine delle dirette, salvo --subito, e l'immagine nuova
-//    si costruisce prima, col bot vecchio acceso.
+//  · l'immagine nuova si costruisce prima, col bot vecchio acceso; poi il cambio
+//    aspetta la fine delle dirette (anche quelle dallo Studio), salvo --subito;
+//  · il segnale di riavvio chiude l'ultimo istante: chi parte mentre si mette
+//    il segnale si vede e si aspetta.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, existsSync, mkdtempSync, writeFileSync, rmSync } from 'node:fs';
@@ -92,19 +94,59 @@ test('il collaudo parte alla priorita\' piu\' bassa, e un collaudo verde si rico
   assert.match(collaudo, /elif \[ "\$\(cat "\$COLLAUDATO" 2>\/dev\/null \|\| true\)" = "\$FIRMA_CODICE" \]; then/);
 });
 
-test('il cambio aspetta la fine delle dirette, e l\'immagine si costruisce prima', () => {
+test('l\'immagine si costruisce prima, poi si aspetta la fine delle dirette, poi si cambia', () => {
   const i = AGG.indexOf('# ---- 5b.');
-  const aspetta = AGG.indexOf('while [ -n "$(in_onda)" ]; do', i);
   const costruisci = AGG.indexOf('docker compose build', i);
+  const aspetta = AGG.indexOf('while [ -n "$(in_onda)" ]; do', i);
+  const segnale = AGG.indexOf('touch "$RIAVVIO_FILE"', i);
   const fermo = AGG.indexOf('FERMO_DA="$(date +%s)"', i);
   const su = AGG.indexOf('docker compose up -d\n', i);
-  assert.ok(i > 0 && aspetta > i && costruisci > aspetta && fermo > costruisci && su > fermo,
-    'prima si aspetta, poi si costruisce col bot vecchio acceso, poi si cambia');
+  assert.ok(i > 0 && costruisci > i && aspetta > costruisci && segnale > aspetta && fermo > segnale && su > fermo,
+    'prima si costruisce col bot vecchio acceso, poi si aspetta, poi il segnale, poi si cambia: fra «nessuno in onda» e il cambio non ci sono piu\' i minuti della costruzione');
   assert.match(AGG, /--subito\) SUBITO=1 ;;/, 'per le emergenze c\'e\' --subito');
   assert.match(AGG, /if \[ "\$SUBITO" = "1" \]; then\n\s*passo "Riavvio subito, su tua richiesta"/);
   assert.match(AGG, /git reset --hard "\$PRIMA" >\/dev\/null\n[^\n]*\n\s*exit 3/, 'se l\'attesa scade il repository torna com\'era');
   assert.match(AGG, /il bot e' rimasto giu' circa \$\(\( \$\(date \+%s\) - FERMO_DA \)\) secondi\./, 'e alla fine si dice quanto e\' rimasto giu\'');
+  assert.match(AGG, /trap togli_segnale EXIT/, 'il segnale non sopravvive allo script, comunque finisca');
   execFileSync('bash', ['-n', new URL('../../server/aggiorna.sh', import.meta.url).pathname]);
+});
+
+// Il pezzo dello script fra «nessuno in onda» e il riavvio, fatto girare cosi'
+// com'e' scritto. Una diretta parte proprio nell'istante in cui si mette il
+// segnale: lo script deve vederla, togliere il segnale, aspettarla, e solo
+// dopo riavviare col segnale messo.
+test('una diretta partita nell\'istante del segnale si aspetta, e il segnale non resta durante l\'attesa', () => {
+  const da = AGG.indexOf('IN_ONDA_FILE="$RADICE/data/.in-onda"');
+  const a = AGG.indexOf('passo "Riavvio"\n');
+  assert.ok(da > 0 && a > da, 'trovo il pezzo dell\'attesa');
+  const pezzo = AGG.slice(da, a);
+  const dir = mkdtempSync(join(tmpdir(), 'andrybot-segnale-'));
+  try {
+    const finto = `set -euo pipefail
+RADICE='${dir}'; mkdir -p "$RADICE/data"; SUBITO=0; PRIMA=x; SERVE_LIA=0
+passo() { echo "== $*"; }
+git() { echo "git $*"; }
+echo '{"canali":[],"ts":1}' > "$RADICE/data/.in-onda"
+touch() { command touch "$@"; if [ ! -f "$RADICE/partita" ]; then command touch "$RADICE/partita"; echo '{"canali":["anna"],"ts":2}' > "$RADICE/data/.in-onda"; echo PARTE-ANNA; fi; }
+sleep() {
+  if [ "$1" = "60" ]; then
+    if [ -f "$RADICE/data/.riavvio" ]; then echo SEGNALE-DURANTE-ATTESA; fi
+    echo '{"canali":[],"ts":3}' > "$RADICE/data/.in-onda"; echo FINISCE-ANNA
+  fi
+}
+${pezzo}
+if [ -f "$RADICE/data/.riavvio" ]; then echo RIAVVIO-COL-SEGNALE; fi
+`;
+    const out = execFileSync('bash', ['-c', finto], { encoding: 'utf8' });
+    const righe = out.split('\n').filter(Boolean);
+    const dove = (r) => righe.findIndex((x) => x.includes(r));
+    assert.ok(dove('PARTE-ANNA') >= 0, out);
+    assert.ok(dove("e' appena partita una diretta (anna)") > dove('PARTE-ANNA'), 'la vede dopo il segnale');
+    assert.equal(dove('SEGNALE-DURANTE-ATTESA'), -1, 'mentre aspetta, il segnale e\' tolto: le dirette dallo Studio partono');
+    assert.ok(dove('FINISCE-ANNA') > dove("e' appena partita"), 'la aspetta');
+    assert.ok(dove('RIAVVIO-COL-SEGNALE') > dove('FINISCE-ANNA'), 'e riavvia solo dopo, col segnale messo');
+    assert.ok(!existsSync(join(dir, 'data', '.riavvio')), 'a script finito il segnale non c\'e\' piu\'');
+  } finally { rmSync(dir, { recursive: true, force: true }); }
 });
 
 // CON PIPEFAIL un tubo con un lettore che esce prima («| grep -q», «| head»)

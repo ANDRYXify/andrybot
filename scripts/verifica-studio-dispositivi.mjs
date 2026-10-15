@@ -65,6 +65,7 @@ const DIFETTI = {
     ["  cam.classList.toggle('onda', collegato && t.onda);", "  cam.classList.toggle('onda', false);", 'in onda il bordo e\' rosso', 1, /bordo rosso/],
     ['      if (mio) { S.riprendi =', '      if (false) { S.riprendi =', 'il telefono dello streamer non si moltiplica', 5, /non si moltiplica/],
     ["  else if (e === 'tolto') tolto();\n", '', 'tolto dalla regia, il telefono lo dice', 7, /il telefono lo dice/],
+    ['  if (dopo?.cam && m.canali[dopo.canale]) {', '  if (false) {', 'dopo un aggiornamento il telefono si ricollega da solo', 6, /si ricollega da solo, senza tocchi/],
     ['    catch (e) { if (e.stato === 401 || e.stato === 404) tolto(!S.pronto); throw e; }', '    catch (e) { throw e; }', 'tolto dalla regia, il telefono lo dice (bis)', 7, /il telefono lo dice/],
   ],
   '/cam.css': [
@@ -119,7 +120,7 @@ const sito = await apriSito({ rotte: (req, res, q) => { if (!PER_LE_ROTTE.test(q
 const { porta: PORTA, base: BASE, chiudi: chiudiSito } = sito;
 const salotto = creaSalotto({ archivio: studioDispositivi });
 montaDispositivi(dispositivi, {
-  salotto, proprietario: [sessione], loginDi: () => LOGIN, studioPerMe: () => true, eLoginNostro: (l) => l === LOGIN,
+  salotto, cancelliRegia: [sessione], loginDi: () => LOGIN, studioPerMe: () => true, eLoginNostro: (l) => l === LOGIN,
   camHtml: path.join(PUB, 'cam.html'), baseUrl: BASE, turnAcceso: false,
 });
 const taglia = (k) => { for (const r of [...aperti[k]]) { try { r.socket?.destroy(); } catch { /* gia' chiuso */ } } };
@@ -308,6 +309,15 @@ try {
   if (riprendi) await tel.click('#b-riprendi');
   const tornato = await aspetta(regia, (s) => STUDIO.doc.inOnda === s, scenaProt, 20000);
   ok('tornato il segnale, si torna a lui da soli', tornato);
+  // Il bot si aggiorna e la pagina del telefono si ricarica (docs/AGGIORNARE.md):
+  // si ricollega da sola, senza un tocco, con la sua chiave.
+  await aspetta(tel, () => document.body.classList.contains('in-cam'), null, 10000);
+  await regia.evaluate((i) => { window._pcCam = STUDIO.rem.regia.remoti.get(i)?.pc; }, id);
+  await tel.evaluate((c) => sessionStorage.setItem('sb-aggiornata', JSON.stringify({ alle: Date.now(), cam: true, canale: c })), LOGIN).catch(() => {});
+  await tel.reload({ waitUntil: 'domcontentloaded' });
+  const daSolo = await aspetta(tel, () => document.body.classList.contains('in-cam') && !document.getElementById('b-riprendi'), null, 10000);
+  const diNuovo = daSolo && await aspetta(regia, (i) => { const v = STUDIO.rem.regia?.remoti.get(i); return !!v && v.pc !== window._pcCam && v.stato === 'collegato' && v.video?.videoWidth > 0; }, id, 20000);
+  ok('dopo un aggiornamento il telefono si ricollega da solo, senza tocchi', daSolo && diNuovo);
 
   // ------------------------------------------------------------ un'altra finestra prende la regia
   console.log('La regia passa a un\'altra finestra:');

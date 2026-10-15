@@ -46,6 +46,7 @@
         caduto = false; tentativi = 0;
         if (!apertoUnaVolta) { apertoUnaVolta = true; if (o.suAperto) { try { o.suAperto(); } catch (e) {} } }
         else if (tornato && o.suRitorno) { try { o.suRitorno(n); } catch (e) {} }
+        if (tornato && window.SB_VERSIONE) { try { window.SB_VERSIONE.controlla(); } catch (e) {} }
       };
       es.onmessage = function (m) {
         ultimo = ora();

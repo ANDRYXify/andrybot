@@ -2,6 +2,9 @@
 <!-- Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live -->
 # Cosa sopravvive a un riavvio
 
+Quando un riavvio può avvenire, e cosa fanno le pagine aperte quando arriva
+la versione nuova, sta in `AGGIORNARE.md`. Qui: cosa resta dopo.
+
 ## La classe di difetti
 
 Un deploy dura un secondo. Una diretta dura ore. Il processo muore, la diretta

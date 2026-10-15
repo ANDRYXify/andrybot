@@ -84,6 +84,8 @@ async function prepara() {
   testi();
   const m = memoria();
   $('nome').value = m.canali[m.ultimo]?.nome || nomeDiSerie();
+  const dopo = window.SB_VERSIONE?.tornata();
+  if (dopo?.cam && m.canali[dopo.canale]) { S.riprendi = { canale: dopo.canale, ...m.canali[dopo.canale] }; entra(); return; }
   if (TOKEN) {
     try { const i = await api('/api/cam/invito/' + encodeURIComponent(TOKEN)); const c = $('canale'); if (c) c.textContent = i.canale; }
     catch (e) { dici(L('Questo invito è scaduto o è già stato usato: scrivi il codice che vedi sul computer, o chiedi un invito nuovo.', 'This invite has expired or was already used: type the code you see on the computer, or ask for a new invite.', 'Esta invitación ha caducado o ya se ha usado: escribe el código que ves en el ordenador, o pide una invitación nueva.'), true); mostraCodice(); }
@@ -507,4 +509,10 @@ setInterval(() => { if (S.rete === 'collegato') mandaInfo(); }, 30000);
 addEventListener('pagehide', () => { if (S.id && !S.fermo) S.camera?.chiudi(); });
 addEventListener('pageshow', (e) => { if (e.persisted && S.id) location.reload(); });
 
+const collegata = () => !!S.id && !S.fermo;
+window.SB_VERSIONE?.registra({
+  modo: 'pannello', fonte: '/api/cam/versione', lingua: () => LINGUA, posto: () => 'sopra', inUso: collegata,
+  stato: () => (collegata() ? { cam: true, canale: S.canale } : {}),
+  spiega: () => (collegata() ? L('Dopo l\'aggiornamento la fotocamera si ricollega da sola, in pochi secondi.', 'After the update the camera reconnects by itself, in a few seconds.', 'Después de actualizar, la cámara se vuelve a conectar sola, en pocos segundos.') : ''),
+});
 prepara();

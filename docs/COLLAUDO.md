@@ -186,9 +186,10 @@ aggiornamento che fallisce lascia le cose come stavano invece che a metà.
    (quella che la riapre per controllarla);
 4. `npm ci` + `npm test` + cancelli — **se è rosso il container non viene
    sfiorato** e il sito resta su con la versione di prima;
-5. aspetta che nessuno sia in diretta (vedi sotto), costruisce l'immagine
-   nuova col bot vecchio acceso, poi cambia il container e interroga `/health`
-   finché non torna sano; se non torna, torna da solo alla versione di prima.
+5. costruisce l'immagine nuova col bot vecchio acceso, aspetta che nessuno
+   sia in diretta (vedi sotto e `AGGIORNARE.md`), poi cambia il container e
+   interroga `/health` finché non torna sano; se non torna, torna da solo alla
+   versione di prima.
 
 `--prova` fa tutto tranne toccare il container. `--salta-prove` e `--subito`
 esistono per le emergenze vere.
@@ -211,8 +212,9 @@ vedeva dallo script: si vedeva in chat.
 - **Il cambio del container** sono pochi secondi con chat, avvisi e overlay
   giù, e quello che succede lì (un comando, un follow) si perde. Di base il
   cambio aspetta che **nessuno sia in diretta**. Lo dice il bot stesso: scrive
-  chi è in onda in `data/.in-onda` a ogni cambio e all'avvio (`_scriviInOnda`
-  in `src/bot.js`), su Twitch e su Kick. Lo script controlla ogni minuto, al
+  chi è in onda in `data/.in-onda` a ogni cambio e all'avvio
+  (`src/in-onda.js`), su Twitch, su Kick e dallo Studio (una diretta dallo
+  Studio passa dal server: un riavvio la taglierebbe). Lo script controlla ogni minuto, al
   massimo `ATTESA_MAX_MIN` minuti (di base 360). Se l'attesa scade rimette il
   repository com'era ed esce con 3. `--subito` non aspetta, ed è per le
   emergenze. Senza il file (il bot è fermo, o è una versione che ancora non lo
@@ -220,8 +222,16 @@ vedeva dallo script: si vedeva in chat.
 - **Il collaudo verde si ricorda** (`data/.collaudato`, il commit di qui e
   quello del cervello): un aggiornamento rimandato non rifà mezz'ora di prove
   al giro dopo.
-- **L'immagine nuova si costruisce prima**, col bot vecchio acceso; il fermo è
-  solo il cambio, e alla fine lo script dice quanti secondi è durato.
+- **L'immagine nuova si costruisce prima dell'attesa**, col bot vecchio
+  acceso. Prima si costruiva dopo: i minuti della costruzione erano una
+  finestra in cui una diretta poteva partire ed essere tagliata. L'ultimo
+  istante lo chiude il segnale `data/.riavvio`: lo script lo mette, rilegge chi
+  è in onda e, se qualcuno è appena partito, lo toglie e torna ad aspettare;
+  col segnale lo Studio non fa partire dirette nuove e riprova da solo
+  (`AGGIORNARE.md`). Il fermo è solo il cambio, e alla fine lo script dice
+  quanti secondi è durato.
+- **Le pagine aperte** si aggiornano da sole quando nessuno le sta usando, e
+  lo dicono quando invece le si usa (`AGGIORNARE.md`, «Le pagine»).
 
 Le prove sono in `test/contratto/aggiorna-senza-fermare.test.mjs`. Lì la
 funzione che legge il file si fa girare così com'è scritta nello script, non

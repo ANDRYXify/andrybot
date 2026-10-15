@@ -29,7 +29,7 @@
 //    ricordarsi di far girare, e non nasce una cartella `dist` che puo' andare
 //    fuori sincrono con i sorgenti.
 import { createHash } from 'node:crypto';
-import { readFileSync, statSync } from 'node:fs';
+import { readFileSync, statSync, readdirSync } from 'node:fs';
 import { join, normalize, extname } from 'node:path';
 import express from 'express';
 
@@ -98,7 +98,33 @@ export function creaImpronte(publicDir) {
   // Chi chiede con l'impronta giusta ha in mano una cosa che non puo' cambiare.
   const eterna = (via, v) => !!v && di(via) === String(v);
 
-  return { di, marca, eterna };
+  // LA VERSIONE DEL SITO (docs/AGGIORNARE.md): l'impronta di TUTTO quello che
+  // una pagina aperta puo' avere caricato. Una pagina sa di essere vecchia
+  // quando la versione del server non e' piu' quella del suo documento. Si
+  // ricava dai contenuti come le impronte, quindi cambia se e solo se cambia un
+  // file servito; i moduli che compone il server (`altri`) entrano anche loro.
+  // Ogni file passa da `di`, che ricalcola solo quello che e' cambiato.
+  const tutti = () => {
+    const via = [];
+    const giu = (dir, base) => {
+      let voci = [];
+      try { voci = readdirSync(dir, { withFileTypes: true }); } catch { return; }
+      for (const v of voci) {
+        if (v.isDirectory()) giu(join(dir, v.name), base + v.name + '/');
+        else if (v.isFile()) via.push(base + v.name);
+      }
+    };
+    giu(publicDir, '/');
+    return via.sort();
+  };
+  const versione = (altri = []) => {
+    const h = createHash('sha1');
+    for (const via of tutti()) h.update(via + ':' + di(via) + '\n');
+    for (const a of altri) h.update(createHash('sha1').update(String(a ?? '')).digest('hex') + '\n');
+    return h.digest('hex').slice(0, 12);
+  };
+
+  return { di, marca, eterna, versione };
 }
 
 // Il montaggio degli statici, in un posto solo: cosi' quello che prova il

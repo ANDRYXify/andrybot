@@ -52,9 +52,11 @@ function toast(msg, tipo = 'ok') {
   }, 4000);
 }
 
+let _scrittureInViaggio = 0;
 async function api(percorso, opzioni = {}) {
   const p = Promise.resolve(DEMO ? apiDemo(percorso, opzioni) : apiServer(percorso, opzioni));
   _legaScrittura(p, opzioni);
+  if (/^(POST|PUT|PATCH|DELETE)$/i.test(opzioni?.method || '')) { _scrittureInViaggio++; p.then(() => { _scrittureInViaggio--; }, () => { _scrittureInViaggio--; }); }
   return p;
 }
 async function apiServer(percorso, opzioni = {}) {
@@ -356,7 +358,7 @@ function _pagineDiProprieta() {
 }
 
 async function caricaStato() {
-  if (DEMO) { stato = statoDemo(); apriDaIndirizzo(); render(); montaDemo(); window.SB_SPLASH_OFF?.(); return; }
+  if (DEMO) { stato = statoDemo(); apriDaIndirizzo(); render(); montaDemo(); window.SB_SPLASH_OFF?.(); _registraVersione(); return; }
   try {
     stato = await api('/api/me');
   } catch (e) {
@@ -372,6 +374,7 @@ async function caricaStato() {
   render();
   mostraNovita();
   window.SB_SPLASH_OFF?.();
+  _registraVersione();
 
   if (new URLSearchParams(location.search).get('promo') === '1') {
 
@@ -391,6 +394,43 @@ async function caricaStato() {
   avvisoCosaManca();
   invito();
   invitoRecensione();
+}
+
+let _aggiornataInDiretta = false;
+function _pannelloInUso() {
+  if (STUDIO.live || STUDIO.avvio) return true;
+  for (const v of STUDIO.rem?.regia?.remoti?.values() || []) if (v.collegato || v.stato === 'collegato') return true;
+  if (STUDIO.cap.camStream || STUDIO.cap.micStream || STUDIO.cap.scrStream) return true;
+  if (_scrittureInViaggio > 0 || _ciSonoModifiche()) return true;
+  if ([...document.querySelectorAll('[role="dialog"][aria-modal="true"]')].some((d) => d.getClientRects().length > 0)) return true;
+  const a = document.activeElement;
+  if (a && a !== document.body && (a.isContentEditable || a.tagName === 'TEXTAREA' || (a.tagName === 'INPUT' && !/^(checkbox|radio|button|submit|reset|range|color|file|image)$/i.test(a.type)))) return true;
+  return false;
+}
+function _registraVersione() {
+  const V = window.SB_VERSIONE;
+  if (!V || !stato?.user) return;
+  V.registra({
+    modo: 'pannello', fonte: DEMO ? null : '/api/versione', lingua: () => LINGUA, inUso: _pannelloInUso,
+    posto: () => (document.body.classList.contains('tel-aperta') ? 'sopra' : 'sotto'),
+    spiega: () => {
+      if (STUDIO.live) return L('Sei in diretta: aggiornando, il pubblico vede per qualche secondo la tua scritta di riserva, poi un tocco su «Riprendi la diretta» la riprende senza interromperla.', 'You are live: while updating, the audience sees your fallback text for a few seconds, then one tap on “Resume the stream” picks it up without a break.', 'Estás en directo: al actualizar, el público ve unos segundos tu texto de reserva, y luego un toque en «Reanudar el directo» lo retoma sin cortes.');
+      if ([...(STUDIO.rem?.regia?.remoti?.values() || [])].some((v) => v.collegato)) return L('I telefoni collegati si ricollegano da soli.', 'Connected phones reconnect by themselves.', 'Los teléfonos conectados se vuelven a conectar solos.');
+      return '';
+    },
+    primaDi: async () => {
+      if (_ciSonoModifiche() && !(await _chiediPrimaDiUscire())) return false;
+      if (STUDIO.live && !(await chiediSe({ titolo: L('Aggiorno durante la diretta?', 'Update during the stream?', '¿Actualizo durante el directo?'), testo: L('Per qualche secondo il pubblico vede la tua scritta di riserva. Poi tocchi «Riprendi la diretta» e si riparte senza interruzioni sul canale.', 'For a few seconds the audience sees your fallback text. Then you tap “Resume the stream” and it goes on with no break on the channel.', 'Durante unos segundos el público ve tu texto de reserva. Luego tocas «Reanudar el directo» y sigue sin cortes en el canal.'), si: L('Aggiorna', 'Update', 'Actualizar') }))) return false;
+      return true;
+    },
+    stato: () => ({ hash: schedaAttiva, live: !!STUDIO.live, cam: !!STUDIO.cap.camStream, mic: !!STUDIO.cap.micStream, scr: !!STUDIO.cap.scrStream }),
+  });
+  const d = V.tornata();
+  if (!d) return;
+  if (d.live) { _aggiornataInDiretta = { cam: !!d.cam, mic: !!d.mic, scr: !!d.scr }; if (schedaAttiva !== 'studio') vaiAScheda('studio'); }
+  else if (d.hash && d.hash !== schedaAttiva && schedaValida(d.hash)) vaiAScheda(d.hash);
+  else if (d.y > 0) setTimeout(() => window.scrollTo(0, d.y), 400);
+  toast(d.live ? L('Bot aggiornato. La diretta è ancora in onda con la scritta di riserva: tocca «Riprendi la diretta».', 'Bot updated. The stream is still on air with the fallback text: tap “Resume the stream”.', 'Bot actualizado. El directo sigue en el aire con el texto de reserva: toca «Reanudar el directo».') : L('Bot aggiornato alla versione nuova.', 'Bot updated to the new version.', 'Bot actualizado a la versión nueva.'));
 }
 
 const AVVISI_MANCA = {
@@ -4273,7 +4313,7 @@ function avviaBarraSalva() {
   window.addEventListener('scroll', _ripensaBarraSalva, { passive: true });
   window.addEventListener('resize', _ripensaBarraSalva, { passive: true });
   window.addEventListener('beforeunload', (ev) => {
-    if (!_ciSonoModifiche()) return;
+    if (!_ciSonoModifiche() || window.SB_VERSIONE?.stato().ricarico) return;
     ev.preventDefault();
     ev.returnValue = '';
   });
@@ -21637,7 +21677,7 @@ function pannelloStudio() {
       <div class="tel-scene" id="tel-scene" role="group" aria-label="${esc(L('Scene', 'Scenes', 'Escenas'))}"></div>
       <div class="tel-cam" id="tel-cam" hidden>
         <button type="button" class="tel-tondo" id="tel-zoom-passo" data-tel="zoom-passo" aria-label="${esc(L('Zoom: tocca per cambiarlo', 'Zoom: tap to change it', 'Zoom: toca para cambiarlo'))}">1×</button>
-        <button type="button" class="tel-cam-nome" id="tel-cam-nome" data-tel="camera" aria-label="${esc(L('Fotocamera: obiettivo, zoom, inquadratura', 'Camera: lens, zoom, framing', 'Cámara: objetivo, zoom, encuadre'))}">${_bIco(ICO.fotocamera)}<span></span></button>
+        <button type="button" class="tel-cam-nome" data-tel="camera" aria-label="${esc(L('Fotocamera: obiettivo, zoom, inquadratura', 'Camera: lens, zoom, framing', 'Cámara: objetivo, zoom, encuadre'))}">${_bIco(ICO.fotocamera)}<span></span></button>
       </div>
       <div class="tel-barra">
         <button type="button" class="tel-tasto" data-tel="mic"></button>
@@ -22281,7 +22321,7 @@ function studioCamEtichetta() {
 
 function studioCamAggiornaUi() {
   const C = STUDIO.cam;
-  const nome = document.querySelector('#tel-cam-nome span'); if (nome && STUDIO.cap.camEl) nome.textContent = studioCamEtichetta();
+  const nome = document.querySelector('.tel-cam-nome span'); if (nome && STUDIO.cap.camEl) nome.textContent = studioCamEtichetta();
   for (const o of document.querySelectorAll('[data-cam-stato]')) o.textContent = studioCamStatoTesto();
   const passo = document.getElementById('tel-zoom-passo'); if (passo) passo.textContent = studioZoomTesto(C.zoom);
   for (const o of document.querySelectorAll('[data-cam-zoomout]')) o.textContent = studioZoomTesto(C.zoom);
@@ -23048,12 +23088,13 @@ function studioSessioniAltrove() {
   return ['o', 'v'].filter((f) => s[f]?.live && !STUDIO.dirette[f]).map((f) => ({ f, ...s[f] }));
 }
 
+const studioTestoRipresaTel = () => L('La tua diretta è ancora in onda, con la scritta di riserva: «Vai live» la riprende senza interruzioni.', 'Your stream is still on air, with the fallback text: «Go live» resumes it with no break.', 'Tu directo sigue en el aire, con el texto de reserva: «Emitir» lo reanuda sin cortes.');
 function studioRenderRipresa() {
   const el = document.getElementById('studio-ripresa');
   if (!el) return;
   const altrove = studioSessioniAltrove();
   el.hidden = !altrove.length;
-  if (el.hidden) { el.innerHTML = ''; return; }
+  if (el.hidden) { el.innerHTML = ''; if (STUDIO.tel?.aperta && studioTelStato().avviso === studioTestoRipresaTel()) studioTelAvviso(''); return; }
   const righe = altrove.map((s) => {
     const dove = esc((s.destinazioni || []).join(', ')) + (altrove.length > 1 || s.f === 'v' ? ` (${studioFormatoNome(s.f)})` : '');
     return s.inRiserva?.video || s.inRiserva?.audio
@@ -23061,7 +23102,20 @@ function studioRenderRipresa() {
       : L(`La tua diretta su ${dove} sta andando da un’altra finestra.`, `Your stream on ${dove} is running from another window.`, `Tu directo en ${dove} va desde otra ventana.`);
   }).join(' ');
   el.innerHTML = `<span class="badge viola">${L('In onda', 'On air', 'En el aire')}</span> ${righe} ${L('«Vai live» la riprende qui senza interruzioni sul canale, se non cambi qualità.', '«Go live» resumes it here with no break on the channel, if you keep the same quality.', '«Emitir» lo reanuda aquí sin cortes en el canal, si no cambias la calidad.')}`
+    + (stato?.ruolo !== 'moderatore' ? ` <button type="button" class="btn mini" id="studio-ripresa-vai">${L('Riprendi la diretta', 'Resume the stream', 'Reanudar el directo')}</button>` : '')
     + ` <button type="button" class="btn secondario mini" id="studio-ripresa-chiudi">${L('Chiudila', 'End it', 'Ciérralo')}</button>`;
+  if (STUDIO.tel?.aperta) studioTelAvviso(studioTestoRipresaTel(), 0);
+}
+
+async function studioRiprendiDiretta() {
+  const prima = _aggiornataInDiretta || {};
+  _aggiornataInDiretta = false;
+  if ((prima.cam || STUDIO.doc?.scene.some((x) => x.fonti.some((f) => f.tipo === 'webcam'))) && !STUDIO.cap.camEl) await studioCapWebcam();
+  if (prima.mic !== false && !STUDIO.cap.micStream) await studioCapMic();
+  renderStudioTutto();
+  if (STUDIO.tel?.aperta) { studioTelSeguiTracce(); renderStudioTel(); }
+  await avviaLive();
+  if (prima.scr) studioLog(L('La condivisione dello schermo la riscegli tu: il browser lo chiede ogni volta.', 'Pick the screen share again yourself: the browser asks every time.', 'La pantalla compartida la vuelves a elegir tú: el navegador lo pregunta cada vez.'));
 }
 
 async function studioChiudiRipresa() {
@@ -23206,7 +23260,7 @@ async function studioAvviaFormato(D, f, sup, q, kbps, dest, testo, assenzaMin) {
   } catch (e) { sped.ferma(); throw e; }
   let turno = '', ripresa = false;
   try {
-    const r = await api('/api/diretta/avvio', { method: 'POST', body: { formato: f, destinazioni: dest, video: cod.config.video, audio: cod.config.audio, kbps, assenzaMin, riprendi: true } });
+    const r = await studioAvvioPaziente(() => api('/api/diretta/avvio', { method: 'POST', body: { formato: f, destinazioni: dest, video: cod.config.video, audio: cod.config.audio, kbps, assenzaMin, riprendi: true } }));
     turno = r.turno; ripresa = r.ripresa;
     sped.usaTurno(turno);
   } catch (e) {
@@ -23218,6 +23272,26 @@ async function studioAvviaFormato(D, f, sup, q, kbps, dest, testo, assenzaMin) {
   await cod.parti();
   STUDIO.dirette[f] = { cod, sped, turno, ripresa };
   return { f, ripresa };
+}
+
+async function studioAvvioPaziente(chiama) {
+  const fino = Date.now() + 3 * 60_000;
+  let detto = false;
+  for (;;) {
+    try { const r = await chiama(); if (detto && STUDIO.tel?.aperta) studioTelAvviso(''); return r; }
+    catch (e) {
+      const aggiorna = e?.dati?.motivo === 'aggiornamento';
+      const giu = !e?.dati && (e instanceof TypeError || /^errore 50[234]$/.test(e?.message || ''));
+      if (!(aggiorna || giu) || Date.now() > fino) throw e;
+      if (!detto) {
+        detto = true;
+        const msg = L('Il bot si sta aggiornando: la diretta parte da sola appena è di nuovo su, di solito in pochi secondi.', 'The bot is updating: the stream starts by itself as soon as it is back, usually in a few seconds.', 'El bot se está actualizando: el directo empieza solo en cuanto vuelva, normalmente en pocos segundos.');
+        studioLog(msg);
+        if (STUDIO.tel?.aperta) studioTelAvviso(msg, 0);
+      }
+      await new Promise((ok) => setTimeout(ok, 3000));
+    }
+  }
 }
 
 async function avviaLive() {
@@ -24458,6 +24532,7 @@ async function onStudioClick(ev) {
   if (t.closest('#studio-transizione')) { if (STUDIO.doc) studioVaiInOnda(STUDIO.doc.anteprima); return; }
   if (t.closest('#studio-impostazioni-apri')) return studioApriImpostazioni();
   if (t.closest('#studio-ripresa-chiudi')) return conErrore(() => studioChiudiRipresa());
+  if (t.closest('#studio-ripresa-vai')) return conErrore(() => studioRiprendiDiretta());
   if (t.closest('#studio-dest-salva')) return conErrore(() => studioSalvaDestinazione());
   if (t.closest('#studio-osify-usa')) return conErrore(async () => { await studioOsifyUsa(); renderStudioMixer(); });
   const togli = t.closest('[data-dest-togli]'); if (togli) { ev.preventDefault(); return conErrore(() => studioTogliDestinazione(togli.dataset.destTogli)); }
@@ -24601,7 +24676,7 @@ function initStudio() {
     document.addEventListener('pointercancel', onStudioPointerUp);
     window.addEventListener('popstate', () => { if (STUDIO.tel?.aperta) studioTelIndietro(); });
     window.addEventListener('resize', () => { clearTimeout(STUDIO.misuraT); STUDIO.misuraT = setTimeout(() => { if (STUDIO.doc && !STUDIO.live) { studioMisureTele(); studioRidisegna(); } }, 200); });
-    window.addEventListener('beforeunload', (e) => { if (STUDIO.live) { e.preventDefault(); e.returnValue = ''; } });
+    window.addEventListener('beforeunload', (e) => { if (STUDIO.live && !window.SB_VERSIONE?.stato().ricarico) { e.preventDefault(); e.returnValue = ''; } });
     window.addEventListener('offline', () => { if (STUDIO.live) studioTelAvviso(L('Niente rete: in onda c’è la tua scritta di riserva finché non torna.', 'No network: your fallback text is on air until it is back.', 'Sin red: en el aire está tu texto de reserva hasta que vuelva.'), 0); });
     window.addEventListener('online', () => { if (STUDIO.live) studioTelAvviso(L('Rete tornata', 'Network back', 'Red de vuelta'), 2500); });
     window.addEventListener('pagehide', studioSalvaUscendo);
@@ -41320,6 +41395,7 @@ function vaiAScheda(id) {
     return;
   }
   if (id === schedaAttiva) { chiudiMenuMobile(); return; }
+  if (window.SB_VERSIONE?.momentoBuono({ hash: id })) return;
   const prima = schedaAttiva;
   schedaAttiva = id;
   document.body.classList.toggle('in-studio', id === 'studio');

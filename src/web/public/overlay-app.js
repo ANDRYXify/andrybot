@@ -2298,6 +2298,7 @@ async function caricaTema() {
 }
 
 if (login) {
+  window.SB_VERSIONE?.registra({ inUso: () => occupato || alertOccupato || codaVisiva.length > 0 || codaAlert.length > 0 });
   connetti();
   caricaTema();
   caricaEmote();

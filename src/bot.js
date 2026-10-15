@@ -6,10 +6,10 @@
 // connessione chat autenticata CON L'ACCOUNT DELLO STREAMER (il bot
 // parla come lui), un gestore messaggi e le sottoscrizioni agli
 // eventi Twitch. Tiene tutto sincronizzato con la dashboard.
-import { writeFileSync, renameSync } from 'node:fs';
 import { join } from 'node:path';
 import { makeLog } from './logger.js';
 import { config } from './config.js';
+import { inOnda } from './in-onda.js';
 import * as filigrana from './watermark.js';
 import * as licenza from './licenza.js';
 import { canaleHa } from './features/accesso.js';
@@ -1653,15 +1653,19 @@ export class BotManager {
   // qualche secondo chat, avvisi e overlay a chi sta trasmettendo, e quello che
   // succede in quei secondi si perde. Si riscrive a ogni cambio e all'avvio, cosi'
   // il file dice sempre quello che sa il processo che gira, non uno morto prima.
-  // Si scrive accanto e poi si rinomina: chi legge non trova mai meta' file.
+  // Il file e' di src/in-onda.js, che ci mette anche le dirette dello Studio:
+  // qui si dichiara la fonte delle piattaforme, e poi si dice quando cambia.
   _scriviInOnda() {
-    try {
-      const canali = new Set([...this._liveState].filter(([, v]) => v === true).map(([c]) => c));
-      for (const p of PIATTAFORME_ALTRE) for (const r of statoVivo.tutti('diretta:' + p)) if (r.dato?.live === true) canali.add(r.channel);
-      const file = join(config.dataDir, '.in-onda');
-      writeFileSync(file + '.tmp', JSON.stringify({ canali: [...canali].sort(), ts: Date.now() }));
-      renameSync(file + '.tmp', file);
-    } catch (e) { log.debug('in onda: ' + (e?.message || e)); }
+    if (!this._fonteInOnda) {
+      this._fonteInOnda = true;
+      inOnda.fonte('piattaforme', () => {
+        const canali = new Set([...this._liveState].filter(([, v]) => v === true).map(([c]) => c));
+        for (const p of PIATTAFORME_ALTRE) for (const r of statoVivo.tutti('diretta:' + p)) if (r.dato?.live === true) canali.add(r.channel);
+        return canali;
+      });
+      return;
+    }
+    inOnda.cambiato();
   }
 
   // Fonte UNICA di verità per lo stato live/offline (arriva sia da EventSub,

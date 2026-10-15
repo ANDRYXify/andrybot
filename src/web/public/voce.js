@@ -521,6 +521,7 @@ function resample16k(float32, fromRate) {
 
 btn.addEventListener('click', () => { if (attivo) ferma(); else avvia(); });
 aggiornaStato();
+window.SB_VERSIONE?.registra({ modo: 'pannello', fonte: '/api/versione', lingua: () => LINGUA, inUso: () => attivo });
 if (!SR) {
   motore = 'locale';
   noApi.hidden = false;

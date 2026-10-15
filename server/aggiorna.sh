@@ -275,32 +275,53 @@ if [ "$PROVA" = "1" ]; then
   exit 0
 fi
 
-# ---- 5b. il momento giusto: quando nessuno e' in diretta --------
+# ---- 5b. la versione nuova si costruisce MENTRE la vecchia gira --------
 #
-# Il file lo scrive il bot che gira (bot.js, _scriviInOnda) a ogni cambio e
-# all'avvio: dice quello che sa il processo vivo. Senza file (bot fermo, o di
-# una versione che non lo scrive ancora) non si sa, e non si aspetta.
+# Prima si costruiva DOPO l'attesa delle dirette: i minuti della costruzione
+# erano una finestra in cui qualcuno poteva andare in diretta, e il riavvio
+# subito dopo lo tagliava (una diretta dallo Studio passa dal server: tagliata
+# davvero). Costruendo prima, fra «nessuno in onda» e il riavvio passano pochi
+# secondi, e quei pochi secondi li chiude il segnale qui sotto.
+passo "Costruisco la versione nuova (quella che gira resta accesa)"
+docker compose build
+
+# ---- 5c. il momento giusto: quando nessuno e' in diretta --------
+#
+# Il file lo scrive il bot che gira (src/in-onda.js): le dirette delle
+# piattaforme e quelle dello Studio, riscritto nello stesso istante in cui una
+# comincia o finisce. Senza file (bot fermo, o di una versione che non lo
+# scrive ancora) non si sa, e non si aspetta.
+#
+# IL SEGNALE (data/.riavvio). «Nessuno in onda» letto adesso puo' essere gia'
+# falso fra un secondo. Allora: si mette il segnale, si lascia finire chi stava
+# partendo proprio in quell'istante, e si RILEGGE. Col segnale il bot non fa
+# partire dirette nuove dallo Studio (la pagina riprova da sola, fra pochi
+# secondi trova la versione nuova); quelle partite prima del segnale sono gia'
+# nel file. Se ce n'e' una, si toglie il segnale e si torna ad aspettare. Il
+# segnale vale tre minuti al massimo, e lo toglie il bot nuovo appena parte.
 IN_ONDA_FILE="$RADICE/data/.in-onda"
+RIAVVIO_FILE="$RADICE/data/.riavvio"
 in_onda() {
   [ -f "$IN_ONDA_FILE" ] || return 0
   sed -n 's/.*"canali":\[\([^]]*\)\].*/\1/p' "$IN_ONDA_FILE" | tr -d '"' | tr ',' ' '
 }
+togli_segnale() { rm -f "$RIAVVIO_FILE"; }
+trap togli_segnale EXIT
 ATTESA_MAX_MIN="${ATTESA_MAX_MIN:-360}"
-if [ "$SUBITO" = "1" ]; then
-  passo "Riavvio subito, su tua richiesta"
-  if [ -n "$(in_onda)" ]; then echo "in diretta adesso: $(in_onda). Per loro chat e overlay si fermano qualche secondo."; fi
-elif [ -n "$(in_onda)" ]; then
+ASPETTATI=0
+aspetta_dirette() {
+  [ -n "$(in_onda)" ] || return 0
   passo "Aspetto la fine delle dirette"
   echo "in diretta adesso: $(in_onda)"
   echo "la versione nuova e' collaudata e pronta: riavvio appena nessuno e' in onda."
   echo "controllo ogni minuto, al massimo $ATTESA_MAX_MIN minuti. Per non aspettare: --subito"
-  ASPETTATI=0
   while [ -n "$(in_onda)" ]; do
     if [ "$ASPETTATI" -ge "$ATTESA_MAX_MIN" ]; then
       echo
       echo "Dopo $ATTESA_MAX_MIN minuti c'e' ancora qualcuno in diretta ($(in_onda)): non riavvio."
       echo "Rimetto il repository com'era ($(git rev-parse --short "$PRIMA")), cosi' quello che c'e' qui e' quello che gira."
       echo "Il collaudo di questa versione resta valido: rilancia quando vuoi, e non lo rifara'."
+      echo "(L'immagine nuova e' gia' costruita: un 'docker compose up -d' a mano metterebbe su quella.)"
       git reset --hard "$PRIMA" >/dev/null
       if [ "$SERVE_LIA" = "1" ]; then git -C "$LIA_DIR" reset --hard "$LIA_PRIMA" >/dev/null; fi
       exit 3
@@ -308,11 +329,22 @@ elif [ -n "$(in_onda)" ]; then
     sleep 60
     ASPETTATI=$((ASPETTATI + 1))
   done
-  echo "nessuno in diretta ($ASPETTATI minuti di attesa): riavvio."
+  echo "nessuno in diretta ($ASPETTATI minuti di attesa)."
+}
+if [ "$SUBITO" = "1" ]; then
+  passo "Riavvio subito, su tua richiesta"
+  if [ -n "$(in_onda)" ]; then echo "in diretta adesso: $(in_onda). Per loro chat e overlay si fermano qualche secondo, e una diretta dallo Studio si interrompe."; fi
+else
+  while :; do
+    aspetta_dirette
+    touch "$RIAVVIO_FILE"
+    sleep 2
+    [ -n "$(in_onda)" ] || break
+    togli_segnale
+    echo "e' appena partita una diretta ($(in_onda)): aspetto anche questa."
+  done
+  echo "riavvio: nessuno in onda, e le dirette nuove dallo Studio aspettano qualche secondo."
 fi
-
-passo "Costruisco la versione nuova (quella che gira resta accesa)"
-docker compose build
 
 passo "Riavvio"
 FERMO_DA="$(date +%s)"

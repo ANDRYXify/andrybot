@@ -47,11 +47,11 @@ function flussoSse(req, res) {
   return { scrivi, allaFine: (f) => req.on('close', () => { clearInterval(battito); f(); }) };
 }
 
-// `proprietario` sono i cancelli di chi fa la regia (sessione da proprietario e
+// `cancelliRegia` sono i cancelli di chi fa la regia (sessione da proprietario e
 // Studio aperto); `loginDi(req)` il suo canale; `studioPerMe(login)` se lo
 // Studio di quel canale e' aperto (per i dispositivi, che una sessione non ce
 // l'hanno).
-export function montaDispositivi(app, { salotto, proprietario, loginDi, studioPerMe, eLoginNostro, camHtml, baseUrl, turnAcceso = false }) {
+export function montaDispositivi(app, { salotto, cancelliRegia, loginDi, studioPerMe, eLoginNostro, camHtml, baseUrl, turnAcceso = false }) {
   const camDi = (req, res) => {
     const b = req.body || {};
     const login = String(b.canale || '').toLowerCase();
@@ -85,11 +85,11 @@ export function montaDispositivi(app, { salotto, proprietario, loginDi, studioPe
   });
   // Il telefono dello streamer: prima chiede di chi e' il canale (per riusare
   // la chiave che ha gia'), poi, se non ce l'ha, entra con la sessione.
-  app.get('/api/cam/io', ...proprietario, (req, res) => {
+  app.get('/api/cam/io', ...cancelliRegia, (req, res) => {
     res.set('Cache-Control', 'private, no-store');
     res.json({ canale: loginDi(req) });
   });
-  app.post('/api/cam/io', ...proprietario, (req, res) => {
+  app.post('/api/cam/io', ...cancelliRegia, (req, res) => {
     const login = loginDi(req);
     const r = salotto.entra({ login, nome: req.body?.nome });
     if (!r.ok) return res.status(409).json({ errore: MOTIVI_CAM[r.motivo] || 'Non riesco a collegare il dispositivo.', motivo: r.motivo });
@@ -128,30 +128,30 @@ export function montaDispositivi(app, { salotto, proprietario, loginDi, studioPe
   });
 
   // ---- la regia
-  app.get('/api/studio/dispositivi', ...proprietario, (req, res) => {
+  app.get('/api/studio/dispositivi', ...cancelliRegia, (req, res) => {
     const login = loginDi(req);
     res.set('Cache-Control', 'private, no-store');
     res.json({ elenco: salotto.elenco(login), presenza: salotto.presenza(login), turn: turnAcceso });
   });
-  app.post('/api/studio/dispositivi/invito', ...proprietario, (req, res) => {
+  app.post('/api/studio/dispositivi/invito', ...cancelliRegia, (req, res) => {
     const i = salotto.invita(loginDi(req));
     res.set('Cache-Control', 'private, no-store');
     res.json({ ...i, url: `${baseUrl}/cam/${i.token}` });
   });
-  app.post('/api/studio/dispositivi/:id', ...proprietario, (req, res) => {
+  app.post('/api/studio/dispositivi/:id', ...cancelliRegia, (req, res) => {
     const v = salotto.cambia(loginDi(req), req.params.id, { nome: req.body?.nome, comanda: typeof req.body?.comanda === 'boolean' ? req.body.comanda : undefined });
     if (!v) return res.status(404).json({ errore: 'Dispositivo non trovato.' });
     res.json(v);
   });
-  app.post('/api/studio/dispositivi/:id/togli', ...proprietario, (req, res) => {
+  app.post('/api/studio/dispositivi/:id/togli', ...cancelliRegia, (req, res) => {
     salotto.togli(loginDi(req), req.params.id);
     res.json({ ok: true });
   });
-  app.get('/api/studio/regia/presenza', ...proprietario, (req, res) => {
+  app.get('/api/studio/regia/presenza', ...cancelliRegia, (req, res) => {
     res.set('Cache-Control', 'private, no-store');
     res.json(salotto.presenza(loginDi(req)));
   });
-  app.get('/api/studio/regia/eventi', ...proprietario, (req, res) => {
+  app.get('/api/studio/regia/eventi', ...cancelliRegia, (req, res) => {
     const login = loginDi(req), id = String(req.query.r || '');
     if (!/^[a-z0-9]{8,24}$/.test(id)) return res.status(400).json({ errore: 'regia senza nome' });
     const { scrivi, allaFine } = flussoSse(req, res);
@@ -160,16 +160,16 @@ export function montaDispositivi(app, { salotto, proprietario, loginDi, studioPe
     scrivi('pronto', { turn: turnAcceso });
     allaFine(() => salotto.chiudiRegia(login, id));
   });
-  app.post('/api/studio/regia/segnale', ...proprietario, (req, res) => {
+  app.post('/api/studio/regia/segnale', ...cancelliRegia, (req, res) => {
     const b = req.body || {};
     const r = salotto.dallaRegia(loginDi(req), String(b.r || ''), { a: b.a, tipo: b.tipo, dati: b.dati });
     if (!r.ok) return rifiuto(res, r);
     res.json({ ok: true });
   });
-  app.post('/api/studio/regia/stato', ...proprietario, (req, res) => {
+  app.post('/api/studio/regia/stato', ...cancelliRegia, (req, res) => {
     res.json({ ok: salotto.statoRegia(loginDi(req), String(req.body?.r || ''), { live: req.body?.live === true }) });
   });
-  app.get('/api/studio/regia/ice', ...proprietario, (req, res) => {
+  app.get('/api/studio/regia/ice', ...cancelliRegia, (req, res) => {
     res.set('Cache-Control', 'private, no-store');
     res.json(salotto.ice(loginDi(req)));
   });

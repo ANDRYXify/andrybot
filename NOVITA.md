@@ -43,6 +43,15 @@ comandi diversi da quelli della riga italiana.
 
 ## 2026-10-15
 
+- [importante] Il bot si aggiorna senza toglierti niente: mai in diretta, mai mentre scrivi. Quando hai finito, la versione nuova arriva da sola. [vai: studio]
+  en: The bot updates without taking anything from you: never while you are live, never while you type. When you are done, the new version arrives by itself.
+  es: El bot se actualiza sin quitarte nada: nunca en directo, nunca mientras escribes. Cuando terminas, la versión nueva llega sola.
+  > Aggiornamenti senza perdere niente
+  > Se stai usando il pannello o lo Studio, un riquadro ti dice che c'è una versione nuova e la prendi quando vuoi. Se no si aggiorna da sola, e l'overlay in OBS solo fuori diretta.
+  en> Updates that lose nothing
+  en> If you are using the panel or the Studio, a box tells you a new version is ready and you take it when you want. Otherwise it updates by itself, and the OBS overlay only off air.
+  es> Actualizaciones sin perder nada
+  es> Si estás usando el panel o el Estudio, un aviso te dice que hay una versión nueva y la tomas cuando quieras. Si no, se actualiza sola, y el overlay de OBS solo fuera de directo.
 - Studio dal telefono: sulla tela leggi sempre quale fotocamera stai usando, e il suo foglio (obiettivo, zoom, inquadratura, luce) sta tutto in una schermata. [vai: studio]
   en: Studio on the phone: the canvas always shows which camera you are using, and its sheet (lens, zoom, framing, light) fits on one screen.
   es: Estudio en el teléfono: el lienzo muestra siempre qué cámara usas, y su hoja (objetivo, zoom, encuadre, luz) cabe en una pantalla.
