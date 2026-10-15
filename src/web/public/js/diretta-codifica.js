@@ -143,7 +143,7 @@ export async function creaCodifica({ supporto: sup, canvas, contestoAudio, nodoA
       }
       const adesso = performance.now();
       if (adesso >= prossimoFotogramma) {
-        prossimoFotogramma = Math.max(prossimoFotogramma + 1000 / fps, adesso);
+        prossimoFotogramma = Math.max(prossimoFotogramma + 1000 / fps, adesso + 500 / fps);
         if (!soloAudio && ve.encodeQueueSize <= 2) {
           if (document.hidden && disegnaSeNascosto) disegnaSeNascosto();
           const f = new VideoFrame(canvas, { timestamp: ora() });
