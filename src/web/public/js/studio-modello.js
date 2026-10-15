@@ -5,6 +5,19 @@ export const TIPI = Object.freeze(['webcam', 'schermo', 'immagine', 'video', 'te
 export const LIMITI = Object.freeze({ scene: 30, fonti: 40, preset: 20, nome: 40, testo: 120, byte: 262144 });
 export const TRANSIZIONI = Object.freeze(['taglio', 'dissolvenza']);
 export const DESTINAZIONI_SOLO_ORIZZONTALI = Object.freeze(['twitch']);
+export const FACCE = Object.freeze(['user', 'environment']);
+export const AUDIO = Object.freeze({
+  voce: Object.freeze({ echoCancellation: true, noiseSuppression: true, autoGainControl: true }),
+  musica: Object.freeze({ echoCancellation: false, noiseSuppression: false, autoGainControl: false }),
+});
+export const SCENARI = Object.freeze({
+  giro: Object.freeze({ disponibile: true, facing: 'user', audio: 'voce', voce: false, categorie: Object.freeze(['IRL', 'Travel & Outdoors']), scene: Object.freeze(['io', 'vedo', 'pausa', 'privacy']) }),
+  camera: Object.freeze({ disponibile: true, facing: 'user', audio: 'voce', voce: false, categorie: Object.freeze(['Just Chatting']), scene: Object.freeze(['camera', 'tornosubito']) }),
+  mani: Object.freeze({ disponibile: true, facing: 'environment', audio: 'voce', voce: true, categorie: Object.freeze(['Food & Drink', 'Art', 'Makers & Crafting']), scene: Object.freeze(['lavoro', 'io', 'pausa']) }),
+  musica: Object.freeze({ disponibile: true, facing: 'user', audio: 'musica', voce: false, categorie: Object.freeze(['Music']), scene: Object.freeze(['palco', 'pausa']) }),
+  gioco: Object.freeze({ disponibile: false, facing: '', audio: 'voce', voce: false, categorie: Object.freeze([]), scene: Object.freeze([]) }),
+});
+export const CHAT_GRANDEZZE = Object.freeze(['s', 'm', 'l']);
 
 const ID = /^[a-z0-9]{1,24}$/;
 const IMPRONTA = /^[0-9a-f]{64}$/;
@@ -93,7 +106,7 @@ export function normalizzaScena(s, usatiScene, usatiFonti) {
     const n = normalizzaFonte(f, usatiFonti);
     if (n) fonti.push(n);
   }
-  return { id, nome: testo(s.nome, LIMITI.nome) || 'Scena', fonti };
+  return { id, nome: testo(s.nome, LIMITI.nome) || 'Scena', fonti, muta: s.muta === true, camera: FACCE.includes(s.camera) ? s.camera : '' };
 }
 
 function scelte(c) {
@@ -109,6 +122,18 @@ function scelte(c) {
     dest: Array.isArray(o.dest) ? [...new Set(o.dest.map(String).filter((k) => /^[a-z0-9]{1,24}$/.test(k)))].slice(0, 20) : ['twitch', 'kick'],
     destFormato: Object.fromEntries(Object.entries(o.destFormato && typeof o.destFormato === 'object' ? o.destFormato : {})
       .filter(([k, v]) => /^[a-z0-9]{1,24}$/.test(k) && (v === 'o' || v === 'v') && !(v === 'v' && DESTINAZIONI_SOLO_ORIZZONTALI.includes(k))).slice(0, 20)),
+    telefono: telefono(o.telefono),
+  };
+}
+
+function telefono(t) {
+  const o = t && typeof t === 'object' ? t : {};
+  const scenario = Object.hasOwn(SCENARI, o.scenario) && SCENARI[o.scenario].disponibile ? o.scenario : '';
+  return {
+    scenario,
+    chat: CHAT_GRANDEZZE.includes(o.chat) ? o.chat : 'm',
+    voce: typeof o.voce === 'boolean' ? o.voce : (scenario ? SCENARI[scenario].voce : false),
+    vibra: o.vibra !== false,
   };
 }
 
@@ -196,6 +221,8 @@ export function dispostoRapido(scena, preset, f) {
 
 export function formatoDi(dest, scelteDoc) {
   if (DESTINAZIONI_SOLO_ORIZZONTALI.includes(dest)) return 'o';
+  const fs = scelteDoc?.formati;
+  if (fs && fs.o !== fs.v) return fs.v ? 'v' : 'o';
   const f = scelteDoc?.destFormato?.[dest];
   return f === 'v' ? 'v' : 'o';
 }
@@ -207,4 +234,62 @@ export function dirette(scelteGiuste, destinazioni) {
     if (scelteGiuste.formati[f]) per[f].push(d);
   }
   return per;
+}
+
+export function escluse(scelteGiuste, destinazioni) {
+  return destinazioni.filter((d) => !scelteGiuste.formati[formatoDi(d, scelteGiuste)]);
+}
+
+export function vincoliAudio(scenario) {
+  return { ...AUDIO[SCENARI[scenario]?.audio === 'musica' ? 'musica' : 'voce'] };
+}
+
+function pieno(tipo, extra = {}) {
+  const f = nuovaFonte(tipo, extra);
+  for (const k of ['o', 'v']) f.pos[k] = { x: 0, y: 0, w: FORMATI[k].W, h: FORMATI[k].H, vis: true };
+  if (tipo === 'testo') Object.assign(f, { testo: testo(extra.testo, LIMITI.testo), dim: 72, sfondo: '#14141c', colore: '#ffffff', grassetto: true });
+  return f;
+}
+
+const PRONTE = {
+  io: (t) => ({ nome: t.io, camera: 'user', fonti: [pieno('webcam', { nome: t.camera }), pieno('overlay', { nome: 'Overlay' })] }),
+  vedo: (t) => ({ nome: t.vedo, camera: 'environment', fonti: [pieno('webcam', { nome: t.camera }), pieno('overlay', { nome: 'Overlay' })] }),
+  camera: (t) => ({ nome: t.inCamera, camera: 'user', fonti: [pieno('webcam', { nome: t.camera }), pieno('overlay', { nome: 'Overlay' })] }),
+  lavoro: (t) => ({ nome: t.lavoro, camera: 'environment', fonti: [pieno('webcam', { nome: t.camera }), pieno('overlay', { nome: 'Overlay' })] }),
+  palco: (t) => ({ nome: t.palco, camera: '', fonti: [pieno('webcam', { nome: t.camera }), pieno('overlay', { nome: 'Overlay' })] }),
+  pausa: (t) => ({ nome: t.pausa, muta: true, fonti: [pieno('testo', { nome: t.pausa, testo: t.pausaTesto }), pieno('overlay', { nome: 'Overlay' })] }),
+  tornosubito: (t) => ({ nome: t.tornosubito, muta: true, fonti: [pieno('testo', { nome: t.tornosubito, testo: t.tornosubitoTesto }), pieno('overlay', { nome: 'Overlay' })] }),
+  privacy: (t) => ({ nome: t.privacy, fonti: [pieno('testo', { nome: t.privacy, testo: t.privacyTesto }), pieno('overlay', { nome: 'Overlay' })] }),
+};
+export const TESTI_PRONTE = Object.freeze(['io', 'vedo', 'inCamera', 'lavoro', 'palco', 'camera', 'pausa', 'pausaTesto', 'tornosubito', 'tornosubitoTesto', 'privacy', 'privacyTesto']);
+
+export function scenePronte(scenario, testi) {
+  const sc = SCENARI[scenario];
+  if (!sc || !sc.disponibile) return [];
+  const us = new Set(), uf = new Set();
+  return sc.scene.map((k) => normalizzaScena(PRONTE[k](testi), us, uf));
+}
+
+export const sceneVuote = (doc) => !doc.scene.some((s) => s.fonti.length);
+
+export function applicaPronte(doc, scenario, testi, { aggiungi = false } = {}) {
+  const pronte = scenePronte(scenario, testi);
+  if (!pronte.length) return 0;
+  if (sceneVuote(doc) && !aggiungi) {
+    doc.scene = pronte;
+    doc.inOnda = doc.anteprima = pronte[0].id;
+  } else {
+    if (!aggiungi) return 0;
+    const nomi = new Set(doc.scene.map((s) => s.nome));
+    const nuove = pronte.filter((s) => !nomi.has(s.nome)).slice(0, Math.max(0, LIMITI.scene - doc.scene.length));
+    doc.scene.push(...nuove);
+    return nuove.length;
+  }
+  return pronte.length;
+}
+
+export function scenaAccanto(doc, id, dir) {
+  const i = doc.scene.findIndex((s) => s.id === id);
+  if (i < 0 || doc.scene.length < 2) return null;
+  return doc.scene[(i + (dir > 0 ? 1 : -1) + doc.scene.length) % doc.scene.length].id;
 }

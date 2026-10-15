@@ -244,22 +244,96 @@ lo vuole non lo vede.
 - Partono e si fermano insieme. Se una cade, l'altra continua, e il pannello
   dice quale.
 
-### Sul telefono
+### Sul telefono: la regia a portata di pollice
 
-Lo Studio diventa semplice:
-- la tela a tutta larghezza;
-- «Verticale / Orizzontale / Tutti e due»;
-- fotocamera davanti o dietro, microfono, le scene come pulsanti grandi, e
-  «Vai live».
+Dal telefono si va in diretta con le mani e basta, spesso con una mano
+sola, camminando, col sole sullo schermo. Lo Studio del computer, stretto,
+sarebbe scomodo e pericoloso: un tocco sbagliato chiude la diretta. Per
+questo sul telefono lo Studio apre una **regia** sua, a schermo intero.
 
-Dei pannelli restano solo **Fonti** e **Controlli**, più le proprietà della
-fonte scelta; le fonti si spostano col dito come sul computer. La modalità
-studio sul telefono non c'è. Di serie è verticale.
+**Le regole che la reggono** (ognuna ha la sua prova in
+`scripts/verifica-studio-diretta.mjs`):
+1. **Lo schermo è il programma.** Si vede quello che va in onda, non
+   un'altra cosa.
+2. **Il pollice arriva a tutto.** Quello che serve in diretta sta nella metà
+   bassa dello schermo, e ogni tasto è largo almeno 48 punti.
+3. **Niente di grave con un tocco.** Per chiudere la diretta si tiene premuto
+   il tasto per un secondo e mezzo. Il tasto «indietro» del telefono chiude i
+   pannelli, mai la diretta. «Blocca i tocchi» rende lo schermo sordo (in tasca,
+   su un supporto) e si sblocca solo tenendo premuto.
+4. **Le interruzioni sono normali.** Pagina in secondo piano, una chiamata,
+   la rete che cambia: va in onda la riserva, e al ritorno la regia riprende da
+   sola fotocamera e microfono, senza tasti.
+5. **La seconda volta è un tocco.** Scenario, formato e destinazioni si
+   ricordano: si apre, si preme «Vai live», tre secondi per mettersi in posa.
+6. **Si dice quello che il telefono non sa fare**, invece di provarci male.
 
-Durante la diretta, su telefono e computer, la pagina chiede al dispositivo
-di **non spegnere lo schermo** (Wake Lock). Se lo streamer esce dall'app, il
-browser ferma la pagina: va in onda la riserva finché non torna, entro i
-minuti scelti, e il pannello lo dice prima di partire.
+**Gli scenari** (`SCENARI` in `studio-modello.js`). Si sceglie cosa si fa, e
+la regia si prepara di conseguenza:
+
+| scenario | fotocamera | audio | scene pronte | chat |
+|---|---|---|---|---|
+| In giro (IRL) | dietro | voce: riduzione del rumore ed eco | In giro, Pausa, Privacy | sullo schermo, e a voce in cuffia se la si accende |
+| In camera (chiacchiere) | davanti | voce | In camera, Torno subito | grande sullo schermo |
+| Mani al lavoro (cucina, disegno, creazioni) | dietro | voce | Il lavoro, Io, Pausa | a voce di serie: le mani sono occupate |
+| Musica dal vivo | davanti | **senza filtri**: niente riduzione del rumore, niente eco, niente guadagno automatico, che rovinano strumenti e voce cantata | Sul palco, Pausa | sullo schermo |
+| Gioco sul telefono | — | — | — | — |
+
+**Il gioco sul telefono non si può fare dal browser**, e la regia lo dice
+invece di far finta: il browser del telefono non condivide lo schermo
+(Android non in modo affidabile, iPhone mai), e appena si passa al gioco il
+telefono ferma la pagina. Le strade vere: giocare sul computer e andare in
+diretta dallo Studio lì; collegare il telefono al computer con una scheda di
+acquisizione o la sua app di mirroring, e lo Studio lo vede come una
+fonte; oppure l'app ufficiale della piattaforma, sapendo che lì l'overlay non
+c'è (chat, comandi e alert del bot invece sì).
+
+**Le scene pronte.** Se le scene sono ancora vuote, scegliere uno scenario le
+crea. Se lo streamer le ha già fatte (anche dal computer) restano le sue: le
+pronte si aggiungono solo se le chiede. Dal computer si aggiungono con «Scene
+pronte» nel pannello Scene, così le prepara con calma prima di uscire. Ogni
+scena pronta ha le posizioni giuste in tutti e due i formati: la fotocamera
+riempie la tela, le scritte stanno al centro, l'overlay sopra. Una scena può
+**spegnere il microfono** finché è in onda (Pausa, Torno subito): lo spegne la
+scena, non un tasto da ricordare, e si riaccende tornando alla scena di
+prima.
+
+**La regia, dall'alto in basso.**
+- In alto, piccolo: lo stato (pronto, o in diretta col tempo), gli spettatori,
+  la rete in tre tacche (rossa quando va in onda la riserva), la batteria.
+- Al centro il programma, a tutto schermo. Scorrendo col dito a destra o a
+  sinistra si cambia scena; con due dita si fa lo zoom della fotocamera, se lo
+  sa fare; due tocchi girano la fotocamera.
+- In basso a sinistra la chat, con le scritte grandi e un fondo che si legge
+  anche al sole; la si ingrandisce con un tocco, e può leggerla una voce in
+  cuffia. Gli alert compaiono in alto e il telefono vibra, dove si può.
+- Sopra la barra, le scene come pulsanti grandi.
+- La barra del pollice: microfono, gira la fotocamera, **Vai live** (in
+  diretta diventa ■, da tenere premuto), chat, «Altro».
+- «Altro»: torcia, zoom, blocca i tocchi, clip (Twitch), grandezza della chat,
+  chat a voce, vibrazione, formato e destinazioni (prima di partire), lo
+  Studio completo.
+
+**Prima di partire** la regia chiede, una volta: cosa fai (lo scenario), il
+formato, dove va la diretta, e titolo e categoria (con le categorie giuste
+dello scenario a portata di tocco: IRL, Just Chatting, Music, Food & Drink,
+Art). Poi controlla quello che può: fotocamera e microfono, codifica del
+telefono, batteria. Twitch non riceve il verticale: se il formato è solo
+verticale e Twitch è fra le destinazioni, lo dice.
+
+**Cosa legge e cosa no.** Batteria e tipo di rete li legge il telefono, dove
+il browser li dà (Android sì, iPhone no), e non lasciano il dispositivo. La
+voce che legge la chat è quella del telefono, non passa da noi; va usata
+con le cuffie, perché dall'altoparlante finirebbe nel microfono.
+
+**Cose del telefono da sapere.**
+- Schermo intero e orientamento bloccato ci sono su Android; sull'iPhone
+  il browser non li concede, e l'aiuto suggerisce «Aggiungi alla schermata
+  Home», che apre il sito senza barre.
+- Sull'iPhone serve iOS 26 o più recente: prima Safari non codificava l'audio.
+- Lo schermo non si spegne durante la diretta (Wake Lock). Se si passa a
+  un'altra app il telefono ferma la pagina: va in onda la riserva fino al
+  ritorno, entro i minuti scelti, e la regia lo dice prima di partire.
 
 ## Dopo: le scene dell'Overlay Studio
 

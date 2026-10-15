@@ -43,6 +43,9 @@ comandi diversi da quelli della riga italiana.
 
 ## 2026-10-15
 
+- Col solo verticale acceso le dirette partono su Kick, YouTube e gli altri senza sceglierlo una per una; Twitch, che il verticale non lo riceve, lo dice. [vai: studio]
+  en: With only vertical on, streams start on Kick, YouTube and the others without picking it one by one; Twitch, which does not take vertical, says so.
+  es: Con solo el vertical activo, los directos salen en Kick, YouTube y los demás sin elegirlo uno a uno; Twitch, que no recibe el vertical, lo dice.
 - [importante] Lo Studio è fatto come OBS: scene, fonti, mixer, transizioni e controlli in pannelli, e la modalità studio con anteprima e programma. [vai: studio]
   en: The Studio is built like OBS: scenes, sources, mixer, transitions and controls in docks, and studio mode with preview and program.
   es: El Estudio está hecho como OBS: escenas, fuentes, mezclador, transiciones y controles en paneles, y el modo estudio con vista previa y programa.
