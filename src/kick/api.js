@@ -11,7 +11,7 @@
 // scadenza, e una sola volta anche se dieci messaggi partono insieme.
 import { tokens } from '../db.js';
 import { makeLog } from '../logger.js';
-import { rinnova, daRinnovare, SCOPE_MOD, PERMESSI_NUOVI } from './auth.js';
+import { rinnova, daRinnovare, SCOPE_MOD, SCOPE_DIRETTA, PERMESSI_NUOVI } from './auth.js';
 import { segna } from './eco.js';
 
 const log = makeLog('kick');
@@ -147,6 +147,27 @@ export async function statoCanale(login, opts) {
   if (!r.ok) return r;
   const c = daCanale(r.dati);
   return c ? { ok: true, ...c } : { ok: false, errore: 'Kick non ha detto niente del tuo canale' };
+}
+
+// LA CHIAVE DELLA DIRETTA, per lo Studio (docs/DIRETTA.md). Kick la da' con il
+// permesso streamkey:read, in `stream.url` e `stream.key` del canale. Non si
+// salva: si chiede quando la diretta parte, come quella di Twitch.
+export function puoDiretta(login) {
+  const s = tokenDi(String(login || '').toLowerCase())?.scopes;
+  return Array.isArray(s) && SCOPE_DIRETTA.every((x) => s.includes(x));
+}
+export function indirizzoDiretta(stream) {
+  const url = String(stream?.url || '').trim().replace(/\/+$/, ''), key = String(stream?.key || '').trim();
+  if (!/^rtmps?:\/\/[^/\s]+/i.test(url) || !key) return null;
+  return /^rtmps?:\/\/[^/]+\/.+/i.test(url) ? `${url}/${key}` : `${url}/app/${key}`;
+}
+export async function chiaveDiretta(login, opts) {
+  const id = String(tokenDi(login)?.userId || '');
+  if (!/^\d{1,20}$/.test(id) || !puoDiretta(login)) return null;
+  const r = await chiama(login, '/channels', { query: { broadcaster_user_id: id }, ...opts });
+  if (!r.ok) return null;
+  const c = Array.isArray(r.dati) ? r.dati[0] : r.dati;
+  return indirizzoDiretta(c?.stream);
 }
 
 // CON QUALE VOCE PARLA IL BOT SU KICK.

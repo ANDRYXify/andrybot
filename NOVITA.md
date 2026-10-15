@@ -41,6 +41,12 @@ questa non è una cosa da ricordarsi: il cancello boccia una riga pubblica senza
 traduzione, una traduzione staccata dalla sua riga, o una che dice numeri e
 comandi diversi da quelli della riga italiana.
 
+## 2026-10-15
+
+- Nello Studio Kick va in diretta da solo, come Twitch: la chiave la chiede a Kick quando parti, senza incollarla. E le scene si salvano senza che la barra chieda il server. [vai: studio]
+  en: In the Studio Kick goes live by itself, like Twitch: the key is asked from Kick when you start, no pasting. And scenes save without the bar asking for the server.
+  es: En el Estudio Kick emite solo, como Twitch: la clave se pide a Kick cuando empiezas, sin pegarla. Y las escenas se guardan sin que la barra pida el servidor.
+
 ## 2026-10-14
 
 - Le storie che escono da sole hanno il tuo QR su misura, logo compreso: prima la storia «Live ora» e quelle prima della diretta uscivano col QR semplice. [vai: grafiche]

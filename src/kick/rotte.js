@@ -26,7 +26,7 @@ import * as diario from './diario.js';
 
 const log = makeLog('kick');
 
-export function montaKick(app, { requireLogin, currentUser, wrap, annotaIngresso, suMessaggio, suEvento, registra }) {
+export function montaKick(app, { requireLogin, currentUser, wrap, annotaIngresso, suMessaggio, suEvento, registra, diretta }) {
   // LO STESSO EVENTO DUE VOLTE. Kick dice che Kick-Event-Message-Id e' la
   // chiave di idempotenza: lo stesso evento puo' arrivare di nuovo, e senza
   // ricordarlo un abbonamento o dei Kicks contavano due volte, e il bot
@@ -50,7 +50,10 @@ export function montaKick(app, { requireLogin, currentUser, wrap, annotaIngresso
   const parti = (req, res, { registrazione }) => {
     if (!auth.configurato()) return res.status(503).send('Kick non è configurato su questo server.');
     const { challenge, state } = giro.apri(req, 'kick', { registrazione });
-    res.redirect(auth.urlAutorizzazione({ challenge, state, conModerazione: req.query.mod === '1' }));
+    // Chi ha lo Studio, ricollegando, tiene (o riceve) il permesso della chiave
+    // di trasmissione: un ricollegamento non deve togliergli la diretta su Kick.
+    const conDiretta = req.query.diretta === '1' || (!registrazione && !!diretta?.(currentUser(req)?.login));
+    res.redirect(auth.urlAutorizzazione({ challenge, state, conModerazione: req.query.mod === '1', conDiretta }));
   };
 
   app.get('/auth/kick', requireLogin, (req, res) => parti(req, res, { registrazione: false }));

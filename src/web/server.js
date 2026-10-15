@@ -3713,7 +3713,7 @@ STREAMER (${su.toUpperCase()}) e non c'entra con l'automazione del marketing.
   // nell'indirizzo, ma vale solo se e' una campagna vera: non e' un «rimandami
   // dove vuoi», e' un elenco chiuso.
   montaKick(app, {
-    requireLogin, currentUser, wrap, annotaIngresso: segnaCampagna,
+    requireLogin, currentUser, wrap, annotaIngresso: segnaCampagna, diretta: (login) => !!login && studioPerMe(login),
     suMessaggio: (msg) => manager.messaggioEsterno(msg),
     suEvento: (ev) => manager.eventoEsterno?.(ev),
 
@@ -8975,6 +8975,7 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
   const vestiDirettaDi = (login) => ({
     destinazioni: direttaDest.elenco(login), maxDestinazioni: MAX_DESTINAZIONI,
     twitch: { keyOk: studioKeyOk(login), su: piattaformaDi(login) === 'twitch' },
+    kick: { su: !!kickApi.tokenDi(login)?.accessToken, keyOk: kickApi.puoDiretta(login), azione: kickApi.puoModerare(login) ? '/auth/kick?mod=1&diretta=1' : '/auth/kick?diretta=1' },
     sessione: tramite.stato(login), kbpsMax: BITRATE_MAX_KBPS,
   });
   app.get('/api/diretta', requireOwner, studioAperto, (req, res) => res.json(vestiDirettaDi(currentUser(req).login)));
@@ -9013,6 +9014,11 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
         const key = await helix.getStreamKey(login).catch(() => null);
         if (!key) return res.status(400).json({ errore: 'Twitch non ha dato la chiave di trasmissione: concedi di nuovo i permessi.', permesso: true });
         destinazioni.push({ id: 'twitch', nome: 'Twitch', url: `${config.twitchRtmp}/${key}` });
+      } else if (id === 'kick') {
+        if (!kickApi.puoDiretta(login)) return res.status(403).json({ errore: 'Per Kick ricollega Kick dalla riga di Kick: serve il permesso di leggere la chiave di trasmissione.', permesso: true });
+        const url = await kickApi.chiaveDiretta(login).catch(() => null);
+        if (!url) return res.status(400).json({ errore: 'Kick non ha dato la chiave di trasmissione: ricollega Kick e riprova.', permesso: true });
+        destinazioni.push({ id: 'kick', nome: 'Kick', url });
       } else {
         const d = direttaDest.conChiave(login, id);
         if (d?.chiave) destinazioni.push({ id: d.id, nome: d.nome, url: `${d.server}/${d.chiave}` });

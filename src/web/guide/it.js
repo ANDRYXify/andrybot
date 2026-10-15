@@ -441,7 +441,7 @@ export const GUIDE_IT = [
       { h2: 'Cosa c\'è nella beta', ul: [
         '<strong>Le sorgenti</strong>: schermo, finestra o scheda del browser, webcam (anche le schede di acquisizione, che il browser vede come camere), immagini, video, testi e il tuo overlay con alert, chat ed effetti.',
         '<strong>Il mixer</strong>: microfono, audio del desktop, video ed effetti, ognuno col suo volume, il muto e il misuratore.',
-        '<strong>Le destinazioni</strong>: Twitch con la chiave presa da sola dopo un permesso, e Kick, YouTube o qualunque servizio RTMP con l\'indirizzo e la chiave che incolli una volta. La chiave resta cifrata sul server e non torna al browser.',
+        '<strong>Le destinazioni</strong>: Twitch e Kick con la chiave presa da sola dopo un permesso, YouTube o qualunque servizio RTMP con l\'indirizzo e la chiave che incolli una volta. La chiave resta cifrata sul server e non torna al browser.',
         '<strong>La qualità</strong> da 720p a 1440p a 30 o 60 fotogrammi, che scende da sola se la rete non regge e risale quando torna.',
         '<strong>La riserva</strong>: la tua scritta «torno subito» sopra la scena com\'era quando sei partito, scurita. Va in onda quando la rete cade, per i minuti che scegli tu.',
         '<strong>La ripresa</strong>: se la pagina si ricarica o la riapri, la diretta è ancora in onda con la riserva, e «Vai live» la riprende senza interruzioni sul canale, se non hai cambiato qualità. Trasmette sempre una finestra sola.',

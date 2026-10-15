@@ -125,8 +125,10 @@ potrebbe portare: la diretta di prima si chiude e ne parte una nuova. «Ferma»
 chiude solo se la finestra è ancora quella che trasmette; dal pannello si può
 chiudere anche una diretta rimasta in onda senza nessuno.
 
-**Le destinazioni.** Twitch con la chiave presa dalle API (resta sul server).
-Kick, YouTube e ogni altro servizio RTMP con l'indirizzo e la chiave che lo
+**Le destinazioni.** Twitch e Kick con la chiave presa dalle loro API al
+momento di partire (resta sul server e non si salva): su Kick col permesso
+`streamkey:read`, chiesto solo a chi ha lo Studio e tenuto quando ricollega.
+YouTube e ogni altro servizio RTMP con l'indirizzo e la chiave che lo
 streamer incolla una volta: salvati cifrati, mai rimandati al browser, si
 cambiano o si tolgono. Ogni destinazione si accende o si spegne prima di
 partire; se una cade, le altre continuano.

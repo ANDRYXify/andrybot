@@ -25,6 +25,10 @@ export const SCOPE = [
 ];
 // Chiesti solo se lo streamer vuole la moderazione: si aggiungono a parte.
 export const SCOPE_MOD = ['moderation:ban', 'moderation:chat_message:manage'];
+// Chiesto solo a chi ha lo Studio della diretta (docs/DIRETTA.md): leggere
+// l'indirizzo e la chiave di trasmissione, per andare in diretta su Kick senza
+// incollarli. A chi non trasmette dal sito non si chiede.
+export const SCOPE_DIRETTA = ['streamkey:read'];
 
 // I PERMESSI ARRIVATI DOPO, per quello che fanno. Kick non aggiunge permessi a
 // un token gia' dato: chi ha collegato prima non li ha, e li concede
@@ -43,8 +47,8 @@ export function configurato() {
 export { creaPkce };
 
 // Dove mandare lo streamer per autorizzare.
-export function urlAutorizzazione({ challenge, state, conModerazione = false }) {
-  const scope = conModerazione ? [...SCOPE, ...SCOPE_MOD] : SCOPE;
+export function urlAutorizzazione({ challenge, state, conModerazione = false, conDiretta = false }) {
+  const scope = [...SCOPE, ...(conModerazione ? SCOPE_MOD : []), ...(conDiretta ? SCOPE_DIRETTA : [])];
   const p = new URLSearchParams({
     response_type: 'code',
     client_id: config.kickClientId,
