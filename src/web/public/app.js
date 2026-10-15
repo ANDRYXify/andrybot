@@ -21475,6 +21475,13 @@ function pannelloStudio() {
             <button type="button" class="sf-btn sf-giu" data-scena-azione="giu" aria-label="${esc(L('Sposta giù', 'Move down', 'Bajar'))}" title="${esc(L('Sposta giù', 'Move down', 'Bajar'))}">${_bIco(ICO.freccia)}</button>
             <button type="button" class="sf-btn sf-rim" data-scena-azione="elimina" aria-label="${esc(L('Elimina la scena', 'Delete the scene', 'Eliminar la escena'))}" title="${esc(L('Elimina la scena', 'Delete the scene', 'Eliminar la escena'))}">${_bIco(ICO.cestino)}</button>
           </div>
+          <label class="campo studio-scena-audio" for="studio-scena-audio">${L('I microfoni di questa scena', 'This scene’s microphones', 'Los micrófonos de esta escena')}</label>
+          <select id="studio-scena-audio" class="campo-largo">
+            <option value="computer">${L('Il microfono del computer', 'The computer microphone', 'El micrófono del ordenador')}</option>
+            <option value="dispositivi">${L('Quelli dei dispositivi in scena', 'Those of the devices in the scene', 'Los de los dispositivos en escena')}</option>
+            <option value="tutti">${L('Computer e dispositivi in scena', 'Computer and devices in the scene', 'Ordenador y dispositivos en escena')}</option>
+            <option value="muta">${L('Nessuno (pausa)', 'None (break)', 'Ninguno (pausa)')}</option>
+          </select>
           <details class="studio-add-menu" id="studio-pronte-menu">
             <summary class="btn secondario mini">${_bIco(ICO.piu)}${L('Scene pronte', 'Ready scenes', 'Escenas listas')}</summary>
             <div class="studio-add">
@@ -21505,6 +21512,7 @@ function pannelloStudio() {
               <button type="button" class="btn secondario mini" data-add="video">${_bIco(ICO.video)}Video</button>
               <button type="button" class="btn secondario mini" data-add="testo">${_bIco(ICO.testo)}${L('Testo', 'Text', 'Texto')}</button>
               <button type="button" class="btn secondario mini" data-add="overlay">${_bIco(ICO.effetti)}Overlay</button>
+              <button type="button" class="btn secondario mini" data-add="remota">${_bIco(ICO.telefono)}${L('Telefono o altro dispositivo', 'Phone or other device', 'Teléfono u otro dispositivo')}</button>
             </div>
           </details>
           <div class="studio-layouts" id="studio-layouts">
@@ -21548,6 +21556,10 @@ function pannelloStudio() {
         <section class="studio-dock" id="studio-prop-box" hidden aria-labelledby="studio-t-prop">
           <h3 class="studio-dock-tit" id="studio-t-prop">${_bIco(ICO.righello)}${L('Proprietà', 'Properties', 'Propiedades')}</h3>
           <div id="studio-prop"></div>
+        </section>
+        <section class="studio-dock studio-dock-remoti" aria-labelledby="studio-t-remoti">
+          <h3 class="studio-dock-tit" id="studio-t-remoti">${_bIco(ICO.telefono)}${L('Dispositivi', 'Devices', 'Dispositivos')}</h3>
+          <div id="studio-remoti"></div>
         </section>
         <section class="studio-dock studio-dock-chat" aria-labelledby="studio-t-chat">
           <h3 class="studio-dock-tit" id="studio-t-chat">${_bIco(ICO.moduli)}${L('Chat live', 'Live chat', 'Chat en directo')}</h3>
@@ -21669,13 +21681,14 @@ const STUDIO = {
   qual: '720p30',
   dev: { cams: [], mics: [], camId: '', micId: '', facing: '', lente: { user: '', environment: '' } },
   cam: { zoom: 1, specchio: false, hw: null, facing: '', id: '', luce: null, luceV: 0, torcia: false, zoomInVolo: false, zoomDopo: false },
+  rem: { M: null, regia: null, flusso: null, id: '', elenco: [], presenza: null, invito: null, invitoT: 0, prot: null, zoom: {}, stato: 'spento', giro: 0, turn: false, liveDetto: null, visti: new Set(), tick: 0, renderT: 0 },
   ov: { list: [], sel: '', mostra: null, xy: null, key: '' },
   emote: {},
   emoteImg: {},
   chatFeed: [],
 };
 
-const studioEtichetta = (tipo) => ({ webcam: 'Webcam', schermo: L('Schermo', 'Screen', 'Pantalla'), immagine: L('Immagine', 'Image', 'Imagen'), video: 'Video', testo: L('Testo', 'Text', 'Texto'), overlay: 'Overlay' }[tipo] || tipo);
+const studioEtichetta = (tipo) => ({ webcam: 'Webcam', schermo: L('Schermo', 'Screen', 'Pantalla'), immagine: L('Immagine', 'Image', 'Imagen'), video: 'Video', testo: L('Testo', 'Text', 'Texto'), overlay: 'Overlay', remota: L('Dispositivo', 'Device', 'Dispositivo') }[tipo] || tipo);
 const studioClamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const studioModalita = () => !!STUDIO.doc?.scelte.modalitaStudio && !STUDIO.mobile;
 const studioChi = () => stato?.user?.login || 'anon';
@@ -21685,7 +21698,7 @@ function studioSceneAttiva() { const d = STUDIO.doc; if (!d) return null; return
 function studioTrovaFonte(id) { const s = studioSceneAttiva(); return s ? s.fonti.find((f) => f.id === id) || null : null; }
 const studioPos = (f) => f.pos[STUDIO.lavoro];
 const studioMisura = () => STUDIO.M.FORMATI[STUDIO.lavoro];
-function studioIcoFonte(tipo) { return { webcam: 'fotocamera', schermo: 'monitor', immagine: 'immagine', video: 'video', testo: 'testo', overlay: 'effetti' }[tipo] || 'moduli'; }
+function studioIcoFonte(tipo) { return { webcam: 'fotocamera', schermo: 'monitor', immagine: 'immagine', video: 'video', testo: 'testo', overlay: 'effetti', remota: 'telefono' }[tipo] || 'moduli'; }
 function studioNuovaScena(nome) {
   const d = STUDIO.doc; if (!d) return null;
   if (d.scene.length >= STUDIO.M.LIMITI.scene) { toast(L('Hai già tutte le scene che si possono avere.', 'You already have as many scenes as allowed.', 'Ya tienes todas las escenas posibles.'), 'errore'); return null; }
@@ -21771,7 +21784,7 @@ function studioScenaViva(scena, f) {
   if (!scena) return false;
   for (const x of scena.fonti) {
     if (!x.pos[f]?.vis) continue;
-    if (x.tipo === 'webcam' || x.tipo === 'schermo' || x.tipo === 'video') return true;
+    if (x.tipo === 'webcam' || x.tipo === 'schermo' || x.tipo === 'video' || x.tipo === 'remota') return true;
     if (x.tipo === 'immagine' && /gif|webp|apng|png/.test(x.media?.mime || '') && STUDIO.media[x.media?.impronta]) return true;
     if (x.tipo === 'overlay') { const o = STUDIO.overlay; if (o.fx.length || o.chat.length || (o.alert && o.alert.until > Date.now() - 200)) return true; }
   }
@@ -21879,7 +21892,8 @@ function studioSfumato(c, el, vw, vh, p) {
 function studioInquadrata(c, el, f, p, fk) {
   const vw = el.videoWidth || el.naturalWidth, vh = el.videoHeight || el.naturalHeight; if (!vw || !vh) return;
   const cam = f.tipo === 'webcam', C = STUDIO.cam;
-  const r = STUDIO.M.inquadra(vw, vh, p, f.inq?.[fk], { zoom: cam && !C.hw ? C.zoom : 1, specchio: cam && studioCamSpecchiata() });
+  const zoom = cam && !C.hw ? C.zoom : (f.tipo === 'remota' ? STUDIO.rem.zoom[f.dispositivo] || 1 : 1);
+  const r = STUDIO.M.inquadra(vw, vh, p, f.inq?.[fk], { zoom, specchio: cam && studioCamSpecchiata() });
   if (!r) return;
   c.save(); c.beginPath(); c.rect(p.x, p.y, p.w, p.h); c.clip();
   if (r.specchio) { c.translate(2 * r.dx + r.dw, 0); c.scale(-1, 1); }
@@ -21892,6 +21906,7 @@ function disegnaFonte(c, f, p, W, H, fk) {
   if (f.tipo === 'webcam') { if (STUDIO.cap.camEl) studioInquadrata(c, STUDIO.cap.camEl, f, p, fk); return; }
   if (f.tipo === 'schermo') { if (STUDIO.cap.scrEl) studioInquadrata(c, STUDIO.cap.scrEl, f, p, fk); return; }
   if (f.tipo === 'immagine' || f.tipo === 'video') { const m = STUDIO.media[f.media?.impronta]; if (m) studioInquadrata(c, m.el, f, p, fk); return; }
+  if (f.tipo === 'remota') { const el = studioRemotoVideo(f.dispositivo); if (el) studioInquadrata(c, el, f, p, fk); return; }
   if (f.tipo === 'testo') { disegnaTestoFonte(c, f, p); return; }
   if (f.tipo === 'overlay') { disegnaOverlayStudio(c, W, H); return; }
 }
@@ -22015,6 +22030,7 @@ function studioSuonaPreset(nome, volume) {
 }
 
 function studioChatPanelPush(d) {
+  studioRemotiChat(d);
   const box = document.getElementById('studio-chat'); if (!box) return;
   const attaccato = box.scrollHeight - box.scrollTop - box.clientHeight < 40;
   const riga = document.createElement('div'); riga.className = 'studio-chat-riga';
@@ -22288,6 +22304,311 @@ async function studioCambiaCamera(camId) {
   }
 }
 
+const REM_RIPIEGO_MS = 5000, REM_RITORNO_MS = 2000;
+
+function studioRemotoVideo(id) {
+  const v = STUDIO.rem.regia?.remoti.get(id);
+  return v?.video && v.video.videoWidth > 0 && (v.stato === 'collegato' || v.stato === 'perso') ? v.video : null;
+}
+const studioRemotoNome = (id) => STUDIO.rem.regia?.remoti.get(id)?.nome || STUDIO.rem.elenco.find((x) => x.id === id)?.nome || L('Dispositivo', 'Device', 'Dispositivo');
+function studioRemotoAudioNota(id) {
+  const mi = STUDIO.M.microfoniInOnda(studioScena(STUDIO.doc?.inOnda), [id]);
+  return mi.dispositivi.includes(id) ? L('in onda in questa scena', 'on air in this scene', 'en el aire en esta escena') : L('spento in questa scena', 'off in this scene', 'apagado en esta escena');
+}
+const studioRemotoParla = (msg, errore) => { if (STUDIO.tel?.aperta) studioTelAvviso(msg, 5000, !!errore); else toast(msg, errore ? 'errore' : 'ok'); };
+
+async function studioRemotiPrepara() {
+  const R = STUDIO.rem;
+  if (DEMO || stato?.user?.role !== 'proprietario' || R.flusso || ['altrove', 'occupata', 'telefono'].includes(R.stato)) return;
+  if (studioTelefono()) {
+    try {
+      const r = await fetch('/api/studio/regia/presenza', { credentials: 'same-origin', cache: 'no-store' });
+      const p = r.ok ? await r.json() : null;
+      if (p?.regia) { R.stato = 'telefono'; R.presenza = p; renderStudioRemoti(); if (STUDIO.tel?.aperta) studioTelFoglio('regia-altrove'); return; }
+    } catch (e) { void e; }
+  }
+  studioRemotiAvvia();
+}
+
+async function studioRemotiAvvia() {
+  const R = STUDIO.rem;
+  if (R.flusso) return;
+  if (!R.M) R.M = await import('/js/studio-remoti.js');
+  if (R.flusso) return;
+  if (!R.id) R.id = [...crypto.getRandomValues(new Uint8Array(12))].map((b) => (b % 36).toString(36)).join('');
+  if (!R.regia) {
+    R.regia = R.M.creaRegiaRemota({
+      trasporto: { manda: (a, tipo, dati) => fetch('/api/studio/regia/segnale', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ r: R.id, a, tipo, dati }) }).catch(() => {}) },
+      chiediIce: () => fetch('/api/studio/regia/ice', { credentials: 'same-origin', cache: 'no-store' }).then((r) => r.json()),
+      suCambio: studioRemotoCambiato,
+      suMessaggio: studioRemotoMessaggio,
+      creaVideo: () => { const el = document.createElement('video'); el.muted = true; el.playsInline = true; el.autoplay = true; el.addEventListener('resize', studioRidisegna); return el; },
+    });
+  }
+  R.stato = 'apre';
+  R.flusso = window.SB_FLUSSO.apri(() => `/api/studio/regia/eventi?r=${R.id}&live=${STUDIO.live ? 1 : 0}`, {
+    silenzio: 75000,
+    suMessaggio: (m) => { let x = null; try { x = JSON.parse(m.data); } catch (e) { return; } studioRemotiEvento(String(x?.e || ''), x?.d || {}); },
+    suCaduta: () => { if (R.stato === 'regia') { R.stato = 'ricollego'; renderStudioRemoti(); } },
+  });
+  if (!R.giro) R.giro = setInterval(studioRemotiGiro, 1000);
+}
+
+function studioRemotiEvento(e, d) {
+  const R = STUDIO.rem;
+  if (e === 'pronto') { R.stato = 'regia'; R.turn = !!d.turn; R.liveDetto = null; studioRemotiElenco(); studioRemotiVerificaInvito(); renderStudioRemoti(); }
+  else if (e === 'presenza') studioRemotoPresenza(d);
+  else if (e === 'segnale') R.regia?.segnale(d);
+  else if (e === 'altrove' || e === 'occupata') studioRemotiFerma(e);
+}
+
+function studioRemotiFerma(motivo) {
+  const R = STUDIO.rem;
+  R.flusso?.chiudi();
+  R.flusso = null; R.stato = motivo;
+  R.regia?.chiudi();
+  if (R.regia) for (const v of R.regia.remoti.values()) { v.stato = 'scollegato'; v.collegato = false; }
+  renderStudioRemoti(); studioRidisegna();
+  if (motivo === 'altrove') studioRemotoParla(L('La regia dei dispositivi è passata a un’altra finestra dello Studio.', 'The devices control room moved to another Studio window.', 'El control de los dispositivos ha pasado a otra ventana del Estudio.'));
+}
+
+async function studioRemotiElenco() {
+  const R = STUDIO.rem;
+  try {
+    const r = await fetch('/api/studio/dispositivi', { credentials: 'same-origin', cache: 'no-store' });
+    if (!r.ok) return;
+    const d = await r.json();
+    R.elenco = Array.isArray(d.elenco) ? d.elenco : []; R.presenza = d.presenza || null; R.turn = !!d.turn;
+    for (const x of R.elenco) if (R.regia && !R.regia.remoti.has(x.id)) R.regia.presenza({ id: x.id, nome: x.nome, comanda: x.comanda, collegato: false });
+  } catch (e) { void e; }
+  renderStudioRemoti();
+}
+
+function studioRemotoPresenza(d) {
+  const R = STUDIO.rem; if (!d?.id) return;
+  R.regia?.presenza(d);
+  const x = R.elenco.find((e) => e.id === d.id);
+  if (x) Object.assign(x, { nome: d.nome || x.nome, comanda: !!d.comanda, collegato: !!d.collegato });
+  else studioRemotiElenco();
+  if (d.collegato && !R.visti.has(d.id)) {
+    R.visti.add(d.id);
+    studioRemotiVerificaInvito();
+    studioRemotoParla(L(`${d.nome || 'Un dispositivo'} è collegato: aggiungilo a una scena o fallo protagonista.`, `${d.nome || 'A device'} is connected: add it to a scene or make it the main shot.`, `${d.nome || 'Un dispositivo'} está conectado: añádelo a una escena o hazlo protagonista.`));
+  }
+  if (STUDIO.audio) collegaAudioRemoti();
+  renderStudioRemoti(); renderStudioMixer(); renderStudioFonti(); studioRidisegna();
+  if (STUDIO.tel?.foglio === 'dispositivi') renderStudioTelFoglio();
+}
+
+function studioRemotoCambiato(v) {
+  const R = STUDIO.rem;
+  if (v && !v.tolto) {
+    const audio = !!v.stream?.getAudioTracks().length;
+    if (audio !== !!v._audio) { v._audio = audio; if (STUDIO.audio) collegaAudioRemoti(); renderStudioMixer(); }
+    if (v.dc?.readyState === 'open' && !v._salutato) { v._salutato = true; v.tallyUltimo = ''; v.sceneUltime = ''; studioRemotiTally(true); }
+    if (v.dc?.readyState !== 'open') v._salutato = false;
+  }
+  studioRidisegna();
+  clearTimeout(R.renderT);
+  R.renderT = setTimeout(() => { renderStudioRemoti(); renderStudioFonti(); if (STUDIO.tel?.foglio === 'dispositivi') renderStudioTelFoglio(); }, 200);
+}
+
+function studioRemotoMessaggio(v, m) {
+  const R = STUDIO.rem;
+  if (m.t === 'info') { clearTimeout(R.renderT); R.renderT = setTimeout(renderStudioRemoti, 200); return; }
+  if (m.t !== 'cmd') return;
+  if (m.cmd === 'zoom') { R.zoom[v.id] = studioClamp(Number(m.v) || 1, 1, STUDIO.M.ZOOM_DIGITALE_MAX); R.regia.manda(v.id, { t: 'zoom', v: R.zoom[v.id] }); studioRidisegna(); return; }
+  if (!v.comanda) { R.regia.manda(v.id, { t: 'avviso', testo: L('Da questo dispositivo la regia non si comanda: lo decide chi è al computer.', 'This device cannot run the control room: whoever is at the computer decides.', 'Desde este dispositivo no se lleva el control: lo decide quien está en el ordenador.'), errore: true }); return; }
+  if (m.cmd === 'scena' && studioScena(String(m.id || ''))) { studioVaiInOnda(String(m.id)); if (STUDIO.tel?.aperta) renderStudioTel(); return; }
+  if (m.cmd === 'protagonista') { studioRemotoProtagonista(v.id); return; }
+  if (m.cmd === 'rilascia') { studioRemotoRilascia(v.id); return; }
+  if (m.cmd === 'ferma' && STUDIO.live) { studioRemotoParla(L(`${v.nome || 'Un dispositivo'} ha chiuso la diretta.`, `${v.nome || 'A device'} ended the stream.`, `${v.nome || 'Un dispositivo'} ha cerrado el directo.`)); conErrore(() => fermaLive()); }
+}
+
+function studioRemotiTally(forza) {
+  const R = STUDIO.rem, d = STUDIO.doc; if (!R.regia || !d || !STUDIO.M) return;
+  const f = d.scelte.formati, formato = f.o && f.v ? 'ov' : (f.v ? 'v' : 'o');
+  const lista = d.scene.map((x) => ({ id: x.id, nome: x.nome, muta: !!x.muta }));
+  const sceneJ = JSON.stringify([lista, d.inOnda]);
+  for (const v of R.regia.remoti.values()) {
+    if (v.dc?.readyState !== 'open') continue;
+    const t = { t: 'tally', ...STUDIO.M.tallyDi(d, v.id, { live: !!STUDIO.live, lavoro: STUDIO.lavoro, modalita: studioModalita() }), live: !!STUDIO.live, formato, protagonista: R.prot?.id || '' };
+    const j = JSON.stringify(t);
+    if (forza || j !== v.tallyUltimo) { v.tallyUltimo = j; R.regia.manda(v.id, t); }
+    if (v.comanda && (forza || sceneJ !== v.sceneUltime)) { v.sceneUltime = sceneJ; R.regia.manda(v.id, { t: 'scene', lista, inOnda: d.inOnda }); }
+  }
+}
+
+function studioRemotiChat(d) {
+  const R = STUDIO.rem; if (!R.regia) return;
+  for (const v of R.regia.remoti.values()) if (v.comanda && v.dc?.readyState === 'open') R.regia.manda(v.id, { t: 'chat', righe: [{ user: String(d?.user || ''), testo: String(d?.testo || '').slice(0, 300) }] });
+}
+
+function studioRemotiGiro() {
+  const R = STUDIO.rem; if (!R.regia || !STUDIO.doc) return;
+  R.tick++;
+  if (R.tick % 2 === 0) R.regia.misura();
+  studioRemotiTally(R.tick % 5 === 0);
+  if (R.stato === 'regia' && R.liveDetto !== !!STUDIO.live) {
+    R.liveDetto = !!STUDIO.live;
+    fetch('/api/studio/regia/stato', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ r: R.id, live: !!STUDIO.live }) }).catch(() => { R.liveDetto = null; });
+  }
+  studioRemotiRipiego();
+}
+
+function studioRemotiRipiego() {
+  const R = STUDIO.rem, P = R.prot, d = STUDIO.doc; if (!P || !d || !R.regia) return;
+  const ora = performance.now(), vivo = R.regia.remoti.get(P.id)?.stato === 'collegato' && !!studioRemotoVideo(P.id);
+  if (vivo) { P.vivoDa = P.vivoDa || ora; P.persoDa = 0; } else { P.persoDa = P.persoDa || ora; P.vivoDa = 0; }
+  if (!vivo && !P.auto && d.inOnda === P.scena && ora - P.persoDa >= REM_RIPIEGO_MS) {
+    const torna = STUDIO.M.scenaDiRipiego(d, P.id, P.prima);
+    if (!torna) return;
+    P.auto = true; P.ripiego = torna;
+    studioVaiInOnda(torna);
+    studioRemotoParla(L(`${studioRemotoNome(P.id)} si è perso: torno a «${studioScena(torna)?.nome || ''}» finché non torna.`, `${studioRemotoNome(P.id)} got lost: back to “${studioScena(torna)?.nome || ''}” until it returns.`, `${studioRemotoNome(P.id)} se ha perdido: vuelvo a «${studioScena(torna)?.nome || ''}» hasta que vuelva.`), true);
+  }
+  if (vivo && P.auto && ora - P.vivoDa >= REM_RITORNO_MS) {
+    P.auto = false;
+    if (d.inOnda === P.ripiego && studioScena(P.scena)) {
+      studioVaiInOnda(P.scena);
+      studioRemotoParla(L(`${studioRemotoNome(P.id)} è tornato: di nuovo in onda.`, `${studioRemotoNome(P.id)} is back: on air again.`, `${studioRemotoNome(P.id)} ha vuelto: de nuevo en el aire.`));
+    }
+  }
+}
+
+function studioRemotoProtagonista(id) {
+  const R = STUDIO.rem, d = STUDIO.doc; if (!d || !STUDIO.M) return;
+  const nome = studioRemotoNome(id);
+  let sc = STUDIO.M.scenaDelProtagonista(d, id);
+  if (!sc) {
+    if (d.scene.length >= STUDIO.M.LIMITI.scene) { toast(L('Hai già tutte le scene che si possono avere: eliminane una.', 'You already have as many scenes as allowed: delete one.', 'Ya tienes todas las escenas posibles: elimina una.'), 'errore'); return; }
+    sc = STUDIO.M.scenaProtagonista(nome, id);
+    d.scene.push(sc); studioSporco();
+  }
+  const prima = d.inOnda !== sc.id ? d.inOnda : (R.prot?.prima || '');
+  R.prot = { id, scena: sc.id, prima, auto: false, persoDa: 0, vivoDa: 0, ripiego: '' };
+  studioVaiInOnda(sc.id);
+  renderStudioTutto(); studioRemotiTally(true);
+  studioRemotoParla(L(`${nome} è il protagonista: va in onda la sua immagine con la sua voce, e il microfono del computer tace su questa scena.`, `${nome} is the main shot: its picture goes on air with its voice, and the computer microphone stays silent in this scene.`, `${nome} es el protagonista: sale su imagen con su voz, y el micrófono del ordenador calla en esta escena.`));
+}
+
+function studioRemotoRilascia(id) {
+  const R = STUDIO.rem, d = STUDIO.doc; if (!d || !R.prot || R.prot.id !== id) return;
+  const torna = STUDIO.M.scenaDiRipiego(d, id, R.prot.prima);
+  R.prot = null;
+  if (torna && d.inOnda !== torna) studioVaiInOnda(torna);
+  renderStudioTutto(); studioRemotiTally(true);
+}
+
+function studioRemotoAggiungi(id) {
+  const sc = studioSceneAttiva(); if (!sc) return;
+  if (sc.fonti.some((f) => f.tipo === 'remota' && f.dispositivo === id)) { toast(L('Questo dispositivo è già in questa scena.', 'This device is already in this scene.', 'Este dispositivo ya está en esta escena.')); return; }
+  studioAddFonte('remota', { nome: studioRemotoNome(id), dispositivo: id });
+}
+
+async function studioRemotiInvita() {
+  const R = STUDIO.rem;
+  if (DEMO) { toast(L('In demo i dispositivi non si collegano: accedi per farlo davvero.', 'In demo devices do not connect: log in to do it for real.', 'En demo los dispositivos no se conectan: inicia sesión para hacerlo de verdad.')); return; }
+  try {
+    R.invito = await apiServer('/api/studio/dispositivi/invito', { method: 'POST' });
+    clearInterval(R.invitoT);
+    R.invitoT = setInterval(() => { if (!R.invito || Date.now() > R.invito.scade) { R.invito = null; clearInterval(R.invitoT); renderStudioRemoti(); if (STUDIO.tel?.foglio === 'dispositivi') renderStudioTelFoglio(); return; } studioRemotiScadenza(); }, 1000);
+    if (R.stato !== 'regia' && !R.flusso) { R.stato = 'spento'; studioRemotiAvvia(); }
+    renderStudioRemoti();
+    if (STUDIO.tel?.foglio === 'dispositivi') renderStudioTelFoglio();
+  } catch (e) { toast(e.message, 'errore'); }
+}
+
+async function studioRemotiVerificaInvito() {
+  const R = STUDIO.rem, i = R.invito; if (!i) return;
+  try {
+    const r = await fetch('/api/cam/invito/' + encodeURIComponent(i.token), { cache: 'no-store' });
+    if (r.status !== 404 || R.invito !== i) return;
+    R.invito = null; clearInterval(R.invitoT);
+    renderStudioRemoti();
+    if (STUDIO.tel?.foglio === 'dispositivi') renderStudioTelFoglio();
+  } catch (e) { void e; }
+}
+
+function studioRemotiScadenza() {
+  const R = STUDIO.rem; if (!R.invito) return;
+  const s = Math.max(0, Math.round((R.invito.scade - Date.now()) / 1000));
+  for (const el of document.querySelectorAll('[data-rem-scade]')) el.textContent = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+}
+
+function studioRemotiQr(url) {
+  try { const Q = window.SB_QR; const p = Q.progetto(url, {}); if (!p.qr || p.problemi?.length) return ''; return Q.svg(p, Q.misura(p, 176, 1)); } catch (e) { return ''; }
+}
+
+function studioRemotiVoci() {
+  const R = STUDIO.rem, ids = new Set(R.elenco.map((x) => x.id));
+  const voci = R.elenco.map((x) => ({ ...x, v: R.regia?.remoti.get(x.id) || null }));
+  for (const v of R.regia?.remoti.values() || []) if (!ids.has(v.id) && v.collegato) voci.push({ id: v.id, nome: v.nome, comanda: v.comanda, collegato: true, v });
+  return voci;
+}
+
+function studioRemotoStato(x) {
+  const st = x.v?.stato || (x.collegato ? 'attesa' : 'scollegato');
+  return {
+    collegato: ['ok', L('in diretta col computer', 'live with the computer', 'en directo con el ordenador')],
+    collego: ['attesa', L('si collega…', 'connecting…', 'conectando…')],
+    attesa: ['attesa', L('in attesa del video', 'waiting for video', 'esperando el vídeo')],
+    perso: ['male', L('segnale perso', 'signal lost', 'señal perdida')],
+    scollegato: ['spento', L('non collegato', 'not connected', 'no conectado')],
+  }[st] || ['spento', st];
+}
+
+function htmlInvitoRemoti(piccolo) {
+  const R = STUDIO.rem, i = R.invito;
+  if (!i) return `<button type="button" class="${piccolo ? 'tel-grande' : 'btn secondario mini'}" data-rem-invita="1">${_bIco(ICO.telefono)}${L('Collega un telefono', 'Connect a phone', 'Conecta un teléfono')}</button>
+    <p class="suggerimento">${L('Il tuo telefono, entrato col tuo account, si collega anche senza codice: apri lo Studio sul telefono e scegli «Collega come fotocamera».', 'Your own phone, logged in with your account, connects without a code too: open the Studio on the phone and choose “Connect as a camera”.', 'Tu teléfono, con tu cuenta, se conecta también sin código: abre el Estudio en el teléfono y elige «Conectar como cámara».')}</p>`;
+  return `<div class="studio-remoti-invito">
+    <div class="studio-remoti-qr" aria-hidden="true">${studioRemotiQr(i.url)}</div>
+    <div>
+      <p>${L('Inquadra il QR col telefono, oppure apri', 'Scan the QR with the phone, or open', 'Escanea el QR con el teléfono, o abre')} <strong>${esc(location.host)}/cam</strong> ${L('e scrivi il codice:', 'and type the code:', 'y escribe el código:')}</p>
+      <p class="studio-remoti-codice">${esc(i.codice.slice(0, 3))} ${esc(i.codice.slice(3))}</p>
+      <p class="suggerimento">${L('Vale una volta, ancora per', 'Valid once, for another', 'Vale una vez, durante')} <span data-rem-scade></span>. <button type="button" class="${piccolo ? 'tel-chip' : 'btn secondario mini'}" data-rem-copia="1">${L('Copia il link', 'Copy the link', 'Copiar el enlace')}</button></p>
+    </div>
+  </div>`;
+}
+
+function htmlVoceRemoto(x, piccolo) {
+  const R = STUDIO.rem, v = x.v, [cl, testo] = studioRemotoStato(x), st = v?.stats || {}, info = v?.info || {};
+  const prot = R.prot?.id === x.id, on = v?.stato === 'collegato';
+  const misure = on ? [st.h > 0 ? `${st.h}p` : '', st.kbps > 0 ? `${st.kbps} kbps` : '', st.rtt > 0 ? `${Math.round(st.rtt * 1000)} ms` : ''].filter(Boolean) : [];
+  const q = misure.length ? `<span class="sr-q ${st.qualita || ''}" title="${esc(L('Il segnale che arriva al computer', 'The signal reaching the computer', 'La señal que llega al ordenador'))}">${misure.join(' · ')}</span>` : '';
+  const batt = info.batteria ? `<span class="sr-q">${L('batteria', 'battery', 'batería')} ${Math.round((info.batteria.livello || 0) * 100)}%${info.batteria.carica ? ' · ' + L('in carica', 'charging', 'cargando') : ''}</span>` : '';
+  const qual = info.qual === '1080p30' ? '1080p30' : '720p30';
+  const muto = info.muto ? `<span class="sr-q male">${L('microfono spento', 'mic off', 'micro apagado')}</span>` : '';
+  if (piccolo) return `<li class="studio-remoto"><div class="sr-testa"><span class="sr-stato ${cl}">${esc(testo)}</span><strong>${esc(x.nome)}</strong>${q}</div>
+    <div class="tel-gruppo">${on ? `<button type="button" class="tel-chip${prot ? ' attivo' : ''}" ${prot ? 'data-rem-rilascia' : 'data-rem-prot'}="${esc(x.id)}">${prot ? L('Protagonista ✓', 'Main shot ✓', 'Protagonista ✓') : L('Fallo protagonista', 'Make it the main shot', 'Hazlo protagonista')}</button><button type="button" class="tel-chip" data-rem-aggiungi="${esc(x.id)}">${L('In questa scena', 'In this scene', 'En esta escena')}</button>` : ''}</div></li>`;
+  return `<li class="studio-remoto">
+    <div class="sr-testa"><span class="sr-stato ${cl}">${esc(testo)}</span><strong>${esc(x.nome)}</strong>${q}${batt}${muto}${prot ? `<span class="badge viola">${L('protagonista', 'main shot', 'protagonista')}</span>` : ''}</div>
+    <div class="sr-azioni">
+      ${on ? `<button type="button" class="btn mini" ${prot ? 'data-rem-rilascia' : 'data-rem-prot'}="${esc(x.id)}">${prot ? L('Torna alla scena di prima', 'Back to the previous scene', 'Vuelve a la escena anterior') : L('Fallo protagonista', 'Make it the main shot', 'Hazlo protagonista')}</button>
+      <button type="button" class="btn secondario mini" data-rem-aggiungi="${esc(x.id)}">${L('Aggiungi a questa scena', 'Add to this scene', 'Añadir a esta escena')}</button>
+      <button type="button" class="btn secondario mini" data-rem-cmd="gira" data-rem-id="${esc(x.id)}">${L('Gira', 'Flip', 'Girar')}</button>
+      ${info.cam?.torcia ? `<button type="button" class="btn secondario mini" data-rem-cmd="torcia" data-rem-id="${esc(x.id)}">${L('Torcia', 'Torch', 'Linterna')}</button>` : ''}
+      <button type="button" class="btn secondario mini" data-rem-cmd="qualita" data-rem-v="720p30" data-rem-id="${esc(x.id)}" aria-pressed="${qual === '720p30'}">720p</button>
+      <button type="button" class="btn secondario mini" data-rem-cmd="qualita" data-rem-v="1080p30" data-rem-id="${esc(x.id)}" aria-pressed="${qual === '1080p30'}">1080p</button>` : ''}
+      <label class="riga-check"><input type="checkbox" data-rem-comanda="${esc(x.id)}"${x.comanda ? ' checked' : ''}> ${L('Può fare regia', 'Can run the show', 'Puede llevar el control')}</label>
+      <button type="button" class="btn secondario mini" data-rem-nome="${esc(x.id)}">${L('Rinomina', 'Rename', 'Renombrar')}</button>
+      <button type="button" class="btn secondario mini pericolo" data-rem-togli="${esc(x.id)}">${L('Togli', 'Remove', 'Quitar')}</button>
+    </div>
+  </li>`;
+}
+
+function renderStudioRemoti() {
+  const el = document.getElementById('studio-remoti'); if (!el || !STUDIO.doc) return;
+  const R = STUDIO.rem, voci = studioRemotiVoci();
+  const st = { apre: L('Apro la regia dei dispositivi…', 'Opening the devices control room…', 'Abriendo el control de los dispositivos…'), ricollego: L('Ricollego al server…', 'Reconnecting to the server…', 'Reconectando con el servidor…'), altrove: L('La regia dei dispositivi è in un’altra finestra dello Studio.', 'The devices control room is in another Studio window.', 'El control de los dispositivos está en otra ventana del Estudio.'), occupata: L('La regia è in diretta da un’altra finestra: i dispositivi sono collegati lì.', 'The control room is live from another window: the devices are connected there.', 'El control está en directo desde otra ventana: los dispositivos están conectados allí.'), telefono: L('La regia è aperta su un altro dispositivo.', 'The control room is open on another device.', 'El control está abierto en otro dispositivo.') }[R.stato] || '';
+  el.innerHTML = `${st ? `<p class="suggerimento">${esc(st)}${['altrove', 'telefono'].includes(R.stato) ? ` <button type="button" class="btn secondario mini" data-rem-qui="1">${L('Fai la regia da qui', 'Run the control room from here', 'Lleva el control desde aquí')}</button>` : ''}</p>` : ''}
+    ${htmlInvitoRemoti(false)}
+    ${voci.length ? `<ul class="studio-lista studio-remoti-lista">${voci.map((x) => htmlVoceRemoto(x, false)).join('')}</ul>` : `<p class="suggerimento">${L('Nessun dispositivo ancora. Un telefono collegato diventa un’inquadratura in più, o il protagonista quando cambi stanza o esci: la regia resta qui.', 'No devices yet. A connected phone becomes an extra shot, or the main shot when you change room or go out: the control room stays here.', 'Ningún dispositivo todavía. Un teléfono conectado se convierte en un plano más, o en el protagonista cuando cambias de habitación o sales: el control se queda aquí.')}</p>`}
+    ${R.turn ? '' : `<p class="suggerimento">${L('Il video va dritto dal dispositivo al computer. Se le due reti non si parlano (capita con alcune reti mobili), collega il telefono alla stessa Wi-Fi del computer.', 'The video goes straight from the device to the computer. If the two networks cannot reach each other (it happens with some mobile networks), connect the phone to the computer’s Wi-Fi.', 'El vídeo va directo del dispositivo al ordenador. Si las dos redes no se hablan (pasa con algunas redes móviles), conecta el teléfono a la misma Wi-Fi del ordenador.')}</p>`}`;
+  studioRemotiScadenza();
+}
+
 async function studioCapSchermo() {
   if (DEMO) { toast(L('In demo la condivisione non parte', 'In demo sharing won’t start', 'En demo la compartición no arranca')); return false; }
   try {
@@ -22460,7 +22781,7 @@ function studioAddFonte(tipo, extra) {
   if (tipo === 'overlay' && s.fonti.some((f) => f.tipo === 'overlay')) { toast(L('L\'overlay è già nella scena.', 'The overlay is already in the scene.', 'El overlay ya está en la escena.')); return null; }
   if (s.fonti.length >= STUDIO.M.LIMITI.fonti) { toast(L('Questa scena ha già tutte le fonti che può avere.', 'This scene already has as many sources as allowed.', 'Esta escena ya tiene todas las fuentes posibles.'), 'errore'); return null; }
   const ovId = tipo === 'overlay' ? (document.getElementById('studio-ov-sel')?.value || studioOverlayDi(null)) : '';
-  const f = STUDIO.M.nuovaFonte(tipo, { nome: extra?.nome || (tipo === 'overlay' && ovId ? studioOverlayNome(ovId) : studioEtichetta(tipo)), media: extra?.media || null, testo: L('Testo', 'Text', 'Texto'), overlay: ovId });
+  const f = STUDIO.M.nuovaFonte(tipo, { nome: extra?.nome || (tipo === 'overlay' && ovId ? studioOverlayNome(ovId) : studioEtichetta(tipo)), media: extra?.media || null, testo: L('Testo', 'Text', 'Texto'), overlay: ovId, dispositivo: extra?.dispositivo || '' });
   if (!f) return null;
   s.fonti.push(f); STUDIO.sel = f.id;
   document.getElementById('studio-add-menu')?.removeAttribute('open');
@@ -22472,6 +22793,15 @@ async function studioAggiungi(tipo) {
   if (tipo === 'webcam') { if (await studioCapWebcam()) studioAddFonte('webcam'); return; }
   if (tipo === 'schermo') { if (await studioCapSchermo()) studioAddFonte('schermo'); return; }
   if (tipo === 'immagine' || tipo === 'video') { studioScegliFile(tipo); return; }
+  if (tipo === 'remota') {
+    const pronti = studioRemotiVoci().filter((x) => x.v?.stato === 'collegato');
+    document.getElementById('studio-add-menu')?.removeAttribute('open');
+    if (pronti.length === 1) { studioRemotoAggiungi(pronti[0].id); return; }
+    if (!pronti.length && !STUDIO.rem.invito) studioRemotiInvita();
+    document.querySelector('.studio-dock-remoti')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    if (pronti.length) toast(L('Scegli quale dispositivo nel pannello «Dispositivi».', 'Pick which device in the “Devices” panel.', 'Elige qué dispositivo en el panel «Dispositivos».'));
+    return;
+  }
   studioAddFonte(tipo);
 }
 
@@ -22537,7 +22867,7 @@ async function studioRiportaMedia() {
   renderStudioUI(); renderStudioFonti(); renderStudioProp();
 }
 
-const studioManca = (f) => (f.tipo === 'immagine' || f.tipo === 'video') ? !STUDIO.media[f.media?.impronta] : (f.tipo === 'webcam' ? !STUDIO.cap.camEl : (f.tipo === 'schermo' ? !STUDIO.cap.scrEl : false));
+const studioManca = (f) => (f.tipo === 'immagine' || f.tipo === 'video') ? !STUDIO.media[f.media?.impronta] : (f.tipo === 'webcam' ? !STUDIO.cap.camEl : (f.tipo === 'schermo' ? !STUDIO.cap.scrEl : (f.tipo === 'remota' ? !studioRemotoVideo(f.dispositivo) : false)));
 
 function studioSpostaFonte(id, dir) {
   const s = studioSceneAttiva(); if (!s) return;
@@ -22581,8 +22911,8 @@ function studioAudioInit() {
   const mkAn = () => { const a = ac.createAnalyser(); a.fftSize = 256; a.smoothingTimeConstant = 0.6; return a; };
   const an = { mic: mkAn(), desk: mkAn(), sfx: mkAn(), media: mkAn(), master: mkAn() };
   gMic.connect(an.mic); gDesk.connect(an.desk); gSfx.connect(an.sfx); gMedia.connect(an.media); gMaster.connect(an.master);
-  STUDIO.audio = { ac, dest, gMaster, gMic, gDesk, gSfx, gMedia, micNode: null, deskNode: null, mediaConnessi: new Set(), an };
-  collegaAudioCatture(); collegaAudioMedia(); applicaMix(); avviaVU();
+  STUDIO.audio = { ac, dest, gMaster, gMic, gDesk, gSfx, gMedia, micNode: null, deskNode: null, mediaConnessi: new Set(), an, rem: new Map(), mkAn };
+  collegaAudioCatture(); collegaAudioMedia(); collegaAudioRemoti(); applicaMix(); avviaVU();
   return dest.stream;
 }
 
@@ -22611,9 +22941,32 @@ function collegaAudioMedia() {
   }
 }
 
+function studioMixRemoto(id) { const k = 'rem:' + id; if (!STUDIO.mix[k]) STUDIO.mix[k] = { vol: 100, mute: false }; return STUDIO.mix[k]; }
+
+function collegaAudioRemoti() {
+  const A = STUDIO.audio, R = STUDIO.rem; if (!A || !A.rem || !R.regia) return;
+  for (const v of R.regia.remoti.values()) {
+    const tr = v.stream?.getAudioTracks()[0] || null, r = A.rem.get(v.id);
+    if (r && r.tr === tr) continue;
+    if (r?.nodo) { try { r.nodo.disconnect(); } catch (e) { void e; } }
+    if (!tr) { if (r) r.tr = null; continue; }
+    try {
+      const nodo = A.ac.createMediaStreamSource(new MediaStream([tr]));
+      const gain = r?.gain || A.ac.createGain(), an = r?.an || A.mkAn();
+      nodo.connect(gain);
+      if (!r) { gain.connect(A.gMaster); gain.connect(an); }
+      A.rem.set(v.id, { tr, nodo, gain, an });
+    } catch (e) { void e; }
+  }
+  applicaMix();
+}
+
 function applicaMix() {
   const A = STUDIO.audio, m = STUDIO.mix; if (!A) return;
-  A.gMic.gain.value = m.mic.mute || studioScena(STUDIO.doc?.inOnda)?.muta ? 0 : m.mic.vol / 100;
+  const connessi = STUDIO.rem.regia ? [...STUDIO.rem.regia.remoti.values()].filter((v) => v.stream?.getAudioTracks().length).map((v) => v.id) : [];
+  const mi = STUDIO.M ? STUDIO.M.microfoniInOnda(studioScena(STUDIO.doc?.inOnda), connessi) : { computer: !studioScena(STUDIO.doc?.inOnda)?.muta, dispositivi: [] };
+  A.gMic.gain.value = m.mic.mute || !mi.computer ? 0 : m.mic.vol / 100;
+  for (const [id, r] of (A.rem || new Map())) { const c = studioMixRemoto(id); r.gain.gain.value = c.mute || !mi.dispositivi.includes(id) ? 0 : c.vol / 100; }
   A.gDesk.gain.value = m.desk.mute ? 0 : m.desk.vol / 100;
   A.gSfx.gain.value = m.sfx.mute ? 0 : m.sfx.vol / 100;
   if (A.gMedia) A.gMedia.gain.value = m.media.mute ? 0 : m.media.vol / 100;
@@ -22631,6 +22984,10 @@ function avviaVU() {
     for (const k of ['mic', 'desk', 'media', 'sfx', 'master']) {
       const bar = document.querySelector(`.mix-vu-barra[data-vu="${k}"]`);
       if (bar && an[k]) bar.style.setProperty('--q', livello(an[k]).toFixed(3));
+    }
+    for (const [id, r] of (STUDIO.audio.rem || new Map())) {
+      const bar = document.querySelector(`.mix-vu-barra[data-vu="rem:${CSS.escape(id)}"]`);
+      if (bar && r.an) bar.style.setProperty('--q', livello(r.an).toFixed(3));
     }
     STUDIO.vuRaf = requestAnimationFrame(tick);
   };
@@ -22986,6 +23343,7 @@ async function caricaStudio() {
   studioAggiornaMobile();
   if (!STUDIO.doc) await studioCaricaScene();
   if (!STUDIO.cap.camEl) studioCamRileggi();
+  studioRemotiPrepara();
   try { const q = localStorage.getItem('andrybot-studio-qual:' + studioChi()); if (q && STUDIO_QUAL[q]) STUDIO.qual = q; } catch (e) {  }
   studioApplicaQualita(STUDIO.qual);
   avviaLoopStudio();
@@ -23115,7 +23473,7 @@ function renderStudioTutto() {
   if (!STUDIO.doc) return;
   studioAggiornaMobile();
   studioMontaTele();
-  renderStudioLavoro(); renderStudioScene(); renderStudioPreset(); renderStudioOverlay(); renderStudioFonti(); renderStudioUI(); renderStudioProp(); renderStudioMixer(); renderStudioTransizioni(); renderStudioControlli(); renderStudioMobile();
+  renderStudioLavoro(); renderStudioScene(); renderStudioPreset(); renderStudioOverlay(); renderStudioFonti(); renderStudioUI(); renderStudioProp(); renderStudioMixer(); renderStudioTransizioni(); renderStudioControlli(); renderStudioMobile(); renderStudioRemoti();
   if (STUDIO.tel?.aperta) renderStudioTel();
 }
 
@@ -23135,6 +23493,7 @@ function studioCambiaLavoro(f) {
 function renderStudioScene() {
   const el = document.getElementById('studio-scene'); if (!el || !STUDIO.doc) return;
   const d = STUDIO.doc, mod = studioModalita(), ed = studioSceneAttiva();
+  const au = document.getElementById('studio-scena-audio'); if (au && ed) au.value = ed.muta ? 'muta' : ed.audio;
   el.innerHTML = d.scene.map((s) => {
     const onda = s.id === d.inOnda, ant = mod && s.id === d.anteprima;
     return `<li><button type="button" class="studio-scena${s === ed ? ' attiva' : ''}${onda ? ' in-onda' : ''}" data-scena="${esc(s.id)}" aria-current="${s === ed}">${_bIco(ICO.scene)}<span>${esc(s.nome)}</span>${onda ? `<span class="studio-tag-onda">${L('in onda', 'on air', 'en el aire')}</span>` : ''}${ant && !onda ? `<span class="studio-tag-ant">${L('anteprima', 'preview', 'vista previa')}</span>` : ''}</button></li>`;
@@ -23242,6 +23601,7 @@ function renderStudioFonti() {
 }
 
 function studioAzioneManca(f) {
+  if (f.tipo === 'remota') return `<button type="button" class="btn secondario mini" data-rem-invita="1">${L('Collega un dispositivo', 'Connect a device', 'Conecta un dispositivo')}</button>`;
   if (f.tipo === 'webcam') return `<button type="button" class="btn secondario mini" data-cap-webcam="1">${L('Accendi la webcam', 'Turn on the webcam', 'Enciende la webcam')}</button>`;
   if (f.tipo === 'schermo') return `<button type="button" class="btn secondario mini" data-cap-schermo="1">${L('Condividi lo schermo', 'Share the screen', 'Compartir la pantalla')}</button>`;
   return `<button type="button" class="btn secondario mini" data-ricollega="${esc(f.id)}">${L('Ricarica questo file', 'Load this file again', 'Vuelve a cargar este archivo')}</button>`;
@@ -23328,7 +23688,8 @@ function renderStudioMixer() {
     + canale('mic', L('Microfono', 'Microphone', 'Micrófono'), micOn, m.mic, micOn ? '' : `<button type="button" class="btn secondario mini" data-cap="mic">${L('Attiva', 'Enable', 'Activar')}</button>`)
     + canale('desk', L('Audio dello schermo', 'Screen audio', 'Audio de la pantalla'), deskOn, m.desk, deskOn ? '' : `<span class="tenue">${L('condividi lo schermo con audio', 'share the screen with audio', 'comparte la pantalla con audio')}</span>`)
     + canale('media', L('Audio dei video', 'Video audio', 'Audio de los vídeos'), mediaOn, m.media, mediaOn ? '' : `<span class="tenue">${L('aggiungi un video con audio', 'add a video with sound', 'añade un vídeo con audio')}</span>`)
-    + canale('sfx', L('Effetti e alert', 'Effects and alerts', 'Efectos y alertas'), true, m.sfx, '');
+    + canale('sfx', L('Effetti e alert', 'Effects and alerts', 'Efectos y alertas'), true, m.sfx, '')
+    + [...(STUDIO.rem.regia?.remoti.values() || [])].filter((v) => v.collegato).map((v) => canale('rem:' + v.id, v.nome || L('Dispositivo', 'Device', 'Dispositivo'), !!v.stream?.getAudioTracks().length, studioMixRemoto(v.id), `<span class="tenue">${esc(studioRemotoAudioNota(v.id))}</span>`)).join('');
 }
 
 function renderStudioTransizioni() {
@@ -23426,7 +23787,8 @@ function studioTelApri() {
   studioMontaTele();
   studioTelLeggiBatteria();
   renderStudioTel();
-  if (!studioTelScelte().scenario) studioTelFoglio('prepara');
+  if (STUDIO.rem.stato === 'telefono') studioTelFoglio('regia-altrove');
+  else if (!studioTelScelte().scenario) studioTelFoglio('prepara');
 }
 
 function studioTelChiudi() {
@@ -23567,6 +23929,7 @@ function renderStudioTelFoglio() {
     el.innerHTML = `<div class="tel-foglio-testa"><h3>${L('Altro', 'More', 'Más')}</h3>${chiudi}</div>
       <div class="tel-griglia">
         <button type="button" class="tel-grande" data-tel="camera">${_bIco(ICO.fotocamera)}${L('Fotocamera', 'Camera', 'Cámara')}</button>
+        <button type="button" class="tel-grande" data-tel="dispositivi">${_bIco(ICO.telefono)}${L('Dispositivi', 'Devices', 'Dispositivos')}</button>
         <button type="button" class="tel-grande" data-tel="blocca">${_bIco(ICO.lucchetto)}${L('Blocca i tocchi', 'Lock touches', 'Bloquear toques')}</button>
         ${live && studioDestScelte().has('twitch') ? `<button type="button" class="tel-grande" data-tel="clip">${_bIco(ICO.clip)}${L('Fai una clip', 'Make a clip', 'Haz un clip')}</button>` : ''}
         <button type="button" class="tel-grande${sc.vibra ? ' attivo' : ''}" data-tel="vibra" aria-pressed="${sc.vibra}">${_bIco(ICO.telefono)}${L('Vibra agli alert', 'Vibrate on alerts', 'Vibrar con alertas')}</button>
@@ -23578,6 +23941,23 @@ function renderStudioTelFoglio() {
       ${STUDIO.ov.list.length > 1 ? `<label class="tel-etichetta">${L('Overlay di questa scena', 'This scene’s overlay', 'Overlay de esta escena')}<select class="tel-campo" data-tel-overlay>${studioOpzioniOverlay(studioOverlayInOnda() || studioOverlayDi(null))}</select></label>` : ''}
       ${mics.length > 1 ? `<label class="tel-etichetta">${L('Microfono', 'Microphone', 'Micrófono')}<select class="tel-campo" data-tel-mic><option value="">${L('Quello del telefono', 'The phone’s own', 'El del teléfono')}</option>${mics.map((m, i) => `<option value="${esc(m.deviceId)}"${m.deviceId === STUDIO.dev.micId ? ' selected' : ''}>${esc(m.label || L('Microfono ', 'Microphone ', 'Micrófono ') + (i + 1))}</option>`).join('')}</select></label>
       <p class="tel-nota">${L('Cuffie col filo, AirPods o un microfono esterno: collegali e sceglili qui.', 'Wired headphones, AirPods or an external mic: connect them and pick them here.', 'Auriculares con cable, AirPods o un micrófono externo: conéctalos y elígelos aquí.')}</p>` : ''}`;
+    return;
+  }
+  if (T.foglio === 'dispositivi') {
+    const voci = studioRemotiVoci();
+    el.innerHTML = `<div class="tel-foglio-testa"><h3>${L('Dispositivi', 'Devices', 'Dispositivos')}</h3>${chiudi}</div>
+      <p class="tel-nota">${L('Un altro telefono collegato diventa un’inquadratura in più, o il protagonista: la regia resta qui.', 'Another connected phone becomes an extra shot, or the main shot: the control room stays here.', 'Otro teléfono conectado se convierte en un plano más, o en el protagonista: el control se queda aquí.')}</p>
+      ${htmlInvitoRemoti(true)}
+      ${voci.length ? `<ul class="tel-check studio-remoti-lista">${voci.map((x) => htmlVoceRemoto(x, true)).join('')}</ul>` : ''}`;
+    studioRemotiScadenza();
+    return;
+  }
+  if (T.foglio === 'regia-altrove') {
+    el.innerHTML = `<div class="tel-foglio-testa"><h3>${L('La regia è sul computer', 'The control room is on the computer', 'El control está en el ordenador')}</h3>${chiudi}</div>
+      <p>${L('Lo Studio è aperto su un altro dispositivo. Questo telefono può diventare una sua fotocamera: mandi video e voce, cambi scena, leggi la chat; la diretta la fa il computer.', 'The Studio is open on another device. This phone can become one of its cameras: you send video and voice, switch scenes, read the chat; the computer runs the stream.', 'El Estudio está abierto en otro dispositivo. Este teléfono puede ser una de sus cámaras: mandas vídeo y voz, cambias de escena, lees el chat; el directo lo hace el ordenador.')}</p>
+      <button type="button" class="tel-grande primario" data-tel="unisciti">${_bIco(ICO.fotocamera)}${L('Collega come fotocamera', 'Connect as a camera', 'Conectar como cámara')}</button>
+      <button type="button" class="tel-grande" data-rem-qui="1">${_bIco(ICO.onda)}${L('Fai la regia da questo telefono', 'Run the control room from this phone', 'Lleva el control desde este teléfono')}</button>
+      ${STUDIO.rem.presenza?.live ? `<p class="tel-nota">${L('Il computer è in diretta: la regia resta lì finché non la chiudi.', 'The computer is live: the control room stays there until you end it.', 'El ordenador está en directo: el control se queda allí hasta que lo cierres.')}</p>` : ''}`;
     return;
   }
   if (T.foglio === 'camera') {
@@ -23896,7 +24276,8 @@ function studioTelAzione(azione, el) {
   if (azione === 'apri') return studioTelApri();
   if (azione === 'esci') { if (T.aperta) { try { if (history.state?.studioTel) history.back(); else studioTelChiudi(); } catch (e) { studioTelChiudi(); } } return; }
   if (azione === 'foglio-chiudi' || azione === 'fatto') { if (T.foglio === 'prepara') studioTelSalvaCanale(); T.foglio = ''; renderStudioTelFoglio(); return; }
-  if (azione === 'prepara' || azione === 'altro' || azione === 'chat' || azione === 'camera') { if (T.foglio === 'prepara' && azione !== 'prepara') studioTelSalvaCanale(); return studioTelFoglio(azione); }
+  if (azione === 'unisciti') { location.href = '/cam?io=1&lang=' + encodeURIComponent(LINGUA); return; }
+  if (azione === 'prepara' || azione === 'altro' || azione === 'chat' || azione === 'camera' || azione === 'dispositivi') { if (T.foglio === 'prepara' && azione !== 'prepara') studioTelSalvaCanale(); return studioTelFoglio(azione); }
   if (azione === 'vai') return studioTelVai();
   if (azione === 'conto') return studioTelAnnullaConto();
   if (azione === 'mic') {
@@ -23971,6 +24352,30 @@ async function onStudioClick(ev) {
   const tch = t.closest('[data-tel-chat]'); if (tch) { STUDIO.doc.scelte.telefono.chat = tch.dataset.telChat; studioSporco(); renderStudioTel(); return; }
   const tca = t.closest('[data-tel-cat]'); if (tca) { const T = studioTelStato(); T.categoria = T.categoria === tca.dataset.telCat ? '' : tca.dataset.telCat; renderStudioTelFoglio(); return; }
   const len = t.closest('[data-tel-lente]'); if (len) return conErrore(() => studioScegliLente(len.dataset.telLente));
+  if (t.closest('[data-rem-invita]')) return conErrore(() => studioRemotiInvita());
+  const rp = t.closest('[data-rem-prot]'); if (rp) return studioRemotoProtagonista(rp.dataset.remProt);
+  const rr = t.closest('[data-rem-rilascia]'); if (rr) return studioRemotoRilascia(rr.dataset.remRilascia);
+  const ra = t.closest('[data-rem-aggiungi]'); if (ra) return studioRemotoAggiungi(ra.dataset.remAggiungi);
+  const rcm = t.closest('[data-rem-cmd]'); if (rcm) { STUDIO.rem.regia?.manda(rcm.dataset.remId, { t: 'cam', cmd: rcm.dataset.remCmd, v: rcm.dataset.remV || '' }); return; }
+  if (t.closest('[data-rem-copia]')) { await copiaTesto(STUDIO.rem.invito?.url || '', L('Link copiato: mandalo al telefono che fa da fotocamera.', 'Link copied: send it to the phone that will be the camera.', 'Enlace copiado: mándalo al teléfono que hará de cámara.')); return; }
+  if (t.closest('[data-rem-qui]')) { STUDIO.rem.stato = 'spento'; studioRemotiAvvia(); renderStudioRemoti(); if (STUDIO.tel?.aperta) { STUDIO.tel.foglio = ''; renderStudioTelFoglio(); } return; }
+  const rn = t.closest('[data-rem-nome]');
+  if (rn) return conErrore(async () => {
+    const id = rn.dataset.remNome;
+    const nome = await chiediTesto({ titolo: L('Come si chiama questo dispositivo?', 'What is this device called?', '¿Cómo se llama este dispositivo?'), valore: studioRemotoNome(id), ok: L('Salva', 'Save', 'Guardar'), max: 40 });
+    if (!nome) return;
+    await apiServer('/api/studio/dispositivi/' + encodeURIComponent(id), { method: 'POST', body: { nome } });
+    studioRemotiElenco();
+  });
+  const rt = t.closest('[data-rem-togli]');
+  if (rt) return conErrore(async () => {
+    const id = rt.dataset.remTogli;
+    if (!await chiediSe({ titolo: L('Tolgo questo dispositivo?', 'Remove this device?', '¿Quito este dispositivo?'), testo: L('Si scollega subito e la sua chiave smette di valere: per tornare gli servirà un codice nuovo (al tuo telefono, entrato col tuo account, no).', 'It disconnects right away and its key stops working: it will need a new code to come back (your own phone, logged in with your account, will not).', 'Se desconecta enseguida y su clave deja de valer: para volver necesitará un código nuevo (tu teléfono, con tu cuenta, no).'), si: L('Toglilo', 'Remove it', 'Quítalo'), pericolo: true })) return;
+    await apiServer('/api/studio/dispositivi/' + encodeURIComponent(id) + '/togli', { method: 'POST' });
+    if (STUDIO.rem.prot?.id === id) studioRemotoRilascia(id);
+    STUDIO.rem.regia?.togli(id);
+    studioRemotiElenco();
+  });
   const zp = t.closest('[data-cam-zoomp]'); if (zp) return studioCamZoom(Number(zp.dataset.camZoomp));
   const ad = t.closest('[data-cam-adatta]'); if (ad) return studioCamAdatta(ad.dataset.camAdatta);
   const tq = t.closest('[data-tel-qual]'); if (tq) { studioApplicaQualita(tq.dataset.telQual); studioRenderIO(); studioControllaSupporto(); renderStudioTelFoglio(); return; }
@@ -24048,6 +24453,8 @@ function onStudioInput(ev) {
   if (t.dataset.telOverlay !== undefined) { studioScegliOverlay(t.value); renderStudioTelFoglio(); return; }
   if (t.id === 'studio-qual-sel') { studioApplicaQualita(t.value); studioControllaSupporto(); return; }
   if (t.dataset.camZoom !== undefined) { studioCamZoom(Number(t.value), false); return; }
+  if (t.id === 'studio-scena-audio') { const sc = studioSceneAttiva(); if (sc) { if (t.value === 'muta') sc.muta = true; else { sc.muta = false; sc.audio = STUDIO.M.AUDIO_SCENA.includes(t.value) ? t.value : 'computer'; } applicaMix(); studioSporco(); renderStudioMixer(); if (STUDIO.tel?.aperta) renderStudioTel(); } return; }
+  if (t.dataset.remComanda !== undefined) { const id = t.dataset.remComanda; conErrore(async () => { await apiServer('/api/studio/dispositivi/' + encodeURIComponent(id), { method: 'POST', body: { comanda: t.checked } }); studioRemotiElenco(); }); return; }
   if (t.dataset.camLuce !== undefined) { studioCamLuce(t.value); return; }
   if (t.dataset.telMic !== undefined) { conErrore(() => studioCambiaMic(t.value)); return; }
   if (t.dataset.camSpecchio !== undefined && t.type === 'checkbox') { if (t.checked !== STUDIO.cam.specchio) studioCamSpecchia(); return; }

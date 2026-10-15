@@ -6,9 +6,9 @@
   var PASSI = [1000, 2000, 4000, 8000, 15000];
   var ora = function () { return (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now(); };
 
-  function apri(url, o) {
+  function apri(sorgente, o) {
     o = o || {};
-    var es = null, chiuso = false, caduto = false, tentativi = 0, timer = 0, guardia = 0;
+    var es = null, chiuso = false, caduto = false, tentativi = 0, timer = 0, guardia = 0, chiesta = 0;
     var ultimo = ora(), apertoUnaVolta = false;
 
     function passo() { return PASSI[Math.min(tentativi++, PASSI.length - 1)]; }
@@ -24,7 +24,20 @@
     function collega() {
       if (chiuso) return;
       if (es) { try { es.close(); } catch (e) {} }
+      es = null;
       ultimo = ora();
+      if (typeof sorgente !== 'function') { apriSu(sorgente); return; }
+      var mia = ++chiesta, scade = 0;
+      var scaduta = new Promise(function (_, no) { scade = setTimeout(function () { no(new Error('tempo')); }, 15000); });
+      Promise.race([Promise.resolve().then(sorgente), scaduta]).then(function (url) {
+        clearTimeout(scade);
+        if (!chiuso && mia === chiesta) apriSu(url);
+      }, function () {
+        clearTimeout(scade);
+        if (!chiuso && mia === chiesta) { segnaCaduta(); riapri(passo()); }
+      });
+    }
+    function apriSu(url) {
       try { es = new EventSource(url); }
       catch (e) { es = null; segnaCaduta(); riapri(passo()); return; }
       es.onopen = function () {

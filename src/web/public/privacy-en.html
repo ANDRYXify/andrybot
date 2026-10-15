@@ -184,6 +184,15 @@
           Images, GIFs and videos stay on their device and never reach us. We also note that they asked to try the beta. On a phone the controls read the battery and the network type, where the
           browser provides them, and the voice that reads the chat is the phone's own: none of this reaches us. The chosen camera (which
           lens, front or back) and the mirror setting also stay in the device's browser.</li>
+        <li><strong>Devices connected to the Studio</strong>, if the streamer connects any: a phone, a tablet or another
+          computer acting as a camera for their control room. Video and voice go straight from the device to the control room
+          computer, encrypted end to end: we only pass the messages the two use to find each other (they contain the network
+          addresses of both devices), without keeping them. If the server has a relay for networks that cannot reach each
+          other, the video goes through the relay, still encrypted, and is not recorded. For each device we keep the name it
+          was given (encrypted), the fingerprint of its key (the key stays only in its browser), whether it can run the show,
+          and when it was created and last seen; the streamer removes it from the control room whenever they like, and
+          deleting the account removes everything. Invites and codes stay only in memory and last ten minutes. The device's
+          battery and network go to the control room, not to us.</li>
         <li><strong>The streamer's own words</strong>, to learn how they talk: the phrases they say with the listening page
           open, if they turn on «Learns while I talk», and the messages they write from their linked Telegram account. We
           keep their last 60 phrases. Only theirs: the bot doesn't learn anyone else's way of talking. From other people's

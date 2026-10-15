@@ -84,7 +84,7 @@ const RE_AUTENTICAZIONE = /^\/(accedi|auth|sblocca|api\/passkey|api\/cambia-cana
 // Kick riceveva 404 dal cancello mentre qui era gia' esente.
 const RE_FLUSSO = /\/stream$/;
 const RE_CARICAMENTO = /^\/api\/(streamer\/(effetti|font|sfondi)|alert\/media)|\/media(\/|$)/;
-const RE_TEMPO_REALE = /^\/api\/(tracking|gsi)\//;
+const RE_TEMPO_REALE = /^\/api\/(tracking|gsi|cam|studio\/regia)\//;
 
 // A che classe appartiene questa richiesta? null = non si limita.
 export function classifica(metodo, percorso, multipart = false) {

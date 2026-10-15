@@ -450,6 +450,153 @@ hanno «L'immagine nel riquadro» e i due cursori per spostarla; sotto la
 scelta della fotocamera, lo zoom e lo specchio. Un microfono o una fotocamera
 attaccati dopo compaiono da soli.
 
+### Più dispositivi, una regia
+
+Chi fa IRL, o vuole cambiare stanza senza portarsi dietro il computer, collega
+alla regia il telefono: anche più di uno, un tablet, un altro computer. Il
+computer con lo Studio aperto fa il lavoro pesante: compone le scene, codifica,
+manda alle piattaforme. I dispositivi mandano solo il loro video e la loro
+voce, e diventano:
+
+- **un'inquadratura in più**: la fonte «Telefono o altro dispositivo», in
+  qualunque scena, che si sposta, si inquadra e si zooma come una webcam;
+- **il protagonista**: «Fallo protagonista» crea (o ritrova) la sua scena, col
+  suo video a tutta tela sotto l'overlay e la sua voce, e la manda in onda. In
+  quella scena il microfono del computer tace. È una scena come le altre: lo
+  streamer la cambia come vuole, e i microfoni di ogni scena si scelgono.
+
+Il controllo resta alla regia del computer, in tutti e due i casi.
+
+**Il modello.** Tre ruoli. La REGIA è una finestra dello Studio del
+proprietario, una per canale. Il DISPOSITIVO manda video e audio alla regia e
+non codifica niente per le piattaforme. COMANDA è un diritto in più: dal
+dispositivo si cambia anche scena, si prende la scena, si legge la chat, si
+chiude la diretta tenendo premuto. Ce l'ha di serie il telefono dello
+streamer entrato col suo account; non ce l'ha chi entra col QR (un amico che
+fa da operatore); si cambia dalla regia, dispositivo per dispositivo.
+
+**Come si collega.**
+- Dalla regia, «Collega un telefono» mostra un QR, un link e un codice di sei
+  cifre: valgono una volta e per dieci minuti. Il telefono inquadra il QR (o
+  apre `socialbot.live/cam` e scrive il codice), si dà un nome e si collega.
+  Da quel momento si ricorda: torna con un tocco, senza codice.
+- Il telefono dello streamer, già entrato col suo account: lo Studio aperto
+  sul telefono, se la regia è sul computer, propone «Collega come
+  fotocamera». Niente codice, e riusa la sua chiave: ricollegarlo non crea un
+  dispositivo nuovo.
+
+**Cosa vede chi è inquadrato.** Bordo rosso e «IN ONDA» quando la sua
+immagine è nella scena in onda (in uno dei formati che vanno in diretta),
+verde e «IN ANTEPRIMA» nella modalità studio, niente altrimenti; il telefono
+vibra quando entra in onda. Poi la qualità della rete, la batteria, lo
+schermo che resta acceso, e i tasti: microfono, gira, zoom (il suo, o quello
+della regia se la fotocamera non ne ha uno), obiettivo, torcia. Il foglio
+«Altro» stacca la fotocamera (con «Ricollega» per tornare) o la dimentica.
+
+**I microfoni della scena.** Ogni scena dice quali microfoni vanno in onda:
+quello del computer (di serie), quelli dei dispositivi che si vedono nella
+scena, tutti e due, o nessuno (pausa). Un dispositivo che non si vede in
+scena non parla. Il mixer ha un canale per dispositivo, col suo volume.
+
+**Se il protagonista si perde.** Resta l'ultimo fotogramma; dopo 5 secondi
+senza segnale si torna alla scena di prima (o alla prima scena senza di lui),
+e la regia lo dice. Quando torna, e in onda c'è ancora la scena di ripiego,
+dopo 2 secondi di segnale buono si torna a lui da soli. Se intanto lo
+streamer ha scelto un'altra scena, vale la sua scelta.
+
+**La tenuta, corretta per costruzione.** Il video va da pari a pari; il
+server passa solo i segnali per trovarsi. Da qui gli invarianti:
+- un buco dei segnali (il server che si riavvia, un proxy, il telefono che
+  cambia antenna per un attimo) non tocca un collegamento vivo. Il telefono,
+  se la regia sparisce dai segnali ma il video passa, aspetta 10 secondi
+  prima di chiudere; la regia non chiude un collegamento vivo perché il
+  telefono è sparito dai segnali;
+- ogni regia ha un suo «giro»: la stessa finestra che si ricollega tiene il
+  suo, una finestra nuova (pagina ricaricata, altra scheda) ne ha uno nuovo,
+  e i dispositivi rifanno il collegamento da capo. Un riavvio del
+  collegamento (ICE restart) verso una regia che quella sessione non l'ha
+  mai vista girerebbe a vuoto: non si fa;
+- una regia in diretta non si ruba: un'altra finestra aspetta. Ferma, la
+  regia passa all'ultima finestra aperta, e la vecchia lo dice col tasto
+  «Fai la regia da qui»;
+- un collegamento che cade con la stessa regia si riprende da solo (ICE
+  restart dopo 4 secondi di silenzio); se in 20 secondi non riparte, si
+  rifà da capo e il telefono dice di provare la stessa Wi-Fi del computer;
+- i segnali arrivano per il flusso di sempre del sito (`flusso.js`: riapre
+  dopo un 502, sente il battito ogni 25 secondi e si accorge di un
+  collegamento rimasto appeso); il telefono a ogni apertura chiede un
+  biglietto nuovo, monouso, perché la sua chiave non stia in un indirizzo.
+
+**Quanti.** Ricordati fino a 8 per canale, collegati insieme fino a 4; il
+nono prende il posto di quello visto meno di recente e non collegato. Il
+computer decodifica un video per dispositivo: quattro 720p a 30 fotogrammi
+stanno in un portatile recente. La qualità (720p o 1080p) si sceglie dalla
+regia, dispositivo per dispositivo.
+
+**Sicurezza e dati.**
+- La chiave del dispositivo sta solo nel suo browser: il server ne tiene
+  l'impronta (sha256), il nome dato al dispositivo (cifrato), se comanda, e
+  quando è stato creato e visto. Togliere un dispositivo spegne subito la sua
+  chiave, e il telefono lo dice.
+- Il video è cifrato da un capo all'altro (DTLS-SRTP) e non passa dal server;
+  con il ponte TURN passa dal ponte, sempre cifrato, senza essere registrato.
+- I segnali passano solo fra la regia di un canale e i dispositivi di quel
+  canale; messaggi piccoli (24 KB), a numero limitato.
+- Inviti e biglietti per ascoltare stanno solo in memoria: monouso, dieci
+  minuti e un minuto. I codici sbagliati hanno un tetto per indirizzo (10 al
+  minuto) e in tutto (200 al minuto): chi prova da mille indirizzi non
+  indovina un codice di sei cifre nei dieci minuti in cui vale.
+- Batteria e rete del telefono vanno alla regia per il canale diretto, non al
+  server. Cancellare l'account dimentica dispositivi, inviti e collegamenti.
+
+**Quando le reti non si parlano.** Quasi sempre telefono e computer si
+trovano da soli, coi server STUN pubblici (Google, Cloudflare). Alcune reti
+mobili o aziendali non lo permettono: serve un ponte TURN. È facoltativo, e
+si fa con coturn:
+
+```
+# /etc/turnserver.conf
+listening-port=3478
+tls-listening-port=5349
+min-port=49152
+max-port=65535
+use-auth-secret
+static-auth-secret=<una parola lunga e casuale>
+realm=socialbot.live
+cert=/etc/letsencrypt/live/turn.socialbot.live/fullchain.pem
+pkey=/etc/letsencrypt/live/turn.socialbot.live/privkey.pem
+no-cli
+no-multicast-peers
+denied-peer-ip=10.0.0.0-10.255.255.255
+denied-peer-ip=172.16.0.0-172.31.255.255
+denied-peer-ip=192.168.0.0-192.168.255.255
+denied-peer-ip=127.0.0.0-127.255.255.255
+```
+
+Nel firewall: 3478 (UDP e TCP), 5349 (TCP), e 49152-65535 UDP. Nel `.env`:
+`TURN_URL=turn:turn.socialbot.live:3478,turns:turn.socialbot.live:5349` e
+`TURN_SEGRETO=` la stessa parola. Ai browser escono solo credenziali a tempo
+(sei ore), firmate con quella parola: la parola non esce mai. Il video che
+passa dal ponte conta nella banda del server. Senza ponte, la regia dice di
+mettere il telefono sulla stessa Wi-Fi del computer.
+
+**Dove sta.** Il salotto dei segnali in `src/features/studio-dispositivi.js`
+(puro, provato in `test/unita/studio-dispositivi.test.mjs`); le rotte in
+`src/web/rotte-dispositivi.js`; la pagina del telefono `cam.html`, `cam.js`
+e `js/studio-camera-remota.js`; la regia in `js/studio-remoti.js` e nello
+Studio. Il modello (fonte `remota`, microfoni della scena, protagonista,
+tally, ripiego) in `studio-modello.js`.
+
+**Il collaudo** (`scripts/verifica-studio-dispositivi.mjs`): una regia e dei
+telefoni veri, con la fotocamera finta di Chromium, in WebRTC attraverso le
+rotte vere e l'archivio cifrato. Misura il video che arriva e si disegna,
+il bordo rosso, il protagonista con la sua voce e il computer muto, chi
+comanda, la caduta e il ritorno, i buchi dei segnali (si tagliano dal
+server) che non staccano il video, la regia che passa a un'altra finestra,
+il telefono dello streamer che non si moltiplica, la revoca, e la pagina del
+telefono in verticale e di lato. Con `--selftest` rimette un difetto per
+promessa e li vuole rossi tutti.
+
 ## Dopo: le scene dell'Overlay Studio
 
 Il passo dopo: lo Studio della diretta parte anche dalle scene che lo

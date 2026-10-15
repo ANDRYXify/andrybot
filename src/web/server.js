@@ -26,7 +26,9 @@ import * as consolle from '../features/console.js';   // CONSOLify + tastiera fi
 import { makeLog } from '../logger.js';
 import { db, tokens, streamers, memory, clips, knowledge, QUANDO_CONOSCENZA, schedaPulita, effects as effectsDb, SCHERMI, normComando, baseDaFile, modules as modulesDb, MAX_MODULI, friends, sfondi as sfondiDb, carteLive, tgAttesa, tgScudo, paginaTelegram, TIPI_PAGINA_TELEGRAM, gsiStato, mortiSchede } from '../db.js';
 import { points, vips, tgConf, tgDest, amici, tgVisti, feedFonti, dcConf, passkeys, managers, quotes, battute, compleanni, membri, subscriptions, giochi as giochiDb, guide, GUIDE_MAX, pointAlerts, tgLogin, contatori, rapporti, postaStreamer, dcRuoli, dcLink, dcGiri, dcAccesso, dcDest, avvisiConf } from '../db.js';
-import { direttaDest, MAX_DESTINAZIONI, studioScene } from '../db.js';
+import { direttaDest, MAX_DESTINAZIONI, studioScene, studioDispositivi } from '../db.js';
+import { creaSalotto } from '../features/studio-dispositivi.js';
+import { montaDispositivi } from './rotte-dispositivi.js';
 import { linkPage, visitePagina, TEMPLATE_LINKPAGE, LIMITI_LINKPAGE, FONT_LINKPAGE, ICONE_LINKPAGE, TIPI_BLOCCO, TIPI_PAGINA_NEGOZIO, contiDonazioni, contiSatispay, registroDonazioni, paginaDona, paginaNegozio, paginaPannello, cartePagina, accessi, recensioni as recensioniDb, campagneDb, sito } from '../db.js';
 import { puoRecensire, validaRecensione, statoDopo, invitoAperto, rimandaFino, vetrinaDi, TESTO_MAX } from '../features/recensioni.js';
 import { funzioniCanale, concessioneDi } from '../features/accesso.js';
@@ -9000,6 +9002,16 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     res.json({ ok: true, versione: r.versione });
   });
 
+  // PIU' DISPOSITIVI, UNA REGIA (docs/DIRETTA.md): telefoni e altri computer
+  // come fotocamere della regia. Le rotte in rotte-dispositivi.js, che monta
+  // anche il collaudo da browser; qui le si danno i cancelli veri.
+  const turnAcceso = !!(config.turnUrl && config.turnSegreto);
+  const salotto = creaSalotto({ archivio: studioDispositivi, turn: turnAcceso ? { url: config.turnUrl, segreto: config.turnSegreto } : null });
+  montaDispositivi(app, {
+    salotto, proprietario: [requireOwner, studioAperto], loginDi: (req) => currentUser(req).login, studioPerMe, eLoginNostro,
+    camHtml: guscio.pagina('cam.html', '/cam'), baseUrl: config.baseUrl, turnAcceso,
+  });
+
   app.get('/api/diretta', requireOwner, studioAperto, (req, res) => res.json(vestiDirettaDi(currentUser(req).login)));
   app.get('/api/diretta/stato', requireOwner, studioAperto, (req, res) => res.json(tramite.stato(sessioneDi(currentUser(req).login, req.query.f))));
 
@@ -12183,7 +12195,7 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
         : 'Non riesco a disdire il tuo abbonamento su Stripe: non ho cancellato niente. Riprova fra poco.' });
     }
     let esito;
-    try { esito = cancellaDati(login, { conferma: req.body?.conferma }); }
+    try { esito = cancellaDati(login, { conferma: req.body?.conferma }); salotto.dimentica(login); }
     catch (e) { return res.status(400).json({ errore: e?.message || 'cancellazione non riuscita' }); }
     // il bot esce dal canale al primo giro di sincronizzazione: la riga
     // streamers non c'e' piu', quindi non c'e' piu' niente a cui collegarsi.
@@ -12315,7 +12327,7 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
       const disdetta = await abbonamenti.disdiciPerSempre(subscriptions.get(login));
       if (!disdetta.ok) return res.status(409).json({ errore: 'Non riesco a disdire il suo abbonamento su Stripe: non ho cancellato niente.' });
       let esito;
-      try { esito = cancellaDati(login, { conferma: req.body?.conferma }); }
+      try { esito = cancellaDati(login, { conferma: req.body?.conferma }); salotto.dimentica(login); }
       catch (e) { return res.status(400).json({ errore: e?.message || 'cancellazione non riuscita' }); }
       sync();
       return res.json({ ok: true, ...esito });

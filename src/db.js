@@ -855,6 +855,16 @@ CREATE TABLE IF NOT EXISTS studio_scene (      -- le scene dello Studio (docs/DI
   versione INTEGER NOT NULL DEFAULT 0,         -- cresce a ogni salvataggio: chi salva dice su quale e' nato, cosi' due finestre non si cancellano a vicenda
   updated_at INTEGER NOT NULL DEFAULT 0
 );
+CREATE TABLE IF NOT EXISTS studio_dispositivi ( -- telefoni e altri computer collegati allo Studio come fotocamere (docs/DIRETTA.md, «Più dispositivi, una regia»)
+  login TEXT NOT NULL,
+  id TEXT NOT NULL,
+  nome TEXT NOT NULL DEFAULT '',               -- come lo chiama lo streamer («iPhone di …»): nella busta
+  impronta TEXT NOT NULL DEFAULT '',           -- sha256 della chiave del dispositivo: la chiave non si conserva
+  comanda INTEGER NOT NULL DEFAULT 0,          -- se da quel dispositivo si puo' anche fare regia
+  creato INTEGER NOT NULL DEFAULT 0,
+  visto INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (login, id)
+);
 CREATE TABLE IF NOT EXISTS donazioni (         -- il registro delle donazioni: quelle in attesa di pagamento e quelle pagate
   id TEXT PRIMARY KEY,                         -- 'stripe:cs_…' | 'satispay:<nostro id>' | 'kofi:<login>:<message_id>' | 'ext:<login>:<id>'
   login TEXT NOT NULL,
@@ -2071,6 +2081,7 @@ export const CAMPI_SEGRETI = {
   conti_satispay: ['chiave'],
   diretta_dest: ['chiave'],
   studio_scene: ['dati'],
+  studio_dispositivi: ['nome'],
   discord_ruoli: ['token'],
 };
 
@@ -2086,6 +2097,7 @@ const RIGA_SEGRETI = {
   conti_satispay: (r) => r.login,
   diretta_dest: (r) => r.login + '/' + r.id,
   studio_scene: (r) => r.login,
+  studio_dispositivi: (r) => r.login + '/' + r.id,
   discord_ruoli: (r) => r.channel,
 };
 const CHIAVE_SEGRETI = {
@@ -2098,6 +2110,7 @@ const CHIAVE_SEGRETI = {
   conti_satispay: ['login'],
   diretta_dest: ['login', 'id'],
   studio_scene: ['login'],
+  studio_dispositivi: ['login', 'id'],
   discord_ruoli: ['channel'],
 };
 
@@ -2485,6 +2498,34 @@ export const studioScene = {
       .run(l, cifra(JSON.stringify(doc), _dove('studio_scene', 'dati', l)), versione, now());
     return { ok: true, versione };
   },
+};
+
+// I dispositivi dello Studio: il nome nella busta, della chiave solo
+// l'impronta. L'archivio del salotto (features/studio-dispositivi.js).
+const _vestiDispositivo = (l, r) => ({ id: r.id, nome: decifra(r.nome, _dove('studio_dispositivi', 'nome', l + '/' + r.id)), impronta: r.impronta, comanda: !!r.comanda, creato: r.creato, visto: r.visto });
+export const studioDispositivi = {
+  elenco(login) {
+    const l = String(login).toLowerCase();
+    return db.prepare('SELECT * FROM studio_dispositivi WHERE login=?').all(l).map((r) => _vestiDispositivo(l, r));
+  },
+  trova(login, id) {
+    const l = String(login).toLowerCase();
+    const r = db.prepare('SELECT * FROM studio_dispositivi WHERE login=? AND id=?').get(l, String(id));
+    return r ? _vestiDispositivo(l, r) : null;
+  },
+  salva(login, { id, nome, impronta, comanda, creato, visto }) {
+    const l = String(login).toLowerCase(), i = String(id);
+    db.prepare(`INSERT INTO studio_dispositivi (login, id, nome, impronta, comanda, creato, visto) VALUES (?,?,?,?,?,?,?)
+      ON CONFLICT(login, id) DO UPDATE SET nome=excluded.nome, impronta=excluded.impronta, comanda=excluded.comanda, visto=excluded.visto`)
+      .run(l, i, cifra(String(nome || '').slice(0, 40), _dove('studio_dispositivi', 'nome', l + '/' + i)), String(impronta || ''), comanda ? 1 : 0, Number(creato) || now(), Number(visto) || now());
+  },
+  aggiorna(login, id, { nome, comanda } = {}) {
+    const r = this.trova(login, id);
+    if (!r) return;
+    this.salva(login, { ...r, nome: nome ?? r.nome, comanda: comanda ?? r.comanda });
+  },
+  visto(login, id, t) { db.prepare('UPDATE studio_dispositivi SET visto=? WHERE login=? AND id=?').run(Number(t) || now(), String(login).toLowerCase(), String(id)); },
+  togli(login, id) { db.prepare('DELETE FROM studio_dispositivi WHERE login=? AND id=?').run(String(login).toLowerCase(), String(id)); },
 };
 
 // I giri del costruttore Discord. Si scrive SEMPRE, anche quando non si e'

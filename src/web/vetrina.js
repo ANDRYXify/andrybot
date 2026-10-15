@@ -122,6 +122,8 @@ const PREFISSI = [
   '/telegram/',          // la porta del gruppo Telegram, anche con la prova aperta dentro Telegram: ci arriva chi NON e' di casa
   '/api/tg-scudo/',      // le chiamate della prova: chi sei lo dice solo la firma di Telegram
   '/api/tg-porta/',      // la prova sulla porta, nel browser: chi sei lo dice solo il codice che il server ha dato alla pagina
+  '/cam/',               // l'invito a diventare fotocamera della regia: un token monouso da dieci minuti
+  '/api/cam/',           // i segnali delle fotocamere: chi sei lo dice la chiave del dispositivo, o un invito, o la sessione
 ];
 
 const RIF_HTML = /(?:src|href)\s*=\s*["']([^"']+)["']/g;

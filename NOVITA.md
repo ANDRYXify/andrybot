@@ -43,6 +43,15 @@ comandi diversi da quelli della riga italiana.
 
 ## 2026-10-15
 
+- [importante] Più telefoni nella tua diretta: collegali allo Studio come inquadrature in più, o fanne uno il protagonista. Il computer fa la diretta e resta lui la regia. [vai: studio]
+  en: More phones in your stream: connect them to the Studio as extra shots, or make one the main shot. The computer runs the stream and stays in control.
+  es: Más teléfonos en tu directo: conéctalos al Estudio como planos extra, o haz de uno el protagonista. El ordenador hace el directo y lleva el control.
+  > Più dispositivi, una regia
+  > Per l'IRL o per cambiare stanza senza il computer: il telefono inquadra il QR e manda video e voce. Lo metti in scena o lo fai protagonista; se si perde si torna indietro, e poi a lui.
+  en> More devices, one control room
+  en> For IRL or moving room without the computer: the phone scans the QR and sends video and voice. Put it in a scene or make it the main shot; if it drops you fall back, then return to it.
+  es> Más dispositivos, un control
+  es> Para el IRL o para cambiar de cuarto sin el ordenador: el teléfono escanea el QR y manda vídeo y voz. Lo pones en escena o lo haces protagonista; si se pierde se vuelve atrás, y luego a él.
 - [importante] Dal telefono la fotocamera non esce più ingrandita: si vede tutto quello che vede, e scegli obiettivo, zoom, inquadratura e specchio. [vai: studio]
   en: From the phone the camera no longer comes out zoomed in: it shows all it sees, and you pick lens, zoom, framing and mirror.
   es: Desde el teléfono la cámara ya no sale ampliada: se ve todo lo que ve, y eliges objetivo, zoom, encuadre y espejo.

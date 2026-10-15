@@ -1162,6 +1162,32 @@ input[type="file"]::file-selector-button:hover { background: var(--acc-600); }
 .studio-dock label.campo { display: block; margin-bottom: .1rem; }
 .studio-lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .2rem; max-height: 260px; overflow-y: auto; overscroll-behavior: contain; }
 .studio-lista .vuoto { font-size: .84rem; color: var(--testo-3); padding: .3rem .1rem; }
+.studio-remoti-lista { max-height: 340px; gap: .4rem; }
+.studio-remoto { display: flex; flex-direction: column; gap: .4rem; padding: .5rem .55rem; border: 1px solid var(--border); border-radius: var(--r-s); background: var(--surface); }
+.sr-testa { display: flex; flex-wrap: wrap; align-items: center; gap: .35rem .5rem; min-width: 0; }
+.sr-testa strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .9rem; }
+.sr-stato { display: inline-flex; align-items: center; gap: .3rem; font-size: .74rem; font-weight: 700; color: var(--testo-3); }
+.sr-stato::before { content: ''; width: .55rem; height: .55rem; border-radius: 50%; background: currentColor; flex: none; }
+.sr-stato.ok { color: var(--verde); }
+.sr-stato.attesa { color: var(--ambra); }
+.sr-stato.male { color: var(--rosso); }
+.sr-q { font-size: .74rem; font-variant-numeric: tabular-nums; color: var(--testo-3); }
+.sr-q.media { color: var(--ambra); }
+.sr-q.scarsa, .sr-q.male { color: var(--rosso); }
+.sr-azioni { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem; }
+.sr-azioni .riga-check { margin: 0 .3rem; font-size: .82rem; }
+.sr-azioni .btn[aria-pressed="true"] { background: var(--acc-soft); border-color: var(--acc-bordo); color: var(--acc); }
+.studio-remoti-invito { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: .75rem; align-items: center; }
+.studio-remoti-invito p { margin: 0 0 .35rem; font-size: .86rem; }
+.studio-remoti-qr { width: 136px; line-height: 0; border-radius: var(--r-s); overflow: hidden; background: #fff; }
+.studio-remoti-qr:empty { display: none; }
+.studio-remoti-qr svg { width: 100%; height: auto; display: block; }
+.studio-remoti-codice { font-size: 1.6rem !important; font-weight: 800; letter-spacing: .12em; font-variant-numeric: tabular-nums; }
+.tel-check .studio-remoto { align-items: stretch; background: #ffffff12; border-color: #ffffff24; }
+.tel-check .sr-stato.spento, .tel-check .sr-q { color: #ffffffa8; }
+@media (max-width: 420px) {
+  .studio-remoti-invito { grid-template-columns: minmax(0, 1fr); justify-items: center; text-align: center; }
+}
 
 .studio-lista .studio-scena { width: 100%; justify-content: flex-start; border-radius: var(--r-s); }
 .studio-scena { display: inline-flex; align-items: center; gap: .4rem; padding: .4rem .6rem; border: 1px solid var(--border-2); background: var(--surface); color: var(--testo-2); border-radius: 999px; font: inherit; font-size: .86rem; font-weight: 600; text-align: left; cursor: pointer; transition: background var(--molla), color var(--molla), border-color var(--molla); }

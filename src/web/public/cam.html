@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<!-- © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live -->
+<!-- Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live -->
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#000000">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" href="/icons/icon-192.png?v=9">
+  <link rel="apple-touch-icon" href="/icons/icon-192.png?v=9">
+  <title>Fotocamera della regia | SocialBot</title>
+  <link rel="stylesheet" href="/font.css">
+  <link rel="stylesheet" href="/tema.css">
+  <link rel="stylesheet" href="/campi.css">
+  <link rel="stylesheet" href="/pagina.css">
+  <link rel="stylesheet" href="/cam.css">
+  <script src="/tema.js"></script>
+  <meta name="description" content="Collega questo telefono allo Studio della diretta: diventa un'inquadratura in più, o il protagonista, e la regia resta al computer.">
+  <meta name="copyright" content="© 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live">
+  <link rel="canonical" href="https://socialbot.live/cam">
+  <meta name="robots" content="noindex, nofollow">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="SocialBot">
+  <meta property="og:locale" content="it_IT">
+  <meta property="og:url" content="https://socialbot.live/cam">
+  <meta property="og:title" content="Il tuo telefono come fotocamera della diretta">
+  <meta property="og:description" content="Collega questo telefono allo Studio della diretta: diventa un'inquadratura in più, o il protagonista, e la regia resta al computer.">
+  <meta property="og:image" content="https://socialbot.live/icons/og.png?v=9">
+  <meta property="og:image:type" content="image/png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="SocialBot, il bot che in chat scrive con il tuo nome, per Twitch e Kick">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Il tuo telefono come fotocamera della diretta">
+  <meta name="twitter:description" content="Collega questo telefono allo Studio della diretta: diventa un'inquadratura in più, o il protagonista, e la regia resta al computer.">
+  <meta name="twitter:image" content="https://socialbot.live/icons/og.png?v=9">
+  <meta name="twitter:image:alt" content="SocialBot, il bot che in chat scrive con il tuo nome, per Twitch e Kick">
+  <meta name="referrer" content="no-referrer">
+</head>
+<body class="centrata">
+  <div class="card" id="entra">
+    <img src="/icons/marchio-barra.png?v=9" alt="SocialBot" width="132" height="84">
+    <h1 id="titolo">Questo telefono come fotocamera</h1>
+    <p id="intro">Diventa un'inquadratura della diretta di <strong id="canale">questo canale</strong>. La regia resta al computer: da qui mandi il video e la voce, e vedi quando sei in onda.</p>
+    <div id="riprendi" hidden></div>
+    <label class="cam-campo" id="campo-codice" hidden><span id="t-codice">Il codice che vedi sul computer</span><input id="codice" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}"></label>
+    <label class="cam-campo" id="campo-nome"><span id="t-nome">Come si chiama questo dispositivo</span><input id="nome" maxlength="40" autocomplete="off"></label>
+    <button class="azione" id="collega" type="button">Collega</button>
+    <div class="msg" id="msg" role="status"></div>
+    <p class="minuta" id="t-privacy">Il video va dritto al computer della regia, cifrato: noi passiamo solo il saluto fra i due. Qui non si registra niente.</p>
+    <div style="margin-top:10px"><a href="/privacy" id="a-privacy" style="font-size:.82rem;color:#8b83ad">Privacy &amp; Sicurezza</a></div>
+  </div>
+
+  <div class="cam" id="cam" hidden>
+    <video id="anteprima" muted playsinline autoplay></video>
+    <div class="cam-su">
+      <span class="cam-pill" id="tally" aria-live="polite"></span>
+      <span class="cam-pill" id="rete"></span>
+      <span class="cam-pill" id="batt" hidden></span>
+      <button type="button" class="cam-tondo cam-altro" data-cam="altro" id="b-altro"></button>
+    </div>
+    <div class="cam-avviso" id="avviso" hidden role="status"></div>
+    <div class="cam-chat" id="chat" hidden></div>
+    <div class="cam-scene" id="scene" hidden></div>
+    <div class="cam-barra" id="barra"></div>
+    <div class="cam-foglio" id="foglio" hidden></div>
+    <button type="button" class="cam-grande cam-accendi" id="accendi" hidden></button>
+  </div>
+
+  <script src="/flusso.js"></script>
+  <script type="module" src="/cam.js"></script>
+
+<!-- Questo software e tutto il suo contenuto (codice, logica, dati, motori di ragionamento e la persona "Lia") sono proprieta intellettuale di Andrea Taliento (ANDRYXify). © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live. ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live -->
+<span hidden aria-hidden="true">​‌​‌​​​‌​‌‌‌​‌​‌​‌‌​​‌​‌​‌‌‌​​‌‌​‌‌‌​‌​​​‌‌​‌‌‌‌​​‌​​​​​​‌‌‌​​‌‌​‌‌​‌‌‌‌​‌‌​​‌‌​​‌‌‌​‌​​​‌‌‌​‌‌‌​‌‌​​​​‌​‌‌‌​​‌​​‌‌​​‌​‌​​‌​​​​​​‌‌​​‌​‌​​‌​​​​​​‌‌‌​‌​​​‌‌‌​‌​‌​‌‌‌​‌​​​‌‌‌​‌​​​‌‌​‌‌‌‌​​‌​​​​​​‌‌​‌​​‌​‌‌​‌‌​​​​‌​​​​​​‌‌‌​​‌‌​‌‌‌​‌​‌​‌‌​‌‌‌‌​​‌​​​​​​‌‌​​​‌‌​‌‌​‌‌‌‌​‌‌​‌‌‌​​‌‌‌​‌​​​‌‌​​‌​‌​‌‌​‌‌‌​​‌‌‌​‌​‌​‌‌‌​‌​​​‌‌​‌‌‌‌​​‌​​​​​​​‌​‌​​​​‌‌​​​‌‌​‌‌​‌‌‌‌​‌‌​​‌​​​‌‌​‌​​‌​‌‌​​​‌‌​‌‌​​‌​‌​​‌​‌‌​​​​‌​​​​​​‌‌​‌‌​​​‌‌​‌‌‌‌​‌‌​​‌‌‌​‌‌​‌​​‌​‌‌​​​‌‌​‌‌​​​​‌​​‌​‌‌​​​​‌​​​​​​‌‌​​‌​​​‌‌​​​​‌​‌‌‌​‌​​​‌‌​‌​​‌​​‌​‌‌​​​​‌​​​​​​‌‌​‌‌​‌​‌‌​‌‌‌‌​‌‌‌​‌​​​‌‌​‌‌‌‌​‌‌‌​​‌​​‌‌​‌​​‌​​‌​​​​​​‌‌​​‌​​​‌‌​‌​​‌​​‌​​​​​​‌‌‌​​‌​​‌‌​​​​‌​‌‌​​‌‌‌​‌‌​‌​​‌​‌‌​‌‌‌‌​‌‌​‌‌‌​​‌‌​​​​‌​‌‌​‌‌​‌​‌‌​​‌​‌​‌‌​‌‌‌​​‌‌‌​‌​​​‌‌​‌‌‌‌​​‌​​​​​​‌‌​​‌​‌​​‌​​​​​​‌‌​‌‌​​​‌‌​​​​‌​​‌​​​​​​‌‌‌​​​​​‌‌​​‌​‌​‌‌‌​​‌​​‌‌‌​​‌‌​‌‌​‌‌‌‌​‌‌​‌‌‌​​‌‌​​​​‌​​‌​​​​​​​‌​​​‌​​‌​​‌‌​​​‌‌​‌​​‌​‌‌​​​​‌​​‌​​​‌​​​‌​‌​​‌​​‌​​​​​​‌‌‌​​‌‌​‌‌​‌‌‌‌​‌‌​‌‌‌​​‌‌​‌‌‌‌​​‌​​​​​​‌‌‌​​​​​‌‌‌​​‌​​‌‌​‌‌‌‌​‌‌‌​​​​​‌‌‌​​‌​​‌‌​‌​​‌​‌‌​​‌​‌​‌‌‌​‌​​​‌‌​​​​‌​​‌​​​​​​‌‌​‌​​‌​‌‌​‌‌‌​​‌‌‌​‌​​​‌‌​​‌​‌​‌‌​‌‌​​​‌‌​‌‌​​​‌‌​​‌​‌​‌‌‌​‌​​​‌‌‌​‌​​​‌‌‌​‌​‌​‌‌​​​​‌​‌‌​‌‌​​​‌‌​​‌​‌​​‌​​​​​​‌‌​​‌​​​‌‌​‌​​‌​​‌​​​​​​‌​​​​​‌​‌‌​‌‌‌​​‌‌​​‌​​​‌‌‌​​‌​​‌‌​​‌​‌​‌‌​​​​‌​​‌​​​​​​‌​‌​‌​​​‌‌​​​​‌​‌‌​‌‌​​​‌‌​‌​​‌​‌‌​​‌​‌​‌‌​‌‌‌​​‌‌‌​‌​​​‌‌​‌‌‌‌​​‌​​​​​​​‌​‌​​​​‌​​​​​‌​‌​​‌‌‌​​‌​​​‌​​​‌​‌​​‌​​‌​‌‌​​‌​‌​‌‌​​​​‌‌​‌​​‌​‌‌​​‌‌​​‌‌‌‌​​‌​​‌​‌​​‌​​‌​‌‌‌​​​‌​​​​​‌‌​​​​‌​‌​‌​‌​​‌​​‌​​​​​​​‌‌​​‌​​​‌‌​​​​​​‌‌​​‌​​​‌‌​‌​​‌‌‌​​​‌​‌​​​​​​​‌​​‌​​‌‌​​‌‌​​‌​​​‌‌​​​​​​‌‌​​‌​​​‌‌​‌‌​​​‌​​​​​​‌​​​​​‌​‌‌​‌‌‌​​‌‌​​‌​​​‌‌‌​​‌​​‌‌​​‌​‌​‌‌​​​​‌​​‌​​​​​​‌​‌​‌​​​‌‌​​​​‌​‌‌​‌‌​​​‌‌​‌​​‌​‌‌​​‌​‌​‌‌​‌‌‌​​‌‌‌​‌​​​‌‌​‌‌‌‌​​‌​​​​​​​‌​‌​​​​‌​​​​​‌​‌​​‌‌‌​​‌​​​‌​​​‌​‌​​‌​​‌​‌‌​​‌​‌​‌‌​​​​‌‌​‌​​‌​‌‌​​‌‌​​‌‌‌‌​​‌​​‌​‌​​‌​​‌​​​​​‌‌‌​​​‌​‌​​​​​​​‌​​‌​‌​​​​‌​​​​​​‌​‌​‌​​​‌‌‌​‌​‌​‌‌‌​‌​​​‌‌‌​‌​​​‌‌​‌​​‌​​‌​​​​​​‌‌​‌​​‌​​‌​​​​​​‌‌​​‌​​​‌‌​‌​​‌​‌‌‌​​‌​​‌‌​‌​​‌​‌‌‌​‌​​​‌‌‌​‌​​​‌‌​‌​​‌​​‌​​​​​​‌‌‌​​‌​​‌‌​‌​​‌​‌‌‌​​‌‌​‌‌​​‌​‌​‌‌‌​​‌​​‌‌‌​‌‌​​‌‌​​​​‌​‌‌‌​‌​​​‌‌​‌​​‌​​‌​​​​​‌‌‌​​​‌​‌​​​​​​​‌​​‌​‌​​​​‌​​​​​​‌‌‌​​‌‌​‌‌​‌‌‌‌​‌‌​​​‌‌​‌‌​‌​​‌​‌‌​​​​‌​‌‌​‌‌​​​‌‌​​​‌​​‌‌​‌‌‌‌​‌‌‌​‌​​​​‌​‌‌‌​​‌‌​‌‌​​​‌‌​‌​​‌​‌‌‌​‌‌​​‌‌​​‌​‌​​‌​‌‌‌​​​‌​​​​​​‌​​​​​‌​‌​​‌‌‌​​‌​​​‌​​​‌​‌​​‌​​‌​‌‌​​‌​‌​‌‌​​​​​‌​‌‌​‌​‌​​‌​​‌​‌​‌​​​​​​‌‌‌​‌​​​‌‌‌​‌​​‌‌​​​​‌​​‌‌​‌‌‌​‌‌​​‌‌​​​‌‌​​‌‌​​‌‌‌​​‌​‌‌​​​‌‌​​‌‌​​​‌​‌‌​​‌​‌​​‌‌‌​​​​‌‌​​​‌​​​‌‌​‌​​​​‌‌​​‌​​​‌‌​‌​​​‌‌​​‌​​​​‌‌‌​​‌​​‌‌​​​​​​‌​‌‌​‌​​‌‌​‌​​​‌‌​​‌‌​​​‌‌​‌‌‌​‌‌​​​‌​​​‌​‌‌​‌​‌‌‌​‌​​​‌‌​​​​‌​‌‌​‌‌​​​‌‌​‌​​‌​‌‌​​‌​‌​‌‌​‌‌‌​​‌‌‌​‌​​​‌‌​‌‌‌‌​​‌‌‌​‌​​​‌‌‌​‌​​‌‌‌​​‌‌​‌‌​‌‌‌‌​‌‌​​​‌‌​‌‌​‌​​‌​‌‌​​​​‌​‌‌​‌‌​​​‌‌​​​‌​​‌‌​‌‌‌‌​‌‌‌​‌​​​​‌​‌‌‌​​‌‌​‌‌​​​‌‌​‌​​‌​‌‌‌​‌‌​​‌‌​​‌​‌⁣</span></body>
+</html>

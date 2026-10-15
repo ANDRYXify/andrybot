@@ -6,7 +6,7 @@
 // che i media sono segnaposto e non file, e che la transizione va da 0 a 1.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { normalizza, nuovaFonte, migraVecchie, impronteUsate, lega, mescola, dispostoRapido, pesa, formatoDi, dirette, escluse, FORMATI, LIMITI, SCENARI, AUDIO, TESTI_PRONTE, scenePronte, applicaPronte, sceneVuote, scenaAccanto, vincoliAudio, overlayDi, inquadra, modoAdatta, spostaCentro, prossimoZoom, orientamentoStorto, nomeCamera, TAGLIO_MAX, ZOOM_DIGITALE_MAX, INQUADRABILI } from '../../src/web/public/js/studio-modello.js';
+import { normalizza, nuovaFonte, migraVecchie, impronteUsate, lega, mescola, dispostoRapido, pesa, formatoDi, dirette, escluse, FORMATI, LIMITI, SCENARI, AUDIO, TESTI_PRONTE, scenePronte, applicaPronte, sceneVuote, scenaAccanto, vincoliAudio, overlayDi, inquadra, modoAdatta, spostaCentro, prossimoZoom, orientamentoStorto, nomeCamera, TAGLIO_MAX, ZOOM_DIGITALE_MAX, INQUADRABILI, microfoniInOnda, scenaProtagonista, scenaDelProtagonista, tallyDi, scenaDiRipiego, copreTutto, AUDIO_SCENA } from '../../src/web/public/js/studio-modello.js';
 
 const IMP = 'a'.repeat(64), IMP2 = 'b'.repeat(64);
 
@@ -288,4 +288,71 @@ test('ogni fonte con un\'immagine ha l\'inquadratura nei due formati; le immagin
   const d = normalizza({ scene: [{ nome: 'S', fonti: [{ tipo: 'webcam', inq: { o: { adatta: 'boh', cx: 9, cy: 'x' }, v: { adatta: 'ritaglia', cx: -0.25, cy: 0.5 } } }] }] });
   assert.deepEqual(d.scene[0].fonti[0].inq, { o: { adatta: 'auto', cx: 1, cy: 0 }, v: { adatta: 'ritaglia', cx: -0.25, cy: 0.5 } });
   assert.deepEqual(normalizza(d), d);
+});
+
+const TEL = 'abcdefghij', ALTRO = 'klmnopqrst';
+const remota = (id, pos) => normalizza({ scene: [{ nome: 'x', fonti: [{ tipo: 'remota', dispositivo: id, ...(pos ? { pos } : {}) }] }] }).scene[0].fonti[0];
+
+test('la fonte «dispositivo» ricorda quale dispositivo mostra; un id storto non passa; nasce piccola, nell\'angolo, nei due formati', () => {
+  const f = remota(TEL);
+  assert.equal(f.dispositivo, TEL);
+  assert.deepEqual(f.inq.o, { adatta: 'auto', cx: 0, cy: 0 });
+  assert.ok(f.pos.o.w < FORMATI.o.W / 2 && f.pos.v.w < FORMATI.v.W / 2, 'come inquadratura in più non copre tutto');
+  assert.equal(remota('../../x').dispositivo, '');
+  assert.equal(nuovaFonte('remota', { dispositivo: TEL }).dispositivo, TEL);
+});
+
+test('ogni scena dice da dove viene l\'audio: di serie dal computer, come prima', () => {
+  const d = normalizza({ scene: [{ nome: 'a' }, { nome: 'b', audio: 'dispositivi' }, { nome: 'c', audio: 'boh' }] });
+  assert.deepEqual(d.scene.map((s) => s.audio), ['computer', 'dispositivi', 'computer']);
+  assert.deepEqual([...AUDIO_SCENA], ['computer', 'dispositivi', 'tutti']);
+});
+
+test('i microfoni in onda: il computer, quelli dei dispositivi che si vedono e sono collegati, e la scena muta che spegne tutto', () => {
+  const prot = scenaProtagonista('Telefono', TEL);
+  assert.deepEqual(microfoniInOnda(prot, [TEL]), { computer: false, dispositivi: [TEL] }, 'il protagonista parla, il computer tace');
+  assert.deepEqual(microfoniInOnda(prot, []), { computer: false, dispositivi: [] }, 'un dispositivo che non c\'e\' non va in onda');
+  const pip = normalizza({ scene: [{ nome: 'p', fonti: [{ tipo: 'webcam' }, { tipo: 'remota', dispositivo: TEL }] }] }).scene[0];
+  assert.deepEqual(microfoniInOnda(pip, [TEL]), { computer: true, dispositivi: [] }, 'un\'inquadratura in piu\' non porta la sua voce: niente eco col computer nella stessa stanza');
+  assert.deepEqual(microfoniInOnda({ ...pip, audio: 'tutti' }, [TEL, ALTRO]), { computer: true, dispositivi: [TEL] }, 'tutti: il computer e chi si vede');
+  pip.fonti[1].pos.o.vis = false; pip.fonti[1].pos.v.vis = false;
+  assert.deepEqual(microfoniInOnda({ ...pip, audio: 'tutti' }, [TEL]), { computer: true, dispositivi: [] }, 'chi e\' nascosto non parla');
+  assert.deepEqual(microfoniInOnda({ ...prot, muta: true }, [TEL]), { computer: false, dispositivi: [] });
+  assert.deepEqual(microfoniInOnda(null, [TEL]), { computer: false, dispositivi: [] });
+});
+
+test('la scena del protagonista: lui a tutta tela nei due formati, l\'overlay sopra, la sua voce; e si ritrova', () => {
+  const s = scenaProtagonista('Cucina', TEL);
+  assert.equal(s.nome, 'Cucina'); assert.equal(s.audio, 'dispositivi');
+  assert.equal(s.fonti[0].tipo, 'remota'); assert.ok(copreTutto(s.fonti[0]));
+  assert.equal(s.fonti.at(-1).tipo, 'overlay');
+  const d = normalizza({ scene: [{ nome: 'Io', fonti: [{ tipo: 'webcam' }] }, s] });
+  assert.equal(scenaDelProtagonista(d, TEL)?.nome, 'Cucina');
+  assert.equal(scenaDelProtagonista(d, ALTRO), null);
+  const piccola = normalizza({ scene: [{ nome: 'pip', fonti: [{ tipo: 'remota', dispositivo: TEL }] }] });
+  assert.equal(scenaDelProtagonista(piccola, TEL), null, 'un riquadro piccolo non e\' la scena del protagonista');
+});
+
+test('il tally: rosso se si vede nel programma, verde se e\' in anteprima, con i formati che vanno davvero in onda', () => {
+  const s = scenaProtagonista('Tel', TEL);
+  const d = normalizza({ scene: [{ nome: 'Io', fonti: [{ tipo: 'webcam' }] }, s], scelte: { formati: { o: true, v: false } } });
+  d.inOnda = d.scene[0].id; d.anteprima = d.scene[1].id;
+  assert.deepEqual(tallyDi(d, TEL, { live: true, modalita: true }), { onda: false, anteprima: true });
+  assert.deepEqual(tallyDi(d, TEL, { live: true, modalita: false }), { onda: false, anteprima: false }, 'senza modalita\' studio l\'anteprima non c\'e\'');
+  d.inOnda = d.scene[1].id;
+  assert.deepEqual(tallyDi(d, TEL, { live: true, modalita: true }), { onda: true, anteprima: false });
+  d.scene[1].fonti[0].pos.o.vis = false;
+  assert.equal(tallyDi(d, TEL, { live: true }).onda, false, 'nascosto nel formato che va in onda: non e\' in onda');
+  assert.equal(tallyDi(d, TEL, { live: false, lavoro: 'v' }).onda, true, 'fuori diretta conta il formato su cui si lavora');
+});
+
+test('la scena di ripiego: quella di prima se non mostra il dispositivo perso, sennò la prima che non lo mostra', () => {
+  const s = scenaProtagonista('Tel', TEL);
+  const d = normalizza({ scene: [{ nome: 'Io', fonti: [{ tipo: 'webcam' }] }, s, { nome: 'Due', fonti: [{ tipo: 'remota', dispositivo: TEL }] }] });
+  const [io, prot, due] = d.scene.map((x) => x.id);
+  assert.equal(scenaDiRipiego(d, TEL, io), io);
+  assert.equal(scenaDiRipiego(d, TEL, due), io, 'la scena di prima mostra anche lei il dispositivo: si va su una che non lo mostra');
+  assert.equal(scenaDiRipiego(d, TEL, 'boh'), io);
+  const sola = normalizza({ scene: [s] });
+  assert.equal(scenaDiRipiego(sola, TEL, prot), '', 'se non c\'e\' dove andare lo si dice, non si inventa');
 });

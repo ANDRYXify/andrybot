@@ -1,7 +1,7 @@
 // © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
 // Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 export const FORMATI = Object.freeze({ o: Object.freeze({ W: 1280, H: 720 }), v: Object.freeze({ W: 720, H: 1280 }) });
-export const TIPI = Object.freeze(['webcam', 'schermo', 'immagine', 'video', 'testo', 'overlay']);
+export const TIPI = Object.freeze(['webcam', 'schermo', 'immagine', 'video', 'testo', 'overlay', 'remota']);
 export const LIMITI = Object.freeze({ scene: 30, fonti: 40, preset: 20, nome: 40, testo: 120, byte: 262144 });
 export const TRANSIZIONI = Object.freeze(['taglio', 'dissolvenza']);
 export const DESTINAZIONI_SOLO_ORIZZONTALI = Object.freeze(['twitch']);
@@ -19,8 +19,10 @@ export const SCENARI = Object.freeze({
 });
 export const CHAT_GRANDEZZE = Object.freeze(['s', 'm', 'l']);
 export const ADATTA = Object.freeze(['auto', 'ritaglia', 'intera']);
-export const INQUADRABILI = Object.freeze(['webcam', 'schermo', 'video', 'immagine']);
-export const SFUMATE = Object.freeze(['webcam', 'schermo', 'video']);
+export const INQUADRABILI = Object.freeze(['webcam', 'schermo', 'video', 'immagine', 'remota']);
+export const SFUMATE = Object.freeze(['webcam', 'schermo', 'video', 'remota']);
+export const AUDIO_SCENA = Object.freeze(['computer', 'dispositivi', 'tutti']);
+const ID_DISPOSITIVO = /^[a-z0-9]{10}$/;
 export const TAGLIO_MAX = 1.5;
 export const ZOOM_DIGITALE_MAX = 3;
 export const PASSI_ZOOM = Object.freeze([1, 2, 3]);
@@ -46,6 +48,7 @@ function adatta(prop, maxW, maxH) {
 export function posizioneDiSerie(tipo, f, prop = 0) {
   const { W, H } = FORMATI[f];
   if (tipo === 'overlay') return { x: 0, y: 0, w: W, h: H, vis: true };
+  if (tipo === 'remota') return f === 'o' ? { x: W - 384 - 28, y: 28, w: 384, h: 216, vis: true } : { x: W - 240 - 24, y: 24, w: 240, h: 427, vis: true };
   if (f === 'o') {
     if (tipo === 'schermo') return { x: 0, y: 0, w: W, h: H, vis: true };
     if (tipo === 'webcam') return { x: W - 384 - 28, y: H - 216 - 28, w: 384, h: 216, vis: true };
@@ -142,6 +145,7 @@ export function normalizzaFonte(f, usati) {
   if (m) out.media = m;
   if (INQUADRABILI.includes(f.tipo)) out.inq = { o: inq(f.inq?.o, f.tipo), v: inq(f.inq?.v, f.tipo) };
   if (f.tipo === 'overlay') out.overlay = /^[A-Za-z0-9_-]{1,40}$/.test(String(f.overlay || '')) ? String(f.overlay) : '';
+  if (f.tipo === 'remota') out.dispositivo = ID_DISPOSITIVO.test(String(f.dispositivo || '')) ? String(f.dispositivo) : '';
   if (f.tipo === 'testo') {
     out.testo = testo(f.testo, LIMITI.testo);
     out.colore = COLORE.test(String(f.colore || '')) ? String(f.colore) : '#ffffff';
@@ -165,7 +169,7 @@ export function normalizzaScena(s, usatiScene, usatiFonti) {
     const n = normalizzaFonte(f, usatiFonti);
     if (n) fonti.push(n);
   }
-  return { id, nome: testo(s.nome, LIMITI.nome) || 'Scena', fonti, muta: s.muta === true, camera: FACCE.includes(s.camera) ? s.camera : '' };
+  return { id, nome: testo(s.nome, LIMITI.nome) || 'Scena', fonti, muta: s.muta === true, camera: FACCE.includes(s.camera) ? s.camera : '', audio: AUDIO_SCENA.includes(s.audio) ? s.audio : 'computer' };
 }
 
 function scelte(c) {
@@ -223,9 +227,9 @@ export function normalizza(doc) {
 
 export function pesa(doc) { return new TextEncoder().encode(JSON.stringify(doc)).length; }
 
-export function nuovaFonte(tipo, { nome = '', media: m = null, testo: t = 'Testo', overlay = '' } = {}) {
+export function nuovaFonte(tipo, { nome = '', media: m = null, testo: t = 'Testo', overlay = '', dispositivo = '' } = {}) {
   const usati = new Set();
-  const base = { id: nuovoId('f'), tipo, nome: nome || tipo, media: m, testo: t, colore: '#ffffff', dim: 56, grassetto: true, sfondo: '', overlay };
+  const base = { id: nuovoId('f'), tipo, nome: nome || tipo, media: m, testo: t, colore: '#ffffff', dim: 56, grassetto: true, sfondo: '', overlay, dispositivo };
   return normalizzaFonte(base, usati);
 }
 
@@ -358,4 +362,40 @@ export function overlayDi(fonte, scelteDoc, elenco = []) {
   const ids = elenco.map((o) => o.id);
   for (const id of [fonte?.overlay, scelteDoc?.overlay]) if (id && (!ids.length || ids.includes(id))) return id;
   return ids[0] || '';
+}
+
+const vedeDispositivo = (f, id, formati) => f.tipo === 'remota' && f.dispositivo === id && formati.some((k) => f.pos[k]?.vis);
+
+export function microfoniInOnda(scena, connessi = []) {
+  if (!scena || scena.muta) return { computer: false, dispositivi: [] };
+  const visti = [...new Set(scena.fonti.filter((f) => f.tipo === 'remota' && connessi.includes(f.dispositivo) && (f.pos.o.vis || f.pos.v.vis)).map((f) => f.dispositivo))];
+  if (scena.audio === 'dispositivi') return { computer: false, dispositivi: visti };
+  if (scena.audio === 'tutti') return { computer: true, dispositivi: visti };
+  return { computer: true, dispositivi: [] };
+}
+
+export function copreTutto(f) {
+  return ['o', 'v'].every((k) => { const p = f.pos[k], { W, H } = FORMATI[k]; return p.vis && p.x <= W * 0.025 && p.y <= H * 0.025 && p.x + p.w >= W * 0.975 && p.y + p.h >= H * 0.975; });
+}
+
+export function scenaProtagonista(nome, id) {
+  const us = new Set(), uf = new Set();
+  return normalizzaScena({ nome, audio: 'dispositivi', fonti: [pieno('remota', { nome, dispositivo: id }), pieno('overlay', { nome: 'Overlay' })] }, us, uf);
+}
+
+export const scenaDelProtagonista = (doc, id) => doc.scene.find((s) => s.fonti.some((f) => f.tipo === 'remota' && f.dispositivo === id && copreTutto(f))) || null;
+
+export function tallyDi(doc, id, { live = false, lavoro = 'o', modalita = false } = {}) {
+  const formati = live ? ['o', 'v'].filter((k) => doc.scelte.formati[k]) : [lavoro];
+  const vede = (s) => !!s && s.fonti.some((f) => vedeDispositivo(f, id, formati));
+  const onda = vede(doc.scene.find((s) => s.id === doc.inOnda));
+  const anteprima = !!modalita && doc.anteprima !== doc.inOnda && vede(doc.scene.find((s) => s.id === doc.anteprima));
+  return { onda, anteprima };
+}
+
+export function scenaDiRipiego(doc, id, prima) {
+  const senza = (s) => !!s && !s.fonti.some((f) => f.tipo === 'remota' && f.dispositivo === id);
+  const p = doc.scene.find((s) => s.id === prima);
+  if (senza(p)) return p.id;
+  return doc.scene.find(senza)?.id || '';
 }

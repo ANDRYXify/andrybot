@@ -114,6 +114,12 @@ export const config = {
   // usare, in Mbps: lo scudo ne tiene libero un quinto per sito e bot.
   studioBeta: env('STUDIO_BETA') !== '0',
   direttaBandaMbps: Math.max(10, parseInt(env('DIRETTA_BANDA_MBPS', '300'), 10) || 300),
+  // Il ponte TURN per i dispositivi dello Studio (docs/DIRETTA.md, «Più
+  // dispositivi, una regia»): serve quando due reti non si parlano da sole.
+  // Facoltativo. TURN_URL e' un elenco separato da virgole (turn:host:3478,
+  // turns:host:5349), TURN_SEGRETO lo stesso «static-auth-secret» di coturn.
+  turnUrl: env('TURN_URL', ''),
+  turnSegreto: env('TURN_SEGRETO', ''),
 
   // web
   port: parseInt(env('PORT', '8090'), 10),
