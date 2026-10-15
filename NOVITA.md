@@ -43,6 +43,9 @@ comandi diversi da quelli della riga italiana.
 
 ## 2026-10-15
 
+- Studio dal telefono: sulla tela leggi sempre quale fotocamera stai usando, e il suo foglio (obiettivo, zoom, inquadratura, luce) sta tutto in una schermata. [vai: studio]
+  en: Studio on the phone: the canvas always shows which camera you are using, and its sheet (lens, zoom, framing, light) fits on one screen.
+  es: Estudio en el teléfono: el lienzo muestra siempre qué cámara usas, y su hoja (objetivo, zoom, encuadre, luz) cabe en una pantalla.
 - [importante] Più telefoni nella tua diretta: collegali allo Studio come inquadrature in più, o fanne uno il protagonista. Il computer fa la diretta e resta lui la regia. [vai: studio]
   en: More phones in your stream: connect them to the Studio as extra shots, or make one the main shot. The computer runs the stream and stays in control.
   es: Más teléfonos en tu directo: conéctalos al Estudio como planos extra, o haz de uno el protagonista. El ordenador hace el directo y lleva el control.

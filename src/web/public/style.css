@@ -2989,6 +2989,23 @@ body.tel-aperta #toast-box { z-index: 1100; left: 12px; right: 12px; top: calc(e
 .tel-cam { position: absolute; right: 10px; bottom: calc(env(safe-area-inset-bottom, 0px) + 164px); display: flex; flex-direction: column; gap: 10px; }
 .tel-tondo { display: flex; align-items: center; justify-content: center; width: 52px; height: 52px; padding: 0; border: 0; border-radius: 50%; background: #000000a6; box-shadow: 0 0 0 1px #ffffff40; font-size: .92rem; font-weight: 800; font-variant-numeric: tabular-nums; }
 .tel-lenti { display: grid; gap: 8px; }
+.tel-cam { align-items: flex-end; }
+.tel-cam-nome { display: inline-flex; align-items: center; gap: .4rem; max-width: min(52vw, 260px); min-height: 48px; padding: 0 14px; border: 0; border-radius: 999px; background: #000000a6; box-shadow: 0 0 0 1px #ffffff40; color: #fff; font-weight: 750; font-size: .86rem; }
+.tel-cam-nome span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tel-cam-nome .b-ico { flex: none; margin: 0; }
+.tel-cam-stato { display: block; margin-top: 2px; font-size: .8rem; font-weight: 600; color: #ffffffb3; }
+.tel-riga { display: grid; gap: 6px; margin-top: 12px; }
+.tel-etichetta { font-size: .78rem; font-weight: 750; letter-spacing: .05em; text-transform: uppercase; color: #ffffffa8; }
+.tel-etichetta output { color: #fff; letter-spacing: 0; }
+.tel-scorre { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; touch-action: pan-x; padding-bottom: 2px; }
+.tel-scorre::-webkit-scrollbar { display: none; }
+.tel-scorre .tel-chip { flex: none; white-space: nowrap; }
+.tel-riga .tel-nota { margin: 0; }
+.tel-zoom { display: flex; align-items: center; gap: 8px; }
+.tel-zoom .tel-chip { flex: none; margin: 0; }
+.tel-zoom .tel-cursore { flex: 1; min-width: 60px; margin: 0; }
+.tel-riga-sotto { margin-top: 12px; }
+.tel-etichetta { display: flex; align-items: baseline; gap: .4rem; }
 .tel-lenti .tel-chip { justify-content: flex-start; min-height: 52px; border-radius: 14px; text-align: left; }
 .tel-cursore { display: block; width: 100%; min-height: 48px; margin: 0; accent-color: #e0245e; touch-action: pan-x; }
 .tel-foglio h4 output { margin-left: .35rem; color: #fff; letter-spacing: 0; text-transform: none; font-variant-numeric: tabular-nums; }

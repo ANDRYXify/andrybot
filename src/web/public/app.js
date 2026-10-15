@@ -21637,7 +21637,7 @@ function pannelloStudio() {
       <div class="tel-scene" id="tel-scene" role="group" aria-label="${esc(L('Scene', 'Scenes', 'Escenas'))}"></div>
       <div class="tel-cam" id="tel-cam" hidden>
         <button type="button" class="tel-tondo" id="tel-zoom-passo" data-tel="zoom-passo" aria-label="${esc(L('Zoom: tocca per cambiarlo', 'Zoom: tap to change it', 'Zoom: toca para cambiarlo'))}">1×</button>
-        <button type="button" class="tel-tondo" data-tel="camera" aria-label="${esc(L('Fotocamera: obiettivo, zoom, inquadratura', 'Camera: lens, zoom, framing', 'Cámara: objetivo, zoom, encuadre'))}">${_bIco(ICO.fotocamera)}</button>
+        <button type="button" class="tel-cam-nome" id="tel-cam-nome" data-tel="camera" aria-label="${esc(L('Fotocamera: obiettivo, zoom, inquadratura', 'Camera: lens, zoom, framing', 'Cámara: objetivo, zoom, encuadre'))}">${_bIco(ICO.fotocamera)}<span></span></button>
       </div>
       <div class="tel-barra">
         <button type="button" class="tel-tasto" data-tel="mic"></button>
@@ -22254,8 +22254,35 @@ function renderStudioCamExtra() {
     <label class="riga-check spazio-sopra"><input type="checkbox" data-cam-specchio${C.specchio ? ' checked' : ''}> ${L('Specchia la fotocamera davanti (anche in onda)', 'Mirror the front camera (on air too)', 'Espejo de la cámara delantera (también en el aire)')}</label>`;
 }
 
+const studioCamNomi = () => ({ davanti: L('Davanti', 'Front', 'Delantera'), dietro: L('Dietro', 'Back', 'Trasera'), fotocamera: L('Fotocamera', 'Camera', 'Cámara') });
+
+function studioCamStatoTesto() {
+  const q = studioCamFonte()?.inq?.[STUDIO.lavoro];
+  const adatta = { auto: L('Automatica', 'Automatic', 'Automático'), ritaglia: L('Riempi', 'Fill', 'Llenar'), intera: L('Intera', 'Whole', 'Entera') }[q?.adatta] || '';
+  return [studioCamEtichetta(), studioZoomTesto(STUDIO.cam.zoom), adatta].filter(Boolean).join(' · ');
+}
+
+function studioCamNomiBrevi() {
+  const cams = STUDIO.dev.cams || [], t = studioCamNomi();
+  const brevi = cams.map((d, i) => STUDIO.M.nomeBreveCamera(d.label, i, t));
+  return brevi.map((b, i) => (brevi.filter((x) => x.nome === b.nome).length > 1 ? STUDIO.M.nomeCamera(cams[i].label, i, t) : b.nome));
+}
+
+function studioCamEtichetta() {
+  const C = STUDIO.cam, cams = STUDIO.dev.cams || [], i = cams.findIndex((d) => d.deviceId === C.id);
+  const lato = C.facing === 'user' ? L('Davanti', 'Front', 'Delantera') : (C.facing === 'environment' ? L('Dietro', 'Back', 'Trasera') : '');
+  if (i >= 0) {
+    const b = STUDIO.M.nomeBreveCamera(cams[i].label, i, studioCamNomi()), l = lato || b.lato;
+    if (b.obiettivo && l && !b.obiettivo.toLowerCase().startsWith(l.toLowerCase())) return `${l} · ${b.obiettivo}`;
+    return b.obiettivo || l || b.nome;
+  }
+  return lato || L('Fotocamera', 'Camera', 'Cámara');
+}
+
 function studioCamAggiornaUi() {
   const C = STUDIO.cam;
+  const nome = document.querySelector('#tel-cam-nome span'); if (nome && STUDIO.cap.camEl) nome.textContent = studioCamEtichetta();
+  for (const o of document.querySelectorAll('[data-cam-stato]')) o.textContent = studioCamStatoTesto();
   const passo = document.getElementById('tel-zoom-passo'); if (passo) passo.textContent = studioZoomTesto(C.zoom);
   for (const o of document.querySelectorAll('[data-cam-zoomout]')) o.textContent = studioZoomTesto(C.zoom);
   for (const r of document.querySelectorAll('[data-cam-zoom]')) { r.max = String(Math.round(studioCamZoomMax() * 10) / 10); if (document.activeElement !== r) r.value = String(C.zoom); }
@@ -22661,6 +22688,7 @@ async function studioPopolaDispositivi() {
     if (!STUDIO.dev.ascolta && navigator.mediaDevices.addEventListener) { STUDIO.dev.ascolta = true; navigator.mediaDevices.addEventListener('devicechange', () => studioPopolaDispositivi()); }
     const dev = await navigator.mediaDevices.enumerateDevices();
     STUDIO.dev.cams = dev.filter((d) => d.kind === 'videoinput');
+    studioCamAggiornaUi();
     STUDIO.dev.mics = dev.filter((d) => d.kind === 'audioinput');
     const riempi = (sel, lista, valore, etichettaDefault) => {
       if (!sel) return;
@@ -23962,29 +23990,35 @@ function renderStudioTelFoglio() {
   }
   if (T.foglio === 'camera') {
     const C = STUDIO.cam, fc = studioCamFonte(), q = fc?.inq?.[STUDIO.lavoro], cams = STUDIO.dev.cams || [];
-    const nomi = { davanti: L('Davanti', 'Front', 'Delantera'), dietro: L('Dietro', 'Back', 'Trasera'), fotocamera: L('Fotocamera', 'Camera', 'Cámara') };
+    const nomi = studioCamNomi();
     const zmax = studioCamZoomMax(), passi = STUDIO.M.PASSI_ZOOM.filter((z) => z <= zmax + 1e-9);
     const chip = (attr, v, testo, on) => `<button type="button" class="tel-chip${on ? ' attivo' : ''}" ${attr}="${esc(String(v))}" aria-pressed="${on}">${testo}</button>`;
-    el.innerHTML = `<div class="tel-foglio-testa"><h3>${L('Fotocamera', 'Camera', 'Cámara')}</h3>${chiudi}</div>
-      ${STUDIO.cap.camEl ? `<div class="tel-griglia">
-        <button type="button" class="tel-grande" data-tel="gira">${_bIco(ICO.aggiorna)}${L('Gira', 'Flip', 'Girar')}</button>
-        <button type="button" class="tel-grande${C.specchio ? ' attivo' : ''}" data-tel="specchio" data-cam-specchio aria-pressed="${C.specchio}">${_bIco(ICO.specchio)}${L('Specchia', 'Mirror', 'Espejo')}</button>
-        ${C.torcia ? `<button type="button" class="tel-grande${T.torcia ? ' attivo' : ''}" data-tel="torcia" aria-pressed="${T.torcia}">${_bIco(ICO.fulmine)}${L('Torcia', 'Torch', 'Linterna')}</button>` : ''}
+    const ADATTA = [['auto', L('Automatica', 'Automatic', 'Automático'), L('Riempie, ma non taglia mai più di un terzo dell’immagine.', 'Fills, but never cuts more than a third of the picture.', 'Llena, pero nunca corta más de un tercio de la imagen.')], ['ritaglia', L('Riempi', 'Fill', 'Llenar'), L('Riempie sempre, tagliando i bordi.', 'Always fills, cutting the edges.', 'Siempre llena, cortando los bordes.')], ['intera', L('Intera', 'Whole', 'Entera'), L('Si vede tutta, con lo sfondo sfumato.', 'Shows whole, with a blurred background.', 'Se ve entera, con el fondo difuminado.')]];
+    const stato = studioCamStatoTesto(), brevi = studioCamNomiBrevi();
+    el.innerHTML = `<div class="tel-foglio-testa"><h3>${L('Fotocamera', 'Camera', 'Cámara')}${STUDIO.cap.camEl ? `<small class="tel-cam-stato" data-cam-stato>${esc(stato)}</small>` : ''}</h3>${chiudi}</div>
+      ${STUDIO.cap.camEl ? `<div class="tel-riga">
+        <span class="tel-etichetta">${L('Obiettivo', 'Lens', 'Objetivo')}</span>
+        <div class="tel-scorre">${cams.length > 1 ? cams.map((d, i) => chip('data-tel-lente', d.deviceId, esc(brevi[i]), d.deviceId === C.id)).join('') : ''}<button type="button" class="tel-chip" data-tel="gira">${_bIco(ICO.aggiorna)}${L('Gira', 'Flip', 'Girar')}</button></div>
       </div>
-      <p class="tel-nota">${L('«Specchia» vale per la fotocamera davanti: anche il pubblico ti vede come allo specchio, e le scritte escono al contrario.', '“Mirror” is for the front camera: the audience sees you as in a mirror too, and writing comes out backwards.', '«Espejo» vale para la cámara delantera: el público también te ve como en un espejo, y lo escrito sale al revés.')}</p>
-      ${cams.length > 1 ? `<h4>${L('Obiettivo', 'Lens', 'Objetivo')}</h4><div class="tel-lenti">${cams.map((d, i) => chip('data-tel-lente', d.deviceId, esc(STUDIO.M.nomeCamera(d.label, i, nomi)), d.deviceId === C.id)).join('')}</div>
-      <p class="tel-nota">${L('I nomi sono quelli del telefono: grandangolo, ultra grandangolo, teleobiettivo. Lo Studio si ricorda quale usi davanti e quale dietro.', 'The names are the phone’s own: wide, ultra wide, telephoto. The Studio remembers which one you use at the front and at the back.', 'Los nombres son los del teléfono: gran angular, ultra gran angular, teleobjetivo. El Estudio recuerda cuál usas delante y cuál detrás.')}</p>` : ''}
-      <h4>${L('Zoom', 'Zoom', 'Zoom')} <output data-cam-zoomout>${studioZoomTesto(C.zoom)}</output></h4>
-      <input type="range" class="tel-cursore" data-cam-zoom min="1" max="${Math.round(zmax * 10) / 10}" step="0.1" value="${C.zoom}" aria-label="${esc(L('Zoom', 'Zoom', 'Zoom'))}">
-      <div class="tel-gruppo">${passi.map((z) => chip('data-cam-zoomp', z, z + '×', Math.abs(z - C.zoom) < 0.05)).join('')}</div>
-      <p class="tel-nota">${C.hw ? L('È lo zoom della fotocamera: l’immagine resta nitida. Con due dita sulla tela lo cambi senza aprire questo foglio.', 'It is the camera’s own zoom: the picture stays sharp. With two fingers on the canvas you change it without opening this sheet.', 'Es el zoom de la cámara: la imagen sigue nítida. Con dos dedos sobre el lienzo lo cambias sin abrir esta hoja.') : L('Questa fotocamera non ha uno zoom suo, quindi l’immagine la ingrandisce lo Studio: oltre 2× si sgrana. Per avvicinarti senza perdere nitidezza scegli un obiettivo più lungo, se c’è.', 'This camera has no zoom of its own, so the Studio enlarges the picture: beyond 2× it gets grainy. To get closer without losing sharpness pick a longer lens, if there is one.', 'Esta cámara no tiene zoom propio, así que la imagen la amplía el Estudio: más allá de 2× se ve granulada. Para acercarte sin perder nitidez elige un objetivo más largo, si lo hay.')}</p>
-      ${q ? `<h4>${L('Inquadratura', 'Framing', 'Encuadre')}</h4>
-      <div class="tel-gruppo">${[['auto', L('Automatica', 'Automatic', 'Automático')], ['ritaglia', L('Riempi', 'Fill', 'Llenar')], ['intera', L('Intera', 'Whole', 'Entera')]].map(([k, n]) => chip('data-cam-adatta', k, n, q.adatta === k)).join('')}<button type="button" class="tel-chip" data-tel="centra">${L('Al centro', 'Centered', 'Al centro')}</button></div>
-      <p class="tel-nota">${L('Automatica riempie lo schermo, ma se per riempirlo dovesse tagliare più di un terzo dell’immagine la mostra intera, con lo sfondo sfumato. Con due dita sulla tela: allarghi per lo zoom, trascini per spostare l’inquadratura.', 'Automatic fills the screen, but if filling it meant cutting more than a third of the picture it shows it whole, with a blurred background. With two fingers on the canvas: spread to zoom, drag to move the framing.', 'Automático llena la pantalla, pero si para llenarla tuviera que cortar más de un tercio de la imagen la muestra entera, con el fondo difuminado. Con dos dedos sobre el lienzo: separas para el zoom, arrastras para mover el encuadre.')}</p>` : ''}
-      ${C.luce ? `<h4>${L('Luce', 'Brightness', 'Luz')}</h4><input type="range" class="tel-cursore" data-cam-luce min="${C.luce.min}" max="${C.luce.max}" step="${C.luce.step}" value="${C.luceV}" aria-label="${esc(L('Luce', 'Brightness', 'Luz'))}">` : ''}
-      <h4>${L('Qualità', 'Quality', 'Calidad')}</h4>
-      <div class="tel-gruppo">${[...new Set(['720p30', '1080p30', STUDIO.qual])].map((k) => `<button type="button" class="tel-chip${STUDIO.qual === k ? ' attivo' : ''}" data-tel-qual="${k}" aria-pressed="${STUDIO.qual === k}"${STUDIO.live ? ' disabled' : ''}>${k.replace('p', 'p ').replace(/(\d+)$/, '$1 fps')}</button>`).join('')}</div>
-      <p class="tel-nota">${STUDIO.live ? L('La qualità si cambia fuori diretta.', 'Quality changes off air.', 'La calidad se cambia fuera del directo.') : L('720p va bene quasi ovunque; 1080p è più nitida ma consuma più batteria e più rete.', '720p works almost everywhere; 1080p is sharper but uses more battery and more data.', '720p va bien casi en todas partes; 1080p es más nítida pero gasta más batería y más red.')}</p>`
+      <div class="tel-riga">
+        <span class="tel-etichetta">${L('Zoom', 'Zoom', 'Zoom')} <output data-cam-zoomout>${studioZoomTesto(C.zoom)}</output></span>
+        <div class="tel-zoom">${passi.map((z) => chip('data-cam-zoomp', z, z + '×', Math.abs(z - C.zoom) < 0.05)).join('')}<input type="range" class="tel-cursore" data-cam-zoom min="1" max="${Math.round(zmax * 10) / 10}" step="0.1" value="${C.zoom}" aria-label="${esc(L('Zoom', 'Zoom', 'Zoom'))}"></div>
+        ${C.hw ? '' : `<p class="tel-nota">${L('Questa fotocamera non ha uno zoom suo: ingrandisce lo Studio, e oltre 2× si sgrana.', 'This camera has no zoom of its own: the Studio enlarges, and beyond 2× it gets grainy.', 'Esta cámara no tiene zoom propio: amplía el Estudio, y más allá de 2× se ve granulada.')}</p>`}
+      </div>
+      ${q ? `<div class="tel-riga">
+        <span class="tel-etichetta">${L('Inquadratura', 'Framing', 'Encuadre')}</span>
+        <div class="tel-gruppo">${ADATTA.map(([k, n, spiega]) => chip('data-cam-adatta', k, n, q.adatta === k).replace('<button ', `<button title="${esc(spiega)}" `)).join('')}</div>
+      </div>` : ''}
+      <div class="tel-gruppo tel-riga-sotto">
+        ${q ? `<button type="button" class="tel-chip" data-tel="centra">${L('Al centro', 'Centered', 'Al centro')}</button>` : ''}
+        <button type="button" class="tel-chip${C.specchio ? ' attivo' : ''}" data-tel="specchio" data-cam-specchio aria-pressed="${C.specchio}" title="${esc(L('Anche il pubblico ti vede come allo specchio: le scritte escono al contrario.', 'The audience sees you mirrored too: writing comes out backwards.', 'El público también te ve como en un espejo: lo escrito sale al revés.'))}">${_bIco(ICO.specchio)}${L('Specchia', 'Mirror', 'Espejo')}</button>
+        ${C.torcia ? `<button type="button" class="tel-chip${T.torcia ? ' attivo' : ''}" data-tel="torcia" aria-pressed="${T.torcia}">${_bIco(ICO.fulmine)}${L('Torcia', 'Torch', 'Linterna')}</button>` : ''}
+      </div>
+      ${C.luce ? `<div class="tel-riga"><span class="tel-etichetta">${L('Luce', 'Brightness', 'Luz')}</span><input type="range" class="tel-cursore" data-cam-luce min="${C.luce.min}" max="${C.luce.max}" step="${C.luce.step}" value="${C.luceV}" aria-label="${esc(L('Luce', 'Brightness', 'Luz'))}"></div>` : ''}
+      <div class="tel-riga">
+        <span class="tel-etichetta">${L('Qualità', 'Quality', 'Calidad')}${STUDIO.live ? ` · ${L('si cambia fuori diretta', 'changes off air', 'se cambia fuera del directo')}` : ''}</span>
+        <div class="tel-gruppo">${[...new Set(['720p30', '1080p30', STUDIO.qual])].map((k) => `<button type="button" class="tel-chip${STUDIO.qual === k ? ' attivo' : ''}" data-tel-qual="${k}" aria-pressed="${STUDIO.qual === k}"${STUDIO.live ? ' disabled' : ''}>${k.replace('p', 'p ').replace(/(\d+)$/, '$1 fps')}</button>`).join('')}</div>
+      </div>`
       : `<p>${L('La fotocamera è spenta.', 'The camera is off.', 'La cámara está apagada.')}</p><button type="button" class="tel-grande primario" data-tel="accendi">${_bIco(ICO.fotocamera)}${L('Accendi fotocamera e microfono', 'Turn on camera and microphone', 'Enciende cámara y micrófono')}</button>`}`;
     return;
   }

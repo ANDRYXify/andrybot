@@ -72,13 +72,14 @@ const DIFETTI = {
     ['  if (libero && !STUDIO.ridisegna && !viva && !STUDIO.eraViva) {', '  if (false) {', 'a riposo non si disegna', 4, /a riposo/],
     ["  const fps = STUDIO.live || STUDIO.avvio ? (STUDIO_QUAL[STUDIO.qual] || STUDIO_QUAL['720p30']).fps : 30;", "  const fps = 1000;", 'fuori diretta al massimo 30 disegni', 4, /30 volte al secondo/],
     ['  const v = { width: { ideal: ww }, height: { ideal: hh }, frameRate:', '  const v = { width: { ideal: hh }, height: { ideal: ww }, frameRate:', 'la fotocamera si chiede in orizzontale', 7, /si chiede in orizzontale/],
-    ['zoom: cam && !C.hw ? C.zoom : 1,', 'zoom: 1,', 'lo zoom digitale ingrandisce', 7, /il tasto «1×» ingrandisce/],
+    ['const zoom = cam && !C.hw ? C.zoom : (', 'const zoom = cam && !C.hw ? 1 : (', 'lo zoom digitale ingrandisce', 7, /il tasto «1×» ingrandisce/],
     ['await tr.applyConstraints({ advanced: [{ zoom: studioClamp(', 'await ({ advanced: [{ zoom: studioClamp(', 'si usa lo zoom della fotocamera', 7, /ha uno zoom suo/],
     ['    studioCamSposta(mx - T.pinza.mx, my - T.pinza.my);\n', '', 'due dita spostano', 7, /spostandole insieme/],
     ['  if (r.specchio) { c.translate(2 * r.dx + r.dw, 0); c.scale(-1, 1); }\n', '', 'lo specchio specchia', 7, /Specchia» rovescia/],
     ['  if (r.bande && STUDIO.M.SFUMATE.includes(f.tipo)) studioSfumato(c, el, vw, vh, p);\n', '', 'le bande sono sfumate', 8, /sfondo sfumato, non il nero/],
     ["  if (k === 'dritto') studioTelAvviso(", '  if (false) studioTelAvviso(', 'si dice di tenere il telefono dritto', 7, /regia dice di tenere il telefono dritto/],
     ['STUDIO.dev.lente[fm] = id;', 'void id;', "l'obiettivo si ricorda per lato", 7, /si ricorda per quel lato/],
+    ["  const nome = document.querySelector('#tel-cam-nome span'); if (nome && STUDIO.cap.camEl) nome.textContent = studioCamEtichetta();\n", '', 'si vede quale fotocamera e\' in uso', 7, /quale fotocamera e' in uso/],
     ['    if (!ripiego || !/Overconstrained|NotFound/', '    if (true || !/Overconstrained|NotFound/', "l'obiettivo sparito non lascia al buio", 7, /obiettivo che non c'e' piu'/],
     ['  } catch (e) { C.hw = null; C.zoom = studioClamp(', '  } catch (e) { void 0; C.zoom = studioClamp(', 'lo zoom rifiutato passa allo Studio', 7, /rifiuta lo zoom/],
     ['  if (STUDIO.cap.camEl && prima && (prima.h !== ora.h || prima.fps !== ora.fps)) studioCambiaCamera(STUDIO.dev.camId);', '', 'la fotocamera segue la qualita\'', 7, /si riapre alla misura nuova/],
@@ -90,6 +91,7 @@ const DIFETTI = {
   ],
   '/style.css': [
     ['.studio-mobile #studio-docks > .studio-dock:not(.studio-controlli)', '.studio-mobile .studio-docks > .studio-dock:not(.studio-controlli)', 'sul telefono Proprieta\' e Chat restano', 1, /proprieta' si vedono anche sul telefono/],
+    ['.tel-riga { display: grid; gap: 6px; margin-top: 12px; }', '.tel-riga { display: grid; gap: 6px; margin-top: 70px; }', 'il foglio Fotocamera non si scorre', 7, /sta tutto in una schermata/],
     ['min-width: 48px; min-height: 60px; padding: 4px;', 'min-width: 30px; min-height: 30px; padding: 0;', 'i tasti sono da pollice', 1, /il pollice arriva a tutto/],
     ['  body.in-studio #cerca-lancia, body.in-studio #plancia-lancia,', '  body.in-studio #nessuno, body.in-studio #plancia-lancia,', 'niente bottoni volanti nello Studio', 7, /niente bottoni volanti/],
     ['width: 52px; height: 52px; padding: 0; border: 0; border-radius: 50%;', 'width: 30px; height: 30px; padding: 0; border: 0; border-radius: 50%;', 'i tasti tondi sono da pollice', 7, /tasti della fotocamera sulla tela/],
@@ -609,6 +611,9 @@ console.log('Fotocamera sul telefono (390×844, a tocco):');
   ok('il foglio Fotocamera elenca gli obiettivi coi nomi del telefono', lenti.join('|') === 'Dietro 1|Davanti 2|Fotocamera 3', lenti.join('|'));
   await clic(p, '[data-tel-lente="a"]'); await p.waitForTimeout(500);
   const l1 = await p.evaluate(() => ({ lente: STUDIO.dev.lente.environment, facing: STUDIO.dev.facing, camId: STUDIO.dev.camId, attivo: document.querySelector('[data-tel-lente="a"]')?.classList.contains('attivo') }));
+  const vista = await p.evaluate(() => { const f = document.getElementById('tel-foglio'); return { nome: document.querySelector('#tel-cam-nome span')?.textContent || '', stato: document.querySelector('#tel-foglio [data-cam-stato]')?.textContent || '', alto: f.scrollHeight, visto: f.clientHeight }; });
+  ok('sulla tela si legge quale fotocamera e\' in uso, e il foglio dice obiettivo, zoom e inquadratura', vista.nome === 'Dietro 1' && /^Dietro 1 · 1×/.test(vista.stato), JSON.stringify(vista));
+  ok('il foglio Fotocamera sta tutto in una schermata: obiettivi, zoom, inquadratura e qualita\' senza scorrere', vista.alto <= vista.visto + 1, JSON.stringify(vista));
   await clic(p, '[data-tel="gira"]'); await p.waitForTimeout(500);
   await clic(p, '[data-tel="gira"]'); await p.waitForTimeout(500);
   const giri = await p.evaluate(() => window.__chiesti.slice(-2));

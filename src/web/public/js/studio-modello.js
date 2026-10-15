@@ -122,6 +122,19 @@ export function nomeCamera(label, i, t) {
   return String(label || '').trim().slice(0, 60) || `${t.fotocamera} ${i + 1}`;
 }
 
+const LATO_DAVANTI = /\b(front|frontale|anteriore|delantera|frontal|user)\b/i;
+const LATO_DIETRO = /\b(back|rear|posteriore|trasera|environment)\b/i;
+const PAROLE_VUOTE = /\b(fotocamera|camera|cámara|camara|front|frontale|anteriore|delantera|frontal|back|rear|posteriore|trasera|environment|user)\b/gi;
+
+export function nomeBreveCamera(label, i, t) {
+  const pieno = nomeCamera(label, i, t), l = String(label || '');
+  if (/camera2 \d+, facing/i.test(l) || !l.trim()) return { lato: '', obiettivo: pieno, nome: pieno };
+  const lato = LATO_DAVANTI.test(l) ? t.davanti : (LATO_DIETRO.test(l) ? t.dietro : '');
+  const resto = l.replace(PAROLE_VUOTE, ' ').replace(/[(),]/g, ' ').replace(/\s+/g, ' ').trim();
+  const obiettivo = resto ? resto.charAt(0).toUpperCase() + resto.slice(1) : '';
+  return { lato, obiettivo, nome: obiettivo || lato || pieno };
+}
+
 function media(m) {
   if (!m || typeof m !== 'object') return null;
   return {

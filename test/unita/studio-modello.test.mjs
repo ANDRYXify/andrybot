@@ -6,7 +6,7 @@
 // che i media sono segnaposto e non file, e che la transizione va da 0 a 1.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { normalizza, nuovaFonte, migraVecchie, impronteUsate, lega, mescola, dispostoRapido, pesa, formatoDi, dirette, escluse, FORMATI, LIMITI, SCENARI, AUDIO, TESTI_PRONTE, scenePronte, applicaPronte, sceneVuote, scenaAccanto, vincoliAudio, overlayDi, inquadra, modoAdatta, spostaCentro, prossimoZoom, orientamentoStorto, nomeCamera, TAGLIO_MAX, ZOOM_DIGITALE_MAX, INQUADRABILI, microfoniInOnda, scenaProtagonista, scenaDelProtagonista, tallyDi, scenaDiRipiego, copreTutto, AUDIO_SCENA } from '../../src/web/public/js/studio-modello.js';
+import { normalizza, nuovaFonte, migraVecchie, impronteUsate, lega, mescola, dispostoRapido, pesa, formatoDi, dirette, escluse, FORMATI, LIMITI, SCENARI, AUDIO, TESTI_PRONTE, scenePronte, applicaPronte, sceneVuote, scenaAccanto, vincoliAudio, overlayDi, inquadra, modoAdatta, spostaCentro, prossimoZoom, orientamentoStorto, nomeCamera, nomeBreveCamera, TAGLIO_MAX, ZOOM_DIGITALE_MAX, INQUADRABILI, microfoniInOnda, scenaProtagonista, scenaDelProtagonista, tallyDi, scenaDiRipiego, copreTutto, AUDIO_SCENA } from '../../src/web/public/js/studio-modello.js';
 
 const IMP = 'a'.repeat(64), IMP2 = 'b'.repeat(64);
 
@@ -355,4 +355,19 @@ test('la scena di ripiego: quella di prima se non mostra il dispositivo perso, s
   assert.equal(scenaDiRipiego(d, TEL, 'boh'), io);
   const sola = normalizza({ scene: [s] });
   assert.equal(scenaDiRipiego(sola, TEL, prot), '', 'se non c\'e\' dove andare lo si dice, non si inventa');
+});
+
+test('il nome breve dell\'obiettivo: senza «fotocamera» e senza il lato ripetuto, nelle lingue dei telefoni', () => {
+  const t = { davanti: 'Davanti', dietro: 'Dietro', fotocamera: 'Fotocamera' };
+  const n = (l, i = 0) => nomeBreveCamera(l, i, t);
+  assert.deepEqual(n('Fotocamera posteriore'), { lato: 'Dietro', obiettivo: '', nome: 'Dietro' });
+  assert.deepEqual(n('Fotocamera ultra grandangolo posteriore'), { lato: 'Dietro', obiettivo: 'Ultra grandangolo', nome: 'Ultra grandangolo' });
+  assert.equal(n('Teleobiettivo posteriore').nome, 'Teleobiettivo');
+  assert.deepEqual(n('Fotocamera anteriore'), { lato: 'Davanti', obiettivo: '', nome: 'Davanti' });
+  assert.deepEqual(n('Back Ultra Wide Camera'), { lato: 'Dietro', obiettivo: 'Ultra Wide', nome: 'Ultra Wide' });
+  assert.equal(n('Front Camera').nome, 'Davanti');
+  assert.equal(n('Cámara trasera gran angular').nome, 'Gran angular');
+  assert.equal(n('camera2 2, facing back', 2).nome, 'Dietro 3', 'i nomi di Android restano quelli leggibili di prima');
+  assert.equal(n('', 1).nome, 'Fotocamera 2', 'senza nome, il numero');
+  assert.equal(n('Logitech C920 (046d:082d)').nome, 'Logitech C920 046d:082d', 'una webcam col suo nome resta lei');
 });
