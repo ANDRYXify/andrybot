@@ -26,7 +26,7 @@ import * as consolle from '../features/console.js';   // CONSOLify + tastiera fi
 import { makeLog } from '../logger.js';
 import { db, tokens, streamers, memory, clips, knowledge, QUANDO_CONOSCENZA, schedaPulita, effects as effectsDb, SCHERMI, normComando, baseDaFile, modules as modulesDb, MAX_MODULI, friends, sfondi as sfondiDb, carteLive, tgAttesa, tgScudo, paginaTelegram, TIPI_PAGINA_TELEGRAM, gsiStato, mortiSchede } from '../db.js';
 import { points, vips, tgConf, tgDest, amici, tgVisti, feedFonti, dcConf, passkeys, managers, quotes, battute, compleanni, membri, subscriptions, giochi as giochiDb, guide, GUIDE_MAX, pointAlerts, tgLogin, contatori, rapporti, postaStreamer, dcRuoli, dcLink, dcGiri, dcAccesso, dcDest, avvisiConf } from '../db.js';
-import { direttaDest, MAX_DESTINAZIONI } from '../db.js';
+import { direttaDest, MAX_DESTINAZIONI, studioScene } from '../db.js';
 import { linkPage, visitePagina, TEMPLATE_LINKPAGE, LIMITI_LINKPAGE, FONT_LINKPAGE, ICONE_LINKPAGE, TIPI_BLOCCO, TIPI_PAGINA_NEGOZIO, contiDonazioni, contiSatispay, registroDonazioni, paginaDona, paginaNegozio, paginaPannello, cartePagina, accessi, recensioni as recensioniDb, campagneDb, sito } from '../db.js';
 import { puoRecensire, validaRecensione, statoDopo, invitoAperto, rimandaFino, vetrinaDi, TESTO_MAX } from '../features/recensioni.js';
 import { funzioniCanale, concessioneDi } from '../features/accesso.js';
@@ -90,6 +90,7 @@ import * as partite from '../features/partite.js';
 import * as webauthn from './webauthn.js';
 import { comprimi, convertiPerEmote, svgInPng, LATO_LIBRERIA, normChiave } from '../features/compress.js';
 import { creaTramite, indirizzoBuono, BITRATE_MAX_KBPS } from '../features/diretta.js';
+import { normalizza as normalizzaStudio, pesa as pesaStudio, LIMITI as LIMITI_STUDIO } from './public/js/studio-modello.js';
 import { seedStreamer } from '../features/seed.js';
 import { eDelKit } from '../features/seed.js';
 import { vivo as comandoVivo } from '../features/comandi-registro.js';
@@ -1371,6 +1372,10 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // Per chi e' aperto lo Studio: a tutti con STUDIO_WEB=1, a chi e' nella beta
   // finche' la beta e' aperta.
   const studioPerMe = (login) => config.studioAttivo || (config.studioBeta && !!streamers.get(login)?.settings?.betaStudio);
+  // Una diretta per formato (docs/DIRETTA.md, «Le dirette, una per formato»):
+  // l'orizzontale e' la sessione del canale, la verticale la stessa con «#v».
+  // Ognuna ha il suo turno, la sua riserva e il suo permesso dello scudo.
+  const sessioneDi = (login, f) => String(login || '').toLowerCase() + (f === 'v' ? '#v' : '');
   process.once('SIGINT', chiudiStudio);
   process.once('SIGTERM', chiudiStudio);
   process.once('exit', chiudiStudio);
@@ -4053,7 +4058,7 @@ STREAMER (${su.toUpperCase()}) e non c'entra con l'automazione del marketing.
       // Regia (Vai live): quali permessi ha concesso per gestire la diretta dal bot
       regia: user ? { broadcast: canaleOk(user.login), raid: raidOk(user.login), commercial: commercialOk(user.login), ads: adsOk(user.login) } : null,
       // Studio Web: acceso? permesso stream key concesso? live in corso?
-      studio: user ? { attivo: studioPerMe(user.login), keyOk: studioKeyOk(user.login), live: tramite.attiva(user.login), beta: !!streamers.get(user.login)?.settings?.betaStudio, betaAperta: config.studioBeta } : null,
+      studio: user ? { attivo: studioPerMe(user.login), keyOk: studioKeyOk(user.login), live: tramite.attiva(sessioneDi(user.login, 'o')) || tramite.attiva(sessioneDi(user.login, 'v')), beta: !!streamers.get(user.login)?.settings?.betaStudio, betaAperta: config.studioBeta } : null,
       telegram: user ? statoTelegram(user.login) : null,
       knowledgeCount: user ? knowledge.count(user.login) : 0,
       preaddestramento: user
@@ -8976,10 +8981,27 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     destinazioni: direttaDest.elenco(login), maxDestinazioni: MAX_DESTINAZIONI,
     twitch: { keyOk: studioKeyOk(login), su: piattaformaDi(login) === 'twitch' },
     kick: { su: !!kickApi.tokenDi(login)?.accessToken, keyOk: kickApi.puoDiretta(login), azione: kickApi.puoModerare(login) ? '/auth/kick?mod=1&diretta=1' : '/auth/kick?diretta=1' },
-    sessione: tramite.stato(login), kbpsMax: BITRATE_MAX_KBPS,
+    sessioni: { o: tramite.stato(sessioneDi(login, 'o')), v: tramite.stato(sessioneDi(login, 'v')) }, kbpsMax: BITRATE_MAX_KBPS,
   });
+  // LE SCENE DELLO STUDIO (docs/DIRETTA.md, «La memoria»). Chi prepara le
+  // scene, anche un moderatore, le salva sul canale. Il documento passa da
+  // normalizza(), la stessa del pannello, e sta nella busta. Ogni salvataggio
+  // dice su quale versione e' nato: se un'altra finestra ha salvato prima, 409.
+  app.get('/api/studio-scene', requireLogin, studioAperto, (req, res) => {
+    const { doc, versione, quando } = studioScene.leggi(currentUser(req).login);
+    res.set('Cache-Control', 'private, no-store');
+    res.json({ doc: doc ? normalizzaStudio(doc) : null, versione, quando });
+  });
+  app.put('/api/studio-scene', requireLogin, studioAperto, (req, res) => {
+    const doc = normalizzaStudio(req.body?.doc);
+    if (pesaStudio(doc) > LIMITI_STUDIO.byte) return res.status(413).json({ errore: 'Le scene sono troppo grandi per essere salvate: togli qualche preset o qualche fonte.', grande: true });
+    const r = studioScene.salva(currentUser(req).login, doc, req.body?.versione);
+    if (!r.ok) return res.status(409).json({ errore: 'Le scene sono state cambiate da un\'altra finestra.', conflitto: true, versione: r.versione });
+    res.json({ ok: true, versione: r.versione });
+  });
+
   app.get('/api/diretta', requireOwner, studioAperto, (req, res) => res.json(vestiDirettaDi(currentUser(req).login)));
-  app.get('/api/diretta/stato', requireOwner, studioAperto, (req, res) => res.json(tramite.stato(currentUser(req).login)));
+  app.get('/api/diretta/stato', requireOwner, studioAperto, (req, res) => res.json(tramite.stato(sessioneDi(currentUser(req).login, req.query.f))));
 
   app.post('/api/diretta/destinazioni', requireOwner, studioAperto, wrap(async (req, res) => {
     const login = currentUser(req).login;
@@ -9006,7 +9028,11 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     const login = currentUser(req).login;
     if (streamers.get(login)?.status !== 'approved') return res.status(403).json({ errore: 'non sei ancora abilitato' });
     const b = req.body || {};
-    const scelte = [...new Set((Array.isArray(b.destinazioni) ? b.destinazioni : []).map(String))].slice(0, MAX_DESTINAZIONI + 1);
+    const f = b.formato === 'v' ? 'v' : 'o';
+    const scelte = [...new Set((Array.isArray(b.destinazioni) ? b.destinazioni : []).map(String))].slice(0, MAX_DESTINAZIONI + 2);
+    if (f === 'v' && scelte.includes('twitch')) return res.status(400).json({ errore: 'Twitch riceve solo la diretta orizzontale.', motivo: 'formato' });
+    const altra = tramite.stato(sessioneDi(login, f === 'v' ? 'o' : 'v'));
+    if (altra.live && (altra.ids || []).some((id) => scelte.includes(id))) return res.status(409).json({ errore: 'Questa destinazione sta già ricevendo l\'altro formato.', motivo: 'doppia' });
     const destinazioni = [];
     for (const id of scelte) {
       if (id === 'twitch') {
@@ -9025,7 +9051,7 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
       }
     }
     const v = b.video || {}, a = b.audio || {};
-    const r = tramite.avvia(login, {
+    const r = tramite.avvia(sessioneDi(login, f), {
       destinazioni,
       video: { codec: v.codec === 'avc1' ? 'avc1' : String(v.codec || ''), config: b64(v.config), larghezza: Number(v.larghezza) || 0, altezza: Number(v.altezza) || 0, fps: Number(v.fps) || 0 },
       audio: { codec: String(a.codec || ''), config: a.config ? b64(a.config) : null, frequenza: Number(a.frequenza) || 0, canali: Number(a.canali) || 0 },
@@ -9037,15 +9063,15 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     res.json({ ok: true, turno: r.turno, ripresa: !!r.ripresa, destinazioni: destinazioni.map((d) => d.nome) });
   }));
   app.post('/api/diretta/riserva', requireOwner, studioAperto, express.raw({ type: () => true, limit: '4mb' }), (req, res) => {
-    const r = tramite.riserva(currentUser(req).login, Buffer.isBuffer(req.body) ? req.body : Buffer.alloc(0), String(req.query.t || ''));
+    const r = tramite.riserva(sessioneDi(currentUser(req).login, req.query.f), Buffer.isBuffer(req.body) ? req.body : Buffer.alloc(0), String(req.query.t || ''));
     res.status(r.ok ? 200 : (r.motivo === 'nessuna' || r.motivo === 'altrove' ? 409 : 400)).json(r.ok ? { ok: true } : { errore: MOTIVI_DIRETTA[r.motivo] || 'Riserva non valida.', motivo: r.motivo });
   });
   app.post('/api/diretta/pacchi', requireOwner, studioAperto, express.raw({ type: () => true, limit: '8mb' }), (req, res) => {
-    const r = tramite.pacchi(currentUser(req).login, Number(req.query.n), Buffer.isBuffer(req.body) ? req.body : Buffer.alloc(0), String(req.query.t || ''));
+    const r = tramite.pacchi(sessioneDi(currentUser(req).login, req.query.f), Number(req.query.n), Buffer.isBuffer(req.body) ? req.body : Buffer.alloc(0), String(req.query.t || ''));
     res.status(r.ok ? 200 : (r.motivo === 'nessuna' || r.motivo === 'altrove' ? 409 : 400)).json(r.ok ? { ok: true } : { errore: MOTIVI_DIRETTA[r.motivo] || 'Pacchetti rifiutati.', motivo: r.motivo });
   });
   app.post('/api/diretta/fine', requireOwner, studioAperto, (req, res) => {
-    const fermata = tramite.ferma(currentUser(req).login, 'fermata', req.body?.turno ? String(req.body.turno) : null);
+    const fermata = tramite.ferma(sessioneDi(currentUser(req).login, req.body?.formato), 'fermata', req.body?.turno ? String(req.body.turno) : null);
     res.json({ ok: true, fermata });
   });
 

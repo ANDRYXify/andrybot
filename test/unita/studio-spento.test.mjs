@@ -32,7 +32,7 @@ test('tutte le rotte della diretta passano da «studioAperto», e trasmette solo
   for (const r of rotte) {
     assert.match(r[2], /requireOwner, studioAperto/, `la rotta ${r[0].slice(0, 46)}… non passa dalla porta`);
   }
-  assert.doesNotMatch(s, /app\.(get|post)\('\/api\/studio/, 'le rotte dello Studio vecchio, che ricodificava sul server, non ci sono piu\'');
+  assert.doesNotMatch(s, /app\.(get|post|put)\('\/api\/studio['\/]/, 'le rotte dello Studio vecchio, che ricodificava sul server, non ci sono piu\'');
   assert.match(s, /const studioPerMe = \(login\) => config\.studioAttivo \|\| \(config\.studioBeta && !!streamers\.get\(login\)\?\.settings\?\.betaStudio\);/);
 });
 

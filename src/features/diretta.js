@@ -260,7 +260,7 @@ export function creaTramite({ risorse = risorseDiSerie, ffmpeg = 'ffmpeg', ora =
     const inFinestra = s.finestra.filter(([t]) => adesso - t <= FINESTRA_BYTE_MS).reduce((t, [, b]) => t + b, 0);
     return {
       live: true, da: s.inizio, byte: s.byte, kbpsVeri: Math.round(inFinestra * 8 / FINESTRA_BYTE_MS), kbpsDichiarati: s.kbps,
-      destinazioni: s.destinazioni.map((d) => d.nome || d.id), riserva: !!s.riserva, inRiserva: { ...s.inRiserva }, errore: s.errore,
+      destinazioni: s.destinazioni.map((d) => d.nome || d.id), ids: s.destinazioni.map((d) => d.id), riserva: !!s.riserva, inRiserva: { ...s.inRiserva }, errore: s.errore,
     };
   }
 

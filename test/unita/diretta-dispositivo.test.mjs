@@ -52,12 +52,14 @@ test('il formato dei pacchetti e\' uno solo: il dispositivo scrive, il server le
 });
 
 test('nessun pacchetto parte prima che la diretta esista sul server, e la riserva arriva prima del via', () => {
-  const avvio = APP.slice(APP.indexOf('async function avviaLive() {'), APP.indexOf('async function studioControllaStato() {'));
-  const i = avvio.indexOf("await api('/api/diretta/avvio'"), j = avvio.indexOf('fetch(`/api/diretta/riserva?t=${encodeURIComponent(turno)}`'), k = avvio.indexOf('await cod.parti();');
+  const avvio = APP.slice(APP.indexOf('async function studioAvviaFormato('), APP.indexOf('async function studioControllaStato() {'));
+  const i = avvio.indexOf("await api('/api/diretta/avvio', { method: 'POST', body: { formato: f,"), j = avvio.indexOf('fetch(`/api/diretta/riserva?f=${f}&t=${encodeURIComponent(turno)}`'), k = avvio.indexOf('await cod.parti();');
   assert.ok(i > 0 && j > i && k > j, `avvio ${i}, riserva ${j}, partenza ${k}`);
   assert.match(avvio, /riprendi: true \} \}\);\n\s+turno = r\.turno; ripresa = r\.ripresa;\n\s+sped\.usaTurno\(turno\);/, 'ogni avvio e\' un turno: i pacchetti partono col turno che il server ha dato');
   const ferma = APP.slice(APP.indexOf('async function fermaLive('), APP.indexOf('function aggiornaTimerStudio()'));
-  assert.match(ferma, /if \(!dalServer\) \{ try \{ await api\('\/api\/diretta\/fine', \{ method: 'POST', body: \{ turno: d\?\.turno \} \}\);/, '«Ferma» chiude solo se questa finestra e\' ancora quella che trasmette');
+  assert.match(ferma, /if \(!dalServer\) \{ try \{ await api\('\/api\/diretta\/fine', \{ method: 'POST', body: \{ turno: d\.turno, formato: f \} \}\);/, '«Ferma» chiude solo se questa finestra e\' ancora quella che trasmette, formato per formato');
+  assert.match(avvio, /for \(const f of formati\) \{[\s\S]*?partite\.push\(await studioAvviaFormato\(D, f, sup, q, kbps, per\[f\], testo, assenzaMin\)\)/, 'una diretta per ogni formato acceso, ognuna con le sue destinazioni');
+  assert.match(avvio, /creaCodifica\(\{\s*supporto: sup, canvas: studioTela\(f\)/, 'ogni formato codifica la sua tela');
   assert.match(avvio, /catch \(e\) \{\n\s+await cod\.ferma\(\); sped\.ferma\(\);/, 'se il server dice no, il dispositivo si ferma e non manda niente');
 });
 
@@ -89,13 +91,13 @@ test('la spedizione ritenta lo stesso lotto col suo numero, e si ferma quando il
     sped.usaTurno('ab12');
     sped.aggiungi({ tipo: 'audio', chiave: true, us: 1, dati: new Uint8Array([7]) });
     await finche(() => chiamate.length === 2);
-    assert.deepEqual(chiamate.map((c) => c.url), ['/api/diretta/pacchi?t=ab12&n=0', '/api/diretta/pacchi?t=ab12&n=0'], 'il ritentativo porta lo stesso numero: il server scarta i doppioni');
+    assert.deepEqual(chiamate.map((c) => c.url), ['/api/diretta/pacchi?f=o&t=ab12&n=0', '/api/diretta/pacchi?f=o&t=ab12&n=0'], 'il ritentativo porta lo stesso numero: il server scarta i doppioni');
     assert.deepEqual(chiamate[0].corpo, chiamate[1].corpo);
     assert.deepEqual(tentativi, [1]);
     sped.aggiungi({ tipo: 'audio', chiave: true, us: 2, dati: new Uint8Array([8]) });
     await finche(() => finita);
     assert.deepEqual(finita, { motivo: 'assente' });
-    assert.equal(chiamate[2].url, '/api/diretta/pacchi?t=ab12&n=1');
+    assert.equal(chiamate[2].url, '/api/diretta/pacchi?f=o&t=ab12&n=1');
     sped.aggiungi({ tipo: 'audio', chiave: true, us: 3, dati: new Uint8Array([9]) });
     await attendi(40);
     assert.equal(chiamate.length, 3, 'a diretta finita non parte piu\' niente');

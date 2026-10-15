@@ -14,7 +14,7 @@
 // NON deve uscire, con il motivo accanto. Una tabella nuova entra da sola; se
 // contiene segreti va negata di proposito, e il collaudo lo pretende.
 
-import { db } from '../db.js';
+import { db, studioScene } from '../db.js';
 import { diCanale as attacchiDiCanale } from './incidenti.js';
 import { registro as registroScudo } from './antibot.js';
 
@@ -50,7 +50,13 @@ export function tabelleDiCanale() {
 }
 
 // Colonne che non escono MAI, qualunque tabella le abbia.
-const COLONNE_SEGRETE = /^(access_token|refresh_token|secret|password|token|apikey|api_key|webhook_secret)$/i;
+const COLONNE_SEGRETE = /^(access_token|refresh_token|secret|password|token|apikey|api_key|webhook_secret|chiave)$/i;
+
+// Tabelle i cui dati stanno nella busta ma sono della persona, non chiavi: in
+// uscita si aprono, perche' una busta chiusa non serve a chi scarica.
+const IN_CHIARO = {
+  studio_scene: (login) => { const s = studioScene.leggi(login); return s.doc ? [{ versione: s.versione, scene: s.doc }] : []; },
+};
 
 // L'esportazione di uno streamer. `limite` protegge da una tabella enorme
 // (la memoria della chat può avere decine di migliaia di righe).
@@ -68,6 +74,7 @@ export function esporta(login, { limite = 20_000 } = {}) {
   for (const { tabella, colonna, colonne } of tabelleDiCanale()) {
     if (NEGATE[tabella]) { saltate.push({ tabella, perche: NEGATE[tabella] }); continue; }
     considerate.push(tabella);
+    if (IN_CHIARO[tabella]) { const r = IN_CHIARO[tabella](chi); if (r.length) dati[tabella] = r; continue; }
     const tieni = colonne.filter((c) => !COLONNE_SEGRETE.test(c));
     const righe = db.prepare(`SELECT ${tieni.map((c) => `"${c}"`).join(', ')} FROM "${tabella}" WHERE "${colonna}"=? LIMIT ?`)
       .all(chi, limite);

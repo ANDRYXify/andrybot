@@ -19,7 +19,7 @@ test('la guida dello Studio dice per prima cosa che e\' una beta, e separa quell
   assert.ok(g, 'la guida c\'e\'');
   assert.match(g.titolo, /\(beta\)/);
   assert.match(g.corpo[0].p[0], /^<strong>A che punto è: beta aperta\.<\/strong>/);
-  assert.match(g.corpo[0].p[0], /serve Chrome o Edge aggiornati/);
+  assert.match(g.corpo[0].p[0], /serve un browser aggiornato \(Chrome o Edge su computer, Chrome su Android\)/, 'dice subito cosa serve, telefono compreso');
   const titoli = g.corpo.map((b) => b.h2).filter(Boolean);
   assert.ok(titoli.includes('Cosa c\'è nella beta') && titoli.includes('Cosa arriva dopo'), titoli.join(' | '));
   assert.match(JSON.stringify(g.corpo.find((b) => b.h2 === 'Cosa arriva dopo')), /telefono come seconda camera/, 'cio\' che non c\'e\' sta in «dopo», non promesso come fatto');

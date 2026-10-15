@@ -29,7 +29,7 @@ export async function supporto({ larghezza, altezza, fps, kbps }) {
   return { ok: true, video, audio };
 }
 
-export function creaSpedizione({ url = '/api/diretta/pacchi', ogniMs = 200, quandoFinisce, quandoRitenta } = {}) {
+export function creaSpedizione({ url = '/api/diretta/pacchi', formato = 'o', ogniMs = 200, quandoFinisce, quandoRitenta } = {}) {
   const coda = [];
   let n = 0, inVoloDa = 0, fermata = false, turno = '';
   const giro = (async () => {
@@ -42,7 +42,7 @@ export function creaSpedizione({ url = '/api/diretta/pacchi', ogniMs = 200, quan
       const seq = n++;
       for (let tentativo = 0; !fermata; tentativo++) {
         try {
-          const r = await fetch(`${url}?t=${encodeURIComponent(turno)}&n=${seq}`, { method: 'POST', headers: { 'Content-Type': 'application/octet-stream' }, body: corpo, credentials: 'same-origin' });
+          const r = await fetch(`${url}?f=${formato === 'v' ? 'v' : 'o'}&t=${encodeURIComponent(turno)}&n=${seq}`, { method: 'POST', headers: { 'Content-Type': 'application/octet-stream' }, body: corpo, credentials: 'same-origin' });
           if (r.ok) break;
           if (r.status === 409 || r.status === 403 || r.status === 400) {
             let dati = null; try { dati = await r.json(); } catch { }

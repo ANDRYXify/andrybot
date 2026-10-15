@@ -43,6 +43,27 @@ comandi diversi da quelli della riga italiana.
 
 ## 2026-10-15
 
+- [importante] Lo Studio è fatto come OBS: scene, fonti, mixer, transizioni e controlli in pannelli, e la modalità studio con anteprima e programma. [vai: studio]
+  en: The Studio is built like OBS: scenes, sources, mixer, transitions and controls in docks, and studio mode with preview and program.
+  es: El Estudio está hecho como OBS: escenas, fuentes, mezclador, transiciones y controles en paneles, y el modo estudio con vista previa y programa.
+  > Lo Studio come OBS, con anteprima e programma
+  > Prepari la scena dopo senza che il pubblico la veda, e la mandi in onda con un taglio o una dissolvenza. Chi viene da OBS trova tutto dove se lo aspetta.
+  en> The Studio like OBS, with preview and program
+  en> You prepare the next scene without the audience seeing it, and put it on air with a cut or a fade. Anyone coming from OBS finds everything where they expect it.
+  es> El Estudio como OBS, con vista previa y programa
+  es> Preparas la escena siguiente sin que el público la vea, y la pones en el aire con un corte o un fundido. Quien viene de OBS encuentra todo donde lo espera.
+- [importante] Dirette verticali, o verticale e orizzontale insieme: due dirette vere dalle stesse scene. Sul telefono lo Studio si semplifica. [vai: studio]
+  en: Vertical streams, or vertical and horizontal together: two real streams from the same scenes. On a phone the Studio gets simpler.
+  es: Directos en vertical, o vertical y horizontal a la vez: dos directos de verdad desde las mismas escenas. En el teléfono el Estudio se simplifica.
+  > In verticale, o in tutti e due i formati insieme
+  > TikTok e Shorts in 9:16, Twitch in 16:9, nello stesso momento: ogni fonte ha la sua posizione per formato. Dal telefono vai in diretta in verticale con pochi tocchi.
+  en> Vertical, or both formats at once
+  en> TikTok and Shorts in 9:16, Twitch in 16:9, at the same time: every source has its own position per format. From a phone you go live vertically in a few taps.
+  es> En vertical, o en los dos formatos a la vez
+  es> TikTok y Shorts en 9:16, Twitch en 16:9, al mismo tiempo: cada fuente tiene su posición por formato. Desde el teléfono emites en vertical con pocos toques.
+- Le scene dello Studio si salvano da sole sul tuo account, cifrate. Immagini, GIF e video restano sul dispositivo: altrove li ricarichi una volta. [vai: studio]
+  en: Studio scenes save by themselves to your account, encrypted. Images, GIFs and videos stay on the device: elsewhere you load them again once.
+  es: Las escenas del Estudio se guardan solas en tu cuenta, cifradas. Imágenes, GIF y vídeos se quedan en el dispositivo: en otro sitio los cargas otra vez.
 - Nello Studio Kick va in diretta da solo, come Twitch: la chiave la chiede a Kick quando parti, senza incollarla. E le scene si salvano senza che la barra chieda il server. [vai: studio]
   en: In the Studio Kick goes live by itself, like Twitch: the key is asked from Kick when you start, no pasting. And scenes save without the bar asking for the server.
   es: En el Estudio Kick emite solo, como Twitch: la clave se pide a Kick cuando empiezas, sin pegarla. Y las escenas se guardan sin que la barra pida el servidor.

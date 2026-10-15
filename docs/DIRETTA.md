@@ -148,10 +148,123 @@ come pagina (si usa il banco dello Studio con l'overlay come sorgente), più
 qualità diverse per piattaforma, la traccia audio separata per i VOD di Twitch,
 OBS comandato da SocialBot.
 
-## Le scene sono quelle dell'Overlay Studio
+## Lo Studio come OBS, il verticale e la memoria
 
-Lo Studio della diretta non ha un editor suo: parte dalle scene che lo
-streamer ha già fatto. Una scena è l'overlay di sempre più le sorgenti
+Quello che lo streamer costruisce non si perde, lo Studio si usa come OBS, e
+la stessa diretta esce orizzontale, verticale o in tutti e due i modi.
+
+### Il modello (`src/web/public/js/studio-modello.js`)
+
+Puro, senza DOM: lo usano il pannello e il server, e le prove lo fanno girare
+in Node. Un posto solo, quindi pannello e server non possono capirlo diverso.
+
+- **Due formati**: orizzontale 1280×720 (`o`) e verticale 720×1280 (`v`).
+- **Una scena** ha un nome e delle fonti. **Ogni fonte ha sempre tutte e due
+  le posizioni**, `pos.o` e `pos.v`, ognuna con la sua visibilità. È
+  l'invariante che regge il resto: una fonte aggiunta in un formato nasce
+  anche nell'altro, al posto giusto per quel formato. Così non esiste una
+  scena «che in verticale non c'è».
+- **Un media** (immagine, GIF, video) nella scena non è il file: è un
+  **segnaposto** con l'impronta del contenuto (SHA-256), il nome, il tipo e le
+  misure.
+- **Il documento** che si salva tiene le scene, quale scena è in onda, i
+  preset e le scelte (formati accesi, transizione, modalità studio).
+  `normalizza()` lo rende sempre valido: tagli alle misure, numeri dentro la
+  tela, tipi conosciuti. Il pannello lo usa leggendo, il server salvando: un
+  documento storto non entra e non esce.
+- **Migrazione**: i preset di prima (una posizione sola, media senza
+  impronta) diventano orizzontali con la verticale calcolata. Un media senza
+  impronta resta un segnaposto da ricollegare scegliendo il file.
+
+### La memoria
+
+- **Le scene stanno sull'account**, in `studio_scene`, **cifrate** come le
+  chiavi: i nomi dei file e i testi possono dire cose della persona. Si
+  salvano da sole, un secondo e mezzo dopo l'ultima modifica, e quando si
+  chiude la pagina. Si ritrovano su ogni computer.
+- **Ogni salvataggio porta la versione su cui è nato.** Se un'altra finestra
+  ha salvato nel frattempo, il server dice di no (409) e la pagina chiede se
+  ricaricare quelle nuove: due finestre non si cancellano il lavoro a
+  vicenda in silenzio.
+- **I file restano sul dispositivo** (IndexedDB del browser), per impronta: non
+  passano dal server, non pesano sulla macchina e non vengono ricompressi. La
+  pagina chiede al browser di tenerli (`storage.persist`), così non li butta
+  quando lo spazio stringe.
+- **Dove il file non c'è** (un altro computer, dati del browser cancellati),
+  il segnaposto si vede **solo nell'interfaccia**, mai sulla tela, quindi mai
+  in onda: un riquadro con il nome e «Ricarica questo file». Scegliendo lo
+  stesso file l'impronta coincide e torna a posto in tutte le scene e i preset;
+  un file diverso si può legare lo stesso, a mano.
+- I file che nessuna scena e nessun preset usa più si tolgono dal dispositivo
+  al salvataggio.
+- Cancellare l'account cancella le scene (la tabella ha il login). Nei dati
+  scaricati le scene escono in chiaro, perché sono della persona; le chiavi
+  di trasmissione no, come ogni chiave.
+
+### Come OBS, di serie
+
+Sul computer lo Studio ha la disposizione di OBS:
+- in alto la tela;
+- sotto, i pannelli **Scene**, **Fonti**, **Mixer audio**, **Transizioni** e
+  **Controlli**;
+- più sotto le **Proprietà** della fonte scelta e la **Chat live**.
+
+Le proprietà di una fonte si aprono dalla fonte. Le impostazioni (ingressi,
+qualità, destinazioni, riserva, formati) stanno in **Impostazioni**, nei
+Controlli. I nomi sono quelli di OBS, così chi viene da OBS si ritrova.
+
+**Modalità studio.** A sinistra l'**anteprima**, dove si lavora; a destra il
+**programma**, cioè quello che è in onda e che il codificatore manda.
+- Un clic su una scena la porta in anteprima; un doppio clic la manda in onda.
+- «Transizione» manda in onda l'anteprima con un **taglio** o una
+  **dissolvenza** della durata scelta. Durante la dissolvenza il programma
+  disegna le due scene mescolate, quindi la transizione va in onda davvero.
+- Dopo la transizione anteprima e programma si scambiano, come in OBS.
+
+Fuori dalla modalità studio c'è una tela sola, il programma, e si lavora
+direttamente su quella. La scelta si ricorda sull'account.
+
+**Il verticale.** Sopra la tela c'è «Orizzontale / Verticale» per lavorare
+sulla posizione delle fonti in ogni formato. La scena è una sola, le posizioni
+sono due. Se il verticale non è acceso, non compare da nessuna parte: chi non
+lo vuole non lo vede.
+
+### Le dirette, una per formato
+
+- **Ogni destinazione ha il suo formato.**
+  - Twitch è solo orizzontale: il doppio formato di Twitch passa da un canale
+    che dal browser non c'è.
+  - Kick, YouTube e gli altri RTMP si scelgono orizzontali o verticali.
+  - TikTok ha il suo tipo di destinazione; Instagram passa da «Altro servizio
+    RTMP».
+- **Due formati accesi sono due dirette vere**: due tele, due codificatori
+  video sul dispositivo, due sessioni del tramite (`login` e `login#v`),
+  ognuna col suo turno, la sua riserva e il suo permesso dello scudo. La banda
+  si conta per tutte e due. L'audio è lo stesso mix, codificato per ognuna.
+- Partono e si fermano insieme. Se una cade, l'altra continua, e il pannello
+  dice quale.
+
+### Sul telefono
+
+Lo Studio diventa semplice:
+- la tela a tutta larghezza;
+- «Verticale / Orizzontale / Tutti e due»;
+- fotocamera davanti o dietro, microfono, le scene come pulsanti grandi, e
+  «Vai live».
+
+Dei pannelli restano solo **Fonti** e **Controlli**, più le proprietà della
+fonte scelta; le fonti si spostano col dito come sul computer. La modalità
+studio sul telefono non c'è. Di serie è verticale.
+
+Durante la diretta, su telefono e computer, la pagina chiede al dispositivo
+di **non spegnere lo schermo** (Wake Lock). Se lo streamer esce dall'app, il
+browser ferma la pagina: va in onda la riserva finché non torna, entro i
+minuti scelti, e il pannello lo dice prima di partire.
+
+## Dopo: le scene dell'Overlay Studio
+
+Il passo dopo: lo Studio della diretta parte anche dalle scene che lo
+streamer ha già fatto nell'Overlay Studio, oltre alle sue. Una scena è l'overlay di sempre più le sorgenti
 (schermo, camera, immagini) messe sotto o sopra i suoi elementi, con lo stesso
 ordine dei livelli. Una scena, un posto dove si modifica: quello che va in OBS
 come sorgente browser e quello che va in onda dallo Studio sono la stessa cosa.

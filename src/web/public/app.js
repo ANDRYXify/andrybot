@@ -932,7 +932,7 @@ function statoDemo() {
     indirizzo: 'https://www.twitch.tv/' + ctx.canale,
     isAdmin: false,
     permessiOk: true, vipOk: true, moderazioneOk: true, canaleOk: true, inChat: true,
-    studio: { attivo: false, keyOk: false, live: false, beta: false },
+    studio: { attivo: new URLSearchParams(location.search).has('studio'), keyOk: false, live: false, beta: false },
     knowledgeCount: 3,
     status: { channels: [ctx.canale] },
     preaddestramento: { preaddestramento_ts: '2026-05-01T20:00:00Z', preaddestramento_esito: 'pagina profilo letta ("Andryx — creator e streamer da Genova · Twitch, YouTube, gaming"), 5 link social; gioco recente: Fortnite; profilo Twitch letto' },
@@ -1389,6 +1389,13 @@ function apiDemo(percorso, opzioni = {}) {
   if (metodo === 'GET' && via === '/api/streamer/settimana/categoria') return Promise.resolve({ categoria: _demoCategoria(domanda) });
   if (metodo === 'GET' && via === '/api/streamer/libreria') return Promise.resolve(_demoLibreria(percorso));
   if (via.startsWith('/api/streamer/effetti-eventi')) return Promise.resolve(_demoEventi(via, metodo, opzioni.body || {}));
+  if (via === '/api/studio-scene') {
+    const v = _demoScritture.studioVer || 0;
+    if (metodo !== 'PUT') return Promise.resolve({ doc: _demoScritture.studioScene || null, versione: v });
+    if (Number(opzioni.body?.versione) !== v) { const e = new Error(L('Le scene sono state cambiate da un’altra finestra.', 'The scenes were changed in another window.', 'Las escenas se cambiaron en otra ventana.')); e.dati = { conflitto: true, versione: v }; return Promise.reject(e); }
+    _demoScritture.studioScene = opzioni.body?.doc || null; _demoScritture.studioVer = v + 1;
+    return Promise.resolve({ ok: true, versione: v + 1 });
+  }
   if (via === '/api/recensione') {
     if (metodo === 'POST') _demoScritture.recensione = { ...opzioni.body, stato: opzioni.body?.testo ? 'attesa' : 'pubblicata' };
     if (metodo === 'DELETE') _demoScritture.recensione = null;
@@ -4742,7 +4749,7 @@ const DESC = {
   negozio: ['Cosa si compra con le monete del canale, chi lo compra, cosa c’è da consegnare, e la pagina del negozio.', 'What can be bought with channel coins, who buys it, what there is to deliver, and the shop page.', 'Qué se compra con las monedas del canal, quién lo compra, qué hay que entregar, y la página de la tienda.'],
   effetti: ['Effetti, suoni, GIF e video da lanciare in chat o in overlay — con libreria condivisa.', 'Effects, sounds, GIFs and videos to trigger in chat or overlay — with a shared library.', 'Efectos, sonidos, GIF y vídeos para lanzar en el chat o en el overlay — con biblioteca compartida.'],
   regia: ['Gestisci la diretta dal bot: titolo, categoria, tag, clip, marker, pubblicità e raid.', 'Run your stream from the bot: title, category, tags, clips, markers, ads and raids.', 'Gestiona el directo desde el bot: título, categoría, etiquetas, clips, marcadores, anuncios y raids.'],
-  studio: ['In diretta dal sito, senza OBS: beta in preparazione, chiedi di provarlo per primo.', 'Live from the site, without OBS: beta in preparation, ask to try it first.', 'En directo desde el sitio, sin OBS: beta en preparación, pide probarlo el primero.'],
+  studio: ['In diretta dal sito, senza OBS: scene, anteprima e programma, in orizzontale e in verticale. In beta.', 'Live from the site, without OBS: scenes, preview and program, horizontal and vertical. In beta.', 'En directo desde el sitio, sin OBS: escenas, vista previa y programa, en horizontal y en vertical. En beta.'],
   clip: ['Clip automatiche nei momenti di hype.', 'Automatic clips in the hype moments.', 'Clips automáticos en los momentos de hype.'],
   ascolto: ['Comanda il bot a voce mentre streammi.', 'Control the bot by voice while you stream.', 'Controla el bot por voz mientras haces directo.'],
   dcavvisi: ['In quali canali del tuo server arrivano gli avvisi, di chi e con che parole.', 'Which channels of your server get the alerts, whose, and in what words.', 'En qué canales de tu servidor llegan los avisos, de quién y con qué palabras.'],
@@ -4953,8 +4960,8 @@ const GUIDE = {
     come: [['Il livello di verifica è il filtro contro chi entra, spamma e sparisce: «email + cinque minuti» ferma quasi tutto.', 'The verification level is the filter against people who join, spam and vanish: «email + five minutes» stops nearly all of it.', 'El nivel de verificación es el filtro contra quien entra, spamea y desaparece: «correo + cinco minutos» para casi todo.', '#dce-verifica'], ['Scrivi la prima schermata: una riga tua e fino a cinque canali con un tasto per ognuno.', 'Write the first screen: one line of your own and up to five channels with a button each.', 'Escribe la primera pantalla: una línea tuya y hasta cinco canales con un botón para cada uno.', '#dce-benvenuto'], ['Aggiungi le domande: ogni risposta apre dei canali e dà un ruolo. I canali si scelgono per nome, anche quelli che la traccia deve ancora creare.', 'Add the questions: every answer opens channels and hands out a role. Channels are picked by name, including the ones the track has yet to create.', 'Añade las preguntas: cada respuesta abre canales y da un rol. Los canales se eligen por nombre, incluidos los que la plantilla aún tiene que crear.', '#dce-porta'], ['«Fammi vedere cosa faresti» e poi «Costruisci»: la porta parte insieme ai canali, in un giro solo.', '«Show me what you would do» and then «Build it»: the door goes out together with the channels, in one go.', '«Enséñame qué harías» y luego «Constrúyelo»: la puerta sale junto con los canales, de una sola vez.', '#dce-vedi']] },
   dcfiltro: { serve: ['Decidere cosa sul tuo server non si scrive: le tue parole, le liste che Discord tiene aggiornate da sé, lo spam e le raffiche di menzioni. Lo ferma Discord prima che il messaggio esista, non un bot che lo legge dopo.', 'Decide what does not get written on your server: your own words, the lists Discord keeps updated by itself, spam and mention raids. Discord stops it before the message exists, not a bot reading it afterwards.', 'Decidir qué no se escribe en tu servidor: tus palabras, las listas que Discord mantiene solo, el spam y las ráfagas de menciones. Lo para Discord antes de que el mensaje exista, no un bot que lo lee después.'],
     come: [['Le tue liste stanno in «Parole da non scrivere», una per ogni cosa che vuoi fermare. Si scrive anche a pezzi: «insult*» prende tutto quello che comincia così.', 'Your own lists live in «Words that do not get written», one per thing you want stopped. Partial words work too: «insult*» catches everything starting like that.', 'Tus listas están en «Palabras que no se escriben», una por cada cosa que quieras parar. También a trozos: «insult*» coge todo lo que empiece así.', '#dcf-parole'], ['Le liste già pronte le aggiorna Discord in tutte le lingue: tu scegli quali accendere.', 'The ready-made lists are updated by Discord in every language: you choose which to switch on.', 'Las listas ya hechas las actualiza Discord en todos los idiomas: tú eliges cuáles encender.', '#dcf-liste'], ['Per ogni regola decidi cosa succede quando scatta, e chi e dove non tocca: passano i ruoli che spunti in «Questi ruoli passano». Con le regole di base ci sono già quelli dello staff della traccia.', 'For each rule you decide what happens when it fires, and who and where it leaves alone: the roles you tick in «These roles get through» get through. With the basic rules the track’s staff roles are already there.', 'Para cada regla decides qué pasa cuando salta, y a quién y dónde no toca: pasan los roles que marques en «Estos roles pasan». Con las reglas básicas ya están los del staff de la plantilla.', '#dcf-menzioni'], ['«Fammi vedere cosa faresti» e poi «Costruisci»: il filtro parte insieme ai canali, in un giro solo.', '«Show me what you would do» and then «Build it»: the filter goes out together with the channels, in one go.', '«Enséñame qué harías» y luego «Constrúyelo»: el filtro sale junto con los canales, de una sola vez.', '#dcf-vedi']] },
-  studio: { serve: ['Andare in diretta dal sito, senza OBS, con le scene dell’Overlay Studio. È una beta aperta: il video lo fa il tuo computer, il server lo passa a Twitch, Kick, YouTube o a un server tuo.', 'Going live from the site, without OBS, with your Overlay Studio scenes. It is an open beta: your computer makes the video, the server passes it on to Twitch, Kick, YouTube or your own server.', 'Emitir en directo desde el sitio, sin OBS, con las escenas del Overlay Studio. Es una beta abierta: tu ordenador hace el vídeo, el servidor lo pasa a Twitch, Kick, YouTube o a un servidor tuyo.'],
-    come: [['Premi «Voglio provarlo» ed entri subito. Serve Chrome o Edge aggiornati su computer.', 'Press «I want to try it» and you are in right away. It needs an up-to-date Chrome or Edge on a computer.', 'Pulsa «Quiero probarlo» y entras enseguida. Necesita Chrome o Edge actualizados en un ordenador.', '#studio-beta-riga'], ['Dentro scegli dove va la diretta: Twitch e Kick sono già pronti se li hai collegati, YouTube o un server tuo si aggiungono con la chiave di trasmissione, che resta cifrata.', 'Inside, choose where the stream goes: Twitch and Kick are ready if you connected them, YouTube or your own server are added with the stream key, which stays encrypted.', 'Dentro eliges adónde va el directo: Twitch y Kick ya están listos si los conectaste, YouTube o un servidor tuyo se añaden con la clave de emisión, que queda cifrada.', ''], ['Scrivi la frase della tua immagine di riserva e quanti minuti aspettare: se la rete rallenta resta la tua voce su quell’immagine, se cade va in onda lei, e se non torni la diretta si chiude da sola.', 'Write the line for your backup image and how many minutes to wait: if the network slows down your voice stays over that image, if it drops the image goes on air, and if you do not come back the stream ends by itself.', 'Escribe la frase de tu imagen de reserva y cuántos minutos esperar: si la red va lenta queda tu voz sobre esa imagen, si cae sale ella, y si no vuelves el directo se cierra solo.', ''], ['Con OSify acceso, i suoi canali audio (gioco, voce, musica) compaiono da soli: «Usa i canali di OSify» li mette ognuno al suo posto nel mixer.', 'With OSify running, its audio channels (game, voice, music) show up by themselves: «Use the OSify channels» puts each one in its place in the mixer.', 'Con OSify encendido, sus canales de audio (juego, voz, música) aparecen solos: «Usar los canales de OSify» pone cada uno en su sitio en el mezclador.', '']] },
+  studio: { serve: ['Andare in diretta dal sito, senza OBS, con uno studio fatto come OBS: scene, fonti, mixer, transizioni, anteprima e programma. In orizzontale, in verticale o in tutti e due insieme. È una beta aperta: il video lo fa il tuo dispositivo, il server lo passa a Twitch, Kick, YouTube o a un server tuo.', 'Going live from the site, without OBS, with a studio built like OBS: scenes, sources, mixer, transitions, preview and program. Horizontal, vertical or both at once. It is an open beta: your device makes the video, the server passes it on to Twitch, Kick, YouTube or your own server.', 'Emitir en directo desde el sitio, sin OBS, con un estudio hecho como OBS: escenas, fuentes, mezclador, transiciones, vista previa y programa. En horizontal, en vertical o en los dos a la vez. Es una beta abierta: tu dispositivo hace el vídeo, el servidor lo pasa a Twitch, Kick, YouTube o a un servidor tuyo.'],
+    come: [['Premi «Voglio provarlo» ed entri subito. Serve un browser aggiornato: Chrome o Edge su computer, Chrome su Android.', 'Press «I want to try it» and you are in right away. It needs an up-to-date browser: Chrome or Edge on a computer, Chrome on Android.', 'Pulsa «Quiero probarlo» y entras enseguida. Necesita un navegador actualizado: Chrome o Edge en el ordenador, Chrome en Android.', '#studio-beta-riga'], ['Componi le scene come in OBS: a sinistra le scene, accanto le fonti (webcam, schermo, immagini e GIF, video, testo, overlay). Trascina e ridimensiona sulla tela; le frecce spostano di un punto, con Maiuscole di dieci.', 'Build your scenes as in OBS: scenes on the left, sources next to them (webcam, screen, images and GIFs, video, text, overlay). Drag and resize on the canvas; the arrow keys move by one point, with Shift by ten.', 'Compón las escenas como en OBS: a la izquierda las escenas, al lado las fuentes (webcam, pantalla, imágenes y GIF, vídeo, texto, overlay). Arrastra y cambia el tamaño en el lienzo; las flechas mueven un punto, con Mayúsculas diez.', ''], ['«Modalità studio» apre anteprima e programma affiancati: prepari la scena dopo senza che il pubblico la veda, e «Transizione» la manda in onda con un taglio o una dissolvenza.', '«Studio mode» opens preview and program side by side: you prepare the next scene without the audience seeing it, and «Transition» puts it on air with a cut or a fade.', '«Modo estudio» abre vista previa y programa lado a lado: preparas la escena siguiente sin que el público la vea, y «Transición» la pone en el aire con un corte o un fundido.', ''], ['In «Impostazioni» scegli i formati: orizzontale, verticale o tutti e due. Con tutti e due partono due dirette vere, e ogni fonte ha una posizione per formato. Poi scegli dove va la diretta: Twitch e Kick sono già pronti se li hai collegati, YouTube, TikTok o un server tuo si aggiungono con la chiave di trasmissione, che resta cifrata.', 'In «Settings» pick the formats: horizontal, vertical or both. With both, two real streams start, and every source has a position per format. Then choose where the stream goes: Twitch and Kick are ready if you connected them, YouTube, TikTok or your own server are added with the stream key, which stays encrypted.', 'En «Ajustes» eliges los formatos: horizontal, vertical o los dos. Con los dos salen dos directos de verdad, y cada fuente tiene una posición por formato. Luego eliges adónde va el directo: Twitch y Kick ya están listos si los conectaste, YouTube, TikTok o un servidor tuyo se añaden con la clave de emisión, que queda cifrada.', ''], ['Sul telefono lo studio si semplifica: scegli Verticale, Orizzontale o Tutti e due, giri la fotocamera, aggiungi testo o immagini e cambi scena dalla barra sotto la tela.', 'On a phone the studio gets simpler: pick Vertical, Horizontal or Both, flip the camera, add text or images and switch scenes from the bar under the canvas.', 'En el teléfono el estudio se simplifica: eliges Vertical, Horizontal o Los dos, giras la cámara, añades texto o imágenes y cambias de escena desde la barra bajo el lienzo.', ''], ['Le scene si salvano da sole sul tuo account, cifrate. Immagini, GIF e video restano sul dispositivo: su un altro computer al loro posto c’è un riquadro col nome del file, e lo ricarichi una volta per tutte le scene che lo usano.', 'Scenes save by themselves to your account, encrypted. Images, GIFs and videos stay on the device: on another computer a box with the file name stands in their place, and you load it once for every scene that uses it.', 'Las escenas se guardan solas en tu cuenta, cifradas. Imágenes, GIF y vídeos se quedan en el dispositivo: en otro ordenador en su lugar hay un recuadro con el nombre del archivo, y lo vuelves a cargar una vez para todas las escenas que lo usan.', ''], ['Scrivi la frase della tua immagine di riserva e quanti minuti aspettare: se la rete rallenta resta la tua voce su quell’immagine, se cade va in onda lei, e se non torni la diretta si chiude da sola.', 'Write the line for your backup image and how many minutes to wait: if the network slows down your voice stays over that image, if it drops the image goes on air, and if you do not come back the stream ends by itself.', 'Escribe la frase de tu imagen de reserva y cuántos minutos esperar: si la red va lenta queda tu voz sobre esa imagen, si cae sale ella, y si no vuelves el directo se cierra solo.', ''], ['Con OSify acceso, i suoi canali audio (gioco, voce, musica) compaiono da soli: «Usa i canali di OSify» li mette ognuno al suo posto nel mixer.', 'With OSify running, its audio channels (game, voice, music) show up by themselves: «Use the OSify channels» puts each one in its place in the mixer.', 'Con OSify encendido, sus canales de audio (juego, voz, música) aparecen solos: «Usar los canales de OSify» pone cada uno en su sitio en el mezclador.', '']] },
   alert: { serve: ['Comporre quello che si vede sulla diretta — alert, chat a schermo, obiettivi, contatori — e prendere il link da mettere in OBS.', 'Compose what shows on your stream — alerts, on-screen chat, goals, counters — and get the link to put in OBS.', 'Componer lo que se ve en el directo — alertas, chat en pantalla, objetivos, contadores — y coger el enlace para poner en OBS.'],
     come: [['Nei «Livelli», a sinistra, c\'è tutto quello che può comparire: l\'occhio lo toglie da questo overlay.', 'In «Layers», on the left, there is everything that can show up: the eye takes it out of this overlay.', 'En «Capas», a la izquierda, está todo lo que puede aparecer: el ojo lo quita de este overlay.', '#ovl-livelli'], ['Sulla tela trascini ogni cosa dove la vuoi: si aggancia da sola ai bordi e agli altri, le frecce la spostano al pixel.', 'On the canvas you drag everything where you want it: it snaps to the edges and to the others, the arrows move it pixel by pixel.', 'En el lienzo arrastras cada cosa donde la quieras: se ajusta sola a los bordes y a las demás, las flechas la mueven píxel a píxel.', '#ovl-preview'], ['Clicca un elemento sulla tela: a destra si apre «Proprietà», e lì si veste — colori, carattere, forma, dimensione, rotazione.', 'Click an element on the canvas: «Properties» opens on the right, and there it gets dressed — colors, font, shape, size, rotation.', 'Haz clic en un elemento del lienzo: a la derecha se abre «Propiedades», y ahí se viste — colores, fuente, forma, tamaño, rotación.', '#ovl-tela'], ['Copia il link qui sopra e mettilo in OBS come sorgente Browser, 1920×1080. Ogni overlay ha il suo.', 'Copy the link above and put it in OBS as a Browser source, 1920×1080. Each overlay has its own.', 'Copia el enlace de arriba y ponlo en OBS como fuente Navegador, 1920×1080. Cada overlay tiene el suyo.', '#inp-overlay-url'], ['Per le sere diverse dalle altre c\'è l\'occasione: un\'aggiunta sopra l\'overlay che hai già. La accendi e compare, la spegni e torna tutto com\'era.', 'For the nights that are not like the others there is the occasion: an add-on over the overlay you already have. Turn it on and it shows up, turn it off and everything is back as it was.', 'Para las noches que no son como las demás está la ocasión: un añadido sobre el overlay que ya tienes. La enciendes y aparece, la apagas y todo vuelve como estaba.', '#ovl-occ-quale']] },
   emote: { serve: ['Gestire a 360° le emote 7TV del tuo canale — aggiungerle, toglierle e rinominarle — direttamente dal bot. Le emote 7TV compaiono anche nella chat a schermo dell\'overlay.', 'Fully manage your channel’s 7TV emotes — add, remove and rename them — right from the bot. 7TV emotes also show up in the overlay’s on-screen chat.', 'Gestiona al 100% las emotes 7TV de tu canal — añadirlas, quitarlas y renombrarlas — directamente desde el bot. Las emotes 7TV también aparecen en el chat en pantalla del overlay.'],
@@ -18699,7 +18706,7 @@ function _rigeneraSelOverlay() {
 const _TENDINE = new WeakMap();
 
 function vestiTendina(sel) {
-  if (!sel || _TENDINE.has(sel)) return;
+  if (!sel || _TENDINE.has(sel) || !sel.parentNode) return;
   try { if (matchMedia('(pointer: coarse)').matches) return; } catch (e) { }
   const guscio = document.createElement('span');
   guscio.className = 'tendina';
@@ -21428,135 +21435,161 @@ function pannelloStudio() {
   }
   return pannello('studio', `
     <div class="carta evidenziata" id="studio-permessi-banner" hidden></div>
-    <div class="carta studio-carta studio-largo" data-non-salva>
-      <h2>${_hIco(ICO.onda)}${L('Studio Web: vai live dal browser', 'Web Studio: go live from the browser', 'Estudio Web: emite sin OBS')}</h2>
-      <p>${L('Un vero studio nel browser: crea', 'A real studio in the browser: create', 'Un estudio de verdad en el navegador: crea')} <strong>${L('scene', 'scenes', 'escenas')}</strong>, ${L('aggiungi', 'add', 'añade')} <strong>${L('fonti', 'sources', 'fuentes')}</strong> (${L('webcam, schermo, immagini, video, testo, overlay), spostale e ridimensionale sul palco, regola l\'<strong>audio</strong> e vai in diretta su Twitch. Il video parte da qui: <strong>tieni aperta questa scheda</strong> mentre trasmetti.', 'webcam, screen, images, video, text, overlay), move and resize them on the stage, tune the <strong>audio</strong> and go live on Twitch. The video comes from here: <strong>keep this tab open</strong> while you broadcast.', 'webcam, pantalla, imágenes, vídeo, texto, overlay), muévelas y rediméntalas en el escenario, ajusta el <strong>audio</strong> y emite en Twitch. El vídeo sale de aquí: <strong>mantén esta pestaña abierta</strong> mientras transmites.')}</p>
-
-      ${miniGuida({
-        titolo: L('Tutorial rapido: la tua prima diretta dallo Studio', 'Quick tutorial: your first Studio broadcast', 'Tutorial rápido: tu primer directo desde el Estudio'),
-        passi: [
-          L('<strong>1. Ingressi & qualità</strong>: scegli fotocamera, microfono e qualità (fino a <strong>2K</strong>). Se scegli una cam e resta nera, prova «Aggiorna dispositivi» e riseleziona.', '<strong>1. Inputs & quality</strong>: pick camera, microphone and quality (up to <strong>2K</strong>). If a cam stays black, hit “Refresh devices” and reselect.', '<strong>1. Entradas y calidad</strong>: elige cámara, micrófono y calidad (hasta <strong>2K</strong>). Si una cam se queda en negro, pulsa «Actualizar dispositivos» y vuelve a seleccionar.'),
-          L('<strong>2. Aggiungi fonti</strong> (webcam, schermo, testo…) e sistemale sul palco trascinando gli angoli, oppure premi un <strong>layout rapido</strong>.', '<strong>2. Add sources</strong> (webcam, screen, text…) and arrange them on the stage by dragging the corners, or press a <strong>quick layout</strong>.', '<strong>2. Añade fuentes</strong> (webcam, pantalla, texto…) y colócalas en el escenario arrastrando las esquinas, o pulsa un <strong>diseño rápido</strong>.'),
-          L('<strong>3. Overlay</strong>: aggiungi la fonte «Overlay» per avere a schermo <strong>alert, chat ed effetti</strong> a punti canale (è lo stesso overlay che useresti in OBS).', '<strong>3. Overlay</strong>: add the “Overlay” source to get <strong>alerts, chat and channel-point effects</strong> on screen (it’s the same overlay you’d use in OBS).', '<strong>3. Overlay</strong>: añade la fuente «Overlay» para tener en pantalla <strong>alertas, chat y efectos</strong> de puntos de canal (es el mismo overlay que usarías en OBS).'),
-          L('<strong>4. Audio</strong>: dal <strong>mixer</strong> regola i volumi (microfono, video, effetti) e controlla che le barre si muovano.', '<strong>4. Audio</strong>: from the <strong>mixer</strong> adjust the volumes (microphone, video, effects) and check the bars are moving.', '<strong>4. Audio</strong>: desde el <strong>mezclador</strong> ajusta los volúmenes (micrófono, vídeo, efectos) y comprueba que las barras se muevan.'),
-          L('<strong>5. Vai live</strong> e <strong>lascia aperta questa scheda</strong>: se la chiudi, la diretta si interrompe.', '<strong>5. Go live</strong> and <strong>leave this tab open</strong>: if you close it, the stream stops.', '<strong>5. Emitir</strong> y <strong>deja esta pestaña abierta</strong>: si la cierras, el directo se corta.'),
-        ],
-        note: [
-          L('Vuoi più spazio? Con «<strong>Layout libero</strong>» sposti i pannelli dove vuoi; «Reimposta layout» rimette tutto in ordine.', 'Want more room? With “<strong>Free layout</strong>” you move the panels wherever you want; “Reset layout” puts everything back.', '¿Quieres más espacio? Con «<strong>Diseño libre</strong>» mueves los paneles donde quieras; «Restablecer diseño» lo deja todo en orden.'),
-        ],
-      })}
-
-      <div class="studio-scene" id="studio-scene"></div>
-      <div class="studio-preset" id="studio-preset"></div>
-      <div class="studio-layout-ctrl">
-        <button type="button" class="btn secondario mini" id="studio-libero-btn" data-libero="toggle" title="${L('Sposta liberamente i pannelli (e il palco) dove vuoi', 'Freely move the panels (and the stage) wherever you want', 'Mueve libremente los paneles (y el escenario) donde quieras')}">${_bIco(ICO.sposta)}${L('Layout libero', 'Free layout', 'Diseño libre')}</button>
-        <button type="button" class="btn secondario mini" data-libero="reset" title="${L('Rimetti i pannelli in ordine', 'Reset panels to the default order', 'Restablecer paneles')}">${L('Reimposta layout', 'Reset layout', 'Restablecer diseño')}</button>
+    <div class="carta studio-carta studio-largo" id="studio-carta" data-non-salva>
+      <div class="studio-testa">
+        <h2>${_hIco(ICO.onda)}${L('Studio Web', 'Web Studio', 'Estudio Web')}</h2>
+        <div class="studio-lavoro" id="studio-lavoro"></div>
+        <span class="studio-salvato" id="studio-salvato" aria-live="polite"></span>
       </div>
 
-      <div class="studio-griglia" id="studio-griglia">
-        <div class="studio-palco-wrap">
-          <span class="studio-palco-drag" title="${L('Trascina il palco', 'Drag the stage', 'Arrastra el escenario')}">⠿ ${L('palco', 'stage', 'escenario')}</span>
-          <div class="studio-palco" id="studio-palco">
-            <canvas id="studio-canvas" width="1280" height="720"></canvas>
-            <div class="studio-ui" id="studio-ui"></div>
+      <div class="studio-tele" id="studio-tele">
+        <div class="studio-tela-box" id="studio-box-ant" hidden>
+          <div class="studio-tela-tit">${L('Anteprima', 'Preview', 'Vista previa')}</div>
+          <div class="studio-palco" id="studio-palco-ant" tabindex="0"></div>
+        </div>
+        <div class="studio-trans-centro" id="studio-trans-centro" hidden>
+          <button type="button" class="btn" id="studio-transizione" title="${esc(L('Manda in onda l’anteprima', 'Send the preview on air', 'Pone en el aire la vista previa'))}">${_bIco(ICO.freccia)}${L('Transizione', 'Transition', 'Transición')}</button>
+        </div>
+        <div class="studio-tela-box">
+          <div class="studio-tela-tit" id="studio-tit-prog">${L('Programma', 'Program', 'Programa')}</div>
+          <div class="studio-palco" id="studio-palco-prog" tabindex="0">
             <div id="studio-badge-live" class="studio-badge-live" hidden>● LIVE <span id="studio-timer">00:00</span></div>
           </div>
+        </div>
+      </div>
+
+      <div class="studio-mobile-barra" id="studio-mobile-barra"></div>
+
+      <div class="studio-docks" id="studio-docks">
+        <section class="studio-dock" aria-labelledby="studio-t-scene">
+          <h3 class="studio-dock-tit" id="studio-t-scene">${_bIco(ICO.scene)}${L('Scene', 'Scenes', 'Escenas')}</h3>
+          <ul class="studio-lista" id="studio-scene"></ul>
+          <div class="studio-dock-piede">
+            <button type="button" class="sf-btn" data-scena-azione="nuova" aria-label="${esc(L('Nuova scena', 'New scene', 'Nueva escena'))}" title="${esc(L('Nuova scena', 'New scene', 'Nueva escena'))}">${_bIco(ICO.piu)}</button>
+            <button type="button" class="sf-btn" data-scena-azione="rinomina" aria-label="${esc(L('Rinomina la scena', 'Rename the scene', 'Renombrar la escena'))}" title="${esc(L('Rinomina la scena', 'Rename the scene', 'Renombrar la escena'))}">${_bIco(ICO.scrivi)}</button>
+            <button type="button" class="sf-btn" data-scena-azione="su" aria-label="${esc(L('Sposta su', 'Move up', 'Subir'))}" title="${esc(L('Sposta su', 'Move up', 'Subir'))}">${_bIco(ICO.freccia)}</button>
+            <button type="button" class="sf-btn sf-giu" data-scena-azione="giu" aria-label="${esc(L('Sposta giù', 'Move down', 'Bajar'))}" title="${esc(L('Sposta giù', 'Move down', 'Bajar'))}">${_bIco(ICO.freccia)}</button>
+            <button type="button" class="sf-btn sf-rim" data-scena-azione="elimina" aria-label="${esc(L('Elimina la scena', 'Delete the scene', 'Eliminar la escena'))}" title="${esc(L('Elimina la scena', 'Delete the scene', 'Eliminar la escena'))}">${_bIco(ICO.cestino)}</button>
+          </div>
+          <div class="studio-preset" id="studio-preset"></div>
+        </section>
+
+        <section class="studio-dock studio-dock-fonti" aria-labelledby="studio-t-fonti">
+          <h3 class="studio-dock-tit" id="studio-t-fonti">${_bIco(ICO.lista)}${L('Fonti', 'Sources', 'Fuentes')}</h3>
+          <ul class="studio-lista studio-fonti" id="studio-fonti"></ul>
+          <details class="studio-add-menu" id="studio-add-menu">
+            <summary class="btn secondario mini">${_bIco(ICO.piu)}${L('Aggiungi una fonte', 'Add a source', 'Añade una fuente')}</summary>
+            <div class="studio-add">
+              <button type="button" class="btn secondario mini" data-add="webcam">${_bIco(ICO.fotocamera)}Webcam</button>
+              <button type="button" class="btn secondario mini" data-add="schermo">${_bIco(ICO.monitor)}${L('Schermo', 'Screen', 'Pantalla')}</button>
+              <button type="button" class="btn secondario mini" data-add="immagine">${_bIco(ICO.immagine)}${L('Immagine o GIF', 'Image or GIF', 'Imagen o GIF')}</button>
+              <button type="button" class="btn secondario mini" data-add="video">${_bIco(ICO.video)}Video</button>
+              <button type="button" class="btn secondario mini" data-add="testo">${_bIco(ICO.testo)}${L('Testo', 'Text', 'Texto')}</button>
+              <button type="button" class="btn secondario mini" data-add="overlay">${_bIco(ICO.effetti)}Overlay</button>
+            </div>
+          </details>
           <div class="studio-layouts" id="studio-layouts">
-            <span class="studio-mini-tit">${L('Layout rapidi', 'Quick layouts', 'Diseños rápidos')}</span>
+            <span class="studio-mini-tit">${L('Disposizioni rapide', 'Quick layouts', 'Diseños rápidos')}</span>
             <button type="button" class="btn secondario mini" data-layout="cam">${L('Solo webcam', 'Webcam only', 'Solo webcam')}</button>
             <button type="button" class="btn secondario mini" data-layout="schermo">${L('Solo schermo', 'Screen only', 'Solo pantalla')}</button>
             <button type="button" class="btn secondario mini" data-layout="pip">${L('Schermo + webcam', 'Screen + webcam', 'Pantalla + webcam')}</button>
             <button type="button" class="btn secondario mini" data-layout="affianco">${L('Affiancati', 'Side by side', 'Lado a lado')}</button>
           </div>
-        </div>
+        </section>
 
-        <aside class="studio-side">
-          <div class="studio-box studio-io">
-            <div class="studio-box-tit">${_bIco(ICO.sliders)}${L('Ingressi & qualità', 'Inputs & quality', 'Entradas y calidad')}</div>
-            <label class="campo" for="studio-cam-sel">${L('Fotocamera', 'Camera', 'Cámara')}</label>
-            <select id="studio-cam-sel" class="campo-largo"></select>
-            <label class="campo spazio-sopra" for="studio-mic-sel">${L('Microfono', 'Microphone', 'Micrófono')}</label>
-            <select id="studio-mic-sel" class="campo-largo"></select>
-            <label class="campo spazio-sopra" for="studio-qual-sel">${L('Qualità della diretta', 'Stream quality', 'Calidad del directo')}</label>
-            <select id="studio-qual-sel" class="campo-largo"></select>
-            <label class="campo spazio-sopra" for="studio-ov-sel">${L('Overlay da mostrare', 'Overlay to show', 'Overlay a mostrar')}</label>
-            <select id="studio-ov-sel" class="campo-largo"></select>
-            <button type="button" class="btn secondario mini spazio-sopra" data-io="aggiorna">${_bIco(ICO.aggiorna)}${L('Aggiorna dispositivi', 'Refresh devices', 'Actualizar dispositivos')}</button>
-          </div>
+        <section class="studio-dock" aria-labelledby="studio-t-mixer">
+          <h3 class="studio-dock-tit" id="studio-t-mixer">${_bIco(ICO.sliders)}${L('Mixer audio', 'Audio mixer', 'Mezclador de audio')}</h3>
+          <div id="studio-mixer"></div>
+        </section>
 
-          <div class="studio-box">
-            <div class="studio-box-tit">${_bIco(ICO.piu)}${L('Aggiungi una fonte', 'Add a source', 'Añade una fuente')}</div>
-            <div class="studio-add">
-              <button type="button" class="btn secondario mini" data-add="webcam">${_bIco(ICO.fotocamera)}Webcam</button>
-              <button type="button" class="btn secondario mini" data-add="schermo">${_bIco(ICO.monitor)}${L('Schermo', 'Screen', 'Pantalla')}</button>
-              <button type="button" class="btn secondario mini" data-add="immagine">${_bIco(ICO.immagine)}${L('Immagine', 'Image', 'Imagen')}</button>
-              <button type="button" class="btn secondario mini" data-add="video">${_bIco(ICO.video)}Video</button>
-              <button type="button" class="btn secondario mini" data-add="testo">${_bIco(ICO.testo)}${L('Testo', 'Text', 'Texto')}</button>
-              <button type="button" class="btn secondario mini" data-add="overlay">${_bIco(ICO.effetti)}Overlay</button>
-            </div>
-          </div>
+        <section class="studio-dock" aria-labelledby="studio-t-trans">
+          <h3 class="studio-dock-tit" id="studio-t-trans">${_bIco(ICO.freccia)}${L('Transizioni', 'Transitions', 'Transiciones')}</h3>
+          <label class="campo" for="studio-trans-tipo">${L('Tipo', 'Type', 'Tipo')}</label>
+          <select id="studio-trans-tipo" class="campo-largo">
+            <option value="dissolvenza">${L('Dissolvenza', 'Fade', 'Fundido')}</option>
+            <option value="taglio">${L('Taglio', 'Cut', 'Corte')}</option>
+          </select>
+          <label class="campo spazio-sopra" for="studio-trans-ms">${L('Durata (millisecondi)', 'Duration (milliseconds)', 'Duración (milisegundos)')}</label>
+          <input id="studio-trans-ms" type="number" min="100" max="3000" step="50" class="campo-largo">
+        </section>
 
-          <div class="studio-box">
-            <div class="studio-box-tit">${_bIco(ICO.lista)}${L('Fonti della scena', 'Scene sources', 'Fuentes de la escena')} <span class="tenue">(${L('la prima è dietro', 'the first is at the back', 'la primera está detrás')})</span></div>
-            <ul class="studio-fonti" id="studio-fonti"></ul>
-          </div>
+        <section class="studio-dock studio-controlli" aria-labelledby="studio-t-ctrl">
+          <h3 class="studio-dock-tit" id="studio-t-ctrl">${_bIco(ICO.onda)}${L('Controlli', 'Controls', 'Controles')}</h3>
+          <button type="button" class="btn grande" id="studio-live" title="${esc(L('Manda in diretta il programma. Da qui in poi ti guarda il pubblico', 'Sends the program out live. From here on, the audience is watching', 'Pone en directo el programa. A partir de aquí te ve el público'))}">${_bIco(ICO.onda)}${L('VAI LIVE', 'GO LIVE', 'EMITIR')}</button>
+          <button type="button" class="btn secondario" id="studio-ferma" hidden>${_bIco(ICO.stop)}${L('Ferma diretta', 'Stop stream', 'Detener directo')}</button>
+          <button type="button" class="btn secondario" id="studio-modalita" aria-pressed="false">${L('Modalità studio', 'Studio mode', 'Modo estudio')}</button>
+          <button type="button" class="btn secondario" id="studio-impostazioni-apri" aria-expanded="false" aria-controls="studio-impostazioni">${_bIco(ICO.sliders)}${L('Impostazioni', 'Settings', 'Ajustes')}</button>
+          <p class="suggerimento" id="studio-stato" aria-live="polite"></p>
+          <p class="suggerimento" id="studio-ripresa" hidden></p>
+          <p class="suggerimento" id="studio-supporto"></p>
+        </section>
+      </div>
 
-          <div class="studio-box" id="studio-prop-box" hidden>
-            <div class="studio-box-tit">${_bIco(ICO.righello)}${L('Proprietà', 'Properties', 'Propiedades')}</div>
-            <div id="studio-prop"></div>
-          </div>
+      <div class="studio-docks studio-docks-2">
+        <section class="studio-dock" id="studio-prop-box" hidden aria-labelledby="studio-t-prop">
+          <h3 class="studio-dock-tit" id="studio-t-prop">${_bIco(ICO.righello)}${L('Proprietà', 'Properties', 'Propiedades')}</h3>
+          <div id="studio-prop"></div>
+        </section>
+        <section class="studio-dock studio-dock-chat" aria-labelledby="studio-t-chat">
+          <h3 class="studio-dock-tit" id="studio-t-chat">${_bIco(ICO.moduli)}${L('Chat live', 'Live chat', 'Chat en directo')}</h3>
+          <div id="studio-chat" class="studio-chat"></div>
+        </section>
+      </div>
 
-          <div class="studio-box" id="studio-dest-box">
-            <div class="studio-box-tit">${_bIco(ICO.onda)}${L('Dove va la diretta', 'Where the stream goes', 'Adónde va el directo')}</div>
-            <p class="suggerimento" id="studio-ripresa" hidden></p>
-            <p class="suggerimento" id="studio-supporto"></p>
-            <p class="suggerimento" id="studio-osify" hidden></p>
-            <div id="studio-dest"></div>
-            <details class="spazio-sopra" id="studio-dest-nuova">
-              <summary>${L('Aggiungi una destinazione', 'Add a destination', 'Añade un destino')}</summary>
-              <label class="campo" for="studio-dest-tipo">${L('Servizio', 'Service', 'Servicio')}</label>
-              <select id="studio-dest-tipo" class="campo-largo">
-                <option value="kick">Kick</option>
-                <option value="youtube">YouTube</option>
-                <option value="altro">${L('Altro servizio RTMP', 'Other RTMP service', 'Otro servicio RTMP')}</option>
-              </select>
-              <label class="campo spazio-sopra" for="studio-dest-server">${L('Indirizzo del server', 'Server address', 'Dirección del servidor')}</label>
-              <input id="studio-dest-server" class="campo-largo" maxlength="300" autocomplete="off" placeholder="rtmps://…">
-              <label class="campo spazio-sopra" for="studio-dest-chiave">${L('Chiave di trasmissione', 'Stream key', 'Clave de transmisión')}</label>
-              <input id="studio-dest-chiave" class="campo-largo" type="password" maxlength="300" autocomplete="off">
-              <p class="suggerimento" id="studio-dest-aiuto"></p>
-              <button type="button" class="btn secondario mini spazio-sopra" id="studio-dest-salva">${L('Salva la destinazione', 'Save the destination', 'Guardar el destino')}</button>
-            </details>
-            <label class="campo spazio-sopra" for="studio-riserva-testo">${L('Scritta se la rete cade', 'Text if the network drops', 'Texto si la red se cae')}</label>
-            <input id="studio-riserva-testo" class="campo-largo" maxlength="40" value="${esc(L('Torno subito', 'Be right back', 'Vuelvo enseguida'))}">
-            <label class="campo spazio-sopra" for="studio-assenza">${L('Chiudi la diretta se non torno entro', 'End the stream if I am not back within', 'Cierra el directo si no vuelvo en')}</label>
-            <select id="studio-assenza" class="campo-largo">
-              <option value="5">5 ${L('minuti', 'minutes', 'minutos')}</option>
-              <option value="10" selected>10 ${L('minuti', 'minutes', 'minutos')}</option>
-              <option value="20">20 ${L('minuti', 'minutes', 'minutos')}</option>
-              <option value="30">30 ${L('minuti', 'minutes', 'minutos')}</option>
+      <div class="studio-impostazioni" id="studio-impostazioni" hidden>
+        <section class="studio-dock studio-io" aria-labelledby="studio-t-io">
+          <h3 class="studio-dock-tit" id="studio-t-io">${_bIco(ICO.sliders)}${L('Ingressi e qualità', 'Inputs and quality', 'Entradas y calidad')}</h3>
+          <label class="campo" for="studio-cam-sel">${L('Fotocamera', 'Camera', 'Cámara')}</label>
+          <select id="studio-cam-sel" class="campo-largo"></select>
+          <label class="campo spazio-sopra" for="studio-mic-sel">${L('Microfono', 'Microphone', 'Micrófono')}</label>
+          <select id="studio-mic-sel" class="campo-largo"></select>
+          <label class="campo spazio-sopra" for="studio-qual-sel">${L('Qualità della diretta', 'Stream quality', 'Calidad del directo')}</label>
+          <select id="studio-qual-sel" class="campo-largo"></select>
+          <label class="campo spazio-sopra" for="studio-ov-sel">${L('Overlay da mostrare', 'Overlay to show', 'Overlay a mostrar')}</label>
+          <select id="studio-ov-sel" class="campo-largo"></select>
+          <button type="button" class="btn secondario mini spazio-sopra" data-io="aggiorna">${_bIco(ICO.aggiorna)}${L('Aggiorna dispositivi', 'Refresh devices', 'Actualizar dispositivos')}</button>
+        </section>
+
+        <section class="studio-dock" aria-labelledby="studio-t-formati">
+          <h3 class="studio-dock-tit" id="studio-t-formati">${_bIco(ICO.monitor)}${L('Formati della diretta', 'Stream formats', 'Formatos del directo')}</h3>
+          <label class="riga-check"><input type="checkbox" data-formato="o"> ${L('Orizzontale (16:9): Twitch, Kick, YouTube', 'Horizontal (16:9): Twitch, Kick, YouTube', 'Horizontal (16:9): Twitch, Kick, YouTube')}</label>
+          <label class="riga-check spazio-sopra"><input type="checkbox" data-formato="v"> ${L('Verticale (9:16): TikTok, YouTube Shorts, Instagram, Kick', 'Vertical (9:16): TikTok, YouTube Shorts, Instagram, Kick', 'Vertical (9:16): TikTok, YouTube Shorts, Instagram, Kick')}</label>
+          <p class="suggerimento spazio-sopra">${L('Con tutti e due accesi partono due dirette vere, una per formato: ogni fonte ha la sua posizione in orizzontale e in verticale, e ogni destinazione riceve il suo formato. Serve il doppio della connessione in uscita.', 'With both on, two real streams start, one per format: every source has its own position in horizontal and in vertical, and every destination gets its own format. It needs twice the upload bandwidth.', 'Con los dos activos salen dos directos de verdad, uno por formato: cada fuente tiene su posición en horizontal y en vertical, y cada destino recibe su formato. Hace falta el doble de subida.')}</p>
+        </section>
+
+        <section class="studio-dock" id="studio-dest-box" aria-labelledby="studio-t-dest">
+          <h3 class="studio-dock-tit" id="studio-t-dest">${_bIco(ICO.onda)}${L('Dove va la diretta', 'Where the stream goes', 'Adónde va el directo')}</h3>
+          <p class="suggerimento" id="studio-osify" hidden></p>
+          <div id="studio-dest"></div>
+          <details class="spazio-sopra" id="studio-dest-nuova">
+            <summary>${L('Aggiungi una destinazione', 'Add a destination', 'Añade un destino')}</summary>
+            <label class="campo" for="studio-dest-tipo">${L('Servizio', 'Service', 'Servicio')}</label>
+            <select id="studio-dest-tipo" class="campo-largo">
+              <option value="youtube">YouTube</option>
+              <option value="kick">Kick</option>
+              <option value="tiktok">TikTok</option>
+              <option value="altro">${L('Altro servizio RTMP', 'Other RTMP service', 'Otro servicio RTMP')}</option>
             </select>
-          </div>
-
-          <div class="studio-box">
-            <div class="studio-box-tit">${_bIco(ICO.sliders)}${L('Mixer audio', 'Audio mixer', 'Mezclador de audio')}</div>
-            <div id="studio-mixer"></div>
-          </div>
-
-          <div class="studio-box">
-            <div class="studio-box-tit">${_bIco(ICO.moduli)}${L('Chat live', 'Live chat', 'Chat en directo')} <span class="tenue">(${L('con emote', 'with emotes', 'con emotes')})</span></div>
-            <div id="studio-chat" class="studio-chat"></div>
-          </div>
-        </aside>
+            <label class="campo spazio-sopra" for="studio-dest-server">${L('Indirizzo del server', 'Server address', 'Dirección del servidor')}</label>
+            <input id="studio-dest-server" class="campo-largo" maxlength="300" autocomplete="off" placeholder="rtmps://…" data-base="rtmps://…">
+            <label class="campo spazio-sopra" for="studio-dest-chiave">${L('Chiave di trasmissione', 'Stream key', 'Clave de transmisión')}</label>
+            <input id="studio-dest-chiave" class="campo-largo" type="password" maxlength="300" autocomplete="off">
+            <p class="suggerimento" id="studio-dest-aiuto"></p>
+            <button type="button" class="btn secondario mini spazio-sopra" id="studio-dest-salva">${L('Salva la destinazione', 'Save the destination', 'Guardar el destino')}</button>
+          </details>
+          <label class="campo spazio-sopra" for="studio-riserva-testo">${L('Scritta se la rete cade', 'Text if the network drops', 'Texto si la red se cae')}</label>
+          <input id="studio-riserva-testo" class="campo-largo" maxlength="40" value="${esc(L('Torno subito', 'Be right back', 'Vuelvo enseguida'))}">
+          <label class="campo spazio-sopra" for="studio-assenza">${L('Chiudi la diretta se non torno entro', 'End the stream if I am not back within', 'Cierra el directo si no vuelvo en')}</label>
+          <select id="studio-assenza" class="campo-largo">
+            <option value="5">5 ${L('minuti', 'minutes', 'minutos')}</option>
+            <option value="10" selected>10 ${L('minuti', 'minutes', 'minutos')}</option>
+            <option value="20">20 ${L('minuti', 'minutes', 'minutos')}</option>
+            <option value="30">30 ${L('minuti', 'minutes', 'minutos')}</option>
+          </select>
+        </section>
       </div>
 
-      <div class="studio-vai spazio-sopra">
-        <button type="button" class="btn grande" id="studio-live" title="${esc(L('Manda in diretta quello che vedi qui sopra. Da qui in poi ti guarda il pubblico', 'Sends what you see above out live. From here on, the audience is watching', 'Pone en directo lo que ves arriba. A partir de aquí te ve el público'))}">${_bIco(ICO.onda)}${L('VAI LIVE', 'GO LIVE', 'EMITIR')}</button>
-        <button type="button" class="btn secondario" id="studio-ferma" hidden>${_bIco(ICO.stop)}${L('Ferma diretta', 'Stop stream', 'Detener directo')}</button>
-        <span id="studio-stato" class="suggerimento"></span>
-      </div>
-
-      <p class="suggerimento spazio-sopra">${L('Perfetto per <strong>just-chatting / webcam</strong>. Per i giochi ad alta qualità/frame rate OBS resta migliore. Alert, chat ed effetti a punti canale compaiono nella fonte <strong>Overlay</strong>.', 'Perfect for <strong>just-chatting / webcam</strong>. For high-quality/high-frame-rate gaming OBS is still better. Alerts, chat and channel-point effects appear in the <strong>Overlay</strong> source.', 'Perfecto para <strong>just-chatting / webcam</strong>. Para juegos de alta calidad/frame rate OBS sigue siendo mejor. Las alertas, el chat y los efectos de puntos de canal aparecen en la fuente <strong>Overlay</strong>.')}</p>
+      <p class="suggerimento spazio-sopra">${L('Le scene si salvano da sole sul tuo account. Immagini, GIF e video restano su questo dispositivo: su un altro computer li ricarichi una volta. Alert, chat ed effetti a punti canale compaiono nella fonte <strong>Overlay</strong>.', 'Scenes save by themselves to your account. Images, GIFs and videos stay on this device: on another computer you load them again once. Alerts, chat and channel-point effects appear in the <strong>Overlay</strong> source.', 'Las escenas se guardan solas en tu cuenta. Imágenes, GIF y vídeos se quedan en este dispositivo: en otro ordenador los vuelves a cargar una vez. Las alertas, el chat y los efectos de puntos de canal aparecen en la fuente <strong>Overlay</strong>.')}</p>
     </div>
     <input type="file" id="studio-file" accept="image/*,video/*" hidden>`);
 }
@@ -21572,18 +21605,17 @@ const STUDIO_QUAL = {
 const STUDIO = {
   cap: { camStream: null, camEl: null, scrStream: null, scrEl: null, micStream: null },
   media: {},
-  scene: [],
-  attiva: 0,
   sel: null,
-  _n: 1,
-  canvas: null, ctx: null, raf: 0,
-  audio: null, rec: null, live: false, startedAt: 0, timer: 0,
-  coda: [], inviando: false,
+  M: null, MD: null, doc: null, versione: 0, lavoro: 'o', mobile: false,
+  tele: { o: null, v: null }, cx: { o: null, v: null }, buf: { o: {}, v: {} }, ante: null, anteCx: null, ui: null,
+  raf: 0, trans: null,
+  salvo: { timer: 0, inCorso: false, ancora: false, stato: '' },
+  audio: null, live: false, startedAt: 0, timer: 0, dirette: {}, sveglia: null,
   overlay: { alert: null, chat: [], fx: [] },
   sse: null,
   mix: { master: { vol: 100, mute: false }, mic: { vol: 100, mute: false }, desk: { vol: 100, mute: false }, media: { vol: 100, mute: false }, sfx: { vol: 100, mute: false } },
-  vuRaf: 0, libero: false,
-  drag: null, addTipo: null, _wired: false,
+  vuRaf: 0,
+  drag: null, addTipo: null, ricollega: null, _wired: false,
 
   qual: '720p30',
   dev: { cams: [], mics: [], camId: '', micId: '', facing: '' },
@@ -21595,26 +21627,147 @@ const STUDIO = {
 
 const studioEtichetta = (tipo) => ({ webcam: 'Webcam', schermo: L('Schermo', 'Screen', 'Pantalla'), immagine: L('Immagine', 'Image', 'Imagen'), video: 'Video', testo: L('Testo', 'Text', 'Texto'), overlay: 'Overlay' }[tipo] || tipo);
 const studioClamp = (v, a, b) => Math.max(a, Math.min(b, v));
-function studioSceneAttiva() { return STUDIO.scene[STUDIO.attiva] || null; }
-function studioTrovaFonte(id) { const s = studioSceneAttiva(); return s ? s.fonti.find((f) => f.id === id) : null; }
+const studioModalita = () => !!STUDIO.doc?.scelte.modalitaStudio && !STUDIO.mobile;
+const studioChi = () => stato?.user?.login || 'anon';
+const studioFormatoNome = (f) => (f === 'v' ? L('verticale', 'vertical', 'vertical') : L('orizzontale', 'horizontal', 'horizontal'));
+function studioScena(id) { return STUDIO.doc ? STUDIO.doc.scene.find((s) => s.id === id) || null : null; }
+function studioSceneAttiva() { const d = STUDIO.doc; if (!d) return null; return studioScena(studioModalita() ? d.anteprima : d.inOnda) || d.scene[0]; }
+function studioTrovaFonte(id) { const s = studioSceneAttiva(); return s ? s.fonti.find((f) => f.id === id) || null : null; }
+const studioPos = (f) => f.pos[STUDIO.lavoro];
+const studioMisura = () => STUDIO.M.FORMATI[STUDIO.lavoro];
 function studioIcoFonte(tipo) { return { webcam: 'fotocamera', schermo: 'monitor', immagine: 'immagine', video: 'video', testo: 'testo', overlay: 'effetti' }[tipo] || 'moduli'; }
-function studioNuovaScena(nome) { const s = { id: 's' + (STUDIO._n++), nome: nome || ('Scena ' + (STUDIO.scene.length + 1)), fonti: [] }; STUDIO.scene.push(s); return s; }
+function studioNuovaScena(nome) {
+  const d = STUDIO.doc; if (!d) return null;
+  if (d.scene.length >= STUDIO.M.LIMITI.scene) { toast(L('Hai già tutte le scene che si possono avere.', 'You already have as many scenes as allowed.', 'Ya tienes todas las escenas posibles.'), 'errore'); return null; }
+  const s = { id: STUDIO.M.nuovoId('s'), nome: (nome || (L('Scena', 'Scene', 'Escena') + ' ' + (d.scene.length + 1))).slice(0, STUDIO.M.LIMITI.nome), fonti: [] };
+  d.scene.push(s);
+  return s;
+}
 
 function studioLog(m) { const el = document.getElementById('studio-stato'); if (el) el.textContent = m; }
 
+function studioTela(f) {
+  if (!STUDIO.tele[f]) {
+    const c = document.createElement('canvas');
+    c.className = 'studio-tela';
+    c.dataset.f = f;
+    STUDIO.tele[f] = c;
+    STUDIO.cx[f] = c.getContext('2d');
+  }
+  return STUDIO.tele[f];
+}
+
+function studioMisureTele() {
+  const q = STUDIO_QUAL[STUDIO.qual] || STUDIO_QUAL['720p30'];
+  for (const f of ['o', 'v']) {
+    const c = studioTela(f), w = f === 'o' ? q.w : q.h, h = f === 'o' ? q.h : q.w;
+    if (c.width !== w) c.width = w;
+    if (c.height !== h) c.height = h;
+  }
+  if (!STUDIO.ante) { STUDIO.ante = document.createElement('canvas'); STUDIO.ante.className = 'studio-tela'; STUDIO.anteCx = STUDIO.ante.getContext('2d'); }
+  const p = STUDIO.tele[STUDIO.lavoro];
+  if (STUDIO.ante.width !== p.width) STUDIO.ante.width = p.width;
+  if (STUDIO.ante.height !== p.height) STUDIO.ante.height = p.height;
+  STUDIO.ante.dataset.f = STUDIO.lavoro;
+}
+
+function studioMontaTele() {
+  const prog = document.getElementById('studio-palco-prog'), ant = document.getElementById('studio-palco-ant');
+  if (!prog || !STUDIO.M) return;
+  studioMisureTele();
+  const f = STUDIO.lavoro, tela = STUDIO.tele[f];
+  prog.dataset.f = f;
+  if (ant) ant.dataset.f = f;
+  for (const c of [...prog.querySelectorAll('canvas')]) if (c !== tela) c.remove();
+  if (tela.parentElement !== prog) prog.prepend(tela);
+  if (ant && STUDIO.ante.parentElement !== ant) ant.prepend(STUDIO.ante);
+  if (!STUDIO.ui) { STUDIO.ui = document.createElement('div'); STUDIO.ui.className = 'studio-ui'; STUDIO.ui.id = 'studio-ui'; }
+  const dove = studioModalita() && ant ? ant : prog;
+  if (STUDIO.ui.parentElement !== dove) dove.appendChild(STUDIO.ui);
+  const box = document.getElementById('studio-box-ant'), centro = document.getElementById('studio-trans-centro');
+  if (box) box.hidden = !studioModalita();
+  document.getElementById('studio-tele')?.classList.toggle('doppio', studioModalita());
+  if (centro) centro.hidden = !studioModalita();
+  const tit = document.getElementById('studio-tit-prog');
+  if (tit) tit.textContent = (studioModalita() ? L('Programma', 'Program', 'Programa') : L('Programma: quello che va in onda', 'Program: what goes on air', 'Programa: lo que sale en el aire'))
+    + (STUDIO.doc.scelte.formati.o && STUDIO.doc.scelte.formati.v ? ' · ' + studioFormatoNome(f) : '');
+}
+
+const studioFormatoServe = (f) => !!STUDIO.doc && (STUDIO.doc.scelte.formati[f] || STUDIO.lavoro === f || !!STUDIO.dirette[f]);
+
 function avviaLoopStudio() {
-  if (!STUDIO.canvas) { STUDIO.canvas = document.getElementById('studio-canvas'); STUDIO.ctx = STUDIO.canvas ? STUDIO.canvas.getContext('2d') : null; }
-  if (STUDIO.ctx && !STUDIO.raf) studioDisegna();
+  if (!STUDIO.M || !STUDIO.doc) return;
+  studioMisureTele();
+  if (!STUDIO.raf) STUDIO.raf = requestAnimationFrame(studioDisegna);
+}
+
+function studioDisegnaScena(c, scena, f) {
+  if (!scena) return;
+  const { W, H } = STUDIO.M.FORMATI[f];
+  for (const x of scena.fonti) { const p = x.pos[f]; if (p.vis) disegnaFonte(c, x, p, W, H); }
+}
+
+function studioDisegnaPiena(cx, tela, scena, f) {
+  const { W, H } = STUDIO.M.FORMATI[f];
+  cx.setTransform(tela.width / W, 0, 0, tela.height / H, 0, 0);
+  cx.globalAlpha = 1;
+  cx.fillStyle = '#0b0b0f'; cx.fillRect(0, 0, W, H);
+  studioDisegnaScena(cx, scena, f);
+}
+
+function studioBuffer(f, k) {
+  const tela = STUDIO.tele[f];
+  let b = STUDIO.buf[f][k];
+  if (!b) { b = document.createElement('canvas'); STUDIO.buf[f][k] = b; }
+  if (b.width !== tela.width) b.width = tela.width;
+  if (b.height !== tela.height) b.height = tela.height;
+  return b;
+}
+
+function studioAvanzaTransizione(ora) {
+  const t = STUDIO.trans;
+  if (t && STUDIO.M.mescola(t.inizio, t.ms, ora) >= 1) studioFineTransizione();
+}
+
+function studioDisegnaProgramma(f, ora) {
+  if (!STUDIO.doc) return;
+  studioAvanzaTransizione(ora);
+  const tela = studioTela(f), cx = STUDIO.cx[f], t = STUDIO.trans;
+  if (!t) { studioDisegnaPiena(cx, tela, studioScena(STUDIO.doc.inOnda), f); return; }
+  const a = studioBuffer(f, 'a'), b = studioBuffer(f, 'b');
+  studioDisegnaPiena(a.getContext('2d'), a, studioScena(t.da), f);
+  studioDisegnaPiena(b.getContext('2d'), b, studioScena(t.a), f);
+  cx.setTransform(1, 0, 0, 1, 0, 0);
+  cx.globalAlpha = 1; cx.drawImage(a, 0, 0);
+  cx.globalAlpha = STUDIO.M.mescola(t.inizio, t.ms, ora); cx.drawImage(b, 0, 0);
+  cx.globalAlpha = 1;
 }
 
 function studioDisegna() {
-  const c = STUDIO.ctx; if (!c) { STUDIO.raf = 0; return; }
-  const cw = STUDIO.canvas.width, ch = STUDIO.canvas.height;
-  c.setTransform(cw / 1280, 0, 0, ch / 720, 0, 0);
-  c.fillStyle = '#0b0b0f'; c.fillRect(0, 0, 1280, 720);
-  const s = studioSceneAttiva();
-  if (s) for (const f of s.fonti) { if (f.visibile) disegnaFonte(c, f, 1280, 720); }
   STUDIO.raf = requestAnimationFrame(studioDisegna);
+  if (!STUDIO.doc) return;
+  const ora = performance.now();
+  for (const f of ['o', 'v']) if (studioFormatoServe(f)) studioDisegnaProgramma(f, ora);
+  if (studioModalita() && STUDIO.ante) studioDisegnaPiena(STUDIO.anteCx, STUDIO.ante, studioScena(STUDIO.doc.anteprima), STUDIO.lavoro);
+}
+
+function studioVaiInOnda(id) {
+  const d = STUDIO.doc;
+  if (!d || !studioScena(id) || id === d.inOnda) return;
+  if (STUDIO.trans) studioFineTransizione();
+  const tr = d.scelte.transizione;
+  STUDIO.trans = { da: d.inOnda, a: id, inizio: performance.now(), ms: tr.tipo === 'taglio' ? 0 : tr.ms };
+  if (tr.tipo === 'taglio') studioFineTransizione();
+}
+
+function studioFineTransizione() {
+  const t = STUDIO.trans, d = STUDIO.doc;
+  STUDIO.trans = null;
+  if (!t || !d) return;
+  d.inOnda = t.a;
+  if (studioModalita()) d.anteprima = t.da;
+  renderStudioScene(); renderStudioFonti(); renderStudioUI(); renderStudioProp(); renderStudioMobile();
+  studioSporco();
 }
 
 function studioCover(c, el, x, y, w, h) {
@@ -21631,22 +21784,22 @@ function studioContain(c, el, x, y, w, h) {
   try { c.drawImage(el, x + (w - dw) / 2, y + (h - dh) / 2, dw, dh); } catch (e) {  }
 }
 
-function disegnaFonte(c, f, W, H) {
-  if (f.tipo === 'webcam') { if (STUDIO.cap.camEl) studioCover(c, STUDIO.cap.camEl, f.x, f.y, f.w, f.h); return; }
-  if (f.tipo === 'schermo') { if (STUDIO.cap.scrEl) studioCover(c, STUDIO.cap.scrEl, f.x, f.y, f.w, f.h); return; }
-  if (f.tipo === 'immagine') { const m = STUDIO.media[f.dataId]; if (m) studioContain(c, m.el, f.x, f.y, f.w, f.h); return; }
-  if (f.tipo === 'video') { const m = STUDIO.media[f.dataId]; if (m) studioCover(c, m.el, f.x, f.y, f.w, f.h); return; }
-  if (f.tipo === 'testo') { disegnaTestoFonte(c, f); return; }
+function disegnaFonte(c, f, p, W, H) {
+  if (f.tipo === 'webcam') { if (STUDIO.cap.camEl) studioCover(c, STUDIO.cap.camEl, p.x, p.y, p.w, p.h); return; }
+  if (f.tipo === 'schermo') { if (STUDIO.cap.scrEl) studioCover(c, STUDIO.cap.scrEl, p.x, p.y, p.w, p.h); return; }
+  if (f.tipo === 'immagine') { const m = STUDIO.media[f.media?.impronta]; if (m) studioContain(c, m.el, p.x, p.y, p.w, p.h); return; }
+  if (f.tipo === 'video') { const m = STUDIO.media[f.media?.impronta]; if (m) studioCover(c, m.el, p.x, p.y, p.w, p.h); return; }
+  if (f.tipo === 'testo') { disegnaTestoFonte(c, f, p); return; }
   if (f.tipo === 'overlay') { disegnaOverlayStudio(c, W, H); return; }
 }
 
-function disegnaTestoFonte(c, f) {
-  if (f.sfondo) { c.fillStyle = f.sfondo; c.fillRect(f.x, f.y, f.w, f.h); }
+function disegnaTestoFonte(c, f, p) {
+  if (f.sfondo) { c.fillStyle = f.sfondo; c.fillRect(p.x, p.y, p.w, p.h); }
   const dim = Number(f.dim) || 48;
   c.font = (f.grassetto ? '800 ' : '600 ') + dim + 'px system-ui, sans-serif';
   c.textAlign = 'center'; c.textBaseline = 'middle';
   c.lineWidth = Math.max(3, dim / 10); c.strokeStyle = '#000a';
-  const cx = f.x + f.w / 2, cy = f.y + f.h / 2, mw = f.w * 0.96;
+  const cx = p.x + p.w / 2, cy = p.y + p.h / 2, mw = p.w * 0.96;
   c.strokeText(f.testo || '', cx, cy, mw);
   c.fillStyle = f.colore || '#fff'; c.fillText(f.testo || '', cx, cy, mw);
   c.textAlign = 'left'; c.textBaseline = 'alphabetic';
@@ -21816,7 +21969,8 @@ function studioSSE(sseUrl) {
 function studioVincoliVideo() {
   const q = STUDIO_QUAL[STUDIO.qual] || STUDIO_QUAL['720p30'];
   const hh = Math.min(q.h, 1080), ww = Math.round(hh * 16 / 9);
-  const v = { width: { ideal: ww }, height: { ideal: hh }, frameRate: { ideal: Math.min(q.fps, 60) } };
+  const verticale = STUDIO.mobile && STUDIO.lavoro === 'v';
+  const v = { width: { ideal: verticale ? hh : ww }, height: { ideal: verticale ? ww : hh }, frameRate: { ideal: Math.min(q.fps, 60) } };
   if (STUDIO.dev.camId) v.deviceId = { exact: STUDIO.dev.camId };
   else if (STUDIO.dev.facing) v.facingMode = STUDIO.dev.facing;
   return v;
@@ -21862,7 +22016,6 @@ async function studioCapSchermo() {
     STUDIO.cap.scrEl = v;
     s.getVideoTracks()[0].addEventListener('ended', () => {
       STUDIO.cap.scrEl = null; STUDIO.cap.scrStream = null;
-      STUDIO.scene.forEach((sc) => { sc.fonti = sc.fonti.filter((f) => f.tipo !== 'schermo'); });
       renderStudioTutto();
     });
     if (STUDIO.live) collegaAudioCatture();
@@ -21946,9 +22099,7 @@ async function studioOsifyUsa() {
 function studioApplicaQualita(key) {
   if (STUDIO.live) return;
   STUDIO.qual = STUDIO_QUAL[key] ? key : '720p30';
-  const q = STUDIO_QUAL[STUDIO.qual];
-  if (!STUDIO.canvas) { STUDIO.canvas = document.getElementById('studio-canvas'); STUDIO.ctx = STUDIO.canvas ? STUDIO.canvas.getContext('2d') : null; }
-  if (STUDIO.canvas) { STUDIO.canvas.width = q.w; STUDIO.canvas.height = q.h; }
+  if (STUDIO.M) studioMisureTele();
   try { localStorage.setItem('andrybot-studio-qual:' + (stato?.user?.login || 'anon'), STUDIO.qual); } catch (e) {  }
 }
 
@@ -21992,20 +22143,15 @@ async function studioConnettiOverlay() {
   } catch (e) {  }
 }
 
-function studioDefaultTrasf(tipo) {
-  const W = 1280, H = 720;
-  if (tipo === 'schermo' || tipo === 'overlay') return { x: 0, y: 0, w: W, h: H };
-  if (tipo === 'webcam') { const w = 384, h = 216; return { x: W - w - 28, y: H - h - 28, w, h }; }
-  if (tipo === 'testo') return { x: 140, y: 560, w: 1000, h: 110 };
-  return { x: (W - 640) / 2, y: (H - 360) / 2, w: 640, h: 360 };
-}
-
 function studioAddFonte(tipo, extra) {
   const s = studioSceneAttiva(); if (!s) return null;
   if (tipo === 'overlay' && s.fonti.some((f) => f.tipo === 'overlay')) { toast(L('L\'overlay è già nella scena.', 'The overlay is already in the scene.', 'El overlay ya está en la escena.')); return null; }
-  const f = { id: 'f' + (STUDIO._n++), tipo, nome: studioEtichetta(tipo), visibile: true, ...studioDefaultTrasf(tipo), ...(extra || {}) };
-  if (tipo === 'testo') { f.testo = f.testo || 'Testo'; f.colore = '#ffffff'; f.dim = 56; f.grassetto = true; f.sfondo = ''; }
-  s.fonti.push(f); STUDIO.sel = f.id; renderStudioTutto();
+  if (s.fonti.length >= STUDIO.M.LIMITI.fonti) { toast(L('Questa scena ha già tutte le fonti che può avere.', 'This scene already has as many sources as allowed.', 'Esta escena ya tiene todas las fuentes posibles.'), 'errore'); return null; }
+  const f = STUDIO.M.nuovaFonte(tipo, { nome: extra?.nome || studioEtichetta(tipo), media: extra?.media || null, testo: L('Testo', 'Text', 'Texto') });
+  if (!f) return null;
+  s.fonti.push(f); STUDIO.sel = f.id;
+  document.getElementById('studio-add-menu')?.removeAttribute('open');
+  renderStudioTutto(); studioSporco();
   return f;
 }
 
@@ -22016,58 +22162,96 @@ async function studioAggiungi(tipo) {
   studioAddFonte(tipo);
 }
 
-function studioScegliFile(tipo) {
+function studioScegliFile(tipo, ricollega = null) {
   const inp = document.getElementById('studio-file'); if (!inp) return;
   inp.accept = tipo === 'video' ? 'video/*' : 'image/*';
-  STUDIO.addTipo = tipo; inp.value = ''; inp.click();
+  STUDIO.addTipo = tipo; STUDIO.ricollega = ricollega; inp.value = ''; inp.click();
 }
 
-function studioFileScelto(file) {
-  const tipo = STUDIO.addTipo; if (!file || !tipo) return;
-  const url = URL.createObjectURL(file), dataId = 'm' + (STUDIO._n++);
-  const el = document.createElement(tipo === 'video' ? 'video' : 'img');
-  if (tipo === 'video') { el.muted = true; el.loop = true; el.playsInline = true; el.autoplay = true; el.src = url; el.play().catch(() => {}); }
-  else el.src = url;
-  STUDIO.media[dataId] = { el, tipo, url };
-  studioAddFonte(tipo, { dataId, nome: (file.name || tipo).slice(0, 22) });
+function studioCaricaMedia(imp, blob, tipo) {
+  const c = STUDIO.media[imp];
+  if (c) return Promise.resolve({ w: c.el.videoWidth || c.el.naturalWidth || 0, h: c.el.videoHeight || c.el.naturalHeight || 0 });
+  return new Promise((ok) => {
+    const url = URL.createObjectURL(blob);
+    const el = document.createElement(tipo === 'video' ? 'video' : 'img');
+    let fatto = false;
+    const fine = () => { if (fatto) return; fatto = true; ok({ w: el.videoWidth || el.naturalWidth || 0, h: el.videoHeight || el.naturalHeight || 0 }); };
+    if (tipo === 'video') { el.muted = true; el.loop = true; el.playsInline = true; el.autoplay = true; el.addEventListener('loadedmetadata', fine, { once: true }); el.src = url; el.play().catch(() => {}); }
+    else { el.addEventListener('load', fine, { once: true }); el.addEventListener('error', fine, { once: true }); el.src = url; }
+    setTimeout(fine, 5000);
+    STUDIO.media[imp] = { el, tipo, url };
+  });
+}
+
+async function studioFileScelto(file) {
+  const tipo = STUDIO.addTipo, rif = STUDIO.ricollega;
+  STUDIO.ricollega = null;
+  if (!file || !tipo) return;
+  if (file.size > STUDIO.MD.MAX_FILE) { toast(L('Il file è troppo grande: al massimo 2 GB.', 'The file is too big: 2 GB at most.', 'El archivo es demasiado grande: 2 GB como máximo.'), 'errore'); return; }
+  studioLog(L('Preparo il file…', 'Preparing the file…', 'Preparando el archivo…'));
+  let info;
+  try { info = await STUDIO.MD.conserva(file, { chi: studioChi() }); }
+  catch (e) {
+    info = { impronta: await STUDIO.MD.impronta(file), nome: String(file.name || '').slice(0, 80), mime: String(file.type || '').slice(0, 60), byte: file.size };
+    toast(L('Questo browser non può tenere il file: resta finché la pagina è aperta.', 'This browser cannot keep the file: it stays while the page is open.', 'Este navegador no puede guardar el archivo: se queda mientras la página esté abierta.'), 'errore');
+  }
+  const misure = await studioCaricaMedia(info.impronta, file, tipo);
+  const media = { impronta: info.impronta, nome: info.nome || String(file.name || tipo), mime: info.mime, byte: info.byte, w: misure.w, h: misure.h };
+  studioLog('');
+  if (rif) {
+    STUDIO.M.lega(STUDIO.doc, rif, media);
+    renderStudioTutto(); studioSporco();
+    toast(L('File ricollegato: torna in tutte le scene che lo usano.', 'File relinked: it is back in every scene that uses it.', 'Archivo reconectado: vuelve a todas las escenas que lo usan.'));
+    return;
+  }
+  studioAddFonte(tipo, { nome: String(file.name || tipo).slice(0, 40), media });
   if (tipo === 'video' && STUDIO.live) { collegaAudioMedia(); renderStudioMixer(); }
 }
+
+function studioTipoDi(imp) {
+  for (const s of [...STUDIO.doc.scene, ...STUDIO.doc.preset.flatMap((p) => p.scene)]) for (const f of s.fonti) if (f.media?.impronta === imp) return f.tipo;
+  return 'immagine';
+}
+
+async function studioRiportaMedia() {
+  if (!STUDIO.doc || !STUDIO.MD) return;
+  for (const imp of STUDIO.M.impronteUsate(STUDIO.doc)) {
+    if (STUDIO.media[imp]) continue;
+    let blob = null;
+    try { blob = await STUDIO.MD.prendi(imp, { chi: studioChi() }); } catch (e) { blob = null; }
+    if (blob) await studioCaricaMedia(imp, blob, studioTipoDi(imp));
+  }
+  renderStudioUI(); renderStudioFonti(); renderStudioProp();
+}
+
+const studioManca = (f) => (f.tipo === 'immagine' || f.tipo === 'video') ? !STUDIO.media[f.media?.impronta] : (f.tipo === 'webcam' ? !STUDIO.cap.camEl : (f.tipo === 'schermo' ? !STUDIO.cap.scrEl : false));
 
 function studioSpostaFonte(id, dir) {
   const s = studioSceneAttiva(); if (!s) return;
   const i = s.fonti.findIndex((f) => f.id === id); if (i < 0) return;
   const j = i + dir; if (j < 0 || j >= s.fonti.length) return;
-  const t = s.fonti[i]; s.fonti[i] = s.fonti[j]; s.fonti[j] = t; renderStudioTutto();
+  const t = s.fonti[i]; s.fonti[i] = s.fonti[j]; s.fonti[j] = t; renderStudioTutto(); studioSporco();
 }
 
 function studioRimuoviFonte(id) {
   const s = studioSceneAttiva(); if (!s) return;
   s.fonti = s.fonti.filter((f) => f.id !== id);
   if (STUDIO.sel === id) STUDIO.sel = null;
-  renderStudioTutto();
+  renderStudioTutto(); studioSporco();
 }
 
 function studioFit(mode) {
   const f = studioTrovaFonte(STUDIO.sel); if (!f) return;
-  if (mode === 'riempi') { f.x = 0; f.y = 0; f.w = 1280; f.h = 720; }
-  else if (mode === 'centra') { f.x = (1280 - f.w) / 2; f.y = (720 - f.h) / 2; }
-  renderStudioTutto();
+  const p = studioPos(f), { W, H } = studioMisura();
+  if (mode === 'riempi') { p.x = 0; p.y = 0; p.w = W; p.h = H; }
+  else if (mode === 'centra') { p.x = Math.round((W - p.w) / 2); p.y = Math.round((H - p.h) / 2); }
+  renderStudioTutto(); studioSporco();
 }
 
 function studioLayout(preset) {
   const s = studioSceneAttiva(); if (!s) return;
-  const cam = s.fonti.find((f) => f.tipo === 'webcam'), scr = s.fonti.find((f) => f.tipo === 'schermo');
-  const pieno = (f) => { f.x = 0; f.y = 0; f.w = 1280; f.h = 720; f.visibile = true; };
-  if (preset === 'cam') { if (cam) pieno(cam); if (scr) scr.visibile = false; }
-  else if (preset === 'schermo') { if (scr) pieno(scr); if (cam) cam.visibile = false; }
-  else if (preset === 'pip') {
-    if (scr) pieno(scr);
-    if (cam) { cam.visibile = true; cam.w = 384; cam.h = 216; cam.x = 1280 - 384 - 28; cam.y = 720 - 216 - 28; const i = s.fonti.indexOf(cam); if (i >= 0) { s.fonti.splice(i, 1); s.fonti.push(cam); } }
-  } else if (preset === 'affianco') {
-    if (scr) { scr.visibile = true; scr.x = 20; scr.y = 150; scr.w = 760; scr.h = 428; }
-    if (cam) { cam.visibile = true; cam.x = 800; cam.y = 150; cam.w = 460; cam.h = 428; }
-  }
-  renderStudioTutto();
+  STUDIO.M.dispostoRapido(s, preset, STUDIO.lavoro);
+  renderStudioTutto(); studioSporco();
 }
 
 function studioAudioInit() {
@@ -22140,19 +22324,15 @@ function avviaVU() {
 
 const DEST_AIUTO = {
   kick: () => L('Se hai collegato Kick non serve: la chiave la prende da sola. Altrimenti, su Kick: Creator Dashboard → Settings → Stream URL e Stream Key. Incolla qui l’indirizzo (comincia con rtmps://) e la chiave.', 'If you connected Kick you don’t need this: the key is fetched by itself. Otherwise, on Kick: Creator Dashboard → Settings → Stream URL and Stream Key. Paste the address (it starts with rtmps://) and the key here.', 'Si conectaste Kick no hace falta: la clave se coge sola. Si no, en Kick: Creator Dashboard → Settings → Stream URL y Stream Key. Pega aquí la dirección (empieza por rtmps://) y la clave.'),
-  youtube: () => L('Su YouTube: YouTube Studio → Vai in diretta → Streaming. L’indirizzo è già scritto; incolla la chiave dello stream.', 'On YouTube: YouTube Studio → Go live → Stream. The address is already filled in; paste the stream key.', 'En YouTube: YouTube Studio → Emitir en directo → Emisión. La dirección ya está escrita; pega la clave de emisión.'),
-  altro: () => L('L’indirizzo RTMP o RTMPS e la chiave te li dà il servizio.', 'The service gives you the RTMP or RTMPS address and the key.', 'El servicio te da la dirección RTMP o RTMPS y la clave.'),
+  youtube: () => L('Su YouTube: YouTube Studio → Vai in diretta → Streaming. L’indirizzo è già scritto; incolla la chiave dello stream. Per una diretta verticale usa una chiave a parte.', 'On YouTube: YouTube Studio → Go live → Stream. The address is already filled in; paste the stream key. For a vertical stream use a separate key.', 'En YouTube: YouTube Studio → Emitir en directo → Emisión. La dirección ya está escrita; pega la clave de emisión. Para un directo vertical usa otra clave.'),
+  tiktok: () => L('Su TikTok l’indirizzo e la chiave li dà TikTok LIVE Studio o la pagina Live di TikTok, se il tuo account può trasmettere da fuori. Di solito è una diretta verticale.', 'On TikTok the address and key come from TikTok LIVE Studio or the TikTok Live page, if your account can stream from outside. It is usually a vertical stream.', 'En TikTok la dirección y la clave las da TikTok LIVE Studio o la página Live de TikTok, si tu cuenta puede emitir desde fuera. Suele ser un directo vertical.'),
+  altro: () => L('L’indirizzo RTMP o RTMPS e la chiave te li dà il servizio (Instagram Live Producer, Facebook, un tuo server…).', 'The service gives you the RTMP or RTMPS address and the key (Instagram Live Producer, Facebook, your own server…).', 'El servicio te da la dirección RTMP o RTMPS y la clave (Instagram Live Producer, Facebook, un servidor tuyo…).'),
 };
 const DEST_SERVER = { youtube: 'rtmp://a.rtmp.youtube.com/live2' };
-const _destChiave = () => 'andrybot-diretta-dest:' + (stato?.user?.login || 'anon');
+const DEST_NOME = { kick: 'Kick', youtube: 'YouTube', tiktok: 'TikTok' };
 
-function studioDestScelte() {
-  if (STUDIO.destScelte) return STUDIO.destScelte;
-  let v = null;
-  try { v = JSON.parse(localStorage.getItem(_destChiave()) || 'null'); } catch (e) {  }
-  STUDIO.destScelte = new Set(Array.isArray(v) ? v : ['twitch', 'kick']);
-  return STUDIO.destScelte;
-}
+function studioDestScelte() { return new Set(STUDIO.doc?.scelte.dest || []); }
+function studioScriviDestScelte(insieme) { if (!STUDIO.doc) return; STUDIO.doc.scelte.dest = [...insieme].slice(0, 20); studioSporco(); }
 
 async function caricaDiretta() {
   const d = await api('/api/diretta');
@@ -22163,22 +22343,30 @@ async function caricaDiretta() {
   studioControllaSupporto();
 }
 
+function studioSessioniAltrove() {
+  const s = STUDIO.dir?.sessioni || {};
+  return ['o', 'v'].filter((f) => s[f]?.live && !STUDIO.dirette[f]).map((f) => ({ f, ...s[f] }));
+}
+
 function studioRenderRipresa() {
   const el = document.getElementById('studio-ripresa');
   if (!el) return;
-  const s = STUDIO.dir?.sessione;
-  el.hidden = !(s?.live && !STUDIO.live);
+  const altrove = studioSessioniAltrove();
+  el.hidden = !altrove.length;
   if (el.hidden) { el.innerHTML = ''; return; }
-  const dove = esc((s.destinazioni || []).join(', '));
-  el.innerHTML = `<span class="badge viola">${L('In onda', 'On air', 'En el aire')}</span> ` + (s.inRiserva?.video || s.inRiserva?.audio
-    ? L(`La tua diretta su ${dove} è ancora in onda, con la scritta di riserva. «Vai live» la riprende senza interruzioni sul canale, se non cambi qualità.`, `Your stream on ${dove} is still on air, with the fallback text. «Go live» resumes it with no break on the channel, if you keep the same quality.`, `Tu directo en ${dove} sigue en el aire, con el texto de reserva. «Emitir» lo reanuda sin cortes en el canal, si no cambias la calidad.`)
-    : L(`La tua diretta su ${dove} sta andando da un’altra finestra. «Vai live» la porta qui.`, `Your stream on ${dove} is running from another window. «Go live» brings it here.`, `Tu directo en ${dove} va desde otra ventana. «Emitir» lo trae aquí.`))
+  const righe = altrove.map((s) => {
+    const dove = esc((s.destinazioni || []).join(', ')) + (altrove.length > 1 || s.f === 'v' ? ` (${studioFormatoNome(s.f)})` : '');
+    return s.inRiserva?.video || s.inRiserva?.audio
+      ? L(`La tua diretta su ${dove} è ancora in onda, con la scritta di riserva.`, `Your stream on ${dove} is still on air, with the fallback text.`, `Tu directo en ${dove} sigue en el aire, con el texto de reserva.`)
+      : L(`La tua diretta su ${dove} sta andando da un’altra finestra.`, `Your stream on ${dove} is running from another window.`, `Tu directo en ${dove} va desde otra ventana.`);
+  }).join(' ');
+  el.innerHTML = `<span class="badge viola">${L('In onda', 'On air', 'En el aire')}</span> ${righe} ${L('«Vai live» la riprende qui senza interruzioni sul canale, se non cambi qualità.', '«Go live» resumes it here with no break on the channel, if you keep the same quality.', '«Emitir» lo reanuda aquí sin cortes en el canal, si no cambias la calidad.')}`
     + ` <button type="button" class="btn secondario mini" id="studio-ripresa-chiudi">${L('Chiudila', 'End it', 'Ciérralo')}</button>`;
 }
 
 async function studioChiudiRipresa() {
   if (!(await chiediSe({ titolo: L('Chiudo la diretta che è in onda?', 'End the stream that is on air?', '¿Cierro el directo que está en el aire?'), testo: L('Sulle piattaforme la diretta finisce adesso.', 'On the platforms the stream ends now.', 'En las plataformas el directo termina ahora.'), si: L('Chiudila', 'End it', 'Ciérralo'), pericolo: true }))) return;
-  await api('/api/diretta/fine', { method: 'POST', body: {} });
+  for (const s of studioSessioniAltrove()) await api('/api/diretta/fine', { method: 'POST', body: { formato: s.f } });
   await caricaDiretta();
   studioLog(L('Diretta chiusa.', 'Stream ended.', 'Directo cerrado.'));
 }
@@ -22186,16 +22374,23 @@ async function studioChiudiRipresa() {
 function studioRenderDestinazioni() {
   const box = document.getElementById('studio-dest');
   const d = STUDIO.dir;
-  if (!box || !d) return;
-  const scelte = studioDestScelte();
-  const voce = (id, nome, extra = '') => `<label class="studio-dest-voce"><input type="checkbox" data-dest="${esc(id)}"${scelte.has(id) ? ' checked' : ''}${STUDIO.live ? ' disabled' : ''}> ${esc(nome)}${extra}</label>`;
+  if (!box || !d || !STUDIO.doc) return;
+  const scelte = studioDestScelte(), sc = STUDIO.doc.scelte, entrambi = sc.formati.o && sc.formati.v;
+  const bloccato = STUDIO.live ? ' disabled' : '';
+  const formato = (id) => {
+    if (!entrambi && sc.formati.o) return '';
+    if (STUDIO.M.DESTINAZIONI_SOLO_ORIZZONTALI.includes(id)) return ` <span class="tenue">${L('solo orizzontale', 'horizontal only', 'solo horizontal')}</span>`;
+    const f = STUDIO.M.formatoDi(id, sc);
+    return ` <select class="chip-utente studio-dest-fmt" data-dest-formato="${esc(id)}" aria-label="${esc(L('Formato per questa destinazione', 'Format for this destination', 'Formato para este destino'))}"${bloccato}><option value="o"${f === 'o' ? ' selected' : ''}>${L('Orizzontale', 'Horizontal', 'Horizontal')}</option><option value="v"${f === 'v' ? ' selected' : ''}>${L('Verticale', 'Vertical', 'Vertical')}</option></select>`;
+  };
+  const voce = (id, nome, extra = '') => `<div class="studio-dest-voce"><label><input type="checkbox" data-dest="${esc(id)}"${scelte.has(id) ? ' checked' : ''}${bloccato}> ${esc(nome)}</label>${formato(id)}${extra}</div>`;
   const twitch = d.twitch?.su
     ? (d.twitch.keyOk ? voce('twitch', 'Twitch') : `<p class="suggerimento">${_bIco(ICO.lucchetto)}${L('Per Twitch serve il permesso della chiave di trasmissione.', 'Twitch needs the stream key permission.', 'Twitch necesita el permiso de la clave de transmisión.')} <a class="btn secondario mini" href="/auth/permessi">${L('Concedi il permesso', 'Grant the permission', 'Conceder el permiso')}</a></p>`)
     : '';
   const kick = d.kick?.su
     ? (d.kick.keyOk ? voce('kick', 'Kick') : `<p class="suggerimento">${_bIco(ICO.lucchetto)}${L('Per Kick serve il permesso di leggere la chiave di trasmissione: si dà ricollegando Kick.', 'Kick needs the permission to read the stream key: you grant it by reconnecting Kick.', 'Kick necesita el permiso para leer la clave de emisión: se da reconectando Kick.')} <a class="btn secondario mini" href="${esc(d.kick.azione)}">${L('Ricollega Kick', 'Reconnect Kick', 'Reconectar Kick')}</a></p>`)
     : '';
-  const altre = (d.destinazioni || []).map((x) => voce(x.id, x.nome, ` <span class="tenue">${esc(x.server.replace(/^rtmps?:\/\//, ''))}</span> <button type="button" class="btn secondario mini" data-dest-togli="${esc(x.id)}"${STUDIO.live ? ' disabled' : ''}>${L('Togli', 'Remove', 'Quitar')}</button>`)).join('');
+  const altre = (d.destinazioni || []).map((x) => voce(x.id, x.nome, ` <span class="tenue">${esc(x.server.replace(/^rtmps?:\/\//, ''))}</span> <button type="button" class="btn secondario mini" data-dest-togli="${esc(x.id)}"${bloccato}>${L('Togli', 'Remove', 'Quitar')}</button>`)).join('');
   box.innerHTML = twitch + kick + altre || `<p class="suggerimento">${L('Aggiungi qui sotto dove vuoi andare in diretta.', 'Add below where you want to go live.', 'Añade abajo dónde quieres emitir.')}</p>`;
   const tipo = document.getElementById('studio-dest-tipo');
   const aiuto = document.getElementById('studio-dest-aiuto');
@@ -22204,12 +22399,13 @@ function studioRenderDestinazioni() {
 
 async function studioControllaSupporto() {
   const el = document.getElementById('studio-supporto');
-  if (!el) return null;
   const q = STUDIO_QUAL[STUDIO.qual] || STUDIO_QUAL['720p30'];
+  const soloV = STUDIO.doc && !STUDIO.doc.scelte.formati.o;
   let sup;
-  try { sup = await (await import('/js/diretta-codifica.js')).supporto({ larghezza: q.w, altezza: q.h, fps: q.fps, kbps: Math.round(q.vbps / 1000) }); }
+  try { sup = await (await import('/js/diretta-codifica.js')).supporto({ larghezza: soloV ? q.h : q.w, altezza: soloV ? q.w : q.h, fps: q.fps, kbps: Math.round(q.vbps / 1000) }); }
   catch (e) { sup = { ok: false, motivo: 'webcodecs' }; }
   STUDIO.supporto = sup;
+  if (!el) return sup;
   if (!sup.ok) {
     el.innerHTML = `<span class="badge rosso">${L('Non pronto', 'Not ready', 'No listo')}</span> ` + ({
       webcodecs: L('Questo browser non sa codificare la diretta da sé. Usa Chrome o Edge aggiornati.', 'This browser cannot encode the stream on its own. Use an up-to-date Chrome or Edge.', 'Este navegador no sabe codificar el directo por sí solo. Usa Chrome o Edge actualizados.'),
@@ -22221,7 +22417,8 @@ async function studioControllaSupporto() {
   el.innerHTML = `<span class="badge verde">${L('Pronto', 'Ready', 'Listo')}</span> ` + (sup.video.hardware
     ? L('Il video lo comprime la scheda video del tuo dispositivo.', 'Your device’s graphics card compresses the video.', 'El vídeo lo comprime la tarjeta gráfica de tu dispositivo.')
     : L('Il video lo comprime il tuo dispositivo (senza scheda video: può scaldare).', 'Your device compresses the video (without the graphics card: it may run hot).', 'El vídeo lo comprime tu dispositivo (sin tarjeta gráfica: puede calentarse).'))
-    + (sup.audio.nome === 'opus' ? ' ' + L('L’audio esce in Opus e il server lo passa in AAC.', 'Audio comes out as Opus and the server turns it into AAC.', 'El audio sale en Opus y el servidor lo pasa a AAC.') : '');
+    + (sup.audio.nome === 'opus' ? ' ' + L('L’audio esce in Opus e il server lo passa in AAC.', 'Audio comes out as Opus and the server turns it into AAC.', 'El audio sale en Opus y el servidor lo pasa a AAC.') : '')
+    + (STUDIO.mobile ? ' ' + L('Resta su questa schermata durante la diretta: se cambi app, il telefono ferma la pagina e va in onda la scritta di riserva.', 'Stay on this screen while live: if you switch apps, the phone pauses the page and your fallback text goes on air.', 'Quédate en esta pantalla durante el directo: si cambias de app, el teléfono para la página y sale tu texto de reserva.') : '');
   return sup;
 }
 
@@ -22229,12 +22426,15 @@ async function studioSalvaDestinazione() {
   const tipo = document.getElementById('studio-dest-tipo')?.value || 'altro';
   const server = (document.getElementById('studio-dest-server')?.value || '').trim() || DEST_SERVER[tipo] || '';
   const chiave = (document.getElementById('studio-dest-chiave')?.value || '').trim();
-  const nome = { kick: 'Kick', youtube: 'YouTube' }[tipo] || L('RTMP', 'RTMP', 'RTMP');
+  const nome = DEST_NOME[tipo] || L('RTMP', 'RTMP', 'RTMP');
   const d = await api('/api/diretta/destinazioni', { method: 'POST', body: { nome, server, chiave } });
   const prima = new Set((STUDIO.dir?.destinazioni || []).map((x) => x.id));
   STUDIO.dir = d;
   const nuova = (d.destinazioni || []).find((x) => !prima.has(x.id));
-  if (nuova) { studioDestScelte().add(nuova.id); try { localStorage.setItem(_destChiave(), JSON.stringify([...studioDestScelte()])); } catch (e) {  } }
+  if (nuova) {
+    const insieme = studioDestScelte(); insieme.add(nuova.id); studioScriviDestScelte(insieme);
+    if (tipo === 'tiktok' && STUDIO.doc) { STUDIO.doc.scelte.destFormato[nuova.id] = 'v'; studioSporco(); }
+  }
   const ch = document.getElementById('studio-dest-chiave'); if (ch) ch.value = '';
   const sv = document.getElementById('studio-dest-server'); if (sv) sv.value = '';
   document.getElementById('studio-dest-nuova')?.removeAttribute('open');
@@ -22244,102 +22444,137 @@ async function studioSalvaDestinazione() {
 
 async function studioTogliDestinazione(id) {
   STUDIO.dir = await api(`/api/diretta/destinazioni/${encodeURIComponent(id)}/togli`, { method: 'POST' });
-  studioDestScelte().delete(id);
-  try { localStorage.setItem(_destChiave(), JSON.stringify([...studioDestScelte()])); } catch (e) {  }
+  const insieme = studioDestScelte(); insieme.delete(id); studioScriviDestScelte(insieme);
   studioRenderDestinazioni();
 }
 
-function studioRiservaCanvas(q, testo) {
+function studioRiservaCanvas(f, testo) {
+  const tela = studioTela(f);
   const c = document.createElement('canvas');
-  c.width = q.w; c.height = q.h;
+  c.width = tela.width; c.height = tela.height;
   const x = c.getContext('2d');
-  try { x.drawImage(STUDIO.canvas, 0, 0, q.w, q.h); } catch (e) {  }
-  x.fillStyle = 'rgba(8, 8, 12, 0.72)'; x.fillRect(0, 0, q.w, q.h);
+  try { x.drawImage(tela, 0, 0, c.width, c.height); } catch (e) {  }
+  x.fillStyle = 'rgba(8, 8, 12, 0.72)'; x.fillRect(0, 0, c.width, c.height);
   x.fillStyle = '#ffffff';
   x.textAlign = 'center'; x.textBaseline = 'middle';
-  x.font = `600 ${Math.round(q.h / 11)}px system-ui, sans-serif`;
-  x.fillText(String(testo || '').slice(0, 40), q.w / 2, q.h / 2);
+  x.font = `600 ${Math.round(Math.min(c.width, c.height) / 11)}px system-ui, sans-serif`;
+  x.fillText(String(testo || '').slice(0, 40), c.width / 2, c.height / 2, c.width * 0.9);
   return c;
 }
 
-function studioDisegnaUnaVolta() {
-  const c = STUDIO.ctx; if (!c) return;
-  const cw = STUDIO.canvas.width, ch = STUDIO.canvas.height;
-  c.setTransform(cw / 1280, 0, 0, ch / 720, 0, 0);
-  c.fillStyle = '#0b0b0f'; c.fillRect(0, 0, 1280, 720);
-  const s = studioSceneAttiva();
-  if (s) for (const f of s.fonti) { if (f.visibile) disegnaFonte(c, f, 1280, 720); }
+function studioDisegnaUnaVolta(f) {
+  if (!STUDIO.doc) return;
+  studioDisegnaProgramma(f, performance.now());
+}
+
+async function studioTieniSveglio(si) {
+  try {
+    if (si) {
+      if ('wakeLock' in navigator && !STUDIO.sveglia) {
+        STUDIO.sveglia = await navigator.wakeLock.request('screen');
+        STUDIO.sveglia.addEventListener?.('release', () => { STUDIO.sveglia = null; });
+      }
+    } else if (STUDIO.sveglia) { const s = STUDIO.sveglia; STUDIO.sveglia = null; await s.release(); }
+  } catch (e) {  }
+}
+
+function studioDirettePerFormato() {
+  const d = STUDIO.dir;
+  const valide = [...studioDestScelte()].filter((id) => id === 'twitch' ? d?.twitch?.keyOk : id === 'kick' ? d?.kick?.keyOk : (d?.destinazioni || []).some((x) => x.id === id));
+  return STUDIO.M.dirette(STUDIO.doc.scelte, valide);
+}
+
+async function studioAvviaFormato(D, f, sup, q, kbps, dest, testo, assenzaMin) {
+  const sped = D.creaSpedizione({
+    formato: f,
+    quandoFinisce: (dati) => studioFineFormato(f, dati),
+    quandoRitenta: () => studioLog(L('La rete è lenta: riprovo. Se dura, sul canale va la tua scritta di riserva.', 'The network is slow: retrying. If it lasts, your fallback text goes on the channel.', 'La red va lenta: reintento. Si dura, en el canal sale tu texto de reserva.')),
+  });
+  let cod;
+  try {
+    cod = await D.creaCodifica({
+      supporto: sup, canvas: studioTela(f), contestoAudio: STUDIO.audio.ac, nodoAudio: STUDIO.audio.gMaster, fps: q.fps, kbps,
+      riserva: studioRiservaCanvas(f, testo), spedizione: sped, disegnaSeNascosto: () => studioDisegnaUnaVolta(f),
+      quandoCambia: (x) => studioLog(x.soloAudio
+        ? L('Rete molto lenta: va solo la tua voce, con la scritta di riserva.', 'Very slow network: only your voice goes out, with the fallback text.', 'Red muy lenta: solo sale tu voz, con el texto de reserva.')
+        : L(`In diretta · qualità adattata a ${(x.kbps / 1000).toFixed(1)} Mbps`, `Live · quality adjusted to ${(x.kbps / 1000).toFixed(1)} Mbps`, `En directo · calidad ajustada a ${(x.kbps / 1000).toFixed(1)} Mbps`)),
+      quandoErrore: () => studioLog(L('Il codificatore del dispositivo si è fermato.', 'The device encoder stopped.', 'El codificador del dispositivo se ha parado.')),
+    });
+  } catch (e) { sped.ferma(); throw e; }
+  let turno = '', ripresa = false;
+  try {
+    const r = await api('/api/diretta/avvio', { method: 'POST', body: { formato: f, destinazioni: dest, video: cod.config.video, audio: cod.config.audio, kbps, assenzaMin, riprendi: true } });
+    turno = r.turno; ripresa = r.ripresa;
+    sped.usaTurno(turno);
+  } catch (e) {
+    await cod.ferma(); sped.ferma();
+    throw e;
+  }
+  const rr = await fetch(`/api/diretta/riserva?f=${f}&t=${encodeURIComponent(turno)}`, { method: 'POST', headers: { 'Content-Type': 'application/octet-stream' }, body: cod.riserva, credentials: 'same-origin' }).catch(() => null);
+  if (!rr || !rr.ok) studioLog(L('Diretta partita, ma la scritta di riserva non è arrivata: se la rete cade, la diretta può interrompersi.', 'Stream started, but the fallback text did not arrive: if the network drops, the stream may stop.', 'Directo iniciado, pero el texto de reserva no llegó: si la red se cae, el directo puede interrumpirse.'));
+  await cod.parti();
+  STUDIO.dirette[f] = { cod, sped, turno, ripresa };
+  return { f, ripresa };
 }
 
 async function avviaLive() {
-  if (STUDIO.live || STUDIO.avvio) return;
+  if (STUDIO.live || STUDIO.avvio || !STUDIO.doc) return;
   if (stato?.ruolo === 'moderatore') { toast(L('Solo il proprietario del canale può andare in diretta.', 'Only the channel owner can go live.', 'Solo el propietario del canal puede emitir.'), 'errore'); return; }
-  const s = studioSceneAttiva();
-  if (!s || !s.fonti.some((f) => f.visibile)) { toast(L('Aggiungi almeno una fonte visibile alla scena.', 'Add at least one visible source to the scene.', 'Añade al menos una fuente visible a la escena.'), 'errore'); return; }
-  const scelte = [...studioDestScelte()].filter((id) => id === 'twitch' ? STUDIO.dir?.twitch?.keyOk : id === 'kick' ? STUDIO.dir?.kick?.keyOk : (STUDIO.dir?.destinazioni || []).some((x) => x.id === id));
-  if (!scelte.length) { toast(L('Scegli dove va la diretta.', 'Choose where the stream goes.', 'Elige adónde va el directo.'), 'errore'); return; }
+  const s = studioScena(STUDIO.doc.inOnda);
+  if (!s || !s.fonti.some((f) => f.pos.o.vis || f.pos.v.vis)) { toast(L('Aggiungi almeno una fonte visibile alla scena in onda.', 'Add at least one visible source to the scene on air.', 'Añade al menos una fuente visible a la escena en el aire.'), 'errore'); return; }
+  const per = studioDirettePerFormato();
+  const formati = ['o', 'v'].filter((f) => per[f].length);
+  if (!formati.length) { toast(L('Scegli dove va la diretta, in un formato acceso: Impostazioni → Dove va la diretta.', 'Choose where the stream goes, in a format that is on: Settings → Where the stream goes.', 'Elige adónde va el directo, en un formato activo: Ajustes → Adónde va el directo.'), 'errore'); studioApriImpostazioni(true); return; }
   STUDIO.avvio = true;
   try {
     studioApplicaQualita(STUDIO.qual);
     const q = STUDIO_QUAL[STUDIO.qual] || STUDIO_QUAL['720p30'];
     const kbps = Math.round(q.vbps / 1000);
-    const sup = await studioControllaSupporto();
-    if (!sup || !sup.ok) { toast(L('Questo browser non può andare in diretta da sé: guarda la riga in «Dove va la diretta».', 'This browser cannot go live on its own: see the line in “Where the stream goes”.', 'Este navegador no puede emitir por sí solo: mira la línea en «Adónde va el directo».'), 'errore'); return; }
     studioLog(L('Preparo la diretta…', 'Preparing the stream…', 'Preparando el directo…'));
     avviaLoopStudio();
     studioAudioInit();
     const D = await import('/js/diretta-codifica.js');
     const testo = document.getElementById('studio-riserva-testo')?.value || L('Torno subito', 'Be right back', 'Vuelvo enseguida');
-    const sped = D.creaSpedizione({
-      quandoFinisce: (dati) => { if (STUDIO.live) fermaLive({ dalServer: dati }); },
-      quandoRitenta: () => studioLog(L('La rete è lenta: riprovo. Se dura, sul canale va la tua scritta di riserva.', 'The network is slow: retrying. If it lasts, your fallback text goes on the channel.', 'La red va lenta: reintento. Si dura, en el canal sale tu texto de reserva.')),
-    });
-    let cod, turno = '', ripresa = false;
-    try {
-      cod = await D.creaCodifica({
-        supporto: sup, canvas: STUDIO.canvas, contestoAudio: STUDIO.audio.ac, nodoAudio: STUDIO.audio.gMaster, fps: q.fps, kbps,
-        riserva: studioRiservaCanvas(q, testo), spedizione: sped, disegnaSeNascosto: studioDisegnaUnaVolta,
-        quandoCambia: (x) => studioLog(x.soloAudio
-          ? L('Rete molto lenta: va solo la tua voce, con la scritta di riserva.', 'Very slow network: only your voice goes out, with the fallback text.', 'Red muy lenta: solo sale tu voz, con el texto de reserva.')
-          : L(`In diretta · qualità adattata a ${(x.kbps / 1000).toFixed(1)} Mbps`, `Live · quality adjusted to ${(x.kbps / 1000).toFixed(1)} Mbps`, `En directo · calidad ajustada a ${(x.kbps / 1000).toFixed(1)} Mbps`)),
-        quandoErrore: () => studioLog(L('Il codificatore del dispositivo si è fermato.', 'The device encoder stopped.', 'El codificador del dispositivo se ha parado.')),
-      });
-    } catch (e) { sped.ferma(); throw e; }
-    try {
-      const r = await api('/api/diretta/avvio', { method: 'POST', body: { destinazioni: scelte, video: cod.config.video, audio: cod.config.audio, kbps, assenzaMin: Number(document.getElementById('studio-assenza')?.value) || 10, riprendi: true } });
-      turno = r.turno; ripresa = r.ripresa;
-      sped.usaTurno(turno);
-    } catch (e) {
-      await cod.ferma(); sped.ferma();
-      studioLog(e.message);
-      toast(L('Non partita: ', 'Did not start: ', 'No ha empezado: ') + e.message, 'errore');
-      return;
+    const assenzaMin = Number(document.getElementById('studio-assenza')?.value) || 10;
+    const partite = [];
+    for (const f of formati) {
+      const sup = await D.supporto({ larghezza: f === 'o' ? q.w : q.h, altezza: f === 'o' ? q.h : q.w, fps: q.fps, kbps });
+      if (!sup.ok) { toast(L(`Questo browser non può andare in diretta in ${studioFormatoNome(f)}: guarda la riga in Controlli.`, `This browser cannot go live in ${studioFormatoNome(f)}: see the line in Controls.`, `Este navegador no puede emitir en ${studioFormatoNome(f)}: mira la línea en Controles.`), 'errore'); continue; }
+      try { partite.push(await studioAvviaFormato(D, f, sup, q, kbps, per[f], testo, assenzaMin)); }
+      catch (e) { studioLog(e.message); toast(L('Non partita', 'Did not start', 'No ha empezado') + ` (${studioFormatoNome(f)}): ` + e.message, 'errore'); }
     }
-    const rr = await fetch(`/api/diretta/riserva?t=${encodeURIComponent(turno)}`, { method: 'POST', headers: { 'Content-Type': 'application/octet-stream' }, body: cod.riserva, credentials: 'same-origin' }).catch(() => null);
-    if (!rr || !rr.ok) studioLog(L('Diretta partita, ma la scritta di riserva non è arrivata: se la rete cade, la diretta può interrompersi.', 'Stream started, but the fallback text did not arrive: if the network drops, the stream may stop.', 'Directo iniciado, pero el texto de reserva no llegó: si la red se cae, el directo puede interrumpirse.'));
-    await cod.parti();
-    STUDIO.diretta = { cod, sped, turno };
-    STUDIO.live = true; STUDIO.startedAt = (ripresa && STUDIO.dir?.sessione?.da) || Date.now();
+    if (!partite.length) { try { STUDIO.audio && STUDIO.audio.ac.close(); } catch (e) {  } STUDIO.audio = null; return; }
+    STUDIO.live = true;
+    const giaDa = partite.filter((p) => p.ripresa).map((p) => Number(STUDIO.dir?.sessioni?.[p.f]?.da)).filter((x) => x > 0);
+    STUDIO.startedAt = giaDa.length ? Math.min(...giaDa) : Date.now();
+    studioTieniSveglio(true);
     studioRenderRipresa();
     studioRenderIO();
     studioRenderDestinazioni();
-    document.getElementById('studio-live').hidden = true;
-    document.getElementById('studio-ferma').hidden = false;
+    renderStudioControlli();
     const badge = document.getElementById('studio-badge-live'); if (badge) badge.hidden = false;
     STUDIO.timer = setInterval(aggiornaTimerStudio, 1000);
     STUDIO.giroStato = setInterval(studioControllaStato, 3000);
-    studioLog(ripresa ? L('Ripresa: sei di nuovo in diretta, senza interruzioni sul canale.', 'Resumed: you are live again, with no break on the channel.', 'Reanudado: vuelves a estar en directo, sin cortes en el canal.') : L('In diretta!', 'Live!', '¡En directo!'));
+    const ripresa = partite.some((p) => p.ripresa);
+    studioLog((ripresa ? L('Ripresa: sei di nuovo in diretta, senza interruzioni sul canale.', 'Resumed: you are live again, with no break on the channel.', 'Reanudado: vuelves a estar en directo, sin cortes en el canal.') : L('In diretta!', 'Live!', '¡En directo!'))
+      + (partite.length > 1 ? ' ' + L('Orizzontale e verticale.', 'Horizontal and vertical.', 'Horizontal y vertical.') : (STUDIO.doc.scelte.formati.o && STUDIO.doc.scelte.formati.v ? ' ' + L(`Solo ${studioFormatoNome(partite[0].f)}.`, `${studioFormatoNome(partite[0].f)} only.`, `Solo ${studioFormatoNome(partite[0].f)}.`) : '')));
   } finally { STUDIO.avvio = false; }
 }
 
 async function studioControllaStato() {
   if (!STUDIO.live) return;
-  let st;
-  try { st = await api('/api/diretta/stato'); } catch (e) { return; }
-  if (!st.live) { fermaLive({ dalServer: st.ultimaFine }); return; }
-  const giu = st.inRiserva?.video || st.inRiserva?.audio;
+  let giu = false;
+  const righe = [];
+  for (const f of Object.keys(STUDIO.dirette)) {
+    let st;
+    try { st = await api(`/api/diretta/stato?f=${f}`); } catch (e) { continue; }
+    if (!st.live) { studioFineFormato(f, st.ultimaFine); continue; }
+    if (st.inRiserva?.video || st.inRiserva?.audio) giu = true;
+    righe.push(`${st.destinazioni.join(', ')}${Object.keys(STUDIO.dirette).length > 1 ? ` (${studioFormatoNome(f)})` : ''} · ${(st.kbpsVeri / 1000).toFixed(1)} Mbps`);
+  }
+  if (!STUDIO.live) return;
   const el = document.getElementById('studio-stato');
-  if (el && !giu) el.textContent = L(`In diretta su ${st.destinazioni.join(', ')} · ${(st.kbpsVeri / 1000).toFixed(1)} Mbps`, `Live on ${st.destinazioni.join(', ')} · ${(st.kbpsVeri / 1000).toFixed(1)} Mbps`, `En directo en ${st.destinazioni.join(', ')} · ${(st.kbpsVeri / 1000).toFixed(1)} Mbps`);
+  if (el && !giu) el.textContent = L('In diretta su ', 'Live on ', 'En directo en ') + righe.join(' · ');
   else if (el) el.textContent = L('Il segnale non arriva: sul canale c’è la tua scritta di riserva.', 'The signal is not arriving: your fallback text is on the channel.', 'La señal no llega: en el canal está tu texto de reserva.');
 }
 
@@ -22353,20 +22588,34 @@ const FINE_DIRETTA = {
   sostituita: () => L('La diretta di prima si è chiusa per far posto a quella nuova.', 'The previous stream ended to make room for the new one.', 'El directo anterior se cerró para dejar sitio al nuevo.'),
 };
 
+async function studioFineFormato(f, dati) {
+  const d = STUDIO.dirette[f];
+  if (!d) return;
+  delete STUDIO.dirette[f];
+  try { await d.cod.ferma(); } catch (e) {  }
+  try { d.sped.ferma(); } catch (e) {  }
+  if (!Object.keys(STUDIO.dirette).length) { fermaLive({ dalServer: dati || { motivo: 'uscita' } }); return; }
+  const perche = dati && (FINE_DIRETTA[dati.motivo] || (dati.errore ? () => dati.errore : null));
+  const msg = L(`La diretta ${studioFormatoNome(f)} si è fermata`, `The ${studioFormatoNome(f)} stream stopped`, `El directo ${studioFormatoNome(f)} se ha parado`) + (perche ? ': ' + perche() : '.') + ' ' + L('L’altra continua.', 'The other one carries on.', 'El otro sigue.');
+  studioLog(msg); toast(msg, 'errore');
+}
+
 async function fermaLive({ dalServer = null } = {}) {
   if (!STUDIO.live) return;
   STUDIO.live = false;
   clearInterval(STUDIO.timer); clearInterval(STUDIO.giroStato);
-  const d = STUDIO.diretta; STUDIO.diretta = null;
-  try { d && await d.cod.ferma(); } catch (e) {  }
-  try { d && d.sped.ferma(); } catch (e) {  }
-  if (!dalServer) { try { await api('/api/diretta/fine', { method: 'POST', body: { turno: d?.turno } }); } catch (e) {  } }
+  const dirette = STUDIO.dirette; STUDIO.dirette = {};
+  for (const [f, d] of Object.entries(dirette)) {
+    try { await d.cod.ferma(); } catch (e) {  }
+    try { d.sped.ferma(); } catch (e) {  }
+    if (!dalServer) { try { await api('/api/diretta/fine', { method: 'POST', body: { turno: d.turno, formato: f } }); } catch (e) {  } }
+  }
+  studioTieniSveglio(false);
   try { STUDIO.audio && STUDIO.audio.ac.close(); } catch (e) {  }
   STUDIO.audio = null;
   for (const id in STUDIO.media) { const mm = STUDIO.media[id]; if (mm && mm.tipo === 'video' && mm.el) { try { mm.el.muted = true; } catch (e) {  } } }
-  document.getElementById('studio-live').hidden = false;
-  document.getElementById('studio-ferma').hidden = true;
   const badge = document.getElementById('studio-badge-live'); if (badge) badge.hidden = true;
+  renderStudioControlli();
   studioRenderIO();
   studioRenderDestinazioni();
   caricaDiretta().catch(() => {});
@@ -22404,26 +22653,110 @@ function caricaStudioBeta() {
 }
 
 async function caricaStudio() {
-  if (!STUDIO.scene.length) studioNuovaScena('Scena 1');
-
-  try { const q = localStorage.getItem('andrybot-studio-qual:' + (stato?.user?.login || 'anon')); if (q && STUDIO_QUAL[q]) STUDIO.qual = q; } catch (e) {  }
+  if (!STUDIO.M) STUDIO.M = await import('/js/studio-modello.js');
+  if (!STUDIO.MD) STUDIO.MD = await import('/js/studio-media.js');
+  studioAggiornaMobile();
+  if (!STUDIO.doc) await studioCaricaScene();
+  try { const q = localStorage.getItem('andrybot-studio-qual:' + studioChi()); if (q && STUDIO_QUAL[q]) STUDIO.qual = q; } catch (e) {  }
   studioApplicaQualita(STUDIO.qual);
   avviaLoopStudio();
   renderStudioTutto();
   studioRenderIO();
-  studioInitRiordino();
+  studioMostraSalvataggio();
 
   const modStudio = stato?.ruolo === 'moderatore';
   const btnLive = document.getElementById('studio-live');
   if (btnLive) { btnLive.disabled = modStudio; if (modStudio) btnLive.title = L('Solo il proprietario del canale può andare in diretta.', 'Only the channel owner can go live.', 'Solo el propietario del canal puede emitir.'); }
-  if (modStudio) studioLog(L('Come moderatore puoi preparare scene, fonti e overlay, ma la diretta la avvia solo il proprietario del canale.', 'As a moderator you can set up scenes, sources and overlays, but only the channel owner can start the stream.', 'Como moderador puedes preparar escenas, fuentes y overlays, pero solo el propietario del canal puede iniciar el directo.'));
-  if (DEMO) { if (!modStudio) studioLog(L('Anteprima demo: qui crei scene, aggiungi fonti e vai in diretta senza OBS.', 'Demo preview: here you create scenes, add sources and go live from the browser.', 'Vista previa demo: aquí creas escenas, añades fuentes y emites sin OBS.')); return; }
-  try { await caricaDiretta(); } catch (e) {  }
-
+  if (modStudio) studioLog(L('Come moderatore prepari scene, fonti e overlay, e si salvano sul canale; la diretta la avvia solo il proprietario.', 'As a moderator you set up scenes, sources and overlays, and they save to the channel; only the owner starts the stream.', 'Como moderador preparas escenas, fuentes y overlays, y se guardan en el canal; solo el propietario inicia el directo.'));
+  if (DEMO) { if (!modStudio) studioLog(L('Anteprima demo: qui componi le scene, le mandi in onda e vai in diretta senza OBS.', 'Demo preview: here you compose scenes, put them on air and go live without OBS.', 'Vista previa demo: aquí compones escenas, las pones en el aire y emites sin OBS.')); return; }
+  if (!modStudio) { try { await caricaDiretta(); } catch (e) {  } }
   try { await studioPopolaDispositivi(); } catch (e) {  }
   try { await studioCaricaEmote(); } catch (e) {  }
   try { await studioCaricaOverlays(); } catch (e) {  }
   studioRenderIO();
+  studioRiportaMedia();
+  STUDIO.MD.chiediDiTenere();
+}
+
+function studioPresetVecchi() {
+  try { const v = JSON.parse(localStorage.getItem('andrybot-studio-preset:' + studioChi()) || '[]'); return Array.isArray(v) ? v : []; } catch (e) { return []; }
+}
+
+async function studioCaricaScene() {
+  let r = null;
+  try { r = await api('/api/studio-scene'); } catch (e) { r = null; }
+  STUDIO.versione = Number(r?.versione) || 0;
+  let doc = r?.doc || null, nuovo = false;
+  if (!doc) {
+    const vecchi = studioPresetVecchi();
+    doc = {
+      scene: [{ nome: L('Scena 1', 'Scene 1', 'Escena 1'), fonti: [] }],
+      preset: vecchi.map((p) => ({ nome: p.nome, scene: STUDIO.M.migraVecchie(p.scene) })),
+      scelte: { formati: STUDIO.mobile ? { o: false, v: true } : { o: true, v: false } },
+    };
+    nuovo = vecchi.length > 0;
+  }
+  STUDIO.doc = STUDIO.M.normalizza(doc);
+  STUDIO.lavoro = STUDIO.doc.scelte.lavoro;
+  STUDIO.sel = null;
+  if (nuovo) studioSporco();
+}
+
+function studioMostraSalvataggio() {
+  const el = document.getElementById('studio-salvato'); if (!el) return;
+  const s = STUDIO.salvo.stato;
+  if (s === 'conflitto') {
+    el.innerHTML = `<span class="badge giallo">${L('Cambiate altrove', 'Changed elsewhere', 'Cambiadas en otro sitio')}</span> ${L('Un’altra finestra ha salvato le scene.', 'Another window saved the scenes.', 'Otra ventana guardó las escenas.')} <button type="button" class="btn secondario mini" data-salvo="ricarica">${L('Carica quelle', 'Load those', 'Cargar esas')}</button> <button type="button" class="btn secondario mini" data-salvo="tieni">${L('Tieni le mie', 'Keep mine', 'Mantener las mías')}</button>`;
+    return;
+  }
+  el.textContent = { salvo: L('Salvataggio…', 'Saving…', 'Guardando…'), attesa: L('Modifiche in corso', 'Changes in progress', 'Cambios en curso'), ok: L('Salvato', 'Saved', 'Guardado'), errore: L('Non salvato: riprovo fra poco', 'Not saved: retrying shortly', 'No guardado: reintento en breve'), grande: L('Troppo grande per salvarlo: togli qualche preset', 'Too big to save: remove some presets', 'Demasiado grande para guardar: quita algún preset') }[s] || '';
+}
+
+function studioSporco() {
+  if (!STUDIO.doc) return;
+  clearTimeout(STUDIO.salvo.timer);
+  if (STUDIO.salvo.stato !== 'conflitto') STUDIO.salvo.stato = 'attesa';
+  studioMostraSalvataggio();
+  STUDIO.salvo.timer = setTimeout(() => { STUDIO.salvo.timer = 0; studioSalva(); }, 1500);
+}
+
+async function studioSalva() {
+  if (!STUDIO.doc || STUDIO.salvo.stato === 'conflitto') return;
+  if (STUDIO.salvo.inCorso) { STUDIO.salvo.ancora = true; return; }
+  STUDIO.salvo.inCorso = true;
+  STUDIO.salvo.stato = 'salvo'; studioMostraSalvataggio();
+  const doc = STUDIO.M.normalizza(STUDIO.doc);
+  try {
+    const r = await api('/api/studio-scene', { method: 'PUT', body: { doc, versione: STUDIO.versione } });
+    STUDIO.versione = r.versione;
+    STUDIO.salvo.stato = 'ok';
+    if (STUDIO.MD && !DEMO) STUDIO.MD.togliTranne(STUDIO.M.impronteUsate(doc), { chi: studioChi() }).catch(() => {});
+  } catch (e) {
+    if (e.dati?.conflitto) { STUDIO.salvo.stato = 'conflitto'; STUDIO.salvo.suServer = Number(e.dati.versione) || 0; }
+    else if (e.dati?.grande) STUDIO.salvo.stato = 'grande';
+    else { STUDIO.salvo.stato = 'errore'; clearTimeout(STUDIO.salvo.timer); STUDIO.salvo.timer = setTimeout(() => { STUDIO.salvo.timer = 0; studioSalva(); }, 10000); }
+  } finally {
+    STUDIO.salvo.inCorso = false;
+    studioMostraSalvataggio();
+    if (STUDIO.salvo.ancora) { STUDIO.salvo.ancora = false; studioSalva(); }
+  }
+}
+
+function studioSalvaUscendo() {
+  if (DEMO || !STUDIO.doc || !STUDIO.salvo.timer) return;
+  clearTimeout(STUDIO.salvo.timer); STUDIO.salvo.timer = 0;
+  const corpo = JSON.stringify({ doc: STUDIO.M.normalizza(STUDIO.doc), versione: STUDIO.versione });
+  if (corpo.length > 60000) return;
+  try { fetch('/api/studio-scene', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: corpo, credentials: 'same-origin', keepalive: true }); } catch (e) {  }
+}
+
+async function studioRisolviConflitto(come) {
+  if (come === 'tieni') { STUDIO.versione = STUDIO.salvo.suServer || STUDIO.versione; STUDIO.salvo.stato = 'attesa'; await studioSalva(); return; }
+  if (STUDIO.live) { toast(L('Mentre sei in diretta tengo le scene che stai usando: le altre le carichi dopo.', 'While live I keep the scenes you are using: load the others afterwards.', 'Durante el directo mantengo las escenas que usas: carga las otras después.'), 'errore'); return; }
+  STUDIO.salvo.stato = '';
+  STUDIO.doc = null;
+  await studioCaricaScene();
+  renderStudioTutto(); studioMostraSalvataggio(); studioRiportaMedia();
 }
 
 function studioRenderIO() {
@@ -22438,269 +22771,157 @@ function studioRenderIO() {
   const cs = document.getElementById('studio-cam-sel'); if (cs && STUDIO.dev.camId) cs.value = STUDIO.dev.camId;
   const ms = document.getElementById('studio-mic-sel'); if (ms && STUDIO.dev.micId) ms.value = STUDIO.dev.micId;
   const os = document.getElementById('studio-ov-sel'); if (os && STUDIO.ov.sel) os.value = STUDIO.ov.sel;
+  for (const c of document.querySelectorAll('#studio-impostazioni [data-formato]')) { c.checked = !!STUDIO.doc?.scelte.formati[c.dataset.formato]; c.disabled = STUDIO.live; }
 }
 
-function studioBoxKey(box) {
-  if (!box) return '';
-  if (box.id === 'studio-prop-box') return 'prop';
-  if (box.classList.contains('studio-io')) return 'io';
-  if (box.querySelector('#studio-fonti')) return 'fonti';
-  if (box.querySelector('#studio-mixer')) return 'mixer';
-  if (box.querySelector('#studio-chat')) return 'chat';
-  if (box.querySelector('[data-add]')) return 'add';
-  return '';
-}
-function studioOrdineKey() { try { return 'andrybot-studio-ord:' + (stato?.user?.login || 'anon'); } catch (e) { return 'andrybot-studio-ord:anon'; } }
-function studioSalvaOrdinePannelli() {
-  const side = document.querySelector('.studio-side'); if (!side) return;
-  const ord = [...side.querySelectorAll(':scope > .studio-box')].map((b) => b.dataset.boxOrd).filter(Boolean);
-  try { localStorage.setItem(studioOrdineKey(), JSON.stringify(ord)); } catch (e) {  }
-}
-function studioApplicaOrdinePannelli() {
-  const side = document.querySelector('.studio-side'); if (!side) return;
-  let ord; try { ord = JSON.parse(localStorage.getItem(studioOrdineKey())); } catch (e) { ord = null; }
-  if (!Array.isArray(ord) || !ord.length) return;
-  for (const key of ord) { const b = side.querySelector(`:scope > .studio-box[data-box-ord="${key}"]`); if (b) side.appendChild(b); }
-}
-
-function studioLiberoKey() { try { return 'andrybot-studio-poslib:' + (stato?.user?.login || 'anon'); } catch (e) { return 'andrybot-studio-poslib:anon'; } }
-function studioLiberoModeKey() { try { return 'andrybot-studio-libero:' + (stato?.user?.login || 'anon'); } catch (e) { return 'andrybot-studio-libero:anon'; } }
-function studioElemKey(el) { return el.classList.contains('studio-palco-wrap') ? 'palco' : (el.dataset.boxOrd || studioBoxKey(el)); }
-function studioElementiLibero() {
-  const g = document.getElementById('studio-griglia'); if (!g) return [];
-  return [g.querySelector('.studio-palco-wrap'), ...g.querySelectorAll('.studio-side > .studio-box')].filter(Boolean);
-}
-function studioLeggiPosLibero() { try { return JSON.parse(localStorage.getItem(studioLiberoKey())); } catch (e) { return null; } }
-function studioSalvaPosLibero() {
-  const g = document.getElementById('studio-griglia'); if (!g) return;
-  const gr = g.getBoundingClientRect(); const pos = {};
-  for (const el of studioElementiLibero()) { const r = el.getBoundingClientRect(); pos[studioElemKey(el)] = { x: Math.round(r.left - gr.left), y: Math.round(r.top - gr.top) }; }
-  try { localStorage.setItem(studioLiberoKey(), JSON.stringify(pos)); } catch (e) {  }
-}
-function studioAggiornaAltezzaLibero() {
-  const g = document.getElementById('studio-griglia'); if (!g || !g.classList.contains('libero')) return;
-  const gr = g.getBoundingClientRect(); let maxB = 0;
-  for (const el of studioElementiLibero()) { const r = el.getBoundingClientRect(); maxB = Math.max(maxB, r.bottom - gr.top); }
-  g.style.minHeight = (maxB + 24) + 'px';
-}
-
-function studioTileLibero(g, els, largh) {
-  const gap = 16, palcoW = 640;
-  const colX = (palcoW + gap + 300 <= largh) ? palcoW + gap : 0;
-  const palco = els.find((e) => e.classList.contains('studio-palco-wrap'));
-  if (palco) { palco.style.left = '0px'; palco.style.top = '0px'; }
-  let y = colX ? 0 : 380;
-  for (const el of els) {
-    if (el.classList.contains('studio-palco-wrap')) continue;
-    el.style.left = colX + 'px';
-    el.style.top = y + 'px';
-    const h = el.getBoundingClientRect().height || 160;
-    y += h + gap;
-  }
-}
-
-function studioApplicaLibero() {
-  const g = document.getElementById('studio-griglia'); if (!g) return;
-  g.classList.add('libero');
-  const els = studioElementiLibero();
-  const gr = g.getBoundingClientRect();
-  const largh = Math.max(360, gr.width || 1000);
-  const salvate = studioLeggiPosLibero();
-
-  let ok = salvate && typeof salvate === 'object';
-  if (ok) {
-    for (const el of els) {
-      const p = salvate[studioElemKey(el)];
-      if (!p || !Number.isFinite(p.x) || !Number.isFinite(p.y) || p.x < 0 || p.y < 0 || p.x > largh - 60) { ok = false; break; }
-    }
-  }
-
-  if (ok) {
-    for (const el of els) {
-      const p = salvate[studioElemKey(el)];
-      el.style.left = Math.max(0, Math.min(p.x, largh - 80)) + 'px';
-      el.style.top = Math.max(0, p.y) + 'px';
-    }
-
-    if (studioSovrapposti(els)) studioTileLibero(g, els, largh);
-  } else {
-    studioTileLibero(g, els, largh);
-  }
-  studioAggiornaAltezzaLibero();
-}
-
-function studioSovrapposti(els) {
-  const r = els.map((e) => e.getBoundingClientRect());
-  for (let i = 0; i < r.length; i++) {
-    for (let j = i + 1; j < r.length; j++) {
-      const a = r[i], b = r[j];
-      const ox = Math.min(a.right, b.right) - Math.max(a.left, b.left);
-      const oy = Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top);
-      if (ox > 40 && oy > 40) return true;
-    }
-  }
-  return false;
-}
-function studioTogliLibero() {
-  const g = document.getElementById('studio-griglia'); if (!g) return;
-  g.classList.remove('libero'); g.style.minHeight = '';
-  for (const el of studioElementiLibero()) { el.style.left = ''; el.style.top = ''; }
-}
-function studioToggleLibero() {
-  STUDIO.libero = !STUDIO.libero;
-  try { localStorage.setItem(studioLiberoModeKey(), STUDIO.libero ? '1' : '0'); } catch (e) {  }
-  if (STUDIO.libero) studioApplicaLibero(); else studioTogliLibero();
-  const btn = document.getElementById('studio-libero-btn'); if (btn) btn.classList.toggle('attivo', STUDIO.libero);
-}
-function studioResetLibero() {
-  try { localStorage.removeItem(studioLiberoKey()); localStorage.removeItem(studioLiberoModeKey()); localStorage.removeItem(studioOrdineKey()); } catch (e) {  }
-  STUDIO.libero = false; studioTogliLibero();
-  const side = document.querySelector('.studio-side');
-  if (side) for (const key of ['io', 'add', 'fonti', 'prop', 'mixer', 'chat']) { const b = side.querySelector(`:scope > .studio-box[data-box-ord="${key}"]`); if (b) side.appendChild(b); }
-  const btn = document.getElementById('studio-libero-btn'); if (btn) btn.classList.remove('attivo');
-  toast(L('Layout ripristinato', 'Layout reset', 'Diseño restablecido'));
-}
-
-let _studioDrag = null;
-function studioInitRiordino() {
-  const griglia = document.getElementById('studio-griglia'); if (!griglia) return;
-  const side = griglia.querySelector('.studio-side');
-  if (side) for (const b of side.querySelectorAll(':scope > .studio-box')) {
-    const key = studioBoxKey(b); if (key) b.dataset.boxOrd = key;
-    const tit = b.querySelector('.studio-box-tit');
-    if (tit && !tit.querySelector('.studio-box-drag')) {
-      const h = document.createElement('span');
-      h.className = 'studio-box-drag'; h.textContent = '⠿';
-      h.title = L('Trascina per riordinare / spostare', 'Drag to reorder / move', 'Arrastra para reordenar / mover');
-      tit.insertBefore(h, tit.firstChild);
-    }
-  }
-
-  try { STUDIO.libero = localStorage.getItem(studioLiberoModeKey()) === '1'; } catch (e) {  }
-  if (STUDIO.libero) studioApplicaLibero(); else studioApplicaOrdinePannelli();
-  const btn0 = document.getElementById('studio-libero-btn'); if (btn0) btn0.classList.toggle('attivo', STUDIO.libero);
-
-  if (STUDIO._riordWired) return;
-  STUDIO._riordWired = true;
-  griglia.addEventListener('pointerdown', (e) => {
-    const h = e.target.closest('.studio-box-drag, .studio-palco-drag'); if (!h) return;
-    const el = h.closest('.studio-box, .studio-palco-wrap'); if (!el) return;
-    if (STUDIO.libero) {
-      const r = el.getBoundingClientRect(), gr = griglia.getBoundingClientRect();
-      _studioDrag = { el, mode: 'free', px: e.clientX, py: e.clientY, startL: r.left - gr.left, startT: r.top - gr.top };
-    } else {
-      if (!el.classList.contains('studio-box')) return;
-      _studioDrag = { el, mode: 'reorder' };
-    }
-    el.classList.add('studio-box-dragging');
-    try { h.setPointerCapture(e.pointerId); } catch (er) {  }
-    e.preventDefault();
-  });
-  griglia.addEventListener('pointermove', (e) => {
-    if (!_studioDrag) return;
-    if (_studioDrag.mode === 'free') {
-      const gr = griglia.getBoundingClientRect();
-      let nx = _studioDrag.startL + (e.clientX - _studioDrag.px);
-      let ny = _studioDrag.startT + (e.clientY - _studioDrag.py);
-      nx = Math.max(0, Math.min(nx, gr.width - 60)); ny = Math.max(0, ny);
-      _studioDrag.el.style.left = nx + 'px'; _studioDrag.el.style.top = ny + 'px';
-      studioAggiornaAltezzaLibero();
-    } else {
-      const s = griglia.querySelector('.studio-side'); if (!s) return;
-      const fratelli = [...s.querySelectorAll(':scope > .studio-box')].filter((b) => b !== _studioDrag.el);
-      let messo = false;
-      for (const f of fratelli) { const r = f.getBoundingClientRect(); if (e.clientY < r.top + r.height / 2) { s.insertBefore(_studioDrag.el, f); messo = true; break; } }
-      if (!messo) s.appendChild(_studioDrag.el);
-    }
-  });
-  const fine = () => { if (!_studioDrag) return; const m = _studioDrag.mode; _studioDrag.el.classList.remove('studio-box-dragging'); _studioDrag = null; if (m === 'free') studioSalvaPosLibero(); else studioSalvaOrdinePannelli(); };
-  griglia.addEventListener('pointerup', fine);
-  griglia.addEventListener('pointercancel', fine);
+function studioAggiornaMobile() {
+  const prima = STUDIO.mobile;
+  STUDIO.mobile = !!window.matchMedia?.('(max-width: 760px)').matches;
+  document.getElementById('studio-carta')?.classList.toggle('studio-mobile', STUDIO.mobile);
+  return prima !== STUDIO.mobile;
 }
 
 function renderStudioTutto() {
-  renderStudioScene(); renderStudioPreset(); renderStudioFonti(); renderStudioUI(); renderStudioProp(); renderStudioMixer();
+  if (!STUDIO.doc) return;
+  studioAggiornaMobile();
+  studioMontaTele();
+  renderStudioLavoro(); renderStudioScene(); renderStudioPreset(); renderStudioFonti(); renderStudioUI(); renderStudioProp(); renderStudioMixer(); renderStudioTransizioni(); renderStudioControlli(); renderStudioMobile();
 }
 
-function studioPresetKey() { try { return 'andrybot-studio-preset:' + (stato?.user?.login || 'anon'); } catch (e) { return 'andrybot-studio-preset:anon'; } }
-function studioLeggiPreset() { try { return JSON.parse(localStorage.getItem(studioPresetKey())) || []; } catch (e) { return []; } }
-function studioScriviPreset(arr) { try { localStorage.setItem(studioPresetKey(), JSON.stringify(arr)); } catch (e) {  } }
-function studioSerializzaScene() {
-  return STUDIO.scene.map((s) => ({ nome: s.nome, fonti: s.fonti.map((f) => {
-    const o = { tipo: f.tipo, nome: f.nome, x: f.x, y: f.y, w: f.w, h: f.h, visibile: f.visibile };
-    if (f.dataId) o.dataId = f.dataId;
-    if (f.tipo === 'testo') { o.testo = f.testo; o.colore = f.colore; o.dim = f.dim; o.grassetto = f.grassetto; o.sfondo = f.sfondo; }
-    return o;
-  }) }));
+function renderStudioLavoro() {
+  const el = document.getElementById('studio-lavoro'); if (!el || !STUDIO.doc) return;
+  const f = STUDIO.doc.scelte.formati;
+  if (!(f.o && f.v)) { el.innerHTML = f.v ? `<span class="badge viola">${L('Verticale 9:16', 'Vertical 9:16', 'Vertical 9:16')}</span>` : ''; return; }
+  el.innerHTML = ['o', 'v'].map((k) => `<button type="button" class="studio-chip${STUDIO.lavoro === k ? ' attivo' : ''}" data-lavoro="${k}" aria-pressed="${STUDIO.lavoro === k}">${k === 'o' ? L('Orizzontale', 'Horizontal', 'Horizontal') : L('Verticale', 'Vertical', 'Vertical')}</button>`).join('');
+}
+
+function studioCambiaLavoro(f) {
+  if (!STUDIO.doc || !STUDIO.doc.scelte.formati[f] || STUDIO.lavoro === f) return;
+  STUDIO.lavoro = f; STUDIO.doc.scelte.lavoro = f;
+  renderStudioTutto(); studioSporco();
+}
+
+function renderStudioScene() {
+  const el = document.getElementById('studio-scene'); if (!el || !STUDIO.doc) return;
+  const d = STUDIO.doc, mod = studioModalita(), ed = studioSceneAttiva();
+  el.innerHTML = d.scene.map((s) => {
+    const onda = s.id === d.inOnda, ant = mod && s.id === d.anteprima;
+    return `<li><button type="button" class="studio-scena${s === ed ? ' attiva' : ''}${onda ? ' in-onda' : ''}" data-scena="${esc(s.id)}" aria-current="${s === ed}">${_bIco(ICO.scene)}<span>${esc(s.nome)}</span>${onda ? `<span class="studio-tag-onda">${L('in onda', 'on air', 'en el aire')}</span>` : ''}${ant && !onda ? `<span class="studio-tag-ant">${L('anteprima', 'preview', 'vista previa')}</span>` : ''}</button></li>`;
+  }).join('');
 }
 
 function renderStudioPreset() {
-  const el = document.getElementById('studio-preset'); if (!el) return;
-  const list = studioLeggiPreset(), vuoto = !list.length;
-  el.innerHTML = `<span class="studio-mini-tit">${L('Preset di layout', 'Layout presets', 'Presets de diseño')}</span>
-    <select aria-label="${esc(L('Preset di layout', 'Layout preset', 'Preajuste de diseno'))}" class="chip-utente" id="studio-preset-sel"${vuoto ? ' disabled' : ''}>${vuoto ? `<option>${L('— nessuno salvato —', '— none saved —', '— ninguno guardado —')}</option>` : list.map((p, i) => `<option value="${i}">${esc(p.nome)}</option>`).join('')}</select>
+  const el = document.getElementById('studio-preset'); if (!el || !STUDIO.doc) return;
+  const list = STUDIO.doc.preset, vuoto = !list.length;
+  el.innerHTML = `<span class="studio-mini-tit">${L('Preset', 'Presets', 'Presets')}</span>
+    <select aria-label="${esc(L('Preset delle scene', 'Scene preset', 'Preset de escenas'))}" class="chip-utente" id="studio-preset-sel"${vuoto ? ' disabled' : ''}>${vuoto ? `<option>${L('nessuno salvato', 'none saved', 'ninguno guardado')}</option>` : list.map((p, i) => `<option value="${i}">${esc(p.nome)}</option>`).join('')}</select>
     <button type="button" class="btn secondario mini" data-preset="applica"${vuoto ? ' disabled' : ''}>${L('Applica', 'Apply', 'Aplicar')}</button>
     <button type="button" class="btn secondario mini" data-preset="salva">${L('Salva com\'è…', 'Save as is…', 'Guardar tal cual…')}</button>
     <button type="button" class="btn secondario mini" data-preset="elimina"${vuoto ? ' disabled' : ''}>${L('Elimina', 'Delete', 'Eliminar')}</button>`;
 }
 
 async function studioSalvaPreset() {
-  const nome = await chiediTesto({ titolo: L('Come chiamo questo layout?', 'What should this layout be called?', '¿Cómo llamo a este diseño?'), valore: L('Il mio layout', 'My layout', 'Mi diseño'), ok: L('Salva', 'Save', 'Guardar') }); if (!nome) return;
-  const arr = studioLeggiPreset();
-  arr.push({ nome: nome.slice(0, 40), scene: studioSerializzaScene() });
-  studioScriviPreset(arr); renderStudioPreset(); toast(L('Preset salvato ✓', 'Preset saved ✓', 'Preset guardado ✓'));
-}
-function studioApplicaPreset(idx) {
-  const arr = studioLeggiPreset(), p = arr[idx]; if (!p) return;
-  STUDIO.scene = (p.scene || []).map((s) => ({ id: 's' + (STUDIO._n++), nome: s.nome || L('Scena', 'Scene', 'Escena'),
-    fonti: (s.fonti || []).filter((f) => !(f.dataId && !STUDIO.media[f.dataId])).map((f) => ({ ...f, id: 'f' + (STUDIO._n++), visibile: f.visibile !== false })) }));
-  if (!STUDIO.scene.length) studioNuovaScena(L('Scena 1', 'Scene 1', 'Escena 1'));
-  STUDIO.attiva = 0; STUDIO.sel = null; renderStudioTutto(); toast(L('Preset applicato ✓', 'Preset applied ✓', 'Preset aplicado ✓'));
-}
-async function studioEliminaPreset(idx) {
-  const arr = studioLeggiPreset(); if (!arr[idx]) return;
-  if (!(await chiediSe({ titolo: L(`Elimino il layout «${arr[idx].nome}»?`, `Delete the layout «${arr[idx].nome}»?`, `¿Elimino el diseño «${arr[idx].nome}»?`), pericolo: true,
-    testo: L('Le scene di adesso restano come sono.', 'Your current scenes stay as they are.', 'Tus escenas actuales se quedan como están.'),
-    si: L('Eliminalo', 'Delete it', 'Elimínalo') }))) return;
-  arr.splice(idx, 1); studioScriviPreset(arr); renderStudioPreset(); toast(L('Preset eliminato', 'Preset deleted', 'Preset eliminado'));
+  const d = STUDIO.doc; if (!d) return;
+  if (d.preset.length >= STUDIO.M.LIMITI.preset) { toast(L('Hai già tutti i preset che si possono avere: eliminane uno.', 'You already have as many presets as allowed: delete one.', 'Ya tienes todos los presets posibles: elimina uno.'), 'errore'); return; }
+  const nome = await chiediTesto({ titolo: L('Come chiamo questo preset?', 'What should this preset be called?', '¿Cómo llamo a este preset?'), valore: L('Le mie scene', 'My scenes', 'Mis escenas'), ok: L('Salva', 'Save', 'Guardar'), max: STUDIO.M.LIMITI.nome }); if (!nome) return;
+  d.preset.push({ nome: nome.slice(0, STUDIO.M.LIMITI.nome), scene: JSON.parse(JSON.stringify(d.scene)) });
+  renderStudioPreset(); studioSporco();
+  toast(L('Preset salvato: le immagini e i video restano legati ai loro file.', 'Preset saved: images and videos stay linked to their files.', 'Preset guardado: las imágenes y los vídeos siguen ligados a sus archivos.'));
 }
 
-function renderStudioScene() {
-  const el = document.getElementById('studio-scene'); if (!el) return;
-  el.innerHTML = STUDIO.scene.map((s, i) =>
-    `<button type="button" class="studio-scena${i === STUDIO.attiva ? ' attiva' : ''}" data-scena="${i}">${_bIco(ICO.scene)}<span>${esc(s.nome)}</span></button>`).join('')
-    + `<button type="button" class="studio-scena studio-scena-nuova" data-scena-nuova="1" title="${L('Nuova scena', 'New scene', 'Nueva escena')}">${_bIco(ICO.piu)}</button>`
-    + (STUDIO.scene.length > 1 ? `<button type="button" class="studio-scena studio-scena-rinomina" data-scena-azione="rinomina" title="${L('Rinomina scena', 'Rename scene', 'Renombrar escena')}">${_bIco(ICO.scrivi)}</button><button type="button" class="studio-scena studio-scena-elimina" data-scena-azione="elimina" title="${L('Elimina scena', 'Delete scene', 'Eliminar escena')}">${_bIco(ICO.cestino)}</button>` : '');
+async function studioApplicaPreset(idx) {
+  const d = STUDIO.doc, p = d?.preset[idx]; if (!p) return;
+  if (STUDIO.live && !(await chiediSe({ titolo: L('Cambio le scene durante la diretta?', 'Change the scenes during the stream?', '¿Cambio las escenas durante el directo?'), testo: L('Quello che è in onda cambia subito.', 'What is on air changes right away.', 'Lo que está en el aire cambia enseguida.'), si: L('Cambiale', 'Change them', 'Cámbialas') }))) return;
+  const copia = STUDIO.M.normalizza({ scene: JSON.parse(JSON.stringify(p.scene)).map((s) => ({ ...s, id: '', fonti: s.fonti.map((f) => ({ ...f, id: '' })) })) });
+  d.scene = copia.scene; d.inOnda = d.scene[0].id; d.anteprima = d.scene[0].id;
+  STUDIO.sel = null; STUDIO.trans = null;
+  renderStudioTutto(); studioSporco(); studioRiportaMedia();
+  toast(L('Preset applicato', 'Preset applied', 'Preset aplicado'));
+}
+
+async function studioEliminaPreset(idx) {
+  const d = STUDIO.doc; if (!d?.preset[idx]) return;
+  if (!(await chiediSe({ titolo: L(`Elimino il preset «${d.preset[idx].nome}»?`, `Delete the preset «${d.preset[idx].nome}»?`, `¿Elimino el preset «${d.preset[idx].nome}»?`), pericolo: true,
+    testo: L('Le scene di adesso restano come sono.', 'Your current scenes stay as they are.', 'Tus escenas actuales se quedan como están.'),
+    si: L('Eliminalo', 'Delete it', 'Elimínalo') }))) return;
+  d.preset.splice(idx, 1); renderStudioPreset(); studioSporco();
+  toast(L('Preset eliminato', 'Preset deleted', 'Preset eliminado'));
+}
+
+async function studioAzioneScena(azione) {
+  const d = STUDIO.doc, s = studioSceneAttiva(); if (!d || !s) return;
+  const i = d.scene.indexOf(s);
+  if (azione === 'nuova') {
+    const n = studioNuovaScena(); if (!n) return;
+    if (studioModalita()) d.anteprima = n.id;
+    else if (STUDIO.live) toast(L('Scena creata: mandala in onda quando è pronta.', 'Scene created: put it on air when it is ready.', 'Escena creada: ponla en el aire cuando esté lista.'));
+    else d.inOnda = n.id;
+    STUDIO.sel = null;
+  } else if (azione === 'rinomina') {
+    const n = await chiediTesto({ titolo: L('Come chiamo questa scena?', 'What should this scene be called?', '¿Cómo llamo a esta escena?'), valore: s.nome, ok: L('Rinomina', 'Rename', 'Renombrar'), max: STUDIO.M.LIMITI.nome });
+    if (!n) return;
+    s.nome = n.slice(0, STUDIO.M.LIMITI.nome);
+  } else if (azione === 'su' || azione === 'giu') {
+    const j = i + (azione === 'su' ? -1 : 1); if (j < 0 || j >= d.scene.length) return;
+    d.scene[i] = d.scene[j]; d.scene[j] = s;
+  } else if (azione === 'elimina') {
+    if (d.scene.length <= 1) { toast(L('Serve almeno una scena.', 'You need at least one scene.', 'Hace falta al menos una escena.')); return; }
+    if (STUDIO.live && s.id === d.inOnda) { toast(L('Questa scena è in onda: manda in onda un’altra scena prima di eliminarla.', 'This scene is on air: put another scene on air before deleting it.', 'Esta escena está en el aire: pon otra en el aire antes de eliminarla.'), 'errore'); return; }
+    if (!(await chiediSe({ titolo: L(`Elimino la scena «${s.nome}»?`, `Delete the scene «${s.nome}»?`, `¿Elimino la escena «${s.nome}»?`), pericolo: true,
+      testo: L('Con lei se ne va quello che ci avevi messo dentro.', 'What you put in it goes with it.', 'Lo que pusiste dentro se va con ella.'),
+      si: L('Eliminala', 'Delete it', 'Elimínala') }))) return;
+    d.scene.splice(i, 1);
+    const vicina = d.scene[Math.max(0, i - 1)].id;
+    if (d.inOnda === s.id) d.inOnda = vicina;
+    if (d.anteprima === s.id) d.anteprima = vicina;
+    if (STUDIO.trans && (STUDIO.trans.da === s.id || STUDIO.trans.a === s.id)) STUDIO.trans = null;
+    STUDIO.sel = null;
+  }
+  renderStudioTutto(); studioSporco();
+}
+
+function studioScegliScena(id) {
+  const d = STUDIO.doc; if (!d || !studioScena(id)) return;
+  STUDIO.sel = null;
+  if (studioModalita()) { d.anteprima = id; renderStudioTutto(); studioSporco(); return; }
+  studioVaiInOnda(id);
+  renderStudioTutto();
 }
 
 function renderStudioFonti() {
   const ul = document.getElementById('studio-fonti'); if (!ul) return;
   const s = studioSceneAttiva();
-  if (!s || !s.fonti.length) { ul.innerHTML = `<li class="vuoto">${L('Nessuna fonte. Aggiungine una qui sopra.', 'No sources. Add one above.', 'Sin fuentes. Añade una arriba.')}</li>`; return; }
-
+  if (!s || !s.fonti.length) { ul.innerHTML = `<li class="vuoto">${L('Nessuna fonte. Aggiungine una qui sotto.', 'No sources. Add one below.', 'Sin fuentes. Añade una abajo.')}</li>`; return; }
   ul.innerHTML = s.fonti.slice().reverse().map((f) => {
-    const i = s.fonti.indexOf(f);
-    return `<li class="studio-fonte${f.id === STUDIO.sel ? ' sel' : ''}${f.visibile ? '' : ' nascosta'}" data-fonte="${f.id}">
+    const i = s.fonti.indexOf(f), vis = studioPos(f).vis, manca = studioManca(f);
+    return `<li class="studio-fonte${f.id === STUDIO.sel ? ' sel' : ''}${vis ? '' : ' nascosta'}${manca ? ' manca' : ''}" data-fonte="${esc(f.id)}">
       <span class="sf-ico">${_bIco(ICO[studioIcoFonte(f.tipo)])}</span>
-      <span class="sf-nome">${esc(f.nome)}</span>
+      <button type="button" class="sf-nome" data-scegli="${esc(f.id)}">${esc(f.nome)}${manca ? ` <span class="tenue">· ${L('manca qui', 'missing here', 'falta aquí')}</span>` : ''}</button>
       <span class="sf-azioni">
-        <button type="button" class="sf-btn" data-vis="${f.id}" title="${f.visibile ? L('Nascondi', 'Hide', 'Ocultar') : L('Mostra', 'Show', 'Mostrar')}">${_bIco(f.visibile ? ICO.occhio : ICO.occhioNo)}</button>
-        <button type="button" class="sf-btn" data-su="${f.id}" title="${L('Porta avanti', 'Bring forward', 'Traer al frente')}"${i === s.fonti.length - 1 ? ' disabled' : ''}>${_bIco(ICO.freccia)}</button>
-        <button type="button" class="sf-btn sf-giu" data-giu="${f.id}" title="${L('Porta dietro', 'Send back', 'Enviar atrás')}"${i === 0 ? ' disabled' : ''}>${_bIco(ICO.freccia)}</button>
-        <button type="button" class="sf-btn sf-rim" data-rim="${f.id}" title="${L('Rimuovi', 'Remove', 'Quitar')}">${_bIco(ICO.cestino)}</button>
+        <button type="button" class="sf-btn" data-vis="${esc(f.id)}" aria-label="${esc((vis ? L('Nascondi', 'Hide', 'Ocultar') : L('Mostra', 'Show', 'Mostrar')) + ': ' + f.nome)}" title="${vis ? L('Nascondi', 'Hide', 'Ocultar') : L('Mostra', 'Show', 'Mostrar')}">${_bIco(vis ? ICO.occhio : ICO.occhioNo)}</button>
+        <button type="button" class="sf-btn" data-su="${esc(f.id)}" aria-label="${esc(L('Porta avanti', 'Bring forward', 'Traer al frente') + ': ' + f.nome)}" title="${L('Porta avanti', 'Bring forward', 'Traer al frente')}"${i === s.fonti.length - 1 ? ' disabled' : ''}>${_bIco(ICO.freccia)}</button>
+        <button type="button" class="sf-btn sf-giu" data-giu="${esc(f.id)}" aria-label="${esc(L('Porta dietro', 'Send back', 'Enviar atrás') + ': ' + f.nome)}" title="${L('Porta dietro', 'Send back', 'Enviar atrás')}"${i === 0 ? ' disabled' : ''}>${_bIco(ICO.freccia)}</button>
+        <button type="button" class="sf-btn sf-rim" data-rim="${esc(f.id)}" aria-label="${esc(L('Rimuovi', 'Remove', 'Quitar') + ': ' + f.nome)}" title="${L('Rimuovi', 'Remove', 'Quitar')}">${_bIco(ICO.cestino)}</button>
       </span>
     </li>`;
   }).join('');
 }
 
+function studioAzioneManca(f) {
+  if (f.tipo === 'webcam') return `<button type="button" class="btn secondario mini" data-cap-webcam="1">${L('Accendi la webcam', 'Turn on the webcam', 'Enciende la webcam')}</button>`;
+  if (f.tipo === 'schermo') return `<button type="button" class="btn secondario mini" data-cap-schermo="1">${L('Condividi lo schermo', 'Share the screen', 'Compartir la pantalla')}</button>`;
+  return `<button type="button" class="btn secondario mini" data-ricollega="${esc(f.id)}">${L('Ricarica questo file', 'Load this file again', 'Vuelve a cargar este archivo')}</button>`;
+}
+
 function renderStudioUI() {
-  const ui = document.getElementById('studio-ui'); if (!ui) return;
-  const s = studioSceneAttiva(), W = 1280, H = 720;
-  ui.innerHTML = (s ? s.fonti : []).filter((f) => f.visibile).map((f) => {
-    const sel = f.id === STUDIO.sel && f.tipo !== 'overlay';
-    const st = `left:${f.x / W * 100}%;top:${f.y / H * 100}%;width:${f.w / W * 100}%;height:${f.h / H * 100}%`;
+  const ui = STUDIO.ui; if (!ui || !STUDIO.doc) return;
+  const s = studioSceneAttiva(), { W, H } = studioMisura();
+  ui.innerHTML = (s ? s.fonti : []).filter((f) => studioPos(f).vis).map((f) => {
+    const p = studioPos(f), sel = f.id === STUDIO.sel && f.tipo !== 'overlay', manca = studioManca(f);
+    const st = `left:${p.x / W * 100}%;top:${p.y / H * 100}%;width:${p.w / W * 100}%;height:${p.h / H * 100}%`;
     const handles = sel ? ['nw', 'ne', 'sw', 'se'].map((h) => `<span class="studio-h studio-h-${h}" data-h="${h}"></span>`).join('') : '';
-    return `<div class="studio-fonte-box${sel ? ' sel' : ''}${f.tipo === 'overlay' ? ' overlay' : ''}" data-box="${f.id}" style="${st}"><span class="sfb-nome">${esc(f.nome)}</span>${handles}</div>`;
+    const segnaposto = manca ? `<span class="studio-manca"><strong>${esc(f.media?.nome || f.nome)}</strong><span>${(f.tipo === 'immagine' || f.tipo === 'video') ? L('Manca su questo dispositivo', 'Missing on this device', 'Falta en este dispositivo') : L('Non attiva', 'Not active', 'No activa')}</span>${studioAzioneManca(f)}</span>` : '';
+    return `<div class="studio-fonte-box${sel ? ' sel' : ''}${f.tipo === 'overlay' ? ' overlay' : ''}${manca ? ' manca' : ''}" data-box="${esc(f.id)}" style="${st}"><span class="sfb-nome">${esc(f.nome)}</span>${segnaposto}${handles}</div>`;
   }).join('');
 }
 
@@ -22714,37 +22935,42 @@ function renderStudioProp() {
   if (f.tipo === 'testo') {
     extra = `
       <label class="campo" for="sp-testo">${L('Testo', 'Text', 'Texto')}</label>
-      <input id="sp-testo" type="text" maxlength="120" value="${esc(f.testo || '')}">
+      <input id="sp-testo" type="text" maxlength="${STUDIO.M.LIMITI.testo}" value="${esc(f.testo || '')}">
       <div class="griglia-campi spazio-sopra">
         <div><label class="campo" for="sp-colore">${L('Colore', 'Color', 'Color')}</label><input id="sp-colore" type="color" value="${esc(f.colore || '#ffffff')}"></div>
         <div><label class="campo" for="sp-dim">${L('Dimensione:', 'Size:', 'Tamaño:')} <strong><span id="sp-dim-v">${f.dim}</span></strong></label><input id="sp-dim" type="range" min="18" max="150" value="${f.dim}"></div>
       </div>
       <label class="riga-check spazio-sopra"><input id="sp-grass" type="checkbox"${f.grassetto ? ' checked' : ''}> ${L('Grassetto', 'Bold', 'Negrita')}</label>`;
   } else if (f.tipo === 'overlay') {
-    extra = `<p class="suggerimento">${L('L\'overlay riempie tutto il palco (alert, chat ed effetti alle loro posizioni). Non si sposta né si ridimensiona.', 'The overlay fills the whole stage (alerts, chat and effects at their positions). It doesn’t move or resize.', 'El overlay llena todo el escenario (alertas, chat y efectos en sus posiciones). No se mueve ni se redimensiona.')}</p>`;
+    extra = `<p class="suggerimento">${L('L\'overlay riempie tutta la tela (alert, chat ed effetti alle loro posizioni). Non si sposta né si ridimensiona.', 'The overlay fills the whole canvas (alerts, chat and effects at their positions). It doesn’t move or resize.', 'El overlay llena todo el lienzo (alertas, chat y efectos en sus posiciones). No se mueve ni se redimensiona.')}</p>`;
+  } else if (f.media) {
+    const mb = f.media.byte ? ` · ${(f.media.byte / 1048576).toFixed(1)} MB` : '';
+    extra = `<p class="suggerimento">${_bIco(ICO.immagine)}${esc(f.media.nome || '')}${mb}${studioManca(f) ? ` · <strong>${L('manca su questo dispositivo', 'missing on this device', 'falta en este dispositivo')}</strong>` : ''}</p>
+      <button type="button" class="btn secondario mini" data-ricollega="${esc(f.id)}">${L('Cambia il file', 'Change the file', 'Cambiar el archivo')}</button>`;
   }
+  const altro = STUDIO.doc.scelte.formati.o && STUDIO.doc.scelte.formati.v;
   el.innerHTML = `
     <label class="campo" for="sp-nome">${L('Nome', 'Name', 'Nombre')}</label>
-    <input id="sp-nome" type="text" maxlength="24" value="${esc(f.nome)}">
+    <input id="sp-nome" type="text" maxlength="${STUDIO.M.LIMITI.nome}" value="${esc(f.nome)}">
     ${extra}
     ${f.tipo !== 'overlay' ? `<div class="studio-prop-pos spazio-sopra">
-      <button type="button" class="btn secondario mini" data-fit="riempi">${L('Riempi il palco', 'Fill the stage', 'Llenar el escenario')}</button>
+      <button type="button" class="btn secondario mini" data-fit="riempi">${L('Riempi la tela', 'Fill the canvas', 'Llenar el lienzo')}</button>
       <button type="button" class="btn secondario mini" data-fit="centra">${L('Centra', 'Center', 'Centrar')}</button>
-    </div>` : ''}`;
+    </div>${altro ? `<p class="suggerimento">${L(`Posizione e visibilità valgono per il formato ${studioFormatoNome(STUDIO.lavoro)}: l’altro formato ha le sue.`, `Position and visibility apply to the ${studioFormatoNome(STUDIO.lavoro)} format: the other format has its own.`, `La posición y la visibilidad valen para el formato ${studioFormatoNome(STUDIO.lavoro)}: el otro formato tiene las suyas.`)}</p>` : ''}` : ''}`;
 }
 
 function renderStudioMixer() {
   const el = document.getElementById('studio-mixer'); if (!el) return;
   const m = STUDIO.mix;
   const micOn = !!STUDIO.cap.micStream;
-  const deskOn = !!(STUDIO.cap.scrStream && STUDIO.cap.scrStream.getAudioTracks().length);
-  const mediaOn = Object.values(STUDIO.media || {}).some((x) => x && x.tipo === 'video');
+  const deskOn = !!(STUDIO.cap.scrStream && STUDIO.cap.scrStream.getAudioTracks().length) || (STUDIO.cap.osify || []).some((o) => o.ruolo === 'desk');
+  const mediaOn = Object.values(STUDIO.media || {}).some((x) => x && x.tipo === 'video') || (STUDIO.cap.osify || []).some((o) => o.ruolo === 'media');
   const canale = (id, nome, on, cfg, extra, forte) => `
     <div class="mix-canale${on ? '' : ' off'}${forte ? ' mix-master' : ''}">
       <div class="mix-testa"><span>${nome}</span>${extra || ''}</div>
       <div class="mix-riga">
-        <button type="button" class="mix-mute${cfg.mute ? ' on' : ''}" data-mute="${id}"${on ? '' : ' disabled'} title="${cfg.mute ? L('Riattiva', 'Unmute', 'Reactivar') : L('Muto', 'Mute', 'Silenciar')}">${_bIco(cfg.mute ? ICO.muto : ICO.altoparlante)}</button>
-        <input type="range" min="0" max="100" value="${cfg.vol}" data-vol="${id}" aria-label="${esc(L('Volume', 'Volume', 'Volumen') + ' — ' + nome)}"${on ? '' : ' disabled'}>
+        <button type="button" class="mix-mute${cfg.mute ? ' on' : ''}" data-mute="${id}"${on ? '' : ' disabled'} aria-label="${esc((cfg.mute ? L('Riattiva', 'Unmute', 'Reactivar') : L('Muto', 'Mute', 'Silenciar')) + ': ' + nome)}" title="${cfg.mute ? L('Riattiva', 'Unmute', 'Reactivar') : L('Muto', 'Mute', 'Silenciar')}">${_bIco(cfg.mute ? ICO.muto : ICO.altoparlante)}</button>
+        <input type="range" min="0" max="100" value="${cfg.vol}" data-vol="${id}" aria-label="${esc(L('Volume', 'Volume', 'Volumen') + ': ' + nome)}"${on ? '' : ' disabled'}>
         <span class="mix-val">${cfg.vol}</span>
       </div>
       <div class="mix-vu"><span class="mix-vu-barra" data-vu="${id}"></span></div>
@@ -22754,85 +22980,154 @@ function renderStudioMixer() {
     + canale('mic', L('Microfono', 'Microphone', 'Micrófono'), micOn, m.mic, micOn ? '' : `<button type="button" class="btn secondario mini" data-cap="mic">${L('Attiva', 'Enable', 'Activar')}</button>`)
     + canale('desk', L('Audio dello schermo', 'Screen audio', 'Audio de la pantalla'), deskOn, m.desk, deskOn ? '' : `<span class="tenue">${L('condividi lo schermo con audio', 'share the screen with audio', 'comparte la pantalla con audio')}</span>`)
     + canale('media', L('Audio dei video', 'Video audio', 'Audio de los vídeos'), mediaOn, m.media, mediaOn ? '' : `<span class="tenue">${L('aggiungi un video con audio', 'add a video with sound', 'añade un vídeo con audio')}</span>`)
-    + canale('sfx', L('Effetti & alert', 'Effects & alerts', 'Efectos y alertas'), true, m.sfx, '');
+    + canale('sfx', L('Effetti e alert', 'Effects and alerts', 'Efectos y alertas'), true, m.sfx, '');
+}
+
+function renderStudioTransizioni() {
+  const t = STUDIO.doc?.scelte.transizione; if (!t) return;
+  const tipo = document.getElementById('studio-trans-tipo'), ms = document.getElementById('studio-trans-ms');
+  if (tipo) tipo.value = t.tipo;
+  if (ms) { ms.value = t.ms; ms.disabled = t.tipo === 'taglio'; }
+}
+
+function renderStudioControlli() {
+  const mod = document.getElementById('studio-modalita');
+  if (mod) { mod.setAttribute('aria-pressed', String(studioModalita())); mod.classList.toggle('attivo', studioModalita()); mod.hidden = STUDIO.mobile; }
+  const live = document.getElementById('studio-live'), ferma = document.getElementById('studio-ferma');
+  if (live) live.hidden = STUDIO.live;
+  if (ferma) ferma.hidden = !STUDIO.live;
+  document.getElementById('studio-carta')?.classList.toggle('in-diretta', STUDIO.live);
+  const imp = document.getElementById('studio-impostazioni'), btn = document.getElementById('studio-impostazioni-apri');
+  if (imp && btn) btn.setAttribute('aria-expanded', String(!imp.hidden));
+}
+
+function studioApriImpostazioni(si) {
+  const imp = document.getElementById('studio-impostazioni'); if (!imp) return;
+  imp.hidden = !(si ?? imp.hidden);
+  renderStudioControlli();
+  if (!imp.hidden) { studioRenderIO(); studioRenderDestinazioni(); imp.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+}
+
+function renderStudioMobile() {
+  const el = document.getElementById('studio-mobile-barra'); if (!el || !STUDIO.doc) return;
+  if (!STUDIO.mobile) { el.innerHTML = ''; return; }
+  const f = STUDIO.doc.scelte.formati, chiave = f.o && f.v ? 'ov' : (f.v ? 'v' : 'o');
+  const chip = (k, testo) => `<button type="button" class="studio-chip${chiave === k ? ' attivo' : ''}" data-mfmt="${k}" aria-pressed="${chiave === k}"${STUDIO.live ? ' disabled' : ''}>${testo}</button>`;
+  el.innerHTML = `
+    <div class="studio-mriga" role="group" aria-label="${esc(L('Formato', 'Format', 'Formato'))}">${chip('v', L('Verticale', 'Vertical', 'Vertical'))}${chip('o', L('Orizzontale', 'Horizontal', 'Horizontal'))}${chip('ov', L('Tutti e due', 'Both', 'Los dos'))}</div>
+    <div class="studio-mriga">
+      <button type="button" class="btn secondario" data-mcam="1">${_bIco(ICO.fotocamera)}${STUDIO.cap.camEl ? L('Gira la fotocamera', 'Flip the camera', 'Girar la cámara') : L('Fotocamera', 'Camera', 'Cámara')}</button>
+      <button type="button" class="btn secondario" data-cap="mic"${STUDIO.cap.micStream ? ' disabled' : ''}>${_bIco(ICO.altoparlante)}${STUDIO.cap.micStream ? L('Microfono attivo', 'Microphone on', 'Micrófono activo') : L('Microfono', 'Microphone', 'Micrófono')}</button>
+      <button type="button" class="btn secondario" data-add="testo">${_bIco(ICO.testo)}${L('Testo', 'Text', 'Texto')}</button>
+      <button type="button" class="btn secondario" data-add="immagine">${_bIco(ICO.immagine)}${L('Immagine', 'Image', 'Imagen')}</button>
+    </div>
+    <div class="studio-mriga studio-mscene" role="group" aria-label="${esc(L('Scene', 'Scenes', 'Escenas'))}">${STUDIO.doc.scene.map((s) => `<button type="button" class="studio-chip${s.id === STUDIO.doc.inOnda ? ' attivo' : ''}" data-scena="${esc(s.id)}">${esc(s.nome)}</button>`).join('')}<button type="button" class="studio-chip" data-scena-azione="nuova" aria-label="${esc(L('Nuova scena', 'New scene', 'Nueva escena'))}">${_bIco(ICO.piu)}</button></div>`;
+}
+
+async function studioMobileFormato(k) {
+  const d = STUDIO.doc; if (!d || STUDIO.live) return;
+  d.scelte.formati = { o: k !== 'v', v: k !== 'o' };
+  STUDIO.lavoro = k === 'o' ? 'o' : 'v'; d.scelte.lavoro = STUDIO.lavoro;
+  renderStudioTutto(); studioRenderIO(); studioRenderDestinazioni(); studioSporco();
+  studioControllaSupporto();
+}
+
+async function studioGiraCamera() {
+  if (!STUDIO.cap.camEl) { if (await studioCapWebcam()) { const s = studioSceneAttiva(); if (s && !s.fonti.some((f) => f.tipo === 'webcam')) studioAddFonte('webcam'); else renderStudioTutto(); } return; }
+  STUDIO.dev.facing = STUDIO.dev.facing === 'environment' ? 'user' : 'environment';
+  await studioCambiaCamera('');
+}
+
+function studioImpostaFormato(f, acceso) {
+  const d = STUDIO.doc; if (!d || STUDIO.live) return;
+  const prossimi = { ...d.scelte.formati, [f]: acceso };
+  if (!prossimi.o && !prossimi.v) { toast(L('Serve almeno un formato.', 'You need at least one format.', 'Hace falta al menos un formato.')); studioRenderIO(); return; }
+  d.scelte.formati = prossimi;
+  if (!prossimi[STUDIO.lavoro]) { STUDIO.lavoro = prossimi.o ? 'o' : 'v'; d.scelte.lavoro = STUDIO.lavoro; }
+  renderStudioTutto(); studioRenderDestinazioni(); studioSporco();
+  studioControllaSupporto();
 }
 
 function posizionaBoxStudio(f) {
-  const box = document.querySelector(`#studio-ui [data-box="${f.id}"]`); if (!box) return;
-  box.style.left = f.x / 1280 * 100 + '%'; box.style.top = f.y / 720 * 100 + '%';
-  box.style.width = f.w / 1280 * 100 + '%'; box.style.height = f.h / 720 * 100 + '%';
+  const box = STUDIO.ui?.querySelector(`[data-box="${CSS.escape(f.id)}"]`); if (!box) return;
+  const p = studioPos(f), { W, H } = studioMisura();
+  box.style.left = p.x / W * 100 + '%'; box.style.top = p.y / H * 100 + '%';
+  box.style.width = p.w / W * 100 + '%'; box.style.height = p.h / H * 100 + '%';
 }
 
 async function onStudioClick(ev) {
   const t = ev.target;
   const add = t.closest('[data-add]'); if (add) return conErrore(() => studioAggiungi(add.dataset.add));
-  if (t.closest('[data-scena-nuova]')) { studioNuovaScena(); STUDIO.attiva = STUDIO.scene.length - 1; STUDIO.sel = null; renderStudioTutto(); return; }
-  const azione = t.closest('[data-scena-azione]');
-  if (azione) {
-    const s = studioSceneAttiva(); if (!s) return;
-    if (azione.dataset.scenaAzione === 'rinomina') { const n = await chiediTesto({ titolo: L('Come chiamo questa scena?', 'What should this scene be called?', '¿Cómo llamo a esta escena?'), valore: s.nome, ok: L('Rinomina', 'Rename', 'Renombrar'), max: 24 }); if (n) { s.nome = n.slice(0, 24); renderStudioScene(); } }
-    else if (azione.dataset.scenaAzione === 'elimina') {
-      if (STUDIO.scene.length <= 1) { toast(L('Serve almeno una scena.', 'You need at least one scene.', 'Hace falta al menos una escena.')); return; }
-      if (!(await chiediSe({ titolo: L(`Elimino la scena «${s.nome}»?`, `Delete the scene «${s.nome}»?`, `¿Elimino la escena «${s.nome}»?`), pericolo: true,
-        testo: L('Con lei se ne va quello che ci avevi messo dentro.', 'What you put in it goes with it.', 'Lo que pusiste dentro se va con ella.'),
-        si: L('Eliminala', 'Delete it', 'Elimínala') }))) return;
-      STUDIO.scene.splice(STUDIO.attiva, 1); STUDIO.attiva = Math.max(0, STUDIO.attiva - 1); STUDIO.sel = null; renderStudioTutto();
-    }
-    return;
-  }
+  const az = t.closest('[data-scena-azione]'); if (az) return conErrore(() => studioAzioneScena(az.dataset.scenaAzione));
   const preset = t.closest('[data-preset]');
   if (preset) {
     const act = preset.dataset.preset;
-    if (act === 'salva') return studioSalvaPreset();
+    if (act === 'salva') return conErrore(() => studioSalvaPreset());
     const sel = document.getElementById('studio-preset-sel'), i = sel ? Number(sel.value) : -1;
-    if (act === 'applica') return studioApplicaPreset(i);
-    if (act === 'elimina') return studioEliminaPreset(i);
+    if (act === 'applica') return conErrore(() => studioApplicaPreset(i));
+    if (act === 'elimina') return conErrore(() => studioEliminaPreset(i));
     return;
   }
-  const scena = t.closest('[data-scena]'); if (scena) { STUDIO.attiva = Number(scena.dataset.scena); STUDIO.sel = null; renderStudioTutto(); return; }
-  const vis = t.closest('[data-vis]'); if (vis) { const f = studioTrovaFonte(vis.dataset.vis); if (f) { f.visibile = !f.visibile; renderStudioTutto(); } return; }
+  const scena = t.closest('[data-scena]'); if (scena) return studioScegliScena(scena.dataset.scena);
+  const lav = t.closest('[data-lavoro]'); if (lav) return studioCambiaLavoro(lav.dataset.lavoro);
+  const mf = t.closest('[data-mfmt]'); if (mf) return conErrore(() => studioMobileFormato(mf.dataset.mfmt));
+  if (t.closest('[data-mcam]')) return conErrore(() => studioGiraCamera());
+  const salvo = t.closest('[data-salvo]'); if (salvo) return conErrore(() => studioRisolviConflitto(salvo.dataset.salvo));
+  const vis = t.closest('[data-vis]'); if (vis) { const f = studioTrovaFonte(vis.dataset.vis); if (f) { studioPos(f).vis = !studioPos(f).vis; renderStudioTutto(); studioSporco(); } return; }
   const su = t.closest('[data-su]'); if (su) return studioSpostaFonte(su.dataset.su, 1);
   const giu = t.closest('[data-giu]'); if (giu) return studioSpostaFonte(giu.dataset.giu, -1);
   const rim = t.closest('[data-rim]'); if (rim) return studioRimuoviFonte(rim.dataset.rim);
-  const voce = t.closest('#studio-fonti [data-fonte]'); if (voce) { STUDIO.sel = voce.dataset.fonte; renderStudioTutto(); return; }
+  const rc = t.closest('[data-ricollega]');
+  if (rc) { const f = studioTrovaFonte(rc.dataset.ricollega); if (f) studioScegliFile(f.tipo === 'video' ? 'video' : 'immagine', { impronta: f.media?.impronta || '', id: f.id }); return; }
+  if (t.closest('[data-cap-webcam]')) return conErrore(async () => { if (await studioCapWebcam()) renderStudioTutto(); });
+  if (t.closest('[data-cap-schermo]')) return conErrore(async () => { if (await studioCapSchermo()) renderStudioTutto(); });
+  const scegli = t.closest('[data-scegli]'); if (scegli) { STUDIO.sel = scegli.dataset.scegli; renderStudioTutto(); return; }
   const layout = t.closest('[data-layout]'); if (layout) return studioLayout(layout.dataset.layout);
   const fit = t.closest('[data-fit]'); if (fit) return studioFit(fit.dataset.fit);
-  const cap = t.closest('[data-cap]'); if (cap && cap.dataset.cap === 'mic') return conErrore(() => studioCapMic());
+  const cap = t.closest('[data-cap]'); if (cap && cap.dataset.cap === 'mic') return conErrore(async () => { await studioCapMic(); renderStudioMobile(); });
   const mute = t.closest('[data-mute]'); if (mute) { const k = mute.dataset.mute; if (STUDIO.mix[k]) { STUDIO.mix[k].mute = !STUDIO.mix[k].mute; applicaMix(); renderStudioMixer(); } return; }
   const io = t.closest('[data-io]'); if (io) { if (io.dataset.io === 'aggiorna') return conErrore(() => studioPopolaDispositivi()); return; }
-  const lib = t.closest('[data-libero]'); if (lib) { if (lib.dataset.libero === 'toggle') return studioToggleLibero(); if (lib.dataset.libero === 'reset') return studioResetLibero(); return; }
   if (t.closest('#studio-live')) return conErrore(() => avviaLive());
   if (t.closest('#studio-ferma')) return conErrore(() => fermaLive());
+  if (t.closest('#studio-modalita')) { if (STUDIO.doc) { STUDIO.doc.scelte.modalitaStudio = !STUDIO.doc.scelte.modalitaStudio; if (STUDIO.doc.scelte.modalitaStudio) STUDIO.doc.anteprima = STUDIO.doc.inOnda; STUDIO.sel = null; renderStudioTutto(); studioSporco(); } return; }
+  if (t.closest('#studio-transizione')) { if (STUDIO.doc) studioVaiInOnda(STUDIO.doc.anteprima); return; }
+  if (t.closest('#studio-impostazioni-apri')) return studioApriImpostazioni();
   if (t.closest('#studio-ripresa-chiudi')) return conErrore(() => studioChiudiRipresa());
   if (t.closest('#studio-dest-salva')) return conErrore(() => studioSalvaDestinazione());
-  if (t.closest('#studio-osify-usa')) return conErrore(() => studioOsifyUsa());
+  if (t.closest('#studio-osify-usa')) return conErrore(async () => { await studioOsifyUsa(); renderStudioMixer(); });
   const togli = t.closest('[data-dest-togli]'); if (togli) { ev.preventDefault(); return conErrore(() => studioTogliDestinazione(togli.dataset.destTogli)); }
   const scelta = t.closest('input[data-dest]');
   if (scelta) {
     const insieme = studioDestScelte();
     if (scelta.checked) insieme.add(scelta.dataset.dest); else insieme.delete(scelta.dataset.dest);
-    try { localStorage.setItem(_destChiave(), JSON.stringify([...insieme])); } catch (e) {  }
+    studioScriviDestScelte(insieme);
     return;
   }
-  if (t.closest('#studio-dest-tipo')) { const a = document.getElementById('studio-dest-aiuto'); const tp = document.getElementById('studio-dest-tipo'); if (a && tp) a.textContent = DEST_AIUTO[tp.value](); return; }
+}
+
+function onStudioDoppio(ev) {
+  const scena = ev.target.closest('#studio-scene [data-scena]');
+  if (scena && studioModalita()) { studioVaiInOnda(scena.dataset.scena); return; }
+  const box = ev.target.closest('.studio-fonte-box');
+  if (box) { STUDIO.sel = box.dataset.box; renderStudioTutto(); document.getElementById('studio-prop-box')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }
 }
 
 function onStudioInput(ev) {
   const t = ev.target;
   const vol = t.closest('[data-vol]'); if (vol) { const k = vol.dataset.vol; if (STUDIO.mix[k]) { STUDIO.mix[k].vol = Number(vol.value); applicaMix(); const v = vol.parentElement.querySelector('.mix-val'); if (v) v.textContent = vol.value; } return; }
-
   if (t.id === 'studio-cam-sel') return conErrore(() => studioCambiaCamera(t.value));
   if (t.id === 'studio-mic-sel') return conErrore(() => studioCambiaMic(t.value));
   if (t.id === 'studio-ov-sel') { STUDIO.ov.sel = t.value; return conErrore(() => studioConnettiOverlay()); }
-  if (t.id === 'studio-qual-sel') { studioApplicaQualita(t.value); return; }
+  if (t.id === 'studio-qual-sel') { studioApplicaQualita(t.value); studioControllaSupporto(); return; }
+  if (t.id === 'studio-trans-ms') { if (STUDIO.doc) { STUDIO.doc.scelte.transizione.ms = studioClamp(Number(t.value) || 300, 100, 3000); studioSporco(); } return; }
   const f = studioTrovaFonte(STUDIO.sel); if (!f) return;
-  if (t.id === 'sp-nome') { f.nome = t.value; const n = document.querySelector(`#studio-fonti [data-fonte="${f.id}"] .sf-nome`); if (n) n.textContent = t.value; const bn = document.querySelector(`#studio-ui [data-box="${f.id}"] .sfb-nome`); if (bn) bn.textContent = t.value; return; }
-  if (t.id === 'sp-testo') { f.testo = t.value; return; }
-  if (t.id === 'sp-colore') { f.colore = t.value; return; }
-  if (t.id === 'sp-dim') { f.dim = Number(t.value); const v = document.getElementById('sp-dim-v'); if (v) v.textContent = t.value; return; }
+  if (t.id === 'sp-nome') { f.nome = t.value.slice(0, STUDIO.M.LIMITI.nome); const n = document.querySelector(`#studio-fonti [data-fonte="${CSS.escape(f.id)}"] .sf-nome`); if (n) n.textContent = f.nome; const bn = STUDIO.ui?.querySelector(`[data-box="${CSS.escape(f.id)}"] .sfb-nome`); if (bn) bn.textContent = f.nome; studioSporco(); return; }
+  if (t.id === 'sp-testo') { f.testo = t.value.slice(0, STUDIO.M.LIMITI.testo); studioSporco(); return; }
+  if (t.id === 'sp-colore') { f.colore = t.value; studioSporco(); return; }
+  if (t.id === 'sp-dim') { f.dim = Number(t.value); const v = document.getElementById('sp-dim-v'); if (v) v.textContent = t.value; studioSporco(); return; }
 }
 
-const _opzDirettaChiave = () => 'andrybot-diretta-opz:' + (stato?.user?.login || 'anon');
+const _opzDirettaChiave = () => 'andrybot-diretta-opz:' + studioChi();
 function studioRicordaOpzioni() {
   const testo = document.getElementById('studio-riserva-testo')?.value, assenza = document.getElementById('studio-assenza')?.value;
   try { localStorage.setItem(_opzDirettaChiave(), JSON.stringify({ testo, assenza })); } catch (e) {  }
@@ -22847,20 +23142,28 @@ function studioRileggiOpzioni() {
 }
 
 function onStudioChange(ev) {
-  if (ev.target.id === 'studio-riserva-testo' || ev.target.id === 'studio-assenza') { studioRicordaOpzioni(); return; }
-  if (ev.target.id === 'sp-grass') { const f = studioTrovaFonte(STUDIO.sel); if (f) f.grassetto = ev.target.checked; return; }
-  if (ev.target.id === 'studio-file') { const file = ev.target.files && ev.target.files[0]; if (file) studioFileScelto(file); }
+  const t = ev.target;
+  if (t.id === 'studio-riserva-testo' || t.id === 'studio-assenza') { studioRicordaOpzioni(); return; }
+  if (t.id === 'sp-grass') { const f = studioTrovaFonte(STUDIO.sel); if (f) { f.grassetto = t.checked; studioSporco(); } return; }
+  if (t.id === 'studio-file') { const file = t.files && t.files[0]; if (file) conErrore(() => studioFileScelto(file)); return; }
+  if (t.id === 'studio-trans-tipo') { if (STUDIO.doc) { STUDIO.doc.scelte.transizione.tipo = t.value === 'taglio' ? 'taglio' : 'dissolvenza'; renderStudioTransizioni(); studioSporco(); } return; }
+  if (t.id === 'studio-dest-tipo') { const a = document.getElementById('studio-dest-aiuto'); if (a) a.textContent = DEST_AIUTO[t.value](); const sv = document.getElementById('studio-dest-server'); if (sv && !sv.value) sv.placeholder = DEST_SERVER[t.value] || sv.dataset.base; return; }
+  if (t.dataset.formato) { studioImpostaFormato(t.dataset.formato, t.checked); return; }
+  if (t.dataset.destFormato) { if (STUDIO.doc) { STUDIO.doc.scelte.destFormato[t.dataset.destFormato] = t.value === 'v' ? 'v' : 'o'; studioSporco(); } return; }
 }
 
+function studioPalcoModifica() { return STUDIO.ui?.parentElement || null; }
+
 function onStudioPointerDown(ev) {
-  const box = ev.target.closest('.studio-fonte-box'); if (!box) return;
+  const box = ev.target.closest('.studio-fonte-box'); if (!box || ev.target.closest('button')) return;
   const id = box.dataset.box, f = studioTrovaFonte(id); if (!f) return;
-  STUDIO.sel = id; renderStudioTutto();
+  if (STUDIO.sel !== id) { STUDIO.sel = id; renderStudioFonti(); renderStudioUI(); renderStudioProp(); }
   if (f.tipo === 'overlay') return;
   const handle = ev.target.closest('.studio-h');
-  const palco = document.getElementById('studio-palco'); const r = palco.getBoundingClientRect();
+  const palco = studioPalcoModifica(); if (!palco) return;
+  const r = palco.getBoundingClientRect(), p = studioPos(f);
   STUDIO.drag = { id, mode: handle ? 'resize' : 'move', h: handle ? handle.dataset.h : null,
-    sx: ev.clientX, sy: ev.clientY, ox: f.x, oy: f.y, ow: f.w, oh: f.h, rw: r.width, rh: r.height };
+    sx: ev.clientX, sy: ev.clientY, ox: p.x, oy: p.y, ow: p.w, oh: p.h, rw: r.width, rh: r.height, mosso: false };
   ev.preventDefault();
   try { palco.setPointerCapture(ev.pointerId); } catch (e) {  }
 }
@@ -22868,34 +23171,56 @@ function onStudioPointerDown(ev) {
 function onStudioPointerMove(ev) {
   const d = STUDIO.drag; if (!d) return;
   const f = studioTrovaFonte(d.id); if (!f) return;
-  const dx = (ev.clientX - d.sx) / d.rw * 1280, dy = (ev.clientY - d.sy) / d.rh * 720;
+  const { W, H } = studioMisura(), p = studioPos(f);
+  const dx = (ev.clientX - d.sx) / d.rw * W, dy = (ev.clientY - d.sy) / d.rh * H;
+  d.mosso = true;
   if (d.mode === 'move') {
-    f.x = studioClamp(d.ox + dx, -f.w + 60, 1280 - 60);
-    f.y = studioClamp(d.oy + dy, -f.h + 60, 720 - 60);
+    p.x = Math.round(studioClamp(d.ox + dx, -p.w + 20, W - 20));
+    p.y = Math.round(studioClamp(d.oy + dy, -p.h + 20, H - 20));
   } else {
     let x = d.ox, y = d.oy, w = d.ow, h = d.oh;
     if (d.h.indexOf('e') >= 0) w = d.ow + dx;
     if (d.h.indexOf('s') >= 0) h = d.oh + dy;
     if (d.h.indexOf('w') >= 0) { w = d.ow - dx; x = d.ox + dx; }
     if (d.h.indexOf('n') >= 0) { h = d.oh - dy; y = d.oy + dy; }
-    if (w < 60) { if (d.h.indexOf('w') >= 0) x = d.ox + d.ow - 60; w = 60; }
-    if (h < 60) { if (d.h.indexOf('n') >= 0) y = d.oy + d.oh - 60; h = 60; }
-    f.x = x; f.y = y; f.w = w; f.h = h;
+    if (w < 40) { if (d.h.indexOf('w') >= 0) x = d.ox + d.ow - 40; w = 40; }
+    if (h < 40) { if (d.h.indexOf('n') >= 0) y = d.oy + d.oh - 40; h = 40; }
+    p.x = Math.round(x); p.y = Math.round(y); p.w = Math.round(w); p.h = Math.round(h);
   }
   posizionaBoxStudio(f);
 }
 
-function onStudioPointerUp() { if (STUDIO.drag) STUDIO.drag = null; }
+function onStudioPointerUp() {
+  const d = STUDIO.drag; if (!d) return;
+  STUDIO.drag = null;
+  if (d.mosso) studioSporco();
+}
+
+function onStudioTasto(ev) {
+  if (!ev.target.closest('.studio-palco')) return;
+  const f = studioTrovaFonte(STUDIO.sel); if (!f || f.tipo === 'overlay') return;
+  const passo = ev.shiftKey ? 10 : 1, p = studioPos(f), { W, H } = studioMisura();
+  const mosse = { ArrowLeft: [-passo, 0], ArrowRight: [passo, 0], ArrowUp: [0, -passo], ArrowDown: [0, passo] };
+  const m = mosse[ev.key]; if (!m) return;
+  ev.preventDefault();
+  p.x = studioClamp(p.x + m[0], -p.w + 20, W - 20); p.y = studioClamp(p.y + m[1], -p.h + 20, H - 20);
+  posizionaBoxStudio(f); studioSporco();
+}
 
 function initStudio() {
   const panel = document.getElementById('scheda-studio'); if (!panel) return;
   panel.addEventListener('click', onStudioClick);
+  panel.addEventListener('dblclick', onStudioDoppio);
   panel.addEventListener('input', onStudioInput);
   panel.addEventListener('change', onStudioChange);
-  document.getElementById('studio-palco')?.addEventListener('pointerdown', onStudioPointerDown);
+  panel.addEventListener('keydown', onStudioTasto);
+  panel.addEventListener('pointerdown', onStudioPointerDown);
   if (!STUDIO._wired) {
     document.addEventListener('pointermove', onStudioPointerMove);
     document.addEventListener('pointerup', onStudioPointerUp);
+    window.addEventListener('pagehide', studioSalvaUscendo);
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') studioSalvaUscendo(); else if (STUDIO.live) studioTieniSveglio(true); });
+    window.matchMedia?.('(max-width: 760px)').addEventListener?.('change', () => { if (STUDIO.doc && studioAggiornaMobile()) renderStudioTutto(); });
     STUDIO._wired = true;
   }
 }

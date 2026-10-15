@@ -849,6 +849,12 @@ CREATE TABLE IF NOT EXISTS diretta_dest (      -- dove va la diretta dallo Studi
   updated_at INTEGER NOT NULL DEFAULT 0,
   PRIMARY KEY (login, id)
 );
+CREATE TABLE IF NOT EXISTS studio_scene (      -- le scene dello Studio (docs/DIRETTA.md, «La memoria»): il documento intero, nella busta
+  login TEXT PRIMARY KEY,
+  dati TEXT NOT NULL DEFAULT '',               -- il documento del modello (studio-modello.js), cifrato: nomi di file e testi sono della persona
+  versione INTEGER NOT NULL DEFAULT 0,         -- cresce a ogni salvataggio: chi salva dice su quale e' nato, cosi' due finestre non si cancellano a vicenda
+  updated_at INTEGER NOT NULL DEFAULT 0
+);
 CREATE TABLE IF NOT EXISTS donazioni (         -- il registro delle donazioni: quelle in attesa di pagamento e quelle pagate
   id TEXT PRIMARY KEY,                         -- 'stripe:cs_…' | 'satispay:<nostro id>' | 'kofi:<login>:<message_id>' | 'ext:<login>:<id>'
   login TEXT NOT NULL,
@@ -2064,6 +2070,7 @@ export const CAMPI_SEGRETI = {
   conti_donazioni: ['chiave'],
   conti_satispay: ['chiave'],
   diretta_dest: ['chiave'],
+  studio_scene: ['dati'],
   discord_ruoli: ['token'],
 };
 
@@ -2078,6 +2085,7 @@ const RIGA_SEGRETI = {
   conti_donazioni: (r) => r.login,
   conti_satispay: (r) => r.login,
   diretta_dest: (r) => r.login + '/' + r.id,
+  studio_scene: (r) => r.login,
   discord_ruoli: (r) => r.channel,
 };
 const CHIAVE_SEGRETI = {
@@ -2089,6 +2097,7 @@ const CHIAVE_SEGRETI = {
   conti_donazioni: ['login'],
   conti_satispay: ['login'],
   diretta_dest: ['login', 'id'],
+  studio_scene: ['login'],
   discord_ruoli: ['channel'],
 };
 
@@ -2451,6 +2460,31 @@ export const direttaDest = {
   },
   togli(login, id) { db.prepare('DELETE FROM diretta_dest WHERE login=? AND id=?').run(String(login).toLowerCase(), String(id)); },
   quante(login) { return db.prepare('SELECT COUNT(*) n FROM diretta_dest WHERE login=?').get(String(login).toLowerCase()).n; },
+};
+
+// Le scene dello Studio: un documento per canale, nella busta. `salva` vuole
+// la versione su cui il documento e' nato: se nel frattempo un'altra finestra
+// ha salvato, dice di no e rimanda quella attuale.
+export const studioScene = {
+  leggi(login) {
+    const l = String(login).toLowerCase();
+    const r = db.prepare('SELECT dati, versione, updated_at FROM studio_scene WHERE login=?').get(l);
+    if (!r || !r.dati) return { doc: null, versione: 0, quando: 0 };
+    let doc = null;
+    try { doc = JSON.parse(decifra(r.dati, _dove('studio_scene', 'dati', l))); } catch { doc = null; }
+    return { doc, versione: r.versione, quando: r.updated_at };
+  },
+  salva(login, doc, prima) {
+    const l = String(login).toLowerCase();
+    const r = db.prepare('SELECT versione FROM studio_scene WHERE login=?').get(l);
+    const attuale = r ? r.versione : 0;
+    if (Number(prima) !== attuale) return { ok: false, versione: attuale };
+    const versione = attuale + 1;
+    db.prepare(`INSERT INTO studio_scene (login, dati, versione, updated_at) VALUES (?,?,?,?)
+      ON CONFLICT(login) DO UPDATE SET dati=excluded.dati, versione=excluded.versione, updated_at=excluded.updated_at`)
+      .run(l, cifra(JSON.stringify(doc), _dove('studio_scene', 'dati', l)), versione, now());
+    return { ok: true, versione };
+  },
 };
 
 // I giri del costruttore Discord. Si scrive SEMPRE, anche quando non si e'

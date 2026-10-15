@@ -2303,7 +2303,7 @@ input[type="file"]::file-selector-button {
 }
 
 .lista-voci li, .lib-card, .lp-blocco, .gc-riga, .pf-riga, .lp-bico, .gc-costa, code,
-.kpi, .studio-box, .stat, .tg-dest, .nota-lettura, .riquadro-info, .sott-segno {
+.kpi, .studio-dock, .stat, .tg-dest, .nota-lettura, .riquadro-info, .sott-segno {
   border-color: var(--contorno); border-width: var(--tratto-1); border-style: solid;
   border-radius: var(--ang-mano);
   box-shadow: var(--alone-contorno);

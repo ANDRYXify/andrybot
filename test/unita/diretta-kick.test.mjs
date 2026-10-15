@@ -43,7 +43,7 @@ test('all\'avvio Kick si prende da Kick, con la chiave chiesta in quel momento',
 
 test('le scene dello Studio non accendono la barra «modifiche da salvare»', () => {
   const app = leggi('src/web/public/app.js');
-  const i = app.indexOf('<div class="carta studio-carta studio-largo" data-non-salva>');
+  const i = app.indexOf('<div class="carta studio-carta studio-largo" id="studio-carta" data-non-salva>');
   assert.ok(i > 0, 'la carta dello Studio e\' fuori dalla barra');
   const j = app.indexOf('id="studio-dest-salva"', i);
   assert.ok(j > i, 'il tasto della destinazione nuova sta dentro quella carta');

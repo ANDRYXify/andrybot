@@ -9,7 +9,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
-import { mkdtempSync, existsSync, statSync } from 'node:fs';
+import { mkdtempSync, existsSync, statSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { createServer } from 'node:net';
@@ -301,4 +301,30 @@ test('una ricarica veloce con l\'orologio del vecchio dispositivo avanti: il fot
   t.pacchi('mario', 0, scriviPacchi([pacco('video', 2_000_001, true, 'K-NUOVO'), pacco('video', 2_033_334, false, 'P-NUOVO')]), due.turno);
   assert.equal(conta(scritto, 'K-NUOVO'), 1, 'il fotogramma chiave nuovo non si perde dietro a quelli vecchi');
   assert.equal(conta(scritto, 'P-NUOVO'), 1);
+});
+
+test('orizzontale e verticale sono due dirette vere: due permessi, la banda di tutte e due, e chi si ferma non ferma l\'altra', () => {
+  const avviati = [];
+  const r = creaRisorse({ misura: calma, cacheMs: 0, avviaProcesso: () => { const p = { stdin: { write() {}, end() {}, on() {}, writable: true, writableLength: 0 }, stderr: { on() {} }, on() {}, exitCode: null, kill() {} }; avviati.push(p); return p; } });
+  const t = creaTramite({ risorse: r, bandaMbps: 10, ogniMs: 0 });
+  const o = t.avvia('mario', { destinazioni: DEST, ...CONF, kbps: 3000 });
+  const v = t.avvia('mario#v', { destinazioni: [{ id: 'tt', nome: 'TikTok', url: 'rtmp://127.0.0.1/live/tt' }], ...CONF, video: { ...CONF.video, larghezza: 180, altezza: 320 }, kbps: 3000 });
+  assert.deepEqual([o.ok, v.ok, avviati.length], [true, true, 2], 'il tetto «a testa» vale per sessione: una per formato');
+  assert.notEqual(o.turno, v.turno);
+  assert.equal(t.avvia('luigi', { destinazioni: DEST, ...CONF, kbps: 3000 }).motivo, 'banda', 'la banda conta le due dirette di mario: 6 di 8 Mbps');
+  assert.deepEqual(t.stato('mario#v').ids, ['tt']);
+  t.ferma('mario#v');
+  assert.deepEqual([t.attiva('mario'), t.attiva('mario#v')], [true, false]);
+  assert.equal(r.stato().classi.diretta.inCorso, 1);
+  t.ferma('mario');
+});
+
+test('le rotte scelgono la sessione dal formato, Twitch resta orizzontale, e una destinazione non riceve due formati', () => {
+  const srv = readFileSync(new URL('../../src/web/server.js', import.meta.url), 'utf8');
+  assert.match(srv, /const sessioneDi = \(login, f\) => String\(login \|\| ''\)\.toLowerCase\(\) \+ \(f === 'v' \? '#v' : ''\);/);
+  for (const r of ['tramite.avvia(sessioneDi(login, f)', 'tramite.riserva(sessioneDi(currentUser(req).login, req.query.f)', 'tramite.pacchi(sessioneDi(currentUser(req).login, req.query.f)', "tramite.ferma(sessioneDi(currentUser(req).login, req.body?.formato)", 'tramite.stato(sessioneDi(currentUser(req).login, req.query.f))']) {
+    assert.ok(srv.includes(r), r);
+  }
+  assert.match(srv, /if \(f === 'v' && scelte\.includes\('twitch'\)\) return res\.status\(400\)/);
+  assert.match(srv, /if \(altra\.live && \(altra\.ids \|\| \[\]\)\.some\(\(id\) => scelte\.includes\(id\)\)\) return res\.status\(409\)/);
 });
