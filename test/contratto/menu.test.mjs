@@ -88,7 +88,12 @@ test('il tutto schermo: solo nelle pagine larghe, lo sceglie chi lavora, e fuori
   // acceso in Donazioni si accendeva anche in Pagina link: ogni scheda ha la sua.
   assert.ok(/const _chiaveSchermo = \(id\) => 'schermoPieno:' \+ id;/.test(APP) && funzione('schermoPienoScelto').includes('localStorage.getItem(_chiaveSchermo(id))'),
     'accenderlo in una pagina non lo accende nelle altre');
-  assert.ok(!/requestFullscreen/.test(APP), 'non e\' lo schermo intero del browser: si toglie solo il menu');
+  // Lo schermo intero del browser lo chiede solo la regia da telefono, al via
+  // della diretta (sul telefono serve per bloccare l'orientamento): il tutto
+  // schermo delle pagine toglie solo il menu.
+  const da = APP.indexOf('function studioTelVai('), a = APP.indexOf('\nfunction ', da + 10);
+  const usi = [...APP.matchAll(/requestFullscreen/g)].map((m) => m.index);
+  assert.ok(da > 0 && usi.every((i) => i > da && i < a), 'non e\' lo schermo intero del browser: si toglie solo il menu');
 });
 
 test('a tutto schermo il menu sta sul bordo: compare dopo una sosta, si disegna a strati e si disfa prima di sparire', () => {

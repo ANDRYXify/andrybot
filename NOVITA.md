@@ -43,6 +43,24 @@ comandi diversi da quelli della riga italiana.
 
 ## 2026-10-15
 
+- Nello Studio ogni scena sceglie quale dei tuoi overlay usare, e cambiando scena passa da sola a quello giusto. Le scene nuove nascono con l'overlay. [vai: studio]
+  en: In the Studio every scene picks which of your overlays to use, and switching scenes moves to the right one by itself. New scenes start with the overlay.
+  es: En el Estudio cada escena elige cuál de tus overlays usar, y al cambiar de escena pasa sola al correcto. Las escenas nuevas nacen con el overlay.
+- Lo Studio pesa molto meno: da fermo non lavora, fuori dalla sua scheda si ferma, e l'anteprima disegna alla misura dello schermo. [vai: studio]
+  en: The Studio is much lighter: idle it does no work, outside its tab it stops, and the preview draws at screen size.
+  es: El Estudio pesa mucho menos: en reposo no trabaja, fuera de su pestaña se para, y la vista previa dibuja al tamaño de la pantalla.
+- Sul computer i menù a tendina che non rispondevano ora rispondono: per esempio overlay, fotocamera, microfono e qualità nello Studio. [vai: studio]
+  en: On a computer the dropdowns that did not respond now do: for example overlay, camera, microphone and quality in the Studio.
+  es: En el ordenador los menús desplegables que no respondían ahora responden: por ejemplo overlay, cámara, micrófono y calidad en el Estudio.
+- [importante] Dal telefono la diretta ha la sua regia: a schermo intero, fatta per il pollice, con scenari pronti per IRL, chiacchiere, mani al lavoro e musica. [vai: studio]
+  en: From the phone the stream has its own controls: full screen, built for the thumb, with ready scenarios for IRL, chatting, hands at work and music.
+  es: Desde el teléfono el directo tiene su propio control: a pantalla completa, hecho para el pulgar, con escenarios listos para IRL, charlas, manos a la obra y música.
+  > In diretta dal telefono, con una mano sola
+  > Scegli cosa fai e le scene si preparano; cambi scena scorrendo il dito, leggi la chat grande o te la fai leggere in cuffia, e un tocco per sbaglio non chiude mai la diretta.
+  en> Live from the phone, with one hand
+  en> Choose what you do and the scenes get ready; swipe to switch scenes, read the chat big or have it read in your headphones, and a stray tap never ends the stream.
+  es> En directo desde el teléfono, con una mano
+  es> Eliges qué haces y las escenas se preparan; cambias de escena deslizando el dedo, lees el chat grande o te lo leen en los auriculares, y un toque sin querer nunca cierra el directo.
 - Col solo verticale acceso le dirette partono su Kick, YouTube e gli altri senza sceglierlo una per una; Twitch, che il verticale non lo riceve, lo dice. [vai: studio]
   en: With only vertical on, streams start on Kick, YouTube and the others without picking it one by one; Twitch, which does not take vertical, says so.
   es: Con solo el vertical activo, los directos salen en Kick, YouTube y los demás sin elegirlo uno a uno; Twitch, que no recibe el vertical, lo dice.

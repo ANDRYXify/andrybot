@@ -6,7 +6,7 @@
 // che i media sono segnaposto e non file, e che la transizione va da 0 a 1.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { normalizza, nuovaFonte, migraVecchie, impronteUsate, lega, mescola, dispostoRapido, pesa, formatoDi, dirette, escluse, FORMATI, LIMITI, SCENARI, AUDIO, TESTI_PRONTE, scenePronte, applicaPronte, sceneVuote, scenaAccanto, vincoliAudio } from '../../src/web/public/js/studio-modello.js';
+import { normalizza, nuovaFonte, migraVecchie, impronteUsate, lega, mescola, dispostoRapido, pesa, formatoDi, dirette, escluse, FORMATI, LIMITI, SCENARI, AUDIO, TESTI_PRONTE, scenePronte, applicaPronte, sceneVuote, scenaAccanto, vincoliAudio, overlayDi } from '../../src/web/public/js/studio-modello.js';
 
 const IMP = 'a'.repeat(64), IMP2 = 'b'.repeat(64);
 
@@ -159,6 +159,8 @@ test('le scene pronte sono valide nei due formati: fotocamera e scritte riempion
 test('le scene pronte non cancellano mai quelle fatte: entrano da sole solo se le scene sono vuote', () => {
   const vuoto = normalizza({});
   assert.ok(sceneVuote(vuoto));
+  assert.ok(sceneVuote(normalizza({ scene: [{ fonti: [{ tipo: 'overlay' }] }] })), 'una scena con solo l\'overlay e\' vuota di contenuto: le pronte entrano');
+  assert.ok(!sceneVuote(normalizza({ scene: [{ fonti: [{ tipo: 'overlay' }, { tipo: 'testo' }] }] })));
   assert.equal(applicaPronte(vuoto, 'giro', TESTI), 4);
   assert.equal(vuoto.inOnda, vuoto.scene[0].id, 'in onda va la prima pronta');
   const fatte = normalizza({ scene: [{ nome: 'Mia', fonti: [{ tipo: 'testo', testo: 'ciao' }] }] });
@@ -185,4 +187,19 @@ test('le scelte del telefono si ricordano e si normalizzano', () => {
   assert.deepEqual(normalizza({ scelte: { telefono: { scenario: 'mani' } } }).scelte.telefono, { scenario: 'mani', chat: 'm', voce: true, vibra: true }, 'mani al lavoro: la chat a voce di serie');
   assert.deepEqual(normalizza({ scelte: { telefono: { scenario: 'gioco', chat: 'xl', voce: 'si', vibra: false } } }).scelte.telefono, { scenario: '', chat: 'm', voce: false, vibra: false }, 'uno scenario che dal browser non si fa non si ricorda');
   assert.deepEqual(normalizza({ scelte: { telefono: { scenario: 'mani', voce: false } } }).scelte.telefono.voce, false, 'spenta a mano resta spenta');
+});
+
+test('la fonte Overlay ricorda quale dei tuoi overlay usa; se quello non c\'e\' piu\', prende quello di serie e poi il primo', () => {
+  const n = normalizza({ scene: [{ fonti: [{ tipo: 'overlay', overlay: 'gioco' }, { tipo: 'testo' }] }, { fonti: [{ tipo: 'overlay', overlay: '../x' }] }], scelte: { overlay: 'chiacchiere' } });
+  assert.equal(n.scene[0].fonti[0].overlay, 'gioco');
+  assert.equal(n.scene[0].fonti[1].overlay, undefined, 'solo l\'overlay ha la scelta');
+  assert.equal(n.scene[1].fonti[0].overlay, '', 'un id storto non entra');
+  assert.equal(n.scelte.overlay, 'chiacchiere');
+  const lista = [{ id: 'gioco' }, { id: 'chiacchiere' }, { id: 'altro' }];
+  assert.equal(overlayDi(n.scene[0].fonti[0], n.scelte, lista), 'gioco');
+  assert.equal(overlayDi(n.scene[1].fonti[0], n.scelte, lista), 'chiacchiere', 'senza scelta: quello di serie');
+  assert.equal(overlayDi({ overlay: 'cancellato' }, { overlay: 'sparito' }, lista), 'gioco', 'overlay cancellati: il primo che c\'e\'');
+  assert.equal(overlayDi({ overlay: 'gioco' }, {}, []), 'gioco', 'finche\' l\'elenco non e\' arrivato vale la scelta');
+  assert.equal(overlayDi(null, {}, []), '');
+  assert.equal(normalizza({ scelte: { overlay: 'a b' } }).scelte.overlay, '');
 });

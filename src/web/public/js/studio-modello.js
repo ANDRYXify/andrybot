@@ -83,6 +83,7 @@ export function normalizzaFonte(f, usati) {
   if (f.tipo === 'overlay') { pos.o = { ...posizioneDiSerie('overlay', 'o'), vis: pos.o.vis }; pos.v = { ...posizioneDiSerie('overlay', 'v'), vis: pos.v.vis }; }
   const out = { id, tipo: f.tipo, nome: testo(f.nome, LIMITI.nome) || f.tipo, pos };
   if (m) out.media = m;
+  if (f.tipo === 'overlay') out.overlay = /^[A-Za-z0-9_-]{1,40}$/.test(String(f.overlay || '')) ? String(f.overlay) : '';
   if (f.tipo === 'testo') {
     out.testo = testo(f.testo, LIMITI.testo);
     out.colore = COLORE.test(String(f.colore || '')) ? String(f.colore) : '#ffffff';
@@ -123,6 +124,7 @@ function scelte(c) {
     destFormato: Object.fromEntries(Object.entries(o.destFormato && typeof o.destFormato === 'object' ? o.destFormato : {})
       .filter(([k, v]) => /^[a-z0-9]{1,24}$/.test(k) && (v === 'o' || v === 'v') && !(v === 'v' && DESTINAZIONI_SOLO_ORIZZONTALI.includes(k))).slice(0, 20)),
     telefono: telefono(o.telefono),
+    overlay: /^[A-Za-z0-9_-]{1,40}$/.test(String(o.overlay || '')) ? String(o.overlay) : '',
   };
 }
 
@@ -163,9 +165,9 @@ export function normalizza(doc) {
 
 export function pesa(doc) { return new TextEncoder().encode(JSON.stringify(doc)).length; }
 
-export function nuovaFonte(tipo, { nome = '', media: m = null, testo: t = 'Testo' } = {}) {
+export function nuovaFonte(tipo, { nome = '', media: m = null, testo: t = 'Testo', overlay = '' } = {}) {
   const usati = new Set();
-  const base = { id: nuovoId('f'), tipo, nome: nome || tipo, media: m, testo: t, colore: '#ffffff', dim: 56, grassetto: true, sfondo: '' };
+  const base = { id: nuovoId('f'), tipo, nome: nome || tipo, media: m, testo: t, colore: '#ffffff', dim: 56, grassetto: true, sfondo: '', overlay };
   return normalizzaFonte(base, usati);
 }
 
@@ -270,7 +272,7 @@ export function scenePronte(scenario, testi) {
   return sc.scene.map((k) => normalizzaScena(PRONTE[k](testi), us, uf));
 }
 
-export const sceneVuote = (doc) => !doc.scene.some((s) => s.fonti.length);
+export const sceneVuote = (doc) => !doc.scene.some((s) => s.fonti.some((f) => f.tipo !== 'overlay'));
 
 export function applicaPronte(doc, scenario, testi, { aggiungi = false } = {}) {
   const pronte = scenePronte(scenario, testi);
@@ -292,4 +294,10 @@ export function scenaAccanto(doc, id, dir) {
   const i = doc.scene.findIndex((s) => s.id === id);
   if (i < 0 || doc.scene.length < 2) return null;
   return doc.scene[(i + (dir > 0 ? 1 : -1) + doc.scene.length) % doc.scene.length].id;
+}
+
+export function overlayDi(fonte, scelteDoc, elenco = []) {
+  const ids = elenco.map((o) => o.id);
+  for (const id of [fonte?.overlay, scelteDoc?.overlay]) if (id && (!ids.length || ids.includes(id))) return id;
+  return ids[0] || '';
 }

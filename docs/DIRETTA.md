@@ -229,6 +229,47 @@ sulla posizione delle fonti in ogni formato. La scena è una sola, le posizioni
 sono due. Se il verticale non è acceso, non compare da nessuna parte: chi non
 lo vuole non lo vede.
 
+### Gli overlay: i tuoi, uno per scena
+
+La fonte **Overlay** prende uno degli overlay creati nell'Overlay Studio, e
+ogni scena ha il suo: la scena «Gioco» può usare un overlay e «Chiacchiere»
+un altro. La scelta sta nel pannello Fonti, nelle proprietà della fonte e,
+sul telefono, in «Altro».
+- Una fonte senza scelta segue **quello di serie** (`scelte.overlay`), che si
+  fissa al primo caricamento e non si sposta quando si sceglie per una scena:
+  scegliere l'overlay di una scena non cambia mai le altre.
+- Un overlay cancellato non rompe niente: la fonte passa a quello di serie, e
+  poi al primo che c'è (`overlayDi` nel modello).
+- Una scena nuova nasce con l'overlay, così passando a quella scena gli alert
+  non spariscono dalla diretta. Una scena con solo l'overlay conta come vuota:
+  le scene pronte del telefono ci entrano al suo posto.
+- In onda il flusso degli eventi è quello dell'overlay della scena in onda;
+  cambiando scena si ricollega da sé, se l'overlay è un altro.
+- Oggi dalla fonte Overlay arrivano **alert, chat ed effetti**, alle posizioni
+  di quell'overlay. Gli altri pezzi dell'Overlay Studio (obiettivi, timer,
+  player e il resto) non si disegnano ancora sulla tela: vedi «Dopo: le scene
+  dell'Overlay Studio».
+
+### Il peso: lo Studio lavora solo quando serve
+
+Misurato in Chromium sulla demo: prima lo Studio consumava il 10% del
+processore da fermo e il 7,6% anche su un'altra scheda; con una fonte video il
+31%. Le regole che lo tengono leggero (ognuna con la sua prova nel collaudo):
+- il disegno gira solo con la scheda Studio aperta, la regia del telefono
+  aperta o in diretta; fuori, si ferma;
+- a riposo (scena ferma, niente diretta) non si disegna e il ciclo dorme: lo
+  risveglia un cambiamento (una fonte che si muove, un evento dell'overlay, una
+  modifica);
+- fuori diretta al massimo 30 disegni al secondo; in diretta quanti ne chiede
+  il codificatore;
+- fuori diretta si disegna solo il formato che si guarda, e la tela ha la
+  misura dello schermo; la risoluzione piena torna al via, perché è lei che va
+  al codificatore;
+- la tela scorsa fuori dallo schermo non si disegna;
+- nello Studio e in diretta lo sfondo animato del sito si ferma.
+
+Dopo: 0% da fermo, 0,5% su un'altra scheda, circa la metà con una fonte video.
+
 ### Le dirette, una per formato
 
 - **Ogni destinazione ha il suo formato.**
@@ -310,9 +351,14 @@ prima.
 - Sopra la barra, le scene come pulsanti grandi.
 - La barra del pollice: microfono, gira la fotocamera, **Vai live** (in
   diretta diventa ■, da tenere premuto), chat, «Altro».
-- «Altro»: torcia, zoom, blocca i tocchi, clip (Twitch), grandezza della chat,
-  chat a voce, vibrazione, formato e destinazioni (prima di partire), lo
-  Studio completo.
+- «Chat»: la chat intera, la grandezza delle scritte, la voce che la legge,
+  e se tenerla sullo schermo.
+- «Altro»: torcia, zoom, blocca i tocchi, clip (Twitch), vibrazione agli alert,
+  quale formato guardare (con tutti e due accesi), scenario e destinazioni
+  (prima di partire), lo Studio completo, e «Chiudi la diretta…» con la
+  conferma, per chi non può tenere premuto.
+- La pressione lunga non apre il menù del telefono, e il clic che certi
+  browser mandano al rilascio non fa ripartire niente.
 
 **Prima di partire** la regia chiede, una volta: cosa fai (lo scenario), il
 formato, dove va la diretta, e titolo e categoria (con le categorie giuste

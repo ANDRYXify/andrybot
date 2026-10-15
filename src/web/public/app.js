@@ -4961,7 +4961,7 @@ const GUIDE = {
   dcfiltro: { serve: ['Decidere cosa sul tuo server non si scrive: le tue parole, le liste che Discord tiene aggiornate da sé, lo spam e le raffiche di menzioni. Lo ferma Discord prima che il messaggio esista, non un bot che lo legge dopo.', 'Decide what does not get written on your server: your own words, the lists Discord keeps updated by itself, spam and mention raids. Discord stops it before the message exists, not a bot reading it afterwards.', 'Decidir qué no se escribe en tu servidor: tus palabras, las listas que Discord mantiene solo, el spam y las ráfagas de menciones. Lo para Discord antes de que el mensaje exista, no un bot que lo lee después.'],
     come: [['Le tue liste stanno in «Parole da non scrivere», una per ogni cosa che vuoi fermare. Si scrive anche a pezzi: «insult*» prende tutto quello che comincia così.', 'Your own lists live in «Words that do not get written», one per thing you want stopped. Partial words work too: «insult*» catches everything starting like that.', 'Tus listas están en «Palabras que no se escriben», una por cada cosa que quieras parar. También a trozos: «insult*» coge todo lo que empiece así.', '#dcf-parole'], ['Le liste già pronte le aggiorna Discord in tutte le lingue: tu scegli quali accendere.', 'The ready-made lists are updated by Discord in every language: you choose which to switch on.', 'Las listas ya hechas las actualiza Discord en todos los idiomas: tú eliges cuáles encender.', '#dcf-liste'], ['Per ogni regola decidi cosa succede quando scatta, e chi e dove non tocca: passano i ruoli che spunti in «Questi ruoli passano». Con le regole di base ci sono già quelli dello staff della traccia.', 'For each rule you decide what happens when it fires, and who and where it leaves alone: the roles you tick in «These roles get through» get through. With the basic rules the track’s staff roles are already there.', 'Para cada regla decides qué pasa cuando salta, y a quién y dónde no toca: pasan los roles que marques en «Estos roles pasan». Con las reglas básicas ya están los del staff de la plantilla.', '#dcf-menzioni'], ['«Fammi vedere cosa faresti» e poi «Costruisci»: il filtro parte insieme ai canali, in un giro solo.', '«Show me what you would do» and then «Build it»: the filter goes out together with the channels, in one go.', '«Enséñame qué harías» y luego «Constrúyelo»: el filtro sale junto con los canales, de una sola vez.', '#dcf-vedi']] },
   studio: { serve: ['Andare in diretta dal sito, senza OBS, con uno studio fatto come OBS: scene, fonti, mixer, transizioni, anteprima e programma. In orizzontale, in verticale o in tutti e due insieme. È una beta aperta: il video lo fa il tuo dispositivo, il server lo passa a Twitch, Kick, YouTube o a un server tuo.', 'Going live from the site, without OBS, with a studio built like OBS: scenes, sources, mixer, transitions, preview and program. Horizontal, vertical or both at once. It is an open beta: your device makes the video, the server passes it on to Twitch, Kick, YouTube or your own server.', 'Emitir en directo desde el sitio, sin OBS, con un estudio hecho como OBS: escenas, fuentes, mezclador, transiciones, vista previa y programa. En horizontal, en vertical o en los dos a la vez. Es una beta abierta: tu dispositivo hace el vídeo, el servidor lo pasa a Twitch, Kick, YouTube o a un servidor tuyo.'],
-    come: [['Premi «Voglio provarlo» ed entri subito. Serve un browser aggiornato: Chrome o Edge su computer, Chrome su Android.', 'Press «I want to try it» and you are in right away. It needs an up-to-date browser: Chrome or Edge on a computer, Chrome on Android.', 'Pulsa «Quiero probarlo» y entras enseguida. Necesita un navegador actualizado: Chrome o Edge en el ordenador, Chrome en Android.', '#studio-beta-riga'], ['Componi le scene come in OBS: a sinistra le scene, accanto le fonti (webcam, schermo, immagini e GIF, video, testo, overlay). Trascina e ridimensiona sulla tela; le frecce spostano di un punto, con Maiuscole di dieci.', 'Build your scenes as in OBS: scenes on the left, sources next to them (webcam, screen, images and GIFs, video, text, overlay). Drag and resize on the canvas; the arrow keys move by one point, with Shift by ten.', 'Compón las escenas como en OBS: a la izquierda las escenas, al lado las fuentes (webcam, pantalla, imágenes y GIF, vídeo, texto, overlay). Arrastra y cambia el tamaño en el lienzo; las flechas mueven un punto, con Mayúsculas diez.', ''], ['«Modalità studio» apre anteprima e programma affiancati: prepari la scena dopo senza che il pubblico la veda, e «Transizione» la manda in onda con un taglio o una dissolvenza.', '«Studio mode» opens preview and program side by side: you prepare the next scene without the audience seeing it, and «Transition» puts it on air with a cut or a fade.', '«Modo estudio» abre vista previa y programa lado a lado: preparas la escena siguiente sin que el público la vea, y «Transición» la pone en el aire con un corte o un fundido.', ''], ['In «Impostazioni» scegli i formati: orizzontale, verticale o tutti e due. Con tutti e due partono due dirette vere, e ogni fonte ha una posizione per formato. Poi scegli dove va la diretta: Twitch e Kick sono già pronti se li hai collegati, YouTube, TikTok o un server tuo si aggiungono con la chiave di trasmissione, che resta cifrata.', 'In «Settings» pick the formats: horizontal, vertical or both. With both, two real streams start, and every source has a position per format. Then choose where the stream goes: Twitch and Kick are ready if you connected them, YouTube, TikTok or your own server are added with the stream key, which stays encrypted.', 'En «Ajustes» eliges los formatos: horizontal, vertical o los dos. Con los dos salen dos directos de verdad, y cada fuente tiene una posición por formato. Luego eliges adónde va el directo: Twitch y Kick ya están listos si los conectaste, YouTube, TikTok o un servidor tuyo se añaden con la clave de emisión, que queda cifrada.', ''], ['Sul telefono lo studio si semplifica: scegli Verticale, Orizzontale o Tutti e due, giri la fotocamera, aggiungi testo o immagini e cambi scena dalla barra sotto la tela.', 'On a phone the studio gets simpler: pick Vertical, Horizontal or Both, flip the camera, add text or images and switch scenes from the bar under the canvas.', 'En el teléfono el estudio se simplifica: eliges Vertical, Horizontal o Los dos, giras la cámara, añades texto o imágenes y cambias de escena desde la barra bajo el lienzo.', ''], ['Le scene si salvano da sole sul tuo account, cifrate. Immagini, GIF e video restano sul dispositivo: su un altro computer al loro posto c’è un riquadro col nome del file, e lo ricarichi una volta per tutte le scene che lo usano.', 'Scenes save by themselves to your account, encrypted. Images, GIFs and videos stay on the device: on another computer a box with the file name stands in their place, and you load it once for every scene that uses it.', 'Las escenas se guardan solas en tu cuenta, cifradas. Imágenes, GIF y vídeos se quedan en el dispositivo: en otro ordenador en su lugar hay un recuadro con el nombre del archivo, y lo vuelves a cargar una vez para todas las escenas que lo usan.', ''], ['Scrivi la frase della tua immagine di riserva e quanti minuti aspettare: se la rete rallenta resta la tua voce su quell’immagine, se cade va in onda lei, e se non torni la diretta si chiude da sola.', 'Write the line for your backup image and how many minutes to wait: if the network slows down your voice stays over that image, if it drops the image goes on air, and if you do not come back the stream ends by itself.', 'Escribe la frase de tu imagen de reserva y cuántos minutos esperar: si la red va lenta queda tu voz sobre esa imagen, si cae sale ella, y si no vuelves el directo se cierra solo.', ''], ['Con OSify acceso, i suoi canali audio (gioco, voce, musica) compaiono da soli: «Usa i canali di OSify» li mette ognuno al suo posto nel mixer.', 'With OSify running, its audio channels (game, voice, music) show up by themselves: «Use the OSify channels» puts each one in its place in the mixer.', 'Con OSify encendido, sus canales de audio (juego, voz, música) aparecen solos: «Usar los canales de OSify» pone cada uno en su sitio en el mezclador.', '']] },
+    come: [['Premi «Voglio provarlo» ed entri subito. Serve un browser aggiornato: Chrome o Edge su computer, Chrome su Android.', 'Press «I want to try it» and you are in right away. It needs an up-to-date browser: Chrome or Edge on a computer, Chrome on Android.', 'Pulsa «Quiero probarlo» y entras enseguida. Necesita un navegador actualizado: Chrome o Edge en el ordenador, Chrome en Android.', '#studio-beta-riga'], ['Componi le scene come in OBS: a sinistra le scene, accanto le fonti (webcam, schermo, immagini e GIF, video, testo, overlay). Ogni scena sceglie quale dei tuoi overlay usare, dal pannello Fonti. Trascina e ridimensiona sulla tela; le frecce spostano di un punto, con Maiuscole di dieci.', 'Build your scenes as in OBS: scenes on the left, sources next to them (webcam, screen, images and GIFs, video, text, overlay). Every scene picks which of your overlays to use, from the Sources dock. Drag and resize on the canvas; the arrow keys move by one point, with Shift by ten.', 'Compón las escenas como en OBS: a la izquierda las escenas, al lado las fuentes (webcam, pantalla, imágenes y GIF, vídeo, texto, overlay). Cada escena elige cuál de tus overlays usar, desde el panel Fuentes. Arrastra y cambia el tamaño en el lienzo; las flechas mueven un punto, con Mayúsculas diez.', ''], ['«Modalità studio» apre anteprima e programma affiancati: prepari la scena dopo senza che il pubblico la veda, e «Transizione» la manda in onda con un taglio o una dissolvenza.', '«Studio mode» opens preview and program side by side: you prepare the next scene without the audience seeing it, and «Transition» puts it on air with a cut or a fade.', '«Modo estudio» abre vista previa y programa lado a lado: preparas la escena siguiente sin que el público la vea, y «Transición» la pone en el aire con un corte o un fundido.', ''], ['In «Impostazioni» scegli i formati: orizzontale, verticale o tutti e due. Con tutti e due partono due dirette vere, e ogni fonte ha una posizione per formato. Poi scegli dove va la diretta: Twitch e Kick sono già pronti se li hai collegati, YouTube, TikTok o un server tuo si aggiungono con la chiave di trasmissione, che resta cifrata.', 'In «Settings» pick the formats: horizontal, vertical or both. With both, two real streams start, and every source has a position per format. Then choose where the stream goes: Twitch and Kick are ready if you connected them, YouTube, TikTok or your own server are added with the stream key, which stays encrypted.', 'En «Ajustes» eliges los formatos: horizontal, vertical o los dos. Con los dos salen dos directos de verdad, y cada fuente tiene una posición por formato. Luego eliges adónde va el directo: Twitch y Kick ya están listos si los conectaste, YouTube, TikTok o un servidor tuyo se añaden con la clave de emisión, que queda cifrada.', ''], ['Sul telefono si apre la regia, a schermo intero e fatta per il pollice: scegli cosa fai (in giro, in camera, mani al lavoro, musica) e prepara scene, fotocamera e audio. Scorri il dito sulla tela per cambiare scena, due tocchi girano la fotocamera, e la diretta si chiude tenendo premuto.', 'On a phone the controls open full screen, built for the thumb: choose what you do (out and about, on camera, hands at work, music) and it sets up scenes, camera and audio. Swipe on the canvas to switch scenes, double tap flips the camera, and you end the stream by holding the button.', 'En el teléfono se abre el control a pantalla completa, hecho para el pulgar: eliges qué haces (de paseo, en cámara, manos a la obra, música) y prepara escenas, cámara y audio. Desliza el dedo sobre el lienzo para cambiar de escena, dos toques giran la cámara, y el directo se cierra manteniendo pulsado.', ''], ['In diretta dal telefono la chat si legge grande, e una voce può leggertela in cuffia; gli alert fanno vibrare. «Blocca i tocchi» evita i tocchi in tasca. Se cambi app va in onda la scritta di riserva, e al ritorno fotocamera e microfono ripartono da soli.', 'Streaming from the phone the chat reads big, and a voice can read it to you in your headphones; alerts make it vibrate. «Lock touches» avoids pocket taps. If you switch apps your fallback text goes on air, and when you are back camera and microphone restart by themselves.', 'En directo desde el teléfono el chat se lee grande, y una voz puede leértelo en los auriculares; las alertas hacen vibrar. «Bloquear toques» evita toques en el bolsillo. Si cambias de app sale tu texto de reserva, y al volver cámara y micrófono arrancan solos.', ''], ['Le scene si salvano da sole sul tuo account, cifrate. Immagini, GIF e video restano sul dispositivo: su un altro computer al loro posto c’è un riquadro col nome del file, e lo ricarichi una volta per tutte le scene che lo usano.', 'Scenes save by themselves to your account, encrypted. Images, GIFs and videos stay on the device: on another computer a box with the file name stands in their place, and you load it once for every scene that uses it.', 'Las escenas se guardan solas en tu cuenta, cifradas. Imágenes, GIF y vídeos se quedan en el dispositivo: en otro ordenador en su lugar hay un recuadro con el nombre del archivo, y lo vuelves a cargar una vez para todas las escenas que lo usan.', ''], ['Scrivi la frase della tua immagine di riserva e quanti minuti aspettare: se la rete rallenta resta la tua voce su quell’immagine, se cade va in onda lei, e se non torni la diretta si chiude da sola.', 'Write the line for your backup image and how many minutes to wait: if the network slows down your voice stays over that image, if it drops the image goes on air, and if you do not come back the stream ends by itself.', 'Escribe la frase de tu imagen de reserva y cuántos minutos esperar: si la red va lenta queda tu voz sobre esa imagen, si cae sale ella, y si no vuelves el directo se cierra solo.', ''], ['Con OSify acceso, i suoi canali audio (gioco, voce, musica) compaiono da soli: «Usa i canali di OSify» li mette ognuno al suo posto nel mixer.', 'With OSify running, its audio channels (game, voice, music) show up by themselves: «Use the OSify channels» puts each one in its place in the mixer.', 'Con OSify encendido, sus canales de audio (juego, voz, música) aparecen solos: «Usar los canales de OSify» pone cada uno en su sitio en el mezclador.', '']] },
   alert: { serve: ['Comporre quello che si vede sulla diretta — alert, chat a schermo, obiettivi, contatori — e prendere il link da mettere in OBS.', 'Compose what shows on your stream — alerts, on-screen chat, goals, counters — and get the link to put in OBS.', 'Componer lo que se ve en el directo — alertas, chat en pantalla, objetivos, contadores — y coger el enlace para poner en OBS.'],
     come: [['Nei «Livelli», a sinistra, c\'è tutto quello che può comparire: l\'occhio lo toglie da questo overlay.', 'In «Layers», on the left, there is everything that can show up: the eye takes it out of this overlay.', 'En «Capas», a la izquierda, está todo lo que puede aparecer: el ojo lo quita de este overlay.', '#ovl-livelli'], ['Sulla tela trascini ogni cosa dove la vuoi: si aggancia da sola ai bordi e agli altri, le frecce la spostano al pixel.', 'On the canvas you drag everything where you want it: it snaps to the edges and to the others, the arrows move it pixel by pixel.', 'En el lienzo arrastras cada cosa donde la quieras: se ajusta sola a los bordes y a las demás, las flechas la mueven píxel a píxel.', '#ovl-preview'], ['Clicca un elemento sulla tela: a destra si apre «Proprietà», e lì si veste — colori, carattere, forma, dimensione, rotazione.', 'Click an element on the canvas: «Properties» opens on the right, and there it gets dressed — colors, font, shape, size, rotation.', 'Haz clic en un elemento del lienzo: a la derecha se abre «Propiedades», y ahí se viste — colores, fuente, forma, tamaño, rotación.', '#ovl-tela'], ['Copia il link qui sopra e mettilo in OBS come sorgente Browser, 1920×1080. Ogni overlay ha il suo.', 'Copy the link above and put it in OBS as a Browser source, 1920×1080. Each overlay has its own.', 'Copia el enlace de arriba y ponlo en OBS como fuente Navegador, 1920×1080. Cada overlay tiene el suyo.', '#inp-overlay-url'], ['Per le sere diverse dalle altre c\'è l\'occasione: un\'aggiunta sopra l\'overlay che hai già. La accendi e compare, la spegni e torna tutto com\'era.', 'For the nights that are not like the others there is the occasion: an add-on over the overlay you already have. Turn it on and it shows up, turn it off and everything is back as it was.', 'Para las noches que no son como las demás está la ocasión: un añadido sobre el overlay que ya tienes. La enciendes y aparece, la apagas y todo vuelve como estaba.', '#ovl-occ-quale']] },
   emote: { serve: ['Gestire a 360° le emote 7TV del tuo canale — aggiungerle, toglierle e rinominarle — direttamente dal bot. Le emote 7TV compaiono anche nella chat a schermo dell\'overlay.', 'Fully manage your channel’s 7TV emotes — add, remove and rename them — right from the bot. 7TV emotes also show up in the overlay’s on-screen chat.', 'Gestiona al 100% las emotes 7TV de tu canal — añadirlas, quitarlas y renombrarlas — directamente desde el bot. Las emotes 7TV también aparecen en el chat en pantalla del overlay.'],
@@ -18809,6 +18809,7 @@ function vestiTendina(sel) {
     if (i < 0 || i >= sel.options.length) return;
     if (sel.selectedIndex !== i) {
       sel.selectedIndex = i;
+      sel.dispatchEvent(new Event('input', { bubbles: true }));
       sel.dispatchEvent(new Event('change', { bubbles: true }));
     }
     titolo();
@@ -21486,6 +21487,12 @@ function pannelloStudio() {
 
         <section class="studio-dock studio-dock-fonti" aria-labelledby="studio-t-fonti">
           <h3 class="studio-dock-tit" id="studio-t-fonti">${_bIco(ICO.lista)}${L('Fonti', 'Sources', 'Fuentes')}</h3>
+          <div class="studio-ov-riga">
+            <label class="studio-mini-tit" for="studio-ov-sel">Overlay</label>
+            <select id="studio-ov-sel" class="chip-utente"></select>
+            <button type="button" class="btn secondario mini" id="studio-ov-metti" data-add="overlay">${_bIco(ICO.effetti)}${L('Mettilo nella scena', 'Put it in the scene', 'Ponlo en la escena')}</button>
+          </div>
+          <p class="suggerimento" id="studio-ov-manca" hidden>${L('Questa scena non ha l’overlay: alert, chat ed effetti non si vedono finché non lo metti.', 'This scene has no overlay: alerts, chat and effects do not show until you put it in.', 'Esta escena no tiene el overlay: alertas, chat y efectos no se ven hasta que lo pongas.')}</p>
           <ul class="studio-lista studio-fonti" id="studio-fonti"></ul>
           <details class="studio-add-menu" id="studio-add-menu">
             <summary class="btn secondario mini">${_bIco(ICO.piu)}${L('Aggiungi una fonte', 'Add a source', 'Añade una fuente')}</summary>
@@ -21555,8 +21562,6 @@ function pannelloStudio() {
           <select id="studio-mic-sel" class="campo-largo"></select>
           <label class="campo spazio-sopra" for="studio-qual-sel">${L('Qualità della diretta', 'Stream quality', 'Calidad del directo')}</label>
           <select id="studio-qual-sel" class="campo-largo"></select>
-          <label class="campo spazio-sopra" for="studio-ov-sel">${L('Overlay da mostrare', 'Overlay to show', 'Overlay a mostrar')}</label>
-          <select id="studio-ov-sel" class="campo-largo"></select>
           <button type="button" class="btn secondario mini spazio-sopra" data-io="aggiorna">${_bIco(ICO.aggiorna)}${L('Aggiorna dispositivi', 'Refresh devices', 'Actualizar dispositivos')}</button>
         </section>
 
@@ -21676,7 +21681,7 @@ function studioIcoFonte(tipo) { return { webcam: 'fotocamera', schermo: 'monitor
 function studioNuovaScena(nome) {
   const d = STUDIO.doc; if (!d) return null;
   if (d.scene.length >= STUDIO.M.LIMITI.scene) { toast(L('Hai già tutte le scene che si possono avere.', 'You already have as many scenes as allowed.', 'Ya tienes todas las escenas posibles.'), 'errore'); return null; }
-  const s = { id: STUDIO.M.nuovoId('s'), nome: (nome || (L('Scena', 'Scene', 'Escena') + ' ' + (d.scene.length + 1))).slice(0, STUDIO.M.LIMITI.nome), fonti: [] };
+  const s = { id: STUDIO.M.nuovoId('s'), nome: (nome || (L('Scena', 'Scene', 'Escena') + ' ' + (d.scene.length + 1))).slice(0, STUDIO.M.LIMITI.nome), fonti: [STUDIO.M.nuovaFonte('overlay', { nome: studioOverlayDi(null) ? studioOverlayNome(studioOverlayDi(null)) : 'Overlay' })], muta: false, camera: '' };
   d.scene.push(s);
   return s;
 }
@@ -21696,10 +21701,16 @@ function studioTela(f) {
 
 function studioMisureTele() {
   const q = STUDIO_QUAL[STUDIO.qual] || STUDIO_QUAL['720p30'];
+  const piena = STUDIO.live || !!STUDIO.avvio;
   for (const f of ['o', 'v']) {
-    const c = studioTela(f), w = f === 'o' ? q.w : q.h, h = f === 'o' ? q.h : q.w;
-    if (c.width !== w) c.width = w;
-    if (c.height !== h) c.height = h;
+    let w = f === 'o' ? q.w : q.h, h = f === 'o' ? q.h : q.w;
+    const c = studioTela(f);
+    if (!piena) {
+      const vista = c.parentElement?.clientWidth || 0;
+      const k = vista ? Math.min(1, Math.ceil(vista * Math.min(window.devicePixelRatio || 1, 2)) / w) : 1;
+      w = Math.max(2, Math.round(w * k / 2) * 2); h = Math.max(2, Math.round(h * k / 2) * 2);
+    }
+    if (c.width !== w || c.height !== h) { c.width = w; c.height = h; STUDIO.ridisegna = true; }
   }
   if (!STUDIO.ante) { STUDIO.ante = document.createElement('canvas'); STUDIO.ante.className = 'studio-tela'; STUDIO.anteCx = STUDIO.ante.getContext('2d'); }
   const p = STUDIO.tele[STUDIO.lavoro];
@@ -21720,6 +21731,15 @@ function studioMontaTele() {
   for (const c of [...prog.querySelectorAll('canvas'), ...(telP ? telP.querySelectorAll('canvas') : [])]) if (c !== tela) c.remove();
   if (tela.parentElement !== casa) casa.prepend(tela);
   if (ant && STUDIO.ante.parentElement !== ant) ant.prepend(STUDIO.ante);
+  if (!STUDIO.vista && window.IntersectionObserver) {
+    STUDIO.vista = new IntersectionObserver((voci) => {
+      for (const v of voci) v.target._inVista = v.isIntersecting;
+      const p = document.getElementById('studio-palco-prog'), a = document.getElementById('studio-palco-ant');
+      STUDIO.palcoNascosto = !(p?._inVista || (a && !a.closest('[hidden]') && a._inVista));
+      if (!STUDIO.palcoNascosto) studioRidisegna();
+    });
+  }
+  if (STUDIO.vista) for (const el of [prog, ant]) if (el && !el._osservato) { el._osservato = true; STUDIO.vista.observe(el); }
   if (!STUDIO.ui) { STUDIO.ui = document.createElement('div'); STUDIO.ui.className = 'studio-ui'; STUDIO.ui.id = 'studio-ui'; }
   const dove = studioModalita() && ant ? ant : prog;
   if (STUDIO.ui.parentElement !== dove) dove.appendChild(STUDIO.ui);
@@ -21732,10 +21752,27 @@ function studioMontaTele() {
     + (STUDIO.doc.scelte.formati.o && STUDIO.doc.scelte.formati.v ? ' · ' + studioFormatoNome(f) : '');
 }
 
-const studioFormatoServe = (f) => !!STUDIO.doc && (STUDIO.doc.scelte.formati[f] || STUDIO.lavoro === f || !!STUDIO.dirette[f]);
+const studioFormatoServe = (f) => !!STUDIO.doc && (STUDIO.lavoro === f || !!STUDIO.dirette[f] || ((STUDIO.live || STUDIO.avvio) && STUDIO.doc.scelte.formati[f]));
+const studioServeDisegnare = () => STUDIO.live || !!STUDIO.avvio || !!STUDIO.tel?.aperta || schedaAttiva === 'studio';
+function studioRidisegna() {
+  STUDIO.ridisegna = true;
+  if (!STUDIO.raf && STUDIO.doc && studioServeDisegnare()) STUDIO.raf = requestAnimationFrame(studioDisegna);
+}
+
+function studioScenaViva(scena, f) {
+  if (!scena) return false;
+  for (const x of scena.fonti) {
+    if (!x.pos[f]?.vis) continue;
+    if (x.tipo === 'webcam' || x.tipo === 'schermo' || x.tipo === 'video') return true;
+    if (x.tipo === 'immagine' && /gif|webp|apng|png/.test(x.media?.mime || '') && STUDIO.media[x.media?.impronta]) return true;
+    if (x.tipo === 'overlay') { const o = STUDIO.overlay; if (o.fx.length || o.chat.length || (o.alert && o.alert.until > Date.now() - 200)) return true; }
+  }
+  return false;
+}
 
 function avviaLoopStudio() {
   if (!STUDIO.M || !STUDIO.doc) return;
+  STUDIO.ridisegna = true;
   studioMisureTele();
   if (!STUDIO.raf) STUDIO.raf = requestAnimationFrame(studioDisegna);
 }
@@ -21783,11 +21820,20 @@ function studioDisegnaProgramma(f, ora) {
 }
 
 function studioDisegna() {
+  if (!studioServeDisegnare()) { STUDIO.raf = 0; return; }
   STUDIO.raf = requestAnimationFrame(studioDisegna);
   if (!STUDIO.doc) return;
   const ora = performance.now();
+  const fps = STUDIO.live || STUDIO.avvio ? (STUDIO_QUAL[STUDIO.qual] || STUDIO_QUAL['720p30']).fps : 30;
+  if (ora - (STUDIO.ultimoDisegno || 0) < 1000 / fps - 3) return;
+  const d = STUDIO.doc, f0 = STUDIO.lavoro;
+  const viva = studioScenaViva(studioScena(d.inOnda), f0) || (studioModalita() && studioScenaViva(studioScena(d.anteprima), f0));
+  const libero = !STUDIO.live && !STUDIO.avvio && !STUDIO.trans;
+  if (libero && STUDIO.palcoNascosto && !STUDIO.tel?.aperta) { cancelAnimationFrame(STUDIO.raf); STUDIO.raf = 0; return; }
+  if (libero && !STUDIO.ridisegna && !viva && !STUDIO.eraViva) { cancelAnimationFrame(STUDIO.raf); STUDIO.raf = 0; return; }
+  STUDIO.eraViva = viva; STUDIO.ridisegna = false; STUDIO.ultimoDisegno = ora;
   for (const f of ['o', 'v']) if (studioFormatoServe(f)) studioDisegnaProgramma(f, ora);
-  if (studioModalita() && STUDIO.ante) studioDisegnaPiena(STUDIO.anteCx, STUDIO.ante, studioScena(STUDIO.doc.anteprima), STUDIO.lavoro);
+  if (studioModalita() && STUDIO.ante) studioDisegnaPiena(STUDIO.anteCx, STUDIO.ante, studioScena(d.anteprima), f0);
 }
 
 function studioVaiInOnda(id) {
@@ -21796,6 +21842,7 @@ function studioVaiInOnda(id) {
   if (STUDIO.trans) studioFineTransizione();
   const tr = d.scelte.transizione;
   STUDIO.trans = { da: d.inOnda, a: id, inizio: performance.now(), ms: tr.tipo === 'taglio' ? 0 : tr.ms };
+  studioRidisegna();
   if (tr.tipo === 'taglio') studioFineTransizione();
 }
 
@@ -21976,6 +22023,7 @@ function studioSSE(sseUrl) {
   if (STUDIO.sse) STUDIO.sse.chiudi();
   STUDIO.sse = window.SB_FLUSSO.apri(sseUrl, { suMessaggio: (ev) => {
     let d; try { d = JSON.parse(ev.data); } catch { return; }
+    studioRidisegna();
     const now = Date.now();
     if (d.tipo === 'immagine' || d.tipo === 'video') {
       const el = document.createElement(d.tipo === 'video' ? 'video' : 'img');
@@ -22161,18 +22209,43 @@ async function studioCaricaEmote() {
 }
 
 async function studioCaricaOverlays() {
-  if (DEMO) return;
   try {
     const d = await api('/api/streamer/overlays');
-    STUDIO.ov.list = Array.isArray(d.overlays) ? d.overlays : [];
-    const sel = document.getElementById('studio-ov-sel');
-    if (sel) {
-      sel.innerHTML = STUDIO.ov.list.map((o) => `<option value="${esc(o.id)}">${esc(o.nome || 'Overlay')}</option>`).join('')
-        || `<option value="">${L('— nessun overlay —', '— no overlay —', '— sin overlay —')}</option>`;
-      if (STUDIO.ov.list.length) { if (!STUDIO.ov.sel || !STUDIO.ov.list.some((o) => o.id === STUDIO.ov.sel)) STUDIO.ov.sel = STUDIO.ov.list[0].id; sel.value = STUDIO.ov.sel; }
-    }
-    await studioConnettiOverlay();
+    STUDIO.ov.list = (Array.isArray(d.overlays) ? d.overlays : []).filter((o) => o && o.id);
   } catch (e) {  }
+  if (STUDIO.doc && STUDIO.ov.list.length && !STUDIO.ov.list.some((o) => o.id === STUDIO.doc.scelte.overlay)) STUDIO.doc.scelte.overlay = STUDIO.ov.list[0].id;
+  renderStudioOverlay(); renderStudioFonti(); renderStudioProp(); renderStudioUI();
+  await studioConnettiOverlay();
+}
+
+const studioOverlayNome = (id) => STUDIO.ov.list.find((o) => o.id === id)?.nome || 'Overlay';
+const studioOverlayDi = (f) => STUDIO.M.overlayDi(f, STUDIO.doc?.scelte, STUDIO.ov.list);
+function studioOverlayInOnda() {
+  const f = studioScena(STUDIO.doc?.inOnda)?.fonti.find((x) => x.tipo === 'overlay');
+  return f ? studioOverlayDi(f) : '';
+}
+
+function studioOpzioniOverlay(scelto) {
+  if (!STUDIO.ov.list.length) return `<option value="">${L('Nessun overlay: crealo in «Scena e overlay»', 'No overlay: create one in «Scene & overlay»', 'Ningún overlay: créalo en «Escena y overlay»')}</option>`;
+  return STUDIO.ov.list.map((o) => `<option value="${esc(o.id)}"${o.id === scelto ? ' selected' : ''}>${esc(o.nome || 'Overlay')}</option>`).join('');
+}
+
+function renderStudioOverlay() {
+  const sel = document.getElementById('studio-ov-sel'); if (!sel || !STUDIO.doc) return;
+  const f = studioSceneAttiva()?.fonti.find((x) => x.tipo === 'overlay');
+  sel.innerHTML = studioOpzioniOverlay(f ? studioOverlayDi(f) : studioOverlayDi(null));
+  sel.disabled = !STUDIO.ov.list.length;
+  sel.title = f ? L('L’overlay di questa scena', 'This scene’s overlay', 'El overlay de esta escena') : L('L’overlay che entra nelle scene nuove', 'The overlay new scenes get', 'El overlay que entra en las escenas nuevas');
+}
+
+function studioScegliOverlay(id, fonte) {
+  const d = STUDIO.doc; if (!d || !id) return;
+  const f = fonte || studioSceneAttiva()?.fonti.find((x) => x.tipo === 'overlay');
+  if (!d.scelte.overlay) d.scelte.overlay = studioOverlayDi(null);
+  if (f) { f.overlay = id; f.nome = studioOverlayNome(id).slice(0, STUDIO.M.LIMITI.nome); }
+  else d.scelte.overlay = id;
+  renderStudioOverlay(); renderStudioFonti(); renderStudioUI(); renderStudioProp(); studioSporco();
+  studioConnettiOverlay();
 }
 
 async function studioConnettiOverlay() {
@@ -22182,12 +22255,14 @@ async function studioConnettiOverlay() {
     if (!ov.overlayUrl) return;
 
     let sseUrl = ov.overlayUrl.replace('?key=', '/stream?key=');
-    const id = STUDIO.ov.sel;
+    const id = studioOverlayInOnda() || studioOverlayDi(null);
+    if (STUDIO.sse && STUDIO.ov.connesso === id) return;
+    STUDIO.ov.connesso = id;
     if (id) sseUrl += (sseUrl.includes('?') ? '&' : '?') + 'o=' + encodeURIComponent(id);
     studioSSE(sseUrl);
 
     const meta = STUDIO.ov.list.find((o) => o.id === id);
-    if (meta) { STUDIO.ov.mostra = meta.mostra || null; STUDIO.ov.xy = meta.xy || null; }
+    STUDIO.ov.mostra = meta?.mostra || null; STUDIO.ov.xy = meta?.xy || null;
   } catch (e) {  }
 }
 
@@ -22195,7 +22270,8 @@ function studioAddFonte(tipo, extra) {
   const s = studioSceneAttiva(); if (!s) return null;
   if (tipo === 'overlay' && s.fonti.some((f) => f.tipo === 'overlay')) { toast(L('L\'overlay è già nella scena.', 'The overlay is already in the scene.', 'El overlay ya está en la escena.')); return null; }
   if (s.fonti.length >= STUDIO.M.LIMITI.fonti) { toast(L('Questa scena ha già tutte le fonti che può avere.', 'This scene already has as many sources as allowed.', 'Esta escena ya tiene todas las fuentes posibles.'), 'errore'); return null; }
-  const f = STUDIO.M.nuovaFonte(tipo, { nome: extra?.nome || studioEtichetta(tipo), media: extra?.media || null, testo: L('Testo', 'Text', 'Texto') });
+  const ovId = tipo === 'overlay' ? (document.getElementById('studio-ov-sel')?.value || studioOverlayDi(null)) : '';
+  const f = STUDIO.M.nuovaFonte(tipo, { nome: extra?.nome || (tipo === 'overlay' && ovId ? studioOverlayNome(ovId) : studioEtichetta(tipo)), media: extra?.media || null, testo: L('Testo', 'Text', 'Texto'), overlay: ovId });
   if (!f) return null;
   s.fonti.push(f); STUDIO.sel = f.id;
   document.getElementById('studio-add-menu')?.removeAttribute('open');
@@ -22223,7 +22299,7 @@ function studioCaricaMedia(imp, blob, tipo) {
     const url = URL.createObjectURL(blob);
     const el = document.createElement(tipo === 'video' ? 'video' : 'img');
     let fatto = false;
-    const fine = () => { if (fatto) return; fatto = true; ok({ w: el.videoWidth || el.naturalWidth || 0, h: el.videoHeight || el.naturalHeight || 0 }); };
+    const fine = () => { if (fatto) return; fatto = true; studioRidisegna(); ok({ w: el.videoWidth || el.naturalWidth || 0, h: el.videoHeight || el.naturalHeight || 0 }); };
     if (tipo === 'video') { el.muted = true; el.loop = true; el.playsInline = true; el.autoplay = true; el.addEventListener('loadedmetadata', fine, { once: true }); el.src = url; el.play().catch(() => {}); }
     else { el.addEventListener('load', fine, { once: true }); el.addEventListener('error', fine, { once: true }); el.src = url; }
     setTimeout(fine, 5000);
@@ -22528,10 +22604,13 @@ async function studioTieniSveglio(si) {
   } catch (e) {  }
 }
 
-function studioDirettePerFormato() {
+function studioDestValide() {
   const d = STUDIO.dir;
-  const valide = [...studioDestScelte()].filter((id) => id === 'twitch' ? d?.twitch?.keyOk : id === 'kick' ? d?.kick?.keyOk : (d?.destinazioni || []).some((x) => x.id === id));
-  return STUDIO.M.dirette(STUDIO.doc.scelte, valide);
+  return [...studioDestScelte()].filter((id) => id === 'twitch' ? d?.twitch?.keyOk : id === 'kick' ? d?.kick?.keyOk : (d?.destinazioni || []).some((x) => x.id === id));
+}
+
+function studioDirettePerFormato() {
+  return STUDIO.M.dirette(STUDIO.doc.scelte, studioDestValide());
 }
 
 async function studioAvviaFormato(D, f, sup, q, kbps, dest, testo, assenzaMin) {
@@ -22668,6 +22747,7 @@ async function fermaLive({ dalServer = null } = {}) {
     if (!dalServer) { try { await api('/api/diretta/fine', { method: 'POST', body: { turno: d.turno, formato: f } }); } catch (e) {  } }
   }
   studioTieniSveglio(false);
+  studioMisureTele(); studioRidisegna();
   try { STUDIO.audio && STUDIO.audio.ac.close(); } catch (e) {  }
   STUDIO.audio = null;
   for (const id in STUDIO.media) { const mm = STUDIO.media[id]; if (mm && mm.tipo === 'video' && mm.el) { try { mm.el.muted = true; } catch (e) {  } } }
@@ -22683,7 +22763,7 @@ async function fermaLive({ dalServer = null } = {}) {
 }
 
 function aggiornaTimerStudio() {
-  const ts = document.getElementById('tel-stato'); if (ts && STUDIO.live) ts.textContent = '● LIVE ' + (document.getElementById('studio-timer')?.textContent || '');
+  const ts = document.getElementById('tel-stato'); if (ts && STUDIO.live) ts.textContent = L('● LIVE ', '● LIVE ', '● EN VIVO ') + (document.getElementById('studio-timer')?.textContent || '');
   const el = document.getElementById('studio-timer'); if (!el) return;
   const s = Math.max(0, Math.floor((Date.now() - STUDIO.startedAt) / 1000));
   el.textContent = String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
@@ -22728,7 +22808,7 @@ async function caricaStudio() {
   if (btnLive) { btnLive.disabled = modStudio; if (modStudio) btnLive.title = L('Solo il proprietario del canale può andare in diretta.', 'Only the channel owner can go live.', 'Solo el propietario del canal puede emitir.'); }
   if (modStudio) studioLog(L('Come moderatore prepari scene, fonti e overlay, e si salvano sul canale; la diretta la avvia solo il proprietario.', 'As a moderator you set up scenes, sources and overlays, and they save to the channel; only the owner starts the stream.', 'Como moderador preparas escenas, fuentes y overlays, y se guardan en el canal; solo el propietario inicia el directo.'));
   if (studioTelefono() && !modStudio && !studioTelStato().chiusa && !STUDIO.tel.aperta) studioTelApri();
-  if (DEMO) { if (!modStudio) studioLog(L('Anteprima demo: qui componi le scene, le mandi in onda e vai in diretta senza OBS.', 'Demo preview: here you compose scenes, put them on air and go live without OBS.', 'Vista previa demo: aquí compones escenas, las pones en el aire y emites sin OBS.')); return; }
+  if (DEMO) { studioCaricaOverlays(); if (!modStudio) studioLog(L('Anteprima demo: qui componi le scene, le mandi in onda e vai in diretta senza OBS.', 'Demo preview: here you compose scenes, put them on air and go live without OBS.', 'Vista previa demo: aquí compones escenas, las pones en el aire y emites sin OBS.')); return; }
   if (!modStudio) { try { await caricaDiretta(); } catch (e) {  } }
   try { await studioPopolaDispositivi(); } catch (e) {  }
   try { await studioCaricaEmote(); } catch (e) {  }
@@ -22750,7 +22830,7 @@ async function studioCaricaScene() {
   if (!doc) {
     const vecchi = studioPresetVecchi();
     doc = {
-      scene: [{ nome: L('Scena 1', 'Scene 1', 'Escena 1'), fonti: [] }],
+      scene: [{ nome: L('Scena 1', 'Scene 1', 'Escena 1'), fonti: [{ tipo: 'overlay', nome: 'Overlay' }] }],
       preset: vecchi.map((p) => ({ nome: p.nome, scene: STUDIO.M.migraVecchie(p.scene) })),
       scelte: { formati: STUDIO.mobile ? { o: false, v: true } : { o: true, v: false } },
     };
@@ -22774,6 +22854,7 @@ function studioMostraSalvataggio() {
 
 function studioSporco() {
   if (!STUDIO.doc) return;
+  studioRidisegna();
   clearTimeout(STUDIO.salvo.timer);
   if (STUDIO.salvo.stato !== 'conflitto') STUDIO.salvo.stato = 'attesa';
   studioMostraSalvataggio();
@@ -22830,7 +22911,6 @@ function studioRenderIO() {
   }
   const cs = document.getElementById('studio-cam-sel'); if (cs && STUDIO.dev.camId) cs.value = STUDIO.dev.camId;
   const ms = document.getElementById('studio-mic-sel'); if (ms && STUDIO.dev.micId) ms.value = STUDIO.dev.micId;
-  const os = document.getElementById('studio-ov-sel'); if (os && STUDIO.ov.sel) os.value = STUDIO.ov.sel;
   for (const c of document.querySelectorAll('#studio-impostazioni [data-formato]')) { c.checked = !!STUDIO.doc?.scelte.formati[c.dataset.formato]; c.disabled = STUDIO.live; }
 }
 
@@ -22845,7 +22925,7 @@ function renderStudioTutto() {
   if (!STUDIO.doc) return;
   studioAggiornaMobile();
   studioMontaTele();
-  renderStudioLavoro(); renderStudioScene(); renderStudioPreset(); renderStudioFonti(); renderStudioUI(); renderStudioProp(); renderStudioMixer(); renderStudioTransizioni(); renderStudioControlli(); renderStudioMobile();
+  renderStudioLavoro(); renderStudioScene(); renderStudioPreset(); renderStudioOverlay(); renderStudioFonti(); renderStudioUI(); renderStudioProp(); renderStudioMixer(); renderStudioTransizioni(); renderStudioControlli(); renderStudioMobile();
   if (STUDIO.tel?.aperta) renderStudioTel();
 }
 
@@ -22952,6 +23032,9 @@ function studioScegliScena(id) {
 function renderStudioFonti() {
   const ul = document.getElementById('studio-fonti'); if (!ul) return;
   const s = studioSceneAttiva();
+  const conOv = !!s?.fonti.some((f) => f.tipo === 'overlay');
+  const metti = document.getElementById('studio-ov-metti'); if (metti) { metti.disabled = conOv; metti.title = conOv ? L('L’overlay è già nella scena', 'The overlay is already in the scene', 'El overlay ya está en la escena') : ''; }
+  const manca = document.getElementById('studio-ov-manca'); if (manca) manca.hidden = conOv || !s;
   if (!s || !s.fonti.length) { ul.innerHTML = `<li class="vuoto">${L('Nessuna fonte. Aggiungine una qui sotto.', 'No sources. Add one below.', 'Sin fuentes. Añade una abajo.')}</li>`; return; }
   ul.innerHTML = s.fonti.slice().reverse().map((f) => {
     const i = s.fonti.indexOf(f), vis = studioPos(f).vis, manca = studioManca(f);
@@ -22976,6 +23059,7 @@ function studioAzioneManca(f) {
 
 function renderStudioUI() {
   const ui = STUDIO.ui; if (!ui || !STUDIO.doc) return;
+  studioRidisegna();
   const s = studioSceneAttiva(), { W, H } = studioMisura();
   ui.innerHTML = (s ? s.fonti : []).filter((f) => studioPos(f).vis).map((f) => {
     const p = studioPos(f), sel = f.id === STUDIO.sel && f.tipo !== 'overlay', manca = studioManca(f);
@@ -23003,7 +23087,9 @@ function renderStudioProp() {
       </div>
       <label class="riga-check spazio-sopra"><input id="sp-grass" type="checkbox"${f.grassetto ? ' checked' : ''}> ${L('Grassetto', 'Bold', 'Negrita')}</label>`;
   } else if (f.tipo === 'overlay') {
-    extra = `<p class="suggerimento">${L('L\'overlay riempie tutta la tela (alert, chat ed effetti alle loro posizioni). Non si sposta né si ridimensiona.', 'The overlay fills the whole canvas (alerts, chat and effects at their positions). It doesn’t move or resize.', 'El overlay llena todo el lienzo (alertas, chat y efectos en sus posiciones). No se mueve ni se redimensiona.')}</p>`;
+    extra = `<label class="campo" for="sp-overlay">${L('Quale overlay', 'Which overlay', 'Qué overlay')}</label>
+      <select id="sp-overlay" class="campo-largo"${STUDIO.ov.list.length ? '' : ' disabled'}>${studioOpzioniOverlay(studioOverlayDi(f))}</select>
+      <p class="suggerimento">${L('Prende alert, chat ed effetti di quell’overlay, alle posizioni che hai scelto nell’Overlay Studio, e riempie tutta la tela. Ogni scena può avere il suo.', 'It takes that overlay’s alerts, chat and effects, at the positions you chose in the Overlay Studio, and fills the whole canvas. Every scene can have its own.', 'Toma las alertas, el chat y los efectos de ese overlay, en las posiciones que elegiste en el Overlay Studio, y llena todo el lienzo. Cada escena puede tener el suyo.')}</p>`;
   } else if (f.media) {
     const mb = f.media.byte ? ` · ${(f.media.byte / 1048576).toFixed(1)} MB` : '';
     extra = `<p class="suggerimento">${_bIco(ICO.immagine)}${esc(f.media.nome || '')}${mb}${studioManca(f) ? ` · <strong>${L('manca su questo dispositivo', 'missing on this device', 'falta en este dispositivo')}</strong>` : ''}</p>
@@ -23058,6 +23144,7 @@ function renderStudioControlli() {
   if (live) live.hidden = STUDIO.live;
   if (ferma) ferma.hidden = !STUDIO.live;
   document.getElementById('studio-carta')?.classList.toggle('in-diretta', STUDIO.live);
+  document.body.classList.toggle('studio-live', STUDIO.live);
   const imp = document.getElementById('studio-impostazioni'), btn = document.getElementById('studio-impostazioni-apri');
   if (imp && btn) btn.setAttribute('aria-expanded', String(!imp.hidden));
 }
@@ -23121,6 +23208,7 @@ function studioTelElemento() {
     el._telCollegata = true;
     el.addEventListener('click', onStudioClick); el.addEventListener('input', onStudioInput);
     el.addEventListener('change', onStudioChange); el.addEventListener('pointerdown', onStudioPointerDown);
+    el.addEventListener('contextmenu', (e) => { if (!e.target.closest('input, textarea')) e.preventDefault(); });
   }
   return el;
 }
@@ -23130,6 +23218,7 @@ function studioTelApri() {
   if (!el || !STUDIO.doc) return;
   T.aperta = true; T.chiusa = false;
   el.hidden = false;
+  avviaLoopStudio();
   document.body.classList.add('tel-aperta');
   try { history.pushState({ ...(history.state || {}), studioTel: true }, ''); } catch (e) {  }
   studioMontaTele();
@@ -23183,8 +23272,8 @@ function studioTelRiassunto() {
   const sc = studioTelScelte(), f = STUDIO.doc.scelte.formati;
   const nomeSc = TEL_SCENARI()[sc.scenario]?.nome || L('Scegli cosa fai', 'Choose what you do', 'Elige qué haces');
   const fmt = f.o && f.v ? L('Verticale e orizzontale', 'Vertical and horizontal', 'Vertical y horizontal') : (f.v ? L('Verticale', 'Vertical', 'Vertical') : L('Orizzontale', 'Horizontal', 'Horizontal'));
-  const dest = [...studioDestScelte()].map((k) => DEST_NOME[k] || (k === 'twitch' ? 'Twitch' : (STUDIO.dir?.destinazioni || []).find((x) => x.id === k)?.nome || k));
-  return `${nomeSc} · ${fmt}${dest.length ? ' · ' + dest.join(', ') : ''}`;
+  const dest = studioDestValide().map((k) => DEST_NOME[k] || (k === 'twitch' ? 'Twitch' : (STUDIO.dir?.destinazioni || []).find((x) => x.id === k)?.nome || k));
+  return `${nomeSc} · ${fmt} · ${dest.length ? dest.join(', ') : L('nessuna destinazione', 'no destination', 'ningún destino')}`;
 }
 
 function renderStudioTel() {
@@ -23192,12 +23281,12 @@ function renderStudioTel() {
   const cab = studioTelElemento(); if (cab && cab.hidden) { cab.hidden = false; studioMontaTele(); }
   const live = STUDIO.live;
   const stato = document.getElementById('tel-stato');
-  if (stato) { stato.textContent = live ? '● LIVE ' + (document.getElementById('studio-timer')?.textContent || '') : (T.conto != null ? L('Si parte…', 'Starting…', 'Empezando…') : L('Pronto', 'Ready', 'Listo')); stato.classList.toggle('in-onda', live); }
+  if (stato) { stato.textContent = live ? L('● LIVE ', '● LIVE ', '● EN VIVO ') + (document.getElementById('studio-timer')?.textContent || '') : (T.conto != null ? L('Si parte…', 'Starting…', 'Empezando…') : L('Pronto', 'Ready', 'Listo')); stato.classList.toggle('in-onda', live); }
   const sp = document.getElementById('tel-spett');
   if (sp) { sp.hidden = !(live && T.spettatori != null); sp.innerHTML = `${_bIco(ICO.occhio)}${Number(T.spettatori) || 0}`; }
   const rete = document.getElementById('tel-rete'); if (rete) { rete.dataset.q = String(T.rete); rete.setAttribute('aria-label', L('Rete: ', 'Network: ', 'Red: ') + ['—', L('debole', 'weak', 'débil'), L('discreta', 'fair', 'regular'), L('buona', 'good', 'buena')][T.rete] ); }
   const bt = document.getElementById('tel-batt');
-  if (bt) { const b = T.batteria; bt.hidden = !b; if (b) { bt.textContent = Math.round(b.level * 100) + '%' + (b.charging ? ' ⚡' : ''); bt.classList.toggle('bassa', b.level < 0.2 && !b.charging); } }
+  if (bt) { const b = T.batteria; bt.hidden = !b; if (b) { bt.innerHTML = (b.charging ? _bIco(ICO.fulmine) : '') + Math.round(b.level * 100) + '%'; bt.setAttribute('aria-label', L('Batteria', 'Battery', 'Batería') + (b.charging ? ' ' + L('in carica', 'charging', 'cargando') : '')); bt.classList.toggle('bassa', b.level < 0.2 && !b.charging); } }
   const esci = document.querySelector('[data-tel="esci"]'); if (esci) esci.setAttribute('aria-label', live ? L('Studio completo (la diretta continua)', 'Full studio (the stream goes on)', 'Estudio completo (el directo sigue)') : L('Chiudi la regia', 'Close the controls', 'Cerrar el control'));
   const rias = document.getElementById('tel-riassunto'); if (rias) { rias.hidden = live; rias.textContent = studioTelRiassunto(); }
   const sc = document.getElementById('tel-scene');
@@ -23231,7 +23320,7 @@ function studioTelCheck() {
   if (sup) out.push({ ok: !!sup.ok, blocca: !sup.ok, testo: sup.ok ? L('Il telefono sa codificare la diretta', 'The phone can encode the stream', 'El teléfono sabe codificar el directo') : L('Questo browser non sa codificare la diretta: su iPhone serve iOS 26, su Android Chrome aggiornato', 'This browser cannot encode the stream: iPhone needs iOS 26, Android an up-to-date Chrome', 'Este navegador no sabe codificar el directo: en iPhone hace falta iOS 26, en Android Chrome actualizado') });
   const b = studioTelStato().batteria;
   if (b && !b.charging && b.level < 0.25) out.push({ ok: false, testo: L(`Batteria al ${Math.round(b.level * 100)}%: una diretta la consuma in fretta, meglio col caricatore`, `Battery at ${Math.round(b.level * 100)}%: a stream drains it fast, better plugged in`, `Batería al ${Math.round(b.level * 100)}%: un directo la gasta rápido, mejor con el cargador`) });
-  const fuori = STUDIO.M.escluse(STUDIO.doc.scelte, [...studioDestScelte()]);
+  const fuori = STUDIO.M.escluse(STUDIO.doc.scelte, studioDestValide());
   if (fuori.length) out.push({ ok: false, blocca: false, testo: L(`${fuori.map((k) => DEST_NOME[k] || (k === 'twitch' ? 'Twitch' : k)).join(', ')}: non riceve questo formato, resta fuori`, `${fuori.map((k) => DEST_NOME[k] || (k === 'twitch' ? 'Twitch' : k)).join(', ')}: does not take this format, left out`, `${fuori.map((k) => DEST_NOME[k] || (k === 'twitch' ? 'Twitch' : k)).join(', ')}: no recibe este formato, se queda fuera`) });
   const per = studioDirettePerFormato();
   if (!per.o.length && !per.v.length) out.push({ ok: false, blocca: true, testo: L('Nessuna destinazione per questo formato', 'No destination for this format', 'Ningún destino para este formato') });
@@ -23283,6 +23372,7 @@ function renderStudioTelFoglio() {
         <button type="button" class="tel-grande" data-tel="esci">${_bIco(ICO.moduli)}${L('Studio completo', 'Full studio', 'Estudio completo')}</button>
         ${live ? `<button type="button" class="tel-grande pericolo" data-tel="ferma-chiedi">${_bIco(ICO.stop)}${L('Chiudi la diretta…', 'End the stream…', 'Cerrar el directo…')}</button>` : ''}
       </div>
+      ${STUDIO.ov.list.length > 1 ? `<label class="tel-zoom">${L('Overlay di questa scena', 'This scene’s overlay', 'Overlay de esta escena')}<select class="tel-campo" data-tel-overlay>${studioOpzioniOverlay(studioOverlayInOnda() || studioOverlayDi(null))}</select></label>` : ''}
       ${cap.zoom ? `<label class="tel-zoom">${L('Zoom', 'Zoom', 'Zoom')}<input type="range" data-tel-zoom min="${cap.zoom.min}" max="${cap.zoom.max}" step="${cap.zoom.step || 0.1}" value="${T.zoom ?? cap.zoom.min}"></label>` : ''}`;
     return;
   }
@@ -23309,7 +23399,7 @@ function renderStudioTelFoglio() {
     <h4>${L('Controlli', 'Checks', 'Comprobaciones')}</h4>
     <ul class="tel-check">${studioTelCheck().map((c) => `<li class="${c.ok ? 'ok' : 'no'}">${_bIco(c.ok ? ICO.spunta : ICO.avviso)}${esc(c.testo)}</li>`).join('')}</ul>
     ${!STUDIO.cap.camEl || !STUDIO.cap.micStream ? `<button type="button" class="tel-grande" data-tel="accendi">${_bIco(ICO.fotocamera)}${L('Accendi fotocamera e microfono', 'Turn on camera and microphone', 'Enciende cámara y micrófono')}</button>` : ''}
-    <p class="tel-nota">${L('Durante la diretta resta su questa schermata: se cambi app il telefono ferma la pagina e va in onda la tua scritta di riserva, finché non torni.', 'Stay on this screen while live: if you switch apps the phone pauses the page and your fallback text goes on air until you come back.', 'Quédate en esta pantalla durante el directo: si cambias de app el teléfono para la página y sale tu texto de reserva hasta que vuelvas.')}</p>
+    <p class="tel-nota">${L('Mentre sei in diretta resta su questa schermata: se cambi app il telefono ferma la pagina e va in onda la tua scritta di riserva, finché non torni.', 'Stay on this screen while live: if you switch apps the phone pauses the page and your fallback text goes on air until you come back.', 'Quédate en esta pantalla durante el directo: si cambias de app el teléfono para la página y sale tu texto de reserva hasta que vuelvas.')}</p>
     <button type="button" class="tel-grande primario" data-tel="fatto">${L('Fatto', 'Done', 'Listo')}</button>`;
 }
 
@@ -23423,7 +23513,8 @@ function studioTelVai() {
   if (STUDIO.live) { studioTelAvviso(L('Per chiudere la diretta tieni premuto il tasto.', 'To end the stream, hold the button.', 'Para cerrar el directo mantén pulsado el botón.'), 3000); return; }
   if (T.conto != null) return;
   const sc = studioTelScelte();
-  if (T.ignoraClic) { T.ignoraClic = false; return; }
+  if (T.ignoraClic && performance.now() - T.ignoraClic < 1000) { T.ignoraClic = 0; return; }
+  T.ignoraClic = 0;
   if (!sc.scenario) { T.foglio = ''; studioTelFoglio('prepara'); return; }
   if (studioTelCheck().some((c) => c.blocca)) { T.foglio = ''; studioTelFoglio('prepara'); return; }
   try { if (!STUDIO.acPronto) { const AC = window.AudioContext || window.webkitAudioContext; STUDIO.acPronto = new AC({ sampleRate: 48000 }); } STUDIO.acPronto.resume?.(); } catch (e) {  }
@@ -23459,7 +23550,7 @@ function studioTelTieniInizio(ev) {
   ev.preventDefault();
   clearTimeout(T.tieni?.t);
   const b = document.getElementById('tel-vai'); b?.classList.add('tenendo');
-  T.tieni = { t: setTimeout(() => { T.tieni = null; T.ignoraClic = true; b?.classList.remove('tenendo'); try { navigator.vibrate?.(120); } catch (e) {  } conErrore(() => fermaLive()); }, TEL_TIENI_MS) };
+  T.tieni = { t: setTimeout(() => { T.tieni = null; T.ignoraClic = performance.now(); b?.classList.remove('tenendo'); try { navigator.vibrate?.(120); } catch (e) {  } conErrore(() => fermaLive()); }, TEL_TIENI_MS) };
   return true;
 }
 
@@ -23560,6 +23651,7 @@ function studioTelChatRiga(riga) {
 
 function studioTelDopoScena() {
   applicaMix();
+  if (STUDIO.ov.connesso !== undefined && studioOverlayInOnda() && studioOverlayInOnda() !== STUDIO.ov.connesso) studioConnettiOverlay();
   const s = studioScena(STUDIO.doc?.inOnda);
   if (studioTelefono() && s?.camera && STUDIO.cap.camEl && !STUDIO.dev.camId && s.camera !== (STUDIO.dev.facing || 'user')) {
     STUDIO.dev.facing = s.camera;
@@ -23637,6 +23729,7 @@ function studioImpostaFormato(f, acceso) {
 function posizionaBoxStudio(f) {
   const box = STUDIO.ui?.querySelector(`[data-box="${CSS.escape(f.id)}"]`); if (!box) return;
   const p = studioPos(f), { W, H } = studioMisura();
+  studioRidisegna();
   box.style.left = p.x / W * 100 + '%'; box.style.top = p.y / H * 100 + '%';
   box.style.width = p.w / W * 100 + '%'; box.style.height = p.h / H * 100 + '%';
 }
@@ -23716,7 +23809,9 @@ function onStudioInput(ev) {
   const vol = t.closest('[data-vol]'); if (vol) { const k = vol.dataset.vol; if (STUDIO.mix[k]) { STUDIO.mix[k].vol = Number(vol.value); applicaMix(); const v = vol.parentElement.querySelector('.mix-val'); if (v) v.textContent = vol.value; } return; }
   if (t.id === 'studio-cam-sel') return conErrore(() => studioCambiaCamera(t.value));
   if (t.id === 'studio-mic-sel') return conErrore(() => studioCambiaMic(t.value));
-  if (t.id === 'studio-ov-sel') { STUDIO.ov.sel = t.value; return conErrore(() => studioConnettiOverlay()); }
+  if (t.id === 'studio-ov-sel') { studioScegliOverlay(t.value); return; }
+  if (t.id === 'sp-overlay') { studioScegliOverlay(t.value, studioTrovaFonte(STUDIO.sel)); return; }
+  if (t.dataset.telOverlay !== undefined) { studioScegliOverlay(t.value); renderStudioTelFoglio(); return; }
   if (t.id === 'studio-qual-sel') { studioApplicaQualita(t.value); studioControllaSupporto(); return; }
   if (t.dataset.telZoom !== undefined) { studioTelZoom(Number(t.value)); return; }
   if (t.id === 'studio-trans-ms') { if (STUDIO.doc) { STUDIO.doc.scelte.transizione.ms = studioClamp(Number(t.value) || 300, 100, 3000); studioSporco(); } return; }
@@ -23755,7 +23850,7 @@ function onStudioChange(ev) {
 function studioPalcoModifica() { return STUDIO.ui?.parentElement || null; }
 
 function onStudioPointerDown(ev) {
-  if (ev.target.closest('#tel-vai')) { studioTelStato().ignoraClic = false; if (studioTelTieniInizio(ev)) return; }
+  if (ev.target.closest('#tel-vai')) { studioTelStato().ignoraClic = 0; if (studioTelTieniInizio(ev)) return; }
   if (ev.target.closest('.tel-sblocca')) { studioTelSbloccaInizio(ev); return; }
   if (ev.target.closest('#tel-palco')) { studioTelPalcoGiu(ev); return; }
   const box = ev.target.closest('.studio-fonte-box'); if (!box || ev.target.closest('button')) return;
@@ -23825,6 +23920,7 @@ function initStudio() {
     document.addEventListener('pointerup', onStudioPointerUp);
     document.addEventListener('pointercancel', onStudioPointerUp);
     window.addEventListener('popstate', () => { if (STUDIO.tel?.aperta) studioTelIndietro(); });
+    window.addEventListener('resize', () => { clearTimeout(STUDIO.misuraT); STUDIO.misuraT = setTimeout(() => { if (STUDIO.doc && !STUDIO.live) { studioMisureTele(); studioRidisegna(); } }, 200); });
     window.addEventListener('beforeunload', (e) => { if (STUDIO.live) { e.preventDefault(); e.returnValue = ''; } });
     window.addEventListener('offline', () => { if (STUDIO.live) studioTelAvviso(L('Niente rete: in onda c’è la tua scritta di riserva finché non torna.', 'No network: your fallback text is on air until it is back.', 'Sin red: en el aire está tu texto de reserva hasta que vuelva.'), 0); });
     window.addEventListener('online', () => { if (STUDIO.live) studioTelAvviso(L('Rete tornata', 'Network back', 'Red de vuelta'), 2500); });
@@ -40546,6 +40642,7 @@ function vaiAScheda(id) {
   if (id === schedaAttiva) { chiudiMenuMobile(); return; }
   const prima = schedaAttiva;
   schedaAttiva = id;
+  document.body.classList.toggle('in-studio', id === 'studio');
   chiudiMenuMobile();
 
   try { history.replaceState(null, '', '#' + id); } catch {  }

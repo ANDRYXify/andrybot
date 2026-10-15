@@ -50,10 +50,18 @@ const DIFETTI = {
     ['const studioPos = (f) => f.pos[STUDIO.lavoro];', 'const studioPos = (f) => f.pos.o;', 'ogni formato ha la sua posizione', 1, /non sposta l'orizzontale/],
     ['  STUDIO.salvo.timer = setTimeout(() => { STUDIO.salvo.timer = 0; studioSalva(); }, 1500);', '  STUDIO.salvo.timer = 0;', 'le scene si salvano da sole', 1, /si salvano da sole/],
     ['  if (STUDIO.live) { studioTelAvviso(', '  if (STUDIO.live) { fermaLive(); return; studioTelAvviso(', 'un tocco non chiude la diretta', 2, /un tocco non chiude/],
-    ['  if (T.ignoraClic) { T.ignoraClic = false; return; }\n', '', 'rilasciato il tasto, non riparte', 1, /clic del rilascio/],
+    ['  if (T.ignoraClic && performance.now() - T.ignoraClic < 1000) { T.ignoraClic = 0; return; }\n', '', 'rilasciato il tasto, non riparte', 1, /clic del rilascio/],
     ['  if (Math.abs(dx) > 60 && Math.abs(dy)', '  if (Math.abs(dx) > 6000 && Math.abs(dy)', 'scorrendo si cambia scena', 1, /scorrendo il dito/],
     ['  if (STUDIO.live || T.conto != null) { history.pushState', '  if (false) { history.pushState', 'indietro non chiude la diretta', 1, /in diretta «indietro»/],
     ['    document.body.appendChild(nuovo); el = nuovo;', '    el = nuovo;', 'la regia copre lo schermo', 3, /a tutto schermo e sopra a tutto/],
+    ["      sel.dispatchEvent(new Event('input', { bubbles: true }));\n      sel.dispatchEvent(new Event('change', { bubbles: true }));", "      sel.dispatchEvent(new Event('change', { bubbles: true }));", 'il menu\' rivestito annuncia la scelta', 4, /scegliendo un altro overlay/],
+    ['  if (!d.scelte.overlay) d.scelte.overlay = studioOverlayDi(null);', '  if (!d.scelte.overlay) d.scelte.overlay = id;', 'la scelta di una scena non tocca le altre', 5, /le altre tengono il loro/],
+    ['  if (STUDIO.doc && STUDIO.ov.list.length && !STUDIO.ov.list.some((o) => o.id === STUDIO.doc.scelte.overlay)) STUDIO.doc.scelte.overlay = STUDIO.ov.list[0].id;', '', 'la scelta di una scena non tocca le altre (bis)', 5, /le altre tengono il loro/],
+    ["const studioServeDisegnare = () => STUDIO.live || !!STUDIO.avvio || !!STUDIO.tel?.aperta || schedaAttiva === 'studio';", 'const studioServeDisegnare = () => true;', 'fuori dalla scheda non si disegna', 4, /fuori dalla scheda Studio/],
+    ["      STUDIO.palcoNascosto = !(p?._inVista || (a && !a.closest('[hidden]') && a._inVista));", '      STUDIO.palcoNascosto = false;', 'fuori dalla scheda non si disegna (bis)', 4, /fuori dalla scheda Studio/],
+    ["      STUDIO.palcoNascosto = !(p?._inVista || (a && !a.closest('[hidden]') && a._inVista));", '      STUDIO.palcoNascosto = false;', 'la tela fuori schermo non si disegna', 6, /scorsa fuori dallo schermo/],
+    ['  if (libero && !STUDIO.ridisegna && !viva && !STUDIO.eraViva) {', '  if (false) {', 'a riposo non si disegna', 4, /a riposo/],
+    ["  const fps = STUDIO.live || STUDIO.avvio ? (STUDIO_QUAL[STUDIO.qual] || STUDIO_QUAL['720p30']).fps : 30;", "  const fps = 1000;", 'fuori diretta al massimo 30 disegni', 4, /30 volte al secondo/],
   ],
   '/style.css': [
     ['.studio-mobile #studio-docks > .studio-dock:not(.studio-controlli)', '.studio-mobile .studio-docks > .studio-dock:not(.studio-controlli)', 'sul telefono Proprieta\' e Chat restano', 1, /proprieta' si vedono anche sul telefono/],
@@ -110,13 +118,16 @@ async function apri({ width, height, telefono }) {
   await p.waitForFunction(() => window.SB_APP, null, { timeout: 20000 });
   await p.evaluate(() => { document.getElementById('cookie-banner')?.remove(); window.SB_APP.vai('studio'); });
   await p.waitForFunction(() => typeof STUDIO !== 'undefined' && !!STUDIO.doc && !!STUDIO.tele.o, null, { timeout: 20000 });
+  // La tela fuori dallo schermo non si disegna (risparmio voluto): come una
+  // persona, prima di guardarla la si porta in vista.
+  await p.evaluate(() => document.getElementById('studio-palco-prog')?.scrollIntoView({ block: 'center' }));
   await p.waitForTimeout(400);
   return { p, err };
 }
 
 // I pixel che non sono il fondo della tela (#0b0b0f): quanto c'e' disegnato sopra.
 const disegnati = (p, quale) => p.evaluate((q) => {
-  const c = q === 'ante' ? STUDIO.ante : STUDIO.tele[q];
+  const c = q === 'ante' ? STUDIO.ante : STUDIO.tele[q === 'lavoro' ? STUDIO.lavoro : q];
   const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data;
   let n = 0;
   for (let i = 0; i < d.length; i += 16) if (Math.abs(d[i] - 11) + Math.abs(d[i + 1] - 11) + Math.abs(d[i + 2] - 15) > 30) n++;
@@ -184,7 +195,7 @@ console.log('Studio della diretta sul computer (1280×900):');
   const v = await p.evaluate(() => ({ tv: [STUDIO.tele.v.width, STUDIO.tele.v.height], chip: document.querySelectorAll('#studio-lavoro [data-lavoro]').length }));
   ok('col verticale acceso c\'e\' la tela 9:16 e si sceglie su quale lavorare', v.tv[1] > v.tv[0] && v.chip === 2, `${v.tv}`);
   await clic(p, '[data-lavoro="v"]');
-  await p.evaluate(() => { const s = studioSceneAttiva(); if (!s.fonti.length) studioAddFonte('testo'); STUDIO.sel = s.fonti[0].id; renderStudioTutto(); });
+  await p.evaluate(() => { const s = studioSceneAttiva(); if (!s.fonti.some((f) => f.tipo !== 'overlay')) studioAddFonte('testo'); STUDIO.sel = s.fonti.find((f) => f.tipo !== 'overlay').id; renderStudioTutto(); });
   const prima = await p.evaluate(() => { const f = studioTrovaFonte(STUDIO.sel); return { o: { ...f.pos.o }, v: { ...f.pos.v } }; });
   await p.evaluate(() => STUDIO.ui.parentElement.focus());
   for (let i = 0; i < 3; i++) await p.keyboard.press('Shift+ArrowRight');
@@ -210,7 +221,7 @@ console.log('Studio della diretta sul computer (1280×900):');
   });
   await fotogrammi(p);
   const seg = await p.evaluate(() => ({ dom: document.querySelectorAll('#studio-palco-prog .studio-manca [data-ricollega]').length, lista: document.querySelectorAll('#studio-fonti .studio-fonte.manca').length }));
-  const sulla = await disegnati(p, 'o');
+  const sulla = await disegnati(p, 'lavoro');
   ok('il file mancante ha il suo segnaposto, col tasto per ricaricarlo', seg.dom === 1 && seg.lista === 1);
   ok('il segnaposto non va in onda: la tela resta pulita', sulla === 0, `${sulla} pixel`);
 
@@ -225,12 +236,52 @@ console.log('Studio della diretta sul computer (1280×900):');
     const blob = await STUDIO.MD.prendi(f.media.impronta, { chi: studioChi() });
     return { imp: f.media.impronta, conservato: !!blob && blob.size > 0, giusta: blob ? (await STUDIO.MD.impronta(blob)) === f.media.impronta : false };
   });
-  const rossi = await disegnati(p, 'o');
+  const rossi = await disegnati(p, 'lavoro');
   ok('ricaricato il file, il segnaposto se ne va e l\'immagine va in onda', rossi > 50, `${rossi} pixel`);
   ok('il file resta su questo dispositivo (IndexedDB) col suo segno', tornato.conservato && tornato.giusta && /^[0-9a-f]{64}$/.test(tornato.imp));
   const tolti = await p.evaluate(async () => { const n = await STUDIO.MD.togliTranne(new Set(), { chi: studioChi() }); const resta = await STUDIO.MD.elenco({ chi: studioChi() }); return { n, resta: resta.length }; });
   ok('i file che nessuna scena usa piu\' si tolgono', tolti.n >= 1 && tolti.resta === 0);
 
+  // Gli overlay sono quelli dello streamer, e ogni scena sceglie il suo.
+  await p.evaluate(() => { STUDIO.doc.scelte.modalitaStudio = false; renderStudioTutto(); });
+  await p.waitForFunction(() => STUDIO.ov.list.length >= 2, null, { timeout: 8000 }).catch(() => {});
+  const ov0 = await p.evaluate(() => ({ n: STUDIO.ov.list.length, opz: document.querySelectorAll('#studio-ov-sel option').length, vis: (() => { const s = document.getElementById('studio-ov-sel'); const r = (s.closest('.tendina')?.querySelector('.tendina-btn') || s).getBoundingClientRect(); return r.width > 40 && r.height > 20; })() }));
+  ok('nel pannello Fonti si sceglie quale dei propri overlay usare, in vista', ov0.n >= 2 && ov0.opz === ov0.n && ov0.vis, JSON.stringify(ov0));
+  await clic(p, '[data-scena-azione="nuova"]');
+  const nuova = await p.evaluate(() => { const s = studioScena(STUDIO.doc.inOnda); const f = s.fonti.find((x) => x.tipo === 'overlay'); return { ha: !!f, nome: f?.nome, id: f ? studioOverlayDi(f) : '' }; });
+  ok('una scena nuova nasce con l\'overlay, cosi\' gli alert non spariscono cambiando scena', nuova.ha && nuova.id && nuova.nome !== 'overlay', JSON.stringify(nuova));
+  // Si sceglie dal menu' come lo usa una persona: sul computer e' il menu'
+  // rivestito del sito, che deve annunciare la scelta come un menu' vero.
+  const altroId = await p.evaluate(() => STUDIO.ov.list.find((o) => o.id !== studioOverlayInOnda()).id);
+  await p.evaluate((id) => {
+    const sel = document.getElementById('studio-ov-sel'), g = sel.closest('.tendina');
+    if (!g) { sel.value = id; sel.dispatchEvent(new Event('input', { bubbles: true })); sel.dispatchEvent(new Event('change', { bubbles: true })); return; }
+    g.querySelector('.tendina-btn').click();
+    const i = [...sel.options].findIndex((o) => o.value === id);
+    document.querySelectorAll('.tendina-voce')[i]?.click();
+  }, altroId);
+  await p.waitForTimeout(150);
+  const scelta = await p.evaluate((altro) => {
+    const qui = studioScena(STUDIO.doc.inOnda).fonti.find((x) => x.tipo === 'overlay');
+    const prima = STUDIO.doc.scene.find((x) => x.id !== STUDIO.doc.inOnda && x.fonti.some((f) => f.tipo === 'overlay'));
+    return { altro, qui: qui.overlay, nome: qui.nome, atteso: studioOverlayNome(altro), primaDiversa: prima ? studioOverlayDi(prima.fonti.find((f) => f.tipo === 'overlay')) !== altro : true };
+  }, altroId);
+  ok('scegliendo un altro overlay cambia quello di questa scena, e le altre tengono il loro', scelta.qui === scelta.altro && scelta.nome === scelta.atteso && scelta.primaDiversa, JSON.stringify(scelta));
+  // Le prestazioni sono promesse anche loro (lo Studio pesava: si misura).
+  await p.evaluate(() => { const vero = studioDisegnaProgramma; window.__disegni = 0; studioDisegnaProgramma = (...a) => { window.__disegni++; return vero(...a); }; STUDIO.doc.scene.forEach((x) => { x.fonti = x.fonti.filter((f) => f.tipo === 'overlay' || f.tipo === 'testo'); }); STUDIO.overlay.chat = []; STUDIO.overlay.fx = []; STUDIO.overlay.alert = null; STUDIO.trans = null; renderStudioTutto(); });
+  await p.waitForTimeout(1200);
+  const fermo = await p.evaluate(async () => { __disegni = 0; await new Promise((ok) => setTimeout(ok, 1000)); return { disegni: __disegni, raf: STUDIO.raf }; });
+  ok('a riposo (scena ferma, niente diretta) lo Studio non disegna e il ciclo dorme', fermo.disegni === 0 && !fermo.raf, JSON.stringify(fermo));
+  const vivo = await p.evaluate(async () => { STUDIO.overlay.chat.push({ user: 'x', testo: 'ciao', tokens: [{ t: 'testo', v: 'ciao' }], until: Date.now() + 8000 }); studioRidisegna(); __disegni = 0; await new Promise((ok) => setTimeout(ok, 1000)); return __disegni; });
+  ok('con qualcosa che si muove si disegna, ma fuori diretta non piu\' di 30 volte al secondo', vivo >= 15 && vivo <= 32, `${vivo} disegni in un secondo`);
+  await p.evaluate(() => { STUDIO.overlay.chat.push({ user: 'x', testo: 'ancora', tokens: [{ t: 'testo', v: 'ancora' }], until: Date.now() + 8000 }); studioRidisegna(); window.scrollTo(0, document.documentElement.scrollHeight); });
+  await p.waitForTimeout(400);
+  const via = await p.evaluate(async () => { __disegni = 0; await new Promise((ok) => setTimeout(ok, 1000)); return { disegni: __disegni, y: Math.round(document.getElementById('studio-palco-prog').getBoundingClientRect().bottom) }; });
+  ok('con la tela scorsa fuori dallo schermo non si disegna, e tornando si riprende', via.disegni === 0 && via.y < 0 && await p.evaluate(async () => { document.getElementById('studio-palco-prog').scrollIntoView({ block: 'center' }); await new Promise((ok) => setTimeout(ok, 500)); __disegni = 0; await new Promise((ok) => setTimeout(ok, 500)); return __disegni > 3; }), JSON.stringify(via));
+  await p.evaluate(() => window.SB_APP.vai('stato'));
+  await p.waitForTimeout(300);
+  const fuori = await p.evaluate(async () => { __disegni = 0; await new Promise((ok) => setTimeout(ok, 1000)); return { disegni: __disegni, raf: STUDIO.raf }; });
+  ok('fuori dalla scheda Studio il disegno si ferma (fuori diretta)', fuori.disegni === 0 && !fuori.raf, JSON.stringify(fuori));
   ok('nessun errore di pagina sul computer', err.length === 0, err.join(' | '));
   await p.close();
 }
@@ -304,6 +355,8 @@ console.log('Regia da telefono (390×844, a tocco):');
     }
     return { fuori, largo: document.documentElement.scrollWidth - W };
   });
+  const rias = await p.evaluate(() => document.getElementById('tel-riassunto').textContent);
+  ok('in alto si legge dove va davvero la diretta: nessuna destinazione collegata, nessuna promessa', /nessuna destinazione/.test(rias) && !/Twitch|Kick/.test(rias), rias);
   ok('il pollice arriva a tutto: ogni tasto della diretta e\' da 48 punti e sta nella meta\' bassa', pollice.fuori.length === 0, pollice.fuori.join('; '));
   ok('la pagina non scorre di lato', pollice.largo <= 0, `${pollice.largo}px`);
 
@@ -356,24 +409,30 @@ console.log('Regia da telefono (390×844, a tocco):');
   await p.goBack(); await p.waitForTimeout(250);
   ok('in diretta «indietro» non chiude la regia', await p.evaluate(() => STUDIO.tel.aperta && STUDIO.live));
   await assicura(p);
-  await p.mouse.move(vai.x, vai.y); await p.mouse.down(); await p.waitForTimeout(TENUTA); await p.mouse.up(); await p.waitForTimeout(400);
+  // Dopo una pressione lunga certi browser mandano anche il clic del rilascio,
+  // altri no (sul telefono diventa un tocco prolungato): qui lo si manda, perche'
+  // e' il caso in cui la diretta potrebbe ripartire da sola.
+  await p.mouse.move(vai.x, vai.y); await p.mouse.down(); await p.waitForTimeout(TENUTA); await p.mouse.up();
+  await p.evaluate(() => document.getElementById('tel-vai').click()); await p.waitForTimeout(400);
+  const menu = await p.evaluate(() => { const e = new MouseEvent('contextmenu', { bubbles: true, cancelable: true }); document.getElementById('tel-vai').dispatchEvent(e); return e.defaultPrevented; });
   const tenuto = await p.evaluate(() => ({ fermate: __fermate, live: STUDIO.live, conto: STUDIO.tel.conto, avvii: __avvii }));
   ok('tenendo premuto un secondo e mezzo la diretta si chiude', tenuto.fermate === 1 && !tenuto.live, JSON.stringify(tenuto));
   ok('e il clic del rilascio non fa ripartire il conto alla rovescia', tenuto.conto === null && tenuto.avvii === 0, JSON.stringify(tenuto));
+  ok('e la pressione lunga non apre il menu\' del telefono', menu);
 
   await assicura(p);
   await p.evaluate(() => { STUDIO.cap.micStream = new MediaStream(); STUDIO.cap.camEl = document.createElement('video'); STUDIO.dir = { kick: { su: true, keyOk: true }, destinazioni: [] }; STUDIO.doc.scelte.dest = []; STUDIO.supporto = { ok: true }; renderStudioTel(); });
-  await clic(p, '#tel-vai'); await p.waitForTimeout(200);
+  await p.mouse.click(vai.x, vai.y); await p.waitForTimeout(200);
   const senza = await p.evaluate(() => ({ foglio: STUDIO.tel.foglio, conto: STUDIO.tel.conto, check: document.querySelector('.tel-check')?.textContent || '' }));
   ok('senza destinazioni «Vai live» non conta: apre «Prima di partire» e dice cosa manca', senza.foglio === 'prepara' && senza.conto === null && /Nessuna destinazione|No destination/.test(senza.check), JSON.stringify(senza));
   await clic(p, '[data-tel-dest="kick"]');
   await clic(p, '[data-tel="fatto"]');
-  await clic(p, '#tel-vai'); await p.waitForTimeout(200);
+  await p.mouse.click(vai.x, vai.y); await p.waitForTimeout(200);
   const conto = await p.evaluate(() => ({ conto: STUDIO.tel.conto, vis: !document.getElementById('tel-conto').hidden }));
   await clic(p, '#tel-conto'); await p.waitForTimeout(1200);
   const annullato = await p.evaluate(() => ({ conto: STUDIO.tel.conto, avvii: __avvii }));
   ok('con una destinazione parte il conto alla rovescia, e un tocco lo annulla prima del via', conto.conto === 3 && conto.vis && annullato.conto === null && annullato.avvii === 0, JSON.stringify({ conto, annullato }));
-  await clic(p, '#tel-vai'); await p.waitForTimeout(3500);
+  await p.mouse.click(vai.x, vai.y); await p.waitForTimeout(3500);
   ok('lasciato correre, al tre si va in diretta', await p.evaluate(() => __avvii === 1 && STUDIO.tel.conto === null));
 
   await assicura(p);
@@ -397,6 +456,8 @@ console.log('Regia da telefono (390×844, a tocco):');
   const orizz = await p.evaluate(() => {
     const W = innerWidth, H = innerHeight, fuori = [];
     for (const b of document.querySelectorAll('.tel-barra button')) { const r = b.getBoundingClientRect(); if (r.left < W / 2 || r.bottom > H || r.top < 0 || r.width < 48 || r.height < 48) fuori.push(`${b.dataset.tel} ${Math.round(r.left)},${Math.round(r.top)} ${Math.round(r.width)}×${Math.round(r.height)}`); }
+    const e = document.querySelector('[data-tel="esci"]').getBoundingClientRect();
+    if (document.elementFromPoint(e.x + e.width / 2, e.y + e.height / 2)?.closest('[data-tel="esci"]') == null) fuori.push('il tasto per uscire e\' coperto');
     return { fuori, largo: document.documentElement.scrollWidth - W };
   });
   ok('col telefono di traverso la barra va sul lato del pollice, intera', orizz.fuori.length === 0 && orizz.largo <= 0, orizz.fuori.join('; '));
