@@ -1,6 +1,6 @@
 // © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
 // Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
-// Lo Studio Web e' SPENTO finche' non funziona davvero.
+// Lo Studio Web: spento a tutti di serie, aperto a chi e' nella beta.
 //
 // Il motore c'e' ed e' completo, ma la funzione non e' mai arrivata al punto di
 // funzionare per chi la usa. Finche' e' cosi' non si promette e non si offre —
@@ -23,23 +23,17 @@ test('di suo e\' spento: si accende solo dicendolo apposta', () => {
   assert.equal(config.studioAttivo, false, 'senza STUDIO_WEB=1 resta spento');
 });
 
-test('tutte le rotte dello Studio passano dall\'interruttore', () => {
+// Lo Studio si apre a chi e' nella beta (docs/DIRETTA.md): ogni rotta della
+// diretta passa dalla stessa porta, e chi non c'e' riceve un no detto.
+test('tutte le rotte della diretta passano da «studioAperto», e trasmette solo il proprietario', () => {
   const s = leggi('src/web/server.js');
-  const rotte = [...s.matchAll(/app\.(get|post)\('\/api\/studio[^']*',([^)]*)/g)];
-  assert.ok(rotte.length >= 4, `rotte trovate: ${rotte.length}`);
+  const rotte = [...s.matchAll(/app\.(get|post)\('\/api\/diretta[^']*',([^)]*)/g)];
+  assert.ok(rotte.length >= 7, `rotte trovate: ${rotte.length}`);
   for (const r of rotte) {
-    assert.match(r[2], /studioAcceso/, `la rotta ${r[0].slice(0, 46)}… non passa dall'interruttore`);
+    assert.match(r[2], /requireOwner, studioAperto/, `la rotta ${r[0].slice(0, 46)}… non passa dalla porta`);
   }
-});
-
-test('e l\'interruttore viene prima del gate del piano', () => {
-  // Altrimenti chi non paga si sentirebbe dire "passa a un piano superiore" per
-  // una cosa che non esiste a nessun prezzo.
-  const s = leggi('src/web/server.js');
-  for (const r of s.matchAll(/app\.(?:get|post)\('\/api\/studio[^']*',([^)]*)/g)) {
-    const i = r[1].indexOf('studioAcceso'), j = r[1].indexOf('gStudio');
-    assert.ok(i >= 0 && (j < 0 || i < j), 'prima l\'interruttore, poi il piano');
-  }
+  assert.doesNotMatch(s, /app\.(get|post)\('\/api\/studio/, 'le rotte dello Studio vecchio, che ricodificava sul server, non ci sono piu\'');
+  assert.match(s, /const studioPerMe = \(login\) => config\.studioAttivo \|\| \(config\.studioBeta && !!streamers\.get\(login\)\?\.settings\?\.betaStudio\);/);
 });
 
 test('la vetrina non promette una diretta dal browser', () => {
@@ -55,7 +49,7 @@ test('la vetrina non promette una diretta dal browser', () => {
 // preparazione detta come tale non e' una promessa, una frase sciolta si'.
 test('nella vetrina lo Studio sta solo in «In arrivo», con lo stato accanto', async () => {
   const { vetrinaHtml } = await import('../../src/web/vetrina-vista.js');
-  const STATO = { it: 'Beta in preparazione', en: 'Beta in preparation', es: 'Beta en preparación' };
+  const STATO = { it: 'Beta aperta', en: 'Open beta', es: 'Beta abierta' };
   for (const l of ['it', 'en', 'es']) {
     const h = vetrinaHtml(l);
     const i = h.indexOf('<section class="vt-sez" id="in-arrivo">');
@@ -90,4 +84,19 @@ test('e il permesso segue l\'interruttore, invece di essere tolto a mano', () =>
     'il permesso deve dipendere dall\'interruttore, cosi\' torna da solo quando lo Studio si accende');
 });
 
+test('la chiave di trasmissione si chiede solo a chi ha lo Studio aperto', () => {
+  const s = leggi('src/web/server.js');
+  const i = s.indexOf("app.get('/auth/permessi'");
+  const r = s.slice(i, s.indexOf('\n  });', i));
+  assert.match(r, /studioPerMe\(login\) && !SCOPES\.broadcaster\.includes\('channel:read:stream_key'\)\s*\? \[\.\.\.SCOPES\.broadcaster, 'channel:read:stream_key'\] : SCOPES\.broadcaster/);
+});
+
 test.after(() => usaEGetta.pulisci());
+
+test('nella beta lo Studio e\' di chi l\'ha chiesto con ogni piano; aperto a tutti passa dal muro del piano', () => {
+  const SRV = leggi('src/web/server.js');
+  const porta = SRV.slice(SRV.indexOf('const studioAperto = '), SRV.indexOf('const MOTIVI_DIRETTA'));
+  assert.match(SRV, /const muroStudio = gateFeature\('studio', 'Studio Web'\);/);
+  assert.match(porta, /if \(!studioPerMe\(currentUser\(req\)\.login\)\) return res\.status\(403\)/, 'prima di tutto: dentro solo chi ha lo Studio');
+  assert.match(porta, /if \(config\.studioAttivo\) return muroStudio\(req, res, next\);\n\s+next\(\);/, 'il piano conta quando lo Studio non e\' piu\' una beta');
+});

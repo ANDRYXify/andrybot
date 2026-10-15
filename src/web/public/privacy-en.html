@@ -37,7 +37,7 @@
   <meta name="twitter:description" content="What data SocialBot collects, why, how long it keeps it, and how to download or delete it. Tokens stay encrypted on the server and never reach the browser.">
   <meta name="twitter:image" content="https://socialbot.live/icons/og.png?v=9">
   <meta name="twitter:image:alt" content="SocialBot, the bot that writes in chat under your own name, for Twitch and Kick">
-  <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebPage","@id":"https://socialbot.live/en/privacy#webpage","url":"https://socialbot.live/en/privacy","name":"Privacy and security at SocialBot","inLanguage":"en-US","isPartOf":{"@type":"WebSite","@id":"https://socialbot.live/#website","url":"https://socialbot.live/","name":"SocialBot"},"publisher":{"@type":"Organization","@id":"https://socialbot.live/#org","name":"andryxify.it","url":"https://andryxify.it"},"dateModified":"2026-10-14"}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebPage","@id":"https://socialbot.live/en/privacy#webpage","url":"https://socialbot.live/en/privacy","name":"Privacy and security at SocialBot","inLanguage":"en-US","isPartOf":{"@type":"WebSite","@id":"https://socialbot.live/#website","url":"https://socialbot.live/","name":"SocialBot"},"publisher":{"@type":"Organization","@id":"https://socialbot.live/#org","name":"andryxify.it","url":"https://andryxify.it"},"dateModified":"2026-10-15"}</script>
 </head>
 <body>
   <div class="wrap">
@@ -175,6 +175,11 @@
           the command or count the forfeit, and we don't keep it. For <strong>highlights</strong> the server listens to the
           public audio of the stream only to measure its loudness and make a clip when it jumps: it doesn't record it and
           doesn't turn it into text.</li>
+        <li><strong>The streaming Studio</strong> (beta), if the streamer uses it. Their device prepares the video and
+          audio; the server receives them and passes them on as they are to the platforms they chose, without recording
+          or watching them. We keep the <strong>stream keys</strong> for YouTube, Kick or their own server encrypted,
+          until they remove them; the Twitch one we ask Twitch for only when the stream starts, and we don't keep it. On
+          their account we only note that they asked to try the beta.</li>
         <li><strong>The streamer's own words</strong>, to learn how they talk: the phrases they say with the listening page
           open, if they turn on «Learns while I talk», and the messages they write from their linked Telegram account. We
           keep their last 60 phrases. Only theirs: the bot doesn't learn anyone else's way of talking. From other people's
@@ -345,7 +350,7 @@
 
     <footer>
       <p><a href="/en">← Back to the dashboard</a> · <a href="https://www.andryxify.it">andryxify.it</a></p>
-      <p class="aggiornato">SocialBot, a concise and transparent privacy notice. Last updated: <time class="aggiornato-il" datetime="2026-10-14">October 14, 2026</time>.</p>
+      <p class="aggiornato">SocialBot, a concise and transparent privacy notice. Last updated: <time class="aggiornato-il" datetime="2026-10-15">October 15, 2026</time>.</p>
     </footer>
   </div>
 

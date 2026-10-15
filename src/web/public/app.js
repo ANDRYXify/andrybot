@@ -4953,8 +4953,8 @@ const GUIDE = {
     come: [['Il livello di verifica è il filtro contro chi entra, spamma e sparisce: «email + cinque minuti» ferma quasi tutto.', 'The verification level is the filter against people who join, spam and vanish: «email + five minutes» stops nearly all of it.', 'El nivel de verificación es el filtro contra quien entra, spamea y desaparece: «correo + cinco minutos» para casi todo.', '#dce-verifica'], ['Scrivi la prima schermata: una riga tua e fino a cinque canali con un tasto per ognuno.', 'Write the first screen: one line of your own and up to five channels with a button each.', 'Escribe la primera pantalla: una línea tuya y hasta cinco canales con un botón para cada uno.', '#dce-benvenuto'], ['Aggiungi le domande: ogni risposta apre dei canali e dà un ruolo. I canali si scelgono per nome, anche quelli che la traccia deve ancora creare.', 'Add the questions: every answer opens channels and hands out a role. Channels are picked by name, including the ones the track has yet to create.', 'Añade las preguntas: cada respuesta abre canales y da un rol. Los canales se eligen por nombre, incluidos los que la plantilla aún tiene que crear.', '#dce-porta'], ['«Fammi vedere cosa faresti» e poi «Costruisci»: la porta parte insieme ai canali, in un giro solo.', '«Show me what you would do» and then «Build it»: the door goes out together with the channels, in one go.', '«Enséñame qué harías» y luego «Constrúyelo»: la puerta sale junto con los canales, de una sola vez.', '#dce-vedi']] },
   dcfiltro: { serve: ['Decidere cosa sul tuo server non si scrive: le tue parole, le liste che Discord tiene aggiornate da sé, lo spam e le raffiche di menzioni. Lo ferma Discord prima che il messaggio esista, non un bot che lo legge dopo.', 'Decide what does not get written on your server: your own words, the lists Discord keeps updated by itself, spam and mention raids. Discord stops it before the message exists, not a bot reading it afterwards.', 'Decidir qué no se escribe en tu servidor: tus palabras, las listas que Discord mantiene solo, el spam y las ráfagas de menciones. Lo para Discord antes de que el mensaje exista, no un bot que lo lee después.'],
     come: [['Le tue liste stanno in «Parole da non scrivere», una per ogni cosa che vuoi fermare. Si scrive anche a pezzi: «insult*» prende tutto quello che comincia così.', 'Your own lists live in «Words that do not get written», one per thing you want stopped. Partial words work too: «insult*» catches everything starting like that.', 'Tus listas están en «Palabras que no se escriben», una por cada cosa que quieras parar. También a trozos: «insult*» coge todo lo que empiece así.', '#dcf-parole'], ['Le liste già pronte le aggiorna Discord in tutte le lingue: tu scegli quali accendere.', 'The ready-made lists are updated by Discord in every language: you choose which to switch on.', 'Las listas ya hechas las actualiza Discord en todos los idiomas: tú eliges cuáles encender.', '#dcf-liste'], ['Per ogni regola decidi cosa succede quando scatta, e chi e dove non tocca: passano i ruoli che spunti in «Questi ruoli passano». Con le regole di base ci sono già quelli dello staff della traccia.', 'For each rule you decide what happens when it fires, and who and where it leaves alone: the roles you tick in «These roles get through» get through. With the basic rules the track’s staff roles are already there.', 'Para cada regla decides qué pasa cuando salta, y a quién y dónde no toca: pasan los roles que marques en «Estos roles pasan». Con las reglas básicas ya están los del staff de la plantilla.', '#dcf-menzioni'], ['«Fammi vedere cosa faresti» e poi «Costruisci»: il filtro parte insieme ai canali, in un giro solo.', '«Show me what you would do» and then «Build it»: the filter goes out together with the channels, in one go.', '«Enséñame qué harías» y luego «Constrúyelo»: el filtro sale junto con los canales, de una sola vez.', '#dcf-vedi']] },
-  studio: { serve: ['Andare in diretta dal sito, senza OBS, su Twitch, Kick e YouTube insieme. È una beta in preparazione: oggi qui chiedi di provarlo per primo, e leggi come sarà.', 'Going live from the site, without OBS, on Twitch, Kick and YouTube at once. It is a beta in preparation: today you can ask here to try it first, and read how it will work.', 'Emitir en directo desde el sitio, sin OBS, en Twitch, Kick y YouTube a la vez. Es una beta en preparación: hoy aquí pides probarlo el primero, y lees cómo será.'],
-    come: [['Premi «Voglio provarlo per primo»: resta segnato sul tuo account, senza altri dati, e lo stesso tasto lo toglie.', 'Press «I want to try it first»: it stays noted on your account, with no other data, and the same button removes it.', 'Pulsa «Quiero probarlo el primero»: queda anotado en tu cuenta, sin otros datos, y el mismo botón lo quita.', '#studio-beta-riga'], ['Quando la beta apre te lo diciamo nelle novità del pannello.', 'When the beta opens we tell you in the panel news.', 'Cuando abra la beta te lo diremos en las novedades del panel.', '#studio-beta-riga']] },
+  studio: { serve: ['Andare in diretta dal sito, senza OBS, con le scene dell’Overlay Studio. È una beta aperta: il video lo fa il tuo computer, il server lo passa a Twitch, Kick, YouTube o a un server tuo.', 'Going live from the site, without OBS, with your Overlay Studio scenes. It is an open beta: your computer makes the video, the server passes it on to Twitch, Kick, YouTube or your own server.', 'Emitir en directo desde el sitio, sin OBS, con las escenas del Overlay Studio. Es una beta abierta: tu ordenador hace el vídeo, el servidor lo pasa a Twitch, Kick, YouTube o a un servidor tuyo.'],
+    come: [['Premi «Voglio provarlo» ed entri subito. Serve Chrome o Edge aggiornati su computer.', 'Press «I want to try it» and you are in right away. It needs an up-to-date Chrome or Edge on a computer.', 'Pulsa «Quiero probarlo» y entras enseguida. Necesita Chrome o Edge actualizados en un ordenador.', '#studio-beta-riga'], ['Dentro scegli dove va la diretta: Twitch è già pronto, Kick, YouTube o un server tuo si aggiungono con la chiave di trasmissione, che resta cifrata.', 'Inside, choose where the stream goes: Twitch is ready, Kick, YouTube or your own server are added with the stream key, which stays encrypted.', 'Dentro eliges adónde va el directo: Twitch ya está listo, Kick, YouTube o un servidor tuyo se añaden con la clave de emisión, que queda cifrada.', ''], ['Scrivi la frase della tua immagine di riserva e quanti minuti aspettare: se la rete rallenta resta la tua voce su quell’immagine, se cade va in onda lei, e se non torni la diretta si chiude da sola.', 'Write the line for your backup image and how many minutes to wait: if the network slows down your voice stays over that image, if it drops the image goes on air, and if you do not come back the stream ends by itself.', 'Escribe la frase de tu imagen de reserva y cuántos minutos esperar: si la red va lenta queda tu voz sobre esa imagen, si cae sale ella, y si no vuelves el directo se cierra solo.', ''], ['Con OSify acceso, i suoi canali audio (gioco, voce, musica) compaiono da soli: «Usa i canali di OSify» li mette ognuno al suo posto nel mixer.', 'With OSify running, its audio channels (game, voice, music) show up by themselves: «Use the OSify channels» puts each one in its place in the mixer.', 'Con OSify encendido, sus canales de audio (juego, voz, música) aparecen solos: «Usar los canales de OSify» pone cada uno en su sitio en el mezclador.', '']] },
   alert: { serve: ['Comporre quello che si vede sulla diretta — alert, chat a schermo, obiettivi, contatori — e prendere il link da mettere in OBS.', 'Compose what shows on your stream — alerts, on-screen chat, goals, counters — and get the link to put in OBS.', 'Componer lo que se ve en el directo — alertas, chat en pantalla, objetivos, contadores — y coger el enlace para poner en OBS.'],
     come: [['Nei «Livelli», a sinistra, c\'è tutto quello che può comparire: l\'occhio lo toglie da questo overlay.', 'In «Layers», on the left, there is everything that can show up: the eye takes it out of this overlay.', 'En «Capas», a la izquierda, está todo lo que puede aparecer: el ojo lo quita de este overlay.', '#ovl-livelli'], ['Sulla tela trascini ogni cosa dove la vuoi: si aggancia da sola ai bordi e agli altri, le frecce la spostano al pixel.', 'On the canvas you drag everything where you want it: it snaps to the edges and to the others, the arrows move it pixel by pixel.', 'En el lienzo arrastras cada cosa donde la quieras: se ajusta sola a los bordes y a las demás, las flechas la mueven píxel a píxel.', '#ovl-preview'], ['Clicca un elemento sulla tela: a destra si apre «Proprietà», e lì si veste — colori, carattere, forma, dimensione, rotazione.', 'Click an element on the canvas: «Properties» opens on the right, and there it gets dressed — colors, font, shape, size, rotation.', 'Haz clic en un elemento del lienzo: a la derecha se abre «Propiedades», y ahí se viste — colores, fuente, forma, tamaño, rotación.', '#ovl-tela'], ['Copia il link qui sopra e mettilo in OBS come sorgente Browser, 1920×1080. Ogni overlay ha il suo.', 'Copy the link above and put it in OBS as a Browser source, 1920×1080. Each overlay has its own.', 'Copia el enlace de arriba y ponlo en OBS como fuente Navegador, 1920×1080. Cada overlay tiene el suyo.', '#inp-overlay-url'], ['Per le sere diverse dalle altre c\'è l\'occasione: un\'aggiunta sopra l\'overlay che hai già. La accendi e compare, la spegni e torna tutto com\'era.', 'For the nights that are not like the others there is the occasion: an add-on over the overlay you already have. Turn it on and it shows up, turn it off and everything is back as it was.', 'Para las noches que no son como las demás está la ocasión: un añadido sobre el overlay que ya tienes. La enciendes y aparece, la apagas y todo vuelve como estaba.', '#ovl-occ-quale']] },
   emote: { serve: ['Gestire a 360° le emote 7TV del tuo canale — aggiungerle, toglierle e rinominarle — direttamente dal bot. Le emote 7TV compaiono anche nella chat a schermo dell\'overlay.', 'Fully manage your channel’s 7TV emotes — add, remove and rename them — right from the bot. 7TV emotes also show up in the overlay’s on-screen chat.', 'Gestiona al 100% las emotes 7TV de tu canal — añadirlas, quitarlas y renombrarlas — directamente desde el bot. Las emotes 7TV también aparecen en el chat en pantalla del overlay.'],
@@ -21416,10 +21416,12 @@ function pannelloStudio() {
   if (stato?.studio && stato.studio.attivo === false) {
     return pannello('studio', `
       <div class="carta evidenziata">
-        <p><span class="badge viola">${L('Beta in preparazione', 'Beta in preparation', 'Beta en preparación')}</span></p>
+        <p><span class="badge viola">${stato.studio.betaAperta ? L('Beta aperta', 'Open beta', 'Beta abierta') : L('Beta in preparazione', 'Beta in preparation', 'Beta en preparación')}</span></p>
         <h2>${_hIco(ICO.onda)}${L('In diretta dal sito, senza OBS', 'Live from the site, without OBS', 'En directo desde el sitio, sin OBS')}</h2>
         <p>${L('Le scene dell’Overlay Studio, su Twitch, Kick e YouTube insieme. Il video lo comprime il tuo pc con la sua scheda video, il server lo passa soltanto alle piattaforme; se la rete traballa la diretta non cade, e resta in onda la tua voce con un’immagine scelta da te.', 'Your Overlay Studio scenes, on Twitch, Kick and YouTube at once. Your computer compresses the video with its graphics card and the server only passes it on to the platforms; if the network wobbles the stream stays up, with your voice and an image you chose.', 'Las escenas del Overlay Studio, en Twitch, Kick y YouTube a la vez. El vídeo lo comprime tu ordenador con su tarjeta gráfica y el servidor solo lo pasa a las plataformas; si la red falla el directo no se cae, y queda tu voz con una imagen elegida por ti.')}</p>
-        <p class="suggerimento">${L('Non si può ancora usare, e finché non si può preferiamo dirtelo invece di fartelo provare a metà. Il resto di SocialBot funziona come sempre.', 'It cannot be used yet, and until it can we would rather tell you than let you try half of it. The rest of SocialBot works as always.', 'Todavía no se puede usar, y hasta que se pueda preferimos decírtelo en vez de dejarte probar la mitad. El resto de SocialBot funciona como siempre.')}</p>
+        <p class="suggerimento">${stato.studio.betaAperta
+    ? L('È una beta: premi il tasto ed entri subito. Serve Chrome o Edge aggiornati su computer; se qualcosa non va, il resto di SocialBot funziona come sempre.', 'It is a beta: press the button and you are in right away. It needs an up-to-date Chrome or Edge on a computer; if something goes wrong, the rest of SocialBot works as always.', 'Es una beta: pulsa el botón y entras enseguida. Necesita Chrome o Edge actualizados en un ordenador; si algo falla, el resto de SocialBot funciona como siempre.')
+    : L('La beta in questo momento è chiusa: segnati e ti avvisiamo quando riapre. Il resto di SocialBot funziona come sempre.', 'The beta is closed right now: sign up and we will tell you when it reopens. The rest of SocialBot works as always.', 'La beta ahora está cerrada: apúntate y te avisaremos cuando reabra. El resto de SocialBot funciona como siempre.')}</p>
         <p class="spazio-sopra" id="studio-beta-riga"></p>
         <p class="suggerimento"><a href="/guide/diretta-dal-sito" target="_blank" rel="noopener">${L('Come sarà, per esteso', 'How it will work, in full', 'Cómo será, en detalle')}</a> · <a href="/guide/osify-sistema-per-lo-streaming" target="_blank" rel="noopener">${L('OSify, il sistema per lo streaming (pre-alpha)', 'OSify, the streaming operating system (pre-alpha)', 'OSify, el sistema para el streaming (pre-alpha)')}</a></p>
       </div>`);
@@ -21502,6 +21504,38 @@ function pannelloStudio() {
           <div class="studio-box" id="studio-prop-box" hidden>
             <div class="studio-box-tit">${_bIco(ICO.righello)}${L('Proprietà', 'Properties', 'Propiedades')}</div>
             <div id="studio-prop"></div>
+          </div>
+
+          <div class="studio-box" id="studio-dest-box">
+            <div class="studio-box-tit">${_bIco(ICO.onda)}${L('Dove va la diretta', 'Where the stream goes', 'Adónde va el directo')}</div>
+            <p class="suggerimento" id="studio-ripresa" hidden></p>
+            <p class="suggerimento" id="studio-supporto"></p>
+            <p class="suggerimento" id="studio-osify" hidden></p>
+            <div id="studio-dest"></div>
+            <details class="spazio-sopra" id="studio-dest-nuova">
+              <summary>${L('Aggiungi una destinazione', 'Add a destination', 'Añade un destino')}</summary>
+              <label class="campo" for="studio-dest-tipo">${L('Servizio', 'Service', 'Servicio')}</label>
+              <select id="studio-dest-tipo" class="campo-largo">
+                <option value="kick">Kick</option>
+                <option value="youtube">YouTube</option>
+                <option value="altro">${L('Altro servizio RTMP', 'Other RTMP service', 'Otro servicio RTMP')}</option>
+              </select>
+              <label class="campo spazio-sopra" for="studio-dest-server">${L('Indirizzo del server', 'Server address', 'Dirección del servidor')}</label>
+              <input id="studio-dest-server" class="campo-largo" maxlength="300" autocomplete="off" placeholder="rtmps://…">
+              <label class="campo spazio-sopra" for="studio-dest-chiave">${L('Chiave di trasmissione', 'Stream key', 'Clave de transmisión')}</label>
+              <input id="studio-dest-chiave" class="campo-largo" type="password" maxlength="300" autocomplete="off">
+              <p class="suggerimento" id="studio-dest-aiuto"></p>
+              <button type="button" class="btn secondario mini spazio-sopra" id="studio-dest-salva">${L('Salva la destinazione', 'Save the destination', 'Guardar el destino')}</button>
+            </details>
+            <label class="campo spazio-sopra" for="studio-riserva-testo">${L('Scritta se la rete cade', 'Text if the network drops', 'Texto si la red se cae')}</label>
+            <input id="studio-riserva-testo" class="campo-largo" maxlength="40" value="${esc(L('Torno subito', 'Be right back', 'Vuelvo enseguida'))}">
+            <label class="campo spazio-sopra" for="studio-assenza">${L('Chiudi la diretta se non torno entro', 'End the stream if I am not back within', 'Cierra el directo si no vuelvo en')}</label>
+            <select id="studio-assenza" class="campo-largo">
+              <option value="5">5 ${L('minuti', 'minutes', 'minutos')}</option>
+              <option value="10" selected>10 ${L('minuti', 'minutes', 'minutos')}</option>
+              <option value="20">20 ${L('minuti', 'minutes', 'minutos')}</option>
+              <option value="30">30 ${L('minuti', 'minutes', 'minutos')}</option>
+            </select>
           </div>
 
           <div class="studio-box">
@@ -21880,7 +21914,33 @@ async function studioPopolaDispositivi() {
     };
     riempi(document.getElementById('studio-cam-sel'), STUDIO.dev.cams, STUDIO.dev.camId, L('Fotocamera predefinita', 'Default camera', 'Cámara predeterminada'));
     riempi(document.getElementById('studio-mic-sel'), STUDIO.dev.mics, STUDIO.dev.micId, L('Microfono predefinito', 'Default microphone', 'Micrófono predeterminado'));
+    STUDIO.dev.osify = STUDIO.dev.mics.filter((d) => /osify/i.test(d.label || '') && !/stream.?mix|master/i.test(d.label || ''));
   } catch (e) {  }
+  studioMostraOsify();
+}
+
+function studioMostraOsify() {
+  const el = document.getElementById('studio-osify');
+  if (!el) return;
+  const trovati = STUDIO.dev.osify || [];
+  el.hidden = !trovati.length;
+  if (!trovati.length) return;
+  const collegati = (STUDIO.cap.osify || []).length;
+  el.innerHTML = collegati
+    ? `<span class="badge verde">OSify</span> ${L('I canali di OSify sono nel mixer: gioco e chat vocale in «Desktop», musica in «Video».', 'The OSify channels are in the mixer: game and voice chat in “Desktop”, music in “Video”.', 'Los canales de OSify están en el mezclador: juego y chat de voz en «Escritorio», música en «Vídeo».')}`
+    : `<span class="badge viola">OSify</span> ${L('Riconosciuto: l’audio del gioco, della chat vocale e della musica può arrivare dai suoi canali, anche dove il browser da solo non lo prende.', 'Detected: game, voice chat and music audio can come from its channels, even where the browser alone cannot capture it.', 'Reconocido: el audio del juego, del chat de voz y de la música puede llegar de sus canales, incluso donde el navegador solo no lo captura.')} <button type="button" class="btn secondario mini" id="studio-osify-usa">${L('Usa i canali di OSify', 'Use the OSify channels', 'Usar los canales de OSify')}</button>`;
+}
+
+async function studioOsifyUsa() {
+  STUDIO.cap.osify = STUDIO.cap.osify || [];
+  for (const d of (STUDIO.dev.osify || [])) {
+    if (STUDIO.cap.osify.some((o) => o.id === d.deviceId)) continue;
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: { deviceId: { exact: d.deviceId }, echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
+    STUDIO.cap.osify.push({ id: d.deviceId, ruolo: /music|musica/i.test(d.label) ? 'media' : 'desk', stream, nodo: null });
+  }
+  collegaAudioCatture();
+  studioMostraOsify();
+  toast(L('Canali di OSify collegati al mixer.', 'OSify channels connected to the mixer.', 'Canales de OSify conectados al mezclador.'));
 }
 
 function studioApplicaQualita(key) {
@@ -22012,7 +22072,8 @@ function studioLayout(preset) {
 
 function studioAudioInit() {
   const AC = window.AudioContext || window.webkitAudioContext;
-  const ac = new AC();
+  const ac = (() => { try { return new AC({ sampleRate: 48000 }); } catch (e) { return new AC(); } })();
+  for (const o of (STUDIO.cap.osify || [])) o.nodo = null;
   const dest = ac.createMediaStreamDestination();
   const gMaster = ac.createGain();
   const gMic = ac.createGain(), gDesk = ac.createGain(), gSfx = ac.createGain(), gMedia = ac.createGain();
@@ -22030,6 +22091,10 @@ function collegaAudioCatture() {
   const A = STUDIO.audio; if (!A) return;
   try { if (!A.micNode && STUDIO.cap.micStream && STUDIO.cap.micStream.getAudioTracks().length) { A.micNode = A.ac.createMediaStreamSource(STUDIO.cap.micStream); A.micNode.connect(A.gMic); } } catch (e) {  }
   try { if (!A.deskNode && STUDIO.cap.scrStream && STUDIO.cap.scrStream.getAudioTracks().length) { A.deskNode = A.ac.createMediaStreamSource(new MediaStream(STUDIO.cap.scrStream.getAudioTracks())); A.deskNode.connect(A.gDesk); } } catch (e) {  }
+  for (const o of (STUDIO.cap.osify || [])) {
+    if (o.nodo) continue;
+    try { o.nodo = A.ac.createMediaStreamSource(o.stream); o.nodo.connect(o.ruolo === 'media' ? A.gMedia : A.gDesk); } catch (e) {  }
+  }
 }
 
 function collegaAudioMedia() {
@@ -22073,64 +22138,237 @@ function avviaVU() {
   STUDIO.vuRaf = requestAnimationFrame(tick);
 }
 
+const DEST_AIUTO = {
+  kick: () => L('Su Kick: Creator Dashboard → Settings → Stream URL e Stream Key. Incolla qui l’indirizzo (comincia con rtmps://) e la chiave.', 'On Kick: Creator Dashboard → Settings → Stream URL and Stream Key. Paste the address (it starts with rtmps://) and the key here.', 'En Kick: Creator Dashboard → Settings → Stream URL y Stream Key. Pega aquí la dirección (empieza por rtmps://) y la clave.'),
+  youtube: () => L('Su YouTube: YouTube Studio → Vai in diretta → Streaming. L’indirizzo è già scritto; incolla la chiave dello stream.', 'On YouTube: YouTube Studio → Go live → Stream. The address is already filled in; paste the stream key.', 'En YouTube: YouTube Studio → Emitir en directo → Emisión. La dirección ya está escrita; pega la clave de emisión.'),
+  altro: () => L('L’indirizzo RTMP o RTMPS e la chiave te li dà il servizio.', 'The service gives you the RTMP or RTMPS address and the key.', 'El servicio te da la dirección RTMP o RTMPS y la clave.'),
+};
+const DEST_SERVER = { youtube: 'rtmp://a.rtmp.youtube.com/live2' };
+const _destChiave = () => 'andrybot-diretta-dest:' + (stato?.user?.login || 'anon');
+
+function studioDestScelte() {
+  if (STUDIO.destScelte) return STUDIO.destScelte;
+  let v = null;
+  try { v = JSON.parse(localStorage.getItem(_destChiave()) || 'null'); } catch (e) {  }
+  STUDIO.destScelte = new Set(Array.isArray(v) ? v : ['twitch']);
+  return STUDIO.destScelte;
+}
+
+async function caricaDiretta() {
+  const d = await api('/api/diretta');
+  STUDIO.dir = d;
+  studioRenderDestinazioni();
+  studioRenderRipresa();
+  studioControllaSupporto();
+}
+
+function studioRenderRipresa() {
+  const el = document.getElementById('studio-ripresa');
+  if (!el) return;
+  const s = STUDIO.dir?.sessione;
+  el.hidden = !(s?.live && !STUDIO.live);
+  if (el.hidden) { el.innerHTML = ''; return; }
+  const dove = esc((s.destinazioni || []).join(', '));
+  el.innerHTML = `<span class="badge viola">${L('In onda', 'On air', 'En el aire')}</span> ` + (s.inRiserva?.video || s.inRiserva?.audio
+    ? L(`La tua diretta su ${dove} è ancora in onda, con la scritta di riserva. «Vai live» la riprende senza interruzioni sul canale, se non cambi qualità.`, `Your stream on ${dove} is still on air, with the fallback text. «Go live» resumes it with no break on the channel, if you keep the same quality.`, `Tu directo en ${dove} sigue en el aire, con el texto de reserva. «Emitir» lo reanuda sin cortes en el canal, si no cambias la calidad.`)
+    : L(`La tua diretta su ${dove} sta andando da un’altra finestra. «Vai live» la porta qui.`, `Your stream on ${dove} is running from another window. «Go live» brings it here.`, `Tu directo en ${dove} va desde otra ventana. «Emitir» lo trae aquí.`))
+    + ` <button type="button" class="btn secondario mini" id="studio-ripresa-chiudi">${L('Chiudila', 'End it', 'Ciérralo')}</button>`;
+}
+
+async function studioChiudiRipresa() {
+  if (!(await chiediSe({ titolo: L('Chiudo la diretta che è in onda?', 'End the stream that is on air?', '¿Cierro el directo que está en el aire?'), testo: L('Sulle piattaforme la diretta finisce adesso.', 'On the platforms the stream ends now.', 'En las plataformas el directo termina ahora.'), si: L('Chiudila', 'End it', 'Ciérralo'), pericolo: true }))) return;
+  await api('/api/diretta/fine', { method: 'POST', body: {} });
+  await caricaDiretta();
+  studioLog(L('Diretta chiusa.', 'Stream ended.', 'Directo cerrado.'));
+}
+
+function studioRenderDestinazioni() {
+  const box = document.getElementById('studio-dest');
+  const d = STUDIO.dir;
+  if (!box || !d) return;
+  const scelte = studioDestScelte();
+  const voce = (id, nome, extra = '') => `<label class="studio-dest-voce"><input type="checkbox" data-dest="${esc(id)}"${scelte.has(id) ? ' checked' : ''}${STUDIO.live ? ' disabled' : ''}> ${esc(nome)}${extra}</label>`;
+  const twitch = d.twitch?.su
+    ? (d.twitch.keyOk ? voce('twitch', 'Twitch') : `<p class="suggerimento">${_bIco(ICO.lucchetto)}${L('Per Twitch serve il permesso della chiave di trasmissione.', 'Twitch needs the stream key permission.', 'Twitch necesita el permiso de la clave de transmisión.')} <a class="btn secondario mini" href="/auth/permessi">${L('Concedi il permesso', 'Grant the permission', 'Conceder el permiso')}</a></p>`)
+    : '';
+  const altre = (d.destinazioni || []).map((x) => voce(x.id, x.nome, ` <span class="tenue">${esc(x.server.replace(/^rtmps?:\/\//, ''))}</span> <button type="button" class="btn secondario mini" data-dest-togli="${esc(x.id)}"${STUDIO.live ? ' disabled' : ''}>${L('Togli', 'Remove', 'Quitar')}</button>`)).join('');
+  box.innerHTML = twitch + altre || `<p class="suggerimento">${L('Aggiungi qui sotto dove vuoi andare in diretta.', 'Add below where you want to go live.', 'Añade abajo dónde quieres emitir.')}</p>`;
+  const tipo = document.getElementById('studio-dest-tipo');
+  const aiuto = document.getElementById('studio-dest-aiuto');
+  if (tipo && aiuto) aiuto.textContent = DEST_AIUTO[tipo.value]();
+}
+
+async function studioControllaSupporto() {
+  const el = document.getElementById('studio-supporto');
+  if (!el) return null;
+  const q = STUDIO_QUAL[STUDIO.qual] || STUDIO_QUAL['720p30'];
+  let sup;
+  try { sup = await (await import('/js/diretta-codifica.js')).supporto({ larghezza: q.w, altezza: q.h, fps: q.fps, kbps: Math.round(q.vbps / 1000) }); }
+  catch (e) { sup = { ok: false, motivo: 'webcodecs' }; }
+  STUDIO.supporto = sup;
+  if (!sup.ok) {
+    el.innerHTML = `<span class="badge rosso">${L('Non pronto', 'Not ready', 'No listo')}</span> ` + ({
+      webcodecs: L('Questo browser non sa codificare la diretta da sé. Usa Chrome o Edge aggiornati.', 'This browser cannot encode the stream on its own. Use an up-to-date Chrome or Edge.', 'Este navegador no sabe codificar el directo por sí solo. Usa Chrome o Edge actualizados.'),
+      h264: L('Questo browser non sa codificare il video in H.264, l’unico che Twitch e Kick accettano. Usa Chrome o Edge aggiornati.', 'This browser cannot encode video in H.264, the only format Twitch and Kick accept. Use an up-to-date Chrome or Edge.', 'Este navegador no sabe codificar vídeo en H.264, el único que aceptan Twitch y Kick. Usa Chrome o Edge actualizados.'),
+      audio: L('Questo browser non sa codificare l’audio. Usa Chrome o Edge aggiornati.', 'This browser cannot encode audio. Use an up-to-date Chrome or Edge.', 'Este navegador no sabe codificar el audio. Usa Chrome o Edge actualizados.'),
+    }[sup.motivo] || '');
+    return sup;
+  }
+  el.innerHTML = `<span class="badge verde">${L('Pronto', 'Ready', 'Listo')}</span> ` + (sup.video.hardware
+    ? L('Il video lo comprime la scheda video del tuo dispositivo.', 'Your device’s graphics card compresses the video.', 'El vídeo lo comprime la tarjeta gráfica de tu dispositivo.')
+    : L('Il video lo comprime il tuo dispositivo (senza scheda video: può scaldare).', 'Your device compresses the video (without the graphics card: it may run hot).', 'El vídeo lo comprime tu dispositivo (sin tarjeta gráfica: puede calentarse).'))
+    + (sup.audio.nome === 'opus' ? ' ' + L('L’audio esce in Opus e il server lo passa in AAC.', 'Audio comes out as Opus and the server turns it into AAC.', 'El audio sale en Opus y el servidor lo pasa a AAC.') : '');
+  return sup;
+}
+
+async function studioSalvaDestinazione() {
+  const tipo = document.getElementById('studio-dest-tipo')?.value || 'altro';
+  const server = (document.getElementById('studio-dest-server')?.value || '').trim() || DEST_SERVER[tipo] || '';
+  const chiave = (document.getElementById('studio-dest-chiave')?.value || '').trim();
+  const nome = { kick: 'Kick', youtube: 'YouTube' }[tipo] || L('RTMP', 'RTMP', 'RTMP');
+  const d = await api('/api/diretta/destinazioni', { method: 'POST', body: { nome, server, chiave } });
+  const prima = new Set((STUDIO.dir?.destinazioni || []).map((x) => x.id));
+  STUDIO.dir = d;
+  const nuova = (d.destinazioni || []).find((x) => !prima.has(x.id));
+  if (nuova) { studioDestScelte().add(nuova.id); try { localStorage.setItem(_destChiave(), JSON.stringify([...studioDestScelte()])); } catch (e) {  } }
+  const ch = document.getElementById('studio-dest-chiave'); if (ch) ch.value = '';
+  const sv = document.getElementById('studio-dest-server'); if (sv) sv.value = '';
+  document.getElementById('studio-dest-nuova')?.removeAttribute('open');
+  studioRenderDestinazioni();
+  toast(L('Destinazione salvata. La chiave resta cifrata sul server.', 'Destination saved. The key stays encrypted on the server.', 'Destino guardado. La clave queda cifrada en el servidor.'));
+}
+
+async function studioTogliDestinazione(id) {
+  STUDIO.dir = await api(`/api/diretta/destinazioni/${encodeURIComponent(id)}/togli`, { method: 'POST' });
+  studioDestScelte().delete(id);
+  try { localStorage.setItem(_destChiave(), JSON.stringify([...studioDestScelte()])); } catch (e) {  }
+  studioRenderDestinazioni();
+}
+
+function studioRiservaCanvas(q, testo) {
+  const c = document.createElement('canvas');
+  c.width = q.w; c.height = q.h;
+  const x = c.getContext('2d');
+  try { x.drawImage(STUDIO.canvas, 0, 0, q.w, q.h); } catch (e) {  }
+  x.fillStyle = 'rgba(8, 8, 12, 0.72)'; x.fillRect(0, 0, q.w, q.h);
+  x.fillStyle = '#ffffff';
+  x.textAlign = 'center'; x.textBaseline = 'middle';
+  x.font = `600 ${Math.round(q.h / 11)}px system-ui, sans-serif`;
+  x.fillText(String(testo || '').slice(0, 40), q.w / 2, q.h / 2);
+  return c;
+}
+
+function studioDisegnaUnaVolta() {
+  const c = STUDIO.ctx; if (!c) return;
+  const cw = STUDIO.canvas.width, ch = STUDIO.canvas.height;
+  c.setTransform(cw / 1280, 0, 0, ch / 720, 0, 0);
+  c.fillStyle = '#0b0b0f'; c.fillRect(0, 0, 1280, 720);
+  const s = studioSceneAttiva();
+  if (s) for (const f of s.fonti) { if (f.visibile) disegnaFonte(c, f, 1280, 720); }
+}
+
 async function avviaLive() {
-  if (STUDIO.live) return;
+  if (STUDIO.live || STUDIO.avvio) return;
   if (stato?.ruolo === 'moderatore') { toast(L('Solo il proprietario del canale può andare in diretta.', 'Only the channel owner can go live.', 'Solo el propietario del canal puede emitir.'), 'errore'); return; }
   const s = studioSceneAttiva();
   if (!s || !s.fonti.some((f) => f.visibile)) { toast(L('Aggiungi almeno una fonte visibile alla scena.', 'Add at least one visible source to the scene.', 'Añade al menos una fuente visible a la escena.'), 'errore'); return; }
-  studioLog(L('Avvio…', 'Starting…', 'Iniciando…'));
-  const q = STUDIO_QUAL[STUDIO.qual] || STUDIO_QUAL['720p30'];
-  studioApplicaQualita(STUDIO.qual);
-  try { await api('/api/studio/start', { method: 'POST', body: { quality: STUDIO.qual } }); }
-  catch (e) { studioLog('' + e.message); toast(L('Non riuscito: ', 'Failed: ', 'No se pudo: ') + e.message, 'errore'); return; }
-  avviaLoopStudio();
-  const vstream = STUDIO.canvas.captureStream(q.fps);
-  const astream = studioAudioInit();
-  const combined = new MediaStream([...vstream.getVideoTracks(), ...astream.getAudioTracks()]);
-  const mimeOk = (t) => { try { return MediaRecorder.isTypeSupported(t); } catch (e) { return false; } };
-  const mime = mimeOk('video/webm;codecs=vp8,opus') ? 'video/webm;codecs=vp8,opus' : (mimeOk('video/webm') ? 'video/webm' : '');
-  let rec;
-  try { rec = new MediaRecorder(combined, mime ? { mimeType: mime, videoBitsPerSecond: q.vbps, audioBitsPerSecond: 160000 } : undefined); }
-  catch (e) { studioLog(L('registrazione non supportata dal browser', 'recording not supported by the browser', 'grabación no soportada por el navegador')); toast(L('Il browser non supporta la registrazione video.', 'The browser doesn’t support video recording.', 'El navegador no soporta la grabación de vídeo.'), 'errore'); await api('/api/studio/stop', { method: 'POST' }).catch(() => {}); return; }
-  rec.ondataavailable = (e) => { if (e.data && e.data.size) { STUDIO.coda.push(e.data); drenaCodaStudio(); } };
-  rec.start(1000);
-  STUDIO.rec = rec; STUDIO.live = true; STUDIO.startedAt = Date.now();
-  studioRenderIO();
-  document.getElementById('studio-live').hidden = true;
-  document.getElementById('studio-ferma').hidden = false;
-  const badge = document.getElementById('studio-badge-live'); if (badge) badge.hidden = false;
-  STUDIO.timer = setInterval(aggiornaTimerStudio, 1000);
-  studioLog(L('In diretta su Twitch!', 'Live on Twitch!', '¡En directo en Twitch!'));
-}
-
-async function drenaCodaStudio() {
-  if (STUDIO.inviando) return;
-  STUDIO.inviando = true;
-  while (STUDIO.coda.length && STUDIO.live) {
-    const blob = STUDIO.coda.shift();
+  const scelte = [...studioDestScelte()].filter((id) => id === 'twitch' ? STUDIO.dir?.twitch?.keyOk : (STUDIO.dir?.destinazioni || []).some((x) => x.id === id));
+  if (!scelte.length) { toast(L('Scegli dove va la diretta.', 'Choose where the stream goes.', 'Elige adónde va el directo.'), 'errore'); return; }
+  STUDIO.avvio = true;
+  try {
+    studioApplicaQualita(STUDIO.qual);
+    const q = STUDIO_QUAL[STUDIO.qual] || STUDIO_QUAL['720p30'];
+    const kbps = Math.round(q.vbps / 1000);
+    const sup = await studioControllaSupporto();
+    if (!sup || !sup.ok) { toast(L('Questo browser non può andare in diretta da sé: guarda la riga in «Dove va la diretta».', 'This browser cannot go live on its own: see the line in “Where the stream goes”.', 'Este navegador no puede emitir por sí solo: mira la línea en «Adónde va el directo».'), 'errore'); return; }
+    studioLog(L('Preparo la diretta…', 'Preparing the stream…', 'Preparando el directo…'));
+    avviaLoopStudio();
+    studioAudioInit();
+    const D = await import('/js/diretta-codifica.js');
+    const testo = document.getElementById('studio-riserva-testo')?.value || L('Torno subito', 'Be right back', 'Vuelvo enseguida');
+    const sped = D.creaSpedizione({
+      quandoFinisce: (dati) => { if (STUDIO.live) fermaLive({ dalServer: dati }); },
+      quandoRitenta: () => studioLog(L('La rete è lenta: riprovo. Se dura, sul canale va la tua scritta di riserva.', 'The network is slow: retrying. If it lasts, your fallback text goes on the channel.', 'La red va lenta: reintento. Si dura, en el canal sale tu texto de reserva.')),
+    });
+    let cod, turno = '', ripresa = false;
     try {
-      const buf = await blob.arrayBuffer();
-      await fetch('/api/studio/chunk', { method: 'POST', headers: { 'Content-Type': 'application/octet-stream' }, body: buf });
-    } catch (e) {  }
-  }
-  STUDIO.inviando = false;
+      cod = await D.creaCodifica({
+        supporto: sup, canvas: STUDIO.canvas, contestoAudio: STUDIO.audio.ac, nodoAudio: STUDIO.audio.gMaster, fps: q.fps, kbps,
+        riserva: studioRiservaCanvas(q, testo), spedizione: sped, disegnaSeNascosto: studioDisegnaUnaVolta,
+        quandoCambia: (x) => studioLog(x.soloAudio
+          ? L('Rete molto lenta: va solo la tua voce, con la scritta di riserva.', 'Very slow network: only your voice goes out, with the fallback text.', 'Red muy lenta: solo sale tu voz, con el texto de reserva.')
+          : L(`In diretta · qualità adattata a ${(x.kbps / 1000).toFixed(1)} Mbps`, `Live · quality adjusted to ${(x.kbps / 1000).toFixed(1)} Mbps`, `En directo · calidad ajustada a ${(x.kbps / 1000).toFixed(1)} Mbps`)),
+        quandoErrore: () => studioLog(L('Il codificatore del dispositivo si è fermato.', 'The device encoder stopped.', 'El codificador del dispositivo se ha parado.')),
+      });
+    } catch (e) { sped.ferma(); throw e; }
+    try {
+      const r = await api('/api/diretta/avvio', { method: 'POST', body: { destinazioni: scelte, video: cod.config.video, audio: cod.config.audio, kbps, assenzaMin: Number(document.getElementById('studio-assenza')?.value) || 10, riprendi: true } });
+      turno = r.turno; ripresa = r.ripresa;
+      sped.usaTurno(turno);
+    } catch (e) {
+      await cod.ferma(); sped.ferma();
+      studioLog(e.message);
+      toast(L('Non partita: ', 'Did not start: ', 'No ha empezado: ') + e.message, 'errore');
+      return;
+    }
+    const rr = await fetch(`/api/diretta/riserva?t=${encodeURIComponent(turno)}`, { method: 'POST', headers: { 'Content-Type': 'application/octet-stream' }, body: cod.riserva, credentials: 'same-origin' }).catch(() => null);
+    if (!rr || !rr.ok) studioLog(L('Diretta partita, ma la scritta di riserva non è arrivata: se la rete cade, la diretta può interrompersi.', 'Stream started, but the fallback text did not arrive: if the network drops, the stream may stop.', 'Directo iniciado, pero el texto de reserva no llegó: si la red se cae, el directo puede interrumpirse.'));
+    await cod.parti();
+    STUDIO.diretta = { cod, sped, turno };
+    STUDIO.live = true; STUDIO.startedAt = (ripresa && STUDIO.dir?.sessione?.da) || Date.now();
+    studioRenderRipresa();
+    studioRenderIO();
+    studioRenderDestinazioni();
+    document.getElementById('studio-live').hidden = true;
+    document.getElementById('studio-ferma').hidden = false;
+    const badge = document.getElementById('studio-badge-live'); if (badge) badge.hidden = false;
+    STUDIO.timer = setInterval(aggiornaTimerStudio, 1000);
+    STUDIO.giroStato = setInterval(studioControllaStato, 3000);
+    studioLog(ripresa ? L('Ripresa: sei di nuovo in diretta, senza interruzioni sul canale.', 'Resumed: you are live again, with no break on the channel.', 'Reanudado: vuelves a estar en directo, sin cortes en el canal.') : L('In diretta!', 'Live!', '¡En directo!'));
+  } finally { STUDIO.avvio = false; }
 }
 
-async function fermaLive() {
+async function studioControllaStato() {
+  if (!STUDIO.live) return;
+  let st;
+  try { st = await api('/api/diretta/stato'); } catch (e) { return; }
+  if (!st.live) { fermaLive({ dalServer: st.ultimaFine }); return; }
+  const giu = st.inRiserva?.video || st.inRiserva?.audio;
+  const el = document.getElementById('studio-stato');
+  if (el && !giu) el.textContent = L(`In diretta su ${st.destinazioni.join(', ')} · ${(st.kbpsVeri / 1000).toFixed(1)} Mbps`, `Live on ${st.destinazioni.join(', ')} · ${(st.kbpsVeri / 1000).toFixed(1)} Mbps`, `En directo en ${st.destinazioni.join(', ')} · ${(st.kbpsVeri / 1000).toFixed(1)} Mbps`);
+  else if (el) el.textContent = L('Il segnale non arriva: sul canale c’è la tua scritta di riserva.', 'The signal is not arriving: your fallback text is on the channel.', 'La señal no llega: en el canal está tu texto de reserva.');
+}
+
+const FINE_DIRETTA = {
+  assente: () => L('La diretta si è chiusa: il segnale non è tornato in tempo.', 'The stream ended: the signal did not come back in time.', 'El directo se cerró: la señal no volvió a tiempo.'),
+  troppo: () => L('La diretta è stata fermata: stava mandando più di quanto dichiarato.', 'The stream was stopped: it was sending more than declared.', 'El directo se paró: enviaba más de lo declarado.'),
+  'uscita-lenta': () => L('La diretta si è chiusa: le piattaforme non riuscivano a ricevere.', 'The stream ended: the platforms could not keep up.', 'El directo se cerró: las plataformas no daban abasto.'),
+  uscita: () => L('La diretta si è chiusa dal lato delle piattaforme.', 'The stream was closed on the platforms’ side.', 'El directo se cerró del lado de las plataformas.'),
+  spegnimento: () => L('La diretta si è chiusa: il server si sta riavviando.', 'The stream ended: the server is restarting.', 'El directo se cerró: el servidor se está reiniciando.'),
+  altrove: () => L('La diretta è passata a un’altra finestra: questa si ferma qui, e sul canale continua da lì.', 'The stream moved to another window: this one stops here, and the channel carries on from there.', 'El directo pasó a otra ventana: esta se para aquí, y el canal sigue desde allí.'),
+  sostituita: () => L('La diretta di prima si è chiusa per far posto a quella nuova.', 'The previous stream ended to make room for the new one.', 'El directo anterior se cerró para dejar sitio al nuevo.'),
+};
+
+async function fermaLive({ dalServer = null } = {}) {
   if (!STUDIO.live) return;
   STUDIO.live = false;
-  try { STUDIO.rec && STUDIO.rec.stop(); } catch (e) {  }
-  clearInterval(STUDIO.timer);
-  try { await api('/api/studio/stop', { method: 'POST' }); } catch (e) {  }
+  clearInterval(STUDIO.timer); clearInterval(STUDIO.giroStato);
+  const d = STUDIO.diretta; STUDIO.diretta = null;
+  try { d && await d.cod.ferma(); } catch (e) {  }
+  try { d && d.sped.ferma(); } catch (e) {  }
+  if (!dalServer) { try { await api('/api/diretta/fine', { method: 'POST', body: { turno: d?.turno } }); } catch (e) {  } }
   try { STUDIO.audio && STUDIO.audio.ac.close(); } catch (e) {  }
-  STUDIO.audio = null; STUDIO.coda = []; STUDIO.inviando = false;
-
+  STUDIO.audio = null;
   for (const id in STUDIO.media) { const mm = STUDIO.media[id]; if (mm && mm.tipo === 'video' && mm.el) { try { mm.el.muted = true; } catch (e) {  } } }
   document.getElementById('studio-live').hidden = false;
   document.getElementById('studio-ferma').hidden = true;
   const badge = document.getElementById('studio-badge-live'); if (badge) badge.hidden = true;
   studioRenderIO();
-  studioLog(L('Diretta terminata.', 'Stream ended.', 'Directo finalizado.'));
+  studioRenderDestinazioni();
+  caricaDiretta().catch(() => {});
+  const perche = dalServer && (FINE_DIRETTA[dalServer.motivo] || (dalServer.errore ? () => dalServer.errore : null));
+  studioLog(perche ? perche() : L('Diretta terminata.', 'Stream ended.', 'Directo finalizado.'));
+  if (perche) toast(perche(), 'errore');
 }
 
 function aggiornaTimerStudio() {
@@ -22144,12 +22382,17 @@ function caricaStudioBeta() {
   if (!riga) return;
   const dentro = !!stato?.studio?.beta;
   const nota = dentro ? `<span class="badge verde">${L('Ci sei: quando la beta apre te lo diciamo qui', 'You are in: we will tell you here when the beta opens', 'Estás dentro: cuando abra la beta te lo diremos aquí')}</span> ` : '';
-  riga.innerHTML = `${nota}<button class="btn${dentro ? ' secondario mini' : ''}" id="btn-studio-beta">${dentro ? L('Toglimi', 'Take me off', 'Quítame') : L('Voglio provarlo per primo', 'I want to try it first', 'Quiero probarlo el primero')}</button>`;
+  riga.innerHTML = `${nota}<button class="btn${dentro ? ' secondario mini' : ''}" id="btn-studio-beta">${dentro ? L('Toglimi', 'Take me off', 'Quítame') : (stato?.studio?.betaAperta ? L('Voglio provarlo', 'I want to try it', 'Quiero probarlo') : L('Voglio provarlo per primo', 'I want to try it first', 'Quiero probarlo el primero'))}</button>`;
   document.getElementById('btn-studio-beta')?.addEventListener('click', async (ev) => {
     ev.currentTarget.disabled = true;
     try {
       const r = await api('/api/streamer/studio-beta', { method: 'POST', body: { voglio: !dentro } });
       if (stato?.studio) stato.studio.beta = r.voglio;
+      if (r.voglio && stato?.studio?.betaAperta) {
+        toast(L('Sei nella beta: lo Studio è aperto.', 'You are in the beta: the Studio is open.', 'Estás en la beta: el Estudio está abierto.'));
+        try { stato = await api('/api/me'); await ridisegna(); } catch (e) {  }
+        return;
+      }
       toast(r.voglio ? L('Segnato: sarai fra i primi a provarlo.', 'Noted: you will be among the first to try it.', 'Anotado: estarás entre los primeros en probarlo.') : L('Tolto: non ti avvisiamo più.', 'Removed: we will not notify you.', 'Quitado: ya no te avisaremos.'));
     } catch (e) { toast(e.message, 'errore'); }
     caricaStudioBeta();
@@ -22171,21 +22414,7 @@ async function caricaStudio() {
   if (btnLive) { btnLive.disabled = modStudio; if (modStudio) btnLive.title = L('Solo il proprietario del canale può andare in diretta.', 'Only the channel owner can go live.', 'Solo el propietario del canal puede emitir.'); }
   if (modStudio) studioLog(L('Come moderatore puoi preparare scene, fonti e overlay, ma la diretta la avvia solo il proprietario del canale.', 'As a moderator you can set up scenes, sources and overlays, but only the channel owner can start the stream.', 'Como moderador puedes preparar escenas, fuentes y overlays, pero solo el propietario del canal puede iniciar el directo.'));
   if (DEMO) { if (!modStudio) studioLog(L('Anteprima demo: qui crei scene, aggiungi fonti e vai in diretta senza OBS.', 'Demo preview: here you create scenes, add sources and go live from the browser.', 'Vista previa demo: aquí creas escenas, añades fuentes y emites sin OBS.')); return; }
-  try {
-    const d = await api('/api/studio');
-    const banner = document.getElementById('studio-permessi-banner');
-    if (banner) {
-      if (!d.keyOk) {
-        banner.hidden = false;
-        banner.innerHTML = '<p>' + _bIco(ICO.lucchetto) + 'Per andare live dallo Studio serve il permesso <strong>stream key</strong> (non ancora concesso).</p><p class="spazio-sopra"><a class="btn" href="/auth/permessi">Concedi i permessi</a></p>';
-      } else banner.hidden = true;
-    }
-
-    if (Array.isArray(d.qualita) && d.qualita.length) {
-      const qs = document.getElementById('studio-qual-sel');
-      if (qs) { qs.innerHTML = d.qualita.map((q) => `<option value="${esc(q.id)}"${q.id === STUDIO.qual ? ' selected' : ''}>${esc(q.etichetta)}</option>`).join(''); }
-    }
-  } catch (e) {  }
+  try { await caricaDiretta(); } catch (e) {  }
 
   try { await studioPopolaDispositivi(); } catch (e) {  }
   try { await studioCaricaEmote(); } catch (e) {  }
@@ -22570,6 +22799,18 @@ async function onStudioClick(ev) {
   const lib = t.closest('[data-libero]'); if (lib) { if (lib.dataset.libero === 'toggle') return studioToggleLibero(); if (lib.dataset.libero === 'reset') return studioResetLibero(); return; }
   if (t.closest('#studio-live')) return conErrore(() => avviaLive());
   if (t.closest('#studio-ferma')) return conErrore(() => fermaLive());
+  if (t.closest('#studio-ripresa-chiudi')) return conErrore(() => studioChiudiRipresa());
+  if (t.closest('#studio-dest-salva')) return conErrore(() => studioSalvaDestinazione());
+  if (t.closest('#studio-osify-usa')) return conErrore(() => studioOsifyUsa());
+  const togli = t.closest('[data-dest-togli]'); if (togli) { ev.preventDefault(); return conErrore(() => studioTogliDestinazione(togli.dataset.destTogli)); }
+  const scelta = t.closest('input[data-dest]');
+  if (scelta) {
+    const insieme = studioDestScelte();
+    if (scelta.checked) insieme.add(scelta.dataset.dest); else insieme.delete(scelta.dataset.dest);
+    try { localStorage.setItem(_destChiave(), JSON.stringify([...insieme])); } catch (e) {  }
+    return;
+  }
+  if (t.closest('#studio-dest-tipo')) { const a = document.getElementById('studio-dest-aiuto'); const tp = document.getElementById('studio-dest-tipo'); if (a && tp) a.textContent = DEST_AIUTO[tp.value](); return; }
 }
 
 function onStudioInput(ev) {

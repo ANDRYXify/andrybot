@@ -839,6 +839,16 @@ CREATE TABLE IF NOT EXISTS conti_satispay (    -- il conto Satispay Business del
   verificato_at INTEGER NOT NULL DEFAULT 0,
   updated_at INTEGER NOT NULL DEFAULT 0
 );
+CREATE TABLE IF NOT EXISTS diretta_dest (      -- dove va la diretta dallo Studio (docs/DIRETTA.md): Kick, YouTube o altro RTMP
+  login TEXT NOT NULL,
+  id TEXT NOT NULL,
+  nome TEXT NOT NULL DEFAULT '',               -- come la chiama lo streamer («Kick», «YouTube»)
+  server TEXT NOT NULL DEFAULT '',             -- l'indirizzo RTMP senza la chiave: si puo' mostrare
+  chiave TEXT NOT NULL DEFAULT '',             -- la chiave di trasmissione (nella busta, mai rimandata al browser)
+  attiva INTEGER NOT NULL DEFAULT 1,
+  updated_at INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (login, id)
+);
 CREATE TABLE IF NOT EXISTS donazioni (         -- il registro delle donazioni: quelle in attesa di pagamento e quelle pagate
   id TEXT PRIMARY KEY,                         -- 'stripe:cs_…' | 'satispay:<nostro id>' | 'kofi:<login>:<message_id>' | 'ext:<login>:<id>'
   login TEXT NOT NULL,
@@ -2053,6 +2063,7 @@ export const CAMPI_SEGRETI = {
   seventv_tokens: ['token'],
   conti_donazioni: ['chiave'],
   conti_satispay: ['chiave'],
+  diretta_dest: ['chiave'],
   discord_ruoli: ['token'],
 };
 
@@ -2066,6 +2077,7 @@ const RIGA_SEGRETI = {
   seventv_tokens: (r) => r.login,
   conti_donazioni: (r) => r.login,
   conti_satispay: (r) => r.login,
+  diretta_dest: (r) => r.login + '/' + r.id,
   discord_ruoli: (r) => r.channel,
 };
 const CHIAVE_SEGRETI = {
@@ -2076,6 +2088,7 @@ const CHIAVE_SEGRETI = {
   seventv_tokens: ['login'],
   conti_donazioni: ['login'],
   conti_satispay: ['login'],
+  diretta_dest: ['login', 'id'],
   discord_ruoli: ['channel'],
 };
 
@@ -2410,6 +2423,34 @@ export const contiSatispay = {
     return this.get(l);
   },
   togli(login) { db.prepare('DELETE FROM conti_satispay WHERE login=?').run(String(login).toLowerCase()); },
+};
+
+// Le destinazioni della diretta dallo Studio. La chiave entra nella busta e ne
+// esce solo per chi trasmette (diretta.js): l'elenco per il pannello non la
+// porta mai, ne' intera ne' in parte.
+export const MAX_DESTINAZIONI = 6;
+export const direttaDest = {
+  elenco(login) {
+    return db.prepare('SELECT id, nome, server, attiva FROM diretta_dest WHERE login=? ORDER BY updated_at').all(String(login).toLowerCase())
+      .map((r) => ({ id: r.id, nome: r.nome, server: r.server, attiva: !!r.attiva }));
+  },
+  conChiave(login, id) {
+    const l = String(login).toLowerCase();
+    const r = db.prepare('SELECT * FROM diretta_dest WHERE login=? AND id=?').get(l, String(id));
+    return r ? { id: r.id, nome: r.nome, server: r.server, attiva: !!r.attiva, chiave: decifra(r.chiave, _dove('diretta_dest', 'chiave', l + '/' + r.id)) } : null;
+  },
+  salva(login, { id, nome, server, chiave, attiva = true }) {
+    const l = String(login).toLowerCase();
+    const i = String(id);
+    const prima = this.conChiave(l, i);
+    const ch = chiave ? String(chiave) : (prima?.chiave || '');
+    db.prepare(`INSERT INTO diretta_dest (login, id, nome, server, chiave, attiva, updated_at) VALUES (?,?,?,?,?,?,?)
+      ON CONFLICT(login, id) DO UPDATE SET nome=excluded.nome, server=excluded.server, chiave=excluded.chiave, attiva=excluded.attiva, updated_at=excluded.updated_at`)
+      .run(l, i, String(nome || '').slice(0, 40), String(server || ''), cifra(ch, _dove('diretta_dest', 'chiave', l + '/' + i)), attiva ? 1 : 0, now());
+    return this.elenco(l);
+  },
+  togli(login, id) { db.prepare('DELETE FROM diretta_dest WHERE login=? AND id=?').run(String(login).toLowerCase(), String(id)); },
+  quante(login) { return db.prepare('SELECT COUNT(*) n FROM diretta_dest WHERE login=?').get(String(login).toLowerCase()).n; },
 };
 
 // I giri del costruttore Discord. Si scrive SEMPRE, anche quando non si e'

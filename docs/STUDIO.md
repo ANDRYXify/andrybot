@@ -2,6 +2,11 @@
 <!-- Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live -->
 # Studio Web: spento, e perché
 
+> **Superato.** Questo era lo Studio di prima, che codificava il video due
+> volte e la seconda sul server. Il suo posto l'ha preso la diretta dal
+> dispositivo, col server che fa solo da tramite (docs/DIRETTA.md), oggi in
+> beta aperta. Quello che segue resta come storia della decisione.
+
 Il motore c'è ed è completo — il browser compone su una canvas, `MediaRecorder`
 manda i pezzi al server, un ffmpeg per streamer transcodifica e spinge su RTMP,
 e la stream key non arriva mai al browser. Ma **la funzione non è mai arrivata

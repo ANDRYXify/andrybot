@@ -608,10 +608,10 @@ function inArrivoHtml(L, l) {
       </div>
       <div class="vt-arrivo">
         <article data-stato="beta">
-          <span class="vt-stato">${L('Beta in preparazione', 'Beta in preparation', 'Beta en preparación')}</span>
+          <span class="vt-stato">${L('Beta aperta', 'Open beta', 'Beta abierta')}</span>
           <h3>${L('Lo Studio della diretta', 'The live Studio', 'El Estudio del directo')}</h3>
-          <p>${L('In diretta dal sito, senza OBS: le scene dell’Overlay Studio, su Twitch, Kick e YouTube insieme. Il video lo comprime il tuo pc, e se la rete traballa la diretta non cade. Non si può ancora usare: dal pannello chiedi di provarlo per primo.', 'Go live from the site, without OBS: your Overlay Studio scenes, on Twitch, Kick and YouTube at once. Your own computer compresses the video, and if the network wobbles the stream stays up. It is not usable yet: ask to try it first from the panel.', 'En directo desde el sitio, sin OBS: las escenas del Overlay Studio, en Twitch, Kick y YouTube a la vez. El vídeo lo comprime tu ordenador, y si la red falla el directo no se cae. Aún no se puede usar: desde el panel pide probarlo el primero.')}</p>
-          <a href="/guide/diretta-dal-sito">${L('Come sarà', 'How it will work', 'Cómo será')}</a>${inItaliano}
+          <p>${L('In diretta dal sito, senza OBS: le scene dell’Overlay Studio, su Twitch, Kick e YouTube insieme. Il video lo comprime il tuo pc, e se la rete traballa la diretta non cade. È una beta: dal pannello entri con un tasto, con Chrome o Edge su computer.', 'Go live from the site, without OBS: your Overlay Studio scenes, on Twitch, Kick and YouTube at once. Your own computer compresses the video, and if the network wobbles the stream stays up. It is a beta: one button in the panel lets you in, with Chrome or Edge on a computer.', 'En directo desde el sitio, sin OBS: las escenas del Overlay Studio, en Twitch, Kick y YouTube a la vez. El vídeo lo comprime tu ordenador, y si la red falla el directo no se cae. Es una beta: desde el panel entras con un botón, con Chrome o Edge en un ordenador.')}</p>
+          <a href="/guide/diretta-dal-sito">${L('Come funziona', 'How it works', 'Cómo funciona')}</a>${inItaliano}
         </article>
         <article data-stato="pre-alpha">
           <span class="vt-stato">Pre-alpha</span>

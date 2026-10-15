@@ -26,6 +26,7 @@ import * as consolle from '../features/console.js';   // CONSOLify + tastiera fi
 import { makeLog } from '../logger.js';
 import { db, tokens, streamers, memory, clips, knowledge, QUANDO_CONOSCENZA, schedaPulita, effects as effectsDb, SCHERMI, normComando, baseDaFile, modules as modulesDb, MAX_MODULI, friends, sfondi as sfondiDb, carteLive, tgAttesa, tgScudo, paginaTelegram, TIPI_PAGINA_TELEGRAM, gsiStato, mortiSchede } from '../db.js';
 import { points, vips, tgConf, tgDest, amici, tgVisti, feedFonti, dcConf, passkeys, managers, quotes, battute, compleanni, membri, subscriptions, giochi as giochiDb, guide, GUIDE_MAX, pointAlerts, tgLogin, contatori, rapporti, postaStreamer, dcRuoli, dcLink, dcGiri, dcAccesso, dcDest, avvisiConf } from '../db.js';
+import { direttaDest, MAX_DESTINAZIONI } from '../db.js';
 import { linkPage, visitePagina, TEMPLATE_LINKPAGE, LIMITI_LINKPAGE, FONT_LINKPAGE, ICONE_LINKPAGE, TIPI_BLOCCO, TIPI_PAGINA_NEGOZIO, contiDonazioni, contiSatispay, registroDonazioni, paginaDona, paginaNegozio, paginaPannello, cartePagina, accessi, recensioni as recensioniDb, campagneDb, sito } from '../db.js';
 import { puoRecensire, validaRecensione, statoDopo, invitoAperto, rimandaFino, vetrinaDi, TESTO_MAX } from '../features/recensioni.js';
 import { funzioniCanale, concessioneDi } from '../features/accesso.js';
@@ -88,7 +89,7 @@ import * as giveaway from '../features/giveaway.js';
 import * as partite from '../features/partite.js';
 import * as webauthn from './webauthn.js';
 import { comprimi, convertiPerEmote, svgInPng, LATO_LIBRERIA, normChiave } from '../features/compress.js';
-import { StudioEngine, QUALITA as STUDIO_QUALITA } from '../features/studio.js';
+import { creaTramite, indirizzoBuono, BITRATE_MAX_KBPS } from '../features/diretta.js';
 import { seedStreamer } from '../features/seed.js';
 import { eDelKit } from '../features/seed.js';
 import { vivo as comandoVivo } from '../features/comandi-registro.js';
@@ -1363,9 +1364,13 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
 
   const comandoLibero = (login, base, tieni) => effectsDb.comandoLibero(login, base, tieni);
 
-  // Studio Web: motore delle dirette dal browser (ffmpeg → RTMP Twitch).
-  const studio = new StudioEngine();
-  const chiudiStudio = () => { try { studio.stopAll(); } catch { /* niente */ } };
+  // Lo Studio della diretta (docs/DIRETTA.md): il tramite copia verso le
+  // piattaforme quello che il dispositivo ha gia' codificato.
+  const tramite = creaTramite({ bandaMbps: config.direttaBandaMbps, log });
+  const chiudiStudio = () => { try { tramite.chiudiTutto(); } catch { /* niente */ } };
+  // Per chi e' aperto lo Studio: a tutti con STUDIO_WEB=1, a chi e' nella beta
+  // finche' la beta e' aperta.
+  const studioPerMe = (login) => config.studioAttivo || (config.studioBeta && !!streamers.get(login)?.settings?.betaStudio);
   process.once('SIGINT', chiudiStudio);
   process.once('SIGTERM', chiudiStudio);
   process.once('exit', chiudiStudio);
@@ -3486,7 +3491,12 @@ STREAMER (${su.toUpperCase()}) e non c'entra con l'automazione del marketing.
   app.get('/auth/permessi', requireOwner, (req, res) => {
     const state = crypto.randomUUID();
     req.session.oauthState = state;
-    res.redirect(auth.authUrl(SCOPES.broadcaster, state));
+    // La chiave di trasmissione si chiede solo a chi ha lo Studio aperto: e' il
+    // potere di trasmettere sul canale, e a chi non lo usa non serve.
+    const login = currentUser(req).login;
+    const scopes = studioPerMe(login) && !SCOPES.broadcaster.includes('channel:read:stream_key')
+      ? [...SCOPES.broadcaster, 'channel:read:stream_key'] : SCOPES.broadcaster;
+    res.redirect(auth.authUrl(scopes, state));
   });
 
   // Elenco/invito/rimozione dei moderatori del proprio canale (solo proprietario).
@@ -4043,7 +4053,7 @@ STREAMER (${su.toUpperCase()}) e non c'entra con l'automazione del marketing.
       // Regia (Vai live): quali permessi ha concesso per gestire la diretta dal bot
       regia: user ? { broadcast: canaleOk(user.login), raid: raidOk(user.login), commercial: commercialOk(user.login), ads: adsOk(user.login) } : null,
       // Studio Web: acceso? permesso stream key concesso? live in corso?
-      studio: user ? { attivo: config.studioAttivo, keyOk: studioKeyOk(user.login), live: studio.attiva(user.login), beta: !!streamers.get(user.login)?.settings?.betaStudio } : null,
+      studio: user ? { attivo: studioPerMe(user.login), keyOk: studioKeyOk(user.login), live: tramite.attiva(user.login), beta: !!streamers.get(user.login)?.settings?.betaStudio, betaAperta: config.studioBeta } : null,
       telegram: user ? statoTelegram(user.login) : null,
       knowledgeCount: user ? knowledge.count(user.login) : 0,
       preaddestramento: user
@@ -8934,51 +8944,104 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     res.json({ ok: !!r.ok });
   }));
 
-  // ---- STUDIO WEB: vai live dal browser, senza OBS (canvas → ffmpeg → RTMP) ----
-  // Sta nel pacchetto Base (l'Essenziale gratuito non lo comprende): trasmettere
-  // consuma CPU e banda del server, quindi non può stare nel gratuito.
-  const gStudio = gateFeature('studio', 'Lo Studio Web');
-  // Spento finche' non funziona davvero: qui, prima del gate del piano, cosi'
-  // il messaggio dice la verita' ("non e' ancora attivo") invece di mandare
-  // qualcuno a pagare per una cosa che non c'e'.
-  const studioAcceso = (req, res, next) => (config.studioAttivo ? next()
-    : res.status(503).json({ errore: 'Lo Studio Web non è ancora attivo.', inArrivo: true }));
-  app.get('/api/studio', requireLogin, studioAcceso, gStudio, wrap(async (req, res) => {
-    const login = currentUser(req).login;
-    // elenco qualità disponibili (chiave + etichetta) per il selettore del client
-    const qualita = Object.entries(STUDIO_QUALITA).map(([id, q]) => ({ id, etichetta: q.etichetta }));
-    res.json({ keyOk: studioKeyOk(login), qualita, ...studio.stato(login) });
-  }));
+  // ---- LO STUDIO DELLA DIRETTA (docs/DIRETTA.md, «La beta») ----
+  // Il dispositivo codifica, il server copia: qui non si decodifica e non si
+  // ricodifica mai il video. Solo il proprietario del canale trasmette (un
+  // moderatore delegato no: userebbe la chiave dello streamer).
+  // Durante la beta lo Studio e' di chi l'ha chiesto, qualunque piano abbia;
+  // aperto a tutti (STUDIO_WEB=1) passa dal muro del piano come ogni funzione
+  // a pagamento.
+  const muroStudio = gateFeature('studio', 'Studio Web');
+  const studioAperto = (req, res, next) => {
+    if (!studioPerMe(currentUser(req).login)) return res.status(403).json({ errore: 'Lo Studio è aperto a chi è nella beta: chiedilo dalla scheda «Studio Web».', beta: true });
+    if (config.studioAttivo) return muroStudio(req, res, next);
+    next();
+  };
+  const MOTIVI_DIRETTA = {
+    gia: 'Sei già in diretta dallo Studio.',
+    altrove: 'La diretta è passata a un\'altra finestra.',
+    destinazioni: 'Scegli almeno una destinazione valida.',
+    video: 'Il video deve arrivare in H.264 dal tuo dispositivo: usa Chrome o Edge aggiornati.',
+    audio: 'L\'audio deve arrivare in AAC o Opus.',
+    banda: 'In questo momento la banda del server è tutta in uso: riprova fra qualche minuto.',
+    carico: 'Il server è sotto sforzo in questo momento: riprova fra un minuto. Chat, alert e storie intanto vanno come sempre.',
+    ffmpeg: 'Il tramite non è disponibile su questo server.',
+    nessuna: 'Nessuna diretta in corso.',
+    pacchi: 'Pacchetti non validi.',
+    riserva: 'La riserva deve cominciare da un fotogramma chiave e avere anche l\'audio.',
+    troppo: 'Stai mandando più di quanto hai dichiarato: la diretta è stata fermata.',
+  };
+  const b64 = (x) => (typeof x === 'string' && x.length <= 4096 ? Buffer.from(x, 'base64') : Buffer.alloc(0));
+  const vestiDirettaDi = (login) => ({
+    destinazioni: direttaDest.elenco(login), maxDestinazioni: MAX_DESTINAZIONI,
+    twitch: { keyOk: studioKeyOk(login), su: piattaformaDi(login) === 'twitch' },
+    sessione: tramite.stato(login), kbpsMax: BITRATE_MAX_KBPS,
+  });
+  app.get('/api/diretta', requireOwner, studioAperto, (req, res) => res.json(vestiDirettaDi(currentUser(req).login)));
+  app.get('/api/diretta/stato', requireOwner, studioAperto, (req, res) => res.json(tramite.stato(currentUser(req).login)));
 
-  // avvia la diretta: prende la stream key (che resta sul server) e apre ffmpeg.
-  // SOLO il proprietario del canale: un moderatore delegato NON può andare live
-  // (avvierebbe la diretta con la stream key dello streamer — troppo rischioso).
-  app.post('/api/studio/start', requireOwner, studioAcceso, gStudio, wrap(async (req, res) => {
+  app.post('/api/diretta/destinazioni', requireOwner, studioAperto, wrap(async (req, res) => {
     const login = currentUser(req).login;
-    if (streamers.get(login)?.status !== 'approved') return res.status(403).json({ errore: 'non sei ancora abilitato' });
-    if (!studioKeyOk(login)) return res.status(403).json({ errore: 'Concedi il permesso "stream key" da /auth/permessi', permesso: true });
-    if (studio.attiva(login)) return res.status(409).json({ errore: 'sei già in diretta dallo studio' });
-    const key = await helix.getStreamKey(login).catch(() => null);
-    if (!key) return res.status(400).json({ errore: 'stream key non disponibile (ri-concedi i permessi)', permesso: true });
-    const r = studio.start(login, key, String(req.body?.quality || ''));
-    if (!r.ok) return res.status(400).json({ errore: r.motivo || 'avvio non riuscito' });
-    res.json({ ok: true });
+    const b = req.body || {};
+    const id = /^[a-f0-9]{8}$/.test(String(b.id || '')) ? String(b.id) : null;
+    const prima = id ? direttaDest.conChiave(login, id) : null;
+    if (id && !prima) return res.status(404).json({ errore: 'Destinazione non trovata.' });
+    if (!id && direttaDest.quante(login) >= MAX_DESTINAZIONI) return res.status(400).json({ errore: `Al massimo ${MAX_DESTINAZIONI} destinazioni.` });
+    const nome = String(b.nome || '').trim().slice(0, 40) || 'RTMP';
+    const server = String(b.server || '').trim().replace(/\/+$/, '');
+    const chiave = String(b.chiave || '').trim() || prima?.chiave || '';
+    if (!/^rtmps?:\/\/[^\s|[\]\\]+$/i.test(server)) return res.status(400).json({ errore: 'L\'indirizzo del server deve cominciare con rtmp:// o rtmps://.' });
+    if (!chiave || chiave.length > 300 || !indirizzoBuono(`${server}/${chiave}`)) return res.status(400).json({ errore: 'Manca la chiave di trasmissione, o contiene caratteri non ammessi.' });
+    direttaDest.salva(login, { id: id || crypto.randomBytes(4).toString('hex'), nome, server, chiave, attiva: b.attiva !== false });
+    res.json(vestiDirettaDi(login));
   }));
-
-  // riceve i pezzi di media (Buffer) dal browser: raw body, un ffmpeg per streamer.
-  // express.raw con type:()=>true → qualsiasi content-type finisce in req.body come Buffer.
-  app.post('/api/studio/chunk', requireOwner, studioAcceso, gStudio, express.raw({ type: () => true, limit: '30mb' }), (req, res) => {
+  app.post('/api/diretta/destinazioni/:id/togli', requireOwner, studioAperto, (req, res) => {
     const login = currentUser(req).login;
-    if (!studio.attiva(login)) return res.status(409).json({ errore: 'nessuna diretta in corso' });
-    if (Buffer.isBuffer(req.body)) studio.write(login, req.body);
-    res.json({ ok: true });
+    direttaDest.togli(login, String(req.params.id));
+    res.json(vestiDirettaDi(login));
   });
 
-  // ferma la diretta dallo studio (solo il proprietario, come lo start)
-  app.post('/api/studio/stop', requireOwner, studioAcceso, gStudio, wrap(async (req, res) => {
-    studio.stop(currentUser(req).login);
-    res.json({ ok: true });
+  app.post('/api/diretta/avvio', requireOwner, studioAperto, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    if (streamers.get(login)?.status !== 'approved') return res.status(403).json({ errore: 'non sei ancora abilitato' });
+    const b = req.body || {};
+    const scelte = [...new Set((Array.isArray(b.destinazioni) ? b.destinazioni : []).map(String))].slice(0, MAX_DESTINAZIONI + 1);
+    const destinazioni = [];
+    for (const id of scelte) {
+      if (id === 'twitch') {
+        if (!studioKeyOk(login)) return res.status(403).json({ errore: 'Per Twitch concedi il permesso della chiave di trasmissione.', permesso: true });
+        const key = await helix.getStreamKey(login).catch(() => null);
+        if (!key) return res.status(400).json({ errore: 'Twitch non ha dato la chiave di trasmissione: concedi di nuovo i permessi.', permesso: true });
+        destinazioni.push({ id: 'twitch', nome: 'Twitch', url: `${config.twitchRtmp}/${key}` });
+      } else {
+        const d = direttaDest.conChiave(login, id);
+        if (d?.chiave) destinazioni.push({ id: d.id, nome: d.nome, url: `${d.server}/${d.chiave}` });
+      }
+    }
+    const v = b.video || {}, a = b.audio || {};
+    const r = tramite.avvia(login, {
+      destinazioni,
+      video: { codec: v.codec === 'avc1' ? 'avc1' : String(v.codec || ''), config: b64(v.config), larghezza: Number(v.larghezza) || 0, altezza: Number(v.altezza) || 0, fps: Number(v.fps) || 0 },
+      audio: { codec: String(a.codec || ''), config: a.config ? b64(a.config) : null, frequenza: Number(a.frequenza) || 0, canali: Number(a.canali) || 0 },
+      kbps: Number(b.kbps) || 0,
+      assenzaMaxMs: Math.min(30, Math.max(1, Number(b.assenzaMin) || 10)) * 60_000,
+      riprendi: b.riprendi === true,
+    });
+    if (!r.ok) return res.status(r.motivo === 'carico' || r.motivo === 'banda' ? 503 : 400).json({ errore: MOTIVI_DIRETTA[r.motivo] || 'La diretta non è partita.', motivo: r.motivo });
+    res.json({ ok: true, turno: r.turno, ripresa: !!r.ripresa, destinazioni: destinazioni.map((d) => d.nome) });
   }));
+  app.post('/api/diretta/riserva', requireOwner, studioAperto, express.raw({ type: () => true, limit: '4mb' }), (req, res) => {
+    const r = tramite.riserva(currentUser(req).login, Buffer.isBuffer(req.body) ? req.body : Buffer.alloc(0), String(req.query.t || ''));
+    res.status(r.ok ? 200 : (r.motivo === 'nessuna' || r.motivo === 'altrove' ? 409 : 400)).json(r.ok ? { ok: true } : { errore: MOTIVI_DIRETTA[r.motivo] || 'Riserva non valida.', motivo: r.motivo });
+  });
+  app.post('/api/diretta/pacchi', requireOwner, studioAperto, express.raw({ type: () => true, limit: '8mb' }), (req, res) => {
+    const r = tramite.pacchi(currentUser(req).login, Number(req.query.n), Buffer.isBuffer(req.body) ? req.body : Buffer.alloc(0), String(req.query.t || ''));
+    res.status(r.ok ? 200 : (r.motivo === 'nessuna' || r.motivo === 'altrove' ? 409 : 400)).json(r.ok ? { ok: true } : { errore: MOTIVI_DIRETTA[r.motivo] || 'Pacchetti rifiutati.', motivo: r.motivo });
+  });
+  app.post('/api/diretta/fine', requireOwner, studioAperto, (req, res) => {
+    const fermata = tramite.ferma(currentUser(req).login, 'fermata', req.body?.turno ? String(req.body.turno) : null);
+    res.json({ ok: true, fermata });
+  });
 
   // elenco dei PIÙ OVERLAY dello streamer: per ognuno id, nome, layout e il suo
   // link OBS (con ?o=id). Lo usa l'Overlay Studio per gestirli.

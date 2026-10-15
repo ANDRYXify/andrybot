@@ -142,7 +142,6 @@ const DECISO = [
   ['features/spotify.js', 'senzaBattito', 'volatile', 'le app che non possono leggere il battito: dopo un riavvio lo si chiede una volta, Spotify risponde di nuovo 403 e si smette per un giorno'],
   ['features/spotify.js', 'fermiFino', 'volatile', 'la pausa chiesta da Spotify con un 429: dopo un riavvio la prima chiamata riceve di nuovo il 429 con quanto aspettare, e la pausa torna. Si perde una chiamata'],
   ['features/spotify.js', 'rinnovi', 'volatile', 'il rinnovo del token in corso, sei secondi al massimo: il token nuovo, che e\' la cosa che conta, sta nel database'],
-  ['features/studio.js', 'sessioni', 'volatile', 'sessioni di trasmissione: sono connessioni, muoiono col processo'],
   ['features/trackinggiochi.js', '_ultimoSfida', 'volatile', 'anti-spam di !sfida, finestra corta'],
   ['bot.js', 'units', 'volatile', 'connessioni chat: si riaprono all\'avvio'],
   ['bot.js', '_diretteDelGiro', 'volatile', 'la diretta del giro delle ore (presenze.direttaDelGiro): dopo un riavvio riparte dall\'id della piattaforma in onda, che e\' lo stesso di prima (Twitch lo stream, Kick il suo inizio); al peggio, se nel frattempo la diretta e\' passata da Twitch a Kick, il tetto delle monete riparte, come succedeva prima. Ore, monete e presenze gia\' contate stanno nel database'],

@@ -14,14 +14,16 @@ const leggi = (f) => readFileSync(new URL('../../' + f, import.meta.url), 'utf8'
 const SRV = leggi('src/web/server.js');
 const APP = leggi('src/web/public/app.js');
 
-test('la guida dello Studio dice per prima cosa che non si usa ancora', () => {
+test('la guida dello Studio dice per prima cosa che e\' una beta, e separa quello che c\'e\' da quello che arriva', () => {
   const g = GUIDE.find((x) => x.slug === 'diretta-dal-sito');
   assert.ok(g, 'la guida c\'e\'');
   assert.match(g.titolo, /\(beta\)/);
-  assert.match(g.desc, /Beta in preparazione/);
-  assert.match(g.corpo[0].p[0], /^<strong>A che punto è: beta in preparazione\.<\/strong> Lo Studio oggi non si può ancora usare\./);
-  assert.match(g.faq[0].r, /^No\./, 'alla domanda «si puo\' gia\' usare?» la risposta e\' no');
-  assert.ok(paginaGuida('diretta-dal-sito').includes('beta in preparazione'));
+  assert.match(g.corpo[0].p[0], /^<strong>A che punto è: beta aperta\.<\/strong>/);
+  assert.match(g.corpo[0].p[0], /serve Chrome o Edge aggiornati/);
+  const titoli = g.corpo.map((b) => b.h2).filter(Boolean);
+  assert.ok(titoli.includes('Cosa c\'è nella beta') && titoli.includes('Cosa arriva dopo'), titoli.join(' | '));
+  assert.match(JSON.stringify(g.corpo.find((b) => b.h2 === 'Cosa arriva dopo')), /telefono come seconda camera/, 'cio\' che non c\'e\' sta in «dopo», non promesso come fatto');
+  assert.ok(paginaGuida('diretta-dal-sito').includes('beta aperta'));
 });
 
 test('la guida di OSify dice pre-alpha in testa, e come provarlo senza rischi', () => {

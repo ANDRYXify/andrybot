@@ -2,8 +2,9 @@
 <!-- Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live -->
 # La diretta dal dispositivo: il server fa solo da tramite
 
-Piano, non ancora codice. Prende il posto dello Studio Web spento
-(docs/STUDIO.md), che non si riaccende: il suo difetto era nel disegno.
+Prende il posto dello Studio Web spento (docs/STUDIO.md), che non si riaccende:
+il suo difetto era nel disegno. Le sezioni che seguono sono il piano intero;
+«La beta» dice cosa ne è già codice e in uso.
 
 ## Perché lo Studio laggava
 
@@ -75,6 +76,75 @@ non si taglia mai: tagliarla è il danno peggiore che si possa fare.
    multistream e immagine di riserva dal server. Richiede di aprire una porta
    in più (RTMP o SRT) accanto a Caddy: è una decisione di esposizione da
    prendere apposta, non un dettaglio.
+
+## La beta: la prima versione che si usa
+
+**Chi entra.** Chi preme «Voglio provarlo per primo» entra subito: lo Studio si
+apre per lui e solo per lui (`STUDIO_BETA=0` nell'ambiente chiude la beta a
+tutti). Durante la beta non serve un piano a pagamento. Il permesso di Twitch
+per la chiave di trasmissione si chiede solo a chi è nella beta.
+
+**Il banco resta quello che c'è.** Scene, sorgenti, mixer e misuratori dello
+Studio esistono già: cambia solo la parte che faceva laggare, cioè la codifica e
+il trasporto.
+
+**Il dispositivo** prende la tela della scena e l'uscita del mixer e le codifica
+con WebCodecs: H.264 con la scheda video, un fotogramma chiave ogni 2 secondi;
+AAC dove il browser lo sa fare (Chrome ed Edge su Windows e macOS), Opus dove no
+(Linux, Firefox). Manda i pacchetti già pronti a lotti, in ordine, e se una
+richiesta fallisce la ripete senza perdere il posto.
+
+**Il server** scrive i pacchetti in un flusso Matroska e lo passa a un ffmpeg
+che copia il video così com'è (`-c:v copy`) verso tutte le destinazioni insieme
+(`-f tee`): non decodifica e non ricodifica mai il video. L'unica eccezione è
+l'audio Opus, che le piattaforme non accettano: lo converte in AAC, e costa
+pochi punti di un core. Il video lo deve codificare il dispositivo: un browser
+che non sa fare H.264 (per esempio Chromium senza codec proprietari) se lo sente
+dire prima di partire, non dopo.
+
+**La riserva.** Prima di andare in onda il dispositivo codifica, con lo stesso
+codificatore, due secondi dell'immagine «torno subito» e un secondo di silenzio,
+e li consegna al server. Se il video si ferma ma l'audio no, il server mette in
+onda l'immagine con la voce; se si ferma tutto, l'immagine e il silenzio,
+ricuciti nel tempo così che la diretta non cada. Al ritorno riprende dal primo
+fotogramma chiave. Dopo il tempo scelto dallo streamer senza segnale (10 minuti
+di serie) la diretta si chiude.
+
+**Un mittente alla volta, e la ripresa.** Ogni avvio dà un *turno*: i
+pacchetti e la riserva viaggiano col loro turno, e quelli di un turno vecchio
+ricevono «altrove» (409). Così una pagina ricaricata, o aperta in un'altra
+finestra, non si mescola mai con quella di prima: l'ultima che parte è l'unica
+che trasmette, e la vecchia si ferma da sé e lo dice. Se la codifica è la
+stessa (stessa avcC, stesso audio, stesse misure e fotogrammi) la finestra
+nuova **riprende la stessa diretta**: nessun ffmpeg nuovo, le piattaforme non
+vedono interruzioni. Il dispositivo nuovo ha un orologio che riparte da capo,
+quindi il server lo aggancia di nuovo all'orologio d'uscita sul suo primo
+fotogramma chiave; fino ad allora va in onda la riserva, anche per l'audio. Se
+la codifica è diversa, il flusso già annunciato alle piattaforme non la
+potrebbe portare: la diretta di prima si chiude e ne parte una nuova. «Ferma»
+chiude solo se la finestra è ancora quella che trasmette; dal pannello si può
+chiudere anche una diretta rimasta in onda senza nessuno.
+
+**Le destinazioni.** Twitch con la chiave presa dalle API (resta sul server).
+Kick, YouTube e ogni altro servizio RTMP con l'indirizzo e la chiave che lo
+streamer incolla una volta: salvati cifrati, mai rimandati al browser, si
+cambiano o si tolgono. Ogni destinazione si accende o si spegne prima di
+partire; se una cade, le altre continuano.
+
+**Lo scudo.** La diretta è la classe `diretta` dello scudo delle risorse: entra
+solo col verde e solo se la banda dichiarata del server la regge
+(`DIRETTA_BANDA_MBPS`, di serie 300); una diretta in onda non si taglia mai.
+Il server controlla anche che il dispositivo non mandi più di quanto ha
+dichiarato: chi supera il tetto viene fermato, perché la banda è di tutti.
+
+**OSify.** Se fra i dispositivi audio compaiono i canali di OSify (Gioco, Voce,
+Musica), lo Studio lo riconosce e li mette da sé nel mixer: l'audio del gioco
+arriva dal suo canale anche su Linux, dove il browser da solo non lo prende.
+
+**Cosa NON c'è ancora nella beta:** la cattura della scena dall'Overlay Studio
+come pagina (si usa il banco dello Studio con l'overlay come sorgente), più
+qualità diverse per piattaforma, la traccia audio separata per i VOD di Twitch,
+OBS comandato da SocialBot.
 
 ## Le scene sono quelle dell'Overlay Studio
 

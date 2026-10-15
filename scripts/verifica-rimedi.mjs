@@ -59,7 +59,6 @@ export const CLASSIFICATI = [
   ['src/features/posta.js', 'dal pannello di SocialBot', 'mail a chi ha chiesto il rapporto'],
   ['src/features/licenza-promemoria.js', 'Per controllare: nella scheda Admin del pannello', 'mail del promemoria della licenza, al proprietario o a chi ha scelto lui'],
   ['src/features/licenza-promemoria.js', 'questa mail arriva a', 'piede della mail del promemoria della licenza, allo stesso destinatario'],
-  ['src/features/studio.js', 'ri-concedi i permessi', 'errore della diretta dallo Studio, nel pannello del proprietario'],
   ['src/features/seventv.js', 'scollega 7TV e ricollegalo', 'errore di 7TV nel pannello: la rotta lo da\' solo al proprietario (ricollega7tv)'],
   ['src/features/seventv.js', 'chiedi al proprietario di ricollegare 7TV', 'errore di 7TV nel pannello, ai moderatori: il rimedio e\' del proprietario'],
   ['src/features/sondaggi.js', 'lo streamer lo rimette dal pannello', '!sondaggio e !predizione rispondono solo a streamer e mod, e il rimedio lo nomina per lo streamer'],

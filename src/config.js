@@ -109,6 +109,11 @@ export const config = {
   // resta raggiungibile da chi chiama la rotta a mano.
   // Per riaccenderla quando sara' vera: STUDIO_WEB=1.
   studioAttivo: env('STUDIO_WEB') === '1',
+  // La beta dello Studio (docs/DIRETTA.md): chi la chiede entra subito.
+  // STUDIO_BETA=0 la chiude a tutti. La banda in uscita che le dirette possono
+  // usare, in Mbps: lo scudo ne tiene libero un quinto per sito e bot.
+  studioBeta: env('STUDIO_BETA') !== '0',
+  direttaBandaMbps: Math.max(10, parseInt(env('DIRETTA_BANDA_MBPS', '300'), 10) || 300),
 
   // web
   port: parseInt(env('PORT', '8090'), 10),

@@ -121,15 +121,15 @@ comandi diversi da quelli della riga italiana.
   en: Heavy uploads go one at a time per person, and wait when the server is very busy: chat, alerts and stories always come first.
   es: Las subidas pesadas van de una en una por persona, y esperan cuando el servidor está muy cargado: el chat, las alertas y las historias siempre van primero.
 
-- [importante] Lo Studio per andare in diretta dal sito, senza OBS, è una beta in preparazione: in «In diretta», alla voce «Studio Web», chiedi di provarlo per primo. [vai: studio]
-  en: The Studio for going live from the site, without OBS, is a beta in preparation: in «Live», under «Web Studio», ask to try it first.
-  es: El Estudio para emitir en directo desde el sitio, sin OBS, es una beta en preparación: en «En directo», en «Estudio Web», pide probarlo el primero.
-  > In diretta dal sito, presto in beta
-  > Scene dell'Overlay Studio, Twitch, Kick e YouTube insieme, e la diretta che non cade se la rete traballa. Non si usa ancora: chi lo chiede lo prova per primo.
-  en> Live from the site, soon in beta
-  en> Overlay Studio scenes, Twitch, Kick and YouTube at once, and a stream that stays up when the network wobbles. Not usable yet: whoever asks tries it first.
-  es> En directo desde el sitio, pronto en beta
-  es> Escenas del Overlay Studio, Twitch, Kick y YouTube a la vez, y un directo que no se cae si la red falla. Aún no se usa: quien lo pide lo prueba el primero.
+- [importante] Lo Studio per andare in diretta dal sito, senza OBS, è in beta aperta: in «In diretta», alla voce «Studio Web», premi «Voglio provarlo» ed entri subito. Serve Chrome o Edge su computer. [vai: studio]
+  en: The Studio for going live from the site, without OBS, is in open beta: in «Live», under «Web Studio», press «I want to try it» and you are in. It needs Chrome or Edge on a computer.
+  es: El Estudio para emitir en directo desde el sitio, sin OBS, está en beta abierta: en «En directo», en «Estudio Web», pulsa «Quiero probarlo» y entras. Necesita Chrome o Edge en un ordenador.
+  > In diretta dal sito: la beta è aperta
+  > Il video lo fa il tuo computer, il server lo gira a Twitch, YouTube o un server tuo. Se la rete cade, va in onda la tua immagine di riserva. Con OSify, i suoi canali audio entrano da soli nel mixer.
+  en> Live from the site: the beta is open
+  en> Your computer makes the video, the server passes it on to Twitch, YouTube or your own server. If the network drops, your backup image goes on air. With OSify, its audio channels join the mixer.
+  es> En directo desde el sitio: la beta está abierta
+  es> Tu ordenador hace el vídeo, el servidor lo pasa a Twitch, YouTube o un servidor tuyo. Si la red cae, sale tu imagen de reserva. Con OSify, sus canales de audio entran solos en el mezclador.
 
 ## 2026-10-08
 

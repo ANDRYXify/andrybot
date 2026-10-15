@@ -422,28 +422,37 @@ export const GUIDE_IT = [
     schede: ['studio'],
     titolo: 'In diretta dal sito, senza OBS: lo Studio di SocialBot (beta)',
     h1: 'In diretta dal sito, senza OBS: lo Studio di SocialBot',
-    desc: 'Lo Studio per andare in diretta da SocialBot su Twitch, Kick e YouTube insieme: come funzionerà, cosa fa il tuo pc, cosa fa il server. Beta in preparazione.',
+    desc: 'Lo Studio per andare in diretta da SocialBot su Twitch, Kick e YouTube insieme: cosa fa il tuo pc, cosa fa il server, cosa c\'è nella beta aperta e cosa arriva dopo.',
     aggiornata: '2026-10-14',
     tipo: 'articolo',
     corpo: [
       { p: [
-        '<strong>A che punto è: beta in preparazione.</strong> Lo Studio oggi non si può ancora usare. Questa pagina dice come sarà e perché è fatto così, e da dove chiedere di provarlo per primo. Quando apre la beta lo trovi scritto qui e nelle novità del pannello.',
+        '<strong>A che punto è: beta aperta.</strong> Lo Studio si può provare: nel pannello premi «Voglio provarlo» ed entri subito. È una beta: serve Chrome o Edge aggiornati su un computer, e qualcosa può non andare ancora. Quello che c\'è e quello che arriva dopo è scritto qui sotto, senza mescolarli.',
         'L\'idea è semplice: andare in diretta senza installare OBS, partendo dalle scene che hai già fatto nell\'Overlay Studio, su Twitch, Kick e YouTube insieme, con una diretta fluida anche quando la connessione non è perfetta.',
       ] },
       { h2: 'Perché la prima versione laggava, e questa no', p: [
         'Una prima versione dello Studio c\'era già, e l\'abbiamo spenta prima di farla usare a qualcuno: le dirette laggavano. Il motivo non era un dettaglio da sistemare ma il disegno. Il video si comprimeva due volte, una nel browser e una sul nostro server, e la seconda compressione si mangiava il processore del server proprio mentre doveva tenere la chat e gli alert di tutti.',
         'La versione nuova ribalta il disegno: <strong>tutto il lavoro sul video lo fa il tuo dispositivo</strong>, con la sua scheda video. Il server non comprime niente: riceve la tua diretta già pronta e ne manda una copia a ogni piattaforma. Il carico non cresce con la qualità, e il lag del server sparisce per costruzione.',
       ] },
-      { h2: 'Le scene sono quelle dell\'Overlay Studio', p: [
-        'Lo Studio non ha un editor suo. Parte dalle scene che hai già: una scena è il tuo overlay con le sorgenti messe sopra o sotto i suoi elementi, cioè lo schermo, la camera, le immagini. Quello che metti in OBS come sorgente browser e quello che va in onda dallo Studio sono la stessa cosa, modificata in un posto solo.',
-        'Ci saranno le scene speciali che servono a ogni diretta, fatte nello stesso editor: sta per iniziare, pausa, torno subito, fine. Le cambi a mano, con un tasto, dal telefono, o da sole con gli automatismi della regia che usi già.',
+      { h2: 'Le scene e il tuo overlay', p: [
+        'Nella beta lo Studio ha il suo banco: componi una o più scene con le sorgenti, le sistemi trascinandole, e il tuo overlay entra come una sorgente, con alert, chat ed effetti come li vedi in OBS. Le cambi a mano mentre sei in onda.',
+        'Il passo dopo è partire direttamente dalle scene dell\'Overlay Studio, con le scene speciali che servono a ogni diretta (sta per iniziare, pausa, torno subito, fine) e i cambi automatici della regia.',
       ] },
-      { h2: 'Le sorgenti e l\'audio', ul: [
-        '<strong>Schermo, finestra o scheda</strong> del browser, e una o più camere. Le schede di acquisizione si vedono come camere, quindi funzionano anche quelle.',
-        '<strong>Il telefono come seconda camera</strong>: lo colleghi con un QR, e il video passa direttamente dal telefono al pc.',
-        '<strong>Un mixer vero</strong>: per ogni sorgente volume, muto, misuratore, ascolto in cuffia, riduzione del rumore, compressore, equalizzatore. La musica si abbassa da sola quando parli.',
-        '<strong>Mix diversi per uscite diverse</strong>: per esempio la traccia per i VOD di Twitch senza musica, e la diretta con.',
-        '<strong>Le uscite</strong>: Twitch, Kick e YouTube accese o spente anche a diretta in corso, ognuna con la sua qualità, più la registrazione sul tuo dispositivo.',
+      { h2: 'Cosa c\'è nella beta', ul: [
+        '<strong>Le sorgenti</strong>: schermo, finestra o scheda del browser, webcam (anche le schede di acquisizione, che il browser vede come camere), immagini, video, testi e il tuo overlay con alert, chat ed effetti.',
+        '<strong>Il mixer</strong>: microfono, audio del desktop, video ed effetti, ognuno col suo volume, il muto e il misuratore.',
+        '<strong>Le destinazioni</strong>: Twitch con la chiave presa da sola dopo un permesso, e Kick, YouTube o qualunque servizio RTMP con l\'indirizzo e la chiave che incolli una volta. La chiave resta cifrata sul server e non torna al browser.',
+        '<strong>La qualità</strong> da 720p a 1440p a 30 o 60 fotogrammi, che scende da sola se la rete non regge e risale quando torna.',
+        '<strong>La riserva</strong>: la tua scritta «torno subito» sopra la scena com\'era quando sei partito, scurita. Va in onda quando la rete cade, per i minuti che scegli tu.',
+        '<strong>La ripresa</strong>: se la pagina si ricarica o la riapri, la diretta è ancora in onda con la riserva, e «Vai live» la riprende senza interruzioni sul canale, se non hai cambiato qualità. Trasmette sempre una finestra sola.',
+        '<strong>OSify</strong>: se lo usi, lo Studio riconosce i suoi canali audio e li mette nel mixer.',
+      ] },
+      { h2: 'Cosa arriva dopo', ul: [
+        'Il telefono come seconda camera, collegato con un QR.',
+        'Riduzione del rumore, compressore ed equalizzatore per ogni sorgente, e la musica che si abbassa da sola quando parli.',
+        'Mix diversi per uscite diverse, come la traccia dei VOD di Twitch senza musica.',
+        'Una qualità diversa per ogni piattaforma, e il 4K dove le piattaforme lo accettano.',
+        'OBS comandato da SocialBot, per chi vuole tutto l\'hardware.',
       ] },
       { h2: 'Quando la connessione traballa', p: [
         'È la parte a cui teniamo di più. Se la rete cala, lo Studio abbassa la qualità da solo e la rialza quando la rete torna. Se la rete è quasi ferma, manda solo la tua voce e sullo schermo resta un\'immagine che scegli tu, o l\'ultimo fotogramma. Se il dispositivo sparisce del tutto, il server tiene la diretta accesa con la tua scena «torno subito»: la diretta non cade, chi ti segue non riceve un secondo avviso, il VOD resta uno solo. Quando torni, si riparte da dove eri. Se non torni entro il tempo che hai scelto, la diretta si chiude da sola.',
@@ -456,11 +465,11 @@ export const GUIDE_IT = [
       { h2: DENTRO.it, passi: [
         { t: 'Entra in SocialBot', d: 'Con l\'account con cui streammi, su Twitch o su Kick. L\'Essenziale è gratis.' },
         { t: 'Apri la scheda «Studio Web»', d: 'Sta nel menù, in «In diretta». Lì trovi lo stato aggiornato della beta.' },
-        { t: 'Premi «Voglio provarlo per primo»', d: 'Non ti chiediamo altri dati: resta segnato sul tuo account, e quando la beta apre te lo diciamo dal pannello. Puoi toglierti quando vuoi con lo stesso tasto.' },
+        { t: 'Premi «Voglio provarlo»', d: 'Entri subito, senza altri dati: resta segnato sul tuo account. Poi in «Dove va la diretta» scegli Twitch o aggiungi Kick, YouTube o un altro servizio, componi la scena e premi «Vai in diretta».' },
       ] },
     ],
     faq: [
-      { d: 'Lo Studio di SocialBot si può già usare?', r: 'No. È una beta in preparazione: questa pagina dice come sarà. Dal pannello puoi chiedere di provarlo per primo, e quando apre te lo diciamo lì.' },
+      { d: 'Lo Studio di SocialBot si può già usare?', r: 'Sì, in beta: nel pannello premi «Voglio provarlo» ed entri subito. Serve Chrome o Edge aggiornati su un computer, e alcune cose arrivano dopo: sono elencate qui sopra.' },
       { d: 'Sostituisce OBS?', r: 'Per la maggior parte degli streamer sì, perché scene, overlay, audio e multistream stanno in un posto solo. Chi gioca a titoli pesanti su un solo pc o usa plugin audio può trovarsi meglio con OBS, e potrà farselo configurare da SocialBot.' },
       { d: 'Rallenta il mio pc?', r: 'Il video lo comprime la tua scheda video, come fa OBS quando usi il codificatore hardware. Il server non lo ricomprime: per questo la diretta non dipende da quanto è carico.' },
       { d: 'Si può andare in diretta su Twitch, Kick e YouTube insieme?', r: 'Sì: è uno degli scopi. Il tuo dispositivo manda una diretta sola e il server ne fa una copia per ogni piattaforma, così la tua connessione non si divide in tre.' },
