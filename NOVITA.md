@@ -52,6 +52,9 @@ comandi diversi da quelli della riga italiana.
   en> If you are using the panel or the Studio, a box tells you a new version is ready and you take it when you want. Otherwise it updates by itself, and the OBS overlay only off air.
   es> Actualizaciones sin perder nada
   es> Si estás usando el panel o el Estudio, un aviso te dice que hay una versión nueva y la tomas cuando quieras. Si no, se actualiza sola, y el overlay de OBS solo fuera de directo.
+- Diretta dallo Studio: chi ti guarda la vede partire subito, non scatta più, e non cade su «torno subito» quando passi a un'altra scheda. [vai: studio]
+  en: Live from the Studio: viewers see it start right away, it no longer stutters, and it does not fall back to «be right back» when you switch tabs.
+  es: Directo desde el Estudio: quien te ve lo ve empezar enseguida, ya no da tirones y no cae en «vuelvo enseguida» cuando cambias de pestaña.
 - Studio sul computer: la tela intera, «Vai live», la fotocamera in uso e le scene stanno in una schermata, e la colonna dei comandi resta accanto mentre scorri fra le fonti. [vai: studio]
   en: Studio on a computer: the whole canvas, «Go live», the camera in use and the scenes fit on one screen, and the controls column stays beside you while you scroll through sources.
   es: Estudio en el ordenador: el lienzo entero, «Emitir», la cámara en uso y las escenas caben en una pantalla, y la columna de controles queda al lado mientras recorres las fuentes.

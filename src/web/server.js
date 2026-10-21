@@ -9126,7 +9126,7 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
   });
   app.post('/api/diretta/pacchi', requireOwner, studioAperto, express.raw({ type: () => true, limit: '8mb' }), (req, res) => {
     const r = tramite.pacchi(sessioneDi(currentUser(req).login, req.query.f), Number(req.query.n), Buffer.isBuffer(req.body) ? req.body : Buffer.alloc(0), String(req.query.t || ''));
-    res.status(r.ok ? 200 : (r.motivo === 'nessuna' || r.motivo === 'altrove' ? 409 : 400)).json(r.ok ? { ok: true } : { errore: MOTIVI_DIRETTA[r.motivo] || 'Pacchetti rifiutati.', motivo: r.motivo });
+    res.status(r.ok ? 200 : (r.motivo === 'nessuna' || r.motivo === 'altrove' ? 409 : 400)).json(r.ok ? (r.chiave ? { ok: true, chiave: true } : { ok: true }) : { errore: MOTIVI_DIRETTA[r.motivo] || 'Pacchetti rifiutati.', motivo: r.motivo });
   });
   app.post('/api/diretta/fine', requireOwner, studioAperto, (req, res) => {
     const fermata = tramite.ferma(sessioneDi(currentUser(req).login, req.body?.formato), 'fermata', req.body?.turno ? String(req.body.turno) : null);

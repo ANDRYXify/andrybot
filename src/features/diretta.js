@@ -22,6 +22,12 @@ import { risorse as risorseDiSerie } from '../risorse.js';
 import { testata, creaScrittore, TRACCIA, leggiPacchi } from './diretta-mkv.js';
 
 export const ATTESA_RISERVA_MS = 1_500;
+// Al rientro dalla riserva un pacco piu' indietro di cosi' rispetto
+// all'orologio d'uscita e' arretrato (era in coda mentre la linea non andava):
+// il pezzo di diretta che portava l'ha gia' coperto la riserva. Si scarta,
+// invece di spostare in avanti tutto l'orologio: ogni spostamento resta in
+// piattaforma come ritardo in piu', per sempre.
+export const ARRETRATO_MS = 2_000;
 export const ASSENZA_MAX_MS = 10 * 60_000;
 export const FINESTRA_BYTE_MS = 10_000;
 export const BITRATE_MAX_KBPS = 12_000;
@@ -249,24 +255,32 @@ export function creaTramite({ risorse = risorseDiSerie, ffmpeg = 'ffmpeg', ora =
         s.riancora = false;
       }
       let ms = p.us / 1000 + s.offset;
-      s.arrivo[p.tipo] = adesso;
+      // Un pacco scartato non e' «arrivato»: se contasse, la riserva si
+      // fermerebbe senza che il video vero riparta, e in onda resterebbe un
+      // fotogramma fermo finche' non arriva una chiave.
+      const arretrato = orologio(s) - ms > ARRETRATO_MS;
       if (p.tipo === 'video') {
-        if (s.serveChiave && !p.chiave) continue;
         if (s.inRiserva.video || s.serveChiave) {
+          if (!p.chiave || arretrato) continue;
           if (ms <= s.ultimo.video) { s.offset += s.ultimo.video - ms + 1000 / s.fps; ms = p.us / 1000 + s.offset; }
           if (s.inRiserva.video) riempiFino(s, 'video', ms);
           s.inRiserva.video = false;
           s.serveChiave = false;
         }
       } else if (s.inRiserva.audio) {
-        if (ms <= s.ultimo.audio) continue;
+        if (arretrato) continue;
+        const passo = s.riserva ? s.riserva.durataA : 20;
+        if (ms <= s.ultimo.audio) { s.offset += s.ultimo.audio - ms + passo; ms = p.us / 1000 + s.offset; }
         riempiFino(s, 'audio', ms);
         s.inRiserva.audio = false;
       }
+      s.arrivo[p.tipo] = adesso;
       emetti(s, p.tipo, ms, p.chiave, p.dati);
     }
     curaTempo(s);
-    return { ok: true };
+    // Aspetta un fotogramma chiave per riprendere il video vero: lo chiede,
+    // e il dispositivo lo fa sul fotogramma dopo invece che fra due secondi.
+    return { ok: true, chiave: s.serveChiave || s.inRiserva.video };
   }
 
   function stato(login) {

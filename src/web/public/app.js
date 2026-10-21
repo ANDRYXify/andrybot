@@ -21904,7 +21904,7 @@ function studioDisegna() {
   if (libero && STUDIO.palcoNascosto && !STUDIO.tel?.aperta) { cancelAnimationFrame(STUDIO.raf); STUDIO.raf = 0; return; }
   if (libero && !STUDIO.ridisegna && !viva && !STUDIO.eraViva) { cancelAnimationFrame(STUDIO.raf); STUDIO.raf = 0; return; }
   STUDIO.eraViva = viva; STUDIO.ridisegna = false; STUDIO.ultimoDisegno = ora;
-  for (const f of ['o', 'v']) if (studioFormatoServe(f)) studioDisegnaProgramma(f, ora);
+  for (const f of ['o', 'v']) if (studioFormatoServe(f) && !STUDIO.dirette[f]?.cod) studioDisegnaProgramma(f, ora);
   if (studioModalita() && STUDIO.ante) studioDisegnaPiena(STUDIO.anteCx, STUDIO.ante, studioScena(d.anteprima), f0);
 }
 
@@ -23254,16 +23254,17 @@ function studioDirettePerFormato() {
 }
 
 async function studioAvviaFormato(D, f, sup, q, kbps, dest, testo, assenzaMin) {
+  let cod;
   const sped = D.creaSpedizione({
     formato: f,
+    quandoChiave: () => cod?.forzaChiave(),
     quandoFinisce: (dati) => studioFineFormato(f, dati),
     quandoRitenta: () => studioLog(L('La rete è lenta: riprovo. Se dura, sul canale va la tua scritta di riserva.', 'The network is slow: retrying. If it lasts, your fallback text goes on the channel.', 'La red va lenta: reintento. Si dura, en el canal sale tu texto de reserva.')),
   });
-  let cod;
   try {
     cod = await D.creaCodifica({
       supporto: sup, canvas: studioTela(f), contestoAudio: STUDIO.audio.ac, nodoAudio: STUDIO.audio.gMaster, fps: q.fps, kbps,
-      riserva: studioRiservaCanvas(f, testo), spedizione: sped, disegnaSeNascosto: () => studioDisegnaUnaVolta(f),
+      riserva: studioRiservaCanvas(f, testo), spedizione: sped, disegna: () => studioDisegnaUnaVolta(f),
       quandoCambia: (x) => studioLog(x.soloAudio
         ? L('Rete molto lenta: va solo la tua voce, con la scritta di riserva.', 'Very slow network: only your voice goes out, with the fallback text.', 'Red muy lenta: solo sale tu voz, con el texto de reserva.')
         : L(`In diretta · qualità adattata a ${(x.kbps / 1000).toFixed(1)} Mbps`, `Live · quality adjusted to ${(x.kbps / 1000).toFixed(1)} Mbps`, `En directo · calidad ajustada a ${(x.kbps / 1000).toFixed(1)} Mbps`)),

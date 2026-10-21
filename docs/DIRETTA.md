@@ -116,6 +116,39 @@ ricuciti nel tempo così che la diretta non cada. Al ritorno riprende dal primo
 fotogramma chiave. Dopo il tempo scelto dallo streamer senza segnale (10 minuti
 di serie) la diretta si chiude.
 
+**Ritardo, scatti e riserva: un orologio solo.** Una diretta di prova in
+720p30 partiva «super in ritardo», scattava e cadeva spesso su «torno subito».
+Le cause erano nel codice, e ognuna ha la sua regola:
+- **Un fotogramma chiave ogni 2 secondi**, contato sui fotogrammi codificati.
+  Prima lo si chiedeva solo al primo fotogramma: il codificatore software di
+  Chrome su Linux ne fa da sé uno ogni 0,85 secondi circa, quelli con la scheda
+  video di Windows e macOS non lo garantiscono. Le piattaforme tagliano i
+  segmenti solo lì: senza chiavi chi guarda aspetta, e il server, che dopo la
+  riserva riprende solo da una chiave, restava in riserva.
+- **Un orologio solo, quello dell'audio**, che gira anche con la scheda non in
+  vista. A ogni suo battito di fotogramma si disegna la tela in onda e si
+  codifica proprio quel disegno: prima la tela si disegnava col ciclo dello
+  schermo e si prendeva col battito dell'audio, due orologi che facevano
+  doppioni e salti. Con la diretta accesa il ciclo dello schermo non ridisegna
+  più la tela in onda.
+- **La spedizione batte sullo stesso orologio**, ogni 200 ms di diretta, e così
+  il giro della qualità. Con la scheda nascosta i timer del browser si
+  strozzano (un secondo, poi un minuto): i pacchetti arrivavano a blocchi e il
+  server metteva la riserva.
+- **Il server chiede la chiave** quando ne aspetta una (`chiave: true` nella
+  risposta ai pacchetti), e il dispositivo la fa sul fotogramma dopo.
+- **Un pacchetto scartato non conta come arrivato**: prima un fotogramma senza
+  chiave fermava la riserva senza far ripartire il video, e restava un
+  fotogramma fermo.
+- **Al rientro un pacchetto rimasto in coda si scarta** se è più di 2 secondi
+  dietro l'orologio d'uscita (`ARRETRATO_MS`): quel pezzo l'ha già coperto la
+  riserva. Prima spostava in avanti tutto l'orologio della diretta della durata
+  del buco, e ogni buco restava in piattaforma come ritardo in più.
+
+Le prove: `test/unita/diretta.test.mjs` e `diretta-dispositivo.test.mjs`
+(codificatore e orologio finti), e `diretta-chrome.test.mjs` con Chrome vero,
+che misura anche le chiavi nel flusso arrivato. Ognuna rotta apposta va rossa.
+
 **Un mittente alla volta, e la ripresa.** Ogni avvio dà un *turno*: i
 pacchetti e la riserva viaggiano col loro turno, e quelli di un turno vecchio
 ricevono «altrove» (409). Così una pagina ricaricata, o aperta in un'altra

@@ -86,6 +86,45 @@ test('dopo la riserva il video riprende solo da un fotogramma chiave', () => {
   assert.equal(t.stato('mario').inRiserva.video, false);
 });
 
+// Le tre cause della diretta «super in ritardo», a scatti, in «torno subito»
+// (docs/DIRETTA.md, «Ritardo, scatti e riserva»), lato server.
+test('aspettando il fotogramma chiave la riserva resta in onda, e il server lo chiede al dispositivo', () => {
+  let adesso = 1_000_000;
+  const { scritto, r } = finto();
+  const t = creaTramite({ risorse: r, ora: () => adesso, ogniMs: 0 });
+  const { turno } = t.avvia('mario', { destinazioni: DEST, ...CONF, kbps: 3000 });
+  t.riserva('mario', scriviPacchi([pacco('video', 0, true, 'RISERVA-K'), pacco('video', 33_333, false, 'RISERVA-P'), pacco('audio', 0, true, 'SILENZIO'), pacco('audio', 21_333, true, 'SILENZIO')]), turno);
+  assert.deepEqual(t.pacchi('mario', 0, scriviPacchi([pacco('video', 0, true, 'VIVO-K1'), pacco('audio', 0, true, 'VOCE')]), turno), { ok: true, chiave: false });
+  adesso += 3_000;
+  t.curaTempo('mario');
+  const conta = () => (Buffer.concat(scritto).toString('latin1').match(/RISERVA-/g) || []).length;
+  const prima = conta();
+  const r1 = t.pacchi('mario', 1, scriviPacchi([pacco('video', 3_000_000, false, 'VIVO-P'), pacco('audio', 3_000_000, true, 'VOCE2')]), turno);
+  assert.equal(r1.chiave, true, 'chi aspetta una chiave la chiede: il dispositivo la fa sul fotogramma dopo');
+  adesso += 1_000;
+  t.curaTempo('mario');
+  assert.ok(conta() > prima, 'un fotogramma senza chiave non conta come arrivato: la riserva continua, niente fermo immagine');
+  assert.equal(t.stato('mario').inRiserva.video, true);
+  const r2 = t.pacchi('mario', 2, scriviPacchi([pacco('video', 4_000_000, true, 'VIVO-K2')]), turno);
+  assert.equal(r2.chiave, false);
+  assert.equal(t.stato('mario').inRiserva.video, false);
+});
+
+test('al rientro un fotogramma rimasto in coda si scarta: l\'orologio della diretta non si sposta di tutto il buco', () => {
+  let adesso = 1_000_000;
+  const { scritto, r } = finto();
+  const t = creaTramite({ risorse: r, ora: () => adesso, ogniMs: 0 });
+  const { turno } = t.avvia('mario', { destinazioni: DEST, ...CONF, kbps: 3000 });
+  t.riserva('mario', scriviPacchi([pacco('video', 0, true, 'RISERVA-K'), pacco('audio', 0, true, 'SILENZIO'), pacco('audio', 21_333, true, 'SILENZIO')]), turno);
+  t.pacchi('mario', 0, scriviPacchi([pacco('video', 0, true, 'VIVO-K1'), pacco('audio', 0, true, 'VOCE')]), turno);
+  adesso += 8_000;
+  t.curaTempo('mario');
+  t.pacchi('mario', 1, scriviPacchi([pacco('video', 500_000, true, 'VIVO-VECCHIO'), pacco('video', 7_800_000, true, 'VIVO-FRESCO'), pacco('video', 7_833_333, false, 'VIVO-DOPO')]), turno);
+  const tutto = Buffer.concat(scritto).toString('latin1');
+  assert.ok(!tutto.includes('VIVO-VECCHIO'), 'otto secondi indietro: quel pezzo l\'ha gia\' coperto la riserva');
+  assert.ok(tutto.includes('VIVO-FRESCO') && tutto.includes('VIVO-DOPO'), 'si riprende dal primo fotogramma chiave fresco');
+});
+
 test('una riserva senza fotogramma chiave in testa, o senza audio, si rifiuta', () => {
   const { r } = finto();
   const t = creaTramite({ risorse: r, ogniMs: 0 });

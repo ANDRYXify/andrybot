@@ -142,3 +142,84 @@ test('la riserva nasce dal codificatore della diretta: due secondi che comincian
     assert.deepEqual([cod.config.video.config, cod.config.audio.config, cod.config.audio.codec], ['AWQAKA==', 'EZA=', 'aac']);
   } finally { nomi.forEach((n, i) => { globalThis[n] = prima[i]; }); }
 });
+
+// Lato dispositivo (docs/DIRETTA.md, «Ritardo, scatti e riserva»).
+test('la spedizione batte sull\'orologio della diretta, anche coi timer del browser strozzati, e fa la chiave che il server chiede', async () => {
+  const { creaSpedizione } = await import('../../src/web/public/js/diretta-codifica.js');
+  const chiamate = [];
+  let chiavi = 0;
+  const sped = creaSpedizione({ ogniMs: 200, quandoChiave: () => { chiavi++; }, fetch: async (url) => { chiamate.push(Date.now()); return { ok: true, status: 200, json: async () => ({ ok: true, chiave: chiamate.length === 1 }) }; } });
+  try {
+    sped.usaTurno('t1');
+    sped.aggiungi({ tipo: 'audio', chiave: true, us: 1, dati: new Uint8Array([1]) });
+    await attendi(20);
+    const t0 = Date.now();
+    sped.batti(10_000);
+    await finche(() => chiamate.length === 1, 500);
+    assert.ok(chiamate[0] - t0 < 150, 'col battito parte subito, senza aspettare il timer (che a scheda nascosta si strozza)');
+    await finche(() => chiavi === 1, 500);
+    sped.aggiungi({ tipo: 'audio', chiave: true, us: 2, dati: new Uint8Array([2]) });
+    await attendi(20);
+    sped.batti(10_100);
+    await attendi(60);
+    assert.equal(chiamate.length, 1, 'non piu\' di un lotto ogni 200 ms di diretta');
+    sped.batti(10_200);
+    await finche(() => chiamate.length === 2, 500);
+    assert.equal(chiavi, 1, 'la chiave si fa solo quando il server la chiede');
+    const t1 = Date.now();
+    await sped.ferma();
+    assert.ok(Date.now() - t1 < 150, 'fermata si ferma subito: un formato che chiude non resta muto ad aspettare un timer');
+  } finally { sped.ferma(); }
+});
+
+test('un fotogramma chiave ogni due secondi, e ogni fotogramma codificato e\' un fotogramma appena disegnato', async () => {
+  const { creaCodifica } = await import('../../src/web/public/js/diretta-codifica.js');
+  const codificati = [];
+  const finto = (video) => class {
+    constructor({ output }) { this.output = output; this.encodeQueueSize = 0; this.primo = true; }
+    configure() { } close() { }
+    encode(x, o = {}) {
+      if (video && this.inDiretta) codificati.push({ ts: x.timestamp, chiave: !!o.keyFrame, disegno: x.disegno });
+      const meta = this.primo ? { decoderConfig: { description: new Uint8Array([1, 2]) } } : undefined;
+      this.primo = false;
+      this.output({ type: o.keyFrame ? 'key' : 'delta', timestamp: x.timestamp, byteLength: 1, copyTo: (d) => d.set([1]) }, meta);
+    }
+    async flush() { }
+  };
+  let disegni = 0, tempo = 0;
+  const nomi = ['VideoEncoder', 'AudioEncoder', 'VideoFrame', 'AudioData', 'AudioWorkletNode'], prima = nomi.map((n) => globalThis[n]);
+  const oraVera = performance.now;
+  let nodo = null;
+  Object.assign(globalThis, {
+    VideoEncoder: finto(true), AudioEncoder: finto(false),
+    VideoFrame: class { constructor(_s, { timestamp }) { this.timestamp = timestamp; this.disegno = disegni; } close() { } },
+    AudioData: class { constructor({ timestamp }) { this.timestamp = timestamp; } close() { } },
+    AudioWorkletNode: class { constructor() { nodo = this; this.port = {}; } connect() { } disconnect() { } },
+  });
+  const nodoAudio = { connect() { }, disconnect() { } };
+  const contestoAudio = { sampleRate: 48000, audioWorklet: { addModule: async () => { } }, createGain: () => ({ gain: {}, connect() { }, disconnect() { } }), destination: {} };
+  try {
+    const sup = { video: { cfg: { width: 1280, height: 720 } }, audio: { cfg: { codec: 'mp4a.40.2' }, nome: 'aac' } };
+    const sped = { aggiungi() { }, batti() { }, ritardoMs: () => 0, togliVideo() { } };
+    const cod = await creaCodifica({ supporto: sup, fps: 30, kbps: 3000, riserva: {}, spedizione: sped, contestoAudio, nodoAudio, canvas: {}, disegna: () => { disegni++; } });
+    VideoEncoder.prototype.inDiretta = true;
+    performance.now = () => tempo;
+    await cod.parti();
+    for (let i = 0; i < 48000 * 5 / 128; i++) { tempo += 128 / 48; nodo.port.onmessage({ data: [new Float32Array(128), new Float32Array(128)] }); }
+    const chiavi = codificati.map((c, i) => (c.chiave ? i : -1)).filter((i) => i >= 0);
+    assert.ok(codificati.length >= 148 && codificati.length <= 151, `cinque secondi a 30 fotogrammi: ${codificati.length}`);
+    assert.deepEqual(chiavi, [0, 60, 120], 'una chiave ogni 60 fotogrammi: le piattaforme tagliano i segmenti li\', e lo spettatore entra subito');
+    assert.equal(disegni, codificati.length, 'tanti disegni quanti fotogrammi: niente doppioni ne\' salti');
+    assert.ok(codificati.every((c, i) => c.disegno === i + 1), 'ogni fotogramma si prende subito dopo il suo disegno');
+    cod.forzaChiave();
+    tempo += 34; nodo.port.onmessage({ data: [new Float32Array(128), new Float32Array(128)] });
+    assert.equal(codificati.at(-1).chiave, true, 'la chiave chiesta dal server arriva sul fotogramma dopo');
+    await cod.ferma();
+  } finally { performance.now = oraVera; nomi.forEach((n, i) => { globalThis[n] = prima[i]; }); }
+});
+
+test('a diretta accesa la tela in onda la disegna solo l\'orologio della diretta', () => {
+  assert.match(APP, /for \(const f of \['o', 'v'\]\) if \(studioFormatoServe\(f\) && !STUDIO\.dirette\[f\]\?\.cod\) studioDisegnaProgramma\(f, ora\);/, 'il ciclo dello schermo non ridisegna una tela che si sta codificando');
+  assert.match(APP, /disegna: \(\) => studioDisegnaUnaVolta\(f\)/);
+  assert.match(APP, /quandoChiave: \(\) => cod\?\.forzaChiave\(\)/);
+});

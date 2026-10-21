@@ -124,6 +124,11 @@ function controllaArrivato(uscita, f) {
   assert.ok(Math.min(...salti(v)) >= 0.010, `${f}: due fotogrammi non stanno mai a meno di mezzo intervallo: salto minimo ${Math.min(...salti(v)).toFixed(3)} s`);
   assert.ok(Math.max(...salti(v)) < 0.25, `${f}: il video non ha buchi: salto massimo ${Math.max(...salti(v)).toFixed(3)} s`);
   assert.ok(Math.max(...salti(a)) < 0.1, `${f}: l'audio non ha buchi: salto massimo ${Math.max(...salti(a)).toFixed(3)} s`);
+  // Le piattaforme tagliano i segmenti solo su un fotogramma chiave: senza,
+  // chi guarda aspetta e la diretta parte «super in ritardo».
+  const chiavi = spawnSync(FFPROBE, ['-v', 'error', '-select_streams', 'v', '-show_entries', 'packet=pts_time,flags', '-of', 'csv=p=0', uscita], { encoding: 'utf8' }).stdout.trim().split('\n')
+    .map((r) => r.split(',')).filter(([, fl]) => String(fl).includes('K')).map(([t]) => Number(t));
+  assert.ok(chiavi.length >= Math.floor(SECONDI / 2) && Math.max(...salti(chiavi)) <= 2.1, `${f}: un fotogramma chiave ogni due secondi: ${chiavi.map((x) => x.toFixed(2)).join(' ')}`);
   const durata = v.at(-1) - v[0];
   assert.ok(durata > SECONDI - 1.5 && durata < SECONDI + 1, `${f}: la diretta dura il tempo vero: ${durata.toFixed(2)} s`);
   const decodifica = spawnSync(FFMPEG, ['-v', 'error', '-i', uscita, '-fps_mode', 'passthrough', '-enc_time_base', '1:1000', '-f', 'null', '-'], { encoding: 'utf8' });

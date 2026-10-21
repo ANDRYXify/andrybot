@@ -29,12 +29,19 @@ export async function supporto({ larghezza, altezza, fps, kbps }) {
   return { ok: true, video, audio };
 }
 
-export function creaSpedizione({ url = '/api/diretta/pacchi', formato = 'o', ogniMs = 200, quandoFinisce, quandoRitenta } = {}) {
+export const RISERVA_TIMER = 5;
+
+export function creaSpedizione({ url = '/api/diretta/pacchi', formato = 'o', ogniMs = 200, quandoFinisce, quandoRitenta, quandoChiave, fetch: manda = (...a) => fetch(...a) } = {}) {
   const coda = [];
-  let n = 0, inVoloDa = 0, fermata = false, turno = '';
+  let n = 0, inVoloDa = 0, fermata = false, turno = '', sveglia = null, ultimoBattito = 0;
+  const aspetta = () => new Promise((ok) => {
+    sveglia = ok;
+    setTimeout(ok, ogniMs * RISERVA_TIMER);
+  });
   const giro = (async () => {
     while (!fermata) {
-      await attendi(ogniMs);
+      await aspetta();
+      sveglia = null;
       if (!coda.length) continue;
       const lotto = coda.splice(0, coda.length);
       inVoloDa = lotto[0].t;
@@ -42,8 +49,12 @@ export function creaSpedizione({ url = '/api/diretta/pacchi', formato = 'o', ogn
       const seq = n++;
       for (let tentativo = 0; !fermata; tentativo++) {
         try {
-          const r = await fetch(`${url}?f=${formato === 'v' ? 'v' : 'o'}&t=${encodeURIComponent(turno)}&n=${seq}`, { method: 'POST', headers: { 'Content-Type': 'application/octet-stream' }, body: corpo, credentials: 'same-origin' });
-          if (r.ok) break;
+          const r = await manda(`${url}?f=${formato === 'v' ? 'v' : 'o'}&t=${encodeURIComponent(turno)}&n=${seq}`, { method: 'POST', headers: { 'Content-Type': 'application/octet-stream' }, body: corpo, credentials: 'same-origin' });
+          if (r.ok) {
+            let dati = null; try { dati = await r.json(); } catch { }
+            if (dati && dati.chiave) quandoChiave?.();
+            break;
+          }
           if (r.status === 409 || r.status === 403 || r.status === 400) {
             let dati = null; try { dati = await r.json(); } catch { }
             fermata = true;
@@ -59,14 +70,19 @@ export function creaSpedizione({ url = '/api/diretta/pacchi', formato = 'o', ogn
   })();
   return {
     usaTurno(t) { turno = String(t || ''); },
+    batti(adesso = performance.now()) {
+      if (adesso - ultimoBattito < ogniMs || !sveglia) return;
+      ultimoBattito = adesso;
+      const s = sveglia; sveglia = null; s();
+    },
     aggiungi(p) { if (!fermata) coda.push({ ...p, t: performance.now() }); },
     ritardoMs() { const piuVecchio = inVoloDa || (coda[0] && coda[0].t) || 0; return piuVecchio ? performance.now() - piuVecchio : 0; },
     togliVideo() { for (let i = coda.length - 1; i >= 0; i--) if (coda[i].tipo === 'video') coda.splice(i, 1); },
-    ferma() { fermata = true; return giro; },
+    ferma() { fermata = true; if (sveglia) { const s = sveglia; sveglia = null; s(); } return giro; },
   };
 }
 
-export async function creaCodifica({ supporto: sup, canvas, contestoAudio, nodoAudio, fps, kbps, riserva, spedizione, quandoCambia, quandoErrore, disegnaSeNascosto }) {
+export async function creaCodifica({ supporto: sup, canvas, contestoAudio, nodoAudio, fps, kbps, riserva, spedizione, quandoCambia, quandoErrore, disegna }) {
   let configVideo = null, configAudio = null, verso = 'riserva', soloAudio = false, chiaveForzata = true, fermato = false;
   const raccoltaRiserva = [];
   const consegna = (p) => { if (verso === 'riserva') raccoltaRiserva.push(p); else spedizione.aggiungi(p); };
@@ -106,7 +122,9 @@ export async function creaCodifica({ supporto: sup, canvas, contestoAudio, nodoA
   const inizioUs = 2_000_000 + 1;
   let t0 = 0;
   const ora = () => Math.round(inizioUs + (performance.now() - t0) * 1000);
-  let cattura = null, muto = null, giroQualita = 0;
+  let cattura = null, muto = null;
+  const gop = Math.max(1, Math.round(fps * 2));
+  let daChiave = 0, fotogrammi = 0, saltati = 0;
 
   let kbpsOra = kbps, ultimoCambio = performance.now(), calmaDa = performance.now();
   async function parti() {
@@ -122,7 +140,7 @@ export async function creaCodifica({ supporto: sup, canvas, contestoAudio, nodoA
     muto.connect(contestoAudio.destination);
     const freq = contestoAudio.sampleRate;
     let accumulo = [new Float32Array(1024), new Float32Array(1024)], pieni = 0, campioniTotali = 0, inizioAudioUs = null;
-    let prossimoFotogramma = 0;
+    let prossimoFotogramma = 0, prossimoGiro = performance.now() + 1000;
     cattura.port.onmessage = (ev) => {
       if (fermato) return;
       if (inizioAudioUs === null) inizioAudioUs = ora();
@@ -142,30 +160,38 @@ export async function creaCodifica({ supporto: sup, canvas, contestoAudio, nodoA
         }
       }
       const adesso = performance.now();
+      spedizione.batti?.(adesso);
       if (adesso >= prossimoFotogramma) {
         prossimoFotogramma = Math.max(prossimoFotogramma + 1000 / fps, adesso + 500 / fps);
-        if (!soloAudio && ve.encodeQueueSize <= 2) {
-          if (document.hidden && disegnaSeNascosto) disegnaSeNascosto();
+        if (!soloAudio && ve.encodeQueueSize > 2) saltati++;
+        else if (!soloAudio) {
+          if (disegna) disegna();
+          const chiave = chiaveForzata || daChiave <= 0;
           const f = new VideoFrame(canvas, { timestamp: ora() });
-          try { ve.encode(f, { keyFrame: chiaveForzata }); chiaveForzata = false; } catch { }
+          try {
+            ve.encode(f, { keyFrame: chiave });
+            chiaveForzata = false;
+            daChiave = chiave ? gop - 1 : daChiave - 1;
+            fotogrammi++;
+          } catch { }
           f.close();
         }
       }
+      if (adesso >= prossimoGiro) { prossimoGiro = adesso + 1000; qualita(); }
     };
+  }
 
-    giroQualita = setInterval(() => {
-      if (fermato) return;
-      const coda = spedizione.ritardoMs();
-      if (coda > 300) calmaDa = performance.now();
-      const d = decidi({ codaMs: coda, kbps: kbpsOra, kbpsMeta: kbps, soloAudio, calmaMs: performance.now() - calmaDa, dalCambioMs: performance.now() - ultimoCambio });
-      if (!d.cambio) return;
-      ultimoCambio = performance.now();
-      if (d.kbps !== kbpsOra) { kbpsOra = d.kbps; try { ve.configure({ ...sup.video.cfg, bitrate: kbpsOra * 1000 }); chiaveForzata = true; } catch { } }
-      if (d.soloAudio && !soloAudio) spedizione.togliVideo();
-      soloAudio = d.soloAudio;
-      if (d.chiave) chiaveForzata = true;
-      quandoCambia && quandoCambia({ kbps: kbpsOra, soloAudio });
-    }, 1000);
+  function qualita() {
+    const coda = spedizione.ritardoMs();
+    if (coda > 300) calmaDa = performance.now();
+    const d = decidi({ codaMs: coda, kbps: kbpsOra, kbpsMeta: kbps, soloAudio, calmaMs: performance.now() - calmaDa, dalCambioMs: performance.now() - ultimoCambio });
+    if (!d.cambio) return;
+    ultimoCambio = performance.now();
+    if (d.kbps !== kbpsOra) { kbpsOra = d.kbps; try { ve.configure({ ...sup.video.cfg, bitrate: kbpsOra * 1000 }); chiaveForzata = true; } catch { } }
+    if (d.soloAudio && !soloAudio) spedizione.togliVideo();
+    soloAudio = d.soloAudio;
+    if (d.chiave) chiaveForzata = true;
+    quandoCambia && quandoCambia({ kbps: kbpsOra, soloAudio });
   }
 
   return {
@@ -176,10 +202,9 @@ export async function creaCodifica({ supporto: sup, canvas, contestoAudio, nodoA
     riserva: scriviPacchi(raccoltaRiserva),
     parti,
     forzaChiave() { chiaveForzata = true; },
-    stato() { return { kbps: kbpsOra, soloAudio, ritardoMs: spedizione.ritardoMs() }; },
+    stato() { return { kbps: kbpsOra, soloAudio, ritardoMs: spedizione.ritardoMs(), fotogrammi, saltati, gop }; },
     async ferma() {
       fermato = true;
-      clearInterval(giroQualita);
       if (cattura) { try { nodoAudio.disconnect(cattura); cattura.disconnect(); muto.disconnect(); } catch { } try { cattura.port.onmessage = null; } catch { } }
       try { await ve.flush(); } catch { }
       try { await ae.flush(); } catch { }
