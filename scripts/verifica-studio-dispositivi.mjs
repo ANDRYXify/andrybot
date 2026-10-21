@@ -83,6 +83,7 @@ if (SELFTEST) {
     const rossi = (giro.stdout || '').split('\n').filter((l) => l.trim().startsWith('✗')).map((l) => l.trim());
     for (const [, , nome, gg, re] of Object.values(DIFETTI).flat()) if (gg === g && !rossi.some((l) => re.test(l))) sfuggiti.push(nome);
     console.log(`Giro ${g}: ${rossi.length} promesse rosse.`);
+    if (!rossi.length) console.log(`  (il giro e' finito con codice ${giro.status}, segnale ${giro.signal || '-'}${giro.error ? ', ' + giro.error.message : ''}; ultime righe: ${[(giro.stdout || '').trim().split('\n').slice(-3).join(' / '), (giro.stderr || '').trim().split('\n').slice(-3).join(' / ')].filter(Boolean).join(' | ')})`);
   }
   if (sfuggiti.length) { console.log(`\nAutoprova ROSSA: non si accorge di ${sfuggiti.join('; ')}.`); process.exit(1); }
   console.log(`\nAutoprova: tutti e ${Object.values(DIFETTI).flat().length} i difetti rimessi sono stati visti, in ${GRUPPI.length} giri. ✓`);
