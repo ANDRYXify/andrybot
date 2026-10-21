@@ -98,6 +98,12 @@ const b = await chromium.launch({ executablePath: CHROMIUM,
   args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader', '--no-sandbox', '--disable-dev-shm-usage'] });
 const p = await b.newPage({ viewport: { width: 1440, height: 950 } });
 const rotture = [];
+// Il giro prova il NOSTRO sito: niente rete di fuori. Un lettore di Twitch
+// incorporato porta con se' i suoi script (il controllo anti-bot di
+// k.twitchcdn.net chiede la mappa della tastiera dalla sua cornice, e Chrome
+// gliela rifiuta): sarebbe un «errore di pagina» che non e' nostro, e che
+// cambierebbe con la rete della macchina invece che col codice.
+await p.route((u) => u.hostname !== '127.0.0.1' && u.hostname !== 'localhost', (r) => r.abort());
 p.on('pageerror', (e) => rotture.push('errore di pagina: ' + e.message));
 await p.goto(`http://127.0.0.1:${PORTA}/?demo=1&lang=it`, { waitUntil: 'domcontentloaded' });
 await p.waitForFunction(() => window.SB_APP && typeof GUIDE === 'object', null, { timeout: 20000 });
