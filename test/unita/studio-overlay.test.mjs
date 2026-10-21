@@ -67,6 +67,6 @@ test('il patto: l\'overlay dentro lo Studio passa i suoni, non segna «overlay a
   assert.match(OV, /if \(login === 'prova\.socialbot'\) avviaProva\(\);\nelse if \(login\) \{/, 'la prova non chiede niente al server');
   assert.match(SRV, /if \(suo && req\.query\.studio !== '1' && !suo\.settings\?\.overlayVisto\)/, 'l\'avviso «non hai ancora aperto l\'overlay» parla di OBS');
   assert.match(SRV, /if \(req\.params\.login !== 'prova\.socialbot' && !chiaveOk\(req\)\) return notFound\(res\);/);
-  assert.match(APP, /const STUDIO_OV_MISURA = \{ o: \{ W: 1920, H: 1080 \}, v: \{ W: 1080, H: 1920 \} \};/, 'la cornice e\' grande come la sorgente di OBS');
+  assert.match(APP, /const STUDIO_OV_MISURA = \{ o: \{ W: 1920, H: 1080, scala: 1 \}, v: \{ W: 1080, H: 1920, scala: 1\.5 \} \};/, 'la cornice e\' grande come la sorgente di OBS, e il verticale si guarda a 720×1280');
   assert.match(APP, /const u = new URL\(ov\.overlayUrl, location\.origin\);\n\s*studioOverlayBase\(u\.pathname \+ u\.search\);/, 'la cornice e\' sempre della stessa origine dello Studio, anche se il link dell\'overlay porta un altro nome del sito');
 });

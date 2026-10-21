@@ -54,6 +54,7 @@ const DIFETTI = {
     ["  if (!v.comanda) { R.regia.manda(v.id, { t: 'avviso',", "  if (false) { R.regia.manda(v.id, { t: 'avviso',", 'chi entra col QR non comanda', 1, /col QR non cambia scena/],
     ['    studioRemotiVerificaInvito();\n', '', 'l\'invito usato sparisce', 1, /invito usato non si mostra/],
     ['  A.gMic.gain.value = m.mic.mute || !mi.computer ? 0 : m.mic.vol / 100;', '  A.gMic.gain.value = m.mic.mute ? 0 : m.mic.vol / 100;', 'il protagonista zittisce il computer', 1, /microfono del computer tace/],
+    ['  if (!STUDIO.live) studioSpegniRegia();\n', '', 'chi cede la regia lascia fotocamera, microfono e scene', 9, /una regia sola/],
     ["  if (azione === 'unisciti') { location.href = '/cam?io=1&lang=' + encodeURIComponent(LINGUA); return; }", "  if (azione === 'unisciti') { location.href = '/cam?io=1'; return; }", 'la fotocamera dello streamer parla la lingua del pannello', 8, /apre la fotocamera col tuo account/],
     ["  if (!i) return `<button type=\"button\" class=\"${piccolo ? 'tel-grande' : 'btn secondario mini'}\" data-rem-invita", "  if (!i) return `<button type=\"button\" class=\"btn${piccolo ? ' tel-grande' : ' secondario mini'}\" data-rem-invita", 'sul telefono il tasto per collegare e\' da pollice', 8, /foglio «Dispositivi»/],
   ],
@@ -155,7 +156,15 @@ async function apriRegia(ctx) {
   await p.goto(`${BASE}/?demo=1&studio=1&lang=it`, { waitUntil: 'domcontentloaded' });
   await p.waitForFunction(() => window.SB_APP, null, { timeout: 20000 });
   await p.evaluate(() => { document.getElementById('cookie-banner')?.remove(); window.SB_APP.vai('studio'); });
-  await p.waitForFunction(() => typeof STUDIO !== 'undefined' && !!STUDIO.doc && !!STUDIO.tele.o, null, { timeout: 20000 });
+  await prendiLaRegia(p);
+  return p;
+}
+// Lo Studio e' uno per browser: se un'altra finestra ce l'ha, questa mostra il
+// cartello «Lo Studio e' aperto in un'altra scheda» e lo prende solo a richiesta.
+async function prendiLaRegia(p) {
+  await p.waitForFunction(() => typeof STUDIO !== 'undefined' && (!!STUDIO.doc || !document.getElementById('studio-fuori')?.hidden), null, { timeout: 20000 });
+  if (await p.evaluate(() => !STUDIO.doc)) await p.click('#studio-fuori [data-fin="qui"]');
+  await p.waitForFunction(() => !!STUDIO.doc && !!STUDIO.tele.o, null, { timeout: 20000 });
   // In demo la regia dei dispositivi non parte da sola (non c'e' un account):
   // qui c'e', e la si avvia come fa lo Studio vero all'apertura.
   // Le transizioni le prova il collaudo dello Studio: qui il taglio, perche'
@@ -163,7 +172,6 @@ async function apriRegia(ctx) {
   await p.evaluate(() => { STUDIO.doc.scelte.transizione.tipo = 'taglio'; studioRemotiAvvia(); });
   await p.waitForFunction(() => STUDIO.rem.stato === 'regia', null, { timeout: 10000 });
   await p.evaluate(() => document.getElementById('studio-palco-prog')?.scrollIntoView({ block: 'center' }));
-  return p;
 }
 const aspetta = async (p, f, arg, ms = 20000) => { try { await p.waitForFunction(f, arg, { timeout: ms, polling: 100 }); return true; } catch { return false; } };
 const collegatoAllaRegia = (p, id, ms = 20000) => aspetta(p, (i) => { const v = i ? STUDIO.rem.regia?.remoti.get(i) : [...(STUDIO.rem.regia?.remoti.values() || [])].find((x) => x.stato === 'collegato'); return !!v && v.stato === 'collegato' && v.video?.videoWidth > 0; }, id, ms);
@@ -328,9 +336,10 @@ try {
   const nuova = await collegatoAllaRegia(regia2, id, 8000);
   ok('la regia nuova riceve il video in pochi secondi', nuova, `${Date.now() - t0} ms`);
   console.log(`    (passaggio in ${Date.now() - t0} ms)`);
-  const vecchia = await aspetta(regia, () => STUDIO.rem.stato === 'altrove' && !!document.querySelector('#studio-remoti [data-rem-qui]'), null, 5000);
+  const vecchia = await aspetta(regia, () => STUDIO.rem.stato === 'altrove' && !document.getElementById('studio-fuori').hidden && !!document.querySelector('#studio-fuori [data-fin="qui"]'), null, 5000);
   ok('e la vecchia lo sa, col tasto per riprenderla', vecchia);
-  if (vecchia) await regia.evaluate(() => document.querySelector('#studio-remoti [data-rem-qui]').click());
+  ok('e ha lasciato fotocamera, microfono e scene alla nuova: una regia sola', await regia.evaluate(() => !STUDIO.doc && !STUDIO.cap.camStream && !STUDIO.cap.micStream && document.getElementById('studio-carta').hidden));
+  if (vecchia) await prendiLaRegia(regia);
   const ripresa = await collegatoAllaRegia(regia, id);
   ok('ripresa la regia, il video torna alla prima finestra', ripresa);
   await regia2.close();

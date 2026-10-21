@@ -1103,6 +1103,7 @@ input[type="file"]::file-selector-button:hover { background: var(--acc-600); }
 
 .studio-testa { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1rem; margin-bottom: .9rem; }
 .studio-testa h2 { display: none; }
+.studio-stacca { margin-left: auto; }
 .studio-lavoro { display: inline-flex; flex-wrap: wrap; gap: .3rem; }
 .studio-salvato { margin-left: auto; display: inline-flex; flex-wrap: wrap; align-items: center; gap: .4rem; min-height: 1.7rem; font-size: .8rem; color: var(--testo-3); }
 
@@ -1148,6 +1149,25 @@ input[type="file"]::file-selector-button:hover { background: var(--acc-600); }
 .studio-h-sw { bottom: -7px; left: -7px; cursor: nesw-resize; }
 .studio-h-se { bottom: -7px; right: -7px; cursor: nwse-resize; }
 .studio-badge-live { position: absolute; top: 10px; left: 10px; z-index: 3; display: inline-flex; align-items: center; gap: .4rem; font-weight: 700; color: #fff; background: #e0245e; padding: .25rem .6rem; border-radius: 999px; font-size: .85rem; letter-spacing: .02em; box-shadow: 0 0 0 3px #e0245e33; animation: regiaPulse 2s infinite; pointer-events: none; }
+.studio-salute { display: flex; flex-wrap: wrap; align-items: center; gap: .35rem .5rem; margin-top: .5rem; padding: .45rem .7rem; border: 1px solid var(--border); border-radius: var(--r-s); background: var(--surface); font-size: .84rem; font-variant-numeric: tabular-nums; }
+.studio-salute[hidden] { display: none; }
+.studio-salute-riga { display: contents; }
+.salute-onda { font-weight: 800; color: #fff; background: #e0245e; padding: .12rem .55rem; border-radius: 999px; }
+.salute-dest { font-weight: 650; }
+.salute-voce { padding: .1rem .5rem; border-radius: 999px; border: 1px solid transparent; }
+.salute-voce.ok { color: var(--verde); background: var(--verde-soft); border-color: var(--verde-bordo); }
+.salute-voce.attenzione { color: var(--ambra); background: var(--ambra-soft); border-color: var(--ambra-bordo); }
+.salute-voce.guasto { color: var(--rosso); background: var(--rosso-soft); border-color: var(--rosso-bordo); font-weight: 700; }
+.tel .salute-voce.ok { color: #b6f2c4; background: #4ade8024; border-color: #4ade8055; }
+.tel .salute-voce.attenzione { color: #ffd27a; background: #ffb02024; border-color: #ffb02066; }
+.tel .salute-voce.guasto { color: #ffb4a9; background: #b3261e40; border-color: #ff5a5a80; }
+.studio-kbd { margin-left: auto; min-width: 1.4em; padding: 0 .3em; border: 1px solid currentColor; border-radius: 4px; font: 700 .72rem/1.4 ui-monospace, monospace; text-align: center; }
+.studio-scena .studio-tag-onda + .studio-kbd, .studio-scena .studio-tag-ant + .studio-kbd { margin-left: .4rem; }
+.studio-mobile .studio-tasti-nota { display: none; }
+.studio-vuoto { position: absolute; inset: 0; z-index: 2; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .6rem; padding: 1rem; text-align: center; pointer-events: none; }
+.studio-vuoto[hidden] { display: none; }
+.studio-vuoto p { margin: 0; max-width: 34ch; padding: .45rem .8rem; border-radius: 10px; background: #000000b3; color: #fff; font-weight: 650; }
+.studio-vuoto button { pointer-events: auto; }
 
 .studio-carta { container-type: inline-size; }
 .studio-docks { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1.25fr) minmax(0, .85fr); gap: .7rem; align-items: start; margin-top: 1rem; }
@@ -2930,13 +2950,13 @@ select.eff-evento { width: auto; max-width: 100%; min-height: 0; padding: .3rem 
 .tempi-prova { display: flex; align-items: baseline; gap: .3rem .6rem; flex-wrap: wrap; margin: .4rem 0 0; }
 .tempi-prova .suggerimento { margin: 0; }
 
-.tel { position: fixed; inset: 0; z-index: 1000; background: #000; color: #fff; overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; font-size: 16px; line-height: 1.35; }
+.tel { --p-su: calc(env(safe-area-inset-top, 0px) + 60px); --p-giu: calc(env(safe-area-inset-bottom, 0px) + 154px); --p-sx: 0px; --p-dx: 0px; position: fixed; inset: 0; z-index: 1000; background: #000; color: #fff; overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; font-size: 16px; line-height: 1.35; }
 body.tel-aperta { overflow: hidden; overscroll-behavior: none; }
 body.tel-aperta #toast-box { z-index: 1100; left: 12px; right: 12px; top: calc(env(safe-area-inset-top, 0px) + 176px); bottom: auto; }
 .tel button { font: inherit; color: inherit; touch-action: manipulation; cursor: pointer; }
 .tel button:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
 .tel .b-ico { margin: 0; vertical-align: 0; }
-.tel-palco { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; touch-action: none; }
+.tel-palco { position: absolute; top: var(--p-su); left: var(--p-sx); right: var(--p-dx); bottom: var(--p-giu); display: flex; align-items: center; justify-content: center; touch-action: none; }
 .tel-palco canvas { display: block; width: 100%; height: 100%; object-fit: contain; }
 .tel-su { position: absolute; top: calc(env(safe-area-inset-top, 0px) + 8px); left: 10px; right: 10px; display: flex; align-items: center; gap: 6px; pointer-events: none; }
 .tel-su > * { pointer-events: auto; }
@@ -2950,7 +2970,12 @@ body.tel-aperta #toast-box { z-index: 1100; left: 12px; right: 12px; top: calc(e
 .tel-rete[data-q="0"] i { background: #ff5a5a; opacity: 1; }
 .tel-rete[data-q="1"] i:nth-child(-n+1) { background: #ffb020; }
 .tel-esci { margin-left: auto; width: 48px; min-height: 48px; border-radius: 50%; }
-.tel-riassunto { position: absolute; top: calc(env(safe-area-inset-top, 0px) + 62px); left: 50%; transform: translateX(-50%); max-width: calc(100% - 20px); min-height: 48px; padding: 0 16px; border: 0; border-radius: 999px; background: #000000a6; font-size: .86rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tel-scena.tel-riassunto { max-width: 46%; background: #000000a6; box-shadow: inset 0 0 0 1px #ffffff47; font-weight: 600; font-size: .86rem; }
+.tel-riassunto span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.tel-vuoto[hidden] { display: none; }
+.tel-vuoto { position: absolute; top: var(--p-su); bottom: var(--p-giu); left: calc(var(--p-sx) + 16px); right: calc(var(--p-dx) + 16px); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; text-align: center; pointer-events: none; }
+.tel-vuoto p { margin: 0; padding: .55rem .9rem; border-radius: 12px; background: #000000b3; font-weight: 700; }
+.tel-vuoto button { pointer-events: auto; width: auto; margin: 0; }
 .tel-avviso, .tel-alert { position: absolute; left: 12px; right: 12px; top: calc(env(safe-area-inset-top, 0px) + 118px); padding: .7rem 1rem; border-radius: 14px; background: #000000cc; font-weight: 700; text-align: center; }
 .tel-avviso { z-index: 5; pointer-events: none; }
 .tel-avviso.errore { background: #b3261e; }
@@ -2961,13 +2986,19 @@ body.tel-aperta #toast-box { z-index: 1100; left: 12px; right: 12px; top: calc(e
 .tel-chat[data-g="l"] { font-size: 23px; }
 .tel-chat .studio-chat-riga, .tel-chat-piena .studio-chat-riga { align-self: flex-start; max-width: 100%; padding: .2rem .55rem; border-radius: 10px; background: #000000b3; text-shadow: 0 1px 2px #000; word-break: break-word; }
 .tel-chat .studio-chat-user { color: #ffd54a; }
-.tel-scene { position: absolute; left: 0; right: 0; bottom: calc(env(safe-area-inset-bottom, 0px) + 98px); display: flex; gap: 8px; padding: 0 10px; overflow-x: auto; scrollbar-width: none; touch-action: pan-x; overscroll-behavior-x: contain; }
-.tel-scene::-webkit-scrollbar { display: none; }
+.tel-scene { position: absolute; left: 0; right: 0; bottom: calc(env(safe-area-inset-bottom, 0px) + 98px); display: flex; gap: 8px; padding-left: 10px; }
+.tel-scene-lista { position: relative; flex: 1; min-width: 0; display: flex; gap: 8px; padding-right: 22px; overflow-x: auto; scrollbar-width: none; touch-action: pan-x; overscroll-behavior-x: contain; -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 26px), transparent); mask-image: linear-gradient(to right, #000 calc(100% - 26px), transparent); }
+.tel-scene-lista::-webkit-scrollbar { display: none; }
 .tel-scena { flex: none; display: inline-flex; align-items: center; gap: .35rem; min-height: 48px; padding: 0 16px; border: 2px solid transparent; border-radius: 999px; background: #ffffff26; font-weight: 700; white-space: nowrap; }
 .tel-scena.attiva { background: #fff; color: #000; }
 .tel-barra { position: absolute; left: 0; right: 0; bottom: 0; display: grid; grid-template-columns: 1fr 1fr auto 1fr 1fr; gap: 8px; align-items: center; padding: 10px 10px calc(env(safe-area-inset-bottom, 0px) + 10px); background: linear-gradient(to bottom, transparent, #000000c0 45%); }
 .tel-tasto { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-width: 48px; min-height: 60px; padding: 4px; border: 0; border-radius: 16px; background: #ffffff26; font-size: .7rem; white-space: nowrap; font-weight: 700; }
 .tel-tasto[data-stato="muto"], .tel-tasto[data-stato="scena"] { background: #b3261e; }
+.tel-tasto.tel-esci { min-height: 48px; height: 48px; }
+.tel-tasto[data-tel="mic"] { position: relative; overflow: hidden; }
+.tel-tasto[data-tel="mic"] span { white-space: normal; text-align: center; line-height: 1.05; }
+.tel-livello { position: absolute; left: 8px; right: 8px; bottom: 4px; height: 3px; border-radius: 2px; background: #4ade80; transform-origin: left center; transform: scaleX(var(--q, 0)); transition: transform .06s linear; }
+.tel-tasto[data-stato="muto"] .tel-livello, .tel-tasto[data-stato="scena"] .tel-livello, .tel-tasto[data-stato="spento"] .tel-livello { display: none; }
 .tel-vai { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; width: 80px; height: 80px; border: 0; border-radius: 50%; background: #e0245e; font-size: .78rem; font-weight: 800; box-shadow: 0 0 0 4px #ffffff40; }
 .tel-vai.in-onda { background: #fff; color: #c2185b; font-size: .72rem; line-height: 1.1; text-align: center; }
 @property --tel-p { syntax: '<number>'; inherits: false; initial-value: 0; }
@@ -3028,6 +3059,10 @@ body.tel-aperta #toast-box { z-index: 1100; left: 12px; right: 12px; top: calc(e
 .tel-lenti .tel-chip { justify-content: flex-start; min-height: 52px; border-radius: 14px; text-align: left; }
 .tel-cursore { display: block; width: 100%; min-height: 48px; margin: 0; accent-color: #e0245e; touch-action: pan-x; }
 .tel-foglio h4 output { margin-left: .35rem; color: #fff; letter-spacing: 0; text-transform: none; font-variant-numeric: tabular-nums; }
+.tel-attivita { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.tel-attivita li { display: flex; gap: .6rem; align-items: baseline; }
+.tel-attivita time { flex: none; color: #ffffffa8; font-size: .82rem; font-variant-numeric: tabular-nums; }
+.tel-salute { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 8px; }
 .tel-chat-piena { max-height: 46dvh; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; touch-action: pan-y; }
 .tel-conto { position: absolute; inset: 0; z-index: 3; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; border: 0; background: #000000a6; }
 .tel-conto strong { font-size: min(40vmin, 220px); line-height: 1; }
@@ -3037,6 +3072,10 @@ body.tel-aperta #toast-box { z-index: 1100; left: 12px; right: 12px; top: calc(e
 .tel-sblocca.tenendo::after { animation: telSblocca 1.5s linear forwards; }
 @keyframes telSblocca { to { transform: scaleX(1); } }
 @media (orientation: landscape) and (max-height: 520px) {
+  .tel { --p-su: 0px; --p-giu: calc(env(safe-area-inset-bottom, 0px) + 66px); --p-sx: env(safe-area-inset-left, 0px); --p-dx: calc(env(safe-area-inset-right, 0px) + 104px); }
+  .tel-avviso { top: auto; bottom: calc(var(--p-giu) + 10px); right: calc(var(--p-dx) + 12px); }
+  .tel-alert { right: calc(var(--p-dx) + 12px); }
+  .tel-scena.tel-riassunto { max-width: 40%; }
   .tel-su { right: 116px; }
   .tel-barra { top: 0; left: auto; width: 104px; grid-template-columns: 1fr; grid-template-rows: repeat(5, auto); align-content: center; justify-items: center; padding: 8px calc(env(safe-area-inset-right, 0px) + 10px) 8px 10px; background: linear-gradient(to right, transparent, #000000c0 40%); }
   .tel-tasto { width: 72px; min-height: 52px; }
@@ -3046,5 +3085,23 @@ body.tel-aperta #toast-box { z-index: 1100; left: 12px; right: 12px; top: calc(e
   .tel-chat { bottom: 70px; max-height: 46vh; width: min(52%, 440px); }
   .tel-foglio { left: 50%; right: auto; width: min(100%, 620px); transform: translateX(-50%); max-height: 94dvh; }
 }
+
+.studio-fuori { max-width: 760px; }
+.studio-fuori[hidden] { display: none; }
+.studio-fuori h2 { margin-top: 0; }
+.studio-fuori-stato { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; font-variant-numeric: tabular-nums; }
+.studio-fuori-tasti { display: flex; flex-wrap: wrap; gap: .5rem; margin: .8rem 0 .4rem; }
+.studio-pillola { flex: none; display: inline-flex; align-items: center; min-height: 36px; margin-left: auto; margin-right: .5rem; padding: 0 .8rem; border: 1px solid var(--acc-bordo); border-radius: 999px; background: var(--acc-soft); color: var(--testo); font: inherit; font-size: .85rem; font-weight: 750; font-variant-numeric: tabular-nums; cursor: pointer; }
+.studio-pillola[hidden] { display: none; }
+@media (pointer: coarse) { .studio-pillola { min-height: 44px; } }
+.studio-pillola + .top-strumenti { margin-left: 0; }
+.studio-pillola.in-onda { border-color: #e0245e; background: #e0245e; color: #fff; }
+.studio-pillola.guasto { border-color: var(--rosso-bordo); background: var(--rosso-soft); color: var(--rosso); }
+.studio-pillola:focus-visible { outline: 3px solid var(--acc); outline-offset: 2px; }
+body.studio-finestra { --lato: 0px; }
+body.studio-finestra #barra-top, body.studio-finestra #barra-giu, body.studio-finestra #backdrop, body.studio-finestra #bordo-menu, body.studio-finestra #drawer, body.studio-finestra #pagina-testata, body.studio-finestra .pie-mano, body.studio-finestra .pie, body.studio-finestra #cookie-banner, body.studio-finestra #cerca-lancia, body.studio-finestra #plancia-lancia { display: none !important; }
+body.studio-finestra .area-principale { margin-left: 0 !important; }
+body.studio-finestra .contenuto { max-width: none; padding: 10px 14px 14px; }
+body.studio-finestra .studio-largo { --lw: 100%; width: 100%; margin-left: 0; }
 
 body.in-studio #anime-sfondo::after, body.tel-aperta #anime-sfondo::after, body.studio-live #anime-sfondo::after { animation: none; }

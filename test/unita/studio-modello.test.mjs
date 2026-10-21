@@ -183,10 +183,11 @@ test('scorrendo si passa alla scena accanto, e si gira in tondo', () => {
 });
 
 test('le scelte del telefono si ricordano e si normalizzano', () => {
-  assert.deepEqual(normalizza({}).scelte.telefono, { scenario: '', chat: 'm', voce: false, vibra: true });
-  assert.deepEqual(normalizza({ scelte: { telefono: { scenario: 'mani' } } }).scelte.telefono, { scenario: 'mani', chat: 'm', voce: true, vibra: true }, 'mani al lavoro: la chat a voce di serie');
-  assert.deepEqual(normalizza({ scelte: { telefono: { scenario: 'gioco', chat: 'xl', voce: 'si', vibra: false } } }).scelte.telefono, { scenario: '', chat: 'm', voce: false, vibra: false }, 'uno scenario che dal browser non si fa non si ricorda');
+  assert.deepEqual(normalizza({}).scelte.telefono, { scenario: '', chat: 'm', voce: false, vibra: true, segui: true });
+  assert.deepEqual(normalizza({ scelte: { telefono: { scenario: 'mani' } } }).scelte.telefono, { scenario: 'mani', chat: 'm', voce: true, vibra: true, segui: true }, 'mani al lavoro: la chat a voce di serie');
+  assert.deepEqual(normalizza({ scelte: { telefono: { scenario: 'gioco', chat: 'xl', voce: 'si', vibra: false } } }).scelte.telefono, { scenario: '', chat: 'm', voce: false, vibra: false, segui: true }, 'uno scenario che dal browser non si fa non si ricorda');
   assert.deepEqual(normalizza({ scelte: { telefono: { scenario: 'mani', voce: false } } }).scelte.telefono.voce, false, 'spenta a mano resta spenta');
+  assert.equal(normalizza({ scelte: { telefono: { segui: false } } }).scelte.telefono.segui, false, 'un formato fissato a mano resta fissato');
 });
 
 test('la fonte Overlay ricorda quale dei tuoi overlay usa; se quello non c\'e\' piu\', prende quello di serie e poi il primo', () => {

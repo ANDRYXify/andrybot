@@ -48,6 +48,14 @@ catch { console.log('Playwright non c\'e\' su questa macchina: collaudo saltato.
 // rifiutato che resta senza effetto; i bottoni volanti sopra i comandi; i nomi
 // di Android illeggibili; la scelta del computer che non arriva alla scena; i
 // tasti tondi troppo piccoli.
+// E per la regia rivista (docs/DIRETTA.md): la tela sotto i comandi; il
+// cartello della tela vuota che tace; il microfono che non dice lo stato; il
+// formato che non segue il telefono o che perde una destinazione; la salute
+// che non distingue il guasto. Per la finestra a parte: le altre schede che
+// restano nella finestra; il sito che si riprende la regia da solo; la
+// finestra chiusa in diretta che non si dice; i tasti che partono mentre si
+// scrive; e, in un giro loro perche' si trascinano dietro tutto il resto, chi
+// ha la regia che non la cede e il cartello che non si mostra.
 const SELFTEST = process.argv.includes('--selftest');
 // Difetti che si coprono a vicenda non si rimettono insieme («un tocco chiude»
 // spegnerebbe la diretta prima di poter misurare il rilascio): ogni gruppo e'
@@ -69,7 +77,7 @@ const DIFETTI = {
     ["      sel.dispatchEvent(new Event('input', { bubbles: true }));\n      sel.dispatchEvent(new Event('change', { bubbles: true }));", "      sel.dispatchEvent(new Event('change', { bubbles: true }));", 'il menu\' rivestito annuncia la scelta', 4, /scegliendo un altro overlay/],
     ['  if (!d.scelte.overlay) d.scelte.overlay = studioOverlayDi(null);', '  if (!d.scelte.overlay) d.scelte.overlay = id;', 'la scelta di una scena non tocca le altre', 5, /le altre tengono il loro/],
     ['  if (STUDIO.doc && STUDIO.ov.list.length && !STUDIO.ov.list.some((o) => o.id === STUDIO.doc.scelte.overlay)) STUDIO.doc.scelte.overlay = STUDIO.ov.list[0].id;', '', 'la scelta di una scena non tocca le altre (bis)', 5, /le altre tengono il loro/],
-    ["const studioServeDisegnare = () => STUDIO.live || !!STUDIO.avvio || !!STUDIO.tel?.aperta || schedaAttiva === 'studio';", 'const studioServeDisegnare = () => true;', 'fuori dalla scheda non si disegna', 4, /fuori dalla scheda Studio/],
+    ["const studioServeDisegnare = () => STUDIO.live || !!STUDIO.avvio || (!FIN.ceduto && (!!STUDIO.tel?.aperta || schedaAttiva === 'studio'));", 'const studioServeDisegnare = () => true;', 'fuori dalla scheda non si disegna', 4, /fuori dalla scheda Studio/],
     ["      STUDIO.palcoNascosto = !(p?._inVista || (a && !a.closest('[hidden]') && a._inVista));", '      STUDIO.palcoNascosto = false;', 'fuori dalla scheda non si disegna (bis)', 4, /fuori dalla scheda Studio/],
     ["      STUDIO.palcoNascosto = !(p?._inVista || (a && !a.closest('[hidden]') && a._inVista));", '      STUDIO.palcoNascosto = false;', 'la tela fuori schermo non si disegna', 6, /scorsa fuori dallo schermo/],
     ['  if (libero && !STUDIO.ridisegna && !viva && !STUDIO.eraViva) {', '  if (false) {', 'a riposo non si disegna', 4, /a riposo/],
@@ -78,6 +86,17 @@ const DIFETTI = {
     ['const zoom = cam && !C.hw ? C.zoom : (', 'const zoom = cam && !C.hw ? 1 : (', 'lo zoom digitale ingrandisce', 7, /il tasto «1×» ingrandisce/],
     ['await tr.applyConstraints({ advanced: [{ zoom: studioClamp(', 'await ({ advanced: [{ zoom: studioClamp(', 'si usa lo zoom della fotocamera', 7, /ha uno zoom suo/],
     ['    studioCamSposta(mx - T.pinza.mx, my - T.pinza.my);\n', '', 'due dita spostano', 7, /spostandole insieme/],
+    ["  if (STUDIO_FINESTRA && id !== 'studio') { if (studioSonoRegia()) studioFinestraFuori(id); return; }\n", '', 'dalla finestra le altre schede vanno nel sito', 10, /si apre nella finestra principale/],
+    ['  card.hidden = !fuori; if (carta) carta.hidden = fuori;', '  card.hidden = true;', 'il sito mostra il cartello', 11, /il sito se ne accorge/],
+    ["    if (!studioSonoRegia()) return;\n    const live = !!STUDIO.live;", "    if (true) return;\n    const live = !!STUDIO.live;", 'chi ha la regia la cede', 11, /il sito se ne accorge|torna nel sito/],
+    ['    FIN.altrove = null; FIN.chiusaLive = !!m.live;', '    FIN.altrove = null; FIN.chiusaLive = false;', 'la finestra chiusa in diretta si dice', 10, /regia manca/],
+    ["  if (ev.target.closest?.('input, textarea, select, [contenteditable]:not([contenteditable=\"false\"]), dialog') || document.querySelector('dialog[open]')) return;\n", '', 'scrivendo non partono i tasti', 10, /scrivendo in un campo/],
+    ['    if (!STUDIO_FINESTRA && !FIN.prendi && occupato) { renderStudioFuori(); return; }', '    if (false) { renderStudioFuori(); return; }', 'il sito non si riprende la regia da solo', 10, /non si riprende la regia/],
+    ['  if (!el || !STUDIO.doc) return;\n  const d = STUDIO.doc, k = STUDIO.trans', '  if (true) return;\n  const d = STUDIO.doc, k = STUDIO.trans', 'la tela vuota si dice', 1, /fotocamera spenta la tela lo dice/],
+    ["muto: L('Mic muto', 'Mic muted', 'Micro silenciado')", "muto: L('Microfono', 'Mic muted', 'Micro silenciado')", 'il microfono dice il suo stato', 1, /dice il suo stato a parole/],
+    ['  if (STUDIO.M.escluse(prova, valide).length > STUDIO.M.escluse(d.scelte, valide).length) return;\n', '', 'il formato non perde destinazioni', 1, /nessuna destinazione si perde/],
+    ['  const lato = innerWidth > innerHeight ? \'o\' : \'v\', f = d.scelte.formati;', '  const lato = STUDIO.lavoro, f = d.scelte.formati;', 'il formato segue il telefono', 7, /il formato segue il telefono/],
+    ['const SALUTE_SOGLIE = { saltati: [0.02, 0.1],', 'const SALUTE_SOGLIE = { saltati: [0.5, 0.9],', 'gli scarti si colorano', 1, /colori della gravita/],
     ['  if (r.specchio) { c.translate(2 * r.dx + r.dw, 0); c.scale(-1, 1); }\n', '', 'lo specchio specchia', 7, /Specchia» rovescia/],
     ['  if (r.bande && STUDIO.M.SFUMATE.includes(f.tipo)) studioSfumato(c, el, vw, vh, p);\n', '', 'le bande sono sfumate', 8, /sfondo sfumato, non il nero/],
     ["  if (k === 'dritto') studioTelAvviso(", '  if (false) studioTelAvviso(', 'si dice di tenere il telefono dritto', 7, /regia dice di tenere il telefono dritto/],
@@ -99,6 +118,7 @@ const DIFETTI = {
     ['.studio-mobile .studio-regia-main { display: contents; }', '.studio-mobile .studio-regia-main { display: block; }', 'sul telefono i comandi stanno subito sotto la tela', 9, /dall'alto: la tela/],
     ['.studio-mobile #studio-docks > .studio-dock:not(.studio-controlli)', '.studio-mobile .studio-docks > .studio-dock:not(.studio-controlli)', 'sul telefono Proprieta\' e Chat restano', 1, /proprieta' si vedono anche sul telefono/],
     ['.tel-riga { display: grid; gap: 6px; margin-top: 12px; }', '.tel-riga { display: grid; gap: 6px; margin-top: 70px; }', 'il foglio Fotocamera non si scorre', 7, /sta tutto in una schermata/],
+    ['.tel-palco { position: absolute; top: var(--p-su); left: var(--p-sx); right: var(--p-dx); bottom: var(--p-giu);', '.tel-palco { position: absolute; top: 0; left: 0; right: 0; bottom: 0;', 'la tela sta fuori dai comandi', 1, /mai sotto i comandi|lascia posto a barra/],
     ['min-width: 48px; min-height: 60px; padding: 4px;', 'min-width: 30px; min-height: 30px; padding: 0;', 'i tasti sono da pollice', 1, /il pollice arriva a tutto/],
     ['body.in-studio #cerca-lancia, body.in-studio #plancia-lancia { display: none !important; }', 'body.in-studio #nessuno, body.in-studio #plancia-lancia { display: none !important; }', 'niente bottoni volanti nello Studio', 7, /niente bottoni volanti/],
     ['width: 52px; height: 52px; padding: 0; border: 0; border-radius: 50%;', 'width: 30px; height: 30px; padding: 0; border: 0; border-radius: 50%;', 'i tasti tondi sono da pollice', 7, /tasti della fotocamera sulla tela/],
@@ -367,6 +387,95 @@ console.log('Studio della diretta a portata (1366×768):');
   await p.close();
 }
 
+// ---------------------------------------------------------------- una finestra a parte
+// Lo Studio si stacca in una finestra sua (docs/DIRETTA.md, «Lo Studio in una
+// finestra a parte»): una regia sola per browser, il sito che se ne accorge,
+// e il ritorno. La diretta finta (STUDIO.live) basta: qui si misura chi tiene
+// la regia e cosa dice il sito, il motore vero lo prova la prova in Chrome.
+console.log('Lo Studio in una finestra a parte (1366×900):');
+{
+  const { p, err } = await apri({ width: 1366, height: 900, telefono: false });
+  const ctx = p.context();
+  if (serviti.size) {
+    await ctx.route((u) => u.host === `127.0.0.1:${PORTA}` && serviti.has(u.pathname), async (route) => {
+      const r = await route.fetch();
+      await route.fulfill({ response: r, body: serviti.get(new URL(route.request().url()).pathname) });
+    });
+  }
+  const errF = [];
+  const stacca = async () => {
+    const [w] = await Promise.all([ctx.waitForEvent('page'), clic(p, '[data-fin="stacca"]')]);
+    w.on('pageerror', (e) => errF.push(e.message));
+    await w.waitForFunction(() => typeof STUDIO !== 'undefined' && !!STUDIO.doc && !!STUDIO.tele.o, null, { timeout: 20000 }).catch(() => {});
+    await p.waitForTimeout(600);
+    return w;
+  };
+  // Ogni prova parte da uno stato noto: le altre finestre chiuse e la regia
+  // qui. Un difetto si vede nella sua riga, non in tutte quelle dopo.
+  const ripristina = async () => {
+    for (const q of ctx.pages()) if (q !== p) await q.evaluate(() => { try { STUDIO.live = false; } catch {} window.close(); }).catch(() => {});
+    await p.waitForTimeout(400);
+    await p.evaluate(async () => { STUDIO.live = false; FIN.altrove = null; FIN.chiusaLive = false; if (!studioSonoRegia()) { FIN.ceduto = false; FIN.prendi = true; await caricaStudio(); } renderStudioFuori(); renderStudioPillola(); });
+    await p.waitForFunction(() => !!STUDIO.doc, null, { timeout: 8000 }).catch(() => {});
+  };
+  await p.evaluate(() => { STUDIO.cap.micStream = new MediaStream(); });
+  let w = await stacca();
+  const fin = await w.evaluate(() => ({ regia: studioSonoRegia(), sola: document.body.classList.contains('studio-finestra') && getComputedStyle(document.getElementById('barra-top')).display === 'none' && getComputedStyle(document.getElementById('drawer')).display === 'none', torna: !!document.querySelector('[data-fin="torna"]') }));
+  ok('«Stacca in una finestra» apre una finestra con solo lo Studio, che prende la regia', fin.regia && fin.sola && fin.torna, JSON.stringify(fin));
+  const sito = async () => p.evaluate(() => ({ regia: studioSonoRegia(), doc: !!STUDIO.doc, mic: !!STUDIO.cap.micStream, cartello: !document.getElementById('studio-fuori').hidden && document.getElementById('studio-carta').hidden, testo: document.getElementById('studio-fuori').textContent, pillola: document.getElementById('studio-pillola')?.hidden === false ? document.getElementById('studio-pillola').textContent : '' }));
+  const s1 = await sito();
+  ok('il sito se ne accorge: al posto dello Studio il cartello, e fotocamera, microfono e scene lasciati alla finestra', !s1.regia && !s1.doc && !s1.mic && s1.cartello && /finestra a parte/.test(s1.testo), JSON.stringify(s1));
+  await p.evaluate(() => SB_APP.vai('statistiche')); await p.waitForTimeout(300);
+  await w.evaluate(() => { STUDIO.live = true; STUDIO.startedAt = Date.now() - 65000; studioFinestraAnnuncia(); });
+  await p.waitForTimeout(400);
+  const pill = await sito();
+  ok('e in ogni altra scheda del sito la pillola in alto dice che si e\' in diretta, col tempo', /LIVE 01:0\d/.test(pill.pillola), pill.pillola);
+  await w.evaluate(() => { STUDIO.live = false; studioFinestraAnnuncia(); SB_APP.vai('alert'); });
+  await p.waitForTimeout(400);
+  const fuori = { sito: await p.evaluate(() => schedaAttiva), finestra: await w.evaluate(() => ({ scheda: schedaAttiva, regia: studioSonoRegia() })) };
+  ok('dalla finestra, un\'altra scheda del sito si apre nella finestra principale, e lo Studio resta li\'', fuori.sito === 'alert' && fuori.finestra.scheda === 'studio' && fuori.finestra.regia, JSON.stringify(fuori));
+  await p.evaluate(() => SB_APP.vai('studio')); await p.waitForTimeout(500);
+  ok('tornando alla scheda Studio il sito non si riprende la regia da solo', await p.evaluate(() => !studioSonoRegia() && !document.getElementById('studio-fuori').hidden));
+  const chiusa = w.waitForEvent('close', { timeout: 8000 }).then(() => true, () => false);
+  await clic(p, '#studio-fuori [data-fin="qui"]');
+  const qui = { chiusa: await chiusa };
+  await p.waitForFunction(() => !!STUDIO.doc, null, { timeout: 8000 }).catch(() => {});
+  Object.assign(qui, await p.evaluate(() => ({ regia: studioSonoRegia(), carta: !document.getElementById('studio-carta').hidden, cartello: !document.getElementById('studio-fuori').hidden })));
+  ok('«Riportalo qui» chiude la finestra e lo Studio torna nel sito', qui.chiusa && qui.regia && qui.carta && !qui.cartello, JSON.stringify(qui));
+
+  await ripristina();
+  w = await stacca();
+  await w.close({ runBeforeUnload: false }); await p.waitForTimeout(500);
+  const chiusoFermo = await sito();
+  ok('chiusa la finestra fuori diretta, il sito dice che lo Studio si e\' chiuso e lo riapre a richiesta', chiusoFermo.cartello && /si è chiuso/.test(chiusoFermo.testo) && !chiusoFermo.pillola, JSON.stringify(chiusoFermo));
+  await ripristina();
+  w = await stacca();
+  await w.evaluate(() => { STUDIO.live = true; STUDIO.startedAt = Date.now(); studioFinestraAnnuncia(); });
+  await p.waitForTimeout(300);
+  await w.close({ runBeforeUnload: false }); await p.waitForTimeout(500);
+  const chiusoLive = await sito();
+  ok('chiusa la finestra in diretta, il sito dice che la regia manca, con «Riprendi la diretta qui»', chiusoLive.cartello && /durante la diretta/.test(chiusoLive.testo) && /senza regia/i.test(chiusoLive.pillola), JSON.stringify(chiusoLive));
+  await ripristina();
+
+  const tasti = await p.evaluate(async () => {
+    if (STUDIO.doc.scene.length < 2) studioNuovaScena('Seconda');
+    renderStudioTutto();
+    STUDIO.doc.scelte.modalitaStudio = false; STUDIO.cap.micStream = new MediaStream(); STUDIO.mix.mic.mute = false;
+    document.activeElement?.blur();
+    const premi = (k, su = document.body) => su.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true }));
+    const prima = STUDIO.doc.inOnda;
+    premi('2'); await new Promise((r) => setTimeout(r, 500));
+    const due = STUDIO.doc.inOnda;
+    premi('m'); const muto = STUDIO.mix.mic.mute;
+    const campo = document.getElementById('studio-riserva-testo'); campo.focus();
+    premi('1', campo); premi('m', campo); await new Promise((r) => setTimeout(r, 300));
+    return { cambiata: due !== prima && due === STUDIO.doc.scene[1].id, muto, fermoNelCampo: STUDIO.doc.inOnda === due && STUDIO.mix.mic.mute === muto, nota: !!document.querySelector('.studio-tasti-nota') && !!document.querySelector('#studio-scene kbd') };
+  });
+  ok('tasti: 2 manda in onda la seconda scena, M zittisce il microfono, e scrivendo in un campo non succede niente', tasti.cambiata && tasti.muto && tasti.fermoNelCampo && tasti.nota, JSON.stringify(tasti));
+  ok('nessun errore di pagina fra le due finestre', !err.length && !errF.length, [...err, ...errF].join(' | '));
+  await p.close();
+}
+
 // ---------------------------------------------------------------- telefono
 console.log('Studio della diretta sul telefono (420×860):');
 {
@@ -442,6 +551,32 @@ console.log('Regia da telefono (390×844, a tocco):');
   ok('in alto si legge dove va davvero la diretta: nessuna destinazione collegata, nessuna promessa', /nessuna destinazione/.test(rias) && !/Twitch|Kick/.test(rias), rias);
   ok('il pollice arriva a tutto: ogni tasto della diretta e\' da 48 punti e sta nella meta\' bassa', pollice.fuori.length === 0, pollice.fuori.join('; '));
   ok('la pagina non scorre di lato', pollice.largo <= 0, `${pollice.largo}px`);
+
+  // La tela e' quello che va in onda: niente le sta sopra se non la chat e i
+  // tasti della fotocamera, voluti. Barra, scene e riassunto stanno fuori.
+  const sottoComandi = () => p.evaluate(() => {
+    const r = (e) => e.getBoundingClientRect(), palco = r(document.getElementById('tel-palco')), fuori = [];
+    const tocca = (a, b) => a.left < b.right - 1 && b.left < a.right - 1 && a.top < b.bottom - 1 && b.top < a.bottom - 1;
+    for (const e of document.querySelectorAll('.tel-barra button, .tel-scene button, .tel-su > *')) { if (!e.getClientRects().length) continue; if (tocca(r(e), palco)) fuori.push(`${e.id || e.dataset.tel || e.className}: ${Math.round(r(e).top)}`); }
+    return { fuori, palco: [Math.round(palco.left), Math.round(palco.top), Math.round(palco.width), Math.round(palco.height)] };
+  });
+  const sc1 = await sottoComandi();
+  ok('la tela non finisce mai sotto i comandi: barra, scene e riassunto stanno fuori', sc1.fuori.length === 0 && sc1.palco[3] > 500, JSON.stringify(sc1));
+  const vuoto = await p.evaluate(() => { const v = document.getElementById('tel-vuoto'); return { vis: !v.hidden, tasto: !!v.querySelector('[data-tel="accendi"]'), testo: v.textContent }; });
+  await p.evaluate(() => { STUDIO.cap.camEl = document.createElement('video'); studioRidisegna(); });
+  await p.waitForTimeout(300);
+  const pieno = await p.evaluate(() => document.getElementById('tel-vuoto').hidden);
+  await p.evaluate(() => { STUDIO.cap.camEl = null; studioRidisegna(); });
+  ok('a fotocamera spenta la tela lo dice, col tasto per accenderla; accesa, il cartello sparisce', vuoto.vis && vuoto.tasto && /spenta/.test(vuoto.testo) && pieno, JSON.stringify({ vuoto, pieno }));
+  const micT = await p.evaluate(() => {
+    STUDIO.cap.micStream = new MediaStream(); STUDIO.mix.mic.mute = true; renderStudioTel();
+    const b = document.querySelector('[data-tel="mic"]'), muto = { testo: b.textContent.trim(), stato: b.dataset.stato };
+    STUDIO.mix.mic.mute = false; renderStudioTel();
+    const on = { testo: b.textContent.trim(), lancetta: !!b.querySelector('[data-vu="mic"]') };
+    STUDIO.cap.micStream = null; renderStudioTel();
+    return { muto, on };
+  });
+  ok('il microfono dice il suo stato a parole («Mic muto», «Mic attivo») e ha la lancetta del livello', micT.muto.testo === 'Mic muto' && micT.muto.stato === 'muto' && micT.on.testo === 'Mic attivo' && micT.on.lancetta, JSON.stringify(micT));
 
   const scorri = async (dx) => { await p.mouse.move(195, 380); await p.mouse.down(); await p.mouse.move(195 + dx / 2, 384, { steps: 4 }); await p.mouse.move(195 + dx, 386, { steps: 4 }); await p.mouse.up(); await p.waitForTimeout(700); };
   const onda = () => p.evaluate(() => studioScena(STUDIO.doc.inOnda).nome);
@@ -544,6 +679,42 @@ console.log('Regia da telefono (390×844, a tocco):');
     return { fuori, largo: document.documentElement.scrollWidth - W };
   });
   ok('col telefono di traverso la barra va sul lato del pollice, intera', orizz.fuori.length === 0 && orizz.largo <= 0, orizz.fuori.join('; '));
+
+  const lato = await p.evaluate(() => {
+    const r = (e) => e.getBoundingClientRect(), palco = r(document.getElementById('tel-palco')), fuori = [];
+    const tocca = (a, b) => a.left < b.right - 1 && b.left < a.right - 1 && a.top < b.bottom - 1 && b.top < a.bottom - 1;
+    for (const e of document.querySelectorAll('.tel-barra button, .tel-scene button')) if (e.getClientRects().length && tocca(r(e), palco)) fuori.push(e.id || e.dataset.tel || e.textContent.trim());
+    return { fuori, f: STUDIO.lavoro, formati: STUDIO.doc.scelte.formati };
+  });
+  ok('di lato la tela lascia posto a barra e scene, e la diretta diventa orizzontale (il formato segue il telefono)', lato.fuori.length === 0 && lato.f === 'o' && lato.formati.o && !lato.formati.v, JSON.stringify(lato));
+  await p.evaluate(() => { STUDIO.dir = { twitch: { su: true, keyOk: true }, kick: { su: true, keyOk: true }, destinazioni: [] }; STUDIO.doc.scelte.dest = ['twitch']; });
+  await p.setViewportSize({ width: 390, height: 844 }); await p.waitForTimeout(500);
+  const twitch = await p.evaluate(() => ({ f: STUDIO.lavoro, formati: STUDIO.doc.scelte.formati }));
+  await p.evaluate(() => { STUDIO.doc.scelte.dest = ['kick']; });
+  await p.setViewportSize({ width: 391, height: 844 }); await p.waitForTimeout(500);
+  const kick = await p.evaluate(() => STUDIO.lavoro);
+  ok('ma con Twitch, che e\' solo orizzontale, dritto resta orizzontale: nessuna destinazione si perde; con Kick torna verticale', twitch.f === 'o' && twitch.formati.o && !twitch.formati.v && kick === 'v', JSON.stringify({ twitch, kick }));
+
+  const salute = await p.evaluate(() => {
+    const prima = { live: STUDIO.live, dirette: STUDIO.dirette };
+    let fot = 0, sal = 0;
+    STUDIO.live = true; STUDIO.startedAt = Date.now();
+    const nom = STUDIO_QUAL[STUDIO.qual].vbps / 1000;
+    STUDIO.dirette = { o: { cod: { stato: () => ({ fotogrammi: fot, saltati: sal, kbps: nom, ritardoMs: 120 }) } } };
+    const st = { live: true, destinazioni: ['Kick'], kbpsVeri: Math.round(nom * 0.98), inRiserva: {} };
+    studioSaluteMisura('o', st);
+    STUDIO.dirette.o.misura.t -= 2000; fot = 60; sal = 0; studioSaluteMisura('o', st);
+    const buona = studioSaluteVoci(STUDIO.dirette.o.salute).map((v) => v.k + ':' + v.liv);
+    STUDIO.dirette.o.misura.t -= 2000; fot = 108; sal = 12; studioSaluteMisura('o', { ...st, kbpsVeri: Math.round(nom * 0.3) });
+    const brutta = studioSaluteVoci(STUDIO.dirette.o.salute).map((v) => v.k + ':' + v.liv);
+    STUDIO.tel.foglio = 'altro'; renderStudioTelFoglio();
+    const foglio = document.querySelector('#tel-foglio .tel-salute')?.textContent || '';
+    renderStudioSalute();
+    const barra = document.getElementById('studio-salute')?.textContent || '';
+    STUDIO.live = prima.live; STUDIO.dirette = prima.dirette; STUDIO.tel.foglio = ''; renderStudioTelFoglio(); renderStudioSalute();
+    return { buona, brutta, foglio, barra, rete: null };
+  });
+  ok('la salute della diretta si legge come in OBS: Mbps, fps, scarti, invio, coi colori della gravita\'', salute.buona.every((x) => x.endsWith(':ok')) && salute.brutta.includes('saltati:guasto') && salute.brutta.includes('kbps:guasto') && /Mbps/.test(salute.foglio) && /fps/.test(salute.foglio) && /LIVE/.test(salute.barra), JSON.stringify(salute));
   ok('nessun errore di pagina nella regia', err.length === 0, err.join(' | '));
   await p.close();
 }

@@ -211,6 +211,7 @@ function telefono(t) {
     chat: CHAT_GRANDEZZE.includes(o.chat) ? o.chat : 'm',
     voce: typeof o.voce === 'boolean' ? o.voce : (scenario ? SCENARI[scenario].voce : false),
     vibra: o.vibra !== false,
+    segui: o.segui !== false,
   };
 }
 

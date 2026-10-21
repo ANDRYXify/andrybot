@@ -21485,11 +21485,14 @@ function pannelloStudio() {
   }
   return pannello('studio', `
     <div class="carta evidenziata" id="studio-permessi-banner" hidden></div>
+    <div class="carta studio-fuori" id="studio-fuori" hidden></div>
     <div class="carta studio-carta studio-largo" id="studio-carta" data-non-salva>
       <div class="studio-testa">
         <h2>${_hIco(ICO.onda)}${L('Studio Web', 'Web Studio', 'Estudio Web')}</h2>
         <div class="studio-lavoro" id="studio-lavoro"></div>
         <span class="studio-salvato" id="studio-salvato" aria-live="polite"></span>
+        ${STUDIO_FINESTRA ? `<button type="button" class="btn secondario mini studio-stacca" data-fin="torna" title="${esc(L('Lo Studio torna nella scheda del sito; in diretta passa senza interruzioni', 'The Studio goes back into the site tab; when live it moves with no break', 'El Estudio vuelve a la pestaña del sitio; en directo pasa sin cortes'))}">${_bIco(ICO.freccia)}${L('Rimettilo nel sito', 'Put it back in the site', 'Devolverlo al sitio')}</button>`
+    : (studioTelefono() ? '' : `<button type="button" class="btn secondario mini studio-stacca" data-fin="stacca" title="${esc(L('Lo Studio in una finestra sua, sempre a portata: il sito resta navigabile', 'The Studio in its own window, always at hand: the site stays browsable', 'El Estudio en su propia ventana, siempre a mano: el sitio sigue navegable'))}">${_bIco(ICO.monitor)}${L('Stacca in una finestra', 'Pop out into a window', 'Separar en una ventana')}</button>`)}
       </div>
 
       <div class="studio-regia" id="studio-regia">
@@ -21506,10 +21509,12 @@ function pannelloStudio() {
           <div class="studio-tela-tit" id="studio-tit-prog">${L('Programma', 'Program', 'Programa')}</div>
           <div class="studio-palco" id="studio-palco-prog" tabindex="0">
             <div id="studio-badge-live" class="studio-badge-live" hidden>● LIVE <span id="studio-timer">00:00</span></div>
+            <div class="studio-vuoto" id="studio-vuoto" hidden></div>
           </div>
         </div>
       </div>
 
+      <div class="studio-salute" id="studio-salute" hidden></div>
       <div class="studio-mobile-barra" id="studio-mobile-barra"></div>
 
       <div class="studio-docks" id="studio-docks">
@@ -21646,6 +21651,7 @@ function pannelloStudio() {
         <section class="studio-dock" aria-labelledby="studio-t-scene">
           <h3 class="studio-dock-tit" id="studio-t-scene">${_bIco(ICO.scene)}${L('Scene', 'Scenes', 'Escenas')}</h3>
           <ul class="studio-lista" id="studio-scene"></ul>
+          <p class="suggerimento studio-tasti-nota">${L('Tasti: 1–9 scene · M microfono · T transizione', 'Keys: 1–9 scenes · M microphone · T transition', 'Teclas: 1–9 escenas · M micrófono · T transición')}</p>
           <div class="studio-dock-piede">
             <button type="button" class="sf-btn" data-scena-azione="nuova" aria-label="${esc(L('Nuova scena', 'New scene', 'Nueva escena'))}" title="${esc(L('Nuova scena', 'New scene', 'Nueva escena'))}">${_bIco(ICO.piu)}</button>
             <button type="button" class="sf-btn" data-scena-azione="rinomina" aria-label="${esc(L('Rinomina la scena', 'Rename the scene', 'Renombrar la escena'))}" title="${esc(L('Rinomina la scena', 'Rename the scene', 'Renombrar la escena'))}">${_bIco(ICO.scrivi)}</button>
@@ -21686,10 +21692,10 @@ function pannelloStudio() {
         <span class="tel-info" id="tel-batt" hidden></span>
         <button type="button" class="tel-tasto tel-esci" data-tel="esci">${_bIco(ICO.indietro)}</button>
       </div>
-      <button type="button" class="tel-riassunto" id="tel-riassunto" data-tel="prepara"></button>
       <div class="tel-avviso" id="tel-avviso" hidden role="status"></div>
       <div class="tel-alert" id="tel-alert" hidden role="status"></div>
       <div class="tel-chat" id="tel-chat" data-g="m" data-tel="chat"></div>
+      <div class="tel-vuoto" id="tel-vuoto" hidden></div>
       <div class="tel-scene" id="tel-scene" role="group" aria-label="${esc(L('Scene', 'Scenes', 'Escenas'))}"></div>
       <div class="tel-cam" id="tel-cam" hidden>
         <button type="button" class="tel-tondo" id="tel-zoom-passo" data-tel="zoom-passo" aria-label="${esc(L('Zoom: tocca per cambiarlo', 'Zoom: tap to change it', 'Zoom: toca para cambiarlo'))}">1×</button>
@@ -21742,6 +21748,10 @@ const STUDIO = {
   emote: {},
   chatFeed: [],
 };
+
+const STUDIO_FINESTRA = new URLSearchParams(location.search).get('finestra') === 'studio';
+const FIN_NOME = 'sb-studio', FIN_VIVA_MS = 6000;
+const FIN = { id: window.crypto?.randomUUID?.() || String(performance.now()).replace('.', '') + String(Math.random()).slice(2), bc: null, altrove: null, ceduto: false, chiusaLive: false, prendi: false, subentra: false, attese: new Map(), giro: 0, orologio: 0 };
 
 const studioEtichetta = (tipo) => ({ webcam: 'Webcam', schermo: L('Schermo', 'Screen', 'Pantalla'), immagine: L('Immagine', 'Image', 'Imagen'), video: 'Video', testo: L('Testo', 'Text', 'Texto'), overlay: 'Overlay', remota: L('Dispositivo', 'Device', 'Dispositivo') }[tipo] || tipo);
 const studioClamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -21829,7 +21839,7 @@ function studioMontaTele() {
 }
 
 const studioFormatoServe = (f) => !!STUDIO.doc && (STUDIO.lavoro === f || !!STUDIO.dirette[f] || ((STUDIO.live || STUDIO.avvio) && STUDIO.doc.scelte.formati[f]));
-const studioServeDisegnare = () => STUDIO.live || !!STUDIO.avvio || !!STUDIO.tel?.aperta || schedaAttiva === 'studio';
+const studioServeDisegnare = () => STUDIO.live || !!STUDIO.avvio || (!FIN.ceduto && (!!STUDIO.tel?.aperta || schedaAttiva === 'studio'));
 function studioRidisegna() {
   STUDIO.ridisegna = true;
   if (!STUDIO.raf && STUDIO.doc && studioServeDisegnare()) STUDIO.raf = requestAnimationFrame(studioDisegna);
@@ -21909,6 +21919,8 @@ function studioDisegna() {
   if (libero && !STUDIO.ridisegna && !viva && !STUDIO.eraViva) { cancelAnimationFrame(STUDIO.raf); STUDIO.raf = 0; return; }
   STUDIO.eraViva = viva; STUDIO.ridisegna = false; STUDIO.ultimoDisegno = ora;
   for (const f of ['o', 'v']) if (studioFormatoServe(f) && !STUDIO.dirette[f]?.cod) studioDisegnaProgramma(f, ora);
+  studioVuotoMostra(document.getElementById('studio-vuoto'), false);
+  if (STUDIO.tel?.aperta) studioVuotoMostra(document.getElementById('tel-vuoto'), true);
   if (studioModalita() && STUDIO.ante) studioDisegnaPiena(STUDIO.anteCx, STUDIO.ante, studioScena(d.anteprima), f0);
 }
 
@@ -21958,13 +21970,44 @@ function studioInquadrata(c, el, f, p, fk) {
   c.restore();
 }
 
+function studioElFonte(f) {
+  if (f.tipo === 'webcam') return STUDIO.cap.camEl || null;
+  if (f.tipo === 'schermo') return STUDIO.cap.scrEl || null;
+  if (f.tipo === 'immagine' || f.tipo === 'video') return STUDIO.media[f.media?.impronta]?.el || null;
+  if (f.tipo === 'remota') return studioRemotoVideo(f.dispositivo) || null;
+  return null;
+}
+
 function disegnaFonte(c, f, p, W, H, fk) {
-  if (f.tipo === 'webcam') { if (STUDIO.cap.camEl) studioInquadrata(c, STUDIO.cap.camEl, f, p, fk); return; }
-  if (f.tipo === 'schermo') { if (STUDIO.cap.scrEl) studioInquadrata(c, STUDIO.cap.scrEl, f, p, fk); return; }
-  if (f.tipo === 'immagine' || f.tipo === 'video') { const m = STUDIO.media[f.media?.impronta]; if (m) studioInquadrata(c, m.el, f, p, fk); return; }
-  if (f.tipo === 'remota') { const el = studioRemotoVideo(f.dispositivo); if (el) studioInquadrata(c, el, f, p, fk); return; }
   if (f.tipo === 'testo') { disegnaTestoFonte(c, f, p); return; }
   if (f.tipo === 'overlay') { const e = studioOverlayMotore(studioOverlayDi(f), fk); if (e) { e.m.tic(); e.m.disegna(c, 0, 0, W, H); } return; }
+  const el = studioElFonte(f); if (el) studioInquadrata(c, el, f, p, fk);
+}
+
+function studioVuoto(scena, fk) {
+  if (!scena) return '';
+  const vis = scena.fonti.filter((f) => f.pos?.[fk]?.vis !== false);
+  if (vis.some((f) => f.tipo === 'testo' ? !!(f.testo || f.sfondo) : f.tipo !== 'overlay' && !!studioElFonte(f))) return '';
+  for (const t of ['webcam', 'remota', 'schermo']) if (vis.some((f) => f.tipo === t)) return t;
+  return vis.some((f) => f.tipo === 'immagine' || f.tipo === 'video') ? 'media' : 'vuota';
+}
+
+function studioVuotoMostra(el, tel) {
+  if (!el || !STUDIO.doc) return;
+  const d = STUDIO.doc, k = STUDIO.trans ? '' : studioVuoto(studioScena(d.inOnda), STUDIO.lavoro);
+  const chiave = k + '|' + LINGUA;
+  if (el.dataset.k === chiave) return;
+  el.dataset.k = chiave; el.hidden = !k;
+  if (!k) { el.innerHTML = ''; return; }
+  const testo = {
+    webcam: L('La fotocamera è spenta: in onda c’è il nero.', 'The camera is off: black is on air.', 'La cámara está apagada: en el aire hay negro.'),
+    remota: L('Il dispositivo di questa scena non è collegato.', 'This scene’s device is not connected.', 'El dispositivo de esta escena no está conectado.'),
+    schermo: L('Lo schermo non è condiviso: in onda c’è il nero.', 'The screen is not shared: black is on air.', 'La pantalla no está compartida: en el aire hay negro.'),
+    media: L('I file di questa scena non sono su questo dispositivo.', 'This scene’s files are not on this device.', 'Los archivos de esta escena no están en este dispositivo.'),
+    vuota: L('Questa scena è vuota: in onda c’è il nero.', 'This scene is empty: black is on air.', 'Esta escena está vacía: en el aire hay negro.'),
+  }[k];
+  const tasto = k === 'webcam' ? `<button type="button" class="${tel ? 'tel-grande primario' : 'btn mini'}" ${tel ? 'data-tel="accendi"' : 'data-studio-cam'}>${_bIco(ICO.fotocamera)}${L('Accendi la fotocamera', 'Turn on the camera', 'Enciende la cámara')}</button>` : '';
+  el.innerHTML = `<p>${esc(testo)}</p>${tasto}`;
 }
 
 function disegnaTestoFonte(c, f, p) {
@@ -23033,22 +23076,34 @@ function applicaMix() {
   if (A.gMaster) A.gMaster.gain.value = m.master.mute ? 0 : m.master.vol / 100;
 }
 
+function studioSpia() {
+  const A = STUDIO.audio, m = STUDIO.cap.micStream, sp = STUDIO.spia;
+  const serve = !A && !!m && m.getAudioTracks().some((t) => t.readyState === 'live') && !document.hidden && studioServeDisegnare();
+  if (sp && (!serve || sp.stream !== m)) { try { sp.src.disconnect(); } catch (e) {  } STUDIO.spia = null; }
+  if (!serve) return null;
+  if (STUDIO.spia) return STUDIO.spia;
+  try {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    const ac = STUDIO.acPronto || (STUDIO.acPronto = new AC({ sampleRate: 48000 }));
+    const an = ac.createAnalyser(); an.fftSize = 256; an.smoothingTimeConstant = 0.6;
+    const src = ac.createMediaStreamSource(m); src.connect(an);
+    STUDIO.spia = { stream: m, src, an };
+  } catch (e) { return null; }
+  return STUDIO.spia;
+}
+
 function avviaVU() {
-  const A = STUDIO.audio; if (!A || !A.an) return;
-  cancelAnimationFrame(STUDIO.vuRaf || 0);
-  const buf = new Uint8Array(A.an.master.fftSize);
-  const livello = (an) => { an.getByteTimeDomainData(buf); let picco = 0; for (let i = 0; i < buf.length; i++) { const v = Math.abs(buf[i] - 128) / 128; if (v > picco) picco = v; } return Math.min(1, picco * 1.4); };
+  if (STUDIO.vuRaf) return;
+  const buf = new Uint8Array(256);
+  const livello = (an) => { an.getByteTimeDomainData(buf); let picco = 0; for (let i = 0; i < an.fftSize && i < buf.length; i++) { const v = Math.abs(buf[i] - 128) / 128; if (v > picco) picco = v; } return Math.min(1, picco * 1.4); };
+  const metti = (sel, q) => { for (const el of document.querySelectorAll(sel)) el.style.setProperty('--q', q.toFixed(3)); };
   const tick = () => {
-    if (!STUDIO.audio || !STUDIO.live) { STUDIO.vuRaf = 0; return; }
-    const an = STUDIO.audio.an;
-    for (const k of ['mic', 'desk', 'media', 'sfx', 'master']) {
-      const bar = document.querySelector(`.mix-vu-barra[data-vu="${k}"]`);
-      if (bar && an[k]) bar.style.setProperty('--q', livello(an[k]).toFixed(3));
-    }
-    for (const [id, r] of (STUDIO.audio.rem || new Map())) {
-      const bar = document.querySelector(`.mix-vu-barra[data-vu="rem:${CSS.escape(id)}"]`);
-      if (bar && r.an) bar.style.setProperty('--q', livello(r.an).toFixed(3));
-    }
+    const A = STUDIO.audio, sp = studioSpia();
+    if (!(A && A.an) && !sp) { STUDIO.vuRaf = 0; return; }
+    if (A && A.an) {
+      for (const k of ['mic', 'desk', 'media', 'sfx', 'master']) if (A.an[k]) metti(`[data-vu="${k}"]`, livello(A.an[k]));
+      for (const [id, r] of (A.rem || new Map())) if (r.an) metti(`[data-vu="rem:${CSS.escape(id)}"]`, livello(r.an));
+    } else metti('[data-vu="mic"]', STUDIO.mix.mic.mute ? 0 : livello(sp.an));
     STUDIO.vuRaf = requestAnimationFrame(tick);
   };
   STUDIO.vuRaf = requestAnimationFrame(tick);
@@ -23341,11 +23396,13 @@ async function studioControllaStato() {
     try { st = await api(`/api/diretta/stato?f=${f}`); } catch (e) { continue; }
     if (!st.live) { studioFineFormato(f, st.ultimaFine); continue; }
     ultimo = st;
+    studioSaluteMisura(f, st);
     if (st.inRiserva?.video || st.inRiserva?.audio) giu = true;
     righe.push(`${st.destinazioni.join(', ')}${Object.keys(STUDIO.dirette).length > 1 ? ` (${studioFormatoNome(f)})` : ''} · ${(st.kbpsVeri / 1000).toFixed(1)} Mbps`);
   }
   if (!STUDIO.live) return;
   if (STUDIO.tel) { studioTelRete(ultimo); renderStudioTel(); }
+  renderStudioSalute();
   const el = document.getElementById('studio-stato');
   if (el && !giu) el.textContent = L('In diretta su ', 'Live on ', 'En directo en ') + righe.join(' · ');
   else if (el) el.textContent = L('Il segnale non arriva: sul canale c’è la tua scritta di riserva.', 'The signal is not arriving: your fallback text is on the channel.', 'La señal no llega: en el canal está tu texto de reserva.');
@@ -23393,6 +23450,8 @@ async function fermaLive({ dalServer = null } = {}) {
   STUDIO.audio = null;
   for (const id in STUDIO.media) { const mm = STUDIO.media[id]; if (mm && mm.tipo === 'video' && mm.el) { try { mm.el.muted = true; } catch (e) {  } } }
   const badge = document.getElementById('studio-badge-live'); if (badge) badge.hidden = true;
+  renderStudioSalute();
+  studioFinestraAnnuncia();
   renderStudioControlli();
   studioRenderIO();
   studioRenderDestinazioni();
@@ -23400,14 +23459,21 @@ async function fermaLive({ dalServer = null } = {}) {
   const perche = dalServer && (FINE_DIRETTA[dalServer.motivo] || (dalServer.errore ? () => dalServer.errore : null));
   studioLog(perche ? perche() : L('Diretta terminata.', 'Stream ended.', 'Directo finalizado.'));
   if (STUDIO.tel?.aperta) { renderStudioTel(); studioTelAvviso(perche ? perche() : L('Diretta terminata.', 'Stream ended.', 'Directo finalizado.'), 6000); }
+  if (FIN.ceduto) { studioSpegniRegia(); renderStudioFuori(); renderStudioPillola(); return; }
   if (perche) toast(perche(), 'errore');
 }
 
+function studioDurata(ms) {
+  const s = Math.max(0, Math.floor(ms / 1000)), h = Math.floor(s / 3600), due = (n) => String(n).padStart(2, '0');
+  return (h ? h + ':' : '') + due(Math.floor(s / 60) % 60) + ':' + due(s % 60);
+}
+
 function aggiornaTimerStudio() {
-  const ts = document.getElementById('tel-stato'); if (ts && STUDIO.live) ts.textContent = L('● LIVE ', '● LIVE ', '● EN VIVO ') + (document.getElementById('studio-timer')?.textContent || '');
-  const el = document.getElementById('studio-timer'); if (!el) return;
-  const s = Math.max(0, Math.floor((Date.now() - STUDIO.startedAt) / 1000));
-  el.textContent = String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
+  const t = studioDurata(Date.now() - STUDIO.startedAt);
+  const el = document.getElementById('studio-timer'); if (el) el.textContent = t;
+  for (const x of document.querySelectorAll('#studio-salute [data-timer]')) x.textContent = t;
+  const ts = document.getElementById('tel-stato'); if (ts && STUDIO.live) ts.textContent = L('● LIVE ', '● LIVE ', '● EN VIVO ') + t;
+  studioFinestraAnnuncia(); renderStudioPillola();
 }
 
 function caricaStudioBeta() {
@@ -23433,6 +23499,12 @@ function caricaStudioBeta() {
 }
 
 async function caricaStudio() {
+  if (schedaAttiva === 'studio') document.body.classList.add('in-studio');
+  if (!studioSonoRegia()) {
+    const occupato = FIN.ceduto || await studioFinestraAltrove();
+    if (!STUDIO_FINESTRA && !FIN.prendi && occupato) { renderStudioFuori(); return; }
+    await studioFinestraPrendi(occupato);
+  }
   if (!STUDIO.M) STUDIO.M = await import('/js/studio-modello.js');
   if (!STUDIO.MD) STUDIO.MD = await import('/js/studio-media.js');
   if (!STUDIO.OV) { STUDIO.OV = await import('/js/studio-overlay.js'); studioOverlayOspita(); }
@@ -23446,6 +23518,7 @@ async function caricaStudio() {
   renderStudioTutto();
   studioRenderIO();
   studioMostraSalvataggio();
+  studioFinestraAnnuncia();
   if (!STUDIO.misuraOss && window.ResizeObserver) {
     const scheda = document.querySelector('.pannello-scheda[data-scheda="studio"]');
     if (scheda) { STUDIO.misuraOss = new ResizeObserver(() => requestAnimationFrame(studioMisuraTela)); STUDIO.misuraOss.observe(scheda); }
@@ -23464,6 +23537,8 @@ async function caricaStudio() {
   studioRenderIO();
   studioRiportaMedia();
   STUDIO.MD.chiediDiTenere();
+  if (FIN.subentra && studioSessioniAltrove().length && stato?.ruolo !== 'moderatore') { FIN.subentra = false; await conErrore(() => studioRiprendiDiretta()); }
+  FIN.subentra = false;
 }
 
 function studioPresetVecchi() {
@@ -23593,6 +23668,7 @@ function renderStudioTutto() {
   if (STUDIO.tel?.aperta) renderStudioTel();
   studioRegiaCam();
   studioMisuraTela();
+  avviaVU();
 }
 
 function renderStudioLavoro() {
@@ -23612,9 +23688,9 @@ function renderStudioScene() {
   const el = document.getElementById('studio-scene'); if (!el || !STUDIO.doc) return;
   const d = STUDIO.doc, mod = studioModalita(), ed = studioSceneAttiva();
   const au = document.getElementById('studio-scena-audio'); if (au && ed) au.value = ed.muta ? 'muta' : ed.audio;
-  el.innerHTML = d.scene.map((s) => {
-    const onda = s.id === d.inOnda, ant = mod && s.id === d.anteprima;
-    return `<li><button type="button" class="studio-scena${s === ed ? ' attiva' : ''}${onda ? ' in-onda' : ''}" data-scena="${esc(s.id)}" aria-current="${s === ed}">${_bIco(ICO.scene)}<span>${esc(s.nome)}</span>${onda ? `<span class="studio-tag-onda">${L('in onda', 'on air', 'en el aire')}</span>` : ''}${ant && !onda ? `<span class="studio-tag-ant">${L('anteprima', 'preview', 'vista previa')}</span>` : ''}</button></li>`;
+  el.innerHTML = d.scene.map((s, i) => {
+    const onda = s.id === d.inOnda, ant = mod && s.id === d.anteprima, tasto = i < 9 && !STUDIO.mobile ? i + 1 : 0;
+    return `<li><button type="button" class="studio-scena${s === ed ? ' attiva' : ''}${onda ? ' in-onda' : ''}" data-scena="${esc(s.id)}" aria-current="${s === ed}"${tasto ? ` aria-keyshortcuts="${tasto}"` : ''}>${_bIco(ICO.scene)}<span>${esc(s.nome)}</span>${tasto ? `<kbd class="studio-kbd" aria-hidden="true">${tasto}</kbd>` : ''}${onda ? `<span class="studio-tag-onda">${L('in onda', 'on air', 'en el aire')}</span>` : ''}${ant && !onda ? `<span class="studio-tag-ant">${L('anteprima', 'preview', 'vista previa')}</span>` : ''}</button></li>`;
   }).join('');
 }
 
@@ -23882,7 +23958,19 @@ function studioTelStato() {
   if (!STUDIO.tel) STUDIO.tel = { aperta: false, foglio: '', blocco: false, conto: null, tieni: null, sblocca: null, avviso: '', avvisoT: 0, alertT: 0, batteria: null, spettatori: null, rete: 3, giroSpett: 0, tocchi: new Map(), pinza: null, tap: 0, storto: null, torcia: false, schermo: false, chiusa: false, voceInCoda: 0, mostraChat: true, titolo: null, categoria: '' };
   return STUDIO.tel;
 }
-const studioTelScelte = () => STUDIO.doc?.scelte.telefono || { scenario: '', chat: 'm', voce: false, vibra: true };
+const studioTelScelte = () => STUDIO.doc?.scelte.telefono || { scenario: '', chat: 'm', voce: false, vibra: true, segui: true };
+
+function studioTelSegui() {
+  const T = STUDIO.tel, d = STUDIO.doc;
+  if (!T?.aperta || !d || !STUDIO.M || STUDIO.live || STUDIO.avvio || T.conto != null || !studioTelScelte().segui) return;
+  const lato = innerWidth > innerHeight ? 'o' : 'v', f = d.scelte.formati;
+  if (f.o && f.v) { if (STUDIO.lavoro !== lato) studioCambiaLavoro(lato); return; }
+  if (f[lato]) return;
+  const valide = studioDestValide(), prova = { ...d.scelte, formati: { o: lato === 'o', v: lato === 'v' } };
+  if (STUDIO.M.escluse(prova, valide).length > STUDIO.M.escluse(d.scelte, valide).length) return;
+  studioMobileFormato(lato);
+  studioTelAvviso(lato === 'o' ? L('Telefono di lato: la diretta sarà orizzontale.', 'Phone sideways: the stream will be horizontal.', 'Teléfono de lado: el directo será horizontal.') : L('Telefono dritto: la diretta sarà verticale.', 'Phone upright: the stream will be vertical.', 'Teléfono derecho: el directo será vertical.'), 3000);
+}
 
 function studioTelElemento() {
   const tutti = [...document.querySelectorAll('#studio-tel')];
@@ -23911,6 +23999,7 @@ function studioTelApri() {
   try { history.pushState({ ...(history.state || {}), studioTel: true }, ''); } catch (e) {  }
   studioMontaTele();
   studioTelLeggiBatteria();
+  studioTelSegui();
   renderStudioTel();
   if (STUDIO.rem.stato === 'telefono') studioTelFoglio('regia-altrove');
   else if (!studioTelScelte().scenario) studioTelFoglio('prepara');
@@ -23928,7 +24017,7 @@ function studioTelChiudi() {
 function studioTelFoglio(quale) {
   const T = studioTelStato();
   T.foglio = T.foglio === quale ? '' : quale;
-  if (T.foglio === 'prepara') studioTelCaricaCanale();
+  if (T.foglio === 'prepara' || T.foglio === 'canale') studioTelCaricaCanale();
   renderStudioTelFoglio();
 }
 
@@ -23942,6 +24031,7 @@ function studioTelAvviso(testo, ms = 5000, errore = false) {
 
 function studioTelAlert(testo) {
   const T = studioTelStato(), el = document.getElementById('tel-alert');
+  if (testo) { (T.attivita ||= []).unshift({ testo, t: Date.now() }); T.attivita.length = Math.min(T.attivita.length, 30); if (T.foglio === 'chat') renderStudioTelFoglio(); }
   if (!el || !T.aperta || !testo) return;
   el.textContent = testo; el.hidden = false;
   clearTimeout(T.alertT);
@@ -23977,18 +24067,22 @@ function renderStudioTel() {
   const bt = document.getElementById('tel-batt');
   if (bt) { const b = T.batteria; bt.hidden = !b; if (b) { bt.innerHTML = (b.charging ? _bIco(ICO.fulmine) : '') + Math.round(b.level * 100) + '%'; bt.setAttribute('aria-label', L('Batteria', 'Battery', 'Batería') + (b.charging ? ' ' + L('in carica', 'charging', 'cargando') : '')); bt.classList.toggle('bassa', b.level < 0.2 && !b.charging); } }
   const esci = document.querySelector('[data-tel="esci"]'); if (esci) esci.setAttribute('aria-label', live ? L('Studio completo (la diretta continua)', 'Full studio (the stream goes on)', 'Estudio completo (el directo sigue)') : L('Chiudi la regia', 'Close the controls', 'Cerrar el control'));
-  const rias = document.getElementById('tel-riassunto'); if (rias) { rias.hidden = live; rias.textContent = studioTelRiassunto(); }
   const sc = document.getElementById('tel-scene');
   if (sc) {
-    const html = STUDIO.doc.scene.map((s) => `<button type="button" class="tel-scena${s.id === STUDIO.doc.inOnda ? ' attiva' : ''}" data-scena="${esc(s.id)}" aria-pressed="${s.id === STUDIO.doc.inOnda}">${s.muta ? _bIco(ICO.muto) : ''}${esc(s.nome)}</button>`).join('');
-    if (T.htmlScene !== html) { T.htmlScene = html; sc.innerHTML = html; sc.querySelector('.attiva')?.scrollIntoView?.({ block: 'nearest', inline: 'center' }); }
+    const html = (live ? '' : `<button type="button" class="tel-scena tel-riassunto" id="tel-riassunto" data-tel="prepara">${_bIco(ICO.sliders)}<span>${esc(studioTelRiassunto())}</span></button>`) + '<div class="tel-scene-lista">' + STUDIO.doc.scene.map((s) => `<button type="button" class="tel-scena${s.id === STUDIO.doc.inOnda ? ' attiva' : ''}" data-scena="${esc(s.id)}" aria-pressed="${s.id === STUDIO.doc.inOnda}">${s.muta ? _bIco(ICO.muto) : ''}${esc(s.nome)}</button>`).join('') + '</div>';
+    if (T.htmlScene !== html) {
+      T.htmlScene = html; sc.innerHTML = html;
+      const lista = sc.querySelector('.tel-scene-lista'), on = lista?.querySelector('.attiva');
+      if (on) lista.scrollLeft = on.offsetLeft - (lista.clientWidth - on.offsetWidth) / 2;
+    }
   }
   const mic = document.querySelector('[data-tel="mic"]');
   if (mic) {
     const m = studioTelMicStato();
     mic.dataset.stato = m;
     mic.setAttribute('aria-pressed', String(m === 'acceso'));
-    mic.innerHTML = `${_bIco(m === 'acceso' ? ICO.voce : ICO.muto)}<span>${{ spento: L('Microfono', 'Mic', 'Micro'), muto: L('Muto', 'Muted', 'Silencio'), scena: L('Pausa', 'Paused', 'Pausa'), acceso: L('Acceso', 'On', 'Activo') }[m]}</span>`;
+    mic.innerHTML = `${_bIco(m === 'acceso' ? ICO.voce : ICO.muto)}<span>${{ spento: L('Mic spento', 'Mic off', 'Micro apagado'), muto: L('Mic muto', 'Mic muted', 'Micro silenciado'), scena: L('Scena muta', 'Muted scene', 'Escena muda'), acceso: L('Mic attivo', 'Mic live', 'Micro activo') }[m]}</span><i class="tel-livello" data-vu="mic" aria-hidden="true"></i>`;
+    mic.setAttribute('aria-label', { spento: L('Microfono spento: tocca per accenderlo', 'Microphone off: tap to turn it on', 'Micrófono apagado: toca para encenderlo'), muto: L('Microfono muto: tocca per riattivarlo', 'Microphone muted: tap to unmute', 'Micrófono silenciado: toca para activarlo'), scena: L('La scena in onda è muta: il microfono torna con la prossima scena', 'The scene on air is muted: the mic comes back with the next scene', 'La escena en el aire está muda: el micrófono vuelve con la próxima escena'), acceso: L('Microfono attivo: tocca per silenziarlo', 'Microphone live: tap to mute', 'Micrófono activo: toca para silenciarlo') }[m]);
   }
   const vai = document.getElementById('tel-vai');
   if (vai) {
@@ -23999,6 +24093,8 @@ function renderStudioTel() {
   const chat = document.getElementById('tel-chat'); if (chat) { chat.dataset.g = studioTelScelte().chat; chat.hidden = !T.mostraChat; }
   const cam = document.getElementById('tel-cam'); if (cam) cam.hidden = !STUDIO.cap.camEl;
   studioCamAggiornaUi();
+  studioVuotoMostra(document.getElementById('tel-vuoto'), true);
+  avviaVU();
   const blocco = document.getElementById('tel-blocco'); if (blocco) blocco.hidden = !T.blocco;
   const conto = document.getElementById('tel-conto'); if (conto) { conto.hidden = T.conto == null; if (T.conto != null) conto.innerHTML = `<strong>${T.conto}</strong><span>${L('Tocca per annullare', 'Tap to cancel', 'Toca para cancelar')}</span>`; }
   renderStudioTelFoglio();
@@ -24044,14 +24140,17 @@ function renderStudioTelFoglio() {
         <button type="button" class="tel-chip${sc.voce ? ' attivo' : ''}" data-tel="voce" aria-pressed="${sc.voce}">${_bIco(ICO.cuffie)}${L('Leggila a voce', 'Read it aloud', 'Léela en voz alta')}</button>
         <button type="button" class="tel-chip${T.mostraChat ? ' attivo' : ''}" data-tel="mostra-chat" aria-pressed="${T.mostraChat}">${L('Sullo schermo', 'On screen', 'En pantalla')}</button>
       </div>
-      <p class="tel-nota">${L('La voce è quella del telefono: usa le cuffie, sennò finisce nel microfono.', 'The voice is the phone’s own: use headphones, or it ends up in the microphone.', 'La voz es la del teléfono: usa auriculares, si no acaba en el micrófono.')}</p>`;
+      <p class="tel-nota">${L('La voce è quella del telefono: usa le cuffie, sennò finisce nel microfono.', 'The voice is the phone’s own: use headphones, or it ends up in the microphone.', 'La voz es la del teléfono: usa auriculares, si no acaba en el micrófono.')}</p>
+      ${T.attivita?.length ? `<h4>${L('Attività', 'Activity', 'Actividad')}</h4><ul class="tel-attivita">${T.attivita.map((a) => `<li><time>${new Date(a.t).toLocaleTimeString(LINGUA, { hour: '2-digit', minute: '2-digit' })}</time>${esc(a.testo)}</li>`).join('')}</ul>` : ''}`;
     const piena = document.getElementById('tel-chat-piena'), mini = document.getElementById('tel-chat');
     if (piena && mini) { piena.innerHTML = mini.innerHTML; piena.scrollTop = piena.scrollHeight; }
     return;
   }
   if (T.foglio === 'altro') {
     const f = STUDIO.doc.scelte.formati, mics = STUDIO.dev.mics || [];
+    const salute = live ? studioSaluteHtml(true) : '';
     el.innerHTML = `<div class="tel-foglio-testa"><h3>${L('Altro', 'More', 'Más')}</h3>${chiudi}</div>
+      ${live ? `<h4>${L('Salute della diretta', 'Stream health', 'Salud del directo')}</h4>${salute || `<p class="tel-nota">${L('Le prime misure arrivano fra qualche secondo.', 'The first measurements arrive in a few seconds.', 'Las primeras medidas llegan en unos segundos.')}</p>`}` : ''}
       <div class="tel-griglia">
         <button type="button" class="tel-grande" data-tel="camera">${_bIco(ICO.fotocamera)}${L('Fotocamera', 'Camera', 'Cámara')}</button>
         <button type="button" class="tel-grande" data-tel="dispositivi">${_bIco(ICO.telefono)}${L('Dispositivi', 'Devices', 'Dispositivos')}</button>
@@ -24059,13 +24158,22 @@ function renderStudioTelFoglio() {
         ${live && studioDestScelte().has('twitch') ? `<button type="button" class="tel-grande" data-tel="clip">${_bIco(ICO.clip)}${L('Fai una clip', 'Make a clip', 'Haz un clip')}</button>` : ''}
         <button type="button" class="tel-grande${sc.vibra ? ' attivo' : ''}" data-tel="vibra" aria-pressed="${sc.vibra}">${_bIco(ICO.telefono)}${L('Vibra agli alert', 'Vibrate on alerts', 'Vibrar con alertas')}</button>
         ${f.o && f.v ? `<button type="button" class="tel-grande" data-tel="guarda">${_bIco(ICO.monitor)}${STUDIO.lavoro === 'v' ? L('Guarda l’orizzontale', 'See horizontal', 'Ver horizontal') : L('Guarda il verticale', 'See vertical', 'Ver vertical')}</button>` : ''}
-        ${live ? '' : `<button type="button" class="tel-grande" data-tel="prepara">${_bIco(ICO.sliders)}${L('Scenario e destinazioni', 'Scenario and destinations', 'Escenario y destinos')}</button>`}
+        ${live ? `<button type="button" class="tel-grande" data-tel="canale">${_bIco(ICO.scrivi)}${L('Titolo e categoria', 'Title and category', 'Título y categoría')}</button>` : `<button type="button" class="tel-grande" data-tel="prepara">${_bIco(ICO.sliders)}${L('Scenario e destinazioni', 'Scenario and destinations', 'Escenario y destinos')}</button>`}
         <button type="button" class="tel-grande" data-tel="esci">${_bIco(ICO.moduli)}${L('Studio completo', 'Full studio', 'Estudio completo')}</button>
         ${live ? `<button type="button" class="tel-grande pericolo" data-tel="ferma-chiedi">${_bIco(ICO.stop)}${L('Chiudi la diretta…', 'End the stream…', 'Cerrar el directo…')}</button>` : ''}
       </div>
       ${STUDIO.ov.list.length > 1 ? `<label class="tel-etichetta">${L('Overlay di questa scena', 'This scene’s overlay', 'Overlay de esta escena')}<select class="tel-campo" data-tel-overlay>${studioOpzioniOverlay(studioOverlayInOnda() || studioOverlayDi(null))}</select></label>` : ''}
       ${mics.length > 1 ? `<label class="tel-etichetta">${L('Microfono', 'Microphone', 'Micrófono')}<select class="tel-campo" data-tel-mic><option value="">${L('Quello del telefono', 'The phone’s own', 'El del teléfono')}</option>${mics.map((m, i) => `<option value="${esc(m.deviceId)}"${m.deviceId === STUDIO.dev.micId ? ' selected' : ''}>${esc(m.label || L('Microfono ', 'Microphone ', 'Micrófono ') + (i + 1))}</option>`).join('')}</select></label>
       <p class="tel-nota">${L('Cuffie col filo, AirPods o un microfono esterno: collegali e sceglili qui.', 'Wired headphones, AirPods or an external mic: connect them and pick them here.', 'Auriculares con cable, AirPods o un micrófono externo: conéctalos y elígelos aquí.')}</p>` : ''}`;
+    return;
+  }
+  if (T.foglio === 'canale') {
+    const cat = STUDIO.M.SCENARI[sc.scenario]?.categorie || [];
+    el.innerHTML = `<div class="tel-foglio-testa"><h3>${L('Titolo e categoria', 'Title and category', 'Título y categoría')}</h3>${chiudi}</div>
+      <input type="text" id="tel-titolo" class="tel-campo" maxlength="140" autocomplete="off" placeholder="${esc(L('Il titolo della diretta', 'The stream title', 'El título del directo'))}" value="${esc(T.titolo ?? '')}">
+      ${cat.length ? `<div class="tel-gruppo tel-riga-sotto">${cat.map((c) => `<button type="button" class="tel-chip${T.categoria === c ? ' attivo' : ''}" data-tel-cat="${esc(c)}" aria-pressed="${T.categoria === c}">${esc(c)}</button>`).join('')}</div>` : ''}
+      <p class="tel-nota">${L('Si aggiorna sul canale anche a diretta in corso, come dall’app della piattaforma.', 'It updates on the channel even while live, as from the platform’s app.', 'Se actualiza en el canal también durante el directo, como desde la app de la plataforma.')}</p>
+      <button type="button" class="tel-grande primario" data-tel="fatto">${L('Aggiorna', 'Update', 'Actualizar')}</button>`;
     return;
   }
   if (T.foglio === 'dispositivi') {
@@ -24121,7 +24229,8 @@ function renderStudioTelFoglio() {
   }
   const scenari = Object.entries(SC).map(([k, v]) => `<button type="button" class="tel-scenario${sc.scenario === k ? ' attivo' : ''}${STUDIO.M.SCENARI[k].disponibile ? '' : ' fuori'}" data-tel-scenario="${k}" aria-pressed="${sc.scenario === k}">${_bIco(ICO[v.ico])}<strong>${v.nome}</strong><span>${v.dice}</span></button>`).join('');
   const f = STUDIO.doc.scelte.formati, chiave = f.o && f.v ? 'ov' : (f.v ? 'v' : 'o');
-  const fmt = (k, t) => `<button type="button" class="tel-chip${chiave === k ? ' attivo' : ''}" data-mfmt="${k}" aria-pressed="${chiave === k}"${live ? ' disabled' : ''}>${t}</button>`;
+  const scelto = sc.segui ? 'segui' : chiave;
+  const fmt = (k, t) => `<button type="button" class="tel-chip${scelto === k ? ' attivo' : ''}" data-mfmt="${k}" aria-pressed="${scelto === k}"${live ? ' disabled' : ''}>${t}</button>`;
   const scelte = studioDestScelte();
   const destDisp = [...(STUDIO.dir?.twitch?.su && STUDIO.dir.twitch.keyOk ? [['twitch', 'Twitch']] : []), ...(STUDIO.dir?.kick?.su && STUDIO.dir.kick.keyOk ? [['kick', 'Kick']] : []), ...(STUDIO.dir?.destinazioni || []).map((x) => [x.id, x.nome])];
   const dest = destDisp.length ? destDisp.map(([k, n]) => `<button type="button" class="tel-chip${scelte.has(k) ? ' attivo' : ''}" data-tel-dest="${esc(k)}" aria-pressed="${scelte.has(k)}"${live ? ' disabled' : ''}>${esc(n)}</button>`).join('')
@@ -24133,7 +24242,7 @@ function renderStudioTelFoglio() {
     <div class="tel-scenari">${scenari}</div>
     ${pronte}
     <h4>${L('Formato', 'Format', 'Formato')}</h4>
-    <div class="tel-gruppo" role="group" aria-label="${esc(L('Formato', 'Format', 'Formato'))}">${fmt('v', L('Verticale', 'Vertical', 'Vertical'))}${fmt('o', L('Orizzontale', 'Horizontal', 'Horizontal'))}${fmt('ov', L('Tutti e due', 'Both', 'Los dos'))}</div>
+    <div class="tel-gruppo" role="group" aria-label="${esc(L('Formato', 'Format', 'Formato'))}">${fmt('segui', `${_bIco(ICO.telefono)}${L('Come tieni il telefono', 'As you hold the phone', 'Como sujetas el teléfono')}`)}${fmt('v', L('Verticale', 'Vertical', 'Vertical'))}${fmt('o', L('Orizzontale', 'Horizontal', 'Horizontal'))}${fmt('ov', L('Tutti e due', 'Both', 'Los dos'))}</div>
     <h4>${L('Dove va la diretta', 'Where the stream goes', 'Adónde va el directo')}</h4>
     <div class="tel-gruppo">${dest}</div>
     <h4>${L('Titolo e categoria', 'Title and category', 'Título y categoría')}</h4>
@@ -24150,7 +24259,8 @@ async function studioTelCaricaCanale() {
   const T = studioTelStato();
   if (T.titolo != null || DEMO) { if (T.titolo == null) T.titolo = ''; return; }
   try { const r = await api('/api/streamer/regia'); T.titolo = r?.canale?.title || ''; T.categoria = r?.canale?.gameName || ''; } catch (e) { T.titolo = ''; }
-  if (T.foglio === 'prepara') { const i = document.getElementById('tel-titolo'); if (i && !i.value) i.value = T.titolo; }
+  T.titoloSalvato = T.titolo; T.categoriaSalvata = T.categoria;
+  if (T.foglio === 'prepara' || T.foglio === 'canale') { const i = document.getElementById('tel-titolo'); if (i && !i.value) i.value = T.titolo; }
 }
 
 async function studioTelSalvaCanale() {
@@ -24239,9 +24349,56 @@ async function studioTelLeggiBatteria() {
 function studioTelRete(st) {
   const T = studioTelStato();
   if (!st) { const c = navigator.connection; T.rete = c && /^(slow-2g|2g)$/.test(c.effectiveType || '') ? 1 : 3; return; }
-  const att = Math.round((STUDIO_QUAL[STUDIO.qual] || STUDIO_QUAL['720p30']).vbps / 1000);
-  const r = att ? (Number(st.kbpsVeri) || 0) / att : 1;
-  T.rete = st.inRiserva?.video ? 0 : (r > 0.75 ? 3 : (r > 0.45 ? 2 : 1));
+  T.rete = studioSaluteRete();
+}
+
+const SALUTE_SOGLIE = { saltati: [0.02, 0.1], fps: [0.85, 0.6], ritardoMs: [800, 1600], consegna: [0.75, 0.45] };
+
+function studioSaluteMisura(f, st) {
+  const d = STUDIO.dirette[f]; if (!d) return;
+  const c = d.cod?.stato?.() || {}, ora = performance.now(), q = STUDIO_QUAL[STUDIO.qual] || STUDIO_QUAL['720p30'];
+  const p = d.misura, dt = p ? (ora - p.t) / 1000 : 0;
+  const dFot = p ? (c.fotogrammi || 0) - p.fot : 0, dSal = p ? (c.saltati || 0) - p.sal : 0;
+  d.misura = { t: ora, fot: c.fotogrammi || 0, sal: c.saltati || 0 };
+  const nominale = Math.round(q.vbps / 1000), invio = Number(c.kbps) || nominale;
+  d.salute = {
+    f, dest: st.destinazioni || [], kbps: Number(st.kbpsVeri) || 0,
+    fps: dt >= 1 && !c.soloAudio ? dFot / dt : null, fpsMeta: q.fps,
+    saltati: dFot + dSal > 0 ? dSal / (dFot + dSal) : 0,
+    ritardoMs: Number(c.ritardoMs) || 0,
+    consegna: Math.min(invio ? (Number(st.kbpsVeri) || 0) / invio : 1, nominale ? invio / nominale : 1),
+    riserva: !!(st.inRiserva?.video || st.inRiserva?.audio),
+  };
+}
+
+function studioSaluteVoci(m) {
+  const S = SALUTE_SOGLIE, liv = (v, [a, b], giu) => giu ? (v >= a ? 'ok' : v >= b ? 'attenzione' : 'guasto') : (v <= a ? 'ok' : v <= b ? 'attenzione' : 'guasto');
+  const voci = [];
+  if (m.riserva) voci.push({ k: 'riserva', liv: 'guasto', testo: L('Il segnale non arriva: in onda c’è la scritta di riserva', 'The signal is not arriving: the fallback text is on air', 'La señal no llega: en el aire está el texto de reserva') });
+  voci.push({ k: 'kbps', liv: liv(m.consegna, S.consegna, true), testo: `${(m.kbps / 1000).toLocaleString(LINGUA, { minimumFractionDigits: 1, maximumFractionDigits: 1 })} Mbps` });
+  if (m.fps != null) voci.push({ k: 'fps', liv: liv(m.fps / m.fpsMeta, S.fps, true), testo: `${Math.round(m.fps)} fps` });
+  voci.push({ k: 'saltati', liv: liv(m.saltati, S.saltati), testo: L('scarti ', 'dropped ', 'descartes ') + (m.saltati * 100).toLocaleString(LINGUA, { maximumFractionDigits: 1 }) + '%' });
+  voci.push({ k: 'ritardo', liv: liv(m.ritardoMs, S.ritardoMs), testo: L('invio ', 'send ', 'envío ') + Math.round(m.ritardoMs) + ' ms' });
+  return voci;
+}
+
+function studioSaluteRete() {
+  const tutte = Object.values(STUDIO.dirette).map((d) => d.salute).filter(Boolean);
+  if (!tutte.length) return 3;
+  const peggio = { ok: 3, attenzione: 2, guasto: 1 };
+  return Math.min(...tutte.map((m) => m.riserva ? 0 : Math.min(...studioSaluteVoci(m).map((v) => peggio[v.liv]))));
+}
+
+function studioSaluteHtml(tel) {
+  const tutte = Object.values(STUDIO.dirette).map((d) => d.salute).filter(Boolean), due = tutte.length > 1;
+  return tutte.map((m) => `<div class="${tel ? 'tel-salute' : 'studio-salute-riga'}">${due || tel ? `<strong>${esc(studioFormatoNome(m.f))}</strong>` : ''}<span class="salute-dest">${esc(m.dest.join(', '))}</span>${studioSaluteVoci(m).map((v) => `<span class="salute-voce ${v.liv}" data-salute="${v.k}">${esc(v.testo)}</span>`).join('')}</div>`).join('');
+}
+
+function renderStudioSalute() {
+  const el = document.getElementById('studio-salute'); if (!el) return;
+  const live = !!STUDIO.live && Object.values(STUDIO.dirette).some((d) => d.salute);
+  el.hidden = !live;
+  el.innerHTML = live ? `<span class="salute-onda">● LIVE <span data-timer>${esc(document.getElementById('studio-timer')?.textContent || '')}</span></span>${studioSaluteHtml(false)}` : '';
 }
 
 async function studioTelSpettatori() {
@@ -24322,14 +24479,14 @@ function studioTelCambiaScena(dir) {
   renderStudioTel();
 }
 
-function studioTelPalcoGiu(ev) {
+function studioTelPalcoGiu(ev, cattura = true) {
   const T = studioTelStato();
   T.tocchi.set(ev.pointerId, { x: ev.clientX, y: ev.clientY, x0: ev.clientX, y0: ev.clientY, t0: performance.now() });
   if (T.tocchi.size === 2) {
     const [a, b] = [...T.tocchi.values()];
     T.pinza = { d0: Math.hypot(a.x - b.x, a.y - b.y), z0: STUDIO.cam.zoom, mx: (a.x + b.x) / 2, my: (a.y + b.y) / 2 };
   }
-  try { ev.currentTarget.setPointerCapture?.(ev.pointerId); } catch (e) {  }
+  if (cattura) { try { ev.currentTarget.setPointerCapture?.(ev.pointerId); } catch (e) {  } }
 }
 
 function studioTelPalcoMuovi(ev) {
@@ -24406,9 +24563,9 @@ function studioTelAzione(azione, el) {
   const T = studioTelStato(), d = STUDIO.doc; if (!d) return;
   if (azione === 'apri') return studioTelApri();
   if (azione === 'esci') { if (T.aperta) { try { if (history.state?.studioTel) history.back(); else studioTelChiudi(); } catch (e) { studioTelChiudi(); } } return; }
-  if (azione === 'foglio-chiudi' || azione === 'fatto') { if (T.foglio === 'prepara') studioTelSalvaCanale(); T.foglio = ''; renderStudioTelFoglio(); return; }
+  if (azione === 'foglio-chiudi' || azione === 'fatto') { if (T.foglio === 'prepara' || T.foglio === 'canale') studioTelSalvaCanale(); T.foglio = ''; renderStudioTelFoglio(); return; }
   if (azione === 'unisciti') { location.href = '/cam?io=1&lang=' + encodeURIComponent(LINGUA); return; }
-  if (azione === 'prepara' || azione === 'altro' || azione === 'chat' || azione === 'camera' || azione === 'dispositivi') { if (T.foglio === 'prepara' && azione !== 'prepara') studioTelSalvaCanale(); return studioTelFoglio(azione); }
+  if (azione === 'prepara' || azione === 'altro' || azione === 'chat' || azione === 'camera' || azione === 'dispositivi' || azione === 'canale') { if ((T.foglio === 'prepara' || T.foglio === 'canale') && azione !== T.foglio) studioTelSalvaCanale(); return studioTelFoglio(azione); }
   if (azione === 'vai') return studioTelVai();
   if (azione === 'conto') return studioTelAnnullaConto();
   if (azione === 'mic') {
@@ -24478,6 +24635,14 @@ function posizionaBoxStudio(f) {
 
 async function onStudioClick(ev) {
   const t = ev.target;
+  const fin = t.closest('[data-fin]');
+  if (fin) {
+    const k = fin.dataset.fin;
+    if (k === 'mostra') return studioMostraFinestra();
+    if (k === 'qui') return conErrore(() => studioPrendiQui());
+    if (k === 'stacca') return studioStacca();
+    if (k === 'torna') return studioTornaNelSito();
+  }
   if (t.closest('[data-studio-cam]')) {
     if (!STUDIO.cap.camEl) return conErrore(async () => { await studioCapWebcam(); renderStudioTutto(); });
     studioApriImpostazioni(true);
@@ -24487,7 +24652,7 @@ async function onStudioClick(ev) {
   const tsc = t.closest('[data-tel-scenario]'); if (tsc) return studioTelScegliScenario(tsc.dataset.telScenario);
   const tde = t.closest('[data-tel-dest]'); if (tde) { const ins = studioDestScelte(); if (ins.has(tde.dataset.telDest)) ins.delete(tde.dataset.telDest); else ins.add(tde.dataset.telDest); studioScriviDestScelte(ins); renderStudioTel(); return; }
   const tch = t.closest('[data-tel-chat]'); if (tch) { STUDIO.doc.scelte.telefono.chat = tch.dataset.telChat; studioSporco(); renderStudioTel(); return; }
-  const tca = t.closest('[data-tel-cat]'); if (tca) { const T = studioTelStato(); T.categoria = T.categoria === tca.dataset.telCat ? '' : tca.dataset.telCat; renderStudioTelFoglio(); return; }
+  const tca = t.closest('[data-tel-cat]'); if (tca) { const T = studioTelStato(), i = document.getElementById('tel-titolo'); if (i) T.titolo = i.value; T.categoria = T.categoria === tca.dataset.telCat ? '' : tca.dataset.telCat; renderStudioTelFoglio(); return; }
   const len = t.closest('[data-tel-lente]'); if (len) return conErrore(() => studioScegliLente(len.dataset.telLente));
   if (t.closest('[data-rem-invita]')) return conErrore(() => studioRemotiInvita());
   const rp = t.closest('[data-rem-prot]'); if (rp) return studioRemotoProtagonista(rp.dataset.remProt);
@@ -24538,7 +24703,12 @@ async function onStudioClick(ev) {
   }
   const scena = t.closest('[data-scena]'); if (scena) return studioScegliScena(scena.dataset.scena);
   const lav = t.closest('[data-lavoro]'); if (lav) return studioCambiaLavoro(lav.dataset.lavoro);
-  const mf = t.closest('[data-mfmt]'); if (mf) return conErrore(() => studioMobileFormato(mf.dataset.mfmt));
+  const mf = t.closest('[data-mfmt]');
+  if (mf) {
+    if (mf.closest('#studio-tel') && STUDIO.doc) { STUDIO.doc.scelte.telefono.segui = mf.dataset.mfmt === 'segui'; studioSporco(); }
+    if (mf.dataset.mfmt === 'segui') { studioTelSegui(); renderStudioTel(); return; }
+    return conErrore(() => studioMobileFormato(mf.dataset.mfmt));
+  }
   if (t.closest('[data-mcam]')) return conErrore(() => studioGiraCamera());
   const salvo = t.closest('[data-salvo]'); if (salvo) return conErrore(() => studioRisolviConflitto(salvo.dataset.salvo));
   const vis = t.closest('[data-vis]'); if (vis) { const f = studioTrovaFonte(vis.dataset.vis); if (f) { studioPos(f).vis = !studioPos(f).vis; renderStudioTutto(); studioSporco(); } return; }
@@ -24636,7 +24806,7 @@ function studioPalcoModifica() { return STUDIO.ui?.parentElement || null; }
 function onStudioPointerDown(ev) {
   if (ev.target.closest('#tel-vai')) { studioTelStato().ignoraClic = 0; if (studioTelTieniInizio(ev)) return; }
   if (ev.target.closest('.tel-sblocca')) { studioTelSbloccaInizio(ev); return; }
-  if (ev.target.closest('#tel-palco')) { studioTelPalcoGiu(ev); return; }
+  if (ev.target.closest('#tel-palco, #tel-vuoto')) { studioTelPalcoGiu(ev, !ev.target.closest('button')); return; }
   const box = ev.target.closest('.studio-fonte-box'); if (!box || ev.target.closest('button')) return;
   const id = box.dataset.box, f = studioTrovaFonte(id); if (!f) return;
   if (STUDIO.sel !== id) { STUDIO.sel = id; renderStudioFonti(); renderStudioUI(); renderStudioProp(); }
@@ -24691,6 +24861,222 @@ function onStudioTasto(ev) {
   posizionaBoxStudio(f); studioSporco();
 }
 
+const studioSonoRegia = () => !!STUDIO.doc && !FIN.ceduto;
+function studioAltroveVivo() { const a = FIN.altrove; return a && performance.now() - a.visto < FIN_VIVA_MS ? a : null; }
+
+function studioCanale() {
+  if (FIN.bc || !('BroadcastChannel' in window) || !stato?.user) return FIN.bc;
+  FIN.bc = new BroadcastChannel('sb-studio:' + studioChi());
+  FIN.bc.onmessage = (e) => studioFinestraMessaggio(e.data || {});
+  return FIN.bc;
+}
+function studioFinestraManda(m) { try { studioCanale()?.postMessage({ ...m, da: FIN.id }); } catch (e) {  } }
+
+function studioFinestraAnnuncia() {
+  if (!studioSonoRegia()) return;
+  const sc = studioScena(STUDIO.doc.inOnda);
+  studioFinestraManda({ t: 'presente', finestra: STUDIO_FINESTRA, live: !!STUDIO.live, inizio: STUDIO.live ? STUDIO.startedAt : 0, scena: sc?.nome || '' });
+  if (STUDIO_FINESTRA) document.title = (STUDIO.live ? L('● LIVE ', '● LIVE ', '● EN VIVO ') + studioDurata(Date.now() - STUDIO.startedAt) + ' · ' : '') + L('Studio · SocialBot', 'Studio · SocialBot', 'Estudio · SocialBot');
+}
+
+function studioFinestraAltrove() {
+  if (studioAltroveVivo()) return Promise.resolve(true);
+  if (!studioCanale()) return Promise.resolve(false);
+  return new Promise((ok) => {
+    const t = setTimeout(() => { FIN.attese.delete('presente'); ok(false); }, 350);
+    FIN.attese.set('presente', () => { clearTimeout(t); FIN.attese.delete('presente'); ok(true); });
+    studioFinestraManda({ t: 'chi' });
+  });
+}
+
+function studioFinestraPrendi(occupato) {
+  FIN.prendi = false; FIN.ceduto = false; FIN.chiusaLive = false;
+  renderStudioFuori();
+  if (!studioCanale()) return Promise.resolve(true);
+  return new Promise((ok) => {
+    const t = setTimeout(() => { FIN.attese.delete('ceduto'); ok(true); }, occupato ? 4000 : 0);
+    FIN.attese.set('ceduto', (m) => { clearTimeout(t); FIN.attese.delete('ceduto'); if (m.live) FIN.subentra = true; ok(true); });
+    studioFinestraManda({ t: 'cedi', finestra: STUDIO_FINESTRA });
+  }).then((v) => { clearInterval(FIN.giro); FIN.giro = setInterval(studioFinestraAnnuncia, 2000); FIN.altrove = null; renderStudioPillola(); return v; });
+}
+
+async function studioCedi() {
+  FIN.ceduto = true;
+  clearInterval(FIN.giro); FIN.giro = 0;
+  if (STUDIO.salvo.timer) { clearTimeout(STUDIO.salvo.timer); STUDIO.salvo.timer = 0; studioSalva(); }
+  for (let i = 0; i < 60 && (STUDIO.salvo.inCorso || STUDIO.salvo.ancora); i++) await new Promise((r) => setTimeout(r, 50));
+  if (STUDIO.tel?.aperta) studioTelChiudi();
+  if (!STUDIO.live) studioSpegniRegia();
+  renderStudioFuori(); renderStudioPillola();
+}
+
+function studioSpegniRegia() {
+  const C = STUDIO.cap;
+  for (const st of [C.camStream, C.micStream, C.scrStream]) { try { st?.getTracks().forEach((t) => t.stop()); } catch (e) {  } }
+  for (const el of [C.camEl, C.scrEl]) { try { if (el) el.srcObject = null; } catch (e) {  } }
+  C.camEl = C.camStream = C.micStream = C.scrEl = C.scrStream = null;
+  for (const e of STUDIO.ovMotori.values()) e.m.chiudi();
+  STUDIO.ovMotori.clear();
+  studioSpia();
+  if (STUDIO.raf) { cancelAnimationFrame(STUDIO.raf); STUDIO.raf = 0; }
+  STUDIO.doc = null;
+  if (STUDIO_FINESTRA) { studioFinestraManda({ t: 'via', live: false }); setTimeout(() => window.close(), 50); }
+}
+
+function studioFinestraMessaggio(m) {
+  if (!m.t || m.da === FIN.id) return;
+  if (m.t === 'chi') { studioFinestraAnnuncia(); return; }
+  if (m.t === 'presente') {
+    const nuova = !studioAltroveVivo();
+    FIN.altrove = { ...m, visto: performance.now() }; FIN.chiusaLive = false;
+    if (nuova || m.live !== FIN.eraLive) { FIN.eraLive = m.live; renderStudioFuori(); }
+    renderStudioPillola(); studioFinestraOrologio();
+    FIN.attese.get('presente')?.(m);
+    return;
+  }
+  if (m.t === 'cedi') {
+    if (!studioSonoRegia()) return;
+    const live = !!STUDIO.live;
+    FIN.altrove = { da: m.da, finestra: !!m.finestra, live: false, scena: '', apre: true, visto: performance.now() };
+    studioFinestraOrologio();
+    studioCedi().then(() => studioFinestraManda({ t: 'ceduto', a: m.da, live }));
+    return;
+  }
+  if (m.t === 'ceduto') { if (m.a === FIN.id) FIN.attese.get('ceduto')?.(m); return; }
+  if (m.t === 'via') {
+    if (FIN.altrove?.da !== m.da) return;
+    FIN.altrove = null; FIN.chiusaLive = !!m.live;
+    renderStudioFuori(); renderStudioPillola();
+    return;
+  }
+  if (m.t === 'mostrati' && STUDIO_FINESTRA && studioSonoRegia()) { try { window.focus(); } catch (e) {  } }
+}
+
+function studioFinestraOrologio() {
+  if (FIN.orologio) return;
+  FIN.orologio = setInterval(() => {
+    const a = studioAltroveVivo();
+    if (!a && FIN.altrove) { FIN.altrove = null; FIN.chiusaLive = !!FIN.eraLive; renderStudioFuori(); }
+    renderStudioPillola();
+    const t = document.querySelector('#studio-fuori [data-timer]'); if (t && a?.live) t.textContent = studioDurata(Date.now() - a.inizio);
+    if (!a && !FIN.chiusaLive) { clearInterval(FIN.orologio); FIN.orologio = 0; }
+  }, 1000);
+}
+
+function studioStacca() {
+  if (STUDIO_FINESTRA || studioTelefono()) return;
+  const q = new URLSearchParams(location.search); q.set('finestra', 'studio'); q.set('lang', LINGUA);
+  const w = window.open('/?' + q + '#studio', FIN_NOME, 'popup,width=1360,height=900');
+  if (!w) { toast(L('Il browser ha bloccato la finestra: consenti i popup per questo sito e riprova.', 'The browser blocked the window: allow pop-ups for this site and try again.', 'El navegador bloqueó la ventana: permite las ventanas emergentes para este sitio y vuelve a intentarlo.'), 'errore'); return; }
+  try { w.focus(); } catch (e) {  }
+}
+
+function studioMostraFinestra() {
+  const a = studioAltroveVivo();
+  if (!a?.finestra) { if (a) toast(L('Lo Studio è aperto in un’altra scheda di questo browser.', 'The Studio is open in another tab of this browser.', 'El Estudio está abierto en otra pestaña de este navegador.')); return; }
+  studioFinestraManda({ t: 'mostrati' });
+  let w = null;
+  try { w = window.open('', FIN_NOME); } catch (e) { w = null; }
+  let vuota = false;
+  try { vuota = !!w && (w.location.href === 'about:blank' || !w.document.body?.childElementCount); } catch (e) { vuota = false; }
+  if (vuota) { try { w.close(); } catch (e) {  } toast(L('La finestra dello Studio è aperta ma questa scheda non la raggiunge: cercala fra le finestre aperte (nel titolo c’è «Studio»).', 'The Studio window is open but this tab cannot reach it: look for it among your open windows (its title says «Studio»).', 'La ventana del Estudio está abierta pero esta pestaña no la alcanza: búscala entre las ventanas abiertas (en el título pone «Estudio»).')); return; }
+  try { w?.focus(); } catch (e) {  }
+}
+
+async function studioPrendiQui() {
+  const live = !!studioAltroveVivo()?.live || FIN.chiusaLive;
+  FIN.prendi = true; FIN.ceduto = false;
+  if (schedaAttiva !== 'studio') vaiAScheda('studio');
+  await caricaStudio();
+  if (live && !STUDIO.live && studioSessioniAltrove().length && stato?.ruolo !== 'moderatore') await conErrore(() => studioRiprendiDiretta());
+}
+
+function studioFinestraFuori(id) {
+  let o = null; try { o = window.opener && !window.opener.closed && window.opener.SB_APP ? window.opener : null; } catch (e) { o = null; }
+  if (o) { o.SB_APP.vai(id); try { o.focus(); } catch (e) {  } return; }
+  const q = new URLSearchParams(location.search); q.delete('finestra');
+  window.open('/' + (String(q) ? '?' + q : '') + '#' + encodeURIComponent(id), '_blank', 'noopener');
+}
+
+function studioTornaNelSito() {
+  let o = null; try { o = window.opener && !window.opener.closed && window.opener.studioPrendiQui ? window.opener : null; } catch (e) { o = null; }
+  if (o) { try { o.focus(); } catch (e) {  } o.studioPrendiQui(); return; }
+  if (STUDIO.live) { toast(L('Apri SocialBot in un’altra scheda e premi «Riportalo qui»: la diretta passa senza interruzioni.', 'Open SocialBot in another tab and press «Bring it here»: the stream moves over with no break.', 'Abre SocialBot en otra pestaña y pulsa «Tráelo aquí»: el directo pasa sin cortes.')); return; }
+  studioSalvaUscendo(); studioFinestraManda({ t: 'via', live: false }); window.close();
+}
+
+function renderStudioFuori() {
+  const card = document.getElementById('studio-fuori'), carta = document.getElementById('studio-carta');
+  if (!card) return;
+  const a = studioAltroveVivo(), fuori = !STUDIO_FINESTRA && !studioSonoRegia() && (FIN.ceduto || !!a || FIN.chiusaLive);
+  card.hidden = !fuori; if (carta) carta.hidden = fuori;
+  if (!fuori) { card.innerHTML = ''; return; }
+  let tit, testo, tasti;
+  if (a) {
+    tit = a.finestra ? L('Lo Studio è in una finestra a parte', 'The Studio is in a separate window', 'El Estudio está en una ventana aparte') : L('Lo Studio è aperto in un’altra scheda', 'The Studio is open in another tab', 'El Estudio está abierto en otra pestaña');
+    testo = a.apre ? esc(L('Si sta aprendo…', 'Opening…', 'Abriéndose…')) : STUDIO.live ? esc(L('La diretta sta passando alla finestra dello Studio, senza interruzioni sul canale…', 'The stream is moving to the Studio window, with no break on the channel…', 'El directo está pasando a la ventana del Estudio, sin cortes en el canal…'))
+      : a.live ? `<span class="salute-onda">● LIVE <span data-timer>${studioDurata(Date.now() - a.inizio)}</span></span> ${a.scena ? esc(L('In onda: ', 'On air: ', 'En el aire: ') + a.scena) : ''}`
+      : esc(L('Fuori diretta', 'Off air', 'Fuera del directo') + (a.scena ? ' · ' + L('scena: ', 'scene: ', 'escena: ') + a.scena : ''));
+    tasti = `${a.finestra ? `<button type="button" class="btn" data-fin="mostra">${_bIco(ICO.monitor)}${L('Mostra la finestra', 'Show the window', 'Mostrar la ventana')}</button>` : ''}
+      <button type="button" class="btn secondario" data-fin="qui">${_bIco(ICO.freccia)}${L('Riportalo qui', 'Bring it here', 'Tráelo aquí')}</button>`;
+  } else if (FIN.chiusaLive) {
+    tit = L('La regia si è chiusa durante la diretta', 'The control room closed during the stream', 'El control se cerró durante el directo');
+    testo = esc(L('Sul canale c’è la tua scritta di riserva finché non riprendi: la diretta riparte da qui senza interruzioni.', 'Your fallback text is on the channel until you resume: the stream restarts from here with no break.', 'En el canal está tu texto de reserva hasta que reanudes: el directo vuelve a empezar desde aquí sin cortes.'));
+    tasti = `<button type="button" class="btn" data-fin="qui">${_bIco(ICO.onda)}${L('Riprendi la diretta qui', 'Resume the stream here', 'Reanudar el directo aquí')}</button>`;
+  } else {
+    tit = L('Lo Studio si è chiuso nell’altra finestra', 'The Studio closed in the other window', 'El Estudio se cerró en la otra ventana');
+    testo = esc(L('Le scene sono salvate.', 'The scenes are saved.', 'Las escenas están guardadas.'));
+    tasti = `<button type="button" class="btn" data-fin="qui">${_bIco(ICO.onda)}${L('Apri lo Studio qui', 'Open the Studio here', 'Abrir el Estudio aquí')}</button>`;
+  }
+  card.innerHTML = `<h2>${_hIco(ICO.onda)}${tit}</h2><p class="studio-fuori-stato">${testo}</p><div class="studio-fuori-tasti">${tasti}</div>
+    <p class="suggerimento">${L('Una regia sola per volta: così fotocamera, microfono e scene non si contendono. Il resto del sito lo usi come sempre.', 'One control room at a time: that way camera, microphone and scenes never compete. Use the rest of the site as always.', 'Un solo control a la vez: así cámara, micrófono y escenas no se pelean. El resto del sitio lo usas como siempre.')}</p>`;
+}
+
+function renderStudioPillola() {
+  const barra = document.getElementById('barra-top'); if (!barra || STUDIO_FINESTRA) return;
+  let b = document.getElementById('studio-pillola');
+  if (!b) {
+    b = document.createElement('button'); b.type = 'button'; b.id = 'studio-pillola'; b.className = 'studio-pillola'; b.hidden = true;
+    b.addEventListener('click', () => { const a = studioAltroveVivo(); if (a?.finestra) studioMostraFinestra(); else vaiAScheda('studio'); });
+    barra.insertBefore(b, document.getElementById('area-utente'));
+  }
+  const a = studioAltroveVivo(), quiLive = studioSonoRegia() && STUDIO.live && schedaAttiva !== 'studio';
+  const live = a?.live || quiLive, inizio = a?.live ? a.inizio : STUDIO.startedAt;
+  const vis = !!a || quiLive || FIN.chiusaLive;
+  b.hidden = !vis;
+  if (!vis) return;
+  b.classList.toggle('in-onda', !!live); b.classList.toggle('guasto', FIN.chiusaLive && !a);
+  const testo = FIN.chiusaLive && !a ? L('Diretta senza regia', 'Stream without control room', 'Directo sin control') : (live ? L('● LIVE ', '● LIVE ', '● EN VIVO ') + studioDurata(Date.now() - inizio) : L('Studio', 'Studio', 'Estudio'));
+  if (b.textContent !== testo) b.textContent = testo;
+  b.title = a?.finestra ? L('Lo Studio è in una finestra a parte: portala davanti', 'The Studio is in a separate window: bring it to the front', 'El Estudio está en una ventana aparte: tráela al frente') : L('Vai allo Studio', 'Go to the Studio', 'Ir al Estudio');
+}
+
+function onStudioScorciatoia(ev) {
+  if (ev.ctrlKey || ev.metaKey || ev.altKey || ev.repeat || ev.defaultPrevented) return;
+  if (!studioSonoRegia() || STUDIO.tel?.aperta || (schedaAttiva !== 'studio' && !STUDIO_FINESTRA)) return;
+  if (ev.target.closest?.('input, textarea, select, [contenteditable]:not([contenteditable="false"]), dialog') || document.querySelector('dialog[open]')) return;
+  const n = /^[1-9]$/.test(ev.key) ? Number(ev.key) : 0, k = ev.key.toLowerCase();
+  if (n) { const sc = STUDIO.doc.scene[n - 1]; if (!sc) return; ev.preventDefault(); studioScegliScena(sc.id); return; }
+  if (k === 'm') {
+    ev.preventDefault();
+    if (!STUDIO.cap.micStream) { conErrore(async () => { await studioCapMic(); renderStudioTutto(); }); return; }
+    STUDIO.mix.mic.mute = !STUDIO.mix.mic.mute; applicaMix(); renderStudioMixer();
+    toast(STUDIO.mix.mic.mute ? L('Microfono muto', 'Microphone muted', 'Micrófono silenciado') : L('Microfono attivo', 'Microphone live', 'Micrófono activo'));
+    return;
+  }
+  if (k === 't' && studioModalita()) { ev.preventDefault(); studioVaiInOnda(STUDIO.doc.anteprima); }
+}
+
+function studioFinestraAvvia() {
+  if (STUDIO_FINESTRA) {
+    document.body.classList.add('studio-finestra', 'in-studio');
+    if (schedaAttiva !== 'studio') setTimeout(() => vaiAScheda('studio'), 0);
+    window.addEventListener('pagehide', () => { if (studioSonoRegia()) studioFinestraManda({ t: 'via', live: !!STUDIO.live }); });
+  }
+  if (!studioCanale()) return;
+  studioFinestraManda({ t: 'chi' });
+}
+
 function initStudio() {
   const panel = document.getElementById('scheda-studio'); if (!panel) return;
   panel.addEventListener('click', onStudioClick);
@@ -24704,13 +25090,15 @@ function initStudio() {
     document.addEventListener('pointerup', onStudioPointerUp);
     document.addEventListener('pointercancel', onStudioPointerUp);
     window.addEventListener('popstate', () => { if (STUDIO.tel?.aperta) studioTelIndietro(); });
-    window.addEventListener('resize', () => { if (schedaAttiva === 'studio') studioMisuraTela(); clearTimeout(STUDIO.misuraT); STUDIO.misuraT = setTimeout(() => { if (STUDIO.doc && !STUDIO.live) { studioMisureTele(); studioRidisegna(); } }, 200); });
+    window.addEventListener('resize', () => { if (schedaAttiva === 'studio') studioMisuraTela(); clearTimeout(STUDIO.misuraT); STUDIO.misuraT = setTimeout(() => { studioTelSegui(); if (STUDIO.doc && !STUDIO.live) { studioMisureTele(); studioRidisegna(); } }, 200); });
     window.addEventListener('beforeunload', (e) => { if (STUDIO.live && !window.SB_VERSIONE?.stato().ricarico) { e.preventDefault(); e.returnValue = ''; } });
     window.addEventListener('offline', () => { if (STUDIO.live) studioTelAvviso(L('Niente rete: in onda c’è la tua scritta di riserva finché non torna.', 'No network: your fallback text is on air until it is back.', 'Sin red: en el aire está tu texto de reserva hasta que vuelva.'), 0); });
     window.addEventListener('online', () => { if (STUDIO.live) studioTelAvviso(L('Rete tornata', 'Network back', 'Red de vuelta'), 2500); });
     window.addEventListener('pagehide', studioSalvaUscendo);
-    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') studioSalvaUscendo(); else { if (STUDIO.live) studioTieniSveglio(true); if (STUDIO.cap.camEl || STUDIO.cap.micStream) studioTelRiprendi(); } });
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') studioSalvaUscendo(); else { if (STUDIO.live) studioTieniSveglio(true); if (STUDIO.cap.camEl || STUDIO.cap.micStream) studioTelRiprendi(); avviaVU(); } });
     window.matchMedia?.('(max-width: 760px)').addEventListener?.('change', () => { if (STUDIO.doc && studioAggiornaMobile()) renderStudioTutto(); });
+    studioFinestraAvvia();
+    document.addEventListener('keydown', onStudioScorciatoia);
     STUDIO._wired = true;
   }
 }
@@ -41414,6 +41802,7 @@ function _riarmaBarraSalva(id) {
 }
 
 function vaiAScheda(id) {
+  if (STUDIO_FINESTRA && id !== 'studio') { if (studioSonoRegia()) studioFinestraFuori(id); return; }
   if (senzaDiretta() && id && !SOLO_DISCORD.has(id) && !SOLO_ADMIN.has(id)) id = 'ruoli';
   const insieme = scriveLaStessaCosa(schedaAttiva, id);
   const sporcoPrima = _ciSonoModifiche();
@@ -41428,6 +41817,7 @@ function vaiAScheda(id) {
   const prima = schedaAttiva;
   schedaAttiva = id;
   document.body.classList.toggle('in-studio', id === 'studio');
+  renderStudioPillola();
   chiudiMenuMobile();
 
   try { history.replaceState(null, '', '#' + id); } catch {  }

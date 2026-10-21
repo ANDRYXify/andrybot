@@ -61,6 +61,24 @@ comandi diversi da quelli della riga italiana.
 - Studio sul computer: la tela intera, «Vai live», la fotocamera in uso e le scene stanno in una schermata, e la colonna dei comandi resta accanto mentre scorri fra le fonti. [vai: studio]
   en: Studio on a computer: the whole canvas, «Go live», the camera in use and the scenes fit on one screen, and the controls column stays beside you while you scroll through sources.
   es: Estudio en el ordenador: el lienzo entero, «Emitir», la cámara en uso y las escenas caben en una pantalla, y la columna de controles queda al lado mientras recorres las fuentes.
+- [importante] Lo Studio si stacca in una finestra sua, sempre a portata, mentre il resto del sito resta navigabile. Il sito se ne accorge: in alto vedi se sei in diretta e da quanto. [vai: studio]
+  en: The Studio pops out into its own window, always at hand, while the rest of the site stays browsable. The site knows: at the top you see whether you are live and for how long.
+  es: El Estudio se separa en su propia ventana, siempre a mano, mientras el resto del sitio sigue navegable. El sitio lo sabe: arriba ves si estás en directo y desde cuándo.
+  > Lo Studio in una finestra a parte
+  > Una regia sola per volta, senza fotocamere doppie né scene che si pestano. In diretta la riporti nel sito, o la stacchi, senza interruzioni sul canale.
+  en> The Studio in a separate window
+  en> One control room at a time, no double cameras, no scenes stepping on each other. While live you bring it back or pop it out with no break on the channel.
+  es> El Estudio en una ventana aparte
+  es> Un solo control a la vez, sin cámaras dobles ni escenas que se pisan. En directo lo devuelves al sitio, o lo separas, sin cortes en el canal.
+- Regia dal telefono: la tela non finisce più sotto i tasti, il formato segue come tieni il telefono, il microfono dice se è attivo o muto con il suo livello, e in diretta cambi titolo e categoria. [vai: studio]
+  en: Phone controls: the canvas no longer ends up under the buttons, the format follows how you hold the phone, the mic says whether it is live or muted with its level, and while live you change title and category.
+  es: Control desde el teléfono: el lienzo ya no queda bajo los botones, el formato sigue cómo sujetas el teléfono, el micro dice si está activo o silenciado con su nivel, y en directo cambias título y categoría.
+- La salute della diretta si legge come in OBS (Mbps, fps, fotogrammi persi, ritardo), la tela vuota si dice, e sul computer i tasti 1–9 cambiano scena, M il microfono, T la transizione. [vai: studio]
+  en: Stream health reads like in OBS (Mbps, fps, dropped frames, delay), an empty canvas tells you so, and on a computer keys 1–9 switch scenes, M the mic, T the transition.
+  es: La salud del directo se lee como en OBS (Mbps, fps, fotogramas perdidos, retraso), el lienzo vacío lo dice, y en el ordenador las teclas 1–9 cambian de escena, M el micro, T la transición.
+- Nelle dirette verticali gli alert, la chat e gli altri pezzi dell'overlay escono una volta e mezza più grandi, leggibili sul telefono di chi guarda. [vai: studio]
+  en: In vertical streams alerts, chat and the other overlay pieces come out one and a half times bigger, readable on the viewer's phone.
+  es: En los directos verticales las alertas, el chat y las demás piezas del overlay salen una vez y media más grandes, legibles en el teléfono de quien mira.
 
 ## 2026-10-15
 

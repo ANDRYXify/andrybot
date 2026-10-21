@@ -494,6 +494,90 @@ con le cuffie, perché dall'altoparlante finirebbe nel microfono.
   un'altra app il telefono ferma la pagina: va in onda la riserva fino al
   ritorno, entro i minuti scelti, e la regia lo dice prima di partire.
 
+**La regia rivista sul telefono** (dopo le prove vere in orizzontale):
+- **La tela sta nell'area libera**, mai sotto i comandi: in verticale fra la
+  barra in alto e la striscia delle scene, di lato a sinistra della colonna
+  dei tasti e sopra le scene. Le misure sono una sola (`--p-su`, `--p-giu`,
+  `--p-sx`, `--p-dx` su `.tel`) e le usano tela e cartello insieme, quindi non
+  possono andare fuori passo. Sopra la tela restano solo la chat e i tasti della
+  fotocamera, voluti.
+- **Il riassunto** («In giro · Verticale · Kick») non galleggia sulla tela: è
+  il primo pezzo della striscia delle scene, fermo, e le scene scorrono accanto.
+- **Il formato segue come tieni il telefono**, fuori diretta: di lato è
+  orizzontale, dritto è verticale. Con un vincolo: il cambio non deve far
+  perdere destinazioni (`escluse()` del modello). Con Twitch, che prende solo
+  l'orizzontale, dritto resta orizzontale e lo dice. In «Prima di partire» si
+  può fissare un formato; «Come tieni il telefono» torna all'automatico.
+- **Il microfono dice lo stato a parole**: «Mic attivo», «Mic muto», «Scena
+  muta», «Mic spento», con una lancetta del livello dentro il tasto. La
+  lancetta c'è anche fuori diretta (una spia sul solo microfono, nello stesso
+  contesto audio che poi userà la diretta), così si vede che il microfono
+  funziona prima di partire. Muto vuol dire zero anche sulla lancetta.
+- **La tela vuota si dice**: fotocamera spenta, schermo non condiviso, file
+  non su questo dispositivo, scena vuota. È un cartello dell'interfaccia, mai
+  nel programma, e si calcola con la stessa funzione che disegna
+  (`studioElFonte`): quello che il disegno non trova, il cartello lo dice.
+- **In diretta**: titolo e categoria si cambiano dal foglio «Altro», come
+  dall'app della piattaforma; la **salute della diretta** sta nello stesso
+  foglio; gli alert arrivati restano nell'elenco **Attività** del foglio Chat.
+
+### La salute della diretta, come la barra di stato di OBS
+
+Un modello solo (`studioSaluteMisura`, ogni 3 secondi col controllo dello
+stato), due viste: la barra sotto il programma sul computer e il foglio
+«Altro» sul telefono. Per ogni formato in onda:
+- **Mbps** che arrivano davvero al server, giudicati contro quanto si sta
+  mandando e contro la qualità scelta (se la qualità si è abbassata da sola,
+  la rete è debole anche se arriva tutto);
+- **fps** veri, contati sui fotogrammi codificati;
+- **scarti**: i fotogrammi saltati perché il codificatore era indietro, in
+  percentuale (oltre il 2% attenzione, oltre il 10% guasto);
+- **invio**: il ritardo della spedizione;
+- la **riserva** in onda, se il segnale non arriva.
+Gli stessi giudizi danno le tacche della rete sul telefono. Il tempo di
+diretta passa alle ore (1:02:03) quando serve.
+
+### Lo Studio in una finestra a parte
+
+Sul computer lo Studio si **stacca in una finestra sua** («Stacca in una
+finestra», in alto a destra): sempre a portata, e il sito resta navigabile.
+
+**L'invariante: una regia sola per browser.** Due finestre con lo Studio
+vorrebbero dire due fotocamere aperte, due microfoni, e le scene salvate da
+due parti (conflitti di versione). Le finestre dello stesso account si
+parlano su un `BroadcastChannel`:
+- chi ha la regia si annuncia ogni 2 secondi (in diretta o no, la scena in
+  onda, da quando);
+- chi apre lo Studio **in una finestra a parte** chiede la regia; chi l'aveva
+  salva le scene, spegne fotocamera, microfono e overlay e risponde. Solo
+  dopo la risposta la finestra nuova carica le scene: un solo scrittore alla
+  volta, per costruzione;
+- una **scheda normale** che apre lo Studio mentre un'altra finestra ce l'ha
+  **non se lo prende**: mostra il cartello «Lo Studio è in una finestra a
+  parte», con «Mostra la finestra» e «Riportalo qui». Prenderlo è sempre una
+  scelta esplicita;
+- **in diretta il passaggio non stacca il canale**: chi prende la regia
+  riapre fotocamera e microfono e riparte con `riprendi` (la stessa strada
+  della ripresa dopo un aggiornamento); il server passa il turno, la finestra
+  di prima riceve «altrove», si ferma e spegne tutto. Vale nei due versi.
+
+**Il sito se ne accorge.** In ogni scheda c'è una pillola in alto: «● LIVE
+12:34» mentre la finestra è in diretta, «Studio» quando è aperta. Un clic la
+porta davanti. Se la finestra si chiude in diretta il sito lo dice («Diretta
+senza regia») e offre «Riprendi la diretta qui»: intanto sul canale c'è la
+scritta di riserva. Se la finestra smette di annunciarsi (si blocca) per 6
+secondi, vale come chiusa.
+
+**Dentro la finestra** c'è solo lo Studio: niente barre del sito. Un link a
+un'altra scheda si apre nella finestra principale; il titolo della finestra
+dice «● LIVE 12:34 · Studio», così si ritrova fra le finestre aperte.
+«Rimettilo nel sito» la riporta indietro.
+
+**Tasti sul computer**, come i tasti rapidi di OBS: **1–9** mandano in onda
+le scene (in modalità studio le mettono in anteprima), **M** zittisce e
+riaccende il microfono, **T** fa la transizione in modalità studio. Mentre
+si scrive in un campo i tasti non fanno niente.
+
 ### La fotocamera del telefono
 
 **Il difetto da cui si parte.** Andando in verticale dal telefono la
