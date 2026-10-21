@@ -18,6 +18,7 @@
 // entra solo se la banda dichiarata del server la regge, e chi manda piu' di
 // quanto ha dichiarato viene fermato.
 import { randomBytes } from 'node:crypto';
+import { execFile } from 'node:child_process';
 import { risorse as risorseDiSerie } from '../risorse.js';
 import { testata, creaScrittore, TRACCIA, leggiPacchi } from './diretta-mkv.js';
 
@@ -39,14 +40,33 @@ export function indirizzoBuono(url) {
   return /^rtmps?:\/\/[^/]+\/.+/i.test(u) && !TEE_VIETATI.test(u) && u.length <= 600;
 }
 
+// LA TRACCIA DEL VOD (docs/DIRETTA.md, «Tracce audio e VOD»). Twitch prende
+// al piu' due tracce audio: la prima, classica, e' il live; la seconda, in FLV
+// «enhanced» con numero di traccia 1, e' quella che finisce nel VOD. E' la
+// stessa disposizione della «Twitch VOD Track» di OBS. ffmpeg la scrive cosi'
+// dalla 7.1; prima scriverebbe due tracce classiche mischiate, e l'audio si
+// romperebbe: per questo la traccia del VOD c'e' solo se ffmpeg e' abbastanza
+// nuovo. Le altre piattaforme ricevono solo il live.
+export const VOD_DESTINAZIONI = Object.freeze(['twitch']);
+export function ffmpegMultitraccia(testoVersione) {
+  const m = /ffmpeg version n?(\d+)\.(\d+)/i.exec(String(testoVersione || ''));
+  return !!m && (Number(m[1]) > 7 || (Number(m[1]) === 7 && Number(m[2]) >= 1));
+}
+const sondaDiSerie = (ffmpeg) => () => new Promise((ok) => {
+  try { execFile(ffmpeg, ['-version'], { timeout: 10_000 }, (e, out) => ok(!e && ffmpegMultitraccia(out))); } catch { ok(false); }
+});
+
 // ffmpeg legge il Matroska dallo stdin e copia il video; l'audio si copia se
-// e' AAC, si converte se e' Opus. Mai un codificatore video.
-export function argomenti(destinazioni, audioCodec) {
-  const tee = destinazioni.map((d) => `[f=flv:onfail=ignore:flvflags=no_duration_filesize]${d.url}`).join('|');
+// e' AAC, si converte se e' Opus. Mai un codificatore video. Con la traccia
+// del VOD, ogni destinazione sceglie i suoi flussi: Twitch tutti, le altre il
+// video e il live.
+export function argomenti(destinazioni, audioCodec, vod = false) {
+  const scelta = (d) => (vod ? `:select=\\'${VOD_DESTINAZIONI.includes(d.id) ? 'v,a' : 'v,a:0'}\\'` : '');
+  const tee = destinazioni.map((d) => `[f=flv:onfail=ignore:flvflags=no_duration_filesize${scelta(d)}]${d.url}`).join('|');
   return [
     '-hide_banner', '-loglevel', 'warning', '-nostats',
     '-f', 'matroska', '-i', 'pipe:0',
-    '-map', '0:v:0', '-map', '0:a:0',
+    '-map', '0:v:0', '-map', '0:a:0', ...(vod ? ['-map', '0:a:1'] : []),
     '-c:v', 'copy',
     ...(audioCodec === 'aac' ? ['-c:a', 'copy'] : ['-c:a', 'aac', '-b:a', '160k', '-ar', '48000']),
     '-f', 'tee', tee,
@@ -55,9 +75,10 @@ export function argomenti(destinazioni, audioCodec) {
 
 const mascherato = (s, destinazioni) => destinazioni.reduce((t, d) => t.split(d.url).join(`[${d.nome || d.id}]`), String(s));
 
-export function creaTramite({ risorse = risorseDiSerie, ffmpeg = 'ffmpeg', ora = () => Date.now(), bandaMbps = 300, log = null, ogniMs = 100, alCambio = null } = {}) {
+export function creaTramite({ risorse = risorseDiSerie, ffmpeg = 'ffmpeg', ora = () => Date.now(), bandaMbps = 300, log = null, ogniMs = 100, alCambio = null, sondaVod = sondaDiSerie(ffmpeg) } = {}) {
   const sessioni = new Map();
-  let giro = null;
+  let giro = null, vodPossibile = false;
+  Promise.resolve().then(sondaVod).then((si) => { vodPossibile = !!si; }, () => {});
 
   const kbpsImpegnati = () => [...sessioni.values()].reduce((n, s) => n + s.kbps * s.destinazioni.length, 0);
 
@@ -81,6 +102,11 @@ export function creaTramite({ risorse = risorseDiSerie, ffmpeg = 'ffmpeg', ora =
     scrivi(s, s.blocco(TRACCIA[tipo], ms, chiave, dati));
     return true;
   }
+  // La riserva dell'audio va in tutte e due le tracce, allo stesso istante: il
+  // VOD non ha mai un buco che il live non ha.
+  function emettiRiservaAudio(s, ms, dati) {
+    if (emetti(s, 'audio', ms, true, dati) && s.vod) emetti(s, 'vod', ms, true, dati);
+  }
 
   // L'orologio d'uscita: millisecondi di diretta, presi dal muro del server
   // dal primo pacchetto in poi.
@@ -97,7 +123,7 @@ export function creaTramite({ risorse = risorseDiSerie, ffmpeg = 'ffmpeg', ora =
       if (!s.inRiserva.audio) { s.inRiserva.audio = true; s.giroA = 0; }
       while (s.ultimo.audio + s.riserva.durataA <= bersaglio) {
         const p = s.riserva.audio[s.giroA++ % s.riserva.audio.length];
-        emetti(s, 'audio', s.ultimo.audio + s.riserva.durataA, true, p.dati);
+        emettiRiservaAudio(s, s.ultimo.audio + s.riserva.durataA, p.dati);
       }
     }
     if (assenteV > ATTESA_RISERVA_MS) {
@@ -120,7 +146,8 @@ export function creaTramite({ risorse = risorseDiSerie, ffmpeg = 'ffmpeg', ora =
     const passo = video ? s.riserva.durataV : s.riserva.durataA;
     while (s.ultimo[tipo] + passo < ms - passo / 2) {
       const p = video ? s.riserva.video[s.giroV++ % s.riserva.video.length] : s.riserva.audio[s.giroA++ % s.riserva.audio.length];
-      emetti(s, tipo, s.ultimo[tipo] + passo, video ? p.chiave : true, p.dati);
+      if (video) emetti(s, tipo, s.ultimo[tipo] + passo, p.chiave, p.dati);
+      else emettiRiservaAudio(s, s.ultimo.audio + passo, p.dati);
     }
   }
 
@@ -156,7 +183,7 @@ export function creaTramite({ risorse = risorseDiSerie, ffmpeg = 'ffmpeg', ora =
   // con la stessa codifica continua la stessa diretta (le piattaforme non
   // vedono interruzioni); con una codifica diversa il flusso gia' annunciato non
   // la potrebbe portare, e la diretta di prima si chiude per lasciare il posto.
-  const stessaCodifica = (s, video, audio) => s.audio === audio?.codec && s.fps === video?.fps
+  const stessaCodifica = (s, video, audio, vod) => s.vod === vod && s.audio === audio?.codec && s.fps === video?.fps
     && s.misure === `${video?.larghezza}x${video?.altezza}` && Buffer.from(video?.config || []).equals(s.config.video)
     && Buffer.from(audio?.config || []).equals(s.config.audio);
 
@@ -164,19 +191,20 @@ export function creaTramite({ risorse = risorseDiSerie, ffmpeg = 'ffmpeg', ora =
     rinvio++;
     try { return avviaDavvero(login, opzioni); } finally { rinvio--; if (daDire) cambiato(); }
   }
-  function avviaDavvero(login, { destinazioni, video, audio, kbps, assenzaMaxMs = ASSENZA_MAX_MS, riprendi = false } = {}) {
+  function avviaDavvero(login, { destinazioni, video, audio, kbps, assenzaMaxMs = ASSENZA_MAX_MS, riprendi = false, vod: vodChiesto = false } = {}) {
     const ch = String(login || '').toLowerCase();
     if (!ch) return { ok: false, motivo: 'chi' };
     const prima = sessioni.get(ch);
     if (prima && !riprendi) return { ok: false, motivo: 'gia' };
-    if (prima && stessaCodifica(prima, video, audio)) {
+    const vod = !!vodChiesto && vodPossibile && (destinazioni || []).some((d) => VOD_DESTINAZIONI.includes(d.id) && indirizzoBuono(d.url));
+    if (prima && stessaCodifica(prima, video, audio, vod)) {
       prima.turno = randomBytes(8).toString('hex');
       prima.riancora = true;
       prima.serveChiave = true;
       prima.ultimoN = -1;
       prima.assenzaMax = assenzaMaxMs;
       log?.info?.(`diretta #${ch} ripresa`);
-      return { ok: true, turno: prima.turno, ripresa: true };
+      return { ok: true, turno: prima.turno, ripresa: true, vod };
     }
     const dest = (destinazioni || []).filter((d) => indirizzoBuono(d.url));
     if (!dest.length) return { ok: false, motivo: 'destinazioni' };
@@ -188,13 +216,13 @@ export function creaTramite({ risorse = risorseDiSerie, ffmpeg = 'ffmpeg', ora =
     const rendi = risorse.prova('diretta', ch);
     if (!rendi) return { ok: false, motivo: 'carico' };
     let ff;
-    try { ff = risorse.avvia(ffmpeg, argomenti(dest, audio.codec), { stdio: ['pipe', 'ignore', 'pipe'] }); }
+    try { ff = risorse.avvia(ffmpeg, argomenti(dest, audio.codec, vod), { stdio: ['pipe', 'ignore', 'pipe'] }); }
     catch { rendi(); return { ok: false, motivo: 'ffmpeg' }; }
     const s = {
-      login: ch, ff, rendi, destinazioni: dest, kbps: k, audio: audio.codec, fps: video.fps,
+      login: ch, ff, rendi, destinazioni: dest, kbps: k, audio: audio.codec, fps: video.fps, vod, gemello: null,
       misure: `${video.larghezza}x${video.altezza}`, turno: randomBytes(8).toString('hex'), riancora: false,
       config: { video: Buffer.from(video.config), audio: Buffer.from(audio.config || []) }, inizio: ora(), muro0: null, offset: null,
-      ultimo: { video: -Infinity, audio: -Infinity }, arrivo: { video: ora(), audio: ora() },
+      ultimo: { video: -Infinity, audio: -Infinity, vod: -Infinity }, arrivo: { video: ora(), audio: ora() },
       inRiserva: { video: false, audio: false }, serveChiave: true, riserva: null, giroV: 0, giroA: 0,
       blocco: creaScrittore(), byte: 0, finestra: [], ultimoN: -1, assenzaMax: assenzaMaxMs, finita: false, errore: '',
     };
@@ -206,10 +234,10 @@ export function creaTramite({ risorse = risorseDiSerie, ffmpeg = 'ffmpeg', ora =
     ff.stdin?.on('error', () => {});
     ff.on('error', () => fine(s, 'ffmpeg'));
     ff.on('exit', () => fine(s, s.finita ? s.motivo : 'uscita'));
-    scrivi(s, testata({ video: { ...video, config: s.config.video }, audio: { ...audio, config: audio.config ? Buffer.from(audio.config) : null } }));
+    scrivi(s, testata({ video: { ...video, config: s.config.video }, audio: { ...audio, config: audio.config ? Buffer.from(audio.config) : null }, vod }));
     accendiGiro();
     log?.info?.(`diretta #${ch} partita verso ${dest.map((d) => d.nome || d.id).join(', ')}`);
-    return { ok: true, turno: s.turno };
+    return { ok: true, turno: s.turno, vod };
   }
 
   // La riserva: pacchetti della stessa codifica, il primo video e' chiave.
@@ -245,6 +273,13 @@ export function creaTramite({ risorse = risorseDiSerie, ffmpeg = 'ffmpeg', ora =
     const inFinestra = s.finestra.reduce((t, [, b]) => t + b, 0);
     if (adesso - s.inizio > FINESTRA_BYTE_MS && inFinestra * 8 / FINESTRA_BYTE_MS > (s.kbps * 1.5 + 256)) { fine(s, 'troppo'); return { ok: false, motivo: 'troppo' }; }
     for (const p of lista) {
+      // Il pacco del VOD e' il gemello dell'audio appena uscito (il dispositivo
+      // li mette in coda a coppie, stesso tempo): esce nello stesso istante,
+      // o non esce. Non aggancia l'orologio e non ferma la riserva.
+      if (p.tipo === 'vod') {
+        if (s.vod && s.gemello && s.gemello.us === p.us) emetti(s, 'vod', s.gemello.ms, true, p.dati);
+        continue;
+      }
       // Il tempo del dispositivo si aggancia all'orologio d'uscita sul primo
       // fotogramma chiave: all'inizio, e di nuovo quando un dispositivo riprende
       // col suo orologio che riparte da capo.
@@ -275,7 +310,8 @@ export function creaTramite({ risorse = risorseDiSerie, ffmpeg = 'ffmpeg', ora =
         s.inRiserva.audio = false;
       }
       s.arrivo[p.tipo] = adesso;
-      emetti(s, p.tipo, ms, p.chiave, p.dati);
+      const uscito = emetti(s, p.tipo, ms, p.chiave, p.dati);
+      if (p.tipo === 'audio') s.gemello = uscito ? { us: p.us, ms } : null;
     }
     curaTempo(s);
     // Aspetta un fotogramma chiave per riprendere il video vero: lo chiede,
@@ -291,7 +327,7 @@ export function creaTramite({ risorse = risorseDiSerie, ffmpeg = 'ffmpeg', ora =
     const inFinestra = s.finestra.filter(([t]) => adesso - t <= FINESTRA_BYTE_MS).reduce((t, [, b]) => t + b, 0);
     return {
       live: true, da: s.inizio, byte: s.byte, kbpsVeri: Math.round(inFinestra * 8 / FINESTRA_BYTE_MS), kbpsDichiarati: s.kbps,
-      destinazioni: s.destinazioni.map((d) => d.nome || d.id), ids: s.destinazioni.map((d) => d.id), riserva: !!s.riserva, inRiserva: { ...s.inRiserva }, errore: s.errore,
+      destinazioni: s.destinazioni.map((d) => d.nome || d.id), ids: s.destinazioni.map((d) => d.id), riserva: !!s.riserva, inRiserva: { ...s.inRiserva }, errore: s.errore, vod: !!s.vod,
     };
   }
 
@@ -299,6 +335,7 @@ export function creaTramite({ risorse = risorseDiSerie, ffmpeg = 'ffmpeg', ora =
     avvia, riserva, pacchi, stato,
     ferma: (login, motivo = 'fermata', turno = null) => { const s = sessioni.get(String(login || '').toLowerCase()); if (!s || (turno && turno !== s.turno)) return false; fine(s, motivo); return true; },
     attiva: (login) => sessioni.has(String(login || '').toLowerCase()),
+    vodPossibile: () => vodPossibile,
     // I canali in diretta dallo Studio, in un formato o nell'altro.
     canali: () => [...new Set([...sessioni.keys()].map((k) => k.replace(/#v$/, '')))],
     chiudiTutto: () => { for (const s of [...sessioni.values()]) fine(s, 'spegnimento'); },

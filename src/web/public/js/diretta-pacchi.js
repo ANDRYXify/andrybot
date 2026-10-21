@@ -1,6 +1,7 @@
 // © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
 // Proprieta intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 export const TESTA_PACCO = 16;
+const TIPI = { video: 1, audio: 2, vod: 3 }, NOMI = ['', 'video', 'audio', 'vod'];
 
 export function scriviPacchi(pacchi) {
   const totale = pacchi.reduce((n, p) => n + TESTA_PACCO + p.dati.byteLength, 0);
@@ -8,7 +9,7 @@ export function scriviPacchi(pacchi) {
   const vista = new DataView(fuori.buffer);
   let i = 0;
   for (const p of pacchi) {
-    fuori[i] = p.tipo === 'video' ? 1 : 2;
+    fuori[i] = TIPI[p.tipo] || 2;
     fuori[i + 1] = p.chiave ? 1 : 0;
     vista.setFloat64(i + 4, p.us);
     vista.setUint32(i + 12, p.dati.byteLength);
@@ -27,8 +28,8 @@ export function leggiPacchi(buf) {
     const tipo = b[i];
     const us = vista.getFloat64(i + 4);
     const n = vista.getUint32(i + 12);
-    if ((tipo !== 1 && tipo !== 2) || !Number.isFinite(us) || i + TESTA_PACCO + n > b.length) throw new Error('pacco storto');
-    fuori.push({ tipo: tipo === 1 ? 'video' : 'audio', chiave: (b[i + 1] & 1) === 1, us, dati: b.subarray(i + TESTA_PACCO, i + TESTA_PACCO + n) });
+    if (!NOMI[tipo] || !Number.isFinite(us) || i + TESTA_PACCO + n > b.length) throw new Error('pacco storto');
+    fuori.push({ tipo: NOMI[tipo], chiave: (b[i + 1] & 1) === 1, us, dati: b.subarray(i + TESTA_PACCO, i + TESTA_PACCO + n) });
     i += TESTA_PACCO + n;
   }
   if (i !== b.length) throw new Error('pacco tronco');

@@ -82,10 +82,30 @@ export function creaSpedizione({ url = '/api/diretta/pacchi', formato = 'o', ogn
   };
 }
 
-export async function creaCodifica({ supporto: sup, canvas, contestoAudio, nodoAudio, fps, kbps, riserva, spedizione, quandoCambia, quandoErrore, disegna }) {
+export const ATTESA_GEMELLI = 64;
+
+export function creaCoppie(consegna) {
+  const inAttesa = { audio: new Map(), vod: new Map() };
+  return function accoppia(p) {
+    const altro = p.tipo === 'audio' ? 'vod' : 'audio', gemello = inAttesa[altro].get(p.us);
+    if (gemello) {
+      inAttesa[altro].delete(p.us);
+      if (p.tipo === 'audio') { consegna(p); consegna(gemello); } else { consegna(gemello); consegna(p); }
+      return;
+    }
+    inAttesa[p.tipo].set(p.us, p);
+    if (inAttesa[p.tipo].size > ATTESA_GEMELLI) {
+      for (const x of inAttesa.audio.values()) consegna(x);
+      inAttesa.audio.clear(); inAttesa.vod.clear();
+    }
+  };
+}
+
+export async function creaCodifica({ supporto: sup, canvas, contestoAudio, nodoAudio, nodoVod = null, fps, kbps, riserva, spedizione, quandoCambia, quandoErrore, disegna }) {
   let configVideo = null, configAudio = null, verso = 'riserva', soloAudio = false, chiaveForzata = true, fermato = false;
   const raccoltaRiserva = [];
   const consegna = (p) => { if (verso === 'riserva') raccoltaRiserva.push(p); else spedizione.aggiungi(p); };
+  const accoppia = creaCoppie(consegna);
   const ve = new VideoEncoder({
     output: (chunk, meta) => {
       if (meta && meta.decoderConfig && meta.decoderConfig.description && !configVideo) configVideo = copia(meta.decoderConfig.description);
@@ -99,11 +119,21 @@ export async function creaCodifica({ supporto: sup, canvas, contestoAudio, nodoA
     output: (chunk, meta) => {
       if (meta && meta.decoderConfig && meta.decoderConfig.description && !configAudio) configAudio = copia(meta.decoderConfig.description);
       const d = new Uint8Array(chunk.byteLength); chunk.copyTo(d);
-      consegna({ tipo: 'audio', chiave: true, us: chunk.timestamp, dati: d });
+      const p = { tipo: 'audio', chiave: true, us: chunk.timestamp, dati: d };
+      if (aeVod && verso === 'diretta') accoppia(p); else consegna(p);
     },
     error: (e) => quandoErrore && quandoErrore(e),
   });
   ae.configure(sup.audio.cfg);
+  const aeVod = nodoVod ? new AudioEncoder({
+    output: (chunk) => {
+      if (verso !== 'diretta') return;
+      const d = new Uint8Array(chunk.byteLength); chunk.copyTo(d);
+      accoppia({ tipo: 'vod', chiave: true, us: chunk.timestamp, dati: d });
+    },
+    error: (e) => quandoErrore && quandoErrore(e),
+  }) : null;
+  if (aeVod) aeVod.configure(sup.audio.cfg);
 
   const passoUs = 1e6 / fps;
   for (let i = 0; i < fps * 2; i++) {
@@ -122,7 +152,7 @@ export async function creaCodifica({ supporto: sup, canvas, contestoAudio, nodoA
   const inizioUs = 2_000_000 + 1;
   let t0 = 0;
   const ora = () => Math.round(inizioUs + (performance.now() - t0) * 1000);
-  let cattura = null, muto = null;
+  let cattura = null, muto = null, unisci = null, separa = [];
   const gop = Math.max(1, Math.round(fps * 2));
   let daChiave = 0, fotogrammi = 0, saltati = 0;
 
@@ -132,30 +162,40 @@ export async function creaCodifica({ supporto: sup, canvas, contestoAudio, nodoA
     verso = 'diretta';
     await contestoAudio.audioWorklet.addModule('/js/diretta-cattura.js');
     if (contestoAudio.sampleRate !== 48000) throw new Error('audio-48k');
-    cattura = new AudioWorkletNode(contestoAudio, 'diretta-cattura', { numberOfInputs: 1, numberOfOutputs: 1, channelCount: 2, channelCountMode: 'explicit' });
+    const canali = aeVod ? 4 : 2;
+    cattura = new AudioWorkletNode(contestoAudio, 'diretta-cattura', { numberOfInputs: 1, numberOfOutputs: 1, channelCount: canali, channelCountMode: 'explicit', channelInterpretation: 'discrete', processorOptions: { canali } });
     muto = contestoAudio.createGain();
     muto.gain.value = 0;
-    nodoAudio.connect(cattura);
+    if (aeVod) {
+      unisci = contestoAudio.createChannelMerger(4);
+      [nodoAudio, nodoVod].forEach((n, k) => {
+        const sp = contestoAudio.createChannelSplitter(2);
+        n.connect(sp); sp.connect(unisci, 0, k * 2); sp.connect(unisci, 1, k * 2 + 1);
+        separa.push([n, sp]);
+      });
+      unisci.connect(cattura);
+    } else nodoAudio.connect(cattura);
     cattura.connect(muto);
     muto.connect(contestoAudio.destination);
     const freq = contestoAudio.sampleRate;
-    let accumulo = [new Float32Array(1024), new Float32Array(1024)], pieni = 0, campioniTotali = 0, inizioAudioUs = null;
+    let accumulo = Array.from({ length: canali }, () => new Float32Array(1024)), pieni = 0, campioniTotali = 0, inizioAudioUs = null;
+    const blocco = (a, b, ts) => { const dati = new Float32Array(2048); dati.set(a, 0); dati.set(b, 1024); return new AudioData({ format: 'f32-planar', sampleRate: freq, numberOfFrames: 1024, numberOfChannels: 2, timestamp: ts, data: dati }); };
     let prossimoFotogramma = 0, prossimoGiro = performance.now() + 1000;
     cattura.port.onmessage = (ev) => {
       if (fermato) return;
       if (inizioAudioUs === null) inizioAudioUs = ora();
-      const [s, d] = ev.data;
+      const ch = ev.data, lung = ch[0].length;
       let i = 0;
-      while (i < s.length) {
-        const quanti = Math.min(1024 - pieni, s.length - i);
-        accumulo[0].set(s.subarray(i, i + quanti), pieni);
-        accumulo[1].set(d.subarray(i, i + quanti), pieni);
+      while (i < lung) {
+        const quanti = Math.min(1024 - pieni, lung - i);
+        for (let c = 0; c < canali; c++) accumulo[c].set((ch[c] || ch[c % 2]).subarray(i, i + quanti), pieni);
         pieni += quanti; i += quanti;
         if (pieni === 1024) {
-          const dati = new Float32Array(2048); dati.set(accumulo[0], 0); dati.set(accumulo[1], 1024);
-          const a = new AudioData({ format: 'f32-planar', sampleRate: freq, numberOfFrames: 1024, numberOfChannels: 2, timestamp: Math.round(inizioAudioUs + campioniTotali * 1e6 / freq), data: dati });
+          const ts = Math.round(inizioAudioUs + campioniTotali * 1e6 / freq);
+          const a = blocco(accumulo[0], accumulo[1], ts);
           try { ae.encode(a); } catch { }
           a.close();
+          if (aeVod) { const v = blocco(accumulo[2], accumulo[3], ts); try { aeVod.encode(v); } catch { } v.close(); }
           campioniTotali += 1024; pieni = 0;
         }
       }
@@ -199,15 +239,20 @@ export async function creaCodifica({ supporto: sup, canvas, contestoAudio, nodoA
       video: { codec: 'avc1', config: base64(configVideo), larghezza: sup.video.cfg.width, altezza: sup.video.cfg.height, fps },
       audio: { codec: sup.audio.nome, config: configAudio ? base64(configAudio) : '', frequenza: 48000, canali: 2 },
     },
+    vod: !!aeVod,
     riserva: scriviPacchi(raccoltaRiserva),
     parti,
     forzaChiave() { chiaveForzata = true; },
     stato() { return { kbps: kbpsOra, soloAudio, ritardoMs: spedizione.ritardoMs(), fotogrammi, saltati, gop }; },
     async ferma() {
       fermato = true;
-      if (cattura) { try { nodoAudio.disconnect(cattura); cattura.disconnect(); muto.disconnect(); } catch { } try { cattura.port.onmessage = null; } catch { } }
+      if (cattura) {
+        try { if (unisci) { for (const [n, sp] of separa) n.disconnect(sp); unisci.disconnect(); } else nodoAudio.disconnect(cattura); cattura.disconnect(); muto.disconnect(); } catch { }
+        try { cattura.port.onmessage = null; } catch { }
+      }
       try { await ve.flush(); } catch { }
       try { await ae.flush(); } catch { }
+      if (aeVod) { try { await aeVod.flush(); } catch { } try { aeVod.close(); } catch { } }
       try { ve.close(); ae.close(); } catch { }
     },
   };

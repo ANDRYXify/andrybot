@@ -20,7 +20,7 @@ const ID = {
   Audio: 0xe1, SamplingFrequency: 0xb5, Channels: 0x9f,
   Cluster: 0x1f43b675, Timestamp: 0xe7, SimpleBlock: 0xa3,
 };
-export const TRACCIA = { video: 1, audio: 2 };
+export const TRACCIA = { video: 1, audio: 2, vod: 3 };
 const SCONOSCIUTA = Buffer.from([0x01, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]);
 
 function idBytes(id) {
@@ -59,8 +59,10 @@ export function opusHead({ canali = 2, frequenza = 48000, preSkip = 312 } = {}) 
   return b;
 }
 
-// L'inizio del flusso: intestazione, informazioni e le due tracce.
-export function testata({ video, audio }) {
+// L'inizio del flusso: intestazione, informazioni e le tracce. La traccia del
+// VOD, quando c'e', e' la gemella dell'audio: stessa codifica, stessa
+// configurazione, un altro mix.
+export function testata({ video, audio, vod = false }) {
   const ebml = insieme(ID.EBML, uint(ID.EBMLVersion, 1), uint(ID.EBMLReadVersion, 1), uint(ID.EBMLMaxIDLength, 4),
     uint(ID.EBMLMaxSizeLength, 8), str(ID.DocType, 'matroska'), uint(ID.DocTypeVersion, 4), uint(ID.DocTypeReadVersion, 2));
   const info = insieme(ID.Info, uint(ID.TimestampScale, 1_000_000), str(ID.MuxingApp, 'socialbot'), str(ID.WritingApp, 'socialbot'));
@@ -69,11 +71,11 @@ export function testata({ video, audio }) {
     insieme(ID.Video, uint(ID.PixelWidth, video.larghezza), uint(ID.PixelHeight, video.altezza)));
   const opus = audio.codec === 'opus';
   const privato = opus ? (audio.config?.length ? Buffer.from(audio.config) : opusHead({ canali: audio.canali, frequenza: audio.frequenza })) : Buffer.from(audio.config);
-  const ta = insieme(ID.TrackEntry, uint(ID.TrackNumber, TRACCIA.audio), uint(ID.TrackUID, 2), uint(ID.TrackType, 2),
+  const traccia = (numero) => insieme(ID.TrackEntry, uint(ID.TrackNumber, numero), uint(ID.TrackUID, numero), uint(ID.TrackType, 2),
     str(ID.CodecID, opus ? 'A_OPUS' : 'A_AAC'), el(ID.CodecPrivate, privato),
     ...(opus ? [uint(ID.CodecDelay, 6_500_000), uint(ID.SeekPreRoll, 80_000_000)] : []),
     insieme(ID.Audio, float(ID.SamplingFrequency, audio.frequenza), uint(ID.Channels, audio.canali)));
-  return Buffer.concat([ebml, idBytes(ID.Segment), SCONOSCIUTA, info, insieme(ID.Tracks, tv, ta)]);
+  return Buffer.concat([ebml, idBytes(ID.Segment), SCONOSCIUTA, info, insieme(ID.Tracks, tv, traccia(TRACCIA.audio), ...(vod ? [traccia(TRACCIA.vod)] : []))]);
 }
 
 // Lo scrittore dei blocchi: ricorda il Cluster aperto e ne apre uno nuovo
@@ -98,7 +100,7 @@ export function creaScrittore() {
 }
 
 // I pacchetti come li manda il dispositivo: una testata di 16 byte e i dati
-// ([0] tipo 1 video / 2 audio, [1] bit 0 fotogramma chiave, [4..11] tempo in
+// ([0] tipo 1 video / 2 audio / 3 audio del VOD, [1] bit 0 fotogramma chiave, [4..11] tempo in
 // microsecondi, [12..15] lunghezza). Il formato sta in un posto solo, che legge
 // anche il browser.
 export { TESTA_PACCO, leggiPacchi, scriviPacchi } from '../web/public/js/diretta-pacchi.js';

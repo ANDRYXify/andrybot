@@ -223,3 +223,25 @@ test('a diretta accesa la tela in onda la disegna solo l\'orologio della diretta
   assert.match(APP, /disegna: \(\) => studioDisegnaUnaVolta\(f\)/);
   assert.match(APP, /quandoChiave: \(\) => cod\?\.forzaChiave\(\)/);
 });
+
+// La traccia del VOD (docs/DIRETTA.md, «Tracce audio e VOD»): il pacco ha il
+// suo tipo, e il dispositivo lo mette in coda subito dopo il suo audio, anche
+// quando i due codificatori finiscono in ordine diverso.
+test('il pacco del VOD ha il suo tipo, e il formato lo porta intatto', () => {
+  const ritorno = leggiPacchi(scriviPacchi([{ tipo: 'audio', us: 10, chiave: true, dati: new Uint8Array([1]) }, { tipo: 'vod', us: 10, chiave: true, dati: new Uint8Array([2]) }]));
+  assert.deepEqual(ritorno.map((p) => [p.tipo, p.us, p.dati[0]]), [['audio', 10, 1], ['vod', 10, 2]]);
+  const storto = scriviPacchi([{ tipo: 'audio', us: 1, chiave: true, dati: new Uint8Array([1]) }]); storto[0] = 4;
+  assert.throws(() => leggiPacchi(storto), /pacco storto/);
+});
+
+test('audio e VOD escono a coppie, prima il live e poi il suo gemello, in qualunque ordine finiscano i codificatori', async () => {
+  const { creaCoppie, ATTESA_GEMELLI } = await import('../../src/web/public/js/diretta-codifica.js');
+  const usciti = [], accoppia = creaCoppie((p) => usciti.push(`${p.tipo}@${p.us}`));
+  accoppia({ tipo: 'vod', us: 0 }); accoppia({ tipo: 'audio', us: 0 });
+  accoppia({ tipo: 'audio', us: 21 }); accoppia({ tipo: 'audio', us: 42 }); accoppia({ tipo: 'vod', us: 21 }); accoppia({ tipo: 'vod', us: 42 });
+  assert.deepEqual(usciti, ['audio@0', 'vod@0', 'audio@21', 'vod@21', 'audio@42', 'vod@42']);
+  usciti.length = 0;
+  for (let i = 0; i <= ATTESA_GEMELLI; i++) accoppia({ tipo: 'audio', us: 1000 + i });
+  assert.equal(usciti.length, ATTESA_GEMELLI + 1, 'se il codificatore del VOD si ferma, il live non aspetta');
+  assert.ok(usciti.every((x) => x.startsWith('audio@')));
+});

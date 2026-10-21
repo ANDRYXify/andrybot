@@ -25,12 +25,12 @@ function nal(buf) {
   return fuori.map((n) => { let f = n.length; while (f > 0 && n[f - 1] === 0) f--; return n.subarray(0, f); });
 }
 
-export function materiale({ secondi = 4, fps = 30, larghezza = 320, altezza = 180, gop = 60 } = {}) {
+export function materiale({ secondi = 4, fps = 30, larghezza = 320, altezza = 180, gop = 60, hz = 440 } = {}) {
   if (!FFMPEG) return null;
   const v = spawnSync(FFMPEG, ['-hide_banner', '-loglevel', 'error', '-f', 'lavfi', '-i', `testsrc2=size=${larghezza}x${altezza}:rate=${fps}`,
     '-t', String(secondi), '-c:v', 'libx264', '-profile:v', 'main', '-bf', '0', '-g', String(gop), '-x264-params', 'aud=1',
     '-pix_fmt', 'yuv420p', '-f', 'h264', 'pipe:1'], { maxBuffer: 1 << 28 });
-  const a = spawnSync(FFMPEG, ['-hide_banner', '-loglevel', 'error', '-f', 'lavfi', '-i', 'sine=frequency=440:sample_rate=48000',
+  const a = spawnSync(FFMPEG, ['-hide_banner', '-loglevel', 'error', '-f', 'lavfi', '-i', `sine=frequency=${hz}:sample_rate=48000`,
     '-t', String(secondi), '-ac', '2', '-c:a', 'aac', '-b:a', '128k', '-f', 'adts', 'pipe:1'], { maxBuffer: 1 << 26 });
   if (v.status !== 0 || a.status !== 0) throw new Error('ffmpeg non ha prodotto il materiale: ' + (v.stderr || a.stderr));
   let sps = null, pps = null, corrente = [];

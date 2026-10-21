@@ -9024,6 +9024,7 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     twitch: { keyOk: studioKeyOk(login), su: piattaformaDi(login) === 'twitch' },
     kick: { su: !!kickApi.tokenDi(login)?.accessToken, keyOk: kickApi.puoDiretta(login), azione: kickApi.puoModerare(login) ? '/auth/kick?mod=1&diretta=1' : '/auth/kick?diretta=1' },
     sessioni: { o: tramite.stato(sessioneDi(login, 'o')), v: tramite.stato(sessioneDi(login, 'v')) }, kbpsMax: BITRATE_MAX_KBPS,
+    vod: tramite.vodPossibile(),
   });
   // LE SCENE DELLO STUDIO (docs/DIRETTA.md, «La memoria»). Chi prepara le
   // scene, anche un moderatore, le salva sul canale. Il documento passa da
@@ -9124,9 +9125,10 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
       kbps: Number(b.kbps) || 0,
       assenzaMaxMs: Math.min(30, Math.max(1, Number(b.assenzaMin) || 10)) * 60_000,
       riprendi: b.riprendi === true,
+      vod: b.vod === true,
     });
     if (!r.ok) return res.status(r.motivo === 'carico' || r.motivo === 'banda' ? 503 : 400).json({ errore: MOTIVI_DIRETTA[r.motivo] || 'La diretta non è partita.', motivo: r.motivo });
-    res.json({ ok: true, turno: r.turno, ripresa: !!r.ripresa, destinazioni: destinazioni.map((d) => d.nome) });
+    res.json({ ok: true, turno: r.turno, ripresa: !!r.ripresa, vod: !!r.vod, destinazioni: destinazioni.map((d) => d.nome) });
   }));
   app.post('/api/diretta/riserva', requireOwner, studioAperto, express.raw({ type: () => true, limit: '4mb' }), (req, res) => {
     const r = tramite.riserva(sessioneDi(currentUser(req).login, req.query.f), Buffer.isBuffer(req.body) ? req.body : Buffer.alloc(0), String(req.query.t || ''));

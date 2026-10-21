@@ -8,15 +8,15 @@
 // ricodificato.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { spawn } from 'node:child_process';
+import { spawn, execFileSync } from 'node:child_process';
 import { mkdtempSync, existsSync, statSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { createServer } from 'node:net';
-import { creaTramite, argomenti, indirizzoBuono } from '../../src/features/diretta.js';
+import { creaTramite, argomenti, indirizzoBuono, ffmpegMultitraccia } from '../../src/features/diretta.js';
 import { scriviPacchi } from '../../src/features/diretta-mkv.js';
 import { creaRisorse } from '../../src/risorse.js';
-import { FFMPEG, materiale, pacchetti, sonda } from '../aiuto-diretta.mjs';
+import { FFMPEG, FFPROBE, materiale, pacchetti, sonda } from '../aiuto-diretta.mjs';
 
 const calma = () => ({ ritardoMs: 0, cpuPsi: 0, memPsi: 0, memLibera: 0.9, caricoPerCore: 0 });
 const risorseCalme = () => creaRisorse({ misura: calma, cacheMs: 0 });
@@ -366,4 +366,117 @@ test('le rotte scelgono la sessione dal formato, Twitch resta orizzontale, e una
   }
   assert.match(srv, /if \(f === 'v' && scelte\.includes\('twitch'\)\) return res\.status\(400\)/);
   assert.match(srv, /if \(altra\.live && \(altra\.ids \|\| \[\]\)\.some\(\(id\) => scelte\.includes\(id\)\)\) return res\.status\(409\)/);
+});
+
+// LA TRACCIA DEL VOD (docs/DIRETTA.md, «Tracce audio e VOD»). I blocchi del
+// Matroska scritto, letti come li legge ffmpeg: traccia, istante, contenuto.
+function blocchi(scritto) {
+  const fuori = [];
+  let base = 0;
+  for (const b of scritto) {
+    let i = 0;
+    if (b.length > 4 && b.readUInt32BE(0) === 0x1f43b675) {
+      i = 12;
+      const n = Number(b.readBigUInt64BE(i + 1) & 0x00ffffffffffffffn);
+      base = b.readUIntBE(i + 9, n);
+      i += 9 + n;
+    }
+    if (b[i] !== 0xa3) continue;
+    const lung = Number(b.readBigUInt64BE(i + 1) & 0x00ffffffffffffffn), h = i + 9;
+    fuori.push({ traccia: b[h] & 0x7f, ms: base + b.readInt16BE(h + 1), segno: b.subarray(h + 4, h + lung).toString('latin1') });
+  }
+  return fuori;
+}
+const TWITCH = [{ id: 'twitch', nome: 'Twitch', url: 'rtmp://127.0.0.1:1935/app/chiave-twitch' }, ...DEST];
+const sondato = () => new Promise((ok) => setImmediate(ok));
+
+test('la traccia del VOD va solo a Twitch, come seconda traccia: le altre piattaforme ricevono il video e il live', () => {
+  const a = argomenti(TWITCH, 'aac', true);
+  assert.deepEqual(a.slice(a.indexOf('-map'), a.indexOf('-c:v')), ['-map', '0:v:0', '-map', '0:a:0', '-map', '0:a:1']);
+  const [tw, altra] = a.at(-1).split('|');
+  assert.match(tw, /select=\\'v,a\\'\]rtmp:\/\/127\.0\.0\.1:1935\/app\/chiave-twitch$/);
+  assert.match(altra, /select=\\'v,a:0\\'\]rtmp:\/\/127\.0\.0\.1:1935\/live\//);
+  const senza = argomenti(TWITCH, 'aac', false);
+  assert.ok(!senza.includes('0:a:1') && !senza.at(-1).includes('select'), 'senza traccia del VOD tutto come prima');
+});
+
+test('la traccia del VOD si chiede solo a un ffmpeg che la scrive come la vuole Twitch (dalla 7.1)', () => {
+  for (const [v, si] of [['ffmpeg version 9.0.2-static https://github.com/mwader/static-ffmpeg', true], ['ffmpeg version 8.0 Copyright', true], ['ffmpeg version n7.1.1', true],
+    ['ffmpeg version 7.0.2-static', false], ['ffmpeg version 6.1.1-3ubuntu5', false], ['ffmpeg version N-71064-gd5e603ddc0-static', false], ['', false]]) assert.equal(ffmpegMultitraccia(v), si, v);
+});
+
+test('con un ffmpeg che non la sa scrivere, o senza Twitch fra le destinazioni, la traccia del VOD non si apre', async () => {
+  const { r } = finto();
+  const vecchio = creaTramite({ risorse: r, ogniMs: 0, sondaVod: () => false });
+  await sondato();
+  assert.equal(vecchio.avvia('mario', { destinazioni: TWITCH, ...CONF, kbps: 3000, vod: true }).vod, false);
+  const nuovo = creaTramite({ risorse: finto().r, ogniMs: 0, sondaVod: () => true });
+  await sondato();
+  assert.equal(nuovo.vodPossibile(), true);
+  assert.equal(nuovo.avvia('luigi', { destinazioni: DEST, ...CONF, kbps: 3000, vod: true }).vod, false, 'senza Twitch non serve');
+});
+
+test('il gemello del VOD esce nello stesso istante del suo audio; senza il suo audio non esce; la riserva riempie le due tracce insieme', async () => {
+  let adesso = 1_000_000;
+  const { scritto, r } = finto();
+  const t = creaTramite({ risorse: r, ora: () => adesso, ogniMs: 0, sondaVod: () => true });
+  await sondato();
+  const { turno, vod } = t.avvia('mario', { destinazioni: TWITCH, ...CONF, kbps: 3000, vod: true });
+  assert.equal(vod, true);
+  assert.ok(Buffer.concat(scritto).includes(Buffer.from([0xd7, 0x01, 0, 0, 0, 0, 0, 0, 0x01, 0x03])), 'la testata ha la terza traccia');
+  t.riserva('mario', scriviPacchi([pacco('video', 0, true, 'RISERVA-K'), pacco('audio', 0, true, 'SILENZIO'), pacco('audio', 21_333, true, 'SILENZIO')]), turno);
+  t.pacchi('mario', 0, scriviPacchi([pacco('video', 0, true, 'K1'), pacco('audio', 0, true, 'LIVE-1'), pacco('vod', 0, true, 'VOD-1'), pacco('audio', 21_333, true, 'LIVE-2'), pacco('vod', 21_333, true, 'VOD-2'), pacco('audio', 42_666, true, 'LIVE-3'), pacco('vod', 64_000, true, 'VOD-ORFANO')]), turno);
+  adesso += 3_000;
+  t.curaTempo('mario');
+  const b = blocchi(scritto);
+  const di = (segno) => b.find((x) => x.segno === segno);
+  assert.equal(di('VOD-1').traccia, 3); assert.equal(di('LIVE-1').traccia, 2);
+  assert.equal(di('VOD-1').ms, di('LIVE-1').ms); assert.equal(di('VOD-2').ms, di('LIVE-2').ms);
+  assert.equal(di('VOD-ORFANO'), undefined, 'un gemello senza il suo audio non esce, neanche all\'istante di un altro');
+  const silenzi = (tr) => b.filter((x) => x.traccia === tr && x.segno === 'SILENZIO').map((x) => x.ms);
+  assert.ok(silenzi(2).length > 10, 'col dispositivo muto va la riserva');
+  assert.deepEqual(silenzi(3), silenzi(2), 'e il VOD ha la stessa riserva negli stessi istanti');
+});
+
+// Da capo a fondo con un ffmpeg che scrive la traccia del VOD (dalla 7.1; sul
+// server c'e' la 9). Dove non c'e' (SB_FFMPEG_MULTI per indicarne uno) la prova
+// si salta e lo dice: con un ffmpeg vecchio la traccia non si apre affatto.
+const MULTI = (() => {
+  for (const f of [process.env.SB_FFMPEG_MULTI, FFMPEG].filter(Boolean)) {
+    const r = spawnSyncSicuro(f, ['-version']);
+    if (r && ffmpegMultitraccia(r)) return f;
+  }
+  return null;
+})();
+function spawnSyncSicuro(f, a) { try { return execFileSync(f, a, { encoding: 'utf8' }); } catch { return ''; } }
+const hzDi = (pcm) => { let z = 0; for (let i = 1; i < pcm.length; i++) if ((pcm[i - 1] < 0) !== (pcm[i] < 0)) z++; return Math.round(z / 2 / (pcm.length / 48000)); };
+
+test('da capo a fondo: Twitch riceve il live e, come seconda traccia, il VOD senza la musica; le altre piattaforme solo il live', { skip: (!MULTI || !FFMPEG) && 'serve un ffmpeg dalla 7.1 (SB_FFMPEG_MULTI)', timeout: 60_000 }, async () => {
+  const live = materiale({ secondi: 3, gop: 60, hz: 440 }), vod = materiale({ secondi: 3, gop: 60, hz: 880 });
+  const dir = mkdtempSync(join(tmpdir(), 'tramite-vod-'));
+  const porte = [await portaLibera(), await portaLibera()];
+  const ricevi = (porta, nome) => spawn(MULTI, ['-hide_banner', '-loglevel', 'error', '-listen', '1', '-f', 'flv', '-i', `rtmp://127.0.0.1:${porta}/app/prova`, '-map', '0', '-c', 'copy', '-y', join(dir, nome)]);
+  const ricevitori = [ricevi(porte[0], 'twitch.mkv'), ricevi(porte[1], 'altra.mkv')];
+  await new Promise((ok) => setTimeout(ok, 800));
+  const t = creaTramite({ risorse: risorseCalme(), ffmpeg: MULTI, ogniMs: 50 });
+  await new Promise((ok) => setTimeout(ok, 500));
+  const esito = t.avvia('mario', { destinazioni: [{ id: 'twitch', nome: 'Twitch', url: `rtmp://127.0.0.1:${porte[0]}/app/prova` }, { id: 'kick', nome: 'Kick', url: `rtmp://127.0.0.1:${porte[1]}/app/prova` }], ...live.config, kbps: 3000, vod: true });
+  assert.equal(esito.vod, true, JSON.stringify(esito));
+  t.riserva('mario', scriviPacchi([...live.video.slice(0, 60), ...live.audio.slice(0, 47)]), esito.turno);
+  const coppie = live.audio.flatMap((a, i) => [a, { ...vod.audio[i], tipo: 'vod', us: a.us }]);
+  const tutti = [...live.video, ...coppie].sort((x, y) => x.us - y.us || (x.tipo === 'vod') - (y.tipo === 'vod'));
+  let n = 0;
+  for (let i = 0; i < tutti.length; i += 40) { t.pacchi('mario', n++, scriviPacchi(tutti.slice(i, i + 40)), esito.turno); await new Promise((ok) => setTimeout(ok, 20)); }
+  t.ferma('mario');
+  await Promise.all(ricevitori.map((r) => new Promise((ok) => r.on('exit', ok))));
+  const tracce = (nome, k) => {
+    let out; try { out = execFileSync(FFMPEG, ['-v', 'error', '-i', join(dir, nome), '-map', `0:a:${k}`, '-ac', '1', '-f', 's16le', '-'], { maxBuffer: 1 << 26 }); } catch { return 0; }
+    return hzDi(new Int16Array(out.buffer, out.byteOffset, out.length >> 1));
+  };
+  const audioDi = (nome) => (execFileSync(FFPROBE, ['-v', 'error', '-select_streams', 'a', '-show_entries', 'stream=index', '-of', 'csv=p=0', join(dir, nome)], { encoding: 'utf8' }).trim().split('\n').filter(Boolean).length);
+  assert.equal(audioDi('twitch.mkv'), 2, 'Twitch riceve due tracce audio');
+  assert.equal(audioDi('altra.mkv'), 1, 'le altre una sola');
+  assert.ok(Math.abs(tracce('twitch.mkv', 0) - 440) < 15, 'la prima traccia e\' il live');
+  assert.ok(Math.abs(tracce('twitch.mkv', 1) - 880) < 15, 'la seconda e\' il VOD');
+  assert.ok(Math.abs(tracce('altra.mkv', 0) - 440) < 15, 'le altre piattaforme ricevono il live');
 });
