@@ -24069,7 +24069,7 @@ function renderStudioTel() {
   const esci = document.querySelector('[data-tel="esci"]'); if (esci) esci.setAttribute('aria-label', live ? L('Studio completo (la diretta continua)', 'Full studio (the stream goes on)', 'Estudio completo (el directo sigue)') : L('Chiudi la regia', 'Close the controls', 'Cerrar el control'));
   const sc = document.getElementById('tel-scene');
   if (sc) {
-    const html = (live ? '' : `<button type="button" class="tel-scena tel-riassunto" id="tel-riassunto" data-tel="prepara">${_bIco(ICO.sliders)}<span>${esc(studioTelRiassunto())}</span></button>`) + '<div class="tel-scene-lista">' + STUDIO.doc.scene.map((s) => `<button type="button" class="tel-scena${s.id === STUDIO.doc.inOnda ? ' attiva' : ''}" data-scena="${esc(s.id)}" aria-pressed="${s.id === STUDIO.doc.inOnda}">${s.muta ? _bIco(ICO.muto) : ''}${esc(s.nome)}</button>`).join('') + '</div>';
+    const html = (live ? '' : `<button type="button" class="tel-scena tel-riassunto" data-tel="prepara">${_bIco(ICO.sliders)}<span>${esc(studioTelRiassunto())}</span></button>`) + '<div class="tel-scene-lista">' + STUDIO.doc.scene.map((s) => `<button type="button" class="tel-scena${s.id === STUDIO.doc.inOnda ? ' attiva' : ''}" data-scena="${esc(s.id)}" aria-pressed="${s.id === STUDIO.doc.inOnda}">${s.muta ? _bIco(ICO.muto) : ''}${esc(s.nome)}</button>`).join('') + '</div>';
     if (T.htmlScene !== html) {
       T.htmlScene = html; sc.innerHTML = html;
       const lista = sc.querySelector('.tel-scene-lista'), on = lista?.querySelector('.attiva');

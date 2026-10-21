@@ -547,7 +547,7 @@ console.log('Regia da telefono (390×844, a tocco):');
     }
     return { fuori, largo: document.documentElement.scrollWidth - W };
   });
-  const rias = await p.evaluate(() => document.getElementById('tel-riassunto').textContent);
+  const rias = await p.evaluate(() => document.querySelector('#tel-scene .tel-riassunto').textContent);
   ok('in alto si legge dove va davvero la diretta: nessuna destinazione collegata, nessuna promessa', /nessuna destinazione/.test(rias) && !/Twitch|Kick/.test(rias), rias);
   ok('il pollice arriva a tutto: ogni tasto della diretta e\' da 48 punti e sta nella meta\' bassa', pollice.fuori.length === 0, pollice.fuori.join('; '));
   ok('la pagina non scorre di lato', pollice.largo <= 0, `${pollice.largo}px`);
