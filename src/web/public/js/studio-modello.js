@@ -2,7 +2,8 @@
 // Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 export const FORMATI = Object.freeze({ o: Object.freeze({ W: 1280, H: 720 }), v: Object.freeze({ W: 720, H: 1280 }) });
 export const TIPI = Object.freeze(['webcam', 'schermo', 'immagine', 'video', 'testo', 'overlay', 'remota']);
-export const LIMITI = Object.freeze({ scene: 30, fonti: 40, preset: 20, nome: 40, testo: 120, byte: 262144 });
+export const LIMITI = Object.freeze({ scene: 30, fonti: 40, preset: 20, nome: 40, testo: 120, byte: 262144, tracce: 8 });
+export const TRACCE = Object.freeze(['ingresso', 'file']);
 export const TRANSIZIONI = Object.freeze(['taglio', 'dissolvenza']);
 export const DESTINAZIONI_SOLO_ORIZZONTALI = Object.freeze(['twitch']);
 export const FACCE = Object.freeze(['user', 'environment']);
@@ -135,6 +136,27 @@ export function nomeBreveCamera(label, i, t) {
   return { lato, obiettivo, nome: obiettivo || lato || pieno };
 }
 
+const CANALE = /^(mic|desk|media|sfx|rem:[A-Za-z0-9_-]{1,40}|aud:[a-z0-9]{1,24})$/;
+
+function audio(a) {
+  const o = a && typeof a === 'object' ? a : {};
+  const usati = new Set(), canali = [];
+  for (const c of Array.isArray(o.canali) ? o.canali : []) {
+    if (canali.length >= LIMITI.tracce || !c || typeof c !== 'object' || !TRACCE.includes(c.tipo)) continue;
+    let id = ID.test(String(c.id || '')) ? String(c.id) : nuovoId('a');
+    while (usati.has(id)) id = nuovoId('a');
+    usati.add(id);
+    const file = c.tipo === 'file' ? media(c.file) : null;
+    canali.push({ id, tipo: c.tipo, nome: testo(c.nome, LIMITI.nome) || file?.nome.slice(0, LIMITI.nome) || '', dispositivo: c.tipo === 'ingresso' ? testo(c.dispositivo, 200) : '', file, giro: c.giro !== false });
+  }
+  const vod = {};
+  for (const [k, v] of Object.entries(o.vod && typeof o.vod === 'object' ? o.vod : {})) if (v === false && CANALE.test(k) && (!k.startsWith('aud:') || usati.has(k.slice(4)))) vod[k] = false;
+  return { canali, vod };
+}
+
+export const nelVod = (scelte, canale) => scelte?.audio?.vod?.[canale] !== false;
+export const vodServe = (scelte) => Object.keys(scelte?.audio?.vod || {}).length > 0;
+
 function media(m) {
   if (!m || typeof m !== 'object') return null;
   return {
@@ -199,6 +221,7 @@ function scelte(c) {
     destFormato: Object.fromEntries(Object.entries(o.destFormato && typeof o.destFormato === 'object' ? o.destFormato : {})
       .filter(([k, v]) => /^[a-z0-9]{1,24}$/.test(k) && (v === 'o' || v === 'v') && !(v === 'v' && DESTINAZIONI_SOLO_ORIZZONTALI.includes(k))).slice(0, 20)),
     telefono: telefono(o.telefono),
+    audio: audio(o.audio),
     overlay: /^[A-Za-z0-9_-]{1,40}$/.test(String(o.overlay || '')) ? String(o.overlay) : '',
   };
 }
@@ -263,6 +286,7 @@ export function impronteUsate(doc) {
   const giro = (scene) => { for (const s of scene || []) for (const f of s.fonti || []) if (f.media?.impronta) out.add(f.media.impronta); };
   giro(doc?.scene);
   for (const p of doc?.preset || []) giro(p.scene);
+  for (const c of doc?.scelte?.audio?.canali || []) if (c.file?.impronta) out.add(c.file.impronta);
   return out;
 }
 

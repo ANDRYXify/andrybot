@@ -15,7 +15,7 @@ import { readFileSync, existsSync, mkdtempSync, statSync } from 'node:fs';
 import { spawn, spawnSync } from 'node:child_process';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { creaTramite } from '../../src/features/diretta.js';
+import { creaTramite, ffmpegMultitraccia } from '../../src/features/diretta.js';
 import { creaRisorse } from '../../src/risorse.js';
 import { FFMPEG, FFPROBE } from '../aiuto-diretta.mjs';
 
@@ -143,4 +143,86 @@ test('da capo a fondo con Google Chrome: il dispositivo codifica, il tramite cop
 test('orizzontale e verticale insieme: due dirette pulite dallo stesso dispositivo, ognuna nel suo formato', SALTA, async (t) => {
   const uscite = await daCapoAFondo(t, ['o', 'v']);
   if (uscite) { controllaArrivato(uscite.o, 'o'); controllaArrivato(uscite.v, 'v'); }
+});
+
+// LA TRACCIA DEL VOD con il codice vero del dispositivo (docs/DIRETTA.md,
+// «Tracce audio e VOD»): il live porta la voce (440 Hz) e la musica (880 Hz),
+// il VOD solo la voce. A Twitch arrivano due tracce allineate pacchetto per
+// pacchetto: nella prima c'e' la musica, nella seconda no. Serve anche un
+// ffmpeg che scriva la seconda traccia (dalla 7.1, SB_FFMPEG_MULTI).
+const MULTI = [process.env.SB_FFMPEG_MULTI, FFMPEG].filter(Boolean).find((f) => ffmpegMultitraccia(spawnSync(f, ['-version'], { encoding: 'utf8' }).stdout)) || null;
+const energia = (pcm, hz) => { let re = 0, im = 0; for (let i = 0; i < pcm.length; i++) { const a = 2 * Math.PI * hz * i / 48000; re += pcm[i] * Math.cos(a); im += pcm[i] * Math.sin(a); } return Math.hypot(re, im) / pcm.length; };
+
+test('da capo a fondo con Google Chrome: la musica va in diretta ma non nel VOD di Twitch', { skip: SALTA.skip || (!MULTI && 'serve un ffmpeg dalla 7.1 (SB_FFMPEG_MULTI)'), timeout: 120_000 }, async (t) => {
+  let chromium;
+  try { ({ chromium } = await import('/opt/node22/lib/node_modules/playwright/index.mjs')); } catch { t.skip('Playwright non c\'e\''); return; }
+  const cartella = mkdtempSync(join(tmpdir(), 'diretta-vod-'));
+  const uscita = join(cartella, 'twitch.mkv'), porta = await portaLibera();
+  const ricevitore = spawn(MULTI, ['-hide_banner', '-loglevel', 'error', '-listen', '1', '-f', 'flv', '-i', `rtmp://127.0.0.1:${porta}/app/prova`, '-map', '0', '-c', 'copy', '-y', uscita]);
+  await new Promise((ok) => setTimeout(ok, 800));
+  const tramite = creaTramite({ risorse: creaRisorse({ misura: () => ({ ritardoMs: 0, cpuPsi: 0, memPsi: 0, memLibera: 0.9, caricoPerCore: 0 }), cacheMs: 0 }), ffmpeg: MULTI, ogniMs: 50 });
+  await new Promise((ok) => setTimeout(ok, 500));
+  const corpo = (q) => new Promise((ok) => { const c = []; q.on('data', (d) => c.push(d)); q.on('end', () => ok(Buffer.concat(c))); });
+  const srv = createServer(async (q, r) => {
+    const u = new URL(q.url, 'http://x');
+    const rispondi = (e) => { r.statusCode = e.ok ? 200 : 409; r.end(JSON.stringify(e)); };
+    if (u.pathname === '/') { r.setHeader('content-type', 'text/html'); return r.end('<!doctype html><title>prova</title>'); }
+    if (u.pathname === '/avvio') {
+      const { video: v, audio: a, vod } = JSON.parse(await corpo(q));
+      return rispondi(tramite.avvia('prova', { destinazioni: [{ id: 'twitch', nome: 'Twitch', url: `rtmp://127.0.0.1:${porta}/app/prova` }],
+        video: { ...v, config: Buffer.from(v.config, 'base64') }, audio: { ...a, config: a.config ? Buffer.from(a.config, 'base64') : null }, kbps: 1500, vod }));
+    }
+    if (u.pathname === '/api/diretta/riserva') return rispondi(tramite.riserva('prova', await corpo(q), u.searchParams.get('t')));
+    if (u.pathname === '/api/diretta/pacchi') return rispondi(tramite.pacchi('prova', Number(u.searchParams.get('n')), await corpo(q), u.searchParams.get('t')));
+    try { r.setHeader('content-type', 'text/javascript'); r.end(readFileSync(join(PUBBLICO, u.pathname))); } catch { r.statusCode = 404; r.end(); }
+  }).listen(0, '127.0.0.1');
+  await new Promise((ok) => srv.on('listening', ok));
+  const browser = await chromium.launch({ executablePath: CHROME, args: ['--no-sandbox', '--disable-dev-shm-usage', '--autoplay-policy=no-user-gesture-required'] });
+  try {
+    const pagina = await browser.newPage();
+    await pagina.goto(`http://127.0.0.1:${srv.address().port}/`);
+    const esito = await pagina.evaluate(async ({ secondi }) => {
+      const D = await import('/js/diretta-codifica.js');
+      const ac = new AudioContext({ sampleRate: 48000 }); await ac.resume();
+      const voce = ac.createOscillator(), musica = ac.createOscillator(); voce.frequency.value = 440; musica.frequency.value = 880;
+      const gv = ac.createGain(), gm = ac.createGain(); gv.gain.value = 0.3; gm.gain.value = 0.3;
+      voce.connect(gv); musica.connect(gm); voce.start(); musica.start();
+      const live = ac.createGain(), vod = ac.createGain();
+      gv.connect(live); gm.connect(live); gv.connect(vod);
+      const sup = await D.supporto({ larghezza: 640, altezza: 360, fps: 30, kbps: 1500 });
+      if (!sup.ok) return { supporto: sup.motivo };
+      const tela = document.createElement('canvas'); tela.width = 640; tela.height = 360;
+      const g = tela.getContext('2d'); let n = 0; setInterval(() => { g.fillStyle = `hsl(${(n++ * 7) % 360} 80% 50%)`; g.fillRect(0, 0, 640, 360); }, 33);
+      const riserva = document.createElement('canvas'); riserva.width = 640; riserva.height = 360; riserva.getContext('2d').fillRect(0, 0, 640, 360);
+      let finita = null;
+      const sped = D.creaSpedizione({ formato: 'o', quandoFinisce: (x) => { finita = x; } });
+      const cod = await D.creaCodifica({ supporto: sup, canvas: tela, contestoAudio: ac, nodoAudio: live, nodoVod: vod, fps: 30, kbps: 1500, riserva, spedizione: sped });
+      const avvio = await (await fetch('/avvio?f=o', { method: 'POST', body: JSON.stringify({ video: cod.config.video, audio: cod.config.audio, vod: cod.vod }) })).json();
+      if (!avvio.ok) return { avvio };
+      sped.usaTurno(avvio.turno);
+      await fetch(`/api/diretta/riserva?f=o&t=${avvio.turno}`, { method: 'POST', body: cod.riserva });
+      await cod.parti();
+      await new Promise((ok) => setTimeout(ok, secondi * 1000));
+      await cod.ferma(); await sped.ferma();
+      return { ok: true, vod: avvio.vod, chiesto: cod.vod, finita };
+    }, { secondi: SECONDI });
+    assert.equal(esito.ok, true, JSON.stringify(esito));
+    assert.equal(esito.chiesto && esito.vod, true, 'il dispositivo chiede la traccia del VOD e il server la apre');
+    assert.equal(esito.finita, null);
+  } finally {
+    await browser.close();
+    tramite.ferma('prova');
+    srv.close();
+    await new Promise((ok) => { if (ricevitore.exitCode !== null) return ok(); ricevitore.on('exit', ok); setTimeout(ok, 10_000); });
+    if (ricevitore.exitCode === null) ricevitore.kill('SIGKILL');
+  }
+  const pts = (k) => spawnSync(FFPROBE, ['-v', 'error', '-select_streams', `a:${k}`, '-show_entries', 'packet=pts_time', '-of', 'csv=p=0', uscita], { encoding: 'utf8' }).stdout.trim().split('\n').filter(Boolean);
+  const [p0, p1] = [pts(0), pts(1)];
+  assert.ok(p0.length > SECONDI * 40, `arriva il live: ${p0.length} pacchetti`);
+  assert.deepEqual(p1, p0, 'il VOD ha gli stessi istanti del live, pacchetto per pacchetto');
+  const pcm = (k) => { const b = spawnSync(FFMPEG, ['-v', 'error', '-i', uscita, '-map', `0:a:${k}`, '-ac', '1', '-ss', '2', '-t', '3', '-f', 's16le', '-'], { maxBuffer: 1 << 26 }).stdout; return new Int16Array(b.buffer, b.byteOffset, b.length >> 1); };
+  const [live, vod] = [pcm(0), pcm(1)];
+  const e = { live440: energia(live, 440), live880: energia(live, 880), vod440: energia(vod, 440), vod880: energia(vod, 880) };
+  assert.ok(e.live440 > 500 && e.live880 > 500, `in diretta voce e musica: ${JSON.stringify(e)}`);
+  assert.ok(e.vod440 > 500 && e.vod880 < e.vod440 / 50, `nel VOD la voce sì, la musica no: ${JSON.stringify(e)}`);
 });

@@ -537,6 +537,59 @@ stato), due viste: la barra sotto il programma sul computer e il foglio
 Gli stessi giudizi danno le tacche della rete sul telefono. Il tempo di
 diretta passa alle ore (1:02:03) quando serve.
 
+### Tracce audio e VOD
+
+Nel mixer si **aggiungono tracce audio** oltre ai canali fissi (microfono,
+audio dello schermo, audio dei video, effetti): un **file audio** (la musica,
+con «In giro» per ricominciare) o un **ingresso audio** (un secondo microfono,
+una scheda audio, un cavo virtuale che porta la musica di un'app). Al più otto.
+I file restano su questo dispositivo, come immagini e video, e la pulizia
+dell'archivio locale li conta fra quelli usati.
+
+**«Solo live»: in diretta sì, nel VOD no.** Ogni canale, fissi compresi, ha il
+suo commutatore «Nel VOD» / «Solo live». È la «Twitch VOD Track» di OBS: la
+musica si sente in diretta e non resta nel VOD.
+
+Come arriva a Twitch (verificato, non supposto):
+- Twitch prende **al più due tracce audio**: la prima, classica, è il live; la
+  seconda, in FLV «enhanced» (Enhanced RTMP) con **numero di traccia 1**, è
+  quella che finisce nel VOD. È la disposizione che usa OBS dalla 30.2.
+- **ffmpeg la scrive così dalla 7.1**: con due tracce AAC, la prima esce
+  classica e la seconda come `AudioPacketTypeMultitrack`, `OneTrack`, `mp4a`,
+  traccia 1 (sorgente di `libavformat/flvenc.c`, e provato con la 8.0: 441 Hz
+  sulla traccia 0, 885 sulla traccia 1). Prima della 7.1 scriverebbe due tracce
+  classiche mischiate e l'audio si romperebbe: il server legge la versione del
+  suo ffmpeg all'avvio e apre la traccia del VOD solo se basta (sul server c'è
+  la 9.0.2). Se non basta, il mixer lo dice e il VOD resta uguale al live.
+- La traccia va **solo a Twitch**: con la tee ogni destinazione sceglie i suoi
+  flussi (`select='v,a'` per Twitch, `select='v,a:0'` per le altre), quindi
+  YouTube, Kick e le altre ricevono il live, come prima.
+
+**Il VOD è il gemello del live, per costruzione.**
+- Nel mixer ogni canale va al master (il live) e, attraverso un suo «invio»,
+  al bus del VOD. L'invio vale 1 o 0: il commutatore cambia solo quel numero,
+  quindi funziona anche a diretta in corso. Il bus del VOD prende lo stesso
+  volume del master.
+- Il dispositivo cattura i due mix **nello stesso campione** (un nodo a quattro
+  canali: live sinistra e destra, VOD sinistra e destra), li codifica con due
+  codificatori identici con gli stessi tempi, e li mette in coda **a coppie**:
+  prima il live, poi il suo gemello (pacco di tipo 3).
+- Il server fa uscire il gemello **nell'istante del suo live, o non lo fa
+  uscire**; la riserva (il silenzio) riempie le due tracce negli stessi
+  istanti. Il VOD non ha mai un buco che il live non ha.
+- La traccia del VOD si decide alla partenza: c'è se Twitch è fra le
+  destinazioni, se almeno un canale è «Solo live» e se il server la sa fare. Se
+  una diretta parte senza, un commutatore cambiato dopo vale dalla prossima, e
+  il mixer lo dice.
+
+Le prove: il formato dei pacchi e le coppie (`diretta-dispositivo.test.mjs`);
+il gemello allo stesso istante, l'orfano scartato, la riserva sulle due tracce
+e la scelta per destinazione (`diretta.test.mjs`); da capo a fondo con ffmpeg
+vero e con Google Chrome, dove il live porta voce (440 Hz) e musica (880 Hz) e
+il VOD solo la voce (servono ffmpeg dalla 7.1, `SB_FFMPEG_MULTI`, e Chrome,
+`SB_CHROME`); nel browser, il bus del VOD che non sente la traccia esclusa e la
+risente appena rientra (`verifica-studio-diretta.mjs`).
+
 ### Lo Studio in una finestra a parte
 
 Sul computer lo Studio si **stacca in una finestra sua** («Stacca in una

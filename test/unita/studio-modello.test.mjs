@@ -6,7 +6,7 @@
 // che i media sono segnaposto e non file, e che la transizione va da 0 a 1.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { normalizza, nuovaFonte, migraVecchie, impronteUsate, lega, mescola, dispostoRapido, pesa, formatoDi, dirette, escluse, FORMATI, LIMITI, SCENARI, AUDIO, TESTI_PRONTE, scenePronte, applicaPronte, sceneVuote, scenaAccanto, vincoliAudio, overlayDi, inquadra, modoAdatta, spostaCentro, prossimoZoom, orientamentoStorto, nomeCamera, nomeBreveCamera, TAGLIO_MAX, ZOOM_DIGITALE_MAX, INQUADRABILI, microfoniInOnda, scenaProtagonista, scenaDelProtagonista, tallyDi, scenaDiRipiego, copreTutto, AUDIO_SCENA } from '../../src/web/public/js/studio-modello.js';
+import { normalizza, nuovaFonte, migraVecchie, impronteUsate, lega, mescola, dispostoRapido, pesa, formatoDi, dirette, escluse, FORMATI, LIMITI, SCENARI, AUDIO, TESTI_PRONTE, scenePronte, applicaPronte, sceneVuote, scenaAccanto, vincoliAudio, overlayDi, inquadra, modoAdatta, spostaCentro, prossimoZoom, orientamentoStorto, nomeCamera, nomeBreveCamera, TAGLIO_MAX, ZOOM_DIGITALE_MAX, INQUADRABILI, microfoniInOnda, scenaProtagonista, scenaDelProtagonista, tallyDi, scenaDiRipiego, copreTutto, AUDIO_SCENA, nelVod, vodServe } from '../../src/web/public/js/studio-modello.js';
 
 const IMP = 'a'.repeat(64), IMP2 = 'b'.repeat(64);
 
@@ -371,4 +371,22 @@ test('il nome breve dell\'obiettivo: senza «fotocamera» e senza il lato ripetu
   assert.equal(n('camera2 2, facing back', 2).nome, 'Dietro 3', 'i nomi di Android restano quelli leggibili di prima');
   assert.equal(n('', 1).nome, 'Fotocamera 2', 'senza nome, il numero');
   assert.equal(n('Logitech C920 (046d:082d)').nome, 'Logitech C920 046d:082d', 'una webcam col suo nome resta lei');
+});
+
+// Le tracce audio e il «Solo live» (docs/DIRETTA.md, «Tracce audio e VOD»).
+test('le tracce audio si ricordano pulite, il «Solo live» vale solo per canali che esistono, e i file delle tracce non si cancellano', () => {
+  const imp = 'b'.repeat(64);
+  const d = normalizza({ scelte: { audio: {
+    canali: [{ id: 'mus', tipo: 'file', file: { impronta: imp, nome: 'Canzone.mp3' } }, { tipo: 'ingresso', dispositivo: 'x1', nome: 'Mixer USB' }, { tipo: 'altro' }, ...Array.from({ length: 12 }, () => ({ tipo: 'ingresso' }))],
+    vod: { 'aud:mus': false, mic: false, sfx: true, 'aud:sparita': false, '../x': false, 'rem:telefono-1': false },
+  } } });
+  const a = d.scelte.audio;
+  assert.equal(a.canali.length, 8, 'al piu\' otto tracce');
+  assert.deepEqual(a.canali.slice(0, 2).map((c) => [c.tipo, c.nome, c.giro]), [['file', 'Canzone.mp3', true], ['ingresso', 'Mixer USB', true]]);
+  assert.deepEqual(Object.keys(a.vod).sort(), ['aud:mus', 'mic', 'rem:telefono-1'], 'si ricordano solo le esclusioni, e solo di canali veri');
+  assert.equal(nelVod(d.scelte, 'aud:mus'), false);
+  assert.equal(nelVod(d.scelte, 'desk'), true, 'di serie tutto va nel VOD');
+  assert.equal(vodServe(d.scelte), true);
+  assert.equal(vodServe(normalizza({}).scelte), false, 'senza esclusioni la traccia del VOD non serve');
+  assert.ok(impronteUsate(d).has(imp), 'il file della traccia resta nell\'archivio del dispositivo');
 });

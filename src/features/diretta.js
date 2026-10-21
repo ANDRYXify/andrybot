@@ -18,7 +18,6 @@
 // entra solo se la banda dichiarata del server la regge, e chi manda piu' di
 // quanto ha dichiarato viene fermato.
 import { randomBytes } from 'node:crypto';
-import { execFile } from 'node:child_process';
 import { risorse as risorseDiSerie } from '../risorse.js';
 import { testata, creaScrittore, TRACCIA, leggiPacchi } from './diretta-mkv.js';
 
@@ -52,8 +51,15 @@ export function ffmpegMultitraccia(testoVersione) {
   const m = /ffmpeg version n?(\d+)\.(\d+)/i.exec(String(testoVersione || ''));
   return !!m && (Number(m[1]) > 7 || (Number(m[1]) === 7 && Number(m[2]) >= 1));
 }
-const sondaDiSerie = (ffmpeg) => () => new Promise((ok) => {
-  try { execFile(ffmpeg, ['-version'], { timeout: 10_000 }, (e, out) => ok(!e && ffmpegMultitraccia(out))); } catch { ok(false); }
+// La versione si chiede dalla porta dei processi (src/risorse.js), come ogni
+// altro processo del bot.
+const sondaDiSerie = (risorse, ffmpeg) => () => new Promise((ok) => {
+  let p, out = '';
+  try { p = risorse.avvia(ffmpeg, ['-version'], { stdio: ['ignore', 'pipe', 'ignore'] }); } catch { ok(false); return; }
+  if (!p?.stdout?.on || !p.on) { ok(false); return; }
+  p.stdout.on('data', (d) => { out += d; });
+  p.on('error', () => ok(false));
+  p.on('close', (codice) => ok(codice === 0 && ffmpegMultitraccia(out)));
 });
 
 // ffmpeg legge il Matroska dallo stdin e copia il video; l'audio si copia se
@@ -75,7 +81,7 @@ export function argomenti(destinazioni, audioCodec, vod = false) {
 
 const mascherato = (s, destinazioni) => destinazioni.reduce((t, d) => t.split(d.url).join(`[${d.nome || d.id}]`), String(s));
 
-export function creaTramite({ risorse = risorseDiSerie, ffmpeg = 'ffmpeg', ora = () => Date.now(), bandaMbps = 300, log = null, ogniMs = 100, alCambio = null, sondaVod = sondaDiSerie(ffmpeg) } = {}) {
+export function creaTramite({ risorse = risorseDiSerie, ffmpeg = 'ffmpeg', ora = () => Date.now(), bandaMbps = 300, log = null, ogniMs = 100, alCambio = null, sondaVod = sondaDiSerie(risorse, ffmpeg) } = {}) {
   const sessioni = new Map();
   let giro = null, vodPossibile = false;
   Promise.resolve().then(sondaVod).then((si) => { vodPossibile = !!si; }, () => {});

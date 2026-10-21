@@ -5123,6 +5123,8 @@ const ICO = {
 
   occhio: '<path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>',
   occhioNo: '<path d="M9.9 4.24A9.1 9.1 0 0 1 12 4c7 0 10 8 10 8a13.2 13.2 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.5 13.5 0 0 0 2 12s3 8 10 8a9.7 9.7 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/>',
+  play: '<path d="M7 4.5v15l12-7.5z"/>',
+  pausa: '<path d="M8 5v14"/><path d="M16 5v14"/>',
   cestino: '<path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>',
   scene: '<path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.9a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m6.08 9.5-3.49 1.58a1 1 0 0 0 0 1.81l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9a1 1 0 0 0 0-1.83l-3.49-1.59"/><path d="m6.08 14.5-3.49 1.58a1 1 0 0 0 0 1.81l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9a1 1 0 0 0 0-1.83l-3.49-1.59"/>',
   testo: '<path d="M4 7V5a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v2"/><path d="M9 20h6"/><path d="M12 4v16"/>',
@@ -21714,7 +21716,8 @@ function pannelloStudio() {
         <button type="button" class="tel-sblocca">${_bIco(ICO.lucchetto)}<span>${L('Tieni premuto per sbloccare', 'Hold to unlock', 'Mantén pulsado para desbloquear')}</span></button>
       </div>
     </div>
-    <input type="file" id="studio-file" accept="image/*,video/*" hidden>`);
+    <input type="file" id="studio-file" accept="image/*,video/*" hidden>
+    <input type="file" id="studio-file-audio" accept="audio/*" hidden>`);
 }
 
 const STUDIO_QUAL = {
@@ -21737,6 +21740,7 @@ const STUDIO = {
   OV: null, ovMotori: new Map(),
   sse: null,
   mix: { master: { vol: 100, mute: false }, mic: { vol: 100, mute: false }, desk: { vol: 100, mute: false }, media: { vol: 100, mute: false }, sfx: { vol: 100, mute: false } },
+  tracce: new Map(),
   vuRaf: 0,
   drag: null, addTipo: null, ricollega: null, _wired: false,
 
@@ -23007,16 +23011,140 @@ function studioAudioInit() {
   try { ac.resume?.(); } catch (e) {  }
   for (const o of (STUDIO.cap.osify || [])) o.nodo = null;
   const dest = ac.createMediaStreamDestination();
-  const gMaster = ac.createGain();
+  const gMaster = ac.createGain(), gVod = ac.createGain();
   const gMic = ac.createGain(), gDesk = ac.createGain(), gSfx = ac.createGain(), gMedia = ac.createGain();
-  gMic.connect(gMaster); gDesk.connect(gMaster); gSfx.connect(gMaster); gMedia.connect(gMaster);
   gMaster.connect(dest);
   const mkAn = () => { const a = ac.createAnalyser(); a.fftSize = 256; a.smoothingTimeConstant = 0.6; return a; };
-  const an = { mic: mkAn(), desk: mkAn(), sfx: mkAn(), media: mkAn(), master: mkAn() };
-  gMic.connect(an.mic); gDesk.connect(an.desk); gSfx.connect(an.sfx); gMedia.connect(an.media); gMaster.connect(an.master);
-  STUDIO.audio = { ac, dest, gMaster, gMic, gDesk, gSfx, gMedia, micNode: null, deskNode: null, mediaConnessi: new Set(), an, rem: new Map(), mkAn };
-  collegaAudioCatture(); collegaAudioMedia(); collegaAudioRemoti(); applicaMix(); avviaVU();
+  const an = { mic: mkAn(), desk: mkAn(), sfx: mkAn(), media: mkAn(), master: mkAn(), vod: mkAn() };
+  STUDIO.audio = { ac, dest, gMaster, gVod, gMic, gDesk, gSfx, gMedia, micNode: null, deskNode: null, mediaConnessi: new Set(), an, rem: new Map(), tracce: new Map(), invii: new Map(), mkAn };
+  for (const [k, g] of [['mic', gMic], ['desk', gDesk], ['sfx', gSfx], ['media', gMedia]]) { studioCanaleInOnda(k, g); g.connect(an[k]); }
+  gMaster.connect(an.master); gVod.connect(an.vod);
+  collegaAudioCatture(); collegaAudioMedia(); collegaAudioRemoti(); collegaTracce(); applicaMix(); avviaVU();
   return dest.stream;
+}
+
+function studioCanaleInOnda(k, g) {
+  const A = STUDIO.audio;
+  g.connect(A.gMaster);
+  const invio = A.ac.createGain();
+  invio.gain.value = studioNelVod(k) ? 1 : 0;
+  g.connect(invio); invio.connect(A.gVod);
+  A.invii.set(k, invio);
+}
+
+const studioAudioScelte = () => STUDIO.doc?.scelte.audio || { canali: [], vod: {} };
+const studioNelVod = (k) => !STUDIO.doc || !STUDIO.M || STUDIO.M.nelVod(STUDIO.doc.scelte, k);
+function studioMixDi(k) { if (!STUDIO.mix[k]) STUDIO.mix[k] = { vol: 100, mute: false }; return STUDIO.mix[k]; }
+const studioVodInOnda = () => Object.values(STUDIO.dirette).some((d) => d.vod);
+
+async function studioTracciaApri(c) {
+  let t = STUDIO.tracce.get(c.id);
+  if (!t) { t = { id: c.id, tipo: c.tipo }; STUDIO.tracce.set(c.id, t); }
+  if (c.tipo === 'ingresso' && !t.stream) {
+    t.stream = await navigator.mediaDevices.getUserMedia({ audio: { ...(c.dispositivo ? { deviceId: { exact: c.dispositivo } } : {}), echoCancellation: false, noiseSuppression: false, autoGainControl: false, channelCount: { ideal: 2 } }, video: false });
+  }
+  if (c.tipo === 'file' && !t.el) {
+    let blob = null;
+    try { blob = c.file?.impronta ? await STUDIO.MD.prendi(c.file.impronta, { chi: studioChi() }) : null; } catch (e) { blob = null; }
+    t.manca = !blob;
+    if (blob) {
+      if (!t.url) t.url = URL.createObjectURL(blob);
+      t.el = new Audio(t.url); t.el.preload = 'auto';
+      t.el.addEventListener('play', renderStudioMixer); t.el.addEventListener('pause', renderStudioMixer);
+    }
+  }
+  if (t.el) { const m = studioMixDi('aud:' + c.id); t.el.loop = c.giro; if (!STUDIO.audio) { t.el.volume = m.vol / 100; t.el.muted = m.mute; } }
+  return t;
+}
+
+async function studioTracceApri() {
+  for (const c of studioAudioScelte().canali) { try { await studioTracciaApri(c); } catch (e) { studioLog(L('La traccia «', 'The track «', 'La pista «') + c.nome + L('» non si apre: ', '» does not open: ', '» no se abre: ') + e.message); } }
+}
+
+function studioTracceChiudi(tutte) {
+  for (const t of STUDIO.tracce.values()) {
+    if (t.el) { try { t.el.pause(); } catch (e) {  } t.el = null; }
+    if (t.stream) { try { t.stream.getTracks().forEach((x) => x.stop()); } catch (e) {  } t.stream = null; }
+    if (tutte && t.url) { URL.revokeObjectURL(t.url); t.url = null; }
+  }
+  if (tutte) STUDIO.tracce.clear();
+}
+
+function studioVodCommuta(k) {
+  const a = STUDIO.doc?.scelte.audio; if (!a) return;
+  if (studioNelVod(k)) a.vod[k] = false; else delete a.vod[k];
+  studioSporco(); applicaMix(); renderStudioMixer();
+  if (STUDIO.live && !studioVodInOnda()) toast(L('Vale dalla prossima diretta: questa è partita senza la traccia del VOD.', 'It applies from the next stream: this one started without the VOD track.', 'Vale desde el próximo directo: este empezó sin la pista del VOD.'));
+}
+
+async function studioTracciaNuova(dati) {
+  const a = STUDIO.doc?.scelte.audio; if (!a || a.canali.length >= STUDIO.M.LIMITI.tracce) return;
+  const c = { id: STUDIO.M.nuovoId('a'), giro: true, dispositivo: '', file: null, ...dati };
+  a.canali.push(c);
+  try { await studioTracciaApri(c); }
+  catch (e) { a.canali.splice(a.canali.indexOf(c), 1); STUDIO.tracce.delete(c.id); renderStudioMixer(); throw new Error(L('La traccia non si apre: ', 'The track does not open: ', 'La pista no se abre: ') + e.message); }
+  studioSporco();
+  if (STUDIO.audio) collegaTracce();
+  renderStudioMixer();
+}
+
+async function studioTracciaFile(file) {
+  if (!/^audio\//.test(file.type || '')) throw new Error(L('Questo non è un file audio.', 'This is not an audio file.', 'Esto no es un archivo de audio.'));
+  let info;
+  try { info = await STUDIO.MD.conserva(file, { chi: studioChi() }); }
+  catch (e) { throw new Error(L('Il file non si può tenere su questo dispositivo.', 'The file cannot be kept on this device.', 'El archivo no se puede guardar en este dispositivo.')); }
+  await studioTracciaNuova({ tipo: 'file', nome: String(file.name || '').replace(/\.[a-z0-9]{1,5}$/i, '').slice(0, 40), file: info });
+}
+
+async function studioTracciaIngresso(id) {
+  const m = (STUDIO.dev.mics || []).find((x) => x.deviceId === id);
+  await studioTracciaNuova({ tipo: 'ingresso', dispositivo: id, nome: String(m?.label || L('Ingresso audio', 'Audio input', 'Entrada de audio')).slice(0, 40) });
+}
+
+function studioTracciaTogli(id) {
+  const a = STUDIO.doc?.scelte.audio; if (!a) return;
+  a.canali = a.canali.filter((c) => c.id !== id);
+  delete a.vod['aud:' + id]; delete STUDIO.mix['aud:' + id];
+  const t = STUDIO.tracce.get(id);
+  if (t) { try { t.el?.pause(); t.stream?.getTracks().forEach((x) => x.stop()); } catch (e) {  } if (t.url) URL.revokeObjectURL(t.url); STUDIO.tracce.delete(id); }
+  if (STUDIO.audio) collegaTracce();
+  studioSporco(); renderStudioMixer();
+}
+
+async function studioTracciaSuona(id) {
+  const c = studioAudioScelte().canali.find((x) => x.id === id); if (!c) return;
+  const t = await studioTracciaApri(c);
+  if (!t.el) { toast(L('Il file di questa traccia non è su questo dispositivo: toglila e caricalo di nuovo.', 'This track’s file is not on this device: remove it and load it again.', 'El archivo de esta pista no está en este dispositivo: quítala y cárgalo de nuevo.'), 'errore'); renderStudioMixer(); return; }
+  if (STUDIO.audio) { collegaTracce(); try { await STUDIO.audio.ac.resume?.(); } catch (e) {  } } else applicaMix();
+  if (t.el.paused) await t.el.play(); else t.el.pause();
+  renderStudioMixer();
+}
+
+function studioTracciaGiro(id) {
+  const c = studioAudioScelte().canali.find((x) => x.id === id); if (!c) return;
+  c.giro = !c.giro;
+  const t = STUDIO.tracce.get(id); if (t?.el) t.el.loop = c.giro;
+  studioSporco(); renderStudioMixer();
+}
+
+function collegaTracce() {
+  const A = STUDIO.audio; if (!A || !A.tracce) return;
+  const vive = new Set();
+  for (const c of studioAudioScelte().canali) {
+    const t = STUDIO.tracce.get(c.id), sorgente = t?.el || t?.stream || null;
+    vive.add(c.id);
+    let r = A.tracce.get(c.id);
+    if (!r) { r = { gain: A.ac.createGain(), an: A.mkAn(), sorgente: null, nodo: null }; studioCanaleInOnda('aud:' + c.id, r.gain); r.gain.connect(r.an); if (c.tipo === 'file') r.gain.connect(A.ac.destination); A.tracce.set(c.id, r); }
+    if (!sorgente || r.sorgente === sorgente) continue;
+    try { r.nodo?.disconnect(); } catch (e) {  }
+    try {
+      r.nodo = t.el ? A.ac.createMediaElementSource(t.el) : A.ac.createMediaStreamSource(t.stream);
+      if (t.el) { t.el.volume = 1; t.el.muted = false; }
+      r.nodo.connect(r.gain); r.sorgente = sorgente;
+    } catch (e) { r.nodo = null; }
+  }
+  for (const [id, r] of A.tracce) if (!vive.has(id)) { try { r.nodo?.disconnect(); r.gain.disconnect(); } catch (e) {  } A.tracce.delete(id); A.invii.delete('aud:' + id); }
+  applicaMix();
 }
 
 function collegaAudioCatture() {
@@ -23057,7 +23185,7 @@ function collegaAudioRemoti() {
       const nodo = A.ac.createMediaStreamSource(new MediaStream([tr]));
       const gain = r?.gain || A.ac.createGain(), an = r?.an || A.mkAn();
       nodo.connect(gain);
-      if (!r) { gain.connect(A.gMaster); gain.connect(an); }
+      if (!r) { studioCanaleInOnda('rem:' + v.id, gain); gain.connect(an); }
       A.rem.set(v.id, { tr, nodo, gain, an });
     } catch (e) { void e; }
   }
@@ -23065,7 +23193,8 @@ function collegaAudioRemoti() {
 }
 
 function applicaMix() {
-  const A = STUDIO.audio, m = STUDIO.mix; if (!A) return;
+  const A = STUDIO.audio, m = STUDIO.mix;
+  if (!A) { for (const t of STUDIO.tracce.values()) if (t.el) { const c = studioMixDi('aud:' + t.id); t.el.volume = c.vol / 100; t.el.muted = c.mute; } return; }
   const connessi = STUDIO.rem.regia ? [...STUDIO.rem.regia.remoti.values()].filter((v) => v.stream?.getAudioTracks().length).map((v) => v.id) : [];
   const mi = STUDIO.M ? STUDIO.M.microfoniInOnda(studioScena(STUDIO.doc?.inOnda), connessi) : { computer: !studioScena(STUDIO.doc?.inOnda)?.muta, dispositivi: [] };
   A.gMic.gain.value = m.mic.mute || !mi.computer ? 0 : m.mic.vol / 100;
@@ -23074,6 +23203,9 @@ function applicaMix() {
   A.gSfx.gain.value = m.sfx.mute ? 0 : m.sfx.vol / 100;
   if (A.gMedia) A.gMedia.gain.value = m.media.mute ? 0 : m.media.vol / 100;
   if (A.gMaster) A.gMaster.gain.value = m.master.mute ? 0 : m.master.vol / 100;
+  for (const [id, r] of (A.tracce || new Map())) { const c = studioMixDi('aud:' + id); r.gain.gain.value = c.mute ? 0 : c.vol / 100; }
+  if (A.gVod) A.gVod.gain.value = A.gMaster.gain.value;
+  for (const [k, invio] of (A.invii || new Map())) invio.gain.value = studioNelVod(k) ? 1 : 0;
 }
 
 function studioSpia() {
@@ -23103,6 +23235,8 @@ function avviaVU() {
     if (A && A.an) {
       for (const k of ['mic', 'desk', 'media', 'sfx', 'master']) if (A.an[k]) metti(`[data-vu="${k}"]`, livello(A.an[k]));
       for (const [id, r] of (A.rem || new Map())) if (r.an) metti(`[data-vu="rem:${CSS.escape(id)}"]`, livello(r.an));
+      for (const [id, r] of (A.tracce || new Map())) metti(`[data-vu="aud:${CSS.escape(id)}"]`, livello(r.an));
+      if (A.an.vod) metti('[data-vu="vod"]', livello(A.an.vod));
     } else metti('[data-vu="mic"]', STUDIO.mix.mic.mute ? 0 : livello(sp.an));
     STUDIO.vuRaf = requestAnimationFrame(tick);
   };
@@ -23297,8 +23431,9 @@ async function studioAvviaFormato(D, f, sup, q, kbps, dest, testo, assenzaMin) {
     quandoRitenta: () => studioLog(L('La rete è lenta: riprovo. Se dura, sul canale va la tua scritta di riserva.', 'The network is slow: retrying. If it lasts, your fallback text goes on the channel.', 'La red va lenta: reintento. Si dura, en el canal sale tu texto de reserva.')),
   });
   try {
+    const vod = !!STUDIO.dir?.vod && dest.includes('twitch') && STUDIO.M.vodServe(STUDIO.doc.scelte);
     cod = await D.creaCodifica({
-      supporto: sup, canvas: studioTela(f), contestoAudio: STUDIO.audio.ac, nodoAudio: STUDIO.audio.gMaster, fps: q.fps, kbps,
+      supporto: sup, canvas: studioTela(f), contestoAudio: STUDIO.audio.ac, nodoAudio: STUDIO.audio.gMaster, nodoVod: vod ? STUDIO.audio.gVod : null, fps: q.fps, kbps,
       riserva: studioRiservaCanvas(f, testo), spedizione: sped, disegna: () => studioDisegnaUnaVolta(f),
       quandoCambia: (x) => studioLog(x.soloAudio
         ? L('Rete molto lenta: va solo la tua voce, con la scritta di riserva.', 'Very slow network: only your voice goes out, with the fallback text.', 'Red muy lenta: solo sale tu voz, con el texto de reserva.')
@@ -23306,11 +23441,12 @@ async function studioAvviaFormato(D, f, sup, q, kbps, dest, testo, assenzaMin) {
       quandoErrore: () => studioLog(L('Il codificatore del dispositivo si è fermato.', 'The device encoder stopped.', 'El codificador del dispositivo se ha parado.')),
     });
   } catch (e) { sped.ferma(); throw e; }
-  let turno = '', ripresa = false;
+  let turno = '', ripresa = false, vodPartito = false;
   try {
-    const r = await studioAvvioPaziente(() => api('/api/diretta/avvio', { method: 'POST', body: { formato: f, destinazioni: dest, video: cod.config.video, audio: cod.config.audio, kbps, assenzaMin, riprendi: true } }));
-    turno = r.turno; ripresa = r.ripresa;
+    const r = await studioAvvioPaziente(() => api('/api/diretta/avvio', { method: 'POST', body: { formato: f, destinazioni: dest, video: cod.config.video, audio: cod.config.audio, kbps, assenzaMin, riprendi: true, vod: !!cod.vod } }));
+    turno = r.turno; ripresa = r.ripresa; vodPartito = !!r.vod;
     sped.usaTurno(turno);
+    if (cod.vod && !vodPartito) studioLog(L('La traccia per il VOD non è partita: stavolta il VOD di Twitch avrà lo stesso audio della diretta.', 'The VOD track did not start: this time the Twitch VOD will have the same audio as the stream.', 'La pista para el VOD no arrancó: esta vez el VOD de Twitch tendrá el mismo audio que el directo.'));
   } catch (e) {
     await cod.ferma(); sped.ferma();
     throw e;
@@ -23318,7 +23454,7 @@ async function studioAvviaFormato(D, f, sup, q, kbps, dest, testo, assenzaMin) {
   const rr = await fetch(`/api/diretta/riserva?f=${f}&t=${encodeURIComponent(turno)}`, { method: 'POST', headers: { 'Content-Type': 'application/octet-stream' }, body: cod.riserva, credentials: 'same-origin' }).catch(() => null);
   if (!rr || !rr.ok) studioLog(L('Diretta partita, ma la scritta di riserva non è arrivata: se la rete cade, la diretta può interrompersi.', 'Stream started, but the fallback text did not arrive: if the network drops, the stream may stop.', 'Directo iniciado, pero el texto de reserva no llegó: si la red se cae, el directo puede interrumpirse.'));
   await cod.parti();
-  STUDIO.dirette[f] = { cod, sped, turno, ripresa };
+  STUDIO.dirette[f] = { cod, sped, turno, ripresa, vod: vodPartito };
   return { f, ripresa };
 }
 
@@ -23357,6 +23493,7 @@ async function avviaLive() {
     const kbps = Math.round(q.vbps / 1000);
     studioLog(L('Preparo la diretta…', 'Preparing the stream…', 'Preparando el directo…'));
     avviaLoopStudio();
+    await studioTracceApri();
     studioAudioInit();
     const D = await import('/js/diretta-codifica.js');
     const testo = document.getElementById('studio-riserva-testo')?.value || L('Torno subito', 'Be right back', 'Vuelvo enseguida');
@@ -23368,7 +23505,7 @@ async function avviaLive() {
       try { partite.push(await studioAvviaFormato(D, f, sup, q, kbps, per[f], testo, assenzaMin)); }
       catch (e) { studioLog(e.message); toast(L('Non partita', 'Did not start', 'No ha empezado') + ` (${studioFormatoNome(f)}): ` + e.message, 'errore'); }
     }
-    if (!partite.length) { try { STUDIO.audio && STUDIO.audio.ac.close(); } catch (e) {  } STUDIO.audio = null; if (STUDIO.tel?.aperta) renderStudioTel(); return; }
+    if (!partite.length) { try { STUDIO.audio && STUDIO.audio.ac.close(); } catch (e) {  } STUDIO.audio = null; studioTracceChiudi(false); if (STUDIO.tel?.aperta) renderStudioTel(); return; }
     STUDIO.live = true;
     const giaDa = partite.filter((p) => p.ripresa).map((p) => Number(STUDIO.dir?.sessioni?.[p.f]?.da)).filter((x) => x > 0);
     STUDIO.startedAt = giaDa.length ? Math.min(...giaDa) : Date.now();
@@ -23448,6 +23585,7 @@ async function fermaLive({ dalServer = null } = {}) {
   studioMisureTele(); studioRidisegna();
   try { STUDIO.audio && STUDIO.audio.ac.close(); } catch (e) {  }
   STUDIO.audio = null;
+  studioTracceChiudi(false);
   for (const id in STUDIO.media) { const mm = STUDIO.media[id]; if (mm && mm.tipo === 'video' && mm.el) { try { mm.el.muted = true; } catch (e) {  } } }
   const badge = document.getElementById('studio-badge-live'); if (badge) badge.hidden = true;
   renderStudioSalute();
@@ -23874,23 +24012,49 @@ function renderStudioMixer() {
   const micOn = !!STUDIO.cap.micStream;
   const deskOn = !!(STUDIO.cap.scrStream && STUDIO.cap.scrStream.getAudioTracks().length) || (STUDIO.cap.osify || []).some((o) => o.ruolo === 'desk');
   const mediaOn = Object.values(STUDIO.media || {}).some((x) => x && x.tipo === 'video') || (STUDIO.cap.osify || []).some((o) => o.ruolo === 'media');
+  const vodOk = !!STUDIO.dir?.vod || DEMO, vodLive = studioVodInOnda();
+  const chipVod = (id) => {
+    const dentro = studioNelVod(id);
+    return `<button type="button" class="mix-vod${dentro ? '' : ' solo-live'}" data-vod="${esc(id)}" aria-pressed="${!dentro}"${vodOk ? '' : ' disabled'} title="${esc(dentro ? L('Va in diretta e nel VOD. Tocca per tenerlo solo in diretta', 'Goes live and into the VOD. Tap to keep it live only', 'Va en directo y en el VOD. Toca para dejarlo solo en directo') : L('Solo in diretta: il VOD di Twitch non lo contiene. Tocca per rimetterlo nel VOD', 'Live only: the Twitch VOD does not contain it. Tap to put it back in the VOD', 'Solo en directo: el VOD de Twitch no lo contiene. Toca para volver a ponerlo en el VOD'))}">${dentro ? L('Nel VOD', 'In VOD', 'En el VOD') : L('Solo live', 'Live only', 'Solo directo')}</button>`;
+  };
   const canale = (id, nome, on, cfg, extra, forte) => `
     <div class="mix-canale${on ? '' : ' off'}${forte ? ' mix-master' : ''}">
-      <div class="mix-testa"><span>${nome}</span>${extra || ''}</div>
+      <div class="mix-testa"><span>${nome}</span>${extra || ''}${forte ? '' : chipVod(id)}</div>
       <div class="mix-riga">
         <button type="button" class="mix-mute${cfg.mute ? ' on' : ''}" data-mute="${id}"${on ? '' : ' disabled'} aria-label="${esc((cfg.mute ? L('Riattiva', 'Unmute', 'Reactivar') : L('Muto', 'Mute', 'Silenciar')) + ': ' + nome)}" title="${cfg.mute ? L('Riattiva', 'Unmute', 'Reactivar') : L('Muto', 'Mute', 'Silenciar')}">${_bIco(cfg.mute ? ICO.muto : ICO.altoparlante)}</button>
         <input type="range" min="0" max="100" value="${cfg.vol}" data-vol="${id}" aria-label="${esc(L('Volume', 'Volume', 'Volumen') + ': ' + nome)}"${on ? '' : ' disabled'}>
         <span class="mix-val">${cfg.vol}</span>
       </div>
       <div class="mix-vu"><span class="mix-vu-barra" data-vu="${id}"></span></div>
+      ${forte && vodLive ? `<div class="mix-vu mix-vu-vod" title="${esc(L('Quello che finisce nel VOD', 'What ends up in the VOD', 'Lo que acaba en el VOD'))}"><span class="mix-vu-barra" data-vu="vod"></span></div>` : ''}
     </div>`;
+  const tracce = studioAudioScelte().canali.map((c) => {
+    const t = STUDIO.tracce.get(c.id), suona = !!(t?.el && !t.el.paused);
+    const extra = c.tipo === 'file'
+      ? `<button type="button" class="mix-mute" data-traccia-suona="${esc(c.id)}" aria-pressed="${suona}" aria-label="${esc((suona ? L('Ferma: ', 'Stop: ', 'Parar: ') : L('Suona: ', 'Play: ', 'Reproducir: ')) + c.nome)}">${_bIco(suona ? ICO.pausa : ICO.play)}</button>
+        <button type="button" class="mix-chip${c.giro ? ' attivo' : ''}" data-traccia-giro="${esc(c.id)}" aria-pressed="${c.giro}" title="${esc(L('Ricomincia da capo quando finisce', 'Starts over when it ends', 'Vuelve a empezar cuando termina'))}">${L('In giro', 'Loop', 'En bucle')}</button>`
+      : `<span class="tenue">${esc((STUDIO.dev.mics || []).find((m) => m.deviceId === c.dispositivo)?.label || L('ingresso audio', 'audio input', 'entrada de audio'))}</span>`;
+    const togli = `<button type="button" class="sf-btn" data-traccia-togli="${esc(c.id)}" aria-label="${esc(L('Togli la traccia ', 'Remove the track ', 'Quitar la pista ') + c.nome)}" title="${esc(L('Togli la traccia', 'Remove the track', 'Quitar la pista'))}">${_bIco(ICO.cestino)}</button>`;
+    return canale('aud:' + c.id, esc(c.nome || L('Traccia', 'Track', 'Pista')) + (t?.manca ? ` <span class="tenue">${L('(file non su questo dispositivo)', '(file not on this device)', '(archivio no en este dispositivo)')}</span>` : ''), true, studioMixDi('aud:' + c.id), extra + togli);
+  }).join('');
+  const pieno = studioAudioScelte().canali.length >= (STUDIO.M?.LIMITI.tracce || 8);
+  const mics = (STUDIO.dev.mics || []).filter((m) => m.deviceId && m.deviceId !== STUDIO.dev.micId);
+  const aggiungi = pieno ? '' : `<details class="studio-add-menu mix-aggiungi">
+      <summary class="btn secondario mini">${_bIco(ICO.piu)}${L('Aggiungi una traccia audio', 'Add an audio track', 'Añadir una pista de audio')}</summary>
+      <div class="studio-add">
+        <button type="button" class="btn secondario mini" data-traccia-nuova="file">${_bIco(ICO.musica)}${L('Un file audio (musica)', 'An audio file (music)', 'Un archivo de audio (música)')}</button>
+        ${mics.length ? `<label class="campo">${L('Un ingresso audio', 'An audio input', 'Una entrada de audio')}<select class="chip-utente" data-traccia-ingresso><option value="">${L('Scegli…', 'Choose…', 'Elige…')}</option>${mics.map((m, i) => `<option value="${esc(m.deviceId)}">${esc(m.label || L('Ingresso ', 'Input ', 'Entrada ') + (i + 1))}</option>`).join('')}</select></label>` : `<p class="suggerimento">${L('Un secondo microfono, una scheda audio o un cavo virtuale (per la musica di un\'app) compaiono qui quando li colleghi.', 'A second microphone, an audio interface or a virtual cable (for music from an app) show up here when you connect them.', 'Un segundo micrófono, una tarjeta de audio o un cable virtual (para la música de una app) aparecen aquí cuando los conectas.')}</p>`}
+      </div>
+    </details>`;
+  const nota = `<p class="suggerimento mix-nota-vod">${vodOk ? L('«Solo live»: si sente in diretta ma non resta nel VOD di Twitch, come la traccia VOD di OBS. Le altre piattaforme ricevono il live.', '«Live only»: heard live but kept out of the Twitch VOD, like the OBS VOD track. Other platforms receive the live mix.', '«Solo directo»: se oye en directo pero no queda en el VOD de Twitch, como la pista VOD de OBS. Las demás plataformas reciben el directo.') : L('«Solo live» ha bisogno di un aggiornamento del server: per ora il VOD ha lo stesso audio della diretta.', '«Live only» needs a server update: for now the VOD has the same audio as the stream.', '«Solo directo» necesita una actualización del servidor: por ahora el VOD tiene el mismo audio que el directo.')}${STUDIO.live && !vodLive && STUDIO.M?.vodServe(STUDIO.doc?.scelte) ? ' ' + L('Questa diretta è partita senza la traccia del VOD: vale dalla prossima.', 'This stream started without the VOD track: it applies from the next one.', 'Este directo empezó sin la pista del VOD: vale desde el próximo.') : ''}</p>`;
   el.innerHTML =
     canale('master', L('Master (uscita)', 'Master (output)', 'Master (salida)'), true, m.master, '', true)
     + canale('mic', L('Microfono', 'Microphone', 'Micrófono'), micOn, m.mic, micOn ? '' : `<button type="button" class="btn secondario mini" data-cap="mic">${L('Attiva', 'Enable', 'Activar')}</button>`)
     + canale('desk', L('Audio dello schermo', 'Screen audio', 'Audio de la pantalla'), deskOn, m.desk, deskOn ? '' : `<span class="tenue">${L('condividi lo schermo con audio', 'share the screen with audio', 'comparte la pantalla con audio')}</span>`)
     + canale('media', L('Audio dei video', 'Video audio', 'Audio de los vídeos'), mediaOn, m.media, mediaOn ? '' : `<span class="tenue">${L('aggiungi un video con audio', 'add a video with sound', 'añade un vídeo con audio')}</span>`)
     + canale('sfx', L('Effetti e alert', 'Effects and alerts', 'Efectos y alertas'), true, m.sfx, '')
-    + [...(STUDIO.rem.regia?.remoti.values() || [])].filter((v) => v.collegato).map((v) => canale('rem:' + v.id, v.nome || L('Dispositivo', 'Device', 'Dispositivo'), !!v.stream?.getAudioTracks().length, studioMixRemoto(v.id), `<span class="tenue">${esc(studioRemotoAudioNota(v.id))}</span>`)).join('');
+    + [...(STUDIO.rem.regia?.remoti.values() || [])].filter((v) => v.collegato).map((v) => canale('rem:' + v.id, v.nome || L('Dispositivo', 'Device', 'Dispositivo'), !!v.stream?.getAudioTracks().length, studioMixRemoto(v.id), `<span class="tenue">${esc(studioRemotoAudioNota(v.id))}</span>`)).join('')
+    + tracce + aggiungi + nota;
 }
 
 function renderStudioTransizioni() {
@@ -24635,6 +24799,16 @@ function posizionaBoxStudio(f) {
 
 async function onStudioClick(ev) {
   const t = ev.target;
+  const vodK = t.closest('[data-vod]'); if (vodK) return studioVodCommuta(vodK.dataset.vod);
+  const tr = t.closest('[data-traccia-suona], [data-traccia-giro], [data-traccia-togli], [data-traccia-nuova]');
+  if (tr) {
+    if (tr.dataset.tracciaSuona) return conErrore(() => studioTracciaSuona(tr.dataset.tracciaSuona));
+    if (tr.dataset.tracciaGiro) return studioTracciaGiro(tr.dataset.tracciaGiro);
+    if (tr.dataset.tracciaTogli) return studioTracciaTogli(tr.dataset.tracciaTogli);
+    tr.closest('details')?.removeAttribute('open');
+    document.getElementById('studio-file-audio')?.click();
+    return;
+  }
   const fin = t.closest('[data-fin]');
   if (fin) {
     const k = fin.dataset.fin;
@@ -24795,6 +24969,8 @@ function onStudioChange(ev) {
   if (t.id === 'studio-riserva-testo' || t.id === 'studio-assenza') { studioRicordaOpzioni(); return; }
   if (t.id === 'sp-grass') { const f = studioTrovaFonte(STUDIO.sel); if (f) { f.grassetto = t.checked; studioSporco(); } return; }
   if (t.id === 'studio-file') { const file = t.files && t.files[0]; if (file) conErrore(() => studioFileScelto(file)); return; }
+  if (t.id === 'studio-file-audio') { const file = t.files && t.files[0]; t.value = ''; if (file) conErrore(() => studioTracciaFile(file)); return; }
+  if (t.matches?.('[data-traccia-ingresso]')) { const id = t.value; t.value = ''; if (id) conErrore(() => studioTracciaIngresso(id)); return; }
   if (t.id === 'studio-trans-tipo') { if (STUDIO.doc) { STUDIO.doc.scelte.transizione.tipo = t.value === 'taglio' ? 'taglio' : 'dissolvenza'; renderStudioTransizioni(); studioSporco(); } return; }
   if (t.id === 'studio-dest-tipo') { const a = document.getElementById('studio-dest-aiuto'); if (a) a.textContent = DEST_AIUTO[t.value](); const sv = document.getElementById('studio-dest-server'); if (sv && !sv.value) sv.placeholder = DEST_SERVER[t.value] || sv.dataset.base; return; }
   if (t.dataset.formato) { studioImpostaFormato(t.dataset.formato, t.checked); return; }
@@ -24915,6 +25091,7 @@ function studioSpegniRegia() {
   for (const st of [C.camStream, C.micStream, C.scrStream]) { try { st?.getTracks().forEach((t) => t.stop()); } catch (e) {  } }
   for (const el of [C.camEl, C.scrEl]) { try { if (el) el.srcObject = null; } catch (e) {  } }
   C.camEl = C.camStream = C.micStream = C.scrEl = C.scrStream = null;
+  studioTracceChiudi(true);
   for (const e of STUDIO.ovMotori.values()) e.m.chiudi();
   STUDIO.ovMotori.clear();
   studioSpia();

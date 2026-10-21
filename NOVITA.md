@@ -79,6 +79,15 @@ comandi diversi da quelli della riga italiana.
 - Nelle dirette verticali gli alert, la chat e gli altri pezzi dell'overlay escono una volta e mezza più grandi, leggibili sul telefono di chi guarda. [vai: studio]
   en: In vertical streams alerts, chat and the other overlay pieces come out one and a half times bigger, readable on the viewer's phone.
   es: En los directos verticales las alertas, el chat y las demás piezas del overlay salen una vez y media más grandes, legibles en el teléfono de quien mira.
+- [importante] Nello Studio aggiungi tracce audio (un file di musica, un secondo microfono, una scheda audio) e scegli per ognuna «Solo live»: si sente in diretta ma non resta nel VOD di Twitch. [vai: studio]
+  en: In the Studio you add audio tracks (a music file, a second microphone, an audio interface) and pick «Live only» for each: heard live but kept out of the Twitch VOD.
+  es: En el Estudio añades pistas de audio (un archivo de música, un segundo micrófono, una tarjeta de audio) y eliges «Solo directo» para cada una: se oye en directo pero no queda en el VOD de Twitch.
+  > Musica in diretta, non nel VOD
+  > Come la traccia VOD di OBS: Twitch riceve il live e, a parte, l'audio per il VOD. Le altre piattaforme ricevono il live come sempre.
+  en> Music live, not in the VOD
+  en> Like the OBS VOD track: Twitch receives the live mix and, separately, the audio for the VOD. Other platforms receive the live mix as always.
+  es> Música en directo, no en el VOD
+  es> Como la pista VOD de OBS: Twitch recibe el directo y, aparte, el audio para el VOD. Las demás plataformas reciben el directo como siempre.
 
 ## 2026-10-15
 

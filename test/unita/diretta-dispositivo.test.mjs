@@ -55,7 +55,7 @@ test('nessun pacchetto parte prima che la diretta esista sul server, e la riserv
   const avvio = APP.slice(APP.indexOf('async function studioAvviaFormato('), APP.indexOf('async function studioControllaStato() {'));
   const i = avvio.indexOf("await studioAvvioPaziente(() => api('/api/diretta/avvio', { method: 'POST', body: { formato: f,"), j = avvio.indexOf('fetch(`/api/diretta/riserva?f=${f}&t=${encodeURIComponent(turno)}`'), k = avvio.indexOf('await cod.parti();');
   assert.ok(i > 0 && j > i && k > j, `avvio ${i}, riserva ${j}, partenza ${k}`);
-  assert.match(avvio, /riprendi: true \} \}\)\);\n\s+turno = r\.turno; ripresa = r\.ripresa;\n\s+sped\.usaTurno\(turno\);/, 'ogni avvio e\' un turno: i pacchetti partono col turno che il server ha dato');
+  assert.match(avvio, /riprendi: true, vod: !!cod\.vod \} \}\)\);\n\s+turno = r\.turno; ripresa = r\.ripresa; vodPartito = !!r\.vod;\n\s+sped\.usaTurno\(turno\);/, 'ogni avvio e\' un turno: i pacchetti partono col turno che il server ha dato');
   // Mentre il bot si aggiorna (docs/AGGIORNARE.md) l'avvio si riprova da solo:
   // solo per quello o per il server giu', e non per sempre.
   const paziente = APP.slice(APP.indexOf('async function studioAvvioPaziente('), APP.indexOf('async function avviaLive() {'));

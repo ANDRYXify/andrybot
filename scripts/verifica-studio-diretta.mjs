@@ -97,6 +97,8 @@ const DIFETTI = {
     ['  if (STUDIO.M.escluse(prova, valide).length > STUDIO.M.escluse(d.scelte, valide).length) return;\n', '', 'il formato non perde destinazioni', 1, /nessuna destinazione si perde/],
     ['  const lato = innerWidth > innerHeight ? \'o\' : \'v\', f = d.scelte.formati;', '  const lato = STUDIO.lavoro, f = d.scelte.formati;', 'il formato segue il telefono', 7, /il formato segue il telefono/],
     ['const SALUTE_SOGLIE = { saltati: [0.02, 0.1],', 'const SALUTE_SOGLIE = { saltati: [0.5, 0.9],', 'gli scarti si colorano', 1, /colori della gravita/],
+    ['  for (const [k, invio] of (A.invii || new Map())) invio.gain.value = studioNelVod(k) ? 1 : 0;', '  for (const [, invio] of (A.invii || new Map())) invio.gain.value = 1;', 'il bus del VOD rispetta «Solo live»', 1, /non sente la traccia/],
+    ["  delete a.vod['aud:' + id]; delete STUDIO.mix['aud:' + id];", "  delete STUDIO.mix['aud:' + id];", 'la traccia tolta porta via il suo segno', 1, /togliendo la traccia/],
     ['  if (r.specchio) { c.translate(2 * r.dx + r.dw, 0); c.scale(-1, 1); }\n', '', 'lo specchio specchia', 7, /Specchia» rovescia/],
     ['  if (r.bande && STUDIO.M.SFUMATE.includes(f.tipo)) studioSfumato(c, el, vw, vh, p);\n', '', 'le bande sono sfumate', 8, /sfondo sfumato, non il nero/],
     ["  if (k === 'dritto') studioTelAvviso(", '  if (false) studioTelAvviso(', 'si dice di tenere il telefono dritto', 7, /regia dice di tenere il telefono dritto/],
@@ -110,6 +112,7 @@ const DIFETTI = {
   '/js/studio-modello.js': [
     ["  return taglio <= TAGLIO_MAX + 1e-9 ? 'ritaglia' : 'intera';", "  return 'ritaglia';", "l'automatica non taglia piu' di un terzo", 7, /si vede intera: niente zoom/],
     ['  if (m) return `${', '  if (false) return `${', 'i nomi di Android si leggono', 7, /coi nomi del telefono/],
+    ['  for (const c of doc?.scelte?.audio?.canali || []) if (c.file?.impronta) out.add(c.file.impronta);\n', '', 'i file delle tracce non si cancellano', 1, /resta fra quelli usati/],
   ],
   '/style.css': [
     ['  .studio-regia { grid-template-columns: minmax(0, 1fr) minmax(250px, 300px); }', '  .studio-regia { grid-template-columns: minmax(0, 1fr); }', 'la regia sta accanto alla tela', 9, /tela intera, «Vai live»/],
@@ -385,6 +388,54 @@ console.log('Studio della diretta a portata (1366×768):');
   const fermo = await p.evaluate(() => { const b = document.getElementById('studio-live').getBoundingClientRect(); return { su: Math.round(b.top), giu: Math.round(b.bottom), vista: innerHeight }; });
   ok('scorrendo fra le fonti, «Vai live» resta a portata', fermo.su >= 0 && fermo.giu <= fermo.vista, JSON.stringify(fermo));
   ok('nessun errore di pagina a portata', !err.length, err.join(' | '));
+  await p.close();
+}
+
+// ---------------------------------------------------------------- tracce audio e VOD
+// Una traccia in piu' nel mixer (un file, come la musica) e il suo «Solo live»
+// (docs/DIRETTA.md, «Tracce audio e VOD»). Si misura col grafo vero: il bus del
+// VOD non deve sentire la traccia esclusa, e deve sentirla appena rientra.
+console.log('Tracce audio e VOD (1280×900):');
+{
+  const { p, err } = await apri({ width: 1280, height: 900, telefono: false });
+  await p.evaluate(async () => {
+    const n = 48000 * 2, buf = new ArrayBuffer(44 + n * 2), v = new DataView(buf);
+    const scrivi = (o, s) => { for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); };
+    scrivi(0, 'RIFF'); v.setUint32(4, 36 + n * 2, true); scrivi(8, 'WAVEfmt '); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+    v.setUint32(24, 48000, true); v.setUint32(28, 96000, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true); scrivi(36, 'data'); v.setUint32(40, n * 2, true);
+    for (let i = 0; i < n; i++) v.setInt16(44 + i * 2, Math.round(Math.sin(2 * Math.PI * 440 * i / 48000) * 12000), true);
+    await studioTracciaFile(new File([buf], 'Canzone.wav', { type: 'audio/wav' }));
+    document.getElementById('studio-mixer')?.scrollIntoView({ block: 'center' });
+  });
+  const aggiunta = await p.evaluate(() => {
+    const c = STUDIO.doc.scelte.audio.canali[0];
+    const riga = c && [...document.querySelectorAll('#studio-mixer .mix-canale')].find((x) => x.querySelector(`[data-vu="aud:${c.id}"]`));
+    return { n: STUDIO.doc.scelte.audio.canali.length, nome: c?.nome, riga: !!riga, chip: riga?.querySelector('[data-vod]')?.textContent, usata: !!c && STUDIO.M.impronteUsate(STUDIO.doc).has(c.file.impronta), id: c?.id };
+  });
+  ok('si aggiunge una traccia audio (un file): ha il suo canale nel mixer, e il suo file resta fra quelli usati', aggiunta.n === 1 && aggiunta.nome === 'Canzone' && aggiunta.riga && aggiunta.chip === 'Nel VOD' && aggiunta.usata, JSON.stringify(aggiunta));
+  const k = 'aud:' + aggiunta.id;
+  await p.click(`[data-vod="${k}"]`);
+  const esclusa = await p.evaluate((k) => ({ vod: STUDIO.doc.scelte.audio.vod[k], serve: STUDIO.M.vodServe(STUDIO.doc.scelte), chip: document.querySelector(`[data-vod="${k}"]`)?.textContent }), k);
+  ok('«Solo live» si segna e si ricorda nelle scene', esclusa.vod === false && esclusa.serve && esclusa.chip === 'Solo live', JSON.stringify(esclusa));
+  await p.evaluate(() => { studioAudioInit(); });
+  await p.click(`[data-traccia-suona="${aggiunta.id}"]`);
+  const livelli = () => p.evaluate(async () => {
+    await new Promise((ok) => setTimeout(ok, 450));
+    const A = STUDIO.audio, buf = new Uint8Array(256);
+    const l = (an) => { an.getByteTimeDomainData(buf); let m = 0; for (const x of buf) m = Math.max(m, Math.abs(x - 128) / 128); return Math.round(m * 1000) / 1000; };
+    return { live: l(A.an.master), vod: l(A.an.vod) };
+  });
+  const fuori = await livelli();
+  await p.click(`[data-vod="${k}"]`);
+  const dentro = await livelli();
+  ok('il bus del VOD non sente la traccia «Solo live», la diretta si', fuori.live > 0.05 && fuori.vod < 0.01, JSON.stringify(fuori));
+  ok('rimessa «Nel VOD», il VOD la sente subito, anche a diretta in corso', dentro.live > 0.05 && dentro.vod > 0.05, JSON.stringify(dentro));
+  await p.click(`[data-vod="${k}"]`);
+  await p.evaluate((id) => studioTracciaTogli(id), aggiunta.id);
+  const tolta = await p.evaluate((k) => ({ n: STUDIO.doc.scelte.audio.canali.length, vod: k in STUDIO.doc.scelte.audio.vod, grafo: STUDIO.audio.tracce.size }), k);
+  ok('togliendo la traccia spariscono canale, segno «Solo live» e nodo audio', tolta.n === 0 && !tolta.vod && tolta.grafo === 0, JSON.stringify(tolta));
+  await p.evaluate(() => { try { STUDIO.audio.ac.close(); } catch {} STUDIO.audio = null; });
+  ok('nessun errore di pagina con le tracce audio', !err.length, err.join(' | '));
   await p.close();
 }
 
