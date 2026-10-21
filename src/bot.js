@@ -2890,8 +2890,9 @@ export class BotManager {
         const t = tokens.get('instagram', login);
         if (!t?.accessToken || !igAccesso.daAllungare(t.expiresAt)) continue;
         const r = await igAccesso.allunga(t.accessToken);
-        if (!r.ok) { log.warn(`#${login}: rinnovo del token Instagram non riuscito — ${r.errore}`); continue; }
+        if (!r.ok) { instagram.ricordaRinnovo(login, r.errore); log.warn(`#${login}: rinnovo del token Instagram non riuscito — ${r.errore}`); continue; }
         tokens.save('instagram', login, { ...t, accessToken: r.token, expiresAt: r.scade });
+        instagram.ricordaRinnovo(login, null);
         log.info(`#${login}: token Instagram rinnovato`);
       } catch (e) { log.warn(`#${login}: rinnovo del token Instagram — ${e?.message || e}`); }
     }

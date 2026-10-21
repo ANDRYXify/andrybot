@@ -79,6 +79,25 @@ chiede a Instagram di rinnovarlo (a quel punto ha già più del giorno di vita
 che Instagram pretende). Uno scaduto non vale più: il pannello dice di
 ricollegare.
 
+Se il rinnovo non riesce (app tolta, password cambiata, permesso ritirato),
+prima lo sapevano solo i log: il pannello se ne accorgeva a token già scaduto,
+con avvisi e storie già fermi. Ora il bot si segna l'errore del rinnovo, e negli
+ultimi venti giorni (`AVVISO_SCADENZA_GIORNI`) il pannello dice «Il collegamento
+con Instagram scade fra N giorni», con le parole di Instagram e il tasto per
+ricollegare; negli ultimi sette è un avviso grave. Riuscito il rinnovo, l'avviso
+sparisce da solo.
+
+## Le versioni di Meta
+
+Ogni porta parla con una versione precisa delle API (`VERSIONI` in
+`src/features/instagram.js`), con accanto la data fino a cui Meta la tiene.
+Meta tiene una versione due anni dopo l'uscita della successiva, poi gira le
+chiamate sulla più vecchia ancora valida: niente si rompe di colpo, ma le regole
+cambiano senza dirlo. La porta del token a mano usava v19.0, scaduta il 21
+maggio 2026; ora v25.0, valida fino al 29 luglio 2028. La porta del tasto usa
+v26.0, la più nuova. `test/unita/instagram-tempo.test.mjs` diventa rosso due
+mesi prima di una scadenza.
+
 ## Le porte di Meta
 
 Due indirizzi senza sessione, perché chi bussa è Meta:

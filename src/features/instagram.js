@@ -14,8 +14,18 @@ const TIMEOUT_MS = 8000;
 // Due porte, secondo come e' nato il token (vedi instagram-credenziali.js): il
 // tasto «Collega Instagram» da' token di Instagram, che parlano con
 // graph.instagram.com; il token incollato a mano parla con graph.facebook.com.
-const API = 'https://graph.facebook.com/v19.0';
-const API_IG = 'https://graph.instagram.com/v26.0';
+//
+// LE VERSIONI SCADONO. Meta tiene una versione due anni dopo l'uscita della
+// successiva, poi gira le chiamate sulla piu' vecchia ancora valida: niente si
+// rompe di colpo, ma le regole cambiano senza dirlo. v19.0 e' rimasta qui oltre
+// il 21 maggio 2026. Accanto a ogni versione la sua scadenza (changelog di
+// Meta): test/unita/instagram-versioni.test.mjs diventa rosso due mesi prima.
+export const VERSIONI = {
+  facebook: { versione: 'v25.0', valida: '2028-07-29' },
+  instagram: { versione: 'v26.0', valida: null },
+};
+const API = 'https://graph.facebook.com/' + VERSIONI.facebook.versione;
+const API_IG = 'https://graph.instagram.com/' + VERSIONI.instagram.versione;
 const apiDi = (via) => (via === 'instagram' ? API_IG : API);
 
 async function getJson(url) {
@@ -146,3 +156,16 @@ export const fresco = (login, eta, adesso = Date.now()) => {
   return !!u && adesso - u.quando < eta;
 };
 export const dimenticaProblema = (login) => { _ultimo.delete(String(login || '').toLowerCase()); };
+
+// IL RINNOVO CHE NON RIESCE. Il token dura sessanta giorni e si rinnova da solo
+// negli ultimi trenta (bot.js, _giroInstagram). Se il rinnovo fallisce, prima lo
+// sapevano solo i log: il pannello se ne accorgeva a token gia' scaduto, con le
+// storie e gli avvisi gia' fermi. Qui l'ultimo errore, per dirlo in tempo.
+const _rinnovo = new Map();
+export function ricordaRinnovo(login, errore) {
+  const chi = String(login || '').toLowerCase();
+  if (errore) _rinnovo.set(chi, String(errore).slice(0, 200)); else _rinnovo.delete(chi);
+}
+export const rinnovoNonRiesce = (login) => _rinnovo.get(String(login || '').toLowerCase()) || '';
+// Quanti giorni mancano perche' il pannello dica del rinnovo che non riesce.
+export const AVVISO_SCADENZA_GIORNI = 20;

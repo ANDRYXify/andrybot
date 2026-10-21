@@ -52,6 +52,9 @@ comandi diversi da quelli della riga italiana.
   en> If you are using the panel or the Studio, a box tells you a new version is ready and you take it when you want. Otherwise it updates by itself, and the OBS overlay only off air.
   es> Actualizaciones sin perder nada
   es> Si estás usando el panel o el Estudio, un aviso te dice que hay una versión nueva y la tomas cuando quieras. Si no, se actualiza sola, y el overlay de OBS solo fuera de directo.
+- Instagram: se il collegamento non riesce a rinnovarsi da solo, il pannello te lo dice venti giorni prima che scada, col tasto per ricollegarlo. [vai: notifiche]
+  en: Instagram: if the connection cannot renew by itself, the panel tells you twenty days before it expires, with the button to reconnect it.
+  es: Instagram: si la conexión no consigue renovarse sola, el panel te lo dice veinte días antes de que caduque, con el botón para reconectarla.
 - Diretta dallo Studio: chi ti guarda la vede partire subito, non scatta più, e non cade su «torno subito» quando passi a un'altra scheda. [vai: studio]
   en: Live from the Studio: viewers see it start right away, it no longer stutters, and it does not fall back to «be right back» when you switch tabs.
   es: Directo desde el Estudio: quien te ve lo ve empezar enseguida, ya no da tirones y no cae en «vuelvo enseguida» cuando cambias de pestaña.

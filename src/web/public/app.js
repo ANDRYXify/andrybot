@@ -12420,6 +12420,10 @@ async function caricaInstagram() {
         tasto: ricollega,
       }));
     }
+    if (d.rinnovo && d.scadeFraGiorni != null && d.scadeFraGiorni <= d.avvisoGiorni) problemi.push(problemaHtml({ grave: d.scadeFraGiorni <= 7, tasto: ricollega,
+      titolo: L(`Il collegamento con Instagram scade fra ${d.scadeFraGiorni} giorni`, `The Instagram connection expires in ${d.scadeFraGiorni} days`, `La conexión con Instagram caduca en ${d.scadeFraGiorni} días`),
+      testo: L('Di solito si rinnova da solo, ma Instagram ora non lo rinnova', 'It usually renews by itself, but Instagram is not renewing it now', 'Normalmente se renueva solo, pero Instagram ahora no la renueva') + ' («' + esc(d.rinnovo) + '»). '
+        + L('Ricollegalo adesso e non si ferma niente: avvisi dei post e storie continuano.', 'Reconnect it now and nothing stops: post alerts and stories go on.', 'Reconéctalo ahora y no se para nada: los avisos de posts y las historias siguen.') + soloChiHa }));
     if (pr?.tipo === 'collegamento') problemi.push(problemaHtml({ grave: true, tasto: ricollega,
       titolo: L('Instagram non riconosce più il collegamento', 'Instagram no longer recognizes the connection', 'Instagram ya no reconoce la conexión'),
       testo: L('Gli avvisi dei post nuovi e la storia della settimana sono fermi. Succede se hai tolto l’app da Instagram o hai cambiato la password.', 'New-post alerts and your weekly story are stopped. It happens if you removed the app from Instagram or changed your password.', 'Los avisos de posts nuevos y la historia de la semana están parados. Pasa si quitaste la app de Instagram o cambiaste la contraseña.') + soloChiHa }));

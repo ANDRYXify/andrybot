@@ -5172,6 +5172,10 @@ STREAMER (${su.toUpperCase()}) e non c'entra con l'automazione del marketing.
       // avviso che non arriva
       mancano: t ? igAccesso.PERMESSI.filter((x) => !(t.scopes || []).includes(x)) : [],
       problema: cr ? instagram.problema(login) : null,
+      // il rinnovo che non riesce, detto negli ultimi giorni e non a token morto
+      scadeFraGiorni: t?.expiresAt ? Math.max(0, Math.ceil((t.expiresAt - Date.now()) / 86_400_000)) : null,
+      rinnovo: t ? instagram.rinnovoNonRiesce(login) : '',
+      avvisoGiorni: instagram.AVVISO_SCADENZA_GIORNI,
     });
   }));
 
