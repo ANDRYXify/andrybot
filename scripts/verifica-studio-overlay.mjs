@@ -10,7 +10,9 @@
 //  · un alert del flusso arriva nella fotografia, e la fotografia coincide
 //    pixel per pixel con la pagina che vede OBS, CSS dello streamer compreso;
 //  · la tela resta trasmettibile, e i suoni vanno allo Studio, non alla cornice;
-//  · in verticale la cornice e' 1080×1920, e una pagina ferma non costa niente;
+//  · in verticale i pezzi escono una volta e mezza piu' grandi (la pagina si
+//    guarda a 720×1280 e si fotografa a 1080×1920: sul telefono, dove il
+//    verticale si guarda, si leggono), e una pagina ferma non costa niente;
 //  · nello Studio della prova la fonte Overlay si vede sulla tela d'uscita, la
 //    cornice e' grande come in OBS (1920×1080), un alert che arriva a Studio
 //    fermo lo risveglia, e una fonte nascosta chiude la sua cornice.
@@ -35,11 +37,12 @@ const PROMESSE = [
   'il CSS dello streamer arriva nella fotografia',
   'la tela resta trasmettibile: la fotografia non la sporca',
   'i suoni dell\'overlay vanno allo Studio, non agli altoparlanti della cornice',
-  'in verticale la cornice e\' 1080×1920',
+  'in verticale la pagina si guarda a 720×1280 e i pezzi escono una volta e mezza piu\' grandi',
   'una pagina ferma non costa fotografie',
   'nello Studio della prova la fonte Overlay si vede sulla tela d\'uscita',
   'nello Studio la cornice e\' grande come in OBS: 1920×1080',
   'un alert che arriva a Studio fermo lo risveglia e va sulla tela',
+  'nello Studio il verticale usa la sua misura: cornice 720×1280, fotografia 1080×1920',
   'una fonte Overlay nascosta chiude la sua cornice',
   'nessun errore di pagina',
 ];
@@ -47,15 +50,17 @@ const PROMESSE = [
 const DIFETTI = {
   '/js/studio-overlay.js': [
     ['      tx.drawImage(img, 0, 0, W, H);\n', '', 'la fotografia si disegna', 1, /pezzi fermi|Studio della prova la fonte/],
+    ["viewBox=\"0 0 ' + VW + ' ' + VH + '\"", "viewBox=\"0 0 ' + W + ' ' + H + '\"", 'la pagina piccola si ingrandisce nella fotografia', 7, /una volta e mezza/],
     ["      if (tipo === 'CSSStyleRule') { out.push(", "      if (tipo === 'CSSStyleRule') { continue; out.push(", 'i fogli di stile arrivano nella fotografia', 2, /coincide con la pagina|CSS dello streamer/],
   ],
   '/overlay-app.js': [
     ['if (OSPITE && window.SUONI_PRESET) {', 'if (false) {', 'i suoni dei preset passano allo Studio', 3, /suoni dell'overlay/],
   ],
   '/app.js': [
-    ['const STUDIO_OV_MISURA = { o: { W: 1920, H: 1080 }', 'const STUDIO_OV_MISURA = { o: { W: 1280, H: 720 }', 'la cornice e\' grande come in OBS', 4, /grande come in OBS/],
+    ['const STUDIO_OV_MISURA = { o: { W: 1920, H: 1080,', 'const STUDIO_OV_MISURA = { o: { W: 1280, H: 720,', 'la cornice e\' grande come in OBS', 4, /grande come in OBS/],
     ['sveglia: () => { if (studioOverlayServono().has(k)) studioRidisegna(); },', 'sveglia: () => {},', 'l\'overlay sveglia lo Studio', 5, /risveglia/],
     ['    else if (ora - e.visto > 30000) { e.m.chiudi();', '    else if (false) { e.m.chiudi();', 'una cornice che non serve si chiude', 6, /nascosta chiude/],
+    ['v: { W: 1080, H: 1920, scala: 1.5 }', 'v: { W: 1080, H: 1920, scala: 1 }', 'nello Studio il verticale e\' ingrandito', 7, /verticale usa la sua misura/],
   ],
 };
 
@@ -128,10 +133,11 @@ const PAGINA = `<!doctype html><html><body style="margin:0"><script type="module
 import { creaFotoOverlay } from '/js/studio-overlay.js';
 window.SUONI = [];
 window.SB_STUDIO_OVERLAY = { suonaUrl: (f, u, v) => SUONI.push(['url', u]), suonaPreset: (f, id) => SUONI.push(['preset', id]), media: (f, el) => { el.muted = true; SUONI.push(['media', el.tagName]); } };
-window.crea = (url, W, H) => { const m = creaFotoOverlay({ W, H }); m.apri(url); return m; };
+window.crea = (url, W, H, scala) => { const m = creaFotoOverlay({ W, H, scala }); m.apri(url); return m; };
 window.giro = (m) => { m.tic(); requestAnimationFrame(() => giro(m)); };
 window.foto = (m, W, H) => { const c = document.createElement('canvas'); c.width = W; c.height = H; m.disegna(c.getContext('2d'), 0, 0, W, H); return c; };
 window.pieni = (c, x = 0, y = 0, w = c.width, h = c.height) => { const d = c.getContext('2d').getImageData(x, y, w, h).data; let n = 0; for (let i = 3; i < d.length; i += 4) if (d[i] > 40) n++; return n; };
+window.larghezza = (c, x, y, w, h) => { const d = c.getContext('2d').getImageData(x, y, w, h).data; let a = w, b = -1; for (let i = 3; i < d.length; i += 4) if (d[i] > 40) { const px = ((i - 3) / 4) % w; if (px < a) a = px; if (px > b) b = px; } return b - a + 1; };
 window.verdi = (c) => { const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let n = 0; for (let i = 0; i < d.length; i += 4) if (d[i] < 40 && d[i + 1] > 215 && d[i + 2] < 40 && d[i + 3] > 200) n++; return n; };
 </script></body></html>`;
 
@@ -187,13 +193,18 @@ try {
     ok(PROMESSE[5], suoni.some((s) => s[0] === 'preset' && s[1] === 'pop'), JSON.stringify(suoni));
     await obs.close();
 
-    await p.evaluate(() => { window.V = crea('/overlay/prova?key=x&studio=1', 1080, 1920); giro(V); });
-    await p.waitForFunction(() => V.stato().pronta, null, { timeout: 15000 }).catch(() => {});
-    const vert = await p.evaluate(() => { const w = V.cornice().contentWindow; return { w: w.innerWidth, h: w.innerHeight, pronta: V.stato().pronta }; });
-    ok(PROMESSE[6], vert.w === 1080 && vert.h === 1920 && vert.pronta, JSON.stringify(vert));
-
-    await p.evaluate(() => { window.F = crea('/overlay/ferma?key=x&studio=1', 1920, 1080); giro(F); });
-    await p.waitForFunction(() => F.stato().pronta, null, { timeout: 15000 }).catch(() => {});
+    // Il contatore della pagina ferma, fotografato in orizzontale e in
+    // verticale: la stessa riga di testo, una volta e mezza piu' larga.
+    await p.evaluate(() => { window.F = crea('/overlay/ferma?key=x&studio=1', 1920, 1080); giro(F); window.V = crea('/overlay/ferma?key=x&studio=1', 1080, 1920, 1.5); giro(V); });
+    await p.waitForFunction(() => F.stato().pronta && V.stato().pronta, null, { timeout: 15000 }).catch(() => {});
+    await attesa(400);
+    const vert = await p.evaluate(() => {
+      const w = V.cornice().contentWindow;
+      return { w: w.innerWidth, h: w.innerHeight, pronta: V.stato().pronta, o: larghezza(foto(F, 1920, 1080), 0, 860, 1000, 220), v: larghezza(foto(V, 1080, 1920), 0, 1560, 1000, 360) };
+    });
+    vert.rapporto = Math.round(vert.v / vert.o * 100) / 100;
+    ok(PROMESSE[6], vert.w === 720 && vert.h === 1280 && vert.pronta && vert.o > 50 && Math.abs(vert.rapporto - 1.5) < 0.08, JSON.stringify(vert));
+    await p.evaluate(() => V.chiudi());
     await attesa(1500);
     const f0 = await p.evaluate(() => F.stato().foto);
     await attesa(1500);
@@ -236,17 +247,22 @@ try {
     const dopoAlert = await zona(0.3, 0.05, 0.4, 0.22);
     ok(PROMESSE[10], dopoAlert > primaAlert + 300, `${primaAlert} → ${dopoAlert}`);
 
+    await p.evaluate(() => { const e = [...STUDIO.ovMotori.values()][0]; window.EV = studioOverlayMotore(e.id, 'v'); });
+    await p.waitForFunction(() => EV.m.stato().pronta, null, { timeout: 15000 }).catch(() => {});
+    const misV = await p.evaluate(() => { const w = EV.m.cornice().contentWindow, st = EV.m.stato(); const r = { w: w.innerWidth, h: w.innerHeight, W: st.W, H: st.H }; EV.m.chiudi(); STUDIO.ovMotori.delete(EV.k); return r; });
+    ok(PROMESSE[11], misV.w === 720 && misV.h === 1280 && misV.W === 1080 && misV.H === 1920, JSON.stringify(misV));
+
     const via = await p.evaluate(async () => {
       for (const s of STUDIO.doc.scene) for (const f of s.fonti) if (f.tipo === 'overlay') { f.pos.o.vis = false; f.pos.v.vis = false; }
       for (const e of STUDIO.ovMotori.values()) e.visto -= 60_000;
       studioOverlayRiordina();
       return { n: STUDIO.ovMotori.size, cornici: document.querySelectorAll('.sbf-cornice').length };
     });
-    ok(PROMESSE[11], via.n === 0 && via.cornici === 0, JSON.stringify(via));
+    ok(PROMESSE[12], via.n === 0 && via.cornici === 0, JSON.stringify(via));
     await p.close();
   }
 } finally {
-  ok(PROMESSE[12], !errori.length, errori.slice(0, 3).join(' | '));
+  ok(PROMESSE[13], !errori.length, errori.slice(0, 3).join(' | '));
   await browser.close();
   sito.chiudi();
 }

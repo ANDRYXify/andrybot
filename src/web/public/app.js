@@ -22719,7 +22719,7 @@ function studioOverlayInOnda() {
 }
 
 const STUDIO_OV_PROVA = '/overlay/prova.socialbot?prova=1';
-const STUDIO_OV_MISURA = { o: { W: 1920, H: 1080 }, v: { W: 1080, H: 1920 } };
+const STUDIO_OV_MISURA = { o: { W: 1920, H: 1080, scala: 1 }, v: { W: 1080, H: 1920, scala: 1.5 } };
 const studioOverlayUrl = (id) => STUDIO.ov.base + (STUDIO.ov.base.includes('?') ? '&' : '?') + 'o=' + encodeURIComponent(id) + '&studio=1';
 
 function studioOverlayBase(base) {
@@ -22734,9 +22734,9 @@ function studioOverlayMotore(id, f) {
   const k = id + '|' + f;
   let e = STUDIO.ovMotori.get(k);
   if (!e) {
-    const { W, H } = STUDIO_OV_MISURA[f];
+    const { W, H, scala } = STUDIO_OV_MISURA[f];
     e = { id, f, k, visto: performance.now(), guasto: '' };
-    e.m = STUDIO.OV.creaFotoOverlay({ W, H, sveglia: () => { if (studioOverlayServono().has(k)) studioRidisegna(); }, avvisa: (perche) => { e.guasto = perche; renderStudioFonti(); } });
+    e.m = STUDIO.OV.creaFotoOverlay({ W, H, scala, sveglia: () => { if (studioOverlayServono().has(k)) studioRidisegna(); }, avvisa: (perche) => { e.guasto = perche; renderStudioFonti(); } });
     STUDIO.ovMotori.set(k, e);
     e.m.suona = studioOverlayServono().get(k) === true;
     e.m.apri(studioOverlayUrl(id));

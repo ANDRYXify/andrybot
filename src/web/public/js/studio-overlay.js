@@ -39,7 +39,7 @@ export const CARATTERI = new Set(['fonts.googleapis.com', 'fonts.gstatic.com']);
 const URL_CSS = /url\(\s*(['"]?)([^'")]+)\1\s*\)/g;
 
 export function creaFotoOverlay(o) {
-  const W = o.W, H = o.H;
+  const W = o.W, H = o.H, S = o.scala > 0 ? o.scala : 1, VW = Math.round(W / S), VH = Math.round(H / S);
   const origine = o.origine || location.origin;
   const byteDi = o.byteDi || ((u) => {
     let x;
@@ -61,7 +61,7 @@ export function creaFotoOverlay(o) {
   fr.title = 'overlay';
   fr.tabIndex = -1;
   fr.setAttribute('aria-hidden', 'true');
-  fr.style.cssText = 'width:' + W + 'px;height:' + H + 'px;border:0;background:transparent';
+  fr.style.cssText = 'width:' + VW + 'px;height:' + VH + 'px;border:0;background:transparent';
   box.appendChild(fr);
 
   let tela = document.createElement('canvas');
@@ -327,7 +327,7 @@ export function creaFotoOverlay(o) {
     b.setAttribute('class', ('sbf-body ' + (body.getAttribute('class') || '')).trim());
     while (kb.firstChild) b.appendChild(kb.firstChild);
     const s = doc.createElement('style');
-    s.textContent = foglio(doc) + '\n' + FERMA + '\n.sbf-html{position:relative;width:' + W + 'px;height:' + H + 'px;overflow:hidden}\n' + pseudo;
+    s.textContent = foglio(doc) + '\n' + FERMA + '\n.sbf-html{position:relative;width:' + VW + 'px;height:' + VH + 'px;overflow:hidden}\n' + pseudo;
     r.appendChild(s);
     r.appendChild(b);
     return new win.XMLSerializer().serializeToString(r);
@@ -339,7 +339,7 @@ export function creaFotoOverlay(o) {
     st.inVolo = true; st.sporco = false; st.vivo = false;
     const t = ora();
     try {
-      const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' + W + '" height="' + H + '"><foreignObject x="0" y="0" width="' + W + '" height="' + H + '">' + clona(doc, win) + '</foreignObject></svg>';
+      const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' + W + '" height="' + H + '" viewBox="0 0 ' + VW + ' ' + VH + '"><foreignObject x="0" y="0" width="' + VW + '" height="' + VH + '">' + clona(doc, win) + '</foreignObject></svg>';
       const img = new Image();
       img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
       await img.decode();
@@ -382,7 +382,7 @@ export function creaFotoOverlay(o) {
     cornice: () => fr,
     set suona(v) { st.suona = !!v; },
     get suona() { return st.suona; },
-    stato: () => ({ pronta: st.pronta, foto: st.foto, ms: Math.round(st.ms), guasta: st.guasta, caricata: st.caricata, mancano: st.mancano, vivo: st.vivo, W, H }),
+    stato: () => ({ pronta: st.pronta, foto: st.foto, ms: Math.round(st.ms), guasta: st.guasta, caricata: st.caricata, mancano: st.mancano, vivo: st.vivo, W, H, VW, VH }),
     chiudi() {
       st.chiusa = true;
       if (oss) oss.disconnect();

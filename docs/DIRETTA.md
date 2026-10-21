@@ -303,8 +303,15 @@ sul telefono, in «Altro».
 
 **L'invariante: lo Studio manda in onda lo stesso overlay che vede OBS.** Non
 un'imitazione: la pagina vera dell'overlay (`/overlay/<canale>?…&studio=1`),
-aperta in una cornice nascosta grande come la sorgente di OBS (1920×1080, in
-verticale 1080×1920), e fotografata sulla tela (`js/studio-overlay.js`).
+aperta in una cornice nascosta grande come la sorgente di OBS (1920×1080), e
+fotografata sulla tela (`js/studio-overlay.js`).
+
+In verticale la pagina si guarda a 720×1280 e si fotografa a 1080×1920: i pezzi
+escono una volta e mezza più grandi, sempre nitidi (la fotografia è vettoriale,
+`viewBox`). Il perché è dove si guarda: il verticale si guarda sul telefono, dove
+1080 punti diventano circa 390, e un alert pensato per un'uscita orizzontale
+vista sul computer lì diventava illeggibile. Le posizioni sono in percentuale,
+quindi restano dove le hai messe.
 Stesso codice, stesso tema, stessi pezzi, stesso CSS dello streamer: un pezzo
 nuovo dell'Overlay Studio arriva nello Studio senza scrivere niente.
 
