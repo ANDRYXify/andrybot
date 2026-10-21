@@ -5138,6 +5138,7 @@ function _inLavorazione(extra = '') {
 const _bIco = (d) => `<svg class="b-ico" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
 
 const SEZ_BANCO = 'alert';
+const GUIDA_CHIUSA = new Set(['studio', 'regia']);
 
 function guidaSchedaHtml(id) {
   const g = GUIDE[id];
@@ -5145,7 +5146,7 @@ function guidaSchedaHtml(id) {
   const serve = Array.isArray(g.serve) ? L(g.serve[0], g.serve[1], g.serve[2]) : g.serve;
   const come = Array.isArray(g.come) ? g.come.map((c) => (Array.isArray(c) ? L(c[0], c[1], c[2]) : c)) : [];
 
-  let aperta = !stretto() && !SOTTO_SCHEDE[id] && id !== SEZ_BANCO;
+  let aperta = !stretto() && !SOTTO_SCHEDE[id] && id !== SEZ_BANCO && !GUIDA_CHIUSA.has(id);
   try {
     const v = localStorage.getItem('guida:' + id);
     if (v === '0') aperta = false;
@@ -5171,6 +5172,7 @@ document.addEventListener('toggle', (e) => {
   const id = d.dataset.guida;
   if (!id) return;
   try { localStorage.setItem('guida:' + id, d.open ? '1' : '0'); } catch {  }
+  if (id === 'studio') requestAnimationFrame(studioMisuraTela);
 }, true);
 
 function miniGuida({ titolo, serve = '', passi = [], note = [], aperta = false } = {}) {
@@ -21486,6 +21488,8 @@ function pannelloStudio() {
         <span class="studio-salvato" id="studio-salvato" aria-live="polite"></span>
       </div>
 
+      <div class="studio-regia" id="studio-regia">
+      <div class="studio-regia-main">
       <div class="studio-tele" id="studio-tele">
         <div class="studio-tela-box" id="studio-box-ant" hidden>
           <div class="studio-tela-tit">${L('Anteprima', 'Preview', 'Vista previa')}</div>
@@ -21505,34 +21509,6 @@ function pannelloStudio() {
       <div class="studio-mobile-barra" id="studio-mobile-barra"></div>
 
       <div class="studio-docks" id="studio-docks">
-        <section class="studio-dock" aria-labelledby="studio-t-scene">
-          <h3 class="studio-dock-tit" id="studio-t-scene">${_bIco(ICO.scene)}${L('Scene', 'Scenes', 'Escenas')}</h3>
-          <ul class="studio-lista" id="studio-scene"></ul>
-          <div class="studio-dock-piede">
-            <button type="button" class="sf-btn" data-scena-azione="nuova" aria-label="${esc(L('Nuova scena', 'New scene', 'Nueva escena'))}" title="${esc(L('Nuova scena', 'New scene', 'Nueva escena'))}">${_bIco(ICO.piu)}</button>
-            <button type="button" class="sf-btn" data-scena-azione="rinomina" aria-label="${esc(L('Rinomina la scena', 'Rename the scene', 'Renombrar la escena'))}" title="${esc(L('Rinomina la scena', 'Rename the scene', 'Renombrar la escena'))}">${_bIco(ICO.scrivi)}</button>
-            <button type="button" class="sf-btn" data-scena-azione="su" aria-label="${esc(L('Sposta su', 'Move up', 'Subir'))}" title="${esc(L('Sposta su', 'Move up', 'Subir'))}">${_bIco(ICO.freccia)}</button>
-            <button type="button" class="sf-btn sf-giu" data-scena-azione="giu" aria-label="${esc(L('Sposta giù', 'Move down', 'Bajar'))}" title="${esc(L('Sposta giù', 'Move down', 'Bajar'))}">${_bIco(ICO.freccia)}</button>
-            <button type="button" class="sf-btn sf-rim" data-scena-azione="elimina" aria-label="${esc(L('Elimina la scena', 'Delete the scene', 'Eliminar la escena'))}" title="${esc(L('Elimina la scena', 'Delete the scene', 'Eliminar la escena'))}">${_bIco(ICO.cestino)}</button>
-          </div>
-          <label class="campo studio-scena-audio" for="studio-scena-audio">${L('I microfoni di questa scena', 'This scene’s microphones', 'Los micrófonos de esta escena')}</label>
-          <select id="studio-scena-audio" class="campo-largo">
-            <option value="computer">${L('Il microfono del computer', 'The computer microphone', 'El micrófono del ordenador')}</option>
-            <option value="dispositivi">${L('Quelli dei dispositivi in scena', 'Those of the devices in the scene', 'Los de los dispositivos en escena')}</option>
-            <option value="tutti">${L('Computer e dispositivi in scena', 'Computer and devices in the scene', 'Ordenador y dispositivos en escena')}</option>
-            <option value="muta">${L('Nessuno (pausa)', 'None (break)', 'Ninguno (pausa)')}</option>
-          </select>
-          <details class="studio-add-menu" id="studio-pronte-menu">
-            <summary class="btn secondario mini">${_bIco(ICO.piu)}${L('Scene pronte', 'Ready scenes', 'Escenas listas')}</summary>
-            <div class="studio-add">
-              <button type="button" class="btn secondario mini" data-scena-pronte="giro">${L('In giro', 'Out and about', 'De paseo')}</button>
-              <button type="button" class="btn secondario mini" data-scena-pronte="camera">${L('In camera', 'On camera', 'En cámara')}</button>
-              <button type="button" class="btn secondario mini" data-scena-pronte="mani">${L('Mani al lavoro', 'Hands at work', 'Manos a la obra')}</button>
-              <button type="button" class="btn secondario mini" data-scena-pronte="musica">${L('Musica dal vivo', 'Live music', 'Música en directo')}</button>
-            </div>
-          </details>
-          <div class="studio-preset" id="studio-preset"></div>
-        </section>
 
         <section class="studio-dock studio-dock-fonti" aria-labelledby="studio-t-fonti">
           <h3 class="studio-dock-tit" id="studio-t-fonti">${_bIco(ICO.lista)}${L('Fonti', 'Sources', 'Fuentes')}</h3>
@@ -21580,16 +21556,6 @@ function pannelloStudio() {
           <input id="studio-trans-ms" type="number" min="100" max="3000" step="50" class="campo-largo">
         </section>
 
-        <section class="studio-dock studio-controlli" aria-labelledby="studio-t-ctrl">
-          <h3 class="studio-dock-tit" id="studio-t-ctrl">${_bIco(ICO.onda)}${L('Controlli', 'Controls', 'Controles')}</h3>
-          <button type="button" class="btn grande" id="studio-live" title="${esc(L('Manda in diretta il programma. Da qui in poi ti guarda il pubblico', 'Sends the program out live. From here on, the audience is watching', 'Pone en directo el programa. A partir de aquí te ve el público'))}">${_bIco(ICO.onda)}${L('VAI LIVE', 'GO LIVE', 'EMITIR')}</button>
-          <button type="button" class="btn secondario" id="studio-ferma" hidden>${_bIco(ICO.stop)}${L('Ferma diretta', 'Stop stream', 'Detener directo')}</button>
-          <button type="button" class="btn secondario" id="studio-modalita" aria-pressed="false">${L('Modalità studio', 'Studio mode', 'Modo estudio')}</button>
-          <button type="button" class="btn secondario" id="studio-impostazioni-apri" aria-expanded="false" aria-controls="studio-impostazioni">${_bIco(ICO.sliders)}${L('Impostazioni', 'Settings', 'Ajustes')}</button>
-          <p class="suggerimento" id="studio-stato" aria-live="polite"></p>
-          <p class="suggerimento" id="studio-ripresa" hidden></p>
-          <p class="suggerimento" id="studio-supporto"></p>
-        </section>
       </div>
 
       <div class="studio-docks studio-docks-2">
@@ -21657,6 +21623,51 @@ function pannelloStudio() {
             <option value="30">30 ${L('minuti', 'minutes', 'minutos')}</option>
           </select>
         </section>
+      </div>
+      </div>
+      <aside class="studio-regia-col" id="studio-regia-col" aria-label="${esc(L('Regia', 'Control room', 'Control'))}">
+        <section class="studio-dock studio-controlli" aria-labelledby="studio-t-ctrl">
+          <h3 class="studio-dock-tit solo-lettori" id="studio-t-ctrl">${_bIco(ICO.onda)}${L('Controlli', 'Controls', 'Controles')}</h3>
+          <button type="button" class="btn grande" id="studio-live" title="${esc(L('Manda in diretta il programma. Da qui in poi ti guarda il pubblico', 'Sends the program out live. From here on, the audience is watching', 'Pone en directo el programa. A partir de aquí te ve el público'))}">${_bIco(ICO.onda)}${L('VAI LIVE', 'GO LIVE', 'EMITIR')}</button>
+          <button type="button" class="btn secondario" id="studio-ferma" hidden>${_bIco(ICO.stop)}${L('Ferma diretta', 'Stop stream', 'Detener directo')}</button>
+          <button type="button" class="btn secondario studio-cam-uso" data-studio-cam>${_bIco(ICO.fotocamera)}<span></span></button>
+          <div class="studio-ctrl-riga">
+            <button type="button" class="btn secondario" id="studio-modalita" aria-pressed="false">${L('Modalità studio', 'Studio mode', 'Modo estudio')}</button>
+            <button type="button" class="btn secondario" id="studio-impostazioni-apri" aria-expanded="false" aria-controls="studio-impostazioni">${_bIco(ICO.sliders)}${L('Impostazioni', 'Settings', 'Ajustes')}</button>
+          </div>
+          <p class="suggerimento" id="studio-stato" aria-live="polite"></p>
+          <p class="suggerimento" id="studio-ripresa" hidden></p>
+        </section>
+        <section class="studio-dock" aria-labelledby="studio-t-scene">
+          <h3 class="studio-dock-tit" id="studio-t-scene">${_bIco(ICO.scene)}${L('Scene', 'Scenes', 'Escenas')}</h3>
+          <ul class="studio-lista" id="studio-scene"></ul>
+          <div class="studio-dock-piede">
+            <button type="button" class="sf-btn" data-scena-azione="nuova" aria-label="${esc(L('Nuova scena', 'New scene', 'Nueva escena'))}" title="${esc(L('Nuova scena', 'New scene', 'Nueva escena'))}">${_bIco(ICO.piu)}</button>
+            <button type="button" class="sf-btn" data-scena-azione="rinomina" aria-label="${esc(L('Rinomina la scena', 'Rename the scene', 'Renombrar la escena'))}" title="${esc(L('Rinomina la scena', 'Rename the scene', 'Renombrar la escena'))}">${_bIco(ICO.scrivi)}</button>
+            <button type="button" class="sf-btn" data-scena-azione="su" aria-label="${esc(L('Sposta su', 'Move up', 'Subir'))}" title="${esc(L('Sposta su', 'Move up', 'Subir'))}">${_bIco(ICO.freccia)}</button>
+            <button type="button" class="sf-btn sf-giu" data-scena-azione="giu" aria-label="${esc(L('Sposta giù', 'Move down', 'Bajar'))}" title="${esc(L('Sposta giù', 'Move down', 'Bajar'))}">${_bIco(ICO.freccia)}</button>
+            <button type="button" class="sf-btn sf-rim" data-scena-azione="elimina" aria-label="${esc(L('Elimina la scena', 'Delete the scene', 'Eliminar la escena'))}" title="${esc(L('Elimina la scena', 'Delete the scene', 'Eliminar la escena'))}">${_bIco(ICO.cestino)}</button>
+          </div>
+          <label class="campo studio-scena-audio" for="studio-scena-audio">${L('I microfoni di questa scena', 'This scene’s microphones', 'Los micrófonos de esta escena')}</label>
+          <select id="studio-scena-audio" class="campo-largo">
+            <option value="computer">${L('Il microfono del computer', 'The computer microphone', 'El micrófono del ordenador')}</option>
+            <option value="dispositivi">${L('Quelli dei dispositivi in scena', 'Those of the devices in the scene', 'Los de los dispositivos en escena')}</option>
+            <option value="tutti">${L('Computer e dispositivi in scena', 'Computer and devices in the scene', 'Ordenador y dispositivos en escena')}</option>
+            <option value="muta">${L('Nessuno (pausa)', 'None (break)', 'Ninguno (pausa)')}</option>
+          </select>
+          <details class="studio-add-menu" id="studio-pronte-menu">
+            <summary class="btn secondario mini">${_bIco(ICO.piu)}${L('Scene pronte', 'Ready scenes', 'Escenas listas')}</summary>
+            <div class="studio-add">
+              <button type="button" class="btn secondario mini" data-scena-pronte="giro">${L('In giro', 'Out and about', 'De paseo')}</button>
+              <button type="button" class="btn secondario mini" data-scena-pronte="camera">${L('In camera', 'On camera', 'En cámara')}</button>
+              <button type="button" class="btn secondario mini" data-scena-pronte="mani">${L('Mani al lavoro', 'Hands at work', 'Manos a la obra')}</button>
+              <button type="button" class="btn secondario mini" data-scena-pronte="musica">${L('Musica dal vivo', 'Live music', 'Música en directo')}</button>
+            </div>
+          </details>
+          <div class="studio-preset" id="studio-preset"></div>
+        </section>
+          <p class="suggerimento" id="studio-supporto"></p>
+      </aside>
       </div>
 
       <p class="suggerimento spazio-sopra">${L('Le scene si salvano da sole sul tuo account. Immagini, GIF e video restano su questo dispositivo: su un altro computer li ricarichi una volta. Alert, chat ed effetti a punti canale compaiono nella fonte <strong>Overlay</strong>.', 'Scenes save by themselves to your account. Images, GIFs and videos stay on this device: on another computer you load them again once. Alerts, chat and channel-point effects appear in the <strong>Overlay</strong> source.', 'Las escenas se guardan solas en tu cuenta. Imágenes, GIF y vídeos se quedan en este dispositivo: en otro ordenador los vuelves a cargar una vez. Las alertas, el chat y los efectos de puntos de canal aparecen en la fuente <strong>Overlay</strong>.')}</p>
@@ -22323,6 +22334,7 @@ function studioCamAggiornaUi() {
   const C = STUDIO.cam;
   const nome = document.querySelector('.tel-cam-nome span'); if (nome && STUDIO.cap.camEl) nome.textContent = studioCamEtichetta();
   for (const o of document.querySelectorAll('[data-cam-stato]')) o.textContent = studioCamStatoTesto();
+  studioRegiaCam();
   const passo = document.getElementById('tel-zoom-passo'); if (passo) passo.textContent = studioZoomTesto(C.zoom);
   for (const o of document.querySelectorAll('[data-cam-zoomout]')) o.textContent = studioZoomTesto(C.zoom);
   for (const r of document.querySelectorAll('[data-cam-zoom]')) { r.max = String(Math.round(studioCamZoomMax() * 10) / 10); if (document.activeElement !== r) r.value = String(C.zoom); }
@@ -23452,6 +23464,10 @@ async function caricaStudio() {
   renderStudioTutto();
   studioRenderIO();
   studioMostraSalvataggio();
+  if (!STUDIO.misuraOss && window.ResizeObserver) {
+    const scheda = document.querySelector('.pannello-scheda[data-scheda="studio"]');
+    if (scheda) { STUDIO.misuraOss = new ResizeObserver(() => requestAnimationFrame(studioMisuraTela)); STUDIO.misuraOss.observe(scheda); }
+  }
 
   const modStudio = stato?.ruolo === 'moderatore';
   const btnLive = document.getElementById('studio-live');
@@ -23571,12 +23587,30 @@ function studioAggiornaMobile() {
   return prima !== STUDIO.mobile;
 }
 
+function studioRegiaCam() {
+  const b = document.querySelector('[data-studio-cam]'); if (!b) return;
+  const accesa = !!STUDIO.cap.camEl;
+  const testo = accesa ? studioCamStatoTesto() : L('Fotocamera spenta: accendila', 'Camera off: turn it on', 'Cámara apagada: enciéndela');
+  const s = b.querySelector('span'); if (s && s.textContent !== testo) s.textContent = testo;
+  b.setAttribute('aria-label', accesa ? L('Fotocamera in uso: ', 'Camera in use: ', 'Cámara en uso: ') + testo + L('. Cambiala', '. Change it', '. Cámbiala') : testo);
+}
+
+function studioMisuraTela() {
+  const carta = document.getElementById('studio-carta'), palco = document.getElementById('studio-palco-prog');
+  if (!carta || !palco || STUDIO.mobile || !palco.offsetParent) return;
+  const sopra = palco.getBoundingClientRect().top + window.scrollY;
+  const alta = Math.max(240, Math.floor(window.innerHeight - sopra - 16));
+  if (carta.style.getPropertyValue('--tela-alta') !== alta + 'px') carta.style.setProperty('--tela-alta', alta + 'px');
+}
+
 function renderStudioTutto() {
   if (!STUDIO.doc) return;
   studioAggiornaMobile();
   studioMontaTele();
   renderStudioLavoro(); renderStudioScene(); renderStudioPreset(); renderStudioOverlay(); renderStudioFonti(); renderStudioUI(); renderStudioProp(); renderStudioMixer(); renderStudioTransizioni(); renderStudioControlli(); renderStudioMobile(); renderStudioRemoti();
   if (STUDIO.tel?.aperta) renderStudioTel();
+  studioRegiaCam();
+  studioMisuraTela();
 }
 
 function renderStudioLavoro() {
@@ -24455,6 +24489,12 @@ function posizionaBoxStudio(f) {
 
 async function onStudioClick(ev) {
   const t = ev.target;
+  if (t.closest('[data-studio-cam]')) {
+    if (!STUDIO.cap.camEl) return conErrore(async () => { await studioCapWebcam(); renderStudioTutto(); });
+    studioApriImpostazioni(true);
+    document.getElementById('studio-cam-sel')?.focus();
+    return;
+  }
   const tsc = t.closest('[data-tel-scenario]'); if (tsc) return studioTelScegliScenario(tsc.dataset.telScenario);
   const tde = t.closest('[data-tel-dest]'); if (tde) { const ins = studioDestScelte(); if (ins.has(tde.dataset.telDest)) ins.delete(tde.dataset.telDest); else ins.add(tde.dataset.telDest); studioScriviDestScelte(ins); renderStudioTel(); return; }
   const tch = t.closest('[data-tel-chat]'); if (tch) { STUDIO.doc.scelte.telefono.chat = tch.dataset.telChat; studioSporco(); renderStudioTel(); return; }
@@ -24675,7 +24715,7 @@ function initStudio() {
     document.addEventListener('pointerup', onStudioPointerUp);
     document.addEventListener('pointercancel', onStudioPointerUp);
     window.addEventListener('popstate', () => { if (STUDIO.tel?.aperta) studioTelIndietro(); });
-    window.addEventListener('resize', () => { clearTimeout(STUDIO.misuraT); STUDIO.misuraT = setTimeout(() => { if (STUDIO.doc && !STUDIO.live) { studioMisureTele(); studioRidisegna(); } }, 200); });
+    window.addEventListener('resize', () => { if (schedaAttiva === 'studio') studioMisuraTela(); clearTimeout(STUDIO.misuraT); STUDIO.misuraT = setTimeout(() => { if (STUDIO.doc && !STUDIO.live) { studioMisureTele(); studioRidisegna(); } }, 200); });
     window.addEventListener('beforeunload', (e) => { if (STUDIO.live && !window.SB_VERSIONE?.stato().ricarico) { e.preventDefault(); e.returnValue = ''; } });
     window.addEventListener('offline', () => { if (STUDIO.live) studioTelAvviso(L('Niente rete: in onda c’è la tua scritta di riserva finché non torna.', 'No network: your fallback text is on air until it is back.', 'Sin red: en el aire está tu texto de reserva hasta que vuelva.'), 0); });
     window.addEventListener('online', () => { if (STUDIO.live) studioTelAvviso(L('Rete tornata', 'Network back', 'Red de vuelta'), 2500); });

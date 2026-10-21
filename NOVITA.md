@@ -52,6 +52,9 @@ comandi diversi da quelli della riga italiana.
   en> If you are using the panel or the Studio, a box tells you a new version is ready and you take it when you want. Otherwise it updates by itself, and the OBS overlay only off air.
   es> Actualizaciones sin perder nada
   es> Si estás usando el panel o el Estudio, un aviso te dice que hay una versión nueva y la tomas cuando quieras. Si no, se actualiza sola, y el overlay de OBS solo fuera de directo.
+- Studio sul computer: la tela intera, «Vai live», la fotocamera in uso e le scene stanno in una schermata, e la colonna dei comandi resta accanto mentre scorri fra le fonti. [vai: studio]
+  en: Studio on a computer: the whole canvas, «Go live», the camera in use and the scenes fit on one screen, and the controls column stays beside you while you scroll through sources.
+  es: Estudio en el ordenador: el lienzo entero, «Emitir», la cámara en uso y las escenas caben en una pantalla, y la columna de controles queda al lado mientras recorres las fuentes.
 - Studio dal telefono: sulla tela leggi sempre quale fotocamera stai usando, e il suo foglio (obiettivo, zoom, inquadratura, luce) sta tutto in una schermata. [vai: studio]
   en: Studio on the phone: the canvas always shows which camera you are using, and its sheet (lens, zoom, framing, light) fits on one screen.
   es: Estudio en el teléfono: el lienzo muestra siempre qué cámara usas, y su hoja (objetivo, zoom, encuadre, luz) cabe en una pantalla.

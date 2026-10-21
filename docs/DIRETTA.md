@@ -211,9 +211,21 @@ in Node. Un posto solo, quindi pannello e server non possono capirlo diverso.
 
 Sul computer lo Studio ha la disposizione di OBS:
 - in alto la tela;
-- sotto, i pannelli **Scene**, **Fonti**, **Mixer audio**, **Transizioni** e
-  **Controlli**;
-- più sotto le **Proprietà** della fonte scelta e la **Chat live**.
+- sotto, i pannelli **Fonti**, **Mixer audio** e **Transizioni**;
+- più sotto le **Proprietà** della fonte scelta e la **Chat live**;
+- di lato, una **colonna di regia** con i **Controlli** («Vai live», la
+  fotocamera in uso, modalità e impostazioni) e le **Scene**. La colonna resta
+  ferma mentre si scorre fra i pannelli: «Vai live» è sempre a portata.
+
+**Tutto in una schermata.** Su un portatile (1366×768) senza scorrere si
+vedono la tela intera, «Vai live», la fotocamera in uso e le scene. La tela si
+misura sulla finestra: è alta quanto lo spazio che resta sotto quello che ha
+sopra, e si rimisura da sola quando cambia (la finestra, la guida aperta o
+chiusa). La guida dello Studio parte chiusa: è uno strumento, e chi la vuole la
+apre. Il tasto della fotocamera dice quale è in uso; se è spenta la accende, se
+è accesa apre le impostazioni sulla scelta della fotocamera. In modalità studio
+le due tele prendono tutta la larghezza e la colonna scende sotto. Sul
+telefono l'ordine è: tela, controlli, barra rapida, fonti.
 
 Le proprietà di una fonte si aprono dalla fonte. Le impostazioni (ingressi,
 qualità, destinazioni, riserva, formati) stanno in **Impostazioni**, nei

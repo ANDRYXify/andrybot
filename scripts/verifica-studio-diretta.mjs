@@ -55,6 +55,8 @@ const SELFTEST = process.argv.includes('--selftest');
 const ROMPI = Number((process.argv.find((a) => a.startsWith('--rompi=')) || '').split('=')[1]) || 0;
 const DIFETTI = {
   '/app.js': [
+    ['  const alta = Math.max(240, Math.floor(window.innerHeight - sopra - 16));', '  const alta = 2000;', 'la tela si misura sulla finestra', 9, /tela intera, «Vai live»/],
+    ['&& !GUIDA_CHIUSA.has(id);', ';', 'la guida dello strumento e\' chiusa', 9, /guida dello Studio e' chiusa/],
     ['  d.inOnda = t.a;\n', '  void t.a;\n', 'la transizione cambia il programma', 1, /transizione manda in onda|dissolvenza finita/],
     ['const studioPos = (f) => f.pos[STUDIO.lavoro];', 'const studioPos = (f) => f.pos.o;', 'ogni formato ha la sua posizione', 1, /non sposta l'orizzontale/],
     ['  STUDIO.salvo.timer = setTimeout(() => { STUDIO.salvo.timer = 0; studioSalva(); }, 1500);', '  STUDIO.salvo.timer = 0;', 'le scene si salvano da sole', 1, /si salvano da sole/],
@@ -90,10 +92,14 @@ const DIFETTI = {
     ['  if (m) return `${', '  if (false) return `${', 'i nomi di Android si leggono', 7, /coi nomi del telefono/],
   ],
   '/style.css': [
+    ['  .studio-regia { grid-template-columns: minmax(0, 1fr) minmax(250px, 300px); }', '  .studio-regia { grid-template-columns: minmax(0, 1fr); }', 'la regia sta accanto alla tela', 9, /tela intera, «Vai live»/],
+    ['  .studio-regia-col { position: sticky;', '  .studio-regia-col { position: static;', '«Vai live» resta a portata scorrendo', 9, /resta a portata/],
+    ['.studio-regia:has(.studio-tele.doppio) { grid-template-columns: minmax(0, 1fr); }', '.studio-regia:has(.studio-tele.doppio) { }', 'in modalita\' studio la regia scende sotto le due tele', 1, /tutta la larghezza/],
+    ['.studio-mobile .studio-regia-main { display: contents; }', '.studio-mobile .studio-regia-main { display: block; }', 'sul telefono i comandi stanno subito sotto la tela', 9, /dall'alto: la tela/],
     ['.studio-mobile #studio-docks > .studio-dock:not(.studio-controlli)', '.studio-mobile .studio-docks > .studio-dock:not(.studio-controlli)', 'sul telefono Proprieta\' e Chat restano', 1, /proprieta' si vedono anche sul telefono/],
     ['.tel-riga { display: grid; gap: 6px; margin-top: 12px; }', '.tel-riga { display: grid; gap: 6px; margin-top: 70px; }', 'il foglio Fotocamera non si scorre', 7, /sta tutto in una schermata/],
     ['min-width: 48px; min-height: 60px; padding: 4px;', 'min-width: 30px; min-height: 30px; padding: 0;', 'i tasti sono da pollice', 1, /il pollice arriva a tutto/],
-    ['  body.in-studio #cerca-lancia, body.in-studio #plancia-lancia,', '  body.in-studio #nessuno, body.in-studio #plancia-lancia,', 'niente bottoni volanti nello Studio', 7, /niente bottoni volanti/],
+    ['body.in-studio #cerca-lancia, body.in-studio #plancia-lancia { display: none !important; }', 'body.in-studio #nessuno, body.in-studio #plancia-lancia { display: none !important; }', 'niente bottoni volanti nello Studio', 7, /niente bottoni volanti/],
     ['width: 52px; height: 52px; padding: 0; border: 0; border-radius: 50%;', 'width: 30px; height: 30px; padding: 0; border: 0; border-radius: 50%;', 'i tasti tondi sono da pollice', 7, /tasti della fotocamera sulla tela/],
   ],
 };
@@ -174,7 +180,7 @@ console.log('Studio della diretta sul computer (1280×900):');
 {
   const { p, err } = await apri({ width: 1280, height: 900, telefono: false });
   const g = await p.evaluate(() => ({
-    pannelli: [...document.querySelectorAll('#studio-docks > .studio-dock')].filter((d) => d.getBoundingClientRect().width > 150).length,
+    pannelli: [...document.querySelectorAll('#studio-regia-col > .studio-dock, #studio-docks > .studio-dock')].filter((d) => d.getBoundingClientRect().width > 150).length,
     largo: document.documentElement.scrollWidth - document.documentElement.clientWidth,
     barra: document.getElementById('studio-mobile-barra').children.length,
     prog: document.querySelectorAll('#studio-palco-prog canvas').length,
@@ -195,6 +201,12 @@ console.log('Studio della diretta sul computer (1280×900):');
   ok('la modalita\' studio mostra anteprima e programma affiancati', m.due);
   ok('la scena nuova va in anteprima, non in onda', m.scene === 2 && m.ant !== m.onda);
   ok('si modifica l\'anteprima, non il programma', m.inAnt);
+  const larghe = await p.evaluate(() => {
+    const w = (id) => Math.round(document.getElementById(id).getBoundingClientRect().width);
+    const tele = document.getElementById('studio-tele').getBoundingClientRect(), col = document.getElementById('studio-regia-col').getBoundingClientRect();
+    return { ant: w('studio-palco-ant'), prog: w('studio-palco-prog'), tele: Math.round(tele.width), sotto: col.top >= tele.bottom };
+  });
+  ok('in modalita\' studio le due tele hanno tutta la larghezza, e la regia scende sotto', larghe.sotto && Math.min(larghe.ant, larghe.prog) >= larghe.tele * 0.4, JSON.stringify(larghe));
   const ant1 = await disegnati(p, 'ante'), prog1 = await disegnati(p, 'o');
   ok('il testo aggiunto si vede in anteprima e non va in onda', ant1 > 50 && prog1 === 0, `anteprima ${ant1}, programma ${prog1}`);
 
@@ -315,19 +327,47 @@ console.log('Studio della diretta sul computer (1280×900):');
   await p.close();
 }
 
+// ---------------------------------------------------------------- a portata
+// Lo Studio e' uno strumento: aperto su un portatile (1366×768), senza
+// scorrere, si vedono la tela intera, «Vai live», la fotocamera in uso e le
+// scene. La striscia della demo c'e' solo nella demo: si toglie prima di
+// misurare, e la tela si rimisura da sola quando cambia quello che ha sopra.
+console.log('Studio della diretta a portata (1366×768):');
+{
+  const { p, err } = await apri({ width: 1366, height: 768, telefono: false });
+  await p.evaluate(() => { document.getElementById('demo-barra')?.remove(); });
+  await p.waitForTimeout(800);
+  const m = await p.evaluate(() => {
+    const r = (s) => { const e = document.querySelector(s); if (!e) return null; const b = e.getBoundingClientRect(); return { su: Math.round(b.top + scrollY), giu: Math.round(b.bottom + scrollY), alto: Math.round(b.height) }; };
+    return { vista: innerHeight, prog: r('#studio-palco-prog'), live: r('#studio-live'), cam: r('[data-studio-cam]'), scena: r('#studio-scene > li'), guida: !!document.querySelector('.guida-scheda[data-guida="studio"]')?.open, volanti: ['cerca-lancia', 'plancia-lancia'].filter((id) => { const e = document.getElementById(id); return e && e.getClientRects().length; }) };
+  });
+  const dentro = (x) => !!x && x.alto > 0 && x.giu <= m.vista;
+  ok('aperto su un portatile, la guida dello Studio e\' chiusa: e\' uno strumento', !m.guida);
+  ok('senza scorrere: la tela intera, «Vai live», la fotocamera in uso e la prima scena', dentro(m.prog) && dentro(m.live) && dentro(m.cam) && dentro(m.scena) && m.prog.alto >= 240, JSON.stringify(m));
+  ok('niente bottoni volanti sopra la colonna di regia', !m.volanti.length, m.volanti.join());
+  await p.evaluate(() => window.scrollTo(0, 900));
+  await p.waitForTimeout(300);
+  const fermo = await p.evaluate(() => { const b = document.getElementById('studio-live').getBoundingClientRect(); return { su: Math.round(b.top), giu: Math.round(b.bottom), vista: innerHeight }; });
+  ok('scorrendo fra le fonti, «Vai live» resta a portata', fermo.su >= 0 && fermo.giu <= fermo.vista, JSON.stringify(fermo));
+  ok('nessun errore di pagina a portata', !err.length, err.join(' | '));
+  await p.close();
+}
+
 // ---------------------------------------------------------------- telefono
 console.log('Studio della diretta sul telefono (420×860):');
 {
   const { p, err } = await apri({ width: 420, height: 860, telefono: true });
   const g = await p.evaluate(() => ({
     righe: document.querySelectorAll('#studio-mobile-barra .studio-mriga').length,
-    visibili: [...document.querySelectorAll('#studio-docks > .studio-dock')].filter((d) => getComputedStyle(d).display !== 'none').map((d) => d.querySelector('h3').id),
+    visibili: [...document.querySelectorAll('#studio-regia-col > .studio-dock, #studio-docks > .studio-dock')].filter((d) => getComputedStyle(d).display !== 'none').map((d) => d.querySelector('h3').id),
     largo: document.documentElement.scrollWidth - document.documentElement.clientWidth,
     formati: STUDIO.doc.scelte.formati, f: document.getElementById('studio-palco-prog').dataset.f,
     modalita: document.getElementById('studio-modalita').hidden,
+    ordine: ['#studio-tele', '#studio-live', '#studio-mobile-barra', '#studio-t-fonti'].map((q) => Math.round(document.querySelector(q).getBoundingClientRect().top)),
   }));
   ok('la barra del telefono ha formato, tasti rapidi e scene', g.righe === 3);
-  ok('sul telefono restano solo controlli e fonti', g.visibili.join() === 'studio-t-fonti,studio-t-ctrl', g.visibili.join());
+  ok('sul telefono restano solo controlli e fonti', [...g.visibili].sort().join() === 'studio-t-ctrl,studio-t-fonti', g.visibili.join());
+  ok('sul telefono, dall\'alto: la tela, «Vai live», la barra, le fonti', g.ordine.every((y, i) => i === 0 || y > g.ordine[i - 1]), JSON.stringify(g.ordine));
   ok('sul telefono si parte in verticale', g.formati.v && !g.formati.o && g.f === 'v');
   ok('la modalita\' studio sul telefono non c\'e\'', g.modalita);
   ok('la pagina non scorre di lato', g.largo <= 0, `${g.largo}px`);
