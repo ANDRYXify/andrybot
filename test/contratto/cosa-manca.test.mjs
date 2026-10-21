@@ -65,10 +65,10 @@ test('uno per volta, e mai sopra un\'altra cosa', () => {
   assert.match(dg, /el\.classList\.contains\('manca-avviso'\)/, 'e se ne va disfacendosi, come l\'invito');
 });
 
-test('l\'overlay si ricorda la prima volta che si apre', () => {
+test('l\'overlay si ricorda la prima volta che si apre in OBS (quello che apre lo Studio dentro di se\' non conta)', () => {
   const r = rotta("app.get('/overlay/:login/stream'", 1200);
   assert.ok(r.indexOf('if (!chiaveOk(req)) return notFound(res);') < r.indexOf('overlayVisto'), 'solo con la chiave giusta');
-  assert.match(r, /if \(suo && !suo\.settings\?\.overlayVisto\) streamers\.setSettings\(login, \{ \.\.\.\(suo\.settings \|\| \{\}\), overlayVisto: Date\.now\(\) \}\);/, 'e una volta sola');
+  assert.match(r, /if \(suo && req\.query\.studio !== '1' && !suo\.settings\?\.overlayVisto\) streamers\.setSettings\(login, \{ \.\.\.\(suo\.settings \|\| \{\}\), overlayVisto: Date\.now\(\) \}\);/, 'e una volta sola');
 });
 
 test('gli inviti: il pannello ha le parole di ognuno, nelle tre lingue, e porta alla scheda giusta', () => {

@@ -21521,7 +21521,8 @@ function pannelloStudio() {
             <select id="studio-ov-sel" class="chip-utente"></select>
             <button type="button" class="btn secondario mini" id="studio-ov-metti" data-add="overlay">${_bIco(ICO.effetti)}${L('Mettilo nella scena', 'Put it in the scene', 'Ponlo en la escena')}</button>
           </div>
-          <p class="suggerimento" id="studio-ov-manca" hidden>${L('Questa scena non ha l’overlay: alert, chat ed effetti non si vedono finché non lo metti.', 'This scene has no overlay: alerts, chat and effects do not show until you put it in.', 'Esta escena no tiene el overlay: alertas, chat y efectos no se ven hasta que lo pongas.')}</p>
+          <p class="suggerimento" id="studio-ov-manca" hidden>${L('Questa scena non ha l’overlay: alert, chat, timer e gli altri pezzi non vanno in onda finché non lo metti.', 'This scene has no overlay: alerts, chat, timers and the other pieces do not go on air until you add it.', 'Esta escena no tiene el overlay: alertas, chat, temporizadores y las demás piezas no salen hasta que lo pongas.')}</p>
+          <p class="suggerimento" id="studio-ov-guasto" role="status" hidden></p>
           <ul class="studio-lista studio-fonti" id="studio-fonti"></ul>
           <details class="studio-add-menu" id="studio-add-menu">
             <summary class="btn secondario mini">${_bIco(ICO.piu)}${L('Aggiungi una fonte', 'Add a source', 'Añade una fuente')}</summary>
@@ -21727,7 +21728,7 @@ const STUDIO = {
   raf: 0, trans: null,
   salvo: { timer: 0, inCorso: false, ancora: false, stato: '' },
   audio: null, live: false, startedAt: 0, timer: 0, dirette: {}, sveglia: null,
-  overlay: { alert: null, chat: [], fx: [] },
+  OV: null, ovMotori: new Map(),
   sse: null,
   mix: { master: { vol: 100, mute: false }, mic: { vol: 100, mute: false }, desk: { vol: 100, mute: false }, media: { vol: 100, mute: false }, sfx: { vol: 100, mute: false } },
   vuRaf: 0,
@@ -21737,9 +21738,8 @@ const STUDIO = {
   dev: { cams: [], mics: [], camId: '', micId: '', facing: '', lente: { user: '', environment: '' } },
   cam: { zoom: 1, specchio: false, hw: null, facing: '', id: '', luce: null, luceV: 0, torcia: false, zoomInVolo: false, zoomDopo: false },
   rem: { M: null, regia: null, flusso: null, id: '', elenco: [], presenza: null, invito: null, invitoT: 0, prot: null, zoom: {}, stato: 'spento', giro: 0, turn: false, liveDetto: null, visti: new Set(), tick: 0, renderT: 0 },
-  ov: { list: [], sel: '', mostra: null, xy: null, key: '' },
+  ov: { list: [], sel: '', key: '', base: '' },
   emote: {},
-  emoteImg: {},
   chatFeed: [],
 };
 
@@ -21841,7 +21841,7 @@ function studioScenaViva(scena, f) {
     if (!x.pos[f]?.vis) continue;
     if (x.tipo === 'webcam' || x.tipo === 'schermo' || x.tipo === 'video' || x.tipo === 'remota') return true;
     if (x.tipo === 'immagine' && /gif|webp|apng|png/.test(x.media?.mime || '') && STUDIO.media[x.media?.impronta]) return true;
-    if (x.tipo === 'overlay') { const o = STUDIO.overlay; if (o.fx.length || o.chat.length || (o.alert && o.alert.until > Date.now() - 200)) return true; }
+    if (x.tipo === 'overlay') { const e = STUDIO.ovMotori.get(studioOverlayDi(x) + '|' + f); if (e && e.m.vivo()) return true; }
   }
   return false;
 }
@@ -21929,6 +21929,7 @@ function studioFineTransizione() {
   d.inOnda = t.a;
   if (studioModalita()) d.anteprima = t.da;
   renderStudioScene(); renderStudioFonti(); renderStudioUI(); renderStudioProp(); renderStudioMobile();
+  studioOverlayRiordina();
   studioTelDopoScena();
   studioSporco();
 }
@@ -21963,7 +21964,7 @@ function disegnaFonte(c, f, p, W, H, fk) {
   if (f.tipo === 'immagine' || f.tipo === 'video') { const m = STUDIO.media[f.media?.impronta]; if (m) studioInquadrata(c, m.el, f, p, fk); return; }
   if (f.tipo === 'remota') { const el = studioRemotoVideo(f.dispositivo); if (el) studioInquadrata(c, el, f, p, fk); return; }
   if (f.tipo === 'testo') { disegnaTestoFonte(c, f, p); return; }
-  if (f.tipo === 'overlay') { disegnaOverlayStudio(c, W, H); return; }
+  if (f.tipo === 'overlay') { const e = studioOverlayMotore(studioOverlayDi(f), fk); if (e) { e.m.tic(); e.m.disegna(c, 0, 0, W, H); } return; }
 }
 
 function disegnaTestoFonte(c, f, p) {
@@ -21978,73 +21979,6 @@ function disegnaTestoFonte(c, f, p) {
   c.textAlign = 'left'; c.textBaseline = 'alphabetic';
 }
 
-function disegnaOverlayStudio(c, W, H) {
-  const now = Date.now(), ov = STUDIO.overlay, mostra = STUDIO.ov.mostra;
-
-  const puoi = (k) => !mostra || mostra[k] !== false;
-
-  ov.fx = ov.fx.filter((f) => f.until > now);
-  if (puoi('effetti')) for (const f of ov.fx) {
-    const el = f.el; const vw = el && (el.videoWidth || el.naturalWidth), vh = el && (el.videoHeight || el.naturalHeight);
-    if (!vw) continue;
-    const scale = (W * 0.35) / vw, w = vw * scale, h = vh * scale;
-    const x = (f.x != null ? f.x / 100 * W : W / 2) - w / 2;
-    const y = (f.y != null ? f.y / 100 * H : H / 2) - h / 2;
-    try { c.drawImage(el, x, y, w, h); } catch (e) {  }
-  }
-
-  ov.chat = ov.chat.filter((m) => m.until > now);
-  if (puoi('chat')) {
-    const chat = ov.chat.slice(-6);
-    const cxy = STUDIO.ov.xy && STUDIO.ov.xy.chat;
-    const baseX = (cxy && cxy.x != null) ? cxy.x / 100 * W : 24;
-    const baseY = (cxy && cxy.y != null) ? cxy.y / 100 * H : H - 28;
-    chat.forEach((m, i) => {
-      const y = baseY - (chat.length - 1 - i) * 32;
-      studioDisegnaRigaChat(c, baseX, y, m, W - baseX - 24);
-    });
-  }
-
-  if (ov.alert && ov.alert.until <= now) ov.alert = null;
-  else if (ov.alert && puoi('alert')) {
-    const a = ov.alert;
-    c.textAlign = 'center'; c.textBaseline = 'top'; c.font = '800 40px system-ui, sans-serif';
-    c.lineWidth = 6; c.strokeStyle = '#000b'; c.strokeText(a.testo, W / 2, 40, W * 0.9);
-    c.fillStyle = a.colore || '#fff'; c.fillText(a.testo, W / 2, 40, W * 0.9);
-    if (a.el && (a.el.naturalWidth || a.el.videoWidth)) {
-      const vw = a.el.videoWidth || a.el.naturalWidth, vh = a.el.videoHeight || a.el.naturalHeight;
-      const scale = (W * 0.26) / vw, w = vw * scale, h = vh * scale;
-      try { c.drawImage(a.el, (W - w) / 2, 96, w, h); } catch (e) {  }
-    }
-    c.textAlign = 'left';
-  }
-}
-
-function studioDisegnaRigaChat(c, x, y, m, maxW) {
-  const eh = 26;
-  c.textAlign = 'left'; c.textBaseline = 'bottom';
-  let cx = x;
-  const txt = (s, colore, peso) => {
-    c.font = (peso || '600') + ' 22px system-ui, sans-serif';
-    c.lineWidth = 4; c.strokeStyle = '#000a'; c.strokeText(s, cx, y);
-    c.fillStyle = colore; c.fillText(s, cx, y);
-    cx += c.measureText(s).width;
-  };
-  if (m.user) txt(m.user + ': ', m.colore || '#c9a6ff', '700');
-  const toks = (m.tokens && m.tokens.length) ? m.tokens : [{ t: 'txt', v: m.testo || '' }];
-  for (const tok of toks) {
-    if (cx - x > maxW) break;
-    if (tok.t === 'emote') {
-      const img = STUDIO.emoteImg[tok.v];
-      if (img && img.complete && (img.naturalWidth || img.width)) {
-        const w = eh * ((img.naturalWidth || img.width) / (img.naturalHeight || img.height || 1));
-        try { c.drawImage(img, cx, y - eh, w, eh); } catch (e) {  }
-        cx += w + 4;
-      } else txt((tok.raw || '') + ' ', '#fff');
-    } else txt(tok.v, '#fff');
-  }
-}
-
 function studioTokenizza(testo, emotiTwitch) {
   const pezzi = String(testo || '').split(/(\s+)/);
   const tokens = []; let buf = '';
@@ -22052,17 +21986,11 @@ function studioTokenizza(testo, emotiTwitch) {
   for (const p of pezzi) {
     if (!p) continue;
     const url = (!/\s/.test(p)) && ((emotiTwitch && emotiTwitch[p]) || STUDIO.emote[p]);
-    if (url) { flush(); tokens.push({ t: 'emote', v: url, raw: p }); studioPrecaricaEmote(url); }
+    if (url) { flush(); tokens.push({ t: 'emote', v: url, raw: p }); }
     else buf += p;
   }
   flush();
   return tokens;
-}
-
-function studioPrecaricaEmote(url) {
-  if (!url || STUDIO.emoteImg[url]) return;
-  const img = new Image(); img.crossOrigin = 'anonymous'; img.src = url;
-  STUDIO.emoteImg[url] = img;
 }
 
 function suonaStudioSfx(url, volume) {
@@ -22110,37 +22038,8 @@ function studioSSE(sseUrl) {
   if (STUDIO.sse) STUDIO.sse.chiudi();
   STUDIO.sse = window.SB_FLUSSO.apri(sseUrl, { suMessaggio: (ev) => {
     let d; try { d = JSON.parse(ev.data); } catch { return; }
-    studioRidisegna();
-    const now = Date.now();
-    if (d.tipo === 'immagine' || d.tipo === 'video') {
-      const el = document.createElement(d.tipo === 'video' ? 'video' : 'img');
-      el.crossOrigin = 'anonymous'; el.src = d.url;
-      if (d.tipo === 'video') { el.muted = true; el.autoplay = true; el.playsInline = true; el.play().catch(() => {}); }
-      const pos = d.posizione || {};
-      STUDIO.overlay.fx.push({ el, until: now + (Number(d.durata) || 5000), x: pos.x, y: pos.y });
-      if (d.suonoUrl) suonaStudioSfx(d.suonoUrl, d.volume);
-    } else if (d.tipo === 'audio') {
-      if (d.url) suonaStudioSfx(d.url, d.volume);
-    } else if (d.tipo === 'preset') {
-      studioSuonaPreset(d.suono || d.preset, d.volume);
-    } else if (d.tipo === 'alert') {
-      const a = { testo: String(d.testo || ''), colore: d.colore, until: now + (Number(d.durata) || 6000) };
-      if (d.mediaUrl) {
-        const el = document.createElement(d.mediaTipo === 'video' ? 'video' : 'img'); el.crossOrigin = 'anonymous'; el.src = d.mediaUrl;
-        if (d.mediaTipo === 'video') { el.muted = true; el.autoplay = true; el.playsInline = true; el.play().catch(() => {}); }
-        a.el = el;
-      }
-      STUDIO.overlay.alert = a;
-      studioTelAlert(a.testo);
-      if (d.suonoUrl) suonaStudioSfx(d.suonoUrl, d.volume);
-      else if (d.suono) studioSuonaPreset(d.suono, d.volume);
-    } else if (d.tipo === 'chat') {
-
-      STUDIO.overlay.chat.push({ user: d.user || '', colore: d.colore, testo: String(d.testo || ''), tokens: studioTokenizza(d.testo, d.emotiTwitch), until: now + 12000 });
-    } else if (d.tipo === 'chat_raw') {
-
-      studioChatPanelPush(d);
-    }
+    if (d.tipo === 'alert') studioTelAlert(String(d.testo || ''));
+    else if (d.tipo === 'chat_raw') studioChatPanelPush(d);
   } });
 }
 
@@ -22819,6 +22718,84 @@ function studioOverlayInOnda() {
   return f ? studioOverlayDi(f) : '';
 }
 
+const STUDIO_OV_PROVA = '/overlay/prova.socialbot?prova=1';
+const STUDIO_OV_MISURA = { o: { W: 1920, H: 1080 }, v: { W: 1080, H: 1920 } };
+const studioOverlayUrl = (id) => STUDIO.ov.base + (STUDIO.ov.base.includes('?') ? '&' : '?') + 'o=' + encodeURIComponent(id) + '&studio=1';
+
+function studioOverlayBase(base) {
+  if (!base || base === STUDIO.ov.base) return;
+  STUDIO.ov.base = base;
+  for (const e of STUDIO.ovMotori.values()) e.m.apri(studioOverlayUrl(e.id));
+  studioOverlayRiordina();
+}
+
+function studioOverlayMotore(id, f) {
+  if (!id || !STUDIO.OV || !STUDIO.ov.base) return null;
+  const k = id + '|' + f;
+  let e = STUDIO.ovMotori.get(k);
+  if (!e) {
+    const { W, H } = STUDIO_OV_MISURA[f];
+    e = { id, f, k, visto: performance.now(), guasto: '' };
+    e.m = STUDIO.OV.creaFotoOverlay({ W, H, sveglia: () => { if (studioOverlayServono().has(k)) studioRidisegna(); }, avvisa: (perche) => { e.guasto = perche; renderStudioFonti(); } });
+    STUDIO.ovMotori.set(k, e);
+    e.m.suona = studioOverlayServono().get(k) === true;
+    e.m.apri(studioOverlayUrl(id));
+  }
+  e.visto = performance.now();
+  return e;
+}
+
+function studioOverlayServono() {
+  const d = STUDIO.doc, chiavi = new Map();
+  if (!d || !studioServeDisegnare()) return chiavi;
+  const metti = (scena, f, suona) => {
+    const x = scena?.fonti.find((t) => t.tipo === 'overlay');
+    if (!x || !x.pos[f]?.vis) return;
+    const k = studioOverlayDi(x) + '|' + f;
+    chiavi.set(k, chiavi.get(k) || suona);
+  };
+  let suona = true;
+  for (const f of ['o', 'v']) {
+    if (!studioFormatoServe(f)) continue;
+    metti(studioScena(d.inOnda), f, suona);
+    if (STUDIO.trans) { metti(studioScena(STUDIO.trans.da), f, false); metti(studioScena(STUDIO.trans.a), f, false); }
+    suona = false;
+  }
+  if (studioModalita()) metti(studioScena(d.anteprima), STUDIO.lavoro, false);
+  return chiavi;
+}
+
+function studioOverlayRiordina() {
+  const servono = studioOverlayServono(), ora = performance.now();
+  for (const [k, e] of STUDIO.ovMotori) {
+    e.m.suona = servono.get(k) === true;
+    if (servono.has(k)) e.visto = ora;
+    else if (ora - e.visto > 30000) { e.m.chiudi(); STUDIO.ovMotori.delete(k); }
+  }
+  for (const k of servono.keys()) if (!STUDIO.ovMotori.has(k)) { const [id, f] = k.split('|'); studioOverlayMotore(id, f); }
+}
+
+function studioOverlayDaCornice(fr) {
+  for (const e of STUDIO.ovMotori.values()) if (e.m.cornice() === fr) return e;
+  return null;
+}
+
+function studioOverlayOspita() {
+  if (window.SB_STUDIO_OVERLAY) return;
+  window.SB_STUDIO_OVERLAY = {
+    suonaUrl(fr, url, vol) { const e = studioOverlayDaCornice(fr); if (e && e.m.suona) suonaStudioSfx(url, Math.round((Number(vol) || 0) * 100)); },
+    suonaPreset(fr, id, quanto) { const e = studioOverlayDaCornice(fr); if (e && e.m.suona) studioSuonaPreset(id, quanto); return true; },
+    media(fr, el) {
+      const e = studioOverlayDaCornice(fr);
+      if (!e || !e.m.suona) { el.muted = true; return; }
+      const A = STUDIO.audio;
+      if (!A || el._sbMix) return;
+      try { const s = A.ac.createMediaElementSource(el); s.connect(A.gSfx); s.connect(A.ac.destination); el._sbMix = true; } catch (err) {  }
+    },
+  };
+  setInterval(() => { if (STUDIO.doc) studioOverlayRiordina(); }, 5000);
+}
+
 function studioOpzioniOverlay(scelto) {
   if (!STUDIO.ov.list.length) return `<option value="">${L('Nessun overlay: crealo in «Scena e overlay»', 'No overlay: create one in «Scene & overlay»', 'Ningún overlay: créalo en «Escena y overlay»')}</option>`;
   return STUDIO.ov.list.map((o) => `<option value="${esc(o.id)}"${o.id === scelto ? ' selected' : ''}>${esc(o.nome || 'Overlay')}</option>`).join('');
@@ -22843,10 +22820,12 @@ function studioScegliOverlay(id, fonte) {
 }
 
 async function studioConnettiOverlay() {
-  if (DEMO) return;
+  if (DEMO) { studioOverlayBase(STUDIO_OV_PROVA + '&lang=' + LINGUA); return; }
   try {
     const ov = await api('/api/streamer/overlay-url');
     if (!ov.overlayUrl) return;
+    const u = new URL(ov.overlayUrl, location.origin);
+    studioOverlayBase(u.pathname + u.search);
 
     let sseUrl = ov.overlayUrl.replace('?key=', '/stream?key=');
     const id = studioOverlayInOnda() || studioOverlayDi(null);
@@ -22854,9 +22833,6 @@ async function studioConnettiOverlay() {
     STUDIO.ov.connesso = id;
     if (id) sseUrl += (sseUrl.includes('?') ? '&' : '?') + 'o=' + encodeURIComponent(id);
     studioSSE(sseUrl);
-
-    const meta = STUDIO.ov.list.find((o) => o.id === id);
-    STUDIO.ov.mostra = meta?.mostra || null; STUDIO.ov.xy = meta?.xy || null;
   } catch (e) {  }
 }
 
@@ -23459,6 +23435,7 @@ function caricaStudioBeta() {
 async function caricaStudio() {
   if (!STUDIO.M) STUDIO.M = await import('/js/studio-modello.js');
   if (!STUDIO.MD) STUDIO.MD = await import('/js/studio-media.js');
+  if (!STUDIO.OV) { STUDIO.OV = await import('/js/studio-overlay.js'); studioOverlayOspita(); }
   studioAggiornaMobile();
   if (!STUDIO.doc) await studioCaricaScene();
   if (!STUDIO.cap.camEl) studioCamRileggi();
@@ -23725,6 +23702,13 @@ function renderStudioFonti() {
   const conOv = !!s?.fonti.some((f) => f.tipo === 'overlay');
   const metti = document.getElementById('studio-ov-metti'); if (metti) { metti.disabled = conOv; metti.title = conOv ? L('L’overlay è già nella scena', 'The overlay is already in the scene', 'El overlay ya está en la escena') : ''; }
   const manca = document.getElementById('studio-ov-manca'); if (manca) manca.hidden = conOv || !s;
+  const guasto = document.getElementById('studio-ov-guasto'), rotto = [...STUDIO.ovMotori.values()].find((e) => e.guasto);
+  if (guasto) {
+    guasto.hidden = !rotto;
+    guasto.textContent = !rotto ? '' : rotto.guasto === 'sporca'
+      ? L('Questo browser non lascia disegnare l’overlay sulla diretta: lo Studio lo ha tolto per non fermare la diretta. Con Chrome o Edge si vede.', 'This browser does not let the overlay be drawn onto the stream: the Studio removed it so the stream does not stop. It shows in Chrome or Edge.', 'Este navegador no deja dibujar el overlay en el directo: el Estudio lo quitó para no parar el directo. Con Chrome o Edge se ve.')
+      : L('L’overlay non si riesce a disegnare in questa pagina: ricaricala. Se succede ancora, scrivici.', 'The overlay cannot be drawn in this page: reload it. If it happens again, write to us.', 'No se consigue dibujar el overlay en esta página: recárgala. Si vuelve a pasar, escríbenos.');
+  }
   if (!s || !s.fonti.length) { ul.innerHTML = `<li class="vuoto">${L('Nessuna fonte. Aggiungine una qui sotto.', 'No sources. Add one below.', 'Sin fuentes. Añade una abajo.')}</li>`; return; }
   ul.innerHTML = s.fonti.slice().reverse().map((f) => {
     const i = s.fonti.indexOf(f), vis = studioPos(f).vis, manca = studioManca(f);

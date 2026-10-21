@@ -1458,8 +1458,11 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   });
 
   // la pagina dell'overlay
+  // `prova.socialbot` e' l'overlay della prova: un nome che nessuna piattaforma
+  // puo' dare (il punto), senza chiave e senza dati. La pagina si riempie da
+  // sola con un tema e degli eventi d'esempio, e non chiede niente al server.
   app.get('/overlay/:login', (req, res) => {
-    if (!chiaveOk(req)) return notFound(res);
+    if (req.params.login !== 'prova.socialbot' && !chiaveOk(req)) return notFound(res);
     res.sendFile(overlayHtml);
   });
 
@@ -1800,9 +1803,10 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     res.flushHeaders?.();
     res.write(': connesso\n\n');   // commento iniziale: apre subito lo stream
     // Il primo collegamento dell'overlay si ricorda, una volta: e' il fatto che
-    // spegne l'avviso «il tuo overlay non l'hai ancora aperto».
+    // spegne l'avviso «il tuo overlay non l'hai ancora aperto». Quello che lo
+    // Studio apre dentro di se' (`studio=1`) non conta: l'avviso parla di OBS.
     const suo = streamers.get(login);
-    if (suo && !suo.settings?.overlayVisto) streamers.setSettings(login, { ...(suo.settings || {}), overlayVisto: Date.now() });
+    if (suo && req.query.studio !== '1' && !suo.settings?.overlayVisto) streamers.setSettings(login, { ...(suo.settings || {}), overlayVisto: Date.now() });
     effects.addClient(login, res);
     // Il primo battito subito, con l'ora del server: l'overlay misura da li' lo
     // scarto del suo orologio (docs/OVERLAY.md, «Un orologio solo»).

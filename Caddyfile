@@ -125,6 +125,7 @@ socialbot.live, dona.socialbot.live, sostieni.socialbot.live, discord.socialbot.
 	# sul sito, e /<canale>/verifica sull'indirizzo corto.
 	@tgapp expression `path('/tgapp', '/tgapp.html', '/telegram/*/verifica') || (host('telegram.socialbot.live') && path('/*/verifica'))`
 	@ml path /voce.html /tracking/*
+	@ovpagina path_regexp ovpagina ^/overlay/[^/]+$
 
 	# --- Mini App Telegram e prova dello scudo: script SDK + framing di Telegram Web
 	handle @tgapp {
@@ -151,6 +152,24 @@ socialbot.live, dona.socialbot.live, sostieni.socialbot.live, discord.socialbot.
 			import sicurezza_comune
 			X-Frame-Options "DENY"
 			Content-Security-Policy "default-src 'self'; script-src 'self' 'wasm-unsafe-eval' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' data: blob: https://cdn.jsdelivr.net https://vladmandic.github.io https://huggingface.co https://*.hf.co https://cdn-lfs.huggingface.co https://cdn-lfs-us-1.hf.co; worker-src 'self' blob:; frame-ancestors 'none'; base-uri 'self'; object-src 'none'; form-action 'self'"
+		}
+		reverse_proxy bot:8090 {
+			header_up X-Edge-Key {env.EDGE_KEY}
+		}
+	}
+
+	# --- La pagina dell'overlay: la incornicia lo Studio del sito stesso ----
+	# Lo Studio della diretta manda in onda lo STESSO overlay che vede OBS: apre
+	# la pagina vera in una cornice nascosta e la fotografa sulla tela
+	# (docs/DIRETTA.md, «L'overlay nello Studio»). Per questo, e solo per questa
+	# pagina, chi puo' incorniciarla e' il sito stesso ('self' / SAMEORIGIN), mai
+	# un altro. Il resto della politica e' identico a quella di tutto il resto:
+	# verifica-csp.mjs lo controlla.
+	handle @ovpagina {
+		header {
+			import sicurezza_comune
+			X-Frame-Options "SAMEORIGIN"
+			Content-Security-Policy "default-src 'self'; script-src 'self' 'inline-speculation-rules'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' ws://127.0.0.1:* ws://localhost:* https://api.streamelements.com https://fonts.googleapis.com https://fonts.gstatic.com; frame-src 'self' https://www.youtube-nocookie.com https://player.twitch.tv https://clips.twitch.tv https://www.twitch.tv https://player.kick.com https://www.tiktok.com https://www.instagram.com https://www.facebook.com https://open.spotify.com https://w.soundcloud.com https://soundcloud.com https://widget.deezer.com https://embed.music.apple.com https://player.vimeo.com; frame-ancestors 'self'; base-uri 'self'; object-src 'none'; form-action 'self'"
 		}
 		reverse_proxy bot:8090 {
 			header_up X-Edge-Key {env.EDGE_KEY}
@@ -197,6 +216,9 @@ socialbot.live, dona.socialbot.live, sostieni.socialbot.live, discord.socialbot.
 			# ogni altro ws:// da una pagina https (misurato: un indirizzo di rete
 			# locale o esterno prende SecurityError). La password di quel programma
 			# resta nel browser: non passa da qui e non arriva al server.
+			# E i caratteri di Google (fonts.googleapis.com, fonts.gstatic.com): lo
+			# Studio li legge per incorporarli nella fotografia dell'overlay, che non
+			# puo' caricare niente da fuori; sono gli stessi gia' ammessi in font-src.
 			# E https://api.streamelements.com, e nient'altro di fuori: per timer
 			# e comandi nascosti lo streamer incolla la chiave di StreamElements, e
 			# la usa il SUO browser verso StreamElements (docs/PONTE.md). Cosi' la
@@ -206,7 +228,7 @@ socialbot.live, dona.socialbot.live, sostieni.socialbot.live, discord.socialbot.
 			#   NON allenta l'anti-clickjacking: quello e' frame-ancestors 'none'
 			#   + X-Frame-Options DENY, che restano — questo dice solo COSA
 			#   possiamo incorniciare NOI.
-			Content-Security-Policy "default-src 'self'; script-src 'self' 'inline-speculation-rules'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' ws://127.0.0.1:* ws://localhost:* https://api.streamelements.com; frame-src 'self' https://www.youtube-nocookie.com https://player.twitch.tv https://clips.twitch.tv https://www.twitch.tv https://player.kick.com https://www.tiktok.com https://www.instagram.com https://www.facebook.com https://open.spotify.com https://w.soundcloud.com https://soundcloud.com https://widget.deezer.com https://embed.music.apple.com https://player.vimeo.com; frame-ancestors 'none'; base-uri 'self'; object-src 'none'; form-action 'self'"
+			Content-Security-Policy "default-src 'self'; script-src 'self' 'inline-speculation-rules'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' ws://127.0.0.1:* ws://localhost:* https://api.streamelements.com https://fonts.googleapis.com https://fonts.gstatic.com; frame-src 'self' https://www.youtube-nocookie.com https://player.twitch.tv https://clips.twitch.tv https://www.twitch.tv https://player.kick.com https://www.tiktok.com https://www.instagram.com https://www.facebook.com https://open.spotify.com https://w.soundcloud.com https://soundcloud.com https://widget.deezer.com https://embed.music.apple.com https://player.vimeo.com; frame-ancestors 'none'; base-uri 'self'; object-src 'none'; form-action 'self'"
 		}
 		reverse_proxy bot:8090 {
 			header_up X-Edge-Key {env.EDGE_KEY}

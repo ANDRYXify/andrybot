@@ -72,6 +72,19 @@ perOgnuno(politiche, (p) => !!p['frame-ancestors'], (n) => `ogni politica dice c
 // avere tutta la CSP stretta che vuole, quella strada resta aperta.
 perOgnuno(politiche, (p) => !!p['form-action'], (n) => `ogni politica dice dove puo' spedire un form (${n})`);
 
+// La pagina dell'overlay la incornicia lo Studio del sito stesso: la sua
+// politica e' quella di tutto il resto, parola per parola, tranne chi puo'
+// incorniciarla ('self' invece di 'none'). Nessun altro permesso in piu'.
+{
+  const testi = [...caddy.matchAll(/Content-Security-Policy\s+"([^"]+)"/g)].map((m) => m[1]);
+  const resto = testi.filter((t) => t.includes("'inline-speculation-rules'") && t.includes("frame-ancestors 'none'"));
+  const ov = testi.filter((t) => t.includes("frame-ancestors 'self'"));
+  dice(resto.length === 1 && ov.length === 1 && ov[0] === resto[0].replace("frame-ancestors 'none'", "frame-ancestors 'self'"),
+    'la pagina dell\'overlay ha la politica di tutto il resto, e la incornicia solo il sito stesso', `${resto.length} / ${ov.length}`);
+  const blocco = caddy.slice(caddy.indexOf('handle @ovpagina'), caddy.indexOf('handle @ovpagina') + 600);
+  dice(/X-Frame-Options "SAMEORIGIN"/.test(blocco) && /@ovpagina path_regexp ovpagina \^\/overlay\/\[\^\/\]\+\$/.test(caddy), 'solo la pagina /overlay/<canale>, e solo dal sito stesso (SAMEORIGIN)');
+}
+
 // ---- 3. nessuno script scritto dentro l'HTML -----------------------------
 // Ammessi solo i blocchi che il browser NON esegue come JavaScript: il JSON-LD
 // (dati per i motori di ricerca) e le regole di prefetch, che hanno un permesso

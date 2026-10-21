@@ -8,6 +8,15 @@ const login = parti[1] || '';
 const urlStream = '/overlay/' + encodeURIComponent(login) + '/stream' + location.search;
 const urlGuaio = '/overlay/' + encodeURIComponent(login) + '/guaio' + location.search;
 const urlTimerParti = '/overlay/' + encodeURIComponent(login) + '/timer/parti' + location.search;
+const OSPITE = (function () {
+  try {
+    if (new URLSearchParams(location.search).get('studio') !== '1' || window.parent === window) return null;
+    return window.parent.SB_STUDIO_OVERLAY || null;
+  } catch (e) { return null; }
+})();
+if (OSPITE && window.SUONI_PRESET) {
+  window.SUONI_PRESET = Object.assign({}, window.SUONI_PRESET, { suona: function (id, quanto) { return OSPITE.suonaPreset(window.frameElement, id, quanto); } });
+}
 
 const MIO = { mostra: { alert: true, chat: true, wf: true, ws: true, effetti: true }, xy: {}, stile: { alert: null, chat: null }, widget: {} };
 const mostra = (k) => MIO.mostra[k] !== false;
@@ -166,6 +175,7 @@ function segnaLibero() { audioLibero = true; }
 });
 
 function avvia(el, dove) {
+  if (OSPITE) OSPITE.media(window.frameElement, el);
   return el.play().catch(function (e) {
     if (!e || e.name !== 'NotAllowedError') {
       guaio(dove, (e && e.name ? e.name : 'errore') + ': ' + (e && e.message ? e.message : ''));
@@ -182,6 +192,7 @@ function avvia(el, dove) {
 
 function suonaUrl(url, vol, dove) {
   if (!url) return;
+  if (OSPITE) { OSPITE.suonaUrl(window.frameElement, url, vol); return; }
   var a;
   try { a = new Audio(url); } catch (e) { return guaio(dove, 'audio non creato: ' + (e && e.message)); }
   a.volume = vol;
@@ -2297,7 +2308,34 @@ async function caricaTema() {
   if (!preso) l.riprova = setTimeout(caricaTema, TEMA_PASSI[Math.min(l.passo++, TEMA_PASSI.length - 1)]);
 }
 
-if (login) {
+function avviaProva() {
+  const lg = String(new URLSearchParams(location.search).get('lang') || '').slice(0, 2);
+  const T = (it, en, es) => (lg === 'en' ? en : lg === 'es' ? es : it);
+  const ora = Date.now();
+  applicaTema({
+    ora, css: '', widget: {}, goals: [], conti: {}, mostra: {}, xy: {}, alertStile: null, chatStile: null,
+    timer: { attivo: true, titolo: T('Si parte fra', 'Starting in', 'Empezamos en'), aFine: 'resta', posizione: 'alto-destra', xy: null, stile: {} },
+    stato: { timer: { fine: ora + 9 * 60000 } },
+    contatori: [{ tipo: 'contatore', comando: 'morti', mostra: true, testo: T('Morti: 3', 'Deaths: 3', 'Muertes: 3'), x: 4, y: 90, r: 0, colore: '#ffffff', sfondo: 'rgba(0,0,0,.55)', dim: 40, grassetto: true, font: 'system' }],
+  });
+  const manda = (d) => ricevi({ data: JSON.stringify(d) });
+  const nomi = ['Anna', 'Bruno', 'Carla', 'Dario'];
+  const colori = ['#ff7ad9', '#7ad7ff', '#ffd27a', '#9dff7a'];
+  const frasi = [T('ciao a tutti!', 'hi everyone!', '¡hola a todos!'), T('che partita', 'what a game', 'qué partida'), T('forza!', 'come on!', '¡vamos!'), 'GG'];
+  let giro = 0;
+  const passo = () => {
+    const n = nomi[giro % nomi.length];
+    if (giro % 3 === 0) manda(giro % 2 ? { tipo: 'alert', kind: 'follow', testo: T(n + ' ti segue', n + ' is following you', n + ' te sigue'), durata: 5000 } : { tipo: 'alert', kind: 'sub', testo: T(n + ' si è abbonata', n + ' subscribed', n + ' se suscribió'), durata: 5000 });
+    manda({ tipo: 'chat', user: n.toLowerCase(), testo: frasi[giro % frasi.length], piattaforma: 'twitch', colore: colori[giro % colori.length], posizione: 'basso-sinistra', max: 6 });
+    giro++;
+  };
+  if (new URLSearchParams(location.search).get('eventi') === '0') return;
+  passo();
+  setInterval(passo, 4000);
+}
+
+if (login === 'prova.socialbot') avviaProva();
+else if (login) {
   window.SB_VERSIONE?.registra({ inUso: () => occupato || alertOccupato || codaVisiva.length > 0 || codaAlert.length > 0 });
   connetti();
   caricaTema();

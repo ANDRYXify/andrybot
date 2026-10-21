@@ -296,10 +296,57 @@ sul telefono, in «Altro».
   le scene pronte del telefono ci entrano al suo posto.
 - In onda il flusso degli eventi è quello dell'overlay della scena in onda;
   cambiando scena si ricollega da sé, se l'overlay è un altro.
-- Oggi dalla fonte Overlay arrivano **alert, chat ed effetti**, alle posizioni
-  di quell'overlay. Gli altri pezzi dell'Overlay Studio (obiettivi, timer,
-  player e il resto) non si disegnano ancora sulla tela: vedi «Dopo: le scene
-  dell'Overlay Studio».
+- Dalla fonte Overlay arriva **l'overlay intero, quello di OBS**: vedi
+  «L'overlay nello Studio».
+
+### L'overlay nello Studio
+
+**L'invariante: lo Studio manda in onda lo stesso overlay che vede OBS.** Non
+un'imitazione: la pagina vera dell'overlay (`/overlay/<canale>?…&studio=1`),
+aperta in una cornice nascosta grande come la sorgente di OBS (1920×1080, in
+verticale 1080×1920), e fotografata sulla tela (`js/studio-overlay.js`).
+Stesso codice, stesso tema, stessi pezzi, stesso CSS dello streamer: un pezzo
+nuovo dell'Overlay Studio arriva nello Studio senza scrivere niente.
+
+Prima la fonte Overlay era un disegno a parte che conosceva solo alert, righe
+di chat ed effetti, e solo mentre succedevano: fra un evento e l'altro la fonte
+era vuota, e timer, obiettivi, contatori, boss, muro, Spotify e il resto non
+c'erano mai. Da qui la segnalazione «l'overlay è nella scena ma non lo vedo».
+
+**La fotografia.** La pagina si clona con i fogli di stile (letti dal CSSOM,
+`:root`, `html` e `body` riscritti sul riquadro), i caratteri e le immagini
+incorporati, e i valori del momento delle animazioni in corso; il tutto in un
+SVG `foreignObject` che il browser disegna. Immagini, video e tele della pagina
+entrano come fotogrammi del loro istante; le emote animate di 7TV e Twitch si
+animano dai loro byte, che arrivano dalla porta del nostro server (la CSP
+lascia leggere byte solo da noi). Trasformazioni, opacità, ritagli e ordine
+dei livelli sono quelli del browser, non ricostruiti.
+
+**Il peso.** Si fotografa solo quando la pagina cambia (un osservatore sul
+DOM, le animazioni in corso, i video che scorrono), al massimo 30 volte al
+secondo; una pagina ferma non costa niente e lo Studio può dormire. Ogni
+overlay ha una cornice per formato, aperta solo se la sua scena è in onda, in
+transizione o in anteprima, e chiusa trenta secondi dopo che non serve più.
+
+**I suoni.** Con `studio=1` l'overlay non suona da sé: passa suoni, suoni
+pronti e audio dei video allo Studio, che li mette nel mix della diretta. Suona
+una cornice sola, quella della scena in onda; le altre restano mute.
+
+**La sicurezza.** La pagina dell'overlay si lascia incorniciare solo dal sito
+stesso (`frame-ancestors 'self'`, `X-Frame-Options: SAMEORIGIN`, solo per
+`/overlay/<canale>`): vedi `docs/CSP.md`. Se un browser sporcasse la tela con la
+fotografia, il motore se ne accorge sulla sua tela privata prima di toccare
+quella in onda, e si spegne: la diretta non si rompe mai per l'overlay.
+L'overlay aperto dallo Studio non spegne l'avviso «non hai ancora aperto
+l'overlay», che parla di OBS.
+
+**Nella prova** l'overlay è `prova.socialbot`: un nome che nessuna piattaforma
+può dare, senza chiave e senza dati, con un tema e degli eventi d'esempio che
+passano dallo stesso codice di quelli veri.
+
+Il collaudo: `scripts/verifica-studio-overlay.mjs` (fotografia e pagina di OBS
+pixel per pixel, pezzi fermi, alert, CSS, suoni, verticale, peso, Studio della
+prova) con la sua autoprova, e `test/unita/studio-overlay.test.mjs`.
 
 ### Il peso: lo Studio lavora solo quando serve
 

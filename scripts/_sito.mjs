@@ -177,6 +177,10 @@ export async function apriSito({ api = () => ({}), kick = true, youtube = false,
     // dei collaudi risponderebbe con la HOME al posto di un modulo — e
     // l'editor, che quel modulo lo importa, non partirebbe: un collaudo che
     // fallisce per colpa del banco di prova, non del prodotto.
+    if (q === '/overlay/prova.socialbot') {
+      res.writeHead(200, { 'content-type': TIPI['.html'] });
+      return res.end(fs.readFileSync(path.join(PUB, 'overlay.html')));
+    }
     if (q === '/js/carta-disegno.js') {
       res.writeHead(200, { 'content-type': 'text/javascript; charset=utf-8' });
       return res.end(disegnoPerIlBrowser());

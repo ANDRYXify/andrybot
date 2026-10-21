@@ -55,6 +55,7 @@ const SELFTEST = process.argv.includes('--selftest');
 const ROMPI = Number((process.argv.find((a) => a.startsWith('--rompi=')) || '').split('=')[1]) || 0;
 const DIFETTI = {
   '/app.js': [
+    ['sveglia: () => { if (studioOverlayServono().has(k)) studioRidisegna(); },', 'sveglia: studioRidisegna,', 'una cornice che non serve non sveglia lo Studio', 1, /a riposo/],
     ['  const alta = Math.max(240, Math.floor(window.innerHeight - sopra - 16));', '  const alta = 2000;', 'la tela si misura sulla finestra', 9, /tela intera, «Vai live»/],
     ['&& !GUIDA_CHIUSA.has(id);', ';', 'la guida dello strumento e\' chiusa', 9, /guida dello Studio e' chiusa/],
     ['  d.inOnda = t.a;\n', '  void t.a;\n', 'la transizione cambia il programma', 1, /transizione manda in onda|dissolvenza finita/],
@@ -161,13 +162,18 @@ async function apri({ width, height, telefono }) {
 }
 
 // I pixel che non sono il fondo della tela (#0b0b0f): quanto c'e' disegnato sopra.
-const disegnati = (p, quale) => p.evaluate((q) => {
+// `testo`: solo il riquadro dove nasce un testo nuovo (studio-modello.js: il
+// terzo basso, x 140-1140 e y 560-670 su 1280×720), senza la sua parte
+// sinistra: li' l'overlay della scena ha contatore e chat. Cosi' si misura il
+// testo e non l'overlay, che vive per conto suo.
+const disegnati = (p, quale, testo = false) => p.evaluate(([q, testo]) => {
   const c = q === 'ante' ? STUDIO.ante : STUDIO.tele[q === 'lavoro' ? STUDIO.lavoro : q];
-  const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data;
+  const [x, y, w, h] = testo ? [Math.floor(c.width * 0.35), Math.floor(c.height * 0.78), Math.floor(c.width * 0.5), Math.floor(c.height * 0.15)] : [0, 0, c.width, c.height];
+  const d = c.getContext('2d').getImageData(x, y, w, h).data;
   let n = 0;
   for (let i = 0; i < d.length; i += 16) if (Math.abs(d[i] - 11) + Math.abs(d[i + 1] - 11) + Math.abs(d[i + 2] - 15) > 30) n++;
   return n;
-}, quale);
+}, [quale, testo]);
 const clic = (p, sel) => p.evaluate((s) => { const e = document.querySelector(s); if (e) e.click(); return !!e; }, sel);
 const fotogrammi = (p) => p.waitForTimeout(180);
 const TENUTA = 1750;
@@ -207,7 +213,7 @@ console.log('Studio della diretta sul computer (1280×900):');
     return { ant: w('studio-palco-ant'), prog: w('studio-palco-prog'), tele: Math.round(tele.width), sotto: col.top >= tele.bottom };
   });
   ok('in modalita\' studio le due tele hanno tutta la larghezza, e la regia scende sotto', larghe.sotto && Math.min(larghe.ant, larghe.prog) >= larghe.tele * 0.4, JSON.stringify(larghe));
-  const ant1 = await disegnati(p, 'ante'), prog1 = await disegnati(p, 'o');
+  const ant1 = await disegnati(p, 'ante', true), prog1 = await disegnati(p, 'o', true);
   ok('il testo aggiunto si vede in anteprima e non va in onda', ant1 > 50 && prog1 === 0, `anteprima ${ant1}, programma ${prog1}`);
 
   // Il taglio manda in onda subito; la dissolvenza passa da tutte e due.
@@ -215,7 +221,7 @@ console.log('Studio della diretta sul computer (1280×900):');
   await clic(p, '#studio-transizione');
   await fotogrammi(p);
   const t = await p.evaluate(() => ({ onda: STUDIO.doc.inOnda, ant: STUDIO.doc.anteprima }));
-  const prog2 = await disegnati(p, 'o');
+  const prog2 = await disegnati(p, 'o', true);
   ok('la transizione manda in onda l\'anteprima', t.onda === m.ant && prog2 > 50, `in onda ${t.onda}, pixel ${prog2}`);
   ok('come in OBS, l\'anteprima prende la scena che era in onda', t.ant === m.onda);
   await p.selectOption('#studio-trans-tipo', 'dissolvenza');
@@ -223,7 +229,7 @@ console.log('Studio della diretta sul computer (1280×900):');
   await clic(p, '#studio-transizione');
   await p.waitForTimeout(450);
   const meta = await p.evaluate(() => ({ corre: !!STUDIO.trans, onda: STUDIO.doc.inOnda }));
-  const prog3 = await disegnati(p, 'o');
+  const prog3 = await disegnati(p, 'o', true);
   await p.waitForTimeout(1100);
   const fine = await p.evaluate(() => ({ corre: !!STUDIO.trans, onda: STUDIO.doc.inOnda }));
   ok('a meta\' dissolvenza le due scene si mescolano', meta.corre && prog3 > 0 && prog3 < prog2, `${prog3} su ${prog2}`);
@@ -309,13 +315,21 @@ console.log('Studio della diretta sul computer (1280×900):');
   }, altroId);
   ok('scegliendo un altro overlay cambia quello di questa scena, e le altre tengono il loro', scelta.qui === scelta.altro && scelta.nome === scelta.atteso && scelta.primaDiversa, JSON.stringify(scelta));
   // Le prestazioni sono promesse anche loro (lo Studio pesava: si misura).
-  await p.evaluate(() => { const vero = studioDisegnaProgramma; window.__disegni = 0; studioDisegnaProgramma = (...a) => { window.__disegni++; return vero(...a); }; STUDIO.doc.scene.forEach((x) => { x.fonti = x.fonti.filter((f) => f.tipo === 'overlay' || f.tipo === 'testo'); }); STUDIO.overlay.chat = []; STUDIO.overlay.fx = []; STUDIO.overlay.alert = null; STUDIO.trans = null; renderStudioTutto(); });
+  await p.evaluate(() => { const vero = studioDisegnaProgramma; window.__disegni = 0; studioDisegnaProgramma = (...a) => { window.__disegni++; return vero(...a); }; STUDIO.doc.scene.forEach((x) => { x.fonti = x.fonti.filter((f) => f.tipo === 'testo'); }); STUDIO.trans = null; renderStudioTutto(); });
   await p.waitForTimeout(1200);
   const fermo = await p.evaluate(async () => { __disegni = 0; await new Promise((ok) => setTimeout(ok, 1000)); return { disegni: __disegni, raf: STUDIO.raf }; });
   ok('a riposo (scena ferma, niente diretta) lo Studio non disegna e il ciclo dorme', fermo.disegni === 0 && !fermo.raf, JSON.stringify(fermo));
-  const vivo = await p.evaluate(async () => { STUDIO.overlay.chat.push({ user: 'x', testo: 'ciao', tokens: [{ t: 'testo', v: 'ciao' }], until: Date.now() + 8000 }); studioRidisegna(); __disegni = 0; await new Promise((ok) => setTimeout(ok, 1000)); return __disegni; });
+  const vivo = await p.evaluate(async () => {
+    const c = document.createElement('canvas'); c.width = 320; c.height = 180; const g = c.getContext('2d'); let n = 0;
+    window.__muovi = setInterval(() => { g.fillStyle = `hsl(${(n++ * 9) % 360} 70% 50%)`; g.fillRect(0, 0, 320, 180); }, 33);
+    const v = document.createElement('video'); v.muted = true; v.playsInline = true; v.srcObject = c.captureStream(30); await v.play().catch(() => {});
+    STUDIO.cap.camEl = v; STUDIO.cap.camStream = v.srcObject;
+    studioScena(STUDIO.doc.inOnda).fonti.push(STUDIO.M.nuovaFonte('webcam', { nome: 'Webcam' }));
+    renderStudioTutto(); studioRidisegna();
+    await new Promise((ok) => setTimeout(ok, 300)); __disegni = 0; await new Promise((ok) => setTimeout(ok, 1000)); return __disegni;
+  });
   ok('con qualcosa che si muove si disegna, ma fuori diretta non piu\' di 30 volte al secondo', vivo >= 15 && vivo <= 32, `${vivo} disegni in un secondo`);
-  await p.evaluate(() => { STUDIO.overlay.chat.push({ user: 'x', testo: 'ancora', tokens: [{ t: 'testo', v: 'ancora' }], until: Date.now() + 8000 }); studioRidisegna(); window.scrollTo(0, document.documentElement.scrollHeight); });
+  await p.evaluate(() => { studioRidisegna(); window.scrollTo(0, document.documentElement.scrollHeight); });
   await p.waitForTimeout(400);
   const via = await p.evaluate(async () => { __disegni = 0; await new Promise((ok) => setTimeout(ok, 1000)); return { disegni: __disegni, y: Math.round(document.getElementById('studio-palco-prog').getBoundingClientRect().bottom) }; });
   ok('con la tela scorsa fuori dallo schermo non si disegna, e tornando si riprende', via.disegni === 0 && via.y < 0 && await p.evaluate(async () => { document.getElementById('studio-palco-prog').scrollIntoView({ block: 'center' }); await new Promise((ok) => setTimeout(ok, 500)); __disegni = 0; await new Promise((ok) => setTimeout(ok, 500)); return __disegni > 3; }), JSON.stringify(via));
@@ -556,7 +570,10 @@ console.log('Fotocamera sul telefono (390×844, a tocco):');
     v.muted = true; v.playsInline = true; v.srcObject = stream; v.addEventListener('resize', studioCamForma);
     await v.play().catch(() => {});
     STUDIO.cap.camStream = stream; STUDIO.cap.camEl = v;
-    STUDIO.overlay.chat = []; STUDIO.overlay.fx = []; STUDIO.overlay.alert = null;
+    clearInterval(window.__muovi);
+    // qui si misura la fotocamera nel suo riquadro: l'overlay (che in verticale
+    // mette l'alert proprio sulla banda di sopra) e' un'altra prova
+    for (const sc of STUDIO.doc.scene) for (const f of sc.fonti) if (f.tipo === 'overlay') { f.pos.o.vis = false; f.pos.v.vis = false; }
     STUDIO.doc.inOnda = STUDIO.doc.scene.find((s) => s.fonti.some((f) => f.tipo === 'webcam')).id;
     studioCamDopo(); avviaLoopStudio(); renderStudioTutto();
   });

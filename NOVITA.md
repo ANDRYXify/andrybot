@@ -41,6 +41,27 @@ questa non è una cosa da ricordarsi: il cancello boccia una riga pubblica senza
 traduzione, una traduzione staccata dalla sua riga, o una che dice numeri e
 comandi diversi da quelli della riga italiana.
 
+## 2026-10-21
+
+- [importante] Nello Studio della diretta l'overlay è quello di OBS, intero: timer, obiettivi, contatori, alert, chat e tutto il tuo Overlay Studio, anche quando non succede niente. [vai: studio]
+  en: In the live Studio the overlay is the one OBS shows, whole: timers, goals, counters, alerts, chat and your whole Overlay Studio, even when nothing is happening.
+  es: En el Estudio del directo el overlay es el de OBS, entero: temporizadores, objetivos, contadores, alertas, chat y todo tu Overlay Studio, aunque no pase nada.
+  > L'overlay di OBS, intero, nello Studio
+  > Prima lo Studio mostrava solo alert, chat ed effetti mentre arrivavano. Ora va in onda la tua pagina vera, con tutti i pezzi e il tuo stile.
+  en> The whole OBS overlay, in the Studio
+  en> Before, the Studio only showed alerts, chat and effects as they came. Now your real page goes on air, with every piece and your style.
+  es> El overlay de OBS, entero, en el Estudio
+  es> Antes el Estudio solo mostraba alertas, chat y efectos al llegar. Ahora sale tu página de verdad, con todas las piezas y tu estilo.
+- Instagram: se il collegamento non riesce a rinnovarsi da solo, il pannello te lo dice venti giorni prima che scada, col tasto per ricollegarlo. [vai: notifiche]
+  en: Instagram: if the connection cannot renew by itself, the panel tells you twenty days before it expires, with the button to reconnect it.
+  es: Instagram: si la conexión no consigue renovarse sola, el panel te lo dice veinte días antes de que caduque, con el botón para reconectarla.
+- Diretta dallo Studio: chi ti guarda la vede partire subito, non scatta più, e non cade su «torno subito» quando passi a un'altra scheda. [vai: studio]
+  en: Live from the Studio: viewers see it start right away, it no longer stutters, and it does not fall back to «be right back» when you switch tabs.
+  es: Directo desde el Estudio: quien te ve lo ve empezar enseguida, ya no da tirones y no cae en «vuelvo enseguida» cuando cambias de pestaña.
+- Studio sul computer: la tela intera, «Vai live», la fotocamera in uso e le scene stanno in una schermata, e la colonna dei comandi resta accanto mentre scorri fra le fonti. [vai: studio]
+  en: Studio on a computer: the whole canvas, «Go live», the camera in use and the scenes fit on one screen, and the controls column stays beside you while you scroll through sources.
+  es: Estudio en el ordenador: el lienzo entero, «Emitir», la cámara en uso y las escenas caben en una pantalla, y la columna de controles queda al lado mientras recorres las fuentes.
+
 ## 2026-10-15
 
 - [importante] Il bot si aggiorna senza toglierti niente: mai in diretta, mai mentre scrivi. Quando hai finito, la versione nuova arriva da sola. [vai: studio]
@@ -52,15 +73,6 @@ comandi diversi da quelli della riga italiana.
   en> If you are using the panel or the Studio, a box tells you a new version is ready and you take it when you want. Otherwise it updates by itself, and the OBS overlay only off air.
   es> Actualizaciones sin perder nada
   es> Si estás usando el panel o el Estudio, un aviso te dice que hay una versión nueva y la tomas cuando quieras. Si no, se actualiza sola, y el overlay de OBS solo fuera de directo.
-- Instagram: se il collegamento non riesce a rinnovarsi da solo, il pannello te lo dice venti giorni prima che scada, col tasto per ricollegarlo. [vai: notifiche]
-  en: Instagram: if the connection cannot renew by itself, the panel tells you twenty days before it expires, with the button to reconnect it.
-  es: Instagram: si la conexión no consigue renovarse sola, el panel te lo dice veinte días antes de que caduque, con el botón para reconectarla.
-- Diretta dallo Studio: chi ti guarda la vede partire subito, non scatta più, e non cade su «torno subito» quando passi a un'altra scheda. [vai: studio]
-  en: Live from the Studio: viewers see it start right away, it no longer stutters, and it does not fall back to «be right back» when you switch tabs.
-  es: Directo desde el Estudio: quien te ve lo ve empezar enseguida, ya no da tirones y no cae en «vuelvo enseguida» cuando cambias de pestaña.
-- Studio sul computer: la tela intera, «Vai live», la fotocamera in uso e le scene stanno in una schermata, e la colonna dei comandi resta accanto mentre scorri fra le fonti. [vai: studio]
-  en: Studio on a computer: the whole canvas, «Go live», the camera in use and the scenes fit on one screen, and the controls column stays beside you while you scroll through sources.
-  es: Estudio en el ordenador: el lienzo entero, «Emitir», la cámara en uso y las escenas caben en una pantalla, y la columna de controles queda al lado mientras recorres las fuentes.
 - Studio dal telefono: sulla tela leggi sempre quale fotocamera stai usando, e il suo foglio (obiettivo, zoom, inquadratura, luce) sta tutto in una schermata. [vai: studio]
   en: Studio on the phone: the canvas always shows which camera you are using, and its sheet (lens, zoom, framing, light) fits on one screen.
   es: Estudio en el teléfono: el lienzo muestra siempre qué cámara usas, y su hoja (objetivo, zoom, encuadre, luz) cabe en una pantalla.

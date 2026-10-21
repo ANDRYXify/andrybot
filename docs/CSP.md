@@ -166,6 +166,20 @@ lì l'elenco chiuso non esiste per costruzione. Chiuderlo vorrebbe dire passare
 quelle immagini da un nostro proxy, che è una funzione a sé — con cache, limiti
 di dimensione e difesa dalle richieste verso l'interno.
 
+## La pagina dell'overlay si lascia incorniciare dal sito stesso
+
+Lo Studio della diretta manda in onda lo stesso overlay di OBS aprendo la
+pagina vera in una cornice (docs/DIRETTA.md, «L'overlay nello Studio»). Per
+questo `/overlay/<canale>`, e solo lei, ha `frame-ancestors 'self'` e
+`X-Frame-Options: SAMEORIGIN` invece di `'none'` e `DENY`: la incornicia il sito
+stesso, mai un altro. Il resto della sua politica è quella di tutto il resto,
+parola per parola: `verifica-csp.mjs` lo controlla, insieme al matcher.
+
+Per la stessa ragione `connect-src` ammette i caratteri di Google
+(`fonts.googleapis.com`, `fonts.gstatic.com`, già in `font-src`): la fotografia
+dell'overlay non può caricare niente da fuori, quindi lo Studio legge il
+carattere e lo incorpora.
+
 ## `form-action`
 
 `form-action` e `frame-ancestors` sono le due direttive che **non ereditano da
