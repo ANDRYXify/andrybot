@@ -165,10 +165,28 @@ async function misura(p, tema, prove) {
       // Il fondo peggiore: fra i colori che coprono almeno il 4% dell'area
       // interna, quello che si avvicina di piu' alla scritta, escluso il colore
       // della scritta stessa.
+      // L'antialiasing delle lettere non e' un fondo: i bordi sfumati di una
+      // scritta hanno colori che stanno sulla linea fra il suo colore e il
+      // fondo dominante. In un ritaglio basso (un'etichetta di 20 punti, tolto
+      // l'orlo, e' quasi tutta lettere) quei grigi arrivano al 4-5% e
+      // passavano per «fondo»: dipendeva dal carattere di sistema della
+      // macchina, non dal colore della pagina. Un fondo VERO dietro le lettere
+      // copre ben di piu' del 12%, e resta misurato.
+      let dominante = null, nDom = 0;
+      for (const [key, n] of conta) if (n > nDom) { nDom = n; dominante = key.split(',').map((v) => Number(v) * 16 + 8); }
+      const sfumatura = (col) => {
+        if (!dominante || rapporto(rgb, dominante) < 1.6) return false;
+        const t = [0, 1, 2].filter((i) => Math.abs(dominante[i] - rgb[i]) > 24).map((i) => (col[i] - rgb[i]) / (dominante[i] - rgb[i]));
+        if (!t.length) return false;
+        const lo = Math.min(...t), hi = Math.max(...t);
+        const fuori = [0, 1, 2].some((i) => Math.abs(dominante[i] - rgb[i]) <= 24 && Math.abs(col[i] - rgb[i]) > 24);
+        return !fuori && lo > 0.02 && hi < 0.98 && hi - lo < 0.15;
+      };
       let peggio = null;
       for (const [key, n] of conta) {
         if (n / totale < 0.04) continue;
         const col = key.split(',').map((v) => Number(v) * 16 + 8);
+        if (n / totale < 0.12 && sfumatura(col)) continue;
         const r = rapporto(rgb, col);
         // Quel che ha il colore della scritta E' la scritta: per definizione non
         // e' il suo fondo, e contarlo faceva fallire ogni bottone scritto scuro.
