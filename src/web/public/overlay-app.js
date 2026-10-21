@@ -129,11 +129,23 @@ function posaEffetti() { posizionaContenitore(palco, MIO.xy.effetti, 'centro'); 
 
 const aSchermo = (ev) => ev.schermo === 'riempi' || ev.schermo === 'intero';
 
+function firmaAttacco(ev) {
+  const a = ev.attacco, p = ev.posizione;
+  if (!a || !p || !p.centro || !a.chi) return;
+  const el = document.createElement('div');
+  el.className = 'attacco-firma';
+  el.textContent = a.chi;
+  el.style.left = p.x + '%'; el.style.top = p.y + '%';
+  palcoLibero.appendChild(el);
+  requestAnimationFrame(() => el.classList.add('dentro'));
+  setTimeout(() => { el.classList.remove('dentro'); setTimeout(() => el.remove(), 400); }, Math.max(1500, durataMs(ev, 4000)));
+}
+
 function metti(el, ev) {
   if (aSchermo(ev)) { el.classList.add(ev.schermo); palcoSchermo.appendChild(el); return; }
   const libero = !!(ev.posizione && ev.posizione.x != null);
   (libero ? palcoLibero : palco).appendChild(el);
-  if (libero) return;
+  if (libero) { firmaAttacco(ev); return; }
   posaEffetti();
   if (el.tagName === 'IMG' || el.tagName === 'VIDEO') el.addEventListener(el.tagName === 'IMG' ? 'load' : 'loadedmetadata', posaEffetti, { once: true });
 }
@@ -146,8 +158,10 @@ function posizionaEffetto(el, pos) {
   el.style.left = pos.x + '%'; el.style.top = pos.y + '%';
 
   const f = (Number(pos.s) || 100) / 100;
-  el.style.setProperty('--fx-ax', tiraXY(pos.x, f) + '%');
-  el.style.setProperty('--fx-ay', tiraXY(pos.y, f) + '%');
+  if (!pos.centro) {
+    el.style.setProperty('--fx-ax', tiraXY(pos.x, f) + '%');
+    el.style.setProperty('--fx-ay', tiraXY(pos.y, f) + '%');
+  }
   el.style.setProperty('--fx-s', f);
   el.style.setProperty('--fx-r', (Number(pos.r) || 0) + 'deg');
 }

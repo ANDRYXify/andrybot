@@ -335,6 +335,9 @@ export class EffectsEngine {
     const eff = effectsDb.get(ch, comando);
     if (!eff) return false;
     const p = this.payload(ch, eff);
+    // Un colpo di uno spettatore (docs/COLPI.md) porta il nome di chi l'ha
+    // mandato, e col suo punto (xy.centro) si posa col centro dove ha mirato.
+    if (opzioni.attacco) p.attacco = opzioni.attacco;
     if (p.tipo === 'disegno') { this.emit(ch, p); return true; }
     if (opzioni.xy && opzioni.xy.x != null && !p.schermo) p.posizione = opzioni.xy;
     if (opzioni.chroma && opzioni.chroma.attivo) {

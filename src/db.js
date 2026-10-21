@@ -885,6 +885,26 @@ CREATE TABLE IF NOT EXISTS donazioni (         -- il registro delle donazioni: q
   media_at INTEGER NOT NULL DEFAULT 0
 );
 CREATE INDEX IF NOT EXISTS idx_donazioni_login ON donazioni(login, stato, pagata_at);
+CREATE TABLE IF NOT EXISTS colpi (             -- gli attacchi degli spettatori (docs/COLPI.md): una riga per mira
+  id TEXT PRIMARY KEY,
+  login TEXT NOT NULL,
+  codice TEXT NOT NULL,                        -- il codice per i Bit e i punti canale, unico fra le mire aperte del canale
+  voce TEXT NOT NULL,                          -- la voce del listino
+  comando TEXT NOT NULL,                       -- l'effetto che parte
+  nome TEXT NOT NULL DEFAULT '',               -- il nome della voce, come lo vede lo spettatore
+  x REAL NOT NULL, y REAL NOT NULL,            -- il centro del colpo, in percento del quadro 16:9
+  scala INTEGER NOT NULL DEFAULT 100,
+  chi TEXT NOT NULL DEFAULT '',                -- il nome che compare accanto al colpo
+  prezzi TEXT NOT NULL DEFAULT '{}',           -- i prezzi del listino al momento della mira (euro in centesimi, punti, bit)
+  stato TEXT NOT NULL DEFAULT 'attesa',        -- attesa | sparata | scaduta
+  metodo TEXT NOT NULL DEFAULT '',             -- euro | punti | bit: con cosa e' stata pagata
+  riferimento TEXT NOT NULL DEFAULT '',        -- la donazione (stripe:cs_… / satispay:…) aperta per pagarla, o il riscatto / il cheer che l'ha pagata
+  creata INTEGER NOT NULL DEFAULT 0,
+  scade INTEGER NOT NULL DEFAULT 0,
+  sparata_at INTEGER NOT NULL DEFAULT 0
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_colpi_codice ON colpi(login, codice) WHERE stato='attesa';
+CREATE INDEX IF NOT EXISTS idx_colpi_rif ON colpi(riferimento);
 
 -- I SOSTEGNI AL PROGETTO, che non sono donazioni a uno streamer.
 --
@@ -2688,6 +2708,45 @@ export const sostegni = {
   },
 };
 export const SOSTEGNO_MAI_PAGATO_MS = 7 * 24 * 3600 * 1000;
+
+// Il registro dei colpi (docs/COLPI.md). Una mira entra in attesa col suo
+// codice; si spara una volta sola (attesa → sparata, in un passaggio). Una mira
+// con un pagamento in corso (riferimento) non scade da sola: la fa scadere la
+// ronda dei pagamenti, quando scade la sessione. Le altre scadono col tempo.
+export const registroColpi = {
+  apri(m) {
+    try {
+      return db.prepare(`INSERT INTO colpi (id, login, codice, voce, comando, nome, x, y, scala, chi, prezzi, stato, creata, scade) VALUES (?,?,?,?,?,?,?,?,?,?,?,'attesa',?,?)`)
+        .run(String(m.id), String(m.login).toLowerCase(), String(m.codice), String(m.voce), String(m.comando), String(m.nome || '').slice(0, 40),
+          Number(m.x), Number(m.y), Math.round(Number(m.scala) || 100), String(m.chi || '').slice(0, 25), JSON.stringify(m.prezzi || {}), Number(m.creata) || now(), Number(m.scade) || now()).changes > 0;
+    } catch (e) { if (/UNIQUE/.test(String(e?.message))) return false; throw e; }
+  },
+  _leggi(r) { if (!r) return null; let prezzi = {}; try { prezzi = JSON.parse(r.prezzi || '{}'); } catch { prezzi = {}; } return { ...r, prezzi }; },
+  get(id) { return this._leggi(db.prepare('SELECT * FROM colpi WHERE id=?').get(String(id))); },
+  getDi(login, id) { return this._leggi(db.prepare('SELECT * FROM colpi WHERE id=? AND login=?').get(String(id), String(login).toLowerCase())); },
+  // la mira aperta con quel codice: per i Bit e i punti, che arrivano col codice
+  perCodice(login, codice, ora = now()) {
+    return this._leggi(db.prepare("SELECT * FROM colpi WHERE login=? AND codice=? AND stato='attesa' AND (scade>? OR riferimento!='')").get(String(login).toLowerCase(), String(codice || '').toUpperCase(), ora));
+  },
+  perRiferimento(riferimento) { return riferimento ? this._leggi(db.prepare("SELECT * FROM colpi WHERE riferimento=?").get(String(riferimento))) : null; },
+  // il pagamento in euro aperto per questa mira: da qui in poi la scadenza la decide lui
+  lega(id, riferimento) { return db.prepare("UPDATE colpi SET riferimento=? WHERE id=? AND stato='attesa' AND riferimento=''").run(String(riferimento).slice(0, 120), String(id)).changes > 0; },
+  // attesa → sparata: true per chi ci riesce, false per tutti gli altri
+  spara(id, metodo, riferimento = '') {
+    return db.prepare("UPDATE colpi SET stato='sparata', metodo=?, sparata_at=?, riferimento=CASE WHEN ?='' THEN riferimento ELSE ? END WHERE id=? AND stato='attesa'")
+      .run(String(metodo), now(), String(riferimento), String(riferimento).slice(0, 120), String(id)).changes > 0;
+  },
+  scadi(id) { return db.prepare("UPDATE colpi SET stato='scaduta' WHERE id=? AND stato='attesa'").run(String(id)).changes > 0; },
+  // quante mire ha aperto questo canale nell'ultimo minuto, e quante da quella stessa persona
+  aperteDa(login, da) { return db.prepare('SELECT COUNT(*) AS n FROM colpi WHERE login=? AND creata>=?').get(String(login).toLowerCase(), da).n; },
+  ultimi(login, n = 30) { return db.prepare("SELECT * FROM colpi WHERE login=? AND stato='sparata' ORDER BY sparata_at DESC LIMIT ?").all(String(login).toLowerCase(), Math.max(1, Math.min(200, n | 0))).map((r) => this._leggi(r)); },
+  pulisci(ora = now()) {
+    db.prepare("UPDATE colpi SET stato='scaduta' WHERE stato='attesa' AND riferimento='' AND scade<?").run(ora);
+    db.prepare("DELETE FROM colpi WHERE stato='scaduta' AND creata<?").run(ora - 86400_000);
+    db.prepare("DELETE FROM colpi WHERE stato='sparata' AND sparata_at<?").run(ora - 90 * 86400_000);
+  },
+  rimuovi(login) { db.prepare('DELETE FROM colpi WHERE login=?').run(String(login).toLowerCase()); },
+};
 
 // Il registro delle donazioni. Una riga per pagamento, con l'id che gli da' chi
 // lo porta (la sessione di Stripe, l'avviso di Ko-fi): la stessa donazione
