@@ -23313,8 +23313,9 @@ function studioRenderDestinazioni() {
   const scelte = studioDestScelte(), sc = STUDIO.doc.scelte, entrambi = sc.formati.o && sc.formati.v;
   const bloccato = STUDIO.live ? ' disabled' : '';
   const formato = (id) => {
-    if (!entrambi) return STUDIO.M.escluse(sc, [id]).length ? ` <span class="tenue">${L('non riceve il verticale: resta fuori', 'does not take vertical: left out', 'no recibe el vertical: se queda fuera')}</span>` : '';
-    if (STUDIO.M.DESTINAZIONI_SOLO_ORIZZONTALI.includes(id)) return ` <span class="tenue">${L('solo orizzontale', 'horizontal only', 'solo horizontal')}</span>`;
+    const dualFormat = () => L('il verticale di Twitch (Dual Format) dallo Studio non c’è ancora', 'Twitch vertical (Dual Format) is not in the Studio yet', 'el vertical de Twitch (Dual Format) aún no está en el Estudio');
+    if (!entrambi) return STUDIO.M.escluse(sc, [id]).length ? ` <span class="tenue">${STUDIO.M.DESTINAZIONI_SOLO_ORIZZONTALI.includes(id) ? dualFormat() + L(': resta fuori', ': left out', ': se queda fuera') : L('non riceve il verticale: resta fuori', 'does not take vertical: left out', 'no recibe el vertical: se queda fuera')}</span>` : '';
+    if (STUDIO.M.DESTINAZIONI_SOLO_ORIZZONTALI.includes(id)) return ` <span class="tenue">${L('orizzontale', 'horizontal', 'horizontal')} · ${dualFormat()}</span>`;
     const f = STUDIO.M.formatoDi(id, sc);
     return ` <select class="chip-utente studio-dest-fmt" data-dest-formato="${esc(id)}" aria-label="${esc(L('Formato per questa destinazione', 'Format for this destination', 'Formato para este destino'))}"${bloccato}><option value="o"${f === 'o' ? ' selected' : ''}>${L('Orizzontale', 'Horizontal', 'Horizontal')}</option><option value="v"${f === 'v' ? ' selected' : ''}>${L('Verticale', 'Vertical', 'Vertical')}</option></select>`;
   };

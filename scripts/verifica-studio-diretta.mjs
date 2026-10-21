@@ -745,7 +745,7 @@ console.log('Regia da telefono (390×844, a tocco):');
   await p.evaluate(() => { STUDIO.doc.scelte.dest = ['kick']; });
   await p.setViewportSize({ width: 391, height: 844 }); await p.waitForTimeout(500);
   const kick = await p.evaluate(() => STUDIO.lavoro);
-  ok('ma con Twitch, che e\' solo orizzontale, dritto resta orizzontale: nessuna destinazione si perde; con Kick torna verticale', twitch.f === 'o' && twitch.formati.o && !twitch.formati.v && kick === 'v', JSON.stringify({ twitch, kick }));
+  ok('ma con Twitch, che dallo Studio e\' orizzontale, dritto resta orizzontale: nessuna destinazione si perde; con Kick torna verticale', twitch.f === 'o' && twitch.formati.o && !twitch.formati.v && kick === 'v', JSON.stringify({ twitch, kick }));
 
   const salute = await p.evaluate(() => {
     const prima = { live: STUDIO.live, dirette: STUDIO.dirette };

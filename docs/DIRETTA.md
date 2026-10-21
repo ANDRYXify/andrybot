@@ -378,8 +378,17 @@ Dopo: 0% da fermo, 0,5% su un'altra scheda, circa la metà con una fonte video.
 ### Le dirette, una per formato
 
 - **Ogni destinazione ha il suo formato.**
-  - Twitch è solo orizzontale: il doppio formato di Twitch passa da un canale
-    che dal browser non c'è.
+  - Twitch dallo Studio è orizzontale. Twitch il verticale lo prende (Dual
+    Format, aperto a tutti dal 17 giugno 2026), ma solo con l'Enhanced
+    Broadcasting: il programma chiede a `ingest.twitch.tv/api/v3/
+    GetClientConfiguration` un piano, con le informazioni della scheda video
+    (senza le rifiuta), e Twitch risponde con un piano firmato dentro la chiave
+    che l'ingest verifica. Provato il 21 ottobre 2026: per un canale senza
+    transcodifica il piano vuole cinque tracce video codificate dal computer
+    (640×360, 1280×720, 1920×1080 in orizzontale; 360×640, 1080×1920 in
+    verticale), la traccia del VOD e circa 14,8 Mbps in uscita. Dal browser
+    vorrebbe dire cinque codificatori WebCodecs insieme e il tramite con
+    cinque tracce video: si fa solo se si decide, con una prova vera sul canale.
   - Kick, YouTube e gli altri RTMP si scelgono orizzontali o verticali.
   - TikTok ha il suo tipo di destinazione; Instagram passa da «Altro servizio
     RTMP».

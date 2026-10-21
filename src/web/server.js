@@ -9093,7 +9093,7 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     // per non chiedere chiavi a vuoto, e di nuovo prima di partire.)
     if (inOnda.riavvioImminente() && !tramite.attiva(sessioneDi(login, f))) return res.status(503).json({ errore: MOTIVI_DIRETTA.aggiornamento, motivo: 'aggiornamento' });
     const scelte = [...new Set((Array.isArray(b.destinazioni) ? b.destinazioni : []).map(String))].slice(0, MAX_DESTINAZIONI + 2);
-    if (f === 'v' && scelte.includes('twitch')) return res.status(400).json({ errore: 'Twitch riceve solo la diretta orizzontale.', motivo: 'formato' });
+    if (f === 'v' && scelte.includes('twitch')) return res.status(400).json({ errore: 'Dallo Studio Twitch riceve l\'orizzontale: il verticale di Twitch (Dual Format) qui non c\'è ancora.', motivo: 'formato' });
     const altra = tramite.stato(sessioneDi(login, f === 'v' ? 'o' : 'v'));
     if (altra.live && (altra.ids || []).some((id) => scelte.includes(id))) return res.status(409).json({ errore: 'Questa destinazione sta già ricevendo l\'altro formato.', motivo: 'doppia' });
     const destinazioni = [];
