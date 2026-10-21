@@ -23,7 +23,7 @@
 import './_dati-usa-e-getta.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
-import { apriSito, apriBrowser, overlayFinto, PUB } from './_sito.mjs';
+import { apriSito, apriBrowser, overlayFinto, PUB, chromiumQui } from './_sito.mjs';
 
 const SELFTEST = process.argv.includes('--selftest');
 const ROMPI = Number((process.argv.find((a) => a.startsWith('--rompi=')) || '').split('=')[1]) || 0;
@@ -58,6 +58,12 @@ const DIFETTI = {
     ['    else if (ora - e.visto > 30000) { e.m.chiudi();', '    else if (false) { e.m.chiudi();', 'una cornice che non serve si chiude', 6, /nascosta chiude/],
   ],
 };
+
+// Sul server non c'e' un browser: il collaudo si salta, e l'autoprova con lui
+// (senza browser nessun difetto puo' diventare rosso, e non e' colpa sua).
+if (!chromiumQui()) { console.log('Chromium non c\'e\' su questa macchina: collaudo saltato.'); process.exit(0); }
+try { await import(process.env.PLAYWRIGHT || '/opt/node22/lib/node_modules/playwright/index.mjs'); }
+catch { console.log('Playwright non c\'e\' su questa macchina: collaudo saltato.'); process.exit(0); }
 
 const GRUPPI = [...new Set(Object.values(DIFETTI).flat().map((d) => d[3]))].sort();
 if (SELFTEST) {
