@@ -287,12 +287,12 @@ const pezzo = (s) => encodeURIComponent(String(s || '').slice(0, 160));
 // Twitch e Kick pretendono parent=<dominio che ospita la pagina>. Lo ricaviamo
 // dal nostro baseUrl invece di scriverlo a mano: se il dominio cambia, i player
 // non si spengono. Twitch accetta più parent, quindi passiamo anche il www.
-function domini(baseUrl) {
+export function domini(baseUrl) {
   let h = 'socialbot.live';
   try { h = new URL(baseUrl || '').hostname || h; } catch { /* baseUrl assente */ }
   return [...new Set([h, h.startsWith('www.') ? h.slice(4) : 'www.' + h])];
 }
-const conParent = (base, dom) => base + (base.includes('?') ? '&' : '?') + dom.map((h) => 'parent=' + pezzo(h)).join('&');
+export const conParent = (base, dom) => base + (base.includes('?') ? '&' : '?') + dom.map((h) => 'parent=' + pezzo(h)).join('&');
 
 // Ritorna { src, formato } oppure null. Il formato decide le proporzioni: un
 // brano Spotify è una barra bassa, uno short è verticale, un video è 16:9.

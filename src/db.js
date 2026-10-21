@@ -828,7 +828,8 @@ CREATE TABLE IF NOT EXISTS conti_donazioni (   -- il conto Stripe dello streamer
   updated_at INTEGER NOT NULL DEFAULT 0,
   chiave TEXT NOT NULL DEFAULT '',             -- la chiave con restrizioni che lo streamer ci affida (nella busta)
   prodotto TEXT NOT NULL DEFAULT '',           -- prod_… «Donazione», creato nel suo conto quando la chiave si verifica
-  nota TEXT NOT NULL DEFAULT ''                -- cosa non va con la chiave, con le parole di Stripe (vuota = tutto bene)
+  nota TEXT NOT NULL DEFAULT '',               -- cosa non va con la chiave, con le parole di Stripe (vuota = tutto bene)
+  rimborsi INTEGER NOT NULL DEFAULT 0          -- 1 se la chiave ha il permesso «Refunds» (provato alla verifica): serve ai colpi pagati in euro
 );
 CREATE TABLE IF NOT EXISTS conti_satispay (    -- il conto Satispay Business dello streamer (suo), per le donazioni
   login TEXT PRIMARY KEY,
@@ -896,13 +897,18 @@ CREATE TABLE IF NOT EXISTS colpi (             -- gli attacchi degli spettatori 
   scala INTEGER NOT NULL DEFAULT 100,
   chi TEXT NOT NULL DEFAULT '',                -- il nome che compare accanto al colpo
   prezzi TEXT NOT NULL DEFAULT '{}',           -- i prezzi del listino al momento della mira (euro in centesimi, punti, bit)
-  stato TEXT NOT NULL DEFAULT 'attesa',        -- attesa | sparata | scaduta
+  versati INTEGER NOT NULL DEFAULT 0,          -- i Bit gia' arrivati per questa mira: si sommano, nessun cheer va perso
+  stato TEXT NOT NULL DEFAULT 'attesa',        -- attesa | pagata (da consegnare) | sparata (vista dall'overlay) | rimborsata | scaduta
   metodo TEXT NOT NULL DEFAULT '',             -- euro | punti | bit: con cosa e' stata pagata
   riferimento TEXT NOT NULL DEFAULT '',        -- la donazione (stripe:cs_… / satispay:…) aperta per pagarla, o il riscatto / il cheer che l'ha pagata
   creata INTEGER NOT NULL DEFAULT 0,
   scade INTEGER NOT NULL DEFAULT 0,
+  pagata_at INTEGER NOT NULL DEFAULT 0,        -- quando il pagamento e' arrivato: da li' corre il tempo per consegnarla
+  tentata_at INTEGER NOT NULL DEFAULT 0,       -- l'ultima volta che e' stata mandata all'overlay
+  premio TEXT NOT NULL DEFAULT '',             -- punti canale: il premio e il riscatto da chiudere (FULFILLED o CANCELED)
   sparata_at INTEGER NOT NULL DEFAULT 0
 );
+CREATE INDEX IF NOT EXISTS idx_colpi_pagate ON colpi(stato) WHERE stato='pagata';
 CREATE UNIQUE INDEX IF NOT EXISTS idx_colpi_codice ON colpi(login, codice) WHERE stato='attesa';
 CREATE INDEX IF NOT EXISTS idx_colpi_rif ON colpi(riferimento);
 
@@ -1336,6 +1342,7 @@ aggiungiColonna('streamers', 'manuale', 'INTEGER NOT NULL DEFAULT 0');
 aggiungiColonna('conti_donazioni', 'chiave', "TEXT NOT NULL DEFAULT ''");
 aggiungiColonna('conti_donazioni', 'prodotto', "TEXT NOT NULL DEFAULT ''");
 aggiungiColonna('conti_donazioni', 'nota', "TEXT NOT NULL DEFAULT ''");
+aggiungiColonna('conti_donazioni', 'rimborsi', 'INTEGER NOT NULL DEFAULT 0');
 aggiungiColonna('donazioni', 'riferimento', "TEXT NOT NULL DEFAULT ''");
 aggiungiColonna('donazioni', 'rimborsata_at', 'INTEGER NOT NULL DEFAULT 0');
 aggiungiColonna('donazioni', 'media', "TEXT NOT NULL DEFAULT ''");
@@ -2427,17 +2434,19 @@ export const contiDonazioni = {
     const chiave = decifra(r.chiave, _dove('conti_donazioni', 'chiave', l));
     return { ...r, chiave, coda: chiave.slice(-4) };
   },
-  set(login, { chiave, prodotto, pronto, verificato, nota } = {}) {
+  set(login, { chiave, prodotto, pronto, verificato, nota, rimborsi } = {}) {
     const l = String(login).toLowerCase();
     const prima = this.get(l) || {};
     const ch = chiave !== undefined ? String(chiave || '') : (prima.chiave || '');
-    db.prepare(`INSERT INTO conti_donazioni (login, chiave, prodotto, pronto, verificato_at, updated_at, nota)
-      VALUES (?,?,?,?,?,?,?)
+    // una chiave nuova non eredita il permesso dei rimborsi della vecchia: si riprova
+    const rim = rimborsi !== undefined ? !!rimborsi : (chiave !== undefined && ch !== prima.chiave ? false : !!prima.rimborsi);
+    db.prepare(`INSERT INTO conti_donazioni (login, chiave, prodotto, pronto, verificato_at, updated_at, nota, rimborsi)
+      VALUES (?,?,?,?,?,?,?,?)
       ON CONFLICT(login) DO UPDATE SET chiave=excluded.chiave, prodotto=excluded.prodotto,
-        pronto=excluded.pronto, verificato_at=excluded.verificato_at, updated_at=excluded.updated_at, nota=excluded.nota`)
+        pronto=excluded.pronto, verificato_at=excluded.verificato_at, updated_at=excluded.updated_at, nota=excluded.nota, rimborsi=excluded.rimborsi`)
       .run(l, cifra(ch, _dove('conti_donazioni', 'chiave', l)), prodotto ?? prima.prodotto ?? '',
         (pronto ?? !!prima.pronto) ? 1 : 0, verificato ? now() : (prima.verificato_at || 0), now(),
-        nota !== undefined ? String(nota || '').slice(0, 300) : (prima.nota || ''));
+        nota !== undefined ? String(nota || '').slice(0, 300) : (prima.nota || ''), rim ? 1 : 0);
     return this.get(l);
   },
   togli(login) { db.prepare('DELETE FROM conti_donazioni WHERE login=?').run(String(login).toLowerCase()); },
@@ -2724,26 +2733,47 @@ export const registroColpi = {
   _leggi(r) { if (!r) return null; let prezzi = {}; try { prezzi = JSON.parse(r.prezzi || '{}'); } catch { prezzi = {}; } return { ...r, prezzi }; },
   get(id) { return this._leggi(db.prepare('SELECT * FROM colpi WHERE id=?').get(String(id))); },
   getDi(login, id) { return this._leggi(db.prepare('SELECT * FROM colpi WHERE id=? AND login=?').get(String(id), String(login).toLowerCase())); },
-  // la mira aperta con quel codice: per i Bit e i punti, che arrivano col codice
+  // la mira aperta con quel codice: per i Bit e i punti, che arrivano col codice.
+  // Una mira gia' legata a un pagamento in euro non si paga anche col codice;
+  // una con dei Bit gia' arrivati aspetta il resto anche dopo la scadenza.
   perCodice(login, codice, ora = now()) {
-    return this._leggi(db.prepare("SELECT * FROM colpi WHERE login=? AND codice=? AND stato='attesa' AND (scade>? OR riferimento!='')").get(String(login).toLowerCase(), String(codice || '').toUpperCase(), ora));
+    return this._leggi(db.prepare("SELECT * FROM colpi WHERE login=? AND codice=? AND stato='attesa' AND riferimento='' AND (scade>? OR versati>0)").get(String(login).toLowerCase(), String(codice || '').toUpperCase(), ora));
   },
   perRiferimento(riferimento) { return riferimento ? this._leggi(db.prepare("SELECT * FROM colpi WHERE riferimento=?").get(String(riferimento))) : null; },
   // il pagamento in euro aperto per questa mira: da qui in poi la scadenza la decide lui
   lega(id, riferimento) { return db.prepare("UPDATE colpi SET riferimento=? WHERE id=? AND stato='attesa' AND riferimento=''").run(String(riferimento).slice(0, 120), String(id)).changes > 0; },
-  // attesa → sparata: true per chi ci riesce, false per tutti gli altri
-  spara(id, metodo, riferimento = '') {
-    return db.prepare("UPDATE colpi SET stato='sparata', metodo=?, sparata_at=?, riferimento=CASE WHEN ?='' THEN riferimento ELSE ? END WHERE id=? AND stato='attesa'")
-      .run(String(metodo), now(), String(riferimento), String(riferimento).slice(0, 120), String(id)).changes > 0;
+  // attesa → pagata: true per chi ci riesce, false per tutti gli altri. Da
+  // pagata si esce solo in due modi: l'overlay l'ha mostrata, o e' rimborsata.
+  // `ancheScaduta`: un pagamento in euro che arriva comunque vale piu' della
+  // scadenza della mira (i soldi ci sono: o il colpo, o il rimborso).
+  paga(id, metodo, riferimento = '', ora = now(), premio = '', ancheScaduta = false) {
+    return db.prepare(`UPDATE colpi SET stato='pagata', metodo=?, pagata_at=?, premio=?, riferimento=CASE WHEN ?='' THEN riferimento ELSE ? END WHERE id=? AND stato IN ('attesa'${ancheScaduta ? ",'scaduta'" : ''})`)
+      .run(String(metodo), ora, String(premio).slice(0, 200), String(riferimento), String(riferimento).slice(0, 120), String(id)).changes > 0;
   },
+  tentata(id, ora = now()) { db.prepare("UPDATE colpi SET tentata_at=? WHERE id=? AND stato='pagata'").run(ora, String(id)); },
+  // pagata → sparata: l'overlay ha detto di averla mostrata
+  consegnata(id, ora = now()) { return db.prepare("UPDATE colpi SET stato='sparata', sparata_at=? WHERE id=? AND stato='pagata'").run(ora, String(id)).changes > 0; },
+  rimborsata(id) { return db.prepare("UPDATE colpi SET stato='rimborsata' WHERE id=? AND stato='pagata'").run(String(id)).changes > 0; },
+  daConsegnare() { return db.prepare("SELECT * FROM colpi WHERE stato='pagata' ORDER BY pagata_at").all().map((r) => this._leggi(r)); },
+  // il riferimento cambia solo se e' ancora quello atteso: la presa «apre:…» diventa il pagamento vero, o torna libera
+  // (qualunque sia lo stato: un pagamento appena aperto deve restare legato alla sua mira anche se nel frattempo e' scaduta)
+  rilega(id, da, a) { return db.prepare("UPDATE colpi SET riferimento=? WHERE id=? AND riferimento=?").run(String(a).slice(0, 120), String(id), String(da)).changes > 0; },
   scadi(id) { return db.prepare("UPDATE colpi SET stato='scaduta' WHERE id=? AND stato='attesa'").run(String(id)).changes > 0; },
+  // i Bit di un cheer si sommano a quelli gia' arrivati: torna il totale, o null se la mira non e' piu' aperta
+  versa(id, bit) {
+    const n = Math.max(0, Math.round(Number(bit) || 0));
+    if (!db.prepare("UPDATE colpi SET versati=versati+? WHERE id=? AND stato='attesa'").run(n, String(id)).changes) return null;
+    return db.prepare('SELECT versati FROM colpi WHERE id=?').get(String(id)).versati;
+  },
   // quante mire ha aperto questo canale nell'ultimo minuto, e quante da quella stessa persona
   aperteDa(login, da) { return db.prepare('SELECT COUNT(*) AS n FROM colpi WHERE login=? AND creata>=?').get(String(login).toLowerCase(), da).n; },
-  ultimi(login, n = 30) { return db.prepare("SELECT * FROM colpi WHERE login=? AND stato='sparata' ORDER BY sparata_at DESC LIMIT ?").all(String(login).toLowerCase(), Math.max(1, Math.min(200, n | 0))).map((r) => this._leggi(r)); },
+  ultimi(login, n = 30) { return db.prepare("SELECT * FROM colpi WHERE login=? AND stato IN ('pagata','sparata','rimborsata') ORDER BY pagata_at DESC LIMIT ?").all(String(login).toLowerCase(), Math.max(1, Math.min(200, n | 0))).map((r) => this._leggi(r)); },
   pulisci(ora = now()) {
-    db.prepare("UPDATE colpi SET stato='scaduta' WHERE stato='attesa' AND riferimento='' AND scade<?").run(ora);
+    db.prepare("UPDATE colpi SET stato='scaduta' WHERE stato='attesa' AND riferimento='' AND scade<? AND (versati=0 OR creata<?)").run(ora, ora - 86400_000);
+    db.prepare("UPDATE colpi SET stato='scaduta' WHERE stato='attesa' AND riferimento LIKE 'apre:%' AND scade<?").run(ora);
+    db.prepare("UPDATE colpi SET stato='scaduta' WHERE stato='attesa' AND riferimento IN (SELECT id FROM donazioni WHERE stato='scaduta')").run();
     db.prepare("DELETE FROM colpi WHERE stato='scaduta' AND creata<?").run(ora - 86400_000);
-    db.prepare("DELETE FROM colpi WHERE stato='sparata' AND sparata_at<?").run(ora - 90 * 86400_000);
+    db.prepare("DELETE FROM colpi WHERE stato IN ('sparata','rimborsata') AND creata<?").run(ora - 90 * 86400_000);
   },
   rimuovi(login) { db.prepare('DELETE FROM colpi WHERE login=?').run(String(login).toLowerCase()); },
 };

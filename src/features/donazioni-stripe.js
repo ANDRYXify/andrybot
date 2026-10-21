@@ -17,7 +17,7 @@
 // sessioni ancora aperte, per chi chiude la scheda prima.
 import { config } from '../config.js';
 import { makeLog } from '../logger.js';
-import { contiDonazioni, registroDonazioni } from '../db.js';
+import { contiDonazioni, registroDonazioni, registroColpi } from '../db.js';
 import { urlPaginaDona } from './donazioni.js';
 import { chiama as chiamaStripe } from './stripe-filo.js';
 
@@ -52,7 +52,7 @@ function chiaveMorta(login, r) {
 // sessione di PROVA al collegamento usa gli stessi, cosi' un permesso che
 // manca si scopre subito, non alla prima donazione vera.
 function paramsSessione({ login, prodotto, chi, cent, valuta, nome, messaggio, scadenzaMs, ritorno = 'link' }) {
-  const base = ritorno === 'dona' ? urlPaginaDona(login) : config.baseUrl + '/u/' + login;
+  const base = ritorno === 'dona' ? urlPaginaDona(login) : config.baseUrl + '/u/' + login + (ritorno === 'colpo' ? '/colpo' : '');
   return {
     mode: 'payment',
     submit_type: 'donate',
@@ -102,10 +102,23 @@ export async function verificaChiave(login) {
   const c = contiDonazioni.get(login);
   if (!c?.chiave) return null;
   const r = await stripe(c.chiave, 'GET', '/products/' + (c.prodotto || 'nessuno'));
-  if (r.ok) return contiDonazioni.set(login, { pronto: true, verificato: true, nota: '' });
+  if (r.ok) return contiDonazioni.set(login, { pronto: true, verificato: true, nota: '', rimborsi: await puoRimborsare(c.chiave, !!c.rimborsi) });
   const nota = spiegaRifiuto(r);
   if (nota) return contiDonazioni.set(login, { pronto: false, nota });
   return c;
+}
+
+// IL PERMESSO DEI RIMBORSI, provato senza toccare niente: un rimborso di un
+// pagamento che non esiste. Senza il permesso Stripe risponde 403 prima di
+// guardare il pagamento; col permesso risponde che il pagamento non c'e'.
+// Qualunque altra risposta (rete, Stripe giu') non cambia quello che si sapeva.
+// Serve ai colpi pagati in euro (docs/COLPI.md): si vendono solo se un colpo
+// che non si puo' consegnare si puo' anche rimborsare.
+export async function puoRimborsare(chiave, prima = false) {
+  const r = await stripe(chiave, 'POST', '/refunds', { payment_intent: 'pi_socialbot_prova_permesso' });
+  if (r.stato === 403) return false;
+  if (r.codice === 'resource_missing' || r.stato === 404 || r.stato === 400) return true;
+  return prima;
 }
 
 export function statoDi(c) {
@@ -206,6 +219,7 @@ export async function ronda(suPagata, ora = Date.now(), altri = {}) {
     try { suPagata(r.login, e.d); } catch (err) { log.warn('donazione confermata dalla ronda, avviso fallito:', err?.message || err); }
   }
   for (const x of registroDonazioni.pulisci()) altri.fileVia?.(x);
+  registroColpi.pulisci();
   return n;
 }
 

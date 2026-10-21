@@ -43,6 +43,15 @@ comandi diversi da quelli della riga italiana.
 
 ## 2026-10-21
 
+- [importante] Colpi degli spettatori: da un link vedono la tua diretta, scelgono un tuo effetto, toccano il punto del quadro e, pagato in euro, punti canale o Bit, l'effetto compare lì col loro nome. Senza estensioni Twitch. [vai: colpi]
+  en: Viewer hits: from a link they watch your stream, pick one of your effects, tap a spot on the frame and, once paid in euros, channel points or Bits, the effect appears there with their name. No Twitch extensions.
+  es: Golpes de los espectadores: desde un enlace ven tu directo, eligen uno de tus efectos, tocan un punto del cuadro y, pagado en euros, puntos de canal o Bits, el efecto aparece ahí con su nombre. Sin extensiones de Twitch.
+  > La chat colpisce la diretta, dove vuole
+  > Una pagina tua con la diretta e la mira: il colpo cade proprio nel punto scelto, e si paga solo quando può comparire. Se non compare, euro e punti tornano da soli a chi ha pagato. Le zone protette, come la webcam, non si colpiscono.
+  en> Chat hits your stream, right where it wants
+  en> A page of yours with the stream and a crosshair: the hit lands exactly on the chosen spot, and can only be paid when it can show. If it does not show, euros and points go back to the payer by themselves. Protected areas, like your webcam, can't be hit.
+  es> El chat golpea tu directo, donde quiere
+  es> Una página tuya con el directo y la mira: el golpe cae justo en el punto elegido, y solo se paga cuando puede aparecer. Si no aparece, los euros y los puntos vuelven solos a quien pagó. Las zonas protegidas, como la webcam, no se golpean.
 - [importante] Nello Studio della diretta l'overlay è quello di OBS, intero: timer, obiettivi, contatori, alert, chat e tutto il tuo Overlay Studio, anche quando non succede niente. [vai: studio]
   en: In the live Studio the overlay is the one OBS shows, whole: timers, goals, counters, alerts, chat and your whole Overlay Studio, even when nothing is happening.
   es: En el Estudio del directo el overlay es el de OBS, entero: temporizadores, objetivos, contadores, alertas, chat y todo tu Overlay Studio, aunque no pase nada.

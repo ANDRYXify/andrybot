@@ -280,6 +280,7 @@ function impostazioni() {
       penitenzeModo: 'lista', penitenze: [], effetto: '', fuzzy: 80,
       overlay: { posizione: 'alto-destra', colore: '#ff2d2d' },
       ...(s.penitenze && typeof s.penitenze === 'object' ? s.penitenze : {}) },
+    colpi: s.colpi && typeof s.colpi === 'object' ? s.colpi : {},
     alerts: (() => {
       const a = (s.alerts && typeof s.alerts === 'object') ? s.alerts : {};
       const ev = (x, d) => ({ attivo: false, chi: 'socialbot', testo: '', suono: d.suono, accento: d.colore, volume: 100, minBits: 0, minViewers: 0, ...(x && typeof x === 'object' ? { ...x, accento: x.accento || x.colore || d.colore } : {}) });
@@ -1010,6 +1011,8 @@ function statoDemo() {
         instagram: { userId: '17841400000000000', username: 'andryxify', via: 'instagram', attivo: true, annunciaChat: false, messaggio: '' },
         giochiSito: { attivo: true, collegato: true },
         antispam: { maiuscole: true, link: true, flood: true },
+        colpi: { attivo: true, pausa: false, attesaSec: 30, alMinuto: 6, conNome: true, zone: [{ x: 72, y: 62, w: 26, h: 34 }],
+          voci: [{ id: 'pomodoro', comando: 'pomodoro', nome: 'Pomodoro', euro: 200, punti: 500, bit: 100, scala: 100, attiva: true }] },
         penitenze: { attivo: true, premioVieta: 'Vietami una parola', premioSolo: 'Dì solo questa parola',
           durataMin: 2, penitenzeModo: 'lista', penitenze: ['10 flessioni', 'canta la sigla', 'parla in inglese per 1 minuto'],
           effetto: 'airhorn', fuzzy: 80, overlay: { posizione: 'alto-destra', colore: '#ff2d2d' } },
@@ -2439,6 +2442,7 @@ function _demoGet(via) {
       effetti: [
         { id: 1, comando: 'applausi', tipo: 'audio', tier: 'tutti', cooldown: 10, volume: 80, durata: 3000 },
         { id: 2, comando: 'tromba', tipo: 'audio', tier: 'sub', cooldown: 15, volume: 70, durata: 2000 },
+        { id: 5, comando: 'pomodoro', tipo: 'immagine', tier: 'tutti', cooldown: 0, volume: 100, durata: 4000, schermo: '' },
         { id: 3, comando: 'coriandoli', tipo: 'video', tier: 'vip', cooldown: 30, volume: 60, durata: 4000, schermo: 'riempi' },
         { id: 4, comando: 'festa', tipo: 'disegno', tier: 'tutti', cooldown: 20, volume: 80, durata: 6000, schermo: '', disegno: { nome: 'fuochi', colori: ['#ff5a5a', '#ffd166', '#4cc9f0'], quanti: 'normale', durata: 8, suono: 'tada' } },
       ],
@@ -2627,6 +2631,9 @@ function _demoGet(via) {
       blocchi: [{ tipo: 'intestazione' }, { tipo: 'vetrina', titolo: '', articolo: 0 }, { tipo: 'articoli', titolo: '', colonne: 2, formato: 'quadrato', prezzo: true, scorte: true, requisiti: true },
         { tipo: 'comecompra', titolo: '', testo: '' }, { tipo: 'piede', link: true, canale: true }] } };
   const statoDona = { paginaUrl: 'https://dona.socialbot.live/andryxify', conto: { stato: 'nessuno', coda: '', nota: '' }, satispay: { stato: 'nessuno', coda: '', nota: '' }, kofi: { stato: 'nessuno', pagina: '', token: false, valuta: 'EUR', webhook: 'https://socialbot.live/dona/kofi/andryxify' }, riepilogo: { oggi: [], mese: [], anno: [], sempre: [] }, ultime: [], daApprovare: [] };
+  F['/api/colpi'] = { pagina: 'https://socialbot.live/u/andryxify/colpo', euro: ['stripe'], valuta: 'EUR', premiErrori: [],
+    voci: [{ id: 'pomodoro', premioNome: 'Colpo: Pomodoro', premioCosto: 500 }],
+    ultimi: [{ quando: Date.now() - 600000, nome: 'Pomodoro', chi: 'Marta', metodo: 'bit', stato: 'sparata' }, { quando: Date.now() - 1500000, nome: 'Pomodoro', chi: 'lucaplays', metodo: 'euro', stato: 'sparata' }] };
   F['/api/donazioni/stato'] = statoDona; F['/api/donazioni/stato?rileggi=1'] = statoDona;
   const PAG_DEMO = {
     link: ['I miei link', L('Dirette, giochi e chiacchiere', 'Streams, games and chatter', 'Directos, juegos y charla'), 'socialbot.live/u/andryxify'],
@@ -4579,6 +4586,7 @@ const GRUPPI = [
     ['alert', 'Overlay Studio'],
     ['effetti', 'Effetti e suoni'],
     ['emote', 'Emote (7TV)'],
+    ['colpi', 'Colpi degli spettatori'],
   ] },
   { id: 'difesa', nome: 'Scudo e attacchi', schede: [
     ['scudo', 'Scudo anti-bot'],
@@ -4667,6 +4675,7 @@ const T_SCHEDA = {
   alert: ['Overlay Studio', 'Overlay Studio', 'Overlay Studio'],
   effetti: ['Effetti e suoni', 'Effects & sounds', 'Efectos y sonidos'],
   emote: ['Emote (7TV)', 'Emotes (7TV)', 'Emotes (7TV)'],
+  colpi: ['Colpi degli spettatori', 'Viewer hits', 'Golpes de los espectadores'],
   scudo: ['Scudo anti-bot', 'Anti-bot shield', 'Escudo anti-bot'],
   attacchi: ['Attacchi', 'Attacks', 'Ataques'],
   follower: ['Follower', 'Followers', 'Seguidores'],
@@ -4758,6 +4767,7 @@ const ICONA = {
   giveaway:    _ico('<rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5C11 3 12 8 12 8s1-5 4.5-5a2.5 2.5 0 0 1 0 5"/>'),
   penitenze:   _ico('<rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>'),
   alert:       _ico('<rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/><path d="M6 8h4"/><path d="M6 11h2"/>'),
+  colpi:       _ico('<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 2v4"/><path d="M12 18v4"/><path d="M2 12h4"/><path d="M18 12h4"/>'),
   emote:       _ico('<circle cx="12" cy="12" r="9"/><path d="M8.5 14.5a4.5 4.5 0 0 0 7 0"/><line x1="9" x2="9.01" y1="9.5" y2="9.5"/><line x1="15" x2="15.01" y1="9.5" y2="9.5"/>'),
   notifiche:   _ico('<path d="M6 9a6 6 0 0 1 12 0c0 4 1.5 5 2 6H4c.5-1 2-2 2-6"/><path d="M10.3 20a1.9 1.9 0 0 0 3.4 0"/>'),
   telegram:    _ico('<path d="M21 12a8 8 0 0 1-11.6 7.1L3 21l1.9-6.4A8 8 0 1 1 21 12Z"/><path d="M8.5 12h.01"/><path d="M12 12h.01"/><path d="M15.5 12h.01"/>'),
@@ -4803,6 +4813,7 @@ const DESC = {
   giveaway: ['Organizza estrazioni a premi per la community.', 'Run prize giveaways for your community.', 'Organiza sorteos de premios para tu comunidad.'],
   penitenze: ['Con i punti canale la chat ti vieta una parola — o ti obbliga a dire solo quella. Se sbagli, penitenza.', 'With channel points chat bans a word for you — or forces you to say only that one. Slip up and you owe a forfeit.', 'Con los puntos de canal el chat te prohíbe una palabra — o te obliga a decir solo esa. Si fallas, penitencia.'],
   alert: ['Il tuo overlay: alert, chat a schermo, widget e temi, tutto personalizzabile.', 'Your stream overlay: alerts, on-screen chat, widgets and themes, all customizable.', 'Tu overlay: alertas, chat en pantalla, widgets y temas, todo personalizable.'],
+  colpi: ['Gli spettatori mirano un punto della diretta e ci fanno comparire un tuo effetto, pagando in euro, punti canale o Bit.', 'Viewers aim at a spot on your stream and make one of your effects appear there, paying in euros, channel points or Bits.', 'Los espectadores apuntan a un punto del directo y hacen aparecer ahí uno de tus efectos, pagando en euros, puntos de canal o Bits.'],
   emote: ['Gestisci le emote 7TV del tuo canale: aggiungi, togli e rinomina, senza uscire dal bot.', 'Manage your channel’s 7TV emotes: add, remove and rename, without leaving the bot.', 'Gestiona las emotes 7TV de tu canal: añade, quita y renombra, sin salir del bot.'],
   notifiche: ['Collega Instagram, TikTok e YouTube, e scegli cosa annunciare quando pubblichi.', 'Connect Instagram, TikTok and YouTube, and choose what to announce when you post.', 'Conecta Instagram, TikTok y YouTube, y elige qué anunciar cuando publicas.'],
   donazioni: ['Ricevi donazioni sul tuo conto, con l’avviso in diretta e il grazie in chat che partono da soli.', 'Receive donations on your own account, with the on-stream alert and the chat thanks firing on their own.', 'Recibe donaciones en tu propia cuenta, con el aviso en directo y el gracias en el chat que salen solos.'],
@@ -4836,7 +4847,7 @@ const NOME_ADDON = {
   squadra: ['Squadra', 'Squadra', 'Squadra'],
 };
 
-const SOLO_TWITCH = ['regia', 'regole', 'scudo', 'registro', 'follower', 'emote', 'sondaggi', 'penitenze'];
+const SOLO_TWITCH = ['regia', 'regole', 'scudo', 'registro', 'follower', 'emote', 'sondaggi', 'penitenze', 'colpi'];
 const NOME_PIATTAFORMA = { twitch: 'Twitch', kick: 'Kick', youtube: 'YouTube', discord: 'Discord' };
 
 const ANCHE_SU = { regole: ['kick'], penitenze: ['kick'], scudo: ['kick'], registro: ['kick'] };
@@ -5005,6 +5016,8 @@ const GUIDE = {
     come: [['Premi «Voglio provarlo» ed entri subito. Serve un browser aggiornato: Chrome o Edge su computer, Chrome su Android.', 'Press «I want to try it» and you are in right away. It needs an up-to-date browser: Chrome or Edge on a computer, Chrome on Android.', 'Pulsa «Quiero probarlo» y entras enseguida. Necesita un navegador actualizado: Chrome o Edge en el ordenador, Chrome en Android.', '#studio-beta-riga'], ['Componi le scene come in OBS: a sinistra le scene, accanto le fonti (webcam, schermo, immagini e GIF, video, testo, overlay). Ogni scena sceglie quale dei tuoi overlay usare, dal pannello Fonti. Trascina e ridimensiona sulla tela; le frecce spostano di un punto, con Maiuscole di dieci.', 'Build your scenes as in OBS: scenes on the left, sources next to them (webcam, screen, images and GIFs, video, text, overlay). Every scene picks which of your overlays to use, from the Sources dock. Drag and resize on the canvas; the arrow keys move by one point, with Shift by ten.', 'Compón las escenas como en OBS: a la izquierda las escenas, al lado las fuentes (webcam, pantalla, imágenes y GIF, vídeo, texto, overlay). Cada escena elige cuál de tus overlays usar, desde el panel Fuentes. Arrastra y cambia el tamaño en el lienzo; las flechas mueven un punto, con Mayúsculas diez.', ''], ['«Modalità studio» apre anteprima e programma affiancati: prepari la scena dopo senza che il pubblico la veda, e «Transizione» la manda in onda con un taglio o una dissolvenza.', '«Studio mode» opens preview and program side by side: you prepare the next scene without the audience seeing it, and «Transition» puts it on air with a cut or a fade.', '«Modo estudio» abre vista previa y programa lado a lado: preparas la escena siguiente sin que el público la vea, y «Transición» la pone en el aire con un corte o un fundido.', ''], ['In «Impostazioni» scegli i formati: orizzontale, verticale o tutti e due. Con tutti e due partono due dirette vere, e ogni fonte ha una posizione per formato. Poi scegli dove va la diretta: Twitch e Kick sono già pronti se li hai collegati, YouTube, TikTok o un server tuo si aggiungono con la chiave di trasmissione, che resta cifrata.', 'In «Settings» pick the formats: horizontal, vertical or both. With both, two real streams start, and every source has a position per format. Then choose where the stream goes: Twitch and Kick are ready if you connected them, YouTube, TikTok or your own server are added with the stream key, which stays encrypted.', 'En «Ajustes» eliges los formatos: horizontal, vertical o los dos. Con los dos salen dos directos de verdad, y cada fuente tiene una posición por formato. Luego eliges adónde va el directo: Twitch y Kick ya están listos si los conectaste, YouTube, TikTok o un servidor tuyo se añaden con la clave de emisión, que queda cifrada.', ''], ['Sul telefono si apre la regia, a schermo intero e fatta per il pollice: scegli cosa fai (in giro, in camera, mani al lavoro, musica) e prepara scene, fotocamera e audio. Scorri il dito sulla tela per cambiare scena, due tocchi girano la fotocamera, e la diretta si chiude tenendo premuto.', 'On a phone the controls open full screen, built for the thumb: choose what you do (out and about, on camera, hands at work, music) and it sets up scenes, camera and audio. Swipe on the canvas to switch scenes, double tap flips the camera, and you end the stream by holding the button.', 'En el teléfono se abre el control a pantalla completa, hecho para el pulgar: eliges qué haces (de paseo, en cámara, manos a la obra, música) y prepara escenas, cámara y audio. Desliza el dedo sobre el lienzo para cambiar de escena, dos toques giran la cámara, y el directo se cierra manteniendo pulsado.', ''], ['In diretta dal telefono la chat si legge grande, e una voce può leggertela in cuffia; gli alert fanno vibrare. «Blocca i tocchi» evita i tocchi in tasca. Se cambi app va in onda la scritta di riserva, e al ritorno fotocamera e microfono ripartono da soli.', 'Streaming from the phone the chat reads big, and a voice can read it to you in your headphones; alerts make it vibrate. «Lock touches» avoids pocket taps. If you switch apps your fallback text goes on air, and when you are back camera and microphone restart by themselves.', 'En directo desde el teléfono el chat se lee grande, y una voz puede leértelo en los auriculares; las alertas hacen vibrar. «Bloquear toques» evita toques en el bolsillo. Si cambias de app sale tu texto de reserva, y al volver cámara y micrófono arrancan solos.', ''], ['La fotocamera: il tasto «1×» sulla tela ingrandisce a tocchi, con due dita fai lo zoom e sposti l’inquadratura, e il tasto della fotocamera apre il suo foglio: gira, specchia, scegli l’obiettivo, lo zoom e come sta l’immagine (Automatica, Riempi, Intera). Sul computer lo stesso è nelle Proprietà della fonte.', 'The camera: the «1×» button on the canvas zooms in steps, with two fingers you zoom and move the framing, and the camera button opens its sheet: flip, mirror, pick the lens, the zoom and how the picture sits (Automatic, Fill, Whole). On a computer the same is in the source’s Properties.', 'La cámara: el botón «1×» sobre el lienzo amplía a toques, con dos dedos haces zoom y mueves el encuadre, y el botón de la cámara abre su hoja: girar, espejo, elegir el objetivo, el zoom y cómo queda la imagen (Automático, Llenar, Entera). En el ordenador lo mismo está en las Propiedades de la fuente.', ''], ['Le scene si salvano da sole sul tuo account, cifrate. Immagini, GIF e video restano sul dispositivo: su un altro computer al loro posto c’è un riquadro col nome del file, e lo ricarichi una volta per tutte le scene che lo usano.', 'Scenes save by themselves to your account, encrypted. Images, GIFs and videos stay on the device: on another computer a box with the file name stands in their place, and you load it once for every scene that uses it.', 'Las escenas se guardan solas en tu cuenta, cifradas. Imágenes, GIF y vídeos se quedan en el dispositivo: en otro ordenador en su lugar hay un recuadro con el nombre del archivo, y lo vuelves a cargar una vez para todas las escenas que lo usan.', ''], ['Scrivi la frase della tua immagine di riserva e quanti minuti aspettare: se la rete rallenta resta la tua voce su quell’immagine, se cade va in onda lei, e se non torni la diretta si chiude da sola.', 'Write the line for your backup image and how many minutes to wait: if the network slows down your voice stays over that image, if it drops the image goes on air, and if you do not come back the stream ends by itself.', 'Escribe la frase de tu imagen de reserva y cuántos minutos esperar: si la red va lenta queda tu voz sobre esa imagen, si cae sale ella, y si no vuelves el directo se cierra solo.', ''], ['Con OSify acceso, i suoi canali audio (gioco, voce, musica) compaiono da soli: «Usa i canali di OSify» li mette ognuno al suo posto nel mixer.', 'With OSify running, its audio channels (game, voice, music) show up by themselves: «Use the OSify channels» puts each one in its place in the mixer.', 'Con OSify encendido, sus canales de audio (juego, voz, música) aparecen solos: «Usar los canales de OSify» pone cada uno en su sitio en el mezclador.', '']] },
   alert: { serve: ['Comporre quello che si vede sulla diretta — alert, chat a schermo, obiettivi, contatori — e prendere il link da mettere in OBS.', 'Compose what shows on your stream — alerts, on-screen chat, goals, counters — and get the link to put in OBS.', 'Componer lo que se ve en el directo — alertas, chat en pantalla, objetivos, contadores — y coger el enlace para poner en OBS.'],
     come: [['Nei «Livelli», a sinistra, c\'è tutto quello che può comparire: l\'occhio lo toglie da questo overlay.', 'In «Layers», on the left, there is everything that can show up: the eye takes it out of this overlay.', 'En «Capas», a la izquierda, está todo lo que puede aparecer: el ojo lo quita de este overlay.', '#ovl-livelli'], ['Sulla tela trascini ogni cosa dove la vuoi: si aggancia da sola ai bordi e agli altri, le frecce la spostano al pixel.', 'On the canvas you drag everything where you want it: it snaps to the edges and to the others, the arrows move it pixel by pixel.', 'En el lienzo arrastras cada cosa donde la quieras: se ajusta sola a los bordes y a las demás, las flechas la mueven píxel a píxel.', '#ovl-preview'], ['Clicca un elemento sulla tela: a destra si apre «Proprietà», e lì si veste — colori, carattere, forma, dimensione, rotazione.', 'Click an element on the canvas: «Properties» opens on the right, and there it gets dressed — colors, font, shape, size, rotation.', 'Haz clic en un elemento del lienzo: a la derecha se abre «Propiedades», y ahí se viste — colores, fuente, forma, tamaño, rotación.', '#ovl-tela'], ['Copia il link qui sopra e mettilo in OBS come sorgente Browser, 1920×1080. Ogni overlay ha il suo.', 'Copy the link above and put it in OBS as a Browser source, 1920×1080. Each overlay has its own.', 'Copia el enlace de arriba y ponlo en OBS como fuente Navegador, 1920×1080. Cada overlay tiene el suyo.', '#inp-overlay-url'], ['Per le sere diverse dalle altre c\'è l\'occasione: un\'aggiunta sopra l\'overlay che hai già. La accendi e compare, la spegni e torna tutto com\'era.', 'For the nights that are not like the others there is the occasion: an add-on over the overlay you already have. Turn it on and it shows up, turn it off and everything is back as it was.', 'Para las noches que no son como las demás está la ocasión: un añadido sobre el overlay que ya tienes. La enciendes y aparece, la apagas y todo vuelve como estaba.', '#ovl-occ-quale']] },
+  colpi: { serve: ['Lasciare che gli spettatori colpiscano la diretta: scelgono un tuo effetto, toccano il punto del quadro e, pagato, l\'effetto compare lì col loro nome. Senza estensioni Twitch: basta un link.', 'Let viewers hit your stream: they pick one of your effects, tap the spot on the frame and, once paid, the effect appears there with their name. No Twitch extensions: just a link.', 'Dejar que los espectadores golpeen el directo: eligen uno de tus efectos, tocan el punto del cuadro y, pagado, el efecto aparece ahí con su nombre. Sin extensiones de Twitch: basta un enlace.'],
+    come: [['Accendi la pagina dei colpi e condividi il suo indirizzo (in chat, nel pannello del canale, nella pagina link).', 'Turn on the hits page and share its address (in chat, in your channel panel, on your link page).', 'Enciende la página de golpes y comparte su dirección (en el chat, en el panel del canal, en la página de enlaces).', '#cl-attivo'], ['Nel listino scegli quali effetti si possono mandare e a che prezzo: euro, punti canale, Bit, anche tutti e tre.', 'In the price list pick which effects can be sent and at what price: euros, channel points, Bits, even all three.', 'En la lista de precios elige qué efectos se pueden mandar y a qué precio: euros, puntos de canal, Bits, incluso los tres.', '#cl-voci'], ['Proteggi le zone che non vuoi colpite, come la tua webcam: lì non si mira.', 'Protect the areas you don\'t want hit, like your webcam: nobody can aim there.', 'Protege las zonas que no quieres que golpeen, como tu webcam: ahí no se apunta.', '#cl-quadro']] },
   emote: { serve: ['Gestire a 360° le emote 7TV del tuo canale — aggiungerle, toglierle e rinominarle — direttamente dal bot. Le emote 7TV compaiono anche nella chat a schermo dell\'overlay.', 'Fully manage your channel’s 7TV emotes — add, remove and rename them — right from the bot. 7TV emotes also show up in the overlay’s on-screen chat.', 'Gestiona al 100% las emotes 7TV de tu canal — añadirlas, quitarlas y renombrarlas — directamente desde el bot. Las emotes 7TV también aparecen en el chat en pantalla del overlay.'],
     come: [['Collega il tuo account 7TV incollando il token (c\'è la guida qui sotto).', 'Connect your 7TV account by pasting the token (there’s a guide below).', 'Conecta tu cuenta 7TV pegando el token (hay una guía abajo).', '#svtv-token'], ['Cerca un\'emote nella directory 7TV e premi «Aggiungi» (puoi dargli un alias).', 'Search an emote in the 7TV directory and hit «Add» (you can give it an alias).', 'Busca una emote en el directorio 7TV y pulsa «Añadir» (puedes ponerle un alias).', '#svtv-cerca'], ['Nel tuo set puoi rinominare o togliere le emote con un clic.', 'In your set you can rename or remove emotes with one click.', 'En tu set puedes renombrar o quitar emotes con un clic.', '#svtv-set']] },
   avatar: { serve: ['Guardare il bot mentre pensa: la sfera si accende quando legge la chat, decide e risponde.', 'Watch the bot while it thinks: the sphere lights up as it reads chat, decides and answers.', 'Ver el bot mientras piensa: la esfera se enciende cuando lee el chat, decide y responde.'],
@@ -6067,6 +6080,7 @@ function vistaPiattaforma() {
     ${pannelloAlert()}
     ${pannelloEffetti()}
     ${pannello7TV()}
+    ${pannelloColpi()}
     ${pannelloRuoli()}
     ${pannelloDcAvvisi()}
     ${pannelloDcServer()}
@@ -25996,6 +26010,225 @@ async function caricaPremi() {
   }); }));
 }
 
+let _clZone = [];
+let _clEffetti = [];
+
+function pannelloColpi() {
+  const c = impostazioni().colpi || {};
+  return pannello('colpi', `
+    <div class="carta">
+      <h2>${_hIco(ICO.target)}${L('Colpi degli spettatori', 'Viewer hits', 'Golpes de los espectadores')}</h2>
+      <p>${L('Gli spettatori aprono la tua pagina dei colpi, guardano la diretta, toccano un punto del quadro e scelgono un tuo effetto: quando pagano, l\'effetto compare lì, col loro nome. Senza estensioni Twitch.', 'Viewers open your hits page, watch the stream, tap a spot on the frame and pick one of your effects: once they pay, the effect appears right there, with their name. No Twitch extensions.', 'Los espectadores abren tu página de golpes, ven el directo, tocan un punto del cuadro y eligen uno de tus efectos: cuando pagan, el efecto aparece ahí, con su nombre. Sin extensiones de Twitch.')}</p>
+      <ul class="lista-punti">
+        <li><strong>${L('Euro', 'Euros', 'Euros')}</strong>: ${L('sul tuo conto, come le donazioni (scheda «Donazioni»).', 'to your account, like donations («Donations» tab).', 'a tu cuenta, como las donaciones (pestaña «Donaciones»).')}</li>
+        <li><strong>${L('Punti canale', 'Channel points', 'Puntos de canal')}</strong>: ${L('SocialBot crea un premio «Colpo: …» per ogni colpo con un prezzo in punti; lo spettatore lo riscatta scrivendo il codice della pagina.', 'SocialBot creates a «Colpo: …» reward for each hit with a points price; the viewer redeems it typing the code from the page.', 'SocialBot crea una recompensa «Colpo: …» por cada golpe con precio en puntos; el espectador la canjea escribiendo el código de la página.')}</li>
+        <li><strong>Bit</strong>: ${L('un Cheer in chat con il codice nel messaggio. I Bit si spendono solo su Twitch: la pagina non li può incassare.', 'a Cheer in chat with the code in the message. Bits can only be spent on Twitch: the page can\'t collect them.', 'un Cheer en el chat con el código en el mensaje. Los Bits solo se gastan en Twitch: la página no puede cobrarlos.')}</li>
+      </ul>
+      <div class="riga-interruttore spazio-sopra">
+        <label class="interruttore"><input type="checkbox" id="cl-attivo" ${c.attivo ? 'checked' : ''}><span class="levetta"></span></label>
+        <span class="etichetta-stato">${L('Pagina dei colpi aperta', 'Hits page open', 'Página de golpes abierta')}</span>
+      </div>
+      <div class="riga-interruttore">
+        <label class="interruttore"><input type="checkbox" id="cl-pausa" ${c.pausa ? 'checked' : ''}><span class="levetta"></span></label>
+        <span class="etichetta-stato">${L('In pausa: la pagina resta, i colpi non si prendono', 'Paused: the page stays, no hits are taken', 'En pausa: la página sigue, no se aceptan golpes')}</span>
+      </div>
+      <div class="riga-flessibile spazio-sopra">
+        <input type="text" id="cl-link" class="campo-largo" readonly value="" aria-label="${esc(L('Indirizzo della pagina dei colpi', 'Hits page address', 'Dirección de la página de golpes'))}">
+        <button type="button" class="btn secondario mini" id="cl-copia">${L('Copia', 'Copy', 'Copiar')}</button>
+        <a class="btn secondario mini" id="cl-apri" href="#" target="_blank" rel="noopener">${L('Apri', 'Open', 'Abrir')}</a>
+      </div>
+      <p class="suggerimento">${L('Un colpo si paga solo con la diretta in onda e un overlay che mostra gli effetti. Pagato, resta in arrivo finché l\'overlay non lo mostra; se in 10 minuti non succede, gli euro e i punti tornano da soli a chi ha pagato.', 'A hit can only be paid while you\'re live with an overlay showing effects. Once paid, it stays on its way until the overlay shows it; if that doesn\'t happen within 10 minutes, euros and points go back to the payer by themselves.', 'Un golpe solo se paga con el directo en marcha y un overlay que muestre los efectos. Pagado, queda en camino hasta que el overlay lo muestre; si en 10 minutos no pasa, los euros y los puntos vuelven solos a quien pagó.')}</p>
+      <p class="riquadro-info" id="cl-avvisi" hidden></p>
+    </div>
+
+    <div class="carta">
+      <h3>${_hIco(ICO.stella)}${L('Il listino', 'The price list', 'La lista de precios')}</h3>
+      <p>${L('Ogni colpo è un tuo effetto con un\'immagine o un video (scheda «Effetti e suoni»). Metti un prezzo in almeno un modo: un modo a zero non si offre.', 'Each hit is one of your effects with an image or a video («Effects & sounds» tab). Set a price in at least one way: a way at zero isn\'t offered.', 'Cada golpe es uno de tus efectos con una imagen o un vídeo (pestaña «Efectos y sonidos»). Pon un precio en al menos una forma: una forma a cero no se ofrece.')}</p>
+      <div id="cl-voci" class="cl-voci"></div>
+      <p class="spazio-sopra"><button type="button" class="btn secondario" id="cl-aggiungi">${_bIco(ICO.piu)}${L('Aggiungi un colpo', 'Add a hit', 'Añade un golpe')}</button></p>
+    </div>
+
+    <div class="carta">
+      <h3>${_hIco(ICO.scudo)}${L('Le regole', 'The rules', 'Las reglas')}</h3>
+      <div class="griglia-campi">
+        <div>
+          <label class="campo" for="cl-attesa">${L('Attesa per spettatore (secondi)', 'Wait per viewer (seconds)', 'Espera por espectador (segundos)')}</label>
+          <input type="number" id="cl-attesa" min="0" max="600" value="${Number.isFinite(Number(c.attesaSec)) ? Number(c.attesaSec) : 30}">
+        </div>
+        <div>
+          <label class="campo" for="cl-minuto">${L('Colpi al minuto, al massimo', 'Hits per minute, at most', 'Golpes por minuto, como máximo')}</label>
+          <input type="number" id="cl-minuto" min="1" max="60" value="${Number(c.alMinuto) || 6}">
+        </div>
+      </div>
+      <div class="riga-interruttore spazio-sopra">
+        <label class="interruttore"><input type="checkbox" id="cl-nome" ${c.conNome !== false ? 'checked' : ''}><span class="levetta"></span></label>
+        <span class="etichetta-stato">${L('Il nome di chi colpisce compare sotto l\'effetto', 'The hitter\'s name shows under the effect', 'El nombre de quien golpea aparece bajo el efecto')}</span>
+      </div>
+      <h4 class="spazio-sopra">${L('Zone protette', 'Protected areas', 'Zonas protegidas')}</h4>
+      <p class="suggerimento">${L('Trascina sul quadro per coprire la tua webcam, la chat o quello che non vuoi colpito. Tocca una zona per toglierla.', 'Drag on the frame to cover your webcam, the chat or anything you don\'t want hit. Tap an area to remove it.', 'Arrastra sobre el cuadro para cubrir tu webcam, el chat o lo que no quieras que golpeen. Toca una zona para quitarla.')}</p>
+      <div class="cl-quadro" id="cl-quadro" role="application" aria-label="${esc(L('Quadro della diretta: trascina per proteggere una zona', 'Stream frame: drag to protect an area', 'Cuadro del directo: arrastra para proteger una zona'))}"></div>
+      <p class="spazio-sopra"><button class="btn" id="cl-salva">${L('Salva', 'Save', 'Guardar')}</button></p>
+    </div>
+
+    <div class="carta">
+      <h3>${_hIco(ICO.orologio)}${L('Gli ultimi colpi', 'Latest hits', 'Últimos golpes')}</h3>
+      <div id="cl-ultimi"><p class="tenue">${L('Ancora nessuno.', 'None yet.', 'Ninguno todavía.')}</p></div>
+    </div>`);
+}
+
+const _clMirabile = (e) => (e.tipo === 'immagine' || e.tipo === 'video') && !e.schermo;
+
+function _clRiga(v) {
+  const opz = _clEffetti.filter(_clMirabile);
+  const c = String(v.comando || '');
+  const scelta = opz.map((e) => `<option value="${esc(e.comando)}"${e.comando === c ? ' selected' : ''}>!${esc(e.comando)} (${esc(e.tipo)})</option>`).join('')
+    + (c && !opz.some((e) => e.comando === c) ? `<option value="${esc(c)}" selected>!${esc(c)} — ${L('non c\'è più', 'missing', 'ya no está')}</option>` : '');
+  const euro = Number(v.euro) > 0 ? (Number(v.euro) / 100).toFixed(2) : '';
+  return `<div class="cl-voce" data-id="${esc(v.id || '')}">
+    <label class="cl-c cl-eff"><span>${L('Effetto', 'Effect', 'Efecto')}</span><select data-k="comando">${scelta || `<option value="">${L('Nessun effetto con immagine o video', 'No effect with an image or video', 'Ningún efecto con imagen o vídeo')}</option>`}</select></label>
+    <label class="cl-c cl-nome"><span>${L('Nome', 'Name', 'Nombre')}</span><input data-k="nome" type="text" maxlength="40" value="${esc(v.nome || '')}"></label>
+    <label class="cl-c"><span>${L('Euro', 'Euros', 'Euros')}</span><input data-k="euro" type="number" min="0" max="500" step="0.5" inputmode="decimal" value="${euro}"></label>
+    <label class="cl-c"><span>${L('Punti', 'Points', 'Puntos')}</span><input data-k="punti" type="number" min="0" max="1000000" step="1" value="${Number(v.punti) || ''}"></label>
+    <label class="cl-c"><span>Bit</span><input data-k="bit" type="number" min="0" max="100000" step="1" value="${Number(v.bit) || ''}"></label>
+    <label class="cl-c"><span>${L('Grandezza %', 'Size %', 'Tamaño %')}</span><input data-k="scala" type="number" min="20" max="300" step="5" value="${Number(v.scala) || 100}"></label>
+    <label class="cl-c cl-acc"><span>${L('Attivo', 'On', 'Activo')}</span><span class="interruttore"><input data-k="attiva" type="checkbox" ${v.attiva !== false ? 'checked' : ''}><span class="levetta"></span></span></label>
+    <button type="button" class="btn secondario mini ico-sola cl-via" title="${esc(L('Togli', 'Remove', 'Quitar'))}" aria-label="${esc(L('Togli', 'Remove', 'Quitar'))}">${_bIco('<path d="M18 6 6 18"/><path d="m6 6 12 12"/>')}</button>
+    <p class="cl-premio suggerimento" data-premio></p>
+  </div>`;
+}
+
+function _clVoci() {
+  const box = document.getElementById('cl-voci');
+  if (!box) return;
+  const voci = (impostazioni().colpi || {}).voci || [];
+  box.innerHTML = voci.length ? voci.map(_clRiga).join('') : `<p class="tenue" data-vuoto>${L('Nessun colpo ancora: aggiungine uno.', 'No hits yet: add one.', 'Ningún golpe aún: añade uno.')}</p>`;
+}
+
+function _clLeggi() {
+  const voci = [...document.querySelectorAll('#cl-voci .cl-voce')].map((r) => {
+    const q = (k) => r.querySelector(`[data-k="${k}"]`);
+    const euro = Math.round((Number(String(q('euro').value).replace(',', '.')) || 0) * 100);
+    return { id: r.dataset.id || '', comando: q('comando').value, nome: q('nome').value.trim(), euro, punti: Number(q('punti').value) || 0,
+      bit: Number(q('bit').value) || 0, scala: Number(q('scala').value) || 100, attiva: q('attiva').checked };
+  }).filter((v) => v.comando);
+  return {
+    attivo: !!document.getElementById('cl-attivo')?.checked,
+    pausa: !!document.getElementById('cl-pausa')?.checked,
+    attesaSec: Number(document.getElementById('cl-attesa')?.value) || 0,
+    alMinuto: Number(document.getElementById('cl-minuto')?.value) || 6,
+    conNome: !!document.getElementById('cl-nome')?.checked,
+    zone: _clZone.map((z) => ({ ...z })),
+    voci,
+  };
+}
+
+async function salvaColpi(silenzioso) {
+  const colpi = _clLeggi();
+  const vuote = colpi.voci.filter((v) => !(v.euro > 0 || v.punti > 0 || v.bit > 0));
+  if (colpi.voci.some((v) => v.euro > 0 && v.euro < 50)) throw new Error(L('Il prezzo in euro parte da 0,50.', 'The euro price starts at 0.50.', 'El precio en euros empieza en 0,50.'));
+  await salvaImpostazioni({ colpi }, silenzioso ? null : (vuote.length ? L('Salvato: i colpi senza prezzo non si offrono', 'Saved: hits without a price aren\'t offered', 'Guardado: los golpes sin precio no se ofrecen') : L('Colpi salvati ✓', 'Hits saved ✓', 'Golpes guardados ✓')));
+  setTimeout(() => { caricaColpiStato(); }, 2500);
+}
+
+function _clQuadro() {
+  const q = document.getElementById('cl-quadro');
+  if (!q) return;
+  q.innerHTML = _clZone.map((z, i) => `<button type="button" class="cl-zona" data-i="${i}" style="left:${z.x}%;top:${z.y}%;width:${z.w}%;height:${z.h}%" title="${esc(L('Togli questa zona', 'Remove this area', 'Quitar esta zona'))}" aria-label="${esc(L('Togli la zona', 'Remove area', 'Quitar zona') + ' ' + (i + 1))}"></button>`).join('');
+}
+
+function _clCollegaQuadro() {
+  const q = document.getElementById('cl-quadro');
+  if (!q || q.dataset.wired) return;
+  q.dataset.wired = '1';
+  let da = null, bozza = null;
+  const pct = (e) => { const r = q.getBoundingClientRect(); return { x: Math.min(100, Math.max(0, (e.clientX - r.left) / r.width * 100)), y: Math.min(100, Math.max(0, (e.clientY - r.top) / r.height * 100)) }; };
+  const rett = (a, b) => ({ x: Math.round(Math.min(a.x, b.x) * 10) / 10, y: Math.round(Math.min(a.y, b.y) * 10) / 10, w: Math.round(Math.abs(a.x - b.x) * 10) / 10, h: Math.round(Math.abs(a.y - b.y) * 10) / 10 });
+  q.addEventListener('pointerdown', (e) => {
+    if (e.target.closest('.cl-zona')) return;
+    if (_clZone.length >= 8) { toast(L('Al massimo 8 zone.', 'At most 8 areas.', 'Como máximo 8 zonas.'), 'errore'); return; }
+    da = pct(e);
+    bozza = document.createElement('div');
+    bozza.className = 'cl-zona bozza';
+    q.appendChild(bozza);
+    q.setPointerCapture(e.pointerId);
+  });
+  q.addEventListener('pointermove', (e) => {
+    if (!da) return;
+    const z = rett(da, pct(e));
+    Object.assign(bozza.style, { left: z.x + '%', top: z.y + '%', width: z.w + '%', height: z.h + '%' });
+  });
+  q.addEventListener('pointerup', (e) => {
+    if (!da) return;
+    const z = rett(da, pct(e));
+    da = null;
+    if (z.w >= 2 && z.h >= 2) _clZone.push(z);
+    _clQuadro();
+  });
+  q.addEventListener('click', (e) => {
+    const b = e.target.closest('.cl-zona');
+    if (!b || b.classList.contains('bozza')) return;
+    _clZone.splice(Number(b.dataset.i), 1);
+    _clQuadro();
+  });
+}
+
+async function caricaColpiStato() {
+  let st = null;
+  try { st = await api('/api/colpi'); } catch { st = null; }
+  if (!st) return;
+  const link = document.getElementById('cl-link');
+  if (link) link.value = st.pagina || '';
+  const apri = document.getElementById('cl-apri');
+  if (apri) apri.href = st.pagina || '#';
+  const avvisi = [];
+  if (st.stripeSenzaRimborsi) avvisi.push(L('Alla chiave Stripe manca il permesso «Refunds»: senza, un colpo pagato che non si riesce a mostrare non si potrebbe rimborsare, quindi gli euro con Stripe non si offrono. Aggiungilo alla chiave in Stripe (Sviluppatori → Chiavi API).', 'Your Stripe key lacks the «Refunds» permission: without it, a paid hit that can\'t be shown couldn\'t be refunded, so euros via Stripe aren\'t offered. Add it to the key in Stripe (Developers → API keys).', 'A la clave de Stripe le falta el permiso «Refunds»: sin él, un golpe pagado que no se puede mostrar no se podría reembolsar, así que los euros con Stripe no se ofrecen. Añádelo a la clave en Stripe (Desarrolladores → Claves API).'));
+  else if (!st.euro?.length) avvisi.push(L('Per gli euro collega il tuo conto nella scheda «Donazioni»: finché non c\'è, i prezzi in euro non si offrono.', 'For euros connect your account in the «Donations» tab: until then, euro prices aren\'t offered.', 'Para los euros conecta tu cuenta en la pestaña «Donaciones»: hasta entonces, los precios en euros no se ofrecen.'));
+  for (const e of st.premiErrori || []) avvisi.push(L('Premio a punti canale non creato: ', 'Channel-point reward not created: ', 'Recompensa de puntos de canal no creada: ') + e);
+  const box = document.getElementById('cl-avvisi');
+  if (box) { box.textContent = avvisi.join(' · '); box.hidden = !avvisi.length; }
+  for (const r of document.querySelectorAll('#cl-voci .cl-voce')) {
+    const v = (st.voci || []).find((x) => x.id === r.dataset.id);
+    const p = r.querySelector('[data-premio]');
+    if (p) p.textContent = v?.premioNome ? L('Premio su Twitch: ', 'Twitch reward: ', 'Recompensa en Twitch: ') + v.premioNome + ' (' + v.premioCosto + ')' : '';
+  }
+  const ul = document.getElementById('cl-ultimi');
+  if (ul && (st.ultimi || []).length) {
+    const metodo = { euro: L('euro', 'euros', 'euros'), punti: L('punti', 'points', 'puntos'), bit: 'Bit' };
+    const come = { sparata: L('Mostrato', 'Shown', 'Mostrado'), pagata: L('In arrivo', 'On its way', 'En camino'), rimborsata: L('Rimborsato', 'Refunded', 'Reembolsado') };
+    ul.innerHTML = `<div class="scorrevole"><table class="tabella"><tbody>${st.ultimi.map((u) => `<tr><td>${esc(new Date(u.quando).toLocaleString(localePannello(), { dateStyle: 'short', timeStyle: 'short' }))}</td><td><strong>${esc(u.nome)}</strong></td><td>${esc(u.chi || '—')}</td><td>${esc(metodo[u.metodo] || u.metodo)}</td><td>${esc(come[u.stato] || '')}</td></tr>`).join('')}</tbody></table></div>`;
+  }
+}
+
+async function caricaColpi() {
+  const c = impostazioni().colpi || {};
+  _clZone = (c.zone || []).map((z) => ({ ...z }));
+  try { _clEffetti = ((await api('/api/streamer/effetti')) || {}).effetti || []; } catch { _clEffetti = []; }
+  _clVoci();
+  _clQuadro();
+  _clCollegaQuadro();
+  const box = document.getElementById('cl-voci');
+  if (box && !box.dataset.wired) {
+    box.dataset.wired = '1';
+    box.addEventListener('click', (e) => {
+      const b = e.target.closest('.cl-via');
+      if (!b) return;
+      b.closest('.cl-voce').remove();
+      if (!box.querySelector('.cl-voce')) _clVoci();
+    });
+    document.getElementById('cl-aggiungi')?.addEventListener('click', () => {
+      if (box.querySelectorAll('.cl-voce').length >= 20) { toast(L('Al massimo 20 colpi.', 'At most 20 hits.', 'Como máximo 20 golpes.'), 'errore'); return; }
+      const primo = _clEffetti.find(_clMirabile);
+      if (!primo) { toast(L('Prima carica un effetto con un\'immagine o un video in «Effetti e suoni».', 'First upload an effect with an image or a video in «Effects & sounds».', 'Primero sube un efecto con imagen o vídeo en «Efectos y sonidos».'), 'errore'); return; }
+      box.querySelector('[data-vuoto]')?.remove();
+      box.insertAdjacentHTML('beforeend', _clRiga({ comando: primo.comando, nome: primo.comando, scala: 100, attiva: true }));
+    });
+    document.getElementById('cl-salva')?.addEventListener('click', () => conErrore(() => salvaColpi()));
+    for (const id of ['cl-attivo', 'cl-pausa']) document.getElementById(id)?.addEventListener('change', () => conErrore(() => salvaColpi(true).then(() => toast(L('Fatto ✓', 'Done ✓', 'Hecho ✓')))));
+    document.getElementById('cl-copia')?.addEventListener('click', () => copiaTesto(document.getElementById('cl-link')?.value || '', L('Indirizzo copiato ✓', 'Address copied ✓', 'Dirección copiada ✓')));
+  }
+  await caricaColpiStato();
+}
+
 function pannello7TV() {
   return pannello('emote', `
     <div class="carta">
@@ -36447,6 +36680,7 @@ function caricaDatiScheda(id) {
   if (id === 'effetti') { caricaEffetti(); caricaPremi(); caricaSuoniPremi(); caricaLibreria(); caricaTracking(); requestAnimationFrame(() => { applicaSottoSchede('effetti'); disegnaPronti(); }); montaEventiEffetti(); caricaEventiEffetti(); }
   else _prontiFerma();
   if (id === 'emote') caricaEmote7TV();
+  if (id === 'colpi') caricaColpi();
   if (id === 'moduli') { caricaPiattaforme(); caricaModuli(); caricaContatori(); caricaGiochiComandi(); collegaMorti(); requestAnimationFrame(() => applicaSottoSchede('moduli')); }
   if (id === 'statistiche') { caricaStatistiche(); caricaClassifica(); }
   if (id === 'giochi') { caricaClassifica(); caricaCitazioni(); caricaBattute(); caricaGiochi(); caricaRegoleGiochi(); caricaCastighi(); caricaGiro(); _disegnaFormaMonete(); contiPunti(); requestAnimationFrame(() => applicaSottoSchede('giochi')); }

@@ -29,7 +29,7 @@ import { points, vips, tgConf, tgDest, amici, tgVisti, feedFonti, dcConf, passke
 import { direttaDest, MAX_DESTINAZIONI, studioScene, studioDispositivi } from '../db.js';
 import { creaSalotto } from '../features/studio-dispositivi.js';
 import { montaDispositivi } from './rotte-dispositivi.js';
-import { linkPage, visitePagina, TEMPLATE_LINKPAGE, LIMITI_LINKPAGE, FONT_LINKPAGE, ICONE_LINKPAGE, TIPI_BLOCCO, TIPI_PAGINA_NEGOZIO, contiDonazioni, contiSatispay, registroDonazioni, paginaDona, paginaNegozio, paginaPannello, cartePagina, accessi, recensioni as recensioniDb, campagneDb, sito } from '../db.js';
+import { linkPage, visitePagina, TEMPLATE_LINKPAGE, LIMITI_LINKPAGE, FONT_LINKPAGE, ICONE_LINKPAGE, TIPI_BLOCCO, TIPI_PAGINA_NEGOZIO, contiDonazioni, contiSatispay, registroDonazioni, registroColpi, paginaDona, paginaNegozio, paginaPannello, cartePagina, accessi, recensioni as recensioniDb, campagneDb, sito } from '../db.js';
 import { puoRecensire, validaRecensione, statoDopo, invitoAperto, rimandaFino, vetrinaDi, TESTO_MAX } from '../features/recensioni.js';
 import { funzioniCanale, concessioneDi } from '../features/accesso.js';
 import { canaleHa } from '../features/accesso.js';
@@ -85,6 +85,10 @@ import * as donazioni from '../features/donazioni.js';
 import * as donaStripe from '../features/donazioni-stripe.js';
 import * as donaSatispay from '../features/donazioni-satispay.js';
 import * as donaMedia from '../features/donazioni-media.js';
+import * as colpiMod from '../features/colpi.js';
+import * as colpiPagina from '../features/colpi-pagina.js';
+import { creaPortaColpi } from '../features/colpi-porta.js';
+import { riconciliaPremi } from '../features/colpi-premi.js';
 import * as spotify from '../features/spotify.js';
 import * as musicaOverlayFeat from '../features/musica-overlay.js';
 import * as giveaway from '../features/giveaway.js';
@@ -925,6 +929,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   const guscio = creaGuscio(publicDir);
   guscio.risorsa('pagina-link.js');
   guscio.risorsa('pagina-negozio.js');
+  guscio.risorsa('pagina-colpo.js');
   guscio.risorsa('telegram-porta.js');
   guscio.pagina('index.html');           // la vetrina, servita anche su '/'
   // Le pagine delle campagne e il loro tasto: aperte solo se l'id e' una
@@ -1435,6 +1440,19 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // noi potevamo saperlo. Qui l'overlay riporta il guaio e finisce
   // nell'osservatorio, dove lo streamer lo legge.
   const _guaioUltimo = new Map();
+  // I COLPI DEGLI SPETTATORI e l'overlay (docs/COLPI.md, «La consegna»):
+  // l'overlay dice se e' pronto a mostrarli, e dice quando ne ha mostrato uno.
+  // Solo con la chiave: e' l'overlay del canale a parlare.
+  app.post('/overlay/:login/colpo/pronto', (req, res) => {
+    if (!chiaveOk(req)) return res.status(403).json({ errore: 'chiave non valida' });
+    effects.segnaPronto(String(req.params.login).toLowerCase(), req.body?.pronto === true);
+    res.json({ ok: true });
+  });
+  app.post('/overlay/:login/colpo/:id/visto', wrap(async (req, res) => {
+    if (!chiaveOk(req)) return res.status(403).json({ errore: 'chiave non valida' });
+    const ok = await manager.colpi?.visto(String(req.params.login).toLowerCase(), String(req.params.id || '').slice(0, 40));
+    res.json({ ok: !!ok });
+  }));
   app.post('/overlay/:login/guaio', (req, res) => {
     if (!chiaveOk(req)) return res.status(403).json({ errore: 'chiave non valida' });
     const login = String(req.params.login).toLowerCase();
@@ -2364,6 +2382,94 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     if (dona) res.set('Cache-Control', 'private, no-store');
     else res.set('Cache-Control', 'public, max-age=0, s-maxage=60, stale-while-revalidate=300');
     res.type('html').send(html);
+  }));
+  // I COLPI DEGLI SPETTATORI (docs/COLPI.md). La pagina e' di tutti, come la
+  // pagina link; esiste solo coi colpi accesi. Cosa rispondono le rotte lo
+  // decide la porta (features/colpi-porta.js); qui ci sono i tetti alle
+  // richieste, le intestazioni e il ritorno da un pagamento in euro.
+  // Gli euro di un colpo si prendono solo da un conto che li sa anche
+  // restituire: un colpo pagato che nessun overlay mostra si rimborsa da solo.
+  // Satispay rimborsa sempre; Stripe se la chiave ha il permesso «Refunds».
+  const mezziEuro = (s, login) => donazioni.mezziDi(s?.settings?.donazioni || {}, contiDi(login))
+    .filter((x) => x === 'satispay' || (x === 'stripe' && !!contiDonazioni.get(login)?.rimborsi));
+  const portaColpi = creaPortaColpi({
+    servizio: manager.colpi, registro: registroColpi, streamers, effettoDi: (l, c) => effectsDb.get(l, c), mezziEuro,
+    apriPagamento: (mezzo, dati) => (mezzo === 'satispay' ? donaSatispay.apriPagamento(dati) : donaStripe.apriPagamento(dati)),
+    inOnda: (l) => manager.inOnda?.(l), overlay: (l) => effects.prontoColpi(l),
+  });
+  const loginColpi = (req) => { const l = String(req.params.user || '').toLowerCase(); return eLoginNostro(l) ? l : ''; };
+  app.get('/u/:user/colpo', wrap(async (req, res) => {
+    const login = loginColpi(req);
+    const k = login && portaColpi.aperti(login);
+    if (!k) return notFound(res);
+    // il ritorno da un pagamento in euro: si conferma come una donazione (che
+    // e' anche), e il colpo parte da donazioneArrivata
+    let mira = '';
+    const dona = String(req.query.dona || '');
+    if (dona && extRateOk('dona-ok:' + login)) {
+      const e = await confermaDonazione(login, dona);
+      if (e?.nuova) donazioneArrivata(login, e.d);
+      const m = e ? registroColpi.perRiferimento(e.d.id) : null;
+      if (m && m.login === login) mira = m.id;
+    }
+    const link = linkPage.get(login);
+    res.set('Cache-Control', 'private, no-store');
+    res.type('html').send(colpiPagina.htmlPaginaColpo({
+      login, display: k.s.display || login, avatar: await avatarDi(login), pagina: link || {}, baseUrl: config.baseUrl,
+      lingua: colpiPagina.linguaDi(req.get('accept-language')), mira,
+      privacy: link?.attiva ? `/u/${login}/privacy` : '/privacy.html',
+    }));
+  }));
+  app.get('/u/:user/colpo/dati', (req, res) => {
+    const d = loginColpi(req) ? portaColpi.dati(loginColpi(req)) : null;
+    res.set('Cache-Control', 'no-store');
+    if (!d) return res.status(404).json({ errore: 'spento' });
+    res.json(d);
+  });
+  // L'anteprima di un colpo, senza la chiave dell'overlay (che sta negli
+  // indirizzi dei media e non deve uscire): solo le voci accese del listino.
+  app.get('/u/:user/colpo/anteprima/:voce', (req, res) => {
+    const login = loginColpi(req);
+    const file = login ? portaColpi.anteprima(login, req.params.voce) : null;
+    if (!file) return notFound(res);
+    res.sendFile(join(effectsRoot, login, file), { maxAge: '300s' }, (err) => { if (err && !res.headersSent) notFound(res); });
+  });
+  app.post('/u/:user/colpo/mira', (req, res) => {
+    const login = loginColpi(req);
+    if (!login) return res.status(404).json({ ok: false, motivo: 'spento' });
+    if (!extRateOk('colpo-mira:' + String(req.ip || ''))) return res.status(429).json({ ok: false, motivo: 'troppi' });
+    res.json(portaColpi.mira(login, req.body || {}, String(req.ip || '')));
+  });
+  app.get('/u/:user/colpo/stato/:id', (req, res) => {
+    const login = loginColpi(req);
+    const m = login ? portaColpi.stato(login, req.params.id) : null;
+    res.set('Cache-Control', 'no-store');
+    if (!m) return res.status(404).json({ errore: 'mira' });
+    res.json(m);
+  });
+  app.post('/u/:user/colpo/paga/:id', wrap(async (req, res) => {
+    const login = loginColpi(req);
+    if (!login) return res.status(404).json({ errore: 'mira' });
+    if (!extRateOk('colpo-paga:' + String(req.ip || ''))) return res.status(429).json({ errore: 'troppi' });
+    res.json(await portaColpi.paga(login, req.params.id, req.body?.mezzo));
+  }));
+  // Il pannello dei colpi: l'indirizzo della pagina, cosa manca per gli euro,
+  // i premi che Twitch non ha voluto creare e gli ultimi colpi partiti.
+  app.get('/api/colpi', requireOwner, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    // il permesso dei rimborsi si riprova quando la scheda si apre, non piu' di una volta al minuto
+    const c = contiDonazioni.get(login);
+    if (c?.chiave && Date.now() - (c.verificato_at || 0) > 60_000) await donaStripe.verificaChiave(login);
+    const s = streamers.get(login);
+    const stripe = contiDonazioni.get(login);
+    const cfg = colpiMod.normalizza(s?.settings?.colpi);
+    res.json({
+      pagina: `${config.baseUrl}/u/${login}/colpo`, euro: mezziEuro(s, login), valuta: s?.settings?.donazioni?.valuta || 'EUR',
+      stripeSenzaRimborsi: !!(stripe?.pronto && !stripe.rimborsi),
+      premiErrori: Array.isArray(s?.settings?.colpi?.premiErrori) ? s.settings.colpi.premiErrori.slice(0, 20) : [],
+      voci: cfg.voci.map((v) => ({ id: v.id, premioNome: v.premio ? v.premioNome : '', premioCosto: v.premio ? v.premioCosto : 0 })),
+      ultimi: registroColpi.ultimi(login, 20).map((m) => ({ quando: m.pagata_at, nome: m.nome, chi: m.chi, metodo: m.metodo, stato: m.stato })),
+    });
   }));
   // LA PAGINA DEL NEGOZIO (docs/NEGOZIO.md, «La pagina»). Sta su
   // negozio.<dominio>/<login> quando il nome corto c'e', e su /u/<login>/negozio
@@ -4541,6 +4647,8 @@ STREAMER (${su.toUpperCase()}) e non c'entra con l'automazione del marketing.
   // i prezzi si trovano in Stripe all'avvio e poi ogni quarto d'ora: una voce che non coincide non si vende
   abbonamenti.sorvegliaPrezzi();
   // le donazioni pagate senza tornare sulla pagina le trova la ronda
+  // i colpi pagati e non ancora visti: si rimandano, e quelli che non si vedono si rimborsano
+  setInterval(() => { manager.colpi?.ronda().catch((e) => log.warn('ronda dei colpi:', e?.message || e)); }, 5000).unref?.();
   donaStripe.avviaRonda(donazioneArrivata, { satispay: donaSatispay.conferma, fileVia: (x) => donaMedia.togli(x.login, x.media) });
 
   // avvia il checkout per un tier. Identità: la sessione, oppure chi ha fatto il
@@ -4724,6 +4832,8 @@ STREAMER (${su.toUpperCase()}) e non c'entra con l'automazione del marketing.
   function donazioneArrivata(login, d) {
     manager.alerts?.donazione(login, d);
     if (!d?.id) return;
+    // una donazione aperta per un colpo (docs/COLPI.md): il colpo parte adesso
+    try { manager.colpi?.daPagamento(d.id); } catch (e) { log.error(`colpo dopo il pagamento #${login}:`, e?.message || e); }
     const r = registroDonazioni.get(d.id);
     if (!r?.media || r.media_stato !== 'attesa') return;
     const cfg = streamers.get(login)?.settings?.donazioni;
@@ -4859,7 +4969,7 @@ STREAMER (${su.toUpperCase()}) e non c'entra con l'automazione del marketing.
     const pid = String(req.query.payment_id || '');
     if (!/^[A-Za-z0-9-]{8,80}$/.test(pid)) return;
     const e = await donaSatispay.confermaPerRiferimento(login, pid);
-    if (e?.nuova) manager.alerts?.donazione(login, e.d);
+    if (e?.nuova) donazioneArrivata(login, e.d);
   }));
 
   // Il modulo «Sostieni» della pagina link: chi dona non ha una sessione. Si
@@ -7270,6 +7380,7 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
   }));
 
   // impostazioni: valida e salva SOLO le chiavi conosciute (merge con le esistenti)
+  const premiInCorso = new Map();     // login -> la riconciliazione dei premi dei colpi in corso
   app.post('/api/streamer/impostazioni', requireLogin, wrap(async (req, res) => {
     const user = currentUser(req);
     const s = streamers.get(user.login);
@@ -7348,6 +7459,8 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     // le donazioni: dove si dona, il tasto, la frase, il grazie in chat; del
     // token di Ko-fi resta solo l'impronta (features/donazioni.js)
     if (b.donazioni !== undefined) out.donazioni = donazioni.normDonazioni(b.donazioni, s.settings?.donazioni, user.login);
+    // i colpi degli spettatori: i premi a punti canale li scrive solo SocialBot (docs/COLPI.md)
+    if (b.colpi !== undefined) out.colpi = colpiMod.normColpi(b.colpi, s.settings?.colpi);
     if (b.penitenze !== undefined) {
       const p = b.penitenze || {};
       const ov = (p.overlay && typeof p.overlay === 'object') ? p.overlay : {};
@@ -7855,6 +7968,18 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     }
 
     streamers.setSettings(user.login, out);
+    // i premi dei colpi si allineano al listino salvato, dopo: Twitch risponde
+    // con calma, e il salvataggio non lo aspetta. Una alla volta per canale:
+    // due salvataggi di fila non creano due volte lo stesso premio.
+    if (b.colpi !== undefined) {
+      const prima = s.settings?.colpi;
+      const l = user.login;
+      const giro = (premiInCorso.get(l) || Promise.resolve())
+        .then(() => riconciliaPremi({ login: l, prima, helix, streamers, pagina: `${config.baseUrl}/u/${l}/colpo`, log }))
+        .catch((e) => log.warn(`premi dei colpi #${l}:`, e?.message || e))
+        .finally(() => { if (premiInCorso.get(l) === giro) premiInCorso.delete(l); });
+      premiInCorso.set(l, giro);
+    }
     // IL CONTO ALLA ROVESCIA CON «PARTE DA SOLO»: parte nel momento in cui lo
     // si accende, non solo quando un overlay si apre. Prima si accendeva la
     // spunta e non succedeva niente finche' una sorgente non ricaricava la

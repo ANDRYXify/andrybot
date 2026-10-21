@@ -59,6 +59,7 @@ export function normalizza(cfg) {
       euro: prezzo(v.euro, LIMITI.euroCent), punti: prezzo(v.punti, LIMITI.punti), bit: prezzo(v.bit, LIMITI.bit),
       scala: num(v.scala, LIMITI.scala, 100), attiva: v.attiva !== false,
       premio: /^[0-9a-f-]{8,64}$/.test(String(v.premio || '')) ? String(v.premio) : '',
+      premioCosto: num(v.premioCosto, [0, LIMITI.punti[1]], 0), premioNome: testo(v.premioNome, 45),
     });
   }
   return {
@@ -120,4 +121,18 @@ export function bastaPer(mira, metodo, pagato) {
   if (!mira) return false;
   const serve = Number(mira.prezzi?.[metodo]) || 0;
   return serve > 0 && Number(pagato) >= serve;
+}
+
+// Il premio a punti canale di una voce: il nome come lo vede chi riscatta.
+export const titoloPremio = (voce) => ('Colpo: ' + voce.nome).slice(0, 45);
+
+// Il listino che arriva dal pannello, coi campi del premio presi da quello
+// salvato: l'id del premio su Twitch lo scrive solo SocialBot.
+export function normColpi(nuovo, prima) {
+  const p = normalizza(prima), n = normalizza(nuovo);
+  for (const v of n.voci) {
+    const q = p.voci.find((x) => x.id === v.id);
+    Object.assign(v, q ? { premio: q.premio, premioCosto: q.premioCosto, premioNome: q.premioNome } : { premio: '', premioCosto: 0, premioNome: '' });
+  }
+  return n;
 }

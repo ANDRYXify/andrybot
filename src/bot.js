@@ -102,7 +102,10 @@ import * as premiTempo from './features/premi-tempo.js';
 import * as bossFeat from './features/boss.js';
 import { aChi } from './features/risposte.js';
 import { modalitaDi, alLavoro } from './features/quando-lavora.js';
-import { statoVivo } from './db.js';
+import { statoVivo, registroColpi, effects as effettiDb } from './db.js';
+import { creaServizioColpi } from './features/colpi-servizio.js';
+import { rimborsa as rimborsaStripe } from './features/donazioni-stripe.js';
+import { rimborsa as rimborsaSatispay } from './features/donazioni-satispay.js';
 import { piattaformaDi, nomeSu } from './identita.js';
 
 // Dove il bot parla DI SUA INIZIATIVA (timer, messaggi spontanei, penitenze,
@@ -163,11 +166,39 @@ export function rigaEvento(tipo, dati) {
 // chiave non si confonde mai con quella di uno streamer annunciato.
 export const chiaveTikTok = (login) => 'tiktok:' + String(login || '').toLowerCase();
 
+// Quello che il bot dice in chat sui colpi degli spettatori, nella lingua del canale.
+function testoColpi(canale, cosa, chi, r = {}) {
+  const T = {
+    codice: [`${chi} quel codice non vale o è già stato usato: i punti tornano a te. Il codice lo prendi mirando sulla pagina dei colpi.`,
+      `${chi} that code isn't valid or was already used: your points are back. You get the code by aiming on the hits page.`,
+      `${chi} ese código no vale o ya se usó: los puntos vuelven a ti. El código lo consigues apuntando en la página de golpes.`],
+    fermo: [`${chi} adesso il colpo non può comparire (diretta o overlay fermi): i punti tornano a te.`,
+      `${chi} the hit can't show right now (stream or overlay stopped): your points are back.`,
+      `${chi} ahora el golpe no puede aparecer (directo u overlay parados): los puntos vuelven a ti.`],
+    pochi: [`${chi} per «${r.nome}» mancano ${r.mancano} Bit: i tuoi restano contati, completa con lo stesso codice.`,
+      `${chi} «${r.nome}» needs ${r.mancano} more Bits: yours are counted, finish with the same code.`,
+      `${chi} a «${r.nome}» le faltan ${r.mancano} Bits: los tuyos quedan contados, completa con el mismo código.`],
+    coda: [`${chi} Bit arrivati: «${r.nome}» compare appena l'overlay torna in onda.`,
+      `${chi} Bits received: «${r.nome}» shows as soon as the overlay is back on air.`,
+      `${chi} Bits recibidos: «${r.nome}» aparece en cuanto el overlay vuelva al aire.`],
+  }[cosa];
+  const l = linguaChat(canale);
+  return T[l === 'en' ? 1 : l === 'es' ? 2 : 0];
+}
+
 export class BotManager {
   constructor({ auth, helix, effects, modules, bus }) {
     this.auth = auth;
     this.helix = helix;
     this.effects = effects;          // motore "Effetti & Suoni" condiviso con la dashboard
+    // i colpi degli spettatori (docs/COLPI.md): la pagina li mira, il cheer, il
+    // premio o il pagamento li sparano
+    this.colpi = creaServizioColpi({ registro: registroColpi, effects: { fireConOpzioni: (...a) => this.effects?.fireConOpzioni?.(...a) },
+      effettoDi: (l, c) => effettiDb.get(l, c), impostazioni: (l) => streamers.get(l)?.settings?.colpi, inOnda: (l) => this.inOnda(l),
+      overlay: (l) => !!this.effects?.prontoColpi?.(l),
+      // un colpo pagato che nessun overlay mostra torna indietro: gli euro dal conto dello streamer, i punti col riscatto annullato
+      rimborsaEuro: (l, id) => (String(id).startsWith('satispay:') ? rimborsaSatispay(l, id) : rimborsaStripe(l, id)),
+      chiudiPremio: (l, premio, riscatto, stato) => this.helix?.aggiornaRedemption?.(l, premio, riscatto, stato), log });
     this.modules = modules || null;  // motore "Moduli" (automazioni QUANDO→SE→ALLORA)
     this.bus = bus || null;          // event-bus dei plugin operatore (opzionale)
     this.running = false;
@@ -1522,6 +1553,20 @@ export class BotManager {
   // (per nome o per id) non sa da dove arriva.
   _riscatto(channel, data) {
     const piattaforma = data?.piattaforma || 'twitch';
+    // un premio dei colpi: il codice nel riscatto spara il colpo; un codice che
+    // non vale restituisce i punti (docs/COLPI.md)
+    // Un colpo pagato chiude il riscatto quando l'overlay lo mostra; uno che non
+    // vale, o che adesso non si puo' consegnare, lo annulla subito.
+    if (piattaforma === 'twitch' && data?.reward?.id) {
+      const r = this.colpi?.daRiscatto(channel, { reward_id: data.reward.id, user_input: data.user_input, id: data.id });
+      if (r && r.esito !== 'non-mio') {
+        if (r.stato) Promise.resolve(this.helix?.aggiornaRedemption?.(channel, data.reward.id, data.id, r.stato)).catch(() => {});
+        const chi = `@${data.user_login || data.user_name || ''}`;
+        if (r.esito === 'sconosciuto' || r.esito === 'gia') this.say(channel, testoColpi(channel, 'codice', chi));
+        else if (r.esito === 'fermo') this.say(channel, testoColpi(channel, 'fermo', chi));
+        return;
+      }
+    }
     const dire = this.vocePer({ channel, piattaforma });
     const premiatore = piattaforma === 'twitch' ? this.helix : (piattaforma === 'kick' ? premiKick(channel) : null);
     // quanto dura il premio: la scelta dello streamer, se no il suo nome
@@ -1614,6 +1659,13 @@ export class BotManager {
     // momento in cui puo' essere cambiata, quindi e' l'unico in cui vale la pena
     // richiederla. Cosi' chi scrive «!bit» appena dopo si vede gia' dentro.
     if (type === 'channel.cheer') { try { bit.scorda(channel); this._classificaBitInScena(channel); } catch { /* niente */ } }
+    if (suTwitch && type === 'channel.cheer') {
+      try {
+        const r = this.colpi?.daCheer(channel, data) || {};
+        if (r.esito === 'pochi') this.say(channel, testoColpi(channel, 'pochi', `@${data.user_login || ''}`, r));
+        else if (r.esito === 'pagato' && r.inCoda) this.say(channel, testoColpi(channel, 'coda', `@${data.user_login || ''}`, r));
+      } catch (e) { log.debug(`#${channel} colpo dal cheer:`, e?.message || e); }
+    }
     // anti-bot: l'hate-raid. I follow li ha gia' visti, in cima.
     try {
       if (suTwitch && type === 'channel.raid') this.antibot?.onRaid(ev);

@@ -105,6 +105,21 @@ export class EffectsEngine {
     }
   }
 
+  // PRONTO PER I COLPI (docs/COLPI.md): un overlay che mostra gli effetti, in
+  // onda (in OBS la sorgente e' attiva in programma, in un browser la scheda si
+  // vede), lo dice ogni 20 secondi. Un colpo si fa pagare solo se un overlay
+  // l'ha detto da poco: «collegato» non basta, un overlay puo' avere gli
+  // effetti spenti o stare in una scena che non va in onda.
+  segnaPronto(channel, si, ora = Date.now()) {
+    const ch = norm(channel);
+    if (!this._pronti) this._pronti = new Map();
+    if (si) this._pronti.set(ch, ora); else this._pronti.delete(ch);
+  }
+  prontoColpi(channel, ora = Date.now()) {
+    const t = this._pronti?.get(norm(channel)) || 0;
+    return ora - t < 45_000 && this.hasClients(channel);
+  }
+
   // True se c'è almeno un client SSE (overlay OBS o Studio Web) collegato a
   // questo canale. Serve a evitare lavoro inutile quando nessuno ascolta.
   hasClients(channel) {

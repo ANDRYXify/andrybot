@@ -5,11 +5,11 @@
 
 export default {
   slug: 'effetti',
-  schede: ['effetti'],
+  schede: ['effetti', 'colpi'],
   titolo: 'Manuale degli effetti: media, eventi e punti canale | SocialBot',
   h1: 'Manuale degli effetti: media, eventi, gesti e punti canale',
   desc: 'Suoni, immagini e video da lanciare in chat, la libreria condivisa, effetti a un follow, ai bit o a un raid, i gesti della webcam e i premi a punti canale.',
-  aggiornata: '2026-10-14',
+  aggiornata: '2026-10-21',
   corpo: [
     { h2: 'Effetti e suoni', scheda: 'effetti', p: [
       'Qui carichi suoni, immagini, GIF e video e li fai partire nell\'overlay: da un comando in chat, da un follow, dai bit o da un raid, da un gesto davanti alla webcam o da un premio a punti canale. Ci sono anche otto effetti pronti, disegnati da noi. Gli stessi media li ritrovi negli alert, nel player, nei cartelli e in ogni campo che ha il pulsante «Dalla libreria».',
@@ -284,8 +284,30 @@ export default {
       '<strong>Un evento non fa partire il suo effetto.</strong> Guarda il titolo del foglio: deve essere acceso e dire un effetto. Con i livelli, il numero deve arrivare al primo. Se è appena partito un effetto dello stesso evento, la pausa non è finita. Una donazione che raggiunge un\'offerta col suo effetto fa partire quello dell\'offerta. «Prova l\'evento» ti dice cosa succede e perché.',
       '<strong>Un effetto degli eventi parte ma non si vede.</strong> Se in cima a «Per gli eventi» leggi che in nessun overlay è acceso «Effetti a schermo», accendilo nello Studio.',
     ] },
+
+    { h2: 'Colpi degli spettatori', scheda: 'colpi', p: [
+      'Gli spettatori colpiscono la diretta senza estensioni Twitch: aprono la tua pagina dei colpi, <code>socialbot.live/u/&lt;canale&gt;/colpo</code>, vedono la diretta, scelgono un tuo effetto, toccano il punto del quadro e pagano. Pagato, l\'effetto compare in quel punto, col suo centro dove hanno toccato, e sotto il loro nome.',
+      'La scheda sta nel gruppo «Scena e overlay». Il listino si fa coi tuoi effetti con un\'immagine o un video che si posano in un punto: un effetto a tutto schermo o disegnato non ha un punto, e non si offre.',
+      'Si paga in tre modi, e ogni colpo può averne uno, due o tutti e tre. <strong>Euro</strong>: sul tuo conto, con Stripe o Satispay, come le donazioni (si collegano nella scheda «Donazioni»); il pagamento conta anche come donazione, quindi parte l\'avviso e sale l\'obiettivo. <strong>Punti canale</strong>: SocialBot crea su Twitch un premio «Colpo: nome» per ogni colpo con un prezzo in punti, e lo spettatore lo riscatta scrivendo il codice che la pagina gli ha dato; un codice sbagliato restituisce i punti. <strong>Bit</strong>: i Bit si spendono solo su Twitch, quindi lo spettatore fa un Cheer in chat con il codice nel messaggio; se ne manda meno del prezzo, i Bit si sommano col Cheer dopo.',
+      'Il punto si decide quando lo spettatore prende la mira: il server controlla che stia nel quadro e fuori dalle zone protette, e lo tiene. Il prezzo è quello del listino in quel momento. Ogni mira parte una volta sola, qualunque cosa la paghi, e se in un quarto d\'ora nessuno la paga scade.',
+      '<strong>Chi paga vede il suo colpo, o riavrà i soldi.</strong> Un colpo si paga solo quando può comparire: diretta in onda e un overlay che mostra gli effetti (in OBS la sorgente deve essere nella scena in onda). Se smette di esserlo, la pagina toglie i modi di pagare e lo dice. Pagato, il colpo resta «in arrivo» finché un overlay non dice di averlo mostrato; se in 10 minuti non succede, gli euro tornano da soli dal tuo conto e il riscatto dei punti si annulla. I Bit non li può restituire nessuno fuori da Twitch: per questo la pagina li chiede solo quando il colpo può comparire, e un colpo pagato a Bit aspetta l\'overlay, anche alla diretta dopo.',
+      'Per gli euro con Stripe serve il permesso «Refunds» sulla chiave: senza, un colpo non si potrebbe rimborsare, e gli euro con Stripe non si offrono (la scheda lo dice). Satispay rimborsa sempre. «In pausa» lascia la pagina aperta ma non prende colpi.',
+    ] },
+    { ul: [
+      '<strong>Zone protette</strong>: trascina sul quadro per coprire la webcam, la chat o quello che non vuoi colpito, fino a 8 zone. Lì non si mira.',
+      '<strong>Attesa per spettatore</strong>: quanti secondi passano fra una mira e la successiva della stessa persona (30 di serie, fino a 600).',
+      '<strong>Colpi al minuto</strong>: quante mire si aprono al massimo in un minuto sul canale (6 di serie, fino a 60).',
+      '<strong>Il nome</strong>: con l\'interruttore acceso, sotto il colpo compare il nome che lo spettatore scrive, fino a 25 caratteri.',
+      '<strong>Grandezza</strong>: la misura del colpo rispetto al file, dal 20% al 300%. La pagina mostra l\'ombra del colpo grande come sarà su un overlay 1920×1080.',
+      '<strong>Prezzi</strong>: in euro da 0,50 a 500, in punti fino a un milione, in Bit fino a centomila. Un prezzo a zero vuol dire che quel modo non si offre.',
+    ] },
+    { p: [
+      'La diretta nella pagina arriva qualche secondo dopo quella vera: il colpo cade nel punto del quadro, non su quello che in quel momento si muove. La pagina lo dice.',
+      'Se Twitch non crea un premio a punti canale (serve il permesso dei punti canale, e un canale Affiliato o Partner), la scheda lo scrive in alto col motivo, e quel colpo non si offre a punti.',
+    ] },
   ],
   faq: [
+    { d: 'Gli spettatori possono mandare un effetto in un punto preciso della diretta?', r: 'Sì, con la scheda «Colpi degli spettatori»: dalla tua pagina dei colpi scelgono l\'effetto, toccano il punto e pagano in euro, punti canale o Bit. Non servono estensioni Twitch.' },
     { d: 'Posso far partire un effetto quando qualcuno mi segue o manda dei bit?', r: 'Sì, in «Per gli eventi»: un effetto per il follow, e per i bit, i raid, gli abbonamenti e le donazioni anche a livelli, più alto il numero, più grande la festa. Parte anche se l\'alert lo mostra Twitch.' },
     { d: 'Posso festeggiare quando un obiettivo arriva al traguardo?', r: 'Sì: in «Per gli eventi» c\'è «Obiettivo raggiunto». Parte una volta per obiettivo, dopo l\'alert dell\'evento che l\'ha fatto arrivare.' },
     { d: 'Come provo un evento senza aspettare che succeda?', r: 'Nel suo foglio, «Prova l\'evento»: parte come in diretta, alert compreso, col numero che scrivi in «Prova con». Non conta negli obiettivi e non scrive in chat.' },

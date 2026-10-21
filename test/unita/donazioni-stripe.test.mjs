@@ -192,3 +192,19 @@ test('il registro: doppioni fuori, una sola volta pagata, elenco a pagine, riepi
   assert.equal(registroDonazioni.getDi('andry', 'kofi:andry:m2'), null);
   assert.equal(registroDonazioni.elenco('nessuno').length, 0);
 });
+
+test('il permesso dei rimborsi si prova senza toccare niente, e serve ai colpi pagati in euro', async () => {
+  let risposta = rifiuto(400, 'No such payment_intent: pi_socialbot_prova_permesso', 'resource_missing');
+  const chiamate = stripeFinto((c) => {
+    if (c.metodo === 'GET' && c.path.startsWith('/v1/products/')) return { body: { id: 'prod_1' } };
+    if (c.metodo === 'POST' && c.path === '/v1/refunds') return risposta;
+    return null;
+  });
+  assert.equal((await ds.verificaChiave('andry')).rimborsi, 1, 'col permesso Stripe dice solo che il pagamento non c\'e\'');
+  assert.equal(chiamate.find((c) => c.path === '/v1/refunds').corpo.payment_intent, 'pi_socialbot_prova_permesso', 'un pagamento che non esiste: niente si rimborsa davvero');
+  risposta = rifiuto(403, 'This API key does not have the required permissions: rak_refund_write');
+  assert.equal((await ds.verificaChiave('andry')).rimborsi, 0, 'senza permesso: 403');
+  risposta = { status: 500, body: { error: { message: 'giu\'' } } };
+  assert.equal((await ds.verificaChiave('andry')).rimborsi, 0, 'Stripe giu\': resta quello che si sapeva');
+  assert.equal(await ds.puoRimborsare(CHIAVE, true), true);
+});

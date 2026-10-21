@@ -8,6 +8,7 @@ const login = parti[1] || '';
 const urlStream = '/overlay/' + encodeURIComponent(login) + '/stream' + location.search;
 const urlGuaio = '/overlay/' + encodeURIComponent(login) + '/guaio' + location.search;
 const urlTimerParti = '/overlay/' + encodeURIComponent(login) + '/timer/parti' + location.search;
+const urlColpo = (via) => '/overlay/' + encodeURIComponent(login) + '/colpo/' + via + location.search;
 const OSPITE = (function () {
   try {
     if (new URLSearchParams(location.search).get('studio') !== '1' || window.parent === window) return null;
@@ -74,12 +75,38 @@ const chatBox = document.getElementById('chatlive');
 
 const codaVisiva = [];
 let occupato = false;
+let colpoInCorso = '';
+const colpiMostrati = new Set();
+
+function idColpo(ev) { return ev && ev.attacco && ev.attacco.id ? String(ev.attacco.id) : ''; }
+function colpoVisto(id) {
+  try { fetch(urlColpo(encodeURIComponent(id) + '/visto'), { method: 'POST' }).catch(function () {  }); } catch (e) {  }
+}
+function colpoNuovo(ev) {
+  const id = idColpo(ev);
+  if (!id) return true;
+  if (colpiMostrati.has(id)) { colpoVisto(id); return false; }
+  return id !== colpoInCorso && !codaVisiva.some(function (x) { return idColpo(x) === id; });
+}
+function prontoPerColpi() {
+  return mostra('effetti') && obsAttivo && document.visibilityState !== 'hidden';
+}
+let obsAttivo = true;
+function dichiaraColpi() {
+  try {
+    fetch(urlColpo('pronto'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pronto: prontoPerColpi() }) }).catch(function () {  });
+  } catch (e) {  }
+}
+window.addEventListener('obsSourceActiveChanged', function (e) { obsAttivo = !(e && e.detail && e.detail.active === false); dichiaraColpi(); });
+document.addEventListener('visibilitychange', dichiaraColpi);
+setInterval(dichiaraColpi, 20000);
 
 function mostraProssimo() {
   if (occupato) return;
   const ev = codaVisiva.shift();
   if (!ev) return;
   occupato = true;
+  colpoInCorso = idColpo(ev);
   try {
     if (ev.tipo === 'immagine') mostraImmagine(ev);
     else if (ev.tipo === 'video') mostraVideo(ev);
@@ -93,6 +120,7 @@ function mostraProssimo() {
 
 function finito() {
   occupato = false;
+  colpoInCorso = '';
 
   setTimeout(mostraProssimo, 120);
 }
@@ -145,7 +173,12 @@ function metti(el, ev) {
   if (aSchermo(ev)) { el.classList.add(ev.schermo); palcoSchermo.appendChild(el); return; }
   const libero = !!(ev.posizione && ev.posizione.x != null);
   (libero ? palcoLibero : palco).appendChild(el);
-  if (libero) { firmaAttacco(ev); return; }
+  if (libero) {
+    firmaAttacco(ev);
+    const id = idColpo(ev);
+    if (id) { colpiMostrati.add(id); colpoVisto(id); }
+    return;
+  }
   posaEffetti();
   if (el.tagName === 'IMG' || el.tagName === 'VIDEO') el.addEventListener(el.tagName === 'IMG' ? 'load' : 'loadedmetadata', posaEffetti, { once: true });
 }
@@ -1440,7 +1473,7 @@ function ricevi(m) {
     else if (dati.tipo === 'boss') { boss(dati); muroBoss(dati); }
     else if (dati.tipo === 'arena') arena(dati);
     else if (dati.tipo === 'contatore') contatore(dati);
-    else if (dati.tipo === 'immagine' || dati.tipo === 'video' || dati.tipo === 'disegno') { if (mostra('effetti')) { codaVisiva.push(dati); mostraProssimo(); } }
+    else if (dati.tipo === 'immagine' || dati.tipo === 'video' || dati.tipo === 'disegno') { if (mostra('effetti') && colpoNuovo(dati)) { codaVisiva.push(dati); mostraProssimo(); } }
 }
 
 function connetti() {
@@ -2240,6 +2273,7 @@ function applicaTema(t) {
   MIO.mostra = (t && t.mostra) ? t.mostra : MIO.mostra;
   if (!mostra('alert')) codaAlert.length = 0;
   if (!mostra('effetti')) codaVisiva.length = 0;
+  dichiaraColpi();
   MIO.ordine = (t && Array.isArray(t.ordine)) ? t.ordine : [];
   MIO.xy = (t && t.xy) ? t.xy : {};
 

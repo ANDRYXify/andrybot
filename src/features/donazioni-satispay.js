@@ -147,7 +147,7 @@ export async function apriPagamento({ login, display, importoCent, nome = '', me
     currency: 'EUR',
     external_code: ('Donazione a ' + chi).slice(0, 50),
     callback_url: `${base}/dona/satispay/${login}?payment_id={uuid}`,
-    redirect_url: `${ritorno === 'dona' ? urlPaginaDona(login) : base + '/u/' + login}?dona=sp_${token}`,
+    redirect_url: `${ritorno === 'dona' ? urlPaginaDona(login) : base + '/u/' + login + (ritorno === 'colpo' ? '/colpo' : '')}?dona=sp_${token}`,
     expiration_date: new Date(Date.now() + SCADENZA_MS).toISOString(),
     metadata: { login, nome, messaggio, token },
   });

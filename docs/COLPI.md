@@ -1,0 +1,151 @@
+<!-- © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live -->
+<!-- Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live -->
+# I colpi degli spettatori
+
+Chiesto così: «un "viewer attack" ma senza che servano estensioni twitch? tipo
+che basta aprire un link che apre la live su socialbot e, grazie all'overlay,
+il viewer può fare attacchi precisi dove vuole e come vuole pagando bit?
+(però vorrei evitare che si mandino bit sulla chat, non possiamo integrare il
+pagamento in bit anche direttamente sul sito?)». Scelti tutti e tre i modi di
+pagare: euro sul sito, punti canale, Bit con un codice.
+
+## Il vincolo dei Bit
+
+I Bit si spendono solo dentro Twitch: in chat (cheer), nei Power-up e nelle
+Estensioni (Bits in Extensions). Nessuna API lascia a un sito esterno
+incassare Bit. Quindi, senza estensione, i Bit passano dalla chat: la pagina
+dà un **codice** e il cheer lo porta nel messaggio. Gli euro invece si pagano
+sul sito, sul conto dello streamer (come le donazioni, docs/DONAZIONI.md), e
+i punti canale col premio che SocialBot crea su Twitch.
+
+## Il modello (src/features/colpi.js)
+
+- **Colpo** = un effetto del canale (immagine o video che si posa in un punto;
+  niente tutto schermo, niente disegni) sparato nell'overlay nel punto mirato,
+  col nome di chi lo manda.
+- **Listino** (`settings.colpi`): `attivo`, `pausa`, `voci` (id, comando, nome,
+  prezzi `euro` in centesimi / `punti` / `bit`, `scala`, `attiva`, e i campi
+  del premio che scrive solo SocialBot), `zone` protette in % del quadro,
+  `attesaSec` per spettatore, `alMinuto` per canale, `conNome`.
+- **Mira** (tabella `colpi`): codice di 5 caratteri senza ambigui (sempre
+  almeno una cifra e una lettera: una parola del messaggio non è mai un
+  codice), punto, prezzi del momento, stato `attesa → sparata | scaduta`.
+
+Le invarianti, per costruzione:
+
+1. **Il punto si decide alla mira.** Il server lo controlla allora (nel quadro,
+   fuori dalle zone) e lo tiene: chi paga dopo non lo sposta.
+2. **Il punto è il centro.** L'overlay riceve `posizione.centro` e posa il
+   colpo col suo centro lì (`translate(-50%,-50%)`), non con la «corsa» delle
+   posizioni dell'Overlay Studio.
+3. **Una mira parte una volta sola**: `UPDATE … WHERE stato='attesa'`, vince
+   uno solo, qualunque cosa paghi.
+4. **Il prezzo è quello della mira**: cambiare il listino non cambia le mire
+   aperte.
+5. **Una mira si paga in un modo.** Aperto un pagamento in euro la mira è
+   legata a quella donazione (`riferimento`) e il codice non vale più per
+   punti o Bit. La presa `apre:<id>` si prende prima di chiamare Stripe o
+   Satispay: un doppio tocco non apre due pagamenti; se il pagamento non si
+   apre la presa si rilascia.
+6. **Chi paga vede il suo colpo, o riavrà i soldi.** Vedi «La consegna».
+
+Scadenze: una mira non pagata scade dopo 15 minuti; una con dei Bit già
+arrivati aspetta il resto fino a un giorno; una legata a un pagamento in euro
+segue la sua donazione (scade quando scade quella).
+
+## La consegna
+
+Chiesto così: «cerca di essere sicuro al 100% che l'utente se paga avrà
+l'effetto, in caso non lo avesse dovrà essere rimborsato o semplicemente dovrà
+venire fermato dal pagare/mandare bit».
+
+Stati: `attesa → pagata → sparata`, oppure `pagata → rimborsata`; `attesa →
+scaduta`. «Pagata» vuol dire soldi arrivati; «sparata» vuol dire MOSTRATA.
+
+1. **Si paga solo un colpo consegnabile adesso** (`servizio.consegnabile`):
+   colpi accesi e non in pausa, diretta in onda, un overlay PRONTO, l'effetto
+   che c'è ancora. Lo guardano la mira, il tasto «Paga» (`porta.paga`) e il
+   riscatto dei punti (che altrimenti si annulla subito, punti restituiti). La
+   pagina chiede lo stato ogni 3 secondi (`pagabile`, `fermo`) e toglie cheer,
+   premio e «Paga» appena il colpo smette di essere consegnabile.
+2. **Pronto non è collegato.** Un overlay collegato può avere gli effetti
+   spenti, o stare in una scena che non va in onda. Ogni overlay dichiara ogni
+   20 secondi se è pronto (`/overlay/<login>/colpo/pronto`): effetti accesi,
+   in OBS la sorgente attiva in programma (`obsSourceActiveChanged`), in un
+   browser la scheda visibile. Vale 45 secondi (`effects.prontoColpi`).
+3. **Consegnato vuol dire mostrato.** Il colpo va all'overlay col suo id; quando
+   l'overlay lo mette a schermo risponde `/overlay/<login>/colpo/<id>/visto`, e
+   solo allora diventa `sparata` (coi punti, il riscatto diventa FULFILLED). La
+   ronda (ogni 5 s, nel server) rimanda ogni 20 s i colpi pagati e non visti:
+   l'overlay riconosce quelli già in fila o già mostrati e non li mostra due
+   volte (a un rinvio di uno già mostrato risponde di nuovo «visto»).
+4. **Se non si vede, si restituisce.** Dopo 10 minuti (`CONSEGNA_MS`) un colpo
+   pagato e mai mostrato si rimborsa da solo: gli euro con il rimborso sul
+   conto dello streamer (Stripe o Satispay), i punti col riscatto CANCELED. Un
+   rimborso che non riesce resta da fare e si ritenta a ogni giro: un colpo
+   pagato non finisce mai nel nulla.
+5. **Gli euro solo da un conto che sa rimborsare.** Satispay rimborsa sempre;
+   Stripe solo con il permesso «Refunds», che si prova alla verifica della
+   chiave con un rimborso di un pagamento che non esiste (`puoRimborsare`: 403 =
+   no, «resource_missing» = sì). Senza, gli euro con Stripe non si offrono.
+6. **I Bit non si possono restituire** (nessuno, fuori da Twitch). La garanzia
+   è la prevenzione: la pagina chiede il cheer solo quando il colpo è
+   consegnabile. Se i Bit arrivano quando non lo è più, il colpo resta pagato
+   in coda e parte appena un overlay è pronto, anche alla diretta dopo; il bot
+   lo dice in chat.
+
+## I tre modi di pagare
+
+- **Euro**: `POST /u/<login>/colpo/paga/<id>` apre il Checkout di Stripe o il
+  pagamento Satispay sul conto dello streamer, con `ritorno: 'colpo'`. È una
+  donazione a tutti gli effetti (avviso, obiettivo, registro). Quando la
+  donazione arriva (ritorno, webhook Satispay o ronda) `donazioneArrivata`
+  chiama `colpi.daPagamento`, che spara.
+- **Punti canale**: per ogni voce con un prezzo in punti SocialBot crea il
+  premio «Colpo: <nome>» con testo obbligatorio (`colpi-premi.js`), e lo rifà
+  se cambiano prezzo o nome. Il riscatto col codice giusto spara e diventa
+  FULFILLED; un codice sbagliato lo rende CANCELED (i punti tornano) e il bot
+  lo dice in chat. Le riconciliazioni vanno una alla volta per canale, e
+  scrivono solo i campi del premio sulle impostazioni del momento.
+- **Bit**: il cheer col codice nel messaggio. I Bit si sommano (`versati`):
+  chi ne manda meno sente in chat quanti ne mancano.
+
+## La pagina (`/u/<login>/colpo`)
+
+Disegnata da `colpi-pagina.js` con l'aspetto della pagina link, nella lingua
+del browser (it/en/es); i dati vivi li risponde `colpi-porta.js` (le stesse
+funzioni servono le rotte e il cancello). La diretta di Twitch si carica solo
+quando lo spettatore lo chiede (o l'ha già accettato sulla pagina link:
+`sb-consenso`). Sopra c'è lo strato di mira 16:9, che prende i clic solo dopo
+aver scelto un colpo: prima il lettore resta usabile. Le zone protette si
+vedono a righe; il mirino e l'ombra del colpo stanno dove si tocca, e l'ombra
+è grande come sarà in un overlay 1920×1080 (file × grandezza). Si mira anche
+con le frecce (Maiusc per passi da 5%) e Invio. L'anteprima dei media passa
+da `/u/<login>/colpo/anteprima/<voce>`: gli indirizzi dell'overlay portano la
+sua chiave e non escono mai.
+
+La diretta nella pagina arriva qualche secondo dopo: il colpo cade nel punto
+del quadro, e la pagina lo dice.
+
+## Il pannello
+
+Scheda «Colpi degli spettatori» in «Scena e overlay»: pagina aperta e pausa,
+indirizzo da copiare, listino, regole, zone protette disegnate trascinando sul
+quadro, gli ultimi colpi e gli avvisi (conto per gli euro mancante, premi che
+Twitch non ha creato, col motivo).
+
+## Collaudo
+
+- `test/unita/colpi.test.mjs`: modello, servizio sul registro vero, porta.
+- `scripts/verifica-colpi.mjs` (`--selftest`, `--rompi=N`): nel browser,
+  dalla pagina all'overlay. I difetti: strato che prende sempre i clic, pagina
+  che non guarda le zone, ombra senza grandezza, overlay che non centra, che
+  non dice «visto», che mostra due volte un rinvio, pagina che lascia pagare a
+  diretta ferma. Ognuno, da solo, fa rosso.
+
+## Limiti noti
+
+- L'ombra presume l'overlay a 1920×1080 (la misura di OBS e dello Studio).
+- «Mostrato» lo dice l'overlay: se in OBS la sorgente è attiva ma coperta da
+  un'altra, o il programma non trasmette, l'overlay non lo può sapere.
+- Fuori da OBS (altri programmi di regia) «pronto» vuol dire scheda visibile.
