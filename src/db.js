@@ -183,7 +183,7 @@ CREATE TABLE IF NOT EXISTS effects (        -- "Effetti & Suoni": comandi chat �
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   channel TEXT NOT NULL,
   comando TEXT NOT NULL,                     -- senza '!', minuscolo, univoco per canale
-  tipo TEXT NOT NULL,                        -- 'audio' | 'immagine' | 'video'
+  tipo TEXT NOT NULL,                        -- 'audio' | 'immagine' | 'video' | 'disegno' | 'lancio'
   file TEXT NOT NULL,                        -- nome file relativo (es. '<id>.webm')
   tier TEXT NOT NULL DEFAULT 'tutti',        -- 'tutti' | 'sub' | 'vip' | 'mod'
   cooldown INTEGER NOT NULL DEFAULT 0,       -- secondi tra un uso e il successivo
@@ -1238,6 +1238,9 @@ aggiungiColonna('effects', 'suono_file', "TEXT NOT NULL DEFAULT ''");   // COMBO
 // visivo ('' nella scena, 'riempi' o 'intero' a tutto schermo), e i parametri
 // di un effetto disegnato (JSON, solo per tipo 'disegno', che non ha file).
 aggiungiColonna('effects', 'schermo', "TEXT NOT NULL DEFAULT ''");
+// lo scontorno di un video (green screen): {colore, soglia} in JSON, '' = niente.
+// Salvato sull'effetto, vale ovunque parta (docs/LANCI.md, «Il green screen dei media»).
+aggiungiColonna('effects', 'chroma', "TEXT NOT NULL DEFAULT ''");
 aggiungiColonna('effects', 'disegno', "TEXT NOT NULL DEFAULT ''");
 // Quando un modulo a tempo ha parlato l'ultima volta. Stava in memoria, e la
 // memoria muore col processo: al riavvio ogni timer risultava "mai partito" e
@@ -5683,26 +5686,35 @@ export const effects = {
   // Un effetto DISEGNATO: nessun file, i parametri in `disegno` (JSON gia'
   // normalizzato dal chiamante). Un comando che e' gia' di un media non si
   // prende: sostituirlo cancellerebbe il file di qualcun altro senza dirlo.
-  addDisegno(channel, { comando, disegno, tier, cooldown, volume, durata }) {
+  // Un effetto senza file: un disegno (a tutto schermo) o un lancio (docs/LANCI.md).
+  // I parametri stanno nella colonna `disegno`, in JSON gia' normalizzato.
+  addDisegno(channel, { comando, disegno, tier, cooldown, volume, durata }, tipo = 'disegno') {
+    if (tipo !== 'disegno' && tipo !== 'lancio') throw new Error('tipo non valido');
     const c = normComando(comando);
     if (!c) throw new Error('comando non valido');
     const esistente = db.prepare('SELECT tipo FROM effects WHERE channel=? AND comando=?').get(channel, c);
-    if (esistente && esistente.tipo !== 'disegno') throw new Error(`il comando !${c} è già di un altro effetto`);
+    if (esistente && esistente.tipo !== tipo) throw new Error(`il comando !${c} è già di un altro effetto`);
     if (!esistente && this.count(channel) >= MAX_EFFETTI) throw new Error(`hai raggiunto il massimo di ${MAX_EFFETTI} effetti`);
     db.prepare(`INSERT INTO effects (channel, comando, tipo, file, tier, cooldown, volume, durata, disegno, schermo, attivo, ts)
-      VALUES (?,?,'disegno','',?,?,?,?,?,'',1,?)
+      VALUES (?,?,?,'',?,?,?,?,?,'',1,?)
       ON CONFLICT(channel, comando) DO UPDATE SET
         tier=excluded.tier, cooldown=excluded.cooldown, volume=excluded.volume,
         durata=excluded.durata, disegno=excluded.disegno, attivo=1, ts=excluded.ts`)
-      .run(channel, c, tier, cooldown, volume, durata, disegno, now());
+      .run(channel, c, tipo, tier, cooldown, volume, durata, disegno, now());
     return c;
   },
+  addLancio(channel, dati) { return this.addDisegno(channel, dati, 'lancio'); },
   // Dove appare un media visivo. Solo immagini e video: un audio non si vede,
   // e un disegno nasce gia' a tutto schermo. true se l'ha cambiato.
   setSchermo(channel, id, schermo) {
     if (!SCHERMI.includes(schermo)) return false;
     const info = db.prepare("UPDATE effects SET schermo=? WHERE channel=? AND id=? AND tipo IN ('immagine','video')")
       .run(schermo, channel, id);
+    return info.changes > 0;
+  },
+  // Lo scontorno di un video: '' lo toglie. true se l'ha cambiato.
+  setChroma(channel, id, chroma) {
+    const info = db.prepare("UPDATE effects SET chroma=? WHERE channel=? AND id=? AND tipo='video'").run(String(chroma || ''), channel, id);
     return info.changes > 0;
   },
   // Elimina un effetto e ritorna i nomi file da cancellare dal disco (media +

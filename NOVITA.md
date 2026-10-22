@@ -43,6 +43,15 @@ comandi diversi da quelli della riga italiana.
 
 ## 2026-10-22
 
+- [importante] Lanci, adesivi e spaventi come in Viewer Attack: oltre ottanta, fatti da artisti veri. Ogni video caricato ha il suo green screen, e lanci e adesivi possono suonare un tuo audio. [vai: effetti]
+  en: Throws, stickers and jumpscares like in Viewer Attack: over eighty, drawn and animated by real artists. Every uploaded video now has its own green screen, and throws and stickers can play your audio.
+  es: Lanzamientos, pegatinas y sustos como en Viewer Attack: más de ochenta, dibujados y animados por artistas reales. Cada vídeo subido tiene ahora su croma, y lanzamientos y pegatinas pueden sonar tu audio.
+  > Lanci, adesivi e spaventi pronti
+  > Pomodori che si spiaccicano, ciabatte che rimbalzano, emoji animate e spaventi con l'urlo, anche dalla pagina dei colpi. Niente disegnato a macchina: Microsoft, Google e Kenney.
+  en> Ready-made throws, stickers and jumpscares
+  en> Tomatoes that splat, flip-flops that bounce, animated emoji and jumpscares with a scream, from the hits page too. Nothing machine-drawn: Microsoft, Google and Kenney.
+  es> Lanzamientos, pegatinas y sustos listos
+  es> Tomates que se aplastan, chanclas que rebotan, emoji animados y sustos con grito, también desde la página de golpes. Nada dibujado a máquina: Microsoft, Google y Kenney.
 - [importante] La pagina dei colpi veste il tema della tua pagina link e ha la chat del canale. Chi entra con Twitch (un solo permesso) scrive da lì, e il suo cheer o riscatto paga il colpo senza codice. [vai: colpi]
   en: The hits page wears your link page theme and has your channel chat. Whoever logs in with Twitch (one permission) chats from there, and their cheer or redemption pays the hit with no code.
   es: La página de golpes viste el tema de tu página de enlaces y tiene el chat del canal. Quien entra con Twitch (un solo permiso) escribe desde ahí, y su cheer o canje paga el golpe sin código.

@@ -20,9 +20,10 @@
 import { normalizza, puntoBuono, voceDi, metodiDi, nuovoCodice, codiceIn, nomeChi, bastaPer, SCADENZA_MS } from './colpi.js';
 import { randomBytes } from 'node:crypto';
 
-// Gli effetti che si possono mirare: quelli con un'immagine o un video, che si
-// posano in un punto. I disegni girano a tutto schermo, senza un punto.
-export const MIRABILE = (eff) => !!eff && (eff.tipo === 'immagine' || eff.tipo === 'video') && eff.schermo !== 'riempi' && eff.schermo !== 'intero';
+// Gli effetti che si possono mirare: quelli che si posano in un punto. Un'immagine
+// o un video (non a tutto schermo), e un lancio (docs/LANCI.md), che per come e'
+// fatto arriva col centro nel punto. I disegni girano a tutto schermo, senza un punto.
+export const MIRABILE = (eff) => !!eff && (eff.tipo === 'lancio' || ((eff.tipo === 'immagine' || eff.tipo === 'video') && eff.schermo !== 'riempi' && eff.schermo !== 'intero'));
 // quanto si aspetta che un overlay mostri un colpo pagato, prima di rimborsarlo
 export const CONSEGNA_MS = 10 * 60_000;
 // ogni quanto si rimanda un colpo non ancora visto (l'overlay riconosce quelli

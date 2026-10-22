@@ -10,6 +10,7 @@ import { config } from '../config.js';
 import { effects as effectsDb, streamers } from '../db.js';
 import { makeLog } from '../logger.js';
 import { normDisegno } from '../web/stile.js';
+import { payloadLancio, durataLancio } from './lanci.js';
 
 // Tetti ai collegamenti SSE (overlay + tracking): per canale e in tutto.
 export const MAX_SSE_CANALE = 32;
@@ -24,6 +25,17 @@ function isVip(msg) {
 }
 
 const norm = (s) => String(s || '').toLowerCase();
+
+// Lo scontorno di un video (green screen): il colore da togliere e quanto
+// largo. null = niente. Lo stesso normalizzatore per quello salvato
+// sull'effetto e per quello di un premio.
+export function normChroma(o) {
+  if (!o || o.attivo === false) return null;
+  const colore = /^#[0-9a-f]{6}$/i.test(String(o.colore || '')) ? String(o.colore).toLowerCase() : '#00ff00';
+  const soglia = Math.max(20, Math.min(300, Math.round(Number(o.soglia)) || 140));
+  return { colore, soglia };
+}
+export const chromaDi = (eff) => { if (!eff?.chroma) return null; try { return normChroma(JSON.parse(eff.chroma)); } catch { return null; } };
 
 export class EffectsEngine {
   constructor() {
@@ -247,6 +259,22 @@ export class EffectsEngine {
       try { grezzo = JSON.parse(eff.disegno || '{}'); } catch { grezzo = {}; }
       return this.payloadDisegno(channel, grezzo, eff.volume, eff.comando);
     }
+    // Un LANCIO (docs/LANCI.md): l'oggetto risolto per intero dal catalogo, e
+    // il punto come per un'immagine (dall'Overlay Studio, o quello mirato).
+    if (eff.tipo === 'lancio') {
+      let grezzo = {};
+      try { grezzo = JSON.parse(eff.disegno || '{}'); } catch { grezzo = {}; }
+      const lancio = payloadLancio(grezzo);
+      // il suono caricato dallo streamer al posto di quello di serie
+      if (lancio.audio) {
+        const a = effectsDb.get(channel, lancio.audio);
+        if (a && a.tipo === 'audio' && a.file) lancio.suono = this.mediaUrl(channel, a.file);
+      }
+      return {
+        comando: eff.comando, tipo: 'lancio', lancio, volume: eff.volume, durata: durataLancio(lancio),
+        posizione: eff.posx != null && eff.posy != null ? { x: eff.posx, y: eff.posy, s: eff.scala != null ? eff.scala : 100, r: 0, centro: true } : null,
+      };
+    }
     const visivo = eff.tipo === 'immagine' || eff.tipo === 'video';
     const schermo = visivo && (eff.schermo === 'riempi' || eff.schermo === 'intero') ? eff.schermo : '';
     const p = {
@@ -265,6 +293,9 @@ export class EffectsEngine {
     if (eff.suono_file && (eff.tipo === 'immagine' || eff.tipo === 'video')) {
       p.suonoUrl = this.mediaUrl(channel, eff.suono_file);
     }
+    // il green screen salvato sul video (un premio puo' sempre metterne uno suo)
+    const chroma = eff.tipo === 'video' ? chromaDi(eff) : null;
+    if (chroma) p.chroma = chroma;
     return p;
   }
 
@@ -355,9 +386,7 @@ export class EffectsEngine {
     if (opzioni.attacco) p.attacco = opzioni.attacco;
     if (p.tipo === 'disegno') { this.emit(ch, p); return true; }
     if (opzioni.xy && opzioni.xy.x != null && !p.schermo) p.posizione = opzioni.xy;
-    if (opzioni.chroma && opzioni.chroma.attivo) {
-      p.chroma = { colore: opzioni.chroma.colore || '#00ff00', soglia: Math.max(20, Math.min(300, Number(opzioni.chroma.soglia) || 140)) };
-    }
+    if (opzioni.chroma && opzioni.chroma.attivo) p.chroma = normChroma(opzioni.chroma);
     this.emit(ch, p);
     log.debug(`fire effetto !${eff.comando} (opzioni) su #${ch}`);
     return true;

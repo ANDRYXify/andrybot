@@ -7,6 +7,9 @@
 // che gira.
 import { normalizza, voceDi, metodiDi, titoloPremio } from './colpi.js';
 import { MIRABILE } from './colpi-servizio.js';
+import { normLancio, oggettoDi, disegnoDi } from './lanci.js';
+
+const spriteLancio = (eff) => { let g = {}; try { g = JSON.parse(eff.disegno || '{}'); } catch { g = {}; } return disegnoDi(oggettoDi(normLancio(g).oggetto)); };
 
 export const ID_MIRA = /^[0-9a-f]{18}$/;
 
@@ -38,7 +41,10 @@ export function creaPortaColpi({ servizio, registro, streamers, effettoDi, mezzi
       const eff = v.attiva ? effettoDi(login, v.comando) : null;
       const metodi = eff && MIRABILE(eff) ? metodiVivi(v, euro) : [];
       if (!metodi.length) continue;
-      voci.push({ id: v.id, nome: v.nome, tipo: eff.tipo, scala: v.scala, anteprima: `/u/${login}/colpo/anteprima/${encodeURIComponent(v.id)}`,
+      // un lancio mostra il suo disegno: lo stesso file che l'overlay tira, quindi
+      // l'ombra della pagina e' grande come il colpo (docs/LANCI.md)
+      const disegno = eff.tipo === 'lancio' ? spriteLancio(eff) : '';
+      voci.push({ id: v.id, nome: v.nome, tipo: eff.tipo === 'lancio' ? 'immagine' : eff.tipo, scala: v.scala, anteprima: disegno || `/u/${login}/colpo/anteprima/${encodeURIComponent(v.id)}`,
         metodi, prezzi: { euro: metodi.includes('euro') ? v.euro : 0, punti: metodi.includes('punti') ? v.punti : 0, bit: metodi.includes('bit') ? v.bit : 0 },
         premio: metodi.includes('punti') ? (v.premioNome || titoloPremio(v)) : '' });
     }

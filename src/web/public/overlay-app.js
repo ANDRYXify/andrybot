@@ -111,6 +111,7 @@ function mostraProssimo() {
     if (ev.tipo === 'immagine') mostraImmagine(ev);
     else if (ev.tipo === 'video') mostraVideo(ev);
     else if (ev.tipo === 'disegno') mostraDisegno(ev);
+    else if (ev.tipo === 'lancio') mostraLancio(ev);
     else finito();
   } catch (e) {
     guaio('effetto-rotto', String(e && e.message || e));
@@ -314,6 +315,24 @@ function mostraVideo(ev) {
 }
 
 let giroDisegno = 0;
+
+function mostraLancio(ev) {
+  if (!window.SB_LANCI || !ev.lancio) { finito(); return; }
+  etichettaVolatile(ev.comando, 1800);
+  let liberato = false;
+  const libera = () => { if (liberato) return; liberato = true; clearTimeout(riserva); finito(); };
+  const riserva = setTimeout(libera, durataMs(ev, 1500) + 4000);
+  window.SB_LANCI.lancia(palcoLibero, ev, {
+    suona: (url) => suonaUrl(url, volume01(ev), 'suono-lancio'),
+    colpito: () => {
+      firmaAttacco(ev);
+      const id = idColpo(ev);
+      if (id) { colpiMostrati.add(id); colpoVisto(id); }
+    },
+    libera,
+    guaio: (m) => guaio('lancio', m),
+  });
+}
 
 function mostraDisegno(ev) {
   if (!window.SB_DISEGNATI || !ev.disegno) { finito(); return; }
@@ -1473,7 +1492,7 @@ function ricevi(m) {
     else if (dati.tipo === 'boss') { boss(dati); muroBoss(dati); }
     else if (dati.tipo === 'arena') arena(dati);
     else if (dati.tipo === 'contatore') contatore(dati);
-    else if (dati.tipo === 'immagine' || dati.tipo === 'video' || dati.tipo === 'disegno') { if (mostra('effetti') && colpoNuovo(dati)) { codaVisiva.push(dati); mostraProssimo(); } }
+    else if (dati.tipo === 'immagine' || dati.tipo === 'video' || dati.tipo === 'disegno' || dati.tipo === 'lancio') { if (mostra('effetti') && colpoNuovo(dati)) { codaVisiva.push(dati); mostraProssimo(); } }
 }
 
 function connetti() {

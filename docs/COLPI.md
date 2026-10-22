@@ -118,6 +118,15 @@ si somma di nascosto (col codice sì, come prima). Un suo riscatto del premio
 di quella voce la paga qualunque cosa scriva. Il codice resta e vince: se c'è
 nel messaggio, vale quello.
 
+## I lanci
+
+Il colpo più naturale è un **lancio** (docs/LANCI.md): un pomodoro, una
+ciabatta, una bomba… o un **adesivo** animato, o uno **spavento**, presi dal
+catalogo con «Lanci e adesivi». Un lancio arriva da chi guarda, colpisce col
+centro nel punto mirato e lascia il segno; il «visto» parte all'impatto (per un
+adesivo, quando compare). Nella pagina l'anteprima e l'ombra sono il suo
+disegno, lo stesso file che usa l'overlay.
+
 ## La pagina (`/u/<login>/colpo`)
 
 Disegnata da `colpi-pagina.js` con l'aspetto della pagina link, nella lingua

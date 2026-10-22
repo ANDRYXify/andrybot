@@ -89,6 +89,8 @@ import * as colpiMod from '../features/colpi.js';
 import * as colpiPagina from '../features/colpi-pagina.js';
 import { creaPortaColpi } from '../features/colpi-porta.js';
 import * as colpiAccesso from '../features/colpi-accesso.js';
+import * as lanci from '../features/lanci.js';
+import * as effectsMod from '../features/effects.js';
 import { riconciliaPremi } from '../features/colpi-premi.js';
 import * as spotify from '../features/spotify.js';
 import * as musicaOverlayFeat from '../features/musica-overlay.js';
@@ -939,6 +941,9 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   guscio.porta('/:campagna', viaDiCampagna);
   guscio.porta('/:campagna/prendi', viaDiCampagna);
   guscio.porta('/campagne/:file', (via) => /^\/campagne\/[a-z0-9-]{1,30}\.png$/.test(via));
+  // Il catalogo dei lanci (docs/LANCI.md) e' pubblico: la demo lo legge da qui.
+  // I suoi disegni, animazioni e suoni stanno in /vendor/, gia' aperto.
+  guscio.porta('/api/lanci', (via) => via === '/api/lanci');
 
   app.use((req, res, next) => {
     // Rivalida la sessione a OGNI richiesta (regola: se non paghi e non sei un
@@ -8494,6 +8499,7 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
   // ------------------------------------------------------------ API effetti & suoni
 
   const disegnoDi = (e) => { try { return normDisegno(JSON.parse(e.disegno || '{}')); } catch { return normDisegno({}); } };
+  const lancioDi = (e) => { let g = {}; try { g = JSON.parse(e.disegno || '{}'); } catch { g = {}; } return lanci.payloadLancio(g); };
   // l'audio del canale che un disegno usa come suono, per sentirlo nell'anteprima
   const disegnoSuonoUrl = (login, e) => {
     const m = /^effetto:(.+)$/.exec(disegnoDi(e).suono);
@@ -8516,6 +8522,8 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
       // dove appare un media visivo, e i parametri di un effetto disegnato
       schermo: e.schermo || '',
       disegno: e.tipo === 'disegno' ? disegnoDi(e) : null,
+      lancio: e.tipo === 'lancio' ? lancioDi(e) : null,
+      chroma: e.tipo === 'video' ? effectsMod.chromaDi(e) : null,
     }));
     res.json({ effetti, overlayUrl: effects.overlayUrl(login), spazio: spazioDi(login) });
   }));
@@ -9459,6 +9467,64 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     res.json({ ok: true, comando, disegno });
   }));
 
+  // I LANCI (docs/LANCI.md): il catalogo (pubblico: e' il prodotto, niente di
+  // nessuno; la demo lo legge da qui), e un oggetto del catalogo che diventa
+  // un effetto del canale. Chiederlo due volte per lo stesso oggetto senza un
+  // comando restituisce quello che c'e' gia': il pannello dei colpi lo usa per
+  // «aggiungi questo lancio» senza moltiplicare gli effetti.
+  app.get('/api/lanci', (req, res) => {
+    res.set('Cache-Control', 'public, max-age=600');
+    res.json(lanci.catalogoPubblico());
+  });
+  app.post('/api/streamer/effetti/lancio', requireLogin, wrap(async (req, res) => {
+    if (!esigiFunzione(req, res, 'effetti', 'Gli effetti')) return;
+    const login = currentUser(req).login;
+    if (streamers.get(login)?.status !== 'approved') return res.status(403).json({ errore: 'non sei ancora abilitato' });
+    const b = req.body || {};
+    if (!lanci.oggettoDi(b.oggetto)) return res.status(400).json({ errore: 'oggetto non nel catalogo' });
+    const tier = String(b.tier || 'tutti');
+    const cooldown = Math.round(Number(b.cooldown ?? 0));
+    const volume = Math.round(Number(b.volume ?? 100));
+    if (!TIER_VALIDI.includes(tier)) return res.status(400).json({ errore: 'permesso (chi può usarlo) non valido' });
+    if (!Number.isFinite(cooldown) || cooldown < 0 || cooldown > 3600) return res.status(400).json({ errore: 'cooldown non valido (0..3600 s)' });
+    if (!Number.isFinite(volume) || volume < 0 || volume > 100) return res.status(400).json({ errore: 'volume non valido (0..100)' });
+    const lancio = lanci.normLancio(b);
+    if (lancio.audio && effectsDb.get(login, lancio.audio)?.tipo !== 'audio') return res.status(400).json({ errore: `!${lancio.audio} non è un tuo suono` });
+    const giaDi = (e) => { try { return e?.tipo === 'lancio' && lanci.normLancio(JSON.parse(e.disegno || '{}')).oggetto === lancio.oggetto; } catch { return false; } };
+    let comando;
+    if (b.id != null) {
+      const eff = effectsDb.byId(login, parseInt(b.id, 10));
+      if (!eff || eff.tipo !== 'lancio') return res.status(404).json({ errore: 'effetto non trovato' });
+      comando = eff.comando;
+    } else if (b.comando) {
+      comando = normComando(b.comando);
+      if (!comando) return res.status(400).json({ errore: 'comando non valido' });
+      const c = effectsDb.get(login, comando);
+      if (c && c.tipo !== 'lancio') return res.status(409).json({ errore: `il comando !${comando} è già di un altro effetto` });
+    } else {
+      const uguale = effectsDb.list(login).find(giaDi);
+      if (uguale) return res.json({ ok: true, comando: uguale.comando, lancio: lanci.normLancio(JSON.parse(uguale.disegno || '{}')), gia: true });
+      comando = comandoLibero(login, lancio.oggetto);
+    }
+    try {
+      effectsDb.addLancio(login, { comando, disegno: JSON.stringify(lancio), tier, cooldown, volume, durata: lanci.durataLancio(lancio) });
+    } catch (e) {
+      return res.status(400).json({ errore: e?.message || 'salvataggio non riuscito' });
+    }
+    res.json({ ok: true, comando, lancio });
+  }));
+
+  // Lo scontorno (green screen) di un video, salvato sull'effetto: vale dalla
+  // chat, dai premi, dagli eventi e dalla pagina dei colpi.
+  app.patch('/api/streamer/effetti/:id/chroma', requireLogin, wrap(async (req, res) => {
+    if (!esigiFunzione(req, res, 'effetti', 'Gli effetti')) return;
+    const login = currentUser(req).login;
+    const id = parseInt(req.params.id, 10);
+    const c = effectsMod.normChroma(req.body || {});
+    if (!Number.isFinite(id) || !effectsDb.setChroma(login, id, c ? JSON.stringify(c) : '')) return res.status(404).json({ errore: 'qui serve un video' });
+    res.json({ ok: true, chroma: c });
+  }));
+
   // Dove appare un media visivo: nella scena, o a tutto schermo riempito o intero.
   app.patch('/api/streamer/effetti/:id/schermo', requireLogin, wrap(async (req, res) => {
     if (!esigiFunzione(req, res, 'effetti', 'Gli effetti')) return;
@@ -9770,6 +9836,8 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     }
     const eff = effectsDb.get(login, comando);
     if (eff && nuovoSuono) effectsDb.attachSuono(login, eff.id, nuovoSuono);
+    // lo scontorno viaggia col video: chi lo prende lo trova gia' pronto
+    if (eff && src.chroma) effectsDb.setChroma(login, eff.id, src.chroma);
     // resta PRIVATO; conserva l'autore originale per l'attribuzione
     if (eff) effectsDb.setPubblico(login, eff.id, { pubblico: false, nome: src.nome || comando, autore: src.autore || src.channel });
     effectsDb.incUsi(src.id);

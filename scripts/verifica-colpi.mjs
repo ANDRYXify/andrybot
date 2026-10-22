@@ -26,7 +26,9 @@
 //  · la chat del canale si legge, e un messaggio non diventa mai HTML; se la
 //    linea cade si riapre da sola, senza righe doppie;
 //  · senza accesso si legge e basta; con l'accesso si scrive, il nome non si
-//    chiede, e la mira e' legata allo spettatore: il suo cheer la paga senza codice.
+//    chiede, e la mira e' legata allo spettatore: il suo cheer la paga senza codice;
+//  · un lancio (docs/LANCI.md) arriva col centro nel punto, grande quanto l'ombra,
+//    e il «visto» parte all'impatto.
 //
 // Uso: node scripts/verifica-colpi.mjs             (esce 1 se una promessa non tiene)
 //      node scripts/verifica-colpi.mjs --selftest  (rimette sette difetti: strato che prende
@@ -36,9 +38,10 @@
 //                                                   mostra due volte un rinvio, pagina che lascia
 //                                                   pagare a diretta ferma, chat che scrive HTML,
 //                                                   modulo per scrivere a chi non ha l'accesso,
-//                                                   righe doppie dopo una riapertura;
+//                                                   righe doppie dopo una riapertura,
+//                                                   lancio spostato, lancio che non dice «visto»;
 //                                                   li vuole tutti rossi)
-//      node scripts/verifica-colpi.mjs --rompi=N   (solo il difetto N, da 1 a 10: deve vedersi da solo)
+//      node scripts/verifica-colpi.mjs --rompi=N   (solo il difetto N, da 1 a 12: deve vedersi da solo)
 
 import './_dati-usa-e-getta.mjs';
 import { apriSito, apriBrowser, overlayFinto } from './_sito.mjs';
@@ -64,6 +67,8 @@ const DIFETTI = [
   ['pagina-colpo.js', 'else li.appendChild(document.createTextNode(p));', "else li.insertAdjacentHTML('beforeend', p);"],
   ['pagina-colpo.js', "$('cp-scrivi').hidden = !io;", "$('cp-scrivi').hidden = false;"],
   ['pagina-colpo.js', 'if (viste[m.id]) return;', 'if (false) return;'],
+  ['lanci.js', 'var px = pos ? tra(Number(pos.x), 0, 100) / 100 * W', 'var px = pos ? 40 + tra(Number(pos.x), 0, 100) / 100 * W'],
+  ['lanci.js', 'if (t.i === 0) colpito();', 'if (false) colpito();'],
 ];
 const SVG = '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="200" viewBox="0 0 400 200"><rect width="400" height="200" rx="40" fill="#e5484d"/></svg>';
 
@@ -73,9 +78,15 @@ streamers.setSettings(LOGIN, {
   colpi: { attivo: true, attesaSec: 0, alMinuto: 30, conNome: true, zone: [{ x: 70, y: 60, w: 30, h: 40 }], voci: [
     { comando: 'pomodoro', nome: 'Pomodoro', euro: 200, punti: 500, bit: 100, scala: 120 },
     { comando: 'festa', nome: 'Festa', bit: 50 },
+    { comando: 'tirapomodoro', nome: 'Pomodoro vero', bit: 30, scala: 150 },
+    { comando: 'ridi', nome: 'Risata', bit: 20 },
   ] },
 });
 effectsDb.add(LOGIN, { comando: 'pomodoro', tipo: 'immagine', file: 'pomodoro.svg', tier: 'tutti', cooldown: 0, volume: 100, durata: 4000 });
+// un lancio del catalogo (docs/LANCI.md): il disegno vero, servito da public/lanci
+effectsDb.addLancio(LOGIN, { comando: 'tirapomodoro', disegno: JSON.stringify({ oggetto: 'pomodoro', quanti: 1 }), tier: 'tutti', cooldown: 0, volume: 100, durata: 1100 });
+// e un adesivo animato (Noto, con lottie-web): compare nel punto e fa la sua scena
+effectsDb.addLancio(LOGIN, { comando: 'ridi', disegno: JSON.stringify({ oggetto: 'risata' }), tier: 'tutti', cooldown: 0, volume: 100, durata: 2200 });
 
 const ov = overlayFinto({ login: LOGIN });
 const motore = new EffectsEngine();
@@ -140,7 +151,7 @@ async function nuova(viewport) {
   const p = await br.newPage({ viewport });
   p.on('pageerror', (e) => guai.push(e.message));
   if (SELFTEST) {
-    await p.route(/\/(pagina-colpo|overlay-app)\.js(\?|$)/, async (route) => {
+    await p.route(/\/(pagina-colpo|overlay-app|lanci)\.js(\?|$)/, async (route) => {
       const r = await route.fetch();
       let t = await r.text();
       const f = new URL(route.request().url()).pathname.slice(1);
@@ -169,8 +180,8 @@ try {
   await p.waitForFunction(() => document.querySelectorAll('.cp-voce').length > 0, null, { timeout: 10000 });
 
   dice(await p.locator('#cp-stato').textContent() === 'In onda', 'con la diretta e l\'overlay su, la pagina dice «In onda»');
-  dice(await p.locator('.cp-voce').count() === 1, 'si offre solo il colpo che si posa in un punto (la festa disegnata no)');
-  const prezzi = await p.locator('.cp-voce .cp-prezzi i').allTextContents();
+  dice(await p.locator('.cp-voce').count() === 3 && !/Festa/.test(await p.locator('#cp-voci').textContent()), 'si offrono solo i colpi che si posano in un punto, lancio e adesivo compresi (la festa disegnata no)');
+  const prezzi = await p.locator('.cp-voce').first().locator('.cp-prezzi i').allTextContents();
   dice(prezzi.length === 2 && /2,00/.test(prezzi[0]) && /100 Bit/.test(prezzi[1]), `euro e Bit col loro prezzo, i punti senza premio su Twitch no (${prezzi.join(' · ')})`);
   dice(await p.evaluate(() => getComputedStyle(document.getElementById('cp-mira')).pointerEvents) === 'none', 'prima di scegliere un colpo lo strato di mira lascia la diretta toccabile');
 
@@ -294,6 +305,53 @@ try {
   await p.locator('#cp-io button').click();
   await p.waitForFunction(() => document.getElementById('cp-scrivi').hidden, null, { timeout: 5000 }).catch(() => {});
   dice(mondo.io === null && await p.locator('#cp-scrivi').isHidden() && !!(await p.getAttribute('#cp-io a', 'href')), '«Esci» chiude l\'accesso e la pagina torna a leggere soltanto');
+  });
+
+  // un LANCIO (docs/LANCI.md): la pagina mostra il suo disegno, l'ombra e' grande
+  // come il colpo, e nell'overlay arriva col centro nel punto mirato, grande
+  // quanto l'ombra; il «visto» parte all'impatto
+  await fase('lancio', async () => {
+  mondo.io = null;
+  await daCapo();
+  await p.locator('.cp-voce', { hasText: 'Pomodoro vero' }).click();
+  await tocca(p, 35, 30);
+  await p.locator('#cp-conferma').click();
+  await p.waitForSelector('.cp-codice output', { timeout: 5000 });
+  const codiceL = (await p.locator('.cp-codice output').textContent()).trim();
+  const strato = await p.locator('#cp-mira').boundingBox();
+  const ombra = await centro(p, '.cp-ombra');
+  const ml = registroColpi.perCodice(LOGIN, codiceL);
+  const visti0 = mondo.visti.length;
+  dice(servizio.daCheer(LOGIN, { bits: 30, message: `Cheer30 ${codiceL}` }).esito === 'pagato', 'il lancio si paga col cheer, come gli altri colpi');
+  await o.waitForFunction(() => document.querySelector('.lancio')?.dataset.impatti, null, { timeout: 8000 }).catch(() => {});
+  const imp = await o.evaluate(() => { const c = document.querySelector('.lancio'); return c ? JSON.parse(c.dataset.impatti || '[]')[0] || null : null; });
+  const atteso = ml ? { x: ml.x / 100 * 1920, y: ml.y / 100 * 1080 } : null;
+  const ombra1920 = ombra && strato ? ombra.w / strato.width * 1920 : 0;
+  dice(!!imp && !!atteso && Math.abs(imp.x - atteso.x) <= 1 && Math.abs(imp.y - atteso.y) <= 1,
+    `il lancio arriva col centro nel punto mirato (${imp ? imp.x + ', ' + imp.y : 'niente'}; atteso ${atteso ? atteso.x.toFixed(0) + ', ' + atteso.y.toFixed(0) : '?'})`);
+  dice(!!imp && Math.abs(imp.w - ombra1920) <= 2, `e grande quanto l'ombra della pagina (${imp ? imp.w : '?'} px; ombra ${ombra1920.toFixed(1)} px)`);
+  for (let i = 0; i < 20 && mondo.visti.length === visti0; i++) await pausa(150);
+  dice(!!ml && mondo.visti.includes(ml.id), 'all\'impatto l\'overlay dice di averlo mostrato');
+  await o.waitForFunction(() => !document.querySelector('.lancio'), null, { timeout: 15000 }).catch(() => {});
+  });
+
+  await fase('adesivo', async () => {
+  await daCapo();
+  await p.locator('.cp-voce', { hasText: 'Risata' }).click();
+  await tocca(p, 70, 25);
+  await p.locator('#cp-conferma').click();
+  await p.waitForSelector('.cp-codice output', { timeout: 5000 });
+  const codiceA = (await p.locator('.cp-codice output').textContent()).trim();
+  const ma = registroColpi.perCodice(LOGIN, codiceA);
+  servizio.daCheer(LOGIN, { bits: 20, message: `Cheer20 ${codiceA}` });
+  await o.waitForFunction(() => document.querySelector('.lancio svg'), null, { timeout: 8000 }).catch(() => {});
+  const ad = await o.evaluate(() => { const c = document.querySelector('.lancio'); const b = c && c.querySelector('svg')?.parentElement?.getBoundingClientRect(); return c ? { imp: JSON.parse(c.dataset.impatti || '[]')[0] || null, box: b ? { x: b.left + b.width / 2, y: b.top + b.height / 2 } : null } : null; });
+  const at = ma ? { x: ma.x / 100 * 1920, y: ma.y / 100 * 1080 } : null;
+  dice(!!ad?.imp && !!ad.box && !!at && Math.abs(ad.imp.x - at.x) <= 1 && Math.abs(ad.box.y - at.y) <= 2 && Math.abs(ad.box.x - at.x) <= 2 && ad.imp.w === 300,
+    `l'adesivo animato compare col centro nel punto, grande quanto il suo disegno (${ad?.imp ? ad.imp.x + ', ' + ad.imp.y + ', ' + ad.imp.w + ' px' : 'niente'})`);
+  for (let i = 0; i < 20 && !(ma && mondo.visti.includes(ma.id)); i++) await pausa(150);
+  dice(!!ma && mondo.visti.includes(ma.id), 'e appena compare l\'overlay dice di averlo mostrato');
+  await o.waitForFunction(() => !document.querySelector('.lancio'), null, { timeout: 15000 }).catch(() => {});
   });
 
   const t = await nuova({ width: 390, height: 844 });

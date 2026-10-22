@@ -121,6 +121,7 @@ const PUBBLICHE = new Map([
   ['GET /u/:user/colpo/dati', 'il listino e lo stato della diretta per la pagina dei colpi: niente che la pagina non mostri gia\'; 404 coi colpi spenti'],
   ['GET /u/:user/colpo/anteprima/:voce', 'l\'anteprima di un colpo del listino: solo il media di una voce accesa (porta.anteprima), senza la chiave dell\'overlay'],
   ['POST /u/:user/colpo/mira', 'la mira dello spettatore: col tetto per indirizzo, e la apre solo se il colpo adesso si puo\' consegnare'],
+  ['GET /api/lanci', 'il catalogo dei lanci (docs/LANCI.md): e\' il prodotto, uguale per tutti, senza dati di nessuno; la demo lo legge da qui'],
   ['GET /u/:user/colpo/accedi', 'l\'accesso dello spettatore con Twitch: un permesso solo (user:write:chat), lo state nella sessione, e il ritorno passa da /auth/callback'],
   ['POST /u/:user/colpo/esci', 'esce dall\'accesso: toglie la chiave dalla sessione e il token dalla memoria; il cookie e\' SameSite=lax, quindi un altro sito non lo fa uscire'],
   ['GET /u/:user/colpo/chat', 'la chat del canale in diretta: e\' la chat pubblica di Twitch, con un tetto di lettori per canale e in tutto; 404 coi colpi spenti'],

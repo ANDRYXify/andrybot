@@ -20,6 +20,7 @@ import { fileURLToPath } from 'node:url';
 import { guscioVetrina, guscioPannello, indirizzoHome } from '../src/web/vetrina-vista.js';
 import { disegnoPerIlBrowser, CARATTERI_AMMESSI, CARTELLA_CARATTERI } from '../src/features/carta-servita.js';
 import { regolePerIlBrowser, giroPerIlBrowser, comuniPerIlBrowser } from '../src/features/economia-servita.js';
+import { catalogoPubblico } from '../src/features/lanci.js';
 import { tmpdir } from 'node:os';
 
 const RAD = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -28,7 +29,7 @@ export const PUB = path.join(RAD, 'src/web/public');
 const TIPI = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
   '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png',
   '.webmanifest': 'application/manifest+json', '.json': 'application/json', '.woff2': 'font/woff2',
-  '.webp': 'image/webp', '.ico': 'image/x-icon', '.txt': 'text/plain; charset=utf-8' };
+  '.webp': 'image/webp', '.ico': 'image/x-icon', '.txt': 'text/plain; charset=utf-8', '.ogg': 'audio/ogg', '.md': 'text/markdown; charset=utf-8' };
 
 // Il guscio come lo manda il server: vetrina dentro, lingua dichiarata,
 // `body.vetrina` gia' messo (che e' quel che tiene ferma la larghezza) e solo
@@ -169,6 +170,10 @@ export async function apriSito({ api = () => ({}), kick = true, youtube = false,
     if (rotte && rotte(req, res, q)) return;
     if (overlay && overlay.gestisci(req, res, q)) return;
     if (q === '/api/demo/anteprima' && req.method === 'POST') return rispondiAnteprima(req, res);
+    if (q === '/api/lanci') {
+      res.writeHead(200, { 'content-type': 'application/json' });
+      return res.end(JSON.stringify(catalogoPubblico()));
+    }
     if (q.startsWith('/api/')) {
       res.writeHead(200, { 'content-type': 'application/json' });
       return res.end(JSON.stringify(api(q, via) ?? {}));
