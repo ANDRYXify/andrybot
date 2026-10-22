@@ -216,3 +216,10 @@ test('con l\'interruttore delle presenze spento il giro non parte', async () => 
   await scudo.giroPresenze(ch, ['lurkerbot']);
   assert.equal(chiesto, false);
 });
+
+test('l\'eta\' dell\'account si misura sull\'ora del giudizio, non sull\'orologio di chi fa girare le prove', () => {
+  const ORA = Date.UTC(2026, 9, 8, 12);
+  const u = { created_at: new Date(ORA - 3600_000).toISOString(), profile_image_url: 'foto', description: 'bio' };
+  assert.deepEqual(P.famigliaProfilo(u, ORA).motivi, ['account di oggi'], 'un\'ora prima dell\'ora del giudizio e\' di oggi, qualunque giorno sia adesso');
+  assert.deepEqual(P.famigliaProfilo(u, ORA + 20 * 86400_000).motivi, [], 'venti giorni dopo non e\' piu\' nuovo');
+});

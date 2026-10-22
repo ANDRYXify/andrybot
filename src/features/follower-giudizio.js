@@ -138,11 +138,14 @@ export function giudizioFollower(r, ctx) {
   const nati = g >= s.soglie.gemelli, arrivati = o >= s.soglie.ondata;
   const reteN = Number(ctx.rete?.(login)) || 0;
   const pr = ctx.precedenti?.get(login) || { colpito: 0, sospettato: 0 };
+  // un orologio solo per tutto il giudizio: i motivi e il punteggio
+  const ora = Number(ctx.ora) || Date.now();
   const p = punteggio({
     utente: utenteDa(r),
     nomeGenerato: nomeGenerato(login),
     reteCanali: reteN,
     sconto: Number(r.fiducia) || 0,
+    ora,
   });
 
   if (nati && arrivati) motivi.push({ k: 'fabbrica', gemelli: g, ondata: o });
@@ -151,7 +154,6 @@ export function giudizioFollower(r, ctx) {
   if (reteN >= ctx.conferme) motivi.push({ k: 'rete', n: reteN });
   if (pr.colpito) motivi.push({ k: 'fermato' });
   else if (pr.sospettato) motivi.push({ k: 'sospettato' });
-  const ora = Number(ctx.ora) || Date.now();
   if (Number(r.creato) > 0) {
     const giorni = (ora - Number(r.creato)) / GIORNO;
     if (giorni < 1) motivi.push({ k: 'oggi' });

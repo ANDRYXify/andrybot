@@ -41,6 +41,19 @@ serve il database, `cartellaUsaEGetta()` da `test/aiuto.mjs` **prima**
 dell'`import` di `db.js`: ogni file di prove gira nel suo processo, quindi ha il
 suo database usa-e-getta.
 
+## Le prove non dipendono dal giorno
+
+`scripts/verifica-orologio.mjs` fa girare tutte le prove con «adesso» spostato
+di 200 giorni in avanti (`scripts/_orologio-avanti.mjs`, caricato con
+`node --import`). Il 22 ottobre 2026 l'aggiornamento del server si è fermato su
+una prova che fino al mattino passava: il giudizio dei follower misurava
+«account di oggi» con la sua ora, ma il punteggio dentro usava l'orologio
+vero, e quattordici giorni dopo la data della prova l'esito cambiava. Il
+difetto era nel codice (ora un orologio solo, `ctx.ora`, anche nel
+punteggio); il cancello fa uscire una prova del genere subito, non il giorno
+in cui il server si aggiorna. L'autoprova rimette i due orologi e lo vuole
+rosso.
+
 ## La regola
 
 Un cancello che non è mai stato visto diventare rosso non è un cancello.

@@ -50,11 +50,14 @@ const norm = (s) => String(s || '').toLowerCase().trim();
 // perché è la stessa notizia detta tre volte.
 const TETTO_PROFILO = 3;
 
-export function famigliaProfilo(u) {
+// `ora`: il momento del giudizio. Chi giudica una lista con la sua ora (il
+// giudizio dei follower, ctx.ora) la passa qui, cosi' «account di oggi» si
+// misura sullo stesso orologio dei motivi che mostra; di serie e' adesso.
+export function famigliaProfilo(u, ora = Date.now()) {
   const motivi = [];
   let p = 0;
   if (!u) return { punti: 0, motivi };
-  const giorni = u.created_at ? (Date.now() - new Date(u.created_at).getTime()) / 86400000 : Infinity;
+  const giorni = u.created_at ? (ora - new Date(u.created_at).getTime()) / 86400000 : Infinity;
   if (giorni < 1) { p += 3; motivi.push('account di oggi'); }
   else if (giorni < 3) { p += 2; motivi.push(`account di ${Math.floor(giorni)} giorni`); }
   else if (giorni < 14) { p += 1; motivi.push('account recente'); }
@@ -166,7 +169,7 @@ export const SOGLIA_AGISCI = TETTO_PROFILO + TETTO_COMPORTAMENTO + 1;
 export const MASSIMO = TETTO_PROFILO + TETTO_NOME + TETTO_PRESENZA + TETTO_COMPORTAMENTO + TETTO_RETE;
 
 export function punteggio(dati = {}) {
-  const a = famigliaProfilo(dati.utente);
+  const a = famigliaProfilo(dati.utente, Number(dati.ora) || Date.now());
   const b = famigliaNome(dati);
   const c = famigliaPresenza(dati.canaliInsieme);
   const d = famigliaComportamento(dati);
