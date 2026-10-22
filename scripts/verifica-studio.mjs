@@ -283,22 +283,25 @@ await p.setViewportSize({ width: 1440, height: 950 });
 await p.waitForTimeout(250);
 // Premendo «Tutto schermo» il menu di lato si disfa all'indietro e solo dopo
 // lascia il posto alla pagina; ripremendo torna e si ridisegna. Si misura a
-// eventi: quando un gruppo del menu comincia a disfarsi o a disegnarsi, e
+// eventi: quando un pezzo disegnato del menu (il cassetto, un gruppo, la voce
+// accesa: quello che ha un contorno) comincia a disfarsi o a disegnarsi, e
 // quando la pagina cambia davvero. Un'attesa fissa sarebbe una gara di tempi.
 // Ogni pressione ha i suoi osservatori e il suo risultato: quelli della
 // pressione prima si staccano, altrimenti scriverebbero qui col loro orologio.
 const segnaCambio = () => p.evaluate(() => {
   (window.__schermoOss || []).forEach((o) => o.disconnect());
-  const t0 = performance.now(), g = document.querySelector('#nav-drawer > .drawer-grp');
+  const t0 = performance.now(), menu = document.getElementById('drawer');
   const era = document.body.classList.contains('tutto-schermo');
   const quando = () => Math.max(1, Math.round(performance.now() - t0));
   const s = { disfa: 0, ridisegna: 0, cambia: 0 };
   window.__schermo = s;
-  const suGruppo = new MutationObserver(() => {
-    if (g.classList.contains('dg-out') && !s.disfa) s.disfa = quando();
-    if (g.classList.contains('dg-in') && !s.ridisegna) s.ridisegna = quando();
+  const suGruppo = new MutationObserver((cambi) => {
+    for (const c of cambi) {
+      if (c.target.classList.contains('dg-out') && !s.disfa) s.disfa = quando();
+      if (c.target.classList.contains('dg-in') && !s.ridisegna) s.ridisegna = quando();
+    }
   });
-  suGruppo.observe(g, { attributes: true, attributeFilter: ['class'] });
+  suGruppo.observe(menu, { attributes: true, attributeFilter: ['class'], subtree: true });
   const suPagina = new MutationObserver(() => {
     if (document.body.classList.contains('tutto-schermo') !== era && !s.cambia) s.cambia = quando();
   });
