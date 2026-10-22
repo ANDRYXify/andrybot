@@ -130,6 +130,11 @@ const SELFTEST = process.argv.includes('--selftest');
 // rada di cosi', perche' sugli schermi fitti i lati diventerebbero scalini. La
 // home e' arrivata a 61,1 kB. Il tetto va a 62: la misura di oggi con l'aria
 // di prima.
+//
+// Il 22 ottobre e' entrata la voce dei colpi degli spettatori: la home e'
+// arrivata a 63489 byte, uno sopra il tetto. Invece di alzarlo, la frase si e'
+// accorciata finche' diceva lo stesso (63483). La misura ora si stampa anche in
+// byte: con cinque byte d'aria, un decimale di kB non basta a vederla.
 const TETTO_KB = 62;
 
 let chromium;
@@ -415,7 +420,7 @@ srv.close();
 const dice = (ok, testo, extra = '') => { console.log(`  ${ok ? '✓' : '✗'} ${testo}${!ok && extra ? ` — ${extra}` : ''}`); return ok; };
 console.log('\nLa vetrina non paga il conto del pannello.\n');
 const perTipo = (l, t) => (pesoDi(l, [t]) / 1024).toFixed(1);
-console.log(`  · home:  ${perTipo(casa.chiesti, '.html')} kB di pagina, ${perTipo(casa.chiesti, '.css')} kB di stile, ${perTipo(casa.chiesti, '.js')} kB di script — ${(peso / 1024).toFixed(1)} kB in tutto (gzip)`);
+console.log(`  · home:  ${perTipo(casa.chiesti, '.html')} kB di pagina, ${perTipo(casa.chiesti, '.css')} kB di stile, ${perTipo(casa.chiesti, '.js')} kB di script — ${(peso / 1024).toFixed(1)} kB in tutto (gzip, ${peso} byte su ${TETTO_KB * 1024})`);
 console.log(`  · script: ${casa.chiesti.filter((r) => r.tipo === '.js').map((r) => r.via).join(', ') || 'nessuno'}`);
 for (const m of misuraCopie) console.log(`  · copie: ${m.quante} regole prese da ${m.madre}, ${m.scollate ? m.scollate + ' scollate' : 'tutte uguali all\'originale'}`);
 for (const c of copie) console.log(`  · copie: rimettendo ${c.madre} ${c.nome}, ${c.diverse === 0 ? 'non cambia niente' : c.diverse + ' differenze'}`);
