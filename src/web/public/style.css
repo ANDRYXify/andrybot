@@ -1033,7 +1033,7 @@ input[type="file"]::file-selector-button:hover { background: var(--acc-600); }
 .lnc-mini { width: 1.4em; height: 1.4em; object-fit: contain; vertical-align: -.35em; margin-right: .3em; }
 .eff-chroma { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem .8rem; margin-top: .45rem; }
 .eff-chroma [hidden] { display: none; }
-.riga-check-inline { display: inline-flex; align-items: center; gap: .45rem; font-size: .9rem; }
+.eff-chroma .riga-check { flex: 1 1 100%; margin: 0; }
 .eff-chroma input[type="color"] { width: 2.2rem; height: 2rem; padding: 0; border: 1px solid var(--border); border-radius: var(--r-s, 6px); background: none; cursor: pointer; }
 .lsc-cerca { flex: 1 1 130px; min-width: 90px; }
 .lib-azioni .lib-usa { flex: 1; }
