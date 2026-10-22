@@ -16,6 +16,9 @@
 //  · nello Studio della prova la fonte Overlay si vede sulla tela d'uscita, la
 //    cornice e' grande come in OBS (1920×1080), un alert che arriva a Studio
 //    fermo lo risveglia, e una fonte nascosta chiude la sua cornice.
+//  · la copertina del brano arriva nella fotografia: il server la riscrive
+//    verso la nostra origine, l'unica da cui la fotografia puo' leggere i byte
+//    (prima restava un riquadro vuoto, mentre in OBS si vedeva).
 //
 // Le promesse sono scritte qui in testa: una che il collaudo non arriva a
 // misurare esce rossa, non «non vista».
@@ -26,6 +29,7 @@ import './_dati-usa-e-getta.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 import { apriSito, apriBrowser, overlayFinto, PUB, chromiumQui } from './_sito.mjs';
+import { copertineNostre } from '../src/features/musica-overlay.js';
 
 const SELFTEST = process.argv.includes('--selftest');
 const ROMPI = Number((process.argv.find((a) => a.startsWith('--rompi=')) || '').split('=')[1]) || 0;
@@ -44,6 +48,7 @@ const PROMESSE = [
   'un alert che arriva a Studio fermo lo risveglia e va sulla tela',
   'nello Studio il verticale usa la sua misura: cornice 720×1280, fotografia 1080×1920',
   'una fonte Overlay nascosta chiude la sua cornice',
+  'la copertina del brano arriva nella fotografia: passa dalla nostra origine, come la vede OBS',
   'nessun errore di pagina',
 ];
 
@@ -55,6 +60,7 @@ const DIFETTI = {
   ],
   '/overlay-app.js': [
     ['if (OSPITE && window.SUONI_PRESET) {', 'if (false) {', 'i suoni dei preset passano allo Studio', 3, /suoni dell'overlay/],
+    ['  const foto = d.copertinaGrande || d.copertina;', "  const foto = 'https://i.scdn.co/image/' + 'ab'.repeat(20);", 'la copertina viene dalla nostra origine', 8, /copertina del brano/],
   ],
   '/app.js': [
     ['const STUDIO_OV_MISURA = { o: { W: 1920, H: 1080,', 'const STUDIO_OV_MISURA = { o: { W: 1280, H: 720,', 'la cornice e\' grande come in OBS', 4, /grande come in OBS/],
@@ -128,7 +134,16 @@ const TEMA = temaDi({
 });
 const ovl = overlayFinto({ login: 'prova', tema: () => TEMA });
 const ferma = overlayFinto({ login: 'ferma', tema: () => temaDi({ css: '', contatori: [CONT] }) });
-const instradati = [ovl, ferma];
+// Il player della musica con una copertina di Spotify, come la risponde il
+// server: riscritta verso la nostra origine (copertineNostre). La copertina e'
+// un quadrato rosso pieno: nella fotografia si conta il rosso.
+const COPERTINA_ID = 'ab67616d0000b273' + '0123456789abcdef01234567';
+const COPERTINA = '<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300"><rect width="300" height="300" fill="#ff0000"/></svg>';
+const MUSICA = { attivo: true, posizione: 'centro', cover: 'disco', sfondo: 'copertina', quandoFermo: 'resta', verso: 'orizzontale', righe: 'due', barra: 'sotto', tempi: 'si', ritmo: 'no', entrata: 'sale', stile: {} };
+const brano = () => copertineNostre({ stato: 'suona', suona: true, id: 'x', nome: 'aLIEz', artisti: 'SawanoHiroyuki[nZk]', album: 'o1', ms: 38_000, durata: 268_000,
+  copertina: 'https://i.scdn.co/image/' + COPERTINA_ID, copertinaGrande: 'https://i.scdn.co/image/' + COPERTINA_ID }, 'musica', 'x');
+const musica = overlayFinto({ login: 'musica', tema: () => temaDi({ css: '', musica: MUSICA }), musica: brano });
+const instradati = [ovl, ferma, musica];
 const PAGINA = `<!doctype html><html><body style="margin:0"><script type="module">
 import { creaFotoOverlay } from '/js/studio-overlay.js';
 window.SUONI = [];
@@ -144,6 +159,7 @@ window.verdi = (c) => { const d = c.getContext('2d').getImageData(0, 0, c.width,
 const sito = await apriSito({
   rotte: (req, res, q) => {
     if (q === '/sonda.html') { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' }); res.end(PAGINA); return true; }
+    if (q === '/overlay/musica/copertina/' + COPERTINA_ID) { res.writeHead(200, { 'content-type': 'image/svg+xml' }); res.end(COPERTINA); return true; }
     for (const o of instradati) if (o.gestisci(req, res, q)) return true;
     return false;
   },
@@ -210,6 +226,18 @@ try {
     await attesa(1500);
     const f1 = await p.evaluate(() => F.stato().foto);
     ok(PROMESSE[7], f0 > 0 && f1 === f0, `${f0} → ${f1}`);
+
+    // la copertina: nella fotografia c'e' il rosso del disco e dello sfondo
+    await p.evaluate(() => { window.MU = crea('/overlay/musica?key=x&studio=1', 1920, 1080); giro(MU); });
+    await p.waitForFunction(() => MU.stato().pronta, null, { timeout: 15000 }).catch(() => {});
+    let rossi = 0;
+    for (let i = 0; i < 40 && rossi < 3000; i++) {
+      await attesa(250);
+      rossi = await p.evaluate(() => { const d = foto(MU, 1920, 1080).getContext('2d').getImageData(0, 0, 1920, 1080).data; let n = 0; for (let k = 0; k < d.length; k += 16) if (d[k] > 200 && d[k + 1] < 60 && d[k + 2] < 60 && d[k + 3] > 200) n++; return n; });
+    }
+    const chiesta = await p.evaluate(() => [...MU.cornice().contentDocument.querySelectorAll('.m-disco')].map((e) => e.style.backgroundImage).join(' '));
+    ok(PROMESSE[13], rossi >= 3000 && chiesta.includes('/overlay/musica/copertina/'), `${rossi} pixel rossi; ${chiesta.slice(0, 120)}`);
+    await p.evaluate(() => MU.chiudi());
     await p.close();
   }
 
@@ -262,7 +290,7 @@ try {
     await p.close();
   }
 } finally {
-  ok(PROMESSE[13], !errori.length, errori.slice(0, 3).join(' | '));
+  ok(PROMESSE[14], !errori.length, errori.slice(0, 3).join(' | '));
   await browser.close();
   sito.chiudi();
 }

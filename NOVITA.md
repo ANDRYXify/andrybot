@@ -41,6 +41,12 @@ questa non è una cosa da ricordarsi: il cancello boccia una riga pubblica senza
 traduzione, una traduzione staccata dalla sua riga, o una che dice numeri e
 comandi diversi da quelli della riga italiana.
 
+## 2026-10-22
+
+- Nello Studio della diretta il player di Spotify mostra la copertina del brano e ne prende i colori, come in OBS: prima restava un riquadro vuoto. [vai: studio]
+  en: In the live Studio the Spotify player shows the song's cover and takes its colors, as in OBS: before, it stayed an empty box.
+  es: En el Estudio del directo el reproductor de Spotify muestra la portada de la canción y toma sus colores, como en OBS: antes quedaba un recuadro vacío.
+
 ## 2026-10-21
 
 - [importante] Colpi degli spettatori: da un link vedono la tua diretta, scelgono un tuo effetto, toccano il punto del quadro e, pagato in euro, punti canale o Bit, l'effetto compare lì col loro nome. Senza estensioni Twitch. [vai: colpi]

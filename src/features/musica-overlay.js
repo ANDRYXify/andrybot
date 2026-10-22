@@ -31,6 +31,26 @@ export function adesso(dati, ts, ora) {
 
 const finito = (dati, ts, ora) => !!(dati?.suona && Number(dati.durata) && (Number(dati.ms) || 0) + (ora - ts) >= Number(dati.durata));
 
+// LA COPERTINA PASSA DA NOI. Spotify la da' su i.scdn.co; l'overlay la
+// chiede invece alla nostra origine (/overlay/<login>/copertina/<id>), che la
+// prende da Spotify e la tiene in copia. Una fonte sola per OBS e per lo
+// Studio: lo Studio fotografa l'overlay e puo' leggere solo i byte della nostra
+// origine (una copertina di un altro sito restava un riquadro vuoto), e il
+// colore preso dalla copertina non dipende piu' dai permessi CORS di un altro
+// sito. Un indirizzo che non e' una copertina di Spotify resta com'e'.
+export const COPERTINA_SPOTIFY = /^https:\/\/i\.scdn\.co\/image\/([0-9a-f]{32,64})$/;
+export function copertineNostre(dati, login, chiave) {
+  if (!dati || typeof dati !== 'object') return dati;
+  const nostra = (u) => {
+    const m = COPERTINA_SPOTIFY.exec(String(u || ''));
+    return m ? `/overlay/${encodeURIComponent(login)}/copertina/${m[1]}?key=${encodeURIComponent(chiave || '')}` : u;
+  };
+  const out = { ...dati };
+  if (out.copertina) out.copertina = nostra(out.copertina);
+  if (out.copertinaGrande) out.copertinaGrande = nostra(out.copertinaGrande);
+  return out;
+}
+
 export function lettore({ spotify, orologio = () => Date.now(), attesa = (ms) => new Promise((r) => { const t = setTimeout(r, ms); t.unref?.(); }) } = {}) {
   const cache = new Map();    // login → { ts, dati }
   const ultima = new Map();   // login → { ts, dati }  l'ultima lettura CERTA

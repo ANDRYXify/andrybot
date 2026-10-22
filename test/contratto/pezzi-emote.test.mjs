@@ -20,6 +20,7 @@ test('le rotte delle emote: con la chiave o con la sessione, mai aperte', () => 
   assert.match(SRV, /app\.get\('\/overlay\/:login\/emote\/:fonte\/:id', wrap\(async \(req, res\) => \{\s*if \(!chiaveOk\(req\) \|\| !eLoginNostro\(String\(req\.params\.login\)\.toLowerCase\(\)\)\) return notFound\(res\);/);
   assert.match(SRV, /app\.get\('\/api\/streamer\/emote\/:fonte\/:id', requireLogin, wrap\(servieEmote\)\);/);
   assert.match(SRV, /app\.get\('\/api\/streamer\/emote-pezzi', requireLogin,/);
+  assert.match(SRV, /app\.get\('\/overlay\/:login\/copertina\/:id', wrap\(async \(req, res\) => \{\s*if \(!chiaveOk\(req\) \|\| !eLoginNostro\(String\(req\.params\.login\)\.toLowerCase\(\)\)\) return notFound\(res\);/, 'la copertina del player: con la chiave dell\'overlay');
 });
 
 test('host fissi, id con la sua forma, tipo, peso e tetto della copia', () => {
@@ -28,7 +29,9 @@ test('host fissi, id con la sua forma, tipo, peso e tetto della copia', () => {
   assert.match(fonti, /twitch: \{ id: \/\^\[A-Za-z0-9_\]\{1,64\}\$\/, url: \(id\) => `https:\/\/static-cdn\.jtvnw\.net\/emoticons\/v2\/\$\{id\}\/default\/dark\/3\.0`, host: 'static-cdn\.jtvnw\.net' \}/);
   assert.match(SRV, /if \(!f \|\| !f\.id\.test\(id\)\) return null;/, 'un id fuori forma non parte nemmeno');
   assert.match(SRV, /if \(!r\.ok \|\| new URL\(r\.url\)\.host !== f\.host\) return null;/, 'un rimando verso un altro host non si segue');
-  assert.match(SRV, /if \(!EMOTE_TIPI\.test\(tipo\)\) return null;/);
+  assert.match(SRV, /if \(!\(f\.tipi \|\| EMOTE_TIPI\)\.test\(tipo\)\) return null;/, 'il tipo e\' quello della fonte, o quello delle emote');
+  // la copertina del player (features/musica-overlay.js): solo i.scdn.co, solo un id esadecimale, solo immagini ferme
+  assert.match(fonti, /spotify: \{ id: \/\^\[0-9a-f\]\{32,64\}\$\/, url: \(id\) => `https:\/\/i\.scdn\.co\/image\/\$\{id\}`, host: 'i\.scdn\.co', tipi: \/\^image\\\/\(jpeg\|png\|webp\)\$\/ \}/);
   assert.match(SRV, /if \(!buf\.length \|\| buf\.length > EMOTE_MAX_BYTE\) return null;/);
   assert.match(SRV, /while \(_emoteByte > EMOTE_TETTO && _emoteCopie\.size\)/);
   assert.match(SRV, /'X-Content-Type-Options': 'nosniff'/);

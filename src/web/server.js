@@ -1749,9 +1749,10 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   const musicaOverlay = musicaOverlayFeat.lettore({ spotify });
   app.get('/overlay/:login/musica', wrap(async (req, res) => {
     if (!chiaveOk(req)) return notFound(res);
-    const dati = await musicaOverlay.musica(String(req.params.login).toLowerCase());
+    const login = String(req.params.login).toLowerCase();
+    const dati = await musicaOverlay.musica(login);
     res.set('Cache-Control', 'no-store');
-    res.json(dati);
+    res.json(musicaOverlayFeat.copertineNostre(dati, login, String(req.query.key || '')));
   }));
 
   // LA CLASSIFICA DEI BIT per l'elemento in scena. La chiede l'overlay, una volta
@@ -1878,6 +1879,8 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   const EMOTE_FONTI = {
     '7tv': { id: /^[A-Za-z0-9]{20,32}$/, url: (id) => `https://cdn.7tv.app/emote/${id}/4x.webp`, host: 'cdn.7tv.app' },
     twitch: { id: /^[A-Za-z0-9_]{1,64}$/, url: (id) => `https://static-cdn.jtvnw.net/emoticons/v2/${id}/default/dark/3.0`, host: 'static-cdn.jtvnw.net' },
+    // la copertina del brano per il player dell'overlay (features/musica-overlay.js, «La copertina passa da noi»)
+    spotify: { id: /^[0-9a-f]{32,64}$/, url: (id) => `https://i.scdn.co/image/${id}`, host: 'i.scdn.co', tipi: /^image\/(jpeg|png|webp)$/ },
   };
   const EMOTE_TIPI = /^image\/(png|gif|webp|avif)$/;
   const EMOTE_MAX_BYTE = 4 * 1024 * 1024;
@@ -1897,7 +1900,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
         const r = await fetch(f.url(id), { signal: AbortSignal.timeout(8000) });
         if (!r.ok || new URL(r.url).host !== f.host) return null;
         const tipo = String(r.headers.get('content-type') || '').split(';')[0].trim().toLowerCase();
-        if (!EMOTE_TIPI.test(tipo)) return null;
+        if (!(f.tipi || EMOTE_TIPI).test(tipo)) return null;
         const buf = Buffer.from(await r.arrayBuffer());
         if (!buf.length || buf.length > EMOTE_MAX_BYTE) return null;
         const v = { buf, tipo };
@@ -1924,6 +1927,11 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     return servieEmote(req, res);
   }));
   app.get('/api/streamer/emote/:fonte/:id', requireLogin, wrap(servieEmote));
+  app.get('/overlay/:login/copertina/:id', wrap(async (req, res) => {
+    if (!chiaveOk(req) || !eLoginNostro(String(req.params.login).toLowerCase())) return notFound(res);
+    req.params.fonte = 'spotify';
+    return servieEmote(req, res);
+  }));
   // Le emote da scegliere: 7TV e Twitch, del canale e globali. Una fonte che
   // non risponde e' una lista vuota, non un errore: le altre restano.
   app.get('/api/streamer/emote-pezzi', requireLogin, wrap(async (req, res) => {

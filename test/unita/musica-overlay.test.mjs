@@ -185,3 +185,13 @@ test('il battito: un 403 vale per l\'app e non si richiede; un intoppo non togli
   globalThis.fetch = async () => risposta(200, { tempo: 121.4, energy: 0.7 });
   assert.deepEqual(await S.battito(altro, 'y'), { bpm: 121, energia: 0.7 }, 'dopo l\'intoppo il battito arriva');
 });
+
+test('la copertina di Spotify passa dalla nostra origine; il resto resta com\'e\'', () => {
+  const id = 'ab67616d0000b273' + '0123456789abcdef01234567';
+  const d = MO.copertineNostre({ nome: 'x', copertina: 'https://i.scdn.co/image/' + id, copertinaGrande: 'https://i.scdn.co/image/' + id }, 'andry', 'k/1');
+  assert.equal(d.copertina, `/overlay/andry/copertina/${id}?key=k%2F1`);
+  assert.equal(d.copertinaGrande, d.copertina);
+  assert.equal(MO.copertineNostre({ copertina: 'https://altro.example/a.jpg' }, 'andry', 'k').copertina, 'https://altro.example/a.jpg', 'non e\' una copertina di Spotify: non la tocchiamo');
+  assert.equal(MO.copertineNostre({ copertina: 'https://i.scdn.co/image/../x' }, 'andry', 'k').copertina, 'https://i.scdn.co/image/../x', 'solo un id esadecimale');
+  assert.deepEqual(MO.copertineNostre({ stato: 'niente', suona: false }, 'andry', 'k'), { stato: 'niente', suona: false });
+});

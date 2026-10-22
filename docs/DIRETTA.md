@@ -329,6 +329,19 @@ animano dai loro byte, che arrivano dalla porta del nostro server (la CSP
 lascia leggere byte solo da noi). Trasformazioni, opacità, ritagli e ordine
 dei livelli sono quelli del browser, non ricostruiti.
 
+**Le immagini di altri siti passano da noi.** La fotografia legge solo i byte
+della nostra origine: un'immagine di un altro sito resta fuori. Così la
+copertina di Spotify (i.scdn.co) nello Studio era un riquadro vuoto, e il
+colore preso dalla copertina non arrivava, mentre in OBS, che la carica da sé,
+si vedeva. Ora il server, rispondendo all'overlay su cosa suona, riscrive la
+copertina verso `/overlay/<canale>/copertina/<id>` (solo un id esadecimale di
+i.scdn.co, con la chiave dell'overlay), e la prende da Spotify con la stessa
+copia in memoria delle emote (`features/musica-overlay.js`,
+`copertineNostre`). Una fonte sola per OBS e per lo Studio: la stessa immagine,
+lo stesso colore. Il cancello `verifica-studio-overlay` conta il rosso di una
+copertina nella fotografia, e col difetto rimesso (la copertina da un altro
+sito) diventa rosso.
+
 **Il peso.** Si fotografa solo quando la pagina cambia (un osservatore sul
 DOM, le animazioni in corso, i video che scorrono), al massimo 30 volte al
 secondo; una pagina ferma non costa niente e lo Studio può dormire. Ogni
