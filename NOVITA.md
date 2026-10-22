@@ -43,6 +43,18 @@ comandi diversi da quelli della riga italiana.
 
 ## 2026-10-22
 
+- [importante] La pagina dei colpi veste il tema della tua pagina link e ha la chat del canale. Chi entra con Twitch (un solo permesso) scrive da lì, e il suo cheer o riscatto paga il colpo senza codice. [vai: colpi]
+  en: The hits page wears your link page theme and has your channel chat. Whoever logs in with Twitch (one permission) chats from there, and their cheer or redemption pays the hit with no code.
+  es: La página de golpes viste el tema de tu página de enlaces y tiene el chat del canal. Quien entra con Twitch (un solo permiso) escribe desde ahí, y su cheer o canje paga el golpe sin código.
+  > La pagina dei colpi ha la chat e l'accesso con Twitch
+  > Ha i colori, il carattere e la foto della tua pagina link, e il titolo lo scrivi tu. Twitch chiede allo spettatore solo di poter scrivere in chat: i Bit restano su Twitch, ma il codice non serve più.
+  en> The hits page has the chat and Twitch login
+  en> It has the colors, font and picture of your link page, and you write its title. Twitch only asks viewers to let it write in chat: Bits stay on Twitch, but no code is needed anymore.
+  es> La página de golpes tiene el chat y el acceso con Twitch
+  es> Tiene los colores, la tipografía y la foto de tu página de enlaces, y el título lo escribes tú. Twitch solo pide al espectador escribir en el chat: los Bits siguen en Twitch, pero ya no hace falta el código.
+- Il menù del pannello respira: i gruppi chiusi sono righe leggere, e risalta solo il gruppo aperto con la pagina dove sei. [vai: stato]
+  en: The panel menu breathes: closed groups are light rows, and only the open group stands out, with the page you are on.
+  es: El menú del panel respira: los grupos cerrados son filas ligeras, y solo destaca el grupo abierto con la página donde estás.
 - [importante] Instagram: un post o un reel nuovo arriva su Telegram anche con dei post fissati in cima al profilo. La carta di Instagram dice com'è andato l'ultimo avviso, e ha «Controlla adesso». [vai: notifiche]
   en: Instagram: a new post or reel reaches Telegram even with posts pinned at the top of your profile. The Instagram card says how the last alert went, and has «Check now».
   es: Instagram: un post o un reel nuevo llega a Telegram aunque haya posts fijados arriba en el perfil. La tarjeta de Instagram dice cómo fue el último aviso, y tiene «Revisar ahora».

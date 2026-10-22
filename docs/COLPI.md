@@ -110,6 +110,14 @@ scaduta`. «Pagata» vuol dire soldi arrivati; «sparata» vuol dire MOSTRATA.
 - **Bit**: il cheer col codice nel messaggio. I Bit si sommano (`versati`):
   chi ne manda meno sente in chat quanti ne mancano.
 
+Con l'accesso a Twitch (sotto) il codice non serve: la mira porta l'id
+Twitch dello spettatore (`colpi.spettatore`) e `registro.apertaDi` trova la
+sua ultima mira aperta. Un suo cheer senza codice la paga **solo se da solo
+copre quello che manca**: un cheer più piccolo, fatto magari per altro, non
+si somma di nascosto (col codice sì, come prima). Un suo riscatto del premio
+di quella voce la paga qualunque cosa scriva. Il codice resta e vince: se c'è
+nel messaggio, vale quello.
+
 ## La pagina (`/u/<login>/colpo`)
 
 Disegnata da `colpi-pagina.js` con l'aspetto della pagina link, nella lingua
@@ -127,12 +135,62 @@ sua chiave e non escono mai.
 La diretta nella pagina arriva qualche secondo dopo: il colpo cade nel punto
 del quadro, e la pagina lo dice.
 
+La pagina è un blocco dentro `renderLinkPage`, come la pagina link dello
+streamer: stesso stile, stesso tema (sfondo, carattere, accento, angoli), la
+stessa testata e lo stesso consenso per il lettore di Twitch (`.chiedi-b` di
+`pagina-link.js`). Il blocco usa solo le variabili del tema (`--acc`,
+`--suacc`, `--r`, `--fd`, `--btxt`…): un tema nuovo vale anche qui senza
+toccarlo.
+
+## La chat
+
+`colpi-chat.js`: le righe che il bot riceve già dalla chat di Twitch del
+canale (solo coi colpi accesi), girate alla pagina con un flusso SSE
+(`GET /u/<login>/colpo/chat`) e le ultime 40 per chi arriva. È la chat
+pubblica del canale, niente di più. Le emote (di Twitch e del canale) viaggiano
+come nome → indirizzo https; la pagina scrive il testo con `textContent`, e un
+messaggio con dell'HTML resta testo. Tetti: 300 lettori per canale, 3000 in
+tutto; un commento ogni 25 s tiene viva la linea dietro i proxy. Le righe
+stanno solo in memoria: un riavvio le perde, e la pagina riparte dai nuovi.
+
+## L'accesso con Twitch
+
+Un permesso solo: `user:write:chat` (scrivere in chat a nome tuo). Chi è lo
+dice Twitch col token (validate), senza chiedere l'email né altro. Niente
+permessi per Bit o punti: **Twitch non lascia spenderli fuori da Twitch**,
+né con le API né con la chat incorporata, quindi chiederli spaventerebbe e
+basta.
+
+- `GET /u/<login>/colpo/accedi` mette nella sessione `colpoFlow` (state,
+  canale, ora) e manda su Twitch. Il ritorno passa da `/auth/callback`,
+  l'unico indirizzo registrato, che riconosce il flusso **dallo state**: un
+  accesso lasciato a metà non ruba il ritorno al login dello streamer.
+- Il token sta **solo nella memoria del server** (`colpi-accesso.js`): il
+  cookie della sessione è firmato ma si legge, quindi lì va solo una chiave
+  casuale. Rinnovo a 5 minuti dalla scadenza; la chiave dura un giorno; al
+  massimo 5000 spettatori. Un riavvio li perde: si rientra con un clic.
+- `POST /u/<login>/colpo/chat` scrive col token dello spettatore e l'API
+  `Send Chat Message`: ban, AutoMod, chat per follower li applica Twitch, e
+  la pagina mostra il suo motivo. Tetto per spettatore. Un 401 chiude
+  l'accesso.
+- `POST /u/<login>/colpo/esci` toglie chiave e token. Il cookie è
+  `SameSite=lax`: un altro sito non può né scrivere né far uscire.
+- Con l'accesso la pagina non chiede il nome: il colpo porta il nome Twitch
+  (se lo streamer mostra i nomi).
+
 ## Il pannello
 
 Scheda «Colpi degli spettatori» in «Scena e overlay»: pagina aperta e pausa,
 indirizzo da copiare, listino, regole, zone protette disegnate trascinando sul
 quadro, gli ultimi colpi e gli avvisi (conto per gli euro mancante, premi che
 Twitch non ha creato, col motivo).
+
+Il riquadro «La pagina» dice da dove viene l'aspetto (la pagina link) con un
+tasto che apre direttamente la sua scheda «Aspetto», e ha titolo e
+sottotitolo (`colpi.titolo`, `colpi.dida`, 80 e 200 caratteri). Vuoti, la
+pagina usa quelli di serie nella lingua di chi la apre; il sottotitolo di
+serie promette «col tuo nome» solo se i nomi sono accesi. Il premio a punti
+canale dice anche che con l'accesso a Twitch va bene qualunque testo.
 
 ## Collaudo
 
@@ -141,7 +199,13 @@ Twitch non ha creato, col motivo).
   dalla pagina all'overlay. I difetti: strato che prende sempre i clic, pagina
   che non guarda le zone, ombra senza grandezza, overlay che non centra, che
   non dice «visto», che mostra due volte un rinvio, pagina che lascia pagare a
-  diretta ferma. Ognuno, da solo, fa rosso.
+  diretta ferma, chat che scrive l'HTML di un messaggio, modulo per scrivere
+  a chi non ha l'accesso. Ognuno, da solo, fa rosso. Prova anche il tema
+  (l'accento è quello della pagina link), l'accesso, la mira legata allo
+  spettatore e il suo cheer senza codice.
+- `test/unita/colpi-chat-accesso.test.mjs`: la riga (colore, emote https),
+  i tetti della chat, la chiave dell'accesso (rinnovo, scadenza, niente token
+  in `chi`), il messaggio verso l'API di Twitch e i suoi rifiuti.
 
 ## Limiti noti
 
@@ -149,3 +213,6 @@ Twitch non ha creato, col motivo).
 - «Mostrato» lo dice l'overlay: se in OBS la sorgente è attiva ma coperta da
   un'altra, o il programma non trasmette, l'overlay non lo può sapere.
 - Fuori da OBS (altri programmi di regia) «pronto» vuol dire scheda visibile.
+- I Bit e i punti restano su Twitch (vincolo di Twitch): l'accesso toglie il
+  codice, non il passaggio dalla chat o dal premio.
+- Un riavvio fa rientrare gli spettatori (il token non si salva, apposta).

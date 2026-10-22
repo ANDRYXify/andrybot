@@ -906,6 +906,7 @@ CREATE TABLE IF NOT EXISTS colpi (             -- gli attacchi degli spettatori 
   pagata_at INTEGER NOT NULL DEFAULT 0,        -- quando il pagamento e' arrivato: da li' corre il tempo per consegnarla
   tentata_at INTEGER NOT NULL DEFAULT 0,       -- l'ultima volta che e' stata mandata all'overlay
   premio TEXT NOT NULL DEFAULT '',             -- punti canale: il premio e il riscatto da chiudere (FULFILLED o CANCELED)
+  spettatore TEXT NOT NULL DEFAULT '',         -- l'id Twitch di chi ha mirato con l'accesso: il suo cheer o il suo riscatto la pagano senza codice
   sparata_at INTEGER NOT NULL DEFAULT 0
 );
 CREATE INDEX IF NOT EXISTS idx_colpi_pagate ON colpi(stato) WHERE stato='pagata';
@@ -1343,6 +1344,7 @@ aggiungiColonna('conti_donazioni', 'chiave', "TEXT NOT NULL DEFAULT ''");
 aggiungiColonna('conti_donazioni', 'prodotto', "TEXT NOT NULL DEFAULT ''");
 aggiungiColonna('conti_donazioni', 'nota', "TEXT NOT NULL DEFAULT ''");
 aggiungiColonna('conti_donazioni', 'rimborsi', 'INTEGER NOT NULL DEFAULT 0');
+aggiungiColonna('colpi', 'spettatore', "TEXT NOT NULL DEFAULT ''");
 aggiungiColonna('donazioni', 'riferimento', "TEXT NOT NULL DEFAULT ''");
 aggiungiColonna('donazioni', 'rimborsata_at', 'INTEGER NOT NULL DEFAULT 0');
 aggiungiColonna('donazioni', 'media', "TEXT NOT NULL DEFAULT ''");
@@ -2725,9 +2727,10 @@ export const SOSTEGNO_MAI_PAGATO_MS = 7 * 24 * 3600 * 1000;
 export const registroColpi = {
   apri(m) {
     try {
-      return db.prepare(`INSERT INTO colpi (id, login, codice, voce, comando, nome, x, y, scala, chi, prezzi, stato, creata, scade) VALUES (?,?,?,?,?,?,?,?,?,?,?,'attesa',?,?)`)
+      return db.prepare(`INSERT INTO colpi (id, login, codice, voce, comando, nome, x, y, scala, chi, prezzi, stato, creata, scade, spettatore) VALUES (?,?,?,?,?,?,?,?,?,?,?,'attesa',?,?,?)`)
         .run(String(m.id), String(m.login).toLowerCase(), String(m.codice), String(m.voce), String(m.comando), String(m.nome || '').slice(0, 40),
-          Number(m.x), Number(m.y), Math.round(Number(m.scala) || 100), String(m.chi || '').slice(0, 25), JSON.stringify(m.prezzi || {}), Number(m.creata) || now(), Number(m.scade) || now()).changes > 0;
+          Number(m.x), Number(m.y), Math.round(Number(m.scala) || 100), String(m.chi || '').slice(0, 25), JSON.stringify(m.prezzi || {}), Number(m.creata) || now(), Number(m.scade) || now(),
+          String(m.spettatore || '').slice(0, 40)).changes > 0;
     } catch (e) { if (/UNIQUE/.test(String(e?.message))) return false; throw e; }
   },
   _leggi(r) { if (!r) return null; let prezzi = {}; try { prezzi = JSON.parse(r.prezzi || '{}'); } catch { prezzi = {}; } return { ...r, prezzi }; },
@@ -2738,6 +2741,13 @@ export const registroColpi = {
   // una con dei Bit gia' arrivati aspetta il resto anche dopo la scadenza.
   perCodice(login, codice, ora = now()) {
     return this._leggi(db.prepare("SELECT * FROM colpi WHERE login=? AND codice=? AND stato='attesa' AND riferimento='' AND (scade>? OR versati>0)").get(String(login).toLowerCase(), String(codice || '').toUpperCase(), ora));
+  },
+  // l'ultima mira ancora aperta di uno spettatore che ha fatto l'accesso: il suo
+  // cheer o il suo riscatto la pagano senza codice (stesse regole di perCodice)
+  apertaDi(login, spettatore, ora = now()) {
+    if (!spettatore) return null;
+    return this._leggi(db.prepare("SELECT * FROM colpi WHERE login=? AND spettatore=? AND stato='attesa' AND riferimento='' AND (scade>? OR versati>0) ORDER BY creata DESC LIMIT 1")
+      .get(String(login).toLowerCase(), String(spettatore), ora));
   },
   perRiferimento(riferimento) { return riferimento ? this._leggi(db.prepare("SELECT * FROM colpi WHERE riferimento=?").get(String(riferimento))) : null; },
   // il pagamento in euro aperto per questa mira: da qui in poi la scadenza la decide lui

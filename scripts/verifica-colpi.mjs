@@ -21,7 +21,12 @@
 //    «visto» dell'overlay, e un colpo rimandato non compare due volte;
 //  · a diretta ferma la pagina toglie i modi di pagare;
 //  · gli euro: «Paga» porta al pagamento, il ritorno mostra il colpo comparso;
-//  · al telefono niente scorre di lato.
+//  · al telefono niente scorre di lato;
+//  · la pagina veste il tema della pagina link (l'accento e' quello del tema);
+//  · la chat del canale si legge, e un messaggio non diventa mai HTML; se la
+//    linea cade si riapre da sola, senza righe doppie;
+//  · senza accesso si legge e basta; con l'accesso si scrive, il nome non si
+//    chiede, e la mira e' legata allo spettatore: il suo cheer la paga senza codice.
 //
 // Uso: node scripts/verifica-colpi.mjs             (esce 1 se una promessa non tiene)
 //      node scripts/verifica-colpi.mjs --selftest  (rimette sette difetti: strato che prende
@@ -29,8 +34,11 @@
 //                                                   guarda, ombra senza la grandezza, overlay
 //                                                   che non centra, che non dice «visto», che
 //                                                   mostra due volte un rinvio, pagina che lascia
-//                                                   pagare a diretta ferma; li vuole tutti rossi)
-//      node scripts/verifica-colpi.mjs --rompi=N   (solo il difetto N, da 1 a 7: deve vedersi da solo)
+//                                                   pagare a diretta ferma, chat che scrive HTML,
+//                                                   modulo per scrivere a chi non ha l'accesso,
+//                                                   righe doppie dopo una riapertura;
+//                                                   li vuole tutti rossi)
+//      node scripts/verifica-colpi.mjs --rompi=N   (solo il difetto N, da 1 a 10: deve vedersi da solo)
 
 import './_dati-usa-e-getta.mjs';
 import { apriSito, apriBrowser, overlayFinto } from './_sito.mjs';
@@ -42,6 +50,7 @@ const { creaServizioColpi } = await import('../src/features/colpi-servizio.js');
 const { creaPortaColpi } = await import('../src/features/colpi-porta.js');
 const { htmlPaginaColpo } = await import('../src/features/colpi-pagina.js');
 const { EffectsEngine } = await import('../src/features/effects.js');
+const { creaChatColpi, rigaDi } = await import('../src/features/colpi-chat.js');
 
 const LOGIN = 'prova';
 const DIFETTI = [
@@ -52,6 +61,9 @@ const DIFETTI = [
   ['overlay-app.js', 'if (id) { colpiMostrati.add(id); colpoVisto(id); }', 'if (id) { colpiMostrati.add(id); }'],
   ['overlay-app.js', 'function colpoNuovo(ev) {', 'function colpoNuovo(ev) { return true;'],
   ['pagina-colpo.js', 'var conCodice = mira.pagabile && !mira.inPagamento;', 'var conCodice = !mira.inPagamento;'],
+  ['pagina-colpo.js', 'else li.appendChild(document.createTextNode(p));', "else li.insertAdjacentHTML('beforeend', p);"],
+  ['pagina-colpo.js', "$('cp-scrivi').hidden = !io;", "$('cp-scrivi').hidden = false;"],
+  ['pagina-colpo.js', 'if (viste[m.id]) return;', 'if (false) return;'],
 ];
 const SVG = '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="200" viewBox="0 0 400 200"><rect width="400" height="200" rx="40" fill="#e5484d"/></svg>';
 
@@ -70,7 +82,8 @@ const motore = new EffectsEngine();
 motore.emit = (ch, p) => ov.manda({ ...p, url: `/u/${LOGIN}/colpo/anteprima/pomodoro` });
 // la diretta e l'overlay: «in onda» lo decide il cancello, «pronto» lo dice
 // l'overlay vero, come in produzione (effects.prontoColpi)
-const mondo = { live: true, pronto: 0, visti: [] };
+const mondo = { live: true, pronto: 0, visti: [], io: null, scritti: [], flussi: new Set() };
+const chat = creaChatColpi();
 const pronto = () => Date.now() - mondo.pronto < 45_000;
 const servizio = creaServizioColpi({ registro: registroColpi, effects: motore, effettoDi: (l, c) => effectsDb.get(l, c),
   impostazioni: (l) => streamers.get(l)?.settings?.colpi, inOnda: () => mondo.live, overlay: pronto });
@@ -93,12 +106,22 @@ const rotte = (req, res, q) => {
     let mira = '';
     if (dona) { servizio.daPagamento('stripe:' + dona); mira = registroColpi.perRiferimento('stripe:' + dona)?.id || ''; }
     res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
-    res.end(htmlPaginaColpo({ login: LOGIN, display: 'Prova', pagina: {}, baseUrl: sito?.base || 'http://127.0.0.1', lingua: 'it', mira, privacy: '/privacy.html' }));
+    res.end(htmlPaginaColpo({ login: LOGIN, display: 'Prova', pagina: { template: 'retro' }, baseUrl: sito?.base || 'http://127.0.0.1', lingua: 'it', mira, privacy: '/privacy.html', io: mondo.io, accesso: true }));
     return true;
   }
   if (q === base + '/dati') { json(res, 200, porta.dati(LOGIN)); return true; }
   if (q === base + '/anteprima/pomodoro') { res.writeHead(200, { 'content-type': 'image/svg+xml' }); res.end(SVG); return true; }
-  if (q === base + '/mira' && req.method === 'POST') { corpo(req).then((b) => json(res, 200, porta.mira(LOGIN, b, 'gate'))); return true; }
+  if (q === base + '/mira' && req.method === 'POST') { corpo(req).then((b) => json(res, 200, porta.mira(LOGIN, b, 'gate', mondo.io))); return true; }
+  if (q === base + '/chat' && req.method === 'GET') {
+    res.writeHead(200, { 'content-type': 'text/event-stream', 'cache-control': 'no-store' });
+    res.write(': chat\n\n');
+    chat.apri(LOGIN, res);
+    mondo.flussi.add(res);
+    req.on('close', () => { chat.chiudi(LOGIN, res); mondo.flussi.delete(res); });
+    return true;
+  }
+  if (q === base + '/chat' && req.method === 'POST') { corpo(req).then((b) => { if (!mondo.io) return json(res, 401, { errore: 'accesso' }); mondo.scritti.push(b.testo); json(res, 200, { ok: true }); }); return true; }
+  if (q === base + '/esci' && req.method === 'POST') { mondo.io = null; json(res, 200, { ok: true }); return true; }
   if (q.startsWith(base + '/stato/')) { const m = porta.stato(LOGIN, q.slice(base.length + 7)); json(res, m ? 200 : 404, m || { errore: 'mira' }); return true; }
   if (q.startsWith(base + '/paga/') && req.method === 'POST') { corpo(req).then(async (b) => json(res, 200, await porta.paga(LOGIN, q.slice(base.length + 6), b.mezzo))); return true; }
   if (q.startsWith('/finto-pagamento/')) { res.writeHead(302, { location: `${base}?dona=${q.slice(17)}` }); res.end(); return true; }
@@ -228,6 +251,49 @@ try {
   dice(/non può comparire/.test(await p.locator('#cp-avviso').textContent()) && !testo3.includes(`Cheer100 ${codice3}`) && await p.locator('#cp-paga .cp-paga-b').count() === 0,
     'a diretta ferma la pagina toglie il cheer e il tasto «Paga», e dice di non pagare');
   mondo.live = true;
+  });
+
+  await fase('tema, chat e accesso', async () => {
+  await daCapo();
+  dice(await p.evaluate(() => getComputedStyle(document.querySelector('.cp-t span')).backgroundColor) === 'rgb(194, 69, 26)', 'la pagina veste il tema della pagina link: l\'accento e\' quello del tema «retro»');
+  dice((await p.getAttribute('#cp-io a', 'href'))?.endsWith('/colpo/accedi') && await p.locator('#cp-scrivi').isHidden() && await p.locator('#cp-chat-fuori').isVisible(),
+    'senza accesso: il tasto per entrare con Twitch, la chat si legge ma non c\'e\' il modulo per scrivere');
+  await p.waitForFunction(() => window.EventSource && performance.getEntriesByType('resource').some((e) => /\/colpo\/chat$/.test(e.name)), null, { timeout: 5000 }).catch(() => {});
+  await pausa(300);
+  chat.messaggio(LOGIN, rigaDi({ id: 'r1', display: 'Marta', text: '<img src=x id=iniettata> ciao Kappa' }, { colore: '#ff0000', emote: { Kappa: 'https://static-cdn.jtvnw.net/emoticons/v2/25/default/dark/1.0' } }));
+  await p.waitForFunction(() => /ciao/.test(document.getElementById('cp-righe').textContent), null, { timeout: 5000 }).catch(() => {});
+  const r1 = await p.evaluate(() => { const li = document.querySelector('#cp-righe li:last-child'); return li && { testo: li.textContent, img: [...li.querySelectorAll('img')].map((i) => i.alt), colore: getComputedStyle(li.querySelector('b')).color, iniettata: !!document.getElementById('iniettata') }; });
+  dice(!!r1 && r1.testo.includes('<img src=x id=iniettata>') && !r1.iniettata && r1.img.join() === 'Kappa' && r1.colore === 'rgb(255, 0, 0)',
+    'la chat arriva in diretta: col colore di chi scrive, l\'emote come immagine, e l\'HTML di un messaggio resta testo');
+  // la linea cade (un proxy, un riavvio): la pagina la riapre da sola, il server rimanda le ultime righe e non se ne vede nessuna due volte
+  for (const res of mondo.flussi) res.destroy();
+  await p.waitForFunction(() => performance.getEntriesByType('resource').filter((e) => /\/colpo\/chat$/.test(e.name)).length >= 2, null, { timeout: 15000 }).catch(() => {});
+  await pausa(500);
+  chat.messaggio(LOGIN, rigaDi({ id: 'r2', display: 'Luca', text: 'di nuovo qui' }));
+  await p.waitForFunction(() => /di nuovo qui/.test(document.getElementById('cp-righe').textContent), null, { timeout: 8000 }).catch(() => {});
+  const dopo = await p.evaluate(() => [...document.querySelectorAll('#cp-righe li')].map((li) => li.textContent));
+  dice(dopo.filter((x) => x.includes('iniettata')).length === 1 && dopo.some((x) => x.includes('di nuovo qui')),
+    `la chat caduta si riapre da sola, e le righe rimandate non si vedono due volte (${dopo.length} righe)`);
+  mondo.io = { id: '777', login: 'marta', nome: 'Marta' };
+  await daCapo();
+  dice(/Marta/.test(await p.locator('#cp-io').textContent()) && await p.locator('#cp-scrivi').isVisible() && await p.locator('#cp-nome-l').isHidden(),
+    'con l\'accesso: la pagina sa chi sei, apre il modulo della chat e non chiede il nome');
+  await p.fill('#cp-testo', 'ciao a tutti');
+  await p.locator('#cp-scrivi button').click();
+  await p.waitForFunction(() => document.getElementById('cp-testo').value === '', null, { timeout: 5000 }).catch(() => {});
+  dice(mondo.scritti.at(-1) === 'ciao a tutti' && await p.inputValue('#cp-testo') === '', 'il messaggio scritto nella pagina parte, e il campo si svuota');
+  await p.locator('.cp-voce').first().click();
+  await tocca(p, 30, 30);
+  await p.locator('#cp-conferma').click();
+  await p.waitForSelector('#cp-paga', { timeout: 5000 });
+  await p.waitForFunction(() => /senza codice/.test(document.getElementById('cp-paga').textContent), null, { timeout: 5000 }).catch(() => {});
+  const mia = registroColpi.apertaDi(LOGIN, '777');
+  const cheer = mia ? servizio.daCheer(LOGIN, { bits: 100, message: 'Cheer100 grande', user_id: '777' }) : null;
+  dice(!!mia && mia.chi === 'Marta' && /senza codice/.test(await p.locator('#cp-paga').textContent()) && cheer?.esito === 'pagato',
+    'la mira di chi ha l\'accesso porta il suo nome Twitch, la pagina dice che basta il cheer, e il suo cheer senza codice la paga');
+  await p.locator('#cp-io button').click();
+  await p.waitForFunction(() => document.getElementById('cp-scrivi').hidden, null, { timeout: 5000 }).catch(() => {});
+  dice(mondo.io === null && await p.locator('#cp-scrivi').isHidden() && !!(await p.getAttribute('#cp-io a', 'href')), '«Esci» chiude l\'accesso e la pagina torna a leggere soltanto');
   });
 
   const t = await nuova({ width: 390, height: 844 });

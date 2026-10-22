@@ -104,6 +104,9 @@ import { aChi } from './features/risposte.js';
 import { modalitaDi, alLavoro } from './features/quando-lavora.js';
 import { statoVivo, registroColpi, effects as effettiDb, segnoInstagram } from './db.js';
 import { creaServizioColpi } from './features/colpi-servizio.js';
+import { creaChatColpi, rigaDi as rigaChatColpi, BATTITO_MS as BATTITO_CHAT_COLPI } from './features/colpi-chat.js';
+import { coloreDi as coloreChatDi } from './features/badges.js';
+import { nativeInMessaggio as emoteNelMessaggio, canaleInCache as emoteInCache } from './features/emotes.js';
 import { rimborsa as rimborsaStripe } from './features/donazioni-stripe.js';
 import { rimborsa as rimborsaSatispay } from './features/donazioni-satispay.js';
 import { piattaformaDi, nomeSu } from './identita.js';
@@ -199,6 +202,9 @@ export class BotManager {
       // un colpo pagato che nessun overlay mostra torna indietro: gli euro dal conto dello streamer, i punti col riscatto annullato
       rimborsaEuro: (l, id) => (String(id).startsWith('satispay:') ? rimborsaSatispay(l, id) : rimborsaStripe(l, id)),
       chiudiPremio: (l, premio, riscatto, stato) => this.helix?.aggiornaRedemption?.(l, premio, riscatto, stato), log });
+    // la chat della pagina dei colpi: i messaggi della chat di Twitch, girati a chi ha la pagina aperta
+    this.colpiChat = creaChatColpi();
+    setInterval(() => this.colpiChat.battito(), BATTITO_CHAT_COLPI).unref?.();
     this.modules = modules || null;  // motore "Moduli" (automazioni QUANDO→SE→ALLORA)
     this.bus = bus || null;          // event-bus dei plugin operatore (opzionale)
     this.running = false;
@@ -1267,6 +1273,11 @@ export class BotManager {
     // pannello chat dello Studio Web (feed 'chat_raw' ungated): solo se qualcuno
     // è collegato via SSE, così non pesa quando lo Studio è chiuso.
     try { this.alerts?.onChatRaw?.(login, msg); } catch (e) { log.debug(`#${login} chat studio:`, e?.message || e); }
+    // la pagina dei colpi mostra la chat di Twitch del canale, se i colpi sono accesi
+    if ((!msg.piattaforma || msg.piattaforma === 'twitch') && streamers.get(login)?.settings?.colpi?.attivo === true) {
+      try { this.colpiChat.messaggio(login, rigaChatColpi(msg, { colore: coloreChatDi(msg), emote: { ...emoteInCache(login), ...emoteNelMessaggio(msg) } })); }
+      catch (e) { log.debug(`#${login} chat dei colpi:`, e?.message || e); }
+    }
     this.brain.observe?.(msg);                             // apprendimento passivo (anche dai messaggi dello streamer)
     // amicizia GLOBALE: chi interagisce diventa piano piano "amico" del bot
     // (solo un'affinità, mai contenuti né in quale canale).
@@ -1558,7 +1569,7 @@ export class BotManager {
     // Un colpo pagato chiude il riscatto quando l'overlay lo mostra; uno che non
     // vale, o che adesso non si puo' consegnare, lo annulla subito.
     if (piattaforma === 'twitch' && data?.reward?.id) {
-      const r = this.colpi?.daRiscatto(channel, { reward_id: data.reward.id, user_input: data.user_input, id: data.id });
+      const r = this.colpi?.daRiscatto(channel, { reward_id: data.reward.id, user_input: data.user_input, id: data.id, user_id: data.user_id });
       if (r && r.esito !== 'non-mio') {
         if (r.stato) Promise.resolve(this.helix?.aggiornaRedemption?.(channel, data.reward.id, data.id, r.stato)).catch(() => {});
         const chi = `@${data.user_login || data.user_name || ''}`;

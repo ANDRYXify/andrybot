@@ -327,3 +327,50 @@ test('due giri della ronda insieme non rimborsano due volte', async () => {
   assert.equal(conta, 1);
   assert.equal(registroColpi.get(e.id).stato, 'rimborsata');
 });
+
+test('con l\'accesso a Twitch niente codice: il suo cheer che copre da solo quello che manca, o il suo riscatto, paga la sua mira', () => {
+  const b = banco();
+  const c = login();
+  const { mira } = b.s.mira(c, { voce: 'pomodoro', x: 30, y: 30, chiave: 'a', spettatore: '777' });
+  assert.equal(b.s.daCheer(c, { bits: 100, message: 'Cheer100 dai', user_id: '888' }).esito, 'nessuno', 'il cheer di un altro non paga la mira di nessuno');
+  assert.equal(b.s.daCheer(c, { bits: 60, message: 'Cheer60', user_id: '777' }).esito, 'nessuno', 'un cheer che non basta da solo non si somma di nascosto');
+  assert.equal(b.sparati.length, 0);
+  const r = b.s.daCheer(c, { bits: 100, message: 'Cheer100', user_id: '777' });
+  assert.equal(r.esito, 'pagato');
+  assert.equal(b.di(c).sparati[0].attacco.id, mira.id);
+  const due = b.s.mira(c, { voce: 'pomodoro', x: 40, y: 40, chiave: 'b', spettatore: '777' }).mira;
+  assert.equal(b.s.daCheer(c, { bits: 60, message: `Cheer60 ${due.codice}`, user_id: '777' }).esito, 'pochi', 'col codice i Bit si sommano');
+  assert.equal(b.s.daCheer(c, { bits: 40, message: 'Cheer40', user_id: '777' }).esito, 'pagato', 'e senza codice basta coprire quello che manca');
+  const tre = b.s.mira(c, { voce: 'pomodoro', x: 50, y: 50, chiave: 'c', spettatore: '777' }).mira;
+  assert.equal(b.s.daRiscatto(c, { reward_id: 'aaaaaaaa-1111', user_input: 'vai!', id: 'r1', user_id: '999' }).stato, 'CANCELED', 'il riscatto di un altro senza codice: i punti tornano');
+  const p = b.s.daRiscatto(c, { reward_id: 'aaaaaaaa-1111', user_input: 'vai!', id: 'r2', user_id: '777' });
+  assert.deepEqual([p.esito, p.stato], ['pagato', null]);
+  assert.equal(b.di(c).sparati.at(-1).attacco.id, tre.id);
+  assert.equal(b.s.daCheer(c, { bits: 500, message: 'Cheer500', user_id: '777' }).esito, 'nessuno', 'nessuna mira aperta: il cheer resta un cheer');
+});
+
+test('la mira di chi ha l\'accesso scade come le altre, se non ha gia\' Bit dentro', () => {
+  const b = banco();
+  const c = login();
+  b.s.mira(c, { voce: 'pomodoro', x: 30, y: 30, chiave: 'a', spettatore: '555' });
+  b.avanti(60 * 60_000);
+  assert.equal(registroColpi.apertaDi(c, '555', b.ora()), null);
+  assert.equal(b.s.daCheer(c, { bits: 100, message: 'Cheer100', user_id: '555' }).esito, 'nessuno');
+  assert.equal(registroColpi.apertaDi(c, '', b.ora()), null, 'senza accesso non c\'e\' nessuno da cercare');
+});
+
+test('titolo e sottotitolo della pagina: dello streamer se li scrive, se no quelli di serie, coerenti coi nomi', async () => {
+  const c = normalizza({ titolo: ' Tirami un <b>pomodoro</b>\n ', dida: 'x'.repeat(500) });
+  assert.equal(c.titolo, 'Tirami un <b>pomodoro</b>');
+  assert.equal(c.dida.length, 200);
+  assert.deepEqual([normalizza({}).titolo, normalizza({}).dida], ['', '']);
+  const { htmlPaginaColpo } = await import('../../src/features/colpi-pagina.js');
+  // senza il dizionario che la pagina porta per il client (data-t): conta quello che si legge
+  const pag = (testi, lingua = 'it') => htmlPaginaColpo({ login: 'prova', display: 'Prova', pagina: {}, baseUrl: 'https://x.test', lingua, testi }).replace(/ data-t="[^"]*"/, '');
+  const mia = pag({ titolo: c.titolo, dida: 'Mira bene' });
+  assert.ok(mia.includes('Tirami un &lt;b&gt;pomodoro&lt;/b&gt;') && !mia.includes('<b>pomodoro</b>'), 'il titolo dello streamer resta testo');
+  assert.ok(mia.includes('Mira bene'));
+  assert.ok(pag({}).includes('Colpisci la diretta di Prova') && pag({}).includes('col tuo nome'));
+  assert.ok(!pag({ conNome: false }).includes('col tuo nome'), 'coi nomi spenti la pagina non promette il nome');
+  assert.ok(pag({}, 'en').includes('Hit Prova'));
+});

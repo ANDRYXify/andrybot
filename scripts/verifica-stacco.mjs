@@ -487,6 +487,8 @@ const CASSETTO = () => {
         && a.effect && a.effect.getKeyframes().some((k) => k.offset === 1 && +k.opacity === 0));
     })(),
     disegna: !!(china && !disfa(d)), disfa: disfa(d), gruppiDisfano: gruppi.filter(disfa).length,
+    // i gruppi col contorno hanno una tela loro, e si disfano; quelli senza non hanno niente da disfare
+    gruppiDisegnati: gruppi.filter((e) => e._dgTela && e._dgTela.isConnected).length,
     china: china ? china.getAttribute('d') : '', largo: r.width, alto: r.height,
   };
 };
@@ -527,7 +529,7 @@ for (const [nome, chiudi] of STRADE) {
     const t0 = performance.now();
     const giro = () => {
       const c = window.__cassetto();
-      window.__fotogrammi.push({ t: Math.round(performance.now() - t0), aperto: c.aperto, si_vede: c.si_vede, disfa: c.disfa, gruppi: c.gruppiDisfano, velo: c.velo, veloVa: c.veloVa });
+      window.__fotogrammi.push({ t: Math.round(performance.now() - t0), aperto: c.aperto, si_vede: c.si_vede, disfa: c.disfa, gruppi: c.gruppiDisfano, disegnati: c.gruppiDisegnati, velo: c.velo, veloVa: c.veloVa });
       if (performance.now() - t0 < 1200) requestAnimationFrame(giro);
     };
     requestAnimationFrame(giro);
@@ -662,8 +664,8 @@ const fermo = cassetto.filter((x) => new Set(x.lati).size !== 1);
 dice(!fermo.length, 'il cassetto del telefono non si sposta: compare dov\'e\' e se ne va da li\'', fermo.map((x) => `${x.nome}: ${x.lati.join(',')}`).join(' · '));
 const nonDisegna = cassetto.filter((x) => !x.primo || !treLati(x.primo));
 dice(!nonDisegna.length, 'aprendolo si disegna, con la china sui suoi tre lati: il lato destro non c\'e\'', nonDisegna.map((x) => `${x.nome}: ${x.primo ? x.primo.china.slice(0, 60) : 'nessun disegno'}`).join(' · '));
-const nonDisfa = cassetto.filter((x) => !(x.disfacendo.some((f) => f.gruppi > 0) && !x.dopo.aperto && !x.dopo.si_vede));
-dice(!nonDisfa.length, 'il cassetto del telefono si chiude disfacendosi, cassetto e gruppi, per ogni strada', nonDisfa.map((x) => `${x.nome}: ${x.disfacendo.length} fotogrammi a disfarsi, poi ${JSON.stringify({ aperto: x.dopo.aperto, si_vede: x.dopo.si_vede })}`).join(' · '));
+const nonDisfa = cassetto.filter((x) => !(x.disfacendo.length && x.disfacendo.some((f) => f.gruppi >= f.disegnati) && !x.dopo.aperto && !x.dopo.si_vede));
+dice(!nonDisfa.length, 'il cassetto del telefono si chiude disfacendosi, cassetto e ogni gruppo disegnato, per ogni strada', nonDisfa.map((x) => `${x.nome}: ${x.disfacendo.length} fotogrammi a disfarsi, poi ${JSON.stringify({ aperto: x.dopo.aperto, si_vede: x.dopo.si_vede })}`).join(' · '));
 // all'ultimo fotogramma in cui il cassetto si vede ancora, il velo sta gia'
 // sfumando verso zero (o c'e' arrivato): se aspettasse la fine del disegno, in
 // tutti quei fotogrammi sarebbe fermo a 1

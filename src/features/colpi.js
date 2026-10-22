@@ -70,6 +70,9 @@ export function normalizza(cfg) {
     alMinuto: num(o.alMinuto, LIMITI.alMinuto, 6),
     conNome: o.conNome !== false,
     pausa: o.pausa === true,
+    // il titolo e il sottotitolo della pagina, se lo streamer li scrive; vuoti, quelli di serie nella lingua di chi legge
+    titolo: testo(o.titolo, 80),
+    dida: testo(o.dida, 200),
   };
 }
 

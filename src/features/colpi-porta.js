@@ -26,7 +26,7 @@ export function creaPortaColpi({ servizio, registro, streamers, effettoDi, mezzi
     const fermo = m.stato === 'attesa' ? servizio.consegnabile(m.login, m.voce) : '';
     return { id: m.id, stato: m.stato, codice: m.codice, voce: m.voce, nome: m.nome, x: m.x, y: m.y, prezzi: m.prezzi, versati: m.versati || 0,
       scade: m.scade, metodo: m.metodo || '', inPagamento: m.stato === 'attesa' && m.riferimento !== '',
-      pagabile: m.stato === 'attesa' && !fermo && (m.scade > ora() || (m.versati || 0) > 0), fermo };
+      pagabile: m.stato === 'attesa' && !fermo && (m.scade > ora() || (m.versati || 0) > 0), fermo, mia: !!m.spettatore };
   };
 
   function dati(login) {
@@ -54,12 +54,14 @@ export function creaPortaColpi({ servizio, registro, streamers, effettoDi, mezzi
     return eff && MIRABILE(eff) && /^[A-Za-z0-9._-]+$/.test(file) && !file.includes('..') ? file : null;
   }
 
-  function mira(login, corpo = {}, chiave = '') {
+  // `io`: lo spettatore che ha fatto l'accesso ({ id, nome }): la mira e' sua,
+  // col suo nome, e il suo cheer o il suo riscatto la pagano senza codice
+  function mira(login, corpo = {}, chiave = '', io = null) {
     const k = aperti(login);
     if (!k) return { ok: false, motivo: 'spento' };
     const v = voceDi(k.cfg, String(corpo.voce || ''));
     if (!v || !metodiVivi(v, mezziEuro(k.s, login)).length) return { ok: false, motivo: 'voce' };
-    const r = servizio.mira(login, { voce: v.id, x: Number(corpo.x), y: Number(corpo.y), chi: String(corpo.chi || ''), chiave });
+    const r = servizio.mira(login, { voce: v.id, x: Number(corpo.x), y: Number(corpo.y), chi: io?.nome || String(corpo.chi || ''), chiave, spettatore: io?.id || '' });
     return r.ok ? { ok: true, mira: statoMira(registro.get(r.mira.id)) } : r;
   }
 

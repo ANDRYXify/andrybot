@@ -26065,6 +26065,7 @@ function pannelloColpi() {
         <li><strong>${L('Euro', 'Euros', 'Euros')}</strong>: ${L('sul tuo conto, come le donazioni (scheda «Donazioni»).', 'to your account, like donations («Donations» tab).', 'a tu cuenta, como las donaciones (pestaña «Donaciones»).')}</li>
         <li><strong>${L('Punti canale', 'Channel points', 'Puntos de canal')}</strong>: ${L('SocialBot crea un premio «Colpo: …» per ogni colpo con un prezzo in punti; lo spettatore lo riscatta scrivendo il codice della pagina.', 'SocialBot creates a «Colpo: …» reward for each hit with a points price; the viewer redeems it typing the code from the page.', 'SocialBot crea una recompensa «Colpo: …» por cada golpe con precio en puntos; el espectador la canjea escribiendo el código de la página.')}</li>
         <li><strong>Bit</strong>: ${L('un Cheer in chat con il codice nel messaggio. I Bit si spendono solo su Twitch: la pagina non li può incassare.', 'a Cheer in chat with the code in the message. Bits can only be spent on Twitch: the page can\'t collect them.', 'un Cheer en el chat con el código en el mensaje. Los Bits solo se gastan en Twitch: la página no puede cobrarlos.')}</li>
+        <li><strong>${L('Accesso con Twitch', 'Twitch login', 'Acceso con Twitch')}</strong>: ${L('chi entra nella pagina con Twitch (un solo permesso: scrivere in chat) non ha bisogno del codice: il suo cheer o il suo riscatto paga il suo colpo. E scrive in chat dalla pagina, accanto alla diretta.', 'whoever logs into the page with Twitch (one permission only: writing in chat) needs no code: their own cheer or redemption pays their hit. And they chat from the page, next to the stream.', 'quien entra en la página con Twitch (un solo permiso: escribir en el chat) no necesita el código: su cheer o su canje paga su golpe. Y escribe en el chat desde la página, junto al directo.')}</li>
       </ul>
       <div class="riga-interruttore spazio-sopra">
         <label class="interruttore"><input type="checkbox" id="cl-attivo" ${c.attivo ? 'checked' : ''}><span class="levetta"></span></label>
@@ -26088,6 +26089,17 @@ function pannelloColpi() {
       <p>${L('Ogni colpo è un tuo effetto con un\'immagine o un video (scheda «Effetti e suoni»). Metti un prezzo in almeno un modo: un modo a zero non si offre.', 'Each hit is one of your effects with an image or a video («Effects & sounds» tab). Set a price in at least one way: a way at zero isn\'t offered.', 'Cada golpe es uno de tus efectos con una imagen o un vídeo (pestaña «Efectos y sonidos»). Pon un precio en al menos una forma: una forma a cero no se ofrece.')}</p>
       <div id="cl-voci" class="cl-voci"></div>
       <p class="spazio-sopra"><button type="button" class="btn secondario" id="cl-aggiungi">${_bIco(ICO.piu)}${L('Aggiungi un colpo', 'Add a hit', 'Añade un golpe')}</button></p>
+    </div>
+
+    <div class="carta">
+      <h3>${_hIco(ICO.condividi)}${L('La pagina', 'The page', 'La página')}</h3>
+      <p>${L('La pagina dei colpi veste la tua pagina link: tema, colori, sfondo, carattere, forma dei bottoni e foto. Cambi l\'aspetto lì e cambia anche qui.', 'The hits page wears your link page: theme, colors, background, font, button shape and picture. Change the look there and it changes here too.', 'La página de golpes viste tu página de enlaces: tema, colores, fondo, tipografía, forma de los botones y foto. Cambias el aspecto allí y cambia también aquí.')}</p>
+      <p><button type="button" class="btn secondario mini" id="cl-aspetto" data-vai="pagina">${L('Cambia l\'aspetto', 'Change the look', 'Cambia el aspecto')}</button></p>
+      <label class="campo spazio-sopra" for="cl-titolo">${L('Titolo', 'Title', 'Título')}</label>
+      <input type="text" id="cl-titolo" maxlength="80" value="${esc(c.titolo || '')}" placeholder="${esc(L('Colpisci la diretta di ', 'Hit the stream of ', 'Golpea el directo de ') + (stato.user?.display || stato.user?.login || ''))}">
+      <label class="campo spazio-sopra" for="cl-dida">${L('Sottotitolo', 'Subtitle', 'Subtítulo')}</label>
+      <input type="text" id="cl-dida" maxlength="200" value="${esc(c.dida || '')}" placeholder="${esc(L('Scegli un effetto, mira un punto della diretta e fallo comparire lì.', 'Pick an effect, aim at a spot on the stream and make it appear there.', 'Elige un efecto, apunta a un punto del directo y haz que aparezca ahí.'))}">
+      <p class="suggerimento">${L('Lasciali vuoti per quelli di serie, che ognuno legge nella sua lingua (italiano, inglese o spagnolo). Quello che scrivi tu si legge così com\'è. Si salvano col tasto «Salva» delle regole.', 'Leave them empty for the default ones, which everyone reads in their language (Italian, English or Spanish). What you write is shown as it is. They are saved with the «Save» button in the rules.', 'Déjalos vacíos para los de serie, que cada uno lee en su idioma (italiano, inglés o español). Lo que escribes tú se lee tal cual. Se guardan con el botón «Guardar» de las reglas.')}</p>
     </div>
 
     <div class="carta">
@@ -26159,6 +26171,8 @@ function _clLeggi() {
     attesaSec: Number(document.getElementById('cl-attesa')?.value) || 0,
     alMinuto: Number(document.getElementById('cl-minuto')?.value) || 6,
     conNome: !!document.getElementById('cl-nome')?.checked,
+    titolo: (document.getElementById('cl-titolo')?.value || '').trim(),
+    dida: (document.getElementById('cl-dida')?.value || '').trim(),
     zone: _clZone.map((z) => ({ ...z })),
     voci,
   };
@@ -26265,6 +26279,7 @@ async function caricaColpi() {
       box.insertAdjacentHTML('beforeend', _clRiga({ comando: primo.comando, nome: primo.comando, scala: 100, attiva: true }));
     });
     document.getElementById('cl-salva')?.addEventListener('click', () => conErrore(() => salvaColpi()));
+    document.getElementById('cl-aspetto')?.addEventListener('click', () => { LP.schede.link.testa = 'aspetto'; });
     for (const id of ['cl-attivo', 'cl-pausa']) document.getElementById(id)?.addEventListener('change', () => conErrore(() => salvaColpi(true).then(() => toast(L('Fatto ✓', 'Done ✓', 'Hecho ✓')))));
     document.getElementById('cl-copia')?.addEventListener('click', () => copiaTesto(document.getElementById('cl-link')?.value || '', L('Indirizzo copiato ✓', 'Address copied ✓', 'Dirección copiada ✓')));
   }

@@ -50,7 +50,7 @@ export function creaServizioColpi({ registro, effects, effettoDi, impostazioni, 
   }
 
   // La mira: il punto si controlla adesso, il prezzo si scrive adesso.
-  function mira(login, { voce: idVoce, x, y, chi = '', chiave = '' } = {}) {
+  function mira(login, { voce: idVoce, x, y, chi = '', chiave = '', spettatore = '' } = {}) {
     const ch = String(login || '').toLowerCase();
     const no = consegnabile(ch, idVoce);
     if (no) return { ok: false, motivo: no };
@@ -67,6 +67,7 @@ export function creaServizioColpi({ registro, effects, effettoDi, impostazioni, 
       id: randomBytes(9).toString('hex'), login: ch, voce: voce.id, comando: voce.comando, nome: voce.nome,
       x: punto.x, y: punto.y, scala: voce.scala, chi: cfg.conNome ? nomeChi(chi) : '',
       prezzi: { euro: voce.euro, punti: voce.punti, bit: voce.bit }, creata: adesso, scade: adesso + SCADENZA_MS,
+      spettatore: String(spettatore || ''),
     };
     for (let i = 0; i < 12; i++) { m.codice = nuovoCodice(); if (registro.apri(m)) { ultimaDi.set(k, adesso); return { ok: true, mira: { ...m, metodi: metodiDi(voce) } }; } }
     return { ok: false, motivo: 'codice' };
@@ -125,13 +126,20 @@ export function creaServizioColpi({ registro, effects, effettoDi, impostazioni, 
     }
   }
 
-  // I Bit: il cheer porta il codice nel messaggio.
-  function daCheer(login, { bits, message, user_login = '' } = {}) {
+  // I Bit: il cheer porta il codice nel messaggio. Chi ha mirato con l'accesso
+  // a Twitch non ha bisogno del codice: un suo cheer che da solo copre quello
+  // che manca paga la sua ultima mira aperta. Solo da solo: un cheer piu'
+  // piccolo, fatto magari per altro, non si somma di nascosto (col codice si').
+  function daCheer(login, { bits, message, user_login = '', user_id = '' } = {}) {
     const ch = String(login || '').toLowerCase();
     const codice = codiceIn(message);
-    if (!codice) return { esito: 'nessuno' };
-    const m = registro.perCodice(ch, codice, ora());
-    if (!m) return { esito: 'sconosciuto', codice };
+    let m = codice ? registro.perCodice(ch, codice, ora()) : null;
+    if (!m && !codice && user_id) {
+      const sua = registro.apertaDi(ch, String(user_id), ora());
+      const manca = sua ? (Number(sua.prezzi.bit) || 0) - (Number(sua.versati) || 0) : 0;
+      if (sua && manca > 0 && Number(bits) >= manca) m = sua;
+    }
+    if (!m) return codice ? { esito: 'sconosciuto', codice } : { esito: 'nessuno' };
     if (!(Number(m.prezzi.bit) > 0)) return { esito: 'sconosciuto', codice };
     // i Bit si sommano: chi ne manda meno del prezzo completa col cheer dopo
     const totale = registro.versa(m.id, bits);
@@ -146,13 +154,19 @@ export function creaServizioColpi({ registro, effects, effettoDi, impostazioni, 
   // il codice non vale o se il colpo adesso non si puo' consegnare; null se il
   // colpo e' pagato: il riscatto si chiude quando l'overlay lo mostra
   // (FULFILLED) o, se non succede, alla scadenza della consegna (CANCELED).
-  function daRiscatto(login, { reward_id, user_input = '', id = '' } = {}) {
+  // Chi ha mirato con l'accesso a Twitch puo' scrivere quello che vuole: vale la
+  // sua ultima mira aperta su quella voce.
+  function daRiscatto(login, { reward_id, user_input = '', id = '', user_id = '' } = {}) {
     const ch = String(login || '').toLowerCase();
     const cfg = cfgDi(ch);
     const voce = (cfg.voci || []).find((v) => v.premio && v.premio === reward_id);
     if (!voce) return { esito: 'non-mio' };
     const codice = codiceIn(user_input);
-    const m = codice ? registro.perCodice(ch, codice, ora()) : null;
+    let m = codice ? registro.perCodice(ch, codice, ora()) : null;
+    if ((!m || m.voce !== voce.id) && user_id) {
+      const sua = registro.apertaDi(ch, String(user_id), ora());
+      if (sua && sua.voce === voce.id) m = sua;
+    }
     if (!m || m.voce !== voce.id || !(Number(m.prezzi.punti) > 0)) return { esito: 'sconosciuto', stato: 'CANCELED', codice };
     const no = consegnabile(ch, m.voce);
     if (no) return { esito: 'fermo', stato: 'CANCELED', motivo: no };

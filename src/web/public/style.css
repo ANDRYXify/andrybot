@@ -132,15 +132,11 @@ body.menu-aperto .drawer { visibility: visible; }
 @media (hover: hover) {
 .chiudi-drawer:hover { color: var(--testo); }
 }
-.drawer-grp {
-  position: relative; margin: 0 .35rem .8rem .15rem; padding: 0 .3rem .35rem;
-  background: var(--surface);
-  border: var(--contorno-sp) solid var(--contorno); border-width: var(--tratto-mano); border-radius: var(--ang-mano);
-  box-shadow: 3px 3px 0 var(--contorno);
-}
+.drawer-grp { position: relative; margin: 0 .2rem .2rem; padding: 0; }
 .drawer-grp:first-child { margin-top: .25rem; }
-.drawer-grp.drawer-solo { padding-top: .35rem; }
-.drawer-grp.chiuso { padding-bottom: 0; }
+.drawer-grp.drawer-solo + .drawer-grp:not(.drawer-solo) { margin-top: .5rem; }
+.drawer-grp:not(.chiuso):not(.drawer-solo) { margin-bottom: .6rem; }
+.drawer-grp-voci { margin-left: .85rem; padding-left: .45rem; border-left: 2px solid var(--contorno); }
 .drawer-grp-tit {
   display: inline-flex; align-items: center; gap: .45em;
   margin: 0 0 .3rem -.3rem; padding: .22em .75em .26em .7em;
@@ -149,11 +145,15 @@ body.menu-aperto .drawer { visibility: visible; }
   border-radius: var(--ang-mano-l) 0 var(--ang-mano-l) 0;
 }
 button.drawer-grp-tit {
-  display: flex; gap: .3em; width: calc(100% + .6rem); min-height: 40px; margin-right: -.3rem; padding-right: .9em;
+  display: flex; gap: .3em; width: 100%; min-height: 40px; margin: 0 0 .3rem; padding-right: .9em;
   border: 0; text-align: left; cursor: pointer;
-  border-radius: var(--ang-mano-l) var(--ang-mano-l) 0 0;
+  border-radius: var(--ang-mano-l);
 }
-.chiuso > button.drawer-grp-tit { margin-bottom: 0; border-radius: var(--ang-mano-l); }
+.chiuso > button.drawer-grp-tit { margin-bottom: 0; background: none; color: var(--testo); }
+.chiuso > button.drawer-grp-tit .grp-conta, .chiuso > button.drawer-grp-tit .grp-nuovo { background: var(--testo); color: var(--bg); }
+@media (hover: hover) {
+.chiuso > button.drawer-grp-tit:hover { background: var(--tono-carta) 0 0 / var(--tono-passo), var(--surface-2-tinta); }
+}
 .grp-nome { flex: 1 1 auto; min-width: 0; }
 .grp-conta {
   flex: 0 0 auto; min-width: 1.35em; height: 1.35em; padding: 0 .3em; border-radius: 999px;

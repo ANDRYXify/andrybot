@@ -88,6 +88,7 @@ import * as donaMedia from '../features/donazioni-media.js';
 import * as colpiMod from '../features/colpi.js';
 import * as colpiPagina from '../features/colpi-pagina.js';
 import { creaPortaColpi } from '../features/colpi-porta.js';
+import * as colpiAccesso from '../features/colpi-accesso.js';
 import { riconciliaPremi } from '../features/colpi-premi.js';
 import * as spotify from '../features/spotify.js';
 import * as musicaOverlayFeat from '../features/musica-overlay.js';
@@ -2406,6 +2407,14 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     inOnda: (l) => manager.inOnda?.(l), overlay: (l) => effects.prontoColpi(l),
   });
   const loginColpi = (req) => { const l = String(req.params.user || '').toLowerCase(); return eLoginNostro(l) ? l : ''; };
+  // Lo spettatore che ha fatto l'accesso con Twitch (features/colpi-accesso.js):
+  // nel cookie c'e' solo la chiave, il token sta nella memoria del server.
+  const accessiColpi = colpiAccesso.creaAccessi({ rinnova: (r) => auth.refresh(r) });
+  const spettatoreDi = (req) => {
+    const io = accessiColpi.chi(req.session?.spettatore);
+    if (!io && req.session?.spettatore) delete req.session.spettatore;
+    return io;
+  };
   app.get('/u/:user/colpo', wrap(async (req, res) => {
     const login = loginColpi(req);
     const k = login && portaColpi.aperti(login);
@@ -2422,9 +2431,12 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     }
     const link = linkPage.get(login);
     res.set('Cache-Control', 'private, no-store');
+    const io = spettatoreDi(req);
     res.type('html').send(colpiPagina.htmlPaginaColpo({
       login, display: k.s.display || login, avatar: await avatarDi(login), pagina: link || {}, baseUrl: config.baseUrl,
       lingua: colpiPagina.linguaDi(req.get('accept-language')), mira,
+      io: io ? { login: io.login, nome: io.nome } : null, accesso: !!config.twitchClientId,
+      testi: (({ titolo, dida, conNome }) => ({ titolo, dida, conNome }))(colpiMod.normalizza(k.s.settings?.colpi)),
       privacy: link?.attiva ? `/u/${login}/privacy` : '/privacy.html',
     }));
   }));
@@ -2446,8 +2458,46 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     const login = loginColpi(req);
     if (!login) return res.status(404).json({ ok: false, motivo: 'spento' });
     if (!extRateOk('colpo-mira:' + String(req.ip || ''))) return res.status(429).json({ ok: false, motivo: 'troppi' });
-    res.json(portaColpi.mira(login, req.body || {}, String(req.ip || '')));
+    res.json(portaColpi.mira(login, req.body || {}, String(req.ip || ''), spettatoreDi(req)));
   });
+  // L'ACCESSO CON TWITCH, un permesso solo (user:write:chat). Il ritorno passa
+  // da /auth/callback, l'unico indirizzo registrato su Twitch: lo riconosce da
+  // `colpoFlow` nella sessione.
+  app.get('/u/:user/colpo/accedi', (req, res) => {
+    const login = loginColpi(req);
+    if (!login || !portaColpi.aperti(login) || !config.twitchClientId) return notFound(res);
+    const state = crypto.randomBytes(16).toString('hex');
+    req.session.colpoFlow = { state, canale: login, ts: Date.now() };
+    res.redirect(auth.authUrl(colpiAccesso.PERMESSI, state));
+  });
+  app.post('/u/:user/colpo/esci', (req, res) => {
+    accessiColpi.togli(req.session?.spettatore);
+    if (req.session) delete req.session.spettatore;
+    res.json({ ok: true });
+  });
+  // La chat del canale, da leggere: un flusso, con le ultime righe per chi arriva.
+  app.get('/u/:user/colpo/chat', (req, res) => {
+    const login = loginColpi(req);
+    if (!login || !portaColpi.aperti(login)) return notFound(res);
+    res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-store', 'X-Accel-Buffering': 'no', Connection: 'keep-alive' });
+    res.write(': chat\n\n');
+    if (!manager.colpiChat.apri(login, res)) { res.end(); return; }
+    req.on('close', () => manager.colpiChat.chiudi(login, res));
+  });
+  // E da scrivere, a nome dello spettatore, con l'API di Twitch.
+  app.post('/u/:user/colpo/chat', wrap(async (req, res) => {
+    const login = loginColpi(req);
+    if (!login || !portaColpi.aperti(login)) return res.status(404).json({ errore: 'spento' });
+    const io = spettatoreDi(req);
+    if (!io) return res.status(401).json({ errore: 'accesso' });
+    if (!extRateOk('colpo-chat:' + io.id)) return res.status(429).json({ errore: 'troppi' });
+    const token = await accessiColpi.token(req.session.spettatore);
+    const s = streamers.get(login);
+    if (!token || !s?.user_id) return res.status(401).json({ errore: 'accesso' });
+    const r = await colpiAccesso.mandaInChat({ clientId: config.twitchClientId, token, broadcasterId: s.user_id, senderId: io.id, testo: req.body?.testo });
+    if (r.scaduto) { accessiColpi.togli(req.session.spettatore); delete req.session.spettatore; return res.status(401).json({ errore: 'accesso' }); }
+    res.json(r.ok ? { ok: true } : { ok: false, motivo: r.motivo });
+  }));
   app.get('/u/:user/colpo/stato/:id', (req, res) => {
     const login = loginColpi(req);
     const m = login ? portaColpi.stato(login, req.params.id) : null;
@@ -3545,6 +3595,24 @@ STREAMER (${su.toUpperCase()}) e non c'entra con l'automazione del marketing.
   // (b) il moderatore che fa login per gestire un canale, (c) il login
   // self-service per abbonarsi. Pubblico: il cancello lo lascia passare.
   app.get('/auth/callback', wrap(async (req, res) => {
+    // ── lo spettatore della pagina dei colpi (un permesso solo, e non entra nel pannello) ──
+    // Lo riconosce dallo state: un accesso lasciato a meta' non ruba il ritorno agli altri flussi.
+    const cf = req.session?.colpoFlow;
+    if (cf) delete req.session.colpoFlow;
+    if (cf?.state && req.query.state === cf.state) {
+      const torna = `/u/${encodeURIComponent(cf.canale)}/colpo`;
+      if (req.query.error || Date.now() - cf.ts > 15 * 60_000) return res.redirect(torna);
+      try {
+        const t = await auth.exchangeCode(String(req.query.code || ''));
+        const v = await auth.validate(t.accessToken);
+        if (v?.userId && (v.scopes || []).includes('user:write:chat')) {
+          let nome = v.login;
+          try { nome = (await helix.getUserByLogin(v.login))?.display_name || v.login; } catch { /* il login basta */ }
+          req.session.spettatore = accessiColpi.metti({ id: v.userId, login: v.login, nome, token: t.accessToken, refresh: t.refreshToken, scade: t.expiresAt });
+        }
+      } catch (e) { log.warn('accesso dello spettatore dei colpi:', e?.message || e); }
+      return res.redirect(torna);
+    }
     if (req.query.error) return res.redirect('/?errore=' + encodeURIComponent(String(req.query.error)));
 
     // ── (c) FLUSSO SELF-SERVICE (abbonamento) ──────────────────────

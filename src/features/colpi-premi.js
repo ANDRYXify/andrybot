@@ -28,7 +28,7 @@ export async function riconciliaPremi({ login, prima, helix, streamers, pagina, 
     }
     if (vuole && !premio) {
       try {
-        const r = await helix.creaReward(login, { titolo, costo: v.punti, prompt: `Il codice del colpo, preso mirando su ${pagina}`, userInput: true });
+        const r = await helix.creaReward(login, { titolo, costo: v.punti, prompt: `Mira su ${pagina} e scrivi qui il codice del colpo (con l'accesso a Twitch fatto sulla pagina va bene qualunque testo)`, userInput: true });
         if (r?.id) { premio = r.id; costo = v.punti; nome = titolo; }
         else errori.push(v.nome);
       } catch (e) { errori.push(v.nome + ': ' + String(e?.message || e).slice(0, 120)); }

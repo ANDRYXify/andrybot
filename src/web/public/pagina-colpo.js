@@ -2,12 +2,16 @@
 // Proprieta intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 
 (function () {
-  var B = document.body;
+  var B = document.getElementById('cp');
+  if (!B) return;
   var login = B.getAttribute('data-login') || '';
   var lingua = B.getAttribute('data-lingua') || 'it';
   var canale = B.getAttribute('data-canale') || login;
   var T = {};
   try { T = JSON.parse(B.getAttribute('data-t') || '{}'); } catch (e) { T = {}; }
+  var io = null;
+  try { io = JSON.parse(B.getAttribute('data-io') || 'null') || null; } catch (e) { io = null; }
+  var accesso = B.getAttribute('data-accesso') === '1';
   var base = '/u/' + encodeURIComponent(login) + '/colpo';
   var memo = 'sb-colpo:' + login;
   var QUADRO_L = 1920, QUADRO_A = 1080;
@@ -40,20 +44,78 @@
   }
   function ricorda(id) { try { if (id) sessionStorage.setItem(memo, id); else sessionStorage.removeItem(memo); } catch (e) {  } }
 
-  function guarda() {
-    var c = $('cp-chiedi');
-    if (!c) return;
-    var f = document.createElement('iframe');
-    f.src = B.getAttribute('data-player');
-    f.title = 'Twitch';
-    f.allowFullscreen = true;
-    f.referrerPolicy = 'strict-origin-when-cross-origin';
-    f.setAttribute('allow', 'autoplay; fullscreen; encrypted-media; picture-in-picture');
-    c.parentNode.replaceChild(f, c);
-    try { localStorage.setItem('sb-consenso', 'si'); } catch (e) {  }
+  function accedi() {
+    var box = $('cp-io');
+    box.textContent = '';
+    if (!accesso) { box.hidden = true; return; }
+    if (io) {
+      box.appendChild(el('p', '', riempi(T.sei, { nome: io.nome || io.login })));
+      var esci = el('button', 'cp-b due', T.esci);
+      esci.type = 'button';
+      esci.onclick = function () {
+        chiedi('/esci', {}).then(function () { io = null; accedi(); scriviSi(); if (mira) mostra(); });
+      };
+      box.appendChild(esci);
+    } else {
+      var a = el('a', 'cp-b', T.accedi);
+      a.href = base + '/accedi';
+      box.appendChild(a);
+      box.appendChild(el('p', 'cp-nota', T.accediPerche));
+    }
+    $('cp-nome-l').hidden = !!io || !(dati && dati.conNome);
   }
-  $('cp-guarda').onclick = guarda;
-  try { if (localStorage.getItem('sb-consenso') === 'si') guarda(); } catch (e) {  }
+
+  function riga(m) {
+    var li = el('li', '');
+    var chi = el('b', '', m.chi || '');
+    if (m.colore) chi.style.color = m.colore;
+    li.appendChild(chi);
+    li.appendChild(document.createTextNode(': '));
+    String(m.testo || '').split(/(\s+)/).forEach(function (p) {
+      var u = m.emote && Object.prototype.hasOwnProperty.call(m.emote, p) ? m.emote[p] : '';
+      if (u && /^https:\/\//.test(u)) { var im = el('img', ''); im.src = u; im.alt = p; im.title = p; im.loading = 'lazy'; li.appendChild(im); }
+      else li.appendChild(document.createTextNode(p));
+    });
+    return li;
+  }
+  function chatViva() {
+    if (!window.EventSource || !window.SB_FLUSSO) return;
+    var lista = $('cp-righe');
+    var viste = Object.create(null), ordine = [];
+    window.SB_FLUSSO.apri(base + '/chat', { silenzio: 75000, suMessaggio: function (e) {
+      var m = null;
+      try { m = JSON.parse(e.data); } catch (x) { return; }
+      if (!m || m.tipo === 'battito') return;
+      if (m.id) {
+        if (viste[m.id]) return;
+        viste[m.id] = 1; ordine.push(m.id);
+        if (ordine.length > 200) delete viste[ordine.shift()];
+      }
+      var vuota = lista.querySelector('.cp-vuota');
+      if (vuota) vuota.remove();
+      var giu = lista.scrollHeight - lista.scrollTop - lista.clientHeight < 40;
+      lista.appendChild(riga(m));
+      while (lista.children.length > 80) lista.removeChild(lista.firstChild);
+      if (giu) lista.scrollTop = lista.scrollHeight;
+    } });
+  }
+  function scriviSi() {
+    $('cp-scrivi').hidden = !io;
+    $('cp-chat-fuori').hidden = !!io || !accesso;
+  }
+  $('cp-scrivi').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var campo = $('cp-testo');
+    var testo = campo.value.trim();
+    if (!testo) return;
+    campo.disabled = true;
+    chiedi('/chat', { testo: testo }).then(function (r) {
+      campo.disabled = false;
+      if (r._stato === 401) { io = null; accedi(); scriviSi(); return; }
+      if (r.ok) { campo.value = ''; campo.focus(); return; }
+      avviso(r.errore === 'troppi' ? (T.motivi || {}).troppi : riempi(T.chatNonInviato, { motivo: r.motivo || '' }), 'ko');
+    }, function () { campo.disabled = false; avviso((T.motivi || {}).rete, 'ko'); });
+  });
 
   function stato() {
     var s = $('cp-stato');
@@ -118,7 +180,7 @@
       b.onclick = function () { scegli(v); };
       box.appendChild(b);
     });
-    $('cp-nome-l').hidden = !dati.conNome;
+    $('cp-nome-l').hidden = !dati.conNome || !!io;
   }
 
   function scegli(v) {
@@ -207,7 +269,7 @@
   function prendi() {
     var b = $('cp-conferma');
     b.disabled = true;
-    chiedi('/mira', { voce: scelta.id, x: punto.x, y: punto.y, chi: dati.conNome ? $('cp-nome').value : '' }).then(function (r) {
+    chiedi('/mira', { voce: scelta.id, x: punto.x, y: punto.y, chi: dati.conNome && !io ? $('cp-nome').value : '' }).then(function (r) {
       if (!r.ok) { avviso(motivo(r), 'ko'); pronto(); return; }
       mira = r.mira;
       ricorda(mira.id);
@@ -268,12 +330,12 @@
       var conCodice = mira.pagabile && !mira.inPagamento;
       if (conCodice && pz.punti > 0 && v.premio) {
         var pp = el('div', 'cp-modo');
-        pp.appendChild(el('p', '', riempi(T.punti, { premio: v.premio, n: numero(pz.punti), codice: mira.codice })));
+        pp.appendChild(el('p', '', riempi(mira.mia ? T.puntiIo : T.punti, { premio: v.premio, n: numero(pz.punti), codice: mira.codice })));
         box.appendChild(pp);
       }
       if (conCodice && pz.bit > 0) {
         var bb = el('div', 'cp-modo');
-        bb.appendChild(el('p', '', riempi(T.bit, { n: pz.bit, codice: mira.codice })));
+        bb.appendChild(el('p', '', riempi(mira.mia ? T.bitIo : T.bit, { n: Math.max(0, pz.bit - (mira.versati || 0)), codice: mira.codice })));
         box.appendChild(bb);
       }
       if (conCodice && (pz.bit > 0 || (pz.punti > 0 && v.premio))) { var cr = el('div', 'cp-righe'); cr.appendChild(chat()); box.appendChild(cr); }
@@ -349,7 +411,11 @@
     }, function () {  });
   }
 
+  accedi();
+  scriviSi();
+  chatViva();
   carica(true).then(function () {
+    accedi();
     var id = B.getAttribute('data-mira') || '';
     if (!id) { try { id = sessionStorage.getItem(memo) || ''; } catch (e) { id = ''; } }
     if (!id || !dati) return;
