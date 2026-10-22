@@ -35,6 +35,42 @@ lo stato. La dashboard ci mette tutti i permessi del caso d'uso (messaggi,
 commenti, statistiche); il tasto ne chiede due, e alla revisione dell'app si
 presentano quei due.
 
+## Gli avvisi dei post
+
+Segnalato così: «ho pubblicato un reel ma non viene mandato su telegram».
+
+Ogni 10 minuti (e col tasto «Controlla adesso» nella carta «Nuovo post su
+Instagram») il bot legge gli ultimi 10 post (`instagram.ultimiPost`), li
+ordina per **data** e annuncia quelli usciti dopo il **segno**
+(`instagram.daAnnunciare`). Prima leggeva un post solo, il primo della lista,
+e lo confrontava con l'ultimo annunciato: se il primo della lista non era
+l'ultimo pubblicato (Instagram mette in cima i post fissati sul profilo), il
+post nuovo non si vedeva mai.
+
+Il segno è il momento fino al quale è già stato tutto annunciato (`t<ms>`):
+
+- mai controllato: si segna l'ultimo post e non si annuncia niente, così
+  collegando non parte l'avviso di un post vecchio;
+- al collegamento (e al cambio di account) il segno è l'istante del
+  collegamento: un post uscito dopo si annuncia anche se il primo controllo
+  arriva più tardi (prima, il primo controllo lo prendeva per «già visto»);
+- un segno di prima, cioè l'id dell'ultimo post annunciato, vale la data di
+  quel post se è fra quelli letti; se no si riparte dall'ultimo, senza raffiche;
+- al massimo 3 avvisi per giro, dal più vecchio.
+
+Il segno si sposta prima di annunciare, così due giri che si sovrappongono non
+annunciano due volte. Sta in `stato_vivo` (`segnoInstagram`), non nella riga di
+Telegram: chi annuncia solo su Discord o in chat quella riga non ce l'ha, e il
+segno non si scriveva mai.
+
+Ogni controllo lascia il suo esito (`instagram.segnaControllo`) e il pannello
+lo mostra sotto il tasto «Salva»: l'ora dell'ultimo controllo, il post più
+recente, e l'ultimo avviso con com'è andato su Telegram (mandato a quanti
+posti; Telegram non collegato; nessun posto che riceve gli avvisi di
+Instagram; l'errore di Telegram). Se gli avvisi sono spenti
+(«Avvisami quando pubblico un nuovo post» non spuntato) lo dice, invece di un
+badge verde che non controlla niente. Le prove: `test/unita/instagram-avvisi.test.mjs`.
+
 ## Due identificativi
 
 Servono tutti e due, e non sono intercambiabili:

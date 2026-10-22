@@ -29,7 +29,7 @@ import { points, vips, tgConf, tgDest, amici, tgVisti, feedFonti, dcConf, passke
 import { direttaDest, MAX_DESTINAZIONI, studioScene, studioDispositivi } from '../db.js';
 import { creaSalotto } from '../features/studio-dispositivi.js';
 import { montaDispositivi } from './rotte-dispositivi.js';
-import { linkPage, visitePagina, TEMPLATE_LINKPAGE, LIMITI_LINKPAGE, FONT_LINKPAGE, ICONE_LINKPAGE, TIPI_BLOCCO, TIPI_PAGINA_NEGOZIO, contiDonazioni, contiSatispay, registroDonazioni, registroColpi, paginaDona, paginaNegozio, paginaPannello, cartePagina, accessi, recensioni as recensioniDb, campagneDb, sito } from '../db.js';
+import { linkPage, visitePagina, TEMPLATE_LINKPAGE, LIMITI_LINKPAGE, FONT_LINKPAGE, ICONE_LINKPAGE, TIPI_BLOCCO, TIPI_PAGINA_NEGOZIO, contiDonazioni, contiSatispay, registroDonazioni, registroColpi, segnoInstagram, paginaDona, paginaNegozio, paginaPannello, cartePagina, accessi, recensioni as recensioniDb, campagneDb, sito } from '../db.js';
 import { puoRecensire, validaRecensione, statoDopo, invitoAperto, rimandaFino, vetrinaDi, TESTO_MAX } from '../features/recensioni.js';
 import { funzioniCanale, concessioneDi } from '../features/accesso.js';
 import { canaleHa } from '../features/accesso.js';
@@ -5298,7 +5298,18 @@ STREAMER (${su.toUpperCase()}) e non c'entra con l'automazione del marketing.
       scadeFraGiorni: t?.expiresAt ? Math.max(0, Math.ceil((t.expiresAt - Date.now()) / 86_400_000)) : null,
       rinnovo: t ? instagram.rinnovoNonRiesce(login) : '',
       avvisoGiorni: instagram.AVVISO_SCADENZA_GIORNI,
+      // gli avvisi dei post nuovi: accesi? e com'e' andato l'ultimo controllo
+      avvisi: !!ig.attivo, puoLeggere: !!cr, controllo: instagram.controllo(login), ogniMin: 10,
     });
+  }));
+  // «Controlla adesso»: lo stesso controllo del giro, subito, per questo canale
+  app.post('/api/instagram/controlla', requireLogin, gateFeature('notifiche', 'Le notifiche'), wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    if (!extRateOk('ig-controlla:' + login)) return res.status(429).json({ errore: 'Troppi controlli di fila: riprova fra un minuto.' });
+    if (!streamers.get(login)?.settings?.instagram?.attivo) return res.status(400).json({ errore: 'Gli avvisi dei post nuovi sono spenti: spunta «Avvisami quando pubblico un nuovo post» e salva.' });
+    const r = await manager.controllaInstagram(login);
+    if (!r) return res.status(400).json({ errore: 'Instagram non è collegato.' });
+    res.json({ ...r, controllo: instagram.controllo(login) });
   }));
 
   app.get('/api/instagram/connect', requireOwner, gateFeature('notifiche', 'Le notifiche'), (req, res) => {
@@ -5334,8 +5345,9 @@ STREAMER (${su.toUpperCase()}) e non c'entra con l'automazione del marketing.
     const s = streamers.get(login);
     const ig = s?.settings?.instagram || {};
     streamers.setSettings(login, { ...(s?.settings || {}), instagram: { ...ig, userId: r.userId, username: r.username, via: 'instagram', token: '' } });
-    // come per TikTok: l'avviso lo fa il primo post NUOVO, non quello che c'e' gia'
-    try { tgConf.setIgUltimo(login, ''); } catch { /* niente */ }
+    // si annuncia quello che esce DA ADESSO: non i post che c'erano gia', e
+    // nemmeno si perde quello pubblicato prima del primo controllo
+    try { segnoInstagram.set(login, instagram.segnoDi(Date.now())); } catch { /* niente */ }
     instagram.dimenticaProblema(login);
     res.redirect('/?instagram=ok#notifiche');
   }));
@@ -5345,7 +5357,7 @@ STREAMER (${su.toUpperCase()}) e non c'entra con l'automazione del marketing.
     const s = streamers.get(login);
     const ig = s?.settings?.instagram || {};
     streamers.setSettings(login, { ...(s?.settings || {}), instagram: { ...ig, userId: '', username: '', via: '', token: '', attivo: false } });
-    try { tgConf.setIgUltimo(login, ''); } catch { /* niente */ }
+    try { segnoInstagram.set(login, ''); } catch { /* niente */ }
     instagram.dimenticaProblema(login);
   };
 
@@ -7972,7 +7984,7 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
       try { tgConf.setYtUltimo(user.login, ''); } catch { /* niente */ }
     }
     if (out.instagram && out.instagram.userId !== (s.settings?.instagram?.userId || '')) {
-      try { tgConf.setIgUltimo(user.login, ''); } catch { /* niente */ }
+      try { segnoInstagram.set(user.login, instagram.segnoDi(Date.now())); } catch { /* niente */ }
     }
 
     streamers.setSettings(user.login, out);

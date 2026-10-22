@@ -57,7 +57,7 @@ test('le porte di Meta si aprono solo con la firma', () => {
 
 test('le credenziali di Instagram si leggono da un posto solo', () => {
   assert.ok(!/ig\.token|ig\?\.token/.test(BOT), 'il giro dei post nuovi chiede alle credenziali');
-  assert.match(BOT, /const igCr = ig\?\.attivo \? credenzialiInstagram\(s\.login\) : null;/);
+  assert.match(BOT, /const cr = ig\?\.attivo \? credenzialiInstagram\(l\) : null;/);
   assert.match(SRV, /const storiaIgPossibile = async \(login\) => \{\n\s+const ig = credenzialiInstagram\(login\);/, 'se si puo\' pubblicare una storia');
   assert.match(SRV, /posti\.ig = await storiaIgPossibile\(login\);/, 'i posti della settimana');
   assert.match(rotta("app.get('/api/streamer/grafiche/storia'", 300), /ig: await storiaIgPossibile\(login\)/, 'e le Grafiche');
@@ -75,7 +75,8 @@ test('dal pannello arrivano le scelte, non l\'identita\' di un account collegato
 });
 
 test('chi fa una chiamata vera ne lascia l\'esito, e il pannello lo riceve coi permessi mancanti', () => {
-  assert.match(BOT, /const p = await instagram\.ultimoPost\(igCr\);\n\s+instagram\.ricorda\(s\.login, p\);/, 'il giro dei post nuovi');
+  assert.match(BOT, /const r = await instagram\.ultimiPost\(cr\);\n\s+instagram\.ricorda\(l, r\.errore \? r : null\);/, 'il giro dei post nuovi');
+  assert.match(BOT, /await this\.controllaInstagram\(s\.login\);/, 'e il giro passa da li\'');
   assert.match(leggi('src/features/storia-ig.js'), /const r = await pubblica\(\{ \.\.\.ig, url: [^\n]+\);\n\s+instagram\.ricorda\(login, r\);/, 'la storia');
   assert.match(rotta('async function mandaLaSettimana(', 3000), /await storiaIg\.pubblicaStoria\(login, storia\)/, 'e «Manda» la pubblica da li\'');
   assert.match(rotta("app.post('/api/streamer/instagram/prova'", 900), /if \(!scritto\) instagram\.ricorda\(login,/,

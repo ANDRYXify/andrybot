@@ -6171,6 +6171,20 @@ export const statoVivo = {
     return vive;
   },
 };
+
+// IL SEGNO DEGLI AVVISI DI INSTAGRAM (features/instagram.js, daAnnunciare): fin
+// dove i post sono gia' stati annunciati. Sta qui e non nella riga di Telegram:
+// chi annuncia solo su Discord o in chat una riga di Telegram non ce l'ha, e il
+// segno non si scriveva mai (ogni giro ripartiva da capo, e nessun post si
+// annunciava). Il segno di prima, se c'e', si legge ancora da li'.
+export const segnoInstagram = {
+  get(channel) {
+    const v = statoVivo.leggi(channel, 'ig-segno');
+    if (v && typeof v.segno === 'string') return v.segno;
+    return tgConf.get(channel)?.ig_ultimo || '';
+  },
+  set(channel, segno) { statoVivo.scrivi(channel, 'ig-segno', { segno: String(segno || '') }); },
+};
 // ---------------------------------------------------------------- contatori
 
 // I CONTATORI SONO UNO SOLO. I moduli avevano una tabella loro (`counters`),

@@ -43,6 +43,15 @@ comandi diversi da quelli della riga italiana.
 
 ## 2026-10-22
 
+- [importante] Instagram: un post o un reel nuovo arriva su Telegram anche con dei post fissati in cima al profilo. La carta di Instagram dice com'è andato l'ultimo avviso, e ha «Controlla adesso». [vai: notifiche]
+  en: Instagram: a new post or reel reaches Telegram even with posts pinned at the top of your profile. The Instagram card says how the last alert went, and has «Check now».
+  es: Instagram: un post o un reel nuevo llega a Telegram aunque haya posts fijados arriba en el perfil. La tarjeta de Instagram dice cómo fue el último aviso, y tiene «Revisar ahora».
+  > I post nuovi di Instagram arrivano su Telegram
+  > Prima guardavo solo il primo post che Instagram mi dava: con un post fissato in cima, il reel nuovo non lo vedevo mai. Ora li ordino per data, e se un avviso non parte il pannello ti dice perché.
+  en> New Instagram posts reach Telegram
+  en> Before, I only looked at the first post Instagram gave me: with a pinned post on top, I never saw the new reel. Now I sort them by date, and if an alert does not go out the panel tells you why.
+  es> Los posts nuevos de Instagram llegan a Telegram
+  es> Antes solo miraba el primer post que me daba Instagram: con un post fijado arriba, nunca veía el reel nuevo. Ahora los ordeno por fecha, y si un aviso no sale el panel te dice por qué.
 - Nello Studio della diretta il player di Spotify mostra la copertina del brano e ne prende i colori, come in OBS: prima restava un riquadro vuoto. [vai: studio]
   en: In the live Studio the Spotify player shows the song's cover and takes its colors, as in OBS: before, it stayed an empty box.
   es: En el Estudio del directo el reproductor de Spotify muestra la portada de la canción y toma sus colores, como en OBS: antes quedaba un recuadro vacío.

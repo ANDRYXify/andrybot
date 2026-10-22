@@ -102,7 +102,7 @@ import * as premiTempo from './features/premi-tempo.js';
 import * as bossFeat from './features/boss.js';
 import { aChi } from './features/risposte.js';
 import { modalitaDi, alLavoro } from './features/quando-lavora.js';
-import { statoVivo, registroColpi, effects as effettiDb } from './db.js';
+import { statoVivo, registroColpi, effects as effettiDb, segnoInstagram } from './db.js';
 import { creaServizioColpi } from './features/colpi-servizio.js';
 import { rimborsa as rimborsaStripe } from './features/donazioni-stripe.js';
 import { rimborsa as rimborsaSatispay } from './features/donazioni-satispay.js';
@@ -3086,20 +3086,7 @@ export class BotManager {
           }
         }
         // --- Instagram: collegato col tasto, o col token incollato a mano ---
-        const ig = s.settings?.instagram;
-        const igCr = ig?.attivo ? credenzialiInstagram(s.login) : null;
-        if (igCr) {
-          const p = await instagram.ultimoPost(igCr);
-          instagram.ricorda(s.login, p);
-          if (p?.id) {
-            const conf = tgConf.get(s.login);
-            const ultimo = conf?.ig_ultimo || '';
-            if (p.id !== ultimo) {
-              tgConf.setIgUltimo(s.login, p.id);
-              if (ultimo) await this.notificaPost(s.login, { piattaforma: 'instagram', titolo: (p.caption || '').slice(0, 140), url: p.permalink, messaggio: ig.messaggio, annunciaChat: ig.annunciaChat });
-            }
-          }
-        }
+        await this.controllaInstagram(s.login);
         // --- Feed generici dello streamer (Instagram e qualunque altra cosa) ---
         await this._giroFeed(s.login);
         // --- TikTok (API ufficiale: account collegato in OAuth, scope video.list) ---
@@ -3117,6 +3104,31 @@ export class BotManager {
         }
       }
     } catch (e) { log.error('controllaPost:', e?.message || e); }
+  }
+
+  // I POST NUOVI DI INSTAGRAM (docs/INSTAGRAM.md, «Gli avvisi dei post»): si
+  // leggono gli ultimi, si ordinano per data, si annuncia quello che e' uscito
+  // dopo il segno (instagram.daAnnunciare), e l'esito resta per il pannello.
+  // Lo chiamano il giro dei post e il tasto «Controlla adesso».
+  async controllaInstagram(login) {
+    const l = String(login || '').toLowerCase();
+    const ig = streamers.get(l)?.settings?.instagram;
+    const cr = ig?.attivo ? credenzialiInstagram(l) : null;
+    if (!cr) return null;
+    const r = await instagram.ultimiPost(cr);
+    instagram.ricorda(l, r.errore ? r : null);
+    if (r.errore) { instagram.segnaControllo(l, { errore: String(r.errore).slice(0, 200) }); return { errore: r.errore }; }
+    const { nuovi, segno } = instagram.daAnnunciare(r.lista, segnoInstagram.get(l));
+    // il segno si sposta PRIMA di annunciare: un giro che si sovrappone non annuncia due volte
+    segnoInstagram.set(l, segno);
+    let avviso = null;
+    for (const p of nuovi) {
+      const e = await this.notificaPost(l, { piattaforma: 'instagram', titolo: (p.caption || '').slice(0, 140), url: p.permalink, messaggio: ig.messaggio, annunciaChat: ig.annunciaChat });
+      avviso = { quando: Date.now(), permalink: p.permalink, ts: p.ts, ok: !!e?.ok, motivo: e?.motivo || '', telegram: e?.telegram || null };
+    }
+    const ultimo = r.lista[0] || null;
+    instagram.segnaControllo(l, { ultimo: ultimo ? { permalink: ultimo.permalink, ts: ultimo.ts } : null, nuovi: nuovi.length, avviso });
+    return { nuovi: nuovi.length, avviso };
   }
 
   // Legge i feed che lo streamer ha collegato e avvisa quando esce una voce nuova.
@@ -3162,11 +3174,14 @@ export class BotManager {
       // il suo, di qua e di la'.
       const riga = this._rigaAvviso(l, 'avviso-post', piattaforma);
       const conf = tgConf.get(l);
+      // com'e' andata su Telegram, per chi lo vuole dire (il pannello di Instagram)
+      let tg = { collegato: !!conf?.token, posti: 0, inviati: 0, errore: '' };
       if (conf?.token) {
         tgDest.migra(l, conf);
         const testo = telegram.costruisciMessaggioPost({ login: l, display: s?.display || l }, { piattaforma, titolo, url, messaggio, riga });
         const dest = tgDest.perEvento(l, ev, l);
-        await telegram.diffondi(conf.token, dest, testo, { anteprima: true }).catch(() => {});
+        const esiti = await telegram.diffondi(conf.token, dest, testo, { anteprima: true }).catch((e) => [{ ok: false, errore: e?.message || String(e) }]);
+        tg = { collegato: true, posti: dest.length, inviati: esiti.filter((x) => x.ok).length, errore: (esiti.find((x) => !x.ok)?.errore || '').slice(0, 200) };
       }
       // E su Discord, dove lo streamer ha acceso quell'avviso. Un post non e'
       // una diretta: niente incorniciato «è in diretta», e le parole del post,
@@ -3180,8 +3195,8 @@ export class BotManager {
         this.say(l, `${info[0]} Nuovo contenuto su ${info[1]}! 👉 ${url}`);
       }
       log.info(`notifica post (${piattaforma}) inviata per #${l}`);
-      return { ok: true };
-    } catch (e) { log.error(`notificaPost #${login}:`, e?.message || e); return { ok: false }; }
+      return { ok: true, telegram: tg };
+    } catch (e) { log.error(`notificaPost #${login}:`, e?.message || e); return { ok: false, motivo: String(e?.message || e).slice(0, 200) }; }
   }
 
   // stato riassuntivo per la dashboard

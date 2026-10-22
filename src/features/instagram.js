@@ -40,17 +40,69 @@ async function getJson(url) {
   finally { clearTimeout(to); }
 }
 
-// Ultimo post. Ritorna {id, caption, permalink} | {errore} | null.
-export async function ultimoPost({ userId, token, via = 'facebook' } = {}) {
+// GLI ULTIMI POST, dal piu' nuovo per DATA. Instagram li elenca in un suo
+// ordine (i post fissati in cima al profilo possono venire prima): il primo
+// della lista non e' per forza l'ultimo pubblicato, quindi se ne leggono
+// alcuni e si ordinano col loro `timestamp`.
+// Ritorna { lista: [{ id, caption, permalink, ts }] } | { errore, codice }.
+export const QUANTI_POST = 10;
+export async function ultimiPost({ userId, token, via = 'facebook' } = {}) {
   const uid = String(userId || '').trim();
   const tok = String(token || '').trim();
-  if (!uid || !tok) return null;
-  const d = await getJson(`${apiDi(via)}/${encodeURIComponent(uid)}/media?fields=id,caption,permalink,timestamp&limit=1&access_token=${encodeURIComponent(tok)}`);
+  if (!uid || !tok) return { lista: [] };
+  const d = await getJson(`${apiDi(via)}/${encodeURIComponent(uid)}/media?fields=id,caption,permalink,timestamp&limit=${QUANTI_POST}&access_token=${encodeURIComponent(tok)}`);
   if (d?.errore) return { errore: d.errore, codice: d.codice || 0 };
-  const m = d?.data?.[0];
-  if (!m?.id) return null;
-  return { id: m.id, caption: String(m.caption || ''), permalink: m.permalink || '' };
+  return { lista: ordinaPost(d?.data) };
 }
+export function ordinaPost(dati) {
+  return (Array.isArray(dati) ? dati : [])
+    .filter((m) => m && m.id)
+    .map((m) => ({ id: String(m.id), caption: String(m.caption || ''), permalink: String(m.permalink || ''), ts: Date.parse(m.timestamp) || 0 }))
+    .sort((a, b) => b.ts - a.ts);
+}
+
+// L'ultimo post pubblicato. Ritorna {id, caption, permalink, ts} | {errore} | null.
+export async function ultimoPost(cr = {}) {
+  const r = await ultimiPost(cr);
+  if (r.errore) return { errore: r.errore, codice: r.codice || 0 };
+  return r.lista[0] || null;
+}
+
+// QUALI POST ANNUNCIARE (docs/INSTAGRAM.md, «Gli avvisi dei post»). Il segno e'
+// il momento fino al quale e' gia' stato tutto annunciato: «t<ms>». Si
+// annuncia ogni post piu' nuovo del segno, dal piu' vecchio, al massimo
+// MAX_AVVISI per giro (un profilo appena ricollegato non diventa una raffica).
+//  · segno vuoto (mai controllato): si segna l'ultimo post e non si annuncia
+//    niente, cosi' collegando non parte l'avviso di un post vecchio;
+//  · al collegamento il segno e' l'istante del collegamento: un post uscito
+//    dopo si annuncia anche se il primo controllo arriva piu' tardi;
+//  · un segno di prima (solo l'id dell'ultimo annunciato) vale la data di quel
+//    post, se e' fra quelli letti; se no si riparte dall'ultimo, senza annunci.
+export const MAX_AVVISI = 3;
+export const segnoDi = (ms) => 't' + Math.max(0, Math.round(Number(ms) || 0));
+export function daAnnunciare(lista, segno) {
+  const post = Array.isArray(lista) ? lista : [];
+  if (!post.length) return { nuovi: [], segno: String(segno || '') };
+  const piuNuovo = post[0].ts;
+  const s = String(segno || '');
+  let fino = null;
+  if (/^t\d+$/.test(s)) fino = Number(s.slice(1));
+  else if (s) { const p = post.find((x) => x.id === s); if (p) fino = p.ts; }
+  if (fino == null) return { nuovi: [], segno: segnoDi(piuNuovo) };
+  const nuovi = post.filter((p) => p.ts > fino).slice(0, MAX_AVVISI).reverse();
+  return { nuovi, segno: segnoDi(Math.max(fino, piuNuovo)) };
+}
+
+// L'ULTIMO CONTROLLO, per il pannello: quando, cosa ha visto, cosa ha
+// annunciato e com'e' andata. Un avviso che non arriva si deve poter capire da
+// li', non dai log.
+const _controlli = new Map();
+export function segnaControllo(login, c, adesso = Date.now()) {
+  const chi = String(login || '').toLowerCase();
+  const prima = _controlli.get(chi) || {};
+  _controlli.set(chi, { ...c, quando: adesso, avviso: c.avviso || prima.avviso || null });
+}
+export const controllo = (login) => _controlli.get(String(login || '').toLowerCase()) || null;
 
 // Verifica che le credenziali funzionino. Ritorna {ok} | {ok:false, motivo}.
 export async function prova({ userId, token, via = 'facebook' } = {}) {

@@ -2080,7 +2080,9 @@ function _demoGet(via) {
     '/api/tiktok/stato': { appAttiva: true, collegato: true, username: 'andryxify', redirect: 'https://socialbot.live/tiktok/callback' },
     '/api/streamer/preferenze': { scelte: {}, valori: { lingua: 'it', fuso: 'Europe/Rome', data: 'gg/mm/aaaa', ora: '24', settimana: 'lun', durate: 'estese', fonteProssime: '', risposta: 'nome' }, origineLingua: 'base', linguaTwitch: '', fusoSettimana: 'Europe/Rome', suTwitch: true, fonte: 'settimana' },
     '/api/account/collegamenti': { collegamenti: [{ id: 'spotify', chi: '', via: '/api/spotify/disconnect' }, { id: 'tiktok', chi: 'andryxify', via: '/api/tiktok/disconnect' }, { id: 'tgapp', chi: 'andryx', via: '/api/tgapp/scollega' }] },
-    '/api/instagram/stato': { appAttiva: true, collegato: true, scaduto: false, username: 'andryxify', aMano: false },
+    '/api/instagram/stato': { appAttiva: true, collegato: true, scaduto: false, username: 'andryxify', aMano: false, avvisi: true, puoLeggere: true, ogniMin: 10,
+      controllo: { quando: Date.now() - 240000, ultimo: { permalink: 'https://www.instagram.com/reel/esempio/', ts: Date.now() - 1800000 }, nuovi: 0,
+        avviso: { quando: Date.now() - 1500000, ok: true, permalink: 'https://www.instagram.com/reel/esempio/', telegram: { collegato: true, posti: 1, inviati: 1, errore: '' } } } },
     '/api/discord/invito': { url: '' },
     '/api/streamer/settimana': { settimana: _DEMO_SETTIMANA, posti: {
       tg: [{ id: 1, nome: 'Canale di andryx', dove: '', tipo: 'channel' }, { id: 2, nome: 'La combriccola', dove: 'Annunci', tipo: 'supergroup' }],
@@ -12406,6 +12408,7 @@ async function caricaInstagram() {
       grave: true,
     }) : `<p class="suggerimento">${L('Si collega col token, dal riquadro «Nuovo post su Instagram» qui sotto.', 'It connects with a token, from the «New Instagram post» card below.', 'Se conecta con el token, desde la tarjeta «Nuevo post en Instagram» aquí abajo.')}</p>`;
     if (aMano) aMano.open = true;
+    _igControllo(d);
     return;
   }
   const collega = () => conErrore(async () => {
@@ -12477,6 +12480,45 @@ async function caricaInstagram() {
   }
   box.querySelectorAll('[data-ig-collega]').forEach((b) => b.addEventListener('click', collega));
   box.querySelectorAll('[data-ig-prova]').forEach((b) => b.addEventListener('click', prova));
+  _igControllo(d);
+}
+
+function _igControllo(d) {
+  const box = document.getElementById('ig-controllo');
+  if (!box) return;
+  if (!d?.puoLeggere && !d?.avvisi) { box.innerHTML = ''; return; }
+  const quando = (ts) => (ts ? new Date(ts).toLocaleString(localePannello(), { dateStyle: 'short', timeStyle: 'short' }) : '');
+  if (!d.avvisi) {
+    box.innerHTML = problemaHtml({ titolo: L('Gli avvisi dei post nuovi sono spenti', 'New-post alerts are off', 'Los avisos de posts nuevos están apagados'),
+      testo: L('Instagram è collegato, ma finché «Avvisami quando pubblico un nuovo post» non è spuntato non controllo i tuoi post. Spuntalo e salva.', 'Instagram is connected, but until «Alert me when I post a new one» is ticked I don’t check your posts. Tick it and save.', 'Instagram está conectado, pero hasta que «Avísame cuando publico un nuevo post» esté marcado no reviso tus posts. Márcalo y guarda.') });
+    return;
+  }
+  const c = d.controllo;
+  const righe = [];
+  if (!c) righe.push(L(`Controllo i tuoi post ogni ${d.ogniMin} minuti: il primo controllo non è ancora passato.`, `I check your posts every ${d.ogniMin} minutes: the first check hasn’t run yet.`, `Reviso tus posts cada ${d.ogniMin} minutos: la primera revisión aún no ha pasado.`));
+  else if (c.errore) righe.push(L('Ultimo controllo alle ', 'Last check at ', 'Última revisión a las ') + esc(quando(c.quando)) + ': ' + L('Instagram ha risposto con un errore', 'Instagram answered with an error', 'Instagram respondió con un error') + ' («' + esc(c.errore) + '»).');
+  else righe.push(L('Ultimo controllo alle ', 'Last check at ', 'Última revisión a las ') + esc(quando(c.quando)) + '. '
+    + (c.ultimo ? L('Il tuo post più recente è del ', 'Your latest post is from ', 'Tu post más reciente es del ') + esc(quando(c.ultimo.ts)) + (c.ultimo.permalink ? ` (<a href="${esc(c.ultimo.permalink)}" target="_blank" rel="noopener">${L('aprilo', 'open it', 'ábrelo')}</a>)` : '') + '.' : L('Non ho trovato post.', 'I found no posts.', 'No encontré posts.')));
+  const a = c?.avviso;
+  if (a) {
+    const t = a.telegram;
+    let esito;
+    if (!a.ok) esito = L('non è partito', 'did not go out', 'no salió') + (a.motivo ? ' (' + esc(a.motivo === 'non nel piano' ? L('le notifiche non sono nel tuo piano', 'notifications aren’t in your plan', 'las notificaciones no están en tu plan') : a.motivo) + ')' : '');
+    else if (!t?.collegato) esito = L('Telegram non è collegato: niente sul gruppo', 'Telegram isn’t connected: nothing on the group', 'Telegram no está conectado: nada en el grupo');
+    else if (!t.posti) esito = L('nessun posto su Telegram riceve gli avvisi di Instagram: controlla i filtri dei posti nella scheda Telegram', 'no place on Telegram receives Instagram alerts: check the places’ filters in the Telegram tab', 'ningún sitio de Telegram recibe los avisos de Instagram: revisa los filtros de los sitios en la pestaña Telegram');
+    else if (t.inviati < t.posti) esito = L(`mandato a ${t.inviati} posti su ${t.posti}; Telegram ha rifiutato: `, `sent to ${t.inviati} of ${t.posti} places; Telegram refused: `, `enviado a ${t.inviati} de ${t.posti} sitios; Telegram rechazó: `) + '«' + esc(t.errore) + '»';
+    else esito = L(`mandato su Telegram (${t.inviati} ${t.inviati === 1 ? 'posto' : 'posti'})`, `sent on Telegram (${t.inviati} ${t.inviati === 1 ? 'place' : 'places'})`, `enviado en Telegram (${t.inviati} ${t.inviati === 1 ? 'sitio' : 'sitios'})`);
+    righe.push(L('Ultimo avviso, alle ', 'Last alert, at ', 'Último aviso, a las ') + esc(quando(a.quando)) + ': ' + esito + '.');
+  }
+  box.innerHTML = `<p class="suggerimento">${righe.join('<br>')}</p>
+    <p><button type="button" class="btn secondario mini" id="ig-controlla">${L('Controlla adesso', 'Check now', 'Revisar ahora')}</button></p>`;
+  document.getElementById('ig-controlla')?.addEventListener('click', () => conErrore(async () => {
+    const r = await api('/api/instagram/controlla', { method: 'POST', body: {} });
+    toast(r?.nuovi ? L(`Trovati ${r.nuovi} post nuovi: avviso mandato.`, `Found ${r.nuovi} new posts: alert sent.`, `Encontrados ${r.nuovi} posts nuevos: aviso enviado.`)
+      : r?.errore ? L('Instagram ha risposto con un errore.', 'Instagram answered with an error.', 'Instagram respondió con un error.')
+        : L('Nessun post nuovo da annunciare.', 'No new post to announce.', 'Ningún post nuevo que anunciar.'), r?.errore ? 'errore' : undefined);
+    caricaInstagram();
+  }));
 }
 
 async function caricaTgLogin() {
@@ -33018,6 +33060,7 @@ function pannelloNotifiche() {
       </div>
 
       <p class="spazio-sopra"><button class="btn" id="btn-ig-salva">${L('Salva', 'Save', 'Guardar')}</button></p>
+      <div id="ig-controllo" class="spazio-sopra" aria-live="polite"></div>
 
       <details id="ig-a-mano" class="spazio-sopra">
         <summary>${L('Uso un token mio (avanzato)', 'I use my own token (advanced)', 'Uso un token mío (avanzado)')}</summary>
