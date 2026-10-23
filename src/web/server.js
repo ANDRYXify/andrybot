@@ -2561,7 +2561,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     const login = loginColpi(req);
     if (!login) return res.status(404).json({ errore: 'mira' });
     if (!extRateOk('colpo-paga:' + String(req.ip || ''))) return res.status(429).json({ errore: 'troppi' });
-    res.json(await portaColpi.paga(login, req.params.id, req.body?.mezzo));
+    res.json(await portaColpi.paga(login, req.params.id, req.body?.mezzo, spettatoreDi(req)));
   }));
   // Il pannello dei colpi: l'indirizzo della pagina, cosa manca per gli euro,
   // i premi che Twitch non ha voluto creare e gli ultimi colpi partiti.

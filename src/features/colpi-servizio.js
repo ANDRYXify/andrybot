@@ -35,8 +35,11 @@ export const PRESENZA_MS = 3 * 60_000;
 // la voce di una presenza: non e' una voce del listino (quelle sono [a-z0-9])
 export const VOCE_PRESENZA = '@presenza';
 
+// `monete`: le monete del canale (economia.js): `punta` (tutte o niente, con la
+// ricevuta), `rendi` (la ricevuta torna com'era) e `saldo`. Senza, i colpi non
+// si pagano in monete.
 export function creaServizioColpi({ registro, effects, effettoDi, impostazioni, inOnda = () => true, overlay = () => true,
-  rimborsaEuro = async () => ({ errore: 'nessun conto' }), chiudiPremio = async () => true, ora = () => Date.now(), log = null }) {
+  rimborsaEuro = async () => ({ errore: 'nessun conto' }), chiudiPremio = async () => true, monete = null, ora = () => Date.now(), log = null }) {
   const ultimaDi = new Map();
   const cfgDi = (login) => normalizza(impostazioni(login));
 
@@ -72,7 +75,7 @@ export function creaServizioColpi({ registro, effects, effettoDi, impostazioni, 
     const m = {
       id: randomBytes(9).toString('hex'), login: ch, voce: voce.id, comando: voce.comando, nome: voce.nome,
       x: punto.x, y: punto.y, scala: voce.scala, chi: cfg.conNome ? nomeChi(chi) : '',
-      prezzi: { euro: voce.euro, punti: voce.punti, bit: voce.bit }, creata: adesso, scade: adesso + SCADENZA_MS,
+      prezzi: { euro: voce.euro, punti: voce.punti, bit: voce.bit, monete: voce.monete }, creata: adesso, scade: adesso + SCADENZA_MS,
       spettatore: String(spettatore || ''),
     };
     for (let i = 0; i < 12; i++) { m.codice = nuovoCodice(); if (registro.apri(m)) { ultimaDi.set(k, adesso); return { ok: true, mira: { ...m, metodi: metodiDi(voce) } }; } }
@@ -88,8 +91,8 @@ export function creaServizioColpi({ registro, effects, effettoDi, impostazioni, 
   }
 
   // Il pagamento e' arrivato: una volta sola, qualunque cosa lo paghi.
-  function incassa(m, metodo, riferimento = '', premio = '', ancheScaduta = false) {
-    if (!m || !registro.paga(m.id, metodo, riferimento, ora(), premio, ancheScaduta)) return false;
+  function incassa(m, metodo, riferimento = '', premio = '', ancheScaduta = false, ricevuta = null) {
+    if (!m || !registro.paga(m.id, metodo, riferimento, ora(), premio, ancheScaduta, ricevuta)) return false;
     const fatto = manda(registro.get(m.id));
     log?.info?.(`colpo ${m.nome} pagato su #${m.login} (${metodo})${fatto ? '' : ': in coda, nessun overlay pronto'}`);
     return true;
@@ -172,6 +175,7 @@ export function creaServizioColpi({ registro, effects, effettoDi, impostazioni, 
       if (m.metodo !== 'bit' && adesso - m.pagata_at > CONSEGNA_MS) {
         let ok = false;
         if (m.metodo === 'punti') ok = await chiudi(m, 'CANCELED');
+        else if (m.metodo === 'monete') { try { ok = !!monete && !!m.ricevuta && (monete.rendi(m.login, String(m.riferimento).replace(/^monete:/, ''), m.ricevuta), true); } catch { ok = false; } }
         else if (m.metodo === 'euro') { try { ok = !!(await rimborsaEuro(m.login, m.riferimento))?.ok; } catch { ok = false; } }
         if (ok && registro.rimborsata(m.id)) log?.info?.(`colpo ${m.nome} su #${m.login} non mostrato: rimborsato (${m.metodo})`);
         else if (!ok) log?.warn?.(`colpo ${m.nome} su #${m.login} non mostrato, rimborso non riuscito (${m.metodo}): riprovo`);
@@ -228,6 +232,26 @@ export function creaServizioColpi({ registro, effects, effettoDi, impostazioni, 
     return incassa(m, 'punti', `premio:${id}`, `${reward_id}:${id}`) ? { esito: 'pagato', stato: null, nome: m.nome } : { esito: 'gia', stato: 'CANCELED' };
   }
 
+  // LE MONETE DEL CANALE. Dalla pagina (con l'accesso a Twitch: `id` della mira,
+  // `user` chi paga) o dalla chat («!pew K7QX3»: `codice`). Si spendono tutte o
+  // niente, prima si guarda che il colpo si possa consegnare, e se la mira nel
+  // frattempo e' gia' pagata la ricevuta torna subito: nessuno paga due volte.
+  function daMonete(login, { id = '', codice = '', user = '' } = {}) {
+    const ch = String(login || '').toLowerCase();
+    const u = String(user || '').toLowerCase();
+    if (!monete || !u) return { esito: 'spento' };
+    const m = id ? registro.getDi(ch, String(id)) : codice ? registro.perCodice(ch, codice, ora()) : null;
+    if (!m || m.stato !== 'attesa' || !(Number(m.prezzi?.monete) > 0)) return { esito: 'sconosciuto', codice };
+    if (m.riferimento) return { esito: 'gia', codice };
+    const no = consegnabile(ch, m.voce);
+    if (no) return { esito: 'fermo', motivo: no, nome: m.nome };
+    const n = Number(m.prezzi.monete);
+    const ricevuta = monete.punta(ch, u, n);
+    if (!ricevuta) return { esito: 'pochi', serve: n, saldo: Number(monete.saldo?.(ch, u)) || 0, nome: m.nome };
+    if (!incassa(m, 'monete', 'monete:' + u, '', false, ricevuta)) { monete.rendi(ch, u, ricevuta); return { esito: 'gia', codice }; }
+    return { esito: 'pagato', nome: m.nome, monete: n };
+  }
+
   // Gli euro: la donazione pagata che era stata aperta per una mira.
   function daPagamento(donazioneId) {
     const m = registro.perRiferimento(donazioneId);
@@ -236,5 +260,5 @@ export function creaServizioColpi({ registro, effects, effettoDi, impostazioni, 
     return { esito: incassa(m, 'euro', donazioneId, '', true) ? 'pagato' : 'gia', nome: m.nome, login: m.login };
   }
 
-  return { mira, consegnabile, daCheer, daRiscatto, daPagamento, presenza, provaPresenza, visto, ronda, cfgDi };
+  return { mira, consegnabile, daCheer, daRiscatto, daPagamento, daMonete, presenza, provaPresenza, visto, ronda, cfgDi, conMonete: !!monete };
 }

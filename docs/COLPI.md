@@ -193,6 +193,54 @@ Un biglietto preso da un altro non fa entrare nessuno, perché il segno che
 serve sta solo nel browser che è partito: nessuno può farti entrare col suo
 account mandandoti un link.
 
+## Le categorie
+
+Chiesto così: «aggiungiamo anche la divisione per tipologia di attacchi,
+personalizzabile dallo streamer (sempre tutto personalizzabile dev'essere)».
+
+Il listino si divide in categorie (`colpi.categorie`, al massimo 10: `{ id,
+nome }`), nell'ordine che sceglie lo streamer. Finché non le tocca valgono
+quelle di serie, una per tipo: **Lanci**, **Adesivi**, **Spaventi**,
+**Immagini e video** (`CATEGORIE_SERIE`). Il nome di una di serie può restare
+vuoto: si legge nella lingua di chi guarda. Una nuova vuole un nome.
+
+Ogni colpo va nella categoria che gli sceglie lo streamer (`voce.categoria`);
+senza, in quella del suo tipo, se c'è; se no nella prima (`categoriaDi`). Il
+tipo viene dall'effetto: un lancio dalla libreria del catalogo (adesivi,
+spaventi, gli altri sono lanci), un'immagine o un video è «media». Senza
+categorie la pagina mostra tutto insieme.
+
+Sulla pagina, con almeno due categorie che hanno colpi, sopra il listino ci
+sono i filtri («Tutti» e le categorie); quelle vuote non si vedono. Nel
+pannello: l'elenco delle categorie (nome, su e giù, togli, aggiungi) e, su ogni
+colpo, «Categoria» («Secondo il tipo» o una delle categorie).
+
+## Le monete del canale
+
+Chiesto così: «colleghiamo poi tutto ai punti del canale, così creiamo proprio
+un sistema vivo». Un colpo ha un quarto prezzo: le monete del canale
+(docs/ECONOMIA.md), `voce.monete`.
+
+- **Dalla pagina**, con l'accesso a Twitch: «Paga N monete». Le monete sono di
+  chi scrive in chat, quindi senza accesso non si sa di chi sono; e si paga
+  solo la propria mira (`spettatore` vuoto o il proprio).
+- **Dalla chat**: `!pew CODICE` (il comando lo sceglie lo streamer,
+  `colpi.comando`), per chi non ha fatto l'accesso, anche su Kick e YouTube.
+  Il bot risponde: pagato, quante ne mancano, codice che non vale, colpo fermo.
+- **Le stesse regole degli altri modi**: si paga solo un colpo che adesso può
+  comparire; una mira con un pagamento in euro aperto no; una volta sola.
+- **Tutte o niente, con la ricevuta**: si spendono con `economia.punta`, che
+  dà i lotti spesi; la ricevuta sta nella mira (`colpi.ricevuta`). Se in dieci
+  minuti il colpo non compare, la ronda la rende tale e quale
+  (`economia.rendi`): tornano le stesse monete, con le loro scadenze. Se la
+  mira nel frattempo fosse già pagata, la ricevuta torna subito.
+- Le monete si muovono solo da `economia.js`: il servizio riceve `punta`,
+  `rendi` e `saldo`, e senza non offre il prezzo in monete.
+
+E la presenza può dare monete (`presenza.monete`): passano dalla porta
+dell'economia (`economia.riceve`), con le sue regole (i bot no, la crescita
+spenta, i tetti).
+
 ## L'anteprima
 
 Chiesto così: «riusciamo ad inserire un'anteprima degli attacchi se l'utente
@@ -329,6 +377,13 @@ canale dice anche che con l'accesso a Twitch va bene qualunque testo.
   richiesta, l'indirizzo scritto in un posto solo. Il giro dell'accesso fra due
   nomi veri (con un certificato per ciascuno) non si prova qui: si prova in
   produzione, appena il nome risponde.
+- Le categorie e le monete: `colpi.test.mjs` (le categorie di serie e quelle
+  dello streamer, la categoria di un colpo, il comando in chat; le monete
+  tutte o niente, solo a colpo consegnabile, una volta sola, rese tali e quali
+  se il colpo non compare; la porta che le chiede con l'accesso e solo per la
+  propria mira), e `verifica-colpi.mjs` nel browser (i filtri, il comando
+  scritto senza accesso, «Paga» che toglie le monete e fa partire il colpo),
+  con un difetto suo (la categoria che non filtra).
 - L'anteprima e la presenza: `colpi.test.mjs` (il modello della presenza, il
   servizio sul registro vero: una per diretta, il tetto suo, le stesse domande
   di un colpo, la ronda che la lascia; la porta che dà all'anteprima quello che

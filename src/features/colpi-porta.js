@@ -5,13 +5,20 @@
 // alle richieste e le intestazioni; il cancello verifica-colpi.mjs serve la
 // pagina vera con questa stessa porta, cosi' quello che si collauda e' quello
 // che gira.
-import { normalizza, voceDi, metodiDi, titoloPremio } from './colpi.js';
+import { normalizza, voceDi, metodiDi, titoloPremio, categoriaDi } from './colpi.js';
+import { monetaDa } from './moneta.js';
 import { MIRABILE } from './colpi-servizio.js';
 import { normLancio, oggettoDi, disegnoDi, payloadLancio, durataLancio } from './lanci.js';
 import { chromaDi } from './chroma.js';
 
 const grezzoDi = (eff) => { try { return JSON.parse(eff.disegno || '{}') || {}; } catch { return {}; } };
 const spriteLancio = (eff) => disegnoDi(oggettoDi(normLancio(grezzoDi(eff)).oggetto));
+// il tipo di un colpo, per la sua categoria di serie: lanci, adesivi, spaventi, media
+const tipoDi = (eff) => {
+  if (eff.tipo !== 'lancio') return 'media';
+  const o = oggettoDi(normLancio(grezzoDi(eff)).oggetto);
+  return o?.libreria === 'adesivi' || o?.libreria === 'spaventi' ? o.libreria : 'lanci';
+};
 const FILE_SEMPLICE = (f) => /^[A-Za-z0-9._-]+$/.test(f) && !f.includes('..');
 
 export const ID_MIRA = /^[0-9a-f]{18}$/;
@@ -25,7 +32,7 @@ export function creaPortaColpi({ servizio, registro, streamers, effettoDi, mezzi
   const valutaDi = (s) => s?.settings?.donazioni?.valuta || 'EUR';
   // quello che la voce si lascia pagare adesso: gli euro col conto pronto, i
   // punti col premio creato su Twitch, i Bit sempre
-  const metodiVivi = (v, euro) => metodiDi(v).filter((m) => (m === 'euro' ? euro.length > 0 : m === 'punti' ? !!v.premio : true));
+  const metodiVivi = (v, euro) => metodiDi(v).filter((m) => (m === 'euro' ? euro.length > 0 : m === 'punti' ? !!v.premio : m === 'monete' ? !!servizio.conMonete : true));
   // `pagabile`: la pagina mostra i modi di pagare solo finche' e' vero, e li
   // toglie appena la diretta o l'overlay vanno via (servizio.consegnabile)
   const statoMira = (m) => {
@@ -48,10 +55,13 @@ export function creaPortaColpi({ servizio, registro, streamers, effettoDi, mezzi
       // l'ombra della pagina e' grande come il colpo (docs/LANCI.md)
       const disegno = eff.tipo === 'lancio' ? spriteLancio(eff) : '';
       voci.push({ id: v.id, nome: v.nome, tipo: eff.tipo === 'lancio' ? 'immagine' : eff.tipo, scala: v.scala, anteprima: disegno || `/u/${login}/colpo/anteprima/${encodeURIComponent(v.id)}`,
-        metodi, prezzi: { euro: metodi.includes('euro') ? v.euro : 0, punti: metodi.includes('punti') ? v.punti : 0, bit: metodi.includes('bit') ? v.bit : 0 },
-        premio: metodi.includes('punti') ? (v.premioNome || titoloPremio(v)) : '', prova: provaDi(login, v, eff) });
+        metodi, prezzi: Object.fromEntries(['euro', 'punti', 'bit', 'monete'].map((x) => [x, metodi.includes(x) ? v[x] : 0])),
+        premio: metodi.includes('punti') ? (v.premioNome || titoloPremio(v)) : '', prova: provaDi(login, v, eff), categoria: categoriaDi(k.cfg, v, tipoDi(eff)) });
     }
-    return { live: !!inOnda(login), overlay: !!overlay(login), pausa: k.cfg.pausa, zone: k.cfg.zone, conNome: k.cfg.conNome, valuta: valutaDi(k.s), mezzi: euro, voci };
+    // le categorie che hanno almeno un colpo, nell'ordine dello streamer
+    const categorie = k.cfg.categorie.filter((c) => voci.some((v) => v.categoria === c.id));
+    return { live: !!inOnda(login), overlay: !!overlay(login), pausa: k.cfg.pausa, zone: k.cfg.zone, conNome: k.cfg.conNome, valuta: valutaDi(k.s), mezzi: euro, voci,
+      categorie, comando: k.cfg.comando, moneta: monetaDa(k.s.settings).nome };
   }
 
   // L'ANTEPRIMA DI UN COLPO (docs/COLPI.md, «L'anteprima»): quello che l'overlay
@@ -113,8 +123,19 @@ export function creaPortaColpi({ servizio, registro, streamers, effettoDi, mezzi
   // Paga in euro: una mira apre UN pagamento. La presa «apre:» si prende prima
   // di chiamare Stripe o Satispay, cosi' un doppio tocco non ne apre due; se il
   // pagamento non si apre, la presa si rilascia e la mira torna pagabile.
-  async function paga(login, id, mezzoChiesto) {
+  // Con le monete del canale serve l'accesso a Twitch (le monete sono di chi
+  // scrive in chat), e la mira dev'essere sua o di nessuno.
+  async function paga(login, id, mezzoChiesto, io = null) {
     const k = aperti(login);
+    if (mezzoChiesto === 'monete') {
+      const mm = k && ID_MIRA.test(String(id || '')) ? registro.getDi(login, String(id)) : null;
+      if (!mm) return { errore: 'mira' };
+      if (!io?.login) return { errore: 'accesso' };
+      if (mm.spettatore && mm.spettatore !== String(io.id)) return { errore: 'mira' };
+      const r = servizio.daMonete(login, { id: mm.id, user: io.login });
+      if (r.esito === 'pagato') return { ok: true };
+      return { errore: r.esito === 'fermo' ? r.motivo : r.esito, serve: r.serve, saldo: r.saldo };
+    }
     const m = k && ID_MIRA.test(String(id || '')) ? registro.getDi(login, String(id)) : null;
     if (!m || m.stato !== 'attesa' || !(Number(m.prezzi?.euro) > 0)) return { errore: 'mira' };
     if (m.scade <= ora()) return { errore: 'scaduta' };

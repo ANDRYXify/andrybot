@@ -104,7 +104,9 @@ import { aChi } from './features/risposte.js';
 import { modalitaDi, alLavoro } from './features/quando-lavora.js';
 import { statoVivo, registroColpi, effects as effettiDb, segnoInstagram } from './db.js';
 import { creaServizioColpi } from './features/colpi-servizio.js';
-import { urlPaginaColpo, eFrasePresenza } from './features/colpi.js';
+import * as economia from './features/economia.js';
+import { nomeMoneta } from './features/moneta.js';
+import { urlPaginaColpo, eFrasePresenza, codicePerMonete } from './features/colpi.js';
 import { creaChatColpi, rigaDi as rigaChatColpi, BATTITO_MS as BATTITO_CHAT_COLPI } from './features/colpi-chat.js';
 import { coloreDi as coloreChatDi } from './features/badges.js';
 import { nativeInMessaggio as emoteNelMessaggio, canaleInCache as emoteInCache } from './features/emotes.js';
@@ -183,10 +185,26 @@ function testoColpi(canale, cosa, chi, r = {}) {
     pochi: [`${chi} per «${r.nome}» mancano ${r.mancano} Bit: i tuoi restano contati, completa con lo stesso codice.`,
       `${chi} «${r.nome}» needs ${r.mancano} more Bits: yours are counted, finish with the same code.`,
       `${chi} a «${r.nome}» le faltan ${r.mancano} Bits: los tuyos quedan contados, completa con el mismo código.`],
+    'monete-pagato': [`${chi} pagato con ${r.monete} ${r.moneta}: «${r.nome}» sta per comparire. Se non compare, ti tornano.`,
+      `${chi} paid with ${r.monete} ${r.moneta}: «${r.nome}» is about to show. If it doesn't, you get them back.`,
+      `${chi} pagado con ${r.monete} ${r.moneta}: «${r.nome}» está a punto de aparecer. Si no aparece, te vuelven.`],
+    'monete-pochi': [`${chi} per «${r.nome}» servono ${r.serve} ${r.moneta}, ne hai ${r.saldo}.`,
+      `${chi} «${r.nome}» costs ${r.serve} ${r.moneta}, you have ${r.saldo}.`,
+      `${chi} «${r.nome}» cuesta ${r.serve} ${r.moneta}, tienes ${r.saldo}.`],
+    'monete-sconosciuto': [`${chi} quel codice non vale o non si paga in ${r.moneta}: prendilo mirando su ${pagina}`,
+      `${chi} that code isn't valid or can't be paid in ${r.moneta}: get it by aiming on ${pagina}`,
+      `${chi} ese código no vale o no se paga en ${r.moneta}: consíguelo apuntando en ${pagina}`],
+    'monete-gia': [`${chi} quella mira è già pagata, o ha un pagamento aperto: le tue ${r.moneta} restano a te.`,
+      `${chi} that aim is already paid, or has a payment open: your ${r.moneta} stay with you.`,
+      `${chi} ese apunte ya está pagado, o tiene un pago abierto: tus ${r.moneta} se quedan contigo.`],
+    'monete-fermo': [`${chi} adesso il colpo non può comparire (diretta o overlay fermi): le tue ${r.moneta} restano a te.`,
+      `${chi} the hit can't show right now (stream or overlay stopped): your ${r.moneta} stay with you.`,
+      `${chi} ahora el golpe no puede aparecer (directo u overlay parados): tus ${r.moneta} se quedan contigo.`],
     coda: [`${chi} Bit arrivati: «${r.nome}» compare appena l'overlay torna in onda.`,
       `${chi} Bits received: «${r.nome}» shows as soon as the overlay is back on air.`,
       `${chi} Bits recibidos: «${r.nome}» aparece en cuanto el overlay vuelva al aire.`],
   }[cosa];
+  if (!T) return '';
   const l = linguaChat(canale);
   return T[l === 'en' ? 1 : l === 'es' ? 2 : 0];
 }
@@ -203,7 +221,9 @@ export class BotManager {
       overlay: (l) => !!this.effects?.prontoColpi?.(l),
       // un colpo pagato che nessun overlay mostra torna indietro: gli euro dal conto dello streamer, i punti col riscatto annullato
       rimborsaEuro: (l, id) => (String(id).startsWith('satispay:') ? rimborsaSatispay(l, id) : rimborsaStripe(l, id)),
-      chiudiPremio: (l, premio, riscatto, stato) => this.helix?.aggiornaRedemption?.(l, premio, riscatto, stato), log });
+      chiudiPremio: (l, premio, riscatto, stato) => this.helix?.aggiornaRedemption?.(l, premio, riscatto, stato),
+      // le monete del canale: si spendono con la ricevuta, e la ricevuta torna se il colpo non compare
+      monete: { punta: economia.punta, rendi: economia.rendi, saldo: economia.saldo }, log });
     // la chat della pagina dei colpi: i messaggi della chat di Twitch, girati a chi ha la pagina aperta
     this.colpiChat = creaChatColpi();
     setInterval(() => this.colpiChat.battito(), BATTITO_CHAT_COLPI).unref?.();
@@ -1283,16 +1303,23 @@ export class BotManager {
     // LA PRESENZA DI PEWPEWIFY (docs/COLPI.md, «La presenza»): la frase dello
     // streamer fa comparire in diretta il suo effetto col nome di chi l'ha
     // scritta, una volta per diretta, e conta nella serie delle presenze.
-    if (!msg.isSelf && streamers.get(login)?.settings?.colpi?.presenza?.attiva === true) {
+    // E le monete del canale: «!pew K7QX3» paga la mira di quel codice.
+    if (!msg.isSelf && streamers.get(login)?.settings?.colpi?.attivo === true) {
       try {
         const cfgColpi = this.colpi?.cfgDi(login);
-        if (cfgColpi && eFrasePresenza(cfgColpi, msg.text) && ePersona(login, msg.user)) {
+        const codice = cfgColpi ? codicePerMonete(cfgColpi, msg.text) : '';
+        if (codice) {
+          const r = this.colpi.daMonete(login, { codice, user: msg.user });
+          const t = testoColpi(login, 'monete-' + r.esito, '@' + (msg.display || msg.user), { ...r, moneta: nomeMoneta(login) });
+          if (t) parla(t);
+        } else if (cfgColpi?.presenza.attiva && eFrasePresenza(cfgColpi, msg.text) && ePersona(login, msg.user)) {
           const piattaforma = msg.piattaforma || 'twitch';
           const r = this.colpi.presenza(login, { chiave: piattaforma + ':' + (msg.userId || msg.user), nome: msg.display || msg.user,
             occasione: arrivi.occasioneDiretta(login, this._inizioTwitch(login)), lingua: linguaChat(login) });
+          if (r.esito === 'partita' && cfgColpi.presenza.monete > 0) economia.riceve(login, msg.user, cfgColpi.presenza.monete, { fonte: 'presenza' });
           if (r.esito === 'partita' || r.esito === 'gia') presenze.dichiara(login, msg.user);
         }
-      } catch (e) { log.debug(`#${login} presenza di Pewpewify:`, e?.message || e); }
+      } catch (e) { log.debug(`#${login} Pewpewify in chat:`, e?.message || e); }
     }
     this.brain.observe?.(msg);                             // apprendimento passivo (anche dai messaggi dello streamer)
     // amicizia GLOBALE: chi interagisce diventa piano piano "amico" del bot

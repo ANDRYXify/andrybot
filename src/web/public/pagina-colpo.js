@@ -32,6 +32,7 @@
     var m = (T.motivi || {})[r && r.motivo] || (T.motivi || {}).codice || '';
     return riempi(m, { n: r && r.fraSec ? r.fraSec : '' });
   }
+  function moneta() { return (dati && dati.moneta) || ''; }
   function prezzo(cent) {
     var v = (dati && dati.valuta) || 'EUR';
     try { return new Intl.NumberFormat(lingua, { style: 'currency', currency: v }).format(cent / 100); } catch (e) { return (cent / 100).toFixed(2) + ' ' + v; }
@@ -158,7 +159,30 @@
     if (v.prezzi.euro) p.appendChild(el('i', '', prezzo(v.prezzi.euro)));
     if (v.prezzi.punti) p.appendChild(el('i', '', riempi(T.puntiN, { n: numero(v.prezzi.punti) })));
     if (v.prezzi.bit) p.appendChild(el('i', '', riempi(T.bitN, { n: numero(v.prezzi.bit) })));
+    if (v.prezzi.monete) p.appendChild(el('i', '', riempi(T.moneteN, { n: numero(v.prezzi.monete), moneta: moneta() })));
     return p;
+  }
+
+  var filtro = '';
+  function categorie() {
+    var box = $('cp-cat');
+    var cat = (dati && dati.categorie) || [];
+    if (filtro && !cat.some(function (c) { return c.id === filtro; })) filtro = '';
+    box.textContent = '';
+    box.hidden = cat.length < 2;
+    if (box.hidden) { filtro = ''; return; }
+    [{ id: '', nome: T.tutti }].concat(cat).forEach(function (c) {
+      var b = el('button', '', c.nome || (T.cat || {})[c.id] || c.id);
+      b.type = 'button';
+      b.setAttribute('data-cat', c.id);
+      b.setAttribute('aria-pressed', filtro === c.id ? 'true' : 'false');
+      b.onclick = function () { filtro = c.id; categorie(); filtra(); };
+      box.appendChild(b);
+    });
+  }
+  function filtra() {
+    var bb = document.querySelectorAll('.cp-voce-box');
+    for (var i = 0; i < bb.length; i++) bb[i].hidden = !!filtro && bb[i].getAttribute('data-cat') !== filtro;
   }
 
   function voci() {
@@ -169,6 +193,7 @@
     vuoto.textContent = riempi(T.nessuno, { canale: canale });
     dati.voci.forEach(function (v) {
       var scatola = el('div', 'cp-voce-box');
+      scatola.setAttribute('data-cat', v.categoria || '');
       var b = el('button', 'cp-voce');
       b.type = 'button';
       b.setAttribute('aria-pressed', scelta && scelta.id === v.id ? 'true' : 'false');
@@ -192,6 +217,8 @@
       }
       box.appendChild(scatola);
     });
+    categorie();
+    filtra();
     $('cp-nome-l').hidden = !dati.conNome || !!io;
   }
 
@@ -203,6 +230,7 @@
     $('cp-p2').classList.remove('spento');
     strato.classList.add('attiva');
     strato.tabIndex = 0;
+    inVista(strato);
     var vecchia = strato.querySelector('.cp-ombra');
     if (vecchia) vecchia.remove();
     if (punto) disegna();
@@ -215,6 +243,12 @@
     $('cp-prova-qui').disabled = !(scelta && scelta.prova && punto && !protetto(punto.x, punto.y)) || !!mira;
   }
 
+  function inVista(el) {
+    var r = el.getBoundingClientRect();
+    if (r.top >= 0 && r.bottom <= innerHeight) return;
+    var ridotto = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    el.scrollIntoView({ block: 'nearest', behavior: ridotto ? 'auto' : 'smooth' });
+  }
   var fermaProva = null;
   function nomeFirma() {
     if (!dati || !dati.conNome) return '';
@@ -250,11 +284,7 @@
       if (fermaProva === fine) fermaProva = null;
     };
     fermaProva = fine;
-    var r = palco.getBoundingClientRect();
-    if (r.top < 0 || r.bottom > innerHeight) {
-      var ridotto = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
-      palco.scrollIntoView({ block: 'nearest', behavior: ridotto ? 'auto' : 'smooth' });
-    }
+    inVista(palco);
     strato.classList.add('in-prova');
     $('cp-solo-tu').hidden = false;
     if (pr.lancio) {
@@ -389,6 +419,16 @@
     }, function () { b.disabled = false; avviso((T.motivi || {}).rete, 'ko'); });
   }
 
+  function pagaMonete(b) {
+    b.disabled = true;
+    chiedi('/paga/' + mira.id, { mezzo: 'monete' }).then(function (r) {
+      if (r.ok) { leggi(); return; }
+      b.disabled = false;
+      if (r.errore === 'accesso') { io = null; accedi(); scriviSi(); }
+      avviso(riempi((T.motivi || {})[r.errore] || (T.motivi || {}).pagamento, { saldo: numero(r.saldo || 0), serve: numero(r.serve || 0) }), 'ko');
+    }, function () { b.disabled = false; avviso((T.motivi || {}).rete, 'ko'); });
+  }
+
   function chat() {
     var a = el('a', 'cp-b due', T.apriChat);
     a.href = 'https://www.twitch.tv/popout/' + encodeURIComponent(login) + '/chat';
@@ -439,7 +479,21 @@
         bb.appendChild(el('p', '', riempi(mira.mia ? T.bitIo : T.bit, { n: Math.max(0, pz.bit - (mira.versati || 0)), codice: mira.codice })));
         box.appendChild(bb);
       }
-      if (conCodice && (pz.bit > 0 || (pz.punti > 0 && v.premio))) { var cr = el('div', 'cp-righe'); cr.appendChild(chat()); box.appendChild(cr); }
+      if (conCodice && pz.monete > 0) {
+        var mm = el('div', 'cp-modo');
+        if (io) {
+          var pm = el('button', 'cp-b cp-paga-b', riempi(T.moneteIo, { n: numero(pz.monete), moneta: moneta() }));
+          pm.type = 'button';
+          pm.setAttribute('data-paga', 'monete');
+          pm.onclick = function () { pagaMonete(pm); };
+          mm.appendChild(pm);
+        } else {
+          mm.appendChild(el('p', '', riempi(T.monete, { n: numero(pz.monete), moneta: moneta(), comando: (dati && dati.comando) || 'pew', codice: mira.codice })));
+          if (accesso) mm.appendChild(el('p', 'cp-nota', T.moneteAccedi));
+        }
+        box.appendChild(mm);
+      }
+      if (conCodice && (pz.bit > 0 || (pz.punti > 0 && v.premio) || (pz.monete > 0 && !io))) { var cr = el('div', 'cp-righe'); cr.appendChild(chat()); box.appendChild(cr); }
     }
     var fine = el('div', 'cp-righe cp-modo');
     if (mira.stato === 'pagata') { racconta(); segui(); return; }

@@ -35,8 +35,17 @@ export function urlPaginaColpo(canale) {
   return config.pewHost ? `https://${config.pewHost}/${ch}` : `${config.baseUrl}/u/${ch}/colpo`;
 }
 
-export const METODI = Object.freeze(['euro', 'punti', 'bit']);
-export const LIMITI = Object.freeze({ voci: 20, zone: 8, nome: 40, chi: 25, attesaSec: [0, 600], alMinuto: [1, 60], scala: [20, 300], euroCent: [50, 50_000], punti: [1, 1_000_000], bit: [1, 100_000] });
+// Le monete sono quelle del canale (docs/ECONOMIA.md): si spendono dalla pagina
+// con l'accesso a Twitch, o in chat col comando e il codice, e tornano se il
+// colpo non compare.
+export const METODI = Object.freeze(['euro', 'punti', 'bit', 'monete']);
+export const LIMITI = Object.freeze({ voci: 20, zone: 8, nome: 40, chi: 25, attesaSec: [0, 600], alMinuto: [1, 60], scala: [20, 300], euroCent: [50, 50_000], punti: [1, 1_000_000], bit: [1, 100_000], monete: [1, 10_000_000], categorie: 10, categoria: 30 });
+// LE CATEGORIE DEL LISTINO (docs/COLPI.md, «Le categorie»): le decide lo
+// streamer, nome e ordine. Finche' non le tocca valgono queste, e un colpo che
+// non ne ha una sua va in quella del suo tipo. Un nome vuoto si legge nella
+// lingua di chi guarda.
+export const CATEGORIE_SERIE = Object.freeze(['lanci', 'adesivi', 'spaventi', 'media']);
+export const COMANDO_SERIE = 'pew';
 export const SCADENZA_MS = 15 * 60_000;
 // Niente 0/O, 1/I/L, 5/S, 2/Z: un codice si detta e si copia a mano.
 export const ALFABETO = 'ABCDEFGHJKMNPQRTUVWXY346789';
@@ -70,13 +79,21 @@ export function normalizza(cfg) {
       id, comando, nome: testo(v.nome, LIMITI.nome) || comando,
       euro: prezzo(v.euro, LIMITI.euroCent), punti: prezzo(v.punti, LIMITI.punti), bit: prezzo(v.bit, LIMITI.bit),
       scala: num(v.scala, LIMITI.scala, 100), attiva: v.attiva !== false,
+      monete: prezzo(v.monete, LIMITI.monete),
+      categoria: ID.test(String(v.categoria || '')) ? String(v.categoria) : '',
       premio: /^[0-9a-f-]{8,64}$/.test(String(v.premio || '')) ? String(v.premio) : '',
       premioCosto: num(v.premioCosto, [0, LIMITI.punti[1]], 0), premioNome: testo(v.premioNome, 45),
     });
   }
+  const categorie = normCategorie(o.categorie);
+  for (const v of voci) if (v.categoria && !categorie.some((c) => c.id === v.categoria)) v.categoria = '';
+  const comando = String(o.comando || '').toLowerCase().replace(/^!/, '');
   return {
     attivo: o.attivo === true,
     voci,
+    categorie,
+    // il comando per pagare in chat con le monete: «!pew K7QX3»
+    comando: COMANDO.test(comando) && comando.length <= 25 ? comando : COMANDO_SERIE,
     zone: (Array.isArray(o.zone) ? o.zone : []).map(zona).filter(Boolean).slice(0, LIMITI.zone),
     attesaSec: num(o.attesaSec, LIMITI.attesaSec, 30),
     alMinuto: num(o.alMinuto, LIMITI.alMinuto, 6),
@@ -99,6 +116,34 @@ export const PRESENZA = Object.freeze({
   // la frase sull'overlay quando lo streamer non la scrive, nella lingua della chat
   testi: Object.freeze({ it: '{nome} è presente', en: '{nome} is here', es: '{nome} está presente' }),
 });
+function normCategorie(c) {
+  if (!Array.isArray(c)) return CATEGORIE_SERIE.map((id) => ({ id, nome: '' }));
+  const out = [];
+  for (const x of c) {
+    if (out.length >= LIMITI.categorie || !x || typeof x !== 'object') continue;
+    const id = ID.test(String(x.id || '')) ? String(x.id) : '';
+    if (!id || out.some((y) => y.id === id)) continue;
+    const nome = testo(x.nome, LIMITI.categoria);
+    if (!nome && !CATEGORIE_SERIE.includes(id)) continue;
+    out.push({ id, nome });
+  }
+  return out;
+}
+// La categoria di un colpo: la sua, se c'e'; se no quella del suo tipo (lanci,
+// adesivi, spaventi, media), se lo streamer la tiene; se no la prima. Senza
+// categorie, nessuna. `tipo` e' uno dei CATEGORIE_SERIE.
+export function categoriaDi(cfg, voce, tipo) {
+  const cat = cfg?.categorie || [];
+  if (!cat.length) return '';
+  if (voce?.categoria && cat.some((c) => c.id === voce.categoria)) return voce.categoria;
+  return cat.some((c) => c.id === tipo) ? tipo : cat[0].id;
+}
+// Il comando delle monete in un messaggio: «!pew K7QX3» → 'K7QX3', se no ''.
+export function codicePerMonete(cfg, messaggio) {
+  const m = new RegExp(`^!${cfg?.comando || COMANDO_SERIE}\\s+(\\S+)\\s*$`, 'i').exec(String(messaggio || '').trim());
+  return m ? codiceIn(m[1]) : '';
+}
+
 const formaFrase = (t) => String(t ?? '').replace(/[\u0000-\u001f]/g, ' ').replace(/\s+/g, ' ').trim().toLowerCase();
 function normPresenza(p) {
   const o = p && typeof p === 'object' ? p : {};
@@ -114,6 +159,8 @@ function normPresenza(p) {
     scala: num(o.scala, LIMITI.scala, PRESENZA.scala),
     testo: testo(o.testo, PRESENZA.testo).includes('{nome}') ? testo(o.testo, PRESENZA.testo) : '',
     alMinuto: num(o.alMinuto, PRESENZA.alMinuto, PRESENZA.alMinutoDef),
+    // le monete del canale a chi si presenta (passano dalla porta dell'economia)
+    monete: num(o.monete, [0, 100_000], 0),
   };
 }
 export const eFrasePresenza = (cfg, messaggio) => !!cfg?.presenza?.attiva && formaFrase(messaggio) === cfg.presenza.frase;

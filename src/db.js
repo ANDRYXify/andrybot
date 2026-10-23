@@ -1352,6 +1352,8 @@ aggiungiColonna('conti_donazioni', 'prodotto', "TEXT NOT NULL DEFAULT ''");
 aggiungiColonna('conti_donazioni', 'nota', "TEXT NOT NULL DEFAULT ''");
 aggiungiColonna('conti_donazioni', 'rimborsi', 'INTEGER NOT NULL DEFAULT 0');
 aggiungiColonna('colpi', 'spettatore', "TEXT NOT NULL DEFAULT ''");
+// pagata con le monete del canale: quali lotti sono stati spesi, per renderli tali e quali
+aggiungiColonna('colpi', 'ricevuta', "TEXT NOT NULL DEFAULT ''");
 aggiungiColonna('donazioni', 'riferimento', "TEXT NOT NULL DEFAULT ''");
 aggiungiColonna('donazioni', 'rimborsata_at', 'INTEGER NOT NULL DEFAULT 0');
 aggiungiColonna('donazioni', 'media', "TEXT NOT NULL DEFAULT ''");
@@ -2749,7 +2751,13 @@ export const registroColpi = {
           Math.round(Number(m.scala) || 100), String(m.chi || '').slice(0, 60), String(m.riferimento).slice(0, 120), ora, ora, ora).changes > 0;
     } catch (e) { if (/UNIQUE/.test(String(e?.message))) return false; throw e; }
   },
-  _leggi(r) { if (!r) return null; let prezzi = {}; try { prezzi = JSON.parse(r.prezzi || '{}'); } catch { prezzi = {}; } return { ...r, prezzi }; },
+  _leggi(r) {
+    if (!r) return null;
+    let prezzi = {}, ricevuta = null;
+    try { prezzi = JSON.parse(r.prezzi || '{}'); } catch { prezzi = {}; }
+    try { ricevuta = r.ricevuta ? JSON.parse(r.ricevuta) : null; } catch { ricevuta = null; }
+    return { ...r, prezzi, ricevuta };
+  },
   get(id) { return this._leggi(db.prepare('SELECT * FROM colpi WHERE id=?').get(String(id))); },
   getDi(login, id) { return this._leggi(db.prepare('SELECT * FROM colpi WHERE id=? AND login=?').get(String(id), String(login).toLowerCase())); },
   // la mira aperta con quel codice: per i Bit e i punti, che arrivano col codice.
@@ -2772,9 +2780,10 @@ export const registroColpi = {
   // pagata si esce solo in due modi: l'overlay l'ha mostrata, o e' rimborsata.
   // `ancheScaduta`: un pagamento in euro che arriva comunque vale piu' della
   // scadenza della mira (i soldi ci sono: o il colpo, o il rimborso).
-  paga(id, metodo, riferimento = '', ora = now(), premio = '', ancheScaduta = false) {
-    return db.prepare(`UPDATE colpi SET stato='pagata', metodo=?, pagata_at=?, premio=?, riferimento=CASE WHEN ?='' THEN riferimento ELSE ? END WHERE id=? AND stato IN ('attesa'${ancheScaduta ? ",'scaduta'" : ''})`)
-      .run(String(metodo), ora, String(premio).slice(0, 200), String(riferimento), String(riferimento).slice(0, 120), String(id)).changes > 0;
+  // `ricevuta`: con le monete, i lotti spesi (per il rimborso).
+  paga(id, metodo, riferimento = '', ora = now(), premio = '', ancheScaduta = false, ricevuta = null) {
+    return db.prepare(`UPDATE colpi SET stato='pagata', metodo=?, pagata_at=?, premio=?, ricevuta=?, riferimento=CASE WHEN ?='' THEN riferimento ELSE ? END WHERE id=? AND stato IN ('attesa'${ancheScaduta ? ",'scaduta'" : ''})`)
+      .run(String(metodo), ora, String(premio).slice(0, 200), ricevuta ? JSON.stringify(ricevuta) : '', String(riferimento), String(riferimento).slice(0, 120), String(id)).changes > 0;
   },
   tentata(id, ora = now()) { db.prepare("UPDATE colpi SET tentata_at=? WHERE id=? AND stato='pagata'").run(ora, String(id)); },
   // pagata → sparata: l'overlay ha detto di averla mostrata

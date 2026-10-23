@@ -3136,7 +3136,8 @@ body.studio-finestra .studio-largo { --lw: 100%; width: 100%; margin-left: 0; }
 body.in-studio #anime-sfondo::after, body.tel-aperta #anime-sfondo::after, body.studio-live #anime-sfondo::after { animation: none; }
 
 .cl-voci { display: grid; gap: .6rem; }
-.cl-voce { display: grid; grid-template-columns: minmax(10rem, 2fr) minmax(8rem, 1.5fr) repeat(4, minmax(4.5rem, 1fr)) auto auto; gap: .5rem; align-items: end; padding: .6rem; border: 1px solid var(--border); border-radius: var(--r-m); background: var(--surface-2); }
+.cl-voce { display: grid; grid-template-columns: repeat(6, minmax(4.5rem, 1fr)) auto; gap: .5rem; align-items: end; padding: .6rem; border: 1px solid var(--border); border-radius: var(--r-m); background: var(--surface-2); }
+.cl-eff, .cl-nome, .cl-cat-sel { grid-column: span 2; }
 .cl-c { display: grid; gap: .2rem; font-size: .8rem; color: var(--testo-2); min-width: 0; }
 .cl-c input, .cl-c select { width: 100%; min-width: 0; }
 .cl-acc { white-space: nowrap; }
@@ -3144,7 +3145,9 @@ body.in-studio #anime-sfondo::after, body.tel-aperta #anime-sfondo::after, body.
 .cl-premio:empty { display: none; }
 @media (max-width: 760px) {
   .cl-voce { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .cl-eff, .cl-nome { grid-column: 1 / -1; }
+  .cl-eff, .cl-nome, .cl-cat-sel { grid-column: 1 / -1; }
+  .cl-via { order: 1; justify-self: end; }
+  .cl-premio { order: 2; }
 }
 .cl-quadro { position: relative; aspect-ratio: 16 / 9; max-width: 40rem; border: 1px dashed var(--border-2); border-radius: var(--r-s); background: var(--surface-2); cursor: crosshair; touch-action: none; user-select: none; }
 .cl-zona { position: absolute; padding: 0; border: 1px solid var(--acc-bordo); border-radius: 2px; cursor: pointer;
@@ -3153,6 +3156,9 @@ body.in-studio #anime-sfondo::after, body.tel-aperta #anime-sfondo::after, body.
 @media (hover: hover) { .cl-zona:hover { border-color: var(--rosso); } }
 .cl-zona.bozza { pointer-events: none; }
 .cl-quadro-punto { touch-action: manipulation; }
+.cl-cat { display: grid; gap: .4rem; max-width: 32rem; }
+.cl-cat-riga { display: flex; align-items: center; gap: .4rem; }
+.cl-cat-riga input { flex: 1; min-width: 0; }
 .cl-quadro-punto .cl-zona { pointer-events: none; cursor: default; }
 .cl-quadro-punto:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
 .cl-punto { position: absolute; width: 22px; height: 22px; transform: translate(-50%, -50%); border: 2px solid var(--acc); border-radius: 50%; background: color-mix(in srgb, var(--acc) 25%, transparent); pointer-events: none; }

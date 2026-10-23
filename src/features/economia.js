@@ -109,6 +109,7 @@ export function scadenzaAlleVecchie(channel, durata, ora = Date.now()) {
 // Le prime che scadono: { scade, quanti }, o null se nessuna scade.
 export const primaScadenza = (channel, user) => points.prossimaScadenza(norm(channel), user);
 export const rendi = (channel, user, ricevuta) => points.rendi(norm(channel), user, ricevuta);
+export const saldo = (channel, user) => points.get(norm(channel), norm(user));
 
 // ── per giocare bisogna esserci ─────────────────────────────────────────────
 //

@@ -47,9 +47,9 @@
 //                                                   lancio spostato, lancio che non dice «visto»,
 //                                                   anteprima che ignora il punto, anteprima che
 //                                                   non dice di essere un'anteprima, green screen
-//                                                   che non toglie il verde;
+//                                                   che non toglie il verde, categoria che non filtra;
 //                                                   li vuole tutti rossi)
-//      node scripts/verifica-colpi.mjs --rompi=N   (solo il difetto N, da 1 a 15: deve vedersi da solo)
+//      node scripts/verifica-colpi.mjs --rompi=N   (solo il difetto N, da 1 a 16: deve vedersi da solo)
 
 import './_dati-usa-e-getta.mjs';
 import { apriSito, apriBrowser, overlayFinto } from './_sito.mjs';
@@ -58,6 +58,7 @@ const ROMPI = Number((process.argv.find((a) => a.startsWith('--rompi=')) || '').
 const SELFTEST = process.argv.includes('--selftest') || ROMPI > 0;
 const { registroColpi, effects: effectsDb, streamers } = await import('../src/db.js');
 const { creaServizioColpi } = await import('../src/features/colpi-servizio.js');
+const economia = await import('../src/features/economia.js');
 const { creaPortaColpi } = await import('../src/features/colpi-porta.js');
 const { htmlPaginaColpo } = await import('../src/features/colpi-pagina.js');
 const { EffectsEngine } = await import('../src/features/effects.js');
@@ -80,6 +81,7 @@ const DIFETTI = [
   ['pagina-colpo.js', 'var pp = p || { x: 50, y: 50 };', 'var pp = { x: 50, y: 50 };'],
   ['pagina-colpo.js', "    $('cp-solo-tu').hidden = false;\n", ''],
   ['scontorno.js', 'd[i + 3] = 0;', 'd[i + 3] = 255;'],
+  ['pagina-colpo.js', "bb[i].hidden = !!filtro && bb[i].getAttribute('data-cat') !== filtro;", 'bb[i].hidden = false;'],
 ];
 const SVG = '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="200" viewBox="0 0 400 200"><rect width="400" height="200" rx="40" fill="#e5484d"/></svg>';
 
@@ -90,7 +92,7 @@ streamers.setSettings(LOGIN, {
     presenza: { attiva: true, comando: 'pomodoro', x: 12, y: 30, scala: 100 }, voci: [
     { comando: 'pomodoro', nome: 'Pomodoro', euro: 200, punti: 500, bit: 100, scala: 120 },
     { comando: 'festa', nome: 'Festa', bit: 50 },
-    { comando: 'tirapomodoro', nome: 'Pomodoro vero', bit: 30, scala: 150 },
+    { comando: 'tirapomodoro', nome: 'Pomodoro vero', bit: 30, monete: 40, scala: 150 },
     { comando: 'ridi', nome: 'Risata', bit: 20 },
   ] },
 });
@@ -109,7 +111,9 @@ const mondo = { live: true, pronto: 0, visti: [], io: null, scritti: [], flussi:
 const chat = creaChatColpi();
 const pronto = () => Date.now() - mondo.pronto < 45_000;
 const servizio = creaServizioColpi({ registro: registroColpi, effects: motore, effettoDi: (l, c) => effectsDb.get(l, c),
-  impostazioni: (l) => streamers.get(l)?.settings?.colpi, inOnda: () => mondo.live, overlay: pronto });
+  impostazioni: (l) => streamers.get(l)?.settings?.colpi, inOnda: () => mondo.live, overlay: pronto,
+  monete: { punta: economia.punta, rendi: economia.rendi, saldo: economia.saldo } });
+economia.dai(LOGIN, 'marta', 500, 'staff');
 const pagamenti = [];
 const porta = creaPortaColpi({ servizio, registro: registroColpi, streamers, effettoDi: (l, c) => effectsDb.get(l, c), mezziEuro: () => ['stripe'],
   apriPagamento: async (mezzo, d) => { const id = 'cs_finto_' + (pagamenti.length + 1); pagamenti.push({ id, ...d }); return { url: `/finto-pagamento/${id}`, id }; },
@@ -146,7 +150,7 @@ const rotte = (req, res, q) => {
   if (q === base + '/chat' && req.method === 'POST') { corpo(req).then((b) => { if (!mondo.io) return json(res, 401, { errore: 'accesso' }); mondo.scritti.push(b.testo); json(res, 200, { ok: true }); }); return true; }
   if (q === base + '/esci' && req.method === 'POST') { mondo.io = null; json(res, 200, { ok: true }); return true; }
   if (q.startsWith(base + '/stato/')) { const m = porta.stato(LOGIN, q.slice(base.length + 7)); json(res, m ? 200 : 404, m || { errore: 'mira' }); return true; }
-  if (q.startsWith(base + '/paga/') && req.method === 'POST') { corpo(req).then(async (b) => json(res, 200, await porta.paga(LOGIN, q.slice(base.length + 6), b.mezzo))); return true; }
+  if (q.startsWith(base + '/paga/') && req.method === 'POST') { corpo(req).then(async (b) => json(res, 200, await porta.paga(LOGIN, q.slice(base.length + 6), b.mezzo, mondo.io))); return true; }
   if (q.startsWith('/finto-pagamento/')) { res.writeHead(302, { location: `${base}?dona=${q.slice(17)}` }); res.end(); return true; }
   return false;
 };
@@ -176,6 +180,9 @@ async function nuova(viewport) {
 }
 // un clic nel punto (x%, y%) dello strato di mira
 const tocca = async (p, x, y) => {
+  // come una persona: il quadro prima si porta in vista (e si aspetta che la pagina smetta di scorrere)
+  await p.locator('#cp-mira').scrollIntoViewIfNeeded();
+  await p.waitForTimeout(400);
   const r = await p.locator('#cp-mira').boundingBox();
   await p.mouse.click(r.x + r.width * x / 100, r.y + r.height * y / 100);
 };
@@ -318,6 +325,38 @@ try {
   await p.locator('#cp-io button').click();
   await p.waitForFunction(() => document.getElementById('cp-scrivi').hidden, null, { timeout: 5000 }).catch(() => {});
   dice(mondo.io === null && await p.locator('#cp-scrivi').isHidden() && !!(await p.getAttribute('#cp-io a', 'href')), '«Esci» chiude l\'accesso e la pagina torna a leggere soltanto');
+  });
+
+  // LE CATEGORIE E LE MONETE (docs/COLPI.md): il listino si divide per tipo (lo
+  // streamer non le ha toccate), e con l'accesso un colpo si paga con le monete
+  // del canale, che si tolgono quando paga; senza, la pagina dice il comando
+  await fase('categorie e monete', async () => {
+  mondo.io = null;
+  await daCapo();
+  const chips = await p.locator('#cp-cat button').allTextContents();
+  dice(chips.join('|') === 'Tutti|Lanci|Adesivi|Immagini e video', `le categorie di serie che hanno colpi, nella lingua di chi guarda (${chips.join(', ')})`);
+  await p.locator('#cp-cat button', { hasText: 'Adesivi' }).click();
+  const viste = await p.evaluate(() => [...document.querySelectorAll('.cp-voce-box')].filter((b) => !b.hidden).map((b) => b.querySelector('b').textContent));
+  dice(viste.join() === 'Risata', `toccata una categoria si vedono solo i suoi colpi (${viste.join(', ')})`);
+  await p.locator('#cp-cat button', { hasText: 'Tutti' }).click();
+  await p.locator('.cp-voce', { hasText: 'Pomodoro vero' }).click();
+  await tocca(p, 20, 20);
+  await p.locator('#cp-conferma').click();
+  await p.waitForSelector('.cp-codice output', { timeout: 5000 });
+  const cod = (await p.locator('.cp-codice output').textContent()).trim();
+  dice((await p.locator('#cp-paga').textContent()).includes(`!pew ${cod}`), 'senza accesso la pagina dice il comando da scrivere in chat, col codice');
+  mondo.io = { id: '888', login: 'marta', nome: 'Marta' };
+  await daCapo();
+  await p.locator('.cp-voce', { hasText: 'Pomodoro vero' }).click();
+  await tocca(p, 20, 20);
+  await p.locator('#cp-conferma').click();
+  await p.waitForSelector('[data-paga="monete"]', { timeout: 5000 });
+  const prima = economia.saldo(LOGIN, 'marta');
+  await p.locator('[data-paga="monete"]').click();
+  await o.waitForFunction(() => document.querySelector('.lancio')?.dataset.impatti, null, { timeout: 8000 }).catch(() => {});
+  dice(prima - economia.saldo(LOGIN, 'marta') === 40 && await o.locator('.lancio').count() > 0, `con l'accesso «Paga» toglie le monete e il colpo parte (${prima} → ${economia.saldo(LOGIN, 'marta')})`);
+  await o.waitForFunction(() => !document.querySelector('.lancio'), null, { timeout: 15000 }).catch(() => {});
+  mondo.io = null;
   });
 
   // un LANCIO (docs/LANCI.md): la pagina mostra il suo disegno, l'ombra e' grande

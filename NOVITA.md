@@ -55,6 +55,9 @@ comandi diversi da quelli della riga italiana.
   en> Whoever is there says so in chat and shows up on screen: you pick the effect, the spot and the phrase in the Pew tab. Once per stream, so a raid doesn't cover the stream.
   es> La presencia en directo
   es> Quien está lo dice en el chat y se ve en pantalla: el efecto, el punto y la frase los eliges en la pestaña Pew. Una vez por directo, así una raid no tapa el directo.
+- Il listino di Pewpewify si divide in categorie che scegli tu, e un colpo si paga anche con le monete del canale: dalla pagina o in chat con !pew e il codice. [vai: colpi]
+  en: The Pewpewify price list is split into categories you choose, and a hit can also be paid with your channel coins: from the page or in chat with !pew and the code.
+  es: La lista de Pewpewify se divide en categorías que eliges tú, y un golpe se paga también con las monedas del canal: desde la página o en el chat con !pew y el código.
 - Sulla pagina di Pewpewify ogni colpo si guarda prima di mandarlo: al centro della diretta, o nel punto mirato con «Prova qui». L'anteprima la vede solo chi guarda. [vai: colpi]
   en: On the Pewpewify page every hit can be watched before sending it: in the middle of the stream, or at the aimed spot with «Prova qui». Only the viewer sees the preview.
   es: En la página de Pewpewify cada golpe se ve antes de mandarlo: en el centro del directo, o en el punto apuntado con «Prova qui». La vista previa solo la ve quien mira.

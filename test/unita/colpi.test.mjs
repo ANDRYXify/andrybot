@@ -62,8 +62,14 @@ process.on('exit', () => usaEGetta.pulisci());
 const { registroColpi } = await import('../../src/db.js');
 const { creaServizioColpi, MIRABILE } = await import('../../src/features/colpi-servizio.js');
 
-function banco({ cfg, live = true, overlay = true, rimborso = { ok: true } } = {}) {
+function banco({ cfg, live = true, overlay = true, rimborso = { ok: true }, borse = null } = {}) {
   let adesso = 1_000_000;
+  // le monete del canale, finte ma con le regole vere: tutte o niente, e la ricevuta torna com'era
+  const monete = borse ? {
+    punta: (ch, u, n) => { const k = ch + '|' + u; if ((borse[k] || 0) < n) return null; borse[k] -= n; return [{ scade: 0, quanti: n }]; },
+    rendi: (ch, u, r) => { const k = ch + '|' + u; borse[k] = (borse[k] || 0) + r.reduce((t, x) => t + x.quanti, 0); },
+    saldo: (ch, u) => borse[ch + '|' + u] || 0,
+  } : null;
   const sparati = [], rimborsi = [], premi = [];
   const stato = { live, overlay };
   const effetti = { pomodoro: { tipo: 'immagine' }, coriandoli: { tipo: 'disegno' }, sfondo: { tipo: 'video', schermo: 'riempi' } };
@@ -76,6 +82,7 @@ function banco({ cfg, live = true, overlay = true, rimborso = { ok: true } } = {
     overlay: () => stato.overlay,
     rimborsaEuro: async (login, id) => { rimborsi.push({ login, id }); return rimborso; },
     chiudiPremio: async (login, premio, riscatto, st) => { premi.push({ login, v: [premio, riscatto, st] }); return true; },
+    monete,
     ora: () => adesso,
   });
   // la ronda passa su tutto il registro, che le prove condividono: ogni prova
@@ -95,7 +102,7 @@ test('si mira solo dal vivo, su un effetto che si posa in un punto, fuori dalle 
   assert.equal(s.mira(c, { voce: 'pomodoro', x: 80, y: 80 }).motivo, 'protetta');
   const ok = s.mira(c, { voce: 'pomodoro', x: 25.5, y: 40, chi: 'Marta', chiave: 'ip1' });
   assert.equal(ok.ok, true);
-  assert.deepEqual([ok.mira.x, ok.mira.y, ok.mira.chi, ok.mira.prezzi], [25.5, 40, 'Marta', { euro: 200, punti: 500, bit: 100 }]);
+  assert.deepEqual([ok.mira.x, ok.mira.y, ok.mira.chi, ok.mira.prezzi], [25.5, 40, 'Marta', { euro: 200, punti: 500, bit: 100, monete: 0 }]);
   assert.ok(MIRABILE({ tipo: 'video' }) && !MIRABILE({ tipo: 'immagine', schermo: 'intero' }));
 });
 
@@ -402,10 +409,10 @@ const { eFrasePresenza, frasePresenza, PRESENZA } = await import('../../src/feat
 const { PRESENZA_MS, RINVIO_MS: RINVIO } = await import('../../src/features/colpi-servizio.js');
 
 test('la presenza nel listino: accesa solo con un effetto, la frase intera senza maiuscole e spazi, il nome nella scritta', () => {
-  assert.deepEqual(normalizza({}).presenza, { attiva: false, frase: '!pew presente', comando: '', x: PRESENZA.x, y: PRESENZA.y, scala: 100, testo: '', alMinuto: 6 });
+  assert.deepEqual(normalizza({}).presenza, { attiva: false, frase: '!pew presente', comando: '', x: PRESENZA.x, y: PRESENZA.y, scala: 100, testo: '', alMinuto: 6, monete: 0 });
   assert.equal(normalizza({ presenza: { attiva: true } }).presenza.attiva, false, 'senza effetto non si accende');
   const c = normalizza({ presenza: { attiva: true, comando: '!Ciao', frase: '  Eccomi   QUI ', testo: 'senza nome', x: 140, y: -3, scala: 9999, alMinuto: 0 } });
-  assert.deepEqual(c.presenza, { attiva: true, frase: 'eccomi qui', comando: 'ciao', x: 100, y: 0, scala: 300, testo: '', alMinuto: 1 });
+  assert.deepEqual(c.presenza, { attiva: true, frase: 'eccomi qui', comando: 'ciao', x: 100, y: 0, scala: 300, testo: '', alMinuto: 1, monete: 0 });
   assert.equal(eFrasePresenza(c, 'ECCOMI    qui'), true);
   assert.equal(eFrasePresenza(c, 'ciao eccomi qui'), false, 'la frase vale da sola');
   assert.equal(eFrasePresenza(normalizza({ presenza: { comando: 'ciao' } }), '!pew presente'), false, 'spenta non risponde');
@@ -504,4 +511,105 @@ test('l\'anteprima della pagina: quello che riceverebbe l\'overlay, senza la sua
   assert.equal(p.anteprima(c, 'tiro', 'suono'), 'urlo.ogg');
   assert.equal(p.anteprima(c, 'tiromuto', 'suono'), null);
   assert.equal(p.anteprima(c, 'clip', 'suono'), null);
+});
+
+const { categoriaDi, codicePerMonete, CATEGORIE_SERIE } = await import('../../src/features/colpi.js');
+const { CONSEGNA_MS } = await import('../../src/features/colpi-servizio.js');
+
+test('le categorie: quelle di serie finche\' lo streamer non le tocca, poi le sue, nel suo ordine', () => {
+  assert.deepEqual(normalizza({}).categorie.map((c) => c.id), CATEGORIE_SERIE);
+  const c = normalizza({ categorie: [{ id: 'cibo', nome: ' Cibo ' }, { id: 'adesivi', nome: '' }, { id: 'cibo', nome: 'doppia' }, { id: 'x y', nome: 'id storto' }, { id: 'vuota', nome: '' }],
+    voci: [{ comando: 'a', categoria: 'cibo' }, { comando: 'b', categoria: 'sparita' }] });
+  assert.deepEqual(c.categorie, [{ id: 'cibo', nome: 'Cibo' }, { id: 'adesivi', nome: '' }], 'senza doppioni, ids veri, e un nome vuoto solo per quelle di serie');
+  assert.deepEqual(c.voci.map((v) => v.categoria), ['cibo', ''], 'una categoria che non c\'e\' piu\' si scorda');
+  assert.equal(categoriaDi(c, c.voci[0], 'lanci'), 'cibo', 'la sua, se c\'e\'');
+  assert.equal(categoriaDi(c, c.voci[1], 'adesivi'), 'adesivi', 'se no quella del suo tipo');
+  assert.equal(categoriaDi(c, c.voci[1], 'spaventi'), 'cibo', 'se no la prima');
+  assert.equal(categoriaDi(normalizza({ categorie: [] }), c.voci[0], 'lanci'), '', 'senza categorie, nessuna');
+  assert.equal(normalizza({ categorie: Array.from({ length: 20 }, (_, i) => ({ id: 'c' + i, nome: 'C' + i })) }).categorie.length, 10);
+});
+
+test('il comando delle monete: «!pew CODICE», da solo; lo streamer lo puo\' chiamare come vuole', () => {
+  const c = normalizza({});
+  assert.equal(c.comando, 'pew');
+  assert.equal(codicePerMonete(c, '!PEW k7qx3'), 'K7QX3');
+  assert.equal(codicePerMonete(c, '!pew k7qx3 dai'), '', 'solo il comando e il codice');
+  assert.equal(codicePerMonete(c, '!pew presente'), '', 'una parola non e\' un codice');
+  assert.equal(codicePerMonete(normalizza({ comando: '!Tira' }), '!tira K7QX3'), 'K7QX3');
+  assert.equal(normalizza({ comando: 'con spazi' }).comando, 'pew');
+});
+
+function bancoMonete(borse) {
+  const cfg = { attivo: true, attesaSec: 0, alMinuto: 30, voci: [{ comando: 'pomodoro', monete: 300, bit: 100 }, { id: 'solobit', comando: 'pomodoro', bit: 50 }] };
+  return banco({ cfg, borse });
+}
+
+test('le monete del canale pagano un colpo: tutte o niente, una volta sola, e prima si guarda che possa comparire', () => {
+  const borse = {};
+  const b = bancoMonete(borse);
+  const c = login();
+  borse[c + '|marta'] = 500;
+  const m = b.s.mira(c, { voce: 'pomodoro', x: 10, y: 10, chiave: 'a' }).mira;
+  assert.deepEqual(b.s.daMonete(c, { codice: m.codice, user: 'Luca' }), { esito: 'pochi', serve: 300, saldo: 0, nome: 'pomodoro' }, 'chi non ne ha abbastanza non paga niente');
+  b.stato.overlay = false;
+  assert.equal(b.s.daMonete(c, { codice: m.codice, user: 'marta' }).esito, 'fermo');
+  assert.equal(borse[c + '|marta'], 500, 'a colpo fermo le monete non si toccano');
+  b.stato.overlay = true;
+  assert.deepEqual(b.s.daMonete(c, { codice: m.codice, user: 'marta' }), { esito: 'pagato', nome: 'pomodoro', monete: 300 });
+  assert.equal(borse[c + '|marta'], 200);
+  const r = registroColpi.get(m.id);
+  assert.deepEqual([r.stato, r.metodo, r.riferimento, r.ricevuta], ['pagata', 'monete', 'monete:marta', [{ scade: 0, quanti: 300 }]]);
+  assert.equal(b.di(c).sparati.length, 1, 'parte subito');
+  assert.equal(b.s.daMonete(c, { id: m.id, user: 'marta' }).esito, 'sconosciuto', 'una mira gia\' pagata non si ripaga');
+  assert.equal(borse[c + '|marta'], 200);
+  const solo = b.s.mira(c, { voce: 'solobit', x: 10, y: 10, chiave: 'b' }).mira;
+  assert.equal(b.s.daMonete(c, { id: solo.id, user: 'marta' }).esito, 'sconosciuto', 'un colpo senza prezzo in monete non si paga in monete');
+  const euro = b.s.mira(c, { voce: 'pomodoro', x: 10, y: 10, chiave: 'c' }).mira;
+  registroColpi.lega(euro.id, 'stripe:cs_aperto');
+  assert.equal(b.s.daMonete(c, { id: euro.id, user: 'marta' }).esito, 'gia', 'con un pagamento in euro aperto, no');
+  assert.equal(banco({ cfg: { attivo: true, voci: [{ comando: 'pomodoro', monete: 1 }] } }).s.daMonete(c, { id: euro.id, user: 'marta' }).esito, 'spento', 'senza le monete del canale, niente');
+});
+
+test('un colpo pagato in monete che non compare le rende tali e quali; uno visto no', async () => {
+  const borse = {};
+  const b = bancoMonete(borse);
+  const c = login();
+  borse[c + '|marta'] = 1000;
+  const a = b.s.mira(c, { voce: 'pomodoro', x: 10, y: 10, chiave: 'a' }).mira;
+  const v = b.s.mira(c, { voce: 'pomodoro', x: 20, y: 10, chiave: 'b' }).mira;
+  b.s.daMonete(c, { id: a.id, user: 'marta' });
+  b.s.daMonete(c, { id: v.id, user: 'marta' });
+  assert.equal(borse[c + '|marta'], 400);
+  assert.equal(await b.s.visto(c, v.id), true);
+  b.avanti(CONSEGNA_MS + 1);
+  await b.s.ronda();
+  assert.deepEqual([registroColpi.get(a.id).stato, registroColpi.get(v.id).stato], ['rimborsata', 'sparata']);
+  assert.equal(borse[c + '|marta'], 700, 'tornano solo quelle del colpo che non si e\' visto');
+  await b.s.ronda();
+  assert.equal(borse[c + '|marta'], 700, 'e una volta sola');
+});
+
+test('la pagina: le categorie che hanno colpi, nell\'ordine dello streamer; le monete solo con l\'accesso', async () => {
+  const borse = {};
+  const cfg = { attivo: true, attesaSec: 0, alMinuto: 30, categorie: [{ id: 'media', nome: '' }, { id: 'adesivi', nome: 'Faccine' }, { id: 'vuota', nome: 'Vuota' }],
+    voci: [{ comando: 'pomodoro', monete: 300 }, { comando: 'ridi', bit: 20 }, { comando: 'tiro', bit: 30, categoria: 'adesivi' }] };
+  const b = banco({ cfg, borse });
+  const c = login();
+  borse[c + '|marta'] = 300;
+  const effetti = { pomodoro: { tipo: 'immagine', file: 'p.png' }, ridi: { tipo: 'lancio', disegno: JSON.stringify({ oggetto: 'risata' }) }, tiro: { tipo: 'lancio', disegno: JSON.stringify({ oggetto: 'pomodoro' }) } };
+  const p = creaPortaColpi({ servizio: b.s, registro: registroColpi, streamers: { get: () => ({ settings: { colpi: cfg, nomeMonete: 'Gemme' } }) },
+    effettoDi: (l, k) => effetti[k] || null, mezziEuro: () => [], apriPagamento: async () => ({}), inOnda: () => true, overlay: () => true, ora: b.ora });
+  const d = p.dati(c);
+  assert.deepEqual(d.categorie, [{ id: 'media', nome: '' }, { id: 'adesivi', nome: 'Faccine' }], 'senza quelle vuote');
+  assert.deepEqual(d.voci.map((v) => [v.id, v.categoria]), [['pomodoro', 'media'], ['ridi', 'adesivi'], ['tiro', 'adesivi']], 'un adesivo va con gli adesivi, un lancio scelto dallo streamer dove dice lui');
+  assert.deepEqual([d.voci[0].metodi, d.voci[0].prezzi.monete, d.moneta, d.comando], [['monete'], 300, 'Gemme', 'pew']);
+  const m = p.mira(c, { voce: 'pomodoro', x: 10, y: 10 }, 'k', { id: '42', nome: 'Marta' }).mira;
+  assert.deepEqual(await p.paga(c, m.id, 'monete', null), { errore: 'accesso' }, 'senza accesso non si sa di chi sono le monete');
+  assert.deepEqual(await p.paga(c, m.id, 'monete', { id: '43', login: 'altro' }), { errore: 'mira' }, 'la mira di un altro no');
+  assert.deepEqual(await p.paga(c, m.id, 'monete', { id: '42', login: 'marta' }), { ok: true });
+  assert.equal(borse[c + '|marta'], 0);
+  assert.equal(p.stato(c, m.id).stato, 'pagata');
+  const senza = creaPortaColpi({ servizio: banco({ cfg }).s, registro: registroColpi, streamers: { get: () => ({ settings: { colpi: cfg } }) },
+    effettoDi: (l, k) => effetti[k] || null, mezziEuro: () => [], apriPagamento: async () => ({}), inOnda: () => true, overlay: () => true, ora: b.ora });
+  assert.equal(senza.dati(c).voci.some((v) => v.id === 'pomodoro'), false, 'senza le monete del canale un colpo solo in monete non si offre');
 });

@@ -30,6 +30,8 @@ export const T = {
     bit: 'Con i Bit: in chat fai un Cheer di {n} Bit con il codice nel messaggio, per esempio «Cheer{n} {codice}». Il cheer si vede in chat: è Twitch.',
     apriChat: 'Apri la chat', puntiN: '{n} punti', bitN: '{n} Bit', ricomincia: 'Un altro colpo',
     vedi: 'Guarda', vediCome: 'Guarda come compare: {nome}', prova: 'Prova qui', soloTu: 'Anteprima: la vedi solo tu', tuoNome: 'Il tuo nome',
+    moneteN: '{n} {moneta}', moneteIo: 'Paga {n} {moneta}', monete: 'Con le {moneta}: in chat scrivi «!{comando} {codice}». Te ne servono {n}.', moneteAccedi: 'Oppure accedi con Twitch e paga da qui.',
+    tutti: 'Tutti', categorie: 'Categorie', cat: { lanci: 'Lanci', adesivi: 'Adesivi', spaventi: 'Spaventi', media: 'Immagini e video' },
     chat: 'Chat', chatVuota: 'La chat è tranquilla: i messaggi nuovi compaiono qui.', chatScrivi: 'Scrivi in chat', chatInvia: 'Invia',
     chatFuori: 'La chat si legge da qui. Per scrivere, accedi con Twitch.', chatNonInviato: 'Twitch non ha mandato il messaggio: {motivo}',
     accedi: 'Accedi con Twitch', esci: 'Esci', sei: 'Sei {nome}',
@@ -49,6 +51,7 @@ export const T = {
       protetta: 'Quel punto è protetto: scegline un altro.', punto: 'Quel punto è fuori dalla diretta.', attesa: 'Hai appena mirato: riprova fra {n} s.',
       troppi: 'Troppi colpi in questo minuto: riprova fra poco.', codice: 'Qualcosa non ha funzionato: riprova.', rete: 'La connessione non risponde: riprova.',
       pagamento: 'Il pagamento non si apre in questo momento: riprova fra poco.', gia: 'Il pagamento di questa mira è già aperto.',
+      pochi: 'Non ti bastano: ne hai {saldo}, ne servono {serve}.', accesso: 'Per pagare con le monete accedi con Twitch.',
     },
     piede: 'I pagamenti vanno a {canale}.', privacy: 'Privacy',
   },
@@ -67,6 +70,8 @@ export const T = {
     bit: 'With Bits: cheer {n} Bits in chat with the code in the message, for example «Cheer{n} {codice}». The cheer shows in chat: that\'s Twitch.',
     apriChat: 'Open chat', puntiN: '{n} points', bitN: '{n} Bits', ricomincia: 'Another hit',
     vedi: 'Watch', vediCome: 'Watch how it shows up: {nome}', prova: 'Try it here', soloTu: 'Preview: only you can see it', tuoNome: 'Your name',
+    moneteN: '{n} {moneta}', moneteIo: 'Pay {n} {moneta}', monete: 'With {moneta}: type «!{comando} {codice}» in chat. You need {n}.', moneteAccedi: 'Or log in with Twitch and pay from here.',
+    tutti: 'All', categorie: 'Categories', cat: { lanci: 'Throws', adesivi: 'Stickers', spaventi: 'Jumpscares', media: 'Images and videos' },
     chat: 'Chat', chatVuota: 'Chat is quiet: new messages show up here.', chatScrivi: 'Write in chat', chatInvia: 'Send',
     chatFuori: 'You can read the chat here. To write, log in with Twitch.', chatNonInviato: 'Twitch did not send the message: {motivo}',
     accedi: 'Log in with Twitch', esci: 'Log out', sei: 'You are {nome}',
@@ -86,6 +91,7 @@ export const T = {
       protetta: 'That spot is protected: pick another one.', punto: 'That spot is outside the stream.', attesa: 'You just aimed: try again in {n} s.',
       troppi: 'Too many hits this minute: try again shortly.', codice: 'Something went wrong: try again.', rete: 'The connection isn\'t answering: try again.',
       pagamento: 'The payment won\'t open right now: try again shortly.', gia: 'The payment for this aim is already open.',
+      pochi: 'Not enough: you have {saldo}, it takes {serve}.', accesso: 'To pay with coins, log in with Twitch.',
     },
     piede: 'Payments go to {canale}.', privacy: 'Privacy',
   },
@@ -104,6 +110,8 @@ export const T = {
     bit: 'Con Bits: en el chat haz un Cheer de {n} Bits con el código en el mensaje, por ejemplo «Cheer{n} {codice}». El cheer se ve en el chat: es Twitch.',
     apriChat: 'Abrir el chat', puntiN: '{n} puntos', bitN: '{n} Bits', ricomincia: 'Otro golpe',
     vedi: 'Ver', vediCome: 'Mira cómo aparece: {nome}', prova: 'Pruébalo aquí', soloTu: 'Vista previa: solo la ves tú', tuoNome: 'Tu nombre',
+    moneteN: '{n} {moneta}', moneteIo: 'Paga {n} {moneta}', monete: 'Con {moneta}: escribe «!{comando} {codice}» en el chat. Te hacen falta {n}.', moneteAccedi: 'O entra con Twitch y paga desde aquí.',
+    tutti: 'Todos', categorie: 'Categorías', cat: { lanci: 'Lanzamientos', adesivi: 'Pegatinas', spaventi: 'Sustos', media: 'Imágenes y vídeos' },
     chat: 'Chat', chatVuota: 'El chat está tranquilo: los mensajes nuevos aparecen aquí.', chatScrivi: 'Escribe en el chat', chatInvia: 'Enviar',
     chatFuori: 'El chat se lee desde aquí. Para escribir, accede con Twitch.', chatNonInviato: 'Twitch no envió el mensaje: {motivo}',
     accedi: 'Accede con Twitch', esci: 'Salir', sei: 'Eres {nome}',
@@ -123,6 +131,7 @@ export const T = {
       protetta: 'Ese punto está protegido: elige otro.', punto: 'Ese punto está fuera del directo.', attesa: 'Acabas de apuntar: vuelve a intentarlo en {n} s.',
       troppi: 'Demasiados golpes este minuto: vuelve a intentarlo pronto.', codice: 'Algo ha fallado: vuelve a intentarlo.', rete: 'La conexión no responde: vuelve a intentarlo.',
       pagamento: 'El pago no se abre ahora: vuelve a intentarlo pronto.', gia: 'El pago de este punto ya está abierto.',
+      pochi: 'No te alcanza: tienes {saldo}, hacen falta {serve}.', accesso: 'Para pagar con monedas entra con Twitch.',
     },
     piede: 'Los pagos van a {canale}.', privacy: 'Privacidad',
   },
@@ -170,7 +179,7 @@ export function htmlPaginaColpo({ login, display, avatar = '', pagina, baseUrl, 
 </div>
 <aside class="cp-lato">
 <section class="cp-carta cp-io" id="cp-io"></section>
-<section class="cp-carta cp-passo" id="cp-p1"><h2 class="cp-t"><span>1</span>${esc(t.passo1)}</h2><div class="cp-voci" id="cp-voci" role="group" aria-label="${esc(t.passo1)}"></div><p id="cp-vuoto" hidden></p></section>
+<section class="cp-carta cp-passo" id="cp-p1"><h2 class="cp-t"><span>1</span>${esc(t.passo1)}</h2><div class="cp-cat" id="cp-cat" role="group" aria-label="${esc(t.categorie)}" hidden></div><div class="cp-voci" id="cp-voci" role="group" aria-label="${esc(t.passo1)}"></div><p id="cp-vuoto" hidden></p></section>
 <section class="cp-carta cp-passo spento" id="cp-p2"><h2 class="cp-t"><span>2</span>${esc(t.passo2)}</h2><p>${esc(t.mira)}</p>
 <label class="cp-campo" id="cp-nome-l" hidden>${esc(t.nome)}<input id="cp-nome" maxlength="25" autocomplete="nickname" placeholder="${esc(t.nomePh)}"></label>
 <div class="cp-righe-b"><button type="button" class="cp-b" id="cp-conferma" disabled>${esc(t.conferma)}</button><button type="button" class="cp-b due" id="cp-prova-qui" disabled>${esc(t.prova)}</button></div>
@@ -223,6 +232,12 @@ export function htmlPaginaColpo({ login, display, avatar = '', pagina, baseUrl, 
   .cp-passo.spento{opacity:.55}
   .cp-passo p{font-size:.92rem;margin:.1rem 0 .6rem}
   .cp-voci{display:grid;grid-template-columns:repeat(auto-fill,minmax(7.5rem,1fr));gap:.5rem}
+  .cp-cat{display:flex;flex-wrap:wrap;gap:.35rem;margin:0 0 .6rem}
+  .cp-cat[hidden]{display:none}
+  .cp-cat button{min-height:2.75rem;padding:.3rem .9rem;border-radius:999px;border:1px solid currentColor;background:transparent;color:inherit;font:inherit;font-size:.88rem;cursor:pointer}
+  .cp-cat button[aria-pressed="true"]{background:var(--acc);color:var(--suacc);border-color:var(--acc)}
+  .cp-cat button:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+  .cp-voce-box[hidden]{display:none}
   .cp-voce-box{position:relative;display:grid}
   .cp-vedi{position:absolute;top:.8rem;right:.8rem;display:inline-grid;place-items:center;width:2.75rem;height:2.75rem;border-radius:50%;border:0;background:rgba(0,0,0,.66);color:#fff;cursor:pointer;padding:0}
   .cp-vedi svg{width:1.1rem;height:1.1rem;fill:currentColor;margin-left:.15rem}

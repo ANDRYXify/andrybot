@@ -26082,6 +26082,9 @@ async function caricaPremi() {
 let _clZone = [];
 let _clEffetti = [];
 let _clPunto = { x: 12, y: 82 };
+let _clCat = [];
+const _CL_CAT_SERIE = ['lanci', 'adesivi', 'spaventi', 'media'];
+const _clNomeCat = (c) => c.nome || ({ lanci: L('Lanci', 'Throws', 'Lanzamientos'), adesivi: L('Adesivi', 'Stickers', 'Pegatinas'), spaventi: L('Spaventi', 'Jumpscares', 'Sustos'), media: L('Immagini e video', 'Images and videos', 'Imágenes y vídeos') })[c.id] || c.id;
 
 function pannelloColpi() {
   const c = impostazioni().colpi || {};
@@ -26116,6 +26119,13 @@ function pannelloColpi() {
       <h3>${_hIco(ICO.stella)}${L('Il listino', 'The price list', 'La lista de precios')}</h3>
       <p>${L('Ogni colpo è un lancio (un pomodoro, una ciabatta, una bomba…) o un tuo effetto con un\'immagine o un video. Metti un prezzo in almeno un modo: un modo a zero non si offre.', 'Each hit is a throw (a tomato, a flip-flop, a bomb…) or one of your effects with an image or a video. Set a price in at least one way: a way at zero isn\'t offered.', 'Cada golpe es un lanzamiento (un tomate, una chancla, una bomba…) o un efecto tuyo con una imagen o un vídeo. Pon un precio en al menos una forma: una forma a cero no se ofrece.')}</p>
       <div id="cl-voci" class="cl-voci"></div>
+      <h4 class="spazio-sopra">${L('Le categorie', 'Categories', 'Las categorías')}</h4>
+      <p class="suggerimento">${L('Sulla pagina il listino si divide così, in quest\'ordine. Ogni colpo va nella categoria che gli scegli, o in quella del suo tipo. Un nome vuoto si legge nella lingua di chi guarda; una categoria senza colpi non si vede.', 'On the page the price list is split like this, in this order. Each hit goes in the category you pick for it, or in the one for its type. An empty name is read in the viewer\'s language; a category with no hits isn\'t shown.', 'En la página la lista se divide así, en este orden. Cada golpe va en la categoría que le eliges, o en la de su tipo. Un nombre vacío se lee en el idioma de quien mira; una categoría sin golpes no se ve.')}</p>
+      <div id="cl-cat" class="cl-cat"></div>
+      <p><button type="button" class="btn secondario mini" id="cl-cat-piu">${_bIco(ICO.piu)}${L('Aggiungi una categoria', 'Add a category', 'Añadir una categoría')}</button></p>
+      <label class="campo spazio-sopra" for="cl-comando">${L('Il comando per pagare in chat con le monete', 'The command to pay with coins in chat', 'El comando para pagar con monedas en el chat')}</label>
+      <input type="text" id="cl-comando" maxlength="25" value="${esc(c.comando || 'pew')}" placeholder="pew">
+      <p class="suggerimento">${L('Chi non ha fatto l\'accesso sulla pagina scrive in chat il comando col codice della sua mira, per esempio', 'Whoever hasn\'t logged in on the page types the command in chat with their aim\'s code, for example', 'Quien no ha entrado en la página escribe en el chat el comando con el código de su apunte, por ejemplo')} <code>!${esc(c.comando || 'pew')} K7QX3</code>. ${L('Le monete si tolgono quando paga e tornano se il colpo non compare.', 'Coins are taken when they pay and come back if the hit doesn\'t show.', 'Las monedas se quitan al pagar y vuelven si el golpe no aparece.')}</p>
       <div class="riga-flessibile spazio-sopra">
         <button type="button" class="btn" id="cl-lancio">${_bIco(ICO.target)}${L('Lanci e adesivi', 'Throws and stickers', 'Lanzamientos y pegatinas')}</button>
         <button type="button" class="btn secondario" id="cl-aggiungi">${_bIco(ICO.piu)}${L('Un tuo effetto', 'One of your effects', 'Un efecto tuyo')}</button>
@@ -26181,6 +26191,10 @@ function pannelloColpi() {
           <input type="number" id="cl-pr-scala" min="20" max="300" step="5" value="${Number(c.presenza?.scala) || 100}">
         </div>
         <div>
+          <label class="campo" for="cl-pr-monete">${L('Monete a chi si presenta', 'Coins for checking in', 'Monedas por presentarse')}</label>
+          <input type="number" id="cl-pr-monete" min="0" max="100000" value="${Number(c.presenza?.monete) || 0}">
+        </div>
+        <div>
           <label class="campo" for="cl-pr-minuto">${L('Al minuto, al massimo', 'Per minute, at most', 'Por minuto, como máximo')}</label>
           <input type="number" id="cl-pr-minuto" min="1" max="30" value="${Number(c.presenza?.alMinuto) || 6}">
         </div>
@@ -26210,14 +26224,33 @@ function _clRiga(v) {
   return `<div class="cl-voce" data-id="${esc(v.id || '')}">
     <label class="cl-c cl-eff"><span>${L('Effetto', 'Effect', 'Efecto')}</span><select data-k="comando">${scelta || `<option value="">${L('Nessun lancio, immagine o video', 'No throw, image or video', 'Ningún lanzamiento, imagen o vídeo')}</option>`}</select></label>
     <label class="cl-c cl-nome"><span>${L('Nome', 'Name', 'Nombre')}</span><input data-k="nome" type="text" maxlength="40" value="${esc(v.nome || '')}"></label>
+    <label class="cl-c cl-cat-sel"><span>${L('Categoria', 'Category', 'Categoría')}</span><select data-k="categoria">${_clOpzioniCat(v.categoria)}</select></label>
+    <button type="button" class="btn secondario mini ico-sola cl-via" title="${esc(L('Togli', 'Remove', 'Quitar'))}" aria-label="${esc(L('Togli', 'Remove', 'Quitar'))}">${_bIco('<path d="M18 6 6 18"/><path d="m6 6 12 12"/>')}</button>
     <label class="cl-c"><span>${L('Euro', 'Euros', 'Euros')}</span><input data-k="euro" type="number" min="0" max="500" step="0.5" inputmode="decimal" value="${euro}"></label>
     <label class="cl-c"><span>${L('Punti', 'Points', 'Puntos')}</span><input data-k="punti" type="number" min="0" max="1000000" step="1" value="${Number(v.punti) || ''}"></label>
     <label class="cl-c"><span>Bit</span><input data-k="bit" type="number" min="0" max="100000" step="1" value="${Number(v.bit) || ''}"></label>
+    <label class="cl-c"><span>${esc(_clMoneta().replace(/^./, (x) => x.toUpperCase()))}</span><input data-k="monete" type="number" min="0" max="10000000" step="1" value="${Number(v.monete) || ''}"></label>
     <label class="cl-c"><span>${L('Grandezza %', 'Size %', 'Tamaño %')}</span><input data-k="scala" type="number" min="20" max="300" step="5" value="${Number(v.scala) || 100}"></label>
     <label class="cl-c cl-acc"><span>${L('Attivo', 'On', 'Activo')}</span><span class="interruttore"><input data-k="attiva" type="checkbox" ${v.attiva !== false ? 'checked' : ''}><span class="levetta"></span></span></label>
-    <button type="button" class="btn secondario mini ico-sola cl-via" title="${esc(L('Togli', 'Remove', 'Quitar'))}" aria-label="${esc(L('Togli', 'Remove', 'Quitar'))}">${_bIco('<path d="M18 6 6 18"/><path d="m6 6 12 12"/>')}</button>
     <p class="cl-premio suggerimento" data-premio></p>
   </div>`;
+}
+
+function _clMoneta() { return impostazioni().nomeMonete || L('monete', 'coins', 'monedas'); }
+function _clOpzioniCat(scelta) {
+  const c = String(scelta || '');
+  return `<option value="">${L('Secondo il tipo', 'By type', 'Según el tipo')}</option>` + _clCat.map((x) => `<option value="${esc(x.id)}"${x.id === c ? ' selected' : ''}>${esc(_clNomeCat(x))}</option>`).join('');
+}
+function _clCategorie() {
+  const box = document.getElementById('cl-cat');
+  if (!box) return;
+  box.innerHTML = _clCat.length ? _clCat.map((c, i) => `<div class="cl-cat-riga" data-i="${i}">
+    <input type="text" maxlength="30" data-cat-nome value="${esc(c.nome || '')}" placeholder="${esc(_clNomeCat({ id: c.id }))}" aria-label="${esc(L('Nome della categoria', 'Category name', 'Nombre de la categoría') + ' ' + (i + 1))}">
+    <button type="button" class="btn secondario mini ico-sola" data-cat-su ${i ? '' : 'disabled'} aria-label="${esc(L('Sposta su', 'Move up', 'Subir'))}" title="${esc(L('Sposta su', 'Move up', 'Subir'))}">${_bIco('<path d="m18 15-6-6-6 6"/>')}</button>
+    <button type="button" class="btn secondario mini ico-sola" data-cat-giu ${i < _clCat.length - 1 ? '' : 'disabled'} aria-label="${esc(L('Sposta giù', 'Move down', 'Bajar'))}" title="${esc(L('Sposta giù', 'Move down', 'Bajar'))}">${_bIco('<path d="m6 9 6 6 6-6"/>')}</button>
+    <button type="button" class="btn secondario mini ico-sola" data-cat-via aria-label="${esc(L('Togli la categoria', 'Remove the category', 'Quitar la categoría'))}" title="${esc(L('Togli', 'Remove', 'Quitar'))}">${_bIco('<path d="M18 6 6 18"/><path d="m6 6 12 12"/>')}</button>
+  </div>`).join('') : `<p class="tenue">${L('Nessuna categoria: la pagina mostra tutti i colpi insieme.', 'No categories: the page shows all hits together.', 'Ninguna categoría: la página muestra todos los golpes juntos.')}</p>`;
+  for (const sel of document.querySelectorAll('#cl-voci [data-k="categoria"]')) sel.innerHTML = _clOpzioniCat(sel.value);
 }
 
 function _clVoci() {
@@ -26232,7 +26265,8 @@ function _clLeggi() {
     const q = (k) => r.querySelector(`[data-k="${k}"]`);
     const euro = Math.round((Number(String(q('euro').value).replace(',', '.')) || 0) * 100);
     return { id: r.dataset.id || '', comando: q('comando').value, nome: q('nome').value.trim(), euro, punti: Number(q('punti').value) || 0,
-      bit: Number(q('bit').value) || 0, scala: Number(q('scala').value) || 100, attiva: q('attiva').checked };
+      bit: Number(q('bit').value) || 0, monete: Number(q('monete').value) || 0, categoria: q('categoria').value,
+      scala: Number(q('scala').value) || 100, attiva: q('attiva').checked };
   }).filter((v) => v.comando);
   return {
     attivo: !!document.getElementById('cl-attivo')?.checked,
@@ -26245,6 +26279,8 @@ function _clLeggi() {
     dida: (document.getElementById('cl-dida')?.value || '').trim(),
     zone: _clZone.map((z) => ({ ...z })),
     voci,
+    categorie: _clCat.map((c) => ({ ...c })),
+    comando: (document.getElementById('cl-comando')?.value || '').trim().replace(/^!/, ''),
   };
 }
 
@@ -26257,6 +26293,7 @@ function _clPresenzaLeggi() {
     comando: v('cl-pr-comando')?.value || '',
     scala: Number(v('cl-pr-scala')?.value) || 100,
     alMinuto: Number(v('cl-pr-minuto')?.value) || 6,
+    monete: Number(v('cl-pr-monete')?.value) || 0,
     x: _clPunto.x, y: _clPunto.y,
   };
 }
@@ -26287,7 +26324,9 @@ function _clPresenzaQuadro() {
 async function salvaColpi(silenzioso) {
   const colpi = _clLeggi();
   _clPresenzaGiusta(colpi.presenza);
-  const vuote = colpi.voci.filter((v) => !(v.euro > 0 || v.punti > 0 || v.bit > 0));
+  const vuote = colpi.voci.filter((v) => !(v.euro > 0 || v.punti > 0 || v.bit > 0 || v.monete > 0));
+  if (colpi.categorie.some((c) => !c.nome && !_CL_CAT_SERIE.includes(c.id))) throw new Error(L('Dai un nome a ogni categoria nuova.', 'Give every new category a name.', 'Ponle un nombre a cada categoría nueva.'));
+  if (colpi.comando && !/^[a-z0-9_]{1,25}$/i.test(colpi.comando)) throw new Error(L('Il comando per le monete: solo lettere, numeri e trattino basso, senza spazi.', 'The coin command: only letters, numbers and underscores, no spaces.', 'El comando de las monedas: solo letras, números y guion bajo, sin espacios.'));
   if (colpi.voci.some((v) => v.euro > 0 && v.euro < 50)) throw new Error(L('Il prezzo in euro parte da 0,50.', 'The euro price starts at 0.50.', 'El precio en euros empieza en 0,50.'));
   await salvaImpostazioni({ colpi }, silenzioso ? null : (vuote.length ? L('Salvato: i colpi senza prezzo non si offrono', 'Saved: hits without a price aren\'t offered', 'Guardado: los golpes sin precio no se ofrecen') : L('Colpi salvati ✓', 'Hits saved ✓', 'Golpes guardados ✓')));
   setTimeout(() => { caricaColpiStato(); }, 2500);
@@ -26356,7 +26395,7 @@ async function caricaColpiStato() {
   }
   const ul = document.getElementById('cl-ultimi');
   if (ul && (st.ultimi || []).length) {
-    const metodo = { euro: L('euro', 'euros', 'euros'), punti: L('punti', 'points', 'puntos'), bit: 'Bit', presenza: L('presenza', 'check-in', 'presencia') };
+    const metodo = { euro: L('euro', 'euros', 'euros'), punti: L('punti', 'points', 'puntos'), bit: 'Bit', presenza: L('presenza', 'check-in', 'presencia'), monete: _clMoneta() };
     const come = { sparata: L('Mostrato', 'Shown', 'Mostrado'), pagata: L('In arrivo', 'On its way', 'En camino'), rimborsata: L('Rimborsato', 'Refunded', 'Reembolsado') };
     ul.innerHTML = `<div class="scorrevole"><table class="tabella"><tbody>${st.ultimi.map((u) => `<tr><td>${esc(new Date(u.quando).toLocaleString(localePannello(), { dateStyle: 'short', timeStyle: 'short' }))}</td><td><strong>${esc(u.metodo === 'presenza' ? L('Presenza', 'Check-in', 'Presencia') : u.nome)}</strong></td><td>${esc(u.chi || '—')}</td><td>${esc(metodo[u.metodo] || u.metodo)}</td><td>${esc(come[u.stato] || '')}</td></tr>`).join('')}</tbody></table></div>`;
   }
@@ -26366,12 +26405,37 @@ async function caricaColpi() {
   const c = impostazioni().colpi || {};
   _clZone = (c.zone || []).map((z) => ({ ...z }));
   _clPunto = { x: Number.isFinite(Number(c.presenza?.x)) ? Number(c.presenza.x) : 12, y: Number.isFinite(Number(c.presenza?.y)) ? Number(c.presenza.y) : 82 };
+  _clCat = Array.isArray(c.categorie) ? c.categorie.map((x) => ({ id: String(x.id || ''), nome: String(x.nome || '') })) : _CL_CAT_SERIE.map((id) => ({ id, nome: '' }));
   await caricaLanci();
   try { _clEffetti = ((await api('/api/streamer/effetti')) || {}).effetti || []; } catch { _clEffetti = []; }
   _clVoci();
+  _clCategorie();
   _clQuadro();
   _clCollegaQuadro();
   _clPresenzaEffetti();
+  const cb = document.getElementById('cl-cat');
+  if (cb && !cb.dataset.wired) {
+    cb.dataset.wired = '1';
+    cb.addEventListener('input', (e) => { const r = e.target.closest('.cl-cat-riga'); if (r && e.target.matches('[data-cat-nome]')) { _clCat[Number(r.dataset.i)].nome = e.target.value.trim(); for (const sel of document.querySelectorAll('#cl-voci [data-k="categoria"]')) { const v = sel.value; sel.innerHTML = _clOpzioniCat(v); } } });
+    cb.addEventListener('click', (e) => {
+      const r = e.target.closest('.cl-cat-riga');
+      if (!r) return;
+      const i = Number(r.dataset.i);
+      if (e.target.closest('[data-cat-su]') && i > 0) [_clCat[i - 1], _clCat[i]] = [_clCat[i], _clCat[i - 1]];
+      else if (e.target.closest('[data-cat-giu]') && i < _clCat.length - 1) [_clCat[i + 1], _clCat[i]] = [_clCat[i], _clCat[i + 1]];
+      else if (e.target.closest('[data-cat-via]')) _clCat.splice(i, 1);
+      else return;
+      _clCategorie();
+    });
+    document.getElementById('cl-cat-piu')?.addEventListener('click', () => {
+      if (_clCat.length >= 10) { toast(L('Al massimo 10 categorie.', 'At most 10 categories.', 'Como máximo 10 categorías.'), 'errore'); return; }
+      let id = '';
+      for (let k = 1; !id || _clCat.some((x) => x.id === id); k++) id = 'cat' + k;
+      _clCat.push({ id, nome: L('Nuova categoria', 'New category', 'Nueva categoría') });
+      _clCategorie();
+      cb.querySelector('.cl-cat-riga:last-child [data-cat-nome]')?.select();
+    });
+  }
   _clPresenzaQuadro();
   const pq = document.getElementById('cl-pr-quadro');
   if (pq && !pq.dataset.wired) {
