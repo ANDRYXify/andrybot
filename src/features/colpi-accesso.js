@@ -53,6 +53,39 @@ export function creaAccessi({ rinnova = async () => null, ora = () => Date.now()
   return { metti, chi, token, togli, quanti: () => chiavi.size };
 }
 
+// IL PONTE fra i due indirizzi della pagina (docs/COLPI.md, «L'indirizzo
+// corto»). Twitch torna solo su /auth/callback del sito, e il cookie della
+// sessione vale per un nome solo: chi ha aperto la pagina su pew.<dominio> fa
+// l'accesso sul sito, e la chiave gli torna di la' con un BIGLIETTO. Il
+// biglietto vale una volta, per due minuti, per quel canale e per QUEL browser:
+// la prova e' il segno che la pagina corta gli ha messo in sessione prima di
+// partire, e che il sito si e' portato fino a Twitch e ritorno. Un biglietto
+// preso da un altro, senza il segno, non fa entrare nessuno: niente accesso
+// imposto da fuori.
+export const PONTE_MS = 2 * 60_000;
+export const MAX_PONTI = 2000;
+
+export function creaPonti({ ora = () => Date.now() } = {}) {
+  const biglietti = new Map();   // biglietto -> { canale, chiave, segno, scade }
+  function apri({ canale, chiave, segno }) {
+    const adesso = ora();
+    for (const [k, v] of biglietti) if (v.scade <= adesso) biglietti.delete(k);
+    while (biglietti.size >= MAX_PONTI) biglietti.delete(biglietti.keys().next().value);
+    const b = randomBytes(24).toString('base64url');
+    biglietti.set(b, { canale: String(canale), chiave, segno: String(segno || ''), scade: adesso + PONTE_MS });
+    return b;
+  }
+  // la chiave, se il biglietto e' buono; il biglietto si brucia in ogni caso
+  function prendi(biglietto, { canale, segno }) {
+    const v = typeof biglietto === 'string' ? biglietti.get(biglietto) : null;
+    if (!v) return null;
+    biglietti.delete(biglietto);
+    if (v.scade <= ora() || v.canale !== String(canale) || !v.segno || v.segno !== String(segno || '')) return null;
+    return v.chiave;
+  }
+  return { apri, prendi, quanti: () => biglietti.size };
+}
+
 // Il messaggio in chat, con l'API di Twitch e il token dello spettatore.
 // Torna { ok } o { ok:false, motivo } con le parole di Twitch (bannato, chat
 // solo per chi segue, messaggio rifiutato da AutoMod...).

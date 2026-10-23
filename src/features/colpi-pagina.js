@@ -134,11 +134,13 @@ const riempi = (s, v) => String(s).replace(/\{(\w+)\}/g, (m, k) => (k in v ? v[k
 // diretta con lo strato di mira, la chat, il listino e i modi di pagare.
 // `io` e' lo spettatore che ha fatto l'accesso con Twitch ({ login, nome }),
 // `accesso` dice se l'accesso c'e' su questo server.
-export function htmlPaginaColpo({ login, display, avatar = '', pagina, baseUrl, lingua = 'it', mira = '', privacy = '', io = null, accesso = false, testi = {} }) {
+// `url` e' l'indirizzo con cui si presenta (urlPaginaColpo) e `corto` il nome
+// pew.<dominio> se e' acceso: il lettore di Twitch lo vuole tra i `parent`.
+export function htmlPaginaColpo({ login, display, avatar = '', pagina, baseUrl, url = '', corto = '', lingua = 'it', mira = '', privacy = '', io = null, accesso = false, testi = {} }) {
   const l = LINGUE.includes(lingua) ? lingua : 'it';
   const t = T[l];
   const nome = display || login;
-  const player = conParent(`https://player.twitch.tv/?channel=${encodeURIComponent(login)}&muted=true&autoplay=true`, domini(baseUrl));
+  const player = conParent(`https://player.twitch.tv/?channel=${encodeURIComponent(login)}&muted=true&autoplay=true`, corto ? [...domini(baseUrl), corto] : domini(baseUrl));
   const titolo = String(testi.titolo || '').trim() || riempi(t.titolo, { canale: nome });
   const dida = String(testi.dida || '').trim() || riempi(testi.conNome === false ? t.didaSenzaNome : t.dida, { canale: nome });
   const base = pagina || {};
@@ -248,9 +250,10 @@ export function htmlPaginaColpo({ login, display, avatar = '', pagina, baseUrl, 
   @media (prefers-reduced-motion:reduce){.cp *{transition:none!important;animation:none!important}}`;
   const fuori = {
     lingua: l,
-    url: `${baseUrl}/u/${login}/colpo`,
+    url: url || `${baseUrl}/u/${login}/colpo`,
     privacy: privacy || `/u/${login}/privacy`,
-    testi: { titolo: t.passo1, descrizione: dida, vuota: '', creata: riempi(t.piede, { canale: nome }), privacy: t.privacy },
+    // il titolo della scheda del browser: «Colpisci la diretta di … · Pewpewify»
+    testi: { titolo: 'Pewpewify', descrizione: dida, vuota: '', creata: riempi(t.piede, { canale: nome }), privacy: t.privacy },
     blocco,
     css,
     script: () => '<script src="/flusso.js" defer></script><script src="/pagina-colpo.js?v=3" defer></script>',

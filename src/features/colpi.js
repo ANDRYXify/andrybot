@@ -23,6 +23,18 @@
 //    scrive nella mira: lo streamer che cambia il listino non cambia le mire gia'
 //    fatte.
 
+import { config } from '../config.js';
+
+// L'INDIRIZZO DELLA PAGINA (docs/COLPI.md, «L'indirizzo corto»): quello corto,
+// pew.<dominio>/<canale>, quando il server l'ha acceso (dal .env o dalla sonda,
+// come il negozio); se no quello lungo, che vale sempre. Chi lo scrive da
+// qualche parte lo chiede qui: il pannello, i premi, i ritorni dei pagamenti,
+// il canonico della pagina.
+export function urlPaginaColpo(canale) {
+  const ch = String(canale || '').toLowerCase();
+  return config.pewHost ? `https://${config.pewHost}/${ch}` : `${config.baseUrl}/u/${ch}/colpo`;
+}
+
 export const METODI = Object.freeze(['euro', 'punti', 'bit']);
 export const LIMITI = Object.freeze({ voci: 20, zone: 8, nome: 40, chi: 25, attesaSec: [0, 600], alMinuto: [1, 60], scala: [20, 300], euroCent: [50, 50_000], punti: [1, 1_000_000], bit: [1, 100_000] });
 export const SCADENZA_MS = 15 * 60_000;

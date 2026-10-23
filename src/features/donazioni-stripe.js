@@ -19,6 +19,7 @@ import { config } from '../config.js';
 import { makeLog } from '../logger.js';
 import { contiDonazioni, registroDonazioni, registroColpi } from '../db.js';
 import { urlPaginaDona } from './donazioni.js';
+import { urlPaginaColpo } from './colpi.js';
 import { chiama as chiamaStripe } from './stripe-filo.js';
 
 const log = makeLog('donazioni');
@@ -52,7 +53,7 @@ function chiaveMorta(login, r) {
 // sessione di PROVA al collegamento usa gli stessi, cosi' un permesso che
 // manca si scopre subito, non alla prima donazione vera.
 function paramsSessione({ login, prodotto, chi, cent, valuta, nome, messaggio, scadenzaMs, ritorno = 'link' }) {
-  const base = ritorno === 'dona' ? urlPaginaDona(login) : config.baseUrl + '/u/' + login + (ritorno === 'colpo' ? '/colpo' : '');
+  const base = ritorno === 'dona' ? urlPaginaDona(login) : ritorno === 'colpo' ? urlPaginaColpo(login) : config.baseUrl + '/u/' + login;
   return {
     mode: 'payment',
     submit_type: 'donate',

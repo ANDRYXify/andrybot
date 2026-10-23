@@ -100,7 +100,7 @@ abbinato a un'immagine, a una GIF o a un video.
   effetto. Nell'elenco un lancio ha la sua miniatura, la **raffica** (da uno a
   cinque) e il **suono**; un video ha il suo **green screen** (spunta, colore,
   quanto largo).
-- **Colpi degli spettatori → Il listino**: «Lanci e adesivi», «Un tuo
+- **Pew → Il listino**: «Lanci e adesivi», «Un tuo
   effetto», «Dalla libreria condivisa». Prendere due volte la stessa voce riusa
   l'effetto che c'è già.
 - **Premi a punti canale**: i lanci stanno con le immagini e i video.

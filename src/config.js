@@ -164,6 +164,11 @@ export const config = {
   // sempre.
   negozioHost: /^(no|off)$/i.test(env('NEGOZIO_HOST', '')) ? '' : env('NEGOZIO_HOST', '').toLowerCase().replace(/^https?:\/\//, '').replace(/\/.*$/, ''),
   negozioHostSpento: /^(no|off)$/i.test(env('NEGOZIO_HOST', '')),
+  // La pagina di Pewpewify di un canale (pew.<dominio>/<canale>), come le altre:
+  // senza nome il server bussa al DNS e la accende quando risponde in HTTPS;
+  // «no» la tiene spenta. L'indirizzo lungo /u/<canale>/colpo vale sempre.
+  pewHost: /^(no|off)$/i.test(env('PEW_HOST', '')) ? '' : env('PEW_HOST', '').toLowerCase().replace(/^https?:\/\//, '').replace(/\/.*$/, ''),
+  pewHostSpento: /^(no|off)$/i.test(env('PEW_HOST', '')),
   // La porta del gruppo Telegram di un canale (telegram.<dominio>/<canale>) e
   // la sua pagina di verifica (telegram.<dominio>/<canale>/verifica), come le
   // altre: senza nome il server bussa al DNS e la accende quando risponde in

@@ -374,3 +374,26 @@ test('titolo e sottotitolo della pagina: dello streamer se li scrive, se no quel
   assert.ok(!pag({ conNome: false }).includes('col tuo nome'), 'coi nomi spenti la pagina non promette il nome');
   assert.ok(pag({}, 'en').includes('Hit Prova'));
 });
+
+test('l\'indirizzo corto: pew.<dominio>/<canale> quando e\' acceso, se no il lungo; la pagina lo dice e il lettore lo accetta', async () => {
+  const { config } = await import('../../src/config.js');
+  const { urlPaginaColpo } = await import('../../src/features/colpi.js');
+  const { htmlPaginaColpo } = await import('../../src/features/colpi-pagina.js');
+  const prima = [config.pewHost, config.baseUrl];
+  try {
+    config.baseUrl = 'https://socialbot.live';
+    config.pewHost = '';
+    assert.equal(urlPaginaColpo('Prova'), 'https://socialbot.live/u/prova/colpo');
+    config.pewHost = 'pew.socialbot.live';
+    assert.equal(urlPaginaColpo('Prova'), 'https://pew.socialbot.live/prova');
+  } finally { [config.pewHost, config.baseUrl] = prima; }
+  const pag = (o) => htmlPaginaColpo({ login: 'prova', display: 'Prova', pagina: {}, baseUrl: 'https://socialbot.live', ...o });
+  const lettore = (h) => decodeURIComponent((/player\.twitch\.tv\/\?[^"' ]+/.exec(h.replace(/&amp;/g, '&')) || [''])[0]);
+  const corta = pag({ url: 'https://pew.socialbot.live/prova', corto: 'pew.socialbot.live' });
+  assert.ok(corta.includes('<link rel="canonical" href="https://pew.socialbot.live/prova">'), 'il canonico e\' quello da dare in giro');
+  assert.ok(lettore(corta).includes('parent=pew.socialbot.live'), 'Twitch rifiuta un lettore su un nome che non e\' tra i parent');
+  assert.ok(lettore(corta).includes('parent=socialbot.live'), 'e l\'indirizzo lungo continua a funzionare');
+  const lunga = pag({});
+  assert.ok(lunga.includes('<link rel="canonical" href="https://socialbot.live/u/prova/colpo">'));
+  assert.ok(!lettore(lunga).includes('pew.'));
+});

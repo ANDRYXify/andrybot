@@ -6,7 +6,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { creaChatColpi, rigaDi, RIGHE_TENUTE, PER_CANALE } from '../../src/features/colpi-chat.js';
-import { creaAccessi, mandaInChat, PERMESSI, DURATA_MS } from '../../src/features/colpi-accesso.js';
+import { creaAccessi, mandaInChat, PERMESSI, DURATA_MS, creaPonti, PONTE_MS, MAX_PONTI } from '../../src/features/colpi-accesso.js';
 
 const lettore = () => { const scritto = []; return { scritto, write: (s) => scritto.push(s), righe: () => scritto.filter((s) => s.startsWith('data: ')).map((s) => JSON.parse(s.slice(6))).filter((r) => r.tipo !== 'battito') }; };
 
@@ -90,4 +90,24 @@ test('il messaggio in chat: l\'API di Twitch col token dello spettatore, e le su
   assert.equal((await mandaInChat({ token: 't', testo: 'x', fetcher: finto(429, { message: 'Too Many Requests' }) })).motivo, 'Too Many Requests');
   assert.equal((await mandaInChat({ token: 't', testo: '   ', fetcher: finto(200, {}) })).motivo, 'vuoto');
   assert.equal((await mandaInChat({ token: 't', testo: 'x', fetcher: async () => { throw new Error('rete giu\''); } })).motivo, 'rete giu\'');
+});
+
+test('il ponte dalla pagina corta: il biglietto vale una volta, per poco, per quel canale e per quel browser', () => {
+  let adesso = 1_000;
+  const ponti = creaPonti({ ora: () => adesso });
+  const b = ponti.apri({ canale: 'prova', chiave: 'K', segno: 's1' });
+  assert.match(b, /^[A-Za-z0-9_-]{32}$/, 'casuale, e sta in un indirizzo');
+  assert.equal(ponti.prendi(b, { canale: 'prova', segno: 's1' }), 'K');
+  assert.equal(ponti.prendi(b, { canale: 'prova', segno: 's1' }), null, 'una volta sola');
+  const rubato = ponti.apri({ canale: 'prova', chiave: 'K2', segno: 's2' });
+  assert.equal(ponti.prendi(rubato, { canale: 'prova', segno: 'altro' }), null, 'senza il segno di chi e\' partito non entra nessuno');
+  assert.equal(ponti.prendi(rubato, { canale: 'prova', segno: 's2' }), null, 'e il biglietto provato si e\' bruciato');
+  assert.equal(ponti.prendi(ponti.apri({ canale: 'prova', chiave: 'K3', segno: 's3' }), { canale: 'altro', segno: 's3' }), null, 'solo per quel canale');
+  assert.equal(ponti.prendi(ponti.apri({ canale: 'prova', chiave: 'K4', segno: '' }), { canale: 'prova', segno: '' }), null, 'un segno vuoto non e\' un segno');
+  const tardi = ponti.apri({ canale: 'prova', chiave: 'K5', segno: 's5' });
+  adesso += PONTE_MS;
+  assert.equal(ponti.prendi(tardi, { canale: 'prova', segno: 's5' }), null, 'scade');
+  assert.equal(ponti.prendi(undefined, { canale: 'prova', segno: 's5' }), null);
+  for (let i = 0; i < MAX_PONTI + 10; i++) ponti.apri({ canale: 'prova', chiave: 'k' + i, segno: 's' });
+  assert.equal(ponti.quanti(), MAX_PONTI, 'con un tetto');
 });

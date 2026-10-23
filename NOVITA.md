@@ -41,6 +41,12 @@ questa non è una cosa da ricordarsi: il cancello boccia una riga pubblica senza
 traduzione, una traduzione staccata dalla sua riga, o una che dice numeri e
 comandi diversi da quelli della riga italiana.
 
+## 2026-10-23
+
+- I colpi degli spettatori ora si chiamano Pewpewify, la scheda è «Pew» e la pagina ha un indirizzo corto: pew.socialbot.live e il nome del canale. Quello vecchio continua a funzionare. [vai: colpi]
+  en: Viewer hits are now called Pewpewify, the tab is «Pew» and the page has a short address: pew.socialbot.live plus your channel name. The old one keeps working.
+  es: Los golpes de los espectadores ahora se llaman Pewpewify, la pestaña es «Pew» y la página tiene una dirección corta: pew.socialbot.live y el nombre del canal. La antigua sigue funcionando.
+
 ## 2026-10-22
 
 - [importante] Lanci, adesivi e spaventi come in Viewer Attack: oltre ottanta, fatti da artisti veri. Ogni video caricato ha il suo green screen, e lanci e adesivi possono suonare un tuo audio. [vai: effetti]

@@ -109,7 +109,11 @@
 # (telegram.socialbot.live/<canale>) e la pagina della prova dello scudo
 # (telegram.socialbot.live/<canale>/verifica), che Telegram apre come Mini App.
 # Stessa regola: il nome va qui.
-socialbot.live, dona.socialbot.live, sostieni.socialbot.live, discord.socialbot.live, negozio.socialbot.live, telegram.socialbot.live {
+#
+# pew.socialbot.live e' la pagina di Pewpewify di uno streamer
+# (pew.socialbot.live/<canale>): gli spettatori colpiscono la diretta da li'.
+# La radice rimanda al sito. Stessa regola: il nome va qui.
+socialbot.live, dona.socialbot.live, sostieni.socialbot.live, discord.socialbot.live, negozio.socialbot.live, telegram.socialbot.live, pew.socialbot.live {
 	# zstd prima di gzip: Chrome lo prende e comprime meglio, gli altri
 	# ricadono su gzip. app.js e un file grosso, qui si vede.
 	encode zstd gzip

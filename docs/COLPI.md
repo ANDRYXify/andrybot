@@ -1,6 +1,12 @@
 <!-- © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live -->
 <!-- Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live -->
-# I colpi degli spettatori
+# Pewpewify: i colpi degli spettatori
+
+Nel prodotto si chiama **Pewpewify** (pagina, vetrina, chat); nel pannello la
+scheda è **Pew**. Nel codice resta `colpi` / `colpo`, e così l'indirizzo lungo
+(`/u/<canale>/colpo`): è già condiviso, e un nome cambiato non deve rompere un
+link. Quello da dare in giro è **`pew.socialbot.live/<canale>`** («L'indirizzo
+corto», sotto).
 
 Chiesto così: «un "viewer attack" ma senza che servano estensioni twitch? tipo
 che basta aprire un link che apre la live su socialbot e, grazie all'overlay,
@@ -151,6 +157,42 @@ stessa testata e lo stesso consenso per il lettore di Twitch (`.chiedi-b` di
 `--suacc`, `--r`, `--fd`, `--btxt`…): un tema nuovo vale anche qui senza
 toccarlo.
 
+## L'indirizzo corto (`pew.<dominio>/<canale>`)
+
+Come `negozio` e `telegram`: il nome sta nel Caddyfile (validato con Caddy vero
+e registrato in `Caddyfile.validato`), il server bussa in HTTPS e accende
+`config.pewHost` quando risponde; `PEW_HOST` lo sceglie o lo spegne (`no`).
+L'indirizzo lungo vale sempre. `urlPaginaColpo` (colpi.js) è l'unico posto che
+lo scrive: il pannello, il premio a punti canale, i ritorni di Stripe e
+Satispay, il canonico della pagina.
+
+Sul nome corto il server traduce solo `/<canale>` in `/u/<canale>/colpo`
+(query compresa, così il ritorno `?dona=` di un pagamento arriva); la radice
+rimanda al sito, l'informativa passa. La pagina chiama le sue rotte con
+indirizzi interi (`/u/<canale>/colpo/dati`, `/mira`, `/chat`…), che lì valgono
+uguali. Il lettore di Twitch vuole tra i `parent` anche il nome corto, se no
+rifiuta di partire: `htmlPaginaColpo` lo riceve come `corto`.
+
+**L'accesso passa da un ponte.** Twitch torna solo su `/auth/callback` del
+sito, e il cookie della sessione vale per un nome solo (allargarlo a tutti i
+sottodomini porterebbe la sessione del pannello anche sulle pagine
+pubbliche: no). Allora:
+
+1. su `pew`, `/accedi` mette in sessione un **segno** casuale e manda a
+   `/accedi?segno=…` del sito;
+2. il sito fa il giro con Twitch come sempre (lo state nella sua sessione) e si
+   porta il segno nel `colpoFlow`;
+3. al ritorno, la chiave dello spettatore non va nella sessione del sito ma in
+   un **biglietto** (`creaPonti`, colpi-accesso.js): una volta sola, due
+   minuti, per quel canale e per quel segno; si torna su
+   `pew…/u/<canale>/colpo/entra?b=…`;
+4. `entra` dà la chiave solo se il segno nella sessione di `pew` è quello del
+   biglietto, e il biglietto si brucia comunque.
+
+Un biglietto preso da un altro non fa entrare nessuno, perché il segno che
+serve sta solo nel browser che è partito: nessuno può farti entrare col suo
+account mandandoti un link.
+
 ## La chat
 
 `colpi-chat.js`: le righe che il bot riceve già dalla chat di Twitch del
@@ -189,7 +231,7 @@ basta.
 
 ## Il pannello
 
-Scheda «Colpi degli spettatori» in «Scena e overlay»: pagina aperta e pausa,
+Scheda «Pew» in «Scena e overlay»: pagina aperta e pausa,
 indirizzo da copiare, listino, regole, zone protette disegnate trascinando sul
 quadro, gli ultimi colpi e gli avvisi (conto per gli euro mancante, premi che
 Twitch non ha creato, col motivo).
@@ -214,7 +256,12 @@ canale dice anche che con l'accesso a Twitch va bene qualunque testo.
   spettatore e il suo cheer senza codice.
 - `test/unita/colpi-chat-accesso.test.mjs`: la riga (colore, emote https),
   i tetti della chat, la chiave dell'accesso (rinnovo, scadenza, niente token
-  in `chi`), il messaggio verso l'API di Twitch e i suoi rifiuti.
+  in `chi`), il messaggio verso l'API di Twitch e i suoi rifiuti; il ponte
+  (una volta sola, scadenza, canale e segno giusti).
+- `test/unita/colpi-pew.test.mjs`: l'indirizzo corto dal server vero, con le
+  richieste fatte col nome `pew`: la pagina e le sue rotte, il `parent` del
+  lettore, la radice, il giro completo dell'accesso fino alla chat scritta dal
+  browser giusto, e il biglietto rubato che non fa entrare.
 
 ## Limiti noti
 

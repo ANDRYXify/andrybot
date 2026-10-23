@@ -123,6 +123,7 @@ const PUBBLICHE = new Map([
   ['POST /u/:user/colpo/mira', 'la mira dello spettatore: col tetto per indirizzo, e la apre solo se il colpo adesso si puo\' consegnare'],
   ['GET /api/lanci', 'il catalogo dei lanci (docs/LANCI.md): e\' il prodotto, uguale per tutti, senza dati di nessuno; la demo lo legge da qui'],
   ['GET /u/:user/colpo/accedi', 'l\'accesso dello spettatore con Twitch: un permesso solo (user:write:chat), lo state nella sessione, e il ritorno passa da /auth/callback'],
+  ['GET /u/:user/colpo/entra', 'l\'altra sponda dell\'accesso partito da pew.<dominio>: il biglietto (una volta, due minuti) entra solo col segno che QUESTO browser ha in sessione, e si brucia comunque'],
   ['POST /u/:user/colpo/esci', 'esce dall\'accesso: toglie la chiave dalla sessione e il token dalla memoria; il cookie e\' SameSite=lax, quindi un altro sito non lo fa uscire'],
   ['GET /u/:user/colpo/chat', 'la chat del canale in diretta: e\' la chat pubblica di Twitch, con un tetto di lettori per canale e in tutto; 404 coi colpi spenti'],
   ['POST /u/:user/colpo/chat', 'scrive in chat a nome dello spettatore entrato con Twitch, col SUO token e l\'API di Twitch (che applica ban, AutoMod e modalita\' della chat); col tetto per spettatore'],

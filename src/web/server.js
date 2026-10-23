@@ -526,6 +526,8 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     (h) => { config.negozioHost = h; }, 'indirizzo corto del negozio acceso');
   sondaHost(!config.telegramHost && !config.telegramHostSpento ? donazioni.candidatoHost(config.baseUrl, 'telegram') : '',
     (h) => { config.telegramHost = h; }, 'porta del gruppo Telegram accesa');
+  sondaHost(!config.pewHost && !config.pewHostSpento ? donazioni.candidatoHost(config.baseUrl, 'pew') : '',
+    (h) => { config.pewHost = h; }, 'indirizzo corto di Pewpewify acceso');
 
   app.use((req, res, next) => {
     // Sull'indirizzo corto del sostegno la radice E' la pagina. Tutto il resto
@@ -561,6 +563,20 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       if (d) {
         const q = req.url.indexOf('?');
         req.url = '/u/' + d[1].toLowerCase() + '/negozio' + (q >= 0 ? req.url.slice(q) : '');
+        return next();
+      }
+      if (req.path === '/') return res.redirect(302, config.baseUrl + '/');
+      return next();
+    }
+    // La pagina di Pewpewify: pew.<dominio>/<canale> E' la pagina dei colpi di
+    // quel canale. Il resto passa com'e': la pagina chiama /u/<canale>/colpo/...
+    // con indirizzi interi, che qui valgono uguali. La radice rimanda al sito.
+    if (config.pewHost && String(req.hostname || '').toLowerCase() === config.pewHost) {
+      if (legaleIn('privacy').some((x) => x.via === req.path)) return next();
+      const d = RE_CANALE_IN_VIA.exec(req.path);
+      if (d) {
+        const q = req.url.indexOf('?');
+        req.url = '/u/' + d[1].toLowerCase() + '/colpo' + (q >= 0 ? req.url.slice(q) : '');
         return next();
       }
       if (req.path === '/') return res.redirect(302, config.baseUrl + '/');
@@ -2415,6 +2431,8 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // Lo spettatore che ha fatto l'accesso con Twitch (features/colpi-accesso.js):
   // nel cookie c'e' solo la chiave, il token sta nella memoria del server.
   const accessiColpi = colpiAccesso.creaAccessi({ rinnova: (r) => auth.refresh(r) });
+  const pontiColpi = colpiAccesso.creaPonti();
+  const sulPew = (req) => !!config.pewHost && String(req.hostname || '').toLowerCase() === config.pewHost;
   const spettatoreDi = (req) => {
     const io = accessiColpi.chi(req.session?.spettatore);
     if (!io && req.session?.spettatore) delete req.session.spettatore;
@@ -2439,6 +2457,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     const io = spettatoreDi(req);
     res.type('html').send(colpiPagina.htmlPaginaColpo({
       login, display: k.s.display || login, avatar: await avatarDi(login), pagina: link || {}, baseUrl: config.baseUrl,
+      url: colpiMod.urlPaginaColpo(login), corto: config.pewHost,
       lingua: colpiPagina.linguaDi(req.get('accept-language')), mira,
       io: io ? { login: io.login, nome: io.nome } : null, accesso: !!config.twitchClientId,
       testi: (({ titolo, dida, conNome }) => ({ titolo, dida, conNome }))(colpiMod.normalizza(k.s.settings?.colpi)),
@@ -2468,12 +2487,32 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // L'ACCESSO CON TWITCH, un permesso solo (user:write:chat). Il ritorno passa
   // da /auth/callback, l'unico indirizzo registrato su Twitch: lo riconosce da
   // `colpoFlow` nella sessione.
+  // Dalla pagina corta l'accesso parte sul sito (Twitch torna solo li'), col
+  // segno di questo browser: il ritorno passa dal ponte (colpi-accesso.js).
   app.get('/u/:user/colpo/accedi', (req, res) => {
     const login = loginColpi(req);
     if (!login || !portaColpi.aperti(login) || !config.twitchClientId) return notFound(res);
+    if (sulPew(req)) {
+      const segno = crypto.randomBytes(16).toString('hex');
+      req.session.colpoSegno = { segno, canale: login, ts: Date.now() };
+      return res.redirect(`${config.baseUrl}/u/${login}/colpo/accedi?segno=${segno}`);
+    }
+    const segno = config.pewHost && /^[a-f0-9]{32}$/.test(String(req.query.segno || '')) ? String(req.query.segno) : '';
     const state = crypto.randomBytes(16).toString('hex');
-    req.session.colpoFlow = { state, canale: login, ts: Date.now() };
+    req.session.colpoFlow = { state, canale: login, ts: Date.now(), ...(segno ? { segno } : {}) };
     res.redirect(auth.authUrl(colpiAccesso.PERMESSI, state));
+  });
+  // L'altra sponda del ponte, sulla pagina corta: il biglietto vale solo col
+  // segno che questo browser si e' preso partendo, e si brucia comunque.
+  app.get('/u/:user/colpo/entra', (req, res) => {
+    const login = loginColpi(req);
+    if (!login) return notFound(res);
+    const s = req.session?.colpoSegno;
+    if (req.session) delete req.session.colpoSegno;
+    const chiave = s && s.canale === login && Date.now() - s.ts < 15 * 60_000
+      ? pontiColpi.prendi(String(req.query.b || ''), { canale: login, segno: s.segno }) : null;
+    if (chiave) req.session.spettatore = chiave;
+    res.redirect(sulPew(req) ? '/' + login : `/u/${login}/colpo`);
   });
   app.post('/u/:user/colpo/esci', (req, res) => {
     accessiColpi.togli(req.session?.spettatore);
@@ -2527,7 +2566,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     const stripe = contiDonazioni.get(login);
     const cfg = colpiMod.normalizza(s?.settings?.colpi);
     res.json({
-      pagina: `${config.baseUrl}/u/${login}/colpo`, euro: mezziEuro(s, login), valuta: s?.settings?.donazioni?.valuta || 'EUR',
+      pagina: colpiMod.urlPaginaColpo(login), euro: mezziEuro(s, login), valuta: s?.settings?.donazioni?.valuta || 'EUR',
       stripeSenzaRimborsi: !!(stripe?.pronto && !stripe.rimborsi),
       premiErrori: Array.isArray(s?.settings?.colpi?.premiErrori) ? s.settings.colpi.premiErrori.slice(0, 20) : [],
       voci: cfg.voci.map((v) => ({ id: v.id, premioNome: v.premio ? v.premioNome : '', premioCosto: v.premio ? v.premioCosto : 0 })),
@@ -3605,7 +3644,9 @@ STREAMER (${su.toUpperCase()}) e non c'entra con l'automazione del marketing.
     const cf = req.session?.colpoFlow;
     if (cf) delete req.session.colpoFlow;
     if (cf?.state && req.query.state === cf.state) {
-      const torna = `/u/${encodeURIComponent(cf.canale)}/colpo`;
+      // partito dalla pagina corta: si torna la', e la chiave ci arriva col ponte
+      const corto = !!(cf.segno && config.pewHost);
+      const torna = corto ? colpiMod.urlPaginaColpo(cf.canale) : `/u/${encodeURIComponent(cf.canale)}/colpo`;
       if (req.query.error || Date.now() - cf.ts > 15 * 60_000) return res.redirect(torna);
       try {
         const t = await auth.exchangeCode(String(req.query.code || ''));
@@ -3613,7 +3654,12 @@ STREAMER (${su.toUpperCase()}) e non c'entra con l'automazione del marketing.
         if (v?.userId && (v.scopes || []).includes('user:write:chat')) {
           let nome = v.login;
           try { nome = (await helix.getUserByLogin(v.login))?.display_name || v.login; } catch { /* il login basta */ }
-          req.session.spettatore = accessiColpi.metti({ id: v.userId, login: v.login, nome, token: t.accessToken, refresh: t.refreshToken, scade: t.expiresAt });
+          const chiave = accessiColpi.metti({ id: v.userId, login: v.login, nome, token: t.accessToken, refresh: t.refreshToken, scade: t.expiresAt });
+          if (corto) {
+            const b = pontiColpi.apri({ canale: cf.canale, chiave, segno: cf.segno });
+            return res.redirect(`https://${config.pewHost}/u/${encodeURIComponent(cf.canale)}/colpo/entra?b=${b}`);
+          }
+          req.session.spettatore = chiave;
         }
       } catch (e) { log.warn('accesso dello spettatore dei colpi:', e?.message || e); }
       return res.redirect(torna);
@@ -8068,7 +8114,7 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
       const prima = s.settings?.colpi;
       const l = user.login;
       const giro = (premiInCorso.get(l) || Promise.resolve())
-        .then(() => riconciliaPremi({ login: l, prima, helix, streamers, pagina: `${config.baseUrl}/u/${l}/colpo`, log }))
+        .then(() => riconciliaPremi({ login: l, prima, helix, streamers, pagina: colpiMod.urlPaginaColpo(l), log }))
         .catch((e) => log.warn(`premi dei colpi #${l}:`, e?.message || e))
         .finally(() => { if (premiInCorso.get(l) === giro) premiInCorso.delete(l); });
       premiInCorso.set(l, giro);

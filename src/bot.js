@@ -104,6 +104,7 @@ import { aChi } from './features/risposte.js';
 import { modalitaDi, alLavoro } from './features/quando-lavora.js';
 import { statoVivo, registroColpi, effects as effettiDb, segnoInstagram } from './db.js';
 import { creaServizioColpi } from './features/colpi-servizio.js';
+import { urlPaginaColpo } from './features/colpi.js';
 import { creaChatColpi, rigaDi as rigaChatColpi, BATTITO_MS as BATTITO_CHAT_COLPI } from './features/colpi-chat.js';
 import { coloreDi as coloreChatDi } from './features/badges.js';
 import { nativeInMessaggio as emoteNelMessaggio, canaleInCache as emoteInCache } from './features/emotes.js';
@@ -171,10 +172,11 @@ export const chiaveTikTok = (login) => 'tiktok:' + String(login || '').toLowerCa
 
 // Quello che il bot dice in chat sui colpi degli spettatori, nella lingua del canale.
 function testoColpi(canale, cosa, chi, r = {}) {
+  const pagina = urlPaginaColpo(canale).replace(/^https:\/\//, '');
   const T = {
-    codice: [`${chi} quel codice non vale o è già stato usato: i punti tornano a te. Il codice lo prendi mirando sulla pagina dei colpi.`,
-      `${chi} that code isn't valid or was already used: your points are back. You get the code by aiming on the hits page.`,
-      `${chi} ese código no vale o ya se usó: los puntos vuelven a ti. El código lo consigues apuntando en la página de golpes.`],
+    codice: [`${chi} quel codice non vale o è già stato usato: i punti tornano a te. Il codice lo prendi mirando su ${pagina}`,
+      `${chi} that code isn't valid or was already used: your points are back. You get the code by aiming on ${pagina}`,
+      `${chi} ese código no vale o ya se usó: los puntos vuelven a ti. El código lo consigues apuntando en ${pagina}`],
     fermo: [`${chi} adesso il colpo non può comparire (diretta o overlay fermi): i punti tornano a te.`,
       `${chi} the hit can't show right now (stream or overlay stopped): your points are back.`,
       `${chi} ahora el golpe no puede aparecer (directo u overlay parados): los puntos vuelven a ti.`],

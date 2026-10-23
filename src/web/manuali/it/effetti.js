@@ -285,8 +285,8 @@ export default {
       '<strong>Un effetto degli eventi parte ma non si vede.</strong> Se in cima a «Per gli eventi» leggi che in nessun overlay è acceso «Effetti a schermo», accendilo nello Studio.',
     ] },
 
-    { h2: 'Colpi degli spettatori', scheda: 'colpi', p: [
-      'Gli spettatori colpiscono la diretta senza estensioni Twitch: aprono la tua pagina dei colpi, <code>socialbot.live/u/&lt;canale&gt;/colpo</code>, vedono la diretta, scelgono un tuo effetto, toccano il punto del quadro e pagano. Pagato, l\'effetto compare in quel punto, col suo centro dove hanno toccato, e sotto il loro nome.',
+    { h2: 'Pewpewify', scheda: 'colpi', p: [
+      'Gli spettatori colpiscono la diretta senza estensioni Twitch: aprono la tua pagina di Pewpewify, <code>pew.socialbot.live/&lt;canale&gt;</code> (vale anche <code>socialbot.live/u/&lt;canale&gt;/colpo</code>), vedono la diretta, scelgono un tuo effetto, toccano il punto del quadro e pagano. Pagato, l\'effetto compare in quel punto, col suo centro dove hanno toccato, e sotto il loro nome.',
       'La scheda sta nel gruppo «Scena e overlay». Il listino si fa coi tuoi effetti con un\'immagine o un video che si posano in un punto: un effetto a tutto schermo o disegnato non ha un punto, e non si offre.',
       'Si paga in tre modi, e ogni colpo può averne uno, due o tutti e tre. <strong>Euro</strong>: sul tuo conto, con Stripe o Satispay, come le donazioni (si collegano nella scheda «Donazioni»); il pagamento conta anche come donazione, quindi parte l\'avviso e sale l\'obiettivo. <strong>Punti canale</strong>: SocialBot crea su Twitch un premio «Colpo: nome» per ogni colpo con un prezzo in punti, e lo spettatore lo riscatta scrivendo il codice che la pagina gli ha dato; un codice sbagliato restituisce i punti. <strong>Bit</strong>: i Bit si spendono solo su Twitch, quindi lo spettatore fa un Cheer in chat con il codice nel messaggio; se ne manda meno del prezzo, i Bit si sommano col Cheer dopo.',
       'Il punto si decide quando lo spettatore prende la mira: il server controlla che stia nel quadro e fuori dalle zone protette, e lo tiene. Il prezzo è quello del listino in quel momento. Ogni mira parte una volta sola, qualunque cosa la paghi, e se in un quarto d\'ora nessuno la paga scade.',
@@ -307,7 +307,7 @@ export default {
     ] },
   ],
   faq: [
-    { d: 'Gli spettatori possono mandare un effetto in un punto preciso della diretta?', r: 'Sì, con la scheda «Colpi degli spettatori»: dalla tua pagina dei colpi scelgono l\'effetto, toccano il punto e pagano in euro, punti canale o Bit. Non servono estensioni Twitch.' },
+    { d: 'Gli spettatori possono mandare un effetto in un punto preciso della diretta?', r: 'Sì, con la scheda «Pew»: dalla tua pagina di Pewpewify, <code>pew.socialbot.live/&lt;canale&gt;</code>, scelgono l\'effetto, toccano il punto e pagano in euro, punti canale o Bit. Non servono estensioni Twitch.' },
     { d: 'Posso far partire un effetto quando qualcuno mi segue o manda dei bit?', r: 'Sì, in «Per gli eventi»: un effetto per il follow, e per i bit, i raid, gli abbonamenti e le donazioni anche a livelli, più alto il numero, più grande la festa. Parte anche se l\'alert lo mostra Twitch.' },
     { d: 'Posso festeggiare quando un obiettivo arriva al traguardo?', r: 'Sì: in «Per gli eventi» c\'è «Obiettivo raggiunto». Parte una volta per obiettivo, dopo l\'alert dell\'evento che l\'ha fatto arrivare.' },
     { d: 'Come provo un evento senza aspettare che succeda?', r: 'Nel suo foglio, «Prova l\'evento»: parte come in diretta, alert compreso, col numero che scrivi in «Prova con». Non conta negli obiettivi e non scrive in chat.' },
