@@ -28,7 +28,9 @@ test('la frase della presenza: da una persona, una per diretta, e conta nella se
   assert.ok(i > 0 && i < BOT.indexOf('this.brain.observe?.(msg);'), 'nell\'elaborazione di ogni messaggio, dopo l\'antispam');
   const h = BOT.slice(i, i + 1800);
   assert.match(h, /const codice = cfgColpi \? codicePerMonete\(cfgColpi, msg\.text\) : '';\n\s*if \(codice\) \{\n\s*const r = this\.colpi\.daMonete\(login, \{ codice, user: msg\.user \}\);/, 'le monete le paga chi scrive, col suo codice');
-  assert.match(h, /if \(r\.esito === 'partita' && cfgColpi\.presenza\.monete > 0\) economia\.riceve\(login, msg\.user, cfgColpi\.presenza\.monete, \{ fonte: 'presenza' \}\);/, 'le monete della presenza passano dalla porta dell\'economia (bot, tetti, crescita spenta)');
+  assert.match(h, /if \(r\.esito === 'partita' && r\.nuova\) \{\n\s*const date = r\.monete > 0 \? economia\.premio\(login, msg\.user, r\.monete, 'presenza'\) : 0;/, 'le monete della serie: un premio (bot, esclusi e streamer no), una volta per diretta');
+  assert.match(BOT, /serie: pewSerie, log \}\);/, 'la serie col registro vero delle dirette');
+  assert.match(BOT, /pewSerie\.segnaDiretta\(login, arrivi\.occasioneDiretta\(login, this\._inizioTwitch\(login\)\), ora\);/, 'ogni diretta va nell\'elenco dal giro delle ore, con la stessa chiave della presenza');
   assert.match(BOT, /monete: \{ punta: economia\.punta, rendi: economia\.rendi, saldo: economia\.saldo \}/, 'le monete si muovono solo da economia.js, con la ricevuta');
   assert.match(h, /eFrasePresenza\(cfgColpi, msg\.text\) && ePersona\(login, msg\.user\)/, 'i bot noti non si presentano');
   assert.match(h, /chiave: piattaforma \+ ':' \+ \(msg\.userId \|\| msg\.user\)/, 'chi e\', per piattaforma');

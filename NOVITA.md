@@ -67,6 +67,9 @@ comandi diversi da quelli della riga italiana.
 - Follow, abbonamenti, regali, Bit, raid e primo messaggio possono dare monete. Lo staff ne dà e ne toglie con !monete dai e !monete togli, e nel pannello vedi quante ne girano. [vai: giochi]
   en: Follows, subs, gifts, Bits, raids and first messages can give coins. Staff give and take them with !monete dai and !monete togli, and the panel shows how many are in circulation.
   es: Follows, suscripciones, regalos, Bits, raids y primer mensaje pueden dar monedas. El equipo las da y las quita con !monete dai y !monete togli, y en el panel ves cuántas circulan.
+- La presenza di Pewpewify dà monete in serie: alla prima di fila quante scegli tu, poi di più a ogni diretta, finché non se ne salta una. I gradini li decidi tu. [vai: colpi]
+  en: Pewpewify check-in gives coins in a streak: the first in a row gives what you choose, then more each stream, until one is missed. You decide the steps.
+  es: La presencia de Pewpewify da monedas en racha: la primera seguida da lo que eliges, luego más en cada directo, hasta que se salta uno. Los escalones los decides tú.
 - Il listino di Pewpewify si divide in categorie che scegli tu, e un colpo si paga anche con le monete del canale: dalla pagina o in chat con !pew e il codice. [vai: colpi]
   en: The Pewpewify price list is split into categories you choose, and a hit can also be paid with your channel coins: from the page or in chat with !pew and the code.
   es: La lista de Pewpewify se divide en categorías que eliges tú, y un golpe se paga también con las monedas del canal: desde la página o en el chat con !pew y el código.

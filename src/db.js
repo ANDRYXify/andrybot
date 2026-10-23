@@ -946,6 +946,21 @@ CREATE INDEX IF NOT EXISTS idx_colpi_rif ON colpi(riferimento);
 -- e finche' e' in arrivo o mostrata ce n'e' una sola. Una che non si e' vista esce
 -- dall'indice (scaduta) e si puo' rifare.
 CREATE UNIQUE INDEX IF NOT EXISTS idx_colpi_presenza ON colpi(riferimento) WHERE metodo='presenza' AND stato IN ('pagata','sparata');
+CREATE TABLE IF NOT EXISTS pew_serie (       -- la serie della presenza di Pewpewify (docs/COLPI.md): una riga per spettatore
+  channel TEXT NOT NULL,
+  chi TEXT NOT NULL,                           -- piattaforma:id di chi si presenta
+  ultima TEXT NOT NULL DEFAULT '',             -- la diretta dell'ultima presenza (arrivi.occasioneDiretta)
+  serie INTEGER NOT NULL DEFAULT 0,            -- quante di fila, con l'ultima
+  record INTEGER NOT NULL DEFAULT 0,
+  ts INTEGER NOT NULL,
+  PRIMARY KEY (channel, chi)
+);
+CREATE TABLE IF NOT EXISTS pew_dirette (     -- le dirette del canale, in ordine: «di fila» vuol dire una dopo l'altra in questo elenco
+  channel TEXT NOT NULL,
+  occasione TEXT NOT NULL,
+  ts INTEGER NOT NULL,                         -- quando si e' vista la prima volta
+  PRIMARY KEY (channel, occasione)
+);
 
 -- I SOSTEGNI AL PROGETTO, che non sono donazioni a uno streamer.
 --
@@ -1923,6 +1938,29 @@ export const points = {
   },
   segnaAssenza(channel, user, ora = now()) { db.prepare('UPDATE points SET assenza_ts=? WHERE channel=? AND user=?').run(ora, channel, String(user).toLowerCase()); },
   conMonete(channel) { _scadute(); return db.prepare('SELECT user, monete, ruolo FROM points WHERE channel=? AND monete>0 ORDER BY monete DESC, user').all(channel); },
+};
+
+// LA SERIE DELLA PRESENZA di Pewpewify (docs/COLPI.md). Le dirette si segnano
+// dal giro delle ore guardate (ogni cinque minuti in onda) e a ogni presenza:
+// una diretta in cui nessuno si e' presentato c'e' lo stesso, e chi l'ha
+// saltata riparte da uno.
+export const pewSerie = {
+  segnaDiretta(channel, occasione, ora = now()) {
+    if (occasione) db.prepare('INSERT OR IGNORE INTO pew_dirette (channel, occasione, ts) VALUES (?,?,?)').run(String(channel).toLowerCase(), String(occasione), ora);
+  },
+  // la diretta prima di questa, '' se non c'e'
+  precedente(channel, occasione) {
+    const ch = String(channel).toLowerCase();
+    return db.prepare(`SELECT occasione FROM pew_dirette WHERE channel=? AND ts < (SELECT ts FROM pew_dirette WHERE channel=? AND occasione=?)
+      ORDER BY ts DESC LIMIT 1`).get(ch, ch, String(occasione))?.occasione || '';
+  },
+  get(channel, chi) { return db.prepare('SELECT ultima, serie, record, ts FROM pew_serie WHERE channel=? AND chi=?').get(String(channel).toLowerCase(), String(chi)) || null; },
+  metti(channel, chi, { ultima, serie, record, ts = now() }) {
+    db.prepare(`INSERT INTO pew_serie (channel, chi, ultima, serie, record, ts) VALUES (?,?,?,?,?,?)
+      ON CONFLICT(channel, chi) DO UPDATE SET ultima=excluded.ultima, serie=excluded.serie, record=excluded.record, ts=excluded.ts`)
+      .run(String(channel).toLowerCase(), String(chi), String(ultima), Math.trunc(serie) || 0, Math.trunc(record) || 0, ts);
+  },
+  pulisci(ora = now()) { db.prepare('DELETE FROM pew_dirette WHERE ts<?').run(ora - 400 * 86400_000); },
 };
 
 export const registroMonete = {

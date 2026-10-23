@@ -26205,15 +26205,28 @@ function pannelloColpi() {
           <input type="number" id="cl-pr-scala" min="20" max="300" step="5" value="${Number(c.presenza?.scala) || 100}">
         </div>
         <div>
-          <label class="campo" for="cl-pr-monete">${L('Monete a chi si presenta', 'Coins for checking in', 'Monedas por presentarse')}</label>
-          <input type="number" id="cl-pr-monete" min="0" max="100000" value="${Number(c.presenza?.monete) || 0}">
-        </div>
-        <div>
           <label class="campo" for="cl-pr-minuto">${L('Al minuto, al massimo', 'Per minute, at most', 'Por minuto, como máximo')}</label>
           <input type="number" id="cl-pr-minuto" min="1" max="30" value="${Number(c.presenza?.alMinuto) || 6}">
         </div>
       </div>
       <p class="suggerimento">${L('La frase vale scritta da sola: maiuscole e spazi non contano. Nella scritta, {nome} diventa il nome di chi l\'ha scritta; vuota, ognuno la legge nella lingua della tua chat.', 'The phrase counts when typed on its own: capitals and spaces don\'t matter. In the caption, {nome} becomes the name of whoever typed it; left empty, it follows your chat language.', 'La frase vale escrita sola: mayúsculas y espacios no cuentan. En el texto, {nome} se convierte en el nombre de quien la escribió; vacío, sigue el idioma de tu chat.')}</p>
+      <h4 class="spazio-sopra">${L('La serie: monete a ogni presenza di fila', 'The streak: coins for each check-in in a row', 'La racha: monedas por cada presencia seguida')}</h4>
+      <p class="suggerimento">${L('Scrivi le monete di ogni gradino, separate da virgole: la prima presenza vale la prima cifra, la seconda di fila la seconda, e così via. Chi salta una diretta riparte dalla prima. Le monete arrivano una volta per diretta.', 'Write the coins for each step, separated by commas: the first check-in is worth the first number, the second in a row the second, and so on. Whoever misses a stream starts again from the first. Coins arrive once per stream.', 'Escribe las monedas de cada escalón, separadas por comas: la primera presencia vale la primera cifra, la segunda seguida la segunda, y así. Quien se salta un directo vuelve a la primera. Las monedas llegan una vez por directo.')}</p>
+      <div class="griglia-campi">
+        <div>
+          <label class="campo" for="cl-pr-premi">${L('Monete per gradino', 'Coins per step', 'Monedas por escalón')}</label>
+          <input type="text" id="cl-pr-premi" maxlength="200" value="${esc((c.presenza?.premi || (Number(c.presenza?.monete) > 0 ? [c.presenza.monete] : [])).join(', '))}" placeholder="1, 5, 10, 15">
+        </div>
+        <div>
+          <label class="campo" for="cl-pr-dopo">${L('Dopo l\'ultimo gradino', 'After the last step', 'Tras el último escalón')}</label>
+          <select id="cl-pr-dopo"><option value="resta"${c.presenza?.dopo !== 'ricomincia' ? ' selected' : ''}>${L('resta lì', 'stays there', 'se queda ahí')}</option><option value="ricomincia"${c.presenza?.dopo === 'ricomincia' ? ' selected' : ''}>${L('ricomincia dal primo', 'starts over from the first', 'vuelve al primero')}</option></select>
+        </div>
+      </div>
+      <p class="pt-dice" id="cl-pr-dice" aria-live="polite"></p>
+      <div class="riga-check"><input type="checkbox" id="cl-pr-rispondi" ${c.presenza?.rispondi !== false ? 'checked' : ''}><label for="cl-pr-rispondi">${L('Il bot risponde in chat a chi si presenta', 'The bot replies in chat to whoever checks in', 'El bot responde en el chat a quien se presenta')}</label></div>
+      <label class="campo" for="cl-pr-risposta">${L('La risposta (vuota: quella di serie)', 'The reply (empty: the default one)', 'La respuesta (vacía: la de serie)')}</label>
+      <input type="text" id="cl-pr-risposta" maxlength="160" value="${esc(c.presenza?.risposta || '')}" placeholder="${esc(L('{nome}, presente! {serie}ª di fila: +{monete} {moneta}.', '{nome}, checked in! {serie} in a row: +{monete} {moneta}.', '{nome}, ¡presente! {serie}ª seguida: +{monete} {moneta}.'))}">
+      <p class="suggerimento">${L('Nella scritta e nella risposta puoi usare {nome}, {serie} e {monete}; nella risposta anche {moneta}, il nome delle tue monete.', 'In the caption and the reply you can use {nome}, {serie} and {monete}; in the reply also {moneta}, your coin name.', 'En el texto y en la respuesta puedes usar {nome}, {serie} y {monete}; en la respuesta también {moneta}, el nombre de tus monedas.')}</p>
       <p><button type="button" class="btn secondario mini" id="cl-pr-lancio">${_bIco(ICO.target)}${L('Scegli tra lanci e adesivi', 'Pick from throws and stickers', 'Elige entre lanzamientos y pegatinas')}</button></p>
       <h4 class="spazio-sopra">${L('Dove compare', 'Where it shows up', 'Dónde aparece')}</h4>
       <p class="suggerimento">${L('Tocca il quadro: il centro dell\'effetto va lì. Le zone protette valgono anche qui.', 'Tap the frame: the center of the effect goes there. Protected areas apply here too.', 'Toca el cuadro: el centro del efecto va ahí. Las zonas protegidas valen también aquí.')}</p>
@@ -26307,12 +26320,29 @@ function _clPresenzaLeggi() {
     comando: v('cl-pr-comando')?.value || '',
     scala: Number(v('cl-pr-scala')?.value) || 100,
     alMinuto: Number(v('cl-pr-minuto')?.value) || 6,
-    monete: Number(v('cl-pr-monete')?.value) || 0,
+    premi: (v('cl-pr-premi')?.value || '').split(/[\s,;]+/).filter(Boolean).map(Number),
+    dopo: v('cl-pr-dopo')?.value || 'resta',
+    rispondi: !!v('cl-pr-rispondi')?.checked,
+    risposta: (v('cl-pr-risposta')?.value || '').trim(),
     x: _clPunto.x, y: _clPunto.y,
   };
 }
 
+function _clPresenzaDice() {
+  const el = document.getElementById('cl-pr-dice');
+  if (!el) return;
+  const p = _clPresenzaLeggi();
+  const g = p.premi.filter((x) => Number.isFinite(x) && x >= 0).map((x) => Math.round(x)).slice(0, 30);
+  const nome = _clMoneta();
+  if (!g.some((x) => x > 0)) { el.textContent = L('Così la presenza non dà monete.', 'So check-in gives no coins.', 'Así la presencia no da monedas.'); return; }
+  const primi = g.slice(0, 6).map((x, i) => `${i + 1}ª ${x}`).join(', ') + (g.length > 6 ? '…' : '');
+  const poi = p.dopo === 'ricomincia' ? L(`poi si ricomincia da ${g[0]}`, `then it starts over from ${g[0]}`, `luego se vuelve a ${g[0]}`) : L(`poi sempre ${g.at(-1)}`, `then always ${g.at(-1)}`, `luego siempre ${g.at(-1)}`);
+  el.textContent = L(`Così, presenza dopo presenza di fila: ${primi} ${nome}, ${poi}. Chi salta una diretta riparte da ${g[0]}.`, `So, check-in after check-in in a row: ${primi} ${nome}, ${poi}. Whoever misses a stream starts again from ${g[0]}.`, `Así, presencia tras presencia seguida: ${primi} ${nome}, ${poi}. Quien se salta un directo vuelve a ${g[0]}.`);
+}
+
 function _clPresenzaGiusta(p) {
+  if (p.premi.some((x) => !Number.isFinite(x) || x < 0 || x > 100000)) throw new Error(L('Nei gradini della serie scrivi solo numeri, da 0 a 100.000, separati da virgole.', 'In the streak steps write only numbers, from 0 to 100,000, separated by commas.', 'En los escalones de la racha escribe solo números, de 0 a 100.000, separados por comas.'));
+  if (p.premi.length > 30) throw new Error(L('Al massimo 30 gradini.', 'At most 30 steps.', 'Como máximo 30 escalones.'));
   if (p.frase && p.frase.length < 2) throw new Error(L('La frase della presenza vuole almeno due caratteri.', 'The check-in phrase needs at least two characters.', 'La frase de la presencia necesita al menos dos caracteres.'));
   if (p.testo && !p.testo.includes('{nome}')) throw new Error(L('Nella scritta della presenza metti {nome}: è lì che va il nome di chi scrive.', 'Put {nome} in the check-in caption: that\'s where the name goes.', 'Pon {nome} en el texto de la presencia: ahí va el nombre de quien escribe.'));
   if (p.attiva && !p.comando) throw new Error(L('Per accendere la presenza scegli il suo effetto.', 'To turn on check-in, pick its effect.', 'Para activar la presencia elige su efecto.'));
@@ -26451,6 +26481,9 @@ async function caricaColpi() {
     });
   }
   _clPresenzaQuadro();
+  _clPresenzaDice();
+  const cardPr = document.getElementById('cl-presenza');
+  if (cardPr && !cardPr.dataset.wiredDice) { cardPr.dataset.wiredDice = '1'; cardPr.addEventListener('input', _clPresenzaDice); cardPr.addEventListener('change', _clPresenzaDice); }
   const pq = document.getElementById('cl-pr-quadro');
   if (pq && !pq.dataset.wired) {
     pq.dataset.wired = '1';

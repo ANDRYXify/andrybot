@@ -102,11 +102,11 @@ import * as premiTempo from './features/premi-tempo.js';
 import * as bossFeat from './features/boss.js';
 import { aChi } from './features/risposte.js';
 import { modalitaDi, alLavoro } from './features/quando-lavora.js';
-import { statoVivo, registroColpi, effects as effettiDb, segnoInstagram } from './db.js';
+import { statoVivo, registroColpi, effects as effettiDb, segnoInstagram, pewSerie } from './db.js';
 import { creaServizioColpi } from './features/colpi-servizio.js';
 import * as economia from './features/economia.js';
 import { nomeMoneta, monetaDi, accordaMoneta } from './features/moneta.js';
-import { urlPaginaColpo, eFrasePresenza, codicePerMonete } from './features/colpi.js';
+import { urlPaginaColpo, eFrasePresenza, codicePerMonete, rispostaPresenza } from './features/colpi.js';
 import { creaChatColpi, rigaDi as rigaChatColpi, BATTITO_MS as BATTITO_CHAT_COLPI } from './features/colpi-chat.js';
 import { coloreDi as coloreChatDi } from './features/badges.js';
 import { nativeInMessaggio as emoteNelMessaggio, canaleInCache as emoteInCache } from './features/emotes.js';
@@ -224,7 +224,9 @@ export class BotManager {
       rimborsaEuro: (l, id) => (String(id).startsWith('satispay:') ? rimborsaSatispay(l, id) : rimborsaStripe(l, id)),
       chiudiPremio: (l, premio, riscatto, stato) => this.helix?.aggiornaRedemption?.(l, premio, riscatto, stato),
       // le monete del canale: si spendono con la ricevuta, e la ricevuta torna se il colpo non compare
-      monete: { punta: economia.punta, rendi: economia.rendi, saldo: economia.saldo }, log });
+      monete: { punta: economia.punta, rendi: economia.rendi, saldo: economia.saldo },
+      // la serie della presenza: chi si presenta diretta dopo diretta
+      serie: pewSerie, log });
     // la chat della pagina dei colpi: i messaggi della chat di Twitch, girati a chi ha la pagina aperta
     this.colpiChat = creaChatColpi();
     setInterval(() => this.colpiChat.battito(), BATTITO_CHAT_COLPI).unref?.();
@@ -877,6 +879,12 @@ export class BotManager {
           arrivi.suGiro(login, chatters, { engine: this.modules, say: (t) => this.say(login, t), twitchInizio: Date.parse(stream.started_at) || this._inizioTwitch(login) }, { helix: this.helix })
             .catch((e) => log.debug(`#${login} arrivi in silenzio:`, e?.message || e));
         }
+        // la serie della presenza di Pewpewify: questa diretta va nell'elenco anche se
+        // nessuno si presenta, con la stessa chiave che usa la presenza
+        if (streamers.get(login)?.settings?.colpi?.presenza?.attiva === true) {
+          try { pewSerie.segnaDiretta(login, arrivi.occasioneDiretta(login, this._inizioTwitch(login)), ora); }
+          catch (e) { log.debug(`#${login} dirette della presenza:`, e?.message || e); }
+        }
         const daKick = this.inDirettaSu(login, 'kick') ? scriventi.giro(login, 'kick', { ora }) : [];
         const presenti = scriventi.unisci(chatters, daKick);
         if (!presenti.length) continue;
@@ -1328,7 +1336,12 @@ export class BotManager {
           const piattaforma = msg.piattaforma || 'twitch';
           const r = this.colpi.presenza(login, { chiave: piattaforma + ':' + (msg.userId || msg.user), nome: msg.display || msg.user,
             occasione: arrivi.occasioneDiretta(login, this._inizioTwitch(login)), lingua: linguaChat(login) });
-          if (r.esito === 'partita' && cfgColpi.presenza.monete > 0) economia.riceve(login, msg.user, cfgColpi.presenza.monete, { fonte: 'presenza' });
+          // la serie: le monete del suo gradino, una volta per diretta, e la risposta in chat
+          if (r.esito === 'partita' && r.nuova) {
+            const date = r.monete > 0 ? economia.premio(login, msg.user, r.monete, 'presenza') : 0;
+            const t = rispostaPresenza(cfgColpi, msg.display || msg.user, linguaChat(login), { serie: r.serie, monete: date, moneta: nomeMoneta(login) });
+            if (t) parla(t);
+          }
           if (r.esito === 'partita' || r.esito === 'gia') presenze.dichiara(login, msg.user);
         }
       } catch (e) { log.debug(`#${login} Pewpewify in chat:`, e?.message || e); }
@@ -3063,6 +3076,7 @@ export class BotManager {
   }
 
   _giornoEconomia() {
+    try { pewSerie.pulisci(); } catch (e) { log.debug('dirette della presenza:', e?.message || e); }
     for (const s of streamers.active()) {
       try {
         const e = economia.giornoEconomia(s.login);

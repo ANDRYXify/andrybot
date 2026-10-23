@@ -330,11 +330,18 @@ export function giornoEconomia(channel, { ora = Date.now() } = {}) {
 // hanno i tetti di quella; nascono «da un premio», con la sua durata. I bot e
 // gli esclusi no, lo streamer no. Torna quante ne ha date in tutto.
 export function evento(channel, quale, user, volte = 1, { ora = Date.now() } = {}) {
+  const n = (regole(channel).eventi[quale] || 0) * Math.max(0, Math.trunc(Number(volte) || 0));
+  return premio(channel, user, n, 'evento:' + quale, { ora });
+}
+// Un premio scelto dallo streamer (un evento, la serie della presenza di
+// Pewpewify): nasce «da un premio» e va nel registro. I bot, gli esclusi e lo
+// streamer no; con i giochi spenti niente.
+export function premio(channel, user, n, motivo, { ora = Date.now() } = {}) {
   const ch = norm(channel), u = norm(user);
   const s = streamers.get(ch);
   const cfg = normalizza(s?.settings?.punti);
-  const n = (cfg.eventi[quale] || 0) * Math.max(0, Math.trunc(Number(volte) || 0));
-  if (!ch || !u || u === ch || n <= 0 || cfg.esclusi.includes(u) || !ePersona(ch, u) || s?.settings?.giochi === false) return 0;
-  return regala(ch, u, n, 'evento:' + quale, { daDove: 'premi', ora });
+  const q = Math.max(0, Math.trunc(Number(n) || 0));
+  if (!ch || !u || u === ch || q <= 0 || cfg.esclusi.includes(u) || !ePersona(ch, u) || s?.settings?.giochi === false) return 0;
+  return regala(ch, u, q, motivo, { daDove: 'premi', ora });
 }
 export const dagliEventi = (channel, type, data, opz) => eventoMonete(type, data).reduce((t, e) => t + evento(channel, e.quale, e.user, e.volte, opz), 0);

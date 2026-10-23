@@ -112,9 +112,15 @@ export function normalizza(cfg) {
 // maiuscole e spazi: «!pew presente» vale, «ciao !pew presente» no. Accesa vuol
 // dire anche «pronta»: senza un effetto non si accende.
 export const PRESENZA = Object.freeze({
-  frase: '!pew presente', x: 12, y: 82, scala: 100, alMinuto: [1, 30], alMinutoDef: 6, testo: 60,
+  frase: '!pew presente', x: 12, y: 82, scala: 100, alMinuto: [1, 30], alMinutoDef: 6, testo: 60, gradini: 30,
   // la frase sull'overlay quando lo streamer non la scrive, nella lingua della chat
   testi: Object.freeze({ it: '{nome} è presente', en: '{nome} is here', es: '{nome} está presente' }),
+  // la risposta in chat di serie: col premio, e senza quando non ce n'e'
+  risposte: Object.freeze({
+    it: Object.freeze(['{nome}, presente! {serie}ª di fila: +{monete} {moneta}.', '{nome}, presente! {serie}ª di fila.']),
+    en: Object.freeze(['{nome}, checked in! {serie} in a row: +{monete} {moneta}.', '{nome}, checked in! {serie} in a row.']),
+    es: Object.freeze(['{nome}, ¡presente! {serie}ª seguida: +{monete} {moneta}.', '{nome}, ¡presente! {serie}ª seguida.']),
+  }),
 });
 function normCategorie(c) {
   if (!Array.isArray(c)) return CATEGORIE_SERIE.map((id) => ({ id, nome: '' }));
@@ -159,18 +165,54 @@ function normPresenza(p) {
     scala: num(o.scala, LIMITI.scala, PRESENZA.scala),
     testo: testo(o.testo, PRESENZA.testo).includes('{nome}') ? testo(o.testo, PRESENZA.testo) : '',
     alMinuto: num(o.alMinuto, PRESENZA.alMinuto, PRESENZA.alMinutoDef),
-    // le monete del canale a chi si presenta (passano dalla porta dell'economia)
-    monete: num(o.monete, [0, 100_000], 0),
+    // LA SERIE (docs/COLPI.md, «La serie della presenza»): le monete di ogni
+    // presenza di fila, gradino per gradino («1, 5, 10, 15»); dopo l'ultimo si
+    // resta li' o si ricomincia. Chi salta una diretta riparte dal primo.
+    premi: normPremi(o.premi, o.monete),
+    dopo: o.dopo === 'ricomincia' ? 'ricomincia' : 'resta',
+    // la risposta in chat a chi si presenta: spenta, o col testo dello streamer
+    // ({nome}, {serie}, {monete}); vuoto = quella di serie, nella lingua della chat
+    rispondi: o.rispondi !== false,
+    risposta: testo(o.risposta, 160),
   };
+}
+function normPremi(premi, vecchio) {
+  const grezzi = Array.isArray(premi) ? premi : typeof premi === 'string' ? premi.split(/[\s,;]+/) : [];
+  const out = grezzi.map((x) => Math.round(Number(x))).filter((x) => Number.isFinite(x) && x >= 0).slice(0, PRESENZA.gradini).map((x) => Math.min(100_000, x));
+  if (!out.length && Number(vecchio) > 0) out.push(Math.min(100_000, Math.round(Number(vecchio))));
+  return out.some((x) => x > 0) ? out : [];
+}
+// Quante monete vale la presenza numero `serie` di fila.
+export function premioSerie(p, serie) {
+  const g = p?.premi || [];
+  const n = Math.max(1, Math.trunc(Number(serie) || 1));
+  if (!g.length) return 0;
+  return p.dopo === 'ricomincia' ? g[(n - 1) % g.length] : g[Math.min(n, g.length) - 1];
+}
+// La serie di una persona dopo questa presenza: +1 se l'ultima sua era alla
+// diretta subito prima, se no si riparte da 1. `precedente` e' la diretta prima
+// di questa nell'elenco delle dirette del canale ('' se non c'e').
+export function serieDopo(prima, occasione, precedente) {
+  if (prima?.ultima && prima.ultima === occasione) return prima.serie || 1;
+  return prima?.ultima && precedente && prima.ultima === precedente ? (prima.serie || 0) + 1 : 1;
 }
 export const eFrasePresenza = (cfg, messaggio) => !!cfg?.presenza?.attiva && formaFrase(messaggio) === cfg.presenza.frase;
 // la frase sull'overlay, col nome: quella dello streamer, o quella di serie
-export function frasePresenza(cfg, nome, lingua = 'it') {
+export function frasePresenza(cfg, nome, lingua = 'it', { serie = 1, monete = 0 } = {}) {
   const n = nomeChi(nome);
   if (!n) return '';
   const modello = cfg?.presenza?.testo || PRESENZA.testi[lingua] || PRESENZA.testi.it;
-  return modello.replace(/\{nome\}/g, () => n).slice(0, PRESENZA.testo);
+  return riempiPresenza(modello, { nome: n, serie, monete }).slice(0, PRESENZA.testo);
 }
+// La risposta in chat: quella dello streamer, o quella di serie (con o senza il premio).
+export function rispostaPresenza(cfg, nome, lingua = 'it', { serie = 1, monete = 0, moneta = '' } = {}) {
+  const p = cfg?.presenza;
+  if (!p?.rispondi) return '';
+  const r = PRESENZA.risposte[lingua] || PRESENZA.risposte.it;
+  const modello = p.risposta || (monete > 0 ? r[0] : r[1]);
+  return riempiPresenza(modello, { nome: '@' + nomeChi(nome), serie, monete, moneta });
+}
+const riempiPresenza = (t, v) => String(t).replace(/\{(nome|serie|monete|moneta)\}/g, (_, k) => String(v[k] ?? ''));
 
 // Il punto e' buono se sta nel quadro e fuori da ogni zona protetta.
 export function puntoBuono(cfg, x, y) {

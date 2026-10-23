@@ -17,7 +17,7 @@
 //    puo' rimborsare nessuno fuori da Twitch: per questo la pagina li chiede
 //    solo quando il colpo e' consegnabile, e un colpo a Bit pagato resta in
 //    coda finche' un overlay non lo mostra.
-import { normalizza, puntoBuono, voceDi, metodiDi, nuovoCodice, codiceIn, nomeChi, bastaPer, frasePresenza, SCADENZA_MS } from './colpi.js';
+import { normalizza, puntoBuono, voceDi, metodiDi, nuovoCodice, codiceIn, nomeChi, bastaPer, frasePresenza, premioSerie, serieDopo, SCADENZA_MS } from './colpi.js';
 import { randomBytes } from 'node:crypto';
 
 // Gli effetti che si possono mirare: quelli che si posano in un punto. Un'immagine
@@ -39,7 +39,7 @@ export const VOCE_PRESENZA = '@presenza';
 // { tolte, ricevuta } o null), `rendi` (la ricevuta torna com'era) e `saldo`. Senza, i colpi non
 // si pagano in monete.
 export function creaServizioColpi({ registro, effects, effettoDi, impostazioni, inOnda = () => true, overlay = () => true,
-  rimborsaEuro = async () => ({ errore: 'nessun conto' }), chiudiPremio = async () => true, monete = null, ora = () => Date.now(), log = null }) {
+  rimborsaEuro = async () => ({ errore: 'nessun conto' }), chiudiPremio = async () => true, monete = null, serie = null, ora = () => Date.now(), log = null }) {
   const ultimaDi = new Map();
   const cfgDi = (login) => normalizza(impostazioni(login));
 
@@ -121,16 +121,25 @@ export function creaServizioColpi({ registro, effects, effettoDi, impostazioni, 
     if (!MIRABILE(effettoDi(ch, p.comando))) return { esito: 'fermo', motivo: 'effetto' };
     const punto = puntoBuono(cfg, p.x, p.y);
     if (!punto.ok) return { esito: 'fermo', motivo: punto.motivo };
-    const chi = frasePresenza(cfg, nome, lingua);
-    if (!chi) return { esito: 'spenta' };
+    if (!nomeChi(nome)) return { esito: 'spenta' };
     const adesso = ora();
     if (registro.presenzeDa(ch, adesso - 60_000) >= p.alMinuto) return { esito: 'troppe' };
+    // la serie: di fila se la sua ultima presenza era alla diretta subito prima
+    // di questa. Le monete una volta per diretta: una presenza rifatta dopo che
+    // la prima non si e' vista non le ridà.
+    serie?.segnaDiretta(ch, occasione, adesso);
+    const prima = serie?.get(ch, chiave) || null;
+    const n = serieDopo(prima, occasione, serie?.precedente(ch, occasione) || '');
+    const nuova = prima?.ultima !== occasione;
+    const premio = nuova ? premioSerie(p, n) : 0;
+    const chi = frasePresenza(cfg, nome, lingua, { serie: n, monete: premioSerie(p, n) });
     const m = { id: randomBytes(9).toString('hex'), login: ch, voce: VOCE_PRESENZA, comando: p.comando, nome: 'Presenza',
       x: punto.x, y: punto.y, scala: p.scala, chi, riferimento: `presenza:${occasione}:${chiave}` };
     if (!registro.presenza(m, adesso)) return { esito: 'gia' };
+    serie?.metti(ch, chiave, { ultima: occasione, serie: n, record: Math.max(prima?.record || 0, n), ts: adesso });
     const fatto = manda(registro.get(m.id));
     log?.info?.(`presenza su #${ch}${fatto ? '' : ': in coda, nessun overlay pronto'}`);
-    return { esito: 'partita' };
+    return { esito: 'partita', serie: n, monete: premio, nuova };
   }
 
   // La prova dal pannello: la stessa presenza, subito, senza registro (non e'
@@ -142,7 +151,7 @@ export function creaServizioColpi({ registro, effects, effettoDi, impostazioni, 
     if (!MIRABILE(effettoDi(ch, p.comando))) return { ok: false, motivo: 'effetto' };
     const punto = puntoBuono(cfg, p.x, p.y);
     if (!punto.ok) return { ok: false, motivo: punto.motivo };
-    const chi = frasePresenza({ presenza: p }, nome, lingua);
+    const chi = frasePresenza({ presenza: p }, nome, lingua, { serie: 1, monete: premioSerie(p, 1) });
     const ok = !!effects.fireConOpzioni(ch, p.comando, { xy: { x: punto.x, y: punto.y, s: p.scala, r: 0, centro: true }, attacco: { id: '', chi, nome: 'Presenza' } });
     return ok ? { ok: true } : { ok: false, motivo: 'overlay' };
   }

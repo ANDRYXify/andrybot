@@ -237,9 +237,7 @@ un sistema vivo». Un colpo ha un quarto prezzo: le monete del canale
 - Le monete si muovono solo da `economia.js`: il servizio riceve `punta`,
   `rendi` e `saldo`, e senza non offre il prezzo in monete.
 
-E la presenza può dare monete (`presenza.monete`): passano dalla porta
-dell'economia (`economia.riceve`), con le sue regole (i bot no, la crescita
-spenta, i tetti).
+E la presenza dà monete in serie («La serie della presenza», sotto).
 
 ## L'anteprima
 
@@ -303,6 +301,40 @@ Nel pannello, scheda Pew, «La presenza»: accesa, frase, scritta, effetto (anch
 dai lanci e adesivi), grandezza, tetto, il punto toccando il quadro, e
 «Prova nell'overlay», che la manda subito col nome dello streamer, senza
 registro.
+
+## La serie della presenza
+
+Chiesto così: «quando si fa la presenza colleghiamo quella presenza al
+riscatto delle monete (ogni giorno si può aggiungere quante monete, tipo alla
+prima presenza 1, poi 5, poi 10 poi 15 fino a che non si salta una presenza,
+però personalizzabile, sia quanto la combo massima sia quanti punti sia
+tutto)».
+
+- **I gradini** (`presenza.premi`, fino a 30): le monete della prima presenza
+  di fila, della seconda, e così via. Dopo l'ultimo gradino si resta lì o si
+  ricomincia dal primo (`presenza.dopo`). Tutti a zero, niente monete
+  (`premioSerie`).
+- **Di fila vuol dire diretta dopo diretta.** La serie (`pew_serie`, per
+  spettatore) sale se la sua ultima presenza era alla diretta subito prima di
+  questa, se no riparte da 1 (`serieDopo`). «Subito prima» lo dice l'elenco
+  delle dirette del canale (`pew_dirette`): ogni diretta ci entra dal giro
+  delle ore guardate, ogni cinque minuti in onda, e a ogni presenza, con la
+  stessa chiave della presenza (`arrivi.occasioneDiretta`). Così una diretta
+  in cui nessuno si è presentato c'è lo stesso, e chi l'ha saltata riparte. Una
+  diretta più corta di cinque minuti senza presenze non entra: non conta come
+  saltata.
+- **Le monete una volta per diretta**: una presenza rifatta perché la prima non
+  si è vista compare di nuovo, ma non ridà le monete. Sono un premio scelto
+  dallo streamer (`economia.premio`): nascono «da un premio», vanno nel
+  registro delle monete (motivo `presenza`), e i bot, gli esclusi e lo
+  streamer non le ricevono.
+- **La scritta** sull'overlay e **la risposta** in chat possono dire `{serie}`
+  e `{monete}` (la risposta anche `{moneta}`, il nome delle monete). La
+  risposta si spegne; vuota, è quella di serie nella lingua della chat, col
+  premio se c'è. Arriva solo alla prima presenza della diretta.
+
+Nel pannello, sotto «La presenza»: i gradini separati da virgole, cosa succede
+dopo l'ultimo, una riga che rilegge la serie coi numeri, la risposta.
 
 ## La chat
 
