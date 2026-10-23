@@ -268,6 +268,36 @@ CREATE TABLE IF NOT EXISTS monete_lotti (  -- le monete a lotti: quante, e quand
 );
 CREATE INDEX IF NOT EXISTS idx_lotti_scade ON monete_lotti(scade);
 
+CREATE TABLE IF NOT EXISTS monete_mov (    -- IL REGISTRO delle monete (docs/ECONOMIA.md): perdite, eventi, staff, stagioni. Novanta giorni
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  channel TEXT NOT NULL,
+  user TEXT NOT NULL,
+  delta INTEGER NOT NULL,                     -- quante: piu' arrivate, meno tolte
+  motivo TEXT NOT NULL,                       -- timeout | ban | cancellato | assenza | assenza-fine | stagione | staff | pannello | evento:<quale>
+  chi TEXT NOT NULL DEFAULT '',               -- chi l'ha deciso: un moderatore, lo streamer; vuoto = una regola
+  ricevuta TEXT NOT NULL DEFAULT '',          -- le tolte: i lotti, per rimetterli tali e quali con «Annulla»
+  annullato_ts INTEGER NOT NULL DEFAULT 0,
+  annullato_da TEXT NOT NULL DEFAULT '',
+  ts INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_monete_mov ON monete_mov(channel, ts);
+CREATE TABLE IF NOT EXISTS monete_giorno (  -- quante monete nascono, si spendono, tornano e scadono, giorno per giorno (UTC): le monete in circolazione
+  channel TEXT NOT NULL,
+  giorno TEXT NOT NULL,
+  nate INTEGER NOT NULL DEFAULT 0,
+  spese INTEGER NOT NULL DEFAULT 0,
+  rese INTEGER NOT NULL DEFAULT 0,
+  scadute INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (channel, giorno)
+);
+CREATE TABLE IF NOT EXISTS monete_stagioni (-- le classifiche delle stagioni finite, prima che le monete ripartano
+  channel TEXT NOT NULL,
+  chiave TEXT NOT NULL,                       -- la stagione: '2026-10' o '2026-T4'
+  ts INTEGER NOT NULL,
+  classifica TEXT NOT NULL DEFAULT '[]',      -- [{ user, monete }], i primi dieci di chi non e' staff
+  PRIMARY KEY (channel, chiave)
+);
+
 CREATE TABLE IF NOT EXISTS arena_emote (    -- l'emote con cui una persona combatte nell'arena (!emote), per canale
   channel TEXT NOT NULL,
   user TEXT NOT NULL,
@@ -1267,7 +1297,8 @@ aggiungiColonna('points', 'zitto_giri', 'INTEGER NOT NULL DEFAULT 0');
 aggiungiColonna('points', 'zitto_ts', 'INTEGER NOT NULL DEFAULT 0');
 aggiungiColonna('points', 'diretta', "TEXT NOT NULL DEFAULT ''");
 aggiungiColonna('points', 'guadagno_diretta', 'INTEGER NOT NULL DEFAULT 0');
-aggiungiColonna('points', 'parlato', 'INTEGER NOT NULL DEFAULT 0');  // i passi per giocare (docs/ECONOMIA.md, «Per giocare bisogna esserci»)
+aggiungiColonna('points', 'parlato', 'INTEGER NOT NULL DEFAULT 0');
+aggiungiColonna('points', 'assenza_ts', 'INTEGER NOT NULL DEFAULT 0');  // l'ultima volta che ha perso monete per l'assenza  // i passi per giocare (docs/ECONOMIA.md, «Per giocare bisogna esserci»)
 aggiungiColonna('negozio_acquisti', 'ricevuta', "TEXT NOT NULL DEFAULT ''");  // i lotti spesi, per rimborsarli uguali
 aggiungiColonna('negozio_articoli', 'campi', "TEXT NOT NULL DEFAULT '[]'");     // il modulo per chi compra (features/negozio-moduli.js)
 aggiungiColonna('negozio_acquisti', 'risposte', "TEXT NOT NULL DEFAULT ''");   // le risposte al modulo, come le ha date: [{ etichetta, valore }]
@@ -1567,12 +1598,21 @@ const _lotti = {
     ON CONFLICT(channel, user) DO UPDATE SET monete = MAX(0, points.monete + ?), ruolo = COALESCE(?, points.ruolo), ts=?`),
 };
 const _ruolo = (r) => (r === null || r === undefined ? null : (r === 'staff' ? 'staff' : ''));
+// LE MONETE IN CIRCOLAZIONE (docs/ECONOMIA.md): ogni moneta nasce, si spende,
+// torna o scade passando da qui sotto, e qui si conta, giorno per giorno. Un
+// regalo o un furto sono una spesa e una resa uguali: fanno zero da soli.
+const _giorno = db.prepare(`INSERT INTO monete_giorno (channel, giorno, nate, spese, rese, scadute) VALUES (?,?,?,?,?,?)
+  ON CONFLICT(channel, giorno) DO UPDATE SET nate = nate + excluded.nate, spese = spese + excluded.spese, rese = rese + excluded.rese, scadute = scadute + excluded.scadute`);
+const _conta = (ch, ora, { nate = 0, spese = 0, rese = 0, scadute = 0 }) => {
+  if (nate || spese || rese || scadute) _giorno.run(ch, new Date(ora).toISOString().slice(0, 10), nate, spese, rese, scadute);
+};
 // Una moneta nasce in un lotto. Una gia' scaduta non nasce: non ci sarebbe.
-function _crea(ch, u, n, scade, ruolo = null, ora = now()) {
+// `nuova` e' falso quando torna da una ricevuta (_rendi): quella non nasce.
+function _crea(ch, u, n, scade, ruolo = null, ora = now(), nuova = true) {
   const q = Math.trunc(Number(n) || 0);
   const s = msIntero(scade);
   const d = q > 0 && !(s > 0 && s <= ora) ? q : 0;
-  if (d) _lotti.metti.run(ch, u, s, d);
+  if (d) { _lotti.metti.run(ch, u, s, d); if (nuova) _conta(ch, ora, { nate: d }); }
   const r = _ruolo(ruolo);
   if (d || r !== null) _lotti.saldo.run(ch, u, d, r, ora, d, r, ora);
   return d;
@@ -1597,6 +1637,7 @@ function _spendi(ch, u, n, { tutto = true, ora = now() } = {}) {
   if (tolte) {
     _lotti.vuoti.run(ch, u);
     _lotti.saldo.run(ch, u, -tolte, null, ora, -tolte, null, ora);
+    _conta(ch, ora, { spese: tolte });
   }
   return { tolte, ricevuta };
 }
@@ -1611,9 +1652,10 @@ function _rendi(ch, u, ricevuta, quante = Infinity, ora = now()) {
     if (resta <= 0) break;
     const q = Math.min(Math.trunc(Number(l?.quanti) || 0), resta);
     if (q <= 0) continue;
-    rese += _crea(ch, u, q, l.scade, null, ora);
+    rese += _crea(ch, u, q, l.scade, null, ora, false);
     resta -= q;
   }
+  _conta(ch, ora, { rese });
   return rese;
 }
 // LE SCADUTE ESCONO PRIMA DI OGNI LETTURA. Un lotto scade a mezzanotte, e da
@@ -1628,7 +1670,7 @@ const _scaduti = {
 const _scadute = db.transaction((ora = now()) => {
   const righe = _scaduti.quali.all(ora);
   if (!righe.length) return 0;
-  for (const r of righe) _lotti.saldo.run(r.channel, r.user, -r.q, null, ora, -r.q, null, ora);
+  for (const r of righe) { _lotti.saldo.run(r.channel, r.user, -r.q, null, ora, -r.q, null, ora); _conta(r.channel, ora, { scadute: r.q }); }
   _scaduti.via.run(ora);
   return righe.reduce((t, r) => t + r.q, 0);
 });
@@ -1846,9 +1888,77 @@ export const points = {
         const v = (x) => (x === undefined ? null : x);
         q.run(channel, u, d, ruolo, ora, v(r.visto), v(r.zittoGiri), v(r.zittoTs), v(r.diretta), v(r.guadagno),
           d, ruolo, d, ora, v(r.visto), v(r.zittoGiri), v(r.zittoTs), v(r.diretta), v(r.guadagno));
-        if (d > 0) _lotti.metti.run(channel, u, msIntero(scade), d);
+        if (d > 0) { _lotti.metti.run(channel, u, msIntero(scade), d); _conta(channel, ora, { nate: d }); }
       }
     })();
+  },
+  // IL REGISTRO, LE ASSENZE, LE STAGIONI (docs/ECONOMIA.md, «Le monete che si
+  // perdono»): letture e segni. Le monete si muovono sempre con le funzioni qui
+  // sopra, da features/economia.js.
+  // Le monete in circolazione: quante ce ne sono, quante persone ne hanno, e
+  // negli ultimi `giorni` giorni quante sono nate e quante sono sparite (spese e
+  // non tornate, o scadute).
+  circolazione(channel, giorni = 7, ora = now()) {
+    _scadute();
+    const t = db.prepare('SELECT COUNT(*) persone, COALESCE(SUM(monete),0) monete FROM points WHERE channel=? AND monete>0').get(channel);
+    const da = new Date(ora - (giorni - 1) * 86400_000).toISOString().slice(0, 10);
+    const g = db.prepare('SELECT COALESCE(SUM(nate),0) nate, COALESCE(SUM(spese),0) spese, COALESCE(SUM(rese),0) rese, COALESCE(SUM(scadute),0) scadute FROM monete_giorno WHERE channel=? AND giorno>=?').get(channel, da);
+    return { persone: t.persone, monete: t.monete, giorni, nate: g.nate, sparite: Math.max(0, g.spese - g.rese) + g.scadute };
+  },
+  // Chi non si vede da prima di `prima` e ha monete, e non ha gia' perso per
+  // l'assenza dopo `settimana`. Chi non e' mai stato visto (righe di prima che
+  // si contasse) comincia a contare adesso: nessuno perde per un dato che manca.
+  assenti(channel, prima, ora = now()) {
+    _scadute();
+    db.prepare('UPDATE points SET visto=? WHERE channel=? AND visto=0 AND monete>0').run(ora, channel);
+    return db.prepare('SELECT user, monete, visto, assenza_ts FROM points WHERE channel=? AND monete>0 AND visto>0 AND visto<? ORDER BY user')
+      .all(channel, prima);
+  },
+  // L'ultimo segno di vita, a ogni messaggio, qualunque cosa dicano le regole
+  // delle monete (spente, a canale spento, ogni N secondi): l'assenza deve
+  // parlare di chi c'e', non di chi ha ricevuto. Al piu' una scrittura ogni
+  // dieci minuti a persona, e solo per chi ha una riga.
+  vistoOra(channel, user, ora = now()) {
+    db.prepare('UPDATE points SET visto=? WHERE channel=? AND user=? AND visto<?').run(ora, channel, String(user).toLowerCase(), ora - 600_000);
+  },
+  segnaAssenza(channel, user, ora = now()) { db.prepare('UPDATE points SET assenza_ts=? WHERE channel=? AND user=?').run(ora, channel, String(user).toLowerCase()); },
+  conMonete(channel) { _scadute(); return db.prepare('SELECT user, monete, ruolo FROM points WHERE channel=? AND monete>0 ORDER BY monete DESC, user').all(channel); },
+};
+
+export const registroMonete = {
+  metti(channel, user, delta, motivo, { chi = '', ricevuta = null, ora = now() } = {}) {
+    const d = Math.trunc(Number(delta) || 0);
+    if (!d) return 0;
+    return Number(db.prepare('INSERT INTO monete_mov (channel, user, delta, motivo, chi, ricevuta, ts) VALUES (?,?,?,?,?,?,?)')
+      .run(channel, String(user).toLowerCase(), d, String(motivo).slice(0, 40), String(chi || '').toLowerCase().slice(0, 40), ricevuta ? JSON.stringify(ricevuta) : '', ora).lastInsertRowid);
+  },
+  _leggi(r) { if (!r) return null; let ricevuta = null; try { ricevuta = r.ricevuta ? JSON.parse(r.ricevuta) : null; } catch { ricevuta = null; } return { ...r, ricevuta }; },
+  get(channel, id) { return this._leggi(db.prepare('SELECT * FROM monete_mov WHERE channel=? AND id=?').get(channel, Math.trunc(Number(id) || 0))); },
+  ultimi(channel, { n = 50, user = '' } = {}) {
+    const lim = Math.max(1, Math.min(200, Math.trunc(Number(n) || 50)));
+    const righe = user
+      ? db.prepare('SELECT * FROM monete_mov WHERE channel=? AND user=? ORDER BY id DESC LIMIT ?').all(channel, String(user).toLowerCase(), lim)
+      : db.prepare('SELECT * FROM monete_mov WHERE channel=? ORDER BY id DESC LIMIT ?').all(channel, lim);
+    return righe.map((r) => this._leggi(r));
+  },
+  // una volta sola: vince il primo che ci riesce
+  annullato(channel, id, chi = '', ora = now()) {
+    return db.prepare('UPDATE monete_mov SET annullato_ts=?, annullato_da=? WHERE channel=? AND id=? AND annullato_ts=0')
+      .run(ora, String(chi || '').toLowerCase().slice(0, 40), channel, Math.trunc(Number(id) || 0)).changes === 1;
+  },
+  pulisci(ora = now()) {
+    db.prepare('DELETE FROM monete_mov WHERE ts<?').run(ora - 90 * 86400_000);
+    db.prepare('DELETE FROM monete_giorno WHERE giorno<?').run(new Date(ora - 90 * 86400_000).toISOString().slice(0, 10));
+  },
+};
+
+export const stagioniMonete = {
+  archivia(channel, chiave, classifica, ora = now()) {
+    db.prepare('INSERT OR IGNORE INTO monete_stagioni (channel, chiave, ts, classifica) VALUES (?,?,?,?)').run(channel, String(chiave), ora, JSON.stringify(classifica || []));
+  },
+  ultime(channel, n = 6) {
+    return db.prepare('SELECT chiave, ts, classifica FROM monete_stagioni WHERE channel=? ORDER BY ts DESC LIMIT ?').all(channel, Math.max(1, Math.min(24, n)))
+      .map((r) => { let c = []; try { c = JSON.parse(r.classifica); } catch { c = []; } return { chiave: r.chiave, ts: r.ts, classifica: c }; });
   },
 };
 

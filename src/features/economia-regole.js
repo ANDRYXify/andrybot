@@ -31,7 +31,17 @@ export const DEFAULT = Object.freeze({
   tettoDiretta: 0, saldoMax: 0,
   durate: Object.freeze({ chat: 'mai', giochi: 'mai', premi: 'mai', staff: 'mai' }),
   giocoOgni: 0, giochiScorta: 3,
+  // le monete che si perdono (docs/ECONOMIA.md): tutto spento, come prima
+  perdite: Object.freeze({ timeout: Object.freeze({ modo: 'no', n: 10 }), ban: Object.freeze({ modo: 'no', n: 100 }), cancellato: 0,
+    assenza: Object.freeze({ giorni: 0, pct: 10, fine: 0 }) }),
+  stagioni: Object.freeze({ ogni: 'no', tieni: 0, annuncia: true }),
+  // le monete degli eventi di Twitch: tutte a zero
+  eventi: Object.freeze({ follow: 0, sub1: 0, sub2: 0, sub3: 0, regalo: 0, bit: 0, raid: 0, primo: 0 }),
 });
+export const MODI_TIMEOUT = Object.freeze(['no', 'pct', 'fisso']);
+export const MODI_BAN = Object.freeze(['no', 'pct', 'tutto']);
+export const STAGIONI = Object.freeze(['no', 'mese', 'tre']);
+export const EVENTI = Object.freeze(['follow', 'sub1', 'sub2', 'sub3', 'regalo', 'bit', 'raid', 'primo']);
 export const ESCLUSI_MAX = 200;
 export const DOPPIO = Object.freeze({ min: 5, max: 240, xMin: 1.5, xMax: 5 });
 
@@ -68,7 +78,63 @@ export function normalizza(p = {}) {
     durate: Object.fromEntries(DA_DOVE.map((k) => [k, DURATE.includes(q.durate?.[k]) ? q.durate[k] : DEFAULT.durate[k]])),
     giocoOgni: intero(q.giocoOgni, DEFAULT.giocoOgni, 0, 50),
     giochiScorta: intero(q.giochiScorta, DEFAULT.giochiScorta, 1, 20),
+    perdite: normPerdite(q.perdite),
+    stagioni: {
+      ogni: STAGIONI.includes(q.stagioni?.ogni) ? q.stagioni.ogni : DEFAULT.stagioni.ogni,
+      tieni: intero(q.stagioni?.tieni, DEFAULT.stagioni.tieni, 0, 100),
+      annuncia: si(q.stagioni?.annuncia, DEFAULT.stagioni.annuncia),
+    },
+    eventi: Object.fromEntries(EVENTI.map((k) => [k, intero(q.eventi?.[k], DEFAULT.eventi[k], 0, 1_000_000)])),
   };
+}
+
+function normPerdite(p) {
+  const d = DEFAULT.perdite;
+  const o = p && typeof p === 'object' ? p : {};
+  return {
+    timeout: { modo: MODI_TIMEOUT.includes(o.timeout?.modo) ? o.timeout.modo : d.timeout.modo, n: intero(o.timeout?.n, d.timeout.n, 1, 1_000_000) },
+    ban: { modo: MODI_BAN.includes(o.ban?.modo) ? o.ban.modo : d.ban.modo, n: intero(o.ban?.n, d.ban.n, 1, 100) },
+    cancellato: intero(o.cancellato, d.cancellato, 0, 1_000_000),
+    assenza: {
+      giorni: intero(o.assenza?.giorni, d.assenza.giorni, 0, 365),
+      pct: intero(o.assenza?.pct, d.assenza.pct, 1, 100),
+      fine: intero(o.assenza?.fine, d.assenza.fine, 0, 1000),
+    },
+  };
+}
+
+// LE MONETE CHE SI PERDONO (docs/ECONOMIA.md, «Le monete che si perdono»).
+// Quante ne perde chi ha `saldo` monete, per un timeout, un ban o un messaggio
+// cancellato. Un timeout di un secondo e' un «purge» (Twitch cancella i
+// messaggi e basta): vale come un messaggio cancellato. Mai piu' del saldo, e
+// una percentuale arrotonda in su: chi ha poco perde almeno una moneta.
+export function quantoPerde(cfg, tipo, saldo, durata = 0) {
+  const p = cfg.perdite;
+  const s = Math.max(0, Math.trunc(Number(saldo) || 0));
+  const t = tipo === 'timeout' && Number(durata) <= 1 ? 'cancellato' : tipo;
+  const pct = (n) => Math.min(s, Math.ceil(s * n / 100));
+  if (t === 'cancellato') return Math.min(s, p.cancellato);
+  if (t === 'timeout') return p.timeout.modo === 'pct' ? pct(p.timeout.n) : p.timeout.modo === 'fisso' ? Math.min(s, p.timeout.n) : 0;
+  if (t === 'ban') return p.ban.modo === 'tutto' ? s : p.ban.modo === 'pct' ? pct(p.ban.n) : 0;
+  return 0;
+}
+// L'assenza: chi non si vede da `giorni` giorni perde il `pct`% (una volta ogni
+// sette giorni, lo conta chi chiama); da `fine` giorni le perde tutte.
+// { n, motivo }, con n = 0 se non perde niente.
+export function quantoAssenza(cfg, saldo, giorniVia) {
+  const a = cfg.perdite.assenza;
+  const s = Math.max(0, Math.trunc(Number(saldo) || 0));
+  if (!s) return { n: 0, motivo: '' };
+  if (a.fine > 0 && giorniVia >= a.fine) return { n: s, motivo: 'assenza-fine' };
+  if (a.giorni > 0 && giorniVia >= a.giorni) return { n: Math.min(s, Math.ceil(s * a.pct / 100)), motivo: 'assenza' };
+  return { n: 0, motivo: '' };
+}
+// La stagione di adesso, nel fuso del canale: '2026-10' (ogni mese),
+// '2026-T4' (ogni tre mesi), '' se le stagioni sono spente.
+export function chiaveStagione(ogni, ora = Date.now(), fuso = 'Europe/Rome') {
+  if (ogni !== 'mese' && ogni !== 'tre') return '';
+  const p = partiIn(ora, fusoOk(fuso));
+  return ogni === 'mese' ? `${p.year}-${String(p.month).padStart(2, '0')}` : `${p.year}-T${Math.floor((p.month - 1) / 3) + 1}`;
 }
 
 // QUANTO DURANO LE MONETE (docs/ECONOMIA.md, «Quanto durano le monete»).
@@ -246,4 +312,22 @@ export function contiDiretta(cfgGrezza, { minuti = 120, x = 1 } = {}) {
     return tot;
   };
   return { spesso: persona(1), ogniTanto: persona(20), silenzio: persona(0) };
+}
+
+// LE MONETE DEGLI EVENTI DI TWITCH (docs/ECONOMIA.md, «Gli eventi»): chi le
+// riceve e quante volte la quota. Il follow e' solo il primo (il ritorno e' un
+// altro evento); un abbonamento regalato le da' a chi regala, una per regalo, e
+// non a chi lo riceve; i Bit una quota ogni cento; il raid a chi lo porta. Chi
+// resta anonimo non riceve niente. [{ user, quale, volte }]
+export function eventoMonete(type, data = {}) {
+  const d = data || {};
+  const u = (x) => norm(x);
+  const tier = (t) => (String(t) === '3000' ? 'sub3' : String(t) === '2000' ? 'sub2' : 'sub1');
+  if (type === 'channel.follow' && u(d.user_login)) return [{ user: u(d.user_login), quale: 'follow', volte: 1 }];
+  if (type === 'channel.subscribe' && !d.is_gift && u(d.user_login)) return [{ user: u(d.user_login), quale: tier(d.tier), volte: 1 }];
+  if (type === 'channel.subscription.message' && u(d.user_login)) return [{ user: u(d.user_login), quale: tier(d.tier), volte: 1 }];
+  if (type === 'channel.subscription.gift' && !d.is_anonymous && u(d.user_login)) return [{ user: u(d.user_login), quale: 'regalo', volte: Math.max(1, Math.trunc(Number(d.total) || 1)) }];
+  if (type === 'channel.cheer' && !d.is_anonymous && u(d.user_login) && Number(d.bits) >= 100) return [{ user: u(d.user_login), quale: 'bit', volte: Math.floor(Number(d.bits) / 100) }];
+  if (type === 'channel.raid' && u(d.from_broadcaster_user_login)) return [{ user: u(d.from_broadcaster_user_login), quale: 'raid', volte: 1 }];
+  return [];
 }

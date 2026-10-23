@@ -904,6 +904,20 @@ export function tryGame(msg, say) {
       }
 
       case 'monete': {
+        // LO STAFF, A MANO (docs/ECONOMIA.md): «!monete dai|togli|imposta @nome N».
+        // Tutto nel registro, con chi l'ha fatto: dal pannello si annulla.
+        const az = String(args[0] || '').toLowerCase();
+        if (az === 'dai' || az === 'togli' || az === 'imposta') {
+          if (!(msg.isMod || msg.isBroadcaster)) { risposta(`Dare e togliere ${moneta()} è cosa dello staff.`); return true; }
+          const chi = String(args[1] || '').replace(/^@/, '').toLowerCase();
+          const n = Number.parseInt(args[2], 10);
+          if (!/^[a-z0-9_]{2,25}$/.test(chi) || !(n >= 0) || n > 1_000_000_000) { risposta(`Si usa così: ${comando('monete')} ${az} @nome 100`); return true; }
+          const d = az === 'dai' ? economia.regala(channel, chi, n, 'staff', { chi: msg.user })
+            : az === 'togli' ? -economia.perde(channel, chi, n, 'staff', { chi: msg.user })
+              : economia.imposta(channel, chi, n, { chi: msg.user });
+          say(`💰 @${chi}: ${d >= 0 ? '+' : ''}${d} ${moneta()}, adesso ${points.get(channel, chi)}.`);
+          return true;
+        }
         const prime = economia.primaScadenza(channel, msg.user);
         const scadono = prime ? ` ${prime.quanti} ${prime.quanti === 1 ? 'scade' : 'scadono'} ${quandoScade(channel, prime.scade)}.` : '';
         risposta(`💰 Hai ${points.get(channel, msg.user)} ${moneta()}.${scadono}`);

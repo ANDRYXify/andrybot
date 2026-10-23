@@ -129,6 +129,27 @@ export default {
       'In chat <code>!monete</code> dice anche quante ne scadono per prime e quando: «20 scadono domenica». Una moneta scaduta non si spende e non conta in classifica, dallo scoccare della mezzanotte.',
     ] },
 
+    { h3: 'Dagli eventi di Twitch' },
+    { p: [
+      'Le monete che dai a chi ti segue la prima volta, a chi si abbona o rinnova (una cifra per ogni tier), a chi regala abbonamenti (per ognuno), ogni cento Bit, a chi porta un raid e al primo messaggio di sempre di una persona. Tutto a zero di serie.',
+      'Valgono anche con «Arrivano anche da sole» spento e non hanno tetti: le scegli tu. Un abbonamento regalato le dà a chi regala, non a chi lo riceve; chi resta anonimo non riceve niente; un follow durante un attacco di bot non vale. I bot e chi hai escluso non ne prendono.',
+    ] },
+
+    { h3: 'Come si perdono' },
+    { p: [
+      '<strong>La moderazione</strong>: un timeout può togliere una parte (in percentuale) o un numero fisso, un ban una parte o tutto, un messaggio cancellato un numero fisso. Vale per quello che fai tu, i moderatori e il bot: il bot lo vede dalla chat di Twitch. Un timeout di un secondo cancella i messaggi e basta, e conta come un messaggio cancellato. Tu non perdi mai.',
+      '<strong>L\'assenza</strong>: chi non si vede da tanti giorni perde una parte delle sue monete ogni settimana, e dopo altri giorni, se vuoi, le perde tutte. Vedersi vuol dire scrivere in chat o esserci mentre sei in diretta. Il conto parte da quando accendi la regola.',
+      '<strong>Le stagioni</strong>: ogni mese o ogni tre mesi le monete ripartono da zero o da una parte di quelle che si avevano. La classifica finale resta nel registro, e se vuoi il bot dice in chat i primi tre. Cambiare da «ogni mese» a «ogni tre mesi» non chiude una stagione.',
+      'Sotto le regole una riga dice coi numeri cosa succede a chi ha 1.000 monete. Tutto è spento di serie.',
+    ] },
+
+    { h3: 'Il registro delle monete' },
+    { p: [
+      'Le monete date e tolte dalle regole e dallo staff: moderazione, assenze, stagioni, eventi, quelle date a mano dal pannello e quelle in chat con <code>!monete dai @nome 100</code>, <code>!monete togli @nome 100</code> e <code>!monete imposta @nome 500</code>, che può usare solo lo staff. Per ognuna: quando, chi, quante, perché e chi l\'ha deciso. Si tiene novanta giorni.',
+      '«Annulla» rimette esattamente quello che è stato tolto, con le stesse scadenze (una moneta scaduta nel frattempo non torna), o riprende quello che è stato dato, quanto ce n\'è ancora. Si annulla una volta sola.',
+      'In cima, le monete in circolazione: quante ce ne sono, quante persone ne hanno, quante ne sono nate e sparite negli ultimi sette giorni. Un regalo o un furto passano monete da una persona all\'altra e non cambiano niente; una puntata conta solo quello che si vince o si perde. Sotto, le stagioni passate coi loro primi tre.',
+    ] },
+
     { h3: 'Per giocare bisogna esserci' },
     { p: [
       'Le attese dicono quanto spesso si gioca, non chi gioca. Con «Un gioco ogni quanti messaggi» una partita costa qualche messaggio scritto in chat: chi viene solo per i giochi prima deve parlare con te. A zero la regola è spenta, ed è così di base.',

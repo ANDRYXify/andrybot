@@ -103,7 +103,7 @@ export const COMANDI = [
   { id: '8ball', modulo: 'giochi', gioco: '8ball', nomi: ['8ball', 'palla8'], titolo: ['Palla magica', 'Magic 8-ball', 'Bola mágica'],
     cosa: ['Risponde a una domanda. Serve la domanda.', 'Answers a question. The question is required.', 'Responde a una pregunta. Hace falta la pregunta.'] },
   { id: 'monete', modulo: 'giochi', nomi: ['monete', 'punti', 'bilancio'], titolo: ['Il mio saldo', 'My balance', 'Mi saldo'],
-    cosa: ['Dice quante monete ha chi lo scrive.', 'Says how many coins the writer has.', 'Dice cuántas monedas tiene quien lo escribe.'] },
+    cosa: ['Dice quante monete ha chi lo scrive. Lo staff dà e toglie: !monete dai @nome 100, !monete togli @nome 100, !monete imposta @nome 500.', 'Says how many coins the writer has. Staff give and take: !monete dai @name 100, !monete togli @name 100, !monete imposta @name 500.', 'Dice cuántas monedas tiene quien lo escribe. El equipo da y quita: !monete dai @nombre 100, !monete togli @nombre 100, !monete imposta @nombre 500.'] },
   { id: 'doppio', modulo: 'giochi', nomi: ['doppio', 'doppie'], titolo: ['Ora doppia', 'Double time', 'Hora doble'], chi: 'mod',
     cosa: ['Per un po\' le monete che arrivano da sole valgono di più: !doppio 30 per mezz\'ora, !doppio 60 3 per un\'ora al triplo, !doppio stop per finire.', 'For a while the coins that come by themselves are worth more: !doppio 30 for half an hour, !doppio 60 3 for an hour at triple, !doppio stop to end it.', 'Durante un rato las monedas que llegan solas valen más: !doppio 30 media hora, !doppio 60 3 una hora al triple, !doppio stop para terminar.'] },
   { id: 'perdona', modulo: 'giochi', nomi: ['perdona', 'perdono', 'pardon'], titolo: ['Togli un castigo', 'Lift a penalty', 'Quita un castigo'], chi: 'mod',

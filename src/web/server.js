@@ -7479,6 +7479,24 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     if (!r) return res.status(400).json({ errore: 'Scegli quando devono scadere.' });
     res.json(r);
   });
+  // IL REGISTRO (docs/ECONOMIA.md, «Il registro»): le perdite, gli eventi, lo
+  // staff, le stagioni; con le monete in circolazione e le stagioni passate.
+  app.get('/api/monete/registro', requireOwner, (req, res) => {
+    const login = currentUser(req).login;
+    const chi = String(req.query.user || '').trim().replace(/^@/, '').toLowerCase();
+    res.json({
+      righe: economia.registro(login, { n: 100, user: /^[a-z0-9_]{2,30}$/.test(chi) ? chi : '' })
+        .map(({ id, user: u, delta, motivo, chi, ts, annullato_ts: annullato, annullato_da: annullatoDa }) => ({ id, user: u, delta, motivo, chi, ts, annullato, annullatoDa })),
+      circolazione: economia.circolazione(login, 7),
+      stagioni: economia.stagioniPassate(login, 6),
+    });
+  });
+  app.post('/api/monete/registro/:id/annulla', requireOwner, (req, res) => {
+    const u = currentUser(req);
+    const r = economia.annulla(u.login, req.params.id, { chi: identitaDi(u) });
+    if (!r.ok) return res.status(r.motivo === 'manca' ? 404 : 409).json({ errore: r.motivo === 'manca' ? 'Questo movimento non c\'è più.' : 'Questo movimento è già stato annullato.' });
+    res.json(r);
+  });
   app.post('/api/monete/doppio', requireOwner, (req, res) => {
     const login = currentUser(req).login;
     const b = req.body || {};
@@ -10879,8 +10897,11 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     const delta = Math.round(Number(req.body?.delta));
     if (!Number.isFinite(delta) || delta === 0) return res.status(400).json({ errore: 'Scrivi quante monete dare (o togliere, con il meno).' });
     const q = Math.max(-1_000_000, Math.min(1_000_000, delta));
-    // quello che lo staff da' a mano nasce «dallo staff», con la sua durata
-    const saldo = q > 0 ? economia.dai(login, utente, q, 'staff') : (economia.togli(login, utente, -q), points.get(login, utente));
+    // quello che lo staff da' a mano nasce «dallo staff», con la sua durata, e
+    // finisce nel registro col nome di chi l'ha fatto (si puo' annullare)
+    if (q > 0) economia.regala(login, utente, q, 'pannello', { chi: identitaDi(currentUser(req)) });
+    else economia.perde(login, utente, -q, 'pannello', { chi: identitaDi(currentUser(req)) });
+    const saldo = points.get(login, utente);
     log.info(`#${login}: monete aggiustate a mano — ${utente} ${q > 0 ? '+' : ''}${q} → ${saldo}`);
     res.json({ ok: true, utente, saldo });
   }));

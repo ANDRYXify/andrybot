@@ -309,9 +309,33 @@ export class ChatBot extends EventEmitter {
           log.debug('NOTICE:', params);
         }
         return;
+      // LA MODERAZIONE, vista dalla chat (docs/ECONOMIA.md, «Le monete che si
+      // perdono»): Twitch la manda a tutti quelli in chat, per i timeout e i ban
+      // dei moderatori e per quelli del bot, senza permessi in piu'. Una sorgente
+      // sola: nessuna punizione si conta due volte.
+      case 'CLEARCHAT': return this._onModerazione('CLEARCHAT', tags, params);
+      case 'CLEARMSG': return this._onModerazione('CLEARMSG', tags, params);
       default:
         return; // 001/353/JOIN/PART ecc.: non ci servono
     }
+  }
+
+  // CLEARCHAT '#canale :utente' (con ban-duration e' un timeout, senza un ban;
+  // senza utente e' la chat svuotata, che non riguarda nessuno) e CLEARMSG
+  // '#canale :testo' (chi l'ha scritto sta nel tag login) → evento 'moderazione'.
+  _onModerazione(comando, tags, params) {
+    const sep = params.indexOf(' :');
+    const channel = normCh(sep === -1 ? params : params.slice(0, sep));
+    if (!channel) return;
+    if (comando === 'CLEARMSG') {
+      const user = String(tags['login'] || '').toLowerCase();
+      if (user) this.emit('moderazione', { channel, user, tipo: 'cancellato', id: tags['target-msg-id'] || '' });
+      return;
+    }
+    const user = sep === -1 ? '' : params.slice(sep + 2).trim().toLowerCase();
+    if (!user) return;
+    const durata = Number(tags['ban-duration']);
+    this.emit('moderazione', { channel, user, tipo: tags['ban-duration'] === undefined ? 'ban' : 'timeout', durata: Number.isFinite(durata) ? durata : 0 });
   }
 
   // Messaggio in chat → evento 'message' per il resto del bot.

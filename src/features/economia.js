@@ -21,9 +21,10 @@
 // Le funzioni pure stanno in economia-regole.js, che il pannello riceve tale e
 // quale (/js/economia-regole.js) per i conti che mostra: il pannello e il bot
 // non possono dire due cose diverse.
-import { points, streamers, statoVivo } from '../db.js';
+import { points, streamers, statoVivo, registroMonete, stagioniMonete } from '../db.js';
 import { ePersona } from './antibot.js';
-import { GIRO_MS, VIVO_MS, STESSO_FILO_MS, DOPPIO, normalizza, quotaGiro, contaMessaggio, taglia, scadenza, giornoIn } from './economia-regole.js';
+import { GIRO_MS, VIVO_MS, STESSO_FILO_MS, DOPPIO, normalizza, quotaGiro, contaMessaggio, taglia, scadenza, giornoIn,
+  quantoPerde, quantoAssenza, chiaveStagione, eventoMonete } from './economia-regole.js';
 import { preferenzeDi } from './preferenze.js';
 
 const norm = (s) => String(s || '').toLowerCase().trim().replace(/^@/, '');
@@ -161,6 +162,7 @@ export function messaggio(msg, ora = Date.now()) {
   const u = norm(msg?.user);
   if (!ch || !u || u.startsWith('[')) return { conta: false, dato: 0 };
   const k = ch + '|' + u;
+  points.vistoOra(ch, u, ora);
   const prec = ultimoTesto.get(k);
   ultimoTesto.delete(k);
   ultimoTesto.set(k, String(msg.text || ''));
@@ -218,3 +220,121 @@ export function giro(channel, presenti, { ruoli = {}, parlanti = new Set(), live
   points.economiaScrivi(ch, scrivi, { scade: scadePer(ch, 'chat', ora) });
   return esito;
 }
+
+// ── le monete che si perdono, e il registro ─────────────────────────────────
+//
+// docs/ECONOMIA.md, «Le monete che si perdono». Ogni perdita, ogni regalo dello
+// staff e ogni evento finiscono nel registro, col motivo e chi l'ha deciso; le
+// tolte con la ricevuta dei lotti, cosi' «Annulla» rimette esattamente quelle.
+const GIORNO = 86_400_000;
+
+// Toglie fino a `n` monete (quante ce ne sono) e lo scrive. Torna le tolte.
+export function perde(channel, user, n, motivo, { chi = '', ora = Date.now() } = {}) {
+  const ch = norm(channel), u = norm(user);
+  const q = Math.max(0, Math.trunc(Number(n) || 0));
+  if (!ch || !u || !q) return 0;
+  const r = points.togli(ch, u, q, { ora });
+  if (r.tolte) registroMonete.metti(ch, u, -r.tolte, motivo, { chi, ricevuta: r.ricevuta, ora });
+  return r.tolte;
+}
+// Da' `n` monete che nascono `daDove` (staff, premi) e lo scrive. Torna le date.
+export function regala(channel, user, n, motivo, { chi = '', daDove = 'staff', ora = Date.now() } = {}) {
+  const ch = norm(channel), u = norm(user);
+  const q = Math.max(0, Math.trunc(Number(n) || 0));
+  if (!ch || !u || !q) return 0;
+  points.dai(ch, u, q, { scade: scadePer(ch, daDove, ora), ora });
+  registroMonete.metti(ch, u, q, motivo, { chi, ora });
+  return q;
+}
+// Il saldo di una persona portato a `n`: la differenza, data o tolta.
+export function imposta(channel, user, n, { chi = '', motivo = 'staff', ora = Date.now() } = {}) {
+  const ch = norm(channel), u = norm(user);
+  const voluto = Math.max(0, Math.trunc(Number(n) || 0));
+  const ha = points.get(ch, u);
+  if (voluto > ha) return regala(ch, u, voluto - ha, motivo, { chi, ora });
+  return -perde(ch, u, ha - voluto, motivo, { chi, ora });
+}
+// La moderazione (CLEARCHAT e CLEARMSG della chat di Twitch). Lo streamer non
+// perde mai: e' casa sua.
+export function punisci(channel, user, tipo, { durata = 0, ora = Date.now() } = {}) {
+  const ch = norm(channel), u = norm(user);
+  if (!ch || !u || u === ch) return 0;
+  const n = quantoPerde(regole(ch), tipo, points.get(ch, u), durata);
+  return perde(ch, u, n, tipo === 'timeout' && Number(durata) <= 1 ? 'cancellato' : tipo, { ora });
+}
+// «Annulla» dal registro: una volta sola. Le tolte tornano coi loro lotti (uno
+// scaduto nel frattempo non torna: non c'e' piu'); le date si riprendono, quante
+// ce ne sono ancora. { ok, monete } o { ok: false, motivo }.
+export function annulla(channel, id, { chi = '', ora = Date.now() } = {}) {
+  const ch = norm(channel);
+  const m = registroMonete.get(ch, id);
+  if (!m) return { ok: false, motivo: 'manca' };
+  if (m.annullato_ts || !registroMonete.annullato(ch, m.id, chi, ora)) return { ok: false, motivo: 'gia' };
+  if (m.delta < 0) {
+    const prima = points.get(ch, m.user);
+    return { ok: true, monete: points.rendi(ch, m.user, m.ricevuta || [], { ora }) - prima };
+  }
+  return { ok: true, monete: -points.togli(ch, m.user, m.delta, { ora }).tolte };
+}
+export const registro = (channel, opz) => registroMonete.ultimi(norm(channel), opz);
+export const circolazione = (channel, giorni = 7) => points.circolazione(norm(channel), giorni);
+export const stagioniPassate = (channel, n) => stagioniMonete.ultime(norm(channel), n);
+
+// IL GIRO DI OGNI GIORNO, una volta al giorno nel fuso del canale (lo chiama il
+// bot quando vuole: il giorno sta nel database, un riavvio non lo rifa').
+//  · l'assenza: chi non si vede da N giorni perde la sua parte, una volta ogni
+//    sette giorni; da M giorni le perde tutte;
+//  · la stagione: quando cambia (e solo se il modo e' lo stesso: passare da
+//    «ogni mese» a «ogni tre mesi» non e' una stagione finita), la classifica
+//    va nell'archivio e le monete ripartono dalla parte che si tiene;
+//  · il registro tiene novanta giorni.
+// Torna null se oggi e' gia' fatto, se no { assenti, tolte, stagione }.
+export function giornoEconomia(channel, { ora = Date.now() } = {}) {
+  const ch = norm(channel);
+  const fuso = preferenzeDi(ch).fuso;
+  const oggi = giornoIn(ora, fuso);
+  if (statoVivo.leggi(ch, 'economia-giorno')?.giorno === oggi) return null;
+  statoVivo.scrivi(ch, 'economia-giorno', { giorno: oggi, ts: ora });
+  const cfg = regole(ch);
+  const esito = { assenti: 0, tolte: 0, stagione: null };
+  const a = cfg.perdite.assenza;
+  const soglie = [a.giorni, a.fine].filter((x) => x > 0);
+  if (soglie.length) {
+    for (const r of points.assenti(ch, ora - Math.min(...soglie) * GIORNO, ora)) {
+      const { n, motivo } = quantoAssenza(cfg, r.monete, Math.floor((ora - r.visto) / GIORNO));
+      if (!n || (motivo === 'assenza' && ora - (r.assenza_ts || 0) < 7 * GIORNO)) continue;
+      const t = perde(ch, r.user, n, motivo, { ora });
+      if (t) { esito.assenti++; esito.tolte += t; points.segnaAssenza(ch, r.user, ora); }
+    }
+  }
+  const ogni = cfg.stagioni.ogni;
+  const chiave = chiaveStagione(ogni, ora, fuso);
+  const prima = statoVivo.leggi(ch, 'economia-stagione');
+  if (!prima || prima.ogni !== ogni || prima.chiave !== chiave) {
+    statoVivo.scrivi(ch, 'economia-stagione', { ogni, chiave, ts: ora });
+    if (prima && prima.ogni === ogni && prima.chiave && chiave) {
+      const gente = points.conMonete(ch);
+      const classifica = gente.filter((r) => r.ruolo !== 'staff').slice(0, 10).map((r) => ({ user: r.user, monete: r.monete }));
+      stagioniMonete.archivia(ch, prima.chiave, classifica, ora);
+      for (const r of gente) perde(ch, r.user, r.monete - Math.floor(r.monete * cfg.stagioni.tieni / 100), 'stagione', { ora });
+      esito.stagione = { chiave: prima.chiave, classifica, annuncia: cfg.stagioni.annuncia };
+    }
+  }
+  registroMonete.pulisci(ora);
+  return esito;
+}
+
+// GLI EVENTI (docs/ECONOMIA.md, «Gli eventi»): follow, abbonamenti, regali, Bit,
+// raid e il primo messaggio di sempre danno le monete che lo streamer sceglie.
+// Le decide lui, quindi valgono anche con la crescita automatica spenta, e non
+// hanno i tetti di quella; nascono «da un premio», con la sua durata. I bot e
+// gli esclusi no, lo streamer no. Torna quante ne ha date in tutto.
+export function evento(channel, quale, user, volte = 1, { ora = Date.now() } = {}) {
+  const ch = norm(channel), u = norm(user);
+  const s = streamers.get(ch);
+  const cfg = normalizza(s?.settings?.punti);
+  const n = (cfg.eventi[quale] || 0) * Math.max(0, Math.trunc(Number(volte) || 0));
+  if (!ch || !u || u === ch || n <= 0 || cfg.esclusi.includes(u) || !ePersona(ch, u) || s?.settings?.giochi === false) return 0;
+  return regala(ch, u, n, 'evento:' + quale, { daDove: 'premi', ora });
+}
+export const dagliEventi = (channel, type, data, opz) => eventoMonete(type, data).reduce((t, e) => t + evento(channel, e.quale, e.user, e.volte, opz), 0);

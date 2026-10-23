@@ -1488,6 +1488,20 @@ function apiDemo(percorso, opzioni = {}) {
   }
   if (via === '/api/monete/durata') return Promise.resolve({ senzaScadenza: { persone: 0, monete: 0 }, fuso: 'Europe/Rome' });
   if (via === '/api/monete/scadenza-vecchie') return Promise.resolve({ persone: 0, monete: 0, scade: 0 });
+  if (via.startsWith('/api/monete/registro')) {
+    const ann = _demoScritture.annullati || [];
+    if (metodo === 'POST') { const id = Number(via.split('/')[4]); _demoScritture.annullati = [...ann, id]; return Promise.resolve({ ok: true, monete: id === 2 ? 50 : -30 }); }
+    const ora = Date.now();
+    const righe = [
+      { id: 4, user: 'lucia_gioca', delta: 30, motivo: 'evento:follow', chi: '', ts: ora - 40 * 60_000 },
+      { id: 3, user: 'marco_88', delta: -120, motivo: 'assenza', chi: '', ts: ora - 9 * 3_600_000 },
+      { id: 2, user: 'trollino', delta: -50, motivo: 'timeout', chi: '', ts: ora - 26 * 3_600_000 },
+      { id: 1, user: 'giulia', delta: 200, motivo: 'staff', chi: 'andryx', ts: ora - 50 * 3_600_000 },
+    ].map((r) => ({ ...r, annullato: ann.includes(r.id) ? ora : 0, annullatoDa: ann.includes(r.id) ? 'andryx' : '' }));
+    const chi = new URL(via, location.origin).searchParams.get('user') || '';
+    return Promise.resolve({ righe: chi ? righe.filter((r) => r.user === chi.toLowerCase()) : righe, circolazione: { persone: 312, monete: 48210, giorni: 7, nate: 9120, sparite: 6480 },
+      stagioni: [{ chiave: '2026-09', ts: ora - 22 * 86_400_000, classifica: [{ user: 'giulia', monete: 4210 }, { user: 'lucia_gioca', monete: 3880 }, { user: 'marco_88', monete: 2950 }] }] });
+  }
   if (via === '/api/monete/doppio') {
     const b = opzioni.body || {};
     if (metodo === 'POST') _demoScritture.doppio = b.stop ? null : { fino: Date.now() + Math.min(240, Math.max(5, Number(b.minuti) || 30)) * 60_000, x: Math.min(5, Math.max(1.5, Number(b.x) || 2)) };
@@ -29902,6 +29916,20 @@ function pannelloGiochi() {
       <ul class="pt-conti" id="pt-conti" aria-live="polite">${attesaHtml('li')}</ul>
       <p class="suggerimento">${L('Sono i conti del bot, con le regole che vedi qui, anche prima di salvarle: senza abbonamento, senza giochi e senza la serie.', 'These are the bot\'s own sums, with the rules you see here, even before saving: no subscription, no games and no streak.', 'Son las cuentas del bot, con las reglas que ves aquí, incluso antes de guardarlas: sin suscripción, sin juegos y sin racha.')}</p>
 
+      <h3 class="sotto-titolo">${L('Dagli eventi di Twitch', 'From Twitch events', 'De los eventos de Twitch')}</h3>
+      <p>${L('Le monete che dai tu a chi ti segue, si abbona, regala, manda Bit o porta un raid. Valgono anche con «Arrivano anche da sole» spento, e non hanno tetti. 0 = niente.', 'The coins you give to whoever follows, subscribes, gifts, sends Bits or brings a raid. They count even with «They also come by themselves» off, and have no caps. 0 = nothing.', 'Las monedas que das a quien te sigue, se suscribe, regala, manda Bits o trae una raid. Valen también con «También llegan solas» apagado, y no tienen topes. 0 = nada.')}</p>
+      <div class="griglia-punti">
+        <label class="campo-num">${L('Chi ti segue (la prima volta)', 'New follower (first time)', 'Quien te sigue (la primera vez)')}<input type="number" id="pt-ev-follow" min="0" max="1000000" value="${s.punti.eventi?.follow || 0}"></label>
+        <label class="campo-num">${L('Abbonamento o rinnovo, tier 1', 'Sub or resub, tier 1', 'Suscripción o renovación, tier 1')}<input type="number" id="pt-ev-sub1" min="0" max="1000000" value="${s.punti.eventi?.sub1 || 0}"></label>
+        <label class="campo-num">${L('Tier 2', 'Tier 2', 'Tier 2')}<input type="number" id="pt-ev-sub2" min="0" max="1000000" value="${s.punti.eventi?.sub2 || 0}"></label>
+        <label class="campo-num">${L('Tier 3', 'Tier 3', 'Tier 3')}<input type="number" id="pt-ev-sub3" min="0" max="1000000" value="${s.punti.eventi?.sub3 || 0}"></label>
+        <label class="campo-num">${L('A chi regala, per ogni abbonamento', 'To the gifter, per sub', 'A quien regala, por cada suscripción')}<input type="number" id="pt-ev-regalo" min="0" max="1000000" value="${s.punti.eventi?.regalo || 0}"></label>
+        <label class="campo-num">${L('Ogni 100 Bit', 'Every 100 Bits', 'Cada 100 Bits')}<input type="number" id="pt-ev-bit" min="0" max="1000000" value="${s.punti.eventi?.bit || 0}"></label>
+        <label class="campo-num">${L('A chi porta un raid', 'To whoever brings a raid', 'A quien trae una raid')}<input type="number" id="pt-ev-raid" min="0" max="1000000" value="${s.punti.eventi?.raid || 0}"></label>
+        <label class="campo-num">${L('Al primo messaggio di sempre', 'On someone\'s first message ever', 'Al primer mensaje de siempre')}<input type="number" id="pt-ev-primo" min="0" max="1000000" value="${s.punti.eventi?.primo || 0}"></label>
+      </div>
+      <p class="suggerimento">${L('Un abbonamento regalato le dà a chi regala, non a chi lo riceve; chi resta anonimo non riceve niente. Un follow durante un attacco di bot non vale.', 'A gifted sub gives them to the gifter, not the recipient; whoever stays anonymous gets nothing. A follow during a bot attack doesn\'t count.', 'Una suscripción regalada se las da a quien regala, no a quien la recibe; quien queda anónimo no recibe nada. Un follow durante un ataque de bots no vale.')}</p>
+
       <h3 class="sotto-titolo">${L('Quanto durano', 'How long they last', 'Cuánto duran')}</h3>
       <p>${L('Una moneta prende la sua scadenza quando si guadagna, da come si guadagna, e la tiene anche quando passa di mano: regalarla o giocarla non la allunga. Si spendono prima quelle che scadono prima, e', 'A coin gets its expiry when it is earned, from how it is earned, and keeps it when it changes hands: gifting or betting it doesn\'t make it last longer. The ones that expire first are spent first, and', 'Una moneda recibe su caducidad cuando se gana, según cómo se gana, y la mantiene cuando cambia de manos: regalarla o apostarla no la alarga. Se gastan primero las que caducan antes, y')} <code>!monete</code> ${L('dice a ognuno quando scadono le sue.', 'tells everyone when theirs expire.', 'le dice a cada uno cuándo caducan las suyas.')}</p>
       <div class="griglia-punti">${_DURATE_DA.map(([k, eti]) => `
@@ -29915,6 +29943,30 @@ function pannelloGiochi() {
         </div>
         <p><button type="button" class="btn secondario" id="btn-vecchie">${L('Fai scadere anche queste', 'Make these expire too', 'Haz que caduquen también')}</button></p>
       </div>
+
+      <h3 class="sotto-titolo">${L('Come si perdono', 'How they are lost', 'Cómo se pierden')}</h3>
+      <p>${L('Con la moderazione, con l\'assenza e con le stagioni. Ogni moneta persa finisce nel registro qui sotto, e lì si annulla.', 'Through moderation, absence and seasons. Every coin lost goes in the register below, where it can be undone.', 'Con la moderación, con la ausencia y con las temporadas. Cada moneda perdida va al registro de abajo, y ahí se deshace.')}</p>
+      <div class="griglia-punti">
+        <label class="campo-num">${L('Un timeout fa perdere', 'A timeout loses', 'Un timeout hace perder')}<select id="pt-pe-timeout-modo">${[['no', L('niente', 'nothing', 'nada')], ['pct', L('una parte (%)', 'a share (%)', 'una parte (%)')], ['fisso', L('un numero fisso', 'a fixed number', 'un número fijo')]].map(([v, e]) => `<option value="${v}"${(s.punti.perdite?.timeout?.modo || 'no') === v ? ' selected' : ''}>${e}</option>`).join('')}</select></label>
+        <label class="campo-num">${L('…quanto', '…how much', '…cuánto')}<input type="number" id="pt-pe-timeout-n" min="1" max="1000000" value="${s.punti.perdite?.timeout?.n || 10}"></label>
+        <label class="campo-num">${L('Un ban fa perdere', 'A ban loses', 'Un ban hace perder')}<select id="pt-pe-ban-modo">${[['no', L('niente', 'nothing', 'nada')], ['pct', L('una parte (%)', 'a share (%)', 'una parte (%)')], ['tutto', L('tutto', 'everything', 'todo')]].map(([v, e]) => `<option value="${v}"${(s.punti.perdite?.ban?.modo || 'no') === v ? ' selected' : ''}>${e}</option>`).join('')}</select></label>
+        <label class="campo-num">${L('…che parte (%)', '…what share (%)', '…qué parte (%)')}<input type="number" id="pt-pe-ban-n" min="1" max="100" value="${s.punti.perdite?.ban?.n || 100}"></label>
+        <label class="campo-num">${L('Un messaggio cancellato (0 = niente)', 'A deleted message (0 = nothing)', 'Un mensaje borrado (0 = nada)')}<input type="number" id="pt-pe-cancellato" min="0" max="1000000" value="${s.punti.perdite?.cancellato || 0}"></label>
+      </div>
+      <p class="suggerimento">${L('Vale per i timeout e i ban tuoi, dei moderatori e del bot: li vede dalla chat di Twitch. Un timeout di un secondo cancella i messaggi e basta, e conta come un messaggio cancellato. Tu non perdi mai.', 'It covers timeouts and bans by you, your moderators and the bot: it sees them in the Twitch chat. A one-second timeout just clears messages, and counts as a deleted message. You never lose any.', 'Vale para los timeouts y bans tuyos, de los moderadores y del bot: los ve en el chat de Twitch. Un timeout de un segundo solo borra mensajes, y cuenta como un mensaje borrado. Tú nunca pierdes.')}</p>
+      <div class="griglia-punti">
+        <label class="campo-num">${L('Chi non si vede da (giorni, 0 = mai)', 'Whoever hasn\'t been seen for (days, 0 = never)', 'Quien no aparece desde hace (días, 0 = nunca)')}<input type="number" id="pt-pe-assenza-giorni" min="0" max="365" value="${s.punti.perdite?.assenza?.giorni || 0}"></label>
+        <label class="campo-num">${L('…perde ogni settimana (%)', '…loses each week (%)', '…pierde cada semana (%)')}<input type="number" id="pt-pe-assenza-pct" min="1" max="100" value="${s.punti.perdite?.assenza?.pct || 10}"></label>
+        <label class="campo-num">${L('Le perde tutte dopo (giorni, 0 = mai)', 'Loses them all after (days, 0 = never)', 'Las pierde todas tras (días, 0 = nunca)')}<input type="number" id="pt-pe-assenza-fine" min="0" max="1000" value="${s.punti.perdite?.assenza?.fine || 0}"></label>
+      </div>
+      <p class="suggerimento">${L('«Vedersi» è scrivere in chat o esserci mentre sei in diretta. Il conto parte da quando hai acceso la regola.', '“Being seen” means writing in chat or being there while you are live. The count starts when you turn the rule on.', '«Aparecer» es escribir en el chat o estar mientras estás en directo. La cuenta empieza cuando activas la regla.')}</p>
+      <div class="griglia-punti">
+        <label class="campo-num">${L('Le stagioni', 'Seasons', 'Las temporadas')}<select id="pt-st-ogni">${[['no', L('nessuna', 'none', 'ninguna')], ['mese', L('ogni mese', 'every month', 'cada mes')], ['tre', L('ogni tre mesi', 'every three months', 'cada tres meses')]].map(([v, e]) => `<option value="${v}"${(s.punti.stagioni?.ogni || 'no') === v ? ' selected' : ''}>${e}</option>`).join('')}</select></label>
+        <label class="campo-num">${L('A fine stagione si tiene (%)', 'At the end of a season people keep (%)', 'Al final de la temporada se conserva (%)')}<input type="number" id="pt-st-tieni" min="0" max="100" value="${s.punti.stagioni?.tieni || 0}"></label>
+      </div>
+      <div class="riga-check"><input type="checkbox" id="pt-st-annuncia" ${s.punti.stagioni?.annuncia !== false ? 'checked' : ''}><label for="pt-st-annuncia">${L('A fine stagione il bot dice in chat i primi tre', 'At the end of a season the bot names the top three in chat', 'Al final de la temporada el bot dice en el chat los tres primeros')}</label></div>
+      <p class="suggerimento">${L('La stagione finisce a mezzanotte del primo giorno del mese (o di gennaio, aprile, luglio e ottobre), nel fuso del canale. La classifica finale resta nel registro.', 'A season ends at midnight on the first day of the month (or of January, April, July and October), in the channel\'s time zone. The final leaderboard stays in the register.', 'La temporada termina a medianoche del primer día del mes (o de enero, abril, julio y octubre), en la zona horaria del canal. La clasificación final queda en el registro.')}</p>
+      <p class="pt-dice" id="pt-dice-perdite" aria-live="polite"></p>
 
       <h3 class="sotto-titolo">${L('Per giocare bisogna esserci', 'To play, you have to be here', 'Para jugar hay que estar')}</h3>
       <p>${L('Le attese dicono quanto spesso si gioca, non chi gioca. Con questa regola una partita costa qualche messaggio scritto in chat: chi viene solo per i giochi prima deve parlare con te.', 'Cooldowns say how often people play, not who plays. With this rule a game costs a few chat messages: whoever comes just for the games has to talk with you first.', 'Las esperas dicen cada cuánto se juega, no quién juega. Con esta regla una partida cuesta algunos mensajes en el chat: quien viene solo por los juegos primero tiene que hablar contigo.')}</p>
@@ -29938,6 +29990,17 @@ function pannelloGiochi() {
       <p class="spazio-sopra"><button type="button" class="btn secondario" id="btn-doppio">${L('Accendi l\'ora doppia', 'Start double time', 'Enciende la hora doble')}</button> <button type="button" class="btn secondario" id="btn-doppio-stop" hidden>${L('Spegnila', 'Stop it', 'Apágala')}</button></p>
       <p class="suggerimento">${L('In chat i moderatori la accendono con', 'In chat moderators start it with', 'En el chat los moderadores la encienden con')} <code>!${esc(String(stato?.streamer?.settings?.comandi?.doppio?.nome || '').replace(/[^a-z0-9]/g, '') || 'doppio')} 30</code> ${L('e la spengono con', 'and stop it with', 'y la apagan con')} <code>!${esc(String(stato?.streamer?.settings?.comandi?.doppio?.nome || '').replace(/[^a-z0-9]/g, '') || 'doppio')} stop</code>.</p>
       <p class="spazio-sopra"><button class="btn" id="btn-salva-punti">${L('Salva punti', 'Save points', 'Guardar puntos')}</button></p>
+    </div>
+    <div class="carta" data-zona="monete" id="carta-registro-monete">
+      <h2>${_hIco(ICO.lista)}${L('Il registro delle monete', 'The coin register', 'El registro de las monedas')}</h2>
+      <p>${L('Quello che le regole e lo staff hanno dato e tolto: moderazione, assenze, stagioni, eventi e quello fatto a mano. Si tiene novanta giorni. «Annulla» rimette esattamente quello che è stato tolto, con le sue scadenze.', 'What rules and staff have given and taken: moderation, absences, seasons, events and what was done by hand. It is kept for ninety days. «Undo» puts back exactly what was taken, with its expiry dates.', 'Lo que las reglas y el equipo han dado y quitado: moderación, ausencias, temporadas, eventos y lo hecho a mano. Se guarda noventa días. «Deshacer» devuelve exactamente lo que se quitó, con sus caducidades.')}</p>
+      <p class="pt-dice" id="rm-circolazione" aria-live="polite"></p>
+      <div class="riga-flessibile spazio-sopra">
+        <input type="text" id="rm-chi" maxlength="30" placeholder="${esc(L('solo di una persona: il nome', 'one person only: the name', 'solo de una persona: el nombre'))}" aria-label="${esc(L('Filtra per nome', 'Filter by name', 'Filtrar por nombre'))}" style="max-width:16rem">
+        <button type="button" class="btn secondario mini" id="rm-cerca">${L('Mostra', 'Show', 'Mostrar')}</button>
+      </div>
+      <div id="rm-righe" class="spazio-sopra" aria-live="polite">${attesaHtml('div')}</div>
+      <div id="rm-stagioni"></div>
     </div>
     <div class="carta" data-zona="monete">
       <h2>${_hIco(ICO.utenti)}${L('Presenze e saluti', 'Attendance and greetings', 'Presencias y saludos')}</h2>
@@ -34973,6 +35036,14 @@ function puntiDalPannello() {
     giocoOgni: v('pt-giocoOgni'), giochiScorta: v('pt-giochiScorta'),
     esclusi: document.getElementById('pt-esclusi')?.value || '',
     topN: v('pt-topN'),
+    eventi: Object.fromEntries(['follow', 'sub1', 'sub2', 'sub3', 'regalo', 'bit', 'raid', 'primo'].map((k) => [k, v(`pt-ev-${k}`) || 0])),
+    perdite: {
+      timeout: { modo: document.getElementById('pt-pe-timeout-modo')?.value || 'no', n: v('pt-pe-timeout-n') },
+      ban: { modo: document.getElementById('pt-pe-ban-modo')?.value || 'no', n: v('pt-pe-ban-n') },
+      cancellato: v('pt-pe-cancellato') || 0,
+      assenza: { giorni: v('pt-pe-assenza-giorni') || 0, pct: v('pt-pe-assenza-pct'), fine: v('pt-pe-assenza-fine') || 0 },
+    },
+    stagioni: { ogni: document.getElementById('pt-st-ogni')?.value || 'no', tieni: v('pt-st-tieni') || 0, annuncia: on('pt-st-annuncia') },
   };
 }
 const oraDellaDoppia = (t) => new Date(t).toLocaleTimeString(LINGUA === 'en' ? 'en-US' : LINGUA === 'es' ? 'es-ES' : 'it-IT', { hour: '2-digit', minute: '2-digit' });
@@ -35005,10 +35076,57 @@ function _dicePunti(regole, punti) {
   const parti = [];
   if (cfg.tettoDiretta) parti.push(L(`in una diretta nessuno ne prende più di ${_cifraPunti(cfg.tettoDiretta)} da sole`, `in one stream nobody gets more than ${_cifraPunti(cfg.tettoDiretta)} by themselves`, `en un directo nadie recibe más de ${_cifraPunti(cfg.tettoDiretta)} solas`));
   if (cfg.saldoMax) parti.push(L(`chi ne ha già ${_cifraPunti(cfg.saldoMax)} non ne riceve più da sole`, `whoever already has ${_cifraPunti(cfg.saldoMax)} stops getting them by themselves`, `quien ya tiene ${_cifraPunti(cfg.saldoMax)} deja de recibirlas solas`));
+  const p = cfg.perdite, ss = 1000;
+  const perse = [];
+  if (p.timeout.modo !== 'no') perse.push(L(`un timeout ne toglie ${regole.quantoPerde(cfg, 'timeout', ss, 600)}`, `a timeout takes ${regole.quantoPerde(cfg, 'timeout', ss, 600)}`, `un timeout quita ${regole.quantoPerde(cfg, 'timeout', ss, 600)}`));
+  if (p.ban.modo !== 'no') perse.push(L(`un ban ${regole.quantoPerde(cfg, 'ban', ss)}`, `a ban ${regole.quantoPerde(cfg, 'ban', ss)}`, `un ban ${regole.quantoPerde(cfg, 'ban', ss)}`));
+  if (p.cancellato) perse.push(L(`un messaggio cancellato ${regole.quantoPerde(cfg, 'cancellato', ss)}`, `a deleted message ${regole.quantoPerde(cfg, 'cancellato', ss)}`, `un mensaje borrado ${regole.quantoPerde(cfg, 'cancellato', ss)}`));
+  if (p.assenza.giorni) perse.push(L(`dopo ${p.assenza.giorni} giorni senza vedersi ${regole.quantoAssenza(cfg, ss, p.assenza.giorni).n} a settimana`, `after ${p.assenza.giorni} days unseen ${regole.quantoAssenza(cfg, ss, p.assenza.giorni).n} a week`, `tras ${p.assenza.giorni} días sin aparecer ${regole.quantoAssenza(cfg, ss, p.assenza.giorni).n} a la semana`));
+  if (p.assenza.fine) perse.push(L(`dopo ${p.assenza.fine} giorni tutte`, `after ${p.assenza.fine} days all of them`, `tras ${p.assenza.fine} días todas`));
+  if (cfg.stagioni.ogni !== 'no') perse.push(L(`a fine stagione ne restano ${Math.floor(ss * cfg.stagioni.tieni / 100)}`, `at the end of a season ${Math.floor(ss * cfg.stagioni.tieni / 100)} are left`, `al final de la temporada quedan ${Math.floor(ss * cfg.stagioni.tieni / 100)}`));
+  scrivi('pt-dice-perdite', perse.length
+    ? L('Così, a chi ne ha 1.000: ', 'So, for someone with 1,000: ', 'Así, a quien tiene 1.000: ') + perse.join(', ') + '.'
+    : L('Così non si perde niente: le monete si tolgono solo giocando, comprando e a mano.', 'So nothing is lost: coins only go away by playing, buying and by hand.', 'Así no se pierde nada: las monedas solo se van jugando, comprando y a mano.'));
   scrivi('pt-dice-tetti', parti.length
     ? L('Così, ', 'So, ', 'Así, ') + parti.join(L(', e ', ', and ', ', y ')) + '.'
     : L('Così, nessun tetto: quello che arriva da solo non si ferma.', 'So, no cap: what comes by itself never stops.', 'Así, sin tope: lo que llega solo no se detiene.'));
 }
+const _MOTIVI_MONETE = () => ({
+  timeout: L('timeout', 'timeout', 'timeout'), ban: L('ban', 'ban', 'ban'), cancellato: L('messaggio cancellato', 'deleted message', 'mensaje borrado'),
+  assenza: L('assenza', 'absence', 'ausencia'), 'assenza-fine': L('assenza lunga: tutte', 'long absence: all of them', 'ausencia larga: todas'), stagione: L('fine stagione', 'end of season', 'fin de temporada'),
+  staff: L('staff, in chat', 'staff, in chat', 'equipo, en el chat'), pannello: L('a mano, dal pannello', 'by hand, from the panel', 'a mano, desde el panel'),
+  'evento:follow': L('follow', 'follow', 'follow'), 'evento:sub1': L('abbonamento tier 1', 'tier 1 sub', 'suscripción tier 1'), 'evento:sub2': L('abbonamento tier 2', 'tier 2 sub', 'suscripción tier 2'),
+  'evento:sub3': L('abbonamento tier 3', 'tier 3 sub', 'suscripción tier 3'), 'evento:regalo': L('abbonamenti regalati', 'gifted subs', 'suscripciones regaladas'), 'evento:bit': 'Bit',
+  'evento:raid': 'raid', 'evento:primo': L('primo messaggio', 'first message', 'primer mensaje'),
+});
+async function caricaRegistroMonete() {
+  const box = document.getElementById('rm-righe');
+  if (!box) return;
+  const chi = (document.getElementById('rm-chi')?.value || '').trim().replace(/^@/, '');
+  let d;
+  try { d = await api('/api/monete/registro' + (chi ? '?user=' + encodeURIComponent(chi) : '')); } catch { box.innerHTML = `<p class="tenue">${L('Il registro adesso non risponde.', 'The register is not answering right now.', 'El registro no responde ahora.')}</p>`; return; }
+  const nome = impostazioni().nomeMonete || L('monete', 'coins', 'monedas');
+  const n = (x) => Number(x).toLocaleString(localePannello());
+  const c = d.circolazione || {};
+  const circ = document.getElementById('rm-circolazione');
+  if (circ) circ.textContent = L(`In circolazione: ${n(c.monete || 0)} ${nome}, in mano a ${n(c.persone || 0)} persone. Negli ultimi 7 giorni ne sono nate ${n(c.nate || 0)} e sparite ${n(c.sparite || 0)} (spese e non tornate, o scadute).`,
+    `In circulation: ${n(c.monete || 0)} ${nome}, held by ${n(c.persone || 0)} people. In the last 7 days ${n(c.nate || 0)} were created and ${n(c.sparite || 0)} disappeared (spent and not returned, or expired).`,
+    `En circulación: ${n(c.monete || 0)} ${nome}, en manos de ${n(c.persone || 0)} personas. En los últimos 7 días nacieron ${n(c.nate || 0)} y desaparecieron ${n(c.sparite || 0)} (gastadas y no devueltas, o caducadas).`);
+  const motivi = _MOTIVI_MONETE();
+  const righe = d.righe || [];
+  box.innerHTML = righe.length ? `<div class="scorrevole"><table class="tabella"><thead><tr><th>${L('Quando', 'When', 'Cuándo')}</th><th>${L('Chi', 'Who', 'Quién')}</th><th>${esc(nome)}</th><th>${L('Perché', 'Why', 'Por qué')}</th><th>${L('Deciso da', 'Decided by', 'Decidido por')}</th><th><span class="solo-lettori">${L('Azioni', 'Actions', 'Acciones')}</span></th></tr></thead><tbody>${righe.map((r) => `<tr${r.annullato ? ' class="tenue"' : ''}>
+      <td>${esc(new Date(r.ts).toLocaleString(localePannello(), { dateStyle: 'short', timeStyle: 'short' }))}</td>
+      <td>${esc(r.user)}</td>
+      <td class="num">${r.delta > 0 ? '+' : ''}${n(r.delta)}</td>
+      <td>${esc(motivi[r.motivo] || r.motivo)}</td>
+      <td>${esc(r.chi || L('una regola', 'a rule', 'una regla'))}</td>
+      <td>${r.annullato ? esc(L('annullato', 'undone', 'deshecho') + (r.annullatoDa ? ' · ' + r.annullatoDa : '')) : `<button type="button" class="btn secondario mini" data-rm-annulla="${r.id}">${L('Annulla', 'Undo', 'Deshacer')}</button>`}</td>
+    </tr>`).join('')}</tbody></table></div>`
+    : `<p class="tenue">${chi ? L('Per questo nome nel registro non c\'è niente.', 'Nothing in the register for this name.', 'Nada en el registro para este nombre.') : L('Ancora niente: qui finiscono le monete che le regole e lo staff danno e tolgono.', 'Nothing yet: this is where the coins that rules and staff give and take end up.', 'Todavía nada: aquí van las monedas que las reglas y el equipo dan y quitan.')}</p>`;
+  const st = document.getElementById('rm-stagioni');
+  if (st) st.innerHTML = (d.stagioni || []).length ? `<h3 class="sotto-titolo spazio-sopra">${L('Le stagioni passate', 'Past seasons', 'Las temporadas pasadas')}</h3><ul class="lista-punti">${d.stagioni.map((x) => `<li><strong>${esc(x.chiave)}</strong>: ${x.classifica.slice(0, 3).map((r, i) => `${i + 1}° ${esc(r.user)} (${n(r.monete)})`).join(', ') || L('nessuno', 'nobody', 'nadie')}</li>`).join('')}</ul>` : '';
+}
+
 async function contiPunti() {
   const box = document.getElementById('pt-conti');
   if (!box) return;
@@ -35673,6 +35791,20 @@ function attivaPiattaforma() {
   document.getElementById('btn-salva-punti')?.addEventListener('click', () => conErrore(async () => {
     await salvaImpostazioni({ punti: puntiDalPannello() }, L('Punti salvati ✓', 'Points saved ✓', 'Puntos guardados ✓'));
   }));
+  document.getElementById('rm-cerca')?.addEventListener('click', () => conErrore(caricaRegistroMonete));
+  document.getElementById('rm-chi')?.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); conErrore(caricaRegistroMonete); } });
+  document.getElementById('rm-righe')?.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-rm-annulla]');
+    if (!b) return;
+    conErrore(async () => {
+      b.disabled = true;
+      const r = await api(`/api/monete/registro/${encodeURIComponent(b.dataset.rmAnnulla)}/annulla`, { method: 'POST', body: {} });
+      const nome = impostazioni().nomeMonete || L('monete', 'coins', 'monedas');
+      toast(r.monete >= 0 ? L(`Annullato: tornano ${r.monete} ${nome}`, `Undone: ${r.monete} ${nome} are back`, `Deshecho: vuelven ${r.monete} ${nome}`) : L(`Annullato: tolte ${-r.monete} ${nome}`, `Undone: ${-r.monete} ${nome} taken back`, `Deshecho: quitadas ${-r.monete} ${nome}`));
+      await caricaRegistroMonete();
+      caricaClassifica();
+    });
+  });
 
   document.getElementById('btn-salva-presenze')?.addEventListener('click', () => conErrore(async () => {
     const v = (id) => Number(document.getElementById(id)?.value);
@@ -35871,6 +36003,7 @@ function attivaPiattaforma() {
     toast(`${r.utente}: ${r.saldo} ${impostazioni().nomeMonete || L('monete', 'coins', 'monedas')}`);
     document.getElementById('pt-delta').value = '';
     caricaClassifica();
+    caricaRegistroMonete();
   }));
 
   _premioTasti('monete');
@@ -36970,7 +37103,7 @@ function caricaDatiScheda(id) {
   if (id === 'colpi') caricaColpi();
   if (id === 'moduli') { caricaPiattaforme(); caricaModuli(); caricaContatori(); caricaGiochiComandi(); collegaMorti(); requestAnimationFrame(() => applicaSottoSchede('moduli')); }
   if (id === 'statistiche') { caricaStatistiche(); caricaClassifica(); }
-  if (id === 'giochi') { caricaClassifica(); caricaCitazioni(); caricaBattute(); caricaGiochi(); caricaRegoleGiochi(); caricaCastighi(); caricaGiro(); _disegnaFormaMonete(); contiPunti(); requestAnimationFrame(() => applicaSottoSchede('giochi')); }
+  if (id === 'giochi') { caricaClassifica(); caricaCitazioni(); caricaBattute(); caricaGiochi(); caricaRegoleGiochi(); caricaCastighi(); caricaGiro(); _disegnaFormaMonete(); contiPunti(); caricaRegistroMonete(); requestAnimationFrame(() => applicaSottoSchede('giochi')); }
   if (id === 'negozio') { caricaNegozio(); caricaPaginaLink(false, 'negozio'); requestAnimationFrame(() => applicaSottoSchede('negozio')); }
   if (id === 'telegram') { caricaTgLogin(); collegaTgDestinazioni(); caricaTgDestinazioni(); collegaCartaLive(); caricaCartaLive(); caricaCompleanni(); caricaScudoTg(); collegaPortaProva(); caricaPaginaLink(false, 'telegram'); }
   if (id === 'notifiche') { caricaTikTok(); caricaInstagram(); collegaFeed(); caricaFeed(); }

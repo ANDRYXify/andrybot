@@ -35,8 +35,8 @@ export const PRESENZA_MS = 3 * 60_000;
 // la voce di una presenza: non e' una voce del listino (quelle sono [a-z0-9])
 export const VOCE_PRESENZA = '@presenza';
 
-// `monete`: le monete del canale (economia.js): `punta` (tutte o niente, con la
-// ricevuta), `rendi` (la ricevuta torna com'era) e `saldo`. Senza, i colpi non
+// `monete`: le monete del canale (economia.js): `punta` (tutte o niente:
+// { tolte, ricevuta } o null), `rendi` (la ricevuta torna com'era) e `saldo`. Senza, i colpi non
 // si pagano in monete.
 export function creaServizioColpi({ registro, effects, effettoDi, impostazioni, inOnda = () => true, overlay = () => true,
   rimborsaEuro = async () => ({ errore: 'nessun conto' }), chiudiPremio = async () => true, monete = null, ora = () => Date.now(), log = null }) {
@@ -246,8 +246,9 @@ export function creaServizioColpi({ registro, effects, effettoDi, impostazioni, 
     const no = consegnabile(ch, m.voce);
     if (no) return { esito: 'fermo', motivo: no, nome: m.nome };
     const n = Number(m.prezzi.monete);
-    const ricevuta = monete.punta(ch, u, n);
-    if (!ricevuta) return { esito: 'pochi', serve: n, saldo: Number(monete.saldo?.(ch, u)) || 0, nome: m.nome };
+    const presa = monete.punta(ch, u, n);
+    if (!presa) return { esito: 'pochi', serve: n, saldo: Number(monete.saldo?.(ch, u)) || 0, nome: m.nome };
+    const ricevuta = presa.ricevuta;
     if (!incassa(m, 'monete', 'monete:' + u, '', false, ricevuta)) { monete.rendi(ch, u, ricevuta); return { esito: 'gia', codice }; }
     return { esito: 'pagato', nome: m.nome, monete: n };
   }

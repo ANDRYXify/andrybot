@@ -59,17 +59,15 @@ test('il prezzo e\' quello scritto nella mira, e basta pagarlo nella sua moneta'
 const { cartellaUsaEGetta } = await import('../aiuto.mjs');
 const usaEGetta = cartellaUsaEGetta('andrybot-colpi-');
 process.on('exit', () => usaEGetta.pulisci());
-const { registroColpi } = await import('../../src/db.js');
+const { registroColpi, points } = await import('../../src/db.js');
+const economia = await import('../../src/features/economia.js');
 const { creaServizioColpi, MIRABILE } = await import('../../src/features/colpi-servizio.js');
 
-function banco({ cfg, live = true, overlay = true, rimborso = { ok: true }, borse = null } = {}) {
+function banco({ cfg, live = true, overlay = true, rimborso = { ok: true }, conMonete = false } = {}) {
   let adesso = 1_000_000;
-  // le monete del canale, finte ma con le regole vere: tutte o niente, e la ricevuta torna com'era
-  const monete = borse ? {
-    punta: (ch, u, n) => { const k = ch + '|' + u; if ((borse[k] || 0) < n) return null; borse[k] -= n; return [{ scade: 0, quanti: n }]; },
-    rendi: (ch, u, r) => { const k = ch + '|' + u; borse[k] = (borse[k] || 0) + r.reduce((t, x) => t + x.quanti, 0); },
-    saldo: (ch, u) => borse[ch + '|' + u] || 0,
-  } : null;
+  // le monete del canale vere (economia.js, sul database usa e getta): un finto
+  // potrebbe dire cose diverse da quelle che il servizio riceve davvero
+  const monete = conMonete ? { punta: economia.punta, rendi: economia.rendi, saldo: economia.saldo } : null;
   const sparati = [], rimborsi = [], premi = [];
   const stato = { live, overlay };
   const effetti = { pomodoro: { tipo: 'immagine' }, coriandoli: { tipo: 'disegno' }, sfondo: { tipo: 'video', schermo: 'riempi' } };
@@ -539,29 +537,28 @@ test('il comando delle monete: «!pew CODICE», da solo; lo streamer lo puo\' ch
   assert.equal(normalizza({ comando: 'con spazi' }).comando, 'pew');
 });
 
-function bancoMonete(borse) {
+function bancoMonete() {
   const cfg = { attivo: true, attesaSec: 0, alMinuto: 30, voci: [{ comando: 'pomodoro', monete: 300, bit: 100 }, { id: 'solobit', comando: 'pomodoro', bit: 50 }] };
-  return banco({ cfg, borse });
+  return banco({ cfg, conMonete: true });
 }
 
 test('le monete del canale pagano un colpo: tutte o niente, una volta sola, e prima si guarda che possa comparire', () => {
-  const borse = {};
-  const b = bancoMonete(borse);
+  const b = bancoMonete();
   const c = login();
-  borse[c + '|marta'] = 500;
+  points.dai(c, 'marta', 500);
   const m = b.s.mira(c, { voce: 'pomodoro', x: 10, y: 10, chiave: 'a' }).mira;
   assert.deepEqual(b.s.daMonete(c, { codice: m.codice, user: 'Luca' }), { esito: 'pochi', serve: 300, saldo: 0, nome: 'pomodoro' }, 'chi non ne ha abbastanza non paga niente');
   b.stato.overlay = false;
   assert.equal(b.s.daMonete(c, { codice: m.codice, user: 'marta' }).esito, 'fermo');
-  assert.equal(borse[c + '|marta'], 500, 'a colpo fermo le monete non si toccano');
+  assert.equal(economia.saldo(c, 'marta'), 500, 'a colpo fermo le monete non si toccano');
   b.stato.overlay = true;
   assert.deepEqual(b.s.daMonete(c, { codice: m.codice, user: 'marta' }), { esito: 'pagato', nome: 'pomodoro', monete: 300 });
-  assert.equal(borse[c + '|marta'], 200);
+  assert.equal(economia.saldo(c, 'marta'), 200);
   const r = registroColpi.get(m.id);
   assert.deepEqual([r.stato, r.metodo, r.riferimento, r.ricevuta], ['pagata', 'monete', 'monete:marta', [{ scade: 0, quanti: 300 }]]);
   assert.equal(b.di(c).sparati.length, 1, 'parte subito');
   assert.equal(b.s.daMonete(c, { id: m.id, user: 'marta' }).esito, 'sconosciuto', 'una mira gia\' pagata non si ripaga');
-  assert.equal(borse[c + '|marta'], 200);
+  assert.equal(economia.saldo(c, 'marta'), 200);
   const solo = b.s.mira(c, { voce: 'solobit', x: 10, y: 10, chiave: 'b' }).mira;
   assert.equal(b.s.daMonete(c, { id: solo.id, user: 'marta' }).esito, 'sconosciuto', 'un colpo senza prezzo in monete non si paga in monete');
   const euro = b.s.mira(c, { voce: 'pomodoro', x: 10, y: 10, chiave: 'c' }).mira;
@@ -571,31 +568,29 @@ test('le monete del canale pagano un colpo: tutte o niente, una volta sola, e pr
 });
 
 test('un colpo pagato in monete che non compare le rende tali e quali; uno visto no', async () => {
-  const borse = {};
-  const b = bancoMonete(borse);
+  const b = bancoMonete();
   const c = login();
-  borse[c + '|marta'] = 1000;
+  points.dai(c, 'marta', 1000);
   const a = b.s.mira(c, { voce: 'pomodoro', x: 10, y: 10, chiave: 'a' }).mira;
   const v = b.s.mira(c, { voce: 'pomodoro', x: 20, y: 10, chiave: 'b' }).mira;
   b.s.daMonete(c, { id: a.id, user: 'marta' });
   b.s.daMonete(c, { id: v.id, user: 'marta' });
-  assert.equal(borse[c + '|marta'], 400);
+  assert.equal(economia.saldo(c, 'marta'), 400);
   assert.equal(await b.s.visto(c, v.id), true);
   b.avanti(CONSEGNA_MS + 1);
   await b.s.ronda();
   assert.deepEqual([registroColpi.get(a.id).stato, registroColpi.get(v.id).stato], ['rimborsata', 'sparata']);
-  assert.equal(borse[c + '|marta'], 700, 'tornano solo quelle del colpo che non si e\' visto');
+  assert.equal(economia.saldo(c, 'marta'), 700, 'tornano solo quelle del colpo che non si e\' visto');
   await b.s.ronda();
-  assert.equal(borse[c + '|marta'], 700, 'e una volta sola');
+  assert.equal(economia.saldo(c, 'marta'), 700, 'e una volta sola');
 });
 
 test('la pagina: le categorie che hanno colpi, nell\'ordine dello streamer; le monete solo con l\'accesso', async () => {
-  const borse = {};
   const cfg = { attivo: true, attesaSec: 0, alMinuto: 30, categorie: [{ id: 'media', nome: '' }, { id: 'adesivi', nome: 'Faccine' }, { id: 'vuota', nome: 'Vuota' }],
     voci: [{ comando: 'pomodoro', monete: 300 }, { comando: 'ridi', bit: 20 }, { comando: 'tiro', bit: 30, categoria: 'adesivi' }] };
-  const b = banco({ cfg, borse });
+  const b = banco({ cfg, conMonete: true });
   const c = login();
-  borse[c + '|marta'] = 300;
+  points.dai(c, 'marta', 300);
   const effetti = { pomodoro: { tipo: 'immagine', file: 'p.png' }, ridi: { tipo: 'lancio', disegno: JSON.stringify({ oggetto: 'risata' }) }, tiro: { tipo: 'lancio', disegno: JSON.stringify({ oggetto: 'pomodoro' }) } };
   const p = creaPortaColpi({ servizio: b.s, registro: registroColpi, streamers: { get: () => ({ settings: { colpi: cfg, nomeMonete: 'Gemme' } }) },
     effettoDi: (l, k) => effetti[k] || null, mezziEuro: () => [], apriPagamento: async () => ({}), inOnda: () => true, overlay: () => true, ora: b.ora });
@@ -607,7 +602,7 @@ test('la pagina: le categorie che hanno colpi, nell\'ordine dello streamer; le m
   assert.deepEqual(await p.paga(c, m.id, 'monete', null), { errore: 'accesso' }, 'senza accesso non si sa di chi sono le monete');
   assert.deepEqual(await p.paga(c, m.id, 'monete', { id: '43', login: 'altro' }), { errore: 'mira' }, 'la mira di un altro no');
   assert.deepEqual(await p.paga(c, m.id, 'monete', { id: '42', login: 'marta' }), { ok: true });
-  assert.equal(borse[c + '|marta'], 0);
+  assert.equal(economia.saldo(c, 'marta'), 0);
   assert.equal(p.stato(c, m.id).stato, 'pagata');
   const senza = creaPortaColpi({ servizio: banco({ cfg }).s, registro: registroColpi, streamers: { get: () => ({ settings: { colpi: cfg } }) },
     effettoDi: (l, k) => effetti[k] || null, mezziEuro: () => [], apriPagamento: async () => ({}), inOnda: () => true, overlay: () => true, ora: b.ora });

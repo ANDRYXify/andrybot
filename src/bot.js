@@ -105,7 +105,7 @@ import { modalitaDi, alLavoro } from './features/quando-lavora.js';
 import { statoVivo, registroColpi, effects as effettiDb, segnoInstagram } from './db.js';
 import { creaServizioColpi } from './features/colpi-servizio.js';
 import * as economia from './features/economia.js';
-import { nomeMoneta } from './features/moneta.js';
+import { nomeMoneta, monetaDi, accordaMoneta } from './features/moneta.js';
 import { urlPaginaColpo, eFrasePresenza, codicePerMonete } from './features/colpi.js';
 import { creaChatColpi, rigaDi as rigaChatColpi, BATTITO_MS as BATTITO_CHAT_COLPI } from './features/colpi-chat.js';
 import { coloreDi as coloreChatDi } from './features/badges.js';
@@ -175,6 +175,7 @@ export const chiaveTikTok = (login) => 'tiktok:' + String(login || '').toLowerCa
 // Quello che il bot dice in chat sui colpi degli spettatori, nella lingua del canale.
 function testoColpi(canale, cosa, chi, r = {}) {
   const pagina = urlPaginaColpo(canale).replace(/^https:\/\//, '');
+  const ac = (t) => accordaMoneta(t, monetaDi(canale).forma);
   const T = {
     codice: [`${chi} quel codice non vale o è già stato usato: i punti tornano a te. Il codice lo prendi mirando su ${pagina}`,
       `${chi} that code isn't valid or was already used: your points are back. You get the code by aiming on ${pagina}`,
@@ -185,7 +186,7 @@ function testoColpi(canale, cosa, chi, r = {}) {
     pochi: [`${chi} per «${r.nome}» mancano ${r.mancano} Bit: i tuoi restano contati, completa con lo stesso codice.`,
       `${chi} «${r.nome}» needs ${r.mancano} more Bits: yours are counted, finish with the same code.`,
       `${chi} a «${r.nome}» le faltan ${r.mancano} Bits: los tuyos quedan contados, completa con el mismo código.`],
-    'monete-pagato': [`${chi} pagato con ${r.monete} ${r.moneta}: «${r.nome}» sta per comparire. Se non compare, ti tornano.`,
+    'monete-pagato': [`${chi} pagato con ${r.monete} ${r.moneta}: «${r.nome}» sta per comparire. Se non compare, ${ac('%[ti tornano|ti tornano|ti torna|ti torna]%')}.`,
       `${chi} paid with ${r.monete} ${r.moneta}: «${r.nome}» is about to show. If it doesn't, you get them back.`,
       `${chi} pagado con ${r.monete} ${r.moneta}: «${r.nome}» está a punto de aparecer. Si no aparece, te vuelven.`],
     'monete-pochi': [`${chi} per «${r.nome}» servono ${r.serve} ${r.moneta}, ne hai ${r.saldo}.`,
@@ -194,10 +195,10 @@ function testoColpi(canale, cosa, chi, r = {}) {
     'monete-sconosciuto': [`${chi} quel codice non vale o non si paga in ${r.moneta}: prendilo mirando su ${pagina}`,
       `${chi} that code isn't valid or can't be paid in ${r.moneta}: get it by aiming on ${pagina}`,
       `${chi} ese código no vale o no se paga en ${r.moneta}: consíguelo apuntando en ${pagina}`],
-    'monete-gia': [`${chi} quella mira è già pagata, o ha un pagamento aperto: le tue ${r.moneta} restano a te.`,
+    'monete-gia': [`${chi} quella mira è già pagata, o ha un pagamento aperto: ${ac('%[le tue|i tuoi|la tua|il tuo]%')} ${r.moneta} ${ac('%[restano|restano|resta|resta]%')} a te.`,
       `${chi} that aim is already paid, or has a payment open: your ${r.moneta} stay with you.`,
       `${chi} ese apunte ya está pagado, o tiene un pago abierto: tus ${r.moneta} se quedan contigo.`],
-    'monete-fermo': [`${chi} adesso il colpo non può comparire (diretta o overlay fermi): le tue ${r.moneta} restano a te.`,
+    'monete-fermo': [`${chi} adesso il colpo non può comparire (diretta o overlay fermi): ${ac('%[le tue|i tuoi|la tua|il tuo]%')} ${r.moneta} ${ac('%[restano|restano|resta|resta]%')} a te.`,
       `${chi} the hit can't show right now (stream or overlay stopped): your ${r.moneta} stay with you.`,
       `${chi} ahora el golpe no puede aparecer (directo u overlay parados): tus ${r.moneta} se quedan contigo.`],
     coda: [`${chi} Bit arrivati: «${r.nome}» compare appena l'overlay torna in onda.`,
@@ -464,6 +465,11 @@ export class BotManager {
     // un membro riceve gli auguri UNA volta l'anno, all'inizio del suo giorno).
     this._compleTimer = setInterval(() => this._controllaCompleanni().catch(() => {}), 60 * 60_000);
     setTimeout(() => this._controllaCompleanni().catch(() => {}), 30_000);
+    // IL GIRO DI OGNI GIORNO DELL'ECONOMIA (docs/ECONOMIA.md): le assenze, le
+    // stagioni, il registro. Si guarda ogni ora; il giorno lo tiene il database,
+    // quindi un canale lo fa una volta sola, anche dopo un riavvio.
+    this._economiaTimer = setInterval(() => this._giornoEconomia(), 60 * 60_000);
+    setTimeout(() => this._giornoEconomia(), 90_000);
     // Il cancello del gruppo Telegram: chi e' entrato e non ha premuto il tasto.
     // Ogni mezzo minuto, perche' l'attesa piu' corta che si puo' scegliere e' un
     // minuto e un controllo ogni minuto la farebbe scadere fino al doppio tardi.
@@ -550,6 +556,7 @@ export class BotManager {
     clearInterval(this._distillaTimer);
     clearInterval(this._giroTimer);
     clearInterval(this._compleTimer);
+    clearInterval(this._economiaTimer);
     clearInterval(this._dcRuoliTimer);
     clearInterval(this._eventiDcTimer);
     clearInterval(this._pubTimer);
@@ -1100,6 +1107,11 @@ export class BotManager {
           chat, helix: this.helix, brain: this.brain, clips: this.clips, botLogin: login,
         });
         chat.on('message', msg => this._gestisciMessaggio(login, msg, onMessage));
+        // timeout, ban e messaggi cancellati: le monete che si perdono (docs/ECONOMIA.md)
+        chat.on('moderazione', (ev) => {
+          try { economia.punisci(login, ev.user, ev.tipo, { durata: ev.durata }); }
+          catch (e) { log.debug(`#${login} monete della moderazione:`, e?.message || e); }
+        });
         // Salute della connessione: 'connesso' azzera l'allarme, 'auth-fallita' (token
         // non valido: NON si ripara da solo) avvisa il proprietario e lo segna KO.
         chat.on('connesso', () => {
@@ -1327,6 +1339,10 @@ export class BotManager {
     if (!msg.isSelf) { try { persona.interagisci(msg.user); } catch { /* niente */ } }
     // L'economia gira sempre: le monete della presenza non sono un comando.
     try { games.accredita(msg); } catch (e) { log.error(`#${login} monete:`, e?.message || e); }
+    // il primo messaggio di sempre in questo canale: lo dice Twitch (first-msg)
+    if (msg.isFirst && !msg.isSelf && (!msg.piattaforma || msg.piattaforma === 'twitch')) {
+      try { economia.evento(login, 'primo', msg.user); } catch (e) { log.debug(`#${login} monete del primo messaggio:`, e?.message || e); }
+    }
     // CHI ARRIVA IN CHAT (features/arrivi.js): le accoglienze che lo streamer
     // ha scelto per questa persona, o per un suo gruppo. Qui, dopo l'antispam
     // (chi e' stato appena fermato non si accoglie) e prima del saluto generico,
@@ -1720,6 +1736,9 @@ export class BotManager {
         else if (r.esito === 'pagato' && r.inCoda) this.say(channel, testoColpi(channel, 'coda', `@${data.user_login || ''}`, r));
       } catch (e) { log.debug(`#${channel} colpo dal cheer:`, e?.message || e); }
     }
+    // le monete degli eventi (docs/ECONOMIA.md, «Gli eventi»): solo su Twitch, e
+    // un follow sotto attacco e' gia' uscito in cima
+    if (suTwitch) { try { economia.dagliEventi(channel, type, data); } catch (e) { log.debug(`#${channel} monete dell'evento:`, e?.message || e); } }
     // anti-bot: l'hate-raid. I follow li ha gia' visti, in cima.
     try {
       if (suTwitch && type === 'channel.raid') this.antibot?.onRaid(ev);
@@ -3040,6 +3059,25 @@ export class BotManager {
         if (settimanaFeat.improntaSettimana(adesso) !== settimanaFeat.improntaSettimana(sett)) continue;
         streamers.setSettings(s.login, { ...ora, settimana: { ...adesso, twitch: { ...adesso.twitch, scritti: e.scritti } } });
       } catch (err) { log.debug('programma', s.login, err?.message || err); }
+    }
+  }
+
+  _giornoEconomia() {
+    for (const s of streamers.active()) {
+      try {
+        const e = economia.giornoEconomia(s.login);
+        if (e?.tolte) log.info(`#${s.login} economia: ${e.assenti} assenti hanno perso ${e.tolte} monete`);
+        const st = e?.stagione;
+        if (!st) continue;
+        log.info(`#${s.login} economia: finita la stagione ${st.chiave}`);
+        if (!st.annuncia || !st.classifica.length) continue;
+        const m = monetaDi(s.login);
+        const podio = st.classifica.slice(0, 3).map((r, i) => `${i + 1}° @${r.user} (${r.monete})`).join(', ');
+        const l = linguaChat(s.login);
+        this.say(s.login, l === 'en' ? `🏁 The season is over: ${podio}. Everyone starts again!`
+          : l === 'es' ? `🏁 Terminó la temporada: ${podio}. ¡Se vuelve a empezar!`
+            : accordaMoneta(`🏁 Fine della stagione: ${podio}. %[Le|I|La|Il]% ${m.nome} %[ripartono|ripartono|riparte|riparte]%!`, m.forma));
+      } catch (e) { log.debug(`#${s.login} giorno dell'economia:`, e?.message || e); }
     }
   }
 

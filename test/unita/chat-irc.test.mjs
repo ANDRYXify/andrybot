@@ -143,3 +143,21 @@ test('chiudere di proposito ferma tutto: niente riconnessioni, niente PING', asy
   await flush();
   assert.equal(socks.length, 1);
 });
+
+test('la moderazione dalla chat: timeout, ban e messaggio cancellato diventano un evento; la chat svuotata no', async (t) => {
+  const { bot, socks } = banco(t);
+  await collega(bot, socks);
+  const visti = [];
+  bot.on('moderazione', (e) => visti.push(e));
+  socks[0].riga('@ban-duration=600;room-id=1;target-user-id=2;tmi-sent-ts=1 :tmi.twitch.tv CLEARCHAT #prova :Troll_A');
+  socks[0].riga('@room-id=1;target-user-id=3;tmi-sent-ts=1 :tmi.twitch.tv CLEARCHAT #prova :troll_b');
+  socks[0].riga('@room-id=1;tmi-sent-ts=1 :tmi.twitch.tv CLEARCHAT #prova');
+  socks[0].riga('@login=lucia;room-id=;target-msg-id=abc-1;tmi-sent-ts=1 :tmi.twitch.tv CLEARMSG #prova :un messaggio : con i due punti');
+  await flush();
+  assert.deepEqual(visti, [
+    { channel: 'prova', user: 'troll_a', tipo: 'timeout', durata: 600 },
+    { channel: 'prova', user: 'troll_b', tipo: 'ban', durata: 0 },
+    { channel: 'prova', user: 'lucia', tipo: 'cancellato', id: 'abc-1' },
+  ]);
+  bot.disconnect();
+});

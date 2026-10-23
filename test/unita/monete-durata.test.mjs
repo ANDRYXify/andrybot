@@ -390,5 +390,5 @@ test('le monete si muovono solo da economia.js, e il saldo lo scrivono solo i lo
   assert.equal(scrive, 2, 'il saldo lo scrivono i lotti e il giro della porta');
   const porta = sorgente.slice(sorgente.indexOf('  economiaScrivi(channel, righe'), sorgente.indexOf('\n  },\n', sorgente.indexOf('  economiaScrivi(channel, righe')));
   assert.match(porta, /const d = Math\.max\(0, /, 'la porta aggiunge e non toglie');
-  assert.match(porta, /if \(d > 0\) _lotti\.metti\.run\(/, 'e quello che aggiunge e\' un lotto');
+  assert.match(porta, /if \(d > 0\) \{ _lotti\.metti\.run\(/, 'e quello che aggiunge e\' un lotto (e si conta fra le nate)');
 });

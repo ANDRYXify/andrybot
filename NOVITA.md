@@ -55,6 +55,18 @@ comandi diversi da quelli della riga italiana.
   en> Whoever is there says so in chat and shows up on screen: you pick the effect, the spot and the phrase in the Pew tab. Once per stream, so a raid doesn't cover the stream.
   es> La presencia en directo
   es> Quien está lo dice en el chat y se ve en pantalla: el efecto, el punto y la frase los eliges en la pestaña Pew. Una vez por directo, así una raid no tapa el directo.
+- [importante] Le monete ora si perdono: con timeout, ban e messaggi cancellati, con l'assenza lunga e a fine stagione, tutto a tua scelta. Ogni movimento resta nel registro, e lì si annulla. [vai: giochi]
+  en: Coins can now be lost: through timeouts, bans and deleted messages, long absence and season ends, all up to you. Every movement stays in the register, where it can be undone.
+  es: Las monedas ahora se pierden: con timeouts, bans y mensajes borrados, con la ausencia larga y al final de temporada, todo a tu elección. Cada movimiento queda en el registro, y ahí se deshace.
+  > Monete che si perdono, e un registro
+  > Un'economia viva sale e scende: decidi tu quanto costano un timeout, un ban, un'assenza, e se ogni mese si riparte. Tutto resta scritto, con chi l'ha deciso, e si annulla con un tasto.
+  en> Coins that can be lost, and a register
+  en> A living economy goes up and down: you decide what a timeout, a ban or an absence costs, and whether everyone starts again each month. Everything is written down, with who decided it, and undone with one button.
+  es> Monedas que se pierden, y un registro
+  es> Una economía viva sube y baja: decides tú cuánto cuestan un timeout, un ban, una ausencia, y si cada mes se vuelve a empezar. Todo queda escrito, con quién lo decidió, y se deshace con un botón.
+- Follow, abbonamenti, regali, Bit, raid e primo messaggio possono dare monete. Lo staff ne dà e ne toglie con !monete dai e !monete togli, e nel pannello vedi quante ne girano. [vai: giochi]
+  en: Follows, subs, gifts, Bits, raids and first messages can give coins. Staff give and take them with !monete dai and !monete togli, and the panel shows how many are in circulation.
+  es: Follows, suscripciones, regalos, Bits, raids y primer mensaje pueden dar monedas. El equipo las da y las quita con !monete dai y !monete togli, y en el panel ves cuántas circulan.
 - Il listino di Pewpewify si divide in categorie che scegli tu, e un colpo si paga anche con le monete del canale: dalla pagina o in chat con !pew e il codice. [vai: colpi]
   en: The Pewpewify price list is split into categories you choose, and a hit can also be paid with your channel coins: from the page or in chat with !pew and the code.
   es: La lista de Pewpewify se divide en categorías que eliges tú, y un golpe se paga también con las monedas del canal: desde la página o en el chat con !pew y el código.

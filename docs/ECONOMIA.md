@@ -223,10 +223,39 @@ Con N = 0 la regola è spenta, ed è così di partenza: un canale che non tocca 
 
 ### Il registro
 
-Una tabella sola (`points_mov`): canale, persona, quanto, motivo, chi l'ha deciso, quando. Ci
-vanno le perdite, gli eventi, i movimenti a mano dello staff e del pannello, le stagioni, le
-importazioni. Non ci vanno il guadagno di ogni giro né i giochi: sono migliaia al giorno e non
-servono a rispondere a «perché ho perso monete». Si tiene novanta giorni.
+Una tabella sola (`monete_mov`): canale, persona, quanto, motivo, chi l'ha deciso, quando, e per
+le tolte la ricevuta dei lotti. Ci vanno le perdite, gli eventi, i movimenti a mano dello staff
+e del pannello, le stagioni. Non ci vanno il guadagno di ogni giro né i giochi: sono migliaia al
+giorno e non servono a rispondere a «perché ho perso monete». Si tiene novanta giorni.
+
+### Gli eventi
+
+Chiesto così: «colleghiamo poi tutto ai punti del canale, così creiamo proprio un sistema vivo,
+però rendiamo un po' più robusto e personalizzabile il sistema di punti/monete, magari con anche
+il modo di perdere punti, piuttosto che altro che magari ad ora manca».
+
+Gli eventi di Twitch danno le monete che lo streamer sceglie (`punti.eventi`, tutto a zero):
+follow (il primo: il ritorno è un altro evento), abbonamento e rinnovo per tier, abbonamenti
+regalati a chi regala (uno per regalo; chi lo riceve no), ogni cento Bit, il raid a chi lo
+porta, il primo messaggio di sempre (il tag `first-msg` di Twitch). Chi riceve lo dice una
+funzione pura, `eventoMonete`.
+
+Non passano dalla porta di `riceve`: la porta è per quello che arriva da solo, e ha la crescita
+spenta, i moltiplicatori e i tetti; un evento è un premio che lo streamer ha scelto, e vale anche
+con la crescita spenta (era il difetto 2: «le monete si guadagnano solo giocando, coi premi e con
+gli eventi»). Restano le regole di chi è: i bot, gli esclusi e lo streamer non ricevono, e con i
+giochi spenti niente. Nascono «da un premio», con quella durata, e vanno nel registro. Un follow
+durante un attacco di bot non arriva nemmeno: lo scudo lo ferma prima, in `_dispatchEvent`. Solo
+su Twitch.
+
+### Le monete in circolazione
+
+Si contano dove le monete si muovono per forza: `_crea` (nascono), `_spendi` (si spendono),
+`_rendi` (tornano da una ricevuta), `_scadute` e la scrittura del giro (`economiaScrivi`), in
+`monete_giorno`, giorno per giorno (UTC). Le monete sparite sono le spese meno le rese, più le
+scadute. Per costruzione un passaggio di mano (un duello, un furto, un regalo) è una spesa e una
+resa uguali e fa zero, e una puntata conta solo quello che si vince o si perde. Il pannello mostra
+quante ce ne sono, in mano a quante persone, e le nate e le sparite degli ultimi sette giorni.
 
 ## Il piano
 
@@ -253,28 +282,60 @@ servono a rispondere a «perché ho perso monete». Si tiene novanta giorni.
 - Il pannello: la carta «Punti & classifica» diventa «L'economia delle monete», con le parti
   «Da dove arrivano», «A chi no», «Quando smettono», e accanto i conti di una diretta tipo.
 
-### Fase 2: come si perdono
+### Fase 2: come si perdono (fatta)
 
 - La durata delle monete (sopra, «Quanto durano le monete»): i lotti, la ricevuta, la puntata
   che torna con la sua data, il giro delle scadenze, `!monete` che le dice, e nel pannello la
   parte «Quanto durano».
-- `CLEARCHAT` e `CLEARMSG` nella chat IRC, `economia.punisci`.
-- Il giro dell'assenza, una volta al giorno.
-- Le stagioni con l'archivio.
-- Il registro, con «Annulla», e la sezione «Come si perdono» nel pannello.
+- `CLEARCHAT` e `CLEARMSG` nella chat IRC (`twitch/chat.js` → evento `moderazione`),
+  `economia.punisci` con le regole pure `quantoPerde`. Un timeout di un secondo è un «purge» e
+  vale come un messaggio cancellato. Lo streamer non perde mai.
+- Il giro di ogni giorno, `economia.giornoEconomia`: il bot lo guarda ogni ora, e il giorno (nel
+  fuso del canale) sta in `stato_vivo`, quindi un canale lo fa una volta sola anche dopo un
+  riavvio.
+  - **L'assenza** (`quantoAssenza`): chi non si vede da N giorni perde la sua parte, una volta ogni
+    sette giorni (`points.assenza_ts`); da M giorni le perde tutte. Il segno di vita
+    (`points.visto`) lo mette ogni messaggio di una persona (`vistoOra`, al più una scrittura ogni
+    dieci minuti) e il giro di presenza, qualunque cosa dicano le regole delle monete: prima lo
+    mettevano solo le monete date, e con la crescita spenta chi scriveva ogni giorno sarebbe
+    sembrato assente. Chi non era mai stato visto comincia a contare dal primo giro: nessuno perde
+    per un dato che manca.
+  - **Le stagioni** (`chiaveStagione`): quando la stagione cambia, la classifica (i primi dieci
+    che non sono staff) va in `monete_stagioni` e le monete di tutti scendono alla parte che si
+    tiene. Il primo giro segna la stagione e basta; passare da «ogni mese» a «ogni tre mesi» non
+    chiude una stagione (si confronta il modo, non solo la chiave).
+  - Il registro tiene novanta giorni.
+- Il registro con «Annulla» (`economia.annulla`, una volta sola): le tolte tornano coi lotti della
+  ricevuta (uno scaduto nel frattempo non torna), le date si riprendono quante ce ne sono.
+- Nel pannello «Come si perdono», con la riga che dice coi numeri cosa succede a chi ha 1.000
+  monete (le stesse `quantoPerde` e `quantoAssenza` del bot), e la carta «Il registro delle
+  monete».
 
 - «Per giocare bisogna esserci»: i passi messi da parte dai messaggi che contano, spesi dai
   giochi; la riga della voce per chi non ne ha; nel pannello «Un gioco ogni N messaggi».
 
-### Fase 3: eventi e strumenti
+### Fase 3: eventi e strumenti (fatta)
 
-- Monete per evento: follow (una volta per persona, mai al ritorno), abbonamento e rinnovo (per
-  tier), abbonamenti regalati (a chi regala), bit (ogni cento), raid (a chi lo porta), primo
-  messaggio di sempre. Tutto a zero di partenza, e tutto passa dalla porta.
-- `!monete dai|togli|imposta @nome N` per lo staff, nel registro con chi l'ha fatto.
-- Le monete in circolazione: quante ce ne sono, quante ne sono entrate e uscite questa settimana.
+- Monete per evento (sopra, «Gli eventi»): non dalla porta, come diceva il piano, ma come premi
+  scelti dallo streamer, che valgono anche a crescita spenta.
+- `!monete dai|togli|imposta @nome N` per lo staff, nel registro con chi l'ha fatto; e le monete
+  date o tolte a mano dal pannello, nel registro col nome di chi le ha date.
+- Le monete in circolazione (sopra).
+- E le monete del canale pagano i colpi di Pewpewify (docs/COLPI.md, «Le monete del canale»):
+  tutte o niente, con la ricevuta, rese se il colpo non compare.
 
 ## Le prove
+
+- Le perdite, il registro, gli eventi e la circolazione: `test/unita/economia-perdite.test.mjs`
+  sul database vero (le regole pure; perdere e annullare coi lotti e le scadenze, una volta sola;
+  la moderazione e lo streamer che non perde; l'assenza una volta a settimana, tutte dopo la fine,
+  e chi non era mai stato visto che comincia a contare; le stagioni, il primo giro e il cambio di
+  modo; gli eventi a crescita spenta, senza bot, esclusi, anonimi e streamer; le nate e le
+  sparite con un passaggio di mano e due puntate); `chat-irc.test.mjs` (CLEARCHAT e CLEARMSG);
+  `test/contratto/economia-perdite.test.mjs` (il cablaggio nel bot e nel server). Mutazioni:
+  undici, tutte rosse, fra cui la ricevuta passata come oggetto (un difetto vero, trovato qui:
+  il pagamento in monete di Pewpewify salvava `{ tolte, ricevuta }` e il rimborso non avrebbe
+  reso niente).
 
 - La durata: si spende prima quello che scade prima; un rimborso rimette i lotti della ricevuta;
   una puntata vinta torna coi suoi lotti e solo il guadagno nasce «giocando»; un furto passa i
