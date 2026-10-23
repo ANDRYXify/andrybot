@@ -397,3 +397,111 @@ test('l\'indirizzo corto: pew.<dominio>/<canale> quando e\' acceso, se no il lun
   assert.ok(lunga.includes('<link rel="canonical" href="https://socialbot.live/u/prova/colpo">'));
   assert.ok(!lettore(lunga).includes('pew.'));
 });
+
+const { eFrasePresenza, frasePresenza, PRESENZA } = await import('../../src/features/colpi.js');
+const { PRESENZA_MS, RINVIO_MS: RINVIO } = await import('../../src/features/colpi-servizio.js');
+
+test('la presenza nel listino: accesa solo con un effetto, la frase intera senza maiuscole e spazi, il nome nella scritta', () => {
+  assert.deepEqual(normalizza({}).presenza, { attiva: false, frase: '!pew presente', comando: '', x: PRESENZA.x, y: PRESENZA.y, scala: 100, testo: '', alMinuto: 6 });
+  assert.equal(normalizza({ presenza: { attiva: true } }).presenza.attiva, false, 'senza effetto non si accende');
+  const c = normalizza({ presenza: { attiva: true, comando: '!Ciao', frase: '  Eccomi   QUI ', testo: 'senza nome', x: 140, y: -3, scala: 9999, alMinuto: 0 } });
+  assert.deepEqual(c.presenza, { attiva: true, frase: 'eccomi qui', comando: 'ciao', x: 100, y: 0, scala: 300, testo: '', alMinuto: 1 });
+  assert.equal(eFrasePresenza(c, 'ECCOMI    qui'), true);
+  assert.equal(eFrasePresenza(c, 'ciao eccomi qui'), false, 'la frase vale da sola');
+  assert.equal(eFrasePresenza(normalizza({ presenza: { comando: 'ciao' } }), '!pew presente'), false, 'spenta non risponde');
+  assert.equal(frasePresenza(c, 'Marta', 'en'), 'Marta is here', 'senza scritta, quella di serie nella lingua della chat');
+  assert.equal(frasePresenza(normalizza({ presenza: { testo: '👋 {nome} c\'è!' } }), 'Marta https://x.y'), '👋 Marta c\'è!', 'il nome si pulisce come quello di un colpo');
+  assert.equal(frasePresenza(c, '   '), '', 'senza nome niente scritta');
+});
+
+function bancoPresenza(extra = {}) {
+  const cfg = { attivo: true, attesaSec: 0, alMinuto: 2, voci: [{ comando: 'pomodoro', bit: 100 }], zone: [{ x: 70, y: 60, w: 30, h: 40 }],
+    presenza: { attiva: true, comando: 'pomodoro', x: 10, y: 20, scala: 80, alMinuto: 3, ...extra } };
+  return { b: banco({ cfg }), cfg };
+}
+
+test('la presenza: parte una volta per diretta, nel suo punto e col nome, e non toglie posto a chi paga', () => {
+  const { b } = bancoPresenza();
+  const c = login();
+  const r = b.s.presenza(c, { chiave: 'twitch:1', nome: 'Marta', occasione: 'd:tw:1' });
+  assert.deepEqual(r, { esito: 'partita' });
+  const sp = b.di(c).sparati;
+  assert.equal(sp.length, 1);
+  assert.deepEqual(sp[0].xy, { x: 10, y: 20, s: 80, r: 0, centro: true }, 'il punto dello streamer, col centro');
+  assert.equal(sp[0].attacco.chi, 'Marta è presente');
+  const m = registroColpi.get(sp[0].attacco.id);
+  assert.deepEqual([m.stato, m.metodo, m.riferimento], ['pagata', 'presenza', 'presenza:d:tw:1:twitch:1'], 'sta nel registro: la consegna e\' quella dei colpi');
+  assert.equal(b.s.presenza(c, { chiave: 'twitch:1', nome: 'Marta', occasione: 'd:tw:1' }).esito, 'gia', 'una per diretta');
+  assert.equal(b.s.presenza(c, { chiave: 'twitch:1', nome: 'Marta', occasione: 'd:tw:2' }).esito, 'partita', 'alla diretta dopo si rifa\'');
+  assert.equal(b.s.presenza(c, { chiave: 'twitch:2', nome: 'Luca', occasione: 'd:tw:1' }).esito, 'partita');
+  assert.equal(b.s.presenza(c, { chiave: 'twitch:3', nome: 'Ugo', occasione: 'd:tw:1' }).esito, 'troppe', 'il tetto delle presenze al minuto');
+  assert.equal(b.s.mira(c, { voce: 'pomodoro', x: 5, y: 5, chiave: 'a' }).ok, true, 'le presenze non contano nel tetto dei colpi');
+  assert.equal(b.s.mira(c, { voce: 'pomodoro', x: 5, y: 5, chiave: 'b' }).ok, true);
+  b.avanti(61_000);
+  assert.equal(b.s.presenza(c, { chiave: 'twitch:3', nome: 'Ugo', occasione: 'd:tw:1' }).esito, 'partita', 'il tetto e\' al minuto');
+});
+
+test('la presenza chiede quello che chiede un colpo, e se non si vede in tempo si lascia e si puo\' rifare', async () => {
+  const { b } = bancoPresenza();
+  const c = login();
+  const p = (chiave = 'twitch:9') => b.s.presenza(c, { chiave, nome: 'Marta', occasione: 'd:tw:9' });
+  b.stato.live = false;
+  assert.deepEqual(p(), { esito: 'fermo', motivo: 'offline' });
+  b.stato.live = true; b.stato.overlay = false;
+  assert.deepEqual(p(), { esito: 'fermo', motivo: 'overlay' });
+  b.stato.overlay = true;
+  assert.deepEqual(bancoPresenza({ x: 80, y: 80 }).b.s.presenza(c, { chiave: 'k', nome: 'M', occasione: 'o' }), { esito: 'fermo', motivo: 'protetta' }, 'il punto fuori dalle zone, anche se le zone cambiano dopo');
+  assert.deepEqual(bancoPresenza({ comando: 'coriandoli' }).b.s.presenza(c, { chiave: 'k', nome: 'M', occasione: 'o' }), { esito: 'fermo', motivo: 'effetto' }, 'un disegno a tutto schermo non ha un punto');
+  assert.equal(bancoPresenza({ attiva: false }).b.s.presenza(c, { chiave: 'k', nome: 'M', occasione: 'o' }).esito, 'spenta');
+  assert.equal(b.di(c).sparati.length, 0, 'niente e\' partito');
+  assert.equal(p().esito, 'partita');
+  const id = b.di(c).sparati[0].attacco.id;
+  b.avanti(RINVIO + 1);
+  await b.s.ronda();
+  assert.equal(b.di(c).sparati.length, 2, 'non vista: la ronda la rimanda');
+  b.avanti(PRESENZA_MS);
+  await b.s.ronda();
+  assert.equal(registroColpi.get(id).stato, 'scaduta', 'il momento e\' passato: niente da rimborsare');
+  assert.equal(p().esito, 'partita', 'e chi l\'ha scritta la puo\' rifare');
+  const id2 = b.di(c).sparati.at(-1).attacco.id;
+  assert.equal(await b.s.visto(c, id2), true);
+  assert.equal(registroColpi.get(id2).stato, 'sparata');
+  assert.equal(p().esito, 'gia', 'vista, vale per tutta la diretta');
+});
+
+test('la prova della presenza dal pannello: subito, col nome dello streamer, senza registro', () => {
+  const { b } = bancoPresenza({ attiva: false });
+  const c = login();
+  assert.deepEqual(b.s.provaPresenza(c, { nome: 'Canale', presenza: { comando: 'pomodoro', x: 30, y: 30, testo: 'Ciao {nome}' } }), { ok: true });
+  const sp = b.di(c).sparati[0];
+  assert.deepEqual([sp.xy.x, sp.xy.y, sp.attacco.id, sp.attacco.chi], [30, 30, '', 'Ciao Canale'], 'quello che c\'e\' nel pannello, anche non salvato');
+  assert.equal(b.s.provaPresenza(c, { nome: 'Canale', presenza: { comando: 'pomodoro', x: 90, y: 90 } }).motivo, 'protetta');
+});
+
+test('l\'anteprima della pagina: quello che riceverebbe l\'overlay, senza la sua chiave', () => {
+  const cfg = { attivo: true, attesaSec: 0, alMinuto: 30, voci: [{ comando: 'pomodoro', bit: 100 }, { comando: 'clip', bit: 100 }, { comando: 'tiro', bit: 100 }, { comando: 'tiromuto', bit: 100 }] };
+  const b = banco({ cfg });
+  const c = login();
+  const effetti = {
+    pomodoro: { tipo: 'immagine', file: 'abc.png', suono_file: 'tonfo.mp3', volume: 40, durata: 3000 },
+    clip: { tipo: 'video', file: 'v.mp4', chroma: JSON.stringify({ colore: '#00FF00', soglia: 90 }) },
+    tiro: { tipo: 'lancio', disegno: JSON.stringify({ oggetto: 'pomodoro', audio: 'urlo' }) },
+    tiromuto: { tipo: 'lancio', disegno: JSON.stringify({ oggetto: 'pomodoro', audio: 'sparito' }) },
+    urlo: { tipo: 'audio', file: 'urlo.ogg' },
+  };
+  const p = creaPortaColpi({ servizio: b.s, registro: registroColpi, streamers: { get: () => ({ settings: { colpi: cfg } }) },
+    effettoDi: (l, k) => effetti[k] || null, mezziEuro: () => [], apriPagamento: async () => ({}), inOnda: () => true, overlay: () => true, ora: b.ora });
+  const v = Object.fromEntries(p.dati(c).voci.map((x) => [x.id, x]));
+  assert.deepEqual(v.pomodoro.prova, { suono: `/u/${c}/colpo/anteprima/pomodoro/suono`, volume: 40, durata: 3000, chroma: null });
+  assert.deepEqual(v.clip.prova.chroma, { colore: '#00ff00', soglia: 90 }, 'il green screen del video, come nell\'overlay');
+  assert.equal(v.tiro.prova.lancio.oggetto, 'pomodoro');
+  assert.equal(v.tiro.prova.lancio.suono, `/u/${c}/colpo/anteprima/tiro/suono`, 'il suono dello streamer passa dall\'anteprima');
+  assert.equal(v.tiro.prova.lancio.audio, '');
+  assert.match(v.tiromuto.prova.lancio.suono, /^\/vendor\/lanci\/suoni\//, 'un suono che non c\'e\' piu\' lascia quello di serie');
+  assert.ok(v.tiro.prova.durata > 0);
+  assert.ok(!JSON.stringify(p.dati(c)).includes('key='), 'nessun indirizzo dell\'overlay');
+  assert.equal(p.anteprima(c, 'pomodoro', 'suono'), 'tonfo.mp3');
+  assert.equal(p.anteprima(c, 'tiro', 'suono'), 'urlo.ogg');
+  assert.equal(p.anteprima(c, 'tiromuto', 'suono'), null);
+  assert.equal(p.anteprima(c, 'clip', 'suono'), null);
+});

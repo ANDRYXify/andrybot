@@ -7,9 +7,12 @@
 // che gira.
 import { normalizza, voceDi, metodiDi, titoloPremio } from './colpi.js';
 import { MIRABILE } from './colpi-servizio.js';
-import { normLancio, oggettoDi, disegnoDi } from './lanci.js';
+import { normLancio, oggettoDi, disegnoDi, payloadLancio, durataLancio } from './lanci.js';
+import { chromaDi } from './chroma.js';
 
-const spriteLancio = (eff) => { let g = {}; try { g = JSON.parse(eff.disegno || '{}'); } catch { g = {}; } return disegnoDi(oggettoDi(normLancio(g).oggetto)); };
+const grezzoDi = (eff) => { try { return JSON.parse(eff.disegno || '{}') || {}; } catch { return {}; } };
+const spriteLancio = (eff) => disegnoDi(oggettoDi(normLancio(grezzoDi(eff)).oggetto));
+const FILE_SEMPLICE = (f) => /^[A-Za-z0-9._-]+$/.test(f) && !f.includes('..');
 
 export const ID_MIRA = /^[0-9a-f]{18}$/;
 
@@ -46,18 +49,49 @@ export function creaPortaColpi({ servizio, registro, streamers, effettoDi, mezzi
       const disegno = eff.tipo === 'lancio' ? spriteLancio(eff) : '';
       voci.push({ id: v.id, nome: v.nome, tipo: eff.tipo === 'lancio' ? 'immagine' : eff.tipo, scala: v.scala, anteprima: disegno || `/u/${login}/colpo/anteprima/${encodeURIComponent(v.id)}`,
         metodi, prezzi: { euro: metodi.includes('euro') ? v.euro : 0, punti: metodi.includes('punti') ? v.punti : 0, bit: metodi.includes('bit') ? v.bit : 0 },
-        premio: metodi.includes('punti') ? (v.premioNome || titoloPremio(v)) : '' });
+        premio: metodi.includes('punti') ? (v.premioNome || titoloPremio(v)) : '', prova: provaDi(login, v, eff) });
     }
     return { live: !!inOnda(login), overlay: !!overlay(login), pausa: k.cfg.pausa, zone: k.cfg.zone, conNome: k.cfg.conNome, valuta: valutaDi(k.s), mezzi: euro, voci };
   }
 
-  // il file dell'anteprima di una voce accesa: solo un nome semplice, mai un percorso
-  function anteprima(login, idVoce) {
+  // L'ANTEPRIMA DI UN COLPO (docs/COLPI.md, «L'anteprima»): quello che l'overlay
+  // riceverebbe, per rifarlo uguale sulla pagina. Il lancio e' il suo payload
+  // (lo stesso disegnatore, public/lanci.js); un media e' il file dell'anteprima.
+  // I suoni caricati dallo streamer passano dall'anteprima anche loro: gli
+  // indirizzi dell'overlay portano la sua chiave, e non escono.
+  function provaDi(login, v, eff) {
+    const suono = suonoDi(login, eff) ? `/u/${login}/colpo/anteprima/${encodeURIComponent(v.id)}/suono` : '';
+    const volume = eff.volume == null || eff.volume === '' ? 100 : Math.max(0, Math.min(100, Number(eff.volume) || 0));
+    if (eff.tipo === 'lancio') {
+      const lancio = payloadLancio(grezzoDi(eff));
+      if (lancio.audio && suono) lancio.suono = suono;
+      lancio.audio = '';
+      return { lancio, volume, durata: durataLancio(lancio) };
+    }
+    return { suono, volume, durata: Number(eff.durata) > 0 ? Number(eff.durata) : 0, chroma: eff.tipo === 'video' ? chromaDi(eff) : null };
+  }
+  // il file del suono di un colpo: quello abbinato a un media, o l'audio del
+  // canale scelto per un lancio
+  function suonoDi(login, eff) {
+    let f = '';
+    if (eff.tipo === 'lancio') {
+      const audio = payloadLancio(grezzoDi(eff)).audio;
+      const a = audio ? effettoDi(login, audio) : null;
+      f = a && a.tipo === 'audio' ? String(a.file || '') : '';
+    } else f = String(eff.suono_file || '');
+    return f && FILE_SEMPLICE(f) ? f : '';
+  }
+
+  // il file dell'anteprima di una voce accesa (o del suo suono, con `parte`):
+  // solo un nome semplice, mai un percorso
+  function anteprima(login, idVoce, parte = '') {
     const k = aperti(login);
     const v = k ? voceDi(k.cfg, String(idVoce || '')) : null;
     const eff = v ? effettoDi(login, v.comando) : null;
-    const file = String(eff?.file || '');
-    return eff && MIRABILE(eff) && /^[A-Za-z0-9._-]+$/.test(file) && !file.includes('..') ? file : null;
+    if (!eff || !MIRABILE(eff)) return null;
+    if (parte === 'suono') return suonoDi(login, eff) || null;
+    const file = String(eff.file || '');
+    return FILE_SEMPLICE(file) ? file : null;
   }
 
   // `io`: lo spettatore che ha fatto l'accesso ({ id, nome }): la mira e' sua,

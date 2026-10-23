@@ -26081,6 +26081,7 @@ async function caricaPremi() {
 
 let _clZone = [];
 let _clEffetti = [];
+let _clPunto = { x: 12, y: 82 };
 
 function pannelloColpi() {
   const c = impostazioni().colpi || {};
@@ -26155,6 +26156,43 @@ function pannelloColpi() {
       <p class="spazio-sopra"><button class="btn" id="cl-salva">${L('Salva', 'Save', 'Guardar')}</button></p>
     </div>
 
+    <div class="carta" id="cl-presenza">
+      <h3>${_hIco(ICO.persona)}${L('La presenza', 'Check-in', 'La presencia')}</h3>
+      <p>${L('Chi scrive in chat la tua frase fa comparire in diretta un effetto col suo nome, nel punto che scegli tu. È gratis, vale una volta per diretta e conta come presenza nella serie. Serve la pagina di Pewpewify aperta, la diretta in onda e l\'overlay.', 'Whoever types your phrase in chat makes an effect appear on stream with their name, in the spot you pick. It\'s free, works once per stream and counts as attendance in the streak. It needs the Pewpewify page open, the stream live and the overlay.', 'Quien escribe tu frase en el chat hace aparecer en directo un efecto con su nombre, en el punto que eliges. Es gratis, vale una vez por directo y cuenta como presencia en la racha. Hace falta la página de Pewpewify abierta, el directo en marcha y el overlay.')}</p>
+      <div class="riga-interruttore spazio-sopra">
+        <label class="interruttore"><input type="checkbox" id="cl-pr-attiva" ${c.presenza?.attiva ? 'checked' : ''}><span class="levetta"></span></label>
+        <span class="etichetta-stato">${L('Presenza accesa', 'Check-in on', 'Presencia activada')}</span>
+      </div>
+      <div class="griglia-campi spazio-sopra">
+        <div>
+          <label class="campo" for="cl-pr-frase">${L('Cosa scrivono in chat', 'What they type in chat', 'Qué escriben en el chat')}</label>
+          <input type="text" id="cl-pr-frase" maxlength="40" value="${esc(c.presenza?.frase || '!pew presente')}" placeholder="!pew presente">
+        </div>
+        <div>
+          <label class="campo" for="cl-pr-testo">${L('La scritta sotto l\'effetto', 'The caption under the effect', 'El texto bajo el efecto')}</label>
+          <input type="text" id="cl-pr-testo" maxlength="60" value="${esc(c.presenza?.testo || '')}" placeholder="${esc(L('{nome} è presente', '{nome} is here', '{nome} está presente'))}">
+        </div>
+        <div>
+          <label class="campo" for="cl-pr-comando">${L('L\'effetto', 'The effect', 'El efecto')}</label>
+          <select id="cl-pr-comando"></select>
+        </div>
+        <div>
+          <label class="campo" for="cl-pr-scala">${L('Grandezza %', 'Size %', 'Tamaño %')}</label>
+          <input type="number" id="cl-pr-scala" min="20" max="300" step="5" value="${Number(c.presenza?.scala) || 100}">
+        </div>
+        <div>
+          <label class="campo" for="cl-pr-minuto">${L('Al minuto, al massimo', 'Per minute, at most', 'Por minuto, como máximo')}</label>
+          <input type="number" id="cl-pr-minuto" min="1" max="30" value="${Number(c.presenza?.alMinuto) || 6}">
+        </div>
+      </div>
+      <p class="suggerimento">${L('La frase vale scritta da sola: maiuscole e spazi non contano. Nella scritta, {nome} diventa il nome di chi l\'ha scritta; vuota, ognuno la legge nella lingua della tua chat.', 'The phrase counts when typed on its own: capitals and spaces don\'t matter. In the caption, {nome} becomes the name of whoever typed it; left empty, it follows your chat language.', 'La frase vale escrita sola: mayúsculas y espacios no cuentan. En el texto, {nome} se convierte en el nombre de quien la escribió; vacío, sigue el idioma de tu chat.')}</p>
+      <p><button type="button" class="btn secondario mini" id="cl-pr-lancio">${_bIco(ICO.target)}${L('Scegli tra lanci e adesivi', 'Pick from throws and stickers', 'Elige entre lanzamientos y pegatinas')}</button></p>
+      <h4 class="spazio-sopra">${L('Dove compare', 'Where it shows up', 'Dónde aparece')}</h4>
+      <p class="suggerimento">${L('Tocca il quadro: il centro dell\'effetto va lì. Le zone protette valgono anche qui.', 'Tap the frame: the center of the effect goes there. Protected areas apply here too.', 'Toca el cuadro: el centro del efecto va ahí. Las zonas protegidas valen también aquí.')}</p>
+      <div class="cl-quadro cl-quadro-punto" id="cl-pr-quadro" role="application" aria-label="${esc(L('Quadro della diretta: tocca dove compare la presenza', 'Stream frame: tap where the check-in shows up', 'Cuadro del directo: toca dónde aparece la presencia'))}" tabindex="0"></div>
+      <p class="riga-flessibile spazio-sopra"><button class="btn" id="cl-pr-salva">${L('Salva', 'Save', 'Guardar')}</button><button type="button" class="btn secondario" id="cl-pr-prova">${_bIco(ICO.play)}${L('Prova nell\'overlay', 'Test in the overlay', 'Probar en el overlay')}</button></p>
+    </div>
+
     <div class="carta">
       <h3>${_hIco(ICO.orologio)}${L('Gli ultimi colpi', 'Latest hits', 'Últimos golpes')}</h3>
       <div id="cl-ultimi"><p class="tenue">${L('Ancora nessuno.', 'None yet.', 'Ninguno todavía.')}</p></div>
@@ -26202,6 +26240,7 @@ function _clLeggi() {
     attesaSec: Number(document.getElementById('cl-attesa')?.value) || 0,
     alMinuto: Number(document.getElementById('cl-minuto')?.value) || 6,
     conNome: !!document.getElementById('cl-nome')?.checked,
+    presenza: _clPresenzaLeggi(),
     titolo: (document.getElementById('cl-titolo')?.value || '').trim(),
     dida: (document.getElementById('cl-dida')?.value || '').trim(),
     zone: _clZone.map((z) => ({ ...z })),
@@ -26209,8 +26248,45 @@ function _clLeggi() {
   };
 }
 
+function _clPresenzaLeggi() {
+  const v = (id) => document.getElementById(id);
+  return {
+    attiva: !!v('cl-pr-attiva')?.checked,
+    frase: (v('cl-pr-frase')?.value || '').trim(),
+    testo: (v('cl-pr-testo')?.value || '').trim(),
+    comando: v('cl-pr-comando')?.value || '',
+    scala: Number(v('cl-pr-scala')?.value) || 100,
+    alMinuto: Number(v('cl-pr-minuto')?.value) || 6,
+    x: _clPunto.x, y: _clPunto.y,
+  };
+}
+
+function _clPresenzaGiusta(p) {
+  if (p.frase && p.frase.length < 2) throw new Error(L('La frase della presenza vuole almeno due caratteri.', 'The check-in phrase needs at least two characters.', 'La frase de la presencia necesita al menos dos caracteres.'));
+  if (p.testo && !p.testo.includes('{nome}')) throw new Error(L('Nella scritta della presenza metti {nome}: è lì che va il nome di chi scrive.', 'Put {nome} in the check-in caption: that\'s where the name goes.', 'Pon {nome} en el texto de la presencia: ahí va el nombre de quien escribe.'));
+  if (p.attiva && !p.comando) throw new Error(L('Per accendere la presenza scegli il suo effetto.', 'To turn on check-in, pick its effect.', 'Para activar la presencia elige su efecto.'));
+  if (_clZone.some((z) => p.x >= z.x && p.x <= z.x + z.w && p.y >= z.y && p.y <= z.y + z.h)) throw new Error(L('Il punto della presenza sta in una zona protetta: scegline un altro.', 'The check-in spot is in a protected area: pick another one.', 'El punto de la presencia está en una zona protegida: elige otro.'));
+}
+
+function _clPresenzaEffetti() {
+  const sel = document.getElementById('cl-pr-comando');
+  if (!sel) return;
+  const c = sel.value || (impostazioni().colpi || {}).presenza?.comando || '';
+  const opz = _clEffetti.filter(_clMirabile);
+  sel.innerHTML = `<option value="">${L('Scegli un effetto', 'Pick an effect', 'Elige un efecto')}</option>` + opz.map((e) => `<option value="${esc(e.comando)}"${e.comando === c ? ' selected' : ''}>!${esc(e.comando)} (${esc(e.lancio ? nomeLancio(e.lancio.oggetto) : etTipoEffetto(e.tipo))})</option>`).join('')
+    + (c && !opz.some((e) => e.comando === c) ? `<option value="${esc(c)}" selected>!${esc(c)} — ${L('non c\'è più', 'missing', 'ya no está')}</option>` : '');
+}
+
+function _clPresenzaQuadro() {
+  const q = document.getElementById('cl-pr-quadro');
+  if (!q) return;
+  q.innerHTML = _clZone.map((z) => `<span class="cl-zona" style="left:${z.x}%;top:${z.y}%;width:${z.w}%;height:${z.h}%"></span>`).join('')
+    + `<span class="cl-punto" style="left:${_clPunto.x}%;top:${_clPunto.y}%"></span>`;
+}
+
 async function salvaColpi(silenzioso) {
   const colpi = _clLeggi();
+  _clPresenzaGiusta(colpi.presenza);
   const vuote = colpi.voci.filter((v) => !(v.euro > 0 || v.punti > 0 || v.bit > 0));
   if (colpi.voci.some((v) => v.euro > 0 && v.euro < 50)) throw new Error(L('Il prezzo in euro parte da 0,50.', 'The euro price starts at 0.50.', 'El precio en euros empieza en 0,50.'));
   await salvaImpostazioni({ colpi }, silenzioso ? null : (vuote.length ? L('Salvato: i colpi senza prezzo non si offrono', 'Saved: hits without a price aren\'t offered', 'Guardado: los golpes sin precio no se ofrecen') : L('Colpi salvati ✓', 'Hits saved ✓', 'Golpes guardados ✓')));
@@ -26280,20 +26356,54 @@ async function caricaColpiStato() {
   }
   const ul = document.getElementById('cl-ultimi');
   if (ul && (st.ultimi || []).length) {
-    const metodo = { euro: L('euro', 'euros', 'euros'), punti: L('punti', 'points', 'puntos'), bit: 'Bit' };
+    const metodo = { euro: L('euro', 'euros', 'euros'), punti: L('punti', 'points', 'puntos'), bit: 'Bit', presenza: L('presenza', 'check-in', 'presencia') };
     const come = { sparata: L('Mostrato', 'Shown', 'Mostrado'), pagata: L('In arrivo', 'On its way', 'En camino'), rimborsata: L('Rimborsato', 'Refunded', 'Reembolsado') };
-    ul.innerHTML = `<div class="scorrevole"><table class="tabella"><tbody>${st.ultimi.map((u) => `<tr><td>${esc(new Date(u.quando).toLocaleString(localePannello(), { dateStyle: 'short', timeStyle: 'short' }))}</td><td><strong>${esc(u.nome)}</strong></td><td>${esc(u.chi || '—')}</td><td>${esc(metodo[u.metodo] || u.metodo)}</td><td>${esc(come[u.stato] || '')}</td></tr>`).join('')}</tbody></table></div>`;
+    ul.innerHTML = `<div class="scorrevole"><table class="tabella"><tbody>${st.ultimi.map((u) => `<tr><td>${esc(new Date(u.quando).toLocaleString(localePannello(), { dateStyle: 'short', timeStyle: 'short' }))}</td><td><strong>${esc(u.metodo === 'presenza' ? L('Presenza', 'Check-in', 'Presencia') : u.nome)}</strong></td><td>${esc(u.chi || '—')}</td><td>${esc(metodo[u.metodo] || u.metodo)}</td><td>${esc(come[u.stato] || '')}</td></tr>`).join('')}</tbody></table></div>`;
   }
 }
 
 async function caricaColpi() {
   const c = impostazioni().colpi || {};
   _clZone = (c.zone || []).map((z) => ({ ...z }));
+  _clPunto = { x: Number.isFinite(Number(c.presenza?.x)) ? Number(c.presenza.x) : 12, y: Number.isFinite(Number(c.presenza?.y)) ? Number(c.presenza.y) : 82 };
   await caricaLanci();
   try { _clEffetti = ((await api('/api/streamer/effetti')) || {}).effetti || []; } catch { _clEffetti = []; }
   _clVoci();
   _clQuadro();
   _clCollegaQuadro();
+  _clPresenzaEffetti();
+  _clPresenzaQuadro();
+  const pq = document.getElementById('cl-pr-quadro');
+  if (pq && !pq.dataset.wired) {
+    pq.dataset.wired = '1';
+    const metti = (x, y) => { _clPunto = { x: Math.round(Math.min(100, Math.max(0, x)) * 10) / 10, y: Math.round(Math.min(100, Math.max(0, y)) * 10) / 10 }; _clPresenzaQuadro(); };
+    pq.addEventListener('click', (e) => { const r = pq.getBoundingClientRect(); if (r.width && r.height) metti((e.clientX - r.left) / r.width * 100, (e.clientY - r.top) / r.height * 100); });
+    pq.addEventListener('keydown', (e) => {
+      const passo = e.shiftKey ? 5 : 1, d = { ArrowLeft: [-passo, 0], ArrowRight: [passo, 0], ArrowUp: [0, -passo], ArrowDown: [0, passo] }[e.key];
+      if (!d) return;
+      e.preventDefault();
+      metti(_clPunto.x + d[0], _clPunto.y + d[1]);
+    });
+    document.getElementById('cl-quadro')?.addEventListener('click', () => setTimeout(_clPresenzaQuadro, 0));
+    document.getElementById('cl-quadro')?.addEventListener('pointerup', () => setTimeout(_clPresenzaQuadro, 0));
+    document.getElementById('cl-pr-salva')?.addEventListener('click', () => conErrore(() => salvaColpi()));
+    document.getElementById('cl-pr-lancio')?.addEventListener('click', () => conErrore(async () => {
+      const r = await scegliLancio({ testo: L('Quello che prendi diventa l\'effetto della presenza: compare col nome di chi scrive la frase.', 'What you take becomes the check-in effect: it shows up with the name of whoever types the phrase.', 'Lo que coges se convierte en el efecto de la presencia: aparece con el nombre de quien escribe la frase.') });
+      if (!r) return;
+      try { _clEffetti = ((await api('/api/streamer/effetti')) || {}).effetti || []; } catch { _clEffetti = _clEffetti || []; }
+      const sel = document.getElementById('cl-pr-comando');
+      _clPresenzaEffetti();
+      if (sel) sel.value = r.comando;
+    }));
+    document.getElementById('cl-pr-prova')?.addEventListener('click', () => conErrore(async () => {
+      const p = _clPresenzaLeggi();
+      _clPresenzaGiusta({ ...p, attiva: true });
+      const r = await api('/api/colpi/presenza/prova', { method: 'POST', body: { presenza: p } });
+      if (r?.ok) { toast(L('Mandata all\'overlay ✓', 'Sent to the overlay ✓', 'Enviada al overlay ✓')); return; }
+      const perche = { effetto: L('quell\'effetto non si può mettere in un punto', 'that effect can\'t be placed at a spot', 'ese efecto no se puede poner en un punto'), protetta: L('il punto sta in una zona protetta', 'the spot is in a protected area', 'el punto está en una zona protegida'), overlay: L('nessun overlay aperto', 'no overlay open', 'ningún overlay abierto') }[r?.motivo] || '';
+      toast(L('Non è partita: ', 'It didn\'t start: ', 'No ha salido: ') + perche, 'errore');
+    }));
+  }
   const box = document.getElementById('cl-voci');
   if (box && !box.dataset.wired) {
     box.dataset.wired = '1';

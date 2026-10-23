@@ -11,6 +11,7 @@ import { effects as effectsDb, streamers } from '../db.js';
 import { makeLog } from '../logger.js';
 import { normDisegno } from '../web/stile.js';
 import { payloadLancio, durataLancio } from './lanci.js';
+import { normChroma, chromaDi } from './chroma.js';
 
 // Tetti ai collegamenti SSE (overlay + tracking): per canale e in tutto.
 export const MAX_SSE_CANALE = 32;
@@ -26,16 +27,9 @@ function isVip(msg) {
 
 const norm = (s) => String(s || '').toLowerCase();
 
-// Lo scontorno di un video (green screen): il colore da togliere e quanto
-// largo. null = niente. Lo stesso normalizzatore per quello salvato
-// sull'effetto e per quello di un premio.
-export function normChroma(o) {
-  if (!o || o.attivo === false) return null;
-  const colore = /^#[0-9a-f]{6}$/i.test(String(o.colore || '')) ? String(o.colore).toLowerCase() : '#00ff00';
-  const soglia = Math.max(20, Math.min(300, Math.round(Number(o.soglia)) || 140));
-  return { colore, soglia };
-}
-export const chromaDi = (eff) => { if (!eff?.chroma) return null; try { return normChroma(JSON.parse(eff.chroma)); } catch { return null; } };
+// Lo scontorno di un video (green screen): sta in chroma.js, che lo legge anche
+// la pagina di Pewpewify senza tirarsi dietro il motore.
+export { normChroma, chromaDi };
 
 export class EffectsEngine {
   constructor() {

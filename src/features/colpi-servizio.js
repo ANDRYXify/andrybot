@@ -17,7 +17,7 @@
 //    puo' rimborsare nessuno fuori da Twitch: per questo la pagina li chiede
 //    solo quando il colpo e' consegnabile, e un colpo a Bit pagato resta in
 //    coda finche' un overlay non lo mostra.
-import { normalizza, puntoBuono, voceDi, metodiDi, nuovoCodice, codiceIn, nomeChi, bastaPer, SCADENZA_MS } from './colpi.js';
+import { normalizza, puntoBuono, voceDi, metodiDi, nuovoCodice, codiceIn, nomeChi, bastaPer, frasePresenza, SCADENZA_MS } from './colpi.js';
 import { randomBytes } from 'node:crypto';
 
 // Gli effetti che si possono mirare: quelli che si posano in un punto. Un'immagine
@@ -29,6 +29,11 @@ export const CONSEGNA_MS = 10 * 60_000;
 // ogni quanto si rimanda un colpo non ancora visto (l'overlay riconosce quelli
 // che ha gia' in fila: un rinvio non lo mostra due volte)
 export const RINVIO_MS = 20_000;
+// una presenza che l'overlay non mostra in tre minuti non si mostra piu': il
+// momento e' passato (come per chi arriva in chat), e lo spettatore la puo' rifare
+export const PRESENZA_MS = 3 * 60_000;
+// la voce di una presenza: non e' una voce del listino (quelle sono [a-z0-9])
+export const VOCE_PRESENZA = '@presenza';
 
 export function creaServizioColpi({ registro, effects, effettoDi, impostazioni, inOnda = () => true, overlay = () => true,
   rimborsaEuro = async () => ({ errore: 'nessun conto' }), chiudiPremio = async () => true, ora = () => Date.now(), log = null }) {
@@ -95,6 +100,50 @@ export function creaServizioColpi({ registro, effects, effettoDi, impostazioni, 
     try { return !!(await chiudiPremio(m.login, premio, riscatto, stato)); } catch (e) { log?.warn?.(`riscatto del colpo #${m.login}:`, e?.message || e); return false; }
   }
 
+  // LA PRESENZA dalla chat (docs/COLPI.md, «La presenza»). Le stesse domande di
+  // un colpo (pagina accesa, non in pausa, in onda, un overlay, l'effetto che
+  // c'e', il punto fuori dalle zone), un tetto suo al minuto, e una sola per
+  // spettatore per diretta: `occasione` e' la diretta (arrivi.occasioneDiretta),
+  // `chiave` chi e' (piattaforma e id). Il resto e' la strada dei colpi: l'overlay
+  // la mostra in fila e dice «visto», la ronda la rimanda.
+  function presenza(login, { chiave = '', nome = '', occasione = '', lingua = 'it' } = {}) {
+    const ch = String(login || '').toLowerCase();
+    const cfg = cfgDi(ch);
+    const p = cfg.presenza;
+    if (!cfg.attivo || !p.attiva) return { esito: 'spenta' };
+    if (!chiave || !occasione) return { esito: 'spenta' };
+    if (cfg.pausa) return { esito: 'fermo', motivo: 'pausa' };
+    if (!inOnda(ch)) return { esito: 'fermo', motivo: 'offline' };
+    if (!overlay(ch)) return { esito: 'fermo', motivo: 'overlay' };
+    if (!MIRABILE(effettoDi(ch, p.comando))) return { esito: 'fermo', motivo: 'effetto' };
+    const punto = puntoBuono(cfg, p.x, p.y);
+    if (!punto.ok) return { esito: 'fermo', motivo: punto.motivo };
+    const chi = frasePresenza(cfg, nome, lingua);
+    if (!chi) return { esito: 'spenta' };
+    const adesso = ora();
+    if (registro.presenzeDa(ch, adesso - 60_000) >= p.alMinuto) return { esito: 'troppe' };
+    const m = { id: randomBytes(9).toString('hex'), login: ch, voce: VOCE_PRESENZA, comando: p.comando, nome: 'Presenza',
+      x: punto.x, y: punto.y, scala: p.scala, chi, riferimento: `presenza:${occasione}:${chiave}` };
+    if (!registro.presenza(m, adesso)) return { esito: 'gia' };
+    const fatto = manda(registro.get(m.id));
+    log?.info?.(`presenza su #${ch}${fatto ? '' : ': in coda, nessun overlay pronto'}`);
+    return { esito: 'partita' };
+  }
+
+  // La prova dal pannello: la stessa presenza, subito, senza registro (non e'
+  // di nessuno e non conta), col nome dello streamer. L'effetto deve esserci.
+  function provaPresenza(login, { nome = '', lingua = 'it', presenza: bozza = null } = {}) {
+    const ch = String(login || '').toLowerCase();
+    const cfg = cfgDi(ch);
+    const p = bozza ? normalizza({ presenza: { ...bozza, attiva: true } }).presenza : cfg.presenza;
+    if (!MIRABILE(effettoDi(ch, p.comando))) return { ok: false, motivo: 'effetto' };
+    const punto = puntoBuono(cfg, p.x, p.y);
+    if (!punto.ok) return { ok: false, motivo: punto.motivo };
+    const chi = frasePresenza({ presenza: p }, nome, lingua);
+    const ok = !!effects.fireConOpzioni(ch, p.comando, { xy: { x: punto.x, y: punto.y, s: p.scala, r: 0, centro: true }, attacco: { id: '', chi, nome: 'Presenza' } });
+    return ok ? { ok: true } : { ok: false, motivo: 'overlay' };
+  }
+
   // L'overlay l'ha mostrato. Coi punti canale il riscatto si chiude adesso.
   async function visto(login, id) {
     const m = registro.getDi(String(login || '').toLowerCase(), String(id || ''));
@@ -115,6 +164,11 @@ export function creaServizioColpi({ registro, effects, effettoDi, impostazioni, 
   async function giro() {
     const adesso = ora();
     for (const m of registro.daConsegnare()) {
+      if (m.metodo === 'presenza') {
+        if (adesso - m.pagata_at > PRESENZA_MS) registro.lasciata(m.id);
+        else if (adesso - (m.tentata_at || 0) >= RINVIO_MS) manda(m);
+        continue;
+      }
       if (m.metodo !== 'bit' && adesso - m.pagata_at > CONSEGNA_MS) {
         let ok = false;
         if (m.metodo === 'punti') ok = await chiudi(m, 'CANCELED');
@@ -182,5 +236,5 @@ export function creaServizioColpi({ registro, effects, effettoDi, impostazioni, 
     return { esito: incassa(m, 'euro', donazioneId, '', true) ? 'pagato' : 'gia', nome: m.nome, login: m.login };
   }
 
-  return { mira, consegnabile, daCheer, daRiscatto, daPagamento, visto, ronda, cfgDi };
+  return { mira, consegnabile, daCheer, daRiscatto, daPagamento, presenza, provaPresenza, visto, ronda, cfgDi };
 }

@@ -949,6 +949,8 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   guscio.risorsa('pagina-link.js');
   guscio.risorsa('pagina-negozio.js');
   guscio.risorsa('pagina-colpo.js');
+  guscio.risorsa('lanci.js');
+  guscio.risorsa('scontorno.js');
   guscio.risorsa('telegram-porta.js');
   guscio.pagina('index.html');           // la vetrina, servita anche su '/'
   // Le pagine delle campagne e il loro tasto: aperte solo se l'id e' una
@@ -2478,6 +2480,12 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     if (!file) return notFound(res);
     res.sendFile(join(effectsRoot, login, file), { maxAge: '300s' }, (err) => { if (err && !res.headersSent) notFound(res); });
   });
+  app.get('/u/:user/colpo/anteprima/:voce/suono', (req, res) => {
+    const login = loginColpi(req);
+    const file = login ? portaColpi.anteprima(login, req.params.voce, 'suono') : null;
+    if (!file) return notFound(res);
+    res.sendFile(join(effectsRoot, login, file), { maxAge: '300s' }, (err) => { if (err && !res.headersSent) notFound(res); });
+  });
   app.post('/u/:user/colpo/mira', (req, res) => {
     const login = loginColpi(req);
     if (!login) return res.status(404).json({ ok: false, motivo: 'spento' });
@@ -2573,6 +2581,15 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       ultimi: registroColpi.ultimi(login, 20).map((m) => ({ quando: m.pagata_at, nome: m.nome, chi: m.chi, metodo: m.metodo, stato: m.stato })),
     });
   }));
+  // La prova della presenza (docs/COLPI.md, «La presenza»): la stessa che parte
+  // dalla chat, subito, col nome dello streamer, con quello che c'e' nel pannello
+  // anche se non e' salvato. Non passa dal registro: non e' di nessuno.
+  app.post('/api/colpi/presenza/prova', requireOwner, (req, res) => {
+    const u = currentUser(req);
+    const b = req.body?.presenza && typeof req.body.presenza === 'object' ? req.body.presenza : null;
+    const r = manager.colpi?.provaPresenza(u.login, { nome: streamers.get(u.login)?.display || u.login, lingua: linguaChat(u.login), presenza: b }) || { ok: false, motivo: 'overlay' };
+    res.json(r);
+  });
   // LA PAGINA DEL NEGOZIO (docs/NEGOZIO.md, «La pagina»). Sta su
   // negozio.<dominio>/<login> quando il nome corto c'e', e su /u/<login>/negozio
   // sempre. Un canale che non c'e' e uno col negozio chiuso hanno la stessa

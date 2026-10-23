@@ -128,6 +128,23 @@ export function contaPresenza(riga, diretta, { ora = Date.now(), bonus = 0, tett
   return { dirette, serie, record, ultima: diretta.corrente, ultima_ts: ora, prima_ts: r.prima_ts || ora, bonus: premio, traguardo: TRAGUARDI.includes(serie) };
 }
 
+// LA PRESENZA DICHIARATA: chi scrive la frase della presenza di Pewpewify
+// (docs/COLPI.md, «La presenza») c'e', e non deve aspettare due giri. Si segna
+// qui e conta al giro dopo, se e' entro il tempo dei due giri: e' il giro che sa
+// qual e' la diretta, cosi' una presenza scritta appena accesa la diretta non
+// finisce su quella di ieri. Conta una volta, come le altre (contaPresenza).
+export const DICHIARATA_MS = GIRI_MINIMI * 5 * 60_000;
+const dichiarati = new Map();   // canale → Map(utente → quando)
+export function dichiara(channel, user, { ora = Date.now() } = {}) {
+  const ch = norm(channel), u = norm(user);
+  if (!ch || !u || u === ch || !cfg(ch).attivo) return false;
+  let m = dichiarati.get(ch);
+  if (!m) { m = new Map(); dichiarati.set(ch, m); }
+  if (!m.has(u) && m.size >= 5000) return false;
+  m.set(u, ora);
+  return true;
+}
+
 // Chiamata dal giro delle ore guardate (ogni cinque minuti, solo in diretta) con
 // la stessa lista di chi e' in chat. Ritorna chi e' diventato presente in questo
 // giro e chi ha toccato un traguardo.
@@ -144,21 +161,27 @@ export function giroDiretta(channel, { streamId = '', chatters = [], ora = Date.
   let m = giri.get(ch);
   if (!m) { m = new Map(); giri.set(ch, m); }
   const presenti = new Set();
-  for (const grezzo of chatters || []) {
-    const u = norm(grezzo);
-    if (!u || u.startsWith('[') || u === ch || !ePersona(ch, u)) continue;
-    presenti.add(u);
-    const n = (m.get(u) || 0) + 1;
-    m.set(u, n);
-    if (n !== GIRI_MINIMI) continue;
+  const conta = (u) => {
     const nuovo = contaPresenza(store.get(ch, u), d, { ora, bonus: c.bonus, tetto: c.tetto });
-    if (!nuovo) continue;
+    if (!nuovo) return;
     const { bonus, traguardo, ...campi } = nuovo;
     store.set(ch, u, campi);
     if (bonus > 0) { try { economia.riceve(ch, u, bonus, { fonte: 'serie' }); } catch (e) { log.debug(`#${ch} bonus a ${u}:`, e?.message || e); } }
     const voce = { user: u, serie: nuovo.serie, dirette: nuovo.dirette, record: nuovo.record, bonus, traguardo };
     esito.presenze.push(voce);
     if (traguardo) esito.traguardi.push(voce);
+  };
+  // chi si e' dichiarato presente conta subito, senza aspettare i due giri
+  const detti = dichiarati.get(ch);
+  dichiarati.delete(ch);
+  for (const [u, t] of detti || []) if (ora - t <= DICHIARATA_MS && u !== ch && ePersona(ch, u)) conta(u);
+  for (const grezzo of chatters || []) {
+    const u = norm(grezzo);
+    if (!u || u.startsWith('[') || u === ch || !ePersona(ch, u)) continue;
+    presenti.add(u);
+    const n = (m.get(u) || 0) + 1;
+    m.set(u, n);
+    if (n === GIRI_MINIMI) conta(u);
   }
   // chi e' uscito ricomincia da zero: la presenza vuole due giri di fila
   for (const k of m.keys()) if (!presenti.has(k)) m.delete(k);

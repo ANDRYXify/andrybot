@@ -146,3 +146,23 @@ test('chi e\' fermato al primo messaggio e\' arrivato lo stesso, e il saluto gua
   assert.equal(arrivo.prima, true);
   assert.equal(p.suMessaggio(k, () => {}, { ora: T + 2 * MIN, live: true, arrivo }), 'prima', 'la prima volta resta la prima volta');
 });
+
+test('la presenza dichiarata (Pewpewify): conta al giro dopo senza aspettare due giri, sulla diretta di quel giro, una volta', () => {
+  const C2 = 'dichiara';
+  streamers.upsertApproved(C2, 'Dichiara');
+  const D0 = T0 + 10 * GIORNO;
+  p.giroDiretta(C2, { streamId: 'vecchia', chatters: [], ora: D0 });
+  // la diretta nuova parte; la frase arriva prima del primo giro della diretta nuova
+  assert.equal(p.dichiara(C2, 'Marta', { ora: D0 + GIORNO }), true);
+  assert.equal(p.dichiara(C2, C2, { ora: D0 + GIORNO }), false, 'lo streamer non si dichiara a casa sua');
+  let e = p.giroDiretta(C2, { streamId: 'nuova', chatters: [], ora: D0 + GIORNO + 2 * MIN });
+  assert.equal(e.nuova, true);
+  assert.deepEqual(e.presenze.map((x) => x.user), ['marta'], 'conta subito, e sulla diretta nuova: quella del giro');
+  assert.equal(store.get(C2, 'marta').ultima, 'nuova');
+  e = p.giroDiretta(C2, { streamId: 'nuova', chatters: ['marta'], ora: D0 + GIORNO + 7 * MIN });
+  e = p.giroDiretta(C2, { streamId: 'nuova', chatters: ['marta'], ora: D0 + GIORNO + 12 * MIN });
+  assert.deepEqual(e.presenze, [], 'una volta per diretta, anche se poi resta in chat');
+  p.dichiara(C2, 'luca', { ora: D0 + GIORNO + 12 * MIN });
+  e = p.giroDiretta(C2, { streamId: 'nuova', chatters: [], ora: D0 + GIORNO + 12 * MIN + p.DICHIARATA_MS + 1 });
+  assert.deepEqual(e.presenze, [], 'una dichiarazione vecchia di piu\' di due giri non conta piu\'');
+});

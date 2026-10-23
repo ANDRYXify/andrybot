@@ -78,7 +78,7 @@ import { ClipEngine } from './features/clips.js';
 import { PenitenzeEngine } from './features/penitenze.js';
 import { AlertsEngine } from './features/alerts.js';
 import { MuroEmote } from './features/muro.js';
-import { AntiBot, caricaListaBotDaDisco, aggiornaListaBot, caricaRegistroDaDisco, spegniScudo, taciFollow, contaTaciuto, registroDi } from './features/antibot.js';
+import { AntiBot, caricaListaBotDaDisco, aggiornaListaBot, caricaRegistroDaDisco, spegniScudo, taciFollow, contaTaciuto, registroDi, ePersona } from './features/antibot.js';
 import * as rapportoAttacco from './features/rapporto-attacco.js';
 import { censisci } from './features/punteggio.js';
 import { carica as caricaRete } from './features/rete.js';
@@ -104,7 +104,7 @@ import { aChi } from './features/risposte.js';
 import { modalitaDi, alLavoro } from './features/quando-lavora.js';
 import { statoVivo, registroColpi, effects as effettiDb, segnoInstagram } from './db.js';
 import { creaServizioColpi } from './features/colpi-servizio.js';
-import { urlPaginaColpo } from './features/colpi.js';
+import { urlPaginaColpo, eFrasePresenza } from './features/colpi.js';
 import { creaChatColpi, rigaDi as rigaChatColpi, BATTITO_MS as BATTITO_CHAT_COLPI } from './features/colpi-chat.js';
 import { coloreDi as coloreChatDi } from './features/badges.js';
 import { nativeInMessaggio as emoteNelMessaggio, canaleInCache as emoteInCache } from './features/emotes.js';
@@ -1279,6 +1279,20 @@ export class BotManager {
     if ((!msg.piattaforma || msg.piattaforma === 'twitch') && streamers.get(login)?.settings?.colpi?.attivo === true) {
       try { this.colpiChat.messaggio(login, rigaChatColpi(msg, { colore: coloreChatDi(msg), emote: { ...emoteInCache(login), ...emoteNelMessaggio(msg) } })); }
       catch (e) { log.debug(`#${login} chat dei colpi:`, e?.message || e); }
+    }
+    // LA PRESENZA DI PEWPEWIFY (docs/COLPI.md, «La presenza»): la frase dello
+    // streamer fa comparire in diretta il suo effetto col nome di chi l'ha
+    // scritta, una volta per diretta, e conta nella serie delle presenze.
+    if (!msg.isSelf && streamers.get(login)?.settings?.colpi?.presenza?.attiva === true) {
+      try {
+        const cfgColpi = this.colpi?.cfgDi(login);
+        if (cfgColpi && eFrasePresenza(cfgColpi, msg.text) && ePersona(login, msg.user)) {
+          const piattaforma = msg.piattaforma || 'twitch';
+          const r = this.colpi.presenza(login, { chiave: piattaforma + ':' + (msg.userId || msg.user), nome: msg.display || msg.user,
+            occasione: arrivi.occasioneDiretta(login, this._inizioTwitch(login)), lingua: linguaChat(login) });
+          if (r.esito === 'partita' || r.esito === 'gia') presenze.dichiara(login, msg.user);
+        }
+      } catch (e) { log.debug(`#${login} presenza di Pewpewify:`, e?.message || e); }
     }
     this.brain.observe?.(msg);                             // apprendimento passivo (anche dai messaggi dello streamer)
     // amicizia GLOBALE: chi interagisce diventa piano piano "amico" del bot

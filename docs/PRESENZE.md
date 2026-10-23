@@ -39,6 +39,12 @@ serie da cento non deve diventare una rendita che schiaccia la classifica.
 Ai traguardi (3, 5, 10, 25, 50, 100 di fila) il bot lo dice in chat, al più una
 riga al minuto; se in uno stesso giro arrivano più traguardi, una riga sola.
 
+Chi scrive in chat la frase della presenza di Pewpewify (docs/COLPI.md, «La
+presenza») non aspetta i due giri: è presente a questa diretta. Si segna
+(`dichiara`) e conta al giro dopo, se arriva entro il tempo dei due giri,
+perché è il giro che sa qual è la diretta: una frase scritta appena accesa la
+diretta non finisce su quella di ieri. Conta una volta, come le altre.
+
 ## I saluti
 
 Stanno sul primo messaggio che una persona scrive, non sulla presenza: un

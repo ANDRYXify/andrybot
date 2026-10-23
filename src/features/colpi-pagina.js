@@ -29,6 +29,7 @@ export const T = {
     punti: 'Con i punti canale: su Twitch riscatta «{premio}» ({n} punti) e scrivi il codice {codice}.',
     bit: 'Con i Bit: in chat fai un Cheer di {n} Bit con il codice nel messaggio, per esempio «Cheer{n} {codice}». Il cheer si vede in chat: è Twitch.',
     apriChat: 'Apri la chat', puntiN: '{n} punti', bitN: '{n} Bit', ricomincia: 'Un altro colpo',
+    vedi: 'Guarda', vediCome: 'Guarda come compare: {nome}', prova: 'Prova qui', soloTu: 'Anteprima: la vedi solo tu', tuoNome: 'Il tuo nome',
     chat: 'Chat', chatVuota: 'La chat è tranquilla: i messaggi nuovi compaiono qui.', chatScrivi: 'Scrivi in chat', chatInvia: 'Invia',
     chatFuori: 'La chat si legge da qui. Per scrivere, accedi con Twitch.', chatNonInviato: 'Twitch non ha mandato il messaggio: {motivo}',
     accedi: 'Accedi con Twitch', esci: 'Esci', sei: 'Sei {nome}',
@@ -65,6 +66,7 @@ export const T = {
     punti: 'With channel points: on Twitch redeem «{premio}» ({n} points) and type the code {codice}.',
     bit: 'With Bits: cheer {n} Bits in chat with the code in the message, for example «Cheer{n} {codice}». The cheer shows in chat: that\'s Twitch.',
     apriChat: 'Open chat', puntiN: '{n} points', bitN: '{n} Bits', ricomincia: 'Another hit',
+    vedi: 'Watch', vediCome: 'Watch how it shows up: {nome}', prova: 'Try it here', soloTu: 'Preview: only you can see it', tuoNome: 'Your name',
     chat: 'Chat', chatVuota: 'Chat is quiet: new messages show up here.', chatScrivi: 'Write in chat', chatInvia: 'Send',
     chatFuori: 'You can read the chat here. To write, log in with Twitch.', chatNonInviato: 'Twitch did not send the message: {motivo}',
     accedi: 'Log in with Twitch', esci: 'Log out', sei: 'You are {nome}',
@@ -101,6 +103,7 @@ export const T = {
     punti: 'Con puntos del canal: en Twitch canjea «{premio}» ({n} puntos) y escribe el código {codice}.',
     bit: 'Con Bits: en el chat haz un Cheer de {n} Bits con el código en el mensaje, por ejemplo «Cheer{n} {codice}». El cheer se ve en el chat: es Twitch.',
     apriChat: 'Abrir el chat', puntiN: '{n} puntos', bitN: '{n} Bits', ricomincia: 'Otro golpe',
+    vedi: 'Ver', vediCome: 'Mira cómo aparece: {nome}', prova: 'Pruébalo aquí', soloTu: 'Vista previa: solo la ves tú', tuoNome: 'Tu nombre',
     chat: 'Chat', chatVuota: 'El chat está tranquilo: los mensajes nuevos aparecen aquí.', chatScrivi: 'Escribe en el chat', chatInvia: 'Enviar',
     chatFuori: 'El chat se lee desde aquí. Para escribir, accede con Twitch.', chatNonInviato: 'Twitch no envió el mensaje: {motivo}',
     accedi: 'Accede con Twitch', esci: 'Salir', sei: 'Eres {nome}',
@@ -154,7 +157,9 @@ export function htmlPaginaColpo({ login, display, avatar = '', pagina, baseUrl, 
 <div class="cp-cima"><span class="cp-stato" id="cp-stato" role="status">${esc(t.spenta)}</span><p class="cp-ritardo">${esc(t.ritardo)}</p></div>
 <div class="cp-palco" id="cp-palco">
 <div class="chiedi"><p class="chiedi-t">Twitch</p><p class="chiedi-p">${esc(t.guardaTesto)}</p><button type="button" class="chiedi-b" data-src="${esc(player)}" data-t="Twitch">${esc(t.guarda)}</button></div>
+<div class="cp-prova" id="cp-prova" aria-hidden="true"></div>
 <div class="cp-mira" id="cp-mira" tabindex="-1" aria-label="${esc(t.passo2)}"></div>
+<p class="cp-solo-tu" id="cp-solo-tu" role="status" hidden>${esc(t.soloTu)}</p>
 </div>
 <section class="cp-carta cp-chat" aria-labelledby="cp-chat-t">
 <h2 class="cp-t" id="cp-chat-t">${esc(t.chat)}</h2>
@@ -168,7 +173,7 @@ export function htmlPaginaColpo({ login, display, avatar = '', pagina, baseUrl, 
 <section class="cp-carta cp-passo" id="cp-p1"><h2 class="cp-t"><span>1</span>${esc(t.passo1)}</h2><div class="cp-voci" id="cp-voci" role="group" aria-label="${esc(t.passo1)}"></div><p id="cp-vuoto" hidden></p></section>
 <section class="cp-carta cp-passo spento" id="cp-p2"><h2 class="cp-t"><span>2</span>${esc(t.passo2)}</h2><p>${esc(t.mira)}</p>
 <label class="cp-campo" id="cp-nome-l" hidden>${esc(t.nome)}<input id="cp-nome" maxlength="25" autocomplete="nickname" placeholder="${esc(t.nomePh)}"></label>
-<div class="cp-righe-b"><button type="button" class="cp-b" id="cp-conferma" disabled>${esc(t.conferma)}</button></div>
+<div class="cp-righe-b"><button type="button" class="cp-b" id="cp-conferma" disabled>${esc(t.conferma)}</button><button type="button" class="cp-b due" id="cp-prova-qui" disabled>${esc(t.prova)}</button></div>
 </section>
 <section class="cp-carta cp-passo spento" id="cp-p3"><h2 class="cp-t"><span>3</span>${esc(t.passo3)}</h2><div id="cp-paga"></div></section>
 <p class="cp-avviso" id="cp-avviso" role="status" hidden></p>
@@ -192,6 +197,14 @@ export function htmlPaginaColpo({ login, display, avatar = '', pagina, baseUrl, 
   .cp-palco .chiedi-p{color:#bbb}
   .cp-mira{position:absolute;inset:0;pointer-events:none;touch-action:manipulation}
   .cp-mira.attiva{pointer-events:auto;cursor:crosshair}
+  .cp-prova{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+  .cp-prova .cp-media{position:absolute;transform:translate(-50%,-50%);max-width:none;opacity:0;transition:opacity .3s}
+  .cp-prova .cp-media.dentro{opacity:1}
+  .cp-firma{position:absolute;transform:translate(-50%,1.6em);padding:.2em .6em;border-radius:999px;background:rgba(0,0,0,.72);color:#fff;font-weight:700;line-height:1.2;font-family:system-ui,sans-serif;white-space:nowrap;opacity:0;transition:opacity .3s;pointer-events:none;z-index:3}
+  .cp-firma.dentro{opacity:1}
+  .cp-mira.in-prova .cp-ombra{opacity:0}
+  .cp-palco:has(.cp-mira.in-prova) .chiedi>*{opacity:.2;transition:opacity .2s}
+  .cp-solo-tu{position:absolute;left:.6rem;top:.6rem;margin:0;padding:.2rem .6rem;border-radius:999px;background:rgba(0,0,0,.72);color:#fff;font-size:.8rem;pointer-events:none}
   .cp-zona{position:absolute;border:1px dashed rgba(255,255,255,.7);background:repeating-linear-gradient(135deg,rgba(255,255,255,.18) 0 6px,rgba(0,0,0,.18) 6px 12px);opacity:0;transition:opacity .2s}
   .cp-mira.attiva .cp-zona{opacity:1}
   .cp-ombra{position:absolute;transform:translate(-50%,-50%);opacity:.8;pointer-events:none;max-width:none;filter:drop-shadow(0 2px 6px rgba(0,0,0,.6))}
@@ -210,6 +223,10 @@ export function htmlPaginaColpo({ login, display, avatar = '', pagina, baseUrl, 
   .cp-passo.spento{opacity:.55}
   .cp-passo p{font-size:.92rem;margin:.1rem 0 .6rem}
   .cp-voci{display:grid;grid-template-columns:repeat(auto-fill,minmax(7.5rem,1fr));gap:.5rem}
+  .cp-voce-box{position:relative;display:grid}
+  .cp-vedi{position:absolute;top:.8rem;right:.8rem;display:inline-grid;place-items:center;width:2.75rem;height:2.75rem;border-radius:50%;border:0;background:rgba(0,0,0,.66);color:#fff;cursor:pointer;padding:0}
+  .cp-vedi svg{width:1.1rem;height:1.1rem;fill:currentColor;margin-left:.15rem}
+  .cp-vedi:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
   .cp-voce{display:grid;gap:.3rem;padding:.45rem;border-radius:calc(var(--r) * .7);border:var(--bw) solid currentColor;background:transparent;color:inherit;font:inherit;cursor:pointer;text-align:left}
   .cp-voce[aria-pressed="true"]{border-color:var(--acc);box-shadow:0 0 0 2px var(--acc)}
   .cp-anteprima{aspect-ratio:1;border-radius:calc(var(--r) * .5);background:rgba(127,127,127,.15);overflow:hidden;display:grid;place-items:center}
@@ -256,7 +273,7 @@ export function htmlPaginaColpo({ login, display, avatar = '', pagina, baseUrl, 
     testi: { titolo: 'Pewpewify', descrizione: dida, vuota: '', creata: riempi(t.piede, { canale: nome }), privacy: t.privacy },
     blocco,
     css,
-    script: () => '<script src="/flusso.js" defer></script><script src="/pagina-colpo.js?v=3" defer></script>',
+    script: () => '<script src="/flusso.js" defer></script><script src="/vendor/lottie/lottie_light.min.js" defer></script><script src="/lanci.js" defer></script><script src="/scontorno.js" defer></script><script src="/pagina-colpo.js?v=4" defer></script>',
   };
   return renderLinkPage(p, { login, display: nome, avatar, baseUrl, fuori });
 }

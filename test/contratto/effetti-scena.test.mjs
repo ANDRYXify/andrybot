@@ -39,5 +39,8 @@ test('in diretta si posa come gli altri, e un premio con un posto suo resta sull
     const corpo = OVL.slice(i, OVL.indexOf('\n}\n', i));
     assert.ok(corpo.includes('metti(') && corpo.includes('togliEffetto('), `${f} passa dall'area`);
   }
-  assert.ok(/if \(!misurata\) \{\n        misurata = true;/.test(OVL), 'il video col green screen prende la sua misura: una tela nuova e\' 300 per 150, non 0');
+  // lo scontorno sta in scontorno.js, lo stesso per l'overlay e per l'anteprima della pagina di Pewpewify
+  const SCONTORNO = leggi('src/web/public/scontorno.js');
+  assert.ok(/if \(!misurata\) \{\n\s*misurata = true;\n\s*var sc = Math\.min\(1, 640 \/ video\.videoWidth\);/.test(SCONTORNO), 'il video col green screen prende la sua misura: una tela nuova e\' 300 per 150, non 0');
+  assert.match(OVL, /window\.SB_SCONTORNO\.scontorna\(v, ev\.chroma, canvas, \{ misurata: \(\) => \{ if \(canvas\.parentNode === palco\) posaEffetti\(\); \} \}\);/, 'e l\'overlay si ripone quando la misura arriva');
 });

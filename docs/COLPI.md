@@ -193,6 +193,69 @@ Un biglietto preso da un altro non fa entrare nessuno, perché il segno che
 serve sta solo nel browser che è partito: nessuno può farti entrare col suo
 account mandandoti un link.
 
+## L'anteprima
+
+Chiesto così: «riusciamo ad inserire un'anteprima degli attacchi se l'utente
+volesse vederli? in più riusciamo anche ad inserire un'anteprima prima di
+lanciarli».
+
+- **Guarda** (il ▶ su ogni colpo del listino): il colpo parte al centro della
+  diretta, sulla pagina.
+- **Prova qui** (al passo 2, e al passo 3 finché la mira è da pagare): parte
+  nel punto mirato.
+
+È lo stesso colpo che vedrebbe l'overlay, per costruzione: un lancio passa
+dallo stesso disegnatore (`public/lanci.js`) col suo payload; un'immagine o un
+video è il file dell'anteprima, grande come l'ombra (che è grande come
+nell'overlay), e un video col green screen passa dallo stesso scontorno
+(`public/scontorno.js`, che ora usa anche l'overlay). Suona col volume
+dell'effetto; i suoni caricati dallo streamer arrivano da
+`/u/<login>/colpo/anteprima/<voce>/suono`, perché gli indirizzi dell'overlay
+portano la sua chiave e non escono. Sotto compare il posto del nome come
+nell'overlay (il nome scritto, quello di Twitch o «Il tuo nome»).
+
+L'anteprima la vede solo chi guarda, e la pagina lo scrive sopra la diretta.
+All'overlay non arriva niente e nessuna mira si apre; si guarda anche a
+diretta spenta.
+
+## La presenza
+
+Chiesto così: «riusciamo anche ad inserire un "presenza"? magari in chat da
+scrivere "!pew presente" o una roba comunque personalizzata dallo streamer»;
+scelto: compare in diretta.
+
+Chi scrive in chat la frase dello streamer (di serie `!pew presente`) fa
+comparire l'effetto scelto dallo streamer, nel punto scelto dallo streamer,
+con sotto «Marta è presente» (o la scritta dello streamer, con `{nome}`; vuota,
+quella di serie nella lingua della chat). È gratis e vale una volta per
+diretta.
+
+- **La frase** si confronta intera: maiuscole e spazi non contano, «ciao !pew
+  presente» non vale. Su Twitch, Kick e YouTube.
+- **Le stesse domande di un colpo**: pagina accesa e non in pausa, diretta in
+  onda, un overlay pronto, l'effetto che c'è e si posa in un punto, il punto
+  fuori dalle zone protette (anche se le zone cambiano dopo). Se no, niente:
+  non si salva nulla e il bot tace.
+- **Una per diretta**, per spettatore: la riga del registro ha il riferimento
+  `presenza:<diretta>:<piattaforma>:<id>`, e un indice unico tiene una sola
+  riga in arrivo o mostrata. La diretta è la chiave delle accoglienze
+  (`arrivi.occasioneDiretta`: l'inizio della diretta su Twitch, o su Kick, o
+  il giorno), che regge un riavvio.
+- **La strada dei colpi**: nasce da consegnare, l'overlay la mostra in fila
+  (mai sopra un altro effetto) e dice «visto»; la ronda la rimanda. Non c'è
+  niente da rimborsare: se in tre minuti non si vede, il momento è passato
+  (`scaduta`) e chi l'ha scritta la può rifare.
+- **Un tetto suo** (di serie 6 al minuto): un raid che si presenta non
+  riempie la diretta, e non toglie posto a chi paga (le presenze non contano
+  nel tetto dei colpi).
+- **La serie**: chi la fa partire, o l'ha già fatta, è presente a questa
+  diretta senza aspettare i due giri (docs/PRESENZE.md).
+
+Nel pannello, scheda Pew, «La presenza»: accesa, frase, scritta, effetto (anche
+dai lanci e adesivi), grandezza, tetto, il punto toccando il quadro, e
+«Prova nell'overlay», che la manda subito col nome dello streamer, senza
+registro.
+
 ## La chat
 
 `colpi-chat.js`: le righe che il bot riceve già dalla chat di Twitch del
@@ -258,10 +321,22 @@ canale dice anche che con l'accesso a Twitch va bene qualunque testo.
   i tetti della chat, la chiave dell'accesso (rinnovo, scadenza, niente token
   in `chi`), il messaggio verso l'API di Twitch e i suoi rifiuti; il ponte
   (una volta sola, scadenza, canale e segno giusti).
-- `test/unita/colpi-pew.test.mjs`: l'indirizzo corto dal server vero, con le
-  richieste fatte col nome `pew`: la pagina e le sue rotte, il `parent` del
-  lettore, la radice, il giro completo dell'accesso fino alla chat scritta dal
-  browser giusto, e il biglietto rubato che non fa entrare.
+- `test/unita/colpi.test.mjs` prova anche `urlPaginaColpo`, il canonico e il
+  `parent` del lettore col nome corto; `test/contratto/colpi-pew.test.mjs`
+  fissa come il server li usa: la traduzione di `/<canale>` e di niente altro,
+  la radice, la sonda e il nome nel Caddyfile, l'accesso che parte dal sito col
+  segno e torna col biglietto, il segno preso dalla sessione e mai dalla
+  richiesta, l'indirizzo scritto in un posto solo. Il giro dell'accesso fra due
+  nomi veri (con un certificato per ciascuno) non si prova qui: si prova in
+  produzione, appena il nome risponde.
+- L'anteprima e la presenza: `colpi.test.mjs` (il modello della presenza, il
+  servizio sul registro vero: una per diretta, il tetto suo, le stesse domande
+  di un colpo, la ronda che la lascia; la porta che dà all'anteprima quello che
+  avrebbe l'overlay, senza la sua chiave), `presenze.test.mjs` (la presenza
+  dichiarata conta al giro dopo, sulla diretta di quel giro),
+  `test/contratto/colpi-presenza.test.mjs` (il bot e il server), e
+  `verifica-colpi.mjs` nel browser, con due difetti suoi (anteprima che ignora
+  il punto, anteprima che non dice di essere un'anteprima).
 
 ## Limiti noti
 

@@ -51,6 +51,11 @@ function pezziOccasione(ch, d, twitchInizio) {
   return { twitchInizio: Number(twitchInizio) || 0, kickDa: kick?.live === true ? Number(kick.da) || 0 : 0, giorno: d.giorno(ch, ora), ora };
 }
 
+// La diretta di adesso come chiave che non cambia con un riavvio: la stessa che
+// tiene un'accoglienza «una volta per diretta». La usa anche la presenza di
+// Pewpewify (colpi-servizio.js), una per spettatore per diretta.
+export const occasioneDiretta = (channel, twitchInizio = 0, deps) => R.occasione('diretta', pezziOccasione(norm(channel), _con(deps), twitchInizio));
+
 // ── la fila ────────────────────────────────────────────────────────────────
 const file = new Map();   // canale → { fila, gira, fine }
 

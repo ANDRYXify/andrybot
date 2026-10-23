@@ -168,6 +168,7 @@
     vuoto.hidden = dati.voci.length > 0;
     vuoto.textContent = riempi(T.nessuno, { canale: canale });
     dati.voci.forEach(function (v) {
+      var scatola = el('div', 'cp-voce-box');
       var b = el('button', 'cp-voce');
       b.type = 'button';
       b.setAttribute('aria-pressed', scelta && scelta.id === v.id ? 'true' : 'false');
@@ -178,7 +179,18 @@
       b.appendChild(el('b', '', v.nome));
       b.appendChild(chip(v));
       b.onclick = function () { scegli(v); };
-      box.appendChild(b);
+      scatola.appendChild(b);
+      if (v.prova) {
+        var g = el('button', 'cp-vedi');
+        g.type = 'button';
+        g.setAttribute('data-vedi', v.id);
+        g.setAttribute('aria-label', riempi(T.vediCome, { nome: v.nome }));
+        g.title = T.vedi;
+        g.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15l13-7.5z"/></svg>';
+        g.onclick = function () { prova(v, null); };
+        scatola.appendChild(g);
+      }
+      box.appendChild(scatola);
     });
     $('cp-nome-l').hidden = !dati.conNome || !!io;
   }
@@ -200,7 +212,96 @@
 
   function pronto() {
     $('cp-conferma').disabled = !(scelta && punto && !protetto(punto.x, punto.y) && dati && dati.live && dati.overlay && !dati.pausa);
+    $('cp-prova-qui').disabled = !(scelta && scelta.prova && punto && !protetto(punto.x, punto.y)) || !!mira;
   }
+
+  var fermaProva = null;
+  function nomeFirma() {
+    if (!dati || !dati.conNome) return '';
+    var n = io ? (io.nome || io.login) : String($('cp-nome').value || '').trim();
+    return (n || T.tuoNome || '').slice(0, 25);
+  }
+  function firma(palco, p) {
+    var chi = nomeFirma();
+    if (!chi) return function () {};
+    var f = el('div', 'cp-firma', chi);
+    f.style.left = p.x + '%'; f.style.top = p.y + '%';
+    f.style.fontSize = Math.max(8, palco.clientWidth * 30 / QUADRO_L) + 'px';
+    palco.appendChild(f);
+    requestAnimationFrame(function () { f.classList.add('dentro'); });
+    return function () { f.remove(); };
+  }
+  function prova(v, p) {
+    if (fermaProva) fermaProva();
+    if (!v || !v.prova) return;
+    var palco = $('cp-prova');
+    var pp = p || { x: 50, y: 50 };
+    var pr = v.prova;
+    var vol = pr.volume == null ? 1 : Math.max(0, Math.min(1, Number(pr.volume) / 100));
+    var suoni = [], via = [], finita = false;
+    var suona = function (url) { if (!url) return; try { var a = new Audio(url); a.volume = vol; suoni.push(a); a.play().catch(function () {  }); } catch (e) {  } };
+    var fine = function () {
+      if (finita) return;
+      finita = true;
+      via.forEach(function (f) { try { f(); } catch (e) {  } });
+      suoni.forEach(function (a) { try { a.pause(); } catch (e) {  } });
+      strato.classList.remove('in-prova');
+      $('cp-solo-tu').hidden = true;
+      if (fermaProva === fine) fermaProva = null;
+    };
+    fermaProva = fine;
+    var r = palco.getBoundingClientRect();
+    if (r.top < 0 || r.bottom > innerHeight) {
+      var ridotto = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+      palco.scrollIntoView({ block: 'nearest', behavior: ridotto ? 'auto' : 'smooth' });
+    }
+    strato.classList.add('in-prova');
+    $('cp-solo-tu').hidden = false;
+    if (pr.lancio) {
+      if (!window.SB_LANCI) { fine(); return; }
+      var s = Math.max(5, palco.clientWidth / QUADRO_L * (v.scala || 100));
+      var ferma = window.SB_LANCI.lancia(palco, { comando: v.id, lancio: pr.lancio, posizione: { x: pp.x, y: pp.y, s: s, centro: true } },
+        { suona: suona, colpito: function () { via.push(firma(palco, pp)); }, fine: fine });
+      via.push(ferma);
+      return;
+    }
+    var m, tela = null;
+    if (v.tipo === 'video') {
+      m = document.createElement('video');
+      m.playsInline = true; m.volume = vol; m.src = v.anteprima;
+      if (pr.chroma && window.SB_SCONTORNO) {
+        tela = document.createElement('canvas');
+        via.push(window.SB_SCONTORNO.scontorna(m, pr.chroma, tela));
+      }
+      m.addEventListener('ended', fine);
+      m.addEventListener('error', fine);
+    } else {
+      m = document.createElement('img');
+      m.alt = ''; m.src = v.anteprima;
+    }
+    var vista = tela || m;
+    vista.className = 'cp-media';
+    vista.style.left = pp.x + '%'; vista.style.top = pp.y + '%';
+    var grande = (v.scala || 100) / 100;
+    var misura = function (l, a) {
+      if (!l || !a) return;
+      misure[v.id] = { l: l, a: a };
+      vista.style.width = (l * Math.min(a, QUADRO_A * 0.92) / a * grande / QUADRO_L * 100) + '%';
+    };
+    if (misure[v.id]) misura(misure[v.id].l, misure[v.id].a);
+    if (v.tipo === 'video') m.addEventListener('loadedmetadata', function () { misura(m.videoWidth, m.videoHeight); });
+    else m.addEventListener('load', function () { misura(m.naturalWidth, m.naturalHeight); });
+    palco.appendChild(vista);
+    via.push(function () { try { m.pause && m.pause(); } catch (e) {  } vista.remove(); });
+    via.push(firma(palco, pp));
+    requestAnimationFrame(function () { vista.classList.add('dentro'); });
+    suona(pr.suono);
+    if (v.tipo === 'video') { var gioca = m.play(); if (gioca && gioca.catch) gioca.catch(function () {  }); }
+    var dura = Number(pr.durata) > 0 ? Number(pr.durata) : (v.tipo === 'video' ? 8000 : 5000);
+    var t = setTimeout(fine, v.tipo === 'video' ? dura + 600 : dura);
+    via.push(function () { clearTimeout(t); });
+  }
+  $('cp-prova-qui').onclick = function () { if (scelta && punto) prova(scelta, punto); };
 
   function mirino() {
     var m = strato.querySelector('.cp-mirino');
@@ -342,6 +443,13 @@
     }
     var fine = el('div', 'cp-righe cp-modo');
     if (mira.stato === 'pagata') { racconta(); segui(); return; }
+    if (mira.stato === 'attesa' && v.prova) {
+      var pq = el('button', 'cp-b due', T.prova);
+      pq.type = 'button';
+      pq.setAttribute('data-prova', 'mira');
+      pq.onclick = function () { prova(v, { x: mira.x, y: mira.y }); };
+      fine.appendChild(pq);
+    }
     var ri = el('button', 'cp-b due', mira.stato === 'attesa' ? T.annulla : T.ricomincia);
     ri.type = 'button';
     ri.onclick = daCapo;
@@ -386,6 +494,7 @@
   }
 
   function daCapo() {
+    if (fermaProva) fermaProva();
     clearInterval(giro); clearInterval(conto);
     mira = null; punto = null;
     ricorda('');

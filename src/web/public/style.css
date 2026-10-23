@@ -3152,4 +3152,8 @@ body.in-studio #anime-sfondo::after, body.tel-aperta #anime-sfondo::after, body.
 .cl-zona:focus-visible { border-color: var(--rosso); }
 @media (hover: hover) { .cl-zona:hover { border-color: var(--rosso); } }
 .cl-zona.bozza { pointer-events: none; }
+.cl-quadro-punto { touch-action: manipulation; }
+.cl-quadro-punto .cl-zona { pointer-events: none; cursor: default; }
+.cl-quadro-punto:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
+.cl-punto { position: absolute; width: 22px; height: 22px; transform: translate(-50%, -50%); border: 2px solid var(--acc); border-radius: 50%; background: color-mix(in srgb, var(--acc) 25%, transparent); pointer-events: none; }
 .cl-via { justify-self: end; }

@@ -895,11 +895,11 @@ CREATE TABLE IF NOT EXISTS colpi (             -- gli attacchi degli spettatori 
   nome TEXT NOT NULL DEFAULT '',               -- il nome della voce, come lo vede lo spettatore
   x REAL NOT NULL, y REAL NOT NULL,            -- il centro del colpo, in percento del quadro 16:9
   scala INTEGER NOT NULL DEFAULT 100,
-  chi TEXT NOT NULL DEFAULT '',                -- il nome che compare accanto al colpo
+  chi TEXT NOT NULL DEFAULT '',                -- il nome che compare accanto al colpo (per una presenza, la sua frase: «Marta è presente»)
   prezzi TEXT NOT NULL DEFAULT '{}',           -- i prezzi del listino al momento della mira (euro in centesimi, punti, bit)
   versati INTEGER NOT NULL DEFAULT 0,          -- i Bit gia' arrivati per questa mira: si sommano, nessun cheer va perso
   stato TEXT NOT NULL DEFAULT 'attesa',        -- attesa | pagata (da consegnare) | sparata (vista dall'overlay) | rimborsata | scaduta
-  metodo TEXT NOT NULL DEFAULT '',             -- euro | punti | bit: con cosa e' stata pagata
+  metodo TEXT NOT NULL DEFAULT '',             -- euro | punti | bit: con cosa e' stata pagata; presenza: gratis, dalla chat, una per diretta
   riferimento TEXT NOT NULL DEFAULT '',        -- la donazione (stripe:cs_… / satispay:…) aperta per pagarla, o il riscatto / il cheer che l'ha pagata
   creata INTEGER NOT NULL DEFAULT 0,
   scade INTEGER NOT NULL DEFAULT 0,
@@ -912,6 +912,10 @@ CREATE TABLE IF NOT EXISTS colpi (             -- gli attacchi degli spettatori 
 CREATE INDEX IF NOT EXISTS idx_colpi_pagate ON colpi(stato) WHERE stato='pagata';
 CREATE UNIQUE INDEX IF NOT EXISTS idx_colpi_codice ON colpi(login, codice) WHERE stato='attesa';
 CREATE INDEX IF NOT EXISTS idx_colpi_rif ON colpi(riferimento);
+-- una presenza per spettatore per diretta: il riferimento e' «presenza:<diretta>:<chi>»,
+-- e finche' e' in arrivo o mostrata ce n'e' una sola. Una che non si e' vista esce
+-- dall'indice (scaduta) e si puo' rifare.
+CREATE UNIQUE INDEX IF NOT EXISTS idx_colpi_presenza ON colpi(riferimento) WHERE metodo='presenza' AND stato IN ('pagata','sparata');
 
 -- I SOSTEGNI AL PROGETTO, che non sono donazioni a uno streamer.
 --
@@ -2732,8 +2736,17 @@ export const registroColpi = {
     try {
       return db.prepare(`INSERT INTO colpi (id, login, codice, voce, comando, nome, x, y, scala, chi, prezzi, stato, creata, scade, spettatore) VALUES (?,?,?,?,?,?,?,?,?,?,?,'attesa',?,?,?)`)
         .run(String(m.id), String(m.login).toLowerCase(), String(m.codice), String(m.voce), String(m.comando), String(m.nome || '').slice(0, 40),
-          Number(m.x), Number(m.y), Math.round(Number(m.scala) || 100), String(m.chi || '').slice(0, 25), JSON.stringify(m.prezzi || {}), Number(m.creata) || now(), Number(m.scade) || now(),
+          Number(m.x), Number(m.y), Math.round(Number(m.scala) || 100), String(m.chi || '').slice(0, 60), JSON.stringify(m.prezzi || {}), Number(m.creata) || now(), Number(m.scade) || now(),
           String(m.spettatore || '').slice(0, 40)).changes > 0;
+    } catch (e) { if (/UNIQUE/.test(String(e?.message))) return false; throw e; }
+  },
+  // La presenza dalla chat: nasce gia' da consegnare (gratis, niente codice).
+  // false se quello spettatore ne ha gia' una in questa diretta: lo dice l'indice.
+  presenza(m, ora = now()) {
+    try {
+      return db.prepare(`INSERT INTO colpi (id, login, codice, voce, comando, nome, x, y, scala, chi, prezzi, stato, metodo, riferimento, creata, scade, pagata_at) VALUES (?,?,'',?,?,?,?,?,?,?,'{}','pagata','presenza',?,?,?,?)`)
+        .run(String(m.id), String(m.login).toLowerCase(), String(m.voce), String(m.comando), String(m.nome || '').slice(0, 40), Number(m.x), Number(m.y),
+          Math.round(Number(m.scala) || 100), String(m.chi || '').slice(0, 60), String(m.riferimento).slice(0, 120), ora, ora, ora).changes > 0;
     } catch (e) { if (/UNIQUE/.test(String(e?.message))) return false; throw e; }
   },
   _leggi(r) { if (!r) return null; let prezzi = {}; try { prezzi = JSON.parse(r.prezzi || '{}'); } catch { prezzi = {}; } return { ...r, prezzi }; },
@@ -2767,6 +2780,8 @@ export const registroColpi = {
   // pagata → sparata: l'overlay ha detto di averla mostrata
   consegnata(id, ora = now()) { return db.prepare("UPDATE colpi SET stato='sparata', sparata_at=? WHERE id=? AND stato='pagata'").run(ora, String(id)).changes > 0; },
   rimborsata(id) { return db.prepare("UPDATE colpi SET stato='rimborsata' WHERE id=? AND stato='pagata'").run(String(id)).changes > 0; },
+  // una presenza che non si e' vista in tempo: non c'e' niente da rimborsare, e il momento e' passato
+  lasciata(id) { return db.prepare("UPDATE colpi SET stato='scaduta' WHERE id=? AND stato='pagata' AND metodo='presenza'").run(String(id)).changes > 0; },
   daConsegnare() { return db.prepare("SELECT * FROM colpi WHERE stato='pagata' ORDER BY pagata_at").all().map((r) => this._leggi(r)); },
   // il riferimento cambia solo se e' ancora quello atteso: la presa «apre:…» diventa il pagamento vero, o torna libera
   // (qualunque sia lo stato: un pagamento appena aperto deve restare legato alla sua mira anche se nel frattempo e' scaduta)
@@ -2779,7 +2794,9 @@ export const registroColpi = {
     return db.prepare('SELECT versati FROM colpi WHERE id=?').get(String(id)).versati;
   },
   // quante mire ha aperto questo canale nell'ultimo minuto, e quante da quella stessa persona
-  aperteDa(login, da) { return db.prepare('SELECT COUNT(*) AS n FROM colpi WHERE login=? AND creata>=?').get(String(login).toLowerCase(), da).n; },
+  // (le presenze no: un raid che si presenta non toglie il posto a chi paga)
+  aperteDa(login, da) { return db.prepare("SELECT COUNT(*) AS n FROM colpi WHERE login=? AND creata>=? AND metodo<>'presenza'").get(String(login).toLowerCase(), da).n; },
+  presenzeDa(login, da) { return db.prepare("SELECT COUNT(*) AS n FROM colpi WHERE login=? AND creata>=? AND metodo='presenza'").get(String(login).toLowerCase(), da).n; },
   ultimi(login, n = 30) { return db.prepare("SELECT * FROM colpi WHERE login=? AND stato IN ('pagata','sparata','rimborsata') ORDER BY pagata_at DESC LIMIT ?").all(String(login).toLowerCase(), Math.max(1, Math.min(200, n | 0))).map((r) => this._leggi(r)); },
   pulisci(ora = now()) {
     db.prepare("UPDATE colpi SET stato='scaduta' WHERE stato='attesa' AND riferimento='' AND scade<? AND (versati=0 OR creata<?)").run(ora, ora - 86400_000);

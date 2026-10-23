@@ -46,6 +46,18 @@ comandi diversi da quelli della riga italiana.
 - I colpi degli spettatori ora si chiamano Pewpewify, la scheda è «Pew» e la pagina ha un indirizzo corto: pew.socialbot.live e il nome del canale. Quello vecchio continua a funzionare. [vai: colpi]
   en: Viewer hits are now called Pewpewify, the tab is «Pew» and the page has a short address: pew.socialbot.live plus your channel name. The old one keeps working.
   es: Los golpes de los espectadores ahora se llaman Pewpewify, la pestaña es «Pew» y la página tiene una dirección corta: pew.socialbot.live y el nombre del canal. La antigua sigue funcionando.
+- [importante] La presenza: chi scrive in chat la tua frase, di serie !pew presente, fa comparire in diretta l'effetto che scegli col suo nome. Gratis, una volta per diretta, e conta nella sua serie. [vai: colpi]
+  en: Check-in: whoever types your phrase in chat, !pew presente by default, makes the effect you pick appear on stream with their name. Free, once per stream, and it counts in their streak.
+  es: La presencia: quien escribe tu frase en el chat, !pew presente de serie, hace aparecer en directo el efecto que eliges con su nombre. Gratis, una vez por directo, y cuenta en su racha.
+  > La presenza in diretta
+  > Chi c'è lo dice in chat e si vede sullo schermo: l'effetto, il punto e la frase li scegli tu nella scheda Pew. Una volta per diretta, così un raid non copre la live.
+  en> Check-in on stream
+  en> Whoever is there says so in chat and shows up on screen: you pick the effect, the spot and the phrase in the Pew tab. Once per stream, so a raid doesn't cover the stream.
+  es> La presencia en directo
+  es> Quien está lo dice en el chat y se ve en pantalla: el efecto, el punto y la frase los eliges en la pestaña Pew. Una vez por directo, así una raid no tapa el directo.
+- Sulla pagina di Pewpewify ogni colpo si guarda prima di mandarlo: al centro della diretta, o nel punto mirato con «Prova qui». L'anteprima la vede solo chi guarda. [vai: colpi]
+  en: On the Pewpewify page every hit can be watched before sending it: in the middle of the stream, or at the aimed spot with «Prova qui». Only the viewer sees the preview.
+  es: En la página de Pewpewify cada golpe se ve antes de mandarlo: en el centro del directo, o en el punto apuntado con «Prova qui». La vista previa solo la ve quien mira.
 
 ## 2026-10-22
 

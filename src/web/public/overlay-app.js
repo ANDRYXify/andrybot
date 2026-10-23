@@ -360,11 +360,6 @@ function mostraDisegno(ev) {
   });
 }
 
-function hexToRgb(h) {
-  const m = /^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(String(h || '').trim());
-  return m ? [parseInt(m[1], 16), parseInt(m[2], 16), parseInt(m[3], 16)] : [0, 255, 0];
-}
-
 function mostraVideoChroma(ev) {
   const v = document.createElement('video');
   v.src = ev.url; v.autoplay = true; v.playsInline = true; v.volume = volume01(ev);
@@ -375,36 +370,13 @@ function mostraVideoChroma(ev) {
   suonaAbbinato(ev);
   requestAnimationFrame(() => canvas.classList.add('dentro'));
   etichettaVolatile(ev.comando, 1800);
-  const ctx = canvas.getContext('2d', { willReadFrequently: true });
-  const [kr, kg, kb] = hexToRgb(ev.chroma.colore);
-  const soglia = Math.max(20, Math.min(300, Number(ev.chroma.soglia) || 140));
-  let raf = 0, chiuso = false, misurata = false;
-  const disegna = () => {
-    if (chiuso) return;
-    if (v.videoWidth) {
-      if (!misurata) {
-        misurata = true;
-        const sc = Math.min(1, 640 / v.videoWidth);
-        canvas.width = Math.max(2, Math.round(v.videoWidth * sc));
-        canvas.height = Math.max(2, Math.round(v.videoHeight * sc));
-        if (canvas.parentNode === palco) posaEffetti();
-      }
-      ctx.drawImage(v, 0, 0, canvas.width, canvas.height);
-      try {
-        const img = ctx.getImageData(0, 0, canvas.width, canvas.height), d = img.data;
-        for (let i = 0; i < d.length; i += 4) {
-          if (Math.abs(d[i] - kr) + Math.abs(d[i + 1] - kg) + Math.abs(d[i + 2] - kb) < soglia) d[i + 3] = 0;
-        }
-        ctx.putImageData(img, 0, 0);
-      } catch (e) {  }
-    }
-    raf = requestAnimationFrame(disegna);
-  };
+  let chiuso = false;
+  const fermaScontorno = window.SB_SCONTORNO.scontorna(v, ev.chroma, canvas, { misurata: () => { if (canvas.parentNode === palco) posaEffetti(); } });
   let fermaTimer = null;
   const chiudi = () => {
     if (chiuso) return; chiuso = true;
     if (fermaTimer) fermaTimer();
-    cancelAnimationFrame(raf);
+    fermaScontorno();
     canvas.classList.remove('dentro');
     setTimeout(() => { try { v.pause(); } catch (e) {} togliEffetto(canvas); finito(); }, 320);
   };
@@ -412,7 +384,6 @@ function mostraVideoChroma(ev) {
   v.addEventListener('error', function () { guaio('video', 'il file non si apre: ' + String(v.src || '').split('?')[0]); chiudi(); });
   fermaTimer = reggiFinoAllaFine(v, 'video', chiudi, durataMs(ev, 8000) + 600);
   avvia(v, 'video');
-  disegna();
 }
 
 function suona(ev) {

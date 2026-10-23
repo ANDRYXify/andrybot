@@ -28,7 +28,12 @@
 //  · senza accesso si legge e basta; con l'accesso si scrive, il nome non si
 //    chiede, e la mira e' legata allo spettatore: il suo cheer la paga senza codice;
 //  · un lancio (docs/LANCI.md) arriva col centro nel punto, grande quanto l'ombra,
-//    e il «visto» parte all'impatto.
+//    e il «visto» parte all'impatto;
+//  · l'anteprima: «Guarda» fa il colpo al centro della diretta e «Prova qui» nel
+//    punto mirato, grandi come nell'overlay, col posto del nome; la vede solo chi
+//    guarda (lo dice), e all'overlay non arriva niente;
+//  · la presenza: l'effetto dello streamer nel suo punto, col nome, «visto» come
+//    un colpo, una volta per diretta.
 //
 // Uso: node scripts/verifica-colpi.mjs             (esce 1 se una promessa non tiene)
 //      node scripts/verifica-colpi.mjs --selftest  (rimette sette difetti: strato che prende
@@ -39,9 +44,12 @@
 //                                                   pagare a diretta ferma, chat che scrive HTML,
 //                                                   modulo per scrivere a chi non ha l'accesso,
 //                                                   righe doppie dopo una riapertura,
-//                                                   lancio spostato, lancio che non dice «visto»;
+//                                                   lancio spostato, lancio che non dice «visto»,
+//                                                   anteprima che ignora il punto, anteprima che
+//                                                   non dice di essere un'anteprima, green screen
+//                                                   che non toglie il verde;
 //                                                   li vuole tutti rossi)
-//      node scripts/verifica-colpi.mjs --rompi=N   (solo il difetto N, da 1 a 12: deve vedersi da solo)
+//      node scripts/verifica-colpi.mjs --rompi=N   (solo il difetto N, da 1 a 15: deve vedersi da solo)
 
 import './_dati-usa-e-getta.mjs';
 import { apriSito, apriBrowser, overlayFinto } from './_sito.mjs';
@@ -69,13 +77,17 @@ const DIFETTI = [
   ['pagina-colpo.js', 'if (viste[m.id]) return;', 'if (false) return;'],
   ['lanci.js', 'var px = pos ? tra(Number(pos.x), 0, 100) / 100 * W', 'var px = pos ? 40 + tra(Number(pos.x), 0, 100) / 100 * W'],
   ['lanci.js', 'if (t.i === 0) colpito();', 'if (false) colpito();'],
+  ['pagina-colpo.js', 'var pp = p || { x: 50, y: 50 };', 'var pp = { x: 50, y: 50 };'],
+  ['pagina-colpo.js', "    $('cp-solo-tu').hidden = false;\n", ''],
+  ['scontorno.js', 'd[i + 3] = 0;', 'd[i + 3] = 255;'],
 ];
 const SVG = '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="200" viewBox="0 0 400 200"><rect width="400" height="200" rx="40" fill="#e5484d"/></svg>';
 
 streamers.request(LOGIN, 'Prova', '1');
 streamers.setSettings(LOGIN, {
   donazioni: { valuta: 'EUR' },
-  colpi: { attivo: true, attesaSec: 0, alMinuto: 30, conNome: true, zone: [{ x: 70, y: 60, w: 30, h: 40 }], voci: [
+  colpi: { attivo: true, attesaSec: 0, alMinuto: 30, conNome: true, zone: [{ x: 70, y: 60, w: 30, h: 40 }],
+    presenza: { attiva: true, comando: 'pomodoro', x: 12, y: 30, scala: 100 }, voci: [
     { comando: 'pomodoro', nome: 'Pomodoro', euro: 200, punti: 500, bit: 100, scala: 120 },
     { comando: 'festa', nome: 'Festa', bit: 50 },
     { comando: 'tirapomodoro', nome: 'Pomodoro vero', bit: 30, scala: 150 },
@@ -146,12 +158,13 @@ const rotti = [], guai = [];
 let difettiMessi = 0;
 const dice = (ok, cosa) => { if (!ok) { console.log(`  ✗ ${cosa}`); rotti.push(cosa); } else console.log(`  ✓ ${cosa}`); return ok; };
 const pausa = (ms) => new Promise((r) => setTimeout(r, ms));
+let lancio1920 = 0;
 
 async function nuova(viewport) {
   const p = await br.newPage({ viewport });
   p.on('pageerror', (e) => guai.push(e.message));
   if (SELFTEST) {
-    await p.route(/\/(pagina-colpo|overlay-app|lanci)\.js(\?|$)/, async (route) => {
+    await p.route(/\/(pagina-colpo|overlay-app|lanci|scontorno)\.js(\?|$)/, async (route) => {
       const r = await route.fetch();
       let t = await r.text();
       const f = new URL(route.request().url()).pathname.slice(1);
@@ -330,6 +343,7 @@ try {
   dice(!!imp && !!atteso && Math.abs(imp.x - atteso.x) <= 1 && Math.abs(imp.y - atteso.y) <= 1,
     `il lancio arriva col centro nel punto mirato (${imp ? imp.x + ', ' + imp.y : 'niente'}; atteso ${atteso ? atteso.x.toFixed(0) + ', ' + atteso.y.toFixed(0) : '?'})`);
   dice(!!imp && Math.abs(imp.w - ombra1920) <= 2, `e grande quanto l'ombra della pagina (${imp ? imp.w : '?'} px; ombra ${ombra1920.toFixed(1)} px)`);
+  lancio1920 = imp ? imp.w : 0;
   for (let i = 0; i < 20 && mondo.visti.length === visti0; i++) await pausa(150);
   dice(!!ml && mondo.visti.includes(ml.id), 'all\'impatto l\'overlay dice di averlo mostrato');
   await o.waitForFunction(() => !document.querySelector('.lancio'), null, { timeout: 15000 }).catch(() => {});
@@ -352,6 +366,85 @@ try {
   for (let i = 0; i < 20 && !(ma && mondo.visti.includes(ma.id)); i++) await pausa(150);
   dice(!!ma && mondo.visti.includes(ma.id), 'e appena compare l\'overlay dice di averlo mostrato');
   await o.waitForFunction(() => !document.querySelector('.lancio'), null, { timeout: 15000 }).catch(() => {});
+  });
+
+  // L'ANTEPRIMA (docs/COLPI.md): «Guarda» fa il colpo al centro della diretta e
+  // «Prova qui» nel punto mirato, con lo stesso disegnatore e la stessa misura
+  // dell'overlay; la vede solo chi guarda, e all'overlay non arriva niente
+  await fase('anteprima', async () => {
+  await daCapo();
+  const palco = await p.locator('#cp-prova').boundingBox();
+  const lanci0 = await o.locator('.lancio').count();
+  await p.locator('.cp-voce-box', { hasText: 'Pomodoro vero' }).locator('.cp-vedi').click();
+  await p.waitForFunction(() => document.querySelector('#cp-prova .lancio')?.dataset.impatti, null, { timeout: 8000 }).catch(() => {});
+  const g = await p.evaluate(() => { const c = document.querySelector('#cp-prova .lancio'); return c ? JSON.parse(c.dataset.impatti || '[]')[0] || null : null; });
+  dice(!!g && Math.abs(g.x - palco.width / 2) <= 1 && Math.abs(g.y - palco.height / 2) <= 1, `«Guarda» fa il colpo al centro della diretta (${g ? g.x + ', ' + g.y : 'niente'})`);
+  dice(!!g && lancio1920 > 0 && Math.abs(g.w / palco.width * 1920 - lancio1920) <= 3, `grande come nell'overlay (${g ? (g.w / palco.width * 1920).toFixed(1) : '?'} su 1920; overlay ${lancio1920})`);
+  dice(await p.locator('#cp-solo-tu').isVisible(), 'e dice che e\' un\'anteprima, che vede solo chi guarda');
+  dice(await o.locator('.lancio').count() === lanci0 && !(await p.locator('.cp-codice').count()), 'all\'overlay non arriva niente, e nessuna mira si apre');
+  await p.waitForFunction(() => !document.querySelector('#cp-prova .lancio'), null, { timeout: 15000 }).catch(() => {});
+  dice(await p.locator('#cp-solo-tu').isHidden(), 'finita l\'anteprima, la scritta se ne va');
+  await p.locator('.cp-voce', { hasText: 'Pomodoro vero' }).click();
+  await tocca(p, 35, 30);
+  await p.locator('#cp-prova-qui').click();
+  await p.waitForFunction(() => document.querySelector('#cp-prova .lancio')?.dataset.impatti, null, { timeout: 8000 }).catch(() => {});
+  const q = await p.evaluate(() => { const c = document.querySelector('#cp-prova .lancio'); return c ? JSON.parse(c.dataset.impatti || '[]')[0] || null : null; });
+  const qx = 0.35 * palco.width, qy = 0.30 * palco.height;
+  dice(!!q && Math.abs(q.x - qx) <= 1.5 && Math.abs(q.y - qy) <= 1.5, `«Prova qui» lo fa nel punto mirato, prima di pagare (${q ? q.x + ', ' + q.y : 'niente'}; atteso ${qx.toFixed(0)}, ${qy.toFixed(0)})`);
+  await p.waitForSelector('#cp-prova .cp-firma', { timeout: 6000 }).catch(() => {});
+  dice((await p.locator('#cp-prova .cp-firma').textContent().catch(() => '')) === 'Il tuo nome', 'all\'impatto, sotto, il posto del nome come nell\'overlay');
+  await p.waitForFunction(() => !document.querySelector('#cp-prova .lancio'), null, { timeout: 15000 }).catch(() => {});
+  // un'immagine: grande come la sua ombra, centrata dove si guarda
+  await daCapo();
+  await p.locator('.cp-voce-box').first().locator('.cp-vedi').click();
+  await p.waitForSelector('#cp-prova .cp-media', { timeout: 6000 }).catch(() => {});
+  await pausa(400);
+  const md = await centro(p, '#cp-prova .cp-media');
+  const pb = await p.locator('#cp-prova').boundingBox();
+  const mw = 400 * 1.2 / 1920 * pb.width;
+  dice(!!md && Math.abs(md.w - mw) < 2 && Math.abs(md.x - (pb.x + pb.width / 2)) < 1.5 && Math.abs(md.y - (pb.y + pb.height / 2)) < 1.5, `un'immagine si vede grande come nell'overlay (${md ? md.w.toFixed(1) : '-'} px, attesi ${mw.toFixed(1)})`);
+  });
+
+  // LO SCONTORNO (public/scontorno.js), lo stesso per l'overlay e per l'anteprima:
+  // su una tela meta' verde e meta' rossa il verde se ne va, il rosso resta, e la
+  // misura arriva a chi l'aspetta
+  await fase('scontorno', async () => {
+  const sc = await p.evaluate(() => new Promise((ok) => {
+    const src = document.createElement('canvas');
+    src.width = 100; src.height = 50;
+    const g = src.getContext('2d');
+    g.fillStyle = '#00ff00'; g.fillRect(0, 0, 50, 50);
+    g.fillStyle = '#e5484d'; g.fillRect(50, 0, 50, 50);
+    Object.defineProperty(src, 'videoWidth', { value: 100 });
+    Object.defineProperty(src, 'videoHeight', { value: 50 });
+    const tela = document.createElement('canvas');
+    let misura = null;
+    const ferma = window.SB_SCONTORNO.scontorna(src, { colore: '#00ff00', soglia: 140 }, tela, { misurata: (l, a) => { misura = [l, a]; } });
+    setTimeout(() => {
+      ferma();
+      const d = tela.getContext('2d').getImageData(0, 0, tela.width, tela.height).data;
+      const a = (x, y) => d[(y * tela.width + x) * 4 + 3];
+      ok({ w: tela.width, h: tela.height, verde: a(10, 25), rosso: a(90, 25), misura });
+    }, 300);
+  }));
+  dice(sc.w === 100 && sc.h === 50 && sc.verde === 0 && sc.rosso === 255 && sc.misura?.join() === '100,50', `il green screen toglie il verde e lascia il resto, alla misura del video (${JSON.stringify(sc)})`);
+  });
+
+  // LA PRESENZA (docs/COLPI.md): la frase in chat fa comparire l'effetto dello
+  // streamer nel suo punto, col nome; l'overlay la mostra e dice «visto»
+  await fase('presenza', async () => {
+  await o.waitForFunction(() => !document.querySelector('#palco-libero .effetto, .lancio'), null, { timeout: 15000 }).catch(() => {});
+  const r = servizio.presenza(LOGIN, { chiave: 'twitch:77', nome: 'Marta', occasione: 'd:tw:gate', lingua: 'it' });
+  dice(r.esito === 'partita', `la frase della presenza parte (${r.esito})`);
+  await o.waitForSelector('#palco-libero .effetto.dentro', { timeout: 5000 }).catch(() => {});
+  await pausa(700);
+  const fx = await centro(o, '#palco-libero .effetto');
+  dice(!!fx && Math.abs(fx.x - 0.12 * 1920) < 1 && Math.abs(fx.y - 0.30 * 1080) < 1 && Math.abs(fx.w - 400) < 1, `l'effetto della presenza sta nel punto dello streamer (${fx ? fx.x.toFixed(1) + ', ' + fx.y.toFixed(1) + ', largo ' + fx.w.toFixed(1) : 'niente'})`);
+  dice((await o.locator('.attacco-firma').last().textContent().catch(() => '')) === 'Marta è presente', 'sotto, chi c\'e\'');
+  const pid = [...registroColpi.ultimi(LOGIN, 5)].find((x) => x.metodo === 'presenza')?.id;
+  for (let i = 0; i < 20 && !(pid && mondo.visti.includes(pid)); i++) await pausa(150);
+  dice(!!pid && registroColpi.get(pid)?.stato === 'sparata', 'l\'overlay la mostra e la segna vista, come un colpo');
+  dice(servizio.presenza(LOGIN, { chiave: 'twitch:77', nome: 'Marta', occasione: 'd:tw:gate' }).esito === 'gia', 'una volta per diretta');
   });
 
   const t = await nuova({ width: 390, height: 844 });

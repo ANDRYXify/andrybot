@@ -85,7 +85,44 @@ export function normalizza(cfg) {
     // il titolo e il sottotitolo della pagina, se lo streamer li scrive; vuoti, quelli di serie nella lingua di chi legge
     titolo: testo(o.titolo, 80),
     dida: testo(o.dida, 200),
+    presenza: normPresenza(o.presenza),
   };
+}
+
+// LA PRESENZA (docs/COLPI.md, «La presenza»): chi scrive in chat la frase dello
+// streamer fa comparire in diretta il SUO effetto, nel SUO punto, col nome.
+// Gratis, una volta per diretta. La frase si confronta intera, senza badare a
+// maiuscole e spazi: «!pew presente» vale, «ciao !pew presente» no. Accesa vuol
+// dire anche «pronta»: senza un effetto non si accende.
+export const PRESENZA = Object.freeze({
+  frase: '!pew presente', x: 12, y: 82, scala: 100, alMinuto: [1, 30], alMinutoDef: 6, testo: 60,
+  // la frase sull'overlay quando lo streamer non la scrive, nella lingua della chat
+  testi: Object.freeze({ it: '{nome} è presente', en: '{nome} is here', es: '{nome} está presente' }),
+});
+const formaFrase = (t) => String(t ?? '').replace(/[\u0000-\u001f]/g, ' ').replace(/\s+/g, ' ').trim().toLowerCase();
+function normPresenza(p) {
+  const o = p && typeof p === 'object' ? p : {};
+  const comando = String(o.comando || '').toLowerCase().replace(/^!/, '');
+  const frase = formaFrase(o.frase).slice(0, 40);
+  const x = pct(o.x), y = pct(o.y);
+  const buono = COMANDO.test(comando);
+  return {
+    attiva: o.attiva === true && buono,
+    frase: frase.length >= 2 ? frase : PRESENZA.frase,
+    comando: buono ? comando : '',
+    x: x ?? PRESENZA.x, y: y ?? PRESENZA.y,
+    scala: num(o.scala, LIMITI.scala, PRESENZA.scala),
+    testo: testo(o.testo, PRESENZA.testo).includes('{nome}') ? testo(o.testo, PRESENZA.testo) : '',
+    alMinuto: num(o.alMinuto, PRESENZA.alMinuto, PRESENZA.alMinutoDef),
+  };
+}
+export const eFrasePresenza = (cfg, messaggio) => !!cfg?.presenza?.attiva && formaFrase(messaggio) === cfg.presenza.frase;
+// la frase sull'overlay, col nome: quella dello streamer, o quella di serie
+export function frasePresenza(cfg, nome, lingua = 'it') {
+  const n = nomeChi(nome);
+  if (!n) return '';
+  const modello = cfg?.presenza?.testo || PRESENZA.testi[lingua] || PRESENZA.testi.it;
+  return modello.replace(/\{nome\}/g, () => n).slice(0, PRESENZA.testo);
 }
 
 // Il punto e' buono se sta nel quadro e fuori da ogni zona protetta.
