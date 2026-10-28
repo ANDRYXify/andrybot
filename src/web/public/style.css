@@ -3166,7 +3166,8 @@ body.in-studio #anime-sfondo::after, body.tel-aperta #anime-sfondo::after, body.
 .cl-cv-parola { align-self: center; margin: 0; font-variant-numeric: tabular-nums; }
 .cl-cv-parola.ko, .pt-dice.ko { color: var(--rosso); }
 .cl-ch-mezzi { display: grid; gap: .35rem; max-width: 36rem; }
-.cl-ch-mezzo { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; gap: .5rem; align-items: center; padding: .35rem .5rem; border: 1px solid var(--border); border-radius: var(--r-s); background: var(--surface-2); }
+.cl-ch-mezzo .riga-check { margin: 0; }
+.cl-ch-mezzo { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: .5rem; align-items: center; padding: .35rem .5rem; border: 1px solid var(--border); border-radius: var(--r-s); background: var(--surface-2); }
 .cl-punto.no { border-color: var(--rosso); background: color-mix(in srgb, var(--rosso) 25%, transparent); }
 .cl-piu { align-self: center; padding-bottom: .1rem; color: var(--testo-2); }
 .cl-premio:empty { display: none; }

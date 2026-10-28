@@ -61,7 +61,7 @@ const esiti = [];
 const dice = (ok, msg, extra = '') => esiti.push({ ok, msg, extra });
 const rotture = [];
 const PARTI = { giochi: ['Minigiochi', 'Gioco per gioco', 'Chi aspetta di più', 'I tuoi giochi', 'Giochi del sito andryxify.it'],
-  monete: ['Punti & classifica', 'Presenze e saluti', 'Classifica & VIP'], automatici: ['I giochi automatici'], battute: ['Citazioni', 'Battute'] };
+  monete: ['Punti & classifica', 'Il registro delle monete', 'Presenze e saluti', 'Classifica & VIP'], automatici: ['I giochi automatici'], battute: ['Citazioni', 'Battute'] };
 
 async function apri(larg, alt, nome) {
   const p = await b.newPage({ viewport: { width: larg, height: alt } });

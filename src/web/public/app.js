@@ -26588,7 +26588,7 @@ function _clChatMezzi() {
   if (!box) return;
   const nomi = { zaino: L('Dallo zaino, se ce l\'ha (è già pagato)', 'From the backpack, if they have it (already paid)', 'De la mochila, si lo tiene (ya está pagado)'), monete: esc(_clMoneta().replace(/^./, (x) => x.toUpperCase())), bit: L('Bit da spendere', 'Bits to spend', 'Bits para gastar'), misto: L(`Misto: ${esc(_clMoneta())} + Bit da spendere`, `Mixed: ${esc(_clMoneta())} + Bits to spend`, `Mixto: ${esc(_clMoneta())} + Bits para gastar`) };
   box.innerHTML = _clChatCon.map((m, i) => `<div class="cl-ch-mezzo" data-i="${i}">
-    <input type="checkbox" id="cl-ch-m-${m.k}" ${m.on ? 'checked' : ''}><label for="cl-ch-m-${m.k}">${nomi[m.k]}</label>
+    <div class="riga-check"><input type="checkbox" id="cl-ch-m-${m.k}" ${m.on ? 'checked' : ''}><label for="cl-ch-m-${m.k}">${nomi[m.k]}</label></div>
     <button type="button" class="btn secondario mini ico-sola" data-m-su ${i ? '' : 'disabled'} aria-label="${esc(L('Sposta su', 'Move up', 'Subir'))}" title="${esc(L('Sposta su', 'Move up', 'Subir'))}">${_bIco('<path d="m18 15-6-6-6 6"/>')}</button>
     <button type="button" class="btn secondario mini ico-sola" data-m-giu ${i < _clChatCon.length - 1 ? '' : 'disabled'} aria-label="${esc(L('Sposta giù', 'Move down', 'Bajar'))}" title="${esc(L('Sposta giù', 'Move down', 'Bajar'))}">${_bIco('<path d="m6 9 6 6 6-6"/>')}</button>
   </div>`).join('');
