@@ -65,7 +65,10 @@
 
 import './_dati-usa-e-getta.mjs';
 import { apriSito, apriBrowser, overlayFinto } from './_sito.mjs';
+import path from 'node:path';
 
+// --foto=<cartella>: le pagine fotografate, da giudicare a occhio
+const FOTO = (process.argv.find((a) => a.startsWith('--foto=')) || '').slice(7);
 const ROMPI = Number((process.argv.find((a) => a.startsWith('--rompi=')) || '').slice(8)) || 0;
 const SELFTEST = process.argv.includes('--selftest') || ROMPI > 0;
 const { registroColpi, effects: effectsDb, streamers, pewBit, pewZaino } = await import('../src/db.js');
@@ -78,6 +81,9 @@ const { creaChatColpi, rigaDi } = await import('../src/features/colpi-chat.js');
 
 const LOGIN = 'prova';
 const DIFETTI = [
+  // su Kick (docs/COLPI.md, «Su Kick»): il tasto d'accesso che manca, e il saldo detto in Bit a chi e' entrato con Kick
+  ['pagina-colpo.js', "if (accessoKick) { var ak = el('a', 'cp-b cp-kick'", "if (false) { var ak = el('a', 'cp-b cp-kick'"],
+  ['pagina-colpo.js', "riempi(tv('saldo', 'saldoBit'), { n: numero(saldoBit) })", "riempi(T.saldoBit, { n: numero(saldoBit) })"],
   ['pagina-colpo.js', "var strato = $('cp-mira');", "var strato = $('cp-mira'); strato.classList.add('attiva');"],
   ['pagina-colpo.js', 'function protetto(x, y) {', 'function protetto(x, y) { return false;'],
   ['pagina-colpo.js', '((v.scala || 100) / 100)', '1'],
@@ -113,7 +119,7 @@ streamers.setSettings(LOGIN, {
     { comando: 'pomodoro', nome: 'Pomodoro', euro: 200, punti: 500, bit: 100, scala: 120 },
     { comando: 'festa', nome: 'Festa', bit: 50 },
     { comando: 'tirapomodoro', nome: 'Pomodoro vero', bit: 30, monete: 40, scala: 150 },
-    { comando: 'ridi', nome: 'Risata', bit: 20 },
+    { comando: 'ridi', nome: 'Risata', bit: 20, kicks: 60 },
   ] },
 });
 effectsDb.add(LOGIN, { comando: 'pomodoro', tipo: 'immagine', file: 'pomodoro.svg', tier: 'tutti', cooldown: 0, volume: 100, durata: 4000 });
@@ -127,7 +133,7 @@ const motore = new EffectsEngine();
 motore.emit = (ch, p) => ov.manda({ ...p, url: `/u/${LOGIN}/colpo/anteprima/pomodoro` });
 // la diretta e l'overlay: «in onda» lo decide il cancello, «pronto» lo dice
 // l'overlay vero, come in produzione (effects.prontoColpi)
-const mondo = { live: true, pronto: 0, visti: [], io: null, scritti: [], flussi: new Set() };
+const mondo = { live: true, pronto: 0, visti: [], io: null, scritti: [], flussi: new Set(), kick: false };
 const chat = creaChatColpi();
 const pronto = () => Date.now() - mondo.pronto < 45_000;
 const servizio = creaServizioColpi({ registro: registroColpi, effects: motore, effettoDi: (l, c) => effectsDb.get(l, c),
@@ -137,7 +143,7 @@ economia.dai(LOGIN, 'marta', 500, 'staff');
 const pagamenti = [];
 const porta = creaPortaColpi({ servizio, registro: registroColpi, streamers, effettoDi: (l, c) => effectsDb.get(l, c), mezziEuro: () => ['stripe'],
   apriPagamento: async (mezzo, d) => { const id = 'cs_finto_' + (pagamenti.length + 1); pagamenti.push({ id, ...d }); return { url: `/finto-pagamento/${id}`, id }; },
-  inOnda: () => mondo.live, overlay: pronto });
+  inOnda: () => mondo.live, overlay: pronto, kick: () => (mondo.kick ? { slug: 'prova_k', live: true } : null) });
 
 const json = (res, stato, o) => { res.writeHead(stato, { 'content-type': 'application/json' }); res.end(JSON.stringify(o)); };
 const corpo = (req) => new Promise((ok) => { let b = ''; req.on('data', (c) => { b += c; }); req.on('end', () => { try { ok(JSON.parse(b || '{}')); } catch { ok({}); } }); });
@@ -153,7 +159,7 @@ const rotte = (req, res, q) => {
     let mira = '';
     if (dona) { servizio.daPagamento('stripe:' + dona); mira = registroColpi.perRiferimento('stripe:' + dona)?.id || ''; }
     res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
-    res.end(htmlPaginaColpo({ login: LOGIN, display: 'Prova', pagina: { template: 'retro' }, baseUrl: sito?.base || 'http://127.0.0.1', lingua: 'it', mira, privacy: '/privacy.html', io: mondo.io, accesso: true }));
+    res.end(htmlPaginaColpo({ login: LOGIN, display: 'Prova', pagina: { template: 'retro' }, baseUrl: sito?.base || 'http://127.0.0.1', lingua: 'it', mira, privacy: '/privacy.html', io: mondo.io, accesso: true, accessoKick: mondo.kick, kick: mondo.kick ? 'prova_k' : '' }));
     return true;
   }
   if (q === base + '/dati') { json(res, 200, porta.dati(LOGIN)); return true; }
@@ -644,6 +650,34 @@ try {
   for (let i = 0; i < 20 && !(pid && mondo.visti.includes(pid)); i++) await pausa(150);
   dice(!!pid && registroColpi.get(pid)?.stato === 'sparata', 'l\'overlay la mostra e la segna vista, come un colpo');
   dice(servizio.presenza(LOGIN, { chiave: 'twitch:77', nome: 'Marta', occasione: 'd:tw:gate' }).esito === 'gia', 'una volta per diretta');
+  });
+
+  // SU KICK (docs/COLPI.md, «Su Kick»): il canale e' anche su Kick. Chi non e'
+  // entrato vede «Accedi con Kick» accanto a Twitch e il lettore di Kick; chi
+  // e' entrato con Kick vede i suoi Kicks, mai dei Bit.
+  await fase('kick', async () => {
+    mondo.kick = true;
+    mondo.io = null;
+    const k = await nuova({ width: 390, height: 844 });
+    await k.goto(sito.base + base, { waitUntil: 'load' });
+    await k.waitForFunction(() => document.querySelectorAll('.cp-voce').length > 0, null, { timeout: 10000 });
+    dice(await k.locator('#cp-io a[href$="/colpo/accedi-kick"]').isVisible() && await k.locator('#cp-io a[href$="/colpo/accedi"]').isVisible(), 'chi non e\' entrato: «Accedi con Kick» accanto a Twitch');
+    dice(await k.locator('.chiedi-b[data-t="Kick"]').count() === 1 && (await k.getAttribute('.chiedi-b[data-t="Kick"]', 'data-src') || '').startsWith('https://player.kick.com/prova_k'), 'e il lettore di Kick, col nome del canale su Kick');
+    dice(await k.evaluate(() => document.scrollingElement.scrollWidth <= innerWidth), 'al telefono, coi due tasti, niente scorre di lato');
+    dice((await k.locator('.cp-voce', { hasText: 'Risata' }).textContent()).includes('60 Kicks') && !(await k.locator('.cp-voce', { hasText: 'Pomodoro' }).first().textContent()).includes('Kicks'), 'il prezzo in Kicks, solo sul colpo che lo ha');
+    dice(await k.locator('.chiedi-b[data-t="Twitch"]').textContent() === 'Guarda su Twitch', 'con due lettori, ognuno dice la sua piattaforma');
+    if (FOTO) await k.screenshot({ path: path.join(FOTO, 'colpi-kick-fuori.png'), fullPage: true });
+    pewBit.entra(LOGIN, 'k:777', 120, 'regalo:gate');
+    mondo.io = { id: 'k:777', login: 'kickina', nome: 'Kickina', piattaforma: 'kick' };
+    await k.reload({ waitUntil: 'load' });
+    await k.waitForFunction(() => /Kickina/.test(document.getElementById('cp-io')?.textContent || ''), null, { timeout: 10000 });
+    await k.waitForFunction(() => /Kicks da spendere/.test(document.getElementById('cp-io')?.textContent || ''), null, { timeout: 5000 }).catch(() => {});
+    const testo = await k.locator('#cp-io').textContent();
+    dice(/Hai 120 Kicks da spendere qui/.test(testo) && !/Bit/.test(testo), `chi e' entrato con Kick vede i suoi Kicks, e niente Bit (${testo.replace(/\s+/g, ' ').slice(0, 120)})`);
+    if (FOTO) await k.screenshot({ path: path.join(FOTO, 'colpi-kick-dentro.png'), fullPage: true });
+    await k.close();
+    mondo.kick = false;
+    mondo.io = null;
   });
 
   const t = await nuova({ width: 390, height: 844 });

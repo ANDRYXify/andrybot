@@ -195,6 +195,8 @@ import { piattaformeDi } from '../features/piattaforme-admin.js';
 import { cancella as cancellaDati, restiDi, confermaValida as confermaCancellazione, parolaDiConferma, canaliDiCollaudo } from '../features/cancella.js';
 import { montaKick } from '../kick/rotte.js';
 import * as kickApi from '../kick/api.js';
+import * as kickAuth from '../kick/auth.js';
+import * as giroOAuth from '../giro.js';
 import * as kickDiario from '../kick/diario.js';
 import { montaYoutube } from '../youtube/rotte.js';
 import * as ytApi from '../youtube/api.js';
@@ -2454,11 +2456,14 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     servizio: manager.colpi, registro: registroColpi, streamers, effettoDi: (l, c) => effectsDb.get(l, c), mezziEuro,
     apriPagamento: (mezzo, dati) => (mezzo === 'satispay' ? donaSatispay.apriPagamento(dati) : donaStripe.apriPagamento(dati)),
     inOnda: (l) => manager.inOnda?.(l), overlay: (l) => effects.prontoColpi(l), fusoDi: (l) => preferenze.preferenzeDi(l).fuso,
+    // il canale su Kick, se collegato: i Kicks e l'accesso con Kick hanno senso solo li'
+    kick: (l) => (kickApi.tokenDi(l)?.userId ? (manager.kickVisto?.(l) || { slug: '', live: false }) : null),
   });
   const loginColpi = (req) => { const l = String(req.params.user || '').toLowerCase(); return eLoginNostro(l) ? l : ''; };
   // Lo spettatore che ha fatto l'accesso con Twitch (features/colpi-accesso.js):
   // nel cookie c'e' solo la chiave, il token sta nella memoria del server.
-  const accessiColpi = colpiAccesso.creaAccessi({ rinnova: (r) => auth.refresh(r) });
+  // il rinnovo di ognuno sulla sua piattaforma (docs/COLPI.md, «Su Kick»)
+  const accessiColpi = colpiAccesso.creaAccessi({ rinnova: (r, piattaforma) => (piattaforma === 'kick' ? kickAuth.rinnova(r) : auth.refresh(r)) });
   const pontiColpi = colpiAccesso.creaPonti();
   const sulPew = (req) => !!config.pewHost && String(req.hostname || '').toLowerCase() === config.pewHost;
   const spettatoreDi = (req) => {
@@ -2487,7 +2492,8 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       login, display: k.s.display || login, avatar: await avatarDi(login), pagina: link || {}, baseUrl: config.baseUrl,
       url: colpiMod.urlPaginaColpo(login), corto: config.pewHost,
       lingua: colpiPagina.linguaDi(req.get('accept-language')), mira,
-      io: io ? { login: io.login, nome: io.nome } : null, accesso: !!config.twitchClientId,
+      io: io ? { login: io.login, nome: io.nome, piattaforma: io.piattaforma || 'twitch' } : null, accesso: !!config.twitchClientId,
+      accessoKick: kickAuth.configurato() && !!kickApi.tokenDi(login)?.userId, kick: manager.kickVisto?.(login)?.slug || '',
       testi: (({ titolo, dida, conNome }) => ({ titolo, dida, conNome }))(colpiMod.normalizza(k.s.settings?.colpi)),
       privacy: link?.attiva ? `/u/${login}/privacy` : '/privacy.html',
     }));
@@ -2546,6 +2552,43 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     req.session.colpoFlow = { state, canale: login, ts: Date.now(), ...(segno ? { segno } : {}) };
     res.redirect(auth.authUrl(colpiAccesso.PERMESSI, state));
   });
+  // L'ACCESSO CON KICK (docs/COLPI.md, «Su Kick»): lo stesso giro, con l'OAuth di
+  // Kick e i soli permessi dello spettatore (chi e', scrivere in chat). Il ritorno
+  // passa da /auth/kick/callback, l'indirizzo registrato su Kick, che lo riconosce
+  // dal giro (`spettatore`) e lo rimanda qui sotto (spettatoreKick).
+  app.get('/u/:user/colpo/accedi-kick', (req, res) => {
+    const login = loginColpi(req);
+    if (!login || !portaColpi.aperti(login) || !kickAuth.configurato()) return notFound(res);
+    if (sulPew(req)) {
+      const segno = crypto.randomBytes(16).toString('hex');
+      req.session.colpoSegno = { segno, canale: login, ts: Date.now() };
+      return res.redirect(`${config.baseUrl}/u/${login}/colpo/accedi-kick?segno=${segno}`);
+    }
+    const segno = config.pewHost && /^[a-f0-9]{32}$/.test(String(req.query.segno || '')) ? String(req.query.segno) : '';
+    const { challenge, state } = giroOAuth.apri(req, 'kick', { spettatore: { canale: login, ...(segno ? { segno } : {}) } });
+    res.redirect(kickAuth.urlAutorizzazione({ challenge, state, scope: colpiAccesso.PERMESSI_KICK }));
+  });
+  async function spettatoreKick(req, res, esito) {
+    const sp = esito.giro.spettatore || {};
+    const canale = String(sp.canale || '');
+    const corto = !!(sp.segno && config.pewHost);
+    const torna = !canale ? '/' : corto ? colpiMod.urlPaginaColpo(canale) : `/u/${encodeURIComponent(canale)}/colpo`;
+    if (!esito.ok || !eLoginNostro(canale)) return res.redirect(torna);
+    try {
+      const t = await kickAuth.scambiaCodice(esito.codice, esito.giro.verifier);
+      const v = t?.accessToken ? await kickApi.chiSono(t.accessToken) : null;
+      if (v?.ok && v.userId) {
+        const nome = v.nome || ('kick:' + v.userId);
+        const chiave = accessiColpi.metti({ id: colpiMod.personaKick(v.userId), login: nome, nome, token: t.accessToken, refresh: t.refreshToken, scade: t.expiresAt, piattaforma: 'kick' });
+        if (corto) {
+          const b = pontiColpi.apri({ canale, chiave, segno: sp.segno });
+          return res.redirect(`https://${config.pewHost}/u/${encodeURIComponent(canale)}/colpo/entra?b=${b}`);
+        }
+        req.session.spettatore = chiave;
+      }
+    } catch (e) { log.warn('accesso con Kick dello spettatore dei colpi:', e?.message || e); }
+    return res.redirect(torna);
+  }
   // L'altra sponda del ponte, sulla pagina corta: il biglietto vale solo col
   // segno che questo browser si e' preso partendo, e si brucia comunque.
   app.get('/u/:user/colpo/entra', (req, res) => {
@@ -2581,8 +2624,12 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     if (!extRateOk('colpo-chat:' + io.id)) return res.status(429).json({ errore: 'troppi' });
     const token = await accessiColpi.token(req.session.spettatore);
     const s = streamers.get(login);
-    if (!token || !s?.user_id) return res.status(401).json({ errore: 'accesso' });
-    const r = await colpiAccesso.mandaInChat({ clientId: config.twitchClientId, token, broadcasterId: s.user_id, senderId: io.id, testo: req.body?.testo });
+    // chi e' entrato con Kick scrive nella chat di Kick del canale, chi con Twitch in quella di Twitch
+    const suKick = io.piattaforma === 'kick';
+    if (!token || (suKick ? !kickApi.tokenDi(login)?.userId : !s?.user_id)) return res.status(401).json({ errore: 'accesso' });
+    const r = suKick
+      ? await colpiAccesso.mandaInChatKick({ token, broadcasterKickId: kickApi.tokenDi(login).userId, testo: req.body?.testo })
+      : await colpiAccesso.mandaInChat({ clientId: config.twitchClientId, token, broadcasterId: s.user_id, senderId: io.id, testo: req.body?.testo });
     if (r.scaduto) { accessiColpi.togli(req.session.spettatore); delete req.session.spettatore; return res.status(401).json({ errore: 'accesso' }); }
     res.json(r.ok ? { ok: true } : { ok: false, motivo: r.motivo });
   }));
@@ -4065,7 +4112,7 @@ STREAMER (${su.toUpperCase()}) e non c'entra con l'automazione del marketing.
   // nell'indirizzo, ma vale solo se e' una campagna vera: non e' un «rimandami
   // dove vuoi», e' un elenco chiuso.
   montaKick(app, {
-    requireLogin, currentUser, wrap, annotaIngresso: segnaCampagna, diretta: (login) => !!login && studioPerMe(login),
+    requireLogin, currentUser, wrap, annotaIngresso: segnaCampagna, diretta: (login) => !!login && studioPerMe(login), spettatore: spettatoreKick,
     suMessaggio: (msg) => manager.messaggioEsterno(msg),
     suEvento: (ev) => manager.eventoEsterno?.(ev),
 

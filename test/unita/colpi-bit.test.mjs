@@ -276,7 +276,10 @@ test('la pagina: il saldo di chi ha l\'accesso, e si paga col saldo solo la prop
   const p = creaPortaColpi({ servizio: b.s, registro: registroColpi, streamers: { get: () => ({ settings: { colpi: b.cfg } }) },
     effettoDi: () => ({ tipo: 'immagine', file: 'p.png' }), mezziEuro: () => [], apriPagamento: async () => ({}), inOnda: () => true, overlay: () => true, ora: b.ora });
   assert.equal(p.dati(c).bitPew, true);
-  assert.deepEqual(p.saldi(c, { id: '21', login: 'marta' }), { bit: 500, monete: null, zaino: null }, 'senza le monete del canale, niente monete; senza lo zaino acceso, niente zaino');
+  assert.deepEqual(p.saldi(c, { id: '21', login: 'marta' }), { valuta: 'bit', daSpendere: 500, bit: 500, kicks: null, monete: null, zaino: null }, 'senza le monete del canale, niente monete; senza lo zaino acceso, niente zaino');
+  // chi e' entrato con Kick ha i suoi Kicks, e solo se il canale e' su Kick (docs/COLPI.md, «Su Kick»)
+  assert.deepEqual(p.saldi(c, { id: 'k:21', login: 'marta' }), { valuta: 'kicks', daSpendere: null, bit: null, kicks: null, monete: null, zaino: null }, 'un canale non su Kick: niente Kicks');
+  assert.equal(p.dati(c).kicksPew, false);
   assert.equal(p.saldi(c, null), null);
   const sua = p.mira(c, { voce: 'pomodoro', x: 10, y: 10 }, 'ip1', { id: '22', nome: 'luca' }).mira;
   assert.deepEqual(await p.paga(c, sua.id, 'bitpew', null), { errore: 'accesso' });
@@ -286,7 +289,7 @@ test('la pagina: il saldo di chi ha l\'accesso, e si paga col saldo solo la prop
   assert.equal(p.stato(c, mia.id).prezzi.resa, 100, 'la pagina sa che la mira si paga col saldo');
   b.cfg.bitPew = { attivo: false };
   assert.equal(p.dati(c).bitPew, false);
-  assert.deepEqual(p.saldi(c, { id: '21' }), { bit: null, monete: null, zaino: null }, 'spenti: il saldo resta, ma non si mostra e non si spende');
+  assert.deepEqual(p.saldi(c, { id: '21' }), { valuta: 'bit', daSpendere: null, bit: null, kicks: null, monete: null, zaino: null }, 'spenti: il saldo resta, ma non si mostra e non si spende');
 });
 
 test('due ronde che si accavallano rendono una volta sola i Bit e le monete di un colpo monete+Bit', async () => {

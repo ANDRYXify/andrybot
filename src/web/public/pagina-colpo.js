@@ -12,6 +12,10 @@
   var io = null;
   try { io = JSON.parse(B.getAttribute('data-io') || 'null') || null; } catch (e) { io = null; }
   var accesso = B.getAttribute('data-accesso') === '1';
+  var accessoKick = B.getAttribute('data-accesso-kick') === '1';
+  function vd() { return io && io.piattaforma === 'kick' ? 'kicks' : 'bit'; }
+  function tv(k, bitKey) { return vd() === 'kicks' ? (T.k || {})[k] : T[bitKey]; }
+  function pewOn() { return !!(dati && (vd() === 'kicks' ? dati.kicksPew : dati.bitPew)); }
   var base = '/u/' + encodeURIComponent(login) + '/colpo';
   var memo = 'sb-colpo:' + login;
   var QUADRO_L = 1920, QUADRO_A = 1080;
@@ -59,7 +63,7 @@
     return chiedi('/saldi').then(function (r) {
       if (r._stato === 401) { io = null; saldoBit = null; saldoMonete = null; accedi(); scriviSi(); lanciaTasti(); return; }
       var prima = saldoBit + '|' + saldoMonete;
-      saldoBit = typeof r.bit === 'number' ? r.bit : null;
+      saldoBit = typeof r.daSpendere === 'number' ? r.daSpendere : null;
       saldoMonete = typeof r.monete === 'number' ? r.monete : null;
       var scPrima = JSON.stringify([scadonoBit, zainoMio]);
       scadonoBit = r.scadono && r.scadono.quanti > 0 ? r.scadono : null;
@@ -105,10 +109,11 @@
       var pz = scelta.prezzi || {};
       var nz = quantiNelloZaino(scelta.id);
       if (nz > 0) modi.push({ con: 'zaino', testo: riempi(T.lanciaZaino, { n: numero(nz) }), basta: true });
-      if (pz.bit > 0 && dati.bitPew && saldoBit !== null) modi.push({ con: 'bit', testo: riempi(T.lanciaBit, { n: numero(pz.bit) }), basta: saldoBit >= pz.bit });
+      var v = vd();
+      if (pz[v] > 0 && pewOn() && saldoBit !== null) modi.push({ con: v, testo: riempi(tv('lancia', 'lanciaBit'), { n: numero(pz[v]) }), basta: saldoBit >= pz[v] });
       if (pz.monete > 0 && saldoMonete !== null) modi.push({ con: 'monete', testo: riempi(T.lanciaMonete, { n: numero(pz.monete), moneta: moneta() }), basta: saldoMonete >= pz.monete });
       (scelta.misti || []).forEach(function (x) {
-        if (x.modo === 'bit' && dati.bitPew && saldoBit !== null && saldoMonete !== null) modi.push({ con: 'misto-bit', testo: riempi(T.lanciaMisto, { monete: numero(x.monete), moneta: moneta(), bit: numero(x.resto) }), basta: saldoMonete >= x.monete && saldoBit >= x.resto });
+        if (x.modo === v && pewOn() && saldoBit !== null && saldoMonete !== null) modi.push({ con: 'misto-' + v, testo: riempi(tv('lanciaMisto', 'lanciaMisto'), { monete: numero(x.monete), moneta: moneta(), bit: numero(x.resto) }), basta: saldoMonete >= x.monete && saldoBit >= x.resto });
       });
     }
     modi.forEach(function (m) {
@@ -135,11 +140,11 @@
     box.hidden = false;
     box.appendChild(el('h3', 'cp-dopo-t', T.perDopo));
     if (!io) { box.appendChild(el('p', 'cp-nota', T.dopoAccedi)); return; }
-    var pz = scelta.prezzi || {}, modi = [];
-    if (z.con.bit && pz.bit > 0 && dati.bitPew && saldoBit !== null) modi.push({ con: 'bit', testo: riempi(T.compraBit, { n: numero(pz.bit) }), basta: saldoBit >= pz.bit });
+    var pz = scelta.prezzi || {}, modi = [], v = vd();
+    if (z.con[v] && pz[v] > 0 && pewOn() && saldoBit !== null) modi.push({ con: v, testo: riempi(tv('compra', 'compraBit'), { n: numero(pz[v]) }), basta: saldoBit >= pz[v] });
     if (z.con.monete && pz.monete > 0 && saldoMonete !== null) modi.push({ con: 'monete', testo: riempi(T.compraMonete, { n: numero(pz.monete), moneta: moneta() }), basta: saldoMonete >= pz.monete });
     (scelta.misti || []).forEach(function (x) {
-      if (z.con.misto && x.modo === 'bit' && dati.bitPew && saldoBit !== null && saldoMonete !== null) modi.push({ con: 'misto-bit', testo: riempi(T.compraMisto, { monete: numero(x.monete), moneta: moneta(), bit: numero(x.resto) }), basta: saldoMonete >= x.monete && saldoBit >= x.resto });
+      if (z.con.misto && x.modo === v && pewOn() && saldoBit !== null && saldoMonete !== null) modi.push({ con: 'misto-' + v, testo: riempi(tv('compraMisto', 'compraMisto'), { monete: numero(x.monete), moneta: moneta(), bit: numero(x.resto) }), basta: saldoMonete >= x.monete && saldoBit >= x.resto });
     });
     var r = el('div', 'cp-lancia');
     modi.forEach(function (m) {
@@ -150,7 +155,7 @@
       b.onclick = function () { compra(m.con, b); };
       r.appendChild(b);
     });
-    var esterni = (z.con.cheer && pz.bit > 0) || (z.con.punti && pz.punti > 0 && scelta.premio) || (z.con.euro && pz.euro > 0 && (dati.mezzi || []).length) || (z.con.misto && (scelta.misti || []).length);
+    var esterni = (z.con.cheer && pz.bit > 0) || (z.con.regalo && pz.kicks > 0) || (z.con.punti && pz.punti > 0 && scelta.premio) || (z.con.euro && pz.euro > 0 && (dati.mezzi || []).length) || (z.con.misto && (scelta.misti || []).length);
     if (esterni) {
       var a = el('button', 'cp-b due', T.altriDopo);
       a.type = 'button';
@@ -199,11 +204,11 @@
   function accedi() {
     var box = $('cp-io');
     box.textContent = '';
-    if (!accesso) { box.hidden = true; return; }
+    if (!accesso && !accessoKick) { box.hidden = true; return; }
     if (io) {
       box.appendChild(el('p', '', riempi(T.sei, { nome: io.nome || io.login })));
-      if (saldoBit !== null && dati && dati.bitPew) box.appendChild(el('p', 'cp-saldo', riempi(T.saldoBit, { n: numero(saldoBit) })));
-      if (saldoBit && scadonoBit && dati && dati.bitPew) box.appendChild(el('p', 'cp-nota cp-scadono', riempi(T.scadonoBit, { n: numero(scadonoBit.quanti), quando: scadonoBit.quando })));
+      if (saldoBit !== null && pewOn()) box.appendChild(el('p', 'cp-saldo', riempi(tv('saldo', 'saldoBit'), { n: numero(saldoBit) })));
+      if (saldoBit && scadonoBit && pewOn()) box.appendChild(el('p', 'cp-nota cp-scadono', riempi(tv('scadono', 'scadonoBit'), { n: numero(scadonoBit.quanti), quando: scadonoBit.quando })));
       if (saldoMonete !== null) box.appendChild(el('p', 'cp-saldo', riempi(T.saldoMonete, { n: numero(saldoMonete), moneta: moneta() })));
       var esci = el('button', 'cp-b due', T.esci);
       esci.type = 'button';
@@ -212,11 +217,14 @@
       };
       box.appendChild(esci);
     } else {
-      var a = el('a', 'cp-b', T.accedi);
-      a.href = base + '/accedi';
-      box.appendChild(a);
-      box.appendChild(el('p', 'cp-nota', T.accediPerche));
-      if (dati && dati.bitPew) box.appendChild(el('p', 'cp-nota', T.bitPewAccedi));
+      var tasti = el('div', 'cp-righe-b');
+      if (accesso) { var a = el('a', 'cp-b', T.accedi); a.href = base + '/accedi'; tasti.appendChild(a); }
+      if (accessoKick) { var ak = el('a', 'cp-b cp-kick', (T.k || {}).accedi); ak.href = base + '/accedi-kick'; tasti.appendChild(ak); }
+      box.appendChild(tasti);
+      if (accesso) box.appendChild(el('p', 'cp-nota', T.accediPerche));
+      if (accessoKick) box.appendChild(el('p', 'cp-nota', (T.k || {}).accediPerche));
+      if (accesso && dati && dati.bitPew) box.appendChild(el('p', 'cp-nota', T.bitPewAccedi));
+      if (accessoKick && dati && dati.kicksPew) box.appendChild(el('p', 'cp-nota', (T.k || {}).pewAccedi));
     }
     $('cp-nome-l').hidden = !!io || !(dati && dati.conNome);
     zaino();
@@ -270,7 +278,7 @@
       campo.disabled = false;
       if (r._stato === 401) { io = null; accedi(); scriviSi(); return; }
       if (r.ok) { campo.value = ''; campo.focus(); return; }
-      avviso(r.errore === 'troppi' ? (T.motivi || {}).troppi : riempi(T.chatNonInviato, { motivo: r.motivo || '' }), 'ko');
+      avviso(r.errore === 'troppi' ? (T.motivi || {}).troppi : riempi(io && io.piattaforma === 'kick' ? T.k.chatNonInviato : T.chatNonInviato, { motivo: r.motivo || '' }), 'ko');
     }, function () { campo.disabled = false; avviso((T.motivi || {}).rete, 'ko'); });
   });
 
@@ -315,9 +323,10 @@
     if (v.prezzi.euro) p.appendChild(el('i', '', prezzo(v.prezzi.euro)));
     if (v.prezzi.punti) p.appendChild(el('i', '', riempi(T.puntiN, { n: numero(v.prezzi.punti) })));
     if (v.prezzi.bit) p.appendChild(el('i', '', riempi(T.bitN, { n: numero(v.prezzi.bit) })));
+    if (v.prezzi.kicks) p.appendChild(el('i', '', riempi((T.k || {}).prezzoN, { n: numero(v.prezzi.kicks) })));
     if (v.prezzi.monete) p.appendChild(el('i', '', riempi(T.moneteN, { n: numero(v.prezzi.monete), moneta: moneta() })));
     (v.misti || []).forEach(function (x) {
-      p.appendChild(el('i', '', riempi(x.modo === 'bit' ? T.mistoBit : T.mistoPunti, { monete: numero(x.monete), moneta: moneta(), resto: numero(x.resto) })));
+      p.appendChild(el('i', '', riempi(x.modo === 'bit' ? T.mistoBit : x.modo === 'kicks' ? (T.k || {}).misto : T.mistoPunti, { monete: numero(x.monete), moneta: moneta(), resto: numero(x.resto) })));
     });
     return p;
   }
@@ -691,29 +700,36 @@
         pp.appendChild(el('p', '', riempi(mira.mia ? T.puntiIo : T.punti, { premio: v.premio, n: numero(pz.punti), codice: mira.codice })));
         box.appendChild(pp);
       }
-      if (conCodice && puo('cheer') && pz.bit > 0) {
+      var raccolto = mira.versati > 0 ? (mira.valuta || 'bit') : '';
+      if (conCodice && puo('cheer') && pz.bit > 0 && raccolto !== 'kicks') {
         var bb = el('div', 'cp-modo');
-        bb.appendChild(el('p', '', riempi(mira.mia ? T.bitIo : T.bit, { n: Math.max(0, pz.bit - (mira.versati || 0)), codice: mira.codice })));
+        bb.appendChild(el('p', '', riempi(mira.mia && vd() === 'bit' ? T.bitIo : T.bit, { n: Math.max(0, pz.bit - (raccolto ? mira.versati : 0)), codice: mira.codice })));
         box.appendChild(bb);
+      }
+      if (conCodice && puo('regalo') && pz.kicks > 0 && raccolto !== 'bit') {
+        var kb = el('div', 'cp-modo');
+        kb.appendChild(el('p', '', riempi(mira.mia && vd() === 'kicks' ? (T.k || {}).regaloIo : (T.k || {}).regalo, { n: Math.max(0, pz.kicks - (raccolto ? mira.versati : 0)), codice: mira.codice })));
+        box.appendChild(kb);
       }
       if (mira.acconto && mira.stato === 'attesa') {
         var ac = el('div', 'cp-modo');
         var mv = (v.misti || []).filter(function (x) { return x.modo === mira.acconto.modo; })[0] || {};
-        ac.appendChild(el('p', '', riempi(mira.acconto.modo === 'punti' ? T.accontoPunti : T.accontoBit, { monete: numero(mira.acconto.monete), moneta: moneta(), resto: numero(mira.acconto.resto), codice: mira.codice, premio: mv.premio || '' })));
+        ac.appendChild(el('p', '', riempi(mira.acconto.modo === 'punti' ? T.accontoPunti : mira.acconto.modo === 'kicks' ? (T.k || {}).mistoDopo : T.accontoBit, { monete: numero(mira.acconto.monete), moneta: moneta(), resto: numero(mira.acconto.resto), codice: mira.codice, premio: mv.premio || '' })));
         box.appendChild(ac);
         var cc = el('div', 'cp-righe'); cc.appendChild(chat()); box.appendChild(cc);
       }
-      var restoBit = mira.acconto ? (mira.acconto.modo === 'bit' ? mira.acconto.resto : 0) : (pz.bit || 0);
+      var vv = vd(), resaV = vv === 'kicks' ? ((pz.k || {}).resa || 0) : (pz.resa || 0);
+      var restoBit = raccolto && raccolto !== vv ? 0 : mira.acconto ? (mira.acconto.modo === vv ? mira.acconto.resto : 0) : (pz[vv] || 0);
       var mancaBit = Math.max(0, restoBit - (mira.versati || 0));
-      if (io && dati.bitPew && puo(mira.acconto ? 'misto' : 'bit') && pz.resa > 0 && mancaBit > 0 && mira.pagabile && !mira.inPagamento) {
+      if (io && pewOn() && puo(mira.acconto ? 'misto' : vv) && resaV > 0 && mancaBit > 0 && mira.pagabile && !mira.inPagamento) {
         var bp = el('div', 'cp-modo');
-        var pbit = el('button', 'cp-b cp-paga-b', riempi(T.bitPewIo, { n: numero(mancaBit) }));
+        var pbit = el('button', 'cp-b cp-paga-b', riempi(tv('pewIo', 'bitPewIo'), { n: numero(mancaBit) }));
         pbit.type = 'button';
         pbit.setAttribute('data-paga', 'bitpew');
         pbit.disabled = saldoBit !== null && saldoBit < mancaBit;
         pbit.onclick = function () { pagaBit(pbit); };
         bp.appendChild(pbit);
-        if (saldoBit !== null) bp.appendChild(el('p', 'cp-nota', riempi(T.bitPewNota, { saldo: numero(saldoBit) })));
+        if (saldoBit !== null) bp.appendChild(el('p', 'cp-nota', riempi(tv('pewNota', 'bitPewNota'), { saldo: numero(saldoBit) })));
         box.appendChild(bp);
       }
       if (conCodice && puo('misto')) {
@@ -721,15 +737,15 @@
           var mm = el('div', 'cp-modo');
           var val = { monete: numero(x.monete), moneta: moneta(), resto: numero(x.resto), codice: mira.codice, comando: (dati && dati.comando) || 'pew', premio: x.premio || '' };
           if (io) {
-            mm.appendChild(el('p', '', riempi(x.modo === 'bit' ? T.mistoBit : T.mistoPunti, val)));
+            mm.appendChild(el('p', '', riempi(x.modo === 'bit' ? T.mistoBit : x.modo === 'kicks' ? (T.k || {}).misto : T.mistoPunti, val)));
             var pb = el('button', 'cp-b cp-paga-b', riempi(T.mistoIo, val));
             pb.type = 'button';
             pb.setAttribute('data-paga', 'misto-' + x.modo);
             pb.onclick = function () { pagaMonete(pb, x.modo); };
             mm.appendChild(pb);
-            mm.appendChild(el('p', 'cp-nota', riempi(x.modo === 'bit' ? T.mistoDopoBit : T.mistoDopoPunti, val)));
+            mm.appendChild(el('p', 'cp-nota', riempi(x.modo === 'bit' ? T.mistoDopoBit : x.modo === 'kicks' ? (T.k || {}).mistoDopo : T.mistoDopoPunti, val)));
           } else {
-            mm.appendChild(el('p', '', riempi(x.modo === 'bit' ? T.mistoChatBit : T.mistoChatPunti, val)));
+            mm.appendChild(el('p', '', riempi(x.modo === 'bit' ? T.mistoChatBit : x.modo === 'kicks' ? (T.k || {}).mistoChat : T.mistoChatPunti, val)));
           }
           box.appendChild(mm);
         });
@@ -748,7 +764,7 @@
         }
         box.appendChild(mm);
       }
-      if (conCodice && (pz.bit > 0 || (pz.punti > 0 && v.premio) || ((pz.monete > 0 || (v.misti || []).length) && !io) || (io && (v.misti || []).length))) { var cr = el('div', 'cp-righe'); cr.appendChild(chat()); box.appendChild(cr); }
+      if (conCodice && (pz.bit > 0 || pz.kicks > 0 || (pz.punti > 0 && v.premio) || ((pz.monete > 0 || (v.misti || []).length) && !io) || (io && (v.misti || []).length))) { var cr = el('div', 'cp-righe'); cr.appendChild(chat()); box.appendChild(cr); }
     }
     var fine = el('div', 'cp-righe cp-modo');
     if (mira.stato === 'pagata') { racconta(); segui(); return; }
@@ -777,7 +793,7 @@
     else if (mira.stato === 'scaduta') avviso(T.scaduta, 'ko');
     else if (mira.inPagamento) avviso(T.attesa);
     else if (!mira.pagabile) avviso(riempi(T.fermo, { motivo: (T.motivi || {})[mira.fermo] || '' }), 'ko');
-    else if (mira.versati > 0) avviso(riempi(T.versati, { n: numero(mira.versati), m: numero(Math.max(0, (mira.prezzi.bit || 0) - mira.versati)) }));
+    else if (mira.versati > 0) avviso(riempi(mira.valuta === 'kicks' ? (T.k || {}).versati : T.versati, { n: numero(mira.versati), m: numero(Math.max(0, (mira.prezzi[mira.valuta === 'kicks' ? 'kicks' : 'bit'] || 0) - mira.versati)) }));
     else avviso('');
     var sc = $('cp-scade');
     if (sc) {

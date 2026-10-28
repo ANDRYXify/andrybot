@@ -641,17 +641,47 @@ Twitch, coi premi che si creano dall'API; la chat; l'accesso OAuth con
   senza codice; quello che avanza diventa Kicks da spendere, se lo streamer li
   accende (`kicksPew`, con le stesse regole e scadenze dei Bit da spendere,
   tutte sue).
-- **La pagina**: «Accedi con Kick» accanto a Twitch (solo `user:read`); con
-  l'accesso a Kick i tasti dicono Kicks, monete e zaino di quella persona; il
-  lettore e la chat sono quelli di Kick se lo streamer è in onda su Kick.
+- **La pagina**: «Accedi con Kick» accanto a Twitch, solo se il canale è
+  collegato a Kick e Kick è configurato sul server. Kick non ha un permesso
+  per la sola chat: si chiedono `user:read` (chi sei) e `chat:write`
+  (scrivere a nome tuo), niente di più. Il giro è PKCE nella sessione e torna
+  dall'indirizzo registrato su Kick (`/auth/kick/callback`), che riconosce il
+  giro dello spettatore prima di qualunque cosa dello streamer; dal nome corto
+  `pew.<dominio>` passa dal ponte col segno, come Twitch. Con l'accesso a Kick
+  la persona è `k:<id>`: i tasti dicono Kicks (e mai Bit), monete e zaino di
+  quella persona, e si paga solo nella propria valuta, anche nei modi misti.
+  La chat della pagina scrive nella chat di Kick, col token dello spettatore
+  (Kick applica i suoi ban). Il lettore: «Guarda su Kick» accanto a «Guarda su
+  Twitch», col nome del canale su Kick (solo lettere, cifre, `_` e `-`: uno
+  slug storto non entra nella pagina).
 - **La chat di Kick**: `!pew CODICE` (monete), `!pew kicks` (il saldo),
   `!pew zaino`, `!pew <colpo>` (dalla chat, coi Kicks e lo zaino di quella
   persona), la presenza.
-- **I premi del canale su Kick**: ogni colpo può avere il suo premio su Kick
-  (`premioKick`), creato dal pannello; il codice nel riscatto spara il colpo,
-  e il riscatto si accetta o si rifiuta come su Twitch.
+- **I premi del canale su Kick**: un prezzo suo, in punti del canale di Kick
+  (`voce.puntiKick`: i punti di Kick non sono quelli di Twitch, e ognuno ha
+  il suo prezzo). I premi si tengono allineati come su Twitch, con la stessa
+  passata (`colpi-premi.js`, «I premi su Twitch»): uno per colpo o uno per
+  prezzo, i titoli presi col numero, i più economici prima, il nuovo tentativo
+  da solo; cambiano solo chi li crea (`premiKick`), i campi sulla voce
+  (`premioKick…`) e il titolo, che su Kick arriva a 50 caratteri. Kick non
+  dice un tetto di premi: si conta solo quando Kick dice di no. Il riscatto
+  passa dalla stessa porta (`_riscatto`): il codice, o l'ultima mira aperta
+  della persona di Kick, e il costo che coincide. **Chi chiude il riscatto lo
+  riconosce dall'id** (ULID su Kick, UUID su Twitch): un riscatto di Kick si
+  accetta o si rifiuta su Kick, mai su Twitch. Kick non documenta che un
+  riscatto rifiutato renda i punti: su Kick non lo si promette, né in chat né
+  sulla pagina. Niente modo misto coi punti di Kick per ora: il misto coi punti
+  è di Twitch.
 - **Il pannello**: la colonna Kicks nel listino, la scheda «I Kicks da
   spendere», «Crea il premio su Kick».
+
+**Lo stato.** Fatti: le persone, la valuta per persona e per mira, il regalo
+che paga, i Kicks da spendere, la chat di Kick, la pagina con l'accesso, la
+chat e il lettore di Kick. Da fare: i premi del canale su Kick e il pannello
+(la colonna Kicks, la scheda dei Kicks da spendere). Fino ad allora un colpo
+non ha un prezzo in Kicks, perché il pannello non lo chiede: chi entra con
+Kick paga con le monete e dallo zaino, e i Kicks regalati diventano Kicks da
+spendere con le regole di serie.
 
 ## La presenza
 
@@ -866,6 +896,17 @@ canale dice anche che con l'accesso a Twitch va bene qualunque testo.
   propria mira), e `verifica-colpi.mjs` nel browser (i filtri, il comando
   scritto senza accesso, «Paga» che toglie le monete e fa partire il colpo),
   con un difetto suo (la categoria che non filtra).
+- Su Kick: `test/unita/colpi-kick-pagina.test.mjs` (l'accesso che ricorda la
+  piattaforma e rinnova sulla sua, la chat verso l'API di Kick coi suoi
+  rifiuti, i soli permessi dello spettatore, il lettore con lo slug pulito, i
+  Kicks solo su un canale collegato e solo se un colpo ci si paga, si paga solo
+  nella propria valuta anche nei misti); `test/contratto/colpi-kick-accesso.test.mjs`
+  (la rotta, il ritorno che riconosce lo spettatore prima dello streamer, la
+  chat e il rinnovo sulla piattaforma giusta); `verifica-colpi.mjs` nel browser
+  (i due accessi, i due lettori coi loro nomi, il prezzo in Kicks solo dove
+  c'è, il saldo in Kicks e mai in Bit per chi è entrato con Kick; con
+  `--foto=<cartella>` le pagine fotografate), con due difetti suoi (il tasto
+  di Kick che manca, il saldo detto in Bit).
 - L'anteprima e la presenza: `colpi.test.mjs` (il modello della presenza, il
   servizio sul registro vero: una per diretta, il tetto suo, le stesse domande
   di un colpo, la ronda che la lascia; la porta che dà all'anteprima quello che

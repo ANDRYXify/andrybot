@@ -43,6 +43,9 @@ comandi diversi da quelli della riga italiana.
 
 ## 2026-10-28
 
+- Pewpewify su Kick: sulla pagina c'è «Accedi con Kick» accanto a Twitch, la chat della pagina scrive su Kick e c'è il lettore di Kick. Chi entra con Kick paga con le monete e dallo zaino. [vai: colpi]
+  en: Pewpewify on Kick: the page has «Log in with Kick» next to Twitch, the page chat writes on Kick and there's the Kick player. Whoever logs in with Kick pays with coins and from the backpack.
+  es: Pewpewify en Kick: la página tiene «Entra con Kick» junto a Twitch, el chat de la página escribe en Kick y está el reproductor de Kick. Quien entra con Kick paga con monedas y desde la mochila.
 - [importante] La presenza ora è una porta: chi non scrive «!presente» in diretta non guadagna monete, non mette Bit nel salvadanaio e non gioca. La frase di serie diventa «!presente». [vai: colpi]
   en: Check-in is now a gate: whoever doesn't type «!presente» during the stream earns no coins, puts no Bits in the piggy bank and can't play. The default phrase becomes «!presente».
   es: La presencia ahora es una puerta: quien no escribe «!presente» en directo no gana monedas, no mete Bits en la hucha y no juega. La frase de serie pasa a ser «!presente».

@@ -26,7 +26,7 @@ import * as diario from './diario.js';
 
 const log = makeLog('kick');
 
-export function montaKick(app, { requireLogin, currentUser, wrap, annotaIngresso, suMessaggio, suEvento, registra, diretta }) {
+export function montaKick(app, { requireLogin, currentUser, wrap, annotaIngresso, suMessaggio, suEvento, registra, diretta, spettatore }) {
   // LO STESSO EVENTO DUE VOLTE. Kick dice che Kick-Event-Message-Id e' la
   // chiave di idempotenza: lo stesso evento puo' arrivare di nuovo, e senza
   // ricordarlo un abbonamento o dei Kicks contavano due volte, e il bot
@@ -75,6 +75,9 @@ export function montaKick(app, { requireLogin, currentUser, wrap, annotaIngresso
   // non il cookie. Chi arriva senza un giro in corso non passa comunque.
   app.get('/auth/kick/callback', wrap(async (req, res) => {
     const esito = giro.chiudi(req, 'kick', req.query, { chi: 'Kick' });
+    // lo spettatore della pagina dei colpi (docs/COLPI.md, «Su Kick»): un giro suo,
+    // che non tocca il canale di nessuno
+    if (esito.giro?.spettatore && typeof spettatore === 'function') return spettatore(req, res, esito);
     const registrazione = !!esito.giro?.registrazione;
     const login = registrazione ? '' : (currentUser(req)?.login || '');
 

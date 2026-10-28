@@ -15,6 +15,9 @@
 import { randomBytes } from 'node:crypto';
 
 export const PERMESSI = Object.freeze(['user:write:chat']);
+// SU KICK (docs/COLPI.md, «Su Kick»): sapere chi e' e scrivere in chat a nome suo.
+// La persona e' k:<id>: i suoi Kicks, il suo zaino.
+export const PERMESSI_KICK = Object.freeze(['user:read', 'chat:write']);
 export const DURATA_MS = 24 * 3600_000;
 export const MAX_SPETTATORI = 5000;
 const MARGINE_MS = 5 * 60_000;
@@ -26,24 +29,24 @@ export function creaAccessi({ rinnova = async () => null, ora = () => Date.now()
     for (const [k, v] of chiavi) if (adesso - v.dal > DURATA_MS) chiavi.delete(k);
     while (chiavi.size > MAX_SPETTATORI) chiavi.delete(chiavi.keys().next().value);
   }
-  function metti({ id, login, nome, token, refresh = '', scade = 0 }) {
+  function metti({ id, login, nome, token, refresh = '', scade = 0, piattaforma = 'twitch' }) {
     pota();
     const k = randomBytes(24).toString('base64url');
-    chiavi.set(k, { id: String(id), login: String(login).toLowerCase(), nome: String(nome || login).slice(0, 40), token, refresh, scade: Number(scade) || 0, dal: ora() });
+    chiavi.set(k, { id: String(id), login: String(login).toLowerCase(), nome: String(nome || login).slice(0, 40), token, refresh, scade: Number(scade) || 0, dal: ora(), piattaforma: piattaforma === 'kick' ? 'kick' : 'twitch' });
     return k;
   }
   // chi e' (senza il token): per la pagina e per la mira
   function chi(k) {
     const v = typeof k === 'string' ? chiavi.get(k) : null;
     if (!v || ora() - v.dal > DURATA_MS) { if (v) chiavi.delete(k); return null; }
-    return { id: v.id, login: v.login, nome: v.nome };
+    return { id: v.id, login: v.login, nome: v.nome, piattaforma: v.piattaforma };
   }
   // il token buono adesso, rinnovato se sta per scadere; null se non c'e' piu'
   async function token(k) {
     const v = typeof k === 'string' ? chiavi.get(k) : null;
     if (!v || !chi(k)) return null;
     if (v.scade && v.scade - ora() < MARGINE_MS) {
-      const t = v.refresh ? await rinnova(v.refresh).catch(() => null) : null;
+      const t = v.refresh ? await rinnova(v.refresh, v.piattaforma).catch(() => null) : null;
       if (!t?.accessToken) { chiavi.delete(k); return null; }
       Object.assign(v, { token: t.accessToken, refresh: t.refreshToken || v.refresh, scade: t.expiresAt || 0 });
     }
@@ -89,6 +92,25 @@ export function creaPonti({ ora = () => Date.now() } = {}) {
 // Il messaggio in chat, con l'API di Twitch e il token dello spettatore.
 // Torna { ok } o { ok:false, motivo } con le parole di Twitch (bannato, chat
 // solo per chi segue, messaggio rifiutato da AutoMod...).
+// Su Kick: lo stesso, con l'API di Kick (type: user, a nome di chi ha il token).
+export async function mandaInChatKick({ token, broadcasterKickId, testo, fetcher = fetch }) {
+  const content = String(testo || '').replace(/[\u0000-\u001f]/g, ' ').trim().slice(0, 500);
+  if (!content) return { ok: false, motivo: 'vuoto' };
+  if (!/^\d{1,20}$/.test(String(broadcasterKickId || ''))) return { ok: false, motivo: 'canale' };
+  try {
+    const r = await fetcher('https://api.kick.com/public/v1/chat', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({ content, type: 'user', broadcaster_user_id: Number(broadcasterKickId) }),
+      signal: AbortSignal.timeout(10_000),
+    });
+    const j = await r.json().catch(() => null);
+    if (r.status === 401) return { ok: false, motivo: 'accesso', scaduto: true };
+    if (!r.ok) return { ok: false, motivo: String(j?.message || ('HTTP ' + r.status)).slice(0, 200) };
+    return { ok: true };
+  } catch (e) { return { ok: false, motivo: String(e?.message || e).slice(0, 200) }; }
+}
+
 export async function mandaInChat({ clientId, token, broadcasterId, senderId, testo, fetcher = fetch }) {
   const message = String(testo || '').replace(/[\u0000-\u001f]/g, ' ').trim().slice(0, 500);
   if (!message) return { ok: false, motivo: 'vuoto' };

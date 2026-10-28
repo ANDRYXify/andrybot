@@ -47,8 +47,9 @@ export function configurato() {
 export { creaPkce };
 
 // Dove mandare lo streamer per autorizzare.
-export function urlAutorizzazione({ challenge, state, conModerazione = false, conDiretta = false }) {
-  const scope = [...SCOPE, ...(conModerazione ? SCOPE_MOD : []), ...(conDiretta ? SCOPE_DIRETTA : [])];
+// `scope`, se c'e', e' tutto quello che si chiede (lo spettatore dei colpi: solo il suo)
+export function urlAutorizzazione({ challenge, state, conModerazione = false, conDiretta = false, scope: soli = null }) {
+  const scope = soli || [...SCOPE, ...(conModerazione ? SCOPE_MOD : []), ...(conDiretta ? SCOPE_DIRETTA : [])];
   const p = new URLSearchParams({
     response_type: 'code',
     client_id: config.kickClientId,

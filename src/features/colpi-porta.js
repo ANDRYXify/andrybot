@@ -5,7 +5,7 @@
 // alle richieste e le intestazioni; il cancello verifica-colpi.mjs serve la
 // pagina vera con questa stessa porta, cosi' quello che si collauda e' quello
 // che gira.
-import { normalizza, voceDi, metodiDi, mistiDi, titoloPremio, titoloPremioMisto, categoriaDi, quandoScade, parolaChat } from './colpi.js';
+import { normalizza, voceDi, metodiDi, mistiDi, titoloPremio, titoloPremioMisto, categoriaDi, quandoScade, parolaChat, valutaDi as valutaPersona } from './colpi.js';
 import { monetaDa } from './moneta.js';
 import { MIRABILE } from './colpi-servizio.js';
 import { normLancio, oggettoDi, disegnoDi, payloadLancio, durataLancio } from './lanci.js';
@@ -23,7 +23,8 @@ const FILE_SEMPLICE = (f) => /^[A-Za-z0-9._-]+$/.test(f) && !f.includes('..');
 
 export const ID_MIRA = /^[0-9a-f]{18}$/;
 
-export function creaPortaColpi({ servizio, registro, streamers, effettoDi, mezziEuro, apriPagamento, inOnda = () => false, overlay = () => false, fusoDi = () => 'Europe/Rome', ora = () => Date.now() }) {
+// `kick(login)`: il canale su Kick, se lo streamer l'ha collegato ({ slug, live }), se no null
+export function creaPortaColpi({ servizio, registro, streamers, effettoDi, mezziEuro, apriPagamento, inOnda = () => false, overlay = () => false, fusoDi = () => 'Europe/Rome', ora = () => Date.now(), kick = () => null }) {
   const aperti = (login) => {
     const s = streamers.get(login);
     const cfg = normalizza(s?.settings?.colpi);
@@ -32,13 +33,14 @@ export function creaPortaColpi({ servizio, registro, streamers, effettoDi, mezzi
   const valutaDi = (s) => s?.settings?.donazioni?.valuta || 'EUR';
   // quello che la voce si lascia pagare adesso: gli euro col conto pronto, i
   // punti col premio creato su Twitch, i Bit sempre
-  const metodiVivi = (v, euro) => metodiDi(v).filter((m) => (m === 'euro' ? euro.length > 0 : m === 'punti' ? !!v.premio : m === 'monete' ? !!servizio.conMonete : true));
+  // i Kicks solo se il canale e' su Kick: i regali arrivano li'
+  const metodiVivi = (v, euro, conKick = false) => metodiDi(v).filter((m) => (m === 'euro' ? euro.length > 0 : m === 'punti' ? !!v.premio : m === 'monete' ? !!servizio.conMonete : m === 'kicks' ? conKick : true));
   // `pagabile`: la pagina mostra i modi di pagare solo finche' e' vero, e li
   // toglie appena la diretta o l'overlay vanno via (servizio.consegnabile)
   const statoMira = (m) => {
     const fermo = m.stato === 'attesa' ? (m.dopo ? servizio.comprabile(m.login, m.voce) : servizio.consegnabile(m.login, m.voce)) : '';
     return { id: m.id, stato: m.stato, codice: m.codice, voce: m.voce, nome: m.nome, x: m.x, y: m.y, prezzi: m.prezzi, versati: m.versati || 0,
-      scade: m.scade, metodo: m.metodo || '', inPagamento: m.stato === 'attesa' && m.riferimento !== '',
+      scade: m.scade, metodo: m.metodo || '', valuta: m.valuta || '', inPagamento: m.stato === 'attesa' && m.riferimento !== '',
       pagabile: m.stato === 'attesa' && !fermo && (m.scade > ora() || (m.versati || 0) > 0), fermo, mia: !!m.spettatore, dopo: !!m.dopo,
       // le monete gia' pagate di un modo misto: si aspetta il resto (senza chi e la ricevuta)
       acconto: m.acconto ? { modo: m.acconto.modo, monete: m.acconto.monete, resto: m.acconto.resto } : null };
@@ -48,19 +50,20 @@ export function creaPortaColpi({ servizio, registro, streamers, effettoDi, mezzi
     const k = aperti(login);
     if (!k) return null;
     const euro = mezziEuro(k.s, login);
+    const suKick = kick(login);
     const voci = [];
     for (const v of k.cfg.voci) {
       const eff = v.attiva ? effettoDi(login, v.comando) : null;
-      const metodi = eff && MIRABILE(eff) ? metodiVivi(v, euro) : [];
+      const metodi = eff && MIRABILE(eff) ? metodiVivi(v, euro, !!suKick) : [];
       // un modo misto si offre solo se si puo' finire: le monete del canale ci
-      // sono, e per i punti il premio misto e' su Twitch
-      const misti = eff && MIRABILE(eff) && servizio.conMonete ? mistiDi(v).filter((x) => x.modo === 'bit' || !!v.premioMisto) : [];
+      // sono, per i punti il premio misto e' su Twitch, per i Kicks il canale e' su Kick
+      const misti = eff && MIRABILE(eff) && servizio.conMonete ? mistiDi(v).filter((x) => x.modo === 'bit' || (x.modo === 'kicks' && !!suKick) || (x.modo === 'punti' && !!v.premioMisto)) : [];
       if (!metodi.length && !misti.length) continue;
       // un lancio mostra il suo disegno: lo stesso file che l'overlay tira, quindi
       // l'ombra della pagina e' grande come il colpo (docs/LANCI.md)
       const disegno = eff.tipo === 'lancio' ? spriteLancio(eff) : '';
       voci.push({ id: v.id, nome: v.nome, tipo: eff.tipo === 'lancio' ? 'immagine' : eff.tipo, scala: v.scala, anteprima: disegno || `/u/${login}/colpo/anteprima/${encodeURIComponent(v.id)}`,
-        metodi, prezzi: Object.fromEntries(['euro', 'punti', 'bit', 'monete'].map((x) => [x, metodi.includes(x) ? v[x] : 0])),
+        metodi, prezzi: Object.fromEntries(['euro', 'punti', 'bit', 'monete', 'kicks'].map((x) => [x, metodi.includes(x) ? v[x] : 0])),
         premio: metodi.includes('punti') ? (v.premioNome || titoloPremio(v)) : '', prova: provaDi(login, v, eff), categoria: categoriaDi(k.cfg, v, tipoDi(eff)),
         misti: misti.map((x) => ({ ...x, premio: x.modo === 'punti' ? (v.premioMistoNome || titoloPremioMisto(v)) : '' })),
         // si compra per dopo (lo zaino): lo dice il servizio, che sa anche se e' in pausa
@@ -72,6 +75,9 @@ export function creaPortaColpi({ servizio, registro, streamers, effettoDi, mezzi
     const categorie = k.cfg.categorie.filter((c) => voci.some((v) => v.categoria === c.id));
     return { live: !!inOnda(login), overlay: !!overlay(login), pausa: k.cfg.pausa, zone: k.cfg.zone, conNome: k.cfg.conNome, valuta: valutaDi(k.s), mezzi: euro, voci,
       categorie, comando: k.cfg.comando, moneta: monetaDa(k.s.settings).nome, bitPew: !!servizio.conBitPew?.(login),
+      // i Kicks da spendere si offrono se qui c'e' qualcosa da pagarci: un colpo
+      // con un prezzo in Kicks (pieno o misto); se no la pagina prometterebbe il falso
+      kicksPew: !!suKick && !!servizio.conKicksPew?.(login) && voci.some((x) => x.prezzi.kicks > 0 || (x.misti || []).some((m) => m.modo === 'kicks')), kick: suKick ? { slug: suKick.slug || '', live: !!suKick.live } : null,
       zaino: servizio.conZaino?.(login) ? { con: k.cfg.zaino.con } : null, quadro: k.cfg.quadro };
   }
 
@@ -186,10 +192,14 @@ export function creaPortaColpi({ servizio, registro, streamers, effettoDi, mezzi
   // scadono presto, detti nella lingua di chi legge) e le monete del canale
   function saldi(login, io, lingua = 'it') {
     if (!aperti(login) || !io?.id) return null;
-    const conBit = !!servizio.conBitPew?.(login);
-    const sc = conBit ? servizio.scadonoBit?.(login, io.id) : null;
+    // il saldo da spendere e' nella valuta della persona: Kicks per chi e' entrato con Kick, Bit per chi con Twitch
+    const valuta = valutaPersona(io.id);
+    const conDs = valuta === 'kicks' ? !!kick(login) && !!servizio.conKicksPew?.(login) : !!servizio.conBitPew?.(login);
+    const sc = conDs ? servizio.scadonoBit?.(login, io.id) : null;
+    const ds = conDs ? servizio.saldoBit(login, io.id) : null;
     return {
-      bit: conBit ? servizio.saldoBit(login, io.id) : null,
+      valuta, daSpendere: ds,
+      bit: valuta === 'bit' ? ds : null, kicks: valuta === 'kicks' ? ds : null,
       monete: servizio.conMonete && io.login ? servizio.saldoMonete(login, io.login) : null,
       ...(sc ? { scadono: { quanti: sc.quanti, quando: quandoScade(sc.scade, lingua, fusoDi(login)) } } : {}),
       // lo zaino: quanti colpi di ogni voce, e fin quando vale il primo che scade
@@ -203,7 +213,7 @@ export function creaPortaColpi({ servizio, registro, streamers, effettoDi, mezzi
   // un tocco che non puo' riuscire non apre nemmeno la mira.
   // Con `dopo` il colpo si compra per lo zaino (niente punto); con 'zaino' si
   // lancia uno di quelli che si hanno nello zaino.
-  const CON = ['bit', 'monete', 'misto-bit', 'zaino'];
+  const CON = ['bit', 'kicks', 'monete', 'misto-bit', 'misto-kicks', 'zaino'];
   function lancia(login, corpo = {}, chiave = '', io = null) {
     const k = aperti(login);
     if (!k) return { ok: false, motivo: 'spento' };
@@ -211,8 +221,10 @@ export function creaPortaColpi({ servizio, registro, streamers, effettoDi, mezzi
     const con = String(corpo.con || '');
     const dopo = corpo.dopo === true;
     const v = voceDi(k.cfg, String(corpo.voce || ''));
-    const misto = v ? mistiDi(v).find((x) => x.modo === 'bit') : null;
-    if (!v || !CON.includes(con) || (dopo && con === 'zaino')) return { ok: false, motivo: 'voce' };
+    // Bit o Kicks: quelli della persona, mai gli altri
+    const vd = valutaPersona(io.id);
+    const misto = v ? mistiDi(v).find((x) => x.modo === vd) : null;
+    if (!v || !CON.includes(con) || (dopo && con === 'zaino') || (/^(misto-)?(bit|kicks)$/.test(con) && con.replace('misto-', '') !== vd)) return { ok: false, motivo: 'voce' };
     if (con === 'zaino') {
       if (!servizio.zainoDi(login, io.id).some((x) => x.voce === v.id)) return { ok: false, motivo: 'vuoto' };
       const r = mira(login, corpo, chiave, io);
@@ -221,9 +233,9 @@ export function creaPortaColpi({ servizio, registro, streamers, effettoDi, mezzi
       return p.esito === 'pagato' ? { ok: true, mira: statoMira(registro.get(r.mira.id)) } : { ok: false, motivo: p.esito === 'fermo' ? p.motivo : p.esito };
     }
     const s = saldi(login, io) || {};
-    const serve = con === 'bit' ? { bit: v.bit } : con === 'monete' ? { monete: v.monete } : misto ? { monete: misto.monete, bit: misto.resto } : null;
+    const serve = con === vd ? { [vd]: v[vd] } : con === 'monete' ? { monete: v.monete } : misto ? { monete: misto.monete, [vd]: misto.resto } : null;
     if (!serve || Object.values(serve).some((n) => !(n > 0))) return { ok: false, motivo: 'voce' };
-    if ((serve.bit && s.bit == null) || (serve.monete && s.monete == null)) return { ok: false, motivo: 'spento' };
+    if ((serve[vd] && s[vd] == null) || (serve.monete && s.monete == null)) return { ok: false, motivo: 'spento' };
     for (const [quale, n] of Object.entries(serve)) if (s[quale] < n) return { ok: false, motivo: 'pochi', serve: n, saldo: s[quale], quale };
     const r = mira(login, corpo, chiave, io);
     if (!r.ok) return r;
