@@ -26103,6 +26103,19 @@ async function caricaPremi() {
 let _clZone = [];
 let _clEffetti = [];
 let _clPunto = { x: 12, y: 82 };
+let _clChatPunto = { x: 50, y: 50 };
+let _clChatCon = [];
+let _clQ = { l: 1920, a: 1080 };
+const _CL_CHAT_MEZZI = ['zaino', 'monete', 'bit', 'misto'];
+const _CL_QUADRI = [[1920, 1080, '1920×1080 (16:9)'], [1280, 720, '1280×720 (16:9)'], [2560, 1440, '2560×1440 (16:9)'], [3840, 2160, '3840×2160 (16:9)'], [1080, 1920, () => L('1080×1920 (verticale)', '1080×1920 (vertical)', '1080×1920 (vertical)')], [2560, 1080, '2560×1080 (21:9)'], [1440, 1080, '1440×1080 (4:3)']];
+const _clPx = (pct, lato) => Math.round(Number(pct) * lato / 100);
+const _clPct = (px, lato) => Math.round(Math.min(100, Math.max(0, Number(px) / lato * 100)) * 100) / 100;
+function _clParolaChat(comando) {
+  const w = String(comando || '').toLowerCase();
+  const re = /(?:^|[^A-Za-z0-9])([ABCDEFGHJKMNPQRTUVWXY346789]{5})(?![A-Za-z0-9])/i;
+  const codice = (t) => { for (let m, da = 0; (m = re.exec(t.slice(da))); da += m.index + m[0].length) if (/\d/.test(m[1]) && /[a-z]/i.test(m[1])) return true; return false; };
+  return !w || ['bit', 'bits', 'zaino', 'backpack', 'mochila'].includes(w) || codice(w) ? '' : w;
+}
 let _clCat = [];
 const _CL_CAT_SERIE = ['lanci', 'adesivi', 'spaventi', 'media'];
 const _clNomeCat = (c) => c.nome || ({ lanci: L('Lanci', 'Throws', 'Lanzamientos'), adesivi: L('Adesivi', 'Stickers', 'Pegatinas'), spaventi: L('Spaventi', 'Jumpscares', 'Sustos'), media: L('Immagini e video', 'Images and videos', 'Imágenes y vídeos') })[c.id] || c.id;
@@ -26180,6 +26193,22 @@ function pannelloColpi() {
       <div class="riga-interruttore spazio-sopra">
         <label class="interruttore"><input type="checkbox" id="cl-nome" ${c.conNome !== false ? 'checked' : ''}><span class="levetta"></span></label>
         <span class="etichetta-stato">${L('Il nome di chi colpisce compare sotto l\'effetto', 'The hitter\'s name shows under the effect', 'El nombre de quien golpea aparece bajo el efecto')}</span>
+      </div>
+      <h4 class="spazio-sopra">${L('Il quadro della diretta', 'The stream frame', 'El cuadro del directo')}</h4>
+      <p class="suggerimento">${L('La risoluzione della tua scena, quella dell\'overlay. La pagina dei colpi ne prende le proporzioni e i punti si contano in questi pixel.', 'Your scene resolution, the overlay\'s. The hits page takes its proportions and spots are counted in these pixels.', 'La resolución de tu escena, la del overlay. La página de golpes toma sus proporciones y los puntos se cuentan en estos píxeles.')}</p>
+      <div class="griglia-campi">
+        <div>
+          <label class="campo" for="cl-q-tipo">${L('Formato', 'Format', 'Formato')}</label>
+          <select id="cl-q-tipo">${_CL_QUADRI.map(([l, a, n]) => `<option value="${l}x${a}">${esc(typeof n === 'function' ? n() : n)}</option>`).join('')}<option value="altro">${L('Altro', 'Other', 'Otro')}</option></select>
+        </div>
+        <div>
+          <label class="campo" for="cl-q-l">${L('Larghezza (px)', 'Width (px)', 'Ancho (px)')}</label>
+          <input type="number" id="cl-q-l" min="160" max="8192" step="1" value="${Number(c.quadro?.l) || 1920}">
+        </div>
+        <div>
+          <label class="campo" for="cl-q-a">${L('Altezza (px)', 'Height (px)', 'Alto (px)')}</label>
+          <input type="number" id="cl-q-a" min="160" max="8192" step="1" value="${Number(c.quadro?.a) || 1080}">
+        </div>
       </div>
       <h4 class="spazio-sopra">${L('Zone protette', 'Protected areas', 'Zonas protegidas')}</h4>
       <p class="suggerimento">${L('Trascina sul quadro per coprire la tua webcam, la chat o quello che non vuoi colpito. Tocca una zona per toglierla.', 'Drag on the frame to cover your webcam, the chat or anything you don\'t want hit. Tap an area to remove it.', 'Arrastra sobre el cuadro para cubrir tu webcam, el chat o lo que no quieras que golpeen. Toca una zona para quitarla.')}</p>
@@ -26328,6 +26357,48 @@ ${_clScadenzaHtml('cl-bp', c.bitPew?.scadenza)}
       <p class="spazio-sopra"><button class="btn" id="cl-zn-salva">${L('Salva', 'Save', 'Guardar')}</button></p>
     </div>
 
+    <div class="carta" id="cl-chat">
+      <h3>${_hIco(ICO.chat)}${L('Dalla chat', 'From chat', 'Desde el chat')}</h3>
+      <div class="riga-interruttore">
+        <label class="interruttore"><input type="checkbox" id="cl-ch-attivo" ${c.chat?.attivo ? 'checked' : ''}><span class="levetta"></span></label>
+        <span class="etichetta-stato">${L('I colpi si lanciano anche dalla chat di Twitch', 'Hits can also be launched from Twitch chat', 'Los golpes también se lanzan desde el chat de Twitch')}</span>
+      </div>
+      <p class="suggerimento">${L(`Chi scrive «!${esc(c.comando || 'pew')} &lt;colpo&gt;» lo lancia nel punto qui sotto e lo paga coi saldi che ha. Può dire anche come: «!${esc(c.comando || 'pew')} torta monete», «… bit», «… zaino», «… misto». Dalla pagina invece si mira dove si vuole, al pixel.`, `Whoever types «!${esc(c.comando || 'pew')} &lt;hit&gt;» launches it at the spot below and pays from their balances. They can also say how: «!${esc(c.comando || 'pew')} cake monete», «… bit», «… zaino», «… misto». On the page instead they aim wherever they want, to the pixel.`, `Quien escribe «!${esc(c.comando || 'pew')} &lt;golpe&gt;» lo lanza en el punto de abajo y lo paga con sus saldos. Puede decir también cómo: «!${esc(c.comando || 'pew')} tarta monete», «… bit», «… zaino», «… misto». Desde la página en cambio se apunta donde se quiere, al píxel.`)}</p>
+      <h4 class="spazio-sopra">${L('Dove compare', 'Where it shows up', 'Dónde aparece')}</h4>
+      <p class="suggerimento">${L('Tocca il quadro, o scrivi i pixel. Con le frecce sposti di un pixel (Maiusc: dell\'1%). Ogni colpo, nel listino, può avere il suo punto. Le zone protette non si colpiscono.', 'Tap the frame, or type the pixels. Arrow keys move one pixel (Shift: 1%). Each hit, in the price list, can have its own spot. Protected areas can\'t be hit.', 'Toca el cuadro, o escribe los píxeles. Las flechas mueven un píxel (Mayús: un 1%). Cada golpe, en la lista, puede tener su punto. Las zonas protegidas no se golpean.')}</p>
+      <div class="cl-quadro cl-quadro-punto" id="cl-ch-quadro" role="application" aria-label="${esc(L('Quadro della diretta: tocca dove compaiono i colpi dalla chat', 'Stream frame: tap where chat hits show up', 'Cuadro del directo: toca dónde aparecen los golpes del chat'))}" tabindex="0"></div>
+      <div class="griglia-campi spazio-sopra">
+        <div>
+          <label class="campo" for="cl-ch-x">X (px)</label>
+          <input type="number" id="cl-ch-x" min="0" step="1">
+        </div>
+        <div>
+          <label class="campo" for="cl-ch-y">Y (px)</label>
+          <input type="number" id="cl-ch-y" min="0" step="1">
+        </div>
+      </div>
+      <p class="pt-dice" id="cl-ch-dice" aria-live="polite"></p>
+      <h4 class="spazio-sopra">${L('Come si paga in chat, in quest\'ordine', 'How chat pays, in this order', 'Cómo se paga en el chat, en este orden')}</h4>
+      <p class="suggerimento">${L('Senza dire come, vale il primo che basta. Quelli spenti in chat non si usano nemmeno chiedendoli.', 'Without saying how, the first one that is enough applies. The ones turned off can\'t be used in chat even on request.', 'Sin decir cómo, vale el primero que alcance. Los apagados no se usan en el chat ni pidiéndolos.')}</p>
+      <div id="cl-ch-mezzi" class="cl-ch-mezzi"></div>
+      <h4 class="spazio-sopra">${L('La risposta in chat', 'The chat reply', 'La respuesta en el chat')}</h4>
+      <div class="riga-check"><input type="checkbox" id="cl-ch-rispondi" ${c.chat?.rispondi !== false ? 'checked' : ''}><label for="cl-ch-rispondi">${L('Il bot risponde a chi lancia dalla chat', 'The bot replies to whoever launches from chat', 'El bot responde a quien lanza desde el chat')}</label></div>
+      <div class="griglia-campi cl-bp-campi">
+        <div>
+          <label class="campo" for="cl-ch-attesa">${L('Secondi fra due rifiuti alla stessa persona', 'Seconds between two refusals to the same person', 'Segundos entre dos rechazos a la misma persona')}</label>
+          <input type="number" id="cl-ch-attesa" min="0" max="3600" value="${Number.isFinite(Number(c.chat?.attesaSec)) ? Number(c.chat.attesaSec) : 30}">
+        </div>
+      </div>
+      ${[['ok', L('Quando parte', 'When it launches', 'Cuando sale'), L('{nome} {colpo} lanciato ({prezzo})', '{nome} {colpo} launched ({prezzo})', '{nome} {colpo} lanzado ({prezzo})')],
+    ['pochi', L('Quando il saldo non basta', 'When the balance isn\'t enough', 'Cuando el saldo no alcanza'), L('{nome} per {colpo} servono {serve}: hai {saldo}. Tutto su {pagina}', '{nome} {colpo} needs {serve}: you have {saldo}. All on {pagina}', '{nome} {colpo} necesita {serve}: tienes {saldo}. Todo en {pagina}')],
+    ['attesa', L('Quando deve aspettare', 'When they must wait', 'Cuando debe esperar'), L('{nome} il prossimo colpo fra {sec} s', '{nome} next hit in {sec}s', '{nome} el próximo golpe en {sec} s')],
+    ['no', L('Quando adesso non può partire', 'When it can\'t go now', 'Cuando ahora no puede salir'), L('{nome} {colpo} adesso non parte: {perche}', '{nome} {colpo} can\'t go now: {perche}', '{nome} {colpo} ahora no sale: {perche}')]].map(([k, eti, ph]) => `
+      <label class="campo" for="cl-ch-r-${k}">${eti}</label>
+      <input type="text" id="cl-ch-r-${k}" maxlength="200" value="${esc(c.chat?.risposte?.[k] || '')}" placeholder="${esc(ph)}">`).join('')}
+      <p class="suggerimento">${L('Vuote: quelle di serie, nella lingua della chat. Puoi usare {nome}, {colpo}, {prezzo}, {serve}, {saldo}, {sec}, {pagina} e {perche} (perché non parte).', 'Empty: the default ones, in the chat language. You can use {nome}, {colpo}, {prezzo}, {serve}, {saldo}, {sec}, {pagina} and {perche} (why it can\'t go).', 'Vacías: las de serie, en el idioma del chat. Puedes usar {nome}, {colpo}, {prezzo}, {serve}, {saldo}, {sec}, {pagina} y {perche} (por qué no sale).')}</p>
+      <p class="spazio-sopra"><button class="btn" id="cl-ch-salva">${L('Salva', 'Save', 'Guardar')}</button></p>
+    </div>
+
     <div class="carta">
       <h3>${_hIco(ICO.orologio)}${L('Gli ultimi colpi', 'Latest hits', 'Últimos golpes')}</h3>
       <div id="cl-ultimi"><p class="tenue">${L('Ancora nessuno.', 'None yet.', 'Ninguno todavía.')}</p></div>
@@ -26368,6 +26439,13 @@ function _clRiga(v) {
       <label class="cl-c cl-zv-dopo"><span>${L('Quanto', 'How long', 'Cuánto')}</span><input data-k="zaino-quanti" type="number" min="1" max="1000" step="1" value="${Number(v.zaino?.quanti) || 30}"></label>
       <label class="cl-c cl-zv-dopo"><span>${L('Unità', 'Unit', 'Unidad')}</span><select data-k="zaino-unita">${[['ore', L('ore', 'hours', 'horas')], ['giorni', L('giorni', 'days', 'días')], ['settimane', L('settimane', 'weeks', 'semanas')], ['mesi', L('mesi', 'months', 'meses')], ['anni', L('anni', 'years', 'años')]].map(([k, t]) => `<option value="${k}"${(v.zaino?.unita || 'giorni') === k ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></label>
     </div>
+    <div class="cl-chat-voce" data-modo="${esc(v.chat?.modo || 'si')}">
+      <span class="cl-misti-t">${L('Chat', 'Chat', 'Chat')}</span>
+      <label class="cl-c"><span>${L('Dalla chat', 'From chat', 'Desde el chat')}</span><select data-k="chat-modo">${[['si', L('nel punto di tutti', 'at the shared spot', 'en el punto de todos')], ['punto', L('nel suo punto…', 'at its own spot…', 'en su propio punto…')], ['no', L('non si lancia', 'not from chat', 'no se lanza')]].map(([k, n]) => `<option value="${k}"${(v.chat?.modo || 'si') === k ? ' selected' : ''}>${n}</option>`).join('')}</select></label>
+      <label class="cl-c cl-cv-punto"><span>X (px)</span><input data-k="chat-x" type="number" min="0" step="1" value="${_clPx(v.chat?.x ?? 50, _clQ.l)}"></label>
+      <label class="cl-c cl-cv-punto"><span>Y (px)</span><input data-k="chat-y" type="number" min="0" step="1" value="${_clPx(v.chat?.y ?? 50, _clQ.a)}"></label>
+      <span class="cl-cv-parola suggerimento" data-parola></span>
+    </div>
     <p class="cl-premio suggerimento" data-premio></p>
   </div>`;
 }
@@ -26405,6 +26483,7 @@ function _clLeggi() {
       misti: { bit: { monete: Number(q('misto-bit-monete').value) || 0, bit: Number(q('misto-bit-bit').value) || 0 },
         punti: { monete: Number(q('misto-punti-monete').value) || 0, punti: Number(q('misto-punti-punti').value) || 0 } },
       zaino: { modo: q('zaino-modo')?.value || 'come', quanti: Number(q('zaino-quanti')?.value) || 30, unita: q('zaino-unita')?.value || 'giorni' },
+      chat: { modo: q('chat-modo')?.value || 'si', x: _clPct(q('chat-x')?.value, _clQ.l), y: _clPct(q('chat-y')?.value, _clQ.a) },
       scala: Number(q('scala').value) || 100, attiva: q('attiva').checked };
   }).filter((v) => v.comando);
   return {
@@ -26416,6 +26495,8 @@ function _clLeggi() {
     presenza: _clPresenzaLeggi(),
     bitPew: _clBitLeggi(),
     zaino: _clZainoLeggi(),
+    chat: _clChatLeggi(),
+    quadro: { ..._clQ },
     titolo: (document.getElementById('cl-titolo')?.value || '').trim(),
     dida: (document.getElementById('cl-dida')?.value || '').trim(),
     zone: _clZone.map((z) => ({ ...z })),
@@ -26423,6 +26504,120 @@ function _clLeggi() {
     categorie: _clCat.map((c) => ({ ...c })),
     comando: (document.getElementById('cl-comando')?.value || '').trim().replace(/^!/, ''),
   };
+}
+
+function _clChatLeggi() {
+  const v = (id) => document.getElementById(id);
+  return {
+    attivo: !!v('cl-ch-attivo')?.checked,
+    x: _clChatPunto.x, y: _clChatPunto.y,
+    con: _clChatCon.filter((m) => m.on).map((m) => m.k),
+    rispondi: !!v('cl-ch-rispondi')?.checked,
+    attesaSec: Number(v('cl-ch-attesa')?.value),
+    risposte: Object.fromEntries(['ok', 'pochi', 'attesa', 'no'].map((k) => [k, (v('cl-ch-r-' + k)?.value || '').trim()])),
+  };
+}
+
+const _clProtetto = (p) => _clZone.some((z) => p.x >= z.x && p.x <= z.x + z.w && p.y >= z.y && p.y <= z.y + z.h);
+function _clChatQuadro() {
+  const q = document.getElementById('cl-ch-quadro');
+  if (!q) return;
+  q.innerHTML = _clZone.map((z) => `<span class="cl-zona" style="left:${z.x}%;top:${z.y}%;width:${z.w}%;height:${z.h}%"></span>`).join('')
+    + `<span class="cl-punto${_clProtetto(_clChatPunto) ? ' no' : ''}" style="left:${_clChatPunto.x}%;top:${_clChatPunto.y}%"></span>`;
+  const x = document.getElementById('cl-ch-x'), y = document.getElementById('cl-ch-y');
+  if (x && document.activeElement !== x) { x.max = String(_clQ.l); x.value = String(_clPx(_clChatPunto.x, _clQ.l)); }
+  if (y && document.activeElement !== y) { y.max = String(_clQ.a); y.value = String(_clPx(_clChatPunto.y, _clQ.a)); }
+  const d = document.getElementById('cl-ch-dice');
+  if (d) {
+    d.textContent = _clProtetto(_clChatPunto) ? L('Questo punto è in una zona protetta: dalla chat non partirebbe niente. Spostalo.', 'This spot is in a protected area: nothing would launch from chat. Move it.', 'Este punto está en una zona protegida: desde el chat no saldría nada. Muévelo.')
+      : L(`I colpi dalla chat compaiono col centro a X ${_clPx(_clChatPunto.x, _clQ.l)}, Y ${_clPx(_clChatPunto.y, _clQ.a)} px.`, `Chat hits show up centered at X ${_clPx(_clChatPunto.x, _clQ.l)}, Y ${_clPx(_clChatPunto.y, _clQ.a)} px.`, `Los golpes del chat aparecen centrados en X ${_clPx(_clChatPunto.x, _clQ.l)}, Y ${_clPx(_clChatPunto.y, _clQ.a)} px.`);
+    d.classList.toggle('ko', _clProtetto(_clChatPunto));
+  }
+}
+function _clChatMezzi() {
+  const box = document.getElementById('cl-ch-mezzi');
+  if (!box) return;
+  const nomi = { zaino: L('Dallo zaino, se ce l\'ha (è già pagato)', 'From the backpack, if they have it (already paid)', 'De la mochila, si lo tiene (ya está pagado)'), monete: esc(_clMoneta().replace(/^./, (x) => x.toUpperCase())), bit: L('Bit da spendere', 'Bits to spend', 'Bits para gastar'), misto: L(`Misto: ${esc(_clMoneta())} + Bit da spendere`, `Mixed: ${esc(_clMoneta())} + Bits to spend`, `Mixto: ${esc(_clMoneta())} + Bits para gastar`) };
+  box.innerHTML = _clChatCon.map((m, i) => `<div class="cl-ch-mezzo" data-i="${i}">
+    <input type="checkbox" id="cl-ch-m-${m.k}" ${m.on ? 'checked' : ''}><label for="cl-ch-m-${m.k}">${nomi[m.k]}</label>
+    <button type="button" class="btn secondario mini ico-sola" data-m-su ${i ? '' : 'disabled'} aria-label="${esc(L('Sposta su', 'Move up', 'Subir'))}" title="${esc(L('Sposta su', 'Move up', 'Subir'))}">${_bIco('<path d="m18 15-6-6-6 6"/>')}</button>
+    <button type="button" class="btn secondario mini ico-sola" data-m-giu ${i < _clChatCon.length - 1 ? '' : 'disabled'} aria-label="${esc(L('Sposta giù', 'Move down', 'Bajar'))}" title="${esc(L('Sposta giù', 'Move down', 'Bajar'))}">${_bIco('<path d="m6 9 6 6 6-6"/>')}</button>
+  </div>`).join('');
+}
+function _clChatParole() {
+  const cmd = (document.getElementById('cl-comando')?.value || 'pew').trim().replace(/^!/, '') || 'pew';
+  for (const r of document.querySelectorAll('#cl-voci .cl-voce')) {
+    const el = r.querySelector('[data-parola]');
+    if (!el) continue;
+    const modo = r.querySelector('[data-k="chat-modo"]')?.value || 'si';
+    const w = _clParolaChat(r.querySelector('[data-k="comando"]')?.value);
+    el.textContent = modo === 'no' ? '' : w ? `«!${cmd} ${w}»` : L('Il suo comando sembra un codice o una parola già usata: dalla chat non si lancia. Cambia il comando dell\'effetto.', 'Its command looks like a code or a word already in use: it can\'t be launched from chat. Change the effect command.', 'Su comando parece un código o una palabra ya usada: no se lanza desde el chat. Cambia el comando del efecto.');
+    el.classList.toggle('ko', modo !== 'no' && !w);
+  }
+}
+function _clQuadroFormato() {
+  for (const q of document.querySelectorAll('.cl-quadro')) Object.assign(q.style, { aspectRatio: `${_clQ.l} / ${_clQ.a}`, width: `min(100%, 40rem, calc(62vh * ${(_clQ.l / _clQ.a).toFixed(4)}))` });
+  const t = document.getElementById('cl-q-tipo');
+  if (t) t.value = _CL_QUADRI.some(([l, a]) => l === _clQ.l && a === _clQ.a) ? `${_clQ.l}x${_clQ.a}` : 'altro';
+}
+
+function _clFreccia(e, p) {
+  const d = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[e.key];
+  if (!d) return null;
+  e.preventDefault();
+  if (e.shiftKey) return { x: p.x + d[0], y: p.y + d[1] };
+  return { x: _clPct(_clPx(p.x, _clQ.l) + d[0], _clQ.l), y: _clPct(_clPx(p.y, _clQ.a) + d[1], _clQ.a) };
+}
+function _clCambiaQuadro(l, a) {
+  if (!(Number.isInteger(l) && Number.isInteger(a) && l >= 160 && a >= 160 && l <= 8192 && a <= 8192)) return;
+  for (const r of document.querySelectorAll('#cl-voci .cl-voce')) {
+    const x = r.querySelector('[data-k="chat-x"]'), y = r.querySelector('[data-k="chat-y"]');
+    if (x) x.value = String(_clPx(_clPct(x.value, _clQ.l), l));
+    if (y) y.value = String(_clPx(_clPct(y.value, _clQ.a), a));
+  }
+  _clQ = { l, a };
+  _clQuadroFormato();
+  _clChatQuadro();
+}
+function _clCollegaChat() {
+  const card = document.getElementById('cl-chat');
+  if (!card || card.dataset.wired) return;
+  card.dataset.wired = '1';
+  const cq = document.getElementById('cl-ch-quadro');
+  const metti = (x, y) => { _clChatPunto = { x: Math.round(Math.min(100, Math.max(0, x)) * 100) / 100, y: Math.round(Math.min(100, Math.max(0, y)) * 100) / 100 }; _clChatQuadro(); };
+  cq.addEventListener('click', (e) => { const r = cq.getBoundingClientRect(); if (r.width && r.height) metti((e.clientX - r.left) / r.width * 100, (e.clientY - r.top) / r.height * 100); });
+  cq.addEventListener('keydown', (e) => { const p = _clFreccia(e, _clChatPunto); if (p) metti(p.x, p.y); });
+  document.getElementById('cl-ch-x').addEventListener('input', (e) => { if (e.target.value !== '') metti(_clPct(e.target.value, _clQ.l), _clChatPunto.y); });
+  document.getElementById('cl-ch-y').addEventListener('input', (e) => { if (e.target.value !== '') metti(_clChatPunto.x, _clPct(e.target.value, _clQ.a)); });
+  document.getElementById('cl-ch-mezzi').addEventListener('click', (e) => {
+    const r = e.target.closest('.cl-ch-mezzo');
+    if (!r) return;
+    const i = Number(r.dataset.i), j = e.target.closest('[data-m-su]') ? i - 1 : e.target.closest('[data-m-giu]') ? i + 1 : -1;
+    if (j < 0 || j >= _clChatCon.length) return;
+    [_clChatCon[i], _clChatCon[j]] = [_clChatCon[j], _clChatCon[i]];
+    _clChatMezzi();
+    document.querySelector(`#cl-ch-mezzi [data-i="${j}"] ${j < i ? '[data-m-su]' : '[data-m-giu]'}`)?.focus();
+  });
+  document.getElementById('cl-ch-mezzi').addEventListener('change', (e) => {
+    const r = e.target.closest('.cl-ch-mezzo');
+    if (r) _clChatCon[Number(r.dataset.i)].on = e.target.checked;
+  });
+  document.getElementById('cl-ch-salva').addEventListener('click', () => conErrore(() => salvaColpi()));
+  document.getElementById('cl-comando')?.addEventListener('input', _clChatParole);
+  const voci = document.getElementById('cl-voci');
+  voci?.addEventListener('change', (e) => {
+    const m = e.target.closest('[data-k="chat-modo"]');
+    if (m) m.closest('.cl-chat-voce').dataset.modo = m.value;
+    if (m || e.target.closest('[data-k="comando"]')) _clChatParole();
+  });
+  const tipo = document.getElementById('cl-q-tipo'), ql = document.getElementById('cl-q-l'), qa = document.getElementById('cl-q-a');
+  tipo?.addEventListener('change', () => {
+    if (tipo.value === 'altro') { ql.focus(); return; }
+    const [l, a] = tipo.value.split('x').map(Number);
+    ql.value = String(l); qa.value = String(a);
+    _clCambiaQuadro(l, a);
+  });
+  for (const i of [ql, qa]) i?.addEventListener('input', () => _clCambiaQuadro(Number(ql.value), Number(qa.value)));
 }
 
 function _clPresenzaLeggi() {
@@ -26613,6 +26808,14 @@ async function salvaColpi(silenzioso) {
   if (colpi.voci.some((v) => ['bit', 'punti'].some((k) => (v.misti[k].monete > 0) !== (v.misti[k][k] > 0)))) throw new Error(L('Un modo misto vuole tutte e due le cifre: le monete e i Bit, o le monete e i punti.', 'A mixed way needs both numbers: coins and Bits, or coins and points.', 'Un modo mixto necesita las dos cifras: monedas y Bits, o monedas y puntos.'));
   if (colpi.categorie.some((c) => !c.nome && !_CL_CAT_SERIE.includes(c.id))) throw new Error(L('Dai un nome a ogni categoria nuova.', 'Give every new category a name.', 'Ponle un nombre a cada categoría nueva.'));
   if (colpi.comando && !/^[a-z0-9_]{1,25}$/i.test(colpi.comando)) throw new Error(L('Il comando per le monete: solo lettere, numeri e trattino basso, senza spazi.', 'The coin command: only letters, numbers and underscores, no spaces.', 'El comando de las monedas: solo letras, números y guion bajo, sin espacios.'));
+  const q = colpi.quadro, lato = (n) => Number.isInteger(n) && n >= 160 && n <= 8192;
+  if (!lato(Number(document.getElementById('cl-q-l')?.value ?? q.l)) || !lato(Number(document.getElementById('cl-q-a')?.value ?? q.a))) throw new Error(L('Il quadro della diretta: larghezza e altezza da 160 a 8.192 pixel.', 'The stream frame: width and height from 160 to 8,192 pixels.', 'El cuadro del directo: ancho y alto de 160 a 8.192 píxeles.'));
+  const ch = colpi.chat;
+  if (ch.attivo && !ch.con.length) throw new Error(L('Dalla chat: scegli almeno un modo di pagare.', 'From chat: pick at least one way to pay.', 'Desde el chat: elige al menos una forma de pagar.'));
+  if (fuori(ch.attesaSec, 0, 3600)) throw new Error(L('Dalla chat: i secondi fra due rifiuti vanno da 0 a 3.600.', 'From chat: the seconds between two refusals go from 0 to 3,600.', 'Desde el chat: los segundos entre dos rechazos van de 0 a 3.600.'));
+  if (ch.attivo && colpi.voci.some((v) => v.attiva && v.chat.modo === 'si') && _clProtetto(ch)) throw new Error(L('Dalla chat: il punto è in una zona protetta, spostalo.', 'From chat: the spot is in a protected area, move it.', 'Desde el chat: el punto está en una zona protegida, muévelo.'));
+  const protetta = colpi.voci.find((v) => v.attiva && v.chat.modo === 'punto' && _clProtetto(v.chat));
+  if (ch.attivo && protetta) throw new Error(L(`Dalla chat: il punto di «${protetta.nome || protetta.comando}» è in una zona protetta.`, `From chat: the spot of «${protetta.nome || protetta.comando}» is in a protected area.`, `Desde el chat: el punto de «${protetta.nome || protetta.comando}» está en una zona protegida.`));
   if (colpi.voci.some((v) => v.euro > 0 && v.euro < 50)) throw new Error(L('Il prezzo in euro parte da 0,50.', 'The euro price starts at 0.50.', 'El precio en euros empieza en 0,50.'));
   await salvaImpostazioni({ colpi }, silenzioso ? null : (vuote.length ? L('Salvato: i colpi senza prezzo non si offrono', 'Saved: hits without a price aren\'t offered', 'Guardado: los golpes sin precio no se ofrecen') : L('Colpi salvati ✓', 'Hits saved ✓', 'Golpes guardados ✓')));
   setTimeout(() => { caricaColpiStato(); }, 2500);
@@ -26716,6 +26919,10 @@ async function caricaColpi() {
   const c = impostazioni().colpi || {};
   _clZone = (c.zone || []).map((z) => ({ ...z }));
   _clPunto = { x: Number.isFinite(Number(c.presenza?.x)) ? Number(c.presenza.x) : 12, y: Number.isFinite(Number(c.presenza?.y)) ? Number(c.presenza.y) : 82 };
+  _clQ = { l: Number(c.quadro?.l) || 1920, a: Number(c.quadro?.a) || 1080 };
+  _clChatPunto = { x: Number.isFinite(Number(c.chat?.x)) ? Number(c.chat.x) : 50, y: Number.isFinite(Number(c.chat?.y)) ? Number(c.chat.y) : 50 };
+  const conCh = Array.isArray(c.chat?.con) ? c.chat.con.filter((k) => _CL_CHAT_MEZZI.includes(k)) : _CL_CHAT_MEZZI;
+  _clChatCon = [...conCh.map((k) => ({ k, on: true })), ..._CL_CHAT_MEZZI.filter((k) => !conCh.includes(k)).map((k) => ({ k, on: false }))];
   _clCat = Array.isArray(c.categorie) ? c.categorie.map((x) => ({ id: String(x.id || ''), nome: String(x.nome || '') })) : _CL_CAT_SERIE.map((id) => ({ id, nome: '' }));
   await caricaLanci();
   try { _clEffetti = ((await api('/api/streamer/effetti')) || {}).effetti || []; } catch { _clEffetti = []; }
@@ -26749,21 +26956,23 @@ async function caricaColpi() {
   }
   _clPresenzaQuadro();
   _clPresenzaDice();
+  _clQuadroFormato();
+  _clChatQuadro();
+  _clChatMezzi();
+  _clChatParole();
+  _clCollegaChat();
   const cardPr = document.getElementById('cl-presenza');
   if (cardPr && !cardPr.dataset.wiredDice) { cardPr.dataset.wiredDice = '1'; cardPr.addEventListener('input', _clPresenzaDice); cardPr.addEventListener('change', _clPresenzaDice); }
   const pq = document.getElementById('cl-pr-quadro');
   if (pq && !pq.dataset.wired) {
     pq.dataset.wired = '1';
-    const metti = (x, y) => { _clPunto = { x: Math.round(Math.min(100, Math.max(0, x)) * 10) / 10, y: Math.round(Math.min(100, Math.max(0, y)) * 10) / 10 }; _clPresenzaQuadro(); };
+    const metti = (x, y) => { _clPunto = { x: Math.round(Math.min(100, Math.max(0, x)) * 100) / 100, y: Math.round(Math.min(100, Math.max(0, y)) * 100) / 100 }; _clPresenzaQuadro(); };
     pq.addEventListener('click', (e) => { const r = pq.getBoundingClientRect(); if (r.width && r.height) metti((e.clientX - r.left) / r.width * 100, (e.clientY - r.top) / r.height * 100); });
     pq.addEventListener('keydown', (e) => {
-      const passo = e.shiftKey ? 5 : 1, d = { ArrowLeft: [-passo, 0], ArrowRight: [passo, 0], ArrowUp: [0, -passo], ArrowDown: [0, passo] }[e.key];
-      if (!d) return;
-      e.preventDefault();
-      metti(_clPunto.x + d[0], _clPunto.y + d[1]);
+      const p = _clFreccia(e, _clPunto);
+      if (p) metti(p.x, p.y);
     });
-    document.getElementById('cl-quadro')?.addEventListener('click', () => setTimeout(_clPresenzaQuadro, 0));
-    document.getElementById('cl-quadro')?.addEventListener('pointerup', () => setTimeout(_clPresenzaQuadro, 0));
+    for (const ev of ['click', 'pointerup']) document.getElementById('cl-quadro')?.addEventListener(ev, () => setTimeout(() => { _clPresenzaQuadro(); _clChatQuadro(); }, 0));
     document.getElementById('cl-pr-salva')?.addEventListener('click', () => conErrore(() => salvaColpi()));
     document.getElementById('cl-bp-salva')?.addEventListener('click', () => conErrore(() => salvaColpi()));
     for (const id of ['cl-bp-attivo', 'cl-bp-resa']) document.getElementById(id)?.addEventListener('input', _clBitDice);

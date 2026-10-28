@@ -37,7 +37,10 @@
 //  · i Bit da spendere: con l'accesso la pagina dice il saldo, il tasto e' spento
 //    se non basta, e se basta un tocco apre la mira e la paga, senza codice;
 //  · lo zaino: un colpo comprato per dopo compare nello zaino della pagina e da
-//    li' parte in un tocco.
+//    li' parte in un tocco;
+//  · al pixel: col dito si trascina, il ritocco e le frecce spostano di un pixel
+//    del quadro, e quel pixel arriva all'overlay; la pagina prende il quadro
+//    dello streamer; «!pew <colpo>» cade nel punto della chat.
 //
 // Uso: node scripts/verifica-colpi.mjs             (esce 1 se una promessa non tiene)
 //      node scripts/verifica-colpi.mjs --selftest  (rimette sette difetti: strato che prende
@@ -53,9 +56,12 @@
 //                                                   non dice di essere un'anteprima, green screen
 //                                                   che non toglie il verde, categoria che non filtra,
 //                                                   saldo dei Bit che non basta ma si lascia spendere, dalla mira
-//                                                   o in un tocco, lancio dallo zaino che non si offre;
+//                                                   o in un tocco, lancio dallo zaino che non si offre,
+//                                                   trascinare che non segue, ritocco che non scorre
+//                                                   o che salta due pixel, quadro dello streamer
+//                                                   ignorato, parola della chat che non si dice;
 //                                                   li vuole tutti rossi)
-//      node scripts/verifica-colpi.mjs --rompi=N   (solo il difetto N, da 1 a 19: deve vedersi da solo)
+//      node scripts/verifica-colpi.mjs --rompi=N   (solo il difetto N, da 1 a 24: deve vedersi da solo)
 
 import './_dati-usa-e-getta.mjs';
 import { apriSito, apriBrowser, overlayFinto } from './_sito.mjs';
@@ -91,6 +97,11 @@ const DIFETTI = [
   ['pagina-colpo.js', 'pbit.disabled = saldoBit !== null && saldoBit < mancaBit;', 'pbit.disabled = false;'],
   ['pagina-colpo.js', "b.setAttribute('data-basta', m.basta ? '1' : '');", "b.setAttribute('data-basta', '1');"],
   ['pagina-colpo.js', "if (nz > 0) modi.push({ con: 'zaino'", "if (false) modi.push({ con: 'zaino'"],
+  ['pagina-colpo.js', 'strato.addEventListener(\'pointermove\', function (e) { if (tocco === e.pointerId) dove(e); });', ''],
+  ['pagina-colpo.js', 'function ripeti(attesa) { sposta(d[0], d[1]); t = setTimeout(function () { ripeti(40); }, attesa); }', 'function ripeti() { sposta(d[0], d[1]); }'],
+  ['pagina-colpo.js', 'punta((q.x + dx) / QUADRO_L * 100, (q.y + dy) / QUADRO_A * 100);', 'punta((q.x + dx * 2) / QUADRO_L * 100, (q.y + dy * 2) / QUADRO_A * 100);'],
+  ['pagina-colpo.js', 'if (!q || !(q.l > 0) || !(q.a > 0)) return;', 'return;'],
+  ['pagina-colpo.js', 'c.hidden = !(scelta && scelta.chat && dati);', 'c.hidden = true;'],
 ];
 const SVG = '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="200" viewBox="0 0 400 200"><rect width="400" height="200" rx="40" fill="#e5484d"/></svg>';
 
@@ -431,6 +442,81 @@ try {
   dice(await o.locator('.lancio').count() > 0 && !/Pomodoro vero/.test(await p.locator('#cp-zaino').textContent()), 'dallo zaino in un tocco: il colpo parte, e lo zaino si svuota');
   await o.waitForFunction(() => !document.querySelector('.lancio'), null, { timeout: 15000 }).catch(() => {});
   mondo.io = null;
+  });
+
+  // AL PIXEL, E DALLA CHAT (docs/COLPI.md, «Dalla chat, nel punto dello
+  // streamer»): col dito si trascina, il ritocco sposta di un pixel del quadro
+  // (tenuto premuto, di seguito), le frecce pure; il punto arriva all'overlay
+  // al pixel. La pagina prende il quadro dello streamer. «!pew <colpo>» cade
+  // nel punto della chat, e la pagina dice la parola.
+  await fase('al pixel', async () => {
+  mondo.io = null;
+  await daCapo();
+  await p.locator('.cp-voce').first().click();
+  await p.locator('#cp-mira').scrollIntoViewIfNeeded();
+  await pausa(400);
+  const st = await p.locator('#cp-mira').boundingBox();
+  await p.mouse.move(st.x + st.width * 0.1, st.y + st.height * 0.1);
+  await p.mouse.down();
+  for (let i = 1; i <= 10; i++) await p.mouse.move(st.x + st.width * (0.1 + 0.05 * i), st.y + st.height * (0.1 + 0.01 * i));
+  await p.mouse.up();
+  const dr = await centro(p, '.cp-mirino');
+  dice(dr && Math.abs(dr.x - (st.x + st.width * 0.6)) < 1.5 && Math.abs(dr.y - (st.y + st.height * 0.2)) < 1.5, `col dito si trascina: il mirino segue fin dove si lascia (${dr ? (dr.x - st.x).toFixed(1) + ', ' + (dr.y - st.y).toFixed(1) : 'niente'})`);
+  const coord = async () => { const t = await p.locator('#cp-coord').textContent(); const m = /X ([\d.]+) · Y ([\d.]+)/.exec(t) || []; return { x: Number(String(m[1]).replace(/\./g, '')), y: Number(String(m[2]).replace(/\./g, '')), t }; };
+  const c0 = await coord();
+  // come una persona: il ritocco prima si porta in vista (il mouse non scorre la pagina da solo)
+  await p.locator('.cp-f.giu').scrollIntoViewIfNeeded();
+  await pausa(300);
+  const giu = await p.locator('.cp-f.giu').boundingBox();
+  await p.mouse.move(giu.x + giu.width / 2, giu.y + giu.height / 2);
+  await p.mouse.down();
+  await pausa(1000);
+  await p.mouse.up();
+  const c1 = await coord();
+  dice(c1.y - c0.y >= 10 && c1.x === c0.x, `tenuto premuto, il ritocco scorre (${c0.y} → ${c1.y})`);
+  for (let i = 0; i < 3; i++) await p.locator('.cp-f.dx').click();
+  for (let i = 0; i < 2; i++) await p.locator('.cp-f.giu').click();
+  await p.locator('#cp-mira').focus();
+  await p.keyboard.press('ArrowLeft');
+  const c2 = await coord();
+  dice(c2.x === c1.x + 2 && c2.y === c1.y + 2 && / px su 1\.920×1\.080/.test(c2.t), `ogni tocco del ritocco e ogni freccia: un pixel del quadro (${c1.x}, ${c1.y} → ${c2.x}, ${c2.y}; «${c2.t}»)`);
+  const mi = await centro(p, '.cp-mirino'), st2 = await p.locator('#cp-mira').boundingBox();
+  dice(mi && Math.abs(mi.x - (st2.x + st2.width * c2.x / 1920)) < 0.5 && Math.abs(mi.y - (st2.y + st2.height * c2.y / 1080)) < 0.5, 'e il mirino sta su quel pixel');
+  await p.fill('#cp-nome', 'Marta');
+  await p.locator('#cp-conferma').click();
+  await p.waitForSelector('.cp-codice output', { timeout: 5000 });
+  const id = await p.evaluate(() => { try { return sessionStorage.getItem('sb-colpo:prova'); } catch { return ''; } });
+  const m = id ? registroColpi.get(id) : null;
+  dice(m && Math.round(m.x * 1920 / 100) === c2.x && Math.round(m.y * 1080 / 100) === c2.y, `la mira tiene quel pixel, esatto (${m?.x}, ${m?.y})`);
+  servizio.daCheer(LOGIN, { bits: 100, message: `Cheer100 ${m?.codice}` });
+  await o.waitForSelector('#palco-libero .effetto.dentro', { timeout: 5000 }).catch(() => {});
+  await pausa(700);
+  const fx = await centro(o, '#palco-libero .effetto');
+  dice(fx && Math.abs(fx.x - c2.x) < 0.6 && Math.abs(fx.y - c2.y) < 0.6, `nell'overlay il centro cade su quel pixel (${fx ? fx.x.toFixed(2) + ', ' + fx.y.toFixed(2) : 'niente'}; atteso ${c2.x}, ${c2.y})`);
+  await o.waitForFunction(() => !document.querySelector('#palco-libero .effetto'), null, { timeout: 12000 }).catch(() => {});
+
+  const s0 = streamers.get(LOGIN).settings;
+  try {
+    streamers.setSettings(LOGIN, { ...s0, colpi: { ...s0.colpi, quadro: { l: 1080, a: 1920 } } });
+    await daCapo();
+    const pl = await p.locator('#cp-palco').boundingBox();
+    dice(pl && Math.abs(pl.width / pl.height - 1080 / 1920) < 0.01, `un quadro verticale: la pagina prende le sue proporzioni (${pl ? (pl.width / pl.height).toFixed(4) : '-'})`);
+    await p.locator('.cp-voce').first().click();
+    await tocca(p, 50, 50);
+    dice(/X 540 · Y 960 px su 1\.080×1\.920/.test(await p.locator('#cp-coord').textContent()), 'e conta i pixel del suo quadro');
+    streamers.setSettings(LOGIN, { ...s0, colpi: { ...s0.colpi, chat: { attivo: true, x: 33.33, y: 66.67 } } });
+    await daCapo();
+    await p.locator('.cp-voce').first().click();
+    dice(/«!pew pomodoro»/.test(await p.locator('#cp-in-chat').textContent()) && await p.locator('#cp-in-chat').isVisible(), 'la pagina dice come lanciarlo dalla chat');
+    pewBit.entra(LOGIN, '888', 100, 'cheer:gate-chat', { nome: 'marta' });
+    const r = servizio.inChat(LOGIN, { voce: 'pomodoro', user: 'marta', chi: '888', nome: 'Marta' });
+    await o.waitForSelector('#palco-libero .effetto.dentro', { timeout: 5000 }).catch(() => {});
+    await pausa(700);
+    const fc = await centro(o, '#palco-libero .effetto');
+    dice(r.esito === 'pagato' && r.mezzo === 'bit' && fc && Math.abs(fc.x - 0.3333 * 1920) < 0.6 && Math.abs(fc.y - 0.6667 * 1080) < 0.6,
+      `«!pew pomodoro» dalla chat: pagato coi Bit da spendere, nel punto della chat (${r.esito}/${r.mezzo}; ${fc ? fc.x.toFixed(1) + ', ' + fc.y.toFixed(1) : 'niente'})`);
+    await o.waitForFunction(() => !document.querySelector('#palco-libero .effetto'), null, { timeout: 12000 }).catch(() => {});
+  } finally { streamers.setSettings(LOGIN, s0); }
   });
 
   // un LANCIO (docs/LANCI.md): la pagina mostra il suo disegno, l'ombra e' grande

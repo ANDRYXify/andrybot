@@ -5,7 +5,7 @@
 // alle richieste e le intestazioni; il cancello verifica-colpi.mjs serve la
 // pagina vera con questa stessa porta, cosi' quello che si collauda e' quello
 // che gira.
-import { normalizza, voceDi, metodiDi, mistiDi, titoloPremio, titoloPremioMisto, categoriaDi, quandoScade } from './colpi.js';
+import { normalizza, voceDi, metodiDi, mistiDi, titoloPremio, titoloPremioMisto, categoriaDi, quandoScade, parolaChat } from './colpi.js';
 import { monetaDa } from './moneta.js';
 import { MIRABILE } from './colpi-servizio.js';
 import { normLancio, oggettoDi, disegnoDi, payloadLancio, durataLancio } from './lanci.js';
@@ -64,13 +64,15 @@ export function creaPortaColpi({ servizio, registro, streamers, effettoDi, mezzi
         premio: metodi.includes('punti') ? (v.premioNome || titoloPremio(v)) : '', prova: provaDi(login, v, eff), categoria: categoriaDi(k.cfg, v, tipoDi(eff)),
         misti: misti.map((x) => ({ ...x, premio: x.modo === 'punti' ? (v.premioMistoNome || titoloPremioMisto(v)) : '' })),
         // si compra per dopo (lo zaino): lo dice il servizio, che sa anche se e' in pausa
-        zaino: !servizio.comprabile?.(login, v.id) });
+        zaino: !servizio.comprabile?.(login, v.id),
+        // la parola per lanciarlo dalla chat, se la chat lo lancia
+        chat: k.cfg.chat.attivo && v.chat.modo !== 'no' ? parolaChat(v) : '' });
     }
     // le categorie che hanno almeno un colpo, nell'ordine dello streamer
     const categorie = k.cfg.categorie.filter((c) => voci.some((v) => v.categoria === c.id));
     return { live: !!inOnda(login), overlay: !!overlay(login), pausa: k.cfg.pausa, zone: k.cfg.zone, conNome: k.cfg.conNome, valuta: valutaDi(k.s), mezzi: euro, voci,
       categorie, comando: k.cfg.comando, moneta: monetaDa(k.s.settings).nome, bitPew: !!servizio.conBitPew?.(login),
-      zaino: servizio.conZaino?.(login) ? { con: k.cfg.zaino.con } : null };
+      zaino: servizio.conZaino?.(login) ? { con: k.cfg.zaino.con } : null, quadro: k.cfg.quadro };
   }
 
   // L'ANTEPRIMA DI UN COLPO (docs/COLPI.md, «L'anteprima»): quello che l'overlay
@@ -123,7 +125,7 @@ export function creaPortaColpi({ servizio, registro, streamers, effettoDi, mezzi
     // per dopo: lo zaino e' di chi ha fatto l'accesso
     const dopo = corpo.dopo === true;
     if (dopo && !io?.id) return { ok: false, motivo: 'accesso' };
-    const r = servizio.mira(login, { voce: v.id, x: Number(corpo.x), y: Number(corpo.y), chi: io?.nome || String(corpo.chi || ''), chiave, spettatore: io?.id || '', dopo });
+    const r = servizio.mira(login, { voce: v.id, x: Number(corpo.x), y: Number(corpo.y), chi: io?.nome || String(corpo.chi || ''), chiave: io?.id ? [chiave, 'tw:' + io.id] : chiave, spettatore: io?.id || '', dopo });
     return r.ok ? { ok: true, mira: statoMira(registro.get(r.mira.id)) } : r;
   }
 

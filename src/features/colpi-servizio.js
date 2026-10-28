@@ -18,7 +18,7 @@
 //    solo quando il colpo e' consegnabile, e un colpo a Bit pagato resta in
 //    coda finche' un overlay non lo mostra. Con i Bit da spendere accesi
 //    (sotto) anche i Bit tornano: come saldo della pagina, a chi li ha mandati.
-import { normalizza, puntoBuono, voceDi, metodiDi, mistiDi, bitServe, bitResi, togliUltimi, scadenzaBit, zainoDi, nuovoCodice, codiceIn, nomeChi, frasePresenza, premioSerie, serieDopo, SCADENZA_MS } from './colpi.js';
+import { normalizza, puntoBuono, puntoChat, voceDi, metodiDi, mistiDi, bitServe, bitResi, togliUltimi, scadenzaBit, zainoDi, nuovoCodice, codiceIn, nomeChi, frasePresenza, premioSerie, serieDopo, SCADENZA_MS } from './colpi.js';
 import { randomBytes } from 'node:crypto';
 
 // Gli effetti che si possono mirare: quelli che si posano in un punto. Un'immagine
@@ -150,8 +150,9 @@ export function creaServizioColpi({ registro, effects, effettoDi, impostazioni, 
     const punto = dopo ? { ok: true, x: 50, y: 50 } : puntoBuono(cfg, x, y);
     if (!punto.ok) return { ok: false, motivo: punto.motivo };
     const adesso = ora();
-    const k = ch + '|' + String(chiave || '');
-    const prima = ultimaDi.get(k) || 0;
+    // le chiavi dell'attesa: l'indirizzo, la persona; la piu' recente comanda
+    const chiavi = (Array.isArray(chiave) ? chiave : [chiave]).map((c) => ch + '|' + String(c || ''));
+    const prima = Math.max(0, ...chiavi.map((k) => ultimaDi.get(k) || 0));
     if (cfg.attesaSec && adesso - prima < cfg.attesaSec * 1000) return { ok: false, motivo: 'attesa', fraSec: Math.ceil((prima + cfg.attesaSec * 1000 - adesso) / 1000) };
     if (registro.aperteDa(ch, adesso - 60_000) >= cfg.alMinuto) return { ok: false, motivo: 'troppi' };
     const m = {
@@ -161,7 +162,7 @@ export function creaServizioColpi({ registro, effects, effettoDi, impostazioni, 
         rendiColpi: cfg.bitPew.rendiColpi, rendiMire: cfg.bitPew.rendiMire }, creata: adesso, scade: adesso + SCADENZA_MS,
       spettatore: String(spettatore || ''), dopo: !!dopo,
     };
-    for (let i = 0; i < 12; i++) { m.codice = nuovoCodice(); if (registro.apri(m)) { ultimaDi.set(k, adesso); return { ok: true, mira: { ...m, metodi: metodiDi(voce) } }; } }
+    for (let i = 0; i < 12; i++) { m.codice = nuovoCodice(); if (registro.apri(m)) { for (const k of chiavi) ultimaDi.set(k, adesso); return { ok: true, mira: { ...m, metodi: metodiDi(voce) } }; } }
     return { ok: false, motivo: 'codice' };
   }
 
@@ -553,6 +554,42 @@ export function creaServizioColpi({ registro, effects, effettoDi, impostazioni, 
     if (chiudi() && monete && m?.acconto?.ricevuta) monete.rendi(ch, m.acconto.user, m.acconto.ricevuta);
     return b;
   }
+  // «!pew <colpo> [come]» (docs/COLPI.md, «Dalla chat»): il colpo nel punto
+  // della chat, pagato col primo mezzo dello streamer che basta (o con quello
+  // chiesto, se lo streamer lo permette). `chi`: la persona di Twitch, `user`:
+  // il suo login (le monete). Torna { esito: 'pagato'|'pochi'|'fermo'|'mezzo'|..., mezzo }.
+  function inChat(login, { voce: idVoce, con = '', user = '', chi = '', nome = '' } = {}) {
+    const ch = String(login || '').toLowerCase();
+    const cfg = cfgDi(ch);
+    const voce = voceDi(cfg, idVoce);
+    if (!cfg.chat.attivo || !voce || voce.chat.modo === 'no' || !chi) return { esito: 'mezzo' };
+    const no = consegnabile(ch, voce.id);
+    if (no) return { esito: 'fermo', motivo: no };
+    const mezzi = con ? cfg.chat.con.filter((m) => m === con) : cfg.chat.con;
+    const misto = mistiDi(voce).find((x) => x.modo === 'bit');
+    const sm = () => saldoMonete(ch, user), sb = () => saldoBit(ch, chi);
+    // cosa costa ogni mezzo, e se il saldo basta
+    const costo = {
+      zaino: () => (zaino && cfg.zaino.attivo ? { ok: zainoDi_(ch, chi).some((x) => x.voce === voce.id), quale: 'zaino' } : null),
+      monete: () => (monete && voce.monete > 0 ? { ok: sm() >= voce.monete, monete: voce.monete, serve: voce.monete, saldo: sm(), quale: 'monete' } : null),
+      bit: () => (crediti && resaDi(ch) && voce.bit > 0 ? { ok: sb() >= voce.bit, bit: voce.bit, serve: voce.bit, saldo: sb(), quale: 'bit' } : null),
+      misto: () => (monete && crediti && resaDi(ch) && misto ? (sm() < misto.monete
+        ? { ok: false, monete: misto.monete, bit: misto.resto, serve: misto.monete, saldo: sm(), quale: 'monete' }
+        : { ok: sb() >= misto.resto, monete: misto.monete, bit: misto.resto, serve: misto.resto, saldo: sb(), quale: 'bit' }) : null),
+    };
+    const prove = mezzi.map((m) => ({ m, c: costo[m]() })).filter((x) => x.c);
+    const scelto = prove.find((x) => x.c.ok);
+    if (!scelto) {
+      const primo = prove.find((x) => x.m !== 'zaino');
+      return primo ? { esito: 'pochi', mezzo: primo.m, serve: primo.c.serve, saldo: primo.c.saldo, quale: primo.c.quale } : { esito: 'mezzo' };
+    }
+    const p = puntoChat(cfg, voce);
+    const r = mira(ch, { voce: voce.id, x: p.x, y: p.y, chi: nome, chiave: ['tw:' + chi], spettatore: chi });
+    if (!r.ok) return { esito: r.motivo === 'attesa' ? 'attesa' : 'fermo', motivo: r.motivo, fraSec: r.fraSec };
+    const pagato = subito(ch, r.mira.id, { con: scelto.m === 'misto' ? 'misto-bit' : scelto.m, user, chi, nome });
+    if (pagato.esito !== 'pagato') return { ...pagato, mezzo: scelto.m, esito: pagato.esito === 'pochi' ? 'pochi' : 'fermo', motivo: pagato.motivo || pagato.esito };
+    return { esito: 'pagato', mezzo: scelto.m, nome: voce.nome, monete: scelto.c.monete || 0, bit: scelto.c.bit || 0, id: r.mira.id };
+  }
   const saldoMonete = (login, user) => (monete && user ? Number(monete.saldo?.(String(login || '').toLowerCase(), String(user).toLowerCase())) || 0 : 0);
 
   // Il premio del modo misto coi punti: vale solo con le monete gia' pagate per
@@ -595,6 +632,6 @@ export function creaServizioColpi({ registro, effects, effettoDi, impostazioni, 
     return [...per.values()].sort((a, b) => ((ordine.indexOf(a.voce) + 1 || 999) - (ordine.indexOf(b.voce) + 1 || 999)));
   }
 
-  return { mira, consegnabile, comprabile, pronta, daZaino, zainoDi: zainoDi_, daCheer, daRiscatto, daPagamento, daMonete, daBitPew, subito, saldoBit, scadonoBit, saldoMonete, presenza, provaPresenza, visto, ronda, cfgDi,
+  return { mira, consegnabile, comprabile, pronta, daZaino, zainoDi: zainoDi_, daCheer, daRiscatto, daPagamento, daMonete, daBitPew, subito, inChat, saldoBit, scadonoBit, saldoMonete, presenza, provaPresenza, visto, ronda, cfgDi,
     conMonete: !!monete, conZaino: (login) => !!zaino && cfgDi(String(login || '').toLowerCase()).zaino.attivo, conBitPew: (login) => !!resaDi(String(login || '').toLowerCase()) };
 }

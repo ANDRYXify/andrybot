@@ -16,6 +16,14 @@
   var memo = 'sb-colpo:' + login;
   var QUADRO_L = 1920, QUADRO_A = 1080;
   function $(id) { return document.getElementById(id); }
+  function quadro() {
+    var q = dati && dati.quadro;
+    if (!q || !(q.l > 0) || !(q.a > 0)) return;
+    QUADRO_L = q.l; QUADRO_A = q.a;
+    var p = $('cp-palco');
+    p.style.aspectRatio = q.l + ' / ' + q.a;
+    p.style.width = 'min(100%, calc(78vh * ' + (q.l / q.a).toFixed(4) + '))';
+  }
   var strato = $('cp-mira');
   var dati = null, scelta = null, punto = null, mira = null, giro = null, conto = null;
   var misure = {};
@@ -386,10 +394,12 @@
     if (vecchia) vecchia.remove();
     if (punto) disegna();
     lanciaTasti();
+    ritocco();
     avviso('');
   }
 
   function pronto() {
+    ritocco();
     var si = !!(scelta && punto && !protetto(punto.x, punto.y) && dati && dati.live && dati.overlay && !dati.pausa) && !mira;
     $('cp-conferma').disabled = !si;
     var bl = document.querySelectorAll('#cp-lancia button');
@@ -526,24 +536,61 @@
     pronto();
     avviso(protetto(punto.x, punto.y) ? (T.motivi || {}).protetta : '', protetto(punto.x, punto.y) ? 'ko' : '');
   }
-  strato.addEventListener('click', function (e) {
+  function pixel(p) { return { x: Math.round(p.x * QUADRO_L / 100), y: Math.round(p.y * QUADRO_A / 100) }; }
+  function sposta(dx, dy) {
+    var q = pixel(punto || { x: 50, y: 50 });
+    punta((q.x + dx) / QUADRO_L * 100, (q.y + dy) / QUADRO_A * 100);
+  }
+  var tocco = null;
+  function dove(e) {
     var r = strato.getBoundingClientRect();
-    if (!r.width || !r.height) return;
-    punta((e.clientX - r.left) / r.width * 100, (e.clientY - r.top) / r.height * 100);
+    if (r.width && r.height) punta((e.clientX - r.left) / r.width * 100, (e.clientY - r.top) / r.height * 100);
+  }
+  strato.addEventListener('pointerdown', function (e) {
+    if (mira || !scelta || e.button > 0) return;
+    tocco = e.pointerId;
+    try { strato.setPointerCapture(e.pointerId); } catch (x) {  }
+    dove(e);
   });
+  strato.addEventListener('pointermove', function (e) { if (tocco === e.pointerId) dove(e); });
+  function lascia(e) { if (tocco === e.pointerId) tocco = null; }
+  strato.addEventListener('pointerup', lascia);
+  strato.addEventListener('pointercancel', lascia);
   strato.addEventListener('keydown', function (e) {
     if (mira || !scelta) return;
-    var passo = e.shiftKey ? 5 : 1;
-    var p = punto || { x: 50, y: 50 };
-    var k = e.key;
-    if (k === 'ArrowLeft') punta(p.x - passo, p.y);
-    else if (k === 'ArrowRight') punta(p.x + passo, p.y);
-    else if (k === 'ArrowUp') punta(p.x, p.y - passo);
-    else if (k === 'ArrowDown') punta(p.x, p.y + passo);
-    else if (k === 'Enter' && !$('cp-conferma').disabled) { prendi(); }
+    var k = e.key, d = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[k];
+    if (d) {
+      var p = punto || { x: 50, y: 50 };
+      if (e.shiftKey) punta(p.x + d[0], p.y + d[1]);
+      else sposta(d[0], d[1]);
+    } else if (k === 'Enter' && !$('cp-conferma').disabled) { prendi(); }
     else return;
     e.preventDefault();
   });
+  (function () {
+    var bb = document.querySelectorAll('#cp-ritocco [data-d]');
+    for (var i = 0; i < bb.length; i++) (function (b) {
+      var d = b.getAttribute('data-d').split(',').map(Number), t = null;
+      function ferma() { clearTimeout(t); t = null; }
+      function ripeti(attesa) { sposta(d[0], d[1]); t = setTimeout(function () { ripeti(40); }, attesa); }
+      b.addEventListener('pointerdown', function (e) { if (e.button > 0) return; e.preventDefault(); ferma(); ripeti(380); });
+      b.addEventListener('pointerup', ferma);
+      b.addEventListener('pointerleave', ferma);
+      b.addEventListener('pointercancel', ferma);
+      b.addEventListener('click', function (e) { if (!e.detail) sposta(d[0], d[1]); });
+    })(bb[i]);
+  })();
+  function ritocco() {
+    var r = $('cp-ritocco'), su = !!(scelta && !mira);
+    r.hidden = !su;
+    if (su) {
+      var q = pixel(punto || { x: 50, y: 50 });
+      $('cp-coord').textContent = riempi(T.coord, { x: numero(q.x), y: numero(q.y), l: numero(QUADRO_L), a: numero(QUADRO_A) });
+    }
+    var c = $('cp-in-chat');
+    c.hidden = !(scelta && scelta.chat && dati);
+    if (!c.hidden) c.textContent = riempi(T.inChat, { comando: '!' + (dati.comando || 'pew') + ' ' + scelta.chat });
+  }
 
   function voceDi(id) {
     var v = null;
@@ -607,6 +654,7 @@
     for (var i = 0; i < bb.length; i++) bb[i].setAttribute('aria-pressed', bb[i].getAttribute('data-voce') === mira.voce ? 'true' : 'false');
     strato.classList.remove('attiva');
     strato.tabIndex = -1;
+    ritocco();
     $('cp-p2').classList.add('spento');
     $('cp-p3').classList.remove('spento');
     $('cp-conferma').disabled = true;
@@ -774,6 +822,7 @@
       if (!r.voci) return;
       var prima = dati ? dati.voci.map(function (v) { return v.id; }).join() : '';
       dati = r;
+      quadro();
       stato();
       zone();
       if (primo || prima !== dati.voci.map(function (v) { return v.id; }).join()) voci();

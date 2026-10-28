@@ -20,6 +20,7 @@ export const T = {
     inOnda: 'In onda', spenta: 'Diretta spenta', senzaOverlay: 'Overlay chiuso',
     passo1: 'Scegli il colpo', passo2: 'Mira', passo3: 'Paga e parte',
     mira: 'Tocca il punto della diretta dove vuoi che compaia. Le zone a righe sono protette.',
+    ritocco: 'Ritocca il punto', su: 'Su di un pixel', giu: 'Giù di un pixel', sx: 'A sinistra di un pixel', dx: 'A destra di un pixel', coord: 'X {x} · Y {y} px su {l}×{a}', ritoccoNota: 'Ogni tocco sposta di un pixel della diretta; tieni premuto per scorrere. Puoi anche trascinare il dito sul quadro.', inChat: 'Dalla chat: «{comando}» lo lancia nel punto scelto dallo streamer.',
     nome: 'Il tuo nome accanto al colpo', nomePh: 'come ti chiamano in chat',
     conferma: 'Prendi la mira', cambia: 'Cambia punto', annulla: 'Ricomincia',
     ritardo: 'La diretta che vedi arriva qualche secondo dopo: il colpo cade nel punto del quadro che hai scelto.',
@@ -67,6 +68,7 @@ export const T = {
     inOnda: 'Live', spenta: 'Offline', senzaOverlay: 'Overlay closed',
     passo1: 'Pick your hit', passo2: 'Aim', passo3: 'Pay and fire',
     mira: 'Tap the spot on the stream where you want it to appear. Striped areas are protected.',
+    ritocco: 'Fine-tune the spot', su: 'Up one pixel', giu: 'Down one pixel', sx: 'Left one pixel', dx: 'Right one pixel', coord: 'X {x} · Y {y} px of {l}×{a}', ritoccoNota: 'Each tap moves one stream pixel; hold to keep going. You can also drag your finger on the frame.', inChat: 'From chat: «{comando}» launches it at the streamer\'s chosen spot.',
     nome: 'Your name next to the hit', nomePh: 'your name in chat',
     conferma: 'Lock the aim', cambia: 'Change spot', annulla: 'Start over',
     ritardo: 'The stream you see runs a few seconds behind: the hit lands on the spot of the frame you picked.',
@@ -114,6 +116,7 @@ export const T = {
     inOnda: 'En directo', spenta: 'Directo apagado', senzaOverlay: 'Overlay cerrado',
     passo1: 'Elige el golpe', passo2: 'Apunta', passo3: 'Paga y sale',
     mira: 'Toca el punto del directo donde quieres que aparezca. Las zonas rayadas están protegidas.',
+    ritocco: 'Ajusta el punto', su: 'Arriba un píxel', giu: 'Abajo un píxel', sx: 'A la izquierda un píxel', dx: 'A la derecha un píxel', coord: 'X {x} · Y {y} px de {l}×{a}', ritoccoNota: 'Cada toque mueve un píxel del directo; mantén pulsado para seguir. También puedes arrastrar el dedo por el cuadro.', inChat: 'Desde el chat: «{comando}» lo lanza en el punto elegido por el streamer.',
     nome: 'Tu nombre junto al golpe', nomePh: 'como te llaman en el chat',
     conferma: 'Fijar el punto', cambia: 'Cambiar punto', annulla: 'Empezar de nuevo',
     ritardo: 'El directo que ves llega unos segundos tarde: el golpe cae en el punto del cuadro que elegiste.',
@@ -191,6 +194,7 @@ export function htmlPaginaColpo({ login, display, avatar = '', pagina, baseUrl, 
 <div class="cp-mira" id="cp-mira" tabindex="-1" aria-label="${esc(t.passo2)}"></div>
 <p class="cp-solo-tu" id="cp-solo-tu" role="status" hidden>${esc(t.soloTu)}</p>
 </div>
+<div class="cp-ritocco" id="cp-ritocco" hidden><div class="cp-frecce" role="group" aria-label="${esc(t.ritocco)}"><button type="button" class="cp-f su" data-d="0,-1" aria-label="${esc(t.su)}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6l7 9H5z"/></svg></button><button type="button" class="cp-f sx" data-d="-1,0" aria-label="${esc(t.sx)}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12l9-7v14z"/></svg></button><button type="button" class="cp-f dx" data-d="1,0" aria-label="${esc(t.dx)}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 12l-9 7V5z"/></svg></button><button type="button" class="cp-f giu" data-d="0,1" aria-label="${esc(t.giu)}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 18l-7-9h14z"/></svg></button></div><div><p class="cp-coord" id="cp-coord" aria-live="polite"></p><p class="cp-nota">${esc(t.ritoccoNota)}</p></div></div>
 <section class="cp-carta cp-chat" aria-labelledby="cp-chat-t">
 <h2 class="cp-t" id="cp-chat-t">${esc(t.chat)}</h2>
 <ol class="cp-righe" id="cp-righe" aria-live="polite"><li class="cp-vuota">${esc(t.chatVuota)}</li></ol>
@@ -204,6 +208,7 @@ export function htmlPaginaColpo({ login, display, avatar = '', pagina, baseUrl, 
 <section class="cp-carta cp-passo" id="cp-p1"><h2 class="cp-t"><span>1</span>${esc(t.passo1)}</h2><div class="cp-cat" id="cp-cat" role="group" aria-label="${esc(t.categorie)}" hidden></div><div class="cp-voci" id="cp-voci" role="group" aria-label="${esc(t.passo1)}"></div><p id="cp-vuoto" hidden></p></section>
 <section class="cp-carta cp-passo spento" id="cp-p2"><h2 class="cp-t"><span>2</span>${esc(t.passo2)}</h2><p>${esc(t.mira)}</p>
 <label class="cp-campo" id="cp-nome-l" hidden>${esc(t.nome)}<input id="cp-nome" maxlength="25" autocomplete="nickname" placeholder="${esc(t.nomePh)}"></label>
+<p class="cp-nota" id="cp-in-chat" hidden></p>
 <div class="cp-lancia" id="cp-lancia" hidden></div>
 <div class="cp-righe-b"><button type="button" class="cp-b" id="cp-conferma" disabled>${esc(t.conferma)}</button><button type="button" class="cp-b due" id="cp-prova-qui" disabled>${esc(t.prova)}</button></div>
 <div class="cp-dopo" id="cp-dopo" hidden></div>
@@ -229,7 +234,17 @@ export function htmlPaginaColpo({ login, display, avatar = '', pagina, baseUrl, 
   .cp-palco .chiedi{position:absolute;inset:0;display:grid;place-content:center;justify-items:center;gap:.5rem;padding:1rem;text-align:center;color:#eee;background:radial-gradient(circle at 50% 40%,#1b1b24,#000)}
   .cp-palco .chiedi-p{color:#bbb}
   .cp-mira{position:absolute;inset:0;pointer-events:none;touch-action:manipulation}
-  .cp-mira.attiva{pointer-events:auto;cursor:crosshair}
+  .cp-mira.attiva{pointer-events:auto;cursor:crosshair;touch-action:none}
+  .cp-palco{margin-inline:auto;width:100%}
+  .cp-ritocco{display:flex;gap:.8rem;align-items:center;margin:.6rem 0}
+  .cp-ritocco[hidden]{display:none}
+  .cp-frecce{display:grid;grid-template-columns:repeat(3,2.6rem);grid-template-rows:repeat(3,2.6rem);gap:.2rem;flex:none}
+  .cp-f{display:grid;place-items:center;border:1px solid color-mix(in srgb,var(--btxt,currentColor) 22%,transparent);background:color-mix(in srgb,var(--btxt,currentColor) 7%,transparent);color:inherit;border-radius:calc(var(--r) * .4);cursor:pointer;touch-action:none;user-select:none;-webkit-user-select:none;padding:0}
+  .cp-f svg{width:1.1rem;height:1.1rem;fill:currentColor}
+  .cp-f:active{background:var(--acc);color:var(--suacc)}
+  .cp-f:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+  .cp-f.su{grid-area:1/2}.cp-f.sx{grid-area:2/1}.cp-f.dx{grid-area:2/3}.cp-f.giu{grid-area:3/2}
+  .cp-coord{margin:0;font-variant-numeric:tabular-nums;font-weight:700}
   .cp-prova{position:absolute;inset:0;pointer-events:none;overflow:hidden}
   .cp-prova .cp-media{position:absolute;transform:translate(-50%,-50%);max-width:none;opacity:0;transition:opacity .3s}
   .cp-prova .cp-media.dentro{opacity:1}

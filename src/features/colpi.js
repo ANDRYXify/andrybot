@@ -83,6 +83,7 @@ export function normalizza(cfg) {
       monete: prezzo(v.monete, LIMITI.monete),
       misti: normMisti(v.misti),
       zaino: normZainoVoce(v.zaino),
+      chat: normChatVoce(v.chat),
       premioMisto: /^[0-9a-f-]{8,64}$/.test(String(v.premioMisto || '')) ? String(v.premioMisto) : '',
       premioMistoCosto: num(v.premioMistoCosto, [0, LIMITI.punti[1]], 0), premioMistoNome: testo(v.premioMistoNome, 45),
       categoria: ID.test(String(v.categoria || '')) ? String(v.categoria) : '',
@@ -110,6 +111,8 @@ export function normalizza(cfg) {
     presenza: normPresenza(o.presenza),
     bitPew: normBitPew(o.bitPew),
     zaino: normZaino(o.zaino),
+    chat: normChat(o.chat),
+    quadro: normQuadro(o.quadro),
   };
 }
 
@@ -387,6 +390,77 @@ export function zainoDi(cfg, voce) {
 }
 // «!pew zaino»
 export const chiedeZaino = (cfg, messaggio) => new RegExp(`^!${cfg?.comando || COMANDO_SERIE}\\s+(zaino|backpack|mochila)\\s*$`, 'i').test(String(messaggio || '').trim());
+// DALLA CHAT, NEL PUNTO DELLO STREAMER (docs/COLPI.md): «!pew <colpo> [come]»
+// lancia il colpo nel punto della chat (quello del colpo, o quello di tutti) e
+// lo paga coi saldi di chi scrive. Lo streamer sceglie i mezzi e il loro ordine,
+// e i testi della risposta. Il quadro e' quello dello streamer: la pagina ne
+// prende le proporzioni e ci conta i pixel.
+export const QUADRO = Object.freeze({ lato: [160, 8192], l: 1920, a: 1080 });
+export const CHAT_PEW = Object.freeze({
+  mezzi: Object.freeze(['zaino', 'monete', 'bit', 'misto']), modiVoce: Object.freeze(['si', 'punto', 'no']), risposta: 200,
+  esiti: Object.freeze(['ok', 'pochi', 'attesa', 'no']),
+  risposte: Object.freeze({
+    it: Object.freeze({ ok: '{nome} {colpo} lanciato ({prezzo})', pochi: '{nome} per {colpo} servono {serve}: hai {saldo}. Tutto su {pagina}', attesa: '{nome} il prossimo colpo fra {sec} s', no: '{nome} {colpo} adesso non parte: {perche}' }),
+    en: Object.freeze({ ok: '{nome} {colpo} launched ({prezzo})', pochi: '{nome} {colpo} needs {serve}: you have {saldo}. All on {pagina}', attesa: '{nome} next hit in {sec}s', no: '{nome} {colpo} can\'t go now: {perche}' }),
+    es: Object.freeze({ ok: '{nome} {colpo} lanzado ({prezzo})', pochi: '{nome} {colpo} necesita {serve}: tienes {saldo}. Todo en {pagina}', attesa: '{nome} el próximo golpe en {sec} s', no: '{nome} {colpo} ahora no sale: {perche}' }),
+  }),
+  perche: Object.freeze({
+    it: Object.freeze({ offline: 'la diretta è spenta', overlay: 'l\'overlay non è aperto', pausa: 'i colpi sono in pausa', protetta: 'il punto è in una zona protetta', troppi: 'troppi colpi in questo minuto', mezzo: 'in chat non si paga così', effetto: 'l\'effetto non c\'è più', altro: 'riprova fra poco' }),
+    en: Object.freeze({ offline: 'the stream is off', overlay: 'the overlay isn\'t open', pausa: 'hits are paused', protetta: 'the spot is in a protected area', troppi: 'too many hits this minute', mezzo: 'chat can\'t pay that way', effetto: 'the effect is gone', altro: 'try again soon' }),
+    es: Object.freeze({ offline: 'el directo está apagado', overlay: 'el overlay no está abierto', pausa: 'los golpes están en pausa', protetta: 'el punto está en una zona protegida', troppi: 'demasiados golpes en este minuto', mezzo: 'en el chat no se paga así', effetto: 'el efecto ya no está', altro: 'inténtalo en un rato' }),
+  }),
+  zaino: Object.freeze({ it: 'dallo zaino', en: 'from your backpack', es: 'de tu mochila' }),
+});
+const MEZZI_IN_CHAT = { zaino: 'zaino', backpack: 'zaino', mochila: 'zaino', monete: 'monete', coins: 'monete', monedas: 'monete', bit: 'bit', bits: 'bit', misto: 'misto', mixed: 'misto', mixto: 'misto' };
+const RISERVATE = new Set(['bit', 'bits', 'zaino', 'backpack', 'mochila']);
+function normQuadro(q) {
+  const o = q && typeof q === 'object' ? q : {};
+  return { l: num(o.l, QUADRO.lato, QUADRO.l), a: num(o.a, QUADRO.lato, QUADRO.a) };
+}
+function normChat(c) {
+  const o = c && typeof c === 'object' ? c : {};
+  const con = Array.isArray(o.con) ? [...new Set(o.con.filter((m) => CHAT_PEW.mezzi.includes(m)))] : [...CHAT_PEW.mezzi];
+  const r = o.risposte && typeof o.risposte === 'object' ? o.risposte : {};
+  return {
+    attivo: o.attivo === true, x: pct(o.x) ?? 50, y: pct(o.y) ?? 50, con,
+    rispondi: o.rispondi !== false, attesaSec: num(o.attesaSec, BIT_PEW.attesaSec, 30),
+    risposte: Object.fromEntries(CHAT_PEW.esiti.map((k) => [k, testo(r[k], CHAT_PEW.risposta)])),
+  };
+}
+function normChatVoce(c) {
+  const o = c && typeof c === 'object' ? c : {};
+  return { modo: CHAT_PEW.modiVoce.includes(o.modo) ? o.modo : 'si', x: pct(o.x) ?? 50, y: pct(o.y) ?? 50 };
+}
+// La parola di un colpo in chat: il suo comando, se non ha gia' un altro
+// significato (un codice dentro, che «!pew» paga; «bit»; «zaino»). Se no ''.
+export function parolaChat(voce) {
+  const w = String(voce?.comando || '').toLowerCase();
+  return !w || RISERVATE.has(w) || codiceIn(w) ? '' : w;
+}
+// «!pew torta» → { voce, con: '' }; «!pew torta monete» → { voce, con: 'monete' }; se no null.
+export function lancioInChat(cfg, messaggio) {
+  if (!cfg?.chat?.attivo || eFrasePresenza(cfg, messaggio)) return null;
+  const m = new RegExp(`^!${cfg.comando || COMANDO_SERIE}\\s+(\\S+)(?:\\s+(\\S+))?\\s*$`, 'i').exec(String(messaggio || '').trim());
+  if (!m) return null;
+  const parola = m[1].toLowerCase();
+  const voce = (cfg.voci || []).find((v) => v.attiva && v.chat?.modo !== 'no' && parolaChat(v) === parola);
+  const con = m[2] ? MEZZI_IN_CHAT[m[2].toLowerCase()] : '';
+  return voce && con !== undefined ? { voce: voce.id, con } : null;
+}
+export const puntoChat = (cfg, voce) => (voce?.chat?.modo === 'punto' ? { x: voce.chat.x, y: voce.chat.y } : { x: cfg.chat.x, y: cfg.chat.y });
+// il prezzo detto in chat: «40 monete», «20 Bit», «10 monete + 30 Bit», «dallo zaino»
+export function prezzoChat(lingua, mezzo, { monete = 0, bit = 0, moneta = '' } = {}) {
+  const L = CHAT_PEW.zaino[lingua] ? lingua : 'it';
+  if (mezzo === 'zaino') return CHAT_PEW.zaino[L];
+  return [monete > 0 ? `${monete} ${moneta}`.trim() : '', bit > 0 ? `${bit} Bit` : ''].filter(Boolean).join(' + ');
+}
+export function rispostaChat(cfg, lingua, esito, v = {}) {
+  const L = CHAT_PEW.risposte[lingua] ? lingua : 'it';
+  if (!CHAT_PEW.esiti.includes(esito)) return '';
+  const vals = { nome: '', colpo: '', prezzo: '', serve: '', saldo: '', sec: '', pagina: '', ...v, perche: CHAT_PEW.perche[L][v.motivo] || CHAT_PEW.perche[L].altro };
+  const t = cfg?.chat?.risposte?.[esito] || CHAT_PEW.risposte[L][esito];
+  return String(t).replace(/\{(nome|colpo|prezzo|serve|saldo|sec|pagina|perche)\}/g, (_, k) => String(vals[k] ?? '')).slice(0, 450);
+}
 // {elenco}: «2 Pomodoro, 1 Risata»
 export function rispostaZaino(cfg, lingua, v = {}) {
   const z = cfg?.zaino || normZaino({});

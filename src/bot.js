@@ -106,7 +106,7 @@ import { statoVivo, registroColpi, effects as effettiDb, segnoInstagram, pewSeri
 import { creaServizioColpi } from './features/colpi-servizio.js';
 import * as economia from './features/economia.js';
 import { nomeMoneta, monetaDi, accordaMoneta } from './features/moneta.js';
-import { urlPaginaColpo, eFrasePresenza, pagaInChat, chiedeBit, rispostaBit, chiedeZaino, rispostaZaino, voceDi as voceColpo, quandoScade, rispostaPresenza, titoloPremioMisto } from './features/colpi.js';
+import { urlPaginaColpo, eFrasePresenza, pagaInChat, chiedeBit, rispostaBit, chiedeZaino, rispostaZaino, voceDi as voceColpo, quandoScade, rispostaPresenza, titoloPremioMisto, lancioInChat, rispostaChat, prezzoChat } from './features/colpi.js';
 import { preferenzeDi } from './features/preferenze.js';
 import { creaChatColpi, rigaDi as rigaChatColpi, BATTITO_MS as BATTITO_CHAT_COLPI } from './features/colpi-chat.js';
 import { coloreDi as coloreChatDi } from './features/badges.js';
@@ -1388,6 +1388,25 @@ export class BotManager {
             if (t) parla(t);
           }
           if (r.esito === 'partita' || r.esito === 'gia') presenze.dichiara(login, msg.user);
+        } else if (cfgColpi?.chat.attivo && (!msg.piattaforma || msg.piattaforma === 'twitch') && msg.userId) {
+          // «!pew <colpo> [come]»: il colpo nel punto della chat, coi saldi di chi scrive
+          const lc = lancioInChat(cfgColpi, msg.text);
+          if (lc) {
+            const nome = msg.display || msg.user, lingua = linguaChat(login), moneta = nomeMoneta(login);
+            const r = this.colpi.inChat(login, { voce: lc.voce, con: lc.con, user: msg.user, chi: msg.userId, nome });
+            const colpo = voceColpo(cfgColpi, lc.voce)?.nome || lc.voce;
+            const esito = r.esito === 'pagato' ? 'ok' : r.esito === 'pochi' ? 'pochi' : r.esito === 'attesa' ? 'attesa' : 'no';
+            const k = login + '|c|' + msg.userId, adesso = Date.now();
+            const parlo = cfgColpi.chat.rispondi && (esito === 'ok' || adesso - (saldiBitChiesti.get(k) || 0) >= cfgColpi.chat.attesaSec * 1000);
+            if (parlo) {
+              if (esito !== 'ok') { if (saldiBitChiesti.size > 5000) saldiBitChiesti.clear(); saldiBitChiesti.set(k, adesso); }
+              const unita = (n, quale) => (quale === 'bit' ? `${n} Bit` : `${n} ${moneta}`);
+              const t = rispostaChat(cfgColpi, lingua, esito, { nome: '@' + nome, colpo, motivo: r.motivo || r.esito, sec: r.fraSec || '',
+                prezzo: prezzoChat(lingua, r.mezzo, { monete: r.monete, bit: r.bit, moneta }), serve: unita(r.serve, r.quale), saldo: unita(r.saldo, r.quale),
+                pagina: urlPaginaColpo(login).replace(/^https:\/\//, '') });
+              if (t) parla(accordaMoneta(t, monetaDi(login).forma));
+            }
+          }
         }
       } catch (e) { log.debug(`#${login} Pewpewify in chat:`, e?.message || e); }
     }

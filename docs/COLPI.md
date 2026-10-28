@@ -147,7 +147,7 @@ quando lo spettatore lo chiede (o l'ha già accettato sulla pagina link:
 aver scelto un colpo: prima il lettore resta usabile. Le zone protette si
 vedono a righe; il mirino e l'ombra del colpo stanno dove si tocca, e l'ombra
 è grande come sarà in un overlay 1920×1080 (file × grandezza). Si mira anche
-con le frecce (Maiusc per passi da 5%) e Invio. L'anteprima dei media passa
+con le frecce (un pixel del quadro; Maiusc per passi dell'1%) e Invio. L'anteprima dei media passa
 da `/u/<login>/colpo/anteprima/<voce>`: gli indirizzi dell'overlay portano la
 sua chiave e non escono mai.
 
@@ -465,6 +465,67 @@ la mira «pagata e per dopo» e la mette nello zaino, mai in diretta.
   dopo pagato col cheer, coi punti o con `!pew CODICE` lo dice in chat. Il
   pannello mostra quanti colpi ci sono negli zaini.
 
+## Dalla chat, nel punto dello streamer
+
+Chiesto così: «l'utente deve poter mirare preciso sullo stream, preciso al mm;
+se invece fa "!pew" dalla chat andrà direttamente nel punto che imposta come
+predefinito lo streamer».
+
+**Il modello.** `!pew <colpo> [come]` (il comando dei colpi, poi la parola del
+colpo, poi, se si vuole, come pagarlo) lancia il colpo nel **punto della chat**:
+quello del colpo, se lo streamer gliene ha dato uno, se no quello di tutti
+(`cfg.chat.x/y`). Paga chi scrive, coi saldi che ha già: niente pagina, niente
+codice.
+
+- La parola del colpo è il suo comando (`parolaChat`). Non lo è mai una parola
+  che ha già un altro significato: la forma di un codice (`!pew K7QX3` paga
+  una mira, come prima), `bit`, `zaino`, la frase della presenza. Il pannello
+  lo dice accanto al colpo. Così un messaggio ha **un** significato, deciso
+  dalla forma e non dall'ordine dei controlli.
+- Come si paga in chat lo decide lo streamer (`cfg.chat.con`): quali mezzi e in
+  che ordine, fra zaino, monete, Bit da spendere e misto (monete + Bit). Senza
+  `[come]` vale il primo dell'ordine che basta (lo zaino prima, di serie: è già
+  pagato); con `[come]` solo quello, se lo streamer lo permette.
+- La mira e il pagamento sono quelli della pagina (`servizio.mira` +
+  `servizio.subito`): stessi controlli (diretta, overlay, zone protette, pausa,
+  colpi al minuto), stesso «niente a metà».
+- **L'attesa è della persona, non della porta.** Una mira porta le sue chiavi
+  d'attesa (l'indirizzo per chi non ha l'accesso; la persona di Twitch per chi
+  ce l'ha, dalla pagina e dalla chat): passare dalla pagina alla chat non salta
+  l'attesa.
+- Il punto della chat deve stare fuori dalle zone protette: il pannello non lo
+  lascia posare dentro, e se una zona nuova lo copre, la chat risponde che il
+  punto è protetto (lo dice anche il pannello).
+- La risposta in chat: accesa o no, con quattro testi dello streamer (lanciato,
+  saldo che non basta, attesa, non si può), di serie nella lingua della chat,
+  e al massimo una ogni `attesaSec` a testa per i rifiuti.
+- Per colpo: in chat sì (punto di tutti), sì col punto suo, o no.
+- Il pannello: la scheda «Dalla chat» (accesa o no, il punto sul quadro o in
+  pixel, con le frecce al pixel; i mezzi con l'ordine; le risposte), il
+  formato del quadro accanto alle zone protette (1920×1080, 4K, verticale,
+  21:9, 4:3 o a mano: cambiarlo tiene i punti dove sono nel quadro e riconta
+  i pixel), e in ogni colpo del listino «Dalla chat» con X e Y suoi e la
+  parola che lo lancia (o perché non ce l'ha). Il pannello non salva un punto
+  della chat in una zona protetta, né la chat accesa senza mezzi.
+- Su Twitch, per ora: la persona dei saldi è quella di Twitch. Kick arriva
+  con la sua valuta.
+
+**Al pixel, sulla pagina.** Il punto è in percentuale del quadro con due
+decimali: 1/100 di % su un quadro largo L px è L/10.000 px, meno di mezzo pixel
+per ogni quadro fino a 8192 px (il tetto). Quindi «un pixel in più» resta un
+pixel esatto anche dopo l'arrotondamento: si lavora in pixel (`px = round(x ×
+L / 100)`), e la percentuale ne deriva.
+
+- Il quadro è quello dello streamer (`cfg.quadro`, di serie 1920×1080, anche
+  verticale o 21:9): la pagina ha le sue proporzioni, così il lettore di
+  Twitch lo riempie senza bande e il clic cade dove cadrà l'effetto.
+- Col dito: si tocca e si trascina (il mirino segue), e il ritocco ←↑↓→ sposta
+  di un pixel del quadro (tenuto premuto, di seguito), con le coordinate in
+  pixel accanto. Il ritocco sta **subito sotto il quadro**: al telefono il
+  mirino si vede mentre lo sposti (lontano, nella colonna dei passi, finiva
+  850 px più giù). Con la tastiera: le frecce un pixel (tenute, di seguito),
+  Maiusc l'1%.
+
 ## L'anteprima
 
 Chiesto così: «riusciamo ad inserire un'anteprima degli attacchi se l'utente
@@ -650,6 +711,14 @@ canale dice anche che con l'accesso a Twitch va bene qualunque testo.
   `test/contratto/colpi-presenza.test.mjs` (il bot e il server), e
   `verifica-colpi.mjs` nel browser, con due difetti suoi (anteprima che ignora
   il punto, anteprima che non dice di essere un'anteprima).
+
+- Dalla chat e al pixel: `test/unita/colpi-chat-pew.test.mjs` (un messaggio
+  un significato, il punto, l'ordine dei mezzi, il mezzo chiesto, niente a
+  metà, l'attesa della persona fra pagina e chat, la parola e il quadro alla
+  pagina, e il pixel che resta pixel per ogni lato fino a 8192, provato tutto),
+  e `verifica-colpi.mjs` nel browser (trascinare, il ritocco tenuto e a un
+  pixel, le frecce, il pixel che arriva all'overlay, il quadro verticale,
+  «!pew pomodoro» nel punto della chat), con cinque difetti suoi.
 
 ## Limiti noti
 

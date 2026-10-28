@@ -43,6 +43,15 @@ comandi diversi da quelli della riga italiana.
 
 ## 2026-10-28
 
+- [importante] Pewpewify dalla chat: «!pew torta» lancia il colpo nel punto che scegli tu, pagato coi saldi di chi scrive. Sulla pagina invece si mira al pixel, anche col dito. [vai: colpi]
+  en: Pewpewify from chat: «!pew cake» launches the hit at the spot you pick, paid from the sender's balances. On the page instead you aim to the pixel, even by finger.
+  es: Pewpewify desde el chat: «!pew tarta» lanza el golpe en el punto que eliges, pagado con los saldos de quien escribe. En la página en cambio se apunta al píxel, también con el dedo.
+  > Dalla chat, nel tuo punto
+  > Scegli il punto (anche colpo per colpo), con cosa si paga in chat e in che ordine, e le risposte. Il formato della tua scena, anche verticale, vale per la pagina e per il pannello.
+  en> From chat, at your spot
+  en> Pick the spot (even hit by hit), what chat pays with and in which order, and the replies. Your scene format, vertical too, applies to the page and the panel.
+  es> Desde el chat, en tu punto
+  es> Elige el punto (incluso golpe a golpe), con qué se paga en el chat y en qué orden, y las respuestas. El formato de tu escena, también vertical, vale para la página y el panel.
 - Gli effetti che tieni privati, se escono dalla diretta (anteprima dei colpi, negozio), portano la tua firma su tutto il quadro. Nell'overlay restano puliti. [vai: effetti]
   en: Effects you keep private carry your signature across the whole frame when they leave the stream (hit previews, shop). In the overlay they stay clean.
   es: Los efectos que mantienes privados llevan tu firma en todo el cuadro cuando salen del directo (vista previa de golpes, tienda). En el overlay quedan limpios.
