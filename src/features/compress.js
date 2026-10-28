@@ -90,7 +90,10 @@ export function leggiSonda(testo) {
   }
   const durata = /Duration: (\d+):(\d+):(\d+(?:\.\d+)?)/.exec(t);
   const secondi = durata ? Number(durata[1]) * 3600 + Number(durata[2]) * 60 + Number(durata[3]) : 0;
-  return { codec, alfa, formato, audio, animato: secondi > 0.1 && !/image2|_pipe/.test((/Input #0, ([^,]+)/.exec(t) || [])[1] || '') };
+  // le misure del quadro (servono alla firma, features/firma-media.js)
+  const misure = /, (\d{1,5})x(\d{1,5})(?=[,\s\[])/.exec(righe[i]) || [];
+  return { codec, alfa, formato, audio, animato: secondi > 0.1 && !/image2|_pipe/.test((/Input #0, ([^,]+)/.exec(t) || [])[1] || ''),
+    larghezza: Number(misure[1]) || 0, altezza: Number(misure[2]) || 0 };
 }
 
 // Il decodificatore di ffmpeg per VP8 e VP9 ignora il canale alfa dei WebM:
@@ -126,6 +129,7 @@ async function testaDi(percorso, n = 32) {
 }
 
 // null = ffmpeg non c'e' (lo dira' la compressione con parole sue)
+export function sondaFile(percorso) { return sonda(percorso); }
 function sonda(percorso) {
   return new Promise((resolve) => {
     let proc;
@@ -211,6 +215,7 @@ const PIXEL_VIDEO = 'format=pix_fmts=yuva420p|yuv420p';
 
 // Esegue ffmpeg con gli argomenti dati. Risolve se esce con codice 0,
 // altrimenti lancia un errore chiaro. Uccide il processo se supera il timeout.
+export function ffmpeg(args) { return eseguiFfmpeg(args); }
 function eseguiFfmpeg(args) {
   return new Promise((resolve, reject) => {
     let proc;

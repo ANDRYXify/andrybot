@@ -47,3 +47,12 @@ test('lo spazio di un canale conta anche i file dell\'archivio che usa', () => {
   assert.match(SRV, /const spazioUsato = \(login\) => spazioCartella\(join\(effectsRoot, String\(login\)\.toLowerCase\(\)\)\) \+ archivioDb\.byteDi\(login\);/);
   assert.match(SRV, /const archivioMedia = creaArchivio\(\{ cartella: join\(config\.dataDir, 'archivio'\), chiudiChiave, apriChiave, impronta: \(sha\) => segno\('archivio', sha\)\.toString\('hex'\) \}\);/, 'cifrato con le maestre del server');
 });
+
+test('la firma: le porte pubbliche firmano gli effetti privati, l\'overlay e la libreria no', () => {
+  assert.match(tratto("app.get('/u/:user/colpo/anteprima/:voce',", 500), /mediaEffetti\.servi\(req, res, login, file, \{ maxAge: 300, firmato: firmaDi\(login\) \}\)/, 'l\'anteprima della pagina dei colpi');
+  assert.match(tratto("app.get('/u/:user/colpo/anteprima/:voce/suono'", 500), /firmato: firmaDi\(login\)/, 'e il suo suono');
+  assert.match(tratto("app.get('/u/:user/negozio/media/:id'", 400), /firmato: firmaDi\(m\.channel\)/, 'il negozio');
+  assert.ok(!/firmato/.test(tratto("app.get('/overlay/:login/media/:file'", 900)), 'in diretta l\'effetto resta pulito');
+  assert.ok(!/firmato/.test(tratto('const serviLibreria = (colonna) =>', 900)), 'la libreria la vede il proprietario, o e\' condivisa');
+  assert.match(SRV, /const firmaDi = \(login\) => testoFirma\(streamers\.get\(login\)\?\.display \|\| login\);/);
+});

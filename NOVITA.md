@@ -43,10 +43,13 @@ comandi diversi da quelli della riga italiana.
 
 ## 2026-10-28
 
+- Gli effetti che tieni privati, se escono dalla diretta (anteprima dei colpi, negozio), portano la tua firma su tutto il quadro. Nell'overlay restano puliti. [vai: effetti]
+  en: Effects you keep private carry your signature across the whole frame when they leave the stream (hit previews, shop). In the overlay they stay clean.
+  es: Los efectos que mantienes privados llevan tu firma en todo el cuadro cuando salen del directo (vista previa de golpes, tienda). En el overlay quedan limpios.
 - Ogni effetto della libreria ha il suo codice: «sb-» se condiviso, il tuo nome davanti se è solo tuo. Con un codice aggiungi un effetto, e prenderlo non occupa altro spazio. [vai: effetti]
   en: Every library effect has its own code: «sb-» if shared, your name in front if it's only yours. With a code you add an effect, and taking it uses no extra space.
   es: Cada efecto de la biblioteca tiene su código: «sb-» si es compartido, tu nombre delante si es solo tuyo. Con un código añades un efecto, y cogerlo no ocupa más espacio.
-- I file dei tuoi effetti ora stanno cifrati sul server, uno per contenuto: chi arrivasse al disco non potrebbe usarli. [vai: effetti]
+- Sul server i file dei tuoi effetti ora stanno cifrati, uno per contenuto: chi arrivasse al disco non potrebbe usarli. [vai: effetti]
   en: Your effect files are now stored encrypted on the server, one per content: anyone reaching the disk couldn't use them.
   es: Los archivos de tus efectos ahora están cifrados en el servidor, uno por contenido: quien llegara al disco no podría usarlos.
 - [importante] Lo zaino di Pewpewify: chi guarda compra un colpo per dopo, anche a diretta spenta, e lo ritrova sulla tua pagina da lanciare quando vuole, con un tocco. [vai: colpi]

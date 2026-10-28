@@ -18,10 +18,12 @@ import { unlink } from 'node:fs/promises';
 import { join, extname } from 'node:path';
 import crypto from 'node:crypto';
 import { eNomeArchivio, servi as serviArchivio } from './archivio.js';
+import { TIPI_FIRMATI } from './firma-media.js';
 
 const NOME_SEMPLICE = /^[A-Za-z0-9._-]+$/;
 
-export function creaMediaEffetti({ archivio, effetti, registro, cartellaDi, temp, log = null }) {
+// `firma`: il firmatore (features/firma-media.js) per le porte pubbliche.
+export function creaMediaEffetti({ archivio, effetti, registro, cartellaDi, temp, firma = null, log = null }) {
   const estDi = (f) => extname(String(f || '')).slice(1).toLowerCase();
 
   // Un file appena preparato (compresso, nella cartella del canale) entra
@@ -45,9 +47,20 @@ export function creaMediaEffetti({ archivio, effetti, registro, cartellaDi, temp
   }
 
   // Serve un file di un effetto di `channel`. false (e 404) se non e' suo.
-  async function servi(req, res, channel, nome, { maxAge = 300 } = {}) {
+  // Con `firmato` (il testo della firma) e' una porta pubblica: un file che
+  // nessun effetto condiviso usa esce firmato (docs/ARCHIVIO.md, «La firma»).
+  async function servi(req, res, channel, nome, { maxAge = 300, firmato = '' } = {}) {
     const ch = String(channel || '').toLowerCase();
     if (!nome || !NOME_SEMPLICE.test(nome) || nome.includes('..')) { res.status(404).end(); return false; }
+    if (firmato) {
+      const arch = eNomeArchivio(nome);
+      if (arch ? !effetti.usaFile(ch, nome) : !existsSync(join(cartellaDi(ch), nome))) { res.status(404).end(); return false; }
+      if (!registro.condiviso(nome, arch ? '' : ch)) {
+        const c = firma ? await firma.copia(ch, nome, estDi(nome), firmato, () => leggi(ch, nome)) : null;
+        if (!c) { res.status(404).end(); return false; }
+        return serviBuffer(req, res, c.buf, TIPI_FIRMATI[c.est] || 'application/octet-stream', maxAge);
+      }
+    }
     if (eNomeArchivio(nome)) {
       if (!effetti.usaFile(ch, nome)) { res.status(404).end(); return false; }
       return serviArchivio(archivio, nome, req, res, { maxAge });
@@ -58,6 +71,25 @@ export function creaMediaEffetti({ archivio, effetti, registro, cartellaDi, temp
         ok(!err);
       });
     });
+  }
+
+  // un buffer coi pezzi (Range) che il lettore chiede
+  function serviBuffer(req, res, buf, tipo, maxAge) {
+    res.setHeader('Content-Type', tipo);
+    res.setHeader('Accept-Ranges', 'bytes');
+    res.setHeader('Cache-Control', `private, max-age=${maxAge}`);
+    let inizio = 0, fine = buf.length - 1;
+    const r = /^bytes=(\d*)-(\d*)$/.exec(String(req.headers?.range || ''));
+    if (r && buf.length) {
+      if (r[1] === '' && r[2] !== '') inizio = Math.max(0, buf.length - Number(r[2]));
+      else { inizio = Number(r[1] || 0); if (r[2] !== '') fine = Math.min(buf.length - 1, Number(r[2])); }
+      if (!(inizio <= fine) || inizio >= buf.length) { res.statusCode = 416; res.setHeader('Content-Range', `bytes */${buf.length}`); res.end(); return false; }
+      res.statusCode = 206;
+      res.setHeader('Content-Range', `bytes ${inizio}-${fine}/${buf.length}`);
+    } else res.statusCode = 200;
+    res.setHeader('Content-Length', String(Math.max(0, fine - inizio + 1)));
+    res.end(req.method === 'HEAD' ? undefined : buf.subarray(inizio, fine + 1));
+    return true;
   }
 
   // I byte in chiaro di un file di un effetto di `channel` (per chi lo deve

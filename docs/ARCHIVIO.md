@@ -78,6 +78,39 @@ condiviso.
 Sul disco i nomi non dicono di chi sono: l'appartenenza sta nel database, il
 codice anche.
 
+## La firma
+
+Chiesto: chi arrivasse a un effetto privato per rubarlo deve trovarci sopra
+una firma dello streamer, visibile e difficile da togliere. Scelto: la firma
+si vede **fuori dalla diretta**; nell'overlay l'effetto resta pulito
+(`src/features/firma-media.js`).
+
+- Le porte pubbliche (l'anteprima sulla pagina dei colpi, l'immagine di un
+  articolo del negozio) passano `firmato` a `mediaEffetti.servi`. Un file che
+  nessun effetto condiviso usa (`archivioDb.condiviso`) esce firmato; un
+  condiviso e' gia' di tutti e esce com'e'. L'overlay e la libreria non
+  passano `firmato`.
+- Immagini e video: «© <streamer> · socialbot.live» ripetuto in diagonale su
+  tutto il quadro, piu' un bollino nell'angolo. Ritagliare un bordo non la
+  toglie. Le misure restano quelle dell'originale (la pagina misura
+  l'anteprima per l'ombra della mira); un video trasparente resta trasparente
+  (VP9 con alfa).
+- Audio: un segno udibile ogni tre secondi.
+- Quello che ffmpeg non sa riscrivere (un WebP animato, un AVIF) non esce mai
+  in chiaro: esce una tessera firmata grande come l'originale. Se la firma non
+  riesce del tutto, la porta risponde 404.
+- La copia firmata si fa alla prima richiesta, una sola anche con tante
+  richieste insieme, e resta in `archivio-firmati/<canale>/`, col nome che
+  dipende dal file e dal testo: un nome nuovo dello streamer fa una copia nuova.
+  Cancellare l'account toglie la sua cartella, e con lei le copie
+  (`cartelleDiCanale`). Le copie vecchie di
+  trenta giorni se ne vanno e si rifanno alla prossima richiesta.
+- Il permesso viene prima della firma: un altro canale non prende il file
+  nemmeno firmato.
+
+Limiti: nell'overlay il file esce in chiaro (e' quello che va in onda); un
+file di prima della migrazione si firma lo stesso, dalla cartella del canale.
+
 ## Collaudo
 
 - `test/unita/archivio.test.mjs`: un file per contenuto, niente in chiaro, i
@@ -85,7 +118,10 @@ codice anche.
   d'altri, il segreto mancante, i Range, i nonce mai ripetuti.
 - `test/unita/media-effetti.test.mjs`: il permesso di servire, prendere senza
   copiare, liberare quando nessuno usa, la migrazione che rispetta la riga, lo
-  spazio, i codici.
+  spazio, i codici; la porta pubblica che non esce mai in chiaro.
+- `test/unita/firma-media.test.mjs`: la firma su immagini, video trasparenti e
+  audio, con ffmpeg vero; la tessera; una copia sola; privati firmati,
+  condivisi e overlay puliti.
 - `test/contratto/archivio.test.mjs`: ogni rotta che serve, fa entrare o libera
-  un file di un effetto passa da `mediaEffetti`.
+  un file di un effetto passa da `mediaEffetti`, e le porte pubbliche firmano.
 - Un video dell'archivio, in Chromium: parte, avanza, salta (Range).

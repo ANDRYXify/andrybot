@@ -153,7 +153,11 @@ test('ogni modulo che scrive file col nome di un canale ha la sua cartella nell\
   const giu = (d) => fs.readdirSync(d, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? (e.name === 'public' ? [] : giu(path.join(d, e.name))) : e.name.endsWith('.js') ? [path.join(d, e.name)] : []));
   const re = /join\(([^()`]*(?:\([^()]*\))?[^()`]*),\s*`\$\{[a-zA-Z_]+\}\.(\$\{[a-zA-Z_]+\}|[a-z0-9]+)`\)/;
   const radice = new URL('../../', import.meta.url).pathname;
-  const trovati = giu(path.join(radice, 'src')).filter((f) => re.test(fs.readFileSync(f, 'utf8'))).map((f) => path.relative(radice, f)).sort();
+  // chi scrive «<cartella>/<canale>/<nome>.<est>» (un nome che non e' il canale)
+  // sta gia' in una cartella del canale, che cartelleDiCanale trova da sola
+  const DENTRO_IL_CANALE = { 'src/features/firma-media.js': /sua = join\(cartella, ch\)/ };
+  for (const [f, dove] of Object.entries(DENTRO_IL_CANALE)) assert.match(fs.readFileSync(path.join(radice, f), 'utf8'), dove, `${f} scrive nella cartella del canale`);
+  const trovati = giu(path.join(radice, 'src')).filter((f) => re.test(fs.readFileSync(f, 'utf8'))).map((f) => path.relative(radice, f)).filter((f) => !DENTRO_IL_CANALE[f]).sort();
   assert.deepEqual(trovati, Object.keys(NOTI).sort(), 'un modulo nuovo scrive file col nome di un canale: aggiungi la sua cartella a CARTELLE_DI_FILE (cancella.js) e qui');
   for (const [f, cartella] of Object.entries(NOTI)) {
     assert.match(fs.readFileSync(path.join(radice, f), 'utf8'), new RegExp(`join\\(config\\.dataDir, '${cartella}'\\)`), `${f} scrive in «${cartella}»`);

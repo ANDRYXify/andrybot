@@ -99,6 +99,25 @@ test('i file di prima passano all\'archivio; la riga cambia solo se e\' ancora q
   assert.ok(await m.pulisci() >= 1, 'il file entrato per niente lo toglie la pulizia');
 });
 
+test('la porta pubblica: un privato che non si firma non esce, e un altro canale non lo prende', async () => {
+  const a = canale(), b = canale();
+  const dati = crypto.randomBytes(1500);
+  const nome = await m.entra(nuovoFile(a, 'p.webp', dati), 'p.webp');
+  effects.add(a, { comando: 'privato', tipo: 'immagine', file: nome, tier: 'tutti', cooldown: 0, volume: 100, durata: 3000 });
+  const porta = async (firma, ch) => {
+    const mf = creaMediaEffetti({ archivio, effetti: effects, registro: archivioDb, cartellaDi, temp: join(usaEGetta.dir, 'entrata'), firma });
+    const { res, fatto } = risposta();
+    await mf.servi({ headers: {}, method: 'GET' }, res, ch, nome, { firmato: '© x · socialbot.live' });
+    return fatto;
+  };
+  const r = await porta({ copia: async () => null }, a);
+  assert.deepEqual([r.stato, r.corpo.equals(dati)], [404, false], 'la firma non riesce: niente, mai il chiaro');
+  assert.equal((await porta(null, a)).stato, 404, 'senza firmatore: niente');
+  const sempre = { copia: async () => ({ buf: Buffer.from('firmato'), est: 'png' }) };
+  assert.equal((await porta(sempre, a)).corpo.toString(), 'firmato');
+  assert.equal((await porta(sempre, b)).stato, 404, 'un altro canale non lo prende, nemmeno firmato');
+});
+
 test('il codice: sb- se condiviso, il canale se privato; stesso codice quando si ricarica; lo trova chi deve', () => {
   const a = canale(), b = canale();
   effects.add(a, { comando: 'boom', tipo: 'immagine', file: 'f1.webp', tier: 'tutti', cooldown: 0, volume: 100, durata: 3000 });

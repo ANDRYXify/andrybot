@@ -6273,6 +6273,13 @@ export const effects = {
 export const archivioDb = {
   segna(nome, byte, ora = now()) { db.prepare('INSERT OR IGNORE INTO archivio (nome, byte, ts) VALUES (?,?,?)').run(String(nome), Math.max(0, Math.trunc(Number(byte) || 0)), ora); },
   usato(nome) { return !!db.prepare('SELECT 1 FROM effects WHERE file=? OR suono_file=?').get(String(nome), String(nome)); },
+  // un effetto condiviso usa questo file? (allora e' di tutti: niente firma)
+  condiviso(nome, channel = '') {
+    const n = String(nome);
+    return channel
+      ? !!db.prepare('SELECT 1 FROM effects WHERE channel=? AND (file=? OR suono_file=?) AND pubblico=1').get(String(channel).toLowerCase(), n, n)
+      : !!db.prepare('SELECT 1 FROM effects WHERE (file=? OR suono_file=?) AND pubblico=1').get(n, n);
+  },
   togli(nome) { db.prepare('DELETE FROM archivio WHERE nome=?').run(String(nome)); },
   // quanto occupa un canale nell'archivio: i file che usa, ognuno una volta
   byteDi(channel) {

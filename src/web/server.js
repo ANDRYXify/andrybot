@@ -99,7 +99,9 @@ import * as musicaOverlayFeat from '../features/musica-overlay.js';
 import * as giveaway from '../features/giveaway.js';
 import * as partite from '../features/partite.js';
 import * as webauthn from './webauthn.js';
-import { comprimi, convertiPerEmote, svgInPng, LATO_LIBRERIA, normChiave } from '../features/compress.js';
+import { comprimi, convertiPerEmote, svgInPng, LATO_LIBRERIA, normChiave, ffmpeg as eseguiFfmpeg, sondaFile } from '../features/compress.js';
+import { creaFirma, testoFirma } from '../features/firma-media.js';
+import { disegna as disegnaSvg } from '../disegno.js';
 import { creaTramite, indirizzoBuono, BITRATE_MAX_KBPS } from '../features/diretta.js';
 import { inOnda } from '../in-onda.js';
 import { normalizza as normalizzaStudio, pesa as pesaStudio, LIMITI as LIMITI_STUDIO } from './public/js/studio-modello.js';
@@ -1412,8 +1414,11 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // I MEDIA DEGLI EFFETTI (docs/ARCHIVIO.md): un file per contenuto, cifrato,
   // servito solo al canale che lo usa; tutto passa da mediaEffetti
   const archivioMedia = creaArchivio({ cartella: join(config.dataDir, 'archivio'), chiudiChiave, apriChiave, impronta: (sha) => segno('archivio', sha).toString('hex') });
+  // la firma sugli effetti privati che escono da una porta pubblica (docs/ARCHIVIO.md, «La firma»)
+  const firmaMedia = creaFirma({ cartella: join(config.dataDir, 'archivio-firmati'), disegna: disegnaSvg, ffmpeg: eseguiFfmpeg, sonda: sondaFile, log });
   const mediaEffetti = creaMediaEffetti({ archivio: archivioMedia, effetti: effectsDb, registro: archivioDb,
-    cartellaDi: (l) => join(effectsRoot, String(l).toLowerCase()), temp: join(config.dataDir, 'archivio', 'entrata'), log });
+    cartellaDi: (l) => join(effectsRoot, String(l).toLowerCase()), temp: join(config.dataDir, 'archivio', 'entrata'), firma: firmaMedia, log });
+  const firmaDi = (login) => testoFirma(streamers.get(login)?.display || login);
   // lo spazio di un canale: la sua cartella, e i file dell'archivio che usa (ognuno una volta)
   const spazioUsato = (login) => spazioCartella(join(effectsRoot, String(login).toLowerCase())) + archivioDb.byteDi(login);
   const spazioEsaurito = (login) => spazioUsato(login) >= config.spazioCanaleByte;
@@ -1422,7 +1427,10 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // alla volta, dopo l'avvio; e ogni tanto si tolgono i file che nessuno usa piu'
   try { const n = effectsDb.siglaTutti(); if (n) log.info(`effetti: ${n} codici nuovi`); } catch (e) { log.warn('codici degli effetti:', e?.message || e); }
   setTimeout(() => { mediaEffetti.migra().then((n) => { if (n) log.info(`archivio: ${n} file spostati`); }).catch((e) => log.warn('archivio:', e?.message || e)); }, 20_000).unref?.();
-  setInterval(() => { mediaEffetti.pulisci().catch((e) => log.warn('archivio, pulizia:', e?.message || e)); }, 6 * 3600_000).unref?.();
+  setInterval(() => {
+    mediaEffetti.pulisci().catch((e) => log.warn('archivio, pulizia:', e?.message || e));
+    firmaMedia.pulisci().catch((e) => log.warn('copie firmate, pulizia:', e?.message || e));
+  }, 6 * 3600_000).unref?.();
   const sfondiRoot = join(config.dataDir, 'sfondi');   // libreria sfondi delle grafiche
   const tmpDir = join(config.dataDir, 'tmp');
   mkdirSync(tmpDir, { recursive: true });
@@ -2494,13 +2502,14 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     const login = loginColpi(req);
     const file = login ? portaColpi.anteprima(login, req.params.voce) : null;
     if (!file) return notFound(res);
-    mediaEffetti.servi(req, res, login, file, { maxAge: 300 }).catch(() => { if (!res.headersSent) notFound(res); });
+    // una porta pubblica: un effetto privato esce firmato
+    mediaEffetti.servi(req, res, login, file, { maxAge: 300, firmato: firmaDi(login) }).catch(() => { if (!res.headersSent) notFound(res); });
   });
   app.get('/u/:user/colpo/anteprima/:voce/suono', (req, res) => {
     const login = loginColpi(req);
     const file = login ? portaColpi.anteprima(login, req.params.voce, 'suono') : null;
     if (!file) return notFound(res);
-    mediaEffetti.servi(req, res, login, file, { maxAge: 300 }).catch(() => { if (!res.headersSent) notFound(res); });
+    mediaEffetti.servi(req, res, login, file, { maxAge: 300, firmato: firmaDi(login) }).catch(() => { if (!res.headersSent) notFound(res); });
   });
   app.post('/u/:user/colpo/mira', (req, res) => {
     const login = loginColpi(req);
@@ -2708,7 +2717,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   app.get('/u/:user/negozio/media/:id', (req, res) => {
     const m = negozioPagina.mediaPubblico(req.params.user, req.params.id);
     if (!m) return notFound(res);
-    mediaEffetti.servi(req, res, m.channel, m.file, { maxAge: 300 }).catch(() => { if (!res.headersSent) notFound(res); });
+    mediaEffetti.servi(req, res, m.channel, m.file, { maxAge: 300, firmato: firmaDi(m.channel) }).catch(() => { if (!res.headersSent) notFound(res); });
   });
 
   // ── LA PORTA DEL GRUPPO TELEGRAM e LA PROVA DELLO SCUDO (docs/TELEGRAM.md) ──
