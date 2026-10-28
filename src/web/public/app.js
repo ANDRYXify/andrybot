@@ -26242,14 +26242,83 @@ function pannelloColpi() {
         <label class="interruttore"><input type="checkbox" id="cl-bp-attivo" ${c.bitPew?.attivo !== false ? 'checked' : ''}><span class="levetta"></span></label>
         <span class="etichetta-stato">${L('Bit da spendere accesi', 'Bits to spend on', 'Bits para gastar activados')}</span>
       </div>
-      <div class="griglia-campi cl-bp-campi spazio-sopra">
+      <div class="griglia-campi spazio-sopra">
         <div>
           <label class="campo" for="cl-bp-resa">${L('Bit da spendere ogni 100 mandati', 'Bits to spend per 100 sent', 'Bits para gastar por cada 100 mandados')}</label>
           <input type="number" id="cl-bp-resa" min="1" max="1000" value="${Number(c.bitPew?.resa) || 100}">
         </div>
+        <div>
+          <label class="campo" for="cl-bp-minimo">${L('Un cheer conta da (Bit)', 'A cheer counts from (Bits)', 'Un cheer cuenta desde (Bits)')}</label>
+          <input type="number" id="cl-bp-minimo" min="1" max="100000" value="${Number(c.bitPew?.minimo) || 1}">
+        </div>
+        <div>
+          <label class="campo" for="cl-bp-tetto">${L('Saldo massimo a testa (0 = nessuno)', 'Max balance each (0 = none)', 'Saldo máximo por persona (0 = ninguno)')}</label>
+          <input type="number" id="cl-bp-tetto" min="0" max="10000000" value="${Number(c.bitPew?.tetto) || 0}">
+        </div>
       </div>
       <p class="pt-dice" id="cl-bp-dice" aria-live="polite"></p>
-      <p class="suggerimento">${L('Si spendono dalla pagina, con l\'accesso a Twitch: sono di chi li ha mandati, e restano suoi anche se cambia nome. In chat «!${esc(c.comando || 'pew')} bit» dice a ognuno quanti ne ha. Valgono i Bit mandati da quando li accendi; quelli anonimi non sono di nessuno.', 'They are spent from the page, logged in with Twitch: they belong to whoever sent them, and stay theirs even if they change name. In chat «!${esc(c.comando || 'pew')} bit» tells everyone how many they have. Bits count from when you turn this on; anonymous ones belong to no one.', 'Se gastan desde la página, con el acceso a Twitch: son de quien los mandó, y siguen siendo suyos aunque cambie de nombre. En el chat «!${esc(c.comando || 'pew')} bit» le dice a cada uno cuántos tiene. Cuentan los Bits mandados desde que lo activas; los anónimos no son de nadie.')}</p>
+      <p class="suggerimento">${L(`Si spendono dalla pagina, con l'accesso a Twitch: sono di chi li ha mandati, e restano suoi anche se cambia nome. In chat «!${esc(c.comando || 'pew')} bit» dice a ognuno quanti ne ha. Valgono i Bit mandati da quando li accendi; quelli anonimi non sono di nessuno.`, `They are spent from the page, logged in with Twitch: they belong to whoever sent them, and stay theirs even if they change name. In chat «!${esc(c.comando || 'pew')} bit» tells everyone how many they have. Bits count from when you turn this on; anonymous ones belong to no one.`, `Se gastan desde la página, con el acceso a Twitch: son de quien los mandó, y siguen siendo suyos aunque cambie de nombre. En el chat «!${esc(c.comando || 'pew')} bit» le dice a cada uno cuántos tiene. Cuentan los Bits mandados desde que lo activas; los anónimos no son de nadie.`)}</p>
+      <h4 class="spazio-sopra">${L('Quando scadono', 'When they expire', 'Cuándo caducan')}</h4>
+      <div class="griglia-campi">
+        <div>
+          <label class="campo" for="cl-bp-tipo">${L('Scadenza', 'Expiry', 'Caducidad')}</label>
+          <select id="cl-bp-tipo">${[['mai', L('Mai', 'Never', 'Nunca')], ['dopo', L('Dopo un tempo da quando arrivano', 'A while after they arrive', 'Un tiempo después de llegar')], ['fine', L('A una data fissa del calendario', 'On a fixed calendar date', 'En una fecha fija del calendario')], ['inattivo', L('Se chi li ha non li muove per un po\'', 'If the holder doesn\'t use them for a while', 'Si quien los tiene no los mueve durante un tiempo')]].map(([v, t]) => `<option value="${v}"${(c.bitPew?.scadenza?.tipo || 'mai') === v ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select>
+        </div>
+        <div data-bp-per="dopo inattivo">
+          <label class="campo" for="cl-bp-quanti">${L('Quanto', 'How long', 'Cuánto')}</label>
+          <input type="number" id="cl-bp-quanti" min="1" max="1000" value="${Number(c.bitPew?.scadenza?.quanti) || 30}">
+        </div>
+        <div data-bp-per="dopo inattivo">
+          <label class="campo" for="cl-bp-unita">${L('Unità', 'Unit', 'Unidad')}</label>
+          <select id="cl-bp-unita">${[['ore', L('ore', 'hours', 'horas')], ['giorni', L('giorni', 'days', 'días')], ['settimane', L('settimane', 'weeks', 'semanas')], ['mesi', L('mesi', 'months', 'meses')], ['anni', L('anni', 'years', 'años')]].map(([v, t]) => `<option value="${v}"${(c.bitPew?.scadenza?.unita || 'giorni') === v ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select>
+        </div>
+        <div data-bp-per="fine">
+          <label class="campo" for="cl-bp-ogni">${L('Ogni', 'Every', 'Cada')}</label>
+          <select id="cl-bp-ogni">${[['giorno', L('giorno', 'day', 'día')], ['settimana', L('settimana', 'week', 'semana')], ['mese', L('mese', 'month', 'mes')], ['anno', L('anno', 'year', 'año')]].map(([v, t]) => `<option value="${v}"${(c.bitPew?.scadenza?.ogni || 'mese') === v ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select>
+        </div>
+        <div data-bp-per="fine-settimana">
+          <label class="campo" for="cl-bp-dow">${L('Giorno', 'Day', 'Día')}</label>
+          <select id="cl-bp-dow">${[L('lunedì', 'Monday', 'lunes'), L('martedì', 'Tuesday', 'martes'), L('mercoledì', 'Wednesday', 'miércoles'), L('giovedì', 'Thursday', 'jueves'), L('venerdì', 'Friday', 'viernes'), L('sabato', 'Saturday', 'sábado'), L('domenica', 'Sunday', 'domingo')].map((t, i) => `<option value="${i + 1}"${Number(c.bitPew?.scadenza?.giorno || 1) === i + 1 ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select>
+        </div>
+        <div data-bp-per="fine-anno">
+          <label class="campo" for="cl-bp-mese">${L('Mese', 'Month', 'Mes')}</label>
+          <select id="cl-bp-mese">${Array.from({ length: 12 }, (_, i) => `<option value="${i + 1}"${Number(c.bitPew?.scadenza?.mese || 1) === i + 1 ? ' selected' : ''}>${esc(new Date(2026, i, 15).toLocaleString(localePannello(), { month: 'long' }))}</option>`).join('')}</select>
+        </div>
+        <div data-bp-per="fine-mese fine-anno">
+          <label class="campo" for="cl-bp-giorno">${L('Giorno del mese', 'Day of the month', 'Día del mes')}</label>
+          <input type="number" id="cl-bp-giorno" min="1" max="31" value="${Number(c.bitPew?.scadenza?.giorno) || 1}">
+        </div>
+        <div data-bp-per="fine">
+          <label class="campo" for="cl-bp-ora">${L('Alle ore', 'At (hour)', 'A las (hora)')}</label>
+          <input type="number" id="cl-bp-ora" min="0" max="23" value="${Number(c.bitPew?.scadenza?.ora) || 0}">
+        </div>
+        <div data-bp-per="dopo fine inattivo">
+          <label class="campo" for="cl-bp-grazia">${L('Ore minime di validità', 'Minimum hours valid', 'Horas mínimas de validez')}</label>
+          <input type="number" id="cl-bp-grazia" min="0" max="720" value="${Number.isFinite(Number(c.bitPew?.scadenza?.grazia)) ? Number(c.bitPew.scadenza.grazia) : 24}">
+        </div>
+        <div data-bp-per="dopo fine inattivo">
+          <label class="campo" for="cl-bp-avviso">${L('Avvisa quanti giorni prima', 'Warn how many days before', 'Avisar cuántos días antes')}</label>
+          <input type="number" id="cl-bp-avviso" min="0" max="90" value="${Number.isFinite(Number(c.bitPew?.scadenza?.avviso)) ? Number(c.bitPew.scadenza.avviso) : 3}">
+        </div>
+      </div>
+      <p class="pt-dice" id="cl-bp-scade-dice" aria-live="polite"></p>
+      <p class="suggerimento">${L('Sempre nel fuso del tuo canale. Le ore minime valgono per chi riceve Bit a ridosso della scadenza e per quelli che tornano da un colpo non comparso: valgono almeno tanto. L\'avviso compare sulla pagina e nella risposta in chat.', 'Always in your channel time zone. The minimum hours apply to Bits received right before the expiry and to those coming back from a hit that didn\'t show: they last at least that long. The warning shows on the page and in the chat reply.', 'Siempre en la zona horaria de tu canal. Las horas mínimas valen para los Bits recibidos justo antes de la caducidad y para los que vuelven de un golpe que no apareció: valen al menos eso. El aviso aparece en la página y en la respuesta del chat.')}</p>
+      <h4 class="spazio-sopra">${L('Quando tornano', 'When they come back', 'Cuándo vuelven')}</h4>
+      <div class="riga-check"><input type="checkbox" id="cl-bp-rendi-colpi" ${c.bitPew?.rendiColpi !== false ? 'checked' : ''}><label for="cl-bp-rendi-colpi">${L('Un colpo pagato col cheer che non compare: i suoi Bit tornano da spendere', 'A hit paid by cheer that doesn\'t show: its Bits come back to spend', 'Un golpe pagado con cheer que no aparece: sus Bits vuelven para gastar')}</label></div>
+      <div class="riga-check"><input type="checkbox" id="cl-bp-rendi-mire" ${c.bitPew?.rendiMire !== false ? 'checked' : ''}><label for="cl-bp-rendi-mire">${L('Una mira mai pagata coi Bit a metà: tornano da spendere', 'An aim never paid with Bits half in: they come back to spend', 'Un punto nunca pagado con Bits a medias: vuelven para gastar')}</label></div>
+      <p class="suggerimento">${L('Quelli spesi dal saldo tornano sempre, coi loro lotti.', 'Those spent from the balance always come back, with their own expiry.', 'Los gastados del saldo vuelven siempre, con su caducidad.')}</p>
+      <h4 class="spazio-sopra">${L('La risposta in chat', 'The chat reply', 'La respuesta en el chat')}</h4>
+      <div class="riga-check"><input type="checkbox" id="cl-bp-rispondi" ${c.bitPew?.rispondi !== false ? 'checked' : ''}><label for="cl-bp-rispondi">${L(`Il bot risponde a «!${esc(c.comando || 'pew')} bit»`, `The bot replies to «!${esc(c.comando || 'pew')} bit»`, `El bot responde a «!${esc(c.comando || 'pew')} bit»`)}</label></div>
+      <div class="griglia-campi cl-bp-campi">
+        <div>
+          <label class="campo" for="cl-bp-attesa">${L('Secondi fra due risposte alla stessa persona', 'Seconds between two replies to the same person', 'Segundos entre dos respuestas a la misma persona')}</label>
+          <input type="number" id="cl-bp-attesa" min="0" max="3600" value="${Number.isFinite(Number(c.bitPew?.attesaSec)) ? Number(c.bitPew.attesaSec) : 60}">
+        </div>
+      </div>
+      <label class="campo" for="cl-bp-risposta">${L('La risposta (vuota: quella di serie)', 'The reply (empty: the default one)', 'La respuesta (vacía: la de serie)')}</label>
+      <input type="text" id="cl-bp-risposta" maxlength="160" value="${esc(c.bitPew?.risposta || '')}" placeholder="${esc(L('{nome} hai {saldo} Bit da spendere su {pagina}{scade}', '{nome} you have {saldo} Bits to spend on {pagina}{scade}', '{nome} tienes {saldo} Bits para gastar en {pagina}{scade}'))}">
+      <p class="suggerimento">${L('Puoi usare {nome}, {saldo}, {pagina}, {scade} (la frase sulla scadenza, solo quando c\'è), {quanti} e {quando}.', 'You can use {nome}, {saldo}, {pagina}, {scade} (the expiry sentence, only when there is one), {quanti} and {quando}.', 'Puedes usar {nome}, {saldo}, {pagina}, {scade} (la frase de la caducidad, solo cuando la hay), {quanti} y {quando}.')}</p>
+
       <div id="cl-bp-chi" class="cl-bp-chi spazio-sopra"></div>
       <p class="spazio-sopra"><button class="btn" id="cl-bp-salva">${L('Salva', 'Save', 'Guardar')}</button></p>
     </div>
@@ -26333,7 +26402,7 @@ function _clLeggi() {
     alMinuto: Number(document.getElementById('cl-minuto')?.value) || 6,
     conNome: !!document.getElementById('cl-nome')?.checked,
     presenza: _clPresenzaLeggi(),
-    bitPew: { attivo: !!document.getElementById('cl-bp-attivo')?.checked, resa: Number(document.getElementById('cl-bp-resa')?.value) || 0 },
+    bitPew: _clBitLeggi(),
     titolo: (document.getElementById('cl-titolo')?.value || '').trim(),
     dida: (document.getElementById('cl-dida')?.value || '').trim(),
     zone: _clZone.map((z) => ({ ...z })),
@@ -26370,6 +26439,42 @@ function _clPresenzaDice() {
   const primi = g.slice(0, 6).map((x, i) => `${i + 1}ª ${x}`).join(', ') + (g.length > 6 ? '…' : '');
   const poi = p.dopo === 'ricomincia' ? L(`poi si ricomincia da ${g[0]}`, `then it starts over from ${g[0]}`, `luego se vuelve a ${g[0]}`) : L(`poi sempre ${g.at(-1)}`, `then always ${g.at(-1)}`, `luego siempre ${g.at(-1)}`);
   el.textContent = L(`Così, presenza dopo presenza di fila: ${primi} ${nome}, ${poi}. Chi salta una diretta riparte da ${g[0]}.`, `So, check-in after check-in in a row: ${primi} ${nome}, ${poi}. Whoever misses a stream starts again from ${g[0]}.`, `Así, presencia tras presencia seguida: ${primi} ${nome}, ${poi}. Quien se salta un directo vuelve a ${g[0]}.`);
+}
+
+function _clBitLeggi() {
+  const v = (id) => document.getElementById(id);
+  const n = (id, d) => { const x = Number(v(id)?.value); return v(id)?.value === '' || !Number.isFinite(x) ? d : x; };
+  const ogni = v('cl-bp-ogni')?.value || 'mese';
+  return {
+    attivo: !!v('cl-bp-attivo')?.checked, resa: n('cl-bp-resa', 0), minimo: n('cl-bp-minimo', 1), tetto: n('cl-bp-tetto', 0),
+    rendiColpi: !!v('cl-bp-rendi-colpi')?.checked, rendiMire: !!v('cl-bp-rendi-mire')?.checked,
+    rispondi: !!v('cl-bp-rispondi')?.checked, risposta: (v('cl-bp-risposta')?.value || '').trim(), attesaSec: n('cl-bp-attesa', 60),
+    scadenza: { tipo: v('cl-bp-tipo')?.value || 'mai', quanti: n('cl-bp-quanti', 30), unita: v('cl-bp-unita')?.value || 'giorni', ogni,
+      giorno: ogni === 'settimana' ? n('cl-bp-dow', 1) : n('cl-bp-giorno', 1), mese: n('cl-bp-mese', 1), ora: n('cl-bp-ora', 0), grazia: n('cl-bp-grazia', 24), avviso: n('cl-bp-avviso', 3) },
+  };
+}
+
+function _clBitScade() {
+  const b = _clBitLeggi(), sc = b.scadenza;
+  const chiave = sc.tipo === 'fine' ? ['fine', 'fine-' + sc.ogni] : [sc.tipo];
+  for (const d of document.querySelectorAll('#cl-bitpew [data-bp-per]')) d.hidden = !d.dataset.bpPer.split(' ').some((k) => chiave.includes(k));
+  const el = document.getElementById('cl-bp-scade-dice');
+  if (!el) return;
+  const un = { ore: L('ore', 'hours', 'horas'), giorni: L('giorni', 'days', 'días'), settimane: L('settimane', 'weeks', 'semanas'), mesi: L('mesi', 'months', 'meses'), anni: L('anni', 'years', 'años') }[sc.unita];
+  const hh = String(sc.ora).padStart(2, '0') + ':00';
+  const giornoSett = [L('lunedì', 'Monday', 'lunes'), L('martedì', 'Tuesday', 'martes'), L('mercoledì', 'Wednesday', 'miércoles'), L('giovedì', 'Thursday', 'jueves'), L('venerdì', 'Friday', 'viernes'), L('sabato', 'Saturday', 'sábado'), L('domenica', 'Sunday', 'domingo')][Math.min(7, Math.max(1, sc.giorno)) - 1];
+  const mese = new Date(2026, Math.min(12, Math.max(1, sc.mese)) - 1, 15).toLocaleString(localePannello(), { month: 'long' });
+  const fino = sc.unita === 'ore' ? '' : L(' (fino alla fine di quel giorno)', ' (until the end of that day)', ' (hasta el final de ese día)');
+  const quando = {
+    giorno: L(`ogni giorno alle ${hh}`, `every day at ${hh}`, `cada día a las ${hh}`),
+    settimana: L(`ogni ${giornoSett} alle ${hh}`, `every ${giornoSett} at ${hh}`, `cada ${giornoSett} a las ${hh}`),
+    mese: L(`il ${sc.giorno} di ogni mese alle ${hh} (l'ultimo, se il mese è più corto)`, `on day ${sc.giorno} of every month at ${hh} (the last one, if the month is shorter)`, `el día ${sc.giorno} de cada mes a las ${hh} (el último, si el mes es más corto)`),
+    anno: L(`il ${sc.giorno} ${mese} di ogni anno alle ${hh}`, `every year on ${mese} ${sc.giorno} at ${hh}`, `el ${sc.giorno} de ${mese} de cada año a las ${hh}`),
+  }[sc.ogni];
+  el.textContent = sc.tipo === 'mai' ? L('Così i Bit da spendere non scadono mai.', 'So Bits to spend never expire.', 'Así los Bits para gastar nunca caducan.')
+    : sc.tipo === 'dopo' ? L(`Così ogni Bit vale ${sc.quanti} ${un} da quando arriva${fino}.`, `So every Bit lasts ${sc.quanti} ${un} from when it arrives${fino}.`, `Así cada Bit vale ${sc.quanti} ${un} desde que llega${fino}.`)
+      : sc.tipo === 'inattivo' ? L(`Così i Bit di una persona scadono tutti se per ${sc.quanti} ${un} non ne riceve e non ne spende.`, `So a person's Bits all expire if for ${sc.quanti} ${un} they neither receive nor spend any.`, `Así los Bits de una persona caducan todos si durante ${sc.quanti} ${un} no recibe ni gasta.`)
+        : L(`Così i Bit scadono tutti ${quando}; quelli arrivati meno di ${sc.grazia} ore prima, al giro dopo.`, `So all Bits expire ${quando}; those received less than ${sc.grazia} hours before, at the next one.`, `Así todos los Bits caducan ${quando}; los recibidos menos de ${sc.grazia} horas antes, en la siguiente.`);
 }
 
 function _clBitDice() {
@@ -26410,7 +26515,11 @@ function _clPresenzaQuadro() {
 async function salvaColpi(silenzioso) {
   const colpi = _clLeggi();
   _clPresenzaGiusta(colpi.presenza);
-  if (colpi.bitPew.attivo && !(colpi.bitPew.resa >= 1 && colpi.bitPew.resa <= 1000)) throw new Error(L('La resa dei Bit da spendere va da 1 a 1.000 ogni 100 Bit.', 'The Bits-to-spend rate goes from 1 to 1,000 per 100 Bits.', 'El rendimiento de los Bits para gastar va de 1 a 1.000 por cada 100 Bits.'));
+  const bp = colpi.bitPew, fuori = (x, a, z) => !(Number.isInteger(x) && x >= a && x <= z);
+  if (bp.attivo && fuori(bp.resa, 1, 1000)) throw new Error(L('La resa dei Bit da spendere va da 1 a 1.000 ogni 100 Bit.', 'The Bits-to-spend rate goes from 1 to 1,000 per 100 Bits.', 'El rendimiento de los Bits para gastar va de 1 a 1.000 por cada 100 Bits.'));
+  if (fuori(bp.minimo, 1, 100000) || fuori(bp.tetto, 0, 10000000) || fuori(bp.attesaSec, 0, 3600)) throw new Error(L('Bit da spendere: il minimo va da 1 a 100.000, il saldo massimo da 0 a 10 milioni, i secondi fra due risposte da 0 a 3.600.', 'Bits to spend: the minimum goes from 1 to 100,000, the max balance from 0 to 10 million, the seconds between replies from 0 to 3,600.', 'Bits para gastar: el mínimo va de 1 a 100.000, el saldo máximo de 0 a 10 millones, los segundos entre respuestas de 0 a 3.600.'));
+  const sc = bp.scadenza;
+  if (sc.tipo !== 'mai' && (fuori(sc.quanti, 1, 1000) || fuori(sc.ora, 0, 23) || fuori(sc.giorno, 1, 31) || fuori(sc.grazia, 0, 720) || fuori(sc.avviso, 0, 90))) throw new Error(L('Scadenza dei Bit: quanto da 1 a 1.000, l\'ora da 0 a 23, il giorno da 1 a 31, le ore minime da 0 a 720, l\'avviso da 0 a 90 giorni.', 'Bit expiry: how long from 1 to 1,000, the hour from 0 to 23, the day from 1 to 31, minimum hours from 0 to 720, the warning from 0 to 90 days.', 'Caducidad de los Bits: cuánto de 1 a 1.000, la hora de 0 a 23, el día de 1 a 31, las horas mínimas de 0 a 720, el aviso de 0 a 90 días.'));
   const mistoOk = (x, k) => x && x.monete > 0 && x[k] > 0;
   const vuote = colpi.voci.filter((v) => !(v.euro > 0 || v.punti > 0 || v.bit > 0 || v.monete > 0 || mistoOk(v.misti.bit, 'bit') || mistoOk(v.misti.punti, 'punti')));
   if (colpi.voci.some((v) => ['bit', 'punti'].some((k) => (v.misti[k].monete > 0) !== (v.misti[k][k] > 0)))) throw new Error(L('Un modo misto vuole tutte e due le cifre: le monete e i Bit, o le monete e i punti.', 'A mixed way needs both numbers: coins and Bits, or coins and points.', 'Un modo mixto necesita las dos cifras: monedas y Bits, o monedas y puntos.'));
@@ -26488,7 +26597,21 @@ async function caricaColpiStato() {
     const t = st.bitPew.totali || { persone: 0, bit: 0 };
     bp.innerHTML = !t.persone ? `<p class="tenue">${L('Ancora nessuno ha Bit da spendere.', 'Nobody has Bits to spend yet.', 'Todavía nadie tiene Bits para gastar.')}</p>`
       : `<p>${esc(L(`In giro: ${t.bit.toLocaleString(localePannello())} Bit da spendere, di ${t.persone} ${t.persone === 1 ? 'persona' : 'persone'}.`, `Out there: ${t.bit.toLocaleString(localePannello())} Bits to spend, held by ${t.persone} ${t.persone === 1 ? 'person' : 'people'}.`, `En circulación: ${t.bit.toLocaleString(localePannello())} Bits para gastar, de ${t.persone} ${t.persone === 1 ? 'persona' : 'personas'}.`))}</p>`
-        + `<div class="scorrevole"><table class="tabella"><tbody>${(st.bitPew.primi || []).map((p) => `<tr><td>${esc(p.nome || "—")}</td><td>${esc(Number(p.saldo).toLocaleString(localePannello()))}</td></tr>`).join('')}</tbody></table></div>`;
+        + `<div class="scorrevole"><table class="tabella"><tbody>${(st.bitPew.primi || []).map((p) => `<tr data-chi="${esc(p.chi || '')}"><td>${esc(p.nome || "—")}</td><td class="cl-bp-correggi"><input type="number" min="0" max="10000000" value="${Number(p.saldo) || 0}" aria-label="${esc(L('Nuovo saldo di ', 'New balance for ', 'Nuevo saldo de ') + (p.nome || ''))}"><button type="button" class="btn secondario mini" data-bp-imposta>${L('Imposta', 'Set', 'Fijar')}</button></td></tr>`).join('')}</tbody></table></div>`;
+    if (!bp.dataset.wired) {
+      bp.dataset.wired = '1';
+      bp.addEventListener('click', (e) => {
+        const b = e.target.closest('[data-bp-imposta]');
+        const r = b?.closest('tr');
+        if (!r) return;
+        conErrore(async () => {
+          const saldo = Number(r.querySelector('input').value);
+          await api('/api/colpi/bit', { method: 'POST', body: { chi: r.dataset.chi, saldo } });
+          toast(L('Saldo aggiornato ✓', 'Balance updated ✓', 'Saldo actualizado ✓'));
+          caricaColpiStato();
+        });
+      });
+    }
   }
   const ul = document.getElementById('cl-ultimi');
   if (ul && (st.ultimi || []).length) {
@@ -26554,7 +26677,10 @@ async function caricaColpi() {
     document.getElementById('cl-pr-salva')?.addEventListener('click', () => conErrore(() => salvaColpi()));
     document.getElementById('cl-bp-salva')?.addEventListener('click', () => conErrore(() => salvaColpi()));
     for (const id of ['cl-bp-attivo', 'cl-bp-resa']) document.getElementById(id)?.addEventListener('input', _clBitDice);
+    document.getElementById('cl-bitpew')?.addEventListener('input', _clBitScade);
+    document.getElementById('cl-bitpew')?.addEventListener('change', _clBitScade);
     _clBitDice();
+    _clBitScade();
     document.getElementById('cl-pr-lancio')?.addEventListener('click', () => conErrore(async () => {
       const r = await scegliLancio({ testo: L('Quello che prendi diventa l\'effetto della presenza: compare col nome di chi scrive la frase.', 'What you take becomes the check-in effect: it shows up with the name of whoever types the phrase.', 'Lo que coges se convierte en el efecto de la presencia: aparece con el nombre de quien escribe la frase.') });
       if (!r) return;

@@ -43,6 +43,9 @@ comandi diversi da quelli della riga italiana.
 
 ## 2026-10-28
 
+- I Bit da spendere di Pewpewify possono scadere quando vuoi: dopo ore, giorni, settimane, mesi o anni, a una data fissa del calendario o se nessuno li usa. Scegli anche minimo, tetto, avvisi e risposta in chat. [vai: colpi]
+  en: Pewpewify Bits to spend can expire when you want: after hours, days, weeks, months or years, on a fixed calendar date or if nobody uses them. You also pick minimum, cap, warnings and chat reply.
+  es: Los Bits para gastar de Pewpewify pueden caducar cuando quieras: tras horas, días, semanas, meses o años, en una fecha fija del calendario o si nadie los usa. Eliges también mínimo, tope, avisos y respuesta en el chat.
 - Con l'accesso a Twitch la pagina di Pewpewify lancia un colpo in un tocco: scegli, tocchi il punto e paghi col tuo saldo di monete o di Bit, senza codici. [vai: colpi]
   en: Logged in with Twitch, the Pewpewify page launches a hit in one tap: pick it, tap the spot and pay from your coin or Bit balance, no codes.
   es: Con el acceso de Twitch la página de Pewpewify lanza un golpe en un toque: eliges, tocas el punto y pagas con tu saldo de monedas o de Bits, sin códigos.

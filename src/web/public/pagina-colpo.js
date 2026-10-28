@@ -45,7 +45,7 @@
   }
   function ricorda(id) { try { if (id) sessionStorage.setItem(memo, id); else sessionStorage.removeItem(memo); } catch (e) {  } }
 
-  var saldoBit = null, saldoMonete = null;
+  var saldoBit = null, saldoMonete = null, scadonoBit = null;
   function saldi() {
     if (!io || !dati) { saldoBit = null; saldoMonete = null; lanciaTasti(); return Promise.resolve(); }
     return chiedi('/saldi').then(function (r) {
@@ -53,6 +53,9 @@
       var prima = saldoBit + '|' + saldoMonete;
       saldoBit = typeof r.bit === 'number' ? r.bit : null;
       saldoMonete = typeof r.monete === 'number' ? r.monete : null;
+      var scPrima = scadonoBit;
+      scadonoBit = r.scadono && r.scadono.quanti > 0 ? r.scadono : null;
+      if (JSON.stringify(scPrima) !== JSON.stringify(scadonoBit)) accedi();
       if (prima !== saldoBit + '|' + saldoMonete) { accedi(); lanciaTasti(); if (mira && mira.stato === 'attesa') mostra(); }
     }, function () {  });
   }
@@ -110,6 +113,7 @@
     if (io) {
       box.appendChild(el('p', '', riempi(T.sei, { nome: io.nome || io.login })));
       if (saldoBit !== null && dati && dati.bitPew) box.appendChild(el('p', 'cp-saldo', riempi(T.saldoBit, { n: numero(saldoBit) })));
+      if (saldoBit && scadonoBit && dati && dati.bitPew) box.appendChild(el('p', 'cp-nota cp-scadono', riempi(T.scadonoBit, { n: numero(scadonoBit.quanti), quando: scadonoBit.quando })));
       if (saldoMonete !== null) box.appendChild(el('p', 'cp-saldo', riempi(T.saldoMonete, { n: numero(saldoMonete), moneta: moneta() })));
       var esci = el('button', 'cp-b due', T.esci);
       esci.type = 'button';

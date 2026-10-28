@@ -41,7 +41,7 @@ export const T = {
     chat: 'Chat', chatVuota: 'La chat è tranquilla: i messaggi nuovi compaiono qui.', chatScrivi: 'Scrivi in chat', chatInvia: 'Invia',
     chatFuori: 'La chat si legge da qui. Per scrivere, accedi con Twitch.', chatNonInviato: 'Twitch non ha mandato il messaggio: {motivo}',
     accedi: 'Accedi con Twitch', esci: 'Esci', sei: 'Sei {nome}',
-    saldoBit: 'Hai {n} Bit da spendere qui.', saldoMonete: 'Hai {n} {moneta}.', lanciaBit: 'Lancia · {n} Bit', lanciaMonete: 'Lancia · {n} {moneta}', lanciaMisto: 'Lancia · {monete} {moneta} + {bit} Bit', altriModi: 'Altri modi di pagare', lanciaNota: 'Paghi col tuo saldo: niente codice, il colpo parte subito.', bitPewIo: 'Paga {n} Bit dal tuo saldo', bitPewNota: 'Sono i Bit che hai mandato al canale senza pagarci un colpo: ne hai {saldo}.', bitPewAccedi: 'Accedi con Twitch: i Bit che mandi al canale si spendono anche qui.',
+    saldoBit: 'Hai {n} Bit da spendere qui.', saldoMonete: 'Hai {n} {moneta}.', scadonoBit: '{n} di questi Bit valgono fino a {quando}.', lanciaBit: 'Lancia · {n} Bit', lanciaMonete: 'Lancia · {n} {moneta}', lanciaMisto: 'Lancia · {monete} {moneta} + {bit} Bit', altriModi: 'Altri modi di pagare', lanciaNota: 'Paghi col tuo saldo: niente codice, il colpo parte subito.', bitPewIo: 'Paga {n} Bit dal tuo saldo', bitPewNota: 'Sono i Bit che hai mandato al canale senza pagarci un colpo: ne hai {saldo}.', bitPewAccedi: 'Accedi con Twitch: i Bit che mandi al canale si spendono anche qui.',
     accediPerche: 'Twitch ti chiede un solo permesso: scrivere in chat a nome tuo. Con l\'accesso non serve il codice: paga il tuo cheer o il tuo riscatto.',
     puntiIo: 'Con i punti canale: su Twitch riscatta «{premio}» ({n} punti). Hai fatto l\'accesso: nel riscatto scrivi quello che vuoi, il colpo è tuo.',
     bitIo: 'Con i Bit: fai un Cheer di almeno {n} Bit nella chat di Twitch. Hai fatto l\'accesso: il tuo prossimo cheer da {n} Bit paga questo colpo, senza codice. Per pagarlo a pezzi, scrivi il codice {codice} in ogni cheer.',
@@ -88,7 +88,7 @@ export const T = {
     chat: 'Chat', chatVuota: 'Chat is quiet: new messages show up here.', chatScrivi: 'Write in chat', chatInvia: 'Send',
     chatFuori: 'You can read the chat here. To write, log in with Twitch.', chatNonInviato: 'Twitch did not send the message: {motivo}',
     accedi: 'Log in with Twitch', esci: 'Log out', sei: 'You are {nome}',
-    saldoBit: 'You have {n} Bits to spend here.', saldoMonete: 'You have {n} {moneta}.', lanciaBit: 'Launch · {n} Bits', lanciaMonete: 'Launch · {n} {moneta}', lanciaMisto: 'Launch · {monete} {moneta} + {bit} Bits', altriModi: 'Other ways to pay', lanciaNota: 'You pay from your balance: no code, the hit goes off right away.', bitPewIo: 'Pay {n} Bits from your balance', bitPewNota: 'These are the Bits you sent to the channel without paying for a hit: you have {saldo}.', bitPewAccedi: 'Log in with Twitch: the Bits you send to the channel can be spent here too.',
+    saldoBit: 'You have {n} Bits to spend here.', saldoMonete: 'You have {n} {moneta}.', scadonoBit: '{n} of these Bits last until {quando}.', lanciaBit: 'Launch · {n} Bits', lanciaMonete: 'Launch · {n} {moneta}', lanciaMisto: 'Launch · {monete} {moneta} + {bit} Bits', altriModi: 'Other ways to pay', lanciaNota: 'You pay from your balance: no code, the hit goes off right away.', bitPewIo: 'Pay {n} Bits from your balance', bitPewNota: 'These are the Bits you sent to the channel without paying for a hit: you have {saldo}.', bitPewAccedi: 'Log in with Twitch: the Bits you send to the channel can be spent here too.',
     accediPerche: 'Twitch asks you for one permission only: writing in chat as you. Once logged in no code is needed: your own cheer or redemption pays.',
     puntiIo: 'With channel points: on Twitch redeem «{premio}» ({n} points). You are logged in: write anything in the redemption, the hit is yours.',
     bitIo: 'With Bits: cheer at least {n} Bits in the Twitch chat. You are logged in: your next cheer of {n} Bits pays for this hit, no code needed. To pay it in parts, write the code {codice} in every cheer.',
@@ -135,7 +135,7 @@ export const T = {
     chat: 'Chat', chatVuota: 'El chat está tranquilo: los mensajes nuevos aparecen aquí.', chatScrivi: 'Escribe en el chat', chatInvia: 'Enviar',
     chatFuori: 'El chat se lee desde aquí. Para escribir, accede con Twitch.', chatNonInviato: 'Twitch no envió el mensaje: {motivo}',
     accedi: 'Accede con Twitch', esci: 'Salir', sei: 'Eres {nome}',
-    saldoBit: 'Tienes {n} Bits para gastar aquí.', saldoMonete: 'Tienes {n} {moneta}.', lanciaBit: 'Lanza · {n} Bits', lanciaMonete: 'Lanza · {n} {moneta}', lanciaMisto: 'Lanza · {monete} {moneta} + {bit} Bits', altriModi: 'Otras formas de pagar', lanciaNota: 'Pagas con tu saldo: sin código, el golpe sale enseguida.', bitPewIo: 'Paga {n} Bits de tu saldo', bitPewNota: 'Son los Bits que mandaste al canal sin pagar un golpe: tienes {saldo}.', bitPewAccedi: 'Entra con Twitch: los Bits que mandas al canal también se gastan aquí.',
+    saldoBit: 'Tienes {n} Bits para gastar aquí.', saldoMonete: 'Tienes {n} {moneta}.', scadonoBit: '{n} de estos Bits valen hasta {quando}.', lanciaBit: 'Lanza · {n} Bits', lanciaMonete: 'Lanza · {n} {moneta}', lanciaMisto: 'Lanza · {monete} {moneta} + {bit} Bits', altriModi: 'Otras formas de pagar', lanciaNota: 'Pagas con tu saldo: sin código, el golpe sale enseguida.', bitPewIo: 'Paga {n} Bits de tu saldo', bitPewNota: 'Son los Bits que mandaste al canal sin pagar un golpe: tienes {saldo}.', bitPewAccedi: 'Entra con Twitch: los Bits que mandas al canal también se gastan aquí.',
     accediPerche: 'Twitch te pide un solo permiso: escribir en el chat en tu nombre. Con el acceso no hace falta el código: paga tu cheer o tu canje.',
     puntiIo: 'Con puntos del canal: en Twitch canjea «{premio}» ({n} puntos). Has accedido: en el canje escribe lo que quieras, el golpe es tuyo.',
     bitIo: 'Con Bits: haz un Cheer de al menos {n} Bits en el chat de Twitch. Has accedido: tu próximo cheer de {n} Bits paga este golpe, sin código. Para pagarlo por partes, escribe el código {codice} en cada cheer.',
@@ -301,6 +301,7 @@ export function htmlPaginaColpo({ login, display, avatar = '', pagina, baseUrl, 
   .cp-io p{font-size:.92rem;margin:0}
   .cp-io .cp-nota{flex-basis:100%;font-size:.85rem}
   .cp-io .cp-saldo{order:3;flex-basis:100%;font-weight:600;font-variant-numeric:tabular-nums}
+  .cp-io .cp-scadono{order:4}
   .cp-lancia{display:flex;flex-wrap:wrap;gap:.5rem;margin:.2rem 0 .6rem}
   .cp-lancia[hidden]{display:none}
   .cp-lancia .cp-nota{flex-basis:100%;margin:0}

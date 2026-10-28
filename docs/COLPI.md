@@ -358,6 +358,54 @@ comparire. Un modo misto coi Bit si finisce col saldo dopo l'acconto in
 monete. Il metodo resta `bit` / `monete+bit`; il riferimento è
 `bitpew:<id>`.
 
+**I lotti.** Il saldo è la somma dei lotti vivi (`pew_bit_lotti`, uno per
+scadenza): un lotto scaduto non c'è più dall'istante in cui scade, senza
+aspettare la pulizia (che lo toglie dal disco una volta al giorno). Si spende
+prima quello che scade prima, tutto o niente, e la spesa dà la **ricevuta**
+dei lotti (`spendi`), che sta sulla mira (il quarto elemento della voce `p`):
+se il colpo non compare, tornano gli stessi lotti con le loro scadenze
+(`rendi`). Un lotto che intanto è scaduto vale ancora per le «ore minime».
+
+### Quando scadono
+
+Chiesto così: «il saldo in bits non deve essere perenne, lo streamer può
+aggiungere scadenze settimanali, giornaliere, mensili o anche annuali, con
+tutto ciò che potrebbe usare come variabili». Tutto in `bitPew.scadenza`,
+sempre nel fuso del canale (`preferenze.fuso`), e l'orologio è uno
+(`scadenzaBit` in colpi.js, con `istanteNelFuso` di economia-regole.js: le
+mezzanotti giuste anche quando cambia l'ora):
+
+- `mai`;
+- `dopo`: `quanti` × `unita` (ore esatte; giorni, settimane, mesi, anni fino
+  alla fine del giorno, come le monete; un mese dal 31 gennaio vale tutto il
+  28 febbraio);
+- `fine`: al prossimo rintocco `ogni` giorno / settimana (`giorno` 1-7, da
+  lunedì) / mese (`giorno` 1-31: l'ultimo, se il mese è corto) / anno
+  (`mese` e `giorno`), all'ora `ora`, ma almeno `grazia` ore dopo: un Bit
+  arrivato un minuto prima del rintocco va al rintocco dopo;
+- `inattivo`: come `dopo`, e ogni movimento (un cheer, una spesa, un Bit che
+  torna) porta tutti i suoi lotti alla scadenza nuova.
+
+`grazia` (ore minime, 0-720) vale anche per i lotti che tornano; `avviso`
+(giorni, 0-90): la pagina e la risposta in chat dicono quanti Bit scadono e
+quando, se scadono entro quei giorni (`scadonoBit`, `quandoScade`: «fino al
+31 ottobre», o «29 ottobre alle 06:00»).
+
+### Tutto il resto, dello streamer
+
+- `resa` (1-1000 ogni 100), `minimo` (un cheer conta da N Bit: quello che
+  avanza da un colpo sotto il minimo resta al canale), `tetto` (saldo
+  massimo a testa, 0 = nessuno: oltre, non entra);
+- `rendiColpi`, `rendiMire`: se tornano i Bit dei cheer di un colpo che non
+  compare, e quelli di una mira mai pagata. Si scrivono sulla mira quando
+  nasce, come la resa. Quelli spesi dal saldo tornano sempre;
+- la risposta a `!pew bit`: `rispondi`, `attesaSec` (fra due risposte alla
+  stessa persona), `risposta` coi segnaposto {nome} {saldo} {pagina} {scade}
+  {quanti} {quando} (vuota: quella di serie, nella lingua della chat);
+- la correzione a mano di un saldo dal pannello (`POST /api/colpi/bit`,
+  `pewBit.imposta`): in su nasce un lotto con la scadenza di adesso, in giù si
+  toglie prima quello che scade prima.
+
 **Vederlo.** La pagina chiede `GET /saldi` (solo con l'accesso) e scrive
 «Hai N Bit da spendere qui.» accanto al nome; chi non ha fatto l'accesso
 legge che i suoi Bit si spendono anche lì. In chat `!pew bit` (col comando

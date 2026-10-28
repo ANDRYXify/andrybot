@@ -18,7 +18,7 @@
 //    solo quando il colpo e' consegnabile, e un colpo a Bit pagato resta in
 //    coda finche' un overlay non lo mostra. Con i Bit da spendere accesi
 //    (sotto) anche i Bit tornano: come saldo della pagina, a chi li ha mandati.
-import { normalizza, puntoBuono, voceDi, metodiDi, mistiDi, bitServe, bitResi, togliUltimi, nuovoCodice, codiceIn, nomeChi, frasePresenza, premioSerie, serieDopo, SCADENZA_MS } from './colpi.js';
+import { normalizza, puntoBuono, voceDi, metodiDi, mistiDi, bitServe, bitResi, togliUltimi, scadenzaBit, nuovoCodice, codiceIn, nomeChi, frasePresenza, premioSerie, serieDopo, SCADENZA_MS } from './colpi.js';
 import { randomBytes } from 'node:crypto';
 
 // Gli effetti che si possono mirare: quelli che si posano in un punto. Un'immagine
@@ -39,10 +39,13 @@ export const VOCE_PRESENZA = '@presenza';
 // `monete`: le monete del canale (economia.js): `punta` (tutte o niente:
 // { tolte, ricevuta } o null), `rendi` (la ricevuta torna com'era) e `saldo`. Senza, i colpi non
 // si pagano in monete.
-// `crediti`: i Bit da spendere sulla pagina (db.pewBit): `saldo` e `muovi`
-// (una volta per riferimento, mai sotto zero). Senza, i Bit fanno come prima.
+// `crediti`: i Bit da spendere sulla pagina (db.pewBit): `entra`, `spendi`
+// (tutti o niente, con la ricevuta dei lotti), `rendi`, `saldo`, `prossima`;
+// ogni movimento una volta per riferimento. Senza, i Bit fanno come prima.
+// `fusoDi`: il fuso del canale, per le scadenze.
 export function creaServizioColpi({ registro, effects, effettoDi, impostazioni, inOnda = () => true, overlay = () => true,
-  rimborsaEuro = async () => ({ errore: 'nessun conto' }), chiudiPremio = async () => true, monete = null, serie = null, crediti = null, ora = () => Date.now(), log = null }) {
+  rimborsaEuro = async () => ({ errore: 'nessun conto' }), chiudiPremio = async () => true, monete = null, serie = null, crediti = null,
+  fusoDi = () => 'Europe/Rome', ora = () => Date.now(), log = null }) {
   const ultimaDi = new Map();
   const cfgDi = (login) => normalizza(impostazioni(login));
 
@@ -52,17 +55,41 @@ export function creaServizioColpi({ registro, effects, effettoDi, impostazioni, 
   // si scrive sulla mira (`prezzi.resa`): i Bit di quella mira tornano con la
   // resa di quando e' stata aperta, anche se intanto lo streamer la cambia.
   const resaDi = (ch) => { const c = cfgDi(ch); return crediti && c.attivo && c.bitPew.attivo ? c.bitPew.resa : 0; };
+  // le scadenze di adesso (docs/COLPI.md, «Quando scadono»): quella dei Bit
+  // che arrivano, la spinta dell'inattivita', e fin dove vale un lotto che torna
+  const scadenze = (ch) => {
+    const sc = cfgDi(ch).bitPew.scadenza, adesso = ora();
+    const nuova = scadenzaBit(sc, adesso, fusoDi(ch));
+    return { scade: nuova, rinnova: sc.tipo === 'inattivo' ? nuova : 0, almeno: sc.tipo === 'mai' ? 0 : adesso + sc.grazia * 3600_000 };
+  };
   function accredita(ch, chi, n, rif, nome = '') {
     if (!crediti || !chi || chi === '-' || !(n > 0)) return 0;
-    try { return crediti.muovi(ch, chi, n, rif, { nome }) ? n : 0; } catch (e) { log?.warn?.(`Bit da spendere su #${ch}:`, e?.message || e); return 0; }
+    const { scade, rinnova } = scadenze(ch);
+    try { return crediti.entra(ch, chi, n, rif, { nome, scade, rinnova, tetto: cfgDi(ch).bitPew.tetto, ora: ora() }); } catch (e) { log?.warn?.(`Bit da spendere su #${ch}:`, e?.message || e); return 0; }
   }
-  // quelli presi dal saldo tornano tali e quali, quelli dei cheer con la resa della mira
-  const rendiVersanti = (m, lista, perche) => lista.reduce((t, [chi, n, da], i) =>
-    t + accredita(m.login, chi, da === 'p' ? n : bitResi(m.prezzi?.resa, n), `${perche}:${m.id}:${i}`), 0);
-  // si sa di chi e' ogni Bit della mira: solo cosi' tornano tutti
-  const tracciati = (m) => Number(m.prezzi?.resa) > 0 && m.versanti.length > 0 && m.versanti.every(([chi]) => chi && chi !== '-')
+  function restituisci(ch, chi, ricevuta, rif) {
+    if (!crediti || !chi) return 0;
+    const { rinnova, almeno } = scadenze(ch);
+    try { return crediti.rendi(ch, chi, ricevuta, rif, { almeno, rinnova, ora: ora() }); } catch (e) { log?.warn?.(`Bit da spendere su #${ch}:`, e?.message || e); return 0; }
+  }
+  // quelli presi dal saldo tornano coi loro lotti, quelli dei cheer con la resa della mira
+  const rendiVersanti = (m, lista, perche) => lista.reduce((t, [chi, n, da, ric], i) =>
+    t + (da === 'p' ? restituisci(m.login, chi, ric || [{ scade: 0, quanti: n }], `${perche}:${m.id}:${i}`) : accredita(m.login, chi, bitResi(m.prezzi?.resa, n), `${perche}:${m.id}:${i}`)), 0);
+  // un Bit della mira puo' tornare: quelli del saldo sempre, quelli dei cheer
+  // se si sa di chi sono e se la mira e' nata coi Bit dei colpi che tornano
+  const rendibile = (m, [chi, , da]) => da === 'p' || (!!chi && chi !== '-' && Number(m.prezzi?.resa) > 0 && m.prezzi?.rendiColpi !== false);
+  // si sa di chi e' ogni Bit della mira, e tutti possono tornare: solo cosi' tornano
+  const tracciati = (m) => m.versanti.length > 0 && m.versanti.every((v) => rendibile(m, v))
     && m.versanti.reduce((t, v) => t + (Number(v[1]) || 0), 0) === (Number(m.versati) || 0);
-  const saldoBit = (login, chi) => (crediti && chi ? crediti.saldo(String(login || '').toLowerCase(), String(chi)) : 0);
+  const saldoBit = (login, chi) => (crediti && chi ? crediti.saldo(String(login || '').toLowerCase(), String(chi), ora()) : 0);
+  // i Bit che scadono per primi, se scadono entro i giorni dell'avviso: { quanti, scade } o null
+  function scadonoBit(login, chi) {
+    const ch = String(login || '').toLowerCase();
+    if (!crediti || !chi) return null;
+    const l = crediti.prossima(ch, String(chi), ora());
+    const giorni = cfgDi(ch).bitPew.scadenza.avviso;
+    return l && giorni > 0 && l.scade - ora() <= giorni * 86400_000 ? { quanti: l.quanti, scade: l.scade } : null;
+  }
 
   // Consegnabile adesso: la stessa domanda per la mira, per «Paga» e per il
   // riscatto. Torna '' se si', se no il motivo.
@@ -96,7 +123,8 @@ export function creaServizioColpi({ registro, effects, effettoDi, impostazioni, 
     const m = {
       id: randomBytes(9).toString('hex'), login: ch, voce: voce.id, comando: voce.comando, nome: voce.nome,
       x: punto.x, y: punto.y, scala: voce.scala, chi: cfg.conNome ? nomeChi(chi) : '',
-      prezzi: { euro: voce.euro, punti: voce.punti, bit: voce.bit, monete: voce.monete, misti: voce.misti || {}, resa: resaDi(ch) }, creata: adesso, scade: adesso + SCADENZA_MS,
+      prezzi: { euro: voce.euro, punti: voce.punti, bit: voce.bit, monete: voce.monete, misti: voce.misti || {}, resa: resaDi(ch),
+        rendiColpi: cfg.bitPew.rendiColpi, rendiMire: cfg.bitPew.rendiMire }, creata: adesso, scade: adesso + SCADENZA_MS,
       spettatore: String(spettatore || ''),
     };
     for (let i = 0; i < 12; i++) { m.codice = nuovoCodice(); if (registro.apri(m)) { ultimaDi.set(k, adesso); return { ok: true, mira: { ...m, metodi: metodiDi(voce) } }; } }
@@ -204,7 +232,7 @@ export function creaServizioColpi({ registro, effects, effettoDi, impostazioni, 
     }
     // i Bit di una mira che non si paghera' piu': tornano a chi li ha mandati, una volta sola
     for (const m of registro.versatiPersi()) {
-      if (!registro.svuota(m.id)) continue;
+      if (!registro.svuota(m.id) || m.prezzi?.rendiMire === false) continue;
       const resi = rendiVersanti(m, m.versanti, 'persi');
       if (resi) log?.info?.(`colpo ${m.nome} su #${m.login} mai pagato: ${resi} Bit tornati da spendere`);
     }
@@ -261,7 +289,7 @@ export function creaServizioColpi({ registro, effects, effettoDi, impostazioni, 
     const { usati = 0, ...r } = cheerSuMira(ch, n, chi, message, user_login, is_anonymous ? '' : user_id);
     const resa = resaDi(ch);
     const avanzo = n - usati;
-    const dati = resa && avanzo > 0 ? accredita(ch, chi, bitResi(resa, avanzo), 'cheer:' + (evento || `${chi}:${ora()}:${n}`), user_login) : 0;
+    const dati = resa && avanzo > 0 && avanzo >= cfgDi(ch).bitPew.minimo ? accredita(ch, chi, bitResi(resa, avanzo), 'cheer:' + (evento || `${chi}:${ora()}:${n}`), user_login) : 0;
     return dati ? { ...r, bitPew: dati, saldo: saldoBit(ch, chi) } : r;
   }
   function cheerSuMira(ch, n, chi, message, user_login, user_id) {
@@ -312,9 +340,10 @@ export function creaServizioColpi({ registro, effects, effettoDi, impostazioni, 
     if (no) return { esito: 'fermo', motivo: no, nome: m.nome };
     const manca = serve - (Number(m.versati) || 0);
     if (!(manca > 0)) return { esito: 'gia' };
-    if (!crediti.muovi(ch, c, -manca, `spesa:${m.id}`, { nome })) return { esito: 'pochi', serve: manca, saldo: saldoBit(ch, c), nome: m.nome };
-    if (registro.versa(m.id, manca, c, 'p') == null || !incassa(registro.get(m.id), m.acconto ? 'monete+bit' : 'bit', 'bitpew:' + c, '', false, m.acconto?.ricevuta || null)) {
-      accredita(ch, c, manca, `reso:${m.id}:spesa`, nome);
+    const ricevuta = crediti.spendi(ch, c, manca, `spesa:${m.id}`, { rinnova: scadenze(ch).rinnova, ora: ora() });
+    if (!ricevuta) return { esito: 'pochi', serve: manca, saldo: saldoBit(ch, c), nome: m.nome };
+    if (registro.versa(m.id, manca, c, 'p', ricevuta) == null || !incassa(registro.get(m.id), m.acconto ? 'monete+bit' : 'bit', 'bitpew:' + c, '', false, m.acconto?.ricevuta || null)) {
+      restituisci(ch, c, ricevuta, `reso:${m.id}:spesa`);
       return { esito: 'gia' };
     }
     return { esito: 'pagato', nome: m.nome, bit: manca, saldo: saldoBit(ch, c) };
@@ -447,6 +476,6 @@ export function creaServizioColpi({ registro, effects, effettoDi, impostazioni, 
     return { esito: incassa(m, 'euro', donazioneId, '', true) ? 'pagato' : 'gia', nome: m.nome, login: m.login };
   }
 
-  return { mira, consegnabile, daCheer, daRiscatto, daPagamento, daMonete, daBitPew, subito, saldoBit, saldoMonete, presenza, provaPresenza, visto, ronda, cfgDi,
+  return { mira, consegnabile, daCheer, daRiscatto, daPagamento, daMonete, daBitPew, subito, saldoBit, scadonoBit, saldoMonete, presenza, provaPresenza, visto, ronda, cfgDi,
     conMonete: !!monete, conBitPew: (login) => !!resaDi(String(login || '').toLowerCase()) };
 }

@@ -5,7 +5,7 @@
 // alle richieste e le intestazioni; il cancello verifica-colpi.mjs serve la
 // pagina vera con questa stessa porta, cosi' quello che si collauda e' quello
 // che gira.
-import { normalizza, voceDi, metodiDi, mistiDi, titoloPremio, titoloPremioMisto, categoriaDi } from './colpi.js';
+import { normalizza, voceDi, metodiDi, mistiDi, titoloPremio, titoloPremioMisto, categoriaDi, quandoScade } from './colpi.js';
 import { monetaDa } from './moneta.js';
 import { MIRABILE } from './colpi-servizio.js';
 import { normLancio, oggettoDi, disegnoDi, payloadLancio, durataLancio } from './lanci.js';
@@ -23,7 +23,7 @@ const FILE_SEMPLICE = (f) => /^[A-Za-z0-9._-]+$/.test(f) && !f.includes('..');
 
 export const ID_MIRA = /^[0-9a-f]{18}$/;
 
-export function creaPortaColpi({ servizio, registro, streamers, effettoDi, mezziEuro, apriPagamento, inOnda = () => false, overlay = () => false, ora = () => Date.now() }) {
+export function creaPortaColpi({ servizio, registro, streamers, effettoDi, mezziEuro, apriPagamento, inOnda = () => false, overlay = () => false, fusoDi = () => 'Europe/Rome', ora = () => Date.now() }) {
   const aperti = (login) => {
     const s = streamers.get(login);
     const cfg = normalizza(s?.settings?.colpi);
@@ -174,11 +174,18 @@ export function creaPortaColpi({ servizio, registro, streamers, effettoDi, mezzi
     return { url: r.url };
   }
 
-  // il saldo di chi ha fatto l'accesso: i Bit da spendere qui e le monete del canale
-  const saldi = (login, io) => (aperti(login) && io?.id ? {
-    bit: servizio.conBitPew?.(login) ? servizio.saldoBit(login, io.id) : null,
-    monete: servizio.conMonete && io.login ? servizio.saldoMonete(login, io.login) : null,
-  } : null);
+  // il saldo di chi ha fatto l'accesso: i Bit da spendere qui (e quelli che
+  // scadono presto, detti nella lingua di chi legge) e le monete del canale
+  function saldi(login, io, lingua = 'it') {
+    if (!aperti(login) || !io?.id) return null;
+    const conBit = !!servizio.conBitPew?.(login);
+    const sc = conBit ? servizio.scadonoBit?.(login, io.id) : null;
+    return {
+      bit: conBit ? servizio.saldoBit(login, io.id) : null,
+      monete: servizio.conMonete && io.login ? servizio.saldoMonete(login, io.login) : null,
+      ...(sc ? { scadono: { quanti: sc.quanti, quando: quandoScade(sc.scade, lingua, fusoDi(login)) } } : {}),
+    };
+  }
 
   // UN TOCCO (docs/COLPI.md, «Con l'accesso, un tocco»): la mira e il
   // pagamento col saldo insieme, senza codice. Prima si guarda il saldo, cosi'

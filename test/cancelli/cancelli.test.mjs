@@ -44,3 +44,18 @@ test('sul server, senza browser, i collaudi col browser si saltano da soli', asy
   const { codice, uscita } = await lanciaScript('scripts/verifica-senza-browser.mjs');
   assert.equal(codice, 0, uscita);
 });
+
+// Un file servito che non si legge spegne la pagina intera (il pannello e'
+// app.js): nessuna prova lo carica, quindi lo si legge qui, uno per uno, con
+// lo stesso Node che lo controlla (`--check` legge e non esegue).
+test('ogni file che arriva al browser si legge', async () => {
+  const { readdirSync } = await import('node:fs');
+  const { join } = await import('node:path');
+  const { spawnSync } = await import('node:child_process');
+  const giu = (d) => readdirSync(d, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? (e.name === 'vendor' ? [] : giu(join(d, e.name))) : /\.m?js$/.test(e.name) ? [join(d, e.name)] : []));
+  const file = giu('src/web/public');
+  assert.ok(file.length > 30, 'li trova');
+  const rotti = file.map((f) => [f, spawnSync(process.execPath, ['--check', f], { encoding: 'utf8' })]).filter(([, r]) => r.status !== 0)
+    .map(([f, r]) => `${f}: ${String(r.stderr).split('\n').find((l) => /Error/.test(l)) || r.stderr}`);
+  assert.deepEqual(rotti, []);
+});

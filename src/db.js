@@ -961,14 +961,21 @@ CREATE TABLE IF NOT EXISTS pew_dirette (     -- le dirette del canale, in ordine
   ts INTEGER NOT NULL,                         -- quando si e' vista la prima volta
   PRIMARY KEY (channel, occasione)
 );
-CREATE TABLE IF NOT EXISTS pew_bit (          -- i Bit da spendere sulla pagina di Pewpewify (docs/COLPI.md): una riga per spettatore
+CREATE TABLE IF NOT EXISTS pew_bit (          -- chi ha Bit da spendere sulla pagina di Pewpewify (docs/COLPI.md): una riga per spettatore
   channel TEXT NOT NULL,
   chi TEXT NOT NULL,                           -- l'id Twitch: il nome si cambia, l'id no
   nome TEXT NOT NULL DEFAULT '',               -- l'ultimo login visto, per il pannello
-  saldo INTEGER NOT NULL DEFAULT 0,
-  ts INTEGER NOT NULL,
+  ts INTEGER NOT NULL,                         -- l'ultimo movimento
   PRIMARY KEY (channel, chi)
 );
+CREATE TABLE IF NOT EXISTS pew_bit_lotti (    -- i Bit da spendere a lotti: quanti, e quando scadono (0 = mai). Il saldo e' la somma dei lotti vivi
+  channel TEXT NOT NULL,
+  chi TEXT NOT NULL,
+  scade INTEGER NOT NULL DEFAULT 0,
+  quanti INTEGER NOT NULL,
+  PRIMARY KEY (channel, chi, scade)
+);
+CREATE INDEX IF NOT EXISTS idx_pew_bit_lotti_scade ON pew_bit_lotti(scade) WHERE scade>0;
 CREATE TABLE IF NOT EXISTS pew_bit_mov (      -- ogni movimento dei Bit da spendere, con un riferimento unico: lo stesso cheer o rimborso entra una volta
   channel TEXT NOT NULL,
   rif TEXT NOT NULL,                           -- cheer:<evento> · avanzo:<evento> · persi:<mira>:<chi> · spesa:<mira> · reso:<mira>:<chi> · streamer:<…>
@@ -1986,31 +1993,109 @@ export const pewSerie = {
 // I BIT DA SPENDERE sulla pagina di Pewpewify (docs/COLPI.md). Si muovono solo
 // da qui, e ogni movimento ha un riferimento unico per canale: lo stesso
 // cheer, la stessa spesa, lo stesso rimborso entrano una volta sola, anche se
-// arrivano due volte. Una spesa e' tutta o niente: mai sotto zero.
+// arrivano due volte. Il saldo e' la somma dei lotti vivi: un lotto scaduto non
+// c'e' piu' dall'istante in cui scade, senza aspettare nessuna pulizia. Si
+// spende prima quello che scade prima, tutto o niente, con la ricevuta dei lotti.
+const _pb = {
+  vivi: db.prepare('SELECT scade, quanti FROM pew_bit_lotti WHERE channel=? AND chi=? AND quanti>0 AND (scade=0 OR scade>?) ORDER BY scade=0, scade'),
+  lotto: db.prepare(`INSERT INTO pew_bit_lotti (channel, chi, scade, quanti) VALUES (?,?,?,?)
+    ON CONFLICT(channel, chi, scade) DO UPDATE SET quanti=quanti+excluded.quanti`),
+  togli: db.prepare('UPDATE pew_bit_lotti SET quanti=quanti-? WHERE channel=? AND chi=? AND scade=?'),
+  vuoti: db.prepare('DELETE FROM pew_bit_lotti WHERE channel=? AND chi=? AND quanti<=0'),
+  mov: db.prepare('INSERT OR IGNORE INTO pew_bit_mov (channel, rif, chi, delta, ts) VALUES (?,?,?,?,?)'),
+  chi: db.prepare(`INSERT INTO pew_bit (channel, chi, nome, ts) VALUES (?,?,?,?)
+    ON CONFLICT(channel, chi) DO UPDATE SET nome=CASE WHEN excluded.nome='' THEN nome ELSE excluded.nome END, ts=excluded.ts`),
+};
+const _pbSaldo = (ch, c, ora) => _pb.vivi.all(ch, c, ora).reduce((t, l) => t + l.quanti, 0);
+// «inattivo»: ogni movimento sposta tutti i lotti vivi alla stessa scadenza
+function _pbRinnova(ch, c, scade, ora) {
+  const n = _pbSaldo(ch, c, ora);
+  db.prepare('DELETE FROM pew_bit_lotti WHERE channel=? AND chi=? AND (scade=0 OR scade>?)').run(ch, c, ora);
+  if (n > 0) _pb.lotto.run(ch, c, scade, n);
+}
 export const pewBit = {
-  saldo(channel, chi) { return db.prepare('SELECT saldo FROM pew_bit WHERE channel=? AND chi=?').get(String(channel).toLowerCase(), String(chi))?.saldo || 0; },
-  // true se il movimento e' entrato adesso
-  muovi(channel, chi, delta, rif, { nome = '', ora = now() } = {}) {
-    const ch = String(channel).toLowerCase(), c = String(chi || ''), d = Math.trunc(Number(delta) || 0);
-    if (!c || !d || !rif) return false;
+  saldo(channel, chi, ora = now()) { return _pbSaldo(String(channel).toLowerCase(), String(chi), ora); },
+  // il lotto vivo che scade per primo: { scade, quanti }, o null se nessuno scade
+  prossima(channel, chi, ora = now()) { return _pb.vivi.all(String(channel).toLowerCase(), String(chi), ora).find((l) => l.scade > 0) || null; },
+  // Bit nuovi: `n`, che scadono a `scade` (0 = mai). `tetto`: il saldo non va
+  // oltre (0 = nessuno). `rinnova`: la scadenza nuova di tutti i suoi lotti
+  // («inattivo»). Torna quanti ne sono entrati (0 se il riferimento c'era gia').
+  entra(channel, chi, n, rif, { nome = '', scade = 0, tetto = 0, rinnova = 0, ora = now() } = {}) {
+    const ch = String(channel).toLowerCase(), c = String(chi || '');
+    let q = Math.max(0, Math.trunc(Number(n) || 0));
+    if (!c || !q || !rif) return 0;
     return db.transaction(() => {
-      if (d < 0 && pewBit.saldo(ch, c) < -d) return false;
-      if (!db.prepare('INSERT OR IGNORE INTO pew_bit_mov (channel, rif, chi, delta, ts) VALUES (?,?,?,?,?)').run(ch, String(rif).slice(0, 160), c, d, ora).changes) return false;
-      db.prepare(`INSERT INTO pew_bit (channel, chi, nome, saldo, ts) VALUES (?,?,?,?,?)
-        ON CONFLICT(channel, chi) DO UPDATE SET saldo=saldo+excluded.saldo, nome=CASE WHEN excluded.nome='' THEN nome ELSE excluded.nome END, ts=excluded.ts`)
-        .run(ch, c, String(nome || '').toLowerCase().slice(0, 40), d, ora);
-      return true;
+      if (tetto > 0) q = Math.min(q, Math.max(0, tetto - _pbSaldo(ch, c, ora)));
+      if (!q || !_pb.mov.run(ch, String(rif).slice(0, 160), c, q, ora).changes) return 0;
+      _pb.lotto.run(ch, c, Math.max(0, Math.trunc(Number(scade) || 0)), q);
+      _pb.chi.run(ch, c, String(nome || '').toLowerCase().slice(0, 40), ora);
+      if (rinnova > 0) _pbRinnova(ch, c, rinnova, ora);
+      return q;
     })();
   },
-  totali(channel) {
-    const r = db.prepare('SELECT COUNT(*) AS persone, COALESCE(SUM(saldo),0) AS bit FROM pew_bit WHERE channel=? AND saldo>0').get(String(channel).toLowerCase());
+  // Una spesa: tutti o niente. La ricevuta ([{ scade, quanti }]), o null.
+  spendi(channel, chi, n, rif, { rinnova = 0, ora = now() } = {}) {
+    const ch = String(channel).toLowerCase(), c = String(chi || '');
+    const q = Math.max(0, Math.trunc(Number(n) || 0));
+    if (!c || !q || !rif) return null;
+    return db.transaction(() => {
+      const lotti = _pb.vivi.all(ch, c, ora);
+      if (lotti.reduce((t, l) => t + l.quanti, 0) < q) return null;
+      if (!_pb.mov.run(ch, String(rif).slice(0, 160), c, -q, ora).changes) return null;
+      const ricevuta = [];
+      let resta = q;
+      for (const l of lotti) {
+        if (!resta) break;
+        const x = Math.min(resta, l.quanti);
+        _pb.togli.run(x, ch, c, l.scade);
+        ricevuta.push({ scade: l.scade, quanti: x });
+        resta -= x;
+      }
+      _pb.vuoti.run(ch, c);
+      _pb.chi.run(ch, c, '', ora);
+      if (rinnova > 0) _pbRinnova(ch, c, rinnova, ora);
+      return ricevuta;
+    })();
+  },
+  // Una ricevuta torna: gli stessi lotti, con le loro scadenze; uno che intanto
+  // e' scaduto (o scade prima di `almeno`) vale fino ad `almeno`. Torna quanti.
+  rendi(channel, chi, ricevuta, rif, { almeno = 0, rinnova = 0, ora = now() } = {}) {
+    const ch = String(channel).toLowerCase(), c = String(chi || '');
+    const lotti = (Array.isArray(ricevuta) ? ricevuta : []).map((l) => ({ scade: Math.max(0, Math.trunc(Number(l?.scade) || 0)), quanti: Math.max(0, Math.trunc(Number(l?.quanti) || 0)) })).filter((l) => l.quanti > 0);
+    const n = lotti.reduce((t, l) => t + l.quanti, 0);
+    if (!c || !n || !rif) return 0;
+    return db.transaction(() => {
+      if (!_pb.mov.run(ch, String(rif).slice(0, 160), c, n, ora).changes) return 0;
+      for (const l of lotti) _pb.lotto.run(ch, c, l.scade && l.scade < Math.max(almeno, ora + 1) ? Math.max(almeno, ora + 1) : l.scade, l.quanti);
+      _pb.chi.run(ch, c, '', ora);
+      if (rinnova > 0) _pbRinnova(ch, c, rinnova, ora);
+      return n;
+    })();
+  },
+  // Lo streamer corregge un saldo: in su nasce un lotto con `scade`, in giu' si
+  // toglie prima quello che scade prima. Torna il saldo nuovo.
+  imposta(channel, chi, n, rif, { scade = 0, ora = now() } = {}) {
+    const ch = String(channel).toLowerCase(), c = String(chi || '');
+    const voluto = Math.max(0, Math.trunc(Number(n) || 0));
+    const d = voluto - _pbSaldo(ch, c, ora);
+    if (d > 0) this.entra(ch, c, d, rif, { scade, ora });
+    else if (d < 0) this.spendi(ch, c, -d, rif, { ora });
+    return _pbSaldo(ch, c, ora);
+  },
+  totali(channel, ora = now()) {
+    const r = db.prepare('SELECT COUNT(DISTINCT chi) AS persone, COALESCE(SUM(quanti),0) AS bit FROM pew_bit_lotti WHERE channel=? AND quanti>0 AND (scade=0 OR scade>?)').get(String(channel).toLowerCase(), ora);
     return { persone: r.persone, bit: r.bit };
   },
-  primi(channel, n = 10) {
-    return db.prepare('SELECT chi, nome, saldo FROM pew_bit WHERE channel=? AND saldo>0 ORDER BY saldo DESC, nome LIMIT ?').all(String(channel).toLowerCase(), Math.max(1, Math.min(100, n | 0)));
+  primi(channel, n = 10, ora = now()) {
+    return db.prepare(`SELECT l.chi, COALESCE(p.nome,'') AS nome, SUM(l.quanti) AS saldo FROM pew_bit_lotti l LEFT JOIN pew_bit p ON p.channel=l.channel AND p.chi=l.chi
+      WHERE l.channel=? AND l.quanti>0 AND (l.scade=0 OR l.scade>?) GROUP BY l.chi ORDER BY saldo DESC, nome LIMIT ?`).all(String(channel).toLowerCase(), ora, Math.max(1, Math.min(100, n | 0)));
   },
-  // i riferimenti servono contro i doppioni, che arrivano in pochi secondi: un anno basta e avanza
-  pulisci(ora = now()) { db.prepare('DELETE FROM pew_bit_mov WHERE ts<?').run(ora - 400 * 86400_000); },
+  // i lotti scaduti escono (il saldo li ignora gia'), e i riferimenti vecchi:
+  // servono contro i doppioni, che arrivano in pochi secondi
+  pulisci(ora = now()) {
+    db.prepare('DELETE FROM pew_bit_lotti WHERE (scade>0 AND scade<=?) OR quanti<=0').run(ora);
+    db.prepare('DELETE FROM pew_bit_mov WHERE ts<?').run(ora - 400 * 86400_000);
+  },
 };
 
 export const registroMonete = {
@@ -3007,16 +3092,16 @@ export const registroColpi = {
   rilega(id, da, a) { return db.prepare("UPDATE colpi SET riferimento=? WHERE id=? AND riferimento=?").run(String(a).slice(0, 120), String(id), String(da)).changes > 0; },
   scadi(id) { return db.prepare("UPDATE colpi SET stato='scaduta' WHERE id=? AND stato='attesa'").run(String(id)).changes > 0; },
   // i Bit di un cheer si sommano a quelli gia' arrivati, in coda col nome di chi
-  // li manda ('-' se anonimo; `da` 'p' se vengono dal saldo della pagina):
-  // torna il totale, o null se la mira non e' piu' aperta
-  versa(id, bit, chi = '-', da = '') {
+  // li manda ('-' se anonimo; `da` 'p' se vengono dal saldo della pagina, con
+  // la `ricevuta` dei lotti spesi): torna il totale, o null se la mira non e' piu' aperta
+  versa(id, bit, chi = '-', da = '', ricevuta = null) {
     const n = Math.max(0, Math.round(Number(bit) || 0));
     return db.transaction(() => {
       const r = this._leggi(db.prepare("SELECT * FROM colpi WHERE id=? AND stato='attesa'").get(String(id)));
       if (!r) return null;
       const v = r.versanti, k = String(chi || '-').slice(0, 40), ultimo = v[v.length - 1];
-      if (n && ultimo && ultimo[0] === k && (ultimo[2] || '') === da) ultimo[1] += n;
-      else if (n) v.push(da ? [k, n, da] : [k, n]);
+      if (n && !da && ultimo && ultimo[0] === k && !ultimo[2]) ultimo[1] += n;
+      else if (n) v.push(da ? [k, n, da, ...(ricevuta ? [ricevuta] : [])] : [k, n]);
       db.prepare('UPDATE colpi SET versati=versati+?, versanti=? WHERE id=?').run(n, JSON.stringify(v), String(id));
       return r.versati + n;
     })();

@@ -59,19 +59,52 @@ test('il modello: accesi alla pari di serie, la resa nei limiti; i Bit di troppo
 
 test('il registro: un movimento per riferimento, mai sotto zero, per canale', () => {
   const c = login();
-  assert.equal(pewBit.muovi(c, '11', 100, 'cheer:x', { nome: 'Marta' }), true);
-  assert.equal(pewBit.muovi(c, '11', 100, 'cheer:x'), false, 'lo stesso cheer due volte');
+  assert.equal(pewBit.entra(c, '11', 100, 'cheer:x', { nome: 'Marta' }), 100);
+  assert.equal(pewBit.entra(c, '11', 100, 'cheer:x'), 0, 'lo stesso cheer due volte');
   assert.equal(pewBit.saldo(c, '11'), 100);
-  assert.equal(pewBit.muovi(c, '11', -101, 'spesa:1'), false, 'non sotto zero');
+  assert.equal(pewBit.spendi(c, '11', 101, 'spesa:1'), null, 'non sotto zero');
   assert.equal(pewBit.saldo(c, '11'), 100, 'e niente si muove');
-  assert.equal(pewBit.muovi(c, '11', -100, 'spesa:1'), true);
-  assert.equal(pewBit.muovi(c, '11', -100, 'spesa:1'), false);
+  assert.deepEqual(pewBit.spendi(c, '11', 100, 'spesa:1'), [{ scade: 0, quanti: 100 }]);
+  assert.equal(pewBit.spendi(c, '11', 100, 'spesa:1'), null, 'la stessa spesa due volte');
   assert.equal(pewBit.saldo(c, '11'), 0);
   assert.equal(pewBit.saldo(login(), '11'), 0, 'un altro canale non lo vede');
-  pewBit.muovi(c, '12', 40, 'cheer:y', { nome: 'luca' });
-  pewBit.muovi(c, '11', 70, 'cheer:z');
+  pewBit.entra(c, '12', 40, 'cheer:y', { nome: 'luca' });
+  pewBit.entra(c, '11', 70, 'cheer:z');
   assert.deepEqual(pewBit.totali(c), { persone: 2, bit: 110 });
   assert.deepEqual(pewBit.primi(c).map((p) => [p.nome, p.saldo]), [['marta', 70], ['luca', 40]], 'il nome resta quello visto');
+});
+
+test('i lotti: si spende prima quello che scade prima, uno scaduto non c\'e\' piu\', la ricevuta li rende com\'erano', () => {
+  const c = login(), T0 = 10_000_000;
+  pewBit.entra(c, '1', 50, 'a', { scade: 0, ora: T0 });
+  pewBit.entra(c, '1', 30, 'b', { scade: T0 + 5000, ora: T0 });
+  pewBit.entra(c, '1', 20, 'c', { scade: T0 + 1000, ora: T0 });
+  assert.deepEqual(pewBit.prossima(c, '1', T0), { scade: T0 + 1000, quanti: 20 });
+  const r = pewBit.spendi(c, '1', 40, 's1', { ora: T0 });
+  assert.deepEqual(r, [{ scade: T0 + 1000, quanti: 20 }, { scade: T0 + 5000, quanti: 20 }], 'prima quelli che scadono prima');
+  assert.equal(pewBit.saldo(c, '1', T0 + 6000), 50, 'i 10 rimasti del lotto a T0+5000 non ci sono piu\', senza pulizia');
+  assert.equal(pewBit.totali(c, T0 + 6000).bit, 50);
+  assert.equal(pewBit.rendi(c, '1', r, 'r1', { almeno: T0 + 9000, ora: T0 + 6000 }), 40);
+  assert.equal(pewBit.rendi(c, '1', r, 'r1', { ora: T0 + 6000 }), 0, 'la stessa ricevuta due volte');
+  assert.equal(pewBit.saldo(c, '1', T0 + 8999), 90, 'i lotti scaduti intanto tornano validi fino ad «almeno»');
+  assert.equal(pewBit.saldo(c, '1', T0 + 9000), 50);
+  pewBit.pulisci(T0 + 9000);
+  assert.equal(pewBit.saldo(c, '1', T0 + 9000), 50, 'la pulizia non cambia il saldo');
+  assert.equal(pewBit.entra(c, '1', 100, 't', { tetto: 80, ora: T0 + 9000 }), 30, 'il tetto: entra solo fino al massimo');
+  assert.equal(pewBit.entra(c, '1', 5, 't2', { tetto: 80, ora: T0 + 9000 }), 0, 'al tetto, niente');
+});
+
+test('«inattivo»: ogni movimento sposta in avanti tutti i suoi lotti; la correzione dello streamer', () => {
+  const c = login(), T0 = 20_000_000;
+  pewBit.entra(c, '1', 10, 'a', { scade: T0 + 100, rinnova: T0 + 100, ora: T0 });
+  pewBit.entra(c, '1', 10, 'b', { scade: T0 + 150, rinnova: T0 + 150, ora: T0 + 50 });
+  assert.deepEqual(pewBit.prossima(c, '1', T0 + 50), { scade: T0 + 150, quanti: 20 }, 'il primo lotto ha preso la scadenza nuova');
+  pewBit.spendi(c, '1', 5, 's', { rinnova: T0 + 300, ora: T0 + 120 });
+  assert.equal(pewBit.saldo(c, '1', T0 + 299), 15, 'anche spendere tiene vivi gli altri');
+  assert.equal(pewBit.saldo(c, '1', T0 + 300), 0);
+  assert.equal(pewBit.imposta(c, '1', 40, 'st1', { scade: 0, ora: T0 + 120 }), 40, 'in su: un lotto nuovo');
+  assert.equal(pewBit.imposta(c, '1', 12, 'st2', { ora: T0 + 120 }), 12, 'in giu\': prima quello che scade prima');
+  assert.equal(pewBit.saldo(c, '1', T0 + 400), 12, 'e restano quelli che non scadono');
 });
 
 test('un cheer che non paga un colpo diventa saldo: una volta, a nome suo, con la resa dello streamer', () => {
@@ -115,7 +148,7 @@ test('un Bit vale una volta: quello che paga il colpo resta sulla mira, solo il 
 test('dalla pagina: il saldo paga quello che manca, tutto o niente, una volta, e solo un colpo che puo\' comparire', () => {
   const b = banco();
   const c = login();
-  pewBit.muovi(c, '21', 90, 'cheer:a');
+  pewBit.entra(c, '21', 90, 'cheer:a');
   const m = mira(b, c);
   assert.deepEqual(b.s.daBitPew(c, { id: m.id, chi: '21' }), { esito: 'pochi', serve: 100, saldo: 90, nome: 'pomodoro' });
   assert.equal(pewBit.saldo(c, '21'), 90, 'non basta: niente si muove');
@@ -126,7 +159,7 @@ test('dalla pagina: il saldo paga quello che manca, tutto o niente, una volta, e
   b.stato.overlay = true;
   assert.deepEqual(b.s.daBitPew(c, { id: m.id, chi: '21' }), { esito: 'pagato', nome: 'pomodoro', bit: 70, saldo: 20 }, 'i 30 del cheer contano');
   const p = registroColpi.get(m.id);
-  assert.deepEqual([p.stato, p.metodo, p.versati, p.versanti], ['pagata', 'bit', 100, [['21', 30], ['21', 70, 'p']]]);
+  assert.deepEqual([p.stato, p.metodo, p.versati, p.versanti], ['pagata', 'bit', 100, [['21', 30], ['21', 70, 'p', [{ scade: 0, quanti: 70 }]]]], 'quelli del saldo con la ricevuta dei lotti');
   assert.equal(b.sparati.length, 1);
   assert.equal(b.s.daBitPew(c, { id: m.id, chi: '21' }).esito, 'sconosciuto', 'gia\' pagata');
   assert.equal(pewBit.saldo(c, '21'), 20, 'una volta sola');
@@ -140,7 +173,7 @@ test('dalla pagina: il saldo paga quello che manca, tutto o niente, una volta, e
 test('un colpo a Bit che non compare li rende: dal saldo tali e quali, dai cheer con la resa della mira; una volta', async () => {
   const b = banco({ bitPew: { attivo: true, resa: 50 } });
   const c = login();
-  pewBit.muovi(c, '21', 100, 'cheer:a');
+  pewBit.entra(c, '21', 100, 'cheer:a');
   const m = mira(b, c);
   b.cfg.bitPew = { attivo: true, resa: 200 };
   b.s.daCheer(c, { bits: 40, message: `Cheer40 ${m.codice}`, user_login: 'luca', user_id: '22', evento: 'y1' });
@@ -224,7 +257,7 @@ test('monete piu\' Bit: un cheer piu\' grande del resto, poi le monete: il tropp
 test('la pagina: il saldo di chi ha l\'accesso, e si paga col saldo solo la propria mira', async () => {
   const b = banco();
   const c = login();
-  pewBit.muovi(c, '21', 500, 'cheer:a');
+  pewBit.entra(c, '21', 500, 'cheer:a');
   const p = creaPortaColpi({ servizio: b.s, registro: registroColpi, streamers: { get: () => ({ settings: { colpi: b.cfg } }) },
     effettoDi: () => ({ tipo: 'immagine', file: 'p.png' }), mezziEuro: () => [], apriPagamento: async () => ({}), inOnda: () => true, overlay: () => true, ora: b.ora });
   assert.equal(p.dati(c).bitPew, true);
@@ -280,7 +313,7 @@ test('un tocco con l\'accesso: la mira e il pagamento col saldo insieme, senza c
   const aperte = registroColpi.aperteDa(c, 0);
   assert.deepEqual(p.lancia(c, corpo('bit'), 'ip', io), { ok: false, motivo: 'pochi', serve: 100, saldo: 0, quale: 'bit' });
   assert.equal(registroColpi.aperteDa(c, 0), aperte, 'un tocco che non puo\' riuscire non apre la mira');
-  pewBit.muovi(c, '21', 130, 'cheer:a');
+  pewBit.entra(c, '21', 130, 'cheer:a');
   points.dai(c, 'marta', 50);
   const r = p.lancia(c, corpo('bit'), 'ip', io);
   assert.deepEqual([r.ok, r.mira.stato, r.mira.metodo, pewBit.saldo(c, '21')], [true, 'pagata', 'bit', 30]);
@@ -295,7 +328,7 @@ test('un tocco che si rompe a meta\': la mira si chiude e torna tutto quello che
   const b = banco({ voce: { comando: 'pomodoro', bit: 100, misti: { bit: { monete: 10, bit: 30 } } }, conMonete: true });
   const c = login();
   points.dai(c, 'marta', 10);
-  pewBit.muovi(c, '21', 5, 'cheer:a');
+  pewBit.entra(c, '21', 5, 'cheer:a');
   const m = mira(b, c);
   // le monete ci sono, i Bit del saldo no: il servizio, da solo, deve rimettere a posto
   const r = b.s.subito(c, m.id, { con: 'misto-bit', user: 'marta', chi: '21', nome: 'marta' });
@@ -309,4 +342,83 @@ test('un tocco che si rompe a meta\': la mira si chiude e torna tutto quello che
   const m3 = mira(b, c, 'c');
   assert.equal(b.s.subito(c, m3.id, { con: 'euro' }).esito, 'mezzo');
   assert.equal(registroColpi.get(m3.id).stato, 'scaduta');
+});
+
+const { scadenzaBit, quandoScade, rispostaBit } = await import('../../src/features/colpi.js');
+const R = 'Europe/Rome';
+const sc = (o) => normalizza({ bitPew: { scadenza: o } }).bitPew.scadenza;
+const iso = (t) => new Date(t).toISOString().slice(0, 16);
+
+test('l\'orologio delle scadenze, nel fuso del canale', () => {
+  const mer = Date.parse('2026-10-28T09:00:00Z'); // mercoledi' 28 ottobre, 10:00 a Roma (ora solare)
+  assert.equal(scadenzaBit(sc({ tipo: 'mai' }), mer, R), 0);
+  assert.equal(iso(scadenzaBit(sc({ tipo: 'dopo', quanti: 5, unita: 'ore' }), mer, R)), '2026-10-28T14:00', 'ore esatte');
+  assert.equal(iso(scadenzaBit(sc({ tipo: 'dopo', quanti: 3, unita: 'giorni' }), mer, R)), '2026-10-31T23:00', 'fino alla fine del terzo giorno dopo: mezzanotte del 1 novembre a Roma');
+  assert.equal(iso(scadenzaBit(sc({ tipo: 'dopo', quanti: 1, unita: 'settimane' }), mer, R)), '2026-11-04T23:00');
+  assert.equal(iso(scadenzaBit(sc({ tipo: 'dopo', quanti: 1, unita: 'mesi' }), Date.parse('2026-01-31T12:00:00Z'), R)), '2026-02-28T23:00', 'un mese dal 31 gennaio: tutto il 28 febbraio');
+  assert.equal(iso(scadenzaBit(sc({ tipo: 'dopo', quanti: 1, unita: 'anni' }), Date.parse('2028-02-29T12:00:00Z'), R)), '2029-02-28T23:00', 'un anno dal 29 febbraio');
+  assert.equal(iso(scadenzaBit(sc({ tipo: 'dopo', quanti: 1, unita: 'giorni' }), Date.parse('2026-10-24T08:00:00Z'), R)), '2026-10-25T23:00', 'attraverso il cambio dell\'ora: sempre mezzanotte a Roma');
+  assert.equal(iso(scadenzaBit(sc({ tipo: 'fine', ogni: 'giorno', ora: 6, grazia: 0 }), mer, R)), '2026-10-29T05:00', 'domani alle 6');
+  assert.equal(iso(scadenzaBit(sc({ tipo: 'fine', ogni: 'giorno', ora: 6, grazia: 24 }), mer, R)), '2026-10-30T05:00', 'con 24 ore minime, il giro dopo');
+  assert.equal(iso(scadenzaBit(sc({ tipo: 'fine', ogni: 'giorno', ora: 11, grazia: 0 }), mer, R)), '2026-10-28T10:00', 'oggi alle 11, se e\' ancora da venire');
+  assert.equal(iso(scadenzaBit(sc({ tipo: 'fine', ogni: 'settimana', giorno: 1, ora: 0, grazia: 0 }), mer, R)), '2026-11-01T23:00', 'lunedi\' a mezzanotte');
+  assert.equal(iso(scadenzaBit(sc({ tipo: 'fine', ogni: 'settimana', giorno: 3, ora: 12, grazia: 0 }), mer, R)), '2026-10-28T11:00', 'oggi e\' mercoledi\': alle 12 di oggi');
+  assert.equal(iso(scadenzaBit(sc({ tipo: 'fine', ogni: 'mese', giorno: 31, ora: 0, grazia: 0 }), Date.parse('2026-11-10T09:00:00Z'), R)), '2026-11-29T23:00', 'il 31 di un mese di 30: l\'ultimo');
+  assert.equal(iso(scadenzaBit(sc({ tipo: 'fine', ogni: 'anno', mese: 1, giorno: 1, ora: 0, grazia: 0 }), mer, R)), '2026-12-31T23:00');
+  assert.equal(iso(scadenzaBit(sc({ tipo: 'inattivo', quanti: 2, unita: 'ore' }), mer, R)), '2026-10-28T11:00');
+});
+
+test('come si dice una scadenza, e la risposta in chat dello streamer', () => {
+  assert.equal(quandoScade(Date.parse('2026-10-31T23:00:00Z'), 'it', R), '31 ottobre', 'scade a mezzanotte: vale fino al giorno prima');
+  assert.match(quandoScade(Date.parse('2026-10-29T05:00:00Z'), 'it', R), /^29 ottobre\D+06:00$/, 'a un\'ora che non e\' mezzanotte, con l\'ora');
+  const cfg = normalizza({});
+  assert.equal(rispostaBit(cfg, 'it', { nome: '@marta', saldo: 30, pagina: 'pew.x/c', quanti: 10, quando: '31 ottobre' }), '@marta hai 30 Bit da spendere su pew.x/c (10 valgono fino a 31 ottobre)');
+  assert.equal(rispostaBit(cfg, 'en', { nome: '@m', saldo: 3, pagina: 'p' }), '@m you have 3 Bits to spend on p', 'senza scadenza vicina, niente frase');
+  const mio = normalizza({ bitPew: { risposta: '{nome}: {saldo} Bit ({quanti} entro {quando}) {zz}' } });
+  assert.equal(rispostaBit(mio, 'it', { nome: 'a', saldo: 1, quanti: 1, quando: 'domani' }), 'a: 1 Bit (1 entro domani) {zz}', 'il testo dello streamer, coi segnaposto che conosce');
+});
+
+function bancoScadenze(bitPew) {
+  const b = banco({ bitPew });
+  return b;
+}
+
+test('i Bit che arrivano prendono la scadenza dello streamer; il minimo, e quanti scadono presto', () => {
+  const b = bancoScadenze({ attivo: true, resa: 100, minimo: 50, scadenza: { tipo: 'dopo', quanti: 2, unita: 'ore', avviso: 1 } });
+  const c = login();
+  b.s.daCheer(c, { bits: 40, message: 'Cheer40', user_login: 'marta', user_id: '21', evento: 'k1' });
+  assert.equal(pewBit.saldo(c, '21', b.ora()), 0, 'sotto il minimo non conta');
+  b.s.daCheer(c, { bits: 60, message: 'Cheer60', user_login: 'marta', user_id: '21', evento: 'k2' });
+  assert.equal(b.s.saldoBit(c, '21'), 60);
+  assert.deepEqual(b.s.scadonoBit(c, '21'), { quanti: 60, scade: b.ora() + 2 * 3600_000 }, 'scadono entro il giorno dell\'avviso: si dice');
+  pewBit.entra(c, '22', 10, 'lontano', { scade: b.ora() + 3 * 86400_000, ora: b.ora() });
+  assert.equal(b.s.scadonoBit(c, '22'), null, 'fra tre giorni, con l\'avviso a uno: ancora niente da dire');
+  b.avanti(2 * 3600_000);
+  assert.equal(b.s.saldoBit(c, '21'), 0, 'e scadono');
+});
+
+test('lo streamer sceglie se tornano: i Bit dei cheer no, quelli spesi dal saldo sempre, coi lotti e le ore minime', async () => {
+  const b = bancoScadenze({ attivo: true, resa: 100, rendiColpi: false, rendiMire: false, scadenza: { tipo: 'dopo', quanti: 1, unita: 'ore', grazia: 5 } });
+  const c = login();
+  pewBit.entra(c, '21', 100, 'cheer:a', { scade: b.ora() + 60_000, ora: b.ora() });
+  const m = mira(b, c);
+  b.stato.mostra = false;
+  assert.equal(b.s.daBitPew(c, { id: m.id, chi: '21' }).esito, 'pagato');
+  b.avanti(CONSEGNA_MS + 1);
+  await b.s.ronda();
+  assert.equal(registroColpi.get(m.id).stato, 'rimborsata', 'pagato dal saldo: torna comunque');
+  assert.equal(b.s.saldoBit(c, '21'), 100, 'il lotto era scaduto intanto: vale ancora per le ore minime');
+  b.avanti(2 * 3600_000);
+  assert.equal(b.s.saldoBit(c, '21'), 100, 'le ore minime (5), non la durata dei Bit nuovi (1)');
+  b.avanti(3 * 3600_000);
+  assert.equal(b.s.saldoBit(c, '21'), 0);
+  const k = mira(b, c, 'k');
+  b.s.daCheer(c, { bits: 100, message: `Cheer100 ${k.codice}`, user_login: 'marta', user_id: '21', evento: 'k9' });
+  const v = mira(b, c, 'v');
+  b.s.daCheer(c, { bits: 30, message: `Cheer30 ${v.codice}`, user_login: 'marta', user_id: '21', evento: 'k10' });
+  b.avanti(2 * 86400_000);
+  registroColpi.pulisci(b.ora());
+  await b.s.ronda();
+  assert.equal(registroColpi.get(k.id).stato, 'pagata', 'pagato col cheer, coi ritorni spenti: resta in coda');
+  assert.equal(b.s.saldoBit(c, '21'), 0, 'e la mira mai pagata non rende i suoi 30');
 });

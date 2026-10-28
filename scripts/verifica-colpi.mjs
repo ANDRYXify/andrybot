@@ -374,7 +374,7 @@ try {
   mondo.io = null;
   await daCapo();
   dice(/si spendono anche qui/.test(await p.locator('#cp-io').textContent()), 'senza accesso la pagina dice che i Bit mandati al canale si spendono anche qui');
-  pewBit.muovi(LOGIN, '888', 25, 'cheer:gate-1', { nome: 'marta' });
+  pewBit.entra(LOGIN, '888', 25, 'cheer:gate-1', { nome: 'marta' });
   mondo.io = { id: '888', login: 'marta', nome: 'Marta' };
   await daCapo();
   await p.waitForFunction(() => /Hai 25 Bit da spendere qui/.test(document.getElementById('cp-io').textContent), null, { timeout: 5000 }).catch(() => {});

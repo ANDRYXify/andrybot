@@ -106,7 +106,8 @@ import { statoVivo, registroColpi, effects as effettiDb, segnoInstagram, pewSeri
 import { creaServizioColpi } from './features/colpi-servizio.js';
 import * as economia from './features/economia.js';
 import { nomeMoneta, monetaDi, accordaMoneta } from './features/moneta.js';
-import { urlPaginaColpo, eFrasePresenza, pagaInChat, chiedeBit, rispostaPresenza, titoloPremioMisto } from './features/colpi.js';
+import { urlPaginaColpo, eFrasePresenza, pagaInChat, chiedeBit, rispostaBit, quandoScade, rispostaPresenza, titoloPremioMisto } from './features/colpi.js';
+import { preferenzeDi } from './features/preferenze.js';
 import { creaChatColpi, rigaDi as rigaChatColpi, BATTITO_MS as BATTITO_CHAT_COLPI } from './features/colpi-chat.js';
 import { coloreDi as coloreChatDi } from './features/badges.js';
 import { nativeInMessaggio as emoteNelMessaggio, canaleInCache as emoteInCache } from './features/emotes.js';
@@ -172,7 +173,7 @@ export function rigaEvento(tipo, dati) {
 // chiave non si confonde mai con quella di uno streamer annunciato.
 export const chiaveTikTok = (login) => 'tiktok:' + String(login || '').toLowerCase();
 
-// chi ha chiesto «!pew bit» e quando: una risposta al minuto a testa
+// chi ha chiesto «!pew bit» e quando: una risposta a testa ogni tanto (lo sceglie lo streamer)
 const saldiBitChiesti = new Map();
 // Quello che il bot dice in chat sui colpi degli spettatori, nella lingua del canale.
 function testoColpi(canale, cosa, chi, r = {}) {
@@ -210,9 +211,6 @@ function testoColpi(canale, cosa, chi, r = {}) {
       : [`${chi} pagate ${r.monete} ${r.moneta} per «${r.nome}»: ora un Cheer di ${r.resto} Bit con il codice ${r.codice}.`,
         `${chi} paid ${r.monete} ${r.moneta} for «${r.nome}»: now a Cheer of ${r.resto} Bits with the code ${r.codice}.`,
         `${chi} pagadas ${r.monete} ${r.moneta} por «${r.nome}»: ahora un Cheer de ${r.resto} Bits con el código ${r.codice}.`],
-    'bit-saldo': [`${chi} hai ${r.saldo} Bit da spendere su ${pagina}`,
-      `${chi} you have ${r.saldo} Bits to spend on ${pagina}`,
-      `${chi} tienes ${r.saldo} Bits para gastar en ${pagina}`],
     'misto-bit-prima': [`${chi} i Bit per «${r.nome}» ci sono: mancano ${r.monete} ${r.moneta}, scrivi !${r.comando || 'pew'} ${r.codice} bit.`,
       `${chi} the Bits for «${r.nome}» are in: ${r.monete} ${r.moneta} to go, type !${r.comando || 'pew'} ${r.codice} bit.`,
       `${chi} los Bits para «${r.nome}» están: faltan ${r.monete} ${r.moneta}, escribe !${r.comando || 'pew'} ${r.codice} bit.`],
@@ -246,7 +244,7 @@ export class BotManager {
       // la serie della presenza: chi si presenta diretta dopo diretta
       serie: pewSerie,
       // i Bit da spendere sulla pagina: i Bit che non pagano un colpo
-      crediti: pewBit, log });
+      crediti: pewBit, fusoDi: (l) => preferenzeDi(l).fuso, log });
     // la chat della pagina dei colpi: i messaggi della chat di Twitch, girati a chi ha la pagina aperta
     this.colpiChat = creaChatColpi();
     setInterval(() => this.colpiChat.battito(), BATTITO_CHAT_COLPI).unref?.();
@@ -1355,11 +1353,13 @@ export class BotManager {
             { ...r, moneta: nomeMoneta(login), comando: cfgColpi.comando, premio: titoloPremioMisto({ nome: r.nome || '' }) });
           if (t) parla(t);
         } else if (cfgColpi && chiedeBit(cfgColpi, msg.text) && (!msg.piattaforma || msg.piattaforma === 'twitch') && msg.userId && this.colpi.conBitPew(login)) {
-          const k = login + '|' + msg.userId, adesso = Date.now();
-          if (adesso - (saldiBitChiesti.get(k) || 0) >= 60_000) {
+          const b = cfgColpi.bitPew, k = login + '|' + msg.userId, adesso = Date.now();
+          if (b.rispondi && adesso - (saldiBitChiesti.get(k) || 0) >= b.attesaSec * 1000) {
             if (saldiBitChiesti.size > 5000) saldiBitChiesti.clear();
             saldiBitChiesti.set(k, adesso);
-            parla(testoColpi(login, 'bit-saldo', '@' + (msg.display || msg.user), { saldo: this.colpi.saldoBit(login, msg.userId) }));
+            const lingua = linguaChat(login), sc = this.colpi.scadonoBit(login, msg.userId);
+            parla(rispostaBit(cfgColpi, lingua, { nome: '@' + (msg.display || msg.user), saldo: this.colpi.saldoBit(login, msg.userId),
+              pagina: urlPaginaColpo(login).replace(/^https:\/\//, ''), quanti: sc?.quanti || 0, quando: sc ? quandoScade(sc.scade, lingua, preferenzeDi(login).fuso) : '' }));
           }
         } else if (cfgColpi?.presenza.attiva && eFrasePresenza(cfgColpi, msg.text) && ePersona(login, msg.user)) {
           const piattaforma = msg.piattaforma || 'twitch';

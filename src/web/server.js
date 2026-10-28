@@ -2427,7 +2427,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   const portaColpi = creaPortaColpi({
     servizio: manager.colpi, registro: registroColpi, streamers, effettoDi: (l, c) => effectsDb.get(l, c), mezziEuro,
     apriPagamento: (mezzo, dati) => (mezzo === 'satispay' ? donaSatispay.apriPagamento(dati) : donaStripe.apriPagamento(dati)),
-    inOnda: (l) => manager.inOnda?.(l), overlay: (l) => effects.prontoColpi(l),
+    inOnda: (l) => manager.inOnda?.(l), overlay: (l) => effects.prontoColpi(l), fusoDi: (l) => preferenze.preferenzeDi(l).fuso,
   });
   const loginColpi = (req) => { const l = String(req.params.user || '').toLowerCase(); return eLoginNostro(l) ? l : ''; };
   // Lo spettatore che ha fatto l'accesso con Twitch (features/colpi-accesso.js):
@@ -2566,7 +2566,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     if (!login || !portaColpi.aperti(login)) return res.status(404).json({ errore: 'spento' });
     const io = spettatoreDi(req);
     if (!io) return res.status(401).json({ errore: 'accesso' });
-    res.json(portaColpi.saldi(login, io) || {});
+    res.json(portaColpi.saldi(login, io, colpiPagina.linguaDi(req.get('accept-language'))) || {});
   });
   app.get('/u/:user/colpo/stato/:id', (req, res) => {
     const login = loginColpi(req);
@@ -2599,9 +2599,20 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
         premioMistoNome: v.premioMisto ? v.premioMistoNome : '', premioMistoCosto: v.premioMisto ? v.premioMistoCosto : 0 })),
       ultimi: registroColpi.ultimi(login, 20).map((m) => ({ quando: m.pagata_at, nome: m.nome, chi: m.chi, metodo: m.metodo, stato: m.stato })),
       // i Bit da spendere: quanti ne girano, e chi ne ha di piu'
-      bitPew: { totali: pewBit.totali(login), primi: pewBit.primi(login, 10).map((p) => ({ nome: p.nome, saldo: p.saldo })) },
+      bitPew: { totali: pewBit.totali(login), primi: pewBit.primi(login, 20).map((p) => ({ chi: p.chi, nome: p.nome, saldo: p.saldo })) },
     });
   }));
+  // Lo streamer corregge i Bit da spendere di uno spettatore (docs/COLPI.md):
+  // il saldo nuovo; quelli in piu' nascono con la scadenza di adesso.
+  app.post('/api/colpi/bit', requireOwner, (req, res) => {
+    const login = currentUser(req).login;
+    const chi = String(req.body?.chi || '');
+    const n = Math.round(Number(req.body?.saldo));
+    if (!/^\d{1,20}$/.test(chi) || !Number.isFinite(n) || n < 0 || n > 10_000_000) return res.status(400).json({ errore: 'valori' });
+    const cfg = colpiMod.normalizza(streamers.get(login)?.settings?.colpi);
+    const scade = colpiMod.scadenzaBit(cfg.bitPew.scadenza, Date.now(), preferenze.preferenzeDi(login).fuso);
+    res.json({ saldo: pewBit.imposta(login, chi, n, `streamer:${Date.now()}:${chi}`, { scade }) });
+  });
   // La prova della presenza (docs/COLPI.md, «La presenza»): la stessa che parte
   // dalla chat, subito, col nome dello streamer, con quello che c'e' nel pannello
   // anche se non e' salvato. Non passa dal registro: non e' di nessuno.

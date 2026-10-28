@@ -22,17 +22,19 @@ const SRV = senzaCommenti(leggi('src/web/server.js'));
 test('il cheer arriva al servizio con l\'id del messaggio, e il servizio ha il registro vero', () => {
   assert.match(leggi('src/twitch/events.js'), /data: msg\.payload\?\.event,\n\s*id: String\(msg\.metadata\?\.message_id \|\| ''\),/, 'l\'id che Twitch ripete quando rimanda');
   assert.match(BOT, /const r = this\.colpi\?\.daCheer\(channel, \{ \.\.\.data, evento: ev\.id \|\| '' \}\) \|\| \{\};/);
-  assert.match(BOT, /crediti: pewBit, log \}\);/, 'i Bit si muovono solo dal registro di db.js');
+  assert.match(BOT, /crediti: pewBit, fusoDi: \(l\) => preferenzeDi\(l\)\.fuso, log \}\);/, 'i Bit si muovono solo dal registro di db.js, e scadono nel fuso del canale');
   assert.match(BOT, /pewSerie\.pulisci\(\); pewBit\.pulisci\(\);/, 'i riferimenti vecchi si puliscono una volta al giorno');
 });
 
-test('«!pew bit»: su Twitch, a chi ha un id, una volta al minuto a testa', () => {
+test('«!pew bit»: su Twitch, a chi ha un id, quando e ogni quanto vuole lo streamer, col suo testo', () => {
   const i = BOT.indexOf('chiedeBit(cfgColpi, msg.text)');
   assert.ok(i > 0 && i < BOT.indexOf('eFrasePresenza(cfgColpi, msg.text)'), 'prima della presenza: la frase non lo copre');
-  const h = BOT.slice(i - 40, i + 700);
+  const h = BOT.slice(i - 40, i + 1200);
   assert.match(h, /\(!msg\.piattaforma \|\| msg\.piattaforma === 'twitch'\) && msg\.userId && this\.colpi\.conBitPew\(login\)/);
-  assert.match(h, /if \(adesso - \(saldiBitChiesti\.get\(k\) \|\| 0\) >= 60_000\) \{/);
+  assert.match(h, /if \(b\.rispondi && adesso - \(saldiBitChiesti\.get\(k\) \|\| 0\) >= b\.attesaSec \* 1000\) \{/);
   assert.match(h, /this\.colpi\.saldoBit\(login, msg\.userId\)/, 'il saldo e\' per id, non per nome');
+  assert.match(h, /parla\(rispostaBit\(cfgColpi, lingua, \{/, 'il testo dello streamer, o quello di serie nella lingua della chat');
+  assert.match(h, /quando: sc \? quandoScade\(sc\.scade, lingua, preferenzeDi\(login\)\.fuso\) : ''/, 'la scadenza detta nel fuso del canale');
 });
 
 test('un tocco: chi paga e\' chi ha l\'accesso, con un tetto alle richieste', () => {
@@ -51,5 +53,11 @@ test('il saldo si legge con l\'accesso, si spende dalla porta, e il pannello ved
   assert.match(h, /res\.set\('Cache-Control', 'private, no-store'\);/);
   assert.match(h, /if \(!io\) return res\.status\(401\)\.json\(\{ errore: 'accesso' \}\);/);
   assert.match(SRV, /res\.json\(await portaColpi\.paga\(login, req\.params\.id, req\.body\?\.mezzo, spettatoreDi\(req\), String\(req\.body\?\.modo \|\| ''\)\)\);/, 'chi paga e\' chi ha l\'accesso, mai un id dal corpo');
-  assert.match(SRV, /bitPew: \{ totali: pewBit\.totali\(login\), primi: pewBit\.primi\(login, 10\)\.map\(\(p\) => \(\{ nome: p\.nome, saldo: p\.saldo \}\)\) \},/, 'al pannello i nomi, non gli id');
+  assert.match(SRV, /bitPew: \{ totali: pewBit\.totali\(login\), primi: pewBit\.primi\(login, 20\)\.map\(\(p\) => \(\{ chi: p\.chi, nome: p\.nome, saldo: p\.saldo \}\)\) \},/, 'al pannello chi ne ha di piu\', per correggerlo');
+  const j = SRV.indexOf("app.post('/api/colpi/bit', requireOwner,");
+  assert.ok(j > 0, 'la correzione e\' dello streamer');
+  const k = SRV.slice(j, j + 900);
+  assert.match(k, /const login = currentUser\(req\)\.login;/, 'solo nel suo canale');
+  assert.match(k, /pewBit\.imposta\(login, chi, n, `streamer:\$\{Date\.now\(\)\}:\$\{chi\}`, \{ scade \}\)/);
+  assert.match(SRV, /res\.json\(portaColpi\.saldi\(login, io, colpiPagina\.linguaDi\(req\.get\('accept-language'\)\)\) \|\| \{\}\);/);
 });
