@@ -397,6 +397,32 @@ export function creaServizioColpi({ registro, effects, effettoDi, impostazioni, 
     return { esito: 'acconto', modo, monete: mi.monete, resto: a.resto, codice: m.codice, nome: m.nome };
   }
 
+  // TUTTO IN UN TOCCO, per chi ha fatto l'accesso (docs/COLPI.md, «Con
+  // l'accesso, un tocco»): monete e Bit da spendere sono un saldo nostro, quindi
+  // la mira appena aperta si paga subito, senza codice. `con`: 'bit' (il saldo
+  // della pagina), 'monete', 'misto-bit' (le monete del modo misto, poi i Bit
+  // dal saldo). Se una parte non va, la mira si chiude e quello che era gia'
+  // stato preso torna: non resta niente a meta'.
+  function subito(login, id, { con = '', user = '', chi = '', nome = '' } = {}) {
+    const ch = String(login || '').toLowerCase();
+    const chiudi = () => registro.scadi(String(id));
+    if (con === 'bit' || con === 'monete') {
+      const r = con === 'bit' ? daBitPew(ch, { id, chi, nome }) : daMonete(ch, { id, user });
+      if (r.esito !== 'pagato') chiudi();
+      return r;
+    }
+    if (con !== 'misto-bit') { chiudi(); return { esito: 'mezzo' }; }
+    const a = daMonete(ch, { id, user, modo: 'bit' });
+    if (a.esito === 'pagato') return a;
+    if (a.esito !== 'acconto') { chiudi(); return a; }
+    const b = daBitPew(ch, { id, chi, nome });
+    if (b.esito === 'pagato') return { ...b, monete: a.monete };
+    const m = registro.get(String(id));
+    if (chiudi() && monete && m?.acconto?.ricevuta) monete.rendi(ch, m.acconto.user, m.acconto.ricevuta);
+    return b;
+  }
+  const saldoMonete = (login, user) => (monete && user ? Number(monete.saldo?.(String(login || '').toLowerCase(), String(user).toLowerCase())) || 0 : 0);
+
   // Il premio del modo misto coi punti: vale solo con le monete gia' pagate per
   // quella mira (l'acconto). Se no i punti tornano, e il bot dice cosa manca.
   function daRiscattoMisto(ch, voce, { reward_id, user_input, id, user_id }) {
@@ -421,6 +447,6 @@ export function creaServizioColpi({ registro, effects, effettoDi, impostazioni, 
     return { esito: incassa(m, 'euro', donazioneId, '', true) ? 'pagato' : 'gia', nome: m.nome, login: m.login };
   }
 
-  return { mira, consegnabile, daCheer, daRiscatto, daPagamento, daMonete, daBitPew, saldoBit, presenza, provaPresenza, visto, ronda, cfgDi,
+  return { mira, consegnabile, daCheer, daRiscatto, daPagamento, daMonete, daBitPew, subito, saldoBit, saldoMonete, presenza, provaPresenza, visto, ronda, cfgDi,
     conMonete: !!monete, conBitPew: (login) => !!resaDi(String(login || '').toLowerCase()) };
 }

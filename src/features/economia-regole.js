@@ -152,6 +152,7 @@ export const DURATE = Object.freeze(['mai', 'sett', 'mese', 'tre', 'anno', 'fine
 const GIORNI = { sett: 7, mese: 30, tre: 91, anno: 365 };
 
 const fusoOk = (fuso) => { try { new Intl.DateTimeFormat('en-US', { timeZone: fuso }); return fuso; } catch { return 'UTC'; } };
+export const partiNelFuso = (ora, fuso) => partiIn(ora, fusoOk(fuso));
 function partiIn(ora, fuso) {
   const f = new Intl.DateTimeFormat('en-US', { timeZone: fuso, year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric', hourCycle: 'h23' });
   const p = {};
@@ -161,8 +162,12 @@ function partiIn(ora, fuso) {
 // L'istante in cui, nel fuso, scocca la mezzanotte del giorno a-m-g (anche un
 // mese 13 o un giorno 32: si normalizzano da soli). Due passi bastano anche
 // nelle notti in cui cambia l'ora.
-function mezzanotte(a, m, g, fuso) {
-  const voluto = Date.UTC(a, m - 1, g);
+function mezzanotte(a, m, g, fuso) { return istanteNelFuso(a, m, g, 0, fuso); }
+// Lo stesso, a un'ora intera del giorno (0-23): per chi scade «ogni lunedi'
+// alle 6» (docs/COLPI.md, «Quando scadono»).
+export function istanteNelFuso(a, m, g, h, fuso) {
+  fuso = fusoOk(fuso);
+  const voluto = Date.UTC(a, m - 1, g, h);
   let t = voluto;
   for (let i = 0; i < 2; i++) {
     const p = partiIn(t, fuso);

@@ -24,6 +24,7 @@
 //    fatte.
 
 import { config } from '../config.js';
+import { istanteNelFuso, partiNelFuso } from './economia-regole.js';
 
 // L'INDIRIZZO DELLA PAGINA (docs/COLPI.md, «L'indirizzo corto»): quello corto,
 // pew.<dominio>/<canale>, quando il server l'ha acceso (dal .env o dalla sonda,
@@ -166,10 +167,85 @@ export const chiedeBit = (cfg, messaggio) => new RegExp(`^!${cfg?.comando || COM
 // canale che non pagano un colpo diventano Bit da spendere sulla pagina, `resa`
 // per cento (100: pari). Un Bit vale una volta: o paga un colpo, o diventa
 // saldo, mai le due cose.
-export const BIT_PEW = Object.freeze({ resa: [1, 1000] });
+// Tutto e' dello streamer: la resa, da quanti Bit un cheer conta, un tetto al
+// saldo, se tornano i Bit dei colpi non comparsi e delle mire mai pagate, la
+// risposta a «!pew bit» (accesa, il testo, ogni quanto), e quando scadono.
+export const BIT_PEW = Object.freeze({
+  resa: [1, 1000], minimo: [1, 100_000], tetto: [0, 10_000_000], attesaSec: [0, 3600], risposta: 160,
+  tipi: Object.freeze(['mai', 'dopo', 'fine', 'inattivo']), unita: Object.freeze(['ore', 'giorni', 'settimane', 'mesi', 'anni']),
+  ogni: Object.freeze(['giorno', 'settimana', 'mese', 'anno']), quanti: [1, 1000], ora: [0, 23], giorno: [1, 31], mese: [1, 12], grazia: [0, 720], avviso: [0, 90],
+  // la risposta di serie a «!pew bit»; {scade} e' la parte sulla scadenza, quando c'e'
+  risposte: Object.freeze({ it: '{nome} hai {saldo} Bit da spendere su {pagina}{scade}', en: '{nome} you have {saldo} Bits to spend on {pagina}{scade}', es: '{nome} tienes {saldo} Bits para gastar en {pagina}{scade}' }),
+  scadenze: Object.freeze({ it: ' ({quanti} valgono fino a {quando})', en: ' ({quanti} last until {quando})', es: ' ({quanti} valen hasta {quando})' }),
+});
 function normBitPew(b) {
   const o = b && typeof b === 'object' ? b : {};
-  return { attivo: o.attivo !== false, resa: num(o.resa, BIT_PEW.resa, 100) };
+  const s = o.scadenza && typeof o.scadenza === 'object' ? o.scadenza : {};
+  const B = BIT_PEW;
+  return {
+    attivo: o.attivo !== false, resa: num(o.resa, B.resa, 100), minimo: num(o.minimo, B.minimo, 1), tetto: num(o.tetto, B.tetto, 0),
+    rendiColpi: o.rendiColpi !== false, rendiMire: o.rendiMire !== false,
+    rispondi: o.rispondi !== false, risposta: testo(o.risposta, B.risposta), attesaSec: num(o.attesaSec, B.attesaSec, 60),
+    scadenza: {
+      tipo: B.tipi.includes(s.tipo) ? s.tipo : 'mai',
+      quanti: num(s.quanti, B.quanti, 30), unita: B.unita.includes(s.unita) ? s.unita : 'giorni',
+      ogni: B.ogni.includes(s.ogni) ? s.ogni : 'mese', ora: num(s.ora, B.ora, 0), giorno: num(s.giorno, B.giorno, 1), mese: num(s.mese, B.mese, 1),
+      grazia: num(s.grazia, B.grazia, 24), avviso: num(s.avviso, B.avviso, 3),
+    },
+  };
+}
+
+// QUANDO SCADONO (docs/COLPI.md, «Quando scadono»), nel fuso del canale:
+//  · mai;
+//  · dopo: N ore esatte, o fino alla fine del giorno N giorni, settimane, mesi,
+//    anni dopo quello in cui arrivano (come le monete);
+//  · fine: al prossimo rintocco del calendario (ogni giorno all'ora X, ogni
+//    settimana il giorno X, ogni mese il giorno X — l'ultimo, se il mese e'
+//    corto —, ogni anno il X del mese Y), ma almeno `grazia` ore dopo: un Bit
+//    arrivato un minuto prima del rintocco non sparisce subito;
+//  · inattivo: come «dopo», ma ogni movimento (un cheer, una spesa, un Bit che
+//    torna) sposta in avanti tutti i suoi.
+// Torna l'istante in cui scadono i Bit che arrivano adesso, 0 se mai.
+const giorniDel = (a, m) => new Date(Date.UTC(a, m, 0)).getUTCDate();
+export function scadenzaBit(sc, ora = Date.now(), fuso = 'Europe/Rome') {
+  if (!sc || !BIT_PEW.tipi.includes(sc.tipo) || sc.tipo === 'mai') return 0;
+  const p = partiNelFuso(ora, fuso);
+  if (sc.tipo === 'dopo' || sc.tipo === 'inattivo') {
+    const q = sc.quanti;
+    if (sc.unita === 'ore') return ora + q * 3600_000;
+    if (sc.unita === 'giorni' || sc.unita === 'settimane') return istanteNelFuso(p.year, p.month, p.day + q * (sc.unita === 'giorni' ? 1 : 7) + 1, 0, fuso);
+    const a = sc.unita === 'anni' ? p.year + q : p.year, m = sc.unita === 'mesi' ? p.month + q : p.month;
+    return istanteNelFuso(a, m, Math.min(p.day, giorniDel(a, m)) + 1, 0, fuso);
+  }
+  const minimo = ora + sc.grazia * 3600_000;
+  let t = 0;
+  for (let k = 0; k < 64; k++) {
+    if (sc.ogni === 'giorno') t = istanteNelFuso(p.year, p.month, p.day + k, sc.ora, fuso);
+    else if (sc.ogni === 'settimana') {
+      const dow = ((new Date(Date.UTC(p.year, p.month - 1, p.day)).getUTCDay() + 6) % 7) + 1;
+      t = istanteNelFuso(p.year, p.month, p.day + ((Math.min(7, sc.giorno) - dow + 7) % 7) + 7 * k, sc.ora, fuso);
+    } else if (sc.ogni === 'mese') t = istanteNelFuso(p.year, p.month + k, Math.min(sc.giorno, giorniDel(p.year, p.month + k)), sc.ora, fuso);
+    else t = istanteNelFuso(p.year + k, sc.mese, Math.min(sc.giorno, giorniDel(p.year + k, sc.mese)), sc.ora, fuso);
+    if (t > minimo) return t;
+  }
+  return t;
+}
+// «fino al 4 novembre» (scade alla mezzanotte che lo chiude) o «5 novembre, 06:00»
+export function quandoScade(scade, lingua = 'it', fuso = 'Europe/Rome') {
+  try {
+    const p = partiNelFuso(scade, fuso);
+    const notte = p.hour === 0 && p.minute === 0;
+    return new Intl.DateTimeFormat(lingua, { timeZone: fuso, day: 'numeric', month: 'long', ...(notte ? {} : { hour: '2-digit', minute: '2-digit' }) }).format(new Date(notte ? scade - 1 : scade));
+  } catch { return new Date(scade).toISOString().slice(0, 16).replace('T', ' '); }
+}
+// La risposta a «!pew bit», con lo stesso testo per tutti i segnaposto: {nome},
+// {saldo}, {pagina}, {scade} (vuoto se niente scade presto), {quanti}, {quando}.
+export function rispostaBit(cfg, lingua, v = {}) {
+  const b = cfg?.bitPew || normBitPew({});
+  const L = BIT_PEW.risposte[lingua] ? lingua : 'it';
+  const scade = v.quanti > 0 && v.quando ? BIT_PEW.scadenze[L].replace('{quanti}', v.quanti).replace('{quando}', v.quando) : '';
+  const vals = { nome: v.nome || '', saldo: v.saldo ?? 0, pagina: v.pagina || '', scade, quanti: v.quanti || 0, quando: v.quando || '' };
+  return String(b.risposta || BIT_PEW.risposte[L]).replace(/\{(nome|saldo|pagina|scade|quanti|quando)\}/g, (_, k) => String(vals[k])).slice(0, 450);
 }
 export const bitResi = (resa, bit) => Math.floor(Math.max(0, Math.trunc(Number(bit) || 0)) * Math.max(0, Number(resa) || 0) / 100);
 // I Bit versati su una mira, in ordine di arrivo: [[chi, bit, da]], con `da`

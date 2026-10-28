@@ -174,8 +174,35 @@ export function creaPortaColpi({ servizio, registro, streamers, effettoDi, mezzi
     return { url: r.url };
   }
 
-  // il saldo di chi ha fatto l'accesso: i Bit da spendere qui
-  const saldi = (login, io) => (aperti(login) && io?.id ? { bit: servizio.conBitPew?.(login) ? servizio.saldoBit(login, io.id) : null } : null);
+  // il saldo di chi ha fatto l'accesso: i Bit da spendere qui e le monete del canale
+  const saldi = (login, io) => (aperti(login) && io?.id ? {
+    bit: servizio.conBitPew?.(login) ? servizio.saldoBit(login, io.id) : null,
+    monete: servizio.conMonete && io.login ? servizio.saldoMonete(login, io.login) : null,
+  } : null);
 
-  return { aperti, dati, anteprima, mira, stato, paga, saldi };
+  // UN TOCCO (docs/COLPI.md, «Con l'accesso, un tocco»): la mira e il
+  // pagamento col saldo insieme, senza codice. Prima si guarda il saldo, cosi'
+  // un tocco che non puo' riuscire non apre nemmeno la mira.
+  const CON = ['bit', 'monete', 'misto-bit'];
+  function lancia(login, corpo = {}, chiave = '', io = null) {
+    const k = aperti(login);
+    if (!k) return { ok: false, motivo: 'spento' };
+    if (!io?.id || !io.login) return { ok: false, motivo: 'accesso' };
+    const con = String(corpo.con || '');
+    const v = voceDi(k.cfg, String(corpo.voce || ''));
+    const misto = v ? mistiDi(v).find((x) => x.modo === 'bit') : null;
+    if (!v || !CON.includes(con)) return { ok: false, motivo: 'voce' };
+    const s = saldi(login, io) || {};
+    const serve = con === 'bit' ? { bit: v.bit } : con === 'monete' ? { monete: v.monete } : misto ? { monete: misto.monete, bit: misto.resto } : null;
+    if (!serve || Object.values(serve).some((n) => !(n > 0))) return { ok: false, motivo: 'voce' };
+    if ((serve.bit && s.bit == null) || (serve.monete && s.monete == null)) return { ok: false, motivo: 'spento' };
+    for (const [quale, n] of Object.entries(serve)) if (s[quale] < n) return { ok: false, motivo: 'pochi', serve: n, saldo: s[quale], quale };
+    const r = mira(login, corpo, chiave, io);
+    if (!r.ok) return r;
+    const p = servizio.subito(login, r.mira.id, { con, user: io.login, chi: io.id, nome: io.login });
+    if (p.esito !== 'pagato') return { ok: false, motivo: p.esito === 'fermo' ? p.motivo : p.esito, serve: p.serve, saldo: p.saldo };
+    return { ok: true, mira: statoMira(registro.get(r.mira.id)) };
+  }
+
+  return { aperti, dati, anteprima, mira, stato, paga, saldi, lancia };
 }

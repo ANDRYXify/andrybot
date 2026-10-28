@@ -44,8 +44,10 @@ function banco({ voce = { comando: 'pomodoro', bit: 100 }, bitPew, attivo = true
 const mira = (b, c, k = 'a', extra = {}) => b.s.mira(c, { voce: 'pomodoro', x: 10, y: 10, chiave: k, ...extra }).mira;
 
 test('il modello: accesi alla pari di serie, la resa nei limiti; i Bit di troppo sono gli ultimi arrivati', () => {
-  assert.deepEqual(normalizza({}).bitPew, { attivo: true, resa: 100 }, 'chiesto: «pari bit»');
-  assert.deepEqual(normalizza({ bitPew: { attivo: false, resa: 5000 } }).bitPew, { attivo: false, resa: BIT_PEW.resa[1] });
+  const d = normalizza({}).bitPew;
+  assert.deepEqual([d.attivo, d.resa, d.scadenza.tipo], [true, 100, 'mai'], 'chiesto: «pari bit», e di serie non scadono');
+  const x = normalizza({ bitPew: { attivo: false, resa: 5000 } }).bitPew;
+  assert.deepEqual([x.attivo, x.resa], [false, BIT_PEW.resa[1]]);
   assert.equal(normalizza({ bitPew: { resa: 0 } }).bitPew.resa, 1);
   assert.deepEqual([bitResi(100, 250), bitResi(50, 125), bitResi(0, 999), bitResi(100, -3)], [250, 62, 0, 0], 'per difetto: mai un Bit in piu\' di quelli mandati');
   assert.deepEqual(togliUltimi([['a', 30], ['b', 50], ['c', 40]], 60), { resto: [['a', 30], ['b', 30]], resi: [['c', 40, ''], ['b', 20, '']] });
@@ -226,7 +228,7 @@ test('la pagina: il saldo di chi ha l\'accesso, e si paga col saldo solo la prop
   const p = creaPortaColpi({ servizio: b.s, registro: registroColpi, streamers: { get: () => ({ settings: { colpi: b.cfg } }) },
     effettoDi: () => ({ tipo: 'immagine', file: 'p.png' }), mezziEuro: () => [], apriPagamento: async () => ({}), inOnda: () => true, overlay: () => true, ora: b.ora });
   assert.equal(p.dati(c).bitPew, true);
-  assert.deepEqual(p.saldi(c, { id: '21', login: 'marta' }), { bit: 500 });
+  assert.deepEqual(p.saldi(c, { id: '21', login: 'marta' }), { bit: 500, monete: null }, 'senza le monete del canale, niente monete');
   assert.equal(p.saldi(c, null), null);
   const sua = p.mira(c, { voce: 'pomodoro', x: 10, y: 10 }, 'ip1', { id: '22', nome: 'luca' }).mira;
   assert.deepEqual(await p.paga(c, sua.id, 'bitpew', null), { errore: 'accesso' });
@@ -236,7 +238,7 @@ test('la pagina: il saldo di chi ha l\'accesso, e si paga col saldo solo la prop
   assert.equal(p.stato(c, mia.id).prezzi.resa, 100, 'la pagina sa che la mira si paga col saldo');
   b.cfg.bitPew = { attivo: false };
   assert.equal(p.dati(c).bitPew, false);
-  assert.deepEqual(p.saldi(c, { id: '21' }), { bit: null }, 'spenti: il saldo resta, ma non si mostra e non si spende');
+  assert.deepEqual(p.saldi(c, { id: '21' }), { bit: null, monete: null }, 'spenti: il saldo resta, ma non si mostra e non si spende');
 });
 
 test('due ronde che si accavallano rendono una volta sola i Bit e le monete di un colpo monete+Bit', async () => {
@@ -265,4 +267,46 @@ test('due ronde che si accavallano rendono una volta sola i Bit e le monete di u
   await uno;
   assert.equal(registroColpi.get(m.id).stato, 'rimborsata');
   assert.deepEqual([pewBit.saldo(c, '21'), economia.saldo(c, 'marta')], [100, 50], 'una volta i Bit, una volta le monete');
+});
+
+test('un tocco con l\'accesso: la mira e il pagamento col saldo insieme, senza codice; se non basta, la mira non si apre', () => {
+  const b = banco({ voce: { comando: 'pomodoro', bit: 100, monete: 40, misti: { bit: { monete: 10, bit: 30 } } }, conMonete: true });
+  const c = login();
+  const p = creaPortaColpi({ servizio: b.s, registro: registroColpi, streamers: { get: () => ({ settings: { colpi: b.cfg } }) },
+    effettoDi: () => ({ tipo: 'immagine', file: 'p.png' }), mezziEuro: () => [], apriPagamento: async () => ({}), inOnda: () => true, overlay: () => true, ora: b.ora });
+  const io = { id: '21', login: 'marta', nome: 'Marta' };
+  const corpo = (con) => ({ voce: 'pomodoro', x: 10, y: 10, con });
+  assert.deepEqual(p.lancia(c, corpo('bit'), 'ip', null), { ok: false, motivo: 'accesso' });
+  const aperte = registroColpi.aperteDa(c, 0);
+  assert.deepEqual(p.lancia(c, corpo('bit'), 'ip', io), { ok: false, motivo: 'pochi', serve: 100, saldo: 0, quale: 'bit' });
+  assert.equal(registroColpi.aperteDa(c, 0), aperte, 'un tocco che non puo\' riuscire non apre la mira');
+  pewBit.muovi(c, '21', 130, 'cheer:a');
+  points.dai(c, 'marta', 50);
+  const r = p.lancia(c, corpo('bit'), 'ip', io);
+  assert.deepEqual([r.ok, r.mira.stato, r.mira.metodo, pewBit.saldo(c, '21')], [true, 'pagata', 'bit', 30]);
+  const m = p.lancia(c, corpo('monete'), 'ip', io);
+  assert.deepEqual([m.ok, m.mira.metodo, economia.saldo(c, 'marta')], [true, 'monete', 10]);
+  const x = p.lancia(c, corpo('misto-bit'), 'ip', io);
+  assert.deepEqual([x.ok, x.mira.metodo, economia.saldo(c, 'marta'), pewBit.saldo(c, '21')], [true, 'monete+bit', 0, 0], 'le monete, poi i Bit dal saldo');
+  assert.equal(b.sparati.length, 3);
+});
+
+test('un tocco che si rompe a meta\': la mira si chiude e torna tutto quello che era stato preso', () => {
+  const b = banco({ voce: { comando: 'pomodoro', bit: 100, misti: { bit: { monete: 10, bit: 30 } } }, conMonete: true });
+  const c = login();
+  points.dai(c, 'marta', 10);
+  pewBit.muovi(c, '21', 5, 'cheer:a');
+  const m = mira(b, c);
+  // le monete ci sono, i Bit del saldo no: il servizio, da solo, deve rimettere a posto
+  const r = b.s.subito(c, m.id, { con: 'misto-bit', user: 'marta', chi: '21', nome: 'marta' });
+  assert.equal(r.esito, 'pochi');
+  assert.deepEqual([registroColpi.get(m.id).stato, economia.saldo(c, 'marta'), pewBit.saldo(c, '21')], ['scaduta', 10, 5]);
+  const m2 = mira(b, c, 'b');
+  b.stato.overlay = false;
+  assert.equal(b.s.subito(c, m2.id, { con: 'bit', chi: '21' }).esito, 'fermo');
+  assert.equal(registroColpi.get(m2.id).stato, 'scaduta', 'nessuna mira lasciata aperta');
+  b.stato.overlay = true;
+  const m3 = mira(b, c, 'c');
+  assert.equal(b.s.subito(c, m3.id, { con: 'euro' }).esito, 'mezzo');
+  assert.equal(registroColpi.get(m3.id).stato, 'scaduta');
 });

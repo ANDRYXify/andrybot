@@ -43,6 +43,9 @@ comandi diversi da quelli della riga italiana.
 
 ## 2026-10-28
 
+- Con l'accesso a Twitch la pagina di Pewpewify lancia un colpo in un tocco: scegli, tocchi il punto e paghi col tuo saldo di monete o di Bit, senza codici. [vai: colpi]
+  en: Logged in with Twitch, the Pewpewify page launches a hit in one tap: pick it, tap the spot and pay from your coin or Bit balance, no codes.
+  es: Con el acceso de Twitch la página de Pewpewify lanza un golpe en un toque: eliges, tocas el punto y pagas con tu saldo de monedas o de Bits, sin códigos.
 - [importante] I Bit da spendere: i Bit che uno spettatore manda al canale senza pagarci un colpo diventano Bit da spendere sulla tua pagina di Pewpewify, accanto a monete e punti canale. [vai: colpi]
   en: Bits to spend: the Bits a viewer sends to your channel without paying for a hit become Bits to spend on your Pewpewify page, next to coins and channel points.
   es: Bits para gastar: los Bits que un espectador manda al canal sin pagar un golpe se convierten en Bits para gastar en tu página de Pewpewify, junto a monedas y puntos de canal.

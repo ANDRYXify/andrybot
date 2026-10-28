@@ -281,6 +281,30 @@ coda come uno a Bit (vedi «Il vincolo dei Bit»), salvo il saldo in Bit
 («I Bit da spendere», sotto). `pulisci` non tocca una mira con un acconto: la
 chiude la ronda, che rende le monete.
 
+## Con l'accesso, un tocco
+
+Chiesto così: «a che serve il codice se il saldo è fittizio? Dai la
+possibilità all'utente di fare direttamente tutto senza troppi rigiri, ha già
+fatto il login». Il codice serve solo a legare la pagina a qualcosa che
+succede **fuori**: un cheer nella chat di Twitch, un riscatto dei punti
+canale, `!pew CODICE` per chi non ha l'accesso. Le monete del canale e i Bit
+da spendere sono un saldo nostro: con l'accesso non serve.
+
+- Scelto il colpo e toccato il punto, il passo 2 mostra un tasto per ogni
+  saldo che lo paga: «Lancia · 20 Bit», «Lancia · 40 monete», «Lancia · 10
+  monete + 30 Bit» (il modo misto coi Bit, pagato tutto dal saldo). Spento se
+  il saldo non basta. «Prendi la mira» diventa «Altri modi di pagare»: cheer,
+  punti, euro, col codice come prima.
+- `POST /u/<login>/colpo/lancia` (`porta.lancia`): chi paga è chi ha
+  l'accesso (la sessione, mai il corpo). Prima si guarda il saldo: un tocco
+  che non può riuscire non apre nemmeno la mira. Poi la mira e
+  `servizio.subito`, insieme.
+- **Niente a metà.** Se il pagamento non va (il colpo intanto non può
+  comparire, il saldo è cambiato), la mira si chiude (`scadi`, una volta) e
+  quello che era già stato preso torna: nel modo misto, le monete
+  dell'acconto. Il colpo pagato segue la strada di sempre (consegna, rinvii,
+  rimborso se non compare).
+
 ## I Bit da spendere
 
 Chiesto così: «in base ai bit spesi dall'utente, su pew.socialbot.live ci

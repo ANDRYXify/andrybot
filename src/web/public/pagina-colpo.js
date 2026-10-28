@@ -45,15 +45,62 @@
   }
   function ricorda(id) { try { if (id) sessionStorage.setItem(memo, id); else sessionStorage.removeItem(memo); } catch (e) {  } }
 
-  var saldoBit = null;
+  var saldoBit = null, saldoMonete = null;
   function saldi() {
-    if (!io || !dati || !dati.bitPew) { saldoBit = null; return Promise.resolve(); }
+    if (!io || !dati) { saldoBit = null; saldoMonete = null; lanciaTasti(); return Promise.resolve(); }
     return chiedi('/saldi').then(function (r) {
-      if (r._stato === 401) { io = null; saldoBit = null; accedi(); scriviSi(); return; }
-      var prima = saldoBit;
+      if (r._stato === 401) { io = null; saldoBit = null; saldoMonete = null; accedi(); scriviSi(); lanciaTasti(); return; }
+      var prima = saldoBit + '|' + saldoMonete;
       saldoBit = typeof r.bit === 'number' ? r.bit : null;
-      if (prima !== saldoBit) { accedi(); if (mira && mira.stato === 'attesa') mostra(); }
+      saldoMonete = typeof r.monete === 'number' ? r.monete : null;
+      if (prima !== saldoBit + '|' + saldoMonete) { accedi(); lanciaTasti(); if (mira && mira.stato === 'attesa') mostra(); }
     }, function () {  });
+  }
+
+  function lanciaTasti() {
+    var box = $('cp-lancia');
+    var conf = $('cp-conferma');
+    box.textContent = '';
+    var modi = [];
+    if (io && scelta && !mira) {
+      var pz = scelta.prezzi || {};
+      if (pz.bit > 0 && dati.bitPew && saldoBit !== null) modi.push({ con: 'bit', testo: riempi(T.lanciaBit, { n: numero(pz.bit) }), basta: saldoBit >= pz.bit });
+      if (pz.monete > 0 && saldoMonete !== null) modi.push({ con: 'monete', testo: riempi(T.lanciaMonete, { n: numero(pz.monete), moneta: moneta() }), basta: saldoMonete >= pz.monete });
+      (scelta.misti || []).forEach(function (x) {
+        if (x.modo === 'bit' && dati.bitPew && saldoBit !== null && saldoMonete !== null) modi.push({ con: 'misto-bit', testo: riempi(T.lanciaMisto, { monete: numero(x.monete), moneta: moneta(), bit: numero(x.resto) }), basta: saldoMonete >= x.monete && saldoBit >= x.resto });
+      });
+    }
+    modi.forEach(function (m) {
+      var b = el('button', 'cp-b cp-paga-b', m.testo);
+      b.type = 'button';
+      b.setAttribute('data-lancia', m.con);
+      b.setAttribute('data-basta', m.basta ? '1' : '');
+      b.onclick = function () { lancia(m.con, b); };
+      box.appendChild(b);
+    });
+    if (modi.length) box.appendChild(el('p', 'cp-nota', T.lanciaNota));
+    box.hidden = !modi.length;
+    conf.textContent = modi.length ? T.altriModi : T.conferma;
+    conf.classList.toggle('due', !!modi.length);
+    pronto();
+  }
+
+  function lancia(con, b) {
+    var bb = document.querySelectorAll('#cp-lancia button');
+    for (var i = 0; i < bb.length; i++) bb[i].disabled = true;
+    chiedi('/lancia', { voce: scelta.id, x: punto.x, y: punto.y, con: con }).then(function (r) {
+      if (!r.ok) {
+        if (r.motivo === 'accesso') { io = null; accedi(); scriviSi(); }
+        avviso(riempi(motivo(r), { saldo: numero(r.saldo || 0), serve: numero(r.serve || 0) }), 'ko');
+        saldi(); lanciaTasti();
+        return;
+      }
+      mira = r.mira;
+      ricorda(mira.id);
+      lanciaTasti();
+      mostra();
+      saldi();
+    }, function () { avviso((T.motivi || {}).rete, 'ko'); lanciaTasti(); });
   }
 
   function accedi() {
@@ -63,6 +110,7 @@
     if (io) {
       box.appendChild(el('p', '', riempi(T.sei, { nome: io.nome || io.login })));
       if (saldoBit !== null && dati && dati.bitPew) box.appendChild(el('p', 'cp-saldo', riempi(T.saldoBit, { n: numero(saldoBit) })));
+      if (saldoMonete !== null) box.appendChild(el('p', 'cp-saldo', riempi(T.saldoMonete, { n: numero(saldoMonete), moneta: moneta() })));
       var esci = el('button', 'cp-b due', T.esci);
       esci.type = 'button';
       esci.onclick = function () {
@@ -250,12 +298,15 @@
     var vecchia = strato.querySelector('.cp-ombra');
     if (vecchia) vecchia.remove();
     if (punto) disegna();
-    pronto();
+    lanciaTasti();
     avviso('');
   }
 
   function pronto() {
-    $('cp-conferma').disabled = !(scelta && punto && !protetto(punto.x, punto.y) && dati && dati.live && dati.overlay && !dati.pausa);
+    var si = !!(scelta && punto && !protetto(punto.x, punto.y) && dati && dati.live && dati.overlay && !dati.pausa) && !mira;
+    $('cp-conferma').disabled = !si;
+    var bl = document.querySelectorAll('#cp-lancia button');
+    for (var i = 0; i < bl.length; i++) bl[i].disabled = !si || !bl[i].getAttribute('data-basta');
     $('cp-prova-qui').disabled = !(scelta && scelta.prova && punto && !protetto(punto.x, punto.y)) || !!mira;
   }
 

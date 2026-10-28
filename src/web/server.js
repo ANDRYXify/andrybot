@@ -2492,6 +2492,15 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     if (!extRateOk('colpo-mira:' + String(req.ip || ''))) return res.status(429).json({ ok: false, motivo: 'troppi' });
     res.json(portaColpi.mira(login, req.body || {}, String(req.ip || ''), spettatoreDi(req)));
   });
+  // Un tocco, con l'accesso: la mira e il pagamento col saldo, senza codice
+  app.post('/u/:user/colpo/lancia', (req, res) => {
+    const login = loginColpi(req);
+    if (!login) return res.status(404).json({ ok: false, motivo: 'spento' });
+    if (!extRateOk('colpo-mira:' + String(req.ip || ''))) return res.status(429).json({ ok: false, motivo: 'troppi' });
+    const io = spettatoreDi(req);
+    if (!io) return res.status(401).json({ ok: false, motivo: 'accesso' });
+    res.json(portaColpi.lancia(login, req.body || {}, String(req.ip || ''), io));
+  });
   // L'ACCESSO CON TWITCH, un permesso solo (user:write:chat). Il ritorno passa
   // da /auth/callback, l'unico indirizzo registrato su Twitch: lo riconosce da
   // `colpoFlow` nella sessione.

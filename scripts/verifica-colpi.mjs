@@ -35,7 +35,7 @@
 //  · la presenza: l'effetto dello streamer nel suo punto, col nome, «visto» come
 //    un colpo, una volta per diretta;
 //  · i Bit da spendere: con l'accesso la pagina dice il saldo, il tasto e' spento
-//    se non basta, e se basta paga il colpo e il saldo scende.
+//    se non basta, e se basta un tocco apre la mira e la paga, senza codice.
 //
 // Uso: node scripts/verifica-colpi.mjs             (esce 1 se una promessa non tiene)
 //      node scripts/verifica-colpi.mjs --selftest  (rimette sette difetti: strato che prende
@@ -50,9 +50,10 @@
 //                                                   anteprima che ignora il punto, anteprima che
 //                                                   non dice di essere un'anteprima, green screen
 //                                                   che non toglie il verde, categoria che non filtra,
-//                                                   saldo dei Bit che non basta ma si lascia spendere;
+//                                                   saldo dei Bit che non basta ma si lascia spendere, dalla mira
+//                                                   o in un tocco;
 //                                                   li vuole tutti rossi)
-//      node scripts/verifica-colpi.mjs --rompi=N   (solo il difetto N, da 1 a 17: deve vedersi da solo)
+//      node scripts/verifica-colpi.mjs --rompi=N   (solo il difetto N, da 1 a 18: deve vedersi da solo)
 
 import './_dati-usa-e-getta.mjs';
 import { apriSito, apriBrowser, overlayFinto } from './_sito.mjs';
@@ -86,6 +87,7 @@ const DIFETTI = [
   ['scontorno.js', 'd[i + 3] = 0;', 'd[i + 3] = 255;'],
   ['pagina-colpo.js', "bb[i].hidden = !!filtro && bb[i].getAttribute('data-cat') !== filtro;", 'bb[i].hidden = false;'],
   ['pagina-colpo.js', 'pbit.disabled = saldoBit !== null && saldoBit < mancaBit;', 'pbit.disabled = false;'],
+  ['pagina-colpo.js', "b.setAttribute('data-basta', m.basta ? '1' : '');", "b.setAttribute('data-basta', '1');"],
 ];
 const SVG = '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="200" viewBox="0 0 400 200"><rect width="400" height="200" rx="40" fill="#e5484d"/></svg>';
 
@@ -155,6 +157,7 @@ const rotte = (req, res, q) => {
   if (q === base + '/esci' && req.method === 'POST') { mondo.io = null; json(res, 200, { ok: true }); return true; }
   if (q.startsWith(base + '/stato/')) { const m = porta.stato(LOGIN, q.slice(base.length + 7)); json(res, m ? 200 : 404, m || { errore: 'mira' }); return true; }
   if (q.startsWith(base + '/paga/') && req.method === 'POST') { corpo(req).then(async (b) => json(res, 200, await porta.paga(LOGIN, q.slice(base.length + 6), b.mezzo, mondo.io, String(b.modo || '')))); return true; }
+  if (q === base + '/lancia' && req.method === 'POST') { corpo(req).then((b) => json(res, mondo.io ? 200 : 401, mondo.io ? porta.lancia(LOGIN, b, 'gate', mondo.io) : { ok: false, motivo: 'accesso' })); return true; }
   if (q === base + '/saldi') { const sl = mondo.io ? porta.saldi(LOGIN, mondo.io) : null; json(res, sl ? 200 : 401, sl || { errore: 'accesso' }); return true; }
   if (q.startsWith('/finto-pagamento/')) { res.writeHead(302, { location: `${base}?dona=${q.slice(17)}` }); res.end(); return true; }
   return false;
@@ -376,26 +379,30 @@ try {
   await daCapo();
   await p.waitForFunction(() => /Hai 25 Bit da spendere qui/.test(document.getElementById('cp-io').textContent), null, { timeout: 5000 }).catch(() => {});
   dice(/Hai 25 Bit da spendere qui/.test(await p.locator('#cp-io').textContent()), 'con l\'accesso la pagina dice il saldo, accanto al nome');
+  // UN TOCCO: con l'accesso, scelto il colpo e il punto, si lancia col saldo, senza codice
   await p.locator('.cp-voce', { hasText: 'Pomodoro vero' }).click();
   await tocca(p, 20, 20);
+  const tasto = p.locator('[data-lancia="bit"]');
+  dice(await tasto.count() === 1 && /Lancia · 30 Bit/.test(await tasto.textContent()) && await tasto.isDisabled(), 'un colpo da 30 Bit con 25 nel saldo: il tasto «Lancia» c\'e\' ma e\' spento');
+  await tasto.click({ force: true, timeout: 2000 }).catch(() => {});
+  await pausa(400);
+  dice(pewBit.saldo(LOGIN, '888') === 25 && registroColpi.ultimi(LOGIN, 50).every((x) => x.metodo !== 'bit' || x.spettatore !== '888'), `e niente si muove (${pewBit.saldo(LOGIN, '888')})`);
+  const mon = p.locator('[data-lancia="monete"]');
+  dice(await mon.count() === 1 && !(await mon.isDisabled()) && /Altri modi/.test(await p.locator('#cp-conferma').textContent()), 'le monete bastano: quel tasto e\' acceso, e il codice sta dietro «Altri modi di pagare»');
   await p.locator('#cp-conferma').click();
   await p.waitForSelector('[data-paga="bitpew"]', { timeout: 5000 });
-  dice(/Paga 30 Bit dal tuo saldo/.test(await p.locator('[data-paga="bitpew"]').textContent()) && await p.locator('[data-paga="bitpew"]').isDisabled(), 'un colpo da 30 Bit con 25 nel saldo: il tasto c\'e\' ma e\' spento');
-  await p.locator('[data-paga="bitpew"]').click({ force: true, timeout: 2000 }).catch(() => {});
-  await pausa(400);
-  dice(pewBit.saldo(LOGIN, '888') === 25, `e il saldo non si tocca (${pewBit.saldo(LOGIN, '888')})`);
+  dice(await p.locator('[data-paga="bitpew"]').isDisabled(), 'anche dagli altri modi, col saldo che non basta il tasto dei Bit e\' spento');
   await daCapo();
   await p.locator('.cp-voce', { hasText: 'Risata' }).click();
   await tocca(p, 30, 30);
-  await p.locator('#cp-conferma').click();
-  await p.waitForSelector('[data-paga="bitpew"]:not([disabled])', { timeout: 5000 });
-  await p.locator('[data-paga="bitpew"]').click();
-  const idb = await p.evaluate(() => { try { return sessionStorage.getItem('sb-colpo:prova'); } catch { return ''; } });
-  for (let i = 0; i < 30 && registroColpi.get(idb)?.stato === 'attesa'; i++) await pausa(100);
+  await p.waitForSelector('[data-lancia="bit"]:not([disabled])', { timeout: 5000 });
+  await p.locator('[data-lancia="bit"]').click();
+  const idb = await p.evaluate(async () => { for (let i = 0; i < 40; i++) { const x = sessionStorage.getItem('sb-colpo:prova'); if (x) return x; await new Promise((r) => setTimeout(r, 100)); } return ''; });
   await p.waitForFunction(() => /Hai 5 Bit da spendere qui/.test(document.getElementById('cp-io').textContent), null, { timeout: 5000 }).catch(() => {});
-  const pb = registroColpi.get(idb);
+  const pb = idb ? registroColpi.get(idb) : null;
   dice(pb && pb.stato !== 'attesa' && pb.metodo === 'bit' && pewBit.saldo(LOGIN, '888') === 5 && /Hai 5 Bit da spendere qui/.test(await p.locator('#cp-io').textContent()),
-    `col saldo che basta il colpo e' pagato e il saldo scende, anche sulla pagina (${pb?.stato}, ${pewBit.saldo(LOGIN, '888')})`);
+    `un tocco: la mira e il pagamento insieme, il saldo scende anche sulla pagina (${pb?.stato}, ${pewBit.saldo(LOGIN, '888')})`);
+  dice(!(await p.locator('.cp-codice').count()), 'e nessun codice da copiare');
   await o.waitForFunction(() => !document.querySelector('.lancio, #palco-libero .effetto'), null, { timeout: 15000 }).catch(() => {});
   mondo.io = null;
   });

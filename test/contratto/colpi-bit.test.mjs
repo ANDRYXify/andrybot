@@ -35,6 +35,15 @@ test('«!pew bit»: su Twitch, a chi ha un id, una volta al minuto a testa', () 
   assert.match(h, /this\.colpi\.saldoBit\(login, msg\.userId\)/, 'il saldo e\' per id, non per nome');
 });
 
+test('un tocco: chi paga e\' chi ha l\'accesso, con un tetto alle richieste', () => {
+  const i = SRV.indexOf("app.post('/u/:user/colpo/lancia',");
+  assert.ok(i > 0);
+  const h = SRV.slice(i, i + 600);
+  assert.match(h, /if \(!extRateOk\('colpo-mira:' \+ String\(req\.ip \|\| ''\)\)\) return res\.status\(429\)/, 'lo stesso tetto della mira');
+  assert.match(h, /const io = spettatoreDi\(req\);\n\s*if \(!io\) return res\.status\(401\)/);
+  assert.match(h, /res\.json\(portaColpi\.lancia\(login, req\.body \|\| \{\}, String\(req\.ip \|\| ''\), io\)\);/, 'chi paga viene dalla sessione, mai dal corpo');
+});
+
 test('il saldo si legge con l\'accesso, si spende dalla porta, e il pannello vede i totali', () => {
   const i = SRV.indexOf("app.get('/u/:user/colpo/saldi',");
   assert.ok(i > 0);
