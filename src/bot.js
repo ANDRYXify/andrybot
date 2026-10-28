@@ -106,7 +106,7 @@ import { statoVivo, registroColpi, effects as effettiDb, segnoInstagram, pewSeri
 import { creaServizioColpi } from './features/colpi-servizio.js';
 import * as economia from './features/economia.js';
 import { nomeMoneta, monetaDi, accordaMoneta } from './features/moneta.js';
-import { urlPaginaColpo, eFrasePresenza, pagaInChat, chiedeBit, rispostaBit, chiedeZaino, rispostaZaino, voceDi as voceColpo, quandoScade, rispostaPresenza, titoloPremioMisto, lancioInChat, rispostaChat, prezzoChat } from './features/colpi.js';
+import { urlPaginaColpo, eFrasePresenza, pagaInChat, chiedeBit, rispostaBit, chiedeZaino, rispostaZaino, voceDi as voceColpo, quandoScade, rispostaPresenza, titoloPremioMisto, lancioInChat, rispostaChat, prezzoChat, chiedeKicks, valutaDi, personaKick } from './features/colpi.js';
 import { preferenzeDi } from './features/preferenze.js';
 import { creaChatColpi, rigaDi as rigaChatColpi, BATTITO_MS as BATTITO_CHAT_COLPI } from './features/colpi-chat.js';
 import { coloreDi as coloreChatDi } from './features/badges.js';
@@ -208,6 +208,10 @@ function testoColpi(canale, cosa, chi, r = {}) {
       ? [`${chi} pagate ${r.monete} ${r.moneta} per «${r.nome}»: ora riscatta «${r.premio}» (${r.resto} punti) e scrivi il codice ${r.codice}.`,
         `${chi} paid ${r.monete} ${r.moneta} for «${r.nome}»: now redeem «${r.premio}» (${r.resto} points) and type the code ${r.codice}.`,
         `${chi} pagadas ${r.monete} ${r.moneta} por «${r.nome}»: ahora canjea «${r.premio}» (${r.resto} puntos) y escribe el código ${r.codice}.`]
+      : r.modo === 'kicks'
+      ? [`${chi} pagate ${r.monete} ${r.moneta} per «${r.nome}»: ora regala ${r.resto} Kicks col codice ${r.codice} nel messaggio.`,
+        `${chi} paid ${r.monete} ${r.moneta} for «${r.nome}»: now gift ${r.resto} Kicks with the code ${r.codice} in the message.`,
+        `${chi} pagadas ${r.monete} ${r.moneta} por «${r.nome}»: ahora regala ${r.resto} Kicks con el código ${r.codice} en el mensaje.`]
       : [`${chi} pagate ${r.monete} ${r.moneta} per «${r.nome}»: ora un Cheer di ${r.resto} Bit con il codice ${r.codice}.`,
         `${chi} paid ${r.monete} ${r.moneta} for «${r.nome}»: now a Cheer of ${r.resto} Bits with the code ${r.codice}.`,
         `${chi} pagadas ${r.monete} ${r.moneta} por «${r.nome}»: ahora un Cheer de ${r.resto} Bits con el código ${r.codice}.`],
@@ -220,6 +224,15 @@ function testoColpi(canale, cosa, chi, r = {}) {
     'misto-punti-prima': [`${chi} per «${r.nome}» prima paga ${r.monete} ${r.moneta}: scrivi !${r.comando || 'pew'} ${r.codice} punti. I punti ti tornano.`,
       `${chi} for «${r.nome}» pay ${r.monete} ${r.moneta} first: type !${r.comando || 'pew'} ${r.codice} punti. Your points are back.`,
       `${chi} para «${r.nome}» primero paga ${r.monete} ${r.moneta}: escribe !${r.comando || 'pew'} ${r.codice} punti. Los puntos te vuelven.`],
+    'pochi-kicks': [`${chi} per «${r.nome}» mancano ${r.mancano} Kicks: i tuoi restano contati, completa con lo stesso codice.`,
+      `${chi} «${r.nome}» needs ${r.mancano} more Kicks: yours are counted, finish with the same code.`,
+      `${chi} a «${r.nome}» le faltan ${r.mancano} Kicks: los tuyos quedan contados, completa con el mismo código.`],
+    'misto-kicks-prima': [`${chi} i Kicks per «${r.nome}» ci sono: mancano ${r.monete} ${r.moneta}, scrivi !${r.comando || 'pew'} ${r.codice} kicks.`,
+      `${chi} the Kicks for «${r.nome}» are in: ${r.monete} ${r.moneta} to go, type !${r.comando || 'pew'} ${r.codice} kicks.`,
+      `${chi} los Kicks para «${r.nome}» están: faltan ${r.monete} ${r.moneta}, escribe !${r.comando || 'pew'} ${r.codice} kicks.`],
+    'coda-kicks': [`${chi} Kicks arrivati: «${r.nome}» compare appena l'overlay torna in onda.`,
+      `${chi} Kicks received: «${r.nome}» shows as soon as the overlay is back on air.`,
+      `${chi} Kicks recibidos: «${r.nome}» aparece en cuanto el overlay vuelva al aire.`],
     coda: [`${chi} Bit arrivati: «${r.nome}» compare appena l'overlay torna in onda.`,
       `${chi} Bits received: «${r.nome}» shows as soon as the overlay is back on air.`,
       `${chi} Bits recibidos: «${r.nome}» aparece en cuanto el overlay vuelva al aire.`],
@@ -1351,27 +1364,30 @@ export class BotManager {
     if (!msg.isSelf && streamers.get(login)?.settings?.colpi?.attivo === true) {
       try {
         const cfgColpi = this.colpi?.cfgDi(login);
+        // la persona dei saldi (docs/COLPI.md, «Su Kick»): l'id su Twitch, k:<id> su Kick
+        const persona = !msg.userId ? '' : (!msg.piattaforma || msg.piattaforma === 'twitch') ? String(msg.userId) : msg.piattaforma === 'kick' ? personaKick(msg.userId) : '';
         const paga = cfgColpi ? pagaInChat(cfgColpi, msg.text) : null;
         if (paga) {
           const r = this.colpi.daMonete(login, { codice: paga.codice, user: msg.user, modo: paga.modo });
           const t = testoColpi(login, r.dopo && r.esito === 'pagato' ? 'zaino-dentro' : 'monete-' + r.esito, '@' + (msg.display || msg.user),
             { ...r, moneta: nomeMoneta(login), comando: cfgColpi.comando, premio: titoloPremioMisto({ nome: r.nome || '' }) });
           if (t) parla(t);
-        } else if (cfgColpi && chiedeBit(cfgColpi, msg.text) && (!msg.piattaforma || msg.piattaforma === 'twitch') && msg.userId && this.colpi.conBitPew(login)) {
-          const b = cfgColpi.bitPew, k = login + '|' + msg.userId, adesso = Date.now();
+        } else if (cfgColpi && persona && (valutaDi(persona) === 'kicks' ? chiedeKicks(cfgColpi, msg.text) && this.colpi.conKicksPew(login) : chiedeBit(cfgColpi, msg.text) && this.colpi.conBitPew(login))) {
+          // «!pew bit» su Twitch, «!pew kicks» su Kick: il saldo da spendere di quella persona
+          const valuta = valutaDi(persona), b = valuta === 'kicks' ? cfgColpi.kicksPew : cfgColpi.bitPew, k = login + '|' + persona, adesso = Date.now();
           if (b.rispondi && adesso - (saldiBitChiesti.get(k) || 0) >= b.attesaSec * 1000) {
             if (saldiBitChiesti.size > 5000) saldiBitChiesti.clear();
             saldiBitChiesti.set(k, adesso);
-            const lingua = linguaChat(login), sc = this.colpi.scadonoBit(login, msg.userId);
-            parla(rispostaBit(cfgColpi, lingua, { nome: '@' + (msg.display || msg.user), saldo: this.colpi.saldoBit(login, msg.userId),
-              pagina: urlPaginaColpo(login).replace(/^https:\/\//, ''), quanti: sc?.quanti || 0, quando: sc ? quandoScade(sc.scade, lingua, preferenzeDi(login).fuso) : '' }));
+            const lingua = linguaChat(login), sc = this.colpi.scadonoBit(login, persona);
+            parla(rispostaBit(cfgColpi, lingua, { nome: '@' + (msg.display || msg.user), saldo: this.colpi.saldoBit(login, persona),
+              pagina: urlPaginaColpo(login).replace(/^https:\/\//, ''), quanti: sc?.quanti || 0, quando: sc ? quandoScade(sc.scade, lingua, preferenzeDi(login).fuso) : '' }, valuta));
           }
-        } else if (cfgColpi && chiedeZaino(cfgColpi, msg.text) && (!msg.piattaforma || msg.piattaforma === 'twitch') && msg.userId && this.colpi.conZaino(login)) {
-          const z = cfgColpi.zaino, k = login + '|z|' + msg.userId, adesso = Date.now();
+        } else if (cfgColpi && chiedeZaino(cfgColpi, msg.text) && persona && this.colpi.conZaino(login)) {
+          const z = cfgColpi.zaino, k = login + '|z|' + persona, adesso = Date.now();
           if (z.rispondi && adesso - (saldiBitChiesti.get(k) || 0) >= z.attesaSec * 1000) {
             if (saldiBitChiesti.size > 5000) saldiBitChiesti.clear();
             saldiBitChiesti.set(k, adesso);
-            const lingua = linguaChat(login), voci = this.colpi.zainoDi(login, msg.userId);
+            const lingua = linguaChat(login), voci = this.colpi.zainoDi(login, persona);
             const prima = voci.filter((x) => x.scade).sort((a, b) => a.scade - b.scade)[0];
             parla(rispostaZaino(cfgColpi, lingua, { nome: '@' + (msg.display || msg.user), pagina: urlPaginaColpo(login).replace(/^https:\/\//, ''),
               voci: voci.map((x) => ({ quanti: x.quanti, nome: voceColpo(cfgColpi, x.voce)?.nome || x.voce })),
@@ -1388,21 +1404,21 @@ export class BotManager {
             if (t) parla(t);
           }
           if (r.esito === 'partita' || r.esito === 'gia') presenze.dichiara(login, msg.user);
-        } else if (cfgColpi?.chat.attivo && (!msg.piattaforma || msg.piattaforma === 'twitch') && msg.userId) {
+        } else if (cfgColpi?.chat.attivo && persona) {
           // «!pew <colpo> [come]»: il colpo nel punto della chat, coi saldi di chi scrive
           const lc = lancioInChat(cfgColpi, msg.text);
           if (lc) {
             const nome = msg.display || msg.user, lingua = linguaChat(login), moneta = nomeMoneta(login);
-            const r = this.colpi.inChat(login, { voce: lc.voce, con: lc.con, user: msg.user, chi: msg.userId, nome });
+            const r = this.colpi.inChat(login, { voce: lc.voce, con: lc.con, user: msg.user, chi: persona, nome });
             const colpo = voceColpo(cfgColpi, lc.voce)?.nome || lc.voce;
             const esito = r.esito === 'pagato' ? 'ok' : r.esito === 'pochi' ? 'pochi' : r.esito === 'attesa' ? 'attesa' : 'no';
-            const k = login + '|c|' + msg.userId, adesso = Date.now();
+            const k = login + '|c|' + persona, adesso = Date.now();
             const parlo = cfgColpi.chat.rispondi && (esito === 'ok' || adesso - (saldiBitChiesti.get(k) || 0) >= cfgColpi.chat.attesaSec * 1000);
             if (parlo) {
               if (esito !== 'ok') { if (saldiBitChiesti.size > 5000) saldiBitChiesti.clear(); saldiBitChiesti.set(k, adesso); }
-              const unita = (n, quale) => (quale === 'bit' ? `${n} Bit` : `${n} ${moneta}`);
+              const unita = (n, quale) => (quale === 'bit' ? `${n} Bit` : quale === 'kicks' ? `${n} Kicks` : `${n} ${moneta}`);
               const t = rispostaChat(cfgColpi, lingua, esito, { nome: '@' + nome, colpo, motivo: r.motivo || r.esito, sec: r.fraSec || '',
-                prezzo: prezzoChat(lingua, r.mezzo, { monete: r.monete, bit: r.bit, moneta }), serve: unita(r.serve, r.quale), saldo: unita(r.saldo, r.quale),
+                prezzo: prezzoChat(lingua, r.mezzo, { monete: r.monete, bit: r.bit, kicks: r.kicks, moneta }), serve: unita(r.serve, r.quale), saldo: unita(r.saldo, r.quale),
                 pagina: urlPaginaColpo(login).replace(/^https:\/\//, '') });
               if (t) parla(accordaMoneta(t, monetaDi(login).forma));
             }
@@ -1816,6 +1832,18 @@ export class BotManager {
         else if (r.esito === 'pagato' && r.dopo) this.say(channel, testoColpi(channel, 'zaino-dentro', `@${data.user_login || ''}`, r));
         else if (r.esito === 'servono-monete') this.say(channel, testoColpi(channel, 'misto-bit-prima', `@${data.user_login || ''}`, { ...r, moneta: nomeMoneta(channel), comando: this.colpi.cfgDi(channel).comando }));
       } catch (e) { log.debug(`#${channel} colpo dal cheer:`, e?.message || e); }
+    }
+    // I KICKS (docs/COLPI.md, «Su Kick»): il regalo col codice paga il colpo come un
+    // cheer, e quello che avanza diventa Kicks da spendere; si risponde in chat di Kick
+    if (ev.piattaforma === 'kick' && type === 'kicks.gifted') {
+      try {
+        const r = this.colpi?.daKicks(channel, { kicks: data.kicks, message: data.message, user_login: data.user_login, user_id: data.is_anonymous ? '' : data.user_id, evento: data.evento }) || {};
+        const chi = `@${data.user_login || ''}`;
+        if (r.esito === 'pochi') dire(testoColpi(channel, 'pochi-kicks', chi, r));
+        else if (r.esito === 'pagato' && r.inCoda) dire(testoColpi(channel, 'coda-kicks', chi, r));
+        else if (r.esito === 'pagato' && r.dopo) dire(testoColpi(channel, 'zaino-dentro', chi, r));
+        else if (r.esito === 'servono-monete') dire(testoColpi(channel, 'misto-kicks-prima', chi, { ...r, moneta: nomeMoneta(channel), comando: this.colpi.cfgDi(channel).comando }));
+      } catch (e) { log.debug(`#${channel} colpo dai Kicks:`, e?.message || e); }
     }
     // le monete degli eventi (docs/ECONOMIA.md, «Gli eventi»): solo su Twitch, e
     // un follow sotto attacco e' gia' uscito in cima
@@ -2437,7 +2465,7 @@ export class BotManager {
       }
       const chi = String(ev.utente || '');
       const data = { user_name: chi, user_login: chi.toLowerCase(), user_id: String(ev.utenteId || ''), piattaforma };
-      if (ev.tipo === 'kicks') Object.assign(data, { kicks: Number(ev.quanti) || 0, message: String(ev.messaggio || ''), is_anonymous: !chi });
+      if (ev.tipo === 'kicks') Object.assign(data, { kicks: Number(ev.quanti) || 0, message: String(ev.messaggio || ''), is_anonymous: !chi, evento: String(ev.idEvento || '') });
       else Object.assign(data, { cumulative_months: ev.mesi, total: ev.quanti });
       this._dispatchEvent({ channel: String(ev.channel).toLowerCase(), piattaforma, type, data });
     } catch (e) { log.error(`evento ${ev.piattaforma} #${ev.channel}:`, e?.message || e); }

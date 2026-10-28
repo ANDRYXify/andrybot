@@ -185,7 +185,7 @@ export function montaKick(app, { requireLogin, currentUser, wrap, annotaIngresso
         if (msg && !msg.isSelf && !nostro(canale, msg.text)) await suMessaggio?.(msg);
         return;
       }
-      const ev = daEvento(tipo, p, { canale });
+      const ev = daEvento(tipo, p, { canale, id: String(req.get('Kick-Event-Message-Id') || '') });
       if (ev) await suEvento?.(ev);
     } catch (e) {
       log.error('evento Kick:', e?.message || e);

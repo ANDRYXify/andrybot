@@ -7,8 +7,8 @@
 // pagina e l'overlay verifica-colpi.mjs. Qui si fissa che il bot lo usi bene:
 //  · nel giro dei colpi di ogni messaggio di una persona, dopo codici, «bit»,
 //    «zaino» e presenza (che restano loro);
-//  · su Twitch, con la persona di Twitch per i saldi (chi) e il suo login per
-//    le monete (user), mai qualcosa che arriva dal testo;
+//  · su Twitch e su Kick, con la persona dei saldi (chi: l'id su Twitch,
+//    k:<id> su Kick) e il login per le monete (user), mai qualcosa dal testo;
 //  · la risposta: accesa dallo streamer, sempre quando parte, i rifiuti al
 //    massimo uno ogni attesaSec a testa; la moneta accordata come altrove.
 import test from 'node:test';
@@ -26,15 +26,17 @@ test('«!pew <colpo>»: nel giro dei colpi, dopo i significati che ci sono gia\'
   assert.ok(giro > 0 && qui > giro && qui < BOT.indexOf('this.brain.observe?.(msg);'), 'nel giro dei colpi, prima del resto del messaggio');
   for (const prima of ['pagaInChat(cfgColpi, msg.text)', 'chiedeBit(cfgColpi, msg.text)', 'chiedeZaino(cfgColpi, msg.text)', 'eFrasePresenza(cfgColpi, msg.text)'])
     assert.ok(BOT.indexOf(prima, giro) > 0 && BOT.indexOf(prima, giro) < qui, `${prima} viene prima`);
-  assert.match(BOT.slice(giro, qui), /\} else if \(cfgColpi\?\.chat\.attivo && \(!msg\.piattaforma \|\| msg\.piattaforma === 'twitch'\) && msg\.userId\) \{\s*$/, 'un ramo della stessa catena: un messaggio fa una cosa sola; solo su Twitch, con la persona');
+  assert.match(BOT.slice(giro, qui), /\} else if \(cfgColpi\?\.chat\.attivo && persona\) \{\s*$/, 'un ramo della stessa catena: un messaggio fa una cosa sola; con la persona');
+  assert.match(BOT.slice(giro, qui), /const persona = !msg\.userId \? '' : \(!msg\.piattaforma \|\| msg\.piattaforma === 'twitch'\) \? String\(msg\.userId\) : msg\.piattaforma === 'kick' \? personaKick\(msg\.userId\) : '';/,
+    'la persona: l\'id su Twitch, k:<id> su Kick, nessuna altrove');
 });
 
 test('paga chi scrive, coi suoi saldi; risponde come vuole lo streamer', () => {
   const qui = BOT.indexOf('const lc = lancioInChat(cfgColpi, msg.text);');
   const h = BOT.slice(qui, qui + 2200);
-  assert.match(h, /this\.colpi\.inChat\(login, \{ voce: lc\.voce, con: lc\.con, user: msg\.user, chi: msg\.userId, nome \}\)/);
+  assert.match(h, /this\.colpi\.inChat\(login, \{ voce: lc\.voce, con: lc\.con, user: msg\.user, chi: persona, nome \}\)/);
   assert.match(h, /const parlo = cfgColpi\.chat\.rispondi && \(esito === 'ok' \|\| adesso - \(saldiBitChiesti\.get\(k\) \|\| 0\) >= cfgColpi\.chat\.attesaSec \* 1000\);/, 'accesa dallo streamer; i rifiuti col loro passo');
-  assert.match(h, /const k = login \+ '\|c\|' \+ msg\.userId/, 'il passo e\' della persona in quel canale');
+  assert.match(h, /const k = login \+ '\|c\|' \+ persona/, 'il passo e\' della persona in quel canale');
   assert.match(h, /rispostaChat\(cfgColpi, lingua, esito, /);
   assert.match(h, /parla\(accordaMoneta\(t, monetaDi\(login\)\.forma\)\)/, 'la moneta accordata');
 });

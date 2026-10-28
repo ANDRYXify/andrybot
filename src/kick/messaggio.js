@@ -75,13 +75,15 @@ export function daChatMessage(payload, { canale, loginBot = '' } = {}) {
 // Gli altri eventi diventano la stessa forma che il bot usa per gli eventi
 // Twitch (seguito, abbonamento, regalo): così alert, moduli e notifiche non
 // devono sapere da dove arrivano.
-export function daEvento(tipo, payload, { canale } = {}) {
+export function daEvento(tipo, payload, { canale, id: idEvento = '' } = {}) {
   const p = payload || {};
   const chi = String(p.follower?.username || p.subscriber?.username || p.gifter?.username || p.sender?.username || p.redeemer?.username || p.user?.username || '');
   // l'id di Kick della persona: serve a chi modera su Kick (un timeout da un
   // modulo); un regalo anonimo non ce l'ha
   const id = p.follower?.user_id ?? p.subscriber?.user_id ?? p.gifter?.user_id ?? p.sender?.user_id ?? p.redeemer?.user_id ?? p.user?.user_id;
-  const base = { piattaforma: 'kick', channel: String(canale || '').toLowerCase(), utente: chi, ...(id != null ? { utenteId: String(id) } : {}) };
+  // l'id del messaggio di Kick: chi conta denaro (i Kicks da spendere) lo usa
+  // come riferimento, cosi' lo stesso evento non conta due volte nemmeno dopo un riavvio
+  const base = { piattaforma: 'kick', channel: String(canale || '').toLowerCase(), utente: chi, ...(id != null ? { utenteId: String(id) } : {}), ...(idEvento ? { idEvento: String(idEvento).slice(0, 120) } : {}) };
   switch (tipo) {
     case 'channel.followed':
       return { ...base, tipo: 'seguito' };

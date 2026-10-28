@@ -1454,6 +1454,10 @@ aggiungiColonna('colpi', 'acconto', "TEXT NOT NULL DEFAULT ''");
 aggiungiColonna('colpi', 'dopo', 'INTEGER NOT NULL DEFAULT 0');
 // chi ha mandato i Bit di una mira, in ordine ([[idTwitch, bit, da]], '-' per i cheer anonimi): i Bit che non pagano un colpo tornano a loro
 aggiungiColonna('colpi', 'versanti', "TEXT NOT NULL DEFAULT ''");
+// la valuta di quello che la mira raccoglie a pezzi (docs/COLPI.md, «Su Kick»):
+// 'bit' o 'kicks', scritta al primo versamento; '' prima (e per le mire di
+// prima, che raccoglievano solo Bit)
+aggiungiColonna('colpi', 'valuta', "TEXT NOT NULL DEFAULT ''");
 aggiungiColonna('donazioni', 'riferimento', "TEXT NOT NULL DEFAULT ''");
 aggiungiColonna('donazioni', 'rimborsata_at', 'INTEGER NOT NULL DEFAULT 0');
 aggiungiColonna('donazioni', 'media', "TEXT NOT NULL DEFAULT ''");
@@ -3121,15 +3125,19 @@ export const registroColpi = {
   // i Bit di un cheer si sommano a quelli gia' arrivati, in coda col nome di chi
   // li manda ('-' se anonimo; `da` 'p' se vengono dal saldo della pagina, con
   // la `ricevuta` dei lotti spesi): torna il totale, o null se la mira non e' piu' aperta
-  versa(id, bit, chi = '-', da = '', ricevuta = null) {
+  // `valuta`: quella di chi versa. Una mira raccoglie in una valuta sola: un
+  // versamento dell'altra si rifiuta (null) e resta a chi l'ha mandato.
+  versa(id, bit, chi = '-', da = '', ricevuta = null, valuta = 'bit') {
     const n = Math.max(0, Math.round(Number(bit) || 0));
+    const vl = valuta === 'kicks' ? 'kicks' : 'bit';
     return db.transaction(() => {
       const r = this._leggi(db.prepare("SELECT * FROM colpi WHERE id=? AND stato='attesa'").get(String(id)));
       if (!r) return null;
+      if (n && (r.valuta || (r.versati > 0 ? 'bit' : vl)) !== vl) return null;
       const v = r.versanti, k = String(chi || '-').slice(0, 40), ultimo = v[v.length - 1];
       if (n && !da && ultimo && ultimo[0] === k && !ultimo[2]) ultimo[1] += n;
       else if (n) v.push(da ? [k, n, da, ...(ricevuta ? [ricevuta] : [])] : [k, n]);
-      db.prepare('UPDATE colpi SET versati=versati+?, versanti=? WHERE id=?').run(n, JSON.stringify(v), String(id));
+      db.prepare('UPDATE colpi SET versati=versati+?, versanti=?, valuta=? WHERE id=?').run(n, JSON.stringify(v), n ? vl : r.valuta, String(id));
       return r.versati + n;
     })();
   },

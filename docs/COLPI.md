@@ -551,6 +551,50 @@ L'anteprima la vede solo chi guarda, e la pagina lo scrive sopra la diretta.
 All'overlay non arriva niente e nessuna mira si apre; si guarda anche a
 diretta spenta.
 
+## Su Kick: i Kicks, l'accesso, i saldi, lo zaino e la chat
+
+Chiesto così: «rendi il tutto disponibile anche per Kick (lo shop con i
+Kicks e tutto il resto)».
+
+**Cosa dà Kick** (docs.kick.com, «Event types»): `kicks.gifted` col mittente,
+la quantità e un **messaggio** (`gift.message`), come un cheer col suo testo;
+`channel.reward.redemption.updated`, i premi del canale come i punti di
+Twitch, coi premi che si creano dall'API; la chat; l'accesso OAuth con
+`user:read`. Il bot li riceve già (src/kick).
+
+**Il modello.**
+- **Le persone.** Su Twitch la persona dei saldi è il suo id (come oggi); su
+  Kick è `k:<id>`. Non c'è modo che due persone di piattaforme diverse
+  diventino una: un id di Kick numerico potrebbe essere uguale a uno di Twitch,
+  e il prefisso lo rende diverso per costruzione. Le monete restano del nome,
+  come il bot le dà già in chat sulle due piattaforme.
+- **Una valuta per persona.** I Kicks sono di chi è su Kick, i Bit di chi è su
+  Twitch: il saldo «da spendere» di `k:…` è in Kicks, quello di un id Twitch in
+  Bit. Le stesse tabelle, separate dalla persona. Non si sommano mai
+  (docs/PIATTAFORME.md, «I Kicks»).
+- **Una valuta per mira.** Il prezzo in Kicks è suo (`voce.kicks`, e il misto
+  monete + Kicks). Quello che una mira raccoglie a pezzi (`versati`) è in **una**
+  valuta, scritta sulla mira al primo versamento (`valuta`): un pezzo dell'altra
+  valuta non ci entra e va al saldo di chi l'ha mandato. Così un conto non
+  mescola mai Bit e Kicks, e il rimborso torna nella valuta giusta con la resa
+  scritta sulla mira per quella valuta.
+- **Il regalo paga.** Un `kicks.gifted` col codice nel messaggio paga quella
+  mira come un cheer (anche a pezzi); chi ha mirato con l'accesso a Kick la paga
+  senza codice; quello che avanza diventa Kicks da spendere, se lo streamer li
+  accende (`kicksPew`, con le stesse regole e scadenze dei Bit da spendere,
+  tutte sue).
+- **La pagina**: «Accedi con Kick» accanto a Twitch (solo `user:read`); con
+  l'accesso a Kick i tasti dicono Kicks, monete e zaino di quella persona; il
+  lettore e la chat sono quelli di Kick se lo streamer è in onda su Kick.
+- **La chat di Kick**: `!pew CODICE` (monete), `!pew kicks` (il saldo),
+  `!pew zaino`, `!pew <colpo>` (dalla chat, coi Kicks e lo zaino di quella
+  persona), la presenza.
+- **I premi del canale su Kick**: ogni colpo può avere il suo premio su Kick
+  (`premioKick`), creato dal pannello; il codice nel riscatto spara il colpo,
+  e il riscatto si accetta o si rifiuta come su Twitch.
+- **Il pannello**: la colonna Kicks nel listino, la scheda «I Kicks da
+  spendere», «Crea il premio su Kick».
+
 ## La presenza
 
 Chiesto così: «riusciamo anche ad inserire un "presenza"? magari in chat da

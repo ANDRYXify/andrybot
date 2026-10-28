@@ -39,8 +39,8 @@ export function urlPaginaColpo(canale) {
 // Le monete sono quelle del canale (docs/ECONOMIA.md): si spendono dalla pagina
 // con l'accesso a Twitch, o in chat col comando e il codice, e tornano se il
 // colpo non compare.
-export const METODI = Object.freeze(['euro', 'punti', 'bit', 'monete']);
-export const LIMITI = Object.freeze({ voci: 20, zone: 8, nome: 40, chi: 25, attesaSec: [0, 600], alMinuto: [1, 60], scala: [20, 300], euroCent: [50, 50_000], punti: [1, 1_000_000], bit: [1, 100_000], monete: [1, 10_000_000], categorie: 10, categoria: 30 });
+export const METODI = Object.freeze(['euro', 'punti', 'bit', 'monete', 'kicks']);
+export const LIMITI = Object.freeze({ voci: 20, zone: 8, nome: 40, chi: 25, attesaSec: [0, 600], alMinuto: [1, 60], scala: [20, 300], euroCent: [50, 50_000], punti: [1, 1_000_000], bit: [1, 100_000], kicks: [1, 100_000], monete: [1, 10_000_000], categorie: 10, categoria: 30 });
 // LE CATEGORIE DEL LISTINO (docs/COLPI.md, «Le categorie»): le decide lo
 // streamer, nome e ordine. Finche' non le tocca valgono queste, e un colpo che
 // non ne ha una sua va in quella del suo tipo. Un nome vuoto si legge nella
@@ -78,13 +78,16 @@ export function normalizza(cfg) {
     usati.add(id);
     voci.push({
       id, comando, nome: testo(v.nome, LIMITI.nome) || comando,
-      euro: prezzo(v.euro, LIMITI.euroCent), punti: prezzo(v.punti, LIMITI.punti), bit: prezzo(v.bit, LIMITI.bit),
+      euro: prezzo(v.euro, LIMITI.euroCent), punti: prezzo(v.punti, LIMITI.punti), bit: prezzo(v.bit, LIMITI.bit), kicks: prezzo(v.kicks, LIMITI.kicks),
       scala: num(v.scala, LIMITI.scala, 100), attiva: v.attiva !== false,
       monete: prezzo(v.monete, LIMITI.monete),
       misti: normMisti(v.misti),
       zaino: normZainoVoce(v.zaino),
       chat: normChatVoce(v.chat),
       premioMisto: /^[0-9a-f-]{8,64}$/.test(String(v.premioMisto || '')) ? String(v.premioMisto) : '',
+      // il premio del canale su Kick (docs/COLPI.md, «Su Kick»): l'id che da' Kick
+      premioKick: /^[A-Za-z0-9_-]{1,64}$/.test(String(v.premioKick || '')) ? String(v.premioKick) : '',
+      premioKickCosto: num(v.premioKickCosto, [0, LIMITI.punti[1]], 0),
       premioMistoCosto: num(v.premioMistoCosto, [0, LIMITI.punti[1]], 0), premioMistoNome: testo(v.premioMistoNome, 45),
       categoria: ID.test(String(v.categoria || '')) ? String(v.categoria) : '',
       premio: /^[0-9a-f-]{8,64}$/.test(String(v.premio || '')) ? String(v.premio) : '',
@@ -110,6 +113,7 @@ export function normalizza(cfg) {
     dida: testo(o.dida, 200),
     presenza: normPresenza(o.presenza),
     bitPew: normBitPew(o.bitPew),
+    kicksPew: normBitPew(o.kicksPew),
     zaino: normZaino(o.zaino),
     chat: normChat(o.chat),
     quadro: normQuadro(o.quadro),
@@ -156,7 +160,7 @@ export function categoriaDi(cfg, voce, tipo) {
 }
 // Il comando delle monete in un messaggio: «!pew K7QX3» → { codice, modo: '' },
 // «!pew K7QX3 bit» (o «punti») → l'acconto di quel modo misto; se no null.
-const MODI_IN_CHAT = { bit: 'bit', bits: 'bit', punti: 'punti', points: 'punti', puntos: 'punti' };
+const MODI_IN_CHAT = { bit: 'bit', bits: 'bit', kicks: 'kicks', kick: 'kicks', punti: 'punti', points: 'punti', puntos: 'punti' };
 export function pagaInChat(cfg, messaggio) {
   const m = new RegExp(`^!${cfg?.comando || COMANDO_SERIE}\\s+(\\S+)(?:\\s+(\\S+))?\\s*$`, 'i').exec(String(messaggio || '').trim());
   if (!m) return null;
@@ -167,6 +171,8 @@ export function pagaInChat(cfg, messaggio) {
 export const codicePerMonete = (cfg, messaggio) => pagaInChat(cfg, messaggio)?.codice || '';
 // «!pew bit»: quanti Bit da spendere ho sulla pagina
 export const chiedeBit = (cfg, messaggio) => new RegExp(`^!${cfg?.comando || COMANDO_SERIE}\\s+bits?\\s*$`, 'i').test(String(messaggio || '').trim());
+// «!pew kicks»: quanti Kicks da spendere ho
+export const chiedeKicks = (cfg, messaggio) => new RegExp(`^!${cfg?.comando || COMANDO_SERIE}\\s+kicks?\\s*$`, 'i').test(String(messaggio || '').trim());
 
 // I BIT DA SPENDERE (docs/COLPI.md, «I Bit da spendere»): i Bit mandati al
 // canale che non pagano un colpo diventano Bit da spendere sulla pagina, `resa`
@@ -245,12 +251,36 @@ export function quandoScade(scade, lingua = 'it', fuso = 'Europe/Rome') {
 }
 // La risposta a «!pew bit», con lo stesso testo per tutti i segnaposto: {nome},
 // {saldo}, {pagina}, {scade} (vuoto se niente scade presto), {quanti}, {quando}.
-export function rispostaBit(cfg, lingua, v = {}) {
-  const b = cfg?.bitPew || normBitPew({});
+// la risposta a «!pew kicks», di serie
+export const KICKS_RISPOSTE = Object.freeze({
+  risposte: Object.freeze({ it: '{nome} hai {saldo} Kicks da spendere su {pagina}{scade}', en: '{nome} you have {saldo} Kicks to spend on {pagina}{scade}', es: '{nome} tienes {saldo} Kicks para gastar en {pagina}{scade}' }),
+});
+export function rispostaBit(cfg, lingua, v = {}, valuta = 'bit') {
+  const b = cfgValuta(cfg, valuta);
   const L = BIT_PEW.risposte[lingua] ? lingua : 'it';
   const scade = v.quanti > 0 && v.quando ? BIT_PEW.scadenze[L].replace('{quanti}', v.quanti).replace('{quando}', v.quando) : '';
   const vals = { nome: v.nome || '', saldo: v.saldo ?? 0, pagina: v.pagina || '', scade, quanti: v.quanti || 0, quando: v.quando || '' };
-  return String(b.risposta || BIT_PEW.risposte[L]).replace(/\{(nome|saldo|pagina|scade|quanti|quando)\}/g, (_, k) => String(vals[k])).slice(0, 450);
+  return String(b.risposta || (valuta === 'kicks' ? KICKS_RISPOSTE.risposte[L] : BIT_PEW.risposte[L])).replace(/\{(nome|saldo|pagina|scade|quanti|quando)\}/g, (_, k) => String(vals[k])).slice(0, 450);
+}
+// UNA VALUTA PER PERSONA (docs/COLPI.md, «Su Kick»): la persona di Kick e'
+// `k:<id>`, quella di Twitch il suo id. La valuta «da spendere» viene dalla
+// persona, mai da altro: i Kicks di chi e' su Kick, i Bit di chi e' su Twitch.
+export const personaKick = (id) => (id == null || id === '' ? '' : 'k:' + String(id));
+export const valutaDi = (chi) => (String(chi || '').startsWith('k:') ? 'kicks' : 'bit');
+export const cfgValuta = (cfg, valuta) => (valuta === 'kicks' ? cfg?.kicksPew : cfg?.bitPew) || normBitPew({});
+// le regole di rimborso scritte sulla mira per quella valuta (resa, rendiColpi, rendiMire)
+export const regoleMira = (m, valuta) => (valuta === 'kicks'
+  ? { resa: Number(m?.prezzi?.k?.resa) || 0, rendiColpi: m?.prezzi?.k?.rendiColpi !== false, rendiMire: m?.prezzi?.k?.rendiMire !== false }
+  : { resa: Number(m?.prezzi?.resa) || 0, rendiColpi: m?.prezzi?.rendiColpi !== false, rendiMire: m?.prezzi?.rendiMire !== false });
+// la valuta di quello che una mira ha raccolto: scritta al primo versamento (le mire di prima: Bit)
+export const valutaMira = (m) => (m?.valuta === 'kicks' ? 'kicks' : 'bit');
+// quanto una mira chiede adesso in quella valuta: il resto del modo misto con
+// le monete gia' pagate, o il prezzo; 0 se in quella valuta non si paga (o se
+// la mira raccoglie gia' nell'altra)
+export function serveIn(m, valuta) {
+  if (Number(m?.versati) > 0 && valutaMira(m) !== valuta) return 0;
+  if (m?.acconto) return m.acconto.modo === valuta ? Number(m.acconto.resto) || 0 : 0;
+  return Number(m?.prezzi?.[valuta]) || 0;
 }
 export const bitResi = (resa, bit) => Math.floor(Math.max(0, Math.trunc(Number(bit) || 0)) * Math.max(0, Number(resa) || 0) / 100);
 // I Bit versati su una mira, in ordine di arrivo: [[chi, bit, da]], con `da`
@@ -357,7 +387,7 @@ export const metodiDi = (voce) => METODI.filter((m) => prezzoDi(voce, m) > 0);
 // per colpo), quando scadono (lo stesso orologio dei Bit da spendere, per tutti
 // o per colpo), se alla scadenza tornano i saldi, e la risposta a «!pew zaino».
 export const ZAINO = Object.freeze({
-  con: Object.freeze(['monete', 'bit', 'misto', 'cheer', 'punti', 'euro']), massimo: [0, 1000], risposta: 200,
+  con: Object.freeze(['monete', 'bit', 'kicks', 'misto', 'cheer', 'regalo', 'punti', 'euro']), massimo: [0, 1000], risposta: 200,
   modiVoce: Object.freeze(['come', 'no', 'mai', 'dopo']),
   risposte: Object.freeze({ it: '{nome} nel tuo zaino: {elenco}{scade}. Si lanciano da {pagina}', en: '{nome} in your backpack: {elenco}{scade}. Launch them from {pagina}', es: '{nome} en tu mochila: {elenco}{scade}. Se lanzan desde {pagina}' }),
   vuoto: Object.freeze({ it: '{nome} il tuo zaino è vuoto: i colpi per dopo si comprano su {pagina}', en: '{nome} your backpack is empty: buy hits for later on {pagina}', es: '{nome} tu mochila está vacía: los golpes para después se compran en {pagina}' }),
@@ -397,7 +427,7 @@ export const chiedeZaino = (cfg, messaggio) => new RegExp(`^!${cfg?.comando || C
 // prende le proporzioni e ci conta i pixel.
 export const QUADRO = Object.freeze({ lato: [160, 8192], l: 1920, a: 1080 });
 export const CHAT_PEW = Object.freeze({
-  mezzi: Object.freeze(['zaino', 'monete', 'bit', 'misto']), modiVoce: Object.freeze(['si', 'punto', 'no']), risposta: 200,
+  mezzi: Object.freeze(['zaino', 'monete', 'bit', 'kicks', 'misto']), modiVoce: Object.freeze(['si', 'punto', 'no']), risposta: 200,
   esiti: Object.freeze(['ok', 'pochi', 'attesa', 'no']),
   risposte: Object.freeze({
     it: Object.freeze({ ok: '{nome} {colpo} lanciato ({prezzo})', pochi: '{nome} per {colpo} servono {serve}: hai {saldo}. Tutto su {pagina}', attesa: '{nome} il prossimo colpo fra {sec} s', no: '{nome} {colpo} adesso non parte: {motivo}' }),
@@ -411,8 +441,8 @@ export const CHAT_PEW = Object.freeze({
   }),
   zaino: Object.freeze({ it: 'dallo zaino', en: 'from your backpack', es: 'de tu mochila' }),
 });
-const MEZZI_IN_CHAT = { zaino: 'zaino', backpack: 'zaino', mochila: 'zaino', monete: 'monete', coins: 'monete', monedas: 'monete', bit: 'bit', bits: 'bit', misto: 'misto', mixed: 'misto', mixto: 'misto' };
-const RISERVATE = new Set(['bit', 'bits', 'zaino', 'backpack', 'mochila']);
+const MEZZI_IN_CHAT = { zaino: 'zaino', backpack: 'zaino', mochila: 'zaino', monete: 'monete', coins: 'monete', monedas: 'monete', bit: 'bit', bits: 'bit', kicks: 'kicks', kick: 'kicks', misto: 'misto', mixed: 'misto', mixto: 'misto' };
+const RISERVATE = new Set(['bit', 'bits', 'kicks', 'kick', 'zaino', 'backpack', 'mochila']);
 function normQuadro(q) {
   const o = q && typeof q === 'object' ? q : {};
   return { l: num(o.l, QUADRO.lato, QUADRO.l), a: num(o.a, QUADRO.lato, QUADRO.a) };
@@ -449,10 +479,10 @@ export function lancioInChat(cfg, messaggio) {
 }
 export const puntoChat = (cfg, voce) => (voce?.chat?.modo === 'punto' ? { x: voce.chat.x, y: voce.chat.y } : { x: cfg.chat.x, y: cfg.chat.y });
 // il prezzo detto in chat: «40 monete», «20 Bit», «10 monete + 30 Bit», «dallo zaino»
-export function prezzoChat(lingua, mezzo, { monete = 0, bit = 0, moneta = '' } = {}) {
+export function prezzoChat(lingua, mezzo, { monete = 0, bit = 0, kicks = 0, moneta = '' } = {}) {
   const L = CHAT_PEW.zaino[lingua] ? lingua : 'it';
   if (mezzo === 'zaino') return CHAT_PEW.zaino[L];
-  return [monete > 0 ? `${monete} ${moneta}`.trim() : '', bit > 0 ? `${bit} Bit` : ''].filter(Boolean).join(' + ');
+  return [monete > 0 ? `${monete} ${moneta}`.trim() : '', bit > 0 ? `${bit} Bit` : '', kicks > 0 ? `${kicks} Kicks` : ''].filter(Boolean).join(' + ');
 }
 export function rispostaChat(cfg, lingua, esito, v = {}) {
   const L = CHAT_PEW.risposte[lingua] ? lingua : 'it';
@@ -472,7 +502,7 @@ export function rispostaZaino(cfg, lingua, v = {}) {
   return String(t).replace(/\{(nome|elenco|pagina|scade|quanti|quando)\}/g, (_, k) => String(vals[k])).slice(0, 450);
 }
 
-export const MISTI = Object.freeze(['bit', 'punti']);
+export const MISTI = Object.freeze(['bit', 'punti', 'kicks']);
 function normMisti(m) {
   const o = m && typeof m === 'object' ? m : {};
   const out = {};
@@ -487,10 +517,7 @@ export const mistiDi = (voce) => MISTI.filter((k) => voce?.misti?.[k]).map((k) =
 // I Bit che una mira chiede adesso: quelli del modo misto se le monete sono
 // gia' pagate, quelli del prezzo se no; 0 se coi Bit non si paga (un acconto
 // per i punti chiude la strada dei Bit).
-export function bitServe(m) {
-  if (m?.acconto) return m.acconto.modo === 'bit' ? Number(m.acconto.resto) || 0 : 0;
-  return Number(m?.prezzi?.bit) || 0;
-}
+export const bitServe = (m) => serveIn(m, 'bit');
 
 // Almeno una cifra e una lettera: una parola vera del messaggio («danke»,
 // «ciaoo») non e' mai un codice, perche' le parole non hanno cifre.

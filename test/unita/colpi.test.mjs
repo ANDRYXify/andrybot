@@ -100,7 +100,7 @@ test('si mira solo dal vivo, su un effetto che si posa in un punto, fuori dalle 
   assert.equal(s.mira(c, { voce: 'pomodoro', x: 80, y: 80 }).motivo, 'protetta');
   const ok = s.mira(c, { voce: 'pomodoro', x: 25.5, y: 40, chi: 'Marta', chiave: 'ip1' });
   assert.equal(ok.ok, true);
-  assert.deepEqual([ok.mira.x, ok.mira.y, ok.mira.chi, ok.mira.prezzi], [25.5, 40, 'Marta', { euro: 200, punti: 500, bit: 100, monete: 0, misti: {}, resa: 0, rendiColpi: true, rendiMire: true }], 'la resa dei Bit da spendere: senza il loro registro, zero; e se tornano, come li vuole lo streamer adesso');
+  assert.deepEqual([ok.mira.x, ok.mira.y, ok.mira.chi, ok.mira.prezzi], [25.5, 40, 'Marta', { euro: 200, punti: 500, bit: 100, kicks: 0, monete: 0, misti: {}, resa: 0, rendiColpi: true, rendiMire: true, k: { resa: 0, rendiColpi: true, rendiMire: true } }], 'la resa dei Bit da spendere: senza il loro registro, zero; e se tornano, come li vuole lo streamer adesso');
   assert.ok(MIRABILE({ tipo: 'video' }) && !MIRABILE({ tipo: 'immagine', schermo: 'intero' }));
 });
 

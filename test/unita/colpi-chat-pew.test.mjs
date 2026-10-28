@@ -50,7 +50,7 @@ const daChat = (b, c, extra = {}) => b.s.inChat(c, { voce: 'torta', user: 'marta
 
 test('il modello: spento di serie, il quadro dello streamer, i mezzi in ordine, ogni colpo come vuole', () => {
   const x = normalizza({});
-  assert.deepEqual([x.chat.attivo, x.chat.con, x.chat.x, x.chat.y, x.quadro], [false, ['zaino', 'monete', 'bit', 'misto'], 50, 50, { l: 1920, a: 1080 }]);
+  assert.deepEqual([x.chat.attivo, x.chat.con, x.chat.x, x.chat.y, x.quadro], [false, ['zaino', 'monete', 'bit', 'kicks', 'misto'], 50, 50, { l: 1920, a: 1080 }]);
   const y = normalizza({ quadro: { l: 1080, a: 1920 }, chat: { attivo: true, con: ['bit', 'euro', 'bit', 'zaino'], x: 12.345, y: 200, attesaSec: 99999, risposte: { ok: 'via!', boh: 'x' } },
     voci: [{ comando: 'a', bit: 1, chat: { modo: 'punto', x: 3, y: 4 } }, { comando: 'b', bit: 1, chat: { modo: 'boh' } }] });
   assert.deepEqual([y.quadro, y.chat.con, y.chat.x, y.chat.y, y.chat.attesaSec], [{ l: 1080, a: 1920 }, ['bit', 'zaino'], 12.35, 100, 3600]);
