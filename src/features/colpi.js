@@ -400,9 +400,9 @@ export const CHAT_PEW = Object.freeze({
   mezzi: Object.freeze(['zaino', 'monete', 'bit', 'misto']), modiVoce: Object.freeze(['si', 'punto', 'no']), risposta: 200,
   esiti: Object.freeze(['ok', 'pochi', 'attesa', 'no']),
   risposte: Object.freeze({
-    it: Object.freeze({ ok: '{nome} {colpo} lanciato ({prezzo})', pochi: '{nome} per {colpo} servono {serve}: hai {saldo}. Tutto su {pagina}', attesa: '{nome} il prossimo colpo fra {sec} s', no: '{nome} {colpo} adesso non parte: {perche}' }),
-    en: Object.freeze({ ok: '{nome} {colpo} launched ({prezzo})', pochi: '{nome} {colpo} needs {serve}: you have {saldo}. All on {pagina}', attesa: '{nome} next hit in {sec}s', no: '{nome} {colpo} can\'t go now: {perche}' }),
-    es: Object.freeze({ ok: '{nome} {colpo} lanzado ({prezzo})', pochi: '{nome} {colpo} necesita {serve}: tienes {saldo}. Todo en {pagina}', attesa: '{nome} el próximo golpe en {sec} s', no: '{nome} {colpo} ahora no sale: {perche}' }),
+    it: Object.freeze({ ok: '{nome} {colpo} lanciato ({prezzo})', pochi: '{nome} per {colpo} servono {serve}: hai {saldo}. Tutto su {pagina}', attesa: '{nome} il prossimo colpo fra {sec} s', no: '{nome} {colpo} adesso non parte: {motivo}' }),
+    en: Object.freeze({ ok: '{nome} {colpo} launched ({prezzo})', pochi: '{nome} {colpo} needs {serve}: you have {saldo}. All on {pagina}', attesa: '{nome} next hit in {sec}s', no: '{nome} {colpo} can\'t go now: {motivo}' }),
+    es: Object.freeze({ ok: '{nome} {colpo} lanzado ({prezzo})', pochi: '{nome} {colpo} necesita {serve}: tienes {saldo}. Todo en {pagina}', attesa: '{nome} el próximo golpe en {sec} s', no: '{nome} {colpo} ahora no sale: {motivo}' }),
   }),
   perche: Object.freeze({
     it: Object.freeze({ offline: 'la diretta è spenta', overlay: 'l\'overlay non è aperto', pausa: 'i colpi sono in pausa', protetta: 'il punto è in una zona protetta', troppi: 'troppi colpi in questo minuto', mezzo: 'in chat non si paga così', effetto: 'l\'effetto non c\'è più', altro: 'riprova fra poco' }),
@@ -457,9 +457,9 @@ export function prezzoChat(lingua, mezzo, { monete = 0, bit = 0, moneta = '' } =
 export function rispostaChat(cfg, lingua, esito, v = {}) {
   const L = CHAT_PEW.risposte[lingua] ? lingua : 'it';
   if (!CHAT_PEW.esiti.includes(esito)) return '';
-  const vals = { nome: '', colpo: '', prezzo: '', serve: '', saldo: '', sec: '', pagina: '', ...v, perche: CHAT_PEW.perche[L][v.motivo] || CHAT_PEW.perche[L].altro };
+  const vals = { nome: '', colpo: '', prezzo: '', serve: '', saldo: '', sec: '', pagina: '', ...v, motivo: CHAT_PEW.perche[L][v.motivo] || CHAT_PEW.perche[L].altro };
   const t = cfg?.chat?.risposte?.[esito] || CHAT_PEW.risposte[L][esito];
-  return String(t).replace(/\{(nome|colpo|prezzo|serve|saldo|sec|pagina|perche)\}/g, (_, k) => String(vals[k] ?? '')).slice(0, 450);
+  return String(t).replace(/\{(nome|colpo|prezzo|serve|saldo|sec|pagina|motivo)\}/g, (_, k) => String(vals[k] ?? '')).slice(0, 450);
 }
 // {elenco}: «2 Pomodoro, 1 Risata»
 export function rispostaZaino(cfg, lingua, v = {}) {
