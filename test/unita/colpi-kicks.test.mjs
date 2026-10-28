@@ -20,7 +20,7 @@ const usaEGetta = cartellaUsaEGetta('andrybot-colpi-kicks-');
 process.on('exit', () => usaEGetta.pulisci());
 const { registroColpi, pewBit, pewZaino, points } = await import('../../src/db.js');
 const economia = await import('../../src/features/economia.js');
-const { normalizza, valutaDi, personaKick, serveIn, chiedeKicks, rispostaBit, mistiDi, metodiDi, parolaChat } = await import('../../src/features/colpi.js');
+const { normColpi, CAMPI_PREMIO, normalizza, valutaDi, personaKick, serveIn, chiedeKicks, rispostaBit, mistiDi, metodiDi, parolaChat } = await import('../../src/features/colpi.js');
 const { creaServizioColpi, CONSEGNA_MS } = await import('../../src/features/colpi-servizio.js');
 
 let n = 0;
@@ -154,4 +154,35 @@ test('Kicks da spendere spenti: il resto del regalo non diventa saldo, e i Bit n
   assert.equal(pewBit.saldo(c, 'k:7', b.ora()), 0);
   b.s.daCheer(c, { bits: 100, message: 'ciao', user_login: 'luca', user_id: '9', evento: 's2' });
   assert.equal(pewBit.saldo(c, '9', b.ora()), 100);
+});
+
+test('i punti del canale su Kick: il premio di Kick paga la mira di quella voce, col codice o con l\'accesso a Kick', () => {
+  const ULID = '01HZX3K9Q8W7E6R5T4Y3U20001';
+  const b = banco({ voce: { puntiKick: 300, premioKick: ULID, premioKickCosto: 300, premioKickNome: 'Colpo: Torta' } });
+  const c = login();
+  const m = mira(b, c);
+  assert.equal(m.prezzi.puntiKick, 300, 'il prezzo in punti di Kick si scrive sulla mira');
+  assert.equal(b.s.daRiscatto(c, { reward_id: ULID, user_input: m.codice, id: 'r1' }).esito, 'non-mio', 'da Twitch un premio di Kick non e\' niente');
+  assert.equal(b.s.daRiscatto(c, { reward_id: '01HZX3K9Q8W7E6R5T4Y3U29999', user_input: m.codice, id: 'r1', piattaforma: 'kick' }).esito, 'non-mio');
+  const r = b.s.daRiscatto(c, { reward_id: ULID, user_input: `eccolo ${m.codice}`, id: 'r2', user_id: '5', piattaforma: 'kick' });
+  assert.deepEqual([r.esito, r.stato], ['pagato', null]);
+  assert.equal(b.s.daRiscatto(c, { reward_id: ULID, user_input: m.codice, id: 'r3', piattaforma: 'kick' }).stato, 'CANCELED', 'un codice usato: rifiutato');
+  // con l'accesso a Kick: la sua ultima mira aperta, qualunque cosa scriva
+  const mia = mira(b, c, { spettatore: personaKick(42) });
+  assert.equal(b.s.daRiscatto(c, { reward_id: ULID, user_input: 'ciao', id: 'r4', user_id: '42', piattaforma: 'kick' }).esito, 'pagato');
+  assert.equal(registroColpi.get(mia.id).stato, 'pagata');
+  // il costo deve coincidere: una mira presa a un altro prezzo non si paga
+  const altro = banco({ voce: { puntiKick: 300, premioKick: ULID, premioKickCosto: 200 } });
+  const c2 = login();
+  const m2 = mira(altro, c2);
+  assert.equal(altro.s.daRiscatto(c2, { reward_id: ULID, user_input: m2.codice, id: 'r5', piattaforma: 'kick' }).stato, 'CANCELED');
+});
+
+test('il pannello non scrive gli id dei premi, ne\' di Twitch ne\' di Kick: un salvataggio non li scorda', () => {
+  const ULID = '01HZX3K9Q8W7E6R5T4Y3U20007';
+  const prima = { voci: [{ id: 'torta', comando: 'torta', puntiKick: 300, premioKick: ULID, premioKickCosto: 300, premioKickNome: 'Colpo: Torta', premio: 'abcdef12-0001', premioCosto: 500, premioNome: 'Colpo: Torta' }] };
+  const v = normColpi({ voci: [{ id: 'torta', comando: 'torta', puntiKick: 300, premioKick: '01HZX3K9Q8W7E6R5T4Y3U2FALS', premio: 'ffffffff-9999' }] }, prima).voci[0];
+  assert.deepEqual(CAMPI_PREMIO.map((k) => v[k]), CAMPI_PREMIO.map((k) => normalizza(prima).voci[0][k]), 'tutti i campi dei premi vengono da quello salvato');
+  const nuova = normColpi({ voci: [{ id: 'pizza', comando: 'pizza', premioKick: ULID, premioKickCosto: 9 }] }, prima).voci[0];
+  assert.deepEqual([nuova.premioKick, nuova.premioKickCosto, nuova.premio], ['', 0, ''], 'una voce nuova non porta premi inventati');
 });

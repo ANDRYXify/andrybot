@@ -39,8 +39,9 @@ export function urlPaginaColpo(canale) {
 // Le monete sono quelle del canale (docs/ECONOMIA.md): si spendono dalla pagina
 // con l'accesso a Twitch, o in chat col comando e il codice, e tornano se il
 // colpo non compare.
-export const METODI = Object.freeze(['euro', 'punti', 'bit', 'monete', 'kicks']);
-export const LIMITI = Object.freeze({ voci: 20, zone: 8, nome: 40, chi: 25, attesaSec: [0, 600], alMinuto: [1, 60], scala: [20, 300], euroCent: [50, 50_000], punti: [1, 1_000_000], bit: [1, 100_000], kicks: [1, 100_000], monete: [1, 10_000_000], categorie: 10, categoria: 30 });
+// puntiKick: i punti del canale su Kick, un prezzo suo (docs/COLPI.md, «Su Kick»)
+export const METODI = Object.freeze(['euro', 'punti', 'bit', 'monete', 'kicks', 'puntiKick']);
+export const LIMITI = Object.freeze({ voci: 20, zone: 8, nome: 40, chi: 25, attesaSec: [0, 600], alMinuto: [1, 60], scala: [20, 300], euroCent: [50, 50_000], punti: [1, 1_000_000], bit: [1, 100_000], kicks: [1, 100_000], puntiKick: [1, 1_000_000], monete: [1, 10_000_000], categorie: 10, categoria: 30 });
 // LE CATEGORIE DEL LISTINO (docs/COLPI.md, «Le categorie»): le decide lo
 // streamer, nome e ordine. Finche' non le tocca valgono queste, e un colpo che
 // non ne ha una sua va in quella del suo tipo. Un nome vuoto si legge nella
@@ -78,7 +79,7 @@ export function normalizza(cfg) {
     usati.add(id);
     voci.push({
       id, comando, nome: testo(v.nome, LIMITI.nome) || comando,
-      euro: prezzo(v.euro, LIMITI.euroCent), punti: prezzo(v.punti, LIMITI.punti), bit: prezzo(v.bit, LIMITI.bit), kicks: prezzo(v.kicks, LIMITI.kicks),
+      euro: prezzo(v.euro, LIMITI.euroCent), punti: prezzo(v.punti, LIMITI.punti), bit: prezzo(v.bit, LIMITI.bit), kicks: prezzo(v.kicks, LIMITI.kicks), puntiKick: prezzo(v.puntiKick, LIMITI.puntiKick),
       scala: num(v.scala, LIMITI.scala, 100), attiva: v.attiva !== false,
       monete: prezzo(v.monete, LIMITI.monete),
       misti: normMisti(v.misti),
@@ -88,6 +89,7 @@ export function normalizza(cfg) {
       // il premio del canale su Kick (docs/COLPI.md, «Su Kick»): l'id che da' Kick
       premioKick: /^[A-Za-z0-9_-]{1,64}$/.test(String(v.premioKick || '')) ? String(v.premioKick) : '',
       premioKickCosto: num(v.premioKickCosto, [0, LIMITI.punti[1]], 0),
+      premioKickNome: testo(v.premioKickNome, 50),
       premioMistoCosto: num(v.premioMistoCosto, [0, LIMITI.punti[1]], 0), premioMistoNome: testo(v.premioMistoNome, 45),
       categoria: ID.test(String(v.categoria || '')) ? String(v.categoria) : '',
       premio: /^[0-9a-f-]{8,64}$/.test(String(v.premio || '')) ? String(v.premio) : '',
@@ -619,13 +621,15 @@ export const titoloPremioPrezzo = (punti) => 'Colpo da ' + punti;
 export const titoloPremioPrezzoMisto = (punti) => 'Colpo da ' + punti + ' + monete';
 
 // Il listino che arriva dal pannello, coi campi del premio presi da quello
-// salvato: l'id del premio su Twitch lo scrive solo SocialBot.
+// salvato: l'id del premio, su Twitch e su Kick, lo scrive solo SocialBot.
+// Tutti i campi dei premi, in un elenco solo: uno dimenticato qui sarebbe un
+// premio che ogni salvataggio scorda, e che resta orfano sulla piattaforma.
+export const CAMPI_PREMIO = Object.freeze(['premio', 'premioCosto', 'premioNome', 'premioMisto', 'premioMistoCosto', 'premioMistoNome', 'premioKick', 'premioKickCosto', 'premioKickNome']);
 export function normColpi(nuovo, prima) {
   const p = normalizza(prima), n = normalizza(nuovo);
   for (const v of n.voci) {
     const q = p.voci.find((x) => x.id === v.id);
-    Object.assign(v, q ? { premio: q.premio, premioCosto: q.premioCosto, premioNome: q.premioNome, premioMisto: q.premioMisto, premioMistoCosto: q.premioMistoCosto, premioMistoNome: q.premioMistoNome }
-      : { premio: '', premioCosto: 0, premioNome: '', premioMisto: '', premioMistoCosto: 0, premioMistoNome: '' });
+    for (const k of CAMPI_PREMIO) v[k] = q ? q[k] : (typeof v[k] === 'number' ? 0 : '');
   }
   return n;
 }

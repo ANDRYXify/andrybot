@@ -34,7 +34,7 @@ export function creaPortaColpi({ servizio, registro, streamers, effettoDi, mezzi
   // quello che la voce si lascia pagare adesso: gli euro col conto pronto, i
   // punti col premio creato su Twitch, i Bit sempre
   // i Kicks solo se il canale e' su Kick: i regali arrivano li'
-  const metodiVivi = (v, euro, conKick = false) => metodiDi(v).filter((m) => (m === 'euro' ? euro.length > 0 : m === 'punti' ? !!v.premio : m === 'monete' ? !!servizio.conMonete : m === 'kicks' ? conKick : true));
+  const metodiVivi = (v, euro, conKick = false) => metodiDi(v).filter((m) => (m === 'euro' ? euro.length > 0 : m === 'punti' ? !!v.premio : m === 'monete' ? !!servizio.conMonete : m === 'kicks' ? conKick : m === 'puntiKick' ? conKick && !!v.premioKick : true));
   // `pagabile`: la pagina mostra i modi di pagare solo finche' e' vero, e li
   // toglie appena la diretta o l'overlay vanno via (servizio.consegnabile)
   const statoMira = (m) => {
@@ -63,8 +63,8 @@ export function creaPortaColpi({ servizio, registro, streamers, effettoDi, mezzi
       // l'ombra della pagina e' grande come il colpo (docs/LANCI.md)
       const disegno = eff.tipo === 'lancio' ? spriteLancio(eff) : '';
       voci.push({ id: v.id, nome: v.nome, tipo: eff.tipo === 'lancio' ? 'immagine' : eff.tipo, scala: v.scala, anteprima: disegno || `/u/${login}/colpo/anteprima/${encodeURIComponent(v.id)}`,
-        metodi, prezzi: Object.fromEntries(['euro', 'punti', 'bit', 'monete', 'kicks'].map((x) => [x, metodi.includes(x) ? v[x] : 0])),
-        premio: metodi.includes('punti') ? (v.premioNome || titoloPremio(v)) : '', prova: provaDi(login, v, eff), categoria: categoriaDi(k.cfg, v, tipoDi(eff)),
+        metodi, prezzi: Object.fromEntries(['euro', 'punti', 'bit', 'monete', 'kicks', 'puntiKick'].map((x) => [x, metodi.includes(x) ? v[x] : 0])),
+        premio: metodi.includes('punti') ? (v.premioNome || titoloPremio(v)) : '', premioKick: metodi.includes('puntiKick') ? (v.premioKickNome || titoloPremio(v)) : '', prova: provaDi(login, v, eff), categoria: categoriaDi(k.cfg, v, tipoDi(eff)),
         misti: misti.map((x) => ({ ...x, premio: x.modo === 'punti' ? (v.premioMistoNome || titoloPremioMisto(v)) : '' })),
         // si compra per dopo (lo zaino): lo dice il servizio, che sa anche se e' in pausa
         zaino: !servizio.comprabile?.(login, v.id),

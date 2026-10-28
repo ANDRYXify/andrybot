@@ -149,7 +149,7 @@ test('Twitch pieno: l\'errore dice la cosa vera, e appena c\'e\' posto i premi a
   const h = twitchCol(50);
   salva2(QUATTRO);
   const r = await giro(h);
-  assert.deepEqual(r.errori, [{ motivo: 'pieno', titoli: ['Colpo da 100', 'Colpo da 200 + monete', 'Colpo da 300'], altri: 50, mancano: 3 }]);
+  assert.deepEqual(r.errori, [{ motivo: 'pieno', titoli: ['Colpo da 100', 'Colpo da 200 + monete', 'Colpo da 300'], altri: 50, mancano: 3, tetto: 50 }]);
   assert.deepEqual(streamers.get(C2).settings.colpi.premiErrori, r.errori, 'e il pannello lo legge');
   h.vivi.delete('ffffff00-0000');
   assert.deepEqual((await giro(h)).errori[0].titoli, ['Colpo da 200 + monete', 'Colpo da 300'], 'un posto: il piu\' economico');
@@ -198,5 +198,49 @@ test('pieno a meta\' strada: dopo il primo «troppi» non si insiste', async () 
   salva2(QUATTRO, { premiModo: 'prezzo' });
   const r = await giro(h);
   assert.equal(h.tentativi, 1, 'una domanda sola a Twitch, non una per premio');
-  assert.deepEqual(r.errori, [{ motivo: 'pieno', titoli: ['Colpo da 100', 'Colpo da 200 + monete', 'Colpo da 300'], altri: null, mancano: 3 }], 'quanti premi non nostri ci sono non si sa, e non si inventa');
+  assert.deepEqual(r.errori, [{ motivo: 'pieno', titoli: ['Colpo da 100', 'Colpo da 200 + monete', 'Colpo da 300'], altri: null, mancano: 3, tetto: 50 }], 'quanti premi non nostri ci sono non si sa, e non si inventa');
+});
+
+// ─────────────────────────────── su Kick (docs/COLPI.md, «Su Kick»)
+
+function kickFinto() {
+  const vivi = new Map();
+  let n = 0;
+  return {
+    vivi,
+    creaReward: async (login, { titolo, costo, prompt }) => {
+      const id = '01HZX3K9Q8W7E6R5T4Y3U2' + String(++n).padStart(4, '0');
+      vivi.set(id, { titolo, costo, prompt });
+      return { id };
+    },
+    eliminaReward: async (login, id) => { vivi.delete(id); },
+    listaRewardsTutti: async () => [...vivi].map(([id, r]) => ({ id, title: r.titolo, cost: r.costo })),
+  };
+}
+
+test('su Kick: la stessa passata, coi punti di Kick e i campi di Kick; Twitch e Kick non si pestano', async () => {
+  const C3 = 'premi3';
+  streamers.upsertApproved(C3, C3, '9003');
+  const voci = [
+    { id: 'torta', comando: 'torta', nome: 'Torta', punti: 500, puntiKick: 300, misti: { punti: { monete: 5, punti: 100 } } },
+    { id: 'pizza', comando: 'pizza', nome: 'Pizza', puntiKick: 300 },
+  ];
+  streamers.setSettings(C3, { colpi: { attivo: true, voci, premiModo: 'colpo' } });
+  const tw = twitch(), k = kickFinto();
+  await riconciliaPremi({ login: C3, prima: {}, helix: tw, streamers, pagina: 'p' });
+  await riconciliaPremi({ login: C3, prima: {}, helix: k, streamers, pagina: 'p', piattaforma: 'kick' });
+  const v = Object.fromEntries(streamers.get(C3).settings.colpi.voci.map((x) => [x.id, x]));
+  assert.deepEqual([...k.vivi.values()].map((r) => [r.titolo, r.costo]).sort(), [['Colpo: Pizza', 300], ['Colpo: Torta', 300]], 'su Kick i punti di Kick, e niente misto');
+  assert.deepEqual([v.torta.premioKickNome, v.torta.premioKickCosto, k.vivi.has(v.torta.premioKick)], ['Colpo: Torta', 300, true]);
+  assert.ok(tw.vivi.has(v.torta.premio) && tw.vivi.has(v.torta.premioMisto), 'i premi di Twitch restano quelli di Twitch');
+  assert.equal(tw.vivi.size, 2, 'su Twitch la pizza non ha prezzo in punti: nessun premio');
+  assert.deepEqual(streamers.get(C3).settings.colpi.premiKickErrori, []);
+  // la seconda passata di Twitch non tocca i campi di Kick, e viceversa
+  await riconciliaPremi({ login: C3, prima: streamers.get(C3).settings.colpi, helix: tw, streamers, pagina: 'p' });
+  assert.equal(streamers.get(C3).settings.colpi.voci.find((x) => x.id === 'torta').premioKick, v.torta.premioKick);
+  const kErr = { ...kickFinto(), creaReward: async () => { throw Object.assign(new Error('Kick: boh'), { status: 500 }); } };
+  streamers.setSettings(C3, { colpi: { attivo: true, voci: [{ id: 'x', comando: 'x', nome: 'X', puntiKick: 10 }] } });
+  const r = await riconciliaPremi({ login: C3, prima: {}, helix: kErr, streamers, pagina: 'p', piattaforma: 'kick' });
+  assert.equal(r.errori[0].piattaforma, 'kick', 'un errore di Kick si dice di Kick');
+  assert.equal(streamers.get(C3).settings.colpi.premiErrori, undefined, 'e non finisce fra quelli di Twitch');
 });

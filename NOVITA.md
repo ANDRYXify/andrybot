@@ -43,6 +43,15 @@ comandi diversi da quelli della riga italiana.
 
 ## 2026-10-28
 
+- [importante] Pewpewify su Kick, completo: nel listino il prezzo in Kicks e in punti del canale di Kick, i premi del canale su Kick creati da soli, e la scheda dei Kicks da spendere con le sue regole. [vai: colpi]
+  en: Pewpewify on Kick, complete: in the price list the price in Kicks and in Kick channel points, Kick channel rewards created by themselves, and the Kicks to spend card with its own rules.
+  es: Pewpewify en Kick, completo: en la lista el precio en Kicks y en puntos del canal de Kick, las recompensas del canal en Kick creadas solas, y la ficha de los Kicks para gastar con sus reglas.
+  > Kick come Twitch
+  > Chi guarda su Kick paga coi suoi Kicks o coi punti del canale, e il riscatto si chiude su Kick. Le colonne di Kick compaiono solo se il canale è collegato.
+  en> Kick like Twitch
+  en> Whoever watches on Kick pays with their Kicks or the channel points, and the redemption closes on Kick. The Kick columns show only if the channel is connected.
+  es> Kick como Twitch
+  es> Quien mira en Kick paga con sus Kicks o con los puntos del canal, y el canje se cierra en Kick. Las columnas de Kick aparecen solo si el canal está conectado.
 - Pewpewify su Kick: sulla pagina c'è «Accedi con Kick» accanto a Twitch, la chat della pagina scrive su Kick e c'è il lettore di Kick. Chi entra con Kick paga con le monete e dallo zaino. [vai: colpi]
   en: Pewpewify on Kick: the page has «Log in with Kick» next to Twitch, the page chat writes on Kick and there's the Kick player. Whoever logs in with Kick pays with coins and from the backpack.
   es: Pewpewify en Kick: la página tiene «Entra con Kick» junto a Twitch, el chat de la página escribe en Kick y está el reproductor de Kick. Quien entra con Kick paga con monedas y desde la mochila.

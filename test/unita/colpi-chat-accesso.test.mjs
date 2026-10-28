@@ -60,7 +60,7 @@ test('la chiave dell\'accesso: chi e\' senza il token, rinnovo vicino alla scade
   const acc = creaAccessi({ ora: () => adesso, rinnova: async (r) => { rinnovi.push(r); return r === 'buono' ? { accessToken: 'nuovo', refreshToken: 'buono2', expiresAt: adesso + 4 * 3600_000 } : null; } });
   const k = acc.metti({ id: 42, login: 'Marta', nome: 'Marta', token: 'vecchio', refresh: 'buono', scade: adesso + 3600_000 });
   assert.match(k, /^[A-Za-z0-9_-]{32}$/);
-  assert.deepEqual(acc.chi(k), { id: '42', login: 'marta', nome: 'Marta' }, 'chi e\' non porta il token');
+  assert.deepEqual(acc.chi(k), { id: '42', login: 'marta', nome: 'Marta', piattaforma: 'twitch' }, 'chi e\' non porta il token, e dice la sua piattaforma');
   assert.equal(await acc.token(k), 'vecchio');
   adesso += 3600_000 - 60_000;
   assert.equal(await acc.token(k), 'nuovo', 'a un minuto dalla scadenza si rinnova');

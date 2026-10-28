@@ -675,13 +675,14 @@ Twitch, coi premi che si creano dall'API; la chat; l'accesso OAuth con
 - **Il pannello**: la colonna Kicks nel listino, la scheda «I Kicks da
   spendere», «Crea il premio su Kick».
 
-**Lo stato.** Fatti: le persone, la valuta per persona e per mira, il regalo
-che paga, i Kicks da spendere, la chat di Kick, la pagina con l'accesso, la
-chat e il lettore di Kick. Da fare: i premi del canale su Kick e il pannello
-(la colonna Kicks, la scheda dei Kicks da spendere). Fino ad allora un colpo
-non ha un prezzo in Kicks, perché il pannello non lo chiede: chi entra con
-Kick paga con le monete e dallo zaino, e i Kicks regalati diventano Kicks da
-spendere con le regole di serie.
+**Lo stato.** Fatto tutto quello che c'è sopra. Nel pannello, solo per un
+canale collegato a Kick: le colonne «Kicks» e «Punti Kick» nel listino, il
+misto monete + Kicks, la scheda «I Kicks da spendere» con le sue regole, e
+«Kicks da spendere» e «Regalo di Kicks» fra i modi dello zaino; a un canale
+non collegato non si mostrano, e i valori salvati restano. Il salvataggio del
+pannello non scrive mai gli id dei premi, né di Twitch né di Kick
+(`CAMPI_PREMIO`, un elenco solo): uno dimenticato sarebbe un premio che ogni
+salvataggio scorda, orfano sulla piattaforma.
 
 ## La presenza
 

@@ -2669,8 +2669,10 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       pagina: colpiMod.urlPaginaColpo(login), euro: mezziEuro(s, login), valuta: s?.settings?.donazioni?.valuta || 'EUR',
       stripeSenzaRimborsi: !!(stripe?.pronto && !stripe.rimborsi),
       premiErrori: Array.isArray(s?.settings?.colpi?.premiErrori) ? s.settings.colpi.premiErrori.slice(0, 20) : [],
+      premiKickErrori: Array.isArray(s?.settings?.colpi?.premiKickErrori) ? s.settings.colpi.premiKickErrori.slice(0, 20) : [],
       voci: cfg.voci.map((v) => ({ id: v.id, premioNome: v.premio ? v.premioNome : '', premioCosto: v.premio ? v.premioCosto : 0,
-        premioMistoNome: v.premioMisto ? v.premioMistoNome : '', premioMistoCosto: v.premioMisto ? v.premioMistoCosto : 0 })),
+        premioMistoNome: v.premioMisto ? v.premioMistoNome : '', premioMistoCosto: v.premioMisto ? v.premioMistoCosto : 0,
+        premioKickNome: v.premioKick ? v.premioKickNome : '', premioKickCosto: v.premioKick ? v.premioKickCosto : 0 })),
       ultimi: registroColpi.ultimi(login, 20).map((m) => ({ quando: m.pagata_at, nome: m.nome, chi: m.chi, metodo: m.metodo, stato: m.stato })),
       // i Bit da spendere: quanti ne girano, e chi ne ha di piu'
       zaino: pewZaino.totali(login),
@@ -7674,9 +7676,12 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
   const premiInCorso = new Map();     // login -> la riconciliazione dei premi dei colpi in corso
   // Una alla volta per canale: due salvataggi di fila non creano due volte lo
   // stesso premio, e il nuovo tentativo qui sotto si mette in fila con loro.
+  // Su Kick la stessa passata coi premi di Kick, se lo streamer ha dato il
+  // permesso dei premi (docs/COLPI.md, «Su Kick»), dopo quella di Twitch.
   const accodaPremi = (l, prima) => {
     const giro = (premiInCorso.get(l) || Promise.resolve())
       .then(() => riconciliaPremi({ login: l, prima, helix, streamers, pagina: colpiMod.urlPaginaColpo(l), log }))
+      .then(() => (kickApi.puoPremiare(l) ? riconciliaPremi({ login: l, prima, helix: kickApi.premiKick(l), streamers, pagina: colpiMod.urlPaginaColpo(l), log, piattaforma: 'kick' }) : null))
       .catch((e) => log.warn(`premi dei colpi #${l}:`, e?.message || e))
       .finally(() => { if (premiInCorso.get(l) === giro) premiInCorso.delete(l); });
     premiInCorso.set(l, giro);
@@ -7688,7 +7693,7 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
   setInterval(() => {
     for (const x of streamers.list()) {
       const c = x.settings?.colpi;
-      if (c?.attivo && Array.isArray(c.premiErrori) && c.premiErrori.length && !premiInCorso.has(x.login)) accodaPremi(x.login, c);
+      if (c?.attivo && (c.premiErrori?.length || c.premiKickErrori?.length) && !premiInCorso.has(x.login)) accodaPremi(x.login, c);
     }
   }, 10 * 60_000).unref?.();
   app.post('/api/streamer/impostazioni', requireLogin, wrap(async (req, res) => {

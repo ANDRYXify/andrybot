@@ -18,18 +18,27 @@ import { monetaDa } from './moneta.js';
 export const TETTO_PREMI = 50;
 const TITOLO_MAX = 45;
 
+// Le due piattaforme: la stessa passata, coi campi suoi sulla voce. Kick non
+// dice un tetto di premi (si conta quando dice di no) e non ha il misto coi
+// punti, che e' di Twitch.
+export const SU = Object.freeze({
+  twitch: Object.freeze({ prezzo: 'punti', premio: 'premio', costo: 'premioCosto', nome: 'premioNome', misto: true, errori: 'premiErrori', tetto: TETTO_PREMI }),
+  kick: Object.freeze({ prezzo: 'puntiKick', premio: 'premioKick', costo: 'premioKickCosto', nome: 'premioKickNome', misto: false, errori: 'premiKickErrori', tetto: Infinity }),
+});
+
 // Il piano, puro: quali premi servono, con che titolo e per quali voci.
 // `liberi`: i posti che restano su Twitch tolti i premi non nostri (Infinity
 // se non si sa); `presi`: i loro titoli, che non si possono riusare.
 // → { forma: 'colpo' | 'prezzo', voluti: [{ chiave, tipo, costo, titolo, voci, monete? }], fuori: [...] }
-export function pianoPremi(cfg, { liberi = Infinity, modo = 'auto', presi = [] } = {}) {
+export function pianoPremi(cfg, { liberi = Infinity, modo = 'auto', presi = [], su = SU.twitch } = {}) {
   const vive = cfg.attivo ? cfg.voci.filter((v) => v.attiva) : [];
   const perColpo = [], perPrezzo = new Map();
   for (const v of vive) {
-    const mi = v.misti?.punti;
-    if (v.punti > 0) perColpo.push({ chiave: 'p:' + v.id, tipo: 'punti', costo: v.punti, titolo: titoloPremio(v), voci: [v.id] });
+    const mi = su.misto ? v.misti?.punti : null;
+    const prezzo = v[su.prezzo];
+    if (prezzo > 0) perColpo.push({ chiave: 'p:' + v.id, tipo: 'punti', costo: prezzo, titolo: titoloPremio(v), voci: [v.id] });
     if (mi?.punti > 0) perColpo.push({ chiave: 'm:' + v.id, tipo: 'misto', costo: mi.punti, titolo: titoloPremioMisto(v), voci: [v.id], monete: mi.monete });
-    for (const [tipo, costo, titolo] of [['punti', v.punti, titoloPremioPrezzo], ['misto', mi?.punti, titoloPremioPrezzoMisto]]) {
+    for (const [tipo, costo, titolo] of [['punti', prezzo, titoloPremioPrezzo], ['misto', mi?.punti, titoloPremioPrezzoMisto]]) {
       if (!(costo > 0)) continue;
       const k = (tipo === 'punti' ? 'P:' : 'M:') + costo;
       if (!perPrezzo.has(k)) perPrezzo.set(k, { chiave: k, tipo, costo, titolo: titolo(costo), voci: [] });
@@ -63,14 +72,16 @@ export function motivoTwitch(e) {
   return 'twitch';
 }
 
-export async function riconciliaPremi({ login, prima, helix, streamers, pagina, log = null }, forzata = '') {
+// `helix` e' chi crea i premi su quella piattaforma: helix, o premiKick con la sua forma.
+export async function riconciliaPremi({ login, prima, helix, streamers, pagina, log = null, piattaforma = 'twitch' }, forzata = '') {
+  const su = SU[piattaforma] || SU.twitch;
   const cfg = normalizza(streamers.get(login)?.settings?.colpi);
   const moneta = monetaDa(streamers.get(login)?.settings).nome;
   // i nostri premi: quelli scritti sulle voci, prima e adesso
   const nostri = new Map();
   for (const v of [...normalizza(prima).voci, ...cfg.voci]) {
-    if (v.premio) nostri.set(v.premio, { titolo: v.premioNome, costo: v.premioCosto });
-    if (v.premioMisto) nostri.set(v.premioMisto, { titolo: v.premioMistoNome, costo: v.premioMistoCosto });
+    if (v[su.premio]) nostri.set(v[su.premio], { titolo: v[su.nome], costo: v[su.costo] });
+    if (su.misto && v.premioMisto) nostri.set(v.premioMisto, { titolo: v.premioMistoNome, costo: v.premioMistoCosto });
   }
   // i posti: 50 meno i premi del canale che non sono nostri. Se l'elenco non
   // si legge non si indovina: si va avanti, e Twitch confermera'
@@ -79,7 +90,7 @@ export async function riconciliaPremi({ login, prima, helix, streamers, pagina, 
     const tutti = await helix.listaRewardsTutti?.(login);
     if (Array.isArray(tutti)) {
       altri = tutti.filter((r) => !nostri.has(r.id));
-      liberi = TETTO_PREMI - altri.length;
+      liberi = su.tetto - altri.length;
       presi = altri.map((r) => r.title);
       const vivi = new Set(tutti.map((r) => r.id));
       // quello che dice Twitch vince su quello che ricordiamo; uno tolto a
@@ -88,7 +99,7 @@ export async function riconciliaPremi({ login, prima, helix, streamers, pagina, 
       for (const r of tutti) if (nostri.has(r.id)) nostri.set(r.id, { titolo: r.title, costo: r.cost });
     }
   } catch (e) { log?.debug?.(`premi del canale #${login}:`, e?.message || e); }
-  const piano = pianoPremi(cfg, { liberi, modo: forzata || cfg.premiModo, presi });
+  const piano = pianoPremi(cfg, { liberi, modo: forzata || cfg.premiModo, presi, su });
 
   // prima si tolgono i nostri che non servono piu' (liberano posti); un premio
   // gia' giusto, titolo e costo, si tiene, anche se passa a un'altra voce
@@ -118,21 +129,22 @@ export async function riconciliaPremi({ login, prima, helix, streamers, pagina, 
       // l'elenco non si era letto, o un premio e' arrivato nel frattempo: per
       // colpo non ci stanno, e la stessa passata riparte per prezzo (una volta)
       if (piano.forma === 'colpo' && !forzata && cfg.premiModo === 'auto') {
-        await scriviPremi({ login, streamers, helix, piano, tenuti, errori: [], log });
-        return riconciliaPremi({ login, prima, helix, streamers, pagina, log }, 'prezzo');
+        await scriviPremi({ login, streamers, helix, piano, tenuti, errori: [], log, su });
+        return riconciliaPremi({ login, prima, helix, streamers, pagina, log, piattaforma }, 'prezzo');
       }
       pieno = true; fuori.push(p);
     }
   }
-  if (fuori.length) errori.unshift({ motivo: 'pieno', titoli: fuori.map((p) => p.titolo), altri: altri ? altri.length : null, mancano: fuori.length });
-  await scriviPremi({ login, streamers, helix, piano, tenuti, errori, log });
+  if (fuori.length) errori.unshift({ motivo: 'pieno', titoli: fuori.map((p) => p.titolo), altri: altri ? altri.length : null, mancano: fuori.length, tetto: Number.isFinite(su.tetto) ? su.tetto : null });
+  if (piattaforma !== 'twitch') for (const e of errori) e.piattaforma = piattaforma;
+  await scriviPremi({ login, streamers, helix, piano, tenuti, errori, log, su });
   return { errori, forma: piano.forma };
 }
 
 // Si scrive solo il pezzo dei premi, sulle impostazioni di adesso: fra la
 // lettura e la scrittura non c'e' nessuna attesa, cosi' un salvataggio
 // arrivato nel frattempo non si perde.
-async function scriviPremi({ login, streamers, helix, piano, tenuti, errori, log }) {
+async function scriviPremi({ login, streamers, helix, piano, tenuti, errori, log, su = SU.twitch }) {
   const assegna = (id, tipo) => {
     const p = piano.voluti.find((x) => x.tipo === tipo && x.voci.includes(id) && tenuti.has(x.chiave));
     return p ? [tenuti.get(p.chiave), p.costo, p.titolo] : ['', 0, ''];
@@ -140,14 +152,14 @@ async function scriviPremi({ login, streamers, helix, piano, tenuti, errori, log
   const s = streamers.get(login);
   const c = s?.settings?.colpi;
   const voci = Array.isArray(c?.voci) ? c.voci.map((v) => {
-    const [premio, premioCosto, premioNome] = assegna(v.id, 'punti');
-    const [premioMisto, premioMistoCosto, premioMistoNome] = assegna(v.id, 'misto');
-    return { ...v, premio, premioCosto, premioNome, premioMisto, premioMistoCosto, premioMistoNome };
+    const [premio, costo, nome] = assegna(v.id, 'punti');
+    const misto = su.misto ? (([premioMisto, premioMistoCosto, premioMistoNome]) => ({ premioMisto, premioMistoCosto, premioMistoNome }))(assegna(v.id, 'misto')) : {};
+    return { ...v, [su.premio]: premio, [su.costo]: costo, [su.nome]: nome, ...misto };
   }) : [];
-  if (c && Array.isArray(c.voci)) streamers.setSettings(login, { ...s.settings, colpi: { ...c, voci, premiErrori: errori } });
+  if (c && Array.isArray(c.voci)) streamers.setSettings(login, { ...s.settings, colpi: { ...c, voci, [su.errori]: errori } });
   // un premio che nessuna voce di adesso usa (una voce tolta da un salvataggio
   // arrivato nel frattempo) non resta orfano
-  const usati = new Set(voci.flatMap((v) => [v.premio, v.premioMisto]).filter(Boolean));
+  const usati = new Set(voci.flatMap((v) => [v[su.premio], su.misto ? v.premioMisto : '']).filter(Boolean));
   for (const id of tenuti.values()) {
     if (!usati.has(id)) { try { await helix.eliminaReward(login, id); } catch (e) { log?.debug?.(`premio colpo via #${login}:`, e?.message || e); } }
   }

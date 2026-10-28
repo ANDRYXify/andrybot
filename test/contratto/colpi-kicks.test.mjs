@@ -34,3 +34,17 @@ test('il servizio riceve il regalo solo da Kick, anonimo senza persona, con l\'i
   assert.match(h, /'pochi-kicks'/);
   assert.match(h, /'misto-kicks-prima'/);
 });
+
+test('i premi del canale su Kick: lo stesso riscatto, chiuso su Kick, senza promettere i punti', () => {
+  assert.match(BOT, /chiudiPremio: \(l, premio, riscatto, stato\) => \(eIdKick\(premio\) \? premiKick\(l\) : this\.helix\)\?\.aggiornaRedemption\?\.\(l, premio, riscatto, stato\),/, 'chi chiude lo riconosce dall\'id del premio');
+  const i = BOT.indexOf("if ((piattaforma === 'twitch' || piattaforma === 'kick') && data?.reward?.id) {");
+  assert.ok(i > 0, 'i riscatti di Kick passano dai colpi');
+  const h = BOT.slice(i, i + 1600);
+  assert.match(h, /this\.colpi\?\.daRiscatto\(channel, \{ reward_id: data\.reward\.id, user_input: data\.user_input, id: data\.id, user_id: data\.user_id, piattaforma \}\)/);
+  assert.match(h, /\(suKick \? premiKick\(channel\) : this\.helix\)\?\.aggiornaRedemption\?\./);
+  assert.match(h, /testoColpi\(channel, suKick \? 'codice-kick' : 'codice', chi\)/);
+  assert.match(h, /testoColpi\(channel, suKick \? 'fermo-kick' : 'fermo', chi\)/);
+  const t = BOT.slice(BOT.indexOf("'codice-kick': ["), BOT.indexOf('    fermo: [`${chi} adesso'));
+  assert.ok(t.includes("'fermo-kick'") && t.length < 1500, 'i due testi di Kick, e solo loro');
+  assert.ok(!/punti tornano|points are back|puntos vuelven/.test(t), 'su Kick non si promette che i punti tornino');
+});

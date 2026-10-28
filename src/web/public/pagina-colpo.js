@@ -324,6 +324,7 @@
     if (v.prezzi.punti) p.appendChild(el('i', '', riempi(T.puntiN, { n: numero(v.prezzi.punti) })));
     if (v.prezzi.bit) p.appendChild(el('i', '', riempi(T.bitN, { n: numero(v.prezzi.bit) })));
     if (v.prezzi.kicks) p.appendChild(el('i', '', riempi((T.k || {}).prezzoN, { n: numero(v.prezzi.kicks) })));
+    if (v.prezzi.puntiKick) p.appendChild(el('i', '', riempi((T.k || {}).puntiN, { n: numero(v.prezzi.puntiKick) })));
     if (v.prezzi.monete) p.appendChild(el('i', '', riempi(T.moneteN, { n: numero(v.prezzi.monete), moneta: moneta() })));
     (v.misti || []).forEach(function (x) {
       p.appendChild(el('i', '', riempi(x.modo === 'bit' ? T.mistoBit : x.modo === 'kicks' ? (T.k || {}).misto : T.mistoPunti, { monete: numero(x.monete), moneta: moneta(), resto: numero(x.resto) })));
@@ -699,6 +700,11 @@
         var pp = el('div', 'cp-modo');
         pp.appendChild(el('p', '', riempi(mira.mia ? T.puntiIo : T.punti, { premio: v.premio, n: numero(pz.punti), codice: mira.codice })));
         box.appendChild(pp);
+      }
+      if (conCodice && puo('punti') && pz.puntiKick > 0 && v.premioKick) {
+        var pk = el('div', 'cp-modo');
+        pk.appendChild(el('p', '', riempi(mira.mia && vd() === 'kicks' ? (T.k || {}).puntiIo : (T.k || {}).punti, { premio: v.premioKick, n: numero(pz.puntiKick), codice: mira.codice })));
+        box.appendChild(pk);
       }
       var raccolto = mira.versati > 0 ? (mira.valuta || 'bit') : '';
       if (conCodice && puo('cheer') && pz.bit > 0 && raccolto !== 'kicks') {

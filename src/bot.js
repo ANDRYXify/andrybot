@@ -120,7 +120,7 @@ import { piattaformaDi, nomeSu } from './identita.js';
 // annunci): bot.js, puoParlare. YouTube no: la quota per scrivere nella chat
 // delle dirette e' una sola per tutto il servizio, e ogni messaggio la consuma.
 const PARLA_DA_SOLO = Object.freeze({ twitch: true, kick: true, youtube: false });
-import { tokenDi as tokenKick, collegati as kickCollegati, statoCanale as statoKick, moderatoreKick, puoModerare as puoModerareKick, allineaIscrizioni as allineaKick, premiKick } from './kick/api.js';
+import { tokenDi as tokenKick, collegati as kickCollegati, statoCanale as statoKick, moderatoreKick, puoModerare as puoModerareKick, allineaIscrizioni as allineaKick, premiKick, eIdKick } from './kick/api.js';
 import * as riscattiKick from './kick/riscatti.js';
 import * as bjFeat from './features/blackjack.js';
 import * as seguitiFeat from './features/seguiti.js';
@@ -184,6 +184,13 @@ function testoColpi(canale, cosa, chi, r = {}) {
     codice: [`${chi} quel codice non vale o è già stato usato: i punti tornano a te. Il codice lo prendi mirando su ${pagina}`,
       `${chi} that code isn't valid or was already used: your points are back. You get the code by aiming on ${pagina}`,
       `${chi} ese código no vale o ya se usó: los puntos vuelven a ti. El código lo consigues apuntando en ${pagina}`],
+    // su Kick il riscatto si rifiuta, ma che i punti tornino Kick non lo dice: non si promette
+    'codice-kick': [`${chi} quel codice non vale o è già stato usato: il riscatto è rifiutato. Il codice lo prendi mirando su ${pagina}`,
+      `${chi} that code isn't valid or was already used: the redemption is rejected. You get the code by aiming on ${pagina}`,
+      `${chi} ese código no vale o ya se usó: el canje queda rechazado. El código lo consigues apuntando en ${pagina}`],
+    'fermo-kick': [`${chi} adesso il colpo non può comparire (diretta o overlay fermi): il riscatto è rifiutato.`,
+      `${chi} the hit can't show right now (stream or overlay stopped): the redemption is rejected.`,
+      `${chi} ahora el golpe no puede aparecer (directo u overlay parados): el canje queda rechazado.`],
     fermo: [`${chi} adesso il colpo non può comparire (diretta o overlay fermi): i punti tornano a te.`,
       `${chi} the hit can't show right now (stream or overlay stopped): your points are back.`,
       `${chi} ahora el golpe no puede aparecer (directo u overlay parados): los puntos vuelven a ti.`],
@@ -258,7 +265,8 @@ export class BotManager {
       overlay: (l) => !!this.effects?.prontoColpi?.(l),
       // un colpo pagato che nessun overlay mostra torna indietro: gli euro dal conto dello streamer, i punti col riscatto annullato
       rimborsaEuro: (l, id) => (String(id).startsWith('satispay:') ? rimborsaSatispay(l, id) : rimborsaStripe(l, id)),
-      chiudiPremio: (l, premio, riscatto, stato) => this.helix?.aggiornaRedemption?.(l, premio, riscatto, stato),
+      // chi chiude il riscatto lo riconosce dall'id del premio: ULID su Kick, UUID su Twitch
+      chiudiPremio: (l, premio, riscatto, stato) => (eIdKick(premio) ? premiKick(l) : this.helix)?.aggiornaRedemption?.(l, premio, riscatto, stato),
       // le monete del canale: si spendono con la ricevuta, e la ricevuta torna se il colpo non compare
       monete: { punta: economia.punta, rendi: economia.rendi, saldo: economia.saldo },
       // la serie della presenza: chi si presenta diretta dopo diretta
@@ -1753,15 +1761,20 @@ export class BotManager {
     // non vale restituisce i punti (docs/COLPI.md)
     // Un colpo pagato chiude il riscatto quando l'overlay lo mostra; uno che non
     // vale, o che adesso non si puo' consegnare, lo annulla subito.
-    if (piattaforma === 'twitch' && data?.reward?.id) {
-      const r = this.colpi?.daRiscatto(channel, { reward_id: data.reward.id, user_input: data.user_input, id: data.id, user_id: data.user_id });
+    // Su Kick lo stesso, coi premi di Kick: il riscatto si chiude su Kick, si
+    // risponde nella chat di Kick, e non si promette che i punti tornino (Kick
+    // non lo documenta).
+    if ((piattaforma === 'twitch' || piattaforma === 'kick') && data?.reward?.id) {
+      const suKick = piattaforma === 'kick';
+      const r = this.colpi?.daRiscatto(channel, { reward_id: data.reward.id, user_input: data.user_input, id: data.id, user_id: data.user_id, piattaforma });
       if (r && r.esito !== 'non-mio') {
-        if (r.stato) Promise.resolve(this.helix?.aggiornaRedemption?.(channel, data.reward.id, data.id, r.stato)).catch(() => {});
+        if (r.stato) Promise.resolve((suKick ? premiKick(channel) : this.helix)?.aggiornaRedemption?.(channel, data.reward.id, data.id, r.stato)).catch(() => {});
         const chi = `@${data.user_login || data.user_name || ''}`;
-        if (r.esito === 'sconosciuto' || r.esito === 'gia') this.say(channel, testoColpi(channel, 'codice', chi));
-        else if (r.esito === 'fermo') this.say(channel, testoColpi(channel, 'fermo', chi));
-        else if (r.esito === 'servono-monete') this.say(channel, testoColpi(channel, 'misto-punti-prima', chi, { ...r, moneta: nomeMoneta(channel), comando: this.colpi.cfgDi(channel).comando }));
-        else if (r.esito === 'pagato' && r.dopo) this.say(channel, testoColpi(channel, 'zaino-dentro', chi, r));
+        const dici = suKick ? this.vocePer({ channel, piattaforma }) : (t) => this.say(channel, t);
+        if (r.esito === 'sconosciuto' || r.esito === 'gia') dici(testoColpi(channel, suKick ? 'codice-kick' : 'codice', chi));
+        else if (r.esito === 'fermo') dici(testoColpi(channel, suKick ? 'fermo-kick' : 'fermo', chi));
+        else if (r.esito === 'servono-monete') dici(testoColpi(channel, 'misto-punti-prima', chi, { ...r, moneta: nomeMoneta(channel), comando: this.colpi.cfgDi(channel).comando }));
+        else if (r.esito === 'pagato' && r.dopo) dici(testoColpi(channel, 'zaino-dentro', chi, r));
         return;
       }
     }

@@ -26391,6 +26391,47 @@ ${_clScadenzaHtml('cl-bp', c.bitPew?.scadenza)}
       <p class="spazio-sopra"><button class="btn" id="cl-bp-salva">${L('Salva', 'Save', 'Guardar')}</button></p>
     </div>
 
+    <div class="carta" id="cl-kickspew"${stato.kick?.collegato ? '' : ' hidden'}>
+      <h3>${_hIco(ICO.fulmine)}${L('I Kicks da spendere', 'Kicks to spend', 'Kicks para gastar')}</h3>
+      <p>${L('Su Kick, come i Bit su Twitch: i Kicks che uno spettatore regala al canale senza pagarci un colpo diventano Kicks da spendere sulla tua pagina, per chi entra con Kick. Regole tutte loro, separate da quelle dei Bit.', 'On Kick, like Bits on Twitch: the Kicks a viewer gifts to the channel without paying for a hit become Kicks to spend on your page, for whoever logs in with Kick. Rules of their own, separate from the Bits ones.', 'En Kick, como los Bits en Twitch: los Kicks que un espectador regala al canal sin pagar un golpe se convierten en Kicks para gastar en tu página, para quien entra con Kick. Reglas propias, separadas de las de los Bits.')}</p>
+      <div class="riga-interruttore spazio-sopra">
+        <label class="interruttore"><input type="checkbox" id="cl-kp-attivo" ${c.kicksPew?.attivo !== false ? 'checked' : ''}><span class="levetta"></span></label>
+        <span class="etichetta-stato">${L('Kicks da spendere accesi', 'Kicks to spend on', 'Kicks para gastar activados')}</span>
+      </div>
+      <div class="griglia-campi spazio-sopra">
+        <div>
+          <label class="campo" for="cl-kp-resa">${L('Kicks da spendere ogni 100 regalati', 'Kicks to spend per 100 gifted', 'Kicks para gastar por cada 100 regalados')}</label>
+          <input type="number" id="cl-kp-resa" min="1" max="1000" value="${Number(c.kicksPew?.resa) || 100}">
+        </div>
+        <div>
+          <label class="campo" for="cl-kp-minimo">${L('Un regalo conta da (Kicks)', 'A gift counts from (Kicks)', 'Un regalo cuenta desde (Kicks)')}</label>
+          <input type="number" id="cl-kp-minimo" min="1" max="100000" value="${Number(c.kicksPew?.minimo) || 1}">
+        </div>
+        <div>
+          <label class="campo" for="cl-kp-tetto">${L('Saldo massimo a testa (0 = nessuno)', 'Max balance each (0 = none)', 'Saldo máximo por persona (0 = ninguno)')}</label>
+          <input type="number" id="cl-kp-tetto" min="0" max="10000000" value="${Number(c.kicksPew?.tetto) || 0}">
+        </div>
+      </div>
+      <p class="suggerimento">${L('Si spendono solo sui colpi che hanno un prezzo in Kicks: senza, la pagina non li offre.', 'They are spent only on hits with a price in Kicks: without one, the page doesn\'t offer them.', 'Solo se gastan en los golpes con precio en Kicks: sin él, la página no los ofrece.')}</p>
+      <h4 class="spazio-sopra">${L('Quando scadono', 'When they expire', 'Cuándo caducan')}</h4>
+${_clScadenzaHtml('cl-kp', c.kicksPew?.scadenza)}
+      <p class="pt-dice" id="cl-kp-dice-scade" aria-live="polite"></p>
+      <h4 class="spazio-sopra">${L('Quando tornano', 'When they come back', 'Cuándo vuelven')}</h4>
+      <div class="riga-check"><input type="checkbox" id="cl-kp-rendi-colpi" ${c.kicksPew?.rendiColpi !== false ? 'checked' : ''}><label for="cl-kp-rendi-colpi">${L('Un colpo pagato con un regalo che non compare: i suoi Kicks tornano da spendere', 'A hit paid by gift that doesn\'t show: its Kicks come back to spend', 'Un golpe pagado con regalo que no aparece: sus Kicks vuelven para gastar')}</label></div>
+      <div class="riga-check"><input type="checkbox" id="cl-kp-rendi-mire" ${c.kicksPew?.rendiMire !== false ? 'checked' : ''}><label for="cl-kp-rendi-mire">${L('Una mira mai pagata coi Kicks a metà: tornano da spendere', 'An aim never paid with Kicks half in: they come back to spend', 'Un punto nunca pagado con Kicks a medias: vuelven para gastar')}</label></div>
+      <h4 class="spazio-sopra">${L('La risposta in chat', 'The chat reply', 'La respuesta en el chat')}</h4>
+      <div class="riga-check"><input type="checkbox" id="cl-kp-rispondi" ${c.kicksPew?.rispondi !== false ? 'checked' : ''}><label for="cl-kp-rispondi">${L(`Il bot risponde a «!${esc(c.comando || 'pew')} kicks» nella chat di Kick`, `The bot replies to «!${esc(c.comando || 'pew')} kicks» in the Kick chat`, `El bot responde a «!${esc(c.comando || 'pew')} kicks» en el chat de Kick`)}</label></div>
+      <div class="griglia-campi">
+        <div>
+          <label class="campo" for="cl-kp-attesa">${L('Secondi fra due risposte alla stessa persona', 'Seconds between two replies to the same person', 'Segundos entre dos respuestas a la misma persona')}</label>
+          <input type="number" id="cl-kp-attesa" min="0" max="3600" value="${Number.isFinite(Number(c.kicksPew?.attesaSec)) ? Number(c.kicksPew.attesaSec) : 60}">
+        </div>
+      </div>
+      <label class="campo" for="cl-kp-risposta">${L('La risposta (vuota: quella di serie)', 'The reply (empty: the default one)', 'La respuesta (vacía: la de serie)')}</label>
+      <input type="text" id="cl-kp-risposta" maxlength="160" value="${esc(c.kicksPew?.risposta || '')}" placeholder="${esc(L('{nome} hai {saldo} Kicks da spendere su {pagina}{scade}', '{nome} you have {saldo} Kicks to spend on {pagina}{scade}', '{nome} tienes {saldo} Kicks para gastar en {pagina}{scade}'))}">
+      <p class="spazio-sopra"><button class="btn" id="cl-kp-salva">${L('Salva', 'Save', 'Guardar')}</button></p>
+    </div>
+
     <div class="carta" id="cl-zaino">
       <h3>${_hIco(ICO.pacco)}${L('Lo zaino', 'The backpack', 'La mochila')}</h3>
       <p>${L('Chi ha fatto l\'accesso a Twitch sulla tua pagina può comprare un colpo per dopo: non parte subito, finisce nel suo zaino di questo canale e lo lancia quando vuole, con un tocco. Si compra anche a diretta spenta.', 'Whoever logged in with Twitch on your page can buy a hit for later: it doesn\'t go off right away, it goes into their backpack for this channel and they launch it whenever they want, with one tap. It can be bought even while you\'re offline.', 'Quien entró con Twitch en tu página puede comprar un golpe para después: no sale enseguida, va a su mochila de este canal y lo lanza cuando quiere, con un toque. Se compra también con el directo apagado.')}</p>
@@ -26399,7 +26440,7 @@ ${_clScadenzaHtml('cl-bp', c.bitPew?.scadenza)}
         <span class="etichetta-stato">${L('Zaino acceso', 'Backpack on', 'Mochila activada')}</span>
       </div>
       <h4 class="spazio-sopra">${L('Con cosa si compra per dopo', 'What can buy for later', 'Con qué se compra para después')}</h4>
-      ${[['monete', _clMoneta().replace(/^./, (x) => x.toUpperCase())], ['bit', L('Bit da spendere', 'Bits to spend', 'Bits para gastar')], ['misto', L('Modi misti', 'Mixed ways', 'Modos mixtos')], ['cheer', L('Cheer (Bit di Twitch)', 'Cheer (Twitch Bits)', 'Cheer (Bits de Twitch)')], ['punti', L('Punti canale', 'Channel points', 'Puntos de canal')], ['euro', L('Euro', 'Euros', 'Euros')]].map(([k, t]) => `<div class="riga-check"><input type="checkbox" id="cl-zn-con-${k}" ${c.zaino?.con?.[k] !== false ? 'checked' : ''}><label for="cl-zn-con-${k}">${esc(t)}</label></div>`).join('')}
+      ${[['monete', _clMoneta().replace(/^./, (x) => x.toUpperCase())], ['bit', L('Bit da spendere', 'Bits to spend', 'Bits para gastar')], ['kicks', L('Kicks da spendere', 'Kicks to spend', 'Kicks para gastar'), true], ['misto', L('Modi misti', 'Mixed ways', 'Modos mixtos')], ['cheer', L('Cheer (Bit di Twitch)', 'Cheer (Twitch Bits)', 'Cheer (Bits de Twitch)')], ['regalo', L('Regalo di Kicks', 'Kicks gift', 'Regalo de Kicks'), true], ['punti', L('Punti canale', 'Channel points', 'Puntos de canal')], ['euro', L('Euro', 'Euros', 'Euros')]].map(([k, t, kick]) => `<div class="riga-check"${kick && !stato.kick?.collegato ? ' hidden' : ''}><input type="checkbox" id="cl-zn-con-${k}" ${c.zaino?.con?.[k] !== false ? 'checked' : ''}><label for="cl-zn-con-${k}">${esc(t)}</label></div>`).join('')}
       <div class="griglia-campi spazio-sopra">
         <div>
           <label class="campo" for="cl-zn-massimo">${L('Colpi a testa nello zaino (0 = senza limite)', 'Hits each in the backpack (0 = no limit)', 'Golpes por persona en la mochila (0 = sin límite)')}</label>
@@ -26487,6 +26528,7 @@ function _clRiga(v) {
   const scelta = opz.map((e) => `<option value="${esc(e.comando)}"${e.comando === c ? ' selected' : ''}>!${esc(e.comando)} (${esc(e.lancio ? nomeLancio(e.lancio.oggetto) : etTipoEffetto(e.tipo))})</option>`).join('')
     + (c && !opz.some((e) => e.comando === c) ? `<option value="${esc(c)}" selected>!${esc(c)} — ${L('non c\'è più', 'missing', 'ya no está')}</option>` : '');
   const euro = Number(v.euro) > 0 ? (Number(v.euro) / 100).toFixed(2) : '';
+  const conKick = !!stato.kick?.collegato;
   return `<div class="cl-voce" data-id="${esc(v.id || '')}">
     <label class="cl-c cl-eff"><span>${L('Effetto', 'Effect', 'Efecto')}</span><select data-k="comando">${scelta || `<option value="">${L('Nessun lancio, immagine o video', 'No throw, image or video', 'Ningún lanzamiento, imagen o vídeo')}</option>`}</select></label>
     <label class="cl-c cl-nome"><span>${L('Nome', 'Name', 'Nombre')}</span><input data-k="nome" type="text" maxlength="40" value="${esc(v.nome || '')}"></label>
@@ -26495,6 +26537,8 @@ function _clRiga(v) {
     <label class="cl-c"><span>${L('Euro', 'Euros', 'Euros')}</span><input data-k="euro" type="number" min="0" max="500" step="0.5" inputmode="decimal" value="${euro}"></label>
     <label class="cl-c"><span>${L('Punti', 'Points', 'Puntos')}</span><input data-k="punti" type="number" min="0" max="1000000" step="1" value="${Number(v.punti) || ''}"></label>
     <label class="cl-c"><span>Bit</span><input data-k="bit" type="number" min="0" max="100000" step="1" value="${Number(v.bit) || ''}"></label>
+    <label class="cl-c"${conKick ? '' : ' hidden'}><span>Kicks</span><input data-k="kicks" type="number" min="0" max="100000" step="1" value="${Number(v.kicks) || ''}"></label>
+    <label class="cl-c"${conKick ? '' : ' hidden'}><span>${L('Punti Kick', 'Kick points', 'Puntos Kick')}</span><input data-k="puntiKick" type="number" min="0" max="1000000" step="1" value="${Number(v.puntiKick) || ''}"></label>
     <label class="cl-c"><span>${esc(_clMoneta().replace(/^./, (x) => x.toUpperCase()))}</span><input data-k="monete" type="number" min="0" max="10000000" step="1" value="${Number(v.monete) || ''}"></label>
     <label class="cl-c"><span>${L('Grandezza %', 'Size %', 'Tamaño %')}</span><input data-k="scala" type="number" min="20" max="300" step="5" value="${Number(v.scala) || 100}"></label>
     <label class="cl-c cl-acc"><span>${L('Attivo', 'On', 'Activo')}</span><span class="interruttore"><input data-k="attiva" type="checkbox" ${v.attiva !== false ? 'checked' : ''}><span class="levetta"></span></span></label>
@@ -26506,6 +26550,9 @@ function _clRiga(v) {
       <label class="cl-c"><span>${esc(_clMoneta().replace(/^./, (x) => x.toUpperCase()))}</span><input data-k="misto-punti-monete" type="number" min="0" max="10000000" step="1" value="${Number(v.misti?.punti?.monete) || ''}"></label>
       <span class="cl-piu" aria-hidden="true">+</span>
       <label class="cl-c"><span>${L('Punti', 'Points', 'Puntos')}</span><input data-k="misto-punti-punti" type="number" min="0" max="1000000" step="1" value="${Number(v.misti?.punti?.punti) || ''}"></label>
+      <label class="cl-c"${conKick ? '' : ' hidden'}><span>${esc(_clMoneta().replace(/^./, (x) => x.toUpperCase()))}</span><input data-k="misto-kicks-monete" type="number" min="0" max="10000000" step="1" value="${Number(v.misti?.kicks?.monete) || ''}"></label>
+      <span class="cl-piu" aria-hidden="true"${conKick ? '' : ' hidden'}>+</span>
+      <label class="cl-c"${conKick ? '' : ' hidden'}><span>Kicks</span><input data-k="misto-kicks-kicks" type="number" min="0" max="100000" step="1" value="${Number(v.misti?.kicks?.kicks) || ''}"></label>
     </div>
     <div class="cl-zaino-voce" data-modo="${esc(v.zaino?.modo || 'come')}">
       <span class="cl-misti-t">${L('Zaino', 'Backpack', 'Mochila')}</span>
@@ -26553,9 +26600,10 @@ function _clLeggi() {
     const q = (k) => r.querySelector(`[data-k="${k}"]`);
     const euro = Math.round((Number(String(q('euro').value).replace(',', '.')) || 0) * 100);
     return { id: r.dataset.id || '', comando: q('comando').value, nome: q('nome').value.trim(), euro, punti: Number(q('punti').value) || 0,
-      bit: Number(q('bit').value) || 0, monete: Number(q('monete').value) || 0, categoria: q('categoria').value,
+      bit: Number(q('bit').value) || 0, kicks: Number(q('kicks')?.value) || 0, puntiKick: Number(q('puntiKick')?.value) || 0, monete: Number(q('monete').value) || 0, categoria: q('categoria').value,
       misti: { bit: { monete: Number(q('misto-bit-monete').value) || 0, bit: Number(q('misto-bit-bit').value) || 0 },
-        punti: { monete: Number(q('misto-punti-monete').value) || 0, punti: Number(q('misto-punti-punti').value) || 0 } },
+        punti: { monete: Number(q('misto-punti-monete').value) || 0, punti: Number(q('misto-punti-punti').value) || 0 },
+        kicks: { monete: Number(q('misto-kicks-monete')?.value) || 0, kicks: Number(q('misto-kicks-kicks')?.value) || 0 } },
       zaino: { modo: q('zaino-modo')?.value || 'come', quanti: Number(q('zaino-quanti')?.value) || 30, unita: q('zaino-unita')?.value || 'giorni' },
       chat: { modo: q('chat-modo')?.value || 'si', x: _clPct(q('chat-x')?.value, _clQ.l), y: _clPct(q('chat-y')?.value, _clQ.a) },
       scala: Number(q('scala').value) || 100, attiva: q('attiva').checked };
@@ -26568,6 +26616,7 @@ function _clLeggi() {
     conNome: !!document.getElementById('cl-nome')?.checked,
     presenza: _clPresenzaLeggi(),
     bitPew: _clBitLeggi(),
+    kicksPew: _clKicksLeggi(),
     zaino: _clZainoLeggi(),
     chat: _clChatLeggi(),
     quadro: { ..._clQ },
@@ -26790,12 +26839,22 @@ function _clBitLeggi() {
     scadenza: _clScadenzaLeggi('cl-bp'),
   };
 }
+function _clKicksLeggi() {
+  const v = (id) => document.getElementById(id);
+  const n = (id, d) => { const x = Number(v(id)?.value); return v(id)?.value === '' || !Number.isFinite(x) ? d : x; };
+  return {
+    attivo: !!v('cl-kp-attivo')?.checked, resa: n('cl-kp-resa', 100), minimo: n('cl-kp-minimo', 1), tetto: n('cl-kp-tetto', 0),
+    rendiColpi: !!v('cl-kp-rendi-colpi')?.checked, rendiMire: !!v('cl-kp-rendi-mire')?.checked,
+    rispondi: !!v('cl-kp-rispondi')?.checked, risposta: (v('cl-kp-risposta')?.value || '').trim(), attesaSec: n('cl-kp-attesa', 60),
+    scadenza: _clScadenzaLeggi('cl-kp'),
+  };
+}
 function _clZainoLeggi() {
   const v = (id) => document.getElementById(id);
   const n = (id, d) => { const x = Number(v(id)?.value); return v(id)?.value === '' || !Number.isFinite(x) ? d : x; };
   return {
     attivo: !!v('cl-zn-attivo')?.checked,
-    con: Object.fromEntries(['monete', 'bit', 'misto', 'cheer', 'punti', 'euro'].map((k) => [k, !!v('cl-zn-con-' + k)?.checked])),
+    con: Object.fromEntries(['monete', 'bit', 'kicks', 'misto', 'cheer', 'regalo', 'punti', 'euro'].map((k) => [k, !!v('cl-zn-con-' + k)?.checked])),
     massimo: n('cl-zn-massimo', 0), massimoVoce: n('cl-zn-massimo-voce', 0), scadenza: _clScadenzaLeggi('cl-zn'), rendi: !!v('cl-zn-rendi')?.checked,
     rispondi: !!v('cl-zn-rispondi')?.checked, risposta: (v('cl-zn-risposta')?.value || '').trim(), attesaSec: n('cl-zn-attesa', 60),
   };
@@ -26951,12 +27010,16 @@ function _clCollegaQuadro() {
 function _clPremioErrore(e) {
   if (typeof e === 'string') return L('Premio a punti canale non creato: ', 'Channel-point reward not created: ', 'Recompensa de puntos de canal no creada: ') + e;
   const quali = (e.titoli || []).map((t) => '«' + t + '»').join(', ');
+  const pf = e.piattaforma === 'kick' ? 'Kick' : 'Twitch';
   if (e.motivo === 'pieno') {
     const quanti = e.altri == null ? '' : L(`: ne hai ${e.altri} non di Pewpewify`, `: you have ${e.altri} that aren't Pewpewify's`, `: tienes ${e.altri} que no son de Pewpewify`);
-    return L(`Twitch tiene al massimo 50 premi per canale${quanti}. Ne servono ancora ${e.mancano} (${quali}): togline ${e.mancano} su Twitch e li creo da solo appena c'è posto.`,
-      `Twitch keeps at most 50 rewards per channel${quanti}. ${e.mancano} more are needed (${quali}): remove ${e.mancano} on Twitch and I'll create them by myself as soon as there's room.`,
-      `Twitch tiene como máximo 50 recompensas por canal${quanti}. Faltan ${e.mancano} (${quali}): quita ${e.mancano} en Twitch y las creo solo en cuanto haya sitio.`);
+    const tetto = e.tetto ? L(`${pf} tiene al massimo ${e.tetto} premi per canale${quanti}.`, `${pf} keeps at most ${e.tetto} rewards per channel${quanti}.`, `${pf} tiene como máximo ${e.tetto} recompensas por canal${quanti}.`)
+      : L(`${pf} non ha posto per altri premi.`, `${pf} has no room for more rewards.`, `${pf} no tiene sitio para más recompensas.`);
+    return tetto + ' ' + L(`Ne servono ancora ${e.mancano} (${quali}): togline ${e.mancano} su ${pf} e li creo da solo appena c'è posto.`,
+      `${e.mancano} more are needed (${quali}): remove ${e.mancano} on ${pf} and I'll create them by myself as soon as there's room.`,
+      `Faltan ${e.mancano} (${quali}): quita ${e.mancano} en ${pf} y las creo solo en cuanto haya sitio.`);
   }
+  if (e.piattaforma === 'kick') return L(`Premi del canale su Kick non creati (${quali}): Kick non ha risposto bene, o manca il permesso dei premi. Riprovo da solo ogni 10 minuti.`, `Kick channel rewards not created (${quali}): Kick didn't answer properly, or the rewards permission is missing. I'll retry by myself every 10 minutes.`, `Recompensas del canal en Kick no creadas (${quali}): Kick no respondió bien, o falta el permiso de recompensas. Lo reintento solo cada 10 minutos.`) + (e.dettaglio ? ' (' + e.dettaglio + ')' : '');
   if (e.motivo === 'affiliato') return L(`Premi a punti canale non creati (${quali}): Twitch li dà solo ai canali affiliati o partner.`, `Channel-point rewards not created (${quali}): Twitch only offers them to affiliate or partner channels.`, `Recompensas de puntos de canal no creadas (${quali}): Twitch solo las da a canales afiliados o partner.`);
   if (e.motivo === 'permesso') return L(`Premi a punti canale non creati (${quali}): manca il permesso di gestire i premi. Rifai l'accesso con Twitch dal pannello.`, `Channel-point rewards not created (${quali}): the permission to manage rewards is missing. Log in with Twitch again from the panel.`, `Recompensas de puntos de canal no creadas (${quali}): falta el permiso para gestionar las recompensas. Vuelve a entrar con Twitch desde el panel.`);
   if (e.motivo === 'doppio') return L(`Premi a punti canale non creati (${quali}): su Twitch c'è già un premio con quel nome. Riprovo da solo.`, `Channel-point rewards not created (${quali}): there's already a reward with that name on Twitch. I'll retry by myself.`, `Recompensas de puntos de canal no creadas (${quali}): en Twitch ya hay una recompensa con ese nombre. Lo reintento solo.`);
@@ -26974,13 +27037,13 @@ async function caricaColpiStato() {
   const avvisi = [];
   if (st.stripeSenzaRimborsi) avvisi.push(L('Alla chiave Stripe manca il permesso «Refunds»: senza, un colpo pagato che non si riesce a mostrare non si potrebbe rimborsare, quindi gli euro con Stripe non si offrono. Aggiungilo alla chiave in Stripe (Sviluppatori → Chiavi API).', 'Your Stripe key lacks the «Refunds» permission: without it, a paid hit that can\'t be shown couldn\'t be refunded, so euros via Stripe aren\'t offered. Add it to the key in Stripe (Developers → API keys).', 'A la clave de Stripe le falta el permiso «Refunds»: sin él, un golpe pagado que no se puede mostrar no se podría reembolsar, así que los euros con Stripe no se ofrecen. Añádelo a la clave en Stripe (Desarrolladores → Claves API).'));
   else if (!st.euro?.length) avvisi.push(L('Per gli euro collega il tuo conto nella scheda «Donazioni»: finché non c\'è, i prezzi in euro non si offrono.', 'For euros connect your account in the «Donations» tab: until then, euro prices aren\'t offered.', 'Para los euros conecta tu cuenta en la pestaña «Donaciones»: hasta entonces, los precios en euros no se ofrecen.'));
-  for (const e of st.premiErrori || []) avvisi.push(_clPremioErrore(e));
+  for (const e of [...(st.premiErrori || []), ...(st.premiKickErrori || [])]) avvisi.push(_clPremioErrore(e));
   const box = document.getElementById('cl-avvisi');
   if (box) { box.textContent = avvisi.join(' · '); box.hidden = !avvisi.length; }
   for (const r of document.querySelectorAll('#cl-voci .cl-voce')) {
     const v = (st.voci || []).find((x) => x.id === r.dataset.id);
     const p = r.querySelector('[data-premio]');
-    if (p) p.textContent = [v?.premioNome ? v.premioNome + ' (' + v.premioCosto + ')' : '', v?.premioMistoNome ? v.premioMistoNome + ' (' + v.premioMistoCosto + ')' : ''].filter(Boolean)
+    if (p) p.textContent = [v?.premioNome ? v.premioNome + ' (' + v.premioCosto + ')' : '', v?.premioMistoNome ? v.premioMistoNome + ' (' + v.premioMistoCosto + ')' : '', v?.premioKickNome ? 'Kick: ' + v.premioKickNome + ' (' + v.premioKickCosto + ')' : ''].filter(Boolean)
       .map((x, i, a) => (i ? '' : L(a.length > 1 ? 'Premi su Twitch: ' : 'Premio su Twitch: ', a.length > 1 ? 'Twitch rewards: ' : 'Twitch reward: ', a.length > 1 ? 'Recompensas en Twitch: ' : 'Recompensa en Twitch: ')) + x).join(' · ');
   }
   const zq = document.getElementById('cl-zn-totali');
@@ -27078,6 +27141,11 @@ async function caricaColpi() {
     for (const id of ['cl-bp-attivo', 'cl-bp-resa']) document.getElementById(id)?.addEventListener('input', _clBitDice);
     document.getElementById('cl-bitpew')?.addEventListener('input', _clBitScade);
     document.getElementById('cl-bitpew')?.addEventListener('change', _clBitScade);
+    const kicksScade = () => _clScadenzaDice('cl-kp', 'cl-kickspew', false);
+    document.getElementById('cl-kickspew')?.addEventListener('input', kicksScade);
+    document.getElementById('cl-kickspew')?.addEventListener('change', kicksScade);
+    document.getElementById('cl-kp-salva')?.addEventListener('click', () => conErrore(() => salvaColpi()));
+    kicksScade();
     const zainoScade = () => _clScadenzaDice('cl-zn', 'cl-zaino', true);
     document.getElementById('cl-zaino')?.addEventListener('input', zainoScade);
     document.getElementById('cl-zaino')?.addEventListener('change', zainoScade);

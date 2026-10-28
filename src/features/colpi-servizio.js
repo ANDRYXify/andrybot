@@ -167,7 +167,7 @@ export function creaServizioColpi({ registro, effects, effettoDi, impostazioni, 
     const m = {
       id: randomBytes(9).toString('hex'), login: ch, voce: voce.id, comando: voce.comando, nome: voce.nome,
       x: punto.x, y: punto.y, scala: voce.scala, chi: cfg.conNome ? nomeChi(chi) : '',
-      prezzi: { euro: voce.euro, punti: voce.punti, bit: voce.bit, kicks: voce.kicks, monete: voce.monete, misti: voce.misti || {}, resa: resaDi(ch),
+      prezzi: { euro: voce.euro, punti: voce.punti, bit: voce.bit, kicks: voce.kicks, puntiKick: voce.puntiKick, monete: voce.monete, misti: voce.misti || {}, resa: resaDi(ch),
         rendiColpi: cfg.bitPew.rendiColpi, rendiMire: cfg.bitPew.rendiMire,
         k: { resa: resaDi(ch, 'kicks'), rendiColpi: cfg.kicksPew.rendiColpi, rendiMire: cfg.kicksPew.rendiMire } }, creata: adesso, scade: adesso + SCADENZA_MS,
       spettatore: String(spettatore || ''), dopo: !!dopo,
@@ -471,9 +471,20 @@ export function creaServizioColpi({ registro, effects, effettoDi, impostazioni, 
     }
     return { m: m && sue.has(m.voce) ? m : null, codice };
   }
-  function daRiscatto(login, { reward_id, user_input = '', id = '', user_id = '' } = {}) {
+  // Su Kick (docs/COLPI.md, «Su Kick»): i premi di Kick, il prezzo in punti di
+  // Kick e la persona k:<id>; niente misto, che coi punti e' di Twitch.
+  function daRiscatto(login, { reward_id, user_input = '', id = '', user_id = '', piattaforma = 'twitch' } = {}) {
     const ch = String(login || '').toLowerCase();
     const cfg = cfgDi(ch);
+    if (piattaforma === 'kick') {
+      const voci = reward_id ? (cfg.voci || []).filter((v) => v.premioKick === reward_id) : [];
+      if (!voci.length) return { esito: 'non-mio' };
+      const { m, codice } = miraDelPremio(ch, voci, user_input, user_id ? personaKick(user_id) : '');
+      if (!m || !(Number(m.prezzi.puntiKick) > 0) || (voci[0].premioKickCosto && Number(m.prezzi.puntiKick) !== voci[0].premioKickCosto)) return { esito: 'sconosciuto', stato: 'CANCELED', codice };
+      const no = pronta(m, 'punti');
+      if (no) return { esito: 'fermo', stato: 'CANCELED', motivo: no };
+      return incassa(m, 'punti', `premio:${id}`, `${reward_id}:${id}`) ? { esito: 'pagato', stato: null, nome: m.nome, dopo: !!m.dopo } : { esito: 'gia', stato: 'CANCELED' };
+    }
     const misti = reward_id ? (cfg.voci || []).filter((v) => v.premioMisto === reward_id) : [];
     if (misti.length) return daRiscattoMisto(ch, misti, { reward_id, user_input, id, user_id });
     const voci = reward_id ? (cfg.voci || []).filter((v) => v.premio === reward_id) : [];
