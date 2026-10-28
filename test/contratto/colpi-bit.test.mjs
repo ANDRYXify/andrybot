@@ -26,13 +26,13 @@ test('il cheer arriva al servizio con l\'id del messaggio, e il servizio ha il r
   assert.match(BOT, /pewSerie\.pulisci\(\); pewBit\.pulisci\(\);/, 'i riferimenti vecchi si puliscono una volta al giorno');
 });
 
-test('«!pew bit»: su Twitch, a chi ha un id, quando e ogni quanto vuole lo streamer, col suo testo', () => {
+test('«!pew bit» su Twitch e «!pew kicks» su Kick: alla persona, quando e ogni quanto vuole lo streamer, col suo testo', () => {
   const i = BOT.indexOf('chiedeBit(cfgColpi, msg.text)');
   assert.ok(i > 0 && i < BOT.indexOf('eFrasePresenza(cfgColpi, msg.text)'), 'prima della presenza: la frase non lo copre');
-  const h = BOT.slice(i - 40, i + 1200);
-  assert.match(h, /\(!msg\.piattaforma \|\| msg\.piattaforma === 'twitch'\) && msg\.userId && this\.colpi\.conBitPew\(login\)/);
+  const h = BOT.slice(i - 200, i + 1200);
+  assert.match(h, /persona && \(valutaDi\(persona\) === 'kicks' \? chiedeKicks\(cfgColpi, msg\.text\) && this\.colpi\.conKicksPew\(login\) : chiedeBit\(cfgColpi, msg\.text\) && this\.colpi\.conBitPew\(login\)\)/, 'la parola e la valuta vengono dalla persona');
   assert.match(h, /if \(b\.rispondi && adesso - \(saldiBitChiesti\.get\(k\) \|\| 0\) >= b\.attesaSec \* 1000\) \{/);
-  assert.match(h, /this\.colpi\.saldoBit\(login, msg\.userId\)/, 'il saldo e\' per id, non per nome');
+  assert.match(h, /this\.colpi\.saldoBit\(login, persona\)/, 'il saldo e\' della persona (id, o k:<id>), non del nome');
   assert.match(h, /parla\(rispostaBit\(cfgColpi, lingua, \{/, 'il testo dello streamer, o quello di serie nella lingua della chat');
   assert.match(h, /quando: sc \? quandoScade\(sc\.scade, lingua, preferenzeDi\(login\)\.fuso\) : ''/, 'la scadenza detta nel fuso del canale');
 });
@@ -46,15 +46,15 @@ test('un tocco: chi paga e\' chi ha l\'accesso, con un tetto alle richieste', ()
   assert.match(h, /res\.json\(portaColpi\.lancia\(login, req\.body \|\| \{\}, String\(req\.ip \|\| ''\), io\)\);/, 'chi paga viene dalla sessione, mai dal corpo');
 });
 
-test('lo zaino: il registro vero, «!pew zaino» su Twitch, le risposte quando un colpo va nello zaino', () => {
+test('lo zaino: il registro vero, «!pew zaino» su Twitch e su Kick, le risposte quando un colpo va nello zaino', () => {
   assert.match(BOT, /zaino: pewZaino, log \}\);/, 'il servizio ha lo zaino di db.js');
   assert.match(BOT, /pewBit\.pulisci\(\); pewZaino\.pulisci\(\);/);
   const i = BOT.indexOf('chiedeZaino(cfgColpi, msg.text)');
   assert.ok(i > 0 && i < BOT.indexOf('eFrasePresenza(cfgColpi, msg.text)'), 'prima della presenza');
   const h = BOT.slice(i - 40, i + 1200);
-  assert.match(h, /\(!msg\.piattaforma \|\| msg\.piattaforma === 'twitch'\) && msg\.userId && this\.colpi\.conZaino\(login\)/);
+  assert.match(h, /chiedeZaino\(cfgColpi, msg\.text\) && persona && this\.colpi\.conZaino\(login\)/);
   assert.match(h, /if \(z\.rispondi && adesso - \(saldiBitChiesti\.get\(k\) \|\| 0\) >= z\.attesaSec \* 1000\) \{/);
-  assert.match(h, /this\.colpi\.zainoDi\(login, msg\.userId\)/, 'lo zaino e\' per id');
+  assert.match(h, /this\.colpi\.zainoDi\(login, persona\)/, 'lo zaino e\' della persona');
   assert.match(BOT, /testoColpi\(login, r\.dopo && r\.esito === 'pagato' \? 'zaino-dentro' : 'monete-' \+ r\.esito/, '!pew CODICE per dopo: «e\' nel tuo zaino», non «sta per comparire»');
   assert.match(BOT, /else if \(r\.esito === 'pagato' && r\.dopo\) this\.say\(channel, testoColpi\(channel, 'zaino-dentro'/);
   assert.match(SRV, /zaino: pewZaino\.totali\(login\),/);
