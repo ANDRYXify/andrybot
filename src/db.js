@@ -1400,6 +1400,8 @@ aggiungiColonna('conti_donazioni', 'rimborsi', 'INTEGER NOT NULL DEFAULT 0');
 aggiungiColonna('colpi', 'spettatore', "TEXT NOT NULL DEFAULT ''");
 // pagata con le monete del canale: quali lotti sono stati spesi, per renderli tali e quali
 aggiungiColonna('colpi', 'ricevuta', "TEXT NOT NULL DEFAULT ''");
+// un modo misto (docs/COLPI.md, «I modi misti»): le monete gia' pagate, con la ricevuta, aspettando il resto
+aggiungiColonna('colpi', 'acconto', "TEXT NOT NULL DEFAULT ''");
 aggiungiColonna('donazioni', 'riferimento', "TEXT NOT NULL DEFAULT ''");
 aggiungiColonna('donazioni', 'rimborsata_at', 'INTEGER NOT NULL DEFAULT 0');
 aggiungiColonna('donazioni', 'media', "TEXT NOT NULL DEFAULT ''");
@@ -2901,10 +2903,11 @@ export const registroColpi = {
   },
   _leggi(r) {
     if (!r) return null;
-    let prezzi = {}, ricevuta = null;
+    let prezzi = {}, ricevuta = null, acconto = null;
     try { prezzi = JSON.parse(r.prezzi || '{}'); } catch { prezzi = {}; }
     try { ricevuta = r.ricevuta ? JSON.parse(r.ricevuta) : null; } catch { ricevuta = null; }
-    return { ...r, prezzi, ricevuta };
+    try { acconto = r.acconto ? JSON.parse(r.acconto) : null; } catch { acconto = null; }
+    return { ...r, prezzi, ricevuta, acconto };
   },
   get(id) { return this._leggi(db.prepare('SELECT * FROM colpi WHERE id=?').get(String(id))); },
   getDi(login, id) { return this._leggi(db.prepare('SELECT * FROM colpi WHERE id=? AND login=?').get(String(id), String(login).toLowerCase())); },
@@ -2937,6 +2940,15 @@ export const registroColpi = {
   // pagata → sparata: l'overlay ha detto di averla mostrata
   consegnata(id, ora = now()) { return db.prepare("UPDATE colpi SET stato='sparata', sparata_at=? WHERE id=? AND stato='pagata'").run(ora, String(id)).changes > 0; },
   rimborsata(id) { return db.prepare("UPDATE colpi SET stato='rimborsata' WHERE id=? AND stato='pagata'").run(String(id)).changes > 0; },
+  // L'acconto di un modo misto: una volta sola, su una mira ancora aperta e senza
+  // un pagamento in euro in corso. true per chi ci riesce.
+  acconto(id, a) {
+    return db.prepare("UPDATE colpi SET acconto=? WHERE id=? AND stato='attesa' AND acconto='' AND riferimento=''").run(JSON.stringify(a), String(id)).changes > 0;
+  },
+  // le mire con un acconto che non si pagheranno piu': la ronda rende le monete e le chiude
+  accontiScaduti(ora = now()) {
+    return db.prepare("SELECT * FROM colpi WHERE stato='attesa' AND acconto<>'' AND ((scade<? AND versati=0) OR creata<?)").all(ora, ora - 86400_000).map((r) => this._leggi(r));
+  },
   // una presenza che non si e' vista in tempo: non c'e' niente da rimborsare, e il momento e' passato
   lasciata(id) { return db.prepare("UPDATE colpi SET stato='scaduta' WHERE id=? AND stato='pagata' AND metodo='presenza'").run(String(id)).changes > 0; },
   daConsegnare() { return db.prepare("SELECT * FROM colpi WHERE stato='pagata' ORDER BY pagata_at").all().map((r) => this._leggi(r)); },
@@ -2956,7 +2968,7 @@ export const registroColpi = {
   presenzeDa(login, da) { return db.prepare("SELECT COUNT(*) AS n FROM colpi WHERE login=? AND creata>=? AND metodo='presenza'").get(String(login).toLowerCase(), da).n; },
   ultimi(login, n = 30) { return db.prepare("SELECT * FROM colpi WHERE login=? AND stato IN ('pagata','sparata','rimborsata') ORDER BY pagata_at DESC LIMIT ?").all(String(login).toLowerCase(), Math.max(1, Math.min(200, n | 0))).map((r) => this._leggi(r)); },
   pulisci(ora = now()) {
-    db.prepare("UPDATE colpi SET stato='scaduta' WHERE stato='attesa' AND riferimento='' AND scade<? AND (versati=0 OR creata<?)").run(ora, ora - 86400_000);
+    db.prepare("UPDATE colpi SET stato='scaduta' WHERE stato='attesa' AND riferimento='' AND acconto='' AND scade<? AND (versati=0 OR creata<?)").run(ora, ora - 86400_000);
     db.prepare("UPDATE colpi SET stato='scaduta' WHERE stato='attesa' AND riferimento LIKE 'apre:%' AND scade<?").run(ora);
     db.prepare("UPDATE colpi SET stato='scaduta' WHERE stato='attesa' AND riferimento IN (SELECT id FROM donazioni WHERE stato='scaduta')").run();
     db.prepare("DELETE FROM colpi WHERE stato='scaduta' AND creata<?").run(ora - 86400_000);

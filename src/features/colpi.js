@@ -80,6 +80,9 @@ export function normalizza(cfg) {
       euro: prezzo(v.euro, LIMITI.euroCent), punti: prezzo(v.punti, LIMITI.punti), bit: prezzo(v.bit, LIMITI.bit),
       scala: num(v.scala, LIMITI.scala, 100), attiva: v.attiva !== false,
       monete: prezzo(v.monete, LIMITI.monete),
+      misti: normMisti(v.misti),
+      premioMisto: /^[0-9a-f-]{8,64}$/.test(String(v.premioMisto || '')) ? String(v.premioMisto) : '',
+      premioMistoCosto: num(v.premioMistoCosto, [0, LIMITI.punti[1]], 0), premioMistoNome: testo(v.premioMistoNome, 45),
       categoria: ID.test(String(v.categoria || '')) ? String(v.categoria) : '',
       premio: /^[0-9a-f-]{8,64}$/.test(String(v.premio || '')) ? String(v.premio) : '',
       premioCosto: num(v.premioCosto, [0, LIMITI.punti[1]], 0), premioNome: testo(v.premioNome, 45),
@@ -144,11 +147,17 @@ export function categoriaDi(cfg, voce, tipo) {
   if (voce?.categoria && cat.some((c) => c.id === voce.categoria)) return voce.categoria;
   return cat.some((c) => c.id === tipo) ? tipo : cat[0].id;
 }
-// Il comando delle monete in un messaggio: «!pew K7QX3» → 'K7QX3', se no ''.
-export function codicePerMonete(cfg, messaggio) {
-  const m = new RegExp(`^!${cfg?.comando || COMANDO_SERIE}\\s+(\\S+)\\s*$`, 'i').exec(String(messaggio || '').trim());
-  return m ? codiceIn(m[1]) : '';
+// Il comando delle monete in un messaggio: «!pew K7QX3» → { codice, modo: '' },
+// «!pew K7QX3 bit» (o «punti») → l'acconto di quel modo misto; se no null.
+const MODI_IN_CHAT = { bit: 'bit', bits: 'bit', punti: 'punti', points: 'punti', puntos: 'punti' };
+export function pagaInChat(cfg, messaggio) {
+  const m = new RegExp(`^!${cfg?.comando || COMANDO_SERIE}\\s+(\\S+)(?:\\s+(\\S+))?\\s*$`, 'i').exec(String(messaggio || '').trim());
+  if (!m) return null;
+  const codice = codiceIn(m[1]);
+  const modo = m[2] ? MODI_IN_CHAT[m[2].toLowerCase()] : '';
+  return codice && modo !== undefined ? { codice, modo } : null;
 }
+export const codicePerMonete = (cfg, messaggio) => pagaInChat(cfg, messaggio)?.codice || '';
 
 const formaFrase = (t) => String(t ?? '').replace(/[\u0000-\u001f]/g, ' ').replace(/\s+/g, ' ').trim().toLowerCase();
 function normPresenza(p) {
@@ -226,6 +235,30 @@ export const voceDi = (cfg, id) => (cfg.voci || []).find((v) => v.id === id && v
 export const prezzoDi = (voce, metodo) => (voce && METODI.includes(metodo) ? Number(voce[metodo]) || 0 : 0);
 export const metodiDi = (voce) => METODI.filter((m) => prezzoDi(voce, m) > 0);
 
+// I MODI MISTI (docs/COLPI.md, «I modi misti»): monete del canale piu' Bit, o
+// piu' punti canale. Le monete si pagano per prime e restano come acconto
+// sulla mira; il resto arriva col cheer o col riscatto del premio misto. Senza
+// euro: un pagamento con la carta a meta' aprirebbe rimborsi a meta'.
+export const MISTI = Object.freeze(['bit', 'punti']);
+function normMisti(m) {
+  const o = m && typeof m === 'object' ? m : {};
+  const out = {};
+  for (const k of MISTI) {
+    const monete = prezzo(o[k]?.monete, LIMITI.monete), resto = prezzo(o[k]?.[k], LIMITI[k]);
+    if (monete && resto) out[k] = { monete, [k]: resto };
+  }
+  return out;
+}
+// [{ modo, monete, resto }] dei modi misti di una voce
+export const mistiDi = (voce) => MISTI.filter((k) => voce?.misti?.[k]).map((k) => ({ modo: k, monete: voce.misti[k].monete, resto: voce.misti[k][k] }));
+// I Bit che una mira chiede adesso: quelli del modo misto se le monete sono
+// gia' pagate, quelli del prezzo se no; 0 se coi Bit non si paga (un acconto
+// per i punti chiude la strada dei Bit).
+export function bitServe(m) {
+  if (m?.acconto) return m.acconto.modo === 'bit' ? Number(m.acconto.resto) || 0 : 0;
+  return Number(m?.prezzi?.bit) || 0;
+}
+
 // Almeno una cifra e una lettera: una parola vera del messaggio («danke»,
 // «ciaoo») non e' mai un codice, perche' le parole non hanno cifre.
 const formaCodice = (c) => /\d/.test(c) && /[A-Z]/.test(c);
@@ -266,6 +299,8 @@ export function bastaPer(mira, metodo, pagato) {
 
 // Il premio a punti canale di una voce: il nome come lo vede chi riscatta.
 export const titoloPremio = (voce) => ('Colpo: ' + voce.nome).slice(0, 45);
+// il premio del modo misto coi punti: un nome suo (Twitch li vuole diversi)
+export const titoloPremioMisto = (voce) => ('Colpo: ' + voce.nome).slice(0, 35) + ' + monete';
 
 // Il listino che arriva dal pannello, coi campi del premio presi da quello
 // salvato: l'id del premio su Twitch lo scrive solo SocialBot.
@@ -273,7 +308,8 @@ export function normColpi(nuovo, prima) {
   const p = normalizza(prima), n = normalizza(nuovo);
   for (const v of n.voci) {
     const q = p.voci.find((x) => x.id === v.id);
-    Object.assign(v, q ? { premio: q.premio, premioCosto: q.premioCosto, premioNome: q.premioNome } : { premio: '', premioCosto: 0, premioNome: '' });
+    Object.assign(v, q ? { premio: q.premio, premioCosto: q.premioCosto, premioNome: q.premioNome, premioMisto: q.premioMisto, premioMistoCosto: q.premioMistoCosto, premioMistoNome: q.premioMistoNome }
+      : { premio: '', premioCosto: 0, premioNome: '', premioMisto: '', premioMistoCosto: 0, premioMistoNome: '' });
   }
   return n;
 }

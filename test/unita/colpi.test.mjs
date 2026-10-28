@@ -100,7 +100,7 @@ test('si mira solo dal vivo, su un effetto che si posa in un punto, fuori dalle 
   assert.equal(s.mira(c, { voce: 'pomodoro', x: 80, y: 80 }).motivo, 'protetta');
   const ok = s.mira(c, { voce: 'pomodoro', x: 25.5, y: 40, chi: 'Marta', chiave: 'ip1' });
   assert.equal(ok.ok, true);
-  assert.deepEqual([ok.mira.x, ok.mira.y, ok.mira.chi, ok.mira.prezzi], [25.5, 40, 'Marta', { euro: 200, punti: 500, bit: 100, monete: 0 }]);
+  assert.deepEqual([ok.mira.x, ok.mira.y, ok.mira.chi, ok.mira.prezzi], [25.5, 40, 'Marta', { euro: 200, punti: 500, bit: 100, monete: 0, misti: {} }]);
   assert.ok(MIRABILE({ tipo: 'video' }) && !MIRABILE({ tipo: 'immagine', schermo: 'intero' }));
 });
 
@@ -601,7 +601,7 @@ test('la pagina: le categorie che hanno colpi, nell\'ordine dello streamer; le m
   const m = p.mira(c, { voce: 'pomodoro', x: 10, y: 10 }, 'k', { id: '42', nome: 'Marta' }).mira;
   assert.deepEqual(await p.paga(c, m.id, 'monete', null), { errore: 'accesso' }, 'senza accesso non si sa di chi sono le monete');
   assert.deepEqual(await p.paga(c, m.id, 'monete', { id: '43', login: 'altro' }), { errore: 'mira' }, 'la mira di un altro no');
-  assert.deepEqual(await p.paga(c, m.id, 'monete', { id: '42', login: 'marta' }), { ok: true });
+  assert.deepEqual(await p.paga(c, m.id, 'monete', { id: '42', login: 'marta' }), { ok: true, esito: 'pagato' });
   assert.equal(economia.saldo(c, 'marta'), 0);
   assert.equal(p.stato(c, m.id).stato, 'pagata');
   const senza = creaPortaColpi({ servizio: banco({ cfg }).s, registro: registroColpi, streamers: { get: () => ({ settings: { colpi: cfg } }) },
@@ -655,4 +655,114 @@ test('la serie col registro vero: diretta dopo diretta sale, una saltata la azze
   adesso += 1000;
   assert.deepEqual(p('d5'), { esito: 'partita', serie: 2, monete: 5, nuova: true }, 'una diretta vista la prima volta da una presenza conta lo stesso');
   assert.equal(pewSerie.get(c, 'twitch:1').record, 2);
+});
+
+const { mistiDi, bitServe, pagaInChat, titoloPremioMisto } = await import('../../src/features/colpi.js');
+
+test('i modi misti nel listino: monete piu\' Bit, monete piu\' punti; tutte e due le cifre o niente; il comando in chat col modo', () => {
+  const c = normalizza({ voci: [{ comando: 'a', misti: { bit: { monete: 50, bit: 10 }, punti: { monete: 20 }, euro: { monete: 1, euro: 100 } } }] });
+  assert.deepEqual(c.voci[0].misti, { bit: { monete: 50, bit: 10 } }, 'senza una delle due cifre il modo non c\'e\'; niente euro');
+  assert.deepEqual(mistiDi(c.voci[0]), [{ modo: 'bit', monete: 50, resto: 10 }]);
+  assert.equal(bitServe({ prezzi: { bit: 100 } }), 100);
+  assert.equal(bitServe({ prezzi: { bit: 100 }, acconto: { modo: 'bit', resto: 10 } }), 10, 'con le monete pagate, il resto del modo misto');
+  assert.equal(bitServe({ prezzi: { bit: 100 }, acconto: { modo: 'punti', resto: 300 } }), 0, 'un acconto per i punti chiude la strada dei Bit');
+  const cfg = normalizza({});
+  assert.deepEqual(pagaInChat(cfg, '!pew k7qx3'), { codice: 'K7QX3', modo: '' });
+  assert.deepEqual(pagaInChat(cfg, '!pew k7qx3 BIT'), { codice: 'K7QX3', modo: 'bit' });
+  assert.deepEqual(pagaInChat(cfg, '!pew k7qx3 punti'), { codice: 'K7QX3', modo: 'punti' });
+  assert.equal(pagaInChat(cfg, '!pew k7qx3 euro'), null);
+  assert.equal(titoloPremioMisto({ nome: 'Pomodoro' }), 'Colpo: Pomodoro + monete');
+  assert.ok(titoloPremioMisto({ nome: 'x'.repeat(60) }).length <= 45);
+});
+
+function bancoMisti(cfgVoce = {}) {
+  const cfg = { attivo: true, attesaSec: 0, alMinuto: 30, voci: [{ comando: 'pomodoro', bit: 100, punti: 500, euro: 200, monete: 1000, premio: 'aaaaaaaa-1111', premioMisto: 'bbbbbbbb-2222',
+    misti: { bit: { monete: 50, bit: 10 }, punti: { monete: 20, punti: 300 } }, ...cfgVoce }] };
+  return { b: banco({ cfg, conMonete: true }), cfg };
+}
+
+test('monete piu\' Bit: le monete per prime (l\'acconto), poi il resto col cheer; o i Bit prima, e le monete chiudono', () => {
+  const { b } = bancoMisti();
+  const c = login();
+  points.dai(c, 'marta', 200);
+  const m = b.s.mira(c, { voce: 'pomodoro', x: 10, y: 10, chiave: 'a' }).mira;
+  assert.deepEqual(b.s.daMonete(c, { codice: m.codice, user: 'marta', modo: 'bit' }), { esito: 'acconto', modo: 'bit', monete: 50, resto: 10, codice: m.codice, nome: 'pomodoro' });
+  assert.equal(economia.saldo(c, 'marta'), 150);
+  assert.equal(b.s.daMonete(c, { codice: m.codice, user: 'marta', modo: 'bit' }).esito, 'gia', 'un acconto solo');
+  assert.equal(economia.saldo(c, 'marta'), 150, 'e il secondo non toglie niente');
+  assert.equal(b.s.daMonete(c, { id: m.id, user: 'marta' }).esito, 'gia', 'con un acconto, niente monete piene');
+  const r = b.s.daCheer(c, { bits: 10, message: `Cheer10 ${m.codice}`, user_login: 'marta' });
+  assert.equal(r.esito, 'pagato');
+  const p = registroColpi.get(m.id);
+  assert.deepEqual([p.stato, p.metodo, p.ricevuta], ['pagata', 'monete+bit', [{ scade: 0, quanti: 50 }]]);
+  assert.equal(b.di(c).sparati.length, 1);
+
+  const m2 = b.s.mira(c, { voce: 'pomodoro', x: 20, y: 10, chiave: 'b' }).mira;
+  const prima = b.s.daCheer(c, { bits: 10, message: `Cheer10 ${m2.codice}`, user_login: 'marta' });
+  assert.deepEqual([prima.esito, prima.monete], ['servono-monete', 50], 'i Bit arrivati prima restano contati, e il bot dice cosa manca');
+  assert.equal(registroColpi.get(m2.id).stato, 'attesa');
+  assert.equal(b.s.daMonete(c, { codice: m2.codice, user: 'marta', modo: 'bit' }).esito, 'pagato', 'le monete chiudono subito');
+  assert.equal(registroColpi.get(m2.id).metodo, 'monete+bit');
+  assert.equal(economia.saldo(c, 'marta'), 100);
+});
+
+test('un acconto senza il resto torna, tale e quale, una volta sola; e una mira con l\'acconto non si paga in altri modi', async () => {
+  const { b } = bancoMisti();
+  const c = login();
+  points.dai(c, 'marta', 100);
+  const m = b.s.mira(c, { voce: 'pomodoro', x: 10, y: 10, chiave: 'a' }).mira;
+  b.s.daMonete(c, { id: m.id, user: 'marta', modo: 'punti' });
+  assert.equal(economia.saldo(c, 'marta'), 80);
+  assert.equal(b.s.daCheer(c, { bits: 100, message: `Cheer100 ${m.codice}` }).esito, 'sconosciuto', 'con l\'acconto per i punti, i Bit no');
+  assert.equal(b.s.daRiscatto(c, { reward_id: 'aaaaaaaa-1111', user_input: m.codice, id: 'r0' }).esito, 'gia', 'ne\' i punti pieni');
+  registroColpi.pulisci(b.ora() + 20 * 60_000);
+  assert.equal(registroColpi.get(m.id).stato, 'attesa', 'la pulizia lascia le mire con l\'acconto alla ronda');
+  b.avanti(20 * 60_000);
+  await b.s.ronda();
+  assert.equal(registroColpi.get(m.id).stato, 'scaduta');
+  assert.equal(economia.saldo(c, 'marta'), 100, 'l\'acconto e\' tornato');
+  await b.s.ronda();
+  assert.equal(economia.saldo(c, 'marta'), 100, 'una volta sola');
+});
+
+test('monete piu\' punti: il premio misto vale solo con l\'acconto; se il colpo non compare tornano i punti e le monete', async () => {
+  const { b } = bancoMisti();
+  const c = login();
+  points.dai(c, 'marta', 100);
+  const m = b.s.mira(c, { voce: 'pomodoro', x: 10, y: 10, chiave: 'a' }).mira;
+  const senza = b.s.daRiscatto(c, { reward_id: 'bbbbbbbb-2222', user_input: m.codice, id: 'r1' });
+  assert.deepEqual([senza.esito, senza.stato, senza.monete], ['servono-monete', 'CANCELED', 20], 'senza le monete i punti tornano');
+  b.s.daMonete(c, { id: m.id, user: 'marta', modo: 'punti' });
+  const r = b.s.daRiscatto(c, { reward_id: 'bbbbbbbb-2222', user_input: m.codice, id: 'r2' });
+  assert.deepEqual([r.esito, r.stato], ['pagato', null]);
+  assert.deepEqual([registroColpi.get(m.id).metodo, registroColpi.get(m.id).premio], ['monete+punti', 'bbbbbbbb-2222:r2']);
+  assert.equal(economia.saldo(c, 'marta'), 80);
+  b.avanti(CONSEGNA_MS + 1);
+  await b.s.ronda();
+  assert.equal(registroColpi.get(m.id).stato, 'rimborsata');
+  assert.deepEqual(b.di(c).premi.at(-1), ['bbbbbbbb-2222', 'r2', 'CANCELED']);
+  assert.equal(economia.saldo(c, 'marta'), 100, 'e le monete');
+  await b.s.ronda();
+  assert.equal(economia.saldo(c, 'marta'), 100, 'una volta sola');
+});
+
+test('la pagina: i modi misti solo se si possono finire, l\'acconto dalla pagina con l\'accesso, e niente euro dopo l\'acconto', async () => {
+  const { cfg } = bancoMisti();
+  const v = cfg.voci[0];
+  delete v.premioMisto;
+  Object.assign(v, { bit: 0, punti: 0, euro: 200 });
+  const b = banco({ cfg, conMonete: true });
+  const c = login();
+  points.dai(c, 'marta', 100);
+  const p = creaPortaColpi({ servizio: b.s, registro: registroColpi, streamers: { get: () => ({ settings: { colpi: cfg } }) },
+    effettoDi: () => ({ tipo: 'immagine', file: 'p.png' }), mezziEuro: () => ['stripe'], apriPagamento: async () => ({ url: 'x', id: 'cs_1' }), inOnda: () => true, overlay: () => true, ora: b.ora });
+  const d = p.dati(c).voci[0];
+  assert.deepEqual(d.misti.map((x) => x.modo), ['bit'], 'senza il premio misto su Twitch, il modo coi punti non si offre');
+  const m = p.mira(c, { voce: 'pomodoro', x: 10, y: 10 }, 'k', { id: '42', nome: 'Marta' }).mira;
+  assert.deepEqual(await p.paga(c, m.id, 'monete', { id: '42', login: 'marta' }, 'bit'), { ok: true, esito: 'acconto' });
+  assert.deepEqual(p.stato(c, m.id).acconto, { modo: 'bit', monete: 50, resto: 10 });
+  assert.deepEqual(await p.paga(c, m.id, 'stripe'), { errore: 'gia' });
+  const soloMisti = banco({ cfg: { ...cfg, voci: [{ comando: 'pomodoro', misti: { bit: { monete: 5, bit: 5 } } }] }, conMonete: true });
+  assert.equal(soloMisti.s.mira(c, { voce: 'pomodoro', x: 10, y: 10, chiave: 'z' }).ok, true, 'un colpo che si paga solo in modo misto si mira');
+  assert.equal(banco({ cfg: { ...cfg, voci: [{ comando: 'pomodoro', misti: { bit: { monete: 5, bit: 5 } } }] } }).s.mira(c, { voce: 'pomodoro', x: 10, y: 10, chiave: 'y' }).ok, true, 'e lo dice il listino');
 });

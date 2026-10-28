@@ -106,7 +106,7 @@ import { statoVivo, registroColpi, effects as effettiDb, segnoInstagram, pewSeri
 import { creaServizioColpi } from './features/colpi-servizio.js';
 import * as economia from './features/economia.js';
 import { nomeMoneta, monetaDi, accordaMoneta } from './features/moneta.js';
-import { urlPaginaColpo, eFrasePresenza, codicePerMonete, rispostaPresenza } from './features/colpi.js';
+import { urlPaginaColpo, eFrasePresenza, pagaInChat, rispostaPresenza, titoloPremioMisto } from './features/colpi.js';
 import { creaChatColpi, rigaDi as rigaChatColpi, BATTITO_MS as BATTITO_CHAT_COLPI } from './features/colpi-chat.js';
 import { coloreDi as coloreChatDi } from './features/badges.js';
 import { nativeInMessaggio as emoteNelMessaggio, canaleInCache as emoteInCache } from './features/emotes.js';
@@ -201,6 +201,19 @@ function testoColpi(canale, cosa, chi, r = {}) {
     'monete-fermo': [`${chi} adesso il colpo non può comparire (diretta o overlay fermi): ${ac('%[le tue|i tuoi|la tua|il tuo]%')} ${r.moneta} ${ac('%[restano|restano|resta|resta]%')} a te.`,
       `${chi} the hit can't show right now (stream or overlay stopped): your ${r.moneta} stay with you.`,
       `${chi} ahora el golpe no puede aparecer (directo u overlay parados): tus ${r.moneta} se quedan contigo.`],
+    'monete-acconto': r.modo === 'punti'
+      ? [`${chi} pagate ${r.monete} ${r.moneta} per «${r.nome}»: ora riscatta «${r.premio}» (${r.resto} punti) e scrivi il codice ${r.codice}.`,
+        `${chi} paid ${r.monete} ${r.moneta} for «${r.nome}»: now redeem «${r.premio}» (${r.resto} points) and type the code ${r.codice}.`,
+        `${chi} pagadas ${r.monete} ${r.moneta} por «${r.nome}»: ahora canjea «${r.premio}» (${r.resto} puntos) y escribe el código ${r.codice}.`]
+      : [`${chi} pagate ${r.monete} ${r.moneta} per «${r.nome}»: ora un Cheer di ${r.resto} Bit con il codice ${r.codice}.`,
+        `${chi} paid ${r.monete} ${r.moneta} for «${r.nome}»: now a Cheer of ${r.resto} Bits with the code ${r.codice}.`,
+        `${chi} pagadas ${r.monete} ${r.moneta} por «${r.nome}»: ahora un Cheer de ${r.resto} Bits con el código ${r.codice}.`],
+    'misto-bit-prima': [`${chi} i Bit per «${r.nome}» ci sono: mancano ${r.monete} ${r.moneta}, scrivi !${r.comando || 'pew'} ${r.codice} bit.`,
+      `${chi} the Bits for «${r.nome}» are in: ${r.monete} ${r.moneta} to go, type !${r.comando || 'pew'} ${r.codice} bit.`,
+      `${chi} los Bits para «${r.nome}» están: faltan ${r.monete} ${r.moneta}, escribe !${r.comando || 'pew'} ${r.codice} bit.`],
+    'misto-punti-prima': [`${chi} per «${r.nome}» prima paga ${r.monete} ${r.moneta}: scrivi !${r.comando || 'pew'} ${r.codice} punti. I punti ti tornano.`,
+      `${chi} for «${r.nome}» pay ${r.monete} ${r.moneta} first: type !${r.comando || 'pew'} ${r.codice} punti. Your points are back.`,
+      `${chi} para «${r.nome}» primero paga ${r.monete} ${r.moneta}: escribe !${r.comando || 'pew'} ${r.codice} punti. Los puntos te vuelven.`],
     coda: [`${chi} Bit arrivati: «${r.nome}» compare appena l'overlay torna in onda.`,
       `${chi} Bits received: «${r.nome}» shows as soon as the overlay is back on air.`,
       `${chi} Bits recibidos: «${r.nome}» aparece en cuanto el overlay vuelva al aire.`],
@@ -1327,10 +1340,11 @@ export class BotManager {
     if (!msg.isSelf && streamers.get(login)?.settings?.colpi?.attivo === true) {
       try {
         const cfgColpi = this.colpi?.cfgDi(login);
-        const codice = cfgColpi ? codicePerMonete(cfgColpi, msg.text) : '';
-        if (codice) {
-          const r = this.colpi.daMonete(login, { codice, user: msg.user });
-          const t = testoColpi(login, 'monete-' + r.esito, '@' + (msg.display || msg.user), { ...r, moneta: nomeMoneta(login) });
+        const paga = cfgColpi ? pagaInChat(cfgColpi, msg.text) : null;
+        if (paga) {
+          const r = this.colpi.daMonete(login, { codice: paga.codice, user: msg.user, modo: paga.modo });
+          const t = testoColpi(login, 'monete-' + r.esito, '@' + (msg.display || msg.user),
+            { ...r, moneta: nomeMoneta(login), comando: cfgColpi.comando, premio: titoloPremioMisto({ nome: r.nome || '' }) });
           if (t) parla(t);
         } else if (cfgColpi?.presenza.attiva && eFrasePresenza(cfgColpi, msg.text) && ePersona(login, msg.user)) {
           const piattaforma = msg.piattaforma || 'twitch';
@@ -1647,6 +1661,7 @@ export class BotManager {
         const chi = `@${data.user_login || data.user_name || ''}`;
         if (r.esito === 'sconosciuto' || r.esito === 'gia') this.say(channel, testoColpi(channel, 'codice', chi));
         else if (r.esito === 'fermo') this.say(channel, testoColpi(channel, 'fermo', chi));
+        else if (r.esito === 'servono-monete') this.say(channel, testoColpi(channel, 'misto-punti-prima', chi, { ...r, moneta: nomeMoneta(channel), comando: this.colpi.cfgDi(channel).comando }));
         return;
       }
     }
@@ -1747,6 +1762,7 @@ export class BotManager {
         const r = this.colpi?.daCheer(channel, data) || {};
         if (r.esito === 'pochi') this.say(channel, testoColpi(channel, 'pochi', `@${data.user_login || ''}`, r));
         else if (r.esito === 'pagato' && r.inCoda) this.say(channel, testoColpi(channel, 'coda', `@${data.user_login || ''}`, r));
+        else if (r.esito === 'servono-monete') this.say(channel, testoColpi(channel, 'misto-bit-prima', `@${data.user_login || ''}`, { ...r, moneta: nomeMoneta(channel), comando: this.colpi.cfgDi(channel).comando }));
       } catch (e) { log.debug(`#${channel} colpo dal cheer:`, e?.message || e); }
     }
     // le monete degli eventi (docs/ECONOMIA.md, «Gli eventi»): solo su Twitch, e

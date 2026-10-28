@@ -239,6 +239,44 @@ un sistema vivo». Un colpo ha un quarto prezzo: le monete del canale
 
 E la presenza dà monete in serie («La serie della presenza», sotto).
 
+## I modi misti
+
+Chiesto così: «colleghiamo anche la possibilità di usare le monete del canale
+ma anche monete più bit o monete più punti canale». Una voce può avere, oltre
+ai prezzi pieni, due prezzi misti (`voce.misti`):
+
+- `misti.bit = { monete, bit }`: le monete e poi i Bit;
+- `misti.punti = { monete, punti }`: le monete e poi i punti canale, con un
+  secondo premio su Twitch, «Colpo: <nome> + monete» (`voce.premioMisto`), che
+  `colpi-premi.js` tiene allineato come il primo.
+
+Niente euro misti: un rimborso a metà fra il conto dello streamer e le monete
+non si fa in un passaggio solo.
+
+**Prima le monete, sempre.** Sono l'unica parte che si può rendere da qui con
+certezza, quindi si pagano per prime: l'**acconto** (`colpi.acconto`,
+`{ modo, monete, resto, user, ricevuta }`), una volta sola, su una mira aperta
+e senza un pagamento in euro in corso (`registro.acconto`). Dalla pagina con
+l'accesso, o in chat con `!pew CODICE bit` / `!pew CODICE punti`
+(`pagaInChat`). Da lì:
+
+- **monete + Bit**: il cheer col codice (o, con l'accesso, senza) paga il
+  resto, `bitServe(m) = acconto.resto`. I Bit arrivati prima delle monete non
+  vanno persi: restano in `versati`, e l'acconto che arriva dopo fa partire il
+  colpo subito. Il metodo è `monete+bit`.
+- **monete + punti**: il riscatto del premio misto vale solo con l'acconto di
+  quella mira; senza, i punti tornano (CANCELED) e il bot dice cosa manca. Il
+  metodo è `monete+punti`; i punti pieni su una mira con un acconto sono
+  rifiutati.
+
+**I rimborsi.** Un acconto lasciato a metà (la mira scade, o un giorno passa
+coi Bit a metà) torna dalla ronda (`registro.accontiScaduti`, una volta sola:
+prima `scadi`, poi `rendi`). Un colpo `monete+punti` che non compare torna
+tutto: il riscatto CANCELED e, dopo, le monete. Un colpo `monete+bit` resta in
+coda come uno a Bit (vedi «Il vincolo dei Bit»), salvo il saldo in Bit
+(«I Bit da spendere», sotto). `pulisci` non tocca una mira con un acconto: la
+chiude la ronda, che rende le monete.
+
 ## L'anteprima
 
 Chiesto così: «riusciamo ad inserire un'anteprima degli attacchi se l'utente

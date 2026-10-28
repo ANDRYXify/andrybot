@@ -41,6 +41,12 @@ questa non è una cosa da ricordarsi: il cancello boccia una riga pubblica senza
 traduzione, una traduzione staccata dalla sua riga, o una che dice numeri e
 comandi diversi da quelli della riga italiana.
 
+## 2026-10-28
+
+- Un colpo di Pewpewify si paga anche a metà: monete del canale più Bit, o monete più punti canale, coi prezzi che scegli tu. Prima le monete, che tornano da sole se il resto non arriva. [vai: colpi]
+  en: A Pewpewify hit can also be paid half and half: channel coins plus Bits, or coins plus channel points, at prices you choose. Coins first, and they come back if the rest never arrives.
+  es: Un golpe de Pewpewify también se paga a medias: monedas del canal más Bits, o monedas más puntos de canal, con los precios que eliges. Primero las monedas, que vuelven solas si el resto no llega.
+
 ## 2026-10-23
 
 - I colpi degli spettatori ora si chiamano Pewpewify, la scheda è «Pew» e la pagina ha un indirizzo corto: pew.socialbot.live e il nome del canale. Quello vecchio continua a funzionare. [vai: colpi]

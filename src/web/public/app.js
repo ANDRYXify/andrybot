@@ -26259,6 +26259,15 @@ function _clRiga(v) {
     <label class="cl-c"><span>${esc(_clMoneta().replace(/^./, (x) => x.toUpperCase()))}</span><input data-k="monete" type="number" min="0" max="10000000" step="1" value="${Number(v.monete) || ''}"></label>
     <label class="cl-c"><span>${L('Grandezza %', 'Size %', 'Tamaño %')}</span><input data-k="scala" type="number" min="20" max="300" step="5" value="${Number(v.scala) || 100}"></label>
     <label class="cl-c cl-acc"><span>${L('Attivo', 'On', 'Activo')}</span><span class="interruttore"><input data-k="attiva" type="checkbox" ${v.attiva !== false ? 'checked' : ''}><span class="levetta"></span></span></label>
+    <div class="cl-misti">
+      <span class="cl-misti-t">${L('Modi misti', 'Mixed ways', 'Modos mixtos')}</span>
+      <label class="cl-c"><span>${esc(_clMoneta().replace(/^./, (x) => x.toUpperCase()))}</span><input data-k="misto-bit-monete" type="number" min="0" max="10000000" step="1" value="${Number(v.misti?.bit?.monete) || ''}"></label>
+      <span class="cl-piu" aria-hidden="true">+</span>
+      <label class="cl-c"><span>Bit</span><input data-k="misto-bit-bit" type="number" min="0" max="100000" step="1" value="${Number(v.misti?.bit?.bit) || ''}"></label>
+      <label class="cl-c"><span>${esc(_clMoneta().replace(/^./, (x) => x.toUpperCase()))}</span><input data-k="misto-punti-monete" type="number" min="0" max="10000000" step="1" value="${Number(v.misti?.punti?.monete) || ''}"></label>
+      <span class="cl-piu" aria-hidden="true">+</span>
+      <label class="cl-c"><span>${L('Punti', 'Points', 'Puntos')}</span><input data-k="misto-punti-punti" type="number" min="0" max="1000000" step="1" value="${Number(v.misti?.punti?.punti) || ''}"></label>
+    </div>
     <p class="cl-premio suggerimento" data-premio></p>
   </div>`;
 }
@@ -26293,6 +26302,8 @@ function _clLeggi() {
     const euro = Math.round((Number(String(q('euro').value).replace(',', '.')) || 0) * 100);
     return { id: r.dataset.id || '', comando: q('comando').value, nome: q('nome').value.trim(), euro, punti: Number(q('punti').value) || 0,
       bit: Number(q('bit').value) || 0, monete: Number(q('monete').value) || 0, categoria: q('categoria').value,
+      misti: { bit: { monete: Number(q('misto-bit-monete').value) || 0, bit: Number(q('misto-bit-bit').value) || 0 },
+        punti: { monete: Number(q('misto-punti-monete').value) || 0, punti: Number(q('misto-punti-punti').value) || 0 } },
       scala: Number(q('scala').value) || 100, attiva: q('attiva').checked };
   }).filter((v) => v.comando);
   return {
@@ -26368,7 +26379,9 @@ function _clPresenzaQuadro() {
 async function salvaColpi(silenzioso) {
   const colpi = _clLeggi();
   _clPresenzaGiusta(colpi.presenza);
-  const vuote = colpi.voci.filter((v) => !(v.euro > 0 || v.punti > 0 || v.bit > 0 || v.monete > 0));
+  const mistoOk = (x, k) => x && x.monete > 0 && x[k] > 0;
+  const vuote = colpi.voci.filter((v) => !(v.euro > 0 || v.punti > 0 || v.bit > 0 || v.monete > 0 || mistoOk(v.misti.bit, 'bit') || mistoOk(v.misti.punti, 'punti')));
+  if (colpi.voci.some((v) => ['bit', 'punti'].some((k) => (v.misti[k].monete > 0) !== (v.misti[k][k] > 0)))) throw new Error(L('Un modo misto vuole tutte e due le cifre: le monete e i Bit, o le monete e i punti.', 'A mixed way needs both numbers: coins and Bits, or coins and points.', 'Un modo mixto necesita las dos cifras: monedas y Bits, o monedas y puntos.'));
   if (colpi.categorie.some((c) => !c.nome && !_CL_CAT_SERIE.includes(c.id))) throw new Error(L('Dai un nome a ogni categoria nuova.', 'Give every new category a name.', 'Ponle un nombre a cada categoría nueva.'));
   if (colpi.comando && !/^[a-z0-9_]{1,25}$/i.test(colpi.comando)) throw new Error(L('Il comando per le monete: solo lettere, numeri e trattino basso, senza spazi.', 'The coin command: only letters, numbers and underscores, no spaces.', 'El comando de las monedas: solo letras, números y guion bajo, sin espacios.'));
   if (colpi.voci.some((v) => v.euro > 0 && v.euro < 50)) throw new Error(L('Il prezzo in euro parte da 0,50.', 'The euro price starts at 0.50.', 'El precio en euros empieza en 0,50.'));
@@ -26435,7 +26448,8 @@ async function caricaColpiStato() {
   for (const r of document.querySelectorAll('#cl-voci .cl-voce')) {
     const v = (st.voci || []).find((x) => x.id === r.dataset.id);
     const p = r.querySelector('[data-premio]');
-    if (p) p.textContent = v?.premioNome ? L('Premio su Twitch: ', 'Twitch reward: ', 'Recompensa en Twitch: ') + v.premioNome + ' (' + v.premioCosto + ')' : '';
+    if (p) p.textContent = [v?.premioNome ? v.premioNome + ' (' + v.premioCosto + ')' : '', v?.premioMistoNome ? v.premioMistoNome + ' (' + v.premioMistoCosto + ')' : ''].filter(Boolean)
+      .map((x, i, a) => (i ? '' : L(a.length > 1 ? 'Premi su Twitch: ' : 'Premio su Twitch: ', a.length > 1 ? 'Twitch rewards: ' : 'Twitch reward: ', a.length > 1 ? 'Recompensas en Twitch: ' : 'Recompensa en Twitch: ')) + x).join(' · ');
   }
   const ul = document.getElementById('cl-ultimi');
   if (ul && (st.ultimi || []).length) {

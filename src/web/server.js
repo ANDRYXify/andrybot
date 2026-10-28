@@ -2561,7 +2561,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     const login = loginColpi(req);
     if (!login) return res.status(404).json({ errore: 'mira' });
     if (!extRateOk('colpo-paga:' + String(req.ip || ''))) return res.status(429).json({ errore: 'troppi' });
-    res.json(await portaColpi.paga(login, req.params.id, req.body?.mezzo, spettatoreDi(req)));
+    res.json(await portaColpi.paga(login, req.params.id, req.body?.mezzo, spettatoreDi(req), String(req.body?.modo || '')));
   }));
   // Il pannello dei colpi: l'indirizzo della pagina, cosa manca per gli euro,
   // i premi che Twitch non ha voluto creare e gli ultimi colpi partiti.
@@ -2577,7 +2577,8 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       pagina: colpiMod.urlPaginaColpo(login), euro: mezziEuro(s, login), valuta: s?.settings?.donazioni?.valuta || 'EUR',
       stripeSenzaRimborsi: !!(stripe?.pronto && !stripe.rimborsi),
       premiErrori: Array.isArray(s?.settings?.colpi?.premiErrori) ? s.settings.colpi.premiErrori.slice(0, 20) : [],
-      voci: cfg.voci.map((v) => ({ id: v.id, premioNome: v.premio ? v.premioNome : '', premioCosto: v.premio ? v.premioCosto : 0 })),
+      voci: cfg.voci.map((v) => ({ id: v.id, premioNome: v.premio ? v.premioNome : '', premioCosto: v.premio ? v.premioCosto : 0,
+        premioMistoNome: v.premioMisto ? v.premioMistoNome : '', premioMistoCosto: v.premioMisto ? v.premioMistoCosto : 0 })),
       ultimi: registroColpi.ultimi(login, 20).map((m) => ({ quando: m.pagata_at, nome: m.nome, chi: m.chi, metodo: m.metodo, stato: m.stato })),
     });
   }));

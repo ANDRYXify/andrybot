@@ -6,34 +6,49 @@
 // li toglie, e se il prezzo o il nome cambiano li rifa' (Twitch non lascia
 // cambiare il costo di un premio creato da un'app senza riscriverlo).
 //
+// E il premio del modo misto coi punti (docs/COLPI.md, «I modi misti»),
+// «Colpo: <nome> + monete»: costa i punti del modo misto, e vale solo con le
+// monete gia' pagate sulla pagina o in chat.
+//
 // Lo stato si confronta col listino SALVATO, non con quello di prima: una
 // riconciliazione che parte due volte trova la seconda volta tutto a posto.
-import { normalizza, titoloPremio } from './colpi.js';
+import { normalizza, titoloPremio, titoloPremioMisto } from './colpi.js';
+import { monetaDa } from './moneta.js';
 
 export async function riconciliaPremi({ login, prima, helix, streamers, pagina, log = null }) {
   const cfg = normalizza(streamers.get(login)?.settings?.colpi);
   const errori = [];
-  const vive = new Set(cfg.voci.map((v) => v.premio).filter(Boolean));
+  const vive = new Set(cfg.voci.flatMap((v) => [v.premio, v.premioMisto]).filter(Boolean));
   for (const v of normalizza(prima).voci) {
-    if (v.premio && !vive.has(v.premio)) { try { await helix.eliminaReward(login, v.premio); } catch (e) { log?.debug?.(`premio colpo via #${login}:`, e?.message || e); } }
+    for (const id of [v.premio, v.premioMisto]) {
+      if (id && !vive.has(id)) { try { await helix.eliminaReward(login, id); } catch (e) { log?.debug?.(`premio colpo via #${login}:`, e?.message || e); } }
+    }
   }
-  const nuovi = new Map();
-  for (const v of cfg.voci) {
-    const vuole = cfg.attivo && v.attiva && v.punti > 0;
-    const titolo = titoloPremio(v);
-    let premio = v.premio, costo = v.premioCosto, nome = v.premioNome;
-    if (premio && (!vuole || costo !== v.punti || nome !== titolo)) {
+  // un premio: tenuto se e' gia' quello giusto, se no tolto e rifatto
+  const allinea = async (v, { vuole, titolo, costo: voluto, prompt }, { premio, costo, nome }) => {
+    if (premio && (!vuole || costo !== voluto || nome !== titolo)) {
       try { await helix.eliminaReward(login, premio); } catch (e) { log?.debug?.(`premio colpo via #${login}:`, e?.message || e); }
       premio = ''; costo = 0; nome = '';
     }
     if (vuole && !premio) {
       try {
-        const r = await helix.creaReward(login, { titolo, costo: v.punti, prompt: `Mira su ${pagina} e scrivi qui il codice del colpo (con l'accesso a Twitch fatto sulla pagina va bene qualunque testo)`, userInput: true });
-        if (r?.id) { premio = r.id; costo = v.punti; nome = titolo; }
-        else errori.push(v.nome);
-      } catch (e) { errori.push(v.nome + ': ' + String(e?.message || e).slice(0, 120)); }
+        const r = await helix.creaReward(login, { titolo, costo: voluto, prompt, userInput: true });
+        if (r?.id) { premio = r.id; costo = voluto; nome = titolo; }
+        else errori.push(titolo);
+      } catch (e) { errori.push(titolo + ': ' + String(e?.message || e).slice(0, 120)); }
     }
-    nuovi.set(v.id, { premio, premioCosto: costo, premioNome: nome });
+    return { premio, costo, nome };
+  };
+  const nuovi = new Map();
+  for (const v of cfg.voci) {
+    const p = await allinea(v, { vuole: cfg.attivo && v.attiva && v.punti > 0, titolo: titoloPremio(v), costo: v.punti,
+      prompt: `Mira su ${pagina} e scrivi qui il codice del colpo (con l'accesso a Twitch fatto sulla pagina va bene qualunque testo)` },
+    { premio: v.premio, costo: v.premioCosto, nome: v.premioNome });
+    const mi = v.misti?.punti;
+    const q = await allinea(v, { vuole: cfg.attivo && v.attiva && !!mi, titolo: titoloPremioMisto(v), costo: mi?.punti || 0,
+      prompt: `Prima paga ${mi?.monete || 0} ${monetaDa(streamers.get(login)?.settings).nome} su ${pagina} (o in chat col codice e «punti»), poi scrivi qui il codice del colpo` },
+    { premio: v.premioMisto, costo: v.premioMistoCosto, nome: v.premioMistoNome });
+    nuovi.set(v.id, { premio: p.premio, premioCosto: p.costo, premioNome: p.nome, premioMisto: q.premio, premioMistoCosto: q.costo, premioMistoNome: q.nome });
   }
   // si scrive solo il pezzo dei premi, sulle impostazioni di adesso: fra la
   // lettura e la scrittura non c'e' nessuna attesa, cosi' un salvataggio
@@ -46,7 +61,10 @@ export async function riconciliaPremi({ login, prima, helix, streamers, pagina, 
   // una voce tolta da un salvataggio arrivato nel frattempo: il suo premio appena creato non resta orfano
   const restano = new Set(c.voci.map((v) => v.id));
   for (const [id, x] of nuovi) {
-    if (x.premio && !restano.has(id)) { try { await helix.eliminaReward(login, x.premio); } catch (e) { log?.debug?.(`premio colpo via #${login}:`, e?.message || e); } }
+    if (restano.has(id)) continue;
+    for (const r of [x.premio, x.premioMisto]) {
+      if (r) { try { await helix.eliminaReward(login, r); } catch (e) { log?.debug?.(`premio colpo via #${login}:`, e?.message || e); } }
+    }
   }
   return { errori };
 }

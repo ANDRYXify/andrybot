@@ -5,7 +5,7 @@
 // alle richieste e le intestazioni; il cancello verifica-colpi.mjs serve la
 // pagina vera con questa stessa porta, cosi' quello che si collauda e' quello
 // che gira.
-import { normalizza, voceDi, metodiDi, titoloPremio, categoriaDi } from './colpi.js';
+import { normalizza, voceDi, metodiDi, mistiDi, titoloPremio, titoloPremioMisto, categoriaDi } from './colpi.js';
 import { monetaDa } from './moneta.js';
 import { MIRABILE } from './colpi-servizio.js';
 import { normLancio, oggettoDi, disegnoDi, payloadLancio, durataLancio } from './lanci.js';
@@ -39,7 +39,9 @@ export function creaPortaColpi({ servizio, registro, streamers, effettoDi, mezzi
     const fermo = m.stato === 'attesa' ? servizio.consegnabile(m.login, m.voce) : '';
     return { id: m.id, stato: m.stato, codice: m.codice, voce: m.voce, nome: m.nome, x: m.x, y: m.y, prezzi: m.prezzi, versati: m.versati || 0,
       scade: m.scade, metodo: m.metodo || '', inPagamento: m.stato === 'attesa' && m.riferimento !== '',
-      pagabile: m.stato === 'attesa' && !fermo && (m.scade > ora() || (m.versati || 0) > 0), fermo, mia: !!m.spettatore };
+      pagabile: m.stato === 'attesa' && !fermo && (m.scade > ora() || (m.versati || 0) > 0), fermo, mia: !!m.spettatore,
+      // le monete gia' pagate di un modo misto: si aspetta il resto (senza chi e la ricevuta)
+      acconto: m.acconto ? { modo: m.acconto.modo, monete: m.acconto.monete, resto: m.acconto.resto } : null };
   };
 
   function dati(login) {
@@ -50,13 +52,17 @@ export function creaPortaColpi({ servizio, registro, streamers, effettoDi, mezzi
     for (const v of k.cfg.voci) {
       const eff = v.attiva ? effettoDi(login, v.comando) : null;
       const metodi = eff && MIRABILE(eff) ? metodiVivi(v, euro) : [];
-      if (!metodi.length) continue;
+      // un modo misto si offre solo se si puo' finire: le monete del canale ci
+      // sono, e per i punti il premio misto e' su Twitch
+      const misti = eff && MIRABILE(eff) && servizio.conMonete ? mistiDi(v).filter((x) => x.modo === 'bit' || !!v.premioMisto) : [];
+      if (!metodi.length && !misti.length) continue;
       // un lancio mostra il suo disegno: lo stesso file che l'overlay tira, quindi
       // l'ombra della pagina e' grande come il colpo (docs/LANCI.md)
       const disegno = eff.tipo === 'lancio' ? spriteLancio(eff) : '';
       voci.push({ id: v.id, nome: v.nome, tipo: eff.tipo === 'lancio' ? 'immagine' : eff.tipo, scala: v.scala, anteprima: disegno || `/u/${login}/colpo/anteprima/${encodeURIComponent(v.id)}`,
         metodi, prezzi: Object.fromEntries(['euro', 'punti', 'bit', 'monete'].map((x) => [x, metodi.includes(x) ? v[x] : 0])),
-        premio: metodi.includes('punti') ? (v.premioNome || titoloPremio(v)) : '', prova: provaDi(login, v, eff), categoria: categoriaDi(k.cfg, v, tipoDi(eff)) });
+        premio: metodi.includes('punti') ? (v.premioNome || titoloPremio(v)) : '', prova: provaDi(login, v, eff), categoria: categoriaDi(k.cfg, v, tipoDi(eff)),
+        misti: misti.map((x) => ({ ...x, premio: x.modo === 'punti' ? (v.premioMistoNome || titoloPremioMisto(v)) : '' })) });
     }
     // le categorie che hanno almeno un colpo, nell'ordine dello streamer
     const categorie = k.cfg.categorie.filter((c) => voci.some((v) => v.categoria === c.id));
@@ -110,7 +116,7 @@ export function creaPortaColpi({ servizio, registro, streamers, effettoDi, mezzi
     const k = aperti(login);
     if (!k) return { ok: false, motivo: 'spento' };
     const v = voceDi(k.cfg, String(corpo.voce || ''));
-    if (!v || !metodiVivi(v, mezziEuro(k.s, login)).length) return { ok: false, motivo: 'voce' };
+    if (!v || (!metodiVivi(v, mezziEuro(k.s, login)).length && !(servizio.conMonete && mistiDi(v).length))) return { ok: false, motivo: 'voce' };
     const r = servizio.mira(login, { voce: v.id, x: Number(corpo.x), y: Number(corpo.y), chi: io?.nome || String(corpo.chi || ''), chiave, spettatore: io?.id || '' });
     return r.ok ? { ok: true, mira: statoMira(registro.get(r.mira.id)) } : r;
   }
@@ -125,19 +131,20 @@ export function creaPortaColpi({ servizio, registro, streamers, effettoDi, mezzi
   // pagamento non si apre, la presa si rilascia e la mira torna pagabile.
   // Con le monete del canale serve l'accesso a Twitch (le monete sono di chi
   // scrive in chat), e la mira dev'essere sua o di nessuno.
-  async function paga(login, id, mezzoChiesto, io = null) {
+  async function paga(login, id, mezzoChiesto, io = null, modo = '') {
     const k = aperti(login);
     if (mezzoChiesto === 'monete') {
       const mm = k && ID_MIRA.test(String(id || '')) ? registro.getDi(login, String(id)) : null;
       if (!mm) return { errore: 'mira' };
       if (!io?.login) return { errore: 'accesso' };
       if (mm.spettatore && mm.spettatore !== String(io.id)) return { errore: 'mira' };
-      const r = servizio.daMonete(login, { id: mm.id, user: io.login });
-      if (r.esito === 'pagato') return { ok: true };
+      const r = servizio.daMonete(login, { id: mm.id, user: io.login, modo: modo === 'bit' || modo === 'punti' ? modo : '' });
+      if (r.esito === 'pagato' || r.esito === 'acconto') return { ok: true, esito: r.esito };
       return { errore: r.esito === 'fermo' ? r.motivo : r.esito, serve: r.serve, saldo: r.saldo };
     }
     const m = k && ID_MIRA.test(String(id || '')) ? registro.getDi(login, String(id)) : null;
     if (!m || m.stato !== 'attesa' || !(Number(m.prezzi?.euro) > 0)) return { errore: 'mira' };
+    if (m.acconto) return { errore: 'gia' };
     if (m.scade <= ora()) return { errore: 'scaduta' };
     // si paga solo un colpo che adesso si puo' consegnare
     const fermo = servizio.consegnabile(login, m.voce);

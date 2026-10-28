@@ -3142,12 +3142,17 @@ body.in-studio #anime-sfondo::after, body.tel-aperta #anime-sfondo::after, body.
 .cl-c input, .cl-c select { width: 100%; min-width: 0; }
 .cl-acc { white-space: nowrap; }
 .cl-premio { grid-column: 1 / -1; margin: 0; }
+.cl-misti { grid-column: 1 / -1; display: grid; grid-template-columns: auto minmax(4.5rem, 1fr) auto minmax(4.5rem, 1fr) minmax(4.5rem, 1fr) auto minmax(4.5rem, 1fr); gap: .5rem; align-items: end; padding-top: .4rem; border-top: 1px dashed var(--border); }
+.cl-misti-t { font-size: .8rem; color: var(--testo-2); align-self: center; }
+.cl-piu { align-self: center; padding-bottom: .1rem; color: var(--testo-2); }
 .cl-premio:empty { display: none; }
 @media (max-width: 760px) {
   .cl-voce { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .cl-eff, .cl-nome, .cl-cat-sel { grid-column: 1 / -1; }
   .cl-via { order: 1; justify-self: end; }
   .cl-premio { order: 2; }
+  .cl-misti { order: 1; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); }
+  .cl-misti-t { grid-column: 1 / -1; }
 }
 .cl-quadro { position: relative; aspect-ratio: 16 / 9; max-width: 40rem; border: 1px dashed var(--border-2); border-radius: var(--r-s); background: var(--surface-2); cursor: crosshair; touch-action: none; user-select: none; }
 .cl-zona { position: absolute; padding: 0; border: 1px solid var(--acc-bordo); border-radius: 2px; cursor: pointer;
