@@ -45,7 +45,7 @@
   }
   function ricorda(id) { try { if (id) sessionStorage.setItem(memo, id); else sessionStorage.removeItem(memo); } catch (e) {  } }
 
-  var saldoBit = null, saldoMonete = null, scadonoBit = null;
+  var saldoBit = null, saldoMonete = null, scadonoBit = null, zainoMio = null;
   function saldi() {
     if (!io || !dati) { saldoBit = null; saldoMonete = null; lanciaTasti(); return Promise.resolve(); }
     return chiedi('/saldi').then(function (r) {
@@ -53,11 +53,39 @@
       var prima = saldoBit + '|' + saldoMonete;
       saldoBit = typeof r.bit === 'number' ? r.bit : null;
       saldoMonete = typeof r.monete === 'number' ? r.monete : null;
-      var scPrima = scadonoBit;
+      var scPrima = JSON.stringify([scadonoBit, zainoMio]);
       scadonoBit = r.scadono && r.scadono.quanti > 0 ? r.scadono : null;
-      if (JSON.stringify(scPrima) !== JSON.stringify(scadonoBit)) accedi();
+      zainoMio = Array.isArray(r.zaino) ? r.zaino : null;
+      if (scPrima !== JSON.stringify([scadonoBit, zainoMio])) { accedi(); zaino(); lanciaTasti(); }
       if (prima !== saldoBit + '|' + saldoMonete) { accedi(); lanciaTasti(); if (mira && mira.stato === 'attesa') mostra(); }
     }, function () {  });
+  }
+
+  function quantiNelloZaino(voce) {
+    var n = 0;
+    (zainoMio || []).forEach(function (x) { if (x.voce === voce) n = x.quanti; });
+    return n;
+  }
+
+  function zaino() {
+    var box = $('cp-zaino');
+    box.textContent = '';
+    var su = !!(dati && dati.zaino && io && zainoMio);
+    box.hidden = !su;
+    if (!su) return;
+    box.appendChild(el('h2', 'cp-t', T.zainoTitolo));
+    if (!zainoMio.length) { box.appendChild(el('p', 'cp-nota', T.zainoVuoto)); return; }
+    var l = el('ul', 'cp-zaino-l');
+    zainoMio.forEach(function (x) {
+      var li = el('li', '');
+      var b = el('button', 'cp-zaino-v', riempi(T.zainoRiga, { n: numero(x.quanti), nome: x.nome }));
+      b.type = 'button';
+      b.onclick = function () { var v = voceDi(x.voce); if (v && !mira) scegli(v); };
+      li.appendChild(b);
+      if (x.quando) li.appendChild(el('small', '', riempi(T.zainoFino, { quando: x.quando })));
+      l.appendChild(li);
+    });
+    box.appendChild(l);
   }
 
   function lanciaTasti() {
@@ -67,6 +95,8 @@
     var modi = [];
     if (io && scelta && !mira) {
       var pz = scelta.prezzi || {};
+      var nz = quantiNelloZaino(scelta.id);
+      if (nz > 0) modi.push({ con: 'zaino', testo: riempi(T.lanciaZaino, { n: numero(nz) }), basta: true });
       if (pz.bit > 0 && dati.bitPew && saldoBit !== null) modi.push({ con: 'bit', testo: riempi(T.lanciaBit, { n: numero(pz.bit) }), basta: saldoBit >= pz.bit });
       if (pz.monete > 0 && saldoMonete !== null) modi.push({ con: 'monete', testo: riempi(T.lanciaMonete, { n: numero(pz.monete), moneta: moneta() }), basta: saldoMonete >= pz.monete });
       (scelta.misti || []).forEach(function (x) {
@@ -85,7 +115,59 @@
     box.hidden = !modi.length;
     conf.textContent = modi.length ? T.altriModi : T.conferma;
     conf.classList.toggle('due', !!modi.length);
+    perDopo();
     pronto();
+  }
+
+  function perDopo() {
+    var box = $('cp-dopo');
+    box.textContent = '';
+    var z = dati && dati.zaino;
+    if (!scelta || mira || !z || !scelta.zaino) { box.hidden = true; return; }
+    box.hidden = false;
+    box.appendChild(el('h3', 'cp-dopo-t', T.perDopo));
+    if (!io) { box.appendChild(el('p', 'cp-nota', T.dopoAccedi)); return; }
+    var pz = scelta.prezzi || {}, modi = [];
+    if (z.con.bit && pz.bit > 0 && dati.bitPew && saldoBit !== null) modi.push({ con: 'bit', testo: riempi(T.compraBit, { n: numero(pz.bit) }), basta: saldoBit >= pz.bit });
+    if (z.con.monete && pz.monete > 0 && saldoMonete !== null) modi.push({ con: 'monete', testo: riempi(T.compraMonete, { n: numero(pz.monete), moneta: moneta() }), basta: saldoMonete >= pz.monete });
+    (scelta.misti || []).forEach(function (x) {
+      if (z.con.misto && x.modo === 'bit' && dati.bitPew && saldoBit !== null && saldoMonete !== null) modi.push({ con: 'misto-bit', testo: riempi(T.compraMisto, { monete: numero(x.monete), moneta: moneta(), bit: numero(x.resto) }), basta: saldoMonete >= x.monete && saldoBit >= x.resto });
+    });
+    var r = el('div', 'cp-lancia');
+    modi.forEach(function (m) {
+      var b = el('button', 'cp-b cp-paga-b', m.testo);
+      b.type = 'button';
+      b.setAttribute('data-dopo', m.con);
+      b.disabled = !m.basta || dati.pausa;
+      b.onclick = function () { compra(m.con, b); };
+      r.appendChild(b);
+    });
+    var esterni = (z.con.cheer && pz.bit > 0) || (z.con.punti && pz.punti > 0 && scelta.premio) || (z.con.euro && pz.euro > 0 && (dati.mezzi || []).length) || (z.con.misto && (scelta.misti || []).length);
+    if (esterni) {
+      var a = el('button', 'cp-b due', T.altriDopo);
+      a.type = 'button';
+      a.setAttribute('data-dopo', 'altri');
+      a.disabled = !!dati.pausa;
+      a.onclick = function () { prendi(true); };
+      r.appendChild(a);
+    }
+    box.appendChild(r);
+    box.appendChild(el('p', 'cp-nota', T.dopoNota));
+  }
+
+  function compra(con, b) {
+    var bb = document.querySelectorAll('#cp-dopo button');
+    for (var i = 0; i < bb.length; i++) bb[i].disabled = true;
+    chiedi('/lancia', { voce: scelta.id, con: con, dopo: true }).then(function (r) {
+      if (!r.ok) {
+        if (r.motivo === 'accesso') { io = null; accedi(); scriviSi(); }
+        avviso(riempi(motivo(r), { saldo: numero(r.saldo || 0), serve: numero(r.serve || 0), massimo: numero(r.massimo || 0) }), 'ko');
+        saldi(); lanciaTasti();
+        return;
+      }
+      avviso(T.nelloZaino, 'ok');
+      saldi().then(lanciaTasti);
+    }, function () { avviso((T.motivi || {}).rete, 'ko'); lanciaTasti(); });
   }
 
   function lancia(con, b) {
@@ -129,6 +211,7 @@
       if (dati && dati.bitPew) box.appendChild(el('p', 'cp-nota', T.bitPewAccedi));
     }
     $('cp-nome-l').hidden = !!io || !(dati && dati.conNome);
+    zaino();
   }
 
   function riga(m) {
@@ -468,17 +551,18 @@
     return v;
   }
 
-  function prendi() {
+  function prendi(dopo) {
     var b = $('cp-conferma');
     b.disabled = true;
-    chiedi('/mira', { voce: scelta.id, x: punto.x, y: punto.y, chi: dati.conNome && !io ? $('cp-nome').value : '' }).then(function (r) {
-      if (!r.ok) { avviso(motivo(r), 'ko'); pronto(); return; }
+    var corpo = dopo === true ? { voce: scelta.id, dopo: true } : { voce: scelta.id, x: punto.x, y: punto.y, chi: dati.conNome && !io ? $('cp-nome').value : '' };
+    chiedi('/mira', corpo).then(function (r) {
+      if (!r.ok) { avviso(riempi(motivo(r), { massimo: numero(r.massimo || 0) }), 'ko'); pronto(); return; }
       mira = r.mira;
       ricorda(mira.id);
       mostra();
     }, function () { avviso((T.motivi || {}).rete, 'ko'); pronto(); });
   }
-  $('cp-conferma').onclick = prendi;
+  $('cp-conferma').onclick = function () { prendi(false); };
 
   function paga(mezzo, b) {
     b.disabled = true;
@@ -540,7 +624,10 @@
       c.appendChild(sc);
       box.appendChild(c);
       var pz = mira.prezzi || {};
-      if (pz.euro > 0 && mira.pagabile && !mira.inPagamento && !mira.acconto && (dati.mezzi || []).length) {
+      var zc = mira.dopo ? ((dati.zaino && dati.zaino.con) || {}) : null;
+      var puo = function (k) { return !zc || !!zc[k]; };
+      if (mira.dopo) box.appendChild(el('p', 'cp-nota', T.dopoNota));
+      if (puo('euro') && pz.euro > 0 && mira.pagabile && !mira.inPagamento && !mira.acconto && (dati.mezzi || []).length) {
         var r = el('div', 'cp-righe cp-modo');
         dati.mezzi.forEach(function (m) {
           var b = el('button', 'cp-b cp-paga-b', riempi(T.euro, { prezzo: prezzo(pz.euro) }) + (dati.mezzi.length > 1 ? ' · ' + (m === 'satispay' ? T.satispay : T.carta) : ''));
@@ -551,12 +638,12 @@
         box.appendChild(r);
       }
       var conCodice = mira.pagabile && !mira.inPagamento && !mira.acconto;
-      if (conCodice && pz.punti > 0 && v.premio) {
+      if (conCodice && puo('punti') && pz.punti > 0 && v.premio) {
         var pp = el('div', 'cp-modo');
         pp.appendChild(el('p', '', riempi(mira.mia ? T.puntiIo : T.punti, { premio: v.premio, n: numero(pz.punti), codice: mira.codice })));
         box.appendChild(pp);
       }
-      if (conCodice && pz.bit > 0) {
+      if (conCodice && puo('cheer') && pz.bit > 0) {
         var bb = el('div', 'cp-modo');
         bb.appendChild(el('p', '', riempi(mira.mia ? T.bitIo : T.bit, { n: Math.max(0, pz.bit - (mira.versati || 0)), codice: mira.codice })));
         box.appendChild(bb);
@@ -570,7 +657,7 @@
       }
       var restoBit = mira.acconto ? (mira.acconto.modo === 'bit' ? mira.acconto.resto : 0) : (pz.bit || 0);
       var mancaBit = Math.max(0, restoBit - (mira.versati || 0));
-      if (io && dati.bitPew && pz.resa > 0 && mancaBit > 0 && mira.pagabile && !mira.inPagamento) {
+      if (io && dati.bitPew && puo(mira.acconto ? 'misto' : 'bit') && pz.resa > 0 && mancaBit > 0 && mira.pagabile && !mira.inPagamento) {
         var bp = el('div', 'cp-modo');
         var pbit = el('button', 'cp-b cp-paga-b', riempi(T.bitPewIo, { n: numero(mancaBit) }));
         pbit.type = 'button';
@@ -581,7 +668,7 @@
         if (saldoBit !== null) bp.appendChild(el('p', 'cp-nota', riempi(T.bitPewNota, { saldo: numero(saldoBit) })));
         box.appendChild(bp);
       }
-      if (conCodice) {
+      if (conCodice && puo('misto')) {
         (v.misti || []).forEach(function (x) {
           var mm = el('div', 'cp-modo');
           var val = { monete: numero(x.monete), moneta: moneta(), resto: numero(x.resto), codice: mira.codice, comando: (dati && dati.comando) || 'pew', premio: x.premio || '' };
@@ -599,7 +686,7 @@
           box.appendChild(mm);
         });
       }
-      if (conCodice && pz.monete > 0) {
+      if (conCodice && puo('monete') && pz.monete > 0) {
         var mm = el('div', 'cp-modo');
         if (io) {
           var pm = el('button', 'cp-b cp-paga-b', riempi(T.moneteIo, { n: numero(pz.monete), moneta: moneta() }));
@@ -617,7 +704,7 @@
     }
     var fine = el('div', 'cp-righe cp-modo');
     if (mira.stato === 'pagata') { racconta(); segui(); return; }
-    if (mira.stato === 'attesa' && v.prova) {
+    if (mira.stato === 'attesa' && v.prova && !mira.dopo) {
       var pq = el('button', 'cp-b due', T.prova);
       pq.type = 'button';
       pq.setAttribute('data-prova', 'mira');
@@ -635,7 +722,8 @@
 
   function racconta() {
     if (!mira) return;
-    if (mira.stato === 'sparata') avviso(T.partito, 'ok');
+    if (mira.stato === 'zaino') avviso(T.nelloZaino, 'ok');
+    else if (mira.stato === 'sparata') avviso(T.partito, 'ok');
     else if (mira.stato === 'pagata') avviso(T.pagata);
     else if (mira.stato === 'rimborsata') avviso(T.rimborsata, 'ko');
     else if (mira.stato === 'scaduta') avviso(T.scaduta, 'ko');

@@ -29,7 +29,7 @@ import { points, vips, tgConf, tgDest, amici, tgVisti, feedFonti, dcConf, passke
 import { direttaDest, MAX_DESTINAZIONI, studioScene, studioDispositivi } from '../db.js';
 import { creaSalotto } from '../features/studio-dispositivi.js';
 import { montaDispositivi } from './rotte-dispositivi.js';
-import { linkPage, visitePagina, TEMPLATE_LINKPAGE, LIMITI_LINKPAGE, FONT_LINKPAGE, ICONE_LINKPAGE, TIPI_BLOCCO, TIPI_PAGINA_NEGOZIO, contiDonazioni, contiSatispay, registroDonazioni, registroColpi, pewBit, segnoInstagram, paginaDona, paginaNegozio, paginaPannello, cartePagina, accessi, recensioni as recensioniDb, campagneDb, sito } from '../db.js';
+import { linkPage, visitePagina, TEMPLATE_LINKPAGE, LIMITI_LINKPAGE, FONT_LINKPAGE, ICONE_LINKPAGE, TIPI_BLOCCO, TIPI_PAGINA_NEGOZIO, contiDonazioni, contiSatispay, registroDonazioni, registroColpi, pewBit, pewZaino, segnoInstagram, paginaDona, paginaNegozio, paginaPannello, cartePagina, accessi, recensioni as recensioniDb, campagneDb, sito } from '../db.js';
 import { puoRecensire, validaRecensione, statoDopo, invitoAperto, rimandaFino, vetrinaDi, TESTO_MAX } from '../features/recensioni.js';
 import { funzioniCanale, concessioneDi } from '../features/accesso.js';
 import { canaleHa } from '../features/accesso.js';
@@ -2599,6 +2599,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
         premioMistoNome: v.premioMisto ? v.premioMistoNome : '', premioMistoCosto: v.premioMisto ? v.premioMistoCosto : 0 })),
       ultimi: registroColpi.ultimi(login, 20).map((m) => ({ quando: m.pagata_at, nome: m.nome, chi: m.chi, metodo: m.metodo, stato: m.stato })),
       // i Bit da spendere: quanti ne girano, e chi ne ha di piu'
+      zaino: pewZaino.totali(login),
       bitPew: { totali: pewBit.totali(login), primi: pewBit.primi(login, 20).map((p) => ({ chi: p.chi, nome: p.nome, saldo: p.saldo })) },
     });
   }));

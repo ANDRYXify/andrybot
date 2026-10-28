@@ -26,7 +26,7 @@ const SRV = senzaCommenti(leggi('src/web/server.js'));
 test('la frase della presenza: da una persona, una per diretta, e conta nella serie', () => {
   const i = BOT.indexOf("if (!msg.isSelf && streamers.get(login)?.settings?.colpi?.attivo === true) {");
   assert.ok(i > 0 && i < BOT.indexOf('this.brain.observe?.(msg);'), 'nell\'elaborazione di ogni messaggio, dopo l\'antispam');
-  const h = BOT.slice(i, i + 2600);
+  const h = BOT.slice(i, i + 4200);
   assert.match(h, /const paga = cfgColpi \? pagaInChat\(cfgColpi, msg\.text\) : null;\n\s*if \(paga\) \{\n\s*const r = this\.colpi\.daMonete\(login, \{ codice: paga\.codice, user: msg\.user, modo: paga\.modo \}\);/, 'le monete le paga chi scrive, col suo codice e col modo che ha scelto');
   assert.match(h, /premio: titoloPremioMisto\(\{ nome: r\.nome \|\| '' \}\)/, 'la risposta nomina il premio misto come lo vede su Twitch');
   assert.match(h, /if \(r\.esito === 'partita' && r\.nuova\) \{\n\s*const date = r\.monete > 0 \? economia\.premio\(login, msg\.user, r\.monete, 'presenza'\) : 0;/, 'le monete della serie: un premio (bot, esclusi e streamer no), una volta per diretta');

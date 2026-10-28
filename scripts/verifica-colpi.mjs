@@ -35,7 +35,9 @@
 //  · la presenza: l'effetto dello streamer nel suo punto, col nome, «visto» come
 //    un colpo, una volta per diretta;
 //  · i Bit da spendere: con l'accesso la pagina dice il saldo, il tasto e' spento
-//    se non basta, e se basta un tocco apre la mira e la paga, senza codice.
+//    se non basta, e se basta un tocco apre la mira e la paga, senza codice;
+//  · lo zaino: un colpo comprato per dopo compare nello zaino della pagina e da
+//    li' parte in un tocco.
 //
 // Uso: node scripts/verifica-colpi.mjs             (esce 1 se una promessa non tiene)
 //      node scripts/verifica-colpi.mjs --selftest  (rimette sette difetti: strato che prende
@@ -51,16 +53,16 @@
 //                                                   non dice di essere un'anteprima, green screen
 //                                                   che non toglie il verde, categoria che non filtra,
 //                                                   saldo dei Bit che non basta ma si lascia spendere, dalla mira
-//                                                   o in un tocco;
+//                                                   o in un tocco, lancio dallo zaino che non si offre;
 //                                                   li vuole tutti rossi)
-//      node scripts/verifica-colpi.mjs --rompi=N   (solo il difetto N, da 1 a 18: deve vedersi da solo)
+//      node scripts/verifica-colpi.mjs --rompi=N   (solo il difetto N, da 1 a 19: deve vedersi da solo)
 
 import './_dati-usa-e-getta.mjs';
 import { apriSito, apriBrowser, overlayFinto } from './_sito.mjs';
 
 const ROMPI = Number((process.argv.find((a) => a.startsWith('--rompi=')) || '').slice(8)) || 0;
 const SELFTEST = process.argv.includes('--selftest') || ROMPI > 0;
-const { registroColpi, effects: effectsDb, streamers, pewBit } = await import('../src/db.js');
+const { registroColpi, effects: effectsDb, streamers, pewBit, pewZaino } = await import('../src/db.js');
 const { creaServizioColpi } = await import('../src/features/colpi-servizio.js');
 const economia = await import('../src/features/economia.js');
 const { creaPortaColpi } = await import('../src/features/colpi-porta.js');
@@ -88,6 +90,7 @@ const DIFETTI = [
   ['pagina-colpo.js', "bb[i].hidden = !!filtro && bb[i].getAttribute('data-cat') !== filtro;", 'bb[i].hidden = false;'],
   ['pagina-colpo.js', 'pbit.disabled = saldoBit !== null && saldoBit < mancaBit;', 'pbit.disabled = false;'],
   ['pagina-colpo.js', "b.setAttribute('data-basta', m.basta ? '1' : '');", "b.setAttribute('data-basta', '1');"],
+  ['pagina-colpo.js', "if (nz > 0) modi.push({ con: 'zaino'", "if (false) modi.push({ con: 'zaino'"],
 ];
 const SVG = '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="200" viewBox="0 0 400 200"><rect width="400" height="200" rx="40" fill="#e5484d"/></svg>';
 
@@ -95,7 +98,7 @@ streamers.request(LOGIN, 'Prova', '1');
 streamers.setSettings(LOGIN, {
   donazioni: { valuta: 'EUR' },
   colpi: { attivo: true, attesaSec: 0, alMinuto: 30, conNome: true, zone: [{ x: 70, y: 60, w: 30, h: 40 }],
-    presenza: { attiva: true, comando: 'pomodoro', x: 12, y: 30, scala: 100 }, voci: [
+    presenza: { attiva: true, comando: 'pomodoro', x: 12, y: 30, scala: 100 }, zaino: { attivo: true }, voci: [
     { comando: 'pomodoro', nome: 'Pomodoro', euro: 200, punti: 500, bit: 100, scala: 120 },
     { comando: 'festa', nome: 'Festa', bit: 50 },
     { comando: 'tirapomodoro', nome: 'Pomodoro vero', bit: 30, monete: 40, scala: 150 },
@@ -118,7 +121,7 @@ const chat = creaChatColpi();
 const pronto = () => Date.now() - mondo.pronto < 45_000;
 const servizio = creaServizioColpi({ registro: registroColpi, effects: motore, effettoDi: (l, c) => effectsDb.get(l, c),
   impostazioni: (l) => streamers.get(l)?.settings?.colpi, inOnda: () => mondo.live, overlay: pronto,
-  monete: { punta: economia.punta, rendi: economia.rendi, saldo: economia.saldo }, crediti: pewBit });
+  monete: { punta: economia.punta, rendi: economia.rendi, saldo: economia.saldo }, crediti: pewBit, zaino: pewZaino });
 economia.dai(LOGIN, 'marta', 500, 'staff');
 const pagamenti = [];
 const porta = creaPortaColpi({ servizio, registro: registroColpi, streamers, effettoDi: (l, c) => effectsDb.get(l, c), mezziEuro: () => ['stripe'],
@@ -404,6 +407,29 @@ try {
     `un tocco: la mira e il pagamento insieme, il saldo scende anche sulla pagina (${pb?.stato}, ${pewBit.saldo(LOGIN, '888')})`);
   dice(!(await p.locator('.cp-codice').count()), 'e nessun codice da copiare');
   await o.waitForFunction(() => !document.querySelector('.lancio, #palco-libero .effetto'), null, { timeout: 15000 }).catch(() => {});
+  mondo.io = null;
+  });
+
+  // LO ZAINO (docs/COLPI.md): con l'accesso un colpo si compra per dopo senza
+  // mirare, compare nello zaino della pagina, e da li' si lancia in un tocco
+  await fase('zaino', async () => {
+  mondo.io = { id: '888', login: 'marta', nome: 'Marta' };
+  await daCapo();
+  await p.locator('.cp-voce', { hasText: 'Pomodoro vero' }).click();
+  await p.waitForSelector('[data-dopo="monete"]:not([disabled])', { timeout: 5000 });
+  const prima = economia.saldo(LOGIN, 'marta');
+  await p.locator('[data-dopo="monete"]').click();
+  await p.waitForFunction(() => /1 × Pomodoro vero/.test(document.getElementById('cp-zaino').textContent), null, { timeout: 5000 }).catch(() => {});
+  dice(/1 × Pomodoro vero/.test(await p.locator('#cp-zaino').textContent()) && prima - economia.saldo(LOGIN, 'marta') === 40 && !(await o.locator('.lancio').count()),
+    `comprato per dopo: nello zaino della pagina, le monete tolte, e niente in diretta (${prima} → ${economia.saldo(LOGIN, 'marta')})`);
+  await tocca(p, 40, 30);
+  await p.waitForSelector('[data-lancia="zaino"]', { timeout: 5000 });
+  dice(/Lancia dallo zaino \(1\)/.test(await p.locator('[data-lancia="zaino"]').textContent()), 'mirato, la pagina offre il lancio dallo zaino');
+  await p.locator('[data-lancia="zaino"]').click();
+  await o.waitForFunction(() => document.querySelector('.lancio')?.dataset.impatti, null, { timeout: 8000 }).catch(() => {});
+  await p.waitForFunction(() => !/Pomodoro vero/.test(document.getElementById('cp-zaino').textContent), null, { timeout: 5000 }).catch(() => {});
+  dice(await o.locator('.lancio').count() > 0 && !/Pomodoro vero/.test(await p.locator('#cp-zaino').textContent()), 'dallo zaino in un tocco: il colpo parte, e lo zaino si svuota');
+  await o.waitForFunction(() => !document.querySelector('.lancio'), null, { timeout: 15000 }).catch(() => {});
   mondo.io = null;
   });
 

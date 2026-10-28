@@ -43,6 +43,15 @@ comandi diversi da quelli della riga italiana.
 
 ## 2026-10-28
 
+- [importante] Lo zaino di Pewpewify: chi guarda compra un colpo per dopo, anche a diretta spenta, e lo ritrova sulla tua pagina da lanciare quando vuole, con un tocco. [vai: colpi]
+  en: The Pewpewify backpack: viewers buy a hit for later, even while you're offline, and find it on your page to launch whenever they want, with one tap.
+  es: La mochila de Pewpewify: quien mira compra un golpe para después, incluso con el directo apagado, y lo encuentra en tu página para lanzarlo cuando quiera, con un toque.
+  > Colpi da tenere da parte
+  > Decidi tu con cosa si compra per dopo, quanti a testa, quando scadono, per tutti o colpo per colpo, e se alla scadenza tornano le monete. Ogni zaino è di quel canale e di quella persona.
+  en> Hits to keep for later
+  en> You decide what buys for later, how many each, when they expire, for all or hit by hit, and whether coins come back on expiry. Every backpack belongs to that channel and that person.
+  es> Golpes para guardar
+  es> Decides tú con qué se compra para después, cuántos por persona, cuándo caducan, para todos o golpe a golpe, y si al caducar vuelven las monedas. Cada mochila es de ese canal y de esa persona.
 - I Bit da spendere di Pewpewify possono scadere quando vuoi: dopo ore, giorni, settimane, mesi o anni, a una data fissa del calendario o se nessuno li usa. Scegli anche minimo, tetto, avvisi e risposta in chat. [vai: colpi]
   en: Pewpewify Bits to spend can expire when you want: after hours, days, weeks, months or years, on a fixed calendar date or if nobody uses them. You also pick minimum, cap, warnings and chat reply.
   es: Los Bits para gastar de Pewpewify pueden caducar cuando quieras: tras horas, días, semanas, meses o años, en una fecha fija del calendario o si nadie los usa. Eliges también mínimo, tope, avisos y respuesta en el chat.

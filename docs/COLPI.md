@@ -412,6 +412,59 @@ legge che i suoi Bit si spendono anche lì. In chat `!pew bit` (col comando
 dello streamer) risponde a chi scrive, su Twitch, una volta al minuto. Il
 pannello mostra quanti ne girano e chi ne ha di più, coi nomi.
 
+## Lo zaino
+
+Chiesto così: «aggiungi la possibilità di comprare effetti da lanciare
+successivamente, l'utente deve poter comprare gli effetti e ritrovarseli
+sempre disponibili, ma non fra canali, ogni canale deve avere il proprio
+storage», e «magari rendiamo anche quello con eventuali scadenze che verranno
+decise dallo streamer».
+
+**Il modello.** Comprare per dopo è una mira **senza punto** e segnata `dopo`
+(`colpi.dopo`): le stesse strade di pagamento di un colpo (il saldo in un
+tocco; cheer, punti ed euro col codice), le stesse garanzie (una volta sola,
+tutto o niente). Quando il pagamento arriva (`incassa`), la mira passa a
+`zaino` e l'oggetto nasce in `pew_zaino`, **nello stesso passaggio**
+(`registroColpi.nelloZaino`): niente va all'overlay, niente si consegna,
+quindi niente da rimborsare. Se il passaggio si interrompe, la ronda ritrova
+la mira «pagata e per dopo» e la mette nello zaino, mai in diretta.
+
+- **Di quel canale e di quella persona**: `channel` + `chi` (l'id Twitch).
+  Serve l'accesso: lo zaino è di qualcuno.
+- **Anche a diretta spenta**: per dopo basta la pagina accesa, lo zaino acceso
+  per quella voce e l'effetto che c'è (`comprabile`), non la diretta né
+  l'overlay.
+- **Il massimo** (`zaino.massimo` in tutto, `zaino.massimoVoce` per colpo)
+  conta anche gli acquisti ancora aperti (`registroColpi.dopoAperte`): un
+  pagamento che arriva dopo non lo supera mai.
+- **Con cosa** si compra per dopo lo sceglie lo streamer (`zaino.con`:
+  monete, Bit da spendere, modi misti, cheer, punti, euro): `pronta(m, mezzo)`
+  lo chiede a ogni strada di pagamento; un cheer su una mira per dopo che non
+  si paga col cheer diventa Bit da spendere come uno senza codice.
+- **Lanciare dallo zaino** è una mira normale (col punto, in diretta, con
+  l'overlay) pagata col metodo `zaino`: `pewZaino.prendi` consuma un oggetto
+  di quella voce, il primo che scade (`riferimento = zaino:<oggetto>`). Se il
+  colpo non compare in `CONSEGNA_MS`, la ronda lo segna `rimborsata` e
+  l'oggetto torna `pieno` (una volta: vale solo per la mira che l'aveva
+  preso), e vale almeno le ore minime.
+- **Quando scadono**: lo stesso orologio dei Bit da spendere
+  («Quando scadono»), in `zaino.scadenza`; ogni voce può averne una sua
+  (`voce.zaino.modo`: `come` gli altri, `no` non si compra per dopo, `mai`,
+  `dopo` N unità). Con `inattivo`, ogni acquisto e ogni lancio sposta in
+  avanti tutti i colpi di quella persona (`pewZaino.rinnova`, solo quelli
+  ancora vivi). Uno scaduto non c'è più dall'istante in cui scade; la ronda lo
+  segna `scaduto` (una volta) e, se lo streamer vuole (`zaino.rendi`), tornano
+  i **saldi** con cui era stato comprato: le monete con la loro ricevuta, i Bit
+  da spendere coi loro lotti, quelli dei cheer come Bit da spendere se lo
+  streamer li rende. Punti ed euro no: il colpo era stato consegnato, nello
+  zaino.
+- **Vederlo**: la pagina mostra «Il tuo zaino» (quanti per colpo, e fin quando
+  vale il primo che scade), «Lancia dallo zaino (N)» fra i tasti del passo 2 e
+  «Per dopo, nello zaino» con un tasto per saldo e «Altri modi per dopo». In
+  chat `!pew zaino` (testo, attesa e accensione dello streamer); un colpo per
+  dopo pagato col cheer, coi punti o con `!pew CODICE` lo dice in chat. Il
+  pannello mostra quanti colpi ci sono negli zaini.
+
 ## L'anteprima
 
 Chiesto così: «riusciamo ad inserire un'anteprima degli attacchi se l'utente

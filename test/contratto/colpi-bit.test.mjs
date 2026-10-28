@@ -22,7 +22,7 @@ const SRV = senzaCommenti(leggi('src/web/server.js'));
 test('il cheer arriva al servizio con l\'id del messaggio, e il servizio ha il registro vero', () => {
   assert.match(leggi('src/twitch/events.js'), /data: msg\.payload\?\.event,\n\s*id: String\(msg\.metadata\?\.message_id \|\| ''\),/, 'l\'id che Twitch ripete quando rimanda');
   assert.match(BOT, /const r = this\.colpi\?\.daCheer\(channel, \{ \.\.\.data, evento: ev\.id \|\| '' \}\) \|\| \{\};/);
-  assert.match(BOT, /crediti: pewBit, fusoDi: \(l\) => preferenzeDi\(l\)\.fuso, log \}\);/, 'i Bit si muovono solo dal registro di db.js, e scadono nel fuso del canale');
+  assert.match(BOT, /crediti: pewBit, fusoDi: \(l\) => preferenzeDi\(l\)\.fuso,\n/, 'i Bit si muovono solo dal registro di db.js, e scadono nel fuso del canale');
   assert.match(BOT, /pewSerie\.pulisci\(\); pewBit\.pulisci\(\);/, 'i riferimenti vecchi si puliscono una volta al giorno');
 });
 
@@ -44,6 +44,20 @@ test('un tocco: chi paga e\' chi ha l\'accesso, con un tetto alle richieste', ()
   assert.match(h, /if \(!extRateOk\('colpo-mira:' \+ String\(req\.ip \|\| ''\)\)\) return res\.status\(429\)/, 'lo stesso tetto della mira');
   assert.match(h, /const io = spettatoreDi\(req\);\n\s*if \(!io\) return res\.status\(401\)/);
   assert.match(h, /res\.json\(portaColpi\.lancia\(login, req\.body \|\| \{\}, String\(req\.ip \|\| ''\), io\)\);/, 'chi paga viene dalla sessione, mai dal corpo');
+});
+
+test('lo zaino: il registro vero, «!pew zaino» su Twitch, le risposte quando un colpo va nello zaino', () => {
+  assert.match(BOT, /zaino: pewZaino, log \}\);/, 'il servizio ha lo zaino di db.js');
+  assert.match(BOT, /pewBit\.pulisci\(\); pewZaino\.pulisci\(\);/);
+  const i = BOT.indexOf('chiedeZaino(cfgColpi, msg.text)');
+  assert.ok(i > 0 && i < BOT.indexOf('eFrasePresenza(cfgColpi, msg.text)'), 'prima della presenza');
+  const h = BOT.slice(i - 40, i + 1200);
+  assert.match(h, /\(!msg\.piattaforma \|\| msg\.piattaforma === 'twitch'\) && msg\.userId && this\.colpi\.conZaino\(login\)/);
+  assert.match(h, /if \(z\.rispondi && adesso - \(saldiBitChiesti\.get\(k\) \|\| 0\) >= z\.attesaSec \* 1000\) \{/);
+  assert.match(h, /this\.colpi\.zainoDi\(login, msg\.userId\)/, 'lo zaino e\' per id');
+  assert.match(BOT, /testoColpi\(login, r\.dopo && r\.esito === 'pagato' \? 'zaino-dentro' : 'monete-' \+ r\.esito/, '!pew CODICE per dopo: «e\' nel tuo zaino», non «sta per comparire»');
+  assert.match(BOT, /else if \(r\.esito === 'pagato' && r\.dopo\) this\.say\(channel, testoColpi\(channel, 'zaino-dentro'/);
+  assert.match(SRV, /zaino: pewZaino\.totali\(login\),/);
 });
 
 test('il saldo si legge con l\'accesso, si spende dalla porta, e il pannello vede i totali', () => {

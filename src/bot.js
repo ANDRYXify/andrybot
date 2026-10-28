@@ -102,11 +102,11 @@ import * as premiTempo from './features/premi-tempo.js';
 import * as bossFeat from './features/boss.js';
 import { aChi } from './features/risposte.js';
 import { modalitaDi, alLavoro } from './features/quando-lavora.js';
-import { statoVivo, registroColpi, effects as effettiDb, segnoInstagram, pewSerie, pewBit } from './db.js';
+import { statoVivo, registroColpi, effects as effettiDb, segnoInstagram, pewSerie, pewBit, pewZaino } from './db.js';
 import { creaServizioColpi } from './features/colpi-servizio.js';
 import * as economia from './features/economia.js';
 import { nomeMoneta, monetaDi, accordaMoneta } from './features/moneta.js';
-import { urlPaginaColpo, eFrasePresenza, pagaInChat, chiedeBit, rispostaBit, quandoScade, rispostaPresenza, titoloPremioMisto } from './features/colpi.js';
+import { urlPaginaColpo, eFrasePresenza, pagaInChat, chiedeBit, rispostaBit, chiedeZaino, rispostaZaino, voceDi as voceColpo, quandoScade, rispostaPresenza, titoloPremioMisto } from './features/colpi.js';
 import { preferenzeDi } from './features/preferenze.js';
 import { creaChatColpi, rigaDi as rigaChatColpi, BATTITO_MS as BATTITO_CHAT_COLPI } from './features/colpi-chat.js';
 import { coloreDi as coloreChatDi } from './features/badges.js';
@@ -211,6 +211,9 @@ function testoColpi(canale, cosa, chi, r = {}) {
       : [`${chi} pagate ${r.monete} ${r.moneta} per «${r.nome}»: ora un Cheer di ${r.resto} Bit con il codice ${r.codice}.`,
         `${chi} paid ${r.monete} ${r.moneta} for «${r.nome}»: now a Cheer of ${r.resto} Bits with the code ${r.codice}.`,
         `${chi} pagadas ${r.monete} ${r.moneta} por «${r.nome}»: ahora un Cheer de ${r.resto} Bits con el código ${r.codice}.`],
+    'zaino-dentro': [`${chi} «${r.nome}» è nel tuo zaino: lancialo quando vuoi da ${pagina}`,
+      `${chi} «${r.nome}» is in your backpack: launch it whenever you want from ${pagina}`,
+      `${chi} «${r.nome}» está en tu mochila: lánzalo cuando quieras desde ${pagina}`],
     'misto-bit-prima': [`${chi} i Bit per «${r.nome}» ci sono: mancano ${r.monete} ${r.moneta}, scrivi !${r.comando || 'pew'} ${r.codice} bit.`,
       `${chi} the Bits for «${r.nome}» are in: ${r.monete} ${r.moneta} to go, type !${r.comando || 'pew'} ${r.codice} bit.`,
       `${chi} los Bits para «${r.nome}» están: faltan ${r.monete} ${r.moneta}, escribe !${r.comando || 'pew'} ${r.codice} bit.`],
@@ -244,7 +247,9 @@ export class BotManager {
       // la serie della presenza: chi si presenta diretta dopo diretta
       serie: pewSerie,
       // i Bit da spendere sulla pagina: i Bit che non pagano un colpo
-      crediti: pewBit, fusoDi: (l) => preferenzeDi(l).fuso, log });
+      crediti: pewBit, fusoDi: (l) => preferenzeDi(l).fuso,
+      // lo zaino: i colpi comprati per dopo
+      zaino: pewZaino, log });
     // la chat della pagina dei colpi: i messaggi della chat di Twitch, girati a chi ha la pagina aperta
     this.colpiChat = creaChatColpi();
     setInterval(() => this.colpiChat.battito(), BATTITO_CHAT_COLPI).unref?.();
@@ -1349,7 +1354,7 @@ export class BotManager {
         const paga = cfgColpi ? pagaInChat(cfgColpi, msg.text) : null;
         if (paga) {
           const r = this.colpi.daMonete(login, { codice: paga.codice, user: msg.user, modo: paga.modo });
-          const t = testoColpi(login, 'monete-' + r.esito, '@' + (msg.display || msg.user),
+          const t = testoColpi(login, r.dopo && r.esito === 'pagato' ? 'zaino-dentro' : 'monete-' + r.esito, '@' + (msg.display || msg.user),
             { ...r, moneta: nomeMoneta(login), comando: cfgColpi.comando, premio: titoloPremioMisto({ nome: r.nome || '' }) });
           if (t) parla(t);
         } else if (cfgColpi && chiedeBit(cfgColpi, msg.text) && (!msg.piattaforma || msg.piattaforma === 'twitch') && msg.userId && this.colpi.conBitPew(login)) {
@@ -1360,6 +1365,17 @@ export class BotManager {
             const lingua = linguaChat(login), sc = this.colpi.scadonoBit(login, msg.userId);
             parla(rispostaBit(cfgColpi, lingua, { nome: '@' + (msg.display || msg.user), saldo: this.colpi.saldoBit(login, msg.userId),
               pagina: urlPaginaColpo(login).replace(/^https:\/\//, ''), quanti: sc?.quanti || 0, quando: sc ? quandoScade(sc.scade, lingua, preferenzeDi(login).fuso) : '' }));
+          }
+        } else if (cfgColpi && chiedeZaino(cfgColpi, msg.text) && (!msg.piattaforma || msg.piattaforma === 'twitch') && msg.userId && this.colpi.conZaino(login)) {
+          const z = cfgColpi.zaino, k = login + '|z|' + msg.userId, adesso = Date.now();
+          if (z.rispondi && adesso - (saldiBitChiesti.get(k) || 0) >= z.attesaSec * 1000) {
+            if (saldiBitChiesti.size > 5000) saldiBitChiesti.clear();
+            saldiBitChiesti.set(k, adesso);
+            const lingua = linguaChat(login), voci = this.colpi.zainoDi(login, msg.userId);
+            const prima = voci.filter((x) => x.scade).sort((a, b) => a.scade - b.scade)[0];
+            parla(rispostaZaino(cfgColpi, lingua, { nome: '@' + (msg.display || msg.user), pagina: urlPaginaColpo(login).replace(/^https:\/\//, ''),
+              voci: voci.map((x) => ({ quanti: x.quanti, nome: voceColpo(cfgColpi, x.voce)?.nome || x.voce })),
+              quanti: prima ? 1 : 0, quando: prima ? quandoScade(prima.scade, lingua, preferenzeDi(login).fuso) : '' }));
           }
         } else if (cfgColpi?.presenza.attiva && eFrasePresenza(cfgColpi, msg.text) && ePersona(login, msg.user)) {
           const piattaforma = msg.piattaforma || 'twitch';
@@ -1677,6 +1693,7 @@ export class BotManager {
         if (r.esito === 'sconosciuto' || r.esito === 'gia') this.say(channel, testoColpi(channel, 'codice', chi));
         else if (r.esito === 'fermo') this.say(channel, testoColpi(channel, 'fermo', chi));
         else if (r.esito === 'servono-monete') this.say(channel, testoColpi(channel, 'misto-punti-prima', chi, { ...r, moneta: nomeMoneta(channel), comando: this.colpi.cfgDi(channel).comando }));
+        else if (r.esito === 'pagato' && r.dopo) this.say(channel, testoColpi(channel, 'zaino-dentro', chi, r));
         return;
       }
     }
@@ -1777,6 +1794,7 @@ export class BotManager {
         const r = this.colpi?.daCheer(channel, { ...data, evento: ev.id || '' }) || {};
         if (r.esito === 'pochi') this.say(channel, testoColpi(channel, 'pochi', `@${data.user_login || ''}`, r));
         else if (r.esito === 'pagato' && r.inCoda) this.say(channel, testoColpi(channel, 'coda', `@${data.user_login || ''}`, r));
+        else if (r.esito === 'pagato' && r.dopo) this.say(channel, testoColpi(channel, 'zaino-dentro', `@${data.user_login || ''}`, r));
         else if (r.esito === 'servono-monete') this.say(channel, testoColpi(channel, 'misto-bit-prima', `@${data.user_login || ''}`, { ...r, moneta: nomeMoneta(channel), comando: this.colpi.cfgDi(channel).comando }));
       } catch (e) { log.debug(`#${channel} colpo dal cheer:`, e?.message || e); }
     }
@@ -3107,7 +3125,7 @@ export class BotManager {
   }
 
   _giornoEconomia() {
-    try { pewSerie.pulisci(); pewBit.pulisci(); } catch (e) { log.debug('dirette e Bit di Pewpewify:', e?.message || e); }
+    try { pewSerie.pulisci(); pewBit.pulisci(); pewZaino.pulisci(); } catch (e) { log.debug('dirette, Bit e zaino di Pewpewify:', e?.message || e); }
     for (const s of streamers.active()) {
       try {
         const e = economia.giornoEconomia(s.login);

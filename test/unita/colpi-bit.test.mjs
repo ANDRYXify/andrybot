@@ -261,7 +261,7 @@ test('la pagina: il saldo di chi ha l\'accesso, e si paga col saldo solo la prop
   const p = creaPortaColpi({ servizio: b.s, registro: registroColpi, streamers: { get: () => ({ settings: { colpi: b.cfg } }) },
     effettoDi: () => ({ tipo: 'immagine', file: 'p.png' }), mezziEuro: () => [], apriPagamento: async () => ({}), inOnda: () => true, overlay: () => true, ora: b.ora });
   assert.equal(p.dati(c).bitPew, true);
-  assert.deepEqual(p.saldi(c, { id: '21', login: 'marta' }), { bit: 500, monete: null }, 'senza le monete del canale, niente monete');
+  assert.deepEqual(p.saldi(c, { id: '21', login: 'marta' }), { bit: 500, monete: null, zaino: null }, 'senza le monete del canale, niente monete; senza lo zaino acceso, niente zaino');
   assert.equal(p.saldi(c, null), null);
   const sua = p.mira(c, { voce: 'pomodoro', x: 10, y: 10 }, 'ip1', { id: '22', nome: 'luca' }).mira;
   assert.deepEqual(await p.paga(c, sua.id, 'bitpew', null), { errore: 'accesso' });
@@ -271,7 +271,7 @@ test('la pagina: il saldo di chi ha l\'accesso, e si paga col saldo solo la prop
   assert.equal(p.stato(c, mia.id).prezzi.resa, 100, 'la pagina sa che la mira si paga col saldo');
   b.cfg.bitPew = { attivo: false };
   assert.equal(p.dati(c).bitPew, false);
-  assert.deepEqual(p.saldi(c, { id: '21' }), { bit: null, monete: null }, 'spenti: il saldo resta, ma non si mostra e non si spende');
+  assert.deepEqual(p.saldi(c, { id: '21' }), { bit: null, monete: null, zaino: null }, 'spenti: il saldo resta, ma non si mostra e non si spende');
 });
 
 test('due ronde che si accavallano rendono una volta sola i Bit e le monete di un colpo monete+Bit', async () => {
@@ -372,7 +372,7 @@ test('come si dice una scadenza, e la risposta in chat dello streamer', () => {
   assert.equal(quandoScade(Date.parse('2026-10-31T23:00:00Z'), 'it', R), '31 ottobre', 'scade a mezzanotte: vale fino al giorno prima');
   assert.match(quandoScade(Date.parse('2026-10-29T05:00:00Z'), 'it', R), /^29 ottobre\D+06:00$/, 'a un\'ora che non e\' mezzanotte, con l\'ora');
   const cfg = normalizza({});
-  assert.equal(rispostaBit(cfg, 'it', { nome: '@marta', saldo: 30, pagina: 'pew.x/c', quanti: 10, quando: '31 ottobre' }), '@marta hai 30 Bit da spendere su pew.x/c (10 valgono fino a 31 ottobre)');
+  assert.equal(rispostaBit(cfg, 'it', { nome: '@marta', saldo: 30, pagina: 'pew.x/c', quanti: 10, quando: '31 ottobre' }), '@marta hai 30 Bit da spendere su pew.x/c (10 valgono fino al 31 ottobre)');
   assert.equal(rispostaBit(cfg, 'en', { nome: '@m', saldo: 3, pagina: 'p' }), '@m you have 3 Bits to spend on p', 'senza scadenza vicina, niente frase');
   const mio = normalizza({ bitPew: { risposta: '{nome}: {saldo} Bit ({quanti} entro {quando}) {zz}' } });
   assert.equal(rispostaBit(mio, 'it', { nome: 'a', saldo: 1, quanti: 1, quando: 'domani' }), 'a: 1 Bit (1 entro domani) {zz}', 'il testo dello streamer, coi segnaposto che conosce');

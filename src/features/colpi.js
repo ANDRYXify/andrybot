@@ -82,6 +82,7 @@ export function normalizza(cfg) {
       scala: num(v.scala, LIMITI.scala, 100), attiva: v.attiva !== false,
       monete: prezzo(v.monete, LIMITI.monete),
       misti: normMisti(v.misti),
+      zaino: normZainoVoce(v.zaino),
       premioMisto: /^[0-9a-f-]{8,64}$/.test(String(v.premioMisto || '')) ? String(v.premioMisto) : '',
       premioMistoCosto: num(v.premioMistoCosto, [0, LIMITI.punti[1]], 0), premioMistoNome: testo(v.premioMistoNome, 45),
       categoria: ID.test(String(v.categoria || '')) ? String(v.categoria) : '',
@@ -108,6 +109,7 @@ export function normalizza(cfg) {
     dida: testo(o.dida, 200),
     presenza: normPresenza(o.presenza),
     bitPew: normBitPew(o.bitPew),
+    zaino: normZaino(o.zaino),
   };
 }
 
@@ -176,7 +178,7 @@ export const BIT_PEW = Object.freeze({
   ogni: Object.freeze(['giorno', 'settimana', 'mese', 'anno']), quanti: [1, 1000], ora: [0, 23], giorno: [1, 31], mese: [1, 12], grazia: [0, 720], avviso: [0, 90],
   // la risposta di serie a «!pew bit»; {scade} e' la parte sulla scadenza, quando c'e'
   risposte: Object.freeze({ it: '{nome} hai {saldo} Bit da spendere su {pagina}{scade}', en: '{nome} you have {saldo} Bits to spend on {pagina}{scade}', es: '{nome} tienes {saldo} Bits para gastar en {pagina}{scade}' }),
-  scadenze: Object.freeze({ it: ' ({quanti} valgono fino a {quando})', en: ' ({quanti} last until {quando})', es: ' ({quanti} valen hasta {quando})' }),
+  scadenze: Object.freeze({ it: ' ({quanti} valgono fino al {quando})', en: ' ({quanti} last until {quando})', es: ' ({quanti} valen hasta el {quando})' }),
 });
 function normBitPew(b) {
   const o = b && typeof b === 'object' ? b : {};
@@ -346,6 +348,56 @@ export const metodiDi = (voce) => METODI.filter((m) => prezzoDi(voce, m) > 0);
 // piu' punti canale. Le monete si pagano per prime e restano come acconto
 // sulla mira; il resto arriva col cheer o col riscatto del premio misto. Senza
 // euro: un pagamento con la carta a meta' aprirebbe rimborsi a meta'.
+// LO ZAINO (docs/COLPI.md, «Lo zaino»): un colpo comprato per dopo, che lo
+// spettatore ritrova sulla pagina di quel canale e lancia quando vuole. Dello
+// streamer: se c'e', con cosa si compra per dopo, quanti a testa (in tutto e
+// per colpo), quando scadono (lo stesso orologio dei Bit da spendere, per tutti
+// o per colpo), se alla scadenza tornano i saldi, e la risposta a «!pew zaino».
+export const ZAINO = Object.freeze({
+  con: Object.freeze(['monete', 'bit', 'misto', 'cheer', 'punti', 'euro']), massimo: [0, 1000], risposta: 200,
+  modiVoce: Object.freeze(['come', 'no', 'mai', 'dopo']),
+  risposte: Object.freeze({ it: '{nome} nel tuo zaino: {elenco}{scade}. Si lanciano da {pagina}', en: '{nome} in your backpack: {elenco}{scade}. Launch them from {pagina}', es: '{nome} en tu mochila: {elenco}{scade}. Se lanzan desde {pagina}' }),
+  vuoto: Object.freeze({ it: '{nome} il tuo zaino è vuoto: i colpi per dopo si comprano su {pagina}', en: '{nome} your backpack is empty: buy hits for later on {pagina}', es: '{nome} tu mochila está vacía: los golpes para después se compran en {pagina}' }),
+  scadenze: Object.freeze({ it: ' (il primo vale fino al {quando})', en: ' (the first lasts until {quando})', es: ' (el primero vale hasta el {quando})' }),
+});
+function normZaino(z) {
+  const o = z && typeof z === 'object' ? z : {};
+  const c = o.con && typeof o.con === 'object' ? o.con : {};
+  const sc = normBitPew({ scadenza: o.scadenza }).scadenza;
+  return {
+    attivo: o.attivo === true,
+    con: Object.fromEntries(ZAINO.con.map((k) => [k, c[k] !== false])),
+    massimo: num(o.massimo, ZAINO.massimo, 0), massimoVoce: num(o.massimoVoce, ZAINO.massimo, 0),
+    scadenza: sc, rendi: o.rendi !== false,
+    rispondi: o.rispondi !== false, risposta: testo(o.risposta, ZAINO.risposta), attesaSec: num(o.attesaSec, BIT_PEW.attesaSec, 60),
+  };
+}
+function normZainoVoce(z) {
+  const o = z && typeof z === 'object' ? z : {};
+  return { modo: ZAINO.modiVoce.includes(o.modo) ? o.modo : 'come', quanti: num(o.quanti, BIT_PEW.quanti, 30), unita: BIT_PEW.unita.includes(o.unita) ? o.unita : 'giorni' };
+}
+// La scadenza di un colpo comprato per dopo: quella della voce se ne ha una,
+// se no quella di tutti. null se la voce non si compra per dopo.
+export function zainoDi(cfg, voce) {
+  if (!cfg?.zaino?.attivo || !voce || voce.zaino?.modo === 'no') return null;
+  const m = voce.zaino?.modo || 'come';
+  if (m === 'mai') return { ...cfg.zaino.scadenza, tipo: 'mai' };
+  if (m === 'dopo') return { ...cfg.zaino.scadenza, tipo: 'dopo', quanti: voce.zaino.quanti, unita: voce.zaino.unita };
+  return cfg.zaino.scadenza;
+}
+// «!pew zaino»
+export const chiedeZaino = (cfg, messaggio) => new RegExp(`^!${cfg?.comando || COMANDO_SERIE}\\s+(zaino|backpack|mochila)\\s*$`, 'i').test(String(messaggio || '').trim());
+// {elenco}: «2 Pomodoro, 1 Risata»
+export function rispostaZaino(cfg, lingua, v = {}) {
+  const z = cfg?.zaino || normZaino({});
+  const L = ZAINO.risposte[lingua] ? lingua : 'it';
+  const elenco = (v.voci || []).map((x) => `${x.quanti} ${x.nome}`).join(', ');
+  const scade = v.quanti > 0 && v.quando ? ZAINO.scadenze[L].replace('{quanti}', v.quanti).replace('{quando}', v.quando) : '';
+  const vals = { nome: v.nome || '', elenco, pagina: v.pagina || '', scade, quanti: v.quanti || 0, quando: v.quando || '' };
+  const t = !elenco ? ZAINO.vuoto[L] : (z.risposta || ZAINO.risposte[L]);
+  return String(t).replace(/\{(nome|elenco|pagina|scade|quanti|quando)\}/g, (_, k) => String(vals[k])).slice(0, 450);
+}
+
 export const MISTI = Object.freeze(['bit', 'punti']);
 function normMisti(m) {
   const o = m && typeof m === 'object' ? m : {};

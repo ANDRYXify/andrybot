@@ -41,11 +41,11 @@ export const T = {
     chat: 'Chat', chatVuota: 'La chat è tranquilla: i messaggi nuovi compaiono qui.', chatScrivi: 'Scrivi in chat', chatInvia: 'Invia',
     chatFuori: 'La chat si legge da qui. Per scrivere, accedi con Twitch.', chatNonInviato: 'Twitch non ha mandato il messaggio: {motivo}',
     accedi: 'Accedi con Twitch', esci: 'Esci', sei: 'Sei {nome}',
-    saldoBit: 'Hai {n} Bit da spendere qui.', saldoMonete: 'Hai {n} {moneta}.', scadonoBit: '{n} di questi Bit valgono fino a {quando}.', lanciaBit: 'Lancia · {n} Bit', lanciaMonete: 'Lancia · {n} {moneta}', lanciaMisto: 'Lancia · {monete} {moneta} + {bit} Bit', altriModi: 'Altri modi di pagare', lanciaNota: 'Paghi col tuo saldo: niente codice, il colpo parte subito.', bitPewIo: 'Paga {n} Bit dal tuo saldo', bitPewNota: 'Sono i Bit che hai mandato al canale senza pagarci un colpo: ne hai {saldo}.', bitPewAccedi: 'Accedi con Twitch: i Bit che mandi al canale si spendono anche qui.',
+    saldoBit: 'Hai {n} Bit da spendere qui.', saldoMonete: 'Hai {n} {moneta}.', scadonoBit: '{n} di questi Bit valgono fino al {quando}.', zainoTitolo: 'Il tuo zaino', zainoVuoto: 'È vuoto: compra un colpo per dopo e lo ritrovi qui, da lanciare quando vuoi.', zainoRiga: '{n} × {nome}', zainoFino: 'il primo vale fino al {quando}', lanciaZaino: 'Lancia dallo zaino ({n})', perDopo: 'Per dopo, nello zaino', compraBit: 'Compra · {n} Bit', compraMonete: 'Compra · {n} {moneta}', compraMisto: 'Compra · {monete} {moneta} + {bit} Bit', altriDopo: 'Altri modi per dopo', dopoNota: 'Non parte adesso: lo ritrovi nel tuo zaino su questa pagina e lo lanci quando vuoi.', dopoAccedi: 'Accedi con Twitch per comprare colpi per dopo: finiscono nel tuo zaino.', nelloZaino: 'Comprato: è nel tuo zaino. Lancialo quando vuoi.', lanciaBit: 'Lancia · {n} Bit', lanciaMonete: 'Lancia · {n} {moneta}', lanciaMisto: 'Lancia · {monete} {moneta} + {bit} Bit', altriModi: 'Altri modi di pagare', lanciaNota: 'Paghi col tuo saldo: niente codice, il colpo parte subito.', bitPewIo: 'Paga {n} Bit dal tuo saldo', bitPewNota: 'Sono i Bit che hai mandato al canale senza pagarci un colpo: ne hai {saldo}.', bitPewAccedi: 'Accedi con Twitch: i Bit che mandi al canale si spendono anche qui.',
     accediPerche: 'Twitch ti chiede un solo permesso: scrivere in chat a nome tuo. Con l\'accesso non serve il codice: paga il tuo cheer o il tuo riscatto.',
     puntiIo: 'Con i punti canale: su Twitch riscatta «{premio}» ({n} punti). Hai fatto l\'accesso: nel riscatto scrivi quello che vuoi, il colpo è tuo.',
     bitIo: 'Con i Bit: fai un Cheer di almeno {n} Bit nella chat di Twitch. Hai fatto l\'accesso: il tuo prossimo cheer da {n} Bit paga questo colpo, senza codice. Per pagarlo a pezzi, scrivi il codice {codice} in ogni cheer.',
-    bitNonQui: 'I Bit e i punti si spendono solo su Twitch: è Twitch a non lasciarli usare da altri siti.',
+    bitNonQui: 'I Bit e i punti di Twitch si spendono solo su Twitch, col cheer e col premio: è Twitch a non lasciarli usare da altri siti. Monete e Bit da spendere invece sono di questa pagina.',
     attesa: 'Aspetto il pagamento…', partito: 'Il colpo è comparso nella diretta: lo vedi fra qualche secondo.',
     pagata: 'Pagato: il colpo sta per comparire. Se entro 10 minuti non compare, euro, punti, monete e Bit da spendere ti tornano da soli.',
     rimborsata: 'Il colpo non è potuto comparire: il pagamento ti è stato restituito.',
@@ -58,7 +58,7 @@ export const T = {
       protetta: 'Quel punto è protetto: scegline un altro.', punto: 'Quel punto è fuori dalla diretta.', attesa: 'Hai appena mirato: riprova fra {n} s.',
       troppi: 'Troppi colpi in questo minuto: riprova fra poco.', codice: 'Qualcosa non ha funzionato: riprova.', rete: 'La connessione non risponde: riprova.',
       pagamento: 'Il pagamento non si apre in questo momento: riprova fra poco.', gia: 'Il pagamento di questa mira è già aperto.',
-      pochi: 'Non ti bastano: ne hai {saldo}, ne servono {serve}.', accesso: 'Per pagare con le monete accedi con Twitch.',
+      pochi: 'Non ti bastano: ne hai {saldo}, ne servono {serve}.', accesso: 'Per pagare con le monete accedi con Twitch.', 'zaino-pieno': 'Il tuo zaino è pieno: al massimo {massimo}. Lancia quelli che hai e fai spazio.', vuoto: 'Nel tuo zaino non ce n’è uno così.', mezzo: 'Per dopo questo colpo non si compra in questo modo.', zaino: 'Questo colpo non si compra per dopo.',
     },
     piede: 'I pagamenti vanno a {canale}.', privacy: 'Privacy',
   },
@@ -88,11 +88,11 @@ export const T = {
     chat: 'Chat', chatVuota: 'Chat is quiet: new messages show up here.', chatScrivi: 'Write in chat', chatInvia: 'Send',
     chatFuori: 'You can read the chat here. To write, log in with Twitch.', chatNonInviato: 'Twitch did not send the message: {motivo}',
     accedi: 'Log in with Twitch', esci: 'Log out', sei: 'You are {nome}',
-    saldoBit: 'You have {n} Bits to spend here.', saldoMonete: 'You have {n} {moneta}.', scadonoBit: '{n} of these Bits last until {quando}.', lanciaBit: 'Launch · {n} Bits', lanciaMonete: 'Launch · {n} {moneta}', lanciaMisto: 'Launch · {monete} {moneta} + {bit} Bits', altriModi: 'Other ways to pay', lanciaNota: 'You pay from your balance: no code, the hit goes off right away.', bitPewIo: 'Pay {n} Bits from your balance', bitPewNota: 'These are the Bits you sent to the channel without paying for a hit: you have {saldo}.', bitPewAccedi: 'Log in with Twitch: the Bits you send to the channel can be spent here too.',
+    saldoBit: 'You have {n} Bits to spend here.', saldoMonete: 'You have {n} {moneta}.', scadonoBit: '{n} of these Bits last until {quando}.', zainoTitolo: 'Your backpack', zainoVuoto: 'It\'s empty: buy a hit for later and you\'ll find it here, to launch whenever you want.', zainoRiga: '{n} × {nome}', zainoFino: 'the first lasts until {quando}', lanciaZaino: 'Launch from backpack ({n})', perDopo: 'For later, in the backpack', compraBit: 'Buy · {n} Bits', compraMonete: 'Buy · {n} {moneta}', compraMisto: 'Buy · {monete} {moneta} + {bit} Bits', altriDopo: 'Other ways for later', dopoNota: 'It doesn\'t go off now: you\'ll find it in your backpack on this page and launch it whenever you want.', dopoAccedi: 'Log in with Twitch to buy hits for later: they go in your backpack.', nelloZaino: 'Bought: it\'s in your backpack. Launch it whenever you want.', lanciaBit: 'Launch · {n} Bits', lanciaMonete: 'Launch · {n} {moneta}', lanciaMisto: 'Launch · {monete} {moneta} + {bit} Bits', altriModi: 'Other ways to pay', lanciaNota: 'You pay from your balance: no code, the hit goes off right away.', bitPewIo: 'Pay {n} Bits from your balance', bitPewNota: 'These are the Bits you sent to the channel without paying for a hit: you have {saldo}.', bitPewAccedi: 'Log in with Twitch: the Bits you send to the channel can be spent here too.',
     accediPerche: 'Twitch asks you for one permission only: writing in chat as you. Once logged in no code is needed: your own cheer or redemption pays.',
     puntiIo: 'With channel points: on Twitch redeem «{premio}» ({n} points). You are logged in: write anything in the redemption, the hit is yours.',
     bitIo: 'With Bits: cheer at least {n} Bits in the Twitch chat. You are logged in: your next cheer of {n} Bits pays for this hit, no code needed. To pay it in parts, write the code {codice} in every cheer.',
-    bitNonQui: 'Bits and points can only be spent on Twitch: Twitch does not let other sites use them.',
+    bitNonQui: 'Twitch Bits and points can only be spent on Twitch, with a cheer and the reward: Twitch does not let other sites use them. Coins and Bits to spend belong to this page instead.',
     attesa: 'Waiting for the payment…', partito: 'Your hit showed up on the stream: you\'ll see it in a few seconds.',
     pagata: 'Paid: the hit is about to show. If it doesn\'t within 10 minutes, euros, points, coins and Bits to spend come back to you by themselves.',
     rimborsata: 'The hit couldn\'t show: your payment has been returned.',
@@ -105,7 +105,7 @@ export const T = {
       protetta: 'That spot is protected: pick another one.', punto: 'That spot is outside the stream.', attesa: 'You just aimed: try again in {n} s.',
       troppi: 'Too many hits this minute: try again shortly.', codice: 'Something went wrong: try again.', rete: 'The connection isn\'t answering: try again.',
       pagamento: 'The payment won\'t open right now: try again shortly.', gia: 'The payment for this aim is already open.',
-      pochi: 'Not enough: you have {saldo}, it takes {serve}.', accesso: 'To pay with coins, log in with Twitch.',
+      pochi: 'Not enough: you have {saldo}, it takes {serve}.', accesso: 'To pay with coins, log in with Twitch.', 'zaino-pieno': 'Your backpack is full: {massimo} at most. Launch the ones you have to make room.', vuoto: 'There isn’t one like that in your backpack.', mezzo: 'This hit can’t be bought for later this way.', zaino: 'This hit can’t be bought for later.',
     },
     piede: 'Payments go to {canale}.', privacy: 'Privacy',
   },
@@ -135,11 +135,11 @@ export const T = {
     chat: 'Chat', chatVuota: 'El chat está tranquilo: los mensajes nuevos aparecen aquí.', chatScrivi: 'Escribe en el chat', chatInvia: 'Enviar',
     chatFuori: 'El chat se lee desde aquí. Para escribir, accede con Twitch.', chatNonInviato: 'Twitch no envió el mensaje: {motivo}',
     accedi: 'Accede con Twitch', esci: 'Salir', sei: 'Eres {nome}',
-    saldoBit: 'Tienes {n} Bits para gastar aquí.', saldoMonete: 'Tienes {n} {moneta}.', scadonoBit: '{n} de estos Bits valen hasta {quando}.', lanciaBit: 'Lanza · {n} Bits', lanciaMonete: 'Lanza · {n} {moneta}', lanciaMisto: 'Lanza · {monete} {moneta} + {bit} Bits', altriModi: 'Otras formas de pagar', lanciaNota: 'Pagas con tu saldo: sin código, el golpe sale enseguida.', bitPewIo: 'Paga {n} Bits de tu saldo', bitPewNota: 'Son los Bits que mandaste al canal sin pagar un golpe: tienes {saldo}.', bitPewAccedi: 'Entra con Twitch: los Bits que mandas al canal también se gastan aquí.',
+    saldoBit: 'Tienes {n} Bits para gastar aquí.', saldoMonete: 'Tienes {n} {moneta}.', scadonoBit: '{n} de estos Bits valen hasta el {quando}.', zainoTitolo: 'Tu mochila', zainoVuoto: 'Está vacía: compra un golpe para después y lo encuentras aquí, para lanzarlo cuando quieras.', zainoRiga: '{n} × {nome}', zainoFino: 'el primero vale hasta el {quando}', lanciaZaino: 'Lanza desde la mochila ({n})', perDopo: 'Para después, en la mochila', compraBit: 'Compra · {n} Bits', compraMonete: 'Compra · {n} {moneta}', compraMisto: 'Compra · {monete} {moneta} + {bit} Bits', altriDopo: 'Otras formas para después', dopoNota: 'No sale ahora: lo encuentras en tu mochila en esta página y lo lanzas cuando quieras.', dopoAccedi: 'Entra con Twitch para comprar golpes para después: van a tu mochila.', nelloZaino: 'Comprado: está en tu mochila. Lánzalo cuando quieras.', lanciaBit: 'Lanza · {n} Bits', lanciaMonete: 'Lanza · {n} {moneta}', lanciaMisto: 'Lanza · {monete} {moneta} + {bit} Bits', altriModi: 'Otras formas de pagar', lanciaNota: 'Pagas con tu saldo: sin código, el golpe sale enseguida.', bitPewIo: 'Paga {n} Bits de tu saldo', bitPewNota: 'Son los Bits que mandaste al canal sin pagar un golpe: tienes {saldo}.', bitPewAccedi: 'Entra con Twitch: los Bits que mandas al canal también se gastan aquí.',
     accediPerche: 'Twitch te pide un solo permiso: escribir en el chat en tu nombre. Con el acceso no hace falta el código: paga tu cheer o tu canje.',
     puntiIo: 'Con puntos del canal: en Twitch canjea «{premio}» ({n} puntos). Has accedido: en el canje escribe lo que quieras, el golpe es tuyo.',
     bitIo: 'Con Bits: haz un Cheer de al menos {n} Bits en el chat de Twitch. Has accedido: tu próximo cheer de {n} Bits paga este golpe, sin código. Para pagarlo por partes, escribe el código {codice} en cada cheer.',
-    bitNonQui: 'Los Bits y los puntos solo se gastan en Twitch: es Twitch quien no deja usarlos a otros sitios.',
+    bitNonQui: 'Los Bits y los puntos de Twitch solo se gastan en Twitch, con el cheer y la recompensa: es Twitch quien no deja usarlos a otros sitios. Las monedas y los Bits para gastar, en cambio, son de esta página.',
     attesa: 'Esperando el pago…', partito: 'El golpe apareció en el directo: lo ves en unos segundos.',
     pagata: 'Pagado: el golpe está por aparecer. Si en 10 minutos no aparece, euros, puntos, monedas y Bits para gastar vuelven a ti solos.',
     rimborsata: 'El golpe no pudo aparecer: se te ha devuelto el pago.',
@@ -152,7 +152,7 @@ export const T = {
       protetta: 'Ese punto está protegido: elige otro.', punto: 'Ese punto está fuera del directo.', attesa: 'Acabas de apuntar: vuelve a intentarlo en {n} s.',
       troppi: 'Demasiados golpes este minuto: vuelve a intentarlo pronto.', codice: 'Algo ha fallado: vuelve a intentarlo.', rete: 'La conexión no responde: vuelve a intentarlo.',
       pagamento: 'El pago no se abre ahora: vuelve a intentarlo pronto.', gia: 'El pago de este punto ya está abierto.',
-      pochi: 'No te alcanza: tienes {saldo}, hacen falta {serve}.', accesso: 'Para pagar con monedas entra con Twitch.',
+      pochi: 'No te alcanza: tienes {saldo}, hacen falta {serve}.', accesso: 'Para pagar con monedas entra con Twitch.', 'zaino-pieno': 'Tu mochila está llena: como máximo {massimo}. Lanza los que tienes para hacer sitio.', vuoto: 'En tu mochila no hay uno así.', mezzo: 'Este golpe no se compra para después de esta forma.', zaino: 'Este golpe no se compra para después.',
     },
     piede: 'Los pagos van a {canale}.', privacy: 'Privacidad',
   },
@@ -200,11 +200,13 @@ export function htmlPaginaColpo({ login, display, avatar = '', pagina, baseUrl, 
 </div>
 <aside class="cp-lato">
 <section class="cp-carta cp-io" id="cp-io"></section>
+<section class="cp-carta cp-zaino" id="cp-zaino" hidden></section>
 <section class="cp-carta cp-passo" id="cp-p1"><h2 class="cp-t"><span>1</span>${esc(t.passo1)}</h2><div class="cp-cat" id="cp-cat" role="group" aria-label="${esc(t.categorie)}" hidden></div><div class="cp-voci" id="cp-voci" role="group" aria-label="${esc(t.passo1)}"></div><p id="cp-vuoto" hidden></p></section>
 <section class="cp-carta cp-passo spento" id="cp-p2"><h2 class="cp-t"><span>2</span>${esc(t.passo2)}</h2><p>${esc(t.mira)}</p>
 <label class="cp-campo" id="cp-nome-l" hidden>${esc(t.nome)}<input id="cp-nome" maxlength="25" autocomplete="nickname" placeholder="${esc(t.nomePh)}"></label>
 <div class="cp-lancia" id="cp-lancia" hidden></div>
 <div class="cp-righe-b"><button type="button" class="cp-b" id="cp-conferma" disabled>${esc(t.conferma)}</button><button type="button" class="cp-b due" id="cp-prova-qui" disabled>${esc(t.prova)}</button></div>
+<div class="cp-dopo" id="cp-dopo" hidden></div>
 </section>
 <section class="cp-carta cp-passo spento" id="cp-p3"><h2 class="cp-t"><span>3</span>${esc(t.passo3)}</h2><div id="cp-paga"></div></section>
 <p class="cp-avviso" id="cp-avviso" role="status" hidden></p>
@@ -305,6 +307,14 @@ export function htmlPaginaColpo({ login, display, avatar = '', pagina, baseUrl, 
   .cp-lancia{display:flex;flex-wrap:wrap;gap:.5rem;margin:.2rem 0 .6rem}
   .cp-lancia[hidden]{display:none}
   .cp-lancia .cp-nota{flex-basis:100%;margin:0}
+  .cp-dopo{display:grid;gap:.5rem;margin-top:.8rem;padding-top:.8rem;border-top:1px dashed currentColor}
+  .cp-dopo[hidden],.cp-zaino[hidden]{display:none}
+  .cp-dopo-t{font-size:.95rem;margin:0}
+  .cp-dopo .cp-nota{margin:0}
+  .cp-zaino-l{list-style:none;margin:.4rem 0 0;padding:0;display:grid;gap:.35rem}
+  .cp-zaino-l li{display:flex;flex-wrap:wrap;align-items:baseline;gap:.2rem .6rem}
+  .cp-zaino-v{font:inherit;font-weight:700;color:inherit;background:none;border:0;padding:0;cursor:pointer;text-decoration:underline;text-underline-offset:3px;font-variant-numeric:tabular-nums}
+  .cp-zaino-l small{font-size:.8rem;color:var(--tenue)}
   [hidden]{display:none!important}
   @media (prefers-reduced-motion:reduce){.cp *{transition:none!important;animation:none!important}}`;
   const fuori = {

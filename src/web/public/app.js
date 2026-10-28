@@ -2667,6 +2667,7 @@ function _demoGet(via) {
         { tipo: 'comecompra', titolo: '', testo: '' }, { tipo: 'piede', link: true, canale: true }] } };
   const statoDona = { paginaUrl: 'https://dona.socialbot.live/andryxify', conto: { stato: 'nessuno', coda: '', nota: '' }, satispay: { stato: 'nessuno', coda: '', nota: '' }, kofi: { stato: 'nessuno', pagina: '', token: false, valuta: 'EUR', webhook: 'https://socialbot.live/dona/kofi/andryxify' }, riepilogo: { oggi: [], mese: [], anno: [], sempre: [] }, ultime: [], daApprovare: [] };
   F['/api/colpi'] = { pagina: 'https://pew.socialbot.live/andryxify', euro: ['stripe'], valuta: 'EUR', premiErrori: [],
+    zaino: { colpi: 7, persone: 4 },
     bitPew: { totali: { persone: 3, bit: 1450 }, primi: [{ chi: '1', nome: 'marta', saldo: 900 }, { chi: '2', nome: 'lucaplays', saldo: 400 }, { chi: '3', nome: 'giuliaa', saldo: 150 }] },
     voci: [{ id: 'pomodoro', premioNome: 'Colpo: Pomodoro', premioCosto: 500 }],
     ultimi: [{ quando: Date.now() - 600000, nome: 'Pomodoro', chi: 'Marta', metodo: 'bit', stato: 'sparata' }, { quando: Date.now() - 1500000, nome: 'Pomodoro', chi: 'lucaplays', metodo: 'euro', stato: 'sparata' }] };
@@ -26259,49 +26260,8 @@ function pannelloColpi() {
       <p class="pt-dice" id="cl-bp-dice" aria-live="polite"></p>
       <p class="suggerimento">${L(`Si spendono dalla pagina, con l'accesso a Twitch: sono di chi li ha mandati, e restano suoi anche se cambia nome. In chat «!${esc(c.comando || 'pew')} bit» dice a ognuno quanti ne ha. Valgono i Bit mandati da quando li accendi; quelli anonimi non sono di nessuno.`, `They are spent from the page, logged in with Twitch: they belong to whoever sent them, and stay theirs even if they change name. In chat «!${esc(c.comando || 'pew')} bit» tells everyone how many they have. Bits count from when you turn this on; anonymous ones belong to no one.`, `Se gastan desde la página, con el acceso a Twitch: son de quien los mandó, y siguen siendo suyos aunque cambie de nombre. En el chat «!${esc(c.comando || 'pew')} bit» le dice a cada uno cuántos tiene. Cuentan los Bits mandados desde que lo activas; los anónimos no son de nadie.`)}</p>
       <h4 class="spazio-sopra">${L('Quando scadono', 'When they expire', 'Cuándo caducan')}</h4>
-      <div class="griglia-campi">
-        <div>
-          <label class="campo" for="cl-bp-tipo">${L('Scadenza', 'Expiry', 'Caducidad')}</label>
-          <select id="cl-bp-tipo">${[['mai', L('Mai', 'Never', 'Nunca')], ['dopo', L('Dopo un tempo da quando arrivano', 'A while after they arrive', 'Un tiempo después de llegar')], ['fine', L('A una data fissa del calendario', 'On a fixed calendar date', 'En una fecha fija del calendario')], ['inattivo', L('Se chi li ha non li muove per un po\'', 'If the holder doesn\'t use them for a while', 'Si quien los tiene no los mueve durante un tiempo')]].map(([v, t]) => `<option value="${v}"${(c.bitPew?.scadenza?.tipo || 'mai') === v ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select>
-        </div>
-        <div data-bp-per="dopo inattivo">
-          <label class="campo" for="cl-bp-quanti">${L('Quanto', 'How long', 'Cuánto')}</label>
-          <input type="number" id="cl-bp-quanti" min="1" max="1000" value="${Number(c.bitPew?.scadenza?.quanti) || 30}">
-        </div>
-        <div data-bp-per="dopo inattivo">
-          <label class="campo" for="cl-bp-unita">${L('Unità', 'Unit', 'Unidad')}</label>
-          <select id="cl-bp-unita">${[['ore', L('ore', 'hours', 'horas')], ['giorni', L('giorni', 'days', 'días')], ['settimane', L('settimane', 'weeks', 'semanas')], ['mesi', L('mesi', 'months', 'meses')], ['anni', L('anni', 'years', 'años')]].map(([v, t]) => `<option value="${v}"${(c.bitPew?.scadenza?.unita || 'giorni') === v ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select>
-        </div>
-        <div data-bp-per="fine">
-          <label class="campo" for="cl-bp-ogni">${L('Ogni', 'Every', 'Cada')}</label>
-          <select id="cl-bp-ogni">${[['giorno', L('giorno', 'day', 'día')], ['settimana', L('settimana', 'week', 'semana')], ['mese', L('mese', 'month', 'mes')], ['anno', L('anno', 'year', 'año')]].map(([v, t]) => `<option value="${v}"${(c.bitPew?.scadenza?.ogni || 'mese') === v ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select>
-        </div>
-        <div data-bp-per="fine-settimana">
-          <label class="campo" for="cl-bp-dow">${L('Giorno', 'Day', 'Día')}</label>
-          <select id="cl-bp-dow">${[L('lunedì', 'Monday', 'lunes'), L('martedì', 'Tuesday', 'martes'), L('mercoledì', 'Wednesday', 'miércoles'), L('giovedì', 'Thursday', 'jueves'), L('venerdì', 'Friday', 'viernes'), L('sabato', 'Saturday', 'sábado'), L('domenica', 'Sunday', 'domingo')].map((t, i) => `<option value="${i + 1}"${Number(c.bitPew?.scadenza?.giorno || 1) === i + 1 ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select>
-        </div>
-        <div data-bp-per="fine-anno">
-          <label class="campo" for="cl-bp-mese">${L('Mese', 'Month', 'Mes')}</label>
-          <select id="cl-bp-mese">${Array.from({ length: 12 }, (_, i) => `<option value="${i + 1}"${Number(c.bitPew?.scadenza?.mese || 1) === i + 1 ? ' selected' : ''}>${esc(new Date(2026, i, 15).toLocaleString(localePannello(), { month: 'long' }))}</option>`).join('')}</select>
-        </div>
-        <div data-bp-per="fine-mese fine-anno">
-          <label class="campo" for="cl-bp-giorno">${L('Giorno del mese', 'Day of the month', 'Día del mes')}</label>
-          <input type="number" id="cl-bp-giorno" min="1" max="31" value="${Number(c.bitPew?.scadenza?.giorno) || 1}">
-        </div>
-        <div data-bp-per="fine">
-          <label class="campo" for="cl-bp-ora">${L('Alle ore', 'At (hour)', 'A las (hora)')}</label>
-          <input type="number" id="cl-bp-ora" min="0" max="23" value="${Number(c.bitPew?.scadenza?.ora) || 0}">
-        </div>
-        <div data-bp-per="dopo fine inattivo">
-          <label class="campo" for="cl-bp-grazia">${L('Ore minime di validità', 'Minimum hours valid', 'Horas mínimas de validez')}</label>
-          <input type="number" id="cl-bp-grazia" min="0" max="720" value="${Number.isFinite(Number(c.bitPew?.scadenza?.grazia)) ? Number(c.bitPew.scadenza.grazia) : 24}">
-        </div>
-        <div data-bp-per="dopo fine inattivo">
-          <label class="campo" for="cl-bp-avviso">${L('Avvisa quanti giorni prima', 'Warn how many days before', 'Avisar cuántos días antes')}</label>
-          <input type="number" id="cl-bp-avviso" min="0" max="90" value="${Number.isFinite(Number(c.bitPew?.scadenza?.avviso)) ? Number(c.bitPew.scadenza.avviso) : 3}">
-        </div>
-      </div>
-      <p class="pt-dice" id="cl-bp-scade-dice" aria-live="polite"></p>
+${_clScadenzaHtml('cl-bp', c.bitPew?.scadenza)}
+      <p class="pt-dice" id="cl-bp-dice-scade" aria-live="polite"></p>
       <p class="suggerimento">${L('Sempre nel fuso del tuo canale. Le ore minime valgono per chi riceve Bit a ridosso della scadenza e per quelli che tornano da un colpo non comparso: valgono almeno tanto. L\'avviso compare sulla pagina e nella risposta in chat.', 'Always in your channel time zone. The minimum hours apply to Bits received right before the expiry and to those coming back from a hit that didn\'t show: they last at least that long. The warning shows on the page and in the chat reply.', 'Siempre en la zona horaria de tu canal. Las horas mínimas valen para los Bits recibidos justo antes de la caducidad y para los que vuelven de un golpe que no apareció: valen al menos eso. El aviso aparece en la página y en la respuesta del chat.')}</p>
       <h4 class="spazio-sopra">${L('Quando tornano', 'When they come back', 'Cuándo vuelven')}</h4>
       <div class="riga-check"><input type="checkbox" id="cl-bp-rendi-colpi" ${c.bitPew?.rendiColpi !== false ? 'checked' : ''}><label for="cl-bp-rendi-colpi">${L('Un colpo pagato col cheer che non compare: i suoi Bit tornano da spendere', 'A hit paid by cheer that doesn\'t show: its Bits come back to spend', 'Un golpe pagado con cheer que no aparece: sus Bits vuelven para gastar')}</label></div>
@@ -26321,6 +26281,46 @@ function pannelloColpi() {
 
       <div id="cl-bp-chi" class="cl-bp-chi spazio-sopra"></div>
       <p class="spazio-sopra"><button class="btn" id="cl-bp-salva">${L('Salva', 'Save', 'Guardar')}</button></p>
+    </div>
+
+    <div class="carta" id="cl-zaino">
+      <h3>${_hIco(ICO.pacco)}${L('Lo zaino', 'The backpack', 'La mochila')}</h3>
+      <p>${L('Chi ha fatto l\'accesso a Twitch sulla tua pagina può comprare un colpo per dopo: non parte subito, finisce nel suo zaino di questo canale e lo lancia quando vuole, con un tocco. Si compra anche a diretta spenta.', 'Whoever logged in with Twitch on your page can buy a hit for later: it doesn\'t go off right away, it goes into their backpack for this channel and they launch it whenever they want, with one tap. It can be bought even while you\'re offline.', 'Quien entró con Twitch en tu página puede comprar un golpe para después: no sale enseguida, va a su mochila de este canal y lo lanza cuando quiere, con un toque. Se compra también con el directo apagado.')}</p>
+      <div class="riga-interruttore spazio-sopra">
+        <label class="interruttore"><input type="checkbox" id="cl-zn-attivo" ${c.zaino?.attivo ? 'checked' : ''}><span class="levetta"></span></label>
+        <span class="etichetta-stato">${L('Zaino acceso', 'Backpack on', 'Mochila activada')}</span>
+      </div>
+      <h4 class="spazio-sopra">${L('Con cosa si compra per dopo', 'What can buy for later', 'Con qué se compra para después')}</h4>
+      ${[['monete', _clMoneta().replace(/^./, (x) => x.toUpperCase())], ['bit', L('Bit da spendere', 'Bits to spend', 'Bits para gastar')], ['misto', L('Modi misti', 'Mixed ways', 'Modos mixtos')], ['cheer', L('Cheer (Bit di Twitch)', 'Cheer (Twitch Bits)', 'Cheer (Bits de Twitch)')], ['punti', L('Punti canale', 'Channel points', 'Puntos de canal')], ['euro', L('Euro', 'Euros', 'Euros')]].map(([k, t]) => `<div class="riga-check"><input type="checkbox" id="cl-zn-con-${k}" ${c.zaino?.con?.[k] !== false ? 'checked' : ''}><label for="cl-zn-con-${k}">${esc(t)}</label></div>`).join('')}
+      <div class="griglia-campi spazio-sopra">
+        <div>
+          <label class="campo" for="cl-zn-massimo">${L('Colpi a testa nello zaino (0 = senza limite)', 'Hits each in the backpack (0 = no limit)', 'Golpes por persona en la mochila (0 = sin límite)')}</label>
+          <input type="number" id="cl-zn-massimo" min="0" max="1000" value="${Number(c.zaino?.massimo) || 0}">
+        </div>
+        <div>
+          <label class="campo" for="cl-zn-massimo-voce">${L('Dello stesso colpo (0 = senza limite)', 'Of the same hit (0 = no limit)', 'Del mismo golpe (0 = sin límite)')}</label>
+          <input type="number" id="cl-zn-massimo-voce" min="0" max="1000" value="${Number(c.zaino?.massimoVoce) || 0}">
+        </div>
+      </div>
+      <h4 class="spazio-sopra">${L('Quando scadono', 'When they expire', 'Cuándo caducan')}</h4>
+      ${_clScadenzaHtml('cl-zn', c.zaino?.scadenza)}
+      <p class="pt-dice" id="cl-zn-dice-scade" aria-live="polite"></p>
+      <p class="suggerimento">${L('Vale per tutti i colpi; ognuno, nel listino, può avere la sua («Zaino»). Un colpo lanciato dallo zaino che non compare ci torna, e vale almeno le ore minime.', 'It applies to all hits; each one, in the price list, can have its own («Backpack»). A hit launched from the backpack that doesn\'t show goes back in, and lasts at least the minimum hours.', 'Vale para todos los golpes; cada uno, en la lista, puede tener la suya («Mochila»). Un golpe lanzado desde la mochila que no aparece vuelve a ella, y vale al menos las horas mínimas.')}</p>
+      <div class="riga-check"><input type="checkbox" id="cl-zn-rendi" ${c.zaino?.rendi !== false ? 'checked' : ''}><label for="cl-zn-rendi">${L('Alla scadenza tornano le monete e i Bit da spendere con cui era stato comprato', 'On expiry the coins and Bits to spend it was bought with come back', 'Al caducar vuelven las monedas y los Bits para gastar con que se compró')}</label></div>
+      <p class="suggerimento">${L('I punti canale e gli euro no: il colpo è stato consegnato, nello zaino.', 'Channel points and euros don\'t: the hit was delivered, into the backpack.', 'Los puntos de canal y los euros no: el golpe se entregó, en la mochila.')}</p>
+      <h4 class="spazio-sopra">${L('La risposta in chat', 'The chat reply', 'La respuesta en el chat')}</h4>
+      <div class="riga-check"><input type="checkbox" id="cl-zn-rispondi" ${c.zaino?.rispondi !== false ? 'checked' : ''}><label for="cl-zn-rispondi">${L(`Il bot risponde a «!${esc(c.comando || 'pew')} zaino»`, `The bot replies to «!${esc(c.comando || 'pew')} zaino»`, `El bot responde a «!${esc(c.comando || 'pew')} zaino»`)}</label></div>
+      <div class="griglia-campi cl-bp-campi">
+        <div>
+          <label class="campo" for="cl-zn-attesa">${L('Secondi fra due risposte alla stessa persona', 'Seconds between two replies to the same person', 'Segundos entre dos respuestas a la misma persona')}</label>
+          <input type="number" id="cl-zn-attesa" min="0" max="3600" value="${Number.isFinite(Number(c.zaino?.attesaSec)) ? Number(c.zaino.attesaSec) : 60}">
+        </div>
+      </div>
+      <label class="campo" for="cl-zn-risposta">${L('La risposta (vuota: quella di serie)', 'The reply (empty: the default one)', 'La respuesta (vacía: la de serie)')}</label>
+      <input type="text" id="cl-zn-risposta" maxlength="200" value="${esc(c.zaino?.risposta || '')}" placeholder="${esc(L('{nome} nel tuo zaino: {elenco}{scade}. Si lanciano da {pagina}', '{nome} in your backpack: {elenco}{scade}. Launch them from {pagina}', '{nome} en tu mochila: {elenco}{scade}. Se lanzan desde {pagina}'))}">
+      <p class="suggerimento">${L('Puoi usare {nome}, {elenco} (per esempio «2 Pomodoro, 1 Risata»), {pagina}, {scade}, {quanti} e {quando}. Con lo zaino vuoto risponde che è vuoto.', 'You can use {nome}, {elenco} (for example «2 Tomato, 1 Laugh»), {pagina}, {scade}, {quanti} and {quando}. With an empty backpack it says it\'s empty.', 'Puedes usar {nome}, {elenco} (por ejemplo «2 Tomate, 1 Risa»), {pagina}, {scade}, {quanti} y {quando}. Con la mochila vacía dice que está vacía.')}</p>
+      <p class="tenue spazio-sopra" id="cl-zn-totali"></p>
+      <p class="spazio-sopra"><button class="btn" id="cl-zn-salva">${L('Salva', 'Save', 'Guardar')}</button></p>
     </div>
 
     <div class="carta">
@@ -26356,6 +26356,12 @@ function _clRiga(v) {
       <label class="cl-c"><span>${esc(_clMoneta().replace(/^./, (x) => x.toUpperCase()))}</span><input data-k="misto-punti-monete" type="number" min="0" max="10000000" step="1" value="${Number(v.misti?.punti?.monete) || ''}"></label>
       <span class="cl-piu" aria-hidden="true">+</span>
       <label class="cl-c"><span>${L('Punti', 'Points', 'Puntos')}</span><input data-k="misto-punti-punti" type="number" min="0" max="1000000" step="1" value="${Number(v.misti?.punti?.punti) || ''}"></label>
+    </div>
+    <div class="cl-zaino-voce" data-modo="${esc(v.zaino?.modo || 'come')}">
+      <span class="cl-misti-t">${L('Zaino', 'Backpack', 'Mochila')}</span>
+      <label class="cl-c"><span>${L('Per dopo', 'For later', 'Para después')}</span><select data-k="zaino-modo">${[['come', L('come gli altri', 'like the others', 'como los demás')], ['no', L('non si compra', 'not for sale', 'no se compra')], ['mai', L('non scade', 'never expires', 'no caduca')], ['dopo', L('scade dopo…', 'expires after…', 'caduca tras…')]].map(([k, t]) => `<option value="${k}"${(v.zaino?.modo || 'come') === k ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></label>
+      <label class="cl-c cl-zv-dopo"><span>${L('Quanto', 'How long', 'Cuánto')}</span><input data-k="zaino-quanti" type="number" min="1" max="1000" step="1" value="${Number(v.zaino?.quanti) || 30}"></label>
+      <label class="cl-c cl-zv-dopo"><span>${L('Unità', 'Unit', 'Unidad')}</span><select data-k="zaino-unita">${[['ore', L('ore', 'hours', 'horas')], ['giorni', L('giorni', 'days', 'días')], ['settimane', L('settimane', 'weeks', 'semanas')], ['mesi', L('mesi', 'months', 'meses')], ['anni', L('anni', 'years', 'años')]].map(([k, t]) => `<option value="${k}"${(v.zaino?.unita || 'giorni') === k ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></label>
     </div>
     <p class="cl-premio suggerimento" data-premio></p>
   </div>`;
@@ -26393,6 +26399,7 @@ function _clLeggi() {
       bit: Number(q('bit').value) || 0, monete: Number(q('monete').value) || 0, categoria: q('categoria').value,
       misti: { bit: { monete: Number(q('misto-bit-monete').value) || 0, bit: Number(q('misto-bit-bit').value) || 0 },
         punti: { monete: Number(q('misto-punti-monete').value) || 0, punti: Number(q('misto-punti-punti').value) || 0 } },
+      zaino: { modo: q('zaino-modo')?.value || 'come', quanti: Number(q('zaino-quanti')?.value) || 30, unita: q('zaino-unita')?.value || 'giorni' },
       scala: Number(q('scala').value) || 100, attiva: q('attiva').checked };
   }).filter((v) => v.comando);
   return {
@@ -26403,6 +26410,7 @@ function _clLeggi() {
     conNome: !!document.getElementById('cl-nome')?.checked,
     presenza: _clPresenzaLeggi(),
     bitPew: _clBitLeggi(),
+    zaino: _clZainoLeggi(),
     titolo: (document.getElementById('cl-titolo')?.value || '').trim(),
     dida: (document.getElementById('cl-dida')?.value || '').trim(),
     zone: _clZone.map((z) => ({ ...z })),
@@ -26441,6 +26449,51 @@ function _clPresenzaDice() {
   el.textContent = L(`Così, presenza dopo presenza di fila: ${primi} ${nome}, ${poi}. Chi salta una diretta riparte da ${g[0]}.`, `So, check-in after check-in in a row: ${primi} ${nome}, ${poi}. Whoever misses a stream starts again from ${g[0]}.`, `Así, presencia tras presencia seguida: ${primi} ${nome}, ${poi}. Quien se salta un directo vuelve a ${g[0]}.`);
 }
 
+function _clScadenzaHtml(id, sc) {
+  return `      <div class="griglia-campi">
+        <div>
+          <label class="campo" for="${id}-tipo">${L('Scadenza', 'Expiry', 'Caducidad')}</label>
+          <select id="${id}-tipo">${[['mai', L('Mai', 'Never', 'Nunca')], ['dopo', L('Dopo un tempo da quando arrivano', 'A while after they arrive', 'Un tiempo después de llegar')], ['fine', L('A una data fissa del calendario', 'On a fixed calendar date', 'En una fecha fija del calendario')], ['inattivo', L('Se chi li ha non li muove per un po\'', 'If the holder doesn\'t use them for a while', 'Si quien los tiene no los mueve durante un tiempo')]].map(([v, t]) => `<option value="${v}"${(sc?.tipo || 'mai') === v ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select>
+        </div>
+        <div data-per="dopo inattivo">
+          <label class="campo" for="${id}-quanti">${L('Quanto', 'How long', 'Cuánto')}</label>
+          <input type="number" id="${id}-quanti" min="1" max="1000" value="${Number(sc?.quanti) || 30}">
+        </div>
+        <div data-per="dopo inattivo">
+          <label class="campo" for="${id}-unita">${L('Unità', 'Unit', 'Unidad')}</label>
+          <select id="${id}-unita">${[['ore', L('ore', 'hours', 'horas')], ['giorni', L('giorni', 'days', 'días')], ['settimane', L('settimane', 'weeks', 'semanas')], ['mesi', L('mesi', 'months', 'meses')], ['anni', L('anni', 'years', 'años')]].map(([v, t]) => `<option value="${v}"${(sc?.unita || 'giorni') === v ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select>
+        </div>
+        <div data-per="fine">
+          <label class="campo" for="${id}-ogni">${L('Ogni', 'Every', 'Cada')}</label>
+          <select id="${id}-ogni">${[['giorno', L('giorno', 'day', 'día')], ['settimana', L('settimana', 'week', 'semana')], ['mese', L('mese', 'month', 'mes')], ['anno', L('anno', 'year', 'año')]].map(([v, t]) => `<option value="${v}"${(sc?.ogni || 'mese') === v ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select>
+        </div>
+        <div data-per="fine-settimana">
+          <label class="campo" for="${id}-dow">${L('Giorno', 'Day', 'Día')}</label>
+          <select id="${id}-dow">${[L('lunedì', 'Monday', 'lunes'), L('martedì', 'Tuesday', 'martes'), L('mercoledì', 'Wednesday', 'miércoles'), L('giovedì', 'Thursday', 'jueves'), L('venerdì', 'Friday', 'viernes'), L('sabato', 'Saturday', 'sábado'), L('domenica', 'Sunday', 'domingo')].map((t, i) => `<option value="${i + 1}"${Number(sc?.giorno || 1) === i + 1 ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select>
+        </div>
+        <div data-per="fine-anno">
+          <label class="campo" for="${id}-mese">${L('Mese', 'Month', 'Mes')}</label>
+          <select id="${id}-mese">${Array.from({ length: 12 }, (_, i) => `<option value="${i + 1}"${Number(sc?.mese || 1) === i + 1 ? ' selected' : ''}>${esc(new Date(2026, i, 15).toLocaleString(localePannello(), { month: 'long' }))}</option>`).join('')}</select>
+        </div>
+        <div data-per="fine-mese fine-anno">
+          <label class="campo" for="${id}-giorno">${L('Giorno del mese', 'Day of the month', 'Día del mes')}</label>
+          <input type="number" id="${id}-giorno" min="1" max="31" value="${Number(sc?.giorno) || 1}">
+        </div>
+        <div data-per="fine">
+          <label class="campo" for="${id}-ora">${L('Alle ore', 'At (hour)', 'A las (hora)')}</label>
+          <input type="number" id="${id}-ora" min="0" max="23" value="${Number(sc?.ora) || 0}">
+        </div>
+        <div data-per="dopo fine inattivo">
+          <label class="campo" for="${id}-grazia">${L('Ore minime di validità', 'Minimum hours valid', 'Horas mínimas de validez')}</label>
+          <input type="number" id="${id}-grazia" min="0" max="720" value="${Number.isFinite(Number(sc?.grazia)) ? Number(sc.grazia) : 24}">
+        </div>
+        <div data-per="dopo fine inattivo">
+          <label class="campo" for="${id}-avviso">${L('Avvisa quanti giorni prima', 'Warn how many days before', 'Avisar cuántos días antes')}</label>
+          <input type="number" id="${id}-avviso" min="0" max="90" value="${Number.isFinite(Number(sc?.avviso)) ? Number(sc.avviso) : 3}">
+        </div>
+      </div>`;
+}
+
 function _clBitLeggi() {
   const v = (id) => document.getElementById(id);
   const n = (id, d) => { const x = Number(v(id)?.value); return v(id)?.value === '' || !Number.isFinite(x) ? d : x; };
@@ -26449,16 +26502,32 @@ function _clBitLeggi() {
     attivo: !!v('cl-bp-attivo')?.checked, resa: n('cl-bp-resa', 0), minimo: n('cl-bp-minimo', 1), tetto: n('cl-bp-tetto', 0),
     rendiColpi: !!v('cl-bp-rendi-colpi')?.checked, rendiMire: !!v('cl-bp-rendi-mire')?.checked,
     rispondi: !!v('cl-bp-rispondi')?.checked, risposta: (v('cl-bp-risposta')?.value || '').trim(), attesaSec: n('cl-bp-attesa', 60),
-    scadenza: { tipo: v('cl-bp-tipo')?.value || 'mai', quanti: n('cl-bp-quanti', 30), unita: v('cl-bp-unita')?.value || 'giorni', ogni,
-      giorno: ogni === 'settimana' ? n('cl-bp-dow', 1) : n('cl-bp-giorno', 1), mese: n('cl-bp-mese', 1), ora: n('cl-bp-ora', 0), grazia: n('cl-bp-grazia', 24), avviso: n('cl-bp-avviso', 3) },
+    scadenza: _clScadenzaLeggi('cl-bp'),
   };
 }
+function _clZainoLeggi() {
+  const v = (id) => document.getElementById(id);
+  const n = (id, d) => { const x = Number(v(id)?.value); return v(id)?.value === '' || !Number.isFinite(x) ? d : x; };
+  return {
+    attivo: !!v('cl-zn-attivo')?.checked,
+    con: Object.fromEntries(['monete', 'bit', 'misto', 'cheer', 'punti', 'euro'].map((k) => [k, !!v('cl-zn-con-' + k)?.checked])),
+    massimo: n('cl-zn-massimo', 0), massimoVoce: n('cl-zn-massimo-voce', 0), scadenza: _clScadenzaLeggi('cl-zn'), rendi: !!v('cl-zn-rendi')?.checked,
+    rispondi: !!v('cl-zn-rispondi')?.checked, risposta: (v('cl-zn-risposta')?.value || '').trim(), attesaSec: n('cl-zn-attesa', 60),
+  };
+}
+function _clScadenzaLeggi(id) {
+  const v = (x) => document.getElementById(`${id}-${x}`);
+  const n = (x, d) => { const y = Number(v(x)?.value); return v(x)?.value === '' || !Number.isFinite(y) ? d : y; };
+  const ogni = v('ogni')?.value || 'mese';
+  return { tipo: v('tipo')?.value || 'mai', quanti: n('quanti', 30), unita: v('unita')?.value || 'giorni', ogni,
+    giorno: ogni === 'settimana' ? n('dow', 1) : n('giorno', 1), mese: n('mese', 1), ora: n('ora', 0), grazia: n('grazia', 24), avviso: n('avviso', 3) };
+}
 
-function _clBitScade() {
-  const b = _clBitLeggi(), sc = b.scadenza;
+function _clScadenzaDice(id, carta, zaino) {
+  const sc = _clScadenzaLeggi(id);
   const chiave = sc.tipo === 'fine' ? ['fine', 'fine-' + sc.ogni] : [sc.tipo];
-  for (const d of document.querySelectorAll('#cl-bitpew [data-bp-per]')) d.hidden = !d.dataset.bpPer.split(' ').some((k) => chiave.includes(k));
-  const el = document.getElementById('cl-bp-scade-dice');
+  for (const d of document.querySelectorAll(`#${carta} [data-per]`)) d.hidden = !d.dataset.per.split(' ').some((k) => chiave.includes(k));
+  const el = document.getElementById(`${id}-dice-scade`);
   if (!el) return;
   const un = { ore: L('ore', 'hours', 'horas'), giorni: L('giorni', 'days', 'días'), settimane: L('settimane', 'weeks', 'semanas'), mesi: L('mesi', 'months', 'meses'), anni: L('anni', 'years', 'años') }[sc.unita];
   const hh = String(sc.ora).padStart(2, '0') + ':00';
@@ -26471,11 +26540,20 @@ function _clBitScade() {
     mese: L(`il ${sc.giorno} di ogni mese alle ${hh} (l'ultimo, se il mese è più corto)`, `on day ${sc.giorno} of every month at ${hh} (the last one, if the month is shorter)`, `el día ${sc.giorno} de cada mes a las ${hh} (el último, si el mes es más corto)`),
     anno: L(`il ${sc.giorno} ${mese} di ogni anno alle ${hh}`, `every year on ${mese} ${sc.giorno} at ${hh}`, `el ${sc.giorno} de ${mese} de cada año a las ${hh}`),
   }[sc.ogni];
+  if (zaino) {
+    el.textContent = sc.tipo === 'mai' ? L('Così i colpi nello zaino non scadono mai.', 'So hits in the backpack never expire.', 'Así los golpes en la mochila nunca caducan.')
+      : sc.tipo === 'dopo' ? L(`Così ogni colpo comprato vale ${sc.quanti} ${un}${fino}.`, `So every hit bought lasts ${sc.quanti} ${un}${fino}.`, `Así cada golpe comprado vale ${sc.quanti} ${un}${fino}.`)
+        : sc.tipo === 'inattivo' ? L(`Così i colpi di una persona scadono tutti se per ${sc.quanti} ${un} non ne compra e non ne lancia.`, `So a person's hits all expire if for ${sc.quanti} ${un} they neither buy nor launch any.`, `Así los golpes de una persona caducan todos si durante ${sc.quanti} ${un} no compra ni lanza.`)
+          : L(`Così i colpi nello zaino scadono tutti ${quando}; quelli comprati meno di ${sc.grazia} ore prima, al giro dopo.`, `So all hits in the backpack expire ${quando}; those bought less than ${sc.grazia} hours before, at the next one.`, `Así todos los golpes de la mochila caducan ${quando}; los comprados menos de ${sc.grazia} horas antes, en la siguiente.`);
+    return;
+  }
   el.textContent = sc.tipo === 'mai' ? L('Così i Bit da spendere non scadono mai.', 'So Bits to spend never expire.', 'Así los Bits para gastar nunca caducan.')
     : sc.tipo === 'dopo' ? L(`Così ogni Bit vale ${sc.quanti} ${un} da quando arriva${fino}.`, `So every Bit lasts ${sc.quanti} ${un} from when it arrives${fino}.`, `Así cada Bit vale ${sc.quanti} ${un} desde que llega${fino}.`)
       : sc.tipo === 'inattivo' ? L(`Così i Bit di una persona scadono tutti se per ${sc.quanti} ${un} non ne riceve e non ne spende.`, `So a person's Bits all expire if for ${sc.quanti} ${un} they neither receive nor spend any.`, `Así los Bits de una persona caducan todos si durante ${sc.quanti} ${un} no recibe ni gasta.`)
         : L(`Così i Bit scadono tutti ${quando}; quelli arrivati meno di ${sc.grazia} ore prima, al giro dopo.`, `So all Bits expire ${quando}; those received less than ${sc.grazia} hours before, at the next one.`, `Así todos los Bits caducan ${quando}; los recibidos menos de ${sc.grazia} horas antes, en la siguiente.`);
 }
+
+const _clBitScade = () => _clScadenzaDice('cl-bp', 'cl-bitpew', false);
 
 function _clBitDice() {
   const el = document.getElementById('cl-bp-dice');
@@ -26518,8 +26596,13 @@ async function salvaColpi(silenzioso) {
   const bp = colpi.bitPew, fuori = (x, a, z) => !(Number.isInteger(x) && x >= a && x <= z);
   if (bp.attivo && fuori(bp.resa, 1, 1000)) throw new Error(L('La resa dei Bit da spendere va da 1 a 1.000 ogni 100 Bit.', 'The Bits-to-spend rate goes from 1 to 1,000 per 100 Bits.', 'El rendimiento de los Bits para gastar va de 1 a 1.000 por cada 100 Bits.'));
   if (fuori(bp.minimo, 1, 100000) || fuori(bp.tetto, 0, 10000000) || fuori(bp.attesaSec, 0, 3600)) throw new Error(L('Bit da spendere: il minimo va da 1 a 100.000, il saldo massimo da 0 a 10 milioni, i secondi fra due risposte da 0 a 3.600.', 'Bits to spend: the minimum goes from 1 to 100,000, the max balance from 0 to 10 million, the seconds between replies from 0 to 3,600.', 'Bits para gastar: el mínimo va de 1 a 100.000, el saldo máximo de 0 a 10 millones, los segundos entre respuestas de 0 a 3.600.'));
-  const sc = bp.scadenza;
-  if (sc.tipo !== 'mai' && (fuori(sc.quanti, 1, 1000) || fuori(sc.ora, 0, 23) || fuori(sc.giorno, 1, 31) || fuori(sc.grazia, 0, 720) || fuori(sc.avviso, 0, 90))) throw new Error(L('Scadenza dei Bit: quanto da 1 a 1.000, l\'ora da 0 a 23, il giorno da 1 a 31, le ore minime da 0 a 720, l\'avviso da 0 a 90 giorni.', 'Bit expiry: how long from 1 to 1,000, the hour from 0 to 23, the day from 1 to 31, minimum hours from 0 to 720, the warning from 0 to 90 days.', 'Caducidad de los Bits: cuánto de 1 a 1.000, la hora de 0 a 23, el día de 1 a 31, las horas mínimas de 0 a 720, el aviso de 0 a 90 días.'));
+  const zn = colpi.zaino;
+  if (fuori(zn.massimo, 0, 1000) || fuori(zn.massimoVoce, 0, 1000) || fuori(zn.attesaSec, 0, 3600)) throw new Error(L('Zaino: i massimi vanno da 0 a 1.000, i secondi fra due risposte da 0 a 3.600.', 'Backpack: the maximums go from 0 to 1,000, the seconds between replies from 0 to 3,600.', 'Mochila: los máximos van de 0 a 1.000, los segundos entre respuestas de 0 a 3.600.'));
+  if (zn.attivo && !Object.values(zn.con).some(Boolean)) throw new Error(L('Zaino acceso: scegli almeno un modo per comprare per dopo.', 'Backpack on: pick at least one way to buy for later.', 'Mochila activada: elige al menos una forma de comprar para después.'));
+  if (colpi.voci.some((v) => v.zaino.modo === 'dopo' && fuori(v.zaino.quanti, 1, 1000))) throw new Error(L('Zaino di un colpo: quanto va da 1 a 1.000.', 'Backpack of a hit: how long goes from 1 to 1,000.', 'Mochila de un golpe: cuánto va de 1 a 1.000.'));
+  for (const sc of [bp.scadenza, zn.scadenza]) {
+    if (sc.tipo !== 'mai' && (fuori(sc.quanti, 1, 1000) || fuori(sc.ora, 0, 23) || fuori(sc.giorno, 1, 31) || fuori(sc.grazia, 0, 720) || fuori(sc.avviso, 0, 90))) throw new Error(L('Scadenza: quanto da 1 a 1.000, l\'ora da 0 a 23, il giorno da 1 a 31, le ore minime da 0 a 720, l\'avviso da 0 a 90 giorni.', 'Expiry: how long from 1 to 1,000, the hour from 0 to 23, the day from 1 to 31, minimum hours from 0 to 720, the warning from 0 to 90 days.', 'Caducidad: cuánto de 1 a 1.000, la hora de 0 a 23, el día de 1 a 31, las horas mínimas de 0 a 720, el aviso de 0 a 90 días.'));
+  }
   const mistoOk = (x, k) => x && x.monete > 0 && x[k] > 0;
   const vuote = colpi.voci.filter((v) => !(v.euro > 0 || v.punti > 0 || v.bit > 0 || v.monete > 0 || mistoOk(v.misti.bit, 'bit') || mistoOk(v.misti.punti, 'punti')));
   if (colpi.voci.some((v) => ['bit', 'punti'].some((k) => (v.misti[k].monete > 0) !== (v.misti[k][k] > 0)))) throw new Error(L('Un modo misto vuole tutte e due le cifre: le monete e i Bit, o le monete e i punti.', 'A mixed way needs both numbers: coins and Bits, or coins and points.', 'Un modo mixto necesita las dos cifras: monedas y Bits, o monedas y puntos.'));
@@ -26592,6 +26675,8 @@ async function caricaColpiStato() {
     if (p) p.textContent = [v?.premioNome ? v.premioNome + ' (' + v.premioCosto + ')' : '', v?.premioMistoNome ? v.premioMistoNome + ' (' + v.premioMistoCosto + ')' : ''].filter(Boolean)
       .map((x, i, a) => (i ? '' : L(a.length > 1 ? 'Premi su Twitch: ' : 'Premio su Twitch: ', a.length > 1 ? 'Twitch rewards: ' : 'Twitch reward: ', a.length > 1 ? 'Recompensas en Twitch: ' : 'Recompensa en Twitch: ')) + x).join(' · ');
   }
+  const zq = document.getElementById('cl-zn-totali');
+  if (zq && st.zaino) zq.textContent = st.zaino.colpi ? L(`Negli zaini adesso: ${st.zaino.colpi} colpi, di ${st.zaino.persone} ${st.zaino.persone === 1 ? 'persona' : 'persone'}.`, `In backpacks now: ${st.zaino.colpi} hits, held by ${st.zaino.persone} ${st.zaino.persone === 1 ? 'person' : 'people'}.`, `En las mochilas ahora: ${st.zaino.colpi} golpes, de ${st.zaino.persone} ${st.zaino.persone === 1 ? 'persona' : 'personas'}.`) : L('Negli zaini, per ora, niente.', 'Nothing in backpacks yet.', 'Nada en las mochilas, por ahora.');
   const bp = document.getElementById('cl-bp-chi');
   if (bp && st.bitPew) {
     const t = st.bitPew.totali || { persone: 0, bit: 0 };
@@ -26615,9 +26700,9 @@ async function caricaColpiStato() {
   }
   const ul = document.getElementById('cl-ultimi');
   if (ul && (st.ultimi || []).length) {
-    const metodo = { euro: L('euro', 'euros', 'euros'), punti: L('punti', 'points', 'puntos'), bit: 'Bit', presenza: L('presenza', 'check-in', 'presencia'), monete: _clMoneta(),
+    const metodo = { euro: L('euro', 'euros', 'euros'), punti: L('punti', 'points', 'puntos'), bit: 'Bit', presenza: L('presenza', 'check-in', 'presencia'), monete: _clMoneta(), zaino: L('dallo zaino', 'from backpack', 'de la mochila'),
       'monete+bit': _clMoneta() + ' + Bit', 'monete+punti': _clMoneta() + ' + ' + L('punti', 'points', 'puntos') };
-    const come = { sparata: L('Mostrato', 'Shown', 'Mostrado'), pagata: L('In arrivo', 'On its way', 'En camino'), rimborsata: L('Rimborsato', 'Refunded', 'Reembolsado') };
+    const come = { sparata: L('Mostrato', 'Shown', 'Mostrado'), pagata: L('In arrivo', 'On its way', 'En camino'), rimborsata: L('Rimborsato', 'Refunded', 'Reembolsado'), zaino: L('Nello zaino', 'In backpack', 'En la mochila') };
     ul.innerHTML = `<div class="scorrevole"><table class="tabella"><tbody>${st.ultimi.map((u) => `<tr><td>${esc(new Date(u.quando).toLocaleString(localePannello(), { dateStyle: 'short', timeStyle: 'short' }))}</td><td><strong>${esc(u.metodo === 'presenza' ? L('Presenza', 'Check-in', 'Presencia') : u.nome)}</strong></td><td>${esc(u.chi || '—')}</td><td>${esc(metodo[u.metodo] || u.metodo)}</td><td>${esc(come[u.stato] || '')}</td></tr>`).join('')}</tbody></table></div>`;
   }
 }
@@ -26679,8 +26764,13 @@ async function caricaColpi() {
     for (const id of ['cl-bp-attivo', 'cl-bp-resa']) document.getElementById(id)?.addEventListener('input', _clBitDice);
     document.getElementById('cl-bitpew')?.addEventListener('input', _clBitScade);
     document.getElementById('cl-bitpew')?.addEventListener('change', _clBitScade);
+    const zainoScade = () => _clScadenzaDice('cl-zn', 'cl-zaino', true);
+    document.getElementById('cl-zaino')?.addEventListener('input', zainoScade);
+    document.getElementById('cl-zaino')?.addEventListener('change', zainoScade);
+    document.getElementById('cl-zn-salva')?.addEventListener('click', () => conErrore(() => salvaColpi()));
     _clBitDice();
     _clBitScade();
+    zainoScade();
     document.getElementById('cl-pr-lancio')?.addEventListener('click', () => conErrore(async () => {
       const r = await scegliLancio({ testo: L('Quello che prendi diventa l\'effetto della presenza: compare col nome di chi scrive la frase.', 'What you take becomes the check-in effect: it shows up with the name of whoever types the phrase.', 'Lo que coges se convierte en el efecto de la presencia: aparece con el nombre de quien escribe la frase.') });
       if (!r) return;
@@ -26706,6 +26796,10 @@ async function caricaColpi() {
       if (!b) return;
       b.closest('.cl-voce').remove();
       if (!box.querySelector('.cl-voce')) _clVoci();
+    });
+    box.addEventListener('change', (e) => {
+      const z = e.target.closest('[data-k="zaino-modo"]');
+      if (z) z.closest('.cl-zaino-voce').dataset.modo = z.value;
     });
     const nuovaVoce = async (comando, nome) => {
       if (box.querySelectorAll('.cl-voce').length >= 20) { toast(L('Al massimo 20 colpi.', 'At most 20 hits.', 'Como máximo 20 golpes.'), 'errore'); return; }

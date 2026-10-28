@@ -18,7 +18,7 @@
 //    solo quando il colpo e' consegnabile, e un colpo a Bit pagato resta in
 //    coda finche' un overlay non lo mostra. Con i Bit da spendere accesi
 //    (sotto) anche i Bit tornano: come saldo della pagina, a chi li ha mandati.
-import { normalizza, puntoBuono, voceDi, metodiDi, mistiDi, bitServe, bitResi, togliUltimi, scadenzaBit, nuovoCodice, codiceIn, nomeChi, frasePresenza, premioSerie, serieDopo, SCADENZA_MS } from './colpi.js';
+import { normalizza, puntoBuono, voceDi, metodiDi, mistiDi, bitServe, bitResi, togliUltimi, scadenzaBit, zainoDi, nuovoCodice, codiceIn, nomeChi, frasePresenza, premioSerie, serieDopo, SCADENZA_MS } from './colpi.js';
 import { randomBytes } from 'node:crypto';
 
 // Gli effetti che si possono mirare: quelli che si posano in un punto. Un'immagine
@@ -42,10 +42,11 @@ export const VOCE_PRESENZA = '@presenza';
 // `crediti`: i Bit da spendere sulla pagina (db.pewBit): `entra`, `spendi`
 // (tutti o niente, con la ricevuta dei lotti), `rendi`, `saldo`, `prossima`;
 // ogni movimento una volta per riferimento. Senza, i Bit fanno come prima.
-// `fusoDi`: il fuso del canale, per le scadenze.
+// `fusoDi`: il fuso del canale, per le scadenze. `zaino`: lo zaino (db.pewZaino);
+// senza, non si compra per dopo.
 export function creaServizioColpi({ registro, effects, effettoDi, impostazioni, inOnda = () => true, overlay = () => true,
   rimborsaEuro = async () => ({ errore: 'nessun conto' }), chiudiPremio = async () => true, monete = null, serie = null, crediti = null,
-  fusoDi = () => 'Europe/Rome', ora = () => Date.now(), log = null }) {
+  zaino = null, fusoDi = () => 'Europe/Rome', ora = () => Date.now(), log = null }) {
   const ultimaDi = new Map();
   const cfgDi = (login) => normalizza(impostazioni(login));
 
@@ -106,14 +107,47 @@ export function creaServizioColpi({ registro, effects, effettoDi, impostazioni, 
     return '';
   }
 
-  // La mira: il punto si controlla adesso, il prezzo si scrive adesso.
-  function mira(login, { voce: idVoce, x, y, chi = '', chiave = '', spettatore = '' } = {}) {
+  // COMPRABILE PER DOPO (docs/COLPI.md, «Lo zaino»): la pagina accesa e non in
+  // pausa, lo zaino acceso per quella voce, l'effetto che c'e'. Niente diretta
+  // ne' overlay: per dopo si compra anche a canale spento.
+  function comprabile(login, idVoce) {
     const ch = String(login || '').toLowerCase();
-    const no = consegnabile(ch, idVoce);
+    const cfg = cfgDi(ch);
+    if (!cfg.attivo) return 'spento';
+    if (cfg.pausa) return 'pausa';
+    const voce = voceDi(cfg, idVoce);
+    if (!zaino || !voce || !zainoDi(cfg, voce)) return 'zaino';
+    if (!metodiDi(voce).length && !mistiDi(voce).length) return 'voce';
+    if (!MIRABILE(effettoDi(ch, voce.comando))) return 'effetto';
+    return '';
+  }
+  // Una mira si paga adesso con questo mezzo? '' se si', se no il motivo. Per
+  // dopo: comprabile, e con un mezzo che lo streamer accetta per lo zaino.
+  const MEZZO_ZAINO = { monete: 'monete', bit: 'bit', 'monete+bit': 'misto', 'monete+punti': 'misto', misto: 'misto', cheer: 'cheer', punti: 'punti', euro: 'euro' };
+  function pronta(m, mezzo) {
+    if (!m?.dopo) return consegnabile(m?.login, m?.voce);
+    const no = comprabile(m.login, m.voce);
+    if (no) return no;
+    return cfgDi(m.login).zaino.con[MEZZO_ZAINO[mezzo] || mezzo] ? '' : 'mezzo';
+  }
+
+  // La mira: il punto si controlla adesso, il prezzo si scrive adesso. Con
+  // `dopo` e' un acquisto per lo zaino: niente punto, e serve sapere di chi e'
+  // (lo zaino e' suo), con posto nello zaino contando gli acquisti ancora aperti.
+  function mira(login, { voce: idVoce, x, y, chi = '', chiave = '', spettatore = '', dopo = false } = {}) {
+    const ch = String(login || '').toLowerCase();
+    const no = dopo ? comprabile(ch, idVoce) : consegnabile(ch, idVoce);
     if (no) return { ok: false, motivo: no };
     const cfg = cfgDi(ch);
     const voce = voceDi(cfg, idVoce);
-    const punto = puntoBuono(cfg, x, y);
+    if (dopo) {
+      if (!spettatore) return { ok: false, motivo: 'accesso' };
+      const z = zaino.conta(ch, spettatore, ora());
+      const aperte = registro.dopoAperte(ch, spettatore, ora());
+      if (cfg.zaino.massimo && z.tutti + aperte.length >= cfg.zaino.massimo) return { ok: false, motivo: 'zaino-pieno', massimo: cfg.zaino.massimo };
+      if (cfg.zaino.massimoVoce && (z.voci[voce.id] || 0) + aperte.filter((v) => v === voce.id).length >= cfg.zaino.massimoVoce) return { ok: false, motivo: 'zaino-pieno', massimo: cfg.zaino.massimoVoce };
+    }
+    const punto = dopo ? { ok: true, x: 50, y: 50 } : puntoBuono(cfg, x, y);
     if (!punto.ok) return { ok: false, motivo: punto.motivo };
     const adesso = ora();
     const k = ch + '|' + String(chiave || '');
@@ -125,7 +159,7 @@ export function creaServizioColpi({ registro, effects, effettoDi, impostazioni, 
       x: punto.x, y: punto.y, scala: voce.scala, chi: cfg.conNome ? nomeChi(chi) : '',
       prezzi: { euro: voce.euro, punti: voce.punti, bit: voce.bit, monete: voce.monete, misti: voce.misti || {}, resa: resaDi(ch),
         rendiColpi: cfg.bitPew.rendiColpi, rendiMire: cfg.bitPew.rendiMire }, creata: adesso, scade: adesso + SCADENZA_MS,
-      spettatore: String(spettatore || ''),
+      spettatore: String(spettatore || ''), dopo: !!dopo,
     };
     for (let i = 0; i < 12; i++) { m.codice = nuovoCodice(); if (registro.apri(m)) { ultimaDi.set(k, adesso); return { ok: true, mira: { ...m, metodi: metodiDi(voce) } }; } }
     return { ok: false, motivo: 'codice' };
@@ -139,12 +173,33 @@ export function creaServizioColpi({ registro, effects, effettoDi, impostazioni, 
     return !!effects.fireConOpzioni(ch, m.comando, { xy: { x: m.x, y: m.y, s: m.scala, r: 0, centro: true }, attacco: { id: m.id, chi: m.chi, nome: m.nome } });
   }
 
-  // Il pagamento e' arrivato: una volta sola, qualunque cosa lo paghi.
+  // Il pagamento e' arrivato: una volta sola, qualunque cosa lo paghi. Un
+  // acquisto per dopo va nello zaino, nello stesso passaggio in cui nasce.
   function incassa(m, metodo, riferimento = '', premio = '', ancheScaduta = false, ricevuta = null) {
     if (!m || !registro.paga(m.id, metodo, riferimento, ora(), premio, ancheScaduta, ricevuta)) return false;
+    if (m.dopo) { alloZaino(registro.get(m.id)); return true; }
     const fatto = manda(registro.get(m.id));
     log?.info?.(`colpo ${m.nome} pagato su #${m.login} (${metodo})${fatto ? '' : ': in coda, nessun overlay pronto'}`);
     return true;
+  }
+
+  function alloZaino(m) {
+    const cfg = cfgDi(m.login);
+    const voce = voceDi(cfg, m.voce);
+    const sc = (voce && zainoDi(cfg, voce)) || cfg.zaino.scadenza;
+    const scade = scadenzaBit(sc, ora(), fusoDi(m.login));
+    // lo streamer usa i punti premio: il riscatto si chiude subito, il colpo e' consegnato nello zaino
+    if ((m.metodo === 'punti' || m.metodo === 'monete+punti') && m.premio) chiudi(m, 'FULFILLED');
+    const ok = registro.nelloZaino(m.id, { id: randomBytes(9).toString('hex'), channel: m.login, chi: m.spettatore, nome: m.chi, voce: m.voce, comprato: ora(), scade });
+    if (ok) rinnovaZaino(m.login, m.spettatore);
+    log?.info?.(`colpo ${m.nome} su #${m.login} comprato per dopo (${m.metodo})${ok ? '' : ': gia\' nello zaino'}`);
+    return ok;
+  }
+
+  // lo zaino «inattivo»: ogni acquisto e ogni lancio sposta in avanti tutti i colpi di quella persona
+  function rinnovaZaino(ch, chi) {
+    const sc = cfgDi(ch).zaino.scadenza;
+    if (zaino && chi && sc.tipo === 'inattivo') zaino.rinnova(ch, String(chi), scadenzaBit(sc, ora(), fusoDi(ch)), ora());
   }
 
   async function chiudi(m, stato) {
@@ -230,6 +285,16 @@ export function creaServizioColpi({ registro, effects, effettoDi, impostazioni, 
         try { monete.rendi(m.login, m.acconto.user, m.acconto.ricevuta); } catch (e) { log?.warn?.(`acconto del colpo su #${m.login}:`, e?.message || e); }
       }
     }
+    // LO ZAINO: un colpo comprato che scade esce, una volta sola; se lo streamer
+    // vuole, tornano i saldi con cui era stato pagato
+    if (zaino) {
+      for (const z of zaino.scaduti(adesso)) {
+        if (!zaino.scadi(z.id)) continue;
+        const p = registro.get(z.mira);
+        if (p && cfgDi(z.channel).zaino.rendi) rendiAcquisto(p);
+        log?.info?.(`colpo per dopo su #${z.channel} scaduto nello zaino`);
+      }
+    }
     // i Bit di una mira che non si paghera' piu': tornano a chi li ha mandati, una volta sola
     for (const m of registro.versatiPersi()) {
       if (!registro.svuota(m.id) || m.prezzi?.rendiMire === false) continue;
@@ -242,6 +307,14 @@ export function creaServizioColpi({ registro, effects, effettoDi, impostazioni, 
         else if (adesso - (m.tentata_at || 0) >= RINVIO_MS) manda(m);
         continue;
       }
+      // lanciato dallo zaino e non comparso: torna nello zaino, pieno
+      if (m.metodo === 'zaino' && adesso - m.pagata_at > CONSEGNA_MS) {
+        const almeno = adesso + cfgDi(m.login).zaino.scadenza.grazia * 3600_000;
+        if (registro.rimborsata(m.id) && zaino?.rimetti(String(m.riferimento).replace(/^zaino:/, ''), m.id, almeno)) log?.info?.(`colpo ${m.nome} su #${m.login} non mostrato: torna nello zaino`);
+        continue;
+      }
+      // un acquisto per dopo rimasto pagato (il passaggio allo zaino interrotto): va nello zaino, mai all'overlay
+      if (m.dopo) { alloZaino(m); continue; }
       // un colpo a Bit che non compare: i Bit tornano da spendere, e le monete
       // dell'acconto. Solo se si sa di chi e' ogni Bit; se no resta in coda.
       if ((m.metodo === 'bit' || m.metodo === 'monete+bit') && adesso - m.pagata_at > CONSEGNA_MS && crediti && tracciati(m)) {
@@ -300,6 +373,7 @@ export function creaServizioColpi({ registro, effects, effettoDi, impostazioni, 
       const manca = sua ? bitServe(sua) - (Number(sua.versati) || 0) : 0;
       if (sua && manca > 0 && n >= manca) m = sua;
     }
+    if (m && m.dopo && pronta(m, 'cheer')) m = null;
     if (!m) return codice ? { esito: 'sconosciuto', codice } : { esito: 'nessuno' };
     // quanti ne chiede adesso: il prezzo, o il resto del modo misto con le
     // monete gia' pagate. Un modo misto coi Bit ancora senza monete li conta lo
@@ -313,7 +387,7 @@ export function creaServizioColpi({ registro, effects, effettoDi, impostazioni, 
     if (totale == null) return { esito: 'sconosciuto', codice };
     if (serve > 0 && totale >= serve) {
       if (!incassa(m, m.acconto ? 'monete+bit' : 'bit', `cheer:${user_login}:${ora()}`, '', false, m.acconto?.ricevuta || null)) return { esito: 'gia', codice, nome: m.nome, usati };
-      return { esito: 'pagato', codice, nome: m.nome, inCoda: !!consegnabile(ch, m.voce), usati };
+      return { esito: 'pagato', codice, nome: m.nome, inCoda: !m.dopo && !!consegnabile(ch, m.voce), dopo: !!m.dopo, usati };
     }
     if (misto && totale >= misto.bit) return { esito: 'servono-monete', codice, nome: m.nome, monete: misto.monete, modo: 'bit', usati };
     return { esito: 'pochi', codice, serve: voluti, mancano: voluti - totale, nome: m.nome, usati };
@@ -336,7 +410,7 @@ export function creaServizioColpi({ registro, effects, effettoDi, impostazioni, 
       const misto = !m.acconto ? m.prezzi?.misti?.bit : null;
       return misto ? { esito: 'servono-monete', nome: m.nome, monete: misto.monete } : { esito: 'sconosciuto' };
     }
-    const no = consegnabile(ch, m.voce);
+    const no = pronta(m, m.acconto ? 'misto' : 'bit');
     if (no) return { esito: 'fermo', motivo: no, nome: m.nome };
     const manca = serve - (Number(m.versati) || 0);
     if (!(manca > 0)) return { esito: 'gia' };
@@ -372,9 +446,9 @@ export function creaServizioColpi({ registro, effects, effettoDi, impostazioni, 
     if (!m || m.voce !== voce.id || !(Number(m.prezzi.punti) > 0)) return { esito: 'sconosciuto', stato: 'CANCELED', codice };
     // con un acconto per un modo misto la strada e' quella: niente punti pieni
     if (m.acconto) return { esito: 'gia', stato: 'CANCELED', codice };
-    const no = consegnabile(ch, m.voce);
+    const no = pronta(m, 'punti');
     if (no) return { esito: 'fermo', stato: 'CANCELED', motivo: no };
-    return incassa(m, 'punti', `premio:${id}`, `${reward_id}:${id}`) ? { esito: 'pagato', stato: null, nome: m.nome } : { esito: 'gia', stato: 'CANCELED' };
+    return incassa(m, 'punti', `premio:${id}`, `${reward_id}:${id}`) ? { esito: 'pagato', stato: null, nome: m.nome, dopo: !!m.dopo } : { esito: 'gia', stato: 'CANCELED' };
   }
 
   // LE MONETE DEL CANALE. Dalla pagina (con l'accesso a Twitch: `id` della mira,
@@ -391,20 +465,20 @@ export function creaServizioColpi({ registro, effects, effettoDi, impostazioni, 
     if (modo) return acconto(ch, m, u, modo, codice);
     if (!m || m.stato !== 'attesa' || !(Number(m.prezzi?.monete) > 0)) return { esito: 'sconosciuto', codice };
     if (m.riferimento || m.acconto) return { esito: 'gia', codice };
-    const no = consegnabile(ch, m.voce);
+    const no = pronta(m, 'monete');
     if (no) return { esito: 'fermo', motivo: no, nome: m.nome };
     const n = Number(m.prezzi.monete);
     const presa = monete.punta(ch, u, n);
     if (!presa) return { esito: 'pochi', serve: n, saldo: Number(monete.saldo?.(ch, u)) || 0, nome: m.nome };
     const ricevuta = presa.ricevuta;
     if (!incassa(m, 'monete', 'monete:' + u, '', false, ricevuta)) { monete.rendi(ch, u, ricevuta); return { esito: 'gia', codice }; }
-    return { esito: 'pagato', nome: m.nome, monete: n };
+    return { esito: 'pagato', nome: m.nome, monete: n, dopo: !!m.dopo };
   }
   function acconto(ch, m, u, modo, codice) {
     const mi = m?.prezzi?.misti?.[modo];
     if (!m || m.stato !== 'attesa' || !mi) return { esito: 'sconosciuto', codice };
     if (m.riferimento || m.acconto) return { esito: 'gia', codice };
-    const no = consegnabile(ch, m.voce);
+    const no = pronta(m, 'misto');
     if (no) return { esito: 'fermo', motivo: no, nome: m.nome };
     const presa = monete.punta(ch, u, mi.monete);
     if (!presa) return { esito: 'pochi', serve: mi.monete, saldo: Number(monete.saldo?.(ch, u)) || 0, nome: m.nome };
@@ -421,9 +495,38 @@ export function creaServizioColpi({ registro, effects, effettoDi, impostazioni, 
           rendiVersanti(m, resi, 'avanzo');
         }
       }
-      return { esito: 'pagato', nome: m.nome, monete: mi.monete };
+      return { esito: 'pagato', nome: m.nome, monete: mi.monete, dopo: !!m.dopo };
     }
     return { esito: 'acconto', modo, monete: mi.monete, resto: a.resto, codice: m.codice, nome: m.nome };
+  }
+
+  // Quello che torna di un acquisto per dopo scaduto: solo i saldi nostri. Le
+  // monete con la loro ricevuta, i Bit come quelli di un colpo non comparso
+  // (dal saldo coi loro lotti, dai cheer se lo streamer li rende); i punti e gli
+  // euro no: sono stati consegnati, nello zaino.
+  function rendiAcquisto(p) {
+    try {
+      if (p.metodo === 'monete' && monete && p.ricevuta) monete.rendi(p.login, String(p.riferimento).replace(/^monete:/, ''), p.ricevuta);
+      if (p.metodo === 'monete+bit' && monete && p.acconto?.ricevuta) monete.rendi(p.login, p.acconto.user, p.acconto.ricevuta);
+      if (p.metodo === 'bit' || p.metodo === 'monete+bit') rendiVersanti(p, p.versanti.filter((v) => rendibile(p, v)), 'scaduto');
+    } catch (e) { log?.warn?.(`acquisto scaduto su #${p.login}:`, e?.message || e); }
+  }
+
+  // DALLO ZAINO: la mira (col punto) si paga con un colpo di quella voce che lo
+  // spettatore ha nello zaino, il primo che scade. Se il colpo non compare,
+  // l'oggetto torna nello zaino (la ronda).
+  function daZaino(login, { id = '', chi = '' } = {}) {
+    const ch = String(login || '').toLowerCase();
+    if (!zaino || !chi) return { esito: 'spento' };
+    const m = registro.getDi(ch, String(id || ''));
+    if (!m || m.stato !== 'attesa' || m.dopo || m.riferimento || m.acconto || (m.scade <= ora() && !(Number(m.versati) > 0))) return { esito: 'sconosciuto' };
+    const no = consegnabile(ch, m.voce);
+    if (no) return { esito: 'fermo', motivo: no, nome: m.nome };
+    const z = zaino.prendi(ch, String(chi), m.voce, m.id, ora());
+    if (!z) return { esito: 'vuoto', nome: m.nome };
+    if (!incassa(m, 'zaino', 'zaino:' + z)) { zaino.rimetti(z, m.id); return { esito: 'gia' }; }
+    rinnovaZaino(ch, chi);
+    return { esito: 'pagato', nome: m.nome };
   }
 
   // TUTTO IN UN TOCCO, per chi ha fatto l'accesso (docs/COLPI.md, «Con
@@ -435,8 +538,8 @@ export function creaServizioColpi({ registro, effects, effettoDi, impostazioni, 
   function subito(login, id, { con = '', user = '', chi = '', nome = '' } = {}) {
     const ch = String(login || '').toLowerCase();
     const chiudi = () => registro.scadi(String(id));
-    if (con === 'bit' || con === 'monete') {
-      const r = con === 'bit' ? daBitPew(ch, { id, chi, nome }) : daMonete(ch, { id, user });
+    if (con === 'bit' || con === 'monete' || con === 'zaino') {
+      const r = con === 'bit' ? daBitPew(ch, { id, chi, nome }) : con === 'zaino' ? daZaino(ch, { id, chi }) : daMonete(ch, { id, user });
       if (r.esito !== 'pagato') chiudi();
       return r;
     }
@@ -463,9 +566,9 @@ export function creaServizioColpi({ registro, effects, effettoDi, impostazioni, 
     }
     if (!m || m.voce !== voce.id || !m.prezzi?.misti?.punti) return { esito: 'sconosciuto', stato: 'CANCELED', codice };
     if (m.acconto?.modo !== 'punti') return { esito: 'servono-monete', stato: 'CANCELED', codice: m.codice, nome: m.nome, monete: m.prezzi.misti.punti.monete, modo: 'punti' };
-    const no = consegnabile(ch, m.voce);
+    const no = pronta(m, 'misto');
     if (no) return { esito: 'fermo', stato: 'CANCELED', motivo: no };
-    return incassa(m, 'monete+punti', `premio:${id}`, `${reward_id}:${id}`, false, m.acconto.ricevuta) ? { esito: 'pagato', stato: null, nome: m.nome } : { esito: 'gia', stato: 'CANCELED' };
+    return incassa(m, 'monete+punti', `premio:${id}`, `${reward_id}:${id}`, false, m.acconto.ricevuta) ? { esito: 'pagato', stato: null, nome: m.nome, dopo: !!m.dopo } : { esito: 'gia', stato: 'CANCELED' };
   }
 
   // Gli euro: la donazione pagata che era stata aperta per una mira.
@@ -476,6 +579,22 @@ export function creaServizioColpi({ registro, effects, effettoDi, impostazioni, 
     return { esito: incassa(m, 'euro', donazioneId, '', true) ? 'pagato' : 'gia', nome: m.nome, login: m.login };
   }
 
-  return { mira, consegnabile, daCheer, daRiscatto, daPagamento, daMonete, daBitPew, subito, saldoBit, scadonoBit, saldoMonete, presenza, provaPresenza, visto, ronda, cfgDi,
-    conMonete: !!monete, conBitPew: (login) => !!resaDi(String(login || '').toLowerCase()) };
+  // lo zaino di una persona, per la pagina e la chat: [{ voce, quanti, scade }]
+  // (scade: il primo che scade di quella voce, 0 = mai), nell'ordine del listino
+  function zainoDi_(login, chi) {
+    const ch = String(login || '').toLowerCase();
+    if (!zaino || !chi) return [];
+    const per = new Map();
+    for (const o of zaino.contenuto(ch, String(chi), ora())) {
+      const x = per.get(o.voce) || { voce: o.voce, quanti: 0, scade: 0 };
+      x.quanti++;
+      if (o.scade && (!x.scade || o.scade < x.scade)) x.scade = o.scade;
+      per.set(o.voce, x);
+    }
+    const ordine = cfgDi(ch).voci.map((v) => v.id);
+    return [...per.values()].sort((a, b) => ((ordine.indexOf(a.voce) + 1 || 999) - (ordine.indexOf(b.voce) + 1 || 999)));
+  }
+
+  return { mira, consegnabile, comprabile, pronta, daZaino, zainoDi: zainoDi_, daCheer, daRiscatto, daPagamento, daMonete, daBitPew, subito, saldoBit, scadonoBit, saldoMonete, presenza, provaPresenza, visto, ronda, cfgDi,
+    conMonete: !!monete, conZaino: (login) => !!zaino && cfgDi(String(login || '').toLowerCase()).zaino.attivo, conBitPew: (login) => !!resaDi(String(login || '').toLowerCase()) };
 }

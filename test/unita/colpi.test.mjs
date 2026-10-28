@@ -552,7 +552,7 @@ test('le monete del canale pagano un colpo: tutte o niente, una volta sola, e pr
   assert.equal(b.s.daMonete(c, { codice: m.codice, user: 'marta' }).esito, 'fermo');
   assert.equal(economia.saldo(c, 'marta'), 500, 'a colpo fermo le monete non si toccano');
   b.stato.overlay = true;
-  assert.deepEqual(b.s.daMonete(c, { codice: m.codice, user: 'marta' }), { esito: 'pagato', nome: 'pomodoro', monete: 300 });
+  assert.deepEqual(b.s.daMonete(c, { codice: m.codice, user: 'marta' }), { esito: 'pagato', nome: 'pomodoro', monete: 300, dopo: false });
   assert.equal(economia.saldo(c, 'marta'), 200);
   const r = registroColpi.get(m.id);
   assert.deepEqual([r.stato, r.metodo, r.riferimento, r.ricevuta], ['pagata', 'monete', 'monete:marta', [{ scade: 0, quanti: 300 }]]);

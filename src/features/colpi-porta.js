@@ -36,10 +36,10 @@ export function creaPortaColpi({ servizio, registro, streamers, effettoDi, mezzi
   // `pagabile`: la pagina mostra i modi di pagare solo finche' e' vero, e li
   // toglie appena la diretta o l'overlay vanno via (servizio.consegnabile)
   const statoMira = (m) => {
-    const fermo = m.stato === 'attesa' ? servizio.consegnabile(m.login, m.voce) : '';
+    const fermo = m.stato === 'attesa' ? (m.dopo ? servizio.comprabile(m.login, m.voce) : servizio.consegnabile(m.login, m.voce)) : '';
     return { id: m.id, stato: m.stato, codice: m.codice, voce: m.voce, nome: m.nome, x: m.x, y: m.y, prezzi: m.prezzi, versati: m.versati || 0,
       scade: m.scade, metodo: m.metodo || '', inPagamento: m.stato === 'attesa' && m.riferimento !== '',
-      pagabile: m.stato === 'attesa' && !fermo && (m.scade > ora() || (m.versati || 0) > 0), fermo, mia: !!m.spettatore,
+      pagabile: m.stato === 'attesa' && !fermo && (m.scade > ora() || (m.versati || 0) > 0), fermo, mia: !!m.spettatore, dopo: !!m.dopo,
       // le monete gia' pagate di un modo misto: si aspetta il resto (senza chi e la ricevuta)
       acconto: m.acconto ? { modo: m.acconto.modo, monete: m.acconto.monete, resto: m.acconto.resto } : null };
   };
@@ -62,12 +62,15 @@ export function creaPortaColpi({ servizio, registro, streamers, effettoDi, mezzi
       voci.push({ id: v.id, nome: v.nome, tipo: eff.tipo === 'lancio' ? 'immagine' : eff.tipo, scala: v.scala, anteprima: disegno || `/u/${login}/colpo/anteprima/${encodeURIComponent(v.id)}`,
         metodi, prezzi: Object.fromEntries(['euro', 'punti', 'bit', 'monete'].map((x) => [x, metodi.includes(x) ? v[x] : 0])),
         premio: metodi.includes('punti') ? (v.premioNome || titoloPremio(v)) : '', prova: provaDi(login, v, eff), categoria: categoriaDi(k.cfg, v, tipoDi(eff)),
-        misti: misti.map((x) => ({ ...x, premio: x.modo === 'punti' ? (v.premioMistoNome || titoloPremioMisto(v)) : '' })) });
+        misti: misti.map((x) => ({ ...x, premio: x.modo === 'punti' ? (v.premioMistoNome || titoloPremioMisto(v)) : '' })),
+        // si compra per dopo (lo zaino): lo dice il servizio, che sa anche se e' in pausa
+        zaino: !servizio.comprabile?.(login, v.id) });
     }
     // le categorie che hanno almeno un colpo, nell'ordine dello streamer
     const categorie = k.cfg.categorie.filter((c) => voci.some((v) => v.categoria === c.id));
     return { live: !!inOnda(login), overlay: !!overlay(login), pausa: k.cfg.pausa, zone: k.cfg.zone, conNome: k.cfg.conNome, valuta: valutaDi(k.s), mezzi: euro, voci,
-      categorie, comando: k.cfg.comando, moneta: monetaDa(k.s.settings).nome, bitPew: !!servizio.conBitPew?.(login) };
+      categorie, comando: k.cfg.comando, moneta: monetaDa(k.s.settings).nome, bitPew: !!servizio.conBitPew?.(login),
+      zaino: servizio.conZaino?.(login) ? { con: k.cfg.zaino.con } : null };
   }
 
   // L'ANTEPRIMA DI UN COLPO (docs/COLPI.md, «L'anteprima»): quello che l'overlay
@@ -117,7 +120,10 @@ export function creaPortaColpi({ servizio, registro, streamers, effettoDi, mezzi
     if (!k) return { ok: false, motivo: 'spento' };
     const v = voceDi(k.cfg, String(corpo.voce || ''));
     if (!v || (!metodiVivi(v, mezziEuro(k.s, login)).length && !(servizio.conMonete && mistiDi(v).length))) return { ok: false, motivo: 'voce' };
-    const r = servizio.mira(login, { voce: v.id, x: Number(corpo.x), y: Number(corpo.y), chi: io?.nome || String(corpo.chi || ''), chiave, spettatore: io?.id || '' });
+    // per dopo: lo zaino e' di chi ha fatto l'accesso
+    const dopo = corpo.dopo === true;
+    if (dopo && !io?.id) return { ok: false, motivo: 'accesso' };
+    const r = servizio.mira(login, { voce: v.id, x: Number(corpo.x), y: Number(corpo.y), chi: io?.nome || String(corpo.chi || ''), chiave, spettatore: io?.id || '', dopo });
     return r.ok ? { ok: true, mira: statoMira(registro.get(r.mira.id)) } : r;
   }
 
@@ -156,8 +162,8 @@ export function creaPortaColpi({ servizio, registro, streamers, effettoDi, mezzi
     if (!m || m.stato !== 'attesa' || !(Number(m.prezzi?.euro) > 0)) return { errore: 'mira' };
     if (m.acconto) return { errore: 'gia' };
     if (m.scade <= ora()) return { errore: 'scaduta' };
-    // si paga solo un colpo che adesso si puo' consegnare
-    const fermo = servizio.consegnabile(login, m.voce);
+    // si paga solo un colpo che adesso si puo' consegnare (o comprare per dopo, in euro)
+    const fermo = servizio.pronta(m, 'euro');
     if (fermo) return { errore: fermo };
     const mezzi = mezziEuro(k.s, login);
     const mezzo = mezzi.includes(String(mezzoChiesto || '')) ? String(mezzoChiesto) : mezzi[0];
@@ -184,21 +190,34 @@ export function creaPortaColpi({ servizio, registro, streamers, effettoDi, mezzi
       bit: conBit ? servizio.saldoBit(login, io.id) : null,
       monete: servizio.conMonete && io.login ? servizio.saldoMonete(login, io.login) : null,
       ...(sc ? { scadono: { quanti: sc.quanti, quando: quandoScade(sc.scade, lingua, fusoDi(login)) } } : {}),
+      // lo zaino: quanti colpi di ogni voce, e fin quando vale il primo che scade
+      zaino: servizio.conZaino?.(login) ? servizio.zainoDi(login, io.id).map((x) => ({ voce: x.voce, nome: voceDi(normalizza(streamers.get(login)?.settings?.colpi), x.voce)?.nome || x.voce,
+        quanti: x.quanti, quando: x.scade ? quandoScade(x.scade, lingua, fusoDi(login)) : '' })) : null,
     };
   }
 
   // UN TOCCO (docs/COLPI.md, «Con l'accesso, un tocco»): la mira e il
   // pagamento col saldo insieme, senza codice. Prima si guarda il saldo, cosi'
   // un tocco che non puo' riuscire non apre nemmeno la mira.
-  const CON = ['bit', 'monete', 'misto-bit'];
+  // Con `dopo` il colpo si compra per lo zaino (niente punto); con 'zaino' si
+  // lancia uno di quelli che si hanno nello zaino.
+  const CON = ['bit', 'monete', 'misto-bit', 'zaino'];
   function lancia(login, corpo = {}, chiave = '', io = null) {
     const k = aperti(login);
     if (!k) return { ok: false, motivo: 'spento' };
     if (!io?.id || !io.login) return { ok: false, motivo: 'accesso' };
     const con = String(corpo.con || '');
+    const dopo = corpo.dopo === true;
     const v = voceDi(k.cfg, String(corpo.voce || ''));
     const misto = v ? mistiDi(v).find((x) => x.modo === 'bit') : null;
-    if (!v || !CON.includes(con)) return { ok: false, motivo: 'voce' };
+    if (!v || !CON.includes(con) || (dopo && con === 'zaino')) return { ok: false, motivo: 'voce' };
+    if (con === 'zaino') {
+      if (!servizio.zainoDi(login, io.id).some((x) => x.voce === v.id)) return { ok: false, motivo: 'vuoto' };
+      const r = mira(login, corpo, chiave, io);
+      if (!r.ok) return r;
+      const p = servizio.subito(login, r.mira.id, { con, chi: io.id });
+      return p.esito === 'pagato' ? { ok: true, mira: statoMira(registro.get(r.mira.id)) } : { ok: false, motivo: p.esito === 'fermo' ? p.motivo : p.esito };
+    }
     const s = saldi(login, io) || {};
     const serve = con === 'bit' ? { bit: v.bit } : con === 'monete' ? { monete: v.monete } : misto ? { monete: misto.monete, bit: misto.resto } : null;
     if (!serve || Object.values(serve).some((n) => !(n > 0))) return { ok: false, motivo: 'voce' };

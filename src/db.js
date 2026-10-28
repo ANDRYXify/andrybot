@@ -976,6 +976,22 @@ CREATE TABLE IF NOT EXISTS pew_bit_lotti (    -- i Bit da spendere a lotti: quan
   PRIMARY KEY (channel, chi, scade)
 );
 CREATE INDEX IF NOT EXISTS idx_pew_bit_lotti_scade ON pew_bit_lotti(scade) WHERE scade>0;
+CREATE TABLE IF NOT EXISTS pew_zaino (        -- lo zaino di Pewpewify (docs/COLPI.md, «Lo zaino»): un colpo comprato per dopo, una riga per colpo
+  id TEXT PRIMARY KEY,
+  channel TEXT NOT NULL,
+  chi TEXT NOT NULL,                           -- l'id di chi l'ha comprato (Twitch: l'id; altre piattaforme: piattaforma:id)
+  nome TEXT NOT NULL DEFAULT '',               -- il suo login, per il pannello
+  voce TEXT NOT NULL,                          -- la voce del listino
+  stato TEXT NOT NULL DEFAULT 'pieno',         -- pieno (da lanciare) | usato (lanciato: la mira e' in usato_da) | scaduto
+  mira TEXT NOT NULL,                          -- la mira che l'ha comprato (col pagamento, per rendere i saldi alla scadenza)
+  comprato INTEGER NOT NULL,
+  scade INTEGER NOT NULL DEFAULT 0,            -- 0 = mai
+  usato_da TEXT NOT NULL DEFAULT '',
+  usato_at INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS idx_zaino_chi ON pew_zaino(channel, chi, stato);
+CREATE INDEX IF NOT EXISTS idx_zaino_scade ON pew_zaino(scade) WHERE stato='pieno' AND scade>0;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_zaino_mira ON pew_zaino(mira);
 CREATE TABLE IF NOT EXISTS pew_bit_mov (      -- ogni movimento dei Bit da spendere, con un riferimento unico: lo stesso cheer o rimborso entra una volta
   channel TEXT NOT NULL,
   rif TEXT NOT NULL,                           -- cheer:<evento> · avanzo:<evento> · persi:<mira>:<chi> · spesa:<mira> · reso:<mira>:<chi> · streamer:<…>
@@ -1425,6 +1441,8 @@ aggiungiColonna('colpi', 'spettatore', "TEXT NOT NULL DEFAULT ''");
 aggiungiColonna('colpi', 'ricevuta', "TEXT NOT NULL DEFAULT ''");
 // un modo misto (docs/COLPI.md, «I modi misti»): le monete gia' pagate, con la ricevuta, aspettando il resto
 aggiungiColonna('colpi', 'acconto', "TEXT NOT NULL DEFAULT ''");
+// una mira comprata per dopo: pagata, va nello zaino invece che all'overlay (docs/COLPI.md, «Lo zaino»)
+aggiungiColonna('colpi', 'dopo', 'INTEGER NOT NULL DEFAULT 0');
 // chi ha mandato i Bit di una mira, in ordine ([[idTwitch, bit, da]], '-' per i cheer anonimi): i Bit che non pagano un colpo tornano a loro
 aggiungiColonna('colpi', 'versanti', "TEXT NOT NULL DEFAULT ''");
 aggiungiColonna('donazioni', 'riferimento', "TEXT NOT NULL DEFAULT ''");
@@ -3019,10 +3037,10 @@ export const SOSTEGNO_MAI_PAGATO_MS = 7 * 24 * 3600 * 1000;
 export const registroColpi = {
   apri(m) {
     try {
-      return db.prepare(`INSERT INTO colpi (id, login, codice, voce, comando, nome, x, y, scala, chi, prezzi, stato, creata, scade, spettatore) VALUES (?,?,?,?,?,?,?,?,?,?,?,'attesa',?,?,?)`)
+      return db.prepare(`INSERT INTO colpi (id, login, codice, voce, comando, nome, x, y, scala, chi, prezzi, stato, creata, scade, spettatore, dopo) VALUES (?,?,?,?,?,?,?,?,?,?,?,'attesa',?,?,?,?)`)
         .run(String(m.id), String(m.login).toLowerCase(), String(m.codice), String(m.voce), String(m.comando), String(m.nome || '').slice(0, 40),
           Number(m.x), Number(m.y), Math.round(Number(m.scala) || 100), String(m.chi || '').slice(0, 60), JSON.stringify(m.prezzi || {}), Number(m.creata) || now(), Number(m.scade) || now(),
-          String(m.spettatore || '').slice(0, 40)).changes > 0;
+          String(m.spettatore || '').slice(0, 40), m.dopo ? 1 : 0).changes > 0;
     } catch (e) { if (/UNIQUE/.test(String(e?.message))) return false; throw e; }
   },
   // La presenza dalla chat: nasce gia' da consegnare (gratis, niente codice).
@@ -3119,7 +3137,7 @@ export const registroColpi = {
   // (le presenze no: un raid che si presenta non toglie il posto a chi paga)
   aperteDa(login, da) { return db.prepare("SELECT COUNT(*) AS n FROM colpi WHERE login=? AND creata>=? AND metodo<>'presenza'").get(String(login).toLowerCase(), da).n; },
   presenzeDa(login, da) { return db.prepare("SELECT COUNT(*) AS n FROM colpi WHERE login=? AND creata>=? AND metodo='presenza'").get(String(login).toLowerCase(), da).n; },
-  ultimi(login, n = 30) { return db.prepare("SELECT * FROM colpi WHERE login=? AND stato IN ('pagata','sparata','rimborsata') ORDER BY pagata_at DESC LIMIT ?").all(String(login).toLowerCase(), Math.max(1, Math.min(200, n | 0))).map((r) => this._leggi(r)); },
+  ultimi(login, n = 30) { return db.prepare("SELECT * FROM colpi WHERE login=? AND stato IN ('pagata','sparata','rimborsata','zaino') ORDER BY pagata_at DESC LIMIT ?").all(String(login).toLowerCase(), Math.max(1, Math.min(200, n | 0))).map((r) => this._leggi(r)); },
   pulisci(ora = now()) {
     db.prepare("UPDATE colpi SET stato='scaduta' WHERE stato='attesa' AND riferimento='' AND acconto='' AND scade<? AND (versati=0 OR creata<?)").run(ora, ora - 86400_000);
     db.prepare("UPDATE colpi SET stato='scaduta' WHERE stato='attesa' AND riferimento LIKE 'apre:%' AND scade<?").run(ora);
@@ -3128,6 +3146,71 @@ export const registroColpi = {
     db.prepare("DELETE FROM colpi WHERE stato IN ('sparata','rimborsata') AND creata<?").run(ora - 90 * 86400_000);
   },
   rimuovi(login) { db.prepare('DELETE FROM colpi WHERE login=?').run(String(login).toLowerCase()); },
+  // pagata → zaino, e l'oggetto nasce: insieme, una volta sola (true per chi ci riesce)
+  nelloZaino(id, oggetto) {
+    return db.transaction(() => {
+      if (!db.prepare("UPDATE colpi SET stato='zaino' WHERE id=? AND stato='pagata' AND dopo=1").run(String(id)).changes) return false;
+      db.prepare('INSERT INTO pew_zaino (id, channel, chi, nome, voce, stato, mira, comprato, scade) VALUES (?,?,?,?,?,\'pieno\',?,?,?)')
+        .run(String(oggetto.id), String(oggetto.channel).toLowerCase(), String(oggetto.chi), String(oggetto.nome || '').toLowerCase().slice(0, 40), String(oggetto.voce),
+          String(id), Number(oggetto.comprato) || now(), Math.max(0, Math.trunc(Number(oggetto.scade) || 0)));
+      return true;
+    })();
+  },
+  // le mire per dopo ancora aperte di una persona: tengono il posto nello zaino
+  dopoAperte(login, spettatore, ora = now()) {
+    return db.prepare("SELECT voce FROM colpi WHERE login=? AND spettatore=? AND dopo=1 AND stato IN ('attesa','pagata') AND (scade>? OR versati>0 OR riferimento<>'' OR acconto<>'')")
+      .all(String(login).toLowerCase(), String(spettatore), ora).map((r) => r.voce);
+  },
+};
+
+// LO ZAINO di Pewpewify (docs/COLPI.md, «Lo zaino»). Un oggetto nasce solo con
+// la sua mira pagata (registroColpi.nelloZaino); si usa una volta, prima quello
+// che scade prima; torna pieno solo se il lancio che l'ha usato non e' comparso.
+// Uno scaduto non c'e' piu' dall'istante in cui scade.
+export const pewZaino = {
+  contenuto(channel, chi, ora = now()) {
+    return db.prepare("SELECT id, voce, scade, comprato FROM pew_zaino WHERE channel=? AND chi=? AND stato='pieno' AND (scade=0 OR scade>?) ORDER BY scade=0, scade, comprato")
+      .all(String(channel).toLowerCase(), String(chi), ora);
+  },
+  // il lancio prende un oggetto di quella voce: l'id, o null
+  prendi(channel, chi, voce, mira, ora = now()) {
+    return db.transaction(() => {
+      const o = db.prepare("SELECT id FROM pew_zaino WHERE channel=? AND chi=? AND voce=? AND stato='pieno' AND (scade=0 OR scade>?) ORDER BY scade=0, scade, comprato LIMIT 1")
+        .get(String(channel).toLowerCase(), String(chi), String(voce), ora);
+      if (!o) return null;
+      db.prepare("UPDATE pew_zaino SET stato='usato', usato_da=?, usato_at=? WHERE id=? AND stato='pieno'").run(String(mira), ora, o.id);
+      return o.id;
+    })();
+  },
+  // il lancio non e' comparso: l'oggetto torna pieno, una volta sola
+  // (uno che intanto e' scaduto, o scade prima di `almeno`, vale fino ad `almeno`)
+  rimetti(id, mira, almeno = 0) {
+    return db.prepare("UPDATE pew_zaino SET stato='pieno', usato_da='', usato_at=0, scade=CASE WHEN scade>0 AND scade<? THEN ? ELSE scade END WHERE id=? AND stato='usato' AND usato_da=?")
+      .run(almeno, almeno, String(id), String(mira)).changes > 0;
+  },
+  get(id) { return db.prepare('SELECT * FROM pew_zaino WHERE id=?').get(String(id)) || null; },
+  // «inattivo»: un acquisto o un lancio porta tutti i suoi colpi vivi alla stessa scadenza
+  rinnova(channel, chi, scade, ora = now()) {
+    db.prepare("UPDATE pew_zaino SET scade=? WHERE channel=? AND chi=? AND stato='pieno' AND (scade=0 OR scade>?)").run(Math.max(0, Math.trunc(Number(scade) || 0)), String(channel).toLowerCase(), String(chi), ora);
+  },
+  scaduti(ora = now()) { return db.prepare("SELECT * FROM pew_zaino WHERE stato='pieno' AND scade>0 AND scade<=?").all(ora); },
+  // pieno → scaduto: true per chi ci riesce
+  scadi(id) { return db.prepare("UPDATE pew_zaino SET stato='scaduto' WHERE id=? AND stato='pieno'").run(String(id)).changes > 0; },
+  // quanti ne ha una persona (pieni e vivi), in tutto e per voce
+  conta(channel, chi, ora = now()) {
+    const r = db.prepare("SELECT voce, COUNT(*) AS n FROM pew_zaino WHERE channel=? AND chi=? AND stato='pieno' AND (scade=0 OR scade>?) GROUP BY voce").all(String(channel).toLowerCase(), String(chi), ora);
+    return { tutti: r.reduce((t, x) => t + x.n, 0), voci: Object.fromEntries(r.map((x) => [x.voce, x.n])) };
+  },
+  totali(channel, ora = now()) {
+    const r = db.prepare("SELECT COUNT(*) AS colpi, COUNT(DISTINCT chi) AS persone FROM pew_zaino WHERE channel=? AND stato='pieno' AND (scade=0 OR scade>?)").get(String(channel).toLowerCase(), ora);
+    return { colpi: r.colpi, persone: r.persone };
+  },
+  // gli oggetti finiti (usati da tempo, scaduti) escono dopo 90 giorni, con le loro mire
+  pulisci(ora = now()) {
+    const vecchi = ora - 90 * 86400_000;
+    db.prepare("DELETE FROM colpi WHERE stato='zaino' AND id IN (SELECT mira FROM pew_zaino WHERE stato IN ('usato','scaduto') AND MAX(comprato, usato_at)<?)").run(vecchi);
+    db.prepare("DELETE FROM pew_zaino WHERE stato IN ('usato','scaduto') AND MAX(comprato, usato_at)<?").run(vecchi);
+  },
 };
 
 // Il registro delle donazioni. Una riga per pagamento, con l'id che gli da' chi
