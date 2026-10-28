@@ -54,11 +54,12 @@ Da cui, per costruzione:
   resta riusabile e condivisibile. Ricaricare *lo stesso file nello stesso
   campo* lo sostituisce; un file diverso, o lo stesso file in un altro campo,
   conia una nuova identità.
-- **Prendere è copiare.** Scegliere un elemento di un altro streamer lo importa
-  prima nella propria libreria (i file vengono copiati, l'autore originale
-  resta), poi restituisce il riferimento alla *propria* copia. Quello che si
-  usa non dipende più da uno streamer che potrebbe rendere privato il suo media
-  domani.
+- **Prendere è richiamare** (era «copiare», vedi `docs/ARCHIVIO.md`). Scegliere
+  un elemento di un altro streamer lo importa nella propria libreria con una
+  riga propria che richiama **gli stessi file** dell'archivio (l'autore
+  originale resta). Quello che si usa non dipende da uno streamer che potrebbe
+  rendere privato o togliere il suo media domani: il file resta finché qualcuno
+  lo usa. E non occupa altro spazio.
 
 ## Le porte, oggi
 

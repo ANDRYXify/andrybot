@@ -43,6 +43,12 @@ comandi diversi da quelli della riga italiana.
 
 ## 2026-10-28
 
+- Ogni effetto della libreria ha il suo codice: «sb-» se condiviso, il tuo nome davanti se è solo tuo. Con un codice aggiungi un effetto, e prenderlo non occupa altro spazio. [vai: effetti]
+  en: Every library effect has its own code: «sb-» if shared, your name in front if it's only yours. With a code you add an effect, and taking it uses no extra space.
+  es: Cada efecto de la biblioteca tiene su código: «sb-» si es compartido, tu nombre delante si es solo tuyo. Con un código añades un efecto, y cogerlo no ocupa más espacio.
+- I file dei tuoi effetti ora stanno cifrati sul server, uno per contenuto: chi arrivasse al disco non potrebbe usarli. [vai: effetti]
+  en: Your effect files are now stored encrypted on the server, one per content: anyone reaching the disk couldn't use them.
+  es: Los archivos de tus efectos ahora están cifrados en el servidor, uno por contenido: quien llegara al disco no podría usarlos.
 - [importante] Lo zaino di Pewpewify: chi guarda compra un colpo per dopo, anche a diretta spenta, e lo ritrova sulla tua pagina da lanciare quando vuole, con un tocco. [vai: colpi]
   en: The Pewpewify backpack: viewers buy a hit for later, even while you're offline, and find it on your page to launch whenever they want, with one tap.
   es: La mochila de Pewpewify: quien mira compra un golpe para después, incluso con el directo apagado, y lo encuentra en tu página para lanzarlo cuando quiera, con un toque.

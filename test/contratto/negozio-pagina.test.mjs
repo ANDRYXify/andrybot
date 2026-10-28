@@ -48,7 +48,7 @@ test('la pagina servita e\' quella salvata, del canale dell\'indirizzo', () => {
 test('la porta delle immagini chiede al negozio, col canale e il media insieme', () => {
   const r = tratto(SRV, "app.get('/u/:user/negozio/media/:id'", 400);
   assert.match(r, /const m = negozioPagina\.mediaPubblico\(req\.params\.user, req\.params\.id\);\n\s*if \(!m\) return notFound\(res\);/);
-  assert.match(r, /res\.sendFile\(join\(effectsRoot, m\.channel, m\.file\)/, 'il file e la cartella vengono da mediaPubblico, non dall\'indirizzo');
+  assert.match(r, /mediaEffetti\.servi\(req, res, m\.channel, m\.file, /, 'il canale e il file vengono da mediaPubblico, non dall\'indirizzo; e passano dai media degli effetti');
   const mp = tratto(PAG, 'export function mediaPubblico(', '\n}\n');
   assert.match(mp, /e\.channel !== ch/, 'il media e\' del canale dell\'indirizzo');
   assert.match(mp, /inVetrina\(ch, ora\)\.some\(\(a\) => a\.immagine === `effetto:\$\{e\.comando\}`\)/, 'e lo usa un articolo in vetrina');

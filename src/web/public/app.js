@@ -1103,12 +1103,12 @@ function _demoEventi(via, metodo, b) {
 }
 
 const LIB_DEMO = [
-  { id: 101, nome: 'Applausi', tipo: 'audio', autore: 'andryx_demo', combo: false, usi: 42, mio: true, pubblico: true, comando: 'applausi', url: '', suonoUrl: '' },
-  { id: 102, nome: 'Coriandoli', tipo: 'video', autore: 'andryx_demo', combo: true, usi: 18, mio: true, pubblico: false, comando: 'coriandoli', url: '', poster: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNjAgOTAiPjxkZWZzPjxsaW5lYXJHcmFkaWVudCBpZD0iZyIgeDE9IjAiIHkxPSIwIiB4Mj0iMSIgeTI9IjEiPjxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iIzA4OTFiMiIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iIzE2YTM0YSIvPjwvbGluZWFyR3JhZGllbnQ+PC9kZWZzPjxyZWN0IHdpZHRoPSIxNjAiIGhlaWdodD0iOTAiIGZpbGw9InVybCgjZykiLz48dGV4dCB4PSI4MCIgeT0iNTIiIGZvbnQtZmFtaWx5PSJzeXN0ZW0tdWksc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMyIgZm9udC13ZWlnaHQ9IjYwMCIgZmlsbD0iI2ZmZmZmZmNjIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5WSURFTzwvdGV4dD48L3N2Zz4=', suonoUrl: '' },
-  { id: 103, nome: 'Gatto sorpreso', tipo: 'immagine', autore: 'lucaplays', combo: false, usi: 210, mio: false, pubblico: true, comando: '', url: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNjAgOTAiPjxkZWZzPjxsaW5lYXJHcmFkaWVudCBpZD0iZyIgeDE9IjAiIHkxPSIwIiB4Mj0iMSIgeTI9IjEiPjxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iIzdjM2FlZCIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iIzI1NjNlYiIvPjwvbGluZWFyR3JhZGllbnQ+PC9kZWZzPjxyZWN0IHdpZHRoPSIxNjAiIGhlaWdodD0iOTAiIGZpbGw9InVybCgjZykiLz48dGV4dCB4PSI4MCIgeT0iNTIiIGZvbnQtZmFtaWx5PSJzeXN0ZW0tdWksc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMyIgZm9udC13ZWlnaHQ9IjYwMCIgZmlsbD0iI2ZmZmZmZmNjIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5HSUY8L3RleHQ+PC9zdmc+', suonoUrl: '' },
-  { id: 104, nome: 'Fuochi d\u2019artificio', tipo: 'video', autore: 'giada_ttv', combo: true, usi: 88, mio: false, pubblico: true, comando: '', url: '', poster: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNjAgOTAiPjxkZWZzPjxsaW5lYXJHcmFkaWVudCBpZD0iZyIgeDE9IjAiIHkxPSIwIiB4Mj0iMSIgeTI9IjEiPjxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iIzA4OTFiMiIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iIzE2YTM0YSIvPjwvbGluZWFyR3JhZGllbnQ+PC9kZWZzPjxyZWN0IHdpZHRoPSIxNjAiIGhlaWdodD0iOTAiIGZpbGw9InVybCgjZykiLz48dGV4dCB4PSI4MCIgeT0iNTIiIGZvbnQtZmFtaWx5PSJzeXN0ZW0tdWksc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMyIgZm9udC13ZWlnaHQ9IjYwMCIgZmlsbD0iI2ZmZmZmZmNjIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5WSURFTzwvdGV4dD48L3N2Zz4=', suonoUrl: '' },
-  { id: 105, nome: 'Tamburi', tipo: 'audio', autore: 'marco99', combo: false, usi: 64, mio: false, pubblico: true, comando: '', url: '', suonoUrl: '' },
-  { id: 106, nome: 'Cartello \u00abattimo\u00bb', tipo: 'immagine', autore: 'lucaplays', combo: false, usi: 31, mio: false, pubblico: true, comando: '', url: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNjAgOTAiPjxkZWZzPjxsaW5lYXJHcmFkaWVudCBpZD0iZyIgeDE9IjAiIHkxPSIwIiB4Mj0iMSIgeTI9IjEiPjxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iI2Y5NzMxNiIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iI2RiMjc3NyIvPjwvbGluZWFyR3JhZGllbnQ+PC9kZWZzPjxyZWN0IHdpZHRoPSIxNjAiIGhlaWdodD0iOTAiIGZpbGw9InVybCgjZykiLz48dGV4dCB4PSI4MCIgeT0iNTIiIGZvbnQtZmFtaWx5PSJzeXN0ZW0tdWksc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMyIgZm9udC13ZWlnaHQ9IjYwMCIgZmlsbD0iI2ZmZmZmZmNjIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5GT1RPPC90ZXh0Pjwvc3ZnPg==', suonoUrl: '' },
+  { codice: 'sb-K7QX3A', id: 101, nome: 'Applausi', tipo: 'audio', autore: 'andryx_demo', combo: false, usi: 42, mio: true, pubblico: true, comando: 'applausi', url: '', suonoUrl: '' },
+  { codice: 'andryx_demo-P4RT9W', id: 102, nome: 'Coriandoli', tipo: 'video', autore: 'andryx_demo', combo: true, usi: 18, mio: true, pubblico: false, comando: 'coriandoli', url: '', poster: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNjAgOTAiPjxkZWZzPjxsaW5lYXJHcmFkaWVudCBpZD0iZyIgeDE9IjAiIHkxPSIwIiB4Mj0iMSIgeTI9IjEiPjxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iIzA4OTFiMiIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iIzE2YTM0YSIvPjwvbGluZWFyR3JhZGllbnQ+PC9kZWZzPjxyZWN0IHdpZHRoPSIxNjAiIGhlaWdodD0iOTAiIGZpbGw9InVybCgjZykiLz48dGV4dCB4PSI4MCIgeT0iNTIiIGZvbnQtZmFtaWx5PSJzeXN0ZW0tdWksc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMyIgZm9udC13ZWlnaHQ9IjYwMCIgZmlsbD0iI2ZmZmZmZmNjIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5WSURFTzwvdGV4dD48L3N2Zz4=', suonoUrl: '' },
+  { codice: 'sb-M3HV8C', id: 103, nome: 'Gatto sorpreso', tipo: 'immagine', autore: 'lucaplays', combo: false, usi: 210, mio: false, pubblico: true, comando: '', url: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNjAgOTAiPjxkZWZzPjxsaW5lYXJHcmFkaWVudCBpZD0iZyIgeDE9IjAiIHkxPSIwIiB4Mj0iMSIgeTI9IjEiPjxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iIzdjM2FlZCIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iIzI1NjNlYiIvPjwvbGluZWFyR3JhZGllbnQ+PC9kZWZzPjxyZWN0IHdpZHRoPSIxNjAiIGhlaWdodD0iOTAiIGZpbGw9InVybCgjZykiLz48dGV4dCB4PSI4MCIgeT0iNTIiIGZvbnQtZmFtaWx5PSJzeXN0ZW0tdWksc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMyIgZm9udC13ZWlnaHQ9IjYwMCIgZmlsbD0iI2ZmZmZmZmNjIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5HSUY8L3RleHQ+PC9zdmc+', suonoUrl: '' },
+  { codice: 'sb-T6YD4N', id: 104, nome: 'Fuochi d\u2019artificio', tipo: 'video', autore: 'giada_ttv', combo: true, usi: 88, mio: false, pubblico: true, comando: '', url: '', poster: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNjAgOTAiPjxkZWZzPjxsaW5lYXJHcmFkaWVudCBpZD0iZyIgeDE9IjAiIHkxPSIwIiB4Mj0iMSIgeTI9IjEiPjxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iIzA4OTFiMiIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iIzE2YTM0YSIvPjwvbGluZWFyR3JhZGllbnQ+PC9kZWZzPjxyZWN0IHdpZHRoPSIxNjAiIGhlaWdodD0iOTAiIGZpbGw9InVybCgjZykiLz48dGV4dCB4PSI4MCIgeT0iNTIiIGZvbnQtZmFtaWx5PSJzeXN0ZW0tdWksc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMyIgZm9udC13ZWlnaHQ9IjYwMCIgZmlsbD0iI2ZmZmZmZmNjIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5WSURFTzwvdGV4dD48L3N2Zz4=', suonoUrl: '' },
+  { codice: 'sb-Q9WA7E', id: 105, nome: 'Tamburi', tipo: 'audio', autore: 'marco99', combo: false, usi: 64, mio: false, pubblico: true, comando: '', url: '', suonoUrl: '' },
+  { codice: 'sb-R3KX6P', id: 106, nome: 'Cartello \u00abattimo\u00bb', tipo: 'immagine', autore: 'lucaplays', combo: false, usi: 31, mio: false, pubblico: true, comando: '', url: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNjAgOTAiPjxkZWZzPjxsaW5lYXJHcmFkaWVudCBpZD0iZyIgeDE9IjAiIHkxPSIwIiB4Mj0iMSIgeTI9IjEiPjxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iI2Y5NzMxNiIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iI2RiMjc3NyIvPjwvbGluZWFyR3JhZGllbnQ+PC9kZWZzPjxyZWN0IHdpZHRoPSIxNjAiIGhlaWdodD0iOTAiIGZpbGw9InVybCgjZykiLz48dGV4dCB4PSI4MCIgeT0iNTIiIGZvbnQtZmFtaWx5PSJzeXN0ZW0tdWksc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxMyIgZm9udC13ZWlnaHQ9IjYwMCIgZmlsbD0iI2ZmZmZmZmNjIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5GT1RPPC90ZXh0Pjwvc3ZnPg==', suonoUrl: '' },
 ];
 
 function _demoLibreria(percorso) {
@@ -25508,6 +25508,11 @@ function pannelloEffetti() {
         <button type="button" class="btn secondario mini" id="lib-miei">${L('Solo i miei', 'Only mine', 'Solo los míos')}</button>
         <input aria-label="${esc(L('Cerca per nome…', 'Search by name…', 'Buscar por nombre…'))}" type="search" id="lib-cerca" placeholder="${L('Cerca per nome…', 'Search by name…', 'Buscar por nombre…')}" maxlength="40">
       </div>
+      <form class="lib-col-codice" id="lib-col-codice">
+        <label class="campo" for="lib-codice-in">${L('Hai un codice? Aggiungi quell\'effetto alla tua libreria', 'Got a code? Add that effect to your library', '¿Tienes un código? Añade ese efecto a tu biblioteca')}</label>
+        <div class="riga-flessibile"><input id="lib-codice-in" type="text" maxlength="40" autocomplete="off" spellcheck="false" placeholder="sb-K7QX3A"><button type="submit" class="btn secondario mini">${_bIco(ICO.piu)}${L('Aggiungi', 'Add', 'Añadir')}</button></div>
+        <p class="suggerimento">${L('Ogni effetto ha il suo codice. Quelli condivisi cominciano con «sb-» e li aggiunge chiunque; quelli tuoi privati hanno davanti il tuo nome e restano tuoi. Il file sta una volta sola nell\'archivio, chiunque lo usi: prendere un effetto non occupa altro spazio.', 'Every effect has its own code. Shared ones start with «sb-» and anyone can add them; your private ones have your name in front and stay yours. The file is stored once in the archive, whoever uses it: taking an effect takes no extra space.', 'Cada efecto tiene su código. Los compartidos empiezan por «sb-» y los añade cualquiera; los tuyos privados llevan tu nombre delante y siguen siendo tuyos. El archivo está una sola vez en el archivo, lo use quien lo use: coger un efecto no ocupa más espacio.')}</p>
+      </form>
       <div id="lib-griglia" class="lib-griglia"><p class="vuoto">${L('Carico la libreria…', 'Loading the library…', 'Cargando la biblioteca…')}</p></div>
     </div>
 
@@ -37178,6 +37183,20 @@ function attivaPiattaforma() {
   document.getElementById('lib-cerca')?.addEventListener('input', () => {
     clearTimeout(_libCercaTimer); _libCercaTimer = setTimeout(caricaLibreria, 300);
   });
+  document.getElementById('lib-col-codice')?.addEventListener('submit', (ev) => {
+    ev.preventDefault();
+    const campo = document.getElementById('lib-codice-in');
+    const codice = String(campo?.value || '').trim();
+    if (!codice) return;
+    if (DEMO) { toast(L('In demo non si importa — accedi per farlo davvero.', "In demo you can't import — log in to do it for real.", 'En la demo no se importa — inicia sesión para hacerlo de verdad.')); return; }
+    conErrore(async () => {
+      const r = await api('/api/streamer/libreria/codice', { method: 'POST', body: { codice } });
+      toast(r.gia ? L(`È già tuo: !${r.comando}`, `It's already yours: !${r.comando}`, `Ya es tuyo: !${r.comando}`) : L(`Aggiunto come !${r.comando} alla tua libreria`, `Added as !${r.comando} to your library`, `Añadido como !${r.comando} a tu biblioteca`));
+      campo.value = '';
+      caricaEffetti();
+      caricaLibreria();
+    });
+  });
   const grigliaLib = document.getElementById('lib-griglia');
   if (grigliaLib) {
     grigliaLib.addEventListener('click', (ev) => {
@@ -37185,6 +37204,8 @@ function attivaPiattaforma() {
       const play = ev.target.closest('.lib-play');
       const cond = ev.target.closest('.lib-cond');
       const guarda = ev.target.closest('.lib-guarda');
+      const cod = ev.target.closest('.lib-codice');
+      if (cod) { copiaTesto(cod.dataset.codice, L('Codice copiato', 'Code copied', 'Código copiado')); return; }
       if (guarda) { const it = _libMostrati.find((x) => x.id === Number(guarda.dataset.id)); if (it) anteprimaEffetto(it, { comando: it.mio ? it.comando : '' }); return; }
       if (imp) conErrore(() => importaLibreria(imp.dataset.id, imp));
       else if (cond) conErrore(() => condividiMedia(cond));
@@ -39690,6 +39711,7 @@ function libItemHtml(it, azione) {
     <div class="meta">${it.mio
       ? `<strong>${L('tuo', 'yours', 'tuyo')}</strong> · ${it.pubblico ? L('condiviso', 'shared', 'compartido') : L('privato', 'private', 'privado')}`
       : L('di', 'by', 'de') + ' ' + esc(it.autore)}${it.usi ? ' · ' + it.usi + ' ' + L('usi', 'uses', 'usos') : ''}</div>
+    ${it.codice ? `<button type="button" class="lib-codice" data-codice="${esc(it.codice)}" title="${esc(L('Copia il codice', 'Copy the code', 'Copia el código'))}">${esc(it.codice)}</button>` : ''}
     <div class="lib-azioni">${audio}${principale}</div>
   </div>`;
 }

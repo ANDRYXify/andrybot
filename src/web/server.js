@@ -24,7 +24,7 @@ import * as filigrana from '../watermark.js';   // filigrana di proprietà (Andr
 import * as licenza from '../licenza.js';      // il nome con cui questo software si presenta
 import * as consolle from '../features/console.js';   // CONSOLify + tastiera fisica
 import { makeLog } from '../logger.js';
-import { db, tokens, streamers, memory, clips, knowledge, QUANDO_CONOSCENZA, schedaPulita, effects as effectsDb, SCHERMI, normComando, baseDaFile, modules as modulesDb, MAX_MODULI, friends, sfondi as sfondiDb, carteLive, tgAttesa, tgScudo, paginaTelegram, TIPI_PAGINA_TELEGRAM, gsiStato, mortiSchede } from '../db.js';
+import { db, tokens, streamers, memory, clips, knowledge, QUANDO_CONOSCENZA, schedaPulita, effects as effectsDb, archivioDb, codiceEffetto, SCHERMI, normComando, baseDaFile, modules as modulesDb, MAX_MODULI, friends, sfondi as sfondiDb, carteLive, tgAttesa, tgScudo, paginaTelegram, TIPI_PAGINA_TELEGRAM, gsiStato, mortiSchede } from '../db.js';
 import { points, vips, tgConf, tgDest, amici, tgVisti, feedFonti, dcConf, passkeys, managers, quotes, battute, compleanni, membri, subscriptions, giochi as giochiDb, guide, GUIDE_MAX, pointAlerts, tgLogin, contatori, rapporti, postaStreamer, dcRuoli, dcLink, dcGiri, dcAccesso, dcDest, avvisiConf } from '../db.js';
 import { direttaDest, MAX_DESTINAZIONI, studioScene, studioDispositivi } from '../db.js';
 import { creaSalotto } from '../features/studio-dispositivi.js';
@@ -46,6 +46,8 @@ import { vociPubbliche, sitemapXml } from './sitemap.js';
 import { legaleIn } from './legali.js';
 import * as novita from './novita.js';
 import { spazioCartella, inMega } from '../features/spazio.js';
+import { creaArchivio, eNomeArchivio } from '../features/archivio.js';
+import { creaMediaEffetti } from '../features/media-effetti.js';
 import * as spontanea from '../features/spontanea.js';
 import { paginaManuale, paginaIndiceManuali, aiutiPerScheda } from './manuali.js';
 import { conOccasione, normOccasioni, accendi as accendiOccasione } from '../features/occasioni.js';
@@ -172,7 +174,7 @@ import { pretrain } from '../ai/pretrain.js';
 import { GENERI } from '../ai/genere.js';
 import * as persona from '../ai/persona.js';
 import * as brainpy from '../ai/brainpy.js';
-import { impronta, combacia } from '../segreti.js';
+import { impronta, combacia, chiudiChiave, apriChiave, segno } from '../segreti.js';
 import { redeemPass } from './gate.js';
 import { eLoginNostro, LOGIN_RE, loginKick, loginYoutube, loginDiscord, loginSu, nomeSu, piattaformaDi, conDiretta, urlCanale, PIATTAFORME } from '../identita.js';
 import { provaModerazione, verificabile } from '../moderatori/prova.js';
@@ -1407,8 +1409,20 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   const effectsRoot = join(config.dataDir, 'effects');
   // Il tetto allo spazio di un canale: la somma di quello che ha caricato.
   const SPAZIO_FINITO = 'spazio del canale esaurito: togli qualche media, effetto o font e riprova';
-  const spazioEsaurito = (login) => spazioCartella(join(effectsRoot, String(login).toLowerCase())) >= config.spazioCanaleByte;
-  const spazioDi = (login) => ({ usato: inMega(spazioCartella(join(effectsRoot, String(login).toLowerCase()))), max: inMega(config.spazioCanaleByte) });
+  // I MEDIA DEGLI EFFETTI (docs/ARCHIVIO.md): un file per contenuto, cifrato,
+  // servito solo al canale che lo usa; tutto passa da mediaEffetti
+  const archivioMedia = creaArchivio({ cartella: join(config.dataDir, 'archivio'), chiudiChiave, apriChiave, impronta: (sha) => segno('archivio', sha).toString('hex') });
+  const mediaEffetti = creaMediaEffetti({ archivio: archivioMedia, effetti: effectsDb, registro: archivioDb,
+    cartellaDi: (l) => join(effectsRoot, String(l).toLowerCase()), temp: join(config.dataDir, 'archivio', 'entrata'), log });
+  // lo spazio di un canale: la sua cartella, e i file dell'archivio che usa (ognuno una volta)
+  const spazioUsato = (login) => spazioCartella(join(effectsRoot, String(login).toLowerCase())) + archivioDb.byteDi(login);
+  const spazioEsaurito = (login) => spazioUsato(login) >= config.spazioCanaleByte;
+  const spazioDi = (login) => ({ usato: inMega(spazioUsato(login)), max: inMega(config.spazioCanaleByte) });
+  // ogni effetto ha il suo codice; i file di prima passano all'archivio un po'
+  // alla volta, dopo l'avvio; e ogni tanto si tolgono i file che nessuno usa piu'
+  try { const n = effectsDb.siglaTutti(); if (n) log.info(`effetti: ${n} codici nuovi`); } catch (e) { log.warn('codici degli effetti:', e?.message || e); }
+  setTimeout(() => { mediaEffetti.migra().then((n) => { if (n) log.info(`archivio: ${n} file spostati`); }).catch((e) => log.warn('archivio:', e?.message || e)); }, 20_000).unref?.();
+  setInterval(() => { mediaEffetti.pulisci().catch((e) => log.warn('archivio, pulizia:', e?.message || e)); }, 6 * 3600_000).unref?.();
   const sfondiRoot = join(config.dataDir, 'sfondi');   // libreria sfondi delle grafiche
   const tmpDir = join(config.dataDir, 'tmp');
   mkdirSync(tmpDir, { recursive: true });
@@ -1889,6 +1903,8 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     const file = String(req.params.file || '');
     // deve essere un basename semplice: niente separatori né risalite di cartella
     if (!/^[A-Za-z0-9._-]+$/.test(file) || file.includes('..')) return notFound(res);
+    // un file dell'archivio: solo se un effetto di questo canale lo usa
+    if (eNomeArchivio(file)) { mediaEffetti.servi(req, res, login, file, { maxAge: 60 }).catch(() => { if (!res.headersSent) notFound(res); }); return; }
     res.sendFile(join(effectsRoot, login, file), { maxAge: '60s' }, (err) => {
       if (err && !res.headersSent) notFound(res);
     });
@@ -2478,13 +2494,13 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     const login = loginColpi(req);
     const file = login ? portaColpi.anteprima(login, req.params.voce) : null;
     if (!file) return notFound(res);
-    res.sendFile(join(effectsRoot, login, file), { maxAge: '300s' }, (err) => { if (err && !res.headersSent) notFound(res); });
+    mediaEffetti.servi(req, res, login, file, { maxAge: 300 }).catch(() => { if (!res.headersSent) notFound(res); });
   });
   app.get('/u/:user/colpo/anteprima/:voce/suono', (req, res) => {
     const login = loginColpi(req);
     const file = login ? portaColpi.anteprima(login, req.params.voce, 'suono') : null;
     if (!file) return notFound(res);
-    res.sendFile(join(effectsRoot, login, file), { maxAge: '300s' }, (err) => { if (err && !res.headersSent) notFound(res); });
+    mediaEffetti.servi(req, res, login, file, { maxAge: 300 }).catch(() => { if (!res.headersSent) notFound(res); });
   });
   app.post('/u/:user/colpo/mira', (req, res) => {
     const login = loginColpi(req);
@@ -2692,7 +2708,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   app.get('/u/:user/negozio/media/:id', (req, res) => {
     const m = negozioPagina.mediaPubblico(req.params.user, req.params.id);
     if (!m) return notFound(res);
-    res.sendFile(join(effectsRoot, m.channel, m.file), { maxAge: '300s' }, (err) => { if (err && !res.headersSent) notFound(res); });
+    mediaEffetti.servi(req, res, m.channel, m.file, { maxAge: 300 }).catch(() => { if (!res.headersSent) notFound(res); });
   });
 
   // ── LA PORTA DEL GRUPPO TELEGRAM e LA PROVA DELLO SCUDO (docs/TELEGRAM.md) ──
@@ -9748,27 +9764,39 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     // per audio/video usiamo la durata reale del media (già limitata).
     const durataFinale = esito.tipo === 'immagine' ? durata : esito.durata;
 
+    // i file entrano nell'archivio (docs/ARCHIVIO.md): la riga scrive i loro nomi
+    let nomeMedia = '', nomeSuono = '';
     try {
-      effectsDb.add(login, { comando, tipo: esito.tipo, file: esito.file, tier, cooldown, volume, durata: durataFinale });
+      nomeMedia = await mediaEffetti.entra(join(destDir, esito.file), esito.file);
+      if (esitoSuono) nomeSuono = await mediaEffetti.entra(join(destDir, esitoSuono.file), esitoSuono.file);
     } catch (e) {
       await pulisciTemp(join(destDir, esito.file));
       if (esitoSuono) await pulisciTemp(join(destDir, esitoSuono.file));
+      if (nomeMedia) await mediaEffetti.libera(login, nomeMedia);
+      log.warn('archivio:', e?.message || e);
+      return res.status(500).json({ errore: 'salvataggio del media non riuscito' });
+    }
+    try {
+      effectsDb.add(login, { comando, tipo: esito.tipo, file: nomeMedia, tier, cooldown, volume, durata: durataFinale });
+    } catch (e) {
+      await mediaEffetti.libera(login, nomeMedia);
+      if (nomeSuono) await mediaEffetti.libera(login, nomeSuono);
       return res.status(400).json({ errore: e?.message || 'salvataggio non riuscito' });
     }
 
     const eff = effectsDb.get(login, comando);   // riprende la riga (con id) appena salvata
     // COMBO: aggancia il nuovo suono (o lascia il precedente se non ne è arrivato uno nuovo)
-    if (esitoSuono && eff) {
-      effectsDb.attachSuono(login, eff.id, esitoSuono.file);
-      if (esistente?.suono_file && esistente.suono_file !== esitoSuono.file) await pulisciTemp(join(destDir, esistente.suono_file));
+    if (nomeSuono && eff) {
+      effectsDb.attachSuono(login, eff.id, nomeSuono);
+      if (esistente?.suono_file && esistente.suono_file !== nomeSuono) await mediaEffetti.libera(login, esistente.suono_file);
     }
     // pubblicazione nella libreria condivisa (attribuzione: chi carica)
     if (eff) effectsDb.setPubblico(login, eff.id, { pubblico, nome: nomePubblico || comando, autore: login });
     // dove appare (solo immagini e video: per un audio non cambia niente)
     if (eff) effectsDb.setSchermo(login, eff.id, schermo);
 
-    // pulizia dei vecchi file su sostituzione
-    if (esistente?.file && esistente.file !== esito.file) await pulisciTemp(join(destDir, esistente.file));
+    // i vecchi file su sostituzione: via, se nessun altro li usa
+    if (esistente?.file && esistente.file !== nomeMedia) await mediaEffetti.libera(login, esistente.file);
 
     res.json({ ok: true, comando, pubblico, combo: !!esitoSuono, tipo: esito.tipo, ref: `effetto:${comando}` });
   }
@@ -9779,8 +9807,9 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     const id = parseInt(req.params.id, 10);
     if (!Number.isFinite(id)) return res.status(400).json({ errore: 'id non valido' });
     const rimosso = effectsDb.remove(login, id);
-    if (rimosso?.file) await pulisciTemp(join(effectsRoot, login, rimosso.file));
-    if (rimosso?.suonoFile) await pulisciTemp(join(effectsRoot, login, rimosso.suonoFile));   // audio della combo
+    // i file se ne vanno solo se nessun altro effetto (di nessun canale) li usa
+    if (rimosso?.file) await mediaEffetti.libera(login, rimosso.file);
+    if (rimosso?.suonoFile) await mediaEffetti.libera(login, rimosso.suonoFile);   // audio della combo
     res.json({ ok: true });
   }));
 
@@ -9826,7 +9855,7 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     const items = righe.map((e) => ({
       id: e.id, nome: e.nome || e.comando, tipo: e.tipo,
       autore: e.autore || e.channel, combo: !!e.suono_file, usi: e.usi || 0,
-      mio: e.channel === login, pubblico: !!e.pubblico,
+      mio: e.channel === login, pubblico: !!e.pubblico, codice: codiceEffetto(e),
       comando: e.channel === login ? e.comando : '',
       url: `/api/streamer/libreria/media/${e.id}`,
       suonoUrl: e.suono_file ? `/api/streamer/libreria/media/${e.id}/audio` : null,
@@ -9844,7 +9873,7 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     const consentito = eff && (eff.pubblico || (login && eff.channel === login));
     const file = consentito ? eff[colonna] : '';
     if (!consentito || !file || !/^[A-Za-z0-9._-]+$/.test(file)) return notFound(res);
-    res.sendFile(join(effectsRoot, eff.channel, file), { maxAge: '300s' }, (err) => { if (err && !res.headersSent) notFound(res); });
+    mediaEffetti.servi(req, res, eff.channel, file, { maxAge: 300 }).catch(() => { if (!res.headersSent) notFound(res); });
   };
   app.get('/api/streamer/libreria/media/:id', requireLogin, serviLibreria('file'));
   app.get('/api/streamer/libreria/media/:id/audio', requireLogin, serviLibreria('suono_file'));
@@ -9917,37 +9946,44 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     if (!esigiFunzione(req, res, 'effetti', 'La libreria condivisa')) return;
     const login = currentUser(req).login;
     if (streamers.get(login)?.status !== 'approved') return res.status(403).json({ errore: 'non sei ancora abilitato' });
-    const id = parseInt(req.body?.id, 10);
+    await importaEffetto(res, login, parseInt(req.body?.id, 10));
+  }));
+  // Col codice: «sb-K7QX3A» e' un effetto condiviso di chiunque; uno col nome di
+  // un canale davanti e' privato, e lo trova solo quel canale (che ce l'ha gia').
+  app.post('/api/streamer/libreria/codice', requireLogin, wrap(async (req, res) => {
+    if (!esigiFunzione(req, res, 'effetti', 'La libreria condivisa')) return;
+    const login = currentUser(req).login;
+    if (streamers.get(login)?.status !== 'approved') return res.status(403).json({ errore: 'non sei ancora abilitato' });
+    const e = effectsDb.byCodice(String(req.body?.codice || ''), login);
+    if (!e) return res.status(404).json({ errore: 'nessun effetto condiviso con questo codice' });
+    if (e.channel === login) return res.json({ ok: true, comando: e.comando, gia: true });
+    await importaEffetto(res, login, e.id);
+  }));
+  async function importaEffetto(res, login, id) {
     const src = Number.isFinite(id) ? effectsDb.pubblicoById(id) : null;
     if (!src) return res.status(404).json({ errore: 'effetto non trovato o non più pubblico' });
     if (src.channel === login) return res.status(400).json({ errore: 'questo effetto è già tuo' });
 
-    const srcDir = join(effectsRoot, src.channel);
-    const destDir = join(effectsRoot, login);
-    mkdirSync(destDir, { recursive: true });
-    if (!existsSync(join(srcDir, src.file))) return res.status(404).json({ errore: 'file di origine non trovato' });
+    // PRENDERE NON E' PIU' COPIARE (docs/ARCHIVIO.md): l'effetto di origine
+    // passa all'archivio se non c'era ancora, e la mia riga richiama gli stessi
+    // file. Se l'autore domani lo toglie, i file restano: li uso anch'io.
+    await mediaEffetti.migraRiga(src);
+    const orig = effectsDb.pubblicoById(id);
+    if (!orig || !eNomeArchivio(orig.file) || (orig.suono_file && !eNomeArchivio(orig.suono_file))) return res.status(404).json({ errore: 'file di origine non trovato' });
 
     // comando univoco nel MIO canale, derivato dal nome/comando di origine
     const base = normComando(src.nome || src.comando) || 'effetto';
     let comando = base, n = 2;
     while (effectsDb.get(login, comando)) { comando = normComando(base + '_' + n) || (base + n); n++; if (n > 99) break; }
 
-    const estens = (f) => { const i = String(f).lastIndexOf('.'); return i >= 0 ? String(f).slice(i) : ''; };
-    const nuovoFile = `${Date.now()}_${comando}${estens(src.file)}`;
-    copyFileSync(join(srcDir, src.file), join(destDir, nuovoFile));
-    let nuovoSuono = '';
-    if (src.suono_file && existsSync(join(srcDir, src.suono_file))) {
-      nuovoSuono = `${Date.now()}_${comando}_snd${estens(src.suono_file)}`;
-      copyFileSync(join(srcDir, src.suono_file), join(destDir, nuovoSuono));
-    }
-
+    const nuovoFile = orig.file, nuovoSuono = orig.suono_file || '';
+    let vecchio;
     try {
-      effectsDb.add(login, { comando, tipo: src.tipo, file: nuovoFile, tier: 'tutti', cooldown: 0, volume: src.volume, durata: src.durata });
+      vecchio = effectsDb.add(login, { comando, tipo: src.tipo, file: nuovoFile, tier: 'tutti', cooldown: 0, volume: src.volume, durata: src.durata });
     } catch (e) {
-      await pulisciTemp(join(destDir, nuovoFile));
-      if (nuovoSuono) await pulisciTemp(join(destDir, nuovoSuono));
       return res.status(400).json({ errore: e?.message || 'importazione non riuscita' });
     }
+    if (vecchio && vecchio !== nuovoFile) await mediaEffetti.libera(login, vecchio);
     const eff = effectsDb.get(login, comando);
     if (eff && nuovoSuono) effectsDb.attachSuono(login, eff.id, nuovoSuono);
     // lo scontorno viaggia col video: chi lo prende lo trova gia' pronto
@@ -9955,8 +9991,8 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     // resta PRIVATO; conserva l'autore originale per l'attribuzione
     if (eff) effectsDb.setPubblico(login, eff.id, { pubblico: false, nome: src.nome || comando, autore: src.autore || src.channel });
     effectsDb.incUsi(src.id);
-    res.json({ ok: true, comando });
-  }));
+    res.json({ ok: true, comando, codice: codiceEffetto(effectsDb.get(login, comando)) });
+  }
 
   // ---- EFFETTI PER GLI EVENTI (docs/EFFETTI-SCHERMO.md) ----
   app.get('/api/streamer/effetti-eventi', requireLogin, wrap(async (req, res) => {
@@ -10151,18 +10187,23 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
       return res.status(400).json({ errore: "per l'icona serve un'IMMAGINE (png, jpg, gif, webp…)" });
     }
 
-    let vecchioFile;
+    let vecchioFile, nomeMedia;
+    try { nomeMedia = await mediaEffetti.entra(join(destDir, esito.file), esito.file); } catch (e) {
+      await pulisciTemp(join(destDir, esito.file));
+      log.warn('archivio:', e?.message || e);
+      return res.status(500).json({ errore: 'salvataggio del media non riuscito' });
+    }
     try {
       vecchioFile = effectsDb.add(login, {
-        comando, tipo: esito.tipo, file: esito.file,
+        comando, tipo: esito.tipo, file: nomeMedia,
         tier: 'mod', cooldown: 0, volume: 100,
         durata: esito.tipo === 'immagine' ? 5000 : esito.durata,
       });
     } catch (e) {
-      await pulisciTemp(join(destDir, esito.file));
+      await mediaEffetti.libera(login, nomeMedia);
       return res.status(400).json({ errore: e?.message || 'salvataggio non riuscito' });
     }
-    if (vecchioFile && vecchioFile !== esito.file) await pulisciTemp(join(destDir, vecchioFile));
+    if (vecchioFile && vecchioFile !== nomeMedia) await mediaEffetti.libera(login, vecchioFile);
 
     // assegna dove va e persisti (merge sulle impostazioni correnti)
     const s = streamers.get(login);
@@ -10182,7 +10223,7 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     }
     streamers.setSettings(login, settings);
 
-    res.json({ ok: true, ref: `effetto:${comando}`, comando, tipo: esito.tipo, url: effects.mediaUrl(login, esito.file) });
+    res.json({ ok: true, ref: `effetto:${comando}`, comando, tipo: esito.tipo, url: effects.mediaUrl(login, nomeMedia) });
   }
 
   // ---- Alert a PUNTI CANALE (Twitch Custom Rewards) ----

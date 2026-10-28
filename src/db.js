@@ -1330,6 +1330,15 @@ aggiungiColonna('effects', 'schermo', "TEXT NOT NULL DEFAULT ''");
 // Salvato sull'effetto, vale ovunque parta (docs/LANCI.md, «Il green screen dei media»).
 aggiungiColonna('effects', 'chroma', "TEXT NOT NULL DEFAULT ''");
 aggiungiColonna('effects', 'disegno', "TEXT NOT NULL DEFAULT ''");
+// IL CODICE di un effetto (docs/ARCHIVIO.md): la sigla e' sua per sempre; il
+// codice che si legge e' «sb-<sigla>» se e' condiviso, «<canale>-<sigla>» se no
+aggiungiColonna('effects', 'sigla', "TEXT NOT NULL DEFAULT ''");
+db.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_effects_sigla ON effects(sigla) WHERE sigla<>''");
+db.exec(`CREATE TABLE IF NOT EXISTS archivio (  -- i file dell'archivio dei media (features/archivio.js): quanto pesano, da quando ci sono
+  nome TEXT PRIMARY KEY,
+  byte INTEGER NOT NULL DEFAULT 0,
+  ts INTEGER NOT NULL
+)`);
 // Quando un modulo a tempo ha parlato l'ultima volta. Stava in memoria, e la
 // memoria muore col processo: al riavvio ogni timer risultava "mai partito" e
 // partivano tutti insieme, a ogni deploy. Zero vuol dire mai visto: il motore
@@ -6061,7 +6070,34 @@ export const TIPI_MEDIA = ['audio', 'immagine', 'video'];
 const SOLO_MEDIA = " AND tipo IN ('audio','immagine','video')";
 export const SCHERMI = ['', 'riempi', 'intero'];
 
+const SIGLA_ALFABETO = 'ABCDEFGHJKMNPQRTUVWXY346789';
+function nuovaSigla() {
+  for (let i = 0; i < 50; i++) {
+    const b = crypto.randomBytes(6);
+    const s = [...b].map((x) => SIGLA_ALFABETO[x % SIGLA_ALFABETO.length]).join('');
+    if (!db.prepare('SELECT 1 FROM effects WHERE sigla=?').get(s)) return s;
+  }
+  throw new Error('sigla: nessuna libera');
+}
+// «sb-K7QX3A» se l'effetto e' condiviso, «pincopallo02-K7QX3A» se e' solo suo
+export const codiceEffetto = (e) => (e?.sigla ? `${e.pubblico ? 'sb' : e.channel}-${e.sigla}` : '');
+
 export const effects = {
+  // un effetto dal suo codice: un condiviso lo trova chiunque, uno privato solo il suo canale
+  byCodice(codice, channel = '') {
+    const t = String(codice || '').trim(), i = t.lastIndexOf('-');
+    const chi = t.slice(0, i).toLowerCase(), sigla = t.slice(i + 1).toUpperCase();
+    if (i < 2 || !/^[a-z0-9_]{2,25}$/.test(chi) || !/^[A-Z0-9]{6}$/.test(sigla)) return null;
+    if (chi === 'sb') return db.prepare('SELECT * FROM effects WHERE sigla=? AND pubblico=1 AND attivo=1').get(sigla) || null;
+    if (chi !== String(channel || '').toLowerCase()) return null;
+    return db.prepare('SELECT * FROM effects WHERE sigla=? AND channel=? AND attivo=1').get(sigla, chi) || null;
+  },
+  // le righe senza sigla (nate prima delle sigle) ne prendono una
+  siglaTutti() {
+    const senza = db.prepare("SELECT id FROM effects WHERE sigla=''").all();
+    for (const r of senza) db.prepare("UPDATE effects SET sigla=? WHERE id=? AND sigla=''").run(nuovaSigla(), r.id);
+    return senza.length;
+  },
   list(channel) {
     return db.prepare('SELECT * FROM effects WHERE channel=? ORDER BY comando').all(channel);
   },
@@ -6096,13 +6132,13 @@ export const effects = {
     if (!esistente && this.count(channel) >= MAX_EFFETTI) {
       throw new Error(`hai raggiunto il massimo di ${MAX_EFFETTI} effetti`);
     }
-    db.prepare(`INSERT INTO effects (channel, comando, tipo, file, tier, cooldown, volume, durata, attivo, ts)
-      VALUES (?,?,?,?,?,?,?,?,1,?)
+    db.prepare(`INSERT INTO effects (channel, comando, tipo, file, tier, cooldown, volume, durata, attivo, ts, sigla)
+      VALUES (?,?,?,?,?,?,?,?,1,?,?)
       ON CONFLICT(channel, comando) DO UPDATE SET
         tipo=excluded.tipo, file=excluded.file, tier=excluded.tier,
         cooldown=excluded.cooldown, volume=excluded.volume, durata=excluded.durata,
         disegno='', attivo=1, ts=excluded.ts`)
-      .run(channel, c, tipo, file, tier, cooldown, volume, durata, now());
+      .run(channel, c, tipo, file, tier, cooldown, volume, durata, now(), nuovaSigla());
     return esistente?.file || null;
   },
   // Un effetto DISEGNATO: nessun file, i parametri in `disegno` (JSON gia'
@@ -6117,12 +6153,12 @@ export const effects = {
     const esistente = db.prepare('SELECT tipo FROM effects WHERE channel=? AND comando=?').get(channel, c);
     if (esistente && esistente.tipo !== tipo) throw new Error(`il comando !${c} è già di un altro effetto`);
     if (!esistente && this.count(channel) >= MAX_EFFETTI) throw new Error(`hai raggiunto il massimo di ${MAX_EFFETTI} effetti`);
-    db.prepare(`INSERT INTO effects (channel, comando, tipo, file, tier, cooldown, volume, durata, disegno, schermo, attivo, ts)
-      VALUES (?,?,?,'',?,?,?,?,?,'',1,?)
+    db.prepare(`INSERT INTO effects (channel, comando, tipo, file, tier, cooldown, volume, durata, disegno, schermo, attivo, ts, sigla)
+      VALUES (?,?,?,'',?,?,?,?,?,'',1,?,?)
       ON CONFLICT(channel, comando) DO UPDATE SET
         tier=excluded.tier, cooldown=excluded.cooldown, volume=excluded.volume,
         durata=excluded.durata, disegno=excluded.disegno, attivo=1, ts=excluded.ts`)
-      .run(channel, c, tipo, tier, cooldown, volume, durata, disegno, now());
+      .run(channel, c, tipo, tier, cooldown, volume, durata, disegno, now(), nuovaSigla());
     return c;
   },
   addLancio(channel, dati) { return this.addDisegno(channel, dati, 'lancio'); },
@@ -6214,6 +6250,36 @@ export const effects = {
   // Effetto per id di QUALSIASI canale (senza vincolo di pubblico): serve al media
   // server per lasciar vedere al PROPRIETARIO anche i propri media non pubblici.
   anyById(id) { return db.prepare('SELECT * FROM effects WHERE id=? AND attivo=1').get(id) || null; },
+  // un canale usa questo file? (fa da permesso per servirlo: un file dell'archivio
+  // si serve a un canale solo se una sua riga lo richiama)
+  usaFile(channel, file) {
+    return !!db.prepare('SELECT 1 FROM effects WHERE channel=? AND (file=? OR suono_file=?)').get(String(channel).toLowerCase(), String(file), String(file));
+  },
+  // le righe che hanno ancora un file fuori dall'archivio (da spostare)
+  // (dopo l'id `dopo`, in ordine: una riga il cui file non c'e' piu' non ferma le altre)
+  fuoriArchivio(dopo = 0, limite = 50) {
+    return db.prepare("SELECT id, channel, file, suono_file FROM effects WHERE id>? AND ((file<>'' AND file NOT LIKE 'a\\_%' ESCAPE '\\') OR (suono_file<>'' AND suono_file NOT LIKE 'a\\_%' ESCAPE '\\')) ORDER BY id LIMIT ?").all(dopo, limite);
+  },
+  // un file della riga e' passato all'archivio: solo se e' ancora quello di prima
+  rinomina(id, colonna, da, a) {
+    if (colonna !== 'file' && colonna !== 'suono_file') return false;
+    return db.prepare(`UPDATE effects SET ${colonna}=? WHERE id=? AND ${colonna}=?`).run(String(a), id, String(da)).changes > 0;
+  },
+};
+
+// IL REGISTRO DELL'ARCHIVIO (docs/ARCHIVIO.md): quanto pesa ogni file, e chi lo
+// usa. Un file si toglie dal disco solo quando nessuna riga, di nessun canale,
+// lo richiama piu'.
+export const archivioDb = {
+  segna(nome, byte, ora = now()) { db.prepare('INSERT OR IGNORE INTO archivio (nome, byte, ts) VALUES (?,?,?)').run(String(nome), Math.max(0, Math.trunc(Number(byte) || 0)), ora); },
+  usato(nome) { return !!db.prepare('SELECT 1 FROM effects WHERE file=? OR suono_file=?').get(String(nome), String(nome)); },
+  togli(nome) { db.prepare('DELETE FROM archivio WHERE nome=?').run(String(nome)); },
+  // quanto occupa un canale nell'archivio: i file che usa, ognuno una volta
+  byteDi(channel) {
+    return db.prepare(`SELECT COALESCE(SUM(a.byte),0) AS b FROM archivio a WHERE a.nome IN (
+      SELECT file FROM effects WHERE channel=? UNION SELECT suono_file FROM effects WHERE channel=?)`).get(String(channel).toLowerCase(), String(channel).toLowerCase()).b;
+  },
+  orfani(limite = 200) { return db.prepare('SELECT nome FROM archivio WHERE nome NOT IN (SELECT file FROM effects UNION SELECT suono_file FROM effects) LIMIT ?').all(limite).map((r) => r.nome); },
 };
 
 // ---------------------------------------------------------------- libreria sfondi (grafiche)

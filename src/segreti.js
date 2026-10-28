@@ -231,3 +231,30 @@ export function decifraBytes(buf, dove) {
     return Buffer.concat([d.update(buf.subarray(94)), d.final()]);
   } catch { return null; }
 }
+
+// ------------------------------------------------------------- chiavi chiuse
+//
+// La chiave di una cosa grande (un file dell'archivio degli effetti,
+// features/archivio.js) chiusa con la maestra di adesso: 2 byte di numero
+// d'anello + 60 byte (iv, chiave, tag). Si riapre solo con lo stesso `dove`.
+// null senza segreto del server, o se la busta non si apre.
+export function chiudiChiave(chiave, dove) {
+  if (!ATTIVA || !Buffer.isBuffer(chiave) || chiave.length !== 32) return null;
+  const ivk = crypto.randomBytes(12);
+  const w = crypto.createCipheriv('aes-256-gcm', maestra(KID), ivk);
+  w.setAAD(Buffer.from('chiave|' + posto(dove), 'utf8'));
+  const testa = Buffer.alloc(2);
+  testa.writeUInt16BE(KID);
+  return Buffer.concat([testa, ivk, w.update(chiave), w.final(), w.getAuthTag()]);
+}
+export function apriChiave(buf, dove) {
+  if (!ATTIVA || !Buffer.isBuffer(buf) || buf.length !== 62) return null;
+  try {
+    const m = maestra(buf.readUInt16BE(0));
+    if (!m) return null;
+    const d = crypto.createDecipheriv('aes-256-gcm', m, buf.subarray(2, 14));
+    d.setAAD(Buffer.from('chiave|' + posto(dove), 'utf8'));
+    d.setAuthTag(buf.subarray(46, 62));
+    return Buffer.concat([d.update(buf.subarray(14, 46)), d.final()]);
+  } catch { return null; }
+}

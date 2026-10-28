@@ -1042,6 +1042,9 @@ input[type="file"]::file-selector-button:hover { background: var(--acc-600); }
   .lib-carta .lsc-carica { margin-left: 0; }
 }
 .lib-combo { position: absolute; left: 4px; bottom: 4px; font-size: .68rem; background: #000000a6; color: #fff; padding: 1px 6px; border-radius: 999px; }
+.lib-codice { justify-self: start; align-self: flex-start; width: fit-content; max-width: 100%; font: 600 .74rem/1.2 var(--mono, ui-monospace, monospace); letter-spacing: .04em; color: var(--testo-2); background: none; border: 1px dashed var(--border); border-radius: var(--r-s); padding: .1rem .35rem; cursor: copy; overflow-wrap: anywhere; text-align: left; }
+.lib-col-codice { margin: .4rem 0 .8rem; }
+.lib-col-codice input { flex: 1 1 12rem; font-family: var(--mono, ui-monospace, monospace); }
 .lib-nome { font-weight: 600; font-size: .9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .lib-azioni { display: flex; align-items: center; gap: .4rem; margin-top: auto; }
 .lib-azioni .lib-importa { flex: 1; }
