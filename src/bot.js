@@ -1370,7 +1370,7 @@ export class BotManager {
         if (paga) {
           const r = this.colpi.daMonete(login, { codice: paga.codice, user: msg.user, modo: paga.modo });
           const t = testoColpi(login, r.dopo && r.esito === 'pagato' ? 'zaino-dentro' : 'monete-' + r.esito, '@' + (msg.display || msg.user),
-            { ...r, moneta: nomeMoneta(login), comando: cfgColpi.comando, premio: titoloPremioMisto({ nome: r.nome || '' }) });
+            { ...r, moneta: nomeMoneta(login), comando: cfgColpi.comando, premio: r.premio || titoloPremioMisto({ nome: r.nome || '' }) });
           if (t) parla(t);
         } else if (cfgColpi && persona && (valutaDi(persona) === 'kicks' ? chiedeKicks(cfgColpi, msg.text) && this.colpi.conKicksPew(login) : chiedeBit(cfgColpi, msg.text) && this.colpi.conBitPew(login))) {
           // «!pew bit» su Twitch, «!pew kicks» su Kick: il saldo da spendere di quella persona

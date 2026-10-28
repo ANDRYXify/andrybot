@@ -7625,6 +7625,25 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
 
   // impostazioni: valida e salva SOLO le chiavi conosciute (merge con le esistenti)
   const premiInCorso = new Map();     // login -> la riconciliazione dei premi dei colpi in corso
+  // Una alla volta per canale: due salvataggi di fila non creano due volte lo
+  // stesso premio, e il nuovo tentativo qui sotto si mette in fila con loro.
+  const accodaPremi = (l, prima) => {
+    const giro = (premiInCorso.get(l) || Promise.resolve())
+      .then(() => riconciliaPremi({ login: l, prima, helix, streamers, pagina: colpiMod.urlPaginaColpo(l), log }))
+      .catch((e) => log.warn(`premi dei colpi #${l}:`, e?.message || e))
+      .finally(() => { if (premiInCorso.get(l) === giro) premiInCorso.delete(l); });
+    premiInCorso.set(l, giro);
+  };
+  // I premi rimasti fuori (Twitch pieno, Twitch giu') si riprovano da soli
+  // (docs/COLPI.md, «I premi su Twitch»): lo streamer libera un posto su
+  // Twitch e il premio arriva senza che tocchi niente. Solo chi ha qualcosa in
+  // sospeso e nessuna passata gia' in corso.
+  setInterval(() => {
+    for (const x of streamers.list()) {
+      const c = x.settings?.colpi;
+      if (c?.attivo && Array.isArray(c.premiErrori) && c.premiErrori.length && !premiInCorso.has(x.login)) accodaPremi(x.login, c);
+    }
+  }, 10 * 60_000).unref?.();
   app.post('/api/streamer/impostazioni', requireLogin, wrap(async (req, res) => {
     const user = currentUser(req);
     const s = streamers.get(user.login);
@@ -8213,17 +8232,8 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
 
     streamers.setSettings(user.login, out);
     // i premi dei colpi si allineano al listino salvato, dopo: Twitch risponde
-    // con calma, e il salvataggio non lo aspetta. Una alla volta per canale:
-    // due salvataggi di fila non creano due volte lo stesso premio.
-    if (b.colpi !== undefined) {
-      const prima = s.settings?.colpi;
-      const l = user.login;
-      const giro = (premiInCorso.get(l) || Promise.resolve())
-        .then(() => riconciliaPremi({ login: l, prima, helix, streamers, pagina: colpiMod.urlPaginaColpo(l), log }))
-        .catch((e) => log.warn(`premi dei colpi #${l}:`, e?.message || e))
-        .finally(() => { if (premiInCorso.get(l) === giro) premiInCorso.delete(l); });
-      premiInCorso.set(l, giro);
-    }
+    // con calma, e il salvataggio non lo aspetta
+    if (b.colpi !== undefined) accodaPremi(user.login, s.settings?.colpi);
     // IL CONTO ALLA ROVESCIA CON «PARTE DA SOLO»: parte nel momento in cui lo
     // si accende, non solo quando un overlay si apre. Prima si accendeva la
     // spunta e non succedeva niente finche' una sorgente non ricaricava la

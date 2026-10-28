@@ -451,21 +451,31 @@ export function creaServizioColpi({ registro, effects, effettoDi, impostazioni, 
   // colpo e' pagato: il riscatto si chiude quando l'overlay lo mostra
   // (FULFILLED) o, se non succede, alla scadenza della consegna (CANCELED).
   // Chi ha mirato con l'accesso a Twitch puo' scrivere quello che vuole: vale la
-  // sua ultima mira aperta su quella voce.
+  // sua ultima mira aperta su una voce di quel premio.
+  // Un premio puo' servire piu' voci (docs/COLPI.md, «I premi su Twitch»): il
+  // premio dice quanto si paga, la mira quale colpo. La mira vale se la sua
+  // voce e' fra quelle del premio.
+  function miraDelPremio(ch, voci, user_input, user_id) {
+    const sue = new Set(voci.map((v) => v.id));
+    const codice = codiceIn(user_input);
+    let m = codice ? registro.perCodice(ch, codice, ora()) : null;
+    if ((!m || !sue.has(m.voce)) && user_id) {
+      const sua = registro.apertaDi(ch, String(user_id), ora());
+      if (sua && sue.has(sua.voce)) m = sua;
+    }
+    return { m: m && sue.has(m.voce) ? m : null, codice };
+  }
   function daRiscatto(login, { reward_id, user_input = '', id = '', user_id = '' } = {}) {
     const ch = String(login || '').toLowerCase();
     const cfg = cfgDi(ch);
-    const misto = (cfg.voci || []).find((v) => v.premioMisto && v.premioMisto === reward_id);
-    if (misto) return daRiscattoMisto(ch, misto, { reward_id, user_input, id, user_id });
-    const voce = (cfg.voci || []).find((v) => v.premio && v.premio === reward_id);
-    if (!voce) return { esito: 'non-mio' };
-    const codice = codiceIn(user_input);
-    let m = codice ? registro.perCodice(ch, codice, ora()) : null;
-    if ((!m || m.voce !== voce.id) && user_id) {
-      const sua = registro.apertaDi(ch, String(user_id), ora());
-      if (sua && sua.voce === voce.id) m = sua;
-    }
-    if (!m || m.voce !== voce.id || !(Number(m.prezzi.punti) > 0)) return { esito: 'sconosciuto', stato: 'CANCELED', codice };
+    const misti = reward_id ? (cfg.voci || []).filter((v) => v.premioMisto === reward_id) : [];
+    if (misti.length) return daRiscattoMisto(ch, misti, { reward_id, user_input, id, user_id });
+    const voci = reward_id ? (cfg.voci || []).filter((v) => v.premio === reward_id) : [];
+    if (!voci.length) return { esito: 'non-mio' };
+    const { m, codice } = miraDelPremio(ch, voci, user_input, user_id);
+    // il premio costa quello che costa la mira, o niente: una mira presa a un
+    // prezzo vecchio non si paga con un premio di un altro prezzo
+    if (!m || !(Number(m.prezzi.punti) > 0) || (voci[0].premioCosto && Number(m.prezzi.punti) !== voci[0].premioCosto)) return { esito: 'sconosciuto', stato: 'CANCELED', codice };
     // con un acconto per un modo misto la strada e' quella: niente punti pieni
     if (m.acconto) return { esito: 'gia', stato: 'CANCELED', codice };
     const no = pronta(m, 'punti');
@@ -519,7 +529,9 @@ export function creaServizioColpi({ registro, effects, effettoDi, impostazioni, 
       }
       return { esito: 'pagato', nome: m.nome, monete: mi.monete, dopo: !!m.dopo };
     }
-    return { esito: 'acconto', modo, monete: mi.monete, resto: a.resto, codice: m.codice, nome: m.nome };
+    // il premio da riscattare dopo, col nome che ha su Twitch (per colpo o per prezzo)
+    const premio = modo === 'punti' ? { premio: (cfgDi(ch).voci || []).find((v) => v.id === m.voce)?.premioMistoNome || '' } : {};
+    return { esito: 'acconto', modo, monete: mi.monete, resto: a.resto, codice: m.codice, nome: m.nome, ...premio };
   }
 
   // Quello che torna di un acquisto per dopo scaduto: solo i saldi nostri. Le
@@ -620,14 +632,10 @@ export function creaServizioColpi({ registro, effects, effettoDi, impostazioni, 
 
   // Il premio del modo misto coi punti: vale solo con le monete gia' pagate per
   // quella mira (l'acconto). Se no i punti tornano, e il bot dice cosa manca.
-  function daRiscattoMisto(ch, voce, { reward_id, user_input, id, user_id }) {
-    const codice = codiceIn(user_input);
-    let m = codice ? registro.perCodice(ch, codice, ora()) : null;
-    if ((!m || m.voce !== voce.id) && user_id) {
-      const sua = registro.apertaDi(ch, String(user_id), ora());
-      if (sua && sua.voce === voce.id) m = sua;
-    }
-    if (!m || m.voce !== voce.id || !m.prezzi?.misti?.punti) return { esito: 'sconosciuto', stato: 'CANCELED', codice };
+  function daRiscattoMisto(ch, voci, { reward_id, user_input, id, user_id }) {
+    const { m, codice } = miraDelPremio(ch, voci, user_input, user_id);
+    const mp = m?.prezzi?.misti?.punti;
+    if (!m || !mp || (voci[0].premioMistoCosto && Number(mp.punti) !== voci[0].premioMistoCosto)) return { esito: 'sconosciuto', stato: 'CANCELED', codice };
     if (m.acconto?.modo !== 'punti') return { esito: 'servono-monete', stato: 'CANCELED', codice: m.codice, nome: m.nome, monete: m.prezzi.misti.punti.monete, modo: 'punti' };
     const no = pronta(m, 'misto');
     if (no) return { esito: 'fermo', stato: 'CANCELED', motivo: no };

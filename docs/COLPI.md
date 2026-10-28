@@ -112,8 +112,9 @@ scaduta`. «Pagata» vuol dire soldi arrivati; «sparata» vuol dire MOSTRATA.
   donazione arriva (ritorno, webhook Satispay o ronda) `donazioneArrivata`
   chiama `colpi.daPagamento`, che spara.
 - **Punti canale**: per ogni voce con un prezzo in punti SocialBot crea il
-  premio «Colpo: <nome>» con testo obbligatorio (`colpi-premi.js`), e lo rifà
-  se cambiano prezzo o nome. Il riscatto col codice giusto spara e diventa
+  premio «Colpo: <nome>» (o, se il canale non ha posto, un premio per prezzo:
+  sotto, «I premi su Twitch») con testo obbligatorio (`colpi-premi.js`), e lo
+  rifà se cambiano prezzo o nome. Il riscatto col codice giusto spara e diventa
   FULFILLED; un codice sbagliato lo rende CANCELED (i punti tornano) e il bot
   lo dice in chat. Le riconciliazioni vanno una alla volta per canale, e
   scrivono solo i campi del premio sulle impostazioni del momento.
@@ -127,6 +128,63 @@ copre quello che manca**: un cheer più piccolo, fatto magari per altro, non
 si somma di nascosto (col codice sì, come prima). Un suo riscatto del premio
 di quella voce la paga qualunque cosa scriva. Il codice resta e vince: se c'è
 nel messaggio, vale quello.
+
+### I premi su Twitch: dentro il tetto, e da soli
+
+Segnalato così: nel pannello «Premio a punti canale non creato: Pomodoro:
+Helix POST /channel_points/custom_rewards → 400 … CREATE_CUSTOM_REWARD_TOO_…»,
+per Pomodoro, Fragole e panna, Torta in faccia e Pizza. E: «rendiamo
+automatico questo».
+
+**Perché.** Twitch tiene al massimo **50 premi per canale**, contati tutti:
+quelli fatti a mano, quelli di altre app, i nostri. Un premio per colpo (e uno
+in più per il modo misto) arriva al tetto con un listino normale su un canale
+che ne ha già. E si ritentava solo al salvataggio successivo: l'errore restava
+lì finché lo streamer non toccava qualcosa.
+
+**Il modello.** Un premio non dice *quale* colpo, dice *quanto si paga*. Il colpo
+lo dice la mira (il codice, o l'ultima mira aperta di chi ha fatto l'accesso),
+che esisteva già. Quindi un premio può servire **più voci** (`voce.premio`
+uguale su più voci): il riscatto paga una mira se la sua voce è fra quelle del
+premio e il costo coincide. È lo stesso controllo di prima, su un insieme invece
+che su una voce sola.
+
+Due forme, una regola:
+- **un premio per colpo**, «Colpo: <nome>», com'era: il nome si vede su Twitch;
+- **un premio per prezzo**, «Colpo da <punti>» (e «Colpo da <punti> + monete»
+  per il misto): tutte le voci con quel prezzo in punti lo condividono. I premi
+  sono tanti quanti i prezzi diversi, non quante le voci.
+
+`colpi.premiModo` è dello streamer: `auto` (di serie), `colpo` o `prezzo`. Con
+`auto` si conta **prima** di creare: i posti liberi sono 50 meno i premi del
+canale che non sono nostri (`listaRewardsTutti`); se i premi per colpo ci
+stanno, per colpo; se no, per prezzo. Lo stesso calcolo ogni volta: due passate
+di fila danno lo stesso risultato, e nessuna crea premi per poi toglierli.
+
+**L'ordine.** Prima si tolgono i nostri premi che non servono più (liberano
+posti), poi si creano quelli che mancano. Un premio nostro che ha già il titolo
+e il costo giusti si tiene, anche se passa da una voce all'altra.
+
+**I titoli.** Twitch non accetta due premi con lo stesso titolo nel canale. Un
+titolo già preso da un premio non nostro prende un numero («Colpo da 500 · 2»):
+scelto prima, non scoperto dall'errore.
+
+**Quando non basta.** Se nemmeno i premi per prezzo ci stanno, si creano quelli
+che ci stanno (i più economici prima: sono quelli che si riscattano di più) e
+l'errore dice la cosa vera, in una frase: «Twitch tiene al massimo 50 premi per
+canale: ne hai N non di Pewpewify, ne servono ancora M. Togline M su Twitch: li
+creo da solo appena c'è posto». Gli altri errori di Twitch si traducono allo
+stesso modo (il canale non è affiliato o partner; manca il permesso).
+
+**Da solo.** Un canale coi premi in sospeso (`premiErrori` non vuoto) si
+riprova da solo ogni 10 minuti, una passata alla
+volta per canale (la stessa coda del salvataggio). Quando lo streamer libera un
+posto su Twitch, il premio arriva senza che lui tocchi niente.
+
+**Su Twitch che legge.** Se l'elenco dei premi non si può leggere (Twitch giù),
+non si indovina: si crea per colpo come prima, e se Twitch risponde
+`TOO_MANY_REWARDS` la stessa passata riparte per prezzo. Il conto è il piano,
+l'errore di Twitch la conferma.
 
 ## I lanci
 

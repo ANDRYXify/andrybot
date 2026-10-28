@@ -70,7 +70,7 @@ function banco({ cfg, live = true, overlay = true, rimborso = { ok: true }, conM
   const monete = conMonete ? { punta: economia.punta, rendi: economia.rendi, saldo: economia.saldo } : null;
   const sparati = [], rimborsi = [], premi = [];
   const stato = { live, overlay };
-  const effetti = { pomodoro: { tipo: 'immagine' }, coriandoli: { tipo: 'disegno' }, sfondo: { tipo: 'video', schermo: 'riempi' } };
+  const effetti = { pomodoro: { tipo: 'immagine' }, torta: { tipo: 'immagine' }, coriandoli: { tipo: 'disegno' }, sfondo: { tipo: 'video', schermo: 'riempi' } };
   const s = creaServizioColpi({
     registro: registroColpi,
     effects: { fireConOpzioni: (login, comando, o) => { sparati.push({ login, comando, ...o }); return true; } },
@@ -129,6 +129,24 @@ test('il colpo parte una volta sola, nel punto mirato e col suo centro, qualunqu
   assert.equal(b.s.daRiscatto(c, { reward_id: 'aaaaaaaa-1111', user_input: mira.codice }).stato, 'CANCELED', 'e i punti tornano');
   assert.equal(b.sparati.length, 1);
   assert.deepEqual(b.sparati[0], { login: c, comando: 'pomodoro', xy: { x: 25, y: 40, s: 120, r: 0, centro: true }, attacco: { id: mira.id, chi: 'Marta', nome: 'pomodoro' } });
+});
+
+test('un premio per prezzo serve piu\' voci: il premio dice quanto, la mira quale colpo (docs/COLPI.md, «I premi su Twitch»)', () => {
+  const voci = [
+    { comando: 'pomodoro', punti: 500, premio: 'bbbbbbbb-0500', premioCosto: 500, premioNome: 'Colpo da 500' },
+    { comando: 'torta', punti: 500, premio: 'bbbbbbbb-0500', premioCosto: 500, premioNome: 'Colpo da 500' },
+    { comando: 'coriandoli', bit: 50 },
+  ];
+  const b = banco({ cfg: { attivo: true, attesaSec: 0, alMinuto: 30, voci } });
+  const c = login();
+  const { mira } = b.s.mira(c, { voce: 'torta', x: 5, y: 5, chiave: 'q' });
+  const r = b.s.daRiscatto(c, { reward_id: 'bbbbbbbb-0500', user_input: mira.codice, id: 'r1' });
+  assert.deepEqual([r.esito, b.sparati.at(-1)?.comando], ['pagato', 'torta'], 'il colpo della mira, non la prima voce del premio');
+  // una mira presa a un altro prezzo non si paga con questo premio
+  const vecchia = banco({ cfg: { attivo: true, attesaSec: 0, alMinuto: 30, voci: [{ ...voci[0], premioCosto: 300, premioNome: 'Colpo da 300' }] } });
+  const c2 = login();
+  const m2 = vecchia.s.mira(c2, { voce: 'pomodoro', x: 5, y: 5, chiave: 'q' }).mira;
+  assert.deepEqual(Object.values(vecchia.s.daRiscatto(c2, { reward_id: 'bbbbbbbb-0500', user_input: m2.codice })).slice(0, 2), ['sconosciuto', 'CANCELED'], 'i punti tornano');
 });
 
 test('i punti: il premio della voce col codice giusto spara; un codice sbagliato restituisce i punti', () => {

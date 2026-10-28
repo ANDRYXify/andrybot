@@ -117,6 +117,9 @@ export function normalizza(cfg) {
     zaino: normZaino(o.zaino),
     chat: normChat(o.chat),
     quadro: normQuadro(o.quadro),
+    // i premi a punti canale: uno per colpo, uno per prezzo, o da solo secondo
+    // i posti liberi su Twitch (docs/COLPI.md, «I premi su Twitch»)
+    premiModo: PREMI_MODI.includes(o.premiModo) ? o.premiModo : 'auto',
   };
 }
 
@@ -557,10 +560,14 @@ export function bastaPer(mira, metodo, pagato) {
   return serve > 0 && Number(pagato) >= serve;
 }
 
+export const PREMI_MODI = ['auto', 'colpo', 'prezzo'];
 // Il premio a punti canale di una voce: il nome come lo vede chi riscatta.
 export const titoloPremio = (voce) => ('Colpo: ' + voce.nome).slice(0, 45);
 // il premio del modo misto coi punti: un nome suo (Twitch li vuole diversi)
 export const titoloPremioMisto = (voce) => ('Colpo: ' + voce.nome).slice(0, 35) + ' + monete';
+// il premio di un prezzo, condiviso dalle voci che costano tanto
+export const titoloPremioPrezzo = (punti) => 'Colpo da ' + punti;
+export const titoloPremioPrezzoMisto = (punti) => 'Colpo da ' + punti + ' + monete';
 
 // Il listino che arriva dal pannello, coi campi del premio presi da quello
 // salvato: l'id del premio su Twitch lo scrive solo SocialBot.

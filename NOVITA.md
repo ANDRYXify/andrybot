@@ -43,6 +43,15 @@ comandi diversi da quelli della riga italiana.
 
 ## 2026-10-28
 
+- [importante] Pewpewify: i premi a punti canale non si fermano più al limite di 50 di Twitch. Se non c'è posto per uno per colpo, ne faccio uno per prezzo, e quelli che mancano li creo da solo appena liberi un posto. [vai: colpi]
+  en: Pewpewify: channel-point rewards no longer stop at Twitch's 50 limit. If there's no room for one per hit, I make one per price, and the missing ones I create by myself as soon as you free a slot.
+  es: Pewpewify: las recompensas de puntos de canal ya no se paran en el límite de 50 de Twitch. Si no hay sitio para una por golpe, hago una por precio, y las que faltan las creo solo en cuanto liberas un hueco.
+  > Premi sempre al loro posto
+  > Twitch conta anche i premi non di Pewpewify. Ora li conto prima di crearli, e un premio «Colpo da 500» vale per tutti i colpi da 500. Puoi anche scegliere tu: uno per colpo o uno per prezzo.
+  en> Rewards always in place
+  en> Twitch also counts rewards that aren't Pewpewify's. Now I count them before creating, and a «Colpo da 500» reward works for every 500 hit. You can also choose: one per hit or one per price.
+  es> Recompensas siempre en su sitio
+  es> Twitch cuenta también las recompensas que no son de Pewpewify. Ahora las cuento antes de crearlas, y una recompensa «Colpo da 500» vale para todos los golpes de 500. También puedes elegir tú: una por golpe o una por precio.
 - [importante] I bot che vendono viewer e follower in chat ora vengono bannati e il loro messaggio tolto, anche a scudo spento e anche se travestono il sito («streamboo . com», «dot com»). [vai: scudo]
   en: Bots selling viewers and followers in chat are now banned and their message removed, even with the shield off and even when they disguise the site («streamboo . com», «dot com»).
   es: Los bots que venden viewers y seguidores en el chat ahora se banean y su mensaje se quita, aunque el escudo esté apagado y aunque disfracen la web («streamboo . com», «dot com»).

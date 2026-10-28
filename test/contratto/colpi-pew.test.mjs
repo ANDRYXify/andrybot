@@ -61,5 +61,7 @@ test('l\'indirizzo si scrive in un posto solo', () => {
   }
   assert.match(SRV, /pagina: colpiMod\.urlPaginaColpo\(login\), euro:/, 'il pannello');
   assert.match(SRV, /riconciliaPremi\(\{ login: l, prima, helix, streamers, pagina: colpiMod\.urlPaginaColpo\(l\), log \}\)/, 'il premio a punti canale');
+  assert.match(SRV, /if \(b\.colpi !== undefined\) accodaPremi\(user\.login, s\.settings\?\.colpi\);/, 'al salvataggio, col listino di prima');
+  assert.match(SRV, /c\.premiErrori\.length && !premiInCorso\.has\(x\.login\)\) accodaPremi\(x\.login, c\);\n    \}\n  \}, 10 \* 60_000\)/, 'e da soli, ogni 10 minuti, chi ha premi in sospeso');
   assert.match(SRV, /url: colpiMod\.urlPaginaColpo\(login\), corto: config\.pewHost,/, 'il canonico e il lettore della pagina');
 });

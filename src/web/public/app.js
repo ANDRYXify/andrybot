@@ -26210,6 +26210,13 @@ function pannelloColpi() {
       <label class="campo spazio-sopra" for="cl-comando">${L('Il comando per pagare in chat con le monete', 'The command to pay with coins in chat', 'El comando para pagar con monedas en el chat')}</label>
       <input type="text" id="cl-comando" maxlength="25" value="${esc(c.comando || 'pew')}" placeholder="pew">
       <p class="suggerimento">${L('Chi non ha fatto l\'accesso sulla pagina scrive in chat il comando col codice della sua mira, per esempio', 'Whoever hasn\'t logged in on the page types the command in chat with their aim\'s code, for example', 'Quien no ha entrado en la página escribe en el chat el comando con el código de su apunte, por ejemplo')} <code>!${esc(c.comando || 'pew')} K7QX3</code>. ${L('Le monete si tolgono quando paga e tornano se il colpo non compare.', 'Coins are taken when they pay and come back if the hit doesn\'t show.', 'Las monedas se quitan al pagar y vuelven si el golpe no aparece.')}</p>
+      <label class="campo spazio-sopra" for="cl-premi-modo">${L('I premi a punti canale su Twitch', 'Channel-point rewards on Twitch', 'Las recompensas de puntos de canal en Twitch')}</label>
+      <select id="cl-premi-modo">
+        <option value="auto" ${(c.premiModo || 'auto') === 'auto' ? 'selected' : ''}>${L('da solo: uno per colpo se c\'è posto, se no uno per prezzo', 'automatic: one per hit if there\'s room, otherwise one per price', 'solo: uno por golpe si hay sitio, si no uno por precio')}</option>
+        <option value="colpo" ${c.premiModo === 'colpo' ? 'selected' : ''}>${L('uno per colpo («Colpo: Pomodoro»)', 'one per hit («Colpo: Pomodoro»)', 'uno por golpe («Colpo: Pomodoro»)')}</option>
+        <option value="prezzo" ${c.premiModo === 'prezzo' ? 'selected' : ''}>${L('uno per prezzo («Colpo da 500»), condiviso dai colpi che costano uguale', 'one per price («Colpo da 500»), shared by hits that cost the same', 'uno por precio («Colpo da 500»), compartido por los golpes que cuestan igual')}</option>
+      </select>
+      <p class="suggerimento">${L('Twitch tiene al massimo 50 premi per canale, contati anche quelli che non sono di Pewpewify. Il codice della mira dice quale colpo, quindi un premio per prezzo vale per tutti i colpi che costano uguale. Se non c\'è posto riprovo da solo ogni 10 minuti.', 'Twitch keeps at most 50 rewards per channel, counting the ones that aren\'t Pewpewify\'s. The aim\'s code says which hit, so a per-price reward works for every hit with that cost. If there\'s no room I retry by myself every 10 minutes.', 'Twitch tiene como máximo 50 recompensas por canal, contando también las que no son de Pewpewify. El código del apunte dice qué golpe, así que una recompensa por precio vale para todos los golpes que cuestan igual. Si no hay sitio lo reintento solo cada 10 minutos.')}</p>
       <div class="riga-flessibile spazio-sopra">
         <button type="button" class="btn" id="cl-lancio">${_bIco(ICO.target)}${L('Lanci e adesivi', 'Throws and stickers', 'Lanzamientos y pegatinas')}</button>
         <button type="button" class="btn secondario" id="cl-aggiungi">${_bIco(ICO.piu)}${L('Un tuo effetto', 'One of your effects', 'Un efecto tuyo')}</button>
@@ -26547,6 +26554,7 @@ function _clLeggi() {
     zaino: _clZainoLeggi(),
     chat: _clChatLeggi(),
     quadro: { ..._clQ },
+    premiModo: document.getElementById('cl-premi-modo')?.value || 'auto',
     titolo: (document.getElementById('cl-titolo')?.value || '').trim(),
     dida: (document.getElementById('cl-dida')?.value || '').trim(),
     zone: _clZone.map((z) => ({ ...z })),
@@ -26913,6 +26921,21 @@ function _clCollegaQuadro() {
   });
 }
 
+function _clPremioErrore(e) {
+  if (typeof e === 'string') return L('Premio a punti canale non creato: ', 'Channel-point reward not created: ', 'Recompensa de puntos de canal no creada: ') + e;
+  const quali = (e.titoli || []).map((t) => '«' + t + '»').join(', ');
+  if (e.motivo === 'pieno') {
+    const quanti = e.altri == null ? '' : L(`: ne hai ${e.altri} non di Pewpewify`, `: you have ${e.altri} that aren't Pewpewify's`, `: tienes ${e.altri} que no son de Pewpewify`);
+    return L(`Twitch tiene al massimo 50 premi per canale${quanti}. Ne servono ancora ${e.mancano} (${quali}): togline ${e.mancano} su Twitch e li creo da solo appena c'è posto.`,
+      `Twitch keeps at most 50 rewards per channel${quanti}. ${e.mancano} more are needed (${quali}): remove ${e.mancano} on Twitch and I'll create them by myself as soon as there's room.`,
+      `Twitch tiene como máximo 50 recompensas por canal${quanti}. Faltan ${e.mancano} (${quali}): quita ${e.mancano} en Twitch y las creo solo en cuanto haya sitio.`);
+  }
+  if (e.motivo === 'affiliato') return L(`Premi a punti canale non creati (${quali}): Twitch li dà solo ai canali affiliati o partner.`, `Channel-point rewards not created (${quali}): Twitch only offers them to affiliate or partner channels.`, `Recompensas de puntos de canal no creadas (${quali}): Twitch solo las da a canales afiliados o partner.`);
+  if (e.motivo === 'permesso') return L(`Premi a punti canale non creati (${quali}): manca il permesso di gestire i premi. Rifai l'accesso con Twitch dal pannello.`, `Channel-point rewards not created (${quali}): the permission to manage rewards is missing. Log in with Twitch again from the panel.`, `Recompensas de puntos de canal no creadas (${quali}): falta el permiso para gestionar las recompensas. Vuelve a entrar con Twitch desde el panel.`);
+  if (e.motivo === 'doppio') return L(`Premi a punti canale non creati (${quali}): su Twitch c'è già un premio con quel nome. Riprovo da solo.`, `Channel-point rewards not created (${quali}): there's already a reward with that name on Twitch. I'll retry by myself.`, `Recompensas de puntos de canal no creadas (${quali}): en Twitch ya hay una recompensa con ese nombre. Lo reintento solo.`);
+  return L(`Premi a punti canale non creati (${quali}): Twitch non ha risposto bene. Riprovo da solo ogni 10 minuti.`, `Channel-point rewards not created (${quali}): Twitch didn't answer properly. I'll retry by myself every 10 minutes.`, `Recompensas de puntos de canal no creadas (${quali}): Twitch no respondió bien. Lo reintento solo cada 10 minutos.`) + (e.dettaglio ? ' (' + e.dettaglio + ')' : '');
+}
+
 async function caricaColpiStato() {
   let st = null;
   try { st = await api('/api/colpi'); } catch { st = null; }
@@ -26924,7 +26947,7 @@ async function caricaColpiStato() {
   const avvisi = [];
   if (st.stripeSenzaRimborsi) avvisi.push(L('Alla chiave Stripe manca il permesso «Refunds»: senza, un colpo pagato che non si riesce a mostrare non si potrebbe rimborsare, quindi gli euro con Stripe non si offrono. Aggiungilo alla chiave in Stripe (Sviluppatori → Chiavi API).', 'Your Stripe key lacks the «Refunds» permission: without it, a paid hit that can\'t be shown couldn\'t be refunded, so euros via Stripe aren\'t offered. Add it to the key in Stripe (Developers → API keys).', 'A la clave de Stripe le falta el permiso «Refunds»: sin él, un golpe pagado que no se puede mostrar no se podría reembolsar, así que los euros con Stripe no se ofrecen. Añádelo a la clave en Stripe (Desarrolladores → Claves API).'));
   else if (!st.euro?.length) avvisi.push(L('Per gli euro collega il tuo conto nella scheda «Donazioni»: finché non c\'è, i prezzi in euro non si offrono.', 'For euros connect your account in the «Donations» tab: until then, euro prices aren\'t offered.', 'Para los euros conecta tu cuenta en la pestaña «Donaciones»: hasta entonces, los precios en euros no se ofrecen.'));
-  for (const e of st.premiErrori || []) avvisi.push(L('Premio a punti canale non creato: ', 'Channel-point reward not created: ', 'Recompensa de puntos de canal no creada: ') + e);
+  for (const e of st.premiErrori || []) avvisi.push(_clPremioErrore(e));
   const box = document.getElementById('cl-avvisi');
   if (box) { box.textContent = avvisi.join(' · '); box.hidden = !avvisi.length; }
   for (const r of document.querySelectorAll('#cl-voci .cl-voce')) {
