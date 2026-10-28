@@ -425,13 +425,15 @@ const { eFrasePresenza, frasePresenza, PRESENZA } = await import('../../src/feat
 const { PRESENZA_MS, RINVIO_MS: RINVIO } = await import('../../src/features/colpi-servizio.js');
 
 test('la presenza nel listino: accesa solo con un effetto, la frase intera senza maiuscole e spazi, il nome nella scritta', () => {
-  assert.deepEqual(normalizza({}).presenza, { attiva: false, frase: '!pew presente', comando: '', x: PRESENZA.x, y: PRESENZA.y, scala: 100, testo: '', alMinuto: 6, premi: [], dopo: 'resta', rispondi: true, risposta: '' });
+  assert.deepEqual(normalizza({}).presenza, { attiva: false, frase: '!presente', comando: '', x: PRESENZA.x, y: PRESENZA.y, scala: 100, testo: '', alMinuto: 6, premi: [], dopo: 'resta', rispondi: true, risposta: '',
+    porta: { attiva: true, monete: true, bit: true, giochi: 'blocca', ricorda: true, testoRicorda: '', conferma: true, testoConferma: '' } });
   assert.equal(normalizza({ presenza: { attiva: true } }).presenza.attiva, false, 'senza effetto non si accende');
   const c = normalizza({ presenza: { attiva: true, comando: '!Ciao', frase: '  Eccomi   QUI ', testo: 'senza nome', x: 140, y: -3, scala: 9999, alMinuto: 0 } });
-  assert.deepEqual(c.presenza, { attiva: true, frase: 'eccomi qui', comando: 'ciao', x: 100, y: 0, scala: 300, testo: '', alMinuto: 1, premi: [], dopo: 'resta', rispondi: true, risposta: '' });
+  const { porta: _p, ...senzaPorta } = c.presenza;
+  assert.deepEqual(senzaPorta, { attiva: true, frase: 'eccomi qui', comando: 'ciao', x: 100, y: 0, scala: 300, testo: '', alMinuto: 1, premi: [], dopo: 'resta', rispondi: true, risposta: '' });
   assert.equal(eFrasePresenza(c, 'ECCOMI    qui'), true);
   assert.equal(eFrasePresenza(c, 'ciao eccomi qui'), false, 'la frase vale da sola');
-  assert.equal(eFrasePresenza(normalizza({ presenza: { comando: 'ciao' } }), '!pew presente'), false, 'spenta non risponde');
+  assert.equal(eFrasePresenza(normalizza({ presenza: { comando: 'ciao' } }), '!presente'), false, 'spenta non risponde');
   assert.equal(frasePresenza(c, 'Marta', 'en'), 'Marta is here', 'senza scritta, quella di serie nella lingua della chat');
   assert.equal(frasePresenza(normalizza({ presenza: { testo: '👋 {nome} c\'è!' } }), 'Marta https://x.y'), '👋 Marta c\'è!', 'il nome si pulisce come quello di un colpo');
   assert.equal(frasePresenza(c, '   '), '', 'senza nome niente scritta');

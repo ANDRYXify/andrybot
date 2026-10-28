@@ -26283,7 +26283,7 @@ function pannelloColpi() {
       <div class="griglia-campi spazio-sopra">
         <div>
           <label class="campo" for="cl-pr-frase">${L('Cosa scrivono in chat', 'What they type in chat', 'Qué escriben en el chat')}</label>
-          <input type="text" id="cl-pr-frase" maxlength="40" value="${esc(c.presenza?.frase || '!pew presente')}" placeholder="!pew presente">
+          <input type="text" id="cl-pr-frase" maxlength="40" value="${esc(c.presenza?.frase && c.presenza.frase !== '!pew presente' ? c.presenza.frase : '!presente')}" placeholder="!presente">
         </div>
         <div>
           <label class="campo" for="cl-pr-testo">${L('La scritta sotto l\'effetto', 'The caption under the effect', 'El texto bajo el efecto')}</label>
@@ -26324,6 +26324,23 @@ function pannelloColpi() {
       <h4 class="spazio-sopra">${L('Dove compare', 'Where it shows up', 'Dónde aparece')}</h4>
       <p class="suggerimento">${L('Tocca il quadro: il centro dell\'effetto va lì. Le zone protette valgono anche qui.', 'Tap the frame: the center of the effect goes there. Protected areas apply here too.', 'Toca el cuadro: el centro del efecto va ahí. Las zonas protegidas valen también aquí.')}</p>
       <div class="cl-quadro cl-quadro-punto" id="cl-pr-quadro" role="application" aria-label="${esc(L('Quadro della diretta: tocca dove compare la presenza', 'Stream frame: tap where the check-in shows up', 'Cuadro del directo: toca dónde aparece la presencia'))}" tabindex="0"></div>
+      <h4 class="spazio-sopra" id="cl-porta">${L('La porta: chi non è presente', 'The gate: who hasn\'t checked in', 'La puerta: quien no está presente')}</h4>
+      <p class="suggerimento">${L('La frase conta sempre, anche con Pewpewify spento o senza overlay: chi la scrive è presente a questa diretta. Chi non l\'ha scritta resta fuori da quello che scegli qui.', 'The phrase always counts, even with Pewpewify off or without the overlay: whoever types it is checked in for this stream. Whoever hasn\'t stays out of what you pick here.', 'La frase cuenta siempre, también con Pewpewify apagado o sin overlay: quien la escribe está presente en este directo. Quien no la ha escrito se queda fuera de lo que eliges aquí.')}</p>
+      <div class="riga-interruttore">
+        <label class="interruttore"><input type="checkbox" id="cl-po-attiva" ${c.presenza?.porta?.attiva !== false ? 'checked' : ''}><span class="levetta"></span></label>
+        <span class="etichetta-stato">${L('Senza presenza, niente…', 'Without check-in, no…', 'Sin presencia, nada de…')}</span>
+      </div>
+      <div class="riga-check"><input type="checkbox" id="cl-po-monete" ${c.presenza?.porta?.monete !== false ? 'checked' : ''}><label for="cl-po-monete">${L('monete dai messaggi e dal tempo guardato', 'coins from messages and watch time', 'monedas por mensajes y tiempo visto')}</label></div>
+      <div class="riga-check"><input type="checkbox" id="cl-po-bit" ${c.presenza?.porta?.bit !== false ? 'checked' : ''}><label for="cl-po-bit">${L('Bit (e Kicks) nel salvadanaio da spendere', 'Bits (and Kicks) in the piggy bank to spend', 'Bits (y Kicks) en la hucha para gastar')}</label></div>
+      <div class="riga-check"><input type="checkbox" id="cl-po-giochi" ${c.presenza?.porta?.giochi !== 'libero' ? 'checked' : ''}><label for="cl-po-giochi">${L('giochi: non può giocare, quindi non vince niente', 'games: they can\'t play, so they win nothing', 'juegos: no puede jugar, así que no gana nada')}</label></div>
+      <p class="suggerimento">${L('Le monete degli eventi (sub, cheer) restano. Un cheer arriva sempre a te: senza presenza i suoi Bit non vanno da spendere. Restano liberi !giochi, !monete, !classifica, !regala, !sblocca e i comandi dello staff. Tu non passi dalla porta.', 'Coins from events (subs, cheers) stay. A cheer always reaches you: without check-in its Bits just don\'t go to spend. !giochi, !monete, !classifica, !regala, !sblocca and staff commands stay open. You never go through the gate.', 'Las monedas de los eventos (subs, cheers) se quedan. Un cheer siempre te llega: sin presencia sus Bits no van para gastar. Quedan libres !giochi, !monete, !classifica, !regala, !sblocca y los comandos del staff. Tú no pasas por la puerta.')}</p>
+      <div class="riga-check"><input type="checkbox" id="cl-po-ricorda" ${c.presenza?.porta?.ricorda !== false ? 'checked' : ''}><label for="cl-po-ricorda">${L('Ricordalo a chi trova la porta chiusa (una volta per diretta)', 'Remind whoever finds the gate closed (once per stream)', 'Recuérdalo a quien encuentra la puerta cerrada (una vez por directo)')}</label></div>
+      <label class="campo" for="cl-po-testo-ricorda">${L('Il ricordo (vuoto: quello di serie)', 'The reminder (empty: the default one)', 'El recordatorio (vacío: el de serie)')}</label>
+      <input type="text" id="cl-po-testo-ricorda" maxlength="200" value="${esc(c.presenza?.porta?.testoRicorda || '')}" placeholder="${esc(L('@{nome} prima scrivi {frase}: da lì {cosa}.', '@{nome} first type {frase}: from then on {cosa}.', '@{nome} primero escribe {frase}: desde ahí {cosa}.'))}">
+      <div class="riga-check"><input type="checkbox" id="cl-po-conferma" ${c.presenza?.porta?.conferma !== false ? 'checked' : ''}><label for="cl-po-conferma">${L('Conferma in chat a chi si presenta, se non riceve già la risposta della serie', 'Confirm in chat to whoever checks in, if they don\'t already get the streak reply', 'Confirma en el chat a quien se presenta, si no recibe ya la respuesta de la racha')}</label></div>
+      <label class="campo" for="cl-po-testo-conferma">${L('La conferma (vuota: quella di serie)', 'The confirmation (empty: the default one)', 'La confirmación (vacía: la de serie)')}</label>
+      <input type="text" id="cl-po-testo-conferma" maxlength="160" value="${esc(c.presenza?.porta?.testoConferma || '')}" placeholder="${esc(L('✓ @{nome} presente!', '✓ @{nome} is here!', '✓ ¡@{nome} presente!'))}">
+      <p class="suggerimento">${L('Nel ricordo: {nome}, {frase} e {cosa} (quello che la porta chiede, detto da solo). Nella conferma: {nome}.', 'In the reminder: {nome}, {frase} and {cosa} (what the gate asks, said for you). In the confirmation: {nome}.', 'En el recordatorio: {nome}, {frase} y {cosa} (lo que pide la puerta, dicho solo). En la confirmación: {nome}.')}</p>
       <p class="riga-flessibile spazio-sopra"><button class="btn" id="cl-pr-salva">${L('Salva', 'Save', 'Guardar')}</button><button type="button" class="btn secondario" id="cl-pr-prova">${_bIco(ICO.play)}${L('Prova nell\'overlay', 'Test in the overlay', 'Probar en el overlay')}</button></p>
     </div>
 
@@ -26692,6 +26709,16 @@ function _clPresenzaLeggi() {
     rispondi: !!v('cl-pr-rispondi')?.checked,
     risposta: (v('cl-pr-risposta')?.value || '').trim(),
     x: _clPunto.x, y: _clPunto.y,
+    porta: {
+      attiva: !!v('cl-po-attiva')?.checked,
+      monete: !!v('cl-po-monete')?.checked,
+      bit: !!v('cl-po-bit')?.checked,
+      giochi: v('cl-po-giochi')?.checked ? 'blocca' : 'libero',
+      ricorda: !!v('cl-po-ricorda')?.checked,
+      testoRicorda: (v('cl-po-testo-ricorda')?.value || '').trim(),
+      conferma: !!v('cl-po-conferma')?.checked,
+      testoConferma: (v('cl-po-testo-conferma')?.value || '').trim(),
+    },
   };
 }
 

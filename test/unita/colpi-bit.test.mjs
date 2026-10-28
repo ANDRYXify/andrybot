@@ -24,7 +24,7 @@ const { creaPortaColpi } = await import('../../src/features/colpi-porta.js');
 let n = 0;
 const login = () => `bitpew${++n}`;
 
-function banco({ voce = { comando: 'pomodoro', bit: 100 }, bitPew, attivo = true, conMonete = false } = {}) {
+function banco({ voce = { comando: 'pomodoro', bit: 100 }, bitPew, attivo = true, conMonete = false, presente } = {}) {
   let adesso = 5_000_000;
   const stato = { live: true, overlay: true, mostra: true };
   const sparati = [];
@@ -38,6 +38,7 @@ function banco({ voce = { comando: 'pomodoro', bit: 100 }, bitPew, attivo = true
     monete: conMonete ? { punta: economia.punta, rendi: economia.rendi, saldo: economia.saldo } : null,
     crediti: pewBit,
     ora: () => adesso,
+    ...(presente ? { presente } : {}),
   });
   return { s, cfg, stato, sparati, avanti: (ms) => { adesso += ms; }, ora: () => adesso };
 }
@@ -105,6 +106,20 @@ test('«inattivo»: ogni movimento sposta in avanti tutti i suoi lotti; la corre
   assert.equal(pewBit.imposta(c, '1', 40, 'st1', { scade: 0, ora: T0 + 120 }), 40, 'in su: un lotto nuovo');
   assert.equal(pewBit.imposta(c, '1', 12, 'st2', { ora: T0 + 120 }), 12, 'in giu\': prima quello che scade prima');
   assert.equal(pewBit.saldo(c, '1', T0 + 400), 12, 'e restano quelli che non scadono');
+});
+
+test('la porta della presenza: senza, il cheer resta un cheer ma non va da spendere; quello che paga un colpo passa (docs/COLPI.md, «La presenza come porta»)', () => {
+  const chiesti = [];
+  const dentro = new Set();
+  const b = banco({ presente: (ch, chi) => { chiesti.push(chi); return dentro.has(chi); } });
+  const c = login();
+  const r = b.s.daCheer(c, { bits: 300, message: 'Cheer300 bravo!', user_login: 'marta', user_id: '21', evento: 'p1' });
+  assert.deepEqual([r.esito, r.fuoriPorta, r.bitPew, pewBit.saldo(c, '21')], ['nessuno', 300, undefined, 0], 'niente nel salvadanaio, e si sa quanti');
+  assert.deepEqual(chiesti, ['21'], 'si chiede per la persona del cheer');
+  const m = mira(b, c);
+  assert.equal(b.s.daCheer(c, { bits: 100, message: `Cheer100 ${m.codice}`, user_login: 'marta', user_id: '21', evento: 'p2' }).esito, 'pagato', 'un colpo col codice si paga anche fuori dalla porta');
+  dentro.add('21');
+  assert.equal(b.s.daCheer(c, { bits: 300, message: 'Cheer300 eccomi', user_login: 'marta', user_id: '21', evento: 'p3' }).bitPew, 300, 'presente: da spendere');
 });
 
 test('un cheer che non paga un colpo diventa saldo: una volta, a nome suo, con la resa dello streamer', () => {

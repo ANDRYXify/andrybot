@@ -659,7 +659,7 @@ Chiesto così: «riusciamo anche ad inserire un "presenza"? magari in chat da
 scrivere "!pew presente" o una roba comunque personalizzata dallo streamer»;
 scelto: compare in diretta.
 
-Chi scrive in chat la frase dello streamer (di serie `!pew presente`) fa
+Chi scrive in chat la frase dello streamer (di serie `!presente`) fa
 comparire l'effetto scelto dallo streamer, nel punto scelto dallo streamer,
 con sotto «Marta è presente» (o la scritta dello streamer, con `{nome}`; vuota,
 quella di serie nella lingua della chat). È gratis e vale una volta per
@@ -690,6 +690,67 @@ Nel pannello, scheda Pew, «La presenza»: accesa, frase, scritta, effetto (anch
 dai lanci e adesivi), grandezza, tetto, il punto toccando il quadro, e
 «Prova nell'overlay», che la manda subito col nome dello streamer, senza
 registro.
+
+## La presenza come porta: «!presente»
+
+Chiesto così: «senza la presenza non parte neanche il guadagno dei punti se lo
+streamer non la modifica di conseguenza, e senza presenza i bit non vengono
+registrati e quindi non vengono salvati nel salvadanaio»; «anche ai giochi, se
+non si fa !presente (rimuoviamolo il pew presente, solo presente) non si
+guadagna nulla anche se si vince […] chi non fa la presenza non potrà neanche
+interagire con i giochi (si può anche disattivare però)».
+
+**La frase** di serie è `!presente`. Chi aveva la vecchia di serie (`!pew
+presente`) passa alla nuova; una frase scritta dallo streamer resta sua.
+
+**Essere presenti** è un fatto, non un effetto sullo schermo: chi scrive la
+frase è presente a **questa diretta** (`arrivi.occasioneDiretta`; fuori
+diretta, il giorno), sulla sua piattaforma. Si segna **sempre**, anche con
+Pewpewify spento, la pagina in pausa o l'overlay chiuso: la porta non può
+dipendere da un overlay che non si apre. L'effetto in diretta e la serie sono
+quelli di sopra, quando ci sono le loro condizioni. Si segna in
+`presenti(channel, chi, occasione)`, una riga per persona e canale, con due
+nomi: `piattaforma:id` (i Bit, i giochi) e `piattaforma:@login` (il giro delle
+monete, che di chi guarda sa solo il login). La riga regge un riavvio.
+
+**La porta** (`presenza.porta`, tutta dello streamer, accesa di serie):
+- `monete`: le monete **dei messaggi** e **del tempo guardato** solo a chi è
+  presente (le monete degli eventi, un sub, un cheer, restano: sono un grazie
+  per un sostegno vero);
+- `bit`: i Bit (e i Kicks) di un cheer che non paga un colpo vanno **da
+  spendere** solo a chi è presente. Il cheer arriva lo stesso allo streamer;
+  quelli che pagano un colpo col codice e i rimborsi non c'entrano;
+- `giochi`: `blocca` (di serie: chi non è presente non gioca, quindi non vince
+  niente) o `libero`. Bloccato vuol dire tutto quello che è un gioco: i
+  comandi dei giochi, le risposte alle manche, l'arena, la conta, la catena.
+  Restano liberi quelli che non lo sono: `!giochi`, `!monete`, `!classifica`,
+  `!regala`, `!sblocca` e quelli dello staff (`!perdona`, `!doppio`). Lo
+  streamer non passa dalla porta.
+- `ricorda`: chi trova la porta chiusa lo sa, **una volta per diretta**, con
+  la frase da scrivere: al primo gioco rifiutato, al primo cheer che non va da
+  spendere, al primo messaggio che avrebbe dato monete. Il testo è dello
+  streamer (`testoRicorda`, con `{nome}`, `{frase}`, `{cosa}`); vuoto, quello di serie
+  nella lingua della chat; `{cosa}` dice solo quello che la porta chiede
+  davvero: «guadagni monete, puoi giocare e i tuoi Bit vanno nel
+  salvadanaio», meno i pezzi spenti). Al più un ricordo ogni 20 secondi nel
+  canale: a inizio diretta non diventa un muro.
+- `conferma`: chi si presenta e non riceve già la risposta della serie sente
+  «presente» (`testoConferma`, con `{nome}`), una volta per diretta.
+
+Spenta la porta (`attiva: false`), la presenza torna quella di sopra: un
+saluto in diretta, e nient'altro dipende da lei.
+
+**Dove sta.** Un posto solo dice chi è presente (`src/features/presenza-porta.js`),
+e chi lo chiede chiede lì: le monete (`games.accredita`, `games.giroMonete`), i
+giochi (`games.tryGame`: ogni `case` è in `COMANDI_GIOCO` o in
+`COMANDI_LIBERI`, e una prova lo controlla), i Bit (`colpi-servizio`, `dono`).
+La diretta di adesso la consegna il bot all'avvio (`usa`); senza, la porta
+resta **aperta**: chiusa, non ci si potrebbe nemmeno presentare. I giveaway e
+le partite con la chat non sono giochi della porta: sono eventi dello streamer.
+
+La frase come porta conta anche con l'effetto in diretta spento
+(`eFrasePorta`); e resta sua anche per «!pew <colpo>»: una frase non lancia
+mai un colpo.
 
 ## La serie della presenza
 

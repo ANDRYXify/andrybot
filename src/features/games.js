@@ -26,6 +26,9 @@ import * as economia from './economia.js';
 import { ultimoGiorno } from './economia-regole.js';
 import { giroDi, pesca, TIPI_MANCHE } from './giro-regole.js';
 import { preferenzeDi } from './preferenze.js';
+import * as porta from './presenza-porta.js';
+import { linguaChat } from './lingua-canale.js';
+import { testoPorta } from './colpi.js';
 
 const log = makeLog('giochi');
 
@@ -116,9 +119,20 @@ export function giroMonete(channel, presenti, { ruoli = null, live = true, diret
   const ch = String(channel || '').toLowerCase();
   if (!ruoli) ruoli = ruoliDi(ch);
   if (!attivi(ch) || !live) { attiviGiro.delete(ch); return { accreditati: 0, monete: 0, saltati: 0, fermi: 0 }; }
-  const esito = economia.giro(ch, presenti, { ruoli, parlanti: attiviGiro.get(ch) || new Set(), live, diretta });
+  // la porta della presenza: le monete del tempo guardato solo a chi e'
+  // presente (docs/COLPI.md, «La presenza come porta»)
+  const dentro = (presenti || []).filter((u) => porta.lascia(ch, { piattaforma: 'twitch', user: u }, 'monete'));
+  const esito = economia.giro(ch, dentro, { ruoli, parlanti: attiviGiro.get(ch) || new Set(), live, diretta });
   attiviGiro.delete(ch);
-  return esito;
+  return { ...esito, fuoriPorta: (presenti || []).length - dentro.length };
+}
+
+// Chi trova la porta chiusa lo sa, una volta per diretta (porta.ricordo).
+const chiDi = (msg) => ({ piattaforma: msg.piattaforma || 'twitch', id: msg.userId || '', user: msg.user || '' });
+function ricordaPorta(msg, say) {
+  if (!say || !porta.ricordo(msg.channel, chiDi(msg))) return;
+  const cfg = porta.cfgDi(msg.channel);
+  say(testoPorta(cfg, 'ricorda', linguaChat(msg.channel), { nome: msg.display || msg.user, frase: cfg.presenza.frase }));
 }
 const medaglia = (i) => ['🥇', '🥈', '🥉'][i] || `${i + 1}°`;
 
@@ -204,13 +218,20 @@ export function inChat(channel, utente) {
 // Chi chatta guadagna qualche moneta: quante, quando e se il messaggio conta lo
 // decide la porta dell'economia. Il ruolo si ricorda sempre; la partecipazione
 // al giro solo se il messaggio conta.
-export function accredita(msg) {
+export function accredita(msg, say = null) {
   try {
     if (!msg) return;
     const u = String(msg.user || '').toLowerCase();
     if (!u || u.startsWith('[')) return;
     segnaPresenza(msg.channel, u);
     if (!attivi(msg.channel)) { segnaAttivita(msg.channel, u, msg, false); return; }
+    // la porta della presenza: senza, il messaggio non porta monete (e non
+    // conta per il giro); chi lo scrive lo sa, una volta
+    if (!porta.lascia(msg.channel, chiDi(msg), 'monete')) {
+      segnaAttivita(msg.channel, u, msg, false);
+      if (!/^[!/]/.test(String(msg.text || '').trim())) ricordaPorta(msg, say);
+      return;
+    }
     const { conta } = economia.messaggio(msg);
     segnaAttivita(msg.channel, u, msg, conta);
   } catch { /* niente */ }
@@ -811,6 +832,14 @@ export function quandoScade(channel, scade, ora = Date.now()) {
   return `${articolo}${g.giorno} ${MESI_IT[g.mese - 1]}${g.anno !== g.annoOggi ? ` ${g.anno}` : ''}`;
 }
 
+// I comandi che sono un gioco: la porta della presenza li chiude. Fuori restano
+// quelli che non lo sono (le informazioni, le monete proprie, lo staff):
+// COMANDI_LIBERI. Ogni `case` di tryGame sta in uno dei due (lo controlla
+// test/contratto/presenza-porta.test.mjs).
+export const COMANDI_LIBERI = new Set(['giochi', 'monete', 'classifica', 'regala', 'sblocca', 'perdona', 'doppio']);
+export const COMANDI_GIOCO = new Set(['dado', 'moneta', '8ball', 'slot', 'duello', 'trivia', 'manche', 'pesca', 'roulette', 'furto', 'blackjack', 'carta', 'stai',
+  'conta', 'catena', 'colpo', 'corsa', 'patata', 'passa', 'boss', 'colpisci', 'arena', 'combatti', 'emote', 'abbraccio', 'bacio', 'cinque', 'nococcole', 'accetta', 'rifiuta', 'morra']);
+
 export function tryGame(msg, say) {
   try {
     // Niente skip su isSelf: lo streamer (che il bot impersona) può giocare/
@@ -825,14 +854,19 @@ export function tryGame(msg, say) {
     const risposta = aChi(msg, say);
     const comando = (id) => '!' + nomeIn(channel, id);
 
+    // la porta della presenza (docs/COLPI.md, «La presenza come porta»): chi
+    // non e' presente non gioca, in nessun modo — ne' i comandi, ne' le
+    // risposte alle manche, ne' l'arena, la conta o la catena
+    const gioca = porta.lascia(channel, chiDi(msg), 'giochi');
+
     // l'arena aperta nel modo «chi scrive» fa entrare con qualunque messaggio,
     // anche un numero della conta: per questo viene prima, e non lo consuma
-    arenaFeat.suMessaggio(channel, msg, say);
+    if (gioca) arenaFeat.suMessaggio(channel, msg, say);
 
     // un numero mentre si conta insieme appartiene alla conta, una parola
     // mentre c'e' la catena alla catena
-    if (contaFeat.suMessaggio(channel, msg)) return true;
-    if (catenaFeat.suMessaggio(channel, msg)) return true;
+    if (gioca && contaFeat.suMessaggio(channel, msg)) return true;
+    if (gioca && catenaFeat.suMessaggio(channel, msg)) return true;
 
     // risposta a una manche (round) in corso: messaggio normale, non comando
     const round = roundAttivo.get(channel);
@@ -840,7 +874,7 @@ export function tryGame(msg, say) {
       if (Date.now() > round.scadenza) { roundAttivo.delete(channel); }
       // Il testo arriva sia normalizzato sia grezzo: le manche a parole usano il
       // primo, quelle a simboli il secondo (norm() toglie le emoji).
-      else if (!String(msg.text).startsWith('!')) {
+      else if (gioca && !String(msg.text).startsWith('!')) {
         const esito = esitoManche(round, norm(msg.text), msg.text);
         if (esito?.vince) {
           roundAttivo.delete(channel);
@@ -864,6 +898,7 @@ export function tryGame(msg, say) {
     const parola = (parti.shift() || '').toLowerCase();
     const args = parti;
     const cmd = parola;
+    if (!gioca && COMANDI_GIOCO.has(cmd)) { ricordaPorta(msg, say); return true; }
 
     switch (cmd) {
       case 'giochi': {

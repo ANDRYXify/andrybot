@@ -126,10 +126,10 @@ export function normalizza(cfg) {
 // LA PRESENZA (docs/COLPI.md, «La presenza»): chi scrive in chat la frase dello
 // streamer fa comparire in diretta il SUO effetto, nel SUO punto, col nome.
 // Gratis, una volta per diretta. La frase si confronta intera, senza badare a
-// maiuscole e spazi: «!pew presente» vale, «ciao !pew presente» no. Accesa vuol
+// maiuscole e spazi: «!presente» vale, «ciao !presente» no. Accesa vuol
 // dire anche «pronta»: senza un effetto non si accende.
 export const PRESENZA = Object.freeze({
-  frase: '!pew presente', x: 12, y: 82, scala: 100, alMinuto: [1, 30], alMinutoDef: 6, testo: 60, gradini: 30,
+  frase: '!presente', x: 12, y: 82, scala: 100, alMinuto: [1, 30], alMinutoDef: 6, testo: 60, gradini: 30,
   // la frase sull'overlay quando lo streamer non la scrive, nella lingua della chat
   testi: Object.freeze({ it: '{nome} è presente', en: '{nome} is here', es: '{nome} está presente' }),
   // la risposta in chat di serie: col premio, e senza quando non ce n'e'
@@ -313,7 +313,8 @@ function normPresenza(p) {
   const buono = COMANDO.test(comando);
   return {
     attiva: o.attiva === true && buono,
-    frase: frase.length >= 2 ? frase : PRESENZA.frase,
+    // la vecchia di serie («!pew presente») passa alla nuova; una scritta dallo streamer resta
+    frase: frase.length >= 2 && frase !== FRASE_VECCHIA ? frase : PRESENZA.frase,
     comando: buono ? comando : '',
     x: x ?? PRESENZA.x, y: y ?? PRESENZA.y,
     scala: num(o.scala, LIMITI.scala, PRESENZA.scala),
@@ -328,7 +329,52 @@ function normPresenza(p) {
     // ({nome}, {serie}, {monete}); vuoto = quella di serie, nella lingua della chat
     rispondi: o.rispondi !== false,
     risposta: testo(o.risposta, 160),
+    porta: normPorta(o.porta),
   };
+}
+const FRASE_VECCHIA = '!pew presente';
+// LA PORTA (docs/COLPI.md, «La presenza come porta»): cosa chiede la presenza.
+// Accesa di serie; ogni pezzo e' dello streamer.
+export const PORTA_GIOCHI = ['blocca', 'libero'];
+function normPorta(p) {
+  const o = p && typeof p === 'object' ? p : {};
+  return {
+    attiva: o.attiva !== false,
+    monete: o.monete !== false,
+    bit: o.bit !== false,
+    giochi: PORTA_GIOCHI.includes(o.giochi) ? o.giochi : 'blocca',
+    ricorda: o.ricorda !== false,
+    testoRicorda: testo(o.testoRicorda, 200),
+    conferma: o.conferma !== false,
+    testoConferma: testo(o.testoConferma, 160),
+  };
+}
+// Cosa chiede la porta adesso: «monete», «bit» o «giochi».
+export function portaChiede(cfg, cosa) {
+  const p = cfg?.presenza?.porta;
+  if (!p?.attiva) return false;
+  return cosa === 'giochi' ? p.giochi === 'blocca' : !!p[cosa];
+}
+// I testi di serie della porta, nella lingua della chat.
+// {cosa} dice solo quello che la porta chiede davvero.
+export const PORTA_TESTI = Object.freeze({
+  ricorda: Object.freeze({ it: '@{nome} prima scrivi {frase}: da lì {cosa}.', en: '@{nome} first type {frase}: from then on {cosa}.', es: '@{nome} primero escribe {frase}: desde ahí {cosa}.' }),
+  conferma: Object.freeze({ it: '✓ @{nome} presente!', en: '✓ @{nome} is here!', es: '✓ ¡@{nome} presente!' }),
+  cosa: Object.freeze({
+    it: { monete: 'guadagni monete', giochi: 'puoi giocare', bit: 'i tuoi Bit vanno nel salvadanaio', e: ' e ' },
+    en: { monete: 'you earn coins', giochi: 'you can play', bit: 'your Bits go to your piggy bank', e: ' and ' },
+    es: { monete: 'ganas monedas', giochi: 'puedes jugar', bit: 'tus Bits van a la hucha', e: ' y ' },
+  }),
+});
+export function testoPorta(cfg, quale, lingua, valori) {
+  const p = cfg?.presenza?.porta || {};
+  const scritto = quale === 'ricorda' ? p.testoRicorda : p.testoConferma;
+  const base = scritto || (PORTA_TESTI[quale][lingua] || PORTA_TESTI[quale].it);
+  const parole = PORTA_TESTI.cosa[lingua] || PORTA_TESTI.cosa.it;
+  const pezzi = ['monete', 'giochi', 'bit'].filter((k) => portaChiede(cfg, k)).map((k) => parole[k]);
+  const cosa = pezzi.length > 1 ? pezzi.slice(0, -1).join(', ') + parole.e + pezzi.at(-1) : pezzi[0] || '';
+  const v = { cosa, ...valori };
+  return base.replace(/\{(\w+)\}/g, (m, k) => (v[k] != null ? String(v[k]) : m));
 }
 function normPremi(premi, vecchio) {
   const grezzi = Array.isArray(premi) ? premi : typeof premi === 'string' ? premi.split(/[\s,;]+/) : [];
@@ -351,6 +397,9 @@ export function serieDopo(prima, occasione, precedente) {
   return prima?.ultima && precedente && prima.ultima === precedente ? (prima.serie || 0) + 1 : 1;
 }
 export const eFrasePresenza = (cfg, messaggio) => !!cfg?.presenza?.attiva && formaFrase(messaggio) === cfg.presenza.frase;
+// la frase come porta (docs/COLPI.md, «La presenza come porta»): conta anche
+// con l'effetto in diretta spento, se la porta e' accesa
+export const eFrasePorta = (cfg, messaggio) => !!(cfg?.presenza?.attiva || cfg?.presenza?.porta?.attiva) && formaFrase(messaggio) === cfg.presenza.frase;
 // la frase sull'overlay, col nome: quella dello streamer, o quella di serie
 export function frasePresenza(cfg, nome, lingua = 'it', { serie = 1, monete = 0 } = {}) {
   const n = nomeChi(nome);
@@ -472,7 +521,7 @@ export function parolaChat(voce) {
 }
 // «!pew torta» → { voce, con: '' }; «!pew torta monete» → { voce, con: 'monete' }; se no null.
 export function lancioInChat(cfg, messaggio) {
-  if (!cfg?.chat?.attivo || eFrasePresenza(cfg, messaggio)) return null;
+  if (!cfg?.chat?.attivo || eFrasePorta(cfg, messaggio)) return null;
   const m = new RegExp(`^!${cfg.comando || COMANDO_SERIE}\\s+(\\S+)(?:\\s+(\\S+))?\\s*$`, 'i').exec(String(messaggio || '').trim());
   if (!m) return null;
   const parola = m[1].toLowerCase();

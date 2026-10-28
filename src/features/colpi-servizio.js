@@ -46,7 +46,10 @@ export const VOCE_PRESENZA = '@presenza';
 // senza, non si compra per dopo.
 export function creaServizioColpi({ registro, effects, effettoDi, impostazioni, inOnda = () => true, overlay = () => true,
   rimborsaEuro = async () => ({ errore: 'nessun conto' }), chiudiPremio = async () => true, monete = null, serie = null, crediti = null,
-  zaino = null, fusoDi = () => 'Europe/Rome', ora = () => Date.now(), log = null }) {
+  zaino = null, fusoDi = () => 'Europe/Rome', ora = () => Date.now(), log = null,
+  // la porta della presenza (docs/COLPI.md, «La presenza come porta»): i Bit
+  // che non pagano un colpo vanno da spendere solo a chi e' presente
+  presente = () => true }) {
   const ultimaDi = new Map();
   const cfgDi = (login) => normalizza(impostazioni(login));
 
@@ -381,7 +384,10 @@ export function creaServizioColpi({ registro, effects, effettoDi, impostazioni, 
     const { usati = 0, ...r } = cheerSuMira(ch, n, chi, message, user_login, spettatore, valuta);
     const resa = resaDi(ch, valuta);
     const avanzo = n - usati;
-    const dati = resa && avanzo > 0 && avanzo >= cfgValuta(cfgDi(ch), valuta).minimo ? accredita(ch, chi, bitResi(resa, avanzo), rif, user_login) : 0;
+    const salva = resa && avanzo > 0 && avanzo >= cfgValuta(cfgDi(ch), valuta).minimo;
+    // chiuso dalla porta: il cheer resta un cheer, ma non va da spendere
+    if (salva && !presente(ch, chi)) return { ...r, fuoriPorta: avanzo };
+    const dati = salva ? accredita(ch, chi, bitResi(resa, avanzo), rif, user_login) : 0;
     return dati ? { ...r, [valuta === 'kicks' ? 'kicksPew' : 'bitPew']: dati, saldo: saldoBit(ch, chi) } : r;
   }
   function cheerSuMira(ch, n, chi, message, user_login, spettatore, valuta = 'bit') {

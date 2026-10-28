@@ -955,6 +955,13 @@ CREATE TABLE IF NOT EXISTS pew_serie (       -- la serie della presenza di Pewpe
   ts INTEGER NOT NULL,
   PRIMARY KEY (channel, chi)
 );
+CREATE TABLE IF NOT EXISTS presenti (        -- chi ha scritto «!presente» (docs/COLPI.md, «La presenza come porta»): una riga per nome
+  channel TEXT NOT NULL,
+  chi TEXT NOT NULL,                           -- piattaforma:id, o piattaforma:@login
+  occasione TEXT NOT NULL,                     -- la diretta (arrivi.occasioneDiretta) dell'ultima volta
+  ts INTEGER NOT NULL,
+  PRIMARY KEY (channel, chi)
+);
 CREATE TABLE IF NOT EXISTS pew_dirette (     -- le dirette del canale, in ordine: «di fila» vuol dire una dopo l'altra in questo elenco
   channel TEXT NOT NULL,
   occasione TEXT NOT NULL,
@@ -2019,6 +2026,27 @@ export const pewSerie = {
       .run(String(channel).toLowerCase(), String(chi), String(ultima), Math.trunc(serie) || 0, Math.trunc(record) || 0, ts);
   },
   pulisci(ora = now()) { db.prepare('DELETE FROM pew_dirette WHERE ts<?').run(ora - 400 * 86400_000); },
+};
+
+// CHI E' PRESENTE (docs/COLPI.md, «La presenza come porta»): l'ultima diretta
+// in cui ha scritto la frase, per ognuno dei suoi nomi. `segna` dice se e' la
+// prima volta in questa diretta.
+export const presenti = {
+  segna(channel, chi, occasione, ora = now()) {
+    const ch = String(channel).toLowerCase(), occ = String(occasione);
+    let nuova = false;
+    for (const c of [...new Set(chi.map(String).filter(Boolean))]) {
+      const r = db.prepare(`INSERT INTO presenti (channel, chi, occasione, ts) VALUES (?,?,?,?)
+        ON CONFLICT(channel, chi) DO UPDATE SET occasione=excluded.occasione, ts=excluded.ts WHERE presenti.occasione<>excluded.occasione`).run(ch, c, occ, ora);
+      if (r.changes) nuova = true;
+    }
+    return nuova;
+  },
+  e(channel, chi, occasione) {
+    const ch = String(channel).toLowerCase();
+    return chi.map(String).filter(Boolean).some((c) => db.prepare('SELECT 1 FROM presenti WHERE channel=? AND chi=? AND occasione=?').get(ch, c, String(occasione)));
+  },
+  pulisci(ora = now()) { db.prepare('DELETE FROM presenti WHERE ts<?').run(ora - 400 * 86400_000); },
 };
 
 // I BIT DA SPENDERE sulla pagina di Pewpewify (docs/COLPI.md). Si muovono solo

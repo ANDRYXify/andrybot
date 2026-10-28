@@ -102,11 +102,12 @@ import * as premiTempo from './features/premi-tempo.js';
 import * as bossFeat from './features/boss.js';
 import { aChi } from './features/risposte.js';
 import { modalitaDi, alLavoro } from './features/quando-lavora.js';
-import { statoVivo, registroColpi, effects as effettiDb, segnoInstagram, pewSerie, pewBit, pewZaino } from './db.js';
+import { statoVivo, registroColpi, effects as effettiDb, segnoInstagram, pewSerie, pewBit, pewZaino, presenti } from './db.js';
 import { creaServizioColpi } from './features/colpi-servizio.js';
 import * as economia from './features/economia.js';
 import { nomeMoneta, monetaDi, accordaMoneta } from './features/moneta.js';
-import { urlPaginaColpo, eFrasePresenza, pagaInChat, chiedeBit, rispostaBit, chiedeZaino, rispostaZaino, voceDi as voceColpo, quandoScade, rispostaPresenza, titoloPremioMisto, lancioInChat, rispostaChat, prezzoChat, chiedeKicks, valutaDi, personaKick } from './features/colpi.js';
+import { urlPaginaColpo, eFrasePresenza, pagaInChat, chiedeBit, rispostaBit, chiedeZaino, rispostaZaino, voceDi as voceColpo, quandoScade, rispostaPresenza, titoloPremioMisto, lancioInChat, rispostaChat, prezzoChat, chiedeKicks, valutaDi, personaKick, testoPorta, eFrasePorta } from './features/colpi.js';
+import * as presenzaPorta from './features/presenza-porta.js';
 import { preferenzeDi } from './features/preferenze.js';
 import { creaChatColpi, rigaDi as rigaChatColpi, BATTITO_MS as BATTITO_CHAT_COLPI } from './features/colpi-chat.js';
 import { coloreDi as coloreChatDi } from './features/badges.js';
@@ -247,6 +248,9 @@ export class BotManager {
     this.auth = auth;
     this.helix = helix;
     this.effects = effects;          // motore "Effetti & Suoni" condiviso con la dashboard
+    // la porta della presenza chiede la diretta di adesso: la stessa chiave
+    // della presenza di Pewpewify (arrivi.occasioneDiretta)
+    presenzaPorta.usa({ occasione: (l) => arrivi.occasioneDiretta(l, this._inizioTwitch(l)) });
     // i colpi degli spettatori (docs/COLPI.md): la pagina li mira, il cheer, il
     // premio o il pagamento li sparano
     this.colpi = creaServizioColpi({ registro: registroColpi, effects: { fireConOpzioni: (...a) => this.effects?.fireConOpzioni?.(...a) },
@@ -259,6 +263,8 @@ export class BotManager {
       monete: { punta: economia.punta, rendi: economia.rendi, saldo: economia.saldo },
       // la serie della presenza: chi si presenta diretta dopo diretta
       serie: pewSerie,
+      // la porta della presenza: i Bit (o i Kicks) da spendere solo a chi e' presente
+      presente: (l, persona) => presenzaPorta.lascia(l, valutaDi(persona) === 'kicks' ? { piattaforma: 'kick', id: String(persona).slice(2) } : { piattaforma: 'twitch', id: String(persona) }, 'bit'),
       // i Bit da spendere sulla pagina: i Bit che non pagano un colpo
       crediti: pewBit, fusoDi: (l) => preferenzeDi(l).fuso,
       // lo zaino: i colpi comprati per dopo
@@ -1248,6 +1254,15 @@ export class BotManager {
   // L'inizio della diretta su Twitch in corso (lo dice Twitch, e un riavvio non
   // lo cambia), o 0 se non e' in diretta. Riconosce la diretta per le
   // accoglienze di chi arriva in chat.
+  // La porta della presenza chiusa su un cheer (o un regalo di Kicks) che non
+  // paga un colpo: il cheer resta, i Bit non vanno da spendere, e chi l'ha
+  // mandato lo sa, una volta per diretta. Un anonimo non e' nessuno.
+  _ricordaPorta(login, chi, dire) {
+    if (!chi?.id || !chi?.user || !presenzaPorta.ricordo(login, chi)) return;
+    const cfg = presenzaPorta.cfgDi(login);
+    dire(testoPorta(cfg, 'ricorda', linguaChat(login), { nome: chi.user, frase: cfg.presenza.frase }));
+  }
+
   _inizioTwitch(login) {
     if (this._liveState.get(login) !== true) return 0;
     return Number(rapporto.inCorso(login)?.inizio) || 0;
@@ -1356,6 +1371,18 @@ export class BotManager {
       try { this.colpiChat.messaggio(login, rigaChatColpi(msg, { colore: coloreChatDi(msg), emote: { ...emoteInCache(login), ...emoteNelMessaggio(msg) } })); }
       catch (e) { log.debug(`#${login} chat dei colpi:`, e?.message || e); }
     }
+    // LA PRESENZA COME PORTA (docs/COLPI.md, «La presenza come porta»): chi
+    // scrive la frase e' presente a questa diretta, sempre, anche con
+    // Pewpewify spento o senza overlay: da li' le monete, i giochi e i Bit da
+    // spendere. L'effetto in diretta e la serie sono qui sotto.
+    let presenteOra = false, rispostoPresenza = false;
+    if (!msg.isSelf) {
+      try {
+        if (eFrasePorta(presenzaPorta.cfgDi(login), msg.text) && ePersona(login, msg.user)) {
+          presenteOra = presenzaPorta.segna(login, { piattaforma: msg.piattaforma || 'twitch', id: msg.userId || '', user: msg.user });
+        }
+      } catch (e) { log.debug(`#${login} presenza:`, e?.message || e); }
+    }
     // LA PRESENZA DI PEWPEWIFY (docs/COLPI.md, «La presenza»): la frase dello
     // streamer fa comparire in diretta il suo effetto col nome di chi l'ha
     // scritta, una volta per diretta, e conta nella serie delle presenze.
@@ -1401,7 +1428,7 @@ export class BotManager {
           if (r.esito === 'partita' && r.nuova) {
             const date = r.monete > 0 ? economia.premio(login, msg.user, r.monete, 'presenza') : 0;
             const t = rispostaPresenza(cfgColpi, msg.display || msg.user, linguaChat(login), { serie: r.serie, monete: date, moneta: nomeMoneta(login) });
-            if (t) parla(t);
+            if (t) { parla(t); rispostoPresenza = true; }
           }
           if (r.esito === 'partita' || r.esito === 'gia') presenze.dichiara(login, msg.user);
         } else if (cfgColpi?.chat.attivo && persona) {
@@ -1426,12 +1453,18 @@ export class BotManager {
         }
       } catch (e) { log.debug(`#${login} Pewpewify in chat:`, e?.message || e); }
     }
+    // chi si presenta e non ha gia' sentito la risposta della serie: «presente»,
+    // una volta per diretta
+    if (presenteOra && !rispostoPresenza) {
+      const cfgP = presenzaPorta.cfgDi(login);
+      if (cfgP.presenza.porta.attiva && cfgP.presenza.porta.conferma) parla(testoPorta(cfgP, 'conferma', linguaChat(login), { nome: msg.display || msg.user }));
+    }
     this.brain.observe?.(msg);                             // apprendimento passivo (anche dai messaggi dello streamer)
     // amicizia GLOBALE: chi interagisce diventa piano piano "amico" del bot
     // (solo un'affinità, mai contenuti né in quale canale).
     if (!msg.isSelf) { try { persona.interagisci(msg.user); } catch { /* niente */ } }
     // L'economia gira sempre: le monete della presenza non sono un comando.
-    try { games.accredita(msg); } catch (e) { log.error(`#${login} monete:`, e?.message || e); }
+    try { games.accredita(msg, parla); } catch (e) { log.error(`#${login} monete:`, e?.message || e); }
     // il primo messaggio di sempre in questo canale: lo dice Twitch (first-msg)
     if (msg.isFirst && !msg.isSelf && (!msg.piattaforma || msg.piattaforma === 'twitch')) {
       try { economia.evento(login, 'primo', msg.user); } catch (e) { log.debug(`#${login} monete del primo messaggio:`, e?.message || e); }
@@ -1831,6 +1864,7 @@ export class BotManager {
         else if (r.esito === 'pagato' && r.inCoda) this.say(channel, testoColpi(channel, 'coda', `@${data.user_login || ''}`, r));
         else if (r.esito === 'pagato' && r.dopo) this.say(channel, testoColpi(channel, 'zaino-dentro', `@${data.user_login || ''}`, r));
         else if (r.esito === 'servono-monete') this.say(channel, testoColpi(channel, 'misto-bit-prima', `@${data.user_login || ''}`, { ...r, moneta: nomeMoneta(channel), comando: this.colpi.cfgDi(channel).comando }));
+        else if (r.fuoriPorta) this._ricordaPorta(channel, { piattaforma: 'twitch', id: data.user_id, user: data.user_login }, (t) => this.say(channel, t));
       } catch (e) { log.debug(`#${channel} colpo dal cheer:`, e?.message || e); }
     }
     // I KICKS (docs/COLPI.md, «Su Kick»): il regalo col codice paga il colpo come un
@@ -1843,6 +1877,7 @@ export class BotManager {
         else if (r.esito === 'pagato' && r.inCoda) dire(testoColpi(channel, 'coda-kicks', chi, r));
         else if (r.esito === 'pagato' && r.dopo) dire(testoColpi(channel, 'zaino-dentro', chi, r));
         else if (r.esito === 'servono-monete') dire(testoColpi(channel, 'misto-kicks-prima', chi, { ...r, moneta: nomeMoneta(channel), comando: this.colpi.cfgDi(channel).comando }));
+        else if (r.fuoriPorta) this._ricordaPorta(channel, { piattaforma: 'kick', id: data.user_id, user: data.user_login }, dire);
       } catch (e) { log.debug(`#${channel} colpo dai Kicks:`, e?.message || e); }
     }
     // le monete degli eventi (docs/ECONOMIA.md, «Gli eventi»): solo su Twitch, e
@@ -3172,7 +3207,7 @@ export class BotManager {
   }
 
   _giornoEconomia() {
-    try { pewSerie.pulisci(); pewBit.pulisci(); pewZaino.pulisci(); } catch (e) { log.debug('dirette, Bit e zaino di Pewpewify:', e?.message || e); }
+    try { pewSerie.pulisci(); pewBit.pulisci(); pewZaino.pulisci(); presenti.pulisci(); } catch (e) { log.debug('dirette, Bit e zaino di Pewpewify:', e?.message || e); }
     for (const s of streamers.active()) {
       try {
         const e = economia.giornoEconomia(s.login);

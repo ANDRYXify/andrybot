@@ -43,6 +43,15 @@ comandi diversi da quelli della riga italiana.
 
 ## 2026-10-28
 
+- [importante] La presenza ora è una porta: chi non scrive «!presente» in diretta non guadagna monete, non mette Bit nel salvadanaio e non gioca. La frase di serie diventa «!presente». [vai: colpi]
+  en: Check-in is now a gate: whoever doesn't type «!presente» during the stream earns no coins, puts no Bits in the piggy bank and can't play. The default phrase becomes «!presente».
+  es: La presencia ahora es una puerta: quien no escribe «!presente» en directo no gana monedas, no mete Bits en la hucha y no juega. La frase de serie pasa a ser «!presente».
+  > Prima ci si presenta
+  > Conta sempre, anche con Pewpewify spento. Scegli tu cosa chiede (monete, Bit, giochi), il ricordo che riceve chi la trova chiusa, una volta per diretta, e la conferma. Le monete degli eventi restano.
+  en> Check in first
+  en> It always counts, even with Pewpewify off. You pick what it asks for (coins, Bits, games), the reminder whoever finds it closed gets, once per stream, and the confirmation. Event coins stay.
+  es> Primero te presentas
+  es> Cuenta siempre, también con Pewpewify apagado. Tú eliges qué pide (monedas, Bits, juegos), el recordatorio que recibe quien la encuentra cerrada, una vez por directo, y la confirmación. Las monedas de los eventos se quedan.
 - [importante] Pewpewify: i premi a punti canale non si fermano più al limite di 50 di Twitch. Se non c'è posto per uno per colpo, ne faccio uno per prezzo, e quelli che mancano li creo da solo appena liberi un posto. [vai: colpi]
   en: Pewpewify: channel-point rewards no longer stop at Twitch's 50 limit. If there's no room for one per hit, I make one per price, and the missing ones I create by myself as soon as you free a slot.
   es: Pewpewify: las recompensas de puntos de canal ya no se paran en el límite de 50 de Twitch. Si no hay sitio para una por golpe, hago una por precio, y las que faltan las creo solo en cuanto liberas un hueco.

@@ -43,6 +43,8 @@ const DECISO = [
   ['features/antibot.js', 'ritmi', 'resta', 'il ritmo del canale si impara in trenta follow, e in memoria non ci arrivava mai'],
   ['features/handler.js', 'ultimoAvvisoMod', 'volatile', 'quando e\' uscito l\'ultimo richiamo delle parole vietate in ogni chat: dopo un riavvio, al peggio, ne esce uno in piu\''],
   ['features/tg-decidi.js', '_finestre', 'volatile', 'il tetto ai messaggi «decidi tu» in privato: dopo un riavvio si riparte da zero, e al peggio arriva qualche messaggio in piu\'. Le richieste stanno nel database'],
+  ['features/presenza-porta.js', 'ricordati', 'volatile', 'a chi il ricordo della presenza e\' gia\' stato detto in questa diretta: dopo un riavvio, al peggio, lo si ridice una volta. Chi e\' presente sta nel database (presenti)'],
+  ['features/presenza-porta.js', 'ultimoCanale', 'volatile', 'il passo di 20 secondi fra un ricordo e l\'altro nel canale: dopo un riavvio si riparte, e al peggio esce un ricordo in piu\''],
   ['features/antibot.js', 'avvisati', 'volatile', 'a chi l\'avviso del trattenimento e\' gia\' stato detto: dopo un riavvio, al massimo, lo si ridice una volta'],
   ['features/modalita-chat.js', 'sveglie', 'volatile', 'le sveglie delle modalita\' a tempo: la fine sta nel database (statoVivo), e all\'avvio si ripuntano da li\''],
   ['features/premi-tempo.js', 'sveglie', 'volatile', 'le sveglie dei premi a punti canale che durano: la fine sta nel database (statoVivo, premi-tempo), e all\'avvio si ripuntano da li\' (riprendi); quello scaduto mentre il bot era giu\' finisce subito, in silenzio se e\' vecchio'],

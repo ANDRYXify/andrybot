@@ -33,6 +33,7 @@
 import { streamers, presenze as store, memory, modules as modulesDb } from '../db.js';
 import { ePersona } from './antibot.js';
 import * as economia from './economia.js';
+import * as porta from './presenza-porta.js';
 import { makeLog } from '../logger.js';
 import { aChi } from './risposte.js';
 import { nomeMoneta } from './moneta.js';
@@ -166,8 +167,12 @@ export function giroDiretta(channel, { streamId = '', chatters = [], ora = Date.
     if (!nuovo) return;
     const { bonus, traguardo, ...campi } = nuovo;
     store.set(ch, u, campi);
-    if (bonus > 0) { try { economia.riceve(ch, u, bonus, { fonte: 'serie' }); } catch (e) { log.debug(`#${ch} bonus a ${u}:`, e?.message || e); } }
-    const voce = { user: u, serie: nuovo.serie, dirette: nuovo.dirette, record: nuovo.record, bonus, traguardo };
+    // il bonus e' una moneta che arriva da sola: passa dalla porta della
+    // presenza (docs/COLPI.md, «La presenza come porta»), e chi resta fuori
+    // non se lo sente annunciare
+    const dato = bonus > 0 && porta.lascia(ch, { piattaforma: 'twitch', user: u }, 'monete') ? bonus : 0;
+    if (dato > 0) { try { economia.riceve(ch, u, dato, { fonte: 'serie' }); } catch (e) { log.debug(`#${ch} bonus a ${u}:`, e?.message || e); } }
+    const voce = { user: u, serie: nuovo.serie, dirette: nuovo.dirette, record: nuovo.record, bonus: dato, traguardo };
     esito.presenze.push(voce);
     if (traguardo) esito.traguardi.push(voce);
   };

@@ -78,6 +78,15 @@ Giochi, negozio e Moduli **non** passano dalla porta: sono scambi decisi da qual
 compro, il Modulo dà 50 monete), non crescita. Se lo streamer scrive un Modulo che dà monete, le
 dà.
 
+### Prima della porta: la presenza
+
+Le tre fonti di monete che arrivano da sole (i messaggi, il tempo guardato, il bonus della serie
+delle presenze) chiedono prima la **presenza come porta** (docs/COLPI.md, «La presenza come
+porta: «!presente»»): accesa di serie, chi non ha scritto la frase in questa diretta non le
+riceve. Il controllo sta dove si sa chi è e su che piattaforma (`games.accredita`,
+`games.giroMonete`, `presenze.giroDiretta`), e chiede a un posto solo
+(`presenza-porta.js`). Le monete degli eventi non passano di qui.
+
 ### Il pannello le rilegge
 
 Chi usava la carta «Punti & classifica» la trovava complicata e macchinosa, e aveva ragione per
