@@ -103,6 +103,7 @@ import { comprimi, convertiPerEmote, svgInPng, LATO_LIBRERIA, normChiave, ffmpeg
 import { creaFirma, testoFirma } from '../features/firma-media.js';
 import { disegna as disegnaSvg } from '../disegno.js';
 import { creaTramite, indirizzoBuono, BITRATE_MAX_KBPS } from '../features/diretta.js';
+import { leggiIndirizzo, nomeDaHost, controllaIndirizzo, provaRtmp } from '../features/diretta-destinazioni.js';
 import { inOnda } from '../in-onda.js';
 import { normalizza as normalizzaStudio, pesa as pesaStudio, LIMITI as LIMITI_STUDIO } from './public/js/studio-modello.js';
 import { seedStreamer } from '../features/seed.js';
@@ -9377,6 +9378,16 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     pacchi: 'Pacchetti non validi.',
     riserva: 'La riserva deve cominciare da un fotogramma chiave e avere anche l\'audio.',
     troppo: 'Stai mandando più di quanto hai dichiarato: la diretta è stata fermata.',
+    rtmps: 'Il tramite di questo server non sa le connessioni sicure (RTMPS) che chiede la destinazione.',
+    privato: 'Quell\'indirizzo non è un server pubblico: la diretta va solo verso le piattaforme su Internet.',
+  };
+  // un indirizzo scritto a mano: pubblico, quando si salva, si prova e si parte
+  const MOTIVI_INDIRIZZO = {
+    forma: 'L\'indirizzo del server deve cominciare con rtmp:// o rtmps://.',
+    chiave: 'Manca la chiave di trasmissione: scrivila, o incolla l\'indirizzo intero con la chiave in fondo.',
+    interno: 'Quell\'indirizzo non è un server pubblico: la diretta va solo verso le piattaforme su Internet.',
+    privato: 'Quell\'indirizzo non è un server pubblico: la diretta va solo verso le piattaforme su Internet.',
+    nome: 'Quel nome di server non esiste: controlla l\'indirizzo.',
   };
   const b64 = (x) => (typeof x === 'string' && x.length <= 4096 ? Buffer.from(x, 'base64') : Buffer.alloc(0));
   const vestiDirettaDi = (login) => ({
@@ -9385,6 +9396,7 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     kick: { su: !!kickApi.tokenDi(login)?.accessToken, keyOk: kickApi.puoDiretta(login), azione: kickApi.puoModerare(login) ? '/auth/kick?mod=1&diretta=1' : '/auth/kick?diretta=1' },
     sessioni: { o: tramite.stato(sessioneDi(login, 'o')), v: tramite.stato(sessioneDi(login, 'v')) }, kbpsMax: BITRATE_MAX_KBPS,
     vod: tramite.vodPossibile(),
+    server: tramite.capacita(),
   });
   // LE SCENE DELLO STUDIO (docs/DIRETTA.md, «La memoria»). Chi prepara le
   // scene, anche un moderatore, le salva sul canale. Il documento passa da
@@ -9429,13 +9441,32 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     const prima = id ? direttaDest.conChiave(login, id) : null;
     if (id && !prima) return res.status(404).json({ errore: 'Destinazione non trovata.' });
     if (!id && direttaDest.quante(login) >= MAX_DESTINAZIONI) return res.status(400).json({ errore: `Al massimo ${MAX_DESTINAZIONI} destinazioni.` });
-    const nome = String(b.nome || '').trim().slice(0, 40) || 'RTMP';
-    const server = String(b.server || '').trim().replace(/\/+$/, '');
-    const chiave = String(b.chiave || '').trim() || prima?.chiave || '';
-    if (!/^rtmps?:\/\/[^\s|[\]\\]+$/i.test(server)) return res.status(400).json({ errore: 'L\'indirizzo del server deve cominciare con rtmp:// o rtmps://.' });
-    if (!chiave || chiave.length > 300 || !indirizzoBuono(`${server}/${chiave}`)) return res.status(400).json({ errore: 'Manca la chiave di trasmissione, o contiene caratteri non ammessi.' });
+    // l'indirizzo e la chiave nei loro campi, o l'indirizzo intero con la chiave in fondo
+    const ind = leggiIndirizzo(b.server || prima?.server, String(b.chiave || '').trim() || prima?.chiave || '');
+    if (!ind.ok) return res.status(400).json({ errore: MOTIVI_INDIRIZZO[ind.motivo], motivo: ind.motivo });
+    const { server, chiave } = ind;
+    if (!indirizzoBuono(`${server}/${chiave}`)) return res.status(400).json({ errore: 'La chiave contiene caratteri non ammessi.' });
+    const pubblico = await controllaIndirizzo(`${server}/${chiave}`);
+    if (!pubblico.ok) return res.status(400).json({ errore: MOTIVI_INDIRIZZO[pubblico.motivo], motivo: pubblico.motivo });
+    const nome = String(b.nome || '').trim().slice(0, 40) || nomeDaHost(server) || 'RTMP';
     direttaDest.salva(login, { id: id || crypto.randomBytes(4).toString('hex'), nome, server, chiave, attiva: b.attiva !== false });
     res.json(vestiDirettaDi(login));
+  }));
+  // «PROVA» (docs/DIRETTA.md): la stretta di mano RTMP con la piattaforma, senza
+  // pubblicare niente. Per Twitch il suo ingresso, per Kick l'indirizzo che da'
+  // la sua API, per le altre quello salvato. Una prova ogni tre secondi a testa.
+  const proveDiretta = new Map();
+  app.post('/api/diretta/destinazioni/:id/prova', requireOwner, studioAperto, wrap(async (req, res) => {
+    const login = currentUser(req).login, id = String(req.params.id);
+    if (Date.now() - (proveDiretta.get(login) || 0) < 3000) return res.status(429).json({ errore: 'Una prova alla volta: riprova fra qualche secondo.' });
+    proveDiretta.set(login, Date.now());
+    if (proveDiretta.size > 5000) proveDiretta.clear();
+    let url = '';
+    if (id === 'twitch') url = `${config.twitchRtmp}/prova`;
+    else if (id === 'kick') url = kickApi.puoDiretta(login) ? await kickApi.chiaveDiretta(login).catch(() => '') : '';
+    else { const d = direttaDest.conChiave(login, id); url = d?.chiave ? `${d.server}/${d.chiave}` : ''; }
+    if (!url) return res.status(404).json({ errore: 'Destinazione non trovata.' });
+    res.json(await provaRtmp(url));
   }));
   app.post('/api/diretta/destinazioni/:id/togli', requireOwner, studioAperto, (req, res) => {
     const login = currentUser(req).login;
@@ -9470,7 +9501,11 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
         destinazioni.push({ id: 'kick', nome: 'Kick', url });
       } else {
         const d = direttaDest.conChiave(login, id);
-        if (d?.chiave) destinazioni.push({ id: d.id, nome: d.nome, url: `${d.server}/${d.chiave}` });
+        if (!d?.chiave) continue;
+        // il nome si risolve di nuovo adesso: un indirizzo che intanto e' diventato interno non parte
+        const pubblico = await controllaIndirizzo(`${d.server}/${d.chiave}`);
+        if (!pubblico.ok) return res.status(400).json({ errore: `${d.nome}: ${MOTIVI_INDIRIZZO[pubblico.motivo]}`, motivo: 'privato' });
+        destinazioni.push({ id: d.id, nome: d.nome, url: `${d.server}/${d.chiave}` });
       }
     }
     const v = b.video || {}, a = b.audio || {};
@@ -9487,7 +9522,10 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
       riprendi: b.riprendi === true,
       vod: b.vod === true,
     });
-    if (!r.ok) return res.status(r.motivo === 'carico' || r.motivo === 'banda' ? 503 : 400).json({ errore: MOTIVI_DIRETTA[r.motivo] || 'La diretta non è partita.', motivo: r.motivo });
+    if (!r.ok) {
+      const piu = r.motivo === 'rtmps' && r.quali?.length ? ` (${r.quali.join(', ')})` : r.motivo === 'ffmpeg' && r.manca?.length ? ` Manca: ${r.manca.join(', ')}.` : '';
+      return res.status(r.motivo === 'carico' || r.motivo === 'banda' ? 503 : 400).json({ errore: (MOTIVI_DIRETTA[r.motivo] || 'La diretta non è partita.') + piu, motivo: r.motivo });
+    }
     res.json({ ok: true, turno: r.turno, ripresa: !!r.ripresa, vod: !!r.vod, destinazioni: destinazioni.map((d) => d.nome) });
   }));
   app.post('/api/diretta/riserva', requireOwner, studioAperto, express.raw({ type: () => true, limit: '4mb' }), (req, res) => {

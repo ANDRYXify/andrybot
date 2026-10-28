@@ -187,6 +187,70 @@ come pagina (si usa il banco dello Studio con l'overlay come sorgente), più
 qualità diverse per piattaforma, la traccia audio separata per i VOD di Twitch,
 OBS comandato da SocialBot.
 
+## Partire senza sorprese, e le destinazioni in un gesto
+
+Chiesto così: «ancora non si riesce a streammare, e aggiungere piattaforme
+streaming su cui atterrare è ancora complesso».
+
+**Cosa si è trovato.** Il tramite, provato da capo a fondo (pacchetti H.264 e
+AAC veri, ricevitore RTMP locale), consegna. Ma tre buchi rendevano «non va»
+muto o indecifrabile:
+1. **Una destinazione caduta non si diceva.** Con `onfail=ignore` ffmpeg, se
+   una piattaforma rifiuta la chiave o non risponde, scrive «Slave muxer #1
+   failed: …, continuing with 1/2 slaves» e va avanti con le altre: lo Studio
+   diceva «In diretta» con quella destinazione in elenco, e lei non riceveva
+   niente. Si teneva solo l'ultima riga d'errore.
+2. **Il server non sapeva cosa sa fare il suo ffmpeg.** Un ffmpeg senza RTMPS
+   (Kick, Facebook) o senza `tee` partiva lo stesso, e falliva dopo.
+3. **Un indirizzo qualunque.** Una destinazione poteva essere
+   `rtmp://127.0.0.1:…` o un indirizzo della rete interna: il server ci si
+   collegava (una porta verso i servizi interni). E per aggiungerne una bisognava
+   sapere l'indirizzo RTMP giusto di ogni piattaforma.
+
+**Il modello.**
+- **Ogni destinazione ha il suo stato.** Il tramite legge da ffmpeg le righe
+  della destinazione N (`Slave '…': error opening: …`, `Slave muxer #N failed:
+  …`) e segna **quella** caduta, col motivo in parole (non raggiungibile,
+  rifiutata dalla piattaforma, connessione sicura fallita, nome che non
+  esiste, ffmpeg che non sa l'RTMPS). Lo stato della diretta porta
+  `stati: [{ id, nome, ok, motivo }]`; lo Studio mostra ✓ o ✗ per ognuna e lo
+  dice una volta quando una cade. Tutte cadute: la diretta si chiude e lo dice.
+- **Il server sa cosa sa fare** (`capacitaFfmpeg`): all'avvio legge una volta
+  `-protocols`, `-muxers`, `-demuxers`, `-encoders` del suo ffmpeg. Senza `tee`,
+  `flv`, `matroska` o `rtmp` il tramite non parte e lo dice; senza `rtmps` le
+  destinazioni `rtmps://` si rifiutano **prima** di partire, col nome di quella
+  che non va. Lo Studio lo legge in `/api/diretta` (`server`).
+- **Solo indirizzi pubblici.** Una destinazione scritta a mano si controlla
+  quando si salva, quando si prova e quando si parte: il nome deve avere un
+  punto, e **tutti** i suoi indirizzi devono essere pubblici (niente loopback,
+  reti private, link-local, CGNAT, multicast, IPv6 ULA). Il nome si risolve di
+  nuovo alla partenza; resta il limite di un nome che cambia indirizzo fra il
+  controllo e la connessione di ffmpeg (una finestra di pochi millisecondi).
+- **Le destinazioni in un gesto.** Si incolla quello che dà la piattaforma:
+  l'indirizzo e la chiave nei loro campi, **o l'indirizzo intero con la chiave
+  in fondo** in un campo solo (`rtmp://host/app/chiave?…`): il server lo
+  divide (`leggiIndirizzo`: la prima parte del percorso è l'applicazione, il
+  resto è la chiave). Il nome lo dà la piattaforma scelta, o l'host quando è
+  sicuro (YouTube, Facebook, Twitch, TikTok), e si può scrivere. Gli indirizzi
+  fissi si scrivono da soli **solo dove sono certi** (YouTube, YouTube di
+  riserva, Facebook): Kick ha un indirizzo per account e gli altri lo danno a
+  ognuno, quindi lì si incolla.
+- **«Prova».** Accanto a ogni destinazione: il server risolve il nome, apre la
+  connessione (TLS per `rtmps`) e fa la stretta di mano RTMP (C0+C1 → S0+S1),
+  senza pubblicare niente: niente va in onda. Risponde in parole: «risponde
+  (120 ms)», o il passo che non va. La chiave giusta la può dire solo la
+  piattaforma quando si parte: per questo c'è lo stato per destinazione.
+
+Le prove: `test/unita/diretta-destinazioni.test.mjs` (l'indirizzo che si
+divide, gli indirizzi interni rifiutati anche travestiti, la stretta di mano
+con un ricevitore RTMP vero che non riceve niente, le righe di ffmpeg, le sue
+liste vere, e da capo a fondo una destinazione che cade mentre l'altra riceve
+tutto) e `test/contratto/diretta-destinazioni.test.mjs` (il server: controllo
+al salvataggio e alla partenza, «Prova» dello streamer e a passo lento). Ognuna
+rotta apposta va rossa. Il dispositivo con H.264 vero lo prova
+`diretta-chrome.test.mjs` con Google Chrome, che qui manca: quella resta da
+fare su una macchina che lo ha.
+
 ## Lo Studio come OBS, il verticale e la memoria
 
 Quello che lo streamer costruisce non si perde, lo Studio si usa come OBS, e

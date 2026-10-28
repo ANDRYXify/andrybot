@@ -21707,12 +21707,15 @@ function pannelloStudio() {
               <option value="youtube">YouTube</option>
               <option value="kick">Kick</option>
               <option value="tiktok">TikTok</option>
+              <option value="facebook">Facebook</option>
               <option value="altro">${L('Altro servizio RTMP', 'Other RTMP service', 'Otro servicio RTMP')}</option>
             </select>
             <label class="campo spazio-sopra" for="studio-dest-server">${L('Indirizzo del server', 'Server address', 'Dirección del servidor')}</label>
-            <input id="studio-dest-server" class="campo-largo" maxlength="300" autocomplete="off" placeholder="rtmps://…" data-base="rtmps://…">
-            <label class="campo spazio-sopra" for="studio-dest-chiave">${L('Chiave di trasmissione', 'Stream key', 'Clave de transmisión')}</label>
+            <input id="studio-dest-server" type="text" class="campo-largo" maxlength="600" autocomplete="off" placeholder="rtmps://…" data-base="rtmps://…">
+            <label class="campo spazio-sopra" for="studio-dest-chiave">${L('Chiave di trasmissione (vuota se è già in fondo all’indirizzo)', 'Stream key (empty if it is already at the end of the address)', 'Clave de transmisión (vacía si ya está al final de la dirección)')}</label>
             <input id="studio-dest-chiave" class="campo-largo" type="password" maxlength="300" autocomplete="off">
+            <label class="campo spazio-sopra" for="studio-dest-nome">${L('Nome (facoltativo)', 'Name (optional)', 'Nombre (opcional)')}</label>
+            <input id="studio-dest-nome" type="text" class="campo-largo" maxlength="40" autocomplete="off" placeholder="${esc(L('il servizio, o il server', 'the service, or the server', 'el servicio, o el servidor'))}">
             <p class="suggerimento" id="studio-dest-aiuto"></p>
             <button type="button" class="btn secondario mini spazio-sopra" id="studio-dest-salva">${L('Salva la destinazione', 'Save the destination', 'Guardar el destino')}</button>
           </details>
@@ -23338,10 +23341,29 @@ const DEST_AIUTO = {
   kick: () => L('Se hai collegato Kick non serve: la chiave la prende da sola. Altrimenti, su Kick: Creator Dashboard → Settings → Stream URL e Stream Key. Incolla qui l’indirizzo (comincia con rtmps://) e la chiave.', 'If you connected Kick you don’t need this: the key is fetched by itself. Otherwise, on Kick: Creator Dashboard → Settings → Stream URL and Stream Key. Paste the address (it starts with rtmps://) and the key here.', 'Si conectaste Kick no hace falta: la clave se coge sola. Si no, en Kick: Creator Dashboard → Settings → Stream URL y Stream Key. Pega aquí la dirección (empieza por rtmps://) y la clave.'),
   youtube: () => L('Su YouTube: YouTube Studio → Vai in diretta → Streaming. L’indirizzo è già scritto; incolla la chiave dello stream. Per una diretta verticale usa una chiave a parte.', 'On YouTube: YouTube Studio → Go live → Stream. The address is already filled in; paste the stream key. For a vertical stream use a separate key.', 'En YouTube: YouTube Studio → Emitir en directo → Emisión. La dirección ya está escrita; pega la clave de emisión. Para un directo vertical usa otra clave.'),
   tiktok: () => L('Su TikTok l’indirizzo e la chiave li dà TikTok LIVE Studio o la pagina Live di TikTok, se il tuo account può trasmettere da fuori. Di solito è una diretta verticale.', 'On TikTok the address and key come from TikTok LIVE Studio or the TikTok Live page, if your account can stream from outside. It is usually a vertical stream.', 'En TikTok la dirección y la clave las da TikTok LIVE Studio o la página Live de TikTok, si tu cuenta puede emitir desde fuera. Suele ser un directo vertical.'),
-  altro: () => L('L’indirizzo RTMP o RTMPS e la chiave te li dà il servizio (Instagram Live Producer, Facebook, un tuo server…).', 'The service gives you the RTMP or RTMPS address and the key (Instagram Live Producer, Facebook, your own server…).', 'El servicio te da la dirección RTMP o RTMPS y la clave (Instagram Live Producer, Facebook, un servidor tuyo…).'),
+  facebook: () => L('Su Facebook: Live Producer → Software di streaming. L’indirizzo è già scritto; incolla la chiave (meglio quella permanente).', 'On Facebook: Live Producer → Streaming software. The address is already filled in; paste the key (the persistent one is best).', 'En Facebook: Live Producer → Software de streaming. La dirección ya está escrita; pega la clave (mejor la permanente).'),
+  altro: () => L('L’indirizzo RTMP o RTMPS e la chiave te li dà il servizio (Instagram Live Producer, Facebook, un tuo server…). Se ti dà un indirizzo solo con la chiave in fondo, incollalo intero nel primo campo.', 'The service gives you the RTMP or RTMPS address and the key (Instagram Live Producer, Facebook, your own server…). If it gives you a single address with the key at the end, paste it whole in the first field.', 'El servicio te da la dirección RTMP o RTMPS y la clave (Instagram Live Producer, Facebook, un servidor tuyo…). Si te da una sola dirección con la clave al final, pégala entera en el primer campo.'),
 };
-const DEST_SERVER = { youtube: 'rtmp://a.rtmp.youtube.com/live2' };
-const DEST_NOME = { kick: 'Kick', youtube: 'YouTube', tiktok: 'TikTok' };
+const DEST_SERVER = { youtube: 'rtmp://a.rtmp.youtube.com/live2', facebook: 'rtmps://live-api-s.facebook.com:443/rtmp' };
+const DEST_NOME = { kick: 'Kick', youtube: 'YouTube', tiktok: 'TikTok', facebook: 'Facebook' };
+const DEST_PROVA = {
+  forma: () => L('l’indirizzo non è scritto bene', 'the address is not written correctly', 'la dirección no está bien escrita'),
+  interno: () => L('non è un server su Internet', 'it is not a server on the Internet', 'no es un servidor en Internet'),
+  privato: () => L('non è un server su Internet', 'it is not a server on the Internet', 'no es un servidor en Internet'),
+  nome: () => L('quel nome di server non esiste', 'that server name does not exist', 'ese nombre de servidor no existe'),
+  irraggiungibile: () => L('il server non risponde', 'the server does not answer', 'el servidor no responde'),
+  tls: () => L('la connessione sicura non va', 'the secure connection fails', 'la conexión segura falla'),
+  rtmp: () => L('risponde, ma non è un server di dirette (RTMP)', 'it answers, but it is not a streaming (RTMP) server', 'responde, pero no es un servidor de directos (RTMP)'),
+  tempo: () => L('il server non ha risposto in tempo', 'the server did not answer in time', 'el servidor no respondió a tiempo'),
+};
+const DEST_CADUTA = {
+  irraggiungibile: () => L('non risponde', 'not answering', 'no responde'),
+  rifiutata: () => L('ha chiuso la connessione: di solito è la chiave', 'closed the connection: usually it is the key', 'cerró la conexión: normalmente es la clave'),
+  tls: () => L('la connessione sicura non va', 'the secure connection fails', 'la conexión segura falla'),
+  nome: () => L('il nome del server non esiste', 'the server name does not exist', 'el nombre del servidor no existe'),
+  protocollo: () => L('questo server non sa quel protocollo', 'this server does not know that protocol', 'este servidor no conoce ese protocolo'),
+  altro: () => L('non riceve', 'not receiving', 'no recibe'),
+};
 
 function studioDestScelte() { return new Set(STUDIO.doc?.scelte.dest || []); }
 function studioScriviDestScelte(insieme) { if (!STUDIO.doc) return; STUDIO.doc.scelte.dest = [...insieme].slice(0, 20); studioSporco(); }
@@ -23410,7 +23432,8 @@ function studioRenderDestinazioni() {
     const f = STUDIO.M.formatoDi(id, sc);
     return ` <select class="chip-utente studio-dest-fmt" data-dest-formato="${esc(id)}" aria-label="${esc(L('Formato per questa destinazione', 'Format for this destination', 'Formato para este destino'))}"${bloccato}><option value="o"${f === 'o' ? ' selected' : ''}>${L('Orizzontale', 'Horizontal', 'Horizontal')}</option><option value="v"${f === 'v' ? ' selected' : ''}>${L('Verticale', 'Vertical', 'Vertical')}</option></select>`;
   };
-  const voce = (id, nome, extra = '') => `<div class="studio-dest-voce"><label><input type="checkbox" data-dest="${esc(id)}"${scelte.has(id) ? ' checked' : ''}${bloccato}> ${esc(nome)}</label>${formato(id)}${extra}</div>`;
+  const prova = (id) => ` <button type="button" class="btn secondario mini" data-dest-prova="${esc(id)}">${L('Prova', 'Test', 'Probar')}</button><span class="studio-dest-esito" data-dest-esito="${esc(id)}" aria-live="polite">${esc(STUDIO.prove?.[id] || '')}</span>`;
+  const voce = (id, nome, extra = '') => `<div class="studio-dest-voce"><label><input type="checkbox" data-dest="${esc(id)}"${scelte.has(id) ? ' checked' : ''}${bloccato}> ${esc(nome)}</label>${formato(id)}${extra}${prova(id)}</div>`;
   const twitch = d.twitch?.su
     ? (d.twitch.keyOk ? voce('twitch', 'Twitch') : `<p class="suggerimento">${_bIco(ICO.lucchetto)}${L('Per Twitch serve il permesso della chiave di trasmissione.', 'Twitch needs the stream key permission.', 'Twitch necesita el permiso de la clave de transmisión.')} <a class="btn secondario mini" href="/auth/permessi">${L('Concedi il permesso', 'Grant the permission', 'Conceder el permiso')}</a></p>`)
     : '';
@@ -23418,7 +23441,11 @@ function studioRenderDestinazioni() {
     ? (d.kick.keyOk ? voce('kick', 'Kick') : `<p class="suggerimento">${_bIco(ICO.lucchetto)}${L('Per Kick serve il permesso di leggere la chiave di trasmissione: si dà ricollegando Kick.', 'Kick needs the permission to read the stream key: you grant it by reconnecting Kick.', 'Kick necesita el permiso para leer la clave de emisión: se da reconectando Kick.')} <a class="btn secondario mini" href="${esc(d.kick.azione)}">${L('Ricollega Kick', 'Reconnect Kick', 'Reconectar Kick')}</a></p>`)
     : '';
   const altre = (d.destinazioni || []).map((x) => voce(x.id, x.nome, ` <span class="tenue">${esc(x.server.replace(/^rtmps?:\/\//, ''))}</span> <button type="button" class="btn secondario mini" data-dest-togli="${esc(x.id)}"${bloccato}>${L('Togli', 'Remove', 'Quitar')}</button>`)).join('');
-  box.innerHTML = twitch + kick + altre || `<p class="suggerimento">${L('Aggiungi qui sotto dove vuoi andare in diretta.', 'Add below where you want to go live.', 'Añade abajo dónde quieres emitir.')}</p>`;
+  const srv = d.server;
+  const tramite = srv && !srv.pronta
+    ? `<p class="suggerimento">${_bIco(ICO.avviso)}${L(`Il tramite di questo server non è pronto (manca: ${esc(srv.manca.join(', '))}): la diretta non può partire. Avvisa chi gestisce il server.`, `This server’s relay is not ready (missing: ${esc(srv.manca.join(', '))}): the stream cannot start. Tell whoever runs the server.`, `El relé de este servidor no está listo (falta: ${esc(srv.manca.join(', '))}): el directo no puede salir. Avisa a quien gestiona el servidor.`)}</p>`
+    : srv && !srv.rtmps ? `<p class="suggerimento">${_bIco(ICO.avviso)}${L('Questo server non sa le connessioni sicure (RTMPS): le destinazioni rtmps:// (Kick, Facebook) non partono.', 'This server does not support secure connections (RTMPS): rtmps:// destinations (Kick, Facebook) will not start.', 'Este servidor no admite conexiones seguras (RTMPS): los destinos rtmps:// (Kick, Facebook) no salen.')}</p>` : '';
+  box.innerHTML = tramite + (twitch + kick + altre || `<p class="suggerimento">${L('Aggiungi qui sotto dove vuoi andare in diretta.', 'Add below where you want to go live.', 'Añade abajo dónde quieres emitir.')}</p>`);
   const tipo = document.getElementById('studio-dest-tipo');
   const aiuto = document.getElementById('studio-dest-aiuto');
   if (tipo && aiuto) aiuto.textContent = DEST_AIUTO[tipo.value]();
@@ -23453,7 +23480,7 @@ async function studioSalvaDestinazione() {
   const tipo = document.getElementById('studio-dest-tipo')?.value || 'altro';
   const server = (document.getElementById('studio-dest-server')?.value || '').trim() || DEST_SERVER[tipo] || '';
   const chiave = (document.getElementById('studio-dest-chiave')?.value || '').trim();
-  const nome = DEST_NOME[tipo] || L('RTMP', 'RTMP', 'RTMP');
+  const nome = (document.getElementById('studio-dest-nome')?.value || '').trim() || DEST_NOME[tipo] || '';
   const d = await api('/api/diretta/destinazioni', { method: 'POST', body: { nome, server, chiave } });
   const prima = new Set((STUDIO.dir?.destinazioni || []).map((x) => x.id));
   STUDIO.dir = d;
@@ -23464,9 +23491,22 @@ async function studioSalvaDestinazione() {
   }
   const ch = document.getElementById('studio-dest-chiave'); if (ch) ch.value = '';
   const sv = document.getElementById('studio-dest-server'); if (sv) sv.value = '';
+  const nm = document.getElementById('studio-dest-nome'); if (nm) nm.value = '';
   document.getElementById('studio-dest-nuova')?.removeAttribute('open');
   studioRenderDestinazioni();
   toast(L('Destinazione salvata. La chiave resta cifrata sul server.', 'Destination saved. The key stays encrypted on the server.', 'Destino guardado. La clave queda cifrada en el servidor.'));
+}
+
+async function studioProvaDestinazione(id, tasto) {
+  const esito = document.querySelector(`[data-dest-esito="${CSS.escape(id)}"]`);
+  if (tasto) tasto.disabled = true;
+  if (esito) esito.textContent = L('provo…', 'testing…', 'probando…');
+  try {
+    const r = await api(`/api/diretta/destinazioni/${encodeURIComponent(id)}/prova`, { method: 'POST' });
+    const testo = r.ok ? L(`✓ risponde (${r.ms} ms)`, `✓ answers (${r.ms} ms)`, `✓ responde (${r.ms} ms)`) : '✗ ' + (DEST_PROVA[r.passo] || DEST_PROVA.irraggiungibile)();
+    STUDIO.prove = { ...(STUDIO.prove || {}), [id]: testo };
+    if (esito) { esito.textContent = testo; esito.classList.toggle('ko', !r.ok); }
+  } finally { if (tasto) tasto.disabled = false; }
 }
 
 async function studioTogliDestinazione(id) {
@@ -23627,7 +23667,15 @@ async function studioControllaStato() {
     ultimo = st;
     studioSaluteMisura(f, st);
     if (st.inRiserva?.video || st.inRiserva?.audio) giu = true;
-    righe.push(`${st.destinazioni.join(', ')}${Object.keys(STUDIO.dirette).length > 1 ? ` (${studioFormatoNome(f)})` : ''} · ${(st.kbpsVeri / 1000).toFixed(1)} Mbps`);
+    const stati = st.stati || st.destinazioni.map((nome) => ({ nome, ok: true }));
+    for (const x of stati.filter((y) => !y.ok)) {
+      const k = `${f}:${x.id || x.nome}`;
+      if (STUDIO.cadute?.has(k)) continue;
+      (STUDIO.cadute ||= new Set()).add(k);
+      const msg = L(`${x.nome} non riceve la diretta: ${(DEST_CADUTA[x.motivo] || DEST_CADUTA.altro)()}. Le altre continuano.`, `${x.nome} is not receiving the stream: ${(DEST_CADUTA[x.motivo] || DEST_CADUTA.altro)()}. The others carry on.`, `${x.nome} no recibe el directo: ${(DEST_CADUTA[x.motivo] || DEST_CADUTA.altro)()}. Los demás siguen.`);
+      studioLog(msg); toast(msg, 'errore');
+    }
+    righe.push(`${stati.map((x) => `${x.ok ? '✓' : '✗'} ${x.nome}`).join(', ')}${Object.keys(STUDIO.dirette).length > 1 ? ` (${studioFormatoNome(f)})` : ''} · ${(st.kbpsVeri / 1000).toFixed(1)} Mbps`);
   }
   if (!STUDIO.live) return;
   if (STUDIO.tel) { studioTelRete(ultimo); renderStudioTel(); }
@@ -25001,6 +25049,7 @@ async function onStudioClick(ev) {
   if (t.closest('#studio-dest-salva')) return conErrore(() => studioSalvaDestinazione());
   if (t.closest('#studio-osify-usa')) return conErrore(async () => { await studioOsifyUsa(); renderStudioMixer(); });
   const togli = t.closest('[data-dest-togli]'); if (togli) { ev.preventDefault(); return conErrore(() => studioTogliDestinazione(togli.dataset.destTogli)); }
+  const prova = t.closest('[data-dest-prova]'); if (prova) { ev.preventDefault(); return conErrore(() => studioProvaDestinazione(prova.dataset.destProva, prova)); }
   const scelta = t.closest('input[data-dest]');
   if (scelta) {
     const insieme = studioDestScelte();

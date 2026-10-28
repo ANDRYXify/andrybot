@@ -43,6 +43,18 @@ comandi diversi da quelli della riga italiana.
 
 ## 2026-10-28
 
+- [importante] Studio: ogni piattaforma della diretta ha la sua spunta. Se una non riceve (chiave sbagliata, server giù) lo Studio te lo dice subito, col motivo, e le altre continuano. [vai: studio]
+  en: Studio: every stream platform has its own check mark. If one is not receiving (wrong key, server down) the Studio tells you right away, with the reason, and the others carry on.
+  es: Estudio: cada plataforma del directo tiene su marca. Si una no recibe (clave equivocada, servidor caído) el Estudio te lo dice enseguida, con el motivo, y las demás siguen.
+  > Sai sempre dove stai andando in onda
+  > Prima, con una piattaforma caduta, lo Studio diceva «In diretta» lo stesso. Adesso ✓ e ✗ per ognuna, e il server ti dice prima di partire se non sa una connessione che serve.
+  en> You always know where you are live
+  en> Before, with one platform down, the Studio still said «Live». Now ✓ and ✗ for each, and the server tells you before starting if it can't make a needed connection.
+  es> Siempre sabes dónde estás en directo
+  es> Antes, con una plataforma caída, el Estudio decía «En directo» igual. Ahora ✓ y ✗ para cada una, y el servidor te avisa antes de salir si no puede hacer una conexión necesaria.
+- Studio: aggiungere una piattaforma è più facile. Incolla l'indirizzo intero con la chiave e si divide da solo, Facebook ha l'indirizzo già scritto, e «Prova» controlla che il server risponda senza andare in onda. [vai: studio]
+  en: Studio: adding a platform is easier. Paste the whole address with the key and it splits itself, Facebook has its address prefilled, and «Test» checks the server answers without going live.
+  es: Estudio: añadir una plataforma es más fácil. Pega la dirección entera con la clave y se divide sola, Facebook tiene la dirección ya escrita, y «Probar» comprueba que el servidor responde sin salir en directo.
 - [importante] Pewpewify dalla chat: «!pew torta» lancia il colpo nel punto che scegli tu, pagato coi saldi di chi scrive. Sulla pagina invece si mira al pixel, anche col dito. [vai: colpi]
   en: Pewpewify from chat: «!pew cake» launches the hit at the spot you pick, paid from the sender's balances. On the page instead you aim to the pixel, even by finger.
   es: Pewpewify desde el chat: «!pew tarta» lanza el golpe en el punto que eliges, pagado con los saldos de quien escribe. En la página en cambio se apunta al píxel, también con el dedo.

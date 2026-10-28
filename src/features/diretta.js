@@ -79,12 +79,56 @@ export function argomenti(destinazioni, audioCodec, vod = false) {
   ];
 }
 
+// UNA DESTINAZIONE CADUTA (docs/DIRETTA.md, «Partire senza sorprese»): con
+// `onfail=ignore` ffmpeg va avanti con le altre e lo scrive cosi':
+// «Slave muxer #1 failed: Connection refused, continuing with 1/2 slaves.».
+// Il numero e' quello della destinazione nell'elenco del tee.
+export function cadutaIn(riga) {
+  const m = /Slave muxer #(\d+) failed: (.*?)(?:, continuing with \d+\/\d+ slaves)?\.?\s*$/.exec(String(riga || ''));
+  return m ? { i: Number(m[1]), motivo: motivoCaduta(m[2]) } : null;
+}
+// Il motivo in parole: la piattaforma non risponde, ha chiuso (di solito la
+// chiave), la connessione sicura non va, il nome non esiste, ffmpeg non sa
+// quel protocollo.
+export function motivoCaduta(testo) {
+  const t = String(testo || '');
+  if (/Protocol not found|Protocol not supported/i.test(t)) return 'protocollo';
+  if (/resolve hostname|Name or service not known|name resolution|nodename nor servname/i.test(t)) return 'nome';
+  if (/TLS|SSL|certificate|handshake|GnuTLS|OpenSSL/i.test(t)) return 'tls';
+  if (/Connection refused|timed out|unreachable|No route to host/i.test(t)) return 'irraggiungibile';
+  if (/Input\/output error|Broken pipe|End of file|reset by peer|Server error|Operation not permitted|Invalid data/i.test(t)) return 'rifiutata';
+  return 'altro';
+}
+
+// COSA SA FARE QUESTO FFMPEG: le sue liste (-protocols, -muxers, -demuxers,
+// -encoders) dicono se il tramite puo' partire e se sa l'RTMPS.
+export function capacitaDa({ protocolli = '', muxer = '', demuxer = '', encoder = '' } = {}) {
+  const uscite = (String(protocolli).split(/^Output:\s*$/m)[1] || '').split(/\s+/).filter(Boolean);
+  const voce = (testo, flag, nome) => String(testo).split('\n').some((r) => { const m = /^\s*([A-Z.]{1,8})\s+(\S+)/.exec(r); return !!m && m[1].includes(flag) && m[2].split(',').includes(nome); });
+  const serve = { rtmp: uscite.includes('rtmp'), tee: voce(muxer, 'E', 'tee'), flv: voce(muxer, 'E', 'flv'), matroska: voce(demuxer, 'D', 'matroska'), aac: voce(encoder, 'A', 'aac') };
+  const manca = Object.keys(serve).filter((k) => !serve[k]);
+  return { pronta: !manca.length, rtmps: uscite.includes('rtmps'), manca };
+}
+const sondaCapacitaDiSerie = (risorse, ffmpeg) => async () => {
+  const leggi = (arg) => new Promise((ok) => {
+    let out = '';
+    let p;
+    try { p = risorse.avvia(ffmpeg, ['-hide_banner', arg], { stdio: ['ignore', 'pipe', 'ignore'] }); } catch { ok(''); return; }
+    p.stdout.on('data', (d) => { out += d; });
+    p.on('error', () => ok(''));
+    p.on('close', () => ok(out));
+  });
+  const [protocolli, muxer, demuxer, encoder] = [await leggi('-protocols'), await leggi('-muxers'), await leggi('-demuxers'), await leggi('-encoders')];
+  return capacitaDa({ protocolli, muxer, demuxer, encoder });
+};
+
 const mascherato = (s, destinazioni) => destinazioni.reduce((t, d) => t.split(d.url).join(`[${d.nome || d.id}]`), String(s));
 
-export function creaTramite({ risorse = risorseDiSerie, ffmpeg = 'ffmpeg', ora = () => Date.now(), bandaMbps = 300, log = null, ogniMs = 100, alCambio = null, sondaVod = sondaDiSerie(risorse, ffmpeg) } = {}) {
+export function creaTramite({ risorse = risorseDiSerie, ffmpeg = 'ffmpeg', ora = () => Date.now(), bandaMbps = 300, log = null, ogniMs = 100, alCambio = null, sondaVod = sondaDiSerie(risorse, ffmpeg), sondaCapacita = sondaCapacitaDiSerie(risorse, ffmpeg) } = {}) {
   const sessioni = new Map();
-  let giro = null, vodPossibile = false;
+  let giro = null, vodPossibile = false, capacita = null;
   Promise.resolve().then(sondaVod).then((si) => { vodPossibile = !!si; }, () => {});
+  Promise.resolve().then(sondaCapacita).then((c) => { capacita = c || null; if (capacita && !capacita.pronta) log?.warn?.(`diretta: a ffmpeg manca ${capacita.manca.join(', ')}`); }, () => {});
 
   const kbpsImpegnati = () => [...sessioni.values()].reduce((n, s) => n + s.kbps * s.destinazioni.length, 0);
 
@@ -214,6 +258,10 @@ export function creaTramite({ risorse = risorseDiSerie, ffmpeg = 'ffmpeg', ora =
     }
     const dest = (destinazioni || []).filter((d) => indirizzoBuono(d.url));
     if (!dest.length) return { ok: false, motivo: 'destinazioni' };
+    // quello che questo ffmpeg non sa fare si dice prima, non dopo
+    if (capacita && !capacita.pronta) return { ok: false, motivo: 'ffmpeg', manca: capacita.manca };
+    const senzaTls = capacita && !capacita.rtmps ? dest.filter((d) => /^rtmps:/i.test(d.url)) : [];
+    if (senzaTls.length) return { ok: false, motivo: 'rtmps', quali: senzaTls.map((d) => d.nome || d.id) };
     if (video?.codec !== 'avc1' || !video?.config?.length || !(video.larghezza > 0) || !(video.altezza > 0) || !(video.fps > 0)) return { ok: false, motivo: 'video' };
     if (!['aac', 'opus'].includes(audio?.codec) || !(audio.frequenza > 0) || !(audio.canali > 0) || (audio.codec === 'aac' && !audio.config?.length)) return { ok: false, motivo: 'audio' };
     const k = Math.min(BITRATE_MAX_KBPS, Math.max(300, Math.round(Number(kbps) || 0)));
@@ -230,13 +278,22 @@ export function creaTramite({ risorse = risorseDiSerie, ffmpeg = 'ffmpeg', ora =
       config: { video: Buffer.from(video.config), audio: Buffer.from(audio.config || []) }, inizio: ora(), muro0: null, offset: null,
       ultimo: { video: -Infinity, audio: -Infinity, vod: -Infinity }, arrivo: { video: ora(), audio: ora() },
       inRiserva: { video: false, audio: false }, serveChiave: true, riserva: null, giroV: 0, giroA: 0,
-      blocco: creaScrittore(), byte: 0, finestra: [], ultimoN: -1, assenzaMax: assenzaMaxMs, finita: false, errore: '',
+      blocco: creaScrittore(), byte: 0, finestra: [], ultimoN: -1, assenzaMax: assenzaMaxMs, finita: false, errore: '', cadute: new Map(),
     };
     sessioni.set(ch, s);
     finite.delete(ch);
     cambiato();
-    let err = '';
-    ff.stderr?.on('data', (d) => { err = (err + d).slice(-2000); s.errore = mascherato(err.trim().split('\n').pop() || '', dest).slice(0, 300); });
+    let err = '', riga = '';
+    ff.stderr?.on('data', (d) => {
+      err = (err + d).slice(-2000);
+      s.errore = mascherato(err.trim().split('\n').pop() || '', dest).slice(0, 300);
+      const righe = (riga + d).split('\n');
+      riga = righe.pop().slice(-2000);
+      for (const r of righe) {
+        const c = cadutaIn(r);
+        if (c && dest[c.i] && !s.cadute.has(c.i)) { s.cadute.set(c.i, { motivo: c.motivo, quando: ora() }); log?.warn?.(`diretta #${ch}: ${dest[c.i].nome || dest[c.i].id} caduta (${c.motivo})`); }
+      }
+    });
     ff.stdin?.on('error', () => {});
     ff.on('error', () => fine(s, 'ffmpeg'));
     ff.on('exit', () => fine(s, s.finita ? s.motivo : 'uscita'));
@@ -334,6 +391,7 @@ export function creaTramite({ risorse = risorseDiSerie, ffmpeg = 'ffmpeg', ora =
     return {
       live: true, da: s.inizio, byte: s.byte, kbpsVeri: Math.round(inFinestra * 8 / FINESTRA_BYTE_MS), kbpsDichiarati: s.kbps,
       destinazioni: s.destinazioni.map((d) => d.nome || d.id), ids: s.destinazioni.map((d) => d.id), riserva: !!s.riserva, inRiserva: { ...s.inRiserva }, errore: s.errore, vod: !!s.vod,
+      stati: s.destinazioni.map((d, i) => ({ id: d.id, nome: d.nome || d.id, ok: !s.cadute.has(i), motivo: s.cadute.get(i)?.motivo || '' })),
     };
   }
 
@@ -342,6 +400,8 @@ export function creaTramite({ risorse = risorseDiSerie, ffmpeg = 'ffmpeg', ora =
     ferma: (login, motivo = 'fermata', turno = null) => { const s = sessioni.get(String(login || '').toLowerCase()); if (!s || (turno && turno !== s.turno)) return false; fine(s, motivo); return true; },
     attiva: (login) => sessioni.has(String(login || '').toLowerCase()),
     vodPossibile: () => vodPossibile,
+    // cosa sa fare il suo ffmpeg (null finche' non l'ha letto)
+    capacita: () => capacita,
     // I canali in diretta dallo Studio, in un formato o nell'altro.
     canali: () => [...new Set([...sessioni.keys()].map((k) => k.replace(/#v$/, '')))],
     chiudiTutto: () => { for (const s of [...sessioni.values()]) fine(s, 'spegnimento'); },

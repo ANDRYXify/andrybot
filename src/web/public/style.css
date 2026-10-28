@@ -1265,6 +1265,8 @@ body.in-studio #cerca-lancia, body.in-studio #plancia-lancia { display: none !im
 .studio-impostazioni { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: .7rem; align-items: start; margin-top: 1rem; }
 .studio-dest-voce { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem .5rem; padding: .35rem 0; border-bottom: 1px solid var(--border); }
 .studio-dest-voce label { display: inline-flex; align-items: center; gap: .35rem; font-weight: 600; }
+.studio-dest-esito { font-size: .85rem; color: var(--testo-2); font-variant-numeric: tabular-nums; }
+.studio-dest-esito.ko { color: var(--rosso); }
 .studio-dest-fmt { max-width: 150px; }
 
 .studio-mobile-barra { display: flex; flex-direction: column; gap: .5rem; margin-top: .7rem; }
