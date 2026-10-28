@@ -3143,6 +3143,9 @@ body.in-studio #anime-sfondo::after, body.tel-aperta #anime-sfondo::after, body.
 .cl-acc { white-space: nowrap; }
 .cl-premio { grid-column: 1 / -1; margin: 0; }
 .cl-misti { grid-column: 1 / -1; display: grid; grid-template-columns: auto minmax(4.5rem, 1fr) auto minmax(4.5rem, 1fr) minmax(4.5rem, 1fr) auto minmax(4.5rem, 1fr); gap: .5rem; align-items: end; padding-top: .4rem; border-top: 1px dashed var(--border); }
+.cl-bp-campi { grid-template-columns: minmax(150px, 18rem); }
+.cl-bp-chi .tabella { max-width: 30rem; }
+.cl-bp-chi td:last-child { text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; }
 .cl-misti-t { font-size: .8rem; color: var(--testo-2); align-self: center; }
 .cl-piu { align-self: center; padding-bottom: .1rem; color: var(--testo-2); }
 .cl-premio:empty { display: none; }

@@ -2667,6 +2667,7 @@ function _demoGet(via) {
         { tipo: 'comecompra', titolo: '', testo: '' }, { tipo: 'piede', link: true, canale: true }] } };
   const statoDona = { paginaUrl: 'https://dona.socialbot.live/andryxify', conto: { stato: 'nessuno', coda: '', nota: '' }, satispay: { stato: 'nessuno', coda: '', nota: '' }, kofi: { stato: 'nessuno', pagina: '', token: false, valuta: 'EUR', webhook: 'https://socialbot.live/dona/kofi/andryxify' }, riepilogo: { oggi: [], mese: [], anno: [], sempre: [] }, ultime: [], daApprovare: [] };
   F['/api/colpi'] = { pagina: 'https://pew.socialbot.live/andryxify', euro: ['stripe'], valuta: 'EUR', premiErrori: [],
+    bitPew: { totali: { persone: 3, bit: 1450 }, primi: [{ chi: '1', nome: 'marta', saldo: 900 }, { chi: '2', nome: 'lucaplays', saldo: 400 }, { chi: '3', nome: 'giuliaa', saldo: 150 }] },
     voci: [{ id: 'pomodoro', premioNome: 'Colpo: Pomodoro', premioCosto: 500 }],
     ultimi: [{ quando: Date.now() - 600000, nome: 'Pomodoro', chi: 'Marta', metodo: 'bit', stato: 'sparata' }, { quando: Date.now() - 1500000, nome: 'Pomodoro', chi: 'lucaplays', metodo: 'euro', stato: 'sparata' }] };
   F['/api/donazioni/stato'] = statoDona; F['/api/donazioni/stato?rileggi=1'] = statoDona;
@@ -26234,6 +26235,25 @@ function pannelloColpi() {
       <p class="riga-flessibile spazio-sopra"><button class="btn" id="cl-pr-salva">${L('Salva', 'Save', 'Guardar')}</button><button type="button" class="btn secondario" id="cl-pr-prova">${_bIco(ICO.play)}${L('Prova nell\'overlay', 'Test in the overlay', 'Probar en el overlay')}</button></p>
     </div>
 
+    <div class="carta" id="cl-bitpew">
+      <h3>${_hIco(ICO.fulmine)}${L('I Bit da spendere', 'Bits to spend', 'Bits para gastar')}</h3>
+      <p>${L('I Bit che uno spettatore manda al canale senza pagarci un colpo diventano Bit da spendere sulla tua pagina di Pewpewify, come le monete e i punti canale. Un Bit vale una volta: quello che paga un colpo non torna anche qui. Se un colpo pagato a Bit non riesce a comparire, i suoi Bit tornano da spendere.', 'The Bits a viewer sends to the channel without paying for a hit become Bits to spend on your Pewpewify page, like coins and channel points. A Bit counts once: one that pays for a hit doesn\'t come back here too. If a hit paid with Bits can\'t show, its Bits come back to spend.', 'Los Bits que un espectador manda al canal sin pagar un golpe se convierten en Bits para gastar en tu página de Pewpewify, como las monedas y los puntos de canal. Un Bit vale una vez: el que paga un golpe no vuelve también aquí. Si un golpe pagado con Bits no consigue aparecer, sus Bits vuelven para gastar.')}</p>
+      <div class="riga-interruttore spazio-sopra">
+        <label class="interruttore"><input type="checkbox" id="cl-bp-attivo" ${c.bitPew?.attivo !== false ? 'checked' : ''}><span class="levetta"></span></label>
+        <span class="etichetta-stato">${L('Bit da spendere accesi', 'Bits to spend on', 'Bits para gastar activados')}</span>
+      </div>
+      <div class="griglia-campi cl-bp-campi spazio-sopra">
+        <div>
+          <label class="campo" for="cl-bp-resa">${L('Bit da spendere ogni 100 mandati', 'Bits to spend per 100 sent', 'Bits para gastar por cada 100 mandados')}</label>
+          <input type="number" id="cl-bp-resa" min="1" max="1000" value="${Number(c.bitPew?.resa) || 100}">
+        </div>
+      </div>
+      <p class="pt-dice" id="cl-bp-dice" aria-live="polite"></p>
+      <p class="suggerimento">${L('Si spendono dalla pagina, con l\'accesso a Twitch: sono di chi li ha mandati, e restano suoi anche se cambia nome. In chat «!${esc(c.comando || 'pew')} bit» dice a ognuno quanti ne ha. Valgono i Bit mandati da quando li accendi; quelli anonimi non sono di nessuno.', 'They are spent from the page, logged in with Twitch: they belong to whoever sent them, and stay theirs even if they change name. In chat «!${esc(c.comando || 'pew')} bit» tells everyone how many they have. Bits count from when you turn this on; anonymous ones belong to no one.', 'Se gastan desde la página, con el acceso a Twitch: son de quien los mandó, y siguen siendo suyos aunque cambie de nombre. En el chat «!${esc(c.comando || 'pew')} bit» le dice a cada uno cuántos tiene. Cuentan los Bits mandados desde que lo activas; los anónimos no son de nadie.')}</p>
+      <div id="cl-bp-chi" class="cl-bp-chi spazio-sopra"></div>
+      <p class="spazio-sopra"><button class="btn" id="cl-bp-salva">${L('Salva', 'Save', 'Guardar')}</button></p>
+    </div>
+
     <div class="carta">
       <h3>${_hIco(ICO.orologio)}${L('Gli ultimi colpi', 'Latest hits', 'Últimos golpes')}</h3>
       <div id="cl-ultimi"><p class="tenue">${L('Ancora nessuno.', 'None yet.', 'Ninguno todavía.')}</p></div>
@@ -26313,6 +26333,7 @@ function _clLeggi() {
     alMinuto: Number(document.getElementById('cl-minuto')?.value) || 6,
     conNome: !!document.getElementById('cl-nome')?.checked,
     presenza: _clPresenzaLeggi(),
+    bitPew: { attivo: !!document.getElementById('cl-bp-attivo')?.checked, resa: Number(document.getElementById('cl-bp-resa')?.value) || 0 },
     titolo: (document.getElementById('cl-titolo')?.value || '').trim(),
     dida: (document.getElementById('cl-dida')?.value || '').trim(),
     zone: _clZone.map((z) => ({ ...z })),
@@ -26351,6 +26372,16 @@ function _clPresenzaDice() {
   el.textContent = L(`Così, presenza dopo presenza di fila: ${primi} ${nome}, ${poi}. Chi salta una diretta riparte da ${g[0]}.`, `So, check-in after check-in in a row: ${primi} ${nome}, ${poi}. Whoever misses a stream starts again from ${g[0]}.`, `Así, presencia tras presencia seguida: ${primi} ${nome}, ${poi}. Quien se salta un directo vuelve a ${g[0]}.`);
 }
 
+function _clBitDice() {
+  const el = document.getElementById('cl-bp-dice');
+  if (!el) return;
+  const r = Math.round(Number(document.getElementById('cl-bp-resa')?.value) || 0);
+  if (!document.getElementById('cl-bp-attivo')?.checked) { el.textContent = L('Spenti: i Bit che non pagano un colpo restano solo al canale.', 'Off: Bits that don\'t pay for a hit just stay with the channel.', 'Apagados: los Bits que no pagan un golpe se quedan solo en el canal.'); return; }
+  if (!(r >= 1 && r <= 1000)) { el.textContent = L('Scrivi un numero da 1 a 1.000.', 'Write a number from 1 to 1,000.', 'Escribe un número de 1 a 1.000.'); return; }
+  el.textContent = r === 100 ? L('Così, alla pari: 100 Bit mandati al canale sono 100 Bit da spendere.', 'So, one for one: 100 Bits sent to the channel are 100 Bits to spend.', 'Así, a la par: 100 Bits mandados al canal son 100 Bits para gastar.')
+    : L(`Così 100 Bit mandati al canale sono ${r} Bit da spendere.`, `So 100 Bits sent to the channel are ${r} Bits to spend.`, `Así 100 Bits mandados al canal son ${r} Bits para gastar.`);
+}
+
 function _clPresenzaGiusta(p) {
   if (p.premi.some((x) => !Number.isFinite(x) || x < 0 || x > 100000)) throw new Error(L('Nei gradini della serie scrivi solo numeri, da 0 a 100.000, separati da virgole.', 'In the streak steps write only numbers, from 0 to 100,000, separated by commas.', 'En los escalones de la racha escribe solo números, de 0 a 100.000, separados por comas.'));
   if (p.premi.length > 30) throw new Error(L('Al massimo 30 gradini.', 'At most 30 steps.', 'Como máximo 30 escalones.'));
@@ -26379,6 +26410,7 @@ function _clPresenzaQuadro() {
 async function salvaColpi(silenzioso) {
   const colpi = _clLeggi();
   _clPresenzaGiusta(colpi.presenza);
+  if (colpi.bitPew.attivo && !(colpi.bitPew.resa >= 1 && colpi.bitPew.resa <= 1000)) throw new Error(L('La resa dei Bit da spendere va da 1 a 1.000 ogni 100 Bit.', 'The Bits-to-spend rate goes from 1 to 1,000 per 100 Bits.', 'El rendimiento de los Bits para gastar va de 1 a 1.000 por cada 100 Bits.'));
   const mistoOk = (x, k) => x && x.monete > 0 && x[k] > 0;
   const vuote = colpi.voci.filter((v) => !(v.euro > 0 || v.punti > 0 || v.bit > 0 || v.monete > 0 || mistoOk(v.misti.bit, 'bit') || mistoOk(v.misti.punti, 'punti')));
   if (colpi.voci.some((v) => ['bit', 'punti'].some((k) => (v.misti[k].monete > 0) !== (v.misti[k][k] > 0)))) throw new Error(L('Un modo misto vuole tutte e due le cifre: le monete e i Bit, o le monete e i punti.', 'A mixed way needs both numbers: coins and Bits, or coins and points.', 'Un modo mixto necesita las dos cifras: monedas y Bits, o monedas y puntos.'));
@@ -26451,9 +26483,17 @@ async function caricaColpiStato() {
     if (p) p.textContent = [v?.premioNome ? v.premioNome + ' (' + v.premioCosto + ')' : '', v?.premioMistoNome ? v.premioMistoNome + ' (' + v.premioMistoCosto + ')' : ''].filter(Boolean)
       .map((x, i, a) => (i ? '' : L(a.length > 1 ? 'Premi su Twitch: ' : 'Premio su Twitch: ', a.length > 1 ? 'Twitch rewards: ' : 'Twitch reward: ', a.length > 1 ? 'Recompensas en Twitch: ' : 'Recompensa en Twitch: ')) + x).join(' · ');
   }
+  const bp = document.getElementById('cl-bp-chi');
+  if (bp && st.bitPew) {
+    const t = st.bitPew.totali || { persone: 0, bit: 0 };
+    bp.innerHTML = !t.persone ? `<p class="tenue">${L('Ancora nessuno ha Bit da spendere.', 'Nobody has Bits to spend yet.', 'Todavía nadie tiene Bits para gastar.')}</p>`
+      : `<p>${esc(L(`In giro: ${t.bit.toLocaleString(localePannello())} Bit da spendere, di ${t.persone} ${t.persone === 1 ? 'persona' : 'persone'}.`, `Out there: ${t.bit.toLocaleString(localePannello())} Bits to spend, held by ${t.persone} ${t.persone === 1 ? 'person' : 'people'}.`, `En circulación: ${t.bit.toLocaleString(localePannello())} Bits para gastar, de ${t.persone} ${t.persone === 1 ? 'persona' : 'personas'}.`))}</p>`
+        + `<div class="scorrevole"><table class="tabella"><tbody>${(st.bitPew.primi || []).map((p) => `<tr><td>${esc(p.nome || "—")}</td><td>${esc(Number(p.saldo).toLocaleString(localePannello()))}</td></tr>`).join('')}</tbody></table></div>`;
+  }
   const ul = document.getElementById('cl-ultimi');
   if (ul && (st.ultimi || []).length) {
-    const metodo = { euro: L('euro', 'euros', 'euros'), punti: L('punti', 'points', 'puntos'), bit: 'Bit', presenza: L('presenza', 'check-in', 'presencia'), monete: _clMoneta() };
+    const metodo = { euro: L('euro', 'euros', 'euros'), punti: L('punti', 'points', 'puntos'), bit: 'Bit', presenza: L('presenza', 'check-in', 'presencia'), monete: _clMoneta(),
+      'monete+bit': _clMoneta() + ' + Bit', 'monete+punti': _clMoneta() + ' + ' + L('punti', 'points', 'puntos') };
     const come = { sparata: L('Mostrato', 'Shown', 'Mostrado'), pagata: L('In arrivo', 'On its way', 'En camino'), rimborsata: L('Rimborsato', 'Refunded', 'Reembolsado') };
     ul.innerHTML = `<div class="scorrevole"><table class="tabella"><tbody>${st.ultimi.map((u) => `<tr><td>${esc(new Date(u.quando).toLocaleString(localePannello(), { dateStyle: 'short', timeStyle: 'short' }))}</td><td><strong>${esc(u.metodo === 'presenza' ? L('Presenza', 'Check-in', 'Presencia') : u.nome)}</strong></td><td>${esc(u.chi || '—')}</td><td>${esc(metodo[u.metodo] || u.metodo)}</td><td>${esc(come[u.stato] || '')}</td></tr>`).join('')}</tbody></table></div>`;
   }
@@ -26512,6 +26552,9 @@ async function caricaColpi() {
     document.getElementById('cl-quadro')?.addEventListener('click', () => setTimeout(_clPresenzaQuadro, 0));
     document.getElementById('cl-quadro')?.addEventListener('pointerup', () => setTimeout(_clPresenzaQuadro, 0));
     document.getElementById('cl-pr-salva')?.addEventListener('click', () => conErrore(() => salvaColpi()));
+    document.getElementById('cl-bp-salva')?.addEventListener('click', () => conErrore(() => salvaColpi()));
+    for (const id of ['cl-bp-attivo', 'cl-bp-resa']) document.getElementById(id)?.addEventListener('input', _clBitDice);
+    _clBitDice();
     document.getElementById('cl-pr-lancio')?.addEventListener('click', () => conErrore(async () => {
       const r = await scegliLancio({ testo: L('Quello che prendi diventa l\'effetto della presenza: compare col nome di chi scrive la frase.', 'What you take becomes the check-in effect: it shows up with the name of whoever types the phrase.', 'Lo que coges se convierte en el efecto de la presencia: aparece con el nombre de quien escribe la frase.') });
       if (!r) return;

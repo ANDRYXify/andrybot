@@ -29,7 +29,7 @@ import { points, vips, tgConf, tgDest, amici, tgVisti, feedFonti, dcConf, passke
 import { direttaDest, MAX_DESTINAZIONI, studioScene, studioDispositivi } from '../db.js';
 import { creaSalotto } from '../features/studio-dispositivi.js';
 import { montaDispositivi } from './rotte-dispositivi.js';
-import { linkPage, visitePagina, TEMPLATE_LINKPAGE, LIMITI_LINKPAGE, FONT_LINKPAGE, ICONE_LINKPAGE, TIPI_BLOCCO, TIPI_PAGINA_NEGOZIO, contiDonazioni, contiSatispay, registroDonazioni, registroColpi, segnoInstagram, paginaDona, paginaNegozio, paginaPannello, cartePagina, accessi, recensioni as recensioniDb, campagneDb, sito } from '../db.js';
+import { linkPage, visitePagina, TEMPLATE_LINKPAGE, LIMITI_LINKPAGE, FONT_LINKPAGE, ICONE_LINKPAGE, TIPI_BLOCCO, TIPI_PAGINA_NEGOZIO, contiDonazioni, contiSatispay, registroDonazioni, registroColpi, pewBit, segnoInstagram, paginaDona, paginaNegozio, paginaPannello, cartePagina, accessi, recensioni as recensioniDb, campagneDb, sito } from '../db.js';
 import { puoRecensire, validaRecensione, statoDopo, invitoAperto, rimandaFino, vetrinaDi, TESTO_MAX } from '../features/recensioni.js';
 import { funzioniCanale, concessioneDi } from '../features/accesso.js';
 import { canaleHa } from '../features/accesso.js';
@@ -2550,6 +2550,15 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     if (r.scaduto) { accessiColpi.togli(req.session.spettatore); delete req.session.spettatore; return res.status(401).json({ errore: 'accesso' }); }
     res.json(r.ok ? { ok: true } : { ok: false, motivo: r.motivo });
   }));
+  // I Bit da spendere di chi ha fatto l'accesso (docs/COLPI.md, «I Bit da spendere»)
+  app.get('/u/:user/colpo/saldi', (req, res) => {
+    const login = loginColpi(req);
+    res.set('Cache-Control', 'private, no-store');
+    if (!login || !portaColpi.aperti(login)) return res.status(404).json({ errore: 'spento' });
+    const io = spettatoreDi(req);
+    if (!io) return res.status(401).json({ errore: 'accesso' });
+    res.json(portaColpi.saldi(login, io) || {});
+  });
   app.get('/u/:user/colpo/stato/:id', (req, res) => {
     const login = loginColpi(req);
     const m = login ? portaColpi.stato(login, req.params.id) : null;
@@ -2580,6 +2589,8 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       voci: cfg.voci.map((v) => ({ id: v.id, premioNome: v.premio ? v.premioNome : '', premioCosto: v.premio ? v.premioCosto : 0,
         premioMistoNome: v.premioMisto ? v.premioMistoNome : '', premioMistoCosto: v.premioMisto ? v.premioMistoCosto : 0 })),
       ultimi: registroColpi.ultimi(login, 20).map((m) => ({ quando: m.pagata_at, nome: m.nome, chi: m.chi, metodo: m.metodo, stato: m.stato })),
+      // i Bit da spendere: quanti ne girano, e chi ne ha di piu'
+      bitPew: { totali: pewBit.totali(login), primi: pewBit.primi(login, 10).map((p) => ({ nome: p.nome, saldo: p.saldo })) },
     });
   }));
   // La prova della presenza (docs/COLPI.md, «La presenza»): la stessa che parte

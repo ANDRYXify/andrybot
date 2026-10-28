@@ -202,6 +202,7 @@ export class EventHub {
           channel: state.login,
           type: msg.payload?.subscription?.type,
           data: msg.payload?.event,
+          id: String(msg.metadata?.message_id || ''),
         });
         break;
       }

@@ -67,7 +67,7 @@ export function creaPortaColpi({ servizio, registro, streamers, effettoDi, mezzi
     // le categorie che hanno almeno un colpo, nell'ordine dello streamer
     const categorie = k.cfg.categorie.filter((c) => voci.some((v) => v.categoria === c.id));
     return { live: !!inOnda(login), overlay: !!overlay(login), pausa: k.cfg.pausa, zone: k.cfg.zone, conNome: k.cfg.conNome, valuta: valutaDi(k.s), mezzi: euro, voci,
-      categorie, comando: k.cfg.comando, moneta: monetaDa(k.s.settings).nome };
+      categorie, comando: k.cfg.comando, moneta: monetaDa(k.s.settings).nome, bitPew: !!servizio.conBitPew?.(login) };
   }
 
   // L'ANTEPRIMA DI UN COLPO (docs/COLPI.md, «L'anteprima»): quello che l'overlay
@@ -133,6 +133,16 @@ export function creaPortaColpi({ servizio, registro, streamers, effettoDi, mezzi
   // scrive in chat), e la mira dev'essere sua o di nessuno.
   async function paga(login, id, mezzoChiesto, io = null, modo = '') {
     const k = aperti(login);
+    // i Bit da spendere sono di chi ha fatto l'accesso: si conoscono per id Twitch
+    if (mezzoChiesto === 'bitpew') {
+      const mb = k && ID_MIRA.test(String(id || '')) ? registro.getDi(login, String(id)) : null;
+      if (!mb) return { errore: 'mira' };
+      if (!io?.id) return { errore: 'accesso' };
+      if (mb.spettatore && mb.spettatore !== String(io.id)) return { errore: 'mira' };
+      const r = servizio.daBitPew(login, { id: mb.id, chi: io.id, nome: io.login });
+      if (r.esito === 'pagato') return { ok: true, esito: r.esito, saldo: r.saldo };
+      return { errore: r.esito === 'fermo' ? r.motivo : r.esito, serve: r.serve, saldo: r.saldo };
+    }
     if (mezzoChiesto === 'monete') {
       const mm = k && ID_MIRA.test(String(id || '')) ? registro.getDi(login, String(id)) : null;
       if (!mm) return { errore: 'mira' };
@@ -164,5 +174,8 @@ export function creaPortaColpi({ servizio, registro, streamers, effettoDi, mezzi
     return { url: r.url };
   }
 
-  return { aperti, dati, anteprima, mira, stato, paga };
+  // il saldo di chi ha fatto l'accesso: i Bit da spendere qui
+  const saldi = (login, io) => (aperti(login) && io?.id ? { bit: servizio.conBitPew?.(login) ? servizio.saldoBit(login, io.id) : null } : null);
+
+  return { aperti, dati, anteprima, mira, stato, paga, saldi };
 }

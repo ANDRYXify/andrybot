@@ -45,12 +45,24 @@
   }
   function ricorda(id) { try { if (id) sessionStorage.setItem(memo, id); else sessionStorage.removeItem(memo); } catch (e) {  } }
 
+  var saldoBit = null;
+  function saldi() {
+    if (!io || !dati || !dati.bitPew) { saldoBit = null; return Promise.resolve(); }
+    return chiedi('/saldi').then(function (r) {
+      if (r._stato === 401) { io = null; saldoBit = null; accedi(); scriviSi(); return; }
+      var prima = saldoBit;
+      saldoBit = typeof r.bit === 'number' ? r.bit : null;
+      if (prima !== saldoBit) { accedi(); if (mira && mira.stato === 'attesa') mostra(); }
+    }, function () {  });
+  }
+
   function accedi() {
     var box = $('cp-io');
     box.textContent = '';
     if (!accesso) { box.hidden = true; return; }
     if (io) {
       box.appendChild(el('p', '', riempi(T.sei, { nome: io.nome || io.login })));
+      if (saldoBit !== null && dati && dati.bitPew) box.appendChild(el('p', 'cp-saldo', riempi(T.saldoBit, { n: numero(saldoBit) })));
       var esci = el('button', 'cp-b due', T.esci);
       esci.type = 'button';
       esci.onclick = function () {
@@ -62,6 +74,7 @@
       a.href = base + '/accedi';
       box.appendChild(a);
       box.appendChild(el('p', 'cp-nota', T.accediPerche));
+      if (dati && dati.bitPew) box.appendChild(el('p', 'cp-nota', T.bitPewAccedi));
     }
     $('cp-nome-l').hidden = !!io || !(dati && dati.conNome);
   }
@@ -432,6 +445,17 @@
     }, function () { b.disabled = false; avviso((T.motivi || {}).rete, 'ko'); });
   }
 
+  function pagaBit(b) {
+    b.disabled = true;
+    chiedi('/paga/' + mira.id, { mezzo: 'bitpew' }).then(function (r) {
+      if (r.ok) { saldi(); leggi(); return; }
+      b.disabled = false;
+      if (r.errore === 'accesso') { io = null; accedi(); scriviSi(); }
+      avviso(riempi((T.motivi || {})[r.errore] || (T.motivi || {}).pagamento, { saldo: numero(r.saldo || 0), serve: numero(r.serve || 0) }), 'ko');
+      saldi();
+    }, function () { b.disabled = false; avviso((T.motivi || {}).rete, 'ko'); });
+  }
+
   function chat() {
     var a = el('a', 'cp-b due', T.apriChat);
     a.href = 'https://www.twitch.tv/popout/' + encodeURIComponent(login) + '/chat';
@@ -488,6 +512,19 @@
         ac.appendChild(el('p', '', riempi(mira.acconto.modo === 'punti' ? T.accontoPunti : T.accontoBit, { monete: numero(mira.acconto.monete), moneta: moneta(), resto: numero(mira.acconto.resto), codice: mira.codice, premio: mv.premio || '' })));
         box.appendChild(ac);
         var cc = el('div', 'cp-righe'); cc.appendChild(chat()); box.appendChild(cc);
+      }
+      var restoBit = mira.acconto ? (mira.acconto.modo === 'bit' ? mira.acconto.resto : 0) : (pz.bit || 0);
+      var mancaBit = Math.max(0, restoBit - (mira.versati || 0));
+      if (io && dati.bitPew && pz.resa > 0 && mancaBit > 0 && mira.pagabile && !mira.inPagamento) {
+        var bp = el('div', 'cp-modo');
+        var pbit = el('button', 'cp-b cp-paga-b', riempi(T.bitPewIo, { n: numero(mancaBit) }));
+        pbit.type = 'button';
+        pbit.setAttribute('data-paga', 'bitpew');
+        pbit.disabled = saldoBit !== null && saldoBit < mancaBit;
+        pbit.onclick = function () { pagaBit(pbit); };
+        bp.appendChild(pbit);
+        if (saldoBit !== null) bp.appendChild(el('p', 'cp-nota', riempi(T.bitPewNota, { saldo: numero(saldoBit) })));
+        box.appendChild(bp);
       }
       if (conCodice) {
         (v.misti || []).forEach(function (x) {
@@ -569,9 +606,9 @@
     if (!mira) return;
     chiedi('/stato/' + mira.id).then(function (r) {
       if (!r.id) return;
-      var cambiato = r.stato !== mira.stato || r.inPagamento !== mira.inPagamento || r.pagabile !== mira.pagabile || !!r.acconto !== !!mira.acconto;
+      var cambiato = r.stato !== mira.stato || r.inPagamento !== mira.inPagamento || r.pagabile !== mira.pagabile || !!r.acconto !== !!mira.acconto || r.versati !== mira.versati;
       mira = r;
-      if (cambiato) mostra(); else racconta();
+      if (cambiato) { mostra(); saldi(); } else racconta();
     }, function () {  });
   }
 
@@ -607,6 +644,7 @@
   chatViva();
   carica(true).then(function () {
     accedi();
+    saldi();
     var id = B.getAttribute('data-mira') || '';
     if (!id) { try { id = sessionStorage.getItem(memo) || ''; } catch (e) { id = ''; } }
     if (!id || !dati) return;

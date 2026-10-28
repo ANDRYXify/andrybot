@@ -41,12 +41,13 @@ export const T = {
     chat: 'Chat', chatVuota: 'La chat è tranquilla: i messaggi nuovi compaiono qui.', chatScrivi: 'Scrivi in chat', chatInvia: 'Invia',
     chatFuori: 'La chat si legge da qui. Per scrivere, accedi con Twitch.', chatNonInviato: 'Twitch non ha mandato il messaggio: {motivo}',
     accedi: 'Accedi con Twitch', esci: 'Esci', sei: 'Sei {nome}',
+    saldoBit: 'Hai {n} Bit da spendere qui.', bitPewIo: 'Paga {n} Bit dal tuo saldo', bitPewNota: 'Sono i Bit che hai mandato al canale senza pagarci un colpo: ne hai {saldo}.', bitPewAccedi: 'Accedi con Twitch: i Bit che mandi al canale si spendono anche qui.',
     accediPerche: 'Twitch ti chiede un solo permesso: scrivere in chat a nome tuo. Con l\'accesso non serve il codice: paga il tuo cheer o il tuo riscatto.',
     puntiIo: 'Con i punti canale: su Twitch riscatta «{premio}» ({n} punti). Hai fatto l\'accesso: nel riscatto scrivi quello che vuoi, il colpo è tuo.',
     bitIo: 'Con i Bit: fai un Cheer di almeno {n} Bit nella chat di Twitch. Hai fatto l\'accesso: il tuo prossimo cheer da {n} Bit paga questo colpo, senza codice. Per pagarlo a pezzi, scrivi il codice {codice} in ogni cheer.',
     bitNonQui: 'I Bit e i punti si spendono solo su Twitch: è Twitch a non lasciarli usare da altri siti.',
     attesa: 'Aspetto il pagamento…', partito: 'Il colpo è comparso nella diretta: lo vedi fra qualche secondo.',
-    pagata: 'Pagato: il colpo sta per comparire. Se entro 10 minuti non compare, gli euro e i punti ti tornano da soli.',
+    pagata: 'Pagato: il colpo sta per comparire. Se entro 10 minuti non compare, euro, punti, monete e Bit da spendere ti tornano da soli.',
     rimborsata: 'Il colpo non è potuto comparire: il pagamento ti è stato restituito.',
     fermo: 'Adesso il colpo non può comparire: {motivo} Non pagare finché non torna possibile.',
     scaduta: 'Questa mira è scaduta: prendine una nuova.', versati: 'Arrivati {n} Bit: ne mancano {m}.',
@@ -87,12 +88,13 @@ export const T = {
     chat: 'Chat', chatVuota: 'Chat is quiet: new messages show up here.', chatScrivi: 'Write in chat', chatInvia: 'Send',
     chatFuori: 'You can read the chat here. To write, log in with Twitch.', chatNonInviato: 'Twitch did not send the message: {motivo}',
     accedi: 'Log in with Twitch', esci: 'Log out', sei: 'You are {nome}',
+    saldoBit: 'You have {n} Bits to spend here.', bitPewIo: 'Pay {n} Bits from your balance', bitPewNota: 'These are the Bits you sent to the channel without paying for a hit: you have {saldo}.', bitPewAccedi: 'Log in with Twitch: the Bits you send to the channel can be spent here too.',
     accediPerche: 'Twitch asks you for one permission only: writing in chat as you. Once logged in no code is needed: your own cheer or redemption pays.',
     puntiIo: 'With channel points: on Twitch redeem «{premio}» ({n} points). You are logged in: write anything in the redemption, the hit is yours.',
     bitIo: 'With Bits: cheer at least {n} Bits in the Twitch chat. You are logged in: your next cheer of {n} Bits pays for this hit, no code needed. To pay it in parts, write the code {codice} in every cheer.',
     bitNonQui: 'Bits and points can only be spent on Twitch: Twitch does not let other sites use them.',
     attesa: 'Waiting for the payment…', partito: 'Your hit showed up on the stream: you\'ll see it in a few seconds.',
-    pagata: 'Paid: the hit is about to show. If it doesn\'t within 10 minutes, euros and points go back to you by themselves.',
+    pagata: 'Paid: the hit is about to show. If it doesn\'t within 10 minutes, euros, points, coins and Bits to spend come back to you by themselves.',
     rimborsata: 'The hit couldn\'t show: your payment has been returned.',
     fermo: 'The hit can\'t show right now: {motivo} Don\'t pay until it\'s possible again.',
     scaduta: 'This aim has expired: take a new one.', versati: '{n} Bits received: {m} to go.',
@@ -133,12 +135,13 @@ export const T = {
     chat: 'Chat', chatVuota: 'El chat está tranquilo: los mensajes nuevos aparecen aquí.', chatScrivi: 'Escribe en el chat', chatInvia: 'Enviar',
     chatFuori: 'El chat se lee desde aquí. Para escribir, accede con Twitch.', chatNonInviato: 'Twitch no envió el mensaje: {motivo}',
     accedi: 'Accede con Twitch', esci: 'Salir', sei: 'Eres {nome}',
+    saldoBit: 'Tienes {n} Bits para gastar aquí.', bitPewIo: 'Paga {n} Bits de tu saldo', bitPewNota: 'Son los Bits que mandaste al canal sin pagar un golpe: tienes {saldo}.', bitPewAccedi: 'Entra con Twitch: los Bits que mandas al canal también se gastan aquí.',
     accediPerche: 'Twitch te pide un solo permiso: escribir en el chat en tu nombre. Con el acceso no hace falta el código: paga tu cheer o tu canje.',
     puntiIo: 'Con puntos del canal: en Twitch canjea «{premio}» ({n} puntos). Has accedido: en el canje escribe lo que quieras, el golpe es tuyo.',
     bitIo: 'Con Bits: haz un Cheer de al menos {n} Bits en el chat de Twitch. Has accedido: tu próximo cheer de {n} Bits paga este golpe, sin código. Para pagarlo por partes, escribe el código {codice} en cada cheer.',
     bitNonQui: 'Los Bits y los puntos solo se gastan en Twitch: es Twitch quien no deja usarlos a otros sitios.',
     attesa: 'Esperando el pago…', partito: 'El golpe apareció en el directo: lo ves en unos segundos.',
-    pagata: 'Pagado: el golpe está por aparecer. Si en 10 minutos no aparece, los euros y los puntos vuelven a ti solos.',
+    pagata: 'Pagado: el golpe está por aparecer. Si en 10 minutos no aparece, euros, puntos, monedas y Bits para gastar vuelven a ti solos.',
     rimborsata: 'El golpe no pudo aparecer: se te ha devuelto el pago.',
     fermo: 'Ahora el golpe no puede aparecer: {motivo} No pagues hasta que vuelva a ser posible.',
     scaduta: 'Este punto ha caducado: elige uno nuevo.', versati: 'Recibidos {n} Bits: faltan {m}.',
@@ -260,12 +263,12 @@ export function htmlPaginaColpo({ login, display, avatar = '', pagina, baseUrl, 
   .cp-vedi{position:absolute;top:.8rem;right:.8rem;display:inline-grid;place-items:center;width:2.75rem;height:2.75rem;border-radius:50%;border:0;background:rgba(0,0,0,.66);color:#fff;cursor:pointer;padding:0}
   .cp-vedi svg{width:1.1rem;height:1.1rem;fill:currentColor;margin-left:.15rem}
   .cp-vedi:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
-  .cp-voce{display:grid;gap:.3rem;padding:.45rem;border-radius:calc(var(--r) * .7);border:var(--bw) solid currentColor;background:transparent;color:inherit;font:inherit;cursor:pointer;text-align:left}
+  .cp-voce{display:grid;align-content:start;gap:.3rem;padding:.45rem;border-radius:calc(var(--r) * .7);border:var(--bw) solid currentColor;background:transparent;color:inherit;font:inherit;cursor:pointer;text-align:left}
   .cp-voce[aria-pressed="true"]{border-color:var(--acc);box-shadow:0 0 0 2px var(--acc)}
   .cp-anteprima{aspect-ratio:1;border-radius:calc(var(--r) * .5);background:rgba(127,127,127,.15);overflow:hidden;display:grid;place-items:center}
   .cp-anteprima img,.cp-anteprima video{width:100%;height:100%;object-fit:contain}
   .cp-voce b{font-size:.88rem;line-height:1.2;overflow-wrap:anywhere}
-  .cp-prezzi{display:flex;flex-wrap:wrap;gap:.25rem}
+  .cp-prezzi{display:flex;flex-wrap:wrap;gap:.25rem;align-content:flex-start;align-items:flex-start}
   .cp-prezzi i{font-style:normal;font-size:.74rem;padding:.05rem .45rem;border-radius:999px;border:1px solid currentColor;font-variant-numeric:tabular-nums;white-space:nowrap;opacity:.85}
   .cp-campo{display:grid;gap:.25rem;margin:.3rem 0 .7rem;font-size:.88rem}
   .cp input{font:inherit;color:inherit;padding:.55rem .7rem;border-radius:calc(var(--r) * .6);border:1px solid currentColor;background:transparent;min-height:2.75rem;width:100%}
@@ -296,6 +299,7 @@ export function htmlPaginaColpo({ login, display, avatar = '', pagina, baseUrl, 
   .cp-io[hidden]{display:none}
   .cp-io p{font-size:.92rem;margin:0}
   .cp-io .cp-nota{flex-basis:100%;font-size:.85rem}
+  .cp-io .cp-saldo{order:3;flex-basis:100%;font-weight:600;font-variant-numeric:tabular-nums}
   [hidden]{display:none!important}
   @media (prefers-reduced-motion:reduce){.cp *{transition:none!important;animation:none!important}}`;
   const fuori = {

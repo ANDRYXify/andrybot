@@ -961,6 +961,22 @@ CREATE TABLE IF NOT EXISTS pew_dirette (     -- le dirette del canale, in ordine
   ts INTEGER NOT NULL,                         -- quando si e' vista la prima volta
   PRIMARY KEY (channel, occasione)
 );
+CREATE TABLE IF NOT EXISTS pew_bit (          -- i Bit da spendere sulla pagina di Pewpewify (docs/COLPI.md): una riga per spettatore
+  channel TEXT NOT NULL,
+  chi TEXT NOT NULL,                           -- l'id Twitch: il nome si cambia, l'id no
+  nome TEXT NOT NULL DEFAULT '',               -- l'ultimo login visto, per il pannello
+  saldo INTEGER NOT NULL DEFAULT 0,
+  ts INTEGER NOT NULL,
+  PRIMARY KEY (channel, chi)
+);
+CREATE TABLE IF NOT EXISTS pew_bit_mov (      -- ogni movimento dei Bit da spendere, con un riferimento unico: lo stesso cheer o rimborso entra una volta
+  channel TEXT NOT NULL,
+  rif TEXT NOT NULL,                           -- cheer:<evento> · avanzo:<evento> · persi:<mira>:<chi> · spesa:<mira> · reso:<mira>:<chi> · streamer:<…>
+  chi TEXT NOT NULL,
+  delta INTEGER NOT NULL,
+  ts INTEGER NOT NULL,
+  PRIMARY KEY (channel, rif)
+);
 
 -- I SOSTEGNI AL PROGETTO, che non sono donazioni a uno streamer.
 --
@@ -1402,6 +1418,8 @@ aggiungiColonna('colpi', 'spettatore', "TEXT NOT NULL DEFAULT ''");
 aggiungiColonna('colpi', 'ricevuta', "TEXT NOT NULL DEFAULT ''");
 // un modo misto (docs/COLPI.md, «I modi misti»): le monete gia' pagate, con la ricevuta, aspettando il resto
 aggiungiColonna('colpi', 'acconto', "TEXT NOT NULL DEFAULT ''");
+// chi ha mandato i Bit di una mira, in ordine ([[idTwitch, bit, da]], '-' per i cheer anonimi): i Bit che non pagano un colpo tornano a loro
+aggiungiColonna('colpi', 'versanti', "TEXT NOT NULL DEFAULT ''");
 aggiungiColonna('donazioni', 'riferimento', "TEXT NOT NULL DEFAULT ''");
 aggiungiColonna('donazioni', 'rimborsata_at', 'INTEGER NOT NULL DEFAULT 0');
 aggiungiColonna('donazioni', 'media', "TEXT NOT NULL DEFAULT ''");
@@ -1963,6 +1981,36 @@ export const pewSerie = {
       .run(String(channel).toLowerCase(), String(chi), String(ultima), Math.trunc(serie) || 0, Math.trunc(record) || 0, ts);
   },
   pulisci(ora = now()) { db.prepare('DELETE FROM pew_dirette WHERE ts<?').run(ora - 400 * 86400_000); },
+};
+
+// I BIT DA SPENDERE sulla pagina di Pewpewify (docs/COLPI.md). Si muovono solo
+// da qui, e ogni movimento ha un riferimento unico per canale: lo stesso
+// cheer, la stessa spesa, lo stesso rimborso entrano una volta sola, anche se
+// arrivano due volte. Una spesa e' tutta o niente: mai sotto zero.
+export const pewBit = {
+  saldo(channel, chi) { return db.prepare('SELECT saldo FROM pew_bit WHERE channel=? AND chi=?').get(String(channel).toLowerCase(), String(chi))?.saldo || 0; },
+  // true se il movimento e' entrato adesso
+  muovi(channel, chi, delta, rif, { nome = '', ora = now() } = {}) {
+    const ch = String(channel).toLowerCase(), c = String(chi || ''), d = Math.trunc(Number(delta) || 0);
+    if (!c || !d || !rif) return false;
+    return db.transaction(() => {
+      if (d < 0 && pewBit.saldo(ch, c) < -d) return false;
+      if (!db.prepare('INSERT OR IGNORE INTO pew_bit_mov (channel, rif, chi, delta, ts) VALUES (?,?,?,?,?)').run(ch, String(rif).slice(0, 160), c, d, ora).changes) return false;
+      db.prepare(`INSERT INTO pew_bit (channel, chi, nome, saldo, ts) VALUES (?,?,?,?,?)
+        ON CONFLICT(channel, chi) DO UPDATE SET saldo=saldo+excluded.saldo, nome=CASE WHEN excluded.nome='' THEN nome ELSE excluded.nome END, ts=excluded.ts`)
+        .run(ch, c, String(nome || '').toLowerCase().slice(0, 40), d, ora);
+      return true;
+    })();
+  },
+  totali(channel) {
+    const r = db.prepare('SELECT COUNT(*) AS persone, COALESCE(SUM(saldo),0) AS bit FROM pew_bit WHERE channel=? AND saldo>0').get(String(channel).toLowerCase());
+    return { persone: r.persone, bit: r.bit };
+  },
+  primi(channel, n = 10) {
+    return db.prepare('SELECT chi, nome, saldo FROM pew_bit WHERE channel=? AND saldo>0 ORDER BY saldo DESC, nome LIMIT ?').all(String(channel).toLowerCase(), Math.max(1, Math.min(100, n | 0)));
+  },
+  // i riferimenti servono contro i doppioni, che arrivano in pochi secondi: un anno basta e avanza
+  pulisci(ora = now()) { db.prepare('DELETE FROM pew_bit_mov WHERE ts<?').run(ora - 400 * 86400_000); },
 };
 
 export const registroMonete = {
@@ -2903,11 +2951,13 @@ export const registroColpi = {
   },
   _leggi(r) {
     if (!r) return null;
-    let prezzi = {}, ricevuta = null, acconto = null;
+    let prezzi = {}, ricevuta = null, acconto = null, versanti = [];
     try { prezzi = JSON.parse(r.prezzi || '{}'); } catch { prezzi = {}; }
     try { ricevuta = r.ricevuta ? JSON.parse(r.ricevuta) : null; } catch { ricevuta = null; }
     try { acconto = r.acconto ? JSON.parse(r.acconto) : null; } catch { acconto = null; }
-    return { ...r, prezzi, ricevuta, acconto };
+    try { versanti = r.versanti ? JSON.parse(r.versanti) : []; } catch { versanti = []; }
+    if (!Array.isArray(versanti)) versanti = [];
+    return { ...r, prezzi, ricevuta, acconto, versanti };
   },
   get(id) { return this._leggi(db.prepare('SELECT * FROM colpi WHERE id=?').get(String(id))); },
   getDi(login, id) { return this._leggi(db.prepare('SELECT * FROM colpi WHERE id=? AND login=?').get(String(id), String(login).toLowerCase())); },
@@ -2956,12 +3006,30 @@ export const registroColpi = {
   // (qualunque sia lo stato: un pagamento appena aperto deve restare legato alla sua mira anche se nel frattempo e' scaduta)
   rilega(id, da, a) { return db.prepare("UPDATE colpi SET riferimento=? WHERE id=? AND riferimento=?").run(String(a).slice(0, 120), String(id), String(da)).changes > 0; },
   scadi(id) { return db.prepare("UPDATE colpi SET stato='scaduta' WHERE id=? AND stato='attesa'").run(String(id)).changes > 0; },
-  // i Bit di un cheer si sommano a quelli gia' arrivati: torna il totale, o null se la mira non e' piu' aperta
-  versa(id, bit) {
+  // i Bit di un cheer si sommano a quelli gia' arrivati, in coda col nome di chi
+  // li manda ('-' se anonimo; `da` 'p' se vengono dal saldo della pagina):
+  // torna il totale, o null se la mira non e' piu' aperta
+  versa(id, bit, chi = '-', da = '') {
     const n = Math.max(0, Math.round(Number(bit) || 0));
-    if (!db.prepare("UPDATE colpi SET versati=versati+? WHERE id=? AND stato='attesa'").run(n, String(id)).changes) return null;
-    return db.prepare('SELECT versati FROM colpi WHERE id=?').get(String(id)).versati;
+    return db.transaction(() => {
+      const r = this._leggi(db.prepare("SELECT * FROM colpi WHERE id=? AND stato='attesa'").get(String(id)));
+      if (!r) return null;
+      const v = r.versanti, k = String(chi || '-').slice(0, 40), ultimo = v[v.length - 1];
+      if (n && ultimo && ultimo[0] === k && (ultimo[2] || '') === da) ultimo[1] += n;
+      else if (n) v.push(da ? [k, n, da] : [k, n]);
+      db.prepare('UPDATE colpi SET versati=versati+?, versanti=? WHERE id=?').run(n, JSON.stringify(v), String(id));
+      return r.versati + n;
+    })();
   },
+  // i Bit di troppo di una mira appena pagata sono tornati: restano quelli che l'hanno pagata
+  riparti(id, versanti) {
+    const v = Array.isArray(versanti) ? versanti : [];
+    db.prepare('UPDATE colpi SET versati=?, versanti=? WHERE id=?').run(v.reduce((t, x) => t + (Number(x[1]) || 0), 0), JSON.stringify(v), String(id));
+  },
+  // le mire scadute con dei Bit dentro: la ronda li rende come Bit da spendere
+  versatiPersi() { return db.prepare("SELECT * FROM colpi WHERE stato='scaduta' AND versati>0").all().map((r) => this._leggi(r)); },
+  // i Bit di una mira scaduta si prendono una volta sola: true per chi ci riesce
+  svuota(id) { return db.prepare("UPDATE colpi SET versati=0 WHERE id=? AND stato='scaduta' AND versati>0").run(String(id)).changes > 0; },
   // quante mire ha aperto questo canale nell'ultimo minuto, e quante da quella stessa persona
   // (le presenze no: un raid che si presenta non toglie il posto a chi paga)
   aperteDa(login, da) { return db.prepare("SELECT COUNT(*) AS n FROM colpi WHERE login=? AND creata>=? AND metodo<>'presenza'").get(String(login).toLowerCase(), da).n; },
@@ -2971,7 +3039,7 @@ export const registroColpi = {
     db.prepare("UPDATE colpi SET stato='scaduta' WHERE stato='attesa' AND riferimento='' AND acconto='' AND scade<? AND (versati=0 OR creata<?)").run(ora, ora - 86400_000);
     db.prepare("UPDATE colpi SET stato='scaduta' WHERE stato='attesa' AND riferimento LIKE 'apre:%' AND scade<?").run(ora);
     db.prepare("UPDATE colpi SET stato='scaduta' WHERE stato='attesa' AND riferimento IN (SELECT id FROM donazioni WHERE stato='scaduta')").run();
-    db.prepare("DELETE FROM colpi WHERE stato='scaduta' AND creata<?").run(ora - 86400_000);
+    db.prepare("DELETE FROM colpi WHERE stato='scaduta' AND creata<? AND (versati=0 OR creata<?)").run(ora - 86400_000, ora - 7 * 86400_000);
     db.prepare("DELETE FROM colpi WHERE stato IN ('sparata','rimborsata') AND creata<?").run(ora - 90 * 86400_000);
   },
   rimuovi(login) { db.prepare('DELETE FROM colpi WHERE login=?').run(String(login).toLowerCase()); },

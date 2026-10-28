@@ -102,11 +102,11 @@ import * as premiTempo from './features/premi-tempo.js';
 import * as bossFeat from './features/boss.js';
 import { aChi } from './features/risposte.js';
 import { modalitaDi, alLavoro } from './features/quando-lavora.js';
-import { statoVivo, registroColpi, effects as effettiDb, segnoInstagram, pewSerie } from './db.js';
+import { statoVivo, registroColpi, effects as effettiDb, segnoInstagram, pewSerie, pewBit } from './db.js';
 import { creaServizioColpi } from './features/colpi-servizio.js';
 import * as economia from './features/economia.js';
 import { nomeMoneta, monetaDi, accordaMoneta } from './features/moneta.js';
-import { urlPaginaColpo, eFrasePresenza, pagaInChat, rispostaPresenza, titoloPremioMisto } from './features/colpi.js';
+import { urlPaginaColpo, eFrasePresenza, pagaInChat, chiedeBit, rispostaPresenza, titoloPremioMisto } from './features/colpi.js';
 import { creaChatColpi, rigaDi as rigaChatColpi, BATTITO_MS as BATTITO_CHAT_COLPI } from './features/colpi-chat.js';
 import { coloreDi as coloreChatDi } from './features/badges.js';
 import { nativeInMessaggio as emoteNelMessaggio, canaleInCache as emoteInCache } from './features/emotes.js';
@@ -172,6 +172,8 @@ export function rigaEvento(tipo, dati) {
 // chiave non si confonde mai con quella di uno streamer annunciato.
 export const chiaveTikTok = (login) => 'tiktok:' + String(login || '').toLowerCase();
 
+// chi ha chiesto «!pew bit» e quando: una risposta al minuto a testa
+const saldiBitChiesti = new Map();
 // Quello che il bot dice in chat sui colpi degli spettatori, nella lingua del canale.
 function testoColpi(canale, cosa, chi, r = {}) {
   const pagina = urlPaginaColpo(canale).replace(/^https:\/\//, '');
@@ -208,6 +210,9 @@ function testoColpi(canale, cosa, chi, r = {}) {
       : [`${chi} pagate ${r.monete} ${r.moneta} per «${r.nome}»: ora un Cheer di ${r.resto} Bit con il codice ${r.codice}.`,
         `${chi} paid ${r.monete} ${r.moneta} for «${r.nome}»: now a Cheer of ${r.resto} Bits with the code ${r.codice}.`,
         `${chi} pagadas ${r.monete} ${r.moneta} por «${r.nome}»: ahora un Cheer de ${r.resto} Bits con el código ${r.codice}.`],
+    'bit-saldo': [`${chi} hai ${r.saldo} Bit da spendere su ${pagina}`,
+      `${chi} you have ${r.saldo} Bits to spend on ${pagina}`,
+      `${chi} tienes ${r.saldo} Bits para gastar en ${pagina}`],
     'misto-bit-prima': [`${chi} i Bit per «${r.nome}» ci sono: mancano ${r.monete} ${r.moneta}, scrivi !${r.comando || 'pew'} ${r.codice} bit.`,
       `${chi} the Bits for «${r.nome}» are in: ${r.monete} ${r.moneta} to go, type !${r.comando || 'pew'} ${r.codice} bit.`,
       `${chi} los Bits para «${r.nome}» están: faltan ${r.monete} ${r.moneta}, escribe !${r.comando || 'pew'} ${r.codice} bit.`],
@@ -239,7 +244,9 @@ export class BotManager {
       // le monete del canale: si spendono con la ricevuta, e la ricevuta torna se il colpo non compare
       monete: { punta: economia.punta, rendi: economia.rendi, saldo: economia.saldo },
       // la serie della presenza: chi si presenta diretta dopo diretta
-      serie: pewSerie, log });
+      serie: pewSerie,
+      // i Bit da spendere sulla pagina: i Bit che non pagano un colpo
+      crediti: pewBit, log });
     // la chat della pagina dei colpi: i messaggi della chat di Twitch, girati a chi ha la pagina aperta
     this.colpiChat = creaChatColpi();
     setInterval(() => this.colpiChat.battito(), BATTITO_CHAT_COLPI).unref?.();
@@ -1337,6 +1344,7 @@ export class BotManager {
     // streamer fa comparire in diretta il suo effetto col nome di chi l'ha
     // scritta, una volta per diretta, e conta nella serie delle presenze.
     // E le monete del canale: «!pew K7QX3» paga la mira di quel codice.
+    // «!pew bit»: quanti Bit da spendere ha chi scrive (su Twitch, una risposta al minuto a testa).
     if (!msg.isSelf && streamers.get(login)?.settings?.colpi?.attivo === true) {
       try {
         const cfgColpi = this.colpi?.cfgDi(login);
@@ -1346,6 +1354,13 @@ export class BotManager {
           const t = testoColpi(login, 'monete-' + r.esito, '@' + (msg.display || msg.user),
             { ...r, moneta: nomeMoneta(login), comando: cfgColpi.comando, premio: titoloPremioMisto({ nome: r.nome || '' }) });
           if (t) parla(t);
+        } else if (cfgColpi && chiedeBit(cfgColpi, msg.text) && (!msg.piattaforma || msg.piattaforma === 'twitch') && msg.userId && this.colpi.conBitPew(login)) {
+          const k = login + '|' + msg.userId, adesso = Date.now();
+          if (adesso - (saldiBitChiesti.get(k) || 0) >= 60_000) {
+            if (saldiBitChiesti.size > 5000) saldiBitChiesti.clear();
+            saldiBitChiesti.set(k, adesso);
+            parla(testoColpi(login, 'bit-saldo', '@' + (msg.display || msg.user), { saldo: this.colpi.saldoBit(login, msg.userId) }));
+          }
         } else if (cfgColpi?.presenza.attiva && eFrasePresenza(cfgColpi, msg.text) && ePersona(login, msg.user)) {
           const piattaforma = msg.piattaforma || 'twitch';
           const r = this.colpi.presenza(login, { chiave: piattaforma + ':' + (msg.userId || msg.user), nome: msg.display || msg.user,
@@ -1759,7 +1774,7 @@ export class BotManager {
     if (type === 'channel.cheer') { try { bit.scorda(channel); this._classificaBitInScena(channel); } catch { /* niente */ } }
     if (suTwitch && type === 'channel.cheer') {
       try {
-        const r = this.colpi?.daCheer(channel, data) || {};
+        const r = this.colpi?.daCheer(channel, { ...data, evento: ev.id || '' }) || {};
         if (r.esito === 'pochi') this.say(channel, testoColpi(channel, 'pochi', `@${data.user_login || ''}`, r));
         else if (r.esito === 'pagato' && r.inCoda) this.say(channel, testoColpi(channel, 'coda', `@${data.user_login || ''}`, r));
         else if (r.esito === 'servono-monete') this.say(channel, testoColpi(channel, 'misto-bit-prima', `@${data.user_login || ''}`, { ...r, moneta: nomeMoneta(channel), comando: this.colpi.cfgDi(channel).comando }));
@@ -3092,7 +3107,7 @@ export class BotManager {
   }
 
   _giornoEconomia() {
-    try { pewSerie.pulisci(); } catch (e) { log.debug('dirette della presenza:', e?.message || e); }
+    try { pewSerie.pulisci(); pewBit.pulisci(); } catch (e) { log.debug('dirette e Bit di Pewpewify:', e?.message || e); }
     for (const s of streamers.active()) {
       try {
         const e = economia.giornoEconomia(s.login);

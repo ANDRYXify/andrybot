@@ -24,6 +24,10 @@ dà un **codice** e il cheer lo porta nel messaggio. Gli euro invece si pagano
 sul sito, sul conto dello streamer (come le donazioni, docs/DONAZIONI.md), e
 i punti canale col premio che SocialBot crea su Twitch.
 
+Quello che il sito può fare è tenere il conto dei Bit **già mandati** al
+canale: i «Bit da spendere» (sotto) sono un saldo di SocialBot, non Bit di
+Twitch. Si spendono solo sulla pagina, e tornano solo lì.
+
 ## Il modello (src/features/colpi.js)
 
 - **Colpo** = un effetto del canale (immagine o video che si posa in un punto;
@@ -276,6 +280,65 @@ tutto: il riscatto CANCELED e, dopo, le monete. Un colpo `monete+bit` resta in
 coda come uno a Bit (vedi «Il vincolo dei Bit»), salvo il saldo in Bit
 («I Bit da spendere», sotto). `pulisci` non tocca una mira con un acconto: la
 chiude la ronda, che rende le monete.
+
+## I Bit da spendere
+
+Chiesto così: «in base ai bit spesi dall'utente, su pew.socialbot.live ci
+saranno pari bit da poter spendere (come fosse una valuta assieme a punti
+canale e monete)». Il saldo sta in `pew_bit` (per canale e per **id**
+Twitch: il nome si cambia, l'id no), e ogni movimento in `pew_bit_mov` col
+suo riferimento, unico per canale (`db.pewBit.muovi`).
+
+**Un Bit vale una volta.** Il cheer passa prima dalla mira (`cheerSuMira`):
+sulla mira va solo quello che serve (`usati`, mai oltre il prezzo); il resto
+del cheer, o tutto se non paga niente (nessun codice, codice sbagliato), è
+saldo. Così un colpo pagato a Bit non dà anche saldo, e un cheer più grande
+del prezzo non perde niente. Il saldo è `bitResi(resa, bit)` =
+⌊bit × resa / 100⌋: la **resa** la sceglie lo streamer (`bitPew.resa`, da 1 a
+1000 ogni 100 Bit; di serie 100, alla pari). Spenti (`bitPew.attivo: false`)
+o con la pagina spenta, i Bit restano solo al canale. Un cheer anonimo non è
+di nessuno.
+
+**Una volta per cheer.** Twitch consegna «almeno una volta»: il cheer porta
+l'id del messaggio di EventSub (`ev.id`, da `events.js`), e il riferimento
+`cheer:<id>` non entra due volte, nemmeno dopo un riavvio (gli id visti in
+memoria non sopravvivono, il registro sì).
+
+**Chi ha mandato cosa.** Ogni Bit su una mira ha un nome: `colpi.versanti`,
+in ordine di arrivo, `[[id, bit, da]]` (`'-'` per gli anonimi, `da = 'p'` per
+quelli presi dal saldo). Da qui tornano:
+
+- **una mira mai pagata** (scade coi Bit dentro: un giorno, o l'acconto che
+  la ronda chiude): `registro.svuota` la prende una volta, e i Bit tornano a
+  chi li ha mandati (`persi:<mira>:<i>`). `pulisci` non cancella una mira
+  scaduta coi Bit dentro finché la ronda non li ha resi (al massimo una
+  settimana);
+- **un colpo a Bit che non compare** (`bit` o `monete+bit`, dopo
+  `CONSEGNA_MS`): prima `rimborsata` (una volta sola), poi i Bit tornano —
+  quelli del saldo tali e quali, quelli dei cheer con la resa scritta sulla
+  mira (`prezzi.resa`, quella di quando è nata) — e le monete dell'acconto.
+  Solo se si sa di chi è **ogni** Bit della mira (`tracciati`): con anche un
+  Bit anonimo, o una mira nata a Bit da spendere spenti, il colpo resta in
+  coda come sempre (vedi «Il vincolo dei Bit»);
+- **i Bit di troppo di un modo misto**: un cheer più grande del resto prima
+  dell'acconto. Sono gli **ultimi arrivati** (`togliUltimi`): tornano a chi li
+  ha mandati (`avanzo:<mira>:<i>`), e sulla mira restano quelli che l'hanno
+  pagata (`registro.riparti`), così un rimborso dopo rende solo quelli.
+
+**Spendere.** Dalla pagina, con l'accesso a Twitch (`POST /paga/<id>` con
+`mezzo: 'bitpew'`): il saldo paga quello che manca (`bitServe(m)` meno i Bit
+già arrivati), tutto o niente (`muovi` non va mai sotto zero), una volta per
+mira (`spesa:<mira>`), con le regole degli altri modi: una mira aperta e
+propria, senza un pagamento in euro in corso, e un colpo che adesso può
+comparire. Un modo misto coi Bit si finisce col saldo dopo l'acconto in
+monete. Il metodo resta `bit` / `monete+bit`; il riferimento è
+`bitpew:<id>`.
+
+**Vederlo.** La pagina chiede `GET /saldi` (solo con l'accesso) e scrive
+«Hai N Bit da spendere qui.» accanto al nome; chi non ha fatto l'accesso
+legge che i suoi Bit si spendono anche lì. In chat `!pew bit` (col comando
+dello streamer) risponde a chi scrive, su Twitch, una volta al minuto. Il
+pannello mostra quanti ne girano e chi ne ha di più, coi nomi.
 
 ## L'anteprima
 

@@ -106,6 +106,7 @@ export function normalizza(cfg) {
     titolo: testo(o.titolo, 80),
     dida: testo(o.dida, 200),
     presenza: normPresenza(o.presenza),
+    bitPew: normBitPew(o.bitPew),
   };
 }
 
@@ -158,6 +159,36 @@ export function pagaInChat(cfg, messaggio) {
   return codice && modo !== undefined ? { codice, modo } : null;
 }
 export const codicePerMonete = (cfg, messaggio) => pagaInChat(cfg, messaggio)?.codice || '';
+// «!pew bit»: quanti Bit da spendere ho sulla pagina
+export const chiedeBit = (cfg, messaggio) => new RegExp(`^!${cfg?.comando || COMANDO_SERIE}\\s+bits?\\s*$`, 'i').test(String(messaggio || '').trim());
+
+// I BIT DA SPENDERE (docs/COLPI.md, «I Bit da spendere»): i Bit mandati al
+// canale che non pagano un colpo diventano Bit da spendere sulla pagina, `resa`
+// per cento (100: pari). Un Bit vale una volta: o paga un colpo, o diventa
+// saldo, mai le due cose.
+export const BIT_PEW = Object.freeze({ resa: [1, 1000] });
+function normBitPew(b) {
+  const o = b && typeof b === 'object' ? b : {};
+  return { attivo: o.attivo !== false, resa: num(o.resa, BIT_PEW.resa, 100) };
+}
+export const bitResi = (resa, bit) => Math.floor(Math.max(0, Math.trunc(Number(bit) || 0)) * Math.max(0, Number(resa) || 0) / 100);
+// I Bit versati su una mira, in ordine di arrivo: [[chi, bit, da]], con `da`
+// 'p' per quelli presi dal saldo della pagina. Quelli di troppo sono gli
+// ultimi arrivati: si tolgono dalla coda, e tornano a chi li ha mandati.
+export function togliUltimi(versanti, quanti) {
+  const resto = (Array.isArray(versanti) ? versanti : []).map((v) => [...v]);
+  const resi = [];
+  let k = Math.max(0, Math.trunc(Number(quanti) || 0));
+  while (k > 0 && resto.length) {
+    const v = resto[resto.length - 1];
+    const n = Math.min(k, Number(v[1]) || 0);
+    resi.push([v[0], n, v[2] || '']);
+    v[1] = (Number(v[1]) || 0) - n;
+    k -= n;
+    if (v[1] <= 0) resto.pop();
+  }
+  return { resto, resi };
+}
 
 const formaFrase = (t) => String(t ?? '').replace(/[\u0000-\u001f]/g, ' ').replace(/\s+/g, ' ').trim().toLowerCase();
 function normPresenza(p) {

@@ -43,6 +43,15 @@ comandi diversi da quelli della riga italiana.
 
 ## 2026-10-28
 
+- [importante] I Bit da spendere: i Bit che uno spettatore manda al canale senza pagarci un colpo diventano Bit da spendere sulla tua pagina di Pewpewify, accanto a monete e punti canale. [vai: colpi]
+  en: Bits to spend: the Bits a viewer sends to your channel without paying for a hit become Bits to spend on your Pewpewify page, next to coins and channel points.
+  es: Bits para gastar: los Bits que un espectador manda al canal sin pagar un golpe se convierten en Bits para gastar en tu página de Pewpewify, junto a monedas y puntos de canal.
+  > I Bit diventano una valuta della pagina
+  > Chi ti manda Bit li ritrova sulla pagina, alla pari o con la resa che scegli tu. Un Bit vale una volta, e se un colpo pagato a Bit non compare, i suoi Bit tornano da spendere.
+  en> Bits become a currency on the page
+  en> Whoever sends you Bits finds them on the page, one for one or at the rate you choose. A Bit counts once, and if a hit paid with Bits doesn't show, its Bits come back to spend.
+  es> Los Bits se vuelven una moneda de la página
+  es> Quien te manda Bits los encuentra en la página, a la par o con el rendimiento que eliges. Un Bit vale una vez, y si un golpe pagado con Bits no aparece, sus Bits vuelven para gastar.
 - Un colpo di Pewpewify si paga anche a metà: monete del canale più Bit, o monete più punti canale, coi prezzi che scegli tu. Prima le monete, che tornano da sole se il resto non arriva. [vai: colpi]
   en: A Pewpewify hit can also be paid half and half: channel coins plus Bits, or coins plus channel points, at prices you choose. Coins first, and they come back if the rest never arrives.
   es: Un golpe de Pewpewify también se paga a medias: monedas del canal más Bits, o monedas más puntos de canal, con los precios que eliges. Primero las monedas, que vuelven solas si el resto no llega.
