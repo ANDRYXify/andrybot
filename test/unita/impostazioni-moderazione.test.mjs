@@ -74,7 +74,20 @@ test('partendo da niente si ottengono i valori di fabbrica, non degli errori', (
   assert.equal(ab.attivo, false);
   assert.equal(ab.modo, 'bilanciata');
   assert.deepEqual(ab.esenti, []);
+  assert.deepEqual([ab.vendita, ab.venditaAzione, ab.venditaPausaSec, ab.venditaTesto, ab.venditaAvvisa, ab.venditaServizi], [true, 'ban', 600, '', true, []], 'il bot dei consigli: acceso, ban');
   const as = normalizzaAntispam();
   assert.equal(as.attivo, false);
   assert.equal(as.linkTier, 'sub');
+});
+
+test('il bot dei consigli: le scelte dello streamer restano, quelle impossibili no', () => {
+  const ab = normalizzaAntibot({}, { vendita: false, venditaAzione: 'timeout', venditaPausaSec: 300, venditaTesto: '  fuori   {nome}\n({cosa}) ' });
+  assert.deepEqual([ab.vendita, ab.venditaAzione, ab.venditaPausaSec, ab.venditaTesto], [false, 'timeout', 300, 'fuori {nome} ({cosa})']);
+  assert.equal(normalizzaAntibot({ vendita: false }, { attivo: true }).vendita, false, 'salvare il resto non la riaccende');
+  const x = normalizzaAntibot({}, { venditaAzione: 'distruggi', venditaPausaSec: 5, venditaTesto: 'x'.repeat(900) });
+  assert.deepEqual([x.venditaAzione, x.venditaPausaSec, x.venditaTesto.length], ['ban', 60, 300]);
+  const n = normalizzaAntibot({}, { venditaAvvisa: false, venditaServizi: ['GrowPanda', 'grow panda', 'ab', 'growpanda', 7, ...Array.from({ length: 80 }, (_, i) => 'nome' + i)] });
+  assert.equal(n.venditaAvvisa, false);
+  assert.deepEqual(n.venditaServizi.slice(0, 3), ['growpanda', 'nome0', 'nome1'], 'ripuliti, senza doppioni, senza i corti');
+  assert.equal(n.venditaServizi.length, 50, 'con un tetto');
 });

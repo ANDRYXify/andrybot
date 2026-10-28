@@ -1456,6 +1456,7 @@ function apiDemo(percorso, opzioni = {}) {
     try { const r = _demoFollower(metodo, via, percorso, opzioni.body || {}); if (r) return Promise.resolve(r); }
     catch (e) { return Promise.reject(e); }
   }
+  if (via === '/api/antibot/vendita/prova') return Promise.resolve({ ok: true, demo: true });
   if (via === '/api/antibot/avvisi') {
     _demoScritture.avvisiScudo = { ..._demoAttacchi().avvisi, ...(_demoScritture.avvisiScudo || {}), ...(opzioni.body?.avvisi || {}) };
     return Promise.resolve({ ok: true, avvisi: _demoScritture.avvisiScudo });
@@ -34143,6 +34144,42 @@ function pannelloScudo() {
       </div>
     </div>
 
+    <div class="carta" id="scudo-vendita">
+      <h2>${_hIco(ICO.scudo)}${L('Chi vende viewer e follower', 'Viewer and follower sellers', 'Quien vende viewers y seguidores')}</h2>
+      <p>${L('I bot «dei consigli» che scrivono in chat per vendere viewer, follower e prime, col sito travestito («streamboo . com», «dot com») o il contatto su Discord. Lavora anche a scudo spento: basta che il bot possa moderare.', 'The «advice» bots that post in chat to sell viewers, followers and primes, with the site disguised («streamboo . com», «dot com») or a Discord contact. It works even with the shield off: the bot just needs to be able to moderate.', 'Los bots «de consejos» que escriben en el chat para vender viewers, seguidores y primes, con la web disfrazada («streamboo . com», «dot com») o el contacto en Discord. Funciona aunque el escudo esté apagado: basta con que el bot pueda moderar.')}</p>
+      ${modTesta('chk-ab-vendita', sel(ab.vendita, true), L('Ferma chi vende viewer e follower', 'Stop viewer and follower sellers', 'Para a quien vende viewers y seguidores'))}
+      <div class="mod-corpo" data-legato="chk-ab-vendita">
+        <div class="riga-flessibile">
+          <span class="suggerimento">${L('Quando è sicuro:', 'When it is sure:', 'Cuando está seguro:')}</span>
+          <select aria-label="${esc(L('Cosa fare con chi vende viewer quando è sicuro', 'What to do with viewer sellers when sure', 'Qué hacer con quien vende viewers cuando está seguro'))}" id="sel-ab-vendazione">
+            <option value="ban" ${(ab.venditaAzione || 'ban') === 'ban' ? 'selected' : ''}>${L('bannare', 'ban', 'banear')}</option>
+            <option value="timeout" ${ab.venditaAzione === 'timeout' ? 'selected' : ''}>${L('mettere in pausa', 'time out', 'silenciar un rato')}</option>
+            <option value="cancella" ${ab.venditaAzione === 'cancella' ? 'selected' : ''}>${L('togliere solo il messaggio', 'only remove the message', 'quitar solo el mensaje')}</option>
+            <option value="segnala" ${ab.venditaAzione === 'segnala' ? 'selected' : ''}>${L('solo segnalare ai mod', 'only report to mods', 'solo avisar a los mods')}</option>
+          </select>
+          <span class="suggerimento">${L('pausa di', 'time-out of', 'pausa de')}</span>
+          <input aria-label="${esc(L('Minuti di pausa', 'Minutes of time-out', 'Minutos de pausa'))}" type="number" id="inp-ab-vendpausa" min="1" max="20160" value="${Math.round((Number(ab.venditaPausaSec) || 600) / 60)}" style="width:5rem">
+          <span class="suggerimento">${L('minuti', 'minutes', 'minutos')}</span>
+        </div>
+        <p class="suggerimento">${L('Quando è solo probabile non lo castiga mai: toglie il messaggio (o lo segnala, se scegli di solo segnalare). Il ban su Twitch toglie anche i suoi messaggi già scritti.', 'When it is only likely it never punishes: it removes the message (or reports it, if you choose report only). A ban on Twitch also removes the messages already written.', 'Cuando solo es probable no castiga nunca: quita el mensaje (o lo avisa, si eliges solo avisar). El baneo en Twitch también quita los mensajes ya escritos.')}</p>
+        <div class="mod-griglia">
+          ${modVoce('chk-ab-vendavvisa', sel(ab.venditaAvvisa, true), L('Dillo in chat quando interviene', 'Say it in chat when it acts', 'Dilo en el chat cuando actúa'))}
+        </div>
+        <label class="campo" for="inp-ab-vendtesto">${L('La frase in chat', 'The chat line', 'La frase en el chat')}</label>
+        <input type="text" id="inp-ab-vendtesto" maxlength="300" value="${esc(ab.venditaTesto || '')}" placeholder="${esc(L('🛡️ @{nome}: niente vendita di viewer e follower qui ({cosa}).', '🛡️ @{nome}: niente vendita di viewer e follower qui ({cosa}).', '🛡️ @{nome}: niente vendita di viewer e follower qui ({cosa}).'))}">
+        <p class="suggerimento">${L('Vuota usa quella di serie. <code>{nome}</code> è chi ha scritto, <code>{cosa}</code> quello che è successo (bannato, in pausa, messaggio tolto).', 'Empty uses the default one. <code>{nome}</code> is who wrote, <code>{cosa}</code> what happened (banned, timed out, message removed).', 'Vacía usa la de serie. <code>{nome}</code> es quien escribió, <code>{cosa}</code> lo que pasó (baneado, en pausa, mensaje quitado).')}</p>
+        <label class="campo" for="inp-ab-vendservizi">${L('Altri nomi di servizi da fermare', 'More service names to stop', 'Más nombres de servicios a parar')}</label>
+        <input type="text" id="inp-ab-vendservizi" maxlength="2000" value="${esc((ab.venditaServizi || []).join(', '))}" placeholder="${esc(L('nomi separati da virgola', 'names separated by commas', 'nombres separados por comas'))}">
+        <p class="suggerimento">${L('Ne nascono di nuovi ogni mese: scrivi il nome (senza il .com) e vale come quelli che conosce già, anche travestito.', 'New ones appear every month: write the name (without the .com) and it counts like the ones it already knows, even disguised.', 'Salen nuevos cada mes: escribe el nombre (sin el .com) y vale como los que ya conoce, también disfrazado.')}</p>
+        <label class="campo" for="inp-ab-vendprova">${L('Prova una frase', 'Try a message', 'Prueba una frase')}</label>
+        <div class="riga-flessibile">
+          <input type="text" id="inp-ab-vendprova" maxlength="500" placeholder="${esc(L('incolla un messaggio della chat', 'paste a chat message', 'pega un mensaje del chat'))}">
+          <button type="button" class="btn secondario mini" id="btn-ab-vendprova">${L('Prova', 'Try', 'Probar')}</button>
+        </div>
+        <p class="suggerimento" id="ab-vendprova-esito" aria-live="polite"></p>
+      </div>
+    </div>
+
     <p class="mod-salva"><button class="btn" id="btn-salva-antibot">${L('Salva lo scudo', 'Save the shield', 'Guardar el escudo')}</button></p>
 
     <div class="carta">
@@ -35293,6 +35330,10 @@ function scudoRenderLista(campo, nomi) {
     : `<span class="suggerimento">${L('Vuota.', 'Empty.', 'Vacía.')}</span>`;
 }
 
+function _serviziVendita() {
+  return (document.getElementById('inp-ab-vendservizi')?.value || '').split(/[,\n]/).map((x) => x.trim()).filter(Boolean);
+}
+
 function modTesta(id, acceso, testo, nota) {
   return `<div class="mod-testa">
       <input type="checkbox" id="${id}" ${acceso ? 'checked' : ''}>
@@ -35920,8 +35961,23 @@ function attivaPiattaforma() {
         chatMinOre: Number(document.getElementById('inp-ab-chatore').value),
         chatNuoviAzione: document.getElementById('sel-ab-chatazione').value,
         avvisa: document.getElementById('chk-ab-avvisa').checked,
+        vendita: document.getElementById('chk-ab-vendita').checked,
+        venditaAzione: document.getElementById('sel-ab-vendazione').value,
+        venditaPausaSec: Number(document.getElementById('inp-ab-vendpausa').value) * 60,
+        venditaAvvisa: document.getElementById('chk-ab-vendavvisa').checked,
+        venditaTesto: document.getElementById('inp-ab-vendtesto').value,
+        venditaServizi: _serviziVendita(),
       },
     }, L('Anti-bot salvato ✓', 'Anti-bot saved ✓', 'Anti-bot guardado ✓'));
+  }));
+  document.getElementById('btn-ab-vendprova')?.addEventListener('click', () => conErrore(async () => {
+    const esito = document.getElementById('ab-vendprova-esito');
+    const testo = document.getElementById('inp-ab-vendprova').value.trim();
+    if (!testo) { esito.textContent = L('Scrivi prima una frase.', 'Write a message first.', 'Escribe primero una frase.'); return; }
+    const r = await api('/api/antibot/vendita/prova', { method: 'POST', body: { testo, servizi: _serviziVendita() } });
+    if (r.demo) { esito.textContent = L('Nella demo la prova non gira: accedi col tuo canale.', 'The test does not run in the demo: sign in with your channel.', 'En la demo la prueba no funciona: entra con tu canal.'); return; }
+    const cosa = { certo: L('Sicuro: farebbe quello che hai scelto qui sopra.', 'Sure: it would do what you chose above.', 'Seguro: haría lo que elegiste arriba.'), probabile: L('Probabile: toglierebbe il messaggio, senza castigo.', 'Likely: it would remove the message, with no punishment.', 'Probable: quitaría el mensaje, sin castigo.') }[r.livello] || L('Non lo tocca: è una frase normale.', 'It leaves it alone: it is a normal message.', 'No lo toca: es una frase normal.');
+    esito.textContent = cosa + (r.motivi?.length ? ' (' + r.motivi.join(', ') + ')' : '');
   }));
 
   document.getElementById('btn-salva-giochi')?.addEventListener('click', () => conErrore(async () => {

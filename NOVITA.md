@@ -43,6 +43,15 @@ comandi diversi da quelli della riga italiana.
 
 ## 2026-10-28
 
+- [importante] I bot che vendono viewer e follower in chat ora vengono bannati e il loro messaggio tolto, anche a scudo spento e anche se travestono il sito («streamboo . com», «dot com»). [vai: scudo]
+  en: Bots selling viewers and followers in chat are now banned and their message removed, even with the shield off and even when they disguise the site («streamboo . com», «dot com»).
+  es: Los bots que venden viewers y seguidores en el chat ahora se banean y su mensaje se quita, aunque el escudo esté apagado y aunque disfracen la web («streamboo . com», «dot com»).
+  > Fuori chi vende viewer
+  > Leggono il discorso, non la forma: una domanda come «come cresco di follower?» resta. Scegli tu cosa fargli, la frase in chat e altri nomi da fermare, e prova un messaggio prima.
+  en> Viewer sellers are out
+  en> It reads what they say, not how: a question like «how do I get followers?» stays. You choose what to do, the chat line and more names to stop, and you can test a message first.
+  es> Fuera quien vende viewers
+  es> Lee lo que dicen, no la forma: una pregunta como «¿cómo consigo seguidores?» se queda. Tú eliges qué hacerle, la frase en el chat y más nombres a parar, y puedes probar un mensaje antes.
 - [importante] Studio: ogni piattaforma della diretta ha la sua spunta. Se una non riceve (chiave sbagliata, server giù) lo Studio te lo dice subito, col motivo, e le altre continuano. [vai: studio]
   en: Studio: every stream platform has its own check mark. If one is not receiving (wrong key, server down) the Studio tells you right away, with the reason, and the others carry on.
   es: Estudio: cada plataforma del directo tiene su marca. Si una no recibe (clave equivocada, servidor caído) el Estudio te lo dice enseguida, con el motivo, y las demás siguen.

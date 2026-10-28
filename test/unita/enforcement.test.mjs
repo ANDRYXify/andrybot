@@ -83,6 +83,15 @@ test('lo stesso evento consegnato due volte non banna due volte', async () => {
   assert.equal(e.stato().doppioni, 1);
 });
 
+test('togliere e\' per messaggio: due messaggi si tolgono tutti e due, lo stesso una volta', async () => {
+  const { f, e } = banco();
+  await e.esegui(v({ azione: E.AZIONI.CANCELLA, messaggio: 'm1' }));
+  await e.esegui(v({ azione: E.AZIONI.CANCELLA, messaggio: 'm2' }));
+  const ancora = await e.esegui(v({ azione: E.AZIONI.CANCELLA, messaggio: 'm1' }));
+  assert.equal(f.chiamate.length, 2, 'il secondo messaggio dello stesso bot non resta in chat');
+  assert.equal(ancora.doppione, true, 'lo stesso messaggio arrivato due volte si toglie una volta');
+});
+
 test('ma due azioni diverse sulla stessa persona passano entrambe', async () => {
   const { f, e } = banco();
   await e.esegui(v({ azione: E.AZIONI.CANCELLA, messaggio: 'm1' }));

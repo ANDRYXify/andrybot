@@ -194,6 +194,87 @@ gocciolamento dalla stessa fabbrica.
 Gli alert che mostra **Twitch** (la scelta «Twitch» o «Tutti e due» negli alert,
 docs/ALERT-TWITCH.md) non passano da noi e non si possono fermare da qui.
 
+## Il bot dei consigli: chi vende viewer e follower
+
+Segnalato così: «mi è passato un bot in chat, dandomi consigli su bot e robe
+spam, e SocialBot non l'ha bannato, eliminato o avvisato in alcun modo».
+
+**Perché passava.** Per due ragioni, tutte e due nel disegno:
+1. l'antispam e lo scudo sono **spenti di serie**: in un canale che non li ha
+   accesi, nessuno guarda la chat;
+2. l'antispam guarda la **forma** (link, maiuscole, flood, simboli). Il bot dei
+   consigli scrive messaggi puliti: niente link vero, ma un dominio
+   travestito (`streamboo . com`, «dot com», «togli gli spazi») e un discorso
+   di vendita (viewer, follower, «promuovo il tuo canale», «scrivimi su
+   Discord»). Per la forma è un messaggio come un altro.
+
+**Il modello** (`src/features/vendita.js`, puro): si guarda il **contenuto**.
+Gli indizi da soli non bastano, insieme sì; e la decisione non è una somma di
+punti (i punti vanno solo nel registro) ma combinazioni scritte, ognuna con la
+sua ragione.
+- Prima si toglie il travestimento: maiuscole, accenti, lettere di altri
+  alfabeti che sembrano latine (а cirillica, і ucraina), la larghezza piena
+  (ｆｏｌｌｏｗｅｒｓ), i caratteri invisibili, le lettere staccate
+  («s t r e a m b o o»; da cinque in su: «a b c» sono parole).
+- **Indizi forti**: un **dominio travestito** («(.) com», «dot com», «punto
+  com», «. com»); il nome di un **servizio di vendita noto**, più quelli che
+  aggiunge lo streamer; «togli gli spazi». Il punto vero staccato da uno
+  spazio vale solo coi finali che in una frase non ci sono (com, net, org, ru,
+  xyz, cc, biz) e non prima di un apostrofo: «finito. com'è andata?», «basta.
+  io vado», «che partita. gg» sono punteggiatura.
+- **Il discorso**, in italiano, inglese e spagnolo: **cosa** si vende
+  (viewer, follower, spettatori, seguidores, prime subs, chat bot; non «prime»
+  da solo, che è «le prime volte»); **l'offerta**, in due misure: *vendere*
+  (compra, prezzo, sconto, «100% reali», garantiti; non «sale», che è «il
+  livello sale») e *spingere* (crescere, promuovere, boost), che dice anche uno
+  streamer piccolo in cerca di amici; **il contatto** (scrivimi, DM, Discord,
+  Telegram, WhatsApp, nel mio profilo); **il copione** («ho notato il tuo
+  canale», «hai del potenziale», «wanna become famous?»).
+- Il **primo messaggio** nel canale (Twitch lo dice) conta: i bot dei
+  consigli scrivono lì; chi è di casa no.
+
+| Livello | Quando |
+|---|---|
+| **certo** | un indizio forte dentro un discorso di vendita; chi *vende* qualcosa e lascia il contatto, col copione o al primo messaggio; chi *spinge* a crescere, lascia il contatto e recita il copione |
+| **probabile** | due indizi forti senza discorso (un servizio noto col dominio travestito è una pubblicità); chi vende e lascia il contatto; chi spinge e lascia il contatto al primo messaggio; contatto e copione con un pezzo di discorso |
+| niente | un indizio forte da solo («lol. com si fa?» è scritto male, non è vendita); ogni domanda («come faccio a crescere di follower?», «quanti viewer fai?»); «comprare follower è da sfigati» |
+
+**Cosa fa.** Il **certo** prende l'azione scelta dallo streamer, di serie il
+**ban** (su Twitch toglie anche i messaggi già scritti), e il messaggio si toglie
+comunque. Il **probabile** non è mai castigato: il messaggio si toglie, o si
+segnala soltanto se lo streamer ha scelto di solo segnalare (il probabile non è
+mai più duro del certo). In chat si dice solo quello che è successo davvero
+(«bannato», «in pausa», «messaggio tolto»). Su Twitch un ban riuscito va anche
+alla rete degli scudi. Su Kick si agisce con le mani di Kick, se il bot ha il
+permesso di moderazione.
+
+Togliere un messaggio riguarda **quel messaggio**: la protezione dai doppioni
+dell'esecutore (la stessa azione sulla stessa persona, una volta ogni 30
+secondi) per la cancellazione guarda anche l'id del messaggio, altrimenti di
+tre messaggi di un bot in mezzo minuto se ne toglieva uno.
+
+**Esenti** come sempre: broadcaster, mod, VIP, abbonati, chi manda Bit, gli
+esenti dello scudo e i bot buoni.
+
+**Acceso di serie, e tutto dello streamer.** È quello che uno streamer si
+aspetta senza configurare niente, quindi è **acceso** e lavora **anche a scudo
+spento**. Per questo ha una scheda sua nel pannello, coi comandi suoi (quelli
+dello scudo, a scudo spento, sono spenti):
+- l'interruttore (`vendita`);
+- l'azione sul certo (`venditaAzione`: ban, pausa, togliere solo il messaggio,
+  solo segnalare ai mod) e i minuti della pausa (`venditaPausaSec`, di serie 10
+  minuti: non i 14 giorni della quarantena dello scudo);
+- se dirlo in chat (`venditaAvvisa`) e con che frase (`venditaTesto`, con
+  `{nome}` e `{cosa}`; vuota, quella di serie);
+- **i nomi di servizi in più** (`venditaServizi`, fino a 50): ne nascono ogni
+  mese, e valgono come quelli noti, anche travestiti;
+- **«Prova una frase»**: incolli un messaggio e vedi cosa ne farebbe, coi nomi
+  appena scritti, senza salvare e senza toccare nessuno
+  (`POST /api/antibot/vendita/prova`, il modello puro).
+
+La sola osservazione dello scudo vale anche qui, ma solo a scudo acceso, dove
+quel comando si vede.
+
 ## Il coro
 
 È la firma dell'hate-raid, ed è quello che mancava del tutto: non conta chi scrive

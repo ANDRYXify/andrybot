@@ -22,10 +22,12 @@
 // completo. Così la regola si può provare senza accendere un server.
 
 import { LIVELLI } from '../features/livelli.js';
+import { nomeServizio, servizioValido } from '../features/vendita.js';
 
 const AZIONI = ['ban', 'timeout', 'segnala'];
 const LIVELLI_LINK = ['tutti', 'sub', 'vip', 'mod'];
 const CHAT_AZIONI = ['elimina', 'segnala'];
+const VENDITA_AZIONI = ['ban', 'timeout', 'cancella', 'segnala'];
 
 const num = (v, min, max, def) => Math.min(max, Math.max(min, Math.round(Number(v)) || def));
 
@@ -113,6 +115,13 @@ export function normalizzaAntibot(vecchio = {}, arrivato = {}) {
     aVuoto: a.aVuoto === true,
     modo: ['prudente', 'bilanciata', 'aggressiva'].includes(a.modo) ? a.modo : 'bilanciata',
     presenze: a.presenze !== false,
+    // il bot dei consigli: acceso di serie, anche a scudo spento
+    vendita: a.vendita !== false,
+    venditaAzione: VENDITA_AZIONI.includes(a.venditaAzione) ? a.venditaAzione : 'ban',
+    venditaPausaSec: num(a.venditaPausaSec, 60, 1209600, 600),
+    venditaTesto: String(a.venditaTesto ?? '').replace(/\s+/g, ' ').trim().slice(0, 300),
+    venditaAvvisa: a.venditaAvvisa !== false,
+    venditaServizi: [...new Set((Array.isArray(a.venditaServizi) ? a.venditaServizi : []).map(nomeServizio).filter(servizioValido))].slice(0, 50),
     // un oggetto arrivato a meta' si completa con quello che c'era
     avvisiScudo: avvisiDi({ avvisiScudo: { ...(vecchio?.avvisiScudo || {}), ...(arrivato?.avvisiScudo || {}) } }),
   };

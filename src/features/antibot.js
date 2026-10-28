@@ -40,6 +40,7 @@ import * as bon from './bonifica.js';
 import * as rep from './reputazione.js';
 import { config } from '../config.js';
 import { nomeIn } from './comandi-registro.js';
+import { giudicaVendita } from './vendita.js';
 
 const log = makeLog('antibot');
 
@@ -80,6 +81,15 @@ export const ANTIBOT_DEFAULT = {
   coroQuanti: 4,               // quante bocche diverse per lo stesso messaggio = coro
   togliFollow: true,           // sui follow-bot certi usa il BLOCCO, che toglie il follow
   taciFollow: true,            // sotto attacco i follow non si festeggiano (docs/SCUDO.md)
+  // 6. IL BOT DEI CONSIGLI (docs/SCUDO.md): chi vende viewer e follower in chat.
+  // Acceso di serie, anche con lo scudo spento: e' preciso, ed e' quello che
+  // uno streamer si aspetta senza configurare niente.
+  vendita: true,
+  venditaAzione: 'ban',        // sul certo: 'ban' | 'timeout' | 'cancella' | 'segnala' (il probabile si toglie e basta)
+  venditaPausaSec: 600,        // la pausa, se l'azione e' 'timeout' (non i 14 giorni della quarantena)
+  venditaTesto: '',            // la frase in chat; vuota: quella di serie ({nome}, {cosa})
+  venditaAvvisa: true,         // dirlo in chat (suo: lavora anche a scudo spento)
+  venditaServizi: [],          // i nomi di servizi in piu', dello streamer
 };
 
 // Bot NOTORIAMENTE buoni: non si toccano mai. In minuscolo.
@@ -1473,8 +1483,10 @@ export class AntiBot {
   async controllaChat(msg) {
     const channel = msg.channel;
     const cfg = this.cfg(channel);
-    if (!cfg.attivo) return false;
     if (msg.isBroadcaster || msg.isMod || msg.isVip || msg.isSub) return false;
+    // il bot dei consigli: ha il suo interruttore, e lavora anche a scudo spento
+    if (cfg.vendita !== false && await this._vendita(msg, cfg)) return true;
+    if (!cfg.attivo) return false;
     // Un messaggio con Bit e' pagato: e' un fatto che un bot non produce, e
     // cancellarlo vorrebbe dire cancellare soldi. Non lo tocca nessuna delle tre
     // difese, nemmeno il coro: un treno di cheer tutti uguali e' una festa.
@@ -1556,6 +1568,45 @@ export class AntiBot {
       }
     }
     return false;
+  }
+
+  // ── il bot dei consigli (docs/SCUDO.md) ───────────────────────────────────
+  // Il certo prende l'azione dello streamer (di serie il ban, che su Twitch
+  // toglie anche i suoi messaggi); il probabile la stessa senza castigo: si
+  // toglie e si dice, e se lo streamer vuole solo la segnalazione si segnala
+  // (mai piu' duro del certo). In chat si dice solo quello che e' successo.
+  // Ha i suoi comandi (azione, pausa, avviso, frase, nomi) perche' lavora anche
+  // a scudo spento, quando quelli dello scudo nel pannello sono spenti; la
+  // sola osservazione dello scudo vale solo a scudo acceso, dove si vede.
+  async _vendita(msg, cfg) {
+    if (Number(msg.bits) > 0) return false;
+    const login = norm(msg.user || msg.username), p = piattaformaScudo(msg.piattaforma);
+    if (!login || BUONI.has(login) || esente(cfg, login, p)) return false;
+    const g = giudicaVendita(msg.text || msg.message || '', { primo: !!msg.isFirst, servizi: cfg.venditaServizi });
+    if (!g.livello) return false;
+    const channel = msg.channel;
+    const certo = g.livello === 'certo';
+    const scelta = String(cfg.venditaAzione || 'ban');
+    const motivi = ['vende viewer e follower', ...g.motivi];
+    log.warn(`#${channel} bot dei consigli${p === 'kick' ? ' su Kick' : ''}: @${login} (${g.livello}, ${g.punti}: ${g.motivi.join(', ')})`);
+    if (scelta === 'segnala') {
+      registra(channel, { login, userId: msg.userId, azione: 'chat-segnala', motivo: motivi.join(', '), esito: 'in-attesa', stato: 'aperto' });
+      if (cfg.venditaAvvisa !== false) this.say?.(channel, `👀 @${login} sembra un bot che vende viewer e follower: occhio, mod.`);
+      return false;
+    }
+    const base = { canale: channel, login, userId: msg.userId, piattaforma: p, messaggio: msg.id, motivi, origine: 'vendita', confidenza: certo ? 0.95 : 0.7, aVuoto: !!cfg.attivo && this._aVuoto(cfg) };
+    const tolto = await this.esecutore.esegui(verdetto({ ...base, azione: AZIONI.CANCELLA }));
+    let castigo = null;
+    if (certo && (scelta === 'ban' || scelta === 'timeout')) {
+      castigo = await this.esecutore.esegui(verdetto({ ...base, azione: scelta === 'ban' ? AZIONI.BAN : AZIONI.TIMEOUT, durata: scelta === 'timeout' ? Number(cfg.venditaPausaSec) || 600 : 0 }));
+      if (p === 'twitch' && castigo?.ok && !castigo.aVuoto && !castigo.doppione) { try { rete.segnala(channel, login, 'vendita'); } catch (e) { /* la rete e' un di piu' */ } }
+    }
+    const fatto = castigo?.ok ? (scelta === 'ban' ? 'bannato' : 'in pausa') : tolto?.ok ? 'messaggio tolto' : '';
+    if (fatto && cfg.venditaAvvisa !== false && !tolto?.aVuoto) {
+      const testo = String(cfg.venditaTesto || '').trim() || '🛡️ @{nome}: niente vendita di viewer e follower qui ({cosa}).';
+      this.say?.(channel, testo.replace(/\{nome\}/g, login).replace(/\{cosa\}/g, fatto).slice(0, 400));
+    }
+    return true;
   }
 
   // ── !permetti: l'uscita dal trattenimento ─────────────────────────────────

@@ -167,7 +167,9 @@ export class Esecutore {
   // com'è andata può attendere il proprio pezzo invece che tutta la fila.
   esegui(v) {
     if (!daFare(v)) { this.annota(v?.canale, rigaDi(v, { ok: true, motivo: 'nessuna azione' })); return Promise.resolve({ ok: true, saltato: true }); }
-    const chiave = `${v.canale}|${suKick(v) ? 'kick:' : ''}${v.login || v.userId}|${v.azione}`;
+    // Togliere un messaggio riguarda quel messaggio, non la persona: tre
+    // messaggi dello stesso bot in mezzo minuto sono tre cose da togliere.
+    const chiave = `${v.canale}|${suKick(v) ? 'kick:' : ''}${v.login || v.userId}|${v.azione}${v.azione === AZIONI.CANCELLA && v.messaggio ? '|' + v.messaggio : ''}`;
     const visto = this._inCoda.get(chiave);
     if (visto && Date.now() - visto < DOPPIONE_MS) {
       // IDEMPOTENZA. Lo stesso evento consegnato due volte da Twitch, o due

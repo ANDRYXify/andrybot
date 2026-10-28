@@ -8,6 +8,7 @@
 // L'amministratore (andryxify) approva e gestisce gli streamer.
 import express from 'express';
 import { normalizzaAntispam, normalizzaAntibot, nomeAccount } from './impostazioni-moderazione.js';
+import { giudicaVendita } from '../features/vendita.js';
 import cookieSession from 'cookie-session';
 import multer from 'multer';
 import https from 'node:https';
@@ -4599,6 +4600,16 @@ STREAMER (${su.toUpperCase()}) e non c'entra con l'automazione del marketing.
     const antibot = normalizzaAntibot(vecchio, { avvisiScudo: req.body?.avvisi || {} });
     streamers.setSettings(login, { ...(s.settings || {}), antibot: { ...vecchio, avvisiScudo: antibot.avvisiScudo } });
     res.json({ ok: true, avvisi: antibot.avvisiScudo });
+  });
+
+  // Il bot dei consigli, alla prova: lo streamer scrive una frase e vede cosa
+  // ne farebbe lo scudo, coi nomi che ha appena scritto (anche non salvati).
+  // Non tocca niente e non scrive niente: e' il modello puro.
+  app.post('/api/antibot/vendita/prova', requireOwner, (req, res) => {
+    const testo = String(req.body?.testo ?? '').slice(0, 500);
+    const servizi = normalizzaAntibot({}, { venditaServizi: req.body?.servizi }).venditaServizi;
+    const g = giudicaVendita(testo, { primo: req.body?.primo === true, servizi });
+    res.json({ ok: true, livello: g.livello, motivi: g.motivi });
   });
 
   // ── I TUOI FOLLOWER (docs/FOLLOWER.md) ──────────────────────────────────────
