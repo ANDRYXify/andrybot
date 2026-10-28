@@ -129,6 +129,8 @@ const PUBBLICHE = new Map([
   ['GET /u/:user/colpo/chat', 'la chat del canale in diretta: e\' la chat pubblica di Twitch, con un tetto di lettori per canale e in tutto; 404 coi colpi spenti'],
   ['POST /u/:user/colpo/chat', 'scrive in chat a nome dello spettatore entrato con Twitch, col SUO token e l\'API di Twitch (che applica ban, AutoMod e modalita\' della chat); col tetto per spettatore'],
   ['GET /u/:user/colpo/stato/:id', 'lo stato di una mira: l\'id e\' casuale (72 bit) e lo sa solo chi l\'ha presa'],
+  ['POST /u/:user/colpo/lancia', 'il colpo in un tocco (docs/COLPI.md, «Con l\'accesso, un tocco»): solo con l\'accesso a Twitch (la persona dalla sessione, mai dal corpo; 401 senza), col tetto per indirizzo, paga dai SUOI saldi e solo se il colpo adesso si puo\' consegnare; niente a meta\''],
+  ['GET /u/:user/colpo/saldi', 'i saldi di chi ha fatto l\'accesso (monete, Bit da spendere, zaino): solo i suoi, presi dalla sessione (401 senza), private e no-store; 404 coi colpi spenti'],
   ['POST /u/:user/colpo/paga/:id', 'apre il pagamento in euro di una mira, o la paga con le monete del canale (solo con l\'accesso a Twitch, solo la propria mira, tutte o niente, con la ricevuta per il rimborso): col tetto per indirizzo, un pagamento solo per mira, e solo se il colpo adesso si puo\' consegnare'],
   ['GET /u/:user/p/:id', 'la pagina dietro un pannello di Twitch: pubblica come la pagina link, e 404 se e\' spenta o se nessun pannello salvato ci porta (portaAllaPagina)'],
   ['GET /u/:user/p/:id/privacy', 'l\'informativa della pagina dietro un pannello: alla stessa condizione della pagina'],
