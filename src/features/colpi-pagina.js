@@ -16,6 +16,7 @@ const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '
 // Le parole. {nome}, {n}, {codice}, {premio}, {canale} si riempiono in pagina.
 export const T = {
   it: {
+    slogan: 'Perché pewpew is the new ka-chow',
     titolo: 'Colpisci la diretta di {canale}', dida: 'Scegli un effetto, mira un punto della diretta di {canale} e fallo comparire lì, col tuo nome.', didaSenzaNome: 'Scegli un effetto, mira un punto della diretta di {canale} e fallo comparire lì.',
     inOnda: 'In onda', spenta: 'Diretta spenta', senzaOverlay: 'Overlay chiuso',
     passo1: 'Scegli il colpo', passo2: 'Mira', passo3: 'Paga e parte',
@@ -68,6 +69,7 @@ export const T = {
     piede: 'I pagamenti vanno a {canale}.', privacy: 'Privacy',
   },
   en: {
+    slogan: 'Because pewpew è il nuovo ka-chow',
     titolo: 'Hit {canale}\'s stream', dida: 'Pick an effect, aim at a spot on {canale}\'s stream and make it appear there, with your name.', didaSenzaNome: 'Pick an effect, aim at a spot on {canale}\'s stream and make it appear there.',
     inOnda: 'Live', spenta: 'Offline', senzaOverlay: 'Overlay closed',
     passo1: 'Pick your hit', passo2: 'Aim', passo3: 'Pay and fire',
@@ -120,6 +122,7 @@ export const T = {
     piede: 'Payments go to {canale}.', privacy: 'Privacy',
   },
   es: {
+    slogan: 'Porque pewpew is the new ka-chow',
     titolo: 'Golpea el directo de {canale}', dida: 'Elige un efecto, apunta a un punto del directo de {canale} y haz que aparezca ahí, con tu nombre.', didaSenzaNome: 'Elige un efecto, apunta a un punto del directo de {canale} y haz que aparezca ahí.',
     inOnda: 'En directo', spenta: 'Directo apagado', senzaOverlay: 'Overlay cerrado',
     passo1: 'Elige el golpe', passo2: 'Apunta', passo3: 'Paga y sale',
@@ -194,6 +197,7 @@ export function htmlPaginaColpo({ login, display, avatar = '', pagina, baseUrl, 
   const playerKick = slugKick ? `https://player.kick.com/${slugKick}?muted=true&autoplay=true` : '';
   const titolo = String(testi.titolo || '').trim() || riempi(t.titolo, { canale: nome });
   const dida = String(testi.dida || '').trim() || riempi(testi.conNome === false ? t.didaSenzaNome : t.dida, { canale: nome });
+  const slogan = testi.sloganAcceso === false ? '' : String(testi.slogan || '').trim() || t.slogan;
   const base = pagina || {};
   const p = { template: base.template, tema: base.tema, headline: titolo, tagline: dida, avatar: base.avatar,
     blocchi: [{ tipo: 'intestazione' }, { tipo: 'colpo' }] };
@@ -201,7 +205,7 @@ export function htmlPaginaColpo({ login, display, avatar = '', pagina, baseUrl, 
   const blocco = (b, { ritardo }) => {
     if (b.tipo !== 'colpo') return null;
     return `<section class="cp" id="cp" ${ritardo} ${dati('login', login)} ${dati('lingua', l)} ${dati('canale', nome)} ${dati('mira', mira)} ${dati('t', t)} ${dati('io', io || '')} ${dati('accesso', accesso ? '1' : '')} ${dati('accesso-kick', accessoKick ? '1' : '')}>
-<div class="cp-scena">
+${slogan ? `<p class="cp-slogan">${esc(slogan)}</p>` : ''}<div class="cp-scena">
 <div class="cp-cima"><span class="cp-stato" id="cp-stato" role="status">${esc(t.spenta)}</span><p class="cp-ritardo">${esc(t.ritardo)}</p></div>
 <div class="cp-palco" id="cp-palco">
 <div class="chiedi"><p class="chiedi-t">${playerKick ? 'Twitch · Kick' : 'Twitch'}</p><p class="chiedi-p">${esc(playerKick ? t.k.guardaTesto : t.guardaTesto)}</p><div class="cp-righe-b"><button type="button" class="chiedi-b" data-src="${esc(player)}" data-t="Twitch">${esc(playerKick ? t.k.guardaTwitch : t.guarda)}</button>${playerKick ? `<button type="button" class="chiedi-b" data-src="${esc(playerKick)}" data-t="Kick">${esc(t.k.guarda)}</button>` : ''}</div></div>
@@ -277,6 +281,7 @@ export function htmlPaginaColpo({ login, display, avatar = '', pagina, baseUrl, 
   .cp-mirino::after{top:50%;left:-10px;right:-10px;height:2px;transform:translateY(-50%)}
   .cp-mirino.no{border-color:var(--ko)}
   .cp-ritardo,.cp-nota{font-size:.85rem;color:var(--tenue)}
+  .cp-slogan{margin:0 0 1rem;text-align:center;font-style:italic;font-weight:600;color:var(--acc);letter-spacing:.01em}
   .cp-cima{display:flex;flex-wrap:wrap;align-items:center;gap:.4rem .8rem}
   .cp-cima .cp-ritardo{margin:0;flex:1 1 14rem}
   .cp-stato{flex:none;display:inline-flex;align-items:center;gap:.4rem;padding:.25rem .7rem;border-radius:999px;${stileBtn};color:var(--btxt);font-size:.8rem;font-weight:600;white-space:nowrap}

@@ -41,6 +41,14 @@ questa non è una cosa da ricordarsi: il cancello boccia una riga pubblica senza
 traduzione, una traduzione staccata dalla sua riga, o una che dice numeri e
 comandi diversi da quelli della riga italiana.
 
+## 2026-10-29
+
+- Con i Pew accesi, il bot scrive da solo in chat il link della tua pagina: ogni tanti minuti, solo in diretta e solo se la chat si è mossa. Ogni quanto, quanti messaggi, dove e cosa dice li scegli tu. [vai: colpi]
+  en: With Pew on, the bot posts your page link in chat on its own: every so many minutes, only while live and only if the chat has moved. How often, how many messages, where and what it says are up to you.
+  es: Con los Pew activados, el bot escribe solo en el chat el enlace de tu página: cada tantos minutos, solo en directo y solo si el chat se ha movido. Cada cuánto, cuántos mensajes, dónde y qué dice lo eliges tú.
+- La pagina Pew ha il suo slogan: «Perché pewpew is the new ka-chow». Lo puoi cambiare o spegnere. [vai: colpi]
+  en: The Pew page has its slogan: «Because pewpew è il nuovo ka-chow». You can change it or turn it off.
+  es: La página Pew tiene su eslogan: «Porque pewpew is the new ka-chow». Puedes cambiarlo o apagarlo.
 ## 2026-10-28
 
 - [importante] Pewpewify su Kick, completo: nel listino il prezzo in Kicks e in punti del canale di Kick, i premi del canale su Kick creati da soli, e la scheda dei Kicks da spendere con le sue regole. [vai: colpi]

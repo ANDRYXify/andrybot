@@ -26232,7 +26232,34 @@ function pannelloColpi() {
       <input type="text" id="cl-titolo" maxlength="80" value="${esc(c.titolo || '')}" placeholder="${esc(L('Colpisci la diretta di ', 'Hit the stream of ', 'Golpea el directo de ') + (stato.user?.display || stato.user?.login || ''))}">
       <label class="campo spazio-sopra" for="cl-dida">${L('Sottotitolo', 'Subtitle', 'Subtítulo')}</label>
       <input type="text" id="cl-dida" maxlength="200" value="${esc(c.dida || '')}" placeholder="${esc(L('Scegli un effetto, mira un punto della diretta e fallo comparire lì.', 'Pick an effect, aim at a spot on the stream and make it appear there.', 'Elige un efecto, apunta a un punto del directo y haz que aparezca ahí.'))}">
+      <div class="riga-check spazio-sopra"><input type="checkbox" id="cl-slogan-acceso" ${c.sloganAcceso !== false ? 'checked' : ''}><label for="cl-slogan-acceso">${L('Lo slogan sotto il sottotitolo', 'The slogan under the subtitle', 'El eslogan bajo el subtítulo')}</label></div>
+      <input type="text" id="cl-slogan" aria-label="${esc(L('Lo slogan', 'The slogan', 'El eslogan'))}" maxlength="120" value="${esc(c.slogan || '')}" placeholder="${esc(L('Perché pewpew is the new ka-chow', 'Because pewpew è il nuovo ka-chow', 'Porque pewpew is the new ka-chow'))}">
       <p class="suggerimento">${L('Lasciali vuoti per quelli di serie, che ognuno legge nella sua lingua (italiano, inglese o spagnolo). Quello che scrivi tu si legge così com\'è. Si salvano col tasto «Salva» delle regole.', 'Leave them empty for the default ones, which everyone reads in their language (Italian, English or Spanish). What you write is shown as it is. They are saved with the «Save» button in the rules.', 'Déjalos vacíos para los de serie, que cada uno lee en su idioma (italiano, inglés o español). Lo que escribes tú se lee tal cual. Se guardan con el botón «Guardar» de las reglas.')}</p>
+    </div>
+
+    <div class="carta" id="cl-annuncio">
+      <h3>${_hIco(ICO.condividi)}${L('Il link in chat da solo', 'The link in chat on its own', 'El enlace en el chat solo')}</h3>
+      <p>${L('Con i Pew accesi, il bot scrive in chat il link della tua pagina ogni tanto: solo in diretta e solo se la chat si è mossa, così in una chat ferma non parla da solo.', 'With Pew on, the bot posts your page link in chat every so often: only while live and only if the chat has moved, so it never talks to an empty chat.', 'Con los Pew activados, el bot escribe en el chat el enlace de tu página de vez en cuando: solo en directo y solo si el chat se ha movido, así no habla solo en un chat parado.')}</p>
+      <div class="riga-interruttore spazio-sopra">
+        <label class="interruttore"><input type="checkbox" id="cl-an-attivo" ${c.annuncio?.attivo !== false ? 'checked' : ''}><span class="levetta"></span></label>
+        <span class="etichetta-stato">${L('Link a tempo acceso', 'Timed link on', 'Enlace con tiempo activado')}</span>
+      </div>
+      <div class="griglia-campi spazio-sopra">
+        <div>
+          <label class="campo" for="cl-an-ogni">${L('Ogni quanti minuti', 'Every how many minutes', 'Cada cuántos minutos')}</label>
+          <input type="number" id="cl-an-ogni" min="5" max="240" value="${Number(c.annuncio?.ogniMin) || 20}">
+        </div>
+        <div>
+          <label class="campo" for="cl-an-msg">${L('Messaggi in chat dall\'ultima volta, almeno', 'Chat messages since last time, at least', 'Mensajes en el chat desde la última vez, al menos')}</label>
+          <input type="number" id="cl-an-msg" min="0" max="500" value="${Number.isFinite(Number(c.annuncio?.messaggi)) ? Number(c.annuncio.messaggi) : 10}">
+        </div>
+      </div>
+      <div class="riga-check"><input type="checkbox" id="cl-an-twitch" ${c.annuncio?.piattaforme?.twitch !== false ? 'checked' : ''}><label for="cl-an-twitch">${L('Nella chat di Twitch', 'In the Twitch chat', 'En el chat de Twitch')}</label></div>
+      <div class="riga-check"${stato.kick?.collegato ? '' : ' hidden'}><input type="checkbox" id="cl-an-kick" ${c.annuncio?.piattaforme?.kick !== false ? 'checked' : ''}><label for="cl-an-kick">${L('Nella chat di Kick', 'In the Kick chat', 'En el chat de Kick')}</label></div>
+      <label class="campo" for="cl-an-testo">${L('Il messaggio (vuoto: quello di serie)', 'The message (empty: the default one)', 'El mensaje (vacío: el de serie)')}</label>
+      <input type="text" id="cl-an-testo" maxlength="200" value="${esc(c.annuncio?.testo || '')}" placeholder="${esc(L('Colpisci la diretta: scegli un effetto, mira un punto e fallo comparire col tuo nome → {pagina}', 'Hit the stream: pick an effect, aim at a spot and make it appear with your name → {pagina}', 'Golpea el directo: elige un efecto, apunta a un punto y haz que aparezca con tu nombre → {pagina}'))}">
+      <p class="suggerimento">${L('Puoi usare {pagina} (il link) e {canale}. Il primo arriva dopo i minuti scelti dall\'inizio della diretta.', 'You can use {pagina} (the link) and {canale}. The first one comes after the chosen minutes from the start of the stream.', 'Puedes usar {pagina} (el enlace) y {canale}. El primero llega tras los minutos elegidos desde el inicio del directo.')}</p>
+      <p class="spazio-sopra"><button class="btn" id="cl-an-salva">${L('Salva', 'Save', 'Guardar')}</button></p>
     </div>
 
     <div class="carta">
@@ -26623,6 +26650,15 @@ function _clLeggi() {
     premiModo: document.getElementById('cl-premi-modo')?.value || 'auto',
     titolo: (document.getElementById('cl-titolo')?.value || '').trim(),
     dida: (document.getElementById('cl-dida')?.value || '').trim(),
+    annuncio: {
+      attivo: !!document.getElementById('cl-an-attivo')?.checked,
+      ogniMin: Number(document.getElementById('cl-an-ogni')?.value) || 20,
+      messaggi: Number(document.getElementById('cl-an-msg')?.value) || 0,
+      piattaforme: { twitch: !!document.getElementById('cl-an-twitch')?.checked, kick: !!document.getElementById('cl-an-kick')?.checked },
+      testo: (document.getElementById('cl-an-testo')?.value || '').trim(),
+    },
+    sloganAcceso: !!document.getElementById('cl-slogan-acceso')?.checked,
+    slogan: (document.getElementById('cl-slogan')?.value || '').trim(),
     zone: _clZone.map((z) => ({ ...z })),
     voci,
     categorie: _clCat.map((c) => ({ ...c })),
@@ -27149,6 +27185,7 @@ async function caricaColpi() {
     document.getElementById('cl-kickspew')?.addEventListener('input', kicksScade);
     document.getElementById('cl-kickspew')?.addEventListener('change', kicksScade);
     document.getElementById('cl-kp-salva')?.addEventListener('click', () => conErrore(() => salvaColpi()));
+    document.getElementById('cl-an-salva')?.addEventListener('click', () => conErrore(() => salvaColpi()));
     kicksScade();
     const zainoScade = () => _clScadenzaDice('cl-zn', 'cl-zaino', true);
     document.getElementById('cl-zaino')?.addEventListener('input', zainoScade);

@@ -57,6 +57,7 @@ const DECISO = [
   ['features/patata.js', 'patate', 'volatile', 'la patata in giro: un riavvio la fa sparire, e nessuna moneta era in sospeso, perche\' la multa si paga solo allo scoppio'],
   ['features/corsa.js', 'corse', 'volatile', 'la corsa in corso: le monete si muovono solo all\'arrivo, quindi un riavvio la fa sparire senza che nessuno perda niente'],
   ['bot.js', 'saldiBitChiesti', 'volatile', 'quando la chat di quella persona ha avuto per ultima la risposta sul saldo, sullo zaino o un rifiuto di «!pew»: e\' il passo delle risposte, e dopo un riavvio al massimo si risponde una volta in piu\''],
+  ['bot.js', '_annunciPew', 'volatile', 'i messaggi contati e l\'ultima volta del link della pagina Pew in chat, per canale e piattaforma: dopo un riavvio si riparte dall\'inizio della diretta, e al peggio il primo link arriva un giro dopo'],
   ['bot.js', '_bjRese', 'volatile', 'le puntate di blackjack rese all\'avvio, da dire in chat quando il canale torna: le monete sono gia\' state rese nel database, e se il bot si riavvia di nuovo prima di dirlo si perde solo l\'avviso'],
   ['features/comandi-registro.js', 'aperture', 'volatile', 'quale apertura di !giochi tocca, per canale: dopo un riavvio si riparte dalla prima, e cambia solo una frase'],
   ['features/blackjack.js', 'mani', 'volatile', 'le carte di una mano aperta: un riavvio la chiude, e la puntata, che e\' la sola cosa che vale, sta nel database (bj-mani) e all\'avvio torna a chi l\'aveva messa'],

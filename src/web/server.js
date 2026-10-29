@@ -2494,7 +2494,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       lingua: colpiPagina.linguaDi(req.get('accept-language')), mira,
       io: io ? { login: io.login, nome: io.nome, piattaforma: io.piattaforma || 'twitch' } : null, accesso: !!config.twitchClientId,
       accessoKick: kickAuth.configurato() && !!kickApi.tokenDi(login)?.userId, kick: manager.kickVisto?.(login)?.slug || '',
-      testi: (({ titolo, dida, conNome }) => ({ titolo, dida, conNome }))(colpiMod.normalizza(k.s.settings?.colpi)),
+      testi: (({ titolo, dida, conNome, slogan, sloganAcceso }) => ({ titolo, dida, conNome, slogan, sloganAcceso }))(colpiMod.normalizza(k.s.settings?.colpi)),
       privacy: link?.attiva ? `/u/${login}/privacy` : '/privacy.html',
     }));
   }));

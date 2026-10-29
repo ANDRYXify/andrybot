@@ -104,6 +104,75 @@ scaduta`. «Pagata» vuol dire soldi arrivati; «sparata» vuol dire MOSTRATA.
    in coda e parte appena un overlay è pronto, anche alla diretta dopo; il bot
    lo dice in chat.
 
+## L'overlay dei Pew: solo nelle scene che scegli
+
+Chiesto così: «inserirei anche un overlay a se stante, così se qualcuno non
+volesse i pew sempre ma solo in alcune scene potrebbe averli, tipo "duplica
+questa scena e crea la scena con i pew attivi"».
+
+**Il modello.** Un overlay è già un layout: ogni link (`?o=<id>`) ha il suo
+`mostra`, cosa ci compare (docs/OVERLAY.md). I colpi stavano dentro
+«effetti»: chi spegneva gli effetti in una scena spegneva anche i Pew, e chi
+voleva i Pew in una scena sola non poteva. Ora **i colpi sono una voce loro**
+(`mostra.colpi`): un colpo, una presenza e la loro prova li mostra solo un
+overlay con `colpi` acceso; gli altri effetti restano di `effetti`. Finché un
+overlay non la scrive, la voce vale quanto `effetti` (la stessa eredità del
+boss e della scritta): niente cambia per chi non tocca niente.
+
+**L'overlay dei Pew** è un overlay come gli altri, con acceso solo `colpi`:
+si crea dalla scheda Pew con un tasto, e ha il suo link. Lo stesso tasto può
+spegnere i colpi negli altri overlay, così un colpo non compare due volte in
+una scena che li ha tutti e due.
+
+**Chi è pronto.** Un colpo si fa pagare solo se un overlay che lo può mostrare
+è in onda (la sorgente attiva in programma in OBS). Il server teneva **un solo**
+«pronto» per canale: con due overlay vinceva l'ultimo che parlava, e un
+overlay in una scena nascosta poteva dire «no» sopra quello in onda (o il
+contrario). Ora il pronto è **per istanza** (ogni overlay aperto ha il suo
+nome, inventato all'apertura): il canale è pronto se una qualunque istanza
+con `colpi` acceso è in onda da meno di 45 secondi. Quindi i Pew solo in alcune
+scene funzionano per costruzione: fuori da quelle scene nessuno è pronto, e i
+colpi non si fanno pagare.
+
+**La scena coi Pew, in OBS.** Il pannello parla già con OBS dal computer della
+regia (obs-websocket sul loopback, `regia-esterna.js`). Nella scheda Pew:
+- **«Crea la scena coi Pew»**: scelta una scena, ne fa una nuova («<scena> ·
+  Pew») con le **stesse fonti** (riferimenti, come «Duplica» di OBS: filtri e
+  impostazioni sono delle fonti, quindi restano), nello stesso ordine, con la
+  stessa posizione, grandezza, taglio, rotazione, visibilità, blocco e modo di
+  fusione; e in cima la fonte browser dell'overlay dei Pew, grande quanto la
+  tela. Un gruppo OBS non si può copiare da fuori (obs-websocket non lo
+  permette): se la scena ne ha uno lo si dice col nome, e si propone l'altra
+  strada.
+- **«Aggiungi i Pew a una scena»**: la fonte dei Pew in cima a una scena che
+  c'è già (anche una duplicata a mano in OBS).
+La fonte dei Pew è una sola («SocialBot · Pew»): se c'è già si riusa, non se ne
+crea un'altra. Il nome della scena nuova, se è preso, prende un numero.
+
+## Il link in chat da solo
+
+Chiesto così: «quando sono attivi i pew, un timer automatico che faccia uscirne
+il link».
+
+`colpi.annuncio`, tutto dello streamer, acceso di serie quando i Pew sono
+accesi: ogni `ogniMin` minuti (di serie 20) il bot scrive in chat il link della
+pagina, ma **solo se** la diretta è in onda e in chat sono passati almeno
+`messaggi` messaggi (di serie 10) dall'ultima volta: in una chat ferma non si
+parla da soli. Su Twitch e su Kick (`piattaforme`), dove il canale è in onda. Il
+testo è dello streamer (`{pagina}`, `{canale}`); vuoto, quello di serie nella
+lingua della chat. Il primo parte dopo `ogniMin` dall'inizio della diretta, non
+appena si accende. Il conto dei messaggi e dell'ultima volta sta in memoria:
+dopo un riavvio, al peggio, il primo arriva un giro dopo.
+
+## Lo slogan
+
+Sotto il sottotitolo della pagina, una riga: «Perché pewpew is the new
+ka-chow» (ka-chow è quello che dice Saetta McQueen in Cars; in italiano il
+doppiaggio dice «ka-ciao»). Il gioco è nelle due lingue: in inglese «Because
+pewpew è il nuovo ka-chow», in spagnolo «Porque pewpew is the new ka-chow».
+Acceso di serie; lo streamer lo spegne o scrive il suo (`colpi.slogan`,
+`colpi.sloganAcceso`).
+
 ## I tre modi di pagare
 
 - **Euro**: `POST /u/<login>/colpo/paga/<id>` apre il Checkout di Stripe o il

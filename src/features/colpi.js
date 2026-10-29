@@ -113,6 +113,11 @@ export function normalizza(cfg) {
     // il titolo e il sottotitolo della pagina, se lo streamer li scrive; vuoti, quelli di serie nella lingua di chi legge
     titolo: testo(o.titolo, 80),
     dida: testo(o.dida, 200),
+    // lo slogan sotto il sottotitolo (docs/COLPI.md, «Lo slogan»): acceso di
+    // serie; vuoto, quello di serie nella lingua di chi legge
+    sloganAcceso: o.sloganAcceso !== false,
+    slogan: testo(o.slogan, 120),
+    annuncio: normAnnuncio(o.annuncio),
     presenza: normPresenza(o.presenza),
     bitPew: normBitPew(o.bitPew),
     kicksPew: normBitPew(o.kicksPew),
@@ -611,6 +616,39 @@ export function bastaPer(mira, metodo, pagato) {
   return serve > 0 && Number(pagato) >= serve;
 }
 
+// IL LINK IN CHAT DA SOLO (docs/COLPI.md, «Il link in chat da solo»): ogni
+// ogniMin minuti, in diretta, e solo se la chat si e' mossa (messaggi).
+export const ANNUNCIO = Object.freeze({
+  ogniMin: [5, 240], ogniMinDef: 20, messaggi: [0, 500], messaggiDef: 10,
+  testi: Object.freeze({
+    it: 'Colpisci la diretta: scegli un effetto, mira un punto e fallo comparire col tuo nome → {pagina}',
+    en: 'Hit the stream: pick an effect, aim at a spot and make it appear with your name → {pagina}',
+    es: 'Golpea el directo: elige un efecto, apunta a un punto y haz que aparezca con tu nombre → {pagina}',
+  }),
+});
+function normAnnuncio(a) {
+  const o = a && typeof a === 'object' ? a : {};
+  const p = o.piattaforme && typeof o.piattaforme === 'object' ? o.piattaforme : {};
+  return {
+    attivo: o.attivo !== false,
+    ogniMin: num(o.ogniMin, ANNUNCIO.ogniMin, ANNUNCIO.ogniMinDef),
+    messaggi: num(o.messaggi, ANNUNCIO.messaggi, ANNUNCIO.messaggiDef),
+    piattaforme: { twitch: p.twitch !== false, kick: p.kick !== false },
+    testo: testo(o.testo, 200),
+  };
+}
+// E' ora? `st`: { inizio, ultimo, messaggi } di quel canale su quella
+// piattaforma, da quando e' in onda. Il primo dopo ogniMin dall'inizio.
+export function annuncioDovuto(cfg, piattaforma, st, ora) {
+  const a = cfg?.annuncio;
+  if (!cfg?.attivo || cfg.pausa || !a?.attivo || !a.piattaforme?.[piattaforma] || !st) return false;
+  const da = st.ultimo > 0 ? st.ultimo : Number.isFinite(st.inizio) ? st.inizio : null;
+  return da !== null && ora - da >= a.ogniMin * 60_000 && (Number(st.messaggi) || 0) >= a.messaggi;
+}
+export function testoAnnuncio(cfg, lingua, valori) {
+  const base = cfg?.annuncio?.testo || ANNUNCIO.testi[lingua] || ANNUNCIO.testi.it;
+  return base.replace(/\{(\w+)\}/g, (m, k) => (valori[k] != null ? String(valori[k]) : m)).slice(0, 400);
+}
 export const PREMI_MODI = ['auto', 'colpo', 'prezzo'];
 // Il premio a punti canale di una voce: il nome come lo vede chi riscatta.
 export const titoloPremio = (voce) => ('Colpo: ' + voce.nome).slice(0, 45);

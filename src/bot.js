@@ -106,7 +106,7 @@ import { statoVivo, registroColpi, effects as effettiDb, segnoInstagram, pewSeri
 import { creaServizioColpi } from './features/colpi-servizio.js';
 import * as economia from './features/economia.js';
 import { nomeMoneta, monetaDi, accordaMoneta } from './features/moneta.js';
-import { urlPaginaColpo, eFrasePresenza, pagaInChat, chiedeBit, rispostaBit, chiedeZaino, rispostaZaino, voceDi as voceColpo, quandoScade, rispostaPresenza, titoloPremioMisto, lancioInChat, rispostaChat, prezzoChat, chiedeKicks, valutaDi, personaKick, testoPorta, eFrasePorta } from './features/colpi.js';
+import { urlPaginaColpo, eFrasePresenza, pagaInChat, chiedeBit, rispostaBit, chiedeZaino, rispostaZaino, voceDi as voceColpo, quandoScade, rispostaPresenza, titoloPremioMisto, lancioInChat, rispostaChat, prezzoChat, chiedeKicks, valutaDi, personaKick, testoPorta, eFrasePorta, annuncioDovuto, testoAnnuncio } from './features/colpi.js';
 import * as presenzaPorta from './features/presenza-porta.js';
 import { preferenzeDi } from './features/preferenze.js';
 import { creaChatColpi, rigaDi as rigaChatColpi, BATTITO_MS as BATTITO_CHAT_COLPI } from './features/colpi-chat.js';
@@ -486,6 +486,9 @@ export class BotManager {
     // moderator:read:chatters, getChatters dà [] e su Twitch non si conteggia
     // nulla. Il passo e' quello di scriventi.PASSO_MS: un messaggio vale due giri.
     this._watchtimeTimer = setInterval(() => this._tickWatchtime().catch(() => {}), scriventi.PASSO_MS);
+    // il link della pagina Pew in chat, da solo (docs/COLPI.md, «Il link in chat da solo»)
+    this._annunciPew = new Map();
+    this._pewLinkTimer = setInterval(() => this._annunciaPew(), 60_000);
     // Backup automatico del database: tutto (comandi, temi, monete, moderatori,
     // pagine link, token) vive in un solo SQLite. Copie coerenti e periodiche in
     // dataDir/backup, non scaricabili dal web. Uno ~90s dopo l'avvio, poi a
@@ -597,6 +600,7 @@ export class BotManager {
     clearInterval(this._moduliTimer);
     clearInterval(this._listaBotTimer);
     clearInterval(this._watchtimeTimer);
+    clearInterval(this._pewLinkTimer);
     stopBackupAuto();
     clearInterval(this._tiktokTimer);
     clearInterval(this._kickTimer);
@@ -1271,6 +1275,34 @@ export class BotManager {
     dire(testoPorta(cfg, 'ricorda', linguaChat(login), { nome: chi.user, frase: cfg.presenza.frase }));
   }
 
+  // IL LINK DELLA PAGINA PEW, DA SOLO. Lo stato e' per canale e piattaforma, da
+  // quando e' in onda: il primo arriva ogniMin dopo l'inizio, poi ogniMin dopo
+  // l'ultimo, e solo se la chat si e' mossa. In memoria: dopo un riavvio si
+  // riparte dall'inizio, e al peggio il primo arriva un giro dopo.
+  _statoAnnuncio(login, piattaforma) {
+    const m = this._annunciPew || (this._annunciPew = new Map());
+    const k = String(login).toLowerCase() + '|' + piattaforma;
+    if (!m.has(k)) m.set(k, { messaggi: 0, ultimo: 0, inizio: NaN });
+    return m.get(k);
+  }
+  _annunciaPew(ora = Date.now()) {
+    for (const s of streamers.list()) {
+      const ch = String(s.login || '').toLowerCase();
+      const cfg = s.botEnabled && s.settings?.colpi?.attivo === true ? this.colpi?.cfgDi(ch) : null;
+      for (const p of ['twitch', 'kick']) {
+        const live = p === 'twitch' ? this._liveState?.get(ch) === true : this.inDirettaSu(ch, p);
+        if (!cfg || !live) { this._annunciPew?.delete(ch + '|' + p); continue; }
+        const st = this._statoAnnuncio(ch, p);
+        if (!Number.isFinite(st.inizio)) st.inizio = ora;
+        if (!annuncioDovuto(cfg, p, st, ora)) continue;
+        st.ultimo = ora;
+        st.messaggi = 0;
+        try { this.vocePer({ channel: ch, piattaforma: p })(testoAnnuncio(cfg, linguaChat(ch), { pagina: urlPaginaColpo(ch).replace(/^https:\/\//, ''), canale: s.display || ch })); }
+        catch (e) { log.debug(`#${ch} link della pagina Pew:`, e?.message || e); }
+      }
+    }
+  }
+
   _inizioTwitch(login) {
     if (this._liveState.get(login) !== true) return 0;
     return Number(rapporto.inCorso(login)?.inizio) || 0;
@@ -1473,6 +1505,8 @@ export class BotManager {
     if (!msg.isSelf) { try { persona.interagisci(msg.user); } catch { /* niente */ } }
     // L'economia gira sempre: le monete della presenza non sono un comando.
     try { games.accredita(msg, parla); } catch (e) { log.error(`#${login} monete:`, e?.message || e); }
+    // i messaggi contano per il link della pagina Pew: in una chat ferma non si parla da soli
+    if (!msg.isSelf) { const st = this._statoAnnuncio(login, msg.piattaforma || 'twitch'); st.messaggi++; }
     // il primo messaggio di sempre in questo canale: lo dice Twitch (first-msg)
     if (msg.isFirst && !msg.isSelf && (!msg.piattaforma || msg.piattaforma === 'twitch')) {
       try { economia.evento(login, 'primo', msg.user); } catch (e) { log.debug(`#${login} monete del primo messaggio:`, e?.message || e); }
