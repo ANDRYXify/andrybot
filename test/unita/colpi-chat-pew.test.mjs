@@ -61,22 +61,26 @@ test('il modello: spento di serie, il quadro dello streamer, i mezzi in ordine, 
   assert.deepEqual(normalizza({ quadro: { l: 9000, a: 10 } }).quadro, { l: QUADRO.lato[1], a: QUADRO.lato[0] });
 });
 
-test('un messaggio, un significato: i codici, «bit», «zaino» e la presenza restano loro', () => {
+test('un messaggio, un significato: i codici, «bit», «zaino» e la presenza restano loro', async () => {
   assert.equal(parolaChat({ comando: 'torta' }), 'torta');
   for (const c of ['k7qx3', 'ab_c3d4e', 'bit', 'bits', 'zaino', 'mochila']) assert.equal(parolaChat({ comando: c }), '', c);
-  const cfg = normalizza({ chat: { attivo: true }, presenza: { attiva: true, comando: 'torta', frase: '!pew eccomi' },
+  // la frase della presenza e' del canale (presente.js): il bot la passa, e resta sua
+  const { presenteDi } = await import('../../src/features/presente.js');
+  const frase = presenteDi({ presente: { frase: '!pew eccomi' } }).frase;
+  const cfg = normalizza({ chat: { attivo: true }, presenza: { attiva: true, comando: 'torta' },
     voci: [VOCE, { comando: 'k7qx3', bit: 1 }, { comando: 'spenta', bit: 1, chat: { modo: 'no' } }, { comando: 'eccomi', bit: 1 }, { comando: 'ferma', bit: 1, attiva: false }] });
-  assert.deepEqual(lancioInChat(cfg, '!pew torta'), { voce: 'torta', con: '' });
-  assert.deepEqual(lancioInChat(cfg, '  !PEW Torta MONETE '), { voce: 'torta', con: 'monete' });
-  assert.deepEqual(['zaino', 'bits', 'misto', 'coins'].map((m) => lancioInChat(cfg, `!pew torta ${m}`).con), ['zaino', 'bit', 'misto', 'monete']);
+  assert.deepEqual(lancioInChat(cfg, '!pew torta', frase), { voce: 'torta', con: '' });
+  assert.deepEqual(lancioInChat(cfg, '  !PEW Torta MONETE ', frase), { voce: 'torta', con: 'monete' });
+  assert.deepEqual(['zaino', 'bits', 'misto', 'coins'].map((m) => lancioInChat(cfg, `!pew torta ${m}`, frase).con), ['zaino', 'bit', 'misto', 'monete']);
   for (const m of ['!pew torta grazie', '!pew k7qx3', '!pew bit', '!pew zaino', '!pew spenta', '!pew eccomi', '!pew ferma', 'ciao !pew torta', '!pewtorta', '!pew'])
-    assert.equal(lancioInChat(cfg, m), null, m);
-  // la frase vale anche solo come porta, con l'effetto in diretta spento
-  const porta = normalizza({ chat: { attivo: true }, presenza: { frase: '!pew eccomi' }, voci: [{ comando: 'eccomi', bit: 1 }] });
-  assert.equal(lancioInChat(porta, '!pew eccomi'), null, 'la frase della porta resta sua');
+    assert.equal(lancioInChat(cfg, m, frase), null, m);
+  // anche senza l'effetto della presenza, la frase resta sua
+  const senza = normalizza({ chat: { attivo: true }, voci: [{ comando: 'eccomi', bit: 1 }] });
+  assert.equal(lancioInChat(senza, '!PEW   eccomi', frase), null, 'la frase della presenza resta sua');
   // la vecchia di serie non e' piu' la frase: un colpo che si chiama «presente» si lancia
-  const nuova = normalizza({ chat: { attivo: true }, presenza: { attiva: true, comando: 'torta', frase: '!pew presente' }, voci: [VOCE, { comando: 'presente', bit: 1 }] });
-  assert.deepEqual(lancioInChat(nuova, '!pew presente'), { voce: 'presente', con: '' });
+  const vecchia = presenteDi({ colpi: { presenza: { frase: '!pew presente' } } }).frase;
+  const nuova = normalizza({ chat: { attivo: true }, voci: [VOCE, { comando: 'presente', bit: 1 }] });
+  assert.deepEqual(lancioInChat(nuova, '!pew presente', vecchia), { voce: 'presente', con: '' });
   assert.equal(lancioInChat(normalizza({ voci: [VOCE] }), '!pew torta'), null, 'la chat spenta non lancia');
   assert.deepEqual(lancioInChat(normalizza({ comando: 'colpo', chat: { attivo: true }, voci: [VOCE] }), '!colpo torta'), { voce: 'torta', con: '' }, 'il comando e\' dello streamer');
 });

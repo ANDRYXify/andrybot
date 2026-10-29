@@ -231,6 +231,7 @@ function impostazioni() {
     promoSocial: s.promoSocial !== false,
     vetrinaLive: s.vetrinaLive === true,
     nomeMonete: (typeof s.nomeMonete === 'string' && s.nomeMonete.trim()) || 'monete',
+    presente: (s.presente && typeof s.presente === 'object') ? s.presente : null,
     punti: { perMessaggio: 2, ogniSecondi: 60, trivia: 25, duello: 15, slotCosto: 10, slotVinci: 200, slotCoppia: 20, topN: 5, perPresenza: 5, perAttivita: 5, moltSub: 1.5, moltVip: 1.25, lurkPasso: 0.15, lurkMinimo: 0.35, auto: true, msgSpento: true, esclusi: [], noComandi: false, noRipetuti: false, minLettere: 0, pienoMin: 0, stopMin: 0, tettoDiretta: 0, saldoMax: 0, durate: { chat: 'mai', giochi: 'mai', premi: 'mai', staff: 'mai' }, giocoOgni: 0, giochiScorta: 3, ...(s.punti && typeof s.punti === 'object' ? s.punti : {}) },
     premioVip: (s.premioVip && typeof s.premioVip === 'object') ? s.premioVip : {},
     antispam: (s.antispam && typeof s.antispam === 'object') ? s.antispam : {},
@@ -1012,6 +1013,8 @@ function statoDemo() {
         instagram: { userId: '17841400000000000', username: 'andryxify', via: 'instagram', attivo: true, annunciaChat: false, messaggio: '' },
         giochiSito: { attivo: true, collegato: true },
         antispam: { maiuscole: true, link: true, flood: true },
+        presente: { frase: '!presente', premi: [1, 5, 10, 15], dopo: 'resta', rispondi: true, risposta: '',
+          porta: { attiva: true, monete: true, bit: true, giochi: 'blocca', ricorda: true, testoRicorda: '', conferma: true, testoConferma: '' } },
         colpi: { attivo: true, pausa: false, attesaSec: 30, alMinuto: 6, conNome: true, zone: [{ x: 72, y: 62, w: 26, h: 34 }],
           voci: [{ id: 'pomodoro', comando: 'pomodoro', nome: 'Pomodoro', euro: 200, punti: 500, bit: 100, scala: 100, attiva: true }] },
         penitenze: { attivo: true, premioVieta: 'Vietami una parola', premioSolo: 'Dì solo questa parola',
@@ -4609,6 +4612,8 @@ const GRUPPI = [
     ['negozio', 'Negozio'],
   ] },
   { id: 'gioca', nome: 'Intrattenimento', schede: [
+    ['presenza', 'Presenza'],
+    ['monete', 'Monete'],
     ['giochi', 'Giochi'],
     ['partite', 'Partite'],
     ['sondaggi', 'Sondaggi e predizioni'],
@@ -4703,6 +4708,8 @@ const T_SCHEDA = {
   moduli: ['Comandi', 'Commands', 'Comandos'],
   regole: ['Moderazione', 'Moderation', 'Moderación'],
   negozio: ['Negozio', 'Shop', 'Tienda'],
+  presenza: ['Presenza', 'Attendance', 'Presencia'],
+  monete: ['Monete', 'Coins', 'Monedas'],
   giochi: ['Giochi', 'Games', 'Juegos'],
   partite: ['Partite', 'Matches', 'Partidas'],
   sondaggi: ['Sondaggi e predizioni', 'Polls & predictions', 'Encuestas y predicciones'],
@@ -4792,6 +4799,8 @@ const ICONA = {
   attacchi:    _ico('<path d="M12 3.2 19 6v5c0 4.8-3.4 7.8-7 8.8-3.6-1-7-4-7-8.8V6z"/><path d="m12.6 7.5-2.8 4.6h2.6l-1 4.4 3-5h-2.6z"/>'),
   follower:    _ico('<path d="M15 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="m16 11 2 2 4-4"/>'),
   registro:    _ico('<rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3h6v1"/><path d="M9 10h6"/><path d="M9 14h6"/><path d="M9 18h3"/>'),
+  presenza:    _ico('<circle cx="9" cy="7" r="4"/><path d="M2 21v-2a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v2"/><path d="m16 11 2 2 4-4"/>'),
+  monete:      _ico('<ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v6c0 1.66 3.13 3 7 3s7-1.34 7-3V6"/><path d="M5 12v6c0 1.66 3.13 3 7 3s7-1.34 7-3v-6"/>'),
   giochi:      _ico('<rect x="2" y="7.5" width="20" height="9" rx="4.5"/><path d="M7 11v3"/><path d="M5.5 12.5h3"/><circle cx="16" cy="11.5" r=".9" fill="currentColor" stroke="none"/><circle cx="18" cy="13.5" r=".9" fill="currentColor" stroke="none"/>'),
   negozio:     _ico('<path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/>'),
   effetti:     _ico('<path d="M4 9v6h4l5 4V5L8 9z"/><path d="M17 9.5a4 4 0 0 1 0 5"/>'),
@@ -4836,7 +4845,9 @@ const DESC = {
   registro: ['Ogni intervento dello scudo, i casi da rivedere e quello rimasto in sospeso.', 'Every shield action, the cases to review and what is left pending.', 'Cada intervención del escudo, los casos por revisar y lo que quedó pendiente.'],
   attacchi: ['Ogni attacco col suo rapporto, come ti avviso e gli altri scudi.', 'Every attack with its report, how I tell you and the other shields.', 'Cada ataque con su informe, cómo te aviso y los otros escudos.'],
   follower: ['La lista intera di chi ti segue, i bot trovati e perché, e la pulizia.', 'The full list of who follows you, the bots found and why, and the cleanup.', 'La lista completa de quién te sigue, los bots encontrados y por qué, y la limpieza.'],
-  giochi: ['Mini-giochi, monete e classifiche per la chat.', 'Minigames, coins and leaderboards for chat.', 'Minijuegos, monedas y clasificaciones para el chat.'],
+  presenza: ['Chi è presente: chi scrive «!presente», chi resta in chat, e cosa vale per chi non c’è.', 'Who is present: who types «!presente», who stays in chat, and what applies to who isn’t.', 'Quién está presente: quien escribe «!presente», quien se queda en el chat, y qué vale para quien no está.'],
+  monete: ['Le monete del canale: il nome, come si guadagnano e si perdono, il registro, la classifica e i VIP.', 'The channel coins: the name, how they are earned and lost, the register, the leaderboard and VIPs.', 'Las monedas del canal: el nombre, cómo se ganan y se pierden, el registro, la clasificación y los VIP.'],
+  giochi: ['Mini-giochi per la chat: a comando, automatici, citazioni e battute.', 'Minigames for chat: on command, automatic, quotes and jokes.', 'Minijuegos para el chat: por comando, automáticos, citas y chistes.'],
   negozio: ['Cosa si compra con le monete del canale, chi lo compra, cosa c’è da consegnare, e la pagina del negozio.', 'What can be bought with channel coins, who buys it, what there is to deliver, and the shop page.', 'Qué se compra con las monedas del canal, quién lo compra, qué hay que entregar, y la página de la tienda.'],
   effetti: ['Effetti, suoni, GIF e video da lanciare in chat o in overlay — con libreria condivisa.', 'Effects, sounds, GIFs and videos to trigger in chat or overlay — with a shared library.', 'Efectos, sonidos, GIF y vídeos para lanzar en el chat o en el overlay — con biblioteca compartida.'],
   regia: ['Gestisci la diretta dal bot: titolo, categoria, tag, clip, marker, pubblicità e raid.', 'Run your stream from the bot: title, category, tags, clips, markers, ads and raids.', 'Gestiona el directo desde el bot: título, categoría, etiquetas, clips, marcadores, anuncios y raids.'],
@@ -4873,7 +4884,7 @@ const DESC = {
 };
 const descScheda = (id) => { const d = DESC[id]; return d ? L(d[0], d[1], d[2]) : ''; };
 
-const SCHEDA_FUNZ = { giochi: 'giochi', negozio: 'giochi', partite: 'giochi', musica: 'musica', ascolto: 'voce', notifiche: 'notifiche', telegram: 'notifiche', effetti: 'effetti', sondaggi: 'effetti', studio: 'studio' };
+const SCHEDA_FUNZ = { giochi: 'giochi', monete: 'giochi', negozio: 'giochi', partite: 'giochi', musica: 'musica', ascolto: 'voce', notifiche: 'notifiche', telegram: 'notifiche', effetti: 'effetti', sondaggi: 'effetti', studio: 'studio' };
 const FUNZ_ADDON = { giochi: 'giochi', musica: 'musica', voce: 'voce', notifiche: 'base', effetti: 'effetti', clipAuto: 'clip', studio: 'base', moderatori: 'base' };
 
 const NOME_ADDON = {
@@ -5018,8 +5029,12 @@ const GUIDE = {
     come: [['Collega dove ricevi i soldi: la chiave con restrizioni di Stripe, il codice di attivazione di Satispay, la tua pagina Ko-fi col suo token. Uno o più, e restano tuoi.', 'Connect where you receive the money: the Stripe restricted key, the Satispay activation code, your Ko-fi page with its token. One or more, and they stay yours.', 'Conecta donde recibes el dinero: la clave restringida de Stripe, el código de activación de Satispay, tu página de Ko-fi con su token. Uno o varios, y siguen siendo tuyos.', '#dona-conto-box'], ['Accendi le donazioni e scegli come si dona: dalla pagina coi conti collegati, oppure con un link esterno.', 'Turn donations on and choose how people donate: from the page with the connected accounts, or with an external link.', 'Activa las donaciones y elige cómo se dona: desde la página con las cuentas conectadas, o con un enlace externo.', '#dona-attivo'], ['Decidi gli importi suggeriti, il minimo, il massimo, se chi dona può lasciare un messaggio, e le offerte con i loro effetti.', 'Set the suggested amounts, the minimum, the maximum, whether donors can leave a message, and the offers with their effects.', 'Decide los importes sugeridos, el mínimo, el máximo, si quien dona puede dejar un mensaje, y las ofertas con sus efectos.', '#dona-importi'], ['Scrivi il testo del tasto e una frase: compaiono nel blocco «Sostieni» della pagina.', 'Write the button text and a line: they show in the «Support me» block of the page.', 'Escribe el texto del botón y una frase: aparecen en el bloque «Apóyame» de la página.', '#dona-etichetta'], ['Se vuoi, accendi il grazie in chat e prova l\'avviso.', 'If you like, turn on the chat thanks and test the alert.', 'Si quieres, activa el gracias en el chat y prueba el aviso.', '#dona-chat']] },
   regole: { serve: ['I filtri sui messaggi: le parole che il bot non dirà mai, e l\'antispam che pulisce la chat da solo.', 'Message filters: the words the bot will never say, and the anti-spam that cleans chat on its own.', 'Los filtros de los mensajes: las palabras que el bot nunca dirá, y el antispam que limpia el chat solo.'],
     come: [['Scrivi le parole vietate, una per riga.', 'Write the banned words, one per line.', 'Escribe las palabras prohibidas, una por línea.', '#txt-vietate'], ['Accendi l\'antispam: da lì in giù decidi cosa filtrare.', 'Turn on anti-spam: from there down you choose what to filter.', 'Enciende el antispam: de ahí para abajo eliges qué filtrar.', '#chk-as-attivo'], ['Scegli chi può postare link e quali domini passano sempre.', 'Choose who can post links and which domains always pass.', 'Elige quién puede publicar enlaces y qué dominios pasan siempre.', '#sel-as-linktier'], ['Salva: il bot modera da solo.', 'Save: the bot moderates on its own.', 'Guarda: el bot modera solo.', '#btn-salva-antispam']] },
-  giochi: { serve: ['Minigiochi, monete e classifiche per tenere viva la chat.', 'Minigames, coins and leaderboards to keep chat alive.', 'Minijuegos, monedas y clasificaciones para animar el chat.'],
-    come: [['Attiva i giochi.', 'Turn on games.', 'Activa los juegos.', '#chk-giochi'], ['Dai un nome alla moneta.', 'Give your coin a name.', 'Ponle nombre a tu moneda.', '#inp-monete'], ['In «Gioco per gioco» apri un gioco e lo sistemi tutto lì: acceso o spento, il nome, quanto costa, quanto paga e quanto si aspetta. Gli spettatori giocano con !slot, !roulette, !pesca, !trivia…', 'In “Game by game” open a game and set it all up right there: on or off, its name, what it costs, what it pays and how long people wait. Viewers play with !slot, !roulette, !fish, !trivia…', 'En «Juego por juego» abre un juego y lo ajustas todo ahí: activo o apagado, el nombre, cuánto cuesta, cuánto paga y cuánto se espera. Los espectadores juegan con !slot, !roulette, !pesca, !trivia…', '#regole-giochi'], ['Quante monete arrivano stando in chat lo decidi in «Monete e classifica».', 'How many coins people get just by being in chat is up to you in “Coins and leaderboard”.', 'Cuántas monedas llegan solo por estar en el chat lo decides en «Monedas y clasificación».', '#pt-perPresenza'], ['Se vuoi, i giochi li lancia il bot da solo: scegli quanto spesso e, gioco per gioco, quanto esce rispetto agli altri.', 'If you like, the bot launches games on its own: choose how often and, game by game, how often each comes up compared to the others.', 'Si quieres, los juegos los lanza el bot solo: elige cada cuánto y, juego por juego, cuánto sale cada uno respecto a los demás.', '#giro-attivo']] },
+  presenza: { serve: ['Decidere chi è presente: chi scrive «!presente» (e cosa perde chi non lo fa) e chi resta in chat dieci minuti.', 'Decide who is present: who types «!presente» (and what whoever doesn’t loses) and who stays in chat ten minutes.', 'Decidir quién está presente: quien escribe «!presente» (y qué pierde quien no lo hace) y quien se queda en el chat diez minutos.'],
+    come: [['Scegli la frase che fa presenti. Vale anche con i Pew spenti.', 'Pick the phrase that checks people in. It counts even with Pew off.', 'Elige la frase que hace presentes. Vale también con Pew apagado.', '#ps-frase'], ['Se vuoi, dai monete a ogni presenza di fila, gradino per gradino.', 'If you like, give coins for each check-in in a row, step by step.', 'Si quieres, da monedas por cada presencia seguida, escalón a escalón.', '#ps-premi'], ['Scegli cosa resta chiuso a chi non è presente: monete, Bit da spendere, giochi.', 'Pick what stays closed to whoever hasn’t checked in: coins, Bits to spend, games.', 'Elige qué queda cerrado a quien no está presente: monedas, Bits para gastar, juegos.', '#ps-po-attiva'], ['Più giù, «Presenze e saluti»: la serie di chi resta in chat, il bonus e i saluti.', 'Further down, “Attendance and greetings”: the streak of whoever stays in chat, the bonus and the greetings.', 'Más abajo, «Presencias y saludos»: la racha de quien se queda en el chat, el bono y los saludos.', '#pr-attivo']] },
+  monete: { serve: ['Le monete del canale in un posto solo: come si chiamano, come si guadagnano e si perdono, chi le ha e chi vince il VIP.', 'Channel coins in one place: what they are called, how they are earned and lost, who has them and who wins VIP.', 'Las monedas del canal en un solo sitio: cómo se llaman, cómo se ganan y se pierden, quién las tiene y quién gana el VIP.'],
+    come: [['Dai un nome alla moneta.', 'Give your coin a name.', 'Ponle nombre a tu moneda.', '#inp-monete'], ['Decidi quante ne arrivano stando in chat e scrivendo.', 'Decide how many come from being in chat and chatting.', 'Decide cuántas llegan por estar en el chat y escribir.', '#pt-perPresenza'], ['Nel registro vedi chi le ha date e tolte, e le rimetti con «Annulla».', 'In the register you see who gave and took them, and put them back with “Undo”.', 'En el registro ves quién las dio y quitó, y las devuelves con «Deshacer».', '#carta-registro-monete'], ['Chi conta come presente, e chi non le riceve, lo decidi nella scheda Presenza.', 'Who counts as present, and who doesn’t get them, is up to you in the Attendance tab.', 'Quién cuenta como presente, y quién no las recibe, lo decides en la pestaña Presencia.', '#mo-vai-presenza']] },
+  giochi: { serve: ['Minigiochi per tenere viva la chat: a comando, automatici, citazioni e battute.', 'Minigames to keep chat alive: on command, automatic, quotes and jokes.', 'Minijuegos para animar el chat: por comando, automáticos, citas y chistes.'],
+    come: [['Attiva i giochi.', 'Turn on games.', 'Activa los juegos.', '#chk-giochi'], ['In «Gioco per gioco» apri un gioco e lo sistemi tutto lì: acceso o spento, il nome, quanto costa, quanto paga e quanto si aspetta. Gli spettatori giocano con !slot, !roulette, !pesca, !trivia…', 'In “Game by game” open a game and set it all up right there: on or off, its name, what it costs, what it pays and how long people wait. Viewers play with !slot, !roulette, !fish, !trivia…', 'En «Juego por juego» abre un juego y lo ajustas todo ahí: activo o apagado, el nombre, cuánto cuesta, cuánto paga y cuánto se espera. Los espectadores juegan con !slot, !roulette, !pesca, !trivia…', '#regole-giochi'], ['Quante monete arrivano stando in chat lo decidi nella scheda Monete.', 'How many coins people get just by being in chat is up to you in the Coins tab.', 'Cuántas monedas llegan solo por estar en el chat lo decides en la pestaña Monedas.', '#gi-vai-monete'], ['Se vuoi, i giochi li lancia il bot da solo: scegli quanto spesso e, gioco per gioco, quanto esce rispetto agli altri.', 'If you like, the bot launches games on its own: choose how often and, game by game, how often each comes up compared to the others.', 'Si quieres, los juegos los lanza el bot solo: elige cada cuánto y, juego por juego, cuánto sale cada uno respecto a los demás.', '#giro-attivo']] },
   negozio: { serve: ['Un negozio in cui si paga con le monete del canale: effetti, VIP, ruoli, canzoni, oggetti della borsa, cose da consegnare in diretta.', 'A shop where people pay with channel coins: effects, VIP, roles, songs, bag items, things to deliver on stream.', 'Una tienda en la que se paga con las monedas del canal: efectos, VIP, roles, canciones, objetos de la bolsa, cosas para entregar en directo.'],
     come: [['Apri il negozio.', 'Open the shop.', 'Abre la tienda.', '#chk-negozio'], ['Crea un articolo, o parti da un modello.', 'Create an item, or start from a template.', 'Crea un artículo, o empieza desde un modelo.', '#neg-nuovo'], ['In chat si compra con !compra e la parola dell’articolo.', 'In chat people buy with !compra and the item word.', 'En el chat se compra con !compra y la palabra del artículo.']] },
   effetti: { serve: ['Suoni ed effetti in overlay della diretta: da un comando, dai punti canale, o da un follow, dei bit, un raid.', 'Sounds and effects in the stream overlay: from a command, from channel points, or from a follow, bits, a raid.', 'Sonidos y efectos en el overlay del directo: desde un comando, desde los puntos de canal, o desde un follow, unos bits, un raid.'],
@@ -5115,6 +5130,8 @@ const ICO = {
   telefono: '<rect width="14" height="20" x="5" y="2" rx="2"/><path d="M12 18h.01"/>',
   carta: '<rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/>',
   utente: '<circle cx="12" cy="7" r="4"/><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>',
+  presente: '<circle cx="9" cy="7" r="4"/><path d="M2 21v-2a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v2"/><path d="m16 11 2 2 4-4"/>',
+  moneta: '<ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v6c0 1.66 3.13 3 7 3s7-1.34 7-3V6"/><path d="M5 12v6c0 1.66 3.13 3 7 3s7-1.34 7-3v-6"/>',
   utenti: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
   persona: '<path d="M12 3c.35 3.8 1.4 4.85 5 5.2-3.6.35-4.65 1.4-5 5.2-.35-3.8-1.4-4.85-5-5.2 3.6-.35 4.65-1.4 5-5.2Z"/><path d="M18.5 15c.15 1.6.6 2.05 2.2 2.2-1.6.15-2.05.6-2.2 2.2-.15-1.6-.6-2.05-2.2-2.2 1.6-.15 2.05-.6 2.2-2.2Z"/>',
   righello: '<path d="M21.3 15.3a2.4 2.4 0 0 1 0 3.4l-2.6 2.6a2.4 2.4 0 0 1-3.4 0L2.7 8.7a2.4 2.4 0 0 1 0-3.4l2.6-2.6a2.4 2.4 0 0 1 3.4 0Z"/><path d="m14.5 12.5 2-2"/><path d="m11.5 9.5 2-2"/><path d="m8.5 6.5 2-2"/><path d="m17.5 15.5 2-2"/>',
@@ -5269,7 +5286,7 @@ const SOTTO_SCHEDE = {
   },
   giochi: {
     attributo: 'zona',
-    voci: [['giochi', ['I giochi', 'Games', 'Los juegos']], ['monete', ['Monete e classifica', 'Coins and leaderboard', 'Monedas y clasificación']], ['automatici', ['Giochi automatici', 'Automatic games', 'Juegos automáticos']], ['battute', ['Citazioni e battute', 'Quotes and jokes', 'Citas y chistes']]],
+    voci: [['giochi', ['I giochi', 'Games', 'Los juegos']], ['automatici', ['Giochi automatici', 'Automatic games', 'Juegos automáticos']], ['battute', ['Citazioni e battute', 'Quotes and jokes', 'Citas y chistes']]],
   },
 };
 
@@ -6024,11 +6041,16 @@ document.addEventListener('click', (ev) => {
   apriGioco(g.dataset.vaiGioco);
 });
 
+const SOTTO_TRASLOCATE = { 'giochi/monete': 'monete' };
+const traslocata = (id, sotto) => SOTTO_TRASLOCATE[`${id}/${sotto}`] || '';
+
 document.addEventListener('click', (ev) => {
   const b = ev.target.closest?.('button[data-vai]');
   const id = b?.dataset.vai;
   if (!id || !schedaValida(id)) return;
   ev.preventDefault();
+  const via = traslocata(id, b.dataset.vaiSotto);
+  if (via) { vaiAScheda(via); return; }
   if (b.dataset.vaiSotto) { try { localStorage.setItem('sotto:' + id, b.dataset.vaiSotto); } catch {  } }
   vaiAScheda(id);
 });
@@ -6104,6 +6126,8 @@ function vistaPiattaforma() {
     ${pannelloRegistro()}
     ${pannelloAttacchi()}
     ${pannelloFollower()}
+    ${pannelloPresenza()}
+    ${pannelloMonete()}
     ${pannelloGiochi()}
     ${pannelloNegozio()}
     ${pannelloRegia()}
@@ -12877,6 +12901,8 @@ function pannelloNegozio() {
     <div class="carta">
       <h2>${_hIco(ICO.negozio)}${L('Il negozio del canale', 'The channel shop', 'La tienda del canal')}</h2>
       <p>${L('Qui si paga solo con le monete del canale, cioè con il tempo passato in chat e in diretta. Tu decidi cosa c’è, quanto costa e chi lo può comprare; chi guarda compra dalla chat.', 'Here people pay only with channel coins, that is with the time spent in chat and on stream. You decide what’s there, what it costs and who can buy it; viewers buy from chat.', 'Aquí solo se paga con las monedas del canal, es decir con el tiempo pasado en el chat y en directo. Tú decides qué hay, cuánto cuesta y quién lo puede comprar; quien mira compra desde el chat.')}</p>
+      <p class="suggerimento">${L('Le monete si guadagnano in chat e in diretta: come, lo decidi nella scheda Monete.', 'Coins are earned in chat and on stream: how is up to you in the Coins tab.', 'Las monedas se ganan en el chat y en directo: cómo, lo decides en la pestaña Monedas.')}
+        <button type="button" class="btn secondario mini" data-scheda="monete">${L('Da dove vengono le monete', 'Where coins come from', 'De dónde vienen las monedas')}</button></p>
       <p class="suggerimento"><a href="/manuale/negozio" target="_blank" rel="noopener">${L('Manuale del negozio', 'Shop manual', 'Manual de la tienda')}</a>: ${L('ogni tipo di articolo, i requisiti e cosa succede quando qualcosa non parte.', 'every item type, the requirements and what happens when something doesn’t go through.', 'cada tipo de artículo, los requisitos y qué pasa cuando algo no sale.')}</p>
       <div class="riga-check">
         <input type="checkbox" id="chk-negozio">
@@ -26266,6 +26292,8 @@ function pannelloColpi() {
         <li><strong>Bit</strong>: ${L('un Cheer in chat con il codice nel messaggio. I Bit si spendono solo su Twitch: la pagina non li può incassare.', 'a Cheer in chat with the code in the message. Bits can only be spent on Twitch: the page can\'t collect them.', 'un Cheer en el chat con el código en el mensaje. Los Bits solo se gastan en Twitch: la página no puede cobrarlos.')}</li>
         <li><strong>${L('Accesso con Twitch', 'Twitch login', 'Acceso con Twitch')}</strong>: ${L('chi entra nella pagina con Twitch (un solo permesso: scrivere in chat) non ha bisogno del codice: il suo cheer o il suo riscatto paga il suo colpo. E scrive in chat dalla pagina, accanto alla diretta.', 'whoever logs into the page with Twitch (one permission only: writing in chat) needs no code: their own cheer or redemption pays their hit. And they chat from the page, next to the stream.', 'quien entra en la página con Twitch (un solo permiso: escribir en el chat) no necesita el código: su cheer o su canje paga su golpe. Y escribe en el chat desde la página, junto al directo.')}</li>
       </ul>
+      <p class="suggerimento">${L('Un colpo si paga anche con le monete del canale.', 'A hit can also be paid with channel coins.', 'Un golpe también se paga con las monedas del canal.')}
+        <button type="button" class="btn secondario mini" data-scheda="monete">${L('Da dove vengono le monete', 'Where coins come from', 'De dónde vienen las monedas')}</button></p>
       <div class="riga-interruttore spazio-sopra">
         <label class="interruttore"><input type="checkbox" id="cl-attivo" ${c.attivo ? 'checked' : ''}><span class="levetta"></span></label>
         <span class="etichetta-stato">${L('Pagina di Pewpewify aperta', 'Pewpewify page open', 'Página de Pewpewify abierta')}</span>
@@ -26417,17 +26445,15 @@ function pannelloColpi() {
     </div>
 
     <div class="carta" id="cl-presenza">
-      <h3>${_hIco(ICO.persona)}${L('La presenza', 'Check-in', 'La presencia')}</h3>
-      <p>${L('Chi scrive in chat la tua frase fa comparire in diretta un effetto col suo nome, nel punto che scegli tu. È gratis, vale una volta per diretta e conta come presenza nella serie. Serve la pagina di Pewpewify aperta, la diretta in onda e l\'overlay.', 'Whoever types your phrase in chat makes an effect appear on stream with their name, in the spot you pick. It\'s free, works once per stream and counts as attendance in the streak. It needs the Pewpewify page open, the stream live and the overlay.', 'Quien escribe tu frase en el chat hace aparecer en directo un efecto con su nombre, en el punto que eliges. Es gratis, vale una vez por directo y cuenta como presencia en la racha. Hace falta la página de Pewpewify abierta, el directo en marcha y el overlay.')}</p>
+      <h3>${_hIco(ICO.persona)}${L('La presenza a schermo', 'Check-in on screen', 'La presencia en pantalla')}</h3>
+      <p>${L(`Chi scrive in chat la frase della presenza (adesso «${esc(impostazioni().presente?.frase || '!presente')}») fa comparire in diretta un tuo effetto col suo nome, nel punto che scegli tu. È gratis e vale una volta per diretta. Serve la pagina di Pewpewify aperta, la diretta in onda e l'overlay.`, `Whoever types the check-in phrase in chat (now «${esc(impostazioni().presente?.frase || '!presente')}») makes one of your effects appear on stream with their name, in the spot you pick. It's free and works once per stream. It needs the Pewpewify page open, the stream live and the overlay.`, `Quien escribe en el chat la frase de la presencia (ahora «${esc(impostazioni().presente?.frase || '!presente')}») hace aparecer en directo uno de tus efectos con su nombre, en el punto que eliges. Es gratis y vale una vez por directo. Hace falta la página de Pewpewify abierta, el directo en marcha y el overlay.`)}</p>
+      <p class="suggerimento">${L('Qui c\'è solo l\'effetto. La frase, la porta, la serie e le risposte sono della presenza del canale: valgono anche con i Pew spenti.', 'Only the effect is here. The phrase, the gate, the streak and the replies belong to the channel check-in: they count even with Pew off.', 'Aquí solo está el efecto. La frase, la puerta, la racha y las respuestas son de la presencia del canal: valen también con Pew apagado.')}
+        <button type="button" class="btn secondario mini" data-scheda="presenza">${L('La presenza del canale', 'The channel check-in', 'La presencia del canal')}</button></p>
       <div class="riga-interruttore spazio-sopra">
         <label class="interruttore"><input type="checkbox" id="cl-pr-attiva" ${c.presenza?.attiva ? 'checked' : ''}><span class="levetta"></span></label>
         <span class="etichetta-stato">${L('Presenza accesa', 'Check-in on', 'Presencia activada')}</span>
       </div>
       <div class="griglia-campi spazio-sopra">
-        <div>
-          <label class="campo" for="cl-pr-frase">${L('Cosa scrivono in chat', 'What they type in chat', 'Qué escriben en el chat')}</label>
-          <input type="text" id="cl-pr-frase" maxlength="40" value="${esc(c.presenza?.frase && c.presenza.frase !== '!pew presente' ? c.presenza.frase : '!presente')}" placeholder="!presente">
-        </div>
         <div>
           <label class="campo" for="cl-pr-testo">${L('La scritta sotto l\'effetto', 'The caption under the effect', 'El texto bajo el efecto')}</label>
           <input type="text" id="cl-pr-testo" maxlength="60" value="${esc(c.presenza?.testo || '')}" placeholder="${esc(L('{nome} è presente', '{nome} is here', '{nome} está presente'))}">
@@ -26445,45 +26471,11 @@ function pannelloColpi() {
           <input type="number" id="cl-pr-minuto" min="1" max="30" value="${Number(c.presenza?.alMinuto) || 6}">
         </div>
       </div>
-      <p class="suggerimento">${L('La frase vale scritta da sola: maiuscole e spazi non contano. Nella scritta, {nome} diventa il nome di chi l\'ha scritta; vuota, ognuno la legge nella lingua della tua chat.', 'The phrase counts when typed on its own: capitals and spaces don\'t matter. In the caption, {nome} becomes the name of whoever typed it; left empty, it follows your chat language.', 'La frase vale escrita sola: mayúsculas y espacios no cuentan. En el texto, {nome} se convierte en el nombre de quien la escribió; vacío, sigue el idioma de tu chat.')}</p>
-      <h4 class="spazio-sopra">${L('La serie: monete a ogni presenza di fila', 'The streak: coins for each check-in in a row', 'La racha: monedas por cada presencia seguida')}</h4>
-      <p class="suggerimento">${L('Scrivi le monete di ogni gradino, separate da virgole: la prima presenza vale la prima cifra, la seconda di fila la seconda, e così via. Chi salta una diretta riparte dalla prima. Le monete arrivano una volta per diretta.', 'Write the coins for each step, separated by commas: the first check-in is worth the first number, the second in a row the second, and so on. Whoever misses a stream starts again from the first. Coins arrive once per stream.', 'Escribe las monedas de cada escalón, separadas por comas: la primera presencia vale la primera cifra, la segunda seguida la segunda, y así. Quien se salta un directo vuelve a la primera. Las monedas llegan una vez por directo.')}</p>
-      <div class="griglia-campi">
-        <div>
-          <label class="campo" for="cl-pr-premi">${L('Monete per gradino', 'Coins per step', 'Monedas por escalón')}</label>
-          <input type="text" id="cl-pr-premi" maxlength="200" value="${esc((c.presenza?.premi || (Number(c.presenza?.monete) > 0 ? [c.presenza.monete] : [])).join(', '))}" placeholder="1, 5, 10, 15">
-        </div>
-        <div>
-          <label class="campo" for="cl-pr-dopo">${L('Dopo l\'ultimo gradino', 'After the last step', 'Tras el último escalón')}</label>
-          <select id="cl-pr-dopo"><option value="resta"${c.presenza?.dopo !== 'ricomincia' ? ' selected' : ''}>${L('resta lì', 'stays there', 'se queda ahí')}</option><option value="ricomincia"${c.presenza?.dopo === 'ricomincia' ? ' selected' : ''}>${L('ricomincia dal primo', 'starts over from the first', 'vuelve al primero')}</option></select>
-        </div>
-      </div>
-      <p class="pt-dice" id="cl-pr-dice" aria-live="polite"></p>
-      <div class="riga-check"><input type="checkbox" id="cl-pr-rispondi" ${c.presenza?.rispondi !== false ? 'checked' : ''}><label for="cl-pr-rispondi">${L('Il bot risponde in chat a chi si presenta', 'The bot replies in chat to whoever checks in', 'El bot responde en el chat a quien se presenta')}</label></div>
-      <label class="campo" for="cl-pr-risposta">${L('La risposta (vuota: quella di serie)', 'The reply (empty: the default one)', 'La respuesta (vacía: la de serie)')}</label>
-      <input type="text" id="cl-pr-risposta" maxlength="160" value="${esc(c.presenza?.risposta || '')}" placeholder="${esc(L('{nome}, presente! {serie}ª di fila: +{monete} {moneta}.', '{nome}, checked in! {serie} in a row: +{monete} {moneta}.', '{nome}, ¡presente! {serie}ª seguida: +{monete} {moneta}.'))}">
-      <p class="suggerimento">${L('Nella scritta e nella risposta puoi usare {nome}, {serie} e {monete}; nella risposta anche {moneta}, il nome delle tue monete.', 'In the caption and the reply you can use {nome}, {serie} and {monete}; in the reply also {moneta}, your coin name.', 'En el texto y en la respuesta puedes usar {nome}, {serie} y {monete}; en la respuesta también {moneta}, el nombre de tus monedas.')}</p>
+      <p class="suggerimento">${L('Nella scritta, {nome} diventa il nome di chi si presenta, {serie} quante presenze ha di fila e {monete} le monete del suo gradino; vuota, ognuno la legge nella lingua della tua chat.', 'In the caption, {nome} becomes the name of whoever checks in, {serie} how many check-ins in a row and {monete} the coins of their step; left empty, it follows your chat language.', 'En el texto, {nome} se convierte en el nombre de quien se presenta, {serie} cuántas presencias seguidas lleva y {monete} las monedas de su escalón; vacío, sigue el idioma de tu chat.')}</p>
       <p><button type="button" class="btn secondario mini" id="cl-pr-lancio">${_bIco(ICO.target)}${L('Scegli tra lanci e adesivi', 'Pick from throws and stickers', 'Elige entre lanzamientos y pegatinas')}</button></p>
       <h4 class="spazio-sopra">${L('Dove compare', 'Where it shows up', 'Dónde aparece')}</h4>
       <p class="suggerimento">${L('Tocca il quadro: il centro dell\'effetto va lì. Le zone protette valgono anche qui.', 'Tap the frame: the center of the effect goes there. Protected areas apply here too.', 'Toca el cuadro: el centro del efecto va ahí. Las zonas protegidas valen también aquí.')}</p>
       <div class="cl-quadro cl-quadro-punto" id="cl-pr-quadro" role="application" aria-label="${esc(L('Quadro della diretta: tocca dove compare la presenza', 'Stream frame: tap where the check-in shows up', 'Cuadro del directo: toca dónde aparece la presencia'))}" tabindex="0"></div>
-      <h4 class="spazio-sopra" id="cl-porta">${L('La porta: chi non è presente', 'The gate: who hasn\'t checked in', 'La puerta: quien no está presente')}</h4>
-      <p class="suggerimento">${L('La frase conta sempre, anche con Pewpewify spento o senza overlay: chi la scrive è presente a questa diretta. Chi non l\'ha scritta resta fuori da quello che scegli qui.', 'The phrase always counts, even with Pewpewify off or without the overlay: whoever types it is checked in for this stream. Whoever hasn\'t stays out of what you pick here.', 'La frase cuenta siempre, también con Pewpewify apagado o sin overlay: quien la escribe está presente en este directo. Quien no la ha escrito se queda fuera de lo que eliges aquí.')}</p>
-      <div class="riga-interruttore">
-        <label class="interruttore"><input type="checkbox" id="cl-po-attiva" ${c.presenza?.porta?.attiva !== false ? 'checked' : ''}><span class="levetta"></span></label>
-        <span class="etichetta-stato">${L('Senza presenza, niente…', 'Without check-in, no…', 'Sin presencia, nada de…')}</span>
-      </div>
-      <div class="riga-check"><input type="checkbox" id="cl-po-monete" ${c.presenza?.porta?.monete !== false ? 'checked' : ''}><label for="cl-po-monete">${L('monete dai messaggi e dal tempo guardato', 'coins from messages and watch time', 'monedas por mensajes y tiempo visto')}</label></div>
-      <div class="riga-check"><input type="checkbox" id="cl-po-bit" ${c.presenza?.porta?.bit !== false ? 'checked' : ''}><label for="cl-po-bit">${L('Bit (e Kicks) nel salvadanaio da spendere', 'Bits (and Kicks) in the piggy bank to spend', 'Bits (y Kicks) en la hucha para gastar')}</label></div>
-      <div class="riga-check"><input type="checkbox" id="cl-po-giochi" ${c.presenza?.porta?.giochi !== 'libero' ? 'checked' : ''}><label for="cl-po-giochi">${L('giochi: non può giocare, quindi non vince niente', 'games: they can\'t play, so they win nothing', 'juegos: no puede jugar, así que no gana nada')}</label></div>
-      <p class="suggerimento">${L('Le monete degli eventi (sub, cheer) restano. Un cheer arriva sempre a te: senza presenza i suoi Bit non vanno da spendere. Restano liberi !giochi, !monete, !classifica, !regala, !sblocca e i comandi dello staff. Tu non passi dalla porta.', 'Coins from events (subs, cheers) stay. A cheer always reaches you: without check-in its Bits just don\'t go to spend. !giochi, !monete, !classifica, !regala, !sblocca and staff commands stay open. You never go through the gate.', 'Las monedas de los eventos (subs, cheers) se quedan. Un cheer siempre te llega: sin presencia sus Bits no van para gastar. Quedan libres !giochi, !monete, !classifica, !regala, !sblocca y los comandos del staff. Tú no pasas por la puerta.')}</p>
-      <div class="riga-check"><input type="checkbox" id="cl-po-ricorda" ${c.presenza?.porta?.ricorda !== false ? 'checked' : ''}><label for="cl-po-ricorda">${L('Ricordalo a chi trova la porta chiusa (una volta per diretta)', 'Remind whoever finds the gate closed (once per stream)', 'Recuérdalo a quien encuentra la puerta cerrada (una vez por directo)')}</label></div>
-      <label class="campo" for="cl-po-testo-ricorda">${L('Il ricordo (vuoto: quello di serie)', 'The reminder (empty: the default one)', 'El recordatorio (vacío: el de serie)')}</label>
-      <input type="text" id="cl-po-testo-ricorda" maxlength="200" value="${esc(c.presenza?.porta?.testoRicorda || '')}" placeholder="${esc(L('@{nome} prima scrivi {frase}: da lì {cosa}.', '@{nome} first type {frase}: from then on {cosa}.', '@{nome} primero escribe {frase}: desde ahí {cosa}.'))}">
-      <div class="riga-check"><input type="checkbox" id="cl-po-conferma" ${c.presenza?.porta?.conferma !== false ? 'checked' : ''}><label for="cl-po-conferma">${L('Conferma in chat a chi si presenta, se non riceve già la risposta della serie', 'Confirm in chat to whoever checks in, if they don\'t already get the streak reply', 'Confirma en el chat a quien se presenta, si no recibe ya la respuesta de la racha')}</label></div>
-      <label class="campo" for="cl-po-testo-conferma">${L('La conferma (vuota: quella di serie)', 'The confirmation (empty: the default one)', 'La confirmación (vacía: la de serie)')}</label>
-      <input type="text" id="cl-po-testo-conferma" maxlength="160" value="${esc(c.presenza?.porta?.testoConferma || '')}" placeholder="${esc(L('✓ @{nome} presente!', '✓ @{nome} is here!', '✓ ¡@{nome} presente!'))}">
-      <p class="suggerimento">${L('Nel ricordo: {nome}, {frase} e {cosa} (quello che la porta chiede, detto da solo). Nella conferma: {nome}.', 'In the reminder: {nome}, {frase} and {cosa} (what the gate asks, said for you). In the confirmation: {nome}.', 'En el recordatorio: {nome}, {frase} y {cosa} (lo que pide la puerta, dicho solo). En la confirmación: {nome}.')}</p>
       <p class="riga-flessibile spazio-sopra"><button class="btn" id="cl-pr-salva">${L('Salva', 'Save', 'Guardar')}</button><button type="button" class="btn secondario" id="cl-pr-prova">${_bIco(ICO.play)}${L('Prova nell\'overlay', 'Test in the overlay', 'Probar en el overlay')}</button></p>
     </div>
 
@@ -27063,39 +27055,12 @@ function _clPresenzaLeggi() {
   const v = (id) => document.getElementById(id);
   return {
     attiva: !!v('cl-pr-attiva')?.checked,
-    frase: (v('cl-pr-frase')?.value || '').trim(),
     testo: (v('cl-pr-testo')?.value || '').trim(),
     comando: v('cl-pr-comando')?.value || '',
     scala: Number(v('cl-pr-scala')?.value) || 100,
     alMinuto: Number(v('cl-pr-minuto')?.value) || 6,
-    premi: (v('cl-pr-premi')?.value || '').split(/[\s,;]+/).filter(Boolean).map(Number),
-    dopo: v('cl-pr-dopo')?.value || 'resta',
-    rispondi: !!v('cl-pr-rispondi')?.checked,
-    risposta: (v('cl-pr-risposta')?.value || '').trim(),
     x: _clPunto.x, y: _clPunto.y,
-    porta: {
-      attiva: !!v('cl-po-attiva')?.checked,
-      monete: !!v('cl-po-monete')?.checked,
-      bit: !!v('cl-po-bit')?.checked,
-      giochi: v('cl-po-giochi')?.checked ? 'blocca' : 'libero',
-      ricorda: !!v('cl-po-ricorda')?.checked,
-      testoRicorda: (v('cl-po-testo-ricorda')?.value || '').trim(),
-      conferma: !!v('cl-po-conferma')?.checked,
-      testoConferma: (v('cl-po-testo-conferma')?.value || '').trim(),
-    },
   };
-}
-
-function _clPresenzaDice() {
-  const el = document.getElementById('cl-pr-dice');
-  if (!el) return;
-  const p = _clPresenzaLeggi();
-  const g = p.premi.filter((x) => Number.isFinite(x) && x >= 0).map((x) => Math.round(x)).slice(0, 30);
-  const nome = _clMoneta();
-  if (!g.some((x) => x > 0)) { el.textContent = L('Così la presenza non dà monete.', 'So check-in gives no coins.', 'Así la presencia no da monedas.'); return; }
-  const primi = g.slice(0, 6).map((x, i) => `${i + 1}ª ${x}`).join(', ') + (g.length > 6 ? '…' : '');
-  const poi = p.dopo === 'ricomincia' ? L(`poi si ricomincia da ${g[0]}`, `then it starts over from ${g[0]}`, `luego se vuelve a ${g[0]}`) : L(`poi sempre ${g.at(-1)}`, `then always ${g.at(-1)}`, `luego siempre ${g.at(-1)}`);
-  el.textContent = L(`Così, presenza dopo presenza di fila: ${primi} ${nome}, ${poi}. Chi salta una diretta riparte da ${g[0]}.`, `So, check-in after check-in in a row: ${primi} ${nome}, ${poi}. Whoever misses a stream starts again from ${g[0]}.`, `Así, presencia tras presencia seguida: ${primi} ${nome}, ${poi}. Quien se salta un directo vuelve a ${g[0]}.`);
 }
 
 function _clScadenzaHtml(id, sc) {
@@ -27224,9 +27189,6 @@ function _clBitDice() {
 }
 
 function _clPresenzaGiusta(p) {
-  if (p.premi.some((x) => !Number.isFinite(x) || x < 0 || x > 100000)) throw new Error(L('Nei gradini della serie scrivi solo numeri, da 0 a 100.000, separati da virgole.', 'In the streak steps write only numbers, from 0 to 100,000, separated by commas.', 'En los escalones de la racha escribe solo números, de 0 a 100.000, separados por comas.'));
-  if (p.premi.length > 30) throw new Error(L('Al massimo 30 gradini.', 'At most 30 steps.', 'Como máximo 30 escalones.'));
-  if (p.frase && p.frase.length < 2) throw new Error(L('La frase della presenza vuole almeno due caratteri.', 'The check-in phrase needs at least two characters.', 'La frase de la presencia necesita al menos dos caracteres.'));
   if (p.testo && !p.testo.includes('{nome}')) throw new Error(L('Nella scritta della presenza metti {nome}: è lì che va il nome di chi scrive.', 'Put {nome} in the check-in caption: that\'s where the name goes.', 'Pon {nome} en el texto de la presencia: ahí va el nombre de quien escribe.'));
   if (p.attiva && !p.comando) throw new Error(L('Per accendere la presenza scegli il suo effetto.', 'To turn on check-in, pick its effect.', 'Para activar la presencia elige su efecto.'));
   if (_clZone.some((z) => p.x >= z.x && p.x <= z.x + z.w && p.y >= z.y && p.y <= z.y + z.h)) throw new Error(L('Il punto della presenza sta in una zona protetta: scegline un altro.', 'The check-in spot is in a protected area: pick another one.', 'El punto de la presencia está en una zona protegida: elige otro.'));
@@ -27436,14 +27398,11 @@ async function caricaColpi() {
     });
   }
   _clPresenzaQuadro();
-  _clPresenzaDice();
   _clQuadroFormato();
   _clChatQuadro();
   _clChatMezzi();
   _clChatParole();
   _clCollegaChat();
-  const cardPr = document.getElementById('cl-presenza');
-  if (cardPr && !cardPr.dataset.wiredDice) { cardPr.dataset.wiredDice = '1'; cardPr.addEventListener('input', _clPresenzaDice); cardPr.addEventListener('change', _clPresenzaDice); }
   const pq = document.getElementById('cl-pr-quadro');
   if (pq && !pq.dataset.wired) {
     pq.dataset.wired = '1';
@@ -30837,41 +30796,151 @@ function presenzeDi(s) {
   return { ...PRESENZE_DEFAULT, ...p, saluti: { ...PRESENZE_DEFAULT.saluti, ...((p.saluti && typeof p.saluti === 'object') ? p.saluti : {}) } };
 }
 
-function pannelloGiochi() {
+function _presLeggi() {
+  const v = (id) => document.getElementById(id);
+  return {
+    frase: (v('ps-frase')?.value || '').trim(),
+    premi: (v('ps-premi')?.value || '').split(/[\s,;]+/).filter(Boolean).map(Number),
+    dopo: v('ps-dopo')?.value || 'resta',
+    rispondi: !!v('ps-rispondi')?.checked,
+    risposta: (v('ps-risposta')?.value || '').trim(),
+    porta: {
+      attiva: !!v('ps-po-attiva')?.checked,
+      monete: !!v('ps-po-monete')?.checked,
+      bit: !!v('ps-po-bit')?.checked,
+      giochi: v('ps-po-giochi')?.checked ? 'blocca' : 'libero',
+      ricorda: !!v('ps-po-ricorda')?.checked,
+      testoRicorda: (v('ps-po-testo-ricorda')?.value || '').trim(),
+      conferma: !!v('ps-po-conferma')?.checked,
+      testoConferma: (v('ps-po-testo-conferma')?.value || '').trim(),
+    },
+  };
+}
+
+function _presGiusta(p) {
+  if (p.premi.some((x) => !Number.isFinite(x) || x < 0 || x > 100000)) throw new Error(L('Nei gradini della serie scrivi solo numeri, da 0 a 100.000, separati da virgole.', 'In the streak steps write only numbers, from 0 to 100,000, separated by commas.', 'En los escalones de la racha escribe solo números, de 0 a 100.000, separados por comas.'));
+  if (p.premi.length > 30) throw new Error(L('Al massimo 30 gradini.', 'At most 30 steps.', 'Como máximo 30 escalones.'));
+  if (p.frase && p.frase.length < 2) throw new Error(L('La frase della presenza vuole almeno due caratteri.', 'The check-in phrase needs at least two characters.', 'La frase de la presencia necesita al menos dos caracteres.'));
+}
+
+function _presDice() {
+  const el = document.getElementById('ps-dice');
+  if (!el) return;
+  const p = _presLeggi();
+  const g = p.premi.filter((x) => Number.isFinite(x) && x >= 0).map((x) => Math.round(x)).slice(0, 30);
+  const nome = impostazioni().nomeMonete;
+  if (!g.some((x) => x > 0)) { el.textContent = L('Così la presenza non dà monete: conta solo nella serie.', 'So check-in gives no coins: it only counts in the streak.', 'Así la presencia no da monedas: solo cuenta en la racha.'); return; }
+  const primi = g.slice(0, 6).map((x, i) => `${i + 1}ª ${x}`).join(', ') + (g.length > 6 ? '…' : '');
+  const poi = p.dopo === 'ricomincia' ? L(`poi si ricomincia da ${g[0]}`, `then it starts over from ${g[0]}`, `luego se vuelve a ${g[0]}`) : L(`poi sempre ${g.at(-1)}`, `then always ${g.at(-1)}`, `luego siempre ${g.at(-1)}`);
+  el.textContent = L(`Così, presenza dopo presenza di fila: ${primi} ${nome}, ${poi}. Chi salta una diretta riparte da ${g[0]}.`, `So, check-in after check-in in a row: ${primi} ${nome}, ${poi}. Whoever misses a stream starts again from ${g[0]}.`, `Así, presencia tras presencia seguida: ${primi} ${nome}, ${poi}. Quien se salta un directo vuelve a ${g[0]}.`);
+}
+
+async function salvaPresente() {
+  const p = _presLeggi();
+  _presGiusta(p);
+  await salvaImpostazioni({ presente: p }, L('Presenza salvata ✓', 'Attendance saved ✓', 'Presencia guardada ✓'));
+}
+
+function pannelloPresenza() {
   const s = impostazioni();
   const pr = presenzeDi(s);
-  return pannello('giochi', `
-    <div class="carta" data-zona="giochi">
-      <h2>${_hIco(ICO.giochi)}${L('Minigiochi', 'Minigames', 'Minijuegos')}</h2>
-      <p>${L('Giochi in chat per la tua community, con delle', 'Chat games for your community, with', 'Juegos en el chat para tu comunidad, con')} <strong class="primo-piano">${L('monete', 'coins', 'monedas')}</strong>
-      ${L('(punti fedeltà) che si guadagnano chiacchierando.', '(loyalty points) earned by chatting.', '(puntos de fidelidad) que se ganan charlando.')}</p>
-      <p class="suggerimento"><a href="/manuale/giochi" target="_blank" rel="noopener">${L('Manuale dei giochi e delle monete', 'Games and coins manual', 'Manual de juegos y monedas')}</a> — ${L('cosa fa ogni comando, quanto costa e quanto paga.', 'what each command does, what it costs and what it pays.', 'qué hace cada comando, cuánto cuesta y cuánto paga.')}</p>
-
-      <div class="riga-check">
-        <input type="checkbox" id="chk-giochi" ${s.giochi ? 'checked' : ''}>
-        <label for="chk-giochi">${L('Attiva i minigiochi in chat', 'Enable chat minigames', 'Activa los minijuegos en el chat')}</label>
+  const p = s.presente || {};
+  const po = p.porta || {};
+  return pannello('presenza', `
+    <div class="carta" id="pres-presente">
+      <h2>${_hIco(ICO.presente)}${L('La presenza dichiarata', 'Declared attendance', 'La presencia declarada')}</h2>
+      <p>${L('Chi scrive in chat la tua frase è', 'Whoever types your phrase in chat is', 'Quien escribe tu frase en el chat está')} <strong class="primo-piano">${L('presente a questa diretta', 'present for this stream', 'presente en este directo')}</strong>${L(': è un fatto del canale, e vale anche con i Pew spenti. Da lì guadagna monete, mette i Bit nel salvadanaio e gioca, se la porta qui sotto lo chiede.', ': it is a fact of the channel, and it counts even with Pew off. From then on they earn coins, put Bits in the piggy bank and play, if the gate below asks for it.', ': es un hecho del canal, y vale también con Pew apagado. Desde ahí gana monedas, mete Bits en la hucha y juega, si la puerta de abajo lo pide.')}</p>
+      <p class="suggerimento">${L('È diversa da «Presenze e saluti», più giù: quella conta da sola chi resta in chat almeno dieci minuti, anche senza scrivere niente.', 'It is different from “Attendance and greetings”, further down: that one counts on its own whoever stays in chat at least ten minutes, even without typing anything.', 'Es distinta de «Presencias y saludos», más abajo: esa cuenta sola a quien se queda en el chat al menos diez minutos, aunque no escriba nada.')}</p>
+      <label class="campo" for="ps-frase">${L('Cosa scrivono in chat', 'What they type in chat', 'Qué escriben en el chat')}</label>
+      <input type="text" id="ps-frase" maxlength="40" value="${esc(p.frase || '!presente')}" placeholder="!presente">
+      <p class="suggerimento">${L('La frase vale scritta da sola: maiuscole e spazi non contano. Su Twitch, Kick e YouTube.', 'The phrase counts when typed on its own: capitals and spaces don\'t matter. On Twitch, Kick and YouTube.', 'La frase vale escrita sola: mayúsculas y espacios no cuentan. En Twitch, Kick y YouTube.')}</p>
+      <h3 class="sotto-titolo">${L('La serie: monete a ogni presenza di fila', 'The streak: coins for each check-in in a row', 'La racha: monedas por cada presencia seguida')}</h3>
+      <p class="suggerimento">${L('Scrivi le monete di ogni gradino, separate da virgole: la prima presenza vale la prima cifra, la seconda di fila la seconda, e così via. Chi salta una diretta riparte dalla prima. Le monete arrivano una volta per diretta, solo mentre sei in onda.', 'Write the coins for each step, separated by commas: the first check-in is worth the first number, the second in a row the second, and so on. Whoever misses a stream starts again from the first. Coins arrive once per stream, only while you are live.', 'Escribe las monedas de cada escalón, separadas por comas: la primera presencia vale la primera cifra, la segunda seguida la segunda, y así. Quien se salta un directo vuelve a la primera. Las monedas llegan una vez por directo, solo mientras estás en directo.')}</p>
+      <div class="griglia-campi">
+        <div>
+          <label class="campo" for="ps-premi">${L('Monete per gradino', 'Coins per step', 'Monedas por escalón')}</label>
+          <input type="text" id="ps-premi" maxlength="200" value="${esc((Array.isArray(p.premi) ? p.premi : []).join(', '))}" placeholder="1, 5, 10, 15">
+        </div>
+        <div>
+          <label class="campo" for="ps-dopo">${L('Dopo l\'ultimo gradino', 'After the last step', 'Tras el último escalón')}</label>
+          <select id="ps-dopo"><option value="resta"${p.dopo !== 'ricomincia' ? ' selected' : ''}>${L('resta lì', 'stays there', 'se queda ahí')}</option><option value="ricomincia"${p.dopo === 'ricomincia' ? ' selected' : ''}>${L('ricomincia dal primo', 'starts over from the first', 'vuelve al primero')}</option></select>
+        </div>
       </div>
+      <p class="pt-dice" id="ps-dice" aria-live="polite"></p>
+      <h3 class="sotto-titolo" id="ps-porta">${L('La porta: chi non è presente', 'The gate: who hasn\'t checked in', 'La puerta: quien no está presente')}</h3>
+      <div class="riga-interruttore">
+        <label class="interruttore"><input type="checkbox" id="ps-po-attiva" ${po.attiva !== false ? 'checked' : ''}><span class="levetta"></span></label>
+        <span class="etichetta-stato">${L('Senza presenza, niente…', 'Without check-in, no…', 'Sin presencia, nada de…')}</span>
+      </div>
+      <div class="riga-check"><input type="checkbox" id="ps-po-monete" ${po.monete !== false ? 'checked' : ''}><label for="ps-po-monete">${L('monete dai messaggi e dal tempo guardato', 'coins from messages and watch time', 'monedas por mensajes y tiempo visto')}</label></div>
+      <div class="riga-check"><input type="checkbox" id="ps-po-bit" ${po.bit !== false ? 'checked' : ''}><label for="ps-po-bit">${L('Bit (e Kicks) nel salvadanaio da spendere', 'Bits (and Kicks) in the piggy bank to spend', 'Bits (y Kicks) en la hucha para gastar')}</label></div>
+      <div class="riga-check"><input type="checkbox" id="ps-po-giochi" ${po.giochi !== 'libero' ? 'checked' : ''}><label for="ps-po-giochi">${L('giochi: non può giocare, quindi non vince niente', 'games: they can\'t play, so they win nothing', 'juegos: no puede jugar, así que no gana nada')}</label></div>
+      <p class="suggerimento">${L('Le monete degli eventi (sub, cheer) restano. Un cheer arriva sempre a te: senza presenza i suoi Bit non vanno da spendere. Restano liberi !giochi, !monete, !classifica, !regala, !sblocca e i comandi dello staff. Tu non passi dalla porta.', 'Coins from events (subs, cheers) stay. A cheer always reaches you: without check-in its Bits just don\'t go to spend. !giochi, !monete, !classifica, !regala, !sblocca and staff commands stay open. You never go through the gate.', 'Las monedas de los eventos (subs, cheers) se quedan. Un cheer siempre te llega: sin presencia sus Bits no van para gastar. Quedan libres !giochi, !monete, !classifica, !regala, !sblocca y los comandos del staff. Tú no pasas por la puerta.')}</p>
+      <div class="riga-check"><input type="checkbox" id="ps-po-ricorda" ${po.ricorda !== false ? 'checked' : ''}><label for="ps-po-ricorda">${L('Ricordalo a chi trova la porta chiusa (una volta per diretta)', 'Remind whoever finds the gate closed (once per stream)', 'Recuérdalo a quien encuentra la puerta cerrada (una vez por directo)')}</label></div>
+      <label class="campo" for="ps-po-testo-ricorda">${L('Il ricordo (vuoto: quello di serie)', 'The reminder (empty: the default one)', 'El recordatorio (vacío: el de serie)')}</label>
+      <input type="text" id="ps-po-testo-ricorda" maxlength="200" value="${esc(po.testoRicorda || '')}" placeholder="${esc(L('@{nome} prima scrivi {frase}: da lì {cosa}.', '@{nome} first type {frase}: from then on {cosa}.', '@{nome} primero escribe {frase}: desde ahí {cosa}.'))}">
+      <p class="suggerimento">${L('Nel ricordo: {nome}, {frase} e {cosa} (quello che la porta chiede, detto da solo).', 'In the reminder: {nome}, {frase} and {cosa} (what the gate asks, said for you).', 'En el recordatorio: {nome}, {frase} y {cosa} (lo que pide la puerta, dicho solo).')}</p>
+      <h3 class="sotto-titolo">${L('La risposta in chat', 'The chat reply', 'La respuesta en el chat')}</h3>
+      <p class="suggerimento">${L('Il bot risponde una volta per diretta a chi si presenta: con la risposta della serie quando ci sono monete o quando l\'hai scritta tu, se no con la conferma. Ognuna si spegne da sola.', 'The bot replies once per stream to whoever checks in: with the streak reply when there are coins or when you wrote it, otherwise with the confirmation. Each one turns off on its own.', 'El bot responde una vez por directo a quien se presenta: con la respuesta de la racha cuando hay monedas o cuando la escribiste tú, si no con la confirmación. Cada una se apaga sola.')}</p>
+      <div class="riga-check"><input type="checkbox" id="ps-rispondi" ${p.rispondi !== false ? 'checked' : ''}><label for="ps-rispondi">${L('La risposta della serie', 'The streak reply', 'La respuesta de la racha')}</label></div>
+      <label class="campo" for="ps-risposta">${L('La risposta (vuota: quella di serie)', 'The reply (empty: the default one)', 'La respuesta (vacía: la de serie)')}</label>
+      <input type="text" id="ps-risposta" maxlength="160" value="${esc(p.risposta || '')}" placeholder="${esc(L('{nome}, presente! {serie}ª di fila: +{monete} {moneta}.', '{nome}, checked in! {serie} in a row: +{monete} {moneta}.', '{nome}, ¡presente! {serie}ª seguida: +{monete} {moneta}.'))}">
+      <div class="riga-check spazio-sopra"><input type="checkbox" id="ps-po-conferma" ${po.conferma !== false ? 'checked' : ''}><label for="ps-po-conferma">${L('La conferma «presente»', 'The “checked in” confirmation', 'La confirmación «presente»')}</label></div>
+      <label class="campo" for="ps-po-testo-conferma">${L('La conferma (vuota: quella di serie)', 'The confirmation (empty: the default one)', 'La confirmación (vacía: la de serie)')}</label>
+      <input type="text" id="ps-po-testo-conferma" maxlength="160" value="${esc(po.testoConferma || '')}" placeholder="${esc(L('✓ @{nome} presente!', '✓ @{nome} is here!', '✓ ¡@{nome} presente!'))}">
+      <p class="suggerimento">${L('Nella risposta: {nome}, {serie}, {monete} e {moneta}, il nome delle tue monete. Nella conferma: {nome}.', 'In the reply: {nome}, {serie}, {monete} and {moneta}, your coin name. In the confirmation: {nome}.', 'En la respuesta: {nome}, {serie}, {monete} y {moneta}, el nombre de tus monedas. En la confirmación: {nome}.')}</p>
+      <p class="suggerimento spazio-sopra">${L('Se vuoi, chi si presenta compare anche in diretta, col suo nome sotto un tuo effetto: è un effetto dei Pew.', 'If you like, whoever checks in also shows up on stream, with their name under one of your effects: it is a Pew effect.', 'Si quieres, quien se presenta aparece también en directo, con su nombre bajo uno de tus efectos: es un efecto de Pew.')}
+        <button type="button" class="btn secondario mini" data-scheda="colpi">${L('L\'effetto a schermo', 'The on-screen effect', 'El efecto en pantalla')}</button></p>
+      <p class="spazio-sopra"><button class="btn" id="btn-salva-presente">${L('Salva la presenza', 'Save attendance', 'Guardar la presencia')}</button></p>
+    </div>
+    <div class="carta">
+      <h2>${_hIco(ICO.utenti)}${L('Presenze e saluti', 'Attendance and greetings', 'Presencias y saludos')}</h2>
+      <p>${L('Chi resta in chat almeno dieci minuti è <strong class="primo-piano">presente</strong> a quella diretta. Diretta dopo diretta la sua <strong class="primo-piano">serie</strong> cresce, e con lei il bonus in', 'Whoever stays in chat at least ten minutes is <strong class="primo-piano">present</strong> at that stream. Stream after stream their <strong class="primo-piano">streak</strong> grows, and with it the bonus in', 'Quien se queda en el chat al menos diez minutos está <strong class="primo-piano">presente</strong> en ese directo. Directo tras directo su <strong class="primo-piano">racha</strong> crece, y con ella el bono en')} <strong class="primo-piano">${esc(s.nomeMonete)}</strong>. ${L('Ai traguardi (3, 5, 10, 25, 50 e 100 di fila) il bot lo dice in chat. Con !serie ognuno vede la sua.', 'At the milestones (3, 5, 10, 25, 50 and 100 in a row) the bot says it in chat. With !serie everyone sees their own.', 'En las metas (3, 5, 10, 25, 50 y 100 seguidos) el bot lo dice en el chat. Con !serie cada uno ve la suya.')}</p>
+      <div class="riga-check">
+        <input type="checkbox" id="pr-attivo" ${pr.attivo !== false ? 'checked' : ''}>
+        <label for="pr-attivo">${L('Conta le presenze e le serie', 'Count attendance and streaks', 'Cuenta presencias y rachas')}</label>
+      </div>
+      <div class="griglia-punti">
+        <label class="campo-num">${L('Bonus per diretta di fila', 'Bonus per stream in a row', 'Bono por directo seguido')}<input type="number" id="pr-bonus" min="0" max="100000" value="${pr.bonus}"></label>
+        <label class="campo-num">${L('Il bonus smette di crescere a', 'The bonus stops growing at', 'El bono deja de crecer en')}<input type="number" id="pr-tetto" min="1" max="365" value="${pr.tetto}"></label>
+      </div>
+      <p class="suggerimento">${L('Alla terza diretta di fila il bonus vale tre volte quello base, alla decima dieci volte: poi resta lì. Chi salta una diretta riparte da uno, il record resta.', 'At the third stream in a row the bonus is three times the base one, at the tenth ten times: then it stays there. Whoever skips a stream starts again from one, the record stays.', 'En el tercer directo seguido el bono vale tres veces el base, en el décimo diez veces: luego se queda ahí. Quien se salta un directo vuelve a empezar de uno, el récord se queda.')}</p>
+      <p><label class="riga-check"><input type="checkbox" id="pr-annuncia"${pr.annuncia !== false ? ' checked' : ''}> ${L('Ai traguardi il bot lo dice in chat', 'At the milestones the bot says it in chat', 'En las metas el bot lo dice en el chat')}</label></p>
+      <h3 class="sotto-titolo">${L('Il bot che ti riconosce', 'The bot that knows you', 'El bot que te reconoce')}</h3>
+      <p>${L('Al primo messaggio di una persona nuova, e a chi torna dopo un po\', il bot dice una parola. Se ti sei costruito un Modulo sul primo messaggio, vince il tuo e il bot tace. Tace anche per chi ha un’accoglienza sua, in Comandi, «Chi arriva in chat».', 'At the first message of a new person, and to whoever comes back after a while, the bot says a word. If you built a Module on the first message, yours wins and the bot stays quiet. It also stays quiet for anyone with their own welcome, in Commands, «Who arrives in chat».', 'Al primer mensaje de una persona nueva, y a quien vuelve tras un tiempo, el bot dice una palabra. Si te has construido un Módulo sobre el primer mensaje, gana el tuyo y el bot calla. También calla para quien tiene su propia bienvenida, en Comandos, «Quién llega al chat».')}</p>
+      <div class="riga-check">
+        <input type="checkbox" id="pr-saluti" ${pr.saluti.attivo !== false ? 'checked' : ''}>
+        <label for="pr-saluti">${L('Saluta chi arriva e chi torna', 'Greet newcomers and returners', 'Saluda a quien llega y a quien vuelve')}</label>
+      </div>
+      <label class="campo" for="pr-primaVolta">${L('Alla prima volta', 'The first time', 'La primera vez')}</label>
+      <input type="text" id="pr-primaVolta" maxlength="200" value="${esc(pr.saluti.primaVolta)}">
+      <label class="campo" for="pr-bentornato">${L('A chi torna', 'To whoever comes back', 'A quien vuelve')}</label>
+      <input type="text" id="pr-bentornato" maxlength="200" value="${esc(pr.saluti.bentornato)}">
+      <div class="griglia-punti">
+        <label class="campo-num">${L('Dopo quanti giorni di assenza', 'After how many days away', 'Tras cuántos días de ausencia')}<input type="number" id="pr-giorni" min="2" max="365" value="${pr.saluti.giorniAssenza}"></label>
+      </div>
+      <p class="suggerimento">${L('Nei testi puoi usare {user}, {giorni}, {serie} e {dirette}. Un testo vuoto vuol dire nessun saluto per quel caso.', 'In the texts you can use {user}, {giorni}, {serie} and {dirette}. An empty text means no greeting for that case.', 'En los textos puedes usar {user}, {giorni}, {serie} y {dirette}. Un texto vacío significa ningún saludo para ese caso.')}</p>
+      <p><label class="riga-check"><input type="checkbox" id="pr-soloLive"${pr.saluti.soloLive !== false ? ' checked' : ''}> ${L('Solo mentre sei in diretta', 'Only while you are live', 'Solo mientras estás en directo')}</label></p>
+      <p class="spazio-sopra"><button class="btn" id="btn-salva-presenze">${L('Salva presenze e saluti', 'Save attendance and greetings', 'Guardar presencias y saludos')}</button></p>
+    </div>
+  `);
+}
 
+function pannelloMonete() {
+  const s = impostazioni();
+  return pannello('monete', `
+    <div class="carta" id="carta-nome-monete">
+      <h2>${_hIco(ICO.moneta)}${L('Il nome delle monete', 'The coin name', 'El nombre de las monedas')}</h2>
+      <p>${L('Le monete sono di tutto il canale: si guadagnano guardando, scrivendo e presentandosi, e si spendono nei giochi, nel negozio e nei Pew.', 'Coins belong to the whole channel: people earn them by watching, chatting and checking in, and spend them in games, the shop and Pew.', 'Las monedas son de todo el canal: se ganan mirando, escribiendo y presentándose, y se gastan en los juegos, la tienda y Pew.')}</p>
+      <p class="suggerimento">${L('Chi conta come presente lo decidi nella scheda Presenza: lì c\'è anche la porta, che lascia le monete solo a chi c\'è.', 'Who counts as present is up to you in the Attendance tab: the gate is there too, which only gives coins to whoever is there.', 'Quién cuenta como presente lo decides en la pestaña Presencia: ahí está también la puerta, que solo da monedas a quien está.')}
+        <button type="button" class="btn secondario mini" id="mo-vai-presenza" data-scheda="presenza">${L('Chi conta come presente', 'Who counts as present', 'Quién cuenta como presente')}</button></p>
       <label class="campo" for="inp-monete">${L('Come si chiamano le monete', 'What the coins are called', 'Cómo se llaman las monedas')}</label>
       <input type="text" id="inp-monete" maxlength="20" value="${esc(s.nomeMonete)}" placeholder="${L('es. monete, punti, gemme…', 'e.g. coins, points, gems…', 'p. ej. monedas, puntos, gemas…')}">
       <div id="forma-monete" class="spazio-sopra" role="radiogroup" aria-labelledby="forma-monete-tit" hidden></div>
 
-      <p class="spazio-sopra"><button class="btn" id="btn-salva-giochi">${L('Salva', 'Save', 'Guardar')}</button></p>
+      <p class="spazio-sopra"><button class="btn" id="btn-salva-nome-monete">${L('Salva il nome', 'Save the name', 'Guardar el nombre')}</button></p>
     </div>
-    <div class="carta" data-zona="giochi">
-      <h2>${_hIco(ICO.dado)}${L('Gioco per gioco', 'Game by game', 'Juego por juego')}</h2>
-      <p>${L('Apri un gioco e lo sistemi tutto lì: se è acceso, come si chiama e chi lo può usare, quanto costa e quanto paga, quanto si aspetta e cosa risponde il bot. Accanto al nome vedi quanto rende coi valori che scegli, e cambia mentre scrivi.', 'Open a game and set it all up right there: whether it\'s on, what it\'s called and who can use it, what it costs and what it pays, how long people wait and what the bot replies. Next to the name you see what it pays out with the values you pick, and it changes as you type.', 'Abre un juego y lo ajustas todo ahí: si está activo, cómo se llama y quién puede usarlo, cuánto cuesta y cuánto paga, cuánto se espera y qué responde el bot. Junto al nombre ves cuánto rinde con los valores que eliges, y cambia mientras escribes.')}</p>
-      <p class="suggerimento">${L('Sono divisi come li vede la chat con', 'They are grouped the way chat sees them with', 'Están agrupados como los ve el chat con')} <code>!giochi</code>. ${L('Se dai a un comando un nome tuo, i nomi di serie smettono di rispondere.', 'If you give a command your own name, the built-in names stop answering.', 'Si le pones a un comando un nombre tuyo, los nombres de serie dejan de responder.')}</p>
-      <div id="regole-giochi" class="spazio-sopra" data-moduli="giochi,webcam,puzzle,sorteggi,sito">${attesaHtml('p')}</div>
-      <p class="spazio-sopra"><button class="btn" id="btn-salva-regole-giochi">${L('Salva i giochi', 'Save the games', 'Guardar los juegos')}</button></p>
-    </div>
-    <div class="carta" data-zona="giochi">
-      <h2>${_hIco(ICO.orologio)}${L('Chi aspetta di più', 'Who is waiting longer', 'Quién espera más')}</h2>
-      <p>${L('Chi in questa diretta ha insistito in un gioco durante la sua attesa, se nelle regole di quel gioco (o in quelle uguali per tutti) hai scelto «Chi insiste prima del tempo aspetta in più». «Perdona» toglie il castigo; l\'attesa normale del gioco resta. In chat lo staff fa lo stesso con', 'Who, in this stream, kept trying a game during their wait, if you set «Whoever insists too early waits longer» in that game\'s rules (or in the ones for every game). «Forgive» lifts the penalty; the game\'s normal wait stays. In chat your team does the same with', 'Quién, en este directo, insistió en un juego durante su espera, si en las reglas de ese juego (o en las de todos) elegiste «Quien insiste antes de tiempo espera más». «Perdonar» quita el castigo; la espera normal del juego se queda. En el chat tu equipo hace lo mismo con')} <code>!perdona @nome</code>.</p>
-      <div id="castighi-giochi" class="spazio-sopra" aria-live="polite">${attesaHtml('div')}</div>
-      <p class="spazio-sopra"><button type="button" class="btn secondario" id="btn-castighi-aggiorna">${L('Aggiorna', 'Refresh', 'Actualizar')}</button></p>
-    </div>
-    <div class="carta" data-zona="monete">
+    <div class="carta">
       <h2>${_hIco(ICO.medaglia)}${L('Punti & classifica', 'Points & leaderboard', 'Puntos y clasificación')}</h2>
       <p>${L('Decidi come si guadagnano', 'Decide how people earn', 'Decide cómo se ganan')} <strong class="primo-piano">${esc(s.nomeMonete)}</strong>${L(', a chi non arrivano e quando smettono di arrivare. La classifica', ', who never gets them and when they stop. The leaderboard', ', a quién no le llegan y cuándo dejan de llegar. La clasificación')} <code>!classifica</code> ${L('mostra i primi in cima. Quanto costa e quanto paga ogni gioco lo decidi in «I giochi», gioco per gioco.', 'shows the top players. What each game costs and pays is set under “Games”, game by game.', 'muestra a los primeros. Cuánto cuesta y cuánto paga cada juego lo decides en «Los juegos», juego por juego.')}</p>
       <div class="griglia-punti">
@@ -31002,7 +31071,7 @@ function pannelloGiochi() {
       <p class="suggerimento">${L('In chat i moderatori la accendono con', 'In chat moderators start it with', 'En el chat los moderadores la encienden con')} <code>!${esc(String(stato?.streamer?.settings?.comandi?.doppio?.nome || '').replace(/[^a-z0-9]/g, '') || 'doppio')} 30</code> ${L('e la spengono con', 'and stop it with', 'y la apagan con')} <code>!${esc(String(stato?.streamer?.settings?.comandi?.doppio?.nome || '').replace(/[^a-z0-9]/g, '') || 'doppio')} stop</code>.</p>
       <p class="spazio-sopra"><button class="btn" id="btn-salva-punti">${L('Salva punti', 'Save points', 'Guardar puntos')}</button></p>
     </div>
-    <div class="carta" data-zona="monete" id="carta-registro-monete">
+    <div class="carta" id="carta-registro-monete">
       <h2>${_hIco(ICO.lista)}${L('Il registro delle monete', 'The coin register', 'El registro de las monedas')}</h2>
       <p>${L('Quello che le regole e lo staff hanno dato e tolto: moderazione, assenze, stagioni, eventi e quello fatto a mano. Si tiene novanta giorni. «Annulla» rimette esattamente quello che è stato tolto, con le sue scadenze.', 'What rules and staff have given and taken: moderation, absences, seasons, events and what was done by hand. It is kept for ninety days. «Undo» puts back exactly what was taken, with its expiry dates.', 'Lo que las reglas y el equipo han dado y quitado: moderación, ausencias, temporadas, eventos y lo hecho a mano. Se guarda noventa días. «Deshacer» devuelve exactamente lo que se quitó, con sus caducidades.')}</p>
       <p class="pt-dice" id="rm-circolazione" aria-live="polite"></p>
@@ -31013,35 +31082,64 @@ function pannelloGiochi() {
       <div id="rm-righe" class="spazio-sopra" aria-live="polite">${attesaHtml('div')}</div>
       <div id="rm-stagioni"></div>
     </div>
-    <div class="carta" data-zona="monete">
-      <h2>${_hIco(ICO.utenti)}${L('Presenze e saluti', 'Attendance and greetings', 'Presencias y saludos')}</h2>
-      <p>${L('Chi resta in chat almeno dieci minuti è <strong class="primo-piano">presente</strong> a quella diretta. Diretta dopo diretta la sua <strong class="primo-piano">serie</strong> cresce, e con lei il bonus in', 'Whoever stays in chat at least ten minutes is <strong class="primo-piano">present</strong> at that stream. Stream after stream their <strong class="primo-piano">streak</strong> grows, and with it the bonus in', 'Quien se queda en el chat al menos diez minutos está <strong class="primo-piano">presente</strong> en ese directo. Directo tras directo su <strong class="primo-piano">racha</strong> crece, y con ella el bono en')} <strong class="primo-piano">${esc(s.nomeMonete)}</strong>. ${L('Ai traguardi (3, 5, 10, 25, 50 e 100 di fila) il bot lo dice in chat. Con !serie ognuno vede la sua.', 'At the milestones (3, 5, 10, 25, 50 and 100 in a row) the bot says it in chat. With !serie everyone sees their own.', 'En las metas (3, 5, 10, 25, 50 y 100 seguidos) el bot lo dice en el chat. Con !serie cada uno ve la suya.')}</p>
+    <div class="carta">
+      <h2>${_hIco(ICO.trofeo)}${L('Classifica & VIP', 'Leaderboard & VIP', 'Clasificación y VIP')}</h2>
+      ${stato.vipOk ? '' : `<p class="suggerimento">${L('Per assegnare i VIP serve un permesso in più (aggiunto dopo).', 'Assigning VIPs needs one more permission (added later).', 'Asignar VIP necesita un permiso más (añadido después).')}
+        <a class="btn secondario mini" href="/auth/permessi">${L('Concedi i permessi', 'Grant permissions', 'Concede los permisos')}</a></p>`}
+      ${_premioGara('monete', L('Chi ti segue sempre', 'Who is always there', 'Quien siempre está'), esc(s.nomeMonete))}
+      ${_premioGara('bit', L('Chi mette i Bit', 'Who puts in the Bits', 'Quien pone los Bits'), 'Bit')}
+      <p class="suggerimento spazio-sopra">${L('Le due gare sono indipendenti: puoi accenderne una, l’altra o tutt’e due. Il premio non pesca mai dallo staff né da te: Twitch non permette di dare il VIP a un moderatore, quindi il posto scorre a chi può davvero riceverlo.', 'The two races are independent: turn on one, the other, or both. The prize never draws from your staff or from you: Twitch does not allow giving VIP to a moderator, so the spot slides to someone who can actually get it.', 'Las dos carreras son independientes: puedes encender una, la otra o las dos. El premio nunca se elige del staff ni de ti: Twitch no permite dar VIP a un moderador, así que el puesto pasa a quien sí puede recibirlo.')}</p>
+      <p class="suggerimento">${L('Puoi darlo anche', 'You can also give it', 'También puedes darlo')}
+      <strong class="primo-piano">${L('a voce', 'by voice', 'por voz')}</strong> ${L(`(«vip a nome», dalla scheda «${tScheda('ascolto')}») o in chat con`, `(«vip a» and the name, in Italian like every voice command, from the «${tScheda('ascolto')}» tab) or in chat with`, `(«vip a nombre», desde la pestaña «${tScheda('ascolto')}») o en el chat con`)} <code>!vip @${L('nome', 'name', 'nombre')}</code>${L(': quelli durano un tempo, non delle dirette.', ': those last a length of time, not a number of streams.', ': esos duran un tiempo, no directos.')}</p>
+      <p class="spazio-sopra"><button class="btn" id="btn-salva-premio">${L('Salva premio', 'Save reward', 'Guardar premio')}</button></p>
+      ${stato.ruolo === 'moderatore' ? '' : `<div class="riga-flessibile spazio-sopra">
+        <input aria-label="${esc(L('nome utente', 'username', 'nombre de usuario'))}" type="text" id="pt-utente" placeholder="${L('nome utente', 'username', 'nombre de usuario')}" style="max-width:14rem">
+        <input aria-label="${esc(L('es. 100 o -50', 'e.g. 100 or -50', 'p. ej. 100 o -50'))}" type="number" id="pt-delta" placeholder="${L('es. 100 o -50', 'e.g. 100 or -50', 'p. ej. 100 o -50')}" style="max-width:10rem">
+        <button type="button" class="btn secondario" id="btn-punti-manuale">${L('Aggiusta', 'Adjust', 'Ajustar')} ${esc(s.nomeMonete)}</button>
+      </div>
+      <p class="suggerimento">${L('Per riparare un errore. Con il meno si tolgono. In chat puoi fare lo stesso con un comando (ricetta «Dai monete»), che però lo fa vedere a tutti, e possono usarlo anche i tuoi moderatori.', 'To fix a mistake. Use a minus to remove. In chat you can do the same with a command (the «Give coins» recipe), which everyone sees, and your mods can use it too.', 'Para reparar un error. Con el menos se quitan. En el chat puedes hacer lo mismo con un comando (receta «Dar monedas»), que además lo ve todo el mundo, y también pueden usarlo tus moderadores.')}</p>
+      <p class="suggerimento">${L(`I punti che il tuo pubblico ha su un altro bot li porti qui dalla scheda «${tScheda('moduli')}», in «Porta qui quello che hai già».`, `Your viewers’ points on another bot come over from the «${tScheda('moduli')}» tab, in «Bring over what you already have».`, `Los puntos que tu público tiene en otro bot los traes desde la pestaña «${tScheda('moduli')}», en «Trae lo que ya tienes».`)}
+        <button type="button" class="btn secondario mini" data-scheda="moduli">${L(`Vai a ${tScheda('moduli')}`, `Go to ${tScheda('moduli')}`, `Ir a ${tScheda('moduli')}`)}</button></p>`}
+      <p class="suggerimento spazio-sopra">${L('Le classifiche delle monete stanno nella scheda Statistiche, insieme a tutti gli altri numeri del canale.', 'The coin leaderboards are in the Stats tab, together with all the other channel numbers.', 'Las clasificaciones de monedas están en la pestaña Estadísticas, junto a los demás números del canal.')}
+        <button type="button" class="btn secondario mini" data-scheda="statistiche">${L('Vedi le classifiche', 'See the leaderboards', 'Ver las clasificaciones')}</button></p>
+      <h3>${L('VIP a tempo attivi', 'Active timed VIPs', 'VIP temporales activos')}</h3>
+      <ul class="lista-voci" id="lista-vip">${attesaHtml('li')}</ul>
+    </div>
+
+  `);
+}
+
+function pannelloGiochi() {
+  const s = impostazioni();
+  return pannello('giochi', `
+    <div class="carta" data-zona="giochi">
+      <h2>${_hIco(ICO.giochi)}${L('Minigiochi', 'Minigames', 'Minijuegos')}</h2>
+      <p>${L('Giochi in chat per la tua community: si gioca con le', 'Chat games for your community: people play with the', 'Juegos en el chat para tu comunidad: se juega con las')} <strong class="primo-piano">${esc(s.nomeMonete)}</strong>
+      ${L('del canale, e chi vince ne prende altre.', 'of the channel, and whoever wins gets more.', 'del canal, y quien gana se lleva más.')}</p>
+      <p class="suggerimento"><a href="/manuale/giochi" target="_blank" rel="noopener">${L('Manuale dei giochi e delle monete', 'Games and coins manual', 'Manual de juegos y monedas')}</a> — ${L('cosa fa ogni comando, quanto costa e quanto paga.', 'what each command does, what it costs and what it pays.', 'qué hace cada comando, cuánto cuesta y cuánto paga.')}</p>
+
       <div class="riga-check">
-        <input type="checkbox" id="pr-attivo" ${pr.attivo !== false ? 'checked' : ''}>
-        <label for="pr-attivo">${L('Conta le presenze e le serie', 'Count attendance and streaks', 'Cuenta presencias y rachas')}</label>
+        <input type="checkbox" id="chk-giochi" ${s.giochi ? 'checked' : ''}>
+        <label for="chk-giochi">${L('Attiva i minigiochi in chat', 'Enable chat minigames', 'Activa los minijuegos en el chat')}</label>
       </div>
-      <div class="griglia-punti">
-        <label class="campo-num">${L('Bonus per diretta di fila', 'Bonus per stream in a row', 'Bono por directo seguido')}<input type="number" id="pr-bonus" min="0" max="100000" value="${pr.bonus}"></label>
-        <label class="campo-num">${L('Il bonus smette di crescere a', 'The bonus stops growing at', 'El bono deja de crecer en')}<input type="number" id="pr-tetto" min="1" max="365" value="${pr.tetto}"></label>
-      </div>
-      <p class="suggerimento">${L('Alla terza diretta di fila il bonus vale tre volte quello base, alla decima dieci volte: poi resta lì. Chi salta una diretta riparte da uno, il record resta.', 'At the third stream in a row the bonus is three times the base one, at the tenth ten times: then it stays there. Whoever skips a stream starts again from one, the record stays.', 'En el tercer directo seguido el bono vale tres veces el base, en el décimo diez veces: luego se queda ahí. Quien se salta un directo vuelve a empezar de uno, el récord se queda.')}</p>
-      <p><label class="riga-check"><input type="checkbox" id="pr-annuncia"${pr.annuncia !== false ? ' checked' : ''}> ${L('Ai traguardi il bot lo dice in chat', 'At the milestones the bot says it in chat', 'En las metas el bot lo dice en el chat')}</label></p>
-      <h3 class="sotto-titolo">${L('Il bot che ti riconosce', 'The bot that knows you', 'El bot que te reconoce')}</h3>
-      <p>${L('Al primo messaggio di una persona nuova, e a chi torna dopo un po\', il bot dice una parola. Se ti sei costruito un Modulo sul primo messaggio, vince il tuo e il bot tace. Tace anche per chi ha un’accoglienza sua, in Comandi, «Chi arriva in chat».', 'At the first message of a new person, and to whoever comes back after a while, the bot says a word. If you built a Module on the first message, yours wins and the bot stays quiet. It also stays quiet for anyone with their own welcome, in Commands, «Who arrives in chat».', 'Al primer mensaje de una persona nueva, y a quien vuelve tras un tiempo, el bot dice una palabra. Si te has construido un Módulo sobre el primer mensaje, gana el tuyo y el bot calla. También calla para quien tiene su propia bienvenida, en Comandos, «Quién llega al chat».')}</p>
-      <div class="riga-check">
-        <input type="checkbox" id="pr-saluti" ${pr.saluti.attivo !== false ? 'checked' : ''}>
-        <label for="pr-saluti">${L('Saluta chi arriva e chi torna', 'Greet newcomers and returners', 'Saluda a quien llega y a quien vuelve')}</label>
-      </div>
-      <label class="campo" for="pr-primaVolta">${L('Alla prima volta', 'The first time', 'La primera vez')}</label>
-      <input type="text" id="pr-primaVolta" maxlength="200" value="${esc(pr.saluti.primaVolta)}">
-      <label class="campo" for="pr-bentornato">${L('A chi torna', 'To whoever comes back', 'A quien vuelve')}</label>
-      <input type="text" id="pr-bentornato" maxlength="200" value="${esc(pr.saluti.bentornato)}">
-      <div class="griglia-punti">
-        <label class="campo-num">${L('Dopo quanti giorni di assenza', 'After how many days away', 'Tras cuántos días de ausencia')}<input type="number" id="pr-giorni" min="2" max="365" value="${pr.saluti.giorniAssenza}"></label>
-      </div>
-      <p class="suggerimento">${L('Nei testi puoi usare {user}, {giorni}, {serie} e {dirette}. Un testo vuoto vuol dire nessun saluto per quel caso.', 'In the texts you can use {user}, {giorni}, {serie} and {dirette}. An empty text means no greeting for that case.', 'En los textos puedes usar {user}, {giorni}, {serie} y {dirette}. Un texto vacío significa ningún saludo para ese caso.')}</p>
-      <p><label class="riga-check"><input type="checkbox" id="pr-soloLive"${pr.saluti.soloLive !== false ? ' checked' : ''}> ${L('Solo mentre sei in diretta', 'Only while you are live', 'Solo mientras estás en directo')}</label></p>
-      <p class="spazio-sopra"><button class="btn" id="btn-salva-presenze">${L('Salva presenze e saluti', 'Save attendance and greetings', 'Guardar presencias y saludos')}</button></p>
+
+      <p class="suggerimento">${L('Le monete hanno una scheda loro: il nome, come si guadagnano, il registro e la classifica.', 'Coins have their own tab: the name, how they are earned, the register and the leaderboard.', 'Las monedas tienen una pestaña propia: el nombre, cómo se ganan, el registro y la clasificación.')}
+        <button type="button" class="btn secondario mini" id="gi-vai-monete" data-scheda="monete">${L('Da dove vengono le monete', 'Where coins come from', 'De dónde vienen las monedas')}</button></p>
+
+      <p class="spazio-sopra"><button class="btn" id="btn-salva-giochi">${L('Salva', 'Save', 'Guardar')}</button></p>
+    </div>
+    <div class="carta" data-zona="giochi">
+      <h2>${_hIco(ICO.dado)}${L('Gioco per gioco', 'Game by game', 'Juego por juego')}</h2>
+      <p>${L('Apri un gioco e lo sistemi tutto lì: se è acceso, come si chiama e chi lo può usare, quanto costa e quanto paga, quanto si aspetta e cosa risponde il bot. Accanto al nome vedi quanto rende coi valori che scegli, e cambia mentre scrivi.', 'Open a game and set it all up right there: whether it\'s on, what it\'s called and who can use it, what it costs and what it pays, how long people wait and what the bot replies. Next to the name you see what it pays out with the values you pick, and it changes as you type.', 'Abre un juego y lo ajustas todo ahí: si está activo, cómo se llama y quién puede usarlo, cuánto cuesta y cuánto paga, cuánto se espera y qué responde el bot. Junto al nombre ves cuánto rinde con los valores que eliges, y cambia mientras escribes.')}</p>
+      <p class="suggerimento">${L('Sono divisi come li vede la chat con', 'They are grouped the way chat sees them with', 'Están agrupados como los ve el chat con')} <code>!giochi</code>. ${L('Se dai a un comando un nome tuo, i nomi di serie smettono di rispondere.', 'If you give a command your own name, the built-in names stop answering.', 'Si le pones a un comando un nombre tuyo, los nombres de serie dejan de responder.')}</p>
+      <div id="regole-giochi" class="spazio-sopra" data-moduli="giochi,webcam,puzzle,sorteggi,sito">${attesaHtml('p')}</div>
+      <p class="spazio-sopra"><button class="btn" id="btn-salva-regole-giochi">${L('Salva i giochi', 'Save the games', 'Guardar los juegos')}</button></p>
+    </div>
+    <div class="carta" data-zona="giochi">
+      <h2>${_hIco(ICO.orologio)}${L('Chi aspetta di più', 'Who is waiting longer', 'Quién espera más')}</h2>
+      <p>${L('Chi in questa diretta ha insistito in un gioco durante la sua attesa, se nelle regole di quel gioco (o in quelle uguali per tutti) hai scelto «Chi insiste prima del tempo aspetta in più». «Perdona» toglie il castigo; l\'attesa normale del gioco resta. In chat lo staff fa lo stesso con', 'Who, in this stream, kept trying a game during their wait, if you set «Whoever insists too early waits longer» in that game\'s rules (or in the ones for every game). «Forgive» lifts the penalty; the game\'s normal wait stays. In chat your team does the same with', 'Quién, en este directo, insistió en un juego durante su espera, si en las reglas de ese juego (o en las de todos) elegiste «Quien insiste antes de tiempo espera más». «Perdonar» quita el castigo; la espera normal del juego se queda. En el chat tu equipo hace lo mismo con')} <code>!perdona @nome</code>.</p>
+      <div id="castighi-giochi" class="spazio-sopra" aria-live="polite">${attesaHtml('div')}</div>
+      <p class="spazio-sopra"><button type="button" class="btn secondario" id="btn-castighi-aggiorna">${L('Aggiorna', 'Refresh', 'Actualizar')}</button></p>
     </div>
     <div class="carta" data-zona="automatici">
       <h2>${_hIco(ICO.dado)}${L('I giochi automatici', 'Automatic games', 'Juegos automáticos')}</h2>
@@ -31138,30 +31236,6 @@ function pannelloGiochi() {
       <h3>${L('I giochi che hai fatto', 'The games you made', 'Los juegos que has hecho')}</h3>
       <ul class="lista-voci" id="lista-giochi">${attesaHtml('li')}</ul>
     </div>
-    <div class="carta" data-zona="monete">
-      <h2>${_hIco(ICO.trofeo)}${L('Classifica & VIP', 'Leaderboard & VIP', 'Clasificación y VIP')}</h2>
-      ${stato.vipOk ? '' : `<p class="suggerimento">${L('Per assegnare i VIP serve un permesso in più (aggiunto dopo).', 'Assigning VIPs needs one more permission (added later).', 'Asignar VIP necesita un permiso más (añadido después).')}
-        <a class="btn secondario mini" href="/auth/permessi">${L('Concedi i permessi', 'Grant permissions', 'Concede los permisos')}</a></p>`}
-      ${_premioGara('monete', L('Chi ti segue sempre', 'Who is always there', 'Quien siempre está'), esc(s.nomeMonete))}
-      ${_premioGara('bit', L('Chi mette i Bit', 'Who puts in the Bits', 'Quien pone los Bits'), 'Bit')}
-      <p class="suggerimento spazio-sopra">${L('Le due gare sono indipendenti: puoi accenderne una, l’altra o tutt’e due. Il premio non pesca mai dallo staff né da te: Twitch non permette di dare il VIP a un moderatore, quindi il posto scorre a chi può davvero riceverlo.', 'The two races are independent: turn on one, the other, or both. The prize never draws from your staff or from you: Twitch does not allow giving VIP to a moderator, so the spot slides to someone who can actually get it.', 'Las dos carreras son independientes: puedes encender una, la otra o las dos. El premio nunca se elige del staff ni de ti: Twitch no permite dar VIP a un moderador, así que el puesto pasa a quien sí puede recibirlo.')}</p>
-      <p class="suggerimento">${L('Puoi darlo anche', 'You can also give it', 'También puedes darlo')}
-      <strong class="primo-piano">${L('a voce', 'by voice', 'por voz')}</strong> ${L(`(«vip a nome», dalla scheda «${tScheda('ascolto')}») o in chat con`, `(«vip a» and the name, in Italian like every voice command, from the «${tScheda('ascolto')}» tab) or in chat with`, `(«vip a nombre», desde la pestaña «${tScheda('ascolto')}») o en el chat con`)} <code>!vip @${L('nome', 'name', 'nombre')}</code>${L(': quelli durano un tempo, non delle dirette.', ': those last a length of time, not a number of streams.', ': esos duran un tiempo, no directos.')}</p>
-      <p class="spazio-sopra"><button class="btn" id="btn-salva-premio">${L('Salva premio', 'Save reward', 'Guardar premio')}</button></p>
-      ${stato.ruolo === 'moderatore' ? '' : `<div class="riga-flessibile spazio-sopra">
-        <input aria-label="${esc(L('nome utente', 'username', 'nombre de usuario'))}" type="text" id="pt-utente" placeholder="${L('nome utente', 'username', 'nombre de usuario')}" style="max-width:14rem">
-        <input aria-label="${esc(L('es. 100 o -50', 'e.g. 100 or -50', 'p. ej. 100 o -50'))}" type="number" id="pt-delta" placeholder="${L('es. 100 o -50', 'e.g. 100 or -50', 'p. ej. 100 o -50')}" style="max-width:10rem">
-        <button type="button" class="btn secondario" id="btn-punti-manuale">${L('Aggiusta', 'Adjust', 'Ajustar')} ${esc(s.nomeMonete)}</button>
-      </div>
-      <p class="suggerimento">${L('Per riparare un errore. Con il meno si tolgono. In chat puoi fare lo stesso con un comando (ricetta «Dai monete»), che però lo fa vedere a tutti, e possono usarlo anche i tuoi moderatori.', 'To fix a mistake. Use a minus to remove. In chat you can do the same with a command (the «Give coins» recipe), which everyone sees, and your mods can use it too.', 'Para reparar un error. Con el menos se quitan. En el chat puedes hacer lo mismo con un comando (receta «Dar monedas»), que además lo ve todo el mundo, y también pueden usarlo tus moderadores.')}</p>
-      <p class="suggerimento">${L(`I punti che il tuo pubblico ha su un altro bot li porti qui dalla scheda «${tScheda('moduli')}», in «Porta qui quello che hai già».`, `Your viewers’ points on another bot come over from the «${tScheda('moduli')}» tab, in «Bring over what you already have».`, `Los puntos que tu público tiene en otro bot los traes desde la pestaña «${tScheda('moduli')}», en «Trae lo que ya tienes».`)}
-        <button type="button" class="btn secondario mini" data-scheda="moduli">${L(`Vai a ${tScheda('moduli')}`, `Go to ${tScheda('moduli')}`, `Ir a ${tScheda('moduli')}`)}</button></p>`}
-      <p class="suggerimento spazio-sopra">${L('Le classifiche delle monete stanno nella scheda Statistiche, insieme a tutti gli altri numeri del canale.', 'The coin leaderboards are in the Stats tab, together with all the other channel numbers.', 'Las clasificaciones de monedas están en la pestaña Estadísticas, junto a los demás números del canal.')}
-        <button type="button" class="btn secondario mini" data-scheda="statistiche">${L('Vedi le classifiche', 'See the leaderboards', 'Ver las clasificaciones')}</button></p>
-      <h3>${L('VIP a tempo attivi', 'Active timed VIPs', 'VIP temporales activos')}</h3>
-      <ul class="lista-voci" id="lista-vip">${attesaHtml('li')}</ul>
-    </div>
-
     <div class="carta" data-zona="giochi">
       <h2>${_hIco(ICO.target)}${L('Giochi del sito andryxify.it', 'andryxify.it site games', 'Juegos del sitio andryxify.it')}</h2>
       <p>${L('I giochi di andryxify.it (come', 'The andryxify.it games (like', 'Los juegos de andryxify.it (como')} <strong class="primo-piano">AGENTify</strong>) ${L('possono girare', 'can run', 'pueden funcionar')}
@@ -36444,13 +36518,15 @@ function attivaPiattaforma() {
   }));
 
   document.getElementById('btn-salva-giochi')?.addEventListener('click', () => conErrore(async () => {
+    await salvaImpostazioni({ giochi: document.getElementById('chk-giochi').checked }, L('Giochi salvati ✓', 'Games saved ✓', 'Juegos guardados ✓'));
+  }));
+  document.getElementById('btn-salva-nome-monete')?.addEventListener('click', () => conErrore(async () => {
     const nome = document.getElementById('inp-monete').value.trim();
     const forma = _formaMoneteDaSalvare(nome);
     await salvaImpostazioni({
-      giochi: document.getElementById('chk-giochi').checked,
       nomeMonete: nome,
       ...(forma === null ? {} : { formaMonete: forma }),
-    }, L('Giochi salvati ✓', 'Games saved ✓', 'Juegos guardados ✓'));
+    }, L('Nome delle monete salvato ✓', 'Coin name saved ✓', 'Nombre de las monedas guardado ✓'));
     _formaMoneteToccata = false;
     _disegnaFormaMonete();
   }));
@@ -36897,6 +36973,9 @@ function attivaPiattaforma() {
       caricaClassifica();
     });
   });
+
+  document.getElementById('btn-salva-presente')?.addEventListener('click', () => conErrore(salvaPresente));
+  for (const ev of ['input', 'change']) document.getElementById('pres-presente')?.addEventListener(ev, _presDice);
 
   document.getElementById('btn-salva-presenze')?.addEventListener('click', () => conErrore(async () => {
     const v = (id) => Number(document.getElementById(id)?.value);
@@ -38211,7 +38290,9 @@ function caricaDatiScheda(id) {
   if (id === 'colpi') caricaColpi();
   if (id === 'moduli') { caricaPiattaforme(); caricaModuli(); caricaContatori(); caricaGiochiComandi(); collegaMorti(); requestAnimationFrame(() => applicaSottoSchede('moduli')); }
   if (id === 'statistiche') { caricaStatistiche(); caricaClassifica(); }
-  if (id === 'giochi') { caricaClassifica(); caricaCitazioni(); caricaBattute(); caricaGiochi(); caricaRegoleGiochi(); caricaCastighi(); caricaGiro(); _disegnaFormaMonete(); contiPunti(); caricaRegistroMonete(); requestAnimationFrame(() => applicaSottoSchede('giochi')); }
+  if (id === 'presenza') _presDice();
+  if (id === 'monete') { caricaClassifica(); _disegnaFormaMonete(); contiPunti(); caricaRegistroMonete(); }
+  if (id === 'giochi') { caricaCitazioni(); caricaBattute(); caricaGiochi(); caricaRegoleGiochi(); caricaCastighi(); caricaGiro(); requestAnimationFrame(() => applicaSottoSchede('giochi')); }
   if (id === 'negozio') { caricaNegozio(); caricaPaginaLink(false, 'negozio'); requestAnimationFrame(() => applicaSottoSchede('negozio')); }
   if (id === 'telegram') { caricaTgLogin(); collegaTgDestinazioni(); caricaTgDestinazioni(); collegaCartaLive(); caricaCartaLive(); caricaCompleanni(); caricaScudoTg(); collegaPortaProva(); caricaPaginaLink(false, 'telegram'); }
   if (id === 'notifiche') { caricaTikTok(); caricaInstagram(); collegaFeed(); caricaFeed(); caricaAvvisiSmart(); }

@@ -18,7 +18,7 @@
 //    solo quando il colpo e' consegnabile, e un colpo a Bit pagato resta in
 //    coda finche' un overlay non lo mostra. Con i Bit da spendere accesi
 //    (sotto) anche i Bit tornano: come saldo della pagina, a chi li ha mandati.
-import { valutaDi, valutaMira, cfgValuta, regoleMira, serveIn, personaKick, normalizza, puntoBuono, puntoChat, voceDi, metodiDi, mistiDi, bitServe, bitResi, togliUltimi, scadenzaBit, zainoDi, nuovoCodice, codiceIn, nomeChi, frasePresenza, premioSerie, serieDopo, SCADENZA_MS,
+import { valutaDi, valutaMira, cfgValuta, regoleMira, serveIn, personaKick, normalizza, puntoBuono, puntoChat, voceDi, metodiDi, mistiDi, bitServe, bitResi, togliUltimi, scadenzaBit, zainoDi, nuovoCodice, codiceIn, nomeChi, frasePresenza, SCADENZA_MS,
   voceBuono, valoreBuono, puntiPer, buonoCopre, titoloPremioPrezzo } from './colpi.js';
 import { randomBytes, createHash } from 'node:crypto';
 
@@ -46,7 +46,7 @@ export const VOCE_PRESENZA = '@presenza';
 // `fusoDi`: il fuso del canale, per le scadenze. `zaino`: lo zaino (db.pewZaino);
 // senza, non si compra per dopo.
 export function creaServizioColpi({ registro, effects, effettoDi, impostazioni, inOnda = () => true, overlay = () => true,
-  rimborsaEuro = async () => ({ errore: 'nessun conto' }), chiudiPremio = async () => true, monete = null, serie = null, crediti = null,
+  rimborsaEuro = async () => ({ errore: 'nessun conto' }), chiudiPremio = async () => true, monete = null, crediti = null,
   zaino = null, fusoDi = () => 'Europe/Rome', ora = () => Date.now(), log = null,
   // la porta della presenza (docs/COLPI.md, «La presenza come porta»): i Bit
   // che non pagano un colpo vanno da spendere solo a chi e' presente
@@ -219,13 +219,17 @@ export function creaServizioColpi({ registro, effects, effettoDi, impostazioni, 
     try { return !!(await chiudiPremio(m.login, premio, riscatto, stato)); } catch (e) { log?.warn?.(`riscatto del colpo #${m.login}:`, e?.message || e); return false; }
   }
 
-  // LA PRESENZA dalla chat (docs/COLPI.md, «La presenza»). Le stesse domande di
-  // un colpo (pagina accesa, non in pausa, in onda, un overlay, l'effetto che
-  // c'e', il punto fuori dalle zone), un tetto suo al minuto, e una sola per
-  // spettatore per diretta: `occasione` e' la diretta (arrivi.occasioneDiretta),
-  // `chiave` chi e' (piattaforma e id). Il resto e' la strada dei colpi: l'overlay
-  // la mostra in fila e dice «visto», la ronda la rimanda.
-  function presenza(login, { chiave = '', nome = '', occasione = '', lingua = 'it' } = {}) {
+  // LA PRESENZA A SCHERMO (docs/COLPI.md, «La presenza»): l'effetto di chi ha
+  // scritto la frase della presenza del canale. Che sia presente, la sua serie
+  // e le sue monete li ha gia' decisi la presenza (presente.js, contaSerie), e
+  // valgono anche se qui non parte niente: qui arrivano `serie` e `monete` solo
+  // per la scritta. Le stesse domande di un colpo (pagina accesa, non in pausa,
+  // in onda, un overlay, l'effetto che c'e', il punto fuori dalle zone), un
+  // tetto suo al minuto, e una sola per spettatore per diretta: `occasione` e'
+  // la diretta (arrivi.occasioneDiretta), `chiave` chi e' (piattaforma e id). Il
+  // resto e' la strada dei colpi: l'overlay la mostra in fila e dice «visto»,
+  // la ronda la rimanda.
+  function presenza(login, { chiave = '', nome = '', occasione = '', lingua = 'it', serie = 1, monete = 0 } = {}) {
     const ch = String(login || '').toLowerCase();
     const cfg = cfgDi(ch);
     const p = cfg.presenza;
@@ -240,34 +244,26 @@ export function creaServizioColpi({ registro, effects, effettoDi, impostazioni, 
     if (!nomeChi(nome)) return { esito: 'spenta' };
     const adesso = ora();
     if (registro.presenzeDa(ch, adesso - 60_000) >= p.alMinuto) return { esito: 'troppe' };
-    // la serie: di fila se la sua ultima presenza era alla diretta subito prima
-    // di questa. Le monete una volta per diretta: una presenza rifatta dopo che
-    // la prima non si e' vista non le ridà.
-    serie?.segnaDiretta(ch, occasione, adesso);
-    const prima = serie?.get(ch, chiave) || null;
-    const n = serieDopo(prima, occasione, serie?.precedente(ch, occasione) || '');
-    const nuova = prima?.ultima !== occasione;
-    const premio = nuova ? premioSerie(p, n) : 0;
-    const chi = frasePresenza(cfg, nome, lingua, { serie: n, monete: premioSerie(p, n) });
+    const chi = frasePresenza(cfg, nome, lingua, { serie, monete });
     const m = { id: randomBytes(9).toString('hex'), login: ch, voce: VOCE_PRESENZA, comando: p.comando, nome: 'Presenza',
       x: punto.x, y: punto.y, scala: p.scala, chi, riferimento: `presenza:${occasione}:${chiave}` };
     if (!registro.presenza(m, adesso)) return { esito: 'gia' };
-    serie?.metti(ch, chiave, { ultima: occasione, serie: n, record: Math.max(prima?.record || 0, n), ts: adesso });
     const fatto = manda(registro.get(m.id));
     log?.info?.(`presenza su #${ch}${fatto ? '' : ': in coda, nessun overlay pronto'}`);
-    return { esito: 'partita', serie: n, monete: premio, nuova };
+    return { esito: 'partita' };
   }
 
   // La prova dal pannello: la stessa presenza, subito, senza registro (non e'
   // di nessuno e non conta), col nome dello streamer. L'effetto deve esserci.
-  function provaPresenza(login, { nome = '', lingua = 'it', presenza: bozza = null } = {}) {
+  // `monete`: il primo gradino della serie del canale, per la scritta.
+  function provaPresenza(login, { nome = '', lingua = 'it', presenza: bozza = null, monete = 0 } = {}) {
     const ch = String(login || '').toLowerCase();
     const cfg = cfgDi(ch);
     const p = bozza ? normalizza({ presenza: { ...bozza, attiva: true } }).presenza : cfg.presenza;
     if (!MIRABILE(effettoDi(ch, p.comando))) return { ok: false, motivo: 'effetto' };
     const punto = puntoBuono(cfg, p.x, p.y);
     if (!punto.ok) return { ok: false, motivo: punto.motivo };
-    const chi = frasePresenza({ presenza: p }, nome, lingua, { serie: 1, monete: premioSerie(p, 1) });
+    const chi = frasePresenza({ presenza: p }, nome, lingua, { serie: 1, monete });
     const ok = !!effects.fireConOpzioni(ch, p.comando, { xy: { x: punto.x, y: punto.y, s: p.scala, r: 0, centro: true }, attacco: { id: '', chi, nome: 'Presenza' } });
     return ok ? { ok: true } : { ok: false, motivo: 'overlay' };
   }

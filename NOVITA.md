@@ -88,6 +88,15 @@ comandi diversi da quelli della riga italiana.
 - Canale, lingua, «?» e tema restano in alto a destra anche quando cambi sezione: prima, al primo cambio, saltavano accanto al logo. [vai: stato]
   en: Channel, language, «?» and theme stay at the top right when you change section too: before, at the first change, they jumped next to the logo.
   es: Canal, idioma, «?» y tema se quedan arriba a la derecha también cuando cambias de sección: antes, al primer cambio, saltaban junto al logo.
+- [importante] Presenza e Monete hanno una scheda loro, in Intrattenimento prima di Giochi. «!presente» non è più dentro Pew: vale anche con Pew spento e senza un effetto. [vai: presenza]
+  en: Attendance and Coins have their own tab, in Entertainment before Games. «!presente» is no longer inside Pew: it counts even with Pew off and without an effect.
+  es: Presencia y Monedas tienen una pestaña propia, en Entretenimiento antes de Juegos. «!presente» ya no está dentro de Pew: vale también con Pew apagado y sin un efecto.
+  > Ci sei, guadagni, giochi
+  > In Presenza trovi la frase, la porta, la serie e «Presenze e saluti»; in Monete il nome, come si guadagnano, il registro, la classifica e i VIP. Ai Pew resta solo l'effetto a schermo. Quello che avevi già impostato resta com'era.
+  en> You're here, you earn, you play
+  en> In Attendance you find the phrase, the gate, the streak and «Attendance and greetings»; in Coins the name, how they're earned, the register, the leaderboard and VIPs. Pew keeps only the on-screen effect. What you had already set up stays as it was.
+  es> Estás, ganas, juegas
+  es> En Presencia encuentras la frase, la puerta, la racha y «Presencias y saludos»; en Monedas el nombre, cómo se ganan, el registro, la clasificación y los VIP. A Pew le queda solo el efecto en pantalla. Lo que ya tenías configurado sigue como estaba.
 ## 2026-10-28
 
 - [importante] Pewpewify su Kick, completo: nel listino il prezzo in Kicks e in punti del canale di Kick, i premi del canale su Kick creati da soli, e la scheda dei Kicks da spendere con le sue regole. [vai: colpi]

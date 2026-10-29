@@ -8,7 +8,7 @@
 //  · la diretta e' la stessa chiave della presenza di Pewpewify;
 //  · le monete dei messaggi passano dalla porta con chi puo' sentire il ricordo;
 //  · i Bit da spendere chiedono la porta per la persona del cheer, anche su Kick;
-//  · chi si presenta sente «presente» solo se non ha gia' la risposta della serie.
+//  · chi si presenta sente una risposta sola (presente.js, rispostaPresenza).
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -19,16 +19,17 @@ const RAD = join(dirname(fileURLToPath(import.meta.url)), '../..');
 const BOT = readFileSync(join(RAD, 'src/bot.js'), 'utf8').replace(/^\s*\/\/.*$/gm, '');
 
 test('la frase si segna sempre, prima del giro di Pewpewify', () => {
-  const segna = BOT.indexOf('presenteOra = presenzaPorta.segna(login, { piattaforma: msg.piattaforma || \'twitch\', id: msg.userId || \'\', user: msg.user });');
+  const segna = BOT.indexOf("const prima = presenzaPorta.segna(login, { piattaforma, id: msg.userId || '', user: msg.user });");
   const giro = BOT.indexOf('if (!msg.isSelf && streamers.get(login)?.settings?.colpi?.attivo === true) {');
   assert.ok(segna > 0 && segna < giro, 'fuori dal giro dei colpi, che e\' acceso solo coi colpi accesi');
-  assert.match(BOT.slice(segna - 300, segna), /if \(eFrasePorta\(presenzaPorta\.cfgDi\(login\), msg\.text\) && ePersona\(login, msg\.user\)\) \{\s*$/);
+  assert.match(BOT.slice(segna - 300, segna), /if \(eFrasePresente\(pres, msg\.text\) && ePersona\(login, msg\.user\)\) \{\s*const piattaforma = msg\.piattaforma \|\| 'twitch';\s*$/);
   assert.match(BOT, /presenzaPorta\.usa\(\{ occasione: \(l\) => arrivi\.occasioneDiretta\(l, this\._inizioTwitch\(l\)\) \}\);/, 'la stessa diretta della presenza di Pewpewify');
 });
 
-test('«presente» solo a chi non ha gia\' la risposta della serie', () => {
-  assert.match(BOT, /if \(t\) \{ parla\(t\); rispostoPresenza = true; \}/);
-  assert.match(BOT, /if \(presenteOra && !rispostoPresenza\) \{\s*const cfgP = presenzaPorta\.cfgDi\(login\);\s*if \(cfgP\.presenza\.porta\.attiva && cfgP\.presenza\.porta\.conferma\) parla\(testoPorta\(cfgP, 'conferma', linguaChat\(login\), \{ nome: msg\.display \|\| msg\.user \}\)\);/);
+test('una risposta sola: la sceglie la presenza (rispostaPresenza), non due rami del bot', () => {
+  assert.doesNotMatch(BOT, /rispostoPresenza|presenteOra/, 'niente piu\' conferma separata dalla risposta della serie');
+  assert.equal((BOT.match(/rispostaPresenza\(/g) || []).length, 1);
+  assert.match(BOT, /dire\(testoPorta\(cfg, 'ricorda', linguaChat\(login\), \{ nome: chi\.user, frase: cfg\.frase \}\)\);/, 'il ricordo dice la frase del canale');
 });
 
 test('le monete e i Bit passano dalla porta', () => {

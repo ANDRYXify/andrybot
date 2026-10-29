@@ -60,6 +60,6 @@ test('il manuale e la vetrina lo raccontano', () => {
     assert.ok(testo.includes(parola), `il manuale non dice «${parola}»`);
   }
   const voci = FUNZIONI_VETRINA.flatMap((g) => g.voci);
-  assert.ok(voci.some((v) => v.t[0] === 'Serie di presenze' && v.scheda === 'giochi'));
+  assert.ok(voci.some((v) => v.t[0] === 'Serie di presenze' && v.scheda === 'presenza'), 'la serie di presenze sta nella scheda Presenza (docs/MENU.md)');
   assert.ok(voci.some((v) => v.t[0] === 'Si ricorda chi c’era' && /Saluta chi scrive per la prima volta/.test(v.d[0])));
 });

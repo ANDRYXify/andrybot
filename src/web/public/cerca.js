@@ -21,7 +21,9 @@
     registro: 'registro interventi segnalazioni da rivedere incidenti attacchi timeline bonifica pulizia follower sospese riprova cronologia storico log azioni escudo registro acciones',
     attacchi: 'attacchi attacco rapporto rapporti incidenti ondata ondate raid grafico follow al minuto avvisi avvisami avviso telegram mail scudo alzato coinvolti chi c era bonifica ripulire csv altri scudi attacks attack report alerts ataques ataque informe avisos',
     follower: 'follower seguaci chi mi segue lista follower bot finti follow finti togli follow rimuovi follower pulizia pulire bot noti probabili ondata fabbrica account nuovi account chiusi blocca sblocca a posto controlla un nome csv followers fake followers remove follower cleanup bots seguidores falsos quitar seguidor limpieza',
-    giochi: 'giochi minigiochi classifiche monete punti coin economia leaderboard ore guardate watchtime fedeltà rank vip games juegos clasificación monedas livelli',
+    presenza: 'presenza presenze presente !presente ci sono check-in porta chi è presente serie di fila saluti benvenuto bentornato prima volta attendance streak greetings presencia presencias racha saludos',
+    monete: 'monete gestione dei punti punti coin coins economia moneta nome delle monete registro saldo scadenza stagioni ora doppia classifica classifiche leaderboard ore guardate watchtime fedeltà rank vip premio vip monedas puntos economía clasificación',
+    giochi: 'giochi minigiochi gioco slot roulette pesca trivia duello manche giochi automatici citazioni battute games minigames juegos minijuegos livelli',
     sondaggi: 'sondaggi predizioni poll prediction votazioni voto encuestas predicciones votar',
     giveaway: 'giveaway estrazione premi raffle sorteggio vincitori concorso sorteo premios',
     partite: 'partite partita con la chat fila coda lobby custom manche giocatori iscriviti gioco esito vincitori monete matches queue players round partidas fila ronda',
@@ -611,7 +613,8 @@
       [L('Vuoi vedere cosa ha fatto lo scudo?', 'Want to see what the shield did?', '¿Ver qué ha hecho el escudo?'), 'registro'],
       [L('Vuoi cambiare la personalità del bot?', 'Want to change the bot personality?', '¿Cambiar la personalidad del bot?'), 'personalita'],
       [L('Vuoi creare un overlay?', 'Want to build an overlay?', '¿Crear un overlay?'), 'alert'],
-      [L('Cerchi giochi e classifiche?', 'Looking for games & leaderboards?', '¿Juegos y clasificaciones?'), 'giochi'],
+      [L('Cerchi le monete del canale?', 'Looking for channel coins?', '¿Buscas las monedas del canal?'), 'monete'],
+      [L('Cerchi i giochi?', 'Looking for games?', '¿Buscas los juegos?'), 'giochi'],
       [L('Vuoi impostare la musica?', 'Want to set up music?', '¿Configurar la música?'), 'musica']
     ];
   }

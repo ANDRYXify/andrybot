@@ -3,18 +3,20 @@
 // LA PRESENZA COME PORTA (docs/COLPI.md, «La presenza come porta: «!presente»»).
 //
 // Un posto solo dice chi e' presente a questa diretta, e chi lo chiede (le
-// monete, i Bit da spendere, i giochi) chiede qui. La diretta la sa il bot
-// (l'inizio della diretta su Twitch): la consegna con `usa`, all'avvio. Un nome
+// monete, i Bit da spendere, i giochi) chiede qui. Cosa chiede la porta lo
+// dice la presenza del canale (presente.js, presenteDi): non i Pew.
+// La diretta la sa il bot (l'inizio della diretta su Twitch): la consegna con
+// `usa`, all'avvio. Un nome
 // e' «piattaforma:id» o «piattaforma:@login»: il giro delle monete di chi
 // guarda sa solo il login.
 import { streamers, presenti } from '../db.js';
-import { normalizza, portaChiede } from './colpi.js';
+import { presenteDi, portaChiede } from './presente.js';
 
 const norm = (s) => String(s || '').toLowerCase();
 let occasioneDi = () => '';
 export function usa({ occasione }) { occasioneDi = occasione; }
 
-export const cfgDi = (channel) => normalizza(streamers.get(norm(channel))?.settings?.colpi);
+export const cfgDi = (channel) => presenteDi(streamers.get(norm(channel))?.settings);
 
 // I nomi di una persona: quelli che si sanno.
 export function nomi({ piattaforma = 'twitch', id = '', user = '' } = {}) {
@@ -52,7 +54,7 @@ const ricordati = new Map();      // canale|nome|diretta → ts
 const ultimoCanale = new Map();   // canale → ts
 export function ricordo(channel, chi, ora = Date.now()) {
   const ch = norm(channel);
-  if (!cfgDi(ch).presenza.porta.ricorda) return false;
+  if (!cfgDi(ch).porta.ricorda) return false;
   const occ = occasioneDi(ch);
   const k = `${ch}|${nomi(chi)[0] || ''}|${occ}`;
   if (ricordati.has(k) || ora - (ultimoCanale.get(ch) || 0) < RIPOSO_CANALE_MS) return false;

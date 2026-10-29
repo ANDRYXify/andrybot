@@ -421,21 +421,19 @@ test('l\'indirizzo corto: pew.<dominio>/<canale> quando e\' acceso, se no il lun
   assert.ok(!lettore(lunga).includes('pew.'));
 });
 
-const { eFrasePresenza, frasePresenza, PRESENZA } = await import('../../src/features/colpi.js');
+const { frasePresenza, PRESENZA } = await import('../../src/features/colpi.js');
 const { PRESENZA_MS, RINVIO_MS: RINVIO } = await import('../../src/features/colpi-servizio.js');
 
-test('la presenza nel listino: accesa solo con un effetto, la frase intera senza maiuscole e spazi, il nome nella scritta', () => {
-  assert.deepEqual(normalizza({}).presenza, { attiva: false, frase: '!presente', comando: '', x: PRESENZA.x, y: PRESENZA.y, scala: 100, testo: '', alMinuto: 6, premi: [], dopo: 'resta', rispondi: true, risposta: '',
-    porta: { attiva: true, monete: true, bit: true, giochi: 'blocca', ricorda: true, testoRicorda: '', conferma: true, testoConferma: '' } });
+// Ai Pew sta solo l'effetto della presenza: la frase, la porta e la serie sono
+// del canale (presente.js, test/unita/presente.test.mjs).
+test('la presenza nel listino: solo l\'effetto, acceso solo con un effetto, il nome nella scritta', () => {
+  assert.deepEqual(normalizza({}).presenza, { attiva: false, comando: '', x: PRESENZA.x, y: PRESENZA.y, scala: 100, testo: '', alMinuto: 6 });
   assert.equal(normalizza({ presenza: { attiva: true } }).presenza.attiva, false, 'senza effetto non si accende');
-  const c = normalizza({ presenza: { attiva: true, comando: '!Ciao', frase: '  Eccomi   QUI ', testo: 'senza nome', x: 140, y: -3, scala: 9999, alMinuto: 0 } });
-  const { porta: _p, ...senzaPorta } = c.presenza;
-  assert.deepEqual(senzaPorta, { attiva: true, frase: 'eccomi qui', comando: 'ciao', x: 100, y: 0, scala: 300, testo: '', alMinuto: 1, premi: [], dopo: 'resta', rispondi: true, risposta: '' });
-  assert.equal(eFrasePresenza(c, 'ECCOMI    qui'), true);
-  assert.equal(eFrasePresenza(c, 'ciao eccomi qui'), false, 'la frase vale da sola');
-  assert.equal(eFrasePresenza(normalizza({ presenza: { comando: 'ciao' } }), '!presente'), false, 'spenta non risponde');
+  const c = normalizza({ presenza: { attiva: true, comando: '!Ciao', frase: '  Eccomi   QUI ', premi: [1], porta: { attiva: false }, testo: 'senza nome', x: 140, y: -3, scala: 9999, alMinuto: 0 } });
+  assert.deepEqual(c.presenza, { attiva: true, comando: 'ciao', x: 100, y: 0, scala: 300, testo: '', alMinuto: 1 }, 'la frase, la serie e la porta di prima non sono piu\' dei Pew');
   assert.equal(frasePresenza(c, 'Marta', 'en'), 'Marta is here', 'senza scritta, quella di serie nella lingua della chat');
   assert.equal(frasePresenza(normalizza({ presenza: { testo: '👋 {nome} c\'è!' } }), 'Marta https://x.y'), '👋 Marta c\'è!', 'il nome si pulisce come quello di un colpo');
+  assert.equal(frasePresenza(normalizza({ presenza: { testo: '{nome}: {serie}ª, +{monete}' } }), 'Marta', 'it', { serie: 4, monete: 10 }), 'Marta: 4ª, +10', 'la serie e le monete arrivano dalla presenza del canale');
   assert.equal(frasePresenza(c, '   '), '', 'senza nome niente scritta');
 });
 
@@ -629,51 +627,31 @@ test('la pagina: le categorie che hanno colpi, nell\'ordine dello streamer; le m
   assert.equal(senza.dati(c).voci.some((v) => v.id === 'pomodoro'), false, 'senza le monete del canale un colpo solo in monete non si offre');
 });
 
-const { premioSerie, serieDopo, rispostaPresenza } = await import('../../src/features/colpi.js');
-
-test('la serie della presenza: i gradini dello streamer, poi resta o ricomincia; di fila vuol dire la diretta subito prima', () => {
-  const p = normalizza({ presenza: { premi: '1, 5, 10, 15' } }).presenza;
-  assert.deepEqual(p.premi, [1, 5, 10, 15]);
-  assert.deepEqual([1, 2, 3, 4, 5, 9].map((n) => premioSerie(p, n)), [1, 5, 10, 15, 15, 15]);
-  assert.deepEqual([4, 5, 6].map((n) => premioSerie({ ...p, dopo: 'ricomincia' }, n)), [15, 1, 5]);
-  assert.deepEqual(normalizza({ presenza: { premi: [0, 0] } }).presenza.premi, [], 'tutti zero vuol dire nessun premio');
-  assert.deepEqual(normalizza({ presenza: { monete: 20 } }).presenza.premi, [20], 'il premio fisso di prima diventa un gradino');
-  assert.equal(normalizza({ presenza: { premi: Array.from({ length: 50 }, () => 1) } }).presenza.premi.length, 30);
-  assert.equal(serieDopo(null, 'd2', 'd1'), 1);
-  assert.equal(serieDopo({ ultima: 'd1', serie: 3 }, 'd2', 'd1'), 4, 'alla diretta subito prima: di fila');
-  assert.equal(serieDopo({ ultima: 'd0', serie: 3 }, 'd2', 'd1'), 1, 'ne ha saltata una: si riparte');
-  assert.equal(serieDopo({ ultima: 'd2', serie: 4 }, 'd2', 'd1'), 4, 'la stessa diretta non conta due volte');
-  const r = normalizza({ presenza: { premi: [5] } });
-  assert.equal(rispostaPresenza(r, 'Marta', 'it', { serie: 3, monete: 5, moneta: 'gemme' }), '@Marta, presente! 3ª di fila: +5 gemme.');
-  assert.equal(rispostaPresenza(r, 'Marta', 'en', { serie: 3, monete: 0 }), '@Marta, checked in! 3 in a row.');
-  assert.equal(rispostaPresenza(normalizza({ presenza: { risposta: 'Ciao {nome} ({serie})' } }), 'Marta', 'it', { serie: 2 }), 'Ciao @Marta (2)');
-  assert.equal(rispostaPresenza(normalizza({ presenza: { rispondi: false } }), 'Marta'), '');
-});
-
-test('la serie col registro vero: diretta dopo diretta sale, una saltata la azzera, e una presenza rifatta non ridà le monete', async () => {
+test('la serie col registro vero: la conta la presenza del canale, e l\'effetto ne scrive i numeri', async () => {
   const { pewSerie } = await import('../../src/db.js');
-  const cfg = { attivo: true, voci: [{ comando: 'pomodoro', bit: 10 }], presenza: { attiva: true, comando: 'pomodoro', x: 10, y: 10, premi: [1, 5, 10] } };
+  const { contaSerie, normPresente } = await import('../../src/features/presente.js');
+  const cfg = { attivo: true, voci: [{ comando: 'pomodoro', bit: 10 }], presenza: { attiva: true, comando: 'pomodoro', x: 10, y: 10, testo: '{nome} {serie}ª +{monete}' } };
   let adesso = 2_000_000;
   const sparati = [];
   const s = creaServizioColpi({ registro: registroColpi, effects: { fireConOpzioni: (l, c, o) => { sparati.push(o); return true; } },
-    effettoDi: () => ({ tipo: 'immagine' }), impostazioni: () => cfg, serie: pewSerie, ora: () => adesso });
+    effettoDi: () => ({ tipo: 'immagine' }), impostazioni: () => cfg, ora: () => adesso });
   const c = login();
-  const p = (occ) => s.presenza(c, { chiave: 'twitch:1', nome: 'Marta', occasione: occ });
+  const pres = normPresente({ premi: [1, 5, 10] });
+  const conta = (occ) => contaSerie(pewSerie, { canale: c, chiave: 'twitch:1', occasione: occ, ora: adesso, pres });
   const giro = (occ) => { adesso += 1000; pewSerie.segnaDiretta(c, occ, adesso); };
   giro('d1');
-  assert.deepEqual(p('d1'), { esito: 'partita', serie: 1, monete: 1, nuova: true });
-  assert.equal(sparati.at(-1).attacco.chi, 'Marta è presente');
+  assert.deepEqual(conta('d1'), { serie: 1, gradino: 1, monete: 1, nuova: true });
   giro('d2');
-  assert.deepEqual(p('d2'), { esito: 'partita', serie: 2, monete: 5, nuova: true });
+  const r = conta('d2');
+  assert.deepEqual(r, { serie: 2, gradino: 5, monete: 5, nuova: true });
+  assert.deepEqual(s.presenza(c, { chiave: 'twitch:1', nome: 'Marta', occasione: 'd2', serie: r.serie, monete: r.gradino }), { esito: 'partita' });
+  assert.equal(sparati.at(-1).attacco.chi, 'Marta 2ª +5', 'la scritta dice la serie che la presenza ha contato');
   giro('d3');
   giro('d4');
-  assert.deepEqual(p('d4'), { esito: 'partita', serie: 1, monete: 1, nuova: true }, 'la d3 l\'ha saltata: si riparte, anche se nessuno si e\' presentato alla d3');
-  const id = sparati.at(-1).attacco.id;
-  registroColpi.lasciata(id);
+  assert.deepEqual(conta('d4'), { serie: 1, gradino: 1, monete: 1, nuova: true }, 'la d3 l\'ha saltata: si riparte, anche se nessuno si e\' presentato alla d3');
   adesso += 1000;
-  assert.deepEqual(p('d4'), { esito: 'partita', serie: 1, monete: 0, nuova: false }, 'rifatta perche\' non si e\' vista: compare, ma le monete erano gia\' sue');
-  adesso += 1000;
-  assert.deepEqual(p('d5'), { esito: 'partita', serie: 2, monete: 5, nuova: true }, 'una diretta vista la prima volta da una presenza conta lo stesso');
+  assert.deepEqual(conta('d4'), { serie: 1, gradino: 1, monete: 0, nuova: false }, 'rifatta: le monete erano gia\' sue');
+  assert.deepEqual(conta('d5'), { serie: 2, gradino: 5, monete: 5, nuova: true }, 'una diretta vista la prima volta da una presenza conta lo stesso');
   assert.equal(pewSerie.get(c, 'twitch:1').record, 2);
 });
 

@@ -55,9 +55,9 @@ const scheda = () => {
 
 test('ogni carta della scheda sta in una parte, e ogni parte ha le sue carte', () => {
   const parti = oggetto('SOTTO_SCHEDE').giochi.voci.map(([id]) => id);
-  assert.deepEqual(parti, ['giochi', 'monete', 'automatici', 'battute']);
+  assert.deepEqual(parti, ['giochi', 'automatici', 'battute'], 'le monete hanno una scheda loro (docs/MENU.md)');
   const carte = [...scheda().matchAll(/<div class="carta"([^>]*)>\s*<h2>[^\n]*?L\('([^']+)'/g)].map((m) => ({ zona: m[1].match(/data-zona="([^"]+)"/)?.[1], nome: m[2] }));
-  assert.ok(carte.length >= 11, `le carte si trovano (${carte.length})`);
+  assert.ok(carte.length >= 8, `le carte si trovano (${carte.length}): le quattro delle monete e della presenza hanno una scheda loro`);
   for (const c of carte) assert.ok(parti.includes(c.zona), `«${c.nome}» ha una parte: ${c.zona}`);
   for (const p of parti) assert.ok(carte.some((c) => c.zona === p), `la parte «${p}» ha almeno una carta`);
   assert.equal(carte.find((c) => c.nome === 'Gioco per gioco')?.zona, 'giochi');

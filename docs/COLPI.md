@@ -860,14 +860,23 @@ Chiesto così: «riusciamo anche ad inserire un "presenza"? magari in chat da
 scrivere "!pew presente" o una roba comunque personalizzata dallo streamer»;
 scelto: compare in diretta.
 
-Chi scrive in chat la frase dello streamer (di serie `!presente`) fa
-comparire l'effetto scelto dallo streamer, nel punto scelto dallo streamer,
-con sotto «Marta è presente» (o la scritta dello streamer, con `{nome}`; vuota,
-quella di serie nella lingua della chat). È gratis e vale una volta per
-diretta.
+Chi scrive in chat la frase della presenza del canale (di serie `!presente`)
+fa comparire l'effetto scelto dallo streamer, nel punto scelto dallo
+streamer, con sotto «Marta è presente» (o la scritta dello streamer, con
+`{nome}`, `{serie}` e `{monete}`; vuota, quella di serie nella lingua della
+chat). È gratis e vale una volta per diretta.
 
-- **La frase** si confronta intera: maiuscole e spazi non contano, «ciao !pew
-  presente» non vale. Su Twitch, Kick e YouTube.
+**Ai Pew sta solo l'effetto** (`colpi.presenza`: `attiva`, `comando`, `x`,
+`y`, `scala`, `testo`, `alMinuto`). La frase, la porta, la serie e le risposte
+sono della presenza del canale (`settings.presente`, `src/features/presente.js`,
+più sotto e in docs/MENU.md, «Presenza, monete e giochi: una strada sola»):
+esserci è un fatto del canale, l'effetto è un modo di festeggiarlo. Il
+servizio dei colpi riceve dalla presenza `serie` e `monete` già decise, solo
+per la scritta: che l'effetto parta o no, la presenza è già contata.
+
+- **La frase** è quella della presenza del canale: si confronta intera,
+  maiuscole e spazi non contano, «ciao !presente» non vale. Su Twitch, Kick e
+  YouTube.
 - **Le stesse domande di un colpo**: pagina accesa e non in pausa, diretta in
   onda, un overlay pronto, l'effetto che c'è e si posa in un punto, il punto
   fuori dalle zone protette (anche se le zone cambiano dopo). Se no, niente:
@@ -884,13 +893,11 @@ diretta.
 - **Un tetto suo** (di serie 6 al minuto): un raid che si presenta non
   riempie la diretta, e non toglie posto a chi paga (le presenze non contano
   nel tetto dei colpi).
-- **La serie**: chi la fa partire, o l'ha già fatta, è presente a questa
-  diretta senza aspettare i due giri (docs/PRESENZE.md).
-
-Nel pannello, scheda Pew, «La presenza»: accesa, frase, scritta, effetto (anche
-dai lanci e adesivi), grandezza, tetto, il punto toccando il quadro, e
+Nel pannello, scheda Pew, «La presenza a schermo»: accesa, scritta, effetto
+(anche dai lanci e adesivi), grandezza, tetto, il punto toccando il quadro, e
 «Prova nell'overlay», che la manda subito col nome dello streamer, senza
-registro.
+registro (la scritta col primo gradino della serie del canale). Un tasto porta
+alla scheda Presenza.
 
 ## La presenza come porta: «!presente»
 
@@ -907,14 +914,16 @@ presente`) passa alla nuova; una frase scritta dallo streamer resta sua.
 **Essere presenti** è un fatto, non un effetto sullo schermo: chi scrive la
 frase è presente a **questa diretta** (`arrivi.occasioneDiretta`; fuori
 diretta, il giorno), sulla sua piattaforma. Si segna **sempre**, anche con
-Pewpewify spento, la pagina in pausa o l'overlay chiuso: la porta non può
-dipendere da un overlay che non si apre. L'effetto in diretta e la serie sono
-quelli di sopra, quando ci sono le loro condizioni. Si segna in
+Pewpewify spento, la pagina in pausa, l'overlay chiuso o nessun effetto
+scelto: la porta non può dipendere da un overlay che non si apre. Conta fra
+le presenze della diretta senza aspettare i due giri (docs/PRESENZE.md). La
+serie (sotto) sale in onda; l'effetto (sopra) parte quando ci sono le sue
+condizioni. Si segna in
 `presenti(channel, chi, occasione)`, una riga per persona e canale, con due
 nomi: `piattaforma:id` (i Bit, i giochi) e `piattaforma:@login` (il giro delle
 monete, che di chi guarda sa solo il login). La riga regge un riavvio.
 
-**La porta** (`presenza.porta`, tutta dello streamer, accesa di serie):
+**La porta** (`presente.porta`, tutta dello streamer, accesa di serie):
 - `monete`: le monete **dei messaggi** e **del tempo guardato** solo a chi è
   presente (le monete degli eventi, un sub, un cheer, restano: sono un grazie
   per un sostegno vero);
@@ -935,11 +944,22 @@ monete, che di chi guarda sa solo il login). La riga regge un riavvio.
   davvero: «guadagni monete, puoi giocare e i tuoi Bit vanno nel
   salvadanaio», meno i pezzi spenti). Al più un ricordo ogni 20 secondi nel
   canale: a inizio diretta non diventa un muro.
-- `conferma`: chi si presenta e non riceve già la risposta della serie sente
-  «presente» (`testoConferma`, con `{nome}`), una volta per diretta.
+- `conferma`: la conferma «presente» (`testoConferma`, con `{nome}`). Quale
+  risposta sente chi si presenta lo dice «La serie della presenza», sotto.
 
-Spenta la porta (`attiva: false`), la presenza torna quella di sopra: un
-saluto in diretta, e nient'altro dipende da lei.
+Spenta la porta (`attiva: false`), la presenza non chiude niente: la serie,
+la risposta e l'effetto restano.
+
+**Dove sta la regola.** Una funzione sola legge la presenza del canale,
+`presenteDi(settings)` (`src/features/presente.js`, pura): `settings.presente`
+se c'è, se no la forma di prima dentro `settings.colpi.presenza`, così chi
+l'aveva configurata nei Pew non perde niente. Tutti passano da lì: la porta
+(`presenza-porta.cfgDi`), il bot, i giochi, il server che la manda al
+pannello già letta. Quando le impostazioni si salvano, `presenteDaSalvare`
+decide: la scheda Presenza la scrive (il salvato sotto, quello che arriva
+sopra); chi salva i Pew prima di averla mai salvata la ferma in
+`settings.presente` da quella di prima, perché i Pew ormai mandano solo
+l'effetto e quella vecchia andrebbe persa.
 
 **Dove sta.** Un posto solo dice chi è presente (`src/features/presenza-porta.js`),
 e chi lo chiede chiede lì: le monete (`games.accredita`, `games.giroMonete`), i
@@ -949,9 +969,9 @@ La diretta di adesso la consegna il bot all'avvio (`usa`); senza, la porta
 resta **aperta**: chiusa, non ci si potrebbe nemmeno presentare. I giveaway e
 le partite con la chat non sono giochi della porta: sono eventi dello streamer.
 
-La frase come porta conta anche con l'effetto in diretta spento
-(`eFrasePorta`); e resta sua anche per «!pew <colpo>»: una frase non lancia
-mai un colpo.
+La frase conta anche senza effetto (`eFrasePresente`); e resta sua anche per
+«!pew <colpo>» e «!pew» da solo: nel giro dei Pew la frase si ferma al ramo
+della presenza, e `lancioInChat` riceve la frase e non la lancia mai.
 
 ## La serie della presenza
 
@@ -961,10 +981,15 @@ prima presenza 1, poi 5, poi 10 poi 15 fino a che non si salta una presenza,
 però personalizzabile, sia quanto la combo massima sia quanti punti sia
 tutto)».
 
-- **I gradini** (`presenza.premi`, fino a 30): le monete della prima presenza
+- **I gradini** (`presente.premi`, fino a 30): le monete della prima presenza
   di fila, della seconda, e così via. Dopo l'ultimo gradino si resta lì o si
-  ricomincia dal primo (`presenza.dopo`). Tutti a zero, niente monete
+  ricomincia dal primo (`presente.dopo`). Tutti a zero, niente monete
   (`premioSerie`).
+- **Solo in onda.** La serie la conta `contaSerie` quando il canale è in onda
+  (lo stesso `inOnda` dei colpi). Fuori diretta la chiave della presenza è il
+  giorno: farla salire, o pagarne le monete, metterebbe nell'elenco delle
+  dirette un giorno senza diretta. Fuori onda la frase vale per la porta, e
+  basta.
 - **Di fila vuol dire diretta dopo diretta.** La serie (`pew_serie`, per
   spettatore) sale se la sua ultima presenza era alla diretta subito prima di
   questa, se no riparte da 1 (`serieDopo`). «Subito prima» lo dice l'elenco
@@ -980,12 +1005,19 @@ tutto)».
   registro delle monete (motivo `presenza`), e i bot, gli esclusi e lo
   streamer non le ricevono.
 - **La scritta** sull'overlay e **la risposta** in chat possono dire `{serie}`
-  e `{monete}` (la risposta anche `{moneta}`, il nome delle monete). La
-  risposta si spegne; vuota, è quella di serie nella lingua della chat, col
-  premio se c'è. Arriva solo alla prima presenza della diretta.
+  e `{monete}` (la risposta anche `{moneta}`, il nome delle monete).
+- **Una risposta sola**, alla prima presenza della diretta
+  (`rispostaPresenza`): quella della serie quando ha qualcosa da dire in più
+  di «presente» (le monete del gradino, o un testo scritto dallo streamer); se
+  no la conferma della porta; se la conferma è spenta, quella della serie
+  senza monete. Ognuna si spegne da sola; vuota, è quella di serie nella
+  lingua della chat. Prima la serie rispondeva solo quando partiva l'effetto,
+  e la conferma negli altri casi: adesso la serie c'è sempre, e la regola
+  sceglie la voce più ricca.
 
-Nel pannello, sotto «La presenza»: i gradini separati da virgole, cosa succede
-dopo l'ultimo, una riga che rilegge la serie coi numeri, la risposta.
+Nel pannello, scheda Presenza, carta «La presenza dichiarata»: la frase, i
+gradini separati da virgole, cosa succede dopo l'ultimo, una riga che rilegge
+la serie coi numeri, la porta, il ricordo, la risposta e la conferma.
 
 ## La chat
 

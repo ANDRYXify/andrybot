@@ -22,9 +22,9 @@ const BOT = readFileSync(join(RAD, 'src/bot.js'), 'utf8').replace(/^\s*\/\/.*$/g
 
 test('«!pew <colpo>»: nel giro dei colpi, dopo i significati che ci sono gia\'', () => {
   const giro = BOT.indexOf("if (!msg.isSelf && streamers.get(login)?.settings?.colpi?.attivo === true) {");
-  const qui = BOT.indexOf('const lc = lancioInChat(cfgColpi, msg.text);');
+  const qui = BOT.indexOf('const lc = lancioInChat(cfgColpi, msg.text, pres.frase);');
   assert.ok(giro > 0 && qui > giro && qui < BOT.indexOf('this.brain.observe?.(msg);'), 'nel giro dei colpi, prima del resto del messaggio');
-  for (const prima of ['pagaInChat(cfgColpi, msg.text)', 'chiedeBit(cfgColpi, msg.text)', 'chiedeZaino(cfgColpi, msg.text)', 'eFrasePresenza(cfgColpi, msg.text)'])
+  for (const prima of ['pagaInChat(cfgColpi, msg.text)', 'chiedeBit(cfgColpi, msg.text)', 'chiedeZaino(cfgColpi, msg.text)', '} else if (presenzaOra) {'])
     assert.ok(BOT.indexOf(prima, giro) > 0 && BOT.indexOf(prima, giro) < qui, `${prima} viene prima`);
   assert.match(BOT.slice(giro, qui), /\} else if \(cfgColpi\?\.chat\.attivo && persona\) \{\s*$/, 'un ramo della stessa catena: un messaggio fa una cosa sola; con la persona');
   assert.match(BOT.slice(giro, qui), /const persona = !msg\.userId \? '' : \(!msg\.piattaforma \|\| msg\.piattaforma === 'twitch'\) \? String\(msg\.userId\) : msg\.piattaforma === 'kick' \? personaKick\(msg\.userId\) : '';/,
@@ -32,7 +32,7 @@ test('«!pew <colpo>»: nel giro dei colpi, dopo i significati che ci sono gia\'
 });
 
 test('paga chi scrive, coi suoi saldi; risponde come vuole lo streamer', () => {
-  const qui = BOT.indexOf('const lc = lancioInChat(cfgColpi, msg.text);');
+  const qui = BOT.indexOf('const lc = lancioInChat(cfgColpi, msg.text, pres.frase);');
   const h = BOT.slice(qui, qui + 2200);
   assert.match(h, /this\.colpi\.inChat\(login, \{ voce: lc\.voce, con: lc\.con, user: msg\.user, chi: persona, nome \}\)/);
   assert.match(h, /const parlo = cfgColpi\.chat\.rispondi && \(esito === 'ok' \|\| adesso - \(saldiBitChiesti\.get\(k\) \|\| 0\) >= cfgColpi\.chat\.attesaSec \* 1000\);/, 'accesa dallo streamer; i rifiuti col loro passo');
@@ -46,7 +46,8 @@ test('«!pew» da solo: il link, dopo la presenza e prima del lancio, con un pas
   const link = BOT.indexOf('} else if (cfgColpi && chiedeLink(cfgColpi, msg.text)) {', giro);
   const lancio = BOT.indexOf('} else if (cfgColpi?.chat.attivo && persona) {', giro);
   assert.ok(giro > 0 && link > giro && link < lancio, 'un ramo della stessa catena, prima del lancio');
-  assert.ok(BOT.indexOf('eFrasePresenza(cfgColpi, msg.text)', giro) < link, 'la presenza resta prima');
+  const pres = BOT.indexOf('} else if (presenzaOra) {', giro);
+  assert.ok(pres > giro && pres < link, 'la presenza resta prima: la frase non chiede il link');
   const h = BOT.slice(link, lancio);
   assert.match(h, /const k = login \+ '\|link\|' \+ \(msg\.piattaforma \|\| 'twitch'\)/, 'il passo e\' del canale su quella piattaforma');
   assert.match(h, /adesso - \(saldiBitChiesti\.get\(k\) \|\| 0\) >= cfgColpi\.link\.attesaSec \* 1000/);

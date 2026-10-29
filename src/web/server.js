@@ -89,6 +89,7 @@ import * as donaStripe from '../features/donazioni-stripe.js';
 import * as donaSatispay from '../features/donazioni-satispay.js';
 import * as donaMedia from '../features/donazioni-media.js';
 import * as colpiMod from '../features/colpi.js';
+import { presenteDi, presenteDaSalvare, premioSerie } from '../features/presente.js';
 import * as colpiPagina from '../features/colpi-pagina.js';
 import { creaPortaColpi } from '../features/colpi-porta.js';
 import * as colpiAccesso from '../features/colpi-accesso.js';
@@ -1426,6 +1427,9 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     // La settimana arriva gia' letta: la regola dei posti vecchi sta nel server,
     // e il pannello non ne tiene una copia sua.
     s.settings = { ...(s.settings || {}), settimana: settimana.vistaSettimana(settimana.settimanaDi(s.settings)) };
+    // e cosi' la presenza del canale (presente.js): letta da dove sta salvata,
+    // anche dalla forma di prima dentro i Pew
+    s.settings = { ...s.settings, presente: presenteDi(s.settings) };
     // gli effetti degli eventi come partirebbero: un tuo effetto cancellato non resta scritto
     if (s.settings.effettiEventi) s.settings = { ...s.settings, effettiEventi: effettiEventiDi(login, s.settings.effettiEventi) };
     return s;
@@ -2741,7 +2745,8 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   app.post('/api/colpi/presenza/prova', requireOwner, (req, res) => {
     const u = currentUser(req);
     const b = req.body?.presenza && typeof req.body.presenza === 'object' ? req.body.presenza : null;
-    const r = manager.colpi?.provaPresenza(u.login, { nome: streamers.get(u.login)?.display || u.login, lingua: linguaChat(u.login), presenza: b }) || { ok: false, motivo: 'overlay' };
+    const monete = premioSerie(presenteDi(streamers.get(u.login)?.settings), 1);
+    const r = manager.colpi?.provaPresenza(u.login, { nome: streamers.get(u.login)?.display || u.login, lingua: linguaChat(u.login), presenza: b, monete }) || { ok: false, motivo: 'overlay' };
     res.json(r);
   });
   // LA PAGINA DEL NEGOZIO (docs/NEGOZIO.md, «La pagina»). Sta su
@@ -7577,7 +7582,7 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
   };
   const partitaDi = (r, frase) => (login) => { if (r.ok && frase) { try { manager.say(login, frase); } catch { /* il bot non e' in chat */ } } };
   const ERRORI_PARTITA = {
-    'giochi-spenti': 'Le partite partono solo con i minigiochi accesi: in «Giochi & classifiche» accendi «Attiva i minigiochi in chat».',
+    'giochi-spenti': 'Le partite partono solo con i minigiochi accesi: nella scheda «Giochi» accendi «Attiva i minigiochi in chat».',
     'gia-aperta': 'C\'è già una partita aperta.',
     nessuna: 'Nessuna partita aperta.',
     'manche-aperta': 'La manche è ancora aperta: dai l\'esito o annullala.',
@@ -7678,7 +7683,7 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
       premio: b.premio, soloSub: !!b.soloSub, keyword: b.keyword, quanti: b.quanti,
       moltSub: b.moltSub, moltVip: b.moltVip, moltMod: b.moltMod,
     });
-    if (!r.ok) return res.status(400).json({ errore: r.errore === 'gia-aperto' ? 'C\'è già un giveaway aperto.' : 'Il giveaway parte solo con i minigiochi accesi: nella scheda «Giochi & classifiche» accendi «Attiva i minigiochi in chat».' });
+    if (!r.ok) return res.status(400).json({ errore: r.errore === 'gia-aperto' ? 'C\'è già un giveaway aperto.' : 'Il giveaway parte solo con i minigiochi accesi: nella scheda «Giochi» accendi «Attiva i minigiochi in chat».' });
     const m = [];
     if (r.molt.sub > 1) m.push(`sub ×${r.molt.sub}`);
     if (r.molt.vip > 1) m.push(`vip ×${r.molt.vip}`);
@@ -7836,6 +7841,10 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     if (b.donazioni !== undefined) out.donazioni = donazioni.normDonazioni(b.donazioni, s.settings?.donazioni, user.login);
     // i colpi degli spettatori: i premi a punti canale li scrive solo SocialBot (docs/COLPI.md)
     if (b.colpi !== undefined) out.colpi = colpiMod.normColpi(b.colpi, s.settings?.colpi);
+    // la presenza del canale (presente.js): la scheda Presenza la scrive, e chi
+    // salva i Pew prima di averla mai salvata la ferma, cosi' non si perde
+    const presente = presenteDaSalvare(s.settings, b);
+    if (presente !== undefined) out.presente = presente;
     if (b.penitenze !== undefined) {
       const p = b.penitenze || {};
       const ov = (p.overlay && typeof p.overlay === 'object') ? p.overlay : {};

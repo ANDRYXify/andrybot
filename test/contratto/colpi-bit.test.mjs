@@ -28,7 +28,7 @@ test('il cheer arriva al servizio con l\'id del messaggio, e il servizio ha il r
 
 test('«!pew bit» su Twitch e «!pew kicks» su Kick: alla persona, quando e ogni quanto vuole lo streamer, col suo testo', () => {
   const i = BOT.indexOf('chiedeBit(cfgColpi, msg.text)');
-  assert.ok(i > 0 && i < BOT.indexOf('eFrasePresenza(cfgColpi, msg.text)'), 'prima della presenza: la frase non lo copre');
+  assert.ok(i > 0 && i < BOT.indexOf('} else if (presenzaOra) {'), 'prima della presenza: la frase non lo copre');
   const h = BOT.slice(i - 200, i + 1200);
   assert.match(h, /persona && \(valutaDi\(persona\) === 'kicks' \? chiedeKicks\(cfgColpi, msg\.text\) && this\.colpi\.conKicksPew\(login\) : chiedeBit\(cfgColpi, msg\.text\) && this\.colpi\.conBitPew\(login\)\)/, 'la parola e la valuta vengono dalla persona');
   assert.match(h, /if \(b\.rispondi && adesso - \(saldiBitChiesti\.get\(k\) \|\| 0\) >= b\.attesaSec \* 1000\) \{/);
@@ -50,7 +50,7 @@ test('lo zaino: il registro vero, «!pew zaino» su Twitch e su Kick, le rispost
   assert.match(BOT, /zaino: pewZaino, log \}\);/, 'il servizio ha lo zaino di db.js');
   assert.match(BOT, /pewBit\.pulisci\(\); pewZaino\.pulisci\(\);/);
   const i = BOT.indexOf('chiedeZaino(cfgColpi, msg.text)');
-  assert.ok(i > 0 && i < BOT.indexOf('eFrasePresenza(cfgColpi, msg.text)'), 'prima della presenza');
+  assert.ok(i > 0 && i < BOT.indexOf('} else if (presenzaOra) {'), 'prima della presenza');
   const h = BOT.slice(i - 40, i + 1200);
   assert.match(h, /chiedeZaino\(cfgColpi, msg\.text\) && persona && this\.colpi\.zainoVisibile\(login, persona\)/);
   assert.match(h, /if \(z\.rispondi && adesso - \(saldiBitChiesti\.get\(k\) \|\| 0\) >= z\.attesaSec \* 1000\) \{/);

@@ -841,8 +841,10 @@ Per sistemare la slot si scorreva su e giù fra due carte, salvando due volte.
   davanti, come «Salva i comandi» nella scheda Comandi), poi le regole. Se un
   nome è già preso non salva niente e dice quale; se le regole non passano dopo
   i comandi, dice che i comandi sono salvati e le regole no.
-- **Quattro parti:** «I giochi», «Monete e classifica», «Giochi automatici»,
-  «Citazioni e battute». Ogni carta ne ha una (`data-zona`), e un contratto
+- **Tre parti:** «I giochi», «Giochi automatici», «Citazioni e battute». Le
+  monete e la presenza, che stavano nella parte «Monete e classifica», hanno
+  una scheda loro (docs/MENU.md, «Presenza, monete e giochi: una strada
+  sola»). Ogni carta ne ha una (`data-zona`), e un contratto
   pretende che nessuna resti fuori. La barra delle parti è fatta di linguette
   sottolineate, per non confonderla con le pillole delle schede sorelle (vale
   anche per Comandi e Negozio, che avevano lo stesso difetto).

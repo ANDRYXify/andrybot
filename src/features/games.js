@@ -28,7 +28,7 @@ import { giroDi, pesca, TIPI_MANCHE } from './giro-regole.js';
 import { preferenzeDi } from './preferenze.js';
 import * as porta from './presenza-porta.js';
 import { linguaChat } from './lingua-canale.js';
-import { testoPorta } from './colpi.js';
+import { testoPorta } from './presente.js';
 
 const log = makeLog('giochi');
 
@@ -132,7 +132,7 @@ const chiDi = (msg) => ({ piattaforma: msg.piattaforma || 'twitch', id: msg.user
 function ricordaPorta(msg, say) {
   if (!say || !porta.ricordo(msg.channel, chiDi(msg))) return;
   const cfg = porta.cfgDi(msg.channel);
-  say(testoPorta(cfg, 'ricorda', linguaChat(msg.channel), { nome: msg.display || msg.user, frase: cfg.presenza.frase }));
+  say(testoPorta(cfg, 'ricorda', linguaChat(msg.channel), { nome: msg.display || msg.user, frase: cfg.frase }));
 }
 const medaglia = (i) => ['🥇', '🥈', '🥉'][i] || `${i + 1}°`;
 

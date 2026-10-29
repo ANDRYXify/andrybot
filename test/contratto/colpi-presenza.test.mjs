@@ -23,21 +23,34 @@ const leggi = (p) => readFileSync(join(RAD, p), 'utf8');
 const BOT = senzaCommenti(leggi('src/bot.js'));
 const SRV = senzaCommenti(leggi('src/web/server.js'));
 
-test('la frase della presenza: da una persona, una per diretta, e conta nella serie', () => {
-  const i = BOT.indexOf("if (!msg.isSelf && streamers.get(login)?.settings?.colpi?.attivo === true) {");
-  assert.ok(i > 0 && i < BOT.indexOf('this.brain.observe?.(msg);'), 'nell\'elaborazione di ogni messaggio, dopo l\'antispam');
-  const h = BOT.slice(i, i + 4200);
-  assert.match(h, /const paga = cfgColpi \? pagaInChat\(cfgColpi, msg\.text\) : null;\n\s*if \(paga\) \{\n\s*const r = this\.colpi\.daMonete\(login, \{ codice: paga\.codice, user: msg\.user, modo: paga\.modo \}\);/, 'le monete le paga chi scrive, col suo codice e col modo che ha scelto');
-  assert.match(h, /premio: r\.premio \|\| titoloPremioMisto\(\{ nome: r\.nome \|\| '' \}\)/, 'la risposta nomina il premio misto come lo vede su Twitch (per colpo o per prezzo)');
-  assert.match(h, /if \(r\.esito === 'partita' && r\.nuova\) \{\n\s*const date = r\.monete > 0 \? economia\.premio\(login, msg\.user, r\.monete, 'presenza'\) : 0;/, 'le monete della serie: un premio (bot, esclusi e streamer no), una volta per diretta');
-  assert.match(BOT, /serie: pewSerie,\n/, 'la serie col registro vero delle dirette');
-  assert.match(BOT, /pewSerie\.segnaDiretta\(login, arrivi\.occasioneDiretta\(login, this\._inizioTwitch\(login\)\), ora\);/, 'ogni diretta va nell\'elenco dal giro delle ore, con la stessa chiave della presenza');
+test('la frase della presenza: da una persona, fuori dal giro dei Pew; l\'effetto, dentro, e solo se acceso', () => {
+  const giro = BOT.indexOf("if (!msg.isSelf && streamers.get(login)?.settings?.colpi?.attivo === true) {");
+  const frase = BOT.indexOf('if (eFrasePresente(pres, msg.text) && ePersona(login, msg.user)) {');
+  assert.ok(frase > 0 && frase < giro && giro < BOT.indexOf('this.brain.observe?.(msg);'), 'la presenza e\' del canale: si conta prima e fuori dal giro dei Pew');
+  assert.match(BOT, /const pres = presenzaPorta\.cfgDi\(login\);/, 'la presenza la legge l\'accessore, dalla porta');
+  const h = BOT.slice(frase, giro);
+  assert.match(h, /const chiave = piattaforma \+ ':' \+ \(msg\.userId \|\| msg\.user\), occasione = arrivi\.occasioneDiretta\(login, this\._inizioTwitch\(login\)\);/, 'chi e\', per piattaforma; la diretta come la tengono le accoglienze: regge un riavvio');
+  assert.match(h, /const s = this\.inOnda\(login\) \? contaSerie\(pewSerie, \{ canale: login, chiave, occasione, pres \}\) : null;/, 'la serie sale solo in onda, col registro vero');
+  assert.match(h, /const date = s\?\.monete > 0 \? economia\.premio\(login, msg\.user, s\.monete, 'presenza'\) : 0;/, 'le monete della serie: un premio (bot, esclusi e streamer no), una volta per diretta');
+  assert.match(h, /presenze\.dichiara\(login, msg\.user\);/, 'presente alla diretta senza aspettare i due giri, anche senza effetto');
+  assert.match(h, /if \(s \? s\.nuova : prima\) \{\n\s*const t = rispostaPresenza\(pres, /, 'una risposta sola, alla prima presenza');
+  const effetto = BOT.indexOf('} else if (presenzaOra) {', giro);
+  assert.ok(effetto > giro, 'l\'effetto e\' un ramo dei Pew');
+  assert.match(BOT.slice(effetto, effetto + 400), /if \(cfgColpi\?\.presenza\.attiva\) \{\n\s*this\.colpi\.presenza\(login, \{ chiave: presenzaOra\.chiave, nome: msg\.display \|\| msg\.user, occasione: presenzaOra\.occasione,\n\s*lingua: linguaChat\(login\), serie: presenzaOra\.serie, monete: presenzaOra\.gradino \}\);/);
+  assert.match(BOT, /try \{ pewSerie\.segnaDiretta\(login, arrivi\.occasioneDiretta\(login, this\._inizioTwitch\(login\)\), ora\); \}/, 'ogni diretta va nell\'elenco dal giro delle ore, sempre, con la stessa chiave della presenza');
+  assert.doesNotMatch(BOT, /settings\?\.colpi\?\.presenza\?\.attiva === true\) \{\s*try \{ pewSerie/, 'e non solo con l\'effetto acceso');
   assert.match(BOT, /monete: \{ punta: economia\.punta, rendi: economia\.rendi, saldo: economia\.saldo \}/, 'le monete si muovono solo da economia.js, con la ricevuta');
-  assert.match(h, /eFrasePresenza\(cfgColpi, msg\.text\) && ePersona\(login, msg\.user\)/, 'i bot noti non si presentano');
-  assert.match(h, /chiave: piattaforma \+ ':' \+ \(msg\.userId \|\| msg\.user\)/, 'chi e\', per piattaforma');
-  assert.match(h, /occasione: arrivi\.occasioneDiretta\(login, this\._inizioTwitch\(login\)\)/, 'la diretta come la tengono le accoglienze: regge un riavvio');
-  assert.match(h, /if \(r\.esito === 'partita' \|\| r\.esito === 'gia'\) presenze\.dichiara\(login, msg\.user\);/);
   assert.match(leggi('src/features/arrivi.js'), /export const occasioneDiretta = \(channel, twitchInizio = 0, deps\) => R\.occasione\('diretta', pezziOccasione\(norm\(channel\), _con\(deps\), twitchInizio\)\);/);
+});
+
+test('un accessore solo: nessuno legge la frase, la porta o la serie dai Pew', () => {
+  const vecchi = /colpi\??\.presenza\??\.(frase|porta|premi|dopo|rispondi|risposta)\b|cfg\.presenza\.(frase|porta)|eFrasePorta|eFrasePresenza/;
+  for (const f of ['src/bot.js', 'src/web/server.js', 'src/features/games.js', 'src/features/presenze.js', 'src/features/presenza-porta.js', 'src/features/colpi-servizio.js', 'src/features/colpi.js']) {
+    assert.doesNotMatch(senzaCommenti(leggi(f)), vecchi, f);
+  }
+  assert.match(leggi('src/features/presenza-porta.js'), /export const cfgDi = \(channel\) => presenteDi\(streamers\.get\(norm\(channel\)\)\?\.settings\);/);
+  assert.match(SRV, /s\.settings = \{ \.\.\.s\.settings, presente: presenteDi\(s\.settings\) \};/, 'il pannello la riceve gia\' letta');
+  assert.match(SRV, /const presente = presenteDaSalvare\(s\.settings, b\);\n\s*if \(presente !== undefined\) out\.presente = presente;/, 'il server la ripulisce, e la ferma quando si salvano i Pew');
 });
 
 test('la prova della presenza e\' del proprietario, e l\'anteprima della pagina usa i pezzi dell\'overlay', () => {

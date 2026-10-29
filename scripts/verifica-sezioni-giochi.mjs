@@ -1,9 +1,11 @@
 // © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
 // Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
-// Collaudo della scheda GIOCHI IN QUATTRO PARTI — gira in un browser vero.
+// Collaudo della scheda GIOCHI IN TRE PARTI — gira in un browser vero.
 //
 // Al telefono la scheda era lunga trenta schermate, e un gioco stava in due
-// carte. Adesso ha quattro parti e un foglio per gioco (docs/GIOCHI.md). Le
+// carte. Adesso ha tre parti e un foglio per gioco (docs/GIOCHI.md); le monete
+// e la presenza hanno una scheda loro (docs/MENU.md, «Presenza, monete e
+// giochi: una strada sola»). Le
 // prove senza browser (giochi-sezioni.test) dicono come sono fatti i fogli;
 // qui si pretende quello che si vede e si tocca:
 //  · ogni parte mostra le sue carte e nient'altro, e niente scorre di lato;
@@ -14,8 +16,9 @@
 //  · si apre un gioco alla volta, e il titolo toccato resta sotto il dito;
 //  · una modifica lasciata in una parte resta da salvare passando a un'altra,
 //    e la barra la salva davvero;
-//  · la ricerca, il giro guidato e il link del boss nello Studio aprono la
-//    parte giusta, e il boss arriva aperto;
+//  · il giro guidato e il link del boss nello Studio aprono la parte giusta,
+//    e il boss arriva aperto; la ricerca di una cosa delle monete apre la
+//    scheda Monete;
 //  · la pagina non ha errori.
 //
 // Uso: node scripts/verifica-sezioni-giochi.mjs              (esce 1 se qualcosa non torna)
@@ -61,7 +64,7 @@ const esiti = [];
 const dice = (ok, msg, extra = '') => esiti.push({ ok, msg, extra });
 const rotture = [];
 const PARTI = { giochi: ['Minigiochi', 'Gioco per gioco', 'Chi aspetta di più', 'I tuoi giochi', 'Giochi del sito andryxify.it'],
-  monete: ['Punti & classifica', 'Il registro delle monete', 'Presenze e saluti', 'Classifica & VIP'], automatici: ['I giochi automatici'], battute: ['Citazioni', 'Battute'] };
+  automatici: ['I giochi automatici'], battute: ['Citazioni', 'Battute'] };
 
 async function apri(larg, alt, nome) {
   const p = await b.newPage({ viewport: { width: larg, height: alt } });
@@ -144,10 +147,10 @@ for (const [larg, alt, nome] of [[390, 844, 'telefono'], [1280, 900, 'computer']
   dice(forma.caselle >= 3 && forma.storte === 0, `${nome}: le caselle di una riga stanno alla stessa altezza, anche se un'etichetta va a capo`, JSON.stringify(forma));
   await p.fill('[data-rg-g="slot"][data-rg-k="costo"]', '23');
   await p.dispatchEvent('[data-rg-g="slot"][data-rg-k="costo"]', 'input');
-  await p.click('[data-sotto="monete"]');
+  await p.click('[data-sotto="automatici"]');
   await p.waitForTimeout(400);
   const lasciata = await barra(p);
-  dice(lasciata.dentro && lasciata.tasti.includes('Salva i giochi'), `${nome}: passando a «Monete e classifica» la modifica resta da salvare`, JSON.stringify(lasciata));
+  dice(lasciata.dentro && lasciata.tasti.includes('Salva i giochi'), `${nome}: passando a «Giochi automatici» la modifica resta da salvare`, JSON.stringify(lasciata));
   if (lasciata.dentro && lasciata.tasti.includes('Salva i giochi')) {
     await p.click('#barra-salva .sv-tasti button.sv-salva');
     await p.waitForTimeout(700);
@@ -168,8 +171,10 @@ for (const [larg, alt, nome] of [[390, 844, 'telefono'], [1280, 900, 'computer']
     const q = document.getElementById('btn-doppio').getBoundingClientRect();
     return { visto: q.width > 0 && q.top >= 0 && q.bottom <= innerHeight };
   });
-  dice((await parte(p)) === 'monete' && trovato.visto, `${nome}: la ricerca apre «Monete e classifica» e porta al tasto dell'ora doppia`);
+  const dove = await p.evaluate(() => document.querySelector('.pannello-scheda.visibile')?.dataset.scheda);
+  dice(dove === 'monete' && trovato.visto, `${nome}: la ricerca apre la scheda Monete e porta al tasto dell'ora doppia`, dove);
 
+  await inGiochi(p);
   await p.click('[data-sotto="giochi"]');
   await p.evaluate(() => window.scrollTo(0, 0));
   await p.evaluate(() => document.querySelector('[data-rifai-giro]')?.click());
@@ -177,11 +182,11 @@ for (const [larg, alt, nome] of [[390, 844, 'telefono'], [1280, 900, 'computer']
   let tappa = null;
   for (let i = 0; i < 8 && await p.evaluate(() => !!document.getElementById('giro')); i++) {
     const t = await p.evaluate(() => ({ tit: document.querySelector('#giro h3')?.textContent, segnata: !document.querySelector('#giro .giro-buco')?.hidden }));
-    if (/Presenza/.test(t.tit || '')) { tappa = { ...t, parte: await parte(p) }; break; }
+    if (/automatici/i.test(t.tit || '')) { tappa = { ...t, parte: await parte(p) }; break; }
     await p.click('#giro [data-giro="avanti"]');
     await p.waitForTimeout(600);
   }
-  dice(!!tappa && tappa.parte === 'monete' && tappa.segnata, `${nome}: il giro guidato apre la parte della sua tappa e la segna`, JSON.stringify(tappa));
+  dice(!!tappa && tappa.parte === 'automatici' && tappa.segnata, `${nome}: il giro guidato apre la parte della sua tappa e la segna`, JSON.stringify(tappa));
   await p.keyboard.press('Escape');
   await p.close();
 

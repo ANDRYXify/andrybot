@@ -129,8 +129,8 @@ export function contaPresenza(riga, diretta, { ora = Date.now(), bonus = 0, tett
   return { dirette, serie, record, ultima: diretta.corrente, ultima_ts: ora, prima_ts: r.prima_ts || ora, bonus: premio, traguardo: TRAGUARDI.includes(serie) };
 }
 
-// LA PRESENZA DICHIARATA: chi scrive la frase della presenza di Pewpewify
-// (docs/COLPI.md, «La presenza») c'e', e non deve aspettare due giri. Si segna
+// LA PRESENZA DICHIARATA: chi scrive la frase della presenza del canale
+// (presente.js; docs/COLPI.md, «La presenza come porta») c'e', e non deve aspettare due giri. Si segna
 // qui e conta al giro dopo, se e' entro il tempo dei due giri: e' il giro che sa
 // qual e' la diretta, cosi' una presenza scritta appena accesa la diretta non
 // finisce su quella di ieri. Conta una volta, come le altre (contaPresenza).

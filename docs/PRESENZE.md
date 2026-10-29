@@ -39,8 +39,9 @@ serie da cento non deve diventare una rendita che schiaccia la classifica.
 Ai traguardi (3, 5, 10, 25, 50, 100 di fila) il bot lo dice in chat, al più una
 riga al minuto; se in uno stesso giro arrivano più traguardi, una riga sola.
 
-Chi scrive in chat la frase della presenza di Pewpewify (docs/COLPI.md, «La
-presenza») non aspetta i due giri: è presente a questa diretta. Si segna
+Chi scrive in chat la frase della presenza del canale (`!presente`;
+docs/COLPI.md, «La presenza come porta») non aspetta i due giri: è presente a
+questa diretta, anche con i Pew spenti o senza un effetto. Si segna
 (`dichiara`) e conta al giro dopo, se arriva entro il tempo dei due giri,
 perché è il giro che sa qual è la diretta: una frase scritta appena accesa la
 diretta non finisce su quella di ieri. Conta una volta, come le altre.
@@ -78,7 +79,9 @@ neutre sul genere di chi arriva, perché non lo sappiamo.
 - In chat: `!serie [@nome]` e `!classificaserie`, nel registro dei comandi
   (famiglia «Serie di presenze»: si spengono, si rinominano, si riservano come
   tutti gli altri). Nei Moduli: `$serie`, `$dirette`, `$recordserie`.
-- Nel pannello: scheda Giochi, carta «Presenze e saluti» (bonus, tetto,
+- Nel pannello: scheda Presenza (gruppo «Intrattenimento»), carta «Presenze
+  e saluti», sotto «La presenza dichiarata» (`!presente`, docs/COLPI.md): le
+  due presenze stanno insieme, e la scheda dice la differenza (bonus, tetto,
   annunci, i due testi, i giorni di assenza, solo in diretta); scheda Memoria,
   «Chi c'è sempre», i primi cinque per serie.
 - Le impostazioni (`settings.presenze`) le normalizza `presenze.normalizza`,

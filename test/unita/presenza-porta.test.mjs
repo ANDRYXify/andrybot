@@ -16,7 +16,6 @@ const casa = cartellaUsaEGetta('presenza-porta-');
 const { streamers, points, giochi } = await import('../../src/db.js');
 const porta = await import('../../src/features/presenza-porta.js');
 const games = await import('../../src/features/games.js');
-const C = await import('../../src/features/colpi.js');
 const conta = await import('../../src/features/conta.js');
 const catena = await import('../../src/features/catena.js');
 const arena = await import('../../src/features/arena.js');
@@ -26,38 +25,28 @@ test.after(() => casa.pulisci());
 let diretta = 'd1';
 porta.usa({ occasione: () => diretta });
 
-function canale(ch, presenza = {}) {
+// La presenza salvata nella forma di prima (dentro i Pew): la porta la legge
+// lo stesso, dall'accessore (presente.js). Con `nuova` si salva come la salva
+// la scheda Presenza.
+function canale(ch, presenza = {}, { nuova = false } = {}) {
   streamers.upsertApproved(ch, ch);
   streamers.setEnabled(ch, true);
-  streamers.setSettings(ch, { giochi: true, colpi: { presenza } });
+  streamers.setSettings(ch, nuova ? { giochi: true, presente: presenza } : { giochi: true, colpi: { presenza } });
 }
 const marta = { piattaforma: 'twitch', id: '77', user: 'marta' };
 
-test('la frase: di serie «!presente», la vecchia di serie passa alla nuova, una scritta resta', () => {
-  assert.equal(C.normalizza({}).presenza.frase, '!presente');
-  assert.equal(C.normalizza({ presenza: { frase: '!pew presente' } }).presenza.frase, '!presente');
-  assert.equal(C.normalizza({ presenza: { frase: '!ci sono' } }).presenza.frase, '!ci sono');
-  assert.ok(C.eFrasePorta(C.normalizza({}), '  !PRESENTE '), 'la porta la sente anche con l\'effetto in diretta spento');
-  assert.ok(!C.eFrasePorta(C.normalizza({}), 'ciao !presente'));
-  assert.ok(!C.eFrasePresenza(C.normalizza({}), '!presente'), 'l\'effetto in diretta, spento, resta spento');
-  assert.ok(!C.eFrasePorta(C.normalizza({ presenza: { porta: { attiva: false } } }), '!presente'), 'porta spenta ed effetto spento: la frase non e\' niente');
-});
-
-test('la porta di serie chiede tutto; ogni pezzo si spegne da solo', () => {
-  const tutto = C.normalizza({});
-  assert.deepEqual(['monete', 'bit', 'giochi'].map((k) => C.portaChiede(tutto, k)), [true, true, true]);
-  const senzaBit = C.normalizza({ presenza: { porta: { bit: false, giochi: 'libero' } } });
-  assert.deepEqual(['monete', 'bit', 'giochi'].map((k) => C.portaChiede(senzaBit, k)), [true, false, false]);
-  const spenta = C.normalizza({ presenza: { porta: { attiva: false } } });
-  assert.deepEqual(['monete', 'bit', 'giochi'].map((k) => C.portaChiede(spenta, k)), [false, false, false]);
-});
-
-test('il ricordo dice solo quello che la porta chiede davvero', () => {
-  const t = (porta_, lingua = 'it') => C.testoPorta(C.normalizza({ presenza: { porta: porta_ } }), 'ricorda', lingua, { nome: 'marta', frase: '!presente' });
-  assert.equal(t({}), '@marta prima scrivi !presente: da lì guadagni monete, puoi giocare e i tuoi Bit vanno nel salvadanaio.');
-  assert.equal(t({ bit: false }), '@marta prima scrivi !presente: da lì guadagni monete e puoi giocare.');
-  assert.equal(t({ monete: false, bit: false }, 'en'), '@marta first type !presente: from then on you can play.');
-  assert.equal(t({ testoRicorda: '{nome}: {frase}!' }), 'marta: !presente!', 'il testo dello streamer');
+// La frase, la porta e il ricordo come modello puro stanno in
+// test/unita/presente.test.mjs; qui la porta sul database.
+test('la porta legge la presenza del canale: quella nuova, e quella di prima nei Pew', () => {
+  const ch = 'porta0';
+  canale(ch, { frase: '!ci sono', porta: { giochi: 'libero' } });
+  assert.equal(porta.cfgDi(ch).frase, '!ci sono', 'la forma di prima');
+  assert.equal(porta.lascia(ch, marta, 'giochi'), true, 'giochi liberi, dalla forma di prima');
+  canale(ch, { frase: '!eccomi' }, { nuova: true });
+  assert.equal(porta.cfgDi(ch).frase, '!eccomi', 'la forma nuova');
+  assert.equal(porta.lascia(ch, marta, 'giochi'), false, 'la porta di serie chiude i giochi');
+  streamers.setSettings(ch, { giochi: true, colpi: { attivo: false, presenza: { attiva: false } } });
+  assert.equal(porta.lascia(ch, marta, 'giochi'), false, 'Pew spento e nessun effetto: la porta c\'e\' lo stesso');
 });
 
 test('presente a QUESTA diretta, con l\'id o col login; quella di ieri non vale', () => {

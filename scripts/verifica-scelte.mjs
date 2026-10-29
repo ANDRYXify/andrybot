@@ -367,7 +367,7 @@ try {
         if (gesto.fuori < 2 || !gesto.spenta) rotte.push(`${w}px · regole: la spunta non si disfa quando la togli (${gesto.fuori} disegni)`);
       }
       await pg.close();
-      const g = await fresca('giochi');
+      const g = await fresca('monete');
       const gruppo = await g.evaluate(async () => {
         document.querySelectorAll('.pannello-scheda.visibile details:not([open])').forEach((d) => { d.open = true; });
         await new Promise((ok) => setTimeout(ok, 350));
@@ -381,8 +381,8 @@ try {
         return { trovato: true, nuovo: altro.dataset.sp === 'si', vecchio: !prima || prima.dataset.sp === 'no' };
       });
       await g.close();
-      if (!gruppo.trovato) rotte.push(`${w}px · giochi: il gruppo dei pallini della moneta non c'e' da provare`);
-      else if (!gruppo.nuovo || !gruppo.vecchio) rotte.push(`${w}px · giochi: scegliendo un pallino, ${gruppo.nuovo ? 'quello di prima resta disegnato' : 'il nuovo non si disegna'}`);
+      if (!gruppo.trovato) rotte.push(`${w}px · monete: il gruppo dei pallini della moneta non c'e' da provare`);
+      else if (!gruppo.nuovo || !gruppo.vecchio) rotte.push(`${w}px · monete: scegliendo un pallino, ${gruppo.nuovo ? 'quello di prima resta disegnato' : 'il nuovo non si disegna'}`);
     }
     if (SELFTEST && telefono) {
       await p.evaluate(() => window.SB_APP.vai('regole'));
