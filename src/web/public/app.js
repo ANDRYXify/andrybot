@@ -27043,8 +27043,12 @@ async function caricaColpiStato() {
   for (const r of document.querySelectorAll('#cl-voci .cl-voce')) {
     const v = (st.voci || []).find((x) => x.id === r.dataset.id);
     const p = r.querySelector('[data-premio]');
-    if (p) p.textContent = [v?.premioNome ? v.premioNome + ' (' + v.premioCosto + ')' : '', v?.premioMistoNome ? v.premioMistoNome + ' (' + v.premioMistoCosto + ')' : '', v?.premioKickNome ? 'Kick: ' + v.premioKickNome + ' (' + v.premioKickCosto + ')' : ''].filter(Boolean)
-      .map((x, i, a) => (i ? '' : L(a.length > 1 ? 'Premi su Twitch: ' : 'Premio su Twitch: ', a.length > 1 ? 'Twitch rewards: ' : 'Twitch reward: ', a.length > 1 ? 'Recompensas en Twitch: ' : 'Recompensa en Twitch: ')) + x).join(' · ');
+    if (p) {
+      const tw = [v?.premioNome ? v.premioNome + ' (' + v.premioCosto + ')' : '', v?.premioMistoNome ? v.premioMistoNome + ' (' + v.premioMistoCosto + ')' : ''].filter(Boolean);
+      const kk = v?.premioKickNome ? v.premioKickNome + ' (' + v.premioKickCosto + ')' : '';
+      p.textContent = [tw.length ? L(tw.length > 1 ? 'Premi su Twitch: ' : 'Premio su Twitch: ', tw.length > 1 ? 'Twitch rewards: ' : 'Twitch reward: ', tw.length > 1 ? 'Recompensas en Twitch: ' : 'Recompensa en Twitch: ') + tw.join(' · ') : '',
+        kk ? L('Premio su Kick: ', 'Kick reward: ', 'Recompensa en Kick: ') + kk : ''].filter(Boolean).join(' · ');
+    }
   }
   const zq = document.getElementById('cl-zn-totali');
   if (zq && st.zaino) zq.textContent = st.zaino.colpi ? L(`Negli zaini adesso: ${st.zaino.colpi} colpi, di ${st.zaino.persone} ${st.zaino.persone === 1 ? 'persona' : 'persone'}.`, `In backpacks now: ${st.zaino.colpi} hits, held by ${st.zaino.persone} ${st.zaino.persone === 1 ? 'person' : 'people'}.`, `En las mochilas ahora: ${st.zaino.colpi} golpes, de ${st.zaino.persone} ${st.zaino.persone === 1 ? 'persona' : 'personas'}.`) : L('Negli zaini, per ora, niente.', 'Nothing in backpacks yet.', 'Nada en las mochilas, por ahora.');
