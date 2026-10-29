@@ -996,6 +996,8 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // Il catalogo dei lanci (docs/LANCI.md) e' pubblico: la demo lo legge da qui.
   // I suoi disegni, animazioni e suoni stanno in /vendor/, gia' aperto.
   guscio.porta('/api/lanci', (via) => via === '/api/lanci');
+  guscio.porta('/api/avvisi-smart/serie', (via) => via === '/api/avvisi-smart/serie');
+  guscio.porta('/api/avvisi-smart/prova', (via) => via === '/api/avvisi-smart/prova');
 
   app.use((req, res, next) => {
     // Rivalida la sessione a OGNI richiesta (regola: se non paghi e non sei un

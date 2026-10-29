@@ -123,6 +123,8 @@ const PUBBLICHE = new Map([
   ['GET /u/:user/colpo/anteprima/:voce/suono', 'il suono di un colpo del listino per l\'anteprima della pagina: solo quello abbinato a una voce accesa (porta.anteprima), senza la chiave dell\'overlay'],
   ['POST /u/:user/colpo/mira', 'la mira dello spettatore: col tetto per indirizzo, e la apre solo se il colpo adesso si puo\' consegnare'],
   ['GET /api/lanci', 'il catalogo dei lanci (docs/LANCI.md): e\' il prodotto, uguale per tutti, senza dati di nessuno; la demo lo legge da qui'],
+  ['GET /api/avvisi-smart/serie', 'le frasi di serie degli avvisi che leggono la diretta (docs/AVVISI-SMART.md): il prodotto, uguale per tutti, senza dati di nessuno; la demo le legge da qui'],
+  ['POST /api/avvisi-smart/prova', 'la prova di una frase (docs/AVVISI-SMART.md): calcolo puro su quello che manda il pannello, non legge ne\' scrive dati di nessun canale; la demo prova le frasi vere'],
   ['GET /u/:user/colpo/accedi', 'l\'accesso dello spettatore con Twitch: un permesso solo (user:write:chat), lo state nella sessione, e il ritorno passa da /auth/callback'],
   ['GET /u/:user/colpo/accedi-kick', 'l\'accesso dello spettatore con Kick (docs/COLPI.md, «Su Kick»): i soli permessi dello spettatore (user:read, chat:write), il giro PKCE nella sessione, e il ritorno passa da /auth/kick/callback che lo riconosce dal giro; 404 coi colpi spenti o senza Kick configurato'],
   ['GET /u/:user/colpo/entra', 'l\'altra sponda dell\'accesso partito da pew.<dominio>: il biglietto (una volta, due minuti) entra solo col segno che QUESTO browser ha in sessione, e si brucia comunque'],
