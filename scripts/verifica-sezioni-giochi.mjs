@@ -160,6 +160,10 @@ for (const [larg, alt, nome] of [[390, 844, 'telefono'], [1280, 900, 'computer']
   const salvato = await p.evaluate(() => document.querySelector('[data-rg-g="slot"][data-rg-k="costo"]')?.value);
   dice(salvato === '23' && !(await barra(p)).dentro, `${nome}: e dalla barra si salva davvero`, `costo ${salvato}`);
 
+  // la ricerca porta alla scheda Monete, un'altra scheda: si parte puliti, o
+  // una modifica rimasta (nel selftest la barra e' rotta apposta) apre «se esci
+  // le perdi» e copre tutto
+  await p.evaluate(() => { try { _annullaModifiche(); } catch (e) { return e; } });
   const trovato = await p.evaluate(async () => {
     window.SB_CERCA.apri();
     const inp = document.getElementById('cerca-input');
