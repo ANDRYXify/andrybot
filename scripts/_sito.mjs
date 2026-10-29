@@ -21,6 +21,7 @@ import { guscioVetrina, guscioPannello, indirizzoHome } from '../src/web/vetrina
 import { disegnoPerIlBrowser, CARATTERI_AMMESSI, CARTELLA_CARATTERI } from '../src/features/carta-servita.js';
 import { regolePerIlBrowser, giroPerIlBrowser, comuniPerIlBrowser } from '../src/features/economia-servita.js';
 import { catalogoPubblico } from '../src/features/lanci.js';
+import { serieSmart, provaSmart } from '../src/features/avvisi-smart.js';
 import { tmpdir } from 'node:os';
 
 const RAD = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -173,6 +174,14 @@ export async function apriSito({ api = () => ({}), kick = true, youtube = false,
     if (q === '/api/lanci') {
       res.writeHead(200, { 'content-type': 'application/json' });
       return res.end(JSON.stringify(catalogoPubblico()));
+    }
+    // gli avvisi che leggono la diretta: le stesse funzioni del server vero
+    if (q === '/api/avvisi-smart/serie') { res.writeHead(200, { 'content-type': 'application/json' }); return res.end(JSON.stringify(serieSmart())); }
+    if (q === '/api/avvisi-smart/prova' && req.method === 'POST') {
+      let corpo = '';
+      req.on('data', (c) => { corpo += c; });
+      req.on('end', () => { let b = {}; try { b = JSON.parse(corpo || '{}'); } catch { b = {}; } res.writeHead(200, { 'content-type': 'application/json' }); res.end(JSON.stringify(provaSmart(b))); });
+      return;
     }
     if (q.startsWith('/api/')) {
       res.writeHead(200, { 'content-type': 'application/json' });

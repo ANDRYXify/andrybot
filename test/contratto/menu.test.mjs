@@ -201,3 +201,12 @@ test('il menu si disegna in ogni caso: quando si vede in una forma nuova, e prim
   assert.doesNotMatch(APP, /SB_DISEGNO\?\.menu\?\./, 'nessuno chiede il disegno a mano: lo fa il modulo, sempre');
   assert.match(CSS, /body\.menu-aperto:not\(\.menu-via\) \.apri-menu span:nth-child\(1\)/, 'e la X torna hamburger appena il menu comincia ad andarsene');
 });
+
+// Gli strumenti stanno in alto a destra anche dopo un cambio di sezione: la
+// pillola dello Studio entra nella barra (nascosta) al primo cambio, e la
+// regola che le cede il margine valeva anche da nascosta, cosi' gli strumenti
+// finivano accanto al logo. Il margine lo cede solo una pillola che si vede.
+test('gli strumenti restano a destra: solo una pillola dello Studio visibile prende il loro margine', () => {
+  assert.match(CSS, /^\.studio-pillola:not\(\[hidden\]\) \+ \.top-strumenti \{ margin-left: 0; \}$/m);
+  assert.doesNotMatch(CSS, /^\.studio-pillola \+ \.top-strumenti/m, 'mai anche da nascosta');
+});

@@ -235,9 +235,11 @@ export function testoDiretta(d, template = '') {
     link: d.url || '',
     login: escMd(d.login || ''),
     piattaforma: NOMI[String(d.piattaforma || '')] || String(d.piattaforma || ''),
+    // la prima riga dell'avviso (la voce del canale, o quella che legge la diretta)
+    frase: d.voce ? stendiRiga(d.voce, escMd, `**${escMd(d.display || d.login)}**`) : '',
   };
   const t = String(template).trim();
-  return t.replace(/\{(nome|titolo|gioco|spettatori|link|login|piattaforma)\}/g, (_, k) => valori[k] ?? '')
+  return t.replace(/\{(nome|titolo|gioco|spettatori|link|login|piattaforma|frase)\}/g, (_, k) => valori[k] ?? '')
     .split('\n')
     .filter((r, i, tutte) => r.trim() !== '' || (i > 0 && i < tutte.length - 1 && tutte[i - 1].trim() !== ''))
     .join('\n')

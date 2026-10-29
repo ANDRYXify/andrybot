@@ -151,8 +151,10 @@ export function messaggio(d, template = '', { conLocandina = false } = {}) {
       link: d.url,
       login: escHtml(d.login),
       piattaforma: p.nome,
+      // la prima riga dell'avviso (la voce del canale, o quella che legge la diretta)
+      frase: d.voce ? stendiRiga(d.voce, escHtml, `<b>${escHtml(d.display)}</b>`) : '',
     };
-    const steso = suo.replace(/\{(nome|titolo|gioco|spettatori|link|login|piattaforma)\}/g, (_, k) => valori[k] ?? '');
+    const steso = suo.replace(/\{(nome|titolo|gioco|spettatori|link|login|piattaforma|frase)\}/g, (_, k) => valori[k] ?? '');
     // via le righe rimaste vuote (o con solo un'emoji e uno spazio)
     return steso.split('\n')
       .filter((r, i, tutte) => r.trim() !== '' || (i > 0 && i < tutte.length - 1 && tutte[i - 1].trim() !== ''))

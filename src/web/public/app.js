@@ -1433,6 +1433,7 @@ function apiDemo(percorso, opzioni = {}) {
   }
   if (metodo === 'GET' && via === '/api/streamer/settimana/categoria') return Promise.resolve({ categoria: _demoCategoria(domanda) });
   if (via === '/api/lanci') return fetch('/api/lanci', { headers: { Accept: 'application/json' } }).then((r) => r.json());
+  if (via.startsWith('/api/avvisi-smart/')) return apiServer(percorso, opzioni);
   if (via === '/api/streamer/effetti/lancio') return Promise.resolve(_demoLancio(opzioni.body || {}));
   if (metodo === 'GET' && via === '/api/streamer/libreria') return Promise.resolve(_demoLibreria(percorso));
   if (via.startsWith('/api/streamer/effetti-eventi')) return Promise.resolve(_demoEventi(via, metodo, opzioni.body || {}));
@@ -26722,6 +26723,83 @@ function _clOverlayPew() {
   g('cl-ov-aggiungi').addEventListener('click', () => fai('aggiungiPew'));
 }
 
+const AS_CLASSI = () => ({ chiacchiere: L('Chiacchiere', 'Chatting', 'Charla'), musica: L('Musica', 'Music', 'Música'), arte: L('Arte', 'Art', 'Arte'), programmazione: L('Programmazione', 'Coding', 'Programación'), cucina: L('Cucina', 'Cooking', 'Cocina'), sport: L('Sport', 'Sports', 'Deporte'), giro: L('In giro', 'Out and about', 'De paseo'), gioco: L('Giochi (tutto il resto)', 'Games (everything else)', 'Juegos (todo lo demás)') });
+const AS_UMORI = () => ({ incerto: L('Titolo incerto («boh», vuoto)', 'Unsure title («idk», empty)', 'Título dudoso («ni idea», vacío)'), domanda: L('Titolo con una domanda', 'Title with a question', 'Título con una pregunta'), prima: L('Prima volta', 'First time', 'Primera vez'), sfida: L('Sfida (ranked, torneo, boss…)', 'Challenge (ranked, tournament, boss…)', 'Reto (ranked, torneo, boss…)'), festa: L('Festa (compleanno, subathon…)', 'Party (birthday, subathon…)', 'Fiesta (cumpleaños, subathon…)'), calma: L('Calma (chill, relax…)', 'Calm (chill, relax…)', 'Calma (chill, relax…)'), carica: L('Carica («!!!», TUTTO MAIUSCOLO)', 'Hype («!!!», ALL CAPS)', 'Subidón («!!!», TODO MAYÚSCULAS)'), normale: L('Tutti gli altri titoli', 'Every other title', 'Todos los demás títulos') });
+const AS_TONI = () => ({ scherzoso: L('scherzoso', 'playful', 'bromista'), amichevole: L('amichevole', 'friendly', 'amistoso'), serio: L('serio', 'serious', 'serio') });
+let _as = null;
+async function caricaAvvisiSmart() {
+  const g = (id) => document.getElementById(id);
+  if (!g('avvisi-smart')) return;
+  let serie = null;
+  try { serie = await api('/api/avvisi-smart/serie'); } catch (e) { serie = null; }
+  if (!serie?.classi) return;
+  const salvato = impostazioni().avvisiSmart || {};
+  const per = (o) => ({ it: [...(o?.it || [])], en: [...(o?.en || [])], es: [...(o?.es || [])] });
+  _as = { serie, smart: {
+    attivo: salvato.attivo !== false,
+    categorie: Object.fromEntries(Object.keys(serie.classi).map((k) => [k, [...(salvato.categorie?.[k] || [])]])),
+    parole: Object.fromEntries(Object.keys(serie.umori).map((k) => [k, [...(salvato.parole?.[k] || [])]])),
+    frasi: Object.fromEntries(Object.keys(serie.classi).map((k) => [k, per(salvato.frasi?.[k])])),
+    umori: Object.fromEntries(Object.keys(serie.umori).map((k) => [k, { frase: per(salvato.umori?.[k]?.frase), chiusa: per(salvato.umori?.[k]?.chiusa) }])),
+    aperture: Object.fromEntries(Object.keys(serie.aperture).map((k) => [k, per(salvato.aperture?.[k])])),
+  } };
+  g('as-attivo').checked = _as.smart.attivo;
+  const opz = [
+    ...Object.entries(AS_TONI()).map(([k, n]) => ['ap:' + k, L('Apertura, tono ', 'Opening, tone ', 'Apertura, tono ') + n]),
+    ...Object.entries(AS_CLASSI()).map(([k, n]) => ['cl:' + k, L('Categoria: ', 'Category: ', 'Categoría: ') + n]),
+    ...Object.entries(AS_UMORI()).map(([k, n]) => ['um:' + k, L('Titolo: ', 'Title: ', 'Título: ') + n]),
+  ];
+  g('as-pezzo').innerHTML = opz.map(([v, n]) => `<option value="${v}">${esc(n)}</option>`).join('');
+  if (g('avvisi-smart').dataset.wired) { _asCampi(); return; }
+  g('avvisi-smart').dataset.wired = '1';
+  g('as-pezzo').addEventListener('change', _asCampi);
+  g('as-lingua').addEventListener('change', _asCampi);
+  g('as-prova').addEventListener('click', () => conErrore(_asProva));
+  g('as-salva').addEventListener('click', () => conErrore(async () => {
+    _asLeggi();
+    await salvaImpostazioni({ avvisiSmart: { ..._as.smart, attivo: g('as-attivo').checked } });
+  }));
+  _asCampi();
+}
+const _asRighe = (v) => (Array.isArray(v) ? v : []).join('\n');
+function _asArea(id, etichetta, valore, serie, aiuto = '') {
+  return `<label class="campo" for="${id}">${esc(etichetta)}</label><textarea id="${id}" rows="3" placeholder="${esc(_asRighe(serie))}">${esc(_asRighe(valore))}</textarea>${aiuto ? `<p class="suggerimento">${aiuto}</p>` : ''}`;
+}
+function _asCampi() {
+  const g = (id) => document.getElementById(id);
+  if (!_as) return;
+  const [tipo, k] = g('as-pezzo').value.split(':'), l = g('as-lingua').value, S = _as.smart, D = _as.serie;
+  g('as-campi').dataset.pezzo = g('as-pezzo').value;
+  g('as-campi').dataset.lingua = l;
+  if (tipo === 'ap') g('as-campi').innerHTML = _asArea('as-f1', L('Come comincia la frase', 'How the sentence starts', 'Cómo empieza la frase'), S.aperture[k][l], D.aperture[k][l]);
+  else if (tipo === 'cl') g('as-campi').innerHTML = _asArea('as-f1', L('Cosa farà (dopo il nome)', 'What they\'ll do (after the name)', 'Qué hará (después del nombre)'), S.frasi[k][l], D.classi[k].frasi[l])
+    + (k === 'gioco' ? '' : _asArea('as-f2', L('Le categorie in più (tutte le lingue), una per riga', 'Extra categories (all languages), one per line', 'Categorías de más (todos los idiomas), una por línea'), S.categorie[k], D.classi[k].categorie, L('Quelle di serie restano: queste si aggiungono.', 'The default ones stay: these are added.', 'Las de serie se quedan: estas se añaden.')));
+  else g('as-campi').innerHTML = _asArea('as-f1', L('Dopo cosa farà', 'After what they\'ll do', 'Después de qué hará'), S.umori[k].frase[l], D.umori[k].frase[l])
+    + _asArea('as-f2', L('La chiusa (una frase a sé)', 'The closing (a sentence of its own)', 'El cierre (una frase aparte)'), S.umori[k].chiusa[l], D.umori[k].chiusa[l])
+    + (['domanda', 'carica', 'normale'].includes(k) ? '' : _asArea('as-f3', L('Le parole in più che lo riconoscono (tutte le lingue)', 'Extra words that recognize it (all languages)', 'Palabras de más que lo reconocen (todos los idiomas)'), S.parole[k], D.umori[k].parole));
+  for (const id of ['as-f1', 'as-f2', 'as-f3']) g(id)?.addEventListener('input', _asLeggi);
+}
+function _asLeggi() {
+  const g = (id) => document.getElementById(id);
+  const box = g('as-campi');
+  if (!_as || !box?.dataset.pezzo) return;
+  const [tipo, k] = box.dataset.pezzo.split(':'), l = box.dataset.lingua, S = _as.smart;
+  const r = (id) => (g(id)?.value || '').split('\n').map((x) => x.trim()).filter(Boolean);
+  if (tipo === 'ap') S.aperture[k][l] = r('as-f1');
+  else if (tipo === 'cl') { S.frasi[k][l] = r('as-f1'); if (g('as-f2')) S.categorie[k] = r('as-f2'); }
+  else { S.umori[k].frase[l] = r('as-f1'); S.umori[k].chiusa[l] = r('as-f2'); if (g('as-f3')) S.parole[k] = r('as-f3'); }
+}
+async function _asProva() {
+  const g = (id) => document.getElementById(id);
+  _asLeggi();
+  const s = impostazioni();
+  const r = await api('/api/avvisi-smart/prova', { method: 'POST', body: { titolo: g('as-titolo').value, gioco: g('as-gioco').value, smart: _as?.smart,
+    tono: s.tono, genere: s.genere, community: s.voce?.community || '', nome: stato?.streamer?.display || stato?.streamer?.login || '' } });
+  const nomi = { it: 'Italiano', en: 'English', es: 'Español' };
+  g('as-esito').innerHTML = `<p class="suggerimento">${esc(L('Categoria', 'Category', 'Categoría'))}: <b>${esc(r.classe ? AS_CLASSI()[r.classe] : L('nessuna', 'none', 'ninguna'))}</b> · ${esc(L('Titolo', 'Title', 'Título'))}: <b>${esc(AS_UMORI()[r.umore] || r.umore)}</b></p>`
+    + Object.entries(r.frasi || {}).map(([l, fr]) => `<h4>${nomi[l]}</h4><ul class="as-frasi">${fr.map((f) => `<li>${esc(f)}</li>`).join('')}</ul>`).join('');
+}
+
 const _clMirabile = (e) => e.tipo === 'lancio' || ((e.tipo === 'immagine' || e.tipo === 'video') && !e.schermo);
 
 function _clRiga(v) {
@@ -31681,7 +31759,7 @@ async function caricaDcAvvisi() {
         <div data-rilievo>${_rilievoRiga(t, d, 'discord')}</div>
         <label class="campo spazio-sopra" for="dca-testo-${t.id}">${L('Il testo', 'The text', 'El texto')}</label>
         <textarea rows="2" id="dca-testo-${t.id}" data-testo placeholder="${esc(L('Vuoto: una riga delle frasi del bot e il link', 'Empty: a line from the bot’s lines and the link', 'Vacío: una línea de las frases del bot y el enlace'))}">${esc(t.messaggio || '')}</textarea>
-        <p class="suggerimento">${L('Segnaposto:', 'Placeholders:', 'Marcadores:')} <code>{nome}</code> <code>{titolo}</code> <code>{gioco}</code> <code>{spettatori}</code> <code>{link}</code> <code>{piattaforma}</code>. ${L('Vuoto = una riga delle frasi del bot, nella lingua del tuo canale (Personalità, «Le frasi del bot»). Titolo, gioco e spettatori sono già dentro il riquadro sotto il messaggio. Vale per le dirette: i post nuovi arrivano con le loro parole, senza riquadro.', 'Empty = a line from the bot’s lines, in your channel’s language (Personality, “The bot’s lines”). Title, game and viewers are already inside the box under the message. It is for streams: new posts arrive with their own words, without the box.', 'Vacío = una línea de las frases del bot, en el idioma de tu canal (Personalidad, «Las frases del bot»). Título, juego y espectadores ya están dentro del recuadro bajo el mensaje. Vale para los directos: los posts nuevos llegan con sus propias palabras, sin recuadro.')}</p>
+        <p class="suggerimento">${L('Segnaposto:', 'Placeholders:', 'Marcadores:')} <code>{nome}</code> <code>{titolo}</code> <code>{gioco}</code> <code>{spettatori}</code> <code>{link}</code> <code>{piattaforma}</code> <code>{frase}</code>. ${L('Vuoto = una riga delle frasi del bot, nella lingua del tuo canale (Personalità, «Le frasi del bot»). Titolo, gioco e spettatori sono già dentro il riquadro sotto il messaggio. Vale per le dirette: i post nuovi arrivano con le loro parole, senza riquadro.', 'Empty = a line from the bot’s lines, in your channel’s language (Personality, “The bot’s lines”). Title, game and viewers are already inside the box under the message. It is for streams: new posts arrive with their own words, without the box.', 'Vacío = una línea de las frases del bot, en el idioma de tu canal (Personalidad, «Las frases del bot»). Título, juego y espectadores ya están dentro del recuadro bajo el mensaje. Vale para los directos: los posts nuevos llegan con sus propias palabras, sin recuadro.')}</p>
         <label class="campo spazio-sopra" for="dca-ruolo-${t.id}">${L('Chiama un ruolo', 'Ping a role', 'Llamar a un rol')}</label>
         <select class="campo-largo" id="dca-ruolo-${t.id}" data-ruolo>
           <option value=""${t.ruolo ? '' : ' selected'}>${L('nessuno', 'nobody', 'nadie')}</option>
@@ -33831,7 +33909,7 @@ function pannelloTelegram() {
       <label class="campo spazio-sopra" for="txt-tg-messaggio">${L('Messaggio dell\'avviso', 'Alert message', 'Mensaje del aviso')}</label>
       <textarea id="txt-tg-messaggio" rows="5" placeholder="${esc(L('Vuoto: una riga delle frasi del bot, poi titolo, gioco e link', 'Empty: a line from the bot’s lines, then title, game and link', 'Vacío: una línea de las frases del bot, luego título, juego y enlace'))}">${esc(tg.messaggio || '')}</textarea>
       <p class="suggerimento">${L('Segnaposto:', 'Placeholders:', 'Marcadores:')} <code>{nome}</code> <code>{titolo}</code> <code>{gioco}</code>
-        <code>{spettatori}</code> <code>{link}</code>. ${L('Lascia vuoto e la prima riga la sceglie il bot, nella lingua del tuo canale, fra le', 'Leave it empty and the bot picks the first line, in your channel’s language, from', 'Déjalo vacío y el bot elige la primera línea, en el idioma de tu canal, entre')} <a href="#personalita" data-scheda="personalita">${L('frasi del bot', 'the bot’s lines', 'las frases del bot')}</a>. ${L('Se lo scrivi, vale il tuo.', 'If you write one, yours is used.', 'Si lo escribes, vale el tuyo.')}</p>
+        <code>{spettatori}</code> <code>{link}</code> <code>{frase}</code>. ${L('Lascia vuoto e la prima riga la sceglie il bot, nella lingua del tuo canale, fra le', 'Leave it empty and the bot picks the first line, in your channel’s language, from', 'Déjalo vacío y el bot elige la primera línea, en el idioma de tu canal, entre')} <a href="#personalita" data-scheda="personalita">${L('frasi del bot', 'the bot’s lines', 'las frases del bot')}</a>. ${L('Se lo scrivi, vale il tuo.', 'If you write one, yours is used.', 'Si lo escribes, vale el tuyo.')}</p>
 
       <div class="riga-check spazio-sopra">
         <input type="checkbox" id="chk-tg-attivo" ${tg.attivo ? 'checked' : ''} ${tg.postoOk ? '' : 'disabled'}>
@@ -34274,6 +34352,32 @@ function pannelloNotifiche() {
         <p class="spazio-sopra"><button class="btn secondario" id="btn-yt-canale-salva">${L('Salva il canale', 'Save the channel', 'Guardar el canal')}</button></p>
       </div>
       <p class="suggerimento spazio-sopra">${L('Gli annunci nei canali del tuo server Discord si scelgono nella sua sezione.', 'Announcements in your Discord server’s channels are chosen in its own section.', 'Los anuncios en los canales de tu servidor de Discord se eligen en su sección.')} <button type="button" class="btn secondario mini" data-vai="dcavvisi">${L('Vai agli avvisi di Discord', 'Go to the Discord alerts', 'Ir a los avisos de Discord')}</button></p>
+    </div>
+
+    <div class="carta" id="avvisi-smart">
+      <h2>${_hIco(ICO.megafono)}${L('Avvisi di diretta su misura', 'Made-to-measure live alerts', 'Avisos de directo a medida')}</h2>
+      <p>${L('La prima riga dell\'avviso su Telegram e su Discord diventa una frase sola, costruita dalla categoria e dal titolo: con «Just Chatting» e il titolo «boh» esce, per esempio, «Oh guarda, oggi Luna parlerà, ma non sembra troppo sicura di cosa. Andiamo a schiarirle le idee!». Sotto restano titolo, gioco e link.', 'The first line of the Telegram and Discord alert becomes a single sentence, built from the category and the title: with «Just Chatting» and the title «idk» you get, for example, «Oh look, today Luna will be chatting, but doesn\'t seem too sure about what. Let\'s go help clear things up!». Title, game and link stay below.', 'La primera línea del aviso en Telegram y Discord se vuelve una sola frase, construida con la categoría y el título: con «Just Chatting» y el título «ni idea» sale, por ejemplo, «Oye, mira: hoy Luna va a charlar, pero no parece muy segura de qué. ¡Vamos a aclararle las ideas!». Debajo quedan título, juego y enlace.')}</p>
+      <div class="riga-interruttore spazio-sopra">
+        <label class="interruttore"><input type="checkbox" id="as-attivo"><span class="levetta"></span></label>
+        <span class="etichetta-stato">${L('La prima riga legge la diretta (spento: quella della voce del bot)', 'The first line reads the stream (off: the bot voice line)', 'La primera línea lee el directo (apagado: la de la voz del bot)')}</span>
+      </div>
+      <h3 class="spazio-sopra">${L('Prova', 'Try it', 'Pruébalo')}</h3>
+      <div class="griglia-campi">
+        <div><label class="campo" for="as-gioco">${L('Categoria', 'Category', 'Categoría')}</label><input type="text" id="as-gioco" data-non-salva maxlength="60" placeholder="Just Chatting"></div>
+        <div><label class="campo" for="as-titolo">${L('Titolo', 'Title', 'Título')}</label><input type="text" id="as-titolo" data-non-salva maxlength="140" placeholder="boh"></div>
+      </div>
+      <p class="spazio-sopra"><button type="button" class="btn secondario" id="as-prova">${L('Prova la frase', 'Try the sentence', 'Probar la frase')}</button></p>
+      <div id="as-esito" class="as-esito" role="status"></div>
+      <details class="spazio-sopra">
+        <summary>${L('Le tue parole: categorie, titoli e frasi', 'Your words: categories, titles and sentences', 'Tus palabras: categorías, títulos y frases')}</summary>
+        <p class="suggerimento">${L('Scegli il pezzo e la lingua. Una riga per voce; vuoto vuol dire quelle di serie, che vedi in grigio. Nelle frasi puoi usare {nome}, {gioco} e {community}; per il genere {maschile/femminile}, per esempio «sicur{o/a}»: col genere neutro si usa una frase che non lo dice.', 'Pick the piece and the language. One line per entry; empty means the default ones, shown in grey. In sentences you can use {nome}, {gioco} and {community}; for gender {masculine/feminine}, for example «sicur{o/a}»: with neutral gender a sentence that doesn\'t say it is used.', 'Elige la pieza y el idioma. Una línea por entrada; vacío significa las de serie, que ves en gris. En las frases puedes usar {nome}, {gioco} y {community}; para el género {masculino/femenino}, por ejemplo «segur{o/a}»: con el género neutro se usa una frase que no lo dice.')}</p>
+        <div class="griglia-campi">
+          <div><label class="campo" for="as-pezzo">${L('Il pezzo', 'The piece', 'La pieza')}</label><select id="as-pezzo" data-non-salva></select></div>
+          <div><label class="campo" for="as-lingua">${L('La lingua', 'The language', 'El idioma')}</label><select id="as-lingua" data-non-salva><option value="it">Italiano</option><option value="en">English</option><option value="es">Español</option></select></div>
+        </div>
+        <div id="as-campi" class="spazio-sopra"></div>
+      </details>
+      <p class="spazio-sopra"><button class="btn" id="as-salva">${L('Salva', 'Save', 'Guardar')}</button></p>
     </div>
 
     <div class="carta">
@@ -38110,7 +38214,7 @@ function caricaDatiScheda(id) {
   if (id === 'giochi') { caricaClassifica(); caricaCitazioni(); caricaBattute(); caricaGiochi(); caricaRegoleGiochi(); caricaCastighi(); caricaGiro(); _disegnaFormaMonete(); contiPunti(); caricaRegistroMonete(); requestAnimationFrame(() => applicaSottoSchede('giochi')); }
   if (id === 'negozio') { caricaNegozio(); caricaPaginaLink(false, 'negozio'); requestAnimationFrame(() => applicaSottoSchede('negozio')); }
   if (id === 'telegram') { caricaTgLogin(); collegaTgDestinazioni(); caricaTgDestinazioni(); collegaCartaLive(); caricaCartaLive(); caricaCompleanni(); caricaScudoTg(); collegaPortaProva(); caricaPaginaLink(false, 'telegram'); }
-  if (id === 'notifiche') { caricaTikTok(); caricaInstagram(); collegaFeed(); caricaFeed(); }
+  if (id === 'notifiche') { caricaTikTok(); caricaInstagram(); collegaFeed(); caricaFeed(); caricaAvvisiSmart(); }
   if (id === 'ruoli') { collegaRuoli(); caricaRuoli(); }
   if (id === 'dcavvisi') { _dcaCollega(); caricaDcAvvisi(); caricaDcEventi(); }
   if (id === 'dcserver') { collegaDcServer(); caricaDcServer(); }

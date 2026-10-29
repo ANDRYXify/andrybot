@@ -69,6 +69,7 @@ import { ChatYoutube } from './youtube/chat.js';
 import { voceYoutube } from './youtube/voce.js';
 import { collegati as youtubeCollegati } from './youtube/api.js';
 import * as avvisi from './features/avvisi.js';
+import { fraseDelCanale } from './features/avvisi-smart.js';
 import { rilievo } from './features/rilievo.js';
 import { dirette, guide, vips, linkPage, recapiti } from './db.js';
 import { dopoErrore, chiaveDiretta, AGGIORNA_OGNI_MS, TIENI_MS } from './features/recapiti.js';
@@ -2346,7 +2347,7 @@ export class BotManager {
     // LA RIGA DELLA VOCE, una per avviso: la stessa a Telegram e a Discord, e
     // il giro delle frasi del canale avanza una volta sola. Parla il canale che
     // manda l'avviso, anche quando la diretta e' di un altro.
-    const conVoce = { ...d, lingua: linguaChat(login), voce: this._rigaAvviso(login, 'avviso-diretta', d?.piattaforma) };
+    const conVoce = { ...d, lingua: linguaChat(login), voce: this._rigaDiretta(login, d) };
     // «chi» sono io o e' un altro? La differenza non e' estetica: l'avviso di un
     // altro va ricordato per STREAMER, se no la sua diretta che finisce chiude
     // anche la mia.
@@ -2492,6 +2493,14 @@ export class BotManager {
 
   // La riga di un avviso, dalla voce del canale, col segno al posto del nome:
   // ogni posto lo stende nel suo formato (features/avvisi.js).
+  // LA PRIMA RIGA DI UN AVVISO DI DIRETTA (docs/AVVISI-SMART.md): letta dalla
+  // diretta se lo streamer non l'ha spenta, se no quella del frasario.
+  _rigaDiretta(login, d) {
+    const s = streamers.get(login)?.settings || {};
+    return fraseDelCanale(s, d, { canale: login, nome: avvisi.SEGNO_NOME, lingua: linguaChat(login), tono: voce.tonoDi(s), community: voce.communityDi(s) })
+      || this._rigaAvviso(login, 'avviso-diretta', d?.piattaforma);
+  }
+
   _rigaAvviso(login, momento, piattaforma = 'twitch') {
     return voce.di(login, momento, { nome: avvisi.SEGNO_NOME, piattaforma: avvisi.NOME_POSTO[piattaforma] || 'Twitch' });
   }
@@ -3315,7 +3324,7 @@ export class BotManager {
       if (Date.now() - (this._tiktokUltima.get(l) || 0) < 3 * 3600_000) return { ok: false, motivo: 'gia avvisato di recente' };
       this._tiktokUltima.set(l, Date.now());
       // Una riga della voce per questa diretta, la stessa ai due posti.
-      const riga = this._rigaAvviso(l, 'avviso-diretta', 'tiktok');
+      const riga = this._rigaDiretta(l, { piattaforma: 'tiktok', login: l, titolo: '', gioco: '', id: String(Date.now() / 3600_000 | 0) });
       // Su Discord, dove lo streamer ha acceso l'avviso «TikTok».
       await this._diffondiDiscord(l, 'tiktok', l, {
         piattaforma: 'tiktok', login: l, display: s?.display || l,

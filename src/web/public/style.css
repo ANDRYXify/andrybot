@@ -3131,7 +3131,7 @@ body.tel-aperta #toast-box { z-index: 1100; left: 12px; right: 12px; top: calc(e
 .studio-pillola { flex: none; display: inline-flex; align-items: center; min-height: 36px; margin-left: auto; margin-right: .5rem; padding: 0 .8rem; border: 1px solid var(--acc-bordo); border-radius: 999px; background: var(--acc-soft); color: var(--testo); font: inherit; font-size: .85rem; font-weight: 750; font-variant-numeric: tabular-nums; cursor: pointer; }
 .studio-pillola[hidden] { display: none; }
 @media (pointer: coarse) { .studio-pillola { min-height: 44px; } }
-.studio-pillola + .top-strumenti { margin-left: 0; }
+.studio-pillola:not([hidden]) + .top-strumenti { margin-left: 0; }
 .studio-pillola.in-onda { border-color: #e0245e; background: #e0245e; color: #fff; }
 .studio-pillola.guasto { border-color: var(--rosso-bordo); background: var(--rosso-soft); color: var(--rosso); }
 .studio-pillola:focus-visible { outline: 3px solid var(--acc); outline-offset: 2px; }

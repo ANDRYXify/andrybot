@@ -38,7 +38,7 @@ test('niente sotto-schede, niente riquadri ripetuti, niente riquadri che sono so
   assert.equal(new Set(titoli).size, titoli.length, 'ogni riquadro una volta');
   assert.ok(!p.includes('data-rete='), 'nessun riquadro legato a una sotto-scheda');
   assert.ok(!titoli.includes('Discord') && !titoli.includes('Promo social in chat'), 'Discord e la promo non sono riquadri degli annunci');
-  assert.deepEqual(titoli, ['I tuoi account', 'Nuovo post su Instagram', 'Nuovo video su TikTok', 'Diretta su TikTok', 'Nuovo video su YouTube', 'Altri siti']);
+  assert.deepEqual(titoli, ['I tuoi account', 'Avvisi di diretta su misura', 'Nuovo post su Instagram', 'Nuovo video su TikTok', 'Diretta su TikTok', 'Nuovo video su YouTube', 'Altri siti']);
 });
 
 test('il riquadro dei feed non dice piu\' che Instagram non si puo\' collegare', () => {

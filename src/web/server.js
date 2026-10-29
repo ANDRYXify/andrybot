@@ -201,6 +201,7 @@ import * as kickDiario from '../kick/diario.js';
 import { montaYoutube } from '../youtube/rotte.js';
 import * as ytApi from '../youtube/api.js';
 import * as avvisi from '../features/avvisi.js';
+import { fraseDelCanale, normSmart, serieSmart, provaSmart } from '../features/avvisi-smart.js';
 import { rilievo } from '../features/rilievo.js';
 import * as comandiChat from '../features/comandichat.js';
 import { nomePulito, formaValida } from '../features/moneta.js';
@@ -401,7 +402,9 @@ const TONI_VALIDI = ['scherzoso', 'amichevole', 'serio'];
 function conVoceDiProva(login, dir) {
   if (!dir) return dir;
   const nome = avvisi.PIATTAFORME[dir.piattaforma]?.nome || 'Twitch';
-  const [riga = ''] = voce.anteprima(login, 'avviso-diretta', { nome: avvisi.SEGNO_NOME, piattaforma: nome }, 1);
+  const s = streamers.get(login)?.settings || {};
+  const smart = fraseDelCanale(s, dir, { canale: login, nome: avvisi.SEGNO_NOME, lingua: linguaChat(login), tono: voce.tonoDi(s), community: voce.communityDi(s) });
+  const [riga = ''] = smart ? [smart] : voce.anteprima(login, 'avviso-diretta', { nome: avvisi.SEGNO_NOME, piattaforma: nome }, 1);
   return { ...dir, voce: riga, lingua: linguaChat(login) };
 }
 // Il genere con cui il bot parla di se'. L'elenco lo tiene il modulo che lo usa,
@@ -7761,6 +7764,8 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
       if (!TONI_VALIDI.includes(b.tono)) return res.status(400).json({ errore: 'tono non valido' });
       out.tono = b.tono;
     }
+    // la prima riga di diretta che legge la diretta (docs/AVVISI-SMART.md): ripulita qui
+    if (b.avvisiSmart !== undefined) out.avvisiSmart = normSmart(b.avvisiSmart);
     if (b.genere !== undefined) {
       if (!GENERI_VALIDI.includes(b.genere)) return res.status(400).json({ errore: 'genere non valido' });
       out.genere = b.genere;
@@ -11961,6 +11966,15 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
   }));
 
   // manda un messaggio di prova nel gruppo, adesso
+  // LA PROVA DEGLI AVVISI SMART (docs/AVVISI-SMART.md): un titolo e una
+  // categoria scritti a mano, la bozza del pannello, e le frasi che ne escono
+  // nelle tre lingue (tre diverse per lingua: le varianti). Non manda niente.
+  // LE FRASI DI SERIE E LA PROVA DEGLI AVVISI SMART (docs/AVVISI-SMART.md):
+  // calcolo puro, senza dati di nessun canale (tono, genere e community li
+  // manda il pannello), quindi pubbliche, e la demo prova le frasi vere.
+  app.get('/api/avvisi-smart/serie', wrap(async (req, res) => { res.json(serieSmart()); }));
+  app.post('/api/avvisi-smart/prova', wrap(async (req, res) => { res.json(provaSmart(req.body || {})); }));
+
   app.post('/api/streamer/telegram/prova', requireLogin, wrap(async (req, res) => {
     const login = currentUser(req).login;
     const c = tgConf.get(login);

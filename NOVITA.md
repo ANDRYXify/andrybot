@@ -76,6 +76,18 @@ comandi diversi da quelli della riga italiana.
 - In chat «!pew» da solo risponde col link della pagina Pew. Il testo e l'attesa li scegli tu. [vai: colpi]
   en: In chat, «!pew» on its own replies with the Pew page link. You choose the text and the wait.
   es: En el chat, «!pew» solo responde con el enlace de la página Pew. El texto y la espera los eliges tú.
+- [importante] Gli avvisi di diretta leggono la diretta: la prima riga su Telegram e Discord è una frase fatta dalla categoria e dal titolo. Con «Just Chatting» e «boh» esce «Oggi Luna parlerà, ma non ha ancora deciso cosa». [vai: notifiche]
+  en: Live alerts read the stream: the first line on Telegram and Discord is a sentence made from the category and the title. With «Just Chatting» and «idk» you get «Today Luna will be chatting, but hasn't decided what yet».
+  es: Los avisos de directo leen el directo: la primera línea en Telegram y Discord es una frase hecha con categoría y título. Con «Just Chatting» y «ni idea» sale «Hoy Luna va a charlar, pero todavía no ha decidido qué».
+  > Un avviso che sembra scritto a mano
+  > Sotto restano titolo, gioco e link. Puoi provarla con un titolo qualsiasi, cambiare le parole per ogni categoria e ogni tipo di titolo nelle tre lingue, o spegnerla.
+  en> An alert that reads hand-written
+  en> Title, game and link stay below. You can try it with any title, change the words for each category and each kind of title in the three languages, or turn it off.
+  es> Un aviso que parece escrito a mano
+  es> Debajo quedan título, juego y enlace. Puedes probarla con cualquier título, cambiar las palabras de cada categoría y cada tipo de título en los tres idiomas, o apagarla.
+- Canale, lingua, «?» e tema restano in alto a destra anche quando cambi sezione: prima, al primo cambio, saltavano accanto al logo. [vai: stato]
+  en: Channel, language, «?» and theme stay at the top right when you change section too: before, at the first change, they jumped next to the logo.
+  es: Canal, idioma, «?» y tema se quedan arriba a la derecha también cuando cambias de sección: antes, al primer cambio, saltaban junto al logo.
 ## 2026-10-28
 
 - [importante] Pewpewify su Kick, completo: nel listino il prezzo in Kicks e in punti del canale di Kick, i premi del canale su Kick creati da soli, e la scheda dei Kicks da spendere con le sue regole. [vai: colpi]
