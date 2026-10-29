@@ -81,12 +81,16 @@ test('cancellare l\'account a meta\' di un attacco non lascia niente, nemmeno qu
   streamers.upsertApproved(CH, CH, '1');
   let sblocca;
   const ferma = new Promise((r) => { sblocca = r; });
-  const helix = { bloccaUtente: async () => { await ferma; return { ok: true }; } };
+  let partiti = 0;
+  const helix = { bloccaUtente: async () => { partiti++; await ferma; return { ok: true }; } };
   const scudo = new ab.AntiBot({ helix });
   inc.apri(CH, { tipo: 'follow' });
   ab.registra(CH, { azione: 'raffica', motivo: 'tanti follow' });
   const esiti = [1, 2, 3].map((i) => scudo.esecutore.esegui(verdetto({ canale: CH, login: 'bot' + i, userId: String(i), azione: 'blocca', motivi: ['ondata'] })));
-  await new Promise((r) => setImmediate(r));
+  // si aspetta il fatto, non un giro: il primo blocco e' partito (e aspetta
+  // Twitch), gli altri due sono in fila. Un giro solo, sotto il carico di
+  // tutta la suite, a volte non bastava alla fila per prendere il primo.
+  while (!partiti) await new Promise((r) => setImmediate(r));
   assert.equal(restiDi(CH).righe.fila_scudo, 2, 'prima di cancellare si vede cosa aspetta');
   const fatto = cancella(CH, { conferma: CH });
   assert.equal(fatto.righe.fila_scudo, 2, 'le due ancora in fila');
