@@ -65,9 +65,9 @@ for (const [larg, alt, nome] of [[390, 844, 'telefono, barra in basso'], [800, 9
   p.on('pageerror', (e) => rotture.push(`${nome}: ${e.message}`));
   await p.goto(`http://127.0.0.1:${PORTA}/?demo=1&lang=it`, { waitUntil: 'domcontentloaded' });
   await p.waitForFunction(() => window.SB_APP, null, { timeout: 20000 });
-  await p.evaluate(() => window.SB_APP.vai('giochi'));
-  await p.waitForFunction(() => document.querySelector('.pannello-scheda.visibile')?.id === 'scheda-giochi', null, { timeout: 20000 });
-  await p.click('[data-sotto="monete"]');
+  // le monete hanno una scheda loro (docs/MENU.md, «Presenza, monete e giochi»)
+  await p.evaluate(() => window.SB_APP.vai('monete'));
+  await p.waitForFunction(() => document.querySelector('.pannello-scheda.visibile')?.id === 'scheda-monete', null, { timeout: 20000 });
   await p.waitForSelector('#pt-perPresenza', { state: 'visible', timeout: 20000 });
   await p.fill('#pt-perPresenza', '3');
   await p.dispatchEvent('#pt-perPresenza', 'input');
