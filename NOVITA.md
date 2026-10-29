@@ -97,6 +97,9 @@ comandi diversi da quelli della riga italiana.
   en> In Attendance you find the phrase, the gate, the streak and «Attendance and greetings»; in Coins the name, how they're earned, the register, the leaderboard and VIPs. Pew keeps only the on-screen effect. What you had already set up stays as it was.
   es> Estás, ganas, juegas
   es> En Presencia encuentras la frase, la puerta, la racha y «Presencias y saludos»; en Monedas el nombre, cómo se ganan, el registro, la clasificación y los VIP. A Pew le queda solo el efecto en pantalla. Lo que ya tenías configurado sigue como estaba.
+- La pagina Pew torna in ordine: la diretta e la chat a sinistra, i passi a destra. Lo slogan si prendeva il posto della diretta e spostava tutto. [vai: colpi]
+  en: The Pew page is back in order: the stream and chat on the left, the steps on the right. The slogan was taking the stream's place and shifting everything.
+  es: La página Pew vuelve a estar en orden: el directo y el chat a la izquierda, los pasos a la derecha. El eslogan ocupaba el sitio del directo y movía todo.
 ## 2026-10-28
 
 - [importante] Pewpewify su Kick, completo: nel listino il prezzo in Kicks e in punti del canale di Kick, i premi del canale su Kick creati da soli, e la scheda dei Kicks da spendere con le sue regole. [vai: colpi]

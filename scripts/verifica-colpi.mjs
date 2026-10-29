@@ -231,6 +231,9 @@ try {
   await p.goto(sito.base + base, { waitUntil: 'load' });
   await p.waitForFunction(() => document.querySelectorAll('.cp-voce').length > 0, null, { timeout: 10000 });
 
+  // la griglia della pagina: a sinistra la diretta con la chat sotto, a destra i passi. Lo slogan (una riga sua) non si prende una cella
+  const colonne = await p.evaluate(() => { const r = (q) => document.querySelector(q).getBoundingClientRect(); return [r('.cp-scena').left, r('.cp-chat').left, r('#cp-p1').left, r('.cp-scena').width].map(Math.round); });
+  dice(Math.abs(colonne[0] - colonne[1]) <= 2 && colonne[2] > colonne[0] + colonne[3] - 2, `a sinistra la diretta con la chat sotto, a destra i passi (${colonne.join(', ')})`);
   dice(await p.locator('#cp-stato').textContent() === 'In onda', 'con la diretta e l\'overlay su, la pagina dice «In onda»');
   dice(await p.locator('.cp-voce').count() === 3 && !/Festa/.test(await p.locator('#cp-voci').textContent()), 'si offrono solo i colpi che si posano in un punto, lancio e adesivo compresi (la festa disegnata no)');
   const prezzi = await p.locator('.cp-voce').first().locator('.cp-prezzi i').allTextContents();

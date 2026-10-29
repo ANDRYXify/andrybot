@@ -281,7 +281,7 @@ ${slogan ? `<p class="cp-slogan">${esc(slogan)}</p>` : ''}<div class="cp-scena">
   .cp-mirino::after{top:50%;left:-10px;right:-10px;height:2px;transform:translateY(-50%)}
   .cp-mirino.no{border-color:var(--ko)}
   .cp-ritardo,.cp-nota{font-size:.85rem;color:var(--tenue)}
-  .cp-slogan{margin:0 0 1rem;text-align:center;font-style:italic;font-weight:600;color:var(--acc);letter-spacing:.01em}
+  .cp-slogan{grid-column:1/-1;margin:0 0 1rem;text-align:center;font-style:italic;font-weight:600;color:var(--acc);letter-spacing:.01em}
   .cp-cima{display:flex;flex-wrap:wrap;align-items:center;gap:.4rem .8rem}
   .cp-cima .cp-ritardo{margin:0;flex:1 1 14rem}
   .cp-stato{flex:none;display:inline-flex;align-items:center;gap:.4rem;padding:.25rem .7rem;border-radius:999px;${stileBtn};color:var(--btxt);font-size:.8rem;font-weight:600;white-space:nowrap}
