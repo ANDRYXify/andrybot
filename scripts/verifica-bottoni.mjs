@@ -35,7 +35,10 @@ const FILE = [
 
 // Bottoni che l'id ce l'hanno per essere raggiunti da fuori (stile, prove,
 // ancore), non per essere premuti. Ognuno con il perche' scritto.
-const ESENTI = new Map([]);
+const ESENTI = new Map([
+  ['gi-vai-monete', 'ancora del giro guidato di Giochi; lo preme il gestore comune di data-scheda, che porta alla scheda Monete'],
+  ['mo-vai-presenza', 'ancora del giro guidato di Monete; lo preme il gestore comune di data-scheda, che porta alla scheda Presenza'],
+]);
 
 let rotti = 0;
 let contati = 0;
