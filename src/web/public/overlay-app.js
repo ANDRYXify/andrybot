@@ -20,7 +20,8 @@ if (OSPITE && window.SUONI_PRESET) {
 }
 
 const MIO = { mostra: { alert: true, chat: true, wf: true, ws: true, effetti: true }, xy: {}, stile: { alert: null, chat: null }, widget: {} };
-const mostra = (k) => MIO.mostra[k] !== false;
+const SPENTI_DI_SERIE = ['invito'];
+const mostra = (k) => (MIO.mostra[k] === undefined ? SPENTI_DI_SERIE.indexOf(k) < 0 : MIO.mostra[k] !== false);
 
 const mono = () => performance.timeOrigin + performance.now();
 const OROLOGIO = { campioni: [] };
@@ -68,6 +69,7 @@ const palco = document.getElementById('palco');
 const palcoLibero = document.getElementById('palco-libero');
 const palcoSchermo = document.getElementById('palco-schermo');
 const etichette = document.getElementById('etichette');
+const invitoBox = document.getElementById('invito');
 const testi = document.getElementById('testi');
 const penBox = document.getElementById('penitenze');
 const alertBox = document.getElementById('alert');
@@ -88,13 +90,15 @@ function colpoNuovo(ev) {
   if (colpiMostrati.has(id)) { colpoVisto(id); return false; }
   return id !== colpoInCorso && !codaVisiva.some(function (x) { return idColpo(x) === id; });
 }
+const eColpo = (d) => !!(d && d.attacco);
+const ISTANZA = (function () { try { const b = new Uint8Array(8); crypto.getRandomValues(b); return Array.from(b, function (x) { return x.toString(16).padStart(2, '0'); }).join(''); } catch (e) { return String(Date.now()); } })();
 function prontoPerColpi() {
-  return mostra('effetti') && obsAttivo && document.visibilityState !== 'hidden';
+  return mostra('pew') && obsAttivo && document.visibilityState !== 'hidden';
 }
 let obsAttivo = true;
 function dichiaraColpi() {
   try {
-    fetch(urlColpo('pronto'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pronto: prontoPerColpi() }) }).catch(function () {  });
+    fetch(urlColpo('pronto'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pronto: prontoPerColpi(), istanza: ISTANZA }) }).catch(function () {  });
   } catch (e) {  }
 }
 window.addEventListener('obsSourceActiveChanged', function (e) { obsAttivo = !(e && e.detail && e.detail.active === false); dichiaraColpi(); });
@@ -1263,6 +1267,29 @@ function etichettaVolatile(comando, durata, conPrefisso = true) {
   }, Math.max(800, durata));
 }
 
+function invitoAcceso() { return mostra('invito') && !!MIO.invito && MIO.invito.attivo !== false && MIO.invito.acceso === true && !!MIO.invito.testo; }
+
+function vestiInvito(el) {
+  const st = (MIO.invito && MIO.invito.stile) || {};
+  el.className = 'ovl-widget ovl-invito dentro dim-' + (st.dim || 'media') + ' ' + classiIdentita(st, 'nessuna');
+  applicaVars(el, {
+    '--bg': st.sfondo, '--op': st.opacita != null ? st.opacita + '%' : null, '--fg': st.testo,
+    '--acc': st.accento, '--radius': st.bordoRaggio != null ? st.bordoRaggio + 'px' : null, '--font': fontDi(st) || null,
+  });
+}
+
+function posaInvito() { posizionaContenitore(invitoBox, MIO.xy.invito, 'basso-centro'); }
+
+function disegnaInvito() {
+  if (!invitoBox) return;
+  if (!invitoAcceso()) { invitoBox.textContent = ''; return; }
+  let el = invitoBox.querySelector('.ovl-invito');
+  if (!el) { el = document.createElement('div'); invitoBox.appendChild(el); }
+  el.textContent = MIO.invito.testo;
+  vestiInvito(el);
+  posaInvito();
+}
+
 function ridisegnaEtichette() {
   if (!etichettaAccesa()) { etichette.textContent = ''; return; }
   etichette.querySelectorAll('.ovl-etichetta').forEach(vestiEtichetta);
@@ -1442,8 +1469,8 @@ function ricevi(m) {
   segnaVisto(dati);
   if (dati.da === 'consolify' && !mostra('consolify')) return;
 
-    if (dati.tipo === 'audio') { if (mostra('effetti')) suona(dati); }
-    else if (dati.tipo === 'preset') { if (mostra('effetti')) suonaPreset(dati); }
+    if (dati.tipo === 'audio') { if (mostra(eColpo(dati) ? 'pew' : 'effetti')) suona(dati); }
+    else if (dati.tipo === 'preset') { if (mostra(eColpo(dati) ? 'pew' : 'effetti')) suonaPreset(dati); }
     else if (dati.tipo === 'penitenza') { if (mostra('pen')) penitenza(dati); }
     else if (dati.tipo === 'alert') alert(dati);
     else if (dati.tipo === 'scudo') { if (dati.followFermi) fermaFollow(); }
@@ -1463,7 +1490,7 @@ function ricevi(m) {
     else if (dati.tipo === 'boss') { boss(dati); muroBoss(dati); }
     else if (dati.tipo === 'arena') arena(dati);
     else if (dati.tipo === 'contatore') contatore(dati);
-    else if (dati.tipo === 'immagine' || dati.tipo === 'video' || dati.tipo === 'disegno' || dati.tipo === 'lancio') { if (mostra('effetti') && colpoNuovo(dati)) { codaVisiva.push(dati); mostraProssimo(); } }
+    else if (dati.tipo === 'immagine' || dati.tipo === 'video' || dati.tipo === 'disegno' || dati.tipo === 'lancio') { if (mostra(eColpo(dati) ? 'pew' : 'effetti') && colpoNuovo(dati)) { codaVisiva.push(dati); mostraProssimo(); } }
 }
 
 function connetti() {
@@ -2262,7 +2289,7 @@ function applicaTema(t) {
   if (t && t.ora) campioneOra(t.ora);
   MIO.mostra = (t && t.mostra) ? t.mostra : MIO.mostra;
   if (!mostra('alert')) codaAlert.length = 0;
-  if (!mostra('effetti')) codaVisiva.length = 0;
+  for (let i = codaVisiva.length - 1; i >= 0; i--) if (!mostra(eColpo(codaVisiva[i]) ? 'pew' : 'effetti')) codaVisiva.splice(i, 1);
   dichiaraColpi();
   MIO.ordine = (t && Array.isArray(t.ordine)) ? t.ordine : [];
   MIO.xy = (t && t.xy) ? t.xy : {};
@@ -2316,6 +2343,8 @@ function applicaTema(t) {
   ridisegnaScritte();
   MIO.etichetta = t.etichetta || null;
   ridisegnaEtichette();
+  MIO.invito = t.invito || null;
+  disegnaInvito();
   MIO.muro = t.muro || null;
   preparaMuro();
   posaEffetti();

@@ -96,16 +96,28 @@ export async function riconciliaPremi({ login, prima, helix, streamers, pagina, 
       // quello che dice Twitch vince su quello che ricordiamo; uno tolto a
       // mano su Twitch non c'e' piu', e si rifa'
       for (const id of [...nostri.keys()]) if (!vivi.has(id)) nostri.delete(id);
-      for (const r of tutti) if (nostri.has(r.id)) nostri.set(r.id, { titolo: r.title, costo: r.cost });
+      for (const r of tutti) if (nostri.has(r.id)) nostri.set(r.id, { titolo: r.title, costo: r.cost, testo: r.richiedeTesto, prompt: r.descrizione });
     }
   } catch (e) { log?.debug?.(`premi del canale #${login}:`, e?.message || e); }
   const piano = pianoPremi(cfg, { liberi, modo: forzata || cfg.premiModo, presi, su });
+  // cosa chiede e cosa dice il premio (docs/COLPI.md, «I premi a punti canale
+  // finiscono nello zaino»): con la strada dello zaino niente codice, il colpo
+  // va nello zaino di chi riscatta; il misto chiede sempre la mira
+  const chiede = (p) => p.tipo === 'misto' || cfg.flusso !== 'zaino';
+  const promptDi = (p) => String(p.tipo === 'misto'
+    ? `Prima paga ${p.monete ? p.monete + ' ' : 'le '}${moneta} su ${pagina} (o in chat col codice e «punti»), poi scrivi qui il codice del colpo`
+    : cfg.flusso === 'zaino'
+      ? (p.chiave.startsWith('P:') ? `Un colpo da ${p.costo} punti nel tuo zaino: lo scegli e lo lanci da ${pagina}` : 'Il colpo va nel tuo zaino: lo lanci quando vuoi da ' + pagina)
+        + ' (entra con lo stesso account). Se lì hai già mirato, parte subito'
+      : `Mira su ${pagina} e scrivi qui il codice del colpo (con l'accesso a Twitch fatto sulla pagina va bene qualunque testo)`).slice(0, 200);
 
   // prima si tolgono i nostri che non servono piu' (liberano posti); un premio
   // gia' giusto, titolo e costo, si tiene, anche se passa a un'altra voce
   const tenuti = new Map();
   for (const [id, r] of nostri) {
-    const p = piano.voluti.find((x) => !tenuti.has(x.chiave) && x.titolo === r.titolo && x.costo === r.costo);
+    // un premio che chiede il testo sbagliato, o dice la cosa vecchia, si rifa' (se si sa)
+    const p = piano.voluti.find((x) => !tenuti.has(x.chiave) && x.titolo === r.titolo && x.costo === r.costo
+      && (r.testo === undefined || (r.testo === chiede(x) && r.prompt === promptDi(x))));
     if (p) { tenuti.set(p.chiave, id); continue; }
     try { await helix.eliminaReward(login, id); } catch (e) { log?.debug?.(`premio colpo via #${login}:`, e?.message || e); }
   }
@@ -116,11 +128,8 @@ export async function riconciliaPremi({ login, prima, helix, streamers, pagina, 
   for (const p of piano.voluti) {
     if (tenuti.has(p.chiave)) continue;
     if (pieno) { fuori.push(p); continue; }
-    const prompt = p.tipo === 'misto'
-      ? `Prima paga ${p.monete ? p.monete + ' ' : 'le '}${moneta} su ${pagina} (o in chat col codice e «punti»), poi scrivi qui il codice del colpo`
-      : `Mira su ${pagina} e scrivi qui il codice del colpo (con l'accesso a Twitch fatto sulla pagina va bene qualunque testo)`;
     try {
-      const r = await helix.creaReward(login, { titolo: p.titolo, costo: p.costo, prompt, userInput: true });
+      const r = await helix.creaReward(login, { titolo: p.titolo, costo: p.costo, prompt: promptDi(p), userInput: chiede(p) });
       if (r?.id) tenuti.set(p.chiave, r.id);
       else errori.push({ motivo: 'twitch', titoli: [p.titolo] });
     } catch (e) {

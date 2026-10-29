@@ -387,7 +387,8 @@ export function premiKick(login, { fetchImpl } = {}) {
         // e li rifiuta quando non riesce (una canzone che non trova)
         should_redemptions_skip_request_queue: false,
       };
-      if (userInput) { corpo.is_user_input_required = true; corpo.description = String(prompt || '').slice(0, 200); }
+      if (prompt) corpo.description = String(prompt).slice(0, 200);
+      if (userInput) corpo.is_user_input_required = true;
       const r = await chiama(chi, '/channels/rewards', { metodo: 'POST', corpo, fetchImpl });
       if (!r.ok) throw Object.assign(new Error(r.errore || 'errore Kick'), { status: r.stato || 0 });
       const d = Array.isArray(r.dati) ? r.dati[0] : r.dati;

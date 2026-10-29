@@ -2163,6 +2163,150 @@ due per uno qualunque fosse la sua forma. Ora c'è un segno esplicito di «già
 misurata», e l'area si riposa appena la misura c'è.
 
 
+## L'overlay dei Pew
+
+Chiesto così: un «overlay dei Pew» a sé, così chi vuole i colpi degli
+spettatori solo in alcune scene crea un overlay con solo quelli accesi; e
+nell'overlay dei Pew una scritta a schermo che dice come si fa: «Attacca lo
+streamer entrando nella pagina che esce scrivendo !pew».
+
+Due pezzi nuovi, di due specie diverse: una chiave **senza posto** (`pew`) e un
+elemento **col posto** (`invito`), più una regola che finora non serviva: una
+chiave che nasce spenta.
+
+### Un colpo segue `pew`, in tutto
+
+Un colpo (docs/COLPI.md) arriva all'overlay come un effetto qualunque, con in
+più `attacco` (chi l'ha mandato). Fino a oggi lo accendeva `effetti`: i Pew non
+si potevano tenere in una scena sola senza tenerci tutti gli effetti, e
+spegnere gli effetti in una scena spegneva anche i colpi pagati.
+
+Ora la regola è una: **un evento con `attacco` segue `pew`, uno senza segue
+`effetti`** (`eColpo(d) ? 'pew' : 'effetti'` in `overlay-app.js`). Vale per
+tutto quello che un colpo fa:
+
+- l'immagine, il video, il disegno, il lancio entrano in coda solo dove `pew`
+  è acceso;
+- il suono: un effetto solo audio mandato come colpo porta `attacco` come gli
+  altri, e suona solo dove `pew` è acceso (lo stesso per un suono pronto, se
+  mai ne arrivasse uno con `attacco`);
+- la coda: spegnere i Pew in un overlay toglie dalla coda **i colpi e solo
+  loro**; spegnere gli effetti toglie gli effetti e lascia i colpi;
+- la dichiarazione «sono pronto per i colpi» che l'overlay manda al server
+  (`prontoPerColpi`) guarda `pew`.
+
+Il nome del comando (`etichetta`) resta un elemento suo, col suo interruttore:
+un colpo mostrato in un overlay dove la pastiglia è accesa la mostra, come
+ogni effetto. Nell'overlay dei Pew è spenta, perché lì è spento tutto tranne
+`pew` e `invito`.
+
+**Lo stesso interruttore di prima.** `pew` eredita `effetti`
+(`EREDITA_MOSTRA`): un overlay salvato con gli effetti spenti, la «Solo chat»
+per esempio, non si ritrova i colpi in scena perché è nata una chiave.
+
+### Senza posto, per costruzione
+
+Un colpo cade **dove mira lo spettatore**: le sue coordinate sono dello
+schermo, come quelle di un premio con un posto suo, e vanno sullo strato a
+tutto schermo (`#palco-libero`). Spostare, ingrandire o chiudere in un
+riquadro «i Pew» non vorrebbe dire niente: un'area in cui farli cadere
+tradirebbe la mira di chi ha pagato.
+
+Quindi `pew` è una chiave di `mostra` e basta:
+
+- **nel pannello** sta nella colonna dei livelli con l'occhio (è
+  l'interruttore per overlay e per occasione) e con una riga che dice dove
+  cadono, ma senza presa, senza lucchetto e senza posizione; scelto,
+  l'ispettore non ha campi di posizione né tasti di livello e porta alla
+  scheda Pew. Un insieme solo, `SENZA_POSTO`, fa saltare le parti che parlano
+  di posto: la riga dei livelli e il suo aggiornamento, i campi e i tasti
+  dell'ispettore, il piede del banco, le frecce, l'allinea, le proprietà, il
+  riquadro, il ripristino, le maniglie, il passo di livello e le figurine dei
+  modelli di occasione (dove compare fra le targhette fisse, come gli
+  effetti). Sulla tela non c'è un suo nodo: la tela disegna solo chi ha una
+  configurazione;
+- **nel server** una posizione o un blocco con quella chiave si butta
+  (`_xyDiOverlay` e `_blocchiDiOverlay` saltano `SENZA_POSTO_EL`): non esiste
+  un `pew` spostato da ripulire domani, perché non si può scrivere;
+- **nell'ordine dei livelli** `pew` sta subito dopo `effetti` (`ORDINE_BASE`
+  di `riquadro.js`): non ha uno strato suo, ma la colonna dei livelli è
+  ordinata da lì, e la sua riga sta accanto a quella degli effetti.
+
+### Una chiave che nasce spenta
+
+La regola di `mostra` è: **si scrive solo il «no»**, quel che non c'è compare.
+È quella che fa entrare acceso ovunque un obiettivo nuovo. L'invito non la può
+seguire: è una scritta fissa per tutta la diretta, e gli overlay che esistono
+già non se la devono trovare in scena perché è nata. Deve comparire solo dove
+qualcuno l'ha accesa, cioè nell'overlay dei Pew.
+
+L'eccezione è scritta, non indovinata: `SPENTI_DI_SERIE = ['invito']`, la stessa
+lista nel server, nel pannello e nella pagina dell'overlay (una prova le tiene
+uguali). Una chiave di quella lista **non scritta** in una base vale spenta.
+Si applica **solo alle basi**:
+
+- leggendo gli overlay salvati (`overlaysDi`), così chi li legge dopo — il
+  pannello, il tema della diretta — trova già `invito: false`;
+- salvando (`_mostraDiOverlay`);
+- quando non c'è nessun overlay salvato (`_mostraDefault`).
+
+**Mai alle differenze di un'occasione**: lì una chiave assente vuol dire «come
+la base», e riempirla la trasformerebbe in un «spegni». Nel pannello la lettura
+passa da `_acceso(m, k)`; e accendere una chiave spenta di serie nella base la
+**scrive** (`invito: true`) invece di cancellarla, perché cancellarla vorrebbe
+dire spegnerla. Un overlay nuovo nasce con `invito: false` scritto.
+
+### L'invito
+
+Chiave `invito`, configurazione `overlayInvito` (`normInvito` in
+`web/stile.js`), fatto come il nome del comando, con gli stessi pezzi negli
+stessi posti: la chiave, la configurazione, la veste `.ovl-invito` nella pelle,
+il vestitore sulla tela, il contenitore `#invito` all'angolo che lo Studio
+conosce (in basso al centro, il 10% dal fondo, come il nome del comando:
+nell'overlay dei Pew la pastiglia è spenta, altrove si sposta uno dei due).
+Di serie: attivo, con una veste leggibile su un gioco (fondo `#100d16`
+all'80%, testo bianco, accento `#f72fa7`, angoli 14).
+
+È **persistente**: non arriva con un evento, sta in scena finché valgono tre
+cose insieme — `mostra('invito')` in quell'overlay, l'interruttore del pezzo
+(`attivo`), e **i Pew del canale accesi**. Con la pagina dei Pew spenta,
+invitare ad aprirla sarebbe una bugia.
+
+**Il testo lo risolve il server**, nel tema dell'overlay: il testo scritto
+dallo streamer (al massimo 140 caratteri) o, se vuoto, quello di serie **nella
+lingua della chat** (`linguaChat`), coi segnaposti riempiti — `{canale}` (il
+nome dello streamer), `{comando}` (il comando dei Pew, di serie `pew`),
+`{pagina}` (l'indirizzo della pagina dei Pew senza `https://`). Il tema porta
+`invito: { ...configurazione, testo, acceso }`: l'overlay non sa niente dei
+Pew, e non deve saperlo. I testi di serie stanno in `web/stile.js`
+(`TESTI_INVITO`, `testoInvito`); il pannello ne ha la stessa copia per
+disegnare l'esempio sulla tela con il testo della diretta (una prova le tiene
+uguali), e l'indirizzo della pagina lo riceve dal server (`paginaPew` in
+`/api/me`), non se lo rifà.
+
+`acceso` vuol dire Pew accesi **e non in pausa**: un invito a una pagina che
+in quel momento risponde «in pausa» inviterebbe a niente.
+
+Accendere o spegnere i Pew, metterli in pausa, o cambiarne il comando, cambia quello che
+l'invito dice o se si vede: salvare `colpi` avvisa gli overlay aperti come
+salvare `overlayInvito`, e la fonte in OBS si riprende il tema da sola.
+
+### L'overlay dei Pew
+
+`creaOverlayPew()` nel pannello crea l'overlay dei Pew per la strada di
+«Nuovo overlay» (un elemento nella lista, il salvataggio degli overlay, la
+rilettura), con `mostra` tutto spento tranne `pew` e `invito` e il nome
+«Pew». Se un overlay così c'è già, ridà quello: niente doppioni. Il suo link
+si mette in OBS solo nelle scene dove si vogliono i colpi.
+
+Prove: `test/contratto/invito-scena.test.mjs` (l'elemento come gli altri, la
+chiave senza posto, la regola dello spento di serie su base e occasioni, il
+testo risolto), `test/unita/ordine-livelli.test.mjs` (`pew` dopo `effetti`),
+il cancello dell'anteprima (l'invito misurato sulla tela e in onda) e quello
+dell'overlay nel tempo (spenti i Pew, i colpi in coda non escono e gli effetti
+sì; un colpo che arriva dopo non entra, l'effetto dopo di lui sì).
+
+
 ## Il muro delle emote
 
 Un elemento nuovo, con un modello suo: sta in docs/MURO-EMOTE.md. Qui le due
@@ -2198,9 +2342,10 @@ quello della base).
 **Di serie è l'ordine che la diretta ha oggi**, letto dai livelli che le
 pagine già avevano, così aprendo lo Studio niente cambia posto:
 
-    muro · arena · effetti · sfida a tempo · nome del comando · testo a schermo · chat ·
-    ultimo follower · ultimo sub · obiettivi · cartelli · player · conto alla
-    rovescia · hype train · classifica Bit · boss · alert · contatori
+    muro · arena · effetti · pew · sfida a tempo · nome del comando · invito ai
+    Pew · testo a schermo · chat · ultimo follower · ultimo sub · obiettivi ·
+    cartelli · player · conto alla rovescia · hype train · classifica Bit ·
+    boss · alert · contatori
 
 Una sola funzione, `SB_RIQUADRO.ordine(chiavi, salvato)`, dà l'ordine vero, e
 la usano sia la tela sia la pagina dell'overlay. Il punto delicato è

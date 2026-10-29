@@ -46,13 +46,17 @@ function banco({ voce = { comando: 'pomodoro', bit: 100, monete: 40, punti: 500,
 }
 const compra = (b, c, chi = '21', extra = {}) => b.s.mira(c, { voce: 'pomodoro', chiave: chi, spettatore: chi, dopo: true, ...extra });
 
-test('il modello: spento di serie; per voce come gli altri, no, mai o dopo un tempo; «!pew zaino»', () => {
-  assert.equal(normalizza({}).zaino.attivo, false, 'lo accende lo streamer');
+test('il modello: acceso con la strada dello zaino (di serie), spento con «subito»; per voce come gli altri, no, mai o dopo un tempo; «!pew zaino»', () => {
+  // docs/COLPI.md, «Compro, ce l'ho, lo lancio»: lo zaino non si accende, si deduce dalla strada
+  assert.deepEqual([normalizza({}).flusso, normalizza({}).zaino.attivo], ['zaino', true], 'la strada di serie e\' lo zaino, anche per chi aveva salvato prima');
+  assert.equal(normalizza({ zaino: { attivo: false } }).zaino.attivo, true, 'il vecchio interruttore non conta piu\'');
+  assert.deepEqual([normalizza({ flusso: 'subito' }).flusso, normalizza({ flusso: 'subito', zaino: { attivo: true } }).zaino.attivo], ['subito', false]);
+  assert.equal(normalizza({ flusso: 'boh' }).flusso, 'zaino');
   const cfg = normalizza({ zaino: { attivo: true, scadenza: { tipo: 'dopo', quanti: 7, unita: 'giorni' } }, voci: [
     { comando: 'a', bit: 1 }, { comando: 'b', bit: 1, zaino: { modo: 'no' } }, { comando: 'c', bit: 1, zaino: { modo: 'mai' } }, { comando: 'd', bit: 1, zaino: { modo: 'dopo', quanti: 2, unita: 'ore' } }] });
   const [a, b, c, d] = cfg.voci;
   assert.deepEqual([zainoDi(cfg, a).tipo, zainoDi(cfg, a).quanti, zainoDi(cfg, b), zainoDi(cfg, c).tipo, zainoDi(cfg, d).unita], ['dopo', 7, null, 'mai', 'ore']);
-  assert.equal(zainoDi(normalizza({ voci: [{ comando: 'a', bit: 1 }] }), a), null);
+  assert.equal(zainoDi(normalizza({ flusso: 'subito', voci: [{ comando: 'a', bit: 1 }] }), a), null);
   assert.ok(chiedeZaino(cfg, '!pew zaino') && chiedeZaino(cfg, '!PEW backpack ') && !chiedeZaino(cfg, '!pew zaino x'));
   assert.equal(rispostaZaino(cfg, 'it', { nome: '@m', pagina: 'p', voci: [{ quanti: 2, nome: 'Pomodoro' }, { quanti: 1, nome: 'Risata' }] }), '@m nel tuo zaino: 2 Pomodoro, 1 Risata. Si lanciano da p');
   assert.equal(rispostaZaino(cfg, 'en', { nome: '@m', pagina: 'p', voci: [] }), '@m your backpack is empty: buy hits for later on p');

@@ -68,6 +68,8 @@ export function creaPortaColpi({ servizio, registro, streamers, effettoDi, mezzi
         misti: misti.map((x) => ({ ...x, premio: x.modo === 'punti' ? (v.premioMistoNome || titoloPremioMisto(v)) : '' })),
         // si compra per dopo (lo zaino): lo dice il servizio, che sa anche se e' in pausa
         zaino: !servizio.comprabile?.(login, v.id),
+        // quanto vale in punti per un buono dello zaino (Twitch e Kick)
+        buono: { punti: v.punti || 0, puntiKick: v.puntiKick || 0 },
         // la parola per lanciarlo dalla chat, se la chat lo lancia
         chat: k.cfg.chat.attivo && v.chat.modo !== 'no' ? parolaChat(v) : '' });
     }
@@ -78,7 +80,7 @@ export function creaPortaColpi({ servizio, registro, streamers, effettoDi, mezzi
       // i Kicks da spendere si offrono se qui c'e' qualcosa da pagarci: un colpo
       // con un prezzo in Kicks (pieno o misto); se no la pagina prometterebbe il falso
       kicksPew: !!suKick && !!servizio.conKicksPew?.(login) && voci.some((x) => x.prezzi.kicks > 0 || (x.misti || []).some((m) => m.modo === 'kicks')), kick: suKick ? { slug: suKick.slug || '', live: !!suKick.live } : null,
-      zaino: servizio.conZaino?.(login) ? { con: k.cfg.zaino.con } : null, quadro: k.cfg.quadro };
+      zaino: servizio.conZaino?.(login) ? { con: k.cfg.zaino.con } : null, flusso: k.cfg.flusso, quadro: k.cfg.quadro };
   }
 
   // L'ANTEPRIMA DI UN COLPO (docs/COLPI.md, «L'anteprima»): quello che l'overlay
@@ -203,7 +205,7 @@ export function creaPortaColpi({ servizio, registro, streamers, effettoDi, mezzi
       monete: servizio.conMonete && io.login ? servizio.saldoMonete(login, io.login) : null,
       ...(sc ? { scadono: { quanti: sc.quanti, quando: quandoScade(sc.scade, lingua, fusoDi(login)) } } : {}),
       // lo zaino: quanti colpi di ogni voce, e fin quando vale il primo che scade
-      zaino: servizio.conZaino?.(login) ? servizio.zainoDi(login, io.id).map((x) => ({ voce: x.voce, nome: voceDi(normalizza(streamers.get(login)?.settings?.colpi), x.voce)?.nome || x.voce,
+      zaino: servizio.zainoVisibile?.(login, io.id) ? servizio.zainoDi(login, io.id).map((x) => ({ voce: x.voce, ...(x.buono ? { buono: x.buono } : {}), nome: voceDi(normalizza(streamers.get(login)?.settings?.colpi), x.voce)?.nome || x.voce,
         quanti: x.quanti, quando: x.scade ? quandoScade(x.scade, lingua, fusoDi(login)) : '' })) : null,
     };
   }
@@ -226,7 +228,7 @@ export function creaPortaColpi({ servizio, registro, streamers, effettoDi, mezzi
     const misto = v ? mistiDi(v).find((x) => x.modo === vd) : null;
     if (!v || !CON.includes(con) || (dopo && con === 'zaino') || (/^(misto-)?(bit|kicks)$/.test(con) && con.replace('misto-', '') !== vd)) return { ok: false, motivo: 'voce' };
     if (con === 'zaino') {
-      if (!servizio.zainoDi(login, io.id).some((x) => x.voce === v.id)) return { ok: false, motivo: 'vuoto' };
+      if (!servizio.copreZaino?.(login, io.id, v.id)) return { ok: false, motivo: 'vuoto' };
       const r = mira(login, corpo, chiave, io);
       if (!r.ok) return r;
       const p = servizio.subito(login, r.mira.id, { con, chi: io.id });

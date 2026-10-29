@@ -607,6 +607,37 @@ export const normEtichetta = (x) => {
   };
 };
 
+// L'INVITO AI PEW in scena (docs/OVERLAY.md, «L'overlay dei Pew»): la scritta
+// fissa che dice come si colpisce la diretta. Di serie in basso al centro, con
+// una veste che si legge sopra un gioco. `testo` vuoto vuol dire «quello di
+// serie, nella lingua della chat»: lo risolve il server nel tema, coi
+// segnaposti {canale} {comando} {pagina}.
+export const VESTE_INVITO = { sfondo: '#100d16', opacita: 80, testo: '#ffffff', accento: '#f72fa7', bordoRaggio: 14 };
+export const POS_INVITO = ['basso-centro'];
+export const MAX_TESTO_INVITO = 140;
+export const TESTI_INVITO = Object.freeze({
+  it: 'Attacca {canale}: scrivi !{comando} in chat ed entra nella pagina che esce',
+  en: 'Hit {canale}: type !{comando} in chat and open the page it gives you',
+  es: 'Ataca a {canale}: escribe !{comando} en el chat y entra en la página que aparece',
+});
+export const normInvito = (x) => {
+  x = x || {};
+  return {
+    attivo: x.attivo !== false,
+    posizione: unoDi(x.posizione, POS_INVITO, 'basso-centro'),
+    xy: xyOk(x.xy),
+    testo: String(x.testo ?? '').replace(/[\u0000-\u001f]/g, ' ').trim().slice(0, MAX_TESTO_INVITO),
+    stile: normWidgetStile({ ...VESTE_INVITO, ...(x.stile || {}) }),
+  };
+};
+// Il testo che va in scena: quello dello streamer o quello di serie nella
+// lingua della chat, coi segnaposti riempiti. Un segnaposto senza valore resta
+// com'e' scritto: chi lo legge vede cosa manca invece di una frase a meta'.
+export function testoInvito(testo, lingua, valori = {}) {
+  const base = String(testo || '').trim() || TESTI_INVITO[lingua] || TESTI_INVITO.it;
+  return base.replace(/\{(canale|comando|pagina)\}/g, (tutto, k) => (valori[k] ? String(valori[k]) : tutto));
+}
+
 // IL MURO DELLE EMOTE (docs/MURO-EMOTE.md). Un'area, non un punto: di serie lo
 // schermo intero, oppure un riquadro; una posa a punto non ha senso per
 // un'area e si butta. Di serie spento: e' l'unico elemento che si muove da

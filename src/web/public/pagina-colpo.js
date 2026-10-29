@@ -78,6 +78,23 @@
     (zainoMio || []).forEach(function (x) { if (x.voce === voce) n = x.quanti; });
     return n;
   }
+  var modo = '', buonoSel = 0;
+  function strada() { return !!(dati && dati.flusso === 'zaino' && dati.zaino); }
+  function puntiDi(v) { return ((v && v.buono) || {})[vd() === 'kicks' ? 'puntiKick' : 'punti'] || 0; }
+  function copre(x, v) { var p = puntiDi(v); return x.buono > 0 && p > 0 && p <= x.buono; }
+  function buoniPer(v) {
+    var n = 0;
+    (zainoMio || []).forEach(function (x) { if (copre(x, v)) n += x.quanti; });
+    return n;
+  }
+  function numera() {
+    var n = 0;
+    ['cp-p1', 'cp-pc', 'cp-p2', 'cp-p3'].forEach(function (id) {
+      var sz = $(id), sp = sz && sz.querySelector('.cp-t span');
+      if (sz && !sz.hidden && sp) sp.textContent = String(++n);
+    });
+    $('cp-p2-t').textContent = strada() ? T.passoLancia : T.passo2;
+  }
 
   function zaino() {
     var box = $('cp-zaino');
@@ -90,10 +107,23 @@
     var l = el('ul', 'cp-zaino-l');
     zainoMio.forEach(function (x) {
       var li = el('li', '');
-      var b = el('button', 'cp-zaino-v', riempi(T.zainoRiga, { n: numero(x.quanti), nome: x.nome }));
+      var nome = x.buono ? riempi(T.zainoBuono, { n: numero(x.buono) }) : x.nome;
+      var su = function () {
+        if (mira) return;
+        if (x.buono) { buonoSel = x.buono; filtra(); inVista($('cp-p1')); return; }
+        var v = voceDi(x.voce);
+        if (v) scegli(v, 'zaino');
+      };
+      var b = el('button', 'cp-zaino-v', riempi(T.zainoRiga, { n: numero(x.quanti), nome: nome }));
       b.type = 'button';
-      b.onclick = function () { var v = voceDi(x.voce); if (v && !mira) scegli(v); };
+      b.onclick = su;
       li.appendChild(b);
+      var lz = el('button', 'cp-b', T.zainoLancia);
+      lz.type = 'button';
+      lz.setAttribute('data-zaino-lancia', x.voce);
+      lz.onclick = su;
+      li.appendChild(lz);
+      if (x.buono) li.appendChild(el('small', '', riempi(T.zainoBuonoNota, { n: numero(x.buono) })));
       if (x.quando) li.appendChild(el('small', '', riempi(T.zainoFino, { quando: x.quando })));
       l.appendChild(li);
     });
@@ -105,10 +135,13 @@
     var conf = $('cp-conferma');
     box.textContent = '';
     var modi = [];
-    if (io && scelta && !mira) {
+    if (io && scelta && !mira && modo) {
       var pz = scelta.prezzi || {};
-      var nz = quantiNelloZaino(scelta.id);
-      if (nz > 0) modi.push({ con: 'zaino', testo: riempi(T.lanciaZaino, { n: numero(nz) }), basta: true });
+      var nv = quantiNelloZaino(scelta.id), nb = buoniPer(scelta);
+      if (nv > 0) modi.push({ con: 'zaino', testo: riempi(T.lanciaZaino, { n: numero(nv) }), basta: true });
+      else if (nb > 0) modi.push({ con: 'zaino', testo: riempi(T.lanciaBuono, { n: numero(nb), punti: numero(buonoSel || puntiDi(scelta)) }), basta: true });
+    }
+    if (io && scelta && !mira && modo === 'subito') {
       var v = vd();
       if (pz[v] > 0 && pewOn() && saldoBit !== null) modi.push({ con: v, testo: riempi(tv('lancia', 'lanciaBit'), { n: numero(pz[v]) }), basta: saldoBit >= pz[v] });
       if (pz.monete > 0 && saldoMonete !== null) modi.push({ con: 'monete', testo: riempi(T.lanciaMonete, { n: numero(pz.monete), moneta: moneta() }), basta: saldoMonete >= pz.monete });
@@ -124,8 +157,9 @@
       b.onclick = function () { lancia(m.con, b); };
       box.appendChild(b);
     });
-    if (modi.length) box.appendChild(el('p', 'cp-nota', T.lanciaNota));
+    if (modi.length) box.appendChild(el('p', 'cp-nota', modo === 'zaino' ? T.miraZaino : T.lanciaNota));
     box.hidden = !modi.length;
+    conf.hidden = modo !== 'subito';
     conf.textContent = modi.length ? T.altriModi : T.conferma;
     conf.classList.toggle('due', !!modi.length);
     perDopo();
@@ -133,13 +167,27 @@
   }
 
   function perDopo() {
-    var box = $('cp-dopo');
+    var sez = $('cp-pc'), box = $('cp-dopo');
     box.textContent = '';
     var z = dati && dati.zaino;
-    if (!scelta || mira || !z || !scelta.zaino) { box.hidden = true; return; }
-    box.hidden = false;
-    box.appendChild(el('h3', 'cp-dopo-t', T.perDopo));
-    if (!io) { box.appendChild(el('p', 'cp-nota', T.dopoAccedi)); return; }
+    sez.hidden = !strada();
+    numera();
+    var vivo = !sez.hidden && !!scelta && !mira;
+    sez.classList.toggle('spento', !vivo);
+    if (!vivo) return;
+    if (modo !== 'subito') {
+      var sub = el('div', 'cp-subito');
+      var cl = el('button', 'cp-b due', T.compraLancia);
+      cl.type = 'button';
+      cl.setAttribute('data-compra-lancia', '1');
+      cl.onclick = function () { scegli(scelta, 'subito'); };
+      sub.appendChild(cl);
+      sub.appendChild(el('p', 'cp-nota', T.compraLanciaNota));
+      box.appendChild(sub);
+    }
+    if (!scelta.zaino) { box.insertBefore(el('p', 'cp-nota', (T.motivi || {}).zaino), box.firstChild); return; }
+    if (!io) { box.insertBefore(el('p', 'cp-nota', T.dopoAccedi), box.firstChild); return; }
+    var primo = box.firstChild;
     var pz = scelta.prezzi || {}, modi = [], v = vd();
     if (z.con[v] && pz[v] > 0 && pewOn() && saldoBit !== null) modi.push({ con: v, testo: riempi(tv('compra', 'compraBit'), { n: numero(pz[v]) }), basta: saldoBit >= pz[v] });
     if (z.con.monete && pz.monete > 0 && saldoMonete !== null) modi.push({ con: 'monete', testo: riempi(T.compraMonete, { n: numero(pz.monete), moneta: moneta() }), basta: saldoMonete >= pz.monete });
@@ -164,8 +212,8 @@
       a.onclick = function () { prendi(true); };
       r.appendChild(a);
     }
-    box.appendChild(r);
-    box.appendChild(el('p', 'cp-nota', T.dopoNota));
+    box.insertBefore(r, primo);
+    box.insertBefore(el('p', 'cp-nota', T.dopoNota), primo);
   }
 
   function compra(con, b) {
@@ -195,6 +243,7 @@
       }
       mira = r.mira;
       ricorda(mira.id);
+      if (con === 'zaino') { buonoSel = 0; filtra(); }
       lanciaTasti();
       mostra();
       saldi();
@@ -351,7 +400,19 @@
   }
   function filtra() {
     var bb = document.querySelectorAll('.cp-voce-box');
-    for (var i = 0; i < bb.length; i++) bb[i].hidden = !!filtro && bb[i].getAttribute('data-cat') !== filtro;
+    for (var i = 0; i < bb.length; i++) {
+      var v = voceDi(bb[i].getAttribute('data-voce'));
+      bb[i].hidden = (!!filtro && bb[i].getAttribute('data-cat') !== filtro) || (!!buonoSel && !(v && copre({ buono: buonoSel }, v)));
+    }
+    var bx = $('cp-buono');
+    bx.textContent = '';
+    bx.hidden = !buonoSel;
+    if (!buonoSel) return;
+    bx.appendChild(el('span', '', riempi(T.buonoScegli, { n: numero(buonoSel) })));
+    var tt = el('button', 'cp-b due', T.buonoTutti);
+    tt.type = 'button';
+    tt.onclick = function () { buonoSel = 0; filtra(); lanciaTasti(); };
+    bx.appendChild(tt);
   }
 
   function voci() {
@@ -363,6 +424,7 @@
     dati.voci.forEach(function (v) {
       var scatola = el('div', 'cp-voce-box');
       scatola.setAttribute('data-cat', v.categoria || '');
+      scatola.setAttribute('data-voce', v.id);
       var b = el('button', 'cp-voce');
       b.type = 'button';
       b.setAttribute('aria-pressed', scelta && scelta.id === v.id ? 'true' : 'false');
@@ -391,15 +453,18 @@
     $('cp-nome-l').hidden = !dati.conNome || !!io;
   }
 
-  function scegli(v) {
+  function scegli(v, m) {
     if (mira) return;
     scelta = v;
+    if (buonoSel && !m) m = 'zaino';
+    modo = m || (strada() && io && v.zaino ? '' : 'subito');
     var bb = document.querySelectorAll('.cp-voce');
     for (var i = 0; i < bb.length; i++) bb[i].setAttribute('aria-pressed', bb[i].getAttribute('data-voce') === v.id ? 'true' : 'false');
-    $('cp-p2').classList.remove('spento');
-    strato.classList.add('attiva');
-    strato.tabIndex = 0;
-    inVista(strato);
+    var mirare = !!modo;
+    $('cp-p2').classList.toggle('spento', !mirare);
+    strato.classList.toggle('attiva', mirare);
+    strato.tabIndex = mirare ? 0 : -1;
+    inVista(mirare ? strato : $('cp-pc'));
     var vecchia = strato.querySelector('.cp-ombra');
     if (vecchia) vecchia.remove();
     if (punto) disegna();
@@ -410,7 +475,7 @@
 
   function pronto() {
     ritocco();
-    var si = !!(scelta && punto && !protetto(punto.x, punto.y) && dati && dati.live && dati.overlay && !dati.pausa) && !mira;
+    var si = !!(scelta && modo && punto && !protetto(punto.x, punto.y) && dati && dati.live && dati.overlay && !dati.pausa) && !mira;
     $('cp-conferma').disabled = !si;
     var bl = document.querySelectorAll('#cp-lancia button');
     for (var i = 0; i < bl.length; i++) bl[i].disabled = !si || !bl[i].getAttribute('data-basta');
@@ -828,7 +893,8 @@
   function daCapo() {
     if (fermaProva) fermaProva();
     clearInterval(giro); clearInterval(conto);
-    mira = null; punto = null;
+    mira = null; punto = null; modo = ''; buonoSel = 0;
+    filtra();
     ricorda('');
     var x = strato.querySelectorAll('.cp-mirino, .cp-ombra');
     for (var i = 0; i < x.length; i++) x[i].remove();

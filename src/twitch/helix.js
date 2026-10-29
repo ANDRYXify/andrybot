@@ -416,7 +416,9 @@ export class Helix {
       cost: Math.max(1, Math.round(Number(costo) || 100)),
       is_enabled: true,
     };
-    if (userInput) { body.is_user_input_required = true; body.prompt = String(prompt || '').slice(0, 200); }
+    // la descrizione si vede anche senza testo da scrivere
+    if (prompt) body.prompt = String(prompt).slice(0, 200);
+    if (userInput) body.is_user_input_required = true;
     const j = await this._request('POST', '/channel_points/custom_rewards', {
       query: { broadcaster_id: s.user_id }, body, token,
     });

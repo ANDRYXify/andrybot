@@ -102,7 +102,9 @@ const DIFETTI = [
   ['pagina-colpo.js', "bb[i].hidden = !!filtro && bb[i].getAttribute('data-cat') !== filtro;", 'bb[i].hidden = false;'],
   ['pagina-colpo.js', 'pbit.disabled = saldoBit !== null && saldoBit < mancaBit;', 'pbit.disabled = false;'],
   ['pagina-colpo.js', "b.setAttribute('data-basta', m.basta ? '1' : '');", "b.setAttribute('data-basta', '1');"],
-  ['pagina-colpo.js', "if (nz > 0) modi.push({ con: 'zaino'", "if (false) modi.push({ con: 'zaino'"],
+  ['pagina-colpo.js', "if (nv > 0) modi.push({ con: 'zaino'", "if (false) modi.push({ con: 'zaino'"],
+  ['pagina-colpo.js', "modo = m || (strada() && io && v.zaino ? '' : 'subito');", "modo = m || 'subito';"],
+  ['pagina-colpo.js', '(!!buonoSel && !(v && copre({ buono: buonoSel }, v)))', 'false'],
   ['pagina-colpo.js', 'strato.addEventListener(\'pointermove\', function (e) { if (tocco === e.pointerId) dove(e); });', ''],
   ['pagina-colpo.js', 'function ripeti(attesa) { sposta(d[0], d[1]); t = setTimeout(function () { ripeti(40); }, attesa); }', 'function ripeti() { sposta(d[0], d[1]); }'],
   ['pagina-colpo.js', 'punta((q.x + dx) / QUADRO_L * 100, (q.y + dy) / QUADRO_A * 100);', 'punta((q.x + dx * 2) / QUADRO_L * 100, (q.y + dy * 2) / QUADRO_A * 100);'],
@@ -214,6 +216,8 @@ const tocca = async (p, x, y) => {
   const r = await p.locator('#cp-mira').boundingBox();
   await p.mouse.click(r.x + r.width * x / 100, r.y + r.height * y / 100);
 };
+// con la strada dello zaino e l'accesso, scelto un colpo si compra; «Compra e lancia» porta alla mira (docs/COLPI.md, «Compro, ce l'ho, lo lancio»)
+const compraELancia = async (p) => { const b = p.locator('[data-compra-lancia]'); if (await b.count() && await b.isVisible()) await b.click(); };
 // una fase che si rompe e' una promessa che non tiene, non un cancello che si ferma
 const fase = async (nome, f) => { try { await f(); } catch (e) { dice(false, `${nome}: ${String(e?.message || e).split('\n')[0]}`); } };
 const centro = (p, sel) => p.evaluate((s) => { const e = document.querySelector(s); if (!e) return null; const r = e.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2, w: r.width, h: r.height }; }, sel);
@@ -342,6 +346,7 @@ try {
   await p.waitForFunction(() => document.getElementById('cp-testo').value === '', null, { timeout: 5000 }).catch(() => {});
   dice(mondo.scritti.at(-1) === 'ciao a tutti' && await p.inputValue('#cp-testo') === '', 'il messaggio scritto nella pagina parte, e il campo si svuota');
   await p.locator('.cp-voce').first().click();
+  await compraELancia(p);
   await tocca(p, 30, 30);
   await p.locator('#cp-conferma').click();
   await p.waitForSelector('#cp-paga', { timeout: 5000 });
@@ -376,6 +381,7 @@ try {
   mondo.io = { id: '888', login: 'marta', nome: 'Marta' };
   await daCapo();
   await p.locator('.cp-voce', { hasText: 'Pomodoro vero' }).click();
+  await compraELancia(p);
   await tocca(p, 20, 20);
   await p.locator('#cp-conferma').click();
   await p.waitForSelector('[data-paga="monete"]', { timeout: 5000 });
@@ -401,6 +407,7 @@ try {
   dice(/Hai 25 Bit da spendere qui/.test(await p.locator('#cp-io').textContent()), 'con l\'accesso la pagina dice il saldo, accanto al nome');
   // UN TOCCO: con l'accesso, scelto il colpo e il punto, si lancia col saldo, senza codice
   await p.locator('.cp-voce', { hasText: 'Pomodoro vero' }).click();
+  await compraELancia(p);
   await tocca(p, 20, 20);
   const tasto = p.locator('[data-lancia="bit"]');
   dice(await tasto.count() === 1 && /Lancia · 30 Bit/.test(await tasto.textContent()) && await tasto.isDisabled(), 'un colpo da 30 Bit con 25 nel saldo: il tasto «Lancia» c\'e\' ma e\' spento');
@@ -414,6 +421,7 @@ try {
   dice(await p.locator('[data-paga="bitpew"]').isDisabled(), 'anche dagli altri modi, col saldo che non basta il tasto dei Bit e\' spento');
   await daCapo();
   await p.locator('.cp-voce', { hasText: 'Risata' }).click();
+  await compraELancia(p);
   await tocca(p, 30, 30);
   await p.waitForSelector('[data-lancia="bit"]:not([disabled])', { timeout: 5000 });
   await p.locator('[data-lancia="bit"]').click();
@@ -433,20 +441,47 @@ try {
   mondo.io = { id: '888', login: 'marta', nome: 'Marta' };
   await daCapo();
   await p.locator('.cp-voce', { hasText: 'Pomodoro vero' }).click();
+  // la strada dello zaino: scelto il colpo si compra, la mira non si apre ancora; i passi si contano come si vedono
+  const passi = await p.evaluate(() => ['cp-p1', 'cp-pc', 'cp-p2', 'cp-p3'].map((id) => document.querySelector('#' + id + ' .cp-t span').textContent).join(''));
+  dice(await p.evaluate(() => getComputedStyle(document.getElementById('cp-mira')).pointerEvents) === 'none' && !(await p.locator('#cp-pc').evaluate((e) => e.classList.contains('spento')))
+    && await p.locator('[data-compra-lancia]').isVisible() && passi === '1234', `con l'accesso, scelto un colpo si compra: la mira resta chiusa, «Compra e lancia» a parte, i passi 1-4 (${passi})`);
   await p.waitForSelector('[data-dopo="monete"]:not([disabled])', { timeout: 5000 });
+  if (FOTO) await p.screenshot({ path: path.join(FOTO, 'colpi-compra.png'), fullPage: true });
   const prima = economia.saldo(LOGIN, 'marta');
   await p.locator('[data-dopo="monete"]').click();
   await p.waitForFunction(() => /1 × Pomodoro vero/.test(document.getElementById('cp-zaino').textContent), null, { timeout: 5000 }).catch(() => {});
   dice(/1 × Pomodoro vero/.test(await p.locator('#cp-zaino').textContent()) && prima - economia.saldo(LOGIN, 'marta') === 40 && !(await o.locator('.lancio').count()),
     `comprato per dopo: nello zaino della pagina, le monete tolte, e niente in diretta (${prima} → ${economia.saldo(LOGIN, 'marta')})`);
+  await p.locator('[data-zaino-lancia="tirapomodoro"]').click();
   await tocca(p, 40, 30);
   await p.waitForSelector('[data-lancia="zaino"]', { timeout: 5000 });
-  dice(/Lancia dallo zaino \(1\)/.test(await p.locator('[data-lancia="zaino"]').textContent()), 'mirato, la pagina offre il lancio dallo zaino');
+  dice(/Lancia dallo zaino \(1\)/.test(await p.locator('[data-lancia="zaino"]').textContent()) && await p.locator('#cp-conferma').isHidden() && await p.locator('[data-lancia]').count() === 1,
+    'dal «Lancia» dello zaino si mira, e c\'e\' un tasto solo: dallo zaino, niente da pagare');
   await p.locator('[data-lancia="zaino"]').click();
   await o.waitForFunction(() => document.querySelector('.lancio')?.dataset.impatti, null, { timeout: 8000 }).catch(() => {});
   await p.waitForFunction(() => !/Pomodoro vero/.test(document.getElementById('cp-zaino').textContent), null, { timeout: 5000 }).catch(() => {});
   dice(await o.locator('.lancio').count() > 0 && !/Pomodoro vero/.test(await p.locator('#cp-zaino').textContent()), 'dallo zaino in un tocco: il colpo parte, e lo zaino si svuota');
   await o.waitForFunction(() => !document.querySelector('.lancio'), null, { timeout: 15000 }).catch(() => {});
+  // IL BUONO dei punti canale (docs/COLPI.md, «I premi a punti canale finiscono nello zaino»): vale per i colpi fino a quei punti
+  const idb = 'buonogate1', adesso = Date.now();
+  registroColpi.apri({ id: idb, login: LOGIN, codice: 'BUONO1', voce: '@punti:500', comando: '', nome: 'Colpo da 500', x: 50, y: 50, scala: 100, chi: '', prezzi: { punti: 500 }, creata: adesso, scade: adesso + 600_000, spettatore: '888', dopo: true });
+  registroColpi.paga(idb, 'punti', 'premio:gate', adesso);
+  registroColpi.nelloZaino(idb, { id: 'zbuonogate1', channel: LOGIN, chi: '888', nome: 'marta', voce: '@punti:500', comprato: adesso, scade: 0 });
+  await daCapo();
+  await p.waitForSelector('[data-zaino-lancia="@punti:500"]', { timeout: 5000 });
+  dice(/1 × colpo da 500 punti/.test(await p.locator('#cp-zaino').textContent()), 'il buono nello zaino, col suo valore');
+  await p.locator('[data-zaino-lancia="@punti:500"]').click();
+  if (FOTO) await p.screenshot({ path: path.join(FOTO, 'colpi-buono.png'), fullPage: true });
+  const coperti = await p.evaluate(() => [...document.querySelectorAll('.cp-voce-box')].filter((b) => !b.hidden).map((b) => b.querySelector('b').textContent));
+  dice(coperti.join() === 'Pomodoro' && await p.locator('#cp-buono').isVisible(), `col buono da 500 si vedono solo i colpi che costano al massimo 500 punti (${coperti.join(', ')})`);
+  await p.locator('.cp-voce', { hasText: 'Pomodoro' }).first().click();
+  await tocca(p, 40, 30);
+  await p.waitForSelector('[data-lancia="zaino"]', { timeout: 5000 });
+  dice(/colpo da 500 punti/.test(await p.locator('[data-lancia="zaino"]').textContent()), 'e si lancia col buono');
+  await p.locator('[data-lancia="zaino"]').click();
+  await p.waitForFunction(() => !/500 punti/.test(document.getElementById('cp-zaino').textContent), null, { timeout: 5000 }).catch(() => {});
+  dice(pewZaino.get('zbuonogate1')?.stato === 'usato' && !/500 punti/.test(await p.locator('#cp-zaino').textContent()), 'il buono si consuma');
+  await o.waitForFunction(() => !document.querySelector('.effetto, .lancio'), null, { timeout: 15000 }).catch(() => {});
   mondo.io = null;
   });
 

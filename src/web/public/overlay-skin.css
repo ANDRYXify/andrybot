@@ -1082,6 +1082,15 @@
 .ovl-etichetta.dim-grande { font-size: 2.1rem; }
 .ovl-etichetta.dim-enorme { font-size: 2.8rem; }
 
+.ovl-invito { display: block; max-width: 24em; white-space: normal; text-align: center; overflow-wrap: anywhere; padding: .45em .9em;
+  font-weight: 800; line-height: 1.2; letter-spacing: .01em; text-shadow: 0 2px 8px rgba(0, 0, 0, .55); --ombra-fuori: drop-shadow(0 8px 18px rgba(0, 0, 0, .45));
+  opacity: 0; translate: 0 .5em; transition: opacity .3s ease, translate .3s ease; }
+.ovl-invito.dentro { opacity: 1; translate: none; }
+.ovl-invito.dim-piccola { font-size: 1.1rem; }
+.ovl-invito.dim-media { font-size: 1.5rem; }
+.ovl-invito.dim-grande { font-size: 2rem; }
+.ovl-invito.dim-enorme { font-size: 2.7rem; }
+
 #palco, .ap-stage .ap-palco { display: flex; align-items: center; justify-content: center; }
 .effetto { display: block; max-width: 80cqw; max-height: 80cqh; opacity: 0; transform: scale(.9); transition: opacity .28s ease, transform .28s ease;
   filter: drop-shadow(0 10px 40px rgba(0, 0, 0, .55)); border-radius: 8px; }
@@ -1119,7 +1128,7 @@
   .ovl-boss.boss-via { animation: boss-via .6s ease-in forwards; }
   .ovl-boss .boss-danno { display: none; }
   .ovl-boss .boss-scia, .ovl-boss .boss-vita { transition: none; }
-  .ovl-scritta, .ovl-etichetta, .effetto, .ovl-arena { transition: none; }
+  .ovl-scritta, .ovl-etichetta, .ovl-invito, .effetto, .ovl-arena { transition: none; }
   .muro-combo { transition: none; }
   .muro-combo.batte img, .muro-combo.batte .muro-emoji, .muro-emote.arcobaleno img, .muro-emote.arcobaleno .muro-emoji { animation: none; }
 }

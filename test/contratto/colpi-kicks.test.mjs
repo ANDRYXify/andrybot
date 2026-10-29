@@ -40,7 +40,7 @@ test('i premi del canale su Kick: lo stesso riscatto, chiuso su Kick, senza prom
   const i = BOT.indexOf("if ((piattaforma === 'twitch' || piattaforma === 'kick') && data?.reward?.id) {");
   assert.ok(i > 0, 'i riscatti di Kick passano dai colpi');
   const h = BOT.slice(i, i + 1600);
-  assert.match(h, /this\.colpi\?\.daRiscatto\(channel, \{ reward_id: data\.reward\.id, user_input: data\.user_input, id: data\.id, user_id: data\.user_id, piattaforma \}\)/);
+  assert.match(h, /this\.colpi\?\.daRiscatto\(channel, \{ reward_id: data\.reward\.id, user_input: data\.user_input, id: data\.id, user_id: data\.user_id, user_login: data\.user_login \|\| data\.user_name \|\| '', piattaforma \}\)/);
   assert.match(h, /\(suKick \? premiKick\(channel\) : this\.helix\)\?\.aggiornaRedemption\?\./);
   assert.match(h, /testoColpi\(channel, suKick \? 'codice-kick' : 'codice', chi\)/);
   assert.match(h, /testoColpi\(channel, suKick \? 'fermo-kick' : 'fermo', chi\)/);

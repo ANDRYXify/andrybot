@@ -1724,6 +1724,8 @@ body.banco-on .pagina-testata > .guida-scheda .guida-corpo { max-height: 30vh; o
   background: var(--surface); color: var(--testo);
 }
 .ovl-insp-num i { font-style: normal; color: var(--testo-3); font-size: .74rem; }
+.ovl-inspector.senza-posto .ovl-insp-num, .ovl-inspector.senza-posto .ovl-insp-cur,
+.ovl-inspector.senza-posto :is(#insp-blocca, #insp-dietro, #insp-davanti, #insp-reset) { display: none; }
 
 @media (max-width: 900px) {
   .ovl-scena { grid-template-columns: minmax(0, 1fr); }

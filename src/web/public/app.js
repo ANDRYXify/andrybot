@@ -968,6 +968,7 @@ function statoDemo() {
     identita: 'andryx_demo', identitaDisplay: 'Andryx',
     tier: 'community', stripeAttivo: false,
     linguaChat: L('it', 'en', 'es'),
+    paginaPew: 'pew.socialbot.live/' + ctx.canale,
     rapportiNuovi: 1, tgDaDecidere: 2, attacchiNuovi: 1, postaDisponibile: true, inviti: [],
     mieiCanali: _DEMO_CANALI,
     gestisce: { canale: ctx.canale, streamer: ctx.display, nome: ctx.canale },
@@ -2365,7 +2366,7 @@ function _demoGet(via) {
       { id: 'principale', nome: 'Overlay principale', mostra: { alert: true, chat: true, wf: true, ws: true, effetti: true },
         xy: { alert: { x: 50, y: 14 }, chat: { x: 16, y: 78 }, wf: { x: 86, y: 62 }, ws: { x: 86, y: 82 } },
         css: '', stile: null, url: 'https://socialbot.live/o/andryx_demo/overlay-principale' },
-      { id: 'ovsolochat', nome: 'Solo chat', mostra: { alert: false, chat: true, wf: false, ws: false, boss: false, arena: false, scritta: false, etichetta: false, muro: false, effetti: false },
+      { id: 'ovsolochat', nome: 'Solo chat', mostra: { alert: false, chat: true, wf: false, ws: false, boss: false, arena: false, scritta: false, etichetta: false, muro: false, effetti: false, pew: false },
         xy: { chat: { x: 22, y: 50 } }, css: '', stile: null, url: 'https://socialbot.live/o/andryx_demo/solo-chat' },
       { id: 'ovpausa', nome: 'Schermata di pausa', mostra: { alert: true, chat: false, wf: true, ws: true, effetti: true },
         xy: { alert: { x: 50, y: 50 }, wf: { x: 22, y: 84 }, ws: { x: 78, y: 84 } },
@@ -15153,6 +15154,26 @@ function pannelloAlert() {
       <p class="spazio-sopra"><button class="btn" data-salva-cfg="etichetta">${L('Salva', 'Save', 'Guardar')}</button></p>
     </details>
 
+    <details class="carta sez" data-parte="aspetto" id="sez-invito">
+      <summary><h3>${_hIco(ICO.scrivi)}${L('Invito ai Pew', 'Pew invitation', 'Invitación a los Pew')}</h3></summary>
+      <p>${L('La scritta fissa che dice a chi guarda come colpire la diretta: scrivere il comando dei Pew in chat ed entrare nella pagina che esce. Si vede solo negli overlay dove la accendi (in quello dei Pew è già accesa) e solo mentre la pagina dei Pew è accesa.', 'The fixed line that tells viewers how to hit the stream: type the Pew command in chat and open the page it gives them. It only shows in the overlays where you turn it on (in the Pew one it already is) and only while the Pew page is on.', 'El texto fijo que dice a quien mira cómo golpear el directo: escribir el comando de los Pew en el chat y entrar en la página que aparece. Solo se ve en los overlays donde lo enciendes (en el de los Pew ya está encendido) y solo mientras la página de los Pew está encendida.')}</p>
+      <p><button type="button" class="btn secondario mini" data-vai-scheda="colpi">${_bIco(ICO.target)}${L('Apri Pew', 'Open Pew', 'Abrir Pew')}</button></p>
+      <div data-cfg="invito">
+        <div class="riga-interruttore spazio-sopra">
+          <label class="interruttore"><input type="checkbox" data-c="attivo" id="inv-attivo"><span class="levetta"></span></label>
+          <span class="etichetta-stato">${L('Mostralo nella scena', 'Show it on the scene', 'Muéstralo en la escena')}</span>
+        </div>
+        <div class="asp-blocco" data-asp="invito" data-cfg-di="invito">
+          <label class="campo spazio-sopra" for="inv-testo">${L('Cosa dice (vuoto: quello di serie, nella lingua della chat)', 'What it says (empty: the default one, in the chat language)', 'Qué dice (vacío: el de serie, en el idioma del chat)')}</label>
+          <input type="text" id="inv-testo" data-c="testo" maxlength="140" placeholder="${esc(_invitoDiSerie())}">
+          <p class="suggerimento">${L('Puoi usare {canale} (il tuo nome), {comando} (il comando dei Pew, senza !) e {pagina} (l\'indirizzo della pagina dei Pew).', 'You can use {canale} (your name), {comando} (the Pew command, without !) and {pagina} (the Pew page address).', 'Puedes usar {canale} (tu nombre), {comando} (el comando de los Pew, sin !) y {pagina} (la dirección de la página de los Pew).')}</p>
+          <h4 class="spazio-sopra">${L('Aspetto', 'Appearance', 'Aspecto')}</h4>
+          ${_vesteCampi()}
+        </div>
+      </div>
+      <p class="spazio-sopra"><button class="btn" data-salva-cfg="invito">${L('Salva', 'Save', 'Guardar')}</button></p>
+    </details>
+
     <details class="carta sez" data-parte="aspetto" id="sez-muro">
       <summary><h3>${_hIco(ICO.faccina)}${L('Muro delle emote', 'Emote wall', 'Muro de emotes')}</h3></summary>
       <p>${L('Le emote che la chat scrive volano sulla scena, ognuna col suo movimento, dentro l\'area che scegli: di serie tutto lo schermo, oppure un riquadro. Quando la chat ripete la stessa emote ne resta una che cresce col suo contatore, e alla fine esplode; gli eventi, i premi e il comando !esplodi fanno esplodere figure intere.', 'The emotes chat writes fly across the scene, each with its own motion, inside the area you pick: the whole screen by default, or a box. When chat repeats the same emote, one stays and grows with its counter, then explodes; events, rewards and the !esplodi command blow up whole shapes.', 'Los emotes que escribe el chat vuelan por la escena, cada uno con su movimiento, dentro del área que elijas: de serie toda la pantalla, o un recuadro. Cuando el chat repite el mismo emote queda uno que crece con su contador y al final explota; los eventos, las recompensas y el comando !esplodi hacen explotar figuras enteras.')}</p>
@@ -15507,8 +15528,11 @@ async function montaFontBrowser(box, targetId) {
 let _conta = [];
 const CONT_BASE = 40;
 const FISSI = ['alert', 'chat', 'wf', 'ws'];
-const ELEM_OVL = [...FISSI, 'goal', 'cont', 'cart', 'musica', 'timer', 'pubblicita', 'tempi', 'treno', 'bit', 'pen', 'boss', 'arena', 'scritta', 'etichetta', 'muro', 'effetti', 'consolify'];
+const ELEM_OVL = [...FISSI, 'goal', 'cont', 'cart', 'musica', 'timer', 'pubblicita', 'tempi', 'treno', 'bit', 'pen', 'boss', 'arena', 'scritta', 'etichetta', 'invito', 'muro', 'effetti', 'pew', 'consolify'];
 const ELEM_SCENA = ELEM_OVL.filter((k) => k !== 'effetti');
+const SPENTI_DI_SERIE = new Set(['invito']);
+const SENZA_POSTO = new Set(['pew']);
+const _acceso = (m, k) => (m && m[k] !== undefined ? m[k] !== false : !SPENTI_DI_SERIE.has(k));
 const CHAT_DA = [['twitch', 'Twitch'], ['kick', 'Kick']];
 let occSel = '';
 const _occAttuale = () => {
@@ -15518,20 +15542,20 @@ const _occAttuale = () => {
 };
 const _baseMostra = () => { const o = _ovAttuale(); if (!o) return {}; return (o.mostra = o.mostra || {}); };
 const _vedoMostra = () => { const oc = _occAttuale(); return oc ? { ..._baseMostra(), ...(oc.mostra || {}) } : _baseMostra(); };
-const _differisce = (k, si) => (!!si !== (_baseMostra()[k] !== false));
+const _differisce = (k, si) => (!!si !== _acceso(_baseMostra(), k));
 function _accendiQui(k, si) {
   const oc = _occAttuale();
-  if (!oc) { const m = _baseMostra(); if (si) delete m[k]; else m[k] = false; return; }
+  if (!oc) { const m = _baseMostra(); if (si && !SPENTI_DI_SERIE.has(k)) delete m[k]; else m[k] = !!si; return; }
   const d = (oc.mostra = oc.mostra || {});
   if (_differisce(k, si)) d[k] = !!si; else delete d[k];
 }
 const _mostraOra = () => {
   const m = _vedoMostra();
-  const o = ELEM_OVL.reduce((q, k) => (q[k] = m[k] !== false, q), {});
+  const o = ELEM_OVL.reduce((q, k) => (q[k] = _acceso(m, k), q), {});
   for (const [k, v] of Object.entries(m)) if (v === false) o[k] = false;
   return o;
 };
-const _quiDentro = (k) => _vedoMostra()[k] !== false;
+const _quiDentro = (k) => _acceso(_vedoMostra(), k);
 const _idEl = (k) => 'ap-' + String(k).replace(/[^a-z0-9]/gi, '-');
 const _nodo = (k) => _g(_idEl(k));
 let overlays = [];
@@ -16451,6 +16475,32 @@ function _vestiEtichetta(box, cfg) {
   box.textContent = '!' + L('applausi', 'applause', 'aplausos');
 }
 
+function _defInvito() {
+  return { attivo: true, posizione: 'basso-centro', xy: null, testo: '',
+    stile: { dim: 'media', sfondo: '#100d16', opacita: 80, testo: '#ffffff', accento: '#f72fa7', bordoRaggio: 14, font: 'sistema', forma: 'carta', materia: 'piatta', cornice: 'nessuna', icona: 'stella', dimIcona: 20 } };
+}
+
+const _TESTI_INVITO = () => ({
+  it: 'Attacca {canale}: scrivi !{comando} in chat ed entra nella pagina che esce',
+  en: 'Hit {canale}: type !{comando} in chat and open the page it gives you',
+  es: 'Ataca a {canale}: escribe !{comando} en el chat y entra en la página que aparece',
+});
+const _invitoDiSerie = () => _TESTI_INVITO()[['it', 'en', 'es'].includes(stato?.linguaChat) ? stato.linguaChat : 'it'];
+function _testoInvito(cfg) {
+  const pew = stato?.streamer?.settings?.colpi || {};
+  const valori = { canale: stato?.user?.display || stato?.user?.login || '', comando: String(pew.comando || '').toLowerCase().replace(/^!/, '') || 'pew', pagina: stato?.paginaPew || '' };
+  const base = String(cfg.testo || '').trim() || _invitoDiSerie();
+  return base.replace(/\{(canale|comando|pagina)\}/g, (tutto, k) => valori[k] || tutto);
+}
+
+function _vestiInvito(box, cfg) {
+  const st = cfg.stile || {};
+  box.className = 'ovl-widget ovl-invito dentro dim-' + (st.dim || 'media') + ' ' + classiIdentita(st, 'nessuna');
+  _setVars(box, { '--bg': st.sfondo, '--op': (st.opacita != null ? st.opacita : 80) + '%', '--fg': st.testo,
+    '--acc': st.accento, '--radius': (st.bordoRaggio != null ? st.bordoRaggio : 14) + 'px', '--font': fontStile(st) });
+  box.textContent = _testoInvito(cfg);
+}
+
 const EFFETTO_ESEMPIO = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360" viewBox="0 0 640 360">'
   + '<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3a1a6b"/><stop offset="1" stop-color="#ba007a"/></linearGradient></defs>'
   + '<rect width="640" height="360" rx="18" fill="url(#g)"/>'
@@ -16591,7 +16641,7 @@ async function _disegnaPremiMuro() {
       : `<p class="vuoto">${L(`Non hai ancora premi a punti canale su ${_premiSu()}: creane uno e torna qui.`, `You have no channel-point rewards on ${_premiSu()} yet: create one and come back here.`, `Aún no tienes recompensas de puntos de canal en ${_premiSu()}: crea una y vuelve aquí.`)}</p>`);
 }
 
-const VESTITORE = { musica: _vestiMusica, pen: _vestiPen, timer: _vestiTimer, pubblicita: _vestiPubblicita, tempi: _vestiTempi, treno: _vestiTreno, bit: _vestiBit, boss: _vestiBoss, arena: _vestiArena, scritta: _vestiScritta, etichetta: _vestiEtichetta, muro: _vestiMuro, effetti: _vestiEffetti };
+const VESTITORE = { musica: _vestiMusica, pen: _vestiPen, timer: _vestiTimer, pubblicita: _vestiPubblicita, tempi: _vestiTempi, treno: _vestiTreno, bit: _vestiBit, boss: _vestiBoss, arena: _vestiArena, scritta: _vestiScritta, etichetta: _vestiEtichetta, invito: _vestiInvito, muro: _vestiMuro, effetti: _vestiEffetti };
 
 function _orologioGiu(ms) {
   const t = Math.max(0, Math.ceil(ms / 1000));
@@ -16734,6 +16784,7 @@ function _stCont(c) {
 }
 
 function _azzeraPos(k) {
+  if (SENZA_POSTO.has(k)) return;
   const e = ELEM(k);
   if (e && e.cont) e.cont.overlayCfg = { ...(e.cont.overlayCfg || {}), x: 4, y: 94, dim: CONT_BASE, r: 0 };
   _scriviPos(k, null);
@@ -16768,6 +16819,7 @@ const ALTROVE = {
   cont: ['moduli', T_SCHEDA.moduli],
   pen: ['penitenze', T_SCHEDA.penitenze],
   effetti: ['effetti', T_SCHEDA.effetti, 'posto'],
+  pew: ['colpi', T_SCHEDA.colpi, 'mira'],
   consolify: ['consolify', T_SCHEDA.consolify],
 };
 
@@ -16782,7 +16834,9 @@ function _altrove(box, senzaBlocco) {
     box.appendChild(nota);
   }
   const nome = L(dove[1][0], dove[1][1], dove[1][2]);
-  const html = `${esc(dove[2] === 'posto'
+  const html = `${esc(dove[2] === 'mira'
+    ? L('I colpi cadono dove mira chi li manda, su tutto lo schermo: qui scegli solo se in questo overlay si vedono. Cosa si può mandare e a che prezzo si cambia in', 'Hits land where the sender aims, anywhere on the screen: here you only choose whether they show in this overlay. What can be sent and at what price is changed in', 'Los golpes caen donde apunta quien los manda, en toda la pantalla: aquí solo eliges si se ven en este overlay. Qué se puede mandar y a qué precio se cambia en')
+    : dove[2] === 'posto'
     ? L('Qui scegli dove compaiono e quanto sono grandi: le immagini e i video stanno dentro il suo riquadro. Quello che fa ognuno si cambia in', 'Here you choose where they appear and how big they are: images and videos fit inside its box. What each one does is changed in', 'Aqu\u00ed eliges d\u00f3nde aparecen y qu\u00e9 tama\u00f1o tienen: las im\u00e1genes y los v\u00eddeos caben en su recuadro. Lo que hace cada uno se cambia en')
     : L('Qui lo sposti e lo vesti. Quello che fa si cambia in', 'Here you move it and dress it. What it does is changed in', 'Aqu\u00ed lo mueves y lo vistes. Lo que hace se cambia en'))} `
     + `<button type="button" class="btn secondario mini" data-vai-scheda="${esc(dove[0])}">${esc(nome)}</button>`;
@@ -16830,6 +16884,7 @@ function aggiornaInspector() {
   mettiVesti(box);
   box.hidden = !box.closest('.carta.ovl-banco');
   box.classList.toggle('vuoto', !selezione);
+  box.classList.toggle('senza-posto', !!selezione && SENZA_POSTO.has(selezione));
   _mostraInspector(box);
   if (!selezione) return;
   const nome = _g('insp-nome'); if (nome) nome.textContent = _nomeEl(selezione);
@@ -16861,7 +16916,7 @@ function _mostraProp() {
 }
 
 function _scriviProp(campo, v) {
-  if (!selezione || !Number.isFinite(v)) return;
+  if (!selezione || !Number.isFinite(v) || SENZA_POSTO.has(selezione)) return;
   const st = _statoXY(selezione);
   const riq = window.SB_RIQUADRO.e(st);
   if ((campo === 'w' || campo === 'h') && !riq) return;
@@ -16893,6 +16948,7 @@ const PEZZI_EL = () => [
   ['arena', '#sez-arena'],
   ['scritta', '#sez-scritta'],
   ['etichetta', '#sez-etichetta'],
+  ['invito', '#sez-invito'],
   ['muro', '#sez-muro'],
 ];
 
@@ -17194,6 +17250,7 @@ function aggiornaPiedeBanco() {
       + _piedeTasti();
     return;
   }
+  if (SENZA_POSTO.has(sel)) { piede.innerHTML = `<span><b>${esc(_nomeEl(sel))}</b></span>` + _piedeTasti(); return; }
   const st = _posDove(sel);
   const nome = _nomeEl(sel);
   piede.innerHTML = `<span><b>${esc(nome)}</b></span>`
@@ -17226,8 +17283,10 @@ const ELEMENTI = () => {
   out.push({ k: 'arena', ico: ICO.scudo, n: L('Arena delle emote', 'Emote arena', 'Arena de emotes'), cfg: 'overlayArena' });
   out.push({ k: 'scritta', ico: ICO.testo, n: L('Testo a schermo', 'On-screen text', 'Texto en pantalla'), cfg: 'overlayScritta' });
   out.push({ k: 'etichetta', ico: ICO.fulmine, n: L('Nome del comando', 'Command name', 'Nombre del comando'), cfg: 'overlayEtichetta' });
+  out.push({ k: 'invito', ico: ICO.scrivi, n: L('Invito ai Pew', 'Pew invitation', 'Invitación a los Pew'), cfg: 'overlayInvito' });
   out.push({ k: 'muro', ico: ICO.faccina, n: L('Muro delle emote', 'Emote wall', 'Muro de emotes'), cfg: 'overlayMuro' });
   out.push({ k: 'effetti', ico: ICO.effetti, n: L('Effetti a schermo', 'On-screen effects', 'Efectos en pantalla'), cfg: 'overlayEffetti' });
+  out.push({ k: 'pew', ico: ICO.target, n: L('Pew (i colpi degli spettatori)', 'Pew (viewers\' hits)', 'Pew (los golpes de los espectadores)') });
   return out;
 };
 const ELEM = (k) => ELEMENTI().find((e) => e.k === k) || null;
@@ -17278,7 +17337,7 @@ function _defTimer() {
     minuti: 15, posizione: 'alto-destra', xy: null, stile: VESTE_DEF() };
 }
 
-const _DEF_EL = { musica: _defMusica, timer: _defTimer, pubblicita: _defPubblicita, tempi: _defTempi, treno: _defTreno, bit: _defBit, boss: _defBoss, arena: _defArena, scritta: _defScritta, etichetta: _defEtichetta, muro: _defMuro, effetti: () => ({ attivo: true, posizione: 'centro', xy: null }), pen: () => ({ attivo: false, durataMin: 2, overlay: { posizione: 'alto-destra', colore: '#ff2d2d' } }) };
+const _DEF_EL = { musica: _defMusica, timer: _defTimer, pubblicita: _defPubblicita, tempi: _defTempi, treno: _defTreno, bit: _defBit, boss: _defBoss, arena: _defArena, scritta: _defScritta, etichetta: _defEtichetta, invito: _defInvito, muro: _defMuro, effetti: () => ({ attivo: true, posizione: 'centro', xy: null }), pen: () => ({ attivo: false, durataMin: 2, overlay: { posizione: 'alto-destra', colore: '#ff2d2d' } }) };
 
 const _pianoObj = (x) => !!x && typeof x === 'object' && !Array.isArray(x);
 function _unisci(base, su) {
@@ -17329,8 +17388,8 @@ function _mettiOrdine(ord) {
 }
 function _passoLivello(k, verso) {
   const ord = _ordineScena();
-  if (!ord.includes(k)) return null;
-  const vis = ord.filter((x) => x === k || _inOverlay(x));
+  if (!ord.includes(k) || SENZA_POSTO.has(k)) return null;
+  const vis = ord.filter((x) => x === k || (_inOverlay(x) && !SENZA_POSTO.has(x)));
   const i = vis.indexOf(k);
   const altro = verso === 'cima' ? vis[vis.length - 1] : verso === 'fondo' ? vis[0] : vis[i + verso];
   if (!altro || altro === k) return null;
@@ -17372,7 +17431,7 @@ function _accendiDi(k, v) {
   if (e && e.cont) { (e.cont.overlayCfg = e.cont.overlayCfg || {}).mostra = !!v; return; }
   if (e && e.cfg) {
     _cfgEl(k).attivo = !!v;
-    const chk = _g({ musica: 'mus-attivo', timer: 'tim-attivo', pen: 'pen-attivo', boss: 'boss-attivo', arena: 'arena-attivo', scritta: 'scr-attivo', etichetta: 'eti-attivo', muro: 'muro-attivo' }[k]);
+    const chk = _g({ musica: 'mus-attivo', timer: 'tim-attivo', pen: 'pen-attivo', boss: 'boss-attivo', arena: 'arena-attivo', scritta: 'scr-attivo', etichetta: 'eti-attivo', invito: 'inv-attivo', muro: 'muro-attivo' }[k]);
     if (chk) chk.checked = !!v;
     return;
   }
@@ -17392,7 +17451,7 @@ function _aggiornaRigaLivello(k, st) {
   const riga = _g('ovl-livelli')?.querySelector(`[data-liv="${k}"]`);
   if (!riga || !_inOverlay(k)) return;
   const dove = riga.querySelector('.ovl-liv-corpo span');
-  if (dove) dove.textContent = _testoPos(st || _posDove(k));
+  if (dove && !SENZA_POSTO.has(k)) dove.textContent = _testoPos(st || _posDove(k));
   const tag = riga.querySelector('.ovl-liv-tag');
   const html = _occTag(k);
   if (tag) tag.outerHTML = html;
@@ -17611,6 +17670,7 @@ function _ridimensionaRiquadro(st, passo) {
 }
 
 function _riquadroOn(k, on) {
+  if (SENZA_POSTO.has(k)) return;
   const st = _statoXY(k), el = _nodo(k);
   if (!el) return;
   if (on && !window.SB_RIQUADRO.e(st)) {
@@ -17651,16 +17711,17 @@ function _rendiLivelli() {
   const righe = qui.map((l) => {
     const dentro = _inOverlay(l.k);
     const spento = dentro && !_elementoAcceso(l.k);
-    const st = _posDove(l.k);
+    const posto = !SENZA_POSTO.has(l.k);
+    const st = posto ? _posDove(l.k) : null;
     return `<button type="button" class="ovl-liv${selezione === l.k ? ' scelto' : ''}${dentro ? '' : ' via'}" data-liv="${l.k}">
-      <span class="ovl-liv-presa" data-presa="${l.k}" title="${L('Trascina per portarlo davanti o dietro', 'Drag to bring it forward or send it back', 'Arrastra para traerlo delante o llevarlo detrás')}${traTasti(scorciatoia('alt', '↑') + ', ' + scorciatoia('alt', '↓'))}">${_bIco(PRESA_ICO)}</span>
+      ${posto ? `<span class="ovl-liv-presa" data-presa="${l.k}" title="${L('Trascina per portarlo davanti o dietro', 'Drag to bring it forward or send it back', 'Arrastra para traerlo delante o llevarlo detrás')}${traTasti(scorciatoia('alt', '↑') + ', ' + scorciatoia('alt', '↓'))}">${_bIco(PRESA_ICO)}</span>` : '<span class="ovl-liv-presa"></span>'}
       <span class="ovl-liv-ico">${_bIco(l.ico)}</span>
       <span class="ovl-liv-corpo"><strong>${esc(l.n)}</strong><span>${dentro
-        ? _testoPos(st)
+        ? (posto ? _testoPos(st) : L('dove mira chi colpisce', 'where the sender aims', 'donde apunta quien golpea'))
         : L('tolto in questa occasione', 'removed in this occasion', 'quitado en esta ocasión')}</span></span>
       ${_occTag(l.k)}
       ${spento ? `<span class="ovl-liv-avviso" data-accendi="${l.k}" role="button" tabindex="0" title="${L('È spento del tutto: premi per accenderlo', 'It is fully off: press to turn it on', 'Está apagado del todo: pulsa para encenderlo')}">!</span>` : ''}
-      ${dentro ? `<span class="ovl-liv-lucchetto${_bloccato(l.k) ? ' chiuso' : ''}" data-lucchetto="${l.k}" role="button" tabindex="0" title="${_bloccato(l.k) ? L('Sblocca: torna a spostarsi', 'Unlock: it can move again', 'Desbloquear: vuelve a moverse') : L('Blocca: non si sposta per sbaglio', 'Lock: it won’t move by accident', 'Bloquear: no se mueve por error')}">${_bIco(ICO.lucchetto)}</span>` : ''}
+      ${dentro && posto ? `<span class="ovl-liv-lucchetto${_bloccato(l.k) ? ' chiuso' : ''}" data-lucchetto="${l.k}" role="button" tabindex="0" title="${_bloccato(l.k) ? L('Sblocca: torna a spostarsi', 'Unlock: it can move again', 'Desbloquear: vuelve a moverse') : L('Blocca: non si sposta per sbaglio', 'Lock: it won’t move by accident', 'Bloquear: no se mueve por error')}">${_bIco(ICO.lucchetto)}</span>` : ''}
       <span class="ovl-liv-occhio" data-occhio="${l.k}" role="button" tabindex="0"
         title="${dentro ? L('Togli da questo overlay', 'Remove from this overlay', 'Quitar de este overlay') : L('Rimettilo com\'era', 'Put it back as it was', 'Vuelve a ponerlo como estaba')}">${_bIco(dentro ? ICO.occhio : ICO.occhioNo)}</span>
     </button>`;
@@ -17908,6 +17969,7 @@ const NOME_FAM = () => ({
   cont: L('Contatori', 'Counters', 'Contadores'),
   cart: L('Cartelli', 'Signs', 'Carteles'),
   effetti: L('Effetti a schermo', 'On-screen effects', 'Efectos en pantalla'),
+  pew: L('Pew', 'Pew', 'Pew'),
   consolify: 'CONSOLify',
 });
 const _nomeChiave = (k) => (ELEM(k) ? _nomeEl(k) : (NOME_FAM()[k] || k));
@@ -18015,7 +18077,7 @@ function _rettMini(k) {
   return { x: st.x / 100 * (100 - w), y: st.y / 100 * (100 - h), w, h };
 }
 
-const ICO_FAM = () => ({ goal: ICO.trofeo, cont: ICO.grafico, cart: ICO.cartello, effetti: ICO.effetti, consolify: ICO.monitor });
+const ICO_FAM = () => ({ goal: ICO.trofeo, cont: ICO.grafico, cart: ICO.cartello, effetti: ICO.effetti, pew: ICO.target, consolify: ICO.monitor });
 
 const MINI_W = 30, MINI_H = 19;
 function _chipMini(r) {
@@ -18039,17 +18101,18 @@ function _sparpaglia(chips) {
 function _occMini(modello, diff) {
   const base = _baseMostra();
   const vis = { ...base, ...diff };
-  const ce = (m, e) => { const fam = e.k.split(':')[0]; return m[e.k] !== false && (fam === e.k || m[fam] !== false); };
+  const ce = (m, e) => { const fam = e.k.split(':')[0]; return _acceso(m, e.k) && (fam === e.k || _acceso(m, fam)); };
   const nominata = (k) => { const fam = k.split(':')[0]; return (k in modello) ? k : ((fam in modello) ? fam : ''); };
   const ombre = [], chips = [];
   for (const e of ELEMENTI()) {
+    if (SENZA_POSTO.has(e.k)) continue;
     const nom = nominata(e.k);
     const r = _rettMini(e.k);
     if (!nom) { if (ce(vis, e)) ombre.push(`<i class="occ-o" style="left:${_arr(r.x)}%;top:${_arr(r.y)}%;width:${_arr(r.w)}%;height:${_arr(r.h)}%"></i>`); continue; }
     const che = (nom in diff) ? (diff[nom] ? 'piu' : 'via') : 'gia';
     chips.push({ ..._chipMini(r), che, e });
   }
-  const coperte = new Set(ELEMENTI().map((e) => nominata(e.k)).filter(Boolean));
+  const coperte = new Set(ELEMENTI().filter((e) => !SENZA_POSTO.has(e.k)).map((e) => nominata(e.k)).filter(Boolean));
   const fam = ICO_FAM();
   let ax = 4;
   for (const k of Object.keys(modello)) {
@@ -18339,6 +18402,7 @@ function _salvaPosDebounced(chiave) {
 
 function _dragManiglia(chiave, e, tipo) {
   e.preventDefault(); e.stopPropagation();
+  if (SENZA_POSTO.has(chiave)) return;
   if (_bloccato(chiave)) { seleziona(chiave); return; }
   const el = _nodo(chiave);
   const rect = el.getBoundingClientRect();
@@ -18501,6 +18565,7 @@ function _mostraGuide(guide) {
 
 function _spostaTasti(chiave, dx, dy, grande) {
   if (_bloccato(chiave)) return;
+  if (SENZA_POSTO.has(chiave)) return;
   const st = _statoXY(chiave);
   const el = _nodo(chiave);
   const p = grande ? 10 : 1;
@@ -18520,6 +18585,7 @@ function _spostaTasti(chiave, dx, dy, grande) {
 
 function allineaOvl(dove) {
   if (!selezione || _bloccato(selezione)) return;
+  if (SENZA_POSTO.has(selezione)) return;
   const st = _statoXY(selezione);
   const el = _nodo(selezione);
   const riq = window.SB_RIQUADRO.e(st);
@@ -19091,7 +19157,7 @@ async function nuovoOverlayDaPreset() {
   const id = 'ov' + Math.random().toString(36).slice(2, 8);
   overlays.push({
     id, nome,
-    mostra: ELEM_OVL.reduce((o, k) => (o[k] = true, o), {}),
+    mostra: ELEM_OVL.reduce((o, k) => (o[k] = !SPENTI_DI_SERIE.has(k), o), {}),
     xy: {},
     css: preset ? '' : ((corr && corr.css) || ''),
     stile: preset ? _stileDaPreset(preset) : (corr && corr.stile ? JSON.parse(JSON.stringify(corr.stile)) : null),
@@ -19101,6 +19167,23 @@ async function nuovoOverlayDaPreset() {
   await caricaOverlays();
   if (!overlays.find((o) => o.id === id)) { toast(L('Overlay non salvato: riprova.', 'Overlay not saved: try again.', 'Overlay no guardado: inténtalo de nuevo.'), 'errore'); return; }
   toast(L('Overlay creato ✓', 'Overlay created ✓', 'Overlay creado ✓'));
+}
+
+async function creaOverlayPew() {
+  let d = null;
+  try { d = await api('/api/streamer/overlays'); } catch (e) { d = null; }
+  if (!Array.isArray(d?.overlays) || !d.overlays.length) { _avvisaSalvataggio(); return ''; }
+  overlays = d.overlays;
+  const voluto = (k) => k === 'pew' || k === 'invito';
+  const gia = overlays.find((o) => ELEM_OVL.every((k) => _acceso(o?.mostra, k) === voluto(k)));
+  if (gia) return gia.id;
+  if (overlays.length >= MAX_OVERLAY) { toast(L('Massimo ' + MAX_OVERLAY + ' overlay.', 'Maximum ' + MAX_OVERLAY + ' overlays.', 'Máximo ' + MAX_OVERLAY + ' overlays.')); return ''; }
+  const id = 'ov' + Math.random().toString(36).slice(2, 8);
+  overlays.push({ id, nome: L('Pew', 'Pew', 'Pew'), mostra: ELEM_OVL.reduce((o, k) => (o[k] = voluto(k), o), {}), xy: {}, css: '', stile: null });
+  await _spingiOverlays();
+  await caricaOverlays();
+  if (!overlays.find((o) => o.id === id)) { toast(L('Overlay non salvato: riprova.', 'Overlay not saved: try again.', 'Overlay no guardado: inténtalo de nuevo.'), 'errore'); return ''; }
+  return id;
 }
 
 function _stileDaPreset(t) {
@@ -26237,6 +26320,27 @@ function pannelloColpi() {
       <p class="suggerimento">${L('Lasciali vuoti per quelli di serie, che ognuno legge nella sua lingua (italiano, inglese o spagnolo). Quello che scrivi tu si legge così com\'è. Si salvano col tasto «Salva» delle regole.', 'Leave them empty for the default ones, which everyone reads in their language (Italian, English or Spanish). What you write is shown as it is. They are saved with the «Save» button in the rules.', 'Déjalos vacíos para los de serie, que cada uno lee en su idioma (italiano, inglés o español). Lo que escribes tú se lee tal cual. Se guardan con el botón «Guardar» de las reglas.')}</p>
     </div>
 
+    <div class="carta" id="cl-overlay-pew">
+      <h3>${_hIco(ICO.target)}${L('L\'overlay dei Pew', 'The Pew overlay', 'El overlay de los Pew')}</h3>
+      <p>${L('I colpi compaiono in ogni overlay dove i Pew sono accesi. Se li vuoi solo in alcune scene, crea l\'overlay dei Pew: dentro ci sono solo i colpi e la scritta che dice come entrare nella pagina («scrivi !pew»). Poi lo metto io in OBS, in una copia della scena che scegli o nella scena stessa.', 'Hits show up in every overlay where Pew is on. If you want them only in some scenes, create the Pew overlay: it holds only the hits and the line that says how to open the page («type !pew»). Then I put it in OBS, in a copy of the scene you pick or in the scene itself.', 'Los golpes aparecen en cada overlay donde los Pew están activados. Si los quieres solo en algunas escenas, crea el overlay de los Pew: dentro solo están los golpes y el texto que dice cómo entrar en la página («escribe !pew»). Luego lo pongo yo en OBS, en una copia de la escena que elijas o en la misma escena.')}</p>
+      <div class="riga-flessibile spazio-sopra">
+        <button type="button" class="btn" id="cl-ov-crea">${L('Crea l\'overlay dei Pew', 'Create the Pew overlay', 'Crear el overlay de los Pew')}</button>
+        <button type="button" class="btn secondario" data-vai="alert">${L('Apri l\'Overlay Studio', 'Open Overlay Studio', 'Abrir Overlay Studio')}</button>
+      </div>
+      <div id="cl-ov-pronto" hidden>
+        <label class="campo spazio-sopra" for="cl-ov-link">${L('Il link per OBS (fonte browser)', 'The link for OBS (browser source)', 'El enlace para OBS (fuente de navegador)')}</label>
+        <div class="riga-flessibile"><input type="text" id="cl-ov-link" readonly><button type="button" class="btn secondario" id="cl-ov-copia">${L('Copia', 'Copy', 'Copiar')}</button></div>
+        <h4 class="spazio-sopra">${L('In OBS', 'In OBS', 'En OBS')}</h4>
+        <p class="suggerimento" id="cl-ov-obs"></p>
+        <div class="riga-flessibile" id="cl-ov-scene" hidden>
+          <select id="cl-ov-scena" aria-label="${esc(L('La scena', 'The scene', 'La escena'))}"></select>
+          <button type="button" class="btn" id="cl-ov-copia-scena">${L('Crea una copia della scena coi Pew', 'Create a copy of the scene with Pew', 'Crear una copia de la escena con los Pew')}</button>
+          <button type="button" class="btn secondario" id="cl-ov-aggiungi">${L('Aggiungili a questa scena', 'Add them to this scene', 'Añadirlos a esta escena')}</button>
+        </div>
+        <p class="suggerimento" id="cl-ov-esito" role="status"></p>
+      </div>
+    </div>
+
     <div class="carta" id="cl-annuncio">
       <h3>${_hIco(ICO.condividi)}${L('Il link in chat da solo', 'The link in chat on its own', 'El enlace en el chat solo')}</h3>
       <p>${L('Con i Pew accesi, il bot scrive in chat il link della tua pagina ogni tanto: solo in diretta e solo se la chat si è mossa, così in una chat ferma non parla da solo.', 'With Pew on, the bot posts your page link in chat every so often: only while live and only if the chat has moved, so it never talks to an empty chat.', 'Con los Pew activados, el bot escribe en el chat el enlace de tu página de vez en cuando: solo en directo y solo si el chat se ha movido, así no habla solo en un chat parado.')}</p>
@@ -26259,6 +26363,17 @@ function pannelloColpi() {
       <label class="campo" for="cl-an-testo">${L('Il messaggio (vuoto: quello di serie)', 'The message (empty: the default one)', 'El mensaje (vacío: el de serie)')}</label>
       <input type="text" id="cl-an-testo" maxlength="200" value="${esc(c.annuncio?.testo || '')}" placeholder="${esc(L('Colpisci la diretta: scegli un effetto, mira un punto e fallo comparire col tuo nome → {pagina}', 'Hit the stream: pick an effect, aim at a spot and make it appear with your name → {pagina}', 'Golpea el directo: elige un efecto, apunta a un punto y haz que aparezca con tu nombre → {pagina}'))}">
       <p class="suggerimento">${L('Puoi usare {pagina} (il link) e {canale}. Il primo arriva dopo i minuti scelti dall\'inizio della diretta.', 'You can use {pagina} (the link) and {canale}. The first one comes after the chosen minutes from the start of the stream.', 'Puedes usar {pagina} (el enlace) y {canale}. El primero llega tras los minutos elegidos desde el inicio del directo.')}</p>
+      <h4 class="spazio-sopra">${L(`Chi scrive «!${esc(c.comando || 'pew')}» da solo`, `Whoever types «!${esc(c.comando || 'pew')}» on its own`, `Quien escribe «!${esc(c.comando || 'pew')}» solo`)}</h4>
+      <div class="riga-check"><input type="checkbox" id="cl-ln-rispondi" ${c.link?.rispondi !== false ? 'checked' : ''}><label for="cl-ln-rispondi">${L('Il bot gli risponde col link della pagina', 'The bot replies with the page link', 'El bot le responde con el enlace de la página')}</label></div>
+      <div class="griglia-campi">
+        <div>
+          <label class="campo" for="cl-ln-attesa">${L('Secondi fra due risposte nel canale', 'Seconds between two replies in the channel', 'Segundos entre dos respuestas en el canal')}</label>
+          <input type="number" id="cl-ln-attesa" min="0" max="600" value="${Number.isFinite(Number(c.link?.attesaSec)) ? Number(c.link.attesaSec) : 30}">
+        </div>
+      </div>
+      <label class="campo" for="cl-ln-testo">${L('La risposta (vuota: quella di serie)', 'The reply (empty: the default one)', 'La respuesta (vacía: la de serie)')}</label>
+      <input type="text" id="cl-ln-testo" maxlength="200" value="${esc(c.link?.testo || '')}" placeholder="${esc(L('{nome} colpisci la diretta da qui: scegli un effetto e mira → {pagina}', '{nome} hit the stream from here: pick an effect and aim → {pagina}', '{nome} golpea el directo desde aquí: elige un efecto y apunta → {pagina}'))}">
+      <p class="suggerimento">${L('Puoi usare {nome}, {pagina} e {canale}.', 'You can use {nome}, {pagina} and {canale}.', 'Puedes usar {nome}, {pagina} y {canale}.')}</p>
       <p class="spazio-sopra"><button class="btn" id="cl-an-salva">${L('Salva', 'Save', 'Guardar')}</button></p>
     </div>
 
@@ -26461,11 +26576,13 @@ ${_clScadenzaHtml('cl-kp', c.kicksPew?.scadenza)}
 
     <div class="carta" id="cl-zaino">
       <h3>${_hIco(ICO.pacco)}${L('Lo zaino', 'The backpack', 'La mochila')}</h3>
-      <p>${L('Chi ha fatto l\'accesso a Twitch sulla tua pagina può comprare un colpo per dopo: non parte subito, finisce nel suo zaino di questo canale e lo lancia quando vuole, con un tocco. Si compra anche a diretta spenta.', 'Whoever logged in with Twitch on your page can buy a hit for later: it doesn\'t go off right away, it goes into their backpack for this channel and they launch it whenever they want, with one tap. It can be bought even while you\'re offline.', 'Quien entró con Twitch en tu página puede comprar un golpe para después: no sale enseguida, va a su mochila de este canal y lo lanza cuando quiere, con un toque. Se compra también con el directo apagado.')}</p>
-      <div class="riga-interruttore spazio-sopra">
-        <label class="interruttore"><input type="checkbox" id="cl-zn-attivo" ${c.zaino?.attivo ? 'checked' : ''}><span class="levetta"></span></label>
-        <span class="etichetta-stato">${L('Zaino acceso', 'Backpack on', 'Mochila activada')}</span>
-      </div>
+      <p>${L('Come si compra un colpo sulla tua pagina. Con lo zaino chi è entrato con Twitch o Kick compra il colpo, lo ritrova nel suo zaino di questo canale e lo lancia quando vuole, anche più tardi; per lanciarlo subito c\'è il tasto a parte «Compra e lancia subito». Si compra anche a diretta spenta, e i premi a punti canale riscattati senza aver mirato finiscono nello zaino.', 'How a hit is bought on your page. With the backpack, whoever logged in with Twitch or Kick buys the hit, finds it in their backpack for this channel and launches it whenever they want, even later; to launch it right away there\'s the separate «Buy and launch now» button. It can be bought even while you\'re offline, and channel-point rewards redeemed without aiming go into the backpack.', 'Cómo se compra un golpe en tu página. Con la mochila, quien entró con Twitch o Kick compra el golpe, lo encuentra en su mochila de este canal y lo lanza cuando quiere, también más tarde; para lanzarlo enseguida está el botón aparte «Comprar y lanzar ya». Se compra también con el directo apagado, y las recompensas de puntos de canal canjeadas sin apuntar van a la mochila.')}</p>
+      <label class="campo spazio-sopra" for="cl-flusso">${L('Come si compra', 'How hits are bought', 'Cómo se compra')}</label>
+      <select id="cl-flusso">
+        <option value="zaino" ${c.flusso !== 'subito' ? 'selected' : ''}>${L('Zaino: compri, ce l\'hai, lo lanci (di serie)', 'Backpack: buy it, keep it, launch it (default)', 'Mochila: lo compras, lo tienes, lo lanzas (de serie)')}</option>
+        <option value="subito" ${c.flusso === 'subito' ? 'selected' : ''}>${L('Subito: si mira, si paga e parte, senza zaino', 'Right away: aim, pay and it fires, no backpack', 'Enseguida: se apunta, se paga y sale, sin mochila')}</option>
+      </select>
+      <p class="suggerimento">${L('Con «Subito» quello che uno ha già nello zaino resta suo, e lo lancia finché non scade.', 'With «Right away» what someone already has in the backpack stays theirs, and they can launch it until it expires.', 'Con «Enseguida» lo que alguien ya tiene en la mochila sigue siendo suyo, y lo lanza hasta que caduque.')}</p>
       <h4 class="spazio-sopra">${L('Con cosa si compra per dopo', 'What can buy for later', 'Con qué se compra para después')}</h4>
       ${[['monete', _clMoneta().replace(/^./, (x) => x.toUpperCase())], ['bit', L('Bit da spendere', 'Bits to spend', 'Bits para gastar')], ['kicks', L('Kicks da spendere', 'Kicks to spend', 'Kicks para gastar'), true], ['misto', L('Modi misti', 'Mixed ways', 'Modos mixtos')], ['cheer', L('Cheer (Bit di Twitch)', 'Cheer (Twitch Bits)', 'Cheer (Bits de Twitch)')], ['regalo', L('Regalo di Kicks', 'Kicks gift', 'Regalo de Kicks'), true], ['punti', L('Punti canale', 'Channel points', 'Puntos de canal')], ['euro', L('Euro', 'Euros', 'Euros')]].map(([k, t, kick]) => `<div class="riga-check"${kick && !stato.kick?.collegato ? ' hidden' : ''}><input type="checkbox" id="cl-zn-con-${k}" ${c.zaino?.con?.[k] !== false ? 'checked' : ''}><label for="cl-zn-con-${k}">${esc(t)}</label></div>`).join('')}
       <div class="griglia-campi spazio-sopra">
@@ -26547,6 +26664,64 @@ ${_clScadenzaHtml('cl-kp', c.kicksPew?.scadenza)}
     </div>`);
 }
 
+function _clOverlayPew() {
+  const g = (id) => document.getElementById(id);
+  if (!g('cl-ov-crea')) return;
+  const esito = (t, ko) => { g('cl-ov-esito').textContent = t; g('cl-ov-esito').classList.toggle('ko', !!ko); };
+  let ov = null;
+  const scene = async () => {
+    const su = !!(window.RegiaEsterna && RegiaEsterna.collegato());
+    g('cl-ov-scene').hidden = !su;
+    g('cl-ov-obs').innerHTML = su
+      ? esc(L('Scegli la scena: la copia porta tutto quello che c\'è nella scena, più i Pew; oppure li aggiungo alla scena così com\'è.', 'Pick the scene: the copy carries everything in the scene, plus Pew; or I add them to the scene as it is.', 'Elige la escena: la copia lleva todo lo que hay en la escena, más los Pew; o los añado a la escena tal como está.'))
+      : esc(L('OBS non è collegato. Collegalo dalla Regia, poi torna qui: oppure incolla tu il link in una fonte browser grande quanto la scena.', 'OBS isn\'t connected. Connect it from Control room, then come back: or paste the link yourself into a browser source as big as the scene.', 'OBS no está conectado. Conéctalo desde Realización y vuelve: o pega tú el enlace en una fuente de navegador tan grande como la escena.'))
+        + ` <button type="button" class="btn secondario mini" data-vai="regia">${L('Apri la Regia', 'Open Control room', 'Abrir Realización')}</button>`;
+    if (!su) return;
+    try {
+      const d = await RegiaEsterna.chiedi('GetSceneList');
+      const prima = g('cl-ov-scena').value;
+      g('cl-ov-scena').innerHTML = (d.scenes || []).map((x) => `<option value="${esc(x.sceneName)}"${x.sceneName === (prima || d.currentProgramSceneName) ? ' selected' : ''}>${esc(x.sceneName)}</option>`).join('');
+    } catch (e) { esito(L('OBS non risponde: riprova fra poco.', 'OBS isn\'t answering: try again shortly.', 'OBS no responde: inténtalo en un momento.'), true); }
+  };
+  const mostra = () => {
+    g('cl-ov-pronto').hidden = !ov;
+    if (!ov) return;
+    g('cl-ov-link').value = ov.url || '';
+    scene();
+  };
+  const voluto = (k) => k === 'pew' || k === 'invito';
+  api('/api/streamer/overlays').then((d) => {
+    ov = (Array.isArray(d?.overlays) ? d.overlays : []).find((o) => ELEM_OVL.every((k) => _acceso(o?.mostra, k) === voluto(k))) || null;
+    mostra();
+  }).catch(() => {});
+  if (window.RegiaEsterna) RegiaEsterna.ascolta('stato', () => { if (ov) scene(); });
+  g('cl-ov-crea').addEventListener('click', () => conErrore(async () => {
+    const id = await creaOverlayPew();
+    if (!id) return;
+    ov = overlays.find((o) => o.id === id) || null;
+    mostra();
+    toast(L('L\'overlay dei Pew è pronto.', 'The Pew overlay is ready.', 'El overlay de los Pew está listo.'), 'ok');
+  }));
+  g('cl-ov-copia').addEventListener('click', () => copiaTesto(g('cl-ov-link').value, L('Link copiato.', 'Link copied.', 'Enlace copiado.')));
+  const MOTIVI = (r) => ({
+    gruppo: L(`La scena ha un gruppo («${r.nome}»): una copia lo spezzerebbe. Aggiungi i Pew alla scena così com'è, o togli il gruppo.`, `The scene has a group («${r.nome}»): a copy would break it. Add Pew to the scene as it is, or remove the group.`, `La escena tiene un grupo («${r.nome}»): una copia lo rompería. Añade los Pew a la escena tal como está, o quita el grupo.`),
+    gia: L(`In «${r.scena}» i Pew ci sono già.`, `«${r.scena}» already has Pew.`, `En «${r.scena}» ya están los Pew.`),
+    scena: L('Quella scena in OBS non c\'è più: ho aggiornato l\'elenco.', 'That scene is gone from OBS: I refreshed the list.', 'Esa escena ya no está en OBS: he actualizado la lista.'),
+    obs: L(`OBS ha detto di no (${r.errore || ''}): non ho lasciato niente a metà.`, `OBS said no (${r.errore || ''}): I left nothing half done.`, `OBS dijo que no (${r.errore || ''}): no he dejado nada a medias.`),
+  })[r.motivo] || L('Non è andata: riprova.', 'It didn\'t work: try again.', 'No ha funcionado: inténtalo de nuevo.');
+  const fai = (come) => conErrore(async () => {
+    if (!ov?.url || !window.RegiaEsterna) return;
+    esito('');
+    let r;
+    try { r = await RegiaEsterna[come]({ scena: g('cl-ov-scena').value, url: ov.url }); } catch (e) { r = { ok: false, motivo: 'obs', errore: String(e?.message || e) }; }
+    if (r.ok) esito(come === 'scenaConPew' ? L(`Fatto: in OBS c'è la scena «${r.scena}», coi Pew.`, `Done: OBS has the scene «${r.scena}», with Pew.`, `Hecho: en OBS está la escena «${r.scena}», con los Pew.`) : L(`Fatto: i Pew sono in «${r.scena}».`, `Done: Pew is in «${r.scena}».`, `Hecho: los Pew están en «${r.scena}».`));
+    else esito(MOTIVI(r), true);
+    scene();
+  });
+  g('cl-ov-copia-scena').addEventListener('click', () => fai('scenaConPew'));
+  g('cl-ov-aggiungi').addEventListener('click', () => fai('aggiungiPew'));
+}
+
 const _clMirabile = (e) => e.tipo === 'lancio' || ((e.tipo === 'immagine' || e.tipo === 'video') && !e.schermo);
 
 function _clRiga(v) {
@@ -26556,43 +26731,62 @@ function _clRiga(v) {
     + (c && !opz.some((e) => e.comando === c) ? `<option value="${esc(c)}" selected>!${esc(c)} — ${L('non c\'è più', 'missing', 'ya no está')}</option>` : '');
   const euro = Number(v.euro) > 0 ? (Number(v.euro) / 100).toFixed(2) : '';
   const conKick = !!stato.kick?.collegato;
+  const Mon = esc(_clMoneta().replace(/^./, (x) => x.toUpperCase()));
+  const num = (k, max, val, etich, nascosto) => `<label class="cl-c"${nascosto ? ' hidden' : ''}><span>${etich}</span><input data-k="${k}" type="number" min="0" max="${max}" step="1" value="${Number(val) || ''}"></label>`;
+  const misto = (modo, altro, etAltro, maxAltro, nascosto) => `<div class="cl-misto"${nascosto ? ' hidden' : ''}>
+        <span class="cl-misto-t">${Mon} + ${etAltro}</span>
+        <div class="cl-misto-c">
+          <input data-k="misto-${modo}-monete" type="number" min="0" max="10000000" step="1" value="${Number(v.misti?.[modo]?.monete) || ''}" aria-label="${Mon} (${esc(L('modo misto', 'mixed way', 'modo mixto'))} ${etAltro})">
+          <span class="cl-piu" aria-hidden="true">+</span>
+          <input data-k="misto-${modo}-${altro}" type="number" min="0" max="${maxAltro}" step="1" value="${Number(v.misti?.[modo]?.[altro]) || ''}" aria-label="${etAltro} (${esc(L('modo misto', 'mixed way', 'modo mixto'))})">
+        </div>
+      </div>`;
   return `<div class="cl-voce" data-id="${esc(v.id || '')}">
-    <label class="cl-c cl-eff"><span>${L('Effetto', 'Effect', 'Efecto')}</span><select data-k="comando">${scelta || `<option value="">${L('Nessun lancio, immagine o video', 'No throw, image or video', 'Ningún lanzamiento, imagen o vídeo')}</option>`}</select></label>
-    <label class="cl-c cl-nome"><span>${L('Nome', 'Name', 'Nombre')}</span><input data-k="nome" type="text" maxlength="40" value="${esc(v.nome || '')}"></label>
-    <label class="cl-c cl-cat-sel"><span>${L('Categoria', 'Category', 'Categoría')}</span><select data-k="categoria">${_clOpzioniCat(v.categoria)}</select></label>
-    <button type="button" class="btn secondario mini ico-sola cl-via" title="${esc(L('Togli', 'Remove', 'Quitar'))}" aria-label="${esc(L('Togli', 'Remove', 'Quitar'))}">${_bIco('<path d="M18 6 6 18"/><path d="m6 6 12 12"/>')}</button>
-    <label class="cl-c"><span>${L('Euro', 'Euros', 'Euros')}</span><input data-k="euro" type="number" min="0" max="500" step="0.5" inputmode="decimal" value="${euro}"></label>
-    <label class="cl-c"><span>${L('Punti', 'Points', 'Puntos')}</span><input data-k="punti" type="number" min="0" max="1000000" step="1" value="${Number(v.punti) || ''}"></label>
-    <label class="cl-c"><span>Bit</span><input data-k="bit" type="number" min="0" max="100000" step="1" value="${Number(v.bit) || ''}"></label>
-    <label class="cl-c"${conKick ? '' : ' hidden'}><span>Kicks</span><input data-k="kicks" type="number" min="0" max="100000" step="1" value="${Number(v.kicks) || ''}"></label>
-    <label class="cl-c"${conKick ? '' : ' hidden'}><span>${L('Punti Kick', 'Kick points', 'Puntos Kick')}</span><input data-k="puntiKick" type="number" min="0" max="1000000" step="1" value="${Number(v.puntiKick) || ''}"></label>
-    <label class="cl-c"><span>${esc(_clMoneta().replace(/^./, (x) => x.toUpperCase()))}</span><input data-k="monete" type="number" min="0" max="10000000" step="1" value="${Number(v.monete) || ''}"></label>
-    <label class="cl-c"><span>${L('Grandezza %', 'Size %', 'Tamaño %')}</span><input data-k="scala" type="number" min="20" max="300" step="5" value="${Number(v.scala) || 100}"></label>
-    <label class="cl-c cl-acc"><span>${L('Attivo', 'On', 'Activo')}</span><span class="interruttore"><input data-k="attiva" type="checkbox" ${v.attiva !== false ? 'checked' : ''}><span class="levetta"></span></span></label>
-    <div class="cl-misti">
-      <span class="cl-misti-t">${L('Modi misti', 'Mixed ways', 'Modos mixtos')}</span>
-      <label class="cl-c"><span>${esc(_clMoneta().replace(/^./, (x) => x.toUpperCase()))}</span><input data-k="misto-bit-monete" type="number" min="0" max="10000000" step="1" value="${Number(v.misti?.bit?.monete) || ''}"></label>
-      <span class="cl-piu" aria-hidden="true">+</span>
-      <label class="cl-c"><span>Bit</span><input data-k="misto-bit-bit" type="number" min="0" max="100000" step="1" value="${Number(v.misti?.bit?.bit) || ''}"></label>
-      <label class="cl-c"><span>${esc(_clMoneta().replace(/^./, (x) => x.toUpperCase()))}</span><input data-k="misto-punti-monete" type="number" min="0" max="10000000" step="1" value="${Number(v.misti?.punti?.monete) || ''}"></label>
-      <span class="cl-piu" aria-hidden="true">+</span>
-      <label class="cl-c"><span>${L('Punti', 'Points', 'Puntos')}</span><input data-k="misto-punti-punti" type="number" min="0" max="1000000" step="1" value="${Number(v.misti?.punti?.punti) || ''}"></label>
-      <label class="cl-c"${conKick ? '' : ' hidden'}><span>${esc(_clMoneta().replace(/^./, (x) => x.toUpperCase()))}</span><input data-k="misto-kicks-monete" type="number" min="0" max="10000000" step="1" value="${Number(v.misti?.kicks?.monete) || ''}"></label>
-      <span class="cl-piu" aria-hidden="true"${conKick ? '' : ' hidden'}>+</span>
-      <label class="cl-c"${conKick ? '' : ' hidden'}><span>Kicks</span><input data-k="misto-kicks-kicks" type="number" min="0" max="100000" step="1" value="${Number(v.misti?.kicks?.kicks) || ''}"></label>
+    <div class="cl-testa">
+      <label class="cl-c cl-eff"><span>${L('Effetto', 'Effect', 'Efecto')}</span><select data-k="comando">${scelta || `<option value="">${L('Nessun lancio, immagine o video', 'No throw, image or video', 'Ningún lanzamiento, imagen o vídeo')}</option>`}</select></label>
+      <label class="cl-c cl-nome"><span>${L('Nome', 'Name', 'Nombre')}</span><input data-k="nome" type="text" maxlength="40" value="${esc(v.nome || '')}"></label>
+      <label class="cl-c cl-cat-sel"><span>${L('Categoria', 'Category', 'Categoría')}</span><select data-k="categoria">${_clOpzioniCat(v.categoria)}</select></label>
+      <label class="cl-c cl-scala"><span>${L('Grandezza %', 'Size %', 'Tamaño %')}</span><input data-k="scala" type="number" min="20" max="300" step="5" value="${Number(v.scala) || 100}"></label>
+      <label class="cl-c cl-acc"><span>${L('Attivo', 'On', 'Activo')}</span><span class="interruttore"><input data-k="attiva" type="checkbox" ${v.attiva !== false ? 'checked' : ''}><span class="levetta"></span></span></label>
+      <button type="button" class="btn secondario mini ico-sola cl-via" title="${esc(L('Togli', 'Remove', 'Quitar'))}" aria-label="${esc(L('Togli', 'Remove', 'Quitar'))}">${_bIco('<path d="M18 6 6 18"/><path d="m6 6 12 12"/>')}</button>
     </div>
-    <div class="cl-zaino-voce" data-modo="${esc(v.zaino?.modo || 'come')}">
-      <span class="cl-misti-t">${L('Zaino', 'Backpack', 'Mochila')}</span>
-      <label class="cl-c"><span>${L('Per dopo', 'For later', 'Para después')}</span><select data-k="zaino-modo">${[['come', L('come gli altri', 'like the others', 'como los demás')], ['no', L('non si compra', 'not for sale', 'no se compra')], ['mai', L('non scade', 'never expires', 'no caduca')], ['dopo', L('scade dopo…', 'expires after…', 'caduca tras…')]].map(([k, t]) => `<option value="${k}"${(v.zaino?.modo || 'come') === k ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></label>
+    <fieldset class="cl-gr">
+      <legend>${L('Prezzo', 'Price', 'Precio')}</legend>
+      <div class="cl-prezzi">
+        <label class="cl-c"><span>${L('Euro', 'Euros', 'Euros')}</span><input data-k="euro" type="number" min="0" max="500" step="0.5" inputmode="decimal" value="${euro}"></label>
+        ${num('punti', 1000000, v.punti, L('Punti', 'Points', 'Puntos'))}
+        ${num('bit', 100000, v.bit, 'Bit')}
+        ${num('kicks', 100000, v.kicks, 'Kicks', !conKick)}
+        ${num('puntiKick', 1000000, v.puntiKick, L('Punti Kick', 'Kick points', 'Puntos Kick'), !conKick)}
+        ${num('monete', 10000000, v.monete, Mon)}
+      </div>
+    </fieldset>
+    <fieldset class="cl-gr cl-misti">
+      <legend>${L('Modi misti', 'Mixed ways', 'Modos mixtos')} <span class="tenue">${L('· una parte in', '· part in', '· una parte en')} ${esc(_clMoneta())}${L(', il resto nell\'altro modo', ', the rest the other way', ', el resto del otro modo')}</span></legend>
+      <div class="cl-misti-righe">
+      ${misto('bit', 'bit', 'Bit', 100000)}
+      ${misto('punti', 'punti', L('Punti', 'Points', 'Puntos'), 1000000)}
+      ${misto('kicks', 'kicks', 'Kicks', 100000, !conKick)}
+      </div>
+    </fieldset>
+    <div class="cl-gr-riga">
+    <fieldset class="cl-gr cl-zaino-voce" data-modo="${esc(v.zaino?.modo || 'come')}">
+      <legend>${L('Zaino', 'Backpack', 'Mochila')}</legend>
+      <div class="cl-gr-campi">
+      <label class="cl-c"><span>${L('Si compra per lo zaino', 'Bought for the backpack', 'Se compra para la mochila')}</span><select data-k="zaino-modo">${[['come', L('come gli altri', 'like the others', 'como los demás')], ['no', L('non si compra', 'not for sale', 'no se compra')], ['mai', L('non scade', 'never expires', 'no caduca')], ['dopo', L('scade dopo…', 'expires after…', 'caduca tras…')]].map(([k, t]) => `<option value="${k}"${(v.zaino?.modo || 'come') === k ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></label>
       <label class="cl-c cl-zv-dopo"><span>${L('Quanto', 'How long', 'Cuánto')}</span><input data-k="zaino-quanti" type="number" min="1" max="1000" step="1" value="${Number(v.zaino?.quanti) || 30}"></label>
       <label class="cl-c cl-zv-dopo"><span>${L('Unità', 'Unit', 'Unidad')}</span><select data-k="zaino-unita">${[['ore', L('ore', 'hours', 'horas')], ['giorni', L('giorni', 'days', 'días')], ['settimane', L('settimane', 'weeks', 'semanas')], ['mesi', L('mesi', 'months', 'meses')], ['anni', L('anni', 'years', 'años')]].map(([k, t]) => `<option value="${k}"${(v.zaino?.unita || 'giorni') === k ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></label>
-    </div>
-    <div class="cl-chat-voce" data-modo="${esc(v.chat?.modo || 'si')}">
-      <span class="cl-misti-t">${L('Chat', 'Chat', 'Chat')}</span>
-      <label class="cl-c"><span>${L('Dalla chat', 'From chat', 'Desde el chat')}</span><select data-k="chat-modo">${[['si', L('nel punto di tutti', 'at the shared spot', 'en el punto de todos')], ['punto', L('nel suo punto…', 'at its own spot…', 'en su propio punto…')], ['no', L('non si lancia', 'not from chat', 'no se lanza')]].map(([k, n]) => `<option value="${k}"${(v.chat?.modo || 'si') === k ? ' selected' : ''}>${n}</option>`).join('')}</select></label>
+      </div>
+    </fieldset>
+    <fieldset class="cl-gr cl-chat-voce" data-modo="${esc(v.chat?.modo || 'si')}">
+      <legend>${L('Dalla chat', 'From chat', 'Desde el chat')}</legend>
+      <div class="cl-gr-campi">
+      <label class="cl-c"><span>${L('Dove cade', 'Where it lands', 'Dónde cae')}</span><select data-k="chat-modo">${[['si', L('nel punto di tutti', 'at the shared spot', 'en el punto de todos')], ['punto', L('nel suo punto…', 'at its own spot…', 'en su propio punto…')], ['no', L('non si lancia', 'not from chat', 'no se lanza')]].map(([k, n]) => `<option value="${k}"${(v.chat?.modo || 'si') === k ? ' selected' : ''}>${n}</option>`).join('')}</select></label>
       <label class="cl-c cl-cv-punto"><span>X (px)</span><input data-k="chat-x" type="number" min="0" step="1" value="${_clPx(v.chat?.x ?? 50, _clQ.l)}"></label>
       <label class="cl-c cl-cv-punto"><span>Y (px)</span><input data-k="chat-y" type="number" min="0" step="1" value="${_clPx(v.chat?.y ?? 50, _clQ.a)}"></label>
       <span class="cl-cv-parola suggerimento" data-parola></span>
+      </div>
+    </fieldset>
     </div>
     <p class="cl-premio suggerimento" data-premio></p>
   </div>`;
@@ -26644,6 +26838,7 @@ function _clLeggi() {
     presenza: _clPresenzaLeggi(),
     bitPew: _clBitLeggi(),
     kicksPew: _clKicksLeggi(),
+    flusso: document.getElementById('cl-flusso')?.value === 'subito' ? 'subito' : 'zaino',
     zaino: _clZainoLeggi(),
     chat: _clChatLeggi(),
     quadro: { ..._clQ },
@@ -26656,6 +26851,11 @@ function _clLeggi() {
       messaggi: Number(document.getElementById('cl-an-msg')?.value) || 0,
       piattaforme: { twitch: !!document.getElementById('cl-an-twitch')?.checked, kick: !!document.getElementById('cl-an-kick')?.checked },
       testo: (document.getElementById('cl-an-testo')?.value || '').trim(),
+    },
+    link: {
+      rispondi: !!document.getElementById('cl-ln-rispondi')?.checked,
+      attesaSec: Number(document.getElementById('cl-ln-attesa')?.value) || 0,
+      testo: (document.getElementById('cl-ln-testo')?.value || '').trim(),
     },
     sloganAcceso: !!document.getElementById('cl-slogan-acceso')?.checked,
     slogan: (document.getElementById('cl-slogan')?.value || '').trim(),
@@ -26763,6 +26963,7 @@ function _clCollegaChat() {
     if (r) _clChatCon[Number(r.dataset.i)].on = e.target.checked;
   });
   document.getElementById('cl-ch-salva').addEventListener('click', () => conErrore(() => salvaColpi()));
+  _clOverlayPew();
   document.getElementById('cl-comando')?.addEventListener('input', _clChatParole);
   const voci = document.getElementById('cl-voci');
   voci?.addEventListener('change', (e) => {
@@ -26889,7 +27090,6 @@ function _clZainoLeggi() {
   const v = (id) => document.getElementById(id);
   const n = (id, d) => { const x = Number(v(id)?.value); return v(id)?.value === '' || !Number.isFinite(x) ? d : x; };
   return {
-    attivo: !!v('cl-zn-attivo')?.checked,
     con: Object.fromEntries(['monete', 'bit', 'kicks', 'misto', 'cheer', 'regalo', 'punti', 'euro'].map((k) => [k, !!v('cl-zn-con-' + k)?.checked])),
     massimo: n('cl-zn-massimo', 0), massimoVoce: n('cl-zn-massimo-voce', 0), scadenza: _clScadenzaLeggi('cl-zn'), rendi: !!v('cl-zn-rendi')?.checked,
     rispondi: !!v('cl-zn-rispondi')?.checked, risposta: (v('cl-zn-risposta')?.value || '').trim(), attesaSec: n('cl-zn-attesa', 60),

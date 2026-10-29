@@ -40,3 +40,15 @@ test('paga chi scrive, coi suoi saldi; risponde come vuole lo streamer', () => {
   assert.match(h, /rispostaChat\(cfgColpi, lingua, esito, /);
   assert.match(h, /parla\(accordaMoneta\(t, monetaDi\(login\)\.forma\)\)/, 'la moneta accordata');
 });
+
+test('«!pew» da solo: il link, dopo la presenza e prima del lancio, con un passo per canale', () => {
+  const giro = BOT.indexOf("if (!msg.isSelf && streamers.get(login)?.settings?.colpi?.attivo === true) {");
+  const link = BOT.indexOf('} else if (cfgColpi && chiedeLink(cfgColpi, msg.text)) {', giro);
+  const lancio = BOT.indexOf('} else if (cfgColpi?.chat.attivo && persona) {', giro);
+  assert.ok(giro > 0 && link > giro && link < lancio, 'un ramo della stessa catena, prima del lancio');
+  assert.ok(BOT.indexOf('eFrasePresenza(cfgColpi, msg.text)', giro) < link, 'la presenza resta prima');
+  const h = BOT.slice(link, lancio);
+  assert.match(h, /const k = login \+ '\|link\|' \+ \(msg\.piattaforma \|\| 'twitch'\)/, 'il passo e\' del canale su quella piattaforma');
+  assert.match(h, /adesso - \(saldiBitChiesti\.get\(k\) \|\| 0\) >= cfgColpi\.link\.attesaSec \* 1000/);
+  assert.match(h, /parla\(testoLink\(cfgColpi, linguaChat\(login\), \{ nome: '@' \+ \(msg\.display \|\| msg\.user\), pagina: urlPaginaColpo\(login\)/);
+});

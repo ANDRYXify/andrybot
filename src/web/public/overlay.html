@@ -38,6 +38,9 @@
     #etichette { position: fixed; display: flex; flex-direction: column; align-items: center; gap: .5rem; pointer-events: none; z-index: 6; }
     #etichette.basso-centro { bottom: 10vh; left: 50%; transform: translateX(-50%); }
 
+    #invito { position: fixed; display: flex; flex-direction: column; align-items: center; pointer-events: none; z-index: 6; }
+    #invito.basso-centro { bottom: 10vh; left: 50%; transform: translateX(-50%); }
+
     
     #testi { position: fixed; display: flex; flex-direction: column; align-items: center; gap: .5rem; pointer-events: none; z-index: 6; }
     #testi.centro { top: 50%; left: 50%; transform: translate(-50%, -50%); }
@@ -100,6 +103,7 @@
   <div id="palco-libero" data-el="effetti"></div>
   <div id="palco-schermo" data-el="effetti"></div>
   <div id="etichette" class="basso-centro" data-el="etichetta"></div>
+  <div id="invito" class="basso-centro" data-el="invito"></div>
   <div id="testi" class="centro" data-el="scritta"></div>
   <div id="boss" class="alto-centro" data-el="boss"></div>
   <div id="arena" class="centro" data-el="arena"></div>

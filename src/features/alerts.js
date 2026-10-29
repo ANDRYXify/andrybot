@@ -618,6 +618,7 @@ export class AlertsEngine {
       arena: (s.overlayArena && typeof s.overlayArena === 'object') ? s.overlayArena : null,
       scritta: (s.overlayScritta && typeof s.overlayScritta === 'object') ? s.overlayScritta : null,
       etichetta: (s.overlayEtichetta && typeof s.overlayEtichetta === 'object') ? s.overlayEtichetta : null,
+      invito: (s.overlayInvito && typeof s.overlayInvito === 'object') ? s.overlayInvito : null,
       muro: (s.overlayMuro && typeof s.overlayMuro === 'object') ? s.overlayMuro : null,
       // I CARTELLI arrivano all'overlay con l'immagine gia' risolta in
       // indirizzo, come le icone dei widget: la pagina non sa niente della

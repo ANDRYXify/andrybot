@@ -68,8 +68,8 @@ test('i salvataggi dell\'overlay passano da una coda sola, e la rete che cade si
   for (const nome of aTempo) assert.match(corpoDi(nome), /_avvisaSalvataggio\(\)/, `${nome} non dice niente quando la rete cade`);
   // +2: la coda, e l'interruttore dell'occasione (che non passa dalla coda perche'
   // ha una porta sua, ma quando la rete cade lo deve dire con la stessa voce)
-  assert.equal((APP.match(/(?<!function )_avvisaSalvataggio\(\)/g) || []).length, aTempo.length + 2, 'l\'avviso e\' uno, usato dalla coda, dall\'occasione e da ogni salvataggio a tempo');
-  assert.equal((APP.match(/await _spingiOverlays\(\);/g) || []).length, 6, 'nuovo, duplica, rinomina, elimina, il layout e la copia per un contatore passano tutti dalla coda');
+  assert.equal((APP.match(/(?<!function )_avvisaSalvataggio\(\)/g) || []).length, aTempo.length + 3, 'l\'avviso e\' uno, usato dalla coda, dall\'occasione, dall\'overlay dei Pew e da ogni salvataggio a tempo');
+  assert.equal((APP.match(/await _spingiOverlays\(\);/g) || []).length, 7, 'nuovo, duplica, rinomina, elimina, il layout, la copia per un contatore e l\'overlay dei Pew passano tutti dalla coda');
   assert.ok(!/function _salvaFamiglia/.test(APP), 'niente funzione morta');
   assert.ok(/function _salvaPos\(chiave\) \{\n  const e = chiave \? ELEM\(chiave\) : null;\n  if \(e && e\.cont\) salvaContoDaScena\(e\.cont\);/.test(APP), 'il ripristino di un contatore si salva davvero');
 });

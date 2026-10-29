@@ -219,7 +219,10 @@ for (const k of chiavi) {
       liv: [...document.querySelectorAll('.ovl-liv.scelto')].map((e) => e.dataset.liv),
       nome: (document.getElementById('insp-nome') || {}).textContent,
       altrove: !!insp.querySelector('.insp-altrove:not([hidden])'),
-      atteso: _nomeEl(kk), idAtteso: _idEl(kk), inOverlay: _inOverlay(kk), chiuso: insp.hidden || insp.classList.contains('vuoto'),
+      atteso: _nomeEl(kk), idAtteso: _idEl(kk), inOverlay: _inOverlay(kk), posto: !SENZA_POSTO.has(kk),
+      presa: !!document.querySelector(`.ovl-liv[data-liv="${CSS.escape(kk)}"] [data-presa]`),
+      lucchetto: !!document.querySelector(`.ovl-liv[data-liv="${CSS.escape(kk)}"] [data-lucchetto]`),
+      numeri: !!insp.querySelector('.ovl-insp-num')?.getClientRects().length, chiuso: insp.hidden || insp.classList.contains('vuoto'),
     };
   }, k);
   const g = [];
@@ -228,8 +231,13 @@ for (const k of chiavi) {
   // non deve succedere e' il vuoto muto, o i comandi di un altro.
   if (r.visti.length ? (r.visti.length !== 1 || r.visti[0] !== k) : !r.altrove) g.push(`comandi visibili [${r.visti}]`);
   if (r.insieme.length) g.push(`due blocchi insieme mentre cambia [${r.insieme}]`);
-  if (r.inOverlay && (r.sel.length !== 1 || r.sel[0] !== r.idAtteso)) g.push(`sulla tela [${r.sel}]`);
-  if (r.liv.length !== 1 || r.liv[0] !== k) g.push(`livelli [${r.liv}]`);
+  if (r.inOverlay && r.posto && (r.sel.length !== 1 || r.sel[0] !== r.idAtteso)) g.push(`sulla tela [${r.sel}]`);
+  // una chiave senza posto (i Pew) non ha un nodo sulla tela: sceglierla non ne accende un altro
+  if (!r.posto && r.sel.length) g.push(`senza posto, ma sulla tela [${r.sel}]`);
+  if (!r.posto && (r.presa || r.lucchetto || r.numeri)) g.push(`senza posto, ma con ${[r.presa && 'la presa', r.lucchetto && 'il lucchetto', r.numeri && 'i campi della posizione'].filter(Boolean).join(', ')}`);
+  // la colonna dei livelli e' quello che c'e' in questo overlay: chi non c'e'
+  // (l'invito ai Pew nasce spento) sta in «Aggiungi» e non ha una riga scelta
+  if (r.inOverlay ? (r.liv.length !== 1 || r.liv[0] !== k) : r.liv.length) g.push(`livelli [${r.liv}]`);
   if (r.nome !== r.atteso) g.push(`titolo «${r.nome}»`);
   if (r.chiuso) g.push('pannello chiuso o vuoto');
   if (g.length) incoerenti.push(k + ': ' + g.join(', '));
@@ -484,7 +492,7 @@ for (const [campo, cur, cas] of [['s', 'insp-size', 'insp-s'], ['r', 'insp-rot',
 // L'annulla girava su goal e contatori a mano e si era dimenticato la famiglia
 // del player e del timer: li spostavi e Annulla non li riportava indietro.
 const scordati = [];
-for (const k of await p.evaluate(() => ELEMENTI().map((e) => e.k))) {
+for (const k of await p.evaluate(() => ELEMENTI().filter((e) => !SENZA_POSTO.has(e.k)).map((e) => e.k))) {
   const r = await p.evaluate(async (kk) => {
     seleziona(kk);
     await new Promise((r) => setTimeout(r, 120));
@@ -508,7 +516,7 @@ for (const k of await p.evaluate(() => ELEMENTI().map((e) => e.k))) {
 const discordi = await p.evaluate(async () => {
   const fuori = [];
   for (const e of ELEMENTI()) {
-    if (!_inOverlay(e.k)) continue;
+    if (!_inOverlay(e.k) || SENZA_POSTO.has(e.k)) continue;
     seleziona(e.k);
     await new Promise((r) => setTimeout(r, 90));
     const st = _posDove(e.k);
@@ -584,7 +592,7 @@ const livelli = [];
 const manigliePerse = await p.evaluate(async () => {
   const fuori = [];
   for (const e of ELEMENTI()) {
-    if (!_inOverlay(e.k)) continue;
+    if (!_inOverlay(e.k) || SENZA_POSTO.has(e.k)) continue;
     seleziona(e.k);
     await new Promise((r) => setTimeout(r, 110));
     const tela = document.getElementById('ovl-preview').getBoundingClientRect();
@@ -608,7 +616,7 @@ const manigliePerse = await p.evaluate(async () => {
 // canale: li spostavi in un overlay e ti seguivano in tutti.
 const trapelati = await p.evaluate(async () => {
   if (overlays.length < 2) return ['servono due overlay per provarlo'];
-  const chiavi = ELEMENTI().map((e) => e.k);
+  const chiavi = ELEMENTI().filter((e) => !SENZA_POSTO.has(e.k)).map((e) => e.k);
   const [primo, secondo] = [overlays[0].id, overlays[1].id];
   __scegli(primo);
   await new Promise((r) => setTimeout(r, 350));

@@ -114,14 +114,14 @@ questa scena e crea la scena con i pew attivi"».
 `mostra`, cosa ci compare (docs/OVERLAY.md). I colpi stavano dentro
 «effetti»: chi spegneva gli effetti in una scena spegneva anche i Pew, e chi
 voleva i Pew in una scena sola non poteva. Ora **i colpi sono una voce loro**
-(`mostra.colpi`): un colpo, una presenza e la loro prova li mostra solo un
-overlay con `colpi` acceso; gli altri effetti restano di `effetti`. Finché un
+(`mostra.pew`, «Pew» nei livelli): un colpo, una presenza e la loro prova li mostra solo un
+overlay con `pew` acceso; gli altri effetti restano di `effetti`. Finché un
 overlay non la scrive, la voce vale quanto `effetti` (la stessa eredità del
 boss e della scritta): niente cambia per chi non tocca niente.
 
-**L'overlay dei Pew** è un overlay come gli altri, con acceso solo `colpi`:
+**L'overlay dei Pew** è un overlay come gli altri, con acceso solo `pew`:
 si crea dalla scheda Pew con un tasto, e ha il suo link. Lo stesso tasto può
-spegnere i colpi negli altri overlay, così un colpo non compare due volte in
+spegnere i Pew negli altri overlay, così un colpo non compare due volte in
 una scena che li ha tutti e due.
 
 **Chi è pronto.** Un colpo si fa pagare solo se un overlay che lo può mostrare
@@ -130,7 +130,7 @@ una scena che li ha tutti e due.
 overlay in una scena nascosta poteva dire «no» sopra quello in onda (o il
 contrario). Ora il pronto è **per istanza** (ogni overlay aperto ha il suo
 nome, inventato all'apertura): il canale è pronto se una qualunque istanza
-con `colpi` acceso è in onda da meno di 45 secondi. Quindi i Pew solo in alcune
+con `pew` acceso è in onda da meno di 45 secondi. Quindi i Pew solo in alcune
 scene funzionano per costruzione: fuori da quelle scene nessuno è pronto, e i
 colpi non si fanno pagare.
 
@@ -163,6 +163,25 @@ testo è dello streamer (`{pagina}`, `{canale}`); vuoto, quello di serie nella
 lingua della chat. Il primo parte dopo `ogniMin` dall'inizio della diretta, non
 appena si accende. Il conto dei messaggi e dell'ultima volta sta in memoria:
 dopo un riavvio, al peggio, il primo arriva un giro dopo.
+
+## «!pew» da solo, e la scritta nell'overlay dei Pew
+
+Chiesto così: «non c'è un comando per accedere alla pagina dei colpi? Magari
+lo inserirei nell'overlay del pew (chiamiamolo pew non colpi), così a schermo
+c'è "Attacca lo streamer entrando nella pagina che esce scrivendo !pew"».
+
+- **«!pew» da solo** (il comando dello streamer, di serie `pew`) risponde col
+  link della pagina (`colpi.link`): accesa di serie, al massimo una risposta
+  ogni `attesaSec` secondi nel canale (di serie 30: il link è di tutti, e dieci
+  «!pew» di fila non fanno dieci risposte), testo dello streamer con `{nome}`,
+  `{pagina}`, `{canale}`. Su Twitch e su Kick, nella chat da cui arriva. È un
+  ramo della stessa catena dei colpi: la frase della presenza viene prima, il
+  lancio «!pew <colpo>» dopo.
+- **La scritta nell'overlay dei Pew**: «Attacca {canale}: scrivi !pew in chat
+  ed entra nella pagina» (nella lingua dell'overlay; il comando è quello dello
+  streamer). È una voce del layout (`pewInvito`), con un posto suo come gli
+  altri elementi: accesa nell'overlay dei Pew quando lo si crea, spenta negli
+  altri. Testo e aspetto sono dello streamer.
 
 ## Lo slogan
 
@@ -586,11 +605,93 @@ la mira «pagata e per dopo» e la mette nello zaino, mai in diretta.
   streamer li rende. Punti ed euro no: il colpo era stato consegnato, nello
   zaino.
 - **Vederlo**: la pagina mostra «Il tuo zaino» (quanti per colpo, e fin quando
-  vale il primo che scade), «Lancia dallo zaino (N)» fra i tasti del passo 2 e
-  «Per dopo, nello zaino» con un tasto per saldo e «Altri modi per dopo». In
+  vale il primo che scade, con «Lancia» per ognuno), «Lancia dallo zaino (N)»
+  fra i tasti della mira e il passo «Compralo» con un tasto per saldo e «Altri
+  modi per comprarlo» (sotto, «Compro, ce l'ho, lo lancio»). In
   chat `!pew zaino` (testo, attesa e accensione dello streamer); un colpo per
   dopo pagato col cheer, coi punti o con `!pew CODICE` lo dice in chat. Il
   pannello mostra quanti colpi ci sono negli zaini.
+
+## Compro, ce l'ho, lo lancio
+
+Chiesto così: «il "colpo da", perché non lo rendiamo (quando lo riscatti dai
+punti canale) semplicemente automaticamente in zaino? Io compro quello, poi
+quando entro nella pagina di pew posso lanciarlo quando voglio», e poi:
+«tutta la logica dei pew deve essere, compro, lo ho nello zaino, lo lancio,
+l'utente può anche decidere di "comprare per lanciare" e non quello standard
+che glielo mette subito nello zaino, così con quel pulsante a se stante può
+subito usarlo».
+
+**Il modello.** Lo zaino non è più un'aggiunta: è la strada. Comprare e
+lanciare sono due gesti, e fra i due c'è lo zaino. Prima un colpo si mirava
+e poi si pagava, e lo zaino era un ripiego da accendere; adesso di serie un
+colpo si compra (finisce nello zaino) e si lancia quando si vuole. «Compra e
+lancia» resta, come tasto a sé: è la strada di prima (mira, paga, parte).
+
+- **Lo streamer sceglie la strada** (`colpi.flusso`): `zaino` (di serie) o
+  `subito` (solo «compra e lancia», com'era). Si compra per lo zaino **se e
+  solo se** la strada è `zaino` (`zaino.attivo` non si scrive più: si deduce):
+  una scelta sola, niente combinazioni senza senso («strada zaino, zaino
+  spento»). Una configurazione salvata prima, senza `flusso`, prende la strada
+  di serie: lo chiede chi ha la pagina. Un colpo che lo streamer non vuole
+  nello zaino (`voce.zaino.modo = 'no'`) si compra solo «compra e lancia».
+- **La pagina**, con la strada `zaino`: «Scegli il colpo», «Compralo» (i saldi
+  in un tocco, gli altri modi col codice: tutto finisce nello zaino; e il
+  tasto a sé «Compra e lancia»), «Mira e lancia» (si apre dallo zaino, o da
+  «Compra e lancia»), e «Paga» solo per «compra e lancia» col codice. I numeri
+  dei passi sono quelli dei passi che si vedono, in ordine: con la strada
+  `subito` il passo «Compralo» non c'è e la mira è il 2. Lo zaino sta in
+  cima: ogni colpo ha il suo «Lancia».
+- **Senza accesso** lo zaino non c'è (è di qualcuno): «Compralo» dice di
+  entrare con Twitch o Kick, e «Compra e lancia» funziona col codice come
+  prima.
+- **Quello che uno ha resta suo.** Se lo streamer passa a `subito`, non si
+  compra più per lo zaino, ma chi ha qualcosa dentro lo vede e lo lancia
+  (pagina e chat) finché non scade: lo zaino si mostra a chi non è vuoto.
+
+### I premi a punti canale finiscono nello zaino
+
+Un riscatto di un premio dei colpi senza una mira da pagare (nessun codice
+valido, nessuna mira aperta di chi riscatta) prima si annullava (i punti
+tornavano). Con la strada `zaino` **è un acquisto**: il colpo va nello zaino
+di chi ha riscattato — Twitch (o Kick) dice sempre chi è (`user_id`, la
+persona di Kick `k:<id>`) — e lo trova appena entra nella pagina con lo
+stesso account. Il riscatto si chiude subito (FULFILLED): il colpo è
+consegnato, nello zaino. Una mira aperta di chi riscatta vince ancora: ha
+mirato, il colpo parte («compra e lancia»).
+
+- **Per colpo** («Colpo: Torta»): nello zaino c'è una Torta.
+- **Per prezzo** («Colpo da 500»): il premio non dice quale colpo, e non lo
+  deve dire. Nello zaino c'è un **buono da 500 punti** (`voce = '@punti:500'`,
+  come la presenza ha `@presenza`: non è una voce del listino). Si lancia
+  scegliendo **un colpo che costa al massimo 500 punti** (il prezzo in punti
+  della piattaforma di chi lo ha: Twitch o Kick) al momento del lancio: lo
+  streamer può cambiare i prezzi nel frattempo, e il buono vale quanto è
+  stato pagato, non un elenco fissato allora. Al lancio vale prima un colpo
+  di quella voce, se c'è; se no il buono più piccolo che basta, il primo che
+  scade.
+- **Quando non si può**: zaino pieno (`massimo`, `massimoVoce`; un buono conta
+  nel `massimo`), i punti non fra i modi dello zaino (`zaino.con.punti`), la
+  pagina spenta o in pausa, il colpo non comprabile per dopo: il riscatto si
+  annulla come prima, e il bot lo dice.
+- **Il misto coi punti** («… + monete») non cambia: le monete si pagano prima,
+  su una mira; senza, i punti tornano.
+- **Il testo del premio** segue la strada: con `zaino` il premio **non chiede
+  niente** (il codice non serve: chi riscatta lo dice Twitch), e la
+  descrizione dice che il colpo finisce nello zaino e da dove si lancia; con
+  `subito` chiede il codice come prima. La riconciliazione confronta anche
+  questo: un premio che chiede (o non chiede) il testo, o con la descrizione
+  vecchia, si rifà. All'avvio una passata per ogni canale con dei premi li
+  mette in pari (quelli fatti prima chiedevano il codice); dopo la prima volta
+  li trova giusti e non tocca niente.
+
+### Garanzie
+
+- Un riscatto, un oggetto nello zaino: lo stesso riscatto (`premio:<id>`) non
+  entra due volte (la mira del riscatto ha l'id del riscatto: la seconda non
+  si apre).
+- Un buono si consuma una volta (`pewZaino.prendi` in una transazione); se il
+  colpo non compare torna pieno come ogni oggetto dello zaino.
 
 ## Dalla chat, nel punto dello streamer
 

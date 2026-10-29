@@ -118,10 +118,16 @@ export function normalizza(cfg) {
     sloganAcceso: o.sloganAcceso !== false,
     slogan: testo(o.slogan, 120),
     annuncio: normAnnuncio(o.annuncio),
+    // «!pew» da solo: il link della pagina, con un passo per canale
+    link: normLink(o.link),
     presenza: normPresenza(o.presenza),
     bitPew: normBitPew(o.bitPew),
     kicksPew: normBitPew(o.kicksPew),
-    zaino: normZaino(o.zaino),
+    // la strada (docs/COLPI.md, «Compro, ce l'ho, lo lancio»): di serie si
+    // compra nello zaino e si lancia dopo; `subito` e' solo «compra e lancia».
+    // Lo zaino e' acceso se e solo se la strada e' quella: non si scrive, si deduce
+    flusso: FLUSSI.includes(o.flusso) ? o.flusso : 'zaino',
+    zaino: { ...normZaino(o.zaino), attivo: o.flusso !== 'subito' },
     chat: normChat(o.chat),
     quadro: normQuadro(o.quadro),
     // i premi a punti canale: uno per colpo, uno per prezzo, o da solo secondo
@@ -616,6 +622,27 @@ export function bastaPer(mira, metodo, pagato) {
   return serve > 0 && Number(pagato) >= serve;
 }
 
+// «!PEW» DA SOLO (docs/COLPI.md, «!pew da solo»): chi lo scrive riceve il link
+// della pagina. Un passo per canale, non per persona: il link e' di tutti, e
+// dieci «!pew» di fila non fanno dieci risposte.
+export const LINK = Object.freeze({
+  attesaSec: [0, 600], attesaSecDef: 30,
+  testi: Object.freeze({
+    it: '{nome} colpisci la diretta da qui: scegli un effetto e mira → {pagina}',
+    en: '{nome} hit the stream from here: pick an effect and aim → {pagina}',
+    es: '{nome} golpea el directo desde aquí: elige un efecto y apunta → {pagina}',
+  }),
+});
+function normLink(l) {
+  const o = l && typeof l === 'object' ? l : {};
+  return { rispondi: o.rispondi !== false, attesaSec: num(o.attesaSec, LINK.attesaSec, LINK.attesaSecDef), testo: testo(o.testo, 200) };
+}
+export const chiedeLink = (cfg, messaggio) => !!cfg?.link?.rispondi && formaFrase(messaggio) === '!' + (cfg.comando || COMANDO_SERIE);
+export function testoLink(cfg, lingua, valori) {
+  const base = cfg?.link?.testo || LINK.testi[lingua] || LINK.testi.it;
+  return base.replace(/\{(\w+)\}/g, (m, k) => (valori[k] != null ? String(valori[k]) : m)).slice(0, 400);
+}
+
 // IL LINK IN CHAT DA SOLO (docs/COLPI.md, «Il link in chat da solo»): ogni
 // ogniMin minuti, in diretta, e solo se la chat si e' mossa (messaggi).
 export const ANNUNCIO = Object.freeze({
@@ -650,6 +677,19 @@ export function testoAnnuncio(cfg, lingua, valori) {
   return base.replace(/\{(\w+)\}/g, (m, k) => (valori[k] != null ? String(valori[k]) : m)).slice(0, 400);
 }
 export const PREMI_MODI = ['auto', 'colpo', 'prezzo'];
+export const FLUSSI = ['zaino', 'subito'];
+// IL BUONO (docs/COLPI.md, «I premi a punti canale finiscono nello zaino»): il
+// riscatto di un premio per prezzo mette nello zaino un colpo da N punti, non
+// una voce; si lancia con un colpo che costa al massimo N punti.
+export const BUONO = '@punti:';
+export const voceBuono = (punti) => BUONO + Math.max(1, Math.trunc(Number(punti) || 0));
+export const valoreBuono = (voce) => (String(voce || '').startsWith(BUONO) ? Math.trunc(Number(String(voce).slice(BUONO.length))) || 0 : 0);
+// il prezzo in punti di una voce per chi la lancia: quelli di Kick per chi e' su Kick
+export const puntiPer = (voce, valuta) => Number(valuta === 'kicks' ? voce?.puntiKick : voce?.punti) || 0;
+// il buono copre la voce? un prezzo in punti che c'e', e non oltre il buono
+const NOME_BUONO = Object.freeze({ it: 'colpo da {n} punti', en: '{n}-point hit', es: 'golpe de {n} puntos' });
+export const nomeBuono = (punti, lingua) => (NOME_BUONO[lingua] || NOME_BUONO.it).replace('{n}', String(punti));
+export const buonoCopre = (valore, voce, valuta) => { const p = puntiPer(voce, valuta); return valore > 0 && p > 0 && p <= valore; };
 // Il premio a punti canale di una voce: il nome come lo vede chi riscatta.
 export const titoloPremio = (voce) => ('Colpo: ' + voce.nome).slice(0, 45);
 // il premio del modo misto coi punti: un nome suo (Twitch li vuole diversi)

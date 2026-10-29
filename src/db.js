@@ -3217,11 +3217,19 @@ export const pewZaino = {
     return db.prepare("SELECT id, voce, scade, comprato FROM pew_zaino WHERE channel=? AND chi=? AND stato='pieno' AND (scade=0 OR scade>?) ORDER BY scade=0, scade, comprato")
       .all(String(channel).toLowerCase(), String(chi), ora);
   },
-  // il lancio prende un oggetto di quella voce: l'id, o null
-  prendi(channel, chi, voce, mira, ora = now()) {
+  // il lancio prende un oggetto di quella voce: l'id, o null. Con `punti` (il
+  // prezzo in punti della voce per chi lancia), se di quella voce non ce n'e',
+  // un buono che basta (docs/COLPI.md, «I premi a punti canale finiscono nello
+  // zaino»): il piu' piccolo, il primo che scade
+  prendi(channel, chi, voce, mira, ora = now(), punti = 0) {
     return db.transaction(() => {
-      const o = db.prepare("SELECT id FROM pew_zaino WHERE channel=? AND chi=? AND voce=? AND stato='pieno' AND (scade=0 OR scade>?) ORDER BY scade=0, scade, comprato LIMIT 1")
-        .get(String(channel).toLowerCase(), String(chi), String(voce), ora);
+      const ch = String(channel).toLowerCase();
+      let o = db.prepare("SELECT id FROM pew_zaino WHERE channel=? AND chi=? AND voce=? AND stato='pieno' AND (scade=0 OR scade>?) ORDER BY scade=0, scade, comprato LIMIT 1")
+        .get(ch, String(chi), String(voce), ora);
+      if (!o && punti > 0) {
+        o = db.prepare("SELECT id FROM pew_zaino WHERE channel=? AND chi=? AND voce LIKE '@punti:%' AND CAST(substr(voce, 8) AS INTEGER)>=? AND stato='pieno' AND (scade=0 OR scade>?) ORDER BY CAST(substr(voce, 8) AS INTEGER), scade=0, scade, comprato LIMIT 1")
+          .get(ch, String(chi), Math.trunc(punti), ora);
+      }
       if (!o) return null;
       db.prepare("UPDATE pew_zaino SET stato='usato', usato_da=?, usato_at=? WHERE id=? AND stato='pieno'").run(String(mira), ora, o.id);
       return o.id;

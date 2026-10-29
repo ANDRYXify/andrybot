@@ -106,7 +106,7 @@ import { statoVivo, registroColpi, effects as effettiDb, segnoInstagram, pewSeri
 import { creaServizioColpi } from './features/colpi-servizio.js';
 import * as economia from './features/economia.js';
 import { nomeMoneta, monetaDi, accordaMoneta } from './features/moneta.js';
-import { urlPaginaColpo, eFrasePresenza, pagaInChat, chiedeBit, rispostaBit, chiedeZaino, rispostaZaino, voceDi as voceColpo, quandoScade, rispostaPresenza, titoloPremioMisto, lancioInChat, rispostaChat, prezzoChat, chiedeKicks, valutaDi, personaKick, testoPorta, eFrasePorta, annuncioDovuto, testoAnnuncio } from './features/colpi.js';
+import { urlPaginaColpo, eFrasePresenza, pagaInChat, chiedeBit, rispostaBit, chiedeZaino, rispostaZaino, nomeBuono, voceDi as voceColpo, quandoScade, rispostaPresenza, titoloPremioMisto, lancioInChat, rispostaChat, prezzoChat, chiedeKicks, valutaDi, personaKick, testoPorta, eFrasePorta, annuncioDovuto, testoAnnuncio, chiedeLink, testoLink } from './features/colpi.js';
 import * as presenzaPorta from './features/presenza-porta.js';
 import { preferenzeDi } from './features/preferenze.js';
 import { creaChatColpi, rigaDi as rigaChatColpi, BATTITO_MS as BATTITO_CHAT_COLPI } from './features/colpi-chat.js';
@@ -1449,7 +1449,7 @@ export class BotManager {
             parla(rispostaBit(cfgColpi, lingua, { nome: '@' + (msg.display || msg.user), saldo: this.colpi.saldoBit(login, persona),
               pagina: urlPaginaColpo(login).replace(/^https:\/\//, ''), quanti: sc?.quanti || 0, quando: sc ? quandoScade(sc.scade, lingua, preferenzeDi(login).fuso) : '' }, valuta));
           }
-        } else if (cfgColpi && chiedeZaino(cfgColpi, msg.text) && persona && this.colpi.conZaino(login)) {
+        } else if (cfgColpi && chiedeZaino(cfgColpi, msg.text) && persona && this.colpi.zainoVisibile(login, persona)) {
           const z = cfgColpi.zaino, k = login + '|z|' + persona, adesso = Date.now();
           if (z.rispondi && adesso - (saldiBitChiesti.get(k) || 0) >= z.attesaSec * 1000) {
             if (saldiBitChiesti.size > 5000) saldiBitChiesti.clear();
@@ -1457,7 +1457,7 @@ export class BotManager {
             const lingua = linguaChat(login), voci = this.colpi.zainoDi(login, persona);
             const prima = voci.filter((x) => x.scade).sort((a, b) => a.scade - b.scade)[0];
             parla(rispostaZaino(cfgColpi, lingua, { nome: '@' + (msg.display || msg.user), pagina: urlPaginaColpo(login).replace(/^https:\/\//, ''),
-              voci: voci.map((x) => ({ quanti: x.quanti, nome: voceColpo(cfgColpi, x.voce)?.nome || x.voce })),
+              voci: voci.map((x) => ({ quanti: x.quanti, nome: x.buono ? nomeBuono(x.buono, lingua) : voceColpo(cfgColpi, x.voce)?.nome || x.voce })),
               quanti: prima ? 1 : 0, quando: prima ? quandoScade(prima.scade, lingua, preferenzeDi(login).fuso) : '' }));
           }
         } else if (cfgColpi?.presenza.attiva && eFrasePresenza(cfgColpi, msg.text) && ePersona(login, msg.user)) {
@@ -1471,6 +1471,14 @@ export class BotManager {
             if (t) { parla(t); rispostoPresenza = true; }
           }
           if (r.esito === 'partita' || r.esito === 'gia') presenze.dichiara(login, msg.user);
+        } else if (cfgColpi && chiedeLink(cfgColpi, msg.text)) {
+          // «!pew» da solo: il link della pagina, al massimo una volta ogni attesaSec nel canale
+          const k = login + '|link|' + (msg.piattaforma || 'twitch'), adesso = Date.now();
+          if (adesso - (saldiBitChiesti.get(k) || 0) >= cfgColpi.link.attesaSec * 1000) {
+            if (saldiBitChiesti.size > 5000) saldiBitChiesti.clear();
+            saldiBitChiesti.set(k, adesso);
+            parla(testoLink(cfgColpi, linguaChat(login), { nome: '@' + (msg.display || msg.user), pagina: urlPaginaColpo(login).replace(/^https:\/\//, ''), canale: streamers.get(login)?.display || login }));
+          }
         } else if (cfgColpi?.chat.attivo && persona) {
           // «!pew <colpo> [come]»: il colpo nel punto della chat, coi saldi di chi scrive
           const lc = lancioInChat(cfgColpi, msg.text);
@@ -1800,7 +1808,7 @@ export class BotManager {
     // non lo documenta).
     if ((piattaforma === 'twitch' || piattaforma === 'kick') && data?.reward?.id) {
       const suKick = piattaforma === 'kick';
-      const r = this.colpi?.daRiscatto(channel, { reward_id: data.reward.id, user_input: data.user_input, id: data.id, user_id: data.user_id, piattaforma });
+      const r = this.colpi?.daRiscatto(channel, { reward_id: data.reward.id, user_input: data.user_input, id: data.id, user_id: data.user_id, user_login: data.user_login || data.user_name || '', piattaforma });
       if (r && r.esito !== 'non-mio') {
         if (r.stato) Promise.resolve((suKick ? premiKick(channel) : this.helix)?.aggiornaRedemption?.(channel, data.reward.id, data.id, r.stato)).catch(() => {});
         const chi = `@${data.user_login || data.user_name || ''}`;

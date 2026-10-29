@@ -17,10 +17,10 @@ vm.runInNewContext(readFileSync(new URL('../../src/web/public/riquadro.js', impo
 const R = finestra.SB_RIQUADRO;
 const ordina = (chiavi, salvato) => [...R.ordine(chiavi, salvato)];
 
-const TUTTI = ['alert', 'chat', 'wf', 'ws', 'goal:g1', 'goal:g2', 'cont:morti', 'cart:c1', 'musica', 'timer', 'treno', 'bit', 'pen', 'boss', 'scritta', 'etichetta', 'muro', 'effetti'];
+const TUTTI = ['alert', 'chat', 'wf', 'ws', 'goal:g1', 'goal:g2', 'cont:morti', 'cart:c1', 'musica', 'timer', 'treno', 'bit', 'pen', 'boss', 'scritta', 'etichetta', 'invito', 'muro', 'effetti', 'pew'];
 
 test('di serie e\' l\'ordine che la diretta aveva: il muro in fondo, poi effetti e testi, gli angoli, e davanti boss, alert e contatori', () => {
-  assert.deepEqual(ordina(TUTTI, []), ['muro', 'effetti', 'pen', 'etichetta', 'scritta', 'chat', 'wf', 'ws', 'goal:g1', 'goal:g2', 'cart:c1', 'musica', 'timer', 'treno', 'bit', 'boss', 'alert', 'cont:morti']);
+  assert.deepEqual(ordina(TUTTI, []), ['muro', 'effetti', 'pew', 'pen', 'etichetta', 'invito', 'scritta', 'chat', 'wf', 'ws', 'goal:g1', 'goal:g2', 'cart:c1', 'musica', 'timer', 'treno', 'bit', 'boss', 'alert', 'cont:morti']);
 });
 
 test('l\'ordine salvato si rispetta, senza doppioni e senza chiavi che non ci sono', () => {

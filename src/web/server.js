@@ -216,7 +216,7 @@ import {
   ICONE_OVL_K, icoOk, PESO_OVL, MAIUSC_OVL, USCITA_OVL,
   FORME_OVL, MATERIE_OVL, CORNICI_OVL, COMP_OVL, chiAlertOk,
   normAlertStile, normChatStile, normWidgetStile, normOverlayWidgetCfg, normOverlayStile, normGoals, MAX_GOAL,
-  normMusica, normTimer, normPubblicita, normTempi, normTreno, normBit, normBoss, normScritta, normEtichetta, normMuro, FIGURE_MURO, normCartelli, normDisegno,
+  normMusica, normTimer, normPubblicita, normTempi, normTreno, normBit, normBoss, normScritta, normEtichetta, normInvito, testoInvito, normMuro, FIGURE_MURO, normCartelli, normDisegno,
   normArena,
 } from './stile.js';
 
@@ -225,8 +225,27 @@ import {
 // di canale (alerts/chatOverlay/overlayWidget). Retro-compatibile: se non c'è
 // una lista `overlays`, ne ricaviamo uno solo ("principale") con tutto visibile
 // e le posizioni attuali → chi ha già l'overlay lo vede identico.
-const ELEM_OVERLAY = ['alert', 'chat', 'wf', 'ws', 'goal', 'cont', 'cart', 'musica', 'timer', 'pubblicita', 'tempi', 'treno', 'bit', 'pen', 'boss', 'arena', 'scritta', 'etichetta', 'muro', 'effetti', 'consolify'];
-const _mostraDefault = () => ELEM_OVERLAY.reduce((o, k) => (o[k] = true, o), {});
+const ELEM_OVERLAY = ['alert', 'chat', 'wf', 'ws', 'goal', 'cont', 'cart', 'musica', 'timer', 'pubblicita', 'tempi', 'treno', 'bit', 'pen', 'boss', 'arena', 'scritta', 'etichetta', 'invito', 'muro', 'effetti', 'pew', 'consolify'];
+// LE CHIAVI CHE NASCONO SPENTE (docs/OVERLAY.md, «Una chiave che nasce
+// spenta»). La regola di `mostra` e' «si scrive solo il no»: quel che non c'e'
+// compare. L'invito ai Pew e' una scritta fissa che deve stare solo dove
+// qualcuno l'ha accesa (l'overlay dei Pew), quindi in una BASE non scritta vale
+// spenta. Solo nelle basi: nelle differenze di un'occasione una chiave assente
+// vuol dire «come la base», e riempirla la farebbe diventare un «spegni».
+// La stessa lista sta nel pannello e nella pagina dell'overlay.
+const SPENTI_DI_SERIE = ['invito'];
+const spentiDiSerie = (m) => {
+  if (!m || typeof m !== 'object') return m;
+  const q = { ...m };
+  for (const k of SPENTI_DI_SERIE) if (q[k] === undefined) q[k] = false;
+  return q;
+};
+// Le chiavi che non hanno un posto (docs/OVERLAY.md, «Senza posto, per
+// costruzione»): i Pew cadono dove mira lo spettatore. Si accendono e si
+// spengono per overlay, ma una posizione o un blocco con la loro chiave non si
+// scrive.
+const SENZA_POSTO_EL = ['pew'];
+const _mostraDefault = () => ELEM_OVERLAY.reduce((o, k) => (o[k] = !SPENTI_DI_SERIE.includes(k), o), {});
 // Gli elementi nati da un interruttore che c'era gia' (docs/OVERLAY.md, «Lo
 // stesso interruttore di prima»): finche' in un overlay non sono scritti,
 // valgono quanto quello da cui dipendevano. Un overlay con gli effetti spenti
@@ -235,7 +254,7 @@ const _mostraDefault = () => ELEM_OVERLAY.reduce((o, k) => (o[k] = true, o), {})
 // quella da cui si eredita c'e'. L'arena e' nata dopo, ed e' un gioco a schermo
 // come il boss: chi il boss l'ha tolto da una scena non ci trova l'arena. Viene
 // dopo il boss, che a sua volta si riempie dagli effetti.
-const EREDITA_MOSTRA = { boss: 'effetti', scritta: 'effetti', etichetta: 'effetti', arena: 'boss' };
+const EREDITA_MOSTRA = { boss: 'effetti', scritta: 'effetti', etichetta: 'effetti', pew: 'effetti', arena: 'boss' };
 const ereditaMostra = (m) => {
   if (!m || typeof m !== 'object') return m;
   const q = { ...m };
@@ -285,6 +304,7 @@ const CHIAVE_CHAT = new RegExp(`^chat:(${CHAT_DA.join('|')})$`, 'i');
 // cosi' un obiettivo nuovo entra acceso ovunque senza dover toccare niente.
 const _mostraDiOverlay = (m) => {
   m = ereditaMostra(m || {});
+  m = spentiDiSerie(m);
   const q = ELEM_OVERLAY.reduce((acc, k) => (acc[k] = m[k] !== false, acc), {});
   if (m && typeof m === 'object') {
     for (const k of Object.keys(m).slice(0, 120)) {
@@ -300,6 +320,7 @@ const _blocchiDiOverlay = (b) => {
   const q = {};
   if (!b || typeof b !== 'object') return q;
   for (const k of Object.keys(b).slice(0, 60)) if (CHIAVE_EL.test(k) && b[k] === true) q[k] = true;
+  for (const k of SENZA_POSTO_EL) delete q[k];
   return q;
 };
 // L'ORDINE DEI LIVELLI: le chiavi degli elementi dal fondo al primo piano
@@ -311,7 +332,7 @@ const _xyDiOverlay = (xy) => {
   const q = {};
   if (!xy || typeof xy !== 'object') return q;
   for (const k of Object.keys(xy).slice(0, 60)) {
-    if (!CHIAVE_EL.test(k)) continue;
+    if (!CHIAVE_EL.test(k) || SENZA_POSTO_EL.includes(k)) continue;
     const v = xyOk(xy[k]);
     if (v) q[k] = v;
   }
@@ -341,14 +362,16 @@ const _occasioniDiOverlay = (x) => normOccasioni(x, {
   pulisciOrdine: _ordineDiOverlay,
 });
 
+const baseDiSerie = (o) => ({ ...o, mostra: spentiDiSerie(o.mostra) });
 function overlaysDi(settings) {
   const s = settings || {};
   if (Array.isArray(s.overlays) && s.overlays.length) {
-    // chi legge un overlay salvato trova gia' le chiavi nuove col valore giusto
-    return s.overlays.map((o) => (o && typeof o === 'object' ? {
+    // chi legge un overlay salvato trova gia' le chiavi nuove col valore giusto;
+    // quelle che nascono spente, solo nella base (le occasioni sono sparse)
+    return s.overlays.map((o) => (o && typeof o === 'object' ? baseDiSerie({
       ...o, mostra: ereditaMostra(o.mostra),
       ...(Array.isArray(o.occasioni) ? { occasioni: o.occasioni.map((c) => (c && typeof c === 'object' ? { ...c, mostra: ereditaMostra(c.mostra) } : c)) } : {}),
-    } : o));
+    }) : o));
   }
   return [{
     id: 'principale', nome: 'Overlay principale',
@@ -1495,7 +1518,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // Solo con la chiave: e' l'overlay del canale a parlare.
   app.post('/overlay/:login/colpo/pronto', (req, res) => {
     if (!chiaveOk(req)) return res.status(403).json({ errore: 'chiave non valida' });
-    effects.segnaPronto(String(req.params.login).toLowerCase(), req.body?.pronto === true);
+    effects.segnaPronto(String(req.params.login).toLowerCase(), req.body?.pronto === true, Date.now(), String(req.body?.istanza || '').replace(/[^a-z0-9]/gi, '').slice(0, 40));
     res.json({ ok: true });
   });
   app.post('/overlay/:login/colpo/:id/visto', wrap(async (req, res) => {
@@ -1738,6 +1761,20 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     } catch (e) { log.debug('goal dal vivo:', e?.message || e); }
   }
 
+  // L'INVITO AI PEW (docs/OVERLAY.md, «L'invito»): il testo dello streamer o
+  // quello di serie nella lingua della chat, coi segnaposti riempiti, e se i
+  // Pew del canale sono accesi. Con i Pew spenti l'invito non va in scena.
+  function invitoInScena(login, cfg) {
+    const inv = normInvito(cfg);
+    const pew = colpiMod.normalizza(streamers.get(login)?.settings?.colpi);
+    const valori = {
+      canale: streamers.get(login)?.display || login,
+      comando: pew.comando || colpiMod.COMANDO_SERIE,
+      pagina: colpiMod.urlPaginaColpo(login).replace(/^https:\/\//, ''),
+    };
+    return { ...inv, testo: testoInvito(inv.testo, linguaChat(login), valori), acceso: pew.attivo && !pew.pausa };
+  }
+
   // tema dell'overlay (CSS avanzato + widget persistenti + loro stato): l'overlay
   // lo legge una volta al caricamento. Pubblico ma protetto dalla chiave.
   app.get('/overlay/:login/tema', wrap(async (req, res) => {
@@ -1778,6 +1815,9 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       arena: normArena(base.arena),
       scritta: normScritta(base.scritta),
       etichetta: normEtichetta(base.etichetta),
+      // l'invito ai Pew arriva col testo gia' detto e col segno se i Pew del
+      // canale sono accesi: l'overlay non sa niente dei Pew
+      invito: invitoInScena(login, base.invito),
       muro: normMuro(base.muro),
       // gia' fuso con l'occasione accesa, se ce n'e' una: chi guarda la diretta
       // deve vedere una cosa sola, non una base e una correzione
@@ -4441,6 +4481,9 @@ STREAMER (${su.toUpperCase()}) e non c'entra con l'automazione del marketing.
       // La lingua della chat, letta dal posto solo: le anteprime del pannello
       // scrivono come scrivera' il bot, non come e' scritto il pannello.
       linguaChat: user ? linguaChat(user.login) : 'it',
+      // l'indirizzo della pagina dei Pew come lo dice l'invito in scena: la
+      // tela dello Studio lo scrive cosi', senza rifarselo
+      paginaPew: user ? colpiMod.urlPaginaColpo(user.login).replace(/^https:\/\//, '') : '',
       permessiOk: user ? permessiOk(user.login) : false,
       // scope aggiunti dopo che lo streamer si era collegato: se non vuoti, la
       // dashboard mostra un invito a ri-autorizzare (niente errori silenziosi).
@@ -7696,6 +7739,16 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
       if (c?.attivo && (c.premiErrori?.length || c.premiKickErrori?.length) && !premiInCorso.has(x.login)) accodaPremi(x.login, c);
     }
   }, 10 * 60_000).unref?.();
+  // All'avvio, una passata per chi ha premi: quello che un premio chiede e dice
+  // dipende dalla strada (docs/COLPI.md, «I premi a punti canale finiscono
+  // nello zaino»), e un premio fatto prima chiede ancora il codice. La passata
+  // tiene quelli gia' giusti: dopo la prima volta non cambia niente.
+  setTimeout(() => {
+    for (const x of streamers.list()) {
+      const c = x.settings?.colpi;
+      if (c?.attivo && (c.voci || []).some((v) => v?.premio || v?.premioKick || v?.premioMisto) && !premiInCorso.has(x.login)) accodaPremi(x.login, c);
+    }
+  }, 60_000).unref?.();
   app.post('/api/streamer/impostazioni', requireLogin, wrap(async (req, res) => {
     const user = currentUser(req);
     const s = streamers.get(user.login);
@@ -7867,6 +7920,7 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     if (b.overlayArena !== undefined) out.overlayArena = normArena(b.overlayArena);
     if (b.overlayScritta !== undefined) out.overlayScritta = normScritta(b.overlayScritta);
     if (b.overlayEtichetta !== undefined) out.overlayEtichetta = normEtichetta(b.overlayEtichetta);
+    if (b.overlayInvito !== undefined) out.overlayInvito = normInvito(b.overlayInvito);
     if (b.overlayMuro !== undefined) out.overlayMuro = normMuro(b.overlayMuro);
     if (b.overlayTreno !== undefined) {
       out.overlayTreno = normTreno(b.overlayTreno);
@@ -8303,7 +8357,7 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     // OVERLAY IN TEMPO REALE: se è cambiato qualcosa che l'overlay mostra
     // (CSS, widget, chat, alert, temi, stato), spingiamo SUBITO il nuovo tema
     // via SSE così la fonte OBS si aggiorna da sola, senza bisogno di refresh.
-    if (['overlayCss', 'overlayWidget', 'chatOverlay', 'alerts', 'overlayTemplates', 'overlayStato', 'overlays', 'overlayGoals', 'overlayMusica', 'overlayTimer', 'overlayPubblicita', 'overlayTempi', 'overlayTreno', 'overlayBit', 'overlayBoss', 'overlayArena', 'overlayScritta', 'overlayEtichetta', 'overlayMuro', 'overlayCartelli', 'fontPersonali'].some((k) => k in out)) {
+    if (['overlayCss', 'overlayWidget', 'chatOverlay', 'alerts', 'overlayTemplates', 'overlayStato', 'overlays', 'overlayGoals', 'overlayMusica', 'overlayTimer', 'overlayPubblicita', 'overlayTempi', 'overlayTreno', 'overlayBit', 'overlayBoss', 'overlayArena', 'overlayScritta', 'overlayEtichetta', 'overlayInvito', 'overlayMuro', 'overlayCartelli', 'fontPersonali', 'colpi'].some((k) => k in out)) {
       // segnale di RICARICA: ogni overlay ricarica il PROPRIO tema (per ?o=id),
       // così più overlay diversi si aggiornano ciascuno col suo layout.
       try { effects.emit(user.login, { tipo: 'tema' }); }

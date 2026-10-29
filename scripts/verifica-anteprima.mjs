@@ -64,9 +64,11 @@ const ROTTURE = [
     'un media a tutto schermo finisce nell\'area degli effetti'],
   ['src/web/public/overlay.html', "    #palco-schermo > .effetto.riempi { object-fit: cover; }\n", '',
     'a tutto schermo riempito si stira invece di coprire'],
-  ['src/web/public/disegnati.js', "      DISEGNA[q.k](ctx, q, s, r);\n", '',
+  ['src/web/public/disegnati.js', "      else if (DISEGNA[q.k]) DISEGNA[q.k](ctx, q, s, r);\n", '',
     'un disegno che non disegna niente'],
-  ['src/web/public/overlay-app.js', "    else if (dati.tipo === 'immagine' || dati.tipo === 'video' || dati.tipo === 'disegno') { if (mostra('effetti')) {", "    else if (dati.tipo === 'immagine' || dati.tipo === 'video' || dati.tipo === 'disegno') { if (true) {",
+  ['src/web/public/overlay-app.js', "  el.className = 'ovl-widget ovl-invito dentro dim-' + (st.dim || 'media') + ' ' + classiIdentita(st, 'nessuna');", "  el.className = 'ovl-widget ovl-invito dentro ' + classiIdentita(st, 'nessuna');",
+    'in diretta l\'invito ai Pew perde la sua grandezza'],
+  ['src/web/public/overlay-app.js', "{ if (mostra(eColpo(dati) ? 'pew' : 'effetti') && colpoNuovo(dati)) {", "{ if (colpoNuovo(dati)) {",
     'a tutto schermo parte anche dove gli effetti sono spenti'],
   ['src/web/public/app.js', "    if (e.tipo === 'video') {\n      const v = document.createElement('video');", "    if (false) {\n      const v = document.createElement('video');",
     'nell\'anteprima del pannello il video non si vede'],
@@ -131,7 +133,7 @@ if (!browser) { console.log('  –  saltato: manca Chromium o Playwright'); proc
 // il tema e il brano che il finto bot serve alla pagina dell'overlay: li scrive
 // l'editor, caso per caso, cosi' le due pagine vestono la stessa cosa
 let TEMA = null, MUSICA = { stato: 'niente' };
-const MOSTRA = { alert: true, chat: true, wf: true, ws: true, goal: true, cont: true, musica: true, timer: true, treno: true, cart: true, pen: true, boss: true, arena: true, scritta: true, etichetta: true, muro: true, effetti: true, consolify: true };
+const MOSTRA = { alert: true, chat: true, wf: true, ws: true, goal: true, cont: true, musica: true, timer: true, treno: true, cart: true, pen: true, boss: true, arena: true, scritta: true, etichetta: true, invito: true, muro: true, effetti: true, pew: true, consolify: true };
 const ovl = overlayFinto({ tema: () => TEMA, musica: () => MUSICA });
 const { base, chiudi } = await apriSito({ overlay: ovl });
 
@@ -544,6 +546,35 @@ try {
     dice(scritto && edE && lvE && vicino(edE.w, lvE.w) && vicino(edE.h, lvE.h) && vicino(edE.font, lvE.font, 0.6)
       && edDove && lvDove && vicino(edDove.x, lvDove.x, 2) && vicino(edDove.y, lvDove.y, 2),
       `nome del comando ${nome}: editor ${edE ? mis(edE) : '–'} a ${edDove ? Math.round(edDove.x) + ',' + Math.round(edDove.y) : '–'} = diretta ${lvE ? mis(lvE) : '–'} a ${lvDove ? Math.round(lvDove.x) + ',' + Math.round(lvDove.y) : '–'}`,
+      'editor e diretta non coincidono');
+  }
+
+  // --- 6-sexies-bis. l'invito ai Pew ----------------------------------------
+  // La scritta fissa dell'overlay dei Pew: stessa grandezza, stesso a capo e
+  // stesso posto, col testo che il server risolve (qui quello della tela).
+  const INV_VESTE = { dim: 'grande', sfondo: '#203040', opacita: 95, testo: '#ffffee', accento: '#22aa66', bordoRaggio: 4, font: 'sistema', forma: 'carta', materia: 'piatta', cornice: 'linea' };
+  for (const [nome, xy, stile] of [['in un punto', { x: 25, y: 35, s: 100, r: 0 }, null], ['al suo angolo', null, null], ['vestito', { x: 65, y: 25, s: 120, r: 0 }, INV_VESTE]]) {
+    const scritto = await ed.evaluate(async ({ xy, stile }) => {
+      _accendiQui('invito', true);
+      const c = _cfgEl('invito'); c.attivo = true; c.testo = ''; c.stile = { ..._defInvito().stile, ...(stile || {}) };
+      const q = _ovXY(); for (const k of Object.keys(q)) delete q[k];
+      if (xy) q.invito = { ...xy };
+      aggiornaAnteprima();
+      await new Promise((r) => setTimeout(r, 600));
+      return document.querySelector('#ap-invito .ovl-invito')?.textContent || '';
+    }, { xy, stile });
+    const edI = await misuraEd('#ap-invito .ovl-invito');
+    const edDove = await ed.evaluate(`(${DOVE_S})('#ap-invito .ovl-invito')`);
+    const stileI = { ...(await ed.evaluate(() => _defInvito().stile)), ...(stile || {}) };
+    TEMA = { css: '', widget: {}, goals: [], conti: {}, timer: null, musica: null, stato: {}, mostra: MOSTRA, xy: xy ? { invito: xy } : {}, alertStile: null, chatStile: null,
+      invito: { attivo: true, posizione: 'basso-centro', xy: null, stile: stileI, testo: scritto, acceso: true } };
+    await apriLive(() => document.querySelector('#invito .ovl-invito'));
+    await attesa(350);
+    const lvI = await misuraLive('#invito .ovl-invito');
+    const lvDove = await live.evaluate(`(${DOVE_S})('#invito .ovl-invito')`);
+    dice(scritto && edI && lvI && vicino(edI.w, lvI.w) && vicino(edI.h, lvI.h) && vicino(edI.font, lvI.font, 0.6)
+      && edDove && lvDove && vicino(edDove.x, lvDove.x, 2) && vicino(edDove.y, lvDove.y, 2),
+      `invito ai Pew ${nome}: editor ${edI ? mis(edI) : '–'} a ${edDove ? Math.round(edDove.x) + ',' + Math.round(edDove.y) : '–'} = diretta ${lvI ? mis(lvI) : '–'} a ${lvDove ? Math.round(lvDove.x) + ',' + Math.round(lvDove.y) : '–'}`,
       'editor e diretta non coincidono');
   }
 

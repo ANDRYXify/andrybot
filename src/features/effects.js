@@ -31,6 +31,10 @@ const norm = (s) => String(s || '').toLowerCase();
 // la pagina di Pewpewify senza tirarsi dietro il motore.
 export { normChroma, chromaDi };
 
+// quanto vale un «pronto» di un overlay, e quante istanze si tengono per canale
+const PRONTO_MS = 45_000;
+const ISTANZE_MAX = 20;
+
 export class EffectsEngine {
   constructor() {
     this._clients = new Map();    // channel → Set<res> (connessioni SSE degli overlay)
@@ -116,14 +120,27 @@ export class EffectsEngine {
   // vede), lo dice ogni 20 secondi. Un colpo si fa pagare solo se un overlay
   // l'ha detto da poco: «collegato» non basta, un overlay puo' avere gli
   // effetti spenti o stare in una scena che non va in onda.
-  segnaPronto(channel, si, ora = Date.now()) {
+  // Il pronto e' PER ISTANZA (docs/COLPI.md, «L'overlay dei Pew»): ogni
+  // overlay aperto ha il suo nome, inventato all'apertura. Con uno solo per
+  // canale vinceva l'ultimo che parlava, e un overlay in una scena nascosta
+  // diceva «no» sopra quello in onda. Il canale e' pronto se lo e' una
+  // qualunque istanza, da meno di PRONTO_MS. Un overlay vecchio, senza nome,
+  // e' l'istanza «».
+  segnaPronto(channel, si, ora = Date.now(), istanza = '') {
     const ch = norm(channel);
     if (!this._pronti) this._pronti = new Map();
-    if (si) this._pronti.set(ch, ora); else this._pronti.delete(ch);
+    const ist = this._pronti.get(ch) || new Map();
+    const k = String(istanza || '').slice(0, 40);
+    if (si) ist.set(k, ora); else ist.delete(k);
+    for (const [n, t] of ist) if (ora - t >= PRONTO_MS) ist.delete(n);
+    while (ist.size > ISTANZE_MAX) ist.delete(ist.keys().next().value);
+    if (ist.size) this._pronti.set(ch, ist); else this._pronti.delete(ch);
   }
   prontoColpi(channel, ora = Date.now()) {
-    const t = this._pronti?.get(norm(channel)) || 0;
-    return ora - t < 45_000 && this.hasClients(channel);
+    const ist = this._pronti?.get(norm(channel));
+    if (!ist || !this.hasClients(channel)) return false;
+    for (const t of ist.values()) if (ora - t < PRONTO_MS) return true;
+    return false;
   }
 
   // True se c'è almeno un client SSE (overlay OBS o Studio Web) collegato a

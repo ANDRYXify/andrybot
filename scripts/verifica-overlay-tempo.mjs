@@ -56,8 +56,12 @@ const ROTTURE = [
     'quello che cambia prima della connessione si perde'],
   [OVL, "  if (!mostra('alert')) codaAlert.length = 0;\n", '',
     'spenti gli alert, quelli in coda escono lo stesso'],
-  [OVL, "  if (!mostra('effetti')) codaVisiva.length = 0;\n", '',
+  [OVL, "  for (let i = codaVisiva.length - 1; i >= 0; i--) if (!mostra(eColpo(codaVisiva[i]) ? 'pew' : 'effetti')) codaVisiva.splice(i, 1);\n", '',
     'spenti gli effetti, quelli in coda escono lo stesso'],
+  [OVL, "if (!mostra(eColpo(codaVisiva[i]) ? 'pew' : 'effetti')) codaVisiva.splice(i, 1);", "if (!mostra('effetti')) codaVisiva.splice(i, 1);",
+    'spenti i Pew, i colpi in coda seguono gli effetti invece dei Pew'],
+  [OVL, "{ if (mostra(eColpo(dati) ? 'pew' : 'effetti') && colpoNuovo(dati)) {", "{ if (mostra('effetti') && colpoNuovo(dati)) {",
+    'un colpo entra in coda dove i Pew sono spenti'],
   [OVL, '  ridisegnaChat();\n', '',
     'spenta la chat (o una piattaforma), le righe restano'],
   [OVL, "  if ('boss' in stato && vale('boss', t)) riconciliaBoss(stato.boss);\n", '',
@@ -88,7 +92,7 @@ const ROTTURE = [
     'un suono pronto a volume zero suona al massimo'],
   [OVL, "  try { disegnaAlert(ev); } catch (e) {\n    guaio('alert-rotto', String(e && e.message || e));\n    alertBox.querySelectorAll('.alert-card:not(.dentro)').forEach((c) => c.remove());\n    liberaAlert();\n  }\n", '  disegnaAlert(ev);\n',
     'un alert che non si disegna blocca tutti quelli dopo'],
-  [OVL, "  try {\n    if (ev.tipo === 'immagine') mostraImmagine(ev);\n    else if (ev.tipo === 'video') mostraVideo(ev);\n    else if (ev.tipo === 'disegno') mostraDisegno(ev);\n    else finito();\n  } catch (e) {\n    guaio('effetto-rotto', String(e && e.message || e));\n    finito();\n  }\n",
+  [OVL, "  try {\n    if (ev.tipo === 'immagine') mostraImmagine(ev);\n    else if (ev.tipo === 'video') mostraVideo(ev);\n    else if (ev.tipo === 'disegno') mostraDisegno(ev);\n    else if (ev.tipo === 'lancio') mostraLancio(ev);\n    else finito();\n  } catch (e) {\n    guaio('effetto-rotto', String(e && e.message || e));\n    finito();\n  }\n",
     "  if (ev.tipo === 'immagine') mostraImmagine(ev);\n  else if (ev.tipo === 'video') mostraVideo(ev);\n  else if (ev.tipo === 'disegno') mostraDisegno(ev);\n  else finito();\n",
     'un effetto che non si disegna blocca tutti quelli dopo'],
   [OVL, "  try { giro(); } catch (e) { guaio('giro-rotto', String(e && e.message || e)); }", '  giro();',
@@ -381,6 +385,30 @@ const PROVE = {
     const v = await s.leggi(() => ({ alert: window.__alert, effetti: window.__effetti }));
     dice(v.alert.length === 1 && /Uno/.test(v.alert[0]), 'spenti gli alert, quelli in coda non escono', 'usciti: ' + v.alert.join(' · '));
     dice(v.effetti.length === 1, 'spenti gli effetti, quelli in coda non escono', `usciti ${v.effetti.length}`);
+  },
+
+  // 6-bis. I PEW SONO UNA CHIAVE LORO (docs/OVERLAY.md, «Un colpo segue pew»).
+  // In fila un effetto, due colpi (portano `attacco`) e un altro effetto; lo
+  // streamer spegne i Pew in questo overlay: i colpi in coda non escono, gli
+  // effetti si'.
+  async pewSpenti() {
+    const s = await scena('pew-spenti');
+    await s.collegato();
+    await spiaScena(s);
+    s.ovl.manda({ tipo: 'immagine', url: immagine(1), durata: 1200 });
+    s.ovl.manda({ tipo: 'immagine', url: immagine(2), durata: 1200, attacco: { id: 'pa', chi: 'Ugo', nome: 'Pomodoro' } });
+    s.ovl.manda({ tipo: 'immagine', url: immagine(3), durata: 1200, attacco: { id: 'pb', chi: 'Ada', nome: 'Pomodoro' } });
+    s.ovl.manda({ tipo: 'immagine', url: immagine(4), durata: 1200 });
+    await s.finche(() => window.__effetti.length >= 1, null, 3000);
+    s.cambia({ tipo: 'tema' }, (t) => { t.mostra = { pew: false }; });
+    await attesa(4200);
+    const v = await s.leggi(() => ({ effetti: window.__effetti }));
+    dice(v.effetti.length === 2 && v.effetti[0] === immagine(1) && v.effetti[1] === immagine(4), 'spenti i Pew, i colpi in coda non escono e gli effetti si\'', 'usciti: ' + v.effetti.map((u) => decodeURIComponent(u).match(/data-n="(\d+)"/)?.[1]).join(' · '));
+    s.ovl.manda({ tipo: 'immagine', url: immagine(5), durata: 800, attacco: { id: 'pc', chi: 'Eva', nome: 'Pomodoro' } });
+    s.ovl.manda({ tipo: 'immagine', url: immagine(6), durata: 800 });
+    await attesa(2400);
+    const w = await s.leggi(() => ({ effetti: window.__effetti }));
+    dice(w.effetti.length === 3 && w.effetti[2] === immagine(6), 'e un colpo che arriva coi Pew spenti non entra, l\'effetto dopo di lui si\'', 'usciti: ' + w.effetti.map((u) => decodeURIComponent(u).match(/data-n="(\d+)"/)?.[1]).join(' · '));
   },
 
   // 7. SPENTI VUOL DIRE SPENTI: la chat, e una piattaforma sola. E un nome che

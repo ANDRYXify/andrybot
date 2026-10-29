@@ -18,8 +18,9 @@
 //    solo quando il colpo e' consegnabile, e un colpo a Bit pagato resta in
 //    coda finche' un overlay non lo mostra. Con i Bit da spendere accesi
 //    (sotto) anche i Bit tornano: come saldo della pagina, a chi li ha mandati.
-import { valutaDi, valutaMira, cfgValuta, regoleMira, serveIn, personaKick, normalizza, puntoBuono, puntoChat, voceDi, metodiDi, mistiDi, bitServe, bitResi, togliUltimi, scadenzaBit, zainoDi, nuovoCodice, codiceIn, nomeChi, frasePresenza, premioSerie, serieDopo, SCADENZA_MS } from './colpi.js';
-import { randomBytes } from 'node:crypto';
+import { valutaDi, valutaMira, cfgValuta, regoleMira, serveIn, personaKick, normalizza, puntoBuono, puntoChat, voceDi, metodiDi, mistiDi, bitServe, bitResi, togliUltimi, scadenzaBit, zainoDi, nuovoCodice, codiceIn, nomeChi, frasePresenza, premioSerie, serieDopo, SCADENZA_MS,
+  voceBuono, valoreBuono, puntiPer, buonoCopre, titoloPremioPrezzo } from './colpi.js';
+import { randomBytes, createHash } from 'node:crypto';
 
 // Gli effetti che si possono mirare: quelli che si posano in un punto. Un'immagine
 // o un video (non a tutto schermo), e un lancio (docs/LANCI.md), che per come e'
@@ -473,13 +474,14 @@ export function creaServizioColpi({ registro, effects, effettoDi, impostazioni, 
   }
   // Su Kick (docs/COLPI.md, «Su Kick»): i premi di Kick, il prezzo in punti di
   // Kick e la persona k:<id>; niente misto, che coi punti e' di Twitch.
-  function daRiscatto(login, { reward_id, user_input = '', id = '', user_id = '', piattaforma = 'twitch' } = {}) {
+  function daRiscatto(login, { reward_id, user_input = '', id = '', user_id = '', user_login = '', piattaforma = 'twitch' } = {}) {
     const ch = String(login || '').toLowerCase();
     const cfg = cfgDi(ch);
     if (piattaforma === 'kick') {
       const voci = reward_id ? (cfg.voci || []).filter((v) => v.premioKick === reward_id) : [];
       if (!voci.length) return { esito: 'non-mio' };
       const { m, codice } = miraDelPremio(ch, voci, user_input, user_id ? personaKick(user_id) : '');
+      if (!m && cfg.flusso === 'zaino') return zainoDaPremio(ch, voci, { id, reward_id, persona: user_id ? personaKick(user_id) : '', nome: user_login, su: 'kick' });
       if (!m || !(Number(m.prezzi.puntiKick) > 0) || (voci[0].premioKickCosto && Number(m.prezzi.puntiKick) !== voci[0].premioKickCosto)) return { esito: 'sconosciuto', stato: 'CANCELED', codice };
       const no = pronta(m, 'punti');
       if (no) return { esito: 'fermo', stato: 'CANCELED', motivo: no };
@@ -490,6 +492,7 @@ export function creaServizioColpi({ registro, effects, effettoDi, impostazioni, 
     const voci = reward_id ? (cfg.voci || []).filter((v) => v.premio === reward_id) : [];
     if (!voci.length) return { esito: 'non-mio' };
     const { m, codice } = miraDelPremio(ch, voci, user_input, user_id);
+    if (!m && cfg.flusso === 'zaino') return zainoDaPremio(ch, voci, { id, reward_id, persona: String(user_id || ''), nome: user_login, su: 'twitch' });
     // il premio costa quello che costa la mira, o niente: una mira presa a un
     // prezzo vecchio non si paga con un premio di un altro prezzo
     if (!m || !(Number(m.prezzi.punti) > 0) || (voci[0].premioCosto && Number(m.prezzi.punti) !== voci[0].premioCosto)) return { esito: 'sconosciuto', stato: 'CANCELED', codice };
@@ -498,6 +501,47 @@ export function creaServizioColpi({ registro, effects, effettoDi, impostazioni, 
     const no = pronta(m, 'punti');
     if (no) return { esito: 'fermo', stato: 'CANCELED', motivo: no };
     return incassa(m, 'punti', `premio:${id}`, `${reward_id}:${id}`) ? { esito: 'pagato', stato: null, nome: m.nome, dopo: !!m.dopo } : { esito: 'gia', stato: 'CANCELED' };
+  }
+
+  // UN RISCATTO SENZA MIRA FINISCE NELLO ZAINO (docs/COLPI.md, «I premi a punti
+  // canale finiscono nello zaino»): di chi ha riscattato, che la piattaforma
+  // dice sempre. Il premio di un colpo mette quel colpo; quello di un prezzo,
+  // un buono da quei punti. La mira del riscatto ha un id che viene dal
+  // riscatto: lo stesso riscatto due volte non mette due oggetti.
+  function zainoDaPremio(ch, voci, { id, reward_id, persona, nome = '', su = 'twitch' }) {
+    const cfg = cfgDi(ch);
+    const no = (motivo) => ({ esito: 'fermo', stato: 'CANCELED', motivo });
+    if (!zaino || !persona || !id) return no('zaino');
+    if (!cfg.attivo) return no('spento');
+    if (cfg.pausa) return no('pausa');
+    if (!cfg.zaino.con.punti) return no('mezzo');
+    const costo = Number(su === 'kick' ? voci[0].premioKickCosto || voci[0].puntiKick : voci[0].premioCosto || voci[0].punti) || 0;
+    const nomePremio = String((su === 'kick' ? voci[0].premioKickNome : voci[0].premioNome) || '');
+    const perPrezzo = voci.length > 1 || nomePremio.startsWith(titoloPremioPrezzo(costo));
+    const voce = perPrezzo ? null : voci[0];
+    if (voce ? comprabile(ch, voce.id) : !voci.some((v) => !comprabile(ch, v.id))) return no('zaino');
+    if (!(costo > 0)) return no('voce');
+    const z = zaino.conta(ch, persona, ora());
+    const aperte = registro.dopoAperte(ch, persona, ora());
+    const vz = voce ? voce.id : voceBuono(costo);
+    if (cfg.zaino.massimo && z.tutti + aperte.length >= cfg.zaino.massimo) return { ...no('zaino-pieno'), massimo: cfg.zaino.massimo };
+    if (voce && cfg.zaino.massimoVoce && (z.voci[vz] || 0) + aperte.filter((v) => v === vz).length >= cfg.zaino.massimoVoce) return { ...no('zaino-pieno'), massimo: cfg.zaino.massimoVoce };
+    const adesso = ora();
+    const m = { id: 'rz' + createHash('sha256').update(su + ':' + reward_id + ':' + id).digest('hex').slice(0, 22), login: ch, voce: vz, comando: voce ? voce.comando : '',
+      nome: voce ? voce.nome : titoloPremioPrezzo(costo), x: 50, y: 50, scala: voce ? voce.scala : 100, chi: nomeChi(nome),
+      prezzi: { [su === 'kick' ? 'puntiKick' : 'punti']: costo }, creata: adesso, scade: adesso + SCADENZA_MS, spettatore: persona, dopo: true };
+    if (registro.get(m.id)) return { esito: 'doppio', stato: null };
+    let aperta = false;
+    for (let i = 0; i < 12 && !aperta; i++) { m.codice = nuovoCodice(); aperta = registro.apri(m); if (!aperta && registro.get(m.id)) return { esito: 'doppio', stato: null }; }
+    if (!aperta) return no('codice');
+    return incassa(registro.get(m.id), 'punti', `premio:${id}`, `${reward_id}:${id}`)
+      ? { esito: 'pagato', stato: null, nome: m.nome, dopo: true, buono: perPrezzo ? costo : 0 } : { esito: 'gia', stato: 'CANCELED' };
+  }
+  // c'e' nello zaino qualcosa che lancia questa voce: un colpo suo, o un buono che basta
+  function copreZaino(ch, chi, voce) {
+    if (!zaino || !chi || !voce) return false;
+    const valuta = valutaDi(chi);
+    return zainoDi_(ch, chi).some((x) => x.voce === voce.id || buonoCopre(valoreBuono(x.voce), voce, valuta));
   }
 
   // LE MONETE DEL CANALE. Dalla pagina (con l'accesso a Twitch: `id` della mira,
@@ -573,7 +617,7 @@ export function creaServizioColpi({ registro, effects, effettoDi, impostazioni, 
     if (!m || m.stato !== 'attesa' || m.dopo || m.riferimento || m.acconto || (m.scade <= ora() && !(Number(m.versati) > 0))) return { esito: 'sconosciuto' };
     const no = consegnabile(ch, m.voce);
     if (no) return { esito: 'fermo', motivo: no, nome: m.nome };
-    const z = zaino.prendi(ch, String(chi), m.voce, m.id, ora());
+    const z = zaino.prendi(ch, String(chi), m.voce, m.id, ora(), puntiPer(voceDi(cfgDi(ch), m.voce), valutaDi(chi)));
     if (!z) return { esito: 'vuoto', nome: m.nome };
     if (!incassa(m, 'zaino', 'zaino:' + z)) { zaino.rimetti(z, m.id); return { esito: 'gia' }; }
     rinnovaZaino(ch, chi);
@@ -623,7 +667,7 @@ export function creaServizioColpi({ registro, effects, effettoDi, impostazioni, 
     const sm = () => saldoMonete(ch, user), sb = () => saldoBit(ch, chi);
     // cosa costa ogni mezzo, e se il saldo basta
     const costo = {
-      zaino: () => (zaino && cfg.zaino.attivo ? { ok: zainoDi_(ch, chi).some((x) => x.voce === voce.id), quale: 'zaino' } : null),
+      zaino: () => (zaino ? { ok: copreZaino(ch, chi, voce), quale: 'zaino' } : null),
       monete: () => (monete && voce.monete > 0 ? { ok: sm() >= voce.monete, monete: voce.monete, serve: voce.monete, saldo: sm(), quale: 'monete' } : null),
       // i Bit da spendere sono di chi e' su Twitch, i Kicks di chi e' su Kick
       bit: () => (valuta === 'bit' && crediti && resaDi(ch) && voce.bit > 0 ? { ok: sb() >= voce.bit, bit: voce.bit, serve: voce.bit, saldo: sb(), quale: 'bit' } : null),
@@ -680,9 +724,12 @@ export function creaServizioColpi({ registro, effects, effettoDi, impostazioni, 
       per.set(o.voce, x);
     }
     const ordine = cfgDi(ch).voci.map((v) => v.id);
-    return [...per.values()].sort((a, b) => ((ordine.indexOf(a.voce) + 1 || 999) - (ordine.indexOf(b.voce) + 1 || 999)));
+    const posto = (x) => ordine.indexOf(x.voce) + 1 || 1000 + valoreBuono(x.voce) / 1e7;
+    return [...per.values()].map((x) => (valoreBuono(x.voce) ? { ...x, buono: valoreBuono(x.voce) } : x)).sort((a, b) => posto(a) - posto(b));
   }
 
   return { mira, consegnabile, comprabile, pronta, daZaino, zainoDi: zainoDi_, daCheer, daRiscatto, daPagamento, daMonete, daBitPew, daKicks, subito, inChat, saldoBit, scadonoBit, saldoMonete, presenza, provaPresenza, visto, ronda, cfgDi,
-    conMonete: !!monete, conZaino: (login) => !!zaino && cfgDi(String(login || '').toLowerCase()).zaino.attivo, conBitPew: (login) => !!resaDi(String(login || '').toLowerCase()), conKicksPew: (login) => !!resaDi(String(login || '').toLowerCase(), 'kicks') };
+    conMonete: !!monete, conZaino: (login) => !!zaino && cfgDi(String(login || '').toLowerCase()).zaino.attivo,
+    // lo zaino si mostra a chi compra per lo zaino, e a chi ci ha qualcosa dentro
+    zainoVisibile: (login, chi) => !!zaino && (cfgDi(String(login || '').toLowerCase()).zaino.attivo || zainoDi_(login, chi).length > 0), copreZaino: (login, chi, idVoce) => copreZaino(String(login || '').toLowerCase(), chi, voceDi(cfgDi(String(login || '').toLowerCase()), idVoce)), conBitPew: (login) => !!resaDi(String(login || '').toLowerCase()), conKicksPew: (login) => !!resaDi(String(login || '').toLowerCase(), 'kicks') };
 }

@@ -49,6 +49,33 @@ comandi diversi da quelli della riga italiana.
 - La pagina Pew ha il suo slogan: «Perché pewpew is the new ka-chow». Lo puoi cambiare o spegnere. [vai: colpi]
   en: The Pew page has its slogan: «Because pewpew è il nuovo ka-chow». You can change it or turn it off.
   es: La página Pew tiene su eslogan: «Porque pewpew is the new ka-chow». Puedes cambiarlo o apagarlo.
+- [importante] Pew: compri il colpo, ce l'hai nello zaino, lo lanci quando vuoi. Chi è entrato nella pagina sceglie il colpo e lo compra; per lanciarlo subito c'è il tasto a parte «Compra e lancia subito». [vai: colpi]
+  en: Pew: you buy the hit, you have it in your backpack, you launch it whenever you want. Whoever logged into the page picks the hit and buys it; to launch it right away there's the separate «Buy and launch now» button.
+  es: Pew: compras el golpe, lo tienes en la mochila, lo lanzas cuando quieras. Quien entró en la página elige el golpe y lo compra; para lanzarlo enseguida está el botón aparte «Comprar y lanzar ya».
+  > Compro, ce l'ho, lo lancio
+  > Lo zaino non va più acceso: è la strada di serie. Se preferisci com'era (mira, paga, parte) scegli «Subito» nella scheda Pew. Quello che uno ha già nello zaino resta suo.
+  en> Buy it, keep it, launch it
+  en> The backpack no longer needs turning on: it's the default way. If you prefer the old way (aim, pay, fire) choose «Right away» in the Pew tab. What someone already has in the backpack stays theirs.
+  es> Lo compro, lo tengo, lo lanzo
+  es> La mochila ya no hay que activarla: es el camino de serie. Si prefieres como era (apuntar, pagar, sale) elige «Enseguida» en la pestaña Pew. Lo que alguien ya tiene en la mochila sigue siendo suyo.
+- I premi a punti canale dei Pew finiscono nello zaino di chi li riscatta, senza codice da scrivere. «Colpo da 500» diventa un colpo da 500 punti, da usare per qualunque colpo che costa fino a 500. [vai: colpi]
+  en: Pew channel-point rewards go into the redeemer's backpack, with no code to type. «Colpo da 500» becomes a 500-point hit, good for any hit that costs up to 500.
+  es: Las recompensas de puntos de canal de los Pew van a la mochila de quien las canjea, sin código que escribir. «Colpo da 500» se convierte en un golpe de 500 puntos, válido para cualquier golpe que cueste hasta 500.
+- [importante] L'overlay dei Pew: solo i colpi e la scritta «scrivi !pew», per averli solo nelle scene che vuoi. Lo crei dalla scheda Pew e lo metto io in OBS, in una copia della scena o nella scena stessa. [vai: colpi]
+  en: The Pew overlay: only the hits and the line «type !pew», to have them only in the scenes you want. You create it from the Pew tab and I put it in OBS, in a copy of the scene or the scene itself.
+  es: El overlay de los Pew: solo los golpes y el texto «escribe !pew», para tenerlos solo en las escenas que quieras. Lo creas desde la pestaña Pew y lo pongo yo en OBS, en una copia de la escena o en la misma.
+  > I Pew solo dove vuoi
+  > Negli altri overlay i Pew restano accesi o spenti come gli effetti. La scritta si sposta, si veste e si riscrive nell'Overlay Studio, e si vede solo coi Pew accesi e non in pausa.
+  en> Pew only where you want
+  en> In the other overlays Pew stays on or off like the effects. The line can be moved, styled and rewritten in Overlay Studio, and shows only with Pew on and not paused.
+  es> Los Pew solo donde quieras
+  es> En los demás overlays los Pew siguen activados o apagados como los efectos. El texto se mueve, se viste y se reescribe en Overlay Studio, y solo se ve con los Pew activados y sin pausa.
+- Il listino dei Pew nel pannello è più ordinato: prezzi, modi misti a coppie («monete + Bit»), zaino e chat in gruppi che vanno a capo bene anche sul telefono. [vai: colpi]
+  en: The Pew price list in the panel is tidier: prices, mixed ways in pairs («coins + Bits»), backpack and chat in groups that wrap well on the phone too.
+  es: La lista de los Pew en el panel está más ordenada: precios, modos mixtos en parejas («monedas + Bits»), mochila y chat en grupos que se ajustan bien también en el móvil.
+- In chat «!pew» da solo risponde col link della pagina Pew. Il testo e l'attesa li scegli tu. [vai: colpi]
+  en: In chat, «!pew» on its own replies with the Pew page link. You choose the text and the wait.
+  es: En el chat, «!pew» solo responde con el enlace de la página Pew. El texto y la espera los eliges tú.
 ## 2026-10-28
 
 - [importante] Pewpewify su Kick, completo: nel listino il prezzo in Kicks e in punti del canale di Kick, i premi del canale su Kick creati da soli, e la scheda dei Kicks da spendere con le sue regole. [vai: colpi]

@@ -140,5 +140,68 @@
     };
   }
 
-  window.RegiaEsterna = crea();
+  const FONTE_PEW = 'SocialBot · Pew';
+  const CAMPI_TRASF = ['positionX', 'positionY', 'rotation', 'scaleX', 'scaleY', 'alignment', 'boundsType', 'boundsAlignment', 'boundsWidth', 'boundsHeight', 'cropLeft', 'cropRight', 'cropTop', 'cropBottom', 'cropToBounds'];
+  function trasformazione(t) {
+    const o = {};
+    for (const k of CAMPI_TRASF) if (t && t[k] !== undefined && t[k] !== null) o[k] = t[k];
+    if (!(o.boundsWidth >= 1)) delete o.boundsWidth;
+    if (!(o.boundsHeight >= 1)) delete o.boundsHeight;
+    return o;
+  }
+  function libero(nome, presi) {
+    let n = nome;
+    for (let i = 2; presi.has(n); i++) n = nome + ' ' + i;
+    return n;
+  }
+  async function fontePew(chiedi, scena, url) {
+    const v = await chiedi('GetVideoSettings');
+    const imp = { url: url, width: Number(v.baseWidth) || 1920, height: Number(v.baseHeight) || 1080 };
+    const ingressi = (await chiedi('GetInputList')).inputs || [];
+    const suo = ingressi.find(function (x) { return x.inputName === FONTE_PEW; });
+    if (suo && suo.inputKind === 'browser_source') {
+      await chiedi('SetInputSettings', { inputName: FONTE_PEW, inputSettings: imp });
+      return (await chiedi('CreateSceneItem', { sceneName: scena, sourceName: FONTE_PEW, sceneItemEnabled: true })).sceneItemId;
+    }
+    const nome = suo ? libero(FONTE_PEW, new Set(ingressi.map(function (x) { return x.inputName; }))) : FONTE_PEW;
+    return (await chiedi('CreateInput', { sceneName: scena, inputName: nome, inputKind: 'browser_source', inputSettings: imp, sceneItemEnabled: true })).sceneItemId;
+  }
+  async function aggiungiPew(chiedi, opz) {
+    const scene = ((await chiedi('GetSceneList')).scenes || []).map(function (x) { return x.sceneName; });
+    if (scene.indexOf(opz.scena) < 0) return { ok: false, motivo: 'scena' };
+    const gia = ((await chiedi('GetSceneItemList', { sceneName: opz.scena })).sceneItems || []).some(function (x) { return x.sourceName === FONTE_PEW; });
+    if (gia) return { ok: false, motivo: 'gia', scena: opz.scena };
+    await fontePew(chiedi, opz.scena, opz.url);
+    return { ok: true, scena: opz.scena };
+  }
+  async function scenaConPew(chiedi, opz) {
+    const scene = ((await chiedi('GetSceneList')).scenes || []).map(function (x) { return x.sceneName; });
+    if (scene.indexOf(opz.scena) < 0) return { ok: false, motivo: 'scena' };
+    const voci = ((await chiedi('GetSceneItemList', { sceneName: opz.scena })).sceneItems || []).slice()
+      .sort(function (a, b) { return a.sceneItemIndex - b.sceneItemIndex; });
+    const gruppo = voci.find(function (x) { return x.isGroup; });
+    if (gruppo) return { ok: false, motivo: 'gruppo', nome: gruppo.sourceName };
+    const nuova = libero(opz.scena + ' · Pew', new Set(scene));
+    await chiedi('CreateScene', { sceneName: nuova });
+    try {
+      for (const x of voci) {
+        if (x.sourceName === FONTE_PEW) continue;
+        const id = (await chiedi('CreateSceneItem', { sceneName: nuova, sourceName: x.sourceName, sceneItemEnabled: x.sceneItemEnabled !== false })).sceneItemId;
+        await chiedi('SetSceneItemTransform', { sceneName: nuova, sceneItemId: id, sceneItemTransform: trasformazione(x.sceneItemTransform) });
+        if (x.sceneItemBlendMode) await chiedi('SetSceneItemBlendMode', { sceneName: nuova, sceneItemId: id, sceneItemBlendMode: x.sceneItemBlendMode });
+        if (x.sceneItemLocked) await chiedi('SetSceneItemLocked', { sceneName: nuova, sceneItemId: id, sceneItemLocked: true });
+      }
+      await fontePew(chiedi, nuova, opz.url);
+    } catch (e) {
+      try { await chiedi('RemoveScene', { sceneName: nuova }); } catch (e2) {  }
+      return { ok: false, motivo: 'obs', errore: String(e && e.message || e) };
+    }
+    return { ok: true, scena: nuova };
+  }
+  const regia = crea();
+  regia.scenaConPew = function (opz) { return scenaConPew(regia.chiedi, opz); };
+  regia.aggiungiPew = function (opz) { return aggiungiPew(regia.chiedi, opz); };
+  regia.FONTE_PEW = FONTE_PEW;
+  window.RegiaEsterna = regia;
+  window.RegiaPew = { scenaConPew: scenaConPew, aggiungiPew: aggiungiPew, trasformazione: trasformazione, FONTE_PEW: FONTE_PEW };
 }());

@@ -52,7 +52,7 @@ test('lo zaino: il registro vero, «!pew zaino» su Twitch e su Kick, le rispost
   const i = BOT.indexOf('chiedeZaino(cfgColpi, msg.text)');
   assert.ok(i > 0 && i < BOT.indexOf('eFrasePresenza(cfgColpi, msg.text)'), 'prima della presenza');
   const h = BOT.slice(i - 40, i + 1200);
-  assert.match(h, /chiedeZaino\(cfgColpi, msg\.text\) && persona && this\.colpi\.conZaino\(login\)/);
+  assert.match(h, /chiedeZaino\(cfgColpi, msg\.text\) && persona && this\.colpi\.zainoVisibile\(login, persona\)/);
   assert.match(h, /if \(z\.rispondi && adesso - \(saldiBitChiesti\.get\(k\) \|\| 0\) >= z\.attesaSec \* 1000\) \{/);
   assert.match(h, /this\.colpi\.zainoDi\(login, persona\)/, 'lo zaino e\' della persona');
   assert.match(BOT, /testoColpi\(login, r\.dopo && r\.esito === 'pagato' \? 'zaino-dentro' : 'monete-' \+ r\.esito/, '!pew CODICE per dopo: «e\' nel tuo zaino», non «sta per comparire»');

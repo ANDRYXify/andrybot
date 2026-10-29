@@ -84,3 +84,13 @@ test('il giro: il primo dopo ogniMin dall\'inizio, poi dall\'ultimo, ognuno sull
   io._annunciaPew(T + 60 * MIN);
   assert.ok(!detti.slice(prima + 1).some((d) => d[1] === 'kick'), 'Kick spento: su Kick niente, anche con Twitch in onda');
 });
+
+test('«!pew» da solo: il link della pagina, col comando dello streamer, spegnibile', () => {
+  const c = C.normalizza({});
+  assert.ok(C.chiedeLink(c, ' !PEW ') && !C.chiedeLink(c, '!pew torta') && !C.chiedeLink(c, 'ciao !pew'));
+  assert.ok(C.chiedeLink(C.normalizza({ comando: 'colpo' }), '!colpo') && !C.chiedeLink(C.normalizza({ comando: 'colpo' }), '!pew'), 'il comando e\' dello streamer');
+  assert.equal(C.chiedeLink(C.normalizza({ link: { rispondi: false } }), '!pew'), false, 'spento');
+  assert.deepEqual([c.link.attesaSec, C.normalizza({ link: { attesaSec: 9999 } }).link.attesaSec], [30, 600]);
+  assert.equal(C.testoLink(c, 'it', { nome: '@m', pagina: 'pew.x/a' }), '@m colpisci la diretta da qui: scegli un effetto e mira → pew.x/a');
+  assert.equal(C.testoLink(C.normalizza({ link: { testo: 'Vai su {pagina}, {nome}' } }), 'it', { nome: '@m', pagina: 'p' }), 'Vai su p, @m');
+});
