@@ -1545,7 +1545,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   app.post('/overlay/:login/timer/parti', (req, res) => {
     if (!chiaveOk(req)) return res.status(403).json({ errore: 'chiave non valida' });
     const login = String(req.params.login).toLowerCase();
-    res.json({ ok: true, fine: alerts.avviaTimerSePronto(login) });
+    res.json({ ok: true, fine: manager.alerts?.avviaTimerSePronto?.(login) || 0 });
   });
 
   // la pagina dell'overlay
