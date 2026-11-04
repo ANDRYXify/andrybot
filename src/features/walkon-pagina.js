@@ -23,7 +23,7 @@ export const T = {
     stati: { attesa: 'In attesa', approvato: 'Approvato', rifiutato: 'Rifiutato', sospeso: 'Sospeso' },
     spiega: { attesa: 'Un moderatore lo guarda prima che vada in onda.', approvato: 'Partirà in diretta come scritto sopra.', rifiutato: 'Non andrà in onda. Puoi farne un altro.', sospeso: 'Adesso non hai i requisiti: se torni sub, torna com\'era.' },
     daVerificare: 'Non abbiamo potuto controllare adesso se sei sub: lo controlliamo quando scrivi in chat.',
-    motivo: 'Perché: {motivo}', effetto: 'Effetto: {nome}', togli: 'Cancella il mio walk-on', togliChiedi: 'Cancello il tuo walk-on? Il file se ne va con lui.', tolto: 'Cancellato.',
+    motivo: 'Perché: {motivo}', effetto: 'Effetto: {nome}', togli: 'Cancella il mio walk-on', togliChiedi: 'Cancello il tuo walk-on? Il file se ne va con lui.', si: 'Sì, cancellalo', no: 'No', tolto: 'Cancellato.',
     nuovo: 'Fai il tuo walk-on', cambia: 'Cambialo', cambiaNota: 'Se lo cambi torna in attesa: si approva quello che si vede.',
     sceltaEffetto: 'Un effetto del canale', sceltaFile: 'Un file tuo', file: 'Il file', fileNota: 'Il tipo lo leggiamo dal file stesso, non dal nome.', fileVa: 'Va bene {tipi}, fino a {mb} MB.',
     testo: 'La riga sotto (facoltativa)', testoPh: 'Per esempio: è arrivato {nome}!', testoNota: '{nome} diventa il tuo nome.',
@@ -49,7 +49,7 @@ export const T = {
     stati: { attesa: 'Pending', approvato: 'Approved', rifiutato: 'Rejected', sospeso: 'Suspended' },
     spiega: { attesa: 'A moderator checks it before it goes live.', approvato: 'It will play on stream as described above.', rifiutato: 'It will not go live. You can make another one.', sospeso: 'You do not meet the requirements right now: if you subscribe again, it is back as it was.' },
     daVerificare: 'We could not check right now whether you are subscribed: we will check when you write in chat.',
-    motivo: 'Why: {motivo}', effetto: 'Effect: {nome}', togli: 'Delete my walk-on', togliChiedi: 'Delete your walk-on? Its file goes with it.', tolto: 'Deleted.',
+    motivo: 'Why: {motivo}', effetto: 'Effect: {nome}', togli: 'Delete my walk-on', togliChiedi: 'Delete your walk-on? Its file goes with it.', si: 'Yes, delete it', no: 'No', tolto: 'Deleted.',
     nuovo: 'Make your walk-on', cambia: 'Change it', cambiaNota: 'If you change it, it goes back to pending: what gets approved is what is seen.',
     sceltaEffetto: 'A channel effect', sceltaFile: 'A file of yours', file: 'The file', fileNota: 'We read the type from the file itself, not from its name.', fileVa: 'Accepted: {tipi}, up to {mb} MB.',
     testo: 'The line below (optional)', testoPh: 'For example: {nome} is here!', testoNota: '{nome} becomes your name.',
@@ -75,7 +75,7 @@ export const T = {
     stati: { attesa: 'En espera', approvato: 'Aprobado', rifiutato: 'Rechazado', sospeso: 'Suspendido' },
     spiega: { attesa: 'Un moderador lo revisa antes de que salga al aire.', approvato: 'Saldrá en directo como dice arriba.', rifiutato: 'No saldrá al aire. Puedes hacer otro.', sospeso: 'Ahora no cumples los requisitos: si vuelves a ser sub, vuelve como estaba.' },
     daVerificare: 'No hemos podido comprobar ahora si eres sub: lo comprobamos cuando escribas en el chat.',
-    motivo: 'Por qué: {motivo}', effetto: 'Efecto: {nome}', togli: 'Borrar mi walk-on', togliChiedi: '¿Borro tu walk-on? El archivo se va con él.', tolto: 'Borrado.',
+    motivo: 'Por qué: {motivo}', effetto: 'Efecto: {nome}', togli: 'Borrar mi walk-on', togliChiedi: '¿Borro tu walk-on? El archivo se va con él.', si: 'Sí, bórralo', no: 'No', tolto: 'Borrado.',
     nuovo: 'Haz tu walk-on', cambia: 'Cámbialo', cambiaNota: 'Si lo cambias vuelve a estar en espera: se aprueba lo que se ve.',
     sceltaEffetto: 'Un efecto del canal', sceltaFile: 'Un archivo tuyo', file: 'El archivo', fileNota: 'El tipo lo leemos del archivo mismo, no del nombre.', fileVa: 'Vale {tipi}, hasta {mb} MB.',
     testo: 'La línea de debajo (opcional)', testoPh: 'Por ejemplo: ¡ha llegado {nome}!', testoNota: '{nome} se convierte en tu nombre.',
@@ -161,6 +161,7 @@ export function htmlPaginaWalkon({ login, display, avatar = '', pagina, baseUrl,
   .wo-righe-b{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.6rem}
   .wo-b{display:inline-flex;align-items:center;justify-content:center;gap:.4rem;min-height:2.75rem;padding:.55rem 1.1rem;border-radius:calc(var(--r) * .8);border:0;background:var(--acc);color:var(--suacc);font:inherit;font-weight:var(--pf);cursor:pointer;text-decoration:none}
   .wo-b.due{background:transparent;color:inherit;border:1px solid currentColor}
+  .wo-chiede{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem}.wo-chiede[hidden]{display:none}.wo-domanda{flex:1 1 100%;margin:0}
   .wo-b[disabled]{opacity:.5;cursor:not-allowed}
   .wo-b:focus-visible,.wo-voce:focus-visible,.wo-scelte button:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
   .wo-avviso{padding:.6rem .8rem;border-radius:calc(var(--r) * .6);font-size:.92rem;background:rgba(127,127,127,.15);margin:0}

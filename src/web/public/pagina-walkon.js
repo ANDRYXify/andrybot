@@ -124,11 +124,25 @@
     var righe = el('div', 'wo-righe-b');
     var tg = el('button', 'wo-b due', T.togli);
     tg.type = 'button';
-    tg.onclick = function () {
-      if (!window.confirm(T.togliChiedi)) return;
-      manda('/togli', {}).then(function (r) { if (r.ok) { avviso(T.tolto, 'ok'); carica(); } else avviso(errore(r), 'ko'); });
+    var chiede = el('div', 'wo-chiede');
+    chiede.hidden = true;
+    chiede.setAttribute('role', 'group');
+    var domanda = el('p', 'wo-domanda', T.togliChiedi);
+    var si = el('button', 'wo-b', T.si);
+    var no = el('button', 'wo-b due', T.no);
+    si.type = 'button';
+    no.type = 'button';
+    chiede.appendChild(domanda);
+    chiede.appendChild(si);
+    chiede.appendChild(no);
+    tg.onclick = function () { tg.hidden = true; chiede.hidden = false; no.focus(); };
+    no.onclick = function () { chiede.hidden = true; tg.hidden = false; tg.focus(); };
+    si.onclick = function () {
+      si.disabled = true;
+      manda('/togli', {}).then(function (r) { if (r.ok) { avviso(T.tolto, 'ok'); carica(); } else { si.disabled = false; avviso(errore(r), 'ko'); } });
     };
     righe.appendChild(tg);
+    righe.appendChild(chiede);
     box.appendChild(righe);
   }
 
