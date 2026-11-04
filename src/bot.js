@@ -107,7 +107,7 @@ import { creaServizioColpi } from './features/colpi-servizio.js';
 import * as economia from './features/economia.js';
 import { nomeMoneta, monetaDi, accordaMoneta } from './features/moneta.js';
 import { urlPaginaColpo, pagaInChat, chiedeBit, rispostaBit, chiedeZaino, rispostaZaino, nomeBuono, voceDi as voceColpo, quandoScade, titoloPremioMisto, lancioInChat, rispostaChat, prezzoChat, chiedeKicks, valutaDi, personaKick, annuncioDovuto, testoAnnuncio, chiedeLink, testoLink } from './features/colpi.js';
-import { eFrasePresente, contaSerie, rispostaPresenza, testoPorta } from './features/presente.js';
+import { eFrasePresente, contaSerie, rispostaPresenza, testoPorta, regaloTocca, scegliRegalo, testoRegalo } from './features/presente.js';
 import * as presenzaPorta from './features/presenza-porta.js';
 import { preferenzeDi } from './features/preferenze.js';
 import { creaChatColpi, rigaDi as rigaChatColpi, BATTITO_MS as BATTITO_CHAT_COLPI } from './features/colpi-chat.js';
@@ -1432,6 +1432,16 @@ export class BotManager {
           if (s ? s.nuova : prima) {
             const t = rispostaPresenza(pres, msg.display || msg.user, linguaChat(login), { serie: presenzaOra.serie, monete: date, moneta: nomeMoneta(login) });
             if (t) parla(t);
+          }
+          // IL REGALO DELLE PRESENZE (docs/COLPI.md): alla presenza numero N un
+          // colpo a caso nello zaino, di chi ha un account (Twitch, o Kick)
+          const persona = !msg.userId ? '' : piattaforma === 'twitch' ? String(msg.userId) : piattaforma === 'kick' ? personaKick(msg.userId) : '';
+          if (s && persona && regaloTocca(pres, s) && streamers.get(login)?.settings?.colpi?.attivo === true) {
+            const r = this.colpi?.regaloPresenza?.(login, { persona, nome: msg.display || msg.user, occasione, voci: pres.regalo.voci, scegli: (c) => scegliRegalo(c, occasione + ':' + persona) });
+            if (r?.esito === 'dato') {
+              const t = testoRegalo(pres, linguaChat(login), { nome: msg.display || msg.user, n: pres.regalo.conta === 'fila' ? s.serie : s.totale, colpo: r.nome, link: urlPaginaColpo(login).replace(/^https:\/\//, '') });
+              if (t) parla(t);
+            }
           }
         }
       } catch (e) { log.debug(`#${login} presenza:`, e?.message || e); }

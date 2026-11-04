@@ -533,6 +533,37 @@ export function creaServizioColpi({ registro, effects, effettoDi, impostazioni, 
     return incassa(registro.get(m.id), 'punti', `premio:${id}`, `${reward_id}:${id}`)
       ? { esito: 'pagato', stato: null, nome: m.nome, dopo: true, buono: perPrezzo ? costo : 0 } : { esito: 'gia', stato: 'CANCELED' };
   }
+  // IL REGALO DELLE PRESENZE (docs/COLPI.md, «Il regalo delle presenze»): un
+  // colpo nello zaino di chi si e' presentato, scelto da `scegli` fra quelli
+  // che si comprano per lo zaino adesso (e fra `voci`, se lo streamer ne ha
+  // scelte). L'id della mira viene dalla presenza: la stessa presenza non apre
+  // un secondo regalo. Metodo «dono»: non costa niente, e alla scadenza non
+  // torna niente. Nessun colpo cosi', o lo zaino pieno: niente regalo.
+  function regaloPresenza(login, { persona = '', nome = '', occasione = '', voci = [], scegli = (c) => c[0] } = {}) {
+    const ch = String(login || '').toLowerCase();
+    const cfg = cfgDi(ch);
+    if (!zaino || !persona || !occasione) return { esito: 'fermo', motivo: 'zaino' };
+    if (!cfg.attivo) return { esito: 'fermo', motivo: 'spento' };
+    if (cfg.pausa) return { esito: 'fermo', motivo: 'pausa' };
+    const scelte = new Set(voci || []);
+    const candidati = cfg.voci.filter((v) => (!scelte.size || scelte.has(v.id)) && !comprabile(ch, v.id));
+    const voce = candidati.length ? scegli(candidati) : null;
+    if (!voce) return { esito: 'fermo', motivo: 'nessuno' };
+    const id = 'rp' + createHash('sha256').update(ch + ':' + occasione + ':' + persona).digest('hex').slice(0, 22);
+    if (registro.get(id)) return { esito: 'doppio' };
+    const z = zaino.conta(ch, persona, ora());
+    const aperte = registro.dopoAperte(ch, persona, ora());
+    if (cfg.zaino.massimo && z.tutti + aperte.length >= cfg.zaino.massimo) return { esito: 'fermo', motivo: 'zaino-pieno' };
+    if (cfg.zaino.massimoVoce && (z.voci[voce.id] || 0) + aperte.filter((v) => v === voce.id).length >= cfg.zaino.massimoVoce) return { esito: 'fermo', motivo: 'zaino-pieno' };
+    const adesso = ora();
+    const m = { id, login: ch, voce: voce.id, comando: voce.comando, nome: voce.nome, x: 50, y: 50, scala: voce.scala, chi: nomeChi(nome),
+      prezzi: {}, creata: adesso, scade: adesso + SCADENZA_MS, spettatore: String(persona), dopo: true };
+    let aperta = false;
+    for (let i = 0; i < 12 && !aperta; i++) { m.codice = nuovoCodice(); aperta = registro.apri(m); if (!aperta && registro.get(id)) return { esito: 'doppio' }; }
+    if (!aperta) return { esito: 'fermo', motivo: 'codice' };
+    return incassa(registro.get(id), 'dono', `dono:${occasione}:${persona}`) ? { esito: 'dato', nome: voce.nome, voce: voce.id } : { esito: 'doppio' };
+  }
+
   // c'e' nello zaino qualcosa che lancia questa voce: un colpo suo, o un buono che basta
   function copreZaino(ch, chi, voce) {
     if (!zaino || !chi || !voce) return false;
@@ -724,7 +755,7 @@ export function creaServizioColpi({ registro, effects, effettoDi, impostazioni, 
     return [...per.values()].map((x) => (valoreBuono(x.voce) ? { ...x, buono: valoreBuono(x.voce) } : x)).sort((a, b) => posto(a) - posto(b));
   }
 
-  return { mira, consegnabile, comprabile, pronta, daZaino, zainoDi: zainoDi_, daCheer, daRiscatto, daPagamento, daMonete, daBitPew, daKicks, subito, inChat, saldoBit, scadonoBit, saldoMonete, presenza, provaPresenza, visto, ronda, cfgDi,
+  return { mira, consegnabile, comprabile, pronta, daZaino, zainoDi: zainoDi_, daCheer, daRiscatto, daPagamento, daMonete, daBitPew, daKicks, subito, inChat, saldoBit, scadonoBit, saldoMonete, presenza, provaPresenza, regaloPresenza, visto, ronda, cfgDi,
     conMonete: !!monete, conZaino: (login) => !!zaino && cfgDi(String(login || '').toLowerCase()).zaino.attivo,
     // lo zaino si mostra a chi compra per lo zaino, e a chi ci ha qualcosa dentro
     zainoVisibile: (login, chi) => !!zaino && (cfgDi(String(login || '').toLowerCase()).zaino.attivo || zainoDi_(login, chi).length > 0), copreZaino: (login, chi, idVoce) => copreZaino(String(login || '').toLowerCase(), chi, voceDi(cfgDi(String(login || '').toLowerCase()), idVoce)), conBitPew: (login) => !!resaDi(String(login || '').toLowerCase()), conKicksPew: (login) => !!resaDi(String(login || '').toLowerCase(), 'kicks') };

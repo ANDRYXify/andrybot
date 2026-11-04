@@ -64,6 +64,15 @@ comandi diversi da quelli della riga italiana.
 - Alert propri per la subathon: allungamenti, traguardi, pausa e fine. E le regole diventano immagini per i pannelli di Twitch. [vai: subathon]
   en: The subathon has its own alerts for extensions, milestones, pause and end, and the rules become images for your Twitch panels.
   es: El subathon tiene sus alertas para alargues, metas, pausa y final, y las reglas se vuelven imágenes para tus paneles de Twitch.
+- [importante] Il regalo delle presenze: dopo il numero di «!presente» che scegli tu, un colpo dei Pew a caso finisce nello zaino di chi si presenta. Si può spegnere. [vai: presenza]
+  en: The check-in gift: after the number of «!presente» you choose, a random Pew hit lands in the backpack of whoever checks in. It can be turned off.
+  es: El regalo de las presencias: tras el número de «!presente» que eliges, un golpe de Pew al azar acaba en la mochila de quien se presenta. Se puede apagar.
+  > Chi c'è sempre, vince
+  > Ogni quante presenze, se di fila o in tutto, una volta o ogni volta, fra quali colpi e cosa dice il bot lo decidi tu. Il colpo resta nello zaino finché non lo lancia.
+  en> Whoever is always there wins
+  en> How many check-ins, in a row or overall, once or every time, which hits and what the bot says: you decide. The hit stays in the backpack until they throw it.
+  es> Quien siempre está, gana
+  es> Cada cuántas presencias, seguidas o en total, una vez o cada vez, qué golpes y qué dice el bot: lo decides tú. El golpe se queda en la mochila hasta que lo lanza.
 
 ## 2026-10-29
 

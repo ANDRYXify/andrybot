@@ -640,18 +640,18 @@ test('la serie col registro vero: la conta la presenza del canale, e l\'effetto 
   const conta = (occ) => contaSerie(pewSerie, { canale: c, chiave: 'twitch:1', occasione: occ, ora: adesso, pres });
   const giro = (occ) => { adesso += 1000; pewSerie.segnaDiretta(c, occ, adesso); };
   giro('d1');
-  assert.deepEqual(conta('d1'), { serie: 1, gradino: 1, monete: 1, nuova: true });
+  assert.deepEqual(conta('d1'), { serie: 1, gradino: 1, monete: 1, nuova: true, totale: 1 });
   giro('d2');
   const r = conta('d2');
-  assert.deepEqual(r, { serie: 2, gradino: 5, monete: 5, nuova: true });
+  assert.deepEqual(r, { serie: 2, gradino: 5, monete: 5, nuova: true, totale: 2 });
   assert.deepEqual(s.presenza(c, { chiave: 'twitch:1', nome: 'Marta', occasione: 'd2', serie: r.serie, monete: r.gradino }), { esito: 'partita' });
   assert.equal(sparati.at(-1).attacco.chi, 'Marta 2ª +5', 'la scritta dice la serie che la presenza ha contato');
   giro('d3');
   giro('d4');
-  assert.deepEqual(conta('d4'), { serie: 1, gradino: 1, monete: 1, nuova: true }, 'la d3 l\'ha saltata: si riparte, anche se nessuno si e\' presentato alla d3');
+  assert.deepEqual(conta('d4'), { serie: 1, gradino: 1, monete: 1, nuova: true, totale: 3 }, 'la d3 l\'ha saltata: si riparte, anche se nessuno si e\' presentato alla d3');
   adesso += 1000;
-  assert.deepEqual(conta('d4'), { serie: 1, gradino: 1, monete: 0, nuova: false }, 'rifatta: le monete erano gia\' sue');
-  assert.deepEqual(conta('d5'), { serie: 2, gradino: 5, monete: 5, nuova: true }, 'una diretta vista la prima volta da una presenza conta lo stesso');
+  assert.deepEqual(conta('d4'), { serie: 1, gradino: 1, monete: 0, nuova: false, totale: 3 }, 'rifatta: le monete erano gia\' sue');
+  assert.deepEqual(conta('d5'), { serie: 2, gradino: 5, monete: 5, nuova: true, totale: 4 }, 'una diretta vista la prima volta da una presenza conta lo stesso');
   assert.equal(pewSerie.get(c, 'twitch:1').record, 2);
 });
 

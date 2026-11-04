@@ -13,7 +13,8 @@ import assert from 'node:assert/strict';
 import { presenteDi, normPresente, presenteDaSalvare, eFrasePresente, portaChiede, testoPorta, premioSerie, serieDopo, contaSerie, rispostaPresenza, PRESENTE } from '../../src/features/presente.js';
 
 const DI_SERIE = { frase: '!presente', premi: [], dopo: 'resta', rispondi: true, risposta: '',
-  porta: { attiva: true, monete: true, bit: true, giochi: 'blocca', ricorda: true, testoRicorda: '', conferma: true, testoConferma: '' } };
+  porta: { attiva: true, monete: true, bit: true, giochi: 'blocca', ricorda: true, testoRicorda: '', conferma: true, testoConferma: '' },
+  regalo: { attivo: false, ogni: 5, conta: 'totale', ripeti: true, voci: [], rispondi: true, frase: '' } };
 
 test('l\'accessore legge la forma nuova, settings.presente', () => {
   const p = presenteDi({ presente: { frase: '  Eccomi   QUI ', premi: '1, 5, 10', dopo: 'ricomincia', porta: { giochi: 'libero' } } });
@@ -89,11 +90,11 @@ test('contaSerie sul registro: sale diretta dopo diretta, una saltata la azzera,
   };
   const pres = normPresente({ premi: [1, 5, 10] });
   const conta = (occ) => contaSerie(serie, { canale: 'c', chiave: 'twitch:1', occasione: occ, ora: 1, pres });
-  assert.deepEqual(conta('d1'), { serie: 1, gradino: 1, monete: 1, nuova: true });
-  assert.deepEqual(conta('d1'), { serie: 1, gradino: 1, monete: 0, nuova: false }, 'rifatta nella stessa diretta: niente monete');
-  assert.deepEqual(conta('d2'), { serie: 2, gradino: 5, monete: 5, nuova: true });
+  assert.deepEqual(conta('d1'), { serie: 1, gradino: 1, monete: 1, nuova: true, totale: 1 });
+  assert.deepEqual(conta('d1'), { serie: 1, gradino: 1, monete: 0, nuova: false, totale: 1 }, 'rifatta nella stessa diretta: niente monete');
+  assert.deepEqual(conta('d2'), { serie: 2, gradino: 5, monete: 5, nuova: true, totale: 2 });
   serie.segnaDiretta('c', 'd3');
-  assert.deepEqual(conta('d4'), { serie: 1, gradino: 1, monete: 1, nuova: true }, 'la d3 l\'ha saltata');
+  assert.deepEqual(conta('d4'), { serie: 1, gradino: 1, monete: 1, nuova: true, totale: 3 }, 'la d3 l\'ha saltata: la serie riparte, il totale no');
   assert.equal(righe.get('twitch:1').record, 2);
   assert.deepEqual(contaSerie(null, { canale: 'c', chiave: 'k', occasione: 'o', pres }).nuova, false, 'senza registro non conta niente');
 });

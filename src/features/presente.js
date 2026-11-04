@@ -55,6 +55,62 @@ function normPorta(p) {
   };
 }
 
+// IL REGALO DELLE PRESENZE (docs/COLPI.md, «Il regalo delle presenze»): dopo
+// `ogni` presenze un colpo a caso nello zaino. Spento di serie: un regalo non
+// lo deve trovare chi non l'ha scelto.
+export const REGALO = Object.freeze({ ogni: [2, 100], diSerie: 5, voci: 50, frase: 200,
+  frasi: Object.freeze({
+    it: '@{nome}, {n} presenze: nel tuo zaino c\'è un regalo, {colpo}! Lancialo quando vuoi da {link}',
+    en: '@{nome}, {n} check-ins: there\'s a gift in your backpack, {colpo}! Throw it whenever you like from {link}',
+    es: '@{nome}, {n} presencias: en tu mochila hay un regalo, ¡{colpo}! Lánzalo cuando quieras desde {link}',
+  }),
+});
+function normRegalo(r) {
+  const o = oggetto(r) || {};
+  const n = Math.round(Number(o.ogni));
+  const voci = (Array.isArray(o.voci) ? o.voci : []).map((v) => testo(v, 40)).filter(Boolean);
+  return {
+    attivo: o.attivo === true,
+    ogni: Number.isFinite(n) ? Math.min(REGALO.ogni[1], Math.max(REGALO.ogni[0], n)) : REGALO.diSerie,
+    // si contano tutte le dirette con la presenza, o solo quelle di fila (la serie)
+    conta: o.conta === 'fila' ? 'fila' : 'totale',
+    // alla 5ª, alla 10ª, alla 15ª…, o una volta sola
+    ripeti: o.ripeti !== false,
+    // fra quali colpi si pesca: vuoto = tutti quelli che si comprano per lo zaino
+    voci: [...new Set(voci)].slice(0, REGALO.voci),
+    rispondi: o.rispondi !== false,
+    frase: testo(o.frase, REGALO.frase),
+  };
+}
+// Questa presenza porta il regalo? Solo la prima della diretta (`nuova`), col
+// conto scelto: il totale delle dirette o la serie di fila.
+export function regaloTocca(pres, { nuova = false, serie = 0, totale = 0 } = {}) {
+  const r = pres?.regalo;
+  if (!r?.attivo || !nuova) return false;
+  const n = Math.trunc(Number(r.conta === 'fila' ? serie : totale)) || 0;
+  if (n < 1) return false;
+  return r.ripeti ? n % r.ogni === 0 : n === r.ogni;
+}
+// Quale colpo, fra quelli che si possono avere: «a caso», ma la stessa presenza
+// pesca sempre lo stesso (il seme e' la presenza), cosi' un nuovo tentativo non
+// cambia il regalo.
+export function scegliRegalo(candidati, seme) {
+  const c = Array.isArray(candidati) ? candidati : [];
+  if (!c.length) return null;
+  let h = 2166136261;
+  for (const ch of String(seme ?? '')) { h ^= ch.codePointAt(0); h = Math.imul(h, 16777619) >>> 0; }
+  return c[h % c.length];
+}
+const riempiRegalo = (t, v) => String(t).replace(/\{(nome|n|colpo|link)\}/g, (_, k) => String(v[k] ?? ''));
+// La riga in chat del regalo: '' se spenta.
+export function testoRegalo(pres, lingua, { nome = '', n = 0, colpo = '', link = '' } = {}) {
+  const r = pres?.regalo;
+  const chi = nomeIn(nome);
+  if (!r?.rispondi || !chi) return '';
+  const base = r.frase || REGALO.frasi[lingua] || REGALO.frasi.it;
+  return riempiRegalo(base, { nome: chi, n, colpo, link }).replace(/\s+/g, ' ').trim();
+}
+
 // La presenza ripulita: frase, serie (gradini e dopo l'ultimo), risposta, porta.
 // Accetta anche la forma vecchia (`monete`: il premio fisso di prima diventa un gradino).
 export function normPresente(p) {
@@ -72,6 +128,7 @@ export function normPresente(p) {
     rispondi: o.rispondi !== false,
     risposta: testo(o.risposta, PRESENTE.risposta),
     porta: normPorta(o.porta),
+    regalo: normRegalo(o.regalo),
   };
 }
 
@@ -92,7 +149,7 @@ export function presenteDaSalvare(prima, corpo) {
   const p = oggetto(prima) || {}, b = oggetto(corpo) || {};
   if (b.presente !== undefined) {
     const sotto = presenteDi(p), sopra = oggetto(b.presente) || {};
-    return normPresente({ ...sotto, ...sopra, porta: { ...sotto.porta, ...(oggetto(sopra.porta) || {}) } });
+    return normPresente({ ...sotto, ...sopra, porta: { ...sotto.porta, ...(oggetto(sopra.porta) || {}) }, regalo: { ...sotto.regalo, ...(oggetto(sopra.regalo) || {}) } });
   }
   if (b.colpi === undefined || oggetto(p.presente)) return undefined;
   return normPresente({ ...(oggetto(oggetto(p.colpi)?.presenza) || {}), ...(oggetto(oggetto(b.colpi)?.presenza) || {}) });
@@ -150,14 +207,16 @@ export function serieDopo(prima, occasione, precedente) {
 // `gradino` e' quanto vale il suo gradino (per le scritte), `monete` quanto
 // gli spetta adesso (zero se non e' nuova).
 export function contaSerie(serie, { canale, chiave, occasione, ora = Date.now(), pres }) {
-  if (!serie || !canale || !chiave || !occasione) return { serie: 1, gradino: premioSerie(pres, 1), monete: 0, nuova: false };
+  if (!serie || !canale || !chiave || !occasione) return { serie: 1, gradino: premioSerie(pres, 1), monete: 0, nuova: false, totale: 0 };
   serie.segnaDiretta(canale, occasione, ora);
   const prima = serie.get(canale, chiave) || null;
   const n = serieDopo(prima, occasione, serie.precedente(canale, occasione) || '');
   const nuova = prima?.ultima !== occasione;
   const gradino = premioSerie(pres, n);
-  if (nuova) serie.metti(canale, chiave, { ultima: occasione, serie: n, record: Math.max(prima?.record || 0, n), ts: ora });
-  return { serie: n, gradino, monete: nuova ? gradino : 0, nuova };
+  // il totale delle dirette con la presenza, una volta per diretta come la serie
+  const totale = (Math.trunc(Number(prima?.totale)) || 0) + (nuova ? 1 : 0);
+  if (nuova) serie.metti(canale, chiave, { ultima: occasione, serie: n, record: Math.max(prima?.record || 0, n), totale, ts: ora });
+  return { serie: n, gradino, monete: nuova ? gradino : 0, nuova, totale };
 }
 
 // LA RISPOSTA IN CHAT, una sola, alla prima presenza della diretta: quella

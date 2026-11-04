@@ -1291,6 +1291,13 @@ function aggiungiColonna(tabella, colonna, definizione) {
 // l'errore inghiottito dal try/catch, quindi muto.
 // Il cancello del gruppo Telegram: spento finche' non lo accendi tu. Un bot che
 // silenzia le persone senza che gliel'abbia chiesto nessuno e' un danno.
+// IL TOTALE DELLE PRESENZE (docs/COLPI.md, «Il regalo delle presenze»): le
+// dirette con la presenza, in tutto. Chi c'era gia' parte dalla sua serie, che
+// e' il minimo sicuro di quante ne ha fatte: non si inventa niente.
+if (!db.prepare('PRAGMA table_info(pew_serie)').all().some((c) => c.name === 'totale')) {
+  aggiungiColonna('pew_serie', 'totale', 'INTEGER NOT NULL DEFAULT 0');
+  db.exec('UPDATE pew_serie SET totale=serie WHERE totale=0');
+}
 aggiungiColonna('telegram', 'ingresso', 'INTEGER NOT NULL DEFAULT 0');
 aggiungiColonna('telegram', 'ingresso_minuti', 'INTEGER NOT NULL DEFAULT 5');
 aggiungiColonna('telegram', 'ingresso_scaduto', "TEXT NOT NULL DEFAULT 'caccia'");
@@ -2043,11 +2050,11 @@ export const pewSerie = {
     return db.prepare(`SELECT occasione FROM pew_dirette WHERE channel=? AND ts < (SELECT ts FROM pew_dirette WHERE channel=? AND occasione=?)
       ORDER BY ts DESC LIMIT 1`).get(ch, ch, String(occasione))?.occasione || '';
   },
-  get(channel, chi) { return db.prepare('SELECT ultima, serie, record, ts FROM pew_serie WHERE channel=? AND chi=?').get(String(channel).toLowerCase(), String(chi)) || null; },
-  metti(channel, chi, { ultima, serie, record, ts = now() }) {
-    db.prepare(`INSERT INTO pew_serie (channel, chi, ultima, serie, record, ts) VALUES (?,?,?,?,?,?)
-      ON CONFLICT(channel, chi) DO UPDATE SET ultima=excluded.ultima, serie=excluded.serie, record=excluded.record, ts=excluded.ts`)
-      .run(String(channel).toLowerCase(), String(chi), String(ultima), Math.trunc(serie) || 0, Math.trunc(record) || 0, ts);
+  get(channel, chi) { return db.prepare('SELECT ultima, serie, record, totale, ts FROM pew_serie WHERE channel=? AND chi=?').get(String(channel).toLowerCase(), String(chi)) || null; },
+  metti(channel, chi, { ultima, serie, record, totale = 0, ts = now() }) {
+    db.prepare(`INSERT INTO pew_serie (channel, chi, ultima, serie, record, totale, ts) VALUES (?,?,?,?,?,?,?)
+      ON CONFLICT(channel, chi) DO UPDATE SET ultima=excluded.ultima, serie=excluded.serie, record=excluded.record, totale=excluded.totale, ts=excluded.ts`)
+      .run(String(channel).toLowerCase(), String(chi), String(ultima), Math.trunc(serie) || 0, Math.trunc(record) || 0, Math.trunc(totale) || 0, ts);
   },
   pulisci(ora = now()) { db.prepare('DELETE FROM pew_dirette WHERE ts<?').run(ora - 400 * 86400_000); },
 };

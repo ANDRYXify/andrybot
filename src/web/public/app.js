@@ -31410,6 +31410,15 @@ function _presLeggi() {
     dopo: v('ps-dopo')?.value || 'resta',
     rispondi: !!v('ps-rispondi')?.checked,
     risposta: (v('ps-risposta')?.value || '').trim(),
+    regalo: {
+      attivo: !!v('ps-rg-attivo')?.checked,
+      ogni: Number(v('ps-rg-ogni')?.value),
+      conta: v('ps-rg-conta')?.value === 'fila' ? 'fila' : 'totale',
+      ripeti: v('ps-rg-ripeti')?.value !== 'una',
+      voci: [...document.querySelectorAll('#ps-rg-voci input[type=checkbox]:checked')].map((x) => x.value),
+      rispondi: !!v('ps-rg-rispondi')?.checked,
+      frase: (v('ps-rg-frase')?.value || '').trim(),
+    },
     porta: {
       attiva: !!v('ps-po-attiva')?.checked,
       monete: !!v('ps-po-monete')?.checked,
@@ -31426,6 +31435,7 @@ function _presLeggi() {
 function _presGiusta(p) {
   if (p.premi.some((x) => !Number.isFinite(x) || x < 0 || x > 100000)) throw new Error(L('Nei gradini della serie scrivi solo numeri, da 0 a 100.000, separati da virgole.', 'In the streak steps write only numbers, from 0 to 100,000, separated by commas.', 'En los escalones de la racha escribe solo números, de 0 a 100.000, separados por comas.'));
   if (p.premi.length > 30) throw new Error(L('Al massimo 30 gradini.', 'At most 30 steps.', 'Como máximo 30 escalones.'));
+  if (p.regalo.attivo && !(Number.isInteger(p.regalo.ogni) && p.regalo.ogni >= 2 && p.regalo.ogni <= 100)) throw new Error(L('Il regalo: ogni quante presenze va da 2 a 100.', 'The gift: every how many check-ins goes from 2 to 100.', 'El regalo: cada cuántas presencias va de 2 a 100.'));
   if (p.frase && p.frase.length < 2) throw new Error(L('La frase della presenza vuole almeno due caratteri.', 'The check-in phrase needs at least two characters.', 'La frase de la presencia necesita al menos dos caracteres.'));
 }
 
@@ -31433,12 +31443,25 @@ function _presDice() {
   const el = document.getElementById('ps-dice');
   if (!el) return;
   const p = _presLeggi();
+  _presDiceRegalo(p);
   const g = p.premi.filter((x) => Number.isFinite(x) && x >= 0).map((x) => Math.round(x)).slice(0, 30);
   const nome = impostazioni().nomeMonete;
   if (!g.some((x) => x > 0)) { el.textContent = L('Così la presenza non dà monete: conta solo nella serie.', 'So check-in gives no coins: it only counts in the streak.', 'Así la presencia no da monedas: solo cuenta en la racha.'); return; }
   const primi = g.slice(0, 6).map((x, i) => `${i + 1}ª ${x}`).join(', ') + (g.length > 6 ? '…' : '');
   const poi = p.dopo === 'ricomincia' ? L(`poi si ricomincia da ${g[0]}`, `then it starts over from ${g[0]}`, `luego se vuelve a ${g[0]}`) : L(`poi sempre ${g.at(-1)}`, `then always ${g.at(-1)}`, `luego siempre ${g.at(-1)}`);
   el.textContent = L(`Così, presenza dopo presenza di fila: ${primi} ${nome}, ${poi}. Chi salta una diretta riparte da ${g[0]}.`, `So, check-in after check-in in a row: ${primi} ${nome}, ${poi}. Whoever misses a stream starts again from ${g[0]}.`, `Así, presencia tras presencia seguida: ${primi} ${nome}, ${poi}. Quien se salta un directo vuelve a ${g[0]}.`);
+}
+
+function _presDiceRegalo(p) {
+  const el = document.getElementById('ps-rg-dice');
+  if (!el) return;
+  const r = p.regalo, n = Number.isInteger(r.ogni) && r.ogni >= 2 && r.ogni <= 100 ? r.ogni : 5;
+  if (!r.attivo) { el.textContent = L('Spento: nessuno riceve regali per le presenze.', 'Off: nobody gets gifts for check-ins.', 'Apagado: nadie recibe regalos por las presencias.'); return; }
+  const en = (k) => k + ([11, 12, 13].includes(k % 100) ? 'th' : ({ 1: 'st', 2: 'nd', 3: 'rd' })[k % 10] || 'th');
+  const quando = r.ripeti ? L(`alla ${n}ª, alla ${n * 2}ª, alla ${n * 3}ª…`, `at the ${en(n)}, the ${en(n * 2)}, the ${en(n * 3)}…`, `en la ${n}ª, la ${n * 2}ª, la ${n * 3}ª…`) : L(`una volta sola, alla ${n}ª`, `once only, at the ${en(n)}`, `una sola vez, en la ${n}ª`);
+  const cosa = r.conta === 'fila' ? L('presenza di fila', 'check-in in a row', 'presencia seguida') : L('presenza in tutto', 'check-in overall', 'presencia en total');
+  const fra = r.voci.length ? L(`fra i ${r.voci.length} colpi che hai scelto`, `from the ${r.voci.length} hits you picked`, `entre los ${r.voci.length} golpes que elegiste`) : L('fra tutti quelli del tuo listino', 'from your whole list', 'entre todos los de tu lista');
+  el.textContent = L(`Così: ${quando} ${cosa}, chi si presenta trova nello zaino un colpo a caso ${fra}.`, `So: ${quando} ${cosa}, whoever checks in finds a random hit ${fra} in their backpack.`, `Así: ${quando} ${cosa}, quien se presenta encuentra en la mochila un golpe al azar ${fra}.`);
 }
 
 async function salvaPresente() {
@@ -31452,6 +31475,8 @@ function pannelloPresenza() {
   const pr = presenzeDi(s);
   const p = s.presente || {};
   const po = p.porta || {};
+  const rg = p.regalo || {};
+  const vociRg = ((s.colpi || {}).voci || []).filter((x) => x && x.id);
   return pannello('presenza', `
     <div class="carta" id="pres-presente">
       <h2>${_hIco(ICO.presente)}${L('La presenza dichiarata', 'Declared attendance', 'La presencia declarada')}</h2>
@@ -31486,6 +31511,33 @@ function pannelloPresenza() {
       <label class="campo" for="ps-po-testo-ricorda">${L('Il ricordo (vuoto: quello di serie)', 'The reminder (empty: the default one)', 'El recordatorio (vacío: el de serie)')}</label>
       <input type="text" id="ps-po-testo-ricorda" maxlength="200" value="${esc(po.testoRicorda || '')}" placeholder="${esc(L('@{nome} prima scrivi {frase}: da lì {cosa}.', '@{nome} first type {frase}: from then on {cosa}.', '@{nome} primero escribe {frase}: desde ahí {cosa}.'))}">
       <p class="suggerimento">${L('Nel ricordo: {nome}, {frase} e {cosa} (quello che la porta chiede, detto da solo).', 'In the reminder: {nome}, {frase} and {cosa} (what the gate asks, said for you).', 'En el recordatorio: {nome}, {frase} y {cosa} (lo que pide la puerta, dicho solo).')}</p>
+      <h3 class="sotto-titolo" id="ps-regalo">${L('Il regalo delle presenze', 'The check-in gift', 'El regalo de las presencias')}</h3>
+      <p class="suggerimento">${L('Dopo un numero di presenze che decidi tu, un colpo a caso finisce nello zaino di chi si presenta: lo lancia dalla pagina dei Pew quando vuole. Conta una presenza per diretta, solo in onda. Serve un account Twitch o Kick, i Pew accesi e almeno un colpo che si compra per lo zaino.', 'After a number of check-ins you choose, a random hit lands in the backpack of whoever checks in: they throw it from the Pew page whenever they like. One check-in per stream counts, only while live. It needs a Twitch or Kick account, Pew on and at least one hit bought for the backpack.', 'Tras un número de presencias que decides tú, un golpe al azar acaba en la mochila de quien se presenta: lo lanza desde la página de Pew cuando quiere. Cuenta una presencia por directo, solo en directo. Hace falta una cuenta de Twitch o Kick, Pew encendido y al menos un golpe que se compre para la mochila.')}</p>
+      <div class="riga-interruttore">
+        <label class="interruttore"><input type="checkbox" id="ps-rg-attivo" ${rg.attivo === true ? 'checked' : ''}><span class="levetta"></span></label>
+        <span class="etichetta-stato">${L('Regala un colpo per le presenze', 'Gift a hit for check-ins', 'Regala un golpe por las presencias')}</span>
+      </div>
+      <div class="griglia-campi">
+        <div>
+          <label class="campo" for="ps-rg-ogni">${L('Ogni quante presenze', 'Every how many check-ins', 'Cada cuántas presencias')}</label>
+          <input type="number" id="ps-rg-ogni" min="2" max="100" step="1" value="${esc(String(rg.ogni || 5))}">
+        </div>
+        <div>
+          <label class="campo" for="ps-rg-conta">${L('Quali presenze contano', 'Which check-ins count', 'Qué presencias cuentan')}</label>
+          <select id="ps-rg-conta"><option value="totale"${rg.conta !== 'fila' ? ' selected' : ''}>${L('tutte', 'all of them', 'todas')}</option><option value="fila"${rg.conta === 'fila' ? ' selected' : ''}>${L('solo di fila', 'only in a row', 'solo seguidas')}</option></select>
+        </div>
+        <div>
+          <label class="campo" for="ps-rg-ripeti">${L('Quante volte', 'How many times', 'Cuántas veces')}</label>
+          <select id="ps-rg-ripeti"><option value="sempre"${rg.ripeti !== false ? ' selected' : ''}>${L('ogni volta', 'every time', 'cada vez')}</option><option value="una"${rg.ripeti === false ? ' selected' : ''}>${L('una volta sola', 'once only', 'una sola vez')}</option></select>
+        </div>
+      </div>
+      <p class="campo">${L('Fra quali colpi si pesca (nessuno spuntato: tutti quelli che si comprano per lo zaino)', 'Which hits it draws from (none ticked: all those bought for the backpack)', 'De qué golpes se saca (ninguno marcado: todos los que se compran para la mochila)')}</p>
+      <div id="ps-rg-voci">${vociRg.length ? vociRg.map((x, i) => `<div class="riga-check"><input type="checkbox" id="ps-rg-v${i}" value="${esc(x.id)}" ${(rg.voci || []).includes(x.id) ? 'checked' : ''}><label for="ps-rg-v${i}">${esc(x.nome || x.id)}</label></div>`).join('') : `<p class="suggerimento">${L('Non hai ancora colpi nel listino dei Pew.', 'You have no hits in the Pew list yet.', 'Aún no tienes golpes en la lista de Pew.')}</p>`}</div>
+      <p class="pt-dice" id="ps-rg-dice" aria-live="polite"></p>
+      <div class="riga-check"><input type="checkbox" id="ps-rg-rispondi" ${rg.rispondi !== false ? 'checked' : ''}><label for="ps-rg-rispondi">${L('Dillo in chat', 'Say it in chat', 'Decirlo en el chat')}</label></div>
+      <label class="campo" for="ps-rg-frase">${L('La frase del regalo (vuota: quella di serie)', 'The gift line (empty: the default one)', 'La frase del regalo (vacía: la de serie)')}</label>
+      <input type="text" id="ps-rg-frase" maxlength="200" value="${esc(rg.frase || '')}" placeholder="${esc(L('@{nome}, {n} presenze: nel tuo zaino c\'è un regalo, {colpo}! Lancialo quando vuoi da {link}', '@{nome}, {n} check-ins: there\'s a gift in your backpack, {colpo}! Throw it whenever you like from {link}', '@{nome}, {n} presencias: en tu mochila hay un regalo, ¡{colpo}! Lánzalo cuando quieras desde {link}'))}">
+      <p class="suggerimento">${L('Nella frase: {nome}, {n} (le presenze), {colpo} e {link}, la pagina dei Pew. Il colpo regalato scade come gli altri dello zaino, e alla scadenza non torna niente.', 'In the line: {nome}, {n} (the check-ins), {colpo} and {link}, the Pew page. The gifted hit expires like the others in the backpack, and nothing comes back when it does.', 'En la frase: {nome}, {n} (las presencias), {colpo} y {link}, la página de Pew. El golpe regalado caduca como los demás de la mochila, y al caducar no vuelve nada.')}</p>
       <h3 class="sotto-titolo">${L('La risposta in chat', 'The chat reply', 'La respuesta en el chat')}</h3>
       <p class="suggerimento">${L('Il bot risponde una volta per diretta a chi si presenta: con la risposta della serie quando ci sono monete o quando l\'hai scritta tu, se no con la conferma. Ognuna si spegne da sola.', 'The bot replies once per stream to whoever checks in: with the streak reply when there are coins or when you wrote it, otherwise with the confirmation. Each one turns off on its own.', 'El bot responde una vez por directo a quien se presenta: con la respuesta de la racha cuando hay monedas o cuando la escribiste tú, si no con la confirmación. Cada una se apaga sola.')}</p>
       <div class="riga-check"><input type="checkbox" id="ps-rispondi" ${p.rispondi !== false ? 'checked' : ''}><label for="ps-rispondi">${L('La risposta della serie', 'The streak reply', 'La respuesta de la racha')}</label></div>

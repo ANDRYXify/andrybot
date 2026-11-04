@@ -1019,6 +1019,53 @@ Nel pannello, scheda Presenza, carta «La presenza dichiarata»: la frase, i
 gradini separati da virgole, cosa succede dopo l'ultimo, una riga che rilegge
 la serie coi numeri, la porta, il ricordo, la risposta e la conferma.
 
+## Il regalo delle presenze: dopo N dirette, un colpo nello zaino
+
+Chiesto così: «dopo la presenza in tot live si vince un effetto a caso, che
+ovviamente rimane nello zaino dello spettatore, e il numero di presenze le
+decide lo streamer (può anche disattivarlo)».
+
+**Il modello.** Il regalo è della presenza del canale (`settings.presente.regalo`)
+e finisce nello zaino dei Pew, dove sta ogni colpo comprato: si lancia dalla
+pagina quando si vuole, come gli altri.
+
+- **Di chi è la scelta**: acceso o spento (di serie **spento**: un regalo non
+  lo deve trovare nessuno che non l'ha scelto), ogni quante presenze (`ogni`,
+  da 2 a 100, di serie 5), se si contano **tutte** le dirette con la presenza
+  o solo quelle **di fila** (la serie), se si ripete (alla 5ª, alla 10ª, alla
+  15ª…) o vale una volta sola, fra quali colpi si pesca (vuoto: tutti quelli
+  che si comprano per lo zaino), e la frase in chat.
+- **Il conto**: `pew_serie` tiene anche il **totale** delle dirette con la
+  presenza (una volta per diretta, come la serie: `contaSerie`). Il regalo
+  scatta solo alla prima presenza di una diretta, e solo in onda, come le
+  monete della serie.
+- **A caso, fra quelli che si possono avere**: un colpo che si compra per lo
+  zaino (`zainoDi`), con l'effetto che c'è, fra quelli scelti. Nessuno così,
+  o Pew spenti: niente regalo e niente messaggio — non si promette quello che
+  non si può dare.
+- **Una volta sola** per quella diretta e quella persona: la mira del regalo
+  ha l'id che viene dalla presenza (`presenza:<diretta>:<persona>`), e la
+  seconda non si apre.
+- **Di chi ha un account**: lo zaino è di chi entra nella pagina con Twitch o
+  Kick (l'id Twitch, `k:<id>` su Kick). Una presenza senza id (o da un'altra
+  piattaforma) non ha uno zaino dove mettere il regalo.
+- **Scade e si lancia** come ogni colpo dello zaino; alla scadenza non torna
+  niente (era gratis).
+- **A caso, ma senza dado**: il colpo lo sceglie l'hash della presenza
+  (diretta e persona, `scegliRegalo`): presenze diverse pescano colpi diversi,
+  e la stessa presenza riprovata pesca lo stesso.
+- **Lo zaino pieno** (i massimi dello streamer) vale anche per i regali: niente
+  regalo, come per un acquisto. Pew in pausa: niente regalo.
+- **Nel registro** il regalo e' una mira per lo zaino col metodo `dono`, senza
+  prezzi: nessun rimborso puo' mai partire da li'.
+- **Chi c'era gia'**: il totale nuovo parte dalla serie di ognuno, il minimo
+  sicuro di quante presenze ha fatto.
+
+Nel pannello, scheda Presenza, carta «La presenza dichiarata», sezione «Il
+regalo delle presenze»: acceso, ogni quante, quali contano, quante volte, fra
+quali colpi, una riga che rilegge la regola, la frase in chat ({nome}, {n},
+{colpo}, {link}).
+
 ## La chat
 
 `colpi-chat.js`: le righe che il bot riceve già dalla chat di Twitch del
