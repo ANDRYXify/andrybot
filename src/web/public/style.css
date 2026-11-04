@@ -3203,3 +3203,17 @@ body.in-studio #anime-sfondo::after, body.tel-aperta #anime-sfondo::after, body.
 .cl-quadro-punto:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
 .cl-punto { position: absolute; width: 22px; height: 22px; transform: translate(-50%, -50%); border: 2px solid var(--acc); border-radius: 50%; background: color-mix(in srgb, var(--acc) 25%, transparent); pointer-events: none; }
 .cl-via { justify-self: end; }
+
+.sb-quadro { display: grid; gap: .2rem; margin-top: .8rem; padding: .8rem 1rem; border: 2px solid var(--contorno); border-radius: var(--r-m); background: var(--surface); }
+.sb-orologio { font-size: clamp(2.2rem, 7vw, 3.4rem); font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; color: var(--acc); }
+.sb-orologio.in-pausa { opacity: .6; }
+.sb-riassunto:empty { display: none; }
+.sb-pezzi { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 13rem), 1fr)); gap: .2rem .8rem; }
+.sb-tg-lista { display: grid; gap: .4rem; margin: .5rem 0; }
+.sb-alert-riga { border: 2px solid var(--border); border-radius: var(--r-s); padding: .6rem .8rem; margin: 0 0 .7rem; min-width: 0; }
+.sb-alert-riga legend { font-weight: 800; padding: 0 .3rem; }
+.sb-libro td { vertical-align: middle; }
+.sb-num-riga { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.sb-pan-vista { display: flex; flex-wrap: wrap; gap: 14px; padding: 14px; border-radius: var(--r-s); background: #0e0e10; }
+.sb-pan-vista figure { margin: 0; display: grid; justify-items: center; gap: 6px; max-width: 100%; }
+.sb-pan-vista canvas { display: block; max-width: 100%; height: auto; }

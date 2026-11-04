@@ -1227,6 +1227,30 @@ CREATE TABLE IF NOT EXISTS pagina_pannello (  -- la pagina dietro un pannello di
   ts INTEGER NOT NULL,
   PRIMARY KEY (channel, pannello)
 );
+-- IL LIBRO DELLA SUBATHON (docs/SUBATHON.md, «Il libro»): ogni mossa dell'orologio
+-- e' una riga, con l'id dell'evento che l'ha fatta. Lo stesso id non entra due
+-- volte, e niente si cancella: «annulla» scrive una riga che storna.
+CREATE TABLE IF NOT EXISTS subathon_righe (
+  channel TEXT NOT NULL,
+  id TEXT NOT NULL,                            -- evento:<message_id> · euro:<id> · mano:cmd:<id msg> · mano:tasto:<id> · annulla:…
+  sessione INTEGER NOT NULL DEFAULT 0,         -- l'istante in cui l'orologio e' partito (overlayStato.subathon.inizio)
+  ts INTEGER NOT NULL,
+  fonte TEXT NOT NULL,                         -- sub · bit · euro · kicks · follow · raid · premio · piu · meno · resta · pausa · riprendi · felice · storno
+  chi TEXT NOT NULL DEFAULT '',                -- chi ha allungato (vuoto per le righe a mano)
+  quanti REAL NOT NULL DEFAULT 0,
+  livello INTEGER NOT NULL DEFAULT 0,
+  per INTEGER NOT NULL DEFAULT 1,              -- il moltiplicatore dell'ora felice applicato
+  chiesti INTEGER NOT NULL DEFAULT 0,          -- millisecondi, col segno
+  messi INTEGER NOT NULL DEFAULT 0,
+  tagliati INTEGER NOT NULL DEFAULT 0,
+  mano TEXT NOT NULL DEFAULT '',               -- chi l'ha scritta a mano (comando o pannello)
+  perche TEXT NOT NULL DEFAULT '',
+  storno TEXT NOT NULL DEFAULT '',             -- l'id della riga stornata, per le righe di storno
+  PRIMARY KEY (channel, id)
+);
+CREATE INDEX IF NOT EXISTS idx_subathon_sessione ON subathon_righe(channel, sessione, ts);
+-- una riga si storna una volta sola, chiunque lo chieda e quante volte lo chieda
+CREATE UNIQUE INDEX IF NOT EXISTS idx_subathon_storno ON subathon_righe(channel, storno) WHERE storno <> '';
 `);
 
 // --- migrazioni leggere: aggiunge colonne nuove a DB già esistenti ------------
@@ -2072,6 +2096,35 @@ function _pbRinnova(ch, c, scade, ora) {
   db.prepare('DELETE FROM pew_bit_lotti WHERE channel=? AND chi=? AND (scade=0 OR scade>?)').run(ch, c, ora);
   if (n > 0) _pb.lotto.run(ch, c, scade, n);
 }
+// IL LIBRO DELLA SUBATHON (docs/SUBATHON.md). `scrivi` torna vero solo se la
+// riga e' entrata: chi muove l'orologio lo fa dentro la stessa transazione, e
+// con un id gia' visto non muove niente.
+const _sb = {
+  scrivi: db.prepare(`INSERT OR IGNORE INTO subathon_righe (channel, id, sessione, ts, fonte, chi, quanti, livello, per, chiesti, messi, tagliati, mano, perche, storno)
+    VALUES (@channel, @id, @sessione, @ts, @fonte, @chi, @quanti, @livello, @per, @chiesti, @messi, @tagliati, @mano, @perche, @storno)`),
+  sessione: db.prepare('SELECT * FROM subathon_righe WHERE channel=? AND sessione=? ORDER BY ts, rowid'),
+  ultime: db.prepare('SELECT * FROM subathon_righe WHERE channel=? AND sessione=? ORDER BY ts DESC, rowid DESC LIMIT ?'),
+  riga: db.prepare('SELECT * FROM subathon_righe WHERE channel=? AND id=?'),
+};
+export const subathonLibro = {
+  scrivi(channel, r) {
+    const riga = {
+      channel: String(channel).toLowerCase(), id: String(r.id || '').slice(0, 160), sessione: Math.trunc(Number(r.sessione) || 0),
+      ts: Math.trunc(Number(r.ts) || now()), fonte: String(r.fonte || '').slice(0, 20), chi: String(r.chi || '').slice(0, 40),
+      quanti: Number(r.quanti) || 0, livello: Math.trunc(Number(r.livello) || 0), per: Math.trunc(Number(r.per) || 1),
+      chiesti: Math.round(Number(r.chiesti) || 0), messi: Math.round(Number(r.messi) || 0), tagliati: Math.round(Number(r.tagliati) || 0),
+      mano: String(r.mano || '').slice(0, 40), perche: String(r.perche || '').slice(0, 120), storno: String(r.storno || '').slice(0, 160),
+    };
+    if (!riga.id || !riga.fonte) return false;
+    return _sb.scrivi.run(riga).changes === 1;
+  },
+  sessione(channel, sessione) { return _sb.sessione.all(String(channel).toLowerCase(), Math.trunc(Number(sessione) || 0)); },
+  ultime(channel, sessione, n = 30) { return _sb.ultime.all(String(channel).toLowerCase(), Math.trunc(Number(sessione) || 0), Math.max(1, Math.min(200, Math.trunc(Number(n) || 30)))); },
+  riga(channel, id) { return _sb.riga.get(String(channel).toLowerCase(), String(id || '')) || null; },
+  // tutto insieme o niente: la riga e l'orologio
+  insieme(fn) { return db.transaction(fn)(); },
+};
+
 export const pewBit = {
   saldo(channel, chi, ora = now()) { return _pbSaldo(String(channel).toLowerCase(), String(chi), ora); },
   // il lotto vivo che scade per primo: { scade, quanti }, o null se nessuno scade

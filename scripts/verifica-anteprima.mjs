@@ -68,6 +68,8 @@ const ROTTURE = [
     'un disegno che non disegna niente'],
   ['src/web/public/overlay-app.js', "  el.className = 'ovl-widget ovl-invito dentro dim-' + (st.dim || 'media') + ' ' + classiIdentita(st, 'nessuna');", "  el.className = 'ovl-widget ovl-invito dentro ' + classiIdentita(st, 'nessuna');",
     'in diretta l\'invito ai Pew perde la sua grandezza'],
+  ['src/web/public/overlay-skin.css', ".ovl-subathon .sb-ultimi li { display: flex; justify-content: space-between; gap: .8rem; margin: 0; padding: 0; line-height: inherit; }", ".ovl-subathon .sb-ultimi li { display: flex; justify-content: space-between; gap: .8rem; }",
+    'gli ultimi della subathon prendono l\'interlinea del pannello e la tela non e\' piu\' la diretta'],
   ['src/web/public/overlay-app.js', "{ if (mostra(eColpo(dati) ? 'pew' : 'effetti') && colpoNuovo(dati)) {", "{ if (colpoNuovo(dati)) {",
     'a tutto schermo parte anche dove gli effetti sono spenti'],
   ['src/web/public/app.js', "    if (e.tipo === 'video') {\n      const v = document.createElement('video');", "    if (false) {\n      const v = document.createElement('video');",
@@ -575,6 +577,35 @@ try {
     dice(scritto && edI && lvI && vicino(edI.w, lvI.w) && vicino(edI.h, lvI.h) && vicino(edI.font, lvI.font, 0.6)
       && edDove && lvDove && vicino(edDove.x, lvDove.x, 2) && vicino(edDove.y, lvDove.y, 2),
       `invito ai Pew ${nome}: editor ${edI ? mis(edI) : '–'} a ${edDove ? Math.round(edDove.x) + ',' + Math.round(edDove.y) : '–'} = diretta ${lvI ? mis(lvI) : '–'} a ${lvDove ? Math.round(lvDove.x) + ',' + Math.round(lvDove.y) : '–'}`,
+      'editor e diretta non coincidono');
+  }
+
+  // --- 6-sexies-ter. la subathon --------------------------------------------
+  // L'elemento della subathon (docs/OVERLAY.md, «La subathon in scena"): lo
+  // stesso disegno sulla tela e in onda, con la stessa vista, grande uguale e
+  // nello stesso posto, al suo angolo, in un punto e vestito.
+  const SB_VESTE = { dim: 'grande', sfondo: '#203040', opacita: 95, testo: '#ffffee', accento: '#22aa66', bordoRaggio: 4, font: 'sistema', forma: 'carta', materia: 'piatta', cornice: 'linea' };
+  for (const [nome, xy, stile] of [['al suo angolo', null, null], ['in un punto', { x: 60, y: 40, s: 100, r: 0 }, null], ['vestito', { x: 30, y: 30, s: 120, r: 0 }, SB_VESTE]]) {
+    const dalla = await ed.evaluate(async ({ xy, stile }) => {
+      _accendiQui('subathon', true);
+      const c = _cfgEl('subathon'); c.attivo = true; c.stile = { ..._defSubathon().stile, ...(stile || {}) };
+      const q = _ovXY(); for (const k of Object.keys(q)) delete q[k];
+      if (xy) q.subathon = { ...xy };
+      aggiornaAnteprima();
+      await new Promise((r) => setTimeout(r, 600));
+      return { cfg: JSON.parse(JSON.stringify(c)), vista: _sbVistaEsempio(), lingua: _sbLingua() };
+    }, { xy, stile });
+    const edS = await misuraEd('#ap-subathon .ovl-subathon');
+    const edDove = await ed.evaluate(`(${DOVE_S})('#ap-subathon .ovl-subathon')`);
+    TEMA = { css: '', widget: {}, goals: [], conti: {}, timer: null, musica: null, stato: { timer: { fine: dalla.vista.fine } }, mostra: { ...MOSTRA, subathon: true }, xy: xy ? { subathon: xy } : {}, alertStile: null, chatStile: null,
+      subathon: { ...dalla.cfg, xy: null, lingua: dalla.lingua, fondoUrl: '', corniceUrl: '', iconaUrl: '', vista: dalla.vista } };
+    await apriLive(() => document.querySelector('.ovl-subathon.dentro'));
+    await attesa(500);
+    const lvS = await misuraLive('.ovl-subathon');
+    const lvDove = await live.evaluate(`(${DOVE_S})('.ovl-subathon')`);
+    dice(edS && lvS && vicino(edS.w, lvS.w) && vicino(edS.h, lvS.h) && vicino(edS.font, lvS.font, 0.6)
+      && edDove && lvDove && vicino(edDove.x, lvDove.x, 2) && vicino(edDove.y, lvDove.y, 2),
+      `subathon ${nome}: editor ${edS ? mis(edS) : '–'} a ${edDove ? Math.round(edDove.x) + ',' + Math.round(edDove.y) : '–'} = diretta ${lvS ? mis(lvS) : '–'} a ${lvDove ? Math.round(lvDove.x) + ',' + Math.round(lvDove.y) : '–'}`,
       'editor e diretta non coincidono');
   }
 

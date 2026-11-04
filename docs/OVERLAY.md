@@ -2419,3 +2419,65 @@ lo rimanda a ogni cambio (`{ tipo: 'tempi', elenco }`); l'overlay conta da sé
 ogni secondo, ordina da sé e fa uscire con un'animazione la carta che finisce.
 Il modello sta in docs/PREMI-A-TEMPO.md, il collaudo in
 `scripts/verifica-premi-tempo.mjs`.
+
+
+## La subathon in scena
+
+Chiesto così: «un overlay ad hoc» per la subathon, con grafiche personalizzate
+(docs/SUBATHON.md). Due elementi col posto, fatti come gli altri («Un elemento è
+sempre fatto nello stesso modo»), e tutti e due **nascono spenti** negli
+overlay che ci sono già: `SPENTI_DI_SERIE = ['invito', 'subathon',
+'subregole']`, la stessa lista nel server, nel pannello e nella pagina
+dell'overlay, con la regola dell'invito (solo nelle basi, mai nelle differenze
+di un'occasione).
+
+| | `subathon` | `subregole` |
+| --- | --- | --- |
+| configurazione | `overlaySubathon` (`normOverlaySubathon`) | `overlaySubathonRegole` (`normOverlaySubathonRegole`) |
+| angolo di serie | in alto a sinistra | in basso a destra |
+| veste | `.ovl-widget.ovl-subathon` | `.ovl-widget.ovl-subregole` |
+| in scena quando | `mostra`, `attivo`, subathon accesa, orologio in corsa o in pausa | `mostra`, `attivo`, subathon accesa, almeno una regola |
+
+**Il disegno è uno solo.** I pezzi dentro la carta li fa `SB_SUBATHON.disegna`
+(`web/public/subathon.js`, caricato dalla pagina dell'overlay e dal pannello):
+la tela dello Studio e la diretta chiamano la stessa funzione con la stessa
+configurazione, cambia solo la vista (d'esempio sulla tela finché l'orologio
+non corre). Ogni lato mette la classe e le variabili della veste come fa per
+gli altri elementi (`classiIdentita`, `--bg`, `--acc`, …), e il contenitore è
+un `wbox` d'angolo come il conto alla rovescia, con `posaElemento` per la
+posizione e il riquadro.
+
+**I pezzi** (`pezzi`): titolo, quanto manca, il «+5:00» che sale, la pausa,
+l'ora felice, il totale aggiunto, da quanto dura (spento di serie), la barra del
+traguardo, gli ultimi (`quantiUltimi`, di serie 3). Si nascondono con
+`hidden`, e la pelle ha `.ovl-subathon [hidden] { display: none !important; }`:
+un `display` scritto per un pezzo non deve battere il «nascosto» (vedi «Un
+`display` che batteva `[hidden]`»). Ogni pezzo ha il suo testo (`testi`):
+vuoto vuol dire quello di serie nella lingua della chat, che il tema porta
+(`lingua`).
+
+**Le grafiche dello streamer**: `fondo`, `cornice` e `icona` sono immagini
+della libreria Effetti (`effetto:<comando>`), risolte in indirizzo dal server
+nel tema (`fondoUrl`, `corniceUrl`, `iconaUrl`), come i cartelli: l'overlay non
+sa niente della libreria. Il fondo copre la carta, la cornice ci sta sopra
+stirata, l'icona accanto al titolo.
+
+**Un orologio solo.** L'elemento non ha un suo istante: legge `MIO.timerFine` e
+`MIO.timerPausa`, gli stessi del conto alla rovescia, che arrivano con
+`{tipo:'timer', fine, pausa}`. Dalla vista (`{tipo:'subathon', vista, sale}`,
+con il suo numero d'ordine come gli altri stati) prende solo i conti sul libro:
+inizio, totale, ultimi, ora felice, traguardi. Il «+» sale quando arriva una
+vista con `sale > 0`, e anima solo `transform` e `opacity`; senza animazioni
+non compare.
+
+**Il conto alla rovescia sa della pausa**: in pausa mostra il tempo fermo
+(classe `in-pausa`) invece di sparire, e «parte da solo» non riparte un conto
+in pausa.
+
+**Le regole in scena** (`subregole`) arrivano già scritte dal server
+(`righe`, da `SB_SUBATHON.righeRegole` con le regole della subathon, la valuta
+delle donazioni e i testi dell'elemento): cambi un numero nella scheda
+Subathon, il tema si ricarica, il riquadro cambia.
+
+Prove: `test/contratto/subathon-scena.test.mjs` e il cancello dell'anteprima
+(l'elemento misurato sulla tela e in onda).

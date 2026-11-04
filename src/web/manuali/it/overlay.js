@@ -186,18 +186,7 @@ export default {
       ['«Parte da solo quando l\'overlay si apre»', 'spento', 'per la schermata d\'attesa'],
     ] },
     { p: ['Con <strong>«Parte da solo»</strong> il conto parte quando lo accendi e ogni volta che un overlay si apre e lo trova fermo. Se sta già andando non riparte da capo. Una linea che cade e torna, o una modifica salvata, non lo fanno ripartire: conta solo l\'apertura.'] },
-    { p: ['Il <strong>subathon</strong> non è un secondo conto: è questo, con una regola in più. Lo accendi sotto il conto alla rovescia. Da quel momento sub, bit e donazioni aggiungono tempo a quello che manca, e a schermo si vede il conto che hai già in scena.'] },
-    { tabella: [
-      ['Impostazione', 'Di base', 'Limiti'],
-      ['«Subathon» (interruttore)', 'spento', ''],
-      ['«Minuti per sub»', '5', 'da 0 a 120'],
-      ['«Minuti ogni 100 bit»', '1', 'da 0 a 120; 50 bit valgono metà'],
-      ['«Minuti per euro donato»', '2', 'da 0 a 120'],
-      ['«Non può mancare più di (ore)»', '12', 'da 0 a 72; a 0 non c\'è tetto'],
-      ['«Dillo in chat quando il conto sale»', 'acceso', ''],
-      ['«Cosa scrive»', 'Grazie {chi}! Il conto sale di {quanto}.', '200 caratteri, con <code>{chi}</code> e <code>{quanto}</code>'],
-    ] },
-    { p: ['Il tetto è su quanto manca, non su quanto hai aggiunto in tutto. Se il conto è già arrivato a zero, un sub non lo fa ripartire. Chi guarda chiede <code>!subathon</code> per sapere quanto manca.'] },
+    { p: ['La <strong>subathon</strong> non è un secondo conto: usa questo stesso orologio, e si gestisce nella sua scheda (<a href="/manuale/diretta#subathon">Subathon</a>). In scena ha due elementi suoi, che nascono spenti negli overlay che hai già: <strong>«Subathon»</strong> (quanto manca, il «+5:00» che sale, gli ultimi, il totale, da quanto dura, l\'ora felice, la pausa, la barra del traguardo, ognuno acceso o spento, coi tuoi testi e con fondo, cornice e icona presi dalla libreria Effetti) e <strong>«Regole della subathon»</strong> (il riquadro «1 sub = 5 minuti…», costruito dalle fonti che hai acceso). Li sposti e li vesti qui come ogni elemento.'] },
 
     { h3: 'Conto alla pubblicità' },
     { p: [

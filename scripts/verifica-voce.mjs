@@ -63,12 +63,11 @@ export const DA_PORTARE = [
   'src/features/quotes.js',
   'src/features/sondaggi.js',
   'src/features/songrequest.js',
-  'src/features/subathon.js',
   'src/features/trackinggiochi.js',
   'src/features/watchtime.js',
   'src/web/server.js',
 ];
-export const MASSIMO = 28;
+export const MASSIMO = 27;
 
 // ── Il frasario ─────────────────────────────────────────────────────────────
 

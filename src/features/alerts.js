@@ -14,6 +14,7 @@ import { inCorso as tempiInCorso } from './premi-tempo.js';
 // legge chi guarda la diretta.
 const TITOLI_PUBBLICITA = { it: ['Pubblicità fra', 'Torno fra'], en: ['Ads in', 'Back in'], es: ['Anuncios en', 'Vuelvo en'] };
 import * as subathon from './subathon.js';
+import { normOverlaySubathon, normOverlaySubathonRegole } from '../web/stile.js';
 import * as treno from './treno.js';
 import { comeSiChiama, portaCorona } from './bit.js';
 import * as stemmi from './badges.js';
@@ -56,6 +57,9 @@ const suonaAvviso = (p) => !!p && Number(p.volume) > 0 && (!!p.suonoUrl || SUONI
 // Quando l'avviso parte anche lui, l'effetto dell'evento arriva un attimo dopo:
 // prima si legge chi e' stato, poi si festeggia (come l'effetto di un'offerta).
 const DOPO_AVVISO_MS = 1200;
+// le icone degli alert della subathon, e i simboli della valuta per le regole in scena
+const ICONA_SUB = { allunga: 'razzo', traguardo: 'trofeo', pausa: 'campana', fine: 'stella' };
+const SIMBOLI = { EUR: '€', USD: '$', GBP: '£', CHF: 'CHF', BRL: 'R$', MXN: 'MX$' };
 const DEFAULT_ACC = { follow: '#f72fa7', sub: '#ffb020', cheer: '#38d39f', kicks: '#53fc18', raid: '#ff4d4d', donazione: '#1d9e5e' };
 
 // stile alert di default (usato se lo streamer non lo tocca)
@@ -108,6 +112,11 @@ export class AlertsEngine {
     this.taci = taci || null;
     this._pausaEventi = new Map(); // 'canale|evento' → epoch ms prima del quale quell'effetto tace
     this._treni = new Map();       // canale → { id, livello } dell'ultimo treno visto
+    this._raffiche = new Map();    // canale → { ms, chi, timer }: gli allungamenti da dire insieme
+    this._fini = new Map();        // canale → il timer che guarda la fine della subathon
+    // la fine della subathon la guarda il server: all'avvio si riarma da quello
+    // che c'e' scritto nelle impostazioni (docs/SUBATHON.md, «Pausa, ripresa, fine»)
+    setTimeout(() => this.riarmaSubathon(), 1500).unref?.();
   }
 
   cfg(channel) { return streamers.get(channel)?.settings || null; }
@@ -142,6 +151,11 @@ export class AlertsEngine {
         this._effettoTreno(channel, type, data);
         return;
       }
+      // LA SUBATHON conta prima di tutto il resto, e da sola: un evento delle
+      // sue fonti scrive una riga nel libro (docs/SUBATHON.md). La raffica dei
+      // regali no: ogni regalo e' gia' un abbonamento.
+      const fonte = subathon.daEvento(ev, MAPPA[type] ? this._vars(data).user : String(data?.user_name || data?.user_login || ''));
+      if (fonte) this.subathonEvento(channel, fonte);
       const sc = this._scenaEvento(this.cfg(channel), type, data);
       if (!sc) return;
       const { kind, vars, regalo } = sc;
@@ -153,14 +167,6 @@ export class AlertsEngine {
       // l'obiettivo conta gli eventi veri, non una stima: passano tutti di qui.
       // La raffica dei regali no (vedi _scenaEvento): ogni regalo e' gia' un sub.
       if (!regalo) sc.obiettivo = this._contaGoal(channel, kind, kind === 'cheer' ? Number(vars.bits) || 0 : 1);
-      // il subathon allunga il conto alla rovescia, se lo streamer lo ha acceso
-      if (!regalo && (kind === 'sub' || kind === 'cheer')) {
-        subathon.suEvento(channel, {
-          tipo: kind === 'cheer' ? 'bit' : 'sub',
-          quanti: kind === 'cheer' ? Number(vars.bits) || 0 : 1,
-          chi: vars.user,
-        }, { say: this.say, spingi: (ch, fine) => this.effects?.emit?.(ch, { tipo: 'timer', fine }) });
-      }
       this._vaInOnda(channel, sc);
     } catch (e) { log.debug('onEvent:', e?.message || e); }
   }
@@ -305,8 +311,7 @@ export class AlertsEngine {
       const { importo, stessa, vars } = sc;
       if (!soloAvviso && stessa) {
         sc.obiettivo = this._contaGoal(channel, 'donazione', importo);
-        subathon.suEvento(channel, { tipo: 'euro', quanti: importo, chi: vars.user },
-          { say: this.say, spingi: (ch, fine) => this.effects?.emit?.(ch, { tipo: 'timer', fine }) });
+        this.subathonEvento(channel, { fonte: 'euro', quanti: importo, chi: vars.user, id: d.id ? 'euro:' + d.id : '' });
       }
       this._vaInOnda(channel, sc);
       const cfgD = s.donazioni || {};
@@ -375,15 +380,26 @@ export class AlertsEngine {
   // fra due sorgenti aperte — e un riavvio del bot non lo azzera.
   // minuti = 0 lo spegne.
   impostaTimer(channel, minuti) {
+    return this._partiTimer(channel, Math.max(0, Math.min(600, Math.round(Number(minuti) || 0))) * 60000);
+  }
+
+  // L'OROLOGIO CHE PARTE (o si ferma, con 0). Toglie la pausa, e se parte
+  // comincia una sessione nuova della subathon: totale, ultimi e traguardi
+  // ricominciano da qui (docs/SUBATHON.md, «La sessione»). Fermarlo non
+  // cancella la sessione: si puo' ancora leggere.
+  _partiTimer(channel, ms) {
     try {
       const s = streamers.get(channel);
       if (!s) return 0;
-      const m = Math.max(0, Math.min(600, Math.round(Number(minuti) || 0)));
-      const fine = m > 0 ? Date.now() + m * 60000 : 0;
+      const ora = Date.now();
+      const fine = ms > 0 ? ora + ms : 0;
       const stato = { ...(s.settings?.overlayStato || {}) };
       stato.timer = { fine };
+      if (fine) stato.subathon = subathon.nuovaSessione(ora);
       streamers.setSettings(channel, { ...s.settings, overlayStato: stato });
-      this.effects?.emit?.(channel, { tipo: 'timer', fine });
+      this.effects?.emit?.(channel, { tipo: 'timer', fine, pausa: null });
+      this._sbSpingiVista(channel);
+      this._sbArma(channel);
       return fine;
     } catch (e) { log.debug('timer:', e?.message || e); return 0; }
   }
@@ -401,6 +417,8 @@ export class AlertsEngine {
       if (!cfg || cfg.attivo !== true || cfg.partiDaSolo !== true) return 0;
       const fine = Number(s.settings?.overlayStato?.timer?.fine) || 0;
       if (fine > Date.now()) return fine;
+      // un conto in pausa ha la fine a zero, ma non e' finito: non riparte da capo
+      if (subathon.S.inPausa(s.settings?.overlayStato?.timer)) return 0;
       return this.impostaTimer(channel, cfg.minuti);
     } catch (e) { log.debug('timer da solo:', e?.message || e); return 0; }
   }
@@ -619,6 +637,10 @@ export class AlertsEngine {
       scritta: (s.overlayScritta && typeof s.overlayScritta === 'object') ? s.overlayScritta : null,
       etichetta: (s.overlayEtichetta && typeof s.overlayEtichetta === 'object') ? s.overlayEtichetta : null,
       invito: (s.overlayInvito && typeof s.overlayInvito === 'object') ? s.overlayInvito : null,
+      // la subathon in scena: la configurazione con le immagini gia' risolte,
+      // la lingua della chat, la vista (orologio e conti sul libro) e le regole
+      subathon: this._subathonInScena(channel, s),
+      subregole: this._subregoleInScena(channel, s),
       muro: (s.overlayMuro && typeof s.overlayMuro === 'object') ? s.overlayMuro : null,
       // I CARTELLI arrivano all'overlay con l'immagine gia' risolta in
       // indirizzo, come le icone dei widget: la pagina non sa niente della
@@ -648,6 +670,190 @@ export class AlertsEngine {
       titoloPausa: c.titoloPausa || tp,
       stato: { prossima: Number(st.prossima) > ora ? Number(st.prossima) : 0, pausaFino: Number(st.pausaFino) > ora ? Number(st.pausaFino) : 0 },
     };
+  }
+
+  // ── LA SUBATHON (docs/SUBATHON.md) ─────────────────────────────────────
+  // Il libro e l'orologio li tiene features/subathon.js; qui la voce e la
+  // scena: l'istante nuovo all'overlay, la vista, la raffica in chat e in
+  // alert, i traguardi, e chi guarda la fine.
+
+  _subathonInScena(channel, s) {
+    const c = s.overlaySubathon;
+    if (!c || typeof c !== 'object') return null;
+    const cfg = normOverlaySubathon(c);
+    const img = (rif) => { const e = rif ? this._risolviEffetto(channel, rif) : null; return e && e.tipo === 'immagine' ? e.url : ''; };
+    return { ...cfg, fondoUrl: img(cfg.fondo), corniceUrl: img(cfg.cornice), iconaUrl: img(cfg.icona), lingua: subathon.lingua(channel), vista: subathon.vista(channel) };
+  }
+
+  _subregoleInScena(channel, s) {
+    const c = s.overlaySubathonRegole;
+    if (!c || typeof c !== 'object') return null;
+    const cfg = normOverlaySubathonRegole(c);
+    const regole = subathon.regoleDi(s);
+    const l = subathon.lingua(channel);
+    const valuta = SIMBOLI[s.donazioni?.valuta || 'EUR'] || s.donazioni?.valuta || '€';
+    return { ...cfg, lingua: l, accesa: subathon.accesa(s), righe: subathon.S.righeRegole(regole, l, { valuta, testi: cfg.testi }) };
+  }
+
+  _sbSpingiVista(channel, sale = 0) {
+    try {
+      if (!this.effects?.emit) return;
+      this.effects.emit(channel, { tipo: 'subathon', vista: subathon.vista(channel), sale: sale > 0 ? sale : 0 });
+    } catch (e) { log.debug('subathon vista:', e?.message || e); }
+  }
+
+  // DOPO UNA RIGA. L'istante all'overlay subito (mai un conto da rifare), la
+  // vista col «+» che sale, la raffica da dire, i traguardi passati, e chi
+  // guarda la fine riarmato sull'istante nuovo.
+  _sbDopo(channel, esito, { annuncia = false } = {}) {
+    if (!esito || esito.esito !== 'ok') return esito;
+    const t = esito.timer || {};
+    if (esito.riga.messi !== 0 || ['pausa', 'riprendi'].includes(esito.riga.fonte)) {
+      this.effects?.emit?.(channel, { tipo: 'timer', fine: Number(t.fine) || 0, pausa: subathon.S.inPausa(t) ? { resta: Number(t.pausa.resta) } : null });
+    }
+    this._sbSpingiVista(channel, esito.riga.messi);
+    if (annuncia && esito.riga.messi > 0) this._sbRaffica(channel, esito);
+    for (const g of subathon.S.superati(esito.regole?.traguardi, esito.totalePrima, esito.totaleDopo)) this._sbTraguardo(channel, esito.regole, g);
+    if (esito.riga.fonte === 'pausa') this._sbAlert(channel, 'pausa', {});
+    this._sbArma(channel);
+    return esito;
+  }
+
+  // Un evento delle fonti: la riga, poi la scena.
+  subathonEvento(channel, ev) {
+    try { return this._sbDopo(channel, subathon.suEvento(channel, ev), { annuncia: true }); }
+    catch (e) { log.debug('subathon evento:', e?.message || e); return null; }
+  }
+
+  // Un'azione a mano (pannello o comando): la riga, poi la scena. Le unita'
+  // scritte a mano si annunciano come gli eventi: sono eventi persi.
+  subathonAzione(channel, a, opz = {}) {
+    try {
+      const esito = subathon.azione(channel, a, opz);
+      return this._sbDopo(channel, esito, { annuncia: a?.azione === 'unita' });
+    } catch (e) { log.debug('subathon azione:', e?.message || e); return { esito: 'errore' }; }
+  }
+
+  // «!subathon …» in chat: risponde chi lo scrive, e la scena segue.
+  subathonComando(msg, parla) {
+    const r = subathon.comando(msg);
+    if (!r) return false;
+    if (r.esito) this._sbDopo(String(msg.channel || '').toLowerCase(), r.esito, { annuncia: r.esito.azione === 'unita' });
+    if (r.detto) parla(r.detto);
+    return true;
+  }
+
+  // Far partire la subathon dal suo pannello: lo stesso orologio, fino a 72 ore.
+  subathonAvvia(channel, minuti) {
+    const m = Math.max(1, Math.min(72 * 60, Math.round(Number(minuti) || 0)));
+    return this._partiTimer(channel, m * 60000);
+  }
+
+  // LA RAFFICA. Gli allungamenti entro `raffica` secondi dal primo diventano
+  // una riga in chat e un alert: venti regali non sono venti alert. Il tempo
+  // e' gia' nell'orologio; qui si dice e basta.
+  _sbRaffica(channel, esito) {
+    const regole = esito.regole || {};
+    const r = this._raffiche.get(channel) || { ms: 0, chi: [], timer: null };
+    r.ms += esito.riga.messi;
+    if (esito.riga.chi) r.chi.push(esito.riga.chi);
+    this._raffiche.set(channel, r);
+    if (r.timer) return;
+    const dopo = Math.max(0, Number(regole.raffica) || 0) * 1000;
+    const via = () => this._sbDiRaffica(channel);
+    if (!dopo) { via(); return; }
+    r.timer = setTimeout(via, dopo);
+    r.timer.unref?.();
+  }
+
+  _sbDiRaffica(channel) {
+    const r = this._raffiche.get(channel);
+    this._raffiche.delete(channel);
+    if (!r || !(r.ms > 0)) return;
+    if (r.timer) clearTimeout(r.timer);
+    const s = streamers.get(channel);
+    const regole = subathon.regoleDi(s?.settings);
+    const l = subathon.lingua(channel);
+    const chi = subathon.S.elenco(r.chi, l, 2);
+    if (regole.annuncia && this.say) {
+      const t = subathon.testo(channel, regole, 'allunga', { chi, quanto: subathon.parole(channel, r.ms) }).slice(0, 300);
+      if (t.trim()) this.say(channel, t);
+    }
+    this._sbAlert(channel, 'allunga', { chi, tempo: subathon.S.orologio(r.ms) });
+  }
+
+  _sbTraguardo(channel, regole, g) {
+    const testo = g.testo || subathon.S.orologio(g.minuti * 60000);
+    if (regole?.annuncia && this.say) {
+      const t = subathon.testo(channel, regole, 'traguardo', { traguardo: testo }).slice(0, 300);
+      if (t.trim()) this.say(channel, t);
+    }
+    this._sbAlert(channel, 'traguardo', { traguardo: testo });
+  }
+
+  // UN ALERT DELLA SUBATHON: parte come gli alert degli eventi, con la loro
+  // veste e il loro posto; testo, suono, immagine e colore sono della subathon.
+  // `prova` lo fa partire anche spento (il tasto «Prova» del pannello).
+  _sbAlert(channel, tipo, dati, { prova = false } = {}) {
+    try {
+      const s = this.cfg(channel);
+      const regole = subathon.regoleDi(s);
+      const a = regole.alert?.[tipo];
+      if (!a || (!a.attivo && !prova)) return null;
+      const testo = subathon.testo(channel, regole, 'alert-' + tipo, dati);
+      const conf = { testo, accento: a.colore, suono: a.suono || 'tada', icona: ICONA_SUB[tipo] || 'stella', media: a.immagine || '' };
+      return this._spara(channel, s?.alerts || {}, 'subathon', conf, {});
+    } catch (e) { log.debug('subathon alert:', e?.message || e); return null; }
+  }
+
+  // Prova di un alert della subathon dal pannello, con dati d'esempio.
+  provaSubathon(channel, tipo) {
+    const l = subathon.lingua(channel);
+    const dati = { allunga: { chi: subathon.S.elenco(['MarioRossi', 'GiadaTTV'], l, 2), tempo: '+10:00' }, traguardo: { traguardo: 'Cosplay' }, pausa: {}, fine: {} }[tipo];
+    if (!dati) return null;
+    return this._sbAlert(channel, tipo, dati, { prova: true });
+  }
+
+  // CHI GUARDA LA FINE: un timer per canale, sull'istante che c'e' scritto.
+  // Arrivato, fineArrivata decide se e' davvero finita e se quell'istante e'
+  // gia' stato festeggiato: due timer, o un riavvio, festeggiano una volta.
+  _sbArma(channel) {
+    const vecchio = this._fini.get(channel);
+    if (vecchio) { clearTimeout(vecchio); this._fini.delete(channel); }
+    const s = streamers.get(channel);
+    if (!s || !subathon.accesa(s.settings)) return;
+    const t = subathon.timerDi(s.settings);
+    const fine = Number(t.fine) || 0;
+    if (subathon.S.inPausa(t) || !fine) return;
+    const ms = fine - Date.now();
+    if (ms <= 0) { this._sbFine(channel); return; }
+    const h = setTimeout(() => { this._fini.delete(channel); this._sbFine(channel); }, Math.min(ms + 250, 2 ** 31 - 1));
+    h.unref?.();
+    this._fini.set(channel, h);
+  }
+
+  _sbFine(channel, { ora = Date.now() } = {}) {
+    const f = subathon.fineArrivata(channel, { ora });
+    if (!f) { if (Number(subathon.timerDi(streamers.get(channel)?.settings).fine) > ora) this._sbArma(channel); return null; }
+    this._sbSpingiVista(channel);
+    if (!f.festeggia) return f;
+    const s = streamers.get(channel);
+    const regole = subathon.regoleDi(s?.settings);
+    if (regole.fineChat && this.say) {
+      const v = subathon.vista(channel, { ora });
+      const t = subathon.testo(channel, regole, 'fine', { totale: subathon.parole(channel, v.totale), durata: subathon.parole(channel, v.inizio ? f.fine - v.inizio : 0) }).slice(0, 300);
+      if (t.trim()) this.say(channel, t);
+    }
+    this._sbAlert(channel, 'fine', {});
+    return f;
+  }
+
+  riarmaSubathon() {
+    try {
+      for (const s of streamers.list()) {
+        if (s?.login && subathon.accesa(s.settings)) this._sbArma(s.login);
+      }
+    } catch (e) { log.debug('subathon riarma:', e?.message || e); }
   }
 
   // Prova dal pannello.

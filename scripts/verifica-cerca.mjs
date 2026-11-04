@@ -53,6 +53,8 @@ const A_PAROLE = [
   // delle due esca dipende da quante parole ci sono attorno, non da un difetto.
   { q: 'chiave api', scheda: ['moduli', 'notifiche'] },
   { q: 'comandi a voce', scheda: ['ascolto'] },
+  // la subathon ha una scheda sua (docs/SUBATHON.md, «Dove si gestisce»)
+  { q: 'aggiungi tempo alla subathon', scheda: ['subathon'] },
   // la domanda da cui e' nata la scheda Monete (docs/MENU.md, «Presenza,
   // monete e giochi: una strada sola»): «non so piu' dove trovare la gestione
   // dei punti», e la presenza che non e' piu' dentro i Pew

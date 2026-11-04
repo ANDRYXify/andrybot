@@ -52,7 +52,6 @@ import { credenzialiInstagram } from './features/instagram-credenziali.js';
 import * as storiaIg from './features/storia-ig.js';
 import * as feed from './features/feed.js';
 import * as compleanniFeat from './features/compleanni.js';
-import * as subathonFeat from './features/subathon.js';
 import * as trenoFeat from './features/treno.js';
 import * as bit from './features/bit.js';
 import * as gamesbridge from './features/gamesbridge.js';
@@ -1590,8 +1589,9 @@ export class BotManager {
     // si chiude qui, perche' solo la chat puo' dire che quel Twitch sei tu
     try { dcCollega.tryComando(cmdMsg, parla); }
     catch (e) { log.error(`#${login} discord:`, e?.message || e); }
-    // quanto manca alla fine del subathon (!subathon)
-    try { subathonFeat.tryComando(cmdMsg, parla); }
+    // la subathon (!subathon): quanto manca per tutti, e per chi lo streamer
+    // sceglie le mosse a mano che rimettono a posto un evento perso
+    try { this.alerts?.subathonComando(cmdMsg, parla); }
     catch (e) { log.error(`#${login} subathon:`, e?.message || e); }
     // a che punto e' l'hype train in corso (!treno)
     try { trenoFeat.tryComando(cmdMsg, parla); }

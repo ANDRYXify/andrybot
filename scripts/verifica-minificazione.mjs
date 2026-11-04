@@ -40,6 +40,7 @@ const PONTI = [
   ['flusso.js', ['SB_FLUSSO']],
   ['riquadro.js', ['SB_RIQUADRO']],
   ['muro.js', ['SB_MURO']],
+  ['subathon.js', ['SB_SUBATHON']],
   ['arena.js', ['SB_ARENA']],
   ['arena-tela.js', ['SB_ARENA_TELA']],
   ['penna.js', ['SB_PENNA']],

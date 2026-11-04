@@ -89,6 +89,7 @@ import * as donaStripe from '../features/donazioni-stripe.js';
 import * as donaSatispay from '../features/donazioni-satispay.js';
 import * as donaMedia from '../features/donazioni-media.js';
 import * as colpiMod from '../features/colpi.js';
+import * as subathonMod from '../features/subathon.js';
 import { presenteDi, presenteDaSalvare, premioSerie } from '../features/presente.js';
 import * as colpiPagina from '../features/colpi-pagina.js';
 import { creaPortaColpi } from '../features/colpi-porta.js';
@@ -218,7 +219,7 @@ import {
   ICONE_OVL_K, icoOk, PESO_OVL, MAIUSC_OVL, USCITA_OVL,
   FORME_OVL, MATERIE_OVL, CORNICI_OVL, COMP_OVL, chiAlertOk,
   normAlertStile, normChatStile, normWidgetStile, normOverlayWidgetCfg, normOverlayStile, normGoals, MAX_GOAL,
-  normMusica, normTimer, normPubblicita, normTempi, normTreno, normBit, normBoss, normScritta, normEtichetta, normInvito, testoInvito, normMuro, FIGURE_MURO, normCartelli, normDisegno,
+  normMusica, normTimer, normPubblicita, normTempi, normTreno, normBit, normBoss, normScritta, normEtichetta, normInvito, testoInvito, normMuro, FIGURE_MURO, normOverlaySubathon, normOverlaySubathonRegole, subathonDaSalvare, normCartelli, normDisegno,
   normArena,
 } from './stile.js';
 
@@ -227,15 +228,17 @@ import {
 // di canale (alerts/chatOverlay/overlayWidget). Retro-compatibile: se non c'è
 // una lista `overlays`, ne ricaviamo uno solo ("principale") con tutto visibile
 // e le posizioni attuali → chi ha già l'overlay lo vede identico.
-const ELEM_OVERLAY = ['alert', 'chat', 'wf', 'ws', 'goal', 'cont', 'cart', 'musica', 'timer', 'pubblicita', 'tempi', 'treno', 'bit', 'pen', 'boss', 'arena', 'scritta', 'etichetta', 'invito', 'muro', 'effetti', 'pew', 'consolify'];
+const ELEM_OVERLAY = ['alert', 'chat', 'wf', 'ws', 'goal', 'cont', 'cart', 'musica', 'timer', 'subathon', 'subregole', 'pubblicita', 'tempi', 'treno', 'bit', 'pen', 'boss', 'arena', 'scritta', 'etichetta', 'invito', 'muro', 'effetti', 'pew', 'consolify'];
 // LE CHIAVI CHE NASCONO SPENTE (docs/OVERLAY.md, «Una chiave che nasce
 // spenta»). La regola di `mostra` e' «si scrive solo il no»: quel che non c'e'
 // compare. L'invito ai Pew e' una scritta fissa che deve stare solo dove
 // qualcuno l'ha accesa (l'overlay dei Pew), quindi in una BASE non scritta vale
 // spenta. Solo nelle basi: nelle differenze di un'occasione una chiave assente
 // vuol dire «come la base», e riempirla la farebbe diventare un «spegni».
+// Cosi' anche i due pezzi della subathon (docs/SUBATHON.md, «In scena»): gli
+// overlay che ci sono gia' non se li devono trovare in scena perche' sono nati.
 // La stessa lista sta nel pannello e nella pagina dell'overlay.
-const SPENTI_DI_SERIE = ['invito'];
+const SPENTI_DI_SERIE = ['invito', 'subathon', 'subregole'];
 const spentiDiSerie = (m) => {
   if (!m || typeof m !== 'object') return m;
   const q = { ...m };
@@ -7931,6 +7934,13 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     if (b.overlayTimer !== undefined) {
       out.overlayTimer = normTimer(b.overlayTimer);
     }
+    // le regole della subathon hanno una chiave loro; quelle scritte prima
+    // dentro il conto alla rovescia si fermano li' la prima volta che si salva
+    // il conto (docs/SUBATHON.md, «Dove stanno le regole»)
+    const regoleSub = subathonDaSalvare(s.settings, b);
+    if (regoleSub !== undefined) out.subathon = regoleSub;
+    if (b.overlaySubathon !== undefined) out.overlaySubathon = normOverlaySubathon(b.overlaySubathon);
+    if (b.overlaySubathonRegole !== undefined) out.overlaySubathonRegole = normOverlaySubathonRegole(b.overlaySubathonRegole);
     if (b.overlayBit !== undefined) out.overlayBit = normBit(b.overlayBit);
     if (b.overlayBoss !== undefined) out.overlayBoss = normBoss(b.overlayBoss);
     if (b.overlayArena !== undefined) out.overlayArena = normArena(b.overlayArena);
@@ -8373,7 +8383,7 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     // OVERLAY IN TEMPO REALE: se è cambiato qualcosa che l'overlay mostra
     // (CSS, widget, chat, alert, temi, stato), spingiamo SUBITO il nuovo tema
     // via SSE così la fonte OBS si aggiorna da sola, senza bisogno di refresh.
-    if (['overlayCss', 'overlayWidget', 'chatOverlay', 'alerts', 'overlayTemplates', 'overlayStato', 'overlays', 'overlayGoals', 'overlayMusica', 'overlayTimer', 'overlayPubblicita', 'overlayTempi', 'overlayTreno', 'overlayBit', 'overlayBoss', 'overlayArena', 'overlayScritta', 'overlayEtichetta', 'overlayInvito', 'overlayMuro', 'overlayCartelli', 'fontPersonali', 'colpi'].some((k) => k in out)) {
+    if (['overlayCss', 'overlayWidget', 'chatOverlay', 'alerts', 'overlayTemplates', 'overlayStato', 'overlays', 'overlayGoals', 'overlayMusica', 'overlayTimer', 'overlayPubblicita', 'overlayTempi', 'overlayTreno', 'overlayBit', 'overlayBoss', 'overlayArena', 'overlayScritta', 'overlayEtichetta', 'overlayInvito', 'subathon', 'overlaySubathon', 'overlaySubathonRegole', 'overlayMuro', 'overlayCartelli', 'fontPersonali', 'colpi'].some((k) => k in out)) {
       // segnale di RICARICA: ogni overlay ricarica il PROPRIO tema (per ?o=id),
       // così più overlay diversi si aggiornano ciascuno col suo layout.
       try { effects.emit(user.login, { tipo: 'tema' }); }
@@ -8839,13 +8849,59 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
   app.get('/api/streamer/timer', requireLogin, wrap(async (req, res) => {
     const login = currentUser(req).login;
     res.set('Cache-Control', 'private, no-store');
-    res.json({ fine: Number(streamers.get(login)?.settings?.overlayStato?.timer?.fine) || 0 });
+    const t = streamers.get(login)?.settings?.overlayStato?.timer || {};
+    res.json({ fine: Number(t.fine) || 0, pausa: t.pausa && Number(t.pausa.resta) > 0 ? { resta: Number(t.pausa.resta) } : null });
   }));
   // Fa partire (o ferma, con minuti = 0) il conto alla rovescia di inizio live.
   app.post('/api/streamer/timer', requireLogin, wrap(async (req, res) => {
     const login = currentUser(req).login;
     const fine = manager.alerts?.impostaTimer?.(login, req.body?.minuti) || 0;
     res.json({ ok: true, fine });
+  }));
+
+  // LA SUBATHON (docs/SUBATHON.md). La scheda legge regole, vista e libro, e
+  // muove l'orologio con le stesse azioni dei comandi in chat: ogni tasto
+  // scrive una riga, con un id che il pannello genera e rimanda uguale se
+  // riprova (lo stesso tasto non allunga due volte). Il canale e' quello della
+  // sessione: chi ha il pannello di un canale muove quello e basta.
+  const chiScriveSub = (u) => String(u?.modDisplay || u?.identitaDisplay || u?.display || identitaDi(u) || u?.login || '').slice(0, 40);
+  const idTastoSub = (v) => String(v || '').replace(/[^A-Za-z0-9_-]/g, '').slice(0, 64);
+  const subathonPerPannello = (login) => {
+    const st = streamers.get(login)?.settings || {};
+    return {
+      regole: subathonMod.regoleDi(st), vista: subathonMod.vista(login), libro: subathonMod.libro(login, 40), ora: Date.now(),
+      siVede: { timer: st.overlayTimer?.attivo === true, elemento: !!(st.overlaySubathon && st.overlaySubathon.attivo !== false) },
+    };
+  };
+  app.get('/api/streamer/subathon', requireLogin, wrap(async (req, res) => {
+    res.set('Cache-Control', 'private, no-store');
+    res.json(subathonPerPannello(currentUser(req).login));
+  }));
+  app.post('/api/streamer/subathon/azione', requireLogin, wrap(async (req, res) => {
+    const u = currentUser(req);
+    const b = req.body || {};
+    const id = idTastoSub(b.id);
+    if (!id) return res.status(400).json({ errore: 'manca l\'id del tasto' });
+    const azioni = ['piu', 'meno', 'unita', 'imposta', 'pausa', 'riprendi', 'annulla', 'felice', 'felice-stop'];
+    if (!azioni.includes(b.azione)) return res.status(400).json({ errore: 'azione sconosciuta' });
+    const a = {
+      azione: b.azione, ms: Math.max(0, Math.round(Number(b.minuti) || 0)) * 60000, perche: String(b.perche || '').slice(0, 120),
+      fonte: ['sub', 'bit', 'euro', 'kicks', 'follow', 'raid'].includes(b.fonte) ? b.fonte : '', quanti: Math.max(0, Number(b.quanti) || 0),
+      livello: Math.max(0, Math.min(3, Math.round(Number(b.livello) || 0))), per: Math.round(Number(b.per) || 2), riga: String(b.riga || '').slice(0, 160),
+    };
+    const esito = manager.alerts?.subathonAzione(u.login, a, { mano: chiScriveSub(u), id: 'tasto:' + id }) || { esito: 'errore' };
+    res.json({ ok: esito.esito === 'ok', esito: esito.esito, detto: subathonMod.risposta(u.login, esito), ...subathonPerPannello(u.login) });
+  }));
+  // Far partire la subathon: lo stesso orologio del conto alla rovescia, fino a 72 ore.
+  app.post('/api/streamer/subathon/avvia', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const fine = manager.alerts?.subathonAvvia?.(login, req.body?.minuti) || 0;
+    res.json({ ok: fine > 0, fine, ...subathonPerPannello(login) });
+  }));
+  app.post('/api/streamer/subathon/prova', requireLogin, wrap(async (req, res) => {
+    const tipo = String(req.body?.tipo || '');
+    const p = manager.alerts?.provaSubathon?.(currentUser(req).login, tipo);
+    res.json({ ok: !!p });
   }));
 
   // COSA HA DETTO DA SOLO. Il registro delle righe dette di sua iniziativa

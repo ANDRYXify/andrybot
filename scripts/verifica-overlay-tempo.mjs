@@ -48,6 +48,8 @@ const ROTTURE = [
     'la classifica dei Bit che torna mentre se ne va sparisce lo stesso'],
   [OVL, "const f = Number(dati.fine); if (Number.isFinite(f)) MIO.timerFine = f;", 'MIO.timerFine = Number(dati.fine) || MIO.timerFine;',
     '«Ferma» non ferma il timer'],
+  [OVL, "  const manca = pausa ? pausa.resta : fine - oraScena();", '  const manca = fine - oraScena();',
+    'in pausa il conto alla rovescia sparisce invece di restare fermo'],
   [OVL, '  const apertura = !temaApplicato;', '  const apertura = true;',
     '«Parte da solo» riparte a ogni rilettura del tema'],
   [OVL, "  if (!preso) l.riprova = setTimeout(caricaTema, TEMA_PASSI[Math.min(l.passo++, TEMA_PASSI.length - 1)]);\n", '',
@@ -319,6 +321,25 @@ const PROVE = {
     await s.finche((q) => !document.querySelector(q), TSEL, 3000);
     const t = await leggiConto(s, TSEL);
     dice(!t, '«Ferma» toglie il timer dalla scena, anche se a fine conto resterebbe', t ? `resta: ${t.num}` : '');
+  },
+
+  // 2-bis. IN PAUSA IL CONTO RESTA, FERMO (docs/SUBATHON.md, «Pausa, ripresa,
+  // fine»): la pausa ha la fine a zero, ma non e' un conto fermato. Si vede
+  // quello che resta, non scende, e la ripresa riparte da li'.
+  async pausa() {
+    const s = await scena('pausa', { tema: { timer: { ...TIMER, aFine: 'sparisce' }, stato: { timer: { fine: Date.now() + 120000 } } } });
+    await s.collegato();
+    await s.finche(() => document.querySelector('.ovl-timer.dentro:not(.ovl-pubblicita)'), null, 5000);
+    s.cambia({ tipo: 'timer', fine: 0, pausa: { resta: 3600000 } }, (t) => { t.stato = { timer: { fine: 0, pausa: { resta: 3600000 } } }; });
+    await s.finche((q) => document.querySelector(q + '.in-pausa'), TSEL, 3000);
+    const a = await leggiConto(s, TSEL);
+    await new Promise((r) => setTimeout(r, 2200));
+    const b = await leggiConto(s, TSEL);
+    dice(a && b && a.num === '1:00:00' && b.num === '1:00:00', 'in pausa il conto resta in scena, fermo su quello che manca', `${a ? a.num : 'sparito'} → ${b ? b.num : 'sparito'}`);
+    s.cambia({ tipo: 'timer', fine: Date.now() + 3600000, pausa: null }, (t) => { t.stato = { timer: { fine: Date.now() + 3600000 } }; });
+    await s.finche((q) => { const n = document.querySelector(q); return n && !n.classList.contains('in-pausa'); }, TSEL, 3000);
+    const c = await leggiConto(s, TSEL);
+    dice(c && /^(1:00:0[01]|59:5\d)$/.test(c.num), 'la ripresa riparte da quello che restava', c ? c.num : 'sparito');
   },
 
   // 3. «PARTE DA SOLO» PARTE UNA VOLTA PER APERTURA: non a ogni rilettura del

@@ -48,7 +48,7 @@ test('l\'alert «donazione» esiste dove nasce, dove si veste e dove si salva', 
   // valuta non si somma: vedi la prova della valuta).
   const unaVoltaSola = AL.slice(AL.indexOf('if (!soloAvviso && stessa) {'), AL.indexOf('const a = s.alerts;'));
   assert.match(unaVoltaSola, /this\._contaGoal\(channel, 'donazione', importo\)/, 'rimandare l\'avviso non riconta l\'obiettivo');
-  assert.match(unaVoltaSola, /subathon\.suEvento/, 'ne\' allunga di nuovo il subathon');
+  assert.match(unaVoltaSola, /this\.subathonEvento\(channel, \{ fonte: 'euro'/, 'ne\' allunga di nuovo la subathon');
   assert.match(AL, /if \(!soloAvviso && cfgD\.annunciaChat && this\.say\)/, 'e il grazie in chat non si ripete');
   assert.match(AL, /importo >= \(Number\(conf\.minImporto\) \|\| 0\)/, 'rispetta l\'importo minimo');
   assert.match(AL, /cfgD\.annunciaChat && this\.say\)/, 'ringrazia in chat solo se acceso');

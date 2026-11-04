@@ -10,6 +10,8 @@
 // modulo, il contratto browser↔server si può provare per davvero (test/contratto),
 // non solo confrontando testo.
 
+import './public/subathon.js';
+
 // Id dei suoni PRESET sintetizzati (deve combaciare con public/presets.js).
 export const SUONI_PRESET = new Set(['campanello', 'campana', 'acqua', 'moneta', 'tamburo',
   'trombetta', 'errore', 'tada', 'pop', 'whoosh', 'applausi', 'laser', 'salita']);
@@ -437,33 +439,150 @@ export const normMusica = (m) => {
 // l'istante in cui scade sta nello STATO del canale (overlayStato.timer.fine),
 // perche' e' un dato che deve sopravvivere a un riavvio: un conto alla rovescia
 // che riparte da solo quando il bot si riavvia non e' un conto alla rovescia.
+// LA SUBATHON (docs/SUBATHON.md). Le parti pure stanno in web/public/subathon.js
+// (le stesse per il server, l'overlay e il pannello): qui le chiavi dei testi.
+const SB = globalThis.SB_SUBATHON;
+export const MAX_TESTO_SUB = 200;
+export const MAX_TRAGUARDI = 20;
+const TESTO_CHAT_DI_PRIMA = 'Grazie {chi}! Il conto sale di {quanto}.';
+const COLORE_ALERT_SUB = '#f72fa7';
+const POS_ANG_SUB = ['alto-sinistra', 'alto-destra', 'basso-sinistra', 'basso-destra'];
+const rifEffettoOk = (v) => (/^effetto:[a-z0-9_]{1,30}$/i.test(String(v || '')) ? String(v).toLowerCase() : '');
+// il suono di un alert: vuoto vuol dire «di serie», «nessuno» e' il silenzio
+// scelto, poi un suono pronto o uno della libreria
+const suonoSubOk = (v) => {
+  const s = String(v ?? '');
+  if (s === '' || s === 'nessuno' || SUONI_PRESET.has(s)) return s;
+  return rifEffettoOk(s);
+};
 // IL SUBATHON: non un orologio nuovo, una REGOLA del conto alla rovescia. Il
 // tempo che aggiunge finisce nello stesso istante di fine che l'overlay mostra
 // gia', quindi non ci sono due orologi da tenere d'accordo — e non si puo'
 // accendere un subathon senza un conto che lo faccia vedere.
 export const normSubathon = (x) => {
   x = x || {};
+  // ogni testo c'e' sempre, vuoto vuol dire «quello di serie, nella lingua
+  // della chat»: il modulo del pannello mostra quello che il pezzo ha, e
+  // rileggerlo non cambia niente (docs/OVERLAY.md)
+  const testi = {};
+  const dati = (x.testi && typeof x.testi === 'object') ? x.testi : {};
+  for (const k of SB.CHIAVI_CHAT) {
+    testi[k] = String(dati[k] ?? '').replace(/[\u0000-\u001f]/g, ' ').trim().slice(0, MAX_TESTO_SUB);
+  }
+  // il testo di prima (`testoChat`) diventa quello dell'allungamento, se non e'
+  // quello di serie di allora: quello lo dice gia' la lingua della chat
+  const prima = String(x.testoChat ?? '').trim().slice(0, MAX_TESTO_SUB);
+  if (!testi.allunga && prima && prima !== TESTO_CHAT_DI_PRIMA) testi.allunga = prima;
+  const alert = {};
+  for (const k of SB.ALERT) {
+    const a = (x.alert && typeof x.alert === 'object' && x.alert[k] && typeof x.alert[k] === 'object') ? x.alert[k] : {};
+    alert[k] = { attivo: a.attivo === true, suono: suonoSubOk(a.suono), immagine: rifEffettoOk(a.immagine), colore: hexOk(a.colore, COLORE_ALERT_SUB) };
+  }
+  const visti = new Set();
+  const traguardi = (Array.isArray(x.traguardi) ? x.traguardi : [])
+    .map((t) => ({ minuti: clampInt(t?.minuti, 1, 100000, 0), testo: String(t?.testo ?? '').replace(/[\u0000-\u001f]/g, ' ').trim().slice(0, 60) }))
+    .filter((t) => t.minuti > 0 && !visti.has(t.minuti) && visti.add(t.minuti))
+    .sort((a, b) => a.minuti - b.minuti).slice(0, MAX_TRAGUARDI);
   return {
     attivo: x.attivo === true,
-    // I minuti sono per UNITA': un sub, cento bit, un euro. Le frazioni le fa il
-    // conto (cinquanta bit valgono mezza unita'), cosi' nessuno deve scrivere
-    // numeri con la virgola.
+    // I minuti sono per UNITA': un sub, cento bit, un euro, cento Kicks, un
+    // follow, dieci spettatori di un raid, un riscatto. Le frazioni le fa il
+    // conto, cosi' nessuno deve scrivere numeri con la virgola. Il livello 2 e
+    // 3 di un abbonamento sono moltiplicatori del primo.
     perSub: clampInt(x.perSub, 0, 120, 5),
+    molt2: clampInt(x.molt2, 1, 10, 2),
+    molt3: clampInt(x.molt3, 1, 20, 5),
     perBit100: clampInt(x.perBit100, 0, 120, 1),
     perEuro: clampInt(x.perEuro, 0, 120, 2),
+    perKicks100: clampInt(x.perKicks100, 0, 120, 1),
+    perFollow: clampInt(x.perFollow, 0, 60, 0),
+    perRaid10: clampInt(x.perRaid10, 0, 120, 0),
+    perPremio: clampInt(x.perPremio, 0, 120, 0),
+    premio: String(x.premio ?? '').replace(/[^A-Za-z0-9_-]/g, '').slice(0, 80),
+    premioTitolo: String(x.premioTitolo ?? '').replace(/[\u0000-\u001f]/g, ' ').trim().slice(0, 60),
     // Il tetto e' su QUANTO MANCA, non su quanto si e' aggiunto in tutto: una
     // serata fortunata non deve trasformare la diretta in tre giorni. A zero
     // non c'e' tetto, ed e' una scelta che si prende scrivendo zero.
     tettoOre: clampInt(x.tettoOre, 0, 72, 12),
     annuncia: x.annuncia !== false,
-    testoChat: String(x.testoChat == null ? 'Grazie {chi}! Il conto sale di {quanto}.' : x.testoChat).slice(0, 200),
+    // gli allungamenti entro questi secondi dal primo sono una raffica: una
+    // riga in chat e un alert, non venti (0 = ognuno per conto suo)
+    raffica: clampInt(x.raffica, 0, 30, 5),
+    comandi: unoDi(x.comandi, ['mod', 'streamer'], 'mod'),
+    fineChat: x.fineChat === true,
+    traguardi,
+    testi,
+    alert,
+  };
+};
+
+// Le regole della subathon di un canale: la chiave sua, o quella di prima
+// dentro il conto alla rovescia (docs/SUBATHON.md, «Dove stanno le regole»).
+export const regoleSubathon = (settings) => normSubathon(
+  (settings?.subathon && typeof settings.subathon === 'object') ? settings.subathon : settings?.overlayTimer?.subathon,
+);
+
+// Salvando, le regole scritte prima dentro il conto alla rovescia si fermano
+// nella chiave nuova la prima volta che si salva il conto senza averle mai
+// salvate altrove. Torna le regole da scrivere, o undefined.
+export const subathonDaSalvare = (settings, body) => {
+  if (body?.subathon !== undefined) return normSubathon(body.subathon);
+  if (body?.overlayTimer === undefined || (settings?.subathon && typeof settings.subathon === 'object')) return undefined;
+  const vecchie = body.overlayTimer?.subathon || settings?.overlayTimer?.subathon;
+  return vecchie && typeof vecchie === 'object' ? normSubathon(vecchie) : undefined;
+};
+
+// L'ELEMENTO SUBATHON in scena (docs/OVERLAY.md, «La subathon»): un posto,
+// la veste di tutti, i pezzi da accendere uno per uno coi loro testi, e le
+// immagini dello streamer dalla libreria. Nasce spento negli overlay che ci
+// sono gia' (SPENTI_DI_SERIE nel server).
+export const VESTE_SUBATHON = { sfondo: '#100d16', opacita: 85, testo: '#ffffff', accento: '#f72fa7', bordoRaggio: 14 };
+export const PEZZI_SUBATHON = { titolo: true, conto: true, sale: true, pausa: true, felice: true, totale: true, durata: false, traguardo: true, ultimi: true };
+export const normOverlaySubathon = (x) => {
+  x = x || {};
+  const p = (x.pezzi && typeof x.pezzi === 'object') ? x.pezzi : {};
+  const pezzi = {};
+  for (const k of SB.PEZZI) pezzi[k] = p[k] === undefined ? PEZZI_SUBATHON[k] : p[k] === true;
+  const t = (x.testi && typeof x.testi === 'object') ? x.testi : {};
+  const testi = {};
+  for (const k of SB.CHIAVI_SCENA) {
+    testi[k] = String(t[k] ?? '').replace(/[\u0000-\u001f]/g, ' ').trim().slice(0, 60);
+  }
+  return {
+    attivo: x.attivo !== false,
+    posizione: unoDi(x.posizione, POS_ANG_SUB, 'alto-sinistra'),
+    xy: xyOk(x.xy),
+    pezzi,
+    quantiUltimi: clampInt(x.quantiUltimi, 1, 10, 3),
+    fondo: rifEffettoOk(x.fondo),
+    cornice: rifEffettoOk(x.cornice),
+    icona: rifEffettoOk(x.icona),
+    testi,
+    stile: normWidgetStile({ ...VESTE_SUBATHON, ...(x.stile || {}) }),
+  };
+};
+// IL RIQUADRO DELLE REGOLE: «1 sub = 5 minuti…», costruito dalle fonti accese.
+export const normOverlaySubathonRegole = (x) => {
+  x = x || {};
+  const t = (x.testi && typeof x.testi === 'object') ? x.testi : {};
+  const testi = {};
+  for (const k of SB.CHIAVI_REGOLE) {
+    testi[k] = String(t[k] ?? '').replace(/[\u0000-\u001f]/g, ' ').trim().slice(0, 80);
+  }
+  return {
+    attivo: x.attivo !== false,
+    posizione: unoDi(x.posizione, POS_ANG_SUB, 'basso-destra'),
+    xy: xyOk(x.xy),
+    titolo: String(x.titolo ?? '').replace(/[\u0000-\u001f]/g, ' ').trim().slice(0, 60),
+    mostraTitolo: x.mostraTitolo !== false,
+    testi,
+    stile: normWidgetStile({ ...VESTE_SUBATHON, ...(x.stile || {}) }),
   };
 };
 
 export const normTimer = (t) => {
   t = t || {};
   return {
-    subathon: normSubathon(t.subathon),
     attivo: t.attivo === true,
     titolo: String(t.titolo == null ? 'Si comincia tra' : t.titolo).slice(0, 60),
     testoFine: String(t.testoFine == null ? 'Si comincia!' : t.testoFine).slice(0, 60),

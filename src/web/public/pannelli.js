@@ -82,16 +82,8 @@
     return adatta(g, String(o.sottotitolo).trim(), sp.largo, daSotto(pxTitolo), fontSotto(o.carattere || CAR), MIN_SOTTO).px;
   }
 
-  function disegna(g, o) {
-    const h = o.h, c = o.colori;
-    const font = fontDi(o.carattere || CAR);
-    const problemi = [];
-    const d = o.densita || 1;
-    g.setTransform(d, 0, 0, d, 0, 0);
-    g.clearRect(0, 0, W, h);
-    const sp = spazio(h, o.forma, !!o.icona, !!o.freccia);
-    const box = sp.box;
-
+  function sagoma(g, o, box, h) {
+    const c = o.colori;
     if (o.forma === 'penna' && o.penna && typeof Path2D !== 'undefined') {
       const P = o.penna;
       const f = P.forma(box.x + 2, box.y + 2, box.w - 4, box.h - 4, { seme: o.seme, rag: 10, angoli: 0.02, bombatura: 0.008 });
@@ -110,6 +102,60 @@
       g.strokeStyle = c.accento;
       g.stroke();
     }
+  }
+
+  const RIGA_ELENCO = 30;
+  function altezzaElenco(n, conTitolo) { return 28 + (conTitolo ? 40 : 0) + Math.max(1, n) * RIGA_ELENCO; }
+
+  function elenco(g, o) {
+    const righe = (o.righe || []).map((r) => String(r || '').trim()).filter(Boolean);
+    const titolo = String(o.titolo || '').trim();
+    const h = altezzaElenco(righe.length, !!titolo);
+    const c = o.colori;
+    const d = o.densita || 1;
+    const problemi = [];
+    g.setTransform(d, 0, 0, d, 0, 0);
+    g.clearRect(0, 0, W, h);
+    const m = o.forma === 'piena' ? 0 : 6;
+    sagoma(g, o, { x: m, y: m, w: W - 2 * m, h: h - 2 * m }, h);
+    const x0 = m + 18, largo = W - 2 * m - 36;
+    let y = m + 14;
+    g.textBaseline = 'middle';
+    g.textAlign = 'left';
+    if (titolo) {
+      const t = adatta(g, titolo, largo, 24, fontDi(o.carattere || CAR));
+      if (t.tagliato) problemi.push({ tipo: 'titolo', titolo });
+      g.fillStyle = c.testo;
+      g.font = fontDi(o.carattere || CAR)(t.px);
+      g.fillText(t.testo, x0, y + 18);
+      y += 40;
+    }
+    for (const r of righe) {
+      g.fillStyle = c.accento;
+      g.beginPath();
+      g.arc(x0 + 4, y + RIGA_ELENCO / 2, 3.5, 0, Math.PI * 2);
+      g.fill();
+      const t = adatta(g, r, largo - 16, 17, fontSotto(o.carattere || CAR), 11);
+      if (t.tagliato) problemi.push({ tipo: 'riga', titolo: r });
+      g.fillStyle = c.testo;
+      g.font = fontSotto(o.carattere || CAR)(t.px);
+      g.fillText(t.testo, x0 + 16, y + RIGA_ELENCO / 2 + 1);
+      y += RIGA_ELENCO;
+    }
+    g.textBaseline = 'alphabetic';
+    return { h, problemi };
+  }
+
+  function disegna(g, o) {
+    const h = o.h, c = o.colori;
+    const font = fontDi(o.carattere || CAR);
+    const problemi = [];
+    const d = o.densita || 1;
+    g.setTransform(d, 0, 0, d, 0, 0);
+    g.clearRect(0, 0, W, h);
+    const sp = spazio(h, o.forma, !!o.icona, !!o.freccia);
+    const box = sp.box;
+    sagoma(g, o, box, h);
 
     if (o.icona) g.drawImage(o.icona, box.x + sp.pad, Math.round(box.y + (box.h - sp.s) / 2), sp.s, sp.s);
     const x0 = sp.x0;
@@ -202,7 +248,7 @@
     return voci.map((p, i) => [`${i + 1}. ${p.titolo}`, p.link || '', p.testo || ''].filter((x, k) => k === 0 || x).join('\n')).join('\n\n----\n\n') + '\n';
   }
 
-  const PANNELLI = { W, DENSITA, ALTEZZE, TEMI, FORME, TIPI, ICONE, MAX, RETI, MIN_PX, MIN_SOTTO, MIEI_BASE, tavolozza, misura, misuraSotto, disegna, predefiniti, mdTesto, mdIndirizzo, mdLink, nomeFile, testi };
+  const PANNELLI = { W, DENSITA, ALTEZZE, TEMI, FORME, TIPI, ICONE, MAX, RETI, MIN_PX, MIN_SOTTO, MIEI_BASE, tavolozza, misura, misuraSotto, disegna, altezzaElenco, elenco, predefiniti, mdTesto, mdIndirizzo, mdLink, nomeFile, testi };
   if (typeof module !== 'undefined' && module.exports) module.exports = PANNELLI;
   else radice.SB_PANNELLI = PANNELLI;
 })(typeof window !== 'undefined' ? window : globalThis);

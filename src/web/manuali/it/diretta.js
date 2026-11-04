@@ -1,18 +1,18 @@
 // © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
 // Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
-// Manuale: la diretta (Regia, Clip, Musica, Dirette, Statistiche). La forma dei manuali e il perche' stanno in
+// Manuale: la diretta (Regia, Clip, Musica, Subathon, Dirette, Statistiche). La forma dei manuali e il perche' stanno in
 // src/web/manuali.js; le lingue in docs/LINGUE.md.
 
 export default {
   slug: 'diretta',
-  schede: ['regia', 'clip', 'musica', 'dirette', 'statistiche'],
+  schede: ['regia', 'clip', 'musica', 'subathon', 'dirette', 'statistiche'],
   titolo: 'Manuale della diretta: regia, clip, musica, rapporti | SocialBot',
   h1: 'Manuale della diretta: regia, clip, musica, rapporti e statistiche',
   desc: 'Titolo, categoria, pubblicità e raid dal pannello, le clip che nascono da sole, le richieste su Spotify, il rapporto di ogni diretta e i numeri del canale.',
-  aggiornata: '2026-10-14',
+  aggiornata: '2026-10-29',
   corpo: [
     { p: [
-      'Queste schede servono <strong>mentre trasmetti</strong> e subito dopo. Stanno nel gruppo «In diretta» del menù: «Regia», «Clip», «Musica» e «CONSOLify». «Dirette» e «Statistiche» stanno nel gruppo «Numeri».',
+      'Queste schede servono <strong>mentre trasmetti</strong> e subito dopo. Stanno nel gruppo «In diretta» del menù: «Regia», «Clip», «Musica», «Subathon» e «CONSOLify». «Dirette» e «Statistiche» stanno nel gruppo «Numeri».',
       'Clip automatiche, richieste musicali, messaggi della pubblicità e rapporti girano sul server: vanno avanti anche se chiudi il pannello. I tasti a portata di dito hanno il loro manuale: <a href="/manuale/consolify">CONSOLify</a>.',
       'I moderatori che hai fatto entrare nel pannello usano queste schede come te. Restano a te, proprietario del canale, i permessi di Twitch, il collegamento con Spotify, i premi a punti canale della musica e l\'indirizzo mail dei rapporti.',
       'Se usi SocialBot solo per Discord, queste schede non compaiono.',
@@ -120,6 +120,47 @@ export default {
       'Il motivo dice cosa l\'ha fatta nascere, per esempio «momento hype: la chat esplode di reazioni», «momento hype: la chat è impazzita all’improvviso», «momento hype: raid di …», «momento hype: valanga di bit», «momento hype: nuovo sub», «momento saliente (audio della live)», «richiesta in chat da …», «dalla Regia» (il tasto «Crea clip»), «modulo», «comando vocale».',
       'Se l\'elenco è vuoto leggi «Nessuna clip ancora: arriveranno nei momenti di hype!». Se dopo una serata trovi troppe clip da scartare, abbassa la sensibilità.',
     ] },
+
+    // --------------------------------------------------------------- SUBATHON
+    { h2: 'Subathon', scheda: 'subathon', p: [
+      'La diretta dura quanto dice l\'orologio, e chi sostiene il canale la allunga. L\'orologio è quello del conto alla rovescia: la scheda Subathon decide cosa lo allunga, lo fa partire e lo rimette a posto a mano se qualcosa si rompe.',
+      'Perché conti serve un conto che la faccia vedere: l\'elemento «Subathon» dello Studio o il «Conto alla rovescia». Se non ce n\'è nessuno la scheda lo dice, con il tasto per accendere l\'elemento.',
+    ] },
+    { h3: 'Cosa la allunga' },
+    { p: ['Minuti per unità, numeri interi: le frazioni le fa il conto. Il tetto è su quanto manca, non su quanto hai aggiunto: arrivato lì il conto non sale, e il libro dice quanto è stato tagliato.'] },
+    { tabella: [
+      ['Impostazione', 'Di base', 'Limiti'],
+      ['«Minuti per sub (livello 1)»', '5', 'da 0 a 120'],
+      ['«Livello 2» e «Livello 3»', '×2 e ×5', 'quante volte il primo'],
+      ['«Minuti ogni 100 bit»', '1', '50 bit valgono metà'],
+      ['«Minuti per 1 € donato»', '2', 'nella valuta delle tue donazioni'],
+      ['«Minuti ogni 100 Kicks»', '1', ''],
+      ['«Minuti per follow nuovo»', '0', 'chi torna a seguirti non conta'],
+      ['«Minuti ogni 10 spettatori di un raid»', '0', ''],
+      ['«Minuti per riscatto del premio»', '0', 'col premio a punti canale scelto'],
+      ['«Non può mancare più di (ore)»', '12', 'da 0 a 72; a 0 non c\'è tetto'],
+      ['«Raffica»', '5 secondi', 'gli allungamenti vicini si dicono insieme'],
+    ] },
+    { p: ['I sub regalati contano uno per uno, col nome di chi li riceve. L\'<strong>ora felice</strong> moltiplica per un tempo tutto quello che arriva dalle fonti (×2 fino a ×5); il tempo scritto a mano no.'] },
+    { h3: 'Far partire, pausa e fine' },
+    { p: ['«Fai partire» comincia una subathon nuova, fino a 72 ore: totale, ultimi e traguardi ripartono da zero. La <strong>pausa</strong> ferma l\'orologio con quello che manca: gli eventi in pausa si contano lo stesso e il tempo si aggiunge a quello che resta. A zero la subathon è finita e non riparte da sola. Alla fine puoi far scrivere una riga in chat e far partire l\'alert di fine.'] },
+    { h3: 'A mano, e i comandi' },
+    { p: ['I tasti della scheda e i comandi in chat fanno le stesse cose, e ognuno scrive una riga nel libro. «!subathon» da solo è di tutti e dice quanto manca; il resto lo usano lo streamer e i moderatori, o solo lo streamer se lo scegli.'] },
+    { tabella: [
+      ['Comando', 'Cosa fa'],
+      ['<code>!subathon +10m [perché]</code>', 'aggiunge dieci minuti'],
+      ['<code>!subathon -5m</code>', 'toglie cinque minuti, mai sotto adesso'],
+      ['<code>!subathon sub 3 2</code>', 'conta tre sub di livello 2 persi (anche bit, euro, kicks, follow, raid)'],
+      ['<code>!subathon resta 3h</code>', 'adesso mancano tre ore'],
+      ['<code>!subathon pausa</code> · <code>riprendi</code>', 'ferma e riprende l\'orologio'],
+      ['<code>!subathon annulla</code>', 'storna l\'ultima riga scritta a mano'],
+      ['<code>!subathon felice 30m x2</code>', 'mezz\'ora in cui tutto vale doppio; <code>felice stop</code> la spegne'],
+    ] },
+    { p: ['Lo stesso messaggio o lo stesso tasto non allungano due volte, e una riga si storna una volta sola. Nel <strong>libro</strong> c\'è ogni mossa con chi l\'ha fatta; «Annulla» scrive una riga che la storna, e niente si cancella.'] },
+    { h3: 'Traguardi, testi e alert' },
+    { p: ['I <strong>traguardi</strong> sono sul tempo aggiunto in tutto («a +2 ore, cosplay»): in scena c\'è la barra verso il prossimo, e quando lo passi lo dicono la chat e l\'alert. Ogni frase del bot e degli alert ha un testo di serie nella lingua della chat, e puoi scriverne uno tuo. Gli alert (allungamento, traguardo, pausa, fine) hanno suono e immagine dalla libreria e partono con la veste degli alert degli eventi.'] },
+    { h3: 'Pannelli per Twitch' },
+    { p: ['La scheda disegna le regole come immagini per i pannelli sotto la diretta, con i colori della tua pagina link o due temi: le scarichi, e «Copia la descrizione» ti dà il testo da incollare. Cambi un numero e le immagini cambiano.'] },
 
     // ----------------------------------------------------------------- MUSICA
     { h2: 'Musica: le richieste degli spettatori su Spotify', scheda: 'musica', p: [

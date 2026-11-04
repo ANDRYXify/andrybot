@@ -247,6 +247,9 @@ function impostazioni() {
     overlayStato: (s.overlayStato && typeof s.overlayStato === 'object') ? s.overlayStato : {},
     overlayMusica: (s.overlayMusica && typeof s.overlayMusica === 'object') ? s.overlayMusica : {},
     overlayTimer: (s.overlayTimer && typeof s.overlayTimer === 'object') ? s.overlayTimer : {},
+    subathon: (s.subathon && typeof s.subathon === 'object') ? s.subathon : null,
+    overlaySubathon: (s.overlaySubathon && typeof s.overlaySubathon === 'object') ? s.overlaySubathon : null,
+    overlaySubathonRegole: (s.overlaySubathonRegole && typeof s.overlaySubathonRegole === 'object') ? s.overlaySubathonRegole : null,
     overlayPubblicita: (s.overlayPubblicita && typeof s.overlayPubblicita === 'object') ? s.overlayPubblicita : {},
     overlayTempi: (s.overlayTempi && typeof s.overlayTempi === 'object') ? s.overlayTempi : {},
     formaMonete: typeof s.formaMonete === 'string' ? s.formaMonete : '',
@@ -1034,14 +1037,17 @@ function statoDemo() {
           { id: 'g2', attivo: true, tipo: 'sub', obiettivo: 50, titolo: 'Nuovi abbonati', posizione: 'alto-destra', xy: null,
             stile: { dim: 'piccola', sfondo: '#1b1024', opacita: 90, testo: '#ffe9f6', accento: '#ffb020', bordoRaggio: 26, font: 'rotondo', forma: 'pillola', materia: 'sfumata', cornice: 'linea' } },
         ],
-        overlayStato: { goals: { g1: 318, g2: 41 } },
+        overlayStato: { goals: { g1: 318, g2: 41 }, timer: { fine: Date.now() + 9250000 }, subathon: { inizio: Date.now() - 18720000, felice: { fino: Date.now() + 1080000, per: 2 }, finita: 0 } },
+        subathon: { ..._sbRegoleDiSerie(), attivo: true, perFollow: 1, perRaid10: 2, traguardi: [{ minuti: 60, testo: 'Cosplay' }, { minuti: 120, testo: 'Karaoke' }, { minuti: 240, testo: 'Horror alle 3' }],
+          alert: { ..._sbRegoleDiSerie().alert, allunga: { attivo: true, suono: '', immagine: '', colore: '#f72fa7' } } },
+        overlaySubathon: { ..._defSubathon(), pezzi: { ...SB_PEZZI_DEF(), durata: true } },
+        overlaySubathonRegole: _defSubregole(),
         overlayMusica: { attivo: true, verso: 'riga', righe: 'due', testo: '{titolo}', testo2: '{artista}',
           cover: 'vinile', barra: 'anello', tempi: 'trascorso', onde: true, ritmo: 'tutto', sfondo: 'colori',
           daCopertina: false, scorre: true, entrata: 'scivola', cambio: true, quandoFermo: 'sparisce',
           corpo: 'normale', tema: 'nessuno', larghezza: 0, posizione: 'basso-sinistra', xy: null,
           stile: { dim: 'media', sfondo: '#12101a', opacita: 88, testo: '#ffffff', accento: '#38d39f', bordoRaggio: 16, font: 'rotondo', forma: 'carta', materia: 'vetro', cornice: 'nessuna' } },
         overlayTimer: { attivo: true, titolo: 'Si comincia tra', testoFine: 'Si comincia!', aFine: 'resta', minuti: 15,
-          subathon: { attivo: true, perSub: 5, perBit100: 1, perEuro: 2, tettoOre: 12, annuncia: true, testoChat: 'Grazie {chi}! Il conto sale di {quanto}.' },
           posizione: 'alto-destra', xy: null,
           stile: { dim: 'grande', sfondo: '#0f0f14', opacita: 85, testo: '#ffffff', accento: '#f72fa7', bordoRaggio: 14, font: 'condensato', forma: 'pillola', materia: 'sfumata', cornice: 'nessuna' } },
         overlayBit: { attivo: true, titolo: 'Classifica Bit', periodo: 'month', quanti: 3, mostraBit: true,
@@ -1421,6 +1427,65 @@ function _demoPubblicita(via, b) {
   return Promise.resolve({ ok: true, length: secondi, retry: 480, ...stato() });
 }
 
+function _demoSubathon(via, metodo, body) {
+  const S = window.SB_SUBATHON;
+  const imp = impostazioni();
+  const regole = { ..._sbRegoleDiSerie(), ...(imp.subathon || {}) };
+  const st = imp.overlayStato || (stato.streamer.settings.overlayStato = {});
+  const ora = Date.now();
+  if (!_demoScritture.sub) {
+    const inizio = Number(st.subathon?.inizio) || ora - 18720000;
+    const r = (id, min, fonte, chi, quanti, extra = {}) => ({ id, sessione: inizio, ts: ora - min * 60000, fonte, chi, quanti, livello: fonte === 'sub' ? 1 : 0, per: 1, chiesti: 0, messi: 0, tagliati: 0, mano: '', perche: '', storno: '', ...extra });
+    const righe = [r('d1', 200, 'sub', 'Luna', 1), r('d2', 150, 'bit', 'MarioRossi', 500), r('d3', 95, 'sub', 'GiadaTTV', 1, { livello: 2 }), r('d4', 60, 'raid', 'PixelMatto', 40),
+      r('d5', 31, 'piu', '', 0, { mano: 'Mod_Ale', perche: L('sub perso', 'missed sub', 'sub perdido') }), r('d6', 12, 'sub', 'Luna', 1, { per: 2 })];
+    for (const x of righe) { x.chiesti = x.fonte === 'piu' ? 600000 : S.msPer(regole, x) * x.per; x.messi = x.chiesti; }
+    _demoScritture.sub = { righe };
+  }
+  const D = _demoScritture.sub;
+  const sb = st.subathon || (st.subathon = { inizio: ora, felice: null, finita: 0 });
+  const vista = () => {
+    const c = S.conti(D.righe.filter((x) => x.sessione === sb.inizio), 10);
+    const t = st.timer || {};
+    return { accesa: !!regole.attivo, fine: Number(t.fine) || 0, pausa: S.inPausa(t) ? t.pausa : null, inizio: sb.inizio, felice: S.per(sb.felice, ora) > 1 ? sb.felice : null, finita: 0, totale: c.totale, ultimi: c.ultimi, migliori: c.migliori, traguardi: regole.traguardi || [] };
+  };
+  const tutto = () => ({ regole, vista: vista(), libro: D.righe.filter((x) => x.sessione === sb.inizio).slice().reverse().slice(0, 40), ora, siVede: { timer: !!imp.overlayTimer?.attivo, elemento: !!imp.overlaySubathon && imp.overlaySubathon.attivo !== false } });
+  if (metodo === 'GET') return tutto();
+  if (via === '/api/streamer/subathon/prova') return { ok: true };
+  if (via === '/api/streamer/subathon/avvia') {
+    st.timer = { fine: ora + (Number(body.minuti) || 60) * 60000 };
+    st.subathon = { inizio: ora, felice: null, finita: 0 };
+    return { ok: true, fine: st.timer.fine, ...tutto() };
+  }
+  const t = st.timer || {};
+  const riga = { id: 'tasto:' + body.id, sessione: sb.inizio, ts: ora, fonte: body.azione, chi: '', quanti: 0, livello: 0, per: 1, chiesti: 0, messi: 0, tagliati: 0, mano: 'Demo', perche: body.perche || '', storno: '' };
+  let ms = 0;
+  if (body.azione === 'piu' || body.azione === 'meno') ms = (body.azione === 'piu' ? 1 : -1) * (Number(body.minuti) || 0) * 60000;
+  else if (body.azione === 'unita') { riga.fonte = body.fonte; riga.quanti = Number(body.quanti) || 0; riga.livello = Number(body.livello) || 1; riga.per = S.per(sb.felice, ora); ms = S.msPer(regole, riga) * riga.per; }
+  else if (body.azione === 'imposta') { riga.fonte = 'resta'; ms = (Number(body.minuti) || 0) * 60000 - S.resta(t, ora); }
+  else if (body.azione === 'pausa') { if (S.inPausa(t)) return { ok: false, detto: '', ...tutto() }; st.timer = { fine: 0, pausa: { resta: S.resta(t, ora) } }; }
+  else if (body.azione === 'riprendi') { if (!S.inPausa(t)) return { ok: false, detto: '', ...tutto() }; st.timer = { fine: ora + t.pausa.resta }; }
+  else if (body.azione === 'felice') { riga.quanti = Number(body.per) || 2; sb.felice = { fino: ora + (Number(body.minuti) || 30) * 60000, per: riga.quanti }; }
+  else if (body.azione === 'felice-stop') { sb.felice = null; }
+  else if (body.azione === 'annulla') {
+    const stornate = new Set(D.righe.filter((x) => x.storno).map((x) => x.storno));
+    const r = body.riga ? D.righe.find((x) => x.id === body.riga) : D.righe.slice().reverse().find((x) => x.mano && !x.storno && x.messi && !stornate.has(x.id));
+    if (!r || stornate.has(r.id)) return { ok: false, detto: _sbTesto('niente'), ...tutto() };
+    Object.assign(riga, { fonte: 'storno', chi: r.chi, storno: r.id, perche: r.fonte });
+    ms = -r.messi;
+  }
+  if (ms) {
+    const m = S.applica(st.timer || t, ms, { ora, tetto: (Number(regole.tettoOre) || 0) * 3600000 });
+    if (!m) return { ok: false, detto: _sbTesto('finita'), ...tutto() };
+    Object.assign(riga, { chiesti: ms, messi: m.messi, tagliati: m.tagliati });
+    if (m.messi) st.timer = m.timer;
+  }
+  D.righe.push(riga);
+  const resta = S.inParole(S.resta(st.timer, ora), _sbLingua());
+  const quanto = S.inParole(Math.abs(riga.messi), _sbLingua());
+  const detto = { piu: 'piu', unita: 'piu', meno: 'meno', imposta: 'resta-messo', pausa: 'pausa', riprendi: 'ripresa', annulla: 'annullato', felice: 'felice', 'felice-stop': 'felice-stop' }[body.azione];
+  return { ok: true, esito: 'ok', detto: _sbTesto(detto, { resta, quanto, per: riga.quanti, totale: '' }), ...tutto() };
+}
+
 function apiDemo(percorso, opzioni = {}) {
   const metodo = (opzioni.method || 'GET').toUpperCase();
   const via = percorso.split('?')[0];
@@ -1437,6 +1502,7 @@ function apiDemo(percorso, opzioni = {}) {
   if (metodo === 'GET' && via === '/api/streamer/settimana/categoria') return Promise.resolve({ categoria: _demoCategoria(domanda) });
   if (via === '/api/lanci') return fetch('/api/lanci', { headers: { Accept: 'application/json' } }).then((r) => r.json());
   if (via.startsWith('/api/avvisi-smart/')) return apiServer(percorso, opzioni);
+  if (via.startsWith('/api/streamer/subathon')) return Promise.resolve().then(() => _demoSubathon(via, metodo, opzioni.body || {}));
   if (via === '/api/streamer/effetti/lancio') return Promise.resolve(_demoLancio(opzioni.body || {}));
   if (metodo === 'GET' && via === '/api/streamer/libreria') return Promise.resolve(_demoLibreria(percorso));
   if (via.startsWith('/api/streamer/effetti-eventi')) return Promise.resolve(_demoEventi(via, metodo, opzioni.body || {}));
@@ -2367,8 +2433,8 @@ function _demoGet(via) {
       ],
     },
     '/api/streamer/overlays': { overlays: [
-      { id: 'principale', nome: 'Overlay principale', mostra: { alert: true, chat: true, wf: true, ws: true, effetti: true },
-        xy: { alert: { x: 50, y: 14 }, chat: { x: 16, y: 78 }, wf: { x: 86, y: 62 }, ws: { x: 86, y: 82 } },
+      { id: 'principale', nome: 'Overlay principale', mostra: { alert: true, chat: true, wf: true, ws: true, effetti: true, subathon: true, subregole: true },
+        xy: { alert: { x: 50, y: 14 }, chat: { x: 16, y: 78 }, wf: { x: 86, y: 62 }, ws: { x: 86, y: 82 }, subathon: { x: 84, y: 34 }, subregole: { x: 14, y: 42 } },
         css: '', stile: null, url: 'https://socialbot.live/o/andryx_demo/overlay-principale' },
       { id: 'ovsolochat', nome: 'Solo chat', mostra: { alert: false, chat: true, wf: false, ws: false, boss: false, arena: false, scritta: false, etichetta: false, muro: false, effetti: false, pew: false },
         xy: { chat: { x: 22, y: 50 } }, css: '', stile: null, url: 'https://socialbot.live/o/andryx_demo/solo-chat' },
@@ -4625,6 +4691,7 @@ const GRUPPI = [
     ['studio', 'Studio Web'],
     ['clip', 'Clip'],
     ['musica', 'Musica'],
+    ['subathon', 'Subathon'],
     ['consolify', 'CONSOLify'],
   ] },
   { id: 'scena', nome: 'Scena e overlay', schede: [
@@ -4718,6 +4785,7 @@ const T_SCHEDA = {
   regia: ['Regia', 'Control room', 'Realización'],
   clip: ['Clip', 'Clips', 'Clips'],
   musica: ['Musica', 'Music', 'Música'],
+  subathon: ['Subathon', 'Subathon', 'Subathon'],
   consolify: ['CONSOLify', 'CONSOLify', 'CONSOLify'],
   alert: ['Overlay Studio', 'Overlay Studio', 'Overlay Studio'],
   effetti: ['Effetti e suoni', 'Effects & sounds', 'Efectos y sonidos'],
@@ -4811,6 +4879,7 @@ const ICONA = {
   dcentra:     _ico('<path d="M10 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4"/><path d="M15 8l4 4-4 4"/><path d="M19 12H9"/>'),
   dcfiltro:    _ico('<path d="M4 5h16l-6 7v6l-4 2v-8z"/>'),
   musica:      _ico('<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>'),
+  subathon:    _ico('<path d="M6 2h12"/><path d="M6 22h12"/><path d="M7 2v4a5 5 0 0 0 10 0V2"/><path d="M7 22v-4a5 5 0 0 1 10 0v4"/>'),
   sondaggi:    _ico('<path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/>'),
   partite:     _ico('<path d="M16 11a3 3 0 1 0 0-6"/><path d="M8 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path d="M2 20c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5"/><path d="M16 14.6c3 .2 6 2.2 6 5.4"/>'),
   giveaway:    _ico('<rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5C11 3 12 8 12 8s1-5 4.5-5a2.5 2.5 0 0 1 0 5"/>'),
@@ -4859,6 +4928,7 @@ const DESC = {
   dcentra: ['Chi può scrivere appena entra, cosa legge per primo e le domande che gli aprono i canali.', 'Who can write right after joining, what they read first, and the questions that open their channels.', 'Quién puede escribir nada más entrar, qué lee primero y las preguntas que le abren los canales.'],
   dcfiltro: ['Le parole, le liste, lo spam e le menzioni che sul tuo server non passano.', 'The words, lists, spam and mentions that do not get through on your server.', 'Las palabras, listas, spam y menciones que en tu servidor no pasan.'],
   musica: ['Richieste musicali: gli spettatori mettono canzoni in coda su Spotify.', 'Music requests: viewers queue songs on Spotify.', 'Peticiones musicales: los espectadores ponen canciones en cola en Spotify.'],
+  subathon: ['La diretta dura quanto dice l’orologio: sub, bit, donazioni e altro lo allungano, e se qualcosa si rompe lo rimetti a posto a mano.', 'The stream lasts as long as the clock says: subs, bits, donations and more stretch it, and if something breaks you fix it by hand.', 'El directo dura lo que diga el reloj: subs, bits, donaciones y más lo alargan, y si algo se rompe lo arreglas a mano.'],
   sondaggi: ['Crea sondaggi e predizioni Twitch al volo.', 'Create Twitch polls and predictions on the fly.', 'Crea encuestas y predicciones de Twitch al vuelo.'],
   partite: ['Giochi con la chat: fila, chi gioca ogni manche, risultati e monete.', 'Play with your chat: queue, who plays each round, results and coins.', 'Juega con tu chat: fila, quién juega cada ronda, resultados y monedas.'],
   giveaway: ['Organizza estrazioni a premi per la community.', 'Run prize giveaways for your community.', 'Organiza sorteos de premios para tu comunidad.'],
@@ -5043,6 +5113,8 @@ const GUIDE = {
     come: [['Attiva le clip automatiche.', 'Enable automatic clips.', 'Activa los clips automáticos.', '#chk-clip'], ['Regola la sensibilità (quanto “hype” serve).', 'Adjust the sensitivity (how much “hype” it takes).', 'Ajusta la sensibilidad (cuánto “hype” hace falta).', '#rng-clip-sens']] },
   ascolto: { serve: ['Comandare il bot con la VOCE mentre streami (l’audio resta sul tuo PC).', 'Control the bot by VOICE while you stream (audio stays on your PC).', 'Controlar el bot por VOZ mientras haces directo (el audio se queda en tu PC).'],
     come: [['Apri l’ascolto vocale e concedi il microfono al browser.', 'Open voice listening and allow the microphone in the browser.', 'Abre la escucha por voz y concede el micrófono al navegador.', '#btn-apri-voce'], ['Di’ le frasi-chiave dei tuoi moduli vocali (es. “clippa”).', 'Say the key phrases of your voice modules (e.g. “clip it”).', 'Di las frases clave de tus módulos de voz (p. ej. “clipea”).', '#inp-cat-trigger']] },
+  subathon: { serve: ['Una subathon: ogni sub, bit o donazione allunga la diretta, con un tetto, i traguardi e il libro di ogni mossa.', 'A subathon: every sub, bit or donation stretches the stream, with a cap, milestones and the book of every move.', 'Un subathon: cada sub, bit o donación alarga el directo, con un tope, metas y el libro de cada movimiento.'],
+    come: [['Scegli quanti minuti vale ogni cosa, e salva.', 'Pick how many minutes each thing is worth, and save.', 'Elige cuántos minutos vale cada cosa, y guarda.', '#sb-fonti'], ['Accendi la subathon e falla partire.', 'Turn the subathon on and start it.', 'Enciende el subathon y ponlo en marcha.', '#sb-avvia'], ['Se un evento si perde, aggiungilo a mano: resta scritto nel libro.', 'If an event is missed, add it by hand: it stays written in the book.', 'Si se pierde un evento, añádelo a mano: queda escrito en el libro.', '#sb-mano']] },
   musica: { serve: ['Richieste musicali: gli spettatori mettono canzoni in coda su Spotify.', 'Music requests: viewers queue songs on Spotify.', 'Peticiones musicales: los espectadores ponen canciones en cola en Spotify.'],
     come: [['Connetti Spotify (serve Premium + app aperta).', 'Connect Spotify (needs Premium + the app open).', 'Conecta Spotify (necesitas Premium + la app abierta).', '#spotify-box'], ['Scegli come si “paga” la richiesta: libera, sub, monete, bit o punti canale.', 'Choose how a request is “paid”: free, subs, coins, bits or channel points.', 'Elige cómo se “paga” la petición: libre, subs, monedas, bits o puntos de canal.', '#musica-modo'], ['Gli spettatori usano !sr <canzone>; !song mostra cosa suona.', 'Viewers use !sr <song>; !song shows what’s playing.', 'Los espectadores usan !sr <canción>; !song muestra qué suena.', '']] },
   sondaggi: { serve: ['Lanciare sondaggi e predizioni Twitch direttamente da qui.', 'Launch Twitch polls and predictions right from here.', 'Lanzar encuestas y predicciones de Twitch directamente desde aquí.'],
@@ -6137,6 +6209,7 @@ function vistaPiattaforma() {
     ${pannelloClip()}
     ${pannelloAscolto()}
     ${pannelloMusica()}
+    ${pannelloSubathon()}
     ${pannelloSondaggi()}
     ${pannelloGiveaway()}
     ${pannelloPartite()}
@@ -10682,6 +10755,430 @@ async function avviaKit() {
   kitRifai();
 }
 
+const SUB_STATO = { dati: null, bozza: null, premi: null, colori: null, tema: 'pagina', orologio: 0, ultimo: '' };
+STATI_SALVA['sb-salva'] = {
+  completo: true,
+  stato: () => SUB_STATO.bozza,
+  rimetti: (v) => { SUB_STATO.bozza = v; _sbRiempi(); },
+};
+
+const _sbRegoleDiSerie = () => ({ attivo: false, perSub: 5, molt2: 2, molt3: 5, perBit100: 1, perEuro: 2, perKicks100: 1, perFollow: 0, perRaid10: 0, perPremio: 0, premio: '', premioTitolo: '',
+  tettoOre: 12, annuncia: true, raffica: 5, comandi: 'mod', fineChat: false, traguardi: [], testi: SB_TESTI_VUOTI(window.SB_SUBATHON?.CHIAVI_CHAT),
+  alert: Object.fromEntries(['allunga', 'traguardo', 'pausa', 'fine'].map((k) => [k, { attivo: false, suono: '', immagine: '', colore: '#f72fa7' }])) });
+
+const SB_FONTI_CAMPI = () => [
+  ['perSub', L('Minuti per sub (livello 1)', 'Minutes per sub (tier 1)', 'Minutos por sub (nivel 1)'), 0, 120],
+  ['molt2', L('Livello 2: quante volte il primo', 'Tier 2: how many times tier 1', 'Nivel 2: cuántas veces el primero'), 1, 10],
+  ['molt3', L('Livello 3: quante volte il primo', 'Tier 3: how many times tier 1', 'Nivel 3: cuántas veces el primero'), 1, 20],
+  ['perBit100', L('Minuti ogni 100 bit', 'Minutes per 100 bits', 'Minutos cada 100 bits'), 0, 120],
+  ['perEuro', L(`Minuti per 1 ${_sbValuta()} donato`, `Minutes per 1 ${_sbValuta()} donated`, `Minutos por 1 ${_sbValuta()} donado`), 0, 120],
+  ['perKicks100', L('Minuti ogni 100 Kicks', 'Minutes per 100 Kicks', 'Minutos cada 100 Kicks'), 0, 120],
+  ['perFollow', L('Minuti per follow nuovo', 'Minutes per new follow', 'Minutos por follow nuevo'), 0, 60],
+  ['perRaid10', L('Minuti ogni 10 spettatori di un raid', 'Minutes per 10 raid viewers', 'Minutos cada 10 espectadores de un raid'), 0, 120],
+  ['perPremio', L('Minuti per riscatto del premio', 'Minutes per reward redemption', 'Minutos por canje de la recompensa'), 0, 120],
+];
+const SB_FONTI_MANO = () => [['sub', 'sub'], ['bit', 'bit'], ['euro', _sbValuta()], ['kicks', 'Kicks'], ['follow', 'follow'], ['raid', L('spettatori in raid', 'raid viewers', 'espectadores en raid')]];
+const SB_NOMI_ALERT = () => ({ allunga: L('Allungamento', 'Extension', 'Alargue'), traguardo: L('Traguardo', 'Milestone', 'Meta'), pausa: L('Pausa', 'Pause', 'Pausa'), fine: L('Fine', 'End', 'Final') });
+const SB_NOMI_FONTE = () => ({ sub: 'sub', bit: 'bit', euro: _sbValuta(), kicks: 'Kicks', follow: 'follow', raid: 'raid', premio: L('premio', 'reward', 'recompensa'), piu: '+', meno: '−', resta: L('resta', 'left', 'queda'),
+  pausa: L('pausa', 'pause', 'pausa'), riprendi: L('ripresa', 'resume', 'reanudar'), felice: L('ora felice', 'happy hour', 'hora feliz'), storno: L('annullata', 'undone', 'deshecha') });
+
+function pannelloSubathon() {
+  const S = window.SB_SUBATHON;
+  const testiChat = S ? S.CHIAVI_CHAT.filter((k) => k.indexOf('alert-') !== 0) : [];
+  const numero = ([k, n, lo, hi]) => `<label class="campo-num">${esc(n)}<input type="number" data-sb="${k}" min="${lo}" max="${hi}"></label>`;
+  const azione = (az, testo, extra = '', classe = 'secondario') => `<button type="button" class="btn ${classe}" data-sb-az="${az}"${extra}>${testo}</button>`;
+  return pannello('subathon', `
+    <div class="carta" id="sb-carta">
+      <h2>${_hIco(ICO.orologio)}Subathon</h2>
+      <p>${L('La diretta dura quanto dice l’orologio, e chi sostiene il canale la allunga. È il conto alla rovescia che hai già: qui decidi cosa lo allunga, e lo rimetti a posto a mano se qualcosa si rompe.', 'The stream lasts as long as the clock says, and whoever supports the channel stretches it. It is the countdown you already have: here you decide what stretches it, and you fix it by hand if something breaks.', 'El directo dura lo que diga el reloj, y quien apoya el canal lo alarga. Es la cuenta atrás que ya tienes: aquí decides qué la alarga, y la arreglas a mano si algo se rompe.')}</p>
+      <div class="riga-interruttore spazio-sopra">
+        <label class="interruttore"><input type="checkbox" id="sb-attivo" data-sb-check="attivo"><span class="levetta"></span></label>
+        <span class="etichetta-stato">${L('Subathon accesa', 'Subathon on', 'Subathon encendido')}</span>
+      </div>
+      <p class="suggerimento" id="sb-vede"></p>
+      <div class="sb-quadro" id="sb-quadro">
+        <div class="sb-orologio" id="sb-orologio">0:00</div>
+        <div class="sb-riassunto tenue" id="sb-riassunto"></div>
+      </div>
+      <div class="goal-campi spazio-sopra">
+        <label class="campo-num">${L('Si parte con (ore)', 'Starts with (hours)', 'Empieza con (horas)')}<input type="number" id="sb-avvia-ore" min="0" max="72" value="4"></label>
+        <label class="campo-num">${L('e minuti', 'and minutes', 'y minutos')}<input type="number" id="sb-avvia-min" min="0" max="59" value="0"></label>
+      </div>
+      <p class="riga-flessibile">
+        <button type="button" class="btn" id="sb-avvia">${_bIco(ICO.play)}${L('Fai partire', 'Start it', 'Ponlo en marcha')}</button>
+        <button type="button" class="btn secondario" id="sb-ferma">${L('Ferma', 'Stop', 'Para')}</button>
+      </p>
+      <p class="suggerimento">${L('Far partire comincia una subathon nuova: totale, ultimi e traguardi ripartono da zero. Il conto è lo stesso del «Conto alla rovescia» dello Studio.', 'Starting begins a new subathon: total, latest and milestones start again from zero. The clock is the same as the Studio «Countdown».', 'Ponerlo en marcha empieza un subathon nuevo: total, últimos y metas vuelven a cero. El reloj es el mismo que la «Cuenta atrás» del Studio.')}</p>
+    </div>
+
+    <div class="carta" id="sb-mano">
+      <h3>${_hIco(ICO.scrivi)}${L('A mano, se qualcosa si rompe', 'By hand, if something breaks', 'A mano, si algo se rompe')}</h3>
+      <p>${L('Ogni tasto scrive una riga nel libro qui sotto, e si può annullare. In chat fanno lo stesso i comandi.', 'Every button writes a line in the book below, and can be undone. In chat the commands do the same.', 'Cada botón escribe una línea en el libro de abajo, y se puede deshacer. En el chat hacen lo mismo los comandos.')}</p>
+      <div class="goal-campi">
+        <label class="campo-num">${L('Minuti', 'Minutes', 'Minutos')}<input type="number" id="sb-min" min="1" max="4320" value="10"></label>
+        <label class="campo">${L('Perché (facoltativo)', 'Why (optional)', 'Por qué (opcional)')}<input type="text" id="sb-perche" maxlength="120"></label>
+      </div>
+      <p class="riga-flessibile">${azione('piu', '+ ' + L('Aggiungi', 'Add', 'Añadir'), '', '')}${azione('meno', '− ' + L('Togli', 'Remove', 'Quitar'))}${azione('piu', '+5:00', ' data-min="5"')}${azione('piu', '+10:00', ' data-min="10"')}${azione('piu', '+30:00', ' data-min="30"')}</p>
+      <div class="goal-campi spazio-sopra">
+        <label class="campo-num">${L('Un evento perso', 'A missed event', 'Un evento perdido')}<select id="sb-fonte">${SB_FONTI_MANO().map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join('')}</select></label>
+        <label class="campo-num">${L('Quanti', 'How many', 'Cuántos')}<input type="number" id="sb-quanti" min="1" max="100000" value="1"></label>
+        <label class="campo-num">${L('Livello del sub', 'Sub tier', 'Nivel del sub')}<select id="sb-livello"><option value="1">1</option><option value="2">2</option><option value="3">3</option></select></label>
+      </div>
+      <p>${azione('unita', L('Conta come se fosse arrivato', 'Count it as if it arrived', 'Cuéntalo como si hubiera llegado'))}</p>
+      <div class="goal-campi spazio-sopra">
+        <label class="campo-num">${L('Deve mancare', 'Time left should be', 'Debe faltar')}<input type="text" id="sb-resta" placeholder="3:00" maxlength="8"></label>
+      </div>
+      <p class="riga-flessibile">${azione('imposta', L('Imposta quanto manca', 'Set time left', 'Fijar cuánto falta'))}${azione('pausa', L('Pausa', 'Pause', 'Pausa'))}${azione('riprendi', L('Riprendi', 'Resume', 'Reanudar'))}${azione('annulla', L('Annulla l’ultima a mano', 'Undo the last manual one', 'Deshacer la última a mano'))}</p>
+      <div class="goal-campi spazio-sopra">
+        <label class="campo-num">${L('Ora felice (minuti)', 'Happy hour (minutes)', 'Hora feliz (minutos)')}<input type="number" id="sb-felice-min" min="1" max="360" value="30"></label>
+        <label class="campo-num">${L('Vale', 'Counts', 'Vale')}<select id="sb-felice-per">${[2, 3, 4, 5].map((n) => `<option value="${n}">×${n}</option>`).join('')}</select></label>
+      </div>
+      <p class="riga-flessibile">${azione('felice', L('Accendi l’ora felice', 'Start happy hour', 'Activar la hora feliz'))}${azione('felice-stop', L('Spegnila', 'Stop it', 'Apagarla'))}</p>
+      <p class="suggerimento" id="sb-esito" aria-live="polite"></p>
+      <p class="suggerimento">${L('In chat:', 'In chat:', 'En el chat:')} <code>!subathon +10m</code> <code>-5m</code> <code>sub 3 2</code> <code>bit 500</code> <code>euro 10</code> <code>kicks 200</code> <code>resta 3h</code> <code>pausa</code> <code>riprendi</code> <code>annulla</code> <code>felice 30m x2</code></p>
+    </div>
+
+    <div class="carta" id="sb-fonti">
+      <h3>${_hIco(ICO.sliders)}${L('Cosa la allunga', 'What stretches it', 'Qué lo alarga')}</h3>
+      <p class="suggerimento">${L('Minuti per unità, numeri interi: le frazioni le fa il conto (cinquanta bit valgono mezza unità). A zero, quella cosa non allunga niente.', 'Minutes per unit, whole numbers: the maths does the fractions (fifty bits are half a unit). At zero, that thing adds nothing.', 'Minutos por unidad, números enteros: las fracciones las hace la cuenta (cincuenta bits son media unidad). En cero, eso no añade nada.')}</p>
+      <div class="goal-campi">${SB_FONTI_CAMPI().map(numero).join('')}</div>
+      <label class="campo-num spazio-sopra">${L('Il premio a punti canale', 'The channel points reward', 'La recompensa de puntos de canal')}<select id="sb-premio"></select></label>
+      <div class="goal-campi spazio-sopra">
+        ${numero(['tettoOre', L('Non può mancare più di (ore, 0 = senza tetto)', 'Never more than (hours, 0 = no cap) left', 'Nunca más de (horas, 0 = sin tope)'), 0, 72])}
+        ${numero(['raffica', L('Raffica: secondi per dirli insieme', 'Burst: seconds to say them together', 'Ráfaga: segundos para decirlos juntos'), 0, 30])}
+      </div>
+      <p class="spazio-sopra"><button type="button" class="btn" id="sb-salva">${L('Salva', 'Save', 'Guardar')}</button></p>
+    </div>
+
+    <div class="carta" id="sb-traguardi" data-salva-con="sb-salva">
+      <h3>${_hIco(ICO.trofeo)}${L('Traguardi', 'Milestones', 'Metas')}</h3>
+      <p class="suggerimento">${L('Sul tempo aggiunto in tutto: «a +2 ore, cosplay». In scena c’è la barra verso il prossimo, e quando lo passi lo dicono la chat e l’alert.', 'On the total time added: «at +2 hours, cosplay». On screen there is the bar to the next one, and when you pass it chat and the alert say so.', 'Sobre el tiempo añadido en total: «a +2 horas, cosplay». En escena está la barra hacia la siguiente, y al pasarla lo dicen el chat y la alerta.')}</p>
+      <div id="sb-tg-lista" class="sb-tg-lista"></div>
+      <p><button type="button" class="btn secondario mini" id="sb-tg-piu">${_bIco(ICO.piu)}${L('Aggiungi un traguardo', 'Add a milestone', 'Añadir una meta')}</button></p>
+    </div>
+
+    <div class="carta" id="sb-chat" data-salva-con="sb-salva">
+      <h3>${_hIco(ICO.chat)}${L('In chat, i comandi e la fine', 'In chat, commands and the end', 'En el chat, comandos y final')}</h3>
+      <label class="riga-check"><input type="checkbox" data-sb-check="annuncia"> ${L('Dillo in chat quando il conto sale e a ogni traguardo', 'Say it in chat when the clock goes up and at each milestone', 'Dilo en el chat cuando la cuenta sube y en cada meta')}</label>
+      <label class="riga-check"><input type="checkbox" data-sb-check="fineChat"> ${L('Alla fine, una riga in chat', 'At the end, a line in chat', 'Al final, una línea en el chat')}</label>
+      <label class="campo-num spazio-sopra">${L('Chi usa i comandi che muovono l’orologio', 'Who uses the commands that move the clock', 'Quién usa los comandos que mueven el reloj')}<select data-sb="comandi"><option value="mod">${L('Io e i moderatori', 'Me and the moderators', 'Yo y los moderadores')}</option><option value="streamer">${L('Solo io', 'Only me', 'Solo yo')}</option></select></label>
+      <p class="suggerimento">${L('«!subathon» da solo resta per tutti: dice quanto manca.', '«!subathon» alone stays for everyone: it says how long is left.', '«!subathon» solo sigue siendo para todos: dice cuánto falta.')}</p>
+      <details class="spazio-sopra"><summary>${L('Cosa dice il bot', 'What the bot says', 'Qué dice el bot')}</summary>
+        <p class="suggerimento">${L('Vuoto: quello di serie, nella lingua della chat. Fra graffe i pezzi che il bot riempie.', 'Empty: the default one, in the chat language. In braces the parts the bot fills in.', 'Vacío: el de serie, en el idioma del chat. Entre llaves las partes que el bot rellena.')}</p>
+        <div class="griglia-campi">${testiChat.map((k) => `<div><label class="campo">${esc(k)}</label><input type="text" data-sb-testo="${k}" maxlength="200" placeholder="${esc(S.testo({}, k, _sbLingua()))}" aria-label="${esc(k)}"></div>`).join('')}</div>
+      </details>
+    </div>
+
+    <div class="carta" id="sb-alert" data-salva-con="sb-salva">
+      <h3>${_hIco(ICO.megafono)}${L('Alert in scena', 'On-screen alerts', 'Alertas en escena')}</h3>
+      <p class="suggerimento">${L('Partono come gli alert degli eventi, con la loro veste e il loro posto. Gli allungamenti vicini diventano un alert solo.', 'They play like the event alerts, with their look and place. Extensions close together become a single alert.', 'Salen como las alertas de eventos, con su aspecto y su sitio. Los alargues seguidos se vuelven una sola alerta.')}</p>
+      <div id="sb-alert-righe"></div>
+    </div>
+
+    <div class="carta" id="sb-libro-carta">
+      <h3>${_hIco(ICO.lista)}${L('Il libro', 'The book', 'El libro')}</h3>
+      <p class="suggerimento">${L('Ogni mossa dell’orologio, con chi l’ha fatta. Niente si cancella: «Annulla» scrive una riga che la storna.', 'Every move of the clock, with who made it. Nothing is deleted: «Undo» writes a line that reverses it.', 'Cada movimiento del reloj, con quién lo hizo. Nada se borra: «Deshacer» escribe una línea que lo revierte.')}</p>
+      <div class="scorrevole"><table class="tabella sb-libro"><tbody id="sb-libro"></tbody></table></div>
+    </div>
+
+    <div class="carta" id="sb-twitch">
+      <h3>${_hIco(ICO.pannelli)}${L('Pannelli per Twitch', 'Twitch panels', 'Paneles para Twitch')}</h3>
+      <p>${L('Le regole come immagini da mettere sotto la diretta, in «Informazioni»: cambi un numero e le immagini cambiano.', 'The rules as images to put under your stream, in «About»: change a number and the images change.', 'Las reglas como imágenes para poner bajo el directo, en «Información»: cambias un número y las imágenes cambian.')}</p>
+      <div class="gr-sfondo-scelte" role="group" aria-label="${esc(L('I colori', 'The colors', 'Los colores'))}">${[['pagina', L('Come la pagina link', 'Like your link page', 'Como tu página de enlaces')], ['notte', L('Notte', 'Night', 'Noche')], ['carta', L('Carta', 'Paper', 'Papel')]].map(([v, t]) => `<button type="button" class="gr-tema" data-sb-tema="${v}" aria-pressed="false">${esc(t)}</button>`).join('')}</div>
+      <div class="sb-pan-vista spazio-sopra">
+        <figure><canvas id="sb-pan-testa" role="img"></canvas><figcaption><button type="button" class="btn secondario mini" data-sb-png="testa">${_bIco(ICO.scarica)}${L('Scarica', 'Download', 'Descargar')}</button></figcaption></figure>
+        <figure><canvas id="sb-pan-regole" role="img"></canvas><figcaption><button type="button" class="btn secondario mini" data-sb-png="regole">${_bIco(ICO.scarica)}${L('Scarica', 'Download', 'Descargar')}</button></figcaption></figure>
+      </div>
+      <p class="riga-flessibile"><button type="button" class="btn secondario" id="sb-pan-testo">${L('Copia la descrizione', 'Copy the description', 'Copiar la descripción')}</button></p>
+    </div>`);
+}
+
+function _sbTesto(k, dati) { return window.SB_SUBATHON.testo(SUB_STATO.bozza?.testi, k, _sbLingua(), dati); }
+
+function _sbRiempi() {
+  const b = SUB_STATO.bozza;
+  const box = _g('scheda-subathon');
+  if (!b || !box) return;
+  box.querySelectorAll('[data-sb]').forEach((el) => { const v = b[el.dataset.sb]; if (v != null) el.value = v; });
+  box.querySelectorAll('[data-sb-check]').forEach((el) => { el.checked = !!b[el.dataset.sbCheck]; });
+  box.querySelectorAll('[data-sb-testo]').forEach((el) => { el.value = (b.testi || {})[el.dataset.sbTesto] || ''; });
+  _sbPremi();
+  _sbTraguardi();
+  _sbAlertRighe();
+  _sbVede();
+  _sbPannelliPresto();
+}
+
+function _sbVede() {
+  const el = _g('sb-vede');
+  const d = SUB_STATO.dati;
+  if (!el || !d) return;
+  const v = d.siVede || {};
+  const conti = [v.timer ? L('il conto alla rovescia', 'the countdown', 'la cuenta atrás') : '', v.elemento ? L('l’elemento Subathon', 'the Subathon element', 'el elemento Subathon') : ''].filter(Boolean);
+  el.innerHTML = conti.length
+    ? esc(L(`Si vede con ${conti.join(' e ')}: accendili negli overlay dove li vuoi, nello Studio.`, `It shows with ${conti.join(' and ')}: turn them on in the overlays where you want them, in the Studio.`, `Se ve con ${conti.join(' y ')}: enciéndelos en los overlays donde los quieras, en el Studio.`))
+    : esc(L('Per contare serve un conto che la faccia vedere: accendi l’elemento Subathon o il conto alla rovescia.', 'To count it needs a clock that shows it: turn on the Subathon element or the countdown.', 'Para contar necesita un reloj que la muestre: enciende el elemento Subathon o la cuenta atrás.'))
+      + ` <button type="button" class="btn secondario mini" id="sb-elemento">${L('Accendi l’elemento Subathon', 'Turn on the Subathon element', 'Encender el elemento Subathon')}</button>`;
+}
+
+async function _sbPremi() {
+  const sel = _g('sb-premio');
+  const b = SUB_STATO.bozza;
+  if (!sel || !b) return;
+  if (SUB_STATO.premi === null) {
+    SUB_STATO.premi = [];
+    try { const d = await api('/api/streamer/premi'); SUB_STATO.premi = (d && d.tutti) || []; } catch { SUB_STATO.premi = []; }
+  }
+  const lista = SUB_STATO.premi;
+  sel.innerHTML = `<option value="">${L('— nessuno —', '— none —', '— ninguna —')}</option>` + lista.map((r) => `<option value="${esc(r.id)}">${esc(r.title)}</option>`).join('')
+    + (b.premio && !lista.some((r) => r.id === b.premio) ? `<option value="${esc(b.premio)}">${esc(b.premioTitolo || b.premio)}</option>` : '');
+  sel.value = b.premio || '';
+}
+
+function _sbTraguardi() {
+  const box = _g('sb-tg-lista');
+  const b = SUB_STATO.bozza;
+  if (!box || !b) return;
+  const v = Array.isArray(b.traguardi) ? b.traguardi : [];
+  box.innerHTML = v.length ? v.map((t, i) => `<div class="goal-campi" data-sb-tg="${i}">
+      <label class="campo-num">${L('A + minuti', 'At + minutes', 'A + minutos')}<input type="number" data-sb-tgk="minuti" min="1" max="100000" value="${Number(t.minuti) || ''}"></label>
+      <label class="campo">${L('Cosa succede', 'What happens', 'Qué pasa')}<input type="text" data-sb-tgk="testo" maxlength="60" value="${esc(t.testo || '')}"></label>
+      <button type="button" class="btn secondario mini" data-sb-tg-via aria-label="${esc(L('Togli questo traguardo', 'Remove this milestone', 'Quitar esta meta'))}">${_bIco(ICO.cestino)}</button>
+    </div>`).join('') : `<p class="vuoto">${L('Nessun traguardo.', 'No milestones.', 'Ninguna meta.')}</p>`;
+}
+
+function _sbOpzSuono(sel) {
+  const audio = (_EFFETTI || []).filter((e) => e.tipo === 'audio');
+  return `<option value=""${sel === '' ? ' selected' : ''}>${L('Di serie', 'Default', 'De serie')}</option>` + opzioniSuono(sel)
+    + audio.map((e) => `<option value="effetto:${esc(e.comando)}"${'effetto:' + e.comando === sel ? ' selected' : ''}>!${esc(e.comando)}</option>`).join('');
+}
+
+function _sbAlertRighe() {
+  const box = _g('sb-alert-righe');
+  const b = SUB_STATO.bozza;
+  if (!box || !b) return;
+  const n = SB_NOMI_ALERT();
+  box.innerHTML = Object.keys(n).map((k) => {
+    const a = (b.alert || {})[k] || {};
+    return `<fieldset class="sb-alert-riga" data-sb-al="${k}"><legend>${esc(n[k])}</legend>
+      <label class="riga-check"><input type="checkbox" data-sb-alk="attivo"${a.attivo ? ' checked' : ''}> ${L('Acceso', 'On', 'Encendido')}</label>
+      <div class="goal-campi">
+        <label class="campo-num">${L('Suono', 'Sound', 'Sonido')}<select data-sb-alk="suono">${_sbOpzSuono(a.suono || '')}</select></label>
+        <label class="campo-num">${L('Immagine', 'Image', 'Imagen')}<select data-sb-alk="immagine">${_optImgCartello(a.immagine || '')}</select></label>
+        <label class="campo-num">${L('Colore', 'Color', 'Color')}<input type="color" data-sb-alk="colore" value="${esc(a.colore || '#f72fa7')}"></label>
+      </div>
+      <label class="campo">${L('Cosa dice', 'What it says', 'Qué dice')}<input type="text" data-sb-testo="alert-${k}" maxlength="200" value="${esc((b.testi || {})['alert-' + k] || '')}" placeholder="${esc(window.SB_SUBATHON.testo({}, 'alert-' + k, _sbLingua()))}"></label>
+      <p><button type="button" class="btn secondario mini" data-sb-prova="${k}">${_bIco(ICO.play)}${L('Prova', 'Test', 'Probar')}</button></p>
+    </fieldset>`;
+  }).join('');
+}
+
+function _sbLibro() {
+  const tb = _g('sb-libro');
+  const d = SUB_STATO.dati;
+  if (!tb || !d) return;
+  const S = window.SB_SUBATHON;
+  const righe = d.libro || [];
+  const stornate = new Set(righe.filter((r) => r.storno).map((r) => r.storno));
+  const nomi = SB_NOMI_FONTE();
+  tb.innerHTML = righe.length ? righe.map((r) => {
+    const puo = r.messi !== 0 && !r.storno && !stornate.has(r.id);
+    const chi = r.chi || r.mano || '';
+    const cosa = (nomi[r.fonte] || r.fonte) + (r.quanti && ['sub', 'bit', 'euro', 'kicks', 'raid'].includes(r.fonte) ? ' ' + r.quanti : '') + (r.per > 1 ? ' ×' + r.per : '');
+    return `<tr class="${stornate.has(r.id) ? 'tenue' : ''}"><td>${esc(new Date(r.ts).toLocaleTimeString(localePannello(), { hour: '2-digit', minute: '2-digit' }))}</td><td>${esc(cosa)}</td><td>${esc(chi)}</td>
+      <td class="sb-num-riga">${r.messi ? esc(S.conSegno(r.messi)) : ''}${r.tagliati && r.messi >= 0 && r.chiesti > 0 ? ` <span class="tenue">(${esc(L('tetto', 'cap', 'tope'))} −${esc(S.orologio(r.tagliati))})</span>` : ''}</td>
+      <td>${esc(r.perche || '')}</td><td>${puo ? `<button type="button" class="btn secondario mini" data-sb-annulla="${esc(r.id)}">${L('Annulla', 'Undo', 'Deshacer')}</button>` : ''}</td></tr>`;
+  }).join('') : `<tr><td class="vuoto">${L('Il libro è vuoto: si riempie quando l’orologio corre.', 'The book is empty: it fills up while the clock runs.', 'El libro está vacío: se llena mientras el reloj corre.')}</td></tr>`;
+}
+
+function _sbOrologio() {
+  const d = SUB_STATO.dati;
+  const o = _g('sb-orologio'), r = _g('sb-riassunto');
+  if (!d || !o) return;
+  const S = window.SB_SUBATHON;
+  const v = d.vista || {};
+  const ora = Date.now() + (SUB_STATO.scarto || 0);
+  const st = S.stato(v, ora);
+  o.textContent = S.orologio(st.resta);
+  o.classList.toggle('in-pausa', st.pausa);
+  const pezzi = [];
+  if (!d.regole?.attivo) pezzi.push(L('spenta', 'off', 'apagado'));
+  else if (st.pausa) pezzi.push(L('in pausa', 'paused', 'en pausa'));
+  else if (st.finito) pezzi.push(L('finita', 'over', 'terminado'));
+  else if (!st.vivo) pezzi.push(L('ferma: falla partire', 'stopped: start it', 'parado: ponlo en marcha'));
+  if (v.inizio) pezzi.push(L('aggiunti', 'added', 'añadidos') + ' ' + S.orologio(v.totale || 0));
+  if (S.per(v.felice, ora) > 1) pezzi.push(L('ora felice', 'happy hour', 'hora feliz') + ' ×' + v.felice.per);
+  if (r) r.textContent = pezzi.join(' · ');
+}
+
+async function _sbCarica() {
+  const d = await api('/api/streamer/subathon');
+  _sbDati(d);
+  if (!SUB_STATO.bozza) { SUB_STATO.bozza = JSON.parse(JSON.stringify(d.regole || _sbRegoleDiSerie())); _sbRiempi(); }
+}
+
+function _sbDati(d) {
+  if (!d) return;
+  SUB_STATO.dati = d;
+  if (d.ora) SUB_STATO.scarto = Number(d.ora) - Date.now();
+  if (d.vista && stato?.streamer?.settings) {
+    const st = { ...(stato.streamer.settings.overlayStato || {}) };
+    st.timer = { fine: d.vista.fine || 0, ...(d.vista.pausa ? { pausa: d.vista.pausa } : {}) };
+    stato.streamer.settings.overlayStato = st;
+  }
+  _sbOrologio();
+  _sbLibro();
+  _sbVede();
+}
+
+const _sbIdTasto = () => (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(16).slice(2)).replace(/[^A-Za-z0-9_-]/g, '');
+
+async function _sbAzione(az, btn) {
+  const body = { azione: az, id: _sbIdTasto() };
+  if (az === 'piu' || az === 'meno') { body.minuti = Number(btn?.dataset.min || _g('sb-min')?.value) || 0; body.perche = _g('sb-perche')?.value || ''; }
+  if (az === 'unita') { body.fonte = _g('sb-fonte')?.value; body.quanti = Number(_g('sb-quanti')?.value) || 0; body.livello = Number(_g('sb-livello')?.value) || 1; }
+  if (az === 'imposta') { const ms = window.SB_SUBATHON.durata(_g('sb-resta')?.value); if (!ms) throw new Error(L('Scrivi quanto deve mancare, per esempio 3:00 o 90m.', 'Type how long should be left, for example 3:00 or 90m.', 'Escribe cuánto debe faltar, por ejemplo 3:00 o 90m.')); body.minuti = Math.round(ms / 60000); }
+  if (az === 'felice') { body.minuti = Number(_g('sb-felice-min')?.value) || 30; body.per = Number(_g('sb-felice-per')?.value) || 2; }
+  if (az === 'annulla' && btn?.dataset.sbAnnulla) body.riga = btn.dataset.sbAnnulla;
+  if (btn) btn.disabled = true;
+  try {
+    const r = await api('/api/streamer/subathon/azione', { method: 'POST', body });
+    _sbDati(r);
+    const e = _g('sb-esito');
+    if (e) e.textContent = r.detto || '';
+    if (r.ok) toast(r.detto || L('Fatto ✓', 'Done ✓', 'Hecho ✓'));
+    else toast(r.detto || L('Non è cambiato niente.', 'Nothing changed.', 'No ha cambiado nada.'), 'errore');
+  } finally { if (btn) btn.disabled = false; }
+}
+
+function _sbLeggi(ev) {
+  const b = SUB_STATO.bozza;
+  const el = ev.target;
+  if (!b || !el) return false;
+  if (el.dataset.sb) { b[el.dataset.sb] = el.type === 'number' ? Number(el.value) : el.value; return true; }
+  if (el.dataset.sbCheck) { b[el.dataset.sbCheck] = el.checked; return true; }
+  if (el.dataset.sbTesto) { b.testi = { ...(b.testi || {}), [el.dataset.sbTesto]: el.value }; return true; }
+  if (el.id === 'sb-premio') { b.premio = el.value; b.premioTitolo = el.value ? (el.selectedOptions[0]?.textContent || '') : ''; return true; }
+  const tg = el.closest('[data-sb-tg]');
+  if (tg && el.dataset.sbTgk) { const t = b.traguardi[Number(tg.dataset.sbTg)]; if (t) t[el.dataset.sbTgk] = el.dataset.sbTgk === 'minuti' ? Number(el.value) : el.value; return true; }
+  const al = el.closest('[data-sb-al]');
+  if (al && el.dataset.sbAlk) {
+    const k = al.dataset.sbAl;
+    b.alert = { ...(b.alert || {}), [k]: { ...((b.alert || {})[k] || {}), [el.dataset.sbAlk]: el.type === 'checkbox' ? el.checked : el.value } };
+    return true;
+  }
+  return false;
+}
+
+async function _sbPannelloColori() {
+  if (SUB_STATO.colori) return SUB_STATO.colori;
+  try { const d = await api('/api/streamer/pannelli'); SUB_STATO.colori = d?.colori || {}; } catch { SUB_STATO.colori = {}; }
+  return SUB_STATO.colori;
+}
+
+function _sbRighePannello() {
+  const S = window.SB_SUBATHON;
+  const cfg = impostazioni().overlaySubathonRegole || {};
+  return S.righeRegole(SUB_STATO.bozza || {}, _sbLingua(), { valuta: _sbValuta(), testi: cfg.testi || {} }).map((r) => r.testo);
+}
+
+async function _sbPannelli() {
+  const testa = _g('sb-pan-testa'), regole = _g('sb-pan-regole');
+  if (!testa || !regole || !SUB_STATO.bozza) return;
+  await caricaMotorePannelli();
+  const P = window.SB_PANNELLI;
+  const colori = await _sbPannelloColori();
+  const pal = P.tavolozza(SUB_STATO.tema, colori, window.SB_KIT, null);
+  const car = GR_CARATTERI.archivo;
+  const seme = 'sub:' + String(stato?.user?.login || '');
+  document.querySelectorAll('#scheda-subathon [data-sb-tema]').forEach((b) => { const on = b.dataset.sbTema === SUB_STATO.tema; b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); });
+  testa.width = P.W * P.DENSITA; testa.height = 100 * P.DENSITA;
+  testa.style.width = P.W + 'px';
+  const sotto = _sbTesto('regole-titolo');
+  P.disegna(testa.getContext('2d'), { h: 100, forma: 'penna', titolo: 'Subathon', sottotitolo: sotto, icona: null, carattere: car, colori: pal, densita: P.DENSITA, seme, penna: window.SB_PENNA });
+  testa.setAttribute('aria-label', 'Subathon, ' + sotto);
+  const righe = _sbRighePannello();
+  const h = P.altezzaElenco(righe.length, false);
+  regole.width = P.W * P.DENSITA; regole.height = h * P.DENSITA;
+  regole.style.width = P.W + 'px';
+  P.elenco(regole.getContext('2d'), { righe, forma: 'penna', carattere: car, colori: pal, densita: P.DENSITA, seme: seme + ':r', penna: window.SB_PENNA });
+  regole.setAttribute('aria-label', righe.join(', '));
+}
+let _sbPanT = 0;
+function _sbPannelliPresto() { clearTimeout(_sbPanT); _sbPanT = setTimeout(() => _sbPannelli().catch(() => null), 120); }
+
+async function avviaSubathon() {
+  const scheda = _g('scheda-subathon');
+  if (!scheda) return;
+  if (!scheda.dataset.collegata) {
+    scheda.dataset.collegata = '1';
+    const cambia = (ev) => { if (_sbLeggi(ev)) { segnaDaSalvare(ev.target); _sbPannelliPresto(); } };
+    scheda.addEventListener('input', cambia);
+    scheda.addEventListener('change', cambia);
+    scheda.addEventListener('click', (ev) => {
+      const b = ev.target.closest('button');
+      if (!b || !scheda.contains(b)) return;
+      if (b.dataset.sbAz) { conErrore(() => _sbAzione(b.dataset.sbAz, b)); return; }
+      if (b.dataset.sbAnnulla) { conErrore(() => _sbAzione('annulla', b)); return; }
+      if (b.dataset.sbProva) { conErrore(async () => { await api('/api/streamer/subathon/prova', { method: 'POST', body: { tipo: b.dataset.sbProva } }); toast(L('Mandato all’overlay ✓', 'Sent to the overlay ✓', 'Enviado al overlay ✓')); }); return; }
+      if (b.dataset.sbTema) { SUB_STATO.tema = b.dataset.sbTema; _sbPannelliPresto(); return; }
+      if (b.dataset.sbPng) {
+        conErrore(async () => {
+          await _sbPannelli();
+          const tela = _g(b.dataset.sbPng === 'testa' ? 'sb-pan-testa' : 'sb-pan-regole');
+          const blob = await firmaPngBlob(await new Promise((ok) => tela.toBlob(ok, 'image/png')));
+          scaricaBlob(blob, b.dataset.sbPng === 'testa' ? 'subathon-titolo.png' : 'subathon-regole.png');
+        });
+        return;
+      }
+      if (b.hasAttribute('data-sb-tg-via')) { const i = Number(b.closest('[data-sb-tg]').dataset.sbTg); SUB_STATO.bozza.traguardi.splice(i, 1); _sbTraguardi(); segnaDaSalvare(b); return; }
+      if (b.id === 'sb-tg-piu') {
+        const v = SUB_STATO.bozza.traguardi = Array.isArray(SUB_STATO.bozza.traguardi) ? SUB_STATO.bozza.traguardi : [];
+        if (v.length >= 20) return;
+        v.push({ minuti: (Number(v.at(-1)?.minuti) || 0) + 60, testo: '' });
+        _sbTraguardi(); segnaDaSalvare(b); return;
+      }
+      if (b.id === 'sb-pan-testo') { conErrore(() => copiaTesto(_sbRighePannello().map((r) => '- ' + r).join('\n'), L('Descrizione copiata ✓', 'Description copied ✓', 'Descripción copiada ✓'))); return; }
+      if (b.id === 'sb-salva') {
+        conErrore(async () => {
+          await salvaImpostazioni({ subathon: SUB_STATO.bozza }, L('Subathon salvata ✓', 'Subathon saved ✓', 'Subathon guardado ✓'));
+          SUB_STATO.bozza = null;
+          await _sbCarica();
+        });
+        return;
+      }
+      if (b.id === 'sb-elemento') {
+        conErrore(async () => {
+          const c = { ..._defSubathon(), ...(impostazioni().overlaySubathon || {}), attivo: true };
+          await salvaImpostazioni({ overlaySubathon: c }, L('Elemento Subathon acceso ✓: mettilo negli overlay dallo Studio.', 'Subathon element on ✓: put it in your overlays from the Studio.', 'Elemento Subathon encendido ✓: ponlo en tus overlays desde el Studio.'));
+          await _sbCarica();
+        });
+        return;
+      }
+      if (b.id === 'sb-avvia') {
+        conErrore(async () => {
+          const min = (Number(_g('sb-avvia-ore')?.value) || 0) * 60 + (Number(_g('sb-avvia-min')?.value) || 0);
+          if (min < 1) throw new Error(L('Scegli da quanto si parte.', 'Pick how long it starts with.', 'Elige con cuánto empieza.'));
+          _sbDati(await api('/api/streamer/subathon/avvia', { method: 'POST', body: { minuti: min } }));
+          toast(L('Subathon partita ✓', 'Subathon started ✓', 'Subathon en marcha ✓'));
+        });
+        return;
+      }
+      if (b.id === 'sb-ferma') {
+        conErrore(async () => {
+          await api('/api/streamer/timer', { method: 'POST', body: { minuti: 0 } });
+          await _sbCarica();
+          toast(L('Orologio fermo.', 'Clock stopped.', 'Reloj parado.'));
+        });
+      }
+    });
+    clearInterval(SUB_STATO.orologio);
+    SUB_STATO.orologio = setInterval(() => { if (schedaAttiva === 'subathon') _sbOrologio(); }, 1000);
+  }
+  try { await _sbCarica(); }
+  catch (e) { toast(e.message, 'errore'); }
+}
+
 const PAN_STATO = { dati: null, serie: null, motore: null, icone: new Map(), timer: 0, giro: 0, errore: '', aperta: 0 };
 STATI_SALVA['pan-salva'] = {
   completo: true,
@@ -14619,6 +15116,7 @@ function riempiCfgForm(k) {
   }
   if (k === 'musica') _mostraParti();
   if (k === 'muro') _disegnaPremiMuro();
+  if (k === 'subathon') _sbImmagini();
 }
 function _scriviMisura(box, el) {
   const o = box.querySelector('[data-mis-out="' + el.dataset.c.split('.')[1] + '"]');
@@ -14976,23 +15474,8 @@ function pannelloAlert() {
         </div>
         <label class="cons-spunta spazio-sopra"><input type="checkbox" data-c="partiDaSolo">
           ${L('Parte da solo quando l’overlay si apre — per la schermata d’attesa: metti su la scena e il conto è già andato.', 'Starts on its own when the overlay opens — for the waiting screen: put the scene up and the countdown is already running.', 'Arranca solo cuando se abre el overlay — para la pantalla de espera: pones la escena y la cuenta ya va.')}</label>
-        <h4 class="spazio-sopra">Subathon</h4>
-        <p class="suggerimento">${L('La diretta dura quanto dice l\'orologio: sub, bit e donazioni lo allungano. Non è un secondo conto, è questo: accendilo qui sopra, fallo partire, e il tempo si aggiunge a quello che manca.', 'The stream lasts as long as the clock says: subs, bits and donations stretch it. It is not a second countdown, it is this one: turn it on above, start it, and the time is added to what is left.', 'El directo dura lo que diga el reloj: subs, bits y donaciones lo alargan. No es una segunda cuenta, es esta: enciéndela arriba, ponla en marcha, y el tiempo se suma a lo que queda.')}</p>
-        <div class="riga-interruttore spazio-sopra">
-          <label class="interruttore"><input type="checkbox" data-c="subathon.attivo"><span class="levetta"></span></label>
-          <span class="etichetta-stato">Subathon</span>
-        </div>
-        <div class="goal-campi spazio-sopra">
-          <label class="campo-num">${L('Minuti per sub', 'Minutes per sub', 'Minutos por sub')}<input type="number" data-c="subathon.perSub" min="0" max="120"></label>
-          <label class="campo-num">${L('Minuti ogni 100 bit', 'Minutes per 100 bits', 'Minutos cada 100 bits')}<input type="number" data-c="subathon.perBit100" min="0" max="120"></label>
-          <label class="campo-num">${L('Minuti per euro donato', 'Minutes per euro donated', 'Minutos por euro donado')}<input type="number" data-c="subathon.perEuro" min="0" max="120"></label>
-          <label class="campo-num">${L('Non può mancare più di (ore)', 'Never more than (hours) left', 'Nunca más de (horas) restantes')}<input type="number" data-c="subathon.tettoOre" min="0" max="72"></label>
-        </div>
-        <p class="suggerimento">${L('A zero ore non c\'è tetto: una serata fortunata può portare la fine dove vuole.', 'At zero hours there is no cap: a lucky night can push the end wherever it likes.', 'En cero horas no hay tope: una noche con suerte puede llevar el final donde quiera.')}</p>
-        <label class="riga-check spazio-sopra"><input type="checkbox" data-c="subathon.annuncia"> ${L('Dillo in chat quando il conto sale', 'Say it in chat when the clock goes up', 'Dilo en el chat cuando la cuenta sube')}</label>
-        <div><label class="campo" for="sub-testo">${L('Cosa scrive', 'What it writes', 'Qué escribe')} <span class="tenue">— <code>{chi}</code> <code>{quanto}</code></span></label>
-          <input type="text" id="sub-testo" data-c="subathon.testoChat" maxlength="200"></div>
-
+        <p class="suggerimento spazio-sopra">${L('La subathon usa questo stesso orologio: fonti, comandi, libro e alert stanno nella sua scheda.', 'The subathon uses this same clock: sources, commands, book and alerts live in its own tab.', 'El subathon usa este mismo reloj: fuentes, comandos, libro y alertas están en su pestaña.')}
+          <button type="button" class="btn secondario mini" data-vai-scheda="subathon">${_bIco(ICO.orologio)}${L('Apri Subathon', 'Open Subathon', 'Abrir Subathon')}</button></p>
         <p class="spazio-sopra">
           <button class="btn" id="tim-parti">${L('Fai partire', 'Start it', 'Ponlo en marcha')}</button>
           <button class="btn secondario" id="tim-ferma">${L('Ferma', 'Stop', 'Para')}</button>
@@ -15004,6 +15487,58 @@ function pannelloAlert() {
         </div>
       </div>
       <p class="spazio-sopra"><button class="btn" data-salva-cfg="timer">${L('Salva', 'Save', 'Guardar')}</button></p>
+    </details>
+
+    <details class="carta sez" data-parte="aspetto" id="sez-subathon">
+      <summary><h3>${_hIco(ICO.orologio)}Subathon</h3></summary>
+      <p>${L('Il conto della subathon in scena, coi pezzi che vuoi: quanto manca, il «+5:00» che sale, gli ultimi che hanno allungato, il totale, da quanto dura, l\'ora felice, la pausa e la barra verso il prossimo traguardo. Nasce spento negli overlay che hai già: accendilo dove lo vuoi.', 'The subathon clock on screen, with the parts you want: time left, the rising «+5:00», the latest who extended it, the total, how long it has run, happy hour, the pause and the bar to the next milestone. It starts off in your existing overlays: turn it on where you want it.', 'El reloj del subathon en escena, con las piezas que quieras: cuánto falta, el «+5:00» que sube, los últimos que lo alargaron, el total, cuánto dura, la hora feliz, la pausa y la barra hacia la próxima meta. Nace apagado en tus overlays: enciéndelo donde lo quieras.')}</p>
+      <p><button type="button" class="btn secondario mini" data-vai-scheda="subathon">${_bIco(ICO.orologio)}${L('Apri Subathon', 'Open Subathon', 'Abrir Subathon')}</button></p>
+      <div data-cfg="subathon">
+        <div class="riga-interruttore spazio-sopra">
+          <label class="interruttore"><input type="checkbox" data-c="attivo" id="sba-attivo"><span class="levetta"></span></label>
+          <span class="etichetta-stato">${L('Mostralo nella scena', 'Show it on the scene', 'Muéstralo en la escena')}</span>
+        </div>
+        <div class="asp-blocco" data-asp="subathon" data-cfg-di="subathon">
+          <h4 class="spazio-sopra">${L('I pezzi', 'The parts', 'Las piezas')}</h4>
+          <div class="sb-pezzi">${_sbPezziCampi()}</div>
+          <label class="campo-num spazio-sopra">${L('Quanti ultimi', 'How many latest', 'Cuántos últimos')}<input type="number" data-c="quantiUltimi" min="1" max="10"></label>
+          <h4 class="spazio-sopra">${L('Le tue immagini', 'Your images', 'Tus imágenes')} <span class="tenue">${L('dalla libreria Effetti', 'from the Effects library', 'de la biblioteca de Efectos')}</span></h4>
+          <div class="goal-campi">
+            <label class="campo-num">${L('Fondo', 'Background', 'Fondo')}<select data-c="fondo" data-sb-img></select></label>
+            <label class="campo-num">${L('Cornice', 'Frame', 'Marco')}<select data-c="cornice" data-sb-img></select></label>
+            <label class="campo-num">${L('Icona', 'Icon', 'Icono')}<select data-c="icona" data-sb-img></select></label>
+          </div>
+          <details class="spazio-sopra"><summary>${L('I testi dei pezzi', 'The parts\' texts', 'Los textos de las piezas')}</summary>
+            <p class="suggerimento">${L('Vuoto: quello di serie, nella lingua della chat.', 'Empty: the default one, in the chat language.', 'Vacío: el de serie, en el idioma del chat.')}</p>
+            <div class="griglia-campi">${_sbTestiCampi('scena')}</div>
+          </details>
+          <h4 class="spazio-sopra">${L('Aspetto', 'Appearance', 'Aspecto')}</h4>
+          ${_vesteCampi()}
+        </div>
+      </div>
+      <p class="spazio-sopra"><button class="btn" data-salva-cfg="subathon">${L('Salva', 'Save', 'Guardar')}</button></p>
+    </details>
+
+    <details class="carta sez" data-parte="aspetto" id="sez-subregole">
+      <summary><h3>${_hIco(ICO.lista)}${L('Regole della subathon', 'Subathon rules', 'Reglas del subathon')}</h3></summary>
+      <p>${L('Il riquadro «1 sub = 5 minuti…», costruito dalle fonti che hai acceso: cambi un numero nella scheda Subathon e il riquadro cambia. Si vede solo a subathon accesa.', 'The «1 sub = 5 minutes…» box, built from the sources you turned on: change a number in the Subathon tab and the box changes. It only shows while the subathon is on.', 'El recuadro «1 sub = 5 minutos…», construido con las fuentes que encendiste: cambias un número en la pestaña Subathon y el recuadro cambia. Solo se ve con el subathon encendido.')}</p>
+      <div data-cfg="subregole">
+        <div class="riga-interruttore spazio-sopra">
+          <label class="interruttore"><input type="checkbox" data-c="attivo" id="sbr-attivo"><span class="levetta"></span></label>
+          <span class="etichetta-stato">${L('Mostralo nella scena', 'Show it on the scene', 'Muéstralo en la escena')}</span>
+        </div>
+        <div class="asp-blocco" data-asp="subregole" data-cfg-di="subregole">
+          <label class="riga-check spazio-sopra"><input type="checkbox" data-c="mostraTitolo"> ${L('Con il titolo', 'With the title', 'Con el título')}</label>
+          <div><label class="campo" for="sbr-titolo">${L('Titolo (vuoto: quello di serie)', 'Title (empty: the default one)', 'Título (vacío: el de serie)')}</label>
+            <input type="text" id="sbr-titolo" data-c="titolo" maxlength="60"></div>
+          <details class="spazio-sopra"><summary>${L('Le righe, a parole tue', 'The lines, in your words', 'Las líneas, con tus palabras')}</summary>
+            <div class="griglia-campi">${_sbTestiCampi('regole')}</div>
+          </details>
+          <h4 class="spazio-sopra">${L('Aspetto', 'Appearance', 'Aspecto')}</h4>
+          ${_vesteCampi()}
+        </div>
+      </div>
+      <p class="spazio-sopra"><button class="btn" data-salva-cfg="subregole">${L('Salva', 'Save', 'Guardar')}</button></p>
     </details>
 
     <details class="carta sez" data-parte="aspetto" id="sez-pubblicita">
@@ -15555,9 +16090,9 @@ async function montaFontBrowser(box, targetId) {
 let _conta = [];
 const CONT_BASE = 40;
 const FISSI = ['alert', 'chat', 'wf', 'ws'];
-const ELEM_OVL = [...FISSI, 'goal', 'cont', 'cart', 'musica', 'timer', 'pubblicita', 'tempi', 'treno', 'bit', 'pen', 'boss', 'arena', 'scritta', 'etichetta', 'invito', 'muro', 'effetti', 'pew', 'consolify'];
+const ELEM_OVL = [...FISSI, 'goal', 'cont', 'cart', 'musica', 'timer', 'subathon', 'subregole', 'pubblicita', 'tempi', 'treno', 'bit', 'pen', 'boss', 'arena', 'scritta', 'etichetta', 'invito', 'muro', 'effetti', 'pew', 'consolify'];
 const ELEM_SCENA = ELEM_OVL.filter((k) => k !== 'effetti');
-const SPENTI_DI_SERIE = new Set(['invito']);
+const SPENTI_DI_SERIE = new Set(['invito', 'subathon', 'subregole']);
 const SENZA_POSTO = new Set(['pew']);
 const _acceso = (m, k) => (m && m[k] !== undefined ? m[k] !== false : !SPENTI_DI_SERIE.has(k));
 const CHAT_DA = [['twitch', 'Twitch'], ['kick', 'Kick']];
@@ -16528,6 +17063,73 @@ function _vestiInvito(box, cfg) {
   box.textContent = _testoInvito(cfg);
 }
 
+const _sbLingua = () => (['it', 'en', 'es'].includes(stato?.linguaChat) ? stato.linguaChat : 'it');
+const SB_TESTI_VUOTI = (chiavi) => Object.fromEntries((chiavi || []).map((k) => [k, '']));
+const SB_PEZZI_DEF = () => ({ titolo: true, conto: true, sale: true, pausa: true, felice: true, totale: true, durata: false, traguardo: true, ultimi: true });
+
+function _defSubathon() {
+  return { attivo: true, posizione: 'alto-sinistra', xy: null, pezzi: SB_PEZZI_DEF(), quantiUltimi: 3, fondo: '', cornice: '', icona: '', testi: SB_TESTI_VUOTI(window.SB_SUBATHON?.CHIAVI_SCENA),
+    stile: { dim: 'media', sfondo: '#100d16', opacita: 85, testo: '#ffffff', accento: '#f72fa7', bordoRaggio: 14, font: 'sistema', forma: 'carta', materia: 'piatta', cornice: 'nessuna', icona: 'stella', dimIcona: 20 } };
+}
+function _defSubregole() {
+  return { attivo: true, posizione: 'basso-destra', xy: null, titolo: '', mostraTitolo: true, testi: SB_TESTI_VUOTI(window.SB_SUBATHON?.CHIAVI_REGOLE),
+    stile: { dim: 'media', sfondo: '#100d16', opacita: 85, testo: '#ffffff', accento: '#f72fa7', bordoRaggio: 14, font: 'sistema', forma: 'carta', materia: 'piatta', cornice: 'nessuna', icona: 'stella', dimIcona: 20 } };
+}
+
+const SB_NOMI_PEZZI = () => ({ titolo: L('Titolo', 'Title', 'Título'), conto: L('Quanto manca', 'Time left', 'Cuánto falta'), sale: L('Il «+5:00» che sale', 'The rising «+5:00»', 'El «+5:00» que sube'),
+  pausa: L('La pausa', 'The pause', 'La pausa'), felice: L('L’ora felice', 'Happy hour', 'La hora feliz'), totale: L('Il totale aggiunto', 'Total added', 'El total añadido'),
+  durata: L('Da quanto dura', 'How long it has run', 'Cuánto lleva'), traguardo: L('La barra del traguardo', 'The milestone bar', 'La barra de la meta'), ultimi: L('Gli ultimi', 'The latest', 'Los últimos') });
+function _sbPezziCampi() {
+  const n = SB_NOMI_PEZZI();
+  return (window.SB_SUBATHON ? window.SB_SUBATHON.PEZZI : Object.keys(n)).map((k) => `<label class="riga-check"><input type="checkbox" data-c="pezzi.${k}"> ${esc(n[k] || k)}</label>`).join('');
+}
+function _sbTestiCampi(quali) {
+  const S = window.SB_SUBATHON;
+  if (!S) return '';
+  const chiavi = quali === 'scena' ? S.CHIAVI_SCENA : S.CHIAVI_REGOLE.filter((k) => k !== 'regole-titolo');
+  return chiavi.map((k) => `<div><label class="campo">${esc(k)}</label><input type="text" data-c="testi.${k}" maxlength="${quali === 'scena' ? 60 : 80}" placeholder="${esc(S.testo({}, k, _sbLingua()))}" aria-label="${esc(k)}"></div>`).join('');
+}
+function _sbImmagini() {
+  const c = _cfgEl('subathon');
+  document.querySelectorAll('[data-sb-img]').forEach((sel) => { const v = c[sel.dataset.c] || ''; sel.innerHTML = _optImgCartello(v); sel.value = v; });
+}
+
+function _sbVistaEsempio() {
+  const ora = Date.now();
+  const t = impostazioni().overlayStato?.timer || {};
+  const vera = SUB_STATO.dati?.vista;
+  if (vera && vera.accesa && (Number(t.fine) > ora || (t.pausa && Number(t.pausa.resta) > 0))) return { ...vera, fine: Number(t.fine) || 0, pausa: t.pausa || null };
+  return { accesa: true, fine: ora + 9250000, pausa: null, inizio: ora - 18720000, felice: { fino: ora + 1080000, per: 2 }, totale: 3900000,
+    ultimi: [{ chi: 'Luna', messi: 300000, id: 'a' }, { chi: 'MarioRossi', messi: 600000, id: 'b' }, { chi: 'GiadaTTV', messi: 150000, id: 'c' }],
+    traguardi: [{ minuti: 60, testo: L('Cosplay', 'Cosplay', 'Cosplay') }, { minuti: 120, testo: 'Karaoke' }] };
+}
+
+function _vestiSubathon(box, cfg) {
+  const st = cfg.stile || {};
+  box.className = 'ovl-widget ovl-subathon dentro dim-' + (st.dim || 'media') + ' ' + classiIdentita(st, 'nessuna');
+  _setVars(box, { '--bg': st.sfondo, '--op': (st.opacita != null ? st.opacita : 85) + '%', '--fg': st.testo,
+    '--acc': st.accento, '--radius': (st.bordoRaggio != null ? st.bordoRaggio : 14) + 'px', '--font': fontStile(st), '--dim-ico': (st.dimIcona != null ? st.dimIcona : 20) + 'px' });
+  if (!window.SB_SUBATHON) return;
+  window.SB_SUBATHON.disegna(box, { ...cfg, fondoUrl: urlEffetto(cfg.fondo), corniceUrl: urlEffetto(cfg.cornice), iconaUrl: urlEffetto(cfg.icona) }, _sbVistaEsempio(), { ora: Date.now(), lingua: _sbLingua() });
+}
+
+const SB_REGOLE_ESEMPIO = { perSub: 5, molt2: 2, molt3: 5, perBit100: 1, perEuro: 2, tettoOre: 12 };
+function _sbRegoleOra() { return SUB_STATO.bozza || SUB_STATO.dati?.regole || impostazioni().subathon || impostazioni().overlayTimer?.subathon || null; }
+function _sbValuta() { const v = impostazioni().donazioni?.valuta || 'EUR'; return ({ EUR: '€', USD: '$', GBP: '£', CHF: 'CHF', BRL: 'R$', MXN: 'MX$' })[v] || v; }
+
+function _vestiSubregole(box, cfg) {
+  const st = cfg.stile || {};
+  box.className = 'ovl-widget ovl-subregole dentro dim-' + (st.dim || 'media') + ' ' + classiIdentita(st, 'nessuna');
+  _setVars(box, { '--bg': st.sfondo, '--op': (st.opacita != null ? st.opacita : 85) + '%', '--fg': st.testo,
+    '--acc': st.accento, '--radius': (st.bordoRaggio != null ? st.bordoRaggio : 14) + 'px', '--font': fontStile(st) });
+  const S = window.SB_SUBATHON;
+  if (!S) return;
+  const opz = { valuta: _sbValuta(), testi: cfg.testi };
+  let righe = S.righeRegole(_sbRegoleOra() || {}, _sbLingua(), opz);
+  if (!righe.length) righe = S.righeRegole(SB_REGOLE_ESEMPIO, _sbLingua(), opz);
+  S.disegnaRegole(box, cfg, righe, { lingua: _sbLingua() });
+}
+
 const EFFETTO_ESEMPIO = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360" viewBox="0 0 640 360">'
   + '<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3a1a6b"/><stop offset="1" stop-color="#ba007a"/></linearGradient></defs>'
   + '<rect width="640" height="360" rx="18" fill="url(#g)"/>'
@@ -16668,7 +17270,7 @@ async function _disegnaPremiMuro() {
       : `<p class="vuoto">${L(`Non hai ancora premi a punti canale su ${_premiSu()}: creane uno e torna qui.`, `You have no channel-point rewards on ${_premiSu()} yet: create one and come back here.`, `Aún no tienes recompensas de puntos de canal en ${_premiSu()}: crea una y vuelve aquí.`)}</p>`);
 }
 
-const VESTITORE = { musica: _vestiMusica, pen: _vestiPen, timer: _vestiTimer, pubblicita: _vestiPubblicita, tempi: _vestiTempi, treno: _vestiTreno, bit: _vestiBit, boss: _vestiBoss, arena: _vestiArena, scritta: _vestiScritta, etichetta: _vestiEtichetta, invito: _vestiInvito, muro: _vestiMuro, effetti: _vestiEffetti };
+const VESTITORE = { musica: _vestiMusica, pen: _vestiPen, timer: _vestiTimer, subathon: _vestiSubathon, subregole: _vestiSubregole, pubblicita: _vestiPubblicita, tempi: _vestiTempi, treno: _vestiTreno, bit: _vestiBit, boss: _vestiBoss, arena: _vestiArena, scritta: _vestiScritta, etichetta: _vestiEtichetta, invito: _vestiInvito, muro: _vestiMuro, effetti: _vestiEffetti };
 
 function _orologioGiu(ms) {
   const t = Math.max(0, Math.ceil(ms / 1000));
@@ -16967,6 +17569,8 @@ const PEZZI_EL = () => [
   ['chat', '#sez-chat'],
   ['musica', '#sez-musica'],
   ['timer', '#sez-timer'],
+  ['subathon', '#sez-subathon'],
+  ['subregole', '#sez-subregole'],
   ['pubblicita', '#sez-pubblicita'],
   ['tempi', '#sez-tempi'],
   ['treno', '#sez-treno'],
@@ -17301,6 +17905,8 @@ const ELEMENTI = () => {
   cartBozza().forEach((c, i) => out.push({ k: 'cart:' + c.id, ico: ICO.cartello, n: nomeCartello(c, i), cart: c }));
   out.push({ k: 'musica', ico: ICO.musica, n: L('Player musica', 'Music player', 'Reproductor de música'), cfg: 'overlayMusica' });
   out.push({ k: 'timer', ico: ICO.orologio, n: L('Conto alla rovescia', 'Countdown', 'Cuenta atrás'), cfg: 'overlayTimer' });
+  out.push({ k: 'subathon', ico: ICO.orologio, n: 'Subathon', cfg: 'overlaySubathon' });
+  out.push({ k: 'subregole', ico: ICO.lista, n: L('Regole della subathon', 'Subathon rules', 'Reglas del subathon'), cfg: 'overlaySubathonRegole' });
   out.push({ k: 'pubblicita', ico: ICO.megafono, n: L('Conto alla pubblicità', 'Ad countdown', 'Cuenta atrás de anuncios'), cfg: 'overlayPubblicita' });
   out.push({ k: 'tempi', ico: ICO.orologio, n: L('Premi a tempo', 'Timed rewards', 'Recompensas con tiempo'), cfg: 'overlayTempi' });
   out.push({ k: 'treno', ico: ICO.treno, n: L('Hype train', 'Hype train', 'Hype train'), cfg: 'overlayTreno' });
@@ -17364,7 +17970,7 @@ function _defTimer() {
     minuti: 15, posizione: 'alto-destra', xy: null, stile: VESTE_DEF() };
 }
 
-const _DEF_EL = { musica: _defMusica, timer: _defTimer, pubblicita: _defPubblicita, tempi: _defTempi, treno: _defTreno, bit: _defBit, boss: _defBoss, arena: _defArena, scritta: _defScritta, etichetta: _defEtichetta, invito: _defInvito, muro: _defMuro, effetti: () => ({ attivo: true, posizione: 'centro', xy: null }), pen: () => ({ attivo: false, durataMin: 2, overlay: { posizione: 'alto-destra', colore: '#ff2d2d' } }) };
+const _DEF_EL = { musica: _defMusica, timer: _defTimer, subathon: _defSubathon, subregole: _defSubregole, pubblicita: _defPubblicita, tempi: _defTempi, treno: _defTreno, bit: _defBit, boss: _defBoss, arena: _defArena, scritta: _defScritta, etichetta: _defEtichetta, invito: _defInvito, muro: _defMuro, effetti: () => ({ attivo: true, posizione: 'centro', xy: null }), pen: () => ({ attivo: false, durataMin: 2, overlay: { posizione: 'alto-destra', colore: '#ff2d2d' } }) };
 
 const _pianoObj = (x) => !!x && typeof x === 'object' && !Array.isArray(x);
 function _unisci(base, su) {
@@ -17458,7 +18064,7 @@ function _accendiDi(k, v) {
   if (e && e.cont) { (e.cont.overlayCfg = e.cont.overlayCfg || {}).mostra = !!v; return; }
   if (e && e.cfg) {
     _cfgEl(k).attivo = !!v;
-    const chk = _g({ musica: 'mus-attivo', timer: 'tim-attivo', pen: 'pen-attivo', boss: 'boss-attivo', arena: 'arena-attivo', scritta: 'scr-attivo', etichetta: 'eti-attivo', invito: 'inv-attivo', muro: 'muro-attivo' }[k]);
+    const chk = _g({ musica: 'mus-attivo', timer: 'tim-attivo', pen: 'pen-attivo', boss: 'boss-attivo', arena: 'arena-attivo', scritta: 'scr-attivo', etichetta: 'eti-attivo', invito: 'inv-attivo', muro: 'muro-attivo', subathon: 'sba-attivo', subregole: 'sbr-attivo' }[k]);
     if (chk) chk.checked = !!v;
     return;
   }
@@ -38269,6 +38875,7 @@ function caricaDatiScheda(id) {
   if (id === 'misure') avviaMisure();
   if (id === 'kit') avviaKit();
   if (id === 'pannelli') avviaPannelli();
+  if (id === 'subathon') avviaSubathon();
   if (id === 'personalita') { caricaGuide(); caricaSpontanee(); caricaFrasiBot(); }
   if (id === 'conoscenza') { caricaConoscenza(); caricaQuaderno(); caricaRetePanoramica(); }
   if (id === 'clip') caricaClip();

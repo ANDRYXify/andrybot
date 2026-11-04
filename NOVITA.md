@@ -49,6 +49,21 @@ comandi diversi da quelli della riga italiana.
 - Overlay e pagine in diretta si ricollegano da sole a ogni caduta della linea, coi loro tempi, invece di restare appese. [vai: alert]
   en: Overlays and live pages reconnect on their own every time the line drops, on their own timing, instead of hanging.
   es: Los overlays y las páginas en directo se reconectan solos cada vez que se cae la línea, a su ritmo, en vez de quedarse colgados.
+- [importante] Subathon, una scheda sua: sub, bit, donazioni, Kicks, follow, raid e un premio a punti allungano l'orologio, con tetto, ora felice e traguardi. Un evento perso lo aggiungi a mano, e ogni mossa resta nel libro. [vai: subathon]
+  en: Subathon, its own tab: subs, bits, donations, Kicks, follows, raids and a points reward stretch the clock, with a cap, happy hour and milestones. Add a missed event by hand; every move stays in the book.
+  es: Subathon, una pestaña suya: subs, bits, donaciones, Kicks, follows, raids y una recompensa de puntos alargan el reloj, con tope, hora feliz y metas. Un evento perdido lo añades a mano; todo queda en el libro.
+  > Una subathon che non si rompe
+  > Lo stesso evento non allunga due volte e niente si cancella: «annulla» scrive una riga. Tu e i moderatori avete «!subathon +10m», «pausa», «annulla» e gli altri comandi.
+  en> A subathon that doesn't break
+  en> The same event never stretches it twice and nothing is deleted: «undo» writes a line. You and your moderators have «!subathon +10m», «pausa», «annulla» and the other commands.
+  es> Un subathon que no se rompe
+  es> El mismo evento no alarga dos veces y nada se borra: «deshacer» escribe una línea. Tú y tus moderadores tenéis «!subathon +10m», «pausa», «annulla» y los demás comandos.
+- Nell'Overlay Studio ci sono due elementi della subathon: il conto con i pezzi che vuoi e le tue immagini, e il riquadro delle regole. Nascono spenti negli overlay che hai già. [vai: alert]
+  en: Overlay Studio has two subathon elements: the clock with the parts you want and your own images, and the rules box. They start off in your existing overlays.
+  es: En Overlay Studio hay dos elementos del subathon: el reloj con las piezas que quieras y tus imágenes, y el recuadro de las reglas. Nacen apagados en tus overlays.
+- Alert propri per la subathon: allungamenti, traguardi, pausa e fine. E le regole diventano immagini per i pannelli di Twitch. [vai: subathon]
+  en: The subathon has its own alerts for extensions, milestones, pause and end, and the rules become images for your Twitch panels.
+  es: El subathon tiene sus alertas para alargues, metas, pausa y final, y las reglas se vuelven imágenes para tus paneles de Twitch.
 
 ## 2026-10-29
 
@@ -109,6 +124,7 @@ comandi diversi da quelli della riga italiana.
 - La pagina Pew torna in ordine: la diretta e la chat a sinistra, i passi a destra. Lo slogan si prendeva il posto della diretta e spostava tutto. [vai: colpi]
   en: The Pew page is back in order: the stream and chat on the left, the steps on the right. The slogan was taking the stream's place and shifting everything.
   es: La página Pew vuelve a estar en orden: el directo y el chat a la izquierda, los pasos a la derecha. El eslogan ocupaba el sitio del directo y movía todo.
+
 ## 2026-10-28
 
 - [importante] Pewpewify su Kick, completo: nel listino il prezzo in Kicks e in punti del canale di Kick, i premi del canale su Kick creati da soli, e la scheda dei Kicks da spendere con le sue regole. [vai: colpi]

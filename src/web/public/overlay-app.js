@@ -20,7 +20,7 @@ if (OSPITE && window.SUONI_PRESET) {
 }
 
 const MIO = { mostra: { alert: true, chat: true, wf: true, ws: true, effetti: true }, xy: {}, stile: { alert: null, chat: null }, widget: {} };
-const SPENTI_DI_SERIE = ['invito'];
+const SPENTI_DI_SERIE = ['invito', 'subathon', 'subregole'];
 const mostra = (k) => (MIO.mostra[k] === undefined ? SPENTI_DI_SERIE.indexOf(k) < 0 : MIO.mostra[k] !== false);
 
 const mono = () => performance.timeOrigin + performance.now();
@@ -47,7 +47,7 @@ function oraScena() { return Math.floor(adesso() / 1000) * 1000; }
 const VISTI = {};
 function chiaveDi(d) {
   switch (d.tipo) {
-    case 'timer': case 'pubblicita': case 'treno': case 'tempi': case 'goal': case 'boss': case 'bit': return d.tipo;
+    case 'timer': case 'pubblicita': case 'treno': case 'tempi': case 'goal': case 'boss': case 'bit': case 'subathon': return d.tipo;
     case 'widget': return 'widget:' + d.id;
     case 'contatore': return 'cont:' + String(d.comando || '').toLowerCase();
     case 'penitenza': return 'pen:' + d.id;
@@ -1480,7 +1480,8 @@ function ricevi(m) {
     else if (dati.tipo === 'muro-treno') MURO.trenoFino = Number(dati.per) > 0 ? adesso() + Number(dati.per) : 0;
     else if (dati.tipo === 'widget') { WIDGET_VALORE[dati.id] = dati.valore; if (mostra(dati.id === 'ultimoSub' ? 'ws' : 'wf')) widget(dati.id, (MIO.widget && MIO.widget[dati.id]) || dati.cfg, dati.valore); }
     else if (dati.tipo === 'goal') { MIO.goals = Array.isArray(dati.goals) ? dati.goals : MIO.goals; MIO.goalConti = dati.conti || {}; goal(MIO.goals, MIO.goalConti); }
-    else if (dati.tipo === 'timer') { const f = Number(dati.fine); if (Number.isFinite(f)) MIO.timerFine = f; disegnaTimer(); }
+    else if (dati.tipo === 'timer') { const f = Number(dati.fine); if (Number.isFinite(f)) MIO.timerFine = f; MIO.timerPausa = pausaDi(dati.pausa); disegnaTimer(); disegnaSubathon(); }
+    else if (dati.tipo === 'subathon') { MIO.sbVista = dati.vista || null; disegnaSubathon(); saleSubathon(Number(dati.sale) || 0); disegnaSubregole(); }
     else if (dati.tipo === 'pubblicita') { MIO.pubblStato = { prossima: Number(dati.prossima) || 0, pausaFino: Number(dati.pausaFino) || 0 }; disegnaPubblicita(); }
     else if (dati.tipo === 'treno') { MIO.trenoStato = dati.treno || null; disegnaTreno(); }
     else if (dati.tipo === 'tempi') { MIO.tempiElenco = Array.isArray(dati.elenco) ? dati.elenco : []; disegnaTempi(); }
@@ -1980,12 +1981,15 @@ function musicaFinitaDa() {
 
 const timerEl = {};
 
+function pausaDi(p) { return p && Number(p.resta) > 0 ? { resta: Number(p.resta) } : null; }
+
 function disegnaTimer() {
   const cfg = MIO.timer;
   const fine = Number(MIO.timerFine) || 0;
-  const manca = fine - oraScena();
+  const pausa = MIO.timerPausa || null;
+  const manca = pausa ? pausa.resta : fine - oraScena();
   const finito = manca <= 0;
-  if (!cfg || !cfg.attivo || !mostra('timer') || !fine || (finito && cfg.aFine === 'sparisce')) return togliTimer();
+  if (!cfg || !cfg.attivo || !mostra('timer') || (!fine && !pausa) || (finito && cfg.aFine === 'sparisce')) return togliTimer();
   let el = timerEl.n;
   const nato = !el;
   if (!el) {
@@ -1996,7 +2000,7 @@ function disegnaTimer() {
   rientra(timerEl, el);
   posa(wboxes[cfg.posizione] || wboxes['alto-destra'] || document.body, el);
   el.className = 'ovl-widget ovl-timer dim-' + ((cfg.stile || {}).dim || 'media') + ' ' + classiIdentita(cfg.stile, 'nessuna')
-    + (finito ? ' finito' : '') + (el.classList.contains('dentro') ? ' dentro' : '');
+    + (finito ? ' finito' : '') + (pausa ? ' in-pausa' : '') + (el.classList.contains('dentro') ? ' dentro' : '');
   el.querySelector('.t-tit').textContent = finito ? '' : (cfg.titolo || '');
   el.querySelector('.t-num').textContent = finito ? (cfg.testoFine || '') : oreMinSec(manca);
   vestiElemento(el, cfg, 'nessuna', 'timer');
@@ -2012,6 +2016,70 @@ function togliTimer() {
   el.classList.remove('dentro');
   el.classList.add('esce');
   timerEl.uscita = setTimeout(via, 520);
+}
+
+const sbEl = {};
+
+function vistaSub() { return Object.assign({}, MIO.sbVista || {}, { fine: Number(MIO.timerFine) || 0, pausa: MIO.timerPausa || null }); }
+
+function subathonAcceso() {
+  const c = MIO.subathon;
+  return mostra('subathon') && !!c && c.attivo !== false && !!MIO.sbVista && MIO.sbVista.accesa === true
+    && ((Number(MIO.timerFine) || 0) > 0 || !!MIO.timerPausa) && !!window.SB_SUBATHON;
+}
+
+function disegnaSubathon() {
+  const cfg = MIO.subathon;
+  if (!subathonAcceso()) return togliSubathon();
+  let el = sbEl.n;
+  const nato = !el;
+  if (!el) { el = document.createElement('div'); sbEl.n = el; }
+  rientra(sbEl, el);
+  posa(wboxes[cfg.posizione] || wboxes['alto-sinistra'] || document.body, el);
+  const st = cfg.stile || {};
+  el.className = 'ovl-widget ovl-subathon dim-' + (st.dim || 'media') + ' ' + classiIdentita(st, 'nessuna') + (el.classList.contains('dentro') ? ' dentro' : '');
+  window.SB_SUBATHON.disegna(el, cfg, vistaSub(), { ora: oraScena(), lingua: cfg.lingua });
+  vestiElemento(el, cfg, 'nessuna', 'subathon');
+  if (nato) requestAnimationFrame(() => el.classList.add('dentro'));
+}
+
+function saleSubathon(ms) {
+  if (!(ms > 0) || !sbEl.n || !MIO.subathon || (MIO.subathon.pezzi || {}).sale === false || fermiIMotori()) return;
+  window.SB_SUBATHON.sale(sbEl.n, ms);
+}
+
+function togliSubathon() {
+  const el = sbEl.n;
+  if (!el) return;
+  const via = () => { el.remove(); if (sbEl.n === el) sbEl.n = null; sbEl.uscita = 0; };
+  if (fermiIMotori()) return via();
+  if (sbEl.uscita) return;
+  el.classList.remove('dentro');
+  el.classList.add('esce');
+  sbEl.uscita = setTimeout(via, 520);
+}
+
+const sbrEl = {};
+
+function subregoleAccese() {
+  const c = MIO.subregole;
+  return mostra('subregole') && !!c && c.attivo !== false && c.accesa === true && Array.isArray(c.righe) && c.righe.length > 0 && !!window.SB_SUBATHON;
+}
+
+function disegnaSubregole() {
+  const cfg = MIO.subregole;
+  if (!subregoleAccese()) {
+    const el = sbrEl.n;
+    if (el) { el.remove(); sbrEl.n = null; }
+    return;
+  }
+  let el = sbrEl.n;
+  if (!el) { el = document.createElement('div'); sbrEl.n = el; }
+  posa(wboxes[cfg.posizione] || wboxes['basso-destra'] || document.body, el);
+  const st = cfg.stile || {};
+  el.className = 'ovl-widget ovl-subregole dentro dim-' + (st.dim || 'media') + ' ' + classiIdentita(st, 'nessuna');
+  window.SB_SUBATHON.disegnaRegole(el, cfg, cfg.righe, { lingua: cfg.lingua });
+  vestiElemento(el, cfg, 'nessuna', 'subregole');
 }
 
 const pubblEl = {};
@@ -2262,6 +2330,7 @@ function oreMinSec(ms) {
 
 function giro() {
   if (MIO.timer && MIO.timer.attivo && mostra('timer')) disegnaTimer();
+  if (MIO.subathon && mostra('subathon')) disegnaSubathon();
   if (MIO.pubbl && MIO.pubbl.attivo) disegnaPubblicita();
   if (MIO.treno && MIO.treno.attivo && mostra('treno')) disegnaTreno();
   if (MIO.tempi && MIO.tempi.attivo) disegnaTempi();
@@ -2314,9 +2383,10 @@ function applicaTema(t) {
   MIO.musica = t.musica || null;
   MIO.timer = t.timer || null;
   if (vale('timer', t)) MIO.timerFine = Number(stato.timer && stato.timer.fine) || 0;
+  if (vale('timer', t)) MIO.timerPausa = pausaDi(stato.timer && stato.timer.pausa);
   const apertura = !temaApplicato;
   temaApplicato = true;
-  if (apertura && MIO.timer && MIO.timer.attivo && MIO.timer.partiDaSolo && mostra('timer') && MIO.timerFine <= adesso()) {
+  if (apertura && MIO.timer && MIO.timer.attivo && MIO.timer.partiDaSolo && mostra('timer') && !MIO.timerPausa && MIO.timerFine <= adesso()) {
     fetch(urlTimerParti, { method: 'POST' })
       .then(function (r) { return r.json(); })
       .then(function (d) { if (d && d.fine) { MIO.timerFine = d.fine; disegnaTimer(); } })
@@ -2345,6 +2415,11 @@ function applicaTema(t) {
   ridisegnaEtichette();
   MIO.invito = t.invito || null;
   disegnaInvito();
+  MIO.subathon = t.subathon || null;
+  if (vale('subathon', t)) MIO.sbVista = (t.subathon && t.subathon.vista) || null;
+  disegnaSubathon();
+  MIO.subregole = t.subregole || null;
+  disegnaSubregole();
   MIO.muro = t.muro || null;
   preparaMuro();
   posaEffetti();
