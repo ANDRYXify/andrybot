@@ -41,6 +41,15 @@ questa non è una cosa da ricordarsi: il cancello boccia una riga pubblica senza
 traduzione, una traduzione staccata dalla sua riga, o una che dice numeri e
 comandi diversi da quelli della riga italiana.
 
+## 2026-11-04
+
+- Il tasto che fa partire il conto alla rovescia dall'overlay funziona di nuovo. [vai: alert]
+  en: The button that starts the countdown from the overlay works again.
+  es: El botón que inicia la cuenta atrás desde el overlay vuelve a funcionar.
+- Overlay e pagine in diretta si ricollegano da sole a ogni caduta della linea, coi loro tempi, invece di restare appese. [vai: alert]
+  en: Overlays and live pages reconnect on their own every time the line drops, on their own timing, instead of hanging.
+  es: Los overlays y las páginas en directo se reconectan solos cada vez que se cae la línea, a su ritmo, en vez de quedarse colgados.
+
 ## 2026-10-29
 
 - Con i Pew accesi, il bot scrive da solo in chat il link della tua pagina: ogni tanti minuti, solo in diretta e solo se la chat si è mossa. Ogni quanto, quanti messaggi, dove e cosa dice li scegli tu. [vai: colpi]

@@ -53,13 +53,11 @@
         if (o.suMessaggio) o.suMessaggio(m);
       };
       es.onerror = function () {
-  segnaCaduta();
-  if (es) {
-    try { es.close(); } catch (e) {}
-    es = null;
-  }
-  riapri(passo());
-};
+        segnaCaduta();
+        if (es) { try { es.close(); } catch (e) {} }
+        es = null;
+        riapri(passo());
+      };
     }
     collega();
     if (o.silenzio > 0) {

@@ -796,7 +796,7 @@ difetto del browser.
 
 | cosa succede | prima | ora |
 |---|---|---|
-| socket chiuso, server subito su | riapre (lo fa il browser) | riapre, e rilegge il tema |
+| socket chiuso, server subito su | riapre (lo fa il browser) | riapre coi passi suoi, e rilegge il tema |
 | riavvio dietro Caddy, 502 per un po' | **morto fino al ricaricamento** | riapre con passi 1·2·4·8·15 s, rilegge il tema |
 | linea aperta ma muta | morto senza saperlo | il battito del server è un evento; dopo 75 s di silenzio riapre |
 
@@ -804,6 +804,12 @@ Era la classe di `RIAVVIO.md` vista dall'altro capo del filo: ogni
 `aggiorna.sh` lasciava la chat ferma e gli effetti e i tasti di CONSOLify senza
 destinazione («nessun overlay collegato»), finché qualcuno non ricaricava la
 sorgente. Con tre deploy in un giorno l'overlay «non funzionava più».
+
+**Un modo solo di ritornare.** A ogni errore il flusso si chiude e si riapre
+coi passi suoi (1·2·4·8·15 s), anche quando il browser starebbe ritentando da
+solo: due meccanismi di ritorno insieme erano due tempi diversi da indovinare,
+e in certi casi il tentativo del browser restava appeso senza mai aprire né
+chiudere. Così la linea si apre, si chiude o si riapre per una strada sola.
 
 Un modo solo di aprire un flusso: `flusso.js` (`SB_FLUSSO.apri`), usato
 dall'overlay, dai due overlay del tracking, dal ponte della regia e dallo Studio

@@ -39,7 +39,7 @@ const RAD = join(dirname(fileURLToPath(import.meta.url)), '..');
 const leggi = (f) => readFileSync(join(RAD, f), 'utf8');
 
 const ROTTURE = [
-  ['src/web/public/flusso.js', 'if (es && es.readyState === 2) riapri(passo());', 'if (false) riapri(passo());',
+  ['src/web/public/flusso.js', '        es = null;\n        riapri(passo());\n      };', '        es = null;\n      };',
     'dopo un 502 la pagina non riprova mai piu\''],
   ['src/web/public/flusso.js', 'else if (tornato && o.suRitorno) { try { o.suRitorno(n); } catch (e) {} }', '',
     'al ritorno nessuno viene avvisato, e lo stato non si rilegge'],
@@ -47,7 +47,7 @@ const ROTTURE = [
     'una linea aperta ma muta resta muta per sempre'],
   ['src/web/public/flusso.js', 'if (chiuso || !es || es.readyState === 2) return;', 'if (chiuso || !es || es.readyState !== 1) return;',
     'una linea che non si apre mai resta appesa per sempre'],
-  ['src/web/public/flusso.js', '      ultimo = ora();\n      try { es = new EventSource(url); }', '      try { es = new EventSource(url); }',
+  ['src/web/public/flusso.js', '      ultimo = ora();\n      if (typeof sorgente', '      if (typeof sorgente',
     'dopo il primo silenzio si ritenta a ogni giro del guardiano'],
   ['src/web/public/overlay-app.js', 'suRitorno: (n) => { caricaTema();', 'suRitorno: (n) => {',
     'l\'overlay torna su ma non rilegge il tema'],
