@@ -163,3 +163,38 @@ test('in chat: lo streamer comanda sempre, i moderatori solo se lui lo permette'
   m('!partita fine', { user: ch, isBroadcaster: true });
   assert.ok(detti.some((t) => /Partita finita/.test(t)));
 });
+
+// CHI SCRIVE !gioco LO SA (docs/PARTITE.md): il silenzio, da fuori, e' uguale a
+// un «no». E un comando dello streamer con lo stesso nome si dice, non si
+// indovina.
+test('!gioco: una risposta senza partita, la conferma come la vuole lo streamer', async () => {
+  const { commands } = await import('../../src/db.js');
+  const detti = [];
+  const say = (t) => detti.push(t);
+  const ch = `conferma${++giro}`;
+  streamers.upsertApproved(ch, ch, '1');
+  const m = (text, user) => P.tryPartita({ channel: ch, user, display: user, text, reply: undefined }, say);
+  m('!gioco', 'gina');
+  assert.ok(detti.some((t) => /Nessuna partita aperta/.test(t)), 'senza partita si dice, non si tace');
+  assert.deepEqual(P.normRegole({}).conferma, 'raffica');
+  assert.equal(P.normRegole({ conferma: 'boh' }).conferma, 'raffica');
+  P.apri(ch, { nome: 'Quiz', regole: { conferma: 'ognuno' } });
+  detti.length = 0;
+  m('!gioco', 'gina');
+  assert.ok(detti.some((t) => /sei in fila, 1°/.test(t)), 'a testa, col posto: ' + detti);
+  P.cambiaRegole(ch, { conferma: 'no' });
+  detti.length = 0;
+  m('!gioco', 'ugo');
+  assert.deepEqual(detti, [], 'spenta, silenzio');
+  assert.deepEqual(P.stato(ch).fila.map((x) => x.user), ['gina', 'ugo']);
+  assert.equal(P.rigaRaffica(ch, ['A', 'B', 'C', 'D', 'E', 'F', 'G'], 9), '🎮 In fila: A, B, C, D, E e altri 2 (9 in fila). Entra anche tu con !gioco.');
+  P.cambiaRegole(ch, { conferma: 'raffica' });
+  detti.length = 0;
+  m('!gioco', 'lia'); m('!gioco', 'teo');
+  assert.deepEqual(detti, [], 'la raffica non parla subito');
+  await new Promise((r) => setTimeout(r, P.RAFFICA_MS + 200));
+  assert.deepEqual(detti, ['🎮 In fila: lia, teo (4 in fila). Entra anche tu con !gioco.'], 'una riga sola per chi e\' entrato insieme');
+  assert.deepEqual(P.stato(ch).coperti, []);
+  commands.set(ch, 'gioco', 'il mio gioco preferito e\' Zelda');
+  assert.deepEqual(P.stato(ch).coperti, ['gioco'], 'un comando suo con lo stesso nome si vede nel pannello');
+});

@@ -58,3 +58,23 @@ risposta (in una chat piena sarebbe un muro); la riceve se qualcosa non va.
 La fila e la classifica nell'overlay, le squadre, i formati salvati, le azioni
 della partita nei Moduli. I punti canale di Twitch non si regalano dall'API:
 i premi sono le monete del canale.
+
+## Chi scrive !gioco lo sa
+
+Chiesto così: «le partite non funzionano, anche se scrivono "!gioco" in chat non
+riescono ad entrare». Il bot, con le impostazioni di serie, li metteva in fila;
+ma da fuori non si vedeva: chi entrava non riceveva niente (per non fare un muro
+in una chat piena) e chi scriveva senza una partita aperta neanche. Un ingresso
+riuscito e uno fallito erano lo stesso silenzio.
+
+- **Senza partita aperta**, `!gioco` risponde «Nessuna partita aperta adesso».
+- **Chi entra lo sa**, come vuole lo streamer (`regole.conferma`): `raffica`
+  (di serie) mette chi entra negli stessi sei secondi in una riga sola («In
+  fila: Lia, Teo e altri 3 (9 in fila)»); `ognuno` risponde a testa col posto;
+  `no` tace, come prima.
+- **Un comando dello streamer con lo stesso nome** (suo, di un Modulo, o
+  importato da un altro bot) vince sempre sui comandi pronti
+  (`personalizzati.js`): la partita quel messaggio non lo vede. Non si indovina:
+  `stato().coperti` dice quali nomi della partita sono coperti, e il pannello lo
+  scrive in cima alla partita, con cosa fare.
+

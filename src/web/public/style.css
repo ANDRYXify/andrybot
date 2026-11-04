@@ -559,6 +559,7 @@ body.vetrina .contenuto { max-width: 1040px; }
 }
 .riquadro-info .ok-riga { color: var(--verde); font-weight: 600; margin-top: .35rem; }
 .riquadro-info .warn-riga { color: var(--ambra, #b45309); font-weight: 600; margin-top: .35rem; }
+.riquadro-info.avviso { border-color: var(--ambra-bordo); background: var(--ambra-soft); color: var(--ambra); }
 
 details > summary {
   display: flex; align-items: center; gap: .5rem; cursor: pointer; list-style: none;

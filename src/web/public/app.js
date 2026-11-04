@@ -14445,13 +14445,16 @@ function _partitaRegoleForm(r, proprietario) {
     ${ck('pt-nick', r.nick, L('Chiede il nome nel gioco (<code>!gioco TuoNome</code>)', 'Asks for the in-game name (<code>!gioco YourName</code>)', 'Pide el nombre en el juego (<code>!gioco TuNombre</code>)'))}
     ${ck('pt-sub', r.soloSub, L('Solo abbonati', 'Subscribers only', 'Solo suscriptores'))}
     ${ck('pt-rot', r.rotazione !== false, L('Chi ha giocato torna in fondo alla fila', 'Whoever played goes back to the end of the queue', 'Quien jugó vuelve al final de la fila'))}
-    ${ck('pt-staff', r.staff, L('Anche i moderatori possono comandarla (in chat e da qui)', 'Moderators can run it too (in chat and from here)', 'Los moderadores también pueden llevarla (en el chat y desde aquí)'), !proprietario)}`;
+    ${ck('pt-staff', r.staff, L('Anche i moderatori possono comandarla (in chat e da qui)', 'Moderators can run it too (in chat and from here)', 'Los moderadores también pueden llevarla (en el chat y desde aquí)'), !proprietario)}
+    <label class="campo spazio-sopra" for="pt-conferma">${L('Chi entra in fila lo sa', 'Whoever joins the queue knows it', 'Quien entra en la fila lo sabe')}</label>
+    <select id="pt-conferma">${[['raffica', L('una riga per chi entra insieme', 'one line for whoever joins together', 'una línea para quien entra a la vez')], ['ognuno', L('una risposta a testa, col posto', 'a reply each, with the spot', 'una respuesta a cada uno, con el puesto')], ['no', L('niente: la fila si legge con !lista', 'nothing: the queue is read with !lista', 'nada: la fila se lee con !lista')]].map(([v, t]) => `<option value="${v}"${(r.conferma || 'raffica') === v ? ' selected' : ''}>${t}</option>`).join('')}</select>`;
 }
 function _partitaRegoleLette() {
   return {
     costo: _ptNum('pt-costo'), max: _ptNum('pt-max'), partecipazione: _ptNum('pt-part'),
     punti: String(_g('pt-punti')?.value || '').split(/[,;\s]+/).map((x) => parseInt(x, 10)).filter((n) => Number.isFinite(n) && n >= 0),
     nick: !!_g('pt-nick')?.checked, soloSub: !!_g('pt-sub')?.checked, rotazione: !!_g('pt-rot')?.checked, staff: !!_g('pt-staff')?.checked,
+    conferma: _g('pt-conferma')?.value || 'raffica',
   };
 }
 
@@ -14461,13 +14464,20 @@ async function _partitaMossa(mossa, body = {}) {
   return r;
 }
 
+function _partitaCoperti(d) {
+  const c = Array.isArray(d.coperti) ? d.coperti : [];
+  if (!c.length) return '';
+  const nomi = c.map((n) => `<code>!${esc(n)}</code>`).join(', ');
+  return `<div class="riquadro-info avviso spazio-sotto" role="alert">${L(`Hai un comando tuo con lo stesso nome di ${nomi}: vince il tuo, e la partita quel messaggio non lo vede. Rinomina il tuo comando, o il comando della partita nella scheda Comandi.`, `You have your own command with the same name as ${nomi}: yours wins, and the game never sees that message. Rename your command, or the game command in the Commands tab.`, `Tienes un comando tuyo con el mismo nombre que ${nomi}: gana el tuyo, y la partida no ve ese mensaje. Renombra tu comando, o el comando de la partida en la pestaña Comandos.`)}</div>`;
+}
+
 function _partitaDisegna() {
   const box = _g('partita-box');
   if (!box) return;
   const d = _partita || {};
   if (!d.puoi) { box.innerHTML = `<p class="tenue">${L('La partita la comanda lo streamer: può dare il permesso ai moderatori.', 'The streamer runs the game: they can allow moderators.', 'La partida la lleva el streamer: puede dar permiso a los moderadores.')}</p>`; return; }
   if (!d.attiva) {
-    box.innerHTML = `
+    box.innerHTML = `${_partitaCoperti(d)}
       <label class="campo" for="pt-nome">${L('Gioco', 'Game', 'Juego')}</label>
       <input type="text" id="pt-nome" class="campo-largo" maxlength="60" placeholder="${L('es. Fortnite, Among Us, un quiz', 'e.g. Fortnite, Among Us, a quiz', 'p. ej. Fortnite, Among Us, un quiz')}">
       ${_partitaRegoleForm(d.regole || {}, d.proprietario)}
@@ -14503,7 +14513,7 @@ function _partitaDisegna() {
       <td>${x.posto}°</td><td>${nome(x)}${x.pagato ? ` <span class="badge">${L('pagato', 'paid', 'pagado')}</span>` : ''}</td>
       <td><button class="btn secondario mini" data-pt-togli="${esc(x.user)}">${L('Togli', 'Remove', 'Quitar')}</button></td></tr>`).join('');
   const cl = (d.classifica || []).slice(0, 10).map((t, i) => `<tr><td>${i + 1}°</td><td>${esc(t.display || t.user)}</td><td>${t.monete}</td><td>${t.vittorie}</td></tr>`).join('');
-  box.innerHTML = `
+  box.innerHTML = `${_partitaCoperti(d)}
     <p><strong>${esc(d.nome || L('Partita', 'Game', 'Partida'))}</strong> · ${fila.length} ${L('in fila', 'in queue', 'en la fila')} · ${d.manche} ${L('manche', 'rounds', 'rondas')}
       · <span class="badge ${d.aperta ? 'verde' : 'giallo'}">${d.aperta ? L('fila aperta', 'queue open', 'fila abierta') : L('fila chiusa', 'queue closed', 'fila cerrada')}</span></p>
     ${manche}

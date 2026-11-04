@@ -88,6 +88,9 @@ comandi diversi da quelli della riga italiana.
 - Sulla pagina del walk-on si può lasciare una mail per sapere l'esito: la usiamo una volta e la cancelliamo, e né tu né i mod la vedete mai. [vai: walkon]
   en: On the walk-on page people can leave an email to hear the outcome: we use it once and delete it, and neither you nor your mods ever see it.
   es: En la página del walk-on se puede dejar un correo para saber el resultado: lo usamos una vez y lo borramos, y ni tú ni los mods lo veis nunca.
+- Partite: chi scrive !gioco ora sa se è entrato, con una riga per chi entra insieme o una risposta a testa, e senza partita aperta il bot lo dice. Se un tuo comando ha lo stesso nome, il pannello te lo segnala. [vai: partite]
+  en: Games: whoever types !gioco now knows if they got in, with one line for those joining together or a reply each, and with no game open the bot says so. If one of your commands has the same name, the panel tells you.
+  es: Partidas: quien escribe !gioco ya sabe si ha entrado, con una línea para quien entra a la vez o una respuesta a cada uno, y sin partida el bot lo dice. Si un comando tuyo se llama igual, el panel te avisa.
 
 ## 2026-10-29
 

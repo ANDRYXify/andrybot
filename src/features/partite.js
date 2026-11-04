@@ -33,6 +33,7 @@ import * as economia from './economia.js';
 import { nomeMoneta } from './moneta.js';
 import { aChi } from './risposte.js';
 import { nomeIn } from './comandi-registro.js';
+import { personalizzato } from './personalizzati.js';
 const log = makeLog('partite');
 
 const CHIAVE = 'partita';
@@ -47,7 +48,11 @@ export const PARTITA_DEFAULT = Object.freeze({
   punti: [100, 50, 25],  // monete per posto: primo, secondo, terzo…
   partecipazione: 0,     // monete a chiunque giochi una manche
   rotazione: true,       // chi ha giocato torna in fondo alla fila
+  conferma: 'raffica',   // chi entra lo sa: 'raffica' (una riga per chi e' entrato insieme), 'ognuno' (risposta a testa), 'no'
 });
+export const CONFERME = Object.freeze(['raffica', 'ognuno', 'no']);
+// la riga della raffica: chi e' entrato in questi secondi, detto una volta
+export const RAFFICA_MS = 6000;
 
 const norm = (x) => String(x || '').toLowerCase().trim();
 const persona = (x) => norm(x).replace(/^@/, '');
@@ -66,6 +71,7 @@ export function normRegole(r = {}) {
     punti,
     partecipazione: intero(b.partecipazione, 0, 0, LIMITI.puntiMax),
     rotazione: b.rotazione !== false,
+    conferma: CONFERME.includes(b.conferma) ? b.conferma : PARTITA_DEFAULT.conferma,
   };
 }
 
@@ -117,12 +123,21 @@ export function classifica(channel) {
   return [...tot.values()].sort((a, b) => b.monete - a.monete || b.vittorie - a.vittorie || a.user.localeCompare(b.user));
 }
 
+// I COMANDI DELLA CHAT COPERTI. Un comando dello streamer (suo o di un Modulo,
+// anche importato da un altro bot) col nome di uno della partita vince sempre
+// (personalizzati.js, «quello che ti sei costruito vince»): la partita quel
+// messaggio non lo vede mai, e chi scrive !gioco non entra. Non si indovina:
+// si dice, nel pannello, quali nomi sono coperti.
+export function coperti(channel) {
+  return ['gioco', 'esco', 'lista', 'partita'].map((id) => nomeIn(channel, id)).filter((n) => personalizzato(channel, n));
+}
+
 export function stato(channel) {
   const p = viva(channel);
-  if (!p) return { aperta: false, attiva: false, regole: regoleDi(channel) };
+  if (!p) return { aperta: false, attiva: false, regole: regoleDi(channel), coperti: coperti(channel) };
   const m = mancheAperta(p);
   return {
-    attiva: true, aperta: p.aperta, nome: p.nome, creata: p.creata, regole: { ...p.regole },
+    attiva: true, aperta: p.aperta, nome: p.nome, creata: p.creata, regole: { ...p.regole }, coperti: coperti(channel),
     fila: p.fila.map((x, i) => ({ posto: i + 1, user: x.user, display: x.display, nick: x.nick || '', pagato: !!x.ricevuta })),
     manche: p.manche.length,
     inGioco: m ? { n: m.n, giocatori: m.giocatori.map((g) => ({ user: g.user, display: g.display, nick: g.nick || '' })) } : null,
@@ -359,6 +374,35 @@ export const FRASI = {
   },
 };
 
+// CHI ENTRA LO SA. 'ognuno': la risposta a testa, col posto. 'raffica': chi
+// entra in questi secondi finisce in una riga sola (una chat piena non diventa
+// un muro), detta quando la raffica si chiude. 'no': come prima, la fila si
+// legge con !lista.
+const raffiche = new Map();   // canale → { nomi: [], timer }
+function conferma(channel, p, msg, r, rispondi, say) {
+  const modo = p.regole.conferma;
+  if (modo === 'no') return;
+  if (modo === 'ognuno') { rispondi(`🎮 sei in fila, ${posizione(r.posto)}.`); return; }
+  const ch = norm(channel);
+  const x = raffiche.get(ch) || { nomi: [], timer: null };
+  x.nomi.push(String(msg.display || msg.user));
+  raffiche.set(ch, x);
+  if (x.timer) return;
+  x.timer = setTimeout(() => {
+    raffiche.delete(ch);
+    const q = viva(ch);
+    if (!q) return;
+    say(rigaRaffica(ch, x.nomi, q.fila.length));
+  }, RAFFICA_MS);
+  x.timer.unref?.();
+}
+export function rigaRaffica(channel, nomi, inFila) {
+  const primi = nomi.slice(0, 5);
+  const altri = nomi.length - primi.length;
+  const chi = primi.join(', ') + (altri > 0 ? ` e altri ${altri}` : '');
+  return `🎮 In fila: ${chi} (${inFila} in fila). Entra anche tu con !${nomeIn(channel, 'gioco')}.`;
+}
+
 export function tryPartita(msg, say) {
   try {
     if (!msg) return false;
@@ -374,9 +418,10 @@ export function tryPartita(msg, say) {
     const moneta = () => nomeMoneta(channel);
 
     if (cmd === 'gioco') {
-      if (!p) return true;
+      // chi scrive deve sapere com'e' andata: il silenzio, da fuori, e' uguale a un «no»
+      if (!p) { rispondi('🎮 Nessuna partita aperta adesso.'); return true; }
       const r = entra(channel, { user: msg.user, display: msg.display || msg.user, nick: parti.join(' '), isSub: msg.isSub, isMod: msg.isMod, isBroadcaster: msg.isBroadcaster });
-      if (r.ok) return true;   // niente conferma a testa: in una chat piena sarebbe un muro. La fila si legge con !lista
+      if (r.ok) { conferma(channel, p, msg, r, rispondi, say); return true; }
       const perche = {
         'gia-dentro': `sei già in fila, ${posizione(r.posto)}.`,
         'sta-giocando': 'stai già giocando questa manche.',
