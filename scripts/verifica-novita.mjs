@@ -191,6 +191,9 @@ const comandi = (t) => (String(t).match(/![a-z0-9_]+/gi) || []).map((c) => c.toL
 const frasi = (t) => (String(t).match(/[.!?](\s|$)/g) || []).length;
 const misura = (t) => [...String(t)].length;
 
+// la pagina pubblica delle novita' (src/web/guide.js, `testo`) lascia passare
+// solo <strong>, <em>, <code>, <a>, <br>: qualunque altro «<» la fa saltare
+const MARCATURA = (x) => /<|javascript:/i.test(String(x).replace(/<\/?(strong|em|code|a|br)\b[^>]*>/gi, ''));
 function guaiLingue(testo) {
   const g = {};
   const segna = (chi, cosa) => { (g[chi] ||= []).push(cosa); };
@@ -199,6 +202,7 @@ function guaiLingue(testo) {
     for (const v of giorno.voci) {
       if (v.privata) continue;              // le private non escono di casa: non si traducono
       const dove = `${giorno.data} «${v.testo.slice(0, 40)}…»`;
+      for (const x of [v.testo, v.titolo, v.perche].filter(Boolean)) if (MARCATURA(x)) segna('marcatura', `${dove}: «${x.slice(0, 60)}»`);
       for (const l of ['en', 'es']) {
         const t = v.lingue?.[l] || {};
         if (!t.testo) { segna('mancano', `${dove}: manca «${l}:»`); continue; }
@@ -211,6 +215,7 @@ function guaiLingue(testo) {
           if (SEGNI.test(x)) segna('segni', q);
           if (GERGO.test(x) || CODICE.test(x) || EMOJI.test(x)) segna('gergo', q);
           if (LEI.test(x)) segna('lei', q);
+          if (MARCATURA(x)) segna('marcatura', q);
         }
         if (misura(t.testo) > 220 || frasi(t.testo) > 2) segna('misura', `${dove} ${l}: ${misura(t.testo)} caratteri, ${frasi(t.testo)} frasi`);
         if (t.titolo && (misura(t.titolo) > 60 || /[.!?;:,]$/.test(t.titolo))) segna('misura', `${dove} ${l}> titolo «${t.titolo}»`);
@@ -238,6 +243,7 @@ const PROMESSE_LINGUE = [
   ['gergo', 'le traduzioni sono scritte per chi trasmette: niente gergo, file o emoji'],
   ['copie', 'nessuna traduzione è la riga italiana ricopiata'],
   ['lei', 'nessuna cosa sua nelle traduzioni'],
+  ['marcatura', 'nessun «<» fuori dalla marcatura che la pagina pubblica accetta (un won/<canale> la fa saltare)'],
 ];
 
 // L'AUTOPROVA. Si prende il file vero, gia' verde, e lo si rompe in un punto per
@@ -279,6 +285,8 @@ if (process.argv.includes('--selftest')) {
     ['una destinazione scritta sulla traduzione', 'segni', cambia(/^  en: /, (r, i) => { r[i] += ' [vai: stato]'; })],
     ['una parola da riunione tecnica', 'gergo', cambia(/^  es: /, (r, i) => { r[i] = r[i].replace(/\.$/, ', con un endpoint.'); })],
     ['la riga italiana ricopiata', 'copie', cambia(/^- /, (r, i) => { r[i + 1] = `  en: ${italiano(r[i])}`; })],
+    ['un segnaposto fra < > nella riga italiana', 'marcatura', cambia(/^- /, (r, i) => { r[i] = r[i].replace(/^- /, '- Dalla pagina won/<canale>: '); })],
+    ['un segnaposto fra < > in una traduzione', 'marcatura', cambia(/^  en: /, (r, i) => { r[i] = r[i].replace(/\.$/, ' on won/<channel>.'); })],
     ['una cosa sua in una traduzione', 'lei', cambia(/^  es: /, (r, i) => { r[i] = r[i].replace(/\.$/, ', como dice Lia.'); })],
   ];
   let cieche = 0;

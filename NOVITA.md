@@ -73,9 +73,9 @@ comandi diversi da quelli della riga italiana.
   en> How many check-ins, in a row or overall, once or every time, which hits and what the bot says: you decide. The hit stays in the backpack until they throw it.
   es> Quien siempre está, gana
   es> Cada cuántas presencias, seguidas o en total, una vez o cada vez, qué golpes y qué dice el bot: lo decides tú. El golpe se queda en la mochila hasta que lo lanza.
-- [importante] Walk-on: chi è sub sceglie la sua entrata in scena dalla pagina won/<canale>, fra i tuoi effetti o con un'immagine, un video, un audio suoi. Parte la prima volta che scrive in chat. [vai: walkon]
-  en: Walk-on: subscribers pick their entrance on the won/<channel> page, among your effects or with an image, a video, a sound of their own. It plays the first time they write in chat.
-  es: Walk-on: quien es sub elige su entrada en escena en la página won/<canal>, entre tus efectos o con una imagen, un vídeo, un audio suyo. Sale la primera vez que escribe en el chat.
+- [importante] Walk-on: chi è sub sceglie la sua entrata in scena dalla pagina walk-on del tuo canale, fra i tuoi effetti o con un'immagine, un video, un audio suoi. Parte la prima volta che scrive in chat. [vai: walkon]
+  en: Walk-on: subscribers pick their entrance on your channel's walk-on page, among your effects or with an image, a video, a sound of their own. It plays the first time they write in chat.
+  es: Walk-on: quien es sub elige su entrada en escena en la página walk-on de tu canal, entre tus efectos o con una imagen, un vídeo, un audio suyo. Sale la primera vez que escribe en el chat.
   > La sua entrata, approvata da te
   > Tu o i mod approvate quello che si vede: se lo cambia torna in attesa. Una volta per diretta, uno alla volta, e chi non è più sub non entra.
   en> Their entrance, approved by you
