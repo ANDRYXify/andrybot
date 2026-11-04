@@ -2481,3 +2481,34 @@ Subathon, il tema si ricarica, il riquadro cambia.
 
 Prove: `test/contratto/subathon-scena.test.mjs` e il cancello dell'anteprima
 (l'elemento misurato sulla tela e in onda).
+
+
+## Il walk-on in scena
+
+Chiesto con il walk-on dei sub (docs/WALKON.md). Un elemento col posto, fatto
+come il «Testo a schermo» («Un elemento è sempre fatto nello stesso modo»):
+
+| | `walkon` |
+| --- | --- |
+| configurazione | `overlayWalkon` (`normOverlayWalkon` in `web/stile.js`) |
+| angolo di serie | in basso al centro (50%, 90%), come il nome del comando: si entra in scena dal centro, e gli angoli in basso sono della chat e del player |
+| veste | `.ovl-widget.ovl-walkon` (nella pelle, la stessa sulla tela e in onda) |
+| in scena quando | `mostra('walkon')`, `attivo`, e arriva un evento `{ tipo: 'walkon' }` |
+| eredita | `effetti` (`EREDITA_MOSTRA`): un overlay salvato con gli effetti spenti non se lo trova in scena |
+
+È **un evento**, non un pezzo fisso: la carta compare quando il server la
+manda (`{ tipo: 'walkon', nome, testo, media: { tipo, url, suonoUrl?, chroma? },
+durata, tetto, volume }`) e se ne va da sola: un'immagine o un audio dopo `durata`,
+un video alla sua fine vera (come gli effetti, «un video lo chiude la sua fine»),
+mai oltre `tetto`, la durata massima dello streamer. Una nuova toglie la
+vecchia: la fila sta nel server (uno alla volta, con l'attesa dello
+streamer), quindi in onda non ne arrivano due insieme. Dentro: il media
+(immagine, video, o niente se è un audio, che suona e basta; un video col
+green screen passa da `SB_SCONTORNO` come gli effetti), il nome (spegnibile:
+`nome`) e la riga. Il file di chi l'ha fatto arriva da
+`/overlay/<canale>/walkon/<file>?key=`, che apre solo un file di un walk-on
+approvato e non sospeso.
+
+Sulla tela lo Studio disegna un esempio con lo stesso markup e la stessa
+immagine (`WALKON_ESEMPIO`, 320×180), e il cancello dell'anteprima lo misura
+sulla tela e in onda: al suo angolo, in un punto e vestito.

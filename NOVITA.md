@@ -73,6 +73,21 @@ comandi diversi da quelli della riga italiana.
   en> How many check-ins, in a row or overall, once or every time, which hits and what the bot says: you decide. The hit stays in the backpack until they throw it.
   es> Quien siempre está, gana
   es> Cada cuántas presencias, seguidas o en total, una vez o cada vez, qué golpes y qué dice el bot: lo decides tú. El golpe se queda en la mochila hasta que lo lanza.
+- [importante] Walk-on: chi è sub sceglie la sua entrata in scena dalla pagina won/<canale>, fra i tuoi effetti o con un'immagine, un video, un audio suoi. Parte la prima volta che scrive in chat. [vai: walkon]
+  en: Walk-on: subscribers pick their entrance on the won/<channel> page, among your effects or with an image, a video, a sound of their own. It plays the first time they write in chat.
+  es: Walk-on: quien es sub elige su entrada en escena en la página won/<canal>, entre tus efectos o con una imagen, un vídeo, un audio suyo. Sale la primera vez que escribe en el chat.
+  > La sua entrata, approvata da te
+  > Tu o i mod approvate quello che si vede: se lo cambia torna in attesa. Una volta per diretta, uno alla volta, e chi non è più sub non entra.
+  en> Their entrance, approved by you
+  en> You or your mods approve what you see: if they change it, it goes back to pending. Once per stream, one at a time, and whoever is no longer subscribed stays out.
+  es> Su entrada, aprobada por ti
+  es> Tú o los mods aprobáis lo que se ve: si lo cambia vuelve a estar en espera. Una vez por directo, uno a la vez, y quien ya no es sub no entra.
+- Nell'Overlay Studio c'è la carta del walk-on: il media, il nome e la riga di chi entra, dove vuoi e vestita come vuoi. [vai: alert]
+  en: Overlay Studio has the walk-on card: the media, name and line of whoever enters, where you want it and styled as you like.
+  es: En Overlay Studio está la tarjeta del walk-on: el medio, el nombre y la línea de quien entra, donde quieras y vestida como quieras.
+- Sulla pagina del walk-on si può lasciare una mail per sapere l'esito: la usiamo una volta e la cancelliamo, e né tu né i mod la vedete mai. [vai: walkon]
+  en: On the walk-on page people can leave an email to hear the outcome: we use it once and delete it, and neither you nor your mods ever see it.
+  es: En la página del walk-on se puede dejar un correo para saber el resultado: lo usamos una vez y lo borramos, y ni tú ni los mods lo veis nunca.
 
 ## 2026-10-29
 

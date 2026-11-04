@@ -25,7 +25,7 @@ import * as filigrana from '../watermark.js';   // filigrana di proprietà (Andr
 import * as licenza from '../licenza.js';      // il nome con cui questo software si presenta
 import * as consolle from '../features/console.js';   // CONSOLify + tastiera fisica
 import { makeLog } from '../logger.js';
-import { db, tokens, streamers, memory, clips, knowledge, QUANDO_CONOSCENZA, schedaPulita, effects as effectsDb, archivioDb, codiceEffetto, SCHERMI, normComando, baseDaFile, modules as modulesDb, MAX_MODULI, friends, sfondi as sfondiDb, carteLive, tgAttesa, tgScudo, paginaTelegram, TIPI_PAGINA_TELEGRAM, gsiStato, mortiSchede } from '../db.js';
+import { db, tokens, streamers, memory, clips, knowledge, QUANDO_CONOSCENZA, schedaPulita, effects as effectsDb, walkon as walkonDb, archivioDb, codiceEffetto, SCHERMI, normComando, baseDaFile, modules as modulesDb, MAX_MODULI, friends, sfondi as sfondiDb, carteLive, tgAttesa, tgScudo, paginaTelegram, TIPI_PAGINA_TELEGRAM, gsiStato, mortiSchede } from '../db.js';
 import { points, vips, tgConf, tgDest, amici, tgVisti, feedFonti, dcConf, passkeys, managers, quotes, battute, compleanni, membri, subscriptions, giochi as giochiDb, guide, GUIDE_MAX, pointAlerts, tgLogin, contatori, rapporti, postaStreamer, dcRuoli, dcLink, dcGiri, dcAccesso, dcDest, avvisiConf } from '../db.js';
 import { direttaDest, MAX_DESTINAZIONI, studioScene, studioDispositivi } from '../db.js';
 import { creaSalotto } from '../features/studio-dispositivi.js';
@@ -92,6 +92,9 @@ import * as colpiMod from '../features/colpi.js';
 import * as subathonMod from '../features/subathon.js';
 import { presenteDi, presenteDaSalvare, premioSerie } from '../features/presente.js';
 import * as colpiPagina from '../features/colpi-pagina.js';
+import { normWalkon } from '../features/walkon.js';
+import * as walkonFile from '../features/walkon-file.js';
+import { montaWalkon } from './rotte-walkon.js';
 import { creaPortaColpi } from '../features/colpi-porta.js';
 import * as colpiAccesso from '../features/colpi-accesso.js';
 import * as lanci from '../features/lanci.js';
@@ -219,7 +222,7 @@ import {
   ICONE_OVL_K, icoOk, PESO_OVL, MAIUSC_OVL, USCITA_OVL,
   FORME_OVL, MATERIE_OVL, CORNICI_OVL, COMP_OVL, chiAlertOk,
   normAlertStile, normChatStile, normWidgetStile, normOverlayWidgetCfg, normOverlayStile, normGoals, MAX_GOAL,
-  normMusica, normTimer, normPubblicita, normTempi, normTreno, normBit, normBoss, normScritta, normEtichetta, normInvito, testoInvito, normMuro, FIGURE_MURO, normOverlaySubathon, normOverlaySubathonRegole, subathonDaSalvare, normCartelli, normDisegno,
+  normMusica, normTimer, normPubblicita, normTempi, normTreno, normBit, normBoss, normScritta, normOverlayWalkon, normEtichetta, normInvito, testoInvito, normMuro, FIGURE_MURO, normOverlaySubathon, normOverlaySubathonRegole, subathonDaSalvare, normCartelli, normDisegno,
   normArena,
 } from './stile.js';
 
@@ -228,7 +231,7 @@ import {
 // di canale (alerts/chatOverlay/overlayWidget). Retro-compatibile: se non c'è
 // una lista `overlays`, ne ricaviamo uno solo ("principale") con tutto visibile
 // e le posizioni attuali → chi ha già l'overlay lo vede identico.
-const ELEM_OVERLAY = ['alert', 'chat', 'wf', 'ws', 'goal', 'cont', 'cart', 'musica', 'timer', 'subathon', 'subregole', 'pubblicita', 'tempi', 'treno', 'bit', 'pen', 'boss', 'arena', 'scritta', 'etichetta', 'invito', 'muro', 'effetti', 'pew', 'consolify'];
+const ELEM_OVERLAY = ['alert', 'chat', 'wf', 'ws', 'goal', 'cont', 'cart', 'musica', 'timer', 'subathon', 'subregole', 'pubblicita', 'tempi', 'treno', 'bit', 'pen', 'boss', 'arena', 'scritta', 'walkon', 'etichetta', 'invito', 'muro', 'effetti', 'pew', 'consolify'];
 // LE CHIAVI CHE NASCONO SPENTE (docs/OVERLAY.md, «Una chiave che nasce
 // spenta»). La regola di `mostra` e' «si scrive solo il no»: quel che non c'e'
 // compare. L'invito ai Pew e' una scritta fissa che deve stare solo dove
@@ -259,7 +262,7 @@ const _mostraDefault = () => ELEM_OVERLAY.reduce((o, k) => (o[k] = !SPENTI_DI_SE
 // quella da cui si eredita c'e'. L'arena e' nata dopo, ed e' un gioco a schermo
 // come il boss: chi il boss l'ha tolto da una scena non ci trova l'arena. Viene
 // dopo il boss, che a sua volta si riempie dagli effetti.
-const EREDITA_MOSTRA = { boss: 'effetti', scritta: 'effetti', etichetta: 'effetti', pew: 'effetti', arena: 'boss' };
+const EREDITA_MOSTRA = { boss: 'effetti', scritta: 'effetti', walkon: 'effetti', etichetta: 'effetti', pew: 'effetti', arena: 'boss' };
 const ereditaMostra = (m) => {
   if (!m || typeof m !== 'object') return m;
   const q = { ...m };
@@ -987,6 +990,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   guscio.risorsa('pagina-link.js');
   guscio.risorsa('pagina-negozio.js');
   guscio.risorsa('pagina-colpo.js');
+  guscio.risorsa('pagina-walkon.js');
   guscio.risorsa('lanci.js');
   guscio.risorsa('scontorno.js');
   guscio.risorsa('telegram-porta.js');
@@ -1002,6 +1006,22 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   guscio.porta('/api/lanci', (via) => via === '/api/lanci');
   guscio.porta('/api/avvisi-smart/serie', (via) => via === '/api/avvisi-smart/serie');
   guscio.porta('/api/avvisi-smart/prova', (via) => via === '/api/avvisi-smart/prova');
+  // LA PAGINA DEL WALK-ON (docs/WALKON.md): won/<canale> e le sue chiamate,
+  // aperte solo per un canale nostro col walk-on acceso. Ogni porta col suo schema.
+  const viaWon = (coda) => (via) => {
+    const m = new RegExp('^/won/([a-z0-9_.]{1,60})' + coda + '$').exec(via);
+    return !!m && eLoginNostro(m[1]) && normWalkon(streamers.get(m[1])?.settings?.walkon).attivo;
+  };
+  guscio.porta('/won/:canale', viaWon(''));
+  guscio.porta('/won/:canale/dati', viaWon('/dati'));
+  guscio.porta('/won/:canale/effetto/:comando', viaWon('/effetto/[^/]{1,40}'));
+  guscio.porta('/won/:canale/mio/file', viaWon('/mio/file'));
+  guscio.porta('/won/:canale/accedi', viaWon('/accedi'));
+  guscio.porta('/won/:canale/accedi-kick', viaWon('/accedi-kick'));
+  guscio.porta('/won/:canale/esci', viaWon('/esci'));
+  guscio.porta('/won/:canale/salva', viaWon('/salva'));
+  guscio.porta('/won/:canale/togli', viaWon('/togli'));
+  guscio.porta('/won/:canale/mail', viaWon('/mail'));
 
   app.use((req, res, next) => {
     // Rivalida la sessione a OGNI richiesta (regola: se non paghi e non sei un
@@ -1826,6 +1846,8 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       boss: normBoss(base.boss),
       arena: normArena(base.arena),
       scritta: normScritta(base.scritta),
+      // la carta del walk-on: dove sta e com'e' vestita (docs/WALKON.md, «In scena»)
+      walkon: normOverlayWalkon(streamers.get(login)?.settings?.overlayWalkon),
       etichetta: normEtichetta(base.etichetta),
       // l'invito ai Pew arriva col testo gia' detto e col segno se i Pew del
       // canale sono accesi: l'overlay non sa niente dei Pew
@@ -2624,7 +2646,8 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     const sp = esito.giro.spettatore || {};
     const canale = String(sp.canale || '');
     const corto = !!(sp.segno && config.pewHost);
-    const torna = !canale ? '/' : corto ? colpiMod.urlPaginaColpo(canale) : `/u/${encodeURIComponent(canale)}/colpo`;
+    const won = sp.won === true;
+    const torna = !canale ? '/' : won ? `/won/${encodeURIComponent(canale)}` : corto ? colpiMod.urlPaginaColpo(canale) : `/u/${encodeURIComponent(canale)}/colpo`;
     if (!esito.ok || !eLoginNostro(canale)) return res.redirect(torna);
     try {
       const t = await kickAuth.scambiaCodice(esito.codice, esito.giro.verifier);
@@ -2632,6 +2655,8 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       if (v?.ok && v.userId) {
         const nome = v.nome || ('kick:' + v.userId);
         const chiave = accessiColpi.metti({ id: colpiMod.personaKick(v.userId), login: nome, nome, token: t.accessToken, refresh: t.refreshToken, scade: t.expiresAt, piattaforma: 'kick' });
+        // dal walk-on: una chiave sua della sessione, che i Pew non leggono
+        if (won) { req.session.spettatoreWon = chiave; return res.redirect(torna); }
         if (corto) {
           const b = pontiColpi.apri({ canale, chiave, segno: sp.segno });
           return res.redirect(`https://${config.pewHost}/u/${encodeURIComponent(canale)}/colpo/entra?b=${b}`);
@@ -2686,6 +2711,19 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     res.json(r.ok ? { ok: true } : { ok: false, motivo: r.motivo });
   }));
   // I Bit da spendere di chi ha fatto l'accesso (docs/COLPI.md, «I Bit da spendere»)
+  // IL WALK-ON (docs/WALKON.md): le rotte stanno in rotte-walkon.js. L'accesso
+  // e' quello dei Pew (la stessa memoria dei token), senza permessi.
+  montaWalkon(app, {
+    requireLogin, currentUser, wrap, notFound, extRateOk, eLoginNostro, streamers, store: walkonDb, servizio: manager.walkon,
+    effettoDi: (l, c) => effectsDb.get(l, c), effetti: (l) => effectsDb.list(l), mediaEffetti, firmaDi, posta, spazioEsaurito, tmpDir, chiaveOk,
+    accessi: accessiColpi, spettatorePew: spettatoreDi, accessoTwitch: () => !!config.twitchClientId,
+    accessoKick: (l) => kickAuth.configurato() && !!kickApi.tokenDi(l)?.userId,
+    authUrl: (state) => auth.authUrl([], state),
+    apriKick: (req, l) => { const { challenge, state } = giroOAuth.apri(req, 'kick', { spettatore: { canale: l, won: true } }); return kickAuth.urlAutorizzazione({ challenge, state, scope: ['user:read'] }); },
+    abbonamento: (l, id) => helix.abbonamento(l, id),
+    linkPage: (l) => linkPage.get(l), avatarDi, baseUrl: config.baseUrl, log,
+    chiDecide: (u) => String(u?.modDisplay || u?.identitaDisplay || u?.display || u?.login || '').slice(0, 40),
+  });
   app.get('/u/:user/colpo/saldi', (req, res) => {
     const login = loginColpi(req);
     res.set('Cache-Control', 'private, no-store');
@@ -3818,6 +3856,23 @@ STREAMER (${su.toUpperCase()}) e non c'entra con l'automazione del marketing.
   // (b) il moderatore che fa login per gestire un canale, (c) il login
   // self-service per abbonarsi. Pubblico: il cancello lo lascia passare.
   app.get('/auth/callback', wrap(async (req, res) => {
+    // ── chi entra dalla pagina del walk-on (docs/WALKON.md): nessun permesso, solo chi e' ──
+    const wf = req.session?.wonFlow;
+    if (wf) delete req.session.wonFlow;
+    if (wf?.state && req.query.state === wf.state) {
+      const torna = `/won/${encodeURIComponent(wf.canale)}`;
+      if (req.query.error || Date.now() - wf.ts > 15 * 60_000) return res.redirect(torna);
+      try {
+        const t = await auth.exchangeCode(String(req.query.code || ''));
+        const v = await auth.validate(t.accessToken);
+        if (v?.userId) {
+          let nome = v.login;
+          try { nome = (await helix.getUserByLogin(v.login))?.display_name || v.login; } catch { /* il login basta */ }
+          req.session.spettatoreWon = accessiColpi.metti({ id: v.userId, login: v.login, nome, token: t.accessToken, refresh: t.refreshToken, scade: t.expiresAt });
+        }
+      } catch (e) { log.warn('accesso dal walk-on:', e?.message || e); }
+      return res.redirect(torna);
+    }
     // ── lo spettatore della pagina dei colpi (un permesso solo, e non entra nel pannello) ──
     // Lo riconosce dallo state: un accesso lasciato a meta' non ruba il ritorno agli altri flussi.
     const cf = req.session?.colpoFlow;
@@ -7945,6 +8000,9 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     if (b.overlayBoss !== undefined) out.overlayBoss = normBoss(b.overlayBoss);
     if (b.overlayArena !== undefined) out.overlayArena = normArena(b.overlayArena);
     if (b.overlayScritta !== undefined) out.overlayScritta = normScritta(b.overlayScritta);
+    // il walk-on (docs/WALKON.md): le regole, e la sua carta in scena
+    if (b.walkon !== undefined) out.walkon = normWalkon(b.walkon);
+    if (b.overlayWalkon !== undefined) out.overlayWalkon = normOverlayWalkon(b.overlayWalkon);
     if (b.overlayEtichetta !== undefined) out.overlayEtichetta = normEtichetta(b.overlayEtichetta);
     if (b.overlayInvito !== undefined) out.overlayInvito = normInvito(b.overlayInvito);
     if (b.overlayMuro !== undefined) out.overlayMuro = normMuro(b.overlayMuro);
@@ -8383,7 +8441,7 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     // OVERLAY IN TEMPO REALE: se è cambiato qualcosa che l'overlay mostra
     // (CSS, widget, chat, alert, temi, stato), spingiamo SUBITO il nuovo tema
     // via SSE così la fonte OBS si aggiorna da sola, senza bisogno di refresh.
-    if (['overlayCss', 'overlayWidget', 'chatOverlay', 'alerts', 'overlayTemplates', 'overlayStato', 'overlays', 'overlayGoals', 'overlayMusica', 'overlayTimer', 'overlayPubblicita', 'overlayTempi', 'overlayTreno', 'overlayBit', 'overlayBoss', 'overlayArena', 'overlayScritta', 'overlayEtichetta', 'overlayInvito', 'subathon', 'overlaySubathon', 'overlaySubathonRegole', 'overlayMuro', 'overlayCartelli', 'fontPersonali', 'colpi'].some((k) => k in out)) {
+    if (['overlayCss', 'overlayWidget', 'chatOverlay', 'alerts', 'overlayTemplates', 'overlayStato', 'overlays', 'overlayGoals', 'overlayMusica', 'overlayTimer', 'overlayPubblicita', 'overlayTempi', 'overlayTreno', 'overlayBit', 'overlayBoss', 'overlayArena', 'overlayScritta', 'overlayWalkon', 'overlayEtichetta', 'overlayInvito', 'subathon', 'overlaySubathon', 'overlaySubathonRegole', 'overlayMuro', 'overlayCartelli', 'fontPersonali', 'colpi'].some((k) => k in out)) {
       // segnale di RICARICA: ogni overlay ricarica il PROPRIO tema (per ?o=id),
       // così più overlay diversi si aggiornano ciascuno col suo layout.
       try { effects.emit(user.login, { tipo: 'tema' }); }

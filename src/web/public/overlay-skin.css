@@ -1073,6 +1073,18 @@
 .ovl-scritta.dim-grande { font-size: 4.4rem; }
 .ovl-scritta.dim-enorme { font-size: 6rem; }
 
+.ovl-walkon { display: flex; flex-direction: column; align-items: stretch; gap: .45em; padding: .5em; max-width: 22em; line-height: 1.2;
+  opacity: 0; translate: -.6em 0; transition: opacity .3s ease, translate .3s ease; }
+.ovl-walkon.dentro { opacity: 1; translate: none; }
+.ovl-walkon .wo-media { display: block; max-width: 21em; max-height: 13em; width: auto; height: auto; object-fit: contain; border-radius: calc(var(--radius, 12px) * .6); }
+.ovl-walkon .wo-sotto { display: grid; gap: .15em; padding: 0 .3em .1em; min-width: 0; }
+.ovl-walkon .wo-nome { font-weight: 800; color: var(--acc); overflow-wrap: anywhere; }
+.ovl-walkon .wo-riga { font-weight: 600; overflow-wrap: anywhere; }
+.ovl-walkon.dim-piccola { font-size: 1rem; }
+.ovl-walkon.dim-media { font-size: 1.35rem; }
+.ovl-walkon.dim-grande { font-size: 1.75rem; }
+.ovl-walkon.dim-enorme { font-size: 2.2rem; }
+
 .ovl-etichetta { display: block; white-space: nowrap; padding: .25em .7em; font-weight: 800; letter-spacing: .02em;
   text-shadow: 0 2px 8px rgba(0, 0, 0, .5); --ombra-fuori: drop-shadow(0 8px 18px rgba(0, 0, 0, .45));
   opacity: 0; translate: 0 .5em; transition: opacity .25s ease, translate .25s ease; }
@@ -1175,7 +1187,7 @@
   .ovl-boss.boss-via { animation: boss-via .6s ease-in forwards; }
   .ovl-boss .boss-danno { display: none; }
   .ovl-boss .boss-scia, .ovl-boss .boss-vita { transition: none; }
-  .ovl-scritta, .ovl-etichetta, .ovl-invito, .effetto, .ovl-arena { transition: none; }
+  .ovl-scritta, .ovl-etichetta, .ovl-invito, .ovl-walkon, .effetto, .ovl-arena { transition: none; }
   .ovl-subathon, .ovl-subathon.esce, .ovl-subathon .sb-pieno { transition: none; }
   .ovl-subathon { opacity: 1; transform: none; }
   .ovl-subathon .sb-sale { display: none; }

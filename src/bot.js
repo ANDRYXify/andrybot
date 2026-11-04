@@ -102,8 +102,10 @@ import * as premiTempo from './features/premi-tempo.js';
 import * as bossFeat from './features/boss.js';
 import { aChi } from './features/risposte.js';
 import { modalitaDi, alLavoro } from './features/quando-lavora.js';
-import { statoVivo, registroColpi, effects as effettiDb, segnoInstagram, pewSerie, pewBit, pewZaino, presenti } from './db.js';
+import { statoVivo, registroColpi, effects as effettiDb, segnoInstagram, pewSerie, pewBit, pewZaino, presenti, walkon as walkonDb } from './db.js';
 import { creaServizioColpi } from './features/colpi-servizio.js';
+import { creaServizioWalkon } from './features/walkon.js';
+import * as walkonFile from './features/walkon-file.js';
 import * as economia from './features/economia.js';
 import { nomeMoneta, monetaDi, accordaMoneta } from './features/moneta.js';
 import { urlPaginaColpo, pagaInChat, chiedeBit, rispostaBit, chiedeZaino, rispostaZaino, nomeBuono, voceDi as voceColpo, quandoScade, titoloPremioMisto, lancioInChat, rispostaChat, prezzoChat, chiedeKicks, valutaDi, personaKick, annuncioDovuto, testoAnnuncio, chiedeLink, testoLink } from './features/colpi.js';
@@ -278,6 +280,14 @@ export class BotManager {
       zaino: pewZaino, log });
     // la chat della pagina dei colpi: i messaggi della chat di Twitch, girati a chi ha la pagina aperta
     this.colpiChat = creaChatColpi();
+    // IL WALK-ON (docs/WALKON.md): parte al primo messaggio della diretta di chi
+    // ce l'ha approvato, uno alla volta, nella carta `walkon` dell'overlay
+    this.walkon = creaServizioWalkon({ store: walkonDb, impostazioni: (l) => streamers.get(l)?.settings?.walkon,
+      effettoDi: (l, c) => effettiDb.get(l, c), payloadEffetto: (l, e) => this.effects?.payload(l, e),
+      urlFile: (l, f) => `${config.baseUrl}/overlay/${l}/walkon/${f}?key=${this.effects?.overlayKey(l) || ''}`,
+      emit: (l, p) => this.effects?.emit(l, p), inOnda: (l) => this.inOnda(l), overlay: (l) => !!this.effects?.hasClients(l),
+      occasione: (l) => arrivi.occasioneDiretta(l, this._inizioTwitch(l)), linguaChat: (l) => linguaChat(l),
+      display: (l) => streamers.get(l)?.display || l, log });
     setInterval(() => this.colpiChat.battito(), BATTITO_CHAT_COLPI).unref?.();
     this.modules = modules || null;  // motore "Moduli" (automazioni QUANDO→SE→ALLORA)
     this.bus = bus || null;          // event-bus dei plugin operatore (opzionale)
@@ -1445,6 +1455,11 @@ export class BotManager {
           }
         }
       } catch (e) { log.debug(`#${login} presenza:`, e?.message || e); }
+    }
+    // IL WALK-ON (docs/WALKON.md): chi ce l'ha approvato entra in scena alla
+    // prima riga della diretta (o col comando), una volta per diretta
+    if (!msg.isSelf) {
+      try { this.walkon?.suMessaggio(login, msg, parla); } catch (e) { log.debug(`#${login} walk-on:`, e?.message || e); }
     }
     // LA PRESENZA A SCHERMO (docs/COLPI.md, «La presenza»): la frase della
     // presenza fa comparire in diretta l'effetto dei Pew col nome di chi l'ha
@@ -3283,6 +3298,7 @@ export class BotManager {
   }
 
   _giornoEconomia() {
+    try { walkonDb.pulisci(); walkonFile.pulisciTutti((l) => walkonDb.fileUsati(l)).catch(() => {}); } catch (e) { log.debug('walk-on, pulizia:', e?.message || e); }
     try { pewSerie.pulisci(); pewBit.pulisci(); pewZaino.pulisci(); presenti.pulisci(); } catch (e) { log.debug('dirette, Bit e zaino di Pewpewify:', e?.message || e); }
     for (const s of streamers.active()) {
       try {

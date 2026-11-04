@@ -711,6 +711,23 @@ export const normScritta = (x) => {
   };
 };
 
+// IL WALK-ON in scena (docs/WALKON.md, «In scena»): la carta con il media e la
+// riga di chi entra. Quando e cosa lo decide la scheda Walk-on; qui se si vede,
+// dove sta e com'e' vestita. Di serie in basso al centro (si entra in scena dal
+// centro, e gli angoli in basso sono della chat e del player), scura e leggibile.
+export const VESTE_WALKON = { sfondo: '#100d16', opacita: 85, testo: '#ffffff', accento: '#f72fa7', bordoRaggio: 16 };
+export const POS_WALKON = ['basso-centro'];
+export const normOverlayWalkon = (x) => {
+  x = x || {};
+  return {
+    attivo: x.attivo !== false,
+    posizione: unoDi(x.posizione, POS_WALKON, 'basso-centro'),
+    xy: xyOk(x.xy),
+    nome: x.nome !== false,
+    stile: normWidgetStile({ ...VESTE_WALKON, ...(x.stile || {}) }),
+  };
+};
+
 // IL NOME DEL COMANDO in scena: la pastiglia «!comando» che compare quando
 // parte un effetto. Di serie come prima: in basso al centro, del colore del
 // marchio, tonda.

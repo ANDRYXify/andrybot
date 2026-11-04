@@ -247,6 +247,8 @@ function impostazioni() {
     overlayStato: (s.overlayStato && typeof s.overlayStato === 'object') ? s.overlayStato : {},
     overlayMusica: (s.overlayMusica && typeof s.overlayMusica === 'object') ? s.overlayMusica : {},
     overlayTimer: (s.overlayTimer && typeof s.overlayTimer === 'object') ? s.overlayTimer : {},
+    walkon: (s.walkon && typeof s.walkon === 'object') ? s.walkon : null,
+    overlayWalkon: (s.overlayWalkon && typeof s.overlayWalkon === 'object') ? s.overlayWalkon : null,
     subathon: (s.subathon && typeof s.subathon === 'object') ? s.subathon : null,
     overlaySubathon: (s.overlaySubathon && typeof s.overlaySubathon === 'object') ? s.overlaySubathon : null,
     overlaySubathonRegole: (s.overlaySubathonRegole && typeof s.overlaySubathonRegole === 'object') ? s.overlaySubathonRegole : null,
@@ -1042,6 +1044,12 @@ function statoDemo() {
           alert: { ..._sbRegoleDiSerie().alert, allunga: { attivo: true, suono: '', immagine: '', colore: '#f72fa7' } } },
         overlaySubathon: { ..._defSubathon(), pezzi: { ...SB_PEZZI_DEF(), durata: true } },
         overlaySubathonRegole: _defSubregole(),
+        overlayWalkon: _defWalkon(),
+        walkon: { attivo: true, chi: { subTwitch: true, livello: 1, subKick: true, vip: true, mod: false, persone: ['twitch:amica_del_canale'] },
+          effetti: { attivo: true, voci: ['applausi', 'coriandoli'], senzaApprovazione: false }, file: { attivo: true, tipi: ['immagine', 'video', 'audio'], pesoMb: 8, durataSec: 10 },
+          testo: { attivo: true, max: 80 }, partenza: { modo: 'messaggio', comando: 'walkon' }, attesaSec: 20, perDiretta: 30, durataSec: 8, durataImmagineSec: 5, volume: 80, riga: { attiva: true },
+          testi: { it: { titolo: '', dida: '', riga: '' }, en: { titolo: '', dida: '', riga: '' }, es: { titolo: '', dida: '', riga: '' } },
+          motivi: [{ it: 'Non è adatto alla diretta.', en: 'It is not right for the stream.', es: 'No es adecuado para el directo.' }, { it: 'Il volume è troppo alto.', en: 'The volume is too loud.', es: 'El volumen está demasiado alto.' }] },
         overlayMusica: { attivo: true, verso: 'riga', righe: 'due', testo: '{titolo}', testo2: '{artista}',
           cover: 'vinile', barra: 'anello', tempi: 'trascorso', onde: true, ritmo: 'tutto', sfondo: 'colori',
           daCopertina: false, scorre: true, entrata: 'scivola', cambio: true, quandoFermo: 'sparisce',
@@ -1427,6 +1435,43 @@ function _demoPubblicita(via, b) {
   return Promise.resolve({ ok: true, length: secondi, retry: 480, ...stato() });
 }
 
+function _demoWalkon(via, metodo, body) {
+  const ora = Date.now();
+  if (!_demoScritture.wo) {
+    const r = (id, nome, min, extra) => ({ id, piattaforma: 'twitch', login: nome.toLowerCase(), nome, lingua: 'it', scelta: 'file', effetto: '', fileTipo: 'immagine', fileDurata: 0, haFile: true, file: '', testo: '',
+      stato: 'attesa', statoVero: 'attesa', sospeso: false, versione: 1, verificato: true, motivo: '', creato: ora - min * 60000, aggiornato: ora - min * 60000, deciso: 0, decisoDa: '', ...extra });
+    _demoScritture.wo = {
+      voci: [
+        r(1, 'Luna_Gaming', 4, { file: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMjAgMTgwIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImciIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIxIj48c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiNmNzJmYTciLz48c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiM1YjNjZmYiLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48cmVjdCB3aWR0aD0iMzIwIiBoZWlnaHQ9IjE4MCIgZmlsbD0idXJsKCNnKSIvPjx0ZXh0IHg9IjE2MCIgeT0iMTA0IiBmb250LWZhbWlseT0ic3lzdGVtLXVpLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMzAiIGZvbnQtd2VpZ2h0PSI4MDAiIGZpbGw9IiNmZmZmZmYiIHRleHQtYW5jaG9yPSJtaWRkbGUiPkxVTkEhPC90ZXh0Pjwvc3ZnPg==', testo: 'è arrivata {nome}!' }),
+        r(2, 'MarioRossi', 11, { scelta: 'effetto', effetto: 'applausi', fileTipo: '', haFile: false, verificato: false, testo: 'eccomi!' }),
+        r(3, 'GiadaTTV', 300, { piattaforma: 'kick', file: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMjAgMTgwIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImciIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIxIj48c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiMwODkxYjIiLz48c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiMxNmEzNGEiLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48cmVjdCB3aWR0aD0iMzIwIiBoZWlnaHQ9IjE4MCIgZmlsbD0idXJsKCNnKSIvPjx0ZXh0IHg9IjE2MCIgeT0iMTA0IiBmb250LWZhbWlseT0ic3lzdGVtLXVpLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMzAiIGZvbnQtd2VpZ2h0PSI4MDAiIGZpbGw9IiNmZmZmZmYiIHRleHQtYW5jaG9yPSJtaWRkbGUiPkdJQURBPC90ZXh0Pjwvc3ZnPg==', stato: 'approvato', statoVero: 'approvato', deciso: ora - 280 * 60000, decisoDa: 'Mod_Ale', testo: 'la regina della chat' }),
+        r(4, 'PixelMatto', 900, { fileTipo: '', haFile: false, stato: 'rifiutato', statoVero: 'rifiutato', motivo: 'Il volume è troppo alto.', deciso: ora - 880 * 60000, decisoDa: 'andryx_demo' }),
+      ],
+      registro: [
+        { nome: 'Luna_Gaming', versione: 1, azione: 'salvato', chi: 'Luna_Gaming', motivo: '', ts: ora - 4 * 60000 },
+        { nome: 'MarioRossi', versione: 1, azione: 'salvato', chi: 'MarioRossi', motivo: '', ts: ora - 11 * 60000 },
+        { nome: 'GiadaTTV', versione: 1, azione: 'approvato', chi: 'Mod_Ale', motivo: '', ts: ora - 280 * 60000 },
+        { nome: 'PixelMatto', versione: 1, azione: 'rifiutato', chi: 'andryx_demo', motivo: 'Il volume è troppo alto.', ts: ora - 880 * 60000 },
+      ],
+    };
+  }
+  const D = _demoScritture.wo;
+  const cfg = impostazioni().walkon || {};
+  const m = /\/api\/streamer\/walkon\/(\d+)\/decidi$/.exec(via);
+  if (m && metodo === 'POST') {
+    const v = D.voci.find((x) => x.id === Number(m[1]));
+    if (v && v.versione === Number(body.versione)) {
+      const motivo = body.esito === 'rifiutato' ? (Number.isInteger(body.pronto) ? (cfg.motivi?.[body.pronto]?.it || '') : String(body.motivo || '')) : '';
+      Object.assign(v, { stato: body.esito, statoVero: body.esito, motivo, deciso: ora, decisoDa: 'andryx_demo', ...(body.esito === 'rifiutato' ? { file: '', haFile: false } : {}) });
+      D.registro.unshift({ nome: v.nome, versione: v.versione, azione: body.esito, chi: 'andryx_demo', motivo, ts: ora });
+    }
+  }
+  const conta = { attesa: 0, approvato: 0, rifiutato: 0, sospeso: 0 };
+  for (const v of D.voci) conta[v.stato]++;
+  return { cfg, pagina: 'https://socialbot.live/won/andryx_demo', posta: true, conta, voci: D.voci, registro: D.registro,
+    effetti: [{ comando: 'applausi', tipo: 'audio', offerto: true }, { comando: 'coriandoli', tipo: 'video', offerto: true }, { comando: 'gattosorpreso', tipo: 'immagine', offerto: false }] };
+}
+
 function _demoSubathon(via, metodo, body) {
   const S = window.SB_SUBATHON;
   const imp = impostazioni();
@@ -1502,6 +1547,7 @@ function apiDemo(percorso, opzioni = {}) {
   if (metodo === 'GET' && via === '/api/streamer/settimana/categoria') return Promise.resolve({ categoria: _demoCategoria(domanda) });
   if (via === '/api/lanci') return fetch('/api/lanci', { headers: { Accept: 'application/json' } }).then((r) => r.json());
   if (via.startsWith('/api/avvisi-smart/')) return apiServer(percorso, opzioni);
+  if (via.startsWith('/api/streamer/walkon')) return Promise.resolve().then(() => _demoWalkon(via, metodo, opzioni.body || {}));
   if (via.startsWith('/api/streamer/subathon')) return Promise.resolve().then(() => _demoSubathon(via, metodo, opzioni.body || {}));
   if (via === '/api/streamer/effetti/lancio') return Promise.resolve(_demoLancio(opzioni.body || {}));
   if (metodo === 'GET' && via === '/api/streamer/libreria') return Promise.resolve(_demoLibreria(percorso));
@@ -4692,6 +4738,7 @@ const GRUPPI = [
     ['clip', 'Clip'],
     ['musica', 'Musica'],
     ['subathon', 'Subathon'],
+    ['walkon', 'Walk-on'],
     ['consolify', 'CONSOLify'],
   ] },
   { id: 'scena', nome: 'Scena e overlay', schede: [
@@ -4786,6 +4833,7 @@ const T_SCHEDA = {
   clip: ['Clip', 'Clips', 'Clips'],
   musica: ['Musica', 'Music', 'Música'],
   subathon: ['Subathon', 'Subathon', 'Subathon'],
+  walkon: ['Walk-on', 'Walk-on', 'Walk-on'],
   consolify: ['CONSOLify', 'CONSOLify', 'CONSOLify'],
   alert: ['Overlay Studio', 'Overlay Studio', 'Overlay Studio'],
   effetti: ['Effetti e suoni', 'Effects & sounds', 'Efectos y sonidos'],
@@ -4879,6 +4927,7 @@ const ICONA = {
   dcentra:     _ico('<path d="M10 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4"/><path d="M15 8l4 4-4 4"/><path d="M19 12H9"/>'),
   dcfiltro:    _ico('<path d="M4 5h16l-6 7v6l-4 2v-8z"/>'),
   musica:      _ico('<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>'),
+  walkon:      _ico('<path d="M13 4h5a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-5"/><circle cx="8" cy="6" r="2"/><path d="M8 9v5l-3 5"/><path d="M8 14l3 5"/><path d="M5 11h6"/>'),
   subathon:    _ico('<path d="M6 2h12"/><path d="M6 22h12"/><path d="M7 2v4a5 5 0 0 0 10 0V2"/><path d="M7 22v-4a5 5 0 0 1 10 0v4"/>'),
   sondaggi:    _ico('<path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/>'),
   partite:     _ico('<path d="M16 11a3 3 0 1 0 0-6"/><path d="M8 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path d="M2 20c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5"/><path d="M16 14.6c3 .2 6 2.2 6 5.4"/>'),
@@ -4928,6 +4977,7 @@ const DESC = {
   dcentra: ['Chi può scrivere appena entra, cosa legge per primo e le domande che gli aprono i canali.', 'Who can write right after joining, what they read first, and the questions that open their channels.', 'Quién puede escribir nada más entrar, qué lee primero y las preguntas que le abren los canales.'],
   dcfiltro: ['Le parole, le liste, lo spam e le menzioni che sul tuo server non passano.', 'The words, lists, spam and mentions that do not get through on your server.', 'Las palabras, listas, spam y menciones que en tu servidor no pasan.'],
   musica: ['Richieste musicali: gli spettatori mettono canzoni in coda su Spotify.', 'Music requests: viewers queue songs on Spotify.', 'Peticiones musicales: los espectadores ponen canciones en cola en Spotify.'],
+  walkon: ['Chi è sub sceglie la sua entrata in scena: un tuo effetto o un suo file, che tu o i mod approvate.', 'Subscribers pick their entrance: one of your effects or a file of their own, which you or your mods approve.', 'Quien es sub elige su entrada en escena: un efecto tuyo o un archivo suyo, que tú o tus mods aprobáis.'],
   subathon: ['La diretta dura quanto dice l’orologio: sub, bit, donazioni e altro lo allungano, e se qualcosa si rompe lo rimetti a posto a mano.', 'The stream lasts as long as the clock says: subs, bits, donations and more stretch it, and if something breaks you fix it by hand.', 'El directo dura lo que diga el reloj: subs, bits, donaciones y más lo alargan, y si algo se rompe lo arreglas a mano.'],
   sondaggi: ['Crea sondaggi e predizioni Twitch al volo.', 'Create Twitch polls and predictions on the fly.', 'Crea encuestas y predicciones de Twitch al vuelo.'],
   partite: ['Giochi con la chat: fila, chi gioca ogni manche, risultati e monete.', 'Play with your chat: queue, who plays each round, results and coins.', 'Juega con tu chat: fila, quién juega cada ronda, resultados y monedas.'],
@@ -5113,6 +5163,8 @@ const GUIDE = {
     come: [['Attiva le clip automatiche.', 'Enable automatic clips.', 'Activa los clips automáticos.', '#chk-clip'], ['Regola la sensibilità (quanto “hype” serve).', 'Adjust the sensitivity (how much “hype” it takes).', 'Ajusta la sensibilidad (cuánto “hype” hace falta).', '#rng-clip-sens']] },
   ascolto: { serve: ['Comandare il bot con la VOCE mentre streami (l’audio resta sul tuo PC).', 'Control the bot by VOICE while you stream (audio stays on your PC).', 'Controlar el bot por VOZ mientras haces directo (el audio se queda en tu PC).'],
     come: [['Apri l’ascolto vocale e concedi il microfono al browser.', 'Open voice listening and allow the microphone in the browser.', 'Abre la escucha por voz y concede el micrófono al navegador.', '#btn-apri-voce'], ['Di’ le frasi-chiave dei tuoi moduli vocali (es. “clippa”).', 'Say the key phrases of your voice modules (e.g. “clip it”).', 'Di las frases clave de tus módulos de voz (p. ej. “clipea”).', '#inp-cat-trigger']] },
+  walkon: { serve: ['Il walk-on: chi è sub sceglie cosa succede in diretta quando scrive per la prima volta, e tu o i mod lo approvate prima.', 'The walk-on: subscribers choose what happens on stream when they first write, and you or your mods approve it first.', 'El walk-on: quien es sub elige qué pasa en el directo cuando escribe por primera vez, y tú o los mods lo aprobáis antes.'],
+    come: [['Accendilo e scegli chi può e cosa si può scegliere, poi salva.', 'Turn it on and pick who can and what can be chosen, then save.', 'Enciéndelo y elige quién puede y qué se puede elegir, y guarda.', '#wo-attivo'], ['Manda il link della pagina a chi è sub.', 'Send the page link to your subscribers.', 'Manda el enlace de la página a tus subs.', '#wo-copia'], ['Approva o rifiuta quello che arriva: si approva quello che si vede.', 'Approve or reject what comes in: what gets approved is what is seen.', 'Aprueba o rechaza lo que llega: se aprueba lo que se ve.', '#wo-moderazione']] },
   subathon: { serve: ['Una subathon: ogni sub, bit o donazione allunga la diretta, con un tetto, i traguardi e il libro di ogni mossa.', 'A subathon: every sub, bit or donation stretches the stream, with a cap, milestones and the book of every move.', 'Un subathon: cada sub, bit o donación alarga el directo, con un tope, metas y el libro de cada movimiento.'],
     come: [['Scegli quanti minuti vale ogni cosa, e salva.', 'Pick how many minutes each thing is worth, and save.', 'Elige cuántos minutos vale cada cosa, y guarda.', '#sb-fonti'], ['Accendi la subathon e falla partire.', 'Turn the subathon on and start it.', 'Enciende el subathon y ponlo en marcha.', '#sb-avvia'], ['Se un evento si perde, aggiungilo a mano: resta scritto nel libro.', 'If an event is missed, add it by hand: it stays written in the book.', 'Si se pierde un evento, añádelo a mano: queda escrito en el libro.', '#sb-mano']] },
   musica: { serve: ['Richieste musicali: gli spettatori mettono canzoni in coda su Spotify.', 'Music requests: viewers queue songs on Spotify.', 'Peticiones musicales: los espectadores ponen canciones en cola en Spotify.'],
@@ -6210,6 +6262,7 @@ function vistaPiattaforma() {
     ${pannelloAscolto()}
     ${pannelloMusica()}
     ${pannelloSubathon()}
+    ${pannelloWalkon()}
     ${pannelloSondaggi()}
     ${pannelloGiveaway()}
     ${pannelloPartite()}
@@ -11179,6 +11232,300 @@ async function avviaSubathon() {
   catch (e) { toast(e.message, 'errore'); }
 }
 
+const WO_STATO = { dati: null, bozza: null, filtro: 'attesa' };
+STATI_SALVA['wo-salva'] = {
+  completo: true,
+  stato: () => WO_STATO.bozza,
+  rimetti: (v) => { WO_STATO.bozza = v; _woRiempi(); },
+};
+const WO_TESTI_SERIE = {
+  it: { titolo: 'La tua entrata in scena da {canale}', dida: 'Sei sub? Scegli cosa succede in diretta la prima volta che scrivi in chat: un effetto del canale, o un\'immagine, un video, un audio tuo. Prima che vada in onda lo guarda un moderatore.', riga: 'Fate largo: entra in scena {nome}!' },
+  en: { titolo: 'Your entrance on {canale}', dida: 'Subscribed? Choose what happens on stream the first time you write in chat: one of the channel\'s effects, or an image, a video, a sound of your own. A moderator checks it before it goes live.', riga: 'Make way: {nome} takes the stage!' },
+  es: { titolo: 'Tu entrada en escena en {canale}', dida: '¿Eres sub? Elige qué pasa en el directo la primera vez que escribes en el chat: un efecto del canal, o una imagen, un vídeo, un audio tuyo. Antes de salir al aire lo revisa un moderador.', riga: '¡Abran paso: {nome} entra en escena!' },
+};
+const WO_LINGUE = () => [['it', 'Italiano'], ['en', 'English'], ['es', 'Español']];
+const WO_NOMI_STATO = () => ({ attesa: L('In attesa', 'Pending', 'En espera'), approvato: L('Approvato', 'Approved', 'Aprobado'), rifiutato: L('Rifiutato', 'Rejected', 'Rechazado'), sospeso: L('Sospeso', 'Suspended', 'Suspendido') });
+const WO_COLORE_STATO = { attesa: 'giallo', approvato: 'verde', rifiutato: 'rosso', sospeso: 'rosso' };
+const WO_NOME_TIPO = () => ({ immagine: L('immagine', 'image', 'imagen'), video: L('video', 'video', 'vídeo'), audio: L('audio', 'sound', 'audio') });
+const WO_NOMI_TIPO = () => ({ immagine: L('Immagini', 'Images', 'Imágenes'), video: L('Video', 'Videos', 'Vídeos'), audio: L('Audio', 'Sounds', 'Audios') });
+const WO_AZIONI = () => ({ salvato: L('ha mandato', 'sent', 'envió'), approvato: L('approvato', 'approved', 'aprobado'), rifiutato: L('rifiutato', 'rejected', 'rechazado'), tolto: L('cancellato', 'deleted', 'borrado'), sospeso: L('sospeso: non ha più i requisiti', 'suspended: no longer eligible', 'suspendido: ya no cumple los requisitos'), ripreso: L('di nuovo valido', 'eligible again', 'válido de nuevo') });
+
+function pannelloWalkon() {
+  const num = (via, testo, lo, hi) => `<label class="campo-num">${esc(testo)}<input type="number" data-wo="${via}" min="${lo}" max="${hi}"></label>`;
+  const spunta = (via, id, testo) => `<div class="riga-interruttore spazio-sopra"><label class="interruttore"><input type="checkbox" id="${id}" data-wo="${via}"><span class="levetta"></span></label><span class="etichetta-stato">${esc(testo)}</span></div>`;
+  const testi = WO_LINGUE().map(([l, n]) => `<fieldset class="wo-lingua spazio-sopra"><legend>${esc(n)}</legend>
+        <label class="campo" for="wo-t-${l}-titolo">${L('Titolo della pagina', 'Page title', 'Título de la página')}</label><input type="text" id="wo-t-${l}-titolo" data-wo="testi.${l}.titolo" maxlength="120" placeholder="${esc(WO_TESTI_SERIE[l].titolo)}">
+        <label class="campo" for="wo-t-${l}-dida">${L('Presentazione', 'Introduction', 'Presentación')}</label><textarea id="wo-t-${l}-dida" data-wo="testi.${l}.dida" maxlength="400" rows="3" placeholder="${esc(WO_TESTI_SERIE[l].dida)}"></textarea>
+        <label class="campo" for="wo-t-${l}-riga">${L('La riga in chat quando entra', 'The chat line when they enter', 'La línea en el chat cuando entra')}</label><input type="text" id="wo-t-${l}-riga" data-wo="testi.${l}.riga" maxlength="200" placeholder="${esc(WO_TESTI_SERIE[l].riga)}">
+      </fieldset>`).join('');
+  return pannello('walkon', `
+    <div class="carta" id="wo-carta" data-salva-con="wo-salva">
+      <h2>${_hIco(ICO.utente)}Walk-on</h2>
+      <p>${L('Chi è sub sceglie la sua entrata in scena: uno degli effetti che offri tu, o un’immagine, un video, un audio suo. Lo guardi tu o un moderatore, e parte la prima volta che scrive in chat in una diretta.', 'Subscribers pick their entrance: one of the effects you offer, or an image, a video, a sound of their own. You or a moderator check it, and it plays the first time they write in chat during a stream.', 'Quien es sub elige su entrada en escena: uno de los efectos que ofreces, o una imagen, un vídeo, un audio suyo. Lo revisas tú o un moderador, y sale la primera vez que escribe en el chat durante un directo.')}</p>
+      ${spunta('attivo', 'wo-attivo', L('Walk-on acceso', 'Walk-on on', 'Walk-on encendido'))}
+      <p class="riga-flessibile spazio-sopra"><span>${L('La pagina dove si fa:', 'The page where it is made:', 'La página donde se hace:')}</span> <a id="wo-link" href="#" target="_blank" rel="noopener"></a>
+        <button type="button" class="btn secondario mini" id="wo-copia">${L('Copia il link', 'Copy the link', 'Copiar el enlace')}</button></p>
+      <p class="suggerimento">${L('In scena entra nella carta «Walk-on» dell’Overlay Studio: lì la sposti e la vesti.', 'On screen it plays in the «Walk-on» card of the Overlay Studio: move it and style it there.', 'En escena sale en la tarjeta «Walk-on» del Overlay Studio: ahí la mueves y la vistes.')}
+        <button type="button" class="btn secondario mini" data-vai-scheda="alert">${_bIco(ICO.scene)}${L('Apri lo Studio', 'Open the Studio', 'Abrir el Studio')}</button></p>
+    </div>
+
+    <div class="carta" id="wo-moderazione">
+      <h3>${_hIco(ICO.occhio)}${L('Da moderare', 'To moderate', 'Para moderar')}</h3>
+      <p>${L('Si approva quello che si vede: se la persona lo cambia, torna qui in attesa. La mail che ha lasciato per l’esito non la vede nessuno, nemmeno tu.', 'What gets approved is what is seen: if the person changes it, it comes back here pending. The email they left for the outcome is seen by nobody, not even you.', 'Se aprueba lo que se ve: si la persona lo cambia, vuelve aquí en espera. El correo que dejó para el resultado no lo ve nadie, ni siquiera tú.')}</p>
+      <div class="riga-flessibile" id="wo-filtri" role="group"></div>
+      <div id="wo-voci" class="wo-voci spazio-sopra"></div>
+    </div>
+
+    <details class="carta sez" id="wo-chi" data-salva-con="wo-salva">
+      <summary><h3>${_hIco(ICO.utenti)}${L('Chi può', 'Who can', 'Quién puede')}</h3></summary>
+      ${spunta('chi.subTwitch', 'wo-sub-twitch', L('Sub su Twitch', 'Twitch subscribers', 'Subs en Twitch'))}
+      <label class="campo-num spazio-sopra">${L('Dal livello', 'From tier', 'Desde el nivel')}<select data-wo="chi.livello"><option value="1">1</option><option value="2">2</option><option value="3">3</option></select></label>
+      ${spunta('chi.subKick', 'wo-sub-kick', L('Sub su Kick', 'Kick subscribers', 'Subs en Kick'))}
+      ${spunta('chi.vip', 'wo-vip', 'VIP')}
+      ${spunta('chi.mod', 'wo-mod', L('Moderatori', 'Moderators', 'Moderadores'))}
+      <label class="campo spazio-sopra" for="wo-persone">${L('E chi scegli tu, uno per riga («pippo» su Twitch, «kick:pippo» su Kick)', 'And whoever you pick, one per line («pippo» on Twitch, «kick:pippo» on Kick)', 'Y quien elijas tú, uno por línea («pippo» en Twitch, «kick:pippo» en Kick)')}</label>
+      <textarea id="wo-persone" data-wo-righe="chi.persone" rows="3"></textarea>
+      <p class="suggerimento">${L('Si guarda quando salva e di nuovo quando entra: chi non è più sub non entra in scena, e il suo walk-on resta sospeso finché non torna.', 'It is checked when they save and again when they enter: whoever is no longer subscribed does not take the stage, and their walk-on stays suspended until they are back.', 'Se mira cuando guarda y otra vez cuando entra: quien ya no es sub no sale en escena, y su walk-on queda suspendido hasta que vuelva.')}</p>
+    </details>
+
+    <details class="carta sez" id="wo-cosa" data-salva-con="wo-salva">
+      <summary><h3>${_hIco(ICO.effetti)}${L('Cosa si può scegliere', 'What can be chosen', 'Qué se puede elegir')}</h3></summary>
+      ${spunta('effetti.attivo', 'wo-eff-attivo', L('Un effetto del canale, fra quelli che scegli qui', 'A channel effect, among the ones you pick here', 'Un efecto del canal, entre los que eliges aquí'))}
+      <div id="wo-effetti" class="wo-scelte-eff spazio-sopra"></div>
+      ${spunta('effetti.senzaApprovazione', 'wo-eff-subito', L('Un effetto del canale parte senza approvazione (l’hai già scelto tu)', 'A channel effect needs no approval (you already picked it)', 'Un efecto del canal sale sin aprobación (ya lo elegiste tú)'))}
+      ${spunta('file.attivo', 'wo-file-attivo', L('Un file suo', 'A file of their own', 'Un archivo suyo'))}
+      <div class="riga-flessibile spazio-sopra" id="wo-tipi"></div>
+      <div class="goal-campi spazio-sopra">
+        ${num('file.pesoMb', L('Peso massimo (MB)', 'Max size (MB)', 'Peso máximo (MB)'), 1, 30)}
+        ${num('file.durataSec', L('Video e audio fino a (secondi)', 'Video and sound up to (seconds)', 'Vídeo y audio hasta (segundos)'), 1, 30)}
+      </div>
+      ${spunta('testo.attivo', 'wo-testo-attivo', L('Una riga di testo sotto, con {nome}', 'A line of text below, with {nome}', 'Una línea de texto debajo, con {nome}'))}
+      <div class="goal-campi spazio-sopra">${num('testo.max', L('Caratteri al massimo', 'Max characters', 'Caracteres como máximo'), 0, 200)}</div>
+    </details>
+
+    <details class="carta sez" id="wo-quando" data-salva-con="wo-salva">
+      <summary><h3>${_hIco(ICO.orologio)}${L('Quando parte', 'When it plays', 'Cuándo sale')}</h3></summary>
+      <label class="campo-num">${L('Parte', 'It plays', 'Sale')}<select data-wo="partenza.modo"><option value="messaggio">${L('al primo messaggio in chat della diretta', 'at the first chat message of the stream', 'con el primer mensaje en el chat del directo')}</option><option value="comando">${L('quando scrive il comando', 'when they type the command', 'cuando escribe el comando')}</option></select></label>
+      <label class="campo-num spazio-sopra">${L('Il comando (senza !)', 'The command (without !)', 'El comando (sin !)')}<input type="text" data-wo="partenza.comando" maxlength="25"></label>
+      <div class="goal-campi spazio-sopra">
+        ${num('attesaSec', L('Attesa fra due walk-on (secondi)', 'Wait between two walk-ons (seconds)', 'Espera entre dos walk-ons (segundos)'), 0, 600)}
+        ${num('perDiretta', L('Al massimo per diretta', 'At most per stream', 'Como máximo por directo'), 1, 500)}
+        ${num('durataSec', L('Durata massima in scena (secondi)', 'Max time on screen (seconds)', 'Duración máxima en escena (segundos)'), 2, 30)}
+        ${num('durataImmagineSec', L('Un’immagine resta (secondi)', 'An image stays (seconds)', 'Una imagen se queda (segundos)'), 1, 30)}
+        ${num('volume', L('Volume (0-100)', 'Volume (0-100)', 'Volumen (0-100)'), 0, 100)}
+      </div>
+      ${spunta('riga.attiva', 'wo-riga-attiva', L('Il bot lo dice in chat quando entra', 'The bot says it in chat when they enter', 'El bot lo dice en el chat cuando entra'))}
+      <p class="suggerimento">${L('Una volta per diretta, solo in onda e con un overlay aperto. Uno alla volta: il prossimo aspetta che finisca il primo, più l’attesa.', 'Once per stream, only while live and with an overlay open. One at a time: the next waits for the first to end, plus the wait.', 'Una vez por directo, solo en el aire y con un overlay abierto. Uno a la vez: el siguiente espera a que termine el primero, más la espera.')}</p>
+    </details>
+
+    <details class="carta sez" id="wo-testi" data-salva-con="wo-salva">
+      <summary><h3>${_hIco(ICO.scrivi)}${L('I testi', 'The texts', 'Los textos')}</h3></summary>
+      <p class="suggerimento">${L('Vuoti, valgono quelli di serie. {canale} è il tuo nome, {nome} quello di chi entra. La pagina parla nella lingua di chi la apre; la riga in chat in quella della tua chat.', 'Left empty, the default ones apply. {canale} is your name, {nome} the name of whoever enters. The page speaks the visitor’s language; the chat line your chat’s language.', 'Vacíos, valen los de serie. {canale} es tu nombre, {nome} el de quien entra. La página habla en el idioma de quien la abre; la línea del chat en el de tu chat.')}</p>
+      ${testi}
+      <h4 class="spazio-sopra">${L('I motivi pronti per il rifiuto', 'Ready-made reasons for a rejection', 'Los motivos listos para el rechazo')}</h4>
+      <p class="suggerimento">${L('La persona lo legge nella sua lingua, sulla pagina e nella mail.', 'The person reads it in their language, on the page and in the email.', 'La persona lo lee en su idioma, en la página y en el correo.')}</p>
+      <div id="wo-motivi"></div>
+      <p><button type="button" class="btn secondario mini" id="wo-motivo-piu">${_bIco(ICO.piu)}${L('Aggiungi un motivo', 'Add a reason', 'Añadir un motivo')}</button></p>
+      <p class="spazio-sopra"><button type="button" class="btn" id="wo-salva">${L('Salva', 'Save', 'Guardar')}</button></p>
+    </details>
+
+    <details class="carta sez" id="wo-registro-carta">
+      <summary><h3>${_hIco(ICO.libro)}${L('Registro', 'Log', 'Registro')}</h3></summary>
+      <p class="suggerimento">${L('Ogni walk-on mandato, deciso o cancellato: chi, quando, cosa.', 'Every walk-on sent, decided or deleted: who, when, what.', 'Cada walk-on enviado, decidido o borrado: quién, cuándo, qué.')}</p>
+      <ol class="wo-registro" id="wo-registro"></ol>
+    </details>`);
+}
+
+function _woVia(o, via) { return String(via).split('.').reduce((x, k) => (x == null ? undefined : x[k]), o); }
+function _woMetti(o, via, v) {
+  const p = String(via).split('.');
+  let x = o;
+  for (const k of p.slice(0, -1)) { if (x[k] == null || typeof x[k] !== 'object') x[k] = {}; x = x[k]; }
+  x[p.at(-1)] = v;
+}
+
+function _woRiempi() {
+  const b = WO_STATO.bozza, d = WO_STATO.dati;
+  const box = _g('scheda-walkon');
+  if (!b || !box) return;
+  box.querySelectorAll('[data-wo]').forEach((el) => {
+    const v = _woVia(b, el.dataset.wo);
+    if (el.type === 'checkbox') el.checked = !!v; else el.value = v == null ? '' : String(v);
+  });
+  box.querySelectorAll('[data-wo-righe]').forEach((el) => { el.value = (_woVia(b, el.dataset.woRighe) || []).map((x) => (String(x).startsWith('twitch:') ? String(x).slice(7) : x)).join('\n'); });
+  const ef = _g('wo-effetti');
+  if (ef) {
+    const tutti = (d?.effetti || []);
+    ef.innerHTML = tutti.length
+      ? tutti.map((e) => `<label class="wo-eff"><input type="checkbox" data-wo-lista="effetti.voci" value="${esc(e.comando)}"${(b.effetti?.voci || []).includes(e.comando) ? ' checked' : ''}> <span>!${esc(e.comando)}</span> <small class="tenue">${esc(WO_NOME_TIPO()[e.tipo] || e.tipo)}</small></label>`).join('')
+      : `<p class="suggerimento">${L('Non hai ancora immagini, video o audio fra i tuoi effetti.', 'You have no images, videos or sounds among your effects yet.', 'Aún no tienes imágenes, vídeos o audios entre tus efectos.')} <button type="button" class="btn secondario mini" data-vai-scheda="effetti">${L('Apri Effetti e suoni', 'Open Effects & sounds', 'Abrir Efectos y sonidos')}</button></p>`;
+  }
+  const tp = _g('wo-tipi');
+  if (tp) tp.innerHTML = ['immagine', 'video', 'audio'].map((t) => `<label class="wo-eff"><input type="checkbox" data-wo-lista="file.tipi" value="${t}"${(b.file?.tipi || []).includes(t) ? ' checked' : ''}> ${esc(WO_NOMI_TIPO()[t])}</label>`).join('');
+  _woMotivi();
+}
+
+function _woMotivi() {
+  const box = _g('wo-motivi');
+  const b = WO_STATO.bozza;
+  if (!box || !b) return;
+  const m = Array.isArray(b.motivi) ? b.motivi : [];
+  box.innerHTML = m.length ? m.map((x, i) => `<div class="wo-motivo goal-campi" data-wo-motivo="${i}">${WO_LINGUE().map(([l, n]) => `<label class="campo">${esc(n)}<input type="text" maxlength="300" data-wo-ml="${l}" value="${esc(x[l] || '')}"></label>`).join('')}<button type="button" class="btn secondario mini" data-wo-motivo-via aria-label="${esc(L('Togli questo motivo', 'Remove this reason', 'Quitar este motivo'))}">${_bIco(ICO.cestino)}</button></div>`).join('')
+    : `<p class="suggerimento">${L('Nessun motivo pronto: chi rifiuta lo scrive.', 'No ready-made reasons: whoever rejects writes one.', 'Ningún motivo listo: quien rechaza lo escribe.')}</p>`;
+}
+
+function _woLeggi(ev) {
+  const b = WO_STATO.bozza;
+  const el = ev.target;
+  if (!b || !el) return false;
+  if (el.dataset.wo) {
+    const v = el.type === 'checkbox' ? el.checked : el.type === 'number' || el.tagName === 'SELECT' && /^\d+$/.test(el.value) ? Number(el.value) : el.value;
+    _woMetti(b, el.dataset.wo, v);
+    return true;
+  }
+  if (el.dataset.woRighe) { _woMetti(b, el.dataset.woRighe, el.value.split(/\n+/).map((x) => x.trim()).filter(Boolean)); return true; }
+  if (el.dataset.woLista) {
+    const via = el.dataset.woLista;
+    const v = new Set(_woVia(b, via) || []);
+    if (el.checked) v.add(el.value); else v.delete(el.value);
+    _woMetti(b, via, [...v]);
+    return true;
+  }
+  const r = el.closest('[data-wo-motivo]');
+  if (r && el.dataset.woMl) { const x = b.motivi[Number(r.dataset.woMotivo)]; if (x) x[el.dataset.woMl] = el.value; return true; }
+  return false;
+}
+
+function _woFiltri() {
+  const box = _g('wo-filtri');
+  const c = WO_STATO.dati?.conta || {};
+  if (!box) return;
+  const nomi = WO_NOMI_STATO();
+  const voci = [['attesa', nomi.attesa, c.attesa], ['approvato', nomi.approvato, c.approvato], ['rifiutato', nomi.rifiutato, c.rifiutato], ['sospeso', nomi.sospeso, c.sospeso], ['tutti', L('Tutti', 'All', 'Todos'), (c.attesa || 0) + (c.approvato || 0) + (c.rifiutato || 0) + (c.sospeso || 0)]];
+  box.innerHTML = voci.map(([k, n, q]) => `<button type="button" class="btn ${WO_STATO.filtro === k ? '' : 'secondario '}mini" data-wo-filtro="${k}" aria-pressed="${WO_STATO.filtro === k}">${esc(n)} · ${q || 0}</button>`).join('');
+}
+
+function _woAnteprima(v) {
+  if (v.scelta === 'effetto') return `<div class="wo-ant wo-ant-eff">${_bIco(ICO.effetti)}<b>!${esc(v.effetto)}</b></div>`;
+  if (!v.file) return `<div class="wo-ant tenue">${L('nessun file', 'no file', 'ningún archivo')}</div>`;
+  if (v.fileTipo === 'audio') return `<div class="wo-ant"><audio controls preload="none" src="${esc(v.file)}"></audio></div>`;
+  if (v.fileTipo === 'video') return `<div class="wo-ant"><video controls muted playsinline preload="metadata" src="${esc(v.file)}"></video></div>`;
+  return `<div class="wo-ant"><img src="${esc(v.file)}" alt="" loading="lazy"></div>`;
+}
+
+function _woVoci() {
+  const box = _g('wo-voci');
+  const d = WO_STATO.dati;
+  if (!box || !d) return;
+  const f = WO_STATO.filtro;
+  const voci = (d.voci || []).filter((v) => f === 'tutti' || v.stato === f);
+  const motivi = (d.cfg?.motivi || []);
+  const lingua = LINGUA in { it: 1, en: 1, es: 1 } ? LINGUA : 'it';
+  const nomi = WO_NOMI_STATO();
+  if (!voci.length) {
+    box.innerHTML = `<p class="vuoto">${f === 'attesa' ? L('Niente da guardare adesso.', 'Nothing to check right now.', 'Nada que revisar ahora.') : L('Nessun walk-on qui.', 'No walk-ons here.', 'Ningún walk-on aquí.')}</p>`;
+    return;
+  }
+  box.innerHTML = voci.map((v) => {
+    const decidi = v.statoVero === 'attesa' && !v.sospeso;
+    const revoca = v.statoVero === 'approvato';
+    const pf = v.piattaforma === 'kick' ? 'Kick' : 'Twitch';
+    const scelta = motivi.map((m, i) => `<option value="${i}">${esc(m[lingua] || m.it || m.en || m.es || '')}</option>`).join('');
+    return `<div class="wo-voce" data-wo-voce="${v.id}" data-wo-versione="${v.versione}">
+      ${_woAnteprima(v)}
+      <div class="wo-dati">
+        <p><strong>${esc(v.nome || v.login)}</strong> <span class="tenue">${esc(pf)} · ${esc(dataIt(v.aggiornato))}</span> <span class="badge ${WO_COLORE_STATO[v.stato] || 'giallo'}">${esc(nomi[v.stato] || v.stato)}</span></p>
+        ${v.testo ? `<p>«${esc(v.testo.replace(/\{nome\}/g, v.nome || v.login))}»</p>` : ''}
+        ${!v.verificato && v.stato === 'attesa' ? `<p class="suggerimento">${L('Da verificare: non si è potuto controllare adesso se è sub. Lo controllo io quando scrive in chat.', 'To verify: it could not be checked right now whether they are subscribed. I check it when they write in chat.', 'Por verificar: no se pudo comprobar ahora si es sub. Lo compruebo cuando escriba en el chat.')}</p>` : ''}
+        ${v.motivo ? `<p class="tenue">${esc(L('Motivo', 'Reason', 'Motivo'))}: ${esc(v.motivo)}</p>` : ''}
+        ${v.deciso ? `<p class="tenue">${esc(v.statoVero === 'approvato' ? L('Approvato da', 'Approved by', 'Aprobado por') : L('Deciso da', 'Decided by', 'Decidido por'))} ${esc(v.decisoDa === 'regola' ? L('la tua regola', 'your rule', 'tu regla') : v.decisoDa)} · ${esc(dataIt(v.deciso))}</p>` : ''}
+        ${decidi || revoca ? `<div class="goal-campi spazio-sopra">
+          ${motivi.length ? `<label class="campo-num">${L('Motivo pronto', 'Ready-made reason', 'Motivo listo')}<select data-wo-pronto><option value="">${L('scritto da me', 'written by me', 'escrito por mí')}</option>${scelta}</select></label>` : ''}
+          <label class="campo">${L('Motivo (facoltativo)', 'Reason (optional)', 'Motivo (opcional)')}<input type="text" maxlength="300" data-wo-motivo-testo></label>
+        </div>
+        <p class="riga-flessibile">${decidi ? `<button type="button" class="btn mini" data-wo-decidi="approvato">${_bIco(ICO.spunta)}${L('Approva', 'Approve', 'Aprobar')}</button>` : ''}
+          <button type="button" class="btn secondario mini" data-wo-decidi="rifiutato">${_bIco(ICO.divieto)}${revoca ? L('Revoca', 'Revoke', 'Revocar') : L('Rifiuta', 'Reject', 'Rechazar')}</button></p>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function _woRegistro() {
+  const box = _g('wo-registro');
+  const d = WO_STATO.dati;
+  if (!box || !d) return;
+  const az = WO_AZIONI();
+  box.innerHTML = (d.registro || []).length
+    ? d.registro.map((r) => `<li><span class="tenue">${esc(dataIt(r.ts))}</span> <strong>${esc(r.nome)}</strong> ${esc(az[r.azione] || r.azione)}${r.chi && r.azione !== 'salvato' && r.chi !== r.nome ? ` · ${esc(r.chi === 'regola' ? L('la tua regola', 'your rule', 'tu regla') : r.chi)}` : ''}${r.motivo ? ` · «${esc(r.motivo)}»` : ''} <span class="tenue">v${r.versione}</span></li>`).join('')
+    : `<li class="tenue">${L('Ancora niente.', 'Nothing yet.', 'Aún nada.')}</li>`;
+}
+
+function _woDati(d) {
+  WO_STATO.dati = d;
+  if (!WO_STATO.bozza) WO_STATO.bozza = JSON.parse(JSON.stringify(d.cfg || {}));
+  const a = _g('wo-link');
+  if (a) { a.href = d.pagina || '#'; a.textContent = String(d.pagina || '').replace(/^https:\/\//, ''); }
+  _woRiempi();
+  _woFiltri();
+  _woVoci();
+  _woRegistro();
+}
+async function _woCarica() { _woDati(await api('/api/streamer/walkon')); }
+
+async function avviaWalkon() {
+  const scheda = _g('scheda-walkon');
+  if (!scheda) return;
+  if (!scheda.dataset.collegata) {
+    scheda.dataset.collegata = '1';
+    const cambia = (ev) => { if (ev.target.closest('#wo-moderazione')) return; if (_woLeggi(ev)) segnaDaSalvare(ev.target); };
+    scheda.addEventListener('input', cambia);
+    scheda.addEventListener('change', cambia);
+    scheda.addEventListener('click', (ev) => {
+      const b = ev.target.closest('button');
+      if (!b || !scheda.contains(b)) return;
+      if (b.dataset.woFiltro) { WO_STATO.filtro = b.dataset.woFiltro; _woFiltri(); _woVoci(); return; }
+      if (b.dataset.woDecidi) {
+        const v = b.closest('[data-wo-voce]');
+        const esito = b.dataset.woDecidi;
+        conErrore(async () => {
+          const p = v.querySelector('[data-wo-pronto]')?.value;
+          const corpo = { versione: Number(v.dataset.woVersione), esito, motivo: v.querySelector('[data-wo-motivo-testo]')?.value || '' };
+          if (p !== undefined && p !== '') corpo.pronto = Number(p);
+          b.disabled = true;
+          try {
+            const r = await api('/api/streamer/walkon/' + encodeURIComponent(v.dataset.woVoce) + '/decidi', { method: 'POST', body: corpo });
+            _woDati(r);
+            toast(esito === 'approvato' ? L('Approvato ✓', 'Approved ✓', 'Aprobado ✓') : L('Rifiutato: il file è stato tolto.', 'Rejected: the file was removed.', 'Rechazado: el archivo se ha quitado.'));
+          } catch (e) {
+            if (e.dati?.voci) { WO_STATO.dati = null; _woDati(e.dati); }
+            if (e.dati?.perche === 'cambiato') throw new Error(L('Nel frattempo è cambiato: riguardalo prima di decidere.', 'It changed in the meantime: look at it again before deciding.', 'Ha cambiado mientras tanto: revísalo antes de decidir.'));
+            if (e.dati?.perche === 'gia') throw new Error(L('Questa decisione qui non si può prendere: guarda lo stato.', 'That decision cannot be made here: check the status.', 'Esa decisión aquí no se puede tomar: mira el estado.'));
+            throw e;
+          } finally { b.disabled = false; }
+        });
+        return;
+      }
+      if (b.id === 'wo-copia') { conErrore(() => copiaTesto(WO_STATO.dati?.pagina || '', L('Link copiato ✓', 'Link copied ✓', 'Enlace copiado ✓'))); return; }
+      if (b.id === 'wo-motivo-piu') {
+        const m = WO_STATO.bozza.motivi = Array.isArray(WO_STATO.bozza.motivi) ? WO_STATO.bozza.motivi : [];
+        if (m.length >= 10) return;
+        m.push({ it: '', en: '', es: '' });
+        _woMotivi(); segnaDaSalvare(b); return;
+      }
+      if (b.hasAttribute('data-wo-motivo-via')) { WO_STATO.bozza.motivi.splice(Number(b.closest('[data-wo-motivo]').dataset.woMotivo), 1); _woMotivi(); segnaDaSalvare(b); return; }
+      if (b.id === 'wo-salva') {
+        conErrore(async () => {
+          await salvaImpostazioni({ walkon: WO_STATO.bozza }, L('Walk-on salvato ✓', 'Walk-on saved ✓', 'Walk-on guardado ✓'));
+          WO_STATO.bozza = null;
+          await _woCarica();
+        });
+      }
+    });
+  }
+  try { await _woCarica(); }
+  catch (e) { toast(e.message, 'errore'); }
+}
+
 const PAN_STATO = { dati: null, serie: null, motore: null, icone: new Map(), timer: 0, giro: 0, errore: '', aperta: 0 };
 STATI_SALVA['pan-salva'] = {
   completo: true,
@@ -15699,6 +16046,27 @@ function pannelloAlert() {
       <p class="spazio-sopra"><button class="btn" data-salva-cfg="scritta">${L('Salva', 'Save', 'Guardar')}</button></p>
     </details>
 
+    <details class="carta sez" data-parte="aspetto" id="sez-walkon">
+      <summary><h3>${_hIco(ICO.utente)}Walk-on</h3></summary>
+      <p>${L('La carta di chi entra in scena col suo walk-on: il media che ha scelto, il suo nome e la sua riga. Chi può, cosa e quando si decide nella scheda Walk-on; qui dove sta e com\'è vestita.', 'The card of whoever takes the stage with their walk-on: the media they chose, their name and their line. Who, what and when is set in the Walk-on tab; here, where it sits and how it looks.', 'La tarjeta de quien entra en escena con su walk-on: el medio que eligió, su nombre y su línea. Quién, qué y cuándo se decide en la pestaña Walk-on; aquí, dónde está y cómo se viste.')}</p>
+      <p><button type="button" class="btn secondario mini" data-vai-scheda="walkon">${_bIco(ICO.utente)}${L('Apri Walk-on', 'Open Walk-on', 'Abrir Walk-on')}</button></p>
+      <div data-cfg="walkon">
+        <div class="riga-interruttore spazio-sopra">
+          <label class="interruttore"><input type="checkbox" data-c="attivo" id="wos-attivo"><span class="levetta"></span></label>
+          <span class="etichetta-stato">${L('Mostralo nella scena', 'Show it on the scene', 'Muéstralo en la escena')}</span>
+        </div>
+        <div class="asp-blocco" data-asp="walkon" data-cfg-di="walkon">
+          <div class="riga-interruttore spazio-sopra">
+            <label class="interruttore"><input type="checkbox" data-c="nome" id="wos-nome"><span class="levetta"></span></label>
+            <span class="etichetta-stato">${L('Col nome di chi entra', 'With the name of whoever enters', 'Con el nombre de quien entra')}</span>
+          </div>
+          <h4 class="spazio-sopra">${L('Aspetto', 'Appearance', 'Aspecto')}</h4>
+          ${_vesteCampi()}
+        </div>
+      </div>
+      <p class="spazio-sopra"><button class="btn" data-salva-cfg="walkon">${L('Salva', 'Save', 'Guardar')}</button></p>
+    </details>
+
     <details class="carta sez" data-parte="aspetto" id="sez-etichetta">
       <summary><h3>${_hIco(ICO.fulmine)}${L('Nome del comando', 'Command name', 'Nombre del comando')}</h3></summary>
       <p>${L('La pastiglia col nome del comando che compare quando parte un effetto, per esempio «!applausi»: chi guarda capisce chi l\'ha fatto partire e come rifarlo.', 'The pill with the command name that shows when an effect fires, for example «!applause»: viewers see what started it and how to do it again.', 'La pastilla con el nombre del comando que aparece cuando sale un efecto, por ejemplo «!aplausos»: quien mira entiende qué lo lanzó y cómo repetirlo.')}</p>
@@ -16090,7 +16458,7 @@ async function montaFontBrowser(box, targetId) {
 let _conta = [];
 const CONT_BASE = 40;
 const FISSI = ['alert', 'chat', 'wf', 'ws'];
-const ELEM_OVL = [...FISSI, 'goal', 'cont', 'cart', 'musica', 'timer', 'subathon', 'subregole', 'pubblicita', 'tempi', 'treno', 'bit', 'pen', 'boss', 'arena', 'scritta', 'etichetta', 'invito', 'muro', 'effetti', 'pew', 'consolify'];
+const ELEM_OVL = [...FISSI, 'goal', 'cont', 'cart', 'musica', 'timer', 'subathon', 'subregole', 'pubblicita', 'tempi', 'treno', 'bit', 'pen', 'boss', 'arena', 'scritta', 'walkon', 'etichetta', 'invito', 'muro', 'effetti', 'pew', 'consolify'];
 const ELEM_SCENA = ELEM_OVL.filter((k) => k !== 'effetti');
 const SPENTI_DI_SERIE = new Set(['invito', 'subathon', 'subregole']);
 const SENZA_POSTO = new Set(['pew']);
@@ -17024,6 +17392,28 @@ function _vestiScritta(box, cfg) {
   box.querySelector('.scritta-corpo').textContent = L('Grazie a tutti per il raid!', 'Thanks everyone for the raid!', '¡Gracias a todos por el raid!');
 }
 
+const WALKON_ESEMPIO = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="320" height="180" viewBox="0 0 320 180"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f72fa7"/><stop offset="1" stop-color="#5b3cff"/></linearGradient></defs><rect width="320" height="180" rx="14" fill="url(#g)"/><circle cx="160" cy="78" r="34" fill="#ffffff" fill-opacity=".85"/><path d="M96 168c8-34 34-52 64-52s56 18 64 52z" fill="#ffffff" fill-opacity=".85"/></svg>');
+const WO_NOME_ESEMPIO = 'Luna_Gaming';
+function _defWalkon() {
+  return { attivo: true, posizione: 'basso-centro', xy: null, nome: true,
+    stile: { dim: 'media', sfondo: '#100d16', opacita: 85, testo: '#ffffff', accento: '#f72fa7', bordoRaggio: 16, font: 'sistema', forma: 'carta', materia: 'piatta', cornice: 'nessuna', icona: 'stella', dimIcona: 20 } };
+}
+
+function _vestiWalkon(box, cfg) {
+  const st = cfg.stile || {};
+  if (!box.querySelector('.wo-media')) {
+    box.innerHTML = '<img class="wo-media" alt=""><div class="wo-sotto"><div class="wo-nome"></div><div class="wo-riga"></div></div>';
+    box.querySelector('.wo-media').src = WALKON_ESEMPIO;
+  }
+  box.className = 'ovl-widget ovl-walkon dentro dim-' + (st.dim || 'media') + ' ' + classiIdentita(st, 'nessuna');
+  _setVars(box, { '--bg': st.sfondo, '--op': (st.opacita != null ? st.opacita : 85) + '%', '--fg': st.testo,
+    '--acc': st.accento, '--radius': (st.bordoRaggio != null ? st.bordoRaggio : 16) + 'px', '--font': fontStile(st) });
+  const n = box.querySelector('.wo-nome');
+  n.textContent = WO_NOME_ESEMPIO;
+  n.hidden = cfg.nome === false;
+  box.querySelector('.wo-riga').textContent = L(`è arrivata ${WO_NOME_ESEMPIO}!`, `${WO_NOME_ESEMPIO} is here!`, `¡ha llegado ${WO_NOME_ESEMPIO}!`);
+}
+
 function _defEtichetta() {
   return { attivo: true, posizione: 'basso-centro', xy: null,
     stile: { dim: 'media', sfondo: '#ba007a', opacita: 85, testo: '#ffffff', accento: '#f72fa7', bordoRaggio: 30, font: 'sistema', forma: 'carta', materia: 'piatta', cornice: 'nessuna', icona: 'stella', dimIcona: 20 } };
@@ -17270,7 +17660,7 @@ async function _disegnaPremiMuro() {
       : `<p class="vuoto">${L(`Non hai ancora premi a punti canale su ${_premiSu()}: creane uno e torna qui.`, `You have no channel-point rewards on ${_premiSu()} yet: create one and come back here.`, `Aún no tienes recompensas de puntos de canal en ${_premiSu()}: crea una y vuelve aquí.`)}</p>`);
 }
 
-const VESTITORE = { musica: _vestiMusica, pen: _vestiPen, timer: _vestiTimer, subathon: _vestiSubathon, subregole: _vestiSubregole, pubblicita: _vestiPubblicita, tempi: _vestiTempi, treno: _vestiTreno, bit: _vestiBit, boss: _vestiBoss, arena: _vestiArena, scritta: _vestiScritta, etichetta: _vestiEtichetta, invito: _vestiInvito, muro: _vestiMuro, effetti: _vestiEffetti };
+const VESTITORE = { musica: _vestiMusica, pen: _vestiPen, timer: _vestiTimer, subathon: _vestiSubathon, subregole: _vestiSubregole, pubblicita: _vestiPubblicita, tempi: _vestiTempi, treno: _vestiTreno, bit: _vestiBit, boss: _vestiBoss, arena: _vestiArena, scritta: _vestiScritta, walkon: _vestiWalkon, etichetta: _vestiEtichetta, invito: _vestiInvito, muro: _vestiMuro, effetti: _vestiEffetti };
 
 function _orologioGiu(ms) {
   const t = Math.max(0, Math.ceil(ms / 1000));
@@ -17578,6 +17968,7 @@ const PEZZI_EL = () => [
   ['boss', '#sez-boss'],
   ['arena', '#sez-arena'],
   ['scritta', '#sez-scritta'],
+  ['walkon', '#sez-walkon'],
   ['etichetta', '#sez-etichetta'],
   ['invito', '#sez-invito'],
   ['muro', '#sez-muro'],
@@ -17915,6 +18306,7 @@ const ELEMENTI = () => {
   out.push({ k: 'boss', ico: ICO.target, n: L('Boss', 'Boss', 'Jefe'), cfg: 'overlayBoss' });
   out.push({ k: 'arena', ico: ICO.scudo, n: L('Arena delle emote', 'Emote arena', 'Arena de emotes'), cfg: 'overlayArena' });
   out.push({ k: 'scritta', ico: ICO.testo, n: L('Testo a schermo', 'On-screen text', 'Texto en pantalla'), cfg: 'overlayScritta' });
+  out.push({ k: 'walkon', ico: ICO.utente, n: 'Walk-on', cfg: 'overlayWalkon' });
   out.push({ k: 'etichetta', ico: ICO.fulmine, n: L('Nome del comando', 'Command name', 'Nombre del comando'), cfg: 'overlayEtichetta' });
   out.push({ k: 'invito', ico: ICO.scrivi, n: L('Invito ai Pew', 'Pew invitation', 'Invitación a los Pew'), cfg: 'overlayInvito' });
   out.push({ k: 'muro', ico: ICO.faccina, n: L('Muro delle emote', 'Emote wall', 'Muro de emotes'), cfg: 'overlayMuro' });
@@ -17970,7 +18362,7 @@ function _defTimer() {
     minuti: 15, posizione: 'alto-destra', xy: null, stile: VESTE_DEF() };
 }
 
-const _DEF_EL = { musica: _defMusica, timer: _defTimer, subathon: _defSubathon, subregole: _defSubregole, pubblicita: _defPubblicita, tempi: _defTempi, treno: _defTreno, bit: _defBit, boss: _defBoss, arena: _defArena, scritta: _defScritta, etichetta: _defEtichetta, invito: _defInvito, muro: _defMuro, effetti: () => ({ attivo: true, posizione: 'centro', xy: null }), pen: () => ({ attivo: false, durataMin: 2, overlay: { posizione: 'alto-destra', colore: '#ff2d2d' } }) };
+const _DEF_EL = { musica: _defMusica, timer: _defTimer, subathon: _defSubathon, subregole: _defSubregole, pubblicita: _defPubblicita, tempi: _defTempi, treno: _defTreno, bit: _defBit, boss: _defBoss, arena: _defArena, scritta: _defScritta, walkon: _defWalkon, etichetta: _defEtichetta, invito: _defInvito, muro: _defMuro, effetti: () => ({ attivo: true, posizione: 'centro', xy: null }), pen: () => ({ attivo: false, durataMin: 2, overlay: { posizione: 'alto-destra', colore: '#ff2d2d' } }) };
 
 const _pianoObj = (x) => !!x && typeof x === 'object' && !Array.isArray(x);
 function _unisci(base, su) {
@@ -18064,7 +18456,7 @@ function _accendiDi(k, v) {
   if (e && e.cont) { (e.cont.overlayCfg = e.cont.overlayCfg || {}).mostra = !!v; return; }
   if (e && e.cfg) {
     _cfgEl(k).attivo = !!v;
-    const chk = _g({ musica: 'mus-attivo', timer: 'tim-attivo', pen: 'pen-attivo', boss: 'boss-attivo', arena: 'arena-attivo', scritta: 'scr-attivo', etichetta: 'eti-attivo', invito: 'inv-attivo', muro: 'muro-attivo', subathon: 'sba-attivo', subregole: 'sbr-attivo' }[k]);
+    const chk = _g({ musica: 'mus-attivo', timer: 'tim-attivo', pen: 'pen-attivo', boss: 'boss-attivo', arena: 'arena-attivo', scritta: 'scr-attivo', walkon: 'wos-attivo', etichetta: 'eti-attivo', invito: 'inv-attivo', muro: 'muro-attivo', subathon: 'sba-attivo', subregole: 'sbr-attivo' }[k]);
     if (chk) chk.checked = !!v;
     return;
   }
@@ -38928,6 +39320,7 @@ function caricaDatiScheda(id) {
   if (id === 'kit') avviaKit();
   if (id === 'pannelli') avviaPannelli();
   if (id === 'subathon') avviaSubathon();
+  if (id === 'walkon') avviaWalkon();
   if (id === 'personalita') { caricaGuide(); caricaSpontanee(); caricaFrasiBot(); }
   if (id === 'conoscenza') { caricaConoscenza(); caricaQuaderno(); caricaRetePanoramica(); }
   if (id === 'clip') caricaClip();

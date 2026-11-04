@@ -71,6 +71,7 @@ const palcoSchermo = document.getElementById('palco-schermo');
 const etichette = document.getElementById('etichette');
 const invitoBox = document.getElementById('invito');
 const testi = document.getElementById('testi');
+const walkonBox = document.getElementById('walkon');
 const penBox = document.getElementById('penitenze');
 const alertBox = document.getElementById('alert');
 const chatBox = document.getElementById('chatlive');
@@ -438,6 +439,79 @@ function ridisegnaScritte() {
   if (!scrittaAccesa()) { testi.textContent = ''; return; }
   testi.querySelectorAll('.ovl-scritta').forEach(vestiScritta);
   posaScritte();
+}
+
+function walkonAcceso() { return mostra('walkon') && !!MIO.walkon && MIO.walkon.attivo !== false; }
+
+function vestiWalkon(el) {
+  const st = (MIO.walkon && MIO.walkon.stile) || {};
+  el.className = 'ovl-widget ovl-walkon dim-' + (st.dim || 'media') + ' ' + classiIdentita(st, 'nessuna') + (el._dentro ? ' dentro' : '');
+  applicaVars(el, {
+    '--bg': st.sfondo, '--op': st.opacita != null ? st.opacita + '%' : null, '--fg': st.testo,
+    '--acc': st.accento, '--radius': st.bordoRaggio != null ? st.bordoRaggio + 'px' : null, '--font': fontDi(st) || null,
+  });
+}
+
+function posaWalkon() { posizionaContenitore(walkonBox, MIO.xy.walkon, 'basso-centro'); }
+
+let walkonChiudi = null;
+function mostraWalkon(ev) {
+  if (!walkonBox || !walkonAcceso()) return;
+  if (walkonChiudi) walkonChiudi(true);
+  const m = ev.media || {};
+  const vol = volume01(ev);
+  const el = document.createElement('div');
+  let medium = null, fermaScontorno = null, fermaTimer = null, chiuso = false;
+  if (m.tipo === 'immagine' && m.url) {
+    medium = document.createElement('img');
+    medium.src = m.url; medium.alt = '';
+  } else if (m.tipo === 'video' && m.url) {
+    const v = document.createElement('video');
+    v.src = m.url; v.autoplay = true; v.playsInline = true; v.volume = vol;
+    if (m.chroma && m.chroma.colore && window.SB_SCONTORNO) {
+      medium = document.createElement('canvas');
+      fermaScontorno = window.SB_SCONTORNO.scontorna(v, m.chroma, medium, { misurata: posaWalkon });
+    } else medium = v;
+    v.addEventListener('error', function () { guaio('walkon-video', 'il file non si apre: ' + String(m.url).split('?')[0]); });
+    avvia(v, 'walkon-video');
+    medium._video = v;
+  } else if (m.tipo === 'audio' && m.url) {
+    suonaUrl(m.url, vol, 'walkon-audio');
+  }
+  if (medium) { medium.className = 'wo-media'; el.appendChild(medium); }
+  if (m.suonoUrl) suonaUrl(m.suonoUrl, vol, 'walkon-suono');
+  const sotto = document.createElement('div');
+  sotto.className = 'wo-sotto';
+  if (MIO.walkon.nome !== false && ev.nome) { const n = document.createElement('div'); n.className = 'wo-nome'; n.textContent = String(ev.nome).slice(0, 40); sotto.appendChild(n); }
+  if (ev.testo) { const t = document.createElement('div'); t.className = 'wo-riga'; t.textContent = String(ev.testo).slice(0, 200); sotto.appendChild(t); }
+  if (sotto.childNodes.length) el.appendChild(sotto);
+  walkonBox.textContent = '';
+  walkonBox.appendChild(el);
+  vestiWalkon(el);
+  posaWalkon();
+  if (medium && medium.tagName === 'IMG') medium.addEventListener('load', posaWalkon, { once: true });
+  requestAnimationFrame(() => { el._dentro = true; el.classList.add('dentro'); });
+  const chiudi = (subito) => {
+    if (chiuso) return; chiuso = true;
+    if (walkonChiudi === chiudi) walkonChiudi = null;
+    if (fermaTimer) fermaTimer();
+    if (fermaScontorno) fermaScontorno();
+    const v = medium && medium._video;
+    el._dentro = false; el.classList.remove('dentro');
+    setTimeout(() => { try { if (v) v.pause(); } catch (e) {} el.remove(); }, subito ? 0 : 320);
+  };
+  walkonChiudi = chiudi;
+  const v = medium && medium._video;
+  if (v) v.addEventListener('ended', () => chiudi());
+  const t = setTimeout(chiudi, v ? Math.min(Number(ev.tetto) || TETTO_MEDIA_MS, TETTO_MEDIA_MS) : durataMs(ev, 6000));
+  fermaTimer = () => clearTimeout(t);
+}
+
+function ridisegnaWalkon() {
+  if (!walkonBox) return;
+  if (!walkonAcceso()) { if (walkonChiudi) walkonChiudi(true); walkonBox.textContent = ''; return; }
+  walkonBox.querySelectorAll('.ovl-walkon').forEach(vestiWalkon);
+  posaWalkon();
 }
 
 let bossScena = null;
@@ -1488,6 +1562,7 @@ function ricevi(m) {
     else if (dati.tipo === 'bit') { if (Array.isArray(dati.righe)) MIO.bitRighe = dati.righe; disegnaBit(); }
     else if (dati.tipo === 'tema') caricaTema();
     else if (dati.tipo === 'testo') mostraTesto(dati);
+    else if (dati.tipo === 'walkon') mostraWalkon(dati);
     else if (dati.tipo === 'boss') { boss(dati); muroBoss(dati); }
     else if (dati.tipo === 'arena') arena(dati);
     else if (dati.tipo === 'contatore') contatore(dati);
@@ -2413,6 +2488,8 @@ function applicaTema(t) {
   ridisegnaScritte();
   MIO.etichetta = t.etichetta || null;
   ridisegnaEtichette();
+  MIO.walkon = t.walkon || null;
+  ridisegnaWalkon();
   MIO.invito = t.invito || null;
   disegnaInvito();
   MIO.subathon = t.subathon || null;

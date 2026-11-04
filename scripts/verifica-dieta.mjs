@@ -135,7 +135,16 @@ const SELFTEST = process.argv.includes('--selftest');
 // arrivata a 63489 byte, uno sopra il tetto. Invece di alzarlo, la frase si e'
 // accorciata finche' diceva lo stesso (63483). La misura ora si stampa anche in
 // byte: con cinque byte d'aria, un decimale di kB non basta a vederla.
-const TETTO_KB = 62;
+//
+// Il 4 novembre e' entrata la voce del walk-on (docs/WALKON.md), su una home
+// che la subathon accorciata aveva lasciato a 63468 byte, 20 sotto il tetto.
+// La frase si e' accorciata finche' diceva ancora cosa e' (titolo «Walk-on» uguale
+// nelle tre lingue, una riga sola: 63522 → 63510), ma la carta da sola, coi
+// suoi campi e la sua voce nell'elenco, costa piu' dei byte d'aria. Cercato
+// cosa potesse uscire dalla home: niente che non sia gia' suo (le altre voci
+// sono le schede del prodotto, e la pagina non porta piu' il rientro). Il
+// tetto va a 63: la misura di oggi (62,0 kB) con l'aria di prima.
+const TETTO_KB = 63;
 
 let chromium;
 if (!CHROMIUM) { console.log('Chromium non c\'e\' su questa macchina: collaudo saltato.'); process.exit(0); }

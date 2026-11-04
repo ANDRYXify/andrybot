@@ -88,7 +88,10 @@ test('nella disposizione libera ogni pezzo e\' posato sulla corsa dello spazio i
 test('una variabile non piu\' chiesta si toglie, di qua e di la\'', () => {
   assert.ok(/el\.style\.setProperty\(k, x\); else el\.style\.removeProperty\(k\); \} \}/.test(APP), 'la tela toglie la variabile quando il valore e\' nullo');
   assert.ok(/el\.style\.setProperty\(k, String\(vars\[k\]\)\); else el\.style\.removeProperty\(k\); \} \}/.test(OVL), 'la diretta pure');
-  assert.ok(!/max-width: 27em/.test(SKIN) && !/max-width: 22em/.test(SKIN), 'la carta non ha un tetto che ruba spazio alla colonna del testo');
+  // solo le regole del player: un altro pezzo (la carta del walk-on) puo' avere il suo tetto
+  const PLAYER = SKIN.split('}').filter((r) => /\.ovl-musica|\.m-[a-z]/.test(r.split('{')[0])).join('}');
+  assert.ok(PLAYER.length > 1000, 'le regole del player si leggono');
+  assert.ok(!/max-width: 27em/.test(PLAYER) && !/max-width: 22em/.test(PLAYER), 'la carta non ha un tetto che ruba spazio alla colonna del testo');
 });
 
 test('il cancello dell\'anteprima misura i pezzi e sa quando la diretta li ignora', () => {

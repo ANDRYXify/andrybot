@@ -32,6 +32,7 @@
     studio: 'studio diretta dal sito senza obs beta multistream twitch kick youtube scene camera webcam schermo mixer audio osify live from site without obs directo desde el sitio sin obs',
     clip: 'clip momenti highlight ritaglia registra clips momentos grabar',
     musica: 'musica spotify song request canzoni richieste brani coda music playlist canciones cola dj',
+    walkon: 'walk-on walkon entrata in scena ingresso dei sub sub entrano chi entra effetto di ingresso approva rifiuta moderazione file caricati pagina won entrance subscriber walk on approve reject entrada en escena aprobar rechazar',
     subathon: 'subathon maratona orologio tempo che sale allunga allungare minuti per sub tetto ore traguardi ora felice pausa riprendi libro annulla aggiungi tempo a mano marathon timer extend milestones happy hour maratón reloj alargar metas hora feliz',
     alert: 'overlay alert studio scena widget browser source obs allerte follow sub bit raid chat a schermo emote 7tv avvisi notifica a schermo layout editor livelli sovrimpressione escena capa aviso occasione occasioni subathon torno subito pausa serata speciale compleanno evento modelli aggiunta temporanea ocasion ocasiones occasion contatore contatori counter contador copia dell overlay duplica scena',
     effetti: 'effetti suoni audio sound sfx gif immagini video premi punti canale riscatto riscatti redeem efectos sonidos',

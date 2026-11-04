@@ -1,18 +1,18 @@
 // © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
 // Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
-// Manuale: la diretta (Regia, Clip, Musica, Subathon, Dirette, Statistiche). La forma dei manuali e il perche' stanno in
+// Manuale: la diretta (Regia, Clip, Musica, Subathon, Walk-on, Dirette, Statistiche). La forma dei manuali e il perche' stanno in
 // src/web/manuali.js; le lingue in docs/LINGUE.md.
 
 export default {
   slug: 'diretta',
-  schede: ['regia', 'clip', 'musica', 'subathon', 'dirette', 'statistiche'],
+  schede: ['regia', 'clip', 'musica', 'subathon', 'walkon', 'dirette', 'statistiche'],
   titolo: 'Manuale della diretta: regia, clip, musica, rapporti | SocialBot',
   h1: 'Manuale della diretta: regia, clip, musica, rapporti e statistiche',
   desc: 'Titolo, categoria, pubblicità e raid dal pannello, le clip che nascono da sole, le richieste su Spotify, il rapporto di ogni diretta e i numeri del canale.',
-  aggiornata: '2026-10-29',
+  aggiornata: '2026-11-04',
   corpo: [
     { p: [
-      'Queste schede servono <strong>mentre trasmetti</strong> e subito dopo. Stanno nel gruppo «In diretta» del menù: «Regia», «Clip», «Musica», «Subathon» e «CONSOLify». «Dirette» e «Statistiche» stanno nel gruppo «Numeri».',
+      'Queste schede servono <strong>mentre trasmetti</strong> e subito dopo. Stanno nel gruppo «In diretta» del menù: «Regia», «Clip», «Musica», «Subathon», «Walk-on» e «CONSOLify». «Dirette» e «Statistiche» stanno nel gruppo «Numeri».',
       'Clip automatiche, richieste musicali, messaggi della pubblicità e rapporti girano sul server: vanno avanti anche se chiudi il pannello. I tasti a portata di dito hanno il loro manuale: <a href="/manuale/consolify">CONSOLify</a>.',
       'I moderatori che hai fatto entrare nel pannello usano queste schede come te. Restano a te, proprietario del canale, i permessi di Twitch, il collegamento con Spotify, i premi a punti canale della musica e l\'indirizzo mail dei rapporti.',
       'Se usi SocialBot solo per Discord, queste schede non compaiono.',
@@ -161,6 +161,33 @@ export default {
     { p: ['I <strong>traguardi</strong> sono sul tempo aggiunto in tutto («a +2 ore, cosplay»): in scena c\'è la barra verso il prossimo, e quando lo passi lo dicono la chat e l\'alert. Ogni frase del bot e degli alert ha un testo di serie nella lingua della chat, e puoi scriverne uno tuo. Gli alert (allungamento, traguardo, pausa, fine) hanno suono e immagine dalla libreria e partono con la veste degli alert degli eventi.'] },
     { h3: 'Pannelli per Twitch' },
     { p: ['La scheda disegna le regole come immagini per i pannelli sotto la diretta, con i colori della tua pagina link o due temi: le scarichi, e «Copia la descrizione» ti dà il testo da incollare. Cambi un numero e le immagini cambiano.'] },
+
+    // ---------------------------------------------------------------- WALK-ON
+    { h2: 'Walk-on', scheda: 'walkon', p: [
+      'Chi è sub sceglie la sua <strong>entrata in scena</strong>: uno degli effetti del canale che offri tu, oppure un\'immagine, un video o un audio suo, con una riga di testo sotto. Lo fa dalla pagina <code>socialbot.live/won/&lt;canale&gt;</code>, entrando con Twitch o con Kick (serve solo a sapere chi è: non chiediamo di fare niente a suo nome).',
+      'Tu o i moderatori lo approvate prima che vada in onda, e parte la prima volta che quella persona scrive in chat durante una diretta. Di serie il walk-on è spento.',
+    ] },
+    { h3: 'Chi può, e cosa si sceglie' },
+    { ul: [
+      '<strong>Chi può</strong>: sub su Twitch (dal livello che scegli), sub su Kick, VIP, moderatori, e chi scrivi tu a mano, uno per riga («pippo» su Twitch, «kick:pippo» su Kick). Si controlla quando salva e di nuovo quando entra: chi non è più sub non entra in scena e il suo walk-on resta <strong>sospeso</strong>; se torna sub, torna com\'era.',
+      '<strong>Gli effetti del canale</strong>: solo immagini, video e audio, e solo quelli che spunti tu. Puoi far partire un effetto del canale senza approvazione, perché l\'hai già scelto tu.',
+      '<strong>Un file suo</strong>: i tipi che accetti, il peso massimo (fino a 30 MB) e la durata massima di video e audio (fino a 30 secondi). Il tipo lo leggiamo dal file stesso, non dal nome; un file più lungo del massimo si rifiuta. Il file sta in un posto suo, non entra nella tua libreria.',
+      '<strong>La riga sotto</strong>: facoltativa, fino ai caratteri che scegli; <code>{nome}</code> diventa il nome di chi entra.',
+    ] },
+    { h3: 'La moderazione' },
+    { p: ['In «Da moderare» vedi l\'anteprima vera (il file o l\'effetto), chi l\'ha chiesto e quando. «Approva» o «Rifiuta», con un motivo pronto o scritto: un file rifiutato si cancella subito. Si approva quello che si vede: se la persona lo cambia, torna in attesa, e una decisione presa su una versione vecchia non passa. Un walk-on approvato si può revocare. Il registro tiene ogni invio, decisione e cancellazione, con chi e quando.'] },
+    { p: ['Chi fa il walk-on può lasciare una <strong>mail</strong> per sapere l\'esito, se la posta del bot è accesa. La usiamo una volta sola, alla decisione, e poi la cancelliamo: né tu né i moderatori la vedete, nemmeno nell\'esportazione dei dati.'] },
+    { h3: 'Quando parte' },
+    { tabella: [
+      ['Impostazione', 'Di base', 'Limiti'],
+      ['«Parte»', 'al primo messaggio della diretta', 'oppure col comando, di serie <code>!walkon</code>'],
+      ['«Attesa fra due walk-on»', '20 secondi', 'da 0 a 600'],
+      ['«Al massimo per diretta»', '30', 'da 1 a 500'],
+      ['«Durata massima in scena»', '8 secondi', 'da 2 a 30'],
+      ['«Un’immagine resta»', '5 secondi', 'da 1 a 30'],
+      ['«Volume»', '80', 'da 0 a 100'],
+    ] },
+    { p: ['Una volta per diretta, solo in onda e con un overlay aperto; uno alla volta, e il prossimo aspetta che il primo finisca più l\'attesa. Un messaggio scritto mentre il walk-on era ancora in attesa non brucia l\'entrata. In scena va nella carta «Walk-on» dell\'Overlay Studio, che sposti e vesti come gli altri elementi. Il bot può dirlo in chat. Titolo e presentazione della pagina, la riga in chat e i motivi pronti li scrivi in italiano, inglese e spagnolo.'] },
 
     // ----------------------------------------------------------------- MUSICA
     { h2: 'Musica: le richieste degli spettatori su Spotify', scheda: 'musica', p: [

@@ -135,7 +135,7 @@ if (!browser) { console.log('  –  saltato: manca Chromium o Playwright'); proc
 // il tema e il brano che il finto bot serve alla pagina dell'overlay: li scrive
 // l'editor, caso per caso, cosi' le due pagine vestono la stessa cosa
 let TEMA = null, MUSICA = { stato: 'niente' };
-const MOSTRA = { alert: true, chat: true, wf: true, ws: true, goal: true, cont: true, musica: true, timer: true, treno: true, cart: true, pen: true, boss: true, arena: true, scritta: true, etichetta: true, invito: true, muro: true, effetti: true, pew: true, consolify: true };
+const MOSTRA = { alert: true, chat: true, wf: true, ws: true, goal: true, cont: true, musica: true, timer: true, treno: true, cart: true, pen: true, boss: true, arena: true, scritta: true, walkon: true, etichetta: true, invito: true, muro: true, effetti: true, pew: true, consolify: true };
 const ovl = overlayFinto({ tema: () => TEMA, musica: () => MUSICA });
 const { base, chiudi } = await apriSito({ overlay: ovl });
 
@@ -606,6 +606,37 @@ try {
     dice(edS && lvS && vicino(edS.w, lvS.w) && vicino(edS.h, lvS.h) && vicino(edS.font, lvS.font, 0.6)
       && edDove && lvDove && vicino(edDove.x, lvDove.x, 2) && vicino(edDove.y, lvDove.y, 2),
       `subathon ${nome}: editor ${edS ? mis(edS) : '–'} a ${edDove ? Math.round(edDove.x) + ',' + Math.round(edDove.y) : '–'} = diretta ${lvS ? mis(lvS) : '–'} a ${lvDove ? Math.round(lvDove.x) + ',' + Math.round(lvDove.y) : '–'}`,
+      'editor e diretta non coincidono');
+  }
+
+  // --- 6-sexies-quater. il walk-on -----------------------------------------
+  // La carta di chi entra in scena (docs/WALKON.md, «In scena»): lo stesso
+  // media, lo stesso nome e la stessa riga, grande uguale e nello stesso posto,
+  // al suo angolo, in un punto e vestita.
+  const WO_VESTE = { dim: 'grande', sfondo: '#203040', opacita: 95, testo: '#ffffee', accento: '#22aa66', bordoRaggio: 4, font: 'sistema', forma: 'carta', materia: 'piatta', cornice: 'linea' };
+  for (const [nome, xy, stile] of [['al suo angolo', null, null], ['in un punto', { x: 40, y: 35, s: 100, r: 0 }, null], ['vestito', { x: 65, y: 60, s: 120, r: 0 }, WO_VESTE]]) {
+    const es = await ed.evaluate(async ({ xy, stile }) => {
+      const c = _cfgEl('walkon'); c.attivo = true; c.nome = true; c.stile = { ..._defWalkon().stile, ...(stile || {}) };
+      const q = _ovXY(); for (const k of Object.keys(q)) delete q[k];
+      if (xy) q.walkon = { ...xy };
+      aggiornaAnteprima();
+      await new Promise((r) => setTimeout(r, 600));
+      const b = document.querySelector('#ap-walkon .ovl-walkon');
+      return { cfg: JSON.parse(JSON.stringify(c)), url: WALKON_ESEMPIO, nome: b?.querySelector('.wo-nome')?.textContent || '', riga: b?.querySelector('.wo-riga')?.textContent || '' };
+    }, { xy, stile });
+    const edW = await misuraEd('#ap-walkon .ovl-walkon');
+    const edDove = await ed.evaluate(`(${DOVE_S})('#ap-walkon .ovl-walkon')`);
+    TEMA = { css: '', widget: {}, goals: [], conti: {}, timer: null, musica: null, stato: {}, mostra: MOSTRA, xy: xy ? { walkon: xy } : {}, alertStile: null, chatStile: null,
+      walkon: { ...es.cfg, xy: null } };
+    await apriLive(() => typeof MIO !== 'undefined' && MIO.walkon);
+    ovl.manda({ tipo: 'walkon', id: 'prova', nome: es.nome, testo: es.riga, media: { tipo: 'immagine', url: es.url }, durata: 60000, volume: 0 });
+    await live.waitForFunction(() => { const i = document.querySelector('#walkon .ovl-walkon.dentro img'); return i && i.complete && i.naturalWidth > 0; }, null, { timeout: 5000 }).catch(() => {});
+    await attesa(600);
+    const lvW = await misuraLive('#walkon .ovl-walkon');
+    const lvDove = await live.evaluate(`(${DOVE_S})('#walkon .ovl-walkon')`);
+    dice(es.nome && edW && lvW && vicino(edW.w, lvW.w) && vicino(edW.h, lvW.h) && vicino(edW.font, lvW.font, 0.6)
+      && edDove && lvDove && vicino(edDove.x, lvDove.x, 2) && vicino(edDove.y, lvDove.y, 2),
+      `walk-on ${nome}: editor ${edW ? mis(edW) : '–'} a ${edDove ? Math.round(edDove.x) + ',' + Math.round(edDove.y) : '–'} = diretta ${lvW ? mis(lvW) : '–'} a ${lvDove ? Math.round(lvDove.x) + ',' + Math.round(lvDove.y) : '–'}`,
       'editor e diretta non coincidono');
   }
 

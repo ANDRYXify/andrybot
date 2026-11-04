@@ -688,6 +688,23 @@ export class Helix {
     } catch (e) { log.debug('getVips:', e?.message || e); return null; }
   }
 
+  // UNA PERSONA E' ABBONATA, E A CHE LIVELLO (docs/WALKON.md). { sub, livello }
+  // (livello 1, 2, 3; 0 se non e' sub), o null se Twitch non l'ha detto: un
+  // «non lo so» non e' un «no».
+  async abbonamento(channelLogin, userId) {
+    const s = streamers.get(channelLogin);
+    const id = String(userId || '');
+    if (!s?.user_id || !/^\d{1,20}$/.test(id)) return null;
+    try {
+      const token = await this.auth.getToken('broadcaster', channelLogin);
+      const j = await this._request('GET', '/subscriptions', { query: { broadcaster_id: s.user_id, user_id: id }, token });
+      const r = (j?.data || []).find((x) => String(x?.user_id) === id);
+      if (!r) return { sub: false, livello: 0 };
+      const t = Number(r.tier) || 1000;
+      return { sub: true, livello: t >= 3000 ? 3 : t >= 2000 ? 2 : 1 };
+    } catch (e) { log.debug('abbonamento:', e?.message || e); return null; }
+  }
+
   // CHI, FRA QUESTI, E' ABBONATO. Scope 'channel:read:subscriptions'.
   // Si chiede in blocchi da cento: una domanda sola per cento persone, invece
   // di cento domande. Torna un insieme di id, o `null` se non l'abbiamo potuto

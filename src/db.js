@@ -962,6 +962,58 @@ CREATE TABLE IF NOT EXISTS presenti (        -- chi ha scritto «!presente» (do
   ts INTEGER NOT NULL,
   PRIMARY KEY (channel, chi)
 );
+CREATE TABLE IF NOT EXISTS walkon (          -- il walk-on di chi e' sub (docs/WALKON.md): una riga per persona per canale
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  channel TEXT NOT NULL,
+  persona TEXT NOT NULL,                       -- l'id Twitch, k:<id> su Kick (la persona dei Pew)
+  piattaforma TEXT NOT NULL DEFAULT 'twitch',
+  login TEXT NOT NULL DEFAULT '',
+  nome TEXT NOT NULL DEFAULT '',
+  lingua TEXT NOT NULL DEFAULT 'it',           -- la lingua con cui ha salvato: quella dell'esito
+  scelta TEXT NOT NULL DEFAULT 'file' CHECK (scelta IN ('effetto','file')),
+  effetto TEXT NOT NULL DEFAULT '',            -- il comando di un effetto del canale
+  file TEXT NOT NULL DEFAULT '',               -- il nome fatto dal server, in DATA_DIR/walkon/<canale>/
+  file_tipo TEXT NOT NULL DEFAULT '',          -- immagine | video | audio
+  file_durata INTEGER NOT NULL DEFAULT 0,
+  testo TEXT NOT NULL DEFAULT '',
+  stato TEXT NOT NULL DEFAULT 'attesa' CHECK (stato IN ('attesa','approvato','rifiutato')),
+  sospeso INTEGER NOT NULL DEFAULT 0,          -- un segno accanto allo stato: chi torna sub torna com'era
+  versione INTEGER NOT NULL DEFAULT 1,         -- si approva quello che si vede: la decisione porta la versione
+  verificato INTEGER NOT NULL DEFAULT 0,       -- i requisiti provati quando si e' salvato (0: da verificare)
+  motivo TEXT NOT NULL DEFAULT '',
+  creato INTEGER NOT NULL,
+  aggiornato INTEGER NOT NULL,
+  deciso INTEGER NOT NULL DEFAULT 0,
+  deciso_da TEXT NOT NULL DEFAULT '',
+  UNIQUE (channel, persona)
+);
+CREATE TABLE IF NOT EXISTS walkon_entrate (  -- una entrata per persona per diretta: la chiave e' la riga
+  channel TEXT NOT NULL,
+  occasione TEXT NOT NULL,                     -- la diretta (arrivi.occasioneDiretta)
+  persona TEXT NOT NULL,
+  ts INTEGER NOT NULL,
+  PRIMARY KEY (channel, occasione, persona)
+);
+CREATE TABLE IF NOT EXISTS walkon_registro ( -- ogni salvataggio, decisione e cancellazione: chi, quando, cosa
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  channel TEXT NOT NULL,
+  persona TEXT NOT NULL,
+  nome TEXT NOT NULL DEFAULT '',
+  versione INTEGER NOT NULL DEFAULT 0,
+  azione TEXT NOT NULL,
+  chi TEXT NOT NULL DEFAULT '',
+  motivo TEXT NOT NULL DEFAULT '',
+  ts INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_walkon_registro ON walkon_registro(channel, id);
+CREATE TABLE IF NOT EXISTS walkon_posta (    -- la mail dell'esito, in una tabella sua: nessuna lettura del walk-on la porta con se'
+  channel TEXT NOT NULL,
+  persona TEXT NOT NULL,
+  versione INTEGER NOT NULL,                   -- vale per la versione con cui e' stata data
+  busta TEXT NOT NULL,                         -- segreti.cifra, col suo posto
+  ts INTEGER NOT NULL,
+  PRIMARY KEY (channel, persona)
+);
 CREATE TABLE IF NOT EXISTS pew_dirette (     -- le dirette del canale, in ordine: «di fila» vuol dire una dopo l'altra in questo elenco
   channel TEXT NOT NULL,
   occasione TEXT NOT NULL,
@@ -2130,6 +2182,151 @@ export const subathonLibro = {
   riga(channel, id) { return _sb.riga.get(String(channel).toLowerCase(), String(id || '')) || null; },
   // tutto insieme o niente: la riga e l'orologio
   insieme(fn) { return db.transaction(fn)(); },
+};
+
+// IL WALK-ON (docs/WALKON.md). Le garanzie stanno nello schema: una riga per
+// persona per canale (UNIQUE), una entrata per diretta (la chiave primaria di
+// walkon_entrate), una decisione solo sulla versione vista (WHERE versione=?).
+// La mail sta in walkon_posta e la legge solo `decidi`, che la toglie nella
+// stessa transazione: nessun'altra funzione qui la nomina.
+const _wo = {
+  riga: db.prepare('SELECT * FROM walkon WHERE channel=? AND persona=?'),
+  perId: db.prepare('SELECT * FROM walkon WHERE channel=? AND id=?'),
+  salva: db.prepare(`INSERT INTO walkon (channel, persona, piattaforma, login, nome, lingua, scelta, effetto, file, file_tipo, file_durata, testo, stato, sospeso, versione, verificato, motivo, creato, aggiornato, deciso, deciso_da)
+    VALUES (@channel, @persona, @piattaforma, @login, @nome, @lingua, @scelta, @effetto, @file, @file_tipo, @file_durata, @testo, @stato, 0, 1, @verificato, '', @ora, @ora, @deciso, @deciso_da)
+    ON CONFLICT(channel, persona) DO UPDATE SET piattaforma=excluded.piattaforma, login=excluded.login, nome=excluded.nome, lingua=excluded.lingua,
+      scelta=excluded.scelta, effetto=excluded.effetto, file=excluded.file, file_tipo=excluded.file_tipo, file_durata=excluded.file_durata, testo=excluded.testo,
+      stato=excluded.stato, sospeso=0, versione=walkon.versione+1, verificato=excluded.verificato, motivo='', aggiornato=excluded.aggiornato,
+      deciso=excluded.deciso, deciso_da=excluded.deciso_da`),
+  decidi: db.prepare(`UPDATE walkon SET stato=@stato, motivo=@motivo, deciso=@ora, deciso_da=@chi,
+    file=CASE WHEN @stato='rifiutato' THEN '' ELSE file END, file_tipo=CASE WHEN @stato='rifiutato' THEN '' ELSE file_tipo END
+    WHERE channel=@channel AND id=@id AND versione=@versione AND (stato='attesa' OR (stato='approvato' AND @stato='rifiutato'))`),
+  togli: db.prepare('DELETE FROM walkon WHERE channel=? AND persona=?'),
+  sospendi: db.prepare('UPDATE walkon SET sospeso=? WHERE channel=? AND persona=? AND sospeso<>?'),
+  verificato: db.prepare('UPDATE walkon SET verificato=1 WHERE channel=? AND persona=? AND verificato=0'),
+  elenco: db.prepare('SELECT * FROM walkon WHERE channel=? ORDER BY (stato=\'attesa\' AND sospeso=0) DESC, aggiornato DESC LIMIT ?'),
+  conta: db.prepare(`SELECT SUM(stato='attesa' AND sospeso=0) attesa, SUM(stato='approvato' AND sospeso=0) approvato, SUM(stato='rifiutato' AND sospeso=0) rifiutato,
+    SUM(sospeso=1) sospeso FROM walkon WHERE channel=?`),
+  attese: db.prepare('SELECT COUNT(*) n FROM walkon WHERE channel=? AND stato=\'attesa\''),
+  file: db.prepare('SELECT file FROM walkon WHERE channel=? AND file<>\'\''),
+  inScena: db.prepare('SELECT 1 FROM walkon WHERE channel=? AND file=? AND stato=\'approvato\' AND sospeso=0'),
+  entra: db.prepare('INSERT OR IGNORE INTO walkon_entrate (channel, occasione, persona, ts) VALUES (?,?,?,?)'),
+  entrate: db.prepare('SELECT COUNT(*) n FROM walkon_entrate WHERE channel=? AND occasione=?'),
+  entrato: db.prepare('SELECT 1 FROM walkon_entrate WHERE channel=? AND occasione=? AND persona=?'),
+  scrivi: db.prepare('INSERT INTO walkon_registro (channel, persona, nome, versione, azione, chi, motivo, ts) VALUES (?,?,?,?,?,?,?,?)'),
+  pota: db.prepare('DELETE FROM walkon_registro WHERE channel=? AND id <= (SELECT id FROM walkon_registro WHERE channel=? ORDER BY id DESC LIMIT 1 OFFSET 500)'),
+  registro: db.prepare('SELECT nome, versione, azione, chi, motivo, ts FROM walkon_registro WHERE channel=? ORDER BY id DESC LIMIT ?'),
+  posta: db.prepare(`INSERT INTO walkon_posta (channel, persona, versione, busta, ts) VALUES (?,?,?,?,?)
+    ON CONFLICT(channel, persona) DO UPDATE SET versione=excluded.versione, busta=excluded.busta, ts=excluded.ts`),
+  haPosta: db.prepare('SELECT 1 FROM walkon_posta WHERE channel=? AND persona=? AND versione=?'),
+  prendiPosta: db.prepare('SELECT busta FROM walkon_posta WHERE channel=? AND persona=? AND versione=?'),
+  togliPosta: db.prepare('DELETE FROM walkon_posta WHERE channel=? AND persona=?'),
+  pulisciEntrate: db.prepare('DELETE FROM walkon_entrate WHERE ts<?'),
+};
+const _woDove = (ch, persona) => ({ tabella: 'walkon_posta', colonna: 'busta', riga: ch + '/' + persona });
+const _woReg = (ch, persona, nome, versione, azione, chi = '', motivo = '', ora = now()) => {
+  _wo.scrivi.run(ch, String(persona), String(nome || '').slice(0, 40), Math.trunc(versione) || 0, azione, String(chi || '').slice(0, 40), String(motivo || '').slice(0, 300), ora);
+  _wo.pota.run(ch, ch);
+};
+export const walkon = {
+  get(channel, persona) { return _wo.riga.get(String(channel).toLowerCase(), String(persona || '')) || null; },
+  perId(channel, id) { return _wo.perId.get(String(channel).toLowerCase(), Math.trunc(Number(id)) || 0) || null; },
+  elenco(channel, limite = 300) { return _wo.elenco.all(String(channel).toLowerCase(), Math.max(1, Math.min(1000, Math.trunc(limite) || 300))); },
+  conta(channel) {
+    const r = _wo.conta.get(String(channel).toLowerCase()) || {};
+    return { attesa: r.attesa || 0, approvato: r.approvato || 0, rifiutato: r.rifiutato || 0, sospeso: r.sospeso || 0 };
+  },
+  inAttesa(channel) { return _wo.attese.get(String(channel).toLowerCase()).n; },
+  // i nomi dei file che una riga usa: quelli della cartella che nessuno nomina sono orfani
+  fileUsati(channel) { return new Set(_wo.file.all(String(channel).toLowerCase()).map((r) => r.file)); },
+  // un file che l'overlay puo' chiedere: di un walk-on approvato e non sospeso
+  inScena(channel, file) { return !!file && !!_wo.inScena.get(String(channel).toLowerCase(), String(file)); },
+  // Salva (o sostituisce) il walk-on di una persona: una versione nuova, in
+  // attesa (o approvata, se la regola dello streamer lo dice), senza segno di
+  // sospeso. La mail di prima vale per la versione di prima: se ne va, e resta
+  // solo quella data adesso. Torna { riga, vecchioFile }.
+  salva(channel, persona, d, { approvato = false, chi = '', mail = '', ora = now() } = {}) {
+    const ch = String(channel).toLowerCase(), p = String(persona || '');
+    if (!ch || !p) return null;
+    return db.transaction(() => {
+      const prima = _wo.riga.get(ch, p) || null;
+      _wo.salva.run({
+        channel: ch, persona: p, piattaforma: d.piattaforma === 'kick' ? 'kick' : 'twitch', login: String(d.login || '').slice(0, 40), nome: String(d.nome || '').slice(0, 40),
+        lingua: ['it', 'en', 'es'].includes(d.lingua) ? d.lingua : 'it', scelta: d.scelta === 'effetto' ? 'effetto' : 'file', effetto: String(d.effetto || '').slice(0, 40),
+        file: String(d.file || ''), file_tipo: String(d.fileTipo || ''), file_durata: Math.max(0, Math.round(Number(d.fileDurata) || 0)), testo: String(d.testo || '').slice(0, 200),
+        stato: approvato ? 'approvato' : 'attesa', verificato: d.verificato ? 1 : 0, ora, deciso: approvato ? ora : 0, deciso_da: approvato ? String(chi || '').slice(0, 40) : '',
+      });
+      const riga = _wo.riga.get(ch, p);
+      _wo.togliPosta.run(ch, p);
+      if (mail) _wo.posta.run(ch, p, riga.versione, cifra(String(mail), _woDove(ch, p)), ora);
+      _woReg(ch, p, riga.nome, riga.versione, 'salvato', riga.nome, '', ora);
+      if (approvato) _woReg(ch, p, riga.nome, riga.versione, 'approvato', chi, '', ora);
+      return { riga, vecchioFile: prima?.file && prima.file !== riga.file ? prima.file : '' };
+    })();
+  },
+  // La decisione, sulla versione vista. { ok, riga, vecchioFile, mail }: la
+  // mail esce di qui una volta sola, e nello stesso momento non c'e' piu'.
+  decidi(channel, id, versione, esito, { motivo = '', chi = '', ora = now() } = {}) {
+    const ch = String(channel).toLowerCase();
+    if (!['approvato', 'rifiutato'].includes(esito)) return { ok: false, perche: 'esito' };
+    return db.transaction(() => {
+      const prima = _wo.perId.get(ch, Math.trunc(Number(id)) || 0);
+      if (!prima) return { ok: false, perche: 'manca' };
+      const r = _wo.decidi.run({ stato: esito, motivo: String(motivo || '').slice(0, 300), ora, chi: String(chi || '').slice(0, 40), channel: ch, id: prima.id, versione: Math.trunc(Number(versione)) || 0 });
+      // una versione che non e' piu' quella vista, o una decisione che non si puo'
+      // prendere (un rifiutato e' chiuso: il file non c'e' piu'; si revoca solo un approvato)
+      if (!r.changes) return { ok: false, perche: prima.versione !== Math.trunc(Number(versione)) ? 'cambiato' : 'gia' };
+      const busta = _wo.prendiPosta.get(ch, prima.persona, prima.versione)?.busta || '';
+      _wo.togliPosta.run(ch, prima.persona);
+      _woReg(ch, prima.persona, prima.nome, prima.versione, esito, chi, motivo, ora);
+      return { ok: true, riga: _wo.perId.get(ch, prima.id), vecchioFile: esito === 'rifiutato' ? prima.file : '', mail: busta ? decifra(busta, _woDove(ch, prima.persona)) : '' };
+    })();
+  },
+  // Toglie il walk-on (e la sua mail): torna il file da togliere dal disco.
+  togli(channel, persona, { chi = '', ora = now() } = {}) {
+    const ch = String(channel).toLowerCase(), p = String(persona || '');
+    return db.transaction(() => {
+      const prima = _wo.riga.get(ch, p);
+      if (!prima) return null;
+      _wo.togli.run(ch, p);
+      _wo.togliPosta.run(ch, p);
+      _woReg(ch, p, prima.nome, prima.versione, 'tolto', chi || prima.nome, '', ora);
+      return { file: prima.file };
+    })();
+  },
+  // Il segno di chi non ha piu' i requisiti (o li ha di nuovo). Vero se e' cambiato.
+  sospendi(channel, persona, si, { ora = now() } = {}) {
+    const ch = String(channel).toLowerCase(), p = String(persona || '');
+    return db.transaction(() => {
+      const v = si ? 1 : 0;
+      if (!_wo.sospendi.run(v, ch, p, v).changes) return false;
+      const r = _wo.riga.get(ch, p);
+      _woReg(ch, p, r.nome, r.versione, si ? 'sospeso' : 'ripreso', '', '', ora);
+      return true;
+    })();
+  },
+  verificato(channel, persona) { return _wo.verificato.run(String(channel).toLowerCase(), String(persona || '')).changes === 1; },
+  // ENTRARE IN SCENA: una volta per diretta, sotto il tetto. Vero se e' entrato.
+  entra(channel, occasione, persona, { tetto = 0, ora = now() } = {}) {
+    const ch = String(channel).toLowerCase(), occ = String(occasione || ''), p = String(persona || '');
+    if (!ch || !occ || !p) return false;
+    return db.transaction(() => {
+      if (tetto > 0 && _wo.entrate.get(ch, occ).n >= tetto) return false;
+      return _wo.entra.run(ch, occ, p, ora).changes === 1;
+    })();
+  },
+  entrato(channel, occasione, persona) { return !!_wo.entrato.get(String(channel).toLowerCase(), String(occasione || ''), String(persona || '')); },
+  entrate(channel, occasione) { return _wo.entrate.get(String(channel).toLowerCase(), String(occasione || '')).n; },
+  registro(channel, n = 60) { return _wo.registro.all(String(channel).toLowerCase(), Math.max(1, Math.min(500, Math.trunc(n) || 60))); },
+  // La mail per la versione di adesso: la mette o la toglie la persona.
+  mettiPosta(channel, persona, versione, indirizzo, ora = now()) {
+    const ch = String(channel).toLowerCase(), p = String(persona || '');
+    if (!indirizzo) { _wo.togliPosta.run(ch, p); return true; }
+    return _wo.posta.run(ch, p, Math.trunc(versione) || 0, cifra(String(indirizzo), _woDove(ch, p)), ora).changes === 1;
+  },
+  // c'e' o non c'e' (per la pagina di chi l'ha data): mai l'indirizzo
+  haPosta(channel, persona, versione) { return !!_wo.haPosta.get(String(channel).toLowerCase(), String(persona || ''), Math.trunc(versione) || 0); },
+  pulisci(ora = now()) { _wo.pulisciEntrate.run(ora - 400 * 86400_000); },
 };
 
 export const pewBit = {

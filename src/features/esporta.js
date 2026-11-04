@@ -34,6 +34,7 @@ export const NEGATE = {
   link_page_visite: 'contatore di visite grezzo, con dati di chi ha visitato',
   messages: 'i messaggi della chat sono di CHI LI HA SCRITTI, non del canale: escono solo i propri',
   stream_context: 'stato momentaneo della diretta, non dati',
+  walkon_posta: 'la mail che chi ha fatto un walk-on ha lasciato per sapere l\'esito: e\' sua, non del canale, e lo streamer non la vede mai (docs/WALKON.md)',
   tg_scudo: 'chi ha chiesto di entrare nel gruppo Telegram: sono dati di quelle persone, tenuti una settimana per mostrare allo streamer come sono andate, con dentro le prove momentanee della pagina',
 };
 

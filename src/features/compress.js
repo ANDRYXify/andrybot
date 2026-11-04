@@ -287,6 +287,10 @@ export async function verificaAlfa(out, s) {
   }
 }
 
+// La durata vera di un file, prima di comprimerlo (docs/WALKON.md, «Il file»):
+// chi ha un tetto di durata lo controlla sulla sorgente. null se non si legge.
+export function durataFile(percorso) { return sondaDurataMs(percorso); }
+
 // Verifica che il file di output esista e non sia vuoto.
 async function verificaOutput(percorso) {
   let st;
