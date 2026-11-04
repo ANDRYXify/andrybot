@@ -142,6 +142,11 @@ const premi = async (p, sel) => {
     const bar = document.getElementById('barra-salva'), t = document.querySelector(s);
     if (!bar.classList.contains('dentro') || bar.classList.contains('esce') || !t) return false;
     const r = t.getBoundingClientRect();
+    // fermo davvero: la stessa posizione due fotogrammi di fila (sotto carico
+    // l'entrata della barra rallenta, e un clic su un tasto che si muove cade accanto)
+    const qui = `${Math.round(r.left)},${Math.round(r.top)}`, prima = window.__premiQui;
+    window.__premiQui = qui;
+    if (prima !== qui) return false;
     return document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2)?.closest('#barra-salva') === bar;
   }, sel, { timeout: 5000 });
   const r = await p.evaluate((s) => { const q = document.querySelector(s).getBoundingClientRect(); return { x: q.left + q.width / 2, y: q.top + q.height / 2 }; }, sel);
