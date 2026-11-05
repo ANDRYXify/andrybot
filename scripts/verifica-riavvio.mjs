@@ -127,6 +127,7 @@ const DECISO = [
   ['features/effects.js', '_cooldown', 'volatile', 'perderlo vale un effetto in piu\' subito dopo un deploy; scriverlo costa a ogni comando'],
   ['features/alerts.js', '_pausaEventi', 'volatile', 'la pausa fra due effetti dello stesso evento e\' una cortesia per gli occhi, non un conto: perderla vale al massimo un effetto in piu\' subito dopo un deploy'],
   ['features/alerts.js', '_treni', 'volatile', 'il livello dell\'ultimo treno visto: dopo un riavvio si reimpara dal primo evento del treno, senza festeggiare, e al peggio si perde la festa di una salita'],
+  ['features/partite.js', 'raffiche', 'volatile', 'i nomi di chi e\' appena entrato in fila, da dire insieme in una riga: la fila e\' gia\' salvata, un riavvio perde al piu\' quella riga in chat'],
   ['features/alerts.js', '_raffiche', 'volatile', 'gli allungamenti della subathon ancora da dire insieme: il tempo e\' gia\' nell\'orologio e nel libro, un riavvio perde al piu\' la riga in chat e l\'alert di una raffica'],
   ['features/alerts.js', '_fini', 'volatile', 'i timer che guardano la fine della subathon: all\'avvio si riarmano dalle impostazioni (riarmaSubathon), e l\'istante festeggiato sta nelle impostazioni (finita)'],
   ['features/emotes.js', 'cacheCanale', 'volatile', 'cache delle emote'],
