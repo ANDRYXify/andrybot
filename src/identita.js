@@ -44,6 +44,7 @@ export const PIATTAFORME = [
   { id: 'kick', prefisso: 'kick.', casa: 'https://kick.com/', diretta: true },
   { id: 'youtube', prefisso: 'yt.', casa: 'https://www.youtube.com/@', diretta: true },
   { id: 'discord', prefisso: 'dc.', casa: '', diretta: false },
+  { id: 'mail', prefisso: 'ml.', casa: '', diretta: false },
 ];
 
 // Questo canale sta su una piattaforma dove si trasmette? Tutto quello che
@@ -116,6 +117,8 @@ export const nomeKick = (login) => (eKick(login) ? nomeSu(login) : '');
 export const loginDiscord = (nome) => loginSu('discord', nome);
 export const eDiscord = (login) => eSu('discord', login);
 export const nomeDiscord = (login) => (eDiscord(login) ? nomeSu(login) : '');
+
+export const eMail = (login) => eSu('mail', login);
 
 export const loginYoutube = (nome) => loginSu('youtube', nome);
 export const eYoutube = (login) => eSu('youtube', login);

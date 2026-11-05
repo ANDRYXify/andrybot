@@ -64,6 +64,15 @@ comandi diversi da quelli della riga italiana.
 - La pagina per entrare ha tutti i modi in un posto solo, e si può entrare anche con un codice per mail, se nel pannello hai la mail e un'altra prova. [vai: account]
   en: The sign-in page has every way in one place, and you can also sign in with an email code, if in the panel you have your email and another check.
   es: La página para entrar tiene todas las formas en un solo sitio, y también se puede entrar con un código por correo, si en el panel tienes el correo y otra prueba.
+- [importante] Ci si può registrare anche con la mail: la confermi con un codice, scegli se vuoi una password e rispondi a sette domande che presentano il canale al bot. Il pannello si apre quando il conto è approvato. [vai: account]
+  en: You can now also sign up with your email: you confirm it with a code, choose whether you want a password and answer seven questions that introduce your channel to the bot. The panel opens once the account is approved.
+  es: Ahora también te puedes registrar con el correo: lo confirmas con un código, eliges si quieres una contraseña y respondes siete preguntas que presentan tu canal al bot. El panel se abre cuando la cuenta está aprobada.
+  > Registrati con la mail
+  > Entri con la password, con un codice per mail o con la passkey, e la seconda prova è sempre di un altro tipo. Si approva come oggi: col pass di andryxify.it o con un abbonamento.
+  en> Sign up with your email
+  en> You sign in with the password, an email code or a passkey, and the second check is always of another kind. Approval works as today: with an andryxify.it pass or a subscription.
+  es> Regístrate con el correo
+  es> Entras con la contraseña, con un código por correo o con la passkey, y la segunda prueba siempre es de otro tipo. Se aprueba como hoy: con el pase de andryxify.it o con una suscripción.
 
 ## 2026-11-04
 

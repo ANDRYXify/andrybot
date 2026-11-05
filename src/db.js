@@ -590,6 +590,15 @@ CREATE TABLE IF NOT EXISTS ingresso_codici (     -- i codici monouso: quelli per
   creato INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_ingresso_codici ON ingresso_codici(login, tipo, usato);
+CREATE TABLE IF NOT EXISTS ingresso_iscrizioni (  -- chi si registra con la mail, finche' non l'ha confermata: un'ora, poi se ne va
+  id TEXT PRIMARY KEY,                     -- 128 bit casuali, sta nella sessione di chi si registra
+  segreto TEXT NOT NULL,                   -- la mail, nella busta
+  impronta TEXT NOT NULL,                  -- della mail: per sapere se e' gia' di qualcuno
+  segreto_parola TEXT NOT NULL DEFAULT '', -- il calco scrypt della password (se l'ha scelta), nella busta: mai la password
+  lingua TEXT NOT NULL DEFAULT 'it',
+  scade INTEGER NOT NULL,
+  creata INTEGER NOT NULL
+);
 CREATE TABLE IF NOT EXISTS ingresso_persone (    -- le scelte della persona sul suo accesso
   login TEXT PRIMARY KEY,
   durata INTEGER NOT NULL DEFAULT 30,      -- giorni di vita di una sessione nuova
@@ -2782,6 +2791,7 @@ export const CAMPI_SEGRETI = {
   studio_dispositivi: ['nome'],
   discord_ruoli: ['token'],
   ingresso_fattori: ['segreto'],
+  ingresso_iscrizioni: ['segreto', 'segreto_parola'],
 };
 
 // Come si chiama la riga, tabella per tabella. Serve alla busta: è il «dove
@@ -2799,6 +2809,7 @@ const RIGA_SEGRETI = {
   studio_dispositivi: (r) => r.login + '/' + r.id,
   discord_ruoli: (r) => r.channel,
   ingresso_fattori: (r) => r.login + '/' + r.tipo,
+  ingresso_iscrizioni: (r) => r.id,
 };
 const CHIAVE_SEGRETI = {
   tokens: ['kind', 'login'],
@@ -2813,6 +2824,7 @@ const CHIAVE_SEGRETI = {
   studio_dispositivi: ['login', 'id'],
   discord_ruoli: ['channel'],
   ingresso_fattori: ['login', 'tipo', 'attivo'],
+  ingresso_iscrizioni: ['id'],
 };
 
 // Porta nella busta di ADESSO tutto quello che è rimasto indietro: il chiaro di
@@ -3915,7 +3927,25 @@ export const ingressoDb = {
     db.prepare('DELETE FROM ingresso_sessioni WHERE scade < ?').run(ora);
     db.prepare('DELETE FROM ingresso_codici WHERE (scade > 0 AND scade < ?) OR (tipo=\'mail\' AND usato<>0)').run(ora - 86_400_000);
     db.prepare('DELETE FROM ingresso_registro WHERE ts < ?').run(ora - 90 * 86_400_000);
+    db.prepare('DELETE FROM ingresso_iscrizioni WHERE scade < ?').run(ora);
   },
+
+  // LE ISCRIZIONI con la mail, prima della conferma. La mail e il calco della
+  // password stanno nella busta; il codice per confermarla sta in ingresso_codici
+  // come tutti gli altri (login «iscr.<id>», che non e' la forma di nessun canale).
+  nuovaIscrizione({ id, mail, impronta, parola = '', lingua = 'it', scade, ora = now() }) {
+    db.prepare('INSERT INTO ingresso_iscrizioni (id, segreto, impronta, segreto_parola, lingua, scade, creata) VALUES (?,?,?,?,?,?,?)')
+      .run(id, cifra(String(mail), _dove('ingresso_iscrizioni', 'segreto', id)), impronta,
+        parola ? cifra(String(parola), _dove('ingresso_iscrizioni', 'segreto_parola', id)) : '', lingua, scade, ora);
+  },
+  iscrizione(id, ora = now()) {
+    const r = id ? db.prepare('SELECT * FROM ingresso_iscrizioni WHERE id=? AND scade > ?').get(String(id), ora) : null;
+    if (!r) return null;
+    return { ...r, mail: decifra(r.segreto, _dove('ingresso_iscrizioni', 'segreto', r.id)),
+      parola: r.segreto_parola ? decifra(r.segreto_parola, _dove('ingresso_iscrizioni', 'segreto_parola', r.id)) : '' };
+  },
+  // La conferma consuma l'iscrizione: una volta sola, lo dice il DELETE.
+  chiudiIscrizione(id) { return db.prepare('DELETE FROM ingresso_iscrizioni WHERE id=?').run(String(id)).changes === 1; },
 
   apriSessione({ sid, login, motore, sistema, rete, via, prova = 0, ora = now(), scade }) {
     db.prepare(`INSERT INTO ingresso_sessioni (sid, login, motore, sistema, rete, via, prova, creata, vista, scade)

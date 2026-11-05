@@ -232,7 +232,7 @@ test('la carta del pannello non consegna segreti, e l\'ultimo fattore non si tog
   const v = await b.chiama('/api/sicurezza');
   assert.equal(v.stato, 200);
   for (const x of [segreto, ...riserve]) assert.ok(!v.testo.includes(x), 'ne\' il segreto dell\'app ne\' i codici');
-  assert.deepEqual(v.dati.fattori, { passkey: 0, totp: true, mail: '', riserve: 10 });
+  assert.deepEqual(v.dati.fattori, { passkey: 0, totp: true, mail: '', password: false, riserve: 10 });
   assert.equal((await b.chiama('/api/sicurezza/fattore/totp', { metodo: 'DELETE' })).stato, 409, 'e\' l\'ultimo');
   const m = await b.chiama('/api/sicurezza/mail/manda', { metodo: 'POST', corpo: { mail: 'mara@esempio.it', lingua: 'it' } });
   assert.equal(m.stato, 200);

@@ -210,3 +210,54 @@ test('le sfide scadute, le sessioni finite e il registro oltre i 90 giorni se ne
   assert.equal(ingressoDb.sessione('finita'), null);
   assert.equal(ingressoDb.registro('zeno').length, 1, 'il registro tiene 90 giorni');
 });
+
+const PW = await import('../../src/features/ingresso-password.js');
+const D = await import('../../src/features/ingresso-domande.js');
+const { contoApribile } = await import('../../src/features/ingresso.js');
+const ID = await import('../../src/identita.js');
+
+test('una password non si salva mai in chiaro: solo il calco scrypt, col suo sale', async () => {
+  const p = 'cavallo batteria graffetta';
+  const c1 = await PW.calco(p), c2 = await PW.calco(p);
+  assert.ok(PW.eCalco(c1) && !c1.includes(p) && !c1.includes('cavallo'), 'il calco non contiene la password');
+  assert.notEqual(c1, c2, 'ogni calco ha il suo sale');
+  assert.equal(await PW.combacia(p, c1), true);
+  assert.equal(await PW.combacia(p + ' ', c1), false);
+  assert.equal(await PW.combacia(p, 'qualcosa'), false, 'un salvato che non e\' un calco non combacia mai');
+  await assert.rejects(() => PW.calco('corta'), 'meno di 8 no');
+  assert.equal(PW.lunghezzaOk('x'.repeat(128)), true);
+  assert.equal(PW.lunghezzaOk('x'.repeat(129)), false);
+  assert.equal(PW.lunghezzaOk('🔑🔑🔑🔑🔑🔑🔑🔑'), true, 'si contano i caratteri, non i byte');
+  assert.equal(PW.lunghezzaOk('abcdefgh'), true, 'nessuna regola su maiuscole e simboli');
+  await servizio.mettiPassword('tina', p);
+  const grezzo = db.prepare('SELECT segreto FROM ingresso_fattori WHERE login=\'tina\' AND tipo=\'password\'').get().segreto;
+  assert.ok(grezzo.startsWith('enc:2:') && !grezzo.includes(p), 'e il calco sta a sua volta nella busta');
+  assert.equal(await servizio.usaPassword('tina', p), true);
+  assert.equal(await servizio.usaPassword('tina', 'sbagliata!'), false);
+});
+
+test('un conto nato con la mail apre il pannello solo approvato', () => {
+  assert.equal(ID.piattaformaDi('ml.ab12cd34ef'), 'mail');
+  assert.equal(ID.conDiretta('mail'), false);
+  assert.equal(ID.urlCanale('ml.ab12cd34ef'), '');
+  assert.equal(contoApribile('ml.ab12cd34ef', { status: 'pending' }), false);
+  assert.equal(contoApribile('ml.ab12cd34ef', null), false);
+  assert.equal(contoApribile('ml.ab12cd34ef', { status: 'approved' }), true);
+  assert.equal(contoApribile('andryx', null), true, 'per gli altri non cambia niente');
+});
+
+test('le domande del primo ingresso vanno nelle impostazioni che ci sono, ripulite', () => {
+  const strumenti = { schedaPulita: (x) => Object.fromEntries(Object.entries(x).filter(([, v]) => v)), normVoce: (v) => ({ ...v, momenti: v.momenti || {} }), toni: ['scherzoso', 'amichevole', 'serio'], generi: ['neutro', 'femminile', 'maschile'], lingue: ['it', 'en', 'es'] };
+  const prima = { tono: 'serio', scheda: { chi: 'gia\' scritto' }, voce: { momenti: { saluto: { modo: 'mie' } } } };
+  const r = D.impostazioniDaDomande(prima, { nome: '  Il Canale  ', argomento: 'giochi horror', tono: 'scherzoso', genere: 'femminile', community: 'ciurma', lingua: 'en', evita: 'spoiler' }, strumenti);
+  assert.equal(r.display, 'Il Canale');
+  assert.deepEqual(r.settings.scheda, { chi: 'gia\' scritto', faccio: 'giochi horror', evita: 'spoiler' });
+  assert.equal(r.settings.tono, 'scherzoso');
+  assert.equal(r.settings.genere, 'femminile');
+  assert.equal(r.settings.voce.community, 'ciurma');
+  assert.deepEqual(r.settings.voce.momenti, { saluto: { modo: 'mie' } }, 'le frasi gia\' scelte restano');
+  assert.equal(r.settings.preferenze.lingua, 'en');
+  const vuote = D.impostazioniDaDomande(prima, { tono: 'cattivo', lingua: 'de' }, strumenti);
+  assert.equal(vuote.settings.tono, 'serio', 'una risposta che non c\'e\' nell\'elenco non tocca niente');
+  assert.equal(vuote.settings.preferenze, undefined);
+});

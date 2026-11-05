@@ -46,6 +46,7 @@ const GUARDIANI = [
   'cancelliRegia',   // le rotte della regia dei dispositivi: requireOwner e Studio aperto (rotte-dispositivi.js)
   'camDi',           // un dispositivo collegato: la sua chiave contro l'impronta salvata, e lo Studio aperto
   'usaBiglietto',    // il flusso di un dispositivo: un biglietto monouso da un minuto, dato solo a chi ha la chiave
+  'contoInAttesa',   // il primo ingresso (rotte-ingresso.js): solo il conto nato con la mail che questa sessione ha appena confermato o aperto, in attesa d'approvazione
   'inSecondaProva',  // la seconda prova (rotte-ingresso.js): solo chi e' entrato da una porta e non l'ha ancora data, letto dalla riga sul server
 ];
 
@@ -188,9 +189,11 @@ const PUBBLICHE = new Map([
   // schema fisso e casuale: non si indovina e non si risale di cartella.
   ['GET /icona/:login/:file', 'icona di un tasto: pubblica di proposito, serve fuori dal sito'],
   ['POST /api/passkey/login/inizio', 'il login non puo chiedere di essere gia loggati'],
-  ['GET /api/ingresso/stato', 'la porta d\'ingresso: dice solo quali modi di entrare ci sono e, a chi aveva il cookie, se la sua sessione e\' stata chiusa per anomalia; niente di nessuno'],
   ['POST /api/ingresso/mail/codice', 'entrare con la mail: solo con una prova di lavoro risolta e bruciata, col tetto per indirizzo e per conto; risponde uguale per una mail che c\'e\' e per una che non c\'e\', e il codice va solo alla mail confermata'],
   ['POST /api/ingresso/mail/entra', 'entrare con la mail: il codice (monouso, dieci minuti, cinque tentativi, confrontato a tempo costante) apre solo una sessione in attesa del secondo fattore, che non puo\' essere di nuovo la mail'],
+  ['POST /api/ingresso/registra', 'la registrazione con la mail: solo con una prova di lavoro risolta e bruciata, col tetto per indirizzo e per mail; non nasce niente finche\' la mail non e\' confermata, e risponde uguale per una mail che c\'e\' gia\''],
+  ['POST /api/ingresso/registra/conferma', 'conferma la mail di chi si registra: solo l\'iscrizione di questa sessione, col codice monouso di dieci minuti; il conto che nasce aspetta l\'approvazione e non apre il pannello'],
+  ['POST /api/ingresso/password', 'entrare con mail e password: prova di lavoro, tetto per indirizzo e per conto, calco scrypt confrontato a tempo costante; apre solo una sessione in attesa del secondo fattore'],
   ['POST /api/ingresso/sfida', 'la prova di lavoro (docs/ACCESSO-SICURO.md): una sfida firmata, senza stato, che non apre niente da sola; col tetto per indirizzo'],
   ['POST /api/passkey/login/fine', 'il login non puo chiedere di essere gia loggati'],
   ['GET /cam', 'la pagina del telefono-fotocamera: un dispositivo una sessione non ce l\'ha, entra con un invito o un codice'],

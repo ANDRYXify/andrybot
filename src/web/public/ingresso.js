@@ -9,6 +9,71 @@
 
   const tasto = (classe, href, testo) => el('a', { classe: 'azione ' + classe, href }, testo);
 
+  const campoMail = (id) => el('input', { type: 'email', id, name: 'username', autocomplete: 'username', inputmode: 'email', required: true, placeholder: L('nome@esempio.it', 'name@example.com', 'nombre@ejemplo.es'), 'aria-label': L('La tua mail', 'Your email', 'Tu correo') });
+  const campoParola = (id, nuova) => el('input', { type: 'password', id, name: nuova ? 'new-password' : 'password', autocomplete: nuova ? 'new-password' : 'current-password', minlength: '8', maxlength: '128', 'aria-label': L('La password', 'The password', 'La contraseña') });
+  const apribile = (id, testo, box, fuoco) => {
+    const b = el('button', { classe: 'azione secondaria', id, type: 'button' }, testo);
+    b.addEventListener('click', () => { b.hidden = true; box.hidden = false; fuoco.focus(); });
+    return b;
+  };
+
+  function conPassword() {
+    const m = el('div', { classe: 'msg', role: 'status' });
+    const mail = campoMail('porta-parola-mail');
+    const parola = campoParola('porta-parola', false);
+    const entra = el('button', { classe: 'azione', id: 'btn-porta-parola-entra', type: 'submit' }, L('Entra', 'Sign in', 'Entrar'));
+    const box = el('form', { classe: 'con-mail', id: 'porta-parola-box', hidden: true, method: 'post', action: '/ingresso' },
+      el('label', { for: 'porta-parola-mail', testo: L('La tua mail', 'Your email', 'Tu correo') }), mail,
+      el('label', { for: 'porta-parola', testo: L('La password', 'The password', 'La contraseña') }), parola, entra, m);
+    box.addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      m.className = 'msg'; m.textContent = L('Un attimo…', 'One moment…', 'Un momento…');
+      entra.disabled = true;
+      try {
+        const p = await prova('password');
+        const r = await chiama('/api/ingresso/password', { mail: mail.value, password: parola.value, ...p });
+        location.href = r.vai || '/seconda-prova';
+      } catch (e) { m.className = 'msg err'; m.textContent = e.codice === 'sbagliato' ? L('La mail o la password non sono giuste.', 'The email or the password is not right.', 'El correo o la contraseña no son correctos.') : errore(e); entra.disabled = false; }
+    });
+    return [apribile('btn-porta-parola', L('Entra con mail e password', 'Sign in with email and password', 'Entra con correo y contraseña'), box, mail), box];
+  }
+
+  function registrati() {
+    const m = el('div', { classe: 'msg', role: 'status' });
+    const mail = campoMail('porta-nuovo-mail');
+    const parola = campoParola('porta-nuovo-parola', true);
+    const codice = el('input', { type: 'text', id: 'porta-nuovo-codice', inputmode: 'numeric', autocomplete: 'one-time-code', maxlength: '7', placeholder: '123456', classe: 'codice-campo', 'aria-label': L('Il codice della mail', 'The code from the email', 'El código del correo') });
+    const manda = el('button', { classe: 'azione', id: 'btn-porta-nuovo-manda', type: 'submit' }, L('Registrati', 'Sign up', 'Regístrate'));
+    const conferma = el('button', { classe: 'azione', id: 'btn-porta-nuovo-conferma', type: 'button' }, L('Conferma la mail', 'Confirm the email', 'Confirmar el correo'));
+    const primo = el('form', { classe: 'con-mail', method: 'post', action: '/ingresso' },
+      el('label', { for: 'porta-nuovo-mail', testo: L('La tua mail', 'Your email', 'Tu correo') }), mail,
+      el('label', { for: 'porta-nuovo-parola', testo: L('Una password, se la vuoi (almeno 8 caratteri)', 'A password, if you want one (at least 8 characters)', 'Una contraseña, si la quieres (al menos 8 caracteres)') }), parola,
+      el('p', { classe: 'minuta', testo: L('Senza password entri con un codice per mail. Il portachiavi del telefono la può creare e ricordare per te.', 'Without a password you sign in with an email code. Your phone’s keychain can create and remember it for you.', 'Sin contraseña entras con un código por correo. El llavero del teléfono puede crearla y recordarla por ti.') }),
+      manda);
+    const secondo = el('div', { classe: 'con-mail', hidden: true },
+      el('p', { classe: 'minuta', testo: L('Ti abbiamo scritto: scrivi qui le 6 cifre della mail. Guarda anche fra lo spam.', 'We wrote to you: type the 6 digits from the email here. Check your spam folder too.', 'Te hemos escrito: escribe aquí las 6 cifras del correo. Mira también en el spam.') }), codice, conferma);
+    const box = el('div', { id: 'porta-nuovo', hidden: true }, primo, secondo, m);
+    primo.addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      m.className = 'msg'; m.textContent = L('Un attimo…', 'One moment…', 'Un momento…');
+      manda.disabled = true;
+      try {
+        const p = await prova('registra');
+        await chiama('/api/ingresso/registra', { mail: mail.value, password: parola.value, lingua: LINGUA, ...p });
+        m.textContent = ''; primo.hidden = true; secondo.hidden = false; codice.focus();
+      } catch (e) { m.className = 'msg err'; m.textContent = errore(e); }
+      finally { manda.disabled = false; }
+    });
+    conferma.addEventListener('click', async () => {
+      m.className = 'msg'; m.textContent = '';
+      conferma.disabled = true;
+      try { const r = await chiama('/api/ingresso/registra/conferma', { codice: codice.value }); location.href = r.vai || '/primo-ingresso'; }
+      catch (e) { m.className = 'msg err'; m.textContent = errore(e); conferma.disabled = false; }
+    });
+    return [el('p', { classe: 'separa', testo: L('Non hai ancora un account?', 'No account yet?', '¿Aún no tienes cuenta?') }),
+      apribile('btn-porta-nuovo', L('Registrati con la mail', 'Sign up with email', 'Regístrate con el correo'), box, mail), box];
+  }
+
   function conMail() {
     const box = el('div', { classe: 'con-mail', id: 'porta-mail', hidden: true });
     const m = el('div', { classe: 'msg', role: 'status' });
@@ -68,7 +133,9 @@
         s.youtube ? tasto('youtube', '/accedi/youtube', L('Entra con YouTube', 'Sign in with YouTube', 'Entra con YouTube')) : null,
         s.discord ? tasto('discord', '/accedi/discord', L('Entra con Discord', 'Sign in with Discord', 'Entra con Discord')) : null,
         btnPasskey,
-        ...(s.posta ? conMail() : [])),
+        ...(s.posta ? conMail() : []),
+        ...(s.posta ? conPassword() : []),
+        ...(s.posta ? registrati() : [])),
       msg,
       el('p', { classe: 'piccolo', testo: L('Per entrare nel pannello ti chiediamo anche una seconda prova che sei tu: una passkey, un codice per mail o l’app dei codici.', 'To get into the panel we also ask for a second check that it is you: a passkey, an email code or a code app.', 'Para entrar en el panel también te pedimos una segunda prueba de que eres tú: una passkey, un código por correo o la app de códigos.') }),
       el('p', { classe: 'piccolo' },
@@ -81,6 +148,7 @@
   chiama('/api/ingresso/stato').then((s) => {
     if (s.dentro === 'aperta') { location.href = '/'; return; }
     if (s.dentro === 'attesa') { location.href = '/seconda-prova'; return; }
+    if (s.conto) { location.href = '/primo-ingresso'; return; }
     disegna(s);
   }).catch(() => disegna({}));
 })();

@@ -4890,7 +4890,7 @@ function percorso(id) {
 }
 
 const SOLO_DISCORD = new Set(['ruoli', 'dcavvisi', 'dcserver', 'dcentra', 'dcfiltro', 'pagina', 'stato', 'account', 'sottoscrizione']);
-const senzaDiretta = () => stato?.piattaforma === 'discord';
+const senzaDiretta = () => stato?.piattaforma === 'discord' || stato?.piattaforma === 'mail';
 
 function elencoGruppi() {
   const base = stato.isAdmin ? GRUPPI.concat([GRUPPO_ADMIN]) : GRUPPI;
@@ -5026,7 +5026,7 @@ const NOME_ADDON = {
 };
 
 const SOLO_TWITCH = ['regia', 'regole', 'scudo', 'registro', 'follower', 'emote', 'sondaggi', 'penitenze', 'colpi'];
-const NOME_PIATTAFORMA = { twitch: 'Twitch', kick: 'Kick', youtube: 'YouTube', discord: 'Discord' };
+const NOME_PIATTAFORMA = { twitch: 'Twitch', kick: 'Kick', youtube: 'YouTube', discord: 'Discord', mail: 'Mail' };
 
 const ANCHE_SU = { regole: ['kick'], penitenze: ['kick'], scudo: ['kick'], registro: ['kick'] };
 
@@ -12101,6 +12101,7 @@ function pannelloAccount() {
         <div id="sic-totp">${attesaHtml()}</div>
         <h3>${L('Il codice per mail', 'The email code', 'El código por correo')}</h3>
         <div id="sic-mail">${attesaHtml()}</div>
+        <div id="sic-password"></div>
         <h3>${L('I codici di riserva', 'Backup codes', 'Los códigos de reserva')}</h3>
         <div id="sic-riserve">${attesaHtml()}</div>
       </div>
@@ -44928,7 +44929,7 @@ const _SIC_EVENTI = {
   riserva: () => L('Codice di riserva usato', 'Backup code used', 'Código de reserva usado'),
   sessioni: () => L('Chiuse le altre sessioni', 'Other sessions closed', 'Cerradas las demás sesiones'),
 };
-const _SIC_COME = { passkey: 'passkey', totp: () => L('app dei codici', 'code app', 'app de códigos'), mail: () => L('codice per mail', 'email code', 'código por correo'), riserva: () => L('codice di riserva', 'backup code', 'código de reserva'), riserve: () => L('codici di riserva nuovi', 'new backup codes', 'códigos de reserva nuevos'), twitch: 'Twitch', kick: 'Kick', youtube: 'YouTube', discord: 'Discord', telegram: 'Telegram', pass: 'andryxify.it', prima: () => L('accesso di prima', 'earlier sign-in', 'acceso anterior') };
+const _SIC_COME = { password: () => L('password', 'password', 'contraseña'), 'mail e password': () => L('mail e password', 'email and password', 'correo y contraseña'), passkey: 'passkey', totp: () => L('app dei codici', 'code app', 'app de códigos'), mail: () => L('codice per mail', 'email code', 'código por correo'), riserva: () => L('codice di riserva', 'backup code', 'código de reserva'), riserve: () => L('codici di riserva nuovi', 'new backup codes', 'códigos de reserva nuevos'), twitch: 'Twitch', kick: 'Kick', youtube: 'YouTube', discord: 'Discord', telegram: 'Telegram', pass: 'andryxify.it', prima: () => L('accesso di prima', 'earlier sign-in', 'acceso anterior') };
 const _sicCome = (x) => { const v = _SIC_COME[x]; return typeof v === 'function' ? v() : (v || ''); };
 let _sicDati = null;
 function _sicRiserveHtml(codici) {
@@ -44939,7 +44940,13 @@ function _sicRiserveHtml(codici) {
 function disegnaSicurezza(d) {
   _sicDati = d;
   const f = d.fattori;
-  const quante = (f.passkey > 0 ? 1 : 0) + (f.totp ? 1 : 0) + (f.mail ? 1 : 0);
+  const quante = (f.passkey > 0 ? 1 : 0) + (f.totp ? 1 : 0) + (f.mail ? 1 : 0) + (f.password ? 1 : 0);
+  const pw = document.getElementById('sic-password');
+  if (pw) pw.innerHTML = !d.conMail ? '' : `<h3>${L('La password', 'The password', 'La contraseña')}</h3>
+    <p>${f.password ? L('Ce l’hai: con la password entri, e il codice per mail fa da seconda prova.', 'You have one: you sign in with it, and the email code is the second check.', 'La tienes: entras con ella, y el código por correo hace de segunda prueba.') : L('Non ce l’hai: entri col codice per mail. Se la vuoi, almeno 8 caratteri.', 'You do not have one: you sign in with the email code. If you want one, at least 8 characters.', 'No la tienes: entras con el código por correo. Si la quieres, al menos 8 caracteres.')}</p>
+    <div class="riga-flessibile"><input type="password" id="sic-password-nuova" class="cresce" autocomplete="new-password" minlength="8" maxlength="128" aria-label="${esc(L('La password nuova', 'The new password', 'La contraseña nueva'))}">
+    <button class="btn" id="btn-sic-password">${f.password ? L('Cambiala', 'Change it', 'Cámbiala') : L('Mettila', 'Set it', 'Ponla')}</button>
+    ${f.password ? `<button class="btn secondario" id="btn-sic-password-togli">${L('Toglila', 'Remove it', 'Quítala')}</button>` : ''}</div>`;
   const st = document.getElementById('sic-stato');
   if (st) st.textContent = quante >= 2 ? L('Sei a posto: hai più di una prova.', 'You are all set: you have more than one check.', 'Estás bien: tienes más de una prueba.')
     : quante === 1 ? L('Hai una prova. Aggiungerne una seconda ti salva il giorno che perdi il telefono.', 'You have one check. Adding a second one saves you the day you lose your phone.', 'Tienes una prueba. Añadir una segunda te salva el día que pierdas el teléfono.')
@@ -44955,7 +44962,7 @@ function disegnaSicurezza(d) {
     ? `<p class="suggerimento">${L('Su questo server la posta è spenta: il codice per mail non si può usare.', 'Email is off on this server: email codes cannot be used.', 'En este servidor el correo está apagado: no se pueden usar códigos por correo.')}</p>`
     : f.mail
       ? `<p>${L('Attivo, a', 'On, to', 'Activo, a')} <strong class="primo-piano">${esc(f.mail)}</strong>.</p>
-         <p><button class="btn secondario" id="btn-sic-mail-togli">${L('Togli la mail', 'Remove the email', 'Quitar el correo')}</button></p>`
+         ${d.conMail ? `<p class="suggerimento">${L('È la mail del tuo conto: resta.', 'It is your account email: it stays.', 'Es el correo de tu cuenta: se queda.')}</p>` : `<p><button class="btn secondario" id="btn-sic-mail-togli">${L('Togli la mail', 'Remove the email', 'Quitar el correo')}</button></p>`}`
       : `<p>${L('Ti mandiamo 6 cifre per mail quando entri: utile se un giorno non hai il telefono con te.', 'We email you 6 digits when you sign in: useful the day you do not have your phone with you.', 'Te mandamos 6 cifras por correo al entrar: útil el día que no tengas el teléfono contigo.')}</p>
          <div class="riga-flessibile"><input type="email" id="sic-mail-indirizzo" class="cresce" autocomplete="email" aria-label="${esc(L('La tua mail', 'Your email', 'Tu correo'))}" placeholder="${esc(L('nome@esempio.it', 'name@example.com', 'nombre@ejemplo.es'))}">
          <button class="btn" id="btn-sic-mail-manda">${L('Mandami il codice', 'Send me the code', 'Mándame el código')}</button></div>
@@ -44989,6 +44996,7 @@ async function caricaSicurezza() {
     if (c === 'sbagliato') return L('Il codice non è giusto. Controlla e riprova.', 'That code is not right. Check it and try again.', 'El código no es correcto. Revísalo y vuelve a intentarlo.');
     if (c === 'troppe') return L('Troppi tentativi. Aspetta qualche minuto.', 'Too many tries. Wait a few minutes.', 'Demasiados intentos. Espera unos minutos.');
     if (c === 'indirizzo') return L('Questa mail non sembra giusta.', 'This email does not look right.', 'Este correo no parece correcto.');
+    if (c === 'misura') return L('La password va da 8 a 128 caratteri.', 'The password must be 8 to 128 characters.', 'La contraseña va de 8 a 128 caracteres.');
     if (c === 'presa') return L('Questa mail la usa già un altro accesso.', 'This email is already used by another account.', 'Este correo ya lo usa otro acceso.');
     return e?.message || String(e);
   };
@@ -45026,6 +45034,14 @@ async function caricaSicurezza() {
     if (ev.target.closest('#btn-sic-mail-togli')) return prova(async () => {
       if (!(await chiediSe({ titolo: L('Tolgo la mail?', 'Remove the email?', '¿Quito el correo?'), testo: L('Per entrare userai le altre prove che hai.', 'To sign in you will use your other checks.', 'Para entrar usarás tus otras pruebas.'), si: L('Toglila', 'Remove it', 'Quítalo'), pericolo: true }))) return;
       disegnaSicurezza(await api('/api/sicurezza/fattore/mail', { method: 'DELETE' }));
+    })(ev);
+    if (ev.target.closest('#btn-sic-password')) return prova(async () => {
+      disegnaSicurezza(await api('/api/sicurezza/password', { method: 'POST', body: { nuova: document.getElementById('sic-password-nuova')?.value || '' } }));
+      toast(L('Salvata.', 'Saved.', 'Guardada.'));
+    })(ev);
+    if (ev.target.closest('#btn-sic-password-togli')) return prova(async () => {
+      if (!(await chiediSe({ titolo: L('Tolgo la password?', 'Remove the password?', '¿Quito la contraseña?'), testo: L('Per entrare userai le altre prove che hai.', 'To sign in you will use your other checks.', 'Para entrar usarás tus otras pruebas.'), si: L('Toglila', 'Remove it', 'Quítala'), pericolo: true }))) return;
+      disegnaSicurezza(await api('/api/sicurezza/fattore/password', { method: 'DELETE' }));
     })(ev);
     if (ev.target.closest('#btn-sic-riserve')) return prova(async () => {
       if (_sicDati?.fattori?.riserve && !(await chiediSe({ titolo: L('Faccio dei codici nuovi?', 'Make new codes?', '¿Hago códigos nuevos?'), testo: L('Quelli di prima smettono di valere.', 'The old ones stop working.', 'Los anteriores dejan de valer.'), si: L('Fanne di nuovi', 'Make new ones', 'Hacer nuevos') }))) return;

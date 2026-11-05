@@ -17,14 +17,18 @@
 // dell'app mentre lo attiva e i codici di riserva appena fatti.
 import { creaSfida, verificaSfida, bitPer, SCOPI } from '../features/ingresso-prova.js';
 import { indirizzoOtp } from '../features/ingresso-totp.js';
-import { tetto, normMail, improntaMail, DURATE } from '../features/ingresso.js';
+import crypto from 'node:crypto';
+import { tetto, normMail, improntaMail, DURATE, mailGiaDiCasa } from '../features/ingresso.js';
+import { calco, lunghezzaOk } from '../features/ingresso-password.js';
+import { eMail } from '../identita.js';
 
 export const LINGUE = ['it', 'en', 'es'];
 const lingua = (x) => (LINGUE.includes(String(x || '')) ? String(x) : 'it');
 
 export function montaIngresso(app, d) {
   const { wrap, requireLogin, currentUser, identitaDi, ingresso, store, passkeys, webauthn, rp, posta, chiaveProva,
-    porte = () => ({}), entraCome = () => false, paginaIngresso, paginaProva, ora = () => Date.now(), log = null } = d;
+    porte = () => ({}), entraCome = () => false, creaConto = () => '', statoConto = () => '', risposteDi = () => ({}), salvaDomande = () => {},
+    abbonabile = () => false, paginaPrimo = '', paginaIngresso, paginaProva, ora = () => Date.now(), log = null } = d;
 
   const ip = (req) => String(req.ip || req.socket?.remoteAddress || '?');
   const inSecondaProva = (req) => (req.ingresso?.stato === 'attesa' && req.session?.user ? req.session.user : null);
@@ -55,7 +59,7 @@ export function montaIngresso(app, d) {
     const avviso = req.session?.avviso || '';
     if (req.session && avviso) delete req.session.avviso;
     res.set('Cache-Control', 'no-store');
-    res.json({ avviso, posta: !!posta.attiva(), ...porte(), dentro: req.ingresso?.stato || 'nessuno' });
+    res.json({ avviso, posta: !!posta.attiva(), ...porte(), dentro: req.ingresso?.stato || 'nessuno', conto: !!contoInAttesa(req) });
   });
 
   // La sfida: firmata, con la difficolta' che dicono i segnali. Niente di salvato.
@@ -91,23 +95,122 @@ export function montaIngresso(app, d) {
     if (!tetto('modulo|' + ip(req), 10, 60_000, ora())) return troppe(res);
     const login = ingresso.chiPerMail(normMail(req.body?.mail));
     if (!login || !ingresso.usaCodiceMail(login, 'entra', req.body?.codice)) return sbagliato(res);
-    if (!entraCome(req, login)) return no(res, 'conto', 403);
-    ingresso.lega(req, { via: 'mail' });
-    req.ingresso = { stato: 'attesa' };
-    res.json({ ok: true, vai: '/seconda-prova' });
+    return dentroOAttesa(req, res, login, 'mail');
+  }));
+
+  // Entrato con la prima prova: se il conto apre un pannello si va alla seconda
+  // prova; un conto nato con la mail e non ancora approvato va alle sue domande.
+  function dentroOAttesa(req, res, login, via) {
+    if (entraCome(req, login)) {
+      ingresso.lega(req, { via });
+      req.ingresso = { stato: 'attesa' };
+      return res.json({ ok: true, vai: '/seconda-prova' });
+    }
+    if (eMail(login)) { req.session.conto = { login, ts: ora() }; return res.json({ ok: true, vai: '/primo-ingresso' }); }
+    return no(res, 'conto', 403);
+  }
+
+  // ── ENTRARE CON LA PASSWORD (solo i conti nati con la mail) ─────────────
+  app.post('/api/ingresso/password', wrap(async (req, res) => {
+    if (!tetto('modulo|' + ip(req), 10, 60_000, ora())) return troppe(res);
+    const p = provaOk(req, 'password');
+    if (!p.ok) return no(res, 'prova');
+    const login = store.perMail(improntaMail(normMail(req.body?.mail)));
+    const ok = !!login && eMail(login) && tetto('parola|' + login, 10, 3_600_000, ora()) && await ingresso.usaPassword(login, req.body?.password);
+    if (!ok) return sbagliato(res);
+    return dentroOAttesa(req, res, login, 'password');
+  }));
+
+  // ── LA REGISTRAZIONE CON LA MAIL (docs/ACCESSO-SICURO.md, passo 4) ──────
+  // Prima della conferma non nasce niente: c'e' solo un'iscrizione di un'ora.
+  // Una mail che e' gia' di qualcuno riceve una mail che glielo dice, e la porta
+  // risponde nello stesso modo.
+  app.post('/api/ingresso/registra', wrap(async (req, res) => {
+    if (!posta.attiva()) return no(res, 'mail');
+    if (!tetto('modulo|' + ip(req), 10, 60_000, ora())) return troppe(res);
+    const p = provaOk(req, 'registra');
+    if (!p.ok) return no(res, 'prova');
+    const mail = normMail(req.body?.mail);
+    if (!posta.indirizzoOk(mail)) return no(res, 'indirizzo');
+    const chiara = req.body?.password;
+    if (chiara !== undefined && chiara !== '' && !lunghezzaOk(chiara)) return no(res, 'misura');
+    const l = lingua(req.body?.lingua);
+    const imp = improntaMail(mail);
+    if (!tetto('iscrivi|' + imp, 3, 3_600_000, ora())) return troppe(res);
+    const id = crypto.randomBytes(16).toString('base64url');
+    req.session.iscrizione = id;
+    if (store.perMail(imp)) {
+      const m = mailGiaDiCasa(l, posta);
+      posta.invia({ a: mail, oggetto: m.oggetto, testo: m.testo, html: m.html }).catch((e) => log?.warn?.('mail di registrazione non partita:', e?.passo || 'errore'));
+      return res.json({ ok: true });
+    }
+    store.nuovaIscrizione({ id, mail, impronta: imp, parola: chiara ? await calco(chiara) : '', lingua: l, scade: ora() + 3_600_000, ora: ora() });
+    ingresso.mandaCodice('iscr.' + id, mail, 'iscrivi', l).catch((e) => log?.warn?.('codice di registrazione non partito:', e?.passo || 'errore'));
+    res.json({ ok: true });
+  }));
+  app.post('/api/ingresso/registra/conferma', wrap(async (req, res) => {
+    if (!tetto('modulo|' + ip(req), 10, 60_000, ora())) return troppe(res);
+    const id = String(req.session?.iscrizione || '');
+    const isc = store.iscrizione(id, ora());
+    if (!isc || !ingresso.usaCodiceMail('iscr.' + id, 'iscrivi', req.body?.codice)) return sbagliato(res);
+    if (!store.chiudiIscrizione(id)) return sbagliato(res);
+    delete req.session.iscrizione;
+    if (store.perMail(isc.impronta)) return no(res, 'presa', 409);
+    const login = creaConto();
+    ingresso.preparaMail(login, isc.mail);
+    if (ingresso.confermaMail(login) !== 'ok') return no(res, 'presa', 409);
+    if (isc.parola) ingresso.mettiCalco(login, isc.parola);
+    store.annota(login, 'fattore', { nota: isc.parola ? 'mail e password' : 'mail' }, ora());
+    req.session.conto = { login, ts: ora() };
+    res.json({ ok: true, vai: '/primo-ingresso' });
+  }));
+
+  // ── IL PRIMO INGRESSO: le domande, e l'attesa dell'approvazione ──────────
+  // `contoInAttesa`: il conto nato con la mail che questa sessione ha appena
+  // confermato, o in cui e' appena entrata. Un giorno, poi si rientra.
+  const contoInAttesa = (req) => {
+    const c = req.session?.conto;
+    const login = String(c?.login || '');
+    if (!login || !eMail(login) || !(ora() - Number(c.ts) < 86_400_000)) return '';
+    return statoConto(login) ? login : '';
+  };
+  app.get('/primo-ingresso', (req, res) => {
+    if (!contoInAttesa(req)) return res.redirect('/ingresso');
+    res.set('Cache-Control', 'no-store');
+    res.sendFile(paginaPrimo);
+  });
+  app.get('/api/ingresso/conto', (req, res) => {
+    const login = contoInAttesa(req);
+    res.set('Cache-Control', 'no-store');
+    if (!login) return res.json({ conto: null });
+    res.json({ conto: { stato: statoConto(login), risposte: risposteDi(login) }, abbonamento: !!abbonabile() });
+  });
+  app.post('/api/ingresso/domande', wrap(async (req, res) => {
+    const login = contoInAttesa(req);
+    if (!login) return no(res, 'sessione', 401);
+    salvaDomande(login, req.body?.risposte || {});
+    res.json({ ok: true, risposte: risposteDi(login) });
+  }));
+  app.post('/api/ingresso/abbonati', wrap(async (req, res) => {
+    const login = contoInAttesa(req);
+    if (!login) return no(res, 'sessione', 401);
+    if (!abbonabile()) return no(res, 'abbonamento');
+    req.session.abbonando = { login, display: risposteDi(login).nome || login };
+    res.json({ ok: true, vai: '/?abbonati=1' });
   }));
 
   // ── IL SECONDO FATTORE, per chi e' entrato da una porta ─────────────────
-  // Chi e' entrato con la mail non la puo' riusare come seconda prova.
-  const entratoConMail = (req) => store.sessione(req.session?.sid)?.via === 'mail';
+  // La seconda prova e' di un altro tipo dalla prima: chi e' entrato con la mail
+  // non la riusa, chi e' entrato con la password nemmeno (ingresso.fattoriUsabili).
+  const primaDi = (req) => store.sessione(req.session?.sid)?.via || '';
+  const entratoConMail = (req) => primaDi(req) === 'mail';
   app.get('/api/ingresso/prova', (req, res) => {
     res.set('Cache-Control', 'no-store');
     const u = inSecondaProva(req);
     if (!u) return res.json({ stato: req.ingresso?.stato || 'nessuno', vai: currentUser(req) ? '/' : '/ingresso' });
     const login = chiDi(u);
-    const f = ingresso.fattoriDi(login);
-    if (entratoConMail(req)) f.mail = '';
-    res.json({ stato: 'attesa', chi: nomeDi(u), modo: ingresso.quantiFattori(f) ? 'verifica' : 'attiva', fattori: f, posta: !!posta.attiva() });
+    const f = ingresso.fattoriUsabili(login, primaDi(req));
+    res.json({ stato: 'attesa', chi: nomeDi(u), modo: ingresso.quantiFattori(f) ? 'verifica' : 'attiva', fattori: f, primo: primaDi(req), posta: !!posta.attiva() });
   });
 
   const fatto = (req, res, login, come, extra = {}) => {
@@ -169,6 +272,15 @@ export function montaIngresso(app, d) {
     if (!ingresso.usaTotp(login, req.body?.codice)) return sbagliato(res);
     return fatto(req, res, login, 'totp');
   }));
+  app.post('/api/ingresso/prova/password', wrap(async (req, res) => {
+    const u = inSecondaProva(req);
+    if (!u) return no(res, 'sessione', 401);
+    const login = chiDi(u);
+    if (primaDi(req) === 'password') return no(res, 'password');
+    if (!tetto('parola|' + login, 10, 3_600_000, ora())) return troppe(res);
+    if (!(await ingresso.usaPassword(login, req.body?.password))) return sbagliato(res);
+    return fatto(req, res, login, 'password');
+  }));
   app.post('/api/ingresso/prova/riserva', wrap(async (req, res) => {
     const u = inSecondaProva(req);
     if (!u) return no(res, 'sessione', 401);
@@ -179,10 +291,10 @@ export function montaIngresso(app, d) {
   }));
 
   // ── ATTIVARLO, per chi non ne ha nessuno (solo lui: se no non proverebbe niente) ──
-  const daAttivare = (u) => {
+  const daAttivare = (u, req) => {
     if (!u) return null;
     const login = chiDi(u);
-    return ingresso.haFattore(login) ? null : { u, login };
+    return ingresso.quantiFattori(ingresso.fattoriUsabili(login, primaDi(req))) ? null : { u, login };
   };
   const attivato = (req, res, login, come) => {
     store.annota(login, 'fattore', { nota: come }, ora());
@@ -190,7 +302,7 @@ export function montaIngresso(app, d) {
   };
 
   app.post('/api/ingresso/attiva/passkey/inizio', wrap(async (req, res) => {
-    const a = daAttivare(inSecondaProva(req));
+    const a = daAttivare(inSecondaProva(req), req);
     if (!a) return no(res, 'sessione', 401);
     const challenge = webauthn.randomChallenge();
     req.session.pkAttiva = challenge;
@@ -199,7 +311,7 @@ export function montaIngresso(app, d) {
       authenticatorSelection: { residentKey: 'preferred', userVerification: 'preferred' }, excludeCredentials: [], timeout: 60000, attestation: 'none' });
   }));
   app.post('/api/ingresso/attiva/passkey/fine', wrap(async (req, res) => {
-    const a = daAttivare(inSecondaProva(req));
+    const a = daAttivare(inSecondaProva(req), req);
     if (!a) return no(res, 'sessione', 401);
     const challenge = req.session.pkAttiva; delete req.session.pkAttiva;
     if (!challenge) return no(res, 'scaduta');
@@ -210,10 +322,10 @@ export function montaIngresso(app, d) {
     return attivato(req, res, a.login, 'passkey');
   }));
   app.post('/api/ingresso/attiva/mail/manda', wrap(async (req, res) => {
-    const a = daAttivare(inSecondaProva(req));
+    const a = daAttivare(inSecondaProva(req), req);
     if (!a) return no(res, 'sessione', 401);
     const mail = normMail(req.body?.mail);
-    if (!posta.attiva()) return no(res, 'mail');
+    if (!posta.attiva() || entratoConMail(req)) return no(res, 'mail');
     if (!posta.indirizzoOk(mail)) return no(res, 'indirizzo');
     if (!tettoMail(a.login)) return troppe(res);
     if (gia(mail, a.login)) return no(res, 'presa', 409);
@@ -223,7 +335,7 @@ export function montaIngresso(app, d) {
     res.json({ ok: true });
   }));
   app.post('/api/ingresso/attiva/mail/verifica', wrap(async (req, res) => {
-    const a = daAttivare(inSecondaProva(req));
+    const a = daAttivare(inSecondaProva(req), req);
     if (!a) return no(res, 'sessione', 401);
     if (!ingresso.usaCodiceMail(a.login, 'attiva', req.body?.codice)) return sbagliato(res);
     const c = ingresso.confermaMail(a.login);
@@ -231,14 +343,14 @@ export function montaIngresso(app, d) {
     return attivato(req, res, a.login, 'mail');
   }));
   app.post('/api/ingresso/attiva/totp/inizio', wrap(async (req, res) => {
-    const a = daAttivare(inSecondaProva(req));
+    const a = daAttivare(inSecondaProva(req), req);
     if (!a) return no(res, 'sessione', 401);
     const segreto = ingresso.preparaTotp(a.login);
     res.set('Cache-Control', 'no-store');
     res.json({ segreto, indirizzo: indirizzoOtp({ segreto, conto: nomeDi(a.u) }) });
   }));
   app.post('/api/ingresso/attiva/totp/verifica', wrap(async (req, res) => {
-    const a = daAttivare(inSecondaProva(req));
+    const a = daAttivare(inSecondaProva(req), req);
     if (!a) return no(res, 'sessione', 401);
     if (!tetto('totp|' + a.login, 10, 600_000, ora())) return troppe(res);
     if (!ingresso.confermaTotp(a.login, req.body?.codice)) return sbagliato(res);
@@ -252,7 +364,7 @@ export function montaIngresso(app, d) {
     const p = store.persona(login);
     const sid = req.session?.sid;
     return {
-      fattori: ingresso.fattoriDi(login), posta: !!posta.attiva(), durata: DURATE.includes(Number(p.durata)) ? Number(p.durata) : 30, durate: DURATE,
+      fattori: ingresso.fattoriDi(login), posta: !!posta.attiva(), conMail: eMail(login), durata: DURATE.includes(Number(p.durata)) ? Number(p.durata) : 30, durate: DURATE,
       sessioni: store.aperte(login, ora()).map((s) => ({ questa: s.sid === sid, motore: s.motore, sistema: s.sistema, rete: s.rete, via: s.via, creata: s.creata, vista: s.vista })),
       registro: store.registro(login, 30),
     };
@@ -298,10 +410,19 @@ export function montaIngresso(app, d) {
   app.delete('/api/sicurezza/fattore/:tipo', requireLogin, wrap(async (req, res) => {
     const login = mio(req);
     const tipo = String(req.params.tipo || '');
-    if (!['totp', 'mail'].includes(tipo)) return no(res, 'tipo');
+    if (!['totp', 'mail', 'password'].includes(tipo)) return no(res, 'tipo');
     if (!ingresso.puoTogliere(login, tipo)) return no(res, 'ultimo', 409);
     store.togliFattore(login, tipo);
     store.annota(login, 'tolto', { nota: tipo }, ora());
+    res.json({ ok: true, ...vista(req) });
+  }));
+  // La password: solo per i conti nati con la mail. Si salva solo il suo calco.
+  app.post('/api/sicurezza/password', requireLogin, wrap(async (req, res) => {
+    const login = mio(req);
+    if (!eMail(login)) return no(res, 'tipo');
+    if (!lunghezzaOk(req.body?.nuova)) return no(res, 'misura');
+    await ingresso.mettiPassword(login, req.body.nuova);
+    store.annota(login, 'fattore', { nota: 'password' }, ora());
     res.json({ ok: true, ...vista(req) });
   }));
   app.post('/api/sicurezza/riserve', requireLogin, wrap(async (req, res) => {

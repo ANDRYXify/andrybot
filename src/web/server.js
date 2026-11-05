@@ -98,7 +98,8 @@ import * as walkonFile from '../features/walkon-file.js';
 import { montaWalkon } from './rotte-walkon.js';
 import { montaIngresso } from './rotte-ingresso.js';
 import { avvisoPer, legaLeSessioni, utenteAperto } from './rotte-ingresso.js';
-import { creaIngresso } from '../features/ingresso.js';
+import { creaIngresso, contoApribile } from '../features/ingresso.js';
+import { impostazioniDaDomande } from '../features/ingresso-domande.js';
 import { creaPortaColpi } from '../features/colpi-porta.js';
 import * as colpiAccesso from '../features/colpi-accesso.js';
 import * as lanci from '../features/lanci.js';
@@ -422,6 +423,8 @@ function conVoceDiProva(login, dir) {
 // cosi' non ci sono due liste da tenere d'accordo.
 const GENERI_VALIDI = GENERI;
 const STATI_VALIDI = ['pending', 'approved', 'disabled'];
+// i moderatori si invitano per piattaforma: la mail non e' una piattaforma su cui si modera
+const PIATTAFORME_MOD = PIATTAFORME.filter((p) => p.id !== 'mail');
 const TIER_VALIDI = ['tutti', 'sub', 'vip', 'mod'];
 const UPLOAD_MAX = 60 * 1024 * 1024;   // 60 MB in ingresso (per clip fino a ~30s; l'output sarà molto più piccolo)
 
@@ -829,7 +832,9 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // da andryxify.it il sito risponde 404 — quindi questo non apre socialbot.live
   // a chiunque passi di lì.
   function haAccesso(login) {
-    return !!String(login || '').toLowerCase();
+    const l = String(login || '').toLowerCase();
+    // un conto nato con la mail apre il pannello solo approvato (docs/ACCESSO-SICURO.md, passo 4)
+    return contoApribile(l, streamers.get(l));
   }
 
   // GLI INVITI CHE ASPETTANO QUESTA PERSONA.
@@ -2128,6 +2133,13 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     }
     const who = await redeemPass(passRaw);
     if (!who) return notFound(res);            // pass presente ma scaduto/già usato
+    // Un conto nato con la mail che aspetta, in questo stesso browser: il pass del
+    // sito madre dice che e' uno streamer di andryxify.it, e lo approva (docs/ACCESSO-SICURO.md).
+    const contoMail = String(req.session?.conto?.login || '');
+    if (piattaformaDi(contoMail) === 'mail' && streamers.get(contoMail)?.status === 'pending') {
+      streamers.setStatus(contoMail, 'approved');
+      log.info(`conto con la mail ${contoMail} approvato dal pass di @${who.login}`);
+    }
 
     // andryxify.it è la fonte di verità sull'abilitazione: lo registriamo
     // localmente come approvato (rispettando un eventuale on/off preesistente) e
@@ -4150,7 +4162,7 @@ ${FUNZIONI_VETRINA.map((a) => `### ${a.area[0]}\n${a.voci.map((v) => `- ${v.t[0]
   const chiInvitare = (corpo) => {
     const grezzo = String(corpo?.nome ?? corpo?.login ?? '').trim().replace(/^@/, '');
     const piattaforma = String(corpo?.piattaforma || 'twitch').toLowerCase();
-    if (!PIATTAFORME.some((p) => p.id === piattaforma)) return { errore: 'piattaforma sconosciuta' };
+    if (!PIATTAFORME_MOD.some((p) => p.id === piattaforma)) return { errore: 'piattaforma sconosciuta' };
     const login = loginSu(piattaforma, grezzo);
     if (!login || !eLoginNostro(login)) return { errore: 'nome utente non valido' };
     return { login };
@@ -4208,7 +4220,7 @@ ${FUNZIONI_VETRINA.map((a) => `### ${a.area[0]}\n${a.voci.map((v) => `- ${v.t[0]
     res.json({
       max: MAX_RICHIESTE,
       // le piattaforme su cui si può chiedere, e se la conferma è possibile
-      piattaforme: PIATTAFORME.map((p) => ({ id: p.id, verificabile: verificabile(loginSu(p.id, 'x'), ident) })),
+      piattaforme: PIATTAFORME_MOD.map((p) => ({ id: p.id, verificabile: verificabile(loginSu(p.id, 'x'), ident) })),
       richieste: managers.richiesteByLogin(ident).map((m) => ({
         canale: m.channel, piattaforma: piattaformaDi(m.channel), nome: nomeSu(m.channel),
         stato: m.status, chiesto: m.chiesto_at || 0, deciso: m.deciso_at || 0,
@@ -4535,7 +4547,7 @@ ${FUNZIONI_VETRINA.map((a) => `### ${a.area[0]}\n${a.voci.map((v) => `- ${v.t[0]
   // esistono.
   const fattiDelCanale = (login) => {
     const f = {};
-    if (piattaformaDi(login) === 'discord') return f;
+    if (!conDiretta(piattaformaDi(login))) return f;
     const s = streamers.get(login);
     const prova = (k, fn) => { try { f[k] = fn(); } catch { /* resta ignoto */ } };
     prova('permessiMancanti', () => scopeMancanti(login).length);
@@ -12902,11 +12914,35 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
   // (docs/ACCESSO-SICURO.md). Le rotte stanno in src/web/rotte-ingresso.js.
   const INGRESSO_HTML = guscio.pagina('ingresso.html', '/ingresso');
   const PROVA_HTML = guscio.pagina('seconda-prova.html', '/seconda-prova');
+  const PRIMO_HTML = guscio.pagina('primo-ingresso.html', '/primo-ingresso');
   montaIngresso(app, {
     wrap, requireLogin, currentUser, identitaDi, ingresso, store: ingressoDb, passkeys, webauthn, posta,
     rp: { id: RP_ID, nome: RP_NAME, origin: ORIGIN }, chiaveProva: segno('ingresso-prova', 'chiave'),
     porte: () => ({ kick: conKick, youtube: conYoutube, discord: !!dcCollega.attivo() }),
     entraCome: (req, login) => apriSessionePerLogin(req, login),
+    // i conti nati con la mail (docs/ACCESSO-SICURO.md, passo 4): uno spazio ml.<a caso>, in attesa
+    creaConto: () => {
+      let login = '';
+      do { login = 'ml.' + crypto.randomBytes(8).toString('hex').slice(0, 10); } while (streamers.get(login));
+      streamers.request(login, '', '');
+      return login;
+    },
+    statoConto: (login) => ({ pending: 'attesa', approved: 'approvato' }[streamers.get(login)?.status] || ''),
+    risposteDi: (login) => {
+      const s = streamers.get(login);
+      const st = s?.settings || {};
+      return { nome: s?.display || '', argomento: st.scheda?.faccio || '', evita: st.scheda?.evita || '', tono: st.tono || '', genere: st.genere || '',
+        community: st.voce?.community || '', lingua: st.preferenze?.lingua || '' };
+    },
+    salvaDomande: (login, risposte) => {
+      const s = streamers.get(login);
+      if (!s) return;
+      const r = impostazioniDaDomande(s.settings, risposte, { schedaPulita, normVoce: voce.normVoce, toni: TONI_VALIDI, generi: GENERI_VALIDI, lingue: ['it', 'en', 'es'] });
+      streamers.setSettings(login, r.settings);
+      if (r.display) streamers.request(login, r.display, '');
+    },
+    abbonabile: () => !!config.stripe.attivo,
+    paginaPrimo: PRIMO_HTML,
     paginaIngresso: INGRESSO_HTML, paginaProva: PROVA_HTML, log,
   });
 

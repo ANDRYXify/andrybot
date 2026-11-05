@@ -251,6 +251,53 @@ la stessa riga: corretto per costruzione, e nessuno chiuso fuori per errore.
   `?lang`, poi quella del browser. Il «Accedi» della vetrina e l'uscita portano
   a `/ingresso`, dove ci sono tutti i modi di entrare.
 
+### La registrazione con la mail (passo 4)
+
+- **Il conto è uno spazio senza diretta**, come chi entra solo con Discord: un
+  canale `ml.<8 segni a caso>` (una piattaforma in più in `src/identita.js`,
+  senza diretta e senza indirizzo pubblico). Il nome che la persona dà al
+  canale diventa il nome da mostrare, non il login: così nessuno si prende il
+  nome di un altro scrivendolo, e Twitch, Kick e YouTube si collegano dopo
+  dal pannello, come oggi. I moderatori non si invitano «per mail»: la mail
+  non sta fra le piattaforme dei moderatori.
+- **Il pannello non c'è finché il conto non è approvato**, per costruzione:
+  `haAccesso` (la sola fonte dei contesti del pannello) dice di no a un conto
+  `ml.` che non è `approved`. Approva **come oggi**: l'amministratore
+  dall'elenco degli streamer, un abbonamento pagato (il ritorno da Stripe
+  approva), o il pass del sito madre portato **dallo stesso browser** mentre
+  il conto aspetta (il pass dice che è uno streamer di andryxify.it; da lì si
+  entra col suo account, e il conto con la mail resta approvato).
+- **La registrazione** chiede solo la mail e, se la vuole, la password (8–128
+  caratteri, nessuna regola di forma, `autocomplete="username"` e
+  `"new-password"`), dopo la prova di lavoro (scopo «registra»). Finché la
+  mail non è confermata non nasce niente: la richiesta sta in
+  `ingresso_iscrizioni` (mail e impronta della password nella busta), scade
+  in un'ora, e il codice (6 cifre, 10 minuti, una volta) sta in
+  `ingresso_codici` come tutti gli altri. Una mail che è già di qualcuno
+  riceve una mail che glielo dice, e la porta risponde allo stesso modo: non
+  dice chi è di casa. Senza posta accesa la registrazione non si offre.
+- **La password** si salva come `scrypt:<N>:<r>:<p>:<sale>:<calco>` (sale di
+  16 byte, N=2^15, r=8, p=1, calco di 64 byte), e quella stringa sta a sua
+  volta nella busta. Si confronta a tempo costante. Mai in chiaro, né nel
+  database né nei log né nelle risposte.
+- **Entrare**: con la passkey (vale per due), con la password o con il codice
+  per mail. **Il secondo fattore vale anche qui, e dev'essere di un altro
+  tipo dal primo**: password e codice per mail sono due prove diverse
+  (sapere e avere), quindi chi ha tutte e due entra con l'una e conferma con
+  l'altra. Chi è entrato con la sola prova che ha (la mail, senza password)
+  trova a `/seconda-prova` il modo di attivarne un'altra (passkey o app),
+  come chi arriva da Twitch senza niente. Per un account dei social la mail
+  resta com'era: vale per entrare solo se accanto c'è un'altra prova.
+- **Le domande del primo ingresso** (`/primo-ingresso`) vanno nelle
+  impostazioni che ci sono: il nome del canale nel nome da mostrare, di cosa
+  parla in `scheda.faccio`, cosa non deve dire mai in `scheda.evita`, il tono
+  in `tono`, come parla di sé in `genere`, la community in `voce.community`,
+  la lingua della chat in `preferenze.lingua`, ripulite dagli stessi pulitori
+  del pannello. Sono tutte facoltative e si cambiano dopo. Le vede chi ha il
+  conto in attesa, nella stessa sessione in cui ha confermato la mail o è
+  entrato, e da lì può anche abbonarsi (il giro dell'abbonamento di oggi, per
+  chi non ha ancora un pannello).
+
 ## Dove sta, e cosa manca
 
 - **Lo schema**: `src/db.js` (`ingresso_sfide`, `ingresso_sessioni`,
@@ -267,10 +314,10 @@ la stessa riga: corretto per costruzione, e nessuno chiuso fuori per errore.
   `test/contratto/ingresso-rotte.test.mjs`, che monta le rotte vere con
   cookie-session e porte finte che fanno quello che fanno le vere (mettono la
   persona in sessione e basta).
-- **Non ancora fatto (il passo 4)**: la registrazione con la mail per chi non
-  ha un account (il conto nuovo, la password con scrypt, le domande del primo
-  ingresso nelle impostazioni che ci sono, l'attesa dell'approvazione). Oggi
-  con la mail entra solo chi è già di casa, l'ha confermata nel pannello e ha
-  un'altra prova. Le due garanzie che riguardano il passo 4 («una password
-  non si salva mai in chiaro», «la registrazione con la mail non apre il
-  pannello senza approvazione») aspettano quel passo.
+- **Il passo 4**: `src/features/ingresso-password.js` (scrypt),
+  `ingresso-domande.js` (le risposte nelle impostazioni), `ingresso_iscrizioni`
+  in `src/db.js`, le rotte `/api/ingresso/registra`, `/registra/conferma`,
+  `/password`, `/prova/password`, `/conto`, `/domande`, `/abbonati` e la
+  pagina `/primo-ingresso`; la regola del pannello è `contoApribile`
+  (`features/ingresso.js`), usata da `haAccesso`. Le prove stanno in
+  `test/contratto/ingresso-registra.test.mjs`.

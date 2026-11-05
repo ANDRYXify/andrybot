@@ -43,6 +43,8 @@
     passkey: () => L('La passkey non è andata. Riprova, o scegli un altro modo.', 'The passkey did not work. Try again, or pick another way.', 'La passkey no ha funcionado. Vuelve a intentarlo o elige otra forma.'),
     indirizzo: () => L('Questa mail non sembra giusta.', 'This email does not look right.', 'Este correo no parece correcto.'),
     invio: () => L('La mail non è partita. Riprova fra poco.', 'The email did not go out. Try again shortly.', 'El correo no ha salido. Vuelve a intentarlo en un rato.'),
+    misura: () => L('La password va da 8 a 128 caratteri.', 'The password must be 8 to 128 characters.', 'La contraseña va de 8 a 128 caracteres.'),
+    password: () => L('Hai già usato la password: scegli un’altra prova.', 'You already used the password: choose another check.', 'Ya usaste la contraseña: elige otra prueba.'),
     presa: () => L('Questa mail la usa già un altro accesso.', 'This email is already used by another account.', 'Este correo ya lo usa otro acceso.'),
     prova: () => L('Il controllo del browser non è andato: ricarica la pagina e riprova.', 'The browser check did not go through: reload the page and try again.', 'La comprobación del navegador no ha ido bien: recarga la página y vuelve a intentarlo.'),
     conto: () => L('Questo accesso adesso non apre nessun pannello.', 'This account does not open any panel right now.', 'Este acceso ahora no abre ningún panel.'),

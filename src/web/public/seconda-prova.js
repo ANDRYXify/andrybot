@@ -50,7 +50,8 @@
       el('div', { classe: 'scelte' },
         f.passkey > 0 ? scelta('scelta-passkey', T.passkey[0], L('Usa l’impronta, il volto o il PIN.', 'Use your fingerprint, face or PIN.', 'Usa la huella, la cara o el PIN.'), () => usaPasskey()) : null,
         f.mail && stato.posta ? scelta('scelta-mail', T.mail[0], L(`Te lo mandiamo a ${f.mail}.`, `We send it to ${f.mail}.`, `Te lo mandamos a ${f.mail}.`), () => usaMail()) : null,
-        f.totp ? scelta('scelta-totp', T.totp[0], L('Apri l’app e scrivi le 6 cifre.', 'Open the app and type the 6 digits.', 'Abre la app y escribe las 6 cifras.'), () => usaTotp()) : null),
+        f.totp ? scelta('scelta-totp', T.totp[0], L('Apri l’app e scrivi le 6 cifre.', 'Open the app and type the 6 digits.', 'Abre la app y escribe las 6 cifras.'), () => usaTotp()) : null,
+        f.password ? scelta('scelta-password', L('Con la tua password', 'With your password', 'Con tu contraseña'), L('Quella che hai scelto quando ti sei registrato.', 'The one you chose when you signed up.', 'La que elegiste al registrarte.'), () => usaPassword()) : null),
       f.riserve > 0 ? el('p', { classe: 'piccolo' }, el('button', { classe: 'link-indietro', type: 'button', id: 'btn-usa-riserva', suclick: () => usaRiserva() },
         L('Non hai niente di questo con te? Usa un codice di riserva', 'None of these with you? Use a backup code', '¿No tienes nada de esto contigo? Usa un código de reserva'))) : null,
       piede());
@@ -92,6 +93,17 @@
     campo.focus();
   }
 
+  function usaPassword() {
+    pulisci();
+    const m = messaggio();
+    const campo = el('input', { type: 'password', id: 'campo-prova-password', name: 'password', autocomplete: 'current-password', maxlength: '128', classe: 'codice-campo parola', 'aria-label': L('La password', 'The password', 'La contraseña') });
+    const b = conBottone(el('button', { classe: 'azione', id: 'btn-prova-password', type: 'button' }, L('Entra', 'Sign in', 'Entrar')), m,
+      async () => entra(await chiama('/api/ingresso/prova/password', { password: campo.value })));
+    metti(el('h1', { testo: L('Con la tua password', 'With your password', 'Con tu contraseña') }),
+      passo(1, L('Scrivi la password del tuo conto. Il portachiavi te la può proporre.', 'Type your account password. Your keychain can suggest it.', 'Escribe la contraseña de tu cuenta. El llavero te la puede proponer.')), campo, b, m, indietro(), piede());
+    campo.focus();
+  }
+
   function usaRiserva() {
     pulisci();
     const m = messaggio();
@@ -110,7 +122,7 @@
       el('p', { classe: 'grande', testo: L('Per entrare d’ora in poi ti chiediamo una seconda prova che sei proprio tu. Scegli come, ci vuole un minuto:', 'From now on, to get in we ask for a second check that it is really you. Choose how, it takes a minute:', 'A partir de ahora, para entrar te pedimos una segunda prueba de que eres tú. Elige cómo, se tarda un minuto:') }),
       el('div', { classe: 'scelte' },
         scelta('attiva-passkey', T.passkey[0], T.passkey[1], () => attivaPasskey()),
-        stato.posta ? scelta('attiva-mail', T.mail[0], T.mail[1], () => attivaMail()) : null,
+        stato.posta && stato.primo !== 'mail' ? scelta('attiva-mail', T.mail[0], T.mail[1], () => attivaMail()) : null,
         scelta('attiva-totp', T.totp[0], T.totp[1], () => attivaTotp())),
       el('p', { classe: 'piccolo', testo: L('Alla fine ti diamo dieci codici di riserva, per il giorno in cui non hai il telefono.', 'At the end we give you ten backup codes, for the day you do not have your phone.', 'Al final te damos diez códigos de reserva, para el día que no tengas el teléfono.') }),
       piede());

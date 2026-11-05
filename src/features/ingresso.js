@@ -20,6 +20,12 @@ import crypto from 'node:crypto';
 import { impronta } from '../segreti.js';
 import { improntaDi, giudica } from './ingresso-impronta.js';
 import * as totp from './ingresso-totp.js';
+import * as parola from './ingresso-password.js';
+import { eMail } from '../identita.js';
+
+// IL CONTO APRE IL PANNELLO? Una regola sola, che server.js usa in haAccesso (la
+// sola fonte dei contesti del pannello): un conto nato con la mail solo approvato.
+export const contoApribile = (login, streamer) => !!login && (!eMail(login) || streamer?.status === 'approved');
 
 export const PRIMA_MS = 30 * 86_400_000;          // i cookie senza sid: ancora 30 giorni dal primo avvio
 export const DURATE = [1, 7, 14, 30];
@@ -84,6 +90,18 @@ export function mailCodice(codice, lingua = 'it', posta = null) {
     testo: `${t.titolo}: ${bello}\n${t.vale}\n${t.non}`,
     html: posta?.guscioHtml ? posta.guscioHtml({ titolo: t.titolo, corpo, piede: t.piede }) : '',
   };
+}
+
+// Chi prova a registrarsi con una mail che e' gia' di casa riceve questa, al
+// posto del codice: la porta risponde uguale, e la mail dice a chi e' davvero.
+export const TESTI_GIA = {
+  it: { oggetto: 'Hai già un accesso a SocialBot', titolo: 'Hai già un accesso', testo: 'Qualcuno ha provato a registrarsi con questa mail, ma un accesso con questa mail c’è già. Per entrare usa «Entra con un codice per mail». Se non sei stato tu, non fare niente.' },
+  en: { oggetto: 'You already have a SocialBot sign-in', titolo: 'You already have a sign-in', testo: 'Someone tried to sign up with this email, but there is already a sign-in with it. To get in, use «Sign in with an email code». If it was not you, do nothing.' },
+  es: { oggetto: 'Ya tienes un acceso a SocialBot', titolo: 'Ya tienes un acceso', testo: 'Alguien ha intentado registrarse con este correo, pero ya hay un acceso con él. Para entrar usa «Entra con un código por correo». Si no fuiste tú, no hagas nada.' },
+};
+export function mailGiaDiCasa(lingua = 'it', posta = null) {
+  const t = TESTI_GIA[lingua] || TESTI_GIA.it;
+  return { oggetto: t.oggetto, testo: t.testo, html: posta?.guscioHtml ? posta.guscioHtml({ titolo: t.titolo, corpo: `<p style="margin:0;">${t.testo}</p>` }) : '' };
 }
 
 const VIE = [
@@ -187,11 +205,21 @@ export function creaIngresso({ store, identitaDi, passkeyQuante = () => 0, posta
       passkey: passkeyQuante(login),
       totp: f.some((x) => x.tipo === 'totp'),
       mail: mail ? mailNascosta(mail.segreto) : '',
+      password: f.some((x) => x.tipo === 'password'),
       riserve: store.riserveRimaste(login),
     };
   }
-  const quantiFattori = (f) => (f.passkey > 0 ? 1 : 0) + (f.totp ? 1 : 0) + (f.mail ? 1 : 0);
+  const quantiFattori = (f) => (f.passkey > 0 ? 1 : 0) + (f.totp ? 1 : 0) + (f.mail ? 1 : 0) + (f.password ? 1 : 0);
   const haFattore = (login) => quantiFattori(fattoriDi(login)) > 0;
+  // LA SECONDA PROVA E' DI UN ALTRO TIPO DALLA PRIMA: chi e' entrato con la mail
+  // non la riusa, chi e' entrato con la password nemmeno. Quello che resta e'
+  // quello che si puo' usare adesso.
+  function fattoriUsabili(login, via) {
+    const f = fattoriDi(login);
+    if (via === 'mail') f.mail = '';
+    if (via === 'password') f.password = false;
+    return f;
+  }
 
   // La prova data: la riga in attesa diventa aperta. Vale solo per una riga viva.
   function provata(req, login, come) {
@@ -257,17 +285,34 @@ export function creaIngresso({ store, identitaDi, passkeyQuante = () => 0, posta
   function chiPerMail(indirizzo) {
     const login = store.perMail(improntaMail(indirizzo));
     if (!login) return '';
+    if (eMail(login)) return login;            // un conto nato con la mail: la mail e' il conto
     const f = fattoriDi(login);
     return f.passkey > 0 || f.totp ? login : '';
+  }
+  // LA PASSWORD: solo il calco, nella busta; confrontata a tempo costante.
+  async function mettiPassword(login, chiara) {
+    store.prepara(login, 'password', await parola.calco(chiara), '', ora());
+    return store.conferma(login, 'password', 0);
+  }
+  function mettiCalco(login, calcoPronto) {
+    if (!parola.eCalco(calcoPronto)) return false;
+    store.prepara(login, 'password', calcoPronto, '', ora());
+    return store.conferma(login, 'password', 0);
+  }
+  async function usaPassword(login, chiara) {
+    const f = store.fattore(login, 'password');
+    return !!f && await parola.combacia(String(chiara ?? ''), f.segreto);
   }
 
   // Togliere un fattore: mai l'ultimo (codici di riserva a parte).
   function puoTogliere(login, tipo) {
+    if (tipo === 'mail' && eMail(login)) return false;   // la mail di un conto nato con la mail e' il conto
     const f = fattoriDi(login);
-    const resta = { ...f, [tipo === 'passkey' ? 'passkey' : tipo]: tipo === 'passkey' ? f.passkey - 1 : (tipo === 'totp' ? false : '') };
+    const resta = { ...f, [tipo]: tipo === 'passkey' ? f.passkey - 1 : (tipo === 'mail' ? '' : false) };
     return quantiFattori(resta) > 0;
   }
 
   return { leggi, lega, esci, fuori, fattoriDi, haFattore, quantiFattori, provata, mandaCodice, usaCodiceMail, nuoveRiserve, usaRiserva,
-    preparaTotp, usaTotp, confermaTotp, preparaMail, confermaMail, chiPerMail, puoTogliere, improntaReq, durataMs };
+    preparaTotp, usaTotp, confermaTotp, preparaMail, confermaMail, chiPerMail, puoTogliere, improntaReq, durataMs,
+    fattoriUsabili, mettiPassword, mettiCalco, usaPassword };
 }

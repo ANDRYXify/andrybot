@@ -62,3 +62,19 @@ code.chiave { display: inline-block; word-break: break-all; margin-top: 4px; }
 .con-mail .azione { margin-top: 4px; }
 .con-mail .azione[hidden] { display: none; }
 .card h1 { line-height: 1.25; }
+.domande { display: grid; gap: 16px; text-align: left; margin: 16px 0 10px; }
+.domanda { display: grid; gap: 6px; }
+.domanda-testo { display: flex; gap: 10px; align-items: center; font-weight: 650; color: var(--testo); }
+.scelte-piccole { display: flex; flex-wrap: wrap; gap: 8px; }
+.scelta-piccola { display: inline-flex; gap: 6px; align-items: center; min-height: 44px; padding: 8px 12px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-2); cursor: pointer; }
+.scelta-piccola input { accent-color: var(--acc); }
+.attesa { text-align: left; margin: 22px 0 6px; padding: 14px 16px; border-radius: 14px; background: var(--acc-soft); border: 1px solid var(--acc-bordo); }
+.attesa p, .attesa li { color: var(--testo); }
+.strade { padding-left: 1.2rem; margin: 8px 0; }
+.con-mail input[type="password"] { width: 100%; min-height: 48px; padding: 10px 12px; font: inherit; background: var(--surface-2); color: var(--testo); border: 1px solid var(--border); border-radius: 12px; }
+.con-mail input[type="password"]:focus-visible { outline: 2px solid var(--acc); outline-offset: 1px; }
+.con-mail label { font-size: .9rem; color: var(--testo-2); }
+.separa { margin: 14px 0 0; font-size: .9rem; color: var(--testo-2); }
+#porta-nuovo[hidden], form.con-mail[hidden] { display: none; }
+.card input.codice-campo.parola { letter-spacing: normal; font-family: inherit; font-size: 1rem; text-align: left; }
+.attesa .azione { text-align: center; }
