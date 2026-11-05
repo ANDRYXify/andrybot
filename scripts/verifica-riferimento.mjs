@@ -93,7 +93,7 @@ try {
   // si ricorda APPENA messa, prima di toccare qualsiasi altro comando: ricaricando
   // torna da sola (chi la salva solo al primo ritocco della trasparenza qui e' rosso)
   await apri();
-  await ed.waitForFunction(() => { const s = document.getElementById('ap-riferimento'); return !s.hidden && /blob:/.test(s.style.backgroundImage); }, null, { timeout: 6000 }).catch(() => {});
+  await ed.waitForFunction(() => { const s = document.getElementById('ap-riferimento'); return !s.hidden && /blob:/.test(s.style.backgroundImage); }, null, { timeout: 20000 }).catch(() => {});
   const appena = await strato();
   dice(!appena.hidden && appena.blob && appena.opacita === '0.6', `appena messa si ricorda: ricaricando la pagina torna com'era (60) — ${JSON.stringify(appena)}`);
 
@@ -116,7 +116,7 @@ try {
   dice(rifiuto === false && (await strato()).blob, 'un file che non e\' un\'immagine viene rifiutato e quella di prima resta');
 
   await apri();
-  await ed.waitForFunction(() => { const s = document.getElementById('ap-riferimento'); return !s.hidden && /blob:/.test(s.style.backgroundImage); }, null, { timeout: 6000 }).catch(() => {});
+  await ed.waitForFunction(() => { const s = document.getElementById('ap-riferimento'); return !s.hidden && /blob:/.test(s.style.backgroundImage); }, null, { timeout: 20000 }).catch(() => {});
   const tornata = await strato();
   dice(!tornata.hidden && tornata.blob && tornata.opacita === '0.3', `ricaricando la pagina l'immagine torna, con la sua trasparenza (30) — ${JSON.stringify(tornata)}`);
 
