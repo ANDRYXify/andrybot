@@ -24,7 +24,7 @@ import { dirname, join } from 'node:path';
 
 const RAD = join(dirname(fileURLToPath(import.meta.url)), '../..');
 const HTML = readFileSync(join(RAD, 'src/web/public/index.html'), 'utf8');
-const ROBOTS = readFileSync(join(RAD, 'src/web/public/robots.txt'), 'utf8');
+const ROBOTS = readFileSync(join(RAD, 'src/web/robots-base.txt'), 'utf8');
 
 function fuoriDalPrefetch() {
   const m = HTML.match(/"not":\s*\{\s*"href_matches":\s*\[([^\]]+)\]/);

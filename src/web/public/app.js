@@ -230,6 +230,7 @@ function impostazioni() {
     giochi: s.giochi !== false,
     promoSocial: s.promoSocial !== false,
     vetrinaLive: s.vetrinaLive === true,
+    ia: { pagine: s.ia?.pagine === true },
     nomeMonete: (typeof s.nomeMonete === 'string' && s.nomeMonete.trim()) || 'monete',
     presente: (s.presente && typeof s.presente === 'object') ? s.presente : null,
     punti: { perMessaggio: 2, ogniSecondi: 60, trivia: 25, duello: 15, slotCosto: 10, slotVinci: 200, slotCoppia: 20, topN: 5, perPresenza: 5, perAttivita: 5, moltSub: 1.5, moltVip: 1.25, lurkPasso: 0.15, lurkMinimo: 0.35, auto: true, msgSpento: true, esclusi: [], noComandi: false, noRipetuti: false, minLettere: 0, pienoMin: 0, stopMin: 0, tettoDiretta: 0, saldoMax: 0, durate: { chat: 'mai', giochi: 'mai', premi: 'mai', staff: 'mai' }, giocoOgni: 0, giochiScorta: 3, ...(s.punti && typeof s.punti === 'object' ? s.punti : {}) },
@@ -29568,6 +29569,15 @@ function pannelloPaginaLink() {
         <span class="etichetta-stato">${L('Fammi comparire quando sono in diretta', 'Show me when I am live', 'Muéstrame cuando esté en directo')}</span>
       </div>
       <p class="suggerimento spazio-sopra">${L('Non mostriamo niente dei tuoi spettatori, e niente di tuo che non sia già pubblico sul tuo canale.', 'We show nothing about your viewers, and nothing of yours that is not already public on your channel.', 'No mostramos nada de tus espectadores, ni nada tuyo que no sea ya público en tu canal.')}</p>
+    </div>
+    <div class="carta" id="carta-ia-pagine">
+      <h2>${_hIco(ICO.globo)}${L('Le tue pagine e gli assistenti IA', 'Your pages and AI assistants', 'Tus páginas y los asistentes de IA')}</h2>
+      <p>${L('ChatGPT, Perplexity, Claude e gli altri assistenti che rispondono alle persone possono leggere le tue pagine pubbliche (la pagina link, la pagina Pew, il walk-on, le donazioni) e consigliarle a chi cerca un canale come il tuo. È spento finché non lo accendi tu.', 'ChatGPT, Perplexity, Claude and the other assistants that answer people can read your public pages (the link page, the Pew page, the walk-on, donations) and recommend them to people looking for a channel like yours. It is off until you turn it on.', 'ChatGPT, Perplexity, Claude y los demás asistentes que responden a las personas pueden leer tus páginas públicas (la página de enlaces, la de Pew, el walk-on, las donaciones) y recomendarlas a quien busca un canal como el tuyo. Está apagado hasta que lo enciendas.')}</p>
+      <div class="riga-interruttore spazio-sopra">
+        <label class="interruttore"><input type="checkbox" id="chk-ia-pagine" ${sImp.ia?.pagine ? 'checked' : ''}><span class="levetta"></span></label>
+        <span class="etichetta-stato">${L('Fai leggere le mie pagine agli assistenti IA', 'Let AI assistants read my pages', 'Deja que los asistentes de IA lean mis páginas')}</span>
+      </div>
+      <p class="suggerimento spazio-sopra">${L('Nessuno, acceso o spento, può usare le tue pagine o SocialBot per addestrare un\'intelligenza artificiale: lo diciamo a tutti i programmi che lo fanno, e quelli seri lo rispettano.', 'Nobody, on or off, may use your pages or SocialBot to train an artificial intelligence: we tell every program that does it, and the serious ones respect it.', 'Nadie, encendido o apagado, puede usar tus páginas ni SocialBot para entrenar una inteligencia artificial: se lo decimos a todos los programas que lo hacen, y los serios lo respetan.')}</p>
     </div>` : ''}
 `);
 }
@@ -39364,7 +39374,7 @@ function caricaDatiScheda(id) {
   if (id === 'dcserver') { collegaDcServer(); caricaDcServer(); }
   if (id === 'dcentra') { collegaChiEntra(); caricaDcServer(); }
   if (id === 'dcfiltro') { collegaFiltro(); caricaDcServer(); }
-  if (id === 'pagina') { caricaPaginaLink(false, 'link'); collegaVetrinaLive(); }
+  if (id === 'pagina') { caricaPaginaLink(false, 'link'); collegaVetrinaLive(); collegaIaPagine(); }
   if (id === 'donazioni') { riempiDonazioni(); caricaStatoDonazioni(true); caricaPaginaLink(false, 'dona'); }
   if (id === 'grafiche') initGrafiche();
   if (id === 'settimana') caricaSettimana();
@@ -42293,6 +42303,18 @@ function _statGara(id, righe, vuoto) {
     ? righe.map((r, i) => `<li><div class="testo-voce"><span class="domanda">${medaglia(i)} ${esc(r.chi)}</span>
         <span class="risposta">${esc(r.quanto)}</span></div></li>`).join('')
     : `<li class="vuoto">${vuoto}</li>`;
+}
+
+function collegaIaPagine() {
+  const c = document.getElementById('chk-ia-pagine');
+  if (!c || c.dataset.legato) return;
+  c.dataset.legato = '1';
+  c.addEventListener('change', () => conErrore(async () => {
+    await salvaImpostazioni({ ia: { pagine: c.checked } }, null);
+    toast(c.checked
+      ? L('Gli assistenti IA possono leggere le tue pagine ✓', 'AI assistants can read your pages ✓', 'Los asistentes de IA pueden leer tus páginas ✓')
+      : L('Le tue pagine restano fuori dagli assistenti IA ✓', 'Your pages stay out of AI assistants ✓', 'Tus páginas quedan fuera de los asistentes de IA ✓'));
+  }));
 }
 
 function collegaVetrinaLive() {

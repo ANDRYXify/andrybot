@@ -46,6 +46,9 @@ comandi diversi da quelli della riga italiana.
 - Il sito ha ora anche i file che gli assistenti IA, i motori di ricerca e chi compra pubblicità cercano in cima: llm.txt, ai.txt, ads.txt e humans.txt. [vai: stato]
   en: The site now also has the files AI assistants, search engines and ad buyers look for at the top: llm.txt, ai.txt, ads.txt and humans.txt.
   es: El sitio tiene ahora también los archivos que buscan arriba los asistentes de IA, los buscadores y quien compra publicidad: llm.txt, ai.txt, ads.txt y humans.txt.
+- Gli assistenti IA ora sanno tutto quello che fa SocialBot, ma nessuno può usarlo per addestrarsi. Le tue pagine pubbliche le leggono solo se lo accendi tu. [vai: pagina]
+  en: AI assistants now know everything SocialBot does, but nobody can use it to train. They read your public pages only if you turn it on.
+  es: Los asistentes de IA ya saben todo lo que hace SocialBot, pero nadie puede usarlo para entrenarse. Leen tus páginas públicas solo si lo enciendes tú.
 
 ## 2026-11-04
 

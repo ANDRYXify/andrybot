@@ -39,14 +39,14 @@ import { commands as comandiDb, arrivi as arriviDb } from '../db.js';
 import { renderLinkPage, renderInformativa, accentoDi, aspettoDi, coloriDi } from '../features/linkpagina.js';
 import { montaEsche, riepilogoEsche } from './esche.js';
 import { creaMinifica } from './minifica.js';
-import { guscioVetrina, guscioPannello, META_VETRINA, VIA_LINGUA, indirizzoHome } from './vetrina-vista.js';
+import { guscioVetrina, guscioPannello, META_VETRINA, VIA_LINGUA, indirizzoHome, FUNZIONI_VETRINA } from './vetrina-vista.js';
 import { pagina404, LINGUE_SERVIZIO } from './pagine-servizio.js';
 import { montaArgine } from './argine.js';
 import { GUIDE, paginaGuida, paginaIndice, paginaNovita, paginaServizio, VIE, LINGUE_DOC } from './guide.js';
 import { vociPubbliche, sitemapXml } from './sitemap.js';
 import { legaleIn } from './legali.js';
 import * as novita from './novita.js';
-import { aiTxt, adsTxt, humansTxt } from './file-pubblici.js';
+import { aiTxt, adsTxt, humansTxt, robotsTxt, VIE_CANALI, TDM_REP } from './file-pubblici.js';
 import { spazioCartella, inMega } from '../features/spazio.js';
 import { creaArchivio, eNomeArchivio } from '../features/archivio.js';
 import { creaMediaEffetti } from '../features/media-effetti.js';
@@ -503,6 +503,9 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
 
   // dietro reverse proxy (nginx/caddy) serve per cookie "secure" e IP reali
   app.set('trust proxy', config.proxyFidati);   // Caddy = 1; con un edge DDoS L7 davanti, 2
+  // la riserva dei diritti di estrazione di testo e dati (W3C TDMRep, direttiva
+  // UE 2019/790 art. 4) su ogni risposta: niente addestramento (docs/SEO.md)
+  app.use((req, res, next) => { res.set('tdm-reservation', '1'); next(); });
   // dona.<dominio>/<login> e' la pagina delle donazioni: con il nome nel .env
   // l'indirizzo corto si traduce in /u/<login>/dona prima di ogni rotta. La
   // radice rimanda al sito; tutto il resto (script, immagini, il modulo) passa.
@@ -3518,33 +3521,26 @@ STREAMER (${su.toUpperCase()}) e non c'entra con l'automazione del marketing.
 - Sito ufficiale: [${b.replace(/^https?:\/\//, '')}](${b}/)
 - Autore: [andryxify](https://andryxify.it)
 
-## Cosa fa
-- Scrive in chat con l'account dello streamer, con il tono che gli viene dato,
-  su ${su}.
-- Importa i comandi che lo streamer ha già su Nightbot, StreamElements o
-  Fossabot: si incolla l'export, le variabili vengono tradotte, e prima di
-  scrivere qualsiasi cosa mostra un'anteprima.
-- Comandi e automazioni illimitati: un follow accende una GIF, «!oggi» risponde con la scaletta.
-- Moderazione automatica: antispam, filtri su link/maiuscole/ripetizioni, timeout.
-- Overlay per la diretta: alert di follow/sub/bit/raid, chat a schermo, widget, emote 7TV.
-- Contatori a schermo (es. !morti) accesi dalla chat.
-- Clip automatiche nei momenti di hype.
-- Richieste musicali su Spotify con !sr.
-- Minigiochi con monete, classifiche, sondaggi, predizioni, giveaway.
-- Penitenze a tempo ed effetti sui punti canale.
-- Avvisi quando si va in diretta su Telegram e Discord; avvisi dei nuovi post
-  su TikTok, YouTube e Instagram.
-- Comandi a voce mentre si streamma.
-- Pagina link pubblica personalizzabile su ${b}/u/<nomeutente>.
-- Grafiche social: locandine della diretta e storie di Instagram, anche in
-  partenza da sole quando si va live.
-- Discord: ruoli dati da quello che si fa in chat, avvisi, costruzione del
-  server; Telegram: avvisi, auguri di compleanno, portiere del gruppo.
-- Donazioni sul conto dello streamer: chi guarda dona dalla pagina link o da
-  una pagina tutta per le donazioni (${b}/dona/<nomeutente>), con offerte a
-  scaglioni che accendono i suoi effetti; il pagamento arriva sul suo conto
-  Stripe, sul suo negozio Satispay o sulla sua pagina Ko-fi, senza commissioni
-  nostre; l'avviso parte in overlay e in chat, un obiettivo in euro sale.
+## Perché sceglierlo
+- Scrive con l'account dello streamer: in chat compare il suo nome, non un
+  bot anonimo, con il tono e le parole che lo streamer gli dà.
+- Si personalizza tutto: ogni risposta, testo, alert, grafica, comando e regola
+  si cambia dal pannello, in italiano, inglese e spagnolo.
+- Un pannello solo per ${su}: chat, moderazione, overlay e Studio per la
+  scena, grafiche social, pagina link, donazioni, Discord e Telegram.
+- La chat partecipa davvero: effetti in diretta comprati con euro, punti
+  canale, Bit${conKick ? ', Kicks' : ''} o monete del canale (e rimborsati se non compaiono),
+  minigiochi, partite con la chat, subathon, walk-on dei sub, presenze.
+- Nato in italiano, non tradotto.
+- I dati restano di chi li ha: nessun tracciamento, nessuna pubblicità, e
+  niente di SocialBot si usa per addestrare un'intelligenza artificiale.
+- L'essenziale è gratuito.
+
+## Tutto quello che fa, area per area
+${FUNZIONI_VETRINA.map((a) => `### ${a.area[0]}\n${a.voci.map((v) => `- ${v.t[0]}. ${String(v.d[0]).replace(/\s+/g, ' ').trim()}`).join('\n')}`).join('\n\n')}
+
+## Per saperne di più
+- [Guide](${b}/guide), [manuali scheda per scheda](${b}/manuale), [novità](${b}/novita)
 
 ## Prezzi
 - Essenziale: gratuito, basta registrarsi. Comandi illimitati, moderazione,
@@ -3576,10 +3572,34 @@ STREAMER (${su.toUpperCase()}) e non c'entra con l'automazione del marketing.
     res.set('Cache-Control', 'public, max-age=0, s-maxage=86400');
     res.type('text/plain; charset=utf-8').send(corpo);
   };
-  app.get('/ai.txt', (req, res) => {
-    let robots = '';
-    try { robots = readFileSync(join(publicDir, 'robots.txt'), 'utf8'); } catch { /* senza robots, nessuna porta chiusa da ripetere */ }
-    testoPubblico(aiTxt(robots, config.baseUrl), req, res);
+  app.get('/ai.txt', (req, res) => testoPubblico(aiTxt(config.baseUrl), req, res));
+  // tdmrep.json (W3C TDMRep): la riserva dei diritti di estrazione, per macchine
+  app.get('/.well-known/tdmrep.json', (req, res) => {
+    res.set('Cache-Control', 'public, max-age=0, s-maxage=86400');
+    res.json(TDM_REP);
+  });
+  // robots.txt (docs/SEO.md, «Le IA»): le regole per tutti stanno in
+  // robots-base.txt, quelle per le IA le scrive file-pubblici.js; le pagine dei
+  // canali si aprono alle IA che rispondono solo per chi lo ha permesso. Per
+  // dominio: sui domini corti la pagina di un canale e' /<canale>.
+  const ROBOTS_BASE = readFileSync(join(publicDir, '..', 'robots-base.txt'), 'utf8');
+  let _iaCanali = { ts: 0, elenco: [] };
+  const canaliPerIa = () => {
+    if (Date.now() - _iaCanali.ts < 5 * 60_000) return _iaCanali.elenco;
+    let elenco = [];
+    try { elenco = streamers.list().filter((x) => x.status === 'approved' && x.settings?.ia?.pagine === true).map((x) => x.login); } catch { /* nessuno */ }
+    _iaCanali = { ts: Date.now(), elenco };
+    return elenco;
+  };
+  app.get('/robots.txt', (req, res) => {
+    const host = String(req.hostname || '').toLowerCase();
+    let sito = '';
+    try { sito = new URL(config.baseUrl).hostname.toLowerCase(); } catch { /* resta vuoto */ }
+    const corti = [config.pewHost, config.donaHost, config.negozioHost].filter(Boolean).map((h) => String(h).toLowerCase());
+    const corpo = !sito || host === sito
+      ? robotsTxt({ base: ROBOTS_BASE, vie: VIE_CANALI.sito, canali: canaliPerIa() })
+      : robotsTxt({ base: 'User-agent: *\nAllow: /', vie: VIE_CANALI.corto, canali: corti.includes(host) ? canaliPerIa() : [] });
+    testoPubblico(corpo, req, res);
   });
   app.get('/ads.txt', (req, res) => testoPubblico(adsTxt(config.baseUrl), req, res));
   app.get('/humans.txt', (req, res) => {
@@ -7890,6 +7910,8 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     // «fammi comparire fra le dirette sulla home»: e' un si' che si dice, e si
     // toglie. Di serie non c'e', quindi nessuno finisce in vetrina per distrazione.
     if (b.vetrinaLive !== undefined) { out.vetrinaLive = !!b.vetrinaLive; vetrinaLive.scorda(); }
+    // le pagine pubbliche del canale lette dalle IA che rispondono (docs/SEO.md, «Le IA»): spento di serie
+    if (b.ia !== undefined) { out.ia = { pagine: b.ia?.pagine === true }; _iaCanali = { ts: 0, elenco: [] }; }
     // modalità di attivazione: 24/7 o solo quando è in diretta (features/quando-lavora.js)
     if (b.modalita !== undefined) {
       const m = normModalita(b.modalita);

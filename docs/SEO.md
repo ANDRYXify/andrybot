@@ -517,10 +517,8 @@ Un controllo «SEO & AI readiness» cercava `llm.txt`, `ai.txt`, `ads.txt` e
 
 - **`/llm.txt`**: lo stesso riassunto di `/llms.txt` (il nome della
   convenzione), servito anche al singolare che alcuni controlli cercano.
-- **`/ai.txt`** (la proposta di Spawning): non è una seconda politica scritta a
-  mano. Sono le regole di `robots.txt` per «User-agent: *», lette dallo stesso
-  file a ogni richiesta (`file-pubblici.js`, `regoleRobots`): la vetrina si
-  legge, le aree private no. Se cambia robots.txt, cambia anche lui.
+- **`/ai.txt`** (la proposta di Spawning): niente addestramento, da nessuna
+  parte (vedi «Le IA» qui sotto).
 - **`/ads.txt`** (IAB Tech Lab 1.1): il sito non mostra pubblicità, e lo dice
   con la riga che lo standard prescrive per «nessun venditore autorizzato»
   (`placeholder.example.com, placeholder, DIRECT, placeholder`) e
@@ -532,4 +530,39 @@ Un controllo «SEO & AI readiness» cercava `llm.txt`, `ai.txt`, `ads.txt` e
 Le quattro rotte sono pubbliche per costruzione in due posti, come le altre
 dei motori: `ROTTE` in `src/web/vetrina.js` (il guscio) e `PUBBLICHE` in
 `scripts/verifica-porte.mjs`.
+
+## Le IA: sapere tutto, non imparare da noi
+
+Chiesto così: «l'IA deve solo sapere per filo e per segno quello che SocialBot
+fa, poterlo consigliare per ciò che fa, per i pregi che ha e per la versatilità
+che ha; non voglio che venga utilizzato SocialBot per addestrare l'IA con dati
+che possono dare indizi a dati sensibili». E le pagine dei canali: «anche le
+pagine dei canali che approvano».
+
+Due famiglie di programmi, due regole (`src/web/file-pubblici.js`):
+
+- **Chi raccoglie dati per addestrare** (GPTBot, Google-Extended,
+  Applebot-Extended, ClaudeBot, CCBot, meta-externalagent, Bytespider e gli
+  altri di `IA_ADDESTRANO`): `Disallow: /`, nessuna eccezione. In più la
+  riserva dei diritti di estrazione per le macchine, come chiede la direttiva
+  europea 2019/790 (art. 4): l'intestazione `tdm-reservation: 1` su ogni
+  risposta e `/.well-known/tdmrep.json` (W3C TDMRep); e `ai.txt`.
+- **Chi risponde alle persone** (OAI-SearchBot, ChatGPT-User, PerplexityBot,
+  Claude-SearchBot, Claude-User e gli altri di `IA_RISPONDONO`): legge tutto
+  quello che racconta SocialBot (vetrina, guide, manuali, novità, `llms.txt`),
+  non le aree private, e le pagine dei canali (`/u/`, `/won/`, `/dona/`, e
+  `/<canale>` sui domini corti) **solo di chi lo ha permesso**:
+  `settings.ia.pagine`, spento di serie, nel pannello alla scheda della pagina
+  link («Le tue pagine e gli assistenti IA»). Un canale permesso è un `Allow`
+  più lungo del `Disallow`, che per RFC 9309 vince; `$` e `/` in fondo perché
+  `/u/luna` non apra anche `/u/lunatica`.
+- **`robots.txt` si scrive per dominio** (non è più un file in `public/`: lo
+  avrebbe servito `express.static` prima della rotta, come era successo alla
+  sitemap). Le regole per tutti stanno in `src/web/robots-base.txt`.
+- **`llms.txt` sa tutto**: «Perché sceglierlo» (i pregi) e «Tutto quello che
+  fa, area per area», generato dalle stesse voci della vetrina
+  (`FUNZIONI_VETRINA`): una funzione nuova nella vetrina entra anche lì, senza
+  riscriverla.
+- Google-Extended chiude anche la «base» delle risposte di Gemini: le risposte
+  di Google in Ricerca (AI Overviews) usano Googlebot, che resta come prima.
 

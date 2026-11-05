@@ -31,7 +31,7 @@ const FUORI = [
   /^src\/web\/public\/vendor\//,
   /(^|\/)OFL-[^/]+\.txt$/,
   /(^|\/)LICENSE(\.txt)?$/,
-  /^src\/web\/public\/robots\.txt$/,
+  /^src\/web\/robots-base\.txt$/,
   /^src\/web\/public\/well-known\/security\.txt$/,
 ];
 
@@ -86,7 +86,7 @@ if (process.argv.includes('--selftest')) {
   const visti = JSON.stringify(mancano) === JSON.stringify(giusti);
   const rifatti = giusti.every((f) => firmato(conFirma(f, finti[f])));
   const shebang = conFirma('server/x.sh', finti['server/x.sh']).startsWith('#!/bin/sh\n# ©');
-  const licenza = !daFirmare(['assets/font/OFL-Anton.txt', 'src/web/public/vendor/x.js', 'src/web/public/robots.txt']).length;
+  const licenza = !daFirmare(['assets/font/OFL-Anton.txt', 'src/web/public/vendor/x.js', 'src/web/robots-base.txt']).length;
   for (const [ok, cosa] of [[visti, 'vede i file senza firma, e solo quelli di testo'], [rifatti, 'la firma messa si riconosce'], [shebang, 'la prima riga #! resta la prima'], [licenza, 'le licenze di altri e i formati fissi restano fuori']]) {
     console.log(`  ${ok ? '✓' : '✗'} ${cosa}`);
   }
