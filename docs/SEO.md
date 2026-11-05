@@ -509,3 +509,27 @@ un'immagine e una nei dati strutturati, e pretende di vederle tutte.
 Le pagine di servizio che non stanno nella sitemap (`/collega`, `/mod`,
 `/sblocca`, `/voce`, l'overlay) hanno avuto lo stesso trattamento a mano, titoli
 compresi: ora si scrivono «Accesso moderatore | SocialBot» come le guide.
+
+## I file in cima al sito
+
+Un controllo «SEO & AI readiness» cercava `llm.txt`, `ai.txt`, `ads.txt` e
+`humans.txt` e non li trovava (sitemap, robots.txt e security.txt c'erano).
+
+- **`/llm.txt`**: lo stesso riassunto di `/llms.txt` (il nome della
+  convenzione), servito anche al singolare che alcuni controlli cercano.
+- **`/ai.txt`** (la proposta di Spawning): non è una seconda politica scritta a
+  mano. Sono le regole di `robots.txt` per «User-agent: *», lette dallo stesso
+  file a ogni richiesta (`file-pubblici.js`, `regoleRobots`): la vetrina si
+  legge, le aree private no. Se cambia robots.txt, cambia anche lui.
+- **`/ads.txt`** (IAB Tech Lab 1.1): il sito non mostra pubblicità, e lo dice
+  con la riga che lo standard prescrive per «nessun venditore autorizzato»
+  (`placeholder.example.com, placeholder, DIRECT, placeholder`) e
+  `ownerdomain`. Chi spaccia il dominio per vendere spazi viene smentito dal
+  file, invece di trovare il vuoto.
+- **`/humans.txt`** (humanstxt.org): chi c'è dietro, le lingue, la data
+  dell'ultima novità pubblica.
+
+Le quattro rotte sono pubbliche per costruzione in due posti, come le altre
+dei motori: `ROTTE` in `src/web/vetrina.js` (il guscio) e `PUBBLICHE` in
+`scripts/verifica-porte.mjs`.
+

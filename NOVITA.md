@@ -41,6 +41,12 @@ questa non è una cosa da ricordarsi: il cancello boccia una riga pubblica senza
 traduzione, una traduzione staccata dalla sua riga, o una che dice numeri e
 comandi diversi da quelli della riga italiana.
 
+## 2026-11-05
+
+- Il sito ha ora anche i file che gli assistenti IA, i motori di ricerca e chi compra pubblicità cercano in cima: llm.txt, ai.txt, ads.txt e humans.txt. [vai: stato]
+  en: The site now also has the files AI assistants, search engines and ad buyers look for at the top: llm.txt, ai.txt, ads.txt and humans.txt.
+  es: El sitio tiene ahora también los archivos que buscan arriba los asistentes de IA, los buscadores y quien compra publicidad: llm.txt, ai.txt, ads.txt y humans.txt.
+
 ## 2026-11-04
 
 - Il tasto che fa partire il conto alla rovescia dall'overlay funziona di nuovo. [vai: alert]

@@ -46,6 +46,7 @@ import { GUIDE, paginaGuida, paginaIndice, paginaNovita, paginaServizio, VIE, LI
 import { vociPubbliche, sitemapXml } from './sitemap.js';
 import { legaleIn } from './legali.js';
 import * as novita from './novita.js';
+import { aiTxt, adsTxt, humansTxt } from './file-pubblici.js';
 import { spazioCartella, inMega } from '../features/spazio.js';
 import { creaArchivio, eNomeArchivio } from '../features/archivio.js';
 import { creaMediaEffetti } from '../features/media-effetti.js';
@@ -3483,7 +3484,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // chiaro di cos'è questo sito. Serve perché "SocialBot" è un nome usato da
   // altri prodotti: senza una fonte esplicita, un'IA che cerca "socialbot"
   // descrive quello sbagliato. Qui diciamo, senza ambiguità, chi siamo.
-  app.get('/llms.txt', (req, res) => {
+  const llmsTxt = (req, res) => {
     const b = config.baseUrl;
     // Le piattaforme sono le porte aperte su questo server, le stesse che la
     // vetrina mostra: il testo per chi indicizza non promette una porta chiusa.
@@ -3562,6 +3563,29 @@ STREAMER (${su.toUpperCase()}) e non c'entra con l'automazione del marketing.
 - [Termini di servizio](${b}/termini)
 - [andryxify (l'autore)](https://andryxify.it)
 `);
+  };
+  // lo stesso riassunto anche al nome al singolare, che alcuni controlli cercano
+  app.get('/llms.txt', llmsTxt);
+  app.get('/llm.txt', llmsTxt);
+
+  // I FILE IN CIMA AL SITO (docs/SEO.md, src/web/file-pubblici.js): ai.txt e'
+  // robots.txt detto per chi raccoglie dati per le IA (le stesse regole, lette
+  // dallo stesso file), ads.txt dice che qui non si vende pubblicita', humans.txt
+  // chi c'e' dietro.
+  const testoPubblico = (corpo, req, res) => {
+    res.set('Cache-Control', 'public, max-age=0, s-maxage=86400');
+    res.type('text/plain; charset=utf-8').send(corpo);
+  };
+  app.get('/ai.txt', (req, res) => {
+    let robots = '';
+    try { robots = readFileSync(join(publicDir, 'robots.txt'), 'utf8'); } catch { /* senza robots, nessuna porta chiusa da ripetere */ }
+    testoPubblico(aiTxt(robots, config.baseUrl), req, res);
+  });
+  app.get('/ads.txt', (req, res) => testoPubblico(adsTxt(config.baseUrl), req, res));
+  app.get('/humans.txt', (req, res) => {
+    let aggiornato = '';
+    try { aggiornato = novita.pubbliche(novita.leggi(NOVITA_MD), 'it')[0]?.data || ''; } catch { /* senza la data si dice il resto */ }
+    testoPubblico(humansTxt(config.baseUrl, { aggiornato }), req, res);
   });
 
   // Informativa privacy & sicurezza (pubblica: dev'essere sempre consultabile)

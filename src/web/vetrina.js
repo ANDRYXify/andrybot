@@ -82,6 +82,7 @@ const ROTTE = new Set([
   '/accedi/youtube', '/auth/youtube', '/auth/youtube/callback',   // e con YouTube, allo stesso modo
   '/accedi/discord',                          // e con Discord soltanto, per chi un canale non ce l'ha
   '/robots.txt', '/sitemap.xml', '/llms.txt', // SEO: i motori devono poterli leggere
+  '/llm.txt', '/ai.txt', '/ads.txt', '/humans.txt', // gli altri file in cima al sito (docs/SEO.md, file-pubblici.js)
   '/.well-known/security.txt',                // RFC 9116: dove scrivere se trovi un buco
   '/accedi',                                  // abbonamenti self-service (login con Twitch)
   '/abbonamento/ritorno',                     // il ritorno dal Checkout: la sessione si rilegge da Stripe
