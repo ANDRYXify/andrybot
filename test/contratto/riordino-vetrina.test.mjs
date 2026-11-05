@@ -55,7 +55,7 @@ test('la promo social sta con la personalita\', e si salva con lei', () => {
 test('la diretta in prima pagina sta accanto alla pagina link, non in Stato', () => {
   assert.ok(funzione('pannelloPaginaLink').includes('id="chk-vetrina-live"'));
   assert.ok(!funzione('pannelloStato').includes('chk-vetrina-live'));
-  assert.match(APP, /if \(id === 'pagina'\) \{ caricaPaginaLink\(false, 'link'\); collegaVetrinaLive\(\); \}/);
+  assert.match(APP, /if \(id === 'pagina'\) \{ caricaPaginaLink\(false, 'link'\); collegaVetrinaLive\(\); collegaIaPagine\(\); \}/);
   assert.ok(!/La tua diretta sulla home/.test(APP), 'e «home» era gergo');
 });
 
