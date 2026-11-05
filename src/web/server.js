@@ -26,7 +26,7 @@ import * as licenza from '../licenza.js';      // il nome con cui questo softwar
 import * as consolle from '../features/console.js';   // CONSOLify + tastiera fisica
 import { makeLog } from '../logger.js';
 import { db, tokens, streamers, memory, clips, knowledge, QUANDO_CONOSCENZA, schedaPulita, effects as effectsDb, walkon as walkonDb, archivioDb, codiceEffetto, SCHERMI, normComando, baseDaFile, modules as modulesDb, MAX_MODULI, friends, sfondi as sfondiDb, carteLive, tgAttesa, tgScudo, paginaTelegram, TIPI_PAGINA_TELEGRAM, gsiStato, mortiSchede } from '../db.js';
-import { points, vips, tgConf, tgDest, amici, tgVisti, feedFonti, dcConf, passkeys, managers, quotes, battute, compleanni, membri, subscriptions, giochi as giochiDb, guide, GUIDE_MAX, pointAlerts, tgLogin, contatori, rapporti, postaStreamer, dcRuoli, dcLink, dcGiri, dcAccesso, dcDest, avvisiConf } from '../db.js';
+import { points, vips, tgConf, tgDest, amici, tgVisti, feedFonti, dcConf, passkeys, managers, quotes, battute, compleanni, membri, subscriptions, giochi as giochiDb, guide, GUIDE_MAX, pointAlerts, tgLogin, contatori, rapporti, postaStreamer, dcRuoli, dcLink, dcGiri, dcAccesso, dcDest, avvisiConf, ingressoDb } from '../db.js';
 import { direttaDest, MAX_DESTINAZIONI, studioScene, studioDispositivi } from '../db.js';
 import { creaSalotto } from '../features/studio-dispositivi.js';
 import { montaDispositivi } from './rotte-dispositivi.js';
@@ -96,6 +96,9 @@ import * as colpiPagina from '../features/colpi-pagina.js';
 import { normWalkon } from '../features/walkon.js';
 import * as walkonFile from '../features/walkon-file.js';
 import { montaWalkon } from './rotte-walkon.js';
+import { montaIngresso } from './rotte-ingresso.js';
+import { avvisoPer, legaLeSessioni, utenteAperto } from './rotte-ingresso.js';
+import { creaIngresso } from '../features/ingresso.js';
 import { creaPortaColpi } from '../features/colpi-porta.js';
 import * as colpiAccesso from '../features/colpi-accesso.js';
 import * as lanci from '../features/lanci.js';
@@ -696,6 +699,20 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // campi restano capati dalla validazione e le rotte sono autenticate.
   app.use(express.json({ limit: '2mb', verify: (req, _res, buf) => { req.rawBody = buf; } }));
 
+  // LA SESSIONE LEGATA (docs/ACCESSO-SICURO.md), prima di ogni rotta. Ogni
+  // richiesta legge la riga sul server: vale solo se c'e', e' aperta, e' della
+  // stessa persona e dalla stessa famiglia di browser, e ha avuto il secondo
+  // fattore. Ogni risposta, prima di partire, lega la persona che una porta ha
+  // appena messo in sessione: qualunque porta sia, nasce «in attesa».
+  // `currentUser` e' vuoto finche' la riga non dice «aperta»: per costruzione,
+  // nessuna guardia apre il pannello a chi non ha dato il secondo fattore.
+  const ingresso = creaIngresso({ store: ingressoDb, identitaDi: (u) => identitaDi(u), passkeyQuante: (l) => passkeys.count(l), posta, log });
+  legaLeSessioni(app, { ingresso, aperto: (via) => guscio.aperto(via), log });
+  // le sfide scadute, le sessioni finite, i codici vecchi e il registro oltre i 90 giorni se ne vanno da soli
+  const puliziaIngresso = () => { try { ingressoDb.pulisci(); } catch (e) { log.warn('accesso, pulizia:', e?.message || e); } };
+  setTimeout(puliziaIngresso, 60_000).unref?.();
+  setInterval(puliziaIngresso, 3_600_000).unref?.();
+
   // ESCHE: subito dopo il parser del corpo (serve per riconoscere il canarino)
   // e prima di ogni altra regola. Chi bussa a porte che qui non esistono trova
   // melassa e uno stivale, non un errore secco che gli dice "prova la prossima".
@@ -744,7 +761,7 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
   // ------------------------------------------------------------ helper
 
   // utente loggato in sessione (o null)
-  const currentUser = (req) => req.session?.user || null;
+  const currentUser = (req) => utenteAperto(req);
   // admin = il founder che agisce come sé stesso. Un MODERATORE delegato non è
   // mai admin, nemmeno se gestisce il canale del founder (user.login = canale).
   const isAdmin = (user) => !!user && user.role !== 'moderatore' && config.adminLogins.includes(user.login);
@@ -4270,8 +4287,9 @@ ${FUNZIONI_VETRINA.map((a) => `### ${a.area[0]}\n${a.voci.map((v) => `- ${v.t[0]
     // passa lo stesso — e' l'header a dire «cross-site», non la sua assenza.
     const da = String(req.get('Sec-Fetch-Site') || '');
     if (da === 'cross-site') return res.redirect('/');
+    ingresso.esci(req);                // la riga sul server si chiude: una copia del cookie non vale piu'
     req.session = null;
-    res.redirect('/entra');            // uscendo si torna "fuori" (404 finché non si rientra col pass)
+    res.redirect('/ingresso');         // uscendo si torna alla porta, con tutti i modi di entrare
   });
 
   // KICK: collegamento dello streamer, e webhook degli eventi. Le rotte vivono
@@ -4581,6 +4599,8 @@ ${FUNZIONI_VETRINA.map((a) => `### ${a.area[0]}\n${a.voci.map((v) => `- ${v.t[0]
     const ident = identitaDi(user);
     res.json({
       user,
+      // l'avviso dell'accesso sicuro da dire una volta (docs/ACCESSO-SICURO.md)
+      avvisoAccesso: avvisoPer(ingresso, ingressoDb, ident, posta.attiva()),
       isAdmin: isAdmin(user),
       ruolo: user?.role || null,
       identita: ident,
@@ -12877,6 +12897,19 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     res.json(r || { ok: false, motivo: 'errore' });
   }));
 
+  // ---------------------------------------------------------- L'ACCESSO SICURO
+  // La porta d'ingresso, il secondo fattore e la carta «Accesso e sicurezza»
+  // (docs/ACCESSO-SICURO.md). Le rotte stanno in src/web/rotte-ingresso.js.
+  const INGRESSO_HTML = guscio.pagina('ingresso.html', '/ingresso');
+  const PROVA_HTML = guscio.pagina('seconda-prova.html', '/seconda-prova');
+  montaIngresso(app, {
+    wrap, requireLogin, currentUser, identitaDi, ingresso, store: ingressoDb, passkeys, webauthn, posta,
+    rp: { id: RP_ID, nome: RP_NAME, origin: ORIGIN }, chiaveProva: segno('ingresso-prova', 'chiave'),
+    porte: () => ({ kick: conKick, youtube: conYoutube, discord: !!dcCollega.attivo() }),
+    entraCome: (req, login) => apriSessionePerLogin(req, login),
+    paginaIngresso: INGRESSO_HTML, paginaProva: PROVA_HTML, log,
+  });
+
   // ---------------------------------------------------------- PASSKEY (WebAuthn)
   // Si CREA da loggati (proprietario O moderatore): la passkey è della PERSONA
   // (la sua identità Twitch), non del canale. Al login ridà accesso a tutti i
@@ -12917,7 +12950,12 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
   }));
 
   app.delete('/api/passkey/:id', requireLogin, wrap(async (req, res) => {
-    passkeys.remove(identitaDi(currentUser(req)), parseInt(req.params.id, 10) || 0);
+    const ident = identitaDi(currentUser(req));
+    const id = parseInt(req.params.id, 10) || 0;
+    // l'ultimo secondo fattore non si toglie (docs/ACCESSO-SICURO.md): prima se ne aggiunge un altro
+    if (passkeys.byLogin(ident).some((p) => p.id === id) && !ingresso.puoTogliere(ident, 'passkey')) return res.status(409).json({ errore: 'ultimo', codice: 'ultimo' });
+    passkeys.remove(ident, id);
+    ingressoDb.annota(ident, 'tolto', { nota: 'passkey' });
     res.json({ ok: true });
   }));
 
@@ -12946,6 +12984,9 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     passkeys.bumpCounter(id, v.newSignCount);
     const disp = streamers.get(cred.login)?.display || managers.attiviByLogin(cred.login)[0]?.display || cred.login;
     req.session.user = sessionePer(cred.login, disp, contestoDefault(contesti));
+    // la passkey e' anche il secondo fattore: la sessione nasce gia' provata
+    ingresso.lega(req, { via: 'passkey', prova: true });
+    req.ingresso = { stato: 'aperta' };
     log.info(`login con passkey: @${cred.login} → #${req.session.user.login} (${req.session.user.role})`);
     res.json({ ok: true });
   }));
@@ -13077,6 +13118,7 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     // il bot esce dal canale al primo giro di sincronizzazione: la riga
     // streamers non c'e' piu', quindi non c'e' piu' niente a cui collegarsi.
     try { await manager.syncChannels?.(); } catch (e) {  }
+    ingresso.esci(req);
     req.session = null;
     res.json({ ok: true, ...esito });
   }));

@@ -49,6 +49,21 @@ comandi diversi da quelli della riga italiana.
 - Gli assistenti IA ora sanno tutto quello che fa SocialBot, ma nessuno può usarlo per addestrarsi. Le tue pagine pubbliche le leggono solo se lo accendi tu. [vai: pagina]
   en: AI assistants now know everything SocialBot does, but nobody can use it to train. They read your public pages only if you turn it on.
   es: Los asistentes de IA ya saben todo lo que hace SocialBot, pero nadie puede usarlo para entrenarse. Leen tus páginas públicas solo si lo enciendes tú.
+- [importante] Entrare è più sicuro: dopo Twitch, Kick, YouTube o Discord ti chiediamo una seconda prova che sei tu. Vale la passkey, un codice per mail o l'app dei codici, più dieci codici di riserva. [vai: account]
+  en: Signing in is safer: after Twitch, Kick, YouTube or Discord we ask for a second check that it is you. A passkey, an email code or a code app all work, plus ten backup codes.
+  es: Entrar es más seguro: después de Twitch, Kick, YouTube o Discord te pedimos una segunda prueba de que eres tú. Vale la passkey, un código por correo o la app de códigos, más diez códigos de reserva.
+  > Una seconda prova, in un minuto
+  > Se non ne hai ancora una, al prossimo ingresso la scegli tu, un passo alla volta. Se hai già la passkey sei a posto: non devi fare niente.
+  en> A second check, in a minute
+  en> If you do not have one yet, you choose it next time you sign in, one step at a time. If you already have a passkey you are all set: nothing to do.
+  es> Una segunda prueba, en un minuto
+  es> Si aún no tienes una, la eliges tú en el próximo acceso, paso a paso. Si ya tienes la passkey estás bien: no tienes que hacer nada.
+- Se lo stesso accesso arriva da un altro tipo di browser lo chiudiamo subito, e chi lo aveva rientra con un avviso; cambiare rete non ti fa uscire. Nel pannello vedi dove sei dentro e il registro. [vai: account]
+  en: If the same sign-in shows up from another kind of browser we close it at once and the owner signs in again with a notice; changing network never signs you out. The panel shows where you are in and the log.
+  es: Si el mismo acceso llega desde otro tipo de navegador lo cerramos enseguida y quien lo tenía vuelve a entrar con un aviso; cambiar de red no te saca. En el panel ves dónde has entrado y el registro.
+- La pagina per entrare ha tutti i modi in un posto solo, e si può entrare anche con un codice per mail, se nel pannello hai la mail e un'altra prova. [vai: account]
+  en: The sign-in page has every way in one place, and you can also sign in with an email code, if in the panel you have your email and another check.
+  es: La página para entrar tiene todas las formas en un solo sitio, y también se puede entrar con un código por correo, si en el panel tienes el correo y otra prueba.
 
 ## 2026-11-04
 

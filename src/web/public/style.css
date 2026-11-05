@@ -3233,3 +3233,9 @@ body.in-studio #anime-sfondo::after, body.tel-aperta #anime-sfondo::after, body.
 .wo-lingua input, .wo-lingua textarea { width: 100%; }
 .wo-motivo { align-items: end; }
 .wo-registro { margin: 0; padding-left: 1.2rem; display: grid; gap: .25rem; overflow-wrap: anywhere; }
+.sic-qr { display: grid; place-items: start; max-width: 200px; margin: .4rem 0; }
+.sic-qr svg { width: 100%; height: auto; border-radius: var(--r-m); }
+.sic-chiave { overflow-wrap: anywhere; }
+.sic-codici { list-style: none; padding: 0; margin: .6rem 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr)); gap: .4rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-weight: 700; letter-spacing: .06em; }
+.sic-codici li { margin: 0; padding: .45rem .6rem; border: 2px solid var(--contorno); border-radius: var(--r-m); user-select: all; }

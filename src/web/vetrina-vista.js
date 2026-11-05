@@ -661,7 +661,7 @@ function corpo(L, l, kick, youtube, dirette, piani, recensioni) {
       <p class="vt-frase">${L('Chat, alert, donazioni e pagina link in un posto solo, con un accesso solo.', 'Chat, alerts, donations and your link page in one place, with one login.', 'Chat, avisos, donaciones y página de enlaces en un solo sitio, con un solo acceso.')}</p>
       <div class="vt-azioni">
         <a class="vt-btn vt-btn-primo" href="/entra?nuovo=1">${L('Registrati con Twitch', 'Sign up with Twitch', 'Regístrate con Twitch')}</a>
-        <a class="vt-btn" href="/entra">${L('Accedi', 'Log in', 'Entrar')}</a>
+        <a class="vt-btn" href="/ingresso">${L('Accedi', 'Log in', 'Entrar')}</a>
         ${kick ? `<a class="vt-btn" href="/accedi/kick">${L('Registrati con Kick', 'Sign up with Kick', 'Regístrate con Kick')}</a>` : ''}
         ${youtube
           ? `<a class="vt-btn" href="/accedi/youtube">${L('Registrati con YouTube', 'Sign up with YouTube', 'Regístrate con YouTube')}</a>`

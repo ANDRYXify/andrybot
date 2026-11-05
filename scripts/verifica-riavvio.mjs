@@ -184,6 +184,7 @@ const DECISO = [
   ['features/momenti.js', '_canali', 'volatile', 'le ultime righe della chat e le domande rimaste aperte: sono il presente della chat, e il presente non si salva — al riavvio si riparte a guardare'],
   ['bot.js', '_spontanee', 'volatile', 'cosa ha detto da solo: e\' un registro DI SEDUTA, e il pannello lo dice («da quando il bot e\' acceso»); quello che ha detto sta comunque nella memoria della chat'],
   ['db.js', '_revComandi', 'volatile', 'numero di revisione per invalidare una cache'],
+  ['features/ingresso.js', 'finestre', 'volatile', 'i tetti della porta d\'ingresso (sfide, codici per mail, tentativi) per indirizzo e per conto: un riavvio li azzera, e al peggio regala un minuto a chi stava per essere fermato. Le garanzie vere stanno nello schema: la sfida bruciata, i cinque tentativi di ogni codice, il passo dell\'app che cresce soltanto'],
   ['segreti.js', '_maestre', 'volatile', 'chiavi maestre tenute in memoria, mai su disco: e\' il punto'],
 ];
 

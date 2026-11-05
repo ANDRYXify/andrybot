@@ -536,6 +536,67 @@ CREATE TABLE IF NOT EXISTS passkeys (     -- passkey (WebAuthn) per rientrare se
 );
 CREATE INDEX IF NOT EXISTS idx_passkeys_login ON passkeys(login);
 
+CREATE TABLE IF NOT EXISTS ingresso_sfide (      -- le prove di lavoro gia' usate: una sfida vale una volta (docs/ACCESSO-SICURO.md)
+  sfida TEXT PRIMARY KEY,
+  scade INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS ingresso_sessioni (   -- la sessione legata: vale solo una riga che c'e', aperta e non scaduta
+  sid TEXT PRIMARY KEY,                    -- 128 bit casuali, l'unica cosa che sta nel cookie
+  login TEXT NOT NULL,                     -- la persona (l'identita'), non il canale
+  motore TEXT NOT NULL DEFAULT '',         -- famiglia del browser: chromium | gecko | webkit | altro
+  sistema TEXT NOT NULL DEFAULT '',        -- famiglia del sistema: windows | apple | linux-android | chromeos | altro
+  rete TEXT NOT NULL DEFAULT '',           -- la rete abbreviata (/16, /48), mai l'indirizzo intero
+  via TEXT NOT NULL DEFAULT '',            -- da che porta e' entrata
+  prova INTEGER NOT NULL DEFAULT 0,        -- 1 = il secondo fattore e' stato dato
+  creata INTEGER NOT NULL,
+  vista INTEGER NOT NULL,
+  scade INTEGER NOT NULL,
+  chiusa INTEGER NOT NULL DEFAULT 0,       -- 0 = aperta; se no quando si e' chiusa
+  motivo TEXT NOT NULL DEFAULT ''          -- anomalia | uscita | cambio | scaduta | altrove
+);
+CREATE INDEX IF NOT EXISTS idx_ingresso_sessioni_login ON ingresso_sessioni(login);
+CREATE TABLE IF NOT EXISTS ingresso_registro (   -- il registro degli accessi della persona, 90 giorni
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  login TEXT NOT NULL,
+  ts INTEGER NOT NULL,
+  evento TEXT NOT NULL,                    -- ingresso | prova | anomalia | uscita | fattore | tolto | riserva | sessioni
+  motore TEXT NOT NULL DEFAULT '',
+  sistema TEXT NOT NULL DEFAULT '',
+  rete TEXT NOT NULL DEFAULT '',
+  nota TEXT NOT NULL DEFAULT ''
+);
+CREATE INDEX IF NOT EXISTS idx_ingresso_registro ON ingresso_registro(login, ts);
+CREATE TABLE IF NOT EXISTS ingresso_fattori (    -- il secondo fattore oltre alla passkey: l'app dei codici e la mail
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  login TEXT NOT NULL,
+  tipo TEXT NOT NULL,                      -- totp | mail
+  segreto TEXT NOT NULL DEFAULT '',        -- nella busta: il segreto dell'app, o l'indirizzo della mail
+  impronta TEXT NOT NULL DEFAULT '',       -- della mail: per cercarla senza aprirla
+  passo INTEGER NOT NULL DEFAULT 0,        -- dell'app: l'ultimo passo accettato (lo stesso codice non vale due volte)
+  attivo INTEGER NOT NULL DEFAULT 0,       -- 0 = si sta attivando, 1 = vale
+  creato INTEGER NOT NULL,
+  UNIQUE (login, tipo, attivo)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_ingresso_mail_una ON ingresso_fattori(impronta) WHERE tipo='mail' AND attivo=1;   -- una mail per entrare e' di una persona sola
+CREATE TABLE IF NOT EXISTS ingresso_codici (     -- i codici monouso: quelli per mail e quelli di riserva, solo come impronta
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  login TEXT NOT NULL,
+  tipo TEXT NOT NULL,                      -- mail | riserva
+  scopo TEXT NOT NULL DEFAULT '',          -- per mail: prova | attiva
+  impronta TEXT NOT NULL,
+  scade INTEGER NOT NULL DEFAULT 0,        -- 0 = non scade (riserva)
+  usato INTEGER NOT NULL DEFAULT 0,        -- 0 = buono; poi quando e' stato usato, -1 = bruciato
+  tentativi INTEGER NOT NULL DEFAULT 0,
+  creato INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_ingresso_codici ON ingresso_codici(login, tipo, usato);
+CREATE TABLE IF NOT EXISTS ingresso_persone (    -- le scelte della persona sul suo accesso
+  login TEXT PRIMARY KEY,
+  durata INTEGER NOT NULL DEFAULT 30,      -- giorni di vita di una sessione nuova
+  avviso_passkey INTEGER NOT NULL DEFAULT 0,   -- quando ha visto «hai gia' la passkey: sei a posto»
+  proposta_mail INTEGER NOT NULL DEFAULT 0     -- quando ha risposto alla proposta del codice per mail
+);
+
 CREATE TABLE IF NOT EXISTS accessi (      -- accessi decisi a mano: si sommano al piano (tutto, scelte) o gli tolgono qualcosa (blocco)
   login TEXT PRIMARY KEY,
   modo TEXT NOT NULL,                     -- tutto | scelte | blocco
@@ -2720,6 +2781,7 @@ export const CAMPI_SEGRETI = {
   studio_scene: ['dati'],
   studio_dispositivi: ['nome'],
   discord_ruoli: ['token'],
+  ingresso_fattori: ['segreto'],
 };
 
 // Come si chiama la riga, tabella per tabella. Serve alla busta: è il «dove
@@ -2736,6 +2798,7 @@ const RIGA_SEGRETI = {
   studio_scene: (r) => r.login,
   studio_dispositivi: (r) => r.login + '/' + r.id,
   discord_ruoli: (r) => r.channel,
+  ingresso_fattori: (r) => r.login + '/' + r.tipo,
 };
 const CHIAVE_SEGRETI = {
   tokens: ['kind', 'login'],
@@ -2749,6 +2812,7 @@ const CHIAVE_SEGRETI = {
   studio_scene: ['login'],
   studio_dispositivi: ['login', 'id'],
   discord_ruoli: ['channel'],
+  ingresso_fattori: ['login', 'tipo', 'attivo'],
 };
 
 // Porta nella busta di ADESSO tutto quello che è rimasto indietro: il chiaro di
@@ -3831,6 +3895,148 @@ export const passkeys = {
   },
   remove(login, id) { db.prepare('DELETE FROM passkeys WHERE login=? AND id=?').run(String(login).toLowerCase(), id); },
   count(login) { return db.prepare('SELECT COUNT(*) c FROM passkeys WHERE login=?').get(String(login).toLowerCase()).c; },
+};
+
+// ---------------------------------------------------------------- l'accesso sicuro
+// docs/ACCESSO-SICURO.md. Qui solo lo schema in azione: le garanzie stanno nelle
+// righe di SQL (la chiave primaria della sfida, il WHERE usato=0 dei codici, il
+// passo dell'app che cresce soltanto, la sessione che vale solo se aperta e non
+// scaduta). Le decisioni (chi, come, quando) stanno in features/ingresso.js.
+const _l = (x) => String(x || '').toLowerCase();
+const _rigaFattore = (login, tipo) => _l(login) + '/' + tipo;
+export const ingressoDb = {
+  // Una sfida della prova di lavoro: la prima volta entra, la seconda no.
+  brucia(sfida, scade) {
+    try { db.prepare('INSERT INTO ingresso_sfide (sfida, scade) VALUES (?,?)').run(String(sfida), Math.round(scade)); return true; }
+    catch { return false; }
+  },
+  pulisci(ora = now()) {
+    db.prepare('DELETE FROM ingresso_sfide WHERE scade < ?').run(ora);
+    db.prepare('DELETE FROM ingresso_sessioni WHERE scade < ?').run(ora);
+    db.prepare('DELETE FROM ingresso_codici WHERE (scade > 0 AND scade < ?) OR (tipo=\'mail\' AND usato<>0)').run(ora - 86_400_000);
+    db.prepare('DELETE FROM ingresso_registro WHERE ts < ?').run(ora - 90 * 86_400_000);
+  },
+
+  apriSessione({ sid, login, motore, sistema, rete, via, prova = 0, ora = now(), scade }) {
+    db.prepare(`INSERT INTO ingresso_sessioni (sid, login, motore, sistema, rete, via, prova, creata, vista, scade)
+      VALUES (?,?,?,?,?,?,?,?,?,?)`).run(sid, _l(login), motore, sistema, rete, String(via || '').slice(0, 20), prova ? 1 : 0, ora, ora, scade);
+  },
+  sessione(sid) { return sid ? db.prepare('SELECT * FROM ingresso_sessioni WHERE sid=?').get(String(sid)) || null : null; },
+  // vale solo se c'e', e' aperta e non e' scaduta: la domanda si fa nello schema
+  sessioneViva(sid, ora = now()) {
+    return sid ? db.prepare('SELECT * FROM ingresso_sessioni WHERE sid=? AND chiusa=0 AND scade > ?').get(String(sid), ora) || null : null;
+  },
+  vista(sid, rete, ora = now()) { db.prepare('UPDATE ingresso_sessioni SET rete=?, vista=? WHERE sid=? AND chiusa=0').run(rete, ora, String(sid)); },
+  provata(sid) { return db.prepare('UPDATE ingresso_sessioni SET prova=1 WHERE sid=? AND chiusa=0').run(String(sid)).changes === 1; },
+  // Chiusa, la riga perde famiglia e rete: resta solo di chi, quando e perche'.
+  chiudi(sid, motivo, ora = now()) {
+    return db.prepare(`UPDATE ingresso_sessioni SET chiusa=?, motivo=?, motore='', sistema='', rete='' WHERE sid=? AND chiusa=0`)
+      .run(ora, String(motivo || ''), String(sid)).changes === 1;
+  },
+  chiudiAltre(login, tranne, motivo, ora = now()) {
+    return db.prepare(`UPDATE ingresso_sessioni SET chiusa=?, motivo=?, motore='', sistema='', rete='' WHERE login=? AND sid<>? AND chiusa=0`)
+      .run(ora, String(motivo || ''), _l(login), String(tranne || '')).changes;
+  },
+  aperte(login, ora = now()) {
+    return db.prepare('SELECT sid, motore, sistema, rete, via, creata, vista, scade FROM ingresso_sessioni WHERE login=? AND chiusa=0 AND scade > ? AND prova=1 ORDER BY vista DESC')
+      .all(_l(login), ora);
+  },
+
+  persona(login) {
+    return db.prepare('SELECT * FROM ingresso_persone WHERE login=?').get(_l(login)) || { login: _l(login), durata: 30, avviso_passkey: 0, proposta_mail: 0 };
+  },
+  aggiornaPersona(login, campi) {
+    const p = { ...this.persona(login), ...campi };
+    db.prepare(`INSERT INTO ingresso_persone (login, durata, avviso_passkey, proposta_mail) VALUES (?,?,?,?)
+      ON CONFLICT(login) DO UPDATE SET durata=excluded.durata, avviso_passkey=excluded.avviso_passkey, proposta_mail=excluded.proposta_mail`)
+      .run(_l(login), p.durata, p.avviso_passkey, p.proposta_mail);
+    return p;
+  },
+
+  // I fattori che valgono (attivo=1). Il segreto esce solo da `segretoDi`.
+  fattori(login) {
+    return db.prepare('SELECT id, tipo, creato FROM ingresso_fattori WHERE login=? AND attivo=1').all(_l(login));
+  },
+  fattore(login, tipo, attivo = 1) {
+    const r = db.prepare('SELECT * FROM ingresso_fattori WHERE login=? AND tipo=? AND attivo=?').get(_l(login), tipo, attivo ? 1 : 0);
+    return r ? { ...r, segreto: decifra(r.segreto, _dove('ingresso_fattori', 'segreto', _rigaFattore(login, tipo))) } : null;
+  },
+  // Si comincia ad attivare: la riga «in prova» prende il posto di una vecchia in prova.
+  prepara(login, tipo, segreto, impronta = '', ora = now()) {
+    db.prepare('DELETE FROM ingresso_fattori WHERE login=? AND tipo=? AND attivo=0').run(_l(login), tipo);
+    db.prepare('INSERT INTO ingresso_fattori (login, tipo, segreto, impronta, passo, attivo, creato) VALUES (?,?,?,?,0,0,?)')
+      .run(_l(login), tipo, cifra(String(segreto), _dove('ingresso_fattori', 'segreto', _rigaFattore(login, tipo))), impronta, ora);
+  },
+  // La riga in prova diventa quella che vale (e quella di prima se ne va), tutto insieme.
+  conferma: db.transaction((login, tipo, passo = 0) => {
+    const l = _l(login);
+    const r = db.prepare('SELECT id FROM ingresso_fattori WHERE login=? AND tipo=? AND attivo=0').get(l, tipo);
+    if (!r) return false;
+    db.prepare('DELETE FROM ingresso_fattori WHERE login=? AND tipo=? AND attivo=1').run(l, tipo);
+    db.prepare('UPDATE ingresso_fattori SET attivo=1, passo=? WHERE id=?').run(passo, r.id);
+    return true;
+  }),
+  // la stessa, ma una mail gia' di un altro non passa: lo dice l'indice, e non cambia niente
+  confermaSeLibera(login, tipo, passo = 0) {
+    try { return this.conferma(login, tipo, passo) ? 'ok' : 'no'; }
+    catch (e) { if (/UNIQUE/.test(String(e?.message))) return 'presa'; throw e; }
+  },
+  // Il passo dell'app cresce soltanto: lo stesso codice non vale due volte.
+  usaPasso(login, passo, attivo = 1) {
+    return db.prepare('UPDATE ingresso_fattori SET passo=? WHERE login=? AND tipo=\'totp\' AND attivo=? AND passo < ?')
+      .run(passo, _l(login), attivo ? 1 : 0, passo).changes === 1;
+  },
+  // Di chi e' questa mail (per entrare con la mail): una sola persona, lo dice l'indice.
+  perMail(impronta) { return impronta ? db.prepare('SELECT login FROM ingresso_fattori WHERE tipo=\'mail\' AND attivo=1 AND impronta=?').get(impronta)?.login || '' : ''; },
+  togliFattore(login, tipo) { return db.prepare('DELETE FROM ingresso_fattori WHERE login=? AND tipo=?').run(_l(login), tipo).changes; },
+
+  // I codici: si conservano come impronta; uno nuovo per mail brucia quelli di prima.
+  nuovoCodiceMail(login, scopo, impronta, scade, ora = now()) {
+    const l = _l(login);
+    db.prepare('UPDATE ingresso_codici SET usato=-1 WHERE login=? AND tipo=\'mail\' AND usato=0').run(l);
+    db.prepare('INSERT INTO ingresso_codici (login, tipo, scopo, impronta, scade, creato) VALUES (?,\'mail\',?,?,?,?)').run(l, scopo, impronta, scade, ora);
+  },
+  codiciMailQuanti(login, da) {
+    return db.prepare('SELECT COUNT(*) c FROM ingresso_codici WHERE login=? AND tipo=\'mail\' AND creato >= ?').get(_l(login), da).c;
+  },
+  // i candidati buoni ADESSO: il confronto lo fa chi chiama, a tempo costante
+  candidati(login, tipo, scopo = null, ora = now()) {
+    return db.prepare(`SELECT id, impronta, tentativi FROM ingresso_codici WHERE login=? AND tipo=? AND usato=0
+      AND (scade=0 OR scade > ?) ${scopo === null ? '' : 'AND scopo=?'}`).all(...[_l(login), tipo, ora, ...(scopo === null ? [] : [scopo])]);
+  },
+  // Un codice vale una volta: lo dice l'UPDATE, non chi lo chiama.
+  usaCodice(id, ora = now()) {
+    return db.prepare('UPDATE ingresso_codici SET usato=? WHERE id=? AND usato=0 AND (scade=0 OR scade > ?)').run(ora, id, ora).changes === 1;
+  },
+  // Un tentativo sbagliato sul codice per mail: al quinto il codice e' bruciato.
+  sbagliato(login, max = 5) {
+    const l = _l(login);
+    db.prepare('UPDATE ingresso_codici SET tentativi=tentativi+1 WHERE login=? AND tipo=\'mail\' AND usato=0').run(l);
+    db.prepare('UPDATE ingresso_codici SET usato=-1 WHERE login=? AND tipo=\'mail\' AND usato=0 AND tentativi >= ?').run(l, max);
+  },
+  nuoveRiserve: db.transaction((login, impronte, ora = now()) => {
+    const l = _l(login);
+    db.prepare('DELETE FROM ingresso_codici WHERE login=? AND tipo=\'riserva\'').run(l);
+    const ins = db.prepare('INSERT INTO ingresso_codici (login, tipo, impronta, scade, creato) VALUES (?,\'riserva\',?,0,?)');
+    for (const i of impronte) ins.run(l, i, ora);
+  }),
+  riserveRimaste(login) { return db.prepare('SELECT COUNT(*) c FROM ingresso_codici WHERE login=? AND tipo=\'riserva\' AND usato=0').get(_l(login)).c; },
+
+  annota(login, evento, { motore = '', sistema = '', rete = '', nota = '' } = {}, ora = now()) {
+    db.prepare('INSERT INTO ingresso_registro (login, ts, evento, motore, sistema, rete, nota) VALUES (?,?,?,?,?,?,?)')
+      .run(_l(login), ora, evento, motore, sistema, rete, String(nota || '').slice(0, 80));
+  },
+  registro(login, quanti = 30) {
+    return db.prepare('SELECT ts, evento, motore, sistema, rete, nota FROM ingresso_registro WHERE login=? ORDER BY ts DESC, id DESC LIMIT ?').all(_l(login), quanti);
+  },
+
+  // Il primo avvio di questa versione: da li' i cookie senza `sid` valgono ancora 30 giorni.
+  avvio(ora = now()) {
+    const r = db.prepare('SELECT value FROM facts WHERE channel=\'__migrazioni__\' AND key=\'ingresso_avvio\'').get();
+    if (r) return Number(r.value) || ora;
+    db.prepare('INSERT OR IGNORE INTO facts (channel, key, value, ts) VALUES (\'__migrazioni__\', \'ingresso_avvio\', ?, ?)').run(String(ora), ora);
+    return ora;
+  },
 };
 
 // ---------------------------------------------------------------- citazioni (!cita)

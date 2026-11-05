@@ -1,0 +1,64 @@
+/* © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live */
+/* Proprieta intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live */
+
+.card.larga { max-width: 480px; }
+.card p.grande { font-size: 1.05rem; color: var(--testo); }
+.porte { display: grid; gap: 10px; margin-top: 18px; }
+.porte .azione { margin-top: 0; width: 100%; }
+.azione.discord { background: #5865f2; color: #ffffff; }
+.azione.secondaria { background: var(--surface-2); color: var(--testo); border: 1px solid var(--border); }
+@media (hover: hover) {
+  .azione.discord:hover { background: #4752c4; }
+  .azione.secondaria:hover { background: var(--acc-soft); border-color: var(--acc); }
+}
+.avviso-anomalia {
+  text-align: left; margin: 16px 0 6px; padding: 14px 16px; border-radius: 14px;
+  background: var(--rosso-soft); border: 1px solid var(--rosso-bordo);
+}
+.avviso-anomalia strong { color: var(--rosso); }
+.avviso-anomalia p { margin: 6px 0 0; color: var(--testo); }
+.avviso-anomalia p.minuta { color: var(--testo-2); }
+.scelte { display: grid; gap: 12px; margin: 18px 0 6px; }
+.scelta {
+  display: grid; gap: 4px; width: 100%; text-align: left; cursor: pointer;
+  padding: 16px 18px; min-height: 64px; font: inherit; color: var(--testo);
+  background: var(--surface-2); border: 2px solid var(--border); border-radius: 16px;
+}
+.scelta:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
+@media (hover: hover) { .scelta:hover { border-color: var(--acc); background: var(--acc-soft); } }
+.scelta-titolo { font-weight: 700; font-size: 1.04rem; }
+.scelta-perche { font-size: .88rem; color: var(--testo-2); line-height: 1.45; }
+.passo { display: flex; gap: 10px; align-items: flex-start; text-align: left; margin: 12px 0; color: var(--testo); }
+.passo-n {
+  flex: 0 0 26px; height: 26px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--acc); color: var(--su-acc); font-weight: 700; font-size: .85rem;
+}
+.card input[type="email"], .card input.codice-campo {
+  width: 100%; min-height: 48px; padding: 10px 12px; font: inherit; margin-top: 6px;
+  background: var(--surface-2); color: var(--testo); border: 1px solid var(--border); border-radius: 12px;
+}
+.card input.codice-campo { font-size: 1.4rem; letter-spacing: .2em; text-align: center; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+.card input[type="email"]:focus-visible, .card input.codice-campo:focus-visible { outline: 2px solid var(--acc); outline-offset: 1px; }
+.link-indietro {
+  background: none; border: 0; padding: 6px 0; margin-top: 14px; cursor: pointer;
+  font: inherit; font-size: .9rem; color: var(--acc); text-decoration: underline;
+}
+.qr { display: grid; place-items: center; margin: 10px auto; max-width: 220px; }
+.qr svg { width: 100%; height: auto; border-radius: 10px; }
+code.chiave { display: inline-block; word-break: break-all; margin-top: 4px; }
+.codici {
+  list-style: none; padding: 0; margin: 16px 0 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 1.05rem; font-weight: 700; letter-spacing: .06em;
+}
+.codici li { margin: 0; padding: 8px 6px; border-radius: 10px; background: var(--surface-2); border: 1px solid var(--border); color: var(--testo); user-select: all; }
+.riga-due { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.riga-due .azione { margin-top: 0; }
+.spunta { display: flex; gap: 8px; align-items: center; justify-content: center; margin-top: 16px; font-weight: 600; cursor: pointer; }
+.spunta input { width: 20px; height: 20px; accent-color: var(--acc); }
+.fatto { color: var(--verde); font-weight: 700; margin-top: 12px; }
+.secondo[hidden] { display: none; }
+.con-mail { display: grid; gap: 8px; text-align: left; padding: 12px 14px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); }
+.con-mail[hidden] { display: none; }
+.con-mail .azione { margin-top: 4px; }
+.con-mail .azione[hidden] { display: none; }
+.card h1 { line-height: 1.25; }
