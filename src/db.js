@@ -599,6 +599,26 @@ CREATE TABLE IF NOT EXISTS ingresso_iscrizioni (  -- chi si registra con la mail
   scade INTEGER NOT NULL,
   creata INTEGER NOT NULL
 );
+CREATE TABLE IF NOT EXISTS ingresso_aiuti (     -- le richieste di aiuto di chi non riesce a entrare (docs/ACCESSO-SICURO.md, passo 5)
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  pratica TEXT NOT NULL UNIQUE,            -- il numero che ha chi ha chiesto
+  login TEXT NOT NULL DEFAULT '',          -- il conto trovato, o '' se non c'e' (o se e' un doppione)
+  segreto TEXT NOT NULL,                   -- nella busta: quello che ha scritto (il conto, la riga, i contatti)
+  problema TEXT NOT NULL DEFAULT 'altro',  -- password | fattore | mail | altro
+  stato TEXT NOT NULL DEFAULT 'aperta',    -- aperta | sbloccata | rifiutata | doppione
+  doppione_di TEXT NOT NULL DEFAULT '',
+  creata INTEGER NOT NULL,
+  decisa INTEGER NOT NULL DEFAULT 0,
+  chi TEXT NOT NULL DEFAULT '',            -- chi ha deciso
+  nota TEXT NOT NULL DEFAULT '',           -- come ha verificato (obbligatoria per sbloccare)
+  risposta TEXT NOT NULL DEFAULT '',       -- la riga per chi ha chiesto, se rifiutata
+  persi TEXT NOT NULL DEFAULT '',          -- i fattori segnati persi e tolti
+  impronta TEXT NOT NULL DEFAULT '',       -- del link di sblocco: il link non si conserva
+  scade INTEGER NOT NULL DEFAULT 0,        -- quando il link smette di valere
+  usato INTEGER NOT NULL DEFAULT 0         -- quando il link e' stato usato (0 = mai)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_ingresso_aiuti_aperta ON ingresso_aiuti(login) WHERE stato='aperta' AND login<>'';   -- una richiesta aperta per conto
+CREATE UNIQUE INDEX IF NOT EXISTS idx_ingresso_aiuti_link ON ingresso_aiuti(impronta) WHERE impronta<>'';
 CREATE TABLE IF NOT EXISTS ingresso_persone (    -- le scelte della persona sul suo accesso
   login TEXT PRIMARY KEY,
   durata INTEGER NOT NULL DEFAULT 30,      -- giorni di vita di una sessione nuova
@@ -2792,6 +2812,7 @@ export const CAMPI_SEGRETI = {
   discord_ruoli: ['token'],
   ingresso_fattori: ['segreto'],
   ingresso_iscrizioni: ['segreto', 'segreto_parola'],
+  ingresso_aiuti: ['segreto'],
 };
 
 // Come si chiama la riga, tabella per tabella. Serve alla busta: è il «dove
@@ -2810,6 +2831,7 @@ const RIGA_SEGRETI = {
   discord_ruoli: (r) => r.channel,
   ingresso_fattori: (r) => r.login + '/' + r.tipo,
   ingresso_iscrizioni: (r) => r.id,
+  ingresso_aiuti: (r) => r.pratica,
 };
 const CHIAVE_SEGRETI = {
   tokens: ['kind', 'login'],
@@ -2825,6 +2847,7 @@ const CHIAVE_SEGRETI = {
   discord_ruoli: ['channel'],
   ingresso_fattori: ['login', 'tipo', 'attivo'],
   ingresso_iscrizioni: ['id'],
+  ingresso_aiuti: ['pratica'],
 };
 
 // Porta nella busta di ADESSO tutto quello che è rimasto indietro: il chiaro di
@@ -3928,6 +3951,58 @@ export const ingressoDb = {
     db.prepare('DELETE FROM ingresso_codici WHERE (scade > 0 AND scade < ?) OR (tipo=\'mail\' AND usato<>0)').run(ora - 86_400_000);
     db.prepare('DELETE FROM ingresso_registro WHERE ts < ?').run(ora - 90 * 86_400_000);
     db.prepare('DELETE FROM ingresso_iscrizioni WHERE scade < ?').run(ora);
+    db.prepare('DELETE FROM ingresso_aiuti WHERE creata < ?').run(ora - 90 * 86_400_000);
+  },
+
+  // LE RICHIESTE DI AIUTO (passo 5). Quello che e' scritto sta nella busta.
+  // Una aperta per conto: lo dice l'indice; il doppione si conserva senza conto.
+  nuovoAiuto({ pratica, login, scritto, problema, ora = now() }) {
+    const busta = (pr) => cifra(JSON.stringify(scritto), _dove('ingresso_aiuti', 'segreto', pr));
+    const ins = db.prepare('INSERT INTO ingresso_aiuti (pratica, login, segreto, problema, stato, doppione_di, creata) VALUES (?,?,?,?,?,?,?)');
+    try { ins.run(pratica, _l(login), busta(pratica), problema, 'aperta', '', ora); return 'aperta'; }
+    catch (e) {
+      if (!/UNIQUE/.test(String(e?.message)) || !login) throw e;
+      const aperta = db.prepare('SELECT pratica FROM ingresso_aiuti WHERE login=? AND stato=\'aperta\'').get(_l(login))?.pratica || '';
+      ins.run(pratica, '', busta(pratica), problema, 'doppione', aperta, ora);
+      return 'doppione';
+    }
+  },
+  aiutoQuanti(da) { return db.prepare('SELECT COUNT(*) c FROM ingresso_aiuti WHERE creata >= ?').get(da).c; },
+  _aiuto(r) {
+    if (!r) return null;
+    let scritto = {};
+    try { scritto = JSON.parse(decifra(r.segreto, _dove('ingresso_aiuti', 'segreto', r.pratica)) || '{}'); } catch { scritto = {}; }
+    const { segreto, impronta, ...resto } = r;
+    return { ...resto, scritto };
+  },
+  aiuto(id) { return this._aiuto(db.prepare('SELECT * FROM ingresso_aiuti WHERE id=?').get(Number(id) || 0)); },
+  aiutoPerPratica(pratica) { return this._aiuto(db.prepare('SELECT * FROM ingresso_aiuti WHERE pratica=?').get(String(pratica || ''))); },
+  aiuti(quanti = 100) { return db.prepare('SELECT * FROM ingresso_aiuti ORDER BY (stato=\'aperta\') DESC, creata DESC LIMIT ?').all(quanti).map((r) => this._aiuto(r)); },
+  // Decidere una volta sola: lo dice il WHERE stato='aperta'.
+  sblocca(id, { chi, nota, persi = '', impronta, scade, ora = now() }) {
+    return db.prepare(`UPDATE ingresso_aiuti SET stato='sbloccata', decisa=?, chi=?, nota=?, persi=?, impronta=?, scade=?
+      WHERE id=? AND stato='aperta' AND login<>''`).run(ora, chi, nota, persi, impronta, scade, Number(id) || 0).changes === 1;
+  },
+  rifiuta(id, { chi, nota = '', risposta = '', ora = now() }) {
+    return db.prepare(`UPDATE ingresso_aiuti SET stato='rifiutata', decisa=?, chi=?, nota=?, risposta=? WHERE id=? AND stato IN ('aperta','doppione')`)
+      .run(ora, chi, nota, risposta, Number(id) || 0).changes === 1;
+  },
+  // Il link vale una volta, per 24 ore: lo dice l'UPDATE. Torna il conto, o ''.
+  usaLink(impronta, ora = now()) {
+    if (!impronta) return '';
+    const r = db.prepare('SELECT id, login FROM ingresso_aiuti WHERE impronta=? AND stato=\'sbloccata\'').get(impronta);
+    if (!r) return '';
+    const ok = db.prepare('UPDATE ingresso_aiuti SET usato=? WHERE id=? AND usato=0 AND scade > ?').run(ora, r.id, ora).changes === 1;
+    return ok ? r.login : '';
+  },
+  // Cercare un conto da quello che ha scritto chi chiede: solo se ne esce uno.
+  contoDiNome(nome) {
+    const n = String(nome || '').trim().toLowerCase();
+    if (!n) return '';
+    const p = n.replace(/^@/, '').replace(/[^a-z0-9_.]/g, '');
+    for (const l of [p, 'kick.' + p, 'yt.' + p, 'dc.' + p]) if (p && db.prepare('SELECT 1 FROM streamers WHERE login=?').get(l)) return l;
+    const r = db.prepare('SELECT login FROM streamers WHERE lower(display)=? LIMIT 2').all(n);
+    return r.length === 1 ? r[0].login : '';
   },
 
   // LE ISCRIZIONI con la mail, prima della conferma. La mail e il calco della

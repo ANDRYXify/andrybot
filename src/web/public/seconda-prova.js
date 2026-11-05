@@ -14,7 +14,7 @@
   const messaggio = () => el('div', { classe: 'msg', role: 'status' });
   const sbaglio = (m, e) => { m.className = 'msg err'; m.textContent = errore(e); };
   const indietro = () => el('button', { classe: 'link-indietro', type: 'button', suclick: () => disegna() }, L('← Scegli un altro modo', '← Choose another way', '← Elige otra forma'));
-  const piede = () => el('p', { classe: 'piccolo' }, L('Non sei tu? ', 'Not you? ', '¿No eres tú? '), el('a', { href: '/auth/logout', testo: L('Esci', 'Sign out', 'Salir') }));
+  const piede = () => el('p', { classe: 'piccolo' }, el('a', { href: '/aiuto-accesso', testo: L('Non riesci a entrare?', 'Cannot sign in?', '¿No puedes entrar?') }), ' · ', L('Non sei tu? ', 'Not you? ', '¿No eres tú? '), el('a', { href: '/auth/logout', testo: L('Esci', 'Sign out', 'Salir') }));
   const campoCodice = (id, etichetta) => {
     const i = el('input', { type: 'text', id, inputmode: 'numeric', autocomplete: 'one-time-code', maxlength: '7', placeholder: '123456', classe: 'codice-campo', 'aria-label': etichetta });
     return i;

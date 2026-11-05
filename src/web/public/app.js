@@ -39415,7 +39415,7 @@ function caricaDatiScheda(id) {
   if (id === 'follower') caricaFollower();
   if (id === 'sottoscrizione') caricaSottoscrizione();
   if (id === 'dirette') caricaDirette();
-  if (id === 'admin' && stato.isAdmin) { caricaTabellaAdmin(); caricaSalute(); caricaLicenza(); caricaBackup(); caricaRecensioniAdmin(); caricaAnima(); caricaLLM(); caricaVita(); caricaEcosistema(); }
+  if (id === 'admin' && stato.isAdmin) { caricaAiutiAdmin(); caricaTabellaAdmin(); caricaSalute(); caricaLicenza(); caricaBackup(); caricaRecensioniAdmin(); caricaAnima(); caricaLLM(); caricaVita(); caricaEcosistema(); }
 }
 
 const fmtGiornoMese = (g, m) => String(g).padStart(2, '0') + '/' + String(m).padStart(2, '0');
@@ -43798,6 +43798,11 @@ function vistaAdminContenuto() {
 
   const st = stato.status || {};
   return `
+    <div class="carta" id="carta-aiuti">
+      <h2>${_hIco(ICO.chiave)}${L('Chi non riesce a entrare', 'People who cannot sign in', 'Quien no puede entrar')}</h2>
+      <p>${L('Le richieste di aiuto. Accanto ai contatti scritti vedi se combaciano con quelli già collegati al conto. Sblocca solo dopo aver scritto alla persona su un contatto che combacia.', 'Help requests. Next to the written contacts you see whether they match the ones already linked to the account. Unlock only after writing to the person on a matching contact.', 'Las solicitudes de ayuda. Junto a los contactos escritos ves si coinciden con los ya vinculados a la cuenta. Desbloquea solo después de escribir a la persona en un contacto que coincida.')}</p>
+      <div id="adm-aiuti" data-non-salva>${attesaHtml()}</div>
+    </div>
     <div class="carta">
       <h2>${_hIco(ICO.corona)}${L('Pannello andryxify', 'andryxify panel', 'Panel de andryxify')}</h2>
       <p class="spazio-sopra">
@@ -44928,6 +44933,8 @@ const _SIC_EVENTI = {
   tolto: () => L('Prova tolta', 'Check removed', 'Prueba quitada'),
   riserva: () => L('Codice di riserva usato', 'Backup code used', 'Código de reserva usado'),
   sessioni: () => L('Chiuse le altre sessioni', 'Other sessions closed', 'Cerradas las demás sesiones'),
+  aiuto: () => L('Richiesta di aiuto per entrare', 'Request for help signing in', 'Solicitud de ayuda para entrar'),
+  sblocco: () => L('Sblocco su richiesta', 'Unlocked on request', 'Desbloqueo a petición'),
 };
 const _SIC_COME = { password: () => L('password', 'password', 'contraseña'), 'mail e password': () => L('mail e password', 'email and password', 'correo y contraseña'), passkey: 'passkey', totp: () => L('app dei codici', 'code app', 'app de códigos'), mail: () => L('codice per mail', 'email code', 'código por correo'), riserva: () => L('codice di riserva', 'backup code', 'código de reserva'), riserve: () => L('codici di riserva nuovi', 'new backup codes', 'códigos de reserva nuevos'), twitch: 'Twitch', kick: 'Kick', youtube: 'YouTube', discord: 'Discord', telegram: 'Telegram', pass: 'andryxify.it', prima: () => L('accesso di prima', 'earlier sign-in', 'acceso anterior') };
 const _sicCome = (x) => { const v = _SIC_COME[x]; return typeof v === 'function' ? v() : (v || ''); };
@@ -45060,6 +45067,71 @@ async function caricaSicurezza() {
     })(ev);
   });
 }
+const _AIUTO_PROBLEMA = { password: () => L('password dimenticata', 'forgotten password', 'contraseña olvidada'), fattore: () => L('seconda prova persa', 'second check lost', 'segunda prueba perdida'), mail: () => L('mail che non arriva', 'email not arriving', 'correo que no llega'), altro: () => L('altro', 'other', 'otro') };
+const _AIUTO_ESITO = { combacia: () => `<span class="badge verde">${L('combacia', 'matches', 'coincide')}</span>`, 'non combacia': () => `<span class="badge rosso">${L('non combacia', 'does not match', 'no coincide')}</span>`, niente: () => `<span class="badge">${L('niente da confrontare', 'nothing to compare', 'nada que comparar')}</span>` };
+const _AIUTO_STATO = { aperta: () => L('aperta', 'open', 'abierta'), sbloccata: () => L('sbloccata', 'unlocked', 'desbloqueada'), rifiutata: () => L('rifiutata', 'refused', 'rechazada'), doppione: () => L('doppione', 'duplicate', 'duplicado') };
+function _aiutoHtml(a) {
+  const c = a.conto;
+  const contatti = Object.entries(a.contatti || {}).map(([k, v]) => `<p class="aiuto-contatto"><strong class="primo-piano">${esc(k)}</strong>: ${esc(v.scritto)} ${(_AIUTO_ESITO[v.esito] || _AIUTO_ESITO.niente)()}${v.collegati?.length ? ` <span class="meta">${L('collegati', 'linked', 'vinculados')}: ${v.collegati.map(esc).join(', ')}</span>` : ''}</p>`).join('');
+  const conto = c ? `${esc(c.nome)} <span class="meta">${esc(c.login)} · ${esc(c.piattaforma)} · ${L('dal', 'since', 'desde')} ${esc(dataIt(c.creato))} · ${L('prove', 'checks', 'pruebas')}: passkey ${c.fattori.passkey}${c.fattori.totp ? ', app' : ''}${c.fattori.mail ? ', mail' : ''}${c.fattori.password ? ', password' : ''}, ${L('riserve', 'backup', 'reserva')} ${c.fattori.riserve}</span>`
+    : `<span class="badge">${L('nessun conto trovato', 'no account found', 'ninguna cuenta encontrada')}</span>`;
+  const accessi = (a.accessi || []).map((x) => `${esc(dataIt(x.ts))} · ${esc(_sicFamiglia(x))} · ${esc(x.rete)}`).join('<br>');
+  const aperta = a.stato === 'aperta' && c;
+  return `<li class="aiuto" data-aiuto="${a.id}"><div class="testo-voce">
+    <span class="domanda">${L('Pratica', 'Case', 'Expediente')} <code>${esc(a.pratica)}</code> · ${(_AIUTO_STATO[a.stato] || (() => esc(a.stato)))()}${a.doppioneDi ? ` · ${L('doppione di', 'duplicate of', 'duplicado de')} <code>${esc(a.doppioneDi)}</code>` : ''} · ${esc(dataIt(a.creata))}</span>
+    <span class="meta">${L('Ha scritto', 'Wrote', 'Escribió')}: «${esc(a.scritto.conto)}» · ${(_AIUTO_PROBLEMA[a.problema] || _AIUTO_PROBLEMA.altro)()}${a.scritto.riga ? ` · ${esc(a.scritto.riga)}` : ''}</span>
+    <p>${L('Conto', 'Account', 'Cuenta')}: ${conto}</p>
+    <div class="aiuto-contatti">${contatti}</div>
+    ${accessi ? `<p class="meta">${L('Ultimi accessi riusciti', 'Last successful sign-ins', 'Últimos accesos correctos')}:<br>${accessi}</p>` : ''}
+    ${a.nota ? `<p class="meta">${L('Nota', 'Note', 'Nota')}: ${esc(a.nota)} (${esc(a.chi)})${a.linkUsato ? ` · ${L('link usato', 'link used', 'enlace usado')} ${esc(dataIt(a.linkUsato))}` : ''}</p>` : ''}
+    ${aperta ? `<label class="campo" for="aiuto-nota-${a.id}">${L('Come hai verificato che è la persona (obbligatorio)', 'How you checked it is the person (required)', 'Cómo comprobaste que es la persona (obligatorio)')}</label>
+    <textarea id="aiuto-nota-${a.id}" rows="2" maxlength="300"></textarea>
+    <p>${L('Togli le prove perse', 'Remove the lost checks', 'Quita las pruebas perdidas')}: ${['passkey', 'totp', 'password'].map((p) => `<label class="spunta-riga"><input type="checkbox" data-perso="${p}"> ${p === 'totp' ? L('app dei codici', 'code app', 'app de códigos') : p}</label>`).join(' ')}</p>
+    <p class="riga-flessibile"><button class="btn" data-aiuto-sblocca="${a.id}">${L('Sblocca', 'Unlock', 'Desbloquear')}</button>
+    <input type="text" class="cresce" data-aiuto-risposta="${a.id}" maxlength="200" aria-label="${esc(L('Una riga per chi ha chiesto', 'A line for the requester', 'Una línea para quien pidió'))}" placeholder="${esc(L('Una riga per chi ha chiesto, se rifiuti', 'A line for the requester, if you refuse', 'Una línea para quien pidió, si rechazas'))}">
+    <button class="btn secondario" data-aiuto-rifiuta="${a.id}">${L('Rifiuta', 'Refuse', 'Rechazar')}</button></p>` : ''}
+    ${a.stato === 'doppione' ? `<p><button class="btn secondario" data-aiuto-rifiuta="${a.id}">${L('Chiudi il doppione', 'Close the duplicate', 'Cerrar el duplicado')}</button></p>` : ''}
+    <div data-aiuto-link="${a.id}"></div>
+  </div></li>`;
+}
+async function caricaAiutiAdmin() {
+  const box = document.getElementById('adm-aiuti');
+  if (!box) return;
+  try {
+    const { aiuti } = await api('/api/admin/aiuti');
+    box.innerHTML = aiuti.length ? `<ul class="lista-voci">${aiuti.map(_aiutoHtml).join('')}</ul>` : `<p class="suggerimento">${L('Nessuna richiesta.', 'No requests.', 'Ninguna solicitud.')}</p>`;
+  } catch (e) { box.textContent = L('Errore', 'Error', 'Error') + ': ' + e.message; }
+  if (box.dataset.collegato) return;
+  box.dataset.collegato = '1';
+  box.addEventListener('click', (ev) => {
+    const s = ev.target.closest('[data-aiuto-sblocca]');
+    const r = ev.target.closest('[data-aiuto-rifiuta]');
+    if (s) conErrore(async () => {
+      const id = s.dataset.aiutoSblocca;
+      const li = s.closest('[data-aiuto]');
+      const persi = [...li.querySelectorAll('[data-perso]:checked')].map((x) => x.dataset.perso);
+      const nota = document.getElementById('aiuto-nota-' + id)?.value || '';
+      if (nota.trim().length < 10) { toast(L('Scrivi come hai verificato, almeno una frase.', 'Write how you checked, at least a sentence.', 'Escribe cómo lo comprobaste, al menos una frase.'), 'errore'); return; }
+      if (!(await chiediSe({ titolo: L('Sblocco questo conto?', 'Unlock this account?', '¿Desbloqueo esta cuenta?'), testo: L('Si chiudono tutte le sue sessioni e ottieni un link che vale una volta, per 24 ore. Mandalo tu, in privato, sul contatto che combacia.', 'All its sessions close and you get a link that works once, for 24 hours. Send it yourself, privately, on the matching contact.', 'Se cierran todas sus sesiones y obtienes un enlace que vale una vez, durante 24 horas. Mándalo tú, en privado, al contacto que coincide.'), si: L('Sblocca', 'Unlock', 'Desbloquear') }))) return;
+      const d = await api(`/api/admin/aiuti/${id}/sblocca`, { method: 'POST', body: { nota, persi } });
+      await caricaAiutiAdmin();
+      const dove = document.querySelector(`[data-aiuto-link="${id}"]`);
+      if (dove) {
+        dove.innerHTML = `<p class="suggerimento">${L('Il link, una volta sola: mandalo ora. Non lo rivedrai.', 'The link, once only: send it now. You will not see it again.', 'El enlace, una sola vez: mándalo ahora. No lo volverás a ver.')}</p>
+          <p class="riga-flessibile"><input type="text" class="cresce" readonly value="${esc(d.link)}" aria-label="${esc(L('Il link di sblocco', 'The unlock link', 'El enlace de desbloqueo'))}"> <button class="btn" data-aiuto-copia="1">${L('Copia', 'Copy', 'Copiar')}</button></p>`;
+        dove.querySelector('[data-aiuto-copia]')?.addEventListener('click', () => copiaTesto(d.link, L('Link copiato', 'Link copied', 'Enlace copiado')));
+      }
+    });
+    if (r) conErrore(async () => {
+      const id = r.dataset.aiutoRifiuta;
+      const risposta = document.querySelector(`[data-aiuto-risposta="${id}"]`)?.value || '';
+      await api(`/api/admin/aiuti/${id}/rifiuta`, { method: 'POST', body: { risposta } });
+      toast(L('Chiusa.', 'Closed.', 'Cerrada.'));
+      caricaAiutiAdmin();
+    });
+  });
+}
+
 async function avvisoAccessoSicuro() {
   const quale = stato?.avvisoAccesso;
   if (!quale || DEMO) return;

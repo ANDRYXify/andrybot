@@ -216,6 +216,8 @@ export function creaIngresso({ store, identitaDi, passkeyQuante = () => 0, posta
   // quello che si puo' usare adesso.
   function fattoriUsabili(login, via) {
     const f = fattoriDi(login);
+    // entrato col link di sblocco (passo 5): nessun fattore vale, se ne attiva uno nuovo
+    if (via === 'sblocco') return { ...f, passkey: 0, totp: false, mail: '', password: false, riserve: 0 };
     if (via === 'mail') f.mail = '';
     if (via === 'password') f.password = false;
     return f;

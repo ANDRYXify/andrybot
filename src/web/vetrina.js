@@ -115,6 +115,7 @@ const PREFISSI = [
   '/dona/',              // donazioni: il webhook di Ko-fi (protetto dal token) e il modulo della pagina link
   '/assets/',            // bundle JS/CSS della link-page (proxy verso Vercel)
   '/api/passkey/login/', // sblocco con passkey: serve prima di avere una sessione
+  '/api/aiuto-accesso',  // chi non riesce a entrare chiede aiuto, e usa il link di sblocco: non e' dentro per definizione (rotte-aiuto-accesso.js)
   '/api/ingresso/',      // la porta d'ingresso e il secondo fattore: chi bussa non e' ancora dentro, e ogni chiamata ha la sua guardia (rotte-ingresso.js)
   '/collega/',           // la porta d'ingresso al Discord di uno streamer: ci arriva chi NON e' di casa
   '/api/discord/collega/',   // e l'indirizzo dove mandarlo, che lo decide il server

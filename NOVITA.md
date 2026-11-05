@@ -73,6 +73,9 @@ comandi diversi da quelli della riga italiana.
   en> You sign in with the password, an email code or a passkey, and the second check is always of another kind. Approval works as today: with an andryxify.it pass or a subscription.
   es> Regístrate con el correo
   es> Entras con la contraseña, con un código por correo o con la passkey, y la segunda prueba siempre es de otro tipo. Se aprueba como hoy: con el pase de andryxify.it o con una suscripción.
+- Se non riesci a entrare c'è una pagina che ti dice cosa fare. Se non basta, chiedi aiuto: ti scriviamo su Discord, Telegram, Instagram o per mail, e ti sblocchiamo dopo aver controllato che sei tu. [vai: account]
+  en: If you cannot sign in, a page tells you what to do. If that is not enough, ask for help: we write to you on Discord, Telegram, Instagram or by email, and unlock you after checking it is you.
+  es: Si no puedes entrar, una página te dice qué hacer. Si no basta, pide ayuda: te escribimos por Discord, Telegram, Instagram o correo, y te desbloqueamos después de comprobar que eres tú.
 
 ## 2026-11-04
 

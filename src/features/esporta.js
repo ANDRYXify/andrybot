@@ -37,6 +37,7 @@ export const NEGATE = {
   walkon_posta: 'la mail che chi ha fatto un walk-on ha lasciato per sapere l\'esito: e\' sua, non del canale, e lo streamer non la vede mai (docs/WALKON.md)',
   ingresso_sessioni: 'le sessioni aperte, con la famiglia del browser e la rete abbreviata: servono alla sicurezza finche\' la sessione vive, e il numero di sessione e\' materiale di accesso (docs/ACCESSO-SICURO.md)',
   ingresso_fattori: 'il secondo fattore: il segreto dell\'app dei codici e la mail della prova, nella busta. Darli via vorrebbe dire consegnare l\'accesso',
+  ingresso_aiuti: 'le richieste di aiuto per entrare: dentro ci sono i contatti di chi ha chiesto, che puo\' non essere lo streamer, e l\'impronta del link di sblocco',
   ingresso_codici: 'le impronte dei codici di riserva e di quelli per mail: materiale di accesso, che fuori di qui non serve a niente',
   tg_scudo: 'chi ha chiesto di entrare nel gruppo Telegram: sono dati di quelle persone, tenuti una settimana per mostrare allo streamer come sono andate, con dentro le prove momentanee della pagina',
 };

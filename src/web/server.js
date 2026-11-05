@@ -97,6 +97,8 @@ import { normWalkon } from '../features/walkon.js';
 import * as walkonFile from '../features/walkon-file.js';
 import { montaWalkon } from './rotte-walkon.js';
 import { montaIngresso } from './rotte-ingresso.js';
+import { montaAiutoAccesso } from './rotte-aiuto-accesso.js';
+import { daiSocial } from '../features/ingresso-aiuto.js';
 import { avvisoPer, legaLeSessioni, utenteAperto } from './rotte-ingresso.js';
 import { creaIngresso, contoApribile } from '../features/ingresso.js';
 import { impostazioniDaDomande } from '../features/ingresso-domande.js';
@@ -12915,6 +12917,8 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
   const INGRESSO_HTML = guscio.pagina('ingresso.html', '/ingresso');
   const PROVA_HTML = guscio.pagina('seconda-prova.html', '/seconda-prova');
   const PRIMO_HTML = guscio.pagina('primo-ingresso.html', '/primo-ingresso');
+  const AIUTO_HTML = guscio.pagina('aiuto-accesso.html', '/aiuto-accesso');
+  const SBLOCCO_HTML = guscio.pagina('sblocca-accesso.html', '/sblocca-accesso');
   montaIngresso(app, {
     wrap, requireLogin, currentUser, identitaDi, ingresso, store: ingressoDb, passkeys, webauthn, posta,
     rp: { id: RP_ID, nome: RP_NAME, origin: ORIGIN }, chiaveProva: segno('ingresso-prova', 'chiave'),
@@ -12944,6 +12948,47 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     abbonabile: () => !!config.stripe.attivo,
     paginaPrimo: PRIMO_HTML,
     paginaIngresso: INGRESSO_HTML, paginaProva: PROVA_HTML, log,
+  });
+
+  // QUANDO NON SI RIESCE A ENTRARE (docs/ACCESSO-SICURO.md, passo 5): la richiesta
+  // di aiuto, l'elenco dell'amministratore e il link di sblocco. Le rotte stanno
+  // in src/web/rotte-aiuto-accesso.js.
+  montaAiutoAccesso(app, {
+    wrap, requireAdmin, currentUser, ingresso, store: ingressoDb, posta, passkeys, chiaveProva: segno('ingresso-prova', 'chiave'),
+    paginaAiuto: AIUTO_HTML, paginaSblocco: SBLOCCO_HTML, baseUrl: config.baseUrl, log,
+    entraCome: (req, login) => apriSessionePerLogin(req, login),
+    // i contatti che il conto ha gia' collegati: per dire «combacia» al proprietario
+    collegatiDi: (login) => {
+      const soc = daiSocial(mediakit.socialDaPagina(linkPage.get(login)));
+      const dc = dcAccesso.perLogin(login)?.nome || '';
+      const tg = tgLogin.getByLogin(login)?.username || '';
+      const p = postaStreamer.get(login);
+      return {
+        discord: [dc, piattaformaDi(login) === 'discord' ? nomeSu(login) : '', ...soc.discord].filter(Boolean),
+        telegram: [tg, ...soc.telegram].filter(Boolean),
+        instagram: soc.instagram,
+        mail: [ingressoDb.fattore(login, 'mail')?.segreto || '', p?.confermata ? p.email : ''].filter(Boolean),
+      };
+    },
+    // il conto come lo vede il proprietario: niente segreti, i fattori come conteggio
+    contoDi: (login) => {
+      const s = streamers.get(login);
+      if (!s) return null;
+      const f = ingresso.fattoriDi(login);
+      return { login, nome: s.display || login, piattaforma: piattaformaDi(login), stato: s.status, creato: s.requested_at || 0,
+        fattori: { passkey: f.passkey, totp: f.totp, mail: !!f.mail, password: f.password, riserve: f.riserve } };
+    },
+    // dove il proprietario riceve gia' gli avvisi del sito: il suo Telegram privato e la sua mail confermata
+    avvisaAdmin: async (testo) => {
+      const admin = config.adminLogins[0] || '';
+      if (!admin) return;
+      const c = tgPrivato(admin);
+      if (c) await telegram.inviaMessaggio(c.token, c.owner_tg_id, telegram.escHtml(testo), { anteprima: false }).catch(() => {});
+      const m = mailDi(admin);
+      if (m) await posta.invia({ a: m, oggetto: 'SocialBot: una richiesta di aiuto per entrare', testo }).catch(() => {});
+    },
+    mailDelConto: (login) => ingressoDb.fattore(login, 'mail')?.segreto || mailDi(login),
+    linguaDi: (login) => linguaChat(login),
   });
 
   // ---------------------------------------------------------- PASSKEY (WebAuthn)

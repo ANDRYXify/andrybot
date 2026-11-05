@@ -339,7 +339,7 @@ const PAGINE = {
   'negozio-es': () => paginaNegozioEsempio({ lingua: 'es', colonne: 2 }),
   ...Object.fromEntries(['minimal', 'neon', 'brutal'].map((s) => [`dona-${s}`, () => paginaDonaEsempio({ template: s })])),
 };
-const STATICHE = ['privacy.html', 'termini.html', 'sostieni.html', 'collega.html', 'ingresso.html'];
+const STATICHE = ['privacy.html', 'termini.html', 'sostieni.html', 'collega.html', 'ingresso.html', 'aiuto-accesso.html', 'sblocca-accesso.html'];
 const TIPI = { '.css': 'text/css', '.js': 'text/javascript', '.png': 'image/png', '.svg': 'image/svg+xml', '.woff2': 'font/woff2', '.ttf': 'font/ttf', '.webp': 'image/webp', '.json': 'application/json', '.html': 'text/html; charset=utf-8' };
 const srv = http.createServer((req, res) => {
   const u = new URL(req.url, 'http://x');

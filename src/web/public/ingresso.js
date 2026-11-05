@@ -137,6 +137,7 @@
         ...(s.posta ? conPassword() : []),
         ...(s.posta ? registrati() : [])),
       msg,
+      el('p', { classe: 'non-riesci' }, el('a', { href: '/aiuto-accesso', id: 'link-non-riesci', testo: L('Non riesci a entrare?', 'Cannot sign in?', '¿No puedes entrar?') })),
       el('p', { classe: 'piccolo', testo: L('Per entrare nel pannello ti chiediamo anche una seconda prova che sei tu: una passkey, un codice per mail o l’app dei codici.', 'To get into the panel we also ask for a second check that it is you: a passkey, an email code or a code app.', 'Para entrar en el panel también te pedimos una segunda prueba de que eres tú: una passkey, un código por correo o la app de códigos.') }),
       el('p', { classe: 'piccolo' },
         el('a', { href: '/mod', testo: L('Sei un moderatore? Entra da qui', 'Are you a moderator? Sign in here', '¿Eres moderador? Entra por aquí') }),

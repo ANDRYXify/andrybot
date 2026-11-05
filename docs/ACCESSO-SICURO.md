@@ -106,6 +106,54 @@ basta: rete abbreviata, nessuna impronta del dispositivo oltre la famiglia di
 browser e sistema, tenute finché la sessione vive (e il registro degli accessi
 per 90 giorni). L'informativa lo dice.
 
+### 6. Quando non si riesce a entrare
+
+Chiesto così: «se la persona si dimenticasse password o altro, diamo la
+possibilità di chiedere aiuto tramite Discord, Telegram o altro mio: l'utente mi
+manda una richiesta con le info che mi servono per contattarlo (nick di Discord,
+Instagram o Telegram, in modo che possa essere sicuro che sia lui) e io lo
+sblocco. Se no un altro modo, magari automatico (tipo codice via mail)».
+
+Prima da soli, poi con il proprietario; mai una porta che salti il secondo
+fattore senza che qualcuno l'abbia guardata.
+
+- **Da soli, sempre offerto per primo** (un link «Non riesci a entrare?»
+  sotto ogni modo di entrare, e sulla pagina della seconda prova):
+  - *password dimenticata*: si entra col codice per mail (che c'è già) e se ne
+    mette una nuova dal pannello; la password non si «recupera», si cambia;
+  - *passkey o telefono persi*: un codice di riserva vale come seconda prova, e
+    dopo si attiva il nuovo fattore;
+  - *mail non più raggiungibile*, *niente codici di riserva*: si passa alla
+    richiesta di aiuto. Ogni strada dice in una riga cosa serve, con parole
+    semplici.
+- **La richiesta di aiuto** (`/aiuto-accesso`): chi chiede scrive quale conto
+  è (il nome del canale o la mail con cui entra), cosa non va (password,
+  secondo fattore, mail persa, altro: una scelta e una riga), e **come
+  raggiungerlo**: uno o più fra Discord, Telegram, Instagram, mail, col suo
+  nome lì. Prova di lavoro e tetti come le altre porte; una richiesta aperta
+  per conto alla volta. La risposta è la stessa per un conto che c'è e per uno
+  che non c'è (niente oracolo). Chi chiede riceve un numero di pratica.
+- **Il proprietario la vede** in un elenco suo (pannello, solo amministratore)
+  e ne è avvisato dove già riceve gli avvisi del sito (Telegram o Discord del
+  proprietario). Accanto a ogni richiesta, per decidere senza fidarsi a
+  occhio: **i contatti che quel conto ha già collegato** (Discord collegato, il
+  Telegram collegato, i social della pagina link e del canale), segnati
+  «combacia» o «non combacia» con quelli scritti nella richiesta; da quanto
+  esiste il conto; gli ultimi accessi riusciti (registro, senza indirizzi
+  interi). Il proprietario non vede mai password, codici, segreti.
+- **Sbloccare** è un tasto del proprietario, con una nota obbligatoria (come
+  ha verificato). Genera un **link monouso** (24 ore, una volta sola, legato
+  a quel conto) che il proprietario manda lui, in privato, sul contatto
+  verificato. Il link fa entrare **una volta** senza il secondo fattore,
+  dritto alla pagina che ne fa attivare uno nuovo (e nuovi codici di
+  riserva); tutte le altre sessioni di quel conto si chiudono, e i fattori che
+  il proprietario segna come persi si tolgono. Se il conto ha una mail, parte
+  una mail che dice «il tuo accesso è stato sbloccato su richiesta: se non sei
+  stato tu, scrivici». **Rifiutare** chiude la richiesta con una riga per chi
+  ha chiesto.
+- **Tutto resta nel registro**: chi ha chiesto (i contatti scritti), chi ha
+  sbloccato, con quale nota, quando è stato usato il link.
+
 ## Garanzie
 
 - Una sfida di ingresso vale una volta, e scade.
@@ -115,6 +163,10 @@ per 90 giorni). L'informativa lo dice.
 - Una password non si salva mai in chiaro; un codice per mail vale una volta e
   scade.
 - La registrazione con la mail non apre il pannello senza approvazione.
+- Una richiesta di aiuto non apre niente da sola: sblocca solo il proprietario,
+  e il link vale una volta, per un conto, per 24 ore.
+- Il proprietario non vede mai password, codici o segreti, e una richiesta per
+  un conto che non c'è risponde come una per un conto che c'è.
 
 ## Le scelte fatte costruendolo
 
@@ -298,6 +350,66 @@ la stessa riga: corretto per costruzione, e nessuno chiuso fuori per errore.
   entrato, e da lì può anche abbonarsi (il giro dell'abbonamento di oggi, per
   chi non ha ancora un pannello).
 
+### Quando non si riesce a entrare (passo 5)
+
+- **La pagina** è `/aiuto-accesso`, e «Non riesci a entrare?» porta lì dalla
+  porta d'ingresso e dalla seconda prova. Prima le strade da soli, una riga
+  ciascuna: la password dimenticata (si entra col codice per mail e la si
+  cambia dal pannello), la passkey o il telefono persi (un codice di
+  riserva), poi la richiesta.
+- **La richiesta** passa dalla prova di lavoro (scopo «aiuto»), ha un tetto
+  per indirizzo (3 all'ora) e uno in tutto (30 all'ora: sono messaggi che
+  arrivano al proprietario). Il conto si cerca da quello che è scritto: una
+  mail fra le mail per entrare; un nome fra i login delle piattaforme (twitch,
+  `kick.`, `yt.`, `dc.`) e il nome da mostrare, solo se ne esce uno. Si
+  conserva anche quando il conto non si trova (il proprietario la vede
+  «nessun conto»), e chi chiede ha la stessa risposta e un numero di pratica
+  in tutti e due i casi.
+- **Una richiesta aperta per conto alla volta**, nello schema (indice unico
+  sul conto fra le aperte). Una seconda richiesta per lo stesso conto si
+  conserva come **doppione** (non si può sbloccare, il proprietario la vede
+  accanto a quella aperta), con la stessa risposta: la porta non dice se per
+  quel conto c'è già una pratica.
+- **Il numero di pratica** (8 segni, quasi 40 bit) serve a chi ha chiesto per
+  sapere com'è andata («ricevuta», «sbloccata: ti abbiamo scritto», «non
+  sbloccata» con la riga del proprietario), col tetto per indirizzo. Il link
+  non passa mai di lì.
+- **Cosa si conserva**: quello che è scritto (il conto, la riga, i contatti)
+  sta nella busta; si tiene 90 giorni, come il registro. Nell'esportazione dei
+  dati non esce: i contatti sono di chi ha chiesto, che può non essere lo
+  streamer.
+- **L'avviso al proprietario** va dove riceve già gli avvisi del sito: il suo
+  Telegram privato e la sua mail confermata (quelli dell'amministratore,
+  `ADMIN_LOGINS`), con il numero di pratica e niente di quello che è scritto.
+  Il resto lo legge nel pannello.
+- **L'elenco** è una carta della scheda Admin, solo `requireAdmin`. Per ogni
+  richiesta: il conto trovato (nome, piattaforma, da quando esiste, i fattori
+  che ha **come conteggio**), gli ultimi accessi del registro, e i contatti
+  scritti confrontati con quelli collegati al conto: Discord (l'accesso con
+  Discord), Telegram (l'accesso con Telegram), Instagram, Discord e Telegram
+  della pagina link, la mail per entrare e quella dei rapporti. Ognuno esce
+  «combacia», «non combacia» o «niente da confrontare». Il confronto lo fa il
+  server: il pannello non riceve mai la mail del conto, password, codici o
+  segreti.
+- **Sbloccare** si fa con una nota obbligatoria (almeno 10 caratteri) e con i
+  fattori persi da togliere (passkey, app, password). Una volta sola:
+  `UPDATE … WHERE stato='aperta'`. Il link è
+  `/sblocca-accesso?t=<32 byte>`, del token si tiene l'impronta, vale 24 ore e
+  si usa una volta (`UPDATE … WHERE usato=0 AND scade > ora`). Allo sblocco si
+  chiudono tutte le sessioni del conto, si tolgono i fattori segnati persi, e
+  parte la mail «il tuo accesso è stato sbloccato su richiesta» se il conto ha
+  una mail. Il link lo vede solo il proprietario, una volta, nella risposta.
+- **Il link non si consuma aprendolo.** Telegram e Discord aprono da soli i
+  link per farne l'anteprima: la pagina chiede un tocco, ed è il tocco
+  (`POST`) che usa il link. Usato, apre una sessione **in attesa** con
+  «sblocco» come prima prova: nessun fattore vale come seconda, quindi la
+  pagina della seconda prova fa attivare un fattore nuovo, con codici di
+  riserva nuovi, e solo dopo si entra nel pannello.
+- **Rifiutare** chiude la richiesta con una riga per chi ha chiesto (che la
+  legge col numero di pratica).
+- **Il registro** del conto annota la richiesta (il numero di pratica), lo
+  sblocco (chi e la nota) e l'uso del link.
+
 ## Dove sta, e cosa manca
 
 - **Lo schema**: `src/db.js` (`ingresso_sfide`, `ingresso_sessioni`,
@@ -321,3 +433,10 @@ la stessa riga: corretto per costruzione, e nessuno chiuso fuori per errore.
   pagina `/primo-ingresso`; la regola del pannello è `contoApribile`
   (`features/ingresso.js`), usata da `haAccesso`. Le prove stanno in
   `test/contratto/ingresso-registra.test.mjs`.
+- **Il passo 5**: `src/features/ingresso-aiuto.js` (i contatti in una forma
+  sola e il confronto), `ingresso_aiuti` in `src/db.js`, le rotte in
+  `src/web/rotte-aiuto-accesso.js` (`/aiuto-accesso`, `/sblocca-accesso`,
+  `/api/aiuto-accesso…`, `/api/admin/aiuti…`), le pagine
+  `public/aiuto-accesso.html` e `public/sblocca-accesso.html`, la carta «Chi
+  non riesce a entrare» nella scheda Admin. Le prove stanno in
+  `test/contratto/ingresso-aiuto.test.mjs`.

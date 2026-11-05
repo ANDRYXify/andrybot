@@ -261,3 +261,34 @@ test('le domande del primo ingresso vanno nelle impostazioni che ci sono, ripuli
   assert.equal(vuote.settings.tono, 'serio', 'una risposta che non c\'e\' nell\'elenco non tocca niente');
   assert.equal(vuote.settings.preferenze, undefined);
 });
+
+const AI = await import('../../src/features/ingresso-aiuto.js');
+test('i contatti di una richiesta di aiuto: una forma sola, e il confronto con quelli collegati', () => {
+  assert.equal(AI.nomeDi('discord', '@Gino_Vero'), 'gino_vero');
+  assert.equal(AI.nomeDi('discord', 'gino#1234'), 'gino');
+  assert.equal(AI.nomeDi('telegram', 'https://t.me/Gino_TG'), 'gino_tg');
+  assert.equal(AI.nomeDi('instagram', 'instagram.com/gino.ig/'), 'gino.ig');
+  assert.equal(AI.nomeDi('telegram', 'ab'), '', 'troppo corto per Telegram');
+  assert.equal(AI.nomeDi('mail', 'Chi@Esempio.it'), 'chi@esempio.it');
+  assert.deepEqual(AI.contattiPuliti({ discord: '', telegram: '@x_y_z_w', altro: 'no' }), { telegram: 'x_y_z_w' });
+  assert.deepEqual(AI.daiSocial([{ url: 'https://t.me/canale_tg' }, { url: 'https://www.instagram.com/canale/' }, { url: 'https://discord.gg/invito' }]), { telegram: ['canale_tg'], instagram: ['canale'], discord: [] }, 'un invito a un server non e\' una persona');
+  const c = AI.confronta({ discord: 'gino', telegram: 'altro_tg', instagram: 'gino.ig' }, { discord: ['Gino'], telegram: ['gino_tg'], instagram: [] });
+  assert.deepEqual([c.discord.esito, c.telegram.esito, c.instagram.esito], ['combacia', 'non combacia', 'niente']);
+  assert.equal(AI.praticaOk(AI.praticaNuova()), true);
+  assert.equal(AI.praticaOk('ABCD-EFG0'), false);
+});
+
+test('una richiesta aperta per conto, decisa una volta; il link vale una volta e scade', () => {
+  const ora = Date.now();
+  assert.equal(ingressoDb.nuovoAiuto({ pratica: 'AAAA-AAAA', login: 'pino', scritto: { conto: 'pino' }, problema: 'altro', ora }), 'aperta');
+  assert.equal(ingressoDb.nuovoAiuto({ pratica: 'AAAA-AAAB', login: 'pino', scritto: { conto: 'pino' }, problema: 'altro', ora }), 'doppione', 'lo dice l\'indice');
+  const a = ingressoDb.aiutoPerPratica('AAAA-AAAA');
+  assert.equal(ingressoDb.aiutoPerPratica('AAAA-AAAB').doppione_di, 'AAAA-AAAA');
+  assert.equal(ingressoDb.sblocca(a.id, { chi: 'admin', nota: 'verificato', impronta: 'imp-x', scade: ora + 1000, ora }), true);
+  assert.equal(ingressoDb.sblocca(a.id, { chi: 'admin', nota: 'verificato', impronta: 'imp-y', scade: ora + 1000, ora }), false, 'una volta sola');
+  assert.equal(ingressoDb.usaLink('imp-x', ora + 2000), '', 'scaduto');
+  db.prepare('UPDATE ingresso_aiuti SET scade=? WHERE id=?').run(ora + 10_000, a.id);
+  assert.equal(ingressoDb.usaLink('imp-x', ora + 2000), 'pino');
+  assert.equal(ingressoDb.usaLink('imp-x', ora + 3000), '', 'una volta sola');
+  assert.equal(ingressoDb.aiutoPerPratica('AAAA-AAAA').impronta, undefined, 'l\'impronta del link non esce dal database');
+});

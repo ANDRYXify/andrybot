@@ -26,7 +26,7 @@ export const VALIDA_MS = 2 * 60_000;
 export const BIT_BASE = 11;
 export const BIT_SEGNALE = 2;
 export const BIT_MAX_IN_PIU = 6;
-export const SCOPI = ['mail', 'password', 'registra'];
+export const SCOPI = ['mail', 'password', 'registra', 'aiuto'];
 
 const b64u = (buf) => Buffer.from(buf).toString('base64url');
 

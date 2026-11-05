@@ -78,3 +78,7 @@ code.chiave { display: inline-block; word-break: break-all; margin-top: 4px; }
 #porta-nuovo[hidden], form.con-mail[hidden] { display: none; }
 .card input.codice-campo.parola { letter-spacing: normal; font-family: inherit; font-size: 1rem; text-align: left; }
 .attesa .azione { text-align: center; }
+.non-riesci { margin: 12px 0 0; font-weight: 650; }
+.modulo-aiuto select, .modulo-aiuto textarea { width: 100%; min-height: 48px; padding: 10px 12px; font: inherit; background: var(--surface-2); color: var(--testo); border: 1px solid var(--border); border-radius: 12px; }
+.modulo-aiuto input[type="text"] { min-height: 48px; }
+#aiuto-pratica { font-size: 1.6rem; letter-spacing: .12em; }
