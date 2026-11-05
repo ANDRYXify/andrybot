@@ -239,11 +239,8 @@ test('il conto alla rovescia è un istante, non un contatore', () => {
   const al = leggi('src/features/alerts.js');
   const i = al.indexOf('impostaTimer(channel, minuti) {');
   assert.ok(i > 0, 'c’è impostaTimer');
-  assert.ok(/return this\._partiTimer\(channel, Math\.max\(0, Math\.min\(600, Math\.round\(Number\(minuti\) \|\| 0\)\)\) \* 60000\);/.test(al.slice(i, al.indexOf('\n  }', i))),
-    'i minuti diventano l\'istante in un posto solo, lo stesso della subathon (docs/SUBATHON.md, «La sessione»)');
-  const j = al.indexOf('_partiTimer(channel, ms) {');
-  const corpo = al.slice(j, al.indexOf('\n  }\n', j));
-  assert.ok(/const fine = ms > 0 \? ora \+ ms : 0;/.test(corpo), 'si scrive quando scade');
+  const corpo = al.slice(i, al.indexOf('\n  }', i));
+  assert.ok(/Date\.now\(\) \+ m \* 60000/.test(corpo), 'si scrive quando scade');
   assert.ok(/overlayStato/.test(corpo), 'nello stato del canale, quindi sopravvive a un riavvio');
   assert.ok(!/setInterval|setTimeout/.test(corpo), 'e nessun orologio da tenere acceso sul server');
 });

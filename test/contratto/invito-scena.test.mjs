@@ -61,7 +61,7 @@ test('la stessa lista di chiavi spente di serie nel server, nel pannello e nella
   const srv = lista(SRV, /const SPENTI_DI_SERIE = (\[[^\]]*\]);/);
   assert.deepEqual(lista(APP, /const SPENTI_DI_SERIE = new Set\((\[[^\]]*\])\);/), srv);
   assert.deepEqual(lista(OVL, /const SPENTI_DI_SERIE = (\[[^\]]*\]);/), srv);
-  assert.deepEqual(srv, ['invito', 'subathon', 'subregole'], 'l\'invito, e i due pezzi della subathon (test/contratto/subathon-scena.test.mjs)');
+  assert.deepEqual(srv, ['invito']);
   assert.ok(/const mostra = \(k\) => \(MIO\.mostra\[k\] === undefined \? SPENTI_DI_SERIE\.indexOf\(k\) < 0 : MIO\.mostra\[k\] !== false\);/.test(OVL), 'in diretta la chiave non scritta vale come nel server');
 });
 

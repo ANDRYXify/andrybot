@@ -2,19 +2,21 @@
 // Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // LA SUBATHON: la diretta dura quanto dice l'orologio (docs/SUBATHON.md).
 //
-// Non e' un orologio nuovo: e' il conto alla rovescia che c'e' gia', e ogni
-// mossa e' una riga del libro. Da questo discendono le prove che contano, e
-// sono tutte cose che da fuori non si vedrebbero finche' non fanno danno in
-// diretta:
+// Ha un orologio suo (overlayStato.subathon), e ogni mossa e' una riga del
+// libro. Da questo discendono le prove che contano, e sono tutte cose che da
+// fuori non si vedrebbero finche' non fanno danno in diretta:
 //
-//  · lo stesso evento non allunga due volte (l'id della riga e' quello
-//    dell'evento), e la stessa riga non si storna due volte;
-//  · un conto FINITO non riparte da solo, e la fine si festeggia una volta;
+//  · la subathon non tocca MAI il conto alla rovescia dello streamer, e il
+//    «Fai partire» del conto non apre una subathon;
+//  · lo stesso evento non allunga due volte, la stessa riga non si storna due
+//    volte;
+//  · un orologio FINITO non riparte da solo, e la fine si festeggia una volta;
 //  · il tetto e' su QUANTO MANCA;
 //  · la pausa ferma l'orologio con quello che manca, sopravvive (sta nelle
 //    impostazioni), e gli eventi in pausa allungano quello che resta;
 //  · i comandi che muovono l'orologio sono di chi lo streamer sceglie;
-//  · totale, contributori e ultimi sono conti sul libro.
+//  · totale, contributori e ultimi sono conti sul libro;
+//  · il posto libero in scena e' una regola, non un tentativo.
 import test, { mock } from 'node:test';
 import assert from 'node:assert/strict';
 import { cartellaUsaEGetta } from '../aiuto.mjs';
@@ -22,6 +24,7 @@ import { cartellaUsaEGetta } from '../aiuto.mjs';
 const usaEGetta = cartellaUsaEGetta('andrybot-subathon-');
 const { streamers, subathonLibro } = await import('../../src/db.js');
 const sub = await import('../../src/features/subathon.js');
+const prima = await import('../../src/features/subathon-prima.js');
 const stile = await import('../../src/web/stile.js');
 const { AlertsEngine } = await import('../../src/features/alerts.js');
 const S = globalThis.SB_SUBATHON;
@@ -29,20 +32,24 @@ const S = globalThis.SB_SUBATHON;
 const CH = 'canale';
 streamers.request(CH, 'Canale', '1');
 const MIN = 60_000;
+// Il conto alla rovescia dello streamer, che la subathon non deve toccare mai.
+const CONTO = { fine: 1_234_567_890 };
 
 const REGOLE = { attivo: true, perSub: 5, perBit100: 1, perEuro: 2, perKicks100: 1, perFollow: 1, perRaid10: 2, tettoOre: 12, annuncia: true, raffica: 0, testi: { allunga: '{chi} +{quanto}' } };
 let giro = 0;
-// Una subathon che parte adesso: sessione nuova, e niente righe di prima.
+// Una subathon che corre adesso: sessione nuova col suo orologio, e il conto
+// alla rovescia dello streamer da un'altra parte.
 const prepara = (regole = REGOLE, fine = Date.now() + 60 * MIN, altro = {}) => {
   const s = streamers.get(CH)?.settings || {};
   const inizio = Date.now() + (++giro);
   streamers.setSettings(CH, { ...s, subathon: regole, overlayTimer: { attivo: true }, ...altro,
-    overlayStato: { ...(s.overlayStato || {}), timer: { fine }, subathon: { inizio, felice: null, finita: 0 } } });
+    overlayStato: { ...(s.overlayStato || {}), timer: { ...CONTO }, subathon: { inizio, fine, pausa: null, felice: null, finita: 0 } } });
   return inizio;
 };
-const timer = () => streamers.get(CH)?.settings?.overlayStato?.timer || {};
-const fineOra = () => Number(timer().fine) || 0;
-const righe = () => subathonLibro.sessione(CH, Number(streamers.get(CH).settings.overlayStato.subathon.inizio) || 0);
+const orologio = () => streamers.get(CH)?.settings?.overlayStato?.subathon || {};
+const contoOra = () => streamers.get(CH)?.settings?.overlayStato?.timer;
+const fineOra = () => Number(orologio().fine) || 0;
+const righe = () => subathonLibro.sessione(CH, Number(orologio().inizio) || 0);
 const msg = (text, chi = {}) => ({ channel: CH, text, user: 'mod1', display: 'Mod1', id: 'm' + Math.random(), ...chi });
 
 test.after(() => usaEGetta.pulisci());
@@ -68,49 +75,98 @@ test('dagli eventi alle fonti: la raffica dei regali non conta, ogni regalo si',
   assert.equal(sub.daEvento({ type: 'channel.channel_points_custom_reward_redemption.add', data: { id: 'r1', reward: { id: 'p' } } }).id, 'riscatto:twitch:r1');
 });
 
-test('un sub allunga il conto che si vede, e scrive la sua riga', () => {
+test('un sub allunga l\'orologio della subathon, scrive la sua riga, e il conto alla rovescia resta com\'era', () => {
   prepara();
-  const prima = fineOra();
+  const p = fineOra();
   const e = sub.suEvento(CH, { fonte: 'sub', quanti: 1, chi: 'luca', id: 'evento:a' });
   assert.equal(e.esito, 'ok');
-  assert.equal(fineOra(), prima + 5 * MIN, 'e\' l\'istante di fine del timer, quello del canale');
+  assert.equal(fineOra(), p + 5 * MIN);
+  assert.deepEqual(contoOra(), CONTO, 'il conto alla rovescia e\' dello streamer');
   assert.deepEqual(righe().map((r) => [r.id, r.fonte, r.chi, r.messi]), [['evento:a', 'sub', 'luca', 5 * MIN]]);
+});
+
+test('nessuna mossa della subathon tocca il conto alla rovescia', () => {
+  const ora = Date.now();
+  prepara(REGOLE, ora + 60 * MIN);
+  const al = new AlertsEngine({ say: () => {}, effects: { emit: () => {} } });
+  al.subathonEvento(CH, { fonte: 'sub', quanti: 1, chi: 'x', id: 'evento:n1' });
+  for (const a of [{ azione: 'piu', ms: 10 * MIN }, { azione: 'meno', ms: 2 * MIN }, { azione: 'unita', fonte: 'bit', quanti: 300 }, { azione: 'imposta', ms: 90 * MIN },
+    { azione: 'pausa' }, { azione: 'riprendi' }, { azione: 'felice', ms: 10 * MIN, per: 2 }, { azione: 'felice-stop' }, { azione: 'annulla' }]) {
+    al.subathonAzione(CH, a, { mano: 'Mod1' });
+    assert.deepEqual(contoOra(), CONTO, `«${a.azione}» non lo tocca`);
+  }
+  al.subathonAvvia(CH, 120);
+  assert.deepEqual(contoOra(), CONTO, '«Fai partire» della subathon non lo tocca');
+  al.subathonFerma(CH);
+  assert.deepEqual(contoOra(), CONTO, '«Ferma» della subathon non lo tocca');
+  prepara(REGOLE, ora - 1000);
+  al._sbFine(CH);
+  assert.deepEqual(contoOra(), CONTO, 'la fine non lo tocca');
+});
+
+test('il «Fai partire» del conto alla rovescia non apre una subathon, e non la muove', () => {
+  prepara();
+  const prima0 = JSON.parse(JSON.stringify(orologio()));
+  const al = new AlertsEngine({ effects: { emit: () => {} } });
+  al.impostaTimer(CH, 10);
+  assert.deepEqual(orologio(), prima0, 'la sessione e l\'orologio della subathon restano com\'erano');
+  al.impostaTimer(CH, 0);
+  assert.deepEqual(orologio(), prima0);
+});
+
+test('far partire la subathon: sessione nuova, orologio suo, una volta per tasto', () => {
+  const ora = Date.now();
+  prepara();
+  const e = sub.avvia(CH, 3 * 60 * MIN, { id: 'tasto:p1', ora });
+  assert.equal(e.esito, 'ok');
+  assert.equal(orologio().inizio, ora);
+  assert.equal(fineOra(), ora + 3 * 60 * MIN);
+  assert.equal(righe().length, 0, 'totale, ultimi e traguardi ripartono da zero');
+  assert.deepEqual(contoOra(), CONTO);
+  assert.equal(sub.avvia(CH, 60 * MIN, { id: 'tasto:p1', ora: ora + 5 }).esito, 'doppio', 'lo stesso tasto non apre una seconda sessione');
+  assert.equal(fineOra(), ora + 3 * 60 * MIN);
+  prepara({ ...REGOLE, attivo: false });
+  assert.equal(sub.avvia(CH, 60 * MIN).esito, 'spenta', 'con le regole spente non parte');
+});
+
+test('accesa vuol dire regole accese e orologio in corsa o in pausa, senza il conto alla rovescia', () => {
+  prepara(REGOLE, Date.now() + 60 * MIN, { overlayTimer: { attivo: false } });
+  assert.equal(sub.accesa(streamers.get(CH).settings), true, 'il conto alla rovescia spento non conta');
+  sub.azione(CH, { azione: 'pausa' });
+  assert.equal(sub.accesa(streamers.get(CH).settings), true, 'in pausa e\' accesa');
+  prepara(REGOLE, Date.now() - 1);
+  assert.equal(sub.accesa(streamers.get(CH).settings), false, 'a zero non lo e\' piu\'');
+  prepara(REGOLE, 0);
+  assert.equal(sub.accesa(streamers.get(CH).settings), false, 'mai partita');
+  prepara({ ...REGOLE, attivo: false });
+  assert.equal(sub.accesa(streamers.get(CH).settings), false, 'regole spente');
 });
 
 test('lo stesso evento non allunga due volte', () => {
   prepara();
-  const prima = fineOra();
+  const p = fineOra();
   assert.equal(sub.suEvento(CH, { fonte: 'sub', quanti: 1, id: 'evento:doppio' }).esito, 'ok');
   assert.equal(sub.suEvento(CH, { fonte: 'sub', quanti: 1, id: 'evento:doppio' }).esito, 'doppio');
-  assert.equal(fineOra(), prima + 5 * MIN, 'il secondo arrivo non tocca l\'orologio');
+  assert.equal(fineOra(), p + 5 * MIN, 'il secondo arrivo non tocca l\'orologio');
   assert.equal(righe().length, 1);
 });
 
-test('un conto finito non riparte, e non scrive righe', () => {
+test('un orologio finito non riparte, e non scrive righe', () => {
   prepara(REGOLE, Date.now() - 1000);
-  const prima = fineOra();
-  assert.equal(sub.suEvento(CH, { fonte: 'sub', quanti: 1, id: 'evento:tardi' }).esito, 'ferma');
-  assert.equal(fineOra(), prima, 'la diretta e\' finita: un sub non la resuscita');
-  assert.equal(righe().length, 0);
-  assert.equal(sub.azione(CH, { azione: 'pausa' }).esito, 'ferma', 'e non si mette in pausa un conto finito');
+  const p = fineOra();
+  assert.equal(sub.suEvento(CH, { fonte: 'sub', quanti: 1, id: 'evento:tardi' }), null, 'la subathon finita non e\' accesa');
+  assert.equal(sub.azione(CH, { azione: 'piu', ms: 5 * MIN }).esito, 'ferma');
+  assert.equal(fineOra(), p, 'la diretta e\' finita: un sub non la resuscita');
+  assert.equal(sub.azione(CH, { azione: 'pausa' }).esito, 'ferma', 'e non si mette in pausa un orologio finito');
   assert.equal(sub.azione(CH, { azione: 'felice', ms: 10 * MIN, per: 2 }).esito, 'ferma');
   assert.equal(righe().length, 0, 'il libro e\' della subathon che corre');
 });
 
 test('con la subathon spenta non si tocca niente', () => {
   prepara({ ...REGOLE, attivo: false });
-  const prima = fineOra();
+  const p = fineOra();
   assert.equal(sub.suEvento(CH, { fonte: 'sub', quanti: 1 }), null);
-  assert.equal(fineOra(), prima);
-});
-
-test('senza un conto che la faccia vedere la subathon non esiste; l\'elemento subathon e\' un conto', () => {
-  prepara(REGOLE, Date.now() + 60 * MIN, { overlayTimer: { attivo: false } });
-  assert.equal(sub.accesa(streamers.get(CH).settings), false);
-  assert.equal(sub.suEvento(CH, { fonte: 'sub', quanti: 1 }), null);
-  prepara(REGOLE, Date.now() + 60 * MIN, { overlayTimer: { attivo: false }, overlaySubathon: { attivo: true } });
-  assert.equal(sub.accesa(streamers.get(CH).settings), true);
-  prepara(REGOLE, Date.now() + 60 * MIN, { overlaySubathon: undefined });
+  assert.equal(fineOra(), p);
 });
 
 test('il tetto e\' su quanto manca, e al tetto la riga dice che e\' arrivato tutto tagliato', () => {
@@ -130,38 +186,31 @@ test('a tetto zero non c\'e\' tetto', () => {
   assert.equal(sub.suEvento(CH, { fonte: 'sub', quanti: 1 }).riga.messi, 120 * MIN, 'con tredici ore che mancano, due ore in piu\' entrano tutte');
 });
 
-test('applica: in giu\' mai sotto adesso, e un conto finito non si muove', () => {
+test('applica: in giu\' mai sotto adesso, e un orologio finito non si muove', () => {
   const ora = 1_000_000;
   const giu = S.applica({ fine: ora + 3 * MIN }, -10 * MIN, { ora });
-  assert.equal(giu.timer.fine, ora, 'a zero e\' finita, non prima di adesso');
+  assert.equal(giu.orologio.fine, ora, 'a zero e\' finita, non prima di adesso');
   assert.equal(giu.messi, -3 * MIN);
   assert.equal(S.applica({ fine: ora - 1 }, 5 * MIN, { ora }), null);
   assert.equal(S.applica({}, 5 * MIN, { ora }), null, 'mai partito');
   const pausa = S.applica({ fine: 0, pausa: { resta: 10 * MIN } }, 5 * MIN, { ora, tetto: 12 * MIN });
-  assert.deepEqual(pausa.timer, { fine: 0, pausa: { resta: 12 * MIN } }, 'in pausa si sposta quello che resta, col tetto');
+  assert.deepEqual(pausa.orologio, { fine: 0, pausa: { resta: 12 * MIN } }, 'in pausa si sposta quello che resta, col tetto');
 });
 
 test('la pausa ferma l\'orologio, gli eventi in pausa allungano quello che resta, la ripresa riparte da li\'', () => {
   const ora = Date.now();
   prepara(REGOLE, ora + 30 * MIN);
   assert.equal(sub.azione(CH, { azione: 'pausa' }, { ora }).esito, 'ok');
-  assert.deepEqual(timer(), { fine: 0, pausa: { resta: 30 * MIN } });
+  assert.equal(fineOra(), 0);
+  assert.deepEqual(orologio().pausa, { resta: 30 * MIN });
   assert.equal(sub.azione(CH, { azione: 'pausa' }, { ora }).esito, 'no', 'una pausa in pausa non fa niente');
   assert.equal(sub.suEvento(CH, { fonte: 'sub', quanti: 1, id: 'evento:inpausa' }, { ora: ora + 10 * MIN }).esito, 'ok');
-  assert.deepEqual(timer(), { fine: 0, pausa: { resta: 35 * MIN } }, 'il tempo dell\'evento va in quello che resta');
-  const riletta = streamers.get(CH).settings.overlayStato.timer;
-  assert.equal(riletta.pausa.resta, 35 * MIN, 'la pausa sta nelle impostazioni: sopravvive a un riavvio');
+  assert.deepEqual(orologio().pausa, { resta: 35 * MIN }, 'il tempo dell\'evento va in quello che resta');
+  assert.equal(streamers.get(CH).settings.overlayStato.subathon.pausa.resta, 35 * MIN, 'la pausa sta nelle impostazioni: sopravvive a un riavvio');
   assert.equal(sub.azione(CH, { azione: 'riprendi' }, { ora: ora + 20 * MIN }).esito, 'ok');
-  assert.deepEqual(timer(), { fine: ora + 20 * MIN + 35 * MIN });
-});
-
-test('il conto che parte da solo non riparte un conto in pausa', () => {
-  const ora = Date.now();
-  prepara(REGOLE, ora + 30 * MIN, { overlayTimer: { attivo: true, partiDaSolo: true, minuti: 15 } });
-  sub.azione(CH, { azione: 'pausa' }, { ora });
-  const al = new AlertsEngine({});
-  assert.equal(al.avviaTimerSePronto(CH), 0);
-  assert.equal(timer().pausa.resta, 30 * MIN, 'la pausa resta, e i minuti di serie non prendono il suo posto');
+  assert.equal(fineOra(), ora + 20 * MIN + 35 * MIN);
+  assert.equal(orologio().pausa, null);
+  assert.deepEqual(contoOra(), CONTO);
 });
 
 test('annulla storna l\'ultima riga a mano, una volta sola, e niente si cancella', () => {
@@ -189,6 +238,7 @@ test('totale, contributori e ultimi sono conti sul libro; lo storno di un evento
   sub.azione(CH, { azione: 'piu', ms: 3 * MIN }, { mano: 'Mod1', id: 'cmd:z', ora: ora + 3 });
   let v = sub.vista(CH, { ora: ora + 4 });
   assert.equal(v.totale, 18 * MIN, 'due sub, cinquecento bit e tre minuti a mano');
+  assert.equal(v.fine, fineOra(), 'la vista porta l\'orologio della subathon');
   assert.deepEqual(v.migliori.map((x) => [x.chi, x.messi]), [['luna', 10 * MIN], ['marco', 5 * MIN]], 'le righe a mano non hanno un contributore');
   assert.deepEqual(v.ultimi.map((x) => x.chi), ['marco', 'luna', 'luna']);
   sub.azione(CH, { azione: 'annulla', riga: 'evento:l2' }, { id: 'tasto:t', ora: ora + 5 });
@@ -204,24 +254,26 @@ test('la fine si vede una volta per istante, e non riparte', () => {
   const f = sub.fineArrivata(CH, { ora });
   assert.equal(f.festeggia, true);
   assert.equal(sub.fineArrivata(CH, { ora: ora + 5 }), null, 'la seconda volta niente');
-  assert.equal(sub.suEvento(CH, { fonte: 'sub', quanti: 1 }).esito, 'ferma');
   prepara(REGOLE, ora - 11 * MIN);
   assert.equal(sub.fineArrivata(CH, { ora }).festeggia, false, 'una fine di piu\' di dieci minuti fa si segna e basta');
   prepara(REGOLE, ora + 60 * MIN);
   assert.equal(sub.fineArrivata(CH, { ora }), null, 'non finita');
   sub.azione(CH, { azione: 'pausa' }, { ora });
   assert.equal(sub.fineArrivata(CH, { ora: ora + 2 * 60 * MIN }), null, 'in pausa non finisce');
+  prepara(REGOLE, ora + 60 * MIN);
+  sub.ferma(CH);
+  assert.equal(sub.fineArrivata(CH, { ora }), null, '«Ferma» non e\' la fine: non si festeggia');
 });
 
 test('i comandi che muovono l\'orologio sono di chi lo streamer sceglie; «!subathon» e\' di tutti', () => {
   prepara();
-  const prima = fineOra();
+  const p = fineOra();
   const curioso = sub.comando(msg('!subathon +10m', { isMod: false, isBroadcaster: false }));
   assert.match(curioso.detto, /^Mancano /, 'chi non puo\' riceve quello che riceve chiunque');
-  assert.equal(fineOra(), prima);
+  assert.equal(fineOra(), p);
   const mod = sub.comando(msg('!subathon +10m perso un sub', { isMod: true }));
   assert.equal(mod.esito.esito, 'ok');
-  assert.equal(fineOra(), prima + 10 * MIN);
+  assert.equal(fineOra(), p + 10 * MIN);
   assert.equal(mod.esito.riga.perche, 'perso un sub');
   assert.equal(mod.esito.riga.mano, 'Mod1', 'il libro dice chi l\'ha scritta');
   assert.match(mod.detto, /^Aggiunti 10 minuti/);
@@ -236,14 +288,32 @@ test('i comandi che muovono l\'orologio sono di chi lo streamer sceglie; «!suba
   assert.match(sub.comando(msg('!subathon +5m', { isMod: true })).detto, /spenta/, 'a chi puo\' muoverla si');
 });
 
-test('lo stesso messaggio in chat non allunga due volte', () => {
+test('«!subathon parti 4h»: chi puo\' la fa partire, chi non puo\' no', () => {
+  prepara(REGOLE, 0);
+  assert.equal(sub.comando(msg('!subathon parti 4h', { isMod: false })), null, 'chi non puo\', a subathon ferma, non riceve niente');
+  assert.equal(fineOra(), 0);
+  const r = sub.comando(msg('!subathon parti 4h', { isMod: true }));
+  assert.equal(r.esito.esito, 'ok');
+  assert.ok(Math.abs(fineOra() - (Date.now() + 4 * 60 * MIN)) < 2000);
+  assert.match(r.detto, /^Subathon partita!/);
+  assert.deepEqual(contoOra(), CONTO);
+  prepara(REGOLE, 0);
+  assert.match(sub.comando(msg('!subathon +10m', { isMod: true })).detto, /non è ancora partita/, 'muoverla prima che parta dice come si fa partire');
+});
+
+test('lo stesso messaggio in chat non allunga due volte, e non fa ripartire due volte', () => {
   prepara();
-  const prima = fineOra();
+  const p = fineOra();
   const m = msg('!subathon sub 2', { isMod: true, id: 'stesso' });
   sub.comando(m);
   const d = sub.comando(m);
   assert.equal(d.detto, '', 'la seconda volta tace');
-  assert.equal(fineOra(), prima + 10 * MIN);
+  assert.equal(fineOra(), p + 10 * MIN);
+  const parti = msg('!subathon parti 2h', { isMod: true, id: 'parti-una' });
+  sub.comando(parti);
+  const inizio = orologio().inizio;
+  assert.equal(sub.comando(parti).detto, '');
+  assert.equal(orologio().inizio, inizio);
 });
 
 test('leggere i comandi', () => {
@@ -254,6 +324,7 @@ test('leggere i comandi', () => {
   assert.deepEqual(sub.leggiComando('!subathon sub 3 2'), { azione: 'unita', fonte: 'sub', quanti: 3, livello: 2 });
   assert.deepEqual(sub.leggiComando('!subathon euro 2,5'), { azione: 'unita', fonte: 'euro', quanti: 2.5, livello: 0 });
   assert.equal(sub.leggiComando('!subathon resta 1:30').ms, 90 * MIN);
+  assert.deepEqual(sub.leggiComando('!subathon parti 4h'), { azione: 'parti', ms: 4 * 60 * MIN });
   assert.deepEqual(sub.leggiComando('!subathon felice 30m x3'), { azione: 'felice', ms: 30 * MIN, per: 3 });
   assert.equal(sub.leggiComando('!subathon felice 30m x9').azione, 'uso');
   assert.equal(sub.leggiComando('!subathon boh').azione, 'uso');
@@ -298,6 +369,8 @@ test('le regole hanno valori di fabbrica sensati, la subathon nasce spenta, e il
   assert.ok(Object.values(r.alert).every((a) => a.attivo === false), 'gli alert nascono spenti');
   assert.equal(stile.normSubathon({ tettoOre: 500 }).tettoOre, 72, 'il tetto ha un tetto');
   assert.ok(!('subathon' in stile.normTimer({ subathon: { attivo: true } })));
+  assert.equal(stile.normOverlaySubathon({}).posizione, 'auto', 'di serie il posto lo sceglie la regola');
+  assert.equal(stile.normOverlaySubathonRegole({}).posizione, 'auto');
 });
 
 test('le regole scritte dentro il conto alla rovescia si leggono, e salvando il conto si fermano nella chiave nuova', () => {
@@ -311,22 +384,54 @@ test('le regole scritte dentro il conto alla rovescia si leggono, e salvando il 
   assert.equal(stile.subathonDaSalvare({}, { subathon: { perSub: 9 } }).perSub, 9);
 });
 
-test('in diretta: l\'istante all\'overlay, la vista col «+», la raffica in una riga, la pausa che arriva all\'overlay', () => {
+test('la subathon di prima passa sull\'orologio suo, una volta, e il conto resta com\'e\'', () => {
+  const ora = 10_000_000;
+  const vecchie = {
+    overlayStato: { timer: { fine: ora + 30 * MIN }, subathon: { inizio: ora - 60 * MIN, felice: null, finita: 0 } },
+    overlays: [{ id: 'a', mostra: { chat: true, subathon: false, subregole: false }, occasioni: [{ id: 'o', mostra: { subathon: false } }] }],
+  };
+  const n = prima.migra(vecchie, ora);
+  assert.equal(n.overlayStato.subathon.fine, ora + 30 * MIN, 'la fine del conto diventa quella della subathon');
+  assert.deepEqual(n.overlayStato.timer, vecchie.overlayStato.timer, 'il conto resta com\'e\'');
+  assert.deepEqual(n.overlays[0].mostra, { chat: true }, 'gli spenti scritti dalla regola di ottobre si tolgono dalle basi');
+  assert.deepEqual(n.overlays[0].occasioni, vecchie.overlays[0].occasioni, 'non dalle occasioni');
+  assert.equal(prima.migra(n, ora), null, 'una volta sola');
+  const inPausa = prima.migra({ overlayStato: { timer: { fine: 0, pausa: { resta: 20 * MIN } }, subathon: { inizio: 5 } } }, ora);
+  assert.deepEqual(inPausa.overlayStato.subathon.pausa, { resta: 20 * MIN });
+  const finito = prima.migra({ overlayStato: { timer: { fine: ora - 1 }, subathon: { inizio: 5 } } }, ora);
+  assert.ok(!('fine' in finito.overlayStato.subathon), 'un conto finito non diventa una subathon in corsa');
+  const nuova = prima.migra({ overlayStato: { timer: { fine: ora + MIN }, subathon: { inizio: 5, fine: ora + 9 * MIN } } }, ora);
+  assert.equal(nuova.overlayStato.subathon.fine, ora + 9 * MIN, 'chi ha gia\' l\'orologio nuovo lo tiene');
+});
+
+test('il posto libero e\' una regola: il primo dell\'ordine scritto che nessuno occupa, se no il primo', () => {
+  assert.equal(S.posto([]), 'alto-sinistra');
+  assert.equal(S.posto([{ posizione: 'alto-sinistra' }, { posizione: 'alto-destra' }]), 'basso-sinistra');
+  assert.equal(S.posto([{ posizione: 'alto-sinistra' }, { xy: { x: 85, y: 10 } }]), 'basso-sinistra', 'un elemento spostato occupa la zona del suo punto');
+  assert.equal(S.posto([{ xy: { x: 70, y: 70, w: 25, h: 20 } }, { posizione: 'alto-sinistra' }, { posizione: 'alto-destra' }, { posizione: 'basso-sinistra' }]), 'alto-centro', 'un riquadro, dal suo centro');
+  assert.equal(S.posto(S.POSTI.map((posizione) => ({ posizione }))), 'alto-sinistra', 'tutto occupato: il primo');
+  const due = S.postiAuto([{ posizione: 'alto-sinistra' }], { posizione: 'auto' }, { posizione: 'auto' });
+  assert.deepEqual(due, { subathon: 'alto-destra', subregole: 'basso-sinistra' }, 'le regole scelgono dopo la subathon, senza starle sopra');
+  assert.deepEqual(S.postiAuto([], { posizione: 'auto', xy: { x: 10, y: 80 } }, { posizione: 'auto' }), { subregole: 'alto-sinistra' }, 'spostata a mano resta dove l\'hai messa, e occupa il suo posto');
+  assert.deepEqual(S.postiAuto([], { posizione: 'alto-destra' }, null), {}, 'un angolo scelto non si sposta');
+});
+
+test('in diretta: la vista con l\'orologio, il «+», la raffica in una riga, la pausa che arriva all\'overlay', () => {
   mock.timers.enable({ apis: ['setTimeout'] });
   try {
     prepara({ ...REGOLE, raffica: 4 });
     const detti = [], spinte = [];
     const al = new AlertsEngine({ say: (ch, t) => detti.push(t), effects: { emit: (ch, p) => spinte.push(p) } });
     for (const [i, chi] of ['luna', 'marco', 'giada'].entries()) al.subathonEvento(CH, { fonte: 'sub', quanti: 1, chi, id: 'evento:r' + i });
-    const timerSpinti = spinte.filter((p) => p.tipo === 'timer');
-    assert.equal(timerSpinti.length, 3, 'l\'istante arriva subito, a ogni evento');
-    assert.equal(timerSpinti.at(-1).fine, fineOra(), 'ed e\' l\'istante vero, non un\'aggiunta da sommare');
-    assert.deepEqual(spinte.filter((p) => p.tipo === 'subathon').map((p) => p.sale), [5 * MIN, 5 * MIN, 5 * MIN]);
+    assert.equal(spinte.filter((p) => p.tipo === 'timer').length, 0, 'il conto alla rovescia non si muove');
+    const viste = spinte.filter((p) => p.tipo === 'subathon');
+    assert.deepEqual(viste.map((p) => p.sale), [5 * MIN, 5 * MIN, 5 * MIN]);
+    assert.equal(viste.at(-1).vista.fine, fineOra(), 'all\'overlay arriva l\'istante vero, non un\'aggiunta da sommare');
     assert.deepEqual(detti, [], 'la raffica aspetta');
     mock.timers.tick(4000);
     assert.deepEqual(detti, ['luna, marco e altri 1 +15 minuti'], 'tre sub, una riga');
     al.subathonAzione(CH, { azione: 'pausa' });
-    assert.deepEqual(spinte.filter((p) => p.tipo === 'timer').at(-1).pausa, timer().pausa, 'l\'overlay sa della pausa');
+    assert.deepEqual(spinte.filter((p) => p.tipo === 'subathon').at(-1).vista.pausa, orologio().pausa, 'l\'overlay sa della pausa');
   } finally { mock.timers.reset(); }
 });
 
@@ -348,4 +453,27 @@ test('la fine, vista dal motore: la riga in chat se lo streamer la vuole, una vo
   al._sbFine(CH);
   al._sbFine(CH);
   assert.equal(detti.filter((t) => /finita/.test(t)).length, 1);
+});
+
+test('all\'avvio una fine passata mentre il bot era spento si festeggia, una volta; il conto alla rovescia no', () => {
+  prepara({ ...REGOLE, fineChat: true }, Date.now() - 2 * MIN);
+  const detti = [];
+  const al = new AlertsEngine({ say: (ch, t) => detti.push(t), effects: { emit: () => {} } });
+  al.riarmaSubathon();
+  al.riarmaSubathon();
+  assert.equal(detti.filter((t) => /finita/.test(t)).length, 1);
+  assert.deepEqual(contoOra(), CONTO);
+});
+
+test('gli elementi che occupano un posto: accesi in quell\'overlay, col loro angolo o il loro punto', () => {
+  const s = { alerts: { attivo: true, posizione: 'alto-centro' }, overlayTimer: { attivo: true, posizione: 'alto-destra' }, overlayBit: { attivo: true }, overlayGoals: [{ id: 'g1', attivo: true, posizione: 'basso-sinistra' }] };
+  const occ = stile.occupatiInScena(s, { mostra: {}, xy: {} });
+  const zone = new Set(occ.map((o) => S.zona(o)));
+  for (const z of ['alto-centro', 'alto-destra', 'alto-sinistra', 'basso-sinistra']) assert.ok(zone.has(z), z + ': la classifica dei Bit col suo angolo di serie, l\'obiettivo col suo');
+  assert.ok(!zone.has('basso-destra'));
+  assert.equal(stile.postiSubathon(s, { mostra: {}, xy: {} }, [], { posizione: 'auto' }, null).subathon, 'basso-destra');
+  assert.equal(stile.postiSubathon(s, { mostra: { bit: false }, xy: {} }, [], { posizione: 'auto' }, null).subathon, 'alto-sinistra', 'un elemento nascosto in quell\'overlay non occupa');
+  assert.equal(stile.postiSubathon(s, { mostra: {}, xy: { bit: { x: 80, y: 80 } } }, [], { posizione: 'auto' }, null).subathon, 'alto-sinistra', 'uno spostato occupa dove l\'hai messo');
+  assert.equal(stile.postiSubathon({ ...s, overlayTimer: { attivo: false } }, { mostra: {}, xy: {} }, [], { posizione: 'auto' }, null).subathon, 'alto-destra', 'uno spento non occupa: si libera il suo angolo');
+  assert.equal(stile.postiSubathon({}, { mostra: {}, xy: {} }, [{ comando: 'morti', mostra: true, x: 5, y: 10 }], { posizione: 'auto' }, null).subathon, 'alto-destra', 'un contatore occupa il suo punto');
 });

@@ -2425,18 +2425,20 @@ Il modello sta in docs/PREMI-A-TEMPO.md, il collaudo in
 
 Chiesto così: «un overlay ad hoc» per la subathon, con grafiche personalizzate
 (docs/SUBATHON.md). Due elementi col posto, fatti come gli altri («Un elemento è
-sempre fatto nello stesso modo»), e tutti e due **nascono spenti** negli
-overlay che ci sono già: `SPENTI_DI_SERIE = ['invito', 'subathon',
-'subregole']`, la stessa lista nel server, nel pannello e nella pagina
-dell'overlay, con la regola dell'invito (solo nelle basi, mai nelle differenze
-di un'occasione).
+sempre fatto nello stesso modo»). Da novembre (docs/SUBATHON.md, «Novembre
+2026: un orologio suo») **ci sono in ogni overlay**, anche in quelli già fatti,
+e si fanno vedere da soli quando la subathon corre: non sono più in
+`SPENTI_DI_SERIE` (che torna `['invito']`), e una chiave non scritta vale
+accesa. Lo streamer li nasconde in un overlay dalla colonna dei livelli, e
+quel «no» resta. Gli spenti scritti nei giorni di ottobre dalla regola di
+allora li toglie una volta la migrazione all'avvio (`features/subathon-prima.js`).
 
 | | `subathon` | `subregole` |
 | --- | --- | --- |
 | configurazione | `overlaySubathon` (`normOverlaySubathon`) | `overlaySubathonRegole` (`normOverlaySubathonRegole`) |
-| angolo di serie | in alto a sinistra | in basso a destra |
+| angolo di serie | `auto`: il primo posto libero (sotto) | `auto`, dopo la subathon |
 | veste | `.ovl-widget.ovl-subathon` | `.ovl-widget.ovl-subregole` |
-| in scena quando | `mostra`, `attivo`, subathon accesa, orologio in corsa o in pausa | `mostra`, `attivo`, subathon accesa, almeno una regola |
+| in scena quando | `mostra`, `attivo`, regole accese e orologio della subathon in corsa o in pausa | lo stesso, e almeno una regola |
 
 **Il disegno è uno solo.** I pezzi dentro la carta li fa `SB_SUBATHON.disegna`
 (`web/public/subathon.js`, caricato dalla pagina dell'overlay e dal pannello):
@@ -2449,7 +2451,8 @@ posizione e il riquadro.
 
 **I pezzi** (`pezzi`): titolo, quanto manca, il «+5:00» che sale, la pausa,
 l'ora felice, il totale aggiunto, da quanto dura (spento di serie), la barra del
-traguardo, gli ultimi (`quantiUltimi`, di serie 3). Si nascondono con
+traguardo, gli ultimi e i migliori (spenti di serie), quanti ne mostra
+`quantiUltimi` (di serie 3). Si nascondono con
 `hidden`, e la pelle ha `.ovl-subathon [hidden] { display: none !important; }`:
 un `display` scritto per un pezzo non deve battere il «nascosto» (vedi «Un
 `display` che batteva `[hidden]`»). Ogni pezzo ha il suo testo (`testi`):
@@ -2462,17 +2465,29 @@ nel tema (`fondoUrl`, `corniceUrl`, `iconaUrl`), come i cartelli: l'overlay non
 sa niente della libreria. Il fondo copre la carta, la cornice ci sta sopra
 stirata, l'icona accanto al titolo.
 
-**Un orologio solo.** L'elemento non ha un suo istante: legge `MIO.timerFine` e
-`MIO.timerPausa`, gli stessi del conto alla rovescia, che arrivano con
-`{tipo:'timer', fine, pausa}`. Dalla vista (`{tipo:'subathon', vista, sale}`,
-con il suo numero d'ordine come gli altri stati) prende solo i conti sul libro:
-inizio, totale, ultimi, ora felice, traguardi. Il «+» sale quando arriva una
-vista con `sale > 0`, e anima solo `transform` e `opacity`; senza animazioni
-non compare.
+**L'orologio della subathon è suo.** L'elemento non legge il conto alla
+rovescia: tutto arriva con la vista (`{tipo:'subathon', vista, sale}`, col suo
+numero d'ordine come gli altri stati), orologio compreso (`vista.fine`,
+`vista.pausa`), insieme ai conti sul libro: inizio, totale, ultimi, migliori,
+ora felice, traguardi. A zero se ne va da solo, senza aspettare il server. Il
+«+» sale quando arriva una vista con `sale > 0`, e anima solo `transform` e
+`opacity`; senza animazioni non compare.
 
-**Il conto alla rovescia sa della pausa**: in pausa mostra il tempo fermo
-(classe `in-pausa`) invece di sparire, e «parte da solo» non riparte un conto
-in pausa.
+**Il posto libero.** Con `posizione: 'auto'` (di serie) il posto lo sceglie una
+regola sola, `SB_SUBATHON.postiAuto`: il primo, nell'ordine in alto a
+sinistra, in alto a destra, in basso a sinistra, in basso a destra, in alto al
+centro, che nessun elemento acceso di quell'overlay occupa (la zona del suo
+angolo, o del suo punto se l'hai spostato; le aree a tutto schermo non
+contano); se sono tutti presi, il primo. Le regole scelgono dopo la subathon.
+Il server la applica nel tema di ogni overlay (`subathonQui`, la posizione già
+risolta con `auto: true`), la tela dello Studio fa lo stesso conto con quello
+che mostra (`_sbPostoAuto`); il cancello dell'anteprima misura che i due posti
+coincidano. Spostato a mano, o con un angolo scelto, l'elemento resta lì e
+occupa il suo posto. La pagina dell'overlay ha l'angolo `alto-centro`.
+
+**Il conto alla rovescia** resta com'era: legge ancora la pausa della forma di
+ottobre (`timer.pausa`, che la migrazione lascia dov'è) e il suo «parte da
+solo» non la fa ripartire. Niente della subathon la scrive più.
 
 **Le regole in scena** (`subregole`) arrivano già scritte dal server
 (`righe`, da `SB_SUBATHON.righeRegole` con le regole della subathon, la valuta

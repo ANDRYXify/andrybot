@@ -91,6 +91,9 @@ comandi diversi da quelli della riga italiana.
 - Partite: chi scrive !gioco ora sa se è entrato, con una riga per chi entra insieme o una risposta a testa, e senza partita aperta il bot lo dice. Se un tuo comando ha lo stesso nome, il pannello te lo segnala. [vai: partite]
   en: Games: whoever types !gioco now knows if they got in, with one line for those joining together or a reply each, and with no game open the bot says so. If one of your commands has the same name, the panel tells you.
   es: Partidas: quien escribe !gioco ya sabe si ha entrado, con una línea para quien entra a la vez o una respuesta a cada uno, y sin partida el bot lo dice. Si un comando tuyo se llama igual, el panel te avisa.
+- La subathon ha un orologio suo: «Fai partire» non tocca più il conto alla rovescia della live. In scena compare da sola in ogni overlay mentre corre, nel primo posto libero. [vai: subathon]
+  en: The subathon has a clock of its own: «Start it» no longer touches the stream countdown. On screen it shows up by itself in every overlay while it runs, in the first free spot.
+  es: El subathon tiene un reloj propio: «Ponlo en marcha» ya no toca la cuenta atrás del directo. En escena aparece solo en cada overlay mientras corre, en el primer sitio libre.
 
 ## 2026-10-29
 

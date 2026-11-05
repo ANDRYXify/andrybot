@@ -4,7 +4,7 @@
 
 «La diretta dura quanto dice l'orologio, e chi si abbona la allunga.»
 
-## Non e' un orologio nuovo
+## Non e' un orologio nuovo (superato: vedi «Novembre 2026: un orologio suo»)
 
 La tentazione e' fare un contatore a se': un tempo totale, un tic tac, un
 elemento in overlay, un pannello. Sarebbero stati DUE orologi da tenere
@@ -348,3 +348,119 @@ volta; la riga di fine una volta.
 (chiavi, spenti di serie nelle basi e solo lì, stessa configurazione di serie
 nel pannello e nel server, stesso disegno sulla tela e in diretta), le rotte con
 il loro guardiano, la scheda registrata in ogni elenco.
+
+## Novembre 2026: un orologio suo
+
+Chiesto così: «la subathon al "fai partire" fa partire il timer countdown della
+live: non va bene, sono altre cose quelle, la subathon deve venire aggiunta agli
+overlay esistenti in maniera smart (con i vari campi, countdown etc.)».
+
+**Perché il modello di ottobre era sbagliato.** Il conto alla rovescia
+(`overlayTimer`, `overlayStato.timer`) dice quanto manca a una cosa dello
+streamer: «si comincia tra», una pausa, quello che lui sceglie. La subathon
+dice quanto **dura la diretta**, e si muove con gli eventi. Sono due significati;
+farli stare in un orologio solo voleva dire che il «Si comincia tra» mostrava il
+tempo della subathon, e che far partire la subathon accendeva il conto della
+diretta. Il difetto non era un caso: era il modello.
+
+**Il modello.**
+
+- **La subathon ha il suo orologio**, nella sua sessione:
+  `overlayStato.subathon = { inizio, fine, pausa, felice, finita }` (`pausa =
+  { resta }` quando è ferma). `applica`, il tetto, il «mai sotto adesso», la
+  pausa e la fine lavorano su questo, e **solo** su questo.
+- **Il conto alla rovescia torna suo.** Nessuna fonte, nessun comando, nessun
+  tasto della subathon lo tocca; il suo «Fai partire» non apre una sessione;
+  `avviaTimerSePronto` e `impostaTimer` sono del conto e basta. Per
+  costruzione: nel codice della subathon non c'è più un riferimento a
+  `overlayStato.timer`.
+- **Fai partire** (scheda Subathon, o `!subathon parti 4h` per chi può):
+  apre la sessione e mette l'orologio a quei minuti. **Accesa** vuol dire:
+  regole accese e un orologio partito (in corsa o in pausa). Non dipende più dal
+  conto alla rovescia.
+- **In scena, da sola, in ogni overlay.** L'elemento `subathon` c'è in tutti
+  gli overlay, anche in quelli già fatti, e si fa vedere **da solo** quando la
+  subathon è in corsa o in pausa, e sparisce quando non lo è (come `invito`
+  coi Pew: `acceso` derivato, non salvato). Lo streamer lo può nascondere in un
+  overlay dallo Studio, e quello resta nascosto. Il posto di serie non è un
+  posto fisso: è il primo, in un ordine scritto (in alto a sinistra, in alto a
+  destra, in basso a sinistra, in basso a destra, in alto al centro), che non si
+  sovrappone agli elementi accesi di quell'overlay; se nessuno è libero, il
+  primo. Una regola, non un tentativo. Lo stesso per `subathonRegole`, che si
+  vede con la subathon se lo streamer non l'ha spento.
+- **I campi** dell'elemento restano quelli di `SB_SUBATHON.disegna`, ognuno
+  acceso o spento dallo streamer: il conto alla rovescia, il «+5:00» che sale, il
+  tempo aggiunto, da quanto dura, la pausa, l'ora felice, il prossimo traguardo
+  con la barra, gli ultimi, i migliori.
+- **Chi aveva una subathon sull'orologio di prima** (una sessione aperta e il
+  conto alla rovescia in corsa o in pausa, senza l'orologio nuovo): all'avvio,
+  una volta sola, l'orologio della subathon prende la fine (o la pausa) del
+  conto. Il conto resta com'è: è dello streamer, lo ferma lui se vuole.
+
+
+### Le scelte fatte costruendolo
+
+- **Accesa, in corsa, finita.** `accesa` = regole accese e orologio della
+  subathon in corsa o in pausa: è quello che decide se l'elemento si vede, se le
+  fonti scrivono nel libro e se `!subathon` risponde. Quando l'orologio arriva a
+  zero la subathon non è più accesa: l'elemento se ne va e parte la fine (una
+  volta sola, `finita`). Chi scrive `!subathon` dopo la fine riceve «finita»
+  finché non ne parte un'altra.
+- **Fai partire, ferma.** «Fai partire» (tasto o `!subathon parti 4h`) apre
+  sempre una sessione nuova: `{ inizio, fine, pausa: null, felice: null,
+  finita: 0 }`, da un minuto a 72 ore. «Ferma» (solo dal pannello) mette `fine`
+  a zero e toglie la pausa: la sessione resta, il libro si legge ancora. Nessuno
+  dei due scrive righe: il libro è delle mosse dell'orologio che corre.
+- **All'overlay arriva l'orologio della subathon dentro la vista**
+  (`{tipo:'subathon', vista}`, `vista.fine` e `vista.pausa`): l'elemento non
+  legge più l'istante del conto alla rovescia.
+- **Il posto libero è una funzione pura** (`SB_SUBATHON.posto`), la stessa per il
+  server e per la tela. Ogni elemento acceso dell'overlay ha una **zona**: la sua
+  posizione d'angolo (`alto-sinistra`, …, `alto-centro`, `basso-centro`,
+  `centro`) o, se l'hai spostato, quella del suo punto (`x < 34` sinistra,
+  `x > 66` destra, se no centro; `y < 50` alto, se no basso; per un riquadro il
+  suo centro). Le aree a tutto schermo (effetti, colpi, muro) non occupano un
+  posto. `posto(occupate)` torna la prima zona libera dell'ordine scritto, se no
+  la prima. La subathon sceglie per prima, le regole dopo, con la zona della
+  subathon occupata. Chi si sceglie il posto (lo sposta nello Studio, o sceglie
+  un angolo invece di «da solo») non viene spostato: `posizione: 'auto'` è il
+  valore di serie, e vuol dire «decide la regola».
+- **La regola la applica il server nel tema dell'overlay** (`posizione` già
+  risolta e `auto: true`), perché è l'unico che conosce insieme le impostazioni
+  del canale e l'overlay chiesto; la tela fa lo stesso conto con quello che
+  mostra. Il cancello dell'anteprima misura che i due posti coincidano. Nella
+  pagina dell'overlay nasce l'angolo che mancava, `alto-centro`.
+- **Visibile in ogni overlay.** `subathon` e `subregole` escono da
+  `SPENTI_DI_SERIE` (resta solo l'invito): una chiave non scritta vale accesa, e
+  si vede solo con la subathon in corsa. Gli overlay salvati nei giorni di
+  ottobre, quando valevano spenti di serie, hanno `subathon: false` e `subregole:
+  false` scritti senza che nessuno li avesse spenti: la migrazione all'avvio li
+  toglie dalle basi, una volta (insieme alla copia dell'orologio, segnata da
+  `subathonOrologio: 2` nelle impostazioni).
+- **Un pezzo in più**, `migliori` (spento di serie): chi ha allungato di più.
+- **Il conto alla rovescia** tiene la lettura della pausa che aveva (`timer.pausa`
+  di prima): è la forma che la migrazione lascia com'è, e il suo «parte da
+  solo» non la fa ripartire. Niente la scrive più.
+
+### Collaudo dell'orologio suo
+
+- `test/unita/subathon.test.mjs`: nessuna mossa della subathon (ogni azione,
+  `parti`, `ferma`, la fine) cambia `overlayStato.timer`; `impostaTimer` non
+  apre né sposta una sessione; `parti` è idempotente sull'id del tasto e
+  rifiuta con le regole spente; accesa senza conto alla rovescia; la migrazione
+  (copia `fine`/`pausa`, non tocca il conto, toglie i `false` solo dalle basi,
+  una volta sola); la regola del posto libero, sia pura sia sulle impostazioni
+  vere (nascosto, spostato, spento, contatore); una fine passata a server
+  spento si festeggia una volta al riavvio.
+- `test/contratto/subathon-scena.test.mjs`: nei due file della subathon non
+  compare il conto alla rovescia (`timer`, `overlayTimer`, `timerDi`), nel corpo
+  di `impostaTimer` non compare la subathon, la rotta `ferma` ha la guardia.
+- `scripts/verifica-overlay-tempo.mjs` (scena `subathonSua`): conto e subathon
+  accesi insieme mostrano due tempi diversi, fermare il conto non ferma la
+  subathon, la pausa resta ferma, a zero la subathon esce da sola.
+- `scripts/verifica-anteprima.mjs`: il posto scelto dalla tela e quello scelto
+  dal server coincidono, e con solo `alto-sinistra` occupato è `alto-destra`.
+- Nella demo l'«Overlay principale» ha tutte e cinque le zone occupate: lì
+  la subathon e le regole hanno un punto messo dallo streamer (come prima),
+  perché la regola ricadrebbe sulla prima zona, sopra a un obiettivo. Il posto
+  da solo si vede negli altri overlay.

@@ -222,7 +222,7 @@ import {
   ICONE_OVL_K, icoOk, PESO_OVL, MAIUSC_OVL, USCITA_OVL,
   FORME_OVL, MATERIE_OVL, CORNICI_OVL, COMP_OVL, chiAlertOk,
   normAlertStile, normChatStile, normWidgetStile, normOverlayWidgetCfg, normOverlayStile, normGoals, MAX_GOAL,
-  normMusica, normTimer, normPubblicita, normTempi, normTreno, normBit, normBoss, normScritta, normOverlayWalkon, normEtichetta, normInvito, testoInvito, normMuro, FIGURE_MURO, normOverlaySubathon, normOverlaySubathonRegole, subathonDaSalvare, normCartelli, normDisegno,
+  normMusica, normTimer, normPubblicita, normTempi, normTreno, normBit, normBoss, normScritta, normOverlayWalkon, normEtichetta, normInvito, testoInvito, normMuro, FIGURE_MURO, normOverlaySubathon, normOverlaySubathonRegole, subathonDaSalvare, postiSubathon, normCartelli, normDisegno,
   normArena,
 } from './stile.js';
 
@@ -238,10 +238,10 @@ const ELEM_OVERLAY = ['alert', 'chat', 'wf', 'ws', 'goal', 'cont', 'cart', 'musi
 // qualcuno l'ha accesa (l'overlay dei Pew), quindi in una BASE non scritta vale
 // spenta. Solo nelle basi: nelle differenze di un'occasione una chiave assente
 // vuol dire «come la base», e riempirla la farebbe diventare un «spegni».
-// Cosi' anche i due pezzi della subathon (docs/SUBATHON.md, «In scena»): gli
-// overlay che ci sono gia' non se li devono trovare in scena perche' sono nati.
+// La subathon no: c'e' in ogni overlay e si vede da sola quando corre
+// (docs/SUBATHON.md, «Novembre 2026: un orologio suo»).
 // La stessa lista sta nel pannello e nella pagina dell'overlay.
-const SPENTI_DI_SERIE = ['invito', 'subathon', 'subregole'];
+const SPENTI_DI_SERIE = ['invito'];
 const spentiDiSerie = (m) => {
   if (!m || typeof m !== 'object') return m;
   const q = { ...m };
@@ -1807,6 +1807,19 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     return { ...inv, testo: testoInvito(inv.testo, linguaChat(login), valori), acceso: pew.attivo && !pew.pausa };
   }
 
+  // I due pezzi della subathon col posto gia' scelto per QUESTO overlay.
+  function subathonQui(login, base, vis) {
+    const m = vis.mostra || {};
+    const xy = vis.xy || {};
+    const sub = base.subathon, reg = base.subregole;
+    if (!sub && !reg) return {};
+    const scelto = postiSubathon(streamers.get(login)?.settings || {}, vis, contatori.list(login).map((c) => contatori.payloadOverlay(c)),
+      sub && m.subathon !== false ? { posizione: sub.posizione, xy: xy.subathon || null } : null,
+      reg && m.subregole !== false ? { posizione: reg.posizione, xy: xy.subregole || null } : null);
+    const con = (c, k) => (c && scelto[k] ? { ...c, posizione: scelto[k], auto: true } : c);
+    return { subathon: con(sub, 'subathon'), subregole: con(reg, 'subregole') };
+  }
+
   // tema dell'overlay (CSS avanzato + widget persistenti + loro stato): l'overlay
   // lo legge una volta al caricamento. Pubblico ma protetto dalla chiave.
   app.get('/overlay/:login/tema', wrap(async (req, res) => {
@@ -1852,6 +1865,8 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
       // l'invito ai Pew arriva col testo gia' detto e col segno se i Pew del
       // canale sono accesi: l'overlay non sa niente dei Pew
       invito: invitoInScena(login, base.invito),
+      // la subathon c'e' in ogni overlay, col posto libero gia' scelto per questo
+      ...subathonQui(login, base, vis),
       muro: normMuro(base.muro),
       // gia' fuso con l'occasione accesa, se ce n'e' una: chi guarda la diretta
       // deve vedere una cosa sola, non una base e una correzione
@@ -8928,7 +8943,6 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     const st = streamers.get(login)?.settings || {};
     return {
       regole: subathonMod.regoleDi(st), vista: subathonMod.vista(login), libro: subathonMod.libro(login, 40), ora: Date.now(),
-      siVede: { timer: st.overlayTimer?.attivo === true, elemento: !!(st.overlaySubathon && st.overlaySubathon.attivo !== false) },
     };
   };
   app.get('/api/streamer/subathon', requireLogin, wrap(async (req, res) => {
@@ -8950,11 +8964,20 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
     const esito = manager.alerts?.subathonAzione(u.login, a, { mano: chiScriveSub(u), id: 'tasto:' + id }) || { esito: 'errore' };
     res.json({ ok: esito.esito === 'ok', esito: esito.esito, detto: subathonMod.risposta(u.login, esito), ...subathonPerPannello(u.login) });
   }));
-  // Far partire la subathon: lo stesso orologio del conto alla rovescia, fino a 72 ore.
+  // Far partire la subathon: il suo orologio, fino a 72 ore. Il conto alla
+  // rovescia resta com'e'. L'id del tasto fa si' che riprovare non apra una
+  // seconda sessione.
   app.post('/api/streamer/subathon/avvia', requireLogin, wrap(async (req, res) => {
     const login = currentUser(req).login;
-    const fine = manager.alerts?.subathonAvvia?.(login, req.body?.minuti) || 0;
-    res.json({ ok: fine > 0, fine, ...subathonPerPannello(login) });
+    const id = idTastoSub(req.body?.id);
+    const esito = manager.alerts?.subathonAvvia?.(login, req.body?.minuti, { id: id ? 'tasto:' + id : '' }) || { esito: 'errore' };
+    res.json({ ok: esito.esito === 'ok', esito: esito.esito, detto: subathonMod.risposta(login, { ...esito, azione: 'parti' }), ...subathonPerPannello(login) });
+  }));
+  // Fermarla: l'orologio della subathon a zero; la sessione e il libro restano.
+  app.post('/api/streamer/subathon/ferma', requireLogin, wrap(async (req, res) => {
+    const login = currentUser(req).login;
+    const esito = manager.alerts?.subathonFerma?.(login) || { esito: 'errore' };
+    res.json({ ok: esito.esito === 'ok', ...subathonPerPannello(login) });
   }));
   app.post('/api/streamer/subathon/prova', requireLogin, wrap(async (req, res) => {
     const tipo = String(req.body?.tipo || '');

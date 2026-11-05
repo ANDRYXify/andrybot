@@ -46,22 +46,35 @@ const SERVER = new Function('xyOk', [
   'return { _mostraDefault, _mostraDiOverlay, _mostraDiffOverlay, _xyDiOverlay, overlaysDi, CHIAVE_EL };',
 ].join('\n'))(xyOk);
 
-test('i due pezzi della subathon nascono spenti nelle basi, e solo nelle basi', () => {
+test('i due pezzi della subathon ci sono in ogni overlay, anche in quelli gia\' fatti, e si possono nascondere', () => {
   for (const k of ['subathon', 'subregole']) {
-    assert.equal(SERVER._mostraDefault()[k], false, `${k}: senza overlay salvati`);
+    assert.equal(SERVER._mostraDefault()[k], true, `${k}: senza overlay salvati`);
     const [ov] = SERVER.overlaysDi({ overlays: [{ id: 'a', mostra: { chat: true }, occasioni: [{ id: 'o', mostra: { chat: false } }] }] });
-    assert.equal(ov.mostra[k], false, `${k}: un overlay salvato senza la chiave la trova spenta, scritta`);
-    assert.ok(!(k in ov.occasioni[0].mostra), `${k}: un\'occasione senza la chiave resta «come la base»`);
-    assert.equal(SERVER._mostraDiOverlay({ [k]: true })[k], true);
+    assert.notEqual(ov.mostra[k], false, `${k}: un overlay salvato senza la chiave la mostra`);
+    assert.equal(SERVER._mostraDiOverlay({})[k], true, `${k}: salvando una base senza la chiave non diventa spenta`);
+    const [nascosta] = SERVER.overlaysDi({ overlays: [{ id: 'b', mostra: { [k]: false } }] });
+    assert.equal(nascosta.mostra[k], false, `${k}: nascosta dallo streamer resta nascosta`);
     assert.ok(SERVER.CHIAVE_EL.test(k), `${k}: ha la sua posizione per overlay`);
     assert.ok(Object.keys(SERVER._xyDiOverlay({ [k]: { x: 10, y: 20 } })).includes(k));
   }
+  assert.ok(/const SPENTI_DI_SERIE = new Set\(\['invito'\]\);/.test(APP) && /const SPENTI_DI_SERIE = \['invito'\];/.test(OVL), 'la stessa regola nel pannello e nella pagina');
+});
+
+test('la subathon non conosce il conto alla rovescia: nel suo codice non c\'e\' un riferimento a overlayStato.timer', () => {
+  for (const f of ['src/features/subathon.js', 'src/web/public/subathon.js']) {
+    const t = leggi(f).replace(/setTimeout|clearTimeout/g, '');
+    assert.doesNotMatch(t, /\btimer\b|overlayTimer|timerDi/i, `${f} non legge ne\' scrive il conto alla rovescia`);
+  }
+  const corpoSb = ALERTS.slice(ALERTS.indexOf('  _subathonInScena(channel, s) {'), ALERTS.indexOf('  // Prova dal pannello.'));
+  assert.doesNotMatch(corpoSb, /overlayStato\?*\.timer|tipo: 'timer'|impostaTimer|_partiTimer/, 'nemmeno la parte della subathon nel motore degli alert');
+  const conto = corpo(ALERTS, '  impostaTimer(channel, minuti) {', '\n  }\n');
+  assert.doesNotMatch(conto, /subathon/i, 'e il «Fai partire» del conto non apre una sessione della subathon');
 });
 
 test('la configurazione di serie e\' la stessa nel pannello e nel server', () => {
   const vuoti = new Function(riga(APP, 'SB_TESTI_VUOTI') + ' return SB_TESTI_VUOTI;')();
   const window = { SB_SUBATHON: globalThis.SB_SUBATHON };
-  const val = (inizio) => new Function('window', 'SB_TESTI_VUOTI', 'SB_PEZZI_DEF', 'return (' + ritorno(APP, inizio) + ')')(window, vuoti, () => ({ titolo: true, conto: true, sale: true, pausa: true, felice: true, totale: true, durata: false, traguardo: true, ultimi: true }));
+  const val = (inizio) => new Function('window', 'SB_TESTI_VUOTI', 'SB_PEZZI_DEF', 'return (' + ritorno(APP, inizio) + ')')(window, vuoti, () => ({ titolo: true, conto: true, sale: true, pausa: true, felice: true, totale: true, durata: false, traguardo: true, ultimi: true, migliori: false }));
   assert.deepEqual(val('function _defSubathon()'), normOverlaySubathon({}));
   assert.deepEqual(val('function _defSubregole()'), normOverlaySubathonRegole({}));
   const pezzi = new Function('return (' + /const SB_PEZZI_DEF = \(\) => (\(\{[^)]*\}\));/.exec(APP)[1] + ')')();
@@ -100,18 +113,21 @@ test('un disegno solo: la tela e la diretta chiamano la stessa funzione, con la 
   assert.ok(/\bS\.disegnaRegole\(box, cfg, righe, /.test(corpo(APP, 'function _vestiSubregole(box, cfg) {')) && /window\.SB_SUBATHON\.disegnaRegole\(el, cfg, cfg\.righe/.test(corpo(OVL, 'function disegnaSubregole() {')));
 });
 
-test('un orologio solo: l\'elemento legge l\'istante del conto alla rovescia, e il conto sa della pausa', () => {
-  assert.ok(/function vistaSub\(\) \{ return Object\.assign\(\{\}, MIO\.sbVista \|\| \{\}, \{ fine: Number\(MIO\.timerFine\) \|\| 0, pausa: MIO\.timerPausa \|\| null \}\); \}/.test(OVL));
-  assert.ok(/MIO\.timerPausa = pausaDi\(dati\.pausa\); disegnaTimer\(\); disegnaSubathon\(\);/.test(OVL), 'l\'istante e la pausa arrivano insieme');
-  assert.ok(/if \(vale\('timer', t\)\) MIO\.timerPausa = pausaDi\(stato\.timer && stato\.timer\.pausa\);/.test(OVL), 'e dal tema, con il numero d\'ordine');
+test('in scena la subathon legge il suo orologio dalla vista, e si vede da sola solo mentre corre', () => {
+  const acceso = corpo(OVL, 'function sbInCorsa() {') + corpo(OVL, 'function subathonAcceso() {') + corpo(OVL, 'function disegnaSubathon() {');
+  assert.doesNotMatch(acceso, /timerFine|timerPausa/, 'l\'elemento non legge l\'istante del conto alla rovescia');
+  assert.ok(/window\.SB_SUBATHON\.inPausa\(v\) \|\| \(Number\(v\.fine\) \|\| 0\) > oraScena\(\)/.test(acceso), 'in corsa o in pausa, e se ne va a zero');
+  assert.ok(/window\.SB_SUBATHON\.disegna\(el, cfg, MIO\.sbVista,/.test(acceso));
   assert.ok(/case 'subathon': return d\.tipo;/.test(OVL) && /if \(vale\('subathon', t\)\) MIO\.sbVista =/.test(OVL), 'la vista ha il suo numero d\'ordine: un tema vecchio non la riporta indietro');
-  const timer = corpo(OVL, 'function disegnaTimer() {');
-  assert.ok(/const manca = pausa \? pausa\.resta : fine - oraScena\(\);/.test(timer) && /\(!fine && !pausa\)/.test(timer), 'in pausa il conto resta fermo, non sparisce');
-  assert.ok(/MIO\.timer\.partiDaSolo && mostra\('timer'\) && !MIO\.timerPausa && MIO\.timerFine <= adesso\(\)/.test(OVL), 'l\'apertura non fa ripartire un conto in pausa');
+  assert.doesNotMatch(OVL.slice(OVL.indexOf("else if (dati.tipo === 'timer')"), OVL.indexOf('\n', OVL.indexOf("else if (dati.tipo === 'timer')"))), /Subathon/, 'il conto alla rovescia che si muove non ridisegna la subathon');
+  assert.ok(/\.\.\.subathonQui\(login, base, vis\),/.test(SRV), 'il tema porta il posto gia\' scelto per quell\'overlay');
+  assert.ok(/<div class="wbox alto-centro" data-ang="alto-centro"><\/div>/.test(HTML), 'l\'angolo in alto al centro c\'e\'');
+  assert.ok(/if \(\(k === 'subathon' \|\| k === 'subregole'\) && _cfgEl\(k\)\.posizione === 'auto'\) return _sbPostoAuto\(k\);/.test(APP), 'la tela usa la stessa regola');
+  assert.ok(/S\.postiAuto\(_sbOccupati\(\), c\('subathon'\), c\('subregole'\)\)/.test(APP) && /const scelto = postiSubathon\(/.test(SRV) && /export const postiSubathon = \(s, vis, contatori, sub, regole\) => SB\.postiAuto\(occupatiInScena\(s, vis, contatori\), sub, regole\);/.test(leggi('src/web/stile.js')), 'una regola sola, SB_SUBATHON.postiAuto, di qua e di la\'');
 });
 
 test('le rotte della scheda hanno il loro guardiano, e i tasti portano un id', () => {
-  for (const r of ["app.get('/api/streamer/subathon', requireLogin", "app.post('/api/streamer/subathon/azione', requireLogin", "app.post('/api/streamer/subathon/avvia', requireLogin", "app.post('/api/streamer/subathon/prova', requireLogin"]) assert.ok(SRV.includes(r), r);
+  for (const r of ["app.get('/api/streamer/subathon', requireLogin", "app.post('/api/streamer/subathon/azione', requireLogin", "app.post('/api/streamer/subathon/avvia', requireLogin", "app.post('/api/streamer/subathon/ferma', requireLogin", "app.post('/api/streamer/subathon/prova', requireLogin"]) assert.ok(SRV.includes(r), r);
   assert.ok(/if \(!id\) return res\.status\(400\)/.test(corpo(SRV, "app.post('/api/streamer/subathon/azione'", '\n  }));\n')), 'un tasto senza id non muove niente: riprovare deve poter essere riconosciuto');
   assert.ok(/const body = \{ azione: az, id: _sbIdTasto\(\) \};/.test(APP), 'il pannello genera l\'id una volta per tasto');
 });

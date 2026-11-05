@@ -50,6 +50,10 @@ const ROTTURE = [
     '«Ferma» non ferma il timer'],
   [OVL, "  const manca = pausa ? pausa.resta : fine - oraScena();", '  const manca = fine - oraScena();',
     'in pausa il conto alla rovescia sparisce invece di restare fermo'],
+  [OVL, "  window.SB_SUBATHON.disegna(el, cfg, MIO.sbVista, { ora: oraScena(), lingua: cfg.lingua });", "  window.SB_SUBATHON.disegna(el, cfg, Object.assign({}, MIO.sbVista, { fine: MIO.timerFine }), { ora: oraScena(), lingua: cfg.lingua });",
+    'la subathon in scena legge l\'istante del conto alla rovescia'],
+  [OVL, "  return !!window.SB_SUBATHON && !!v && v.accesa === true && (window.SB_SUBATHON.inPausa(v) || (Number(v.fine) || 0) > oraScena());", "  return !!window.SB_SUBATHON && !!v && v.accesa === true;",
+    'a zero la subathon resta in scena aspettando il server'],
   [OVL, '  const apertura = !temaApplicato;', '  const apertura = true;',
     '«Parte da solo» riparte a ogni rilettura del tema'],
   [OVL, "  if (!preso) l.riprova = setTimeout(caricaTema, TEMA_PASSI[Math.min(l.passo++, TEMA_PASSI.length - 1)]);\n", '',
@@ -340,6 +344,34 @@ const PROVE = {
     await s.finche((q) => { const n = document.querySelector(q); return n && !n.classList.contains('in-pausa'); }, TSEL, 3000);
     const c = await leggiConto(s, TSEL);
     dice(c && /^(1:00:0[01]|59:5\d)$/.test(c.num), 'la ripresa riparte da quello che restava', c ? c.num : 'sparito');
+  },
+
+  // 2-ter. LA SUBATHON HA IL SUO OROLOGIO (docs/SUBATHON.md, «Novembre 2026: un
+  // orologio suo»). Il conto alla rovescia e la subathon in scena insieme
+  // mostrano due tempi diversi; il conto che si ferma non tocca la subathon, la
+  // subathon in pausa non tocca il conto; e a zero la subathon se ne va da
+  // sola, senza aspettare il server.
+  async subathonSua() {
+    const ora = Date.now();
+    const vista = { accesa: true, fine: ora + 3 * 3600000, pausa: null, inizio: ora - 60000, felice: null, totale: 0, ultimi: [], migliori: [], traguardi: [] };
+    const SUB = { attivo: true, posizione: 'alto-sinistra', xy: null, pezzi: {}, quantiUltimi: 3, testi: {}, stile: {}, lingua: 'it', vista };
+    const s = await scena('subathon-sua', { tema: { timer: { ...TIMER, aFine: 'resta' }, subathon: SUB, stato: { timer: { fine: ora + 10 * 60000 } } } });
+    await s.collegato();
+    await s.finche(() => document.querySelector('.ovl-subathon.dentro') && document.querySelector('.ovl-timer.dentro:not(.ovl-pubblicita)'), null, 5000);
+    const due = await s.leggi(() => ({ sb: document.querySelector('.ovl-subathon .sb-num')?.textContent || '', conto: document.querySelector('.ovl-timer:not(.ovl-pubblicita) .t-num')?.textContent || '' }));
+    dice(/^(3:00:00|2:5\d:\d\d)$/.test(due.sb) && /^(9|10):\d\d$/.test(due.conto), 'conto alla rovescia e subathon insieme mostrano due tempi diversi', `subathon ${due.sb} · conto ${due.conto}`);
+    s.cambia({ tipo: 'timer', fine: 0 }, (t) => { t.stato = { timer: { fine: 0 } }; });
+    await s.finche((q) => !document.querySelector(q), TSEL, 3000);
+    const resta = await s.leggi(() => document.querySelector('.ovl-subathon .sb-num')?.textContent || '');
+    dice(/^(3:00:00|2:5\d:\d\d)$/.test(resta), 'fermare il conto alla rovescia non ferma la subathon', resta || 'sparita');
+    s.cambia({ tipo: 'subathon', vista: { ...vista, fine: 0, pausa: { resta: 3600000 } }, sale: 0 }, (t) => { t.subathon = { ...SUB, vista: { ...vista, fine: 0, pausa: { resta: 3600000 } } }; });
+    await s.finche(() => document.querySelector('.ovl-subathon.in-pausa'), null, 3000);
+    const pausa = await s.leggi(() => document.querySelector('.ovl-subathon .sb-num')?.textContent || '');
+    dice(pausa === '1:00:00', 'in pausa la subathon resta in scena, ferma su quello che manca', pausa || 'sparita');
+    s.cambia({ tipo: 'subathon', vista: { ...vista, fine: Date.now() + 1500 }, sale: 0 }, (t) => { t.subathon = { ...SUB, vista: { ...vista, fine: Date.now() + 1500 } }; });
+    await s.finche(() => !document.querySelector('.ovl-subathon'), null, 5000);
+    const via = await s.leggi(() => !document.querySelector('.ovl-subathon'));
+    dice(via, 'a zero la subathon se ne va da sola', 'resta in scena');
   },
 
   // 3. «PARTE DA SOLO» PARTE UNA VOLTA PER APERTURA: non a ogni rilettura del

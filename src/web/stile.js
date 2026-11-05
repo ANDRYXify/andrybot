@@ -446,7 +446,8 @@ export const MAX_TESTO_SUB = 200;
 export const MAX_TRAGUARDI = 20;
 const TESTO_CHAT_DI_PRIMA = 'Grazie {chi}! Il conto sale di {quanto}.';
 const COLORE_ALERT_SUB = '#f72fa7';
-const POS_ANG_SUB = ['alto-sinistra', 'alto-destra', 'basso-sinistra', 'basso-destra'];
+// «auto» vuol dire «decide la regola del posto libero» (docs/SUBATHON.md, «Novembre 2026»)
+const POS_ANG_SUB = ['auto', 'alto-sinistra', 'alto-destra', 'basso-sinistra', 'basso-destra', 'alto-centro'];
 const rifEffettoOk = (v) => (/^effetto:[a-z0-9_]{1,30}$/i.test(String(v || '')) ? String(v).toLowerCase() : '');
 // il suono di un alert: vuoto vuol dire «di serie», «nessuno» e' il silenzio
 // scelto, poi un suono pronto o uno della libreria
@@ -534,10 +535,11 @@ export const subathonDaSalvare = (settings, body) => {
 
 // L'ELEMENTO SUBATHON in scena (docs/OVERLAY.md, «La subathon»): un posto,
 // la veste di tutti, i pezzi da accendere uno per uno coi loro testi, e le
-// immagini dello streamer dalla libreria. Nasce spento negli overlay che ci
-// sono gia' (SPENTI_DI_SERIE nel server).
+// immagini dello streamer dalla libreria. C'e' in ogni overlay e si vede da
+// solo quando la subathon corre; di serie si mette nel primo posto libero
+// (`posizione: 'auto'`, docs/SUBATHON.md, «Novembre 2026: un orologio suo»).
 export const VESTE_SUBATHON = { sfondo: '#100d16', opacita: 85, testo: '#ffffff', accento: '#f72fa7', bordoRaggio: 14 };
-export const PEZZI_SUBATHON = { titolo: true, conto: true, sale: true, pausa: true, felice: true, totale: true, durata: false, traguardo: true, ultimi: true };
+export const PEZZI_SUBATHON = { titolo: true, conto: true, sale: true, pausa: true, felice: true, totale: true, durata: false, traguardo: true, ultimi: true, migliori: false };
 export const normOverlaySubathon = (x) => {
   x = x || {};
   const p = (x.pezzi && typeof x.pezzi === 'object') ? x.pezzi : {};
@@ -550,7 +552,7 @@ export const normOverlaySubathon = (x) => {
   }
   return {
     attivo: x.attivo !== false,
-    posizione: unoDi(x.posizione, POS_ANG_SUB, 'alto-sinistra'),
+    posizione: unoDi(x.posizione, POS_ANG_SUB, 'auto'),
     xy: xyOk(x.xy),
     pezzi,
     quantiUltimi: clampInt(x.quantiUltimi, 1, 10, 3),
@@ -571,7 +573,7 @@ export const normOverlaySubathonRegole = (x) => {
   }
   return {
     attivo: x.attivo !== false,
-    posizione: unoDi(x.posizione, POS_ANG_SUB, 'basso-destra'),
+    posizione: unoDi(x.posizione, POS_ANG_SUB, 'auto'),
     xy: xyOk(x.xy),
     titolo: String(x.titolo ?? '').replace(/[\u0000-\u001f]/g, ' ').trim().slice(0, 60),
     mostraTitolo: x.mostraTitolo !== false,
@@ -985,3 +987,38 @@ export const normDisegno = (x) => {
     suono: SUONI_PRESET.has(suono) || SUONO_EFFETTO.test(suono) ? suono : '',
   };
 };
+
+// DOVE STA LA SUBATHON in un overlay (docs/SUBATHON.md, «Le scelte fatte
+// costruendolo»): gli elementi accesi dell'overlay, ognuno col suo angolo o il
+// punto dove l'hai spostato. Le aree a tutto schermo (effetti, colpi, muro) non
+// occupano un posto. `vis` e' l'overlay gia' fuso con l'occasione ({ mostra,
+// xy }); `contatori` i contatori come li manda l'overlay ({ comando, mostra,
+// x, y }). La regola che sceglie e' SB_SUBATHON.postiAuto, la stessa della
+// tela dello Studio: qui c'e' solo l'elenco, e lo usano il server e il
+// cancello dell'anteprima.
+export function occupatiInScena(s, vis, contatori = []) {
+  s = s || {};
+  const m = vis?.mostra || {};
+  const xy = vis?.xy || {};
+  const qui = (k, fam) => m[k] !== false && (!fam || m[fam] !== false);
+  const out = [];
+  const metti = (k, acceso, posizione, fam) => { if (acceso && qui(k, fam)) out.push({ posizione, xy: xy[k] || null }); };
+  metti('alert', s.alerts?.attivo !== false, s.alerts?.posizione || 'alto-centro');
+  metti('chat', s.chatOverlay?.attivo === true, s.chatOverlay?.posizione || 'basso-sinistra');
+  metti('wf', !!s.overlayWidget?.ultimoFollower?.attivo, s.overlayWidget?.ultimoFollower?.posizione || 'basso-destra');
+  metti('ws', !!s.overlayWidget?.ultimoSub?.attivo, s.overlayWidget?.ultimoSub?.posizione || 'basso-destra');
+  for (const g of (Array.isArray(s.overlayGoals) ? s.overlayGoals : [])) if (g?.id) metti('goal:' + g.id, g.attivo !== false, g.posizione || 'alto-sinistra', 'goal');
+  for (const c of (Array.isArray(s.overlayCartelli) ? s.overlayCartelli : [])) if (c?.id) metti('cart:' + c.id, c.attivo !== false, c.posizione || 'basso-sinistra', 'cart');
+  for (const c of (Array.isArray(contatori) ? contatori : [])) {
+    const k = 'cont:' + c.comando;
+    if (c.mostra && qui(k, 'cont')) out.push({ posizione: '', xy: xy[k] || { x: c.x, y: c.y } });
+  }
+  const cfg = [['musica', normMusica(s.overlayMusica)], ['timer', normTimer(s.overlayTimer)], ['pubblicita', normPubblicita(s.overlayPubblicita)],
+    ['tempi', normTempi(s.overlayTempi)], ['treno', normTreno(s.overlayTreno)], ['bit', normBit(s.overlayBit)], ['boss', normBoss(s.overlayBoss)],
+    ['arena', normArena(s.overlayArena)], ['scritta', normScritta(s.overlayScritta)], ['walkon', normOverlayWalkon(s.overlayWalkon)],
+    ['etichetta', normEtichetta(s.overlayEtichetta)], ['invito', normInvito(s.overlayInvito)]];
+  for (const [k, c] of cfg) metti(k, c.attivo === true, c.posizione);
+  metti('pen', s.penitenze?.attivo === true, s.penitenze?.overlay?.posizione || 'alto-destra');
+  return out;
+}
+export const postiSubathon = (s, vis, contatori, sub, regole) => SB.postiAuto(occupatiInScena(s, vis, contatori), sub, regole);

@@ -28,6 +28,7 @@ import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { join, dirname } from 'node:path';
 import { apriSito, apriBrowser, overlayFinto } from './_sito.mjs';
+import { postiSubathon, occupatiInScena } from '../src/web/stile.js';
 
 const RAD = join(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -583,22 +584,37 @@ try {
   // --- 6-sexies-ter. la subathon --------------------------------------------
   // L'elemento della subathon (docs/OVERLAY.md, «La subathon in scena"): lo
   // stesso disegno sulla tela e in onda, con la stessa vista, grande uguale e
-  // nello stesso posto, al suo angolo, in un punto e vestito.
+  // nello stesso posto, al suo angolo, in un punto e vestito. «Al suo angolo» e'
+  // il posto libero (docs/SUBATHON.md, «Le scelte fatte costruendolo»): la tela
+  // lo sceglie con quello che mostra, il server con le impostazioni e
+  // l'overlay (postiSubathon, in web/stile.js), e qui si pretende che sia lo
+  // stesso posto. Al server si danno le impostazioni come la tela le ha in mano
+  // (le bozze dei pezzi e i moduli di alert, chat e widget compresi): quelle
+  // che il pannello salva.
   const SB_VESTE = { dim: 'grande', sfondo: '#203040', opacita: 95, testo: '#ffffee', accento: '#22aa66', bordoRaggio: 4, font: 'sistema', forma: 'carta', materia: 'piatta', cornice: 'linea' };
-  for (const [nome, xy, stile] of [['al suo angolo', null, null], ['in un punto', { x: 60, y: 40, s: 100, r: 0 }, null], ['vestito', { x: 30, y: 30, s: 120, r: 0 }, SB_VESTE]]) {
-    const dalla = await ed.evaluate(async ({ xy, stile }) => {
+  for (const [nome, xy, stile, libero] of [['al suo angolo', null, null, false], ['al primo posto libero', null, null, true], ['in un punto', { x: 60, y: 40, s: 100, r: 0 }, null, false], ['vestito', { x: 30, y: 30, s: 120, r: 0 }, SB_VESTE, false]]) {
+    const dalla = await ed.evaluate(async ({ xy, stile, libero }) => {
       _accendiQui('subathon', true);
+      for (const e of ELEMENTI()) if (!['subathon', 'subregole', 'effetti', 'pew', 'muro', 'consolify'].includes(e.k)) _accendiQui(e.k, !libero || _angoloDi(e.k) === 'alto-sinistra');
       const c = _cfgEl('subathon'); c.attivo = true; c.stile = { ..._defSubathon().stile, ...(stile || {}) };
       const q = _ovXY(); for (const k of Object.keys(q)) delete q[k];
       if (xy) q.subathon = { ...xy };
       aggiornaAnteprima();
       await new Promise((r) => setTimeout(r, 600));
-      return { cfg: JSON.parse(JSON.stringify(c)), vista: _sbVistaEsempio(), lingua: _sbLingua() };
-    }, { xy, stile });
+      return { cfg: JSON.parse(JSON.stringify(c)), vista: _sbVistaEsempio(), lingua: _sbLingua(), tela: _angoloDi('subathon'), occTela: _sbOccupati(),
+        settings: JSON.parse(JSON.stringify({ ...stato.streamer.settings, ...Object.fromEntries(ELEMENTI().filter((e) => e.cfg).map((e) => [e.cfg, _cfgEl(e.k)])),
+          alerts: { ...(stato.streamer.settings.alerts || {}), attivo: _elementoAcceso('alert'), posizione: _angoloDi('alert') },
+          chatOverlay: { ...(stato.streamer.settings.chatOverlay || {}), attivo: _elementoAcceso('chat'), posizione: _angoloDi('chat') },
+          overlayWidget: { ultimoFollower: { attivo: _elementoAcceso('wf'), posizione: _angoloDi('wf') }, ultimoSub: { attivo: _elementoAcceso('ws'), posizione: _angoloDi('ws') } } })), mostra: JSON.parse(JSON.stringify(_vedoMostra())), xy: JSON.parse(JSON.stringify(_vedoXY())),
+        contatori: _conta.map((x) => ({ comando: x.comando, ...(x.overlayCfg || {}) })) };
+    }, { xy, stile, libero });
     const edS = await misuraEd('#ap-subathon .ovl-subathon');
     const edDove = await ed.evaluate(`(${DOVE_S})('#ap-subathon .ovl-subathon')`);
-    TEMA = { css: '', widget: {}, goals: [], conti: {}, timer: null, musica: null, stato: { timer: { fine: dalla.vista.fine } }, mostra: { ...MOSTRA, subathon: true }, xy: xy ? { subathon: xy } : {}, alertStile: null, chatStile: null,
-      subathon: { ...dalla.cfg, xy: null, lingua: dalla.lingua, fondoUrl: '', corniceUrl: '', iconaUrl: '', vista: dalla.vista } };
+    const server = postiSubathon(dalla.settings, { mostra: dalla.mostra, xy: dalla.xy }, dalla.contatori, { posizione: dalla.cfg.posizione, xy: xy || null }, null).subathon;
+    if (libero) dice(server === 'alto-destra', `con occupato solo l'angolo in alto a sinistra, il primo libero e' in alto a destra (${server || '–'})`, 'la regola del posto libero non sceglie il primo libero');
+    if (!xy) dice(!!server && server === dalla.tela, `subathon al posto libero: la tela sceglie ${dalla.tela}, il server ${server || '–'}`, `la tela e la diretta la mettono in due posti diversi — tela ${JSON.stringify(dalla.occTela)} · server ${JSON.stringify(occupatiInScena(dalla.settings, { mostra: dalla.mostra, xy: dalla.xy }, dalla.contatori))}`);
+    TEMA = { css: '', widget: {}, goals: [], conti: {}, timer: null, musica: null, stato: {}, mostra: { ...MOSTRA, subathon: true }, xy: xy ? { subathon: xy } : {}, alertStile: null, chatStile: null,
+      subathon: { ...dalla.cfg, posizione: server || dalla.cfg.posizione, xy: null, lingua: dalla.lingua, fondoUrl: '', corniceUrl: '', iconaUrl: '', vista: dalla.vista } };
     await apriLive(() => document.querySelector('.ovl-subathon.dentro'));
     await attesa(500);
     const lvS = await misuraLive('.ovl-subathon');

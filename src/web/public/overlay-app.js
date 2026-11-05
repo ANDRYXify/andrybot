@@ -20,7 +20,7 @@ if (OSPITE && window.SUONI_PRESET) {
 }
 
 const MIO = { mostra: { alert: true, chat: true, wf: true, ws: true, effetti: true }, xy: {}, stile: { alert: null, chat: null }, widget: {} };
-const SPENTI_DI_SERIE = ['invito', 'subathon', 'subregole'];
+const SPENTI_DI_SERIE = ['invito'];
 const mostra = (k) => (MIO.mostra[k] === undefined ? SPENTI_DI_SERIE.indexOf(k) < 0 : MIO.mostra[k] !== false);
 
 const mono = () => performance.timeOrigin + performance.now();
@@ -1554,7 +1554,7 @@ function ricevi(m) {
     else if (dati.tipo === 'muro-treno') MURO.trenoFino = Number(dati.per) > 0 ? adesso() + Number(dati.per) : 0;
     else if (dati.tipo === 'widget') { WIDGET_VALORE[dati.id] = dati.valore; if (mostra(dati.id === 'ultimoSub' ? 'ws' : 'wf')) widget(dati.id, (MIO.widget && MIO.widget[dati.id]) || dati.cfg, dati.valore); }
     else if (dati.tipo === 'goal') { MIO.goals = Array.isArray(dati.goals) ? dati.goals : MIO.goals; MIO.goalConti = dati.conti || {}; goal(MIO.goals, MIO.goalConti); }
-    else if (dati.tipo === 'timer') { const f = Number(dati.fine); if (Number.isFinite(f)) MIO.timerFine = f; MIO.timerPausa = pausaDi(dati.pausa); disegnaTimer(); disegnaSubathon(); }
+    else if (dati.tipo === 'timer') { const f = Number(dati.fine); if (Number.isFinite(f)) MIO.timerFine = f; MIO.timerPausa = pausaDi(dati.pausa); disegnaTimer(); }
     else if (dati.tipo === 'subathon') { MIO.sbVista = dati.vista || null; disegnaSubathon(); saleSubathon(Number(dati.sale) || 0); disegnaSubregole(); }
     else if (dati.tipo === 'pubblicita') { MIO.pubblStato = { prossima: Number(dati.prossima) || 0, pausaFino: Number(dati.pausaFino) || 0 }; disegnaPubblicita(); }
     else if (dati.tipo === 'treno') { MIO.trenoStato = dati.treno || null; disegnaTreno(); }
@@ -2095,12 +2095,14 @@ function togliTimer() {
 
 const sbEl = {};
 
-function vistaSub() { return Object.assign({}, MIO.sbVista || {}, { fine: Number(MIO.timerFine) || 0, pausa: MIO.timerPausa || null }); }
+function sbInCorsa() {
+  const v = MIO.sbVista;
+  return !!window.SB_SUBATHON && !!v && v.accesa === true && (window.SB_SUBATHON.inPausa(v) || (Number(v.fine) || 0) > oraScena());
+}
 
 function subathonAcceso() {
   const c = MIO.subathon;
-  return mostra('subathon') && !!c && c.attivo !== false && !!MIO.sbVista && MIO.sbVista.accesa === true
-    && ((Number(MIO.timerFine) || 0) > 0 || !!MIO.timerPausa) && !!window.SB_SUBATHON;
+  return mostra('subathon') && !!c && c.attivo !== false && sbInCorsa();
 }
 
 function disegnaSubathon() {
@@ -2113,7 +2115,7 @@ function disegnaSubathon() {
   posa(wboxes[cfg.posizione] || wboxes['alto-sinistra'] || document.body, el);
   const st = cfg.stile || {};
   el.className = 'ovl-widget ovl-subathon dim-' + (st.dim || 'media') + ' ' + classiIdentita(st, 'nessuna') + (el.classList.contains('dentro') ? ' dentro' : '');
-  window.SB_SUBATHON.disegna(el, cfg, vistaSub(), { ora: oraScena(), lingua: cfg.lingua });
+  window.SB_SUBATHON.disegna(el, cfg, MIO.sbVista, { ora: oraScena(), lingua: cfg.lingua });
   vestiElemento(el, cfg, 'nessuna', 'subathon');
   if (nato) requestAnimationFrame(() => el.classList.add('dentro'));
 }
@@ -2138,7 +2140,7 @@ const sbrEl = {};
 
 function subregoleAccese() {
   const c = MIO.subregole;
-  return mostra('subregole') && !!c && c.attivo !== false && c.accesa === true && Array.isArray(c.righe) && c.righe.length > 0 && !!window.SB_SUBATHON;
+  return mostra('subregole') && !!c && c.attivo !== false && sbInCorsa() && Array.isArray(c.righe) && c.righe.length > 0;
 }
 
 function disegnaSubregole() {
@@ -2406,6 +2408,7 @@ function oreMinSec(ms) {
 function giro() {
   if (MIO.timer && MIO.timer.attivo && mostra('timer')) disegnaTimer();
   if (MIO.subathon && mostra('subathon')) disegnaSubathon();
+  if (MIO.subregole && mostra('subregole')) disegnaSubregole();
   if (MIO.pubbl && MIO.pubbl.attivo) disegnaPubblicita();
   if (MIO.treno && MIO.treno.attivo && mostra('treno')) disegnaTreno();
   if (MIO.tempi && MIO.tempi.attivo) disegnaTempi();

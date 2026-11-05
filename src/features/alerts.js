@@ -14,6 +14,7 @@ import { inCorso as tempiInCorso } from './premi-tempo.js';
 // legge chi guarda la diretta.
 const TITOLI_PUBBLICITA = { it: ['Pubblicità fra', 'Torno fra'], en: ['Ads in', 'Back in'], es: ['Anuncios en', 'Vuelvo en'] };
 import * as subathon from './subathon.js';
+import { migra as migraSubathon } from './subathon-prima.js';
 import { normOverlaySubathon, normOverlaySubathonRegole } from '../web/stile.js';
 import * as treno from './treno.js';
 import { comeSiChiama, portaCorona } from './bit.js';
@@ -380,26 +381,15 @@ export class AlertsEngine {
   // fra due sorgenti aperte — e un riavvio del bot non lo azzera.
   // minuti = 0 lo spegne.
   impostaTimer(channel, minuti) {
-    return this._partiTimer(channel, Math.max(0, Math.min(600, Math.round(Number(minuti) || 0))) * 60000);
-  }
-
-  // L'OROLOGIO CHE PARTE (o si ferma, con 0). Toglie la pausa, e se parte
-  // comincia una sessione nuova della subathon: totale, ultimi e traguardi
-  // ricominciano da qui (docs/SUBATHON.md, «La sessione»). Fermarlo non
-  // cancella la sessione: si puo' ancora leggere.
-  _partiTimer(channel, ms) {
     try {
       const s = streamers.get(channel);
       if (!s) return 0;
-      const ora = Date.now();
-      const fine = ms > 0 ? ora + ms : 0;
+      const m = Math.max(0, Math.min(600, Math.round(Number(minuti) || 0)));
+      const fine = m > 0 ? Date.now() + m * 60000 : 0;
       const stato = { ...(s.settings?.overlayStato || {}) };
       stato.timer = { fine };
-      if (fine) stato.subathon = subathon.nuovaSessione(ora);
       streamers.setSettings(channel, { ...s.settings, overlayStato: stato });
-      this.effects?.emit?.(channel, { tipo: 'timer', fine, pausa: null });
-      this._sbSpingiVista(channel);
-      this._sbArma(channel);
+      this.effects?.emit?.(channel, { tipo: 'timer', fine });
       return fine;
     } catch (e) { log.debug('timer:', e?.message || e); return 0; }
   }
@@ -417,8 +407,11 @@ export class AlertsEngine {
       if (!cfg || cfg.attivo !== true || cfg.partiDaSolo !== true) return 0;
       const fine = Number(s.settings?.overlayStato?.timer?.fine) || 0;
       if (fine > Date.now()) return fine;
-      // un conto in pausa ha la fine a zero, ma non e' finito: non riparte da capo
-      if (subathon.S.inPausa(s.settings?.overlayStato?.timer)) return 0;
+      // la pausa che il conto aveva quando la subathon ci girava sopra (la
+      // forma di prima, docs/SUBATHON.md): fine a zero ma non finito, e non
+      // riparte da capo
+      const p = s.settings?.overlayStato?.timer?.pausa;
+      if (p && Number(p.resta) > 0) return 0;
       return this.impostaTimer(channel, cfg.minuti);
     } catch (e) { log.debug('timer da solo:', e?.message || e); return 0; }
   }
@@ -673,22 +666,21 @@ export class AlertsEngine {
   }
 
   // ── LA SUBATHON (docs/SUBATHON.md) ─────────────────────────────────────
-  // Il libro e l'orologio li tiene features/subathon.js; qui la voce e la
-  // scena: l'istante nuovo all'overlay, la vista, la raffica in chat e in
-  // alert, i traguardi, e chi guarda la fine.
+  // Il libro e l'orologio della subathon li tiene features/subathon.js; qui la
+  // voce e la scena: la vista all'overlay (con l'orologio della subathon
+  // dentro), la raffica in chat e in alert, i traguardi, e chi guarda la fine.
+  // Il conto alla rovescia qui non si tocca: e' un'altra cosa.
 
+  // L'elemento c'e' sempre, anche mai salvato: si vede da solo quando la
+  // subathon corre (docs/SUBATHON.md, «In scena, da sola, in ogni overlay»).
   _subathonInScena(channel, s) {
-    const c = s.overlaySubathon;
-    if (!c || typeof c !== 'object') return null;
-    const cfg = normOverlaySubathon(c);
+    const cfg = normOverlaySubathon(s.overlaySubathon);
     const img = (rif) => { const e = rif ? this._risolviEffetto(channel, rif) : null; return e && e.tipo === 'immagine' ? e.url : ''; };
     return { ...cfg, fondoUrl: img(cfg.fondo), corniceUrl: img(cfg.cornice), iconaUrl: img(cfg.icona), lingua: subathon.lingua(channel), vista: subathon.vista(channel) };
   }
 
   _subregoleInScena(channel, s) {
-    const c = s.overlaySubathonRegole;
-    if (!c || typeof c !== 'object') return null;
-    const cfg = normOverlaySubathonRegole(c);
+    const cfg = normOverlaySubathonRegole(s.overlaySubathonRegole);
     const regole = subathon.regoleDi(s);
     const l = subathon.lingua(channel);
     const valuta = SIMBOLI[s.donazioni?.valuta || 'EUR'] || s.donazioni?.valuta || '€';
@@ -702,15 +694,11 @@ export class AlertsEngine {
     } catch (e) { log.debug('subathon vista:', e?.message || e); }
   }
 
-  // DOPO UNA RIGA. L'istante all'overlay subito (mai un conto da rifare), la
-  // vista col «+» che sale, la raffica da dire, i traguardi passati, e chi
-  // guarda la fine riarmato sull'istante nuovo.
+  // DOPO UNA MOSSA. La vista all'overlay subito, con l'orologio della
+  // subathon e il «+» che sale (mai un conto da rifare), la raffica da dire, i
+  // traguardi passati, e chi guarda la fine riarmato sull'istante nuovo.
   _sbDopo(channel, esito, { annuncia = false } = {}) {
     if (!esito || esito.esito !== 'ok') return esito;
-    const t = esito.timer || {};
-    if (esito.riga.messi !== 0 || ['pausa', 'riprendi'].includes(esito.riga.fonte)) {
-      this.effects?.emit?.(channel, { tipo: 'timer', fine: Number(t.fine) || 0, pausa: subathon.S.inPausa(t) ? { resta: Number(t.pausa.resta) } : null });
-    }
     this._sbSpingiVista(channel, esito.riga.messi);
     if (annuncia && esito.riga.messi > 0) this._sbRaffica(channel, esito);
     for (const g of subathon.S.superati(esito.regole?.traguardi, esito.totalePrima, esito.totaleDopo)) this._sbTraguardo(channel, esito.regole, g);
@@ -743,10 +731,19 @@ export class AlertsEngine {
     return true;
   }
 
-  // Far partire la subathon dal suo pannello: lo stesso orologio, fino a 72 ore.
-  subathonAvvia(channel, minuti) {
+  // Far partire la subathon dal suo pannello: il suo orologio, fino a 72 ore.
+  // Il conto alla rovescia resta com'e'.
+  subathonAvvia(channel, minuti, { id = '' } = {}) {
     const m = Math.max(1, Math.min(72 * 60, Math.round(Number(minuti) || 0)));
-    return this._partiTimer(channel, m * 60000);
+    return this._sbDopo(channel, subathon.avvia(channel, m * 60000, { id }));
+  }
+
+  // Fermarla dal pannello: l'orologio a zero, senza fine da festeggiare.
+  subathonFerma(channel) {
+    const esito = subathon.ferma(channel);
+    this._sbSpingiVista(channel);
+    this._sbArma(channel);
+    return esito;
   }
 
   // LA RAFFICA. Gli allungamenti entro `raffica` secondi dal primo diventano
@@ -821,10 +818,10 @@ export class AlertsEngine {
     const vecchio = this._fini.get(channel);
     if (vecchio) { clearTimeout(vecchio); this._fini.delete(channel); }
     const s = streamers.get(channel);
-    if (!s || !subathon.accesa(s.settings)) return;
-    const t = subathon.timerDi(s.settings);
-    const fine = Number(t.fine) || 0;
-    if (subathon.S.inPausa(t) || !fine) return;
+    if (!s || !subathon.regoleDi(s.settings).attivo) return;
+    const o = subathon.sessioneDi(s.settings);
+    const fine = Number(o.fine) || 0;
+    if (subathon.S.inPausa(o) || !fine) return;
     const ms = fine - Date.now();
     if (ms <= 0) { this._sbFine(channel); return; }
     const h = setTimeout(() => { this._fini.delete(channel); this._sbFine(channel); }, Math.min(ms + 250, 2 ** 31 - 1));
@@ -834,7 +831,7 @@ export class AlertsEngine {
 
   _sbFine(channel, { ora = Date.now() } = {}) {
     const f = subathon.fineArrivata(channel, { ora });
-    if (!f) { if (Number(subathon.timerDi(streamers.get(channel)?.settings).fine) > ora) this._sbArma(channel); return null; }
+    if (!f) { if (Number(subathon.sessioneDi(streamers.get(channel)?.settings).fine) > ora) this._sbArma(channel); return null; }
     this._sbSpingiVista(channel);
     if (!f.festeggia) return f;
     const s = streamers.get(channel);
@@ -848,10 +845,17 @@ export class AlertsEngine {
     return f;
   }
 
+  // All'avvio: la forma di prima portata una volta sola sull'orologio della
+  // subathon (subathon-prima.js), poi chi guarda la fine riarmato da quello
+  // che c'e' scritto.
   riarmaSubathon() {
     try {
       for (const s of streamers.list()) {
-        if (s?.login && subathon.accesa(s.settings)) this._sbArma(s.login);
+        if (!s?.login) continue;
+        const nuove = migraSubathon(s.settings);
+        if (nuove) streamers.setSettings(s.login, nuove);
+        const st = nuove || s.settings;
+        if (subathon.regoleDi(st).attivo && Number(subathon.sessioneDi(st).fine) > 0) this._sbArma(s.login);
       }
     } catch (e) { log.debug('subathon riarma:', e?.message || e); }
   }

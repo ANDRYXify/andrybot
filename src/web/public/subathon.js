@@ -10,7 +10,9 @@
   const ORA = 60 * MIN;
   const FONTI = ['sub', 'bit', 'euro', 'kicks', 'follow', 'raid', 'premio'];
   const A_MANO = ['piu', 'meno', 'resta', 'pausa', 'riprendi', 'felice'];
-  const PEZZI = ['titolo', 'conto', 'sale', 'pausa', 'felice', 'totale', 'durata', 'traguardo', 'ultimi'];
+  const PEZZI = ['titolo', 'conto', 'sale', 'pausa', 'felice', 'totale', 'durata', 'traguardo', 'ultimi', 'migliori'];
+  const POSTI = ['alto-sinistra', 'alto-destra', 'basso-sinistra', 'basso-destra', 'alto-centro'];
+  const ZONE = ['alto-sinistra', 'alto-destra', 'basso-sinistra', 'basso-destra', 'alto-centro', 'basso-centro', 'centro'];
   const ALERT = ['allunga', 'traguardo', 'pausa', 'fine'];
 
   const TESTI = {
@@ -19,6 +21,8 @@
       resta: 'Mancano {resta} alla fine della subathon.',
       'resta-pausa': 'Subathon in pausa: mancano {resta}.',
       finita: 'La subathon è finita.',
+      'non-partita': 'La subathon non è ancora partita: si fa partire con !subathon parti 4h o dal pannello.',
+      partita: 'Subathon partita! Mancano {resta}.',
       fine: 'La subathon è finita! In tutto avete aggiunto {totale}. Grazie a tutti!',
       traguardo: 'Traguardo raggiunto: {traguardo}!',
       piu: 'Aggiunti {quanto}. Mancano {resta}.',
@@ -31,13 +35,14 @@
       felice: 'Ora felice: per {quanto} ogni cosa vale ×{per}!',
       'felice-stop': 'Ora felice finita.',
       spenta: 'La subathon è spenta: si accende dal pannello.',
-      uso: 'Si usa così: !subathon +10m, -5m, sub 3, bit 500, euro 10, kicks 200, resta 3h, pausa, riprendi, annulla, felice 30m x2.',
+      uso: 'Si usa così: !subathon parti 4h, +10m, -5m, sub 3, bit 500, euro 10, kicks 200, resta 3h, pausa, riprendi, annulla, felice 30m x2.',
       titolo: 'Subathon',
       'in-pausa': 'In pausa',
       'ora-felice': 'Ora felice ×{per}',
       totale: '+{tempo} aggiunti',
       durata: 'Da {tempo}',
       ultimi: 'Ultimi',
+      migliori: 'I migliori',
       'traguardo-scena': 'Prossimo: {testo}',
       'traguardi-fatti': 'Tutti i traguardi raggiunti!',
       'finito-scena': 'Finita!',
@@ -61,6 +66,8 @@
       resta: '{resta} left before the subathon ends.',
       'resta-pausa': 'Subathon paused: {resta} left.',
       finita: 'The subathon is over.',
+      'non-partita': 'The subathon has not started yet: start it with !subathon parti 4h or from the dashboard.',
+      partita: 'Subathon started! {resta} left.',
       fine: 'The subathon is over! Together you added {totale}. Thank you all!',
       traguardo: 'Milestone reached: {traguardo}!',
       piu: 'Added {quanto}. {resta} left.',
@@ -73,13 +80,14 @@
       felice: 'Happy hour: for {quanto} everything counts ×{per}!',
       'felice-stop': 'Happy hour is over.',
       spenta: 'The subathon is off: turn it on from the dashboard.',
-      uso: 'Usage: !subathon +10m, -5m, sub 3, bit 500, euro 10, kicks 200, resta 3h, pausa, riprendi, annulla, felice 30m x2.',
+      uso: 'Usage: !subathon parti 4h, +10m, -5m, sub 3, bit 500, euro 10, kicks 200, resta 3h, pausa, riprendi, annulla, felice 30m x2.',
       titolo: 'Subathon',
       'in-pausa': 'Paused',
       'ora-felice': 'Happy hour ×{per}',
       totale: '+{tempo} added',
       durata: 'Live for {tempo}',
       ultimi: 'Latest',
+      migliori: 'Top',
       'traguardo-scena': 'Next: {testo}',
       'traguardi-fatti': 'Every milestone reached!',
       'finito-scena': 'Over!',
@@ -103,6 +111,8 @@
       resta: 'Faltan {resta} para el final del subathon.',
       'resta-pausa': 'Subathon en pausa: faltan {resta}.',
       finita: 'El subathon ha terminado.',
+      'non-partita': 'El subathon aún no ha empezado: se pone en marcha con !subathon parti 4h o desde el panel.',
+      partita: '¡Subathon en marcha! Faltan {resta}.',
       fine: '¡El subathon ha terminado! Entre todos habéis añadido {totale}. ¡Gracias a todos!',
       traguardo: '¡Meta alcanzada: {traguardo}!',
       piu: 'Añadidos {quanto}. Faltan {resta}.',
@@ -115,13 +125,14 @@
       felice: '¡Hora feliz: durante {quanto} todo vale ×{per}!',
       'felice-stop': 'Se acabó la hora feliz.',
       spenta: 'El subathon está apagado: se enciende desde el panel.',
-      uso: 'Se usa así: !subathon +10m, -5m, sub 3, bit 500, euro 10, kicks 200, resta 3h, pausa, riprendi, annulla, felice 30m x2.',
+      uso: 'Se usa así: !subathon parti 4h, +10m, -5m, sub 3, bit 500, euro 10, kicks 200, resta 3h, pausa, riprendi, annulla, felice 30m x2.',
       titolo: 'Subathon',
       'in-pausa': 'En pausa',
       'ora-felice': 'Hora feliz ×{per}',
       totale: '+{tempo} añadidos',
       durata: 'Desde hace {tempo}',
       ultimi: 'Últimos',
+      migliori: 'Los mejores',
       'traguardo-scena': 'Siguiente: {testo}',
       'traguardi-fatti': '¡Todas las metas alcanzadas!',
       'finito-scena': '¡Terminado!',
@@ -142,7 +153,7 @@
     },
   };
   const CHIAVI = Object.keys(TESTI.it);
-  const CHIAVI_SCENA = ['titolo', 'in-pausa', 'ora-felice', 'totale', 'durata', 'ultimi', 'traguardo-scena', 'traguardi-fatti', 'finito-scena'];
+  const CHIAVI_SCENA = ['titolo', 'in-pausa', 'ora-felice', 'totale', 'durata', 'ultimi', 'migliori', 'traguardo-scena', 'traguardi-fatti', 'finito-scena'];
   const CHIAVI_REGOLE = CHIAVI.filter((k) => k === 'regole-titolo' || k.indexOf('r-') === 0);
   const CHIAVI_CHAT = CHIAVI.filter((k) => CHIAVI_SCENA.indexOf(k) < 0 && CHIAVI_REGOLE.indexOf(k) < 0);
 
@@ -231,19 +242,19 @@
     return x >= 2 && x <= 5 ? x : 1;
   }
 
-  function resta(timer, ora) {
-    const t = timer || {};
+  function resta(orologio, ora) {
+    const t = orologio || {};
     if (t.pausa && typeof t.pausa === 'object') return Math.max(0, num(t.pausa.resta));
     const f = num(t.fine);
     return f > 0 ? Math.max(0, f - ora) : 0;
   }
 
-  function inPausa(timer) { return !!(timer && timer.pausa && typeof timer.pausa === 'object' && num(timer.pausa.resta) > 0); }
+  function inPausa(orologio) { return !!(orologio && orologio.pausa && typeof orologio.pausa === 'object' && num(orologio.pausa.resta) > 0); }
 
-  function applica(timer, ms, o) {
+  function applica(orologio, ms, o) {
     const ora = num(o && o.ora);
     const tetto = Math.max(0, num(o && o.tetto));
-    const t = timer || {};
+    const t = orologio || {};
     const pausa = inPausa(t);
     const prima = pausa ? num(t.pausa.resta) : num(t.fine) - ora;
     if (!(prima > 0)) return null;
@@ -255,7 +266,7 @@
     if (num(ms) > 0 && messi < SEC) { messi = 0; dopo = prima; }
     const tagliati = Math.abs(voluto - dopo);
     const nuovo = pausa ? { fine: 0, pausa: { resta: Math.round(dopo) } } : { fine: Math.round(ora + dopo) };
-    return { timer: nuovo, prima, dopo, messi: Math.round(messi), tagliati: Math.round(tagliati) };
+    return { orologio: nuovo, prima, dopo, messi: Math.round(messi), tagliati: Math.round(tagliati) };
   }
 
   function conti(righe, quanti) {
@@ -330,11 +341,61 @@
 
   function mostra(n, si) { if (n.hidden === !!si) n.hidden = !si; }
 
+  function elencoChi(el, classe, lista, titolo, acceso) {
+    const ul = nodo(el, 'ol', classe);
+    const firma = lista.map((u) => (u.id || '') + ':' + u.chi + ':' + u.messi).join('|') + '#' + titolo;
+    if (ul.dataset.firma !== firma) {
+      ul.dataset.firma = firma;
+      ul.textContent = '';
+      ul.setAttribute('aria-label', titolo);
+      for (const u of lista) {
+        const li = el.ownerDocument.createElement('li');
+        const b = el.ownerDocument.createElement('b');
+        b.textContent = String(u.chi || '').slice(0, 25);
+        const s = el.ownerDocument.createElement('span');
+        s.textContent = conSegno(u.messi);
+        li.appendChild(b); li.appendChild(s);
+        ul.appendChild(li);
+      }
+    }
+    mostra(ul, acceso && lista.length > 0);
+  }
+
+  function zona(e) {
+    const xy = e && e.xy;
+    if (xy && Number.isFinite(Number(xy.x)) && Number.isFinite(Number(xy.y))) {
+      const x = num(xy.x) + (num(xy.w) > 0 ? num(xy.w) / 2 : 0);
+      const y = num(xy.y) + (num(xy.h) > 0 ? num(xy.h) / 2 : 0);
+      return (y < 50 ? 'alto' : 'basso') + '-' + (x < 34 ? 'sinistra' : x > 66 ? 'destra' : 'centro');
+    }
+    const p = e && e.posizione;
+    return ZONE.indexOf(p) >= 0 ? p : '';
+  }
+
+  function posto(occupati) {
+    const prese = new Set((occupati || []).map(zona).filter(Boolean));
+    return POSTI.find((p) => !prese.has(p)) || POSTI[0];
+  }
+
+  function postiAuto(occupati, sub, regole) {
+    const lista = (occupati || []).slice();
+    const out = {};
+    const prende = (k, c) => {
+      if (!c) return;
+      if (c.xy || c.posizione !== 'auto') { lista.push(c); return; }
+      out[k] = posto(lista);
+      lista.push({ posizione: out[k] });
+    };
+    prende('subathon', sub);
+    prende('subregole', regole);
+    return out;
+  }
+
   function stato(vista, ora) {
     const v = vista || {};
-    const timer = { fine: num(v.fine), pausa: v.pausa || null };
-    const pausa = inPausa(timer);
-    const r = resta(timer, ora);
+    const o = { fine: num(v.fine), pausa: v.pausa || null };
+    const pausa = inPausa(o);
+    const r = resta(o, ora);
     const finito = !pausa && num(v.fine) > 0 && r <= 0;
     const vivo = pausa || num(v.fine) > 0;
     return { pausa, resta: r, finito, vivo };
@@ -383,24 +444,9 @@
     const pieno = nodo(barra, 'i', 'sb-pieno');
     pieno.style.setProperty('--q', g.quota.toFixed(4));
     mostra(tg, on('traguardo') && g.tutti.length > 0);
-    const ul = nodo(el, 'ol', 'sb-ultimi');
-    const lista = (Array.isArray(v.ultimi) ? v.ultimi : []).slice(0, Math.max(1, Math.min(10, num(c.quantiUltimi) || 3)));
-    const firma = lista.map((u) => u.id + ':' + u.chi + ':' + u.messi).join('|') + '#' + testo(t, 'ultimi', l);
-    if (ul.dataset.firma !== firma) {
-      ul.dataset.firma = firma;
-      ul.textContent = '';
-      ul.setAttribute('aria-label', testo(t, 'ultimi', l));
-      for (const u of lista) {
-        const li = el.ownerDocument.createElement('li');
-        const b = el.ownerDocument.createElement('b');
-        b.textContent = String(u.chi || '').slice(0, 25);
-        const s = el.ownerDocument.createElement('span');
-        s.textContent = conSegno(u.messi);
-        li.appendChild(b); li.appendChild(s);
-        ul.appendChild(li);
-      }
-    }
-    mostra(ul, on('ultimi') && lista.length > 0);
+    const quanti = Math.max(1, Math.min(10, num(c.quantiUltimi) || 3));
+    elencoChi(el, 'sb-ultimi', (Array.isArray(v.ultimi) ? v.ultimi : []).slice(0, quanti), testo(t, 'ultimi', l), on('ultimi'));
+    elencoChi(el, 'sb-migliori', (Array.isArray(v.migliori) ? v.migliori : []).slice(0, quanti), testo(t, 'migliori', l), on('migliori'));
     immagine(el, 'sb-cornice', c.corniceUrl || '');
     el.classList.toggle('in-pausa', st.pausa);
     el.classList.toggle('finito', st.finito);
@@ -443,7 +489,7 @@
     return (righe || []).length;
   }
 
-  const SUBATHON = { LINGUE, MIN, ORA, FONTI, A_MANO, PEZZI, ALERT, TESTI, CHIAVI, CHIAVI_SCENA, CHIAVI_REGOLE, CHIAVI_CHAT, lingua, riempi, testo, inParole, orologio, conSegno, elenco, durata, msPer, per, resta, inPausa, applica, conti, traguardi, superati, righeRegole, stato, disegna, sale, disegnaRegole };
+  const SUBATHON = { LINGUE, MIN, ORA, FONTI, A_MANO, PEZZI, POSTI, ZONE, ALERT, zona, posto, postiAuto, TESTI, CHIAVI, CHIAVI_SCENA, CHIAVI_REGOLE, CHIAVI_CHAT, lingua, riempi, testo, inParole, orologio, conSegno, elenco, durata, msPer, per, resta, inPausa, applica, conti, traguardi, superati, righeRegole, stato, disegna, sale, disegnaRegole };
   if (typeof module !== 'undefined' && module.exports) module.exports = SUBATHON;
   else radice.SB_SUBATHON = SUBATHON;
 })(typeof window !== 'undefined' ? window : globalThis);

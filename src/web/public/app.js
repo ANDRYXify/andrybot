@@ -1039,7 +1039,7 @@ function statoDemo() {
           { id: 'g2', attivo: true, tipo: 'sub', obiettivo: 50, titolo: 'Nuovi abbonati', posizione: 'alto-destra', xy: null,
             stile: { dim: 'piccola', sfondo: '#1b1024', opacita: 90, testo: '#ffe9f6', accento: '#ffb020', bordoRaggio: 26, font: 'rotondo', forma: 'pillola', materia: 'sfumata', cornice: 'linea' } },
         ],
-        overlayStato: { goals: { g1: 318, g2: 41 }, timer: { fine: Date.now() + 9250000 }, subathon: { inizio: Date.now() - 18720000, felice: { fino: Date.now() + 1080000, per: 2 }, finita: 0 } },
+        overlayStato: { goals: { g1: 318, g2: 41 }, timer: { fine: Date.now() + 540000 }, subathon: { inizio: Date.now() - 18720000, fine: Date.now() + 9250000, pausa: null, felice: { fino: Date.now() + 1080000, per: 2 }, finita: 0 } },
         subathon: { ..._sbRegoleDiSerie(), attivo: true, perFollow: 1, perRaid10: 2, traguardi: [{ minuti: 60, testo: 'Cosplay' }, { minuti: 120, testo: 'Karaoke' }, { minuti: 240, testo: 'Horror alle 3' }],
           alert: { ..._sbRegoleDiSerie().alert, allunga: { attivo: true, suono: '', immagine: '', colore: '#f72fa7' } } },
         overlaySubathon: { ..._defSubathon(), pezzi: { ...SB_PEZZI_DEF(), durata: true } },
@@ -1487,30 +1487,31 @@ function _demoSubathon(via, metodo, body) {
     _demoScritture.sub = { righe };
   }
   const D = _demoScritture.sub;
-  const sb = st.subathon || (st.subathon = { inizio: ora, felice: null, finita: 0 });
+  const sb = () => st.subathon || (st.subathon = { inizio: ora, fine: 0, pausa: null, felice: null, finita: 0 });
   const vista = () => {
-    const c = S.conti(D.righe.filter((x) => x.sessione === sb.inizio), 10);
-    const t = st.timer || {};
-    return { accesa: !!regole.attivo, fine: Number(t.fine) || 0, pausa: S.inPausa(t) ? t.pausa : null, inizio: sb.inizio, felice: S.per(sb.felice, ora) > 1 ? sb.felice : null, finita: 0, totale: c.totale, ultimi: c.ultimi, migliori: c.migliori, traguardi: regole.traguardi || [] };
+    const o = sb();
+    const c = S.conti(D.righe.filter((x) => x.sessione === o.inizio), 10);
+    const vivo = S.inPausa(o) || Number(o.fine) > ora;
+    return { accesa: !!regole.attivo && vivo, fine: Number(o.fine) || 0, pausa: S.inPausa(o) ? o.pausa : null, inizio: o.inizio, felice: S.per(o.felice, ora) > 1 ? o.felice : null, finita: 0, totale: c.totale, ultimi: c.ultimi, migliori: c.migliori, traguardi: regole.traguardi || [] };
   };
-  const tutto = () => ({ regole, vista: vista(), libro: D.righe.filter((x) => x.sessione === sb.inizio).slice().reverse().slice(0, 40), ora, siVede: { timer: !!imp.overlayTimer?.attivo, elemento: !!imp.overlaySubathon && imp.overlaySubathon.attivo !== false } });
+  const tutto = () => ({ regole, vista: vista(), libro: D.righe.filter((x) => x.sessione === sb().inizio).slice().reverse().slice(0, 40), ora });
   if (metodo === 'GET') return tutto();
   if (via === '/api/streamer/subathon/prova') return { ok: true };
   if (via === '/api/streamer/subathon/avvia') {
-    st.timer = { fine: ora + (Number(body.minuti) || 60) * 60000 };
-    st.subathon = { inizio: ora, felice: null, finita: 0 };
-    return { ok: true, fine: st.timer.fine, ...tutto() };
+    st.subathon = { inizio: ora, fine: ora + (Number(body.minuti) || 60) * 60000, pausa: null, felice: null, finita: 0 };
+    return { ok: true, esito: 'ok', detto: _sbTesto('partita', { resta: S.inParole(st.subathon.fine - ora, _sbLingua()) }), ...tutto() };
   }
-  const t = st.timer || {};
-  const riga = { id: 'tasto:' + body.id, sessione: sb.inizio, ts: ora, fonte: body.azione, chi: '', quanti: 0, livello: 0, per: 1, chiesti: 0, messi: 0, tagliati: 0, mano: 'Demo', perche: body.perche || '', storno: '' };
+  if (via === '/api/streamer/subathon/ferma') { Object.assign(sb(), { fine: 0, pausa: null }); return { ok: true, ...tutto() }; }
+  const o = sb();
+  const riga = { id: 'tasto:' + body.id, sessione: o.inizio, ts: ora, fonte: body.azione, chi: '', quanti: 0, livello: 0, per: 1, chiesti: 0, messi: 0, tagliati: 0, mano: 'Demo', perche: body.perche || '', storno: '' };
   let ms = 0;
   if (body.azione === 'piu' || body.azione === 'meno') ms = (body.azione === 'piu' ? 1 : -1) * (Number(body.minuti) || 0) * 60000;
-  else if (body.azione === 'unita') { riga.fonte = body.fonte; riga.quanti = Number(body.quanti) || 0; riga.livello = Number(body.livello) || 1; riga.per = S.per(sb.felice, ora); ms = S.msPer(regole, riga) * riga.per; }
-  else if (body.azione === 'imposta') { riga.fonte = 'resta'; ms = (Number(body.minuti) || 0) * 60000 - S.resta(t, ora); }
-  else if (body.azione === 'pausa') { if (S.inPausa(t)) return { ok: false, detto: '', ...tutto() }; st.timer = { fine: 0, pausa: { resta: S.resta(t, ora) } }; }
-  else if (body.azione === 'riprendi') { if (!S.inPausa(t)) return { ok: false, detto: '', ...tutto() }; st.timer = { fine: ora + t.pausa.resta }; }
-  else if (body.azione === 'felice') { riga.quanti = Number(body.per) || 2; sb.felice = { fino: ora + (Number(body.minuti) || 30) * 60000, per: riga.quanti }; }
-  else if (body.azione === 'felice-stop') { sb.felice = null; }
+  else if (body.azione === 'unita') { riga.fonte = body.fonte; riga.quanti = Number(body.quanti) || 0; riga.livello = Number(body.livello) || 1; riga.per = S.per(o.felice, ora); ms = S.msPer(regole, riga) * riga.per; }
+  else if (body.azione === 'imposta') { riga.fonte = 'resta'; ms = (Number(body.minuti) || 0) * 60000 - S.resta(o, ora); }
+  else if (body.azione === 'pausa') { if (S.inPausa(o)) return { ok: false, detto: '', ...tutto() }; Object.assign(o, { fine: 0, pausa: { resta: S.resta(o, ora) } }); }
+  else if (body.azione === 'riprendi') { if (!S.inPausa(o)) return { ok: false, detto: '', ...tutto() }; Object.assign(o, { fine: ora + o.pausa.resta, pausa: null }); }
+  else if (body.azione === 'felice') { riga.quanti = Number(body.per) || 2; o.felice = { fino: ora + (Number(body.minuti) || 30) * 60000, per: riga.quanti }; }
+  else if (body.azione === 'felice-stop') { o.felice = null; }
   else if (body.azione === 'annulla') {
     const stornate = new Set(D.righe.filter((x) => x.storno).map((x) => x.storno));
     const r = body.riga ? D.righe.find((x) => x.id === body.riga) : D.righe.slice().reverse().find((x) => x.mano && !x.storno && x.messi && !stornate.has(x.id));
@@ -1519,13 +1520,13 @@ function _demoSubathon(via, metodo, body) {
     ms = -r.messi;
   }
   if (ms) {
-    const m = S.applica(st.timer || t, ms, { ora, tetto: (Number(regole.tettoOre) || 0) * 3600000 });
+    const m = S.applica({ fine: o.fine, pausa: o.pausa }, ms, { ora, tetto: (Number(regole.tettoOre) || 0) * 3600000 });
     if (!m) return { ok: false, detto: _sbTesto('finita'), ...tutto() };
     Object.assign(riga, { chiesti: ms, messi: m.messi, tagliati: m.tagliati });
-    if (m.messi) st.timer = m.timer;
+    if (m.messi) Object.assign(o, { fine: m.orologio.fine, pausa: m.orologio.pausa || null });
   }
   D.righe.push(riga);
-  const resta = S.inParole(S.resta(st.timer, ora), _sbLingua());
+  const resta = S.inParole(S.resta(sb(), ora), _sbLingua());
   const quanto = S.inParole(Math.abs(riga.messi), _sbLingua());
   const detto = { piu: 'piu', unita: 'piu', meno: 'meno', imposta: 'resta-messo', pausa: 'pausa', riprendi: 'ripresa', annulla: 'annullato', felice: 'felice', 'felice-stop': 'felice-stop' }[body.azione];
   return { ok: true, esito: 'ok', detto: _sbTesto(detto, { resta, quanto, per: riga.quanti, totale: '' }), ...tutto() };
@@ -2479,7 +2480,7 @@ function _demoGet(via) {
       ],
     },
     '/api/streamer/overlays': { overlays: [
-      { id: 'principale', nome: 'Overlay principale', mostra: { alert: true, chat: true, wf: true, ws: true, effetti: true, subathon: true, subregole: true },
+      { id: 'principale', nome: 'Overlay principale', mostra: { alert: true, chat: true, wf: true, ws: true, effetti: true },
         xy: { alert: { x: 50, y: 14 }, chat: { x: 16, y: 78 }, wf: { x: 86, y: 62 }, ws: { x: 86, y: 82 }, subathon: { x: 84, y: 34 }, subregole: { x: 14, y: 42 } },
         css: '', stile: null, url: 'https://socialbot.live/o/andryx_demo/overlay-principale' },
       { id: 'ovsolochat', nome: 'Solo chat', mostra: { alert: false, chat: true, wf: false, ws: false, boss: false, arena: false, scritta: false, etichetta: false, muro: false, effetti: false, pew: false },
@@ -10843,7 +10844,7 @@ function pannelloSubathon() {
   return pannello('subathon', `
     <div class="carta" id="sb-carta">
       <h2>${_hIco(ICO.orologio)}Subathon</h2>
-      <p>${L('La diretta dura quanto dice l’orologio, e chi sostiene il canale la allunga. È il conto alla rovescia che hai già: qui decidi cosa lo allunga, e lo rimetti a posto a mano se qualcosa si rompe.', 'The stream lasts as long as the clock says, and whoever supports the channel stretches it. It is the countdown you already have: here you decide what stretches it, and you fix it by hand if something breaks.', 'El directo dura lo que diga el reloj, y quien apoya el canal lo alarga. Es la cuenta atrás que ya tienes: aquí decides qué la alarga, y la arreglas a mano si algo se rompe.')}</p>
+      <p>${L('La diretta dura quanto dice l’orologio della subathon, e chi sostiene il canale la allunga. È un orologio suo, separato dal conto alla rovescia: qui decidi cosa lo allunga, lo fai partire, e lo rimetti a posto a mano se qualcosa si rompe.', 'The stream lasts as long as the subathon clock says, and whoever supports the channel stretches it. It is a clock of its own, separate from the countdown: here you decide what stretches it, you start it, and you fix it by hand if something breaks.', 'El directo dura lo que diga el reloj del subathon, y quien apoya el canal lo alarga. Es un reloj propio, separado de la cuenta atrás: aquí decides qué lo alarga, lo pones en marcha y lo arreglas a mano si algo se rompe.')}</p>
       <div class="riga-interruttore spazio-sopra">
         <label class="interruttore"><input type="checkbox" id="sb-attivo" data-sb-check="attivo"><span class="levetta"></span></label>
         <span class="etichetta-stato">${L('Subathon accesa', 'Subathon on', 'Subathon encendido')}</span>
@@ -10861,7 +10862,7 @@ function pannelloSubathon() {
         <button type="button" class="btn" id="sb-avvia">${_bIco(ICO.play)}${L('Fai partire', 'Start it', 'Ponlo en marcha')}</button>
         <button type="button" class="btn secondario" id="sb-ferma">${L('Ferma', 'Stop', 'Para')}</button>
       </p>
-      <p class="suggerimento">${L('Far partire comincia una subathon nuova: totale, ultimi e traguardi ripartono da zero. Il conto è lo stesso del «Conto alla rovescia» dello Studio.', 'Starting begins a new subathon: total, latest and milestones start again from zero. The clock is the same as the Studio «Countdown».', 'Ponerlo en marcha empieza un subathon nuevo: total, últimos y metas vuelven a cero. El reloj es el mismo que la «Cuenta atrás» del Studio.')}</p>
+      <p class="suggerimento">${L('Far partire comincia una subathon nuova: totale, ultimi e traguardi ripartono da zero. Il conto alla rovescia dello Studio non si tocca. In chat: «!subathon parti 4h».', 'Starting begins a new subathon: total, latest and milestones start again from zero. The Studio countdown is not touched. In chat: «!subathon parti 4h».', 'Ponerlo en marcha empieza un subathon nuevo: total, últimos y metas vuelven a cero. La cuenta atrás del Studio no se toca. En el chat: «!subathon parti 4h».')}</p>
     </div>
 
     <div class="carta" id="sb-mano">
@@ -10964,14 +10965,8 @@ function _sbRiempi() {
 
 function _sbVede() {
   const el = _g('sb-vede');
-  const d = SUB_STATO.dati;
-  if (!el || !d) return;
-  const v = d.siVede || {};
-  const conti = [v.timer ? L('il conto alla rovescia', 'the countdown', 'la cuenta atrás') : '', v.elemento ? L('l’elemento Subathon', 'the Subathon element', 'el elemento Subathon') : ''].filter(Boolean);
-  el.innerHTML = conti.length
-    ? esc(L(`Si vede con ${conti.join(' e ')}: accendili negli overlay dove li vuoi, nello Studio.`, `It shows with ${conti.join(' and ')}: turn them on in the overlays where you want them, in the Studio.`, `Se ve con ${conti.join(' y ')}: enciéndelos en los overlays donde los quieras, en el Studio.`))
-    : esc(L('Per contare serve un conto che la faccia vedere: accendi l’elemento Subathon o il conto alla rovescia.', 'To count it needs a clock that shows it: turn on the Subathon element or the countdown.', 'Para contar necesita un reloj que la muestre: enciende el elemento Subathon o la cuenta atrás.'))
-      + ` <button type="button" class="btn secondario mini" id="sb-elemento">${L('Accendi l’elemento Subathon', 'Turn on the Subathon element', 'Encender el elemento Subathon')}</button>`;
+  if (!el) return;
+  el.textContent = L('In scena compare da sola in ogni overlay mentre corre, nel primo posto libero. Nello Studio la sposti, la vesti, scegli i pezzi o la nascondi in un overlay.', 'On screen it shows up by itself in every overlay while it runs, in the first free spot. In the Studio you move it, style it, pick its parts or hide it in an overlay.', 'En escena aparece sola en cada overlay mientras corre, en el primer sitio libre. En el Studio la mueves, la vistes, eliges sus piezas o la ocultas en un overlay.');
 }
 
 async function _sbPremi() {
@@ -11076,7 +11071,7 @@ function _sbDati(d) {
   if (d.ora) SUB_STATO.scarto = Number(d.ora) - Date.now();
   if (d.vista && stato?.streamer?.settings) {
     const st = { ...(stato.streamer.settings.overlayStato || {}) };
-    st.timer = { fine: d.vista.fine || 0, ...(d.vista.pausa ? { pausa: d.vista.pausa } : {}) };
+    st.subathon = { ...(st.subathon || {}), inizio: d.vista.inizio || 0, fine: d.vista.fine || 0, pausa: d.vista.pausa || null, felice: d.vista.felice || null };
     stato.streamer.settings.overlayStato = st;
   }
   _sbOrologio();
@@ -11200,28 +11195,21 @@ async function avviaSubathon() {
         });
         return;
       }
-      if (b.id === 'sb-elemento') {
-        conErrore(async () => {
-          const c = { ..._defSubathon(), ...(impostazioni().overlaySubathon || {}), attivo: true };
-          await salvaImpostazioni({ overlaySubathon: c }, L('Elemento Subathon acceso ✓: mettilo negli overlay dallo Studio.', 'Subathon element on ✓: put it in your overlays from the Studio.', 'Elemento Subathon encendido ✓: ponlo en tus overlays desde el Studio.'));
-          await _sbCarica();
-        });
-        return;
-      }
       if (b.id === 'sb-avvia') {
         conErrore(async () => {
           const min = (Number(_g('sb-avvia-ore')?.value) || 0) * 60 + (Number(_g('sb-avvia-min')?.value) || 0);
           if (min < 1) throw new Error(L('Scegli da quanto si parte.', 'Pick how long it starts with.', 'Elige con cuánto empieza.'));
-          _sbDati(await api('/api/streamer/subathon/avvia', { method: 'POST', body: { minuti: min } }));
+          const r = await api('/api/streamer/subathon/avvia', { method: 'POST', body: { minuti: min, id: _sbIdTasto() } });
+          _sbDati(r);
+          if (!r.ok) throw new Error(r.detto || L('Accendi la subathon e salva, poi falla partire.', 'Turn the subathon on and save, then start it.', 'Enciende el subathon y guarda, luego ponlo en marcha.'));
           toast(L('Subathon partita ✓', 'Subathon started ✓', 'Subathon en marcha ✓'));
         });
         return;
       }
       if (b.id === 'sb-ferma') {
         conErrore(async () => {
-          await api('/api/streamer/timer', { method: 'POST', body: { minuti: 0 } });
-          await _sbCarica();
-          toast(L('Orologio fermo.', 'Clock stopped.', 'Reloj parado.'));
+          _sbDati(await api('/api/streamer/subathon/ferma', { method: 'POST', body: {} }));
+          toast(L('Subathon ferma.', 'Subathon stopped.', 'Subathon parado.'));
         });
       }
     });
@@ -15831,8 +15819,6 @@ function pannelloAlert() {
         </div>
         <label class="cons-spunta spazio-sopra"><input type="checkbox" data-c="partiDaSolo">
           ${L('Parte da solo quando l’overlay si apre — per la schermata d’attesa: metti su la scena e il conto è già andato.', 'Starts on its own when the overlay opens — for the waiting screen: put the scene up and the countdown is already running.', 'Arranca solo cuando se abre el overlay — para la pantalla de espera: pones la escena y la cuenta ya va.')}</label>
-        <p class="suggerimento spazio-sopra">${L('La subathon usa questo stesso orologio: fonti, comandi, libro e alert stanno nella sua scheda.', 'The subathon uses this same clock: sources, commands, book and alerts live in its own tab.', 'El subathon usa este mismo reloj: fuentes, comandos, libro y alertas están en su pestaña.')}
-          <button type="button" class="btn secondario mini" data-vai-scheda="subathon">${_bIco(ICO.orologio)}${L('Apri Subathon', 'Open Subathon', 'Abrir Subathon')}</button></p>
         <p class="spazio-sopra">
           <button class="btn" id="tim-parti">${L('Fai partire', 'Start it', 'Ponlo en marcha')}</button>
           <button class="btn secondario" id="tim-ferma">${L('Ferma', 'Stop', 'Para')}</button>
@@ -15848,7 +15834,7 @@ function pannelloAlert() {
 
     <details class="carta sez" data-parte="aspetto" id="sez-subathon">
       <summary><h3>${_hIco(ICO.orologio)}Subathon</h3></summary>
-      <p>${L('Il conto della subathon in scena, coi pezzi che vuoi: quanto manca, il «+5:00» che sale, gli ultimi che hanno allungato, il totale, da quanto dura, l\'ora felice, la pausa e la barra verso il prossimo traguardo. Nasce spento negli overlay che hai già: accendilo dove lo vuoi.', 'The subathon clock on screen, with the parts you want: time left, the rising «+5:00», the latest who extended it, the total, how long it has run, happy hour, the pause and the bar to the next milestone. It starts off in your existing overlays: turn it on where you want it.', 'El reloj del subathon en escena, con las piezas que quieras: cuánto falta, el «+5:00» que sube, los últimos que lo alargaron, el total, cuánto dura, la hora feliz, la pausa y la barra hacia la próxima meta. Nace apagado en tus overlays: enciéndelo donde lo quieras.')}</p>
+      <p>${L('Il conto della subathon in scena, coi pezzi che vuoi: quanto manca, il «+5:00» che sale, gli ultimi che hanno allungato, il totale, da quanto dura, l\'ora felice, la pausa, la barra verso il prossimo traguardo e i migliori. È in ogni overlay e compare da sola mentre la subathon corre, nel primo posto libero; se la sposti resta dove la metti. Per non averla in un overlay, spegnila nei livelli.', 'The subathon clock on screen, with the parts you want: time left, the rising «+5:00», the latest who extended it, the total, how long it has run, happy hour, the pause, the bar to the next milestone and the top ones. It is in every overlay and shows up by itself while the subathon runs, in the first free spot; if you move it, it stays where you put it. To keep it out of an overlay, turn it off in the layers.', 'El reloj del subathon en escena, con las piezas que quieras: cuánto falta, el «+5:00» que sube, los últimos que lo alargaron, el total, cuánto dura, la hora feliz, la pausa, la barra hacia la próxima meta y los mejores. Está en cada overlay y aparece solo mientras el subathon corre, en el primer sitio libre; si lo mueves, se queda donde lo pones. Para no tenerlo en un overlay, apágalo en las capas.')}</p>
       <p><button type="button" class="btn secondario mini" data-vai-scheda="subathon">${_bIco(ICO.orologio)}${L('Apri Subathon', 'Open Subathon', 'Abrir Subathon')}</button></p>
       <div data-cfg="subathon">
         <div class="riga-interruttore spazio-sopra">
@@ -16470,7 +16456,7 @@ const CONT_BASE = 40;
 const FISSI = ['alert', 'chat', 'wf', 'ws'];
 const ELEM_OVL = [...FISSI, 'goal', 'cont', 'cart', 'musica', 'timer', 'subathon', 'subregole', 'pubblicita', 'tempi', 'treno', 'bit', 'pen', 'boss', 'arena', 'scritta', 'walkon', 'etichetta', 'invito', 'muro', 'effetti', 'pew', 'consolify'];
 const ELEM_SCENA = ELEM_OVL.filter((k) => k !== 'effetti');
-const SPENTI_DI_SERIE = new Set(['invito', 'subathon', 'subregole']);
+const SPENTI_DI_SERIE = new Set(['invito']);
 const SENZA_POSTO = new Set(['pew']);
 const _acceso = (m, k) => (m && m[k] !== undefined ? m[k] !== false : !SPENTI_DI_SERIE.has(k));
 const CHAT_DA = [['twitch', 'Twitch'], ['kick', 'Kick']];
@@ -17465,20 +17451,20 @@ function _vestiInvito(box, cfg) {
 
 const _sbLingua = () => (['it', 'en', 'es'].includes(stato?.linguaChat) ? stato.linguaChat : 'it');
 const SB_TESTI_VUOTI = (chiavi) => Object.fromEntries((chiavi || []).map((k) => [k, '']));
-const SB_PEZZI_DEF = () => ({ titolo: true, conto: true, sale: true, pausa: true, felice: true, totale: true, durata: false, traguardo: true, ultimi: true });
+const SB_PEZZI_DEF = () => ({ titolo: true, conto: true, sale: true, pausa: true, felice: true, totale: true, durata: false, traguardo: true, ultimi: true, migliori: false });
 
 function _defSubathon() {
-  return { attivo: true, posizione: 'alto-sinistra', xy: null, pezzi: SB_PEZZI_DEF(), quantiUltimi: 3, fondo: '', cornice: '', icona: '', testi: SB_TESTI_VUOTI(window.SB_SUBATHON?.CHIAVI_SCENA),
+  return { attivo: true, posizione: 'auto', xy: null, pezzi: SB_PEZZI_DEF(), quantiUltimi: 3, fondo: '', cornice: '', icona: '', testi: SB_TESTI_VUOTI(window.SB_SUBATHON?.CHIAVI_SCENA),
     stile: { dim: 'media', sfondo: '#100d16', opacita: 85, testo: '#ffffff', accento: '#f72fa7', bordoRaggio: 14, font: 'sistema', forma: 'carta', materia: 'piatta', cornice: 'nessuna', icona: 'stella', dimIcona: 20 } };
 }
 function _defSubregole() {
-  return { attivo: true, posizione: 'basso-destra', xy: null, titolo: '', mostraTitolo: true, testi: SB_TESTI_VUOTI(window.SB_SUBATHON?.CHIAVI_REGOLE),
+  return { attivo: true, posizione: 'auto', xy: null, titolo: '', mostraTitolo: true, testi: SB_TESTI_VUOTI(window.SB_SUBATHON?.CHIAVI_REGOLE),
     stile: { dim: 'media', sfondo: '#100d16', opacita: 85, testo: '#ffffff', accento: '#f72fa7', bordoRaggio: 14, font: 'sistema', forma: 'carta', materia: 'piatta', cornice: 'nessuna', icona: 'stella', dimIcona: 20 } };
 }
 
 const SB_NOMI_PEZZI = () => ({ titolo: L('Titolo', 'Title', 'Título'), conto: L('Quanto manca', 'Time left', 'Cuánto falta'), sale: L('Il «+5:00» che sale', 'The rising «+5:00»', 'El «+5:00» que sube'),
   pausa: L('La pausa', 'The pause', 'La pausa'), felice: L('L’ora felice', 'Happy hour', 'La hora feliz'), totale: L('Il totale aggiunto', 'Total added', 'El total añadido'),
-  durata: L('Da quanto dura', 'How long it has run', 'Cuánto lleva'), traguardo: L('La barra del traguardo', 'The milestone bar', 'La barra de la meta'), ultimi: L('Gli ultimi', 'The latest', 'Los últimos') });
+  durata: L('Da quanto dura', 'How long it has run', 'Cuánto lleva'), traguardo: L('La barra del traguardo', 'The milestone bar', 'La barra de la meta'), ultimi: L('Gli ultimi', 'The latest', 'Los últimos'), migliori: L('I migliori', 'The top ones', 'Los mejores') });
 function _sbPezziCampi() {
   const n = SB_NOMI_PEZZI();
   return (window.SB_SUBATHON ? window.SB_SUBATHON.PEZZI : Object.keys(n)).map((k) => `<label class="riga-check"><input type="checkbox" data-c="pezzi.${k}"> ${esc(n[k] || k)}</label>`).join('');
@@ -17496,12 +17482,26 @@ function _sbImmagini() {
 
 function _sbVistaEsempio() {
   const ora = Date.now();
-  const t = impostazioni().overlayStato?.timer || {};
   const vera = SUB_STATO.dati?.vista;
-  if (vera && vera.accesa && (Number(t.fine) > ora || (t.pausa && Number(t.pausa.resta) > 0))) return { ...vera, fine: Number(t.fine) || 0, pausa: t.pausa || null };
+  if (vera && vera.accesa && (Number(vera.fine) > ora || (vera.pausa && Number(vera.pausa.resta) > 0))) return vera;
   return { accesa: true, fine: ora + 9250000, pausa: null, inizio: ora - 18720000, felice: { fino: ora + 1080000, per: 2 }, totale: 3900000,
     ultimi: [{ chi: 'Luna', messi: 300000, id: 'a' }, { chi: 'MarioRossi', messi: 600000, id: 'b' }, { chi: 'GiadaTTV', messi: 150000, id: 'c' }],
+    migliori: [{ chi: 'MarioRossi', messi: 1800000 }, { chi: 'Luna', messi: 1200000 }, { chi: 'GiadaTTV', messi: 900000 }],
     traguardi: [{ minuti: 60, testo: L('Cosplay', 'Cosplay', 'Cosplay') }, { minuti: 120, testo: 'Karaoke' }] };
+}
+
+const SB_SENZA_POSTO = ['subathon', 'subregole', 'effetti', 'pew', 'muro', 'consolify'];
+function _sbOccupati() {
+  const xy = _vedoXY();
+  return ELEMENTI().filter((e) => !SB_SENZA_POSTO.includes(e.k) && _inOverlay(e.k) && _accesoDi(e.k))
+    .map((e) => ({ posizione: _angoloDi(e.k) || '', xy: xy[e.k] || (e.cont ? _posCorrente(e.k) : null) }));
+}
+function _sbPostoAuto(k) {
+  const S = window.SB_SUBATHON;
+  if (!S) return 'alto-sinistra';
+  const xy = _vedoXY();
+  const c = (kk) => (_quiDentro(kk) ? { posizione: _cfgEl(kk).posizione, xy: xy[kk] || null } : null);
+  return S.postiAuto(_sbOccupati(), c('subathon'), c('subregole'))[k] || 'alto-sinistra';
 }
 
 function _vestiSubathon(box, cfg) {
@@ -17718,6 +17718,7 @@ function _angoloDi(k) {
   if (e && e.cart) return e.cart.posizione || 'basso-sinistra';
   if (e && e.cont) return null;
   if (k === 'pen') return (_cfgEl(k).overlay || {}).posizione || 'alto-destra';
+  if ((k === 'subathon' || k === 'subregole') && _cfgEl(k).posizione === 'auto') return _sbPostoAuto(k);
   if (e && e.cfg) return _cfgEl(k).posizione || (k === 'timer' ? 'alto-destra' : 'basso-sinistra');
   if (k === 'alert') return _v('al-pos') || 'alto-centro';
   if (k === 'chat') return _v('co-pos') || 'basso-sinistra';

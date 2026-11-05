@@ -123,8 +123,8 @@ export default {
 
     // --------------------------------------------------------------- SUBATHON
     { h2: 'Subathon', scheda: 'subathon', p: [
-      'La diretta dura quanto dice l\'orologio, e chi sostiene il canale la allunga. L\'orologio è quello del conto alla rovescia: la scheda Subathon decide cosa lo allunga, lo fa partire e lo rimette a posto a mano se qualcosa si rompe.',
-      'Perché conti serve un conto che la faccia vedere: l\'elemento «Subathon» dello Studio o il «Conto alla rovescia». Se non ce n\'è nessuno la scheda lo dice, con il tasto per accendere l\'elemento.',
+      'La diretta dura quanto dice l\'orologio della subathon, e chi sostiene il canale la allunga. È un orologio suo, separato dal «Conto alla rovescia» dello Studio, che resta tuo per il «si comincia tra»: la scheda Subathon decide cosa allunga la subathon, la fa partire e la rimette a posto a mano se qualcosa si rompe.',
+      'In scena compare da sola in ogni overlay mentre corre, anche in quelli che avevi già, nel primo posto libero (in alto a sinistra, poi in alto a destra, in basso a sinistra, in basso a destra, in alto al centro). Nello Studio la sposti, la vesti, scegli i pezzi, o la nascondi in un overlay dalla colonna dei livelli.',
     ] },
     { h3: 'Cosa la allunga' },
     { p: ['Minuti per unità, numeri interi: le frazioni le fa il conto. Il tetto è su quanto manca, non su quanto hai aggiunto: arrivato lì il conto non sale, e il libro dice quanto è stato tagliato.'] },
@@ -143,11 +143,12 @@ export default {
     ] },
     { p: ['I sub regalati contano uno per uno, col nome di chi li riceve. L\'<strong>ora felice</strong> moltiplica per un tempo tutto quello che arriva dalle fonti (×2 fino a ×5); il tempo scritto a mano no.'] },
     { h3: 'Far partire, pausa e fine' },
-    { p: ['«Fai partire» comincia una subathon nuova, fino a 72 ore: totale, ultimi e traguardi ripartono da zero. La <strong>pausa</strong> ferma l\'orologio con quello che manca: gli eventi in pausa si contano lo stesso e il tempo si aggiunge a quello che resta. A zero la subathon è finita e non riparte da sola. Alla fine puoi far scrivere una riga in chat e far partire l\'alert di fine.'] },
+    { p: ['«Fai partire» (o <code>!subathon parti 4h</code>) comincia una subathon nuova, fino a 72 ore: totale, ultimi e traguardi ripartono da zero, e il conto alla rovescia non si tocca. «Ferma» la ferma senza festeggiare la fine. La <strong>pausa</strong> ferma l\'orologio con quello che manca: gli eventi in pausa si contano lo stesso e il tempo si aggiunge a quello che resta. A zero la subathon è finita e non riparte da sola. Alla fine puoi far scrivere una riga in chat e far partire l\'alert di fine.'] },
     { h3: 'A mano, e i comandi' },
     { p: ['I tasti della scheda e i comandi in chat fanno le stesse cose, e ognuno scrive una riga nel libro. «!subathon» da solo è di tutti e dice quanto manca; il resto lo usano lo streamer e i moderatori, o solo lo streamer se lo scegli.'] },
     { tabella: [
       ['Comando', 'Cosa fa'],
+      ['<code>!subathon parti 4h</code>', 'fa partire una subathon nuova di quattro ore'],
       ['<code>!subathon +10m [perché]</code>', 'aggiunge dieci minuti'],
       ['<code>!subathon -5m</code>', 'toglie cinque minuti, mai sotto adesso'],
       ['<code>!subathon sub 3 2</code>', 'conta tre sub di livello 2 persi (anche bit, euro, kicks, follow, raid)'],

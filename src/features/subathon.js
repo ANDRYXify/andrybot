@@ -2,8 +2,11 @@
 // Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
 // LA SUBATHON: la diretta dura quanto dice l'orologio (docs/SUBATHON.md).
 //
-// Non e' un orologio nuovo. E' il CONTO ALLA ROVESCIA che c'e' gia'
-// (overlayStato.timer), con delle regole che lo muovono. Tutto quello che lo
+// HA UN OROLOGIO SUO, nella sua sessione (overlayStato.subathon: inizio, fine,
+// pausa, felice, finita), e non tocca il conto alla rovescia dello streamer:
+// sono due significati diversi («si comincia tra» e «quanto dura la diretta»),
+// e un orologio solo per tutti e due mostrava l'uno al posto dell'altro
+// (docs/SUBATHON.md, «Novembre 2026: un orologio suo»). Tutto quello che lo
 // muove passa da qui, e passa in un modo solo:
 //
 //  · OGNI MOSSA E' UNA RIGA DEL LIBRO (subathon_righe), con l'id dell'evento
@@ -45,17 +48,15 @@ export const RESTA_MAX_MS = 72 * ORA;
 
 export const regoleDi = (settings) => regoleSubathon(settings);
 const obj = (x) => !!x && typeof x === 'object' && !Array.isArray(x);
-// Si vede con un conto: il conto alla rovescia acceso, o l'elemento subathon
-// salvato e acceso (docs/SUBATHON.md, «Acceso vuol dire»).
-export const siVede = (settings) => settings?.overlayTimer?.attivo === true
-  || (obj(settings?.overlaySubathon) && settings.overlaySubathon.attivo !== false);
-export const accesa = (settings) => !!(regoleDi(settings).attivo && siVede(settings));
-
 const statoDi = (settings) => (obj(settings?.overlayStato) ? settings.overlayStato : {});
-export const timerDi = (settings) => (obj(statoDi(settings).timer) ? statoDi(settings).timer : {});
+// L'OROLOGIO DELLA SUBATHON e' la sua sessione: { inizio, fine, pausa, felice, finita }.
 export const sessioneDi = (settings) => (obj(statoDi(settings).subathon) ? statoDi(settings).subathon : {});
 // L'orologio corre (o e' in pausa con del tempo dentro): solo allora il libro scrive.
-export const inCorsa = (timer, ora) => S.inPausa(timer) || Number(timer?.fine) > ora;
+export const inCorsa = (orologio, ora) => S.inPausa(orologio) || Number(orologio?.fine) > ora;
+// Accesa: regole accese e l'orologio della subathon in corsa o in pausa.
+export const accesa = (settings, ora = Date.now()) => !!(regoleDi(settings).attivo && inCorsa(sessioneDi(settings), ora));
+// L'orologio nella forma che `applica` conosce.
+const orologio = (sb) => ({ fine: Number(sb?.fine) || 0, pausa: S.inPausa(sb) ? { resta: Number(sb.pausa.resta) } : null });
 
 // ── dagli eventi alle righe ────────────────────────────────────────────────
 
@@ -96,27 +97,28 @@ const idNuovo = (pre) => pre + ':' + crypto.randomUUID();
 
 // LA SOLA PORTA DEL LIBRO. Dentro una transazione: legge le impostazioni,
 // muove l'orologio con `applica` (se la riga chiede del tempo: `r.ms`, o una
-// funzione (timer, ora) → ms), scrive la riga e, solo se e' entrata, le
-// impostazioni. `cambia(stato, ora)` applica il resto (pausa, ripresa, ora
-// felice) e puo' rifiutare tornando false.
-// Torna { esito, riga, timer, prima, dopo, totalePrima, totaleDopo, regole }.
+// funzione (orologio, ora) → ms), scrive la riga e, solo se e' entrata, le
+// impostazioni. `cambia(sb, ora)` cambia il resto della sessione (pausa,
+// ripresa, ora felice) e puo' rifiutare tornando false.
+// Torna { esito, riga, orologio, prima, dopo, totalePrima, totaleDopo, regole }.
 //   esito: 'ok' · 'doppio' (id gia' visto) · 'spenta' · 'ferma' (orologio non in corsa) · 'no' (cambia ha rifiutato)
 export function scrivi(channel, r, { ora = Date.now(), cambia = null } = {}) {
   try {
     return subathonLibro.insieme(() => {
       const s = streamers.get(channel);
-      if (!s || !accesa(s.settings)) return { esito: 'spenta' };
+      if (!s) return { esito: 'spenta' };
       const regole = regoleDi(s.settings);
+      if (!regole.attivo) return { esito: 'spenta', regole };
       const stato = { ...statoDi(s.settings) };
-      const timer = obj(stato.timer) ? stato.timer : {};
-      if (!inCorsa(timer, ora)) return { esito: 'ferma', regole };
-      const sb = obj(stato.subathon) ? { ...stato.subathon } : {};
-      const ms = Math.round(Number(typeof r.ms === 'function' ? r.ms(timer, ora) : r.ms) || 0);
-      const mossa = ms ? S.applica(timer, ms, { ora, tetto: regole.tettoOre * ORA }) : null;
+      const sb = { ...sessioneDi(s.settings) };
+      const prima0 = orologio(sb);
+      if (!inCorsa(prima0, ora)) return { esito: 'ferma', regole };
+      const ms = Math.round(Number(typeof r.ms === 'function' ? r.ms(prima0, ora) : r.ms) || 0);
+      const mossa = ms ? S.applica(prima0, ms, { ora, tetto: regole.tettoOre * ORA }) : null;
       if (ms && !mossa) return { esito: 'ferma', regole };
+      if (mossa && mossa.messi !== 0) Object.assign(sb, { fine: mossa.orologio.fine, pausa: mossa.orologio.pausa || null });
+      if (cambia && cambia(sb, ora) === false) return { esito: 'no', regole };
       stato.subathon = sb;
-      if (mossa && mossa.messi !== 0) stato.timer = mossa.timer;
-      if (cambia && cambia(stato, ora) === false) return { esito: 'no', regole };
       const sessione = Number(sb.inizio) || 0;
       const prima = S.conti(subathonLibro.sessione(channel, sessione)).totale;
       const riga = {
@@ -127,8 +129,8 @@ export function scrivi(channel, r, { ora = Date.now(), cambia = null } = {}) {
       if (!subathonLibro.scrivi(channel, riga)) return { esito: 'doppio', regole };
       streamers.setSettings(channel, { ...s.settings, overlayStato: stato });
       return {
-        esito: 'ok', riga, regole, timer: stato.timer, sessione: stato.subathon,
-        prima: S.resta(timer, ora), dopo: S.resta(stato.timer, ora),
+        esito: 'ok', riga, regole, orologio: orologio(sb), sessione: sb,
+        prima: S.resta(prima0, ora), dopo: S.resta(orologio(sb), ora),
         totalePrima: prima, totaleDopo: prima + riga.messi,
       };
     });
@@ -154,6 +156,7 @@ const numero = (testo) => { const n = Number(String(testo || '').replace(',', '.
 //   { azione: 'piu'|'meno', ms, perche }
 //   { azione: 'unita', fonte, quanti, livello }
 //   { azione: 'imposta', ms } · 'pausa' · 'riprendi' · 'annulla' · { azione: 'felice', ms, per } · 'felice-stop'
+//   { azione: 'parti', ms }                     apre una subathon nuova
 //   { azione: 'uso' }                           un argomento che non si capisce
 export function leggiComando(testo) {
   const t = String(testo || '').trim();
@@ -176,6 +179,7 @@ export function leggiComando(testo) {
     return { azione: 'unita', fonte: primo, quanti: primo === 'euro' ? Math.round(n * 100) / 100 : Math.round(n), livello };
   }
   if (primo === 'resta') { const ms = S.durata(a[1]); return ms ? { azione: 'imposta', ms } : { azione: 'uso' }; }
+  if (primo === 'parti') { const ms = S.durata(a[1]); return ms ? { azione: 'parti', ms } : { azione: 'uso' }; }
   if (primo === 'pausa') return { azione: 'pausa' };
   if (primo === 'riprendi') return { azione: 'riprendi' };
   if (primo === 'annulla') return { azione: 'annulla' };
@@ -243,25 +247,25 @@ export function azione(channel, a, { mano = '', id = '', ora = Date.now() } = {}
     out = scrivi(channel, { ...base, ...ev, id: rid('mano'), ms, per, perche: a.perche || '' }, { ora });
   } else if (a.azione === 'imposta') {
     const voluto = Math.min(RESTA_MAX_MS, Math.max(1000, Number(a.ms) || 0));
-    out = scrivi(channel, { ...base, id: rid('mano'), fonte: 'resta', ms: (timer, t) => voluto - S.resta(timer, t), perche: a.perche || '' }, { ora });
+    out = scrivi(channel, { ...base, id: rid('mano'), fonte: 'resta', ms: (o, t) => voluto - S.resta(o, t), perche: a.perche || '' }, { ora });
   } else if (a.azione === 'pausa') {
     out = scrivi(channel, { ...base, id: rid('mano'), fonte: 'pausa' }, {
-      ora, cambia: (st, t) => { if (S.inPausa(st.timer)) return false; st.timer = { fine: 0, pausa: { resta: Math.round(S.resta(st.timer, t)) } }; return true; },
+      ora, cambia: (sb, t) => { if (S.inPausa(sb)) return false; Object.assign(sb, { fine: 0, pausa: { resta: Math.round(S.resta(orologio(sb), t)) } }); return true; },
     });
   } else if (a.azione === 'riprendi') {
     out = scrivi(channel, { ...base, id: rid('mano'), fonte: 'riprendi' }, {
-      ora, cambia: (st, t) => { if (!S.inPausa(st.timer)) return false; st.timer = { fine: t + Math.round(Number(st.timer.pausa.resta) || 0) }; return true; },
+      ora, cambia: (sb, t) => { if (!S.inPausa(sb)) return false; Object.assign(sb, { fine: t + Math.round(Number(sb.pausa.resta) || 0), pausa: null }); return true; },
     });
   } else if (a.azione === 'felice') {
     const ms = Math.min(FELICE_MAX_MS, Math.max(MIN, Number(a.ms) || 0));
     const per = Math.max(2, Math.min(5, Math.round(Number(a.per) || 2)));
     out = scrivi(channel, { ...base, id: rid('mano'), fonte: 'felice', quanti: per, perche: S.orologio(ms) }, {
-      ora, cambia: (st, t) => { st.subathon = { ...st.subathon, felice: { fino: t + ms, per } }; return true; },
+      ora, cambia: (sb, t) => { sb.felice = { fino: t + ms, per }; return true; },
     });
     if (out?.esito === 'ok') out.felice = { fino: ora + ms, per, ms };
   } else if (a.azione === 'felice-stop') {
     out = scrivi(channel, { ...base, id: rid('mano'), fonte: 'felice', quanti: 0, perche: 'stop' }, {
-      ora, cambia: (st, t) => { if (S.per(st.subathon?.felice, t) <= 1) return false; st.subathon = { ...st.subathon, felice: null }; return true; },
+      ora, cambia: (sb, t) => { if (S.per(sb.felice, t) <= 1) return false; sb.felice = null; return true; },
     });
   } else if (a.azione === 'annulla') {
     if (id && subathonLibro.riga(channel, 'annulla:' + id)) return { esito: 'doppio', azione: a.azione };
@@ -270,14 +274,44 @@ export function azione(channel, a, { mano = '', id = '', ora = Date.now() } = {}
     if (!r) return { esito: 'nessuna', azione: a.azione };
     out = storna(channel, r.id, { ...base, id: id ? 'annulla:' + id : '', ora });
     if (out?.esito === 'ok') out.stornata = r;
+  } else if (a.azione === 'parti') {
+    out = avvia(channel, a.ms, { id, ora });
   } else return { esito: 'no', azione: a.azione };
   return { ...(out || { esito: 'no' }), azione: a.azione };
 }
 
 // ── l'orologio che parte, e la fine ────────────────────────────────────────
 
-// La sessione nuova di una subathon: comincia quando parte l'orologio.
-export const nuovaSessione = (ora) => ({ inizio: ora, felice: null, finita: 0 });
+// FAR PARTIRE LA SUBATHON: una sessione nuova con l'orologio a `ms` (da un
+// minuto a 72 ore). Totale, ultimi e traguardi ricominciano da qui. Il conto
+// alla rovescia non si tocca. `id` (del comando o del tasto) fa si' che lo
+// stesso «parti» ripetuto non apra una seconda sessione. Non scrive righe: il
+// libro e' delle mosse dell'orologio che corre.
+export function avvia(channel, ms, { id = '', ora = Date.now() } = {}) {
+  try {
+    return subathonLibro.insieme(() => {
+      const s = streamers.get(channel);
+      if (!s) return { esito: 'spenta' };
+      const regole = regoleDi(s.settings);
+      if (!regole.attivo) return { esito: 'spenta', regole };
+      if (id && sessioneDi(s.settings).da === id) return { esito: 'doppio', regole };
+      const durata = Math.max(MIN, Math.min(RESTA_MAX_MS, Math.round(Number(ms) || 0)));
+      const sb = { inizio: ora, fine: ora + durata, pausa: null, felice: null, finita: 0, ...(id ? { da: id } : {}) };
+      streamers.setSettings(channel, { ...s.settings, overlayStato: { ...statoDi(s.settings), subathon: sb } });
+      return { esito: 'ok', regole, orologio: orologio(sb), sessione: sb, riga: { messi: 0, fonte: 'parti' } };
+    });
+  } catch (e) { log.debug('avvia:', e?.message || e); return { esito: 'errore' }; }
+}
+
+// FERMARE LA SUBATHON (dal pannello): l'orologio a zero, senza pausa. La
+// sessione resta, e il libro si legge ancora. Non e' la fine: non si festeggia.
+export function ferma(channel) {
+  const s = streamers.get(channel);
+  if (!s) return { esito: 'no' };
+  const sb = { ...sessioneDi(s.settings), fine: 0, pausa: null };
+  streamers.setSettings(channel, { ...s.settings, overlayStato: { ...statoDi(s.settings), subathon: sb } });
+  return { esito: 'ok', orologio: orologio(sb), sessione: sb };
+}
 
 // L'orologio e' arrivato a zero? Una volta sola per istante di fine: torna
 // { festeggia, vecchia, fine } la prima volta, null le altre (e se non e'
@@ -286,11 +320,10 @@ export function fineArrivata(channel, { ora = Date.now() } = {}) {
   try {
     return subathonLibro.insieme(() => {
       const s = streamers.get(channel);
-      if (!s || !accesa(s.settings)) return null;
-      const timer = timerDi(s.settings);
-      const fine = Number(timer.fine) || 0;
-      if (S.inPausa(timer) || !fine || fine > ora) return null;
+      if (!s || !regoleDi(s.settings).attivo) return null;
       const sb = sessioneDi(s.settings);
+      const fine = Number(sb.fine) || 0;
+      if (S.inPausa(sb) || !fine || fine > ora) return null;
       if (Number(sb.finita) === fine) return null;
       const stato = { ...statoDi(s.settings), subathon: { ...sb, finita: fine } };
       streamers.setSettings(channel, { ...s.settings, overlayStato: stato });
@@ -307,12 +340,12 @@ export function vista(channel, { ora = Date.now(), quanti = 10 } = {}) {
   const s = streamers.get(channel);
   const settings = s?.settings || {};
   const regole = regoleDi(settings);
-  const timer = timerDi(settings);
   const sb = sessioneDi(settings);
+  const o = orologio(sb);
   const sessione = Number(sb.inizio) || 0;
   const c = S.conti(subathonLibro.sessione(channel, sessione), quanti);
   return {
-    accesa: accesa(settings), fine: Number(timer.fine) || 0, pausa: S.inPausa(timer) ? { resta: Number(timer.pausa.resta) } : null,
+    accesa: accesa(settings, ora), fine: o.fine, pausa: o.pausa,
     inizio: sessione, felice: S.per(sb.felice, ora) > 1 ? sb.felice : null, finita: Number(sb.finita) || 0,
     totale: c.totale, ultimi: c.ultimi, migliori: c.migliori, traguardi: regole.traguardi,
   };
@@ -333,9 +366,9 @@ export function risposta(channel, esito, { ora = Date.now() } = {}) {
   if (!esito) return '';
   const regole = esito.regole || regoleDi(streamers.get(channel)?.settings);
   const t = (k, d) => testo(channel, regole, k, d);
-  const resta = parole(channel, S.resta(esito.timer || timerDi(streamers.get(channel)?.settings), ora));
+  const resta = parole(channel, S.resta(esito.orologio || orologio(sessioneDi(streamers.get(channel)?.settings)), ora));
   if (esito.esito === 'spenta') return t('spenta');
-  if (esito.esito === 'ferma') return t('finita');
+  if (esito.esito === 'ferma') return Number(sessioneDi(streamers.get(channel)?.settings).fine) > 0 ? t('finita') : t('non-partita');
   if (esito.esito === 'nessuna') return t('niente');
   if (esito.esito === 'fonte' || esito.esito === 'no') return t('uso');
   if (esito.esito !== 'ok') return '';
@@ -349,6 +382,7 @@ export function risposta(channel, esito, { ora = Date.now() } = {}) {
     case 'annulla': return t('annullato', { quanto: (Number(esito.riga?.messi) < 0 ? '−' : '+') + q, resta });
     case 'felice': return t('felice', { quanto: parole(channel, esito.felice?.ms), per: esito.felice?.per });
     case 'felice-stop': return t('felice-stop');
+    case 'parti': return t('partita', { resta });
     default: return '';
   }
 }
@@ -358,11 +392,13 @@ export function risposta(channel, esito, { ora = Date.now() } = {}) {
 // bot cose che non servono a nessuno.
 export function quantoManca(channel, { ora = Date.now() } = {}) {
   const s = streamers.get(channel);
-  if (!s || !accesa(s.settings)) return '';
+  if (!s) return '';
   const regole = regoleDi(s.settings);
-  const timer = timerDi(s.settings);
-  if (S.inPausa(timer)) return testo(channel, regole, 'resta-pausa', { resta: parole(channel, S.resta(timer, ora)) });
-  const fine = Number(timer.fine) || 0;
+  const sb = sessioneDi(s.settings);
+  if (!regole.attivo) return '';
+  if (S.inPausa(sb)) return testo(channel, regole, 'resta-pausa', { resta: parole(channel, S.resta(sb, ora)) });
+  const fine = Number(sb.fine) || 0;
+  if (!fine) return '';
   return fine > ora ? testo(channel, regole, 'resta', { resta: parole(channel, fine - ora) }) : testo(channel, regole, 'finita');
 }
 
@@ -381,7 +417,7 @@ export function comando(msg, { ora = Date.now() } = {}) {
     const d = quantoManca(ch, { ora });
     return d ? { detto: d, esito: null } : null;
   }
-  if (!accesa(s.settings)) return { detto: testo(ch, regole, 'spenta'), esito: null };
+  if (!regole.attivo) return { detto: testo(ch, regole, 'spenta'), esito: null };
   if (a.azione === 'uso') return { detto: testo(ch, regole, 'uso'), esito: null };
   const esito = azione(ch, a, { mano: msg.display || msg.user || '', id: msg.id ? 'cmd:' + msg.id : '', ora });
   return { detto: esito.esito === 'doppio' ? '' : risposta(ch, esito, { ora }), esito };
