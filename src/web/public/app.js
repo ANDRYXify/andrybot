@@ -394,8 +394,8 @@ async function caricaStato() {
   esitoPermessiDaIndirizzo();
   esitoPostaDaIndirizzo();
   vegliaAttacchi();
-  avvisoAccessoSicuro();
   avvisaDaDecidere();
+  avvisoAccessoSicuro();
   avvisaRapporti();
   collegaRegiaRicordata();
   _mortiRiavvia();
