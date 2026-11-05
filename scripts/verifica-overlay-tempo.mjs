@@ -74,6 +74,8 @@ const ROTTURE = [
     'il boss in corso non si rivede dopo una ricarica'],
   [OVL, "  if ('penitenze' in stato) riconciliaPenitenze(stato.penitenze, t);\n", '',
     'le penitenze in corso non si rivedono dopo una ricarica'],
+  [OVL, "card._scadenza - adesso() <= PEN_ANNULLATA_MS", "card._scadenza <= adesso()",
+    'una penitenza che sta finendo sparisce prima del suo esito se l\'orologio della scena e\' indietro'],
   [OVL, '  riconciliaContatori(Array.isArray(t.contatori) ? t.contatori : null, t);\n', '',
     'i contatori non si rivedono dopo una ricarica'],
   [OVL, "    if (trascorso) barraTempo.style.animationDelay = '-' + trascorso + 's';\n", '',
@@ -145,9 +147,9 @@ const ROTTURE = [
     'il tema vecchio rimette il follower di prima'],
   [OVL, "  if ('boss' in stato && vale('boss', t)) riconciliaBoss", "  if ('boss' in stato) riconciliaBoss",
     'il tema vecchio resuscita il boss appena battuto'],
-  [OVL, "    if (vive[id] || card._finita || !vale('pen:' + id, t) || card._scadenza <= adesso()) continue;", '    if (vive[id] || card._finita || card._scadenza <= adesso()) continue;',
+  [OVL, "    if (vive[id] || card._finita || !vale('pen:' + id, t) || card._scadenza - adesso() <= PEN_ANNULLATA_MS) continue;", '    if (vive[id] || card._finita || card._scadenza - adesso() <= PEN_ANNULLATA_MS) continue;',
     'il tema vecchio toglie la penitenza appena cominciata'],
-  [OVL, "    if (vive[id] || card._finita || !vale('pen:' + id, t) || card._scadenza <= adesso()) continue;", "    if (vive[id] || card._finita || !vale('pen:' + id, t)) continue;",
+  [OVL, "    if (vive[id] || card._finita || !vale('pen:' + id, t) || card._scadenza - adesso() <= PEN_ANNULLATA_MS) continue;", "    if (vive[id] || card._finita || !vale('pen:' + id, t)) continue;",
     'una penitenza scaduta sparisce prima di dire com\'e\' andata'],
   [OVL, "    if (!vale('pen:' + p.id, t)) continue;\n", '',
     'il tema vecchio rimette indietro il conto della penitenza'],
@@ -359,11 +361,11 @@ const PROVE = {
     await s.collegato();
     await s.finche(() => document.querySelector('.ovl-subathon.dentro') && document.querySelector('.ovl-timer.dentro:not(.ovl-pubblicita)'), null, 5000);
     const due = await s.leggi(() => ({ sb: document.querySelector('.ovl-subathon .sb-num')?.textContent || '', conto: document.querySelector('.ovl-timer:not(.ovl-pubblicita) .t-num')?.textContent || '' }));
-    dice(/^(3:00:00|2:5\d:\d\d)$/.test(due.sb) && /^(9|10):\d\d$/.test(due.conto), 'conto alla rovescia e subathon insieme mostrano due tempi diversi', `subathon ${due.sb} · conto ${due.conto}`);
+    dice(/^(3:00:0[01]|2:5\d:\d\d)$/.test(due.sb) && /^(9|10):\d\d$/.test(due.conto), 'conto alla rovescia e subathon insieme mostrano due tempi diversi', `subathon ${due.sb} · conto ${due.conto}`);
     s.cambia({ tipo: 'timer', fine: 0 }, (t) => { t.stato = { timer: { fine: 0 } }; });
     await s.finche((q) => !document.querySelector(q), TSEL, 3000);
     const resta = await s.leggi(() => document.querySelector('.ovl-subathon .sb-num')?.textContent || '');
-    dice(/^(3:00:00|2:5\d:\d\d)$/.test(resta), 'fermare il conto alla rovescia non ferma la subathon', resta || 'sparita');
+    dice(/^(3:00:0[01]|2:5\d:\d\d)$/.test(resta), 'fermare il conto alla rovescia non ferma la subathon', resta || 'sparita');
     s.cambia({ tipo: 'subathon', vista: { ...vista, fine: 0, pausa: { resta: 3600000 } }, sale: 0 }, (t) => { t.subathon = { ...SUB, vista: { ...vista, fine: 0, pausa: { resta: 3600000 } } }; });
     await s.finche(() => document.querySelector('.ovl-subathon.in-pausa'), null, 3000);
     const pausa = await s.leggi(() => document.querySelector('.ovl-subathon .sb-num')?.textContent || '');
@@ -789,13 +791,19 @@ const PROVE = {
   // toglie dall'elenco e sceglie la penitenza DOPO (a volte chiedendola all'IA,
   // un secondo o due). Un tema riletto in quel mezzo non la elenca piu': la
   // carta deve restare, e mostrare l'esito quando arriva.
+  // L'orologio dell'overlay e' quello del server stimato: puo' restare indietro.
+  // Il server la toglie un secondo prima di quando l'overlay la vede scadere, e
+  // la carta deve restare lo stesso (una carta si toglie per assenza solo se
+  // mancano ancora piu' di cinque secondi: allora e' stata annullata).
   async penitenzaEsito() {
-    const fine = Date.now() + 1500;
+    const fine = Date.now() + 2500;
+    let tolta = false;
     const pen = { id: 'p7', modo: 'vietata', cosa: 'parola', valore: 'ciao', count: 2, fine, posizione: 'alto-destra' };
-    const s = await scena('penitenza-esito', { vivo: (t) => ({ ...t, stato: { penitenze: Date.now() < fine ? [pen] : [] } }) });
+    const s = await scena('penitenza-esito', { vivo: (t) => ({ ...t, stato: { penitenze: tolta ? [] : [pen] } }) });
     await s.collegato();
     await s.finche(() => document.querySelector('#penitenze .pen-card'), null, 3000);
-    while (Date.now() < fine + 400) await attesa(50);
+    while (Date.now() < fine - 1000) await attesa(50);
+    tolta = true;
     const letti = s.ovl.st.tema;
     s.ovl.manda({ tipo: 'tema' });
     for (let i = 0; i < 100 && s.ovl.st.tema <= letti; i++) await attesa(20);

@@ -590,6 +590,7 @@ function boss(ev) {
 }
 
 const FINE_PERSA_MS = 15000;
+const PEN_ANNULLATA_MS = 5000;
 
 function riconciliaBoss(b) {
   if (!b) { if (bossScena) bossVia(); return; }
@@ -607,7 +608,7 @@ function riconciliaPenitenze(lista, t) {
   for (const p of lista) if (p && p.id != null) vive[p.id] = p;
   for (const id of Object.keys(penCard)) {
     const card = penCard[id];
-    if (vive[id] || card._finita || !vale('pen:' + id, t) || card._scadenza <= adesso()) continue;
+    if (vive[id] || card._finita || !vale('pen:' + id, t) || card._scadenza - adesso() <= PEN_ANNULLATA_MS) continue;
     clearInterval(card._orologio);
     card.remove();
     delete penCard[id];
