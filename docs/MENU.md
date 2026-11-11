@@ -191,7 +191,7 @@ menu/sottomenu/navigazione in generale? sì? la configuri e la lanci?».
      quanto un dito.
    - **Pagina d'apertura**: Stato, l'ultima usata, o una voce a scelta. Un
      indirizzo con la sua pagina vince sempre.
-   - **Rimetti il menu di serie**: toglie tutte le scelte.
+   - **Rimetti il menù di serie**: toglie tutte le scelte.
 8. **Gli invarianti stanno nella funzione, non nei controlli attorno.** Ogni
    voce di fabbrica esce una volta sola, nel suo gruppo o fra le nascoste. Una
    voce nata dopo (un aggiornamento) compare al suo posto di fabbrica anche in
@@ -208,8 +208,8 @@ menu/sottomenu/navigazione in generale? sì? la configuri e la lanci?».
    uguali.
 10. **Dove si fa.** Una stella accanto al titolo di ogni pagina («Mettila fra
     le mie»): il gesto più frequente costa un clic, dove sei. Tutto il resto
-    nella carta «Menu su misura» (Account → Accesso e dati), a cui porta anche
-    il tasto «Sistema il menu» in fondo al menu. Ogni gesto vale subito, e il
+    nella carta «Menù su misura» (Account → Accesso e dati), a cui porta anche
+    il tasto «Sistema il menù» in fondo al menu. Ogni gesto vale subito, e il
     menu accanto è l'anteprima. Il tasto porta la carta in vista e la segue
     finché la pagina non ha finito di caricarsi: le carte sopra crescono
     mentre arrivano i loro dati, e una carta lasciata appena sotto lo schermo

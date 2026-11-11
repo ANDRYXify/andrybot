@@ -4,7 +4,7 @@
 //
 // La funzione pura la prova il contratto (test/contratto/menu-misura.test.mjs).
 // Qui si apre il pannello e si fa quello che fa una persona: la stella accanto
-// al titolo, la carta «Menu su misura», l'occhio, le frecce, la barra in basso
+// al titolo, la carta «Menù su misura», l'occhio, le frecce, la barra in basso
 // del telefono, le righe fitte, il ritorno al menu di serie. E si guarda il
 // menu che ne esce, non le scelte salvate.
 //
@@ -18,7 +18,7 @@
 //   · «tutti aperti» apre tutti i gruppi;
 //   · sul telefono la barra in basso mostra le voci scelte piu' «Altro», larga
 //     quanto lo schermo, e la carta non allarga la pagina;
-//   · «Rimetti il menu di serie» riporta tutto com'era.
+//   · «Rimetti il menù di serie» riporta tutto com'era.
 //
 // Uso: node scripts/verifica-menu-misura.mjs [--foto <cartella>]
 //      --selftest serve un app.js rotto in sei modi e pretende sei rossi.
@@ -108,7 +108,7 @@ async function giro(rottura, dice) {
     const m0 = await menu(d);
     chiedi(JSON.stringify(m0.gruppi.flatMap((g) => g.voci)) === JSON.stringify(tutte) && !m0.mie.length && !m0.nascoste.length,
       `senza scelte il menu e' quello di fabbrica (${tutte.length} voci)`);
-    chiedi(await d.isVisible('#menu-sistema'), 'in fondo al menu c\'e\' «Sistema il menu»');
+    chiedi(await d.isVisible('#menu-sistema'), 'in fondo al menu c\'e\' «Sistema il menù»');
 
     await vai(d, 'subathon');
     await d.click('#pt-mia');
@@ -119,7 +119,7 @@ async function giro(rottura, dice) {
     await foto(d, 'computer-stella');
 
     await carta(d);
-    chiedi(await d.evaluate(() => window.SB_APP.schedaAttiva === 'account'), '«Sistema il menu» porta alla carta «Menu su misura»');
+    chiedi(await d.evaluate(() => window.SB_APP.schedaAttiva === 'account'), '«Sistema il menù» porta alla carta «Menù su misura»');
     await d.click('#menu-misura [data-mm="mia"][data-id="clip"]');
     await d.click('#menu-misura [data-mm="mie"][data-id="clip"][data-passo="-1"]');
     const m2 = await menu(d);
@@ -147,7 +147,7 @@ async function giro(rottura, dice) {
     await serie(d);
     const m5 = await menu(d);
     chiedi(JSON.stringify(m5.gruppi.flatMap((g) => g.voci)) === JSON.stringify(tutte) && !m5.mie.length && !m5.nascoste.length && (await d.isDisabled('#menu-di-serie')),
-      '«Rimetti il menu di serie» riporta tutto com\'era');
+      '«Rimetti il menù di serie» riporta tutto com\'era');
 
     await vai(d, 'giochi');
     await fermo(d);

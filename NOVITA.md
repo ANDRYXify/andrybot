@@ -43,11 +43,11 @@ comandi diversi da quelli della riga italiana.
 
 ## 2026-11-11
 
-- [importante] Il menu del pannello ora è tuo: metti in cima le pagine che usi, nascondi le altre, cambia l'ordine e scegli la barra in basso del telefono. Ti segue su ogni dispositivo. [vai: account]
+- [importante] Il menù del pannello ora è tuo: metti in cima le pagine che usi, nascondi le altre, cambia l'ordine e scegli la barra in basso del telefono. Ti segue su ogni dispositivo. [vai: account]
   en: The panel menu is now yours: put the pages you use at the top, hide the others, change the order and choose the phone's bottom bar. It follows you on every device.
   es: El menú del panel ahora es tuyo: pon arriba las páginas que usas, oculta las demás, cambia el orden y elige la barra inferior del móvil. Te sigue en todos tus dispositivos.
-  > Un menu su misura
-  > Premi la stella accanto al titolo di una pagina per averla in cima. Il resto è in «Sistema il menu», in fondo al menu: righe più fitte, gruppi aperti, pagina d'apertura.
+  > Un menù su misura
+  > Premi la stella accanto al titolo di una pagina per averla in cima. Il resto è in «Sistema il menù», in fondo al menù: righe più fitte, gruppi aperti, pagina d'apertura.
   en> A menu of your own
   en> Press the star next to a page's title to keep it at the top. The rest is under «Arrange the menu», at the bottom of the menu: tighter rows, open groups, opening page.
   es> Un menú a medida

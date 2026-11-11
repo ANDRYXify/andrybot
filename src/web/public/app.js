@@ -4992,7 +4992,7 @@ function menuCambia(cambia) {
   const tieniQui = () => { try { localStorage.setItem(MENU_LOCALE, JSON.stringify(corpo)); } catch (e) {  } };
   _menuCoda = _menuCoda.then(() => api('/api/persona/menu', { method: 'POST', body: { menu: corpo } }))
     .then((r) => { if (r?.qui) tieniQui(); else { try { localStorage.removeItem(MENU_LOCALE); } catch (e) {  } if (stato) stato.menu = r?.menu || null; } })
-    .catch(() => { tieniQui(); toast(L('Non sono riuscito a salvare il menu sul server: per ora resta su questo dispositivo.', 'I could not save the menu on the server: for now it stays on this device.', 'No he podido guardar el menú en el servidor: por ahora se queda en este dispositivo.')); });
+    .catch(() => { tieniQui(); toast(L('Non sono riuscito a salvare il menù sul server: per ora resta su questo dispositivo.', 'I could not save the menu on the server: for now it stays on this device.', 'No he podido guardar el menú en el servidor: por ahora se queda en este dispositivo.')); });
 }
 
 function menuRidisegna() {
@@ -5821,7 +5821,7 @@ function disegnaMenuMisura() {
     const n = voceDelMenu(id), mia = m.mie.includes(id), via = nascosta(id);
     return tasto('mia', id, 0, ICO.stella, mia ? L(`Togli «${n}» dalle tue`, `Remove “${n}” from yours`, `Quita «${n}» de las tuyas`) : L(`Metti «${n}» fra le tue`, `Put “${n}” among yours`, `Pon «${n}» entre las tuyas`), { premuto: mia })
       + (id === 'stato' ? '<span class="mm-vuoto" aria-hidden="true"></span>'
-        : tasto('nascosta', id, 0, via ? ICO.occhioNo : ICO.occhio, via ? L(`Rimetti «${n}» nel menu`, `Put “${n}” back in the menu`, `Devuelve «${n}» al menú`) : L(`Togli «${n}» dal menu`, `Take “${n}” out of the menu`, `Quita «${n}» del menú`), { premuto: via }));
+        : tasto('nascosta', id, 0, via ? ICO.occhioNo : ICO.occhio, via ? L(`Rimetti «${n}» nel menù`, `Put “${n}” back in the menu`, `Devuelve «${n}» al menú`) : L(`Togli «${n}» dal menù`, `Take “${n}” out of the menu`, `Quita «${n}» del menú`), { premuto: via }));
   };
 
   const mie = m.mie.length
@@ -5858,28 +5858,28 @@ function disegnaMenuMisura() {
 
   box.innerHTML = `
     <h3>${esc(menuNomeMie())}</h3>
-    <p class="suggerimento">${L(`In cima al menu, sempre aperte, nell’ordine che vuoi tu: fino a ${MENU_MIE_MAX}. Restano anche nel loro gruppo.`, `At the top of the menu, always open, in the order you want: up to ${MENU_MIE_MAX}. They also stay in their group.`, `Arriba del menú, siempre abiertas, en el orden que quieras: hasta ${MENU_MIE_MAX}. También siguen en su grupo.`)}</p>
+    <p class="suggerimento">${L(`In cima al menù, sempre aperte, nell’ordine che vuoi tu: fino a ${MENU_MIE_MAX}. Restano anche nel loro gruppo.`, `At the top of the menu, always open, in the order you want: up to ${MENU_MIE_MAX}. They also stay in their group.`, `Arriba del menú, siempre abiertas, en el orden que quieras: hasta ${MENU_MIE_MAX}. También siguen en su grupo.`)}</p>
     ${mie}
     <label class="campo" for="menu-nome-mie">${L('Il nome del tuo gruppo', 'Your group’s name', 'El nombre de tu grupo')}</label>
     <input type="text" id="menu-nome-mie" maxlength="24" autocomplete="off" placeholder="${esc(L('Le mie', 'Mine', 'Las mías'))}" value="${esc(m.nomeMie)}">
     <h3 class="spazio-sopra">${L('Barra in basso del telefono', 'Phone bottom bar', 'Barra inferior del móvil')}</h3>
-    <p class="suggerimento">${L('Fino a quattro voci a portata di pollice; «Altro» apre tutto il menu e c’è sempre. Con i posti vuoti resta la barra di serie: Stato, Il bot, Chat, In diretta.', 'Up to four entries within thumb’s reach; “More” opens the whole menu and is always there. With every slot empty you keep the standard bar: Status, The bot, Chat, Live.', 'Hasta cuatro entradas al alcance del pulgar; «Más» abre todo el menú y está siempre. Con los huecos vacíos queda la barra de serie: Estado, El bot, Chat, En directo.')}</p>
+    <p class="suggerimento">${L('Fino a quattro voci a portata di pollice; «Altro» apre tutto il menù e c’è sempre. Con i posti vuoti resta la barra di serie: Stato, Il bot, Chat, In diretta.', 'Up to four entries within thumb’s reach; “More” opens the whole menu and is always there. With every slot empty you keep the standard bar: Status, The bot, Chat, Live.', 'Hasta cuatro entradas al alcance del pulgar; «Más» abre todo el menú y está siempre. Con los huecos vacíos queda la barra de serie: Estado, El bot, Chat, En directo.')}</p>
     <div class="mm-posti">${posti}</div>
     <h3 class="spazio-sopra">${L('Come si comporta', 'How it behaves', 'Cómo se comporta')}</h3>
     <div class="mm-campi">
       <div><label class="campo" for="menu-modo">${L('I gruppi', 'Groups', 'Los grupos')}</label>
         <select id="menu-modo">${op('uno', m.modo, L('Uno aperto alla volta', 'One open at a time', 'Uno abierto cada vez'))}${op('ricorda', m.modo, L('Restano come li lascio', 'They stay as I leave them', 'Se quedan como los dejo'))}${op('tutti', m.modo, L('Tutti aperti', 'All open', 'Todos abiertos'))}</select></div>
       <div><label class="campo" for="menu-righe">${L('Le righe', 'Rows', 'Las filas')}</label>
-        <select id="menu-righe">${op('comode', m.righe, L('Comode', 'Roomy', 'Cómodas'))}${op('fitte', m.righe, L('Fitte: ci sta più menu', 'Tight: more menu fits', 'Juntas: cabe más menú'))}</select></div>
+        <select id="menu-righe">${op('comode', m.righe, L('Comode', 'Roomy', 'Cómodas'))}${op('fitte', m.righe, L('Fitte: ci sta più menù', 'Tight: more menu fits', 'Juntas: cabe más menú'))}</select></div>
       <div><label class="campo" for="menu-apre">${L('Quando apro il pannello', 'When I open the panel', 'Cuando abro el panel')}</label>
         <select id="menu-apre">${apre}</select></div>
     </div>
     <h3 class="spazio-sopra">${L('Tutte le voci', 'All entries', 'Todas las entradas')}</h3>
-    <p class="suggerimento">${L('La stella mette una voce fra le tue. L’occhio la toglie dal menu: la ritrovi in fondo, in «Nascoste», e con la lente. Le frecce cambiano l’ordine dei gruppi e delle voci.', 'The star puts an entry among yours. The eye takes it out of the menu: you find it again at the bottom, under “Hidden”, and with search. The arrows change the order of groups and entries.', 'La estrella pone una entrada entre las tuyas. El ojo la quita del menú: la encuentras abajo, en «Ocultas», y con la lupa. Las flechas cambian el orden de los grupos y de las entradas.')}</p>
+    <p class="suggerimento">${L('La stella mette una voce fra le tue. L’occhio la toglie dal menù: la ritrovi in fondo, in «Nascoste», e con la lente. Le frecce cambiano l’ordine dei gruppi e delle voci.', 'The star puts an entry among yours. The eye takes it out of the menu: you find it again at the bottom, under “Hidden”, and with search. The arrows change the order of groups and entries.', 'La estrella pone una entrada entre las tuyas. El ojo la quita del menú: la encuentras abajo, en «Ocultas», y con la lupa. Las flechas cambian el orden de los grupos y de las entradas.')}</p>
     <div class="mm-gruppi">${gruppi}</div>
     <p class="mm-serie spazio-sopra">
-      <button type="button" class="btn secondario" id="menu-di-serie"${diSerie ? ' disabled' : ''}>${L('Rimetti il menu di serie', 'Restore the standard menu', 'Vuelve al menú de serie')}</button>
-      <span id="menu-serie-chiedi" hidden>${L('Tolgo tutte le tue scelte sul menu.', 'I will remove all your menu choices.', 'Quito todas tus elecciones del menú.')}
+      <button type="button" class="btn secondario" id="menu-di-serie"${diSerie ? ' disabled' : ''}>${L('Rimetti il menù di serie', 'Restore the standard menu', 'Vuelve al menú de serie')}</button>
+      <span id="menu-serie-chiedi" hidden>${L('Tolgo tutte le tue scelte sul menù.', 'I will remove all your menu choices.', 'Quito todas tus elecciones del menú.')}
         <button type="button" class="btn pericolo mini" id="menu-serie-si">${L('Sì, rimettilo', 'Yes, restore it', 'Sí, vuelve')}</button>
         <button type="button" class="btn secondario mini" id="menu-serie-no">${L('No', 'No', 'No')}</button></span>
       ${diSerie ? `<span class="suggerimento">${L('È già quello di serie.', 'It is already the standard one.', 'Ya es el de serie.')}</span>` : ''}
@@ -5898,7 +5898,7 @@ function menuMisuraClic(ev) {
     if (serie.id === 'menu-serie-si') {
       menuCambia((s) => { for (const k of Object.keys(s)) delete s[k]; });
       try { localStorage.removeItem(MENU_APERTI); } catch (e) {  }
-      toast(L('Il menu è tornato quello di serie.', 'The menu is back to standard.', 'El menú ha vuelto al de serie.'));
+      toast(L('Il menù è tornato quello di serie.', 'The menu is back to standard.', 'El menú ha vuelto al de serie.'));
     } else if (chiedi) { chiedi.hidden = serie.id === 'menu-serie-no'; (chiedi.hidden ? document.getElementById('menu-di-serie') : document.getElementById('menu-serie-no'))?.focus(); }
     return;
   }
@@ -5967,7 +5967,7 @@ function navDrawerHtml() {
     return chiudibile(g.id, tGruppo(g.id, g.nome), g.schede);
   }).join('');
   const nascoste = m.nascoste.length ? chiudibile('nascoste', L('Nascoste', 'Hidden', 'Ocultas'), m.nascoste, ' drawer-nascoste') : '';
-  const sistema = `<div class="drawer-sistema"><button type="button" class="drawer-voce" id="menu-sistema">${_ico('<path d="M4 6h8M16 6h4M4 12h2M10 12h10M4 18h10M18 18h2"/><circle cx="14" cy="6" r="2"/><circle cx="8" cy="12" r="2"/><circle cx="16" cy="18" r="2"/>')}<span>${L('Sistema il menu', 'Arrange the menu', 'Ordena el menú')}</span></button></div>`;
+  const sistema = `<div class="drawer-sistema"><button type="button" class="drawer-voce" id="menu-sistema">${_ico('<path d="M4 6h8M16 6h4M4 12h2M10 12h10M4 18h10M18 18h2"/><circle cx="14" cy="6" r="2"/><circle cx="8" cy="12" r="2"/><circle cx="16" cy="18" r="2"/>')}<span>${L('Sistema il menù', 'Arrange the menu', 'Ordena el menú')}</span></button></div>`;
   return mie + gruppi + nascoste + sistema;
 }
 
@@ -6063,7 +6063,7 @@ function aggiornaStellaMia() {
   const nome = voceDelMenu(voceMenuDi(schedaAttiva));
   b.setAttribute('aria-pressed', on ? 'true' : 'false');
   b.title = on ? L(`Togli «${nome}» dalle tue`, `Remove “${nome}” from yours`, `Quita «${nome}» de las tuyas`)
-    : L(`Metti «${nome}» fra le tue, in cima al menu`, `Put “${nome}” among yours, at the top of the menu`, `Pon «${nome}» entre las tuyas, arriba del menú`);
+    : L(`Metti «${nome}» fra le tue, in cima al menù`, `Put “${nome}” among yours, at the top of the menu`, `Pon «${nome}» entre las tuyas, arriba del menú`);
   b.setAttribute('aria-label', b.title);
 }
 
@@ -12551,8 +12551,8 @@ function pannelloAccount() {
       <div id="acc-preferenze" class="spazio-sopra" aria-busy="true">${attesaHtml('div')}</div>
     </div>`}
     <div class="carta" id="carta-menu">
-      <h2>${_hIco(ICO.stella)}${L('Menu su misura', 'Your own menu', 'Menú a medida')}</h2>
-      <p>${L('Il menu è tuo: metti in cima le pagine che usi, togli di mezzo quelle che non ti servono, cambia l’ordine. Ogni scelta vale subito e ti segue su ogni dispositivo, anche quando gestisci il canale di un altro.', 'The menu is yours: put the pages you use at the top, move the ones you don’t need out of the way, change the order. Every choice applies at once and follows you on every device, even when you manage someone else’s channel.', 'El menú es tuyo: pon arriba las páginas que usas, aparta las que no necesitas, cambia el orden. Cada elección vale al momento y te sigue en todos tus dispositivos, también cuando gestionas el canal de otra persona.')}</p>
+      <h2>${_hIco(ICO.stella)}${L('Menù su misura', 'Your own menu', 'Menú a medida')}</h2>
+      <p>${L('Il menù è tuo: metti in cima le pagine che usi, togli di mezzo quelle che non ti servono, cambia l’ordine. Ogni scelta vale subito e ti segue su ogni dispositivo, anche quando gestisci il canale di un altro.', 'The menu is yours: put the pages you use at the top, move the ones you don’t need out of the way, change the order. Every choice applies at once and follows you on every device, even when you manage someone else’s channel.', 'El menú es tuyo: pon arriba las páginas que usas, aparta las que no necesitas, cambia el orden. Cada elección vale al momento y te sigue en todos tus dispositivos, también cuando gestionas el canal de otra persona.')}</p>
       <div id="menu-misura" class="spazio-sopra"></div>
     </div>
     <div class="carta">
