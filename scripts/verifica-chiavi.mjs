@@ -15,6 +15,7 @@
 // piu' il suo testo e' rossa anche lei, come negli altri cancelli.
 //
 // Uso: node scripts/verifica-chiavi.mjs [--selftest]
+import './_dati-usa-e-getta.mjs';
 import { execFileSync } from 'node:child_process';
 import { readFileSync, statSync } from 'node:fs';
 import { dirname, join } from 'node:path';
