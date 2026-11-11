@@ -1,0 +1,45 @@
+# © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+# Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
+# LA GUARDIA (docs/GUARDIA.md): ogni notte, senza nessuno davanti, tre domande.
+# Le dipendenze hanno una falla nota? C'è una chiave finita in un file? Il sito
+# vero, guardato da fuori, è ancora come deve essere? Se una risposta è no il
+# lavoro fallisce, e GitHub lo scrive per mail al proprietario.
+name: guardia
+
+on:
+  schedule:
+    - cron: '17 3 * * *'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['package.json', 'package-lock.json', '.github/workflows/guardia.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  dipendenze-e-chiavi:
+    runs-on: ubuntu-latest
+    name: dipendenze e chiavi
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: le dipendenze di produzione non hanno falle gravi
+        run: npm audit --omit=dev --audit-level=high
+      - name: nessuna chiave nei file tracciati
+        run: node scripts/verifica-chiavi.mjs
+
+  sito:
+    if: github.event_name != 'push'
+    runs-on: ubuntu-latest
+    name: il sito visto da fuori
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: la sonda
+        run: node scripts/sonda-sito.mjs https://socialbot.live

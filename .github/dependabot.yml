@@ -1,0 +1,30 @@
+# © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live
+# Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live
+# Gli aggiornamenti si propongono da soli (docs/GUARDIA.md): una richiesta la
+# settimana per le librerie e una per le azioni di GitHub, più quelle di
+# sicurezza appena escono. Non si uniscono da sole: le unisce una persona dopo
+# il collaudo.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "05:00"
+      timezone: Europe/Rome
+    open-pull-requests-limit: 3
+    groups:
+      librerie:
+        update-types: [minor, patch]
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "05:00"
+      timezone: Europe/Rome
+    open-pull-requests-limit: 2
+    groups:
+      azioni:
+        patterns: ["*"]
