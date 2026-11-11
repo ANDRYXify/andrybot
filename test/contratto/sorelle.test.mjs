@@ -34,7 +34,9 @@ test('e `famigliaDi` e\' rimasta quella di prima', () => {
 
 test('i nomi nella barra sono quelli che hai letto nel menu', () => {
   assert.match(APP, /if \(f\) return \{ \.\.\.f, nome: tFamiglia\(f\.id, f\.nome\), etichetta: \(p\) => tScheda\(p\) \};/, 'dentro una famiglia, il nome di ogni parte');
-  assert.match(APP, /parti: g\.schede\.map\(\(\[sid\]\) => sid\), etichetta: voceDelMenu, dalGruppo: true/, 'fra le voci di un gruppo, il nome del menu');
+  // le voci sono quelle del menu di chi guarda (docs/MENU.md, «Il menu su
+  // misura»): nel suo ordine, senza le nascoste tranne quella in cui si trova
+  assert.match(APP, /parti: g\.schede\.map\(\(\[sid\]\) => sid\)\.filter\(\(sid\) => sid === id \|\| !via\.has\(sid\)\), etichetta: voceDelMenu, dalGruppo: true/, 'fra le voci di un gruppo, il nome del menu');
 });
 
 test('una pagina con le sue parti non ha anche la barra del gruppo', () => {
