@@ -63,7 +63,7 @@ test('nessun pacchetto parte prima che la diretta esista sul server, e la riserv
   assert.match(paziente, /const aggiorna = e\?\.dati\?\.motivo === 'aggiornamento';\n\s+const giu = !e\?\.dati && \(e instanceof TypeError \|\| \/\^errore 50\[234\]\$\/\.test\(e\?\.message \|\| ''\)\);\n\s+if \(!\(aggiorna \|\| giu\) \|\| Date\.now\(\) > fino\) throw e;/, 'ogni altro rifiuto si dice subito');
   const ferma = APP.slice(APP.indexOf('async function fermaLive('), APP.indexOf('function aggiornaTimerStudio()'));
   assert.match(ferma, /if \(!dalServer\) \{ try \{ await api\('\/api\/diretta\/fine', \{ method: 'POST', body: \{ turno: d\.turno, formato: f \} \}\);/, '«Ferma» chiude solo se questa finestra e\' ancora quella che trasmette, formato per formato');
-  assert.match(avvio, /for \(const f of formati\) \{[\s\S]*?partite\.push\(await studioAvviaFormato\(D, f, sup, q, kbps, per\[f\], testo, assenzaMin\)\)/, 'una diretta per ogni formato acceso, ognuna con le sue destinazioni');
+  assert.match(avvio, /for \(const f of formati\) \{[\s\S]*?partite\.push\(await studioAvviaFormato\(D, f, sup, q, kbps, per\[f\], testo, assenzaMin, margine\)\)/, 'una diretta per ogni formato acceso, ognuna con le sue destinazioni (e il margine scelto)');
   assert.match(avvio, /creaCodifica\(\{\s*supporto: sup, canvas: studioTela\(f\)/, 'ogni formato codifica la sua tela');
   assert.match(avvio, /catch \(e\) \{\n\s+await cod\.ferma\(\); sped\.ferma\(\);/, 'se il server dice no, il dispositivo si ferma e non manda niente');
 });
@@ -244,4 +244,86 @@ test('audio e VOD escono a coppie, prima il live e poi il suo gemello, in qualun
   for (let i = 0; i <= ATTESA_GEMELLI; i++) accoppia({ tipo: 'audio', us: 1000 + i });
   assert.equal(usciti.length, ATTESA_GEMELLI + 1, 'se il codificatore del VOD si ferma, il live non aspetta');
   assert.ok(usciti.every((x) => x.startsWith('audio@')));
+});
+
+// IL MARGINE, DAL BROWSER (docs/DIRETTA.md, «Il margine: un intoppo non e' un
+// "torno subito"»): una spedizione non resta appesa, un lotto troppo grande si
+// divide, un accesso scaduto ferma e lo dice.
+const risposta = (status, corpo = null) => ({ ok: status < 300, status, json: async () => corpo });
+const appesa = (o) => new Promise((_, no) => { o.signal?.addEventListener('abort', () => no(new DOMException('fermato', 'AbortError'))); });
+
+test('un invio appeso si riprova dopo il suo tempo massimo, con lo stesso numero; e il battito dell\'audio lo sblocca anche col timer strozzato', async () => {
+  const { creaSpedizione, TEMPO_INVIO_MS } = await import('../../src/web/public/js/diretta-codifica.js');
+  assert.equal(TEMPO_INVIO_MS, 5000);
+  const chiamate = [], tentativi = [];
+  const sped = creaSpedizione({ ogniMs: 5, tempoMaxMs: 40, quandoRitenta: (t) => tentativi.push(t), fetch: (url, o) => { chiamate.push({ url, corpo: o.body }); return chiamate.length === 1 ? appesa(o) : Promise.resolve(risposta(200, { ok: true })); } });
+  try {
+    sped.usaTurno('t1');
+    sped.aggiungi({ tipo: 'audio', chiave: true, us: 1, dati: new Uint8Array([1]) });
+    await finche(() => chiamate.length === 2, 3000);
+    assert.deepEqual(chiamate.map((c) => c.url), ['/api/diretta/pacchi?f=o&t=t1&n=0', '/api/diretta/pacchi?f=o&t=t1&n=0'], 'lo stesso lotto, lo stesso numero: il server scarta i doppioni');
+    assert.deepEqual(chiamate[0].corpo, chiamate[1].corpo);
+    assert.deepEqual(tentativi, [1]);
+  } finally { sped.ferma(); }
+  // a scheda nascosta il timer si strozza: il battito dell'audio basta da solo
+  const altre = [];
+  const due = creaSpedizione({ ogniMs: 5, tempoMaxMs: 60_000, fetch: (url, o) => { altre.push(url); return altre.length === 1 ? appesa(o) : Promise.resolve(risposta(200, { ok: true })); } });
+  try {
+    due.usaTurno('t2');
+    due.aggiungi({ tipo: 'audio', chiave: true, us: 1, dati: new Uint8Array([1]) });
+    await finche(() => altre.length === 1, 3000);
+    due.batti(performance.now() + 61_000);
+    await finche(() => altre.length === 2, 3000);
+    assert.equal(altre[1], '/api/diretta/pacchi?f=o&t=t2&n=0');
+  } finally { due.ferma(); }
+});
+
+test('un lotto troppo grande per il server (413) si divide in due, senza separare un audio dal suo gemello del VOD, e i numeri restano in fila', async () => {
+  const { creaSpedizione, tagliaLotto } = await import('../../src/web/public/js/diretta-codifica.js');
+  const { leggiPacchi: leggi } = await import('../../src/web/public/js/diretta-pacchi.js');
+  const chiamate = [];
+  const sped = creaSpedizione({ ogniMs: 5, fetch: async (url, o) => { chiamate.push({ url, pacchi: leggi(o.body).map((p) => `${p.tipo}@${p.us}`) }); return risposta(chiamate.length === 1 ? 413 : 200, { ok: true }); } });
+  try {
+    sped.usaTurno('t1');
+    for (const [tipo, us] of [['video', 0], ['audio', 10], ['vod', 10], ['video', 33]]) sped.aggiungi({ tipo, chiave: true, us, dati: new Uint8Array([1]) });
+    await finche(() => chiamate.length === 3, 3000);
+    assert.deepEqual(chiamate.map((c) => c.url.split('&n=')[1]), ['0', '0', '1'], 'la prima meta\' tiene il numero che il server non ha mai preso');
+    assert.deepEqual(chiamate[1].pacchi.concat(chiamate[2].pacchi), chiamate[0].pacchi, 'le due meta\' sono il lotto intero, nell\'ordine');
+    assert.deepEqual([chiamate[1].pacchi, chiamate[2].pacchi], [['video@0', 'audio@10', 'vod@10'], ['video@33']], 'il gemello del VOD resta col suo audio');
+    sped.aggiungi({ tipo: 'audio', chiave: true, us: 50, dati: new Uint8Array([1]) });
+    await finche(() => chiamate.length === 4, 3000);
+    assert.match(chiamate[3].url, /&n=2$/);
+  } finally { sped.ferma(); }
+  assert.deepEqual(tagliaLotto([{ tipo: 'audio' }, { tipo: 'vod' }]).map((x) => x.length), [1, 1]);
+});
+
+test('un accesso scaduto o da riconfermare (401) ferma la spedizione e lo dice: niente ritentativi all\'infinito', async () => {
+  const { creaSpedizione } = await import('../../src/web/public/js/diretta-codifica.js');
+  const chiamate = [];
+  let finita = null;
+  const sped = creaSpedizione({ ogniMs: 5, quandoFinisce: (d) => { finita = d; }, quandoRitenta: () => { throw new Error('un 401 non si riprova'); }, fetch: async (url) => { chiamate.push(url); return risposta(401, { errore: 'seconda-prova', vai: '/seconda-prova' }); } });
+  try {
+    sped.usaTurno('t1');
+    sped.aggiungi({ tipo: 'audio', chiave: true, us: 1, dati: new Uint8Array([1]) });
+    await finche(() => finita, 3000);
+    assert.deepEqual(finita, { errore: 'seconda-prova', vai: '/seconda-prova', motivo: 'accesso' });
+    sped.aggiungi({ tipo: 'audio', chiave: true, us: 2, dati: new Uint8Array([2]) });
+    await attendi(60);
+    assert.equal(chiamate.length, 1, 'dopo il 401 non parte piu\' niente');
+  } finally { sped.ferma(); }
+  // lo Studio lo dice, la diretta sul server resta con la riserva, e la pagina
+  // in diretta non si sposta da sola sull'ingresso
+  assert.match(APP, /accesso: \(\) => L\('Il tuo accesso è scaduto o va riconfermato: la diretta continua con la riserva\. Rientra e premi «Riprendi la diretta»\.'/);
+  assert.match(APP, /\/\^\\\/\(ingresso\|seconda-prova\)\$\/\.test\(dati\.vai\) && !_nonSpostare\) \{ location\.href = dati\.vai; \}/);
+  const ferma = APP.slice(APP.indexOf('async function fermaLive('), APP.indexOf('function aggiornaTimerStudio()'));
+  assert.match(ferma, /const accesso = dalServer\?\.motivo === 'accesso';\n\s+_nonSpostare = accesso;\n\s+if \(accesso\) studioRenderRientra\(dalServer\.vai\);\n\s+else caricaDiretta\(\)/);
+  assert.match(ferma, /if \(!dalServer\) \{ try \{ await api\('\/api\/diretta\/fine'/, 'con l\'accesso scaduto non si chiude la diretta sul server');
+});
+
+test('il margine si sceglie nello Studio (di serie 3 secondi, da 1 a 8) e va all\'avvio; la barra della salute conta le riserve con la causa', () => {
+  assert.match(APP, /<select id="studio-margine"[^>]*>\n\s+\$\{\[1, 2, 3, 4, 5, 6, 7, 8\]\.map\(\(n\) => `<option value="\$\{n\}"\$\{n === 3 \? ' selected' : ''\}>/);
+  assert.match(APP, /const margine = Number\(document\.getElementById\('studio-margine'\)\?\.value\) \|\| 3;/);
+  assert.match(APP, /kbps, assenzaMin, margine, riprendi: true/);
+  assert.match(APP, /margine: Number\(st\.margine\) \|\| 0, scorta: Number\(st\.scorta\) \|\| 0, riserve: st\.riserve \|\| null,/);
+  assert.match(APP, /voci\.push\(\{ k: 'riserve',/);
 });

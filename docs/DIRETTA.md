@@ -27,7 +27,7 @@ dei pacchetti, per cucire la diretta quando il dispositivo sparisce.
 | sul dispositivo | sul server |
 |---|---|
 | cattura (schermo, camera, microfono, audio di sistema dove si può) | autentica la diretta |
-| composizione della scena con i nostri overlay, fuori dal filo della pagina | tiene un buffer di 2–4 secondi |
+| composizione della scena con i nostri overlay, fuori dal filo della pagina | tiene un margine di 1–8 secondi (di serie 3, «Il margine») |
 | codifica H.264 con la scheda video (WebCodecs), AAC per l'audio | copia i pacchetti verso Twitch, Kick, YouTube |
 | scelta della qualità secondo la rete | riscrive i tempi quando cuce |
 | il fermo immagine e il silenzio, codificati prima di partire | conta la banda e la fa rispettare |
@@ -140,10 +140,12 @@ Le cause erano nel codice, e ognuna ha la sua regola:
 - **Un pacchetto scartato non conta come arrivato**: prima un fotogramma senza
   chiave fermava la riserva senza far ripartire il video, e restava un
   fotogramma fermo.
-- **Al rientro un pacchetto rimasto in coda si scarta** se è più di 2 secondi
-  dietro l'orologio d'uscita (`ARRETRATO_MS`): quel pezzo l'ha già coperto la
-  riserva. Prima spostava in avanti tutto l'orologio della diretta della durata
-  del buco, e ogni buco restava in piattaforma come ritardo in più.
+- **Al rientro un pacchetto rimasto in coda si scarta** se il suo tempo l'ha
+  già coperto la riserva. Prima spostava in avanti tutto l'orologio della
+  diretta della durata del buco, e ogni buco restava in piattaforma come ritardo
+  in più. (Con il margine, sezione qui sotto, la soglia di 2 secondi,
+  `ARRETRATO_MS`, non c'è più: si scarta esattamente quello che la riserva ha
+  già coperto.)
 
 Le prove: `test/unita/diretta.test.mjs` e `diretta-dispositivo.test.mjs`
 (codificatore e orologio finti), e `diretta-chrome.test.mjs` con Chrome vero,
@@ -186,6 +188,161 @@ arriva dal suo canale anche su Linux, dove il browser da solo non lo prende.
 come pagina (si usa il banco dello Studio con l'overlay come sorgente), più
 qualità diverse per piattaforma, la traccia audio separata per i VOD di Twitch,
 OBS comandato da SocialBot.
+
+## Il margine: un intoppo non è un «torno subito»
+
+Chiesto così (novembre 2026): «lo Studio web continua a non funzionare come
+dovrebbe: continua a esserci "torno subito" quando c'è la live, che va a scatti
+e si blocca ogni tre per due».
+
+**Il difetto, nel modello.** L'invariante qui sopra dice «tiene un buffer di
+2–4 secondi»; il codice non lo teneva. Il server mandava ogni pacchetto alle
+piattaforme nell'istante in cui arrivava, e se una traccia taceva per 1,5
+secondi (`ATTESA_RISERVA_MS`) metteva la riserva; al ritorno buttava i pacchetti
+più di 2 secondi indietro e aspettava una chiave. Quindi **ogni intoppo più lungo
+di un secondo e mezzo**, sulla linea di casa (in caricamento, a linea quasi
+piena, i ritardi salgono di secondi) o sul server (il processo del bot fermo un
+attimo), **diventava qualche secondo di «torno subito» e un pezzo di diretta
+perso**. OBS, nello stesso intoppo, non mostra niente: la piattaforma aspetta.
+
+**Il modello.**
+
+- **Il margine** (`margine`, di serie 3 secondi, lo streamer lo sceglie da 1 a
+  8 nella scheda dello Studio: «più margine, più ritardo, meno intoppi»). Il
+  server tiene i pacchetti che arrivano in una coda per traccia e li **manda
+  alle piattaforme quando l'orologio d'uscita arriva al loro tempo più il
+  margine**. L'orologio d'uscita resta quello del server, agganciato al primo
+  fotogramma chiave.
+- **La riserva entra solo quando il margine è vuoto**: al momento di mandare,
+  una traccia non ha niente di pronto e il suo ultimo pacchetto mandato è più
+  indietro di un passo (un fotogramma, un blocco audio) del tempo che tocca
+  adesso. Un intoppo più corto del margine **non si vede**: chi guarda vede la
+  diretta intera, col margine di ritardo.
+- **Solo audio, voluto dal dispositivo** (la rete è quasi ferma): non c'è più
+  video in coda mentre l'audio c'è, e la riserva del video entra nel tempo
+  giusto, come prima.
+- **Al ritorno** il video riprende da un fotogramma chiave (lo si chiede al
+  dispositivo come prima); un pacchetto il cui tempo è già passato (già coperto
+  dalla riserva) si scarta, senza spostare l'orologio.
+- **Il server fermo un attimo** (il suo processo occupato) non è un intoppo
+  della diretta: al risveglio manda tutto quello che nel frattempo è diventato
+  pronto, nell'ordine, coi suoi tempi.
+- **La coda ha un tetto** di memoria (`CODA_MAX_BYTE` vale anche qui): oltre,
+  la diretta si chiude con un motivo detto, mai la memoria del server.
+- **Si vede perché.** Ogni volta che la riserva entra, la diretta lo conta, con
+  quanto è durata e di chi era il buco: dalla linea (non arrivava niente), dal
+  server (il suo ciclo era fermo: `monitorEventLoopDelay`), dal dispositivo
+  (solo audio voluto). Lo Studio lo mostra nella sua barra della salute, con
+  parole semplici, e il ritardo d'invio misurato dal dispositivo.
+
+**Dal browser.**
+
+- Una spedizione non resta appesa: ogni invio ha un tempo massimo (5 secondi),
+  poi si riprova lo stesso lotto (stesso numero: il server scarta i doppioni).
+- Un lotto più grande di quanto il server accetta (`413`) si divide in due e si
+  riprova, invece di riprovare per sempre lo stesso.
+- Un accesso scaduto o da riconfermare (`401`, o la sessione chiusa per
+  anomalia) **non si riprova all'infinito**: lo Studio lo dice («la diretta
+  continua con la riserva: rientra e premi Riprendi») e si ferma; la diretta sul
+  server resta, come per una pagina ricaricata.
+
+**Garanzie** (rotte apposta, devono andare rosse):
+
+- un buco più corto del margine non mette nemmeno un fotogramma di riserva, e
+  tutti i pacchetti arrivano alle piattaforme, nell'ordine;
+- un buco più lungo del margine mette la riserva, e il ritorno riparte da una
+  chiave senza spostare l'orologio;
+- il server fermo per 2 secondi (orologio che salta) non mette la riserva se i
+  pacchetti erano arrivati;
+- un invio appeso si riprova; un `413` si divide; un `401` ferma e lo dice.
+
+### Le scelte fatte
+
+Quello che il modello qui sopra non diceva, deciso prima del codice.
+
+- **I tempi.** Ogni pacchetto ha il suo tempo di diretta `ms` (quello del
+  dispositivo agganciato all'orologio d'uscita, come prima) e il suo
+  *ritardo d'arrivo* `λ = orologio all'arrivo − ms`. Ogni traccia ha un
+  *ritardo di base* `b`: il pacchetto esce quando `orologio ≥ ms + b +
+  margine`, e «il tempo che tocca adesso» è `tocca = orologio − margine − b`.
+  All'aggancio `b = 0` (il fotogramma chiave dell'aggancio ha `λ = 0` per
+  definizione).
+- **La deriva degli orologi.** L'orologio del dispositivo (e quello della sua
+  scheda audio, che conta i campioni) non va alla stessa velocità di quello del
+  server: decine di parti per milione, cioè qualche decimo di secondo l'ora.
+  Con `b` fisso, in una diretta lunga la deriva si mangerebbe il margine e
+  l'audio finirebbe in riserva per sempre. Quindi `b` **segue il pacchetto più
+  puntuale dell'ultimo mezzo minuto** (il `λ` più piccolo, per traccia), ma
+  **al più di 1 ms per secondo** (0,1%): dieci volte la deriva peggiore, così la
+  segue tutta; e un intoppo di qualche secondo lo sposta di qualche
+  millisecondo, così il margine non si «adatta» agli intoppi. Non è una
+  statistica: è il ritardo minimo della linea, misurato.
+- **Quando entra la riserva** (per traccia, al momento di mandare):
+  - *la coda è vuota* e l'ultimo pacchetto mandato è più indietro di un passo
+    del tempo che tocca: il margine è finito, entra la riserva. Il passo è
+    quello del modello: un fotogramma, un blocco audio;
+  - *la coda non è vuota ma il prossimo pacchetto è avanti* (un buco nei tempi
+    del dispositivo, non della linea): per l'audio entra la riserva come sopra;
+    per il **video solo se il buco è più lungo di un secondo**
+    (`SALTO_VIDEO_MS`). Il dispositivo salta un fotogramma quando il suo
+    codificatore è indietro, o la pagina si inceppa un attimo: con la regola
+    del passo ogni scatto diventerebbe un lampo di «torno subito» e una
+    ripartenza da chiave. Sotto il secondo chi guarda vede un fotogramma fermo,
+    come in OBS; sopra, la scritta dice la verità. La riserva comincia comunque
+    subito dopo l'ultimo fotogramma vero, così i tempi non hanno buchi.
+- **Il server fermo un attimo.** Il fermo si misura col giro stesso del
+  tramite (ogni 100 ms): se un giro arriva tardi di più di un giro, il server
+  era sordo da quando il giro doveva arrivare. È ciò che misura
+  `monitorEventLoopDelay`, ma sullo stesso orologio che decide la riserva e
+  nello stesso istante (il timer di `monitorEventLoopDelay` può scattare dopo
+  il nostro giro, e la decisione verrebbe presa senza saperlo). Chiunque guardi
+  il tempo (il giro o un pacchetto che arriva) e trovi il giro in ritardo
+  registra il fermo. La regola: **il margine si conta sul tempo in cui il server
+  ascoltava**. Una traccia a coda vuota entra in riserva solo se la linea ha
+  avuto un margine intero di tempo sveglio per consegnare il pacchetto che
+  manca; il tempo sordo non si conta. I pacchetti pronti escono comunque
+  all'istante, coi loro tempi (al risveglio: tutti insieme).
+- **Di chi era il buco.** Ogni volta che la riserva entra comincia un
+  *episodio*, che finisce quando tutte le tracce sono tornate vere; la sua
+  durata è il tempo di diretta coperto dalla riserva. La causa si decide
+  all'inizio: **server** se nella finestra in cui il pacchetto mancante doveva
+  arrivare il server è stato sordo (anche se il margine si conta senza quel
+  tempo, è il fermo che ha fatto accumulare l'arretrato al dispositivo);
+  altrimenti **dispositivo** se l'altra traccia arriva (solo audio voluto, il
+  codificatore fermo) o se il buco è nei tempi del dispositivo; altrimenti
+  **linea**. Una ripresa (pagina ricaricata) durante un episodio lo fa del
+  dispositivo.
+- **La chiave si chiede quando serve davvero**: la risposta ai pacchetti dice
+  `chiave: true` se il video aspetta una chiave e in coda non ce n'è già una
+  utile. Prima, con la riserva in onda, ogni lotto chiedeva una chiave.
+- **Il margine è della diretta.** Si sceglie prima di partire (1–8 secondi,
+  di serie 3) e resta quello finché la diretta dura: una ripresa con un
+  margine diverso tiene quello di prima (cambiarlo a metà sarebbe uno scatto o
+  un fermo per chi guarda), e lo Studio lo dice. Il server lo normalizza:
+  un valore che non è un numero vale 3, gli altri si arrotondano e si tengono
+  fra 1 e 8.
+- **Il tetto.** `CODA_MAX_BYTE` (16 MB) vale per la coda del margine: al
+  massimo del bitrate (12 Mbps) e del margine (8 s) la coda tiene 12 MB. Oltre,
+  il dispositivo sta mandando più avanti del tempo vero, e la diretta si chiude
+  con il motivo `coda`.
+- **Alla fine** («Ferma», il bot che si spegne, la diretta sostituita) la coda
+  esce tutta prima di chiudere: chi guarda vede la diretta fino all'ultimo
+  secondo mandato. Se si chiude perché si manda troppo, la coda si butta.
+- **Dal browser.** Il tempo massimo di un invio lo controlla anche il battito
+  dell'audio (come la spedizione), perché a scheda nascosta il timer del
+  browser si strozza. Il numero del lotto si consuma solo quando il server lo
+  ha preso: un lotto riprovato ha lo stesso numero, e dividendo un `413` la
+  prima metà tiene il numero che il server non ha mai accettato. Il taglio non
+  separa un audio dal suo gemello del VOD. Un pacchetto solo più grande di
+  quanto il server accetta (8 MB: impossibile coi bitrate dello Studio) si
+  lascia, invece di bloccare la diretta. Un `401` ferma la diretta di questa
+  finestra senza chiuderla sul server; lo Studio dice di rientrare e, mentre
+  lo dice o è in diretta, la pagina non si sposta da sola sull'ingresso (lo
+  farebbe qualunque richiesta del pannello): si rientra col tasto.
+- **Quanto ritardo in più.** Chi guarda vede la diretta in ritardo di un
+  margine in più rispetto a prima (di serie 3 secondi; la base del ritardo, il
+  passo di 200 ms della spedizione e la rete, c'era già). La barra della salute
+  mostra quanto margine è pieno adesso e le riserve con la loro causa.
 
 ## Partire senza sorprese, e le destinazioni in un gesto
 
@@ -619,6 +776,13 @@ stato), due viste: la barra sotto il programma sul computer e il foglio
 - **scarti**: i fotogrammi saltati perché il codificatore era indietro, in
   percentuale (oltre il 2% attenzione, oltre il 10% guasto);
 - **invio**: il ritardo della spedizione;
+- il **margine**: quanta diretta è già arrivata al server e aspetta il suo
+  turno, contro il margine scelto (sotto la metà attenzione, sotto un quinto
+  guasto);
+- le **riserve**: quante volte è entrata la riserva e di chi era il buco (la
+  linea, il server, il dispositivo), e quanto è durata l'ultima (o da quanto
+  dura). Non abbassa le tacche della rete: è la storia, non l'adesso
+  (sezione «Il margine»);
 - la **riserva** in onda, se il segnale non arriva.
 Gli stessi giudizi danno le tacche della rete sul telefono. Il tempo di
 diretta passa alle ore (1:02:03) quando serve.

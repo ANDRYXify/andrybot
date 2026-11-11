@@ -115,7 +115,7 @@ import * as webauthn from './webauthn.js';
 import { comprimi, convertiPerEmote, svgInPng, LATO_LIBRERIA, normChiave, ffmpeg as eseguiFfmpeg, sondaFile } from '../features/compress.js';
 import { creaFirma, testoFirma } from '../features/firma-media.js';
 import { disegna as disegnaSvg } from '../disegno.js';
-import { creaTramite, indirizzoBuono, BITRATE_MAX_KBPS } from '../features/diretta.js';
+import { creaTramite, indirizzoBuono, normalizzaMargine, BITRATE_MAX_KBPS } from '../features/diretta.js';
 import { leggiIndirizzo, nomeDaHost, controllaIndirizzo, provaRtmp } from '../features/diretta-destinazioni.js';
 import { inOnda } from '../in-onda.js';
 import { normalizza as normalizzaStudio, pesa as pesaStudio, LIMITI as LIMITI_STUDIO } from './public/js/studio-modello.js';
@@ -9879,6 +9879,8 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
       audio: { codec: String(a.codec || ''), config: a.config ? b64(a.config) : null, frequenza: Number(a.frequenza) || 0, canali: Number(a.canali) || 0 },
       kbps: Number(b.kbps) || 0,
       assenzaMaxMs: Math.min(30, Math.max(1, Number(b.assenzaMin) || 10)) * 60_000,
+      // il margine contro gli intoppi (docs/DIRETTA.md, «Il margine»): di serie 3 s, da 1 a 8
+      margineMs: normalizzaMargine(b.margine),
       riprendi: b.riprendi === true,
       vod: b.vod === true,
     });
@@ -9886,7 +9888,7 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
       const piu = r.motivo === 'rtmps' && r.quali?.length ? ` (${r.quali.join(', ')})` : r.motivo === 'ffmpeg' && r.manca?.length ? ` Manca: ${r.manca.join(', ')}.` : '';
       return res.status(r.motivo === 'carico' || r.motivo === 'banda' ? 503 : 400).json({ errore: (MOTIVI_DIRETTA[r.motivo] || 'La diretta non è partita.') + piu, motivo: r.motivo });
     }
-    res.json({ ok: true, turno: r.turno, ripresa: !!r.ripresa, vod: !!r.vod, destinazioni: destinazioni.map((d) => d.nome) });
+    res.json({ ok: true, turno: r.turno, ripresa: !!r.ripresa, vod: !!r.vod, margine: Math.round((r.margineMs || 0) / 1000), destinazioni: destinazioni.map((d) => d.nome) });
   }));
   app.post('/api/diretta/riserva', requireOwner, studioAperto, express.raw({ type: () => true, limit: '4mb' }), (req, res) => {
     const r = tramite.riserva(sessioneDi(currentUser(req).login, req.query.f), Buffer.isBuffer(req.body) ? req.body : Buffer.alloc(0), String(req.query.t || ''));

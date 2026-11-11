@@ -59,6 +59,7 @@ async function api(percorso, opzioni = {}) {
   if (/^(POST|PUT|PATCH|DELETE)$/i.test(opzioni?.method || '')) { _scrittureInViaggio++; p.then(() => { _scrittureInViaggio--; }, () => { _scrittureInViaggio--; }); }
   return p;
 }
+let _nonSpostare = false;
 async function apiServer(percorso, opzioni = {}) {
   const opts = { headers: {}, ...opzioni };
 
@@ -70,7 +71,7 @@ async function apiServer(percorso, opzioni = {}) {
   const res = await fetch(percorso, opts);
   let dati = null;
   try { dati = await res.json(); } catch {  }
-  if (res.status === 401 && typeof dati?.vai === 'string' && /^\/(ingresso|seconda-prova)$/.test(dati.vai)) { location.href = dati.vai; }
+  if (res.status === 401 && typeof dati?.vai === 'string' && /^\/(ingresso|seconda-prova)$/.test(dati.vai) && !_nonSpostare) { location.href = dati.vai; }
   if (!res.ok) { const e = new Error(dati?.errore || `errore ${res.status}`); e.dati = dati; throw e; }
   return dati;
 }
@@ -22879,6 +22880,11 @@ function pannelloStudio() {
             <option value="20">20 ${L('minuti', 'minutes', 'minutos')}</option>
             <option value="30">30 ${L('minuti', 'minutes', 'minutos')}</option>
           </select>
+          <label class="campo spazio-sopra" for="studio-margine">${L('Margine contro gli intoppi della rete', 'Buffer against network hiccups', 'Margen contra los tropiezos de la red')}</label>
+          <select id="studio-margine" class="campo-largo" aria-describedby="studio-margine-aiuto">
+            ${[1, 2, 3, 4, 5, 6, 7, 8].map((n) => `<option value="${n}"${n === 3 ? ' selected' : ''}>${n} ${n === 1 ? L('secondo', 'second', 'segundo') : L('secondi', 'seconds', 'segundos')}${n === 3 ? ' · ' + L('di serie', 'default', 'por defecto') : ''}</option>`).join('')}
+          </select>
+          <p class="suggerimento" id="studio-margine-aiuto">${L('Più margine, più ritardo, meno intoppi: un intoppo della tua linea più corto del margine chi guarda non lo vede. La diretta arriva sulle piattaforme con questo ritardo in più. Vale dalla prossima diretta.', 'More buffer, more delay, fewer hiccups: a hiccup on your line shorter than the buffer is invisible to viewers. The stream reaches the platforms with this much extra delay. It applies from the next stream.', 'Más margen, más retraso, menos tropiezos: un tropiezo de tu línea más corto que el margen el público no lo ve. El directo llega a las plataformas con este retraso de más. Vale desde el próximo directo.')}</p>
         </section>
       </div>
       </div>
@@ -24571,6 +24577,7 @@ async function studioChiudiRipresa() {
 }
 
 function studioRenderDestinazioni() {
+  const margine = document.getElementById('studio-margine'); if (margine) margine.disabled = !!STUDIO.live;
   const box = document.getElementById('studio-dest');
   const d = STUDIO.dir;
   if (!box || !d || !STUDIO.doc) return;
@@ -24705,7 +24712,7 @@ function studioDirettePerFormato() {
   return STUDIO.M.dirette(STUDIO.doc.scelte, studioDestValide());
 }
 
-async function studioAvviaFormato(D, f, sup, q, kbps, dest, testo, assenzaMin) {
+async function studioAvviaFormato(D, f, sup, q, kbps, dest, testo, assenzaMin, margine) {
   let cod;
   const sped = D.creaSpedizione({
     formato: f,
@@ -24726,9 +24733,10 @@ async function studioAvviaFormato(D, f, sup, q, kbps, dest, testo, assenzaMin) {
   } catch (e) { sped.ferma(); throw e; }
   let turno = '', ripresa = false, vodPartito = false;
   try {
-    const r = await studioAvvioPaziente(() => api('/api/diretta/avvio', { method: 'POST', body: { formato: f, destinazioni: dest, video: cod.config.video, audio: cod.config.audio, kbps, assenzaMin, riprendi: true, vod: !!cod.vod } }));
+    const r = await studioAvvioPaziente(() => api('/api/diretta/avvio', { method: 'POST', body: { formato: f, destinazioni: dest, video: cod.config.video, audio: cod.config.audio, kbps, assenzaMin, margine, riprendi: true, vod: !!cod.vod } }));
     turno = r.turno; ripresa = r.ripresa; vodPartito = !!r.vod;
     sped.usaTurno(turno);
+    if (ripresa && r.margine && r.margine !== margine) studioLog(L(`La diretta continua col margine di ${r.margine} s con cui è partita: quello nuovo vale dalla prossima.`, `The stream keeps the ${r.margine} s buffer it started with: the new one applies from the next stream.`, `El directo sigue con el margen de ${r.margine} s con el que empezó: el nuevo vale desde el próximo.`));
     if (cod.vod && !vodPartito) studioLog(L('La traccia per il VOD non è partita: stavolta il VOD di Twitch avrà lo stesso audio della diretta.', 'The VOD track did not start: this time the Twitch VOD will have the same audio as the stream.', 'La pista para el VOD no arrancó: esta vez el VOD de Twitch tendrá el mismo audio que el directo.'));
   } catch (e) {
     await cod.ferma(); sped.ferma();
@@ -24781,15 +24789,17 @@ async function avviaLive() {
     const D = await import('/js/diretta-codifica.js');
     const testo = document.getElementById('studio-riserva-testo')?.value || L('Torno subito', 'Be right back', 'Vuelvo enseguida');
     const assenzaMin = Number(document.getElementById('studio-assenza')?.value) || 10;
+    const margine = Number(document.getElementById('studio-margine')?.value) || 3;
     const partite = [];
     for (const f of formati) {
       const sup = await D.supporto({ larghezza: f === 'o' ? q.w : q.h, altezza: f === 'o' ? q.h : q.w, fps: q.fps, kbps });
       if (!sup.ok) { toast(L(`Questo browser non può andare in diretta in ${studioFormatoNome(f)}: guarda la riga in Controlli.`, `This browser cannot go live in ${studioFormatoNome(f)}: see the line in Controls.`, `Este navegador no puede emitir en ${studioFormatoNome(f)}: mira la línea en Controles.`), 'errore'); continue; }
-      try { partite.push(await studioAvviaFormato(D, f, sup, q, kbps, per[f], testo, assenzaMin)); }
+      try { partite.push(await studioAvviaFormato(D, f, sup, q, kbps, per[f], testo, assenzaMin, margine)); }
       catch (e) { studioLog(e.message); toast(L('Non partita', 'Did not start', 'No ha empezado') + ` (${studioFormatoNome(f)}): ` + e.message, 'errore'); }
     }
     if (!partite.length) { try { STUDIO.audio && STUDIO.audio.ac.close(); } catch (e) {  } STUDIO.audio = null; studioTracceChiudi(false); if (STUDIO.tel?.aperta) renderStudioTel(); return; }
     STUDIO.live = true;
+    _nonSpostare = true;
     const giaDa = partite.filter((p) => p.ripresa).map((p) => Number(STUDIO.dir?.sessioni?.[p.f]?.da)).filter((x) => x > 0);
     STUDIO.startedAt = giaDa.length ? Math.min(...giaDa) : Date.now();
     studioTieniSveglio(true);
@@ -24844,6 +24854,8 @@ const FINE_DIRETTA = {
   spegnimento: () => L('La diretta si è chiusa: il server si sta riavviando.', 'The stream ended: the server is restarting.', 'El directo se cerró: el servidor se está reiniciando.'),
   altrove: () => L('La diretta è passata a un’altra finestra: questa si ferma qui, e sul canale continua da lì.', 'The stream moved to another window: this one stops here, and the channel carries on from there.', 'El directo pasó a otra ventana: esta se para aquí, y el canal sigue desde allí.'),
   sostituita: () => L('La diretta di prima si è chiusa per far posto a quella nuova.', 'The previous stream ended to make room for the new one.', 'El directo anterior se cerró para dejar sitio al nuevo.'),
+  coda: () => L('La diretta si è chiusa: il dispositivo mandava la diretta più in fretta del tempo vero, oltre il margine.', 'The stream ended: the device was sending faster than real time, beyond the buffer.', 'El directo se cerró: el dispositivo enviaba más rápido que el tiempo real, más allá del margen.'),
+  accesso: () => L('Il tuo accesso è scaduto o va riconfermato: la diretta continua con la riserva. Rientra e premi «Riprendi la diretta».', 'Your sign-in expired or needs confirming: the stream carries on with the fallback. Sign back in and press «Resume the stream».', 'Tu acceso caducó o hay que confirmarlo: el directo sigue con la reserva. Vuelve a entrar y pulsa «Reanudar el directo».'),
 };
 
 async function studioFineFormato(f, dati) {
@@ -24884,12 +24896,23 @@ async function fermaLive({ dalServer = null } = {}) {
   renderStudioControlli();
   studioRenderIO();
   studioRenderDestinazioni();
-  caricaDiretta().catch(() => {});
+  const accesso = dalServer?.motivo === 'accesso';
+  _nonSpostare = accesso;
+  if (accesso) studioRenderRientra(dalServer.vai);
+  else caricaDiretta().catch(() => {});
   const perche = dalServer && (FINE_DIRETTA[dalServer.motivo] || (dalServer.errore ? () => dalServer.errore : null));
   studioLog(perche ? perche() : L('Diretta terminata.', 'Stream ended.', 'Directo finalizado.'));
   if (STUDIO.tel?.aperta) { renderStudioTel(); studioTelAvviso(perche ? perche() : L('Diretta terminata.', 'Stream ended.', 'Directo finalizado.'), 6000); }
   if (FIN.ceduto) { studioSpegniRegia(); renderStudioFuori(); renderStudioPillola(); return; }
   if (perche) toast(perche(), 'errore');
+}
+
+function studioRenderRientra(vai) {
+  const el = document.getElementById('studio-ripresa');
+  if (!el) return;
+  const dove = /^\/(ingresso|seconda-prova)$/.test(String(vai || '')) ? vai : '/ingresso';
+  el.hidden = false;
+  el.innerHTML = `<span class="badge viola">${L('In onda', 'On air', 'En el aire')}</span> ${esc(FINE_DIRETTA.accesso())} <a class="btn mini" href="${esc(dove)}">${L('Rientra', 'Sign back in', 'Vuelve a entrar')}</a>`;
 }
 
 function studioDurata(ms) {
@@ -25807,7 +25830,8 @@ function studioTelRete(st) {
   T.rete = studioSaluteRete();
 }
 
-const SALUTE_SOGLIE = { saltati: [0.02, 0.1], fps: [0.85, 0.6], ritardoMs: [800, 1600], consegna: [0.75, 0.45] };
+const SALUTE_SOGLIE = { saltati: [0.02, 0.1], fps: [0.85, 0.6], ritardoMs: [800, 1600], consegna: [0.75, 0.45], scorta: [0.5, 0.2] };
+const SALUTE_CAUSE = { linea: () => L('la linea', 'the line', 'la línea'), server: () => L('il server', 'the server', 'el servidor'), dispositivo: () => L('il dispositivo', 'the device', 'el dispositivo') };
 
 function studioSaluteMisura(f, st) {
   const d = STUDIO.dirette[f]; if (!d) return;
@@ -25823,6 +25847,7 @@ function studioSaluteMisura(f, st) {
     ritardoMs: Number(c.ritardoMs) || 0,
     consegna: Math.min(invio ? (Number(st.kbpsVeri) || 0) / invio : 1, nominale ? invio / nominale : 1),
     riserva: !!(st.inRiserva?.video || st.inRiserva?.audio),
+    margine: Number(st.margine) || 0, scorta: Number(st.scorta) || 0, riserve: st.riserve || null,
   };
 }
 
@@ -25834,6 +25859,15 @@ function studioSaluteVoci(m) {
   if (m.fps != null) voci.push({ k: 'fps', liv: liv(m.fps / m.fpsMeta, S.fps, true), testo: `${Math.round(m.fps)} fps` });
   voci.push({ k: 'saltati', liv: liv(m.saltati, S.saltati), testo: L('scarti ', 'dropped ', 'descartes ') + (m.saltati * 100).toLocaleString(LINGUA, { maximumFractionDigits: 1 }) + '%' });
   voci.push({ k: 'ritardo', liv: liv(m.ritardoMs, S.ritardoMs), testo: L('invio ', 'send ', 'envío ') + Math.round(m.ritardoMs) + ' ms' });
+  const sec = (ms) => (ms / 1000).toLocaleString(LINGUA, { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' s';
+  if (m.margine) voci.push({ k: 'margine', liv: liv(m.scorta / m.margine, S.scorta, true), testo: L('margine ', 'buffer ', 'margen ') + sec(Math.min(m.scorta, m.margine)) + ' / ' + sec(m.margine) });
+  const r = m.riserve;
+  if (r && r.n > 0) {
+    const cause = Object.keys(SALUTE_CAUSE).filter((k) => r.cause?.[k]?.n > 0).map((k) => `${r.cause[k].n} ${SALUTE_CAUSE[k]()}`).join(', ');
+    const liv = r.ultima?.inCorso ? 'guasto' : 'attenzione';
+    voci.push({ k: 'riserve', liv, testo: (r.n === 1 ? L('riserva 1 volta', 'fallback once', 'reserva 1 vez') : L(`riserva ${r.n} volte`, `fallback ${r.n} times`, `reserva ${r.n} veces`)) + ` (${cause})` });
+    if (r.ultima) voci.push({ k: 'ultima', liv, testo: (r.ultima.inCorso ? L('in riserva da ', 'on fallback for ', 'en reserva desde hace ') : L('l’ultima è durata ', 'the last lasted ', 'la última duró ')) + sec(r.ultima.ms) });
+  }
   return voci;
 }
 
@@ -25841,7 +25875,7 @@ function studioSaluteRete() {
   const tutte = Object.values(STUDIO.dirette).map((d) => d.salute).filter(Boolean);
   if (!tutte.length) return 3;
   const peggio = { ok: 3, attenzione: 2, guasto: 1 };
-  return Math.min(...tutte.map((m) => m.riserva ? 0 : Math.min(...studioSaluteVoci(m).map((v) => peggio[v.liv]))));
+  return Math.min(...tutte.map((m) => m.riserva ? 0 : Math.min(...studioSaluteVoci(m).filter((v) => v.k !== 'riserve' && v.k !== 'ultima').map((v) => peggio[v.liv]))));
 }
 
 function studioSaluteHtml(tel) {
@@ -26244,21 +26278,22 @@ function onStudioInput(ev) {
 
 const _opzDirettaChiave = () => 'andrybot-diretta-opz:' + studioChi();
 function studioRicordaOpzioni() {
-  const testo = document.getElementById('studio-riserva-testo')?.value, assenza = document.getElementById('studio-assenza')?.value;
-  try { localStorage.setItem(_opzDirettaChiave(), JSON.stringify({ testo, assenza })); } catch (e) {  }
+  const testo = document.getElementById('studio-riserva-testo')?.value, assenza = document.getElementById('studio-assenza')?.value, margine = document.getElementById('studio-margine')?.value;
+  try { localStorage.setItem(_opzDirettaChiave(), JSON.stringify({ testo, assenza, margine })); } catch (e) {  }
 }
 function studioRileggiOpzioni() {
   let o = null;
   try { o = JSON.parse(localStorage.getItem(_opzDirettaChiave()) || 'null'); } catch (e) {  }
   if (!o) return;
-  const t = document.getElementById('studio-riserva-testo'), a = document.getElementById('studio-assenza');
+  const t = document.getElementById('studio-riserva-testo'), a = document.getElementById('studio-assenza'), m = document.getElementById('studio-margine');
   if (t && typeof o.testo === 'string') t.value = o.testo.slice(0, 40);
   if (a && [...a.options].some((x) => x.value === o.assenza)) a.value = o.assenza;
+  if (m && [...m.options].some((x) => x.value === o.margine)) m.value = o.margine;
 }
 
 function onStudioChange(ev) {
   const t = ev.target;
-  if (t.id === 'studio-riserva-testo' || t.id === 'studio-assenza') { studioRicordaOpzioni(); return; }
+  if (t.id === 'studio-riserva-testo' || t.id === 'studio-assenza' || t.id === 'studio-margine') { studioRicordaOpzioni(); return; }
   if (t.id === 'sp-grass') { const f = studioTrovaFonte(STUDIO.sel); if (f) { f.grassetto = t.checked; studioSporco(); } return; }
   if (t.id === 'studio-file') { const file = t.files && t.files[0]; if (file) conErrore(() => studioFileScelto(file)); return; }
   if (t.id === 'studio-file-audio') { const file = t.files && t.files[0]; t.value = ''; if (file) conErrore(() => studioTracciaFile(file)); return; }

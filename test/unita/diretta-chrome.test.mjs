@@ -17,7 +17,7 @@ import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { creaTramite, ffmpegMultitraccia } from '../../src/features/diretta.js';
 import { creaRisorse } from '../../src/risorse.js';
-import { FFMPEG, FFPROBE } from '../aiuto-diretta.mjs';
+import { FFMPEG, FFPROBE, materiale, pacchetti } from '../aiuto-diretta.mjs';
 
 const CHROME = process.env.SB_CHROME || ['/usr/bin/google-chrome', '/opt/google/chrome/chrome'].find((f) => existsSync(f)) || null;
 const PUBBLICO = new URL('../../src/web/public', import.meta.url).pathname;
@@ -31,7 +31,7 @@ const portaLibera = () => new Promise((ok) => { const s = createServer().listen(
 // Una o piu' dirette dallo stesso dispositivo, una per formato, come le fa lo
 // Studio: ogni formato ha la sua tela, il suo codificatore, la sua spedizione
 // e la sua sessione sul server; l'audio e' uno solo, condiviso.
-async function daCapoAFondo(t, formati) {
+async function daCapoAFondo(t, formati, { buco = null, margineMs } = {}) {
   let chromium;
   try { ({ chromium } = await import('/opt/node22/lib/node_modules/playwright/index.mjs')); } catch { t.skip('Playwright non c\'e\''); return null; }
   const cartella = mkdtempSync(join(tmpdir(), 'diretta-chrome-'));
@@ -52,12 +52,19 @@ async function daCapoAFondo(t, formati) {
     if (u.pathname === '/avvio') {
       const { video: v, audio: a } = JSON.parse(await corpo(q));
       return rispondi(tramite.avvia(sessione(f), { destinazioni: [{ id: 'x' + f, nome: 'Locale', url: `rtmp://127.0.0.1:${porte[f]}/live/prova` }],
-        video: { ...v, config: Buffer.from(v.config, 'base64') }, audio: { ...a, config: a.config ? Buffer.from(a.config, 'base64') : null }, kbps: 1500 }));
+        video: { ...v, config: Buffer.from(v.config, 'base64') }, audio: { ...a, config: a.config ? Buffer.from(a.config, 'base64') : null }, kbps: 1500, margineMs }));
     }
     if (u.pathname === '/api/diretta/riserva') return rispondi(tramite.riserva(sessione(f), await corpo(q), u.searchParams.get('t')));
-    if (u.pathname === '/api/diretta/pacchi') return rispondi(tramite.pacchi(sessione(f), Number(u.searchParams.get('n')), await corpo(q), u.searchParams.get('t')));
+    if (u.pathname === '/api/diretta/pacchi') {
+      const b = await corpo(q);
+      // la linea ferma (docs/DIRETTA.md, «Il margine»): le richieste restano in sospeso
+      primo ||= Date.now();
+      if (buco && Date.now() >= primo + buco[0] && Date.now() < primo + buco[1]) { tenute++; await new Promise((ok) => setTimeout(ok, primo + buco[1] - Date.now())); }
+      return rispondi(tramite.pacchi(sessione(f), Number(u.searchParams.get('n')), b, u.searchParams.get('t')));
+    }
     try { r.setHeader('content-type', 'text/javascript'); r.end(readFileSync(join(PUBBLICO, u.pathname))); } catch { r.statusCode = 404; r.end(); }
   }).listen(0, '127.0.0.1');
+  let primo = 0, tenute = 0;
   await new Promise((ok) => srv.on('listening', ok));
   const browser = await chromium.launch({ executablePath: CHROME, args: ['--no-sandbox', '--disable-dev-shm-usage', '--autoplay-policy=no-user-gesture-required'] });
   try {
@@ -99,6 +106,7 @@ async function daCapoAFondo(t, formati) {
       const st = tramite.stato(sessione(f));
       assert.deepEqual(st.inRiserva, { video: false, audio: false }, `${f}: alla fine va in onda il dispositivo, non la riserva`);
       assert.equal(st.errore, '', `${f}: il tramite non si lamenta dei tempi: ${st.errore}`);
+      if (buco) { assert.ok(tenute > 0, 'la linea si e\' fermata davvero'); assert.equal(st.riserve.n, 0, `${f}: un buco piu' corto del margine non mette la riserva: ${JSON.stringify(st.riserve)}`); }
     }
   } finally {
     await browser.close();
@@ -137,6 +145,11 @@ function controllaArrivato(uscita, f) {
 
 test('da capo a fondo con Google Chrome: il dispositivo codifica, il tramite copia, arriva una diretta pulita', SALTA, async (t) => {
   const uscite = await daCapoAFondo(t, ['o']);
+  if (uscite) controllaArrivato(uscite.o, 'o');
+});
+
+test('da capo a fondo con Google Chrome: la linea si ferma due secondi, meno del margine, e la diretta arriva intera senza riserva', SALTA, async (t) => {
+  const uscite = await daCapoAFondo(t, ['o'], { buco: [3_000, 5_000], margineMs: 3_000 });
   if (uscite) controllaArrivato(uscite.o, 'o');
 });
 
@@ -225,4 +238,125 @@ test('da capo a fondo con Google Chrome: la musica va in diretta ma non nel VOD 
   const e = { live440: energia(live, 440), live880: energia(live, 880), vod440: energia(vod, 440), vod880: energia(vod, 880) };
   assert.ok(e.live440 > 500 && e.live880 > 500, `in diretta voce e musica: ${JSON.stringify(e)}`);
   assert.ok(e.vod440 > 500 && e.vod880 < e.vod440 / 50, `nel VOD la voce sì, la musica no: ${JSON.stringify(e)}`);
+});
+
+// IL MARGINE CON UN BROWSER VERO (docs/DIRETTA.md, «Il margine: un intoppo non
+// e' un "torno subito"»). La spedizione vera gira nel browser (fetch, tempo
+// massimo per invio, ritentativi, battito), il server vero la riceve, il
+// tramite copia verso un ricevitore RTMP locale. La linea si ferma davvero: il
+// server tiene in sospeso le richieste dei pacchetti per un tratto, come una
+// linea di casa piena. Il video lo fa ffmpeg (H.264 vero), cosi' basta anche il
+// Chromium di collaudo, che non ha H.264; con Google Chrome il codificatore e'
+// quello del browser, nella prova piu' sotto.
+const BROWSER = CHROME || [process.env.CHROMIUM, '/opt/pw-browsers/chromium-1194/chrome-linux/chrome'].filter(Boolean).find((f) => existsSync(f)) || null;
+const SALTA_LINEA = { skip: (!BROWSER && 'serve un browser (SB_CHROME o CHROMIUM)') || (!FFMPEG && 'serve ffmpeg (SB_FFMPEG)'), timeout: 120_000 };
+
+async function lineaCheSiFerma(t, { margineMs, buco: [da, a], secondi }) {
+  let chromium;
+  try { ({ chromium } = await import('/opt/node22/lib/node_modules/playwright/index.mjs')); } catch { t.skip('Playwright non c\'e\''); return null; }
+  const m = materiale({ secondi, gop: 60 });
+  const cartella = mkdtempSync(join(tmpdir(), 'diretta-linea-'));
+  const uscita = join(cartella, 'arrivato.flv'), porta = await portaLibera();
+  const ricevitore = spawn(FFMPEG, ['-hide_banner', '-loglevel', 'error', '-listen', '1', '-f', 'flv', '-i', `rtmp://127.0.0.1:${porta}/live/prova`, '-c', 'copy', '-y', uscita]);
+  await new Promise((ok) => setTimeout(ok, 800));
+  // quando il tramite scrive verso le piattaforme, sul muro: chi guarda vede
+  // uno scatto se fra due scritture passa piu' di un attimo
+  const scritture = [];
+  const avviaProcesso = (cmd, args, opz) => { const p = spawn(cmd, args, opz); const w = p.stdin.write.bind(p.stdin); p.stdin.write = (b, ...x) => { scritture.push(Date.now()); return w(b, ...x); }; return p; };
+  const tramite = creaTramite({ risorse: creaRisorse({ misura: () => ({ ritardoMs: 0, cpuPsi: 0, memPsi: 0, memLibera: 0.9, caricoPerCore: 0 }), cacheMs: 0, avviaProcesso }), ffmpeg: FFMPEG, ogniMs: 50 });
+  const avvio = tramite.avvia('prova', { destinazioni: [{ id: 'x', nome: 'Locale', url: `rtmp://127.0.0.1:${porta}/live/prova` }], ...m.config, kbps: 3000, margineMs });
+  assert.equal(avvio.ok, true, JSON.stringify(avvio));
+  assert.equal(tramite.riserva('prova', Buffer.from(scriviPacchiNode([...m.video.slice(0, 60), ...m.audio.slice(0, 47)])), avvio.turno).ok, true);
+  const corpo = (q) => new Promise((ok) => { const c = []; q.on('data', (d) => c.push(d)); q.on('end', () => ok(Buffer.concat(c))); });
+  let via = 0, tenute = 0, doppi = 0;
+  const visto = { inRiserva: false, n: 0 };
+  const srv = createServer(async (q, r) => {
+    const u = new URL(q.url, 'http://x');
+    if (u.pathname === '/') { r.setHeader('content-type', 'text/html'); return r.end('<!doctype html><title>prova</title>'); }
+    if (u.pathname === '/via') { via = Date.now(); return r.end('{}'); }
+    if (u.pathname === '/api/diretta/pacchi') {
+      const b = await corpo(q);
+      // la linea ferma: la richiesta resta in sospeso fino alla fine del buco
+      const fino = via + a;
+      if (via && Date.now() >= via + da && Date.now() < fino) { tenute++; await new Promise((ok) => setTimeout(ok, fino - Date.now())); }
+      const e = tramite.pacchi('prova', Number(u.searchParams.get('n')), b, u.searchParams.get('t'));
+      if (e.doppio) doppi++;
+      r.statusCode = e.ok ? 200 : 409;
+      return r.end(JSON.stringify(e));
+    }
+    try { r.setHeader('content-type', 'text/javascript'); r.end(readFileSync(join(PUBBLICO, u.pathname))); } catch { r.statusCode = 404; r.end(); }
+  }).listen(0, '127.0.0.1');
+  await new Promise((ok) => srv.on('listening', ok));
+  const guarda = setInterval(() => { const st = tramite.stato('prova'); if (st.live) { visto.inRiserva ||= st.inRiserva.video || st.inRiserva.audio; visto.n = st.riserve.n; visto.riserve = st.riserve; } }, 20);
+  const browser = await chromium.launch({ executablePath: BROWSER, args: ['--no-sandbox', '--disable-dev-shm-usage'] });
+  let esito;
+  try {
+    const pagina = await browser.newPage();
+    await pagina.goto(`http://127.0.0.1:${srv.address().port}/`);
+    const tutti = [...m.video, ...m.audio].sort((x, y) => x.us - y.us).map((p) => ({ tipo: p.tipo, chiave: p.chiave, us: p.us, d: Buffer.from(p.dati).toString('base64') }));
+    esito = await pagina.evaluate(async ({ tutti, turno }) => {
+      const D = await import('/js/diretta-codifica.js');
+      let finita = null, ritenta = 0;
+      const sped = D.creaSpedizione({ formato: 'o', quandoFinisce: (x) => { finita = x; }, quandoRitenta: () => { ritenta++; } });
+      sped.usaTurno(turno);
+      const da64 = (s) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
+      const battito = setInterval(() => sped.batti(performance.now()), 20);
+      await fetch('/via');
+      const t0 = performance.now();
+      for (const p of tutti) {
+        const quando = t0 + p.us / 1000 - performance.now();
+        if (quando > 0) await new Promise((ok) => setTimeout(ok, quando));
+        sped.aggiungi({ tipo: p.tipo, chiave: p.chiave, us: p.us, dati: da64(p.d) });
+      }
+      await new Promise((ok) => setTimeout(ok, 1500));
+      clearInterval(battito);
+      await sped.ferma();
+      return { finita, ritenta };
+    }, { tutti, turno: avvio.turno });
+    visto.finePagina = Date.now();
+  } finally {
+    clearInterval(guarda);
+    await browser.close();
+    const st = tramite.stato('prova');
+    tramite.ferma('prova');
+    srv.close();
+    await new Promise((ok) => { if (ricevitore.exitCode !== null) return ok(); ricevitore.on('exit', ok); setTimeout(ok, 10_000); });
+    if (ricevitore.exitCode === null) ricevitore.kill('SIGKILL');
+    visto.fine = st;
+  }
+  // il silenzio piu' lungo verso le piattaforme, dalla prima uscita alla fine della pagina
+  const uscite = scritture.slice(1).filter((x) => x <= visto.finePagina);
+  const silenzio = Math.max(0, ...uscite.slice(1).map((x, i) => x - uscite[i]));
+  return { uscita, esito, visto, tenute, doppi, m, silenzio };
+}
+// il formato dei pacchetti, lato server (lo stesso del browser)
+function scriviPacchiNode(lista) { const parti = []; for (const p of lista) { const h = Buffer.alloc(16); h[0] = p.tipo === 'video' ? 1 : 2; h[1] = p.chiave ? 1 : 0; h.writeDoubleBE(p.us, 4); h.writeUInt32BE(p.dati.length, 12); parti.push(h, Buffer.from(p.dati)); } return Buffer.concat(parti); }
+const salti = (xs) => xs.slice(1).map((p, i) => p.t - xs[i].t);
+
+test('con un browser vero: la linea si ferma due secondi, meno del margine di tre, e chi guarda non vede nemmeno un fotogramma di riserva', SALTA_LINEA, async (t) => {
+  const r = await lineaCheSiFerma(t, { margineMs: 3_000, buco: [3_000, 5_000], secondi: 8 });
+  if (!r) return;
+  assert.ok(r.tenute > 0, 'la linea si e\' fermata davvero: delle richieste sono rimaste in sospeso');
+  assert.equal(r.esito.finita, null, JSON.stringify(r.esito));
+  assert.equal(r.visto.inRiserva, false, 'la riserva non e\' mai andata in onda');
+  assert.equal(r.visto.fine.riserve.n, 0, JSON.stringify(r.visto.fine.riserve));
+  assert.ok(r.silenzio < 400, `verso le piattaforme la diretta esce senza fermarsi, col margine: il silenzio piu' lungo e' stato di ${r.silenzio} ms`);
+  const v = pacchetti(r.uscita, 'v'), a = pacchetti(r.uscita, 'a');
+  assert.equal(v.length, r.m.video.length, `tutti i fotogrammi sono arrivati alla piattaforma: ${v.length} di ${r.m.video.length}`);
+  assert.ok(Math.max(...salti(v)) < 0.05 && Math.min(...salti(v)) > 0, `il video e' intero, coi suoi tempi: salto massimo ${Math.max(...salti(v)).toFixed(3)} s`);
+  assert.ok(Math.max(...salti(a)) < 0.05, `l'audio e' intero: salto massimo ${Math.max(...salti(a)).toFixed(3)} s`);
+});
+
+test('con un browser vero: la linea si ferma sei secondi, piu\' del margine di due; l\'invio appeso si riprova, la riserva entra della linea e il ritorno riparte da una chiave', SALTA_LINEA, async (t) => {
+  const r = await lineaCheSiFerma(t, { margineMs: 2_000, buco: [3_000, 9_000], secondi: 12 });
+  if (!r) return;
+  assert.ok(r.esito.ritenta > 0, `un invio oltre i cinque secondi si e' riprovato: ${r.esito.ritenta}`);
+  assert.ok(r.doppi > 0, `lo stesso lotto riprovato e' arrivato due volte, e il server ha scartato il doppione: ${r.doppi}`);
+  assert.equal(r.visto.inRiserva, true);
+  assert.ok(r.silenzio < 400, `la riserva copre il buco: verso le piattaforme il silenzio piu' lungo e' stato di ${r.silenzio} ms`);
+  assert.ok(r.visto.fine.riserve.n >= 1 && r.visto.fine.riserve.cause.linea.n === r.visto.fine.riserve.n, JSON.stringify(r.visto.fine.riserve));
+  const v = pacchetti(r.uscita, 'v'), a = pacchetti(r.uscita, 'a');
+  assert.ok(Math.max(...salti(v)) < 0.25 && Math.min(...salti(v)) > 0, `il video non ha buchi: salto massimo ${Math.max(...salti(v)).toFixed(3)} s`);
+  assert.ok(Math.max(...salti(a)) < 0.25, `l'audio non ha buchi: salto massimo ${Math.max(...salti(a)).toFixed(3)} s`);
+  assert.ok(v.filter((p) => p.chiave && p.t > 6).length >= 2, 'dopo la riserva il video riparte da una chiave');
 });

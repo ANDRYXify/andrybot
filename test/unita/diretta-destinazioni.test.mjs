@@ -131,6 +131,9 @@ test('da capo a fondo: una destinazione cade e lo stato lo dice, l\'altra riceve
     await new Promise((ok) => setTimeout(ok, Math.max(0, inizio + lotto[0].us / 1000 - Date.now())));
     t.pacchi('mario', n++, scriviPacchi(lotto), e.turno);
   }
+  // col margine (docs/DIRETTA.md, «Il margine») la diretta arriva alle
+  // piattaforme qualche secondo dopo: la caduta si vede quando ffmpeg ci prova
+  for (const fine = Date.now() + 8_000; Date.now() < fine && t.stato('mario').stati[1].ok;) await new Promise((ok) => setTimeout(ok, 100));
   const st = t.stato('mario');
   assert.deepEqual(st.stati, [{ id: 'buona', nome: 'Buona', ok: true, motivo: '' }, { id: 'morta', nome: 'Morta', ok: false, motivo: 'irraggiungibile' }]);
   assert.equal(st.live, true, 'le altre continuano');

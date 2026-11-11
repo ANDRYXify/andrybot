@@ -13,7 +13,7 @@ import { mkdtempSync, existsSync, statSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { createServer } from 'node:net';
-import { creaTramite, argomenti, indirizzoBuono, ffmpegMultitraccia } from '../../src/features/diretta.js';
+import { creaTramite, argomenti, indirizzoBuono, ffmpegMultitraccia, MARGINE_MS } from '../../src/features/diretta.js';
 import { scriviPacchi } from '../../src/features/diretta-mkv.js';
 import { creaRisorse } from '../../src/risorse.js';
 import { FFMPEG, FFPROBE, materiale, pacchetti, sonda } from '../aiuto-diretta.mjs';
@@ -65,6 +65,7 @@ test('chi manda piu\' di quanto ha dichiarato viene fermato', () => {
 function finto() {
   const scritto = [];
   const proc = { stdin: { write(b) { scritto.push(Buffer.from(b)); }, end() {}, on() {}, writable: true, writableLength: 0 }, stderr: { on() {} }, on() {}, exitCode: null, kill() {} };
+  finto.ultimo = proc;
   return { scritto, r: creaRisorse({ misura: calma, cacheMs: 0, avviaProcesso: () => proc }) };
 }
 const pacco = (tipo, us, chiave, segno) => ({ tipo, us, chiave, dati: Buffer.from(segno) });
@@ -76,10 +77,14 @@ test('dopo la riserva il video riprende solo da un fotogramma chiave', () => {
   const { turno } = t.avvia('mario', { destinazioni: DEST, ...CONF, kbps: 3000 });
   t.riserva('mario', scriviPacchi([pacco('video', 0, true, 'RISERVA-K'), pacco('video', 33_333, false, 'RISERVA-P'), pacco('audio', 0, true, 'SILENZIO'), pacco('audio', 21_333, true, 'SILENZIO')]), turno);
   t.pacchi('mario', 0, scriviPacchi([pacco('video', 0, true, 'VIVO-K1'), pacco('audio', 0, true, 'VOCE')]), turno);
-  adesso += 3_000;
+  // Col margine (docs/DIRETTA.md, «Il margine»): la riserva entra quando il
+  // margine e' finito, e il ritorno esce quando tocca al suo tempo.
+  adesso += MARGINE_MS + 3_000;
   t.curaTempo('mario');
-  assert.equal(t.stato('mario').inRiserva.video, true, 'col video fermo da tre secondi va la riserva');
-  t.pacchi('mario', 1, scriviPacchi([pacco('video', 3_000_000, false, 'VIVO-P-ORFANO'), pacco('video', 3_033_333, true, 'VIVO-K2')]), turno);
+  assert.equal(t.stato('mario').inRiserva.video, true, 'col video fermo da tre secondi oltre il margine va la riserva');
+  t.pacchi('mario', 1, scriviPacchi([pacco('video', 6_000_000, false, 'VIVO-P-ORFANO'), pacco('video', 6_033_333, true, 'VIVO-K2')]), turno);
+  adesso += MARGINE_MS + 40;
+  t.curaTempo('mario');
   const tutto = Buffer.concat(scritto).toString('latin1');
   assert.ok(!tutto.includes('VIVO-P-ORFANO'), 'un fotogramma che dipende da quelli persi non va in onda');
   assert.ok(tutto.includes('VIVO-K2') && tutto.indexOf('RISERVA-K') < tutto.indexOf('VIVO-K2'), 'si riprende dal fotogramma chiave, dopo la riserva');
@@ -95,18 +100,21 @@ test('aspettando il fotogramma chiave la riserva resta in onda, e il server lo c
   const { turno } = t.avvia('mario', { destinazioni: DEST, ...CONF, kbps: 3000 });
   t.riserva('mario', scriviPacchi([pacco('video', 0, true, 'RISERVA-K'), pacco('video', 33_333, false, 'RISERVA-P'), pacco('audio', 0, true, 'SILENZIO'), pacco('audio', 21_333, true, 'SILENZIO')]), turno);
   assert.deepEqual(t.pacchi('mario', 0, scriviPacchi([pacco('video', 0, true, 'VIVO-K1'), pacco('audio', 0, true, 'VOCE')]), turno), { ok: true, chiave: false });
-  adesso += 3_000;
+  adesso += MARGINE_MS + 3_000;
   t.curaTempo('mario');
   const conta = () => (Buffer.concat(scritto).toString('latin1').match(/RISERVA-/g) || []).length;
   const prima = conta();
-  const r1 = t.pacchi('mario', 1, scriviPacchi([pacco('video', 3_000_000, false, 'VIVO-P'), pacco('audio', 3_000_000, true, 'VOCE2')]), turno);
+  const r1 = t.pacchi('mario', 1, scriviPacchi([pacco('video', 6_000_000, false, 'VIVO-P'), pacco('audio', 6_000_000, true, 'VOCE2')]), turno);
   assert.equal(r1.chiave, true, 'chi aspetta una chiave la chiede: il dispositivo la fa sul fotogramma dopo');
-  adesso += 1_000;
+  adesso += MARGINE_MS + 1_000;
   t.curaTempo('mario');
   assert.ok(conta() > prima, 'un fotogramma senza chiave non conta come arrivato: la riserva continua, niente fermo immagine');
   assert.equal(t.stato('mario').inRiserva.video, true);
-  const r2 = t.pacchi('mario', 2, scriviPacchi([pacco('video', 4_000_000, true, 'VIVO-K2')]), turno);
-  assert.equal(r2.chiave, false);
+  const r2 = t.pacchi('mario', 2, scriviPacchi([pacco('video', 10_000_000, true, 'VIVO-K2')]), turno);
+  assert.equal(r2.chiave, false, 'con una chiave buona in coda non se ne chiede un\'altra');
+  assert.equal(t.stato('mario').inRiserva.video, true, 'la chiave esce quando tocca al suo tempo, col margine');
+  adesso += MARGINE_MS;
+  t.curaTempo('mario');
   assert.equal(t.stato('mario').inRiserva.video, false);
 });
 
@@ -120,9 +128,12 @@ test('al rientro un fotogramma rimasto in coda si scarta: l\'orologio della dire
   adesso += 8_000;
   t.curaTempo('mario');
   t.pacchi('mario', 1, scriviPacchi([pacco('video', 500_000, true, 'VIVO-VECCHIO'), pacco('video', 7_800_000, true, 'VIVO-FRESCO'), pacco('video', 7_833_333, false, 'VIVO-DOPO')]), turno);
+  adesso += MARGINE_MS;
+  t.curaTempo('mario');
   const tutto = Buffer.concat(scritto).toString('latin1');
   assert.ok(!tutto.includes('VIVO-VECCHIO'), 'otto secondi indietro: quel pezzo l\'ha gia\' coperto la riserva');
   assert.ok(tutto.includes('VIVO-FRESCO') && tutto.includes('VIVO-DOPO'), 'si riprende dal primo fotogramma chiave fresco');
+  assert.equal(blocchi(scritto).find((b) => b.segno === 'VIVO-FRESCO').ms, 7_800, 'col suo tempo: l\'orologio non si e\' spostato');
 });
 
 test('una riserva senza fotogramma chiave in testa, o senza audio, si rifiuta', () => {
@@ -338,6 +349,9 @@ test('una ricarica veloce con l\'orologio del vecchio dispositivo avanti: il fot
   adesso += 200;
   const due = t.avvia('mario', { destinazioni: DEST, ...CONF, kbps: 3000, riprendi: true });
   t.pacchi('mario', 0, scriviPacchi([pacco('video', 2_000_001, true, 'K-NUOVO'), pacco('video', 2_033_334, false, 'P-NUOVO')]), due.turno);
+  adesso += MARGINE_MS + 1_000;
+  t.curaTempo('mario');
+  assert.equal(conta(scritto, 'P-AVANTI'), 1);
   assert.equal(conta(scritto, 'K-NUOVO'), 1, 'il fotogramma chiave nuovo non si perde dietro a quelli vecchi');
   assert.equal(conta(scritto, 'P-NUOVO'), 1);
 });
@@ -426,7 +440,7 @@ test('il gemello del VOD esce nello stesso istante del suo audio; senza il suo a
   assert.ok(Buffer.concat(scritto).includes(Buffer.from([0xd7, 0x01, 0, 0, 0, 0, 0, 0, 0x01, 0x03])), 'la testata ha la terza traccia');
   t.riserva('mario', scriviPacchi([pacco('video', 0, true, 'RISERVA-K'), pacco('audio', 0, true, 'SILENZIO'), pacco('audio', 21_333, true, 'SILENZIO')]), turno);
   t.pacchi('mario', 0, scriviPacchi([pacco('video', 0, true, 'K1'), pacco('audio', 0, true, 'LIVE-1'), pacco('vod', 0, true, 'VOD-1'), pacco('audio', 21_333, true, 'LIVE-2'), pacco('vod', 21_333, true, 'VOD-2'), pacco('audio', 42_666, true, 'LIVE-3'), pacco('vod', 64_000, true, 'VOD-ORFANO')]), turno);
-  adesso += 3_000;
+  adesso += MARGINE_MS + 3_000;
   t.curaTempo('mario');
   const b = blocchi(scritto);
   const di = (segno) => b.find((x) => x.segno === segno);
@@ -479,4 +493,166 @@ test('da capo a fondo: Twitch riceve il live e, come seconda traccia, il VOD sen
   assert.ok(Math.abs(tracce('twitch.mkv', 0) - 440) < 15, 'la prima traccia e\' il live');
   assert.ok(Math.abs(tracce('twitch.mkv', 1) - 880) < 15, 'la seconda e\' il VOD');
   assert.ok(Math.abs(tracce('altra.mkv', 0) - 440) < 15, 'le altre piattaforme ricevono il live');
+});
+
+// IL MARGINE (docs/DIRETTA.md, «Il margine: un intoppo non e' un "torno
+// subito"»). Un dispositivo finto codifica in tempo reale (un fotogramma ogni
+// 1/fps, chiave ogni due secondi o quando il server la chiede, un blocco audio
+// ogni audioMs) e spedisce a lotti ogni 200 ms; la linea decide quando ogni
+// lotto arriva; il server puo' essere sordo (il giro e i pacchetti fermi).
+// Il giro batte ogni 100 ms, prima dei pacchetti arrivati, come in Node.
+function simula({ margineMs, durataMs, arrivo = (ms) => ms, sordo = () => false, fps = 30, audioMs = 1024 / 48, passoMs = 10, deriva = 0, senzaVideo = () => false }) {
+  const T0 = 1_000_000;
+  let adesso = T0;
+  const { scritto, r } = finto();
+  // quando ogni blocco esce verso le piattaforme, sul muro del server
+  const quando = [], proc = finto.ultimo, w = proc.stdin.write;
+  proc.stdin.write = (x) => { quando.push(adesso); return w(x); };
+  const t = creaTramite({ risorse: r, ora: () => adesso, ogniMs: 0 });
+  const { turno } = t.avvia('mario', { destinazioni: DEST, ...CONF, video: { ...CONF.video, fps }, kbps: 3000, margineMs });
+  t.riserva('mario', scriviPacchi([pacco('video', 0, true, 'RISERVA-K'), pacco('video', 1e6 / fps, false, 'RISERVA-P'), pacco('audio', 0, true, 'SILENZIO'), pacco('audio', audioMs * 1000, true, 'SILENZIO')]), turno);
+  const fatti = { video: [], audio: [] }, viaggio = [];
+  let lotto = [], tV = 0, tA = 0, nV = 0, nA = 0, daChiave = 0, chiedi = false, prossimoLotto = 200, prossimoGiro = 0, n = 0, ultimoArrivo = 0;
+  for (let ms = 0; ms <= durataMs; ms += passoMs) {
+    adesso = T0 + ms;
+    for (; tV <= ms; tV += 1000 / fps) {
+      if (senzaVideo(tV)) continue;
+      const chiave = chiedi || daChiave <= 0;
+      daChiave = chiave ? 2 * fps - 1 : daChiave - 1;
+      chiedi = false;
+      const p = pacco('video', Math.round(tV * (1 - deriva) * 1000), chiave, `V${nV++}.`);
+      lotto.push(p); fatti.video.push(p);
+    }
+    for (; tA <= ms; tA += audioMs) { const p = pacco('audio', Math.round(tA * (1 - deriva) * 1000), true, `A${nA++}.`); lotto.push(p); fatti.audio.push(p); }
+    if (ms >= prossimoLotto) {
+      prossimoLotto += 200;
+      ultimoArrivo = Math.max(ultimoArrivo, arrivo(ms));
+      viaggio.push({ arriva: ultimoArrivo, lista: lotto });
+      lotto = [];
+    }
+    if (sordo(ms)) continue;
+    if (ms >= prossimoGiro) { t.battito(); prossimoGiro = ms + 100; }
+    while (viaggio.length && viaggio[0].arriva <= ms) {
+      const r1 = t.pacchi('mario', n++, scriviPacchi(viaggio.shift().lista), turno);
+      if (r1.chiave) chiedi = true;
+    }
+  }
+  // il ritardo d'uscita di ogni blocco: muro all'uscita meno il suo tempo di diretta
+  const ritardi = () => { const b = blocchi(scritto), testa = scritto.length - b.length; return b.map((x, i) => ({ ...x, ritardo: quando[testa + i] - T0 - x.ms })); };
+  return { t, scritto, fatti, ritardi, fine: () => { const st = t.stato('mario'); const rit = ritardi(); t.ferma('mario'); return { st, b: blocchi(scritto), rit }; } };
+}
+const vivi = (b, traccia) => b.filter((x) => x.traccia === traccia && /^[VA]\d+\.$/.test(x.segno));
+const diRiserva = (b) => b.filter((x) => x.segno === 'RISERVA-K' || x.segno === 'RISERVA-P' || x.segno === 'SILENZIO');
+const inOrdine = (xs) => xs.every((x, i) => i === 0 || x.ms > xs[i - 1].ms);
+
+test('il margine: un buco della linea piu\' corto del margine non mette nemmeno un fotogramma di riserva, e arriva tutto, nell\'ordine, coi suoi tempi', () => {
+  // la linea si ferma due secondi e mezzo: quello che parte fra 4 e 6,5 s arriva tutto a 6,5 s
+  const { fatti, fine } = simula({ margineMs: 3_000, durataMs: 10_000, arrivo: (ms) => (ms >= 4_000 && ms < 6_500 ? 6_500 : ms) });
+  const { st, b, rit } = fine();
+  // chi guarda non vede il buco: ogni blocco esce verso le piattaforme in
+  // orario, col margine di ritardo e non di piu' (il primo lotto parte a 200 ms,
+  // il giro batte ogni 100)
+  const peggio = Math.max(...rit.map((x) => x.ritardo)), meglio = Math.min(...rit.map((x) => x.ritardo));
+  assert.ok(peggio - meglio <= 250 && peggio <= 3_000 + 200 + 150, `uscita in orario: ritardo fra ${meglio} e ${peggio} ms`);
+  assert.equal(diRiserva(b).length, 0, `nessun pacchetto di riserva: ${diRiserva(b).length}`);
+  assert.equal(st.riserve.n, 0);
+  for (const [traccia, tipo] of [[1, 'video'], [2, 'audio']]) {
+    const v = vivi(b, traccia);
+    assert.deepEqual(v.map((x) => x.segno), fatti[tipo].map((p) => p.dati.toString()), `${tipo}: tutti, nell'ordine`);
+    assert.ok(v.every((x, i) => x.ms === Math.round(fatti[tipo][i].us / 1000)), `${tipo}: ognuno col suo tempo`);
+  }
+});
+
+test('il margine: un buco piu\' lungo del margine mette la riserva, contata come della linea; il ritorno riparte da una chiave senza spostare l\'orologio', () => {
+  const { fatti, fine } = simula({ margineMs: 2_000, durataMs: 14_000, arrivo: (ms) => (ms >= 4_000 && ms < 8_000 ? 8_000 : ms) });
+  const { st, b } = fine();
+  const v = vivi(b, 1), ris = diRiserva(b).filter((x) => x.traccia === 1);
+  assert.ok(ris.length > 30, `la riserva c'e': ${ris.length} fotogrammi`);
+  assert.equal(ris[0].segno, 'RISERVA-K', 'la riserva comincia dalla sua chiave');
+  const dopo = v.find((x) => x.ms > ris.at(-1).ms);
+  assert.ok(dopo && fatti.video.find((p) => p.dati.toString() === dopo.segno).chiave, `il video vero riparte da una chiave: ${dopo?.segno}`);
+  const tempi = new Map([...fatti.video, ...fatti.audio].map((p) => [p.dati.toString(), Math.round(p.us / 1000)]));
+  assert.ok([...v, ...vivi(b, 2)].every((x) => x.ms === tempi.get(x.segno)), 'ogni pacchetto vero esce col suo tempo: l\'orologio non si e\' spostato');
+  assert.ok(inOrdine(b.filter((x) => x.traccia === 1)) && inOrdine(b.filter((x) => x.traccia === 2)), 'i tempi di ogni traccia vanno sempre avanti');
+  assert.equal(st.riserve.n, 1);
+  assert.equal(st.riserve.cause.linea.n, 1, JSON.stringify(st.riserve));
+  assert.ok(st.riserve.ms > 1_500 && st.riserve.ms < 3_000, `la riserva dura il buco meno il margine (circa 2 s): ${st.riserve.ms} ms`);
+});
+
+test('il margine: il server fermo due secondi non mette la riserva se i pacchetti erano arrivati, anche col margine di un secondo', () => {
+  const sordo = (ms) => ms >= 4_000 && ms < 6_000;
+  // i lotti spediti mentre il server era fermo lo aspettano: li legge al risveglio
+  const a = simula({ margineMs: 1_000, durataMs: 9_000, sordo });
+  const ra = a.fine();
+  assert.equal(diRiserva(ra.b).length, 0, `nessuna riserva al risveglio: ${diRiserva(ra.b).length}`);
+  assert.deepEqual(vivi(ra.b, 1).map((x) => x.segno), a.fatti.video.map((p) => p.dati.toString()), 'al risveglio esce tutto, nell\'ordine');
+  // e se il dispositivo, che aspettava il server, consegna l'arretrato poco dopo
+  // (entro il margine di tempo sveglio), di nuovo niente riserva
+  const b = simula({ margineMs: 1_000, durataMs: 9_000, sordo, arrivo: (ms) => (ms >= 3_800 && ms < 6_600 ? 6_600 : ms) });
+  const rb = b.fine();
+  assert.equal(diRiserva(rb.b).length, 0, `il margine si conta sul tempo in cui il server ascoltava: ${diRiserva(rb.b).length}`);
+  // oltre il margine sveglio la riserva entra, ed e' del server
+  const c = simula({ margineMs: 1_000, durataMs: 10_000, sordo, arrivo: (ms) => (ms >= 3_800 && ms < 7_600 ? 7_600 : ms) });
+  const rc = c.fine();
+  assert.ok(diRiserva(rc.b).length > 0);
+  assert.equal(rc.st.riserve.cause.server.n, 1, JSON.stringify(rc.st.riserve));
+});
+
+test('il margine: solo audio voluto dal dispositivo mette la riserva del video nel tempo giusto, del dispositivo, e la voce non si ferma', () => {
+  const { fine } = simula({ margineMs: 3_000, durataMs: 12_000, senzaVideo: (ms) => ms >= 4_000 && ms < 7_000 });
+  const { st, b } = fine();
+  assert.equal(b.filter((x) => x.segno === 'SILENZIO').length, 0, 'l\'audio non va mai in riserva');
+  const ris = diRiserva(b).filter((x) => x.traccia === 1);
+  assert.ok(ris.length > 0 && ris[0].ms > 3_900 && ris[0].ms < 4_100, `la riserva del video comincia dove il video si ferma: ${ris[0]?.ms}`);
+  assert.equal(st.riserve.cause.dispositivo.n, 1, JSON.stringify(st.riserve));
+  assert.equal(st.riserve.n, 1);
+});
+
+test('il margine: la deriva dell\'orologio del dispositivo (0,05%, un\'ora) non si mangia il margine', () => {
+  // in un'ora il dispositivo resta indietro di 1,8 s: con la base ferma, un
+  // margine di un secondo finirebbe dopo mezz'ora e l'audio resterebbe in riserva
+  const { fine } = simula({ margineMs: 1_000, durataMs: 3_600_000, fps: 5, audioMs: 100, passoMs: 50, deriva: 0.0005 });
+  const { st, b } = fine();
+  assert.equal(st.riserve.n, 0, JSON.stringify(st.riserve));
+  assert.equal(diRiserva(b).length, 0);
+});
+
+test('il margine e\' dello streamer: di serie 3 secondi, da 1 a 8, normalizzato sul server', async () => {
+  const { normalizzaMargine } = await import('../../src/features/diretta.js');
+  for (const [dato, ms] of [[undefined, 3_000], [null, 3_000], ['', 3_000], ['tre', 3_000], [NaN, 3_000], [3, 3_000], ['5', 5_000], [2.6, 3_000], [0, 1_000], [-4, 1_000], [99, 8_000], [8, 8_000]]) assert.equal(normalizzaMargine(dato), ms, String(dato));
+  const srv = readFileSync(new URL('../../src/web/server.js', import.meta.url), 'utf8');
+  assert.match(srv, /margineMs: normalizzaMargine\(b\.margine\),/, 'l\'avvio passa il margine scelto, normalizzato');
+  const { r } = finto();
+  const t = creaTramite({ risorse: r, ogniMs: 0 });
+  const uno = t.avvia('mario', { destinazioni: DEST, ...CONF, kbps: 3000, margineMs: 5_000 });
+  assert.equal(uno.margineMs, 5_000);
+  assert.equal(t.stato('mario').margine, 5_000);
+  assert.equal(t.avvia('mario', { destinazioni: DEST, ...CONF, kbps: 3000, margineMs: 1_000, riprendi: true }).margineMs, 5_000, 'una ripresa tiene il margine con cui la diretta e\' partita');
+});
+
+test('il margine: la coda ha un tetto, e oltre la diretta si chiude col suo motivo; a «Ferma» la coda esce tutta', () => {
+  const { scritto, r } = finto();
+  let adesso = 1_000_000;
+  const t = creaTramite({ risorse: r, ora: () => adesso, ogniMs: 0 });
+  const { turno } = t.avvia('mario', { destinazioni: DEST, ...CONF, kbps: 3000 });
+  t.pacchi('mario', 0, scriviPacchi([pacco('video', 0, true, 'K0'), pacco('audio', 0, true, 'A0'), pacco('video', 1_000_000, false, 'P-IN-CODA')]), turno);
+  assert.equal(conta(scritto, 'P-IN-CODA'), 0, 'dentro il margine non e\' ancora uscito');
+  t.ferma('mario');
+  assert.equal(conta(scritto, 'P-IN-CODA'), 1, 'fermando, la coda esce prima di chiudere');
+  const due = finto();
+  const t2 = creaTramite({ risorse: due.r, ora: () => adesso, ogniMs: 0 });
+  const k = t2.avvia('luigi', { destinazioni: DEST, ...CONF, kbps: 3000 });
+  const grossi = Array.from({ length: 9 }, (_, i) => pacco('video', i * 33_333, i === 0, 'X'.repeat(2 * 1024 * 1024)));
+  assert.equal(t2.pacchi('luigi', 0, scriviPacchi(grossi), k.turno).motivo, 'coda');
+  assert.equal(t2.attiva('luigi'), false);
+  assert.equal(t2.stato('luigi').ultimaFine.motivo, 'coda', 'la memoria del server non si riempie: la diretta si chiude e lo dice');
+});
+
+test('il margine: un fotogramma saltato dal dispositivo (il codificatore indietro, la pagina inceppata) non e\' un buco: niente lampi di riserva', () => {
+  const salta = (ms) => (ms >= 4_000 && ms < 4_150) || (ms >= 6_000 && ms < 6_700);
+  const { fatti, fine } = simula({ margineMs: 1_000, durataMs: 9_000, senzaVideo: salta });
+  const { st, b } = fine();
+  assert.equal(diRiserva(b).length, 0, `un buco nei tempi del dispositivo sotto il secondo resta un fotogramma fermo: ${diRiserva(b).length}`);
+  assert.equal(st.riserve.n, 0);
+  assert.deepEqual(vivi(b, 1).map((x) => x.segno), fatti.video.map((p) => p.dati.toString()));
 });

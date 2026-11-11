@@ -30,40 +30,67 @@ export async function supporto({ larghezza, altezza, fps, kbps }) {
 }
 
 export const RISERVA_TIMER = 5;
+export const TEMPO_INVIO_MS = 5000;
 
-export function creaSpedizione({ url = '/api/diretta/pacchi', formato = 'o', ogniMs = 200, quandoFinisce, quandoRitenta, quandoChiave, fetch: manda = (...a) => fetch(...a) } = {}) {
+export function tagliaLotto(lotto) {
+  let m = Math.floor(lotto.length / 2);
+  while (m < lotto.length && lotto[m].tipo === 'vod') m++;
+  if (m >= lotto.length) m = Math.floor(lotto.length / 2);
+  return [lotto.slice(0, m), lotto.slice(m)];
+}
+
+export function creaSpedizione({ url = '/api/diretta/pacchi', formato = 'o', ogniMs = 200, tempoMaxMs = TEMPO_INVIO_MS, quandoFinisce, quandoRitenta, quandoChiave, fetch: manda = (...a) => fetch(...a) } = {}) {
   const coda = [];
-  let n = 0, inVoloDa = 0, fermata = false, turno = '', sveglia = null, ultimoBattito = 0;
+  let n = 0, inVoloDa = 0, fermata = false, turno = '', sveglia = null, ultimoBattito = 0, invio = null;
   const aspetta = () => new Promise((ok) => {
     sveglia = ok;
     setTimeout(ok, ogniMs * RISERVA_TIMER);
   });
+  const leggi = async (r) => { try { return await r.json(); } catch { return null; } };
+  async function invia(parte) {
+    const corpo = scriviPacchi(parte);
+    for (let tentativo = 0; !fermata; tentativo++) {
+      const ac = typeof AbortController === 'function' ? new AbortController() : null;
+      invio = { da: performance.now(), ac };
+      const scade = setTimeout(() => ac?.abort(), tempoMaxMs);
+      try {
+        const r = await manda(`${url}?f=${formato === 'v' ? 'v' : 'o'}&t=${encodeURIComponent(turno)}&n=${n}`, { method: 'POST', headers: { 'Content-Type': 'application/octet-stream' }, body: corpo, credentials: 'same-origin', signal: ac?.signal });
+        if (r.ok) {
+          const dati = await leggi(r);
+          n++;
+          if (dati && dati.chiave) quandoChiave?.();
+          return 'ok';
+        }
+        if (r.status === 413) return 'grande';
+        if (r.status === 401) {
+          const dati = await leggi(r);
+          fermata = true;
+          quandoFinisce?.({ ...(dati || {}), motivo: 'accesso' });
+          return 'fine';
+        }
+        if (r.status === 409 || r.status === 403 || r.status === 400) {
+          const dati = await leggi(r);
+          fermata = true;
+          quandoFinisce?.(dati);
+          return 'fine';
+        }
+      } catch { } finally { clearTimeout(scade); invio = null; }
+      if (fermata) break;
+      quandoRitenta?.(tentativo + 1);
+      await attendi(Math.min(4000, 250 * 2 ** tentativo));
+    }
+    return 'fine';
+  }
   const giro = (async () => {
     while (!fermata) {
       await aspetta();
       sveglia = null;
       if (!coda.length) continue;
-      const lotto = coda.splice(0, coda.length);
-      inVoloDa = lotto[0].t;
-      const corpo = scriviPacchi(lotto);
-      const seq = n++;
-      for (let tentativo = 0; !fermata; tentativo++) {
-        try {
-          const r = await manda(`${url}?f=${formato === 'v' ? 'v' : 'o'}&t=${encodeURIComponent(turno)}&n=${seq}`, { method: 'POST', headers: { 'Content-Type': 'application/octet-stream' }, body: corpo, credentials: 'same-origin' });
-          if (r.ok) {
-            let dati = null; try { dati = await r.json(); } catch { }
-            if (dati && dati.chiave) quandoChiave?.();
-            break;
-          }
-          if (r.status === 409 || r.status === 403 || r.status === 400) {
-            let dati = null; try { dati = await r.json(); } catch { }
-            fermata = true;
-            quandoFinisce?.(dati);
-            break;
-          }
-        } catch { }
-        quandoRitenta?.(tentativo + 1);
-        await attendi(Math.min(4000, 250 * 2 ** tentativo));
+      const parti = [coda.splice(0, coda.length)];
+      while (parti.length && !fermata) {
+        const parte = parti.shift();
+        inVoloDa = parte[0].t;
+        if (await invia(parte) === 'grande' && parte.length > 1) parti.unshift(...tagliaLotto(parte));
       }
       inVoloDa = 0;
     }
@@ -71,6 +98,7 @@ export function creaSpedizione({ url = '/api/diretta/pacchi', formato = 'o', ogn
   return {
     usaTurno(t) { turno = String(t || ''); },
     batti(adesso = performance.now()) {
+      if (invio && adesso - invio.da > tempoMaxMs) invio.ac?.abort();
       if (adesso - ultimoBattito < ogniMs || !sveglia) return;
       ultimoBattito = adesso;
       const s = sveglia; sveglia = null; s();
@@ -78,7 +106,7 @@ export function creaSpedizione({ url = '/api/diretta/pacchi', formato = 'o', ogn
     aggiungi(p) { if (!fermata) coda.push({ ...p, t: performance.now() }); },
     ritardoMs() { const piuVecchio = inVoloDa || (coda[0] && coda[0].t) || 0; return piuVecchio ? performance.now() - piuVecchio : 0; },
     togliVideo() { for (let i = coda.length - 1; i >= 0; i--) if (coda[i].tipo === 'video') coda.splice(i, 1); },
-    ferma() { fermata = true; if (sveglia) { const s = sveglia; sveglia = null; s(); } return giro; },
+    ferma() { fermata = true; invio?.ac?.abort(); if (sveglia) { const s = sveglia; sveglia = null; s(); } return giro; },
   };
 }
 

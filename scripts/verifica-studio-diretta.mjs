@@ -97,6 +97,8 @@ const DIFETTI = {
     ['  if (STUDIO.M.escluse(prova, valide).length > STUDIO.M.escluse(d.scelte, valide).length) return;\n', '', 'il formato non perde destinazioni', 1, /nessuna destinazione si perde/],
     ['  const lato = innerWidth > innerHeight ? \'o\' : \'v\', f = d.scelte.formati;', '  const lato = STUDIO.lavoro, f = d.scelte.formati;', 'il formato segue il telefono', 7, /il formato segue il telefono/],
     ['const SALUTE_SOGLIE = { saltati: [0.02, 0.1],', 'const SALUTE_SOGLIE = { saltati: [0.5, 0.9],', 'gli scarti si colorano', 1, /colori della gravita/],
+    ['  if (r && r.n > 0) {\n    const cause', '  if (false) {\n    const cause', 'la barra conta le riserve con la causa', 1, /riserve contate con la loro causa/],
+    ["${n === 3 ? ' selected' : ''}>${n} ${n === 1", "${n === 8 ? ' selected' : ''}>${n} ${n === 1", 'il margine di serie e\' di 3 secondi', 1, /margine contro gli intoppi/],
     ['  for (const [k, invio] of (A.invii || new Map())) invio.gain.value = studioNelVod(k) ? 1 : 0;', '  for (const [, invio] of (A.invii || new Map())) invio.gain.value = 1;', 'il bus del VOD rispetta «Solo live»', 1, /non sente la traccia/],
     ["  delete a.vod['aud:' + id]; delete STUDIO.mix['aud:' + id];", "  delete STUDIO.mix['aud:' + id];", 'la traccia tolta porta via il suo segno', 1, /togliendo la traccia/],
     ['  if (r.specchio) { c.translate(2 * r.dx + r.dw, 0); c.scale(-1, 1); }\n', '', 'lo specchio specchia', 7, /Specchia» rovescia/],
@@ -764,9 +766,20 @@ console.log('Regia da telefono (390×844, a tocco):');
     renderStudioSalute();
     const barra = document.getElementById('studio-salute')?.textContent || '';
     STUDIO.live = prima.live; STUDIO.dirette = prima.dirette; STUDIO.tel.foglio = ''; renderStudioTelFoglio(); renderStudioSalute();
-    return { buona, brutta, foglio, barra, rete: null };
+    // il margine e le riserve (docs/DIRETTA.md, «Il margine»): quante, di chi, e quanto margine c'e'
+    STUDIO.live = true; STUDIO.dirette = { o: { cod: { stato: () => ({ fotogrammi: fot, saltati: sal, kbps: nom, ritardoMs: 120 }) } } };
+    sal = 0; studioSaluteMisura('o', st); STUDIO.dirette.o.misura.t -= 2000; fot += 60; studioSaluteMisura('o', { ...st, margine: 3000, scorta: 2900, riserve: { n: 3, ms: 5200, cause: { linea: { n: 2, ms: 4000 }, server: { n: 1, ms: 1200 }, dispositivo: { n: 0, ms: 0 } }, ultima: { causa: 'server', ms: 1200, inCorso: false } } });
+    const riserve = studioSaluteVoci(STUDIO.dirette.o.salute).map((v) => v.k + ':' + v.liv + ':' + v.testo);
+    renderStudioSalute();
+    const barraRiserve = document.getElementById('studio-salute')?.textContent || '';
+    STUDIO.live = prima.live; STUDIO.dirette = prima.dirette; renderStudioSalute();
+    const m = document.getElementById('studio-margine');
+    const margine = m ? { valori: [...m.options].map((o) => o.value), scelto: m.value, aiuto: document.getElementById('studio-margine-aiuto')?.textContent || '' } : null;
+    return { buona, brutta, foglio, barra, rete: null, riserve, barraRiserve, margine };
   });
   ok('la salute della diretta si legge come in OBS: Mbps, fps, scarti, invio, coi colori della gravita\'', salute.buona.every((x) => x.endsWith(':ok')) && salute.brutta.includes('saltati:guasto') && salute.brutta.includes('kbps:guasto') && /Mbps/.test(salute.foglio) && /fps/.test(salute.foglio) && /LIVE/.test(salute.barra), JSON.stringify(salute));
+  ok('nella barra della salute il margine pieno e le riserve contate con la loro causa, a parole', salute.riserve.some((x) => /^margine:ok:margine 2,9 s \/ 3,0 s$/.test(x)) && salute.riserve.some((x) => /^riserve:attenzione:riserva 3 volte \(2 la linea, 1 il server\)$/.test(x)) && salute.riserve.some((x) => /^ultima:attenzione:l’ultima è durata 1,2 s$/.test(x)) && /riserva 3 volte/.test(salute.barraRiserve), JSON.stringify(salute.riserve));
+  ok('il margine contro gli intoppi si sceglie nelle impostazioni: da 1 a 8 secondi, di serie 3, e dice il ritardo in piu\'', !!salute.margine && salute.margine.valori.join() === '1,2,3,4,5,6,7,8' && salute.margine.scelto === '3' && /ritardo/.test(salute.margine.aiuto), JSON.stringify(salute.margine));
   ok('nessun errore di pagina nella regia', err.length === 0, err.join(' | '));
   await p.close();
 }

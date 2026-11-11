@@ -14,6 +14,12 @@
 // riserva, nel tempo giusto, e la diretta non cade. Al ritorno il video
 // riprende solo da un fotogramma chiave.
 //
+// Il margine (docs/DIRETTA.md, «Il margine: un intoppo non e' un "torno
+// subito"»): i pacchetti stanno in una coda per traccia e escono quando
+// l'orologio d'uscita arriva al loro tempo piu' il margine. La riserva entra
+// solo a margine vuoto: un intoppo della linea o del server piu' corto del
+// margine chi guarda non lo vede.
+//
 // Lo scudo: ogni diretta e' un permesso della classe `diretta` (src/risorse.js),
 // entra solo se la banda dichiarata del server la regge, e chi manda piu' di
 // quanto ha dichiarato viene fermato.
@@ -21,13 +27,30 @@ import { randomBytes } from 'node:crypto';
 import { risorse as risorseDiSerie } from '../risorse.js';
 import { testata, creaScrittore, TRACCIA, leggiPacchi } from './diretta-mkv.js';
 
-export const ATTESA_RISERVA_MS = 1_500;
-// Al rientro dalla riserva un pacco piu' indietro di cosi' rispetto
-// all'orologio d'uscita e' arretrato (era in coda mentre la linea non andava):
-// il pezzo di diretta che portava l'ha gia' coperto la riserva. Si scarta,
-// invece di spostare in avanti tutto l'orologio: ogni spostamento resta in
-// piattaforma come ritardo in piu', per sempre.
-export const ARRETRATO_MS = 2_000;
+// Il margine, scelto dallo streamer prima di partire: di serie 3 secondi, da 1
+// a 8. Piu' margine, piu' ritardo per chi guarda, meno intoppi.
+export const MARGINE_MS = 3_000;
+export const MARGINE_MIN_S = 1;
+export const MARGINE_MAX_S = 8;
+// Quello che arriva dal pannello, in secondi: un valore che non e' un numero
+// vale quello di serie, gli altri si arrotondano dentro i confini.
+export function normalizzaMargine(secondi) {
+  const n = typeof secondi === 'string' && !secondi.trim() ? NaN : Number(secondi);
+  if (secondi == null || !Number.isFinite(n)) return MARGINE_MS;
+  return Math.min(MARGINE_MAX_S, Math.max(MARGINE_MIN_S, Math.round(n))) * 1000;
+}
+// Un buco nei tempi del video del dispositivo (un fotogramma saltato, la pagina
+// inceppata un attimo) sotto il secondo resta un fotogramma fermo; sopra, va la
+// riserva. Con la coda vuota invece basta un passo: il margine e' finito.
+export const SALTO_VIDEO_MS = 1_000;
+// Il ritardo di base di una traccia segue il pacchetto piu' puntuale dell'ultimo
+// mezzo minuto, al piu' di 1 ms al secondo: tiene dietro alla deriva degli
+// orologi (decine di parti per milione), non agli intoppi.
+export const SCIVOLO = 0.001;
+export const FINESTRA_PUNTUALE_MS = 10_000;
+// Il giro del tramite: un giro che arriva tardi di piu' di un giro vuol dire
+// che il server era fermo (sordo) da quando doveva arrivare.
+export const PERIODO_GIRO_MS = 100;
 export const ASSENZA_MAX_MS = 10 * 60_000;
 export const FINESTRA_BYTE_MS = 10_000;
 export const BITRATE_MAX_KBPS = 12_000;
@@ -124,7 +147,13 @@ const sondaCapacitaDiSerie = (risorse, ffmpeg) => async () => {
 
 const mascherato = (s, destinazioni) => destinazioni.reduce((t, d) => t.split(d.url).join(`[${d.nome || d.id}]`), String(s));
 
-export function creaTramite({ risorse = risorseDiSerie, ffmpeg = 'ffmpeg', ora = () => Date.now(), bandaMbps = 300, log = null, ogniMs = 100, alCambio = null, sondaVod = sondaDiSerie(risorse, ffmpeg), sondaCapacita = sondaCapacitaDiSerie(risorse, ffmpeg) } = {}) {
+// I motivi per cui una diretta si chiude buttando la coda: chi manda troppo, o
+// un ffmpeg che non c'e' piu'. In tutti gli altri la coda esce prima.
+const SENZA_CODA = new Set(['troppo', 'coda', 'uscita-lenta', 'ffmpeg', 'uscita']);
+const CAUSE = ['linea', 'server', 'dispositivo'];
+const TRACCE = ['video', 'audio'];
+
+export function creaTramite({ risorse = risorseDiSerie, ffmpeg = 'ffmpeg', ora = () => Date.now(), bandaMbps = 300, log = null, ogniMs = PERIODO_GIRO_MS, alCambio = null, sondaVod = sondaDiSerie(risorse, ffmpeg), sondaCapacita = sondaCapacitaDiSerie(risorse, ffmpeg) } = {}) {
   const sessioni = new Map();
   let giro = null, vodPossibile = false, capacita = null;
   Promise.resolve().then(sondaVod).then((si) => { vodPossibile = !!si; }, () => {});
@@ -132,73 +161,192 @@ export function creaTramite({ risorse = risorseDiSerie, ffmpeg = 'ffmpeg', ora =
 
   const kbpsImpegnati = () => [...sessioni.values()].reduce((n, s) => n + s.kbps * s.destinazioni.length, 0);
 
+  // IL SERVER SORDO. Il giro batte ogni `periodo`; chi guarda il tempo (il giro
+  // stesso o un pacchetto che arriva) e lo trova in ritardo di piu' di un giro
+  // sa che il processo era fermo da quando il giro doveva battere: in quel
+  // tempo non si leggeva niente dalla rete. I fermi si tengono due minuti.
+  const periodo = ogniMs || PERIODO_GIRO_MS;
+  let ultimoGiro = null;
+  const fermi = [];
+  function registraFermo(da, a) {
+    const u = fermi[fermi.length - 1];
+    if (u && da <= u.a) u.a = Math.max(u.a, a); else fermi.push({ da, a });
+    while (fermi.length && fermi[0].a < a - 120_000) fermi.shift();
+  }
+  function osservaCiclo() {
+    if (ultimoGiro == null) return;
+    const adesso = ora();
+    if (adesso - ultimoGiro > 2 * periodo) registraFermo(ultimoGiro + periodo, adesso);
+  }
+  const sordoFra = (da, a) => fermi.reduce((t, f) => t + Math.max(0, Math.min(a, f.a) - Math.max(da, f.da)), 0);
+  function battito() {
+    osservaCiclo();
+    ultimoGiro = ora();
+    for (const s of [...sessioni.values()]) curaTempo(s);
+  }
+
   function accendiGiro() {
     if (giro || !ogniMs) return;
-    giro = setInterval(() => { for (const s of sessioni.values()) curaTempo(s); }, ogniMs);
+    ultimoGiro = ora();
+    giro = setInterval(battito, ogniMs);
     giro.unref?.();
   }
-  function spegniGiroSeVuoto() { if (!sessioni.size && giro) { clearInterval(giro); giro = null; } }
+  function spegniGiroSeVuoto() { if (!sessioni.size && giro) { clearInterval(giro); giro = null; ultimoGiro = null; } }
 
   function scrivi(s, buf) {
     const w = s.ff.stdin;
-    if (!w || w.destroyed || !w.writable) return;
+    if (s.finita || !w || w.destroyed || !w.writable) return;
     if (w.writableLength > CODA_MAX_BYTE) { fine(s, 'uscita-lenta'); return; }
     try { w.write(buf); } catch { /* ffmpeg gia' chiuso: lo dice l'uscita */ }
   }
 
-  function emetti(s, tipo, ms, chiave, dati) {
+  // L'orologio d'uscita: millisecondi di diretta, presi dal muro del server
+  // dal primo fotogramma chiave in poi.
+  const orologio = (s) => (s.muro0 == null ? 0 : ora() - s.muro0);
+  // Il tempo di diretta che tocca mandare adesso, per traccia.
+  const tocca = (s, tipo) => orologio(s) - s.margine - s.base[tipo];
+  const passoDi = (s, tipo) => (tipo === 'video' ? (s.riserva?.durataV || 1000 / s.fps) : (s.riserva?.durataA || (s.audio === 'aac' ? 1024 / 48 : 20)));
+  // L'ultimo tempo mandato; prima del primo, il punto d'aggancio.
+  const ultimoDi = (s, tipo) => (Number.isFinite(s.ultimo[tipo]) ? s.ultimo[tipo] : s.aggancio - passoDi(s, tipo));
+
+  // Un pacchetto esce solo se va avanti nei tempi della sua traccia.
+  function esce(s, tipo, ms, chiave, dati, fuori) {
     if (ms <= s.ultimo[tipo]) return false;
     s.ultimo[tipo] = ms;
-    scrivi(s, s.blocco(TRACCIA[tipo], ms, chiave, dati));
+    fuori.push({ tipo, ms, chiave, dati });
     return true;
   }
   // La riserva dell'audio va in tutte e due le tracce, allo stesso istante: il
   // VOD non ha mai un buco che il live non ha.
-  function emettiRiservaAudio(s, ms, dati) {
-    if (emetti(s, 'audio', ms, true, dati) && s.vod) emetti(s, 'vod', ms, true, dati);
+  function esceRiserva(s, tipo, fuori) {
+    const ms = ultimoDi(s, tipo) + passoDi(s, tipo);
+    if (tipo === 'video') {
+      const p = s.riserva.video[s.giroV++ % s.riserva.video.length];
+      esce(s, 'video', ms, p.chiave, p.dati, fuori);
+    } else {
+      const p = s.riserva.audio[s.giroA++ % s.riserva.audio.length];
+      if (esce(s, 'audio', ms, true, p.dati, fuori) && s.vod) esce(s, 'vod', ms, true, p.dati, fuori);
+    }
+    if (s.episodio) s.episodio.fine = Math.max(s.episodio.fine, ms);
+  }
+  // La riserva fino a `fino` compreso.
+  function riempi(s, tipo, fino, fuori) {
+    const passo = passoDi(s, tipo);
+    while (ultimoDi(s, tipo) + passo <= fino) esceRiserva(s, tipo, fuori);
   }
 
-  // L'orologio d'uscita: millisecondi di diretta, presi dal muro del server
-  // dal primo pacchetto in poi.
-  const orologio = (s) => (s.muro0 == null ? 0 : ora() - s.muro0);
+  // GLI EPISODI DI RISERVA (docs/DIRETTA.md, «Le scelte fatte»): ognuno si
+  // conta quando comincia, con la sua causa; la durata e' il tempo di diretta
+  // coperto dalla riserva, e si somma quando tutte le tracce sono tornate vere.
+  function entraRiserva(s, tipo, causa) {
+    s.inRiserva[tipo] = true;
+    if (tipo === 'video') s.giroV = 0; else s.giroA = 0;
+    if (s.episodio) return;
+    const da = ultimoDi(s, tipo) + passoDi(s, tipo);
+    s.episodio = { causa, da, fine: da };
+    s.conti.n++;
+    s.conti.cause[causa].n++;
+    log?.info?.(`diretta #${s.login}: riserva (${causa})`);
+  }
+  function chiudiEpisodio(s) {
+    const e = s.episodio;
+    if (!e) return;
+    s.episodio = null;
+    const ms = Math.max(0, e.fine - e.da);
+    s.conti.ms += ms;
+    s.conti.cause[e.causa].ms += ms;
+    s.conti.ultima = { causa: e.causa, ms };
+  }
+  function esciRiserva(s, tipo, ms) {
+    s.inRiserva[tipo] = false;
+    if (s.episodio) s.episodio.fine = Math.max(s.episodio.fine, ms);
+    if (!s.inRiserva.video && !s.inRiserva.audio) chiudiEpisodio(s);
+  }
+  // Di chi era il buco: del server se, mentre il pacchetto che manca doveva
+  // arrivare, il server e' stato sordo; del dispositivo se il buco e' nei suoi
+  // tempi, se l'altra traccia arriva (solo audio voluto) o se sta riprendendo;
+  // altrimenti della linea.
+  function causaDi(s, tipo, nelDispositivo) {
+    const atteso = ultimoDi(s, tipo) + passoDi(s, tipo) + s.base[tipo];
+    if (sordoFra(s.muro0 + atteso, ora()) > 0) return 'server';
+    const altro = tipo === 'video' ? 'audio' : 'video';
+    if (nelDispositivo || s.riancora || (!s.inRiserva[altro] && ora() - s.arrivo[altro] < s.margine / 2)) return 'dispositivo';
+    return 'linea';
+  }
 
-  function curaTempo(s) {
+  // Una traccia, al momento di mandare: esce quello che e' pronto, nell'ordine;
+  // dalla riserva si torna solo con un pacchetto che va avanti (e per il video
+  // con un fotogramma chiave). Poi, se non c'e' niente di pronto, si decide se
+  // il margine e' finito.
+  function scorri(s, tipo, limite, fuori, decide) {
+    const coda = s.coda[tipo], video = tipo === 'video';
+    while (coda.length && coda[0].ms <= limite) {
+      const p = coda.shift();
+      s.codaByte -= p.peso;
+      if (p.ms <= s.ultimo[tipo]) continue;
+      if (s.inRiserva[tipo]) {
+        // gia' coperto dalla riserva (anche solo in parte): si scarta
+        if ((video && !p.chiave) || p.ms < s.ultimo[tipo] + passoDi(s, tipo) / 2) continue;
+        if (s.riserva) riempi(s, tipo, p.ms - passoDi(s, tipo) / 2 - 1e-6, fuori);
+        esciRiserva(s, tipo, p.ms);
+      }
+      if (esce(s, tipo, p.ms, p.chiave, p.dati, fuori) && p.vod && s.vod) esce(s, 'vod', p.ms, true, p.vod, fuori);
+    }
+    if (!decide || !s.riserva) return;
+    const passo = passoDi(s, tipo), ultimo = ultimoDi(s, tipo);
+    if (!s.inRiserva[tipo]) {
+      if (ultimo + passo > limite) return;
+      let nelDispositivo = false;
+      if (coda.length) {
+        // un buco nei tempi del dispositivo: il prossimo pacchetto c'e' gia'
+        if (coda[0].ms - ultimo <= (video ? SALTO_VIDEO_MS : passo * 1.5)) return;
+        nelDispositivo = true;
+      } else {
+        // coda vuota: il margine e' finito se la linea ha avuto un margine
+        // intero di tempo in cui il server ascoltava
+        const atteso = ultimo + passo + s.base[tipo];
+        if (orologio(s) - atteso - sordoFra(s.muro0 + atteso, ora()) <= s.margine) return;
+      }
+      entraRiserva(s, tipo, causaDi(s, tipo, nelDispositivo));
+    }
+    riempi(s, tipo, limite, fuori);
+  }
+
+  // Il ritardo di base di una traccia (docs/DIRETTA.md, «Le scelte fatte»):
+  // il ritardo d'arrivo piu' piccolo dell'ultimo mezzo minuto, in cassetti di
+  // dieci secondi, e la base gli va incontro al piu' di SCIVOLO al millisecondo.
+  function osservaRitardo(s, tipo, ritardo, oro) {
+    const k = Math.floor(oro / FINESTRA_PUNTUALE_MS), m = s.minimi[tipo];
+    const u = m[m.length - 1];
+    if (u && u.k === k) { if (ritardo < u.min) u.min = ritardo; return; }
+    m.push({ k, min: ritardo });
+    while (m.length && m[0].k <= k - 3) m.shift();
+  }
+  function scivola(s, dt) {
+    for (const tipo of TRACCE) {
+      const m = s.minimi[tipo];
+      if (!m.length) continue;
+      const meta = m.reduce((x, c) => Math.min(x, c.min), Infinity), max = dt * SCIVOLO;
+      s.base[tipo] += Math.max(-max, Math.min(max, meta - s.base[tipo]));
+    }
+  }
+
+  function curaTempo(s, { tutto = false } = {}) {
     if (s.finita) return;
-    const adesso = ora();
-    const assenteV = adesso - s.arrivo.video, assenteA = adesso - s.arrivo.audio;
-    if (Math.min(assenteV, assenteA) > s.assenzaMax) { fine(s, 'assente'); return; }
-    if (s.muro0 == null || !s.riserva) return;
-    const bersaglio = orologio(s) - 500;
-    if (assenteA > ATTESA_RISERVA_MS) {
-      if (!s.inRiserva.audio) { s.inRiserva.audio = true; s.giroA = 0; }
-      while (s.ultimo.audio + s.riserva.durataA <= bersaglio) {
-        const p = s.riserva.audio[s.giroA++ % s.riserva.audio.length];
-        emettiRiservaAudio(s, s.ultimo.audio + s.riserva.durataA, p.dati);
-      }
+    if (!tutto) {
+      osservaCiclo();
+      const adesso = ora();
+      if (Math.min(adesso - s.arrivo.video, adesso - s.arrivo.audio) > s.assenzaMax) { fine(s, 'assente'); return; }
     }
-    if (assenteV > ATTESA_RISERVA_MS) {
-      if (!s.inRiserva.video) { s.inRiserva.video = true; s.giroV = 0; s.serveChiave = true; }
-      const fino = s.inRiserva.audio ? bersaglio : Math.max(bersaglio, s.ultimo.audio);
-      while (s.ultimo.video + s.riserva.durataV <= fino) {
-        const i = s.giroV++ % s.riserva.video.length;
-        const p = s.riserva.video[i];
-        emetti(s, 'video', s.ultimo.video + s.riserva.durataV, p.chiave, p.dati);
-      }
-    }
-  }
-
-  // Al ritorno la riserva si completa fino al primo pacchetto vero: la riserva
-  // corre mezzo secondo indietro rispetto all'orologio, e senza questo il
-  // ritorno lascerebbe quel mezzo secondo vuoto.
-  function riempiFino(s, tipo, ms) {
-    if (!s.riserva) return;
-    const video = tipo === 'video';
-    const passo = video ? s.riserva.durataV : s.riserva.durataA;
-    while (s.ultimo[tipo] + passo < ms - passo / 2) {
-      const p = video ? s.riserva.video[s.giroV++ % s.riserva.video.length] : s.riserva.audio[s.giroA++ % s.riserva.audio.length];
-      if (video) emetti(s, tipo, s.ultimo[tipo] + passo, p.chiave, p.dati);
-      else emettiRiservaAudio(s, s.ultimo.audio + passo, p.dati);
-    }
+    if (s.muro0 == null) return;
+    const oro = orologio(s);
+    if (s.ultimaCura != null && oro > s.ultimaCura) scivola(s, oro - s.ultimaCura);
+    s.ultimaCura = Math.max(s.ultimaCura ?? oro, oro);
+    const fuori = [];
+    for (const tipo of TRACCE) scorri(s, tipo, tutto ? Infinity : tocca(s, tipo), fuori, !tutto);
+    // le tracce si intrecciano nei tempi, come le vuole il Matroska
+    fuori.sort((a, b) => a.ms - b.ms);
+    for (const u of fuori) scrivi(s, s.blocco(TRACCIA[u.tipo], u.ms, u.chiave, u.dati));
   }
 
   // Chi trasmette lo si dice a chi aspetta per riavviare (src/in-onda.js), nello
@@ -215,8 +363,14 @@ export function creaTramite({ risorse = risorseDiSerie, ffmpeg = 'ffmpeg', ora =
 
   function fine(s, motivo) {
     if (s.finita) return;
+    // la coda esce prima di chiudere: chi guarda vede fino all'ultimo secondo
+    if (!SENZA_CODA.has(motivo)) curaTempo(s, { tutto: true });
+    if (s.finita) return;
     s.finita = true;
     s.motivo = motivo;
+    chiudiEpisodio(s);
+    s.coda = { video: [], audio: [] };
+    s.codaByte = 0;
     try { s.ff.stdin?.end(); } catch { /* niente */ }
     const ff = s.ff;
     setTimeout(() => { try { if (ff.exitCode == null) ff.kill('SIGKILL'); } catch { /* niente */ } }, 3_000).unref?.();
@@ -241,7 +395,7 @@ export function creaTramite({ risorse = risorseDiSerie, ffmpeg = 'ffmpeg', ora =
     rinvio++;
     try { return avviaDavvero(login, opzioni); } finally { rinvio--; if (daDire) cambiato(); }
   }
-  function avviaDavvero(login, { destinazioni, video, audio, kbps, assenzaMaxMs = ASSENZA_MAX_MS, riprendi = false, vod: vodChiesto = false } = {}) {
+  function avviaDavvero(login, { destinazioni, video, audio, kbps, assenzaMaxMs = ASSENZA_MAX_MS, margineMs = MARGINE_MS, riprendi = false, vod: vodChiesto = false } = {}) {
     const ch = String(login || '').toLowerCase();
     if (!ch) return { ok: false, motivo: 'chi' };
     const prima = sessioni.get(ch);
@@ -253,8 +407,14 @@ export function creaTramite({ risorse = risorseDiSerie, ffmpeg = 'ffmpeg', ora =
       prima.serveChiave = true;
       prima.ultimoN = -1;
       prima.assenzaMax = assenzaMaxMs;
+      // la pagina si e' ricaricata: il buco in corso e' del dispositivo
+      if (prima.episodio && prima.episodio.causa !== 'dispositivo') {
+        prima.conti.cause[prima.episodio.causa].n--;
+        prima.conti.cause.dispositivo.n++;
+        prima.episodio.causa = 'dispositivo';
+      }
       log?.info?.(`diretta #${ch} ripresa`);
-      return { ok: true, turno: prima.turno, ripresa: true, vod };
+      return { ok: true, turno: prima.turno, ripresa: true, vod, margineMs: prima.margine };
     }
     const dest = (destinazioni || []).filter((d) => indirizzoBuono(d.url));
     if (!dest.length) return { ok: false, motivo: 'destinazioni' };
@@ -272,12 +432,15 @@ export function creaTramite({ risorse = risorseDiSerie, ffmpeg = 'ffmpeg', ora =
     let ff;
     try { ff = risorse.avvia(ffmpeg, argomenti(dest, audio.codec, vod), { stdio: ['pipe', 'ignore', 'pipe'] }); }
     catch { rendi(); return { ok: false, motivo: 'ffmpeg' }; }
+    const margine = Math.min(MARGINE_MAX_S * 1000, Math.max(MARGINE_MIN_S * 1000, Number(margineMs) || MARGINE_MS));
     const s = {
-      login: ch, ff, rendi, destinazioni: dest, kbps: k, audio: audio.codec, fps: video.fps, vod, gemello: null,
+      login: ch, ff, rendi, destinazioni: dest, kbps: k, audio: audio.codec, fps: video.fps, vod, margine,
       misure: `${video.larghezza}x${video.altezza}`, turno: randomBytes(8).toString('hex'), riancora: false,
-      config: { video: Buffer.from(video.config), audio: Buffer.from(audio.config || []) }, inizio: ora(), muro0: null, offset: null,
+      config: { video: Buffer.from(video.config), audio: Buffer.from(audio.config || []) }, inizio: ora(), muro0: null, offset: null, aggancio: 0,
       ultimo: { video: -Infinity, audio: -Infinity, vod: -Infinity }, arrivo: { video: ora(), audio: ora() },
-      inRiserva: { video: false, audio: false }, serveChiave: true, riserva: null, giroV: 0, giroA: 0,
+      coda: { video: [], audio: [] }, codaByte: 0, base: { video: 0, audio: 0 }, minimi: { video: [], audio: [] }, ultimaCura: null,
+      inRiserva: { video: false, audio: false }, serveChiave: true, riserva: null, giroV: 0, giroA: 0, episodio: null,
+      conti: { n: 0, ms: 0, ultima: null, cause: Object.fromEntries(CAUSE.map((c) => [c, { n: 0, ms: 0 }])) },
       blocco: creaScrittore(), byte: 0, finestra: [], ultimoN: -1, assenzaMax: assenzaMaxMs, finita: false, errore: '', cadute: new Map(),
     };
     sessioni.set(ch, s);
@@ -299,8 +462,8 @@ export function creaTramite({ risorse = risorseDiSerie, ffmpeg = 'ffmpeg', ora =
     ff.on('exit', () => fine(s, s.finita ? s.motivo : 'uscita'));
     scrivi(s, testata({ video: { ...video, config: s.config.video }, audio: { ...audio, config: audio.config ? Buffer.from(audio.config) : null }, vod }));
     accendiGiro();
-    log?.info?.(`diretta #${ch} partita verso ${dest.map((d) => d.nome || d.id).join(', ')}`);
-    return { ok: true, turno: s.turno, vod };
+    log?.info?.(`diretta #${ch} partita verso ${dest.map((d) => d.nome || d.id).join(', ')} (margine ${margine / 1000} s)`);
+    return { ok: true, turno: s.turno, vod, margineMs: margine };
   }
 
   // La riserva: pacchetti della stessa codifica, il primo video e' chiave.
@@ -320,6 +483,10 @@ export function creaTramite({ risorse = risorseDiSerie, ffmpeg = 'ffmpeg', ora =
     return { ok: true };
   }
 
+  // Il video aspetta una chiave (al via, alla ripresa, in riserva) e in coda non
+  // ce n'e' una che vada avanti: la si chiede al dispositivo.
+  const chiedeChiave = (s) => s.serveChiave || (s.inRiserva.video && !s.coda.video.some((p) => p.chiave && p.ms > s.ultimo.video));
+
   function pacchi(login, n, buf, turno) {
     const s = sessioni.get(String(login || '').toLowerCase());
     if (!s) return { ok: false, motivo: 'nessuna' };
@@ -329,6 +496,7 @@ export function creaTramite({ risorse = risorseDiSerie, ffmpeg = 'ffmpeg', ora =
     let lista;
     try { lista = leggiPacchi(buf); } catch { return { ok: false, motivo: 'pacchi' }; }
     if (Number.isFinite(seq)) s.ultimoN = seq;
+    osservaCiclo();
     const adesso = ora();
     s.byte += buf.length;
     s.finestra.push([adesso, buf.length]);
@@ -336,11 +504,11 @@ export function creaTramite({ risorse = risorseDiSerie, ffmpeg = 'ffmpeg', ora =
     const inFinestra = s.finestra.reduce((t, [, b]) => t + b, 0);
     if (adesso - s.inizio > FINESTRA_BYTE_MS && inFinestra * 8 / FINESTRA_BYTE_MS > (s.kbps * 1.5 + 256)) { fine(s, 'troppo'); return { ok: false, motivo: 'troppo' }; }
     for (const p of lista) {
-      // Il pacco del VOD e' il gemello dell'audio appena uscito (il dispositivo
-      // li mette in coda a coppie, stesso tempo): esce nello stesso istante,
-      // o non esce. Non aggancia l'orologio e non ferma la riserva.
+      // Il pacco del VOD e' il gemello dell'audio appena messo in coda (il
+      // dispositivo li manda a coppie, stesso tempo): esce con lui, o non esce.
       if (p.tipo === 'vod') {
-        if (s.vod && s.gemello && s.gemello.us === p.us) emetti(s, 'vod', s.gemello.ms, true, p.dati);
+        const a = s.coda.audio[s.coda.audio.length - 1];
+        if (s.vod && a && a.us === p.us && !a.vod) { a.vod = p.dati; a.peso += p.dati.length; s.codaByte += p.dati.length; }
         continue;
       }
       // Il tempo del dispositivo si aggancia all'orologio d'uscita sul primo
@@ -350,36 +518,29 @@ export function creaTramite({ risorse = risorseDiSerie, ffmpeg = 'ffmpeg', ora =
         if (p.tipo !== 'video' || !p.chiave) continue;
         if (s.muro0 == null) s.muro0 = adesso;
         s.offset = (adesso - s.muro0) - p.us / 1000;
+        // la chiave nuova va dopo tutto il video gia' preso, anche se il
+        // dispositivo di prima aveva l'orologio avanti
+        const coda = s.coda.video, dopo = Math.max(s.ultimo.video, coda.length ? coda[coda.length - 1].ms : -Infinity);
+        if (p.us / 1000 + s.offset <= dopo) s.offset += dopo - (p.us / 1000 + s.offset) + 1000 / s.fps;
+        if (!Number.isFinite(s.ultimo.video) && !coda.length) s.aggancio = p.us / 1000 + s.offset;
+        s.minimi = { video: [], audio: [] };
         s.riancora = false;
       }
-      let ms = p.us / 1000 + s.offset;
-      // Un pacco scartato non e' «arrivato»: se contasse, la riserva si
-      // fermerebbe senza che il video vero riparta, e in onda resterebbe un
-      // fotogramma fermo finche' non arriva una chiave.
-      const arretrato = orologio(s) - ms > ARRETRATO_MS;
-      if (p.tipo === 'video') {
-        if (s.inRiserva.video || s.serveChiave) {
-          if (!p.chiave || arretrato) continue;
-          if (ms <= s.ultimo.video) { s.offset += s.ultimo.video - ms + 1000 / s.fps; ms = p.us / 1000 + s.offset; }
-          if (s.inRiserva.video) riempiFino(s, 'video', ms);
-          s.inRiserva.video = false;
-          s.serveChiave = false;
-        }
-      } else if (s.inRiserva.audio) {
-        if (arretrato) continue;
-        const passo = s.riserva ? s.riserva.durataA : 20;
-        if (ms <= s.ultimo.audio) { s.offset += s.ultimo.audio - ms + passo; ms = p.us / 1000 + s.offset; }
-        riempiFino(s, 'audio', ms);
-        s.inRiserva.audio = false;
+      const ms = p.us / 1000 + s.offset;
+      if (p.tipo === 'video' && s.serveChiave) {
+        if (!p.chiave) continue;
+        s.serveChiave = false;
       }
+      osservaRitardo(s, p.tipo, (adesso - s.muro0) - ms, adesso - s.muro0);
       s.arrivo[p.tipo] = adesso;
-      const uscito = emetti(s, p.tipo, ms, p.chiave, p.dati);
-      if (p.tipo === 'audio') s.gemello = uscito ? { us: p.us, ms } : null;
+      const peso = p.dati.length;
+      s.coda[p.tipo].push({ us: p.us, ms, chiave: p.chiave, dati: p.dati, peso, vod: null });
+      s.codaByte += peso;
     }
+    if (s.codaByte > CODA_MAX_BYTE) { fine(s, 'coda'); return { ok: false, motivo: 'coda' }; }
     curaTempo(s);
-    // Aspetta un fotogramma chiave per riprendere il video vero: lo chiede,
-    // e il dispositivo lo fa sul fotogramma dopo invece che fra due secondi.
-    return { ok: true, chiave: s.serveChiave || s.inRiserva.video };
+    if (s.finita) return { ok: false, motivo: s.motivo };
+    return { ok: true, chiave: chiedeChiave(s) };
   }
 
   function stato(login) {
@@ -388,10 +549,19 @@ export function creaTramite({ risorse = risorseDiSerie, ffmpeg = 'ffmpeg', ora =
     if (!s) return { live: false, ultimaFine: finite.get(ch) || null };
     const adesso = ora();
     const inFinestra = s.finestra.filter(([t]) => adesso - t <= FINESTRA_BYTE_MS).reduce((t, [, b]) => t + b, 0);
+    // quanto margine c'e' adesso: la diretta gia' arrivata e non ancora mandata
+    const scorta = s.muro0 == null ? 0 : Math.max(0, ...TRACCE.map((t) => { const c = s.coda[t]; return c.length ? c[c.length - 1].ms - tocca(s, t) : 0; }));
+    const e = s.episodio, inCorso = e ? Math.max(0, e.fine - e.da) : 0;
     return {
       live: true, da: s.inizio, byte: s.byte, kbpsVeri: Math.round(inFinestra * 8 / FINESTRA_BYTE_MS), kbpsDichiarati: s.kbps,
       destinazioni: s.destinazioni.map((d) => d.nome || d.id), ids: s.destinazioni.map((d) => d.id), riserva: !!s.riserva, inRiserva: { ...s.inRiserva }, errore: s.errore, vod: !!s.vod,
       stati: s.destinazioni.map((d, i) => ({ id: d.id, nome: d.nome || d.id, ok: !s.cadute.has(i), motivo: s.cadute.get(i)?.motivo || '' })),
+      margine: s.margine, scorta: Math.round(Math.min(scorta, s.margine + 1000)),
+      riserve: {
+        n: s.conti.n, ms: Math.round(s.conti.ms + inCorso),
+        cause: Object.fromEntries(CAUSE.map((c) => [c, { n: s.conti.cause[c].n, ms: Math.round(s.conti.cause[c].ms + (e?.causa === c ? inCorso : 0)) }])),
+        ultima: e ? { causa: e.causa, ms: Math.round(inCorso), inCorso: true } : s.conti.ultima ? { ...s.conti.ultima, ms: Math.round(s.conti.ultima.ms), inCorso: false } : null,
+      },
     };
   }
 
@@ -406,5 +576,7 @@ export function creaTramite({ risorse = risorseDiSerie, ffmpeg = 'ffmpeg', ora =
     canali: () => [...new Set([...sessioni.keys()].map((k) => k.replace(/#v$/, '')))],
     chiudiTutto: () => { for (const s of [...sessioni.values()]) fine(s, 'spegnimento'); },
     curaTempo: (login) => { const s = sessioni.get(String(login || '').toLowerCase()); if (s) curaTempo(s); },
+    // un giro del tramite, come lo batte il suo timer (per le prove senza timer)
+    battito,
   };
 }

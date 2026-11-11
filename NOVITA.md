@@ -41,6 +41,12 @@ questa non è una cosa da ricordarsi: il cancello boccia una riga pubblica senza
 traduzione, una traduzione staccata dalla sua riga, o una che dice numeri e
 comandi diversi da quelli della riga italiana.
 
+## 2026-11-06
+
+- La diretta dallo Studio non va più in «torno subito» a ogni intoppo della rete: tiene un margine (di serie 3 s, da 1 a 8) e chi guarda non vede gli intoppi più corti. La barra della salute conta le riserve e il perché. [vai: studio]
+  en: Streaming from the Studio no longer drops to «be right back» at every network hiccup: it keeps a buffer (3 seconds by default, 1 to 8) that hides shorter hiccups. The health bar shows how many fallbacks and why.
+  es: El directo desde el Estudio ya no pasa a «vuelvo enseguida» con cada tropiezo de la red: guarda un margen (3 segundos por defecto, de 1 a 8) que oculta los más cortos. La barra de salud dice cuántas reservas y por qué.
+
 ## 2026-11-05
 
 - Il sito ha ora anche i file che gli assistenti IA, i motori di ricerca e chi compra pubblicità cercano in cima: llm.txt, ai.txt, ads.txt e humans.txt. [vai: stato]
