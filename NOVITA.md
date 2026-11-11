@@ -41,6 +41,18 @@ questa non è una cosa da ricordarsi: il cancello boccia una riga pubblica senza
 traduzione, una traduzione staccata dalla sua riga, o una che dice numeri e
 comandi diversi da quelli della riga italiana.
 
+## 2026-11-11
+
+- [importante] Il menu del pannello ora è tuo: metti in cima le pagine che usi, nascondi le altre, cambia l'ordine e scegli la barra in basso del telefono. Ti segue su ogni dispositivo. [vai: account]
+  en: The panel menu is now yours: put the pages you use at the top, hide the others, change the order and choose the phone's bottom bar. It follows you on every device.
+  es: El menú del panel ahora es tuyo: pon arriba las páginas que usas, oculta las demás, cambia el orden y elige la barra inferior del móvil. Te sigue en todos tus dispositivos.
+  > Un menu su misura
+  > Premi la stella accanto al titolo di una pagina per averla in cima. Il resto è in «Sistema il menu», in fondo al menu: righe più fitte, gruppi aperti, pagina d'apertura.
+  en> A menu of your own
+  en> Press the star next to a page's title to keep it at the top. The rest is under «Arrange the menu», at the bottom of the menu: tighter rows, open groups, opening page.
+  es> Un menú a medida
+  es> Pulsa la estrella junto al título de una página para tenerla arriba. Lo demás está en «Ordena el menú», al final del menú: filas más juntas, grupos abiertos, página de inicio.
+
 ## 2026-11-06
 
 - La diretta dallo Studio non va più in «torno subito» a ogni intoppo della rete: tiene un margine (di serie 3 s, da 1 a 8) e chi guarda non vede gli intoppi più corti. La barra della salute conta le riserve e il perché. [vai: studio]

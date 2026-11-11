@@ -170,6 +170,7 @@ import * as storiaIg from '../features/storia-ig.js';
 import * as settimana from '../features/settimana.js';
 import * as prossime from '../features/prossime.js';
 import * as preferenze from '../features/preferenze.js';
+import * as menuPersona from '../features/menu-persona.js';
 import { origineLinguaChat, linguaChat } from '../features/lingua-canale.js';
 import * as automatiche from '../features/automatiche.js';
 import * as campagne from '../features/campagne.js';
@@ -4619,6 +4620,9 @@ ${FUNZIONI_VETRINA.map((a) => `### ${a.area[0]}\n${a.voci.map((v) => `- ${v.t[0]
       ruolo: user?.role || null,
       identita: ident,
       identitaDisplay: user.identitaDisplay || user.modDisplay || user.display || ident,
+      // il menu su misura di chi e' entrato (docs/MENU.md): della persona, non
+      // del canale che sta gestendo. null: il menu di serie.
+      menu: menuPersona.menuDi(ident),
       // chi sta gestendo ora + TUTTI i canali gestibili dall'identità, con ruolo
       // (proprio canale da proprietario + canali moderati) → alimenta lo switcher.
       gestisce: { canale: user.login, streamer: user.display || user.login, nome: nomeSu(user.login) },
@@ -6225,6 +6229,14 @@ ${FUNZIONI_VETRINA.map((a) => `### ${a.area[0]}\n${a.voci.map((v) => `- ${v.t[0]
     if (!preferenze.salvaPreferenze(login, req.body?.preferenze)) return res.status(404).json({ errore: 'canale sconosciuto' });
     prossime.dimenticaProgramma(login);
     res.json({ ok: true, ...statoPreferenze(login) });
+  });
+
+  // IL MENU SU MISURA (docs/MENU.md): le scelte sono della persona che e'
+  // entrata, anche quando gestisce il canale di un altro. Chi non ha un conto
+  // suo riceve `qui: true`, e il pannello le tiene nel browser.
+  app.post('/api/persona/menu', requireLogin, (req, res) => {
+    const salvate = menuPersona.salvaMenu(identitaDi(currentUser(req)), req.body?.menu);
+    res.json(salvate ? { ok: true, menu: salvate } : { ok: true, qui: true, menu: menuPersona.pulisci(req.body?.menu) });
   });
 
   app.get('/api/account/collegamenti', requireOwner, (req, res) => {

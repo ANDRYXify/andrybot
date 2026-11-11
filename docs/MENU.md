@@ -50,12 +50,16 @@ prima era una carta dentro Giveaway.
 
 ## Il menu
 
+Questo elenco è quello di `GRUPPI` nel pannello, e un contratto lo tiene uguale
+(`menu-nomi.test.mjs`): era rimasto indietro di quattro voci senza che niente
+lo dicesse.
+
 - Stato
 - Il bot
 - Chat: Comandi, Moderazione, Negozio
 - Intrattenimento: Presenza, Monete, Giochi, Partite, Sondaggi e predizioni, Giveaway, Penitenze
-- In diretta: Regia, Clip, Musica, CONSOLify
-- Scena e overlay: Overlay Studio, Effetti e suoni, Emote (7TV)
+- In diretta: Regia, Studio Web, Clip, Musica, Subathon, Walk-on, CONSOLify
+- Scena e overlay: Overlay Studio, Effetti e suoni, Emote (7TV), Pew
 - Scudo e attacchi: Scudo anti-bot, Attacchi, Follower, Registro
 - Numeri: Statistiche, Dirette
 - Vetrina: Pagina link, Donazioni, Settimana, Grafiche social, Social
@@ -139,3 +143,93 @@ pillola dello Studio entra nella barra (nascosta) quando si cambia scheda, e
 la regola che le cedeva il margine valeva anche da nascosta. Ora il margine lo
 cede solo una pillola che si vede (`.studio-pillola:not([hidden]) +
 .top-strumenti`), e un contratto lo tiene fermo.
+
+## Il menu su misura: sopra la fabbrica, il livello di chi lo usa
+
+Chiesto così: «dici che servirebbe una gestione migliore dei
+menu/sottomenu/navigazione in generale? sì? la configuri e la lanci?».
+
+**Il difetto, misurato** (pannello di prova, 1280×800 e 390×844).
+
+- 42 voci in 12 gruppi, due da 7. I nomi reggono (uno per posto, nessun
+  doppione, i cancelli li tengono): **i gruppi non sono il difetto.**
+- Da Stato, 40 voci su 42 costano due clic (apri il gruppo, scegli), e aprire
+  un gruppo chiude quello di prima. Sul telefono 30 su 42 ne costano tre
+  (Altro, gruppo, voce).
+- La barra in basso del telefono ha quattro voci decise da noi, uguali per
+  tutti.
+- Non c'è niente di «mio»: chi usa sei pagine le cerca ogni volta fra 42, e chi
+  non ha Discord, Kick o una subathon se li vede davanti lo stesso.
+- Con un gruppo da 7 aperto il menu è più alto di uno schermo da 768 (930 px
+  contro 708): Stato scorre via.
+- L'elenco «Il menu» di questo documento era rimasto a quattro voci fa.
+
+**Il modello.** Due livelli, e il secondo non tocca il primo.
+
+6. **La fabbrica è una sola** (`GRUPPI`). I nomi e i gruppi sono quelli che
+   dicono i manuali, la lente, le novità e i percorsi scritti nel pannello: non
+   si rinominano, e una voce non cambia gruppo. Così «In diretta → Musica» è
+   vero per tutti, qualunque cosa uno abbia fatto al suo menu.
+7. **Sopra c'è il menu di chi usa il pannello**: una funzione pura,
+   `menuSuMisura(fabbrica, scelte)`, che dalla fabbrica e dalle scelte della
+   persona dà il menu da disegnare. Le scelte:
+   - **«Le mie»**: fino a 12 voci, nell'ordine che vuole lui, in cima al menu e
+     sempre aperte. Il nome del gruppo lo sceglie lui (di serie «Le mie»). Una
+     voce fra le mie resta anche nel suo gruppo: è una scorciatoia, non uno
+     spostamento.
+   - **Nascoste**: le voci che non usa escono dal menu e stanno in fondo, in
+     una riga chiusa «Nascoste». Non spariscono mai: la lente, i link e le
+     novità le aprono lo stesso, e la voce in cui ci si trova si vede finché
+     ci si sta. Stato non si nasconde: è dove arrivano gli avvisi.
+   - **Ordine** dei gruppi, e delle voci dentro ogni gruppo.
+   - **Barra in basso del telefono**: fino a quattro voci a scelta. «Altro» c'è
+     sempre, perché è la porta di tutto il resto.
+   - **Gruppi**: uno aperto alla volta (di serie), come li lascio, o tutti
+     aperti.
+   - **Righe**: comode o fitte (fitte: il menu intero con un gruppo da 7
+     aperto sta in 768). Vale col mouse: sul telefono le righe restano alte
+     quanto un dito.
+   - **Pagina d'apertura**: Stato, l'ultima usata, o una voce a scelta. Un
+     indirizzo con la sua pagina vince sempre.
+   - **Rimetti il menu di serie**: toglie tutte le scelte.
+8. **Gli invarianti stanno nella funzione, non nei controlli attorno.** Ogni
+   voce di fabbrica esce una volta sola, nel suo gruppo o fra le nascoste. Una
+   voce nata dopo (un aggiornamento) compare al suo posto di fabbrica anche in
+   un menu già riordinato; un gruppo nato dopo va in coda. Un id che non esiste
+   più si scarta. Un gruppo senza voci visibili non si disegna. Una scelta
+   guasta vale «di serie». Quello che la persona non può aprire (piano, conto
+   solo Discord, admin) si toglie dopo, con le stesse regole di prima.
+9. **Le scelte sono della persona, non del canale**: chi modera il canale di un
+   altro si porta dietro il suo menu. Stanno sul server (`settings.menu` del
+   conto di chi è entrato) e arrivano con `/api/me`, così il telefono e il
+   computer hanno lo stesso menu; chi non ha un conto suo le tiene nel
+   browser. Il server le ripulisce con le stesse regole del pannello
+   (`src/features/menu-persona.js`), e un contratto tiene le due ripuliture
+   uguali.
+10. **Dove si fa.** Una stella accanto al titolo di ogni pagina («Mettila fra
+    le mie»): il gesto più frequente costa un clic, dove sei. Tutto il resto
+    nella carta «Menu su misura» (Account → Accesso e dati), a cui porta anche
+    il tasto «Sistema il menu» in fondo al menu. Ogni gesto vale subito, e il
+    menu accanto è l'anteprima. Il tasto porta la carta in vista e la segue
+    finché la pagina non ha finito di caricarsi: le carte sopra crescono
+    mentre arrivano i loro dati, e una carta lasciata appena sotto lo schermo
+    non si disegna.
+11. **Le sorelle seguono il menu**: sul telefono la barra delle voci del
+    gruppo ha l'ordine scelto e non mostra le nascoste (tranne quella in cui
+    ci si trova).
+
+**Quello che non si può fare, e perché.** Rinominare i gruppi di fabbrica o
+spostare una voce da un gruppo all'altro: i nomi dei posti sono quelli con cui
+il pannello, i manuali e l'assistenza li chiamano (regola 1). Chi vuole le sue
+cose insieme, col suo nome e nel suo ordine, ha «Le mie».
+
+**Le ultime usate** c'erano già: la lente (Ctrl+K, o `/`) apre con le pagine
+più usate in cima.
+
+**Come si misura.** `test/contratto/menu-misura.test.mjs` prova la funzione
+sulle tabelle vere (gli invarianti del punto 8, uno per uno, e le due
+ripuliture a confronto). `scripts/verifica-menu-misura.mjs` apre il pannello e
+fa i gesti: stella, nascondi, ordine, barra del telefono, righe fitte in 768,
+ritorno al menu di serie; con `--selftest` rompe la funzione e pretende il
+rosso.
+

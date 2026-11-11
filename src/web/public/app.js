@@ -339,10 +339,17 @@ function inApp() {
   return window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
 }
 
+let _apertaFatta = false;
 function apriDaIndirizzo() {
   if (stato?.streamer?.status !== 'approved') return;
   const h = decodeURIComponent((location.hash || '').replace(/^#/, ''));
-  if (h && schedaValida(h) && !schedaBloccata(h) && (!SOLO_ADMIN.has(h) || stato?.isAdmin)) schedaAttiva = h;
+  if (h && schedaValida(h) && !schedaBloccata(h) && (!SOLO_ADMIN.has(h) || stato?.isAdmin)) { schedaAttiva = h; return; }
+  if (h || _apertaFatta) return;
+  _apertaFatta = true;
+  let apre = menuMio().apre;
+  if (apre === 'ultima') { try { apre = localStorage.getItem(MENU_ULTIMA) || 'stato'; } catch (e) { apre = 'stato'; } }
+  if (apre !== 'stato' && schedaValida(apre) && !schedaNonUsabile(apre) && (!SOLO_ADMIN.has(apre) || stato?.isAdmin)
+    && (!senzaDiretta() || SOLO_DISCORD.has(apre) || SOLO_ADMIN.has(apre))) schedaAttiva = apre;
 }
 
 function _firma() {
@@ -2907,6 +2914,7 @@ function render() {
 
   document.body.classList.toggle('con-nav', conPiattaforma);
   if (navDrawer) navDrawer.innerHTML = conPiattaforma ? navDrawerHtml() : '';
+  document.body.classList.toggle('menu-fitto', conPiattaforma && menuMio().righe === 'fitte');
   const salta = document.getElementById('salta');
   if (salta) salta.textContent = L('Vai al contenuto', 'Skip to content', 'Ir al contenido');
   aggiornaTestataPagina();
@@ -4901,6 +4909,131 @@ function elencoGruppi() {
     .filter((g) => g.schede.length);
 }
 
+const MENU_MIE_MAX = 12;
+const MENU_BARRA_MAX = 4;
+function menuPulito(grezze) {
+  const id = (x) => (typeof x === 'string' && /^[a-z0-9]{1,24}$/.test(x) ? x : '');
+  const lista = (x, max) => [...new Set((Array.isArray(x) ? x : []).map(id).filter(Boolean))].slice(0, max);
+  const o = grezze && typeof grezze === 'object' && !Array.isArray(grezze) ? grezze : {};
+  const ordine = {};
+  if (o.ordine && typeof o.ordine === 'object' && !Array.isArray(o.ordine)) {
+    for (const [g, v] of Object.entries(o.ordine).slice(0, 40)) if (id(g)) ordine[g] = lista(v, 40);
+  }
+  return {
+    mie: lista(o.mie, 12),
+    nomeMie: (typeof o.nomeMie === 'string' ? o.nomeMie : '').replace(/[<>\u0000-\u001f]/g, '').trim().slice(0, 24),
+    nascoste: lista(o.nascoste, 80),
+    gruppi: lista(o.gruppi, 40),
+    ordine,
+    barra: lista(o.barra, 4),
+    modo: ['uno', 'ricorda', 'tutti'].includes(o.modo) ? o.modo : 'uno',
+    righe: ['comode', 'fitte'].includes(o.righe) ? o.righe : 'comode',
+    apre: o.apre === 'ultima' ? 'ultima' : (id(o.apre) || 'stato'),
+  };
+}
+
+function menuOrdina(fabbrica, scelta) {
+  const out = scelta.filter((x) => fabbrica.includes(x));
+  fabbrica.forEach((x, i) => {
+    if (out.includes(x)) return;
+    let dopo = -1;
+    for (let k = i - 1; k >= 0 && dopo < 0; k--) dopo = out.indexOf(fabbrica[k]);
+    out.splice(dopo + 1, 0, x);
+  });
+  return out;
+}
+
+function menuSuMisura(fabbrica, scelte) {
+  const s = menuPulito(scelte);
+  const tutte = new Set(fabbrica.flatMap((g) => g.schede.map(([id]) => id)));
+  const mie = s.mie.filter((id) => tutte.has(id));
+  const via = new Set(s.nascoste.filter((id) => tutte.has(id) && id !== 'stato' && !mie.includes(id)));
+  const perId = new Map(fabbrica.map((g) => [g.id, g]));
+  const interi = menuOrdina(fabbrica.map((g) => g.id), s.gruppi).map((gid) => {
+    const g = perId.get(gid);
+    const voci = new Map(g.schede.map((v) => [v[0], v]));
+    return { ...g, schede: menuOrdina(g.schede.map(([id]) => id), s.ordine[gid] || []).map((id) => voci.get(id)) };
+  });
+  return {
+    mie,
+    interi,
+    gruppi: interi.map((g) => ({ ...g, schede: g.schede.filter(([id]) => !via.has(id)) })).filter((g) => g.schede.length),
+    nascoste: interi.flatMap((g) => g.schede.filter(([id]) => via.has(id))),
+    barra: s.barra.filter((id) => tutte.has(id)),
+    nomeMie: s.nomeMie,
+    modo: s.modo,
+    righe: s.righe,
+    apre: s.apre === 'ultima' || tutte.has(s.apre) ? s.apre : 'stato',
+  };
+}
+
+const MENU_LOCALE = 'menu:scelte';
+const MENU_APERTI = 'menu:aperti';
+const MENU_ULTIMA = 'menu:ultima';
+let _menuScelte = null, _menuDi = null, _menuCoda = Promise.resolve();
+function menuScelte() {
+  if (_menuScelte && _menuDi === stato) return _menuScelte;
+  let locale = null;
+  if (!DEMO) { try { locale = JSON.parse(localStorage.getItem(MENU_LOCALE) || 'null'); } catch (e) { locale = null; } }
+  _menuDi = stato;
+  return (_menuScelte = menuPulito(locale || stato?.menu));
+}
+const menuMio = () => menuSuMisura(elencoGruppi(), menuScelte());
+const voceMenuDi = (id) => famigliaDi(id)?.parti[0] || id;
+
+function menuCambia(cambia) {
+  const s = JSON.parse(JSON.stringify(menuScelte()));
+  cambia(s);
+  _menuScelte = menuPulito(s); _menuDi = stato;
+  _gruppiAperti = null;
+  menuRidisegna();
+  if (DEMO) return;
+  const corpo = _menuScelte;
+  const tieniQui = () => { try { localStorage.setItem(MENU_LOCALE, JSON.stringify(corpo)); } catch (e) {  } };
+  _menuCoda = _menuCoda.then(() => api('/api/persona/menu', { method: 'POST', body: { menu: corpo } }))
+    .then((r) => { if (r?.qui) tieniQui(); else { try { localStorage.removeItem(MENU_LOCALE); } catch (e) {  } if (stato) stato.menu = r?.menu || null; } })
+    .catch(() => { tieniQui(); toast(L('Non sono riuscito a salvare il menu sul server: per ora resta su questo dispositivo.', 'I could not save the menu on the server: for now it stays on this device.', 'No he podido guardar el menú en el servidor: por ahora se queda en este dispositivo.')); });
+}
+
+function menuRidisegna() {
+  const nav = document.getElementById('nav-drawer');
+  const con = document.body.classList.contains('con-nav');
+  if (nav && con) nav.innerHTML = navDrawerHtml();
+  document.body.classList.toggle('menu-fitto', con && menuMio().righe === 'fitte');
+  aggiornaBarraGiu();
+  aggiornaStellaMia();
+  disegnaMenuMisura();
+}
+
+const menuNomeMie = () => menuMio().nomeMie || L('Le mie', 'Mine', 'Las mías');
+function menuGiraMia(id) {
+  const voce = voceMenuDi(id);
+  const cera = menuMio().mie.includes(voce);
+  if (!cera && menuMio().mie.length >= MENU_MIE_MAX) {
+    toast(L(`Fra le tue ce ne stanno ${MENU_MIE_MAX}: togline una per farle posto.`, `Yours hold ${MENU_MIE_MAX}: remove one to make room.`, `Entre las tuyas caben ${MENU_MIE_MAX}: quita una para hacerle sitio.`));
+    return;
+  }
+  menuCambia((s) => {
+    s.mie = cera ? s.mie.filter((x) => x !== voce) : s.mie.concat([voce]);
+    if (!cera) s.nascoste = s.nascoste.filter((x) => x !== voce);
+  });
+}
+function menuGiraNascosta(id) {
+  if (id === 'stato') return;
+  menuCambia((s) => {
+    const cera = s.nascoste.includes(id);
+    s.nascoste = cera ? s.nascoste.filter((x) => x !== id) : s.nascoste.concat([id]);
+    if (!cera) { s.mie = s.mie.filter((x) => x !== id); s.barra = s.barra.filter((x) => x !== id); }
+  });
+}
+function menuSposta(lista, id, passo) {
+  const i = lista.indexOf(id), j = i + passo;
+  if (i < 0 || j < 0 || j >= lista.length) return lista;
+  const out = lista.slice();
+  out.splice(i, 1); out.splice(j, 0, id);
+  return out;
+}
+
 const _ico = (d) => `<svg class="lat-svg" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
 const ICONA = {
   stato:       _ico('<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9v11h14V9"/><path d="M9.5 20v-6h5v6"/>'),
@@ -5496,9 +5629,11 @@ function sorelleDi(id) {
   const f = famigliaDi(id);
   if (f) return { ...f, nome: tFamiglia(f.id, f.nome), etichetta: (p) => tScheda(p) };
   if (SOTTO_SCHEDE[id]) return null;
-  const g = elencoGruppi().find((x) => x.schede.some(([sid]) => sid === id));
+  const m = menuMio();
+  const g = m.interi.find((x) => x.schede.some(([sid]) => sid === id));
   if (!g) return null;
-  return { id: g.id, nome: tGruppo(g.id, g.nome), parti: g.schede.map(([sid]) => sid), etichetta: voceDelMenu, dalGruppo: true };
+  const via = new Set(m.nascoste.map(([sid]) => sid));
+  return { id: g.id, nome: tGruppo(g.id, g.nome), parti: g.schede.map(([sid]) => sid).filter((sid) => sid === id || !via.has(sid)), etichetta: voceDelMenu, dalGruppo: true };
 }
 
 function barraFamigliaHtml(id) {
@@ -5558,9 +5693,19 @@ const _icoAltro = _ico('<circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" 
 
 function barraGiuHtml() {
   const gruppi = elencoGruppi();
-  const voce = (chiave, ico, attivo, attr) =>
+  const voce = (chiave, ico, attivo, attr, nome) =>
     `<button type="button" class="bg-voce${attivo ? ' on' : ''}" ${attr}>
-      <span class="bg-ico">${ico}</span><span class="bg-eti">${esc(T_GIU[chiave] ? L(...T_GIU[chiave]) : tGruppo(chiave))}</span></button>`;
+      <span class="bg-ico">${ico}</span><span class="bg-eti">${esc(nome || (T_GIU[chiave] ? L(...T_GIU[chiave]) : tGruppo(chiave)))}</span></button>`;
+  const scelte = menuMio().barra.filter((id) => !schedaNonUsabile(id));
+  if (scelte.length) {
+    let coperta = false, out = '';
+    for (const id of scelte) {
+      const attivo = voceAttiva(id, schedaAttiva);
+      if (attivo) coperta = true;
+      out += voce(id, ICONA[id] || '', attivo, `data-scheda="${id}"`, voceDelMenu(id));
+    }
+    return out + voce('altro', _icoAltro, !coperta, 'data-apri-menu="1"');
+  }
   let coperta = schedaAttiva === 'stato';
   let out = voce('stato', ICONA.stato || '', schedaAttiva === 'stato', 'data-scheda="stato"');
   for (const gid of ['bot', 'pubblico', 'diretta']) {
@@ -5610,10 +5755,34 @@ function voceAttiva(voce, scheda) {
 }
 
 let _gruppiAperti = null;
-const gruppiAperti = () => (_gruppiAperti ||= new Set([gruppoDiScheda(schedaAttiva)]));
+const gruppiAperti = () => (_gruppiAperti ||= gruppiDaAprire(schedaAttiva));
+
+function gruppoNelMenu(id) {
+  const m = menuMio(), voce = voceMenuDi(id);
+  if (m.nascoste.some(([x]) => x === voce)) return 'nascoste';
+  if (m.mie.includes(voce)) return '';
+  return gruppoDiScheda(id);
+}
+
+function gruppiDaAprire(id) {
+  const m = menuMio(), qui = gruppoNelMenu(id);
+  const con = (base) => new Set(base.concat(qui ? [qui] : []));
+  if (m.modo === 'tutti') return con(m.gruppi.map((g) => g.id));
+  if (m.modo !== 'ricorda') return con([]);
+  if (_gruppiAperti) return con([..._gruppiAperti]);
+  let prima = [];
+  try { prima = JSON.parse(localStorage.getItem(MENU_APERTI) || '[]'); } catch (e) { prima = []; }
+  return con(Array.isArray(prima) ? prima.map(String) : []);
+}
+
+function ricordaAperti() {
+  if (DEMO || menuMio().modo !== 'ricorda' || !_gruppiAperti) return;
+  try { localStorage.setItem(MENU_APERTI, JSON.stringify([..._gruppiAperti].filter((g) => g !== 'nascoste'))); } catch (e) {  }
+}
 
 function apriGruppiDi(id) {
-  _gruppiAperti = new Set([gruppoDiScheda(id)]);
+  _gruppiAperti = gruppiDaAprire(id);
+  ricordaAperti();
   document.querySelectorAll('#nav-drawer .drawer-grp[data-grp]').forEach((el) => mostraGruppo(el, gruppiAperti().has(el.dataset.grp)));
 }
 
@@ -5631,19 +5800,175 @@ function giraGruppo(bottone) {
   const aperto = !aperti.has(el.dataset.grp);
   if (aperto) aperti.add(el.dataset.grp); else aperti.delete(el.dataset.grp);
   mostraGruppo(el, aperto);
+  ricordaAperti();
+}
+
+const _mmGruppi = new Map();
+const _mmSu = '<path d="m6 15 6-6 6 6"/>', _mmGiu = '<path d="m6 9 6 6 6-6"/>', _mmVia = '<path d="M6 6l12 12M18 6 6 18"/>';
+function disegnaMenuMisura() {
+  const box = document.getElementById('menu-misura');
+  if (!box) return;
+  const m = menuMio();
+  const chi = box.contains(document.activeElement) ? document.activeElement.getAttribute('data-mm-chi') : null;
+  const tasto = (cosa, id, passo, ico, testo, { spento = false, premuto = null } = {}) =>
+    `<button type="button" class="mm-tasto" data-mm="${cosa}" data-id="${esc(id)}"${passo ? ` data-passo="${passo}"` : ''} data-mm-chi="${cosa}:${esc(id)}:${passo || 0}"${spento ? ' disabled' : ''}${premuto === null ? '' : ` aria-pressed="${premuto ? 'true' : 'false'}"`} title="${esc(testo)}" aria-label="${esc(testo)}">${_bIco(ico)}</button>`;
+  const frecce = (cosa, id, nome, i, n) =>
+    tasto(cosa, id, -1, _mmSu, L(`Sposta «${nome}» più su`, `Move “${nome}” up`, `Sube «${nome}»`), { spento: i === 0 })
+    + tasto(cosa, id, 1, _mmGiu, L(`Sposta «${nome}» più giù`, `Move “${nome}” down`, `Baja «${nome}»`), { spento: i === n - 1 });
+  const nome = (id) => `<span class="mm-nome">${ICONA[id] || ''}<span>${esc(voceDelMenu(id))}</span></span>`;
+  const nascosta = (id) => m.nascoste.some(([x]) => x === id);
+  const stellaOcchio = (id) => {
+    const n = voceDelMenu(id), mia = m.mie.includes(id), via = nascosta(id);
+    return tasto('mia', id, 0, ICO.stella, mia ? L(`Togli «${n}» dalle tue`, `Remove “${n}” from yours`, `Quita «${n}» de las tuyas`) : L(`Metti «${n}» fra le tue`, `Put “${n}” among yours`, `Pon «${n}» entre las tuyas`), { premuto: mia })
+      + (id === 'stato' ? '<span class="mm-vuoto" aria-hidden="true"></span>'
+        : tasto('nascosta', id, 0, via ? ICO.occhioNo : ICO.occhio, via ? L(`Rimetti «${n}» nel menu`, `Put “${n}” back in the menu`, `Devuelve «${n}» al menú`) : L(`Togli «${n}» dal menu`, `Take “${n}” out of the menu`, `Quita «${n}» del menú`), { premuto: via }));
+  };
+
+  const mie = m.mie.length
+    ? `<ul class="mm-lista">${m.mie.map((id, i) => `<li class="mm-riga">${nome(id)}<span class="mm-tasti">${frecce('mie', id, voceDelMenu(id), i, m.mie.length)}${tasto('mia', id, 0, _mmVia, L(`Togli «${voceDelMenu(id)}» dalle tue`, `Remove “${voceDelMenu(id)}” from yours`, `Quita «${voceDelMenu(id)}» de las tuyas`))}</span></li>`).join('')}</ul>`
+    : `<p class="suggerimento">${L('Ancora nessuna. Premi la stella accanto a una voce qui sotto, o accanto al titolo di una pagina mentre la usi.', 'None yet. Press the star next to an entry below, or next to a page’s title while you use it.', 'Todavía ninguna. Pulsa la estrella junto a una entrada aquí abajo, o junto al título de una página mientras la usas.')}</p>`;
+
+  const gruppi = m.interi.map((g, gi) => {
+    const tit = tGruppo(g.id, g.nome);
+    const su = frecce('gruppo', g.id, tit, gi, m.interi.length);
+    if (g.schede.length === 1) {
+      const id = g.schede[0][0];
+      return `<div class="mm-gruppo"><div class="mm-riga${nascosta(id) ? ' via' : ''}">${nome(id)}<span class="mm-tasti">${stellaOcchio(id)}${su}</span></div></div>`;
+    }
+    const righe = g.schede.map(([id], i) => `<li class="mm-riga${nascosta(id) ? ' via' : ''}">${nome(id)}<span class="mm-tasti">${stellaOcchio(id)}${frecce('voce', id, voceDelMenu(id), i, g.schede.length)}</span></li>`).join('');
+    const aperto = _mmGruppi.has(g.id) ? _mmGruppi.get(g.id) : !stretto();
+    return `<details class="mm-gruppo" data-mm-grp="${esc(g.id)}"${aperto ? ' open' : ''}><summary class="mm-riga mm-testa"><span class="mm-nome mm-titolo">${esc(tit)} <span class="grp-conta" aria-hidden="true">${g.schede.length}</span></span><span class="mm-tasti">${su}</span></summary><ul class="mm-lista">${righe}</ul></details>`;
+  }).join('');
+
+  const scelte = (attuale, primo) => `<option value="">${esc(primo)}</option>` + m.interi.map((g) => {
+    const op = g.schede.filter(([id]) => !nascosta(id) || id === attuale).map(([id]) => `<option value="${esc(id)}"${id === attuale ? ' selected' : ''}>${esc(voceDelMenu(id))}</option>`).join('');
+    if (!op) return '';
+    return g.schede.length === 1 ? op : `<optgroup label="${esc(tGruppo(g.id, g.nome))}">${op}</optgroup>`;
+  }).join('');
+  const posti = [0, 1, 2, 3].map((i) => `<select class="mm-posto" data-mm-posto="${i}" aria-label="${esc(L(`Posto ${i + 1} della barra`, `Bar slot ${i + 1}`, `Hueco ${i + 1} de la barra`))}">${scelte(m.barra[i] || '', L('— vuoto —', '— empty —', '— vacío —'))}</select>`).join('');
+  const op = (v, attuale, testo) => `<option value="${v}"${v === attuale ? ' selected' : ''}>${esc(testo)}</option>`;
+  const apre = `<option value="stato"${m.apre === 'stato' ? ' selected' : ''}>${esc(tScheda('stato'))}</option>${op('ultima', m.apre, L('L’ultima che ho usato', 'The last one I used', 'La última que usé'))}`
+    + m.interi.map((g) => {
+      const voci = g.schede.filter(([id]) => id !== 'stato').map(([id]) => op(id, m.apre, voceDelMenu(id))).join('');
+      if (!voci) return '';
+      return g.schede.length === 1 ? voci : `<optgroup label="${esc(tGruppo(g.id, g.nome))}">${voci}</optgroup>`;
+    }).join('');
+  const s = menuScelte();
+  const diSerie = !s.mie.length && !s.nomeMie && !s.nascoste.length && !s.gruppi.length && !Object.keys(s.ordine).length && !s.barra.length && s.modo === 'uno' && s.righe === 'comode' && s.apre === 'stato';
+
+  box.innerHTML = `
+    <h3>${esc(menuNomeMie())}</h3>
+    <p class="suggerimento">${L(`In cima al menu, sempre aperte, nell’ordine che vuoi tu: fino a ${MENU_MIE_MAX}. Restano anche nel loro gruppo.`, `At the top of the menu, always open, in the order you want: up to ${MENU_MIE_MAX}. They also stay in their group.`, `Arriba del menú, siempre abiertas, en el orden que quieras: hasta ${MENU_MIE_MAX}. También siguen en su grupo.`)}</p>
+    ${mie}
+    <label class="campo" for="menu-nome-mie">${L('Il nome del tuo gruppo', 'Your group’s name', 'El nombre de tu grupo')}</label>
+    <input type="text" id="menu-nome-mie" maxlength="24" autocomplete="off" placeholder="${esc(L('Le mie', 'Mine', 'Las mías'))}" value="${esc(m.nomeMie)}">
+    <h3 class="spazio-sopra">${L('Barra in basso del telefono', 'Phone bottom bar', 'Barra inferior del móvil')}</h3>
+    <p class="suggerimento">${L('Fino a quattro voci a portata di pollice; «Altro» apre tutto il menu e c’è sempre. Con i posti vuoti resta la barra di serie: Stato, Il bot, Chat, In diretta.', 'Up to four entries within thumb’s reach; “More” opens the whole menu and is always there. With every slot empty you keep the standard bar: Status, The bot, Chat, Live.', 'Hasta cuatro entradas al alcance del pulgar; «Más» abre todo el menú y está siempre. Con los huecos vacíos queda la barra de serie: Estado, El bot, Chat, En directo.')}</p>
+    <div class="mm-posti">${posti}</div>
+    <h3 class="spazio-sopra">${L('Come si comporta', 'How it behaves', 'Cómo se comporta')}</h3>
+    <div class="mm-campi">
+      <div><label class="campo" for="menu-modo">${L('I gruppi', 'Groups', 'Los grupos')}</label>
+        <select id="menu-modo">${op('uno', m.modo, L('Uno aperto alla volta', 'One open at a time', 'Uno abierto cada vez'))}${op('ricorda', m.modo, L('Restano come li lascio', 'They stay as I leave them', 'Se quedan como los dejo'))}${op('tutti', m.modo, L('Tutti aperti', 'All open', 'Todos abiertos'))}</select></div>
+      <div><label class="campo" for="menu-righe">${L('Le righe', 'Rows', 'Las filas')}</label>
+        <select id="menu-righe">${op('comode', m.righe, L('Comode', 'Roomy', 'Cómodas'))}${op('fitte', m.righe, L('Fitte: ci sta più menu', 'Tight: more menu fits', 'Juntas: cabe más menú'))}</select></div>
+      <div><label class="campo" for="menu-apre">${L('Quando apro il pannello', 'When I open the panel', 'Cuando abro el panel')}</label>
+        <select id="menu-apre">${apre}</select></div>
+    </div>
+    <h3 class="spazio-sopra">${L('Tutte le voci', 'All entries', 'Todas las entradas')}</h3>
+    <p class="suggerimento">${L('La stella mette una voce fra le tue. L’occhio la toglie dal menu: la ritrovi in fondo, in «Nascoste», e con la lente. Le frecce cambiano l’ordine dei gruppi e delle voci.', 'The star puts an entry among yours. The eye takes it out of the menu: you find it again at the bottom, under “Hidden”, and with search. The arrows change the order of groups and entries.', 'La estrella pone una entrada entre las tuyas. El ojo la quita del menú: la encuentras abajo, en «Ocultas», y con la lupa. Las flechas cambian el orden de los grupos y de las entradas.')}</p>
+    <div class="mm-gruppi">${gruppi}</div>
+    <p class="mm-serie spazio-sopra">
+      <button type="button" class="btn secondario" id="menu-di-serie"${diSerie ? ' disabled' : ''}>${L('Rimetti il menu di serie', 'Restore the standard menu', 'Vuelve al menú de serie')}</button>
+      <span id="menu-serie-chiedi" hidden>${L('Tolgo tutte le tue scelte sul menu.', 'I will remove all your menu choices.', 'Quito todas tus elecciones del menú.')}
+        <button type="button" class="btn pericolo mini" id="menu-serie-si">${L('Sì, rimettilo', 'Yes, restore it', 'Sí, vuelve')}</button>
+        <button type="button" class="btn secondario mini" id="menu-serie-no">${L('No', 'No', 'No')}</button></span>
+      ${diSerie ? `<span class="suggerimento">${L('È già quello di serie.', 'It is already the standard one.', 'Ya es el de serie.')}</span>` : ''}
+    </p>`;
+  if (chi) {
+    let el = [...box.querySelectorAll('[data-mm-chi]')].find((x) => x.getAttribute('data-mm-chi') === chi);
+    if (el?.disabled) el = [...el.parentElement.querySelectorAll('button:not([disabled])')][0];
+    el?.focus({ preventScroll: true });
+  }
+}
+
+function menuMisuraClic(ev) {
+  const serie = ev.target.closest?.('#menu-di-serie, #menu-serie-si, #menu-serie-no');
+  if (serie) {
+    const chiedi = document.getElementById('menu-serie-chiedi');
+    if (serie.id === 'menu-serie-si') {
+      menuCambia((s) => { for (const k of Object.keys(s)) delete s[k]; });
+      try { localStorage.removeItem(MENU_APERTI); } catch (e) {  }
+      toast(L('Il menu è tornato quello di serie.', 'The menu is back to standard.', 'El menú ha vuelto al de serie.'));
+    } else if (chiedi) { chiedi.hidden = serie.id === 'menu-serie-no'; (chiedi.hidden ? document.getElementById('menu-di-serie') : document.getElementById('menu-serie-no'))?.focus(); }
+    return;
+  }
+  const b = ev.target.closest?.('#menu-misura [data-mm]');
+  if (!b) return;
+  const id = b.dataset.id, passo = Number(b.dataset.passo) || 0, m = menuMio();
+  if (b.dataset.mm === 'mia') { menuGiraMia(id); return; }
+  if (b.dataset.mm === 'nascosta') { menuGiraNascosta(id); return; }
+  if (b.dataset.mm === 'mie') { menuCambia((s) => { s.mie = menuSposta(m.mie, id, passo); }); return; }
+  if (b.dataset.mm === 'gruppo') { menuCambia((s) => { s.gruppi = menuSposta(m.interi.map((g) => g.id), id, passo); }); return; }
+  if (b.dataset.mm === 'voce') {
+    const g = m.interi.find((x) => x.schede.some(([sid]) => sid === id));
+    if (g) menuCambia((s) => { s.ordine[g.id] = menuSposta(g.schede.map(([sid]) => sid), id, passo); });
+  }
+}
+
+function menuMisuraCambio(ev) {
+  const t = ev.target;
+  if (!t?.closest?.('#menu-misura')) return;
+  if (t.id === 'menu-nome-mie') { menuCambia((s) => { s.nomeMie = t.value; }); return; }
+  if (t.id === 'menu-modo') { menuCambia((s) => { s.modo = t.value; }); return; }
+  if (t.id === 'menu-righe') { menuCambia((s) => { s.righe = t.value; }); return; }
+  if (t.id === 'menu-apre') { menuCambia((s) => { s.apre = t.value; }); return; }
+  if (t.matches('[data-mm-posto]')) {
+    const scelte = [...document.querySelectorAll('#menu-misura [data-mm-posto]')].map((x) => x.value).filter(Boolean);
+    menuCambia((s) => { s.barra = scelte; });
+  }
+}
+
+function apriMenuMisura() {
+  vaiAScheda('account');
+  let giri = 0, mollato = false;
+  const molla = () => { mollato = true; };
+  const ascolti = ['wheel', 'touchstart', 'keydown', 'pointerdown'];
+  ascolti.forEach((e) => window.addEventListener(e, molla, { once: true, passive: true, capture: true }));
+  const segui = () => {
+    const c = document.getElementById('carta-menu');
+    const pronta = c && c.closest('.pannello-scheda.visibile');
+    if (pronta && !mollato) {
+      if (giri < 60 && c.classList.contains('chiusa')) { try { mostraZonaDi(c); } catch (e) {  } _piegaCarta(c, true); }
+      const su = c.getBoundingClientRect().top;
+      if (su < 56 || su > window.innerHeight * 0.4) c.scrollIntoView({ block: 'start', behavior: 'auto' });
+    }
+    if (++giri < 30 && !mollato) setTimeout(segui, pronta ? 120 : 50);
+    else ascolti.forEach((e) => window.removeEventListener(e, molla, { capture: true }));
+  };
+  segui();
 }
 
 function navDrawerHtml() {
-  return elencoGruppi().map((g) => {
-    const voci = g.schede.map(([id]) =>
-      `<button class="drawer-voce${voceAttiva(id, schedaAttiva) ? ' on' : ''}${schedaNonUsabile(id) ? ' bloccata' : ''}" data-scheda="${id}"${voceAttiva(id, schedaAttiva) ? ' aria-current="page"' : ''}>${ICONA[id] || ''}<span>${esc(voceDelMenu(id))}</span>${nuovoDi(id)}${schedaNonUsabile(id) ? '<span class="voce-lock" aria-hidden="true">' + _bIco(ICO.lucchetto) + '</span>' : ''}</button>`).join('');
-    const titolo = tGruppo(g.id, g.nome);
-    if (g.schede.length === 1) return `<div class="drawer-grp drawer-solo">${voci}</div>`;
-    const aperto = gruppiAperti().has(g.id);
-    const nuovo = g.schede.some(([id]) => nuovoDi(id))
+  const m = menuMio();
+  const voce = (id) =>
+    `<button class="drawer-voce${voceAttiva(id, schedaAttiva) ? ' on' : ''}${schedaNonUsabile(id) ? ' bloccata' : ''}" data-scheda="${id}"${voceAttiva(id, schedaAttiva) ? ' aria-current="page"' : ''}>${ICONA[id] || ''}<span>${esc(voceDelMenu(id))}</span>${nuovoDi(id)}${schedaNonUsabile(id) ? '<span class="voce-lock" aria-hidden="true">' + _bIco(ICO.lucchetto) + '</span>' : ''}</button>`;
+  const chiudibile = (gid, titolo, schede, classe = '') => {
+    const voci = schede.map(([id]) => voce(id)).join('');
+    const aperto = gruppiAperti().has(gid);
+    const nuovo = schede.some(([id]) => nuovoDi(id))
       ? `<span class="voce-nuovo grp-nuovo" role="img" aria-label="${esc(L('dentro c\'è qualcosa di nuovo', 'something new inside', 'hay algo nuevo dentro'))}"></span>` : '';
-    return `<div class="drawer-grp${aperto ? '' : ' chiuso'}" data-grp="${g.id}"><button type="button" class="drawer-grp-tit" aria-expanded="${aperto ? 'true' : 'false'}" aria-controls="grp-voci-${g.id}"><span class="grp-nome">${esc(titolo)}</span>${nuovo}<span class="grp-conta" aria-hidden="true">${g.schede.length}</span><span class="grp-freccia" aria-hidden="true"></span></button><div class="drawer-grp-voci" id="grp-voci-${g.id}"${aperto ? '' : ' hidden'}>${voci}</div></div>`;
+    return `<div class="drawer-grp${classe}${aperto ? '' : ' chiuso'}" data-grp="${gid}"><button type="button" class="drawer-grp-tit" aria-expanded="${aperto ? 'true' : 'false'}" aria-controls="grp-voci-${gid}"><span class="grp-nome">${esc(titolo)}</span>${nuovo}<span class="grp-conta" aria-hidden="true">${schede.length}</span><span class="grp-freccia" aria-hidden="true"></span></button><div class="drawer-grp-voci" id="grp-voci-${gid}"${aperto ? '' : ' hidden'}>${voci}</div></div>`;
+  };
+  const mie = m.mie.length
+    ? `<div class="drawer-grp drawer-mie" data-mie="1"><div class="drawer-grp-tit"><span class="grp-nome">${esc(menuNomeMie())}</span></div><div class="drawer-grp-voci">${m.mie.map(voce).join('')}</div></div>` : '';
+  const gruppi = m.gruppi.map((g) => {
+    const voci = g.schede.map(([id]) => voce(id)).join('');
+    if (g.schede.length === 1) return `<div class="drawer-grp drawer-solo">${voci}</div>`;
+    return chiudibile(g.id, tGruppo(g.id, g.nome), g.schede);
   }).join('');
+  const nascoste = m.nascoste.length ? chiudibile('nascoste', L('Nascoste', 'Hidden', 'Ocultas'), m.nascoste, ' drawer-nascoste') : '';
+  const sistema = `<div class="drawer-sistema"><button type="button" class="drawer-voce" id="menu-sistema">${_ico('<path d="M4 6h8M16 6h4M4 12h2M10 12h10M4 18h10M18 18h2"/><circle cx="14" cy="6" r="2"/><circle cx="8" cy="12" r="2"/><circle cx="16" cy="18" r="2"/>')}<span>${L('Sistema il menu', 'Arrange the menu', 'Ordena el menú')}</span></button></div>`;
+  return mie + gruppi + nascoste + sistema;
 }
 
 const SCHEDE_LARGHE = new Set(['alert', 'grafiche', 'pagina', 'donazioni']);
@@ -5714,16 +6039,32 @@ function aggiornaTestataPagina() {
   const stessoTitolo = _titoloFermo || (!!h1Prima && h1Prima.textContent.trim() === String(titolo).trim());
   el.innerHTML =
     `${area ? `<div class="pt-occhiello">${esc(area)}</div>` : ''}` +
-    `<h1${stessoTitolo ? ' class="fermo"' : ''}>${titoloParole(titolo)}</h1>` +
+    `<h1${stessoTitolo ? ' class="fermo"' : ''} aria-label="${esc(titolo)}">${titoloParole(titolo)}${stellaMiaHtml()}</h1>` +
     tastoSchermoHtml() +
     `${desc ? `<p>${esc(desc)}</p>` : ''}` +
     barraFamigliaHtml(schedaAttiva) +
     sottoSchedeHtml(schedaAttiva) +
     guidaSchedaHtml(schedaAttiva) +
     barraCarteHtml(schedaAttiva);
+  aggiornaStellaMia();
   applicaSchermo();
   aggiornaBarraGiu();
   osservaTitolo();
+}
+
+function stellaMiaHtml() {
+  if (STUDIO_FINESTRA) return '';
+  return ` <button type="button" class="pt-mia" id="pt-mia" aria-pressed="false">${_bIco(ICO.stella)}</button>`;
+}
+function aggiornaStellaMia() {
+  const b = document.getElementById('pt-mia');
+  if (!b) return;
+  const on = menuMio().mie.includes(voceMenuDi(schedaAttiva));
+  const nome = voceDelMenu(voceMenuDi(schedaAttiva));
+  b.setAttribute('aria-pressed', on ? 'true' : 'false');
+  b.title = on ? L(`Togli «${nome}» dalle tue`, `Remove “${nome}” from yours`, `Quita «${nome}» de las tuyas`)
+    : L(`Metti «${nome}» fra le tue, in cima al menu`, `Put “${nome}” among yours, at the top of the menu`, `Pon «${nome}» entre las tuyas, arriba del menú`);
+  b.setAttribute('aria-label', b.title);
 }
 
 function titoloParole(t, off = 0) {
@@ -12209,6 +12550,11 @@ function pannelloAccount() {
       <p>${L('Come parla e come conta il tempo il tuo canale: la lingua del bot in chat, le date, le ore e da dove prende le prossime dirette. «Di base» segue il tuo canale da solo.', 'How your channel speaks and counts time: the bot’s language in chat, dates, times and where it takes the next streams from. «Default» follows your channel by itself.', 'Cómo habla y cuenta el tiempo tu canal: el idioma del bot en el chat, las fechas, las horas y de dónde toma los próximos directos. «Por defecto» sigue a tu canal solo.')}</p>
       <div id="acc-preferenze" class="spazio-sopra" aria-busy="true">${attesaHtml('div')}</div>
     </div>`}
+    <div class="carta" id="carta-menu">
+      <h2>${_hIco(ICO.stella)}${L('Menu su misura', 'Your own menu', 'Menú a medida')}</h2>
+      <p>${L('Il menu è tuo: metti in cima le pagine che usi, togli di mezzo quelle che non ti servono, cambia l’ordine. Ogni scelta vale subito e ti segue su ogni dispositivo, anche quando gestisci il canale di un altro.', 'The menu is yours: put the pages you use at the top, move the ones you don’t need out of the way, change the order. Every choice applies at once and follows you on every device, even when you manage someone else’s channel.', 'El menú es tuyo: pon arriba las páginas que usas, aparta las que no necesitas, cambia el orden. Cada elección vale al momento y te sigue en todos tus dispositivos, también cuando gestionas el canal de otra persona.')}</p>
+      <div id="menu-misura" class="spazio-sopra"></div>
+    </div>
     <div class="carta">
       <h2>${_hIco(ICO.cestino)}${L('Andarsene', 'Leaving', 'Marcharse')}</h2>
       <p>${L('Se te ne vai', 'If you leave', 'Si te vas')} <strong class="primo-piano">${L('non resta niente di tuo', 'nothing of yours stays', 'no queda nada tuyo')}</strong>: ${L('comandi, moduli, effetti, punti, ore guardate, memoria della chat, pagina link, file caricati, collegamenti ai tuoi account. Il bot esce dal tuo canale.', 'commands, modules, effects, points, watch time, chat memory, link page, uploaded files, connections to your accounts. The bot leaves your channel.', 'comandos, módulos, efectos, puntos, horas vistas, memoria del chat, página de enlaces, archivos subidos, conexiones con tus cuentas. El bot sale de tu canal.')}</p>
@@ -39398,7 +39744,7 @@ async function conErrore(fn) {
 function caricaDatiScheda(id) {
   if (schedaBloccata(id)) return;
   if (id === 'stato') caricaAdesso();
-  if (id === 'account') { caricaPasskey(); caricaSicurezza(); caricaModeratori(); caricaRichiesteMod(); caricaMieRichieste(); caricaPiattaforme(); caricaCodiciPosta(); caricaRecensione(); collegaCancella(); collegaAvvisiManca(); caricaCollegamenti(); caricaPreferenze(); }
+  if (id === 'account') { caricaPasskey(); caricaSicurezza(); caricaModeratori(); caricaRichiesteMod(); caricaMieRichieste(); caricaPiattaforme(); caricaCodiciPosta(); caricaRecensione(); collegaCancella(); collegaAvvisiManca(); caricaCollegamenti(); caricaPreferenze(); disegnaMenuMisura(); }
   if (id === 'avatar') caricaMente3d();
   if (id === 'promo') { collegaPromo(); caricaPromo(); }
   if (id === 'qr') avviaQr();
@@ -45356,6 +45702,7 @@ function vaiAScheda(id) {
   chiudiMenuMobile();
 
   try { history.replaceState(null, '', '#' + id); } catch {  }
+  if (!DEMO) { try { localStorage.setItem(MENU_ULTIMA, id); } catch (e) {  } }
 
   const sezioni = [...document.querySelectorAll('.pannello-scheda')].filter((p) => p.dataset.scheda === id);
   sezioni.forEach((p) => rendiCartePieghevoli(p, id));
@@ -45456,6 +45803,7 @@ function initGuscio() {
     if (sb) { ev.preventDefault(); sbloccaAddon(sb.dataset.sblocca); return; }
 
     if (ev.target.closest('#pt-schermo')) { cambiaSchermo(); return; }
+    if (ev.target.closest('#pt-mia')) { menuGiraMia(schedaAttiva); return; }
 
     const vp = ev.target.closest('a[data-scheda],button[data-scheda]');
     if (vp && !vp.closest('#nav-drawer')) { ev.preventDefault(); vaiAScheda(vp.dataset.scheda); }
@@ -45470,9 +45818,13 @@ function initGuscio() {
   document.getElementById('nav-drawer')?.addEventListener('click', (ev) => {
     const tit = ev.target.closest('.drawer-grp-tit[aria-controls]');
     if (tit) { giraGruppo(tit); return; }
+    if (ev.target.closest('#menu-sistema')) { apriMenuMisura(); return; }
     const b = ev.target.closest('[data-scheda]');
     if (b) vaiAScheda(b.dataset.scheda);
   });
+  document.addEventListener('click', menuMisuraClic);
+  document.addEventListener('change', menuMisuraCambio);
+  document.addEventListener('toggle', (ev) => { const g = ev.target?.closest?.('#menu-misura details[data-mm-grp]'); if (g) _mmGruppi.set(g.dataset.mmGrp, g.open); }, true);
 
   document.addEventListener('click', (ev) => {
     if (ev.target.closest('.aiuto-box')) return;
