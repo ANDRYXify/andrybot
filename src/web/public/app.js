@@ -6129,9 +6129,7 @@ function aspettoClic(ev) {
     return;
   }
   if (t.id === 'as-copia') {
-    const testo = JSON.stringify(aspettoScelte());
-    const aMano = () => { _aspCarta.incolla = true; _aspCarta.incollaTesto = testo; disegnaAspetto(); document.getElementById('as-incolla-testo')?.select(); toast(L('Non posso scrivere negli appunti: il testo della veste è qui sotto, copialo da lì.', 'I cannot write to the clipboard: the text of the look is below, copy it from there.', 'No puedo escribir en el portapapeles: el texto del aspecto está aquí abajo, cópialo de ahí.')); };
-    try { navigator.clipboard.writeText(testo).then(() => toast(L('Veste copiata: incollala dove vuoi, o passala a qualcuno.', 'Look copied: paste it wherever you like, or pass it to someone.', 'Aspecto copiado: pégalo donde quieras, o pásaselo a alguien.')), aMano); } catch (e) { aMano(); }
+    copiaTesto(JSON.stringify(aspettoScelte()), L('Veste copiata: incollala dove vuoi, o passala a qualcuno.', 'Look copied: paste it wherever you like, or pass it to someone.', 'Aspecto copiado: pégalo donde quieras, o pásaselo a alguien.'));
     return;
   }
   if (t.id === 'as-incolla') { _aspCarta.incolla = !_aspCarta.incolla; _aspCarta.incollaTesto = ''; disegnaAspetto(); document.getElementById('as-incolla-testo')?.focus(); return; }
