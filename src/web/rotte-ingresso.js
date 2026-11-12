@@ -28,7 +28,7 @@ const lingua = (x) => (LINGUE.includes(String(x || '')) ? String(x) : 'it');
 export function montaIngresso(app, d) {
   const { wrap, requireLogin, currentUser, identitaDi, ingresso, store, passkeys, webauthn, rp, posta, chiaveProva,
     porte = () => ({}), entraCome = () => false, creaConto = () => '', statoConto = () => '', risposteDi = () => ({}), salvaDomande = () => {},
-    abbonabile = () => false, paginaPrimo = '', paginaIngresso, paginaProva, ora = () => Date.now(), log = null } = d;
+    abbonabile = () => false, paginaPrimo = '', paginaSblocca = '', paginaIngresso, paginaProva, ora = () => Date.now(), log = null } = d;
 
   const ip = (req) => String(req.ip || req.socket?.remoteAddress || '?');
   const inSecondaProva = (req) => (req.ingresso?.stato === 'attesa' && req.session?.user ? req.session.user : null);
@@ -178,6 +178,15 @@ export function montaIngresso(app, d) {
     if (!contoInAttesa(req)) return res.redirect('/ingresso');
     res.set('Cache-Control', 'no-store');
     res.sendFile(paginaPrimo);
+  });
+  // «Sblocca» (docs/ACCESSO-SICURO.md, «L'app installata»): la scorciatoia della
+  // passkey, dove si apre l'app installata. Decide dalla riga sul server come le
+  // altre pagine d'ingresso: solo chi non e' nessuno la vede, e la sua uscita e' la porta.
+  if (paginaSblocca) app.get('/sblocca', (req, res) => {
+    const dove = currentUser(req) ? '/' : inSecondaProva(req) ? '/seconda-prova' : contoInAttesa(req) ? '/primo-ingresso' : req.session?.avviso ? '/ingresso' : '';
+    if (dove) return res.redirect(dove);
+    res.set('Cache-Control', 'no-store');
+    res.sendFile(paginaSblocca);
   });
   app.get('/api/ingresso/conto', (req, res) => {
     const login = contoInAttesa(req);

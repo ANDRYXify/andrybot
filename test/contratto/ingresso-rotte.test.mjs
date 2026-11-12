@@ -44,7 +44,7 @@ app.set('trust proxy', true);
 const CHIAVE_COOKIE = 'chiave-di-prova-lunga-abbastanza';
 app.use(cookieSession({ name: 'andrybot', keys: [CHIAVE_COOKIE], maxAge: 30 * 86_400_000 }));
 app.use(express.json());
-const APERTE = ['/ingresso', '/seconda-prova', '/finto/entra', '/finto/me'];
+const APERTE = ['/ingresso', '/seconda-prova', '/sblocca', '/finto/entra', '/finto/me'];
 legaLeSessioni(app, { ingresso, aperto: (via) => via.startsWith('/api/ingresso/') || APERTE.some((a) => via.startsWith(a)) });
 const currentUser = utenteAperto;   // la stessa del server: test 'la guardia del server e\' questa'
 const requireLogin = (req, res, next) => (currentUser(req) ? next() : res.status(401).json({ errore: 'non autenticato' }));
@@ -71,6 +71,7 @@ montaIngresso(app, {
   entraCome: (req, login) => { req.session.user = { login, identita: login, display: login, role: 'proprietario' }; return true; },
   paginaIngresso: new URL('../../src/web/public/ingresso.html', import.meta.url).pathname,
   paginaProva: new URL('../../src/web/public/seconda-prova.html', import.meta.url).pathname, ora: () => adesso,
+  paginaSblocca: new URL('../../src/web/public/sblocca.html', import.meta.url).pathname,
 });
 const server = await new Promise((ok) => { const s = app.listen(0, '127.0.0.1', () => ok(s)); });
 const base = `http://127.0.0.1:${server.address().port}`;
@@ -318,4 +319,52 @@ test('uscire, sulla porta vera, chiude la riga prima di buttare il cookie', () =
   const r = src.slice(src.indexOf("app.get('/auth/logout'"), src.indexOf("app.get('/auth/logout'") + 1200);
   const i = r.indexOf('ingresso.esci(req);'), j = r.indexOf('req.session = null;');
   assert.ok(i > 0 && j > i, 'ingresso.esci prima di req.session = null');
+});
+
+// «Sblocca», dove si apre l'app installata (docs/ACCESSO-SICURO.md, «L'app
+// installata e la pagina Sblocca»). Era una rotta aperta che guardava solo «sei
+// gia' dentro?», con un link a un altro sito come sola uscita: chi non aveva una
+// passkey non arrivava mai alla pagina che fa attivare la seconda prova.
+test('«Sblocca» manda ognuno dove lo aspettano: solo chi non e\' nessuno vede la pagina', async () => {
+  azzeraTetti();
+  const nessuno = await browser().chiama('/sblocca', { html: true });
+  assert.equal(nessuno.stato, 200, 'chi non e\' nessuno vede la pagina');
+  assert.match(nessuno.testo, /id="altro-modo" href="\/ingresso"/, 'con la porta come uscita');
+
+  const b = browser();
+  await b.chiama('/finto/entra/sblocca-attesa');
+  const attesa = await b.chiama('/sblocca', { html: true });
+  assert.equal(attesa.stato, 302, 'chi e\' entrato da una porta e deve ancora dare o attivare la seconda prova');
+  assert.equal(attesa.dove, '/seconda-prova', 'va alla pagina che lo aspetta, non a quella della passkey');
+
+  const p = browser();
+  await p.chiama('/finto/passkey/sblocca-dentro', { metodo: 'POST', corpo: {} });
+  const dentro = await p.chiama('/sblocca', { html: true });
+  assert.equal(dentro.dove, '/', 'chi e\' dentro va al pannello');
+
+  const { b: d } = await dentroConApp('sblocca-anomalia');
+  await d.copia(UA_FIREFOX, '185.220.101.4').chiama('/finto/pannello');
+  await d.chiama('/finto/pannello');
+  const anomalia = await d.chiama('/sblocca', { html: true });
+  assert.equal(anomalia.dove, '/ingresso', 'un avviso d\'anomalia da dire si dice alla porta');
+  assert.equal((await d.chiama('/api/ingresso/stato')).dati.avviso, 'anomalia', 'e arrivarci non l\'ha consumato');
+});
+
+test('nella pagina «Sblocca» nessun indirizzo esce dal sito, e la rotta sta con le altre pagine d\'ingresso', () => {
+  const leggi = (via) => readFileSync(new URL('../../' + via, import.meta.url), 'utf8');
+  const html = leggi('src/web/public/sblocca.html');
+  const corpo = html.slice(html.indexOf('<body'));
+  const fuori = [...corpo.matchAll(/(?:href|src|action)="([^"]+)"/g)].map((m) => m[1]).filter((u) => !u.startsWith('/'));
+  assert.deepEqual(fuori, [], 'ogni indirizzo del corpo comincia da questo sito');
+  for (const via of ['/ingresso', '/aiuto-accesso', '/ingresso-comune.js', '/sblocca.js']) assert.ok(corpo.includes(`"${via}"`), `${via} c'e'`);
+  const js = leggi('src/web/public/sblocca.js');
+  assert.doesNotMatch(js, /https?:\/\//, 'nemmeno lo script porta fuori');
+  assert.match(js, /if \(inApp && passkeyQui\(\)\)/, 'la richiesta parte da sola solo dove una passkey e\' gia\' stata usata');
+  assert.doesNotMatch(js, /navigator\.credentials/, 'la passkey si scrive una volta sola, in ingresso-comune.js');
+  const server = leggi('src/web/server.js');
+  assert.doesNotMatch(server, /app\.get\('\/sblocca'/, 'il server non la serve piu\' per conto suo');
+  assert.match(server, /guscio\.pagina\('sblocca\.html', '\/sblocca'\)/, 'la dichiara col suo indirizzo');
+  assert.match(server, /paginaSblocca: SBLOCCA_HTML/, 'e la da\' alle rotte dell\'accesso');
+  for (const codice of ['sessione', 'ignota', 'passkey', 'conto']) assert.match(server, new RegExp(`codice: '${codice}'`), `il no della passkey dice «${codice}»`);
+  assert.equal(JSON.parse(leggi('src/web/public/manifest.webmanifest')).start_url, '/sblocca', 'ed e\' li\' che si apre l\'app installata');
 });

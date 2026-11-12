@@ -4,7 +4,7 @@
 .card.larga { max-width: 480px; }
 .card p.grande { font-size: 1.05rem; color: var(--testo); }
 .porte { display: grid; gap: 10px; margin-top: 18px; }
-.porte .azione { margin-top: 0; width: 100%; }
+.porte .azione { margin-top: 0; width: 100%; line-height: 1.5; box-sizing: border-box; border: 1px solid transparent; }
 .azione.discord { background: #5865f2; color: #ffffff; }
 .azione.secondaria { background: var(--surface-2); color: var(--testo); border: 1px solid var(--border); }
 @media (hover: hover) {

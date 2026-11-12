@@ -410,6 +410,53 @@ la stessa riga: corretto per costruzione, e nessuno chiuso fuori per errore.
 - **Il registro** del conto annota la richiesta (il numero di pratica), lo
   sblocco (chi e la nota) e l'uso del link.
 
+### L'app installata e la pagina «Sblocca»
+
+Segnalato così: «se qualcuno prova ad accedere ed ha la webapp ma non ha mai
+configurato l'MFA, il "accedi dal sito" li fa entrare da andryxify.it e non dà
+la possibilità di configurare una nuova modalità di MFA».
+
+- **Il difetto, misurato.** L'app installata si apre su `/sblocca`
+  (`start_url` del manifesto), e lì ci torna il pannello quando la sessione
+  non c'è più. Quella pagina è di prima dell'accesso sicuro: offriva la
+  passkey e, come sola uscita, un link a un altro sito (andryxify.it, il
+  vecchio giro del pass). Chi non ha una passkey usciva dall'app e non
+  arrivava mai a `/seconda-prova`, cioè al solo posto dove chi non ha niente
+  attiva la sua seconda prova. In più `/sblocca` è una rotta aperta e
+  guardava solo «sei già dentro?»: chi era entrato da una porta e doveva
+  ancora dare (o attivare) la seconda prova, riaprendo l'app rivedeva la
+  pagina della passkey invece della pagina che lo aspettava.
+- **La regola.** Una pagina che fa entrare ha come uscita **la porta**
+  (`/ingresso`, stesso sito, quindi dentro l'app), mai un altro sito. E decide
+  dove mandare la persona **dalla riga della sessione sul server**, come le
+  altre pagine d'ingresso: dentro → il pannello; in attesa della seconda
+  prova → `/seconda-prova`; conto in attesa d'approvazione →
+  `/primo-ingresso`; un avviso d'anomalia da dire → `/ingresso`, che è dove si
+  dice. Solo chi non è nessuno vede «Sblocca».
+- **Per costruzione**: `/sblocca` si serve da `rotte-ingresso.js`, accanto a
+  `/ingresso` e `/seconda-prova`, con le stesse guardie (`inSecondaProva`,
+  `contoInAttesa`); nella pagina non c'è nessun indirizzo che esca dal sito
+  (lo dice una prova sul file, non l'occhio).
+- **Cosa c'è nella pagina**: «Sblocca con la passkey»; sotto, un tasto vero
+  «Entra in un altro modo» che porta alla porta, con scritto che chi non ha
+  ancora una seconda prova la sceglie subito dopo; «Non riesci a entrare?»
+  (`/aiuto-accesso`). Le parole stanno nello script, in tre lingue, come le
+  altre pagine d'ingresso, e i pezzi (passkey, messaggi d'errore) sono quelli
+  di `ingresso-comune.js`: una sola scrittura della passkey per tutte le porte.
+- **La richiesta automatica della passkey**, all'apertura dell'app, parte solo
+  se su quel dispositivo una passkey è già stata usata o creata (un appunto
+  nel browser, `passkey:qui`, scritto quando la passkey riesce). A chi non
+  l'ha mai avuta il telefono mostrerebbe una finestra di sistema che non può
+  servirgli, prima ancora di aver letto la pagina. L'appunto decide solo
+  questa comodità: senza, il tasto c'è lo stesso e funziona. Chi ha una
+  passkey e non ha ancora l'appunto tocca il tasto una volta, e da lì torna
+  automatica.
+- **Quando la passkey non va** (annullata, non riconosciuta, dispositivo che
+  non le sa usare) la pagina lo dice con una riga e mette avanti l'altro modo:
+  non resta muta. Le risposte di `/api/passkey/login/fine` hanno ora un
+  codice (`sessione`, `ignota`, `passkey`, `conto`), così la riga è nella
+  lingua di chi legge e dice la cosa giusta anche a `/ingresso`.
+
 ## Dove sta, e cosa manca
 
 - **Lo schema**: `src/db.js` (`ingresso_sfide`, `ingresso_sessioni`,
@@ -421,11 +468,14 @@ la stessa riga: corretto per costruzione, e nessuno chiuso fuori per errore.
   `src/web/rotte-ingresso.js` (`legaLeSessioni` prima di ogni rotta,
   `utenteAperto` che è il `currentUser` del server, `montaIngresso`). **Le
   pagine**: `public/ingresso.html`, `public/seconda-prova.html` coi loro
-  script; la carta del pannello in `app.js` (`caricaSicurezza`).
+  script; `public/sblocca.html` (dove si apre l'app installata); la carta del
+  pannello in `app.js` (`caricaSicurezza`).
 - **Le prove**: `test/unita/ingresso.test.mjs` e
   `test/contratto/ingresso-rotte.test.mjs`, che monta le rotte vere con
   cookie-session e porte finte che fanno quello che fanno le vere (mettono la
-  persona in sessione e basta).
+  persona in sessione e basta). La pagina «Sblocca» si prova anche coi gesti,
+  in un browser con una passkey per finta: `scripts/verifica-sblocca.mjs`
+  (`--selftest` la rompe in sei modi e pretende sei rossi).
 - **Il passo 4**: `src/features/ingresso-password.js` (scrypt),
   `ingresso-domande.js` (le risposte nelle impostazioni), `ingresso_iscrizioni`
   in `src/db.js`, le rotte `/api/ingresso/registra`, `/registra/conferma`,

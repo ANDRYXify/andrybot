@@ -2189,15 +2189,6 @@ export function startWeb({ auth, helix, manager, effects, modules }) {
     res.sendFile(join(publicDir, 'well-known', 'security.txt'));
   });
 
-  // Pagina "Sblocca con passkey": ingresso alternativo per chi ha registrato
-  // una passkey (così può rientrare, o aprire l'app installata, senza pass del
-  // sito). Se si è già loggati, si va dritti alla dashboard.
-  const SBLOCCA_HTML = guscio.pagina('sblocca.html');
-  app.get('/sblocca', (req, res) => {
-    if (currentUser(req)) return res.redirect('/');
-    res.sendFile(SBLOCCA_HTML);
-  });
-
   // Link-page pubblica dello streamer: socialbot.live/u/<login> è il link
   // "ufficiale" mostrato in chat/promo, e la pagina DEVE essere servita da
   // socialbot.live (non più andryxify.it). La pagina vera è la SPA sul sito
@@ -12933,6 +12924,9 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
   const PRIMO_HTML = guscio.pagina('primo-ingresso.html', '/primo-ingresso');
   const AIUTO_HTML = guscio.pagina('aiuto-accesso.html', '/aiuto-accesso');
   const SBLOCCO_HTML = guscio.pagina('sblocca-accesso.html', '/sblocca-accesso');
+  // «Sblocca con la passkey»: dove si apre l'app installata. La serve montaIngresso,
+  // con le guardie delle altre pagine d'ingresso (docs/ACCESSO-SICURO.md, «L'app installata»).
+  const SBLOCCA_HTML = guscio.pagina('sblocca.html', '/sblocca');
   montaIngresso(app, {
     wrap, requireLogin, currentUser, identitaDi, ingresso, store: ingressoDb, passkeys, webauthn, posta,
     rp: { id: RP_ID, nome: RP_NAME, origin: ORIGIN }, chiaveProva: segno('ingresso-prova', 'chiave'),
@@ -12960,7 +12954,7 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
       if (r.display) streamers.request(login, r.display, '');
     },
     abbonabile: () => !!config.stripe.attivo,
-    paginaPrimo: PRIMO_HTML,
+    paginaPrimo: PRIMO_HTML, paginaSblocca: SBLOCCA_HTML,
     paginaIngresso: INGRESSO_HTML, paginaProva: PROVA_HTML, log,
   });
 
@@ -13063,19 +13057,20 @@ ${tastoDecidi(u, chiave, 'conferma', 'Va bene così')}
 
   app.post('/api/passkey/login/fine', wrap(async (req, res) => {
     const challenge = req.session?.pkLogin; delete req.session.pkLogin;
-    if (!challenge) return res.status(400).json({ errore: 'sessione scaduta, riprova' });
+    // ogni no ha un codice: la pagina lo dice nella lingua di chi legge (ingresso-comune.js)
+    if (!challenge) return res.status(400).json({ errore: 'sessione scaduta, riprova', codice: 'sessione' });
     const { id, authenticatorData, clientDataJSON, signature } = req.body || {};
     const cred = id ? passkeys.byCredId(id) : null;
-    if (!cred) return res.status(400).json({ errore: 'passkey sconosciuta' });
+    if (!cred) return res.status(400).json({ errore: 'passkey sconosciuta', codice: 'ignota' });
     const v = webauthn.verifyAuthentication({
       authenticatorData, clientDataJSON, signature,
       jwk: cred.publicKey, alg: cred.alg, challenge, origin: ORIGIN, rpId: RP_ID, storedSignCount: cred.sign_count,
     });
-    if (!v.ok) return res.status(400).json({ errore: v.errore });
+    if (!v.ok) return res.status(400).json({ errore: v.errore, codice: 'passkey' });
     // cred.login = identità della persona; ricostruiamo i suoi contesti attuali
     // (proprio canale + moderati). Se non ne ha più nessuno, accesso revocato.
     const contesti = contestiPer(cred.login);
-    if (!contesti.length) return res.status(403).json({ errore: 'account non più abilitato' });
+    if (!contesti.length) return res.status(403).json({ errore: 'account non più abilitato', codice: 'conto' });
     passkeys.bumpCounter(id, v.newSignCount);
     const disp = streamers.get(cred.login)?.display || managers.attiviByLogin(cred.login)[0]?.display || cred.login;
     req.session.user = sessionePer(cred.login, disp, contestoDefault(contesti));

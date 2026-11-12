@@ -24,8 +24,11 @@ const RAD = join(dirname(fileURLToPath(import.meta.url)), '../..');
 const PUB = join(RAD, 'src/web/public');
 const SRV = readFileSync(join(RAD, 'src/web/server.js'), 'utf8');
 
-// Le pagine pubbliche non si elencano qui: si leggono da chi le serve.
-const PAGINE = [...SRV.matchAll(/guscio\.pagina\('([^']+)'\)/g)].map((m) => m[1]);
+// Le pagine pubbliche non si elencano qui: si leggono da chi le serve. Una
+// pagina si dichiara da sola o col suo indirizzo (`guscio.pagina('x.html', '/x')`):
+// si leggono tutte e due le scritture, sennò le pagine con l'indirizzo (la porta
+// d'ingresso, la seconda prova, «Sblocca») restano fuori da queste prove.
+const PAGINE = [...new Set([...SRV.matchAll(/guscio\.pagina\('([^']+)'\s*[,)]/g)].map((m) => m[1]))];
 
 const guscio = creaGuscio(PUB);
 for (const p of PAGINE) guscio.pagina(p);

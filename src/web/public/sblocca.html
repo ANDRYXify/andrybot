@@ -12,6 +12,7 @@
   <link rel="stylesheet" href="/font.css">
   <link rel="stylesheet" href="/tema.css">
   <link rel="stylesheet" href="/pagina.css">
+  <link rel="stylesheet" href="/ingresso.css">
   <script src="/tema.js"></script>
   <meta name="description" content="Sblocca la tua dashboard SocialBot con la passkey del dispositivo: nessuna password da ricordare e nessun codice da copiare.">
   <meta name="copyright" content="© 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live">
@@ -35,16 +36,21 @@
   <meta name="twitter:image:alt" content="SocialBot, il bot che in chat scrive con il tuo nome, per Twitch e Kick">
 </head>
 <body class="centrata">
-  <div class="card">
+  <main class="card" id="sblocca">
     <img src="/icons/marchio-barra.png?v=9" alt="SocialBot" width="132" height="84">
-    <h1>Bentornato</h1>
-    <p>Sblocca la tua dashboard con la <strong>passkey</strong> (impronta, volto o PIN del dispositivo).</p>
-    <button class="azione" id="btn">Sblocca con passkey</button>
-    <div class="msg" id="msg"></div>
-    <a href="https://www.andryxify.it">Non hai una passkey? Entra dal sito</a>
-    <div style="margin-top:10px"><a href="/privacy" style="font-size:.82rem;color:#8b83ad">Privacy &amp; Sicurezza</a></div>
-  </div>
+    <h1 id="sb-titolo">Rieccoti</h1>
+    <p id="sb-testo">Sblocca il pannello con la passkey: impronta, volto o PIN di questo dispositivo.</p>
+    <div class="porte">
+      <button class="azione" id="btn" type="button">Sblocca con la passkey</button>
+      <a class="azione secondaria" id="altro-modo" href="/ingresso">Entra in un altro modo</a>
+    </div>
+    <div class="msg" id="msg" role="status" aria-live="polite"></div>
+    <p class="minuta" id="sb-nota">Non hai una passkey su questo dispositivo? Entra con Twitch, Kick, la mail o gli altri modi. Se non hai ancora una seconda prova, la scegli subito dopo: ci vuole un minuto.</p>
+    <p class="non-riesci"><a href="/aiuto-accesso" id="link-non-riesci">Non riesci a entrare?</a></p>
+    <p class="piccolo"><a href="/privacy" id="sb-privacy">Privacy e sicurezza</a></p>
+  </main>
 
+  <script src="/ingresso-comune.js" defer></script>
   <script src="/sblocca.js" defer></script>
 
 <!-- Questo software e tutto il suo contenuto (codice, logica, dati, motori di ragionamento e la persona "Lia") sono proprieta intellettuale di Andrea Taliento (ANDRYXify). © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live. ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live -->

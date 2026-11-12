@@ -45160,6 +45160,7 @@ async function creaPasskey() {
     clientDataJSON: bufToB64url(cred.response.clientDataJSON),
     nome,
   } });
+  try { localStorage.setItem('passkey:qui', '1'); } catch {}
   return true;
 }
 

@@ -50,6 +50,7 @@
     conto: () => L('Questo accesso adesso non apre nessun pannello.', 'This account does not open any panel right now.', 'Este acceso ahora no abre ningún panel.'),
     mail: () => L('Il codice per mail adesso non si può usare.', 'Email codes cannot be used right now.', 'Ahora no se pueden usar códigos por correo.'),
     annullata: () => L('Operazione annullata.', 'Cancelled.', 'Operación cancelada.'),
+    ignota: () => L('Questa passkey qui non apre niente: forse è stata tolta dal pannello. Entra in un altro modo.', 'This passkey does not open anything here: it may have been removed from the panel. Sign in another way.', 'Esta passkey aquí no abre nada: puede que se haya quitado del panel. Entra de otra forma.'),
     supporto: () => L('Questo dispositivo non sa usare le passkey: scegli un altro modo.', 'This device cannot use passkeys: pick another way.', 'Este dispositivo no puede usar passkeys: elige otra forma.'),
   };
   const errore = (e) => {
@@ -99,6 +100,13 @@
     return { sfida: s.sfida, numero: await risolvi(s.sfida, s.bit) };
   }
 
+  const passkeyQui = (segna) => {
+    try {
+      if (segna) radice.localStorage.setItem('passkey:qui', '1');
+      return radice.localStorage.getItem('passkey:qui') === '1';
+    } catch { return false; }
+  };
+
   async function passkeyUsa(inizio, fine) {
     if (!radice.PublicKeyCredential) throw Object.assign(new Error('supporto'), { codice: 'supporto' });
     const o = await chiama(inizio, {});
@@ -106,7 +114,9 @@
       challenge: daB64(o.challenge), rpId: o.rpId, userVerification: o.userVerification || 'preferred', timeout: o.timeout || 60000,
       allowCredentials: (o.allowCredentials || []).map((x) => ({ type: 'public-key', id: daB64(x.id) })),
     } });
-    return chiama(fine, { id: c.id, authenticatorData: aB64(c.response.authenticatorData), clientDataJSON: aB64(c.response.clientDataJSON), signature: aB64(c.response.signature) });
+    const r = await chiama(fine, { id: c.id, authenticatorData: aB64(c.response.authenticatorData), clientDataJSON: aB64(c.response.clientDataJSON), signature: aB64(c.response.signature) });
+    passkeyQui(true);
+    return r;
   }
   async function passkeyCrea(inizio, fine, nome) {
     if (!radice.PublicKeyCredential) throw Object.assign(new Error('supporto'), { codice: 'supporto' });
@@ -115,8 +125,10 @@
       challenge: daB64(o.challenge), rp: o.rp, user: { ...o.user, id: daB64(o.user.id) },
       pubKeyCredParams: o.pubKeyCredParams, authenticatorSelection: o.authenticatorSelection, timeout: o.timeout, attestation: o.attestation,
     } });
-    return chiama(fine, { attestationObject: aB64(c.response.attestationObject), clientDataJSON: aB64(c.response.clientDataJSON), nome });
+    const r = await chiama(fine, { attestationObject: aB64(c.response.attestationObject), clientDataJSON: aB64(c.response.clientDataJSON), nome });
+    passkeyQui(true);
+    return r;
   }
 
-  radice.SB_INGRESSO = { LINGUA, L, el, chiama, errore, prova, segni, risolvi, passkeyUsa, passkeyCrea };
+  radice.SB_INGRESSO = { LINGUA, L, el, chiama, errore, prova, segni, risolvi, passkeyUsa, passkeyCrea, passkeyQui };
 })(window);

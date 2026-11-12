@@ -41,6 +41,12 @@ questa non è una cosa da ricordarsi: il cancello boccia una riga pubblica senza
 traduzione, una traduzione staccata dalla sua riga, o una che dice numeri e
 comandi diversi da quelli della riga italiana.
 
+## 2026-11-12
+
+- Dall'app installata, chi non ha una passkey ora entra in un altro modo senza uscire dall'app, e sceglie lì la sua seconda prova. Prima il link portava su un altro sito. [vai: account]
+  en: From the installed app, people without a passkey can now sign in another way without leaving the app, and choose their second check there. The link used to lead to another site.
+  es: Desde la app instalada, quien no tiene una passkey ahora entra de otra forma sin salir de la app, y elige allí su segunda prueba. Antes el enlace llevaba a otro sitio.
+
 ## 2026-11-11
 
 - [importante] Il menù del pannello ora è tuo: metti in cima le pagine che usi, nascondi le altre, cambia l'ordine e scegli la barra in basso del telefono. Ti segue su ogni dispositivo. [vai: account]

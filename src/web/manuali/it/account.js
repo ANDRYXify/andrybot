@@ -67,6 +67,7 @@ export default {
       'Premi «Crea una passkey» e conferma con il dispositivo entro un minuto. Come nome prende il sistema del dispositivo, per esempio macOS o Android.',
       'La passkey è <strong>tua come persona</strong>, non del canale: ti riporta al tuo canale e a tutti i canali che moderi.',
       'In «Le tue passkey» vedi quando ognuna è stata creata e usata l\'ultima volta. «Rimuovi» la toglie subito, senza chiedere conferma.',
+      'L\'app installata si apre su «Sblocca con la passkey». Se su quel dispositivo non hai una passkey, premi «Entra in un altro modo»: entri con Twitch, Kick, la mail o gli altri modi senza uscire dall\'app, e se non hai ancora una seconda prova la scegli subito dopo.',
     ] },
     { tabella: [
       ['Messaggio', 'Cosa vuol dire'],
