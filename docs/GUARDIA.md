@@ -65,3 +65,23 @@ in diretta (docs/AGGIORNARE.md). Mancavano quattro cose:
   accesso): guarda quello che è pubblico.
 - I cancelli col browser restano fuori da GitHub: girano sulla macchina di chi
   pubblica e, dove il browser c'è, a ogni spinta.
+
+## Sul server, i controlli col browser
+
+Sul server Chromium non c'è, apposta: i cancelli che aprono il pannello in un
+browser lì si saltano, perché li ha già passati chi ha pubblicato. Ognuno però
+scriveva la sua riga («Chromium non c'è su questa macchina: collaudo
+saltato»), uguale alle altre e senza nome: chi guardava l'aggiornamento vedeva
+una schermata di sessanta righe identiche e non poteva sapere se andava bene.
+
+`server/aggiorna.sh` adesso le conta e le toglie, e alla fine ne scrive una:
+«N controlli col browser saltati: su questo server Chromium non c'è, ed è
+previsto». Il resto dell'uscita passa com'è. Tre cose tenute ferme da un
+contratto (`aggiorna-senza-fermare.test.mjs`), perché quello script è l'unica
+strada per cui il server si aggiorna:
+
+- il rosso di un cancello resta il rosso del comando, con le sue righe prima;
+- il filtro non usa niente che sotto `set -u` possa non esistere (la prima
+  stesura lo faceva, e la prova l'ha fermata prima che arrivasse al server);
+- senza `awk` o senza il tubo il comando gira lo stesso, a righe intere: il
+  filtro è una comodità e non ferma mai un aggiornamento.

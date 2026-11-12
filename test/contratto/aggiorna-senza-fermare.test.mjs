@@ -16,7 +16,7 @@
 //    il segnale si vede e si aspetta.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync, existsSync, mkdtempSync, writeFileSync, rmSync } from 'node:fs';
+import { readFileSync, existsSync, mkdtempSync, writeFileSync, rmSync, readdirSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -92,6 +92,40 @@ test('il collaudo parte alla priorita\' piu\' bassa, e un collaudo verde si rico
   for (const pezzo of comandi) assert.match(pezzo, /"\$\{BASSA\[@\]\}" npm /, `a priorita' bassa: ${pezzo.trim()}`);
   assert.match(collaudo, /echo "\$FIRMA_CODICE" > "\$COLLAUDATO"\n\s*echo "collaudo verde ✓"/, 'si ricorda solo quando e\' verde');
   assert.match(collaudo, /elif \[ "\$\(cat "\$COLLAUDATO" 2>\/dev\/null \|\| true\)" = "\$FIRMA_CODICE" \]; then/);
+});
+
+test('i controlli col browser saltati si dicono una volta sola, e il rosso di un cancello resta rosso', () => {
+  const pezzo = (nome) => new RegExp(`^ {2}${nome}\\(\\) \\{\\n[\\s\\S]*?\\n {2}\\}`, 'm').exec(AGG)?.[0];
+  const [conta, filtra, salti] = ['conta_salti', 'filtra', 'salti_di'].map(pezzo);
+  assert.ok(conta && filtra && salti, 'le tre funzioni ci sono');
+  assert.ok(!/\$!/.test(AGG.split('\n').filter((r) => !/^\s*#/.test(r)).join('\n').replace(/lettore=\$!/, '')),
+    'l\'unico «$!» e\' quello del lettore lanciato sullo sfondo: quello di una sostituzione di processo sotto «set -u» puo\' non esistere');
+  const dir = mkdtempSync(join(tmpdir(), 'andrybot-salti-'));
+  const f = join(dir, 'salti');
+  // come nello script: «set -euo pipefail», e il comando e' un processo a parte
+  const gira = (comando) => execFileSync('bash', ['-c',
+    `set -euo pipefail\n${conta}\n${filtra}\n${salti}\ncomando() { ${comando}; }\nESITO=0\nfiltra '${f}' comando || ESITO=$?\necho "esito=$ESITO salti=$(salti_di '${f}')"`],
+  { encoding: 'utf8', env: { ...process.env, TMPDIR: dir } });
+  try {
+    const righe = ['cancello verde ✓', 'Playwright non c\'e\': salto.', 'Chromium non c\'e\' su questa macchina: collaudo saltato.', '  ✓ una promessa',
+      'Playwright non c\'e\' su questa macchina: collaudo saltato.', 'Chromium o Playwright non ci sono su questa macchina: collaudo saltato.',
+      'Playwright non c\'e\': impossibile generare il marchio.', 'ultima riga'];
+    const stampa = righe.map((r) => `echo "${r}"`).join('; ');
+    assert.equal(gira(`( ${stampa} )`), ['cancello verde ✓', '  ✓ una promessa', 'Playwright non c\'e\': impossibile generare il marchio.', 'ultima riga', 'esito=0 salti=4', ''].join('\n'),
+      'le righe dei salti si tolgono e si contano, le altre passano nell\'ordine');
+    assert.match(gira(`( ${stampa}; echo "  ✗ un difetto vero" >&2; exit 7 )`), /ultima riga\n {2}✗ un difetto vero\nesito=7 salti=4\n$/,
+      'il rosso passa col suo codice, e dopo le sue righe');
+    assert.match(gira('bash -c "exit 3"'), /^esito=3 salti=0\n$/, 'un comando esterno rosso senza righe');
+    assert.match(gira('true'), /^esito=0 salti=0\n$/, 'senza salti non c\'e\' niente da dire');
+    assert.deepEqual(readdirSync(dir), ['salti'], 'il tubo non resta in giro');
+    // senza awk il comando gira lo stesso, con tutte le sue righe e il suo esito
+    const senza = execFileSync('bash', ['-c', `set -euo pipefail\ncommand() { return 1; }\n${conta}\n${filtra}\ncomando() { ( echo "Playwright non c'e': salto."; exit 5 ); }\nESITO=0\nfiltra '${f}' comando || ESITO=$?\necho "esito=$ESITO"`],
+      { encoding: 'utf8', env: { ...process.env, TMPDIR: dir } });
+    assert.equal(senza, 'Playwright non c\'e\': salto.\nesito=5\n', 'il filtro e\' una comodita\': senza, niente si ferma');
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+  assert.match(AGG, /\n {2}filtra "\$SALTI_QUI" "\$\{BASSA\[@\]\}" npm run --silent cancelli \|\| torna_indietro\n/);
+  assert.match(AGG, /\n {4}filtra "\$SALTI_LIA" collaudo_cervello \|\| torna_indietro\n/);
+  assert.match(AGG, /if \[ "\$N_SALTI" -gt 0 \]; then\n\s+echo\n\s+echo "\$N_SALTI controlli col browser saltati/);
 });
 
 test('l\'immagine si costruisce prima, poi si aspetta la fine delle dirette, poi si cambia', () => {

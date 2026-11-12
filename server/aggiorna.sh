@@ -256,13 +256,67 @@ else
     exit 1
   }
 
+  # I CONTROLLI COL BROWSER QUI SI SALTANO, E SI DICE UNA VOLTA SOLA.
+  #
+  # Su questo server Chromium non c'e' (docs/GUARDIA.md): i cancelli che aprono
+  # il pannello in un browser si saltano, perche' li ha gia' passati chi ha
+  # pubblicato, prima della spinta. Ognuno pero' scriveva la sua riga, uguale
+  # alle altre e senza nome: una schermata di «Chromium non c'e'» che non dice
+  # se va bene o male. Le righe si contano e si tolgono, e alla fine se ne
+  # scrive una che lo spiega. Tutto il resto passa cosi' com'e'.
+  #
+  # Il filtro legge soltanto. Sta dietro un tubo col nome, e chi lo lancia ne
+  # tiene il numero: si aspetta LUI prima di andare avanti (le ultime righe di
+  # un rosso escono prima di «guarda il collaudo qui sopra»), e l'esito che
+  # torna e' quello del comando, non del filtro. Niente «$!» di una
+  # sostituzione di processo: sotto «set -u» in certi casi non esiste, e lo
+  # script morirebbe li'.
+  conta_salti() {
+    awk -v f="$1" '/^(Playwright|Chromium|Chromium o Playwright) non (c.e.|ci sono).*(salto|saltato)\.$/ { n++; next } { print; fflush() } END { printf "%d\n", n > f }'
+  }
+  filtra() {
+    local conto="$1" casa tubo lettore esito=0
+    shift
+    # senza awk o senza tubo il comando gira lo stesso, a righe intere: il
+    # filtro e' una comodita', e non deve mai fermare un aggiornamento
+    casa="$(mktemp -d 2>/dev/null)" || casa=""
+    tubo="$casa/tubo"
+    if [ -z "$casa" ] || ! command -v awk >/dev/null 2>&1 || ! mkfifo "$tubo" 2>/dev/null; then
+      [ -n "$casa" ] && rm -rf -- "${casa:?}"
+      "$@" || esito=$?
+      return "$esito"
+    fi
+    conta_salti "$conto" < "$tubo" &
+    lettore=$!
+    "$@" > "$tubo" 2>&1 || esito=$?
+    wait "$lettore" || true
+    rm -rf -- "${casa:?}"
+    return "$esito"
+  }
+  salti_di() {
+    local n; n="$(cat "$1" 2>/dev/null || true)"
+    case "$n" in ''|*[!0-9]*) n=0 ;; esac
+    echo "$n"
+  }
+  collaudo_cervello() {
+    # le prove del cervello leggono anche questo repository (sta accanto): ANDRYBOT_DIR glielo dice
+    ( cd "$LIA_DIR" && ANDRYBOT_DIR="$RADICE" "${BASSA[@]}" npm test --silent && ANDRYBOT_DIR="$RADICE" "${BASSA[@]}" npm run --silent cancelli )
+  }
+  SALTI_QUI="$(mktemp)"; SALTI_LIA="$(mktemp)"
+
   echo "(a priorita' bassa: il bot che gira non rallenta, il collaudo ci mette quello che serve)"
   "${BASSA[@]}" npm ci --no-audit --no-fund --silent || { echo "installazione dipendenze fallita"; torna_indietro; }
   "${BASSA[@]}" npm test --silent || torna_indietro
-  "${BASSA[@]}" npm run --silent cancelli || torna_indietro
+  filtra "$SALTI_QUI" "${BASSA[@]}" npm run --silent cancelli || torna_indietro
   if [ "$SERVE_LIA" = "1" ]; then
-    # le prove del cervello leggono anche questo repository (sta accanto): ANDRYBOT_DIR glielo dice
-    ( cd "$LIA_DIR" && ANDRYBOT_DIR="$RADICE" "${BASSA[@]}" npm test --silent && ANDRYBOT_DIR="$RADICE" "${BASSA[@]}" npm run --silent cancelli ) || torna_indietro
+    filtra "$SALTI_LIA" collaudo_cervello || torna_indietro
+  fi
+  N_SALTI=$(( $(salti_di "$SALTI_QUI") + $(salti_di "$SALTI_LIA") ))
+  rm -f -- "${SALTI_QUI:?}" "${SALTI_LIA:?}"
+  if [ "$N_SALTI" -gt 0 ]; then
+    echo
+    echo "$N_SALTI controlli col browser saltati: su questo server Chromium non c'è, ed è previsto."
+    echo "Li ha già passati tutti chi ha pubblicato, prima della spinta. Qui hanno girato le prove e i cancelli senza browser."
   fi
   mkdir -p "$(dirname "$COLLAUDATO")" && echo "$FIRMA_CODICE" > "$COLLAUDATO"
   echo "collaudo verde ✓"
