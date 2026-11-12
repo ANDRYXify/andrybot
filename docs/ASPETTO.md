@@ -135,6 +135,10 @@ scuri erano chiaro su chiaro (contrasto 1.26). L'ha visto il cancello.
   mentre la pagina scorre (la barra del menù, il piede, le intestazioni) e
   prendono il colore della pagina: su una sfumatura si vedrebbero le toppe. I
   due colori dello sfondo diventano uno, a metà.
+- **La copertina d'avvio.** I pochi istanti col marchio prima che il pannello
+  arrivi restano del marchio, come la vetrina. Prendono però il lato della
+  veste (chiaro o scuro, da `data-theme`), quindi non c'è un lampo chiaro
+  prima di una veste scura né il contrario.
 - **Gli overlay e le pagine pubbliche** (link, negozio, donazioni, Pew): sono
   del canale e hanno già i loro editor.
 
