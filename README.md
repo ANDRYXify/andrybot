@@ -1,6 +1,6 @@
 <!-- © 2024–2026 Andrea Taliento (ANDRYXify) — Tutti i diritti riservati — socialbot.live -->
 <!-- Proprietà intellettuale · ANDRYX-IP::a7f39c1e8b424d90-4f7b-taliento::socialbot.live -->
-# SocialBot 🤖💜
+# SocialBot 
 
 Bot e pannello per streamer della community di **[andryxify.it](https://andryxify.it)**: un bot che
 **parla nella chat dello streamer con il suo stesso account**, **impara** dalla sua
