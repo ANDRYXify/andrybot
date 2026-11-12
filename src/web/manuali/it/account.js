@@ -257,7 +257,7 @@ export default {
       ['«Quando apro il pannello»', 'Stato, l\'ultima pagina usata o una voce', 'La pagina da cui parti. Un link a una pagina precisa vince sempre.'],
     ] },
     { p: [
-      '«Sistema il menù», in fondo al menù, porta a questa carta. «Rimetti il menù di serie» toglie tutte le scelte, dopo una conferma.',
+      'Il tasto «Sistema il menù», in fondo alla barra del menù, porta a questa carta. «Rimetti il menù di serie» toglie tutte le scelte, dopo una conferma.',
       'I gruppi di serie non si rinominano e una voce non si sposta da un gruppo all\'altro: i nomi dei posti sono quelli che usano i manuali, la lente e l\'assistenza. Per avere le tue cose insieme c\'è «Le mie».',
       'La carta la vedono anche i moderatori: ognuno ha il suo menù.',
     ] },

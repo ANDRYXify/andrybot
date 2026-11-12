@@ -214,6 +214,15 @@ menu/sottomenu/navigazione in generale? sì? la configuri e la lanci?».
     finché la pagina non ha finito di caricarsi: le carte sopra crescono
     mentre arrivano i loro dati, e una carta lasciata appena sotto lo schermo
     non si disegna.
+    **Il tasto non è una voce.** Chiesto così: «"sistema il menù" mettiamolo
+    separato, così è brutto e sembra incoerente con il resto». Era scritto come
+    una voce del menu, in coda all'elenco, più chiara e con un altro carattere:
+    sembrava una pagina venuta male. Ma non è una pagina, è lo strumento che
+    cambia l'elenco, quindi sta fuori dall'elenco: un piede in fondo alla barra
+    del menu, con una riga piena sopra e un tasto fatto come gli altri tasti
+    del pannello. Sul computer il piede resta in fondo alla barra anche col
+    menu più lungo dello schermo (l'elenco scorre sotto e si ferma alla riga);
+    sul telefono viene dopo l'elenco, prima del tuo nome e dei canali.
 11. **Le sorelle seguono il menu**: sul telefono la barra delle voci del
     gruppo ha l'ordine scelto e non mostra le nascoste (tranne quella in cui
     ci si trova).

@@ -5967,7 +5967,7 @@ function navDrawerHtml() {
     return chiudibile(g.id, tGruppo(g.id, g.nome), g.schede);
   }).join('');
   const nascoste = m.nascoste.length ? chiudibile('nascoste', L('Nascoste', 'Hidden', 'Ocultas'), m.nascoste, ' drawer-nascoste') : '';
-  const sistema = `<div class="drawer-sistema"><button type="button" class="drawer-voce" id="menu-sistema">${_ico('<path d="M4 6h8M16 6h4M4 12h2M10 12h10M4 18h10M18 18h2"/><circle cx="14" cy="6" r="2"/><circle cx="8" cy="12" r="2"/><circle cx="16" cy="18" r="2"/>')}<span>${L('Sistema il menù', 'Arrange the menu', 'Ordena el menú')}</span></button></div>`;
+  const sistema = `<div class="drawer-piede"><button type="button" class="btn secondario mini" id="menu-sistema">${_ico('<path d="M4 6h8M16 6h4M4 12h2M10 12h10M4 18h10M18 18h2"/><circle cx="14" cy="6" r="2"/><circle cx="8" cy="12" r="2"/><circle cx="16" cy="18" r="2"/>')}<span>${L('Sistema il menù', 'Arrange the menu', 'Ordena el menú')}</span></button></div>`;
   return mie + gruppi + nascoste + sistema;
 }
 

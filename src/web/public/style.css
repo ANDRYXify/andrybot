@@ -203,8 +203,13 @@ button.drawer-grp-tit {
 .drawer-mie { margin-bottom: .7rem; }
 .drawer-mie > .drawer-grp-tit { display: flex; width: max-content; max-width: 100%; }
 .drawer-nascoste > button.drawer-grp-tit { color: var(--testo-2); }
-.drawer-sistema { margin: .7rem .2rem .2rem; padding-top: .45rem; border-top: 1px dashed var(--border); }
-.drawer-sistema .drawer-voce { font-size: .86rem; color: var(--testo-2); }
+.drawer-piede { margin: 0 0 .2rem; padding: .7rem .2rem 0; border-top: 2px solid var(--contorno); }
+.nav-drawer > :nth-last-child(2) { margin-bottom: .7rem; }
+.drawer-piede .btn { width: 100%; gap: .45rem; min-height: 34px; font-size: .84rem; }
+.drawer-piede .btn .lat-svg { flex: none; }
+@media (pointer: coarse) {
+  .drawer-piede .btn { min-height: 44px; font-size: .9rem; }
+}
 @media (hover: hover) and (pointer: fine) {
   body.menu-fitto .drawer-voce { padding-top: .2rem; padding-bottom: .2rem; font-size: .88rem; }
   body.menu-fitto .drawer .drawer-voce.on { margin: 1px 0 3px; }
@@ -214,7 +219,8 @@ button.drawer-grp-tit {
   body.menu-fitto .drawer-grp:not(.chiuso):not(.drawer-solo) { margin-bottom: .3rem; }
   body.menu-fitto .drawer-grp.drawer-solo + .drawer-grp:not(.drawer-solo) { margin-top: .2rem; }
   body.menu-fitto .drawer-mie { margin-bottom: .4rem; }
-  body.menu-fitto .drawer-sistema { margin-top: .3rem; padding-top: .2rem; }
+  body.menu-fitto .drawer-piede { padding-top: .45rem; }
+  body.menu-fitto .nav-drawer > :nth-last-child(2) { margin-bottom: .4rem; }
 }
 .pt-mia {
   display: inline-grid; place-items: center; width: 1.9rem; height: 1.9rem; margin: -.3rem 0 -.3rem .3rem; padding: 0; vertical-align: middle;
@@ -2862,6 +2868,12 @@ body:not(.con-nav) .salta { display: none; }
     box-shadow: var(--ombra-ink-salto);
   }
   body.con-nav.tutto-schermo.menu-aperto .drawer { visibility: visible; }
+  body.con-nav:not(.tutto-schermo) .drawer, body.con-nav.tutto-schermo .drawer { display: flex; flex-direction: column; padding-bottom: 0; }
+  body.con-nav .nav-drawer { flex: 1 0 auto; display: flex; flex-direction: column; }
+  body.con-nav .drawer-piede {
+    margin-top: auto; position: sticky; bottom: 0; z-index: 2; padding-bottom: .8rem;
+    background: var(--tono-carta) 0 0 / var(--tono-passo), var(--bg);
+  }
   body.con-nav.tutto-schermo .backdrop, body.con-nav.tutto-schermo .drawer-testa { display: none; }
   body.con-nav.tutto-schermo .bordo-menu {
     display: block; position: fixed; left: 0; top: var(--top-h); bottom: 0; width: var(--bordo-menu); z-index: 39;

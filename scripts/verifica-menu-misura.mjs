@@ -16,12 +16,15 @@
 //   · le frecce cambiano l'ordine dei gruppi e delle voci;
 //   · con le righe fitte il menu con un gruppo da sette aperto sta in 768;
 //   · «tutti aperti» apre tutti i gruppi;
+//   · «Sistema il menù» e' un tasto a se', in un piede in fondo alla barra del
+//     menu: non una voce dell'elenco, e col menu lungo resta a portata senza
+//     coprire l'ultima voce;
 //   · sul telefono la barra in basso mostra le voci scelte piu' «Altro», larga
 //     quanto lo schermo, e la carta non allarga la pagina;
 //   · «Rimetti il menù di serie» riporta tutto com'era.
 //
 // Uso: node scripts/verifica-menu-misura.mjs [--foto <cartella>]
-//      --selftest serve un app.js rotto in sei modi e pretende sei rossi.
+//      --selftest serve un app.js rotto in sette modi e pretende sette rossi.
 import './_dati-usa-e-getta.mjs';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -42,6 +45,7 @@ const ROTTURE = [
   ['l\'ordine scelto non conta', 'const out = scelta.filter((x) => fabbrica.includes(x));', 'const out = [];'],
   ['le righe fitte non stringono', "document.body.classList.toggle('menu-fitto', con && menuMio().righe === 'fitte');", "document.body.classList.toggle('menu-fitto', false);"],
   ['la barra ignora le scelte', 'const scelte = menuMio().barra.filter((id) => !schedaNonUsabile(id));', 'const scelte = [];'],
+  ['«Sistema il menù» torna una voce in coda all\'elenco', '<div class="drawer-piede"><button type="button" class="btn secondario mini" id="menu-sistema">', '<div class="drawer-grp drawer-solo"><button type="button" class="drawer-voce" id="menu-sistema">'],
   ['il menu di serie non torna', 'menuCambia((s) => { for (const k of Object.keys(s)) delete s[k]; });', 'menuCambia(() => {});'],
 ];
 
@@ -90,6 +94,22 @@ async function giro(rottura, dice) {
     let prima = -1, uguali = 0;
     const t = setInterval(() => { const h = el.scrollHeight; uguali = h === prima ? uguali + 1 : 0; prima = h; if (uguali >= 5) { clearInterval(t); ok(); } }, 60);
   }));
+  // Il piede del menu: dov'e' il tasto, e quanto resta fra l'ultima voce che si vede e il piede.
+  const piede = (pg) => pg.evaluate(() => {
+    const b = document.getElementById('menu-sistema');
+    const barra = document.getElementById('drawer');
+    const r = b.getBoundingClientRect();
+    const p = b.closest('.drawer-piede')?.getBoundingClientRect();
+    const voci = [...document.querySelectorAll('#nav-drawer .drawer-voce, #nav-drawer .drawer-grp-tit')].filter((v) => v.offsetHeight > 0 && v !== b);
+    const ultima = voci.length ? voci[voci.length - 1].getBoundingClientRect() : null;
+    return {
+      tasto: b.classList.contains('btn'), voce: b.classList.contains('drawer-voce'), gruppo: !!b.closest('.drawer-grp'),
+      inVista: r.top >= 0 && r.bottom <= window.innerHeight,
+      sottoIlTasto: Math.round(barra.getBoundingClientRect().bottom - r.bottom),
+      sopraIlPiede: p && ultima ? Math.round(p.top - ultima.bottom) : -1,
+      lungo: barra.scrollHeight > barra.clientHeight + 40,
+    };
+  });
   const carta = async (pg) => {
     await pg.evaluate(() => document.getElementById('menu-sistema').click());
     await pg.waitForSelector('#carta-menu #menu-di-serie', { state: 'visible', timeout: 5000 });
@@ -109,6 +129,9 @@ async function giro(rottura, dice) {
     chiedi(JSON.stringify(m0.gruppi.flatMap((g) => g.voci)) === JSON.stringify(tutte) && !m0.mie.length && !m0.nascoste.length,
       `senza scelte il menu e' quello di fabbrica (${tutte.length} voci)`);
     chiedi(await d.isVisible('#menu-sistema'), 'in fondo al menu c\'e\' «Sistema il menù»');
+    const p0 = await piede(d);
+    chiedi(p0.tasto && !p0.voce && !p0.gruppo, '«Sistema il menù» e\' un tasto a se\', non una voce dell\'elenco');
+    chiedi(p0.inVista && p0.sottoIlTasto <= 24 && p0.sopraIlPiede >= 40, `sta in un piede in fondo alla barra del menu, staccato dall'elenco (${p0.sopraIlPiede} px sopra, ${p0.sottoIlTasto} sotto)`);
 
     await vai(d, 'subathon');
     await d.click('#pt-mia');
@@ -166,6 +189,13 @@ async function giro(rottura, dice) {
     await d.selectOption('#menu-modo', 'tutti');
     const m6 = await menu(d);
     chiedi(m6.gruppi.every((g) => g.aperto), '«tutti aperti» apre tutti i gruppi');
+    await fermo(d);
+    const p1 = await piede(d);
+    chiedi(p1.lungo && p1.inVista && p1.sottoIlTasto <= 24, 'col menu piu\' lungo dello schermo il tasto resta a portata, in fondo alla barra');
+    await d.evaluate(() => { const b = document.getElementById('drawer'); b.scrollTop = b.scrollHeight; });
+    const p2 = await piede(d);
+    chiedi(p2.inVista && p2.sopraIlPiede >= 0, `e in fondo all'elenco non copre l'ultima voce (${p2.sopraIlPiede} px di respiro)`);
+    await d.evaluate(() => { document.getElementById('drawer').scrollTop = 0; });
     await serie(d);
     await d.close();
 

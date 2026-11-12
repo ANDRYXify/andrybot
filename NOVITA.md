@@ -46,6 +46,9 @@ comandi diversi da quelli della riga italiana.
 - Dall'app installata, chi non ha una passkey ora entra in un altro modo senza uscire dall'app, e sceglie lì la sua seconda prova. Prima il link portava su un altro sito. [vai: account]
   en: From the installed app, people without a passkey can now sign in another way without leaving the app, and choose their second check there. The link used to lead to another site.
   es: Desde la app instalada, quien no tiene una passkey ahora entra de otra forma sin salir de la app, y elige allí su segunda prueba. Antes el enlace llevaba a otro sitio.
+- «Sistema il menù» ora è un tasto a sé in fondo alla barra del menù, staccato dall'elenco delle pagine. Sul computer resta sempre a portata, anche col menù lungo. [vai: account]
+  en: «Arrange the menu» is now a button of its own at the bottom of the menu bar, apart from the list of pages. On a computer it stays within reach, even with a long menu.
+  es: «Ordena el menú» ahora es un botón aparte al final de la barra del menú, separado de la lista de páginas. En el ordenador queda siempre a mano, incluso con el menú largo.
 
 ## 2026-11-11
 
