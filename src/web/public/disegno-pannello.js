@@ -122,7 +122,7 @@
     new MutationObserver(function (lista) {
       lista.forEach(function (m) { [].forEach.call(m.addedNodes, spDentro); });
     }).observe(document.documentElement, { childList: true, subtree: true });
-    new MutationObserver(spRifai).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+    new MutationObserver(spRifai).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme', 'data-veste'] });
     if (window.matchMedia) {
       var mq = matchMedia('(prefers-color-scheme: dark)');
       if (mq.addEventListener) mq.addEventListener('change', spRifai);

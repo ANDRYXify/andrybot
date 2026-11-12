@@ -72,6 +72,7 @@ guide non caricano `tema.css`: si portano via **la stessa regola** da
 |---|---|
 | `style.css`, `anime.css`, `vetrina.css`, `pagina.css` | `var(--...)` |
 | `src/web/guide.js` | i token e l'alone, inline nelle pagine composte |
+| `src/web/public/aspetto.js` | i colori di fabbrica dei sette ruoli e di verde, rosso e ambra, per derivare la veste di chi usa il pannello (`docs/ASPETTO.md`); un contratto li confronta con `tema.css` |
 | `scripts/og.mjs` | i colori dell'anteprima social |
 | `scripts/marchio.mjs` | il fondo delle icone di sistema |
 

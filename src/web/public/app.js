@@ -375,7 +375,7 @@ function _pagineDiProprieta() {
 }
 
 async function caricaStato() {
-  if (DEMO) { stato = statoDemo(); apriDaIndirizzo(); render(); montaDemo(); window.SB_SPLASH_OFF?.(); _registraVersione(); return; }
+  if (DEMO) { stato = statoDemo(); apriDaIndirizzo(); render(); montaDemo(); window.SB_SPLASH_OFF?.(); _registraVersione(); if (ASPETTO_FUGA) apriMenuMisura('carta-aspetto'); return; }
   try {
     stato = await api('/api/me');
   } catch (e) {
@@ -391,6 +391,7 @@ async function caricaStato() {
   render();
   mostraNovita();
   window.SB_SPLASH_OFF?.();
+  if (ASPETTO_FUGA && stato.user) apriMenuMisura('carta-aspetto');
   _registraVersione();
 
   if (new URLSearchParams(location.search).get('promo') === '1') {
@@ -3307,25 +3308,29 @@ function _sistemaScuro() {
 function temaScuroAttivo() { return TEMA === 'dark' || (TEMA === 'auto' && _sistemaScuro()); }
 function applicaTema() {
   const scuro = temaScuroAttivo();
-  try { document.documentElement.setAttribute('data-theme', scuro ? 'dark' : 'light'); } catch (e) {  }
+  let dipinto = scuro;
+  try { dipinto = aspettoDipingi().tema === 'dark'; } catch (e) {
+    try { document.documentElement.setAttribute('data-theme', scuro ? 'dark' : 'light'); } catch (e2) {  }
+  }
   const et = scuro
     ? L('Passa al tema chiaro', 'Switch to light theme', 'Cambiar a tema claro')
     : L('Passa al tema scuro', 'Switch to dark theme', 'Cambiar a tema oscuro');
   document.querySelectorAll('[data-tema-toggle]').forEach((b) => { b.setAttribute('aria-label', et); b.title = et; });
 
   try {
-    if (_lia && typeof _lia.tema === 'function') _lia.tema(scuro);
+    if (_lia && typeof _lia.tema === 'function') _lia.tema(dipinto);
   } catch (e) {  }
 }
 function cambiaTema() {
   TEMA = temaScuroAttivo() ? 'light' : 'dark';
   try { localStorage.setItem('tema', TEMA); } catch (e) {  }
   applicaTema();
+  disegnaAspetto();
 }
 
 try {
   const _mq = window.matchMedia('(prefers-color-scheme: dark)');
-  const _onSys = () => { if (TEMA === 'auto') applicaTema(); };
+  const _onSys = () => { if (TEMA === 'auto') { applicaTema(); disegnaAspetto(); } };
   if (_mq.addEventListener) _mq.addEventListener('change', _onSys);
   else if (_mq.addListener) _mq.addListener(_onSys);
 } catch (e) {  }
@@ -5376,6 +5381,7 @@ const ICO = {
   pannelli: '<rect x="3" y="3" width="18" height="6" rx="1.5"/><rect x="3" y="11" width="18" height="4" rx="1.5"/><rect x="3" y="17" width="18" height="4" rx="1.5"/>',
   meno: '<line x1="5" x2="19" y1="12" y2="12"/>',
   stella: '<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/>',
+  tavolozza: '<path d="M12 3a9 9 0 1 0 0 18c1.3 0 2-.9 2-1.9 0-1.3-1-1.6-1-2.7 0-1 .8-1.8 1.9-1.8H17a4 4 0 0 0 4-4c0-4.2-4-7.6-9-7.6Z"/><circle cx="7.6" cy="11.6" r=".9"/><circle cx="10.4" cy="7.6" r=".9"/><circle cx="15.2" cy="7.8" r=".9"/>',
   orologio: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.2 2"/>',
   cartello: '<path d="M4 5h16v11H4z"/><path d="M12 16v5"/><path d="M8 21h8"/>',
   podio: '<path d="M4 20h4v-7H4z"/><path d="M10 20h4V6h-4z"/><path d="M16 20h4v-10h-4z"/>',
@@ -5928,14 +5934,14 @@ function menuMisuraCambio(ev) {
   }
 }
 
-function apriMenuMisura() {
+function apriMenuMisura(idCarta = 'carta-menu') {
   vaiAScheda('account');
   let giri = 0, mollato = false;
   const molla = () => { mollato = true; };
   const ascolti = ['wheel', 'touchstart', 'keydown', 'pointerdown'];
   ascolti.forEach((e) => window.addEventListener(e, molla, { once: true, passive: true, capture: true }));
   const segui = () => {
-    const c = document.getElementById('carta-menu');
+    const c = document.getElementById(idCarta);
     const pronta = c && c.closest('.pannello-scheda.visibile');
     if (pronta && !mollato) {
       if (giri < 60 && c.classList.contains('chiusa')) { try { mostraZonaDi(c); } catch (e) {  } _piegaCarta(c, true); }
@@ -5946,6 +5952,226 @@ function apriMenuMisura() {
     else ascolti.forEach((e) => window.removeEventListener(e, molla, { capture: true }));
   };
   segui();
+}
+
+const ASPETTO_LOCALE = 'aspetto:scelte';
+const ASPETTO_FUGA = /[?&]aspetto=serie(&|$)/.test(location.search);
+let _aspScelte = null, _aspDi = null, _aspDemo = null, _aspUltima = null, _aspCoda = Promise.resolve();
+const _aspCarta = { incolla: false, incollaTesto: '', css: false, tolto: false, chiedi: false };
+function _aspLeggi(k) { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch (e) { return null; } }
+function aspettoScelte() {
+  if (_aspScelte && _aspDi === stato) return _aspScelte;
+  const grezze = DEMO ? _aspDemo
+    : !stato ? _aspLeggi(SB_ASPETTO.CHIAVE)?.scelte
+      : !stato.user ? null
+        : _aspQui() || stato.aspetto;
+  _aspDi = stato;
+  return (_aspScelte = SB_ASPETTO.pulisci(grezze));
+}
+function _aspQui() {
+  const q = _aspLeggi(ASPETTO_LOCALE);
+  return q && q.chi === stato?.identita && q.scelte ? q.scelte : null;
+}
+const aspettoPosto = () => (temaScuroAttivo() ? 'scuro' : 'chiaro');
+
+function aspettoMoto(m) {
+  const vuole = m === 'leggero' ? '1' : m === 'pieno' ? '0' : null;
+  if (vuole !== null) document.body.classList.toggle('leggero', vuole === '1');
+  if (DEMO) return;
+  try {
+    if (vuole === null) localStorage.removeItem('sb-leggero'); else localStorage.setItem('sb-leggero', vuole);
+  } catch (e) {  }
+}
+
+function aspettoDipingi() {
+  const scelte = aspettoScelte(), dentro = !!(stato && stato.user);
+  const v = SB_ASPETTO.dipingi(ASPETTO_FUGA ? {} : scelte, aspettoPosto(), { css: dentro });
+  if (stato && !DEMO) SB_ASPETTO.conserva(scelte);
+  if (dentro) aspettoMoto(scelte.moto);
+  return v;
+}
+
+function aspettoCambia(cambia, { salva = true, carta = true } = {}) {
+  const s = JSON.parse(JSON.stringify(aspettoScelte()));
+  cambia(s);
+  _aspScelte = SB_ASPETTO.pulisci(s); _aspDi = stato;
+  if (DEMO) _aspDemo = _aspScelte;
+  applicaTema();
+  if (carta) disegnaAspetto();
+  if (DEMO || !salva) return;
+  const corpo = _aspScelte, chi = stato?.identita || '';
+  _aspUltima = corpo;
+  const tieniQui = () => { try { localStorage.setItem(ASPETTO_LOCALE, JSON.stringify({ chi, scelte: corpo })); } catch (e) {  } };
+  const riallinea = () => { if (_aspUltima === corpo && _aspScelte !== corpo) { _aspScelte = corpo; _aspDi = stato; applicaTema(); disegnaAspetto(); } };
+  _aspCoda = _aspCoda.then(() => api('/api/persona/aspetto', { method: 'POST', body: { aspetto: corpo } }))
+    .then((r) => { if (r?.qui) tieniQui(); else { try { localStorage.removeItem(ASPETTO_LOCALE); } catch (e) {  } if (stato) stato.aspetto = r?.aspetto || null; } riallinea(); })
+    .catch(() => { tieniQui(); toast(L('Non sono riuscito a salvare l’aspetto sul server: per ora resta su questo dispositivo.', 'I could not save the look on the server: for now it stays on this device.', 'No he podido guardar el aspecto en el servidor: por ahora se queda en este dispositivo.')); });
+}
+
+const _aspNomi = () => ({
+  preset: { '': L('Di serie', 'Standard', 'De serie'), minimal: 'Minimal', neon: 'Neon', retro: 'Retro', sunset: 'Sunset', glass: 'Glass', brutal: 'Brutal', pastello: L('Pastello', 'Pastel', 'Pastel'), cyber: 'Cyberpunk', vapor: 'Vaporwave', oro: L('Oro', 'Gold', 'Oro'), oceano: L('Oceano', 'Ocean', 'Océano'), foresta: L('Foresta', 'Forest', 'Bosque'), ghiaccio: L('Ghiaccio', 'Ice', 'Hielo'), lava: 'Lava', bubblegum: 'Bubblegum' },
+  ruoli: {
+    pagina: L('La pagina', 'The page', 'La página'), carta: L('Le carte', 'The cards', 'Las tarjetas'), testo: L('Il testo', 'The text', 'El texto'),
+    tenue: L('Il testo tenue', 'The muted text', 'El texto tenue'), bordo: L('I bordi', 'The borders', 'Los bordes'),
+    acc: L('L’evidenza', 'The accent', 'El acento'), inchiostro: L('L’inchiostro dei contorni', 'The outline ink', 'La tinta de los contornos'),
+  },
+  manopole: {
+    carattere: L('Il carattere', 'The typeface', 'La tipografía'), titoli: L('I titoli', 'The headings', 'Los títulos'),
+    angoli: L('Gli angoli', 'The corners', 'Las esquinas'), tratto: L('Il tratto', 'The stroke', 'El trazo'), ombre: L('Le ombre', 'The shadows', 'Las sombras'),
+    trama: L('La trama', 'The texture', 'La trama'), puntatore: L('Il puntatore', 'The pointer', 'El puntero'), moto: L('Il movimento', 'The motion', 'El movimiento'),
+  },
+  valori: {
+    carattere: { serie: L('Di serie (Archivo)', 'Standard (Archivo)', 'De serie (Archivo)') },
+    titoli: { serie: L('Di serie (a pennarello)', 'Standard (marker)', 'De serie (a rotulador)'), testo: L('Come il testo', 'Same as the text', 'Como el texto') },
+    pile: { system: L('Del sistema', 'System', 'Del sistema'), inter: 'Inter', mono: L('Monospazio', 'Monospace', 'Monoespaciada'), serif: L('Con le grazie', 'Serif', 'Con serifa'), condensato: L('Condensato', 'Condensed', 'Condensada'), tondo: L('Arrotondato', 'Rounded', 'Redondeada') },
+    angoli: { serie: L('Di serie', 'Standard', 'De serie'), vivi: L('Vivi', 'Square', 'Rectos'), tondi: L('Tondi', 'Round', 'Redondos') },
+    tratto: { serie: L('Di serie', 'Standard', 'De serie'), sottile: L('Sottile', 'Thin', 'Fino'), marcato: L('Marcato', 'Bold', 'Marcado') },
+    ombre: { serie: L('Di serie', 'Standard', 'De serie'), corte: L('Corte', 'Short', 'Cortas'), nessuna: L('Nessuna', 'None', 'Ninguna') },
+    trama: { serie: L('Di serie (puntinata)', 'Standard (dotted)', 'De serie (punteada)'), liscia: L('Liscia', 'Plain', 'Lisa') },
+    puntatore: { serie: L('Di serie (disegnato)', 'Standard (drawn)', 'De serie (dibujado)'), sistema: L('Quello del sistema', 'The system one', 'El del sistema') },
+    moto: { serie: L('Di serie (decide il dispositivo)', 'Standard (the device decides)', 'De serie (decide el dispositivo)'), leggero: L('Leggero', 'Light', 'Ligero'), pieno: L('Pieno', 'Full', 'Completo') },
+  },
+});
+
+function disegnaAspetto() {
+  const box = document.getElementById('aspetto-misura');
+  if (!box || !window.SB_ASPETTO) return;
+  const A = SB_ASPETTO, s = aspettoScelte(), posto = aspettoPosto(), mia = s[posto], v = A.veste(s, posto), N = _aspNomi();
+  const att = document.activeElement, dentro = att && box.contains(att);
+  const chi = !dentro ? '' : att.id ? '#' + att.id
+    : ['asTema', 'asPreset', 'asVia'].map((k) => (att.dataset[k] === undefined ? '' : `[data-${k.replace(/[A-Z]/g, (c) => '-' + c.toLowerCase())}="${att.dataset[k]}"]`)).find(Boolean) || '';
+  const cssAperto = _aspCarta.css || !!box.querySelector('details.as-css')?.open;
+  const op = (val, attuale, testo) => `<option value="${esc(val)}"${val === attuale ? ' selected' : ''}>${esc(testo)}</option>`;
+
+  const campione = (id) => {
+    const r = A.veste({ [posto]: { preset: id } }, posto).ruoli;
+    return `<button type="button" class="as-preset" data-as-preset="${esc(id)}" aria-pressed="${mia.preset === id && (id !== '' || !v.vestita) ? 'true' : 'false'}">
+      <span class="as-campione" style="background:${r.pagina};border-color:${r.inchiostro}"><span class="as-c-carta" style="background:${r.carta};border-color:${r.bordo};color:${r.testo}">Aa<i style="background:${r.acc}"></i></span></span>
+      <span class="as-preset-nome">${esc(N.preset[id] || id)}</span></button>`;
+  };
+  const colore = (r) => {
+    const tuo = mia[r], ritoccato = v.corretti.includes(r);
+    const nota = ritoccato ? L(`Hai scelto ${tuo}: uso ${v.ruoli[r]}, che si legge.`, `You chose ${tuo}: I use ${v.ruoli[r]}, which reads.`, `Has elegido ${tuo}: uso ${v.ruoli[r]}, que se lee.`)
+      : tuo ? L('Scelto da te', 'Chosen by you', 'Elegido por ti') : mia.preset ? L('Dalla veste pronta', 'From the ready-made look', 'Del aspecto ya hecho') : v.vestita ? L('Ricavato dagli altri', 'Derived from the others', 'Derivado de los demás') : L('Di serie', 'Standard', 'De serie');
+    return `<div class="as-colore">
+      <input type="color" id="as-col-${r}" data-as-ruolo="${r}" value="${esc(tuo || v.ruoli[r])}">
+      <label for="as-col-${r}">${esc(N.ruoli[r])}<small class="${ritoccato ? 'as-ritocco' : ''}">${esc(nota)}</small></label>
+      ${tuo ? `<button type="button" class="mm-tasto" data-as-via="${r}" title="${esc(L('Togli il tuo colore', 'Remove your colour', 'Quita tu color'))}" aria-label="${esc(L(`Togli il tuo colore: ${N.ruoli[r]}`, `Remove your colour: ${N.ruoli[r]}`, `Quita tu color: ${N.ruoli[r]}`))}">${_bIco(_mmVia)}</button>` : ''}
+    </div>`;
+  };
+  const scelta = (k) => `<div><label class="campo" for="as-${k}">${esc(N.manopole[k])}</label>
+    <select id="as-${k}" data-as-manopola="${k}">${A.MANOPOLE[k].map((val) => op(val, s[k], (N.valori[k] && N.valori[k][val]) || N.valori.pile[val] || val)).join('')}</select></div>`;
+
+  box.innerHTML = `
+    ${ASPETTO_FUGA ? `<p class="riquadro-info">${L('Stai guardando SocialBot con l’aspetto di serie, perché l’indirizzo lo chiede. Le tue scelte sono ancora qui sotto: sistemale, poi', 'You are seeing SocialBot with the standard look, because the address asks for it. Your choices are still below: fix them, then', 'Estás viendo SocialBot con el aspecto de serie, porque la dirección lo pide. Tus elecciones siguen aquí abajo: arréglalas y luego')} <a href="/">${L('torna alla tua veste', 'go back to your look', 'vuelve a tu aspecto')}</a>.</p>` : ''}
+    <div class="as-temi" role="group" aria-label="${esc(L('Quale tema stai vestendo', 'Which theme you are dressing', 'Qué tema estás vistiendo'))}">
+      <button type="button" class="btn${posto === 'chiaro' ? '' : ' secondario'} mini" data-as-tema="chiaro" aria-pressed="${posto === 'chiaro'}">${L('Tema chiaro', 'Light theme', 'Tema claro')}</button>
+      <button type="button" class="btn${posto === 'scuro' ? '' : ' secondario'} mini" data-as-tema="scuro" aria-pressed="${posto === 'scuro'}">${L('Tema scuro', 'Dark theme', 'Tema oscuro')}</button>
+    </div>
+    <p class="suggerimento">${L('Ogni tema ha la sua veste: scegli qui quale stai vestendo. Il tasto col sole e la luna, in alto, passa dall’una all’altra.', 'Each theme has its own look: choose here which one you are dressing. The sun and moon button at the top switches between them.', 'Cada tema tiene su aspecto: elige aquí cuál estás vistiendo. El botón del sol y la luna, arriba, pasa de uno a otro.')}</p>
+    <h3>${L('Parti da una veste pronta', 'Start from a ready-made look', 'Parte de un aspecto ya hecho')}</h3>
+    <div class="as-preset-griglia">${[''].concat(Object.keys(A.PRESET)).map(campione).join('')}</div>
+    <h3>${L('I colori, uno per uno', 'The colours, one by one', 'Los colores, uno a uno')}</h3>
+    <p class="suggerimento">${L('Se un colore non si leggerebbe lo ritocco quel tanto che basta, e te lo dico qui accanto. Una scritta che non si legge non è un gusto: è un guasto.', 'If a colour would not be readable I adjust it just enough, and tell you right here. Unreadable text is not a taste: it is a fault.', 'Si un color no se leería lo retoco lo justo, y te lo digo aquí al lado. Un texto que no se lee no es un gusto: es una avería.')}</p>
+    <div class="as-colori">${A.RUOLI.map(colore).join('')}</div>
+    <h3>${L('La scrittura', 'The writing', 'La escritura')}</h3>
+    <div class="mm-campi">${scelta('carattere')}${scelta('titoli')}
+      <div><label class="campo" for="as-grandezza">${L('La grandezza', 'The size', 'El tamaño')} <output id="as-grandezza-dice" for="as-grandezza">${s.grandezza} %</output></label>
+        <input type="range" id="as-grandezza" min="${A.GRANDEZZA.min}" max="${A.GRANDEZZA.max}" step="${A.GRANDEZZA.passo}" value="${s.grandezza}"></div>
+    </div>
+    <h3>${L('La forma', 'The shape', 'La forma')}</h3>
+    <div class="mm-campi">${['angoli', 'tratto', 'ombre', 'trama', 'puntatore', 'moto'].map(scelta).join('')}</div>
+    <p class="suggerimento">${L('Il movimento cambia del tutto alla prossima apertura.', 'Motion changes fully the next time you open it.', 'El movimiento cambia del todo la próxima vez que abras.')}</p>
+    <details class="as-css spazio-sopra"${cssAperto ? ' open' : ''}>
+      <summary>${L('Il tuo CSS, per quello che le manopole non fanno', 'Your own CSS, for what the knobs don’t do', 'Tu CSS, para lo que los mandos no hacen')}</summary>
+      <label class="campo" for="as-css">${L('Arriva per ultimo e vale solo qui dentro, solo per te', 'It comes last and applies only in here, only for you', 'Llega el último y vale solo aquí dentro, solo para ti')}</label>
+      <textarea id="as-css" class="campo-largo as-css-testo" rows="7" maxlength="${A.CSS_MAX}" spellcheck="false" autocomplete="off" placeholder=".carta { border-style: dashed; }">${esc(s.css)}</textarea>
+      <p class="suggerimento">${L('Non passa niente che apra una connessione verso altri siti (url, @import, image-set) e nemmeno la barra rovescia: qui dentro ci sono le tue chiavi e i tuoi dati, e un CSS copiato da altri potrebbe portarli fuori.', 'Nothing that opens a connection to other sites gets through (url, @import, image-set), nor the backslash: your keys and your data are in here, and CSS copied from someone else could carry them out.', 'No pasa nada que abra una conexión hacia otros sitios (url, @import, image-set) ni la barra invertida: aquí dentro están tus claves y tus datos, y un CSS copiado de otros podría sacarlos.')}</p>
+      ${_aspCarta.tolto ? `<p class="riquadro-info" id="as-css-tolto">${L('Ho tolto dal tuo CSS le parti che aprono una connessione. Il resto vale.', 'I removed from your CSS the parts that open a connection. The rest applies.', 'He quitado de tu CSS las partes que abren una conexión. El resto vale.')}</p>` : ''}
+      <p><button type="button" class="btn secondario mini" id="as-css-applica">${L('Applica il CSS', 'Apply the CSS', 'Aplica el CSS')}</button></p>
+      <p class="suggerimento">${L('Se un CSS ti rende inservibile lo schermo, apri socialbot.live/?aspetto=serie: entri con l’aspetto di serie e le tue scelte restano qui da sistemare.', 'If some CSS makes the screen unusable, open socialbot.live/?aspetto=serie: you get in with the standard look and your choices stay here to fix.', 'Si un CSS te deja la pantalla inservible, abre socialbot.live/?aspetto=serie: entras con el aspecto de serie y tus elecciones siguen aquí para arreglarlas.')}</p>
+    </details>
+    <p class="mm-serie spazio-sopra">
+      <button type="button" class="btn secondario" id="as-copia">${L('Copia la mia veste', 'Copy my look', 'Copia mi aspecto')}</button>
+      <button type="button" class="btn secondario" id="as-incolla" aria-expanded="${_aspCarta.incolla}">${L('Incolla una veste', 'Paste a look', 'Pega un aspecto')}</button>
+      <button type="button" class="btn secondario" id="as-di-serie"${A.diSerie(s) ? ' disabled' : ''}>${L('Rimetti l’aspetto di serie', 'Restore the standard look', 'Vuelve al aspecto de serie')}</button>
+      <span id="as-serie-chiedi"${_aspCarta.chiedi ? '' : ' hidden'}>${L('Tolgo tutte le tue scelte sull’aspetto, nei due temi.', 'I will remove all your look choices, in both themes.', 'Quito todas tus elecciones de aspecto, en los dos temas.')}
+        <button type="button" class="btn pericolo mini" id="as-serie-si">${L('Sì, rimettilo', 'Yes, restore it', 'Sí, vuelve')}</button>
+        <button type="button" class="btn secondario mini" id="as-serie-no">${L('No', 'No', 'No')}</button></span>
+      ${A.diSerie(s) ? `<span class="suggerimento">${L('È già quello di serie.', 'It is already the standard one.', 'Ya es el de serie.')}</span>` : ''}
+    </p>
+    ${_aspCarta.incolla ? `<div class="as-incolla">
+      <label class="campo" for="as-incolla-testo">${L('Il testo di una veste copiata: la tua da un altro dispositivo, o quella che ti ha passato qualcuno', 'The text of a copied look: yours from another device, or one someone gave you', 'El texto de un aspecto copiado: el tuyo desde otro dispositivo, o el que te ha pasado alguien')}</label>
+      <textarea id="as-incolla-testo" class="campo-largo as-css-testo" rows="4" spellcheck="false" autocomplete="off">${esc(_aspCarta.incollaTesto)}</textarea>
+      <p><button type="button" class="btn mini" id="as-incolla-applica">${L('Vesti con questa', 'Dress with this one', 'Viste con este')}</button></p>
+    </div>` : ''}`;
+  if (chi) { try { box.querySelector(chi)?.focus({ preventScroll: true }); } catch (e) {  } }
+}
+
+function aspettoClic(ev) {
+  const t = ev.target.closest?.('#aspetto-misura button');
+  if (!t) return;
+  const posto = aspettoPosto();
+  if (t.dataset.asTema) {
+    TEMA = t.dataset.asTema === 'scuro' ? 'dark' : 'light';
+    try { localStorage.setItem('tema', TEMA); } catch (e) {  }
+    applicaTema(); disegnaAspetto();
+    return;
+  }
+  if (t.dataset.asPreset !== undefined) { aspettoCambia((s) => { s[posto] = { preset: t.dataset.asPreset }; }); return; }
+  if (t.dataset.asVia) { aspettoCambia((s) => { s[posto][t.dataset.asVia] = ''; }); return; }
+  if (t.id === 'as-css-applica') {
+    const scritto = String(document.getElementById('as-css')?.value || '');
+    _aspCarta.css = true;
+    _aspCarta.tolto = SB_ASPETTO.cssSicuro(scritto) !== scritto.replace(/\/\*[\s\S]*?\*\//g, ' ').trim();
+    aspettoCambia((s) => { s.css = scritto; });
+    toast(L('Il tuo CSS è applicato.', 'Your CSS is applied.', 'Tu CSS está aplicado.'));
+    return;
+  }
+  if (t.id === 'as-copia') {
+    const testo = JSON.stringify(aspettoScelte());
+    const aMano = () => { _aspCarta.incolla = true; _aspCarta.incollaTesto = testo; disegnaAspetto(); document.getElementById('as-incolla-testo')?.select(); toast(L('Non posso scrivere negli appunti: il testo della veste è qui sotto, copialo da lì.', 'I cannot write to the clipboard: the text of the look is below, copy it from there.', 'No puedo escribir en el portapapeles: el texto del aspecto está aquí abajo, cópialo de ahí.')); };
+    try { navigator.clipboard.writeText(testo).then(() => toast(L('Veste copiata: incollala dove vuoi, o passala a qualcuno.', 'Look copied: paste it wherever you like, or pass it to someone.', 'Aspecto copiado: pégalo donde quieras, o pásaselo a alguien.')), aMano); } catch (e) { aMano(); }
+    return;
+  }
+  if (t.id === 'as-incolla') { _aspCarta.incolla = !_aspCarta.incolla; _aspCarta.incollaTesto = ''; disegnaAspetto(); document.getElementById('as-incolla-testo')?.focus(); return; }
+  if (t.id === 'as-incolla-applica') {
+    let nuova = null;
+    try { nuova = JSON.parse(String(document.getElementById('as-incolla-testo')?.value || '')); } catch (e) { nuova = null; }
+    if (!nuova || typeof nuova !== 'object' || Array.isArray(nuova)) { toast(L('Questo testo non è una veste: copiala di nuovo col tasto «Copia la mia veste».', 'This text is not a look: copy it again with the “Copy my look” button.', 'Este texto no es un aspecto: cópialo otra vez con el botón «Copia mi aspecto».')); return; }
+    _aspCarta.incolla = false; _aspCarta.incollaTesto = '';
+    aspettoCambia((s) => { for (const k of Object.keys(s)) delete s[k]; Object.assign(s, nuova); });
+    toast(L('Fatto: hai addosso la veste incollata.', 'Done: you are wearing the pasted look.', 'Hecho: llevas puesto el aspecto pegado.'));
+    return;
+  }
+  if (t.id === 'as-di-serie') { _aspCarta.chiedi = true; disegnaAspetto(); document.getElementById('as-serie-no')?.focus(); return; }
+  if (t.id === 'as-serie-no') { _aspCarta.chiedi = false; disegnaAspetto(); document.getElementById('as-di-serie')?.focus(); return; }
+  if (t.id === 'as-serie-si') {
+    _aspCarta.chiedi = false; _aspCarta.tolto = false;
+    aspettoCambia((s) => { for (const k of Object.keys(s)) delete s[k]; });
+    toast(L('L’aspetto è tornato quello di serie.', 'The look is back to standard.', 'El aspecto ha vuelto al de serie.'));
+  }
+}
+
+function aspettoCambio(ev) {
+  const t = ev.target;
+  if (!t?.closest?.('#aspetto-misura')) return;
+  const posto = aspettoPosto();
+  if (t.dataset.asRuolo) { aspettoCambia((s) => { s[posto][t.dataset.asRuolo] = t.value; }); return; }
+  if (t.dataset.asManopola) { aspettoCambia((s) => { s[t.dataset.asManopola] = t.value; }); return; }
+  if (t.id === 'as-grandezza') aspettoCambia((s) => { s.grandezza = Number(t.value); });
+}
+
+function aspettoMentre(ev) {
+  const t = ev.target;
+  if (!t?.closest?.('#aspetto-misura')) return;
+  const posto = aspettoPosto();
+  if (t.dataset.asRuolo) { aspettoCambia((s) => { s[posto][t.dataset.asRuolo] = t.value; }, { salva: false, carta: false }); return; }
+  if (t.id === 'as-grandezza') {
+    const dice = document.getElementById('as-grandezza-dice');
+    if (dice) dice.textContent = `${t.value} %`;
+    aspettoCambia((s) => { s.grandezza = Number(t.value); }, { salva: false, carta: false });
+  }
 }
 
 function navDrawerHtml() {
@@ -5967,7 +6193,7 @@ function navDrawerHtml() {
     return chiudibile(g.id, tGruppo(g.id, g.nome), g.schede);
   }).join('');
   const nascoste = m.nascoste.length ? chiudibile('nascoste', L('Nascoste', 'Hidden', 'Ocultas'), m.nascoste, ' drawer-nascoste') : '';
-  const sistema = `<div class="drawer-piede"><button type="button" class="btn secondario mini" id="menu-sistema">${_ico('<path d="M4 6h8M16 6h4M4 12h2M10 12h10M4 18h10M18 18h2"/><circle cx="14" cy="6" r="2"/><circle cx="8" cy="12" r="2"/><circle cx="16" cy="18" r="2"/>')}<span>${L('Sistema il menù', 'Arrange the menu', 'Ordena el menú')}</span></button></div>`;
+  const sistema = `<div class="drawer-piede"><button type="button" class="btn secondario mini" id="menu-sistema">${_ico('<path d="M4 6h8M16 6h4M4 12h2M10 12h10M4 18h10M18 18h2"/><circle cx="14" cy="6" r="2"/><circle cx="8" cy="12" r="2"/><circle cx="16" cy="18" r="2"/>')}<span>${L('Sistema il menù', 'Arrange the menu', 'Ordena el menú')}</span></button><button type="button" class="btn secondario mini drawer-piede-ico" id="menu-aspetto" title="${esc(L('Cambia l’aspetto', 'Change the look', 'Cambia el aspecto'))}" aria-label="${esc(L('Cambia l’aspetto', 'Change the look', 'Cambia el aspecto'))}">${_ico(ICO.tavolozza)}</button></div>`;
   return mie + gruppi + nascoste + sistema;
 }
 
@@ -12554,6 +12780,11 @@ function pannelloAccount() {
       <h2>${_hIco(ICO.stella)}${L('Menù su misura', 'Your own menu', 'Menú a medida')}</h2>
       <p>${L('Il menù è tuo: metti in cima le pagine che usi, togli di mezzo quelle che non ti servono, cambia l’ordine. Ogni scelta vale subito e ti segue su ogni dispositivo, anche quando gestisci il canale di un altro.', 'The menu is yours: put the pages you use at the top, move the ones you don’t need out of the way, change the order. Every choice applies at once and follows you on every device, even when you manage someone else’s channel.', 'El menú es tuyo: pon arriba las páginas que usas, aparta las que no necesitas, cambia el orden. Cada elección vale al momento y te sigue en todos tus dispositivos, también cuando gestionas el canal de otra persona.')}</p>
       <div id="menu-misura" class="spazio-sopra"></div>
+    </div>
+    <div class="carta" id="carta-aspetto">
+      <h2>${_hIco(ICO.tavolozza)}${L('Aspetto su misura', 'Your own look', 'Aspecto a medida')}</h2>
+      <p>${L('Vesti SocialBot come vuoi: colori, caratteri, grandezza, angoli, ombre. Parti da una veste pronta o scegli tutto tu. Ogni scelta vale subito, è solo tua e ti segue su ogni dispositivo, anche quando gestisci il canale di un altro.', 'Dress SocialBot the way you like: colours, typefaces, size, corners, shadows. Start from a ready-made look or choose everything yourself. Every choice applies at once, is yours alone and follows you on every device, even when you manage someone else’s channel.', 'Viste SocialBot como quieras: colores, tipografías, tamaño, esquinas, sombras. Parte de un aspecto ya hecho o elígelo todo tú. Cada elección vale al instante, es solo tuya y te sigue en cada dispositivo, también cuando gestionas el canal de otra persona.')}</p>
+      <div id="aspetto-misura" class="spazio-sopra"></div>
     </div>
     <div class="carta">
       <h2>${_hIco(ICO.cestino)}${L('Andarsene', 'Leaving', 'Marcharse')}</h2>
@@ -39744,7 +39975,7 @@ async function conErrore(fn) {
 function caricaDatiScheda(id) {
   if (schedaBloccata(id)) return;
   if (id === 'stato') caricaAdesso();
-  if (id === 'account') { caricaPasskey(); caricaSicurezza(); caricaModeratori(); caricaRichiesteMod(); caricaMieRichieste(); caricaPiattaforme(); caricaCodiciPosta(); caricaRecensione(); collegaCancella(); collegaAvvisiManca(); caricaCollegamenti(); caricaPreferenze(); disegnaMenuMisura(); }
+  if (id === 'account') { caricaPasskey(); caricaSicurezza(); caricaModeratori(); caricaRichiesteMod(); caricaMieRichieste(); caricaPiattaforme(); caricaCodiciPosta(); caricaRecensione(); collegaCancella(); collegaAvvisiManca(); caricaCollegamenti(); caricaPreferenze(); disegnaMenuMisura(); disegnaAspetto(); }
   if (id === 'avatar') caricaMente3d();
   if (id === 'promo') { collegaPromo(); caricaPromo(); }
   if (id === 'qr') avviaQr();
@@ -45820,11 +46051,15 @@ function initGuscio() {
     const tit = ev.target.closest('.drawer-grp-tit[aria-controls]');
     if (tit) { giraGruppo(tit); return; }
     if (ev.target.closest('#menu-sistema')) { apriMenuMisura(); return; }
+    if (ev.target.closest('#menu-aspetto')) { apriMenuMisura('carta-aspetto'); return; }
     const b = ev.target.closest('[data-scheda]');
     if (b) vaiAScheda(b.dataset.scheda);
   });
   document.addEventListener('click', menuMisuraClic);
   document.addEventListener('change', menuMisuraCambio);
+  document.addEventListener('click', aspettoClic);
+  document.addEventListener('change', aspettoCambio);
+  document.addEventListener('input', aspettoMentre);
   document.addEventListener('toggle', (ev) => { const g = ev.target?.closest?.('#menu-misura details[data-mm-grp]'); if (g) _mmGruppi.set(g.dataset.mmGrp, g.open); }, true);
 
   document.addEventListener('click', (ev) => {

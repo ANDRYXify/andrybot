@@ -4,12 +4,25 @@ window.__ax2 = '4f7b-taliento';
 
 
 (function () {
+  var el = document.documentElement, scuro = false;
   try {
     var t = localStorage.getItem('tema') || 'auto';
-    var scuro = t === 'dark' || (t === 'auto' &&
+    scuro = t === 'dark' || (t === 'auto' &&
       window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
-    document.documentElement.setAttribute('data-theme', scuro ? 'dark' : 'light');
   } catch (e) {
-    document.documentElement.setAttribute('data-theme', 'light');
+    scuro = false;
   }
+  el.setAttribute('data-theme', scuro ? 'dark' : 'light');
+  try {
+    if (/[?&](aspetto=serie|demo=1)(&|$)/.test(location.search)) return;
+    var a = JSON.parse(localStorage.getItem('aspetto') || 'null');
+    var v = a && a.v === 1 && a[scuro ? 'scuro' : 'chiaro'];
+    if (!v || !v.vars) return;
+    for (var n in v.vars) {
+      var val = String(v.vars[n]);
+      if (/^--[a-z0-9-]+$/.test(n) && !/url\(|\\/i.test(val)) el.style.setProperty(n, val);
+    }
+    if (v.tema === 'dark' || v.tema === 'light') el.setAttribute('data-theme', v.tema);
+    if (a.grandezza >= 85 && a.grandezza <= 130 && a.grandezza !== 100) el.style.fontSize = a.grandezza + '%';
+  } catch (e) {}
 })();

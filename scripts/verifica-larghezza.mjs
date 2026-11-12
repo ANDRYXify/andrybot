@@ -323,7 +323,8 @@ const BLOCCHI = [
   { tipo: 'scritta', testo: 'Nuovo video ogni settimana' },
   { tipo: 'griglia', voci: [{ titolo: 'Uno', testo: 'Primo' }, { titolo: 'Due', testo: 'Secondo' }, { titolo: 'Tre', testo: 'Terzo' }] },
 ];
-const STILI = [...fs.readFileSync(path.join(RAD, 'src/features/linkpagina.js'), 'utf8').match(/const PRESET = \{([\s\S]*?)\n\};/)[1].matchAll(/^\s{2}([a-z]+):/gm)].map((m) => m[1]);
+await import('../src/web/public/aspetto.js');
+const STILI = Object.keys(globalThis.SB_ASPETTO.PRESET);
 
 const guscio = fs.readFileSync(path.join(PUB, 'index.html'), 'utf8');
 const piani = pianiPubblici();

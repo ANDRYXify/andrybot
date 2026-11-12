@@ -17,73 +17,29 @@
 // linea, nessun font remoto, nessuno script. Tutto il testo passa da esc().
 
 // ── preset: il punto di partenza, poi il tema dell'utente sovrascrive ──
+// Le tavolozze e le pile dei caratteri stanno in UN posto solo,
+// src/web/public/aspetto.js, perche' le usa anche il pannello per l'aspetto su
+// misura (docs/ASPETTO.md): la stessa «neon» veste la pagina link e il
+// pannello. Quel file va al browser, quindi i perche' restano scritti qui.
+//
 // Tavolozze. Due criteri, che prima non erano rispettati:
 // 1. i due colori dello sfondo devono essere DAVVERO diversi, altrimenti il
 //    gradiente non si vede e la pagina sembra una tinta piatta slavata;
 // 2. il testo tenue deve restare LEGGIBILE (grigio con dentro un po' del colore
 //    di sfondo, non un grigio lavato che sparisce).
-const PRESET = {
-  minimal:  { bg: '#ffffff', bg2: '#eceef3', testo: '#0d0d12', tenue: '#4a4a58', card: '#ffffff', bordo: '#dcdce4', acc: '#5b2ee5' },
-  neon:     { bg: '#05040a', bg2: '#1b0b3d', testo: '#f6f3ff', tenue: '#a99ed0', card: 'rgba(255,255,255,.07)', bordo: 'rgba(170,110,255,.42)', acc: '#b072ff' },
-  retro:    { bg: '#f7ecd6', bg2: '#dcbd8e', testo: '#241a12', tenue: '#63503b', card: '#fffbf3', bordo: '#cbb08a', acc: '#c2451a' },
-  sunset:   { bg: '#160b24', bg2: '#5f1f45', testo: '#fff3ec', tenue: '#dcb0c4', card: 'rgba(255,255,255,.09)', bordo: 'rgba(255,170,130,.38)', acc: '#ff7a45' },
-  glass:    { bg: '#080f1c', bg2: '#173a63', testo: '#f0f6ff', tenue: '#a6bdda', card: 'rgba(255,255,255,.10)', bordo: 'rgba(255,255,255,.22)', acc: '#3fc0ff' },
-  brutal:   { bg: '#f5f5ef', bg2: '#e2e2d8', testo: '#000000', tenue: '#3d3d3d', card: '#ffffff', bordo: '#000000', acc: '#ff3b16' },
-  pastello: { bg: '#fff7fb', bg2: '#e6eaff', testo: '#2f2b3d', tenue: '#6a647f', card: '#ffffff', bordo: '#e6d7ea', acc: '#b4489a' },
-  // — nuove palette —
-  cyber:    { bg: '#05070d', bg2: '#0a1a2b', testo: '#d7fbff', tenue: '#6f93a8', card: 'rgba(0,229,255,.06)', bordo: 'rgba(0,229,255,.34)', acc: '#00e5ff' },
-  vapor:    { bg: '#1a0b2e', bg2: '#3a1a6b', testo: '#ffe8fb', tenue: '#c9a0dc', card: 'rgba(255,255,255,.08)', bordo: 'rgba(255,113,206,.42)', acc: '#ff71ce' },
-  oro:      { bg: '#0a0a0a', bg2: '#1c1608', testo: '#f8f1dc', tenue: '#b8a878', card: 'rgba(232,196,99,.07)', bordo: 'rgba(212,175,55,.42)', acc: '#e8c463' },
-  oceano:   { bg: '#04121f', bg2: '#06304f', testo: '#e6f6ff', tenue: '#8fb8cf', card: 'rgba(255,255,255,.07)', bordo: 'rgba(70,180,230,.32)', acc: '#3bb0e6' },
-  foresta:  { bg: '#08130d', bg2: '#102a1b', testo: '#e8f5ec', tenue: '#93b7a1', card: 'rgba(255,255,255,.06)', bordo: 'rgba(120,210,140,.30)', acc: '#6ad48b' },
-  ghiaccio: { bg: '#eef4fb', bg2: '#d6e6f5', testo: '#10222f', tenue: '#4a6274', card: '#ffffff', bordo: '#c2d6e8', acc: '#2a8fd8' },
-  lava:     { bg: '#100604', bg2: '#3a1005', testo: '#ffe9df', tenue: '#c99a8a', card: 'rgba(255,110,60,.08)', bordo: 'rgba(255,110,60,.36)', acc: '#ff5a2c' },
-  bubblegum:{ bg: '#fff0f6', bg2: '#ffe0ef', testo: '#3d0b28', tenue: '#8a5a72', card: '#ffffff', bordo: '#ffc2dd', acc: '#ff3d8b' },
-};
-
-// Due caratteri, non uno. È l'accoppiata titolo/testo a far sembrare una pagina
-// DISEGNATA invece che scritta: un carattere solo su tutto, alla stessa misura,
-// è il motivo per cui una pagina "non spicca". Nessun font da scaricare — solo
-// quelli già installati — quindi la pagina resta immediata.
-// d = titoli, t = testo corrente.
-const PILE = {
-  system: {
-    d: 'system-ui, -apple-system, "SF Pro Display", "Segoe UI Variable Display", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-    t: 'system-ui, -apple-system, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-  },
-  inter: {
-    d: 'Inter, "Inter Tight", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
-    t: 'Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
-  },
-  // titoli larghi e squadrati, testo monospaziato: da terminale, ma leggibile
-  mono: {
-    d: 'ui-monospace, "SF Mono", SFMono-Regular, "JetBrains Mono", Menlo, Consolas, monospace',
-    t: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
-  },
-  // il classico editoriale: titoli con le grazie, testo senza. Sono due voci
-  // diverse, e si sente.
-  serif: {
-    d: '"Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif',
-    t: 'system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-  },
-  // titoli stretti e alti (da manifesto), testo normale
-  condensato: {
-    d: '"Oswald", "Haettenschweiler", "Arial Narrow Bold", "Arial Narrow", "Helvetica Neue Condensed", Impact, sans-serif',
-    t: 'system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-  },
-  tondo: {
-    d: '"SF Pro Rounded", ui-rounded, "Varela Round", "Trebuchet MS", "Segoe UI", system-ui, sans-serif',
-    t: '"SF Pro Rounded", ui-rounded, "Trebuchet MS", "Segoe UI", system-ui, sans-serif',
-  },
-  // Titoli a pennarello, testo normale sotto: la voce del marchio. E' l'unica
-  // pila che ha bisogno di una FACCIA vera, quindi la faccia si manda solo a
-  // chi ha scelto questo tema — le altre pagine link non pagano 29 KB per un
-  // carattere che non usano. Vedi `facciaFont`.
-  manga: {
-    d: '"Permanent Marker", "Trebuchet MS", "Segoe UI", system-ui, sans-serif',
-    t: 'system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-  },
-};
+//
+// Pile: due caratteri, non uno (d = titoli, t = testo corrente). È l'accoppiata
+// titolo/testo a far sembrare una pagina DISEGNATA invece che scritta: un
+// carattere solo su tutto, alla stessa misura, è il motivo per cui una pagina
+// "non spicca". Nessun font da scaricare — solo quelli già installati — quindi
+// la pagina resta immediata. «mono» e' da terminale ma leggibile; «serif» e' il
+// classico editoriale (titoli con le grazie, testo senza); «condensato» ha i
+// titoli stretti e alti, da manifesto. «manga» ha i titoli a pennarello, la
+// voce del marchio: e' l'unica pila che ha bisogno di una FACCIA vera, quindi
+// la faccia si manda solo a chi ha scelto questo tema — le altre pagine link
+// non pagano 29 KB per un carattere che non usano. Vedi `facciaFont`.
+import '../web/public/aspetto.js';
+const { PRESET, PILE } = globalThis.SB_ASPETTO;
 
 // La sola pila che porta un file. Le pagine link non caricano caratteri dal
 // web: e' una scelta di velocita', e vale ancora per tutte tranne questa.

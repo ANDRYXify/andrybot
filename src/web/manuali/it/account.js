@@ -262,6 +262,32 @@ export default {
       'La carta la vedono anche i moderatori: ognuno ha il suo menù.',
     ] },
 
+    { h3: 'Aspetto su misura' },
+    { p: [
+      'Anche l\'aspetto è di chi usa SocialBot. Colori, caratteri, grandezza e forma li scegli tu: le scelte sono tue e non del canale, ti seguono sul telefono e sul computer, e anche quando gestisci il canale di un altro. Ogni gesto vale subito, senza salvare, e quello che vedi cambiare è già il risultato.',
+      'Il tema chiaro e il tema scuro hanno ognuno la sua veste. «Tema chiaro» e «Tema scuro», in cima alla carta, dicono quale stai vestendo; il tasto col sole e la luna, in alto, passa dall\'una all\'altra come sempre.',
+    ] },
+    { tabella: [
+      ['Cosa', 'Come si fa', 'Cosa succede'],
+      ['Una veste pronta', '«Parti da una veste pronta»: quindici, le stesse della pagina link', 'Tutti i colori cambiano insieme. «Di serie» rimette quelli di SocialBot. Una veste scura messa nel tema chiaro resta scura.'],
+      ['Un colore solo', '«I colori, uno per uno»: pagina, carte, testo, testo tenue, bordi, evidenza, inchiostro dei contorni', 'Cambia quel colore e gli altri si adattano. La crocetta accanto toglie il tuo colore.'],
+      ['Un colore che non si legge', 'Niente: ci pensa la carta', 'Il colore si scurisce o si schiarisce quel tanto che basta per leggersi, e sotto il suo nome c\'è scritto quale hai scelto e quale uso.'],
+      ['«Il carattere» e «I titoli»', 'Di serie, del sistema, Inter, con le grazie, monospazio, arrotondato; per i titoli anche condensato, o come il testo', 'Cambia il carattere del testo e quello dei titoli. Non si scarica niente: sono caratteri già sul tuo dispositivo.'],
+      ['«La grandezza»', 'Dall\'85 al 130 %', 'Tutte le scritte e gli spazi crescono o calano insieme.'],
+      ['«Gli angoli», «Il tratto», «Le ombre»', 'Di serie o due alternative ciascuno', 'Angoli vivi o tondi, contorni sottili o marcati, ombre corte o nessuna.'],
+      ['«La trama»', 'Di serie (puntinata) o liscia', 'Toglie i puntini della carta dai fondi.'],
+      ['«Il puntatore»', 'Di serie (disegnato) o quello del sistema', 'Il puntatore del mouse torna quello del tuo computer.'],
+      ['«Il movimento»', 'Di serie, leggero o pieno', 'Leggero spegne le animazioni di sfondo; pieno le tiene anche su un dispositivo debole. Cambia del tutto alla prossima apertura.'],
+      ['«Il tuo CSS»', 'Scrivi il CSS e premi «Applica il CSS»', 'Arriva per ultimo e vale solo per te. Non passa niente che apra una connessione verso altri siti (<code>url</code>, <code>@import</code>, <code>image-set</code>) e nemmeno la barra rovescia: la carta ti dice se ha tolto qualcosa.'],
+      ['Passare la veste', '«Copia la mia veste» e «Incolla una veste»', 'La veste è un testo: lo incolli su un altro dispositivo o lo dai a qualcuno. Chi la incolla prende il posto della sua di prima.'],
+    ] },
+    { p: [
+      'Il tasto con la tavolozza, in fondo alla barra del menù accanto a «Sistema il menù», porta a questa carta. «Rimetti l\'aspetto di serie» toglie tutte le scelte nei due temi, dopo una conferma.',
+      'Se un CSS ti rende inservibile lo schermo, apri <code>socialbot.live/?aspetto=serie</code>: entri con l\'aspetto di serie, arrivi a questa carta e le tue scelte sono ancora lì da sistemare. Le pagine d\'ingresso non prendono mai il tuo CSS.',
+      'Non si caricano immagini di sfondo né caratteri: sarebbero file da tenere sul server o chiamate ad altri siti. Gli overlay e le pagine pubbliche (link, negozio, donazioni) hanno i loro editor e non cambiano.',
+      'La carta la vedono anche i moderatori: ognuno ha la sua veste.',
+    ] },
+
     { h3: 'Andarsene' },
     { p: [
       'Solo il proprietario può cancellare. Se te ne vai non resta niente di tuo: comandi, moduli, effetti, punti, ore guardate, memoria della chat, pagina link, file caricati, collegamenti ai tuoi account, recensione. Il bot esce dal tuo canale.',

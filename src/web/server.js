@@ -171,6 +171,7 @@ import * as settimana from '../features/settimana.js';
 import * as prossime from '../features/prossime.js';
 import * as preferenze from '../features/preferenze.js';
 import * as menuPersona from '../features/menu-persona.js';
+import * as aspettoPersona from '../features/aspetto-persona.js';
 import { origineLinguaChat, linguaChat } from '../features/lingua-canale.js';
 import * as automatiche from '../features/automatiche.js';
 import * as campagne from '../features/campagne.js';
@@ -4614,6 +4615,7 @@ ${FUNZIONI_VETRINA.map((a) => `### ${a.area[0]}\n${a.voci.map((v) => `- ${v.t[0]
       // il menu su misura di chi e' entrato (docs/MENU.md): della persona, non
       // del canale che sta gestendo. null: il menu di serie.
       menu: menuPersona.menuDi(ident),
+      aspetto: aspettoPersona.scelteDi(ident),
       // chi sta gestendo ora + TUTTI i canali gestibili dall'identità, con ruolo
       // (proprio canale da proprietario + canali moderati) → alimenta lo switcher.
       gestisce: { canale: user.login, streamer: user.display || user.login, nome: nomeSu(user.login) },
@@ -6228,6 +6230,14 @@ ${FUNZIONI_VETRINA.map((a) => `### ${a.area[0]}\n${a.voci.map((v) => `- ${v.t[0]
   app.post('/api/persona/menu', requireLogin, (req, res) => {
     const salvate = menuPersona.salvaMenu(identitaDi(currentUser(req)), req.body?.menu);
     res.json(salvate ? { ok: true, menu: salvate } : { ok: true, qui: true, menu: menuPersona.pulisci(req.body?.menu) });
+  });
+
+  // L'ASPETTO SU MISURA (docs/ASPETTO.md): come il menu, e' della persona che
+  // e' entrata. Il server tiene le scelte ripulite e basta: niente fogli,
+  // niente immagini. Chi non ha un conto suo riceve `qui: true`.
+  app.post('/api/persona/aspetto', requireLogin, (req, res) => {
+    const salvate = aspettoPersona.salvaScelte(identitaDi(currentUser(req)), req.body?.aspetto);
+    res.json(salvate ? { ok: true, aspetto: salvate } : { ok: true, qui: true, aspetto: aspettoPersona.pulisci(req.body?.aspetto) });
   });
 
   app.get('/api/account/collegamenti', requireOwner, (req, res) => {

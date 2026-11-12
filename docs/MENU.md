@@ -223,6 +223,9 @@ menu/sottomenu/navigazione in generale? sì? la configuri e la lanci?».
     del pannello. Sul computer il piede resta in fondo alla barra anche col
     menu più lungo dello schermo (l'elenco scorre sotto e si ferma alla riga);
     sul telefono viene dopo l'elenco, prima del tuo nome e dei canali.
+    Nel piede, accanto, c'è il tasto con la tavolozza che porta alla carta
+    «Aspetto su misura» (`docs/ASPETTO.md`): stessa famiglia, strumenti che
+    cambiano il pannello e non pagine.
 11. **Le sorelle seguono il menu**: sul telefono la barra delle voci del
     gruppo ha l'ordine scelto e non mostra le nascoste (tranne quella in cui
     ci si trova).
